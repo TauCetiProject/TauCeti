@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.DeterminantOne
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # The type A weight torus and its maximality on field-valued points
 
@@ -51,12 +53,6 @@ theorem torusCharacter_weight (K : Type u) [CommRing K]
   split_ifs <;>
     simp only [← weightChar_apply, weightChar_single, weightChar_zero, MonoidHom.one_apply,
       div_eq_mul_inv, inv_one]
-
-/-- The final partial product is the product of all the entries. -/
-private theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) :
-    Fin.partialProd f (Fin.last n) = ∏ i, f i := by
-  rw [Fin.partialProd, Fin.val_last]
-  rw [(List.take_eq_self_iff _).mpr (by simp), Fin.prod_ofFn]
 
 /-- On a determinant-one diagonal tuple, the partial products evaluate under the standard weight
 characters to the original tuple. -/

@@ -14,7 +14,8 @@ import Mathlib.Tactic.FinCases
 # Basic results about finite ordinal types
 
 This file collects elementary facts about finite ordinal types, including the classification of
-permutations of `Fin 2` and indicator sums indexed by `Fin n`.
+permutations of `Fin 2`, indicator sums indexed by `Fin n`, and the final value of a partial
+product.
 
 `Fintype.sum_ite_eq` evaluates a sum whose indicator compares two elements of the index type.
 When the comparison is instead between a natural number and the `Fin.val` of the index — as it is
@@ -25,6 +26,7 @@ range, so the value is a `dite` rather than a plain application.
 
 * `TauCeti.perm_fin_two_eq_one_or_swap`: every permutation of `Fin 2` is the identity or the
   transposition.
+* `TauCeti.partialProd_last`: the final partial product is the product of all the entries.
 * `TauCeti.sum_ite_val_add`: a sum against the indicator of `b = k + j` picks out the summand at
   `b - j`, or vanishes when there is no such index.
 -/
@@ -32,6 +34,12 @@ range, so the value is a `dite` rather than a plain application.
 public section
 
 namespace TauCeti
+
+/-- The final partial product is the product of all the entries. -/
+theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) :
+    Fin.partialProd f (Fin.last n) = ∏ i, f i := by
+  rw [Fin.partialProd, Fin.val_last]
+  rw [(List.take_eq_self_iff _).mpr (by simp), Fin.prod_ofFn]
 
 /-- A permutation of `Fin 2` is either the identity or the transposition. -/
 theorem perm_fin_two_eq_one_or_swap (e : Equiv.Perm (Fin 2)) :
