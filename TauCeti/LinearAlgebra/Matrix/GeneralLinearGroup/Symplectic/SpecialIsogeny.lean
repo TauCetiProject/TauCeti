@@ -307,6 +307,11 @@ theorem symplecticSpecialIsogeny_symplecticSpecialIsogeny [CharP R 2]
     simp only [symplecticSpecialIsogeny_apply, specialIsogenyPair_zero, specialIsogenyPair_one,
       specialIsogenyPair_two, specialIsogenyPair_three, pairMinor_eq, Matrix.map_apply,
       Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk]
+  -- The sixteen entries are grouped by the row of the output. The entry at `(i, j)` is a quartic
+  -- in the entries of `g`, and reducing it to `g i j ^ 2` takes three of the six row identities
+  -- above together with `2 = 0`; which three depends only on `i`, so each group of four shares
+  -- them and differs only in the column. Each certificate below is that combination written out.
+  -- Row `0`: the identities on the row pairs `(0,1)`, `(0,3)` and `(1,3)`.
   · linear_combination (g 0 0 * g 3 0) * h01 + (g 0 0 * g 1 0) * h03 + (g 0 0^2) * h13 + (-g 0 0^2
       * g 1 0 * g 3 2 - g 0 0 * g 0 1 * g 1 0 * g 3 3 + g 0 0 * g 0 2 * g 1 0 * g 3 0 + g 0 0 *
       g 0 3 * g 1 0 * g 3 1) * h2
@@ -319,6 +324,7 @@ theorem symplecticSpecialIsogeny_symplecticSpecialIsogeny [CharP R 2]
   · linear_combination (g 0 3 * g 3 3) * h01 + (g 0 3 * g 1 3) * h03 + (g 0 3^2) * h13 + (-g 0 0 *
       g 0 3 * g 1 3 * g 3 2 - g 0 1 * g 0 3 * g 1 3 * g 3 3 + g 0 2 * g 0 3 * g 1 3 * g 3 0 +
       g 0 3^2 * g 1 3 * g 3 1) * h2
+  -- Row `1`: the identities on the row pairs `(0,1)`, `(0,2)` and `(1,2)`.
   · linear_combination (g 1 0 * g 2 0) * h01 + (g 1 0^2) * h02 + (g 0 0 * g 1 0) * h12 + (-g 0 0 *
       g 1 0^2 * g 2 2 - g 0 1 * g 1 0^2 * g 2 3 + g 0 2 * g 1 0^2 * g 2 0 + g 0 3 * g 1 0^2 *
       g 2 1) * h2
@@ -331,6 +337,7 @@ theorem symplecticSpecialIsogeny_symplecticSpecialIsogeny [CharP R 2]
   · linear_combination (g 1 3 * g 2 3) * h01 + (g 1 3^2) * h02 + (g 0 3 * g 1 3) * h12 + (-g 0 0 *
       g 1 3^2 * g 2 2 - g 0 1 * g 1 3^2 * g 2 3 + g 0 2 * g 1 3^2 * g 2 0 + g 0 3 * g 1 3^2 *
       g 2 1) * h2
+  -- Row `2`: the identities on the row pairs `(1,2)`, `(1,3)` and `(2,3)`.
   · linear_combination (g 2 0 * g 3 0) * h12 + (g 2 0^2) * h13 + (g 1 0 * g 2 0) * h23 + (-g 1 0 *
       g 2 0^2 * g 3 2 - g 1 0 * g 2 0 * g 2 1 * g 3 3 + g 1 0 * g 2 0 * g 2 3 * g 3 1 - g 1 1 *
       g 2 0 * g 2 3 * g 3 0 + g 1 2 * g 2 0^2 * g 3 0 + g 1 3 * g 2 0 * g 2 1 * g 3 0) * h2
@@ -343,6 +350,7 @@ theorem symplecticSpecialIsogeny_symplecticSpecialIsogeny [CharP R 2]
   · linear_combination (g 2 3 * g 3 3) * h12 + (g 2 3^2) * h13 + (g 1 3 * g 2 3) * h23 + (-g 1 0 *
       g 2 2 * g 2 3 * g 3 3 - g 1 1 * g 2 3^2 * g 3 3 + g 1 2 * g 2 0 * g 2 3 * g 3 3 - g 1 3 *
       g 2 0 * g 2 3 * g 3 2 + g 1 3 * g 2 2 * g 2 3 * g 3 0 + g 1 3 * g 2 3^2 * g 3 1) * h2
+  -- Row `3`: the identities on the row pairs `(0,2)`, `(0,3)` and `(2,3)`.
   · linear_combination (g 3 0^2) * h02 + (g 2 0 * g 3 0) * h03 + (g 0 0 * g 3 0) * h23 + (-g 0 0 *
       g 2 0 * g 3 0 * g 3 2 - g 0 1 * g 2 0 * g 3 0 * g 3 3 + g 0 2 * g 2 0 * g 3 0^2 + g 0 3 *
       g 2 0 * g 3 0 * g 3 1) * h2
