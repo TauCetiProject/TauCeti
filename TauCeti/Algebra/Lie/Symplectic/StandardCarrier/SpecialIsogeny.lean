@@ -147,20 +147,11 @@ private theorem last_one : Fin.last 1 = (1 : Fin (1 + 1)) := rfl
 
 -- The two rank-two transports below name the successor node in one form and the numeral in the
 -- other, so they need the index pair of a difference short-root element to be all that matters.
-/-- The difference short-root element depends on its index pair only. -/
-private theorem differenceShortRootUnit_congr {m : ℕ} {R : Type*} [CommRing R] {i j i' j' : Fin m}
-    (hij : i ≠ j) (hij' : i' ≠ j') (hi : i = i') (hj : j = j') (c : R) :
-    GLSymplecticFin.differenceShortRootUnit hij c =
-      GLSymplecticFin.differenceShortRootUnit hij' c := by
-  subst hi
-  subst hj
-  rfl
-
 omit [CharP K 2] in
 private theorem shortRootUnit_eq (t : K) :
     pointsMulEquivGLSymplecticFin K (rootSubgroupPoints 1 (.inl 0) K (Multiplicative.ofAdd t)) =
       GLSymplecticFin.differenceShortRootUnit (show (0 : Fin (1 + 1)) ≠ 1 by decide) t := by
-  rw [← differenceShortRootUnit_congr (lt_next 1 0 zero_ne_last).ne
+  rw [← GLSymplecticFin.differenceShortRootUnit_congr (lt_next 1 0 zero_ne_last).ne
     (show (0 : Fin (1 + 1)) ≠ 1 by decide) rfl next_zero t]
   apply Subtype.ext
   rw [coe_pointsMulEquivGLSymplecticFin_apply,
@@ -209,7 +200,7 @@ omit [CharP K 2] in
 private theorem negShortRootUnit_eq (t : K) :
     pointsMulEquivGLSymplecticFin K (rootSubgroupPoints 1 (.inr 0) K (Multiplicative.ofAdd t)) =
       GLSymplecticFin.differenceShortRootUnit (show (1 : Fin (1 + 1)) ≠ 0 by decide) t := by
-  rw [← differenceShortRootUnit_congr (lt_next 1 0 zero_ne_last).ne'
+  rw [← GLSymplecticFin.differenceShortRootUnit_congr (lt_next 1 0 zero_ne_last).ne'
     (show (1 : Fin (1 + 1)) ≠ 0 by decide) next_zero rfl t]
   apply Subtype.ext
   rw [coe_pointsMulEquivGLSymplecticFin_apply,
