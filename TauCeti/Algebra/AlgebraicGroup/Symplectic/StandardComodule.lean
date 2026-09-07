@@ -65,15 +65,14 @@ quotient map on the coordinate factor. -/
 @[simp]
 theorem standardComodule_coact :
     let _ := GeneralLinear.standardComodule R (m + m)
-    Comodule.coact (self := standardComodule R m) =
+    Comodule.corestrictCoact
+        (R := R) (C := GeneralLinear.coordinateHopfAlgebra R (m + m))
+        (D := coordinateHopfAlgebra R m) (M := Fin (m + m) → R)
+        (coordinateMap R m).hom.toCoalgHom =
       TensorProduct.map LinearMap.id
           (Bialgebra.Quotient.mkBialgHom (R := R)
             (definingHopfIdeal R m).toIdeal).toLinearMap ∘ₗ
         GeneralLinear.standardCoact R (m + m) := by
-  change Comodule.corestrictCoact
-      (R := R) (C := GeneralLinear.coordinateHopfAlgebra R (m + m))
-      (D := coordinateHopfAlgebra R m) (M := Fin (m + m) → R)
-      (coordinateMap R m).hom.toCoalgHom = _
   rw [coordinateMap_def, CommHopfAlgCat.hom_mkQuotient]
   apply LinearMap.ext
   intro v
