@@ -25,6 +25,8 @@ computation (`Quadratic/Norm.lean`).
 
 * `NumberField.minpoly_rat_quadratic`: the minimal polynomial of `θ` over `ℚ` is `X² - d`.
 * `NumberField.finrank_rat_eq_two`: `K` has degree `2` over `ℚ`.
+* `NumberField.finrank_rat_eq_two_of_minpoly_eq_X_sq_sub_X_add`: the same for a field generated
+  by a root of a monic quadratic `X² - X + c`, the half-integer presentation.
 * `NumberField.gen_sq`: the integral generator squares to the radicand in `𝓞 K`.
 * `NumberField.coe_gen_sq`: the generator squares to the radicand, `θ² = d` in `K`.
 * `NumberField.coe_gen_sq_ratCast`: the same over `ℚ`, `θ² = (d : ℚ)` in `K`.
@@ -65,6 +67,23 @@ theorem finrank_rat_eq_two (hmin : minpoly ℤ θ = X ^ 2 - C d)
   rw [(PowerBasis.ofAdjoinEqTop' hint hgen).finrank,
     ← (PowerBasis.ofAdjoinEqTop' hint hgen).natDegree_minpoly, PowerBasis.ofAdjoinEqTop'_gen,
     minpoly_rat_quadratic hmin, natDegree_X_pow_sub_C]
+
+/-- The field generated over `ℚ` by an algebraic integer `ω` with minimal polynomial `X² - X + c`
+over `ℤ` — the half-integer presentation of a quadratic field — has degree `2` over `ℚ`. -/
+theorem finrank_rat_eq_two_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
+    (hmin : minpoly ℤ ω = X ^ 2 - X + C c) (hgen : Algebra.adjoin ℚ {(ω : K)} = ⊤) :
+    finrank ℚ K = 2 := by
+  have hint : IsIntegral ℚ (ω : K) := ω.isIntegral_coe.tower_top
+  rw [(PowerBasis.ofAdjoinEqTop' hint hgen).finrank,
+    ← (PowerBasis.ofAdjoinEqTop' hint hgen).natDegree_minpoly, PowerBasis.ofAdjoinEqTop'_gen,
+    minpoly.isIntegrallyClosed_eq_field_fractions' ℚ ω.isIntegral_coe, RingOfIntegers.minpoly_coe,
+    (minpoly.monic ω.isIntegral).natDegree_map, hmin]
+  have hq : (X ^ 2 - X + C c : ℤ[X]) = X ^ 2 + (C (-1) * X + C c) := by
+    rw [map_neg, C_1]; ring
+  have hlt : (C (-1) * X + C c : ℤ[X]).natDegree < (X ^ 2 : ℤ[X]).natDegree := by
+    rw [natDegree_X_pow]
+    exact lt_of_le_of_lt natDegree_linear_le (by norm_num)
+  rw [hq, natDegree_add_eq_left_of_natDegree_lt hlt, natDegree_X_pow]
 
 omit [NumberField K] in
 /-- The integral generator squares to the radicand: `θ² = d` in `𝓞 K`. -/

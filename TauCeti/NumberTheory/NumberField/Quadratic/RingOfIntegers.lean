@@ -37,6 +37,8 @@ coordinate as `B`, the norm of `z` is `(A² - d·B²)/4`, and the factor `4` dis
 * `NumberField.discr_eq_four_mul_of_mod_four_ne_one`: `discr K = 4d` for `d % 4 ≠ 1`.
 * `NumberField.adjoin_halfGen_eq_top_of_mod_four_eq_one`: `𝓞 K = ℤ[(1+θ)/2]` for `d ≡ 1`.
 * `NumberField.minpoly_halfGen`: the minimal polynomial of `(1+θ)/2` is `X² - X + (1-d)/4`.
+* `NumberField.adjoin_eq_top_of_minpoly_eq_X_sq_sub_X_add`: `𝓞 K = ℤ[ω]` for a generator `ω`
+  with minimal polynomial `X² - X + (1-d)/4`, `d` squarefree, `d ≡ 1`.
 * `NumberField.discr_eq_of_squarefree_of_mod_four_eq_one`: `discr K = d` for `d ≡ 1`.
 * `NumberField.exists_sq_sub_mul_sq_eq_four_mul_norm`: the norm form `4·N(z) = A² - d·B²`, and
   `NumberField.exists_sq_sub_mul_sq_eq_norm_of_mod_four_ne_one`: `N(z) = A² - d·B²` for `d ≢ 1`.
@@ -339,6 +341,76 @@ theorem adjoin_halfGen_eq_top_of_mod_four_eq_one (hmin : minpoly ℤ θ = X ^ 2 
   rw [hkl]
   exact add_mem (zsmul_mem (one_mem _) k)
     (zsmul_mem (Algebra.subset_adjoin (Set.mem_singleton _)) l)
+
+/-- **The ring of integers in the half-integer presentation.** Let `K` be generated over `ℚ` by
+an algebraic integer `ω` with minimal polynomial `X² - X + (1 - d)/4` over `ℤ`, where `d` is
+squarefree with `d ≡ 1 (mod 4)` — the presentation of `ℚ(√d)` by `ω = (1 + √d)/2`. Then
+`𝓞 K = ℤ[ω]`. -/
+theorem adjoin_eq_top_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K}
+    (hmin : minpoly ℤ ω = X ^ 2 - X + C ((1 - d) / 4)) (hgen : Algebra.adjoin ℚ {(ω : K)} = ⊤)
+    (hsf : Squarefree d) (hd4 : d % 4 = 1) : Algebra.adjoin ℤ {ω} = ⊤ := by
+  set c : ℤ := (1 - d) / 4 with hc
+  have h4 : 4 * c = 1 - d := by omega
+  -- `η = 2ω - 1` is a square root of `d` generating `K`, and `ω` is its half-integer generator.
+  set η : 𝓞 K := ω + ω - 1 with hη
+  have hηK : algebraMap (𝓞 K) K η = algebraMap (𝓞 K) K ω + algebraMap (𝓞 K) K ω - 1 := by
+    rw [hη, map_sub, map_add, map_one]
+  have hωroot : aeval ω (X ^ 2 - X + C c : ℤ[X]) = 0 := by rw [← hmin]; exact minpoly.aeval ℤ ω
+  have hωsq : ω ^ 2 - ω + (c : 𝓞 K) = 0 := by
+    rwa [map_add, map_sub, map_pow, aeval_X, aeval_C, algebraMap_int_eq, eq_intCast] at hωroot
+  have hηsq : η ^ 2 = (d : 𝓞 K) := by
+    have h4' : (4 : 𝓞 K) * (c : 𝓞 K) = 1 - (d : 𝓞 K) := by exact_mod_cast h4
+    rw [hη]
+    linear_combination 4 * hωsq - h4'
+  have hgenη : Algebra.adjoin ℚ {(η : K)} = ⊤ := by
+    rw [eq_top_iff, ← hgen, Algebra.adjoin_le_iff, Set.singleton_subset_iff]
+    have hmem : (η : K) ∈ Algebra.adjoin ℚ {(η : K)} := Algebra.subset_adjoin rfl
+    have hω : algebraMap (𝓞 K) K ω = (1 / 2 : ℚ) • (algebraMap (𝓞 K) K η + 1) := by
+      rw [hηK, Algebra.smul_def, map_div₀, map_one, map_ofNat]; ring
+    rw [show (ω : K) = (1 / 2 : ℚ) • ((η : K) + 1) from hω]
+    exact Subalgebra.smul_mem _ (add_mem hmem (one_mem _)) _
+  -- `ω` is not a rational integer, so neither is `η`, whose minimal polynomial is then `X² - d`.
+  have hωnot : ω ∉ (algebraMap ℤ (𝓞 K)).range := by
+    rw [← minpoly.two_le_natDegree_iff (Algebra.IsIntegral.isIntegral ω), hmin]
+    have hq : (X ^ 2 - X + C c : ℤ[X]) = X ^ 2 + (C (-1) * X + C c) := by
+      rw [map_neg, C_1]; ring
+    have hlt : (C (-1) * X + C c : ℤ[X]).natDegree < (X ^ 2 : ℤ[X]).natDegree := by
+      rw [natDegree_X_pow]
+      exact lt_of_le_of_lt natDegree_linear_le (by norm_num)
+    rw [hq, natDegree_add_eq_left_of_natDegree_lt hlt, natDegree_X_pow]
+  have hηnot : η ∉ (algebraMap ℤ (𝓞 K)).range := by
+    rintro ⟨n, hn⟩
+    apply hωnot
+    have hηn : algebraMap (𝓞 K) K η = algebraMap ℤ K n := by
+      rw [← hn, IsScalarTower.algebraMap_apply ℤ (𝓞 K) K]
+    have hωq : algebraMap (𝓞 K) K ω = algebraMap ℚ K ((((n : ℤ) : ℚ) + 1) / 2) := by
+      rw [map_div₀, map_add, map_one, map_ofNat, ← eq_intCast (algebraMap ℤ ℚ) n,
+        ← IsScalarTower.algebraMap_apply ℤ ℚ K, ← hηn, hηK]
+      ring
+    have hint : IsIntegral ℤ ((((n : ℤ) : ℚ) + 1) / 2) := by
+      rw [← isIntegral_algebraMap_iff (A := ℚ) (B := K) (R := ℤ), ← hωq]
+      exact ω.isIntegral_coe
+    obtain ⟨m, hm⟩ := IsIntegrallyClosed.isIntegral_iff.mp hint
+    refine ⟨m, RingOfIntegers.coe_injective ?_⟩
+    rw [hωq, ← hm, ← IsScalarTower.algebraMap_apply ℤ ℚ K,
+      ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K]
+  have hminη : minpoly ℤ η = X ^ 2 - C d := by
+    have hintη : IsIntegral ℤ η := Algebra.IsIntegral.isIntegral η
+    have hroot : aeval η (X ^ 2 - C d : ℤ[X]) = 0 := by
+      rw [map_sub, map_pow, aeval_X, aeval_C, algebraMap_int_eq, eq_intCast, hηsq, sub_self]
+    have h2le : 2 ≤ (minpoly ℤ η).natDegree := (minpoly.two_le_natDegree_iff hintη).mpr hηnot
+    exact (Polynomial.eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hintη)
+      (monic_X_pow_sub_C d two_ne_zero) (minpoly.isIntegrallyClosed_dvd hintη hroot)
+      (by rw [natDegree_X_pow_sub_C]; exact h2le)).symm
+  -- `ω` is the half-integer generator of `η`, which generates `𝓞 K` over `ℤ`.
+  have hω : halfGen hminη hd4 = ω := by
+    apply RingOfIntegers.coe_injective
+    have h1 : algebraMap (𝓞 K) K (halfGen hminη hd4) = (1 + algebraMap (𝓞 K) K η) / 2 :=
+      coe_halfGen hminη hd4
+    rw [h1, hηK]
+    ring
+  rw [← hω]
+  exact adjoin_halfGen_eq_top_of_mod_four_eq_one hminη hgenη hsf hd4
 
 /-- **The discriminant of `ℚ(√d)` when `d ≡ 1 (mod 4)`.** For squarefree `d` with `d % 4 = 1`, the
 field discriminant is `disc K = d` (the ring of integers is `ℤ[(1+θ)/2]`, whose `{1, ω}` basis has
