@@ -5,105 +5,43 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Frobenius
-public import TauCeti.GroupTheory.FixedPointCandidate
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Frobenius
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Basic
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Closure
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Index
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 
 /-!
-# The candidate group of the untwisted family `Bₙ(q)`
+# Type-B spin-carrier data for validated indices
 
-The classification list carries the untwisted odd orthogonal family named `Bₙ(q)` for `n ≥ 2`,
-whose matrix name in Gorenstein--Lyons--Solomon is `Ω_{2n+1}(q)`. This file runs the fixed-point
-recipe of Chevalley and Steinberg on a validated index of that family: inside the group of
-algebraic-closure-valued points of an explicit full-weight Chevalley carrier of type `Bₙ`, take
-the fixed points of the `q`-power Frobenius, then the derived subgroup of those fixed points, then
-the quotient by its centre.
+This file attaches Tau Ceti's explicit full-weight type-`B` spin carrier to a validated index of
+the untwisted family `Bₙ(q)`. The carrier at parameter `n` has type `B (n + 1)`, so an index of
+rank `r` uses parameter `r - 1`. The bound `TauCeti.TypeBLieIndex.two_le_rank` ensures this
+subtraction does not truncate, and `TauCeti.TypeBLieIndex.carrierRank_add_one` identifies the
+resulting node type with the Bourbaki numbering of the index.
 
-The carrier used is Tau Ceti's explicit type-`B` spin carrier `TauCeti.TypeBSpinCarrier`, the
-Kostant toral closure of the `2ⁿ`-dimensional spin representation of `so_(2n+1)` inside `GL_(2ⁿ)`
-over `ℤ`. The spin representation rather than the adjoint one is what makes the character lattice
-of this carrier the full weight lattice of the `Bₙ` root datum, that lattice containing the root
-lattice with index two; the adjoint representation sees only the root lattice, and its span is the
-whole character lattice exactly in the types `E₈`, `F₄` and `G₂`, by
-`TauCeti.DynkinType.span_range_geckWeight_eq_top_iff`. The spin weights do span, by
-`TauCeti.TypeBSpinCarrier.span_range_basisWeight_eq_top`.
+The simple-root subgroup at a numbered node is the corresponding raising subgroup of
+`TauCeti.TypeBSpinCarrier`. Its torus character agrees with the simple root of the simply
+connected type-`Bₙ` root datum, as recorded by
+`TauCeti.TypeBLieIndex.rootWeight_carrierNode_eq_root_simpleIndex`.
 
-The carrier is indexed by `n` in the spelling `B (n + 1)`, so a validated index of rank `r` uses
-the carrier at `TauCeti.TypeBLieIndex.carrierRank`, which is `r - 1`. That subtraction is harmless
-because `TauCeti.TypeBLieIndex.two_le_rank` bounds the rank below by two:
-`TauCeti.TypeBLieIndex.carrierRank_add_one` recovers `r`, and every numbered object below is indexed
-by `Fin d.1.rank`, the Bourbaki index type of the index's own Dynkin type, rather than by a node of
-the carrier. The two numberings agree node for node, so `TauCeti.TypeBLieIndex.carrierNode` is the
-rank identification and nothing more; that is what
-`TauCeti.TypeBLieIndex.rootWeight_carrierNode_eq_root_simpleIndex` records, reading the character of
-the `i`-th raising subgroup as the `i`-th simple root of the type-`Bₙ` root datum the index names.
-
-The family is untwisted: the `Bₙ` diagram has no symmetry to twist by, its two extreme nodes
-carrying different root lengths, so the Steinberg endomorphism is the `q`-power Frobenius outright
-and no diagram automorphism and no half-Frobenius enters. The Suzuki family `²B₂(2^(2m+1))` shares
-the rank-two diagram but not that Steinberg map, and it is not an index of the subtype used here;
-it is served in `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two.lean`, on the rank-two symplectic
-carrier that the exceptional isogeny of characteristic two acts on. The rank-two members of the
-present family are also collected there, by `TauCeti.TypeB2LieIndex`: that subtype cuts the
-untwisted family out of the pair sharing the `B₂` diagram, where this one cuts the untwisted family
-out of the whole list, at every rank the family has.
-
-The subtype everything here is stated on, `TauCeti.TypeBLieIndex`, together with its selector
-`TauCeti.LieTypeIndex.IsTypeB`, its introduction form and the diagram facts that hold of every one
-of its indices, is indexing data and carries no carrier; it is in
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Index.lean`, which this file imports.
-
-Nothing here asserts that the carrier is reductive, that its weight torus is maximal, that it is
-the spin group scheme, or that it is the pinned simply connected Chevalley--Demazure group scheme
-of type `Bₙ`: no identification of the spin carrier with that pinned group is proved here or in the
-files this one imports, and none is assumed. What is supplied is the explicit carrier, its numbered
-root characters read in the type-`Bₙ` root datum, the equation `Frob_q (x_i(u)) = x_i(u ^ q)`, and
-the fixed-point recipe run on that Frobenius; each of those is a statement about the spin carrier
-and transfers to another carrier only along an identification of the two. That is why the quotient
-formed below is named `TauCeti.TypeBLieIndex.SpinCarrierGroup` after the carrier it is formed on,
-and why no `TauCeti.TypeBLieIndex.Group` is defined. Nothing below asserts that any group formed
-here is finite, perfect, or simple.
-
-The counterpart constructions on the other families are in
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeA.lean`,
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeD.lean`,
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeE6.lean` and
-`TauCeti/GroupTheory/SpecificGroups/CFSG/Unimodular.lean`.
+Nothing here identifies the spin carrier with the pinned simply connected Chevalley--Demazure
+group scheme of type `Bₙ`, or defines a Steinberg endomorphism or fixed-point quotient for the
+family. No reductivity, finiteness, perfectness, or simplicity assertion is made.
 
 ## Main declarations
 
 * `TauCeti.TypeBLieIndex.AmbientGroup`: the algebraic-closure-valued points of the full-weight
-  type-`B` spin carrier at the rank the index names.
+  type-`B` spin carrier at the index's rank.
 * `TauCeti.TypeBLieIndex.simpleRootSubgroup`: its positive simple-root subgroup at a
-  Bourbaki-numbered node, with
-  `TauCeti.TypeBLieIndex.rootWeight_carrierNode_eq_root_simpleIndex` identifying the character of
-  that subgroup with the corresponding simple root of the type-`Bₙ` root datum.
-* `TauCeti.TypeBLieIndex.steinberg`, with `TauCeti.TypeBLieIndex.steinberg_simpleRootSubgroup` and
-  `TauCeti.TypeBLieIndex.mem_fixedSubgroup_steinberg_iff`: the Steinberg endomorphism of the
-  family, its equation `Frob_q (x_i(u)) = x_i(u ^ q)` on the numbered simple-root subgroups, and
-  the description of its fixed points as the carrier points with entries in `𝔽_q`.
-* `TauCeti.TypeBLieIndex.SpinCarrierGroup`: the derived subgroup of those fixed points, modulo its
-  centre. The name records the carrier it is formed on.
+  Bourbaki-numbered node.
+* `TauCeti.TypeBLieIndex.rootWeight_carrierNode_eq_root_simpleIndex`: the carrier root character
+  agrees with the corresponding simple root of the index's root datum.
 
 ## References
 
-* C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II, for the spin representation the
-  carrier is built from.
+* C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 11.3.
-* R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17, for
-  the Frobenius endomorphism and its fixed points.
-* D. Gorenstein, R. Lyons and R. Solomon, *The Classification of the Finite Simple Groups*,
-  Number 1, §2.2, for the small-parameter exclusions that the validated index carries.
-* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate II, for the numbering of the
-  `Bₙ` diagram that the root subgroups below are indexed by.
-* The signatures realized here follow the human-authored formal skeleton
-  `TauCetiRoadmap/CFSGStatement/Suggested.lean`: the ambient group, the numbered simple root
-  subgroup, the Steinberg map with its pinned equation, and the fixed-point recipe, all taken on a
-  validated-index subtype.
+* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate II.
 -/
-
 public section
 
 namespace TauCeti
@@ -187,9 +125,6 @@ def simpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.Am
 /-- The simple-root subgroup is the carrier's numbered raising subgroup at the corresponding
 carrier node. This is the equation through which the upstream root-subgroup API reaches
 `simpleRootSubgroup`, whose definition itself stays sealed. -/
--- Deliberately not a `simp` lemma: `steinberg_simpleRootSubgroup` is the normal form the pinned
--- equations of this file are stated against, and unfolding to
--- `TauCeti.TypeBSpinCarrier.rootSubgroupPoints` would keep it from firing.
 theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
     d.simpleRootSubgroup i =
       TypeBSpinCarrier.rootSubgroupPoints d.carrierRank (.inl (d.carrierNode i)) d.1.Closure :=
@@ -220,86 +155,6 @@ theorem rootWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.1.rank) :
     DynkinType.cartanMatrix_B, d.cartanMatrix_B_carrierNode]
   simp only [DynkinType.root_simpleIndex]
   exact (d.dynkinType_cartanMatrix_apply i j).symm
-
-/-! ## The Steinberg endomorphism -/
-
-/-- **The Steinberg endomorphism of a validated type-`B` index**: the `q`-power Frobenius of the
-ambient group, `q` being the field order the index records. The family is untwisted, the `Bₙ`
-diagram having no symmetry to twist by, so no diagram automorphism and no half-Frobenius enters;
-`TauCeti.GraphTwistedIndex.diagramPerm_B` is the check that its diagram permutation is trivial. -/
-def steinberg : d.AmbientGroup →* d.AmbientGroup :=
-  TypeBSpinCarrier.frobenius d.carrierRank d.1.characteristic d.1.fieldExponent d.1.Closure
-
-/-- The Steinberg map of a type-`B` index is the carrier's Frobenius at the exponent the index
-records. This is its unfolding lemma; the definition itself stays sealed. -/
--- Deliberately not a `simp` lemma: `steinberg_simpleRootSubgroup` and `coe_steinberg_apply` are
--- the normal forms the pinned equations of this file are stated against, and unfolding to
--- `TauCeti.TypeBSpinCarrier.frobenius` would keep them from firing.
-theorem steinberg_def :
-    d.steinberg =
-      TypeBSpinCarrier.frobenius d.carrierRank d.1.characteristic d.1.fieldExponent d.1.Closure :=
-  (rfl)
-
-/-- The Steinberg map acts on the ambient group by raising every matrix entry to the `q`-th
-power. -/
-@[simp]
-theorem coe_steinberg_apply (g : d.AmbientGroup)
-    (r c : Fin (TypeBSpinCarrier.dimension d.carrierRank)) :
-    ((d.steinberg g :
-        Matrix.GeneralLinearGroup (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
-        Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
-        Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c ^ d.1.fieldOrder := by
-  rw [steinberg_def, d.1.fieldOrder_eq_characteristic_pow]
-  exact TypeBSpinCarrier.coe_frobenius_apply _ _ _ _ g r c
-
-/-- **The Steinberg map fixes the Bourbaki numbering of a simple-root subgroup and raises its
-parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. This is the equation an
-ordinary Frobenius Steinberg map is pinned by. -/
-@[simp]
-theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
-    d.steinberg (d.simpleRootSubgroup i u) =
-      d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
-  rw [steinberg_def, simpleRootSubgroup_def, TypeBSpinCarrier.frobenius_rootSubgroupPoints,
-    ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
-
-/-- **A point of the ambient group is fixed by the Steinberg map exactly when all of its matrix
-entries lie in the field of definition.** Writing `𝔽_q` for `TauCeti.ValidLieTypeIndex.fixedField`,
-the copy of the field of `q` elements inside the algebraic closure, the group whose derived
-subgroup the recipe below takes is therefore the group of points of the spin carrier whose entries
-lie in `𝔽_q`. -/
--- As for `TauCeti.ValidLieTypeIndex.mem_fixedSubgroup_geckFrobenius_iff`, this is not a `simp`
--- lemma: `TauCeti.fixedSubgroup` is `MonoidHom.eqLocus` against the identity, so `simp` rewrites
--- its left-hand side to `d.steinberg g = g` through `MonoidHom.mem_eqLocus`, and the `simpNF`
--- linter rejects the annotation.
-theorem mem_fixedSubgroup_steinberg_iff (g : d.AmbientGroup) :
-    g ∈ fixedSubgroup d.steinberg ↔
-      ∀ r c, ((g : Matrix.GeneralLinearGroup
-            (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
-          Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
-            (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c ∈ d.1.fixedField := by
-  rw [mem_fixedSubgroup, steinberg_def, TypeBSpinCarrier.frobenius_eq_self_iff]
-  simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
-    d.1.fieldOrder_eq_characteristic_pow]
-
-/-! ## The classification candidate -/
-
-/-- **The fixed-point quotient of the type-`B` spin carrier**: the derived subgroup of the fixed
-points of the Steinberg map above, modulo the centre of that derived subgroup.
-
-This is the recipe of Chevalley and Steinberg, run on the spin carrier rather than on the pinned
-simply connected Chevalley--Demazure group scheme of type `Bₙ`. The name says which carrier it is
-formed on, and no `TauCeti.TypeBLieIndex.Group` is defined: this quotient is the candidate simple
-group of the family only along an identification of the two carriers, which is not proved here.
-Nothing below asserts that this quotient is finite, perfect, or simple. -/
-abbrev SpinCarrierGroup : Type := FixedPointCandidate d.steinberg
-
-/-- The classification recipe produces a group; the quotient construction supplies the instance. -/
-example : Group d.SpinCarrierGroup := inferInstance
 
 end
 

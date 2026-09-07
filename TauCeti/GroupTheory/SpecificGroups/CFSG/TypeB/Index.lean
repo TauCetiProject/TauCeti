@@ -22,10 +22,8 @@ but takes an odd power of a half-Frobenius for its Steinberg map, and the two fa
 diagram are separated instead by `TauCeti.RankTwoBLieIndex` and `TauCeti.TypeB2LieIndex`.
 
 This file is diagram-level indexing data only: it attaches no carrier, no endomorphism and no
-group, and nothing here asserts that a named group is finite or simple. The carrier of the family,
-its Steinberg endomorphism and the fixed-point construction run on them are in
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Basic.lean`, and the rank-two members are also
-served, beside the Suzuki family, in
+group, and nothing here asserts that a named group is finite or simple. The rank-two members are
+also served, beside the Suzuki family, in
 `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two.lean`.
 
 ## Main declarations
