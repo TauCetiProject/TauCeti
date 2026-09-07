@@ -14,7 +14,7 @@ public import TauCeti.Probability.Moments.Covariance
 This file identifies the generic covariance matrix from
 `TauCeti.Probability.Moments.Covariance` with the covariance parameter of Mathlib's multivariate
 Gaussian, and records the centred multivariate Gaussian as the image of the standard Gaussian
-under the square root of its covariance matrix.
+under the square root of its matrix parameter.
 
 ## Main results
 
@@ -26,7 +26,7 @@ under the square root of its covariance matrix.
 ## References
 
 * Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 1,
-  **Covariance matrices**.
+  **Covariance matrices**, and Layer 5, item 3, **Gaussian quadratic forms**.
 -/
 
 public section
@@ -51,7 +51,7 @@ theorem covMatrix_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : Euclid
   simpa only [covMatrix_apply] using covariance_eval_multivariateGaussian hS i j
 
 /-- A centred multivariate Gaussian law is the image of the standard Gaussian under the square
-root of its covariance matrix. -/
+root of its matrix parameter. No hypothesis on that parameter is needed. -/
 theorem multivariateGaussian_zero_eq_map_stdGaussian_sqrt [Fintype ι] [DecidableEq ι]
     (S : Matrix ι ι ℝ) :
     multivariateGaussian 0 S =

@@ -23,17 +23,17 @@ eigen-coordinates, into a product of one-dimensional moment-generating functions
 
 ## Main results
 
-* `ProbabilityTheory.mgf_sum_pi` — the moment-generating function of a sum of coordinate
+* `TauCeti.mgf_sum_pi` — the moment-generating function of a sum of coordinate
   statistics factors over the coordinates, for every argument;
-* `ProbabilityTheory.integrableExpSet_sum_pi` — its exponential-integrability domain is the
+* `TauCeti.integrableExpSet_sum_pi` — its exponential-integrability domain is the
   intersection of the coordinate domains.
 -/
 
 public section
 
-open MeasureTheory
+open MeasureTheory ProbabilityTheory
 
-namespace ProbabilityTheory
+namespace TauCeti
 
 variable {ι : Type*} [Fintype ι] {E : ι → Type*} [∀ i, MeasurableSpace (E i)]
   {μ : ∀ i, Measure (E i)}
@@ -63,4 +63,4 @@ theorem integrableExpSet_sum_pi [∀ i, IsProbabilityMeasure (μ i)] (f : ∀ i,
   refine ⟨fun h j ↦ mgf_nonneg.lt_of_ne' fun hj ↦ ?_, fun h ↦ Finset.prod_pos fun j _ ↦ h j⟩
   exact absurd (Finset.prod_eq_zero (Finset.mem_univ j) hj) h.ne'
 
-end ProbabilityTheory
+end TauCeti

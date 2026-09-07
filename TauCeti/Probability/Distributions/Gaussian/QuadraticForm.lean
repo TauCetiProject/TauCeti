@@ -13,9 +13,10 @@ public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 /-!
 # Moment-generating functions of Gaussian quadratic forms
 
-Let `S` be a covariance matrix and `Θ` a real symmetric matrix. This file determines exactly
-when the quadratic statistic `x ↦ ⟪x, Θ x⟫` of a centred multivariate Gaussian vector has finite
-exponential moments of order `t`, and computes its moment-generating function there:
+Let `S` be the matrix parameter of a centred multivariate Gaussian and `Θ` a real symmetric
+matrix. This file determines exactly when the quadratic statistic `x ↦ ⟪x, Θ x⟫` of that Gaussian
+vector has finite exponential moments of order `t`, and computes its moment-generating function
+there:
 
 * the integrand is integrable exactly when the pencil `1 - (2 * t) • (√S * Θ * √S)` is positive
   definite, where `√S = CFC.sqrt S`, with no hypothesis on `S`; and
@@ -48,6 +49,8 @@ of squares of independent standard Gaussian coordinates, live in
 * R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Wiley (1982), Theorem 1.2.6
   (the multivariate Gaussian) and Theorem 3.2.3 (the Wishart moment-generating function, which
   is the product of these).
+* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 3,
+  **Gaussian quadratic forms**.
 -/
 
 public section
@@ -103,12 +106,12 @@ section multivariateGaussian
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {S Θ : Matrix ι ι ℝ} {t : ℝ}
 
 /-- The exponential moment of order `t` of the quadratic form `x ↦ ⟪x, Θ x⟫` of a real
-symmetric matrix `Θ` under the centred multivariate Gaussian with covariance `S` is finite
+symmetric matrix `Θ` under the centred multivariate Gaussian with matrix parameter `S` is finite
 exactly when the pencil `1 - (2 * t) • (√S * Θ * √S)` is positive definite.
 
-No hypothesis on `S` is needed: for a covariance matrix that is not positive semidefinite,
-Mathlib's `CFC.sqrt S` is zero, the pencil is the identity, and the law is the Dirac measure
-at the origin. -/
+No hypothesis on `S` is needed. For a parameter that is not positive semidefinite it is not the
+law's covariance: Mathlib's `CFC.sqrt S` is then zero, the pencil is the identity, and the law is
+the Dirac measure at the origin. -/
 theorem mem_integrableExpSet_inner_toEuclideanLin_multivariateGaussian_iff (S : Matrix ι ι ℝ)
     (hΘ : Θ.IsHermitian) (t : ℝ) :
     t ∈ integrableExpSet (fun x ↦ ⟪x, Θ.toEuclideanLin x⟫)
@@ -125,7 +128,7 @@ theorem mem_integrableExpSet_inner_toEuclideanLin_multivariateGaussian_iff (S : 
 
 /-- On its exponential-integrability domain, the moment-generating function of the quadratic
 form `x ↦ ⟪x, Θ x⟫` of a real symmetric matrix `Θ` under the centred multivariate Gaussian
-with covariance `S` is `det (1 - (2 * t) • (√S * Θ * √S)) ^ (-1 / 2)`, for every `S`. -/
+with matrix parameter `S` is `det (1 - (2 * t) • (√S * Θ * √S)) ^ (-1 / 2)`, for every `S`. -/
 theorem mgf_inner_toEuclideanLin_multivariateGaussian_sqrt (S : Matrix ι ι ℝ)
     (hΘ : Θ.IsHermitian) (ht : (1 - (2 * t) • (CFC.sqrt S * Θ * CFC.sqrt S)).PosDef) :
     mgf (fun x ↦ ⟪x, Θ.toEuclideanLin x⟫) (multivariateGaussian 0 S) t =
@@ -142,7 +145,7 @@ theorem mgf_inner_toEuclideanLin_multivariateGaussian_sqrt (S : Matrix ι ι ℝ
 
 /-- On its exponential-integrability domain, the cumulant-generating function of the quadratic
 form `x ↦ ⟪x, Θ x⟫` of a real symmetric matrix `Θ` under the centred multivariate Gaussian
-with covariance `S` is `-1 / 2 * log (det (1 - (2 * t) • (√S * Θ * √S)))`, for every `S`. -/
+with matrix parameter `S` is `-1 / 2 * log (det (1 - (2 * t) • (√S * Θ * √S)))`, for every `S`. -/
 theorem cgf_inner_toEuclideanLin_multivariateGaussian_sqrt (S : Matrix ι ι ℝ)
     (hΘ : Θ.IsHermitian) (ht : (1 - (2 * t) • (CFC.sqrt S * Θ * CFC.sqrt S)).PosDef) :
     cgf (fun x ↦ ⟪x, Θ.toEuclideanLin x⟫) (multivariateGaussian 0 S) t =
