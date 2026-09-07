@@ -57,7 +57,7 @@ theorem _root_.QuadraticMap.mem_unitValueSet {Q : QuadraticMap R M R} {a : Rˣ} 
   Iff.rfl
 
 /-- Representation is preserved by an isometric equivalence of quadratic maps. -/
-theorem _root_.QuadraticMap.IsometryEquiv.represents_iff
+@[simp] theorem _root_.QuadraticMap.IsometryEquiv.represents_iff
     {M₁ M₂ N : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid N]
     [Module R M₁] [Module R M₂] [Module R N]
     {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
@@ -73,7 +73,7 @@ theorem _root_.QuadraticMap.IsometryEquiv.represents_iff
 theorem _root_.QuadraticMap.Equivalent.unitValueSet_eq
     {M₁ M₂ : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂]
     [Module R M₁] [Module R M₂]
-    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    {Q₁ : QuadraticMap R M₁ R} {Q₂ : QuadraticMap R M₂ R}
     (h : Q₁.Equivalent Q₂) : unitValueSet Q₁ = unitValueSet Q₂ := by
   obtain ⟨e⟩ := h
   ext a
