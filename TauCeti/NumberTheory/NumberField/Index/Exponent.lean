@@ -50,8 +50,7 @@ variable {K : Type*} [Field K]
 /-- The conductor exponent of `θ` divides `n` exactly when `n` lies in the conductor of
 `ℤ[θ]`. -/
 theorem exponent_dvd_iff (θ : 𝓞 K) {n : ℕ} : exponent θ ∣ n ↔ (n : 𝓞 K) ∈ conductor ℤ θ := by
-  rw [← Int.natCast_dvd_natCast, ← Ideal.mem_span_singleton, exponent,
-    Int.ideal_span_absNorm_eq_self, Ideal.under_def, Ideal.mem_comap, map_natCast]
+  rw [← Int.natCast_dvd_natCast, exponent, ← Int.cast_mem_ideal_iff, Int.cast_natCast]
 
 end RingOfIntegers
 
