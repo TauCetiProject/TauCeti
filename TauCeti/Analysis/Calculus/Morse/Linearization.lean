@@ -122,7 +122,7 @@ the Hessian operator. -/
 theorem hasFDerivAt_gradient (hf : ContDiffAt ℝ 2 f x) :
     HasFDerivAt (∇ f) (hessianOperator f x) x := by
   have hfd : HasFDerivAt (fderiv ℝ f) (fderiv ℝ (fderiv ℝ f) x) x :=
-    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero |>.hasFDerivAt
+    ContDiffAt.hasFDerivAt_fderiv hf le_rfl
   have h := (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.hasFDerivAt.comp x hfd
   -- The composed function is the gradient, by the defining property `toDual_gradient` of `∇ f`.
   have hfun : ⇑(InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv ∘ fderiv ℝ f = ∇ f := by
