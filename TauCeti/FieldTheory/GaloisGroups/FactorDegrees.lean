@@ -112,7 +112,6 @@ theorem factorDegrees_sum_eq_natDegree_map (f : ℤ[X]) (p : ℕ) [Fact p.Prime]
 
 /-- For a monic polynomial, the degrees of all irreducible factors of its reduction modulo a
 prime, counted with multiplicity, sum to the degree of the original polynomial. -/
-@[simp]
 theorem factorDegrees_sum (f : ℤ[X]) (hf : f.Monic) (p : ℕ) [Fact p.Prime] :
     (factorDegrees f p).sum = f.natDegree := by
   rw [factorDegrees_sum_eq_natDegree_map, hf.natDegree_map]
