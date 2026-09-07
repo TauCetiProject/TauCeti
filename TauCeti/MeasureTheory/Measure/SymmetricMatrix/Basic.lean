@@ -29,8 +29,8 @@ This file equips that subspace with the ambient Frobenius norm and inner product
 the subtype topology and uniformity it already carries: the norm structure is induced from
 `Matrix.frobeniusNormedAddCommGroup`, whose topology and uniformity are definitionally the
 product ones, so the induced structures agree definitionally with the subtype instances. The
-`example` blocks record these definitional equalities. The measurable structure is the Borel
-structure of the subtype topology, and `volume` is supplied by `measureSpaceOfInnerProductSpace`.
+measurable structure is the Borel structure of the subtype topology, and `volume` is supplied by
+`measureSpaceOfInnerProductSpace`.
 
 It also fixes the upper-triangular coordinate system used to normalize Lebesgue measure on the
 subspace: `TauCeti.symmetricCoordinates` reads off the entries above the diagonal.
@@ -74,7 +74,7 @@ The instances below install the Frobenius norm and inner product on the symmetri
 norm is induced from the ambient (scoped) Frobenius instances, and the inner product pairs the
 underlying matrices. Because the Frobenius norm is definitionally compatible with the product
 topology and uniformity of `Matrix`, the induced structures agree definitionally with the subtype
-instances already present; the `example` blocks at the end of the section check this. -/
+instances already present. -/
 
 section instances
 
@@ -93,8 +93,8 @@ instance symmetricMatrixNormedAddCommGroup :
   { base with toMetricSpace := base.toMetricSpace.replaceUniformity rfl }
 
 /-- The symmetric subspace carries the Frobenius inner product `⟪A, B⟫ = ∑ i, ∑ j, A i j * B i j`
-of the underlying matrices, which is the pairing `TauCeti.symmetricLebesgue` is normalized
-against. -/
+of the underlying matrices, which on this subspace is the trace pairing
+`selfAdjoint.inner_eq_trace_mul`. -/
 instance symmetricMatrixInnerProductSpace :
     InnerProductSpace ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
   letI : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedAddCommGroup

@@ -5,7 +5,6 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Matrix.Normed
 
 /-!
