@@ -58,7 +58,8 @@ theorem coe_integralPrimitiveElement [IsCyclotomicExtension {n} ℚ K]
 @[simp]
 theorem integralPrimitiveElement_index [IsCyclotomicExtension {n} ℚ K]
     (hζ : IsPrimitiveRoot ζ n) : hζ.integralPrimitiveElement.index = 1 := by
-  rw [TauCeti.NumberField.IntegralPrimitiveElement.index_eq_one_iff, coe_integralPrimitiveElement,
+  rw [TauCeti.NumberField.IntegralPrimitiveElement.index_eq_one_iff,
+    TauCeti.NumberField.IntegralPrimitiveElement.adjoin_def, coe_integralPrimitiveElement,
     ← hζ.integralPowerBasis_gen]
   exact hζ.integralPowerBasis.adjoin_gen_eq_top
 
