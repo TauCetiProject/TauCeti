@@ -77,7 +77,6 @@ and subsequently from the `π⁻¹`-reindexed rows returns `x i` for every `i �
 
 The conclusion is deliberately restricted to the admissible finite horizon: unused successor
 entries are unconstrained, so the two infinite reconstructions need not agree after `m`. -/
-@[simp]
 theorem pathOfReindexedSuccessors_symm_apply {π : α → Equiv.Perm ℕ} {x : ℕ → α} {m : ℕ}
     (h : LastExitAdmissible π x m) {i : ℕ} (hi : i ≤ m) :
     pathOfReindexedSuccessors (fun a => (π a).symm) (pathOfReindexedSuccessors π x) i = x i := by
