@@ -136,6 +136,7 @@ theorem integers_smul : (σ • P).integers = σ • P.integers := by
 
 /-- **The two actions on places agree**: restricting the scalars of an automorphism of `F'` over
 an intermediate field `E` down to `F` does not change the place it produces. -/
+@[simp]
 theorem restrictScalars_smul (E : IntermediateField F F') (τ : F' ≃ₐ[E] F') (Q : Place k F') :
     τ.restrictScalars F • Q = τ • Q := rfl
 

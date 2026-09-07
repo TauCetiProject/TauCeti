@@ -82,10 +82,7 @@ variable [Algebra.IsIntegral F F'] [FiniteDimensional F F'] [IsGalois F F']
 variable (F)
 
 /-- **The order of the decomposition group** (Stichtenoth, Theorem 3.8.2): the stabilizer of a
-place `P` in a finite Galois extension has order `e(P ∣ P ∩ F) · f(P ∣ P ∩ F)`.
-
-The fibre of `P` is its orbit, so the orbit--stabilizer count and the fundamental identity
-`r · e · f = [F' : F]` differ only by the common factor `r`. -/
+place `P` in a finite Galois extension has order `e(P ∣ P ∩ F) · f(P ∣ P ∩ F)`. -/
 theorem card_decompositionSubgroup (P : Place k F') :
     Nat.card (P.integers.decompositionSubgroup F) =
       ramificationIdx F P * relativeDegree k F P := by
@@ -102,14 +99,6 @@ theorem card_decompositionSubgroup (P : Place k F') :
 (Stichtenoth, Definition 3.8.1): the subfield of `F'` fixed by the decomposition group of `P`. -/
 def decompositionField (P : Place k F') : IntermediateField F F' :=
   IntermediateField.fixedField (P.integers.decompositionSubgroup F)
-
-omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] [FiniteDimensional F F']
-  [IsGalois F F'] in
-/-- The defining equation of the decomposition field: it is the fixed field of the decomposition
-group. -/
-theorem decompositionField_def (P : Place k F') :
-    decompositionField F P = IntermediateField.fixedField (P.integers.decompositionSubgroup F) :=
-  (rfl)
 
 omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] [FiniteDimensional F F']
   [IsGalois F F'] in
@@ -131,6 +120,7 @@ theorem fixingSubgroup_decompositionField (P : Place k F') :
 omit [Algebra.IsIntegral F F'] [IsGalois F F'] in
 /-- An automorphism of `F'` over the decomposition field of `P`, read as an automorphism over
 `F`, fixes `P`. -/
+@[simp]
 theorem restrictScalars_smul_eq_self (P : Place k F') (τ : F' ≃ₐ[decompositionField F P] F') :
     τ.restrictScalars F • P = P := by
   refine MulAction.mem_stabilizer_iff.mp ?_
@@ -149,6 +139,7 @@ theorem eq_of_restrict_decompositionField_eq {P Q : Place k F'}
 
 omit [Algebra.IsIntegral F F'] in
 /-- The fibre of a place over its restriction to its decomposition field is a single point. -/
+@[simp]
 theorem setOf_restrict_decompositionField_eq_eq_singleton (P : Place k F') :
     {Q : Place k F' | restrict k (decompositionField F P) Q =
       restrict k (decompositionField F P) P} = {P} :=
@@ -159,7 +150,7 @@ order of the decomposition group, that is `e(P ∣ P ∩ F) · f(P ∣ P ∩ F)`
 theorem finrank_decompositionField (P : Place k F') :
     Module.finrank (decompositionField F P) F' =
       ramificationIdx F P * relativeDegree k F P := by
-  rw [decompositionField_def, IntermediateField.finrank_fixedField_eq_card,
+  rw [decompositionField, IntermediateField.finrank_fixedField_eq_card,
     card_decompositionSubgroup]
 
 /-- **The product `e · f` is the same over the decomposition field as over `F`** (Stichtenoth,
@@ -255,8 +246,8 @@ omit [Algebra.IsIntegral F F'] [FiniteDimensional F F'] [IsGalois F F'] in
 (Stichtenoth, Theorem 3.8.2). -/
 theorem decompositionField_smul (σ : F' ≃ₐ[F] F') (P : Place k F') :
     decompositionField F (σ • P) = (decompositionField F P).map σ.toAlgHom := by
-  rw [decompositionField_def, decompositionSubgroup_integers_smul,
-    Subgroup.fixedField_map_conj, decompositionField_def]
+  rw [decompositionField, decompositionSubgroup_integers_smul,
+    Subgroup.fixedField_map_conj, decompositionField]
 
 /-- **The degree of the decomposition field over `F`** (Stichtenoth, Theorem 3.8.2): it is the
 number of places of `F' / k` lying over the place below `P`. -/

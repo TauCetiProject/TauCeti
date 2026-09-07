@@ -124,8 +124,11 @@ theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) 
   · intro h
     refine ⟨σ.symm x, fun g hg ↦ ?_, by simp⟩
     have hx := h (MulAut.conj σ g) (Subgroup.mem_map_of_mem _ hg)
-    exact σ.injective (by simpa using hx)
+    exact σ.injective (by
+      simpa only [MulAut.conj_apply, AlgEquiv.mul_apply, AlgEquiv.coe_inv,
+        AlgEquiv.apply_symm_apply] using hx)
   · rintro ⟨y, hy, rfl⟩ g ⟨h, hh, rfl⟩
-    simpa using congrArg σ (hy h hh)
+    change σ (h (σ.symm (σ y))) = σ y
+    simpa only [AlgEquiv.symm_apply_apply] using congrArg σ (hy h hh)
 
 end Subgroup
