@@ -124,7 +124,7 @@ private theorem restriction_eq_counit
   intro x
   have h := congrArg (fun φ : H ⟶ M ↦ FiniteTypeCommHopfAlgCat.toBialgHom φ x) hcomp
   rw [FiniteTypeCommHopfAlgCat.toBialgHom_comp, BialgHom.comp_apply] at h
-  exact h.trans (TauCeti.BialgHom.apply_eq_counit_of_ker_eq_augmentation
+  exact h.trans (_root_.BialgHom.apply_eq_counit_of_ker_eq_augmentation
     (FiniteTypeCommHopfAlgCat.toBialgHom f)
       (by
         ext y
