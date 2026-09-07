@@ -10,15 +10,16 @@ public import Mathlib.LinearAlgebra.Contraction
 /-!
 # The contraction equivalence is the contraction map
 
-For a finite projective module `M`, Mathlib's contraction equivalence
-`dualTensorHomEquiv R M N : Module.Dual R M ⊗[R] N ≃ₗ[R] M →ₗ[R] N` is built as
-`LinearEquiv.ofBijective` of the contraction `dualTensorHom R M N`, so the two agree on the nose.
-Mathlib records this identification for the basis-dependent companion
-`dualTensorHomEquivOfBasis` (`dualTensorHomEquivOfBasis_apply`,
-`coe_dualTensorHomEquivOfBasis`) but states no such lemma for `dualTensorHomEquiv` itself. This
-file supplies it, so that proofs can pass between the equivalence and the contraction — for
-instance to combine `LinearEquiv.apply_symm_apply` with the `dualTensorHom_apply` computation on
-pure tensors — without unfolding the implementation of the equivalence.
+For a finite projective module `M` over a commutative semiring `R`, the contraction map
+`dualTensorHom R M N : Module.Dual R M ⊗[R] N →ₗ[R] (M →ₗ[R] N)`, which sends a pure tensor
+`φ ⊗ₜ y` to `x ↦ φ x • y`, is an isomorphism; Mathlib packages the isomorphism as
+`dualTensorHomEquiv R M N`. This file identifies the equivalence with the contraction map.
+
+The identification is what lets a structure defined on `Module.Dual R M ⊗[R] N` be transported to
+`M →ₗ[R] N` and then computed on pure tensors: a statement about `dualTensorHomEquiv` becomes one
+about `dualTensorHom`, which `dualTensorHom_apply` evaluates. The Hodge structure on an internal
+hom is obtained this way. Mathlib states the corresponding identification only for the
+basis-dependent companion `dualTensorHomEquivOfBasis`.
 
 ## Main results
 

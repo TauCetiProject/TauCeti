@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Hodge.Dual
 public import TauCeti.Geometry.Hodge.TensorProduct
 public import TauCeti.LinearAlgebra.Contraction
+public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
 # Internal homs of pure Hodge structures
@@ -102,24 +103,20 @@ namespace HodgeStructureOn
 variable {ω₁ : Conjugation W₁} {ω₂ : Conjugation W₂} {n₁ n₂ : ℤ}
 
 /-- The complex-linear maps shifting Hodge degree by exactly `r`: those carrying the degree-`a`
-component of the source into the degree-`a + r` component of the target. These subspaces are the
-Hodge components of the internal hom, by
-`TauCeti.Hodge.HodgeStructureOn.internalHom_piece`. -/
-def internalHomPiece (hs₁ : HodgeStructureOn W₁ ω₁ n₁) (hs₂ : HodgeStructureOn W₂ ω₂ n₂)
-    (r : ℤ) : Submodule ℂ (W₁ →ₗ[ℂ] W₂) where
-  carrier := {f | ∀ a, ∀ x ∈ hs₁.piece a, f x ∈ hs₂.piece (a + r)}
-  add_mem' := fun hf hg a x hx ↦ by
-    simpa using Submodule.add_mem _ (hf a x hx) (hg a x hx)
-  zero_mem' := fun a x _ ↦ by simp
-  smul_mem' := fun c f hf a x hx ↦ by
-    simpa using Submodule.smul_mem _ c (hf a x hx)
+component of the source into the degree-`a + r` component of the target, that is, the maps
+homogeneous of degree `r` for the two Hodge decompositions. These subspaces are the Hodge
+components of the internal hom, by `TauCeti.Hodge.HodgeStructureOn.internalHom_piece`. -/
+noncomputable def internalHomPiece (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
+    (hs₂ : HodgeStructureOn W₂ ω₂ n₂) (r : ℤ) : Submodule ℂ (W₁ →ₗ[ℂ] W₂) :=
+  LinearMap.homogeneousSubmodule hs₁.piece hs₂.piece r
 
-/-- A map shifts Hodge degree by `r` exactly when it carries every source component of degree `a`
-into the target component of degree `a + r`. -/
+/-- A map shifts Hodge degree by `r` exactly when it is homogeneous of degree `r` for the two
+Hodge decompositions; `TauCeti.LinearMap.isHomogeneous_def` spells that out elementwise. -/
+@[simp]
 theorem mem_internalHomPiece_iff (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
     (hs₂ : HodgeStructureOn W₂ ω₂ n₂) {r : ℤ} {f : W₁ →ₗ[ℂ] W₂} :
-    f ∈ hs₁.internalHomPiece hs₂ r ↔ ∀ a, ∀ x ∈ hs₁.piece a, f x ∈ hs₂.piece (a + r) :=
-  Iff.rfl
+    f ∈ hs₁.internalHomPiece hs₂ r ↔ LinearMap.IsHomogeneous f hs₁.piece hs₂.piece r :=
+  LinearMap.mem_homogeneousSubmodule
 
 /-- Conjugating a map shifting Hodge degree by `r` gives one shifting Hodge degree by the
 complementary amount `n₂ - n₁ - r`. -/
@@ -127,7 +124,7 @@ theorem conj_mem_internalHomPiece (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
     (hs₂ : HodgeStructureOn W₂ ω₂ n₂) {r : ℤ} {f : W₁ →ₗ[ℂ] W₂}
     (hf : f ∈ hs₁.internalHomPiece hs₂ r) :
     (ω₁.internalHom ω₂).toEquiv f ∈ hs₁.internalHomPiece hs₂ (n₂ - n₁ - r) := by
-  simp only [mem_internalHomPiece_iff] at hf ⊢
+  rw [mem_internalHomPiece_iff, LinearMap.isHomogeneous_def] at hf ⊢
   intro a x hx
   have hidx : a + (n₂ - n₁ - r) = n₂ - (n₁ - a + r) := by ring
   rw [Conjugation.internalHom_toEquiv_apply_apply, hidx]
@@ -139,6 +136,7 @@ theorem internalHomPiece_iSupIndep (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
   intro r
   rw [Submodule.disjoint_def]
   intro f hf hf'
+  rw [mem_internalHomPiece_iff] at hf
   refine hs₁.linearMap_ext_of_piece (g := 0) fun a x hx ↦ ?_
   have hmem : f x ∈ ⨆ b, ⨆ (_ : b ≠ a + r), hs₂.piece b := by
     refine Submodule.iSup_induction
@@ -149,8 +147,8 @@ theorem internalHomPiece_iSupIndep (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
       (fun hsr g hg ↦ ?_) (by simp) (fun g h hg hh ↦ by simpa using Submodule.add_mem _ hg hh)
     have hle : hs₂.piece (a + s) ≤ ⨆ b, ⨆ (_ : b ≠ a + r), hs₂.piece b :=
       le_iSup₂_of_le (a + s) (by omega) le_rfl
-    exact hle (hg a x hx)
-  simpa using Submodule.disjoint_def.1 (hs₂.piece_iSupIndep (a + r)) _ (hf a x hx) hmem
+    exact hle (((mem_internalHomPiece_iff hs₁ hs₂).mp hg).map_mem hx)
+  simpa using Submodule.disjoint_def.1 (hs₂.piece_iSupIndep (a + r)) _ (hf.map_mem hx) hmem
 
 /-- The maps shifting Hodge degree span the whole space of linear maps: a map is the finite sum of
 its components `proj^b ∘ f ∘ proj^a`. -/
@@ -174,8 +172,9 @@ theorem iSup_internalHomPiece_eq_top (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
   rw [hf]
   refine Submodule.sum_mem _ fun a _ ↦ Submodule.sum_mem _ fun b _ ↦ ?_
   refine Submodule.mem_iSup_of_mem (b - a) ?_
-  simp only [mem_internalHomPiece_iff, LinearMap.comp_apply]
+  rw [mem_internalHomPiece_iff, LinearMap.isHomogeneous_def]
   intro c x hx
+  simp only [LinearMap.comp_apply]
   by_cases hca : a = c
   · subst hca
     have hidx : a + (b - a) = b := by ring
@@ -212,7 +211,7 @@ theorem isHodgeDecomposition_internalHomPiece (hs₁ : HodgeStructureOn W₁ ω�
       rw [(Submodule.mem_bot ℂ).1 hx]
       simp
     · have hbot : hs₂.piece (a + r) = ⊥ := hs₂.piece_eq_bot_of_F_eq_top ha₂ (by omega)
-      have hzero := hf a x hx
+      have hzero := ((mem_internalHomPiece_iff hs₁ hs₂).mp hf).map_mem hx
       rw [hbot] at hzero
       simpa using hzero
 
@@ -257,21 +256,20 @@ theorem map_mem_piece_of_mem_internalHom_piece (hs₁ : HodgeStructureOn W₁ ω
     (hf : f ∈ (hs₁.internalHom hs₂).piece p) {x : W₁} (hx : x ∈ hs₁.piece a) :
     f x ∈ hs₂.piece (a + p) := by
   rw [internalHom_piece, mem_internalHomPiece_iff] at hf
-  exact hf a x hx
+  exact hf.map_mem hx
 
 /-- A map lies in the degree-`p` internal-hom component exactly when it carries every source
 component of degree `a` into the target component of degree `a + p`. -/
 theorem mem_internalHom_piece_iff (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
     (hs₂ : HodgeStructureOn W₂ ω₂ n₂) {p : ℤ} (f : W₁ →ₗ[ℂ] W₂) :
     f ∈ (hs₁.internalHom hs₂).piece p ↔ ∀ a, ∀ x ∈ hs₁.piece a, f x ∈ hs₂.piece (a + p) := by
-  rw [internalHom_piece, mem_internalHomPiece_iff]
+  rw [internalHom_piece, mem_internalHomPiece_iff, LinearMap.isHomogeneous_def]
 
 /-- The identity map has internal-hom degree `0`. -/
 theorem id_mem_internalHom_piece (hs : HodgeStructureOn W₁ ω₁ n₁) :
     LinearMap.id ∈ (hs.internalHom hs).piece 0 := by
-  rw [mem_internalHom_piece_iff]
-  intro a x hx
-  simpa using hx
+  rw [internalHom_piece, mem_internalHomPiece_iff]
+  exact LinearMap.isHomogeneous_id hs.piece
 
 /-- Composing a map of internal-hom degree `p` with one of internal-hom degree `q` gives a map of
 internal-hom degree `p + q`. -/
@@ -281,12 +279,8 @@ theorem comp_mem_internalHom_piece {W₃ : Type w} [AddCommGroup W₃] [Module �
     {f : W₁ →ₗ[ℂ] W₂} {g : W₂ →ₗ[ℂ] W₃} (hf : f ∈ (hs₁.internalHom hs₂).piece p)
     (hg : g ∈ (hs₂.internalHom hs₃).piece q) :
     g ∘ₗ f ∈ (hs₁.internalHom hs₃).piece (p + q) := by
-  rw [mem_internalHom_piece_iff]
-  intro a x hx
-  have hidx : a + p + q = a + (p + q) := by ring
-  rw [LinearMap.comp_apply, ← hidx]
-  exact hs₂.map_mem_piece_of_mem_internalHom_piece hs₃ hg
-    (hs₁.map_mem_piece_of_mem_internalHom_piece hs₂ hf hx)
+  rw [internalHom_piece, mem_internalHomPiece_iff] at hf hg ⊢
+  exact hg.comp hf
 
 /-- A rank-one map made from a dual vector of degree `p` and a target vector of degree `q` has
 internal-hom degree `p + q`. -/
@@ -366,10 +360,7 @@ variable [FiniteDimensional ℂ W₁]
 
 /-- **The tensor presentation of the internal hom.** Over a finite-dimensional source, the
 degree-`p` internal-hom component is the pullback of the degree-`p` component of the tensor
-product `V^* ⊗ W` along Mathlib's contraction equivalence.
-
-The two families decompose the same space, so it is enough that a tensor of degree `p` acts as a
-map shifting Hodge degree by `p`. -/
+product `V^* ⊗ W` along Mathlib's contraction equivalence. -/
 theorem internalHom_piece_eq_comap (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
     (hs₂ : HodgeStructureOn W₂ ω₂ n₂) (p : ℤ) :
     (hs₁.internalHom hs₂).piece p =
@@ -380,7 +371,7 @@ theorem internalHom_piece_eq_comap (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
         (hs₁.internalHom hs₂).piece q := by
     intro q f hf
     rw [comap_piece, Submodule.mem_comap, LinearEquiv.coe_coe] at hf
-    rw [internalHom_piece, mem_internalHomPiece_iff]
+    rw [internalHom_piece, mem_internalHomPiece_iff, LinearMap.isHomogeneous_def]
     intro a x hx
     -- A tensor of total degree `q` sends the degree-`a` component into the degree-`a + q` one.
     have hle : (hs₁.dual.tensorProduct hs₂).piece q ≤
