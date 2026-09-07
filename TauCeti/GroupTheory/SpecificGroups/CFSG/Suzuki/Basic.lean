@@ -74,6 +74,9 @@ which is why this family is not an instance of the Frobenius machinery the untwi
 
 ## References
 
+* `TauCetiRoadmap/CFSGStatement/README.md`, the human-authored blueprint that fixes the Steinberg
+  map of each family, and its `Suggested.lean`, which states the two equations identifying the
+  upstream special isogeny.
 * R. W. Carter, *Simple Groups of Lie Type*, §13.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
 * *On the cohomology of the Ree groups and kernels of exceptional isogenies*,
