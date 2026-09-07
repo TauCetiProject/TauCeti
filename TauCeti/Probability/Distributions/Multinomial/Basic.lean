@@ -144,6 +144,7 @@ theorem multinomialMeasure_singleton (n : ℕ) (p : StdSimplex NNReal ι) (k : �
     simp [hbk]
 
 /-- The real singleton mass of a multinomial law, in the usual factorial form. -/
+@[simp]
 theorem multinomialMeasure_real_singleton (n : ℕ) (p : StdSimplex NNReal ι) (k : ι → ℕ) :
     (multinomialMeasure n p).real {k} =
       if ∑ i, k i = n then
