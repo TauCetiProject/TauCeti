@@ -32,8 +32,8 @@ is asserted here.
 * `TauCeti.E6DoubledMinuscule.graphModuleEquiv`: its signed monomial lift to the doubled minuscule
   module.
 * `TauCeti.E6DoubledMinuscule.graphAutomorphism`: the induced automorphism of the doubled carrier.
-* `TauCeti.E6DoubledMinuscule.rootSubgroup_comp_graphAutomorphism_hom`: its pinned action on the
-  numbered root subgroups.
+* `TauCeti.E6DoubledMinuscule.rootSubgroup_comp_graphAutomorphism_hom`: its action on the numbered
+  simple-root subgroups.
 * `TauCeti.E6DoubledMinuscule.weightTorus_comp_graphAutomorphism_hom`: its action on the split
   weight torus.
 * `TauCeti.E6DoubledMinuscule.graphAutomorphism_hom_comp_self` and
@@ -41,8 +41,8 @@ is asserted here.
 * `TauCeti.E6DoubledMinuscule.graphAutomorphismPoints`: the same automorphism on matrix-valued
   points.
 * `TauCeti.E6DoubledMinuscule.graphAutomorphismPoints_rootSubgroupPoints` and
-  `TauCeti.E6DoubledMinuscule.graphAutomorphismPoints_weightTorusPoints`: its pointwise pinning
-  equations.
+  `TauCeti.E6DoubledMinuscule.graphAutomorphismPoints_weightTorusPoints`: its pointwise equations
+  on the numbered simple-root subgroups and represented weight torus.
 * `TauCeti.E6DoubledMinuscule.pointsMap_comp_graphAutomorphismPoints`: its naturality in the value
   ring, which makes it commute with Frobenius.
 * `TauCeti.E6DoubledMinuscule.graphAutomorphismPoints_sq`: its pointwise order-two relation.
@@ -85,7 +85,7 @@ theorem graphRootPerm_inr (i : Fin 6) : graphRootPerm (.inr i) = .inr (graphPerm
   by simp [graphRootPerm]
 
 @[simp]
-theorem graphRootPerm_graphRootPerm (k : Fin 6 ⊕ Fin 6) :
+theorem graphRootPerm_apply_apply (k : Fin 6 ⊕ Fin 6) :
     graphRootPerm (graphRootPerm k) = k := by
   cases k <;> simp only [graphRootPerm_inl, graphRootPerm_inr]
   all_goals rw [← Equiv.Perm.mul_apply, ← pow_two, graphPermE6_sq, Equiv.Perm.one_apply]
@@ -458,11 +458,12 @@ private noncomputable def toralGraphAutomorphism :
     graphMatrixPerm graphMatrixScale graphModuleEquiv_matrixBasis graphPermE6
     matrixWeight_graphMatrixPerm
 
-/-- **The pinned graph automorphism of the doubled type-`E₆` minuscule carrier.** -/
+/-- **The graph automorphism of the doubled type-`E₆` minuscule carrier**, characterized on
+the numbered simple-root subgroups and represented weight torus. -/
 noncomputable def graphAutomorphism : Aut groupScheme :=
   toralGraphAutomorphism
 
-/-- The graph automorphism renumbers each positive and negative pinned simple-root subgroup by the
+/-- The graph automorphism renumbers each positive and negative numbered simple-root subgroup by the
 type-`E₆` diagram involution, without changing its additive parameter. -/
 @[reassoc (attr := simp)]
 theorem rootSubgroup_comp_graphAutomorphism_hom (k : Fin 6 ⊕ Fin 6) :
@@ -487,7 +488,7 @@ theorem graphAutomorphism_sq : graphAutomorphism ^ 2 = 1 := by
   rw [graphAutomorphism, toralGraphAutomorphism]
   apply kostantToralNumberedSymmetryIso_pow_eq_one
   · funext k
-    exact graphRootPerm_graphRootPerm k
+    exact graphRootPerm_apply_apply k
   · exact graphPermE6_sq
 
 /-- Applying the graph automorphism twice is the identity on the doubled type-`E₆` carrier. -/
@@ -575,7 +576,7 @@ theorem coe_graphAutomorphismPoints (A : Type v) [CommRing A] (g : points A) :
   coe_kostantNumberedSymmetryPoints lattice.toAddSubgroup matrixBasis graphModuleEquiv
     graphModuleEquiv_mem_lattice_iff A (points A) (map_points_conj_graphAutomorphismMatrix A) g
 
-/-- The graph automorphism on points renumbers every pinned positive and negative simple-root
+/-- The graph automorphism on points renumbers every numbered positive and negative simple-root
 subgroup without changing its additive parameter. -/
 @[simp]
 theorem graphAutomorphismPoints_rootSubgroupPoints (A : Type v) [CommRing A]
@@ -668,5 +669,14 @@ theorem graphAutomorphismPoints_graphAutomorphismPoints
     graphAutomorphismPoints A (graphAutomorphismPoints A g) = g := by
   have h := congrArg (fun σ : MulAut (points A) => σ g) (graphAutomorphismPoints_sq A)
   simpa only [pow_two, MulAut.mul_apply, MulAut.one_apply] using h
+
+/-- The graph automorphism on matrix-valued points is its own inverse. -/
+@[simp]
+theorem graphAutomorphismPoints_symm (A : Type v) [CommRing A] :
+    (graphAutomorphismPoints A).symm = graphAutomorphismPoints A := by
+  apply DFunLike.ext _ _
+  intro g
+  apply (graphAutomorphismPoints A).injective
+  rw [MulEquiv.apply_symm_apply, graphAutomorphismPoints_graphAutomorphismPoints]
 
 end TauCeti.E6DoubledMinuscule
