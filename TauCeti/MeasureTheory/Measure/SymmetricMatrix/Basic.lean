@@ -47,12 +47,6 @@ subspace: `TauCeti.symmetricCoordinates` reads off the entries above the diagona
 * `TauCeti.symmetricBasis` — the basis dual to the upper-triangular coordinates.
 * `TauCeti.finrank_symmetricMatrix` — the dimension is `p * (p + 1) / 2`.
 * `selfAdjoint.inner_eq_trace_mul` — the Frobenius pairing is the trace pairing.
-
-## References
-
-* This module suite implements the symmetric-matrix carrier design of the
-  StandardDistributions roadmap (`StandardDistributions/README.md`, Layer 6, item 1, in the
-  TauCetiRoadmap repository, https://github.com/TauCetiProject/TauCetiRoadmap).
 -/
 
 public section
