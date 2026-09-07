@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
 public import TauCeti.NumberTheory.ModularForms.Degeneracy
 public import TauCeti.NumberTheory.ModularForms.SlashActionRat
 
+import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+
 /-!
 # The `q`-expansion of a rational diagonal slash
 
@@ -124,14 +126,13 @@ theorem _root_.ModularForm.qExpansion_slash_natDiagGL_d_one_coeff
 `Gamma1_map_le_conjAct_scaleGL` packages its scaled translate at level `dM`; this specialization
 is the form needed by the coprime Hecke recurrence. -/
 theorem _root_.ModularForm.qExpansion_slash_natDiagGL_d_one_coeff_Gamma1
-    (M d : ℕ) [NeZero M] [NeZero d]
+    (M d : ℕ) [NeZero d]
     (f : ModularForm ((Gamma1 M).map (mapGL ℝ)) k) (n : ℕ) :
     (qExpansion 1 (⇑f ∣[k] (natDiagGL 2 ![d, 1] : GL (Fin 2) ℚ))).coeff n =
       if d ∣ n then (d : ℂ) ^ (k - 1) * (qExpansion 1 f).coeff (n / d) else 0 := by
-  let _ : NeZero (d * M) := ⟨Nat.mul_ne_zero (NeZero.ne d) (NeZero.ne M)⟩
   refine ModularForm.qExpansion_slash_natDiagGL_d_one_coeff ?_ ?_
     (Gamma1_map_le_conjAct_scaleGL M d) f n <;>
-    simp [CongruenceSubgroup.strictPeriods_Gamma1]
+    exact one_mem_strictPeriods_Gamma1_map _
 
 end TauCeti
 

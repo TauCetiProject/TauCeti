@@ -154,7 +154,7 @@ private theorem preimage_permReindex_cylinder (π : Equiv.Perm ℕ) (F : Finset 
 
 private theorem measurable_pullMoved [MeasurableSpace α] (π : Equiv.Perm ℕ) (F : Finset ℕ) :
     Measurable (pullMoved π F α) :=
-  measurable_pi_lambda _ fun _ => measurable_pi_apply _
+  Measurable.of_eval fun _ => measurable_pi_apply _
 
 /-- Every measurable path-space event is approximated, in measure, by a measurable cylinder over a
 finite index set. -/
@@ -191,7 +191,7 @@ private theorem measure_pathLaw_inter_cylinder_of_disjoint {μ : Measure Ω}
     pathLaw μ X (cylinder F S ∩ cylinder G T)
       = pathLaw μ X (cylinder F S) * pathLaw μ X (cylinder G T) := by
   let := h_indep.isProbabilityMeasure
-  have hΦ : AEMeasurable (fun ω => (fun n => X n ω : ℕ → α)) μ := aemeasurable_pi_lambda _ hX
+  have hΦ : AEMeasurable (fun ω => (fun n => X n ω : ℕ → α)) μ := AEMeasurable.of_eval hX
   have hSmeas : MeasurableSet (cylinder F S) :=
     MeasurableSet.cylinder (α := fun _ : ℕ => α) F hS
   have hTmeas : MeasurableSet (cylinder G T) :=
@@ -300,7 +300,7 @@ private theorem measureReal_sq_of_exchangeableSigma {ρ : Measure (ℕ → α)} 
         = ρ (cylinder (α := fun _ : ℕ => α) F S) * ρ (cylinder (α := fun _ : ℕ => α) G T))
     {s : Set (ℕ → α)} (hs : MeasurableSet[exchangeableSigma α] s) :
     ρ.real s = ρ.real s * ρ.real s := by
-  have hs_meas : MeasurableSet s := MeasurableSet.ambient_of_exchangeableSigma hs
+  have hs_meas : MeasurableSet s := exchangeableSigma_le s hs
   by_contra hne
   set q := ρ.real s with hq
   set d := |q - q * q| with hd
@@ -349,7 +349,7 @@ theorem measure_eq_zero_or_one_of_exchangeableSigma {ρ : Measure (ℕ → α)} 
         = ρ (cylinder (α := fun _ : ℕ => α) F S) * ρ (cylinder (α := fun _ : ℕ => α) G T))
     {s : Set (ℕ → α)} (hs : MeasurableSet[exchangeableSigma α] s) :
     ρ s = 0 ∨ ρ s = 1 := by
-  have hs_meas : MeasurableSet s := MeasurableSet.ambient_of_exchangeableSigma hs
+  have hs_meas : MeasurableSet s := exchangeableSigma_le s hs
   have hsq := measureReal_sq_of_exchangeableSigma hexch hprod hs
   have htop : ρ s ≠ ⊤ := measure_ne_top ρ s
   have hE : ρ (s ∩ s) = ρ s * ρ s := by
@@ -384,7 +384,7 @@ theorem hewittSavage_trivial_of_iIndep {μ : Measure Ω} {X : ℕ → Ω → α}
   have hX : ∀ i, AEMeasurable (X i) μ := fun i => (hident i).aemeasurable_fst
   have : IsProbabilityMeasure (pathLaw μ X) := by
     rw [pathLaw_def]
-    exact Measure.isProbabilityMeasure_map (aemeasurable_pi_lambda _ hX)
+    infer_instance
   have hexch : ExchangeableLaw (pathLaw μ X) :=
     (exchangeable_iff_exchangeableLaw_pathLaw hX).mp
       (Exchangeable.of_iIndepFun_identDistrib h_indep hident)

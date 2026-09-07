@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Operators
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.QExpansion
 
+import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+
 /-!
 # The Hecke operators at an index supported on the level
 
@@ -197,21 +199,19 @@ at a prime `p ∣ N`, leaving `T_{p^{r+1}} = T_p T_{p^r}`. In that case, read th
 `heckeUNat_eq_heckeTNat`, the statement is `T_{p^r} = U_p ^ r`; there is no second operator. -/
 theorem heckeTNat_pow_of_dvd (hpN : p ∣ N) (r : ℕ) :
     heckeTNat (N := N) k (p ^ r)
-        (_hn := ⟨pow_ne_zero r fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩)
+        (_hn := haveI := NeZero.of_dvd hpN; NeZero.pow)
       = heckeTNat (N := N) k p
-          (_hn := ⟨fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩) ^ r :=
-  let _ : NeZero p :=
-    ⟨fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩
+          (_hn := NeZero.of_dvd hpN) ^ r :=
+  let _ : NeZero p := NeZero.of_dvd hpN
   heckeTNat_pow_of_primeFactors_subset k (Nat.primeFactors_mono hpN (NeZero.ne N)) r
 
 /-- **`T_{p^r} = T_p ^ r` at a divisor `p ∣ N`**, on `S_k(Γ₁(N))`. -/
 theorem heckeTCuspNat_pow_of_dvd (hpN : p ∣ N) (r : ℕ) :
     heckeTCuspNat (N := N) k (p ^ r)
-        (_hn := ⟨pow_ne_zero r fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩)
+        (_hn := haveI := NeZero.of_dvd hpN; NeZero.pow)
       = heckeTCuspNat (N := N) k p
-          (_hn := ⟨fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩) ^ r :=
-  let _ : NeZero p :=
-    ⟨fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩
+          (_hn := NeZero.of_dvd hpN) ^ r :=
+  let _ : NeZero p := NeZero.of_dvd hpN
   heckeTCuspNat_pow_of_primeFactors_subset k (Nat.primeFactors_mono hpN (NeZero.ne N)) r
 
 section Nebentypus
@@ -256,7 +256,7 @@ theorem qExpansion_coeff_heckeTNat_of_primeFactors_subset (n : ℕ) [NeZero n]
     (qExpansion 1 (heckeTNat (N := N) k n f)).coeff m = (qExpansion 1 f).coeff (n * m) := by
   rw [coe_heckeTNat_of_primeFactors_subset k n hn f]
   exact qExpansion_coeff_heckeSlashUpperTri' k n
-    (by simp [CongruenceSubgroup.strictPeriods_Gamma1]) (Nat.pos_of_ne_zero (NeZero.ne n)) f m
+    (TauCeti.one_mem_strictPeriods_Gamma1_map _) (Nat.pos_of_ne_zero (NeZero.ne n)) f m
 
 /-- **The `q`-expansion recurrence on cusp forms**: `aₘ(T_n f) = a_{n m}(f)` at an index
 supported on the level. -/
@@ -266,7 +266,7 @@ theorem qExpansion_coeff_heckeTCuspNat_of_primeFactors_subset (n : ℕ) [NeZero 
     (qExpansion 1 (heckeTCuspNat (N := N) k n f)).coeff m = (qExpansion 1 f).coeff (n * m) := by
   rw [coe_heckeTCuspNat_of_primeFactors_subset k n hn f]
   exact qExpansion_coeff_heckeSlashUpperTri' k n
-    (by simp [CongruenceSubgroup.strictPeriods_Gamma1]) (Nat.pos_of_ne_zero (NeZero.ne n)) f m
+    (TauCeti.one_mem_strictPeriods_Gamma1_map _) (Nat.pos_of_ne_zero (NeZero.ne n)) f m
 
 end HeckeRing.GL2
 

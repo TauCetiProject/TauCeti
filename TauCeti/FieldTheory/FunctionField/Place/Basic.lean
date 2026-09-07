@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.AlgebraicClosure
+public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 public import Mathlib.RingTheory.Valuation.Integral
 public import Mathlib.RingTheory.Valuation.IsTrivialOn
 public import TauCeti.RingTheory.Valuation.Discrete.Order
@@ -29,6 +30,11 @@ equivalence is needed and equality of places *is* equality of valuations
   element has order `1`. It has the junk value `ord_P 0 = 0`.
 * `TauCeti.Place.ResidueField`: the residue field `F_P = 𝒪_P / 𝔪_P`, a `k`-algebra.
 * `TauCeti.Place.degree`: the degree `deg P = [F_P : k]` of a place.
+* `TauCeti.Place.ordAddMonoidHom`: `ord_P` bundled as an additive homomorphism on `Additive Fˣ`.
+  Restricting to units is what makes it additive, since `ord_P 0 = 0` is a junk value.
+* `TauCeti.Place.ord_mul_eq_zero`, `ord_inv_eq_zero` and `ord_div_eq_zero`:
+  the units of order zero form a subgroup of `Fˣ`, read off that homomorphism. Its identity is
+  `ord_one` itself, since `((1 : Fˣ) : F)` is `1` definitionally.
 
 ## Main results
 
@@ -167,6 +173,50 @@ theorem ord_pow (f : F) (n : ℕ) : P.ord (f ^ n) = n * P.ord f :=
 theorem ord_div {f g : F} (hf : f ≠ 0) (hg : g ≠ 0) :
     P.ord (f / g) = P.ord f - P.ord g := Valuation.ord_div P.valuation hf hg
 
+/-- The order of vanishing at a place, as a homomorphism out of the additivized group of units
+`Additive Fˣ`.  Restricting to units is what makes it additive: `ord_P` is only additive away
+from the junk value `ord_P 0 = 0`. -/
+noncomputable def ordAddMonoidHom (P : Place k F) : Additive Fˣ →+ ℤ :=
+  AddMonoidHom.mk' (fun z => P.ord ((Additive.toMul z : Fˣ) : F)) fun z w => by
+    simpa only [toMul_add, Units.val_mul] using
+      P.ord_mul (Units.ne_zero _) (Units.ne_zero _)
+
+@[simp]
+theorem ordAddMonoidHom_apply (P : Place k F) (z : Fˣ) :
+    P.ordAddMonoidHom (Additive.ofMul z) = P.ord (z : F) := by
+  simp [ordAddMonoidHom]
+
+-- The units of order zero are the kernel of `ordAddMonoidHom`, so these four are `map_add`,
+-- `map_neg`, `map_sub` and `map_zero` read through `ordAddMonoidHom_apply` rather than four fresh
+-- order calculations. They are named rather than inlined because `TauCeti.Place.residueUnit`
+-- carries its admissibility proof as an argument, so each of its group laws has to name a proof
+-- for the composite function inside its own left-hand side.
+-- The `_root_` prefixes below only disambiguate against `Valuation.map_neg` / `Valuation.map_sub`,
+-- which this file has open.
+/-- **A product of order-zero units has order zero.** -/
+theorem ord_mul_eq_zero {P : Place k F} {f g : Fˣ} (hf : P.ord (f : F) = 0)
+    (hg : P.ord (g : F) = 0) : P.ord ((f * g : Fˣ) : F) = 0 := by
+  rw [← P.ordAddMonoidHom_apply] at hf hg ⊢
+  rw [ofMul_mul, map_add, hf, hg, add_zero]
+
+/-- **The inverse of an order-zero unit has order zero.** -/
+theorem ord_inv_eq_zero {P : Place k F} {f : Fˣ} (hf : P.ord (f : F) = 0) :
+    P.ord ((f⁻¹ : Fˣ) : F) = 0 := by
+  rw [← P.ordAddMonoidHom_apply] at hf ⊢
+  rw [ofMul_inv, _root_.map_neg, hf, neg_zero]
+
+/-- **A power of an order-zero unit has order zero.** -/
+theorem ord_zpow_eq_zero {P : Place k F} {f : Fˣ} (hf : P.ord (f : F) = 0) (n : ℤ) :
+    P.ord ((f ^ n : Fˣ) : F) = 0 := by
+  rw [← P.ordAddMonoidHom_apply] at hf ⊢
+  rw [ofMul_zpow, map_zsmul, hf, smul_zero]
+
+/-- **A quotient of order-zero units has order zero.** -/
+theorem ord_div_eq_zero {P : Place k F} {f g : Fˣ} (hf : P.ord (f : F) = 0)
+    (hg : P.ord (g : F) = 0) : P.ord ((f / g : Fˣ) : F) = 0 := by
+  rw [← P.ordAddMonoidHom_apply] at hf hg ⊢
+  rw [ofMul_div, _root_.map_sub, hf, hg, sub_zero]
+
 @[simp]
 theorem ord_neg (f : F) : P.ord (-f) = P.ord f := Valuation.ord_neg P.valuation f
 
@@ -201,6 +251,34 @@ have distinct orders, the order of their sum is the smaller of the two. -/
 theorem ord_add_eq_min_of_ord_ne {f g : F} (hf : f ≠ 0) (hg : g ≠ 0)
     (h : P.ord f ≠ P.ord g) : P.ord (f + g) = min (P.ord f) (P.ord g) :=
   Valuation.ord_add_eq_min_of_ord_ne P.valuation hf hg h
+
+/-- A finite sum one of whose summands has strictly least order at `P` does not vanish. -/
+theorem sum_ne_zero_of_forall_ord_lt {ι : Type*} {s : Finset ι} {f : ι → F} {j : ι} (hj : j ∈ s)
+    (hfj : f j ≠ 0) (hlt : ∀ i ∈ s, i ≠ j → P.ord (f j) < P.ord (f i)) :
+    ∑ i ∈ s, f i ≠ 0 :=
+  Valuation.sum_ne_zero_of_forall_ord_lt P.valuation hj hfj hlt
+
+/-- The **strict triangle inequality for a finite sum**: a summand of strictly least order at `P`
+dictates the order of the sum. -/
+theorem ord_sum_eq_of_forall_lt {ι : Type*} {s : Finset ι} {f : ι → F} {j : ι} (hj : j ∈ s)
+    (hfj : f j ≠ 0) (hlt : ∀ i ∈ s, i ≠ j → P.ord (f j) < P.ord (f i)) :
+    P.ord (∑ i ∈ s, f i) = P.ord (f j) :=
+  Valuation.ord_sum_eq_of_forall_lt P.valuation hj hfj hlt
+
+/-- **Normalizing a family of coefficients.** A finite family in `F` that does not vanish
+identically has a nonzero member by which the whole family can be divided without leaving `𝒪_P`;
+a member of least order at `P` is one. This is what turns a relation with coefficients in `F`
+into a relation with coefficients in `𝒪_P`, one of which is a unit. -/
+theorem exists_ne_zero_forall_div_mem_integers {ι : Type*} [Finite ι] (c : ι → F) {i₁ : ι}
+    (hi₁ : c i₁ ≠ 0) : ∃ i₀, c i₀ ≠ 0 ∧ ∀ i, c i / c i₀ ∈ P.integers := by
+  obtain ⟨i₀, hi₀, hmin⟩ :=
+    Set.exists_min_image {i | c i ≠ 0} (fun i ↦ P.ord (c i)) (Set.toFinite _) ⟨i₁, hi₁⟩
+  refine ⟨i₀, hi₀, fun i ↦ ?_⟩
+  rcases eq_or_ne (c i) 0 with h | h
+  · simp [h]
+  · rw [P.mem_integers_iff_ord_nonneg, P.ord_div h hi₀]
+    have := hmin i h
+    omega
 
 section Constants
 
@@ -330,30 +408,13 @@ theorem integers_injective : Function.Injective (integers : Place k F → Valuat
 /-- **The valuation ring of a place is a maximal proper subring of `F`** (Stichtenoth,
 Theorem 1.1.13(d)), in the form used to recognize a place from a containment of valuation
 rings: a place whose valuation ring contains the valuation ring of another place is that
-place. -/
-theorem eq_of_integers_le {P Q : Place k F} (h : P.integers ≤ Q.integers) : P = Q := by
-  refine integers_injective (le_antisymm h ?_)
-  by_contra hle
-  obtain ⟨f, hfQ, hfP⟩ := SetLike.not_le_iff_exists.mp hle
-  rw [mem_integers_iff_ord_nonneg] at hfQ
-  rw [mem_integers_iff_ord_nonneg, not_le] at hfP
-  have hf0 : f ≠ 0 := by rintro rfl; simp at hfP
-  have hgP : 0 < P.ord f⁻¹ := by rw [ord_inv]; omega
-  have hgQ : 0 ≤ Q.ord f⁻¹ := by
-    rw [← mem_integers_iff_ord_nonneg]
-    exact h (P.mem_integers_iff_ord_nonneg.mpr hgP.le)
-  have hgQ0 : Q.ord f⁻¹ = 0 := by rw [ord_inv] at hgQ ⊢; omega
-  refine Q.integers_ne_top (top_unique fun y _ ↦ ?_)
-  rcases eq_or_ne y 0 with rfl | hy0
-  · exact zero_mem _
-  set n := (max 0 (-P.ord y)).toNat with hn
-  have hmem : y * f⁻¹ ^ n ∈ P.integers := by
-    rw [mem_integers_iff_ord_nonneg, ord_mul _ hy0 (pow_ne_zero _ (inv_ne_zero hf0)), ord_pow]
-    have : (1 : ℤ) ≤ P.ord f⁻¹ := hgP
-    nlinarith [Int.toNat_of_nonneg (le_max_left 0 (-P.ord y)), le_max_right 0 (-P.ord y)]
-  have := Q.mem_integers_iff_ord_nonneg.mp (h hmem)
-  rw [ord_mul _ hy0 (pow_ne_zero _ (inv_ne_zero hf0)), ord_pow, hgQ0] at this
-  exact Q.mem_integers_iff_ord_nonneg.mpr (by omega)
+place.
+
+This is Mathlib's `ValuationSubring.eq_of_le_of_ne_top` for `𝒪_P`, which applies because a
+discrete valuation ring has Krull dimension at most one; properness of `𝒪_Q` is what rules out
+the other case. -/
+theorem eq_of_integers_le {P Q : Place k F} (h : P.integers ≤ Q.integers) : P = Q :=
+  integers_injective (P.integers.eq_of_le_of_ne_top h Q.integers_ne_top)
 
 /-- The valuation ring of a place is integrally closed in `F`: an element of `F` integral over a
 `k`-algebra whose image lies in `𝒪_P` lies in `𝒪_P`. -/
