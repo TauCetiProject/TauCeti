@@ -34,8 +34,7 @@ than on a separately tabulated field order.
 
 ## The pinning
 
-What identifies `τ` among the endomorphisms of the ambient group is its action on the numbered
-simple root subgroups:
+What is recorded of `τ` is its action on the numbered simple root subgroups:
 
 ```text
 τ (x_{α i}(t)) = x_{α (σ i)}(t ^ e i),
