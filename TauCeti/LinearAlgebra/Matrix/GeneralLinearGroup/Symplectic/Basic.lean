@@ -814,7 +814,8 @@ theorem coe_differenceShortRootUnit {i j : Fin m} (hij : i ≠ j) (c : R) :
     commutingTransvectionPairHom_apply]
 
 /-- The matrix underlying `x_{eᵢ-eⱼ}(c)`, as the identity plus two matrix units. -/
-@[simp]
+-- Not `@[simp]`: `coe_differenceShortRootUnit` is already a simp lemma and rewrites this
+-- left-hand side to the transvection product first.
 theorem coe_differenceShortRootUnit_eq_one_add_single_sub_single {i j : Fin m} (hij : i ≠ j)
     (c : R) :
     (((differenceShortRootUnit hij c : GLSymplecticFin m R) : GL (Fin (m + m)) R) :
