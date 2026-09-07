@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
+public import TauCeti.LinearAlgebra.Matrix.Minor
 
 /-!
 # The special isogeny of `Sp₄` in characteristic two
@@ -100,19 +101,6 @@ consequence rather than the definition.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
 * *On the cohomology of the Ree groups and kernels of exceptional isogenies*,
   [arXiv:2108.06291](https://arxiv.org/abs/2108.06291), for the formulation `τ ² = Frob_p`.
-
-## Roadmap
-
-This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`, which lists "the special isogenies in characteristics
-two and three" among its targets and says of them that they are statements about the pinned groups
-and belong there rather than in any consumer. Its consumer is milestone `L2` of
-`TauCetiRoadmap/CFSGStatement/README.md`, which owns everything between such an isogeny and a
-finite group: `L2` fixes the exponent convention followed here, attaching `1` to a long simple root
-and the defining characteristic to a short one, and the two pinning equations proved below are that
-convention on the `B₂` diagram. The square relation `τ ^ 2 = Frob_p` that `L2` inherits rather
-than proves is established here in its `p = 2` case. The odd powers `τ ^ (2m+1)` that `L2` takes,
-and the ambient carrier they are taken on, are not part of this file.
 -/
 public section
 
@@ -120,32 +108,11 @@ open Matrix
 
 namespace TauCeti
 
+open TauCeti.Matrix
+
 universe u
 
-variable {n : Type*} {R : Type u} [CommRing R]
-
-/-- The `2 × 2` minor of a square matrix on the ordered row pair `p` and the ordered column
-pair `q`. -/
-def pairMinor (g : Matrix n n R) (p q : n × n) : R :=
-  (g.submatrix ![p.1, p.2] ![q.1, q.2]).det
-
-/-- The `2 × 2` minor written out. -/
-theorem pairMinor_eq (g : Matrix n n R) (p q : n × n) :
-    pairMinor g p q = g p.1 q.1 * g p.2 q.2 - g p.1 q.2 * g p.2 q.1 := by
-  rw [pairMinor, Matrix.det_fin_two]
-  simp
-
-/-- **Cauchy--Binet for `2 × 2` minors of a `4 × 4` product.** -/
-theorem pairMinor_mul (g h : Matrix (Fin 4) (Fin 4) R) (p q : Fin 4 × Fin 4) :
-    pairMinor (g * h) p q =
-      pairMinor g p (0, 1) * pairMinor h (0, 1) q +
-        pairMinor g p (0, 2) * pairMinor h (0, 2) q +
-        pairMinor g p (0, 3) * pairMinor h (0, 3) q +
-        pairMinor g p (1, 2) * pairMinor h (1, 2) q +
-        pairMinor g p (1, 3) * pairMinor h (1, 3) q +
-        pairMinor g p (2, 3) * pairMinor h (2, 3) q := by
-  simp only [pairMinor_eq, Matrix.mul_apply, Fin.sum_univ_four]
-  ring
+variable {R : Type u} [CommRing R]
 
 /-! ### The standard alternating form in rank two -/
 
@@ -346,7 +313,7 @@ section CharTwo
 variable [CharP R 2]
 
 /-- The special isogeny of `Sp₄`, as a monoid homomorphism into the matrix monoid. -/
-def specialIsogenyToMatrix :
+private def specialIsogenyToMatrix :
     GLSymplecticFin 2 R →* Matrix (Fin (2 + 2)) (Fin (2 + 2)) R where
   toFun M := specialIsogenyMatrix ((M : GL (Fin (2 + 2)) R) :
     Matrix (Fin (2 + 2)) (Fin (2 + 2)) R)
@@ -356,7 +323,7 @@ def specialIsogenyToMatrix :
       (GLSymplecticFin.mem_iff.mp N.2)
 
 @[simp]
-theorem specialIsogenyToMatrix_apply (M : GLSymplecticFin 2 R) :
+private theorem specialIsogenyToMatrix_apply (M : GLSymplecticFin 2 R) :
     specialIsogenyToMatrix M =
       specialIsogenyMatrix ((M : GL (Fin (2 + 2)) R) :
         Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) := by
@@ -383,6 +350,30 @@ theorem coe_specialIsogeny (M : GLSymplecticFin 2 R) :
 
 end CharTwo
 
+/-- The minor formula commutes with entrywise application of a ring morphism. -/
+@[simp]
+theorem specialIsogenyMatrix_map {S : Type u} [CommRing S] (f : R →+* S)
+    (g : Matrix (Fin 4) (Fin 4) R) :
+    specialIsogenyMatrix (g.map f) = (specialIsogenyMatrix g).map f := by
+  ext i j
+  simp [Matrix.map_apply]
+
+/-- **The special isogeny is natural in the value ring**, so a consumer can transport it along a
+morphism of characteristic-two rings without unfolding the minor construction. -/
+@[simp]
+theorem map_specialIsogeny [CharP R 2] {S : Type u} [CommRing S] [CharP S 2] (f : R →+* S)
+    (M : GLSymplecticFin 2 R) :
+    GLSymplecticFin.map 2 R f (specialIsogeny M) =
+      specialIsogeny (GLSymplecticFin.map 2 R f M) := by
+  apply Subtype.ext
+  apply Units.ext
+  rw [GLSymplecticFin.coe_map, coe_specialIsogeny]
+  have hM : ((GLSymplecticFin.map 2 R f M : GLSymplecticFin 2 S) : GL (Fin (2 + 2)) S) =
+      Matrix.GeneralLinearGroup.map f ((M : GL (Fin (2 + 2)) R)) := GLSymplecticFin.coe_map 2 R f M
+  rw [hM]
+  simp [← specialIsogenyMatrix_map]
+
+
 /-! ### The action on the simple root subgroups -/
 
 private theorem fse_inl_zero : finSumFinEquiv (Sum.inl (0 : Fin 2)) = (0 : Fin (2 + 2)) := rfl
@@ -391,7 +382,7 @@ private theorem fse_inr_zero : finSumFinEquiv (Sum.inr (0 : Fin 2)) = (2 : Fin (
 private theorem fse_inr_one : finSumFinEquiv (Sum.inr (1 : Fin 2)) = (3 : Fin (2 + 2)) := rfl
 
 /-- The short simple root element `x_{e₀-e₁}(t)` of `Sp₄`, written out. -/
-theorem coe_differenceShortRootUnit_zero_one (t : R) :
+private theorem coe_differenceShortRootUnit_zero_one (t : R) :
     (((GLSymplecticFin.differenceShortRootUnit (show (0 : Fin 2) ≠ 1 by decide) t :
           GLSymplecticFin 2 R) : GL (Fin (2 + 2)) R) :
         Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) =
@@ -404,7 +395,7 @@ theorem coe_differenceShortRootUnit_zero_one (t : R) :
       Fin.sum_univ_four, fse_inl_zero, fse_inl_one, fse_inr_zero, fse_inr_one]
 
 /-- The long simple root element `x_{2e₁}(t)` of `Sp₄`, written out. -/
-theorem coe_positiveLongRootTransvectionUnit_one (t : R) :
+private theorem coe_positiveLongRootTransvectionUnit_one (t : R) :
     (((GLSymplecticFin.positiveLongRootTransvectionUnit (1 : Fin 2) t : GLSymplecticFin 2 R) :
         GL (Fin (2 + 2)) R) : Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) =
       !![1, 0, 0, 0; 0, 1, 0, t; 0, 0, 1, 0; 0, 0, 0, 1] := by
@@ -415,6 +406,7 @@ theorem coe_positiveLongRootTransvectionUnit_one (t : R) :
 
 /-- The special isogeny carries the short simple root subgroup to the long one and squares the
 parameter: `τ (x_{e₀-e₁}(t)) = x_{2e₁}(t²)`. -/
+@[simp]
 theorem specialIsogeny_differenceShortRootUnit [CharP R 2] (t : R) :
     specialIsogeny
         (GLSymplecticFin.differenceShortRootUnit (show (0 : Fin 2) ≠ 1 by decide) t) =
@@ -433,6 +425,7 @@ theorem specialIsogeny_differenceShortRootUnit [CharP R 2] (t : R) :
 
 /-- The special isogeny carries the long simple root subgroup to the short one and keeps the
 parameter: `τ (x_{2e₁}(t)) = x_{e₀-e₁}(t)`. -/
+@[simp]
 theorem specialIsogeny_positiveLongRootTransvectionUnit [CharP R 2] (t : R) :
     specialIsogeny (GLSymplecticFin.positiveLongRootTransvectionUnit 1 t) =
       GLSymplecticFin.differenceShortRootUnit (show (0 : Fin 2) ≠ 1 by decide) t := by
@@ -448,7 +441,7 @@ theorem specialIsogeny_positiveLongRootTransvectionUnit [CharP R 2] (t : R) :
       Fin.mk_one, Fin.reduceFinMk] <;> ring1
 
 /-- The short simple root element `x_{e₁-e₀}(t)` of `Sp₄`, written out. -/
-theorem coe_differenceShortRootUnit_one_zero (t : R) :
+private theorem coe_differenceShortRootUnit_one_zero (t : R) :
     (((GLSymplecticFin.differenceShortRootUnit (show (1 : Fin 2) ≠ 0 by decide) t :
           GLSymplecticFin 2 R) : GL (Fin (2 + 2)) R) :
         Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) =
@@ -461,7 +454,7 @@ theorem coe_differenceShortRootUnit_one_zero (t : R) :
       Fin.sum_univ_four, fse_inl_zero, fse_inl_one, fse_inr_zero, fse_inr_one]
 
 /-- The long simple root element `x_{-2e₁}(t)` of `Sp₄`, written out. -/
-theorem coe_negativeLongRootTransvectionUnit_one (t : R) :
+private theorem coe_negativeLongRootTransvectionUnit_one (t : R) :
     (((GLSymplecticFin.negativeLongRootTransvectionUnit (1 : Fin 2) t : GLSymplecticFin 2 R) :
         GL (Fin (2 + 2)) R) : Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) =
       !![1, 0, 0, 0; 0, 1, 0, 0; 0, 0, 1, 0; 0, t, 0, 1] := by
@@ -472,6 +465,7 @@ theorem coe_negativeLongRootTransvectionUnit_one (t : R) :
 
 /-- The special isogeny on the negative short simple root subgroup:
 `τ (x_{e₁-e₀}(t)) = x_{-2e₁}(t²)`. -/
+@[simp]
 theorem specialIsogeny_differenceShortRootUnit_one_zero [CharP R 2] (t : R) :
     specialIsogeny
         (GLSymplecticFin.differenceShortRootUnit (show (1 : Fin 2) ≠ 0 by decide) t) =
@@ -490,6 +484,7 @@ theorem specialIsogeny_differenceShortRootUnit_one_zero [CharP R 2] (t : R) :
 
 /-- The special isogeny on the negative long simple root subgroup:
 `τ (x_{-2e₁}(t)) = x_{e₁-e₀}(t)`. -/
+@[simp]
 theorem specialIsogeny_negativeLongRootTransvectionUnit [CharP R 2] (t : R) :
     specialIsogeny (GLSymplecticFin.negativeLongRootTransvectionUnit 1 t) =
       GLSymplecticFin.differenceShortRootUnit (show (1 : Fin 2) ≠ 0 by decide) t := by
@@ -573,6 +568,7 @@ theorem specialIsogenyMatrix_specialIsogenyMatrix [CharP R 2]
       g 2 3 * g 3 1 * g 3 3) * h2
 
 /-- **The square of the special isogeny is the Frobenius**, on the symplectic group. -/
+@[simp]
 theorem specialIsogeny_specialIsogeny [CharP R 2] (M : GLSymplecticFin 2 R) :
     specialIsogeny (specialIsogeny M) = GLSymplecticFin.map 2 R (frobenius R 2) M := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
