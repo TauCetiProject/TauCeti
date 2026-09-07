@@ -8,7 +8,6 @@ module
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 public import TauCeti.FieldTheory.Galois.FixedField
-public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 
 /-!
 # The decomposition group and the decomposition field of a place
@@ -106,6 +105,14 @@ def decompositionField (P : Place k F') : IntermediateField F F' :=
 
 omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] [FiniteDimensional F F']
   [IsGalois F F'] in
+/-- The defining equation of the decomposition field: it is the fixed field of the decomposition
+group. -/
+theorem decompositionField_def (P : Place k F') :
+    decompositionField F P = IntermediateField.fixedField (P.integers.decompositionSubgroup F) :=
+  (rfl)
+
+omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] [FiniteDimensional F F']
+  [IsGalois F F'] in
 /-- An element of `F'` lies in the decomposition field of `P` exactly when the decomposition
 group of `P` fixes it. -/
 @[simp]
@@ -152,7 +159,7 @@ order of the decomposition group, that is `e(P ∣ P ∩ F) · f(P ∣ P ∩ F)`
 theorem finrank_decompositionField (P : Place k F') :
     Module.finrank (decompositionField F P) F' =
       ramificationIdx F P * relativeDegree k F P := by
-  rw [decompositionField, IntermediateField.finrank_fixedField_eq_card,
+  rw [decompositionField_def, IntermediateField.finrank_fixedField_eq_card,
     card_decompositionSubgroup]
 
 /-- **The product `e · f` is the same over the decomposition field as over `F`** (Stichtenoth,
@@ -248,8 +255,8 @@ omit [Algebra.IsIntegral F F'] [FiniteDimensional F F'] [IsGalois F F'] in
 (Stichtenoth, Theorem 3.8.2). -/
 theorem decompositionField_smul (σ : F' ≃ₐ[F] F') (P : Place k F') :
     decompositionField F (σ • P) = (decompositionField F P).map σ.toAlgHom := by
-  rw [decompositionField, decompositionSubgroup_integers_smul,
-    Subgroup.fixedField_map_conj, decompositionField]
+  rw [decompositionField_def, decompositionSubgroup_integers_smul,
+    Subgroup.fixedField_map_conj, decompositionField_def]
 
 /-- **The degree of the decomposition field over `F`** (Stichtenoth, Theorem 3.8.2): it is the
 number of places of `F' / k` lying over the place below `P`. -/
