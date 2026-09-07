@@ -126,14 +126,14 @@ theorem equivFinsuppOfBasisRight_apply {ι : Type*} [DecidableEq ι]
   rw [TensorProduct.equivFinsuppOfBasisRight_apply]
   rfl
 
-section Field
+section Free
 
 variable {k : Type u} {D : Type v} {V : Type w}
-variable [Field k] [AddCommGroup D] [Module k D]
-variable [AddCommGroup V] [Module k V]
+variable [CommSemiring k] [AddCommMonoid D] [Module k D] [Module.Free k D]
+variable [AddCommMonoid V] [Module k V]
 
 /-- Equality of all contractions against the right factor detects equality in a tensor product
-over a field. -/
+over a commutative semiring when the right factor is free. -/
 theorem tensor_eq_of_forall_tensorComponent_eq {x y : V ⊗[k] D}
     (h : ∀ φ : Module.Dual k D,
       tensorComponent (R := k) (M := V) φ x = tensorComponent (R := k) (M := V) φ y) :
@@ -145,7 +145,7 @@ theorem tensor_eq_of_forall_tensorComponent_eq {x y : V ⊗[k] D}
   rw [equivFinsuppOfBasisRight_apply, equivFinsuppOfBasisRight_apply]
   exact h (b.coord i)
 
-end Field
+end Free
 
 omit [Coalgebra R C] [Comodule R C M] in
 @[simp]

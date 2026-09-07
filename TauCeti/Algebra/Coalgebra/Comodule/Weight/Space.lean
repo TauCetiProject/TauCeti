@@ -13,11 +13,11 @@ import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 /-!
 # Weight spaces of a comodule
 
-Let `M` be a comodule over a coalgebra `C` over a field `k`. For a group-like element `c` of
-`C`, its weight space is the subspace of vectors whose coaction is `m ↦ m ⊗ c`. This file
-packages that subspace and proves that the weight spaces belonging to distinct group-like
-elements are independent. Consequently a finite-dimensional comodule has only finitely many
-nonzero weight spaces.
+Let `M` be a comodule over a coalgebra `C` over a commutative semiring. For a group-like element
+`c` of `C`, its weight space is the submodule of vectors whose coaction is `m ↦ m ⊗ c`. This
+file packages that submodule and its elementary functorial API. Over a field, it proves that the
+weight spaces belonging to distinct group-like elements are independent. Consequently a
+finite-dimensional comodule has only finitely many nonzero weight spaces.
 
 The independence proof reads a coaction through all linear functionals on `C`. The `c`-weight
 space is the joint eigenspace of the component endomorphisms
@@ -25,9 +25,8 @@ space is the joint eigenspace of the component endomorphisms
 points over a field, so distinct group-like elements give distinct joint eigenvalue functions.
 
 Unlike the weight decomposition for a monoid algebra, these weight spaces need not span an
-arbitrary comodule. The results here provide exactly the finite family permuted in the
-Lie--Kolchin induction: after restricting a representation to the derived subgroup, its nonzero
-weight spaces form the finite set that the next step must show is permuted by the ambient group.
+arbitrary comodule. Their finite nonzero support can be used to define permutation actions on
+weights in Lie--Kolchin arguments.
 
 ## Main declarations
 
@@ -66,22 +65,16 @@ variable [AddCommMonoid N] [Module R N] [Comodule R C N]
 
 /-- The weight space of a group-like element `c` consists of the vectors with coaction
 `m ↦ m ⊗ c`. -/
-def groupLikeWeightSpace (c : GroupLike R C) : Submodule R M where
-  carrier := {m | coact (R := R) (C := C) m = m ⊗ₜ[R] c.val}
-  zero_mem' := by simp
-  add_mem' {m n} hm hn := by
-    simp only [Set.mem_ofPred_eq] at hm hn ⊢
-    rw [map_add, hm, hn, TensorProduct.add_tmul]
-  smul_mem' r m hm := by
-    simp only [Set.mem_ofPred_eq] at hm ⊢
-    rw [map_smul, hm, TensorProduct.smul_tmul']
+def groupLikeWeightSpace (c : GroupLike R C) : Submodule R M :=
+  LinearMap.eqLocus (coact (R := R) (C := C) (M := M))
+    ((TensorProduct.mk R M C).flip c.val)
 
 /-- Membership in a group-like weight space is the corresponding coaction equation. -/
 @[simp]
 theorem mem_groupLikeWeightSpace {c : GroupLike R C} {m : M} :
     m ∈ groupLikeWeightSpace (M := M) c ↔
       coact (R := R) (C := C) m = m ⊗ₜ[R] c.val :=
-  Iff.rfl
+  LinearMap.mem_eqLocus
 
 /-- A comodule morphism preserves every group-like weight space. -/
 theorem Hom.map_mem_groupLikeWeightSpace (f : Hom R C M N) {c : GroupLike R C} {m : M}
@@ -144,22 +137,20 @@ theorem groupLikeWeightSpace_eq_iInf_eigenspace (c : GroupLike k C) :
   rw [mem_groupLikeWeightSpace_iff_forall_coactComponent_eq_smul]
   simp only [Submodule.mem_iInf, Module.End.mem_eigenspace_iff]
 
-/-- Distinct group-like elements give distinct eigenvalue functions on the linear dual. -/
-private theorem injective_groupLike_eigenvalue :
-    Function.Injective (fun c : GroupLike k C ↦ fun φ : Module.Dual k C ↦ φ c.val) := by
-  intro c d h
-  apply GroupLike.val_injective
-  apply Module.eval_apply_injective k
-  ext φ
-  exact congrFun h φ
-
 /-- The group-like weight spaces of a comodule over a field are supremum-independent. -/
 theorem iSupIndep_groupLikeWeightSpace :
     iSupIndep (groupLikeWeightSpace (M := M) : GroupLike k C → Submodule k M) := by
   have h := iSupIndep_iInf_eigenspace
     (fun φ : Module.Dual k C ↦
       (coactComponent (R := k) (C := C) (M := M) φ : Module.End k M))
-  have hc := h.comp injective_groupLike_eigenvalue
+  have hEval :
+      Function.Injective (fun c : GroupLike k C ↦ fun φ : Module.Dual k C ↦ φ c.val) := by
+    intro c d hcd
+    apply GroupLike.val_injective
+    apply Module.eval_apply_injective k
+    ext φ
+    exact congrFun hcd φ
+  have hc := h.comp hEval
   have hfamily :
       ((fun χ : Module.Dual k C → k ↦
         ⨅ φ : Module.Dual k C,
