@@ -7,8 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
+public import TauCeti.Analysis.Complex.SegmentDistIntegral
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
-public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SegmentDistIntegral
 
 /-!
 # The vertices of the Schwarz--Christoffel map
