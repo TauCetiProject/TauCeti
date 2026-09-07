@@ -108,12 +108,6 @@ theorem eps_smul_dualNumberResidue (x : dualNumberResidue k) : (ε : DualNumber 
 noncomputable def dualNumberEpsSmul : dualNumberFree k ⟶ dualNumberFree k :=
   ModuleCat.ofHom (LinearMap.mulLeft (DualNumber k) (ε : DualNumber k))
 
-/-- Multiplication by `ε` acts on elements as multiplication by `ε`. -/
--- This is already a simp consequence of `dualNumberEpsSmul_hom` and `LinearMap.mulLeft_apply`.
-theorem dualNumberEpsSmul_apply (x : DualNumber k) :
-    (dualNumberEpsSmul k).hom x = ε * x :=
-  (rfl)
-
 /-- The quotient map `k[ε] ↠ k[ε]/(ε)`. -/
 noncomputable def dualNumberProj : dualNumberFree k ⟶ dualNumberResidue k :=
   ModuleCat.ofHom (X := dualNumberFree k) (Y := dualNumberResidue k)
@@ -148,8 +142,9 @@ differentials. -/
 theorem dualNumberEpsSmul_comp_eq_zero (f : dualNumberFree k ⟶ dualNumberResidue k) :
     dualNumberEpsSmul k ≫ f = 0 :=
   ModuleCat.hom_ext (LinearMap.ext fun x => by
-    rw [ModuleCat.hom_comp, LinearMap.comp_apply, dualNumberEpsSmul_apply, ← smul_eq_mul,
-      map_smul, eps_smul_dualNumberResidue, ModuleCat.hom_zero, LinearMap.zero_apply])
+    rw [ModuleCat.hom_comp, LinearMap.comp_apply, dualNumberEpsSmul_hom,
+      LinearMap.mulLeft_apply, ← smul_eq_mul, map_smul, eps_smul_dualNumberResidue,
+      ModuleCat.hom_zero, LinearMap.zero_apply])
 
 /-- The image of multiplication by `ε` is the set of dual numbers with vanishing constant term.
 This is `DualNumber.fst_eq_zero_iff_eps_dvd` read as a statement about a linear map. -/
@@ -162,7 +157,7 @@ private theorem mem_range_dualNumberEpsSmul_iff {x : DualNumber k} :
 term. -/
 private theorem mem_ker_dualNumberEpsSmul_iff {x : DualNumber k} :
     x ∈ LinearMap.ker (dualNumberEpsSmul k).hom ↔ fst x = 0 := by
-  rw [LinearMap.mem_ker, dualNumberEpsSmul_apply]
+  rw [LinearMap.mem_ker, dualNumberEpsSmul_hom, LinearMap.mulLeft_apply]
   constructor
   · intro hx
     simpa [TrivSqZeroExt.snd_mul] using congrArg TrivSqZeroExt.snd hx
@@ -300,11 +295,6 @@ theorem homDualNumberFreeEquiv_apply (f : dualNumberFree k ⟶ dualNumberResidue
     homDualNumberFreeEquiv k f = dualNumberResidueEquiv k (f.hom 1) :=
   (rfl)
 
-/-- The quotient map is the element `1` of `Hom_A(A, S) ≅ k`. -/
--- This is already a simp consequence of the two more general application lemmas above.
-theorem homDualNumberFreeEquiv_proj : homDualNumberFreeEquiv k (dualNumberProj k) = 1 := by
-  rw [homDualNumberFreeEquiv_apply, dualNumberResidueEquiv_apply, dualNumberProj_apply, fst_one]
-
 /-- `End_A(S)` is isomorphic to `k` as a `k`-module. -/
 noncomputable def homDualNumberResidueEquiv :
     (dualNumberResidue k ⟶ dualNumberResidue k) ≃ₗ[k] k :=
@@ -314,7 +304,8 @@ noncomputable def homDualNumberResidueEquiv :
         ((homDualNumberFreeEquiv k).injective h),
       fun c => ⟨c • 𝟙 (dualNumberResidue k), by
         rw [LinearMap.comp_apply, Linear.leftComp_apply, Linear.comp_smul, Category.comp_id,
-          LinearEquiv.coe_coe, map_smul, homDualNumberFreeEquiv_proj, smul_eq_mul, mul_one]⟩⟩
+          LinearEquiv.coe_coe, map_smul, homDualNumberFreeEquiv_apply,
+          dualNumberResidueEquiv_apply, dualNumberProj_apply, fst_one, smul_eq_mul, mul_one]⟩⟩
 
 /-- `TauCeti.homDualNumberResidueEquiv` reads an endomorphism of `S` off its value on the class
 of `1`, through `TauCeti.dualNumberResidueEquiv`: precomposing with `A ↠ S` and evaluating at `1`
