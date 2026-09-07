@@ -55,27 +55,27 @@ namespace Probability
 
 variable {ι : Type*} [Fintype ι]
 
-/-- The real-valued mass function of the multinomial distribution.
+/-- The real-valued multinomial weight associated to nonnegative cell weights.
 
-It is indexed by a probability vector `p` and a count vector `k`.  The sample size does not occur
-in the definition: it selects the level set `∑ i, k i = n` when the measure is formed. -/
-def multinomialWeightReal (p : StdSimplex NNReal ι) (k : ι → ℕ) : ℝ :=
-  (Nat.multinomial Finset.univ k : ℝ) * ∏ i, (p.weights i : ℝ) ^ k i
+It is indexed by cell weights `w` and a count vector `k`.  The weights need not sum to one;
+the multinomial measure specializes them to the weights of a probability vector. -/
+def multinomialWeightReal (w : ι → NNReal) (k : ι → ℕ) : ℝ :=
+  (Nat.multinomial Finset.univ k : ℝ) * ∏ i, (w i : ℝ) ^ k i
 
-/-- Every multinomial mass is nonnegative. -/
-theorem multinomialWeightReal_nonneg (p : StdSimplex NNReal ι) (k : ι → ℕ) :
-    0 ≤ multinomialWeightReal p k := by
+/-- Every real multinomial weight is nonnegative. -/
+theorem multinomialWeightReal_nonneg (w : ι → NNReal) (k : ι → ℕ) :
+    0 ≤ multinomialWeightReal w k := by
   exact mul_nonneg (Nat.cast_nonneg _)
-    (Finset.prod_nonneg fun i _ ↦ pow_nonneg (p.weights i).coe_nonneg _)
+    (Finset.prod_nonneg fun i _ ↦ pow_nonneg (w i).coe_nonneg _)
 
 /-- The `ℝ≥0∞`-valued multinomial weight used to scale Dirac measures. -/
-def multinomialWeight (p : StdSimplex NNReal ι) (k : ι → ℕ) : ℝ≥0∞ :=
-  (Nat.multinomial Finset.univ k : ℝ≥0∞) * ∏ i, (p.weights i : ℝ≥0∞) ^ k i
+def multinomialWeight (w : ι → NNReal) (k : ι → ℕ) : ℝ≥0∞ :=
+  (Nat.multinomial Finset.univ k : ℝ≥0∞) * ∏ i, (w i : ℝ≥0∞) ^ k i
 
 /-- The extended nonnegative multinomial weight has the expected real value. -/
 @[simp]
-theorem multinomialWeight_toReal (p : StdSimplex NNReal ι) (k : ι → ℕ) :
-    (multinomialWeight p k).toReal = multinomialWeightReal p k := by
+theorem multinomialWeight_toReal (w : ι → NNReal) (k : ι → ℕ) :
+    (multinomialWeight w k).toReal = multinomialWeightReal w k := by
   simp [multinomialWeight, multinomialWeightReal, ENNReal.toReal_mul]
 
 open Classical in
@@ -83,12 +83,12 @@ open Classical in
 
 The finite antidiagonal consists precisely of the count vectors whose coordinates sum to `n`. -/
 def multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) : Measure (ι → ℕ) :=
-  ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p k • Measure.dirac k
+  ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p.weights k • Measure.dirac k
 
 open Classical in
 /-- The real multinomial masses on a fixed antidiagonal sum to one. -/
 theorem sum_multinomialWeightReal (n : ℕ) (p : StdSimplex NNReal ι) :
-    ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeightReal p k = 1 := by
+    ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeightReal p.weights k = 1 := by
   calc
     _ = (∑ i ∈ Finset.univ, (p.weights i : ℝ)) ^ n := by
       symm
@@ -99,7 +99,7 @@ theorem sum_multinomialWeightReal (n : ℕ) (p : StdSimplex NNReal ι) :
 open Classical in
 /-- The `ℝ≥0∞`-valued multinomial weights on a fixed antidiagonal sum to one. -/
 theorem sum_multinomialWeight (n : ℕ) (p : StdSimplex NNReal ι) :
-    ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p k = 1 := by
+    ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p.weights k = 1 := by
   calc
     _ = (∑ i ∈ Finset.univ, (p.weights i : ℝ≥0∞)) ^ n := by
       symm
@@ -127,7 +127,7 @@ zero elsewhere. -/
 @[simp]
 theorem multinomialMeasure_singleton (n : ℕ) (p : StdSimplex NNReal ι) (k : ι → ℕ) :
     multinomialMeasure n p {k} =
-      if ∑ i, k i = n then multinomialWeight p k else 0 := by
+      if ∑ i, k i = n then multinomialWeight p.weights k else 0 := by
   classical
   rw [multinomialMeasure, Measure.finsetSum_apply]
   split_ifs with hk
@@ -166,10 +166,10 @@ theorem multinomialMeasure_real_singleton (n : ℕ) (p : StdSimplex NNReal ι) (
   · simp
 
 /-- A multinomial weight is nonzero exactly when every cell receiving a positive count has
-positive parameter weight. -/
+positive weight. -/
 @[simp]
-theorem multinomialWeight_ne_zero_iff (p : StdSimplex NNReal ι) (k : ι → ℕ) :
-    multinomialWeight p k ≠ 0 ↔ ∀ i, k i ≠ 0 → p.weights i ≠ 0 := by
+theorem multinomialWeight_ne_zero_iff (w : ι → NNReal) (k : ι → ℕ) :
+    multinomialWeight w k ≠ 0 ↔ ∀ i, k i ≠ 0 → w i ≠ 0 := by
   rw [multinomialWeight, mul_ne_zero_iff,
     and_iff_right (by exact_mod_cast Nat.ne_of_gt (Nat.multinomial_pos Finset.univ k)),
     Finset.prod_ne_zero_iff]
@@ -196,8 +196,8 @@ theorem multinomialMeasure_singleton_ne_zero_iff (n : ℕ) (p : StdSimplex NNRea
 
 /-- Every multinomial weight is finite. -/
 @[simp]
-theorem multinomialWeight_ne_top (p : StdSimplex NNReal ι) (k : ι → ℕ) :
-    multinomialWeight p k ≠ ∞ := by
+theorem multinomialWeight_ne_top (w : ι → NNReal) (k : ι → ℕ) :
+    multinomialWeight w k ≠ ∞ := by
   rw [multinomialWeight]
   apply ENNReal.mul_ne_top
   · exact ne_of_lt (ENNReal.natCast_lt_top _)
@@ -211,7 +211,7 @@ theorem multinomialMeasure_sum_eq (n : ℕ) (p : StdSimplex NNReal ι) :
   classical
   rw [multinomialMeasure, Measure.finsetSum_apply]
   calc
-    _ = ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p k := by
+    _ = ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p.weights k := by
       apply Finset.sum_congr rfl
       intro k hk
       have hsum : ∑ i, k i = n := (Finset.mem_piAntidiag.mp hk).1
@@ -225,18 +225,18 @@ theorem integrable_multinomialMeasure {E : Type*} [NormedAddCommGroup E]
   classical
   rw [multinomialMeasure]
   exact integrable_finsetSum_measure.mpr fun k _ ↦
-    (integrable_dirac (by simp)).smul_measure (multinomialWeight_ne_top p k)
+    (integrable_dirac (by simp)).smul_measure (multinomialWeight_ne_top p.weights k)
 
 open Classical in
 /-- Integration against a multinomial law is the corresponding finite weighted sum. -/
 theorem integral_multinomialMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [CompleteSpace E] (f : (ι → ℕ) → E) (n : ℕ) (p : StdSimplex NNReal ι) :
     ∫ k, f k ∂multinomialMeasure n p =
-      ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeightReal p k • f k := by
+      ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeightReal p.weights k • f k := by
   rw [multinomialMeasure, integral_finsetSum_measure]
   · simp
   · exact fun k _ ↦
-      (integrable_dirac (by simp)).smul_measure (multinomialWeight_ne_top p k)
+      (integrable_dirac (by simp)).smul_measure (multinomialWeight_ne_top p.weights k)
 
 end Probability
 
