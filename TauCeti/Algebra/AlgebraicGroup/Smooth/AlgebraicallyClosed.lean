@@ -76,10 +76,9 @@ theorem smoothCommHopfAlgProperty_of_isAlgClosed_of_isReduced
       (RingHom.isIntegral_of_surjective _
         (ULift.algEquiv (R := k) (A := k)).symm.surjective)
       (Algebra.IsIntegral.isIntegral (R := ULift.{v} k))
-  let _ : Algebra.IsIntegral k K := ⟨by
-    change ((algebraMap (ULift.{v} k) K).comp
-      (algebraMap k (ULift.{v} k))).IsIntegral
-    exact hIntegralMap⟩
+  let _ : Algebra.IsIntegral k K := algebraMap_isIntegral_iff.mp <| by
+    rw [Algebra.compHom_algebraMap_eq]
+    exact hIntegralMap
   have hMap : Function.Bijective (algebraMap k K) :=
     IsAlgClosed.algebraMap_bijective_of_isIntegral
   have hInclude : Function.Bijective
