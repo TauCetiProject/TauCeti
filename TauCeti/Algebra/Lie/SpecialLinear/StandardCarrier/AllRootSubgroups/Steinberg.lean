@@ -186,21 +186,16 @@ theorem map_graphAutomorphismPoints_range_rootSubgroupPointsOfPair (hij : i ≠ 
     Subgroup.map (graphAutomorphismPoints r A).toMonoidHom
         (rootSubgroupPointsOfPair r hij).range =
       (rootSubgroupPointsOfPair r (Fin.rev_injective.ne hij.symm)).range := by
+  -- Rescaling the parameter by the sign, as an automorphism of `Multiplicative A`. The ring is
+  -- commutative, so `AddAut.mulRight` is multiplication by the sign on either side.
   set σ : Multiplicative A ≃* Multiplicative A :=
-    AddEquiv.toMultiplicative
-      (Multiplicative.toAdd (AddAut.mulLeft ((-1 : Aˣ) ^ ((i : ℕ) + (j : ℕ) + 1))))
-      with hσ
+    AddEquiv.toMultiplicative (AddAut.mulRight ((-1 : Aˣ) ^ ((i : ℕ) + (j : ℕ) + 1))) with hσ
   have hσ_apply (u : Multiplicative A) :
       σ u = Multiplicative.ofAdd
         ((-1 : A) ^ ((i : ℕ) + (j : ℕ) + 1) * Multiplicative.toAdd u) := by
-    rw [hσ, AddEquiv.toMultiplicative_apply_apply,
-      AddMonoidHom.toMultiplicative_apply_apply, AddEquiv.coe_toAddMonoidHom]
-    rw [show
-      (Multiplicative.toAdd (AddAut.mulLeft ((-1 : Aˣ) ^ ((i : ℕ) + (j : ℕ) + 1))))
-          (Multiplicative.toAdd u) =
-        ((-1 : Aˣ) ^ ((i : ℕ) + (j : ℕ) + 1)) • Multiplicative.toAdd u from
-      AddAut.mulLeft_apply_apply _ _]
-    rw [Units.smul_def, Units.val_pow_eq_pow_val, Units.coe_neg_one, smul_eq_mul]
+    rw [hσ, AddEquiv.toMultiplicative_apply_apply, AddMonoidHom.toMultiplicative_apply_apply,
+      AddEquiv.coe_toAddMonoidHom, AddAut.mulRight_apply, Units.val_pow_eq_pow_val,
+      Units.coe_neg_one, mul_comm]
   have hσrange : σ.toMonoidHom.range = ⊤ := MonoidHom.range_eq_top.mpr σ.surjective
   -- On the root subgroup at `ε_i - ε_j` the graph automorphism is that rescaling followed by the
   -- parametrization of the reversed root subgroup.
