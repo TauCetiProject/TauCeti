@@ -17,8 +17,8 @@ commute with a map of the scalar-extension algebras.
 
 ## Main declarations
 
-* `TauCeti.Comodule.tensorComponent`: contraction against the right factor of a tensor product.
-* `TauCeti.Comodule.tensor_eq_of_forall_tensorComponent_eq`: contractions against a free right
+* `TauCeti.TensorProduct.tensorComponent`: contraction against the right factor of a tensor product.
+* `TauCeti.TensorProduct.tensor_eq_of_forall_tensorComponent_eq`: contractions against a free right
   factor detect equality.
 * `Module.Basis.map_baseChange_repr`: applying a scalar map to a coordinate in a base-changed
   basis agrees with first mapping the tensor and then taking its coordinate.
@@ -31,7 +31,7 @@ public section
 open TensorProduct
 open scoped TensorProduct
 
-namespace TauCeti.Comodule
+namespace TauCeti.TensorProduct
 
 universe u v w
 
@@ -54,7 +54,7 @@ theorem equivFinsuppOfBasisRight_apply {ι : Type*} [DecidableEq ι]
     (b : Module.Basis ι R N) (t : M ⊗[R] N) (i : ι) :
     TensorProduct.equivFinsuppOfBasisRight b t i =
       tensorComponent (R := R) (M := M) (b.coord i) t := by
-  rw [TensorProduct.equivFinsuppOfBasisRight_apply]
+  rw [_root_.TensorProduct.equivFinsuppOfBasisRight_apply]
   rfl
 
 /-- Equality of all contractions against the right factor detects equality in a tensor product
@@ -77,7 +77,7 @@ theorem tensorComponent_zero :
   refine TensorProduct.ext' fun m n => ?_
   simp
 
-end TauCeti.Comodule
+end TauCeti.TensorProduct
 
 namespace Module.Basis
 

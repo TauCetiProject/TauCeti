@@ -32,7 +32,7 @@ weights in Lie--Kolchin arguments.
 
 ## Main declarations
 
-* `TauCeti.Comodule.groupLikeWeightSpace`: the weight space belonging to a group-like element.
+* `TauCeti.GroupLike.weightSpace`: the weight space belonging to a group-like element.
 * `TauCeti.Comodule.iSupIndep_groupLikeWeightSpace`: distinct group-like weight spaces are
   independent.
 * `TauCeti.Comodule.finite_setOf_groupLikeWeightSpace_ne_bot`: a Noetherian comodule has only
@@ -53,7 +53,7 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti.Comodule
+namespace TauCeti
 
 universe u v w x
 
@@ -68,35 +68,37 @@ variable [AddCommMonoid N] [Module R N] [Comodule R C N]
 
 /-- The weight space of a group-like element `c` consists of the vectors with coaction
 `m ↦ m ⊗ c`. -/
-def groupLikeWeightSpace (c : GroupLike R C) : Submodule R M :=
-  LinearMap.eqLocus (coact (R := R) (C := C) (M := M))
+def GroupLike.weightSpace (c : _root_.GroupLike R C) : Submodule R M :=
+  LinearMap.eqLocus (Comodule.coact (R := R) (C := C) (M := M))
     ((TensorProduct.mk R M C).flip c.val)
+
+namespace Comodule
 
 /-- The group-like elements whose weight space in a comodule is nonzero. -/
 abbrev NonzeroGroupLikeWeight (R : Type u) (C : Type v) (M : Type w)
     [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
     [AddCommMonoid M] [Module R M] [Comodule R C M] :=
-  {c : GroupLike R C // groupLikeWeightSpace (M := M) c ≠ ⊥}
+  {c : GroupLike R C // GroupLike.weightSpace (M := M) c ≠ ⊥}
 
 /-- Membership in a group-like weight space is the corresponding coaction equation. -/
 @[simp]
 theorem mem_groupLikeWeightSpace {c : GroupLike R C} {m : M} :
-    m ∈ groupLikeWeightSpace (M := M) c ↔
+    m ∈ GroupLike.weightSpace (M := M) c ↔
       coact (R := R) (C := C) m = m ⊗ₜ[R] c.val :=
   LinearMap.mem_eqLocus
 
 /-- A comodule morphism preserves every group-like weight space. -/
 theorem Hom.map_mem_groupLikeWeightSpace (f : Hom R C M N) {c : GroupLike R C} {m : M}
-    (hm : m ∈ groupLikeWeightSpace (M := M) c) :
-    f m ∈ groupLikeWeightSpace (M := N) c := by
+    (hm : m ∈ GroupLike.weightSpace (M := M) c) :
+    f m ∈ GroupLike.weightSpace (M := N) c := by
   rw [mem_groupLikeWeightSpace] at hm ⊢
   rw [← f.map_coact_apply, hm, TensorProduct.map_tmul]
   rfl
 
 /-- A comodule morphism maps each group-like weight space into the same weight space. -/
 theorem Hom.map_groupLikeWeightSpace_le (f : Hom R C M N) (c : GroupLike R C) :
-    (groupLikeWeightSpace (M := M) c).map f.toLinearMap ≤
-      groupLikeWeightSpace (M := N) c := by
+    (GroupLike.weightSpace (M := M) c).map f.toLinearMap ≤
+      GroupLike.weightSpace (M := N) c := by
   rintro _ ⟨m, hm, rfl⟩
   exact f.map_mem_groupLikeWeightSpace hm
 
@@ -104,18 +106,51 @@ theorem Hom.map_groupLikeWeightSpace_le (f : Hom R C M N) (c : GroupLike R C) :
 nonzero. -/
 theorem hasNonzeroWeightVector_iff_exists_groupLikeWeightSpace_ne_bot :
     HasNonzeroWeightVector R C M ↔
-      ∃ c : GroupLike R C, groupLikeWeightSpace (M := M) c ≠ ⊥ := by
+      ∃ c : GroupLike R C, GroupLike.weightSpace (M := M) c ≠ ⊥ := by
   rw [hasNonzeroWeightVector_iff]
   constructor
   · rintro ⟨m, c, hm, hc, hcoact⟩
     refine ⟨⟨c, hc⟩, ?_⟩
-    exact (groupLikeWeightSpace (M := M) ⟨c, hc⟩).ne_bot_iff.mpr
+    exact (GroupLike.weightSpace (M := M) ⟨c, hc⟩).ne_bot_iff.mpr
       ⟨m, mem_groupLikeWeightSpace.mpr hcoact, hm⟩
   · rintro ⟨c, hc⟩
-    obtain ⟨m, hm, hm0⟩ := (groupLikeWeightSpace (M := M) c).ne_bot_iff.mp hc
+    obtain ⟨m, hm, hm0⟩ := (GroupLike.weightSpace (M := M) c).ne_bot_iff.mp hc
     exact ⟨m, c.val, hm0, c.isGroupLikeElem_val, mem_groupLikeWeightSpace.mp hm⟩
 
+end Comodule
+
 end Semiring
+
+namespace Comodule
+
+section Free
+
+variable {k : Type u} {C : Type v} {M : Type w}
+variable [CommSemiring k] [AddCommMonoid C] [Module k C] [Coalgebra k C] [Module.Free k C]
+variable [AddCommMonoid M] [Module k M] [Comodule k C M]
+
+/-- A vector has weight `c` exactly when every component of its coaction has eigenvalue obtained
+by evaluating the component functional at `c`. -/
+theorem mem_groupLikeWeightSpace_iff_forall_coactComponent_eq_smul
+    {c : GroupLike k C} {m : M} :
+    m ∈ GroupLike.weightSpace (M := M) c ↔
+      ∀ φ : Module.Dual k C,
+        coactComponent (R := k) (C := C) (M := M) φ m = φ c.val • m := by
+  constructor
+  · intro hm φ
+    rw [coactComponent_apply, mem_groupLikeWeightSpace.mp hm,
+      TensorProduct.tensorComponent_tmul]
+  · intro hm
+    rw [mem_groupLikeWeightSpace]
+    apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
+    intro φ
+    rw [← coactComponent_apply, hm φ, TensorProduct.tensorComponent_tmul]
+
+end Free
+
+end Comodule
+
+namespace GroupLike
 
 section Free
 
@@ -123,32 +158,21 @@ variable {k : Type u} {C : Type v} {M : Type w}
 variable [CommRing k] [AddCommGroup C] [Module k C] [Coalgebra k C] [Module.Free k C]
 variable [AddCommGroup M] [Module k M] [Comodule k C M]
 
-/-- A vector has weight `c` exactly when every component of its coaction has eigenvalue obtained
-by evaluating the component functional at `c`. -/
-theorem mem_groupLikeWeightSpace_iff_forall_coactComponent_eq_smul
-    {c : GroupLike k C} {m : M} :
-    m ∈ groupLikeWeightSpace (M := M) c ↔
-      ∀ φ : Module.Dual k C,
-        coactComponent (R := k) (C := C) (M := M) φ m = φ c.val • m := by
-  constructor
-  · intro hm φ
-    rw [coactComponent_apply, mem_groupLikeWeightSpace.mp hm, tensorComponent_tmul]
-  · intro hm
-    rw [mem_groupLikeWeightSpace]
-    apply tensor_eq_of_forall_tensorComponent_eq
-    intro φ
-    rw [← coactComponent_apply, hm φ, tensorComponent_tmul]
-
 /-- A group-like weight space is the joint eigenspace of all components of the coaction. -/
-theorem groupLikeWeightSpace_eq_iInf_eigenspace (c : GroupLike k C) :
-    groupLikeWeightSpace (M := M) c =
+theorem weightSpace_eq_iInf_eigenspace (c : _root_.GroupLike k C) :
+    weightSpace (M := M) c =
       ⨅ φ : Module.Dual k C,
-        Module.End.eigenspace (coactComponent (R := k) (C := C) (M := M) φ) (φ c.val) := by
+        Module.End.eigenspace (Comodule.coactComponent (R := k) (C := C) (M := M) φ)
+          (φ c.val) := by
   ext m
-  rw [mem_groupLikeWeightSpace_iff_forall_coactComponent_eq_smul]
+  rw [Comodule.mem_groupLikeWeightSpace_iff_forall_coactComponent_eq_smul]
   simp only [Submodule.mem_iInf, Module.End.mem_eigenspace_iff]
 
 end Free
+
+end GroupLike
+
+namespace Comodule
 
 section Domain
 
@@ -160,7 +184,7 @@ variable [Comodule k C M]
 /-- The group-like weight spaces of a torsion-free comodule over a domain are
 supremum-independent. -/
 theorem iSupIndep_groupLikeWeightSpace :
-    iSupIndep (groupLikeWeightSpace (M := M) : GroupLike k C → Submodule k M) := by
+    iSupIndep (GroupLike.weightSpace (M := M) : GroupLike k C → Submodule k M) := by
   have h := iSupIndep_iInf_eigenspace
     (fun φ : Module.Dual k C ↦
       (coactComponent (R := k) (C := C) (M := M) φ : Module.End k M))
@@ -177,20 +201,20 @@ theorem iSupIndep_groupLikeWeightSpace :
         ⨅ φ : Module.Dual k C,
           Module.End.eigenspace (coactComponent (R := k) (C := C) (M := M) φ) (χ φ)) ∘
           fun c : GroupLike k C ↦ fun φ : Module.Dual k C ↦ φ c.val) =
-        (groupLikeWeightSpace (M := M) : GroupLike k C → Submodule k M) := by
+        (GroupLike.weightSpace (M := M) : GroupLike k C → Submodule k M) := by
     funext c
-    exact (groupLikeWeightSpace_eq_iInf_eigenspace c).symm
+    exact (GroupLike.weightSpace_eq_iInf_eigenspace c).symm
   rw [hfamily] at hc
   exact hc
 
 /-- Weight spaces belonging to distinct group-like elements are disjoint. -/
 theorem disjoint_groupLikeWeightSpace {c d : GroupLike k C} (hcd : c ≠ d) :
-    Disjoint (groupLikeWeightSpace (M := M) c) (groupLikeWeightSpace (M := M) d) :=
+    Disjoint (GroupLike.weightSpace (M := M) c) (GroupLike.weightSpace (M := M) d) :=
   iSupIndep_groupLikeWeightSpace.pairwiseDisjoint hcd
 
 /-- A Noetherian comodule has only finitely many nonzero group-like weight spaces. -/
 theorem finite_setOf_groupLikeWeightSpace_ne_bot [IsNoetherian k M] :
-    {c : GroupLike k C | groupLikeWeightSpace (M := M) c ≠ ⊥}.Finite :=
+    {c : GroupLike k C | GroupLike.weightSpace (M := M) c ≠ ⊥}.Finite :=
   Submodule.finite_ne_bot_of_iSupIndep iSupIndep_groupLikeWeightSpace
 
 /-- The nonzero group-like weights of a Noetherian comodule form a finite type. -/
@@ -217,6 +241,8 @@ theorem natCard_nonzeroGroupLikeWeights_le_finrank [FiniteDimensional k M] :
 
 end Field
 
+end Comodule
+
 end
 
-end TauCeti.Comodule
+end TauCeti
