@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
+public import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # Orbits of nondegenerate special orthogonal groups
@@ -47,7 +48,7 @@ private theorem exists_orthogonal_anisotropic (Q : QuadraticForm K V) (hQ : Q.No
     exact B.isCompl_span_singleton_orthogonal hByy
   have hWtop : W ≠ ⊤ := by
     intro htop
-    change K ∙ y = ⊤ at htop
+    dsimp [W] at htop
     have hy0 : y ≠ 0 := by
       intro hy0
       apply hy
@@ -56,7 +57,7 @@ private theorem exists_orthogonal_anisotropic (Q : QuadraticForm K V) (hQ : Q.No
     rw [htop, finrank_top] at hdim
     omega
   obtain ⟨z, hzorth, hzz⟩ :=
-    exists_mem_orthogonal_self_ne_zero B hB hBsymm W hWnondeg hWtop
+    TauCeti.BilinForm.exists_mem_orthogonal_self_ne_zero B hB hBsymm W hWnondeg hWtop
   refine ⟨z, ?_, ?_⟩
   · apply QuadraticMap.isOrtho_polarBilin.mp
     simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_comm] using

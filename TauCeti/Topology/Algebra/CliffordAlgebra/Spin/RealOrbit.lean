@@ -33,7 +33,7 @@ noncomputable def realCliffordSpinOrbitMap (n : ℕ) (x : realCliffordUnitLevel 
   toFun s := s • x
   continuous_toFun := by
     apply Continuous.subtype_mk ?_ _
-    simpa only [SubMulAction.val_smul, realCliffordSpinGroupZero_smul_apply] using
+    simpa only [SubMulAction.val_smul, realCliffordSpinGroupZero_smul_def] using
       continuous_spinVectorAction_apply (realCliffordForm n 0) x
 
 /-- The orbit map evaluates to the bundled unit-level Spin translate. -/
@@ -49,7 +49,7 @@ theorem coe_realCliffordSpinOrbitMap_apply (n : ℕ) (x : realCliffordUnitLevel 
     (realCliffordSpinOrbitMap n x s : Fin n → ℝ) =
       spinVectorAction (realCliffordForm n 0) s x := by
   simp only [realCliffordSpinOrbitMap, ContinuousMap.coe_mk, SubMulAction.val_smul,
-    realCliffordSpinGroupZero_smul_apply]
+    realCliffordSpinGroupZero_smul_def]
 
 /-- The compact real Spin orbit map is onto the unit level set in dimension at least two. -/
 theorem realCliffordSpinOrbitMap_surjective (n : ℕ) (hn : 2 ≤ n)

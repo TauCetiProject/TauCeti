@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 
 /-!
 # Extending left-separating subspaces by an orthogonal vector
@@ -63,6 +64,33 @@ theorem restrict_nondegenerate_sup_span_singleton
     simp [← hsum, hw0, ha]
   refine ⟨hleft, fun y hy ↦ hleft y fun z ↦ ?_⟩
   exact (hB.domRestrict S).eq_zero (hy z)
+
+section Field
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- A proper nondegenerate orthogonal complement contains a vector with nonzero self-pairing. -/
+theorem exists_mem_orthogonal_self_ne_zero
+    [FiniteDimensional K V] [Invertible (2 : K)]
+    (B : BilinForm K V) (hB : B.Nondegenerate)
+    (hBsymm : B.IsSymm) (W : Submodule K V) (hW : (B.restrict W).Nondegenerate)
+    (hne : W ≠ ⊤) :
+    ∃ x : V, x ∈ B.orthogonal W ∧ B x x ≠ 0 := by
+  have horth_ne : B.orthogonal W ≠ ⊥ :=
+    mt (B.orthogonal_eq_bot_iff hBsymm.isRefl hW hB).mp hne
+  have hcomp : IsCompl W (B.orthogonal W) :=
+    B.isCompl_orthogonal_of_restrict_nondegenerate hBsymm.isRefl hW
+  have horth_nondegenerate : (B.restrict (B.orthogonal W)).Nondegenerate := by
+    rw [B.restrict_nondegenerate_iff_isCompl_orthogonal hBsymm.isRefl,
+      B.orthogonal_orthogonal hB hBsymm.isRefl W]
+    exact hcomp.symm
+  let _ : Nontrivial (B.orthogonal W) := Submodule.nontrivial_iff_ne_bot.mpr horth_ne
+  obtain ⟨x, hxx⟩ :=
+    LinearMap.BilinForm.exists_bilinForm_self_ne_zero horth_nondegenerate.ne_zero
+      (LinearMap.BilinForm.isSymm_iff.mp (hBsymm.restrict _))
+  exact ⟨x, x.2, hxx⟩
+
+end Field
 
 end BilinForm
 

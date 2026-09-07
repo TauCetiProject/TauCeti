@@ -30,12 +30,14 @@ universe u
 
 variable {V : Type u} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
 
+/-- The compact real Spin action on `Fin n → ℝ`, induced by
+`spinToOrthogonal (realCliffordForm n 0)`. -/
 noncomputable instance instMulActionRealCliffordSpinGroupZero (n : ℕ) :
     MulAction (realCliffordSpinGroupZero n) (Fin n → ℝ) :=
   MulAction.compHom _ (spinToOrthogonal (realCliffordForm n 0))
 
 /-- The compact real Spin action is the usual vector action. -/
-theorem realCliffordSpinGroupZero_smul_apply (n : ℕ)
+theorem realCliffordSpinGroupZero_smul_def (n : ℕ)
     (s : realCliffordSpinGroupZero n) (x : Fin n → ℝ) :
     s • x = spinVectorAction (realCliffordForm n 0) s x := by
   rw [MulAction.compHom_smul_def]
@@ -46,7 +48,7 @@ noncomputable def realCliffordUnitLevel (n : ℕ) :
     SubMulAction (realCliffordSpinGroupZero n) (Fin n → ℝ) where
   carrier := {x | realCliffordForm n 0 x = 1}
   smul_mem' s x hx := by
-    rw [realCliffordSpinGroupZero_smul_apply]
+    rw [realCliffordSpinGroupZero_smul_def]
     exact (spinVectorAction_map_app (realCliffordForm n 0) s x).trans hx
 
 /-- Membership in the unit quadratic level is exactly its defining equation. -/
@@ -88,7 +90,7 @@ theorem realCliffordUnitLevel_isPretransitive (n : ℕ) (hn : 2 ≤ n) :
     obtain ⟨s, hs⟩ :=
       exists_realCliffordSpinGroupZero_spinVectorAction_eq n hn x.2 y.2
     exact ⟨s, Subtype.ext (by
-      simpa only [SubMulAction.val_smul, realCliffordSpinGroupZero_smul_apply] using hs)⟩
+      simpa only [SubMulAction.val_smul, realCliffordSpinGroupZero_smul_def] using hs)⟩
 
 end
 
