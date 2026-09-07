@@ -39,13 +39,13 @@ first pairs with the third and the second with the fourth, matching
 
 ## Where characteristic two enters
 
-Multiplicativity is Cauchy--Binet, `Matrix.pairMinor_mul`, which expands a minor of a product
-over all six index pairs. Four of the six terms assemble the product of the two minor matrices;
-the other two involve the pairs `(0,2)` and `(1,3)` carrying the form. The symplectic condition
-makes those two minors cancel in pairs, once along rows and once along columns
-(`TauCeti.pairMinor_row` and `TauCeti.pairMinor_column_eq_zero`), and what is left of the
-two extra terms is `2` times a product of minors. That is the only place the hypothesis is used,
-and it is why the construction has no counterpart in odd characteristic.
+Multiplicativity is Cauchy--Binet, `Matrix.pairMinor_mul_fin_four`, which expands a minor of a
+product over all six index pairs. Four of the six terms assemble the product of the two minor
+matrices; the other two involve the pairs `(0,2)` and `(1,3)` carrying the form. The symplectic
+condition makes those two minors cancel in pairs, once along rows and once along columns
+(`TauCeti.pairMinor_row` and `TauCeti.pairMinor_column`), and what is left of the two extra terms
+is `2` times a product of minors. That is the only place the hypothesis is used, and it is why the
+construction has no counterpart in odd characteristic.
 
 That `τ g` is again symplectic is deduced rather than computed: `τ` commutes with the symplectic
 adjoint `M ↦ -(J Mᵀ J)` in characteristic two, and for a symplectic `g` that adjoint is the
@@ -75,11 +75,8 @@ alone; the square relation is a consequence of that pinning rather than the defi
 
 ## Main results
 
-* `Matrix.pairMinor_mul`: Cauchy--Binet for `2 × 2` minors of a `4 × 4` product.
-* `TauCeti.mem_symplecticGroup_submatrix`: a matrix preserving the transported form is symplectic
-  in Mathlib's sum-indexed coordinates, which is how everything the symplectic condition gives
-  beyond the two minor identities is read off rather than reproved.
-* `TauCeti.pairMinor_row` and `TauCeti.pairMinor_column_eq_zero`: the symplectic condition read on
+* `Matrix.pairMinor_mul_fin_four`: Cauchy--Binet for `2 × 2` minors of a `4 × 4` product.
+* `TauCeti.pairMinor_row` and `TauCeti.pairMinor_column`: the symplectic condition read on
   minors, along rows and along columns.
 * `Matrix.symplecticSpecialIsogeny_mul`: multiplicativity on symplectic matrices in characteristic
   two.
@@ -131,40 +128,7 @@ theorem jFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 
   fin_cases i <;> fin_cases j <;>
     simp [e0, e1, e2, e3, Matrix.J, Matrix.fromBlocks]
 
-/-- The transported alternating form squares to `-1`, which is Mathlib's `Matrix.J_squared` read
-through the reindexing. -/
-theorem jFin_two_mul_self : JFin 2 R * JFin 2 R = -1 := by
-  have h : ((JFin 2 R).submatrix finSumFinEquiv finSumFinEquiv) *
-      ((JFin 2 R).submatrix finSumFinEquiv finSumFinEquiv) = -1 := by
-    rw [JFin_submatrix]
-    exact Matrix.J_squared (Fin 2) R
-  rw [Matrix.submatrix_mul_equiv] at h
-  have hone : ((-1 : Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) R).submatrix finSumFinEquiv.symm
-      finSumFinEquiv.symm) = (-1 : Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) := by
-    ext a b
-    simp [Matrix.one_apply, finSumFinEquiv.symm.injective.eq_iff]
-  have h' := congrArg (fun M => M.submatrix finSumFinEquiv.symm finSumFinEquiv.symm) h
-  simpa [Matrix.submatrix_submatrix, hone] using h'
-
 variable {g : Matrix (Fin 4) (Fin 4) R}
-
-/-- A matrix preserving the transported alternating form is a symplectic matrix in Mathlib's
-sum-indexed coordinates. Everything this file needs from the symplectic condition beyond the two
-minor identities is read off through this reindexing rather than reproved. -/
-theorem mem_symplecticGroup_submatrix (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
-    g.submatrix finSumFinEquiv finSumFinEquiv ∈ Matrix.symplecticGroup (Fin 2) R := by
-  rw [SymplecticGroup.mem_iff, ← JFin_submatrix 2 (R := R), Matrix.transpose_submatrix,
-    Matrix.submatrix_mul_equiv, Matrix.submatrix_mul_equiv, hg]
-
-/-- The column form of the symplectic condition, which is Mathlib's `SymplecticGroup.mem_iff'`
-read through the reindexing. -/
-theorem transpose_mul_jFin_mul_self (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
-    gᵀ * JFin 2 R * g = JFin 2 R := by
-  have h := SymplecticGroup.mem_iff'.mp (mem_symplecticGroup_submatrix hg)
-  rw [← JFin_submatrix 2 (R := R), Matrix.transpose_submatrix, Matrix.submatrix_mul_equiv,
-    Matrix.submatrix_mul_equiv] at h
-  have h' := congrArg (fun M => M.submatrix finSumFinEquiv.symm finSumFinEquiv.symm) h
-  simpa only [Matrix.submatrix_submatrix, Equiv.self_comp_symm, Matrix.submatrix_id_id] using h'
 
 /-- **The symplectic condition, read on minors.** The two minors supported by the form on a fixed
 row pair sum to the corresponding entry of the form. -/
@@ -175,14 +139,13 @@ theorem pairMinor_row (hg : g * JFin 2 R * gᵀ = JFin 2 R) (p : Fin 4 × Fin 4)
     pairMinor_eq] at h ⊢
   linear_combination -h
 
-/-- The column identity: the two `J`-supported minors on a fixed column pair cancel. -/
-theorem pairMinor_column_eq_zero (hg : g * JFin 2 R * gᵀ = JFin 2 R)
-    (q : Fin 4 × Fin 4) (hq : JFin 2 R q.1 q.2 = 0) :
-    pairMinor g (0, 2) q + pairMinor g (1, 3) q = 0 := by
-  have h := congrFun (congrFun (transpose_mul_jFin_mul_self hg) q.1) q.2
-  rw [hq] at h
-  simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, jFin_two_eq] at h
-  simp only [pairMinor_eq]
+/-- **The symplectic condition, read on minors along columns.** The two minors supported by the
+form on a fixed column pair sum to the corresponding entry of the form. -/
+theorem pairMinor_column (hg : g * JFin 2 R * gᵀ = JFin 2 R) (q : Fin 4 × Fin 4) :
+    pairMinor g (0, 2) q + pairMinor g (1, 3) q = -JFin 2 R q.1 q.2 := by
+  have h := congrFun (congrFun (transpose_mul_JFin_mul_self (m := 2) hg) q.1) q.2
+  simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, jFin_two_eq,
+    pairMinor_eq] at h ⊢
   linear_combination -h
 
 /-! ### The special isogeny on matrices -/
@@ -203,6 +166,7 @@ def specialIsogenyPair : Fin 4 → Fin 4 × Fin 4 := ![(0, 1), (0, 3), (2, 3), (
   rw [specialIsogenyPair]; rfl
 
 /-- The `J`-supported pairs are exactly the two omitted ones. -/
+@[simp]
 theorem jFin_specialIsogenyPair (i : Fin 4) :
     JFin 2 R (specialIsogenyPair i).1 (specialIsogenyPair i).2 = 0 := by
   fin_cases i <;> simp [specialIsogenyPair, jFin_two_eq]
@@ -246,8 +210,9 @@ theorem symplecticSpecialIsogeny_mul [CharP R 2] {g h : Matrix (Fin 4) (Fin 4) R
   ext i j
   have hgp := pairMinor_row hg (specialIsogenyPair i)
   rw [jFin_specialIsogenyPair i, neg_zero] at hgp
-  have hhq := pairMinor_column_eq_zero hh (specialIsogenyPair j) (jFin_specialIsogenyPair j)
-  rw [symplecticSpecialIsogeny_apply, pairMinor_mul, Matrix.mul_apply, Fin.sum_univ_four]
+  have hhq := pairMinor_column hh (specialIsogenyPair j)
+  rw [jFin_specialIsogenyPair j, neg_zero] at hhq
+  rw [symplecticSpecialIsogeny_apply, pairMinor_mul_fin_four, Matrix.mul_apply, Fin.sum_univ_four]
   simp only [symplecticSpecialIsogeny_apply, specialIsogenyPair_zero, specialIsogenyPair_one,
     specialIsogenyPair_two, specialIsogenyPair_three]
   linear_combination pairMinor g (specialIsogenyPair i) (0, 2) * hhq -
@@ -282,10 +247,10 @@ theorem symplecticSpecialIsogeny_mul_jFin_mul_transpose [CharP R 2]
     (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
     symplecticSpecialIsogeny g * JFin 2 R * (symplecticSpecialIsogeny g)ᵀ = JFin 2 R := by
   -- The adjoint is the inverse, and an inverse of a symplectic matrix is symplectic. Both are
-  -- one-step consequences of `hg` and `jFin_two_mul_self` in these coordinates, and are used only
+  -- one-step consequences of `hg` and `JFin_mul_self` in these coordinates, and are used only
   -- here, so they are `have`s rather than declarations restating Mathlib's `SymplecticGroup` API.
   have hgh : g * -(JFin 2 R * gᵀ * JFin 2 R) = 1 := by
-    rw [mul_neg, ← mul_assoc, ← mul_assoc, hg, jFin_two_mul_self, neg_neg]
+    rw [mul_neg, ← mul_assoc, ← mul_assoc, hg, JFin_mul_self, neg_neg]
   have hhg : -(JFin 2 R * gᵀ * JFin 2 R) * g = 1 := mul_eq_one_comm.mp hgh
   have hh : -(JFin 2 R * gᵀ * JFin 2 R) * JFin 2 R * (-(JFin 2 R * gᵀ * JFin 2 R))ᵀ =
       JFin 2 R := by
@@ -303,17 +268,17 @@ theorem symplecticSpecialIsogeny_mul_jFin_mul_transpose [CharP R 2]
       (JFin 2 R * (symplecticSpecialIsogeny g)ᵀ * JFin 2 R) = -1 := neg_eq_iff_eq_neg.mp hmul
   have key : symplecticSpecialIsogeny g * JFin 2 R * (symplecticSpecialIsogeny g)ᵀ * JFin 2 R =
       JFin 2 R * JFin 2 R := by
-    rw [jFin_two_mul_self, ← h1]
+    rw [JFin_mul_self, ← h1]
     noncomm_ring
   have hJinv : JFin 2 R * -JFin 2 R = 1 := by
-    rw [Matrix.mul_neg, jFin_two_mul_self, neg_neg]
+    rw [Matrix.mul_neg, JFin_mul_self, neg_neg]
   calc symplecticSpecialIsogeny g * JFin 2 R * (symplecticSpecialIsogeny g)ᵀ
       = symplecticSpecialIsogeny g * JFin 2 R * (symplecticSpecialIsogeny g)ᵀ *
           (JFin 2 R * -JFin 2 R) := by rw [hJinv, Matrix.mul_one]
     _ = symplecticSpecialIsogeny g * JFin 2 R * (symplecticSpecialIsogeny g)ᵀ * JFin 2 R *
           -JFin 2 R := by noncomm_ring
     _ = JFin 2 R * JFin 2 R * -JFin 2 R := by rw [key]
-    _ = JFin 2 R := by rw [jFin_two_mul_self]; simp
+    _ = JFin 2 R := by rw [JFin_mul_self]; simp
 
 /-- The minor formula commutes with entrywise application of a ring morphism. -/
 @[simp]
@@ -342,6 +307,11 @@ theorem symplecticSpecialIsogeny_symplecticSpecialIsogeny [CharP R 2]
     simp only [symplecticSpecialIsogeny_apply, specialIsogenyPair_zero, specialIsogenyPair_one,
       specialIsogenyPair_two, specialIsogenyPair_three, pairMinor_eq, Matrix.map_apply,
       Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk]
+  -- The sixteen entries are grouped by the row of the output. The entry at `(i, j)` is a quartic
+  -- in the entries of `g`, and reducing it to `g i j ^ 2` takes three of the six row identities
+  -- above together with `2 = 0`; which three depends only on `i`, so each group of four shares
+  -- them and differs only in the column. Each certificate below is that combination written out.
+  -- Row `0`: the identities on the row pairs `(0,1)`, `(0,3)` and `(1,3)`.
   · linear_combination (g 0 0 * g 3 0) * h01 + (g 0 0 * g 1 0) * h03 + (g 0 0^2) * h13 + (-g 0 0^2
       * g 1 0 * g 3 2 - g 0 0 * g 0 1 * g 1 0 * g 3 3 + g 0 0 * g 0 2 * g 1 0 * g 3 0 + g 0 0 *
       g 0 3 * g 1 0 * g 3 1) * h2
@@ -354,6 +324,7 @@ theorem symplecticSpecialIsogeny_symplecticSpecialIsogeny [CharP R 2]
   · linear_combination (g 0 3 * g 3 3) * h01 + (g 0 3 * g 1 3) * h03 + (g 0 3^2) * h13 + (-g 0 0 *
       g 0 3 * g 1 3 * g 3 2 - g 0 1 * g 0 3 * g 1 3 * g 3 3 + g 0 2 * g 0 3 * g 1 3 * g 3 0 +
       g 0 3^2 * g 1 3 * g 3 1) * h2
+  -- Row `1`: the identities on the row pairs `(0,1)`, `(0,2)` and `(1,2)`.
   · linear_combination (g 1 0 * g 2 0) * h01 + (g 1 0^2) * h02 + (g 0 0 * g 1 0) * h12 + (-g 0 0 *
       g 1 0^2 * g 2 2 - g 0 1 * g 1 0^2 * g 2 3 + g 0 2 * g 1 0^2 * g 2 0 + g 0 3 * g 1 0^2 *
       g 2 1) * h2
@@ -366,6 +337,7 @@ theorem symplecticSpecialIsogeny_symplecticSpecialIsogeny [CharP R 2]
   · linear_combination (g 1 3 * g 2 3) * h01 + (g 1 3^2) * h02 + (g 0 3 * g 1 3) * h12 + (-g 0 0 *
       g 1 3^2 * g 2 2 - g 0 1 * g 1 3^2 * g 2 3 + g 0 2 * g 1 3^2 * g 2 0 + g 0 3 * g 1 3^2 *
       g 2 1) * h2
+  -- Row `2`: the identities on the row pairs `(1,2)`, `(1,3)` and `(2,3)`.
   · linear_combination (g 2 0 * g 3 0) * h12 + (g 2 0^2) * h13 + (g 1 0 * g 2 0) * h23 + (-g 1 0 *
       g 2 0^2 * g 3 2 - g 1 0 * g 2 0 * g 2 1 * g 3 3 + g 1 0 * g 2 0 * g 2 3 * g 3 1 - g 1 1 *
       g 2 0 * g 2 3 * g 3 0 + g 1 2 * g 2 0^2 * g 3 0 + g 1 3 * g 2 0 * g 2 1 * g 3 0) * h2
@@ -378,6 +350,7 @@ theorem symplecticSpecialIsogeny_symplecticSpecialIsogeny [CharP R 2]
   · linear_combination (g 2 3 * g 3 3) * h12 + (g 2 3^2) * h13 + (g 1 3 * g 2 3) * h23 + (-g 1 0 *
       g 2 2 * g 2 3 * g 3 3 - g 1 1 * g 2 3^2 * g 3 3 + g 1 2 * g 2 0 * g 2 3 * g 3 3 - g 1 3 *
       g 2 0 * g 2 3 * g 3 2 + g 1 3 * g 2 2 * g 2 3 * g 3 0 + g 1 3 * g 2 3^2 * g 3 1) * h2
+  -- Row `3`: the identities on the row pairs `(0,2)`, `(0,3)` and `(2,3)`.
   · linear_combination (g 3 0^2) * h02 + (g 2 0 * g 3 0) * h03 + (g 0 0 * g 3 0) * h23 + (-g 0 0 *
       g 2 0 * g 3 0 * g 3 2 - g 0 1 * g 2 0 * g 3 0 * g 3 3 + g 0 2 * g 2 0 * g 3 0^2 + g 0 3 *
       g 2 0 * g 3 0 * g 3 1) * h2
