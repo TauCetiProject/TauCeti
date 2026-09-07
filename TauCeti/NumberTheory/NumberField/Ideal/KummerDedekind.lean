@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Ideal.KummerDedekind
-import Mathlib.Algebra.CharP.Two
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Factorization
 
 /-!

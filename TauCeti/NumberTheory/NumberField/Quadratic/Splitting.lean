@@ -229,9 +229,12 @@ theorem ncard_primesOver_two_of_mod_four_eq_one {θ : 𝓞 K} {d : ℤ}
     exponent_eq_one_iff.mpr (adjoin_halfGen_eq_top_of_mod_four_eq_one hmin hgen hsf hd4)
   rw [ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add (minpoly_halfGen hmin hd4)
     (by rw [hexp]; norm_num)]
+  -- `(1 - d)/4` is even exactly when `d ≡ 1 (mod 8)`, given `d ≡ 1 (mod 4)`.
   by_cases hd8 : d % 8 = 1
-  · rw [ite_eq_left hd8, ite_eq_left (show 2 ∣ (1 - d) / 4 by omega)]
-  · rw [ite_eq_right hd8, ite_eq_right (show ¬ 2 ∣ (1 - d) / 4 by omega)]
+  · have hc : 2 ∣ (1 - d) / 4 := by omega
+    rw [ite_eq_left hd8, ite_eq_left hc]
+  · have hc : ¬ 2 ∣ (1 - d) / 4 := by omega
+    rw [ite_eq_right hd8, ite_eq_right hc]
 
 /-- **The splitting law at `2` for `d ≡ 1 (mod 4)`.** For `K = ℚ(√d)` with `d` squarefree and
 `d ≡ 1 (mod 4)`, the prime `2` splits completely in `K` if and only if `d ≡ 1 (mod 8)`. -/
