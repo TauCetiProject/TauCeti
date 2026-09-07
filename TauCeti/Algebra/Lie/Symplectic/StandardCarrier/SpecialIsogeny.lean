@@ -178,10 +178,9 @@ theorem specialIsogeny_rootSubgroupPoints_inl_zero (t : K) :
   apply Subtype.ext
   rw [coe_specialIsogeny_gl, shortRootUnit_eq,
     TauCeti.specialIsogeny_differenceShortRootUnit]
-  have h := congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
-    (longRootUnit_eq K (t ^ 2))
-  rw [coe_pointsMulEquivGLSymplecticFin_apply] at h
-  exact h.symm
+  simpa only [coe_pointsMulEquivGLSymplecticFin_apply] using
+    congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
+      (longRootUnit_eq K (t ^ 2)).symm
 
 /-- The isogeny carries the long simple root subgroup to the short one, keeping the parameter. -/
 @[simp]
@@ -191,10 +190,9 @@ theorem specialIsogeny_rootSubgroupPoints_inl_last (t : K) :
   apply Subtype.ext
   rw [coe_specialIsogeny_gl, longRootUnit_eq,
     TauCeti.specialIsogeny_positiveLongRootTransvectionUnit]
-  have h := congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
-    (shortRootUnit_eq K t)
-  rw [coe_pointsMulEquivGLSymplecticFin_apply] at h
-  exact h.symm
+  simpa only [coe_pointsMulEquivGLSymplecticFin_apply] using
+    congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
+      (shortRootUnit_eq K t).symm
 
 omit [CharP K 2] in
 private theorem negShortRootUnit_eq (t : K) :
@@ -227,10 +225,9 @@ theorem specialIsogeny_rootSubgroupPoints_inr_zero (t : K) :
   apply Subtype.ext
   rw [coe_specialIsogeny_gl, negShortRootUnit_eq,
     TauCeti.specialIsogeny_differenceShortRootUnit_one_zero]
-  have h := congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
-    (negLongRootUnit_eq K (t ^ 2))
-  rw [coe_pointsMulEquivGLSymplecticFin_apply] at h
-  exact h.symm
+  simpa only [coe_pointsMulEquivGLSymplecticFin_apply] using
+    congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
+      (negLongRootUnit_eq K (t ^ 2)).symm
 
 /-- The isogeny on the negative long simple root subgroup. -/
 @[simp]
@@ -240,9 +237,8 @@ theorem specialIsogeny_rootSubgroupPoints_inr_last (t : K) :
   apply Subtype.ext
   rw [coe_specialIsogeny_gl, negLongRootUnit_eq,
     TauCeti.specialIsogeny_negativeLongRootTransvectionUnit]
-  have h := congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
-    (negShortRootUnit_eq K t)
-  rw [coe_pointsMulEquivGLSymplecticFin_apply] at h
-  exact h.symm
+  simpa only [coe_pointsMulEquivGLSymplecticFin_apply] using
+    congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
+      (negShortRootUnit_eq K t).symm
 
 end TauCeti.SpStd
