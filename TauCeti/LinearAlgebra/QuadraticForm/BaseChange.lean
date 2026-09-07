@@ -143,9 +143,11 @@ variable {V : Type uM} [AddCommGroup V] [Module K V]
 
 /-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after extending its
 base field. -/
-theorem Nondegenerate.baseChange [Invertible (2 : K)] [Invertible (2 : L)]
+theorem Nondegenerate.baseChange [Invertible (2 : K)]
     [FiniteDimensional K V] {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) :
     (Q.baseChange L).Nondegenerate := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   let b := Module.Free.chooseBasis K V
   rw [← QuadraticMap.nondegenerate_associated_iff]
   rw [_root_.QuadraticForm.associated_baseChange]
