@@ -49,8 +49,6 @@ of squares of independent standard Gaussian coordinates, live in
 * R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Wiley (1982), Theorem 1.2.6
   (the multivariate Gaussian) and Theorem 3.2.3 (the Wishart moment-generating function, which
   is the product of these).
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 3,
-  **Gaussian quadratic forms**.
 -/
 
 public section

@@ -26,7 +26,7 @@ under the square root of its matrix parameter.
 ## References
 
 * Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 1,
-  **Covariance matrices**, and Layer 5, item 3, **Gaussian quadratic forms**.
+  **Covariance matrices**.
 -/
 
 public section
