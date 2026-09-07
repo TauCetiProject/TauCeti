@@ -202,6 +202,19 @@ run_lean() {
   fi
 }
 
+# Each driver's wall clock, so the margin against the watchdog deadline is visible
+# in the log before it reaches zero rather than only once a build turns red.
+# Call this OUTSIDE the caller's redirect: both drivers have their stdout AND stderr
+# captured into a file that step 4 parses fail-closed, and a stray line there is
+# either a forged-report suspect or an unattributed violation.
+report_elapsed() {
+  if [ -n "${WATCHDOG_TOOLCHAIN:-}" ]; then
+    echo "lint-env: $1 took $((SECONDS - $2))s of its ${TAUCETI_LEAN_TIMEOUT_SECONDS:-300}s watchdog deadline."
+  else
+    echo "lint-env: $1 took $((SECONDS - $2))s (no watchdog deadline outside the sandboxed build)."
+  fi
+}
+
 fail() { echo "::error::lint-env: $*"; echo "LINT-ENV: FAIL — $*"; exit 1; }
 
 TMP="$(mktemp -d)" || fail "mktemp failed"
@@ -351,7 +364,10 @@ run_meta do
 EOF
 } > "$DOCDRIVER"
 
-if ! run_lean "$DOCDRIVER" > "$TMP/docscan.txt" 2>&1; then
+t0=$SECONDS
+run_lean "$DOCDRIVER" > "$TMP/docscan.txt" 2>&1 && docstatus=0 || docstatus=$?
+report_elapsed "docstring-scan driver" "$t0"
+if [ "$docstatus" -ne 0 ]; then
   cat "$TMP/docscan.txt"
   fail "driver failure: the docstring-scan driver did not elaborate cleanly — see output above"
 fi
@@ -467,11 +483,13 @@ fi
 } > "$DRIVER"
 
 # --- 3. elaborate it (exit 1 from lean is EXPECTED when the linters report) -------
+t0=$SECONDS
 if run_lean "$DRIVER" > "$TMP/out.txt" 2>&1; then
   status=0
 else
   status=$?
 fi
+report_elapsed "lint driver" "$t0"
 
 # --- 4. locate the linter report and parse it fail-closed -------------------------
 # Two genuine header shapes (see SECURITY MODEL): N > 0 comes as an error diagnostic

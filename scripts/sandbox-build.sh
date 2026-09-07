@@ -23,8 +23,8 @@ test -d "$TRUSTED_SCRIPTS"
 # Lake normally invokes Lean directly. Route every compiler process through a
 # trusted wall-clock watchdog instead. This script and the wrapper are the
 # workflow-pinned copies, and the sandbox does not pass timeout-control variables,
-# so candidate code cannot raise or disable the 300s
-# deadline. The wrapper and Lean both remain inside the same bwrap sandbox.
+# so candidate code cannot raise or disable the deadlines set here. The wrapper and
+# Lean both remain inside the same bwrap sandbox.
 test -n "${WATCHDOG_TOOLCHAIN:-}"
 test -x "$WATCHDOG_TOOLCHAIN/bin/lean"
 export LAKE_OVERRIDE_LEAN=true
@@ -54,7 +54,14 @@ lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/ModuleSystem.lea
 # (scripts/lint-nolints-allowlist.txt) are workflow-pinned trusted copies, and its report parsing
 # is fail-closed (see the SECURITY MODEL in the script). Fails on new violations or
 # unaccounted nolints; fixed baseline entries print a ratchet reminder only.
-bash "$TRUSTED_SCRIPTS/lint-env.sh"
+#
+# Its drivers are the one pair of Lean processes whose cost scales with the whole
+# library rather than with a single module: `#lint` runs over every declaration in
+# TauCeti at once, so its runtime grows with each merged PR while the per-module
+# deadline does not. Give them a larger, still bounded one. The assignment is scoped
+# to this call, and the sandbox's --setenv allowlist keeps candidate code from
+# setting it; the script prints each driver's elapsed time against this deadline.
+TAUCETI_LEAN_TIMEOUT_SECONDS=900 bash "$TRUSTED_SCRIPTS/lint-env.sh"
 
 # Source style lint. The trusted wrapper uses the shared validated TauCeti/ module list, applies
 # Mathlib's copyright/Authors checks (excluding the deliberately empty root), and generates the
