@@ -223,15 +223,11 @@ theorem twistedHeckeSlashSum_twistedHeckeSlashSum_eq_sum_nsmul
           (D₁.out : GL (Fin 2) ℚ)⁻¹ (D.out : GL (Fin 2) ℚ)⁻¹ •
             twistedHeckeSlashSum k χ D f := by
   rw [twistedHeckeSlashSum_twistedHeckeSlashSum, ← Fintype.sum_prod_type',
-    ← Finset.sum_fiberwise_of_maps_to (g := pairCoset D₁ D₂)
-      (fun p _ ↦ Finset.mem_image_of_mem _ (Finset.mem_univ p))]
-  refine Finset.sum_congr rfl fun D _ ↦ ?_
-  rw [Finset.sum_subtype (p := fun q ↦ pairCoset D₁ D₂ q = D)
-    (Finset.univ.filter fun q ↦ pairCoset D₁ D₂ q = D) (fun q ↦ by simp)
-    fun q ↦ (delta0NebentypusChar N χ
+    TauCeti.sum_eq_sum_image_fiber (pairCoset D₁ D₂) fun q ↦ (delta0NebentypusChar N χ
       ⟨rightCosetRep D₁ q.1 * rightCosetRep D₂ q.2,
         mul_mem (rightCosetRep_mem_Delta0 D₁ q.1) (rightCosetRep_mem_Delta0 D₂ q.2)⟩ : ℂ) •
           (f ∣[k] (rightCosetRep D₁ q.1 * rightCosetRep D₂ q.2))]
+  refine Finset.sum_congr rfl fun D _ ↦ ?_
   exact sum_nebentypus_smul_slash_eq_nsmul_twistedHeckeSlashSum k χ D _ _
     (fun i ↦ pairCoset_eq_iff.mp i.2)
     (fun _ hx ↦ card_pairs_pairCoset_rightCoset_eq_multiplicity hx) f hf
