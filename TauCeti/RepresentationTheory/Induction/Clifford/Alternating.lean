@@ -30,6 +30,8 @@ A minimal inertia group is exactly what the Mackey irreducibility criterion for 
 character wants, so `Ind` of a nontrivial `χ` is irreducible; and induction from a subgroup of
 index two doubles the dimension, so what it produces is a **two-dimensional irreducible
 representation** of `Equiv.Perm α`.
+That dimension count needs nothing new: `TauCeti.finrank_indFDRep_ofLinearCharacter` and
+`alternatingGroup.index_eq_two` give it in one step wherever it is wanted.
 
 For `Nat.card α = 4` this is the `A₄ ◁ S₄` case, and it is not vacuous:
 `TauCeti.exists_monoidHom_alternatingGroup_ne_one` produces a nontrivial linear character of `A₄`
@@ -44,8 +46,6 @@ of the Clifford correspondence complementary to the one treated here.
 
 ## Main statements
 
-* `MonoidHom.finrank_indFDRep_ofLinearCharacter_alternatingGroup`: what a linear character of the
-  alternating group induces to is two-dimensional, the alternating group having index two.
 * `TauCeti.inertia_ofLinearCharacter_alternatingGroup`: **the inertia group of a nontrivial linear
   character of the alternating group is the alternating group.**
 * `TauCeti.simple_indFDRep_ofLinearCharacter_alternatingGroup`: **a nontrivial linear character of
@@ -63,21 +63,6 @@ open CategoryTheory
 universe u
 
 variable {α k : Type u} [DecidableEq α] [Fintype α] [Field k]
-
-namespace MonoidHom
-
-open TauCeti
-
-/-- **What a linear character of the alternating group induces to is two-dimensional**, the
-alternating group having index two. Together with
-`TauCeti.simple_indFDRep_ofLinearCharacter_alternatingGroup` this is a two-dimensional irreducible
-representation of the symmetric group. -/
-theorem finrank_indFDRep_ofLinearCharacter_alternatingGroup [Nontrivial α]
-    (χ : alternatingGroup α →* kˣ) :
-    Module.finrank k (indFDRep (FDRep.ofLinearCharacter (k := k) χ)) = 2 := by
-  rw [finrank_indFDRep_ofLinearCharacter, alternatingGroup.index_eq_two]
-
-end MonoidHom
 
 namespace TauCeti
 
@@ -97,8 +82,9 @@ theorem inertia_ofLinearCharacter_alternatingGroup {χ : alternatingGroup α →
 variable [IsAlgClosed k] [CharZero k]
 
 /-- **A nontrivial linear character of the alternating group induces irreducibly to the symmetric
-group.** With `MonoidHom.finrank_indFDRep_ofLinearCharacter_alternatingGroup` this exhibits a
-two-dimensional irreducible representation of the symmetric group. -/
+group.** What it induces to is two-dimensional, by `TauCeti.finrank_indFDRep_ofLinearCharacter` and
+`alternatingGroup.index_eq_two`, so this exhibits a two-dimensional irreducible representation of
+the symmetric group. -/
 theorem simple_indFDRep_ofLinearCharacter_alternatingGroup {χ : alternatingGroup α →* kˣ}
     (hχ : χ ≠ 1) : Simple (indFDRep (FDRep.ofLinearCharacter (k := k) χ)) :=
   (simple_indFDRep_ofLinearCharacter_iff χ).mpr fun _ hs =>
@@ -106,11 +92,11 @@ theorem simple_indFDRep_ofLinearCharacter_alternatingGroup {χ : alternatingGrou
 
 /- The `A₄ ◁ S₄` case, recorded without claiming a name for it: over an algebraically closed field
 of characteristic zero `A₄` has a nontrivial linear character, its inertia group in `S₄` is `A₄`,
-and what it induces to is the two-dimensional irreducible representation of `S₄`. The three
-conjuncts are `inertia_ofLinearCharacter_alternatingGroup`,
-`simple_indFDRep_ofLinearCharacter_alternatingGroup` and
-`MonoidHom.finrank_indFDRep_ofLinearCharacter_alternatingGroup` applied to a character supplied by
-`exists_monoidHom_alternatingGroup_ne_one`. -/
+and what it induces to is the two-dimensional irreducible representation of `S₄`. The conjuncts
+are `inertia_ofLinearCharacter_alternatingGroup` and
+`simple_indFDRep_ofLinearCharacter_alternatingGroup`, applied to a character supplied by
+`exists_monoidHom_alternatingGroup_ne_one`, together with `finrank_indFDRep_ofLinearCharacter` and
+`alternatingGroup.index_eq_two`. -/
 example (hα : Nat.card α = 4) :
     ∃ χ : alternatingGroup α →* kˣ,
       inertia (FDRep.ofLinearCharacter (k := k) χ) = alternatingGroup α ∧
@@ -122,8 +108,8 @@ example (hα : Nat.card α = 4) :
   have _ : NeZero ((Monoid.exponent (Abelianization (alternatingGroup α)) : ℕ) : k) :=
     ⟨Nat.cast_ne_zero.mpr Monoid.exponent_ne_zero_of_finite⟩
   obtain ⟨χ, hχ⟩ := exists_monoidHom_alternatingGroup_ne_one (α := α) k hα
-  exact ⟨χ, inertia_ofLinearCharacter_alternatingGroup hχ,
-    simple_indFDRep_ofLinearCharacter_alternatingGroup hχ,
-    χ.finrank_indFDRep_ofLinearCharacter_alternatingGroup⟩
+  refine ⟨χ, inertia_ofLinearCharacter_alternatingGroup hχ,
+    simple_indFDRep_ofLinearCharacter_alternatingGroup hχ, ?_⟩
+  rw [finrank_indFDRep_ofLinearCharacter, alternatingGroup.index_eq_two]
 
 end TauCeti

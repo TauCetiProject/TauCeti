@@ -176,8 +176,7 @@ theorem map_conjNormal_alternatingGroup_eq_inv {s : Perm α} (hs : s ∉ alterna
   have hcomp : ∀ y : alternatingGroup α,
       (MulAut.conjNormal s) ((MulAut.conjNormal s) y) = MulAut.conjNormal (s * s) y := by
     intro y
-    rw [map_mul]
-    rfl
+    rw [map_mul, MulAut.mul_apply]
   have hfix : ∀ y : alternatingGroup α,
       (χ.comp (MulAut.conjNormal s : MulAut (alternatingGroup α)).toMonoidHom * χ)
           (MulAut.conjNormal s y) =
@@ -190,8 +189,7 @@ theorem map_conjNormal_alternatingGroup_eq_inv {s : Perm α} (hs : s ∉ alterna
     rw [hcomp y, hss, mul_comm]
   have hone := eq_one_of_map_conjNormal_eq_alternatingGroup _ hs hfix
   have hx : (χ.comp (MulAut.conjNormal s : MulAut (alternatingGroup α)).toMonoidHom * χ) x = 1 := by
-    rw [hone]
-    rfl
+    rw [hone, MonoidHom.one_apply]
   simp only [MonoidHom.mul_apply, MonoidHom.coe_comp, Function.comp_apply,
     MulEquiv.coe_toMonoidHom] at hx
   exact eq_inv_of_mul_eq_one_left hx
