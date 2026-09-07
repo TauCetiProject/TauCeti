@@ -325,6 +325,19 @@ theorem mul_JFin_mul_transpose_of_submatrix_mem_symplecticGroup
   simpa only [Matrix.submatrix_submatrix, Equiv.self_comp_symm, Matrix.submatrix_id_id] using h'
 
 variable {m R} in
+/-- The symplectic adjoint, read in Mathlib's sum-indexed coordinates, is the adjoint of the
+reindexed matrix. This is the transport that identifies it with the inverse in
+`Matrix.symplecticGroup`. -/
+theorem submatrix_neg_JFin_mul_transpose_mul_JFin
+    {g : Matrix (Fin (m + m)) (Fin (m + m)) R} :
+    (-(JFin m R * gᵀ * JFin m R)).submatrix finSumFinEquiv finSumFinEquiv =
+      -Matrix.J (Fin m) R * (g.submatrix finSumFinEquiv finSumFinEquiv)ᵀ *
+        Matrix.J (Fin m) R := by
+  rw [Matrix.submatrix_neg, Matrix.neg_mul, Matrix.neg_mul, Matrix.transpose_submatrix,
+    ← JFin_submatrix m (R := R), Matrix.submatrix_mul_equiv, Matrix.submatrix_mul_equiv]
+  rfl
+
+variable {m R} in
 /-- **The symplectic adjoint of a matrix preserving the transported alternating form preserves it
 too.** The adjoint is the inverse, and Mathlib's symplectic matrices are closed under
 inversion. -/
@@ -335,10 +348,7 @@ theorem neg_JFin_mul_transpose_mul_JFin_mul_JFin_mul_transpose
   have hinv := (⟨_, submatrix_mem_symplecticGroup hg⟩ :
     Matrix.symplecticGroup (Fin m) R)⁻¹.2
   rw [SymplecticGroup.coe_inv] at hinv
-  convert hinv using 2
-  rw [Matrix.submatrix_neg, Matrix.neg_mul, Matrix.neg_mul, Matrix.transpose_submatrix,
-    ← JFin_submatrix m (R := R), Matrix.submatrix_mul_equiv, Matrix.submatrix_mul_equiv]
-  rfl
+  rwa [submatrix_neg_JFin_mul_transpose_mul_JFin]
 
 variable {m R} in
 /-- The column form of the symplectic condition, which is Mathlib's `SymplecticGroup.mem_iff'`

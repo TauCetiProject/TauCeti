@@ -42,8 +42,9 @@ first pairs with the third and the second with the fourth, matching
 Multiplicativity fails in odd characteristic. Expanding a minor of a product over the six index
 pairs, four terms assemble the product of the two minor matrices and the two carried by the pairs
 `(0,2)` and `(1,3)` leave `2` times a product of minors. Characteristic two is what kills that
-remainder, and it is the only place the hypothesis is used, so the construction has no counterpart
-in odd characteristic.
+remainder, which is why the construction has no counterpart in odd characteristic. It is used
+again in each of the results that follow: that the isogeny commutes with the symplectic adjoint,
+that it carries a symplectic matrix to a symplectic one, and the square relation.
 
 Nothing here concerns fixed points, finiteness or simplicity, and the odd powers `τ ^ (2m+1)` that
 cut out the Suzuki groups are not taken. Two properties of `τ` are recorded independently of each
@@ -102,7 +103,7 @@ variable {R : Type u} [CommRing R]
 /-! ### The standard alternating form in rank two -/
 
 /-- The transported alternating form of `Sp₄`, written out. -/
-theorem jFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 0, 0] := by
+private theorem jFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 0, 0] := by
   have hJ : JFin 2 R =
       (Matrix.J (Fin 2) R).submatrix finSumFinEquiv.symm finSumFinEquiv.symm := by
     rw [← JFin_submatrix 2 (R := R), Matrix.submatrix_submatrix]
@@ -168,7 +169,7 @@ open TauCeti
 variable {R : Type u} [CommRing R] {g : Matrix (Fin 4) (Fin 4) R}
 
 /-- The symplectic adjoint `-(J Mᵀ J)`, written out. -/
-theorem neg_jFin_mul_transpose_mul_jFin_eq (M : Matrix (Fin 4) (Fin 4) R) :
+private theorem neg_jFin_mul_transpose_mul_jFin_eq (M : Matrix (Fin 4) (Fin 4) R) :
     -(JFin 2 R * Mᵀ * JFin 2 R) =
       !![M 2 2, M 3 2, -M 0 2, -M 1 2;
         M 2 3, M 3 3, -M 0 3, -M 1 3;
@@ -270,6 +271,7 @@ theorem symplecticSpecialIsogeny_map {S : Type*} [CommRing S] (f : R →+* S)
 /-! ### The square of the special isogeny -/
 
 /-- **The square of the special isogeny is the Frobenius.** -/
+@[simp]
 theorem symplecticSpecialIsogeny_symplecticSpecialIsogeny [CharP R 2]
     (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
     symplecticSpecialIsogeny (symplecticSpecialIsogeny g) = g.map (· ^ 2) := by
