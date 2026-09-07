@@ -317,25 +317,17 @@ noncomputable def skewZigzagQuotientGaugeEquiv (c c' : SkewZigzagParameter k G)
   AlgEquiv.ofAlgHom (skewZigzagQuotientRescaleHom k G c c' u hc)
     (skewZigzagQuotientRescaleHom k G c' c (fun _ _ e => (u e)⁻¹) (by rw [hc, gauge_gauge_inv]))
     (Ideal.Quotient.algHom_ext k (AlgHom.ext fun x => by
-      have hid : rescale (fun _ _ e => ((u e : kˣ) : k) * (((u e)⁻¹ : kˣ) : k))
-          = AlgHom.id k (pathAlgebra k (DoubledQuiver G)) := by
-        rw [← rescale_one]
-        exact rescale_congr _ _ fun _ _ e => by
-          rw [← Units.val_mul, mul_inv_cancel, Units.val_one]
       have hux : rescale (fun _ _ e => ((u e : kˣ) : k))
           (rescale (fun _ _ e => (((u e)⁻¹ : kˣ) : k)) x) = x := by
-        rw [← AlgHom.comp_apply, rescale_comp_rescale, hid, AlgHom.id_apply]
+        exact rescale_rescale_of_mul_eq_one _ _ (fun _ _ e => by
+          rw [← Units.val_mul, mul_inv_cancel, Units.val_one]) x
       simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, ← skewZigzagMk_apply,
         skewZigzagQuotientRescaleHom_skewZigzagMk, AlgHom.id_apply, hux]))
     (Ideal.Quotient.algHom_ext k (AlgHom.ext fun x => by
-      have hid : rescale (fun _ _ e => (((u e)⁻¹ : kˣ) : k) * ((u e : kˣ) : k))
-          = AlgHom.id k (pathAlgebra k (DoubledQuiver G)) := by
-        rw [← rescale_one]
-        exact rescale_congr _ _ fun _ _ e => by
-          rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
       have hux : rescale (fun _ _ e => (((u e)⁻¹ : kˣ) : k))
           (rescale (fun _ _ e => ((u e : kˣ) : k)) x) = x := by
-        rw [← AlgHom.comp_apply, rescale_comp_rescale, hid, AlgHom.id_apply]
+        exact rescale_rescale_of_mul_eq_one _ _ (fun _ _ e => by
+          rw [← Units.val_mul, inv_mul_cancel, Units.val_one]) x
       simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, ← skewZigzagMk_apply,
         skewZigzagQuotientRescaleHom_skewZigzagMk, AlgHom.id_apply, hux]))
 
