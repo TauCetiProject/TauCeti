@@ -19,11 +19,11 @@ This file attaches that carrier to a validated type-`C` index: the group of alge
 points of the carrier at the index's rank, its Bourbaki-numbered simple root subgroups, and the
 reading of their root characters in the type-`C` root datum the index names.
 
-The carrier also has a `q`-power Frobenius, where `q` is the field order recorded by the index.
-This file records its entrywise action and its equations on the numbered simple-root subgroups and
-the split weight torus. It is carrier-level input for the eventual type-`C` Steinberg map, not that
-map itself: the latter waits on the identification with the pinned simply connected
-Chevalley--Demazure group required by the roadmaps.
+The carrier also has a `q`-power Frobenius, where `q` is the field order recorded by the index: the
+endomorphism of its point group raising every matrix entry to the `q`-th power. This file records
+that entrywise action together with the equations it satisfies on the numbered simple-root
+subgroups and on the split weight torus, where it raises the subgroup parameter and every torus
+coordinate to the `q`-th power.
 
 The carrier is indexed by `n` in the spelling `C (n + 1)`, so a validated index of rank `r` uses
 the carrier at `TauCeti.TypeCLieIndex.carrierRank`, which is `r - 1`. That subtraction is harmless
@@ -169,16 +169,13 @@ theorem rootGeneratorWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.1.rank)
 /-! ## Frobenius on the carrier -/
 
 /-- **The `q`-power Frobenius of the standard symplectic carrier attached to a validated type-`C`
-index**, where `q` is the field order recorded by the index.
-
-This is the carrier-level map intended to underlie the type-`C` Steinberg endomorphism after the
-carrier is identified with the pinned simply connected Chevalley--Demazure group. It is deliberately
-not named `steinberg`, because no such identification is currently available. -/
+index**, where `q` is the field order recorded by the index. It is the endomorphism of the point
+group raising every matrix entry to the `q`-th power. -/
 def carrierFrobenius : d.AmbientGroup →* d.AmbientGroup :=
   SpStd.frobenius d.carrierRank d.1.characteristic d.1.fieldExponent d.1.Closure
 
-/-- The carrier Frobenius is the standard carrier's Frobenius at the exponent recorded by the
-index. This is its unfolding lemma; the definition itself stays sealed. -/
+/-- The carrier Frobenius is the standard carrier's Frobenius at the characteristic and field
+exponent recorded by the index. -/
 theorem carrierFrobenius_def :
     d.carrierFrobenius =
       SpStd.frobenius d.carrierRank d.1.characteristic d.1.fieldExponent d.1.Closure :=
