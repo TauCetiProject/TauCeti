@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.Abelianization.Finite
 public import Mathlib.GroupTheory.FiniteAbelian.Duality
-public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.SpecificGroups.Alternating.KleinFour
 public import TauCeti.GroupTheory.GroupAction.ConjAct
 
@@ -15,8 +14,8 @@ public import TauCeti.GroupTheory.GroupAction.ConjAct
 # An odd permutation inverts every linear character of the alternating group
 
 Let `α` be a finite type and let `χ` be a homomorphism from `alternatingGroup α` to a commutative
-group. Conjugation by an *even* permutation cannot move `χ`, the target being commutative. This
-file proves that conjugation by an **odd** permutation inverts it:
+monoid. Conjugation by an *even* permutation cannot move `χ`, the target being commutative. This
+file proves that conjugation by an **odd** permutation inverts it, once the target has inverses:
 
 `χ (s x s⁻¹) = (χ x)⁻¹` for every `s ∉ alternatingGroup α` and every `x`.
 
@@ -24,14 +23,14 @@ The argument is short and uniform in `α`. The product of `χ` with its conjugat
 conjugation by `s`, because `s * s` is even; and a character fixed by conjugation by *one* odd
 permutation is fixed by conjugation by *every* permutation, since the odd permutations form a
 single coset of the even ones. Such a character kills every three-cycle `c`, because `c` is
-conjugate in `Equiv.Perm α` to its own inverse, so the value at `c` is its own inverse while also
+conjugate in `Equiv.Perm α` to its own inverse, so the value at `c` squares to `1` while also
 cubing to `1`. Three-cycles generate the alternating group, so the character is trivial, which is
 the claim.
 
 The consequence the file exists for is that a **nontrivial** linear character `χ` satisfies
-`χ ∘ conj s ≠ χ` for every odd `s`: otherwise `χ` would be its own inverse and the same lemma would
-make it trivial. So the odd permutations move `χ`, and `{χ, χ⁻¹}` is a single orbit of two
-characters under the conjugation action of `Equiv.Perm α`. That is exactly the hypothesis of the
+`χ ∘ conj s ≠ χ` for every odd `s`: otherwise `χ` would be fixed by conjugation by `s` and the same
+lemma would make it trivial. So the odd permutations move `χ`, and `{χ, χ⁻¹}` is a single orbit of
+two characters under the conjugation action of `Equiv.Perm α`. That is exactly the hypothesis of the
 Mackey irreducibility criterion for an induced linear character, applied to `A₄ ◁ S₄` in
 `TauCeti.RepresentationTheory.Induction.Clifford.Alternating`.
 
@@ -98,7 +97,9 @@ namespace MonoidHom
 
 open TauCeti
 
-variable {M : Type*} [CommGroup M] (χ : alternatingGroup α →* M)
+section Fixed
+
+variable {M : Type*} [CommMonoid M] (χ : alternatingGroup α →* M)
 
 /-- A linear character fixed by conjugation by one odd permutation is fixed by conjugation by
 every permutation: the even ones fix it because the target is commutative, and every odd one is an
@@ -132,12 +133,14 @@ theorem eq_one_of_map_conjNormal_eq_alternatingGroup {s : Perm α} (hs : s ∉ a
     obtain ⟨g, hg⟩ := isConj_iff.mp (isConj_iff_cycleType_eq.mpr (cycleType_inv c).symm)
     have hconj : MulAut.conjNormal g (⟨c, hcmem⟩ : alternatingGroup α) = (⟨c, hcmem⟩)⁻¹ :=
       Subtype.ext (by simpa using hg)
-    have hinv : (χ (⟨c, hcmem⟩ : alternatingGroup α))⁻¹ = χ ⟨c, hcmem⟩ := by
-      rw [← _root_.map_inv, ← hconj]
+    have hinv : χ ((⟨c, hcmem⟩ : alternatingGroup α)⁻¹) = χ ⟨c, hcmem⟩ := by
+      rw [← hconj]
       exact hall g _
     have hsq : χ (⟨c, hcmem⟩ : alternatingGroup α) ^ 2 = 1 := by
-      rw [pow_two]
-      exact eq_inv_iff_mul_eq_one.mp hinv.symm
+      have hmul : χ (⟨c, hcmem⟩ : alternatingGroup α) * χ ((⟨c, hcmem⟩ : alternatingGroup α)⁻¹)
+          = 1 := by
+        rw [← map_mul, mul_inv_cancel, _root_.map_one]
+      rwa [hinv, ← pow_two] at hmul
     have hpow : (⟨c, hcmem⟩ : alternatingGroup α) ^ 3 = 1 :=
       orderOf_dvd_iff_pow_eq_one.mp (by rw [Subgroup.orderOf_mk, hc.orderOf])
     have hcube : χ (⟨c, hcmem⟩ : alternatingGroup α) ^ 3 = 1 := by
@@ -158,6 +161,12 @@ theorem eq_one_of_map_conjNormal_eq_alternatingGroup {s : Perm α} (hs : s ∉ a
   have hyx : y = x := Subtype.ext hxy
   rw [MonoidHom.one_apply, ← hyx]
   exact hy
+
+end Fixed
+
+section Inversion
+
+variable {M : Type*} [CommGroup M] (χ : alternatingGroup α →* M)
 
 /-- **An odd permutation inverts every linear character of the alternating group.** -/
 @[simp]
@@ -194,6 +203,12 @@ theorem comp_conjNormal_alternatingGroup_eq_inv {s : Perm α} (hs : s ∉ altern
     χ.comp (MulAut.conjNormal s : MulAut (alternatingGroup α)) = χ⁻¹ :=
   MonoidHom.ext fun x => map_conjNormal_alternatingGroup_eq_inv χ hs x
 
+end Inversion
+
+section Nontrivial
+
+variable {M : Type*} [CommMonoid M] (χ : alternatingGroup α →* M)
+
 /-- **An odd permutation moves every nontrivial linear character of the alternating group.** This
 is the hypothesis of the Mackey irreducibility criterion for an induced linear character, checked
 at `A₄ ◁ S₄`. -/
@@ -211,6 +226,8 @@ theorem comp_conjNormal_alternatingGroup_ne (hχ : χ ≠ 1) {s : Perm α}
     χ.comp (MulAut.conjNormal s : MulAut (alternatingGroup α)) ≠ χ := fun hcon =>
   hχ (eq_one_of_map_conjNormal_eq_alternatingGroup χ hs
     fun x => congrArg (fun f : alternatingGroup α →* M => f x) hcon)
+
+end Nontrivial
 
 end MonoidHom
 
