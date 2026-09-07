@@ -37,12 +37,16 @@ quotient, a gauge-trivial parameter presents the ordinary zigzag algebra.
 * `TauCeti.DoubledQuiver.backtrackScale`: the factor by which an arrow rescaling multiplies the
   backtrack along an edge.
 * `TauCeti.SkewZigzagParameter.gauge`: the gauge transform of a skew-zigzag parameter.
-* `TauCeti.SkewZigzagParameter.IsGaugeEquivalent`: the gauge equivalence relation on parameters.
+* the `MulAction` instance on `TauCeti.SkewZigzagParameter`: gauge transforms as an action of the
+  pointwise group of unit-valued arrow labellings.
+* `TauCeti.SkewZigzagParameter.IsGaugeEquivalent`: the gauge equivalence relation on parameters,
+  the orbit relation of that action.
 
 ## Main results
 
 * `TauCeti.DoubledQuiver.backtrackScale_symm`: the backtrack scale depends only on the unoriented
   edge.
+* `TauCeti.SkewZigzagParameter.isGaugeEquivalent_iff`: gauge equivalence in existential form.
 * `TauCeti.SkewZigzagParameter.IsGaugeEquivalent.equivalence`: gauge equivalence is an equivalence
   relation.
 * `TauCeti.skewZigzagQuotientGaugeEquiv`: **gauge independence**, a gauge transform of a parameter
@@ -199,33 +203,51 @@ theorem gauge_gauge_inv (c : SkewZigzagParameter k G)
   rw [gauge_gauge, gauge_congr c (u' := fun _ _ _ => 1) fun _ _ e => mul_inv_cancel (u e),
     gauge_one]
 
-/-! ### Gauge equivalence -/
+/-! ### The gauge action and gauge equivalence -/
+
+/-- **Gauge transforms are an action** of the pointwise group of unit-valued arrow labellings on
+skew-zigzag parameters: `gauge_one` and `gauge_gauge` are its two axioms. Gauge equivalence is the
+orbit relation of this action. -/
+instance : MulAction (∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → kˣ) (SkewZigzagParameter k G) where
+  smul u c := c.gauge u
+  one_smul := gauge_one
+  mul_smul u u' c :=
+    (gauge_congr c fun _ _ e => mul_comm (u e) (u' e)).trans (gauge_gauge c u' u).symm
+
+/-- The gauge action is the gauge transform. -/
+@[simp]
+theorem smul_eq_gauge (u : ∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → kˣ)
+    (c : SkewZigzagParameter k G) : u • c = c.gauge u := (rfl)
 
 /-- Two skew-zigzag parameters are **gauge equivalent** when one is a gauge transform of the other,
 that is, when rescaling the arrows of the doubled quiver by units carries the first presentation to
-the second. -/
+the second. This is the orbit relation of the gauge action. -/
 def IsGaugeEquivalent (c c' : SkewZigzagParameter k G) : Prop :=
-  ∃ u : ∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → kˣ, c' = c.gauge u
+  MulAction.orbitRel (∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → kˣ) (SkewZigzagParameter k G) c' c
+
+/-- **Gauge equivalence in existential form**: a gauging labelling carrying the first parameter to
+the second. -/
+theorem isGaugeEquivalent_iff {c c' : SkewZigzagParameter k G} :
+    c.IsGaugeEquivalent c' ↔
+      ∃ u : ∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → kˣ, c' = c.gauge u :=
+  MulAction.orbitRel_apply.trans (exists_congr fun _ => eq_comm)
 
 /-- Every parameter is gauge equivalent to itself, by the constant labelling one. -/
 @[refl]
 theorem IsGaugeEquivalent.refl (c : SkewZigzagParameter k G) : IsGaugeEquivalent c c :=
-  ⟨fun _ _ _ => 1, (gauge_one c).symm⟩
+  Setoid.refl' _ c
 
 /-- Gauge equivalence is symmetric: the pointwise inverse labelling gauges back. -/
 @[symm]
 theorem IsGaugeEquivalent.symm {c c' : SkewZigzagParameter k G} (h : IsGaugeEquivalent c c') :
-    IsGaugeEquivalent c' c := by
-  obtain ⟨u, rfl⟩ := h
-  exact ⟨fun _ _ e => (u e)⁻¹, (gauge_gauge_inv c u).symm⟩
+    IsGaugeEquivalent c' c :=
+  Setoid.symm' _ h
 
 /-- Gauge equivalence is transitive: the pointwise product labelling gauges across. -/
 @[trans]
 theorem IsGaugeEquivalent.trans {c c' c'' : SkewZigzagParameter k G}
-    (h : IsGaugeEquivalent c c') (h' : IsGaugeEquivalent c' c'') : IsGaugeEquivalent c c'' := by
-  obtain ⟨u, rfl⟩ := h
-  obtain ⟨u', rfl⟩ := h'
-  exact ⟨fun _ _ e => u e * u' e, gauge_gauge c u u'⟩
+    (h : IsGaugeEquivalent c c') (h' : IsGaugeEquivalent c' c'') : IsGaugeEquivalent c c'' :=
+  Setoid.trans' _ h' h
 
 /-- **Gauge equivalence of skew-zigzag parameters is an equivalence relation.** -/
 theorem IsGaugeEquivalent.equivalence :
@@ -244,8 +266,10 @@ variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
 /-- **Rescaling by a unit labelling carries the skew relators of a parameter into the relation ideal
 of its gauge transform**: a path relator is multiplied by its path weight, and the backtrack
-relator of a pair of incident edges is multiplied by the backtrack scale at the first of them. -/
-theorem skewZigzagMk_rescale_eq_zero (c c' : SkewZigzagParameter k G)
+relator of a pair of incident edges is multiplied by the backtrack scale at the first of them.
+This is an implementation step for `TauCeti.skewZigzagQuotientGaugeEquiv`, which is the public
+API. -/
+private theorem skewZigzagMk_rescale_eq_zero (c c' : SkewZigzagParameter k G)
     (u : ∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → kˣ) (hc : c' = c.gauge u)
     {x : pathAlgebra k (DoubledQuiver G)} (hx : IsSkewZigzagRelator k G c x) :
     skewZigzagMk k G c' (rescale (fun _ _ e => ((u e : kˣ) : k)) x) = 0 := by
@@ -343,7 +367,7 @@ theorem skewZigzagQuotientGaugeEquiv_symm_skewZigzagMk
 theorem nonempty_algEquiv_skewZigzagQuotient_of_isGaugeEquivalent
     {c c' : SkewZigzagParameter k G} (h : c.IsGaugeEquivalent c') :
     Nonempty (skewZigzagQuotient k G c ≃ₐ[k] skewZigzagQuotient k G c') := by
-  obtain ⟨u, hu⟩ := h
+  obtain ⟨u, hu⟩ := isGaugeEquivalent_iff.mp h
   exact ⟨skewZigzagQuotientGaugeEquiv k G c c' u hu⟩
 
 end Independence
@@ -361,7 +385,7 @@ theorem nonempty_algEquiv_nonisolatedZigzagQuotient_of_isGaugeEquivalent_one
     {c : SkewZigzagParameter k G}
     (h : SkewZigzagParameter.IsGaugeEquivalent (1 : SkewZigzagParameter k G) c) :
     Nonempty (skewZigzagQuotient k G c ≃ₐ[k] nonisolatedZigzagQuotient k G) := by
-  obtain ⟨u, rfl⟩ := h
+  obtain ⟨u, rfl⟩ := SkewZigzagParameter.isGaugeEquivalent_iff.mp h
   exact ⟨(skewZigzagQuotientGaugeEquiv k G 1 _ u rfl).symm.trans (skewZigzagQuotientOneEquiv k G)⟩
 
 end One
