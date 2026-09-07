@@ -38,7 +38,7 @@ realization theorem is asserted here; that is the subsequent geometric-to-combin
   is genuinely positive or negative.
 * `TauCeti.OrientedPDCode.mirror_mirror` and `relabel_relabel` show respectively that reflection
   is involutive and that relabelling is an action.
-* `TauCeti.orientedPDCode_zero` is the empty oriented diagram, providing a nontrivial
+* `TauCeti.orientedPDCodeZero` is the empty oriented diagram, providing a nontrivial
   witness for the finite presentation at zero crossings.
 -/
 
@@ -221,7 +221,7 @@ theorem relabel_relabel (D : OrientedPDCode n)
 end OrientedPDCode
 
 /-- The empty oriented PD-code. -/
-@[expose] def orientedPDCode_zero : OrientedPDCode 0 where
+@[expose] def orientedPDCodeZero : OrientedPDCode 0 where
   halfEdge := Equiv.refl _
   edgePair := Equiv.refl _
   edgePair_sq := by intro h; exact rfl
@@ -234,8 +234,8 @@ end OrientedPDCode
 
 /-- Reflection fixes the empty PD-code. -/
 @[simp]
-theorem orientedPDCode_zero_mirror :
-    orientedPDCode_zero.mirror = orientedPDCode_zero := by
+theorem orientedPDCodeZero_mirror :
+    orientedPDCodeZero.mirror = orientedPDCodeZero := by
   refine OrientedPDCode.ext rfl rfl rfl rfl ?_
   funext i
   exact Fin.elim0 i
@@ -244,7 +244,7 @@ theorem orientedPDCode_zero_mirror :
 
 This concrete code is useful as a sanity check that the presentation permits genuine crossings,
 not only the empty link. -/
-@[expose] def orientedPDCode_one : OrientedPDCode 1 where
+@[expose] def orientedPDCodeOne : OrientedPDCode 1 where
   halfEdge := Equiv.refl _
   edgePair := Equiv.swap 0 1 * Equiv.swap 2 3
   edgePair_sq := by
@@ -262,13 +262,13 @@ not only the empty link. -/
   crossingSign_mem := by intro i; left; rfl
 
 @[simp]
-theorem orientedPDCode_one_crossingSign :
-    orientedPDCode_one.crossingSign 0 = 1 :=
+theorem orientedPDCodeOne_crossingSign :
+    orientedPDCodeOne.crossingSign 0 = 1 :=
   rfl
 
 @[simp]
-theorem orientedPDCode_one_mirror_crossingSign :
-    orientedPDCode_one.mirror.crossingSign 0 = -1 := by
+theorem orientedPDCodeOne_mirror_crossingSign :
+    orientedPDCodeOne.mirror.crossingSign 0 = -1 := by
   simp
 
 end TauCeti
