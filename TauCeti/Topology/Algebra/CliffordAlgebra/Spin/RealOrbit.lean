@@ -46,7 +46,6 @@ theorem realCliffordSpinOrbitMap_apply_subtype (n : ℕ) (x : realCliffordUnitLe
   rfl
 
 /-- The underlying-vector computation of the orbit map. -/
-@[simp]
 theorem realCliffordSpinOrbitMap_apply (n : ℕ) (x : realCliffordUnitLevel n)
     (s : realCliffordSpinGroupZero n) :
     (realCliffordSpinOrbitMap n x s : Fin n → ℝ) =
@@ -79,7 +78,7 @@ theorem realCliffordSpinStabilizerQuotientEquiv_mk
     (realCliffordUnitLevel_isPretransitive n hn) x s
 
 /-- The quotient equivalence intertwines the quotient Spin action with the unit-level action. -/
-@[simp] theorem realCliffordSpinStabilizerQuotientEquiv_smul
+theorem realCliffordSpinStabilizerQuotientEquiv_smul
     (n : ℕ) (hn : 2 ≤ n) (x : realCliffordUnitLevel n)
     (s : realCliffordSpinGroupZero n)
     (q : realCliffordSpinGroupZero n ⧸ MulAction.stabilizer _ x) :
