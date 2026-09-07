@@ -210,9 +210,11 @@ theorem kostantElementaryNumberedSymmetryAut_pow_eq_one (A : CommAlgCat.{w} ℤ)
         intro g
         rw [pow_succ', MulAut.mul_apply, val_kostantElementaryNumberedSymmetryAut, ih g, pow_succ']
         group
-  have hn' : ∀ v, (θ.toAddEquiv.toIntLinearEquiv ^ n) v = v := fun v =>
-    (LinearEquiv.pow_apply θ.toAddEquiv.toIntLinearEquiv n v).trans
-      ((LinearEquiv.pow_apply θ n v).symm.trans (hn v))
+  have hcoe : ⇑(θ.toAddEquiv.toIntLinearEquiv : V ≃ₗ[ℤ] V) = (θ : V → V) := by
+    rw [AddEquiv.coe_toIntLinearEquiv]
+    exact funext fun v => LinearEquiv.coe_addEquiv_apply θ v
+  have hn' : ∀ v, (θ.toAddEquiv.toIntLinearEquiv ^ n) v = v := fun v => by
+    simpa only [LinearEquiv.pow_apply, hcoe] using hn v
   rw [hpow n g, baseChangeInvariantRestrictUnit_pow_eq_one θ.toAddEquiv M hθM hn', one_mul,
     inv_one, mul_one]
   rfl

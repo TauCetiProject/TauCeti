@@ -150,9 +150,11 @@ rational linear equivalence. -/
 theorem kostantNumberedSymmetryMatrix_pow_eq_one (A : Type v) [CommRing A] {m : ℕ}
     (hm : ∀ x, (θ ^ m) x = x) :
     kostantNumberedSymmetryMatrix M b θ hθM A ^ m = 1 := by
-  have hm' : ∀ x, (θ.toAddEquiv.toIntLinearEquiv ^ m) x = x := fun x =>
-    (LinearEquiv.pow_apply θ.toAddEquiv.toIntLinearEquiv m x).trans
-      ((LinearEquiv.pow_apply θ m x).symm.trans (hm x))
+  have hcoe : ⇑(θ.toAddEquiv.toIntLinearEquiv : V ≃ₗ[ℤ] V) = (θ : V → V) := by
+    rw [AddEquiv.coe_toIntLinearEquiv]
+    exact funext fun x => LinearEquiv.coe_addEquiv_apply θ x
+  have hm' : ∀ x, (θ.toAddEquiv.toIntLinearEquiv ^ m) x = x := fun x => by
+    simpa only [LinearEquiv.pow_apply, hcoe] using hm x
   have hunit := AddEquiv.baseChangeInvariantRestrictUnit_pow_eq_one
     (R := A) θ.toAddEquiv M hθM hm'
   have hmatrix := congrArg
