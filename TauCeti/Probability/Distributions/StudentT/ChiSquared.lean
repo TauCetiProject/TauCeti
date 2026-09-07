@@ -147,11 +147,13 @@ theorem map_div_sqrt_chiSquaredMeasure {ν : ℝ} (hν : 0 < ν) :
     calc
       (μ.map ratio).map sq = μ.map (fun z ↦ (ratio z) ^ 2) := by
         rw [Measure.map_map (by fun_prop) (by fun_prop)]
-        rfl
+        exact congrArg (fun f : ℝ × ℝ → ℝ ↦ μ.map f) (funext fun z ↦ by
+          simp only [Function.comp_apply, sq])
       _ = μ.map (fun z ↦ z.1 ^ 2 / 1 / (z.2 / ν)) := Measure.map_congr hratio_sq
       _ = (μ.map (Prod.map sq id)).map (fun z ↦ z.1 / 1 / (z.2 / ν)) := by
         rw [Measure.map_map (by fun_prop) (by fun_prop)]
-        rfl
+        exact congrArg (fun f : ℝ × ℝ → ℝ ↦ μ.map f) (funext fun z ↦ by
+          simp only [Function.comp_apply, sq, Prod.map_apply', id_eq])
       _ = fisherSnedecorMeasure 1 ν := by
         rw [hμ_sq, map_scaled_div_chiSquaredMeasure one_pos hν]
   have hμ_reflect : μ.map reflect = μ := by

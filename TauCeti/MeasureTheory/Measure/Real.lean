@@ -8,17 +8,17 @@ module
 public import Mathlib.Probability.CDF
 
 /-!
-# Extensionality for symmetric real probability measures
+# Extensionality for symmetric finite real measures
 
-This file gives an extensionality principle for symmetric probability measures on the real line:
+This file gives an extensionality principle for symmetric finite measures on the real line:
 their pushforwards under squaring determine them. It packages the elementary observation that the
 square records the mass of intervals symmetric about zero, while reflection invariance makes the
 two complementary tails equal.
 
 ## Main result
 
-* `TauCeti.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric real
-  probability measures with the same law after squaring are equal.
+* `TauCeti.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric finite real
+  measures with the same pushforward after squaring are equal.
 -/
 
 public section
@@ -29,16 +29,23 @@ namespace TauCeti
 
 namespace MeasureTheory
 
-/-- Two reflection-invariant probability measures on `ℝ` are equal if their pushforwards under
+/-- Two reflection-invariant finite measures on `ℝ` are equal if their pushforwards under
 squaring are equal. -/
 theorem Measure.eq_of_map_sq_eq_of_map_neg_eq_self {μ ν : Measure ℝ}
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     (hμneg : μ.map (fun x : ℝ ↦ -x) = μ) (hνneg : ν.map (fun x : ℝ ↦ -x) = ν)
     (hsq : μ.map (fun x : ℝ ↦ x ^ 2) = ν.map (fun x : ℝ ↦ x ^ 2)) :
     μ = ν := by
-  apply Measure.eq_of_cdf
-  ext x
-  rw [cdf_eq_real, cdf_eq_real]
+  apply Measure.ext_of_Iic
+  intro x
+  rw [← measureReal_eq_measureReal_iff]
+  have htotal : μ.real univ = ν.real univ := by
+    have h := congrArg (fun ρ : Measure ℝ ↦ ρ.real univ) hsq
+    simpa only [map_measureReal_apply (μ := μ) (f := fun y : ℝ ↦ y ^ 2) (by fun_prop)
+        MeasurableSet.univ,
+      map_measureReal_apply (μ := ν) (f := fun y : ℝ ↦ y ^ 2) (by fun_prop)
+        MeasurableSet.univ,
+      preimage_univ] using h
   by_cases hx : 0 ≤ x
   -- On the nonnegative half-line, the squared law fixes the central interval `[-x, x]`.
   -- Symmetry equates its two open complementary tails, hence fixes `Iic x`.
@@ -74,14 +81,14 @@ theorem Measure.eq_of_map_sq_eq_of_map_neg_eq_self {μ ν : Measure ℝ}
     have hdisj_inner : Disjoint (Icc (-x) x) (Ioi x) :=
       (Iic_disjoint_Ioi le_rfl).mono Icc_subset_Iic_self Subset.rfl
     have hμtotal :
-        1 = μ.real (Iio (-x)) + (μ.real (Icc (-x) x) + μ.real (Ioi x)) := by
-      rw [← probReal_univ (μ := μ), ← Iio_union_Ici (a := -x),
+        μ.real univ = μ.real (Iio (-x)) + (μ.real (Icc (-x) x) + μ.real (Ioi x)) := by
+      rw [← Iio_union_Ici (a := -x),
         measureReal_union (Iio_disjoint_Ici le_rfl) measurableSet_Ici,
         ← Icc_union_Ioi_eq_Ici hbounds,
         measureReal_union hdisj_inner measurableSet_Ioi]
     have hνtotal :
-        1 = ν.real (Iio (-x)) + (ν.real (Icc (-x) x) + ν.real (Ioi x)) := by
-      rw [← probReal_univ (μ := ν), ← Iio_union_Ici (a := -x),
+        ν.real univ = ν.real (Iio (-x)) + (ν.real (Icc (-x) x) + ν.real (Ioi x)) := by
+      rw [← Iio_union_Ici (a := -x),
         measureReal_union (Iio_disjoint_Ici le_rfl) measurableSet_Ici,
         ← Icc_union_Ioi_eq_Ici hbounds,
         measureReal_union hdisj_inner measurableSet_Ioi]
@@ -134,14 +141,14 @@ theorem Measure.eq_of_map_sq_eq_of_map_neg_eq_self {μ ν : Measure ℝ}
     have hdisj_inner : Disjoint (Ioo x (-x)) (Ici (-x)) :=
       (Iio_disjoint_Ici le_rfl).mono Ioo_subset_Iio_self Subset.rfl
     have hμtotal :
-        1 = μ.real (Iic x) + (μ.real (Ioo x (-x)) + μ.real (Ici (-x))) := by
-      rw [← probReal_univ (μ := μ), ← Iic_union_Ioi (a := x),
+        μ.real univ = μ.real (Iic x) + (μ.real (Ioo x (-x)) + μ.real (Ici (-x))) := by
+      rw [← Iic_union_Ioi (a := x),
         measureReal_union (Iic_disjoint_Ioi le_rfl) measurableSet_Ioi,
         ← Ioo_union_Ici_eq_Ioi hbounds,
         measureReal_union hdisj_inner measurableSet_Ici]
     have hνtotal :
-        1 = ν.real (Iic x) + (ν.real (Ioo x (-x)) + ν.real (Ici (-x))) := by
-      rw [← probReal_univ (μ := ν), ← Iic_union_Ioi (a := x),
+        ν.real univ = ν.real (Iic x) + (ν.real (Ioo x (-x)) + ν.real (Ici (-x))) := by
+      rw [← Iic_union_Ioi (a := x),
         measureReal_union (Iic_disjoint_Ioi le_rfl) measurableSet_Ioi,
         ← Ioo_union_Ici_eq_Ioi hbounds,
         measureReal_union hdisj_inner measurableSet_Ici]
