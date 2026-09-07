@@ -48,7 +48,8 @@ class group (`oneEquivClassGroup`).
   `TauCeti.GlobalNumberFields.classMap_comp_idealClass`: the transition maps compose along a tower
   of moduli, and carry the class of an integral ideal to the class of the same ideal.  Both are
   equalities of homomorphisms, with the pointwise forms `classMap_classMap` and
-  `classMap_idealClass` derived from them.
+  `classMap_idealClass` derived from them.  The transition map from a modulus to itself is the
+  identity (`TauCeti.GlobalNumberFields.classMap_dvd_refl`).
 * `TauCeti.GlobalNumberFields.oneEquivClassGroup`: at the trivial modulus the ray class group is
   the class group of `𝓞 K`, carrying a ray class to the class of the same fractional ideal
   (`TauCeti.GlobalNumberFields.oneEquivClassGroup_rayClassMk`).
@@ -57,6 +58,8 @@ class group (`oneEquivClassGroup`).
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VI, §1.
 * S. Lang, *Algebraic Number Theory*, Chapter VI, §1.
+* `GlobalNumberFields/Suggested.lean` in the Tau Ceti roadmap, whose moduli and ray class section
+  fixes the names and signatures followed here.
 -/
 
 public section
@@ -165,6 +168,21 @@ noncomputable def classMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
     classMap h (rayClassMk 𝔫 I) =
       rayClassMk 𝔪 (NumberFieldArithmetic.idealsAwayInclusion (Modulus.support_mono h) I) := (rfl)
 
+/-- **The transition map at a modulus and itself is the identity**, as an equality of
+homomorphisms. -/
+theorem classMap_dvd_refl (𝔪 : Modulus K) :
+    classMap (Modulus.dvd_refl 𝔪) = MonoidHom.id (RayClassGroup 𝔪) := by
+  refine MonoidHom.ext fun c ↦ ?_
+  obtain ⟨I, rfl⟩ := rayClassMk_surjective 𝔪 c
+  rw [classMap_rayClassMk, MonoidHom.id_apply]
+  congr 1
+  exact Subtype.ext (Units.ext (by simp [NumberFieldArithmetic.coe_idealsAwayInclusion]))
+
+/-- The transition map at a modulus and itself is the identity. -/
+@[simp] theorem classMap_dvd_refl_apply (𝔪 : Modulus K) (c : RayClassGroup 𝔪) :
+    classMap (Modulus.dvd_refl 𝔪) c = c := by
+  rw [classMap_dvd_refl, MonoidHom.id_apply]
+
 /-- **The transition maps compose along a tower of moduli**, as an equality of homomorphisms. -/
 theorem classMap_comp_classMap {𝔪 𝔫 𝔭 : Modulus K} (h₁ : 𝔪 ∣ 𝔫) (h₂ : 𝔫 ∣ 𝔭) :
     (classMap h₁).comp (classMap h₂) = classMap (Modulus.dvd_trans h₁ h₂) := by
@@ -175,7 +193,8 @@ theorem classMap_comp_classMap {𝔪 𝔫 𝔭 : Modulus K} (h₁ : 𝔪 ∣ �
   exact Subtype.ext (Units.ext (by simp [NumberFieldArithmetic.coe_idealsAwayInclusion]))
 
 /-- The transition maps compose along a tower of moduli. -/
-theorem classMap_classMap {𝔪 𝔫 𝔭 : Modulus K} (h₁ : 𝔪 ∣ 𝔫) (h₂ : 𝔫 ∣ 𝔭) (c : RayClassGroup 𝔭) :
+@[simp] theorem classMap_classMap {𝔪 𝔫 𝔭 : Modulus K} (h₁ : 𝔪 ∣ 𝔫) (h₂ : 𝔫 ∣ 𝔭)
+    (c : RayClassGroup 𝔭) :
     classMap h₁ (classMap h₂ c) = classMap (Modulus.dvd_trans h₁ h₂) c := by
   rw [← MonoidHom.comp_apply, classMap_comp_classMap]
 

@@ -64,6 +64,8 @@ away from a finite set of primes.
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VI, §1.
 * S. Lang, *Algebraic Number Theory*, Chapter VI, §1.
+* `GlobalNumberFields/Suggested.lean` in the Tau Ceti roadmap, whose moduli and ray class section
+  fixes the names and signatures followed here.
 -/
 
 public section
@@ -196,9 +198,10 @@ noncomputable def narrowModulus (K : Type*) [Field K] [NumberField K] : Modulus 
 divisible by `v ^ (𝔪.exponent v)` locally — equivalently `v.valuation K (x - 1)` is at most
 `exp (-𝔪.exponent v)` — and `x` is positive at every real place selected by the infinite part.
 
-This is a condition on `Kˣ`, not on `K`: writing it on `K` would let `0` meet a request for
-negative signs.  It is also not unqualified membership in `1 + 𝔪.finitePart`, since `x` need not
-be an algebraic integer. -/
+This is a condition on `Kˣ`, not on `K`.  Zero is excluded because it generates no invertible
+principal fractional ideal, so it has no ray class to contribute, while it would satisfy the empty
+conditions imposed by the trivial modulus.  The condition is also not unqualified membership in
+`1 + 𝔪.finitePart`, since `x` need not be an algebraic integer. -/
 def IsCongrOne (𝔪 : Modulus K) (x : Kˣ) : Prop :=
   (∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
       v.valuation K ((x : K) - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ))) ∧
@@ -361,13 +364,10 @@ theorem Modulus.isCoprimeTo_iff_sup_eq_top {𝔪 : Modulus K} {I : Ideal (𝓞 K
     𝔪.IsCoprimeTo I ↔ I ≠ ⊥ ∧ I ⊔ 𝔪.finitePart = ⊤ := by
   rw [isCoprimeTo_iff]
   refine and_congr_right fun hI ↦ ⟨fun h ↦ ?_, fun h v hv hdvd ↦ ?_⟩
-  · by_contra hne
-    obtain ⟨𝔭, h𝔭max, h𝔭le⟩ := Ideal.exists_le_maximal _ hne
-    have h𝔭bot : 𝔭 ≠ ⊥ := fun hbot ↦ 𝔪.finitePart_ne_bot
-      (le_bot_iff.mp (hbot ▸ le_sup_right.trans h𝔭le))
-    refine h ⟨𝔭, h𝔭max.isPrime, h𝔭bot⟩ ?_ ?_
-    · exact (mem_support_iff _ _).mpr (Ideal.dvd_iff_le.mpr (le_sup_right.trans h𝔭le))
-    · exact Ideal.dvd_iff_le.mpr (le_sup_left.trans h𝔭le)
+  · refine Ideal.isCoprime_iff_sup_eq.mp (Ideal.coprime_of_no_prime_ge fun 𝔭 h𝔭I h𝔭m h𝔭 ↦ ?_)
+    have h𝔭bot : 𝔭 ≠ ⊥ := fun hbot ↦ 𝔪.finitePart_ne_bot (le_bot_iff.mp (hbot ▸ h𝔭m))
+    exact h ⟨𝔭, h𝔭, h𝔭bot⟩ ((mem_support_iff _ _).mpr (Ideal.dvd_iff_le.mpr h𝔭m))
+      (Ideal.dvd_iff_le.mpr h𝔭I)
   · refine v.isPrime.ne_top (top_le_iff.mp ?_)
     rw [← h]
     exact sup_le (Ideal.le_of_dvd hdvd) (Ideal.le_of_dvd ((mem_support_iff _ _).mp hv))
@@ -384,10 +384,10 @@ theorem Modulus.mem_integralIdealsPrimeTo {𝔪 : Modulus K} {I : Ideal (𝓞 K)
 /-- **The integral prime-to monoid is antitone in the modulus**: the support of a divisor `𝔪` of
 `𝔫` is contained in that of `𝔫`, so an ideal prime to `𝔫` is prime to `𝔪`. -/
 theorem integralIdealsPrimeTo_antitone {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
-    integralIdealsPrimeTo 𝔫 ≤ integralIdealsPrimeTo 𝔪 := by
-  intro I hI
-  rw [Modulus.mem_integralIdealsPrimeTo, Modulus.isCoprimeTo_iff] at hI ⊢
-  exact ⟨hI.1, fun v hv ↦ hI.2 v (Modulus.support_mono h hv)⟩
+    integralIdealsPrimeTo 𝔫 ≤ integralIdealsPrimeTo 𝔪 := fun _ hI ↦
+  Modulus.mem_integralIdealsPrimeTo.mpr <|
+    (Modulus.mem_integralIdealsPrimeTo.mp hI).mono
+      (Finset.coe_subset.mpr (Modulus.support_mono h))
 
 /-- The inclusion of the integral ideals prime to `𝔫` into those prime to `𝔪`, for a divisor `𝔪`
 of `𝔫`.  It is the literal inclusion, matching `NumberFieldArithmetic.idealsAwayInclusion` on the
