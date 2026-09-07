@@ -42,7 +42,8 @@ asserts that the carrier is reductive, that its weight torus is maximal, or that
   `TauCeti.SpStd.rootIntMatrix_inl_of_ne_last` and `TauCeti.SpStd.rootIntMatrix_inr_of_ne_last`:
   the integral matrices of the numbered root generators.
 * `TauCeti.SpStd.coe_rootSubgroupPoints_eq_one_add_smul`: a root-subgroup point is `1 + u X`.
-* `TauCeti.SpStd.rootSubgroupPoints_inl_last` and its three siblings: each numbered root point is
+* `TauCeti.SpStd.rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit` and its three
+  siblings: each numbered root point is
   the corresponding long-root transvection or difference short-root element of the symplectic
   group.
 * `TauCeti.SpStd.points_eq_GLSymplecticFin`: the carrier points are exactly the symplectic
@@ -136,7 +137,7 @@ theorem coe_rootSubgroupPoints_eq_one_add_smul (k : Fin (n + 1) ⊕ Fin (n + 1))
 variable {A : Type v} [CommRing A]
 
 /-- The final raising point of the carrier is the positive long-root transvection. -/
-theorem rootSubgroupPoints_inl_last (u : Multiplicative A) :
+theorem rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit (u : Multiplicative A) :
     (rootSubgroupPoints n (.inl (Fin.last n)) A u :
         Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) =
       ((GLSymplecticFin.positiveLongRootTransvectionUnit (Fin.last n)
@@ -149,7 +150,7 @@ theorem rootSubgroupPoints_inl_last (u : Multiplicative A) :
   simp [Matrix.transvection, Matrix.single_apply]
 
 /-- The final lowering point of the carrier is the negative long-root transvection. -/
-theorem rootSubgroupPoints_inr_last (u : Multiplicative A) :
+theorem rootSubgroupPoints_inr_last_eq_negativeLongRootTransvectionUnit (u : Multiplicative A) :
     (rootSubgroupPoints n (.inr (Fin.last n)) A u :
         Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) =
       ((GLSymplecticFin.negativeLongRootTransvectionUnit (Fin.last n)
@@ -162,7 +163,8 @@ theorem rootSubgroupPoints_inr_last (u : Multiplicative A) :
   simp [Matrix.transvection, Matrix.single_apply]
 
 /-- A nonfinal raising point of the carrier is the difference short-root element. -/
-theorem rootSubgroupPoints_inl_of_ne_last (i : Fin (n + 1)) (hi : i ≠ Fin.last n)
+theorem rootSubgroupPoints_inl_of_ne_last_eq_differenceShortRootUnit (i : Fin (n + 1))
+    (hi : i ≠ Fin.last n)
     (u : Multiplicative A) :
     (rootSubgroupPoints n (.inl i) A u :
         Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) =
@@ -179,7 +181,8 @@ theorem rootSubgroupPoints_inl_of_ne_last (i : Fin (n + 1)) (hi : i ≠ Fin.last
   split_ifs <;> ring
 
 /-- A nonfinal lowering point of the carrier is the opposite difference short-root element. -/
-theorem rootSubgroupPoints_inr_of_ne_last (i : Fin (n + 1)) (hi : i ≠ Fin.last n)
+theorem rootSubgroupPoints_inr_of_ne_last_eq_differenceShortRootUnit (i : Fin (n + 1))
+    (hi : i ≠ Fin.last n)
     (u : Multiplicative A) :
     (rootSubgroupPoints n (.inr i) A u :
         Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) =
@@ -218,7 +221,8 @@ theorem points_eq_GLSymplecticFin : points n K = GLSymplecticFin (n + 1) K := by
         have hj : j = next n i hi := Fin.ext (by rw [val_next]; omega)
         subst hj
         have hmem := (rootSubgroupPoints n (.inl i) K (Multiplicative.ofAdd c)).2
-        rwa [rootSubgroupPoints_inl_of_ne_last n i hi (Multiplicative.ofAdd c)] at hmem
+        rwa [rootSubgroupPoints_inl_of_ne_last_eq_differenceShortRootUnit n i hi
+          (Multiplicative.ofAdd c)] at hmem
       · have hj : j ≠ Fin.last n := by
           intro h
           subst h
@@ -228,15 +232,18 @@ theorem points_eq_GLSymplecticFin : points n K = GLSymplecticFin (n + 1) K := by
         have hi : i = next n j hj := Fin.ext (by rw [val_next]; omega)
         subst hi
         have hmem := (rootSubgroupPoints n (.inr j) K (Multiplicative.ofAdd c)).2
-        rwa [rootSubgroupPoints_inr_of_ne_last n j hj (Multiplicative.ofAdd c)] at hmem
+        rwa [rootSubgroupPoints_inr_of_ne_last_eq_differenceShortRootUnit n j hj
+          (Multiplicative.ofAdd c)] at hmem
     · intro c
       rw [Subgroup.mem_comap, Subgroup.coe_subtype]
       have hmem := (rootSubgroupPoints n (.inl (Fin.last n)) K (Multiplicative.ofAdd c)).2
-      rwa [rootSubgroupPoints_inl_last n (Multiplicative.ofAdd c)] at hmem
+      rwa [rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit n
+        (Multiplicative.ofAdd c)] at hmem
     · intro c
       rw [Subgroup.mem_comap, Subgroup.coe_subtype]
       have hmem := (rootSubgroupPoints n (.inr (Fin.last n)) K (Multiplicative.ofAdd c)).2
-      rwa [rootSubgroupPoints_inr_last n (Multiplicative.ofAdd c)] at hmem
+      rwa [rootSubgroupPoints_inr_last_eq_negativeLongRootTransvectionUnit n
+        (Multiplicative.ofAdd c)] at hmem
   have hmem : (⟨g, hg⟩ : GLSymplecticFin (n + 1) K) ∈
       (points n K).comap (GLSymplecticFin (n + 1) K).subtype := hH ▸ Subgroup.mem_top _
   exact Subgroup.mem_subgroupOf.mp hmem
