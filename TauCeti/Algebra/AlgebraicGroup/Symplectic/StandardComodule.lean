@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 
 /-!
 # The standard representation of the symplectic group
@@ -62,6 +62,7 @@ attribute [local instance] GeneralLinear.standardComodule standardComodule
 
 /-- The standard symplectic coaction is the standard general-linear coaction followed by the
 quotient map on the coordinate factor. -/
+@[simp]
 theorem standardComodule_coact :
     let _ := GeneralLinear.standardComodule R (m + m)
     Comodule.coact (self := standardComodule R m) =
@@ -69,9 +70,11 @@ theorem standardComodule_coact :
           (Bialgebra.Quotient.mkBialgHom (R := R)
             (definingHopfIdeal R m).toIdeal).toLinearMap ∘ₗ
         GeneralLinear.standardCoact R (m + m) := by
-  rw [show Comodule.coact (self := standardComodule R m) =
-      Comodule.corestrictCoact (coordinateMap R m).hom.toCoalgHom from rfl,
-    coordinateMap_def, CommHopfAlgCat.hom_mkQuotient]
+  change Comodule.corestrictCoact
+      (R := R) (C := GeneralLinear.coordinateHopfAlgebra R (m + m))
+      (D := coordinateHopfAlgebra R m) (M := Fin (m + m) → R)
+      (coordinateMap R m).hom.toCoalgHom = _
+  rw [coordinateMap_def, CommHopfAlgCat.hom_mkQuotient]
   apply LinearMap.ext
   intro v
   rw [Comodule.corestrictCoact_apply, LinearMap.comp_apply,
@@ -311,9 +314,7 @@ instance instIsSimpleOrderSubcomodule :
     · right
       apply top_unique
       intro v _
-      have hv : v = ∑ a, v a • Pi.single a 1 := by
-        ext a
-        simp [Pi.single_apply]
+      have hv := pi_eq_sum_univ' v
       rw [hv]
       exact N.toSubmodule.sum_mem fun a _ ↦
         N.toSubmodule.smul_mem (v a) (single_one_mem_of_ne_bot k m N hN a)
