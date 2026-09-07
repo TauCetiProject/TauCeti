@@ -123,6 +123,7 @@ theorem exists_isGreatest_mem_weilDifferentialFiltration (hF : IsFunctionField k
 /-- The characteristic property of the divisor of `ω`, in the form consumers use: `ω` is bounded
 by `D` exactly when `D` is at most the divisor of `ω`.  The forward direction is maximality; the
 reverse is antitonicity of the filtration. -/
+@[simp]
 theorem mem_weilDifferentialFiltration_iff_le_of_isGreatest
     {ω : Module.Dual k ↥(repartitionSpace k F)} {W : Divisor k F}
     (hW : IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D} W) (D : Divisor k F) :
@@ -149,6 +150,7 @@ theorem isGreatest_weilDifferentialDivisor (hF : IsFunctionField k F)
 
 /-- **The characteristic property of `(ω)`**: a nonzero Weil differential is bounded by `D`
 exactly when `D ≤ (ω)`. -/
+@[simp]
 theorem mem_weilDifferentialFiltration_iff_le_weilDifferentialDivisor (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
     (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) (D : Divisor k F) :
@@ -232,6 +234,7 @@ multiplies `ω` into `Ω_F(D)` exactly when it lies in `L(W - D)`.
 For nonzero `x`, multiplication translates the filtration by the principal divisor of `x`
 (`TauCeti.repartitionDualMul_mem_weilDifferentialFiltration_iff`), so `x · ω ∈ Ω_F(D)` says
 `ω ∈ Ω_F(D - div x)`, which by maximality of `W` says `D - div x ≤ W`. -/
+@[simp]
 theorem repartitionDualMul_mem_weilDifferentialFiltration_iff_mem_riemannRochSpace
     (hF : IsFunctionField k F) {ω : Module.Dual k ↥(repartitionSpace k F)} {W : Divisor k F}
     (hW : IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D} W)
