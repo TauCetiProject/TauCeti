@@ -85,7 +85,7 @@ noncomputable def specialIsogeny : points 1 K →* points 1 K :=
 theorem coe_specialIsogeny (g : points 1 K) :
     ((specialIsogeny K g : GL (Fin (1 + 1 + (1 + 1))) K) :
         Matrix (Fin (1 + 1 + (1 + 1))) (Fin (1 + 1 + (1 + 1))) K) =
-      specialIsogenyMatrix ((g : GL (Fin (1 + 1 + (1 + 1))) K) :
+      Matrix.symplecticSpecialIsogeny ((g : GL (Fin (1 + 1 + (1 + 1))) K) :
         Matrix (Fin (1 + 1 + (1 + 1))) (Fin (1 + 1 + (1 + 1))) K) := by
   rw [specialIsogeny]
   simp [pointsMulEquivGLSymplecticFin]
@@ -107,7 +107,7 @@ theorem specialIsogeny_specialIsogeny (g : points 1 K) :
   apply Units.ext
   ext i j
   rw [coe_specialIsogeny, coe_specialIsogeny,
-    specialIsogenyMatrix_specialIsogenyMatrix
+    Matrix.symplecticSpecialIsogeny_symplecticSpecialIsogeny
       (GLSymplecticFin.mem_iff.mp (mem_GLSymplecticFin_of_mem_points 1 g.2)),
     Matrix.map_apply, coe_frobenius_apply]
   norm_num
