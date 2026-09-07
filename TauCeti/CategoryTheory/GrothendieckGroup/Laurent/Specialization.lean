@@ -103,7 +103,6 @@ noncomputable def map : LaurentK0 E →+ Specialization E a := by
       map_zero' := by rw [TensorProduct.tmul_zero]
       map_add' := fun _ _ => by rw [TensorProduct.tmul_add] }
 
-@[simp]
 private theorem map_apply (x : LaurentK0 E) :
     map E a x =
       @TensorProduct.tmul (LaurentPolynomial ℤ) inferInstance ℤ (LaurentK0 E) inferInstance
@@ -114,7 +113,6 @@ private theorem map_apply (x : LaurentK0 E) :
 noncomputable def of (X : C) : Specialization E a :=
   map E a (LaurentK0.of E X)
 
-@[simp]
 theorem of_eq_map (X : C) : of E a X = map E a (LaurentK0.of E X) :=
   (rfl)
 
@@ -144,7 +142,6 @@ theorem map_shiftZPow (n : ℤ) (x : ExactK0 E.toExactStructure) :
   rw [← LaurentK0.T_smul, map_smul, laurentEval_T]
 
 /-- At `q = 1`, every iterated grading shift has the same specialized class. -/
-@[simp]
 theorem atOne_map_shiftZPow (n : ℤ) (x : ExactK0 E.toExactStructure) :
     map E 1 (LaurentK0.ofExactK0 E (E.shiftZPow n x)) =
       map E 1 (LaurentK0.ofExactK0 E x) := by
