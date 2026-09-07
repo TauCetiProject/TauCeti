@@ -16,9 +16,9 @@ positive imaginary part, hence lies in `Complex.slitPlane`.  The principal power
 `(z - x) ^ (r : ℂ)` is therefore holomorphic and nonvanishing there, and its logarithmic
 derivative is the simple fraction `r / (z - x)`.
 
-Reflecting the base across the real axis, replacing `z - x` by `x - z`, multiplies the power by
-the constant `exp (π r i)` -- unimodular when `r` is real -- because the two bases lie on opposite
-sides of the real axis.
+Negating the base, replacing `z - x` by `x - z`, multiplies the power by the constant
+`exp (π r i)` -- unimodular when `r` is real -- because the two bases lie on opposite sides of the
+real axis.
 
 These are the basic branch facts for a factor of a product of principal powers with real base
 points, such as the Schwarz--Christoffel integrand.
@@ -62,7 +62,7 @@ lemma sub_cpow_ne_zero_of_im_pos {z : ℂ} (hz : 0 < z.im) (x r : ℝ) :
   simp only [sub_im, ofReal_im, sub_zero, zero_im] at this
   exact hz.ne' this
 
-/-- Reflecting the base of a principal power with real base point multiplies it by the factor
+/-- Negating the base of a principal power with real base point multiplies it by the factor
 `exp (π r i)`, unimodular for a real exponent `r`.  At a point with positive imaginary part the two
 bases `z - x` and `x - z` lie on opposite sides of the real axis, so their arguments differ by `π`
 and neither meets the branch cut of the other. -/

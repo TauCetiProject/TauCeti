@@ -15,7 +15,8 @@ The Schwarz--Christoffel map is the primitive on the upper half-plane of the pro
 `∏ i, (z - a i) ^ (e i)` of principal powers with real prevertices `a i`.  This file proves a
 boundary step toward identifying its image as a polygon: on a real interval containing no
 prevertex, the map extends continuously and its boundary values run along a straight line, in the
-direction `exp (i π ∑_{a i > x} e i)`.
+direction `exp (i π ∑_{a i > x} e i)`.  Only prevertices with nonzero exponent have to be avoided,
+since a factor with zero exponent is the constant `1`.
 
 The obstacle is that the principal power is cut along the negative reals, so the integrand itself
 is discontinuous across the part of the real axis to the left of a prevertex.  It is only the
@@ -89,6 +90,13 @@ agrees with the integrand up to the unimodular constant of
 def schwarzChristoffelContinuedIntegrand (a e : ι → ℝ) (c : ℝ) (z : ℂ) : ℂ :=
   ∏ i, (if a i ≤ c then z - (a i : ℂ) else (a i : ℂ) - z) ^ (e i : ℂ)
 
+/-- The continued Schwarz--Christoffel integrand is the product of its reflected principal-power
+factors. -/
+theorem schwarzChristoffelContinuedIntegrand_def (a e : ι → ℝ) (c : ℝ) (z : ℂ) :
+    schwarzChristoffelContinuedIntegrand a e c z =
+      ∏ i, (if a i ≤ c then z - (a i : ℂ) else (a i : ℂ) - z) ^ (e i : ℂ) :=
+  (rfl)
+
 /-- The **Schwarz--Christoffel edge angle** at a reference point `c`: the argument `π ∑_{a i > c}
 e i` of the direction in which the map runs along the image of the boundary interval containing
 `c`. -/
@@ -135,7 +143,7 @@ theorem schwarzChristoffelIntegrand_eq_exp_mul_continued (a e : ι → ℝ) (c :
     · rw [ite_eq_right (not_lt.mpr h), ite_eq_left h, Complex.exp_zero, one_mul]
     · rw [ite_eq_left (lt_of_not_ge h), ite_eq_right h]
       exact sub_cpow_eq_exp_mul_sub_cpow_of_im_pos hz' (a i) (e i : ℂ)
-  rw [schwarzChristoffelIntegrand_def, schwarzChristoffelContinuedIntegrand,
+  rw [schwarzChristoffelIntegrand_def, schwarzChristoffelContinuedIntegrand_def,
     Finset.prod_congr rfl fun i _ => hfac i, Finset.prod_mul_distrib, ← Complex.exp_sum]
   congr 2
   rw [schwarzChristoffelEdgeAngle]
@@ -144,56 +152,65 @@ theorem schwarzChristoffelIntegrand_eq_exp_mul_continued (a e : ι → ℝ) (c :
   exact Finset.sum_congr rfl fun i _ => by split <;> simp
 
 /-- The continued Schwarz--Christoffel integrand is holomorphic at any point where each reflected
-principal-power factor lies in `Complex.slitPlane`. -/
+principal-power factor with nonzero exponent lies in `Complex.slitPlane`.  A factor with zero
+exponent is the constant `1`, so it is unrestricted. -/
 theorem differentiableAt_schwarzChristoffelContinuedIntegrand (a e : ι → ℝ) {c : ℝ} {z : ℂ}
-    (hz : ∀ i, (if a i ≤ c then z - (a i : ℂ) else (a i : ℂ) - z) ∈ Complex.slitPlane) :
+    (hz : ∀ i, e i ≠ 0 →
+      (if a i ≤ c then z - (a i : ℂ) else (a i : ℂ) - z) ∈ Complex.slitPlane) :
     DifferentiableAt ℂ (schwarzChristoffelContinuedIntegrand a e c) z := by
   unfold schwarzChristoffelContinuedIntegrand
   refine DifferentiableAt.fun_finsetProd fun i _ => ?_
-  by_cases h : a i ≤ c
-  · simp only [ite_eq_left h]
-    exact (differentiableAt_id.sub_const _).cpow_const (by simpa [h] using hz i)
-  · simp only [ite_eq_right h]
-    exact ((differentiableAt_const _).sub differentiableAt_id).cpow_const
-      (by simpa [h] using hz i)
+  rcases eq_or_ne (e i) 0 with he | he
+  · simp only [he, Complex.ofReal_zero, Complex.cpow_zero]
+    exact differentiableAt_const 1
+  · by_cases h : a i ≤ c
+    · simp only [ite_eq_left h]
+      exact (differentiableAt_id.sub_const _).cpow_const (by simpa [h] using hz i he)
+    · simp only [ite_eq_right h]
+      exact ((differentiableAt_const _).sub differentiableAt_id).cpow_const
+        (by simpa [h] using hz i he)
 
-/-- The Schwarz--Christoffel integrand continued across the left endpoint of a prevertex-free
-interval is holomorphic on the whole vertical strip over that interval. -/
+/-- The Schwarz--Christoffel integrand continued across the left endpoint of an interval free of
+prevertices with nonzero exponent is holomorphic on the whole vertical strip over that
+interval. -/
 theorem differentiableOn_schwarzChristoffelContinuedIntegrand (a e : ι → ℝ) {p q : ℝ}
-    (ha : ∀ i, a i ∉ Ioo p q) :
+    (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) :
     DifferentiableOn ℂ (schwarzChristoffelContinuedIntegrand a e p) {z : ℂ | z.re ∈ Ioo p q} := by
   intro z hz
-  refine (differentiableAt_schwarzChristoffelContinuedIntegrand a e fun i =>
+  refine (differentiableAt_schwarzChristoffelContinuedIntegrand a e fun i he =>
     ?_).differentiableWithinAt
   by_cases hi : a i ≤ p
   · rw [ite_eq_left hi]
     exact mem_slitPlane_iff.mpr (Or.inl (by simpa using sub_pos.mpr (hi.trans_lt hz.1)))
   · rw [ite_eq_right hi]
     exact mem_slitPlane_iff.mpr (Or.inl (by
-      simpa using sub_pos.mpr (hz.2.trans_le (not_lt.mp fun h => ha i ⟨lt_of_not_ge hi, h⟩))))
+      simpa using sub_pos.mpr (hz.2.trans_le (not_lt.mp fun h => ha i he ⟨lt_of_not_ge hi, h⟩))))
 
-/-- On a prevertex-free real interval the continued Schwarz--Christoffel integrand takes the
-positive real value `∏ i, |x - a i| ^ e i`: every factor is a positive real raised to a real
-power. -/
+/-- At a real point separated in the expected direction from every prevertex with nonzero
+exponent, the continued Schwarz--Christoffel integrand takes the positive real value
+`∏ i, |x - a i| ^ e i`: every such factor is a positive real raised to a real power, and a factor
+with zero exponent is `1` on both sides. -/
 theorem schwarzChristoffelContinuedIntegrand_ofReal (a e : ι → ℝ) {c x : ℝ}
-    (hlo : ∀ i, a i ≤ c → a i < x) (hhi : ∀ i, c < a i → x < a i) :
+    (hlo : ∀ i, e i ≠ 0 → a i ≤ c → a i < x) (hhi : ∀ i, e i ≠ 0 → c < a i → x < a i) :
     schwarzChristoffelContinuedIntegrand a e c (x : ℂ) = ((∏ i, |x - a i| ^ e i : ℝ) : ℂ) := by
-  rw [schwarzChristoffelContinuedIntegrand, Complex.ofReal_prod]
+  rw [schwarzChristoffelContinuedIntegrand_def, Complex.ofReal_prod]
   refine Finset.prod_congr rfl fun i _ => ?_
-  by_cases h : a i ≤ c
-  · have hx : 0 < x - a i := sub_pos.mpr (hlo i h)
-    have hcast : (x : ℂ) - (a i : ℂ) = ((x - a i : ℝ) : ℂ) := by push_cast; ring
-    rw [ite_eq_left h, hcast, ← Complex.ofReal_cpow hx.le, abs_of_pos hx]
-  · have hx : 0 < a i - x := sub_pos.mpr (hhi i (lt_of_not_ge h))
-    have hcast : (a i : ℂ) - (x : ℂ) = ((a i - x : ℝ) : ℂ) := by push_cast; ring
-    rw [ite_eq_right h, hcast, ← Complex.ofReal_cpow hx.le, abs_sub_comm, abs_of_pos hx]
+  rcases eq_or_ne (e i) 0 with he | he
+  · simp [he]
+  · by_cases h : a i ≤ c
+    · have hx : 0 < x - a i := sub_pos.mpr (hlo i he h)
+      have hcast : (x : ℂ) - (a i : ℂ) = ((x - a i : ℝ) : ℂ) := by push_cast; ring
+      rw [ite_eq_left h, hcast, ← Complex.ofReal_cpow hx.le, abs_of_pos hx]
+    · have hx : 0 < a i - x := sub_pos.mpr (hhi i he (lt_of_not_ge h))
+      have hcast : (a i : ℂ) - (x : ℂ) = ((a i - x : ℝ) : ℂ) := by push_cast; ring
+      rw [ite_eq_right h, hcast, ← Complex.ofReal_cpow hx.le, abs_sub_comm, abs_of_pos hx]
 
-/-- The **boundary value of the Schwarz--Christoffel integrand** at a point of a prevertex-free
-real interval: approaching from the upper half-plane, the integrand tends to the positive real
-`∏ i, |x - a i| ^ e i` rotated by the edge angle.  In particular its argument is constant along
-the interval. -/
+/-- The **boundary value of the Schwarz--Christoffel integrand** at a point of a real interval
+free of prevertices with nonzero exponent: approaching from the upper half-plane, the integrand
+tends to the positive real `∏ i, |x - a i| ^ e i` rotated by the edge angle.  In particular its
+argument is constant along the interval. -/
 theorem tendsto_schwarzChristoffelIntegrand_nhdsWithin (a e : ι → ℝ) {p q x : ℝ}
-    (ha : ∀ i, a i ∉ Ioo p q) (hx : x ∈ Ioo p q) :
+    (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) (hx : x ∈ Ioo p q) :
     Tendsto (schwarzChristoffelIntegrand a e) (𝓝[upperHalfPlaneSet] (x : ℂ))
       (𝓝 (Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) *
         ((∏ i, |x - a i| ^ e i : ℝ) : ℂ))) := by
@@ -202,8 +219,8 @@ theorem tendsto_schwarzChristoffelIntegrand_nhdsWithin (a e : ι → ℝ) {p q x
   have hmem : (x : ℂ) ∈ {z : ℂ | z.re ∈ Ioo p q} := by simpa using hx
   have hval : schwarzChristoffelContinuedIntegrand a e p (x : ℂ) =
       ((∏ i, |x - a i| ^ e i : ℝ) : ℂ) :=
-    schwarzChristoffelContinuedIntegrand_ofReal a e (fun i hi => hi.trans_lt hx.1)
-      fun i hi => hx.2.trans_le (not_lt.mp fun h => ha i ⟨hi, h⟩)
+    schwarzChristoffelContinuedIntegrand_ofReal a e (fun i _ hi => hi.trans_lt hx.1)
+      fun i he hi => hx.2.trans_le (not_lt.mp fun h => ha i he ⟨hi, h⟩)
   have hcont : ContinuousAt (schwarzChristoffelContinuedIntegrand a e p) (x : ℂ) :=
     ((differentiableOn_schwarzChristoffelContinuedIntegrand a e ha _ hmem).differentiableAt
       (hstrip.mem_nhds hmem)).continuousAt
@@ -217,14 +234,15 @@ theorem tendsto_schwarzChristoffelIntegrand_nhdsWithin (a e : ι → ℝ) {p q x
   filter_upwards [self_mem_nhdsWithin] with z hz
   exact (schwarzChristoffelIntegrand_eq_exp_mul_continued a e p hz).symm
 
-/-- **The Schwarz--Christoffel map has straight image edges.**  Let the prevertices `a` avoid the
-real interval `Ioo p q`.  Then the Schwarz--Christoffel primitive extends continuously from the
-upper half-plane to that interval, and any increment of the extension along it is a real multiple
-of the unimodular direction with argument `schwarzChristoffelEdgeAngle a e p`.  The image of the
-interval is therefore contained in a line with that direction; see
+/-- **The Schwarz--Christoffel map has straight image edges.**  Let every prevertex `a i` with
+nonzero exponent avoid the real interval `Ioo p q`; a prevertex with zero exponent contributes the
+constant factor `1` and is harmless.  Then the Schwarz--Christoffel primitive extends continuously
+from the upper half-plane to that interval, and any increment of the extension along it is a real
+multiple of the unimodular direction with argument `schwarzChristoffelEdgeAngle a e p`.  The image
+of the interval is therefore contained in a line with that direction; see
 `exists_tendsto_schwarzChristoffelPrimitive_injOn_collinear`. -/
 theorem exists_tendsto_schwarzChristoffelPrimitive_sub_eq (a e : ι → ℝ) (z₀ : UpperHalfPlane)
-    {p q : ℝ} (ha : ∀ i, a i ∉ Ioo p q) :
+    {p q : ℝ} (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) :
     ∃ L : ℝ → ℂ,
       (∀ x ∈ Ioo p q, Tendsto (schwarzChristoffelPrimitive a e z₀)
         (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 (L x))) ∧
@@ -287,8 +305,8 @@ theorem exists_tendsto_schwarzChristoffelPrimitive_sub_eq (a e : ι → ℝ) (z�
         (fun t : ℝ => ((∏ i, |t - a i| ^ e i : ℝ) : ℂ) * C) (uIcc y x) := by
       intro t ht
       have h := schwarzChristoffelContinuedIntegrand_ofReal a e (c := p)
-        (fun i hi => hi.trans_lt (hsub ht).1)
-        fun i hi => (hsub ht).2.trans_le (not_lt.mp fun h => ha i ⟨hi, h⟩)
+        (fun i _ hi => hi.trans_lt (hsub ht).1)
+        fun i he hi => (hsub ht).2.trans_le (not_lt.mp fun h => ha i he ⟨hi, h⟩)
       simp only [hg, h]
       ring
     calc P (x : ℂ) + k - (P (y : ℂ) + k) = ∫ t in y..x, g (t : ℂ) := by
@@ -299,25 +317,31 @@ theorem exists_tendsto_schwarzChristoffelPrimitive_sub_eq (a e : ι → ℝ) (z�
       _ = ((∫ t in y..x, ∏ i, |t - a i| ^ e i : ℝ) : ℂ) * C := by
           rw [intervalIntegral.integral_ofReal]
 
-/-- **The Schwarz--Christoffel map carries a prevertex-free boundary interval injectively into a
-line.**  The boundary values of the map along such an interval are collinear, and distinct points
-of the interval have distinct boundary values, so the interval is carried injectively onto a subset
-of a line — a candidate edge for a later polygon identification. -/
+/-- **The Schwarz--Christoffel map carries a boundary interval free of prevertices with nonzero
+exponent injectively into a line.**  The boundary values of the map along such an interval are
+collinear, and distinct points of the interval have distinct boundary values, so the interval is
+carried injectively onto a subset of a line — a candidate edge for a later polygon
+identification. -/
 theorem exists_tendsto_schwarzChristoffelPrimitive_injOn_collinear (a e : ι → ℝ)
-    (z₀ : UpperHalfPlane) {p q : ℝ} (ha : ∀ i, a i ∉ Ioo p q) :
+    (z₀ : UpperHalfPlane) {p q : ℝ} (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) :
     ∃ L : ℝ → ℂ,
       (∀ x ∈ Ioo p q, Tendsto (schwarzChristoffelPrimitive a e z₀)
         (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 (L x))) ∧
       ContinuousOn L (Ioo p q) ∧
       InjOn L (Ioo p q) ∧ Collinear ℝ (L '' Ioo p q) := by
   obtain ⟨L, hL, hLcont, hdiff⟩ := exists_tendsto_schwarzChristoffelPrimitive_sub_eq a e z₀ ha
-  have hne : ∀ t ∈ Ioo p q, ∀ i, t ≠ a i := fun t ht i h => ha i (h ▸ ht)
-  have hfcont : ContinuousOn (fun t : ℝ => ∏ i, |t - a i| ^ e i) (Ioo p q) :=
-    continuousOn_finsetProd _ fun i _ t ht =>
-      (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
-        (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne (hne t ht i))))).continuousWithinAt
-  have hprodpos : ∀ t : ℝ, (∀ i, t ≠ a i) → 0 < ∏ i, |t - a i| ^ e i := fun t ht =>
-    Finset.prod_pos fun i _ => Real.rpow_pos_of_pos (abs_pos.mpr (sub_ne_zero_of_ne (ht i))) _
+  have hne : ∀ t ∈ Ioo p q, ∀ i, e i ≠ 0 → t ≠ a i := fun t ht i he h => ha i he (h ▸ ht)
+  have hfcont : ContinuousOn (fun t : ℝ => ∏ i, |t - a i| ^ e i) (Ioo p q) := by
+    refine continuousOn_finsetProd _ fun i _ t ht => ?_
+    rcases eq_or_ne (e i) 0 with he | he
+    · simpa [he] using continuousWithinAt_const
+    · exact (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
+        (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne (hne t ht i he))))).continuousWithinAt
+  have hprodpos : ∀ t : ℝ, (∀ i, e i ≠ 0 → t ≠ a i) → 0 < ∏ i, |t - a i| ^ e i := by
+    refine fun t ht => Finset.prod_pos fun i _ => ?_
+    rcases eq_or_ne (e i) 0 with he | he
+    · simp [he]
+    · exact Real.rpow_pos_of_pos (abs_pos.mpr (sub_ne_zero_of_ne (ht i he))) _
   have key : ∀ x ∈ Ioo p q, ∀ y ∈ Ioo p q, y < x → L x - L y ≠ 0 := by
     intro x hx y hy hyx
     rw [hdiff x hx y hy]
