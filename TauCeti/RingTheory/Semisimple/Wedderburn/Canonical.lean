@@ -99,8 +99,6 @@ the base field.
 
 ## References
 
-This implements the Layer 2 targets "the canonical invariants" and "uniqueness / invariance" of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 The assembly of the canonical presentation follows Mathlib's
 `IsSemisimpleModule.exists_end_algEquiv_pi_matrix_end` and
 `IsSemisimpleRing.exists_algEquiv_pi_matrix_end_mulOpposite`.  See T. Y. Lam, *A First Course in
@@ -135,10 +133,20 @@ module of `R`, defined as the length of the `S`-isotypic component of `R`.
 Over a semisimple ring the isotypic component is a finite direct sum of copies of `S`, so this is
 the number of summands; taking the length instead makes the definition independent of a chosen
 decomposition.  It is the size of the Wedderburn block of `S`. -/
-noncomputable def blockMultiplicity : ℕ :=
+@[expose] noncomputable def blockMultiplicity : ℕ :=
   (Module.length R (isotypicComponent R R S)).toNat
 
 variable {R S}
+
+/-- **The block division ring depends only on the isomorphism class**: a linear equivalence
+conjugates the endomorphism rings, hence also their opposites. -/
+def blockDivisionRingEquiv {S' : Type w} [AddCommGroup S'] [Module R S']
+    (e : S ≃ₗ[R] S') : blockDivisionRing R S ≃+* blockDivisionRing R S' :=
+  RingEquiv.op e.conjRingEquiv
+
+/-- The block multiplicity is the length of the corresponding isotypic component. -/
+theorem blockMultiplicity_def :
+    blockMultiplicity R S = (Module.length R (isotypicComponent R R S)).toNat := rfl
 
 /-- **The block multiplicity depends only on the isomorphism class**, since isomorphic modules have
 the same isotypic component. -/
@@ -212,8 +220,9 @@ theorem exists_ringEquiv_pi_matrix_end_mulOpposite_blockMultiplicity :
     intro M _ _ _
     let c : isotypicComponents R R :=
       ⟨isotypicComponent R R M, isotypicComponent_mem_isotypicComponents R M⟩
-    exact ⟨c, isotypicComponent_eq_iff.mp (show
-      isotypicComponent R R M = isotypicComponent R R (S c) from hcomp c)⟩
+    have hc : isotypicComponent R R M = isotypicComponent R R (S c) := by
+      simpa only [c] using hcomp c
+    exact ⟨c, isotypicComponent_eq_iff.mp hc⟩
   let φ := Finite.equivFin (isotypicComponents R R)
   refine ⟨_, fun i ↦ S (φ.symm i), fun i ↦ d (φ.symm i),
     fun i ↦ simple _, fun i ↦ pos _, fun i ↦ hmult _,
@@ -221,8 +230,7 @@ theorem exists_ringEquiv_pi_matrix_end_mulOpposite_blockMultiplicity :
     fun M _ _ _ ↦ by
       obtain ⟨c, h⟩ := hall M
       refine ⟨φ c, ?_⟩
-      change Nonempty (M ≃ₗ[R] S (φ.symm (φ c)))
-      rw [φ.symm_apply_apply]
+      rw [← φ.symm_apply_apply c] at h
       exact h, ⟨?_⟩⟩
   -- Assemble the presentation from the two splittings, as Mathlib does: the endomorphism ring of
   -- the regular module is the product of the endomorphism rings of the isotypic components, each
