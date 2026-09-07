@@ -47,8 +47,7 @@ factor, so the bijection can be evaluated on a concrete example.
 * `TauCeti.KummerDedekind.ramificationIdx_primesOverEquivNormalizedFactorsMinPolyMk_symm_apply`:
   its ramification index is the multiplicity of the factor in `minpoly R x` modulo `p`.
 * `TauCeti.KummerDedekind.irreducible_map_iff_irreducible_minpoly_map`: `p` stays prime in `S`
-  exactly when `minpoly R x` is irreducible modulo `p`; the converse direction is the one Mathlib's
-  `Ideal.irreducible_map_of_irreducible_minpoly` leaves open.
+  exactly when `minpoly R x` is irreducible modulo `p`.
 
 ## Provenance
 
@@ -202,40 +201,28 @@ theorem ramificationIdx_primesOverEquivNormalizedFactorsMinPolyMk_symm_apply {d 
 open scoped Classical in
 /-- **The converse of `Ideal.irreducible_map_of_irreducible_minpoly`.** If `p S` is irreducible,
 that is, if `p` stays prime in `S`, then `minpoly R x` modulo `p` is irreducible: the
-Kummer–Dedekind correspondence matches the single prime factor `p S`, of multiplicity one, with a
-single monic irreducible factor of multiplicity one, which is therefore `minpoly R x` modulo `p`
-itself. -/
+Kummer–Dedekind correspondence matches the single prime factor of `p S` with a single monic
+irreducible factor, which is therefore `minpoly R x` modulo `p` itself. -/
 theorem irreducible_minpoly_map_of_irreducible_map (h : Irreducible (p.map (algebraMap R S))) :
     Irreducible ((minpoly R x).map (Ideal.Quotient.mk p)) := by
-  set e := KummerDedekind.normalizedFactorsMapEquivNormalizedFactorsMinPolyMk hp hp0 hx hx'
-    with he
   have hm0 : (minpoly R x).map (Ideal.Quotient.mk p) ≠ 0 :=
     Polynomial.map_monic_ne_zero (minpoly.monic hx')
-  have hpS : p.map (algebraMap R S) ∈ normalizedFactors (p.map (algebraMap R S)) := by
-    rw [normalizedFactors_irreducible h, normalize_eq]
-    exact Multiset.mem_singleton_self _
-  -- `d` is the factor matched with `p S`; it is the only normalized factor, of multiplicity one.
-  set d := (e ⟨_, hpS⟩).val with hd
-  have hdmem : d ∈ normalizedFactors ((minpoly R x).map (Ideal.Quotient.mk p)) :=
-    (e ⟨_, hpS⟩).prop
-  have hdirr : Irreducible d := irreducible_of_normalized_factor d hdmem
-  have hdmonic : d.Monic := ((Polynomial.mem_normalizedFactors_iff hm0).mp hdmem).2.1
-  have hall : ∀ d' ∈ normalizedFactors ((minpoly R x).map (Ideal.Quotient.mk p)), d' = d := by
-    intro d' hd'
-    have h1 := (e.symm ⟨d', hd'⟩).prop
-    simp only [normalizedFactors_irreducible h, normalize_eq, Multiset.mem_singleton] at h1
-    rw [hd, ← show e.symm ⟨d', hd'⟩ = ⟨_, hpS⟩ from Subtype.ext h1, Equiv.apply_symm_apply]
-  have hcount : (normalizedFactors ((minpoly R x).map (Ideal.Quotient.mk p))).count d = 1 := by
-    have hmult := KummerDedekind.emultiplicity_factors_map_eq_emultiplicity hp hp0 hx hx' hpS
-    rw [← he, ← hd, emultiplicity_eq_count_normalizedFactors h h.ne_zero,
-      emultiplicity_eq_count_normalizedFactors hdirr hm0, normalizedFactors_irreducible h,
-      normalize_eq, Multiset.count_singleton_self, hdmonic.normalize_eq_self] at hmult
-    exact_mod_cast hmult.symm
-  have hrep := Multiset.eq_replicate_card.mpr hall
-  rw [hrep, Multiset.count_replicate_self] at hcount
+  -- The prime factors of `p S` form a singleton, and they are the image of the normalized factors
+  -- of `minpoly R x` modulo `p` under the Kummer–Dedekind bijection.
+  have hcard : Multiset.card (normalizedFactors ((minpoly R x).map (Ideal.Quotient.mk p))) = 1 := by
+    have h1 : Multiset.card (normalizedFactors (p.map (algebraMap R S))) = 1 := by
+      rw [normalizedFactors_irreducible h, Multiset.card_singleton]
+    have hmap := congrArg Multiset.card
+      (KummerDedekind.normalizedFactors_ideal_map_eq_normalizedFactors_min_poly_mk_map hp hp0 hx
+        hx')
+    rw [h1, Multiset.card_map, Multiset.card_attach] at hmap
+    exact hmap.symm
+  obtain ⟨d, hd⟩ := Multiset.card_eq_one.mp hcard
+  have hdirr : Irreducible d :=
+    irreducible_of_normalized_factor d (by rw [hd]; exact Multiset.mem_singleton_self d)
   -- Hence `minpoly R x` modulo `p` is associated to the irreducible `d`.
   have hassoc := prod_normalizedFactors hm0
-  rw [hrep, hcount, Multiset.replicate_one, Multiset.prod_singleton] at hassoc
+  rw [hd, Multiset.prod_singleton] at hassoc
   exact hassoc.irreducible hdirr
 
 /-- **The Kummer–Dedekind irreducibility criterion.** `p` stays prime in `S` exactly when
