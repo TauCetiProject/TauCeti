@@ -34,7 +34,7 @@ variable [Comodule R (MonoidAlgebra R G) M]
 space. -/
 @[simp]
 theorem groupLikeWeightSpace_single_one (g : G) :
-    GroupLike.weightSpace (M := M)
+    _root_.GroupLike.weightSpace (M := M)
         ⟨MonoidAlgebra.single g (1 : R),
           by
             constructor

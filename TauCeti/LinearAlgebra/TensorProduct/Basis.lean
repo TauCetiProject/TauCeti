@@ -17,8 +17,8 @@ commute with a map of the scalar-extension algebras.
 
 ## Main declarations
 
-* `TauCeti.TensorProduct.tensorComponent`: contraction against the right factor of a tensor product.
-* `TauCeti.TensorProduct.tensor_eq_of_forall_tensorComponent_eq`: contractions against a free right
+* `TensorProduct.tensorComponent`: contraction against the right factor of a tensor product.
+* `TensorProduct.tensor_eq_of_forall_tensorComponent_eq`: contractions against a free right
   factor detect equality.
 * `Module.Basis.map_baseChange_repr`: applying a scalar map to a coordinate in a base-changed
   basis agrees with first mapping the tensor and then taking its coordinate.
@@ -31,7 +31,7 @@ public section
 open TensorProduct
 open scoped TensorProduct
 
-namespace TauCeti.TensorProduct
+namespace TensorProduct
 
 universe u v w
 
@@ -50,11 +50,11 @@ theorem tensorComponent_tmul (phi : N →ₗ[R] R) (m : M) (n : N) :
   simp [tensorComponent]
 
 /-- The coordinates of a tensor in a basis of its right factor are its tensor components. -/
-theorem equivFinsuppOfBasisRight_apply {ι : Type*} [DecidableEq ι]
+theorem equivFinsuppOfBasisRight_apply_eq_tensorComponent {ι : Type*} [DecidableEq ι]
     (b : Module.Basis ι R N) (t : M ⊗[R] N) (i : ι) :
     TensorProduct.equivFinsuppOfBasisRight b t i =
       tensorComponent (R := R) (M := M) (b.coord i) t := by
-  rw [_root_.TensorProduct.equivFinsuppOfBasisRight_apply]
+  rw [TensorProduct.equivFinsuppOfBasisRight_apply]
   rfl
 
 /-- Equality of all contractions against the right factor detects equality in a tensor product
@@ -67,7 +67,8 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Free R N] {x y : M ⊗[R]
   let b := Module.Free.chooseBasis R N
   apply (TensorProduct.equivFinsuppOfBasisRight b (M := M)).injective
   ext i
-  rw [equivFinsuppOfBasisRight_apply, equivFinsuppOfBasisRight_apply]
+  rw [equivFinsuppOfBasisRight_apply_eq_tensorComponent,
+    equivFinsuppOfBasisRight_apply_eq_tensorComponent]
   exact h (b.coord i)
 
 /-- Contraction by the zero functional is the zero linear map. -/
@@ -77,7 +78,7 @@ theorem tensorComponent_zero :
   refine TensorProduct.ext' fun m n => ?_
   simp
 
-end TauCeti.TensorProduct
+end TensorProduct
 
 namespace Module.Basis
 
