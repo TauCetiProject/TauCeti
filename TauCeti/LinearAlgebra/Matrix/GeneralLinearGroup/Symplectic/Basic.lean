@@ -813,15 +813,15 @@ theorem coe_differenceShortRootUnit {i j : Fin m} (hij : i ≠ j) (c : R) :
   simp [differenceShortRootUnit, differenceShortRootHom,
     commutingTransvectionPairHom_apply]
 
-/-- The matrix underlying `x_{eᵢ-eⱼ}(c)`, as the identity plus two matrix units. The two
-transvections of `coe_differenceShortRootUnit` commute and their product has no cross term, the
-column of the first and the row of the second being an upper and a lower coordinate. -/
+/-- The matrix underlying `x_{eᵢ-eⱼ}(c)`, as the identity plus two matrix units. -/
 theorem coe_differenceShortRootUnit_eq_one_add_single_sub_single {i j : Fin m} (hij : i ≠ j)
     (c : R) :
     (((differenceShortRootUnit hij c : GLSymplecticFin m R) : GL (Fin (m + m)) R) :
         Matrix (Fin (m + m)) (Fin (m + m)) R) =
       1 + Matrix.single (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inl j)) c -
         Matrix.single (finSumFinEquiv (Sum.inr j)) (finSumFinEquiv (Sum.inr i)) c := by
+  -- The product of the two transvections of `coe_differenceShortRootUnit` has no cross term: the
+  -- column of the first and the row of the second are an upper and a lower coordinate.
   have hzero : Matrix.single (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inl j)) c *
       Matrix.single (finSumFinEquiv (Sum.inr j)) (finSumFinEquiv (Sum.inr i)) (-c) = 0 := by
     apply Matrix.single_mul_single_of_ne
