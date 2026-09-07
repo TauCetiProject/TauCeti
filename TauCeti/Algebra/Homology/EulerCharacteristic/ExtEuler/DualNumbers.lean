@@ -15,17 +15,15 @@ Let `k` be a field, let `A = k[ε]` be the dual numbers `k[ε]/(ε²)`, and let 
 residue field of `A`, viewed as an `A`-module. Every `Ext` group of the pair `(S, S)` is a
 one-dimensional `k`-vector space (`TauCeti.extDualNumberResidueEquiv`), so `TauCeti.IsExtFinite`
 holds while none of the groups vanishes and `TauCeti.IsExtBounded` fails: the alternating sum
-`∑ n, (-1)ⁿ dim_k Extⁿ(S, S)` has no meaning. This is the example that separates the two halves
-of `TauCeti.IsEulerAdmissible`. Since `TauCeti.extEuler` takes a proof of
-`TauCeti.IsEulerAdmissible` as an argument, `TauCeti.not_isEulerAdmissible_dualNumberResidue` is
-exactly the statement that this pair has no Ext-Euler characteristic; no totalised value is
-available for it.
+`∑ n, (-1)ⁿ dim_k Extⁿ(S, S)` is not a finite sum. This is the example that separates the two
+halves of `TauCeti.IsEulerAdmissible`. Since `TauCeti.extEuler` takes a proof of
+`TauCeti.IsEulerAdmissible` as an argument, it cannot be instantiated for this pair and exposes no
+totalised fallback value.
 
 ## Main results
 
 * `TauCeti.not_isExtBounded_dualNumberResidue`: no degree bounds the `Ext`-support of `(S, S)`.
   This half needs only a nontrivial commutative ring of coefficients.
-* `TauCeti.finrank_ext_dualNumberResidue`: over a field, every `Extⁿ(S, S)` is one-dimensional.
 * `TauCeti.isExtFinite_dualNumberResidue`: every `Extⁿ(S, S)` is a finite-dimensional
   `k`-vector space.
 * `TauCeti.not_isEulerAdmissible_dualNumberResidue`: the pair `(S, S)` is not Euler-admissible.
@@ -34,8 +32,6 @@ available for it.
 
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Cambridge Studies in Advanced
   Mathematics 38, Cambridge University Press (1994), Section 2.5 and Chapter 4.
-* The Tau Ceti `GrothendieckEulerForms` roadmap, section *The dual numbers*, which selects the
-  pair `(S, S)` as the example separating `Ext`-finiteness from `Ext`-boundedness.
 -/
 
 open CategoryTheory CategoryTheory.Abelian
@@ -77,11 +73,6 @@ section Field
 
 variable [Field k]
 
-/-- Over a field, every `Extⁿ(S, S)` of the residue field `S` of `k[ε]` is one-dimensional. -/
-theorem finrank_ext_dualNumberResidue (n : ℕ) :
-    Module.finrank k (Ext.{u} (dualNumberResidue k) (dualNumberResidue k) n) = 1 := by
-  rw [(extDualNumberResidueEquiv k n).finrank_eq, Module.finrank_self]
-
 /-- Every `Ext` group of `k[ε]/(ε)` against itself is a finite-dimensional `k`-vector space. -/
 theorem isExtFinite_dualNumberResidue :
     IsExtFinite.{u} k (dualNumberResidue k) (dualNumberResidue k) :=
@@ -91,8 +82,8 @@ theorem isExtFinite_dualNumberResidue :
 against itself: its `Ext` groups are all one-dimensional, so `Ext`-finiteness holds
 (`TauCeti.isExtFinite_dualNumberResidue`), but none of them vanishes, so the alternating sum
 `∑ n, (-1)ⁿ dim_k Extⁿ(S, S)` is not a finite sum. Because `TauCeti.extEuler` consumes a proof of
-`TauCeti.IsEulerAdmissible`, this pair has no Ext-Euler characteristic at all; no totalised value
-is exposed for it. -/
+`TauCeti.IsEulerAdmissible`, it cannot be instantiated for this pair and exposes no totalised
+fallback value. -/
 theorem not_isEulerAdmissible_dualNumberResidue :
     ¬ IsEulerAdmissible.{u} k (dualNumberResidue k) (dualNumberResidue k) :=
   fun h => not_isExtBounded_dualNumberResidue k h.isExtBounded

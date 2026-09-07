@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Algebra.Homology.AlternatingConst
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.RingTheory.DualNumber
 public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 
@@ -36,13 +37,12 @@ zero, because `ε` annihilates `S`. Hence `Extⁿ_A(S, S) ≅ k` as a `k`-module
   `Hom_A(A, S) ≃ₗ[k] Extⁿ⁺¹(S, S)` read off that resolution.
 * `TauCeti.extDualNumberResidueEquiv`: the `k`-linear equivalence `Extⁿ(S, S) ≃ₗ[k] k`, for
   every `n`.
+* `TauCeti.finrank_ext_dualNumberResidue`: over a field, every `Extⁿ(S, S)` is one-dimensional.
 
 ## References
 
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Cambridge Studies in Advanced
   Mathematics 38, Cambridge University Press (1994), Section 2.5 and Chapter 4.
-* The Tau Ceti `GrothendieckEulerForms` roadmap, section *The dual numbers*, which lays out the
-  periodic resolution followed here and the resulting `Extⁿ_A(S, S) ≅ k`.
 -/
 
 open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits TrivSqZeroExt DualNumber
@@ -77,6 +77,18 @@ noncomputable def dualNumberResidueEquiv : dualNumberResidue k ≃ₗ[k] k where
   left_inv _ := rfl
   right_inv _ := rfl
 
+/-- The identification of `k[ε]/(ε)` with `k` is the identity on the underlying elements. -/
+@[simp]
+theorem dualNumberResidueEquiv_apply (x : dualNumberResidue k) :
+    dualNumberResidueEquiv k x = x :=
+  (rfl)
+
+/-- The inverse identification of `k` with `k[ε]/(ε)` is also the identity on elements. -/
+@[simp]
+theorem dualNumberResidueEquiv_symm_apply (x : k) :
+    (dualNumberResidueEquiv k).symm x = x :=
+  (rfl)
+
 /-- The `k[ε]`-action on `k[ε]/(ε)` is multiplication by the constant term. -/
 theorem dualNumberResidueEquiv_smul (a : DualNumber k) (x : dualNumberResidue k) :
     dualNumberResidueEquiv k (a • x) = fst a * dualNumberResidueEquiv k x :=
@@ -105,10 +117,10 @@ noncomputable def dualNumberProj : dualNumberFree k ⟶ dualNumberResidue k :=
       map_add' := fun _ _ => rfl
       map_smul' := TrivSqZeroExt.fst_mul }
 
-/-- The quotient map is the constant-term map, read through `TauCeti.dualNumberResidueEquiv`. -/
+/-- The quotient map is the constant-term map. -/
 @[simp]
 theorem dualNumberProj_apply (x : DualNumber k) :
-    dualNumberResidueEquiv k ((dualNumberProj k).hom x) = fst x :=
+    (dualNumberProj k).hom x = fst x :=
   (rfl)
 
 /-- Multiplication by `ε` is left multiplication by `ε` as a linear map. -/
@@ -157,7 +169,8 @@ private theorem mem_ker_dualNumberEpsSmul_iff {x : DualNumber k} :
 /-- The quotient map kills exactly the dual numbers with vanishing constant term. -/
 private theorem mem_ker_dualNumberProj_iff {x : DualNumber k} :
     x ∈ LinearMap.ker (dualNumberProj k).hom ↔ fst x = 0 := by
-  rw [LinearMap.mem_ker, ← (dualNumberResidueEquiv k).map_eq_zero_iff, dualNumberProj_apply]
+  rw [LinearMap.mem_ker, ← (dualNumberResidueEquiv k).map_eq_zero_iff,
+    dualNumberResidueEquiv_apply, dualNumberProj_apply]
 
 /-- Exactness of the periodic complex away from degree zero. -/
 private theorem range_dualNumberEpsSmul_eq_ker :
@@ -285,7 +298,7 @@ theorem homDualNumberFreeEquiv_apply (f : dualNumberFree k ⟶ dualNumberResidue
 
 /-- The quotient map is the element `1` of `Hom_A(A, S) ≅ k`. -/
 theorem homDualNumberFreeEquiv_proj : homDualNumberFreeEquiv k (dualNumberProj k) = 1 := by
-  rw [homDualNumberFreeEquiv_apply, dualNumberProj_apply, fst_one]
+  rw [homDualNumberFreeEquiv_apply, dualNumberResidueEquiv_apply, dualNumberProj_apply, fst_one]
 
 /-- `End_A(S)` is isomorphic to `k` as a `k`-module. -/
 noncomputable def homDualNumberResidueEquiv :
@@ -356,5 +369,10 @@ theorem extDualNumberResidueEquiv_succ (n : ℕ)
     extDualNumberResidueEquiv k (n + 1) α =
       homDualNumberFreeEquiv k ((extDualNumberResidueSuccEquiv k n).symm α) := by
   rw [extDualNumberResidueEquiv, LinearEquiv.trans_apply]
+
+/-- Over a field, every `Extⁿ(S, S)` of the residue field `S` of `k[ε]` is one-dimensional. -/
+theorem finrank_ext_dualNumberResidue {k : Type u} [Field k] (n : ℕ) :
+    Module.finrank k (Ext.{u} (dualNumberResidue k) (dualNumberResidue k) n) = 1 := by
+  rw [(extDualNumberResidueEquiv k n).finrank_eq, Module.finrank_self]
 
 end TauCeti

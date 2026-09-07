@@ -45,7 +45,7 @@ open CategoryTheory.Abelian
 
 universe w v u t
 
-variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [CommRing k] [Linear k C]
+variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Ring k] [Linear k C]
   [HasExt.{w} C] {X Y : C}
 
 /-- If the two differentials of a projective resolution `R` of `X` adjacent to degree `n + 1`
