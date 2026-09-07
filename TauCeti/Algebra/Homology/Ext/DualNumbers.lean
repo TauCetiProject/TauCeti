@@ -94,7 +94,6 @@ noncomputable def dualNumberEpsSmul : dualNumberFree k ⟶ dualNumberFree k :=
   ModuleCat.ofHom (LinearMap.mulLeft (DualNumber k) (ε : DualNumber k))
 
 /-- Multiplication by `ε` acts on elements as multiplication by `ε`. -/
-@[simp]
 theorem dualNumberEpsSmul_apply (x : DualNumber k) :
     (dualNumberEpsSmul k).hom x = ε * x :=
   (rfl)
@@ -113,11 +112,13 @@ theorem dualNumberProj_apply (x : DualNumber k) :
   (rfl)
 
 /-- Multiplication by `ε` is left multiplication by `ε` as a linear map. -/
+@[simp]
 theorem dualNumberEpsSmul_hom :
     (dualNumberEpsSmul k).hom = LinearMap.mulLeft (DualNumber k) (ε : DualNumber k) :=
   (rfl)
 
 /-- `ε² = 0`, so multiplication by `ε` squares to zero. -/
+@[simp]
 theorem dualNumberEpsSmul_comp_dualNumberEpsSmul_eq_zero :
     dualNumberEpsSmul k ≫ dualNumberEpsSmul k = 0 :=
   ModuleCat.hom_ext (by
@@ -127,6 +128,7 @@ theorem dualNumberEpsSmul_comp_dualNumberEpsSmul_eq_zero :
 /-- Every map from the free module to `k[ε]/(ε)` kills multiplication by `ε`: this is
 the statement that `Hom_A(-, S)` turns the periodic resolution into a complex with zero
 differentials. -/
+@[simp]
 theorem dualNumberEpsSmul_comp_eq_zero (f : dualNumberFree k ⟶ dualNumberResidue k) :
     dualNumberEpsSmul k ≫ f = 0 :=
   ModuleCat.hom_ext (LinearMap.ext fun x => by
@@ -254,6 +256,7 @@ theorem dualNumberProjectiveResolution_π_f_zero :
   dualNumberComplexπ_f_zero k
 
 /-- Every differential of the periodic resolution dies against the residue field. -/
+@[simp]
 theorem dualNumberProjectiveResolution_comp_eq_zero (p q : ℕ)
     (f : (dualNumberProjectiveResolution k).complex.X q ⟶ dualNumberResidue k) :
     (dualNumberProjectiveResolution k).complex.d p q ≫ f = 0 := by
@@ -275,12 +278,12 @@ noncomputable def homDualNumberFreeEquiv :
 does. This is the one place where the three equivalences above have to be unfolded: `ε`-linear
 maps out of `A` and their values are definitionally the same data, but no lemma of Mathlib's
 states the composite in this form. -/
+@[simp]
 theorem homDualNumberFreeEquiv_apply (f : dualNumberFree k ⟶ dualNumberResidue k) :
     homDualNumberFreeEquiv k f = dualNumberResidueEquiv k (f.hom 1) :=
   (rfl)
 
 /-- The quotient map is the element `1` of `Hom_A(A, S) ≅ k`. -/
-@[simp]
 theorem homDualNumberFreeEquiv_proj : homDualNumberFreeEquiv k (dualNumberProj k) = 1 := by
   rw [homDualNumberFreeEquiv_apply, dualNumberProj_apply, fst_one]
 
