@@ -25,9 +25,12 @@ namespace TauCeti
 
 /-- The endomorphism underlying a power of a multiplicative automorphism is its power in the
 endomorphism monoid. -/
+-- Deliberately not `@[simp]`: `MulEquiv.toMonoidHom_eq_coe` is itself a simp lemma, so simp
+-- rewrites this left-hand side to `↑(f ^ m)` before the statement below could fire, and the
+-- `simpNF` linter rejects the attribute for exactly that reason.
 theorem mulAut_toMonoidHom_pow {G : Type*} [Monoid G] (f : MulAut G) :
-    ∀ m : ℕ, (show Monoid.End G from f.toMonoidHom) ^ m = (f ^ m).toMonoidHom
+    ∀ m : ℕ, (f ^ m).toMonoidHom = (show Monoid.End G from f.toMonoidHom) ^ m
   | 0 => rfl
-  | m + 1 => by rw [pow_succ, mulAut_toMonoidHom_pow f m, pow_succ]; rfl
+  | m + 1 => by rw [pow_succ, pow_succ, ← mulAut_toMonoidHom_pow f m]; rfl
 
 end TauCeti
