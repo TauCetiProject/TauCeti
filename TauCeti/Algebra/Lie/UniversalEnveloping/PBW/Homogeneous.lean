@@ -41,6 +41,11 @@ while retaining the global associated-graded map.
   piece has a homogeneous symmetric representative of the same degree.
 * `TauCeti.UniversalEnvelopingAlgebra.pbwAssociatedGradedMap_surjective`: the canonical map is
   onto.
+* `TauCeti.UniversalEnvelopingAlgebra.pbwAssociatedGradedMap_eq_map_decompose`: the canonical map
+  is the direct sum of its degreewise components, read through the internal homogeneous
+  decomposition of the symmetric algebra.
+* `TauCeti.UniversalEnvelopingAlgebra.pbwAssociatedGradedMap_injective_iff`: the canonical map is
+  injective exactly when every component map is.
 
 ## References
 
@@ -148,5 +153,31 @@ theorem pbwAssociatedGradedMap_surjective :
           pbwAssociatedGradedMap_apply_homogeneous R L n p⟩
     | add x y hx hy => exact (pbwAssociatedGradedMap R L).range.add_mem hx hy
   exact hx
+
+/-- The canonical map is the direct sum of its degreewise components: it first decomposes a
+symmetric element into its homogeneous parts and then applies `pbwHomogeneousComponentMap` in each
+degree. -/
+theorem pbwAssociatedGradedMap_eq_map_decompose (x : SymmetricAlgebra R L) :
+    pbwAssociatedGradedMap R L x =
+      DirectSum.map (fun n ↦ (pbwHomogeneousComponentMap R L n).toAddMonoidHom)
+        (DirectSum.decompose (homogeneousSubmodule R L) x) := by
+  induction x using DirectSum.Decomposition.inductionOn (ℳ := homogeneousSubmodule R L) with
+  | zero => simp
+  | homogeneous p => simp
+  | add x y hx hy => rw [map_add, DirectSum.decompose_add, map_add, hx, hy]
+
+/-- The canonical map `Sym(L) → gr U(L)` is injective exactly when all of its degreewise components
+are. This is the degreewise reduction of the linear-independence half of the
+Poincaré--Birkhoff--Witt theorem: the homogeneous submodules decompose the symmetric algebra, and
+the canonical map carries the degree-`n` piece into the `n`-th summand of the associated graded. -/
+theorem pbwAssociatedGradedMap_injective_iff :
+    Function.Injective (pbwAssociatedGradedMap R L) ↔
+      ∀ n, Function.Injective (pbwHomogeneousComponentMap R L n) := by
+  have hcomp : ⇑(pbwAssociatedGradedMap R L) =
+      (DirectSum.map fun n ↦ (pbwHomogeneousComponentMap R L n).toAddMonoidHom) ∘
+        DirectSum.decompose (homogeneousSubmodule R L) :=
+    funext (pbwAssociatedGradedMap_eq_map_decompose R L)
+  rw [hcomp, Equiv.injective_comp, DirectSum.map_injective]
+  simp only [LinearMap.toAddMonoidHom_coe]
 
 end TauCeti.UniversalEnvelopingAlgebra

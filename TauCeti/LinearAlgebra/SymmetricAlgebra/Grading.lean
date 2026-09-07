@@ -31,8 +31,9 @@ compared with the total-degree pieces of a multivariate polynomial ring.
 
 ## Main results
 
-* `homogeneousDecomposition`: the homogeneous pieces decompose the symmetric algebra.
-* `isInternal_homogeneousSubmodule`: the same statement as an internal direct sum.
+* `gradedAlgebra`: the homogeneous pieces grade the symmetric algebra, so in particular they
+  decompose it.
+* `isInternal_homogeneousSubmodule`: the decomposition as an internal direct sum.
 * `map_homogeneousSubmodule_equivMvPolynomial`: a basis-induced equivalence carries the degree
   `n` part of a symmetric algebra to the degree `n` part of a multivariate polynomial ring.
 * `SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff`: the degreewise form of that comparison.
@@ -51,50 +52,48 @@ universe u v w
 variable (R : Type u) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 /-- The generator map of a symmetric algebra, corestricted to the degree-one homogeneous piece and
-then included into the external direct sum of all of them. -/
-private noncomputable def gradedι : M →ₗ[R] ⨁ n, homogeneousSubmodule R M n :=
+then included into the external direct sum of all of them. This is primarily an auxiliary
+construction used to provide `gradedAlgebra`. -/
+noncomputable def gradedι : M →ₗ[R] ⨁ n, homogeneousSubmodule R M n :=
   DirectSum.lof R ℕ (fun n ↦ homogeneousSubmodule R M n) 1 ∘ₗ
     (SymmetricAlgebra.ι R M).codRestrict _ fun m ↦ by
       simpa only [pow_one] using LinearMap.mem_range_self _ m
 
 /-- The defining formula for `gradedι`. -/
-private theorem gradedι_apply (m : M) :
+theorem gradedι_apply (m : M) :
     gradedι R M m = DirectSum.of (fun n ↦ homogeneousSubmodule R M n) 1
       ⟨SymmetricAlgebra.ι R M m, by simpa only [pow_one] using LinearMap.mem_range_self _ m⟩ :=
-  rfl
+  (rfl)
 
-/-- The canonical decomposition of a symmetric algebra into its homogeneous pieces. No freeness of
-`M` is needed: the external direct sum of the pieces is itself a commutative `R`-algebra, so the
-universal property turns the degree-one copy of the generator map into an algebra map splitting the
-recomposition map. -/
-@[instance_reducible]
-noncomputable def homogeneousDecomposition :
-    DirectSum.Decomposition (homogeneousSubmodule R M) :=
-  letI : GradedAlgebra (homogeneousSubmodule R M) :=
-    GradedAlgebra.ofAlgHom _ (SymmetricAlgebra.lift (gradedι R M))
-      (by
-        ext m
-        simp only [LinearMap.coe_comp, LinearMap.coe_coe, AlgHom.coe_comp, Function.comp_apply,
-          SymmetricAlgebra.lift_ι_apply, gradedι_apply, DirectSum.coeAlgHom_of, AlgHom.coe_id,
-          id_eq])
-      -- A homogeneous element is a sum of products of `n` generators, so induction on the power
-      -- reduces to the degree-one case.
-      fun n x ↦ by
-        obtain ⟨x, hx⟩ := x
-        dsimp only [DirectSum.lof_eq_of]
-        induction hx using Submodule.pow_induction_on_left' with
-        | algebraMap r => rw [AlgHom.commutes, DirectSum.algebraMap_apply]; rfl
-        | add x y i hx hy ihx ihy => rw [map_add, ihx, ihy, ← map_add]; rfl
-        | mem_mul m hm i x hx ih =>
-            obtain ⟨_, rfl⟩ := hm
-            rw [map_mul, ih, SymmetricAlgebra.lift_ι_apply, gradedι_apply, DirectSum.of_mul_of]
-            exact DirectSum.of_eq_of_gradedMonoid_eq (Sigma.subtype_ext (add_comm _ _) rfl)
-  inferInstance
+/-- A symmetric algebra is graded by its homogeneous pieces. No freeness of `M` is needed: the
+external direct sum of the pieces is itself a commutative `R`-algebra, so the universal property
+turns the degree-one copy of the generator map into an algebra map splitting the recomposition map.
+
+This subsumes the canonical `DirectSum.Decomposition (homogeneousSubmodule R M)`, which it supplies
+by instance search, and makes the multiplicative API of a graded algebra available as well. -/
+noncomputable instance gradedAlgebra : GradedAlgebra (homogeneousSubmodule R M) :=
+  GradedAlgebra.ofAlgHom _ (SymmetricAlgebra.lift (gradedι R M))
+    (by
+      ext m
+      simp only [LinearMap.coe_comp, LinearMap.coe_coe, AlgHom.coe_comp, Function.comp_apply,
+        SymmetricAlgebra.lift_ι_apply, gradedι_apply, DirectSum.coeAlgHom_of, AlgHom.coe_id,
+        id_eq])
+    -- A homogeneous element is a sum of products of `n` generators, so induction on the power
+    -- reduces to the degree-one case.
+    fun n x ↦ by
+      obtain ⟨x, hx⟩ := x
+      dsimp only [DirectSum.lof_eq_of]
+      induction hx using Submodule.pow_induction_on_left' with
+      | algebraMap r => rw [AlgHom.commutes, DirectSum.algebraMap_apply]; rfl
+      | add x y i hx hy ihx ihy => rw [map_add, ihx, ihy, ← map_add]; rfl
+      | mem_mul m hm i x hx ih =>
+          obtain ⟨_, rfl⟩ := hm
+          rw [map_mul, ih, SymmetricAlgebra.lift_ι_apply, gradedι_apply, DirectSum.of_mul_of]
+          exact DirectSum.of_eq_of_gradedMonoid_eq (Sigma.subtype_ext (add_comm _ _) rfl)
 
 /-- The homogeneous pieces form an internal direct sum decomposition of the symmetric algebra. -/
 theorem isInternal_homogeneousSubmodule :
     DirectSum.IsInternal (homogeneousSubmodule R M) :=
-  letI := homogeneousDecomposition R M
   DirectSum.Decomposition.isInternal _
 
 /-- The algebra equivalence induced by a basis preserves homogeneous degree. -/
