@@ -25,7 +25,7 @@ induced morphism of affine group schemes (`TauCeti.CommHopfAlgCat.kernelHopfIdea
 * `TauCeti.HopfIdeal.mem_augmentation` and `TauCeti.HopfIdeal.augmentation_toIdeal`:
   characteristic API.
 * `TauCeti.HopfIdeal.le_augmentation`: every Hopf ideal is contained in the augmentation ideal.
-* `BialgHom.apply_eq_counit_of_ker_eq_augmentation`: a morphism whose kernel is the
+* `AlgHom.apply_eq_counit_of_ker_eq_augmentation`: an algebra morphism whose kernel is the
   augmentation ideal is evaluation by the counit, followed by the target's scalar map.
 * `TauCeti.HopfIdeal.comapOfSurjective_augmentation`: the augmentation ideal is preserved by
   pullback along a surjective bialgebra morphism.
@@ -75,16 +75,16 @@ end HopfIdeal
 
 end TauCeti
 
-namespace BialgHom
+namespace AlgHom
 
 universe u v w
 
-/-- A bialgebra morphism whose kernel is the augmentation ideal sends each element to its
+/-- An algebra morphism whose kernel is the augmentation ideal sends each element to its
 counit, viewed as a scalar in the target. -/
 theorem apply_eq_counit_of_ker_eq_augmentation
     {k : Type u} {A : Type v} {B : Type w}
-    [CommRing k] [Ring A] [Ring B] [HopfAlgebra k A] [HopfAlgebra k B]
-    (f : A →ₐc[k] B)
+    [CommRing k] [Ring A] [Ring B] [HopfAlgebra k A] [Algebra k B]
+    (f : A →ₐ[k] B)
     (hf : RingHom.ker f = (TauCeti.HopfIdeal.augmentation k A).toIdeal) (x : A) :
     f x = algebraMap k B (Coalgebra.counit x) := by
   have hmem : x - algebraMap k A (Coalgebra.counit x) ∈
@@ -96,9 +96,9 @@ theorem apply_eq_counit_of_ker_eq_augmentation
     exact hf.symm ▸ hmem
   rw [map_sub, sub_eq_zero] at hzero
   rw [hzero]
-  exact f.toAlgHom.commutes (Coalgebra.counit x)
+  exact f.commutes (Coalgebra.counit x)
 
-end BialgHom
+end AlgHom
 
 namespace TauCeti
 

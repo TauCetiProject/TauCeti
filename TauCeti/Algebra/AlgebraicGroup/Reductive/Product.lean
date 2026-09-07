@@ -124,11 +124,12 @@ private theorem restriction_eq_counit
   intro x
   have h := congrArg (fun φ : H ⟶ M ↦ FiniteTypeCommHopfAlgCat.toBialgHom φ x) hcomp
   rw [FiniteTypeCommHopfAlgCat.toBialgHom_comp, BialgHom.comp_apply] at h
-  exact h.trans (_root_.BialgHom.apply_eq_counit_of_ker_eq_augmentation
-    (FiniteTypeCommHopfAlgCat.toBialgHom f)
+  exact h.trans (_root_.AlgHom.apply_eq_counit_of_ker_eq_augmentation
+    (FiniteTypeCommHopfAlgCat.toBialgHom f).toAlgHom
       (by
         ext y
-        rw [RingHom.mem_ker, HopfIdeal.mem_toIdeal, ← hf, HopfIdeal.mem_ker])
+        rw [RingHom.mem_ker, HopfIdeal.mem_toIdeal, ← hf, HopfIdeal.mem_ker]
+        exact Iff.rfl)
       x)
 
 /-- **A direct product of reductive finite-type affine groups is reductive.** -/
@@ -227,20 +228,13 @@ theorem tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, u} k)
     apply Algebra.TensorProduct.ext'
     intro h l
     rw [Algebra.TensorProduct.productMap_apply_tmul]
-    -- Unfold both maps on a pure tensor: the product map multiplies the factor counits,
-    -- while `ε` uses the tensor-product counit.
-    change algebraMap (AlgebraicClosure k) (FiniteTypeCommHopfAlgCat.quotient P₀ I)
-        (Coalgebra.counit h) *
-        algebraMap (AlgebraicClosure k) (FiniteTypeCommHopfAlgCat.quotient P₀ I)
-          (Coalgebra.counit l) =
-      algebraMap (AlgebraicClosure k) (FiniteTypeCommHopfAlgCat.quotient P₀ I)
-        (Coalgebra.counit (h ⊗ₜ[AlgebraicClosure k] l))
+    simp only [ε, AlgHom.comp_apply, Algebra.ofId_apply, Bialgebra.counitAlgHom_apply]
     rw [← map_mul]
     congr 1
     have hcounit := DFunLike.congr_fun
       (Bialgebra.TensorProduct.counitAlgHom_def (AlgebraicClosure k)
         (AlgebraicClosure k) Hbar Kbar) (h ⊗ₜ[AlgebraicClosure k] l)
-    simpa only [Bialgebra.counitAlgHom_apply, AlgHom.comp_apply,
+    simpa only [P, Bialgebra.counitAlgHom_apply, AlgHom.comp_apply,
       Algebra.TensorProduct.map_tmul, AlgEquiv.toAlgHom_apply, Algebra.TensorProduct.rid_tmul,
       smul_eq_mul, mul_comm] using hcounit.symm
   have hq' (x : P) :
