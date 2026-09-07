@@ -38,6 +38,8 @@ the Riemann–Roch identity.
   (Stichtenoth, Definition 1.5.11), the greatest divisor bounding it.
 * `TauCeti.canonicalClass`: **the canonical class** in the divisor class group, represented by
   the divisor of any nonzero Weil differential.
+* `TauCeti.weilDifferentialOrder`: **the order `v_P(ω)`** of a nonzero Weil differential at a
+  place, the coefficient of `P` in `(ω)`.
 * `TauCeti.riemannRochSpaceEquivWeilDifferentialFiltration`: **the duality isomorphism**
   `L(W - D) ≃ Ω_F(D)`, `x ↦ x · ω` (Stichtenoth, Theorem 1.5.14).
 
@@ -61,8 +63,11 @@ the Riemann–Roch identity.
 * `TauCeti.map_riemannRochSpace_repartitionDualMulRight` and
   `TauCeti.dim_sub_eq_finrank_weilDifferentialFiltration`: **the duality theorem** — `x ↦ x · ω`
   maps `L(W - D)` onto `Ω_F(D)`, so `ℓ(W - D) = dim_k Ω_F(D)` (Stichtenoth, Theorem 1.5.14).
-* `TauCeti.isRiemannRochDivisor_of_isGreatest_mem_weilDifferentialFiltration`: that divisor is a
-  Riemann–Roch divisor for the genus (Stichtenoth, Theorem 1.5.15).
+* `TauCeti.isRiemannRochDivisor_of_isGreatest_mem_weilDifferentialFiltration` and
+  `TauCeti.isRiemannRochDivisor_weilDifferentialDivisor`: that divisor is a Riemann–Roch divisor
+  for the genus (Stichtenoth, Theorem 1.5.15).
+* `TauCeti.dim_weilDifferentialDivisor` and `TauCeti.degree_weilDifferentialDivisor`:
+  `ℓ((ω)) = g` and `deg (ω) = 2g - 2` (Stichtenoth, Corollary 1.5.16).
 * `TauCeti.exists_isRiemannRochDivisor`: **the Riemann–Roch theorem** — a Riemann–Roch divisor
   exists.
 
@@ -156,6 +161,22 @@ theorem mem_weilDifferentialFiltration_iff_le_weilDifferentialDivisor (hF : IsFu
     ω ∈ weilDifferentialFiltration D ↔ D ≤ weilDifferentialDivisor hF hex hmem hω :=
   mem_weilDifferentialFiltration_iff_le_of_isGreatest
     (isGreatest_weilDifferentialDivisor hF hex hmem hω) D
+
+/-- **The order `v_P(ω)` of a nonzero Weil differential at a place** (Stichtenoth,
+Definition 1.5.11): the coefficient of `P` in the divisor `(ω)`.  A differential is regular, or
+holomorphic, exactly when all of its orders are nonnegative, that is when `0 ≤ (ω)`. -/
+noncomputable def weilDifferentialOrder (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
+    (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) (P : Place k F) : ℤ :=
+  (weilDifferentialDivisor hF hex hmem hω).coeff P
+
+/-- The divisor of a nonzero Weil differential has the orders `v_P(ω)` as its coefficients. -/
+@[simp]
+theorem coeff_weilDifferentialDivisor (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
+    (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) (P : Place k F) :
+    (weilDifferentialDivisor hF hex hmem hω).coeff P = weilDifferentialOrder hF hex hmem hω P :=
+  (rfl)
 
 /-- **The transformation law `(z · ω) = div z + (ω)`** (Stichtenoth, Proposition 1.5.13): the
 divisor of a Weil differential changes by a principal divisor when the differential is multiplied
@@ -329,19 +350,40 @@ theorem isRiemannRochDivisor_of_isGreatest_mem_weilDifferentialFiltration
     Divisor.indexOfSpecialty_def] at hi
   omega
 
-/-- **The Riemann–Roch theorem, existence form** (Stichtenoth, Theorem 1.5.15 with
-Corollary 1.5.16): every algebraic function field with exact constant field has a Riemann–Roch
-divisor, namely the divisor of any nonzero Weil differential.  With
-`TauCeti.Divisor.IsRiemannRochDivisor.dim_eq` and
-`TauCeti.Divisor.IsRiemannRochDivisor.degree_eq` this gives `ℓ(W) = g` and `deg W = 2g - 2`, and
-with `TauCeti.Divisor.IsRiemannRochDivisor.linearlyEquivalent` the class of `W` — the canonical
-class — is well defined. -/
+/-- **The Riemann–Roch theorem** (Stichtenoth, Theorem 1.5.15), for the divisor `(ω)` itself:
+the divisor of a nonzero Weil differential is a Riemann–Roch divisor for the genus. -/
+theorem isRiemannRochDivisor_weilDifferentialDivisor (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
+    (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) :
+    (weilDifferentialDivisor hF hex hmem hω).IsRiemannRochDivisor (genus k F) :=
+  isRiemannRochDivisor_of_isGreatest_mem_weilDifferentialFiltration hF hex hω
+    (isGreatest_weilDifferentialDivisor hF hex hmem hω)
+
+/-- **`ℓ((ω)) = g`** (Stichtenoth, Corollary 1.5.16): the divisor of a nonzero Weil differential
+has Riemann–Roch space of dimension the genus. -/
+theorem dim_weilDifferentialDivisor (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
+    (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) :
+    Divisor.dim (weilDifferentialDivisor hF hex hmem hω) = genus k F :=
+  (isRiemannRochDivisor_weilDifferentialDivisor hF hex hmem hω).dim_eq hF hex
+
+/-- **`deg (ω) = 2g - 2`** (Stichtenoth, Corollary 1.5.16): the divisor of a nonzero Weil
+differential has degree `2g - 2`, so the canonical class has that degree. -/
+theorem degree_weilDifferentialDivisor (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
+    (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) :
+    Divisor.degree (weilDifferentialDivisor hF hex hmem hω) = 2 * genus k F - 2 :=
+  (isRiemannRochDivisor_weilDifferentialDivisor hF hex hmem hω).degree_eq hF hex
+
+/-- **The Riemann–Roch theorem, existence form** (Stichtenoth, Theorem 1.5.15): every algebraic
+function field with exact constant field has a Riemann–Roch divisor, namely the divisor of any
+nonzero Weil differential, whose dimension and degree are recorded by
+`TauCeti.dim_weilDifferentialDivisor` and `TauCeti.degree_weilDifferentialDivisor`. -/
 theorem exists_isRiemannRochDivisor (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) :
     ∃ W : Divisor k F, W.IsRiemannRochDivisor (genus k F) := by
   obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
   exact ⟨weilDifferentialDivisor hF hex hωmem hω0,
-    isRiemannRochDivisor_of_isGreatest_mem_weilDifferentialFiltration hF hex hω0
-      (isGreatest_weilDifferentialDivisor hF hex hωmem hω0)⟩
+    isRiemannRochDivisor_weilDifferentialDivisor hF hex hωmem hω0⟩
 
 end TauCeti
