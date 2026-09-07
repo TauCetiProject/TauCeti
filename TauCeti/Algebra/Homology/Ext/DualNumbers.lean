@@ -135,8 +135,13 @@ theorem dualNumberEpsSmul_hom :
 theorem dualNumberEpsSmul_comp_dualNumberEpsSmul_eq_zero :
     dualNumberEpsSmul k ≫ dualNumberEpsSmul k = 0 :=
   ModuleCat.hom_ext (by
-    rw [ModuleCat.hom_comp, dualNumberEpsSmul_hom, ← LinearMap.mulLeft_mul, eps_mul_eps,
-      LinearMap.mulLeft_zero_eq_zero, ModuleCat.hom_zero])
+    simp [dualNumberEpsSmul, ← LinearMap.mulLeft_mul])
+
+private theorem dualNumberEpsSmul_comp_apply (f : dualNumberFree k ⟶ dualNumberResidue k)
+    (x : dualNumberFree k) :
+    ((dualNumberEpsSmul k ≫ f).hom) x = (ε : DualNumber k) • f.hom x := by
+  rw [ModuleCat.hom_comp, LinearMap.comp_apply, dualNumberEpsSmul_hom,
+    LinearMap.mulLeft_apply, ← smul_eq_mul, map_smul]
 
 /-- Every map from the free module to `k[ε]/(ε)` kills multiplication by `ε`: this is
 the statement that `Hom_A(-, S)` turns the periodic resolution into a complex with zero
@@ -144,10 +149,8 @@ differentials. -/
 @[simp]
 theorem dualNumberEpsSmul_comp_eq_zero (f : dualNumberFree k ⟶ dualNumberResidue k) :
     dualNumberEpsSmul k ≫ f = 0 :=
-  ModuleCat.hom_ext (LinearMap.ext fun x => by
-    rw [ModuleCat.hom_comp, LinearMap.comp_apply, dualNumberEpsSmul_hom,
-      LinearMap.mulLeft_apply, ← smul_eq_mul, map_smul, eps_smul_dualNumberResidue,
-      ModuleCat.hom_zero, LinearMap.zero_apply])
+  ModuleCat.hom_ext (LinearMap.ext fun x =>
+    (dualNumberEpsSmul_comp_apply k f x).trans (eps_smul_dualNumberResidue k (f.hom x)))
 
 /-- The image of multiplication by `ε` is the set of dual numbers with vanishing constant term.
 This is `DualNumber.fst_eq_zero_iff_eps_dvd` read as a statement about a linear map. -/
@@ -289,14 +292,15 @@ noncomputable def homDualNumberFreeEquiv :
   ModuleCat.homLinearEquiv ≪≫ₗ LinearMap.ringLmapEquivSelf (DualNumber k) k _ ≪≫ₗ
     dualNumberResidueEquiv k
 
-/-- Evaluation at `1`, read through `TauCeti.dualNumberResidueEquiv`, is what the composite
-does. This is the one place where the three equivalences above have to be unfolded: `ε`-linear
-maps out of `A` and their values are definitionally the same data, but no lemma of Mathlib's
-states the composite in this form. -/
+/-- Evaluation at `1`, read through `TauCeti.dualNumberResidueEquiv`, is what the composite does. -/
 @[simp]
 theorem homDualNumberFreeEquiv_apply (f : dualNumberFree k ⟶ dualNumberResidue k) :
     homDualNumberFreeEquiv k f = dualNumberResidueEquiv k (f.hom 1) :=
   (rfl)
+
+private theorem homDualNumberFreeEquiv_dualNumberProj :
+    homDualNumberFreeEquiv k (dualNumberProj k) = 1 := by
+  rw [homDualNumberFreeEquiv_apply, dualNumberResidueEquiv_apply, dualNumberProj_apply, fst_one]
 
 /-- `End_A(S)` is isomorphic to `k` as a `k`-module. -/
 noncomputable def homDualNumberResidueEquiv :
@@ -306,9 +310,9 @@ noncomputable def homDualNumberResidueEquiv :
     ⟨fun g g' h => (cancel_epi (dualNumberProj k)).1
         ((homDualNumberFreeEquiv k).injective h),
       fun c => ⟨c • 𝟙 (dualNumberResidue k), by
-        rw [LinearMap.comp_apply, Linear.leftComp_apply, Linear.comp_smul, Category.comp_id,
-          LinearEquiv.coe_coe, map_smul, homDualNumberFreeEquiv_apply,
-          dualNumberResidueEquiv_apply, dualNumberProj_apply, fst_one, smul_eq_mul, mul_one]⟩⟩
+        simp only [LinearMap.comp_apply, Linear.leftComp_apply, Category.comp_id,
+          LinearEquiv.coe_coe, map_smul, homDualNumberFreeEquiv_dualNumberProj, smul_eq_mul,
+          mul_one]⟩⟩
 
 /-- `TauCeti.homDualNumberResidueEquiv` reads an endomorphism of `S` off its value on the class
 of `1`, through `TauCeti.dualNumberResidueEquiv`: precomposing with `A ↠ S` and evaluating at `1`
