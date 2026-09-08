@@ -103,6 +103,13 @@ noncomputable def coordinateMap :
   CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
     (definingHopfIdeal R n)
 
+/-- The special orthogonal coordinate morphism is the quotient by its defining Hopf ideal. -/
+theorem coordinateMap_def :
+    coordinateMap R n =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
+        (definingHopfIdeal R n) := by
+  rw [coordinateMap]
+
 /-- The special orthogonal coordinate morphism sends an ambient coordinate to its quotient
 class. -/
 theorem coordinateMap_apply (h : GeneralLinear.coordinateHopfAlgebra R n) :
@@ -137,6 +144,7 @@ noncomputable def groupScheme :=
   CommHopfAlgCat.quotientSpec (GeneralLinear.coordinateHopfAlgebra R n)
     (definingHopfIdeal R n)
 
+/-- The quotient-spectrum presentation of the special orthogonal group scheme. -/
 private noncomputable def groupSchemeι :=
   CommHopfAlgCat.quotientSpecι (GeneralLinear.coordinateHopfAlgebra R n)
     (definingHopfIdeal R n)

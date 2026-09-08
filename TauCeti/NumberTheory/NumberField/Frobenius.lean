@@ -8,8 +8,8 @@ module
 public import Mathlib.NumberTheory.NumberField.Ideal.Basic
 public import TauCeti.RingTheory.Frobenius
 public import TauCeti.NumberTheory.LegendreSymbol.Frobenius
+public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 public import TauCeti.NumberTheory.NumberField.IntegralSqrt
-import TauCeti.NumberTheory.NumberField.AutomorphismAction
 import Mathlib.Algebra.CharP.Basic
 
 /-!
@@ -34,7 +34,7 @@ services on top of Mathlib's `RingTheory/Frobenius.lean`:
 * **the square-root action** — for a number field `K`, `p` odd, and `x ∈ K` with
   `x² = d ∈ ℤ`, `p ∤ d`, a
   Frobenius at any ideal `Q` over `p` satisfies `σ x = legendreSym p d • x`, transporting the
-  `𝓞 K`-level computation `TauCeti.AlgHom.IsArithFrobAt.apply_sqrt` along the Galois action
+  `𝓞 K`-level computation `AlgHom.IsArithFrobAt.apply_sqrt` along the Galois action
   on the ring of integers (via `NumberField.algebraMap_smul_eq_apply`), with the `σ x = x`
   characterization read off from it.
 
@@ -48,6 +48,8 @@ multiquadratic roadmap).
   `𝓞 L` in a finite Galois extension `L/K` of number fields.
 * `NumberField.exists_isArithFrobAt_int_of_liesOver`: a `ℤ`-carrier Frobenius exists at every
   prime over a rational prime.
+* `AlgEquiv.isArithFrobAt_autCongr`: an isomorphism of extensions transports the Frobenius
+  condition.
 * `NumberField.isArithFrobAt_eq_of_isUnramifiedAt`: for a finite Galois extension `L/K` of
   number fields, two Frobenius elements of `Gal(L/K)` at an unramified prime `Q` of `𝓞 L` are
   equal.
@@ -96,6 +98,33 @@ theorem exists_isArithFrobAt_int_of_liesOver [IsGalois ℚ K] {p : ℕ} [Fact p.
   exact exists_isArithFrobAt_aux ℤ (K ≃ₐ[ℚ] K) Q
     (Ideal.ne_bot_of_liesOver_of_ne_bot hp Q)
 
+end NumberField
+
+namespace AlgEquiv
+
+variable {K L L' : Type*} [Field K] [Field L] [Algebra K L] [Field L'] [Algebra K L']
+
+/-- **A Frobenius travels along an isomorphism of extensions.** If `σ` is an arithmetic Frobenius
+at `Q`, then `AlgEquiv.autCongr e σ` is one at the prime of `𝓞 L'` matching `Q`. -/
+theorem isArithFrobAt_autCongr (e : L ≃ₐ[K] L') {Q : Ideal (𝓞 L)} {σ : L ≃ₐ[K] L}
+    (hσ : IsArithFrobAt (𝓞 K) σ Q) :
+    IsArithFrobAt (𝓞 K) (autCongr e σ)
+      (Q.comap (NumberField.RingOfIntegers.mapAlgEquiv e).symm) := by
+  have hunder : (Q.comap (NumberField.RingOfIntegers.mapAlgEquiv e).symm).under (𝓞 K) =
+      Q.under (𝓞 K) :=
+    (Ideal.LiesOver.over (p := Q.under (𝓞 K))
+      (P := Q.comap (NumberField.RingOfIntegers.mapAlgEquiv e).symm)).symm
+  intro x
+  rw [MulSemiringAction.toAlgHom_apply, Ideal.mem_comap, hunder, map_sub, map_pow,
+    e.mapAlgEquiv_symm_autCongr_smul, ← MulSemiringAction.toAlgHom_apply (𝓞 K)]
+  exact hσ _
+
+end AlgEquiv
+
+namespace NumberField
+
+variable {K : Type*} [Field K] [NumberField K] {p : ℕ} [Fact p.Prime]
+
 /-! ### Uniqueness at unramified primes
 
 Mathlib proves uniqueness for algebra homomorphisms of the integral rings.  The Galois-group
@@ -143,7 +172,7 @@ theorem isArithFrobAt_apply_sqrt (hodd : p ≠ 2) {d : ℤ} (hd : ¬ (p : ℤ) �
     σ x = legendreSym p d • x := by
   -- Apply the `𝓞 K`-level computation to the packaged square root and push down along `𝓞 K ↪ K`.
   have hsmul : σ • integralSqrt hx = legendreSym p d • integralSqrt hx :=
-    TauCeti.IsArithFrobAt.smul_sqrt hσ hodd hd (integralSqrt_sq hx)
+    IsArithFrobAt.smul_sqrt hσ hodd hd (integralSqrt_sq hx)
   have hcoe := congrArg (algebraMap (𝓞 K) K) hsmul
   rw [map_zsmul, algebraMap_integralSqrt, algebraMap_smul_eq_apply] at hcoe
   rwa [algebraMap_integralSqrt] at hcoe
