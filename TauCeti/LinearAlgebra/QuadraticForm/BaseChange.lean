@@ -44,7 +44,10 @@ variable [AddCommGroup P] [Module R P]
 variable {Q₁ : _root_.QuadraticForm R M} {Q₂ : _root_.QuadraticForm R N}
 variable {Q₃ : _root_.QuadraticForm R P}
 
-/-- Base change of an isometry of quadratic forms. -/
+/-- Base change of an isometry of quadratic forms.
+
+Unlike `QuadraticMap.Isometry.tmul`, this construction is heterobasic: the original forms are
+over `R`, while their base changes are over the possibly different algebra `A`. -/
 def Isometry.baseChange (f : Q₁ →qᵢ Q₂) (A : Type uA) [CommRing A] [Algebra R A] :
     Q₁.baseChange A →qᵢ Q₂.baseChange A where
   toLinearMap := f.toLinearMap.baseChange A
