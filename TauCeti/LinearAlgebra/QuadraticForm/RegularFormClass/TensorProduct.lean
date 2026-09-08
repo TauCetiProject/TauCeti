@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.TensorProduct
-import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Tensor products of regular-form classes
@@ -179,6 +178,17 @@ noncomputable def presentedFormTensorIsometryEquiv (p q : RegularFormPresentatio
       smul_eq_mul, mul_comm]
   exact ⟨e.toLinearEquiv, fun x => hform ▸ e.map_app x⟩
 
+/-- The comparison isometry sends a pure tensor to the corresponding products of coordinates. -/
+@[simp]
+theorem presentedFormTensorIsometryEquiv_tmul_apply (p q : RegularFormPresentation K)
+    (x : Fin p.1 → K) (y : Fin q.1 → K) (i : Fin p.1) (j : Fin q.1) :
+    presentedFormTensorIsometryEquiv p q (x ⊗ₜ[K] y)
+      (Fin.cast (RegularFormPresentation.fst_tmul p q).symm (finProdFinEquiv (i, j))) =
+        x i * y j := by
+  change (presentedFormTensorBasis p q).repr (x ⊗ₜ[K] y)
+    (Fin.cast (RegularFormPresentation.fst_tmul p q).symm (finProdFinEquiv (i, j))) = _
+  simp [presentedFormTensorBasis, presentedFormTensorIndexEquiv, smul_eq_mul, mul_comm]
+
 /-! ### Multiplication of isometry classes -/
 
 /-- The form presented by tensoring two presentations is isometric to the tensor product of the
@@ -222,6 +232,19 @@ theorem presentedForm_tmul_assoc (p q r : RegularFormPresentation K) :
 /-- The rank-one presentation with weight one. -/
 def RegularFormPresentation.one : RegularFormPresentation K := ⟨1, fun _ => 1⟩
 
+omit [Invertible (2 : K)] in
+/-- The unit presentation has rank one. -/
+@[simp]
+theorem RegularFormPresentation.fst_one :
+    (RegularFormPresentation.one (K := K)).1 = 1 := (rfl)
+
+omit [Invertible (2 : K)] in
+/-- The sole weight of the unit presentation is one. -/
+@[simp]
+theorem RegularFormPresentation.one_apply
+    (i : Fin (RegularFormPresentation.one (K := K)).1) :
+    (RegularFormPresentation.one (K := K)).2 i = 1 := (rfl)
+
 /-- The rank-one presentation with weight one presents the square form. -/
 noncomputable def presentedFormOneIsometryEquiv :
     (presentedForm (RegularFormPresentation.one (K := K))).IsometryEquiv
@@ -231,6 +254,14 @@ noncomputable def presentedFormOneIsometryEquiv :
     unfold RegularFormPresentation.one at x ⊢
     rw [presentedForm_apply, QuadraticMap.sq_apply]
     convert (Fin.sum_univ_one fun i : Fin 1 => x i * x i).symm using 1 <;> simp
+
+omit [Invertible (2 : K)] in
+/-- The comparison from the unit presentation to the square form evaluates its sole coordinate. -/
+@[simp]
+theorem presentedFormOneIsometryEquiv_apply
+    (x : Fin (RegularFormPresentation.one (K := K)).1 → K) :
+    presentedFormOneIsometryEquiv x =
+      x (Fin.cast RegularFormPresentation.fst_one.symm 0) := (rfl)
 
 /-- Tensoring a presentation on the right with the rank-one presentation preserves its form up
 to isometry. -/
