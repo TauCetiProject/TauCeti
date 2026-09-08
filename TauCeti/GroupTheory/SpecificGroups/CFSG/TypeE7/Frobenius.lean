@@ -24,9 +24,9 @@ matrix entries lie in the copy `TauCeti.ValidLieTypeIndex.fixedField` of `𝔽_q
 
 Nothing here identifies the minuscule carrier with the pinned simply connected
 Chevalley--Demazure group scheme of type `E₇`. Consequently this file does not define the
-Steinberg endomorphism or candidate group of `E₇(q)`: those declarations require the Layer 9
-pinned carrier that milestone L0 of the CFSG roadmap consumes. The results here are carrier-side
-computations that can be transported when that identification exists. Nor is the fixed-point
+Steinberg endomorphism or candidate group of `E₇(q)`: those are stated of the points of that
+pinned group scheme, and the results here are carrier-side computations that transport to it once
+an identification of the two is proved. Nor is the fixed-point
 quotient asserted to be finite, perfect, or simple.
 
 ## Main declarations
@@ -65,8 +65,8 @@ variable (d : TypeE7LieIndex)
 /-! ## Frobenius on the minuscule carrier -/
 
 /-- The `q`-power Frobenius of the `E₇` minuscule carrier, for `q` the field order recorded by the
-index. This is the carrier-side map that can be transported to the Steinberg endomorphism once
-Layer 9 identifies the carrier with the pinned simply connected `E₇` group scheme. -/
+index. It transports to the Steinberg endomorphism once the carrier is identified with the pinned
+simply connected `E₇` group scheme. -/
 def minusculeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
   E7Minuscule.frobenius d.1.characteristic d.1.fieldExponent d.1.Closure
 
@@ -122,15 +122,26 @@ theorem simpleRootSubgroup_mem_fixedSubgroup_minusculeFrobenius (i : Fin d.1.ran
   rw [mem_fixedSubgroup, minusculeFrobenius_simpleRootSubgroup,
     ValidLieTypeIndex.mem_fixedField.mp hu, ofAdd_toAdd]
 
+/-- **The fixed subgroup contains the weight-torus points with `𝔽_q` coordinates.** A torus point
+`t(s)` is fixed by the carrier Frobenius as soon as each of its coordinates lies in the field of
+definition. -/
+theorem weightTorusPoints_mem_fixedSubgroup_minusculeFrobenius (s : Fin 7 → d.1.Closureˣ)
+    (hs : ∀ k, ((s k : d.1.Closure)) ∈ d.1.fixedField) :
+    E7Minuscule.weightTorusPoints d.1.Closure s ∈ fixedSubgroup d.minusculeFrobenius := by
+  rw [mem_fixedSubgroup, minusculeFrobenius_weightTorusPoints]
+  congr 1
+  funext k
+  apply Units.ext
+  simpa using ValidLieTypeIndex.mem_fixedField.mp (hs k)
+
 /-- **A point of the minuscule carrier is fixed by Frobenius exactly when all of its matrix
 entries lie in the field of definition.** Writing `𝔽_q` for
 `TauCeti.ValidLieTypeIndex.fixedField`, the copy of the field of `q` elements inside the algebraic
 closure, the group `H` cut out below is therefore the group of points of the minuscule carrier
-whose entries lie in `𝔽_q`.
-
-This is not a `simp` lemma:
-`TauCeti.fixedSubgroup` is `MonoidHom.eqLocus` against the identity, so `simp` rewrites its
-left-hand side through `MonoidHom.mem_eqLocus`, and the `simpNF` linter rejects the annotation. -/
+whose entries lie in `𝔽_q`. -/
+-- Not `@[simp]`: `TauCeti.fixedSubgroup` is `MonoidHom.eqLocus` against the identity, so `simp`
+-- rewrites this left-hand side through `MonoidHom.mem_eqLocus` and the `simpNF` linter rejects
+-- the annotation.
 theorem mem_fixedSubgroup_minusculeFrobenius_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.minusculeFrobenius ↔
       ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
@@ -142,8 +153,8 @@ theorem mem_fixedSubgroup_minusculeFrobenius_iff (g : d.AmbientGroup) :
 /-! ## The carrier-side fixed-point quotient -/
 
 /-- The derived subgroup of the minuscule Frobenius fixed points, modulo the centre of that derived
-subgroup. This is not the candidate group of `E₇(q)` without the Layer 9 identification of the
-minuscule carrier with the pinned simply connected `E₇` group scheme. -/
+subgroup. This is not the candidate group of `E₇(q)`: that would need an identification of the
+minuscule carrier with the pinned simply connected `E₇` group scheme, which is not available. -/
 abbrev MinusculeFixedPointQuotient : Type := FixedPointCandidate d.minusculeFrobenius
 
 /-- The quotient construction supplies its group structure. -/

@@ -29,8 +29,8 @@ where the two lattices coincide.
 
 The carrier's Frobenius and its fixed-point quotient are studied in
 `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeE7/Frobenius.lean`. Neither file forms the Steinberg
-endomorphism or candidate group of `E₇(q)`: those require the Layer 9 identification with the
-pinned carrier. Nothing below asserts that
+endomorphism or candidate group of `E₇(q)`: those require an identification of this carrier with
+the pinned simply connected `E₇` group scheme. Nothing below asserts that
 the carrier is reductive, that its weight torus is maximal, that it is the pinned simply connected
 Chevalley--Demazure group scheme of type `E₇`, or that any group named is finite, perfect or
 simple; none of those is proved of `TauCeti.E7Minuscule.groupScheme` here or in the files this one
