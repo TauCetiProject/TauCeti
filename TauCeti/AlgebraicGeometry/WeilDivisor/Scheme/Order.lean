@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Basic
 public import Mathlib.AlgebraicGeometry.OrderOfVanishing
+import TauCeti.AlgebraicGeometry.Scheme.OrderOfVanishing
 
 /-!
 # Orders of rational functions at codimension-one points
@@ -21,19 +22,16 @@ This is the local algebraic input for the scheme-theoretic principal-divisor map
 that map also requires the separate global theorem that a nonzero rational function has nonzero
 order at only finitely many codimension-one points; no finiteness assumption is hidden here.
 
-Two elementary facts about `Scheme.ord` itself are recorded first: the constant function `1` has
-order zero everywhere (`Scheme.ord_one`), and a function regular on `U` has nonnegative order at
-every point of `U` (`Scheme.ord_germToFunctionField_nonneg`), that is, it has no poles where it is
-defined.
+An elementary fact about `Scheme.ord` itself is recorded first: a function regular on `U` has
+nonnegative order at every point of `U` (`Scheme.ord_germToFunctionField_nonneg`), that is, it has
+no poles where it is defined.
 
 Where the local ring at a codimension-one point is a discrete valuation ring, `orderAt` is
 surjective onto `ℤ` (`SchemeWeilDivisor.exists_orderAt_eq`): the powers of a uniformizer supply
 a rational function of each prescribed order.
 
-The construction advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, the
-"principal divisors" part of "Divisors on a curve". It reuses Mathlib's
-`AlgebraicGeometry.Scheme.ord`, `ordHom`, and `ord_eq_unzero_ordHom`; no external
-formalization is vendored.
+The construction reuses Mathlib's `AlgebraicGeometry.Scheme.ord`, `ordHom`, and
+`ord_eq_unzero_ordHom`; no external formalization is vendored.
 -/
 
 public section
@@ -51,13 +49,6 @@ variable {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X]
 noncomputable section
 
 namespace Scheme
-
-/-- The rational function `1` has order zero at every point. -/
-lemma ord_one (x : X) : X.ord (1 : X.functionField) x = 0 := by
-  rcases eq_or_ne (Order.coheight x) 1 with hx | hx
-  · rw [X.ord_eq_iff hx one_ne_zero]
-    simp
-  · simp [hx]
 
 /-- A regular function on `U` has nonnegative order at every point of `U`: it has no poles where
 it is defined. -/

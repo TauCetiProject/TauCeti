@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Basic
 public import Mathlib.AlgebraicGeometry.OrderOfVanishing
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
-import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
+import TauCeti.AlgebraicGeometry.Scheme.OrderOfVanishing
 
 /-!
 # Rational functions without poles are regular
