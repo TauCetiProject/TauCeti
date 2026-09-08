@@ -115,6 +115,7 @@ theorem repartitionDualComponent_ne_zero (hF : IsFunctionField k F)
     LinearMap.zero_apply]
 
 /-- A Weil differential is zero exactly when its local component at one fixed place is zero. -/
+@[simp]
 theorem repartitionDualComponent_eq_zero_iff (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
     (hω : ω ∈ weilDifferentialSpace k F) (P : Place k F) :
@@ -127,6 +128,7 @@ theorem repartitionDualComponent_eq_zero_iff (hF : IsFunctionField k F)
 
 /-- **One local component determines a Weil differential**: two Weil differentials are equal if
 and only if their local components at any one fixed place are equal. -/
+@[simp]
 theorem repartitionDualComponent_eq_iff (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω η : Module.Dual k ↥(repartitionSpace k F)}
     (hω : ω ∈ weilDifferentialSpace k F) (hη : η ∈ weilDifferentialSpace k F)
