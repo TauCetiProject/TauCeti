@@ -192,8 +192,8 @@ theorem exists_isTotallyPositive_sub_mem {H : Ideal (𝓞 K)} (hH : H ≠ ⊥) (
   -- The square of a nonzero element of `H` lies in `H` and is totally positive.
   have hpH : q ^ 2 ∈ H := by rw [sq]; exact Ideal.mul_mem_left H q hqH
   have hppos : IsTotallyPositive ((q ^ 2 : 𝓞 K) : K) := by
-    rw [show ((q ^ 2 : 𝓞 K) : K) = (q : K) ^ 2 by push_cast; ring]
-    exact isTotallyPositive_sq (RingOfIntegers.coe_ne_zero_iff.mpr hq0)
+    simpa only [map_pow] using
+      isTotallyPositive_sq (K := K) (RingOfIntegers.coe_ne_zero_iff.mpr hq0)
   set B : ℝ := ∑ w : {w : InfinitePlace K // w.IsReal},
     |embedding_of_isReal w.2 (a : K)| / embedding_of_isReal w.2 ((q ^ 2 : 𝓞 K) : K) with hB
   -- Any natural number exceeding `B` clears the negative values of `a` at every real place.
@@ -228,8 +228,11 @@ theorem exists_isTotallyPositive_sub_mem {H : Ideal (𝓞 K)} (hH : H ≠ ⊥) (
   refine ⟨a + (m : 𝓞 K) * q ^ 2, ?_, by simpa using H.mul_mem_left _ hpH, key m hmB⟩
   rw [hm]
   split_ifs with h
-  · rw [show a + ((n + 1 : ℕ) : 𝓞 K) * q ^ 2 = (a + (n : 𝓞 K) * q ^ 2) + q ^ 2 by push_cast; ring,
-      h, zero_add]
+  · have hshift : a + ((n + 1 : ℕ) : 𝓞 K) * q ^ 2 =
+        (a + (n : 𝓞 K) * q ^ 2) + q ^ 2 := by
+      push_cast
+      ring
+    rw [hshift, h, zero_add]
     exact pow_ne_zero 2 hq0
   · exact h
 

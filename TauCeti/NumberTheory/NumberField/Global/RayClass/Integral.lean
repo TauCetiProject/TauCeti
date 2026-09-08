@@ -28,7 +28,7 @@ everything: this is the moving lemma, `idealClass_surjective`.
 ## Main results
 
 * `TauCeti.GlobalNumberFields.exists_mem_isCongrOne`: an ideal comaximal with the finite part of
-  `𝔪` contains a generator of `Kˣ` congruent to one modulo `𝔪`.
+  `𝔪` contains a nonzero element whose image in `Kˣ` is congruent to one modulo `𝔪`.
 * `TauCeti.GlobalNumberFields.exists_isCongrOne_span_eq_mul`: an integral ideal prime to `𝔪`
   divides a principal ideal whose generator is congruent to one modulo `𝔪`, with complementary
   ideal again prime to `𝔪`.
@@ -86,11 +86,13 @@ theorem exists_mem_isCongrOne {𝔪 : Modulus K} {D : Ideal (𝓞 K)} (hD : D �
     (Ideal.mul_eq_bot.mp h).elim hD 𝔪.finitePart_ne_bot
   obtain ⟨b, hb0, hbu, hbpos⟩ := NumberField.exists_isTotallyPositive_sub_mem hH u
   have hbD : b ∈ D := by
-    rw [show b = u + (b - u) by ring]
-    exact D.add_mem hu (Ideal.mul_le_left hbu)
+    simpa only [sub_add_cancel] using D.add_mem (Ideal.mul_le_left hbu) hu
   have hb1 : b - 1 ∈ 𝔪.finitePart := by
-    rw [show b - 1 = (b - u) + (u - 1) by ring, show u - 1 = -t by rw [← hut]; ring]
-    exact 𝔪.finitePart.add_mem (Ideal.mul_le_right hbu) (𝔪.finitePart.neg_mem ht)
+    have hu1 : u - 1 ∈ 𝔪.finitePart := by
+      rw [← hut, sub_add_eq_sub_sub, sub_self, zero_sub]
+      exact 𝔪.finitePart.neg_mem ht
+    simpa only [sub_add_sub_cancel] using
+      𝔪.finitePart.add_mem (Ideal.mul_le_right hbu) hu1
   exact ⟨b, Units.mk0 (b : K) (RingOfIntegers.coe_ne_zero_iff.mpr hb0), hbD, rfl,
     isCongrOne_of_sub_one_mem rfl hb1 fun w _ ↦ isTotallyPositive_iff.mp hbpos w.1 w.2⟩
 
@@ -132,8 +134,7 @@ theorem idealClass_mul_eq_one_of_span_eq_mul {𝔪 : Modulus K} {I J : integralI
     idealClass 𝔪 I * idealClass 𝔪 J = 1 := by
   rw [← map_mul, idealClass_eq_one_iff]
   exact ⟨x, hx, by
-    rw [show ((I * J : integralIdealsPrimeTo 𝔪) : Ideal (𝓞 K)) =
-      (I : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)) from rfl, ← hJ,
+    rw [Submonoid.coe_mul, ← hJ,
       FractionalIdeal.coeIdeal_span_singleton, hxa]⟩
 
 /-- **Every ray class of an integral ideal prime to `𝔪` is inverted by another one.**  The
