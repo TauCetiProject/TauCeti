@@ -37,6 +37,7 @@ carry the hypothesis, while the clopen-image statement is valid for an arbitrary
   the quotient of a profinite group by a closed normal subgroup is totally disconnected.
 * `Subgroup.iInf_openNormalSubgroup_eq_bot`: the infimum of the open normal subgroups of a
   profinite group is trivial.
+
 ## References
 
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Proposition 1.1.4 and Theorem 1.1.6.
