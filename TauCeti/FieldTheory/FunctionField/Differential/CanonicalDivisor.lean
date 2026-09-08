@@ -70,11 +70,15 @@ the Riemann–Roch identity.
   `ℓ((ω)) = g` and `deg (ω) = 2g - 2` (Stichtenoth, Corollary 1.5.16).
 * `TauCeti.exists_isRiemannRochDivisor`: **the Riemann–Roch theorem** — a Riemann–Roch divisor
   exists.
+* `TauCeti.divisorClass_eq_canonicalClass_iff`: **the characterization of canonical divisors**
+  (Stichtenoth, Proposition 1.6.2) — a divisor represents the canonical class exactly when
+  `deg D = 2g - 2` and `ℓ(D) ≥ g`.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Section I.5, in particular Proposition 1.5.11, Theorem 1.5.14 and Theorem 1.5.15.
+  Section I.5, in particular Proposition 1.5.11, Theorem 1.5.14 and Theorem 1.5.15, and
+  Proposition 1.6.2.
 -/
 
 public section
@@ -388,5 +392,53 @@ theorem exists_isRiemannRochDivisor (hF : IsFunctionField k F)
   obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
   exact ⟨weilDifferentialDivisor hF hex hωmem hω0,
     isRiemannRochDivisor_weilDifferentialDivisor hF hex hωmem hω0⟩
+
+/-! ### The characterization of canonical divisors -/
+
+/-- A divisor representing the canonical class is a Riemann–Roch divisor for the genus: it is
+linearly equivalent to the divisor of a nonzero Weil differential, and being a Riemann–Roch
+divisor depends only on the divisor class
+(`TauCeti.Divisor.IsRiemannRochDivisor.of_linearlyEquivalent`). -/
+theorem isRiemannRochDivisor_of_divisorClass_eq_canonicalClass (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {D : Divisor k F}
+    (hD : (Place.orderSystem hF).divisorClass D = canonicalClass hF hex) :
+    D.IsRiemannRochDivisor (genus k F) := by
+  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  refine (isRiemannRochDivisor_weilDifferentialDivisor hF hex hωmem hω0).of_linearlyEquivalent hF
+    ((Place.orderSystem hF).divisorClass_eq_iff.mp ?_)
+  rw [divisorClass_weilDifferentialDivisor hF hex hωmem hω0, hD]
+
+/-- **The characterization of canonical divisors** (Stichtenoth, Proposition 1.6.2): a divisor
+represents the canonical class exactly when it has degree `2g - 2` and its Riemann–Roch space
+has dimension at least the genus.
+
+For the substantial direction, take `W` to be the divisor of a nonzero Weil differential.  Once
+`deg D = 2g - 2`, the Riemann–Roch identity at `D` reads `ℓ(D) = g - 1 + ℓ(W - D)`, so `ℓ(D) ≥ g`
+forces `ℓ(W - D) ≥ 1`; as `W - D` has degree zero it is then principal
+(`TauCeti.Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero`), that is, `D` has the
+class of `W`.  Conversely such a `D` is itself a Riemann–Roch divisor, whose degree and dimension
+are `2g - 2` and `g` by Corollary 1.5.16. -/
+theorem divisorClass_eq_canonicalClass_iff (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (D : Divisor k F) :
+    (Place.orderSystem hF).divisorClass D = canonicalClass hF hex ↔
+      Divisor.degree D = 2 * genus k F - 2 ∧ genus k F ≤ Divisor.dim D := by
+  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  refine ⟨fun hD ↦ ?_, fun ⟨hdeg, hdim⟩ ↦ ?_⟩
+  · have hRR := isRiemannRochDivisor_of_divisorClass_eq_canonicalClass hF hex hD
+    exact ⟨hRR.degree_eq hF hex, (hRR.dim_eq hF hex).ge⟩
+  · have hid := Divisor.isRiemannRochDivisor_iff.mp
+      (isRiemannRochDivisor_weilDifferentialDivisor hF hex hωmem hω0) D
+    have hdegsub : Divisor.degree (weilDifferentialDivisor hF hex hωmem hω0 - D) = 0 := by
+      rw [Divisor.degree_sub, degree_weilDifferentialDivisor hF hex hωmem hω0, hdeg, sub_self]
+    have hone : 1 ≤ Divisor.dim (weilDifferentialDivisor hF hex hωmem hω0 - D) := by
+      rw [hdeg] at hid
+      omega
+    obtain ⟨z, hz⟩ :=
+      (Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero hF hdegsub).mp hone
+    have hclass : (Place.orderSystem hF).divisorClass
+        (weilDifferentialDivisor hF hex hωmem hω0 - D) = 0 :=
+      (Divisor.divisorClass_eq_zero_iff hF).mpr ⟨z, hz⟩
+    rw [map_sub, sub_eq_zero, divisorClass_weilDifferentialDivisor hF hex hωmem hω0] at hclass
+    exact hclass.symm
 
 end TauCeti
