@@ -268,8 +268,8 @@ theorem autCompForgetActionMulEquiv_hom_app_apply {C : Type*} [Category C]
     change (autForgetActionMulEquiv G g).hom.app (e.obj p) x = g • x
     exact autForgetActionMulEquiv_hom_app_apply g (e.obj p) x
 
-/-- The inverse of a transported natural automorphism acts by `g⁻¹` on every fibre. -/
-@[simp]
+/-- The inverse of a transported natural automorphism acts by `g⁻¹` on every fibre; not a `simp`
+lemma, for the reason given at `TauCeti.endCompForgetActionMulEquiv_app_apply`. -/
 theorem autCompForgetActionMulEquiv_inv_app_apply {C : Type*} [Category C]
     (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : G) (p : C) (x : ToType (e.obj p)) :
     (autCompForgetActionMulEquiv G e g).inv.app p x = g⁻¹ • x := by
