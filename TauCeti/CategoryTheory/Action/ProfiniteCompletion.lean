@@ -62,7 +62,7 @@ def actionHom (A : Action FintypeCat.{u} G) :
   change ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →* Equiv.Perm A.V at f
   exact f
 
-/-- The extended continuous representation restricts along the canonical morphism `G → Ĝ` to the
+/-- The extended continuous representation restricts along the canonical morphism `G → Ĝ` to the
 original permutation representation. -/
 @[simp]
 theorem continuousActionHom_eta (A : Action FintypeCat.{u} G) :
