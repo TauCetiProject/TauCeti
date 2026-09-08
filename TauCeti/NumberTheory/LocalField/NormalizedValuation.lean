@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LocalField.Basic
+public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 
 /-!
@@ -36,6 +37,11 @@ decoding with `Multiplicative.toAdd`.
 * `TauCeti.normalizedValuation_surjective`: the normalized value group is all of `ℤ`.
 * `TauCeti.normalizedValuation_irreducible`: an irreducible element of `𝒪[K]` has normalized
   valuation `1`; that is, uniformizers are exactly where the normalization is pinned.
+* `TauCeti.normalizedValuationWithZero_eq_ordFrac`: the zero-preserving normalized valuation is
+  Mathlib's order-of-vanishing map `Ring.ordFrac 𝒪[K]`, which is where the discrete-valuation-ring
+  API for it comes from.
+* `TauCeti.normalizedValuation_eq_one_of_isOfFinOrder`: the normalized valuation vanishes on the
+  roots of unity of `K`.
 * `TauCeti.eq_normalizedValuation`: the kernel condition together with the uniformizer equation
   characterizes the normalized valuation among homomorphisms `Kˣ →* Multiplicative ℤ`.
 * `TauCeti.isUnit_iff_normalizedValuationWithZero_eq_one`,
@@ -113,6 +119,25 @@ private theorem intValuation_valuationSubring :
     (OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
       (a := valuation K x) (b := 1))
 
+private theorem intValuation_eq_maximalIdeal_valuation :
+    intValuation (K := K) = (IsDiscreteValuationRing.maximalIdeal 𝒪[K]).valuation K := by
+  have hv : Function.Surjective (intValuation (K := K)) := intValuation_surjective
+  have : IsDiscreteValuationRing (intValuation (K := K)).valuationSubring :=
+    Valuation.valuationSubring_isDiscreteValuationRing_of_surjective _ hv
+  -- Both valuations are surjective and normalized, so it is enough to see that they have the
+  -- same valuation subring, namely `𝒪[K]`.
+  refine Valuation.eq_of_isEquiv_of_surjective hv
+    (IsDedekindDomain.HeightOneSpectrum.valuation_surjective K _)
+    ((Valuation.isEquiv_iff_valuationSubring ..).mpr ?_)
+  refine ValuationSubring.eq_of_le_of_ne_top
+    (A := (intValuation (K := K)).valuationSubring) ?_ ?_
+  · intro x hx
+    have hx' : x ∈ 𝒪[K] := by rwa [← intValuation_valuationSubring]
+    exact IsDedekindDomain.HeightOneSpectrum.valuation_le_one
+      (IsDiscreteValuationRing.maximalIdeal 𝒪[K]) (K := K) (⟨x, hx'⟩ : 𝒪[K])
+  · simp only [ne_eq, Valuation.valuationSubring_eq_top_iff, not_not]
+    infer_instance
+
 /-- The zero-preserving normalized valuation vanishes exactly at zero. -/
 theorem normalizedValuationWithZero_eq_zero_iff (x : K) :
     normalizedValuationWithZero K x = 0 ↔ x = 0 := by
@@ -123,6 +148,16 @@ theorem normalizedValuationWithZero_eq_zero_iff (x : K) :
 theorem normalizedValuationWithZero_coe (x : Kˣ) :
     normalizedValuationWithZero K (x : K) = (normalizedValuation K x : ℤᵐ⁰) := by
   simp [normalizedValuationWithZero, normalizedValuation, invMonoidWithZeroHom]
+
+/-- The normalized valuation of a local field is the order of vanishing along `𝒪[K]`: it agrees
+with Mathlib's `Ring.ordFrac`, the canonical `ℤᵐ⁰`-valued order map of a discrete valuation ring
+on its fraction field. The `Ring.ordFrac` API therefore applies to `normalizedValuationWithZero`.
+-/
+theorem normalizedValuationWithZero_eq_ordFrac :
+    normalizedValuationWithZero K = Ring.ordFrac 𝒪[K] := by
+  ext x
+  rw [Ring.ordFrac_eq_valuation_inv, ← intValuation_eq_maximalIdeal_valuation]
+  simp [normalizedValuationWithZero, intValuation, invMonoidWithZeroHom]
 
 /-- The translation between Mathlib's multiplicative valuation and the additive normalization:
 the normalized valuation is minus the logarithm of `ValuativeRel.valuation`, transported to
@@ -158,6 +193,12 @@ theorem normalizedValuation_eq_one_iff (x : Kˣ) :
   rw [← toAdd_eq_zero, toAdd_normalizedValuation_eq_ord,
     Valuation.ord_eq_iff_valuation_eq_exp_neg (intValuation (K := K)) x.ne_zero]
   simp [intValuation]
+
+/-- The normalized valuation vanishes on every root of unity: `Multiplicative ℤ` is torsion
+free, so a unit of finite order has normalized valuation `1`. -/
+theorem normalizedValuation_eq_one_of_isOfFinOrder {x : Kˣ} (hx : IsOfFinOrder x) :
+    normalizedValuation K x = 1 :=
+  ((normalizedValuation K).isOfFinOrder hx).eq_one'
 
 /-- The normalized valuation reverses the order of Mathlib's valuation. -/
 theorem toAdd_normalizedValuation_le_iff_valuation_le (x y : Kˣ) :
@@ -206,14 +247,8 @@ theorem normalizedValuation_surjective : Function.Surjective (normalizedValuatio
 normalized valuation is one. -/
 theorem isUnit_iff_normalizedValuationWithZero_eq_one {u : 𝒪[K]} :
     IsUnit u ↔ normalizedValuationWithZero K (u : K) = 1 := by
-  rw [Valuation.Integers.isUnit_iff_valuation_eq_one
-    (Valuation.integer.integers (valuation K))]
-  -- Expose the underlying composite: the normalized map first transports the valuation and
-  -- then inverts it. There is no propositional coercion lemma for this nested homomorphism.
-  change valuation K (u : K) = 1 ↔
-    (valueGroupWithZeroIsoInt K (valuation K (u : K)))⁻¹ = 1
-  rw [inv_eq_one, ← map_one (valueGroupWithZeroIsoInt K)]
-  exact (valueGroupWithZeroIsoInt K).injective.eq_iff.symm
+  rw [normalizedValuationWithZero_eq_ordFrac]
+  exact Ring.isUnit_iff_ordFrac_one_of_isDiscreteValuationRing (K := K)
 
 /-- Divisibility in the ring of integers is monotonicity of the normalized valuation. -/
 theorem dvd_iff_toAdd_normalizedValuation_le {a b : 𝒪[K]} (ha : (a : K) ≠ 0) (hb : (b : K) ≠ 0) :
@@ -247,22 +282,14 @@ theorem exists_eq_mul_zpow_of_irreducible {π : 𝒪[K]} (hπ : Irreducible π) 
 theorem normalizedValuation_irreducible {π : 𝒪[K]} (hπ : Irreducible π) :
     normalizedValuation K
       (Units.mk0 (π : K) (fun h => hπ.ne_zero (Subtype.ext h))) = Multiplicative.ofAdd 1 := by
-  apply Multiplicative.toAdd.injective
-  rw [toAdd_normalizedValuation_eq_ord]
-  let v := intValuation (K := K)
-  have hv : Function.Surjective v := intValuation_surjective
-  let _ : Nontrivial (MonoidWithZeroHom.valueGroup (.ofClass v)) :=
-    Valuation.nontrivial_valueGroup_of_surjective v hv
-  let _ : IsDiscreteValuationRing v.valuationSubring :=
-    Valuation.valuationSubring_isDiscreteValuationRing_of_surjective v hv
-  let e : v.valuationSubring.toSubring ≃+* 𝒪[K] :=
-    RingEquiv.subringCongr intValuation_valuationSubring
-  let π' : v.valuationSubring := e.symm π
-  have hπ' : Irreducible π' := (MulEquiv.irreducible_iff e.symm.toMulEquiv).mpr hπ
-  have huni : v.IsUniformizer (π' : K) :=
-    Valuation.isUniformizer_of_maximalIdeal_eq_span v hπ'.maximalIdeal_eq
-  have hord := (Valuation.isUniformizer_iff_ord_eq_one_of_surjective v hv).mp huni
-  simpa [v, π', e] using hord
+  have h : normalizedValuationWithZero K (π : K) = WithZero.exp 1 := by
+    rw [normalizedValuationWithZero_eq_ordFrac]
+    exact Ring.ordFrac_irreducible (K := K) hπ
+  -- Read the equation on `Kˣ`: the algebra map out of `𝒪[K]` is the subtype coercion, so `π` is
+  -- the underlying element of the unit displayed in the statement.
+  rw [show (π : K) = ((Units.mk0 (π : K) (fun h => hπ.ne_zero (Subtype.ext h)) : Kˣ) : K) from rfl,
+    normalizedValuationWithZero_coe, WithZero.exp_eq_coe_ofAdd] at h
+  exact_mod_cast h
 
 /-- The normalized valuation is the unique homomorphism `Kˣ →* Multiplicative ℤ` that vanishes
 on the elements of valuation `1` and takes the value `Multiplicative.ofAdd 1` at a uniformizer. -/
