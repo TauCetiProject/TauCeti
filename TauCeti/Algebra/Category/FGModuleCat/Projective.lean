@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.CategoryTheory.Exact.Projective
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
-public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 
 /-!
@@ -19,37 +19,32 @@ every short exact sequence of finite-dimensional modules splits.
 ## Main results
 
 * `FGModuleCat.projective`: every finite-dimensional module over a division ring is projective.
+* `FGModuleCat.projective_of_free`: every finite free module is projective.
 * `FGModuleCat.nonempty_splitting_of_shortExact`: every short exact sequence of finite-dimensional
   modules over a division ring splits.
-* `FGModuleCat.finrank_biprod`: dimension is additive on biproducts of finite-dimensional modules.
 -/
 
 public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory
 
 universe u v
 
+variable (R : Type u) [Ring R]
+
+/-- Every finite free module is a projective object. -/
+theorem _root_.FGModuleCat.projective_of_free (X : FGModuleCat.{v} R) [Module.Free R X] :
+    Projective X := by
+  apply (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).projective_of_map_projective
+  exact ModuleCat.projective_of_free (Module.Free.chooseBasis R X)
+
 variable (k : Type u) [DivisionRing k]
 
-/-- The dimension of a biproduct of finite-dimensional modules is the sum of their dimensions. -/
-theorem _root_.FGModuleCat.finrank_biprod (X Y : FGModuleCat.{v} k) :
-    Module.finrank k ((X ⊞ Y : FGModuleCat.{v} k) : Type v) =
-      Module.finrank k X + Module.finrank k Y := by
-  let F := forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)
-  let _ : PreservesBinaryBiproduct X Y F :=
-    preservesBinaryBiproduct_of_preservesBinaryProduct F
-  let e : F.obj (X ⊞ Y) ≅ ModuleCat.of k (X × Y) :=
-    F.mapBiprod X Y ≪≫ ModuleCat.biprodIsoProd X.obj Y.obj
-  let e' : (X ⊞ Y : FGModuleCat.{v} k) ≅ FGModuleCat.of k (X × Y) := F.preimageIso e
-  exact (FGModuleCat.isoToLinearEquiv e').finrank_eq.trans Module.finrank_prod
-
 /-- Every finite-dimensional vector space over a division ring is a projective object. -/
-theorem _root_.FGModuleCat.projective (X : FGModuleCat.{v} k) : Projective X := by
-  apply (forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).projective_of_map_projective
-  exact ModuleCat.projective_of_free (Module.Free.chooseBasis k X)
+theorem _root_.FGModuleCat.projective (X : FGModuleCat.{v} k) : Projective X :=
+  FGModuleCat.projective_of_free k X
 
 /-- Every short exact sequence of finite-dimensional vector spaces over a division ring splits. -/
 theorem _root_.FGModuleCat.nonempty_splitting_of_shortExact

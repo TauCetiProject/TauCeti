@@ -620,6 +620,14 @@ lemma fromSplitEquiv_apply
     fromSplitEquiv h x = fromSplit E x :=
   AddEquiv.ofBijective_apply _ _ _
 
+/-- The inverse split-to-exact equivalence sends an object class to its split class. -/
+@[simp]
+lemma fromSplitEquiv_symm_of
+    (h : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) (X : C) :
+    (fromSplitEquiv h).symm (of X) = SplitK0.of X := by
+  apply (fromSplitEquiv h).injective
+  simp
+
 /-- The canonical comparison out of split `K₀` is natural in a conflation-exact functor: every
 additive functor is conflation-exact for the split exact structures. -/
 theorem map_comp_fromSplit (F : C ⥤ D) [F.Additive] (hF : E.IsConflationExact E' F) :

@@ -150,12 +150,12 @@ noncomputable def finrankEquiv [Small.{v} k] : SplitK0 (FGModuleCat.{v} k) ≃+ 
     fun n ↦ ⟨n • of (line k), by simp [finrank_of]⟩⟩
 
 /-- The dimension equivalence agrees with the dimension homomorphism. -/
+@[simp]
 theorem finrankEquiv_apply [Small.{v} k] (x : SplitK0 (FGModuleCat.{v} k)) :
     finrankEquiv k x = finrank k x :=
   AddEquiv.ofBijective_apply _ _ _
 
 /-- The dimension equivalence sends an object class to its dimension. -/
-@[simp]
 theorem finrankEquiv_of [Small.{v} k] (X : FGModuleCat.{v} k) :
     finrankEquiv k (of X) = Module.finrank k X :=
   by rw [finrankEquiv_apply, finrank_of]
@@ -226,13 +226,13 @@ noncomputable def finrankEquiv [Small.{v} k] : AbelianK0 (FGModuleCat.{v} k) ≃
   (fromSplitEquiv k).symm.trans (SplitK0.finrankEquiv k)
 
 /-- The dimension equivalence agrees with the dimension homomorphism. -/
+@[simp]
 theorem finrankEquiv_apply [Small.{v} k] (x : AbelianK0 (FGModuleCat.{v} k)) :
     finrankEquiv k x = finrank k x := by
   simp only [finrankEquiv, AddEquiv.trans_apply, finrank, AddMonoidHom.comp_apply,
     AddEquiv.toAddMonoidHom_eq_coe, AddMonoidHom.coe_coe, SplitK0.finrankEquiv_apply]
 
 /-- The dimension equivalence sends an object class to its dimension. -/
-@[simp]
 theorem finrankEquiv_of [Small.{v} k] (X : FGModuleCat.{v} k) :
     finrankEquiv k (of X) = Module.finrank k X :=
   by rw [finrankEquiv_apply, finrank_of]
