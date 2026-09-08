@@ -14,11 +14,10 @@ This file proves that the quotient of two independent standard real Gaussian var
 standard Cauchy law. The measure-level identity is primary, and a `HasLaw` formulation records the
 independence assumptions needed for random variables.
 
-The denominator's square has the chi-squared law with one degree of freedom, so the corresponding
-quotient by its absolute value is Student t with one degree of freedom. A measure-preserving sign
-twist uses reflection invariance of the numerator to show that replacing the denominator by its
-absolute value does not change the quotient law. Finally,
-`studentTMeasure 1 = cauchyMeasure 0 1` identifies the result.
+Ratios of independent standard Gaussian variables provide a standard construction of Cauchy random
+variables. The measure identity is useful for distributional calculations on product spaces, while
+the `HasLaw` theorem lets probabilistic arguments recognize a quotient of independent standard
+Gaussians as Cauchy.
 
 ## Main results
 
