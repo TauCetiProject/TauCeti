@@ -8,15 +8,13 @@ module
 public import TauCeti.Probability.Distributions.Multinomial.Basic
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
-public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 
 /-!
 # Directional exponential transforms of the multinomial distribution
 
-A count vector `k : ι → ℕ` is cast into `EuclideanSpace ℝ ι` by `multinomialToEuclidean`. For
-the pushforward of `multinomialMeasure n p` along that cast and a direction `θ`, the directional
-moment generating function is finite everywhere and equals
+For the pushforward of `multinomialMeasure n p` into `EuclideanSpace ℝ ι` along
+`multinomialToEuclidean` and a direction `θ`, the directional moment generating function is
+finite everywhere and equals
 `(∑ i, p i * exp (t * θ i)) ^ n`: the multinomial theorem, with the cell weights tilted by
 `exp (t * θ i)`. The cumulant generating function is its real logarithm.
 
@@ -25,9 +23,9 @@ for probability vectors with zero cells, which contribute nothing to the tilted 
 
 ## Main results
 
-* `TauCeti.Probability.multinomialToEuclidean` — the cast of count vectors into Euclidean space;
-* `TauCeti.Probability.integrableExpSet_inner_multinomial` — every direction has full exponential
-  integrability domain;
+* `TauCeti.Probability.integrableExpSet_multinomialMeasure` — every real observable has full
+  exponential integrability domain, and `TauCeti.Probability.integrableExpSet_inner_multinomial`
+  for every direction of the Euclidean pushforward;
 * `TauCeti.Probability.mgf_inner_multinomial` — the directional moment generating function;
 * `TauCeti.Probability.cgf_inner_multinomial` — the directional cumulant generating function.
 
@@ -50,16 +48,6 @@ namespace Probability
 
 variable {ι : Type*} [Fintype ι]
 
-/-- The count vector cast into Euclidean space. -/
-def multinomialToEuclidean (k : ι → ℕ) : EuclideanSpace ℝ ι :=
-  (EuclideanSpace.equiv ι ℝ).symm fun i => (k i : ℝ)
-
-omit [Fintype ι] in
-/-- The coordinates of the cast are the counts, as reals. -/
-@[simp]
-theorem multinomialToEuclidean_apply (k : ι → ℕ) (i : ι) :
-    multinomialToEuclidean k i = (k i : ℝ) := (rfl)
-
 /-- The pointwise identity behind the moment generating function: a multinomial weight times the
 exponential of a directional sum is the multinomial weight of the tilted cells `pᵢ exp (t θᵢ)`. -/
 private theorem multinomialWeightReal_mul_exp (p : ι → NNReal) (θ : ι → ℝ) (t : ℝ)
@@ -71,14 +59,6 @@ private theorem multinomialWeightReal_mul_exp (p : ι → NNReal) (θ : ι → �
   refine Finset.prod_congr rfl fun i _ => ?_
   rw [mul_pow, ← exp_nat_mul]
   ring_nf
-
-omit [Fintype ι] in
-/-- The cast of count vectors into Euclidean space is measurable. -/
-theorem measurable_multinomialToEuclidean [Finite ι] :
-    Measurable (multinomialToEuclidean (ι := ι)) := by
-  have := Fintype.ofFinite ι
-  refine (EuclideanSpace.equiv ι ℝ).symm.continuous.measurable.comp ?_
-  exact Measurable.of_eval fun i => measurable_from_nat.comp (measurable_pi_apply i)
 
 /-- The cell weights tilted by `exp (t * θ i)`, as a nonnegative family. -/
 private def tiltedWeights (p : ι → NNReal) (θ : ι → ℝ) (t : ℝ) (i : ι) : NNReal :=
@@ -107,7 +87,13 @@ theorem mgf_inner_multinomial (n : ℕ) (p : StdSimplex NNReal ι) (θ : Euclide
   exact (sum_multinomialWeightReal n (tiltedWeights p.weights θ t)).symm ▸
     Finset.sum_congr rfl fun k _ => (multinomialWeightReal_def _ k).symm
 
-/-- Every direction has full exponential-integrability domain: the law has finite support. -/
+/-- Every real observable of a multinomial law has full exponential-integrability domain: the law
+has finite support. -/
+theorem integrableExpSet_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι)
+    (f : (ι → ℕ) → ℝ) : integrableExpSet f (multinomialMeasure n p) = Set.univ :=
+  Set.eq_univ_of_forall fun _ => integrable_multinomialMeasure _ n p
+
+/-- Every direction has full exponential-integrability domain for the Euclidean pushforward. -/
 theorem integrableExpSet_inner_multinomial (n : ℕ) (p : StdSimplex NNReal ι)
     (θ : EuclideanSpace ℝ ι) :
     integrableExpSet (fun x => inner ℝ θ x) ((multinomialMeasure n p).map multinomialToEuclidean)
@@ -115,7 +101,8 @@ theorem integrableExpSet_inner_multinomial (n : ℕ) (p : StdSimplex NNReal ι)
   ext t
   simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
   rw [integrable_map_measure (by fun_prop) measurable_multinomialToEuclidean.aemeasurable]
-  exact integrable_multinomialMeasure _ n p
+  exact Set.eq_univ_iff_forall.1
+    (integrableExpSet_multinomialMeasure n p fun k => inner ℝ θ (multinomialToEuclidean k)) t
 
 /-- **Directional cumulant generating function of the multinomial law**: the real logarithm of
 the moment generating function. -/
