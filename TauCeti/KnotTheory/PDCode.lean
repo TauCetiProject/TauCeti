@@ -15,9 +15,10 @@ import Mathlib.Tactic
 
 An oriented PD-code records the finite combinatorial data at the crossings of a link.  The
 `halfEdge` permutation lists the four visits at each crossing, `edgePair` joins the two visits
-belonging to one arc, and `orientation` records the direction of every arc.  Opposite slots form
-the two local strands, one of which is selected by `overPair`; the crossing sign is then derived
-from this local oriented crossing data.
+belonging to one arc, and `orientation` records the direction of every arc.  Crossing-free circle
+components and their orientations are recorded separately.  Opposite slots form the two local
+strands, one of which is selected by `overPair`; the crossing sign is then derived from this local
+oriented crossing data.
 
 This is a code-level presentation: planarity and the realization in the plane are intentionally
 separate predicates.  Keeping the code finite and explicit makes it the hub for later
@@ -39,8 +40,8 @@ realization theorem is asserted here; that is the subsequent geometric-to-combin
   is genuinely positive or negative.
 * `TauCeti.OrientedPDCode.mirror_mirror` and `relabel_relabel` show respectively that reflection
   is involutive and that relabelling is an action.
-* `TauCeti.orientedPDCodeZero` is the empty oriented diagram, providing a nontrivial
-  witness for the finite presentation at zero crossings.
+* `TauCeti.orientedPDCodeUnlink` records any finite collection of oriented crossing-free circles;
+  `orientedPDCodeZero` and `orientedPDCodeUnknot` are respectively the empty and one-circle cases.
 -/
 
 public section
@@ -67,6 +68,7 @@ The `4 * n` half-edges are grouped into four slots for each crossing by `halfEdg
 fixed-point-free involution `edgePair` joins the two visits of each arc.  `orientation` chooses a
 direction on each arc, so its values are opposite both at paired visits and across each local
 strand.  Slots `0` and `2` form one strand, while slots `1` and `3` form the other.
+`crossinglessComponents` records the chosen orientations of components with no crossing visits.
 `overPair i = false` selects the `0`-`2` strand as over; `true` selects the `1`-`3` strand. -/
 structure OrientedPDCode (n : ℕ) where
   /-- The half-edge labels occupying the four slots of each crossing. -/
@@ -86,6 +88,8 @@ structure OrientedPDCode (n : ℕ) where
     orientation (halfEdge (OrientedPDCode.crossingSlotEquiv n
       (i, OrientedPDCode.oppositeCrossingSlot slot))) =
       !orientation (halfEdge (OrientedPDCode.crossingSlotEquiv n (i, slot)))
+  /-- The chosen orientations of circle components which meet no crossing. -/
+  crossinglessComponents : Multiset Bool
   /-- Which of the two opposite-slot strands is over at each crossing. -/
   overPair : Fin n → Bool
 
@@ -94,11 +98,13 @@ namespace OrientedPDCode
 variable {n : ℕ}
 
 /-- An oriented PD-code is determined by its crossing order, arc pairing, orientations, and
-over-strand choices. -/
+crossing-free components, and over-strand choices. -/
 @[ext]
 theorem ext {D E : OrientedPDCode n}
     (hhalf : D.halfEdge = E.halfEdge) (hedge : D.edgePair = E.edgePair)
-    (horient : D.orientation = E.orientation) (hover : D.overPair = E.overPair) : D = E := by
+    (horient : D.orientation = E.orientation)
+    (hcrossingless : D.crossinglessComponents = E.crossinglessComponents)
+    (hover : D.overPair = E.overPair) : D = E := by
   cases D
   cases E
   simp_all
@@ -175,6 +181,7 @@ theorem orientation_edgePair (D : OrientedPDCode n) (h : Fin (4 * n)) :
   orientation := D.orientation
   orientation_pair := D.orientation_pair
   orientation_opposite := D.orientation_opposite
+  crossinglessComponents := D.crossinglessComponents
   overPair := fun i => !D.overPair i
 
 /-- Reflection leaves the order of the half-edge labels unchanged. -/
@@ -186,6 +193,12 @@ theorem mirror_halfEdge (D : OrientedPDCode n) : D.mirror.halfEdge = D.halfEdge 
 @[simp]
 theorem mirror_crossing (D : OrientedPDCode n) (i : Fin n) (slot : Fin 4) :
     D.mirror.crossing i slot = D.crossing i slot :=
+  rfl
+
+/-- Reflection preserves the orientations of components which do not meet a crossing. -/
+@[simp]
+theorem mirror_crossinglessComponents (D : OrientedPDCode n) :
+    D.mirror.crossinglessComponents = D.crossinglessComponents :=
   rfl
 
 /-- Reflection reverses the sign of every crossing. -/
@@ -252,6 +265,7 @@ names, so later equivalence relations can quotient out these bookkeeping choices
   orientation_opposite := by
     intro i slot
     simp [Equiv.Perm.mul_apply, D.orientation_opposite]
+  crossinglessComponents := D.crossinglessComponents
   overPair := D.overPair ∘ cross.symm
 
 /-- Relabelling transports the entire crossing block together with its metadata. -/
@@ -262,6 +276,13 @@ theorem relabel_crossing (D : OrientedPDCode n)
     (D.relabel half cross).halfEdge (crossingSlotEquiv n (i, slot)) =
       half (D.crossing (cross.symm i) slot) := by
   simp [relabel, crossing, Equiv.Perm.mul_apply]
+
+/-- Relabelling crossing and half-edge names leaves crossing-free components unchanged. -/
+@[simp]
+theorem relabel_crossinglessComponents (D : OrientedPDCode n)
+    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
+    (D.relabel half cross).crossinglessComponents = D.crossinglessComponents :=
+  rfl
 
 /-- The crossing sign after relabelling is read at the old crossing name. -/
 @[simp]
@@ -280,6 +301,7 @@ theorem relabel_refl (D : OrientedPDCode n) :
     simp [relabel, crossingBlockPerm, Equiv.Perm.mul_apply]
   · ext x
     rfl
+  · rfl
   · rfl
   · rfl
 
@@ -301,11 +323,13 @@ theorem relabel_relabel (D : OrientedPDCode n)
     rfl
   · rfl
   · rfl
+  · rfl
 
 end OrientedPDCode
 
-/-- The empty oriented PD-code. -/
-@[expose] def orientedPDCodeZero : OrientedPDCode 0 where
+/-- A zero-crossing oriented PD-code consisting of crossing-free circles with the specified
+orientations.  Multiplicity records distinct components without imposing an ordering on them. -/
+@[expose] def orientedPDCodeUnlink (orientations : Multiset Bool) : OrientedPDCode 0 where
   halfEdge := Equiv.refl _
   edgePair := Equiv.refl _
   edgePair_sq := by intro h; exact rfl
@@ -313,14 +337,42 @@ end OrientedPDCode
   orientation := fun h => nomatch h
   orientation_pair := by intro h; exact nomatch h
   orientation_opposite := by intro i; exact Fin.elim0 i
+  crossinglessComponents := orientations
   overPair := fun h => nomatch h
+
+/-- The empty oriented PD-code. -/
+@[expose] def orientedPDCodeZero : OrientedPDCode 0 :=
+  orientedPDCodeUnlink 0
+
+/-- A crossing-free oriented unknot with the specified choice of orientation. -/
+@[expose] def orientedPDCodeUnknot (orientation : Bool) : OrientedPDCode 0 :=
+  orientedPDCodeUnlink {orientation}
+
+/-- Zero-crossing unlink codes retain exactly their multiset of component orientations. -/
+theorem orientedPDCodeUnlink_injective : Function.Injective orientedPDCodeUnlink := by
+  intro orientations₁ orientations₂ h
+  exact congrArg OrientedPDCode.crossinglessComponents h
+
+/-- A crossing-free oriented circle is distinct from the empty diagram. -/
+theorem orientedPDCodeUnknot_ne_zero (orientation : Bool) :
+    orientedPDCodeUnknot orientation ≠ orientedPDCodeZero := by
+  intro h
+  have := congrArg OrientedPDCode.crossinglessComponents h
+  simp [orientedPDCodeUnknot, orientedPDCodeZero, orientedPDCodeUnlink] at this
+
+/-- The two explicit orientation choices give distinct crossing-free circle presentations. -/
+theorem orientedPDCodeUnknot_true_ne_false :
+    orientedPDCodeUnknot true ≠ orientedPDCodeUnknot false := by
+  intro h
+  have := congrArg OrientedPDCode.crossinglessComponents h
+  simp [orientedPDCodeUnknot, orientedPDCodeUnlink] at this
 
 /-- Reflection fixes the empty PD-code. -/
 @[simp]
 theorem orientedPDCodeZero_mirror :
     orientedPDCodeZero.mirror = orientedPDCodeZero := by
   refine OrientedPDCode.ext (D := orientedPDCodeZero.mirror) (E := orientedPDCodeZero)
-    rfl rfl rfl ?_
+    rfl rfl rfl rfl ?_
   funext i
   exact Fin.elim0 i
 
@@ -345,6 +397,7 @@ not only the empty link. -/
     intro i slot
     fin_cases i
     fin_cases slot <;> decide
+  crossinglessComponents := 0
   overPair := fun _ => true
 
 @[simp]
