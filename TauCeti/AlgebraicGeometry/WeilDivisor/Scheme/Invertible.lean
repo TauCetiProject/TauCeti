@@ -196,7 +196,8 @@ lemma sheafPrincipalDivisorIsoUnit_inv_sheafι (hX : ∀ y : X, coheight y ≤ 1
     (fun φ ↦ φ ≫ Scheme.rationalFunctionsMul X
       ((Additive.toMul (-g) : X.functionFieldˣ) : X.functionField))
     (sheafPrincipalDivisorIsoUnit_hom_toRationalFunctions hX g).symm
-  simp only [Category.assoc, rationalFunctionsMul_comp_neg, Category.comp_id] at h
+  simp only [Category.assoc, toMul_neg, Scheme.rationalFunctionsMul_comp_inv,
+    Category.comp_id] at h
   exact h.trans (Category.assoc _ _ _)
 
 /-- **The sheaf of a principal Weil divisor is a line bundle.** On a Noetherian integral scheme

@@ -27,7 +27,8 @@ prime-power levels — the degree count of Shimura, Theorem 3.24 — which lives
 is congruence-subgroup arithmetic consumed by, but independent of, the Hecke-ring layer.
 
 A final section records how the *principal* congruence subgroups compose with the arithmetic
-of the level: `Γ` is antitone in the level like the other two families, and the join of two
+of the level: `Γ` is antitone in the level like the other two families, it sits inside those
+two at the same level along the chain `Γ(N) ≤ Γ₁(N) ≤ Γ₀(N)`, and the join of two
 of them is the principal congruence subgroup of the gcd, `Γ(gcd a b) = Γ(a) ⊔ Γ(b)`. That
 identity is Shimura's Lemma 3.28; it is the Chinese remainder theorem for `SL₂`, and it is
 what lets a Hecke operator at level `ab` be analysed one prime at a time.
@@ -46,6 +47,8 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.Gamma1_le_Gamma1_of_dvd`, `CongruenceSubgroup.Gamma0_le_Gamma0_of_dvd`,
   `CongruenceSubgroup.Gamma_le_Gamma_of_dvd`: all three families are antitone in the level,
   `Γ(N) ≤ Γ(M)` whenever `M ∣ N`.
+* `CongruenceSubgroup.Gamma_le_Gamma1`, `CongruenceSubgroup.Gamma_le_Gamma0`: at a fixed level
+  the three families are nested, `Γ(N) ≤ Γ₁(N) ≤ Γ₀(N)`.
 * `CongruenceSubgroup.mem_Gamma1_iff`: `Γ₁(N)` is cut out inside `Γ₀(N)` by the
   single congruence `d ≡ 1`.
 * `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0`: a `Γ₀(N)` matrix has
@@ -121,10 +124,16 @@ theorem Gamma_le_Gamma_of_dvd {M N : ℕ} (h : M ∣ N) : Gamma N ≤ Gamma M :=
     by simpa [map_intCast, map_one, map_zero] using
       congr_arg (ZMod.castHom h (ZMod M)) hA.2.2.2⟩
 
-/-- `Γ(N) ≤ Γ₀(N)`: the principal congruence subgroup sits inside `Γ₀(N)`, since `c ≡ 0` is
-one of the four congruences it imposes. -/
-theorem Gamma_le_Gamma0 (N : ℕ) : Gamma N ≤ Gamma0 N := fun _ hA ↦
-  Gamma0_mem.mpr (Gamma_mem.mp hA).2.2.1
+/-- `Γ(N) ≤ Γ₁(N)`: the principal congruence subgroup sits inside `Γ₁(N)`, since the three
+congruences `a ≡ 1`, `d ≡ 1`, `c ≡ 0` that `Γ₁(N)` imposes are three of the four that `Γ(N)`
+does. -/
+theorem Gamma_le_Gamma1 (N : ℕ) : Gamma N ≤ Gamma1 N := fun _ hA ↦
+  (Gamma1_mem _ _).mpr ⟨(Gamma_mem.mp hA).1, (Gamma_mem.mp hA).2.2.2, (Gamma_mem.mp hA).2.2.1⟩
+
+/-- `Γ(N) ≤ Γ₀(N)`: the principal congruence subgroup sits inside `Γ₀(N)`, along the chain
+`Γ(N) ≤ Γ₁(N) ≤ Γ₀(N)`. -/
+theorem Gamma_le_Gamma0 (N : ℕ) : Gamma N ≤ Gamma0 N :=
+  (Gamma_le_Gamma1 N).trans (Gamma1_in_Gamma0 N)
 
 /-- `Γ₀` is antitone in the level: if `M ∣ N` then `Γ₀(N) ≤ Γ₀(M)`. -/
 theorem Gamma0_le_Gamma0_of_dvd {M N : ℕ} (h : M ∣ N) : Gamma0 N ≤ Gamma0 M := by

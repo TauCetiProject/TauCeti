@@ -42,6 +42,10 @@ class group (`oneEquivClassGroup`).
 
 * `TauCeti.GlobalNumberFields.IsCongrOne.toPrincipalIdeal_mem_idealsPrimeTo`: the principal ideal
   of an element congruent to one is prime to the modulus.
+* `TauCeti.GlobalNumberFields.idealClass_apply`: the ray class of an integral ideal is the ray
+  class of the fractional ideal it generates.
+* `TauCeti.GlobalNumberFields.idealClass_mul`: taking the ray class of an integral ideal respects
+  multiplication.
 * `TauCeti.GlobalNumberFields.idealClass_eq_one_iff`: an ideal has trivial ray class exactly when
   it is generated, as a fractional ideal, by an element of `Kˣ` congruent to one modulo `𝔪`.
 * `TauCeti.GlobalNumberFields.classMap_comp_classMap` and
@@ -132,6 +136,16 @@ argument also makes multiplicativity `map_mul` rather than a law with side condi
 noncomputable def idealClass (𝔪 : Modulus K) :
     integralIdealsPrimeTo 𝔪 →* RayClassGroup 𝔪 :=
   (rayClassMk 𝔪).comp (NumberFieldArithmetic.integralIdealsAwayHom 𝔪.support)
+
+/-- The ray class of a product is the product of the ray classes. -/
+@[simp] theorem idealClass_mul (𝔪 : Modulus K) (I J : integralIdealsPrimeTo 𝔪) :
+    idealClass 𝔪 (I * J) = idealClass 𝔪 I * idealClass 𝔪 J :=
+  map_mul _ _ _
+
+/-- The ray class of an integral ideal is the ray class of the fractional ideal it generates. -/
+theorem idealClass_apply (𝔪 : Modulus K) (I : integralIdealsPrimeTo 𝔪) :
+    idealClass 𝔪 I = rayClassMk 𝔪 (NumberFieldArithmetic.integralIdealsAwayHom 𝔪.support I) :=
+  (rfl)
 
 /-- **The intrinsic triviality criterion for a ray class.**  An integral ideal prime to `𝔪` has
 trivial ray class exactly when it is generated as a *fractional* ideal by an element of `Kˣ` that

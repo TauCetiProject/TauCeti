@@ -40,10 +40,10 @@ forces the values at `c = 0` and `c = 1` to agree.
   for `K` compact.
 * `ContinuousLinearMap.IsFredholm.add_of_isCompactOperator`: a compact perturbation of a Fredholm
   operator is Fredholm.
-* `TauCeti.ContinuousLinearMap.index_add_of_isCompactOperator`: a compact perturbation leaves the
+* `ContinuousLinearMap.index_add_of_isCompactOperator`: a compact perturbation leaves the
   index unchanged.
-* `TauCeti.ContinuousLinearMap.index_one_sub_eq_zero` and
-  `TauCeti.ContinuousLinearMap.index_one_add_eq_zero`: `1 - K` and `1 + K` have index `0` for `K`
+* `ContinuousLinearMap.index_one_sub_eq_zero` and
+  `ContinuousLinearMap.index_one_add_eq_zero`: `1 - K` and `1 + K` have index `0` for `K`
   compact.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix
@@ -128,15 +128,16 @@ theorem _root_.ContinuousLinearMap.IsFredholm.add_of_isCompactOperator
     exact FiniteDimensional.of_surjective (Submodule.factor hrange)
       (Submodule.factor_surjective hrange)
 
-namespace ContinuousLinearMap
 
 /-- A compact perturbation leaves the Fredholm index unchanged.
 
 The scalar family `c ↦ T + c • C` is a continuous family of Fredholm operators over the
 preconnected parameter space `𝕜`, so its index is constant; comparing `c = 0` with `c = 1` gives
 the claim. -/
-theorem index_add_of_isCompactOperator (hT : ContinuousLinearMap.IsFredholm T)
-    (hC : IsCompactOperator C) : index (T + C) = index T := by
+theorem _root_.ContinuousLinearMap.index_add_of_isCompactOperator
+    (hT : ContinuousLinearMap.IsFredholm T)
+    (hC : IsCompactOperator C) : ContinuousLinearMap.index (T + C) = ContinuousLinearMap.index T :=
+      by
   let _i := IsRCLikeNormedField.rclike 𝕜
   have hpre : PreconnectedSpace 𝕜 :=
     ⟨(convex_univ : Convex ℝ (Set.univ : Set 𝕜)).isPreconnected⟩
@@ -147,23 +148,25 @@ theorem index_add_of_isCompactOperator (hT : ContinuousLinearMap.IsFredholm T)
 
 /-- A compact perturbation of the identity has index `0`. -/
 @[simp]
-theorem index_one_sub_eq_zero {K : E →L[𝕜] E} (hK : IsCompactOperator K) :
-    index (1 - K : E →L[𝕜] E) = 0 := by
+theorem _root_.ContinuousLinearMap.index_one_sub_eq_zero {K : E →L[𝕜] E} (hK : IsCompactOperator K)
+    :
+    ContinuousLinearMap.index (1 - K : E →L[𝕜] E) = 0 := by
   have hneg : IsCompactOperator (-K : E →L[𝕜] E) := by
     simpa only [FunLike.coe_neg] using hK.neg
   have hrw : (1 - K : E →L[𝕜] E) = ContinuousLinearMap.id 𝕜 E + (-K) := by
     ext x
     simp [sub_eq_add_neg]
-  rw [hrw, index_add_of_isCompactOperator .id hneg, index_id]
+  rw [hrw, ContinuousLinearMap.index_add_of_isCompactOperator .id hneg,
+    ContinuousLinearMap.index_id]
 
 /-- A compact perturbation of the identity has index `0`, in additive form. -/
 @[simp]
-theorem index_one_add_eq_zero {K : E →L[𝕜] E} (hK : IsCompactOperator K) :
-    index (1 + K : E →L[𝕜] E) = 0 := by
+theorem _root_.ContinuousLinearMap.index_one_add_eq_zero {K : E →L[𝕜] E} (hK : IsCompactOperator K)
+    :
+    ContinuousLinearMap.index (1 + K : E →L[𝕜] E) = 0 := by
   have hrw : (1 + K : E →L[𝕜] E) = ContinuousLinearMap.id 𝕜 E + K := rfl
-  rw [hrw, index_add_of_isCompactOperator .id hK, index_id]
+  rw [hrw, ContinuousLinearMap.index_add_of_isCompactOperator .id hK, ContinuousLinearMap.index_id]
 
-end ContinuousLinearMap
 
 end TauCeti
 
