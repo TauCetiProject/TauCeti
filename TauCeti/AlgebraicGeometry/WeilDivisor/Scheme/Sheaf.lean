@@ -70,23 +70,6 @@ variable {X : Scheme.{u}} [IsIntegral X]
 
 noncomputable section
 
-omit [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))] in
-/-- Multiplying by `g` and then by `g⁻¹` is the identity on `𝒦_X`. -/
-lemma rationalFunctionsMul_comp_neg (g : Additive X.functionFieldˣ) :
-    Scheme.rationalFunctionsMul X ((Additive.toMul g : X.functionFieldˣ) : X.functionField) ≫
-        Scheme.rationalFunctionsMul X
-          ((Additive.toMul (-g) : X.functionFieldˣ) : X.functionField) = 𝟙 _ := by
-  rw [← Scheme.rationalFunctionsMul_mul, toMul_neg, (Additive.toMul g).inv_mul,
-    Scheme.rationalFunctionsMul_one]
-
-omit [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))] in
-/-- Multiplying by `g⁻¹` and then by `g` is the identity on `𝒦_X`. -/
-lemma rationalFunctionsMul_neg_comp (g : Additive X.functionFieldˣ) :
-    Scheme.rationalFunctionsMul X ((Additive.toMul (-g) : X.functionFieldˣ) : X.functionField) ≫
-        Scheme.rationalFunctionsMul X
-          ((Additive.toMul g : X.functionFieldˣ) : X.functionField) = 𝟙 _ := by
-  simpa using rationalFunctionsMul_comp_neg (-g)
-
 section LocallyNoetherian
 
 variable [IsLocallyNoetherian X]
@@ -378,8 +361,8 @@ def sheafOverMulIsoOfCoeffEq
                 (Scheme.rationalFunctionsMul X
                   ((Additive.toMul (-g) : X.functionFieldˣ) : X.functionField)) V.unop.left)
                 s.val = s.val
-            rw [← Scheme.Modules.Hom.comp_app, rationalFunctionsMul_comp_neg,
-              Scheme.Modules.Hom.id_app]
+            rw [← Scheme.Modules.Hom.comp_app, toMul_neg,
+              Scheme.rationalFunctionsMul_comp_inv, Scheme.Modules.Hom.id_app]
             rfl
           right_inv := by
             intro s
@@ -392,8 +375,8 @@ def sheafOverMulIsoOfCoeffEq
                 (Scheme.rationalFunctionsMul X
                   ((Additive.toMul g : X.functionFieldˣ) : X.functionField)) V.unop.left)
                 s.val = s.val
-            rw [← Scheme.Modules.Hom.comp_app, rationalFunctionsMul_neg_comp,
-              Scheme.Modules.Hom.id_app]
+            rw [← Scheme.Modules.Hom.comp_app, toMul_neg,
+              Scheme.rationalFunctionsMul_inv_comp, Scheme.Modules.Hom.id_app]
             rfl
           map_add' := by
             intro s t
@@ -493,12 +476,12 @@ def sheafMulIso (D : SchemeWeilDivisor X) :
     inv := sheafMul (-g) _ ≫ eqToHom (congrArg sheaf hg)
     hom_inv_id := by
       rw [← cancel_mono (sheafι D), Category.assoc, Category.assoc, eqToHom_sheafι hg,
-        sheafMul_ι, sheafMul_ι_assoc, rationalFunctionsMul_comp_neg, Category.comp_id,
-        Category.id_comp]
+        sheafMul_ι, sheafMul_ι_assoc, toMul_neg, Scheme.rationalFunctionsMul_comp_inv,
+        Category.comp_id, Category.id_comp]
     inv_hom_id := by
       rw [← cancel_mono (sheafι _), Category.assoc, Category.assoc, sheafMul_ι,
-        eqToHom_sheafι_assoc hg, sheafMul_ι_assoc, rationalFunctionsMul_neg_comp,
-        Category.comp_id, Category.id_comp] }
+        eqToHom_sheafι_assoc hg, sheafMul_ι_assoc, toMul_neg,
+        Scheme.rationalFunctionsMul_inv_comp, Category.comp_id, Category.id_comp] }
 
 /-- The forward morphism of `sheafMulIso` is multiplication by `g`. -/
 @[simp]
@@ -514,7 +497,7 @@ lemma sheafMulIso_inv_ι (D : SchemeWeilDivisor X) :
         Scheme.rationalFunctionsMul X
           ((Additive.toMul (-g) : X.functionFieldˣ) : X.functionField) := by
   rw [← cancel_epi (sheafMulIso g D).hom, Iso.hom_inv_id_assoc, sheafMulIso_hom,
-    sheafMul_ι_assoc, rationalFunctionsMul_comp_neg, Category.comp_id]
+    sheafMul_ι_assoc, toMul_neg, Scheme.rationalFunctionsMul_comp_inv, Category.comp_id]
 
 variable {g}
 
