@@ -60,16 +60,17 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
 /-- Averaging an `Lᵖ` function against the normalized form of a smooth bump centred at zero.
 
 The average is a Bochner integral in `Lᵖ`, so it is independent of all choices of pointwise
-representative. -/
+representative. The restriction `p < ∞` ensures that translation is strongly continuous, hence
+that the `Lᵖ`-valued integrand is integrable. -/
 @[expose]
-def normedBumpLp (phi : ContDiffBump (0 : E))
+def normedBumpLp (_hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (mu : Measure E) [mu.IsAddHaarMeasure] (f : Lp F p mu) : Lp F p mu :=
   ∫ t, phi.normed mu t • translateLp mu p (-t) f ∂mu
 
 omit [CompleteSpace F] in
 /-- The defining Bochner-integral formula for `normedBumpLp`. -/
-theorem normedBumpLp_apply (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
-    normedBumpLp phi mu f =
+theorem normedBumpLp_apply (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
+    normedBumpLp hp phi mu f =
       ∫ t, phi.normed mu t • translateLp mu p (-t) f ∂mu := rfl
 
 omit [CompleteSpace F] in
@@ -81,22 +82,32 @@ private theorem integrable_normed_smul_translateLp_neg (hp : p ≠ ∞)
   · exact phi.hasCompactSupport_normed.smul_right
 
 omit [CompleteSpace F] in
-/-- Averaging against a normalized nonnegative bump does not increase the `Lᵖ` norm. -/
-theorem norm_normedBumpLp_le (phi : ContDiffBump (0 : E))
+/-- Averaging against a normalized nonnegative bump does not increase the `Lᵖ` norm when
+`p < ∞`. -/
+theorem norm_normedBumpLp_le (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (f : Lp F p mu) :
-    ‖normedBumpLp phi mu f‖ ≤ ‖f‖ := by
-  refine (norm_integral_le_of_norm_le (phi.integrable_normed.mul_const ‖f‖) ?_).trans_eq ?_
-  · filter_upwards with t
-    have ht : ‖translateLp mu p (-t) f‖ = ‖f‖ := (translateLp mu p (-t)).norm_map f
-    rw [norm_smul, Real.norm_of_nonneg (phi.nonneg_normed t), ht]
-  · rw [integral_mul_const, phi.integral_normed, one_mul]
+    ‖normedBumpLp hp phi mu f‖ ≤ ‖f‖ := by
+  calc
+    ‖normedBumpLp hp phi mu f‖ ≤
+        ∫ t, ‖phi.normed mu t • translateLp mu p (-t) f‖ ∂mu := by
+      rw [normedBumpLp]
+      exact norm_integral_le_of_norm_le
+        (integrable_normed_smul_translateLp_neg hp phi f).norm
+        (Eventually.of_forall fun _ ↦ le_rfl)
+    _ = ∫ t, phi.normed mu t * ‖f‖ ∂mu := by
+      apply integral_congr_ae
+      filter_upwards with t
+      have ht : ‖translateLp mu p (-t) f‖ = ‖f‖ := (translateLp mu p (-t)).norm_map f
+      rw [norm_smul, Real.norm_of_nonneg (phi.nonneg_normed t), ht]
+    _ = ‖f‖ := by rw [integral_mul_const, phi.integral_normed, one_mul]
 
 omit [CompleteSpace F] in
 /-- `normedBumpLp` preserves addition when `p < ∞`. -/
 @[simp]
 theorem normedBumpLp_add (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (f g : Lp F p mu) :
-    normedBumpLp phi mu (f + g) = normedBumpLp phi mu f + normedBumpLp phi mu g := by
+    normedBumpLp hp phi mu (f + g) =
+      normedBumpLp hp phi mu f + normedBumpLp hp phi mu g := by
   rw [normedBumpLp, normedBumpLp, normedBumpLp,
     ← integral_add (integrable_normed_smul_translateLp_neg hp phi f)
       (integrable_normed_smul_translateLp_neg hp phi g)]
@@ -105,10 +116,11 @@ theorem normedBumpLp_add (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
   simp only [map_add, smul_add]
 
 omit [CompleteSpace F] in
-/-- `normedBumpLp` commutes with real scalar multiplication. -/
+/-- `normedBumpLp` commutes with real scalar multiplication when `p < ∞`. -/
 @[simp]
-theorem normedBumpLp_smul (c : ℝ) (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
-    normedBumpLp phi mu (c • f) = c • normedBumpLp phi mu f := by
+theorem normedBumpLp_smul (hp : p ≠ ∞) (c : ℝ) (phi : ContDiffBump (0 : E))
+    (f : Lp F p mu) :
+    normedBumpLp hp phi mu (c • f) = c • normedBumpLp hp phi mu f := by
   rw [normedBumpLp, normedBumpLp, ← integral_smul]
   apply integral_congr_ae
   filter_upwards with t
@@ -118,12 +130,12 @@ private theorem norm_normedBumpLp_sub_le (hp : p ≠ ∞) (phi : ContDiffBump (0
     (f : Lp F p mu) {C : ℝ}
     (htrans : ∀ t ∈ ball (0 : E) phi.rOut,
       ‖translateLp mu p (-t) f - f‖ ≤ C) :
-    ‖normedBumpLp phi mu f - f‖ ≤ C := by
+    ‖normedBumpLp hp phi mu f - f‖ ≤ C := by
   have havg :
-      normedBumpLp phi mu f - f =
+      normedBumpLp hp phi mu f - f =
         ∫ t, phi.normed mu t • (translateLp mu p (-t) f - f) ∂mu := by
     calc
-      normedBumpLp phi mu f - f =
+      normedBumpLp hp phi mu f - f =
           (∫ t, phi.normed mu t • translateLp mu p (-t) f ∂mu) -
             ∫ t, phi.normed mu t • f ∂mu := by
               rw [normedBumpLp, phi.integral_normed_smul]
@@ -157,7 +169,7 @@ No positivity or normalization hypotheses are exposed because they are already s
 theorem tendsto_normedBumpLp {I : Type*} {l : Filter I}
     (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
     (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) (f : Lp F p mu) :
-    Tendsto (fun i ↦ normedBumpLp (phi i) mu f) l (nhds f) := by
+    Tendsto (fun i ↦ normedBumpLp hp (phi i) mu f) l (nhds f) := by
   rw [Metric.tendsto_nhds]
   intro epsilon hepsilon
   have hcont : Tendsto
