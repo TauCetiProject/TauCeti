@@ -89,15 +89,6 @@ noncomputable def completionAlgebra {L : Type*} [Field L] [NumberField L] [Algeb
 
 open scoped IsDedekindDomain.HeightOneSpectrum
 
-/-- The global field, its completion, and the completion of an extension form a scalar tower for
-the canonical completion algebra. -/
-@[scoped instance]
-theorem completionIsScalarTower {L : Type*} [Field L] [NumberField L] [Algebra K L]
-    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
-    [w.asIdeal.LiesOver v.asIdeal] :
-    IsScalarTower K (v.adicCompletion K) (w.adicCompletion L) :=
-  IsScalarTower.of_algebraMap_eq fun x ↦ ((completionAlgHom v w).commutes x).symm
-
 /-- Scalar multiplication by `K_v` on `L_w` is continuous for the canonical completion
 algebra. -/
 @[scoped instance]
