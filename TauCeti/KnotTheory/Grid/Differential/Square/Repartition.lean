@@ -100,21 +100,10 @@ theorem transpose (h : D.IsRepartition E) : D.transpose.IsRepartition E.transpos
 theorem transpose_iff : D.transpose.IsRepartition E.transpose ↔ D.IsRepartition E := by
   constructor
   · intro h
-    have hDfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_first
-    have hDsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_second
-    have hEfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_first
-    have hEsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_second
-    simp only [GridRectangleBetween.coveredSquares_transpose] at hDfirst hDsecond hEfirst hEsecond
-    refine ⟨?_, ?_, ?_⟩
-    · have hleft := h.disjoint_coveredSquares_left
-      rw [hDfirst, hDsecond, Finset.disjoint_image Prod.swap_injective] at hleft
-      exact hleft
-    · have hright := h.disjoint_coveredSquares_right
-      rw [hEfirst, hEsecond, Finset.disjoint_image Prod.swap_injective] at hright
-      exact hright
-    · apply Finset.image_injective Prod.swap_injective
-      simpa only [Finset.image_union, hEfirst, hEsecond, hDfirst, hDsecond] using
-        h.coveredSquares_union_eq
+    have ht := h.transpose
+    rw [GridRectangleDecomposition.transpose_transpose,
+      GridRectangleDecomposition.transpose_transpose] at ht
+    exact ht
   · exact fun h => h.transpose
 
 /-- A repartition preserves the product of any multiplicative weight on squares: both

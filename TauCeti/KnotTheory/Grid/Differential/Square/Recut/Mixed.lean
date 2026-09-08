@@ -12,9 +12,10 @@ public import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Terminal
 # Recutting two-step grid rectangle decompositions with a mixed common side
 
 Two composable empty rectangles sharing exactly one side column form an L-shaped domain with a
-unique second cut. The cases where the common column is initial for both rectangles or terminal
-for both are handled in `Recut.Initial` and `Recut.Terminal`. This file treats the two remaining
-orientations: the common column is initial for one rectangle and terminal for the other.
+second cut uniquely characterized by its computed side rows and row configuration. The cases where
+the common column is initial for both rectangles or terminal for both are handled in
+`Recut.Initial` and `Recut.Terminal`. This file treats the two remaining orientations: the common
+column is initial for one rectangle and terminal for the other.
 
 Diagonal reflection turns either mixed column orientation into one of the same-side orientations.
 Reflecting its recut back gives the required second decomposition. Accordingly, its side *rows*
@@ -25,7 +26,8 @@ so the new rectangles have the same combined weight and inherit avoidance of the
 
 * `TauCeti.GridRectangleDecomposition.exists_isRepartition_of_isEmpty_of_left_eq_right` and
   `exists_isRepartition_of_isEmpty_of_right_eq_left`: the two mixed common-side configurations
-  admit unique recuts through different intermediate states, with both new rectangles empty.
+  admit recuts through different intermediate states, uniquely characterized by their computed
+  side rows and row configurations, with both new rectangles empty.
 * `exists_isRepartition_of_mem_unblockedRectangles_of_left_eq_right`
   and `exists_isRepartition_of_mem_unblockedRectangles_of_right_eq_left`: the recuts again give
   terms counted by the unblocked differential.
@@ -64,7 +66,8 @@ private theorem middle_eq_swapRows_of_transpose_eq
 /-! ### Initial side of the first rectangle equals terminal side of the second -/
 
 /-- Two composable empty rectangles whose common column is the initial side of the first and the
-terminal side of the second admit a unique recut through a different intermediate state.
+terminal side of the second admit a recut through a different intermediate state, unique among
+decompositions with the stated side rows and row configuration.
 
 The two alternatives record which of the two noncommon corner rows lies inside the other row
 span. They compute all four side rows of the recut and hence determine it uniquely after diagonal
@@ -168,7 +171,7 @@ theorem exists_isRepartition_of_isEmpty_of_left_eq_right
           _ = D.transpose.second.left := hF2right
           _ = D.second.bottom := D.transpose_second_left
   refine ⟨E, ⟨hrecutE, hmiddleE, hEfirst, hEsecond, hE1bottom, hE2bottom, hrowsE⟩, ?_⟩
-  -- A second candidate reflects to the unique recut of `D.transpose`.
+  -- A second candidate reflects to the recut of `D.transpose` with the specified side data.
   intro E' hE'
   have hmiddle' : E'.transpose.middle ≠ D.transpose.middle := by
     intro h
@@ -241,7 +244,8 @@ theorem exists_isRepartition_of_mem_unblockedRectangles_of_left_eq_right
 /-! ### Terminal side of the first rectangle equals initial side of the second -/
 
 /-- Two composable empty rectangles whose common column is the terminal side of the first and the
-initial side of the second admit a unique recut through a different intermediate state.
+initial side of the second admit a recut through a different intermediate state, unique among
+decompositions with the stated side rows and row configuration.
 
 The two alternatives record which of the two noncommon corner rows lies inside the other row
 span. They compute all four side rows of the recut and hence determine it uniquely after diagonal
@@ -348,7 +352,7 @@ theorem exists_isRepartition_of_isEmpty_of_right_eq_left
           _ = D.transpose.second.right := hF2left
           _ = D.second.top := D.transpose_second_right
   refine ⟨E, ⟨hrecutE, hmiddleE, hEfirst, hEsecond, hE1top, hE2top, hrowsE⟩, ?_⟩
-  -- A second candidate reflects to the unique recut of `D.transpose`.
+  -- A second candidate reflects to the recut of `D.transpose` with the specified side data.
   intro E' hE'
   have hmiddle' : E'.transpose.middle ≠ D.transpose.middle := by
     intro h
