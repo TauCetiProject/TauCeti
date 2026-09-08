@@ -126,6 +126,7 @@ theorem vertexPreReflectionList_append (l₁ l₂ : List Q) :
   simp [vertexPreReflectionList, List.map_append, List.prod_append]
 
 /-- Repeating a word `N` times raises its reflection product to the `N`-th power. -/
+@[simp]
 theorem vertexPreReflectionList_flatten_replicate (l : List Q) (N : ℕ) :
     vertexPreReflectionList Q (List.replicate N l).flatten = vertexPreReflectionList Q l ^ N := by
   induction N with

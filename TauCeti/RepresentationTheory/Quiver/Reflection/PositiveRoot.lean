@@ -51,10 +51,6 @@ functors at a source.
 
 ## References
 
-This is the root-side half of the "descent by height" milestone of the reflection induction in
-Layer 5, Gabriel's theorem, of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`; its representation-side
-half is `TauCeti.titsForm_dimVector_eq_one_of_indecomposable`. See
 Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and Assem--Simson--
 Skowroński, *Elements of the Representation Theory of Associative Algebras* I, VII.5.
 -/
@@ -75,6 +71,7 @@ is negative precisely when `d` is the simple dimension vector `αᵢ`.
 
 This is the step of the Bernstein-Gelfand-Ponomarev descent at which a positive root leaves the
 positive cone: it can only be a simple root, and the reflection then merely negates it. -/
+@[simp]
 theorem vertexPreReflection_apply_self_neg_iff_eq_single (hpd : (titsForm Q).PosDef) {i : Q}
     {d : Q → ℤ} (hd : 0 ≤ d) (hroot : titsForm Q d = 1) :
     vertexPreReflection Q i d i < 0 ↔ d = Pi.single i 1 := by
@@ -222,9 +219,15 @@ direction only records that a reflection product preserves the Tits form. Combin
 vector of every finite-dimensional indecomposable representation in the Weyl orbit of a simple
 dimension vector. -/
 theorem titsForm_eq_one_iff_exists_vertexPreReflectionList_single (hpd : (titsForm Q).PosDef)
-    {l : List Q} (hnd : l.Nodup) (hmem : ∀ i : Q, i ∈ l) {d : Q → ℤ} (hd : 0 ≤ d) :
+    {d : Q → ℤ} (hd : 0 ≤ d) :
     titsForm Q d = 1 ↔
       ∃ (w : List Q) (j : Q), vertexPreReflectionList Q w (Pi.single j 1) = d := by
+  classical
+  let l : List Q := Finset.univ.toList
+  have hnd : l.Nodup := by exact Finset.nodup_toList _
+  have hmem : ∀ i : Q, i ∈ l := by
+    intro i
+    exact Finset.mem_toList.mpr (Finset.mem_univ i)
   have hloop : ∀ j : Q, IsEmpty (j ⟶ j) := isEmpty_hom_self_of_titsForm_posDef Q hpd
   constructor
   · intro hroot
