@@ -126,7 +126,7 @@ theorem isOver_slots (D : OrientedPDCode n) (i : Fin n) :
 /-- The orientation reverses across each local strand at a crossing. -/
 @[simp]
 theorem orientation_oppositeCrossingSlot (D : OrientedPDCode n) (i : Fin n) (slot : Fin 4) :
-    D.orientation (D.crossing i (oppositeCrossingSlot slot)) =
+    D.orientation (D.halfEdge (crossingSlotEquiv n (i, oppositeCrossingSlot slot))) =
       !D.orientation (D.crossing i slot) :=
   D.orientation_opposite i slot
 
@@ -259,7 +259,8 @@ names, so later equivalence relations can quotient out these bookkeeping choices
 theorem relabel_crossing (D : OrientedPDCode n)
     (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n))
     (i : Fin n) (slot : Fin 4) :
-    (D.relabel half cross).crossing i slot = half (D.crossing (cross.symm i) slot) := by
+    (D.relabel half cross).halfEdge (crossingSlotEquiv n (i, slot)) =
+      half (D.crossing (cross.symm i) slot) := by
   simp [relabel, crossing, Equiv.Perm.mul_apply]
 
 /-- The crossing sign after relabelling is read at the old crossing name. -/
@@ -351,7 +352,6 @@ theorem orientedPDCodeOne_crossingSign :
     orientedPDCodeOne.crossingSign 0 = 1 :=
   by decide
 
-@[simp]
 theorem orientedPDCodeOne_mirror_crossingSign :
     orientedPDCodeOne.mirror.crossingSign 0 = -1 := by
   simp
