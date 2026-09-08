@@ -150,8 +150,15 @@ theorem mem_definingPointsSubgroup_iff
         (CommAlgCat.of R A) ↔
       (SpecialLinear.pointsMulEquiv (R := R) (A := A) 2) g ∈ SL2Borel A := by
   rw [definingHopfIdeal_def,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_map_mkQuotient_iff,
+    CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff_of_surjective
+      (SpecialLinear.coordinateMap R 2)
+      (CommHopfAlgCat.mkQuotient_surjective
+        (GeneralLinear.coordinateHopfAlgebra R 2) (SpecialLinear.definingHopfIdeal R 2)),
     GeneralLinear.UpperTriangular.mem_definingPointsSubgroup_iff]
+  rw [CommHopfAlgCat.mapPointsFunctor_app_apply,
+    ← CommHopfAlgCat.quotientPointsHom_apply
+      (GeneralLinear.coordinateHopfAlgebra R 2) (SpecialLinear.definingHopfIdeal R 2)
+      (CommAlgCat.of R A) g]
   have hmatrix := SpecialLinear.pointsMulEquiv_toGL (R := R) (A := A) 2 g
   rw [hmatrix]
   rw [GL2Borel.mem_iff, SL2Borel.mem_iff,
@@ -202,6 +209,7 @@ private theorem coe_definingPointsSubgroupMulEquiv_apply
 
 /-- Under the Borel and special-linear point equivalences, the quotient-point inclusion is the
 ordinary inclusion of the standard Borel into `SL₂`. -/
+@[simp]
 theorem pointsMulEquiv_coe
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R)
       (CommAlgCat.of R A)) :
