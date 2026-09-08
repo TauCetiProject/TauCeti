@@ -48,13 +48,10 @@ A Suzuki index reaches all of it through `TauCeti.SuzukiLieIndex.toRankTwoBLieIn
 Neither branch gets a Steinberg endomorphism here, and neither gets a candidate simple group. The
 Steinberg endomorphism of either family is an endomorphism of the points of the *pinned* simply
 connected group scheme of the diagram, and no identification of the carrier below with that pinned
-group is available. On the untwisted branch the Frobenius supplied here is taken as that
-endomorphism, and the recipe is run on it, in
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Steinberg.lean`, which records there that its
-`TauCeti.TypeB2LieIndex.steinberg` and `TauCeti.TypeB2LieIndex.Group` become the Steinberg map and
-the candidate group of `B₂(q)` only along that missing identification; on the Suzuki branch not
-even that is possible, the special isogeny being unconstructed. What is named below is named after
-what it is: `TauCeti.RankTwoBLieIndex.frobenius` is the Frobenius of this carrier, and
+group is available; so neither that endomorphism, nor the group of its fixed points, nor the
+quotient of the derived subgroup of those fixed points by its centre, is stated of the rank-two
+type-`C` carrier. What is named below is named after what it is:
+`TauCeti.RankTwoBLieIndex.frobenius` is the Frobenius of this carrier, and
 `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff` describes the group it fixes as the
 points whose matrix entries lie in the field of definition `𝔽_q`.
 
