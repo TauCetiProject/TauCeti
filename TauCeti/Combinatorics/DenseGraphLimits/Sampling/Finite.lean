@@ -79,14 +79,6 @@ section Mass
 
 variable {n : ℕ} (W : Graphon Ω μ) (G : SimpleGraph (Fin n))
 
-open Classical in
-/-- The defining edge/nonedge product of the sampled-graph integrand. -/
-theorem sampleIntegrand_def (x : Fin n → Ω) :
-    sampleIntegrand W G x =
-      (∏ e ∈ G.edgeFinset, edgeFactor W x e) *
-        ∏ e ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset \ G.edgeFinset,
-          (1 - edgeFactor W x e) := (rfl)
-
 /-- The defining integral of a sampled graph's mass. -/
 theorem sampleMass_def :
     sampleMass W G = ∫ x : Fin n → Ω, sampleIntegrand W G x ∂Measure.pi fun _ => μ := (rfl)
@@ -149,10 +141,6 @@ theorem sampleMass_le_one : sampleMass W G ≤ 1 := by
     (sampleIntegrand_le_one W G)
   simpa using h
 
-/-- A sampled-graph mass lies in `[0, 1]`. -/
-theorem sampleMass_mem_Icc : sampleMass W G ∈ Set.Icc 0 1 :=
-  ⟨sampleMass_nonneg W G, sampleMass_le_one W G⟩
-
 open Classical in
 /-- At fixed vertex positions, the conditional masses sum to `1` over all simple graphs. -/
 theorem sum_sampleIntegrand_eq_one (x : Fin n → Ω) :
@@ -189,10 +177,8 @@ theorem sum_sampleIntegrand_eq_one (x : Fin n → Ω) :
 open Classical in
 /-- The sampled-graph masses sum to `1`. -/
 theorem sum_sampleMass_eq_one : ∑ H : SimpleGraph (Fin n), sampleMass W H = 1 := by
-  rw [show (∑ H : SimpleGraph (Fin n), sampleMass W H) =
-      ∫ x : Fin n → Ω, ∑ H : SimpleGraph (Fin n), sampleIntegrand W H x
-        ∂Measure.pi fun _ => μ from
-    (integral_finsetSum _ fun H _ => integrable_sampleIntegrand W H).symm]
+  simp_rw [sampleMass_def]
+  rw [← integral_finsetSum _ fun H _ => integrable_sampleIntegrand W H]
   simp_rw [sum_sampleIntegrand_eq_one W]
   simp
 
@@ -215,10 +201,6 @@ theorem samplePMF_apply (W : Graphon Ω μ) (n : ℕ) (G : SimpleGraph (Fin n)) 
 /-- The `W`-random graph law on `Fin n`. -/
 def sampleGraph (W : Graphon Ω μ) (n : ℕ) : Measure (SimpleGraph (Fin n)) :=
   (samplePMF W n).toMeasure
-
-/-- The defining probability measure of the `W`-random graph law. -/
-theorem sampleGraph_def (W : Graphon Ω μ) (n : ℕ) :
-    sampleGraph W n = (samplePMF W n).toMeasure := (rfl)
 
 /-- A sampled graph law is a probability measure. -/
 instance sampleGraph_isProbabilityMeasure (W : Graphon Ω μ) (n : ℕ) :
@@ -247,6 +229,7 @@ section Constant
 
 open Classical in
 /-- The sampled mass of a constant graphon is the usual independent-edge mass. -/
+@[simp]
 theorem sampleMass_const (p : I) (G : SimpleGraph (Fin n)) :
     sampleMass (Graphon.const μ p) G =
       (p : ℝ) ^ G.edgeFinset.card *
