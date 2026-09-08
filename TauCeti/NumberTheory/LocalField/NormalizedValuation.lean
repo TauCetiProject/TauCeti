@@ -112,7 +112,6 @@ private theorem intValuation_valuationSubring :
       (a := valuation K x) (b := 1))
 
 /-- The zero-preserving normalized valuation vanishes exactly at zero. -/
-@[simp]
 theorem normalizedValuationWithZero_eq_zero_iff (x : K) :
     normalizedValuationWithZero K x = 0 ↔ x = 0 := by
   simp [normalizedValuationWithZero]
