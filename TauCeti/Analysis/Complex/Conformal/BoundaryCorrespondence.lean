@@ -34,7 +34,7 @@ available, into the boundary homeomorphism the milestone asks for.
 
 Properness is the inverse function theorem in disguise. An injective holomorphic map on an open set
 is an open partial homeomorphism onto its image
-(`TauCeti.DifferentiableOn.toOpenPartialHomeomorph`), and `U ∩ f ⁻¹' K` is exactly the image of `K`
+(`DifferentiableOn.toOpenPartialHomeomorph`), and `U ∩ f ⁻¹' K` is exactly the image of `K`
 under its inverse `Function.invFunOn f U`, so it is compact as the continuous image of a compact
 set. Everything else follows from that one fact. If `z i → w` with `z i ∈ U` and `w ∉ U`, then
 `f (z i)` cannot lie in a compact `K ⊆ f '' U` frequently: otherwise `z i` would frequently lie in
@@ -78,7 +78,7 @@ L5 is absent from [mathlib4#33505](https://github.com/leanprover-community/mathl
 in-progress human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself.
 So this file is new Lean formalization rather than a temporary shim. It does consume the L0–L3 shims
 `TauCeti.isOpen_image_of_differentiableOn_of_injOn` and
-`TauCeti.DifferentiableOn.toOpenPartialHomeomorph`, which are to be refactored onto Mathlib once the
+`DifferentiableOn.toOpenPartialHomeomorph`, which are to be refactored onto Mathlib once the
 upstream work lands.
 
 ## References
@@ -109,12 +109,12 @@ theorem isCompact_inter_preimage_of_differentiableOn_of_injOn (hUo : IsOpen U)
     IsCompact (U ∩ f ⁻¹' K) := by
   -- In the packaging of `f` as an open partial homeomorphism onto its image, `U ∩ f ⁻¹' K` is the
   -- image of `K` under the inverse, hence compact.
-  set e := TauCeti.DifferentiableOn.toOpenPartialHomeomorph hfd hUo hfi with he
+  set e := DifferentiableOn.toOpenPartialHomeomorph hfd hUo hfi with he
   have hKt : K ⊆ e.target := by
-    simpa only [he, TauCeti.DifferentiableOn.toOpenPartialHomeomorph_target] using hKf
+    simpa only [he, DifferentiableOn.toOpenPartialHomeomorph_target] using hKf
   have hset : e.symm '' K = U ∩ f ⁻¹' K := by
-    simpa only [he, TauCeti.DifferentiableOn.toOpenPartialHomeomorph_source,
-      TauCeti.DifferentiableOn.toOpenPartialHomeomorph_coe] using
+    simpa only [he, DifferentiableOn.toOpenPartialHomeomorph_source,
+      DifferentiableOn.toOpenPartialHomeomorph_coe] using
       e.symm_image_eq_source_inter_preimage hKt
   exact hset ▸ hK.image_of_continuousOn (e.continuousOn_symm.mono hKt)
 

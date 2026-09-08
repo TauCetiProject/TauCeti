@@ -10,7 +10,7 @@ public import TauCeti.KnotTheory.Grid.Differential.Square.Repartition
 public import TauCeti.KnotTheory.Grid.Rectangle.Juxtaposition
 
 /-!
-# Recutting a two-step grid rectangle decomposition along its other internal edge
+# Recutting a two-step grid rectangle decomposition sharing its initial side column
 
 A nondiagonal term in the square of the unblocked grid differential `∂⁻` is a pair of composable
 empty rectangles whose two pairs of side columns are either disjoint or share exactly one column.
@@ -34,10 +34,6 @@ covered squares (`GridRectangle.coveredSquares_union_eq_of_mem_cIoo` and its com
 Emptiness of the new rectangles is not part of that identity: it is proved here, and it is where
 emptiness of *both* old rectangles is used, one for the columns below the cut and one for the
 columns above it.
-
-Three orientations of the shared side column remain: the two rectangles may share their terminal
-side, or the terminal side of one may be the initial side of the other. Those three, and the
-assembly of the disjoint, overlapping and annular cases into `∂⁻ ∘ ∂⁻ = 0`, are separate steps.
 
 ## Main results
 

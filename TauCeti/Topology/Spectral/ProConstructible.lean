@@ -44,7 +44,7 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
 ## Main results
 
 * `TauCeti.IsOpen.isOpen_constructibleTopology` — on a prespectral space the constructible
-  topology refines the given one; hence `TauCeti.IsClosed.isProConstructible`.
+  topology refines the given one; hence `IsClosed.isProConstructible`.
 * `IsCompact.isProConstructible` — a quasi-compact open subset is pro-constructible. It is
   in fact clopen for the constructible topology, which is what makes the two previous families
   interact.
@@ -60,7 +60,7 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
   the sobriety half of the main theorem.
 * `TauCeti.IsProConstructible.spectralSpace` — **a pro-constructible subspace of a spectral space
   is spectral**, together with `TauCeti.IsProConstructible.isSpectralMap_subtypeVal`: its
-  inclusion is a spectral map. `TauCeti.IsClosed.spectralSpace` is the closed special case, the
+  inclusion is a spectral map. `IsClosed.spectralSpace` is the closed special case, the
   counterpart of Mathlib's `Topology.IsOpenEmbedding.spectralSpace`.
 
 ## References
@@ -176,7 +176,7 @@ theorem _root_.IsCompact.isProConstructible {s : Set X} (hcomp : IsCompact s) (h
         hopen.isClosed_compl
 
 /-- A closed subset of a prespectral space is pro-constructible. -/
-theorem IsClosed.isProConstructible [PrespectralSpace X] {s : Set X} (hs : IsClosed s) :
+theorem _root_.IsClosed.isProConstructible [PrespectralSpace X] {s : Set X} (hs : IsClosed s) :
     IsProConstructible s := by
   rw [IsProConstructible, ← isOpen_compl_iff, ← Set.preimage_compl]
   exact IsOpen.isOpen_preimage_ofTopology hs.isOpen_compl
@@ -369,7 +369,7 @@ theorem IsProConstructible.spectralSpace (hs : IsProConstructible s) : SpectralS
 
 /-- A closed subspace of a spectral space is spectral. Mathlib has the open counterpart,
 `Topology.IsOpenEmbedding.spectralSpace`; this is the closed one. -/
-theorem IsClosed.spectralSpace (hs : IsClosed s) : SpectralSpace s :=
+theorem _root_.IsClosed.spectralSpace (hs : IsClosed s) : SpectralSpace s :=
   IsProConstructible.spectralSpace (IsClosed.isProConstructible hs)
 
 end Spectral

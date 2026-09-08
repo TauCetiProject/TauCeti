@@ -27,7 +27,7 @@ base change acts entrywise on the Gram matrix of a basis and maps its determinan
 
 ## Main declarations
 
-* `TauCeti.IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
+* `IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
   second form, evaluating it through the associated base-change equivalence agrees with the
   canonical base change of the second form.
 * `TauCeti.bilinForm_toMatrix_baseChange`: the Gram matrix of a base-changed form, in the
@@ -47,7 +47,7 @@ open Module TensorProduct
 
 namespace TauCeti
 
-namespace IsBaseChange
+section
 
 variable {R : Type*} {A : Type*} {M : Type*} {N : Type*}
 variable [CommSemiring R] [CommSemiring A] [Algebra R A]
@@ -57,7 +57,8 @@ variable {f : M →ₗ[R] N} (h : IsBaseChange A f)
 
 /-- If `B` restricts along `f` to `B'`, evaluating `B` on base-changed vectors agrees with the
 canonical base change of `B'`. -/
-theorem bilinForm_baseChange (B' : LinearMap.BilinForm R M) (B : LinearMap.BilinForm A N)
+theorem _root_.IsBaseChange.bilinForm_baseChange (B' : LinearMap.BilinForm R M)
+    (B : LinearMap.BilinForm A N)
     (hB : ∀ x y : M, B (f x) (f y) = algebraMap R A (B' x y)) (x y : A ⊗[R] M) :
     B (h.equiv x) (h.equiv y) = B'.baseChange A x y := by
   induction x using TensorProduct.induction_on with
@@ -75,7 +76,7 @@ theorem bilinForm_baseChange (B' : LinearMap.BilinForm R M) (B : LinearMap.Bilin
         hB, Algebra.smul_def]
       ring
 
-end IsBaseChange
+end
 
 section Semiring
 

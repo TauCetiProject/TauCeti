@@ -320,7 +320,7 @@ theorem IsPwC1ImmersionOn.exists_int_windingNumber_eq_add_sum_crossingAngle_toFi
       = k + ((∑ t ∈ (h_imm.finite_crossings (z₀ := s)).toFinset, crossingAngle γ t : ℝ) : ℂ)
           / (2 * (Real.pi : ℂ)) :=
   h_imm.exists_int_windingNumber_eq_add_sum_crossingAngle hab hclosed hbase fun t => by
-    rw [h_imm.mem_toFinset_finite_crossings, uIcc_of_le hab]
+    rw [h_imm.mem_toFinset_finite_crossings_of_le hab]
 
 /-- **Every smooth crossing contributes `½`.** A crossing where the two one-sided tangents agree
 has angle `π` (`TauCeti.Contour.crossingAngle_eq_pi`), hence winding weight `π / 2π = ½`. So a

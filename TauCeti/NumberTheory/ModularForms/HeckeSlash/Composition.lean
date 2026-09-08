@@ -413,8 +413,7 @@ theorem heckeSlashGamma1ModularFormEnd_mul_of_doubleCoset_eq_mul :
       heckeSlashGamma1ModularFormEnd k D₃ := by
   ext f τ
   have hf : ∀ γ ∈ (Gamma1 N).map (mapGL ℚ), ⇑f ∣[k] γ = ⇑f := fun _ hγ ↦
-    ModularForm.slash_eq_of_mem_map_mapGL
-      (fun γ' hγ' ↦ SlashInvariantFormClass.slash_action_eq f γ' hγ') hγ
+    SlashInvariantFormClass.slash_eq_of_mem_map_mapGL f hγ
   have := heckeSlashSum_heckeSlashSum_eq_heckeSlashSum k D₁ D₂ a b hcover₁ hinj₁ hcover₂ hinj₂
     D₃ hD₃ hinj₃ ⇑f hf
   simpa [coe_heckeSlashGamma1ModularFormEnd] using congrFun this τ
@@ -427,8 +426,7 @@ theorem heckeSlashGamma1CuspFormEnd_mul_of_doubleCoset_eq_mul :
       heckeSlashGamma1CuspFormEnd k D₃ := by
   ext f τ
   have hf : ∀ γ ∈ (Gamma1 N).map (mapGL ℚ), ⇑f ∣[k] γ = ⇑f := fun _ hγ ↦
-    ModularForm.slash_eq_of_mem_map_mapGL
-      (fun γ' hγ' ↦ SlashInvariantFormClass.slash_action_eq f γ' hγ') hγ
+    SlashInvariantFormClass.slash_eq_of_mem_map_mapGL f hγ
   have := heckeSlashSum_heckeSlashSum_eq_heckeSlashSum k D₁ D₂ a b hcover₁ hinj₁ hcover₂ hinj₂
     D₃ hD₃ hinj₃ ⇑f hf
   simpa [coe_heckeSlashGamma1CuspFormEnd] using congrFun this τ

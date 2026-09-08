@@ -18,7 +18,7 @@ functions that are injective on an open set and for holomorphic open partial hom
 
 ## Main results
 
-* `TauCeti.DifferentiableOn.invFunOn` — the inverse of a holomorphic injection on an open set is
+* `DifferentiableOn.invFunOn` — the inverse of a holomorphic injection on an open set is
   holomorphic on its image.
 * `TauCeti.hasDerivAt_invFunOn` — the derivative of the inverse at `f z₀` is
   `(deriv f z₀)⁻¹`, via `HasDerivAt.of_local_left_inverse`.
@@ -41,7 +41,7 @@ The inverse of a holomorphic injection on an open set is holomorphic on its imag
 The inverse is `Function.invFunOn f U`, which chooses the unique preimage lying in `U`. No global
 injectivity of `f` outside `U` is required.
 -/
-theorem DifferentiableOn.invFunOn {f : ℂ → ℂ} {U : Set ℂ} (hf : DifferentiableOn ℂ f U)
+theorem _root_.DifferentiableOn.invFunOn {f : ℂ → ℂ} {U : Set ℂ} (hf : DifferentiableOn ℂ f U)
     (hU : IsOpen U) (hinj : InjOn f U) :
     DifferentiableOn ℂ (Function.invFunOn f U) (f '' U) := by
   rintro _ ⟨z, hz, rfl⟩
@@ -59,7 +59,7 @@ theorem DifferentiableOn.invFunOn {f : ℂ → ℂ} {U : Set ℂ} (hf : Differen
 theorem OpenPartialHomeomorph.differentiableOn_symm {e : OpenPartialHomeomorph ℂ ℂ}
     (he : DifferentiableOn ℂ e e.source) :
     DifferentiableOn ℂ e.symm e.target := by
-  have hinv := TauCeti.DifferentiableOn.invFunOn he e.open_source e.injOn
+  have hinv := DifferentiableOn.invFunOn he e.open_source e.injOn
   rw [e.image_source_eq_target] at hinv
   exact hinv.congr fun z hz => by
     calc
@@ -80,7 +80,7 @@ theorem hasDerivAt_invFunOn {f : ℂ → ℂ} {U : Set ℂ}
   have hΩ : IsOpen (f '' U) := isOpen_image_of_differentiableOn_of_injOn hU hf hinj
   have hp : f z₀ ∈ f '' U := mem_image_of_mem f hz₀
   have hgcont : ContinuousAt (Function.invFunOn f U) (f z₀) :=
-    ((TauCeti.DifferentiableOn.invFunOn hf hU hinj).differentiableAt
+    ((DifferentiableOn.invFunOn hf hU hinj).differentiableAt
       (hΩ.mem_nhds hp)).continuousAt
   have hgz : Function.invFunOn f U (f z₀) = z₀ := hinj.leftInvOn_invFunOn hz₀
   have hfz : HasDerivAt f (deriv f z₀) (Function.invFunOn f U (f z₀)) := by
