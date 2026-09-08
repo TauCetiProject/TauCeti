@@ -40,8 +40,6 @@ itself smooth, connected and solvable — then it is its own unique Borel subgro
 smooth geometrically connected group with a trivial geometric Borel subgroup is semisimple, since
 its geometric solvable radical is squeezed between the trivial Borel and the identity subgroup.
 
-Conjugacy of Borel subgroups is not proved here, and none of the statements below need it.
-
 ## Main declarations
 
 * `TauCeti.HopfIdeal.IsBorelCandidate.productOfNormal`: the multiplication image of a connected
@@ -76,10 +74,6 @@ Conjugacy of Borel subgroups is not proved here, and none of the statements belo
 The product-image bookkeeping follows the formal organization of
 `TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Product`, where the same three closure
 properties are proved for two normal factors.
-
-This advances Layer 7, "Borel subgroups, maximal tori, and their conjugacy", of the
-ReductiveGroups roadmap, by relating the Borel subgroups constructed there to the radicals of
-Layers 5 and 6. Conjugacy of Borel subgroups remains open.
 -/
 
 public section
