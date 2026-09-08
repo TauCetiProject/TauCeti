@@ -30,20 +30,19 @@ an admissible finite presentation in `A` and pass from `A(T/s)` to the completed
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.exists_comap_preimage_rationalSubset_eq`: a rational subset over a
+* `TauCeti.ValuationSpectrum.exists_comap_preimage_basicOpenFinset_eq`: a rational open over a
   localization is the pullback of one presented by elements of the source ring.
+* `TauCeti.ValuationSpectrum.exists_comap_preimage_rationalSubset_inter_spa_eq`: the same for
+  rational subsets, after cutting the pullback down to the target adic spectrum.
 * `TauCeti.ValuationSpectrum.exists_spaLocalizationHomeomorph_preimage_rationalSubset_eq`: the
   same statement through the localization homeomorphism.
 
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic], arXiv:1910.05934v1, Proposition 8.2(2).
-
-## Provenance
-
-The proof uses Mathlib's `IsLocalization.commonDenomOfFinset` and
-`IsLocalization.integerMultiple` to clear a finite family of denominators. No external
-formalization was used.
+* The simultaneous clearing of denominators is Mathlib's
+  `IsLocalization.commonDenomOfFinset` and `IsLocalization.finsetIntegerMultiple`, used as
+  they stand.
 -/
 
 public section
@@ -54,44 +53,49 @@ open TauCeti.Huber TauCeti.Huber.PairOfDefinition TauCeti.Localization
 
 variable {A S : Type*} [CommRing A] [CommRing S] [Algebra A S]
 
-/-- **Clear denominators in a rational subset of a localization.** If `S` is a localization of
-`A` at a submonoid `M`, then every rational subset of `Spa(S, S⁺)` is the pullback of a basic
-rational locus presented by a finite family in `A`.
+/-- **Clear denominators in a rational open of a localization.** If `S` is a localization of `A`
+at a submonoid `M`, then every rational open `Spv(S)(U/q)` is the pullback of one presented by a
+finite family in `A`.
 
 No topological admissibility is asserted for the resulting numerator family in `A`. Establishing
 that extra property is the remaining topological-algebra step in Wedhorn Proposition 8.2(2). -/
-theorem exists_comap_preimage_rationalSubset_eq [TopologicalSpace A] [TopologicalSpace S]
-    (M : Submonoid A) [IsLocalization M S] (Aplus : Subring A) (Bplus : Subring S)
-    (hcont : Continuous (algebraMap A S))
+theorem exists_comap_preimage_basicOpenFinset_eq (M : Submonoid A) [IsLocalization M S]
+    (U : Finset S) (q : S) :
+    ∃ (V : Finset A) (r : A),
+      comap (algebraMap A S) ⁻¹' basicOpenFinset V r = basicOpenFinset U q := by
+  classical
+  set d : S := algebraMap A S (IsLocalization.commonDenomOfFinset M (insert q U) : A) with hd
+  have hnum (x : ↥(insert q U)) :
+      algebraMap A S (IsLocalization.integerMultiple M (insert q U) id x) = (x : S) * d := by
+    rw [IsLocalization.map_integerMultiple, Submonoid.smul_def, Algebra.smul_def, hd]
+    exact mul_comm _ _
+  have hV : (IsLocalization.finsetIntegerMultiple M (insert q U)).image (algebraMap A S)
+      = (insert q U).image fun x ↦ x * d := by
+    apply Finset.coe_injective
+    rw [Finset.coe_image, Finset.coe_image, IsLocalization.finsetIntegerMultiple_image,
+      ← Set.image_smul]
+    exact Set.image_congr' fun x ↦ by rw [Submonoid.smul_def, Algebra.smul_def, hd]; ring
+  refine ⟨IsLocalization.finsetIntegerMultiple M (insert q U),
+    IsLocalization.integerMultiple M (insert q U) id ⟨q, Finset.mem_insert_self q U⟩, ?_⟩
+  rw [comap_preimage_basicOpenFinset, hV, hnum ⟨q, Finset.mem_insert_self q U⟩,
+    basicOpenFinset_image_mul_right _ _ _ (IsLocalization.map_units S _),
+    basicOpenFinset_insert_self]
+
+/-- **Clear denominators in a rational subset of a localization.** If `S` is a localization of
+`A` at a submonoid `M`, then every rational subset of `Spa(S, S⁺)` is the trace on `Spa(S, S⁺)`
+of the pullback of a basic rational locus presented by a finite family in `A`. -/
+theorem exists_comap_preimage_rationalSubset_inter_spa_eq [TopologicalSpace A]
+    [TopologicalSpace S] (M : Submonoid A) [IsLocalization M S] (Aplus : Subring A)
+    (Bplus : Subring S) (hcont : Continuous (algebraMap A S))
     (hplus : ∀ a ∈ Aplus, algebraMap A S a ∈ Bplus) (U : Finset S) (q : S) :
     ∃ (V : Finset A) (r : A),
       comap (algebraMap A S) ⁻¹' rationalSubset Aplus V r ∩ spa Bplus =
         rationalSubset Bplus U q := by
-  classical
-  -- Mathlib's `IsLocalization.commonDenom`/`integerMultiple` clear the finitely many
-  -- denominators of `insert q U` simultaneously; only the packaged data is used below.
-  obtain ⟨d, hd, num, hnum⟩ :
-      ∃ d : S, IsUnit d ∧ ∃ num : ∀ x ∈ insert q U, A,
-        ∀ (x : S) (hx : x ∈ insert q U), algebraMap A S (num x hx) = x * d :=
-    ⟨algebraMap A S (IsLocalization.commonDenom M (insert q U) id : A),
-      IsLocalization.map_units S _,
-      fun x hx ↦ IsLocalization.integerMultiple M (insert q U) id ⟨x, hx⟩, fun x hx ↦ by
-        rw [IsLocalization.map_integerMultiple, Submonoid.smul_def, Algebra.smul_def]
-        exact mul_comm _ _⟩
-  refine ⟨U.attach.image fun u ↦ num u.1 (Finset.mem_insert_of_mem u.2),
-    num q (Finset.mem_insert_self q U), ?_⟩
-  have hV : (U.attach.image fun u ↦ num u.1 (Finset.mem_insert_of_mem u.2)).image (algebraMap A S)
-      = U.image fun u ↦ u * d :=
-    calc (U.attach.image fun u ↦ num u.1 (Finset.mem_insert_of_mem u.2)).image (algebraMap A S)
-        = U.attach.image fun u : {x // x ∈ U} ↦ u.1 * d :=
-          Finset.image_image.trans
-            (Finset.image_congr fun u _ ↦ hnum u.1 (Finset.mem_insert_of_mem u.2))
-      _ = (U.attach.image Subtype.val).image fun x ↦ x * d :=
-          (Finset.image_image (f := Subtype.val) (g := fun x : S ↦ x * d)).symm
-      _ = U.image fun u ↦ u * d := by rw [Finset.attach_image_val]
-  rw [comap_preimage_rationalSubset_inter_spa (algebraMap A S) hcont hplus, hV,
-    hnum q (Finset.mem_insert_self q U),
-    rationalSubset_image_mul_right Bplus U q d hd]
+  obtain ⟨V, r, hVr⟩ := exists_comap_preimage_basicOpenFinset_eq M U q
+  refine ⟨V, r, ?_⟩
+  rw [rationalSubset_def, rationalSubset_def, Set.preimage_inter, hVr]
+  exact Set.ext fun v ↦ ⟨fun hv ↦ ⟨hv.2, hv.1.2⟩,
+    fun hv ↦ ⟨⟨comap_mem_spa hcont hplus hv.1, hv.2⟩, hv.1⟩⟩
 
 /-- **Rational subsets through the topological-localization homeomorphism.** Every rational
 subset of `Spa(A(T/s), A(T/s)⁺)` is the inverse image, under the canonical homeomorphism with
@@ -123,8 +127,8 @@ theorem exists_spaLocalizationHomeomorph_preimage_rationalSubset_eq
       (⟨_, Subalgebra.algebraMap_mem _ (⟨a, ha⟩ : Aplus)⟩ :
         ↥(Algebra.adjoin Aplus
           (Set.range fun t : T ↦ (TauCeti.Localization.divBy (t : A) s : S))))
-  obtain ⟨V, r, hVr⟩ := exists_comap_preimage_rationalSubset_eq (Submonoid.powers s) Aplus Bplus
-    (continuous_algebraMap_locTopology P T s S hden) hplus U q
+  obtain ⟨V, r, hVr⟩ := exists_comap_preimage_rationalSubset_inter_spa_eq (Submonoid.powers s)
+    Aplus Bplus (continuous_algebraMap_locTopology P T s S hden) hplus U q
   refine ⟨V, r, Set.ext fun v ↦ ?_⟩
   have hpoint := Set.ext_iff.mp hVr v.1
   rw [Set.mem_preimage, Set.mem_preimage, spaLocalizationHomeomorph_apply_val]
