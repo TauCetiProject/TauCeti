@@ -132,17 +132,17 @@ theorem rayClassMk_surjective (𝔪 : Modulus K) : Function.Surjective (rayClass
 /-- **The universal property of the ray class group.**  A homomorphism out of the invertible
 fractional ideals prime to `𝔪` which is trivial on the ray factors, uniquely, through the ray
 class group. -/
-noncomputable def rayClassLift {M : Type*} [Group M] {𝔪 : Modulus K} (φ : idealsPrimeTo 𝔪 →* M)
+noncomputable def rayClassLift {M : Type*} [Monoid M] {𝔪 : Modulus K} (φ : idealsPrimeTo 𝔪 →* M)
     (h : ray 𝔪 ≤ φ.ker) : RayClassGroup 𝔪 →* M :=
   QuotientGroup.lift (ray 𝔪) φ h
 
-@[simp] theorem rayClassLift_rayClassMk {M : Type*} [Group M] {𝔪 : Modulus K}
+@[simp] theorem rayClassLift_rayClassMk {M : Type*} [Monoid M] {𝔪 : Modulus K}
     (φ : idealsPrimeTo 𝔪 →* M) (h : ray 𝔪 ≤ φ.ker) (I : idealsPrimeTo 𝔪) :
     rayClassLift φ h (rayClassMk 𝔪 I) = φ I := (rfl)
 
 /-- **The factorization through the ray class group is unique**: a homomorphism out of
 `RayClassGroup 𝔪` is determined by its composition with `rayClassMk`. -/
-theorem rayClassLift_unique {M : Type*} [Group M] {𝔪 : Modulus K} (φ : idealsPrimeTo 𝔪 →* M)
+theorem rayClassLift_unique {M : Type*} [Monoid M] {𝔪 : Modulus K} (φ : idealsPrimeTo 𝔪 →* M)
     (h : ray 𝔪 ≤ φ.ker) {ψ : RayClassGroup 𝔪 →* M} (hψ : ψ.comp (rayClassMk 𝔪) = φ) :
     ψ = rayClassLift φ h := by
   refine MonoidHom.ext fun c ↦ ?_

@@ -133,11 +133,12 @@ ideal.** -/
 
 /-- The inverse identification carries the narrow class of a fractional ideal back to its narrow
 ray class. -/
-@[simp] theorem narrowEquivNarrowClassGroup_symm_mk (I : idealsPrimeTo (narrowModulus K)) :
-    narrowEquivNarrowClassGroup.symm
-        (NarrowClassGroup.mk (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)) =
-      rayClassMk (narrowModulus K) I :=
-  (MulEquiv.symm_apply_eq _).mpr (narrowEquivNarrowClassGroup_rayClassMk I).symm
+@[simp] theorem narrowEquivNarrowClassGroup_symm_mk (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    narrowEquivNarrowClassGroup.symm (NarrowClassGroup.mk I) =
+      rayClassMk (narrowModulus K)
+        ((idealsPrimeToEquiv (narrowModulus_support (K := K))).symm I) :=
+  (MulEquiv.symm_apply_eq _).mpr <| by
+    rw [narrowEquivNarrowClassGroup_rayClassMk, idealsPrimeToEquiv_symm_apply]
 
 /-! ### The transition map to the trivial modulus -/
 
@@ -190,11 +191,10 @@ theorem narrowRayClassPrincipal_eq_one_of_isTotallyPositive {x : Kˣ}
 /-- **The narrow ray class of a principal ideal is `2`-torsion**, since the square of any generator
 is totally positive. -/
 @[simp] theorem narrowRayClassPrincipal_sq (x : Kˣ) :
-    narrowRayClassPrincipal (K := K) x ^ 2 = 1 := by
-  rw [← map_pow]
-  refine narrowRayClassPrincipal_eq_one_of_isTotallyPositive ?_
-  rw [Units.val_pow_eq_pow_val]
-  exact isTotallyPositive_sq x.ne_zero
+    narrowRayClassPrincipal (K := K) x ^ 2 = 1 :=
+  narrowEquivNarrowClassGroup.injective <| by
+    rw [map_pow, narrowEquivNarrowClassGroup_narrowRayClassPrincipal, map_one,
+      NarrowClassGroup.mkPrincipal_sq]
 
 /-- **Exactness at the narrow ray class group** of `Kˣ → Cl⁺(K) → Cl(K) → 1`: the kernel of the
 transition map to the trivial modulus is exactly the group of narrow ray classes of principal
@@ -218,11 +218,9 @@ theorem ker_classMap_narrowModulus :
 positivity conditions of the narrow modulus are vacuous, so every principal fractional ideal
 already has a totally positive generator. -/
 theorem classMap_narrowModulus_injective [IsTotallyComplex K] :
-    Function.Injective (classMap (Modulus.one_dvd (narrowModulus K))) := by
-  rw [← MonoidHom.ker_eq_bot_iff, ker_classMap_narrowModulus, Subgroup.eq_bot_iff_forall]
-  rintro _ ⟨x, rfl⟩
-  exact narrowRayClassPrincipal_eq_one_of_isTotallyPositive
-    (mem_totallyPositiveUnits.mp (totallyPositiveUnits_eq_top (K := K) ▸ Subgroup.mem_top x))
+    Function.Injective (classMap (Modulus.one_dvd (narrowModulus K))) := fun c d h ↦
+  narrowEquivNarrowClassGroup.injective <| NarrowClassGroup.toClassGroup_injective <| by
+    rw [toClassGroup_narrowEquiv, toClassGroup_narrowEquiv, h]
 
 /-- **Over a totally complex field the narrow modulus imposes no condition**: its ray class group
 is the ray class group of the trivial modulus, hence the ordinary class group. -/
