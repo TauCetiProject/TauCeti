@@ -53,13 +53,9 @@ evaluates `∫ t in Ioi 0, t ^ n * exp (-(a * t))` as `n ! / a ^ (n + 1)`,
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, exponential.
 * [mathlib4#35504](https://github.com/leanprover-community/mathlib4/pull/35504) by Joakim
-  Björnander (Apache 2.0), the upstream exponential mgf, moments and memorylessness work that the
-  roadmap names as the source for this material. It has not landed at Tau Ceti's current Mathlib
-  pin, so the names, the theorem shapes, and the real-integral proof pattern of the mgf, moment
-  and memorylessness results below are adapted from it, and they should be dropped once the pin
-  provides them.
+  Björnander (Apache 2.0): the names, the theorem shapes, and the real-integral proof pattern of
+  the mgf, moment and memorylessness results below are adapted from it.
 -/
 
 public section
@@ -400,7 +396,7 @@ theorem hasLaw_min_iid_expMeasure {Ω ι : Type*} {mΩ : MeasurableSpace Ω} [Fi
   have _ : IsProbabilityMeasure (expMeasure ((Fintype.card ι : ℝ) * r)) :=
     isProbabilityMeasure_expMeasure (mul_pos hd hr)
   have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P :=
-    Finset.aemeasurable_sup'' (α := OrderDual ℝ) Finset.univ_nonempty fun i _ =>
+    Finset.aemeasurable_sup'_apply (α := OrderDual ℝ) Finset.univ_nonempty fun i _ =>
       (hlaw i).aemeasurable
   have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
   refine ⟨hmin, ?_⟩

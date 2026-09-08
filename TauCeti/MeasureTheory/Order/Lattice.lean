@@ -43,7 +43,7 @@ theorem aemeasurable_sup' (hs : s.Nonempty) (hf : ∀ n ∈ s, AEMeasurable (f n
 `x ↦ sup' (fun n => f n x)` of a nonempty finite family of a.e.-measurable functions is a.e.
 measurable. -/
 @[fun_prop]
-theorem aemeasurable_sup'' (hs : s.Nonempty) (hf : ∀ n ∈ s, AEMeasurable (f n) μ) :
+theorem aemeasurable_sup'_apply (hs : s.Nonempty) (hf : ∀ n ∈ s, AEMeasurable (f n) μ) :
     AEMeasurable (fun x => s.sup' hs fun n => f n x) μ :=
   (aemeasurable_sup' hs hf).congr (Filter.Eventually.of_forall fun x => Finset.sup'_apply hs f x)
 

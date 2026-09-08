@@ -41,13 +41,6 @@ of `d` i.i.d. exponentials of rate `r` is exponential of rate `d * r`.
   `(1 - cdf μ x) ^ d`, hence is at most `x` with probability `1 - (1 - cdf μ x) ^ d`;
 * `TauCeti.Probability.cdf_max_iid`, `TauCeti.Probability.cdf_min_iid` — the same two formulas for
   the laws of the two extremes.
-
-A general theory of order statistics is outside the scope of the roadmap target below.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 4, item 6,
-  **Finite minima and maxima**.
 -/
 
 public section
@@ -137,7 +130,7 @@ theorem measureReal_setOf_min_le_iid [IsProbabilityMeasure μ] (hindep : iIndepF
     ext ω
     simp
   have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P :=
-    Finset.aemeasurable_sup'' (α := OrderDual ℝ) Finset.univ_nonempty fun i _ =>
+    Finset.aemeasurable_sup'_apply (α := OrderDual ℝ) Finset.univ_nonempty fun i _ =>
       (hlaw i).aemeasurable
   have hnull : NullMeasurableSet
       {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω} P :=
@@ -152,7 +145,7 @@ theorem cdf_max_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
     cdf (P.map fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) x
       = cdf μ x ^ Fintype.card ι := by
   have hmax : AEMeasurable (fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) P :=
-    Finset.aemeasurable_sup'' Finset.univ_nonempty fun i _ => (hlaw i).aemeasurable
+    Finset.aemeasurable_sup'_apply Finset.univ_nonempty fun i _ => (hlaw i).aemeasurable
   have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
   rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hmax measurableSet_Iic,
     ← measureReal_setOf_max_le_iid hindep hlaw x]
@@ -165,7 +158,7 @@ theorem cdf_min_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
     cdf (P.map fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) x
       = 1 - (1 - cdf μ x) ^ Fintype.card ι := by
   have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P :=
-    Finset.aemeasurable_sup'' (α := OrderDual ℝ) Finset.univ_nonempty fun i _ =>
+    Finset.aemeasurable_sup'_apply (α := OrderDual ℝ) Finset.univ_nonempty fun i _ =>
       (hlaw i).aemeasurable
   have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
   rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hmin measurableSet_Iic,
