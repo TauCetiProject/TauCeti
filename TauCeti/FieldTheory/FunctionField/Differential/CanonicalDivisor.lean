@@ -79,9 +79,6 @@ the Riemann–Roch identity.
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Section I.5, in particular Lemma 1.5.10, Theorem 1.5.14 and Theorem 1.5.15, and
   Proposition 1.6.2.
-* Tau Ceti pull request
-  [#5207](https://github.com/TauCetiProject/TauCeti/pull/5207), the predecessor formalization of
-  these results, which the present development adapts.
 -/
 
 public section
@@ -112,6 +109,7 @@ theorem exists_isGreatest_mem_weilDifferentialFiltration (hF : IsFunctionField k
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
     (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) :
     ∃ W : Divisor k F, IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D} W := by
+  -- This maximal-degree construction adapts the predecessor formalization in Tau Ceti PR #5207.
   -- Degrees are bounded above, so a divisor `W` of maximal degree among them exists; for any
   -- other `D` bounding `ω`, the supremum `D ⊔ W` also bounds `ω` and has degree at least that of
   -- `W` by monotonicity and at most by maximality, hence equals `W` because places have positive
