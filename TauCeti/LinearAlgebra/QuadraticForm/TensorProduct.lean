@@ -23,10 +23,12 @@ public section
 
 namespace TauCeti
 
+open scoped TensorProduct
+
 variable {R : Type*} [CommRing R] [Invertible (2 : R)]
 
 /-- Tensor product of isometric equivalences of quadratic forms. -/
-noncomputable def _root_.QuadraticMap.IsometryEquiv.tmul
+def _root_.QuadraticMap.IsometryEquiv.tmul
     {M₁ M₂ N₁ N₂ : Type*}
     [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
     [AddCommGroup N₁] [Module R N₁] [AddCommGroup N₂] [Module R N₂]
@@ -34,18 +36,20 @@ noncomputable def _root_.QuadraticMap.IsometryEquiv.tmul
     {S₁ : QuadraticForm R N₁} {S₂ : QuadraticForm R N₂}
     (e : Q₁.IsometryEquiv Q₂) (f : S₁.IsometryEquiv S₂) :
     (Q₁.tmul S₁).IsometryEquiv (Q₂.tmul S₂) where
-  toLinearEquiv := LinearEquiv.ofBijective
-    (TensorProduct.map e.toIsometry.toLinearMap f.toIsometry.toLinearMap)
-    (TensorProduct.map_bijective
-      (by
-        constructor
-        · exact e.injective
-        · exact e.surjective)
-      (by
-        constructor
-        · exact f.injective
-        · exact f.surjective))
+  toLinearEquiv := TensorProduct.congr e.toLinearEquiv f.toLinearEquiv
   map_app' x := QuadraticForm.tmul_tensorMap_apply e.toIsometry f.toIsometry x
+
+/-- The tensor product of two isometric equivalences acts componentwise on pure tensors. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.tmul_tmul
+    {M₁ M₂ N₁ N₂ : Type*}
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N₁] [Module R N₁] [AddCommGroup N₂] [Module R N₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    {S₁ : QuadraticForm R N₁} {S₂ : QuadraticForm R N₂}
+    (e : Q₁.IsometryEquiv Q₂) (f : S₁.IsometryEquiv S₂) (x : M₁) (y : N₁) :
+    e.tmul f (x ⊗ₜ[R] y) = e x ⊗ₜ[R] f y :=
+  TensorProduct.congr_tmul e.toLinearEquiv f.toLinearEquiv x y
 
 /-- Tensor product preserves equivalence of quadratic forms. -/
 theorem _root_.QuadraticMap.Equivalent.tmul
