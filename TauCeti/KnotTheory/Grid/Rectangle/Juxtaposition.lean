@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Rectangle.Squares
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Juxtaposing toroidal grid rectangles
@@ -56,12 +57,6 @@ namespace TauCeti
 namespace GridRectangle
 
 variable {n : ℕ}
-
-private theorem product_union_eq_union_product {s s' : Finset α} {t t' : Finset β}
-    [DecidableEq α] [DecidableEq β] :
-    s ×ˢ t ∪ (s ∪ s') ×ˢ t' = s' ×ˢ t' ∪ s ×ˢ (t ∪ t') := by
-  rw [Finset.union_product, Finset.product_union]
-  ac_rfl
 
 /-- Rectangles on opposite sides of a row cut cover disjoint sets of squares, independently of
 their column spans. -/

@@ -35,12 +35,6 @@ Emptiness of the new rectangles is not part of that identity: it is proved here,
 emptiness of *both* old rectangles is used, one for the columns below the cut and one for the
 columns above it.
 
-Two orientations of the shared side column remain: the terminal side of one rectangle may be the
-initial side of the other. Those two, and the assembly of the disjoint, overlapping and annular
-cases into `∂⁻ ∘ ∂⁻ = 0`, are separate steps; the orientation in which the two rectangles share
-their terminal side is in
-`TauCeti.KnotTheory.Grid.Differential.Square.Recut.Terminal`.
-
 ## Main results
 
 * `TauCeti.GridRectangleDecomposition.exists_isRepartition_of_isEmpty_of_left_eq_left`: two

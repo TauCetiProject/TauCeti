@@ -37,10 +37,6 @@ rectangles of each cut cover disjoint sets of squares, and the two unions agree.
 construction separately proves that the two cuts have different intermediate states, and records
 the intermediate state and the side columns of the new cut.
 
-Two orientations of the shared side column remain: the terminal side of one rectangle may be the
-initial side of the other. Those two, and the assembly of the disjoint, overlapping and annular
-cases into `∂⁻ ∘ ∂⁻ = 0`, are separate steps.
-
 ## Main results
 
 * `TauCeti.GridRectangleDecomposition.exists_isRepartition_of_isEmpty_of_right_eq_right`: two
@@ -52,9 +48,7 @@ cases into `∂⁻ ∘ ∂⁻ = 0`, are separate steps.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, "The complexes and
-`∂² = 0`", specifically the overlapping case of its juxtaposition case analysis. The recut follows
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.6.
+The recut follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.6.
 -/
 
 public section
