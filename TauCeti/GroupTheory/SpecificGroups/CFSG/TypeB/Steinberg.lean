@@ -52,6 +52,14 @@ reductive-groups roadmap owns, and not before. What is recorded of the carrier i
 identification of numbered root characters with the simple roots of the `B₂` root datum proved in
 `TauCeti.RankTwoBLieIndex.rootGeneratorWeight_carrierNode_eq_root_simpleIndex`.
 
+The carrier is not left unidentified as a group of points, though. Over a field its points are
+exactly the symplectic matrices, by `TauCeti.SpStd.points_eq_GLSymplecticFin`, so the ambient
+group below is `Sp₄` over the algebraic closure of the prime field, and its numbered raising
+points are the transvections and difference short-root elements of that group named by
+`TauCeti.SpStd.rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit` and its siblings.
+What is absent is the scheme-level datum: no pinning is constructed for the carrier and the two
+group schemes are not shown to agree.
+
 Nothing below asserts that any group in sight is finite, perfect, simple, or isomorphic to the
 projective symplectic group `PSp₄(q)` that Gorenstein--Lyons--Solomon write for this family. The
 list's small-parameter exclusions are already carried by the index:
