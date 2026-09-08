@@ -5,22 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.Analysis.Fourier.AddCircle
 public import TauCeti.MeasureTheory.Group.TypeTags
 public import TauCeti.RepresentationTheory.Compact.Character.Basic
+public import TauCeti.RepresentationTheory.Continuous.Scalar
 public import TauCeti.RepresentationTheory.LinearCharacter
 
 /-!
-# The circle group: Fourier monomials are its continuous representations on `ℂ`
+# The circle group: Fourier monomials are its irreducible continuous representations
 
 For a positive period — the standing hypothesis `[Fact (0 < T)]`, which is what Mathlib's
 compactness instance and its Fourier analysis on `AddCircle T` both require — the circle
 `AddCircle T` is a compact abelian group. This file builds its continuous representations on `ℂ`
-from Mathlib's Fourier monomials, shows that they exhaust the representations carried by `ℂ`, and
-checks that the general compact-group theory, specialized to the circle, returns Mathlib's Fourier
-analysis on the nose. That every irreducible representation of a compact abelian group is
-one-dimensional — the theorem that would promote this to a classification of *all* irreducibles —
-is not proved here; see the implementation notes.
+from Mathlib's Fourier monomials, shows that they exhaust the finite-dimensional irreducible
+continuous representations up to equivalence and are pairwise inequivalent, and checks that the
+general compact-group theory, specialized to the circle, returns Mathlib's Fourier analysis on the
+nose.
 
 Concretely, `fourierRep T n` is the continuous representation of the circle on `ℂ` in which the
 group element `x` acts by multiplication by `fourier n x`. It is one-dimensional, hence
@@ -33,10 +34,13 @@ Under those identifications:
   orthogonality relation `character_orthonormal_distinct` return the diagonal and off-diagonal
   halves of that same statement.
 
-The list `n ↦ fourierRep T n` is moreover complete among the continuous representations carried by
-`ℂ`: such a representation acts by the scalar `π x 1`, which is a continuous additive character of
-`AddCircle T` and therefore a Fourier monomial by `AddChar.exists_fourierAddChar_eq`. Nothing here
-transports that statement to a representation on some other one-dimensional space.
+The list `n ↦ fourierRep T n` is moreover complete. A representation carried by `ℂ` acts by the
+scalar `π x 1`, which is a continuous additive character of `AddCircle T` and therefore a Fourier
+monomial by `AddChar.exists_fourierAddChar_eq`, so it *is* a `fourierRep`. A finite-dimensional
+irreducible one on an arbitrary carrier is only *equivalent* to a `fourierRep`: the circle group is
+commutative, so `TauCeti/RepresentationTheory/Continuous/Scalar.lean` makes its carrier a line on
+which it acts by a continuous linear character, and that character is again a Fourier monomial. The
+index `n` is uniquely determined, so `ℤ` indexes the irreducibles exactly once.
 
 The last two are recorded as anonymous `example`s: they are consistency checks on the general
 theory's normalization, not new API, and naming them would duplicate
@@ -62,6 +66,12 @@ theory's normalization, not new API, and naming them would duplicate
 * `MonoidHom.exists_fourierChar_eq`, `ContRepresentation.exists_fourierRep_eq`: every continuous
   linear character of the circle group, and every continuous representation of it carried by `ℂ`,
   is a Fourier one.
+* `ContRepresentation.nonempty_equiv_fourierRep_iff`: two Fourier representations are equivalent
+  only if they are equal.
+* `ContRepresentation.exists_equiv_fourierRep`,
+  `ContRepresentation.existsUnique_equiv_fourierRep`: **the classification.** Every
+  finite-dimensional irreducible continuous representation of the circle group is equivalent to
+  `fourierRep T n` for a unique `n : ℤ`.
 * `TauCeti.orthonormal_characterLp_fourierRep`: the characters of the `fourierRep T n` are an
   orthonormal family in `L²` of the circle group for normalized Haar measure; this is
   `AddCircle.orthonormal_fourier` read through the general compact-group packaging.
@@ -82,11 +92,12 @@ multiplicative side. Because `Multiplicative (AddCircle T)` and `AddCircle T` ar
 with the same topology and σ-algebra, an integral over one is literally an integral over the other,
 which is what lets `inner_characterLp_fourierRep` end in Mathlib's orthonormality statement.
 
-What is *not* done here is the full Peter-Weyl identification of `peterWeylBasis` with
-`AddCircle.fourierBasis` under the indexing equivalence `Σ π, Fin 1 × Fin 1 ≃ ℤ`. Exhaustion is
-available for representations carried by `ℂ` (`ContRepresentation.exists_fourierRep_eq`), but the
-step from there to *every* finite-dimensional irreducible — that an irreducible representation of
-an abelian group over an algebraically closed field is one-dimensional — is not proved here.
+The two exhaustion statements are deliberately different in kind. On the carrier `ℂ` the Fourier
+representation is recovered on the nose, as an equality of representations
+(`ContRepresentation.exists_fourierRep_eq`); on an arbitrary carrier no equality is available, and
+`ContRepresentation.exists_equiv_fourierRep` produces a `ContRepresentation.Equiv` instead. What is
+*not* done here is the full Peter-Weyl identification of `peterWeylBasis` with
+`AddCircle.fourierBasis` under the indexing equivalence `Σ π, Fin 1 × Fin 1 ≃ ℤ`.
 
 The general compact-group character theory that is specialized here is in
 `TauCeti/RepresentationTheory/Compact/Character/Basic.lean`. The mathematical development follows
@@ -293,10 +304,9 @@ include hT in
 /-- **Every continuous representation of the circle group carried by `ℂ` is a Fourier
 representation.** With `TauCeti.contIntertwiningMap_fourierRep_eq_zero_of_ne` this says that
 `n ↦ fourierRep T n` lists the continuous representations of the circle group on `ℂ` exactly once.
-The quantifier is over representations whose carrier is literally `ℂ`; transporting the statement
-along an isomorphism to an arbitrary one-dimensional carrier, and passing from there to *all*
-finite-dimensional irreducibles — which needs that an irreducible representation of an abelian
-group over an algebraically closed field is one-dimensional — are not done here. -/
+The quantifier is over representations whose carrier is literally `ℂ`, which is what makes the
+conclusion an equality; `ContRepresentation.exists_equiv_fourierRep` is the corresponding statement
+for an arbitrary carrier, where only an equivalence can be asked for. -/
 theorem exists_fourierRep_eq (π : ContRepresentation ℂ (Multiplicative (AddCircle T)) ℂ)
     (hπ : Continuous π) : ∃ n : ℤ, fourierRep T n = π := by
   have hsmul (x : Multiplicative (AddCircle T)) (z : ℂ) : π x z = z * π x 1 := by
@@ -311,5 +321,55 @@ theorem exists_fourierRep_eq (π : ContRepresentation ℂ (Multiplicative (AddCi
   refine ⟨n, DFunLike.ext _ _ fun x => ContinuousLinearMap.ext fun z => ?_⟩
   rw [fourierRep_apply, hsmul x z, mul_comm]
   exact congrArg (z * ·) (by simpa using DFunLike.congr_fun hn (Multiplicative.toAdd x))
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
+
+include hT in
+/-- **Two Fourier representations are equivalent only if they are equal.** The Fourier
+representations of the circle group are therefore indexed by `ℤ` without repetition; this is
+`TauCeti.contIntertwiningMap_fourierRep_eq_zero_of_ne` read for an equivalence, whose underlying
+map is invertible and so cannot vanish. -/
+theorem nonempty_equiv_fourierRep_iff {m n : ℤ} :
+    Nonempty ((fourierRep T m).Equiv (fourierRep T n)) ↔ m = n := by
+  refine ⟨fun ⟨φ⟩ => by_contra fun hmn => ?_, fun h => h ▸ ⟨.refl _⟩⟩
+  have h0 : φ.toContIntertwiningMap.toContinuousLinearMap = 0 :=
+    contIntertwiningMap_fourierRep_eq_zero_of_ne T hT.out.ne' (Ne.symm hmn) φ.toContIntertwiningMap
+  have h1 : φ (1 : ℂ) = 0 := by
+    simpa using congrArg (fun L : ℂ →L[ℂ] ℂ => L (1 : ℂ)) h0
+  have h2 : (0 : ℂ) = 1 := by simpa [h1] using φ.symm_apply_apply (1 : ℂ)
+  exact one_ne_zero h2.symm
+
+include hT in
+/-- **Every finite-dimensional irreducible continuous representation of the circle group is a
+Fourier representation.** This is the classification the circle roadmap example asks for: together
+with `ContRepresentation.nonempty_equiv_fourierRep_iff` it says that `ℤ` indexes the irreducibles
+exactly once.
+
+The carrier is not assumed to be `ℂ`. Irreducibility and commutativity make it a line
+(`ContRepresentation.exists_continuousLinearEquiv_of_isIrreducible`) on which the group acts by a
+continuous linear character (`ContRepresentation.exists_linearCharacter_smul_eq` and
+`ContRepresentation.continuous_of_smul_eq`); that character is a Fourier monomial by
+`MonoidHom.exists_fourierChar_eq`, and two representations acting by the same scalars are
+equivalent by `ContRepresentation.equivOfSmul`. -/
+theorem exists_equiv_fourierRep (π : ContRepresentation ℂ (Multiplicative (AddCircle T)) V)
+    (hπ : Continuous π) (hirr : π.toRepresentation.IsIrreducible) :
+    ∃ n : ℤ, Nonempty (π.Equiv (fourierRep T n)) := by
+  obtain ⟨e⟩ := exists_continuousLinearEquiv_of_isIrreducible π hirr
+  obtain ⟨χ, hχ⟩ := exists_linearCharacter_smul_eq π hirr
+  obtain ⟨n, hn⟩ := MonoidHom.exists_fourierChar_eq χ (continuous_of_smul_eq π hπ e hχ)
+  exact ⟨n, ⟨equivOfSmul hχ (fun x z => by
+    rw [fourierRep_apply, smul_eq_mul, ← coe_fourierChar, hn]) e⟩⟩
+
+include hT in
+/-- **The Fourier index of a finite-dimensional irreducible continuous representation of the circle
+group is unique.** Existence is `ContRepresentation.exists_equiv_fourierRep` and uniqueness
+is `ContRepresentation.nonempty_equiv_fourierRep_iff`, so `ℤ` is a complete and irredundant
+index of the irreducibles. -/
+theorem existsUnique_equiv_fourierRep (π : ContRepresentation ℂ (Multiplicative (AddCircle T)) V)
+    (hπ : Continuous π) (hirr : π.toRepresentation.IsIrreducible) :
+    ∃! n : ℤ, Nonempty (π.Equiv (fourierRep T n)) := by
+  obtain ⟨n, hn⟩ := exists_equiv_fourierRep π hπ hirr
+  obtain ⟨ψ⟩ := hn
+  exact ⟨n, ⟨ψ⟩, fun m hm => nonempty_equiv_fourierRep_iff.mp ⟨hm.some.symm.trans ψ⟩⟩
 
 end ContRepresentation
