@@ -37,8 +37,10 @@ Mackey irreducibility criterion for an induced linear character, applied to `A�
 For that application to be about something, `alternatingGroup α` must *have* a nontrivial linear
 character, which for `Nat.card α = 4` it does: Mathlib's `alternatingGroup.kleinFour_eq_commutator`
 identifies the commutator subgroup of `A₄` with the Klein four subgroup, of order `4` inside a
-group of order `12`, so the commutator subgroup is proper and the duality of finite abelian groups
-produces a character of the abelianization that does not kill it. For `4 < Nat.card α` the
+group of order `12`. That subgroup is therefore proper, so some element of `A₄` has a nonidentity
+class in the abelianization `A₄ / V₄`, and the duality of finite abelian groups supplies a
+character of that abelianization nontrivial on that class; pulling it back along
+`Abelianization.of` gives a nontrivial linear character of `A₄`. For `4 < Nat.card α` the
 alternating group is perfect instead, and the statements above are then all vacuously about the
 trivial character.
 
@@ -233,7 +235,7 @@ namespace TauCeti
 
 /-- **The abelianization of `A₄` is nontrivial**: its commutator subgroup is the Klein four
 subgroup, a proper subgroup. -/
-theorem exists_abelianization_of_ne_one_alternatingGroup (hα : Nat.card α = 4) :
+theorem exists_abelianizationOf_ne_one_alternatingGroup (hα : Nat.card α = 4) :
     ∃ x : alternatingGroup α, Abelianization.of x ≠ 1 := by
   have hne : alternatingGroup.kleinFour α ≠ ⊤ := by
     intro htop
@@ -260,7 +262,7 @@ of unity for the exponent of the abelianization `A₄ / V₄`, through which eve
 factors and for which an algebraically closed field of characteristic zero supplies the roots. -/
 theorem exists_monoidHom_alternatingGroup_ne_one (hα : Nat.card α = 4) :
     ∃ χ : alternatingGroup α →* Mˣ, χ ≠ 1 := by
-  obtain ⟨x, hx⟩ := exists_abelianization_of_ne_one_alternatingGroup (α := α) hα
+  obtain ⟨x, hx⟩ := exists_abelianizationOf_ne_one_alternatingGroup (α := α) hα
   obtain ⟨φ, hφ⟩ :=
     CommGroup.exists_apply_ne_one_of_hasEnoughRootsOfUnity (Abelianization (alternatingGroup α)) M
       hx

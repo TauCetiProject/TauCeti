@@ -62,9 +62,11 @@ open CategoryTheory
 
 universe u
 
-variable {α k : Type u} [DecidableEq α] [Fintype α] [Field k]
-
 namespace TauCeti
+
+section Inertia
+
+variable {α k : Type u} [DecidableEq α] [Fintype α] [CommRing k]
 
 /-- **The inertia group of a nontrivial linear character of the alternating group is the
 alternating group itself**, the smallest value Clifford theory allows. This is the hypothesis the
@@ -79,7 +81,11 @@ theorem inertia_ofLinearCharacter_alternatingGroup {χ : alternatingGroup α →
       (s := g⁻¹) fun hmem => hgnot (by simpa using inv_mem hmem)
   exact hx (hg x)
 
-variable [IsAlgClosed k] [CharZero k]
+end Inertia
+
+section Irreducible
+
+variable {α k : Type u} [DecidableEq α] [Fintype α] [Field k] [IsAlgClosed k] [CharZero k]
 
 /-- **A nontrivial linear character of the alternating group induces irreducibly to the symmetric
 group.** What it induces to is two-dimensional, by `TauCeti.finrank_indFDRep_ofLinearCharacter` and
@@ -111,5 +117,7 @@ example (hα : Nat.card α = 4) :
   refine ⟨χ, inertia_ofLinearCharacter_alternatingGroup hχ,
     simple_indFDRep_ofLinearCharacter_alternatingGroup hχ, ?_⟩
   rw [finrank_indFDRep_ofLinearCharacter, alternatingGroup.index_eq_two]
+
+end Irreducible
 
 end TauCeti

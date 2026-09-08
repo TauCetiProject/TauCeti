@@ -12,8 +12,7 @@ public import Mathlib.GroupTheory.GroupAction.ConjAct
 
 A normal subgroup `N` of `G` carries the conjugation action `MulAut.conjNormal` of the whole of
 `G`. Conjugation by an element of `N` itself is inner, so a homomorphism `ψ : N →* M` to a
-*commutative* monoid cannot see it: the images of the conjugating element and of its inverse cancel
-in the target.
+*commutative* monoid cannot see it: conjugate elements of `N` have the same image in `M`.
 
 ## Main statements
 
@@ -28,11 +27,12 @@ namespace MonoidHom
 variable {G M : Type*} [Group G] [CommMonoid M] {N : Subgroup G} [N.Normal]
 
 /-- **Conjugation by an element of a normal subgroup does not move a homomorphism from that
-subgroup to a commutative monoid**: the images of the conjugating element and of its inverse
-cancel. -/
+subgroup to a commutative monoid**: conjugate elements have the same image in a commutative
+target. -/
 @[simp]
 theorem map_conjNormal_val (ψ : N →* M) (a x : N) : ψ (MulAut.conjNormal (a : G) x) = ψ x := by
-  rw [MulAut.conjNormal_val, MulAut.conj_apply, map_mul, map_mul, mul_right_comm, ← map_mul,
-    mul_inv_cancel, map_one, one_mul]
+  have h : IsConj x (MulAut.conjNormal (a : G) x) :=
+    isConj_iff.mpr ⟨a, by rw [MulAut.conjNormal_val, MulAut.conj_apply]⟩
+  exact (isConj_iff_eq.mp (ψ.map_isConj h)).symm
 
 end MonoidHom
