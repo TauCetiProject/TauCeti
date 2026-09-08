@@ -25,11 +25,6 @@ entries of a fixed point in `A^F`. Consequently the fixed-point group is finite 
 finite; in particular this holds over a field of characteristic `p` for every nonzero Frobenius
 exponent.
 
-The construction uses `TauCeti.GeneralLinear.frobeniusFixedMulEquivOfCoeEq`, which transports the
-fixed-point equivalence for the matrix points cut out by a Hopf ideal. The type-`D` carrier supplies
-only its Hopf-ideal presentation and the fact that its Frobenius acts entrywise. Thus no fixed-point
-descent is repeated here.
-
 ## Main declarations
 
 * `TauCeti.TypeDSpinCarrier.pointsMulEquivFixedSubgroupFrobenius`: the fixed-point group
@@ -66,11 +61,7 @@ variable (A : Type v) [CommRing A] [ExpChar A p]
 
 /-- **The Frobenius-fixed points of the full-weight type-`Dₙ` spin carrier are its points over
 the Frobenius-fixed subring.** For `p` prime, `0 < k`, and `A` an algebraic closure of `ZMod p`,
-this is the group isomorphism `G(𝔽_(p^k)) ≃* G(A)^F`.
-
-The equivalence is the generic fixed-point equivalence for the matrix points cut out by
-`TauCeti.TypeDSpinCarrier.definingIdeal n hn`, transported to the named carrier points using
-`TauCeti.TypeDSpinCarrier.points_def`. -/
+this is the group isomorphism `G(𝔽_(p^k)) ≃* G(A)^F`. -/
 def pointsMulEquivFixedSubgroupFrobenius :
     points n hn ↥(frobeniusFixedSubring A p k) ≃*
       ↥(fixedSubgroup (frobenius n hn p k A)) :=
