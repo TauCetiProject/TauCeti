@@ -25,9 +25,6 @@ inclusion.
 
 * `TauCeti.integrableOn_pow_mul_exp_neg_mul_Ioi`: integrability on `(0, ∞)`.
 * `TauCeti.integral_pow_mul_exp_neg_mul_Ioi`: evaluation in terms of a factorial.
-* `TauCeti.integral_exp_neg_mul_Ioi_zero` and
-  `TauCeti.lintegral_ofReal_exp_neg_mul_Ioi_zero`: the power-zero evaluation in real and
-  extended-real form.
 * `TauCeti.integrableOn_exp_mul_Ioi_iff`: `exp (a * ·)` is integrable on `(c, ∞)` exactly when
   `a < 0`.
 * `TauCeti.integrableOn_exp_mul_Iic_iff`: `exp (a * ·)` is integrable on `(-∞, c]` exactly when
@@ -69,20 +66,6 @@ theorem integral_pow_mul_exp_neg_mul_Ioi (n : ℕ) {a : ℝ} (ha : 0 < a) :
     rw [Real.rpow_natCast t n]
   rw [h', one_div, div_eq_mul_inv, inv_pow]
   ring
-
-/-- The scalar Laplace integral `∫₀^∞ e^{-as} ds = a⁻¹`. -/
-theorem integral_exp_neg_mul_Ioi_zero {a : ℝ} (ha : 0 < a) :
-    ∫ s in Set.Ioi (0 : ℝ), Real.exp (-(a * s)) = a⁻¹ := by
-  simpa only [pow_zero, one_mul, Nat.factorial_zero, Nat.cast_one, pow_one, one_div,
-    zero_add] using integral_pow_mul_exp_neg_mul_Ioi 0 ha
-
-/-- The extended-real form of `TauCeti.integral_exp_neg_mul_Ioi_zero`. -/
-theorem lintegral_ofReal_exp_neg_mul_Ioi_zero {a : ℝ} (ha : 0 < a) :
-    ∫⁻ s in Set.Ioi (0 : ℝ), ENNReal.ofReal (Real.exp (-(a * s))) = ENNReal.ofReal a⁻¹ := by
-  have hint : IntegrableOn (fun s : ℝ => Real.exp (-(a * s))) (Set.Ioi 0) := by
-    simpa [neg_mul] using exp_neg_integrableOn_Ioi (0 : ℝ) ha
-  rw [← ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun s => (Real.exp_pos _).le),
-    integral_exp_neg_mul_Ioi_zero ha]
 
 /-- The two-sided exponential is integrable on the line. -/
 theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :

@@ -126,8 +126,15 @@ private theorem lintegral_ofReal_exp_neg_mul_mul_lintegral (ν : Measure ℝ≥0
           ENNReal.ofReal (Real.exp (-((t + (x : ℝ)) * s)))) ∂ν := lintegral_lintegral_swap hmeas
     _ = ∫⁻ x : ℝ≥0, ENNReal.ofReal (t + (x : ℝ))⁻¹ ∂ν := by
           refine lintegral_congr fun x => ?_
-          exact lintegral_ofReal_exp_neg_mul_Ioi_zero
-            (add_pos_of_pos_of_nonneg ht x.coe_nonneg)
+          have htx : 0 < t + (x : ℝ) := add_pos_of_pos_of_nonneg ht x.coe_nonneg
+          have hint : IntegrableOn
+              (fun s : ℝ => Real.exp (-((t + (x : ℝ)) * s))) (Ioi 0) := by
+            simpa only [pow_zero, one_mul] using
+              integrableOn_pow_mul_exp_neg_mul_Ioi 0 htx
+          rw [← ofReal_integral_eq_lintegral_ofReal hint
+            (.of_forall fun s => (Real.exp_pos _).le)]
+          simpa using congrArg ENNReal.ofReal
+            (integral_pow_mul_exp_neg_mul_Ioi 0 htx)
 
 /-! ## The two transforms of a Laplace representing measure -/
 
@@ -264,8 +271,11 @@ theorem RepresentsStieltjes.exists_isCompletelyMonotoneOnIoi (h : RepresentsStie
         = (∫ s in Ioi (0 : ℝ), Real.exp (-(t * s)) * (a : ℝ)) +
           ∫ s in Ioi (0 : ℝ), Real.exp (-(t * s)) * laplaceTransform μ s := by
       simpa only [mul_add] using integral_add (hconst t ht) (hLint t ht)
-    rw [hsplit, integral_mul_const,
-      integral_exp_neg_mul_Ioi_zero ht]
+    rw [hsplit, integral_mul_const]
+    have hexp := integral_pow_mul_exp_neg_mul_Ioi 0 ht
+    simp only [pow_zero, one_mul, Nat.factorial_zero, Nat.cast_one, pow_one, one_div,
+      zero_add] at hexp
+    rw [hexp]
     rw [div_eq_inv_mul]
     ring
 
