@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.FactorDegrees
-public import Mathlib.Algebra.Polynomial.SpecificDegree
+import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
 
 import Mathlib.Algebra.CharP.Two
@@ -26,6 +26,8 @@ polynomial carrier and API live in `TauCeti/RingTheory/Polynomial/FactorDegrees.
 * `Polynomial.irreducible_X_sq_add_X_add_one_zmod_two`,
   `Polynomial.irreducible_X_pow_three_add_X_sq_add_one_zmod_two`: the two irreducibility facts
   over `ZMod 2` that the modulo `2` example rests on.
+* `Polynomial.irreducible_X_pow_five_sub_X_sub_one_zmod_five`: the irreducibility fact over
+  `ZMod 5` that the modulo `5` example rests on.
 * `Polynomial.factorDegrees_X_pow_five_sub_X_sub_one_two`: the worked example
   `factorDegrees (X ^ 5 - X - 1) 2 = {3, 2}`.
 * `Polynomial.factorDegrees_X_pow_five_sub_X_sub_one_five`: the worked example
@@ -101,7 +103,8 @@ theorem _root_.Polynomial.factorDegrees_X_pow_five_sub_X_sub_one_two :
 
 local instance factPrimeFive : Fact (Nat.Prime 5) := ⟨by decide⟩
 
-private theorem irreducible_X_pow_five_sub_X_sub_one_zmod_five :
+/-- `X ^ 5 - X - 1` is irreducible over `ZMod 5`. -/
+theorem _root_.Polynomial.irreducible_X_pow_five_sub_X_sub_one_zmod_five :
     Irreducible (X ^ 5 - X - 1 : (ZMod 5)[X]) := by
   have hmonic : Monic (X ^ 5 - X - 1 : (ZMod 5)[X]) := by
     rw [sub_sub]
@@ -131,12 +134,14 @@ private theorem irreducible_X_pow_five_sub_X_sub_one_zmod_five :
     norm_num at hdvd
   · let a := q.coeff 1
     let b := q.coeff 0
+    -- Put a hypothetical monic quadratic factor in coefficient form.
     have hqeq : q = X ^ 2 + C a * X + C b := by
       rw [Polynomial.eq_quadratic_of_degree_le_two
         (Polynomial.degree_le_of_natDegree_le hdeg'.le)]
       have hc : q.coeff 2 = 1 := by simpa [hdeg'] using hq.coeff_natDegree
       rw [hc]
       simp [a, b]
+    -- Divide explicitly by that quadratic; the displayed polynomial is the linear remainder.
     let quotient : (ZMod 5)[X] :=
       X ^ 3 - C a * X ^ 2 + C (a ^ 2 - b) * X + C (-a ^ 3 + 2 * a * b)
     let remainder : (ZMod 5)[X] :=
@@ -146,6 +151,7 @@ private theorem irreducible_X_pow_five_sub_X_sub_one_zmod_five :
       simp only [quotient, remainder]
       simp only [map_add, map_sub, map_mul, map_pow, map_neg, map_one, map_ofNat]
       ring
+    -- Divisibility forces the degree-at-most-one remainder to vanish.
     have hrem : q ∣ remainder := by
       rw [hdivision] at hdvd
       obtain ⟨c, hc⟩ := hdvd
@@ -158,6 +164,7 @@ private theorem irreducible_X_pow_five_sub_X_sub_one_zmod_five :
     have hremzero : remainder = 0 := by
       by_contra hr
       exact (hq.not_dvd_of_natDegree_lt hr (by omega)) hrem
+    -- Its two coefficients give equations with no solution among the 25 pairs in `ZMod 5`.
     have ha : a ^ 4 - 3 * a ^ 2 * b + b ^ 2 - 1 = 0 := by
       simpa only [remainder, Polynomial.coeff_add, Polynomial.coeff_C_mul_X,
         Polynomial.coeff_C, one_ne_zero, Polynomial.coeff_zero, ite_true, ite_false, add_zero]
@@ -179,7 +186,7 @@ theorem _root_.Polynomial.factorDegrees_X_pow_five_sub_X_sub_one_five :
       (X ^ 5 - X - 1 : (ZMod 5)[X]) := by norm_num
   rw [hmap]
   constructor
-  · exact irreducible_X_pow_five_sub_X_sub_one_zmod_five
+  · exact Polynomial.irreducible_X_pow_five_sub_X_sub_one_zmod_five
   · rw [sub_sub]
     compute_degree!
 
