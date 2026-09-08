@@ -14,9 +14,11 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 
 A statistic of the form `x ↦ ∑ j, f j (x j)` under a finite product measure `Measure.pi μ` has
 exponential `∏ j, exp (t * f j (x j))`, so Fubini's theorem turns its moment-generating function
-into the product of the coordinate ones. Since each factor is positive exactly on its
-exponential-integrability domain, the domain of the sum is the intersection of the domains of
-the coordinates.
+into the product of the coordinate ones. For a product of *probability* measures each factor is
+positive exactly on its exponential-integrability domain, so the domain of the sum is then the
+intersection of the domains of the coordinates. That step genuinely needs the coordinates to be
+probability measures: under the zero measure, for instance, the moment-generating function
+vanishes everywhere while the integrability domain is all of `ℝ`.
 
 These are the facts that turn a quadratic statistic of a Gaussian vector, written in
 eigen-coordinates, into a product of one-dimensional moment-generating functions.
@@ -25,8 +27,8 @@ eigen-coordinates, into a product of one-dimensional moment-generating functions
 
 * `TauCeti.mgf_sum_pi` — the moment-generating function of a sum of coordinate
   statistics factors over the coordinates, for every argument;
-* `TauCeti.integrableExpSet_sum_pi` — its exponential-integrability domain is the
-  intersection of the coordinate domains.
+* `TauCeti.integrableExpSet_sum_pi` — for a product of probability measures, its
+  exponential-integrability domain is the intersection of the coordinate domains.
 -/
 
 public section
