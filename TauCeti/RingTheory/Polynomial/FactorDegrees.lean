@@ -23,6 +23,10 @@ and its relationship with irreducibility. Roadmap-specific worked examples are i
 ## Main declarations
 
 * `Polynomial.factorDegrees`: the multiset of factor degrees of `f` modulo `p`.
+* `Polynomial.mem_factorDegrees_iff`: a number occurs as a factor degree exactly when it is the
+  degree of a normalized irreducible factor of the reduction.
+* `Polynomial.factorDegrees_mul`: the factor degrees of a product with nonzero reductions are the
+  sum of the factor degrees.
 * `Polynomial.factorDegrees_eq_map_natDegree_of_map_eq_prod`: compute the factor degrees from any
   factorization of the reduction into irreducibles.
 * `Polynomial.sum_factorDegrees_eq_natDegree_map`, `Polynomial.Monic.sum_factorDegrees`: the

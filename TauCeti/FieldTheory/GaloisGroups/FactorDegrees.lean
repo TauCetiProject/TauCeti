@@ -23,9 +23,11 @@ This module supplies the Layer 5 worked computations of `Polynomial.factorDegree
 
 ## Main declarations
 
+* `Polynomial.irreducible_X_sq_add_X_add_one_zmod_two`,
+  `Polynomial.irreducible_X_pow_three_add_X_sq_add_one_zmod_two`: the two irreducibility facts
+  over `ZMod 2` that the modulo `2` example rests on.
 * `Polynomial.factorDegrees_X_pow_five_sub_X_sub_one_two`: the worked example
-  `factorDegrees (X ^ 5 - X - 1) 2 = {3, 2}`, with the two irreducibility facts over `ZMod 2`
-  that it rests on.
+  `factorDegrees (X ^ 5 - X - 1) 2 = {3, 2}`.
 * `Polynomial.factorDegrees_X_pow_five_sub_X_sub_one_five`: the worked example
   `factorDegrees (X ^ 5 - X - 1) 5 = {5}`.
 
