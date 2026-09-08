@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
-public import TauCeti.Topology.Algebra.Group.Compact
 public import TauCeti.Topology.Algebra.Group.Quotient
 
 /-!
@@ -38,9 +37,6 @@ carry the hypothesis, while the clopen-image statement is valid for an arbitrary
   the quotient of a profinite group by a closed normal subgroup is totally disconnected.
 * `Subgroup.iInf_openNormalSubgroup_eq_bot`: the infimum of the open normal subgroups of a
   profinite group is trivial.
-* `Subgroup.isOpen_of_index_sup_openNormalSubgroup_le`: a closed subgroup whose joins with
-  the open normal subgroups have uniformly bounded index is open.
-
 ## References
 
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Proposition 1.1.4 and Theorem 1.1.6.
@@ -111,52 +107,6 @@ theorem _root_.Subgroup.iInf_openNormalSubgroup_eq_bot :
     (⨅ U : OpenNormalSubgroup G, U.toSubgroup) = ⊥ := by
   simpa using (Subgroup.eq_iInf_sup_openNormalSubgroup (⊥ : Subgroup G)
     isClosed_singleton).symm
-
-/-- A closed subgroup `H` of a profinite group whose joins `H ⊔ N` with the open normal
-subgroups `N` have uniformly bounded index is open.
-
-The bound makes the indices of the subgroups `H ⊔ N` a finite set of natural numbers, so it
-attains a maximum, at `N₀` say. That maximum is attained by an infimum of the family: for any
-`N`, intersecting `N₀` with `N` cannot make the index strictly larger, so `H ⊔ (N₀ ⊓ N)` is
-already all of `H ⊔ N₀`, and hence `H ⊔ N₀ ≤ H ⊔ N`. So the infimum
-`⨅ N, H ⊔ N`, which is `H` because `H` is closed, is the open subgroup `H ⊔ N₀`. -/
-theorem _root_.Subgroup.isOpen_of_index_sup_openNormalSubgroup_le {H : Subgroup G} {m : ℕ}
-    (hH : IsClosed (H : Set G))
-    (hbound : ∀ N : OpenNormalSubgroup G, (H ⊔ N.toSubgroup).index ≤ m) :
-    IsOpen (H : Set G) := by
-  let f : OpenNormalSubgroup G → ℕ := fun N ↦ (H ⊔ N.toSubgroup).index
-  have hfinite : (f '' (Set.univ : Set (OpenNormalSubgroup G))).Finite := by
-    refine (Set.finite_Iic m).subset ?_
-    rintro k ⟨N, -, rfl⟩
-    exact hbound N
-  have hnonempty : (Set.univ : Set (OpenNormalSubgroup G)).Nonempty :=
-    ⟨{ toOpenSubgroup := ⊤, isNormal' := Subgroup.normal_top }, Set.mem_univ _⟩
-  obtain ⟨N₀, -, hmax⟩ :=
-    Set.Finite.exists_maximalFor' f Set.univ hfinite hnonempty
-  have hmax_le (N : OpenNormalSubgroup G) : f N ≤ f N₀ := by
-    rcases le_total (f N) (f N₀) with hle | hle
-    · exact hle
-    · exact hmax (Set.mem_univ N) hle
-  have hsup_le (N : OpenNormalSubgroup G) : H ⊔ N₀.toSubgroup ≤ H ⊔ N.toSubgroup := by
-    let M : OpenNormalSubgroup G := N₀ ⊓ N
-    have hMsub : H ⊔ M.toSubgroup ≤ H ⊔ N₀.toSubgroup := sup_le_sup_left inf_le_left H
-    have hMeq : H ⊔ M.toSubgroup = H ⊔ N₀.toSubgroup := by
-      apply le_antisymm hMsub
-      by_contra hnot
-      have hlt : H ⊔ M.toSubgroup < H ⊔ N₀.toSubgroup :=
-        lt_of_le_of_ne hMsub fun heq ↦ hnot heq.ge
-      have hMopen : IsOpen ((H ⊔ M.toSubgroup : Subgroup G) : Set G) :=
-        Subgroup.isOpen_mono le_sup_right M.toOpenSubgroup.isOpen
-      let _ : (H ⊔ M.toSubgroup).FiniteIndex :=
-        ((H ⊔ M.toSubgroup).isOpen_iff_isClosed_and_finiteIndex.mp hMopen).2
-      exact absurd (Subgroup.index_strictAnti hlt) (not_lt_of_ge (hmax_le M))
-    rw [← hMeq]
-    exact sup_le_sup_left inf_le_right H
-  have hHeq : H = H ⊔ N₀.toSubgroup :=
-    (Subgroup.eq_iInf_sup_openNormalSubgroup H hH).trans
-      (le_antisymm (iInf_le _ N₀) (le_iInf hsup_le))
-  rw [hHeq]
-  exact Subgroup.isOpen_mono le_sup_right N₀.toOpenSubgroup.isOpen
 
 namespace QuotientGroup
 
