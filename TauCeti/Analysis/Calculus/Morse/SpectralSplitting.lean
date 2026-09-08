@@ -90,6 +90,7 @@ theorem unstableLinearSubspace_def (hf : ContDiffAt ℝ 2 f x) :
 
 /-- A vector is stable exactly when its Hessian eigenbasis representation is supported on the
 positive eigenvalues. -/
+@[simp]
 theorem mem_stableLinearSubspace_iff (hf : ContDiffAt ℝ 2 f x) {v : E} :
     v ∈ hf.stableLinearSubspace ↔
       ∀ i ∈ ((hf.isSelfAdjoint_hessianOperator.isSymmetric.eigenvectorBasis
@@ -100,6 +101,7 @@ theorem mem_stableLinearSubspace_iff (hf : ContDiffAt ℝ 2 f x) {v : E} :
 
 /-- A vector is unstable exactly when its Hessian eigenbasis representation is supported on the
 negative eigenvalues. -/
+@[simp]
 theorem mem_unstableLinearSubspace_iff (hf : ContDiffAt ℝ 2 f x) {v : E} :
     v ∈ hf.unstableLinearSubspace ↔
       ∀ i ∈ ((hf.isSelfAdjoint_hessianOperator.isSymmetric.eigenvectorBasis

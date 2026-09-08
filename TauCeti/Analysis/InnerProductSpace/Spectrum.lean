@@ -180,6 +180,7 @@ noncomputable def eigenvectorSpan (hT : T.IsSymmetric) (hn : Module.finrank 𝕜
 
 /-- A vector belongs to an eigenvector span exactly when its eigenbasis representation is
 supported on the selected indices. -/
+@[simp]
 theorem mem_eigenvectorSpan_iff (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     {s : Set (Fin n)} {v : E} :
     v ∈ hT.eigenvectorSpan hn s ↔
@@ -189,7 +190,6 @@ theorem mem_eigenvectorSpan_iff (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E
 
 /-- An eigenvector from the ordered eigenbasis belongs to an eigenvector span exactly when its
 index is selected. -/
-@[simp]
 theorem eigenvectorBasis_mem_eigenvectorSpan_iff (hT : T.IsSymmetric)
     (hn : Module.finrank 𝕜 E = n) {s : Set (Fin n)} (i : Fin n) :
     hT.eigenvectorBasis hn i ∈ hT.eigenvectorSpan hn s ↔ i ∈ s := by
@@ -279,6 +279,7 @@ theorem positiveSpectralSubspace_def (hT : T.IsSymmetric) (hn : Module.finrank �
 
 /-- A vector belongs to the negative spectral subspace exactly when its eigenbasis representation
 is supported on the negative eigenvalues. -/
+@[simp]
 theorem mem_negativeSpectralSubspace_iff (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     {v : E} :
     v ∈ hT.negativeSpectralSubspace hn ↔
@@ -288,6 +289,7 @@ theorem mem_negativeSpectralSubspace_iff (hT : T.IsSymmetric) (hn : Module.finra
 
 /-- A vector belongs to the positive spectral subspace exactly when its eigenbasis representation
 is supported on the positive eigenvalues. -/
+@[simp]
 theorem mem_positiveSpectralSubspace_iff (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     {v : E} :
     v ∈ hT.positiveSpectralSubspace hn ↔
