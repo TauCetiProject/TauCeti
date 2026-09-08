@@ -26,10 +26,8 @@ condition and the `𝒪_X`-module structure automatic.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.Scheme.genericPoint_mem` and
-  `TauCeti.AlgebraicGeometry.Scheme.nonempty_inf`, the two elementary facts about nonempty open
-  subsets of an irreducible scheme used throughout: they contain the generic point, and hence
-  meet pairwise;
+* `TauCeti.AlgebraicGeometry.Scheme.genericPoint_mem`, the elementary fact that every nonempty open
+  subset of an irreducible scheme contains the generic point;
 * `TauCeti.AlgebraicGeometry.Scheme.fromSpecFunctionField`, the canonical morphism
   `Spec K(X) ⟶ X` from the spectrum of the function field, and
   `TauCeti.AlgebraicGeometry.Scheme.fromSpecFunctionField_preimage`: it pulls a nonempty open
@@ -109,13 +107,6 @@ variable {X}
 /-- The generic point of an irreducible scheme lies in every nonempty open subset. -/
 theorem genericPoint_mem (U : X.Opens) [Nonempty U] : genericPoint X ∈ U :=
   ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
-
-/-- Two nonempty open subsets of an irreducible scheme meet: both contain the generic point.
-
-This is not an instance, because it would apply to its own hypotheses. -/
-theorem nonempty_inf (U V : X.Opens) [Nonempty U] [Nonempty V] :
-    Nonempty (U ⊓ V : X.Opens) :=
-  ⟨⟨genericPoint X, genericPoint_mem U, genericPoint_mem V⟩⟩
 
 instance instUniqueSpecFunctionField (X : Scheme.{u}) [IrreducibleSpace X] :
     Unique (Spec X.functionField) where

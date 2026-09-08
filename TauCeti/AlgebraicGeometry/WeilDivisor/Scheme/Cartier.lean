@@ -110,9 +110,9 @@ theorem restrict_eq_rationalUnitClass (hX : ∀ y : X, coheight y ≤ 1)
     (hg : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → WeilDivisor.coeff D y = orderAt y g) :
     E |_ U = Scheme.rationalUnitClass X U g := by
   choose W hWne k hxW hk hEW using hE
-  have hne : ∀ x : X, Nonempty (W x ⊓ U : X.Opens) := fun x ↦
-    have := hWne x
-    Scheme.nonempty_inf (W x) U
+  have hne : ∀ x : X, Nonempty (W x ⊓ U : X.Opens) := fun x ↦ by
+    simpa using nonempty_preirreducible_inter (W x).isOpen U.isOpen
+      (by simpa using hWne x) (by simpa using (inferInstance : Nonempty U))
   refine (Scheme.cartierDivisorSheaf X).eq_of_locally_eq'
     (fun x : X ↦ (W x ⊓ U : X.Opens)) U (fun x ↦ homOfLE inf_le_right)
     (fun x hx ↦ Opens.mem_iSup.mpr ⟨x, ⟨hxW x, hx⟩⟩) _ _ fun x ↦ ?_
@@ -146,8 +146,9 @@ theorem existsUnique_cartierDivisor (hX : ∀ y : X, coheight y ≤ 1)
         E |_ U = Scheme.rationalUnitClass X U g := by
   choose U hxU g hg using isLocallyPrincipal_iff.mp hD
   have hne : ∀ x : X, Nonempty (U x) := fun x ↦ ⟨⟨x, hxU x⟩⟩
-  have hne₂ : ∀ x z : X, Nonempty (U x ⊓ U z : X.Opens) := fun x z ↦
-    Scheme.nonempty_inf (U x) (U z)
+  have hne₂ : ∀ x z : X, Nonempty (U x ⊓ U z : X.Opens) := fun x z ↦ by
+    simpa using nonempty_preirreducible_inter (U x).isOpen (U z).isOpen
+      (by simpa using hne x) (by simpa using hne z)
   have hcompat : TopCat.Presheaf.IsCompatible (Scheme.cartierDivisorSheaf X).obj U
       fun x ↦ Scheme.rationalUnitClass X (U x) (g x) := by
     intro x z
