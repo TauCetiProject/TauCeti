@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
-import Mathlib.Algebra.Ring.Identities
+import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -27,9 +27,8 @@ unit here, so this half of the theory is developed over a commutative ring.
 
 The second is the **binary equivalence criterion**: two binary forms with unit coefficients are
 isometric exactly when they have the same discriminant modulo squares and represent a common
-unit. One direction is the Brahmagupta–Fibonacci identity applied to the images of the two
-standard basis vectors; the other applies the representation normal form to both sides and
-compares the forced second coefficients.
+unit. One direction follows from the discriminant change-of-variables formula; the other applies
+the representation normal form to both sides and compares the forced second coefficients.
 
 Both statements are about the *unit* value set `QuadraticMap.unitValueSet`. Invertibility of the
 represented value carries the whole content of the first theorem: every quadratic form represents
@@ -201,62 +200,29 @@ theorem equivalent_binary_of_isSquare_of_mem_unitValueSet {a b c d e : Rˣ}
         _ = a * (b * e) := by simp [mul_assoc]
     simpa [mul_assoc] using congrArg Units.val hu
 
-end CommRing
-
-section Field
-
-variable {K : Type u} [Field K]
-
 /-- Isometric binary diagonal forms with unit coefficients have the same discriminant modulo
 squares: the discriminant of `⟨a, b⟩` is `a * b` and that of `⟨c, d⟩` is `c * d`, and the two
 agree modulo squares exactly when their product `a * b * (c * d)` is a square. -/
-theorem isSquare_mul_mul_of_equivalent_binary [Invertible (2 : K)] {a b c d : Kˣ}
-    (h : (weightedSumSquares K ![(a : K), (b : K)]).Equivalent
-      (weightedSumSquares K ![(c : K), (d : K)])) :
+theorem isSquare_mul_mul_of_equivalent_binary [Invertible (2 : R)] {a b c d : Rˣ}
+    (h : (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
+      (weightedSumSquares R ![(c : R), (d : R)])) :
     IsSquare (a * b * (c * d)) := by
-  -- Let `u` and `v` be the images of the two standard basis vectors. Comparing the values at
-  -- `(1, 0)`, at `(0, 1)` and at `(1, 1)` shows that `u` and `v` are orthogonal for `⟨c, d⟩`, so
-  -- Brahmagupta's identity `sq_add_mul_sq_mul_sq_add_mul_sq`, read at `n = c * d`, collapses to
-  -- its second summand.
   obtain ⟨f⟩ := h
-  have key : ∀ p : Fin 2 → K,
-      (c : K) * f p 0 ^ 2 + (d : K) * f p 1 ^ 2 = (a : K) * p 0 ^ 2 + (b : K) * p 1 ^ 2 := by
-    intro p
-    have hp := f.map_app p
-    simp only [weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
-      Matrix.cons_val_one, smul_eq_mul] at hp
-    linear_combination hp
-  obtain ⟨u, v, hu, hv, hw⟩ : ∃ u v : Fin 2 → K,
-      (c : K) * u 0 ^ 2 + (d : K) * u 1 ^ 2 = a ∧
-      (c : K) * v 0 ^ 2 + (d : K) * v 1 ^ 2 = b ∧
-      (c : K) * (u 0 + v 0) ^ 2 + (d : K) * (u 1 + v 1) ^ 2 = (a : K) + b := by
-    refine ⟨f ![1, 0], f ![0, 1], by simpa using key ![1, 0], by simpa using key ![0, 1], ?_⟩
-    have hadd : f ![1, 1] = f ![1, 0] + f ![0, 1] := by
-      rw [← map_add]
-      congr 1
-      ext i
-      fin_cases i <;> simp
-    have := key ![1, 1]
-    rw [hadd] at this
-    simpa using this
-  have hortho : (c : K) * (u 0 * v 0) + (d : K) * (u 1 * v 1) = 0 := by
-    have h2 : (2 : K) * ((c : K) * (u 0 * v 0) + (d : K) * (u 1 * v 1)) = 0 := by
-      linear_combination hw - hu - hv
-    exact (mul_eq_zero.mp h2).resolve_left (isUnit_of_invertible (2 : K)).ne_zero
-  have hdet : (a : K) * b = (c : K) * d * (u 0 * v 1 - u 1 * v 0) ^ 2 := by
-    -- Brahmagupta's identity at `n = c * d` reads `c² a b = c² (c u₀v₀ + d u₁v₁)²
-    -- + c² · c d (u₀v₁ - u₁v₀)²`, whose first summand vanishes by `hortho`.
-    have brahmagupta := sq_add_mul_sq_mul_sq_add_mul_sq (n := (c : K) * d)
-      (x₁ := (c : K) * u 0) (x₂ := u 1) (y₁ := (c : K) * v 0) (y₂ := -v 1)
-    refine mul_left_cancel₀ (mul_ne_zero c.ne_zero c.ne_zero) ?_
-    linear_combination brahmagupta - (c : K) ^ 2 * b * hu
-      - (c : K) ^ 2 * ((c : K) * u 0 ^ 2 + (d : K) * u 1 ^ 2) * hv
-      + (c : K) ^ 2 * ((c : K) * (u 0 * v 0) + (d : K) * (u 1 * v 1)) * hortho
-  have hne : u 0 * v 1 - u 1 * v 0 ≠ 0 := fun h0 =>
-    mul_ne_zero a.ne_zero b.ne_zero (by rw [hdet, h0]; ring)
-  refine ⟨c * d * Units.mk0 _ hne, Units.ext ?_⟩
-  simp only [Units.val_mul, Units.val_mk0]
-  linear_combination ((c : K) * d) * hdet
+  have heq : weightedSumSquares R ![(a : R), (b : R)] =
+      (weightedSumSquares R ![(c : R), (d : R)]).comp f.toLinearMap :=
+    QuadraticMap.ext fun x => (f.map_app x).symm
+  have hdisc := congrArg QuadraticForm.discr' heq
+  rw [QuadraticForm.discr'_comp, LinearMap.det_toMatrix'] at hdisc
+  have hdiag (x y : Rˣ) :
+      QuadraticForm.discr' (weightedSumSquares R ![(x : R), (y : R)]) = (x : R) * y := by
+    rw [QuadraticForm.discr', Matrix.det_fin_two]
+    simp [QuadraticForm.toMatrix', LinearMap.toMatrix₂'_apply,
+      QuadraticMap.associated_eq_self_apply, QuadraticMap.associated_apply,
+      weightedSumSquares_apply, Fin.sum_univ_two]
+  rw [hdiag, hdiag] at hdisc
+  refine ⟨LinearEquiv.det f.toLinearEquiv * c * d, Units.ext ?_⟩
+  simp only [Units.val_mul, LinearEquiv.coe_det]
+  linear_combination ((c : R) * d) * hdisc
 
 /-- **The binary equivalence criterion**, Lam I.5.1. Two binary diagonal forms with unit
 coefficients are isometric exactly when their discriminants agree modulo squares and they
@@ -264,19 +230,19 @@ represent a common unit.
 
 The quotient-free spelling `IsSquare (a * b * (c * d))` of "equal discriminants" is the one that
 `TauCeti.squareClass_eq_zero_iff` translates into the square-class group. -/
-theorem equivalent_binary_iff [Invertible (2 : K)] (a b c d : Kˣ) :
-    (weightedSumSquares K ![(a : K), (b : K)]).Equivalent
-        (weightedSumSquares K ![(c : K), (d : K)]) ↔
+theorem equivalent_binary_iff [Invertible (2 : R)] (a b c d : Rˣ) :
+    (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
+        (weightedSumSquares R ![(c : R), (d : R)]) ↔
       IsSquare (a * b * (c * d)) ∧
-        ∃ e : Kˣ, e ∈ unitValueSet (weightedSumSquares K ![(a : K), (b : K)]) ∧
-          e ∈ unitValueSet (weightedSumSquares K ![(c : K), (d : K)]) := by
+        ∃ e : Rˣ, e ∈ unitValueSet (weightedSumSquares R ![(a : R), (b : R)]) ∧
+          e ∈ unitValueSet (weightedSumSquares R ![(c : R), (d : R)]) := by
   refine ⟨fun h => ⟨isSquare_mul_mul_of_equivalent_binary h, a,
     mem_unitValueSet_binary_left _ _, ?_⟩,
     fun ⟨hdisc, _, hab, hcd⟩ => equivalent_binary_of_isSquare_of_mem_unitValueSet hdisc hab hcd⟩
   rw [← h.unitValueSet_eq]
   exact mem_unitValueSet_binary_left _ _
 
-end Field
+end CommRing
 
 /-- **Worked example.** Over `ℚ` the binary forms `⟨1, 1⟩` and `⟨2, 2⟩` are isometric: their
 discriminants `1` and `4` agree modulo squares, and both represent `2`, once as `1² + 1²` and once
@@ -284,7 +250,7 @@ as `2 · 1² + 2 · 0²`. Concretely `x² + y²` becomes `2 s² + 2 t²` under `
 example : (weightedSumSquares ℚ ![(1 : ℚ), 1]).Equivalent (weightedSumSquares ℚ ![(2 : ℚ), 2]) := by
   have : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
   have hu : ((Units.mk0 (2 : ℚ) two_ne_zero : ℚˣ) : ℚ) = 2 := rfl
-  have key := equivalent_binary_iff (K := ℚ) 1 1 (Units.mk0 2 two_ne_zero)
+  have key := equivalent_binary_iff (R := ℚ) 1 1 (Units.mk0 2 two_ne_zero)
     (Units.mk0 2 two_ne_zero)
   simp only [hu, Units.val_one] at key
   refine key.mpr ⟨⟨Units.mk0 2 two_ne_zero, by rw [one_mul, one_mul]⟩,
