@@ -351,7 +351,7 @@ maximality of the torus among abelian subgroups. -/
 theorem eq_diagonalTorus_of_le_of_isMulCommutative (H : Subgroup (GL (Fin n) k))
     [IsMulCommutative H] (hle : diagonalTorus k n ≤ H) :
     H = diagonalTorus k n :=
-  eq_of_centralizer_eq_self_of_le_of_isMulCommutative
+  Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative
     (centralizer_diagonalTorus (k := k) (n := n)) hle
 
 end IsCancelMulZero

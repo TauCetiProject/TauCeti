@@ -98,7 +98,7 @@ theorem torusCharacter_partialProd {K : Type u} [CommRing K]
         apply Fin.ext
         simp only [k, Fin.val_succ, Fin.val_last]
       rw [hk_last]
-      exact (partialProd_last t).trans ht
+      exact (Fin.partialProd_last t).trans ht
     have hright := Fin.partialProd_right_inv t k
     rw [hlast, mul_one] at hright
     simpa only [one_mul, k] using hright
@@ -219,7 +219,7 @@ theorem eq_range_weightTorusPoints_of_weightChar_weight_injective_of_le_of_isMul
     (H : Subgroup (points r K)) [IsMulCommutative H]
     (hle : (weightTorusPoints r K).range ≤ H) :
     H = (weightTorusPoints r K).range :=
-  eq_of_centralizer_eq_self_of_le_of_isMulCommutative
+  Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative
     ((centralizer_range_weightTorusPoints_eq_diagonalPoints_of_weightChar_weight_injective
       r K hchar).trans (range_weightTorusPoints_eq_diagonalPoints r K).symm) hle
 
