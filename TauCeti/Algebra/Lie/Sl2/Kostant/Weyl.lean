@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Lie.Sl2.Weyl.Standard
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Weyl
 
 /-!
-# The Weyl involution in the rank-one Kostant carrier
+# The rank-one Weyl representative in the Kostant carrier
 
 For the full-weight `A₁` carrier constructed from the standard two-dimensional `sl₂` module, this
 file specializes the integral Weyl representative
@@ -31,9 +31,8 @@ where `h(s) = diag(s, s⁻¹)` is the represented full-weight torus.  Consequent
 in the pointwise normalizer quotient has square one.  Over a nontrivial ring this image is not the
 identity: the Weyl matrix has a nonzero off-diagonal entry, whereas every torus point is diagonal.
 
-This is the first quotient-level Weyl relation for the Kostant carriers.  It is the rank-one input
-for comparing the normalizer of the represented torus with the Weyl group in the pinned
-Chevalley--Demazure construction.
+This quotient-level Weyl relation supplies the rank-one input for comparing the normalizer of the
+represented torus with the Weyl group in the pinned Chevalley--Demazure construction.
 
 ## Main declarations
 
@@ -124,11 +123,7 @@ theorem coe_rankOneCarrierTorusPoint (A : Type u) [CommRing A] (s : Fin 1 → A�
       diagGL ![s 0, (s 0)⁻¹] := by
   rw [rankOneCarrierTorusPoint, rankOneCarrierTorusHom,
     coe_kostantToralWeightTorusPoints]
-  rw [kostantTorusMatrix_apply]
-  apply Matrix.GeneralLinearGroup.ext
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [rankOneWeight_zero, rankOneWeight_one, diagGL_apply]
+  rw [← rankOneTorusMatrix_eq_kostantTorusMatrix, rankOneTorusMatrix_apply]
 
 /-- The integral rank-one Weyl automorphism sends a standard lattice basis vector to the reversed
 basis vector with the usual sign. -/
@@ -271,7 +266,6 @@ noncomputable def rankOneWeylClass (A : Type u) [CommRing A] :
     (rankOneWeylNormalizerPoint A)
 
 /-- The Weyl class is represented by the packaged Weyl normalizer point. -/
-@[simp]
 theorem rankOneWeylClass_eq_normalizerQuotientMk (A : Type u) [CommRing A] :
     rankOneWeylClass A =
       TauCeti.Subgroup.normalizerQuotientMk (rankOneCarrierTorusPoints A)
@@ -281,11 +275,8 @@ theorem rankOneWeylClass_eq_normalizerQuotientMk (A : Type u) [CommRing A] :
 /-- The Weyl class in the torus normalizer quotient has square one. -/
 @[simp]
 theorem rankOneWeylClass_sq (A : Type u) [CommRing A] :
-    (rankOneWeylNormalizerPoint A :
-      TauCeti.Subgroup.normalizerQuotient (rankOneCarrierTorusPoints A)) ^ 2 = 1 := by
-  change TauCeti.Subgroup.normalizerQuotientMk (rankOneCarrierTorusPoints A)
-      (rankOneWeylNormalizerPoint A) ^ 2 = 1
-  rw [← map_pow]
+    rankOneWeylClass A ^ 2 = 1 := by
+  rw [rankOneWeylClass_eq_normalizerQuotientMk, ← map_pow]
   apply (TauCeti.Subgroup.normalizerQuotientMk_eq_one_iff
     (rankOneCarrierTorusPoints A) ((rankOneWeylNormalizerPoint A) ^ 2)).mpr
   have hsquare : rankOneWeylPoint A ^ 2 ∈ rankOneCarrierTorusPoints A := by
@@ -319,8 +310,7 @@ theorem rankOneWeylClass_ne_one (A : Type u) [CommRing A] [Nontrivial A] :
 normalizer quotient. -/
 @[simp]
 theorem orderOf_rankOneWeylClass (A : Type u) [CommRing A] [Nontrivial A] :
-    orderOf (rankOneWeylNormalizerPoint A :
-      TauCeti.Subgroup.normalizerQuotient (rankOneCarrierTorusPoints A)) = 2 :=
+    orderOf (rankOneWeylClass A) = 2 :=
   orderOf_eq_prime (rankOneWeylClass_sq A) (rankOneWeylClass_ne_one A)
 
 end TauCeti.Sl2Std
