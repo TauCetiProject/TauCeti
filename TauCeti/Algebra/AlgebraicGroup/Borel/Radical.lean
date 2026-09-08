@@ -8,22 +8,28 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Borel.Existence
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Product.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Semisimple
+import Mathlib.RingTheory.Etale.Descent
+import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Connected.Product
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Product.Properties
 import TauCeti.Algebra.AlgebraicGroup.Smooth.Product
+import TauCeti.Algebra.AlgebraicGroup.Solvable.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Solvable.NormalProduct
+import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.BaseChange
 
 /-!
 # The radical is contained in every Borel subgroup
 
 Let `H` be the coordinate Hopf algebra of a finite-type affine group over a field. A Borel
-candidate is a smooth, geometrically connected, geometrically solvable closed subgroup, and a
-Borel subgroup is a maximal one. This file proves that every *normal* Borel candidate is
-contained in every maximal one; in particular the solvable radical `R(G)`, and hence the
-unipotent radical `R_u(G)`, lies inside every Borel subgroup.
+candidate is a smooth, geometrically connected, geometrically solvable closed subgroup. A maximal
+Borel candidate is a Borel subgroup over an algebraically closed field; over an arbitrary field,
+a Borel subgroup is one whose base change to an algebraic closure is such a subgroup. This file
+proves that every *normal* Borel candidate is contained in every maximal one; in particular the
+solvable radical `R(G)`, and hence the unipotent radical `R_u(G)`, lies inside every Borel subgroup.
 
 The argument is the standard one and reuses the product machinery that built the two radicals.
-Let `B` be a Borel candidate and let `N` be a connected normal smooth solvable closed subgroup.
+Let `B` be a Borel candidate and let `N` be a geometrically connected normal smooth geometrically
+solvable closed subgroup.
 Since `N` is normal, multiplication is a homomorphism from the conjugation semidirect product of
 `N` and `B` into the ambient group, and its scheme-theoretic image `N · B` contains both factors.
 That image is again smooth, geometrically connected and geometrically solvable, so it is a Borel
@@ -36,33 +42,37 @@ oppositely to the closed subgroups they cut out, so `J ≤ I` says that the subg
 sits inside the subgroup defined by `J`.
 
 Two consequences are recorded. If the radical is the whole group — that is, if the group is
-itself smooth, connected and solvable — then it is its own unique Borel subgroup. Conversely, a
-smooth geometrically connected group with a trivial geometric Borel subgroup is semisimple, since
-its geometric solvable radical is squeezed between the trivial Borel and the identity subgroup.
+itself smooth, geometrically connected and geometrically solvable — then its unique maximal Borel
+candidate is the whole group, and the same conclusion holds for every Borel subgroup over the
+ground field. Conversely, a smooth geometrically connected group with a trivial geometric Borel
+subgroup is semisimple, since its geometric solvable radical is squeezed between the trivial Borel
+and the identity subgroup.
 
 ## Main declarations
 
-* `TauCeti.HopfIdeal.IsBorelCandidate.productOfNormal`: the multiplication image of a connected
-  normal smooth solvable closed subgroup with a Borel candidate is a Borel candidate.
-* `TauCeti.HopfIdeal.IsBorelCandidate.isSolvableRadicalCandidate`: a normal Borel candidate is a
-  solvable-radical candidate.
+* `TauCeti.HopfIdeal.IsBorelCandidate.productOfNormal`: the multiplication image of a
+  geometrically connected normal smooth geometrically solvable closed subgroup with a Borel
+  candidate is a Borel candidate.
+* `TauCeti.HopfIdeal.IsBorelCandidate.isSolvableRadicalCandidate_of_isNormal`: a normal Borel
+  candidate is a solvable-radical candidate.
 * `TauCeti.HopfIdeal.IsSolvableRadicalCandidate.le_of_minimal_isBorelCandidate`: **every
-  connected normal smooth solvable closed subgroup is contained in every Borel subgroup.**
+  geometrically connected normal smooth geometrically solvable closed subgroup is contained in
+  every maximal Borel candidate.**
 * `TauCeti.FiniteTypeCommHopfAlgCat.le_solvableRadicalDefiningIdeal_of_minimal_isBorelCandidate`:
-  **the solvable radical is contained in every Borel subgroup.**
+  **the solvable radical is contained in every maximal Borel candidate.**
 * `TauCeti.FiniteTypeCommHopfAlgCat.le_unipotentRadicalDefiningIdeal_of_minimal_isBorelCandidate`:
-  the unipotent radical is contained in every Borel subgroup.
-* `TauCeti.FiniteTypeCommHopfAlgCat.eq_solvableRadicalDefiningIdeal_of_minimal_isBorelCandidate`:
-  a normal Borel subgroup is exactly the solvable radical.
+  the unipotent radical is contained in every maximal Borel candidate.
 * `TauCeti.HopfIdeal.IsBorelOverAlgClosed.le_solvableRadicalDefiningIdeal` and
   `TauCeti.HopfIdeal.IsBorelOverAlgClosed.le_unipotentRadicalDefiningIdeal`: the same two
   containments for the Borel-subgroup predicate over an algebraically closed field.
 * `TauCeti.HopfIdeal.IsBorel.baseChangeHopfIdeal_le_solvableRadicalDefiningIdeal` and
   `TauCeti.HopfIdeal.IsBorel.baseChangeHopfIdeal_le_unipotentRadicalDefiningIdeal`: over an
   arbitrary field, the base change of a Borel subgroup contains the two geometric radicals.
-* `TauCeti.FiniteTypeCommHopfAlgCat.eq_bot_of_solvableRadicalDefiningIdeal_eq_bot`: a smooth
-  connected solvable affine group is its own unique Borel subgroup.
-* `TauCeti.semisimpleCommHopfAlgProperty_of_minimal_isBorelCandidate_eq_augmentation`: a smooth
+* `TauCeti.HopfIdeal.IsBorel.eq_solvableRadicalDefiningIdeal_of_isNormal`: a normal Borel subgroup
+  over an arbitrary field is exactly the solvable radical.
+* `TauCeti.HopfIdeal.IsBorel.eq_bot_of_solvableRadicalDefiningIdeal_eq_bot`: if the solvable
+  radical is the whole group, every Borel subgroup over the ground field is the whole group.
+* `TauCeti.semisimpleCommHopfAlgProperty_of_isBorelOverAlgClosed_eq_augmentation`: a smooth
   geometrically connected affine group with a trivial geometric Borel subgroup is semisimple.
 
 ## References
@@ -91,8 +101,8 @@ namespace HopfIdeal
 variable {k : Type u} [Field k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} {I J : HopfIdeal k H}
 
-/-- The scheme-theoretic multiplication image of a connected normal smooth solvable closed
-subgroup with a Borel candidate is again a Borel candidate.
+/-- The scheme-theoretic multiplication image of a geometrically connected normal smooth
+geometrically solvable closed subgroup with a Borel candidate is again a Borel candidate.
 
 Normality of the solvable factor is what makes multiplication a homomorphism out of the
 conjugation semidirect product; the other factor is an arbitrary Borel candidate. -/
@@ -109,8 +119,8 @@ theorem IsBorelCandidate.productOfNormal
       ((smoothCommHopfAlgProperty_iff _).mpr hI.smooth) hJ.smooth
       hI.geometricallySolvable hJ.geometricallySolvable
 
-/-- **Every connected normal smooth solvable closed subgroup is contained in every Borel
-subgroup.**
+/-- **Every geometrically connected normal smooth geometrically solvable closed subgroup is
+contained in every maximal Borel candidate.**
 
 In the contravariant Hopf-ideal order, `J ≤ I` says that the subgroup cut out by `I` is contained
 in the maximal Borel candidate cut out by `J`. -/
@@ -123,7 +133,7 @@ theorem IsSolvableRadicalCandidate.le_of_minimal_isBorelCandidate
 
 /-- A normal Borel candidate is a solvable-radical candidate: normality is the only condition
 separating the two notions. -/
-theorem IsBorelCandidate.isSolvableRadicalCandidate
+theorem IsBorelCandidate.isSolvableRadicalCandidate_of_isNormal
     (hJ : IsBorelCandidate k H J) (hnormal : J.IsNormal) :
     IsSolvableRadicalCandidate H J :=
   IsSolvableRadicalCandidate.mk hnormal hJ.geometricallyConnected
@@ -135,15 +145,15 @@ namespace FiniteTypeCommHopfAlgCat
 
 variable {k : Type u} [Field k]
 
-/-- **The solvable radical is contained in every Borel subgroup.** -/
+/-- **The solvable radical is contained in every maximal Borel candidate.** -/
 theorem le_solvableRadicalDefiningIdeal_of_minimal_isBorelCandidate
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) {J : HopfIdeal k H}
     (hJ : Minimal (HopfIdeal.IsBorelCandidate k H) J) :
     J ≤ solvableRadicalDefiningIdeal H :=
   (isSolvableRadicalCandidate_solvableRadicalDefiningIdeal H).le_of_minimal_isBorelCandidate hJ
 
-/-- The unipotent radical is contained in every Borel subgroup, since it is contained in the
-solvable radical. -/
+/-- The unipotent radical is contained in every maximal Borel candidate, since it is contained in
+the solvable radical. -/
 theorem le_unipotentRadicalDefiningIdeal_of_minimal_isBorelCandidate
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) {J : HopfIdeal k H}
     (hJ : Minimal (HopfIdeal.IsBorelCandidate k H) J) :
@@ -151,22 +161,24 @@ theorem le_unipotentRadicalDefiningIdeal_of_minimal_isBorelCandidate
   (le_solvableRadicalDefiningIdeal_of_minimal_isBorelCandidate H hJ).trans
     (solvableRadicalDefiningIdeal_le_unipotentRadicalDefiningIdeal H)
 
-/-- **A normal Borel subgroup is exactly the solvable radical.**
+/-- **A normal maximal Borel candidate is exactly the solvable radical.**
 
-One containment is maximality of the Borel subgroup, the other is the universal property of the
-radical applied to the Borel subgroup, which is a solvable-radical candidate once it is normal. -/
-theorem eq_solvableRadicalDefiningIdeal_of_minimal_isBorelCandidate
+One containment is maximality of the Borel candidate, the other is the universal property of the
+radical applied to the candidate, which is a solvable-radical candidate once it is normal. -/
+theorem eq_solvableRadicalDefiningIdeal_of_isNormal_of_minimal_isBorelCandidate
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) {J : HopfIdeal k H}
     (hnormal : J.IsNormal) (hJ : Minimal (HopfIdeal.IsBorelCandidate k H) J) :
     J = solvableRadicalDefiningIdeal H :=
   le_antisymm (le_solvableRadicalDefiningIdeal_of_minimal_isBorelCandidate H hJ)
-    (solvableRadicalDefiningIdeal_le H J (hJ.1.isSolvableRadicalCandidate hnormal))
+    (solvableRadicalDefiningIdeal_le H J
+      (hJ.1.isSolvableRadicalCandidate_of_isNormal hnormal))
 
-/-- **A smooth connected solvable affine group is its own unique Borel subgroup.**
+/-- **A smooth geometrically connected and geometrically solvable affine group is its own unique
+maximal Borel candidate.**
 
 The hypothesis says that the solvable radical is the whole group, the closed subgroup cut out by
 the zero Hopf ideal. -/
-theorem eq_bot_of_solvableRadicalDefiningIdeal_eq_bot
+theorem eq_bot_of_solvableRadicalDefiningIdeal_eq_bot_of_minimal_isBorelCandidate
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) {J : HopfIdeal k H}
     (hH : solvableRadicalDefiningIdeal H = ⊥)
     (hJ : Minimal (HopfIdeal.IsBorelCandidate k H) J) :
@@ -192,6 +204,23 @@ theorem le_unipotentRadicalDefiningIdeal (hI : IsBorelOverAlgClosed k H I) :
     I ≤ FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal H :=
   FiniteTypeCommHopfAlgCat.le_unipotentRadicalDefiningIdeal_of_minimal_isBorelCandidate H
     ((isBorelOverAlgClosed_iff k H I).mp hI).2
+
+/-- Over an algebraically closed field, a normal Borel subgroup is exactly the solvable
+radical. -/
+theorem eq_solvableRadicalDefiningIdeal_of_isNormal
+    (hI : IsBorelOverAlgClosed k H I) (hnormal : I.IsNormal) :
+    I = FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal H :=
+  FiniteTypeCommHopfAlgCat.eq_solvableRadicalDefiningIdeal_of_isNormal_of_minimal_isBorelCandidate
+    H hnormal ((isBorelOverAlgClosed_iff k H I).mp hI).2
+
+/-- Over an algebraically closed field, if the solvable radical is the whole group, every Borel
+subgroup is the whole group. -/
+theorem eq_bot_of_solvableRadicalDefiningIdeal_eq_bot
+    (hI : IsBorelOverAlgClosed k H I)
+    (hH : FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal H = ⊥) :
+    I = ⊥ :=
+  FiniteTypeCommHopfAlgCat.eq_bot_of_solvableRadicalDefiningIdeal_eq_bot_of_minimal_isBorelCandidate
+    H hH ((isBorelOverAlgClosed_iff k H I).mp hI).2
 
 end HopfIdeal.IsBorelOverAlgClosed
 
@@ -220,6 +249,63 @@ theorem baseChangeHopfIdeal_le_unipotentRadicalDefiningIdeal (hI : IsBorel k H I
   IsBorelOverAlgClosed.le_unipotentRadicalDefiningIdeal
     ((isBorel_iff_isBorelOverAlgClosed_baseChange k H I).mp hI)
 
+/-- Over an arbitrary field, a normal Borel subgroup is exactly the solvable radical. -/
+theorem eq_solvableRadicalDefiningIdeal_of_isNormal
+    (hI : IsBorel k H I) (hnormal : I.IsNormal) :
+    I = FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal
+      ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩ := by
+  let H' : FiniteTypeCommHopfAlgCat.{u, u} k :=
+    ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩
+  have hIcandidate : IsBorelCandidate k H' I := by
+    let qIso := CommHopfAlgCat.quotientBaseChangeIso (K := AlgebraicClosure k) I
+    have hIK : IsBorelCandidate (AlgebraicClosure k)
+        (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H')
+        (CommHopfAlgCat.baseChangeHopfIdeal (K := AlgebraicClosure k) I) :=
+      ((isBorelOverAlgClosed_iff _ _ _).mp
+        ((isBorel_iff_isBorelOverAlgClosed_baseChange k H I).mp hI)).2.1
+    refine IsBorelCandidate.mk ?_ ?_ ?_
+    · rw [smoothCommHopfAlgProperty_iff]
+      -- Unwrap the finite-type quotient for Mathlib's faithfully-flat smoothness descent lemma.
+      change Algebra.Smooth k (CommHopfAlgCat.quotient H I)
+      have hsmooth :=
+        (smoothCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso qIso hIK.smooth
+      let _ : Algebra.Smooth (AlgebraicClosure k)
+          (CommHopfAlgCat.baseChange (K := AlgebraicClosure k)
+            (CommHopfAlgCat.quotient H I)) :=
+        (smoothCommHopfAlgProperty_iff _).mp hsmooth
+      exact Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat (AlgebraicClosure k)
+    · apply geometricallyConnectedCommHopfAlgProperty.of_baseChange k (AlgebraicClosure k)
+        (FiniteTypeCommHopfAlgCat.quotient H' I).obj
+      exact (geometricallyConnectedCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso
+        qIso hIK.geometricallyConnected
+    · apply geometricallySolvablePointsCommHopfAlgProperty.of_baseChange
+        (K := AlgebraicClosure k)
+        (FiniteTypeCommHopfAlgCat.quotient H' I).obj
+      exact (geometricallySolvablePointsCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso
+        qIso hIK.geometricallySolvable
+  apply le_antisymm
+  · apply (CommHopfAlgCat.baseChangeHopfIdeal_le_iff_of_faithfullyFlat
+      (K := AlgebraicClosure k) I
+      (FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal H')).mp
+    exact hI.baseChangeHopfIdeal_le_solvableRadicalDefiningIdeal.trans
+      (FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_baseChange_le H')
+  · exact FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_le H' I
+      (hIcandidate.isSolvableRadicalCandidate_of_isNormal hnormal)
+
+/-- Over an arbitrary field, if the solvable radical is the whole group, every Borel subgroup is
+the whole group. -/
+theorem eq_bot_of_solvableRadicalDefiningIdeal_eq_bot
+    (hI : IsBorel k H I)
+    (hH : FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal
+      ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩ = ⊥) :
+    I = ⊥ := by
+  apply le_antisymm ?_ bot_le
+  rw [← hH]
+  apply (CommHopfAlgCat.baseChangeHopfIdeal_le_iff_of_faithfullyFlat
+    (K := AlgebraicClosure k) I _).mp
+  exact hI.baseChangeHopfIdeal_le_solvableRadicalDefiningIdeal.trans
+    (FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_baseChange_le _)
+
 end HopfIdeal.IsBorel
 
 variable {k : Type u} [Field k]
@@ -230,21 +316,20 @@ semisimple.**
 The Borel subgroup is taken on the geometric fibre, and triviality means that its defining Hopf
 ideal is the augmentation ideal. The geometric solvable radical is then contained in the identity
 subgroup, hence equal to it. -/
-theorem semisimpleCommHopfAlgProperty_of_minimal_isBorelCandidate_eq_augmentation
+theorem semisimpleCommHopfAlgProperty_of_isBorelOverAlgClosed_eq_augmentation
     (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (hsmooth : Algebra.Smooth k H)
     (hconnected : geometricallyConnectedCommHopfAlgProperty k H.obj)
     {J : HopfIdeal (AlgebraicClosure k)
       (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H)}
-    (hJ : Minimal (HopfIdeal.IsBorelCandidate (AlgebraicClosure k)
-      (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H)) J)
+    (hJ : HopfIdeal.IsBorelOverAlgClosed (AlgebraicClosure k)
+      (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H) J)
     (hJtrivial : J = HopfIdeal.augmentation (AlgebraicClosure k)
       (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H)) :
     semisimpleCommHopfAlgProperty k H := by
   rw [semisimpleCommHopfAlgProperty_iff_solvableRadicalDefiningIdeal_baseChange_eq_augmentation]
   refine ⟨hsmooth, hconnected, le_antisymm (HopfIdeal.le_augmentation _ _ _) ?_⟩
-  exact hJtrivial ▸
-    FiniteTypeCommHopfAlgCat.le_solvableRadicalDefiningIdeal_of_minimal_isBorelCandidate _ hJ
+  exact hJtrivial ▸ hJ.le_solvableRadicalDefiningIdeal
 
 end
 
