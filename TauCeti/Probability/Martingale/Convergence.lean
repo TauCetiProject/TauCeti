@@ -183,13 +183,14 @@ theorem tendsto_eLpNorm_condExp_iInf [IsFiniteMeasure μ] {𝔽 : ℕ → Measur
 along an antitone sequence of sub-σ-algebras whose intersection is `μ`-trivial, and neither
 `μ (B' n)` nor `μ (A ∩ B' n)` depends on `n`, then `μ (A ∩ B) = μ A * μ B`. This is the step that
 turns tail triviality into independence of events readable far apart. -/
-theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf [IsZeroOrProbabilityMeasure μ]
+theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf
     {𝔽 : ℕ → MeasurableSpace Ω} (hanti : Antitone 𝔽) (h𝔽 : 𝔽 0 ≤ ‹MeasurableSpace Ω›)
     (htriv : ∀ s, MeasurableSet[⨅ n, 𝔽 n] s → μ s = 0 ∨ μ s = 1)
     {A B : Set Ω} (hA : MeasurableSet A) {B' : ℕ → Set Ω}
     (hB' : ∀ n, MeasurableSet[𝔽 n] (B' n)) (hBmass : ∀ n, μ (B' n) = μ B)
     (hjoint : ∀ n, μ (A ∩ B' n) = μ (A ∩ B)) :
     μ (A ∩ B) = μ A * μ B := by
+  have : IsZeroOrProbabilityMeasure μ := ⟨htriv Set.univ MeasurableSet.univ⟩
   rcases eq_zero_or_isProbabilityMeasure μ with rfl | _
   · simp
   have h𝔽' : ∀ n, 𝔽 n ≤ ‹MeasurableSpace Ω› := fun n => (hanti (Nat.zero_le n)).trans h𝔽

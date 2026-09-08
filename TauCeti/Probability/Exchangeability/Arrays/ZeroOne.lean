@@ -38,14 +38,9 @@ rows are all one common i.i.d. random path is separately dissociated, and its ro
 whole path.
 
 **The converse holds for a jointly exchangeable array.** If the corner tail is trivial, the array
-is jointly dissociated. The argument is representation-free. Independence of two blocks over
-disjoint index sets is checked on the cylinders generating their σ-algebras; a permutation of the
-indices, the identity on the finitely many indices the first cylinder reads and carrying the
-finitely many the second reads past a cutoff `n`, moves the second cylinder into
-`arrayTailFamily X n` without changing either mass or the joint mass, by joint exchangeability;
-and along the corner tail filtration Lévy's downward theorem drives the conditional expectation of
-the first cylinder's indicator to its tail conditional expectation, which triviality makes the
-constant `μ A`, so in the limit the joint mass factorizes.
+is jointly dissociated: joint exchangeability moves any block cylinder arbitrarily far into the
+corner tail without changing its mass or its joint mass with a fixed cylinder, and the
+factorization along the corner-tail filtration then follows from tail triviality.
 
 The ergodic form of the Aldous--Hoover representation is the dissociated one, and this is the
 zero-one law separating it from the general form, together with its converse.
@@ -191,7 +186,7 @@ theorem JointlyDissociated.measure_eq_zero_or_one_of_tailProcess_arrayDiag
 /-- **The core factorization.** Under corner-tail triviality and joint exchangeability, a cylinder
 `A` of the block over `range e × range e` and a cylinder `B` of the block over
 `range e' × range e'`, for `e`, `e'` of disjoint range, have `μ (A ∩ B) = μ A * μ B`. -/
-private theorem measure_inter_eq_mul_of_cylinders [IsProbabilityMeasure μ]
+private theorem measure_inter_eq_mul_of_cylinders
     {X : ℕ × ℕ → Ω → α} (hX : ∀ p, Measurable (X p)) (hexch : JointlyExchangeable μ X)
     (htriv : ∀ s, MeasurableSet[arrayTail X] s → μ s = 0 ∨ μ s = 1)
     {e e' : ℕ → ℕ} (hd : Disjoint (Set.range e) (Set.range e'))
@@ -296,10 +291,10 @@ private theorem measure_inter_eq_mul_of_cylinders [IsProbabilityMeasure μ]
 /-- **Corner-tail triviality implies joint dissociation.** A coordinatewise measurable, jointly
 exchangeable array whose corner tail is `μ`-trivial is jointly dissociated. -/
 theorem jointlyDissociated_of_forall_arrayTail_measure_eq_zero_or_one {X : ℕ × ℕ → Ω → α}
-    [IsZeroOrProbabilityMeasure μ]
     (hX : ∀ p, Measurable (X p)) (hexch : JointlyExchangeable μ X)
     (htriv : ∀ s, MeasurableSet[arrayTail X] s → μ s = 0 ∨ μ s = 1) :
     JointlyDissociated μ X := by
+  have : IsZeroOrProbabilityMeasure μ := ⟨htriv Set.univ MeasurableSet.univ⟩
   rcases eq_zero_or_isProbabilityMeasure μ with rfl | _
   · exact jointlyDissociated_iff.mpr fun e e' _ => by
       rw [indepFun_iff_measure_inter_preimage_eq_mul]; simp
