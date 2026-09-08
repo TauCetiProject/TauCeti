@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Exact.Projective
+public import TauCeti.Algebra.Category.FGModuleCat.Projective
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
-public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
-public import Mathlib.Algebra.Category.ModuleCat.Projective
 
 /-!
 # Grothendieck groups of finite-dimensional vector spaces
@@ -30,8 +28,8 @@ scalars and carriers live in the same universe.
 
 ## Main results
 
-* `TauCeti.FGModuleCat.projective`: every finite-dimensional vector space is projective.
-* `TauCeti.FGModuleCat.nonempty_splitting_of_shortExact`: every short exact sequence of
+* `FGModuleCat.projective`: every finite-dimensional vector space is projective.
+* `FGModuleCat.nonempty_splitting_of_shortExact`: every short exact sequence of
   finite-dimensional vector spaces splits.
 * `TauCeti.SplitK0.finrankEquiv`: split `K₀` of finite-dimensional vector spaces is `ℤ`.
 * `TauCeti.AbelianK0.finrankEquiv`: abelian `K₀` of finite-dimensional vector spaces is `ℤ`.
@@ -40,8 +38,6 @@ scalars and carriers live in the same universe.
 
 * Charles A. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter II,
   Sections 5--6.
-* [Tau Ceti's Grothendieck groups, Cartan maps, and Euler forms roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GrothendieckEulerForms/README.md),
-  the finite-dimensional-vector-space acceptance calculation.
 -/
 
 public section
@@ -51,25 +47,6 @@ namespace TauCeti
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
 universe u v
-
-namespace FGModuleCat
-
-variable (k : Type u) [DivisionRing k]
-
-/-- Every finite-dimensional vector space over a field is a projective object. -/
-theorem projective (X : FGModuleCat.{v} k) : Projective X := by
-  apply (forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).projective_of_map_projective
-  exact ModuleCat.projective_of_free (Module.Free.chooseBasis k X)
-
-/-- Every short exact sequence of finite-dimensional vector spaces splits. -/
-theorem nonempty_splitting_of_shortExact {S : ShortComplex (FGModuleCat.{v} k)}
-    (hS : S.ShortExact) : Nonempty S.Splitting := by
-  have h₃ : (ExactStructure.abelian (FGModuleCat.{v} k)).isProjective S.X₃ :=
-    (ExactStructure.abelian_isProjective_iff S.X₃).mpr (projective k S.X₃)
-  exact ⟨(ExactStructure.abelian (FGModuleCat.{v} k)).splittingOfProjective
-    ((ExactStructure.abelian_conflation S).mpr hS) h₃⟩
-
-end FGModuleCat
 
 section Dimension
 
@@ -148,6 +125,7 @@ private noncomputable def finrankInvariant : AdditiveInvariant (FGModuleCat.{v} 
 noncomputable def finrank : SplitK0 (FGModuleCat.{v} k) →+ ℤ :=
   lift (finrankInvariant k)
 
+/-- The dimension homomorphism sends an object class to its dimension. -/
 @[simp]
 theorem finrank_of (X : FGModuleCat.{v} k) :
     finrank k (of X) = Module.finrank k X :=
@@ -183,14 +161,16 @@ noncomputable def finrankEquiv [Small.{v} k] : SplitK0 (FGModuleCat.{v} k) ≃+ 
     fun x y h ↦ by rw [eq_finrank_zsmul k x, eq_finrank_zsmul k y, h],
     fun n ↦ ⟨n • of (line k), by simp [finrank_of]⟩⟩
 
-@[simp]
+/-- The dimension equivalence agrees with the dimension homomorphism. -/
 theorem finrankEquiv_apply [Small.{v} k] (x : SplitK0 (FGModuleCat.{v} k)) :
     finrankEquiv k x = finrank k x :=
   AddEquiv.ofBijective_apply _ _ _
 
+/-- The dimension equivalence sends an object class to its dimension. -/
+@[simp]
 theorem finrankEquiv_of [Small.{v} k] (X : FGModuleCat.{v} k) :
     finrankEquiv k (of X) = Module.finrank k X :=
-  finrank_of k X
+  by rw [finrankEquiv_apply, finrank_of]
 
 /-- The inverse dimension equivalence sends an integer to that multiple of the class of any
 one-dimensional space. -/
@@ -212,62 +192,64 @@ namespace AbelianK0
 
 variable (k : Type u) [DivisionRing k]
 
-private noncomputable def finrankInvariant : AdditiveInvariant (FGModuleCat.{v} k) ℤ where
-  obj X := Module.finrank k X
-  map_iso {_ _} e := congrArg Int.ofNat (FGModuleCat.isoToLinearEquiv e).finrank_eq
-  map_shortExact {S} hS := by
-    obtain ⟨s⟩ := FGModuleCat.nonempty_splitting_of_shortExact k hS
-    have h := (FGModuleCat.isoToLinearEquiv s.isoBinaryBiproduct).finrank_eq
-    rw [finrank_biprod] at h
-    exact congrArg Int.ofNat h
+private theorem nonempty_splitting_of_conflation
+    {S : ShortComplex (FGModuleCat.{v} k)}
+    (hS : (ExactStructure.abelian (FGModuleCat.{v} k)).Conflation S) :
+    Nonempty S.Splitting :=
+  FGModuleCat.nonempty_splitting_of_shortExact k
+    ((ExactStructure.abelian_conflation S).mp hS)
+
+private noncomputable def fromSplitEquiv :
+    SplitK0 (FGModuleCat.{v} k) ≃+ AbelianK0 (FGModuleCat.{v} k) :=
+  (ExactK0.fromSplitEquiv (nonempty_splitting_of_conflation k)).trans
+    (toExactK0 (FGModuleCat.{v} k)).symm
+
+@[simp] private theorem fromSplitEquiv_of (X : FGModuleCat.{v} k) :
+    fromSplitEquiv k (SplitK0.of X) = of X := by
+  change (toExactK0 (FGModuleCat.{v} k)).symm
+    ((ExactK0.fromSplitEquiv (nonempty_splitting_of_conflation k)) (SplitK0.of X)) = of X
+  rw [ExactK0.fromSplitEquiv_apply, ExactK0.fromSplit_of, toExactK0_symm_of]
+
+@[simp] private theorem fromSplitEquiv_symm_of (X : FGModuleCat.{v} k) :
+    (fromSplitEquiv k).symm (of X) = SplitK0.of X := by
+  apply (fromSplitEquiv k).injective
+  simp
 
 /-- Dimension as a homomorphism from abelian `K₀` of finite-dimensional vector spaces to `ℤ`. -/
 noncomputable def finrank : AbelianK0 (FGModuleCat.{v} k) →+ ℤ :=
-  lift (finrankInvariant k)
+  (SplitK0.finrank k).comp (fromSplitEquiv k).symm.toAddMonoidHom
 
+/-- The dimension homomorphism sends an object class to its dimension. -/
 @[simp]
 theorem finrank_of (X : FGModuleCat.{v} k) :
-    finrank k (of X) = Module.finrank k X :=
-  lift_of (finrankInvariant k) X
+    finrank k (of X) = Module.finrank k X := by
+  change SplitK0.finrank k ((fromSplitEquiv k).symm (of X)) = _
+  rw [fromSplitEquiv_symm_of, SplitK0.finrank_of]
 
 /-- Every object class in abelian `K₀` is its dimension times the class of the one-dimensional
 space. -/
 theorem of_eq_finrank_nsmul (L X : FGModuleCat.{v} k) (hL : Module.finrank k L = 1) :
-    (of X : AbelianK0 (FGModuleCat.{v} k)) = Module.finrank k X • of L :=
-  class_eq_finrank_nsmul k of (fun {_ _} e ↦ of_congr e) of_zero of_biprod L X hL
-
-private theorem eq_finrank_zsmul [Small.{v} k] (x : AbelianK0 (FGModuleCat.{v} k)) :
-    x = finrank k x • of (line k) := by
-  induction x using induction_on with
-  | zero => simp
-  | of X => simpa [finrank_of] using of_eq_finrank_nsmul k (line k) X (finrank_line k)
-  | add x y hx hy =>
-      calc
-        x + y = finrank k x • of (line k) + finrank k y • of (line k) :=
-          congrArg₂ (fun a b ↦ a + b) hx hy
-        _ = (finrank k x + finrank k y) • of (line k) :=
-          (add_zsmul _ _ _).symm
-        _ = finrank k (x + y) • of (line k) := by rw [map_add]
-  | neg x hx =>
-      calc
-        -x = -(finrank k x • of (line k)) := congrArg Neg.neg hx
-        _ = (-finrank k x) • of (line k) := (neg_zsmul _ _).symm
-        _ = finrank k (-x) • of (line k) := by rw [map_neg]
+    (of X : AbelianK0 (FGModuleCat.{v} k)) = Module.finrank k X • of L := by
+  apply (fromSplitEquiv k).symm.injective
+  simpa only [map_nsmul, fromSplitEquiv_symm_of] using
+    SplitK0.of_eq_finrank_nsmul k L X hL
 
 /-- Dimension identifies abelian `K₀` of finite-dimensional vector spaces with `ℤ`. -/
 noncomputable def finrankEquiv [Small.{v} k] : AbelianK0 (FGModuleCat.{v} k) ≃+ ℤ :=
-  AddEquiv.ofBijective (finrank k) ⟨
-    fun x y h ↦ by rw [eq_finrank_zsmul k x, eq_finrank_zsmul k y, h],
-    fun n ↦ ⟨n • of (line k), by simp [finrank_of]⟩⟩
+  (fromSplitEquiv k).symm.trans (SplitK0.finrankEquiv k)
 
-@[simp]
+/-- The dimension equivalence agrees with the dimension homomorphism. -/
 theorem finrankEquiv_apply [Small.{v} k] (x : AbelianK0 (FGModuleCat.{v} k)) :
-    finrankEquiv k x = finrank k x :=
-  AddEquiv.ofBijective_apply _ _ _
+    finrankEquiv k x = finrank k x := by
+  change SplitK0.finrankEquiv k ((fromSplitEquiv k).symm x) =
+    SplitK0.finrank k ((fromSplitEquiv k).symm x)
+  rw [SplitK0.finrankEquiv_apply]
 
+/-- The dimension equivalence sends an object class to its dimension. -/
+@[simp]
 theorem finrankEquiv_of [Small.{v} k] (X : FGModuleCat.{v} k) :
     finrankEquiv k (of X) = Module.finrank k X :=
-  finrank_of k X
+  by rw [finrankEquiv_apply, finrank_of]
 
 /-- The inverse dimension equivalence sends an integer to that multiple of the class of any
 one-dimensional space. -/
