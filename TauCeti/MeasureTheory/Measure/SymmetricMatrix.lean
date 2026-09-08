@@ -5,10 +5,8 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Basic
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Determinant
-public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Lebesgue
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef
 
 /-!
