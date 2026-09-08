@@ -27,8 +27,10 @@ lattice the full weight lattice of the `E₇` root datum, which contains the roo
 two; the adjoint carrier spans the character lattice exactly in the types `E₈`, `F₄` and `G₂`,
 where the two lattices coincide.
 
-No Steinberg endomorphism is formed here, and no group of fixed points; those are in
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeE7/Steinberg.lean`. Nothing below asserts that
+The carrier's Frobenius and its fixed-point quotient are studied in
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeE7/Frobenius.lean`. Neither file forms the Steinberg
+endomorphism or candidate group of `E₇(q)`: those require the Layer 9 identification with the
+pinned carrier. Nothing below asserts that
 the carrier is reductive, that its weight torus is maximal, that it is the pinned simply connected
 Chevalley--Demazure group scheme of type `E₇`, or that any group named is finite, perfect or
 simple; none of those is proved of `TauCeti.E7Minuscule.groupScheme` here or in the files this one
@@ -39,7 +41,7 @@ is proved of the carrier against the `E₇` diagram is the pinning equation
 ## Main declarations
 
 * `TauCeti.TypeE7LieIndex.AmbientGroup`: the algebraic-closure-valued points of the minuscule
-  carrier, the group inside which the family's finite group will be cut out.
+  carrier.
 * `TauCeti.TypeE7LieIndex.simpleRootSubgroup`: its positive simple-root subgroup at a
   Bourbaki-numbered node.
 
