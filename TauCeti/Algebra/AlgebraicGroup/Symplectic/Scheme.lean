@@ -11,6 +11,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 # Scheme-valued points of the symplectic group
 
 This file identifies scheme-valued points of `Sp₂ₘ` with the standard symplectic matrix group.
+This interface lets group-scheme morphisms and identities, including root-subgroup and torus
+actions, be computed as explicit symplectic matrix equations.
 
 ## Main declarations
 
@@ -89,6 +91,15 @@ theorem schemePointsMulEquiv_apply
     schemePointsMulEquiv m A p =
       pointsMulEquiv (A := A) R m ((groupSchemePointMulEquiv m A).symm p) := by
   unfold schemePointsMulEquiv
+  rfl
+
+/-- The inverse scheme-points equivalence sends a symplectic matrix to the spectrum point induced
+by its canonical coordinate-algebra point. -/
+-- Not `@[simp]`: the reducible `groupScheme` target prevents the left-hand side from being in simp
+-- normal form.
+theorem schemePointsMulEquiv_symm_apply (g : GLSymplecticFin m A) :
+    (schemePointsMulEquiv m A).symm g =
+      groupSchemePointMulEquiv m A ((pointsMulEquiv (A := A) R m).symm g) := by
   rfl
 
 end TauCeti.Symplectic

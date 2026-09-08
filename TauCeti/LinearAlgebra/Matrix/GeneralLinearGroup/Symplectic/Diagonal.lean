@@ -87,13 +87,6 @@ private theorem finSumFinEquiv_symm_addNat (i : Fin m) :
     finSumFinEquiv.symm (i.addNat m) = Sum.inr i := by
   rw [← Fin.natAdd_eq_addNat, finSumFinEquiv_symm_apply_natAdd]
 
-private theorem diagGL_inv (t : Fin m → Rˣ) :
-    (diagGL t)⁻¹ = diagGL (fun i ↦ (t i)⁻¹) := by
-  rw [← map_inv]
-  apply congrArg diagGL
-  funext i
-  rfl
-
 /-- **The diagonal split torus in the standard symplectic matrix group.** It sends `t` to the
 diagonal matrix with entries `t i` on the first block and `(t i)⁻¹` on the second. -/
 noncomputable def diagonal : (Fin m → Rˣ) →* GLSymplecticFin m R :=
@@ -108,28 +101,29 @@ theorem coe_diagonal (t : Fin m → Rˣ) :
   apply Matrix.GeneralLinearGroup.ext
   intro i j
   rw [coe_leviHom]
+  conv_lhs => rw [← map_inv diagGL t]
+  simp only [diagGL_coe]
   obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective i
   · obtain ⟨j | j, rfl⟩ := finSumFinEquiv.surjective j
-    · simp [diagGL_apply, Matrix.diagonal_apply, finSumFinEquiv_symm_apply_castAdd]
+    · simp [Matrix.diagonal_apply, finSumFinEquiv_symm_apply_castAdd]
     · have h : Fin.castAdd m i ≠ j.addNat m := by
         simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
           Fin.natAdd_eq_addNat] using finSumFinEquiv_inl_ne_inr i j
-      simp [diagGL_apply, h, finSumFinEquiv_symm_addNat,
+      simp [h, finSumFinEquiv_symm_addNat,
         finSumFinEquiv_symm_apply_castAdd]
   · obtain ⟨j | j, rfl⟩ := finSumFinEquiv.surjective j
     · have h : i.addNat m ≠ Fin.castAdd m j := by
         simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
           Fin.natAdd_eq_addNat] using finSumFinEquiv_inr_ne_inl i j
-      simp [diagGL_apply, h, finSumFinEquiv_symm_addNat,
+      simp [h, finSumFinEquiv_symm_addNat,
         finSumFinEquiv_symm_apply_castAdd]
     · simp only [Matrix.submatrix_apply, Equiv.symm_apply_apply,
         Matrix.fromBlocks_apply₂₂]
-      rw [diagGL_inv]
       by_cases hij : i = j
       · subst j
-        simp [diagGL_apply, diagonalCoordinates, finSumFinEquiv_symm_addNat]
+        simp [diagonalCoordinates, finSumFinEquiv_symm_addNat]
       · have hji : j ≠ i := Ne.symm hij
-        simp [diagGL_apply, hij, hji]
+        simp [hij, hji]
 
 /-- The symplectic diagonal homomorphism is injective. -/
 theorem diagonal_injective : Function.Injective (diagonal (m := m) (R := R)) := by
