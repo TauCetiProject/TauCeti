@@ -147,6 +147,13 @@ theorem weightUnipotentInParabolicHopfIdeal_comapOfSurjective (w : Fin N → ℤ
     HopfIdeal.comapOfSurjective_map, hker, sup_eq_left]
   exact weightParabolicDefiningHopfIdeal_le_weightUnipotent R w
 
+private theorem weightParabolicCoordinateMap_eq_mkQuotient (w : Fin N → ℤ) :
+    weightParabolicCoordinateMap R w =
+      CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R N)
+        (weightParabolicDefiningHopfIdeal R w) := by
+  ext x
+  rw [weightParabolicCoordinateMap_apply, CommHopfAlgCat.mkQuotient_apply]
+
 section Points
 
 variable {A : Type v} [CommRing A] [Algebra R A]
@@ -164,25 +171,11 @@ theorem mem_weightLeviInParabolicPointsSubgroup_iff (w : Fin N → ℤ)
           (weightParabolicDefiningHopfIdeal R w) (CommAlgCat.of R A) f ∈
         CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R N)
           (weightLeviDefiningHopfIdeal R w) (CommAlgCat.of R A) := by
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  constructor
-  · intro hf x hx
-    have hqx := hf ((weightParabolicCoordinateMap R w).hom x)
-      (HopfIdeal.mem_map_of_mem (weightParabolicCoordinateMap R w).hom hx)
-    rw [weightParabolicCoordinateMap_apply] at hqx
-    rw [CommHopfAlgCat.quotientPointsHom_apply_apply]
-    exact hqx
-  · intro hf y hy
-    rw [weightLeviInParabolicHopfIdeal] at hy
-    obtain ⟨x, hx, hxy⟩ :=
-      (HopfIdeal.mem_map_iff_of_surjective
-        (weightParabolicCoordinateMap_surjective R w)).mp hy
-    subst y
-    have hx0 := hf x hx
-    rw [CommHopfAlgCat.quotientPointsHom_apply_apply] at hx0
-    rw [weightParabolicCoordinateMap_apply]
-    exact hx0
+  simpa only [weightLeviInParabolicHopfIdeal,
+    weightParabolicCoordinateMap_eq_mkQuotient] using
+    CommHopfAlgCat.mem_quotientPointsSubgroup_map_mkQuotient_iff
+      (coordinateHopfAlgebra R N) (weightParabolicDefiningHopfIdeal R w)
+        (weightLeviDefiningHopfIdeal R w) (CommAlgCat.of R A) f
 
 /-- A parabolic point belongs to the subgroup cut out by the relative unipotent Hopf ideal
 exactly when its ambient general linear point belongs to the weight-unipotent subgroup. -/
@@ -197,25 +190,11 @@ theorem mem_weightUnipotentInParabolicPointsSubgroup_iff (w : Fin N → ℤ)
           (weightParabolicDefiningHopfIdeal R w) (CommAlgCat.of R A) f ∈
         CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R N)
           (weightUnipotentDefiningHopfIdeal R w) (CommAlgCat.of R A) := by
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  constructor
-  · intro hf x hx
-    have hqx := hf ((weightParabolicCoordinateMap R w).hom x)
-      (HopfIdeal.mem_map_of_mem (weightParabolicCoordinateMap R w).hom hx)
-    rw [weightParabolicCoordinateMap_apply] at hqx
-    rw [CommHopfAlgCat.quotientPointsHom_apply_apply]
-    exact hqx
-  · intro hf y hy
-    rw [weightUnipotentInParabolicHopfIdeal] at hy
-    obtain ⟨x, hx, hxy⟩ :=
-      (HopfIdeal.mem_map_iff_of_surjective
-        (weightParabolicCoordinateMap_surjective R w)).mp hy
-    subst y
-    have hx0 := hf x hx
-    rw [CommHopfAlgCat.quotientPointsHom_apply_apply] at hx0
-    rw [weightParabolicCoordinateMap_apply]
-    exact hx0
+  simpa only [weightUnipotentInParabolicHopfIdeal,
+    weightParabolicCoordinateMap_eq_mkQuotient] using
+    CommHopfAlgCat.mem_quotientPointsSubgroup_map_mkQuotient_iff
+      (coordinateHopfAlgebra R N) (weightParabolicDefiningHopfIdeal R w)
+        (weightUnipotentDefiningHopfIdeal R w) (CommAlgCat.of R A) f
 
 end Points
 

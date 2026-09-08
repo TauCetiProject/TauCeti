@@ -25,11 +25,12 @@ element whose square is not one. In particular, this holds over every infinite f
 The maximal-solvability theorem is the abstract-group input for proving that the
 upper-triangular closed subgroup scheme of `SL₂` is a Borel subgroup. The field hypothesis is
 used only to rule out solvability of `SL₂`; the Bruhat decomposition itself holds over every
-field.
+field. Entrywise mapping makes the construction functorial in the coefficient ring.
 
 ## Main declarations
 
 * `TauCeti.SL2Borel`: the upper-triangular subgroup of `SL₂`.
+* `TauCeti.SL2Borel.map`: entrywise mapping along a ring homomorphism.
 * `TauCeti.SL2Borel.mem_doubleCoset_modularGroup_S_iff`: the big cell of the rank-one Bruhat
   decomposition is detected by the lower-left entry.
 * `TauCeti.SL2Borel.closure_insert_modularGroup_S_eq_top`: the Borel and the Weyl element generate
@@ -92,8 +93,8 @@ theorem coe_map {S : Type v} [CommRing S] (phi : R →+* S) (g : SL2Borel R) :
     (map phi g : SL(2, S)) = Matrix.SpecialLinearGroup.map phi g.1 :=
   by simp only [map, MonoidHom.codRestrict_apply, MonoidHom.domRestrict_apply]
 
-/-- Entrywise application of a ring homomorphism to an upper-triangular determinant-one
-matrix. -/
+/-- The `(i, j)` entry of the entrywise map of `g` is the image under `phi` of the `(i, j)`
+entry of `g`. -/
 theorem map_apply {S : Type v} [CommRing S] (phi : R →+* S) (g : SL2Borel R)
     (i j : Fin 2) :
     (map phi g : SL(2, S)) i j = phi ((g : SL(2, R)) i j) := by
