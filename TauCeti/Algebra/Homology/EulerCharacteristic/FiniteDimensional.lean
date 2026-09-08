@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.EulerCharacteristic
 public import TauCeti.Algebra.Category.FGModuleCat.Finrank
+public import TauCeti.Algebra.Category.FGModuleCat.Homology
 public import TauCeti.Algebra.Category.ModuleCat.Finrank
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.CategoryTheory.GrothendieckGroup.EulerCharacteristic
@@ -90,25 +91,6 @@ theorem eulerChar_forgetFG_eq_sum_finrank (a b : ℤ) [K.IsStrictlyGE a]
       (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K)
       a b).trans hs
 
-/-- The comparison between homology after forgetting an `FGModuleCat` complex and the underlying
-module of its homology, obtained from exactness of the forgetful functor. -/
-private noncomputable def homologyForgetIso (n : ℤ) :
-    (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K).homology n ≅
-      (forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).obj (K.homology n) := by
-  let i := n - 1
-  let j := n
-  let l := n + 1
-  have hij : i + 1 = j := by dsimp [i, j]; omega
-  have hjl : j + 1 = l := by dsimp [j, l]
-  exact homologyIsoSc'
-      (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K) i j l
-      ((ComplexShape.up ℤ).prev_eq' hij) ((ComplexShape.up ℤ).next_eq' hjl) ≪≫
-    (K.sc' i j l).mapHomologyIso
-      (forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)) ≪≫
-    (forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapIso
-      (K.homologyIsoSc' i j l
-        ((ComplexShape.up ℤ).prev_eq' hij) ((ComplexShape.up ℤ).next_eq' hjl)).symm
-
 /-- Forgetting an `FGModuleCat` complex before taking homology does not change homology finrank. -/
 @[simp]
 theorem finrank_homology_forget (n : ℤ) :
@@ -116,7 +98,7 @@ theorem finrank_homology_forget (n : ℤ) :
       ((((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj
         K).homology n) =
       Module.finrank k (K.homology n) :=
-  (homologyForgetIso K n).toLinearEquiv.finrank_eq.trans
+  (TauCeti.HomologicalComplex.homologyForgetIso K n).toLinearEquiv.finrank_eq.trans
     (FGModuleCat.finrank_forget₂_obj (K.homology n))
 
 /-- Mathlib's `finsum` homology Euler characteristic of a bounded complex of finite-dimensional
