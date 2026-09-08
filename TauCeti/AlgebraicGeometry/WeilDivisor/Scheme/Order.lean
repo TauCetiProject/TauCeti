@@ -25,6 +25,10 @@ An elementary fact about `Scheme.ord` itself is recorded first: a function regul
 nonnegative order at every point of `U` (`Scheme.ord_germToFunctionField_nonneg`), that is, it has
 no poles where it is defined.
 
+Where the local ring at a codimension-one point is a discrete valuation ring, `orderAt` is
+surjective onto `ℤ` (`SchemeWeilDivisor.exists_orderAt_eq`): the powers of a uniformizer supply
+a rational function of each prescribed order.
+
 The construction advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, the
 "principal divisors" part of "Divisors on a curve". It reuses Mathlib's
 `AlgebraicGeometry.Scheme.ord`, `ordHom`, and `ord_eq_unzero_ordHom`; no external
@@ -82,6 +86,24 @@ lemma orderAt_apply (x : CodimensionOnePoint X) (f : Additive X.functionFieldˣ)
   simp only [orderAt, MonoidHom.toAdditiveLeft_apply_apply, MonoidHom.coe_comp,
     MulEquiv.coe_toMonoidHom, Function.comp_apply, WithZero.unitsWithZeroEquiv_apply]
   congr 1
+
+/-- **Every integer is an order of vanishing.** At a codimension-one point whose local ring is a
+discrete valuation ring, a uniformizer has order one, so its integer powers realize every integer
+as the order of a nonzero rational function. -/
+theorem exists_orderAt_eq (x : CodimensionOnePoint X)
+    [IsDiscreteValuationRing (X.presheaf.stalk (x : X))] (n : ℤ) :
+    ∃ g : Additive X.functionFieldˣ, orderAt x g = n := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (X.presheaf.stalk (x : X))
+  have hinj := IsFractionRing.injective (X.presheaf.stalk (x : X)) X.functionField
+  have hne : algebraMap (X.presheaf.stalk (x : X)) X.functionField ϖ ≠ 0 := fun h ↦
+    hϖ.ne_zero (hinj (h.trans (map_zero _).symm))
+  have hord : X.ord (algebraMap (X.presheaf.stalk (x : X)) X.functionField ϖ) (x : X) = 1 := by
+    rw [X.ord_eq_iff x.property hne]
+    simp only [_root_.AlgebraicGeometry.Scheme.ordHom]
+    rw [Ring.ordFrac_irreducible hϖ, WithZero.exp_eq_coe_ofAdd]
+  refine ⟨n • Additive.ofMul (Units.mk0 _ hne), ?_⟩
+  rw [map_zsmul, orderAt_apply]
+  simp [hord]
 
 end SchemeWeilDivisor
 

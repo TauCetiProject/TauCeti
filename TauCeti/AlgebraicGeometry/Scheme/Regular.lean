@@ -28,9 +28,14 @@ of a regular function on `U`.
 * `TauCeti.AlgebraicGeometry.Scheme.exists_germToFunctionField_eq_of_ord_nonneg`: a rational
   function with nonnegative order at every codimension-one point of `U` is the germ at the generic
   point of a section of `𝒪_X` over `U`.
+* `TauCeti.AlgebraicGeometry.Scheme.exists_isUnit_germToFunctionField_eq_of_ord_eq_zero`: a
+  nonzero rational function whose order vanishes at every codimension-one point of `U` is the
+  germ of a unit of `Γ(X, U)`.
 
-The last statement is the one-dimensional case of algebraic Hartogs' principle, and it is the
-input that identifies the sheaf `𝒪_X(0)` of the zero divisor with the structure sheaf.
+The third statement is the one-dimensional case of algebraic Hartogs' principle, and it is the
+input that identifies the sheaf `𝒪_X(0)` of the zero divisor with the structure sheaf. The fourth
+sharpens it from a regular function to a regular unit, which is the form in which two local
+equations for the same divisor are compared.
 
 The argument follows Hartshorne, *Algebraic Geometry*, II.6.3A and Proposition II.6.11, in the
 dimension-one case where the intersection of the local rings can be taken over the points of `U`
@@ -144,6 +149,39 @@ theorem exists_germToFunctionField_eq_of_ord_nonneg
   have hres : X.presheaf.map (homOfLE (hVU y)).op a = s y := ha y
   rw [← hs y, ← hres,
     X.presheaf.germ_res_apply (homOfLE (hVU y)) (genericPoint X) (hgen _ (hne y)) a]
+
+/-- **A rational function without zeros or poles is a regular unit.** On a locally Noetherian
+integral scheme, let `U` be a nonempty open subset of dimension at most one whose
+codimension-one local rings are discrete valuation rings. A nonzero rational function whose order
+vanishes at every codimension-one point of `U` is the germ of a *unit* of `Γ(X, U)`.
+
+This is the converse over such a `U` of `AlgebraicGeometry.Scheme.ord_of_isUnit`, which says
+that a regular unit has order zero wherever it is defined. -/
+theorem exists_isUnit_germToFunctionField_eq_of_ord_eq_zero
+    {U : X.Opens} [Nonempty U]
+    (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
+      IsDiscreteValuationRing (X.presheaf.stalk (y : X)))
+    (hU : ∀ y ∈ U, coheight y ≤ 1) {f : X.functionField} (hf0 : f ≠ 0)
+    (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → X.ord f y = 0) :
+    ∃ a : Γ(X, U), IsUnit a ∧ X.germToFunctionField U a = f := by
+  -- The order of the inverse is the negative of the order, so both have no poles on `U`.
+  have hone : ∀ x : X, X.ord (1 : X.functionField) x = 0 := by
+    intro x
+    let _ : Nonempty (⊤ : X.Opens) := ⟨⟨x, trivial⟩⟩
+    -- Naming this proof fixes the open set before elaborating `ord_of_isUnit`.
+    have hx_top : x ∈ (⊤ : X.Opens) := by simp
+    simpa using X.ord_of_isUnit (U := ⊤) isUnit_one hx_top
+  have hinv : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → X.ord f⁻¹ (y : X) = 0 := by
+    intro y hy
+    have h := X.ord_mul (x := (y : X)) hf0 (inv_ne_zero hf0)
+    rw [mul_inv_cancel₀ hf0, hone, hf y hy] at h
+    omega
+  obtain ⟨a, ha⟩ :=
+    exists_germToFunctionField_eq_of_ord_nonneg hDVR hU (fun y hy ↦ (hf y hy).ge)
+  obtain ⟨b, hb⟩ :=
+    exists_germToFunctionField_eq_of_ord_nonneg (f := f⁻¹) hDVR hU (fun y hy ↦ (hinv y hy).ge)
+  refine ⟨a, IsUnit.of_mul_eq_one b (X.germToFunctionField_injective U ?_), ha⟩
+  rw [map_mul, ha, hb, map_one, mul_inv_cancel₀ hf0]
 
 end Scheme
 

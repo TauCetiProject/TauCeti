@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Scheme.Regular
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Sheaf
 import Mathlib.Tactic.Abel
 
@@ -37,14 +38,30 @@ hypothesis under which that sheaf is built.
   and `SchemeWeilDivisor.IsLocallyPrincipal.exists_iso_sheaf_sections_eq_sections_zero` consume
   the predicate: the sheaf `𝒪_X(D)` of
   `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Sheaf.lean` is isomorphic, near every point, to
-  the sheaf of a divisor whose sections there are those of `𝒪_X(0)`.
+  the sheaf of a divisor whose sections there are those of `𝒪_X(0)`;
+* `SchemeWeilDivisor.isLocallyPrincipal_of_forall_coheight_le_one` establishes the predicate on a
+  curve: when every point of `X` has codimension at most one and the codimension-one local rings
+  are discrete valuation rings, *every* Weil divisor is locally principal, equivalently
+  `SchemeWeilDivisor.locallyPrincipalSubgroup_eq_top`;
+* `SchemeWeilDivisor.exists_isUnit_germToFunctionField_eq_of_forall_coeff_eq` says that two local
+  equations for the same divisor on such an open subset differ by a unit of `Γ(X, U)`.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, target "Divisors on a curve:
 Weil divisors and Cartier divisors; the dictionaries `Cartier ≃ line bundles` and (smooth curve)
 `Weil ≃ Cartier`". It isolates the exact local condition needed next: the construction of
 `𝒪_X(D)` can prove invertibility by reducing on a trivializing cover to the already constructed
-principal-divisor multiplication isomorphism, while the smooth-curve comparison must prove that
-every Weil divisor satisfies this predicate.
+principal-divisor multiplication isomorphism, and on a curve every Weil divisor satisfies the
+condition.
+
+Existence and uniqueness of local equations are the two halves of the local comparison of Weil
+and Cartier divisors: near each point a divisor is the divisor of a nonzero rational function,
+and that function is determined up to a regular unit, so its class in `𝒦_X^× / 𝒪_X^×` is well
+defined.
+
+In higher dimension the same conclusion needs the local rings of `X` to be unique factorization
+domains rather than merely one-dimensional; without such a hypothesis a Weil divisor need not be
+locally principal, and it is that failure which separates the divisor class group of `X` from its
+Picard group.
 
 The local-equation formulation follows Hartshorne, *Algebraic Geometry*, II.6. The Stacks
 Project, *Divisors*, Tags 0BE0 and 0BE9, supplies the principal-Weil-divisor and Picard/class-group
@@ -161,6 +178,27 @@ lemma mem_locallyPrincipalSubgroup {D : SchemeWeilDivisor X} :
     D ∈ locallyPrincipalSubgroup X ↔ IsLocallyPrincipal D :=
   (Iff.rfl)
 
+/-- **Local equations are unique up to a regular unit.** If two nonzero rational functions `g` and
+`h` are both local equations for `D` on a nonempty open `U` all of whose points have codimension
+at most one and whose codimension-one local rings are discrete valuation rings, then `g / h` is
+the germ of a unit of `Γ(X, U)`.
+
+This is the second half of the local comparison of Weil and Cartier divisors: the first half
+produces local equations, and this one says that the class of a local equation in
+`𝒦_X^× / 𝒪_X^×` does not depend on the equation chosen. -/
+theorem exists_isUnit_germToFunctionField_eq_of_forall_coeff_eq {U : X.Opens} [Nonempty U]
+    (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
+      IsDiscreteValuationRing (X.presheaf.stalk (y : X)))
+    (hU : ∀ y ∈ U, Order.coheight y ≤ 1) {D : SchemeWeilDivisor X}
+    {g h : Additive X.functionFieldˣ}
+    (hg : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → WeilDivisor.coeff D y = orderAt y g)
+    (hh : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → WeilDivisor.coeff D y = orderAt y h) :
+    ∃ a : Γ(X, U), IsUnit a ∧ X.germToFunctionField U a =
+      ((Additive.toMul (g - h) : X.functionFieldˣ) : X.functionField) := by
+  refine Scheme.exists_isUnit_germToFunctionField_eq_of_ord_eq_zero hDVR hU
+    (Units.ne_zero _) fun y hy ↦ ?_
+  rw [← orderAt_apply, map_sub, ← hg y hy, ← hh y hy, sub_self]
+
 end LocallyNoetherian
 
 section Noetherian
@@ -200,6 +238,78 @@ lemma IsLocallyPrincipal.of_linearlyEquivalent {D E : SchemeWeilDivisor X}
   exact hD.sub hDiff
 
 end Noetherian
+
+section DimensionOne
+
+variable [IsNoetherian X] (hdim : ∀ y : X, Order.coheight y ≤ 1)
+
+include hdim
+
+/-- **The divisor of a single codimension-one point on a curve is locally principal.** On a
+scheme all of whose points have codimension at most one, the prime divisor of a codimension-one
+point whose local ring is a discrete valuation ring has a local equation near every point. -/
+theorem isLocallyPrincipal_ofPoint (x : CodimensionOnePoint X)
+    [IsDiscreteValuationRing (X.presheaf.stalk (x : X))] :
+    IsLocallyPrincipal (WeilDivisor.ofPoint x) := by
+  obtain ⟨g, hg⟩ := exists_orderAt_eq x 1
+  -- The codimension-one points other than `x` at which `g` has nonzero order.
+  set T : Set X := Subtype.val '' {y : CodimensionOnePoint X | orderAt y g ≠ 0 ∧ y ≠ x}
+  have hTfin : T.Finite :=
+    Set.Finite.image _ ((finite_support_orderAt g).subset fun _ hy ↦ hy.1)
+  have hTclosed : IsClosed T := by
+    rw [← Set.biUnion_of_singleton T]
+    refine hTfin.isClosed_biUnion fun t ht ↦ ?_
+    obtain ⟨y, -, rfl⟩ := ht
+    exact isClosed_singleton_of_coheight_eq_one hdim y.property
+  have hxT : (x : X) ∉ T := by
+    rintro ⟨y, hy, hyx⟩
+    exact hy.2 (Subtype.ext hyx)
+  intro z
+  by_cases hz : z = (x : X)
+  -- Near `x` itself, delete the other points at which `g` has nonzero order: they are finitely
+  -- many closed points, so what is left is an open neighbourhood of `x` on which `g` cuts out
+  -- exactly the divisor `x`.
+  · refine ⟨⟨Tᶜ, hTclosed.isOpen_compl⟩, hz ▸ hxT, g, fun y hy ↦ ?_⟩
+    by_cases hyx : y = x
+    · subst hyx
+      rw [WeilDivisor.coeff_ofPoint_self, hg]
+    · have hy0 : orderAt y g = 0 := by
+        by_contra h0
+        exact hy ⟨y, ⟨h0, hyx⟩, rfl⟩
+      rw [WeilDivisor.coeff_ofPoint_of_ne hyx, hy0]
+  -- Away from `x` the divisor is zero on the open complement of the closed point `x`, where the
+  -- constant function `1` — the zero of `Additive X.functionFieldˣ` — is a local equation.
+  · refine ⟨⟨({(x : X)} : Set X)ᶜ,
+      (isClosed_singleton_of_coheight_eq_one hdim x.property).isOpen_compl⟩, hz, 0, fun y hy ↦ ?_⟩
+    have hyx : y ≠ x := fun h ↦ hy (by rw [h]; exact rfl)
+    rw [WeilDivisor.coeff_ofPoint_of_ne hyx, map_zero]
+
+/-- **Every Weil divisor on a curve is locally principal.** Let `X` be a Noetherian integral
+scheme all of whose points have codimension at most one and whose codimension-one local rings are
+discrete valuation rings. Then every Weil divisor on `X` is locally principal, so
+`locallyPrincipalSubgroup X` is the whole divisor group.
+
+This is the local half of the comparison of Weil with Cartier divisors: near every point of `X`
+the divisor is cut out by a single nonzero rational function. -/
+theorem isLocallyPrincipal_of_forall_coheight_le_one
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+    (D : SchemeWeilDivisor X) : IsLocallyPrincipal D := by
+  refine mem_locallyPrincipalSubgroup.mp ?_
+  induction D using Finsupp.induction_linear with
+  | zero => exact zero_mem _
+  | add D E hD hE => exact add_mem hD hE
+  | single a b =>
+      rw [WeilDivisor.single_eq_zsmul_ofPoint]
+      exact (locallyPrincipalSubgroup X).zsmul_mem
+        (mem_locallyPrincipalSubgroup.mpr (isLocallyPrincipal_ofPoint hdim a)) b
+
+/-- On a curve the locally principal divisors are all of them. -/
+theorem locallyPrincipalSubgroup_eq_top
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] :
+    locallyPrincipalSubgroup X = ⊤ :=
+  eq_top_iff.mpr fun D _ ↦ isLocallyPrincipal_of_forall_coheight_le_one hdim D
+
+end DimensionOne
 
 section Sheaf
 
