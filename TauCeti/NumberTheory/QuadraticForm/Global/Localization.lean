@@ -23,8 +23,8 @@ and invariant comparisons over number fields.
 
 ## References
 
-* [Global quadratic forms roadmap, Layer 0.1](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/GlobalQuadraticForms/README.md#01-canonical-localizations)
-* [Global quadratic forms formal sketch](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/GlobalQuadraticForms/Suggested.lean)
+* [Global quadratic forms roadmap, Layer 0.1](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GlobalQuadraticForms/README.md#01-canonical-localizations)
+* [Global quadratic forms formal sketch](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GlobalQuadraticForms/Suggested.lean)
 
 -/
 
@@ -36,7 +36,7 @@ open scoped TensorProduct
 
 universe u v
 
-namespace IsDedekindDomain.HeightOneSpectrum
+namespace TauCeti.NumberField.QuadraticForm
 
 variable {K : Type u} [Field K]
 variable {V : Type v} [AddCommGroup V] [Module K V]
@@ -52,13 +52,6 @@ theorem finrank_finiteScalarExtension [NumberField K]
       Module.finrank K V :=
   Module.finrank_baseChange
 
-end IsDedekindDomain.HeightOneSpectrum
-
-namespace TauCeti
-
-variable {K : Type u} [Field K]
-variable {V : Type v} [AddCommGroup V] [Module K V]
-
 /-- The scalar extension of `V` to `ℝ` through the embedding belonging to a real place. -/
 abbrev RealScalarExtension (w : {w : InfinitePlace K // w.IsReal}) :=
   letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
@@ -70,13 +63,6 @@ theorem finrank_realScalarExtension (w : {w : InfinitePlace K // w.IsReal}) :
     Module.finrank ℝ (RealScalarExtension (V := V) w) = Module.finrank K V := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   exact Module.finrank_baseChange
-
-end TauCeti
-
-namespace NumberField.InfinitePlace
-
-variable {K : Type u} [Field K]
-variable {V : Type v} [AddCommGroup V] [Module K V]
 
 /-- The scalar extension of `V` to `ℂ` through the chosen embedding of an infinite place. -/
 abbrev ComplexScalarExtension (w : InfinitePlace K) :=
@@ -90,29 +76,31 @@ theorem finrank_complexScalarExtension (w : InfinitePlace K) :
   let : Algebra K ℂ := w.embedding.toAlgebra
   exact Module.finrank_baseChange
 
-end NumberField.InfinitePlace
-
-namespace QuadraticForm
-
-variable {K : Type u} [Field K]
-variable {V : Type v} [AddCommGroup V] [Module K V]
-
 @[instance_reducible]
 private noncomputable def invertibleTwoOfInfinitePlace (w : InfinitePlace K) :
     Invertible (2 : K) := by
   letI : CharZero K := RingHom.charZero w.embedding
   exact invertibleOfNonzero two_ne_zero
 
+/-- The image of a global unit in the completion at a finite place. -/
+def unitAtFinitePlace [NumberField K] (v : HeightOneSpectrum (𝓞 K)) (a : Kˣ) :
+    (v.adicCompletion K)ˣ :=
+  Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom a
+
+/-- The image of a global unit under the embedding belonging to a real place. -/
+def unitAtRealPlace (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) : ℝˣ :=
+  Units.map (embedding_of_isReal w.2).toMonoidHom a
+
 /-- The localization of a quadratic form at a finite place of a number field. -/
 def atFinitePlace [NumberField K] (Q : _root_.QuadraticForm K V)
     (v : HeightOneSpectrum (𝓞 K)) :
-    _root_.QuadraticForm (v.adicCompletion K) (v.FiniteScalarExtension (V := V)) :=
+    _root_.QuadraticForm (v.adicCompletion K) (FiniteScalarExtension (V := V) v) :=
   Q.baseChange (v.adicCompletion K)
 
 /-- The localization of a quadratic form at a real place of a number field. -/
 def atRealPlace (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace K // w.IsReal}) :
-    _root_.QuadraticForm ℝ (TauCeti.RealScalarExtension (V := V) w) := by
+    _root_.QuadraticForm ℝ (RealScalarExtension (V := V) w) := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   exact Q.baseChange ℝ
@@ -120,7 +108,7 @@ def atRealPlace (Q : _root_.QuadraticForm K V)
 /-- The scalar extension of a quadratic form through the chosen complex embedding of an
 infinite place. -/
 def atComplexEmbedding (Q : _root_.QuadraticForm K V) (w : InfinitePlace K) :
-    _root_.QuadraticForm ℂ (w.ComplexScalarExtension (V := V)) := by
+    _root_.QuadraticForm ℂ (ComplexScalarExtension (V := V) w) := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   letI : Algebra K ℂ := w.embedding.toAlgebra
   exact Q.baseChange ℂ
@@ -502,4 +490,4 @@ theorem Nondegenerate.atComplexEmbedding [FiniteDimensional K V]
 
 end FiniteDimensional
 
-end QuadraticForm
+end TauCeti.NumberField.QuadraticForm

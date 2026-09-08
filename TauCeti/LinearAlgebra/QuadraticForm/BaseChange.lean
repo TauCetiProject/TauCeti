@@ -77,6 +77,7 @@ theorem Isometry.baseChange_id (Q : _root_.QuadraticForm R M) :
   exact DFunLike.congr_fun h x
 
 /-- Base change commutes with composition of isometries. -/
+@[simp]
 theorem Isometry.baseChange_comp (g : Q₂ →qᵢ Q₃) (f : Q₁ →qᵢ Q₂) :
     Isometry.baseChange (g.comp f) A =
       (Isometry.baseChange g A).comp (Isometry.baseChange f A) := by
@@ -113,6 +114,7 @@ theorem IsometryEquiv.baseChange_refl (Q : _root_.QuadraticForm R M) :
   | add x y hx hy => simp [hx, hy]
 
 /-- Base change commutes with composition of isometric equivalences. -/
+@[simp]
 theorem IsometryEquiv.baseChange_trans
     (f : Q₁.IsometryEquiv Q₂) (g : Q₂.IsometryEquiv Q₃) :
     IsometryEquiv.baseChange (f.trans g) A =
@@ -126,6 +128,7 @@ theorem IsometryEquiv.baseChange_trans
   exact DFunLike.congr_fun h x
 
 /-- Base change commutes with inversion of isometric equivalences. -/
+@[simp]
 theorem IsometryEquiv.baseChange_symm (f : Q₁.IsometryEquiv Q₂) :
     IsometryEquiv.baseChange f.symm A = (IsometryEquiv.baseChange f A).symm := by
   apply DFunLike.ext _ _
