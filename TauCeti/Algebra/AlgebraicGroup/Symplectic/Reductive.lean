@@ -43,10 +43,6 @@ base-change identification
 * T. A. Springer, *Linear Algebraic Groups*, §§2.2, 2.4, and Chapter 8.
 * The ReductiveGroups roadmap, Layer 6 and its `Sp₂ₙ` worked example, which requests this
   geometric `R_u = 1` proof in arbitrary characteristic.
-
-The proof follows the normal-unipotent elimination used for the general and special linear groups
-in `TauCeti.Algebra.AlgebraicGroup.{GeneralLinear,SpecialLinear}.Reductive`, applied to the
-symplectic standard comodule.
 -/
 
 public section
