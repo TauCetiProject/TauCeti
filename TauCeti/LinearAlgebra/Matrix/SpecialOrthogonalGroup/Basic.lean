@@ -11,7 +11,8 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 # Entrywise maps of special orthogonal matrices
 
 A ring homomorphism maps a special orthogonal matrix entrywise to a special orthogonal matrix.
-This file provides the general mapping operation without importing the quotient-lifting theory.
+This expresses the functoriality of special orthogonal groups under coefficient-ring maps and
+supports their base-change constructions.
 
 ## Main declarations
 

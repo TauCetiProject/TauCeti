@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 public import TauCeti.Algebra.AlgebraicGroup.Orthogonal.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Basic
 import TauCeti.CategoryTheory.Comma.Over
 
 /-!
@@ -49,6 +50,8 @@ identification, with no smoothness or reductivity claim.
   orthogonal subgroup scheme and its closed immersion into the general linear group scheme.
 * `TauCeti.SpecialOrthogonal.pointsMulEquiv`: the group of algebra-valued points of the special
   orthogonal coordinate Hopf algebra is `Matrix.specialOrthogonalGroup (Fin n) A`.
+* `TauCeti.SpecialOrthogonal.pointsMulEquiv_mapValue`: this points identification is natural in
+  the value algebra.
 
 ## References
 
@@ -67,7 +70,7 @@ open CategoryTheory Matrix WithConv
 
 namespace TauCeti.SpecialOrthogonal
 
-universe u w
+universe u v w
 
 variable (R : Type u) [CommRing R] (n : ℕ)
 
@@ -317,6 +320,36 @@ theorem pointsMulEquiv_coe
   exact congrArg
     (fun g => (pointsSubgroupToSpecialOrthogonalGroup R n g : Matrix (Fin n) (Fin n) A))
     hcomponent.symm
+
+/-- The matrix description of special orthogonal points is natural under algebra maps. -/
+theorem pointsMulEquiv_mapValue {B : Type v} [CommRing B] [Algebra R B]
+    (phi : A →ₐ[R] B)
+    (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
+    pointsMulEquiv R n (A := B)
+        (AlgHom.mapValue (H := coordinateHopfAlgebra R n) phi f) =
+      Matrix.SpecialOrthogonalGroup.map phi.toRingHom
+        (pointsMulEquiv R n (A := A) f) := by
+  apply Subtype.ext
+  have hcoe_lhs := pointsMulEquiv_coe R n
+    (AlgHom.mapValue (H := coordinateHopfAlgebra R n) phi f)
+  have hcoe_rhs := pointsMulEquiv_coe R n f
+  have hnatural := (CommHopfAlgCat.mapValue_quotientPointsHom
+    (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n) phi f).symm
+  rw [← hcoe_lhs, hnatural, GeneralLinear.pointsMulEquiv_mapValue,
+    Matrix.SpecialOrthogonalGroup.coe_map]
+  simpa only [Matrix.GeneralLinearGroup.val_map_apply] using
+    congrArg (fun M : Matrix (Fin n) (Fin n) A ↦ M.map phi.toRingHom) hcoe_rhs
+
+/-- Naturality of the inverse pointwise equivalence in the value algebra. -/
+theorem mapValue_pointsMulEquiv_symm_apply {B : Type v} [CommRing B] [Algebra R B]
+    (phi : A →ₐ[R] B) (g : Matrix.specialOrthogonalGroup (Fin n) A) :
+    AlgHom.mapValue (H := coordinateHopfAlgebra R n) phi
+        ((pointsMulEquiv R n (A := A)).symm g) =
+      (pointsMulEquiv R n (A := B)).symm
+        (Matrix.SpecialOrthogonalGroup.map phi.toRingHom g) := by
+  apply (pointsMulEquiv R n (A := B)).injective
+  rw [pointsMulEquiv_mapValue]
+  simp
 
 /-- The ambient point attached to a special orthogonal matrix is the general-linear point
 attached to the unit of its orthogonal part. -/

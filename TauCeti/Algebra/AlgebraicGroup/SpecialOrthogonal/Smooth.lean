@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SmoothConnected
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
-public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Naturality
+public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Lift
 
 /-!
