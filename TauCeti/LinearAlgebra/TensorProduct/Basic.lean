@@ -12,6 +12,8 @@ public import Mathlib.LinearAlgebra.TensorProduct.Associator
 
 This file defines contraction of a tensor product against a linear functional on its right factor,
 and records its behavior on pure tensors and under tensor-product maps.
+Such contractions extract coordinates and test tensor identities, supporting componentwise
+arguments about coactions and weight spaces.
 
 ## Main declarations
 
