@@ -210,10 +210,6 @@ section Matrix
 
 variable [CommRing R]
 
-private theorem conjugate_mul (d x y : GL (Fin (m + m)) R) :
-    d * (x * y) * d⁻¹ = (d * x * d⁻¹) * (d * y * d⁻¹) := by
-  simp [mul_assoc]
-
 /-- **Conjugation by a diagonal symplectic matrix acts on each root subgroup through its root
 character.** -/
 theorem diagonal_mul_rootSubgroup_mul_inv (root : RootSubgroupIndex m) (t : Fin m → Rˣ)
@@ -244,21 +240,27 @@ theorem diagonal_mul_rootSubgroup_mul_inv (root : RootSubgroupIndex m) (t : Fin 
       rw [RootSubgroupIndex.hom_difference, RootSubgroupIndex.character_difference]
       simp only [differenceShortRootHom_apply, coe_diagonal,
         coe_differenceShortRootUnit, Subgroup.coe_mul, Subgroup.coe_inv]
-      rw [conjugate_mul, diagGL_mul_transvectionUnit_mul_inv,
+      rw [← MulAut.conj_apply, map_mul]
+      simp only [MulAut.conj_apply]
+      rw [diagGL_mul_transvectionUnit_mul_inv,
         diagGL_mul_transvectionUnit_mul_inv]
       congr 1 <;> simp <;> ring_nf
   | positiveSum i j hij =>
       rw [RootSubgroupIndex.hom_positiveSum, RootSubgroupIndex.character_positiveSum]
       simp only [positiveSumShortRootHom_apply, coe_diagonal,
         coe_positiveSumShortRootUnit, Subgroup.coe_mul, Subgroup.coe_inv]
-      rw [conjugate_mul, diagGL_mul_transvectionUnit_mul_inv,
+      rw [← MulAut.conj_apply, map_mul]
+      simp only [MulAut.conj_apply]
+      rw [diagGL_mul_transvectionUnit_mul_inv,
         diagGL_mul_transvectionUnit_mul_inv]
       congr 1 <;> simp <;> ring_nf
   | negativeSum i j hij =>
       rw [RootSubgroupIndex.hom_negativeSum, RootSubgroupIndex.character_negativeSum]
       simp only [negativeSumShortRootHom_apply, coe_diagonal,
         coe_negativeSumShortRootUnit, Subgroup.coe_mul, Subgroup.coe_inv]
-      rw [conjugate_mul, diagGL_mul_transvectionUnit_mul_inv,
+      rw [← MulAut.conj_apply, map_mul]
+      simp only [MulAut.conj_apply]
+      rw [diagGL_mul_transvectionUnit_mul_inv,
         diagGL_mul_transvectionUnit_mul_inv]
       congr 1 <;> simp <;> ring_nf
 

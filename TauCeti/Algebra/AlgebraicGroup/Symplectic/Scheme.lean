@@ -18,6 +18,11 @@ This file identifies scheme-valued points of `Sp₂ₘ` with the standard symple
   symplectic coordinate Hopf algebra.
 * `TauCeti.Symplectic.schemePointsMulEquiv`: scheme-valued points of `Sp₂ₘ` are
   `TauCeti.GLSymplecticFin`.
+
+## References
+
+* The scheme-points interface follows the formal template in
+  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme`.
 -/
 
 public section

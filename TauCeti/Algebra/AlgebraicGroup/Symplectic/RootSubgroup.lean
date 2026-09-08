@@ -49,6 +49,8 @@ factorization through the symplectic equations is recorded scheme-theoretically,
 * J. S. Milne, *Algebraic Groups* (2017), §21 and §24.6.
 * R. W. Carter, *Simple Groups of Lie Type* (1972), §11.3.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), §26.3.
+* The scheme-points root-subgroup construction follows the formal template in
+  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Subgroup`.
 -/
 
 public section
