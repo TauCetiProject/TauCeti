@@ -39,11 +39,21 @@ variables, so `MvPowerSeries.hasEval_of_finite_of_isTopologicallyNilpotent` appl
 ## Main results
 
 * `WeierstrassCurve.formalSlopeEval_mul_sub` : `λ(t₁, t₂) * (t₂ - t₁) = w(t₂) - w(t₁)`.
-* `WeierstrassCurve.formalInterceptEval_eq` : `ν(t₁, t₂) = w(t₁) - λ(t₁, t₂) * t₁`.
+* `WeierstrassCurve.formalInterceptEval_eq` : `ν(t₁, t₂) = w(t₁) - λ(t₁, t₂) * t₁`, and
+  `WeierstrassCurve.formalInterceptEval_eq_inr` : `ν(t₁, t₂) = w(t₂) - λ(t₁, t₂) * t₂`, the same
+  intercept read from either parameter.
+* `WeierstrassCurve.formalWEval_formalThirdRootEval` :
+  `w(t₃(t₁, t₂)) = λ(t₁, t₂) * t₃(t₁, t₂) + ν(t₁, t₂)`, the `w`-expansion at the third root
+  agreeing with the chord line there.
 * `WeierstrassCurve.formalSlopeEval_mem`, `WeierstrassCurve.formalThirdRootEval_mem` : parameters
   in `I ^ k` keep the slope and the third root there.
 * `WeierstrassCurve.formalThirdRootEval_relation` : Vieta's formula at a pair, cleared of the
   inverse of the cubic's leading coefficient.
+* `WeierstrassCurve.formalThirdRootEval_ne_zero` : the third root is nonzero once
+  `t₁ * w(t₂) ≠ t₂ * w(t₁)` — an inequality that forces both parameters nonzero, and over a
+  field also makes their `x`-coordinates distinct.
+* `WeierstrassCurve.hasEval_formalThirdRootEval` : the third root admits evaluation as soon as
+  the two parameters do, the ideal-free counterpart of `formalThirdRootEval_mem`.
 * `WeierstrassCurve.formalAddEval_eq` : `F(t₁, t₂) = ι(t₃(t₁, t₂))`.
 * `WeierstrassCurve.formalAddEval_formalInverseEval` : `F(t, ι(t)) = 0`, the inverse law.
 * `WeierstrassCurve.formalAddEval_zero_right` and
@@ -77,8 +87,14 @@ Adapted from Michael Stoll's `EllipticCurves` project
 `EllipticCurves/WeierstrassFormalGroup/Eval.lean` — its pair-evaluation layer, declarations
 `slopeEval`, `interceptEval`, `thirdRootEval`, `addEval`, `hasEval_pairElim`, `eval_pair_rename`,
 `eval_pair_subst_single`, `slopeEval_mul_sub`, `interceptEval_eq`, `slopeEval_mem`,
-`thirdRootEval_mem`, `thirdRootEval_relation`, `addEval_eq`, `addEval_sub_add_mem` and
-`addEval_iotaEval`.
+`thirdRootEval_mem`, `thirdRootEval_relation`, `addEval_eq`, `addEval_sub_add_mem`,
+`addEval_iotaEval`, `wEval_thirdRootEval` (here `formalWEval_formalThirdRootEval`),
+`interceptEval_eq'` (here `formalInterceptEval_eq_inr`) and `thirdRootEval_ne_zero` (here
+`formalThirdRootEval_ne_zero`, whose source carries an `[IsDomain O]` the argument does not use).
+
+`hasEval_formalThirdRootEval` and `hasEval_formalAddEval` have no counterpart in the source, which
+reads evaluability off membership in `IsLocalRing.maximalIdeal O`; they are this repository's
+ideal-free replacements for that step.
 
 The unit laws `formalAddEval_zero_right` and `formalAddEval_zero_left`, and the associativity
 `formalAddEval_assoc`, follow the same project's
@@ -239,6 +255,18 @@ theorem formalInterceptEval_eq {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
     Sum.elim_inr, PowerSeries.eval₂_id_toMvPowerSeries (hasEval_pair h₁ h₂),
     MvPowerSeries.eval₂_X] using h
 
+/-- **The evaluated intercept identity, read from the second point**:
+`ν(t₁, t₂) = w(t₂) - λ(t₁, t₂) * t₂`. Together with `formalInterceptEval_eq` this says the chord
+meets the curve at both parameters, which is what makes the intercept symmetric in them. -/
+theorem formalInterceptEval_eq_inr {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
+    (h₂ : PowerSeries.HasEval t₂) :
+    W.formalInterceptEval t₁ t₂ = W.formalWEval t₂ - W.formalSlopeEval t₁ t₂ * t₂ := by
+  have h := congrArg (evalPair h₁ h₂) W.formalIntercept_eq_inr
+  rw [map_sub, map_mul] at h
+  simpa [formalInterceptEval, formalSlopeEval, W.formalWEval_def, coe_evalPair, Sum.elim_inl,
+    Sum.elim_inr, PowerSeries.eval₂_id_toMvPowerSeries (hasEval_pair h₁ h₂),
+    MvPowerSeries.eval₂_X] using h
+
 /-- The slope of the chord at parameters of `I ^ k` again lies in `I ^ k`: the slope series has
 vanishing constant coefficient. -/
 theorem formalSlopeEval_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t₁ t₂ : O}
@@ -289,17 +317,76 @@ theorem formalThirdRootEval_relation {t₁ t₂ : O} (h₁ : PowerSeries.HasEval
   linear_combination (1 + W.a₂ * L + W.a₄ * L ^ 2 + W.a₆ * L ^ 3) * hT -
     (W.a₁ * L + W.a₂ * N + W.a₃ * L ^ 2 + 2 * W.a₄ * L * N + 3 * W.a₆ * L ^ 2 * N) * hD
 
+open MvPowerSeries.WithPiTopology in
+/-- **The third root admits evaluation as soon as the two parameters do.** Like
+`hasEval_formalAddEval`, this is the ideal-free counterpart of `formalThirdRootEval_mem`, and it
+is what lets the identities below take only their two parameters. -/
+theorem hasEval_formalThirdRootEval {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
+    (h₂ : PowerSeries.HasEval t₂) : PowerSeries.HasEval (W.formalThirdRootEval t₁ t₂) := by
+  -- `formalThirdRoot` is topologically nilpotent because its constant coefficient vanishes, and
+  -- evaluation is a continuous ring hom, so it carries that property to the value.
+  have hnil := isTopologicallyNilpotent_of_constantCoeff_zero (constantCoeff_formalThirdRoot W)
+  have h := IsTopologicallyNilpotent.map (φ := MvPowerSeries.aeval (hasEval_pair h₁ h₂))
+    (MvPowerSeries.continuous_aeval (hasEval_pair h₁ h₂)) hnil
+  simpa [formalThirdRootEval, MvPowerSeries.coe_aeval, Algebra.algebraMap_self] using h
+
+/-- **The evaluated on-line identity**: `w(t₃(t₁, t₂)) = λ(t₁, t₂) * t₃(t₁, t₂) + ν(t₁, t₂)`, so
+the `w`-expansion read at the third root agrees with the chord line read there. Over a field, where
+the parameters carry the coordinates `x = t / w` and `y = -1 / w`, this is what says the third root
+parametrises a point *on* the chord and not merely a root of the chord cubic. -/
+theorem formalWEval_formalThirdRootEval {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
+    (h₂ : PowerSeries.HasEval t₂) :
+    W.formalWEval (W.formalThirdRootEval t₁ t₂) =
+      W.formalSlopeEval t₁ t₂ * W.formalThirdRootEval t₁ t₂ + W.formalInterceptEval t₁ t₂ := by
+  have hae : MvPowerSeries.aeval (hasEval_pair h₁ h₂) W.formalThirdRoot =
+      W.formalThirdRootEval t₁ t₂ :=
+    congrFun (MvPowerSeries.coe_aeval (hasEval_pair h₁ h₂)) W.formalThirdRoot
+  have hT' : PowerSeries.HasEval (MvPowerSeries.aeval (hasEval_pair h₁ h₂) W.formalThirdRoot) := by
+    rw [hae]; exact W.hasEval_formalThirdRootEval h₁ h₂
+  have h := MvPowerSeries.aeval_subst W.hasSubst_formalThirdRoot
+    (MvPowerSeries.continuous_aeval (hasEval_pair h₁ h₂))
+    (PowerSeries.hasEval hT') W.formalW
+  -- distribute while the evaluation is still an algebra map: after `coe_aeval` rewrites it to
+  -- `eval₂`, `map_add` and `map_mul` no longer apply.
+  rw [W.subst_formalThirdRoot_formalW, map_add, map_mul] at h
+  simpa [W.formalWEval_def, formalSlopeEval, formalInterceptEval, ← W.formalThirdRootEval_def,
+    MvPowerSeries.coe_aeval, PowerSeries.eval₂] using h.symm
+
+/-- **The third root does not vanish once `t₁ * w(t₂) ≠ t₂ * w(t₁)`.** The inequality forces both
+parameters to be nonzero, `w` vanishing at `0`; and over a field a nonzero parameter `t` carries
+the affine coordinates `x = t / w(t)`, `y = -1 / w(t)`, so it then also says the two
+`x`-coordinates differ. The conclusion is that the chord through the two points is not the
+vertical line. -/
+theorem formalThirdRootEval_ne_zero {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
+    (h₂ : PowerSeries.HasEval t₂)
+    (hx : t₁ * W.formalWEval t₂ ≠ t₂ * W.formalWEval t₁) :
+    W.formalThirdRootEval t₁ t₂ ≠ 0 := by
+  intro h
+  have hT := W.hasEval_formalThirdRootEval h₁ h₂
+  have honl := W.formalWEval_formalThirdRootEval h₁ h₂
+  rw [h, mul_zero, zero_add, W.formalWEval_eq_pow_mul_formalUEval (h ▸ hT)] at honl
+  -- `w` vanishes at the zero parameter, so the on-line identity collapses to `ν = 0`
+  rw [zero_pow (by norm_num), zero_mul] at honl
+  refine hx ?_
+  -- the two intercept identities, read from either parameter, give `ν · (t₂ - t₁)` symmetrically
+  have hnu : W.formalInterceptEval t₁ t₂ * (t₂ - t₁) =
+      t₂ * W.formalWEval t₁ - t₁ * W.formalWEval t₂ := by
+    linear_combination t₂ * W.formalInterceptEval_eq h₁ h₂ -
+      t₁ * W.formalInterceptEval_eq_inr h₁ h₂
+  rw [← honl, zero_mul] at hnu
+  linear_combination hnu
+
 /-- **The addition series at a pair of parameters is the formal inverse of the third root**:
 `F(t₁, t₂) = ι(t₃(t₁, t₂))`, the sum of two points being the negative of the third point of the
 chord through them. -/
 theorem formalAddEval_eq {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
-    (h₂ : PowerSeries.HasEval t₂) (hT : PowerSeries.HasEval (W.formalThirdRootEval t₁ t₂)) :
+    (h₂ : PowerSeries.HasEval t₂) :
     W.formalAddEval t₁ t₂ = W.formalInverseEval (W.formalThirdRootEval t₁ t₂) := by
   have hae : MvPowerSeries.aeval (hasEval_pair h₁ h₂) W.formalThirdRoot =
       W.formalThirdRootEval t₁ t₂ :=
     congrFun (MvPowerSeries.coe_aeval (hasEval_pair h₁ h₂)) W.formalThirdRoot
   have hT' : PowerSeries.HasEval (MvPowerSeries.aeval (hasEval_pair h₁ h₂) W.formalThirdRoot) := by
-    rw [hae]; exact hT
+    rw [hae]; exact W.hasEval_formalThirdRootEval h₁ h₂
   have h := MvPowerSeries.aeval_subst W.hasSubst_formalThirdRoot
     (MvPowerSeries.continuous_aeval (hasEval_pair h₁ h₂))
     (PowerSeries.hasEval hT') W.formalInverse

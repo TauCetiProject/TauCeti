@@ -326,7 +326,7 @@ theorem chainTopCoeff_mul_killingForm_root_neg_eq
   have hcoeff := rootSystem_chainCoeffs_eq hα hβ (by
     simpa only [P, rootSystem_root_apply, i, j] using hlin)
   have hlength :=
-    TauCeti.RootPairing.InvariantForm.chainTopCoeff_mul_apply_root_self_eq
+    RootPairing.InvariantForm.chainTopCoeff_mul_apply_root_self_eq
       (P := P) (rootInvariantForm (H := H)) hk
   have hβkill := hx.killingForm_root_neg_eq β hβ
   have hγkill := hx.killingForm_root_neg_eq γ hγ

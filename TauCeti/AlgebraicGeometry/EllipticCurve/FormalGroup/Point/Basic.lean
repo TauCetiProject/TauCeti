@@ -53,16 +53,16 @@ into pole orders, but no order or valuation hypothesis is assumed here.
 ## Provenance
 
 The same parametrization is formalised in Michael Stoll's elliptic-curve development
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0) at `66889eada51a`, file
-`EllipticCurves/WeierstrassFormalGroup/Filtration.lean`, declarations `formalPoint_nonsingular`,
-`formalPoint`, `formalPoint_of_param_eq_zero` and `formalPoint_of_param_ne_zero`; of these the
-last three keep their source names here, while `formalPoint_nonsingular` is not restated at all.
-That
-development states them over `v.adicCompletion K` for a height-one prime of a Dedekind domain
-and builds nonsingularity from its own chord lemma; the declarations below are stated over an
-arbitrary complete adic ring mapping injectively to a field, and build the point with Mathlib's
-`Affine.Point.mk`, which carries the equation-to-nonsingularity step itself, so no nonsingularity
-lemma is restated here.
+(`github.com/MichaelStollBayreuth/EllipticCurves` @ `66889eada51a`, Apache-2.0), file
+`EllipticCurves/WeierstrassFormalGroup/Filtration.lean`, declarations `formalPoint`,
+`formalPoint_of_param_eq_zero`, `formalPoint_of_param_ne_zero` and `formalPoint_nonsingular`. The
+first three keep their source names; the fourth is not restated, `Affine.Point.mk` carrying the
+equation-to-nonsingularity step itself.
+
+That development states them over `v.adicCompletion K` for a height-one prime of a Dedekind domain
+and builds nonsingularity from a chord lemma of its own. The declarations below are stated over an
+arbitrary complete adic ring mapping injectively to a field, and read the nonsingularity off
+Mathlib's `equation_iff_nonsingular`, which `Affine.Point.mk` also uses.
 -/
 
 public section

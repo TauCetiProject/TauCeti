@@ -278,8 +278,7 @@ theorem heckeSlashSum_coe_eq_sum_of_rightCosets {ι : Type*} [Fintype ι] (a : �
       MulOpposite.op (a i) • (G.map (mapGL ℚ) : Set (GL (Fin 2) ℚ)))
     (f : F) : heckeSlashSum k D ⇑f = ∑ i, ⇑f ∣[k] a i :=
   heckeSlashSum_eq_sum_of_rightCosets k D a hcover hinj ⇑f fun _ hγ ↦
-    ModularForm.slash_eq_of_mem_map_mapGL
-      (fun γ' hγ' ↦ SlashInvariantFormClass.slash_action_eq f γ' hγ') hγ
+    SlashInvariantFormClass.slash_eq_of_mem_map_mapGL f hγ
 
 /-- **The weighted collapse for a form of level `G.map (mapGL ℝ)`.** This is
 `sum_slash_eq_nsmul_heckeSlashSum` with the hypothesis `hf` discharged, exactly as
@@ -297,8 +296,7 @@ theorem sum_slash_coe_eq_nsmul_heckeSlashSum {ι : Type*} [Fintype ι] (a : ι �
         MulOpposite.op x • (G.map (mapGL ℚ) : Set (GL (Fin 2) ℚ))} = m)
     (f : F) : ∑ i, ⇑f ∣[k] a i = m • heckeSlashSum k D ⇑f :=
   sum_slash_eq_nsmul_heckeSlashSum k D a m hmem hcard ⇑f fun _ hγ ↦
-    ModularForm.slash_eq_of_mem_map_mapGL
-      (fun γ' hγ' ↦ SlashInvariantFormClass.slash_action_eq f γ' hγ') hγ
+    SlashInvariantFormClass.slash_eq_of_mem_map_mapGL f hγ
 
 end Form
 
