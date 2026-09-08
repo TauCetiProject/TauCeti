@@ -58,14 +58,9 @@ it; the subspace form here needs no such comparison.)
   point of the adic spectrum exactly when the prime is open, for any plus ring.
 * `TauCeti.ValuationSpectrum.eq_top_of_spa_eq_empty` : an empty adic spectrum forces every open
   ideal to be the unit ideal.
-* `TauCeti.ValuationSpectrum.one_mem_closure_zero_of_spa_eq_empty` : the converse half of
-  Wedhorn Proposition 7.49(1) — over a topological ring in which `closure {0}` is open, an empty
-  adic spectrum forces `1 ∈ closure {0}`.
-* `TauCeti.ValuationSpectrum.spa_eq_empty_iff_one_mem_closure_zero` : the two halves combined.
-
-The openness of `closure {0}` is Wedhorn 7.49(2) and is taken as a hypothesis here, exactly as
-Wedhorn's proof of 7.49(1) takes it; proving it needs the microbiality substrate and is not done
-in this file.
+The converse and the full separated-quotient criterion of Wedhorn Proposition 7.49(1) require
+the Huber-pair hypotheses and are proved in
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness`.
 
 ## Provenance
 
@@ -178,30 +173,6 @@ theorem eq_top_of_spa_eq_empty (Aplus : Subring A) {I : Ideal A}
     (trivialSection_mem_spa_iff Aplus _).mpr hopen
   rw [h] at hmem
   exact Set.notMem_empty _ hmem
-
-/-- **The `Spa (A, A⁺) = ∅ → 1 ∈ closure {0}` half of Wedhorn Proposition 7.49(1)**, the converse
-of `spa_eq_empty_of_one_mem_closure_zero`, under the hypothesis that `closure {0}` is open.
-
-That openness is not proved here. It is what Wedhorn's proof of 7.49(1) extracts from 7.49(2) once
-the adic spectrum is empty, via the separated-quotient item 7.49(2)(iii); discharging it needs the
-Huber hypotheses 7.49(2) carries, which this statement does not assume. -/
-theorem one_mem_closure_zero_of_spa_eq_empty [IsTopologicalRing A] (Aplus : Subring A)
-    (hopen : IsOpen (closure ({0} : Set A))) (h : spa Aplus = ∅) :
-    (1 : A) ∈ closure ({0} : Set A) := by
-  have hcoe : ((Ideal.closure (⊥ : Ideal A) : Ideal A) : Set A) = closure ({0} : Set A) := by
-    rw [Ideal.coe_closure, Submodule.bot_coe]
-  have htop : Ideal.closure (⊥ : Ideal A) = ⊤ :=
-    eq_top_of_spa_eq_empty Aplus (by rw [hcoe]; exact hopen) h
-  rw [← hcoe, htop]
-  exact Submodule.mem_top
-
-/-- **Wedhorn Proposition 7.49(1)**, both directions, once `closure {0}` is open: the adic
-spectrum is empty exactly when `1` lies in the closure of zero. -/
-theorem spa_eq_empty_iff_one_mem_closure_zero [IsTopologicalRing A] (Aplus : Subring A)
-    (hopen : IsOpen (closure ({0} : Set A))) :
-    spa Aplus = ∅ ↔ (1 : A) ∈ closure ({0} : Set A) :=
-  ⟨one_mem_closure_zero_of_spa_eq_empty Aplus hopen,
-    spa_eq_empty_of_one_mem_closure_zero Aplus⟩
 
 end SeparatelyContinuousAdd
 
