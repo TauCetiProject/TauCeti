@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 
 /-!
-# Balancing a sesquilinear form against a conjugate-semilinear map
+# Balancing a sesquilinear form against a conjugate-semilinear map, and separation
 
 A sesquilinear form `H` on a module and a `star`-semilinear map `K` of that module are unrelated
 data.  This file makes them compatible: the **balanced** form
@@ -30,6 +30,11 @@ commutative star semiring.  Nonnegativity and definiteness off the origin need a
 scalars and are stated over `ℂ`, which is why the file sits here: the complex half is what the
 representation theory of `TauCeti/RepresentationTheory/InvariantForm/StructureMap.lean` consumes.
 
+Definiteness off the origin is also what makes a form **separate** vectors: two vectors pairing
+identically against every vector are equal, because their difference pairs to zero with itself.
+That principle is what the representation theory downstream uses to identify two vectors, and it
+is recorded here beside the construction; it needs subtraction, hence a commutative star *ring*.
+
 ## Main definitions
 
 * `LinearMap.balance`: the balanced form `x, y ↦ H x y + star (H (K x) (K y))`.
@@ -42,6 +47,7 @@ representation theory of `TauCeti/RepresentationTheory/InvariantForm/StructureMa
 * `LinearMap.isSymm_balance`, `LinearMap.isNonneg_balance` and
   `LinearMap.balance_apply_self_ne_zero`: balancing preserves Hermitian symmetry, nonnegativity,
   and definiteness off the origin.
+* `LinearMap.eq_of_forall_sesq_eq`: a form definite off the origin separates vectors.
 -/
 
 public section
@@ -107,6 +113,27 @@ theorem isSymm_balance {H : V →ₗ⋆[R] V →ₗ[R] R} (hH : H.IsSymm)
       hH.eq (K y) (K x)]
 
 end CommSemiring
+
+section CommRing
+
+variable {R V : Type*} [CommRing R] [StarRing R] [AddCommGroup V] [Module R V]
+
+/-- **A form definite off the origin separates vectors**: two vectors pairing identically against
+every vector are equal, because their difference pairs to zero with itself.  Mathlib's
+`LinearMap.SeparatingLeft` is the same separation stated as a property of the form; definiteness
+off the origin is what supplies it here, and is the shape the callers carry it in. -/
+theorem eq_of_forall_sesq_eq {H : V →ₗ⋆[R] V →ₗ[R] R} (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) {u v : V}
+    (h : ∀ y : V, H u y = H v y) : u = v := by
+  rw [← sub_eq_zero]
+  by_contra hne
+  refine hdef _ hne ?_
+  -- The difference pairs to zero against every vector, so in particular against itself.
+  have hzero : H (u - v) = 0 := by
+    ext y
+    rw [map_sub, LinearMap.sub_apply, h y, sub_self, LinearMap.zero_apply]
+  rw [hzero, LinearMap.zero_apply]
+
+end CommRing
 
 section Complex
 

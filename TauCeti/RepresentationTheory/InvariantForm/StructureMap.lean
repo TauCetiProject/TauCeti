@@ -111,8 +111,8 @@ open Module (Dual)
 
 open scoped ComplexOrder
 
-open LinearMap (BilinForm balance balance_apply balance_map_map isSymm_balance
-  balance_apply_self_ne_zero)
+open LinearMap (BilinForm balance balance_apply balance_map_map eq_of_forall_sesq_eq
+  isSymm_balance balance_apply_self_ne_zero)
 
 open TauCeti
 
@@ -168,13 +168,6 @@ private noncomputable def sesqEquivDual (H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ)
 private theorem sesqEquivDual_apply (H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ)
     (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) (x : V) : sesqEquivDual H hdef x = H x := (rfl)
 
-/-- A positive definite form separates vectors. -/
-private theorem eq_of_forall_sesq_eq (H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ)
-    (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) {u v : V} (h : ∀ y : V, H u y = H v y) : u = v := by
-  refine (sesqEquivDual H hdef).injective ?_
-  rw [sesqEquivDual_apply, sesqEquivDual_apply]
-  exact LinearMap.ext h
-
 private theorem sesq_apply_symm_apply (H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ)
     (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) (f : Dual ℂ V) (y : V) :
     H ((sesqEquivDual H hdef).symm f) y = f y := by
@@ -192,7 +185,7 @@ private noncomputable def compareForms (B : BilinForm ℂ V) (H : V →ₗ⋆[�
   toFun x := (sesqEquivDual H hdef).symm (B x)
   map_add' x y := by simp
   map_smul' c x := by
-    refine eq_of_forall_sesq_eq H hdef fun y => ?_
+    refine eq_of_forall_sesq_eq hdef fun y => ?_
     have hl : H ((sesqEquivDual H hdef).symm (B (c • x))) y = c * B x y := by
       rw [sesq_apply_symm_apply, map_smul, LinearMap.smul_apply, smul_eq_mul]
     have hr : H ((starRingEnd ℂ) c • (sesqEquivDual H hdef).symm (B x)) y = c * B x y := by
@@ -243,7 +236,7 @@ written as `ρ g z`, which is no loss because the action is surjective. -/
 private theorem compareForms_apply_rep (hBinv : IsInvariantForm ρ B)
     (hHinv : IsInvariantSesqForm ρ H) (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) (g : G) (x : V) :
     compareForms B H hdef (ρ g x) = ρ g (compareForms B H hdef x) := by
-  refine eq_of_forall_sesq_eq H hdef fun y => ?_
+  refine eq_of_forall_sesq_eq hdef fun y => ?_
   obtain ⟨z, rfl⟩ := hHinv.surjective_of_apply_self_ne_zero hdef g y
   calc H (compareForms B H hdef (ρ g x)) (ρ g z)
       = B (ρ g x) (ρ g z) := sesq_compareForms B H hdef (ρ g x) (ρ g z)
