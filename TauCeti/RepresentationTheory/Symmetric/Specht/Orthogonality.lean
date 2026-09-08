@@ -12,12 +12,11 @@ public import TauCeti.RepresentationTheory.Symmetric.Specht.Complex
 /-!
 # The character table of `Sₙ` is a character table, and its orthogonality relations
 
-The integer matrix `TauCeti.symmetricCharacterTable n`, whose `(μ, ν)` entry is the value
-`χ^μ(ν)` of the character of the Specht module `S^μ` on the class of cycle type `ν`, was built
-without any of the properties a character table carries: it was not compared with the library's
-complex character table `TauCeti.characterTable ℂ (Equiv.Perm (Fin n))`, and neither the
-orthogonality relations nor the specification `TauCeti.IsCharacterTableSpec` were proved for it.
-This file supplies both.
+This file identifies the integer matrix `TauCeti.symmetricCharacterTable n`, whose `(μ, ν)` entry
+is the value `χ^μ(ν)` of the character of the Specht module `S^μ` on the class of cycle type `ν`,
+with the library's complex character table `TauCeti.characterTable ℂ (Equiv.Perm (Fin n))`. It then
+proves the specification `TauCeti.IsCharacterTableSpec` and the row and column orthogonality
+relations for the table.
 
 The bridge is that the complex Specht modules are exactly the irreducible complex representations
 of `Sₙ` (`TauCeti.existsUnique_character_eq_spechtChar`), so each `χ^μ`, read in `ℂ`, is one of the
@@ -62,11 +61,6 @@ its conjugate coincide.
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapter 6.
 * B. E. Sagan, *The Symmetric Group*, 2nd ed. (2001), Sections 1.9 and 4.7.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 6, "The Specht character", whose remaining half — assembling the character table of `Sₙ`
-  and proving it satisfies the `IsCharacterTableSpec` of the character-theory roadmap — is what
-  this file supplies, together with the orthogonality relations that the class-size weights of
-  that layer's "Class sizes" item exist for.
 -/
 
 public section
@@ -87,8 +81,11 @@ theorem spechtChar_mem_irreducibleCharacters (μ : n.Partition) :
     (fun σ ↦ ((spechtChar μ σ : ℤ) : ℂ)) ∈ irreducibleCharacters ℂ (Equiv.Perm (Fin n)) := by
   have := FDRep.isIrreducible_of_simple (spechtModuleℂ μ)
   have h := character_mem_irreducibleCharacters (spechtModuleℂ μ).ρ
-  rwa [show Representation.character (spechtModuleℂ μ).ρ =
-    fun σ ↦ ((spechtChar μ σ : ℤ) : ℂ) from funext (character_spechtModuleℂ_intCast μ)] at h
+  have hcharacter : Representation.character (spechtModuleℂ μ).ρ =
+      fun σ ↦ ((spechtChar μ σ : ℤ) : ℂ) :=
+    funext (character_spechtModuleℂ_intCast μ)
+  rw [hcharacter] at h
+  exact h
 
 /-- **The row of the complex character table of `Sₙ` carrying `χ^μ`.** The enumeration
 `TauCeti.irreducibleCharacter` of the irreducible characters is an arbitrary one, so this index is
@@ -165,15 +162,25 @@ noncomputable def symmetricCharacterTableℂ (n : ℕ) :
   Matrix.of fun i C ↦ (symmetricCharacterTable n ((partitionEquivIrreducibleIndex n).symm i)
     ((partitionEquivConjClasses n).symm C) : ℂ)
 
+/-- The entries of the reindexed complex character table are the integer Specht character values
+read in `ℂ`. -/
+@[simp]
+theorem symmetricCharacterTableℂ_apply (n : ℕ)
+    (i : Fin (Nat.card (ConjClasses (Equiv.Perm (Fin n)))))
+    (C : ConjClasses (Equiv.Perm (Fin n))) :
+    symmetricCharacterTableℂ n i C =
+      (symmetricCharacterTable n ((partitionEquivIrreducibleIndex n).symm i)
+        ((partitionEquivConjClasses n).symm C) : ℂ) := by
+  simp [symmetricCharacterTableℂ]
+
 /-- **The reindexed integer character table of `Sₙ` is the complex character table of `Sₙ`.** -/
 theorem symmetricCharacterTableℂ_eq_characterTable (n : ℕ) :
     symmetricCharacterTableℂ n = characterTable ℂ (Equiv.Perm (Fin n)) := by
   ext i C
-  rw [show i = spechtCharIndex ((partitionEquivIrreducibleIndex n).symm i) from by
-      rw [← partitionEquivIrreducibleIndex_apply, Equiv.apply_symm_apply],
-    show C = partitionEquivConjClasses n ((partitionEquivConjClasses n).symm C) from
-      (Equiv.apply_symm_apply _ _).symm, characterTable_spechtCharIndex]
-  simp [symmetricCharacterTableℂ]
+  have hi : spechtCharIndex ((partitionEquivIrreducibleIndex n).symm i) = i := by
+    rw [← partitionEquivIrreducibleIndex_apply, Equiv.apply_symm_apply]
+  rw [symmetricCharacterTableℂ_apply, ← characterTable_spechtCharIndex]
+  rw [hi, Equiv.apply_symm_apply]
 
 /-- **The character table of `Sₙ` satisfies the character-table specification**: its identity
 column consists of positive divisors of `n !` whose squares sum to `n !`, its rows are orthonormal

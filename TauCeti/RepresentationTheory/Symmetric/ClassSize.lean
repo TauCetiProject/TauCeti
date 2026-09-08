@@ -283,9 +283,10 @@ theorem zPart_partitionEquivConjClasses_symm_mk (n : ℕ) (σ : Equiv.Perm (Fin 
 commutes with everything, so its centralizer is the whole of `Equiv.Perm α`. -/
 theorem zPart_partition_one (α : Type*) [Fintype α] [DecidableEq α] :
     zPart ((1 : Equiv.Perm α).partition) = (Fintype.card α)! := by
-  rw [← nat_card_centralizer_eq_zPart,
-    show Subgroup.centralizer {(1 : Equiv.Perm α)} = ⊤ from by
-      ext x; simp [Subgroup.mem_centralizer_iff]]
+  have hcentralizer : Subgroup.centralizer {(1 : Equiv.Perm α)} = ⊤ := by
+    ext x
+    simp [Subgroup.mem_centralizer_iff]
+  rw [← nat_card_centralizer_eq_zPart, hcentralizer]
   simp [Nat.card_eq_fintype_card, Fintype.card_perm]
 
 /-- **The class-size formula on the conjugacy class attached to a partition**: the class
