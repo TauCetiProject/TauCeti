@@ -19,7 +19,7 @@ genus, `deg W = 2g - 2` and `ℓ(W) = g`, and any two such divisors are linearly
 The witness is the divisor of a nonzero Weil differential.  Enlarging a divisor shrinks the space
 `Ω_F(D)` of Weil differentials it bounds, so the divisors bounding a fixed `ω` form a downward
 closed family; the two facts that make it have a *greatest* element are that the family is stable
-under suprema (`TauCeti.mem_weilDifferentialFiltration_sup`) and that its degrees are bounded
+under suprema (`TauCeti.weilDifferentialFiltration_sup`) and that its degrees are bounded
 above, because past the threshold of Riemann's theorem the index of specialty vanishes and with
 it `Ω_F(D)`.
 A divisor of maximal degree in the family is then the greatest, since places have positive degree.
@@ -124,7 +124,9 @@ theorem exists_isGreatest_mem_weilDifferentialFiltration (hF : IsFunctionField k
       ⟨c, fun n ⟨D, hD, hDn⟩ ↦ hDn ▸ (hc D hD).le⟩
       ⟨Divisor.degree D₀, D₀, hD₀, rfl⟩
   refine ⟨W, hWmem, fun D hD ↦ ?_⟩
-  have hsup : ω ∈ weilDifferentialFiltration (D ⊔ W) := mem_weilDifferentialFiltration_sup hD hWmem
+  have hsup : ω ∈ weilDifferentialFiltration (D ⊔ W) := by
+    rw [weilDifferentialFiltration_sup]
+    exact ⟨hD, hWmem⟩
   have hle : Divisor.degree (D ⊔ W) ≤ Divisor.degree W := hWdeg ▸ hmax _ ⟨D ⊔ W, hsup, rfl⟩
   have hge : Divisor.degree W ≤ Divisor.degree (D ⊔ W) := Divisor.degree_le_of_le le_sup_right
   have hWeq : W = D ⊔ W := Divisor.eq_of_le_of_degree_eq hF le_sup_right (le_antisymm hge hle)
@@ -181,6 +183,19 @@ theorem coeff_weilDifferentialDivisor (hF : IsFunctionField k F)
     (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) (P : Place k F) :
     (weilDifferentialDivisor hF hex hmem hω).coeff P = weilDifferentialOrder hF hex hmem hω P :=
   (rfl)
+
+/-- A nonzero Weil differential is regular (or holomorphic), meaning that it is bounded by the
+zero divisor, exactly when its order is nonnegative at every place. -/
+@[simp]
+theorem mem_weilDifferentialFiltration_zero_iff_forall_order_nonneg
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    {ω : Module.Dual k ↥(repartitionSpace k F)} (hmem : ω ∈ weilDifferentialSpace k F)
+    (hω : ω ≠ 0) :
+    ω ∈ weilDifferentialFiltration (0 : Divisor k F) ↔
+      ∀ P : Place k F, 0 ≤ weilDifferentialOrder hF hex hmem hω P := by
+  rw [mem_weilDifferentialFiltration_iff_le_weilDifferentialDivisor hF hex hmem hω]
+  change (∀ P : Place k F, 0 ≤ (weilDifferentialDivisor hF hex hmem hω).coeff P) ↔ _
+  simp only [coeff_weilDifferentialDivisor]
 
 /-- **The transformation law `(z · ω) = div z + (ω)`** (Stichtenoth, Proposition 1.5.13): the
 divisor of a Weil differential changes by a principal divisor when the differential is multiplied
