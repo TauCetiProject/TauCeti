@@ -60,7 +60,7 @@ private def realCliffordSpinLastIsometry (n : ℕ) :
 off the last positive coordinate. -/
 def realCliffordSpinInclusion (n : ℕ) :
     realCliffordSpinGroupZero n →* realCliffordSpinGroupZero (n + 1) :=
-  spinGroup.map (realCliffordSpinInclusionIsometry n)
+  (realCliffordSpinInclusionIsometry n).spinGroupMap
 
 /-- The lower-rank Spin inclusion is induced by the corresponding Clifford-algebra map. -/
 @[simp]
@@ -71,7 +71,7 @@ theorem coe_realCliffordSpinInclusion_apply (n : ℕ) (x : realCliffordSpinGroup
           (QuadraticMap.Isometry.inl (realCliffordForm n 0)
             (QuadraticMap.sq (R := ℝ) (A := ℝ))))
         (x : CliffordAlgebra (realCliffordForm n 0)) :=
-  spinGroup.coe_map_apply _ _
+  QuadraticMap.Isometry.coe_spinGroupMap_apply _ _
 
 private theorem realCliffordSpinLastIsometry_one (n : ℕ) :
     realCliffordSpinLastIsometry n 1 = Pi.single (Fin.last n) 1 := by
@@ -92,13 +92,12 @@ theorem realCliffordSpinInclusion_fixed_last (n : ℕ) (x : realCliffordSpinGrou
     spinVectorAction (realCliffordForm (n + 1) 0) (realCliffordSpinInclusion n x)
         (Pi.single (Fin.last n) 1) = Pi.single (Fin.last n) 1 := by
   rw [← realCliffordSpinLastIsometry_one]
-  exact spinGroup.map_fixed_of_isometryEquiv_prod
-    (realCliffordPositiveSplitIsometry n 0) x 1
+  exact (realCliffordPositiveSplitIsometry n 0).spinGroupMap_fixed_of_prod x 1
 
 /-- The lower-rank homomorphism `Spin(n) → Spin(n + 1)` is injective. -/
 theorem realCliffordSpinInclusion_injective (n : ℕ) :
     Function.Injective (realCliffordSpinInclusion n) := by
-  apply spinGroup.map_injective
+  apply QuadraticMap.Isometry.spinGroupMap_injective
   rw [realCliffordSpinInclusionIsometry, ← CliffordAlgebra.map_comp_map]
   exact (CliffordAlgebra.leftInverse_map_of_leftInverse
       (realCliffordPositiveSplitIsometry n 0).symm.toIsometry

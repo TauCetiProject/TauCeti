@@ -73,6 +73,33 @@ variable {K : Type u} [Field K] [Invertible (2 : K)]
   {N₁ : Type v} [AddCommGroup N₁] [Module K N₁]
   {N₂ : Type w} [AddCommGroup N₂] [Module K N₂]
 
+private noncomputable def decomposeTensorEquiv
+    (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂) :
+    CliffordAlgebra P₁ ⊗[K] CliffordAlgebra P₂ ≃ₗ[K]
+      (DirectSum (ZMod 2) fun i ↦ evenOdd P₁ i) ⊗[K]
+        DirectSum (ZMod 2) fun i ↦ evenOdd P₂ i :=
+  ((DirectSum.decomposeAlgEquiv (evenOdd P₁)).toLinearEquiv.rTensor
+      (CliffordAlgebra P₂)).trans
+    ((DirectSum.decomposeAlgEquiv (evenOdd P₂)).toLinearEquiv.lTensor
+      (DirectSum (ZMod 2) fun i ↦ evenOdd P₁ i))
+
+omit [Invertible (2 : K)] in
+private theorem auxEquiv_includeLeft (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂)
+    (x : CliffordAlgebra P₁) :
+    GradedTensorProduct.auxEquiv K (evenOdd P₁) (evenOdd P₂)
+        (GradedTensorProduct.includeLeft (evenOdd P₁) (evenOdd P₂) x) =
+      decomposeTensorEquiv P₁ P₂
+        (Algebra.TensorProduct.includeLeft (R := K) (S := K)
+          (A := CliffordAlgebra P₁) (B := CliffordAlgebra P₂) x) := by
+  simp only [GradedTensorProduct.includeLeft_apply, GradedTensorProduct.auxEquiv_tmul,
+    decomposeTensorEquiv, Algebra.TensorProduct.includeLeft_apply, LinearEquiv.trans_apply,
+    LinearEquiv.rTensor_tmul, LinearEquiv.lTensor_tmul]
+  have h₁ : (DirectSum.decomposeAlgEquiv (evenOdd P₁)).toLinearEquiv x =
+      DirectSum.decompose (evenOdd P₁) x := rfl
+  have h₂ : (DirectSum.decomposeAlgEquiv (evenOdd P₂)).toLinearEquiv 1 =
+      DirectSum.decompose (evenOdd P₂) 1 := rfl
+  rw [h₁, h₂]
+
 private theorem gradedTensorIncludeLeft_injective
     (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂) :
     Function.Injective (GradedTensorProduct.includeLeft (evenOdd P₁) (evenOdd P₂)) := by
@@ -81,7 +108,8 @@ private theorem gradedTensorIncludeLeft_injective
     (R := K) (S := K) (A := CliffordAlgebra P₁) (B := CliffordAlgebra P₂)
     (FaithfulSMul.algebraMap_injective K (CliffordAlgebra P₂))
   have h := congrArg (GradedTensorProduct.auxEquiv K (evenOdd P₁) (evenOdd P₂)) hxy
-  simpa using h
+  rw [auxEquiv_includeLeft, auxEquiv_includeLeft] at h
+  exact (decomposeTensorEquiv P₁ P₂).injective h
 
 omit [Invertible (2 : K)] in
 private theorem toProd_includeLeft (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂)

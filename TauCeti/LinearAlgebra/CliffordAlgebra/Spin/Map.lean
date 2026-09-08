@@ -19,13 +19,16 @@ summand.
 
 ## Main results
 
-* `spinGroup.map` is the homomorphism of Spin groups induced by a quadratic isometry.
-* `spinGroup.mapEquiv` is the group equivalence induced by a quadratic isometry equivalence.
-* `spinGroup.map_injective_of_leftInverse` proves injectivity when the isometry has an isometric
-  left inverse.
-* `spinGroup.map_spinVectorAction` proves naturality of the Spin vector action.
-* `spinGroup.map_fixed_of_isometryEquiv_prod` proves that the Spin group of one summand fixes the
-  other summand.
+* `QuadraticMap.Isometry.spinGroupMap` is the homomorphism of Spin groups induced by a quadratic
+  isometry.
+* `QuadraticMap.IsometryEquiv.spinGroupEquiv` is the group equivalence induced by a quadratic
+  isometry equivalence.
+* `QuadraticMap.Isometry.spinGroupMap_injective_of_leftInverse` proves injectivity when the
+  isometry has an isometric left inverse.
+* `QuadraticMap.Isometry.spinGroupMap_spinVectorAction` proves naturality of the Spin vector
+  action.
+* `QuadraticMap.IsometryEquiv.spinGroupMap_fixed_of_prod` proves that the Spin group of one
+  summand fixes the other summand.
 -/
 
 public section
@@ -33,7 +36,7 @@ public section
 
 open QuadraticMap
 
-namespace lipschitzGroup
+namespace QuadraticMap.Isometry
 
 universe u v w
 
@@ -44,7 +47,8 @@ variable {R : Type u} [CommRing R]
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
 
 /-- Mapping Clifford units along a quadratic isometry preserves the Lipschitz group. -/
-theorem map_mem (f : Q₁ →qᵢ Q₂) {x : (CliffordAlgebra Q₁)ˣ} (hx : x ∈ lipschitzGroup Q₁) :
+theorem map_mem_lipschitzGroup (f : Q₁ →qᵢ Q₂) {x : (CliffordAlgebra Q₁)ˣ}
+    (hx : x ∈ lipschitzGroup Q₁) :
     Units.map (CliffordAlgebra.map f).toMonoidHom x ∈ lipschitzGroup Q₂ := by
   induction hx using Subgroup.closure_induction with
   | mem x hx =>
@@ -61,10 +65,10 @@ theorem map_mem (f : Q₁ →qᵢ Q₂) {x : (CliffordAlgebra Q₁)ˣ} (hx : x �
   | mul x y _ _ hx hy => simpa using mul_mem hx hy
   | inv x _ hx => simpa using inv_mem hx
 
-end lipschitzGroup
+end QuadraticMap.Isometry
 
 
-namespace spinGroup
+namespace QuadraticMap.Isometry
 
 universe u v w x
 
@@ -76,7 +80,7 @@ variable {R : Type u} [CommRing R]
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} {Q : QuadraticForm R N}
 
 /-- The Clifford map induced by a quadratic isometry sends Spin elements to Spin elements. -/
-theorem map_mem (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
+theorem map_mem_spinGroup (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
     CliffordAlgebra.map f (x : CliffordAlgebra Q₁) ∈ spinGroup Q₂ := by
   rw [spinGroup.mem_iff]
   refine ⟨?_, CliffordAlgebra.map_mem_even f x.2.2⟩
@@ -88,7 +92,7 @@ theorem map_mem (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
           (lipschitzGroup Q₂).toSubmonoid.map
             (Units.coeHom (CliffordAlgebra Q₂)) :=
       lipschitzGroup.coe_mem_iff_mem.mpr
-        (lipschitzGroup.map_mem f (spinGroup.units_mem_lipschitzGroup x.2))
+        (f.map_mem_lipschitzGroup (spinGroup.units_mem_lipschitzGroup x.2))
     simpa using hu
   · rw [Unitary.mem_iff]
     constructor
@@ -98,91 +102,132 @@ theorem map_mem (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
         map_one]
 
 /-- The homomorphism of Spin groups induced by a quadratic isometry. -/
-def map (f : Q₁ →qᵢ Q₂) : spinGroup Q₁ →* spinGroup Q₂ where
-  toFun x := ⟨CliffordAlgebra.map f (x : CliffordAlgebra Q₁), map_mem f x⟩
+def spinGroupMap (f : Q₁ →qᵢ Q₂) : spinGroup Q₁ →* spinGroup Q₂ where
+  toFun x := ⟨CliffordAlgebra.map f (x : CliffordAlgebra Q₁), f.map_mem_spinGroup x⟩
   map_one' := Subtype.ext (map_one (CliffordAlgebra.map f))
   map_mul' x y := Subtype.ext (map_mul (CliffordAlgebra.map f)
     (x : CliffordAlgebra Q₁) (y : CliffordAlgebra Q₁))
 
 /-- The Spin-group map is induced by the corresponding Clifford-algebra map. -/
 @[simp]
-theorem coe_map_apply (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
-    (map f x : CliffordAlgebra Q₂) = CliffordAlgebra.map f (x : CliffordAlgebra Q₁) :=
+theorem coe_spinGroupMap_apply (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
+    (f.spinGroupMap x : CliffordAlgebra Q₂) = CliffordAlgebra.map f (x : CliffordAlgebra Q₁) :=
   (rfl)
 
 /-- The identity isometry induces the identity homomorphism of a Spin group. -/
 @[simp]
-theorem map_id (Q₁ : QuadraticForm R M₁) :
-    map (QuadraticMap.Isometry.id Q₁) = MonoidHom.id (spinGroup Q₁) := by
+theorem spinGroupMap_id (Q₁ : QuadraticForm R M₁) :
+    (QuadraticMap.Isometry.id Q₁).spinGroupMap = MonoidHom.id (spinGroup Q₁) := by
   ext x
   simp
 
 /-- Spin-group maps respect composition of quadratic isometries. -/
 @[simp]
-theorem map_comp_map (f : Q₂ →qᵢ Q) (g : Q₁ →qᵢ Q₂) :
-    (map f).comp (map g) = map (f.comp g) := by
+theorem spinGroupMap_comp (f : Q₂ →qᵢ Q) (g : Q₁ →qᵢ Q₂) :
+    f.spinGroupMap.comp g.spinGroupMap = (f.comp g).spinGroupMap := by
   ext x
   exact AlgHom.congr_fun (CliffordAlgebra.map_comp_map f g) (x : CliffordAlgebra Q₁)
 
+end QuadraticMap.Isometry
+
+
+namespace QuadraticMap.IsometryEquiv
+
+universe u v w
+
+
+variable {R : Type u} [CommRing R]
+  {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
+  {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
+  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+
 /-- The equivalence of Spin groups induced by a quadratic isometry equivalence. -/
-def mapEquiv (e : Q₁.IsometryEquiv Q₂) : spinGroup Q₁ ≃* spinGroup Q₂ :=
-  MonoidHom.toMulEquiv (map e.toIsometry) (map e.symm.toIsometry)
+def spinGroupEquiv (e : Q₁.IsometryEquiv Q₂) : spinGroup Q₁ ≃* spinGroup Q₂ :=
+  MonoidHom.toMulEquiv e.toIsometry.spinGroupMap e.symm.toIsometry.spinGroupMap
     (by
-      rw [map_comp_map]
+      rw [QuadraticMap.Isometry.spinGroupMap_comp]
       have h : e.symm.toIsometry.comp e.toIsometry = QuadraticMap.Isometry.id Q₁ := by
         ext m
         exact e.symm_apply_apply m
-      rw [h, map_id])
+      rw [h, QuadraticMap.Isometry.spinGroupMap_id])
     (by
-      rw [map_comp_map]
+      rw [QuadraticMap.Isometry.spinGroupMap_comp]
       have h : e.toIsometry.comp e.symm.toIsometry = QuadraticMap.Isometry.id Q₂ := by
         ext m
         exact e.apply_symm_apply m
-      rw [h, map_id])
+      rw [h, QuadraticMap.Isometry.spinGroupMap_id])
 
 /-- The equivalence induced on Spin groups agrees with the forward isometry map. -/
 @[simp]
-theorem mapEquiv_apply (e : Q₁.IsometryEquiv Q₂) (x : spinGroup Q₁) :
-    mapEquiv e x = map e.toIsometry x :=
+theorem spinGroupEquiv_apply (e : Q₁.IsometryEquiv Q₂) (x : spinGroup Q₁) :
+    e.spinGroupEquiv x = e.toIsometry.spinGroupMap x :=
   (rfl)
 
 /-- The inverse of the induced Spin equivalence is induced by the inverse quadratic isometry. -/
 @[simp]
-theorem mapEquiv_symm (e : Q₁.IsometryEquiv Q₂) :
-    (mapEquiv e).symm = mapEquiv e.symm := by
+theorem spinGroupEquiv_symm (e : Q₁.IsometryEquiv Q₂) :
+    e.spinGroupEquiv.symm = e.symm.spinGroupEquiv := by
   ext x
   rfl
 
+end QuadraticMap.IsometryEquiv
+
+
+namespace QuadraticMap.Isometry
+
+universe u v w x
+
+
+variable {R : Type u} [CommRing R]
+  {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
+  {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
+  {N : Type x} [AddCommGroup N] [Module R N]
+  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} {Q : QuadraticForm R N}
+
 /-- A Spin-group map is injective if its underlying Clifford-algebra map is injective. -/
-theorem map_injective (f : Q₁ →qᵢ Q₂) (hf : Function.Injective (CliffordAlgebra.map f)) :
-    Function.Injective (map f) := by
+theorem spinGroupMap_injective (f : Q₁ →qᵢ Q₂)
+    (hf : Function.Injective (CliffordAlgebra.map f)) : Function.Injective f.spinGroupMap := by
   intro x y hxy
   apply Subtype.ext
   apply hf
   exact congrArg ((↑) : spinGroup Q₂ → CliffordAlgebra Q₂) hxy
 
 /-- A quadratic isometry with an isometric left inverse induces an injective Spin-group map. -/
-theorem map_injective_of_leftInverse (f : Q₁ →qᵢ Q₂) (g : Q₂ →qᵢ Q₁)
-    (h : Function.LeftInverse g f) : Function.Injective (map f) :=
-  map_injective f (CliffordAlgebra.leftInverse_map_of_leftInverse f g h).injective
+theorem spinGroupMap_injective_of_leftInverse (f : Q₁ →qᵢ Q₂) (g : Q₂ →qᵢ Q₁)
+    (h : Function.LeftInverse g f) : Function.Injective f.spinGroupMap :=
+  f.spinGroupMap_injective (CliffordAlgebra.leftInverse_map_of_leftInverse f g h).injective
 
 /-- Spin-group maps commute with the vector actions induced by quadratic isometries. -/
 @[simp]
-theorem map_spinVectorAction [Invertible (2 : R)] (f : Q₁ →qᵢ Q₂)
+theorem spinGroupMap_spinVectorAction [Invertible (2 : R)] (f : Q₁ →qᵢ Q₂)
     (x : spinGroup Q₁) (m : M₁) :
-    CliffordAlgebra.spinVectorAction Q₂ (map f x) (f m) =
+    CliffordAlgebra.spinVectorAction Q₂ (f.spinGroupMap x) (f m) =
       f (CliffordAlgebra.spinVectorAction Q₁ x m) := by
   apply CliffordAlgebra.ι_injective Q₂
   rw [CliffordAlgebra.ι_spinVectorAction_apply, ← CliffordAlgebra.map_apply_ι,
     ← CliffordAlgebra.map_apply_ι, CliffordAlgebra.ι_spinVectorAction_apply, map_mul,
-    map_mul, coe_map_apply, CliffordAlgebra.map_star]
+    map_mul, coe_spinGroupMap_apply, CliffordAlgebra.map_star]
+
+end QuadraticMap.Isometry
+
+
+namespace QuadraticMap.IsometryEquiv
+
+universe u v w x
+
+
+variable {R : Type u} [CommRing R]
+  {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
+  {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
+  {N : Type x} [AddCommGroup N] [Module R N]
+  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} {Q : QuadraticForm R N}
 
 /-- Under an orthogonal-product isometry, the image of the Spin group of the first summand fixes
 every vector in the second summand. -/
-theorem map_fixed_of_isometryEquiv_prod (e : Q.IsometryEquiv (Q₁.prod Q₂)) [Invertible (2 : R)]
+theorem spinGroupMap_fixed_of_prod (e : Q.IsometryEquiv (Q₁.prod Q₂)) [Invertible (2 : R)]
     (x : spinGroup Q₁) (m₂ : M₂) :
     CliffordAlgebra.spinVectorAction Q
-      (map (e.symm.toIsometry.comp (QuadraticMap.Isometry.inl Q₁ Q₂)) x)
+      ((e.symm.toIsometry.comp (QuadraticMap.Isometry.inl Q₁ Q₂)).spinGroupMap x)
       (e.symm.toIsometry.comp (QuadraticMap.Isometry.inr Q₁ Q₂) m₂) =
         e.symm.toIsometry.comp (QuadraticMap.Isometry.inr Q₁ Q₂) m₂ := by
   apply CliffordAlgebra.ι_injective Q
@@ -209,4 +254,4 @@ theorem map_fixed_of_isometryEquiv_prod (e : Q.IsometryEquiv (Q₁.prod Q₂)) [
   rw [hcomm.eq, mul_assoc, ← CliffordAlgebra.map_star, ← map_mul,
     spinGroup.mul_star_self_of_mem x.2, map_one, mul_one]
 
-end spinGroup
+end QuadraticMap.IsometryEquiv
