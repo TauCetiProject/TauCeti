@@ -25,7 +25,8 @@ row exchangeability of that array. This file shows that recurrence and Markov ex
 not supply that hypothesis, and exhibits an obstruction to it.
 
 The obstruction is not the reordering of genuine transitions but the junk rows. A state the
-process never visits has no genuine successors, so its whole row is `Nat.nth`'s junk value: by
+process never visits has no genuine successors, so every one of its visit times is `Nat.nth`'s
+junk index `0`; the whole row is therefore read off at time zero, every entry being `x 1`, and by
 `TauCeti.successorArray_eq_successorArray_zero_of_forall_ne` it is constant and equal to the cell
 `(x 0, 0)`. Every successor array therefore satisfies the tie
 
