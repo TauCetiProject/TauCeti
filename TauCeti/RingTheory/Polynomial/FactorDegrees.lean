@@ -17,7 +17,7 @@ degrees of the monic irreducible factors of the reduction of `f` modulo `p`. Mul
 retained: a repeated irreducible factor contributes its degree repeatedly.
 
 This file gives the generic polynomial API for the carrier: membership, products, total degree,
-and its relationship with irreducibility. Roadmap-specific worked examples are in
+and its relationship with irreducibility. Worked examples for `X ^ 5 - X - 1` are in
 `TauCeti/FieldTheory/GaloisGroups/FactorDegrees.lean`.
 
 ## Main declarations
@@ -36,11 +36,12 @@ and its relationship with irreducibility. Roadmap-specific worked examples are i
 
 ## References
 
-* [Tau Ceti PolynomialGaloisGroups roadmap, Layer 5](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/PolynomialGaloisGroups/README.md#layer-5-frobenius-specialization),
-  with Lean signatures in its Layer 5 `Suggested.lean` specification.
 * D. A. Marcus, *Number Fields*, 2nd edition, Springer 2018, Chapter 4.
 * J. Neukirch, *Algebraic Number Theory*, Springer 1999, Chapter I, §8.
 -/
+
+-- Provenance: the Tau Ceti `PolynomialGaloisGroups` roadmap README and its `Suggested.lean`,
+-- which write down the Lean signature of the factor-degree multiset defined here.
 
 public section
 noncomputable section

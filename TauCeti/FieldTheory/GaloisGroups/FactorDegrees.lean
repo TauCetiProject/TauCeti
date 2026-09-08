@@ -17,9 +17,9 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Degrees of factors modulo a prime
 
-This module supplies the Layer 5 worked computations of `Polynomial.factorDegrees` for
-`X ^ 5 - X - 1`. The generic polynomial carrier and API live in
-`TauCeti/RingTheory/Polynomial/FactorDegrees.lean`.
+This module works out `Polynomial.factorDegrees` explicitly for `X ^ 5 - X - 1`, whose reduction
+splits as a cubic times a quadratic modulo `2` and stays irreducible modulo `5`. The generic
+polynomial carrier and API live in `TauCeti/RingTheory/Polynomial/FactorDegrees.lean`.
 
 ## Main declarations
 
@@ -33,12 +33,13 @@ This module supplies the Layer 5 worked computations of `Polynomial.factorDegree
 
 ## References
 
-* [Tau Ceti PolynomialGaloisGroups roadmap, Layer 5](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/PolynomialGaloisGroups/README.md#layer-5-frobenius-specialization),
-  with Lean signatures in its Layer 5 `Suggested.lean` specification.
 * D. A. Marcus, *Number Fields*, 2nd edition, Springer 2018, Chapter 4, where the factorization
   of `f mod p` is matched with the splitting of `p`.
 * J. Neukirch, *Algebraic Number Theory*, Springer 1999, Chapter I, §8.
 -/
+
+-- Provenance: the Tau Ceti `PolynomialGaloisGroups` roadmap README and its `Suggested.lean`,
+-- which write down the Lean signatures for these factorization patterns of `X ^ 5 - X - 1`.
 
 public section
 noncomputable section
