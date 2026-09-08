@@ -44,12 +44,15 @@ exchangeable (`spareStateProcess_exchangeable`), hence Markov exchangeable
 (`spareStateProcess_markovExchangeable`) and recurrent (`spareStateProcess_recurrent`). Yet
 swapping the first two entries of the row of the letter `0` — a permutation family of finite
 support — changes the law of its successor array
-(`spareStateProcess_not_rowExchangeable_successorProcess`), because on the positive-probability
-event that the path begins `0, 0, 1, 1` the swap breaks the tie above.
+(`spareStateProcess_not_rowExchangeable_successorProcess`), because the swap breaks the tie above
+on the event that the path begins `0, 0, 1, 1` *and* never takes the spare letter. That event has
+probability `16⁻¹`, the probability of the opening alone, because avoiding the spare letter is
+almost sure.
 
-The cells the tie involves are not the ones the consumer of the array reads:
+Only one of the two cells the tie involves is one the consumer of the array reads:
 `TauCeti.eqOn_iff_successorArray_visitCell` describes a finite path event through the cells a
-reference path designates, and those lie in visited rows.
+reference path designates, and those lie in visited rows, so the spare row's cell `(2, 0)` is
+never among them, while the cell `(x 0, 0)` it is tied to is a genuine successor cell.
 
 ## Main results
 
@@ -105,12 +108,8 @@ theorem spareStateLaw_singleton_of_ne_two {a : Fin 3} (ha : a ≠ 2) :
 def spareStateMeasure : Measure (ℕ → Fin 3) :=
   Measure.infinitePi fun _ : ℕ => spareStateLaw
 
-/-- The defining equation of `spareStateMeasure`. -/
-theorem spareStateMeasure_def :
-    spareStateMeasure = Measure.infinitePi fun _ : ℕ => spareStateLaw := (rfl)
-
 instance : IsProbabilityMeasure spareStateMeasure := by
-  rw [spareStateMeasure_def]
+  rw [spareStateMeasure]
   infer_instance
 
 /-- The example's process: the coordinates of a fair-coin sequence in the alphabet `Fin 3`. -/
@@ -193,7 +192,7 @@ private theorem mem_opening {x : ℕ → Fin 3} :
 
 /-- The opening has probability `16⁻¹`, in particular positive probability. -/
 private theorem spareStateMeasure_opening : spareStateMeasure opening = (16 : ℝ≥0∞)⁻¹ := by
-  rw [spareStateMeasure_def, opening,
+  rw [spareStateMeasure, opening,
     Measure.infinitePi_pi _ fun i _ => measurableSet_singleton (openingWord i)]
   have hword : ∀ i, openingWord i ≠ 2 := by
     intro i
@@ -204,11 +203,6 @@ private theorem spareStateMeasure_opening : spareStateMeasure opening = (16 : �
   norm_num
   rw [← ENNReal.inv_pow]
   norm_num
-
-/-- The successor array of the example read at a sample path. -/
-private theorem successorProcess_spareStateProcess_apply (p : Fin 3 × ℕ) (x : ℕ → Fin 3) :
-    successorProcess spareStateProcess p x = successorArray x p.1 p.2 :=
-  successorProcess_apply spareStateProcess p x
 
 /-- The successor-array entries the opening pins down: the spare row's head is `0`, while the
 second entry of the row of `0` and the head of the row of `1` are both `1`. -/
@@ -271,15 +265,16 @@ private theorem measurable_successorProcess_reindex (π : Fin 3 → Equiv.Perm �
     Measurable fun x : ℕ → Fin 3 => fun p : Fin 3 × ℕ =>
       successorProcess spareStateProcess (p.1, π p.1 p.2) x := by
   refine Measurable.of_eval fun p => ?_
-  simp only [successorProcess_spareStateProcess_apply]
+  simp only [successorProcess_apply]
   exact measurable_successorArray_apply p.1 (π p.1 p.2) (measurableSet_singleton p.1)
 
 /-- **The successor array of a recurrent Markov exchangeable process need not be row
 exchangeable.** Row exchangeability would move the head of the row of `0` while leaving the spare
 row where it is, and the two are tied by
-`TauCeti.successorArray_eq_successorArray_zero_of_forall_ne`. On the opening `0, 0, 1, 1`, an
-event of probability `16⁻¹`, the tie is broken, so the reindexed array does not almost surely
-satisfy an identity the original array always satisfies.
+`TauCeti.successorArray_eq_successorArray_zero_of_forall_ne`. On the paths that open `0, 0, 1, 1`
+and never take the spare letter — an event of probability `16⁻¹`, since avoiding the spare letter
+is almost sure — the tie is broken, so the reindexed array does not almost surely satisfy an
+identity the original array almost surely satisfies.
 
 Together with `spareStateProcess_markovExchangeable` and `spareStateProcess_recurrent` this shows
 that the row-exchangeability input of
@@ -292,7 +287,7 @@ theorem spareStateProcess_not_rowExchangeable_successorProcess :
   have hmeas₀ : Measurable fun x : ℕ → Fin 3 => fun p : Fin 3 × ℕ =>
       successorProcess spareStateProcess p x := by
     refine Measurable.of_eval fun p => ?_
-    simp only [successorProcess_spareStateProcess_apply]
+    simp only [successorProcess_apply]
     exact measurable_successorArray_apply p.1 p.2 (measurableSet_singleton p.1)
   -- The original array always lies in the tie event.
   have horig : spareStateMeasure
@@ -303,8 +298,8 @@ theorem spareStateProcess_not_rowExchangeable_successorProcess :
       (prob_compl_eq_zero_iff measurableSet_avoidsTwo).1 spareStateMeasure_compl_avoidsTwo
     rw [← havoid]
     refine measure_mono fun x hx => ?_
-    simpa only [Set.mem_preimage, tiedSpareRow, Set.mem_ofPred_eq,
-      successorProcess_spareStateProcess_apply] using successorArray_two_zero_eq hx
+    simpa only [Set.mem_preimage, tiedSpareRow, Set.mem_ofPred_eq, successorProcess_apply]
+      using successorArray_two_zero_eq hx
   -- Row exchangeability would transport that to the reindexed array.
   have hswap : spareStateMeasure
       ((fun x (p : Fin 3 × ℕ) =>
@@ -320,7 +315,7 @@ theorem spareStateProcess_not_rowExchangeable_successorProcess :
     refine measure_mono_null (fun x hx => ?_) hcompl
     obtain ⟨h0, h1, h2⟩ := successorArray_of_mem_opening hx.1 hx.2
     simp only [Set.mem_compl_iff, Set.mem_preimage, tiedSpareRow, Set.mem_ofPred_eq,
-      successorProcess_spareStateProcess_apply, swapRowZeroHead_zero,
+      successorProcess_apply, swapRowZeroHead_zero,
       swapRowZeroHead_of_ne (by decide : (1 : Fin 3) ≠ 0),
       swapRowZeroHead_of_ne (by decide : (2 : Fin 3) ≠ 0), Equiv.Perm.one_apply,
       Equiv.swap_apply_left, h0, h1, h2]
