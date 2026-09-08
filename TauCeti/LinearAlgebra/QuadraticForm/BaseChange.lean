@@ -68,9 +68,10 @@ theorem Isometry.baseChange_id (Q : _root_.QuadraticForm R M) :
       _root_.QuadraticMap.Isometry.id (Q.baseChange A) := by
   apply _root_.QuadraticMap.Isometry.ext
   intro x
-  change (LinearMap.id : M →ₗ[R] M).baseChange A x = x
-  rw [LinearMap.baseChange_id]
-  rfl
+  have h : (Isometry.baseChange (_root_.QuadraticMap.Isometry.id Q) A).toLinearMap =
+      (_root_.QuadraticMap.Isometry.id (Q.baseChange A)).toLinearMap :=
+    LinearMap.baseChange_id
+  exact DFunLike.congr_fun h x
 
 /-- Base change commutes with composition of isometries. -/
 theorem Isometry.baseChange_comp (g : Q₂ →qᵢ Q₃) (f : Q₁ →qᵢ Q₂) :
@@ -78,9 +79,10 @@ theorem Isometry.baseChange_comp (g : Q₂ →qᵢ Q₃) (f : Q₁ →qᵢ Q₂)
       (Isometry.baseChange g A).comp (Isometry.baseChange f A) := by
   apply _root_.QuadraticMap.Isometry.ext
   intro x
-  change (g.toLinearMap.comp f.toLinearMap).baseChange A x =
-    (g.toLinearMap.baseChange A).comp (f.toLinearMap.baseChange A) x
-  rw [LinearMap.baseChange_comp]
+  have h : (Isometry.baseChange (g.comp f) A).toLinearMap =
+      ((Isometry.baseChange g A).comp (Isometry.baseChange f A)).toLinearMap :=
+    LinearMap.baseChange_comp f.toLinearMap g.toLinearMap
+  exact DFunLike.congr_fun h x
 
 /-- Base change of an isometric equivalence of quadratic forms. -/
 def IsometryEquiv.baseChange (f : Q₁.IsometryEquiv Q₂) (A : Type uA)
@@ -114,19 +116,21 @@ theorem IsometryEquiv.baseChange_trans
       (IsometryEquiv.baseChange f A).trans (IsometryEquiv.baseChange g A) := by
   apply DFunLike.ext _ _
   intro x
-  change (f.toLinearEquiv.trans g.toLinearEquiv).baseChange R A M P x =
-    ((f.toLinearEquiv.baseChange R A M N).trans
-      (g.toLinearEquiv.baseChange R A N P)) x
-  rw [LinearEquiv.baseChange_trans]
+  have h : (IsometryEquiv.baseChange (f.trans g) A).toLinearEquiv =
+      ((IsometryEquiv.baseChange f A).trans
+        (IsometryEquiv.baseChange g A)).toLinearEquiv :=
+    LinearEquiv.baseChange_trans R A M N f.toLinearEquiv g.toLinearEquiv
+  exact DFunLike.congr_fun h x
 
 /-- Base change commutes with inversion of isometric equivalences. -/
 theorem IsometryEquiv.baseChange_symm (f : Q₁.IsometryEquiv Q₂) :
     IsometryEquiv.baseChange f.symm A = (IsometryEquiv.baseChange f A).symm := by
   apply DFunLike.ext _ _
   intro x
-  change f.toLinearEquiv.symm.baseChange R A N M x =
-    (f.toLinearEquiv.baseChange R A M N).symm x
-  rw [LinearEquiv.baseChange_symm]
+  have h : (IsometryEquiv.baseChange f.symm A).toLinearEquiv =
+      ((IsometryEquiv.baseChange f A).symm).toLinearEquiv :=
+    LinearEquiv.baseChange_symm R A M N f.toLinearEquiv
+  exact DFunLike.congr_fun h x
 
 /-- Isometric quadratic forms remain isometric after base change. -/
 theorem Equivalent.baseChange (h : Q₁.Equivalent Q₂) (A : Type uA)
