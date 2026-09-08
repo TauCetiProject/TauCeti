@@ -56,12 +56,12 @@ same order. The reverse convention is common in the literature and in databases 
   Mathematical Sciences 141, Springer 2004, §1.1 and §1.5 (constellations and hypermaps).
 * E. Girondo, G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins d'Enfants*,
   London Mathematical Society Student Texts 79, Cambridge University Press 2012, §4.
-
-The formal prototype in `TauCetiRoadmap/BelyiMaps/Suggested.lean` was adapted for the declarations
-and proof structure in this file.
 -/
 
 open Equiv
+
+-- The signatures and proof outlines below follow the formal prototype `Suggested.lean` of the
+-- Tau Ceti `BelyiMaps` roadmap.
 
 public section
 
