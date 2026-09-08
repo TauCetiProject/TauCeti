@@ -14,8 +14,8 @@ public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.Algebra.Group.Pi.Units
 -- `Matrix.IsDiag` occurs in the statements below.
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
--- `Subgroup.centralizer` and `Subgroup.center` occur in the statements below.
-public import Mathlib.GroupTheory.Subgroup.Centralizer
+-- `Subgroup.centralizer` and its maximal-commutative-subgroup API occur below.
+public import TauCeti.Algebra.Group.Subgroup.Centralizer
 -- `Nat.card` occurs in the statement of `TauCeti.natCard_diagonalTorus`.
 public import Mathlib.SetTheory.Cardinal.Finite
 -- Non-public: `Nat.card_units`, the number of units of a `GroupWithZero`, is used only inside the
@@ -351,12 +351,8 @@ maximality of the torus among abelian subgroups. -/
 theorem eq_diagonalTorus_of_le_of_isMulCommutative (H : Subgroup (GL (Fin n) k))
     [IsMulCommutative H] (hle : diagonalTorus k n ≤ H) :
     H = diagonalTorus k n :=
-  le_antisymm
-    (by
-      rw [← centralizer_diagonalTorus (k := k) (n := n)]
-      exact (Subgroup.le_centralizer (H := H)).trans
-        (Subgroup.centralizer_le (SetLike.coe_subset_coe.mpr hle)))
-    hle
+  Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative
+    (centralizer_diagonalTorus (k := k) (n := n)) hle
 
 end IsCancelMulZero
 
