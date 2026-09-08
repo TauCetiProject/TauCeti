@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
-public import Mathlib.RingTheory.Noetherian.Nilpotent
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 
 /-!
@@ -30,8 +29,6 @@ Hopf-algebra argument from that commutative-algebra input.
 * `TauCeti.HopfIdeal.mem_reduction`: membership is nilpotence.
 * `TauCeti.HopfIdeal.reduction_le_of_isReduced_quotient`: its minimality among Hopf ideals with
   reduced quotient.
-* `TauCeti.HopfIdeal.isNilpotent_reduction_toIdeal`: over a Noetherian algebra, the reduction
-  ideal is nilpotent.
 
 ## References
 
@@ -118,13 +115,5 @@ theorem reduction_le_of_isReduced_quotient
   rw [← toIdeal_le_toIdeal, reduction_toIdeal, nilradical]
   exact ((Ideal.isRadical_iff_quotient_reduced I.toIdeal).mpr inferInstance).radical_le_iff.mpr
     bot_le
-
-/-- Over a Noetherian commutative Hopf algebra, the ideal removed to form the reduction is
-nilpotent. -/
-theorem isNilpotent_reduction_toIdeal
-    [IsReduced ((H ⧸ nilradical H) ⊗[R] (H ⧸ nilradical H))]
-    [IsNoetherianRing H] : IsNilpotent (reduction R H).toIdeal := by
-  rw [reduction_toIdeal]
-  exact IsNoetherianRing.isNilpotent_nilradical H
 
 end TauCeti.HopfIdeal

@@ -38,8 +38,6 @@ thickening controls the original center.
   agree.
 * `TauCeti.CommHopfAlgCat.smooth_reducedCenterCoordinateHopfAlgebra`: over an algebraically closed
   field, a finite-type reduced center is smooth.
-* `TauCeti.HopfIdeal.isNilpotent_reduction_toIdeal`: over a Noetherian coordinate ring, the
-  thickening discarded by any Hopf-algebra reduction is nilpotent.
 
 ## References
 
@@ -112,10 +110,11 @@ theorem reducedCenterDefiningIdeal_toIdeal :
         (centerDefiningIdeal H).toIdeal :=
     calc
       RingHom.ker ((mkQuotient H (centerDefiningIdeal H)).hom :
-          H →+* centerCoordinateHopfAlgebra H) =
+        H →+* centerCoordinateHopfAlgebra H) =
           RingHom.ker (mkQuotient H (centerDefiningIdeal H)).hom.toAlgHom.toRingHom := by
         ext x
-        rfl
+        simp only [RingHom.mem_ker, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+          BialgHom.coe_toAlgHom]
       _ = (centerDefiningIdeal H).toIdeal :=
         mkQuotient_ker H (centerDefiningIdeal H)
   rw [reducedCenterDefiningIdeal, HopfIdeal.comapOfSurjective_toIdeal,
