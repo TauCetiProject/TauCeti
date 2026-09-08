@@ -8,12 +8,22 @@ module
 public import Mathlib.RepresentationTheory.Basic
 
 /-!
-# Monoid-algebra elements that annihilate a fixed vector
+# The group-algebra action of a representation
 
-An element `a` of the monoid algebra `k[G]` acting through a representation `ρ` kills a vector `v`
-when three conditions meet: doubling is injective on `V`, some `g` fixes `v`, and right
-multiplication by `g` negates `a`. The last two make `ρ.asAlgebraHom a v` its own negative, and
-injective doubling turns being its own negative into vanishing.
+Two general facts about `Representation.asAlgebraHom`, the extension of a representation `ρ` of a
+monoid `G` to the monoid algebra `k[G]`.
+
+The first is the description of its image: since `k[G]` is spanned by `G`, the image of
+`ρ.asAlgebraHom` is, as a submodule, the span of the image of `ρ`
+(`Representation.toSubmodule_range_asAlgebraHom`). This is what turns a statement about a group
+action into a statement about the subalgebra of endomorphisms it generates, as a
+double-centralizer theorem needs.
+
+The second is a vanishing criterion. An element `a` of the monoid algebra `k[G]` acting through a
+representation `ρ` kills a vector `v` when three conditions meet: doubling is injective on `V`,
+some `g` fixes `v`, and right multiplication by `g` negates `a`. The last two make
+`ρ.asAlgebraHom a v` its own negative, and injective doubling turns being its own negative into
+vanishing.
 
 That is the mechanism behind the column-antisymmetrizer vanishing arguments of
 `TauCeti/RepresentationTheory/Symmetric/`, which are its consumers: the antisymmetrizer of a set of
@@ -28,6 +38,8 @@ divisors whose additive group has no `2`-torsion.
 
 ## Main results
 
+* `Representation.toSubmodule_range_asAlgebraHom`: the image of the group-algebra action is the
+  span of the image of the representation.
 * `Representation.asAlgebraHom_eq_zero_of_mul_single_eq_neg`: with doubling injective on `V`, an
   algebra element negated by right multiplication by an element fixing `v` annihilates `v`.
 -/
@@ -35,6 +47,33 @@ divisors whose additive group has no `2`-torsion.
 public section
 
 namespace Representation
+
+section Range
+
+variable {k G V : Type*} [CommSemiring k] [Monoid G] [AddCommMonoid V] [Module k V]
+
+/-- **The image of the group-algebra action is the span of the image of the representation.**
+The monoid algebra `k[G]` is spanned by the elements of `G`, so an element of `k[G]` acts by a
+finite `k`-combination of the operators `ρ g`, and conversely each `ρ g` is the action of a group
+element. -/
+theorem toSubmodule_range_asAlgebraHom (ρ : Representation k G V) :
+    Subalgebra.toSubmodule ρ.asAlgebraHom.range = Submodule.span k (Set.range ρ) := by
+  have hmem : ∀ a : MonoidAlgebra k G, ρ.asAlgebraHom a ∈ Submodule.span k (Set.range ρ) := by
+    intro a
+    induction a using MonoidAlgebra.induction_on with
+    | of g => rw [asAlgebraHom_of]; exact Submodule.subset_span ⟨g, rfl⟩
+    | add a b ha hb => rw [map_add]; exact Submodule.add_mem _ ha hb
+    | smul r a ha => rw [map_smul]; exact Submodule.smul_mem _ r ha
+  refine le_antisymm (fun x hx => ?_) (Submodule.span_le.2 ?_)
+  · obtain ⟨a, ha⟩ := (Subalgebra.mem_toSubmodule _).mp hx
+    rw [← ha]
+    exact hmem a
+  · rintro _ ⟨g, rfl⟩
+    exact (Subalgebra.mem_toSubmodule _).mpr ⟨MonoidAlgebra.of k G g, asAlgebraHom_of ρ g⟩
+
+end Range
+
+section Vanishing
 
 variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
 
@@ -56,5 +95,7 @@ theorem asAlgebraHom_eq_zero_of_mul_single_eq_neg
   simp only [two_nsmul, add_zero]
   nth_rewrite 1 [key]
   exact neg_add_cancel _
+
+end Vanishing
 
 end Representation
