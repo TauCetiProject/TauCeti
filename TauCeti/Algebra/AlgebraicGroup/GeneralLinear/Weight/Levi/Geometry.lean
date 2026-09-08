@@ -35,6 +35,10 @@ the weight Levi is geometrically connected.
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapters 12--13.
+
+The quotient/evaluation equivalence and its inverse-map proofs, together with the smoothness,
+domain, and geometric-connectedness arguments, are adapted from the construction in
+`TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Unipotent.Geometry`.
 -/
 
 public section
