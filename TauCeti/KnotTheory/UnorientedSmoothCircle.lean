@@ -63,11 +63,11 @@ namespace SmoothCircleEmbedding
 
 /-- The setoid of oriented smooth circle presentations modulo reversal. -/
 private def unorientedSetoid : Setoid (SmoothCircleEmbedding I M) :=
-  TauCeti.Setoid.involution reverse reverse_reverse
+  Equiv.Perm.SameCycle.setoid (Function.Involutive.toPerm reverse reverse_reverse)
 
 private theorem unorientedSetoid_apply (f g : SmoothCircleEmbedding I M) :
     unorientedSetoid f g ↔ f = g ∨ f = g.reverse :=
-  TauCeti.Setoid.involution_apply reverse reverse_reverse f g
+  TauCeti.Setoid.sameCycle_toPerm_iff reverse reverse_reverse f g
 
 end SmoothCircleEmbedding
 
@@ -92,7 +92,7 @@ theorem forgetOrientation_eq_iff :
     forgetOrientation f = forgetOrientation g ↔ f = g ∨ f = g.reverse := by
   simp only [forgetOrientation, UnorientedSmoothCircleEmbedding]
   rw [Quotient.eq_iff_equiv]
-  exact TauCeti.Setoid.involution_apply reverse reverse_reverse f g
+  exact unorientedSetoid_apply f g
 
 /-- Reversing the orientation does not change the unoriented presentation. -/
 @[simp]

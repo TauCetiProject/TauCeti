@@ -245,11 +245,11 @@ def reverse (D : BasedOrientedGaussCode n) : BasedOrientedGaussCode n where
 
 /-- The setoid of oriented Gauss codes modulo orientation reversal. -/
 private def unorientedSetoid : Setoid (BasedOrientedGaussCode n) :=
-  TauCeti.Setoid.involution reverse reverse_reverse
+  Equiv.Perm.SameCycle.setoid (Function.Involutive.toPerm reverse reverse_reverse)
 
 private theorem unorientedSetoid_apply (D E : BasedOrientedGaussCode n) :
     unorientedSetoid D E ↔ D = E ∨ D = E.reverse :=
-  TauCeti.Setoid.involution_apply reverse reverse_reverse D E
+  TauCeti.Setoid.sameCycle_toPerm_iff reverse reverse_reverse D E
 
 end BasedOrientedGaussCode
 
@@ -269,7 +269,7 @@ orientation reversal. -/
     D.forgetOrientation = E.forgetOrientation ↔ D = E ∨ D = E.reverse := by
   simp only [forgetOrientation, BasedUnorientedGaussCode]
   rw [Quotient.eq_iff_equiv]
-  exact TauCeti.Setoid.involution_apply reverse reverse_reverse D E
+  exact unorientedSetoid_apply D E
 
 /-- Reversing orientation does not change the unoriented Gauss code. -/
 @[simp] theorem forgetOrientation_reverse (D : BasedOrientedGaussCode n) :
