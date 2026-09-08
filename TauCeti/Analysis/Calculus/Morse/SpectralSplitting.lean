@@ -40,6 +40,9 @@ negative-gradient field, supplied by
 * `ContDiffAt.finrank_unstableLinearSubspace`: the unstable dimension is the Morse index.
 * `ContDiffAt.finrank_stableLinearSubspace_add_morseIndex`: the stable dimension plus the Morse
   index is the ambient dimension.
+* `TauCeti.IsNondegenerateCriticalPoint.isCompl_unstableLinearSubspace_stableLinearSubspace` and
+  `TauCeti.IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex`: the same two
+  results stated for a nondegenerate critical point, which supplies the Hessian injectivity.
 
 ## References
 
@@ -207,5 +210,28 @@ theorem finrank_stableLinearSubspace_add_morseIndex (hf : ContDiffAt ℝ 2 f x)
     hker)
 
 end ContDiffAt
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {f : E → ℝ} {x : E}
+
+/-- At a nondegenerate critical point the unstable and stable linear subspaces are complementary,
+so the tangent space is their direct sum. -/
+theorem IsNondegenerateCriticalPoint.isCompl_unstableLinearSubspace_stableLinearSubspace
+    (h : IsNondegenerateCriticalPoint f x) :
+    IsCompl h.contDiffAt.unstableLinearSubspace h.contDiffAt.stableLinearSubspace :=
+  h.contDiffAt.isCompl_unstableLinearSubspace_stableLinearSubspace
+    (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective)
+
+/-- At a nondegenerate critical point the dimension of the stable linear subspace plus the Morse
+index is the dimension of the ambient tangent space. -/
+theorem IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex
+    (h : IsNondegenerateCriticalPoint f x) :
+    Module.finrank ℝ h.contDiffAt.stableLinearSubspace + morseIndex f x = Module.finrank ℝ E :=
+  h.contDiffAt.finrank_stableLinearSubspace_add_morseIndex
+    (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective)
+
+end TauCeti
 
 end
