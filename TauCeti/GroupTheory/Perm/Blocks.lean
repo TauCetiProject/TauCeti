@@ -7,8 +7,8 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Primitive
 public import Mathlib.GroupTheory.GroupAction.SubMulAction.OfStabilizer
-import Mathlib.Algebra.Group.Subgroup.Ker
-import Mathlib.Order.LatticeIntervals
+import Mathlib.Algebra.Group.Subgroup.Map
+import TauCeti.Algebra.Group.Subgroup.Cover
 
 /-!
 # Primitive actions from extremal blocks
@@ -69,16 +69,10 @@ theorem _root_.MulAction.IsBlock.isPreprimitive_stabilizer_of_isAtom
     (hB : IsBlock G B) (ha : a ∈ B)
     (hmin : IsAtom (⟨B, ha, hB⟩ : BlockMem G a)) :
     IsPreprimitive (stabilizer G B) B := by
-  have hstab_le : stabilizer G a ≤ stabilizer G B := hB.stabilizer_le ha
   have hcover : stabilizer G a ⋖ stabilizer G B :=
     (hB.isAtom_iff_stabilizer_covBy ha).mp hmin
-  have hcoatom_Iic : IsCoatom
-      (⟨stabilizer G a, hstab_le⟩ : Set.Iic (stabilizer G B)) :=
-    (covBy_iff_coatom_Iic hcover.le).mp hcover
-  let _ : OrderTop { H' : Subgroup G // H' ≤ stabilizer G B } := Set.Iic.orderTop
   have hcoatom : IsCoatom ((stabilizer G a).subgroupOf (stabilizer G B)) :=
-    (OrderIso.isCoatom_iff (Subgroup.MapSubtype.orderIso (stabilizer G B)).symm _).mpr
-      hcoatom_Iic
+    hcover.isCoatom_subgroupOf
   have hB_ne : B ≠ {a} := by
     intro h
     apply hmin.ne_bot
