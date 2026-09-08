@@ -16,10 +16,11 @@ This file relates semilocal simple connectivity to local homeomorphisms and cove
 The mechanism for descending semilocal simple connectivity is a local section. If `p : E → X`
 is a local homeomorphism and `e : E`, then `p` restricts to a homeomorphism from a neighbourhood
 of `e` onto an open set `U ∋ p e`, so a loop inside `U` is the image under `p` of a loop in `E`.
-If that loop in `E` is null-homotopic, so is its image. Only local injectivity is used, never path
-lifting, so the hypothesis on the total space is stated as "every loop in `E` is null-homotopic
-in `E`", which is weaker than `SimplyConnectedSpace E`: it does not ask `E` to be
-path-connected, and so applies to a cover whose components are separately simply connected.
+If that loop in `E` is null-homotopic, so is its image. Only the local-section structure of a
+local homeomorphism is used, never path lifting, so the hypothesis on the total space is stated
+as "every loop in `E` is null-homotopic in `E`", which is weaker than `SimplyConnectedSpace E`:
+it does not ask `E` to be path-connected, and so applies to a cover whose components are
+separately simply connected.
 
 The same neighbourhoods run the other way as well: the preimage of a witnessing neighbourhood is
 one upstairs, because a covering map is injective on the Hom-sets of the fundamental groupoid.
@@ -70,18 +71,17 @@ theorem semilocallySimplyConnectedAt_of_isLocalHomeomorph (hp : IsLocalHomeomorp
   have hpu : p (φ u) = u := hp.apply_localInverseAt_of_mem hu
   -- The local inverse of `p` at `e` carries `γ` to a loop at `φ u` in `E`.
   have key := hE (φ u) (γ.map' (φ.continuousOn_toFun.mono hγ))
-  -- Pushing that loop forward along `p` returns `γ`, up to relabelling its endpoints by `hpu`.
-  have hdesc : (γ.map' (φ.continuousOn_toFun.mono hγ)).map
-      (map_continuous (⟨p, hp.continuous⟩ : C(E, X))) = γ.cast hpu hpu := by
+  -- Pushing that loop forward along `p` returns `γ`, once its endpoints are relabelled by `hpu`.
+  have hdesc : ((γ.map' (φ.continuousOn_toFun.mono hγ)).map
+      (map_continuous (⟨p, hp.continuous⟩ : C(E, X)))).cast hpu.symm hpu.symm = γ := by
     ext t
     exact hp.apply_localInverseAt_of_mem (hmem t)
-  have hrefl : (Path.refl (φ u)).map (map_continuous (⟨p, hp.continuous⟩ : C(E, X)))
-      = (Path.refl u).cast hpu hpu := by
+  have hrefl : ((Path.refl (φ u)).map
+      (map_continuous (⟨p, hp.continuous⟩ : C(E, X)))).cast hpu.symm hpu.symm = Path.refl u := by
     ext t
     exact hpu
-  refine (Path.Homotopic.cast_iff hpu hpu).mp ?_
   obtain ⟨F⟩ := key.map (⟨p, hp.continuous⟩ : C(E, X))
-  exact ⟨F.cast hdesc hrefl⟩
+  exact ⟨(F.pathCast hpu.symm hpu.symm).cast hdesc hrefl⟩
 
 /-- **A space that is the image of a local homeomorphism whose source has only null-homotopic
 loops is semilocally simply connected.** -/
@@ -107,9 +107,11 @@ preimage of a witnessing neighbourhood downstairs projects to a null-homotopic l
 covering map is injective on the Hom-sets of the fundamental groupoid, so the loop upstairs is
 null-homotopic as well.
 
-Together with `IsLocalHomeomorph.locallyPathConnectedSpace` this says that a covering space of a
-space satisfying the standing hypotheses of the universal-cover construction satisfies them
-again, so covers can be iterated. -/
+Together with `IsLocalHomeomorph.locallyPathConnectedSpace` this says that a covering map
+preserves the two *local* standing hypotheses of the universal-cover construction: over a locally
+path-connected, semilocally simply connected base, the total space is again locally path-connected
+and semilocally simply connected. Path-connectedness of the base is not inherited — a cover can be
+disconnected — so to iterate the construction one restricts to a path component of `E`. -/
 theorem _root_.IsCoveringMap.semilocallySimplyConnectedSpace [SemilocallySimplyConnectedSpace X]
     (hp : IsCoveringMap p) : SemilocallySimplyConnectedSpace E where
   exists_mem_nhds_loops_nullhomotopic e := by

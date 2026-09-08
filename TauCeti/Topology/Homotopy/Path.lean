@@ -279,15 +279,6 @@ theorem refl_of_forall_mem_of_nullhomotopic {s : Set X}
     (γ.codRestrict (x := ⟨x, hx⟩) (y := ⟨x, hx⟩) hγ)
   rwa [Path.map_codRestrict] at hmap
 
-/-- Path homotopy is invariant under transporting both paths along equalities of their
-endpoints: `Path.cast` only relabels the endpoints, leaving the underlying map untouched. -/
-@[simp, grind =]
-theorem cast_iff {x y x' y' : X} (hx : x' = x) (hy : y' = y) {γ δ : Path x y} :
-    (γ.cast hx hy).Homotopic (δ.cast hx hy) ↔ γ.Homotopic δ := by
-  subst hx
-  subst hy
-  simp
-
 namespace Quotient
 variable {x₀ x₁ : X}
 
