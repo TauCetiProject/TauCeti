@@ -47,13 +47,6 @@ def unitAtFinitePlace [NumberField K] (v : HeightOneSpectrum (𝓞 K)) :
     Kˣ →* (v.adicCompletion K)ˣ :=
   Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom
 
-/-- The finite-place unit map applies the canonical algebra map to a global unit. -/
-@[simp]
-theorem unitAtFinitePlace_apply [NumberField K] (v : HeightOneSpectrum (𝓞 K)) (a : Kˣ) :
-    unitAtFinitePlace v a =
-      Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom a :=
-  by simp only [unitAtFinitePlace]
-
 end IsDedekindDomain.HeightOneSpectrum
 
 namespace TauCeti
@@ -69,12 +62,6 @@ abbrev RealScalarExtension (w : {w : InfinitePlace K // w.IsReal}) :=
 /-- The map from global units to real units induced by a real place. -/
 def unitAtRealPlace (w : {w : InfinitePlace K // w.IsReal}) : Kˣ →* ℝˣ :=
   Units.map (embedding_of_isReal w.2).toMonoidHom
-
-/-- The real-place unit map applies the embedding belonging to the place to a global unit. -/
-@[simp]
-theorem unitAtRealPlace_apply (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) :
-    unitAtRealPlace w a = Units.map (embedding_of_isReal w.2).toMonoidHom a :=
-  by simp only [unitAtRealPlace]
 
 end TauCeti
 

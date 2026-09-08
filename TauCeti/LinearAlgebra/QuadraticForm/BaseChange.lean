@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.QuadraticForm.Radical
-public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
+public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 
@@ -147,6 +146,14 @@ theorem QuadraticMap.IsometryEquiv.baseChange_symm (f : Q₁.IsometryEquiv Q₂)
 theorem QuadraticMap.Equivalent.baseChange (h : Q₁.Equivalent Q₂) (A : Type uA)
     [CommRing A] [Algebra R A] : (Q₁.baseChange A).Equivalent (Q₂.baseChange A) :=
   h.elim fun f ↦ ⟨QuadraticMap.IsometryEquiv.baseChange f A⟩
+
+/-- A scalar represented by a quadratic form remains represented after base change. -/
+theorem QuadraticMap.Represents.baseChange {Q : _root_.QuadraticForm R M} {a : R}
+    (h : _root_.QuadraticMap.Represents Q a) :
+    _root_.QuadraticMap.Represents (Q.baseChange A) (algebraMap R A a) := by
+  rw [_root_.QuadraticMap.represents_iff] at h ⊢
+  obtain ⟨v, hv⟩ := h
+  exact ⟨1 ⊗ₜ v, by simp [hv, Algebra.smul_def]⟩
 
 namespace QuadraticForm
 
