@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Projective
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall

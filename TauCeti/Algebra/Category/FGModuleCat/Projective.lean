@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.CategoryTheory.Exact.Projective
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Projective
