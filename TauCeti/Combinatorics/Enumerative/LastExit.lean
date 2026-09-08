@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Perm.Finite
+import Mathlib.GroupTheory.Perm.Finite
 public import TauCeti.Combinatorics.Enumerative.SuccessorArray
 
 /-!
