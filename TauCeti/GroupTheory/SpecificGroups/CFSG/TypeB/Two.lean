@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.IntegralMatrix
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Frobenius
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.RootDatum
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Frobenius
@@ -53,7 +54,9 @@ quotient of the derived subgroup of those fixed points by its centre, is stated 
 type-`C` carrier. What is named below is named after what it is:
 `TauCeti.RankTwoBLieIndex.frobenius` is the Frobenius of this carrier, and
 `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff` describes the group it fixes as the
-points whose matrix entries lie in the field of definition `𝔽_q`.
+points whose matrix entries lie in the field of definition `𝔽_q`. The fixed group meets each
+numbered simple-root subgroup in exactly its `𝔽_q`-points and contains the `𝔽_q`-points of the
+carrier's split weight torus.
 
 Nothing here asserts that the carrier is reductive, that its weight torus is maximal, that it is
 the symplectic group scheme, or that any group below is finite, perfect, or simple. In particular
@@ -81,6 +84,10 @@ The same carrier-and-Frobenius material on the branches already assembled is in
   description, and its pinned equation `Frob_q (x_i(u)) = x_i(u ^ q)`.
 * `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff`: its fixed points are the points whose
   matrix entries lie in the field of definition `𝔽_q`.
+* `TauCeti.RankTwoBLieIndex.simpleRootSubgroup_mem_fixedSubgroup_frobenius_iff`: the fixed group
+  meets a numbered simple-root subgroup in exactly its `𝔽_q`-points.
+* `TauCeti.RankTwoBLieIndex.weightTorusPoints_mem_fixedSubgroup_frobenius`: the fixed group contains
+  the `𝔽_q`-points of the carrier's split weight torus.
 
 ## References
 
@@ -208,6 +215,16 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
   rw [frobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
+/-- **The Frobenius raises every coordinate of the carrier's split weight torus to the `q`-th
+power.** This is the torus equation accompanying `frobenius_simpleRootSubgroup`; it concerns the
+explicit rank-two type-`C` carrier only and does not supply the missing pinned `B₂` carrier. -/
+@[simp]
+theorem frobenius_weightTorusPoints (s : Fin 2 → d.1.Closureˣ) :
+    d.frobenius (SpStd.weightTorusPoints 1 d.1.Closure s) =
+      SpStd.weightTorusPoints 1 d.1.Closure (s ^ d.1.fieldOrder) := by
+  rw [frobenius_def, SpStd.frobenius_weightTorusPoints,
+    ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
 /-- **A point of the ambient group is fixed by the Frobenius exactly when all of its matrix entries
 lie in the field of definition.** Writing `𝔽_q` for `TauCeti.ValidLieTypeIndex.fixedField`, the copy
 of the field of `q` elements inside the algebraic closure, the Frobenius fixed points are the points
@@ -226,6 +243,54 @@ theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
   rw [mem_fixedSubgroup, frobenius_def, SpStd.frobenius_eq_self_iff]
   simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
     d.1.fieldOrder_eq_characteristic_pow]
+
+-- The parameter of a raising point occurs as one of its matrix entries. The terminal generator is
+-- a single matrix unit, while the other is a difference of two matrix units in distinct rows.
+private theorem exists_coe_simpleRootSubgroup_eq (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    ∃ r c, ((d.simpleRootSubgroup i u :
+        Matrix.GeneralLinearGroup (Fin 4) d.1.Closure) :
+      Matrix (Fin 4) (Fin 4) d.1.Closure) r c = Multiplicative.toAdd u := by
+  rw [d.simpleRootSubgroup_def]
+  generalize d.carrierNode i = k
+  by_cases hk : k = Fin.last 1
+  · refine ⟨finSumFinEquiv (Sum.inl (Fin.last 1)), finSumFinEquiv (Sum.inr (Fin.last 1)), ?_⟩
+    rw [hk, SpStd.coe_rootSubgroupPoints_eq_one_add_smul, SpStd.rootIntMatrix_inl_last]
+    simp
+  · have h1 : (1 : Matrix (Fin (1 + 1 + (1 + 1))) (Fin (1 + 1 + (1 + 1))) d.1.Closure)
+        (finSumFinEquiv (Sum.inl k)) (finSumFinEquiv (Sum.inl (SpStd.next 1 k hk))) = 0 :=
+      Matrix.one_apply_ne fun h => (SpStd.lt_next 1 k hk).ne (by simpa using h)
+    refine ⟨finSumFinEquiv (Sum.inl k), finSumFinEquiv (Sum.inl (SpStd.next 1 k hk)), ?_⟩
+    rw [SpStd.coe_rootSubgroupPoints_eq_one_add_smul, SpStd.rootIntMatrix_inl_of_ne_last _ _ hk]
+    simp [h1]
+
+/-- **The Frobenius-fixed group meets a numbered simple-root subgroup in exactly its
+`𝔽_q`-points.** A carrier point `x_i(u)` is fixed precisely when its parameter belongs to the
+field of definition. This is a statement about the explicit rank-two type-`C` carrier, not the
+Steinberg fixed group of the classification-list family. -/
+theorem simpleRootSubgroup_mem_fixedSubgroup_frobenius_iff (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.simpleRootSubgroup i u ∈ fixedSubgroup d.frobenius ↔
+      Multiplicative.toAdd u ∈ d.1.fixedField := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · obtain ⟨r, c, hrc⟩ := d.exists_coe_simpleRootSubgroup_eq i u
+    exact hrc ▸ (d.mem_fixedSubgroup_frobenius_iff _).mp h r c
+  · rw [ValidLieTypeIndex.mem_fixedField] at h
+    rw [mem_fixedSubgroup, frobenius_simpleRootSubgroup, h]
+    rfl
+
+/-- **The Frobenius-fixed group contains the `𝔽_q`-points of the carrier's split weight
+torus.** Only this direction is asserted: the matrix entries of a torus point are values of the
+standard-module weights, so recovering the two torus coordinates would require the corresponding
+weight table. -/
+theorem weightTorusPoints_mem_fixedSubgroup_frobenius {s : Fin 2 → d.1.Closureˣ}
+    (hs : ∀ j, ((s j : d.1.Closure)) ∈ d.1.fixedField) :
+    SpStd.weightTorusPoints 1 d.1.Closure s ∈ fixedSubgroup d.frobenius := by
+  rw [mem_fixedSubgroup, frobenius_weightTorusPoints]
+  congr 1
+  funext j
+  refine Units.ext ?_
+  simpa using ValidLieTypeIndex.mem_fixedField.mp (hs j)
 
 end
 
