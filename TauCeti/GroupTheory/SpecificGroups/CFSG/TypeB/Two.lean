@@ -50,11 +50,11 @@ Neither branch gets a Steinberg endomorphism here. What is named below is named 
 `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff` describes the group it fixes as the
 points whose matrix entries lie in the field of definition `𝔽_q`.
 
-The Suzuki branch's Steinberg endomorphism and its candidate group are stated on this carrier in
+The Suzuki branch's Steinberg endomorphism is stated on this carrier in
 `TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`, as `TypeA.lean`, `TypeD.lean`,
 `TypeE6.lean` and `Unimodular.lean` state theirs on their own carriers. No identification of this
 carrier with the pinned simply connected group scheme of the diagram is available, so neither file
-offers it as a substitute for that pinned group: those constructions carry over to the pinned group
+offers it as a substitute for that pinned group: that construction carries over to the pinned group
 once such an identification is proved, and not before.
 
 Nothing here asserts that the carrier is reductive, that its weight torus is maximal, that it is
