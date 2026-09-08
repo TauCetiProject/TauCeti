@@ -25,10 +25,10 @@ those bases is an orthonormal family; and a vector orthogonal to the whole famil
 to every eigenspace, hence zero.  `HilbertBasis.mkOfOrthogonalEqBot` then assembles the family
 into a Hilbert basis of `E`.
 
-In finite dimensions, this file also packages Mathlib's ordered eigenbasis into spectral
-subspaces spanned by any chosen set of eigenvector indices. In particular, the negative and
-positive spectral subspaces are disjoint, invariant under the operator, and together span the
-whole space when the operator is injective.
+In finite dimensions, this file also packages Mathlib's ordered eigenbasis into the spans of
+any chosen set of its eigenvectors. In particular, the negative and positive spectral subspaces,
+spanned by the eigenvectors with negative and with positive eigenvalue, are disjoint, invariant
+under the operator, and together span the whole space when the operator is injective.
 
 No separability is assumed anywhere: the basis is indexed by a set of vectors of `E`, exactly as
 in Mathlib's `exists_hilbertBasis`, and the eigenvalue `0` may well carry an infinite-dimensional
@@ -45,8 +45,8 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
   symmetric operator, every vector of that basis has a nonzero eigenvalue.
 * `ContinuousLinearMap.hasSum_smul_repr_of_apply_eq_smul`: an operator diagonal in a Hilbert
   basis is the sum of its eigencomponents, the spectral expansion such a basis is for.
-* `LinearMap.IsSymmetric.spectralSubspace`: the span of the eigenvectors whose indices lie in a
-  specified set.
+* `LinearMap.IsSymmetric.eigenvectorSpan`: the span of the eigenvectors of the ordered
+  eigenbasis whose indices lie in a specified set.
 * `LinearMap.IsSymmetric.negativeSpectralSubspace` and
   `LinearMap.IsSymmetric.positiveSpectralSubspace`: the negative and positive halves of the
   finite-dimensional spectral splitting.
@@ -167,74 +167,75 @@ namespace LinearMap.IsSymmetric
 
 variable {n : ℕ} [FiniteDimensional 𝕜 E] {T : E →ₗ[𝕜] E}
 
-/-! ### Finite-dimensional spectral subspaces -/
+/-! ### Finite-dimensional eigenvector spans -/
 
-/-- The spectral subspace spanned by the eigenvectors whose indices belong to `s`.
+/-- The span of the eigenvectors whose indices belong to `s`.
 
-The eigenvectors are those of Mathlib's decreasingly ordered eigenbasis. This definition is
-particularly useful with subsets cut out by inequalities on the corresponding eigenvalues. -/
-noncomputable def spectralSubspace (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
+The eigenvectors are those of Mathlib's decreasingly ordered eigenbasis, so this span depends on
+that basis and may select only part of a repeated eigenspace. It is particularly useful with
+subsets cut out by inequalities on the corresponding eigenvalues. -/
+noncomputable def eigenvectorSpan (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     (s : Set (Fin n)) : Submodule 𝕜 E :=
   Submodule.span 𝕜 (hT.eigenvectorBasis hn '' s)
 
-/-- A vector belongs to a spectral subspace exactly when its eigenbasis representation is
+/-- A vector belongs to an eigenvector span exactly when its eigenbasis representation is
 supported on the selected indices. -/
 theorem mem_spectralSubspace_iff (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     {s : Set (Fin n)} {v : E} :
-    v ∈ hT.spectralSubspace hn s ↔
+    v ∈ hT.eigenvectorSpan hn s ↔
       ↑((hT.eigenvectorBasis hn).toBasis.repr v).support ⊆ s := by
-  rw [spectralSubspace, ← OrthonormalBasis.coe_toBasis]
+  rw [eigenvectorSpan, ← OrthonormalBasis.coe_toBasis]
   exact Module.Basis.mem_span_image (b := (hT.eigenvectorBasis hn).toBasis)
 
-/-- An eigenvector from the ordered eigenbasis belongs to a spectral subspace exactly when its
+/-- An eigenvector from the ordered eigenbasis belongs to an eigenvector span exactly when its
 index is selected. -/
 @[simp]
 theorem eigenvectorBasis_mem_spectralSubspace_iff (hT : T.IsSymmetric)
     (hn : Module.finrank 𝕜 E = n) {s : Set (Fin n)} (i : Fin n) :
-    hT.eigenvectorBasis hn i ∈ hT.spectralSubspace hn s ↔ i ∈ s := by
-  rw [spectralSubspace, ← OrthonormalBasis.coe_toBasis]
+    hT.eigenvectorBasis hn i ∈ hT.eigenvectorSpan hn s ↔ i ∈ s := by
+  rw [eigenvectorSpan, ← OrthonormalBasis.coe_toBasis]
   exact Module.Basis.self_mem_span_image (b := (hT.eigenvectorBasis hn).toBasis)
 
-/-- Enlarging the set of eigenvector indices enlarges its spectral subspace. -/
+/-- Enlarging the set of eigenvector indices enlarges its span. -/
 theorem spectralSubspace_mono (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     {s t : Set (Fin n)} (hst : s ⊆ t) :
-    hT.spectralSubspace hn s ≤ hT.spectralSubspace hn t :=
+    hT.eigenvectorSpan hn s ≤ hT.eigenvectorSpan hn t :=
   Submodule.span_mono (Set.image_mono hst)
 
-/-- The spectral subspace of a union is the sum of the two spectral subspaces. -/
+/-- The eigenvector span of a union is the sum of the two eigenvector spans. -/
 @[simp]
 theorem spectralSubspace_union (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     (s t : Set (Fin n)) :
-    hT.spectralSubspace hn (s ∪ t) = hT.spectralSubspace hn s ⊔ hT.spectralSubspace hn t := by
-  rw [spectralSubspace, spectralSubspace, spectralSubspace, Set.image_union,
+    hT.eigenvectorSpan hn (s ∪ t) = hT.eigenvectorSpan hn s ⊔ hT.eigenvectorSpan hn t := by
+  rw [eigenvectorSpan, eigenvectorSpan, eigenvectorSpan, Set.image_union,
     Submodule.span_union]
 
-/-- The spectral subspace of the empty set is zero. -/
+/-- The eigenvector span of the empty set is zero. -/
 @[simp]
 theorem spectralSubspace_empty (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) :
-    hT.spectralSubspace hn ∅ = ⊥ := by
-  simp [spectralSubspace]
+    hT.eigenvectorSpan hn ∅ = ⊥ := by
+  simp [eigenvectorSpan]
 
 /-- All eigenvectors together span the whole finite-dimensional inner product space. -/
 @[simp]
 theorem spectralSubspace_univ (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) :
-    hT.spectralSubspace hn Set.univ = ⊤ := by
-  rw [spectralSubspace, ← OrthonormalBasis.coe_toBasis, Set.image_univ]
+    hT.eigenvectorSpan hn Set.univ = ⊤ := by
+  rw [eigenvectorSpan, ← OrthonormalBasis.coe_toBasis, Set.image_univ]
   exact (hT.eigenvectorBasis hn).toBasis.span_eq
 
-/-- Spectral subspaces indexed by disjoint sets are disjoint. -/
+/-- Eigenvector spans indexed by disjoint sets are disjoint. -/
 theorem disjoint_spectralSubspace (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     {s t : Set (Fin n)} (hst : Disjoint s t) :
-    Disjoint (hT.spectralSubspace hn s) (hT.spectralSubspace hn t) :=
+    Disjoint (hT.eigenvectorSpan hn s) (hT.eigenvectorSpan hn t) :=
   (hT.eigenvectorBasis hn).toBasis.linearIndependent.disjoint_span_image hst
 
-/-- The dimension of a spectral subspace is the number of eigenvectors selected. -/
+/-- The dimension of an eigenvector span is the number of eigenvectors selected. -/
 @[simp]
 theorem finrank_spectralSubspace (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     (s : Set (Fin n)) :
-    Module.finrank 𝕜 (hT.spectralSubspace hn s) = s.ncard := by
+    Module.finrank 𝕜 (hT.eigenvectorSpan hn s) = s.ncard := by
   classical
-  rw [spectralSubspace, ← OrthonormalBasis.coe_toBasis, finrank_span_set_eq_card
+  rw [eigenvectorSpan, ← OrthonormalBasis.coe_toBasis, finrank_span_set_eq_card
     ((hT.eigenvectorBasis hn).toBasis.linearIndependent.linearIndepOn _ |>.id_image)]
   calc
     ((hT.eigenvectorBasis hn).toBasis '' s).toFinset.card =
@@ -243,35 +244,37 @@ theorem finrank_spectralSubspace (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 
     _ = s.ncard :=
       Set.ncard_image_of_injective s (hT.eigenvectorBasis hn).toBasis.injective
 
-/-- A symmetric operator preserves each of its spectral subspaces. -/
+/-- A symmetric operator preserves each of its eigenvector spans. -/
 theorem map_spectralSubspace_le (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     (s : Set (Fin n)) :
-    Submodule.map T (hT.spectralSubspace hn s) ≤ hT.spectralSubspace hn s := by
-  rw [spectralSubspace, Submodule.map_span_le]
+    Submodule.map T (hT.eigenvectorSpan hn s) ≤ hT.eigenvectorSpan hn s := by
+  rw [eigenvectorSpan, Submodule.map_span_le]
   rintro _ ⟨i, hi, rfl⟩
   rw [hT.apply_eigenvectorBasis hn i]
   exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hi, rfl⟩)
 
-/-- The negative spectral subspace of a finite-dimensional symmetric operator. -/
+/-- The negative spectral subspace of a finite-dimensional symmetric operator: the span of the
+eigenvectors with negative eigenvalue. -/
 noncomputable def negativeSpectralSubspace (hT : T.IsSymmetric)
     (hn : Module.finrank 𝕜 E = n) : Submodule 𝕜 E :=
-  hT.spectralSubspace hn {i | hT.eigenvalues hn i < 0}
+  hT.eigenvectorSpan hn {i | hT.eigenvalues hn i < 0}
 
-/-- The positive spectral subspace of a finite-dimensional symmetric operator. -/
+/-- The positive spectral subspace of a finite-dimensional symmetric operator: the span of the
+eigenvectors with positive eigenvalue. -/
 noncomputable def positiveSpectralSubspace (hT : T.IsSymmetric)
     (hn : Module.finrank 𝕜 E = n) : Submodule 𝕜 E :=
-  hT.spectralSubspace hn {i | 0 < hT.eigenvalues hn i}
+  hT.eigenvectorSpan hn {i | 0 < hT.eigenvalues hn i}
 
-/-- The negative spectral subspace is the spectral subspace of the negative eigenvalue
+/-- The negative spectral subspace is the eigenvector span of the negative eigenvalue
 indices. -/
 theorem negativeSpectralSubspace_def (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) :
-    hT.negativeSpectralSubspace hn = hT.spectralSubspace hn {i | hT.eigenvalues hn i < 0} := by
+    hT.negativeSpectralSubspace hn = hT.eigenvectorSpan hn {i | hT.eigenvalues hn i < 0} := by
   rw [negativeSpectralSubspace]
 
-/-- The positive spectral subspace is the spectral subspace of the positive eigenvalue
+/-- The positive spectral subspace is the eigenvector span of the positive eigenvalue
 indices. -/
 theorem positiveSpectralSubspace_def (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) :
-    hT.positiveSpectralSubspace hn = hT.spectralSubspace hn {i | 0 < hT.eigenvalues hn i} := by
+    hT.positiveSpectralSubspace hn = hT.eigenvectorSpan hn {i | 0 < hT.eigenvalues hn i} := by
   rw [positiveSpectralSubspace]
 
 /-- A vector belongs to the negative spectral subspace exactly when its eigenbasis representation

@@ -18,10 +18,10 @@ direct-sum decomposition of the tangent space. For the negative-gradient vector 
 positive Hessian subspace is the stable linear subspace and the negative Hessian subspace is the
 unstable linear subspace.
 
-This file constructs those two subspaces and identifies the dimension of the unstable one with
-the Morse index. The dimension statement uses the same ordered orthonormal eigenbasis both for
-the spectral subspace and for Sylvester's law of inertia: in that basis, the Hessian quadratic
-form is a weighted sum of squares whose weights are precisely the Hessian eigenvalues.
+This file constructs those two subspaces, shows that both are invariant under the
+negative-gradient linearization, and identifies the dimension of the unstable subspace with the
+Morse index; the stable dimension and the Morse index therefore add up to the dimension of the
+ambient space.
 
 These are the linear data used by the local stable-manifold theorem. No local invariant manifold
 is asserted here: that theorem additionally has to control the nonlinear remainder of the
@@ -32,6 +32,9 @@ negative-gradient field, supplied by
 
 * `ContDiffAt.stableLinearSubspace`: the positive spectral subspace of the Hessian.
 * `ContDiffAt.unstableLinearSubspace`: the negative spectral subspace of the Hessian.
+* `ContDiffAt.map_neg_hessianOperator_stableLinearSubspace_le` and
+  `ContDiffAt.map_neg_hessianOperator_unstableLinearSubspace_le`: both subspaces are invariant
+  under the negative-gradient linearization `-hessianOperator f x`.
 * `TauCeti.IsNondegenerateCriticalPoint.isCompl_unstableLinearSubspace_stableLinearSubspace`: at a
   nondegenerate critical point these subspaces are complementary, so the tangent space is their
   direct sum.
@@ -116,6 +119,24 @@ theorem map_hessianOperator_unstableLinearSubspace_le (hf : ContDiffAt ℝ 2 f x
       hf.unstableLinearSubspace := by
   rw [unstableLinearSubspace_def]
   exact hf.isSelfAdjoint_hessianOperator.isSymmetric.map_negativeSpectralSubspace_le rfl
+
+/-- The negative-gradient linearization preserves the stable linear subspace. It is
+`-hessianOperator f x`, the derivative of `-∇ f` at `x` by
+`ContDiffAt.hasFDerivAt_neg_gradient`. -/
+theorem map_neg_hessianOperator_stableLinearSubspace_le (hf : ContDiffAt ℝ 2 f x) :
+    Submodule.map (-hessianOperator f x).toLinearMap hf.stableLinearSubspace ≤
+      hf.stableLinearSubspace := by
+  rw [ContinuousLinearMap.toLinearMap_neg, Submodule.map_neg]
+  exact hf.map_hessianOperator_stableLinearSubspace_le
+
+/-- The negative-gradient linearization preserves the unstable linear subspace. It is
+`-hessianOperator f x`, the derivative of `-∇ f` at `x` by
+`ContDiffAt.hasFDerivAt_neg_gradient`. -/
+theorem map_neg_hessianOperator_unstableLinearSubspace_le (hf : ContDiffAt ℝ 2 f x) :
+    Submodule.map (-hessianOperator f x).toLinearMap hf.unstableLinearSubspace ≤
+      hf.unstableLinearSubspace := by
+  rw [ContinuousLinearMap.toLinearMap_neg, Submodule.map_neg]
+  exact hf.map_hessianOperator_unstableLinearSubspace_le
 
 /-- The stable and unstable linear subspaces at a `C²` point are disjoint. This does not require
 nondegeneracy: the zero eigenspace belongs to neither subspace. -/
