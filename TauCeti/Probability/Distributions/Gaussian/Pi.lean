@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.PiWithDensity
-public import Mathlib.Probability.Distributions.Gaussian.Real
+public import TauCeti.Probability.Distributions.Gaussian.Basic
 
 /-!
 # The standard Gaussian measure on a finite product
@@ -22,6 +22,8 @@ basis that consumes them.
 
 ## Main statements
 
+* `TauCeti.prod_gaussianPDFReal_zero_one`: the joint density in closed form,
+  `(2π)^(-d/2) · e^{-∑ᵢ xᵢ²/2}`, where `d` is the number of coordinates.
 * `TauCeti.pi_gaussianReal_eq_withDensity`: `γ^ι = volume^ι` weighted by the joint density.
 * `TauCeti.pi_volume_absolutelyContinuous_pi_gaussianReal`: the joint density never vanishes, so
   `volume^ι`-null sets are exactly `γ^ι`-null sets in the direction one needs to move an
@@ -30,7 +32,7 @@ basis that consumes them.
 
 public section
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory ProbabilityTheory Real
 
 open scoped ENNReal
 
@@ -41,6 +43,24 @@ variable (ι : Type*) [Fintype ι]
 /-- The joint standard Gaussian density on `ℝ^ι` is everywhere positive. -/
 theorem prod_gaussianPDFReal_pos (x : ι → ℝ) : 0 < ∏ i, gaussianPDFReal 0 1 (x i) :=
   Finset.prod_pos fun i _ => gaussianPDFReal_pos 0 1 (x i) one_ne_zero
+
+/-- **The joint standard Gaussian density on `ℝ^ι` in closed form.** Each factor contributes one
+power of `(2π)^(-1/2)`, and the exponents add up to minus half the sum of the squared
+coordinates. -/
+theorem prod_gaussianPDFReal_zero_one (x : ι → ℝ) :
+    ∏ i, gaussianPDFReal 0 1 (x i)
+      = (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) * exp (-(∑ i, x i ^ 2) / 2) := by
+  have hπ : (0 : ℝ) < 2 * π := by positivity
+  have hconst : (√(2 * π))⁻¹ ^ Fintype.card ι = (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) := by
+    rw [Real.sqrt_eq_rpow, ← Real.rpow_neg hπ.le, ← Real.rpow_natCast _ (Fintype.card ι),
+      ← Real.rpow_mul hπ.le]
+    congr 1
+    ring
+  have hexp : ∑ i, -(x i ^ 2 / 2) = -(∑ i, x i ^ 2) / 2 := by
+    rw [Finset.sum_neg_distrib, ← Finset.sum_div]
+    ring
+  rw [Finset.prod_congr rfl fun i (_ : i ∈ Finset.univ) => gaussianPDFReal_zero_one (x i),
+    Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, ← Real.exp_sum, hconst, hexp]
 
 /-- The joint standard Gaussian density on `ℝ^ι` is measurable. -/
 theorem measurable_prod_gaussianPDFReal :
