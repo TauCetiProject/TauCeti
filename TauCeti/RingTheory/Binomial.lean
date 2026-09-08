@@ -167,7 +167,7 @@ theorem mem_ringChooseSpan_iff_existsUnique {r : R}
   rw [← AddSubgroup.toIntSubmodule_toAddSubgroup (ringChooseSpan r),
     Submodule.mem_toAddSubgroup,
     ← span_int_range_ringChoose r]
-  exact TauCeti.LinearIndependent.mem_span_range_iff_existsUnique h x
+  exact LinearIndependent.mem_span_range_iff_existsUnique h x
 
 end Span
 

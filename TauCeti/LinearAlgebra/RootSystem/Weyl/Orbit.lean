@@ -26,10 +26,10 @@ height reaches a simple root from anywhere.
 
 * `TauCeti.exists_mem_support_weylGroupToPerm_eq`: **every root index is the image of a simple root
   index under the Weyl group.**
-* `TauCeti.RootPairing.RootPositiveForm.rootLength_weylGroupToPerm`: root length is a Weyl-group
-  invariant, with `TauCeti.RootPairing.RootPositiveForm.rootLength_reflectionPerm` the special case
+* `RootPairing.RootPositiveForm.rootLength_weylGroupToPerm`: root length is a Weyl-group
+  invariant, with `RootPairing.RootPositiveForm.rootLength_reflectionPerm` the special case
   of a single reflection.
-* `TauCeti.RootPairing.RootPositiveForm.exists_mem_support_rootLength_eq`: **every root has the
+* `RootPairing.RootPositiveForm.exists_mem_support_rootLength_eq`: **every root has the
   length of some simple root.** This is what turns a statement about the two entries of a rank-two
   Cartan matrix into a statement about all the roots.
 
@@ -68,7 +68,7 @@ theorem exists_mem_support_weylGroupToPerm_eq [CharZero R] [Finite ι] [IsDomain
   exact b.induction_reflect j (fun k hk ↦ step k k hk) (fun i hi ↦ ⟨i, hi, 1, by simp⟩)
     fun x k hx _ ↦ step k x hx
 
-namespace RootPairing.RootPositiveForm
+section
 
 variable {S : Type*} [CommRing S] [LinearOrder S] [Algebra S R]
   [FaithfulSMul S R] [Module S M] [IsScalarTower S R M] [P.IsValuedIn S]
@@ -79,7 +79,8 @@ group by construction, and the Weyl group carries the root indexed by `i` to the
 -- Not a `simp` lemma: `simp` unfolds `P.weylGroupToPerm w i` to `(↑↑w).indexEquiv i` through
 -- `MonoidHom.domRestrict_apply` and `RootPairing.Equiv.indexHom_apply`, so this left-hand side is
 -- never in normal form. The `reflectionPerm` form below is the usable `simp` lemma.
-theorem rootLength_weylGroupToPerm (B : P.RootPositiveForm S) (w : P.weylGroup) (i : ι) :
+theorem _root_.RootPairing.RootPositiveForm.rootLength_weylGroupToPerm
+    (B : P.RootPositiveForm S) (w : P.weylGroup) (i : ι) :
     B.rootLength (P.weylGroupToPerm w i) = B.rootLength i := by
   apply FaithfulSMul.algebraMap_injective S R
   rw [B.algebraMap_rootLength, B.algebraMap_rootLength, ← P.weylGroup_apply_root w i]
@@ -88,20 +89,22 @@ theorem rootLength_weylGroupToPerm (B : P.RootPositiveForm S) (w : P.weylGroup) 
 /-- Reflection in any root preserves root lengths. Mathlib's
 `RootPairing.RootPositiveForm.rootLength_reflectionPerm_self` is the case `i = j`. -/
 @[simp]
-theorem rootLength_reflectionPerm (B : P.RootPositiveForm S) (i j : ι) :
+theorem _root_.RootPairing.RootPositiveForm.rootLength_reflectionPerm
+    (B : P.RootPositiveForm S) (i j : ι) :
     B.rootLength (P.reflectionPerm i j) = B.rootLength j := by
   rw [← TauCeti.RootPairing.weylGroupToPerm_ofIdx_apply P i j]
-  exact rootLength_weylGroupToPerm B _ j
+  exact RootPairing.RootPositiveForm.rootLength_weylGroupToPerm B _ j
 
 /-- **Every root has the length of one of the simple roots.** Consequently the set of root lengths
 of a root pairing is read off its base, which is what lets a rank-two Cartan matrix control the
 lengths of all the roots and not only of the two simple ones. -/
-theorem exists_mem_support_rootLength_eq [CharZero R] [Finite ι] [IsDomain R]
+theorem _root_.RootPairing.RootPositiveForm.exists_mem_support_rootLength_eq
+    [CharZero R] [Finite ι] [IsDomain R]
     [P.IsCrystallographic] [P.IsReduced] (B : P.RootPositiveForm S) (b : P.Base) (j : ι) :
     ∃ i ∈ b.support, B.rootLength j = B.rootLength i := by
   obtain ⟨i, hi, w, rfl⟩ := exists_mem_support_weylGroupToPerm_eq b j
-  exact ⟨i, hi, rootLength_weylGroupToPerm B w i⟩
+  exact ⟨i, hi, RootPairing.RootPositiveForm.rootLength_weylGroupToPerm B w i⟩
 
-end RootPairing.RootPositiveForm
+end
 
 end TauCeti

@@ -233,7 +233,7 @@ theorem measure_eq_zero_or_one_of_exchangeableSigma {ρ : Measure (ℕ → α)} 
         = ρ (cylinder (α := fun _ : ℕ => α) F S) * ρ (cylinder (α := fun _ : ℕ => α) G T))
     {s : Set (ℕ → α)} (hs : MeasurableSet[exchangeableSigma α] s) :
     ρ s = 0 ∨ ρ s = 1 := by
-  have hs_meas : MeasurableSet s := MeasurableSet.ambient_of_exchangeableSigma hs
+  have hs_meas : MeasurableSet s := exchangeableSigma_le s hs
   refine TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_approx_factorization
     hs_meas.nullMeasurableSet ?_
   intro ε hε

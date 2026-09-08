@@ -7,12 +7,10 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
-import TauCeti.Algebra.AlgebraicGroup.Reductive.LinearlyReductive
-import TauCeti.Algebra.AlgebraicGroup.Representation.ClosedSubgroup
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Connected
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Smooth
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Embedding
+import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Faithful
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -82,46 +80,25 @@ theorem eq_augmentation_of_isNormal_of_smoothUnipotent
       (FiniteTypeCommHopfAlgCat.quotient (finiteTypeCoordinateHopfAlgebra k n) I)) :
     I = HopfIdeal.augmentation k (finiteTypeCoordinateHopfAlgebra k n) := by
   let e := coordinateHopfAlgebraFiniteTypeObjIso k n
-  let f : coordinateHopfAlgebra k n →ₐc[k] (finiteTypeCoordinateHopfAlgebra k n) :=
-    CommHopfAlgCat.ofIso e
-  have hf : Function.Bijective f := ConcreteCategory.bijective_of_isIso e.hom
-  let J : HopfIdeal k (coordinateHopfAlgebra k n) := I.comapOfSurjective f hf.2
-  have hJnormal : J.IsNormal := hI.comapOfSurjective_of_bijective f hf.1 hf.2
-  let qIso : CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) J ≅
-      CommHopfAlgCat.quotient (finiteTypeCoordinateHopfAlgebra k n).obj I :=
-    CommHopfAlgCat.quotientIsoOfIso e I
-  have hU' := (smoothUnipotentCommHopfAlgProperty_iff k
-    (FiniteTypeCommHopfAlgCat.quotient (finiteTypeCoordinateHopfAlgebra k n) I)).mp hU
-  let _ : Algebra.Smooth k
-      (CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) J) :=
-    (smoothCommHopfAlgProperty_iff _).mp <|
-      (smoothCommHopfAlgProperty k).prop_of_iso qIso.symm
-        ((smoothCommHopfAlgProperty_iff _).mpr hU'.1)
-  have hJunipotent : geometricallyUnipotentPointsCommHopfAlgProperty k
-      (CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) J) :=
-    (geometricallyUnipotentPointsCommHopfAlgProperty k).prop_of_iso qIso.symm
-      ((geometricallyUnipotentPointsCommHopfAlgProperty_iff k _).mpr hU'.2)
-  let _ : IsReduced (CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) J) :=
-    isReduced_of_smooth_of_field k _
-  let _ : IsReduced (coordinateHopfAlgebra k n) := isReduced_of_smooth_of_field k _
+  let H : FiniteTypeCommHopfAlgCat k :=
+    ⟨coordinateHopfAlgebra k n, by
+      rw [← finiteTypeCoordinateHopfAlgebra_obj]
+      exact (finiteTypeCoordinateHopfAlgebra k n).property⟩
+  let _ : IsReduced H := by
+    -- `H` packages this coordinate algebra with its finite-type proof, so its carrier is
+    -- definitionally the coordinate algebra on which smoothness supplies reducedness.
+    change IsReduced (coordinateHopfAlgebra k n)
+    exact isReduced_of_smooth_of_field k _
   let _ : Comodule k (coordinateHopfAlgebra k n) (Fin n → k) := standardComodule k n
-  have hu :=
-    geometricallyUnipotentPointsCommHopfAlgProperty.forall_isUnipotentPoint hJunipotent
   have hcr : Comodule.IsCompletelyReducible k (coordinateHopfAlgebra k n) (Fin n → k) := by
     cases n with
     | zero => exact Comodule.isCompletelyReducible_of_subsingleton
     | succ n =>
         let _ : NeZero n.succ := ⟨Nat.succ_ne_zero n⟩
         exact Comodule.isCompletelyReducible_of_isSimpleOrder
-  have htrivial :=
-    mkQuotient_coact_eq_tmul_one_of_isNormal_of_forall_isUnipotentPoint_of_isCompletelyReducible
-      hJnormal hu hcr
-  have hJ : J = HopfIdeal.augmentation k (coordinateHopfAlgebra k n) :=
-    Comodule.eq_augmentation_of_isFaithful_of_quotient_coact_eq_tmul_one J
-      (isFaithful_standardComodule k n) htrivial
-  rw [← HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff f hf.2,
-    HopfIdeal.comapOfSurjective_augmentation]
-  exact hJ
+  exact HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful_of_iso
+    k H (Fin n → k) (finiteTypeCoordinateHopfAlgebra k n) e hcr
+      (isFaithful_standardComodule k n) I hI hU
 
 /-- **The special linear group is reductive over every field.** -/
 theorem reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra

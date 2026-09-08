@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Flat.Equalizer
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.Basic
@@ -54,29 +53,14 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti
-
 universe u v w x
+
+namespace TauCeti
 
 namespace HopfIdeal
 
 variable {R : Type u} {H : Type v} {K : Type w}
 variable [CommRing R] [Ring H] [Ring K]
-
-/-- The tensor-kernel exactness theorem in the tensor-ideal notation used by `HopfIdeal`. -/
-private theorem tensor_map_ker_eq_left_sup_right [Algebra R H] {A : Type*} [Ring A] [Algebra R A]
-    (f : H →ₐ[R] A)
-    (hf : Function.Surjective f) :
-    RingHom.ker (Algebra.TensorProduct.map f f) =
-      leftTensorIdeal (R := R) (H := H) (RingHom.ker f) ⊔
-        rightTensorIdeal (R := R) (H := H) (RingHom.ker f) := by
-  rw [Algebra.TensorProduct.map_ker (f := f) (g := f) hf hf,
-    leftTensorIdeal_def, rightTensorIdeal_def]
-  simp only [AlgHom.toRingHom_eq_coe]
-  -- `map_ker` states the two maps via algebra-hom coercions, while `leftTensorIdeal_def`
-  -- and `rightTensorIdeal_def` use their `toRingHom`; after the named coercion rewrite
-  -- these are the same ideal maps definitionally.
-  apply congr_arg₂ (· ⊔ ·) <;> rfl
 
 /-- Tensoring on the left by a flat algebra carries the kernel of an algebra map to the
 corresponding right tensor ideal. -/
@@ -194,7 +178,8 @@ def kerOfSurjective (f : H →ₐc[R] K) (hf : Function.Surjective f) : HopfIdea
     have hker' : Coalgebra.comul (R := R) x ∈
         RingHom.ker (Algebra.TensorProduct.map (f : H →ₐ[R] K) (f : H →ₐ[R] K)) := by
       simpa using hker
-    rwa [tensor_map_ker_eq_left_sup_right (R := R) (f : H →ₐ[R] K) hf] at hker')
+    rwa [HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal (R := R)
+      (f : H →ₐ[R] K) (f : H →ₐ[R] K) hf hf] at hker')
 
 /-- The underlying ideal of the kernel Hopf ideal is the ring-hom kernel. -/
 @[simp]
@@ -265,7 +250,8 @@ private theorem comul_mem_left_sup_right_of_mem_ker (f : H →ₐc[k] K) {x : H}
   have hker : RingHom.ker (Algebra.TensorProduct.map q q).toRingHom =
       leftTensorIdeal (R := k) (H := H) I ⊔ rightTensorIdeal (R := k) (H := H) I := by
     simpa only [q, AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, Ideal.Quotient.mkₐ_ker] using
-      tensor_map_ker_eq_left_sup_right (R := k) q (Ideal.Quotient.mkₐ_surjective k I)
+      HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal (R := k) q q
+        (Ideal.Quotient.mkₐ_surjective k I) (Ideal.Quotient.mkₐ_surjective k I)
   rw [← hker, RingHom.mem_ker]
   exact hqzero
 

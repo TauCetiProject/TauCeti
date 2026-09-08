@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.CosetMap
 public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
+public import TauCeti.NumberTheory.HeckeRing.Normalizer
 
 /-!
 # The `Γ₀(N)`-double coset of a diagonal matrix
@@ -44,6 +45,8 @@ Ported from the AINTLIB `LeanModularForms` project
 * `HeckeRing.GL2.diagCosetGamma0_one`: the all-ones tuple gives the identity coset.
 * `HeckeRing.GL2.diagCosetGamma0_of_not_pos`: so does any tuple that is not everywhere
   positive.
+* `HeckeRing.GL2.doubleCoset_out_diagCosetGamma0_const_eq_iUnion_rightCosets`: a scalar
+  double coset is a single right coset.
 
 ## References
 
@@ -125,5 +128,48 @@ condition is vacuous in this branch, so it is irrelevant which proof is supplied
     (hgcd : (∀ i, 0 < a i) → Nat.Coprime (a 0) N) (ha : ¬ ∀ i, 0 < a i) :
     diagCosetGamma0 N a hgcd = 1 :=
   congrArg (HeckeCoset.mk _ _) (Subtype.ext (natDiagGL_of_not_pos (n := 2) ha))
+
+/-- The representative of the `Γ₀(N)`-coset of `diag(a)` differs from `diag(a)` by a left and a
+right factor in `Γ₀(N)`. -/
+lemma exists_rep_diagCosetGamma0_eq_mul_natDiagGL_mul (a : Fin 2 → ℕ)
+    (hgcd : (∀ i, 0 < a i) → Nat.Coprime (a 0) N) :
+    ∃ h₁ ∈ (Gamma0 N).map (mapGL ℚ), ∃ h₂ ∈ (Gamma0 N).map (mapGL ℚ),
+      ((diagCosetGamma0 N a hgcd).rep : GL (Fin 2) ℚ) = h₁ * natDiagGL 2 a * h₂ := by
+  have hmem : ((diagCosetGamma0 N a hgcd).rep : GL (Fin 2) ℚ) ∈
+      DoubleCoset.doubleCoset (natDiagGL 2 a) ((Gamma0 N).map (mapGL ℚ))
+        ((Gamma0 N).map (mapGL ℚ)) := by
+    rw [← diagCosetGamma0_toSet]
+    exact HeckeCoset.rep_mem _
+  exact DoubleCoset.mem_doubleCoset.mp hmem
+
+/-- The scalar `Γ₀(N)` double coset is the single right coset represented by its natural
+diagonal matrix. The coprimality hypothesis is only needed on the positive branch, matching
+the junk-branch convention of `diagCosetGamma0`: at `c = 0` the representative is the
+identity and the statement is the trivial decomposition of `Γ₀(N)` itself. -/
+theorem doubleCoset_out_diagCosetGamma0_const_eq_iUnion_rightCosets (c : ℕ)
+    (hcN : 0 < c → Nat.Coprime c N) :
+    DoubleCoset.doubleCoset
+        ((diagCosetGamma0 N ![c, c] fun h ↦ by simpa using hcN (by simpa using h 0)).out :
+          GL (Fin 2) ℚ)
+        ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) =
+      ⋃ _ : Unit, MulOpposite.op (natDiagGL 2 ![c, c]) •
+        ((Gamma0 N).map (mapGL ℚ) : Set (GL (Fin 2) ℚ)) := by
+  have hvec : ![c, c] = fun _ : Fin 2 ↦ c := by
+    funext i
+    fin_cases i <;> rfl
+  rw [Set.iUnion_const, diagCosetGamma0_def]
+  apply HeckeCoset.doubleCoset_out_mk_eq_rightCoset_of_mem_normalizer
+  simpa only [hvec] using natDiagGL_const_mem_normalizer 2 c ((Gamma0 N).map (mapGL ℚ))
+
+/-- **The scalar double coset has degree one**: `diag(c, c)` is central, so its `Γ₀(N)`-double
+coset is a single right coset. The level-`N` companion of `degree_diagCoset_const`; it is what
+bounds the multiplicity of a product one of whose factors is scalar. -/
+@[simp]
+theorem degree_diagCosetGamma0_const (c : ℕ)
+    (hgcd : (∀ _ : Fin 2, 0 < c) → Nat.Coprime c N) :
+    (diagCosetGamma0 N (fun _ ↦ c) hgcd).degree = 1 := by
+  rw [diagCosetGamma0_def, HeckeCoset.degree_mk]
+  have hnorm := natDiagGL_const_mem_normalizer 2 c ((Gamma0 N).map (mapGL ℚ))
+  rw [Subgroup.conjAct_pointwise_smul_eq_self hnorm, Subgroup.relIndex_self]
 
 end HeckeRing.GL2

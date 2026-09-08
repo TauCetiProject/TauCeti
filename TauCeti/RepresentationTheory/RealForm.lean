@@ -49,7 +49,7 @@ realizability is *produced*: the route to it for an irreducible representation w
 Frobenius-Schur indicator `1` is to build the conjugation out of an invariant symmetric bilinear
 form and an invariant Hermitian inner product, and a real form on a carrier is not something one
 writes down directly.  That route is taken in
-`TauCeti/RepresentationTheory/InvariantForm/RealStructure.lean`, and read off as a criterion on the
+`TauCeti/RepresentationTheory/InvariantForm/StructureMap.lean`, and read off as a criterion on the
 indicator in `TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/Realizability.lean`.
 
 ## Main definitions
@@ -161,9 +161,7 @@ particular it takes real values (`Representation.IsRealForm.conj_char`). -/
 theorem IsRealForm.char_eq [FiniteDimensional ℝ W] (h : IsRealForm ρ σ) (g : G) :
     ρ.character g = (σ.character g : ℂ) := by
   obtain ⟨φ⟩ := isRealForm_iff_nonempty_equiv.mp h
-  rw [← congrFun (char_iso φ) g]
-  simp only [Representation.character, Representation.baseChange_apply,
-    LinearMap.trace_baseChange, Complex.coe_algebraMap]
+  rw [← congrFun (char_iso φ) g, Representation.character_baseChange, Complex.coe_algebraMap]
 
 /-- The character of a representation with a real form is fixed by complex conjugation. -/
 theorem IsRealForm.conj_char [FiniteDimensional ℝ W] (h : IsRealForm ρ σ) (g : G) :
