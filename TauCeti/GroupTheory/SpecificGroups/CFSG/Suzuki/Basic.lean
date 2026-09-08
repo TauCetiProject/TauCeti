@@ -52,7 +52,8 @@ and that numbering correspondence.
 
 * `TauCeti.SuzukiLieIndex.halfFrobenius`: the special isogeny of the ambient group.
 * `TauCeti.SuzukiLieIndex.steinberg`: its odd power `τ ^ (2m+1)`.
-* `TauCeti.SuzukiLieIndex.Group`: the group the classification attaches to that Steinberg map,
+* `TauCeti.SuzukiLieIndex.CarrierFixedPointQuotient`: the quotient the classification's recipe
+  produces from that Steinberg map on this carrier,
   the derived subgroup of its fixed points modulo the centre of that derived subgroup.
 
 ## Main results
@@ -310,15 +311,16 @@ theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
 
 /-! ## The attached group -/
 
-/-- **The group attached to a Suzuki index**: the derived subgroup of the fixed points of its
-Steinberg map, modulo the centre of that derived subgroup.
+/-- The derived subgroup of the fixed points of the Suzuki Steinberg map on this carrier, modulo
+the centre of that derived subgroup.
 
-This is the classification's recipe run on the rank-two type-`C` carrier, and it is the candidate
-for the Suzuki group `²B₂(2 ^ (2m+1))`. Nothing here identifies it with that group, and nothing
-below asserts that it is finite, perfect, or simple. -/
-abbrev Group : Type := FixedPointCandidate d.steinberg
+This is the classification's recipe, run on the rank-two type-`C` carrier. It is not the Suzuki
+group `²B₂(2 ^ (2m+1))`: that is the same recipe run on the points of the pinned simply connected
+`B₂` group scheme, and no identification of this carrier with that group is available. Nothing
+below asserts that the quotient is finite, perfect, or simple. -/
+abbrev CarrierFixedPointQuotient : Type := FixedPointCandidate d.steinberg
 
-/-- The attached group carries a group structure. -/
-noncomputable example : _root_.Group d.Group := inferInstance
+/-- The quotient construction supplies its group structure. -/
+noncomputable example : _root_.Group d.CarrierFixedPointQuotient := inferInstance
 
 end TauCeti.SuzukiLieIndex
