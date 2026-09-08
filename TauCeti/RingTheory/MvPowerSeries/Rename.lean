@@ -229,8 +229,11 @@ the type of its `HasEval` argument: a caller who knows the reindexed family in a
 cannot rewrite it under `aeval` afterwards, and supplying it here is the only way to state the
 evaluation it actually wants. -/
 theorem aeval_rename (e : σ → τ) [TendstoCofinite e] {a : τ → S} {b : σ → S} (ha : HasEval a)
-    (hb : HasEval b) (hab : ∀ s, b s = a (e s)) (p : MvPowerSeries σ R) :
-    aeval ha (rename e p) = aeval hb p := by
+    (hab : ∀ s, b s = a (e s)) (p : MvPowerSeries σ R) :
+    aeval ha (rename e p) = eval₂ (algebraMap R S) b p := by
+  have hb : HasEval b := by
+    rw [show b = a ∘ e from funext hab]
+    exact ⟨fun s ↦ ha.hpow (e s), ha.tendsto_zero.comp (TendstoCofinite.tendsto_cofinite e)⟩
   have hfam : (fun s ↦ (aeval ha) ((X ∘ e) s : MvPowerSeries τ R)) = b := by
     funext s
     rw [coe_aeval, Function.comp_apply, eval₂_X, hab]
@@ -241,7 +244,6 @@ theorem aeval_rename (e : σ → τ) [TendstoCofinite e] {a : τ → S} {b : σ 
       = eval₂ (algebraMap R S) (fun s ↦ (aeval ha) ((X ∘ e) s : MvPowerSeries τ R)) p :=
         congrFun (coe_aeval hb') p
     _ = eval₂ (algebraMap R S) b p := by rw [hfam]
-    _ = aeval hb p := (congrFun (coe_aeval hb) p).symm
 
 end Eval
 

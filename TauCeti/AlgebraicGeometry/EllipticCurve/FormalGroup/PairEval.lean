@@ -455,7 +455,8 @@ theorem formalAddEval_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t₁ t₂ : O
 theorem formalAddEval_comm {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
     (h₂ : PowerSeries.HasEval t₂) : W.formalAddEval t₁ t₂ = W.formalAddEval t₂ t₁ := by
   have h := congrArg (MvPowerSeries.aeval (hasEval_pair h₁ h₂)) (rename_swap_formalAdd W)
-  rw [MvPowerSeries.aeval_rename Sum.swap (hasEval_pair h₁ h₂) (hasEval_pair h₂ h₁)
+  rw [MvPowerSeries.aeval_rename Sum.swap
+    (b := Sum.elim (fun _ ↦ t₂) (fun _ ↦ t₁)) (hasEval_pair h₁ h₂)
     (by rintro (_ | _) <;> rfl)] at h
   simpa [formalAddEval, MvPowerSeries.coe_aeval, Algebra.algebraMap_self] using h.symm
 
