@@ -81,6 +81,10 @@ The same carrier-and-Frobenius material on the branches already assembled is in
   description, and its pinned equation `Frob_q (x_i(u)) = x_i(u ^ q)`.
 * `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff`: its fixed points are the points whose
   matrix entries lie in the field of definition `𝔽_q`.
+* `TauCeti.RankTwoBLieIndex.primeFrobenius` and
+  `TauCeti.RankTwoBLieIndex.primeFrobenius_simpleRootSubgroup`: the prime-field Frobenius and its
+  pinned equation `Frob_p (x_i(u)) = x_i(u ^ p)`, the map an odd power of a half-Frobenius on this
+  diagram is built over.
 
 ## References
 
@@ -207,6 +211,32 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
       d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
+/-- **The prime-field Frobenius endomorphism of the ambient group of an index on the `B₂`
+diagram**, the `p`-power map for `p` the defining characteristic. It is not the `q`-power map
+`TauCeti.RankTwoBLieIndex.frobenius` above: validity forces the field order `q` strictly above the
+prime. It is the map that the half-Frobenius of a Suzuki index squares to, so it is the right-hand
+side of the relation that identifies that half-Frobenius. -/
+def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
+  SpStd.frobenius 1 d.1.characteristic 1 d.1.Closure
+
+/-- The prime-field Frobenius of an index on the `B₂` diagram is the carrier's Frobenius at
+exponent one. This is its unfolding lemma; the definition itself stays sealed.
+
+As with `frobenius_def` it is deliberately not a `simp` lemma:
+`primeFrobenius_simpleRootSubgroup` is the normal form stated against it. -/
+theorem primeFrobenius_def :
+    d.primeFrobenius = SpStd.frobenius 1 d.1.characteristic 1 d.1.Closure :=
+  (rfl)
+
+/-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
+its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
+@[simp]
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+  rw [primeFrobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints, pow_one]
 
 /-- **A point of the ambient group is fixed by the Frobenius exactly when all of its matrix entries
 lie in the field of definition.** Writing `𝔽_q` for `TauCeti.ValidLieTypeIndex.fixedField`, the copy
