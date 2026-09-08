@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Enumerative.PerfectMatching
-public import TauCeti.Data.Setoid.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+import TauCeti.GroupTheory.Perm.Basic
 import Mathlib.Data.Fin.Rev
 import Mathlib.Tactic.FinCases
 
@@ -249,7 +249,7 @@ private def unorientedSetoid : Setoid (BasedOrientedGaussCode n) :=
 
 private theorem unorientedSetoid_apply (D E : BasedOrientedGaussCode n) :
     unorientedSetoid D E ↔ D = E ∨ D = E.reverse :=
-  TauCeti.Setoid.sameCycle_toPerm_iff reverse reverse_reverse D E
+  TauCeti.sameCycle_toPerm_iff reverse reverse_reverse D E
 
 end BasedOrientedGaussCode
 
@@ -449,6 +449,40 @@ def relabel (D : BasedUnorientedGaussCode n) (e : Fin n ≃ Fin n) :
   simp only [relabel, BasedOrientedGaussCode.forgetOrientation, Quotient.map'_mk'']
   apply Quotient.sound
   exact (BasedOrientedGaussCode.unorientedSetoid_apply _ _).mpr (Or.inl rfl)
+
+/-- Mirroring twice recovers the original based unoriented Gauss code. -/
+@[simp] theorem mirror_mirror (D : BasedUnorientedGaussCode n) : D.mirror.mirror = D := by
+  refine D.inductionOn ?_
+  simp
+
+/-- Mirroring negates the writhe of a based unoriented Gauss code. -/
+@[simp] theorem writhe_mirror (D : BasedUnorientedGaussCode n) : D.mirror.writhe = -D.writhe := by
+  refine D.inductionOn ?_
+  simp
+
+/-- Relabelling by the identity equivalence has no effect. -/
+@[simp] theorem relabel_refl (D : BasedUnorientedGaussCode n) :
+    D.relabel (Equiv.refl (Fin n)) = D := by
+  refine D.inductionOn ?_
+  simp
+
+/-- Successive relabellings of a based unoriented Gauss code compose. -/
+@[simp] theorem relabel_relabel (D : BasedUnorientedGaussCode n) (e f : Fin n ≃ Fin n) :
+    (D.relabel e).relabel f = D.relabel (e.trans f) := by
+  refine D.inductionOn ?_
+  simp
+
+/-- Relabelling preserves the writhe of a based unoriented Gauss code. -/
+@[simp] theorem writhe_relabel (D : BasedUnorientedGaussCode n) (e : Fin n ≃ Fin n) :
+    (D.relabel e).writhe = D.writhe := by
+  refine D.inductionOn ?_
+  simp
+
+/-- Mirroring and relabelling commute on based unoriented Gauss codes. -/
+@[simp] theorem mirror_relabel (D : BasedUnorientedGaussCode n) (e : Fin n ≃ Fin n) :
+    (D.relabel e).mirror = D.mirror.relabel e := by
+  refine D.inductionOn ?_
+  simp
 
 end BasedUnorientedGaussCode
 
