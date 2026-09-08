@@ -42,13 +42,6 @@ variable {V : Type v} [AddCommGroup V] [Module K V]
 abbrev FiniteScalarExtension [NumberField K] (v : HeightOneSpectrum (𝓞 K)) :=
   v.adicCompletion K ⊗[K] V
 
-/-- Finite localization preserves the rank of a quadratic space. -/
-theorem finrank_finiteScalarExtension [NumberField K]
-    (v : HeightOneSpectrum (𝓞 K)) :
-    Module.finrank (v.adicCompletion K) (FiniteScalarExtension (V := V) v) =
-      Module.finrank K V :=
-  Module.finrank_baseChange
-
 /-- The map from global units to units in the completion at a finite place. -/
 def unitAtFinitePlace [NumberField K] (v : HeightOneSpectrum (𝓞 K)) :
     Kˣ →* (v.adicCompletion K)ˣ :=
@@ -66,13 +59,6 @@ abbrev RealScalarExtension (w : {w : InfinitePlace K // w.IsReal}) :=
   letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   ℝ ⊗[K] V
 
-/-- Real localization preserves the rank of a quadratic space. -/
-@[simp]
-theorem finrank_realScalarExtension (w : {w : InfinitePlace K // w.IsReal}) :
-    Module.finrank ℝ (RealScalarExtension (V := V) w) = Module.finrank K V := by
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact Module.finrank_baseChange
-
 /-- The map from global units to real units induced by a real place. -/
 def unitAtRealPlace (w : {w : InfinitePlace K // w.IsReal}) : Kˣ →* ℝˣ :=
   Units.map (embedding_of_isReal w.2).toMonoidHom
@@ -88,13 +74,6 @@ variable {V : Type v} [AddCommGroup V] [Module K V]
 abbrev ComplexScalarExtension (w : InfinitePlace K) :=
   letI : Algebra K ℂ := w.embedding.toAlgebra
   ℂ ⊗[K] V
-
-/-- Scalar extension to `ℂ` through a chosen embedding preserves the rank of a quadratic space. -/
-@[simp]
-theorem finrank_complexScalarExtension (w : InfinitePlace K) :
-    Module.finrank ℂ (ComplexScalarExtension (V := V) w) = Module.finrank K V := by
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact Module.finrank_baseChange
 
 end NumberField.InfinitePlace
 
@@ -131,6 +110,51 @@ def atComplexEmbedding (Q : _root_.QuadraticForm K V) (w : InfinitePlace K) :
   letI : Algebra K ℂ := w.embedding.toAlgebra
   exact Q.baseChange ℂ
 
+/-- Finite localization is base change along the canonical map to the completion. -/
+theorem atFinitePlace_def [NumberField K] (Q : _root_.QuadraticForm K V)
+    (v : HeightOneSpectrum (𝓞 K)) :
+    atFinitePlace Q v = Q.baseChange (v.adicCompletion K) := by
+  apply _root_.baseChange_ext
+  intro x
+  simp [atFinitePlace]
+
+private theorem atRealPlace_def_aux (Q : _root_.QuadraticForm K V)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    let _ : Invertible (2 : K) := by
+      letI : CharZero K := RingHom.charZero w.1.embedding
+      exact invertibleOfNonzero two_ne_zero
+    let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    atRealPlace Q w = Q.baseChange ℝ :=
+  rfl
+
+/-- Real localization is base change along the embedding belonging to the real place. -/
+theorem atRealPlace_def (Q : _root_.QuadraticForm K V)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    let _ : Invertible (2 : K) := by
+      letI : CharZero K := RingHom.charZero w.1.embedding
+      exact invertibleOfNonzero two_ne_zero
+    let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    atRealPlace Q w = Q.baseChange ℝ := by
+  exact atRealPlace_def_aux Q w
+
+private theorem atComplexEmbedding_def_aux (Q : _root_.QuadraticForm K V)
+    (w : InfinitePlace K) :
+    let _ : Invertible (2 : K) := by
+      letI : CharZero K := RingHom.charZero w.embedding
+      exact invertibleOfNonzero two_ne_zero
+    let _ : Algebra K ℂ := w.embedding.toAlgebra
+    atComplexEmbedding Q w = Q.baseChange ℂ :=
+  rfl
+
+/-- Complex localization is base change along the chosen complex embedding. -/
+theorem atComplexEmbedding_def (Q : _root_.QuadraticForm K V) (w : InfinitePlace K) :
+    let _ : Invertible (2 : K) := by
+      letI : CharZero K := RingHom.charZero w.embedding
+      exact invertibleOfNonzero two_ne_zero
+    let _ : Algebra K ℂ := w.embedding.toAlgebra
+    atComplexEmbedding Q w = Q.baseChange ℂ := by
+  exact atComplexEmbedding_def_aux Q w
+
 section Evaluation
 
 variable (Q : _root_.QuadraticForm K V)
@@ -164,498 +188,5 @@ theorem atComplexEmbedding_tmul (w : InfinitePlace K) (a : ℂ) (x : V) :
   simp [atComplexEmbedding, Algebra.smul_def, RingHom.algebraMap_toAlgebra, pow_two, mul_comm]
 
 end Evaluation
-
-section Operations
-
-variable [NumberField K]
-variable (v : HeightOneSpectrum (𝓞 K))
-
-/-- Finite localization sends the zero form to the zero form. -/
-@[simp]
-theorem atFinitePlace_zero :
-    atFinitePlace (0 : _root_.QuadraticForm K V) v = 0 :=
-  QuadraticForm.baseChange_zero
-
-/-- Finite localization commutes with addition of forms. -/
-@[simp]
-theorem atFinitePlace_add (Q Q' : _root_.QuadraticForm K V) :
-    atFinitePlace (Q + Q') v = atFinitePlace Q v + atFinitePlace Q' v :=
-  QuadraticForm.baseChange_add Q Q'
-
-/-- Finite localization commutes with negation of forms. -/
-@[simp]
-theorem atFinitePlace_neg (Q : _root_.QuadraticForm K V) :
-    atFinitePlace (-Q) v = -(atFinitePlace Q v) :=
-  QuadraticForm.baseChange_neg Q
-
-/-- Finite localization commutes with subtraction of forms. -/
-@[simp]
-theorem atFinitePlace_sub (Q Q' : _root_.QuadraticForm K V) :
-    atFinitePlace (Q - Q') v = atFinitePlace Q v - atFinitePlace Q' v :=
-  QuadraticForm.baseChange_sub Q Q'
-
-/-- Scaling before finite localization agrees with scaling by the image in the completion. -/
-@[simp]
-theorem atFinitePlace_smul (r : K) (Q : _root_.QuadraticForm K V) :
-    atFinitePlace (r • Q) v =
-      algebraMap K (v.adicCompletion K) r • atFinitePlace Q v :=
-  QuadraticForm.baseChange_smul r Q
-
-end Operations
-
-section ArchimedeanOperations
-
-/-- Real localization sends the zero form to the zero form. -/
-@[simp]
-theorem atRealPlace_zero (w : {w : InfinitePlace K // w.IsReal}) :
-    atRealPlace (0 : _root_.QuadraticForm K V) w = 0 := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.baseChange_zero
-
-/-- Real localization commutes with addition of forms. -/
-@[simp]
-theorem atRealPlace_add (Q Q' : _root_.QuadraticForm K V)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    atRealPlace (Q + Q') w = atRealPlace Q w + atRealPlace Q' w := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.baseChange_add Q Q'
-
-/-- Real localization commutes with negation of forms. -/
-@[simp]
-theorem atRealPlace_neg (Q : _root_.QuadraticForm K V)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    atRealPlace (-Q) w = -(atRealPlace Q w) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.baseChange_neg Q
-
-/-- Real localization commutes with subtraction of forms. -/
-@[simp]
-theorem atRealPlace_sub (Q Q' : _root_.QuadraticForm K V)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    atRealPlace (Q - Q') w = atRealPlace Q w - atRealPlace Q' w := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.baseChange_sub Q Q'
-
-/-- Scaling before real localization agrees with scaling by the corresponding real embedding. -/
-@[simp]
-theorem atRealPlace_smul (r : K) (Q : _root_.QuadraticForm K V)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    atRealPlace (r • Q) w = embedding_of_isReal w.2 r • atRealPlace Q w := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.baseChange_smul r Q
-
-/-- Scalar extension through a complex embedding sends the zero form to the zero form. -/
-@[simp]
-theorem atComplexEmbedding_zero (w : InfinitePlace K) :
-    atComplexEmbedding (0 : _root_.QuadraticForm K V) w = 0 := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.baseChange_zero
-
-/-- Scalar extension through a complex embedding commutes with addition of forms. -/
-@[simp]
-theorem atComplexEmbedding_add (Q Q' : _root_.QuadraticForm K V) (w : InfinitePlace K) :
-    atComplexEmbedding (Q + Q') w = atComplexEmbedding Q w + atComplexEmbedding Q' w := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.baseChange_add Q Q'
-
-/-- Scalar extension through a complex embedding commutes with negation of forms. -/
-@[simp]
-theorem atComplexEmbedding_neg (Q : _root_.QuadraticForm K V) (w : InfinitePlace K) :
-    atComplexEmbedding (-Q) w = -(atComplexEmbedding Q w) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.baseChange_neg Q
-
-/-- Scalar extension through a complex embedding commutes with subtraction of forms. -/
-@[simp]
-theorem atComplexEmbedding_sub (Q Q' : _root_.QuadraticForm K V) (w : InfinitePlace K) :
-    atComplexEmbedding (Q - Q') w = atComplexEmbedding Q w - atComplexEmbedding Q' w := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.baseChange_sub Q Q'
-
-/-- Scaling before extension through a complex embedding agrees with scaling by that embedding. -/
-@[simp]
-theorem atComplexEmbedding_smul (r : K) (Q : _root_.QuadraticForm K V)
-    (w : InfinitePlace K) :
-    atComplexEmbedding (r • Q) w = w.embedding r • atComplexEmbedding Q w := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.baseChange_smul r Q
-
-end ArchimedeanOperations
-
-section Isometries
-
-variable {W : Type*} [AddCommGroup W] [Module K W]
-variable {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
-
-/-- An isometry of global quadratic forms extends to every finite localization. -/
-def Isometry.atFinitePlace [NumberField K] (f : Q →qᵢ R)
-    (v : HeightOneSpectrum (𝓞 K)) :
-    atFinitePlace Q v →qᵢ atFinitePlace R v :=
-  QuadraticForm.Isometry.baseChange f (v.adicCompletion K)
-
-/-- On pure tensors, a localized isometry applies the original isometry to the vector. -/
-@[simp]
-theorem Isometry.atFinitePlace_tmul [NumberField K] (f : Q →qᵢ R)
-    (v : HeightOneSpectrum (𝓞 K)) (a : v.adicCompletion K) (x : V) :
-    Isometry.atFinitePlace f v (a ⊗ₜ x) = a ⊗ₜ f x :=
-  QuadraticForm.Isometry.baseChange_tmul f a x
-
-/-- Finite localization sends the identity isometry to the identity isometry. -/
-@[simp]
-theorem Isometry.atFinitePlace_id [NumberField K] (Q : _root_.QuadraticForm K V)
-    (v : HeightOneSpectrum (𝓞 K)) :
-    Isometry.atFinitePlace (_root_.QuadraticMap.Isometry.id Q) v =
-      _root_.QuadraticMap.Isometry.id (_root_.QuadraticForm.atFinitePlace Q v) :=
-  QuadraticForm.Isometry.baseChange_id Q
-
-/-- Finite localization commutes with composition of isometries. -/
-@[simp]
-theorem Isometry.atFinitePlace_comp [NumberField K]
-    {X : Type*} [AddCommGroup X] [Module K X] {S : _root_.QuadraticForm K X}
-    (g : R →qᵢ S) (f : Q →qᵢ R) (v : HeightOneSpectrum (𝓞 K)) :
-    Isometry.atFinitePlace (g.comp f) v =
-      (Isometry.atFinitePlace g v).comp (Isometry.atFinitePlace f v) :=
-  QuadraticForm.Isometry.baseChange_comp g f
-
-/-- An isometry of global quadratic forms extends to every real localization. -/
-def Isometry.atRealPlace (f : Q →qᵢ R) (w : {w : InfinitePlace K // w.IsReal}) :
-    atRealPlace Q w →qᵢ atRealPlace R w := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.Isometry.baseChange f ℝ
-
-/-- On pure tensors, an isometry localized at a real place applies the original isometry to the
-vector. -/
-@[simp]
-theorem Isometry.atRealPlace_tmul (f : Q →qᵢ R)
-    (w : {w : InfinitePlace K // w.IsReal}) (a : ℝ) (x : V) :
-    let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-    Isometry.atRealPlace f w (a ⊗ₜ x) = a ⊗ₜ f x := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.Isometry.baseChange_tmul f a x
-
-/-- Real localization sends the identity isometry to the identity isometry. -/
-@[simp]
-theorem Isometry.atRealPlace_id (Q : _root_.QuadraticForm K V)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    Isometry.atRealPlace (_root_.QuadraticMap.Isometry.id Q) w =
-      _root_.QuadraticMap.Isometry.id (_root_.QuadraticForm.atRealPlace Q w) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.Isometry.baseChange_id Q
-
-/-- Real localization commutes with composition of isometries. -/
-@[simp]
-theorem Isometry.atRealPlace_comp
-    {X : Type*} [AddCommGroup X] [Module K X] {S : _root_.QuadraticForm K X}
-    (g : R →qᵢ S) (f : Q →qᵢ R) (w : {w : InfinitePlace K // w.IsReal}) :
-    Isometry.atRealPlace (g.comp f) w =
-      (Isometry.atRealPlace g w).comp (Isometry.atRealPlace f w) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.Isometry.baseChange_comp g f
-
-/-- An isometry of global quadratic forms extends through every chosen complex embedding. -/
-def Isometry.atComplexEmbedding (f : Q →qᵢ R) (w : InfinitePlace K) :
-    atComplexEmbedding Q w →qᵢ atComplexEmbedding R w := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  letI : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.Isometry.baseChange f ℂ
-
-/-- On pure tensors, an isometry extended through a complex embedding applies the original
-isometry to the vector. -/
-@[simp]
-theorem Isometry.atComplexEmbedding_tmul (f : Q →qᵢ R) (w : InfinitePlace K)
-    (a : ℂ) (x : V) :
-    let _ : Algebra K ℂ := w.embedding.toAlgebra
-    Isometry.atComplexEmbedding f w (a ⊗ₜ x) = a ⊗ₜ f x := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.Isometry.baseChange_tmul f a x
-
-/-- Extension through a complex embedding sends the identity isometry to the identity isometry. -/
-@[simp]
-theorem Isometry.atComplexEmbedding_id (Q : _root_.QuadraticForm K V)
-    (w : InfinitePlace K) :
-    Isometry.atComplexEmbedding (_root_.QuadraticMap.Isometry.id Q) w =
-      _root_.QuadraticMap.Isometry.id (_root_.QuadraticForm.atComplexEmbedding Q w) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.Isometry.baseChange_id Q
-
-/-- Extension through a complex embedding commutes with composition of isometries. -/
-@[simp]
-theorem Isometry.atComplexEmbedding_comp
-    {X : Type*} [AddCommGroup X] [Module K X] {S : _root_.QuadraticForm K X}
-    (g : R →qᵢ S) (f : Q →qᵢ R) (w : InfinitePlace K) :
-    Isometry.atComplexEmbedding (g.comp f) w =
-      (Isometry.atComplexEmbedding g w).comp (Isometry.atComplexEmbedding f w) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.Isometry.baseChange_comp g f
-
-/-- A global isometric equivalence extends to every finite localization. -/
-def IsometryEquiv.atFinitePlace [NumberField K] (f : Q.IsometryEquiv R)
-    (v : HeightOneSpectrum (𝓞 K)) :
-    (atFinitePlace Q v).IsometryEquiv (atFinitePlace R v) :=
-  QuadraticForm.IsometryEquiv.baseChange f (v.adicCompletion K)
-
-/-- On pure tensors, a localized isometric equivalence applies the original equivalence to the
-vector. -/
-@[simp]
-theorem IsometryEquiv.atFinitePlace_tmul [NumberField K] (f : Q.IsometryEquiv R)
-    (v : HeightOneSpectrum (𝓞 K)) (a : v.adicCompletion K) (x : V) :
-    IsometryEquiv.atFinitePlace f v (a ⊗ₜ x) = a ⊗ₜ f x :=
-  QuadraticForm.IsometryEquiv.baseChange_tmul f a x
-
-/-- Finite localization sends the identity isometric equivalence to the identity equivalence. -/
-@[simp]
-theorem IsometryEquiv.atFinitePlace_refl [NumberField K]
-    (Q : _root_.QuadraticForm K V) (v : HeightOneSpectrum (𝓞 K)) :
-    IsometryEquiv.atFinitePlace (_root_.QuadraticMap.IsometryEquiv.refl Q) v =
-      _root_.QuadraticMap.IsometryEquiv.refl (_root_.QuadraticForm.atFinitePlace Q v) :=
-  QuadraticForm.IsometryEquiv.baseChange_refl Q
-
-/-- Finite localization commutes with composition of isometric equivalences. -/
-@[simp]
-theorem IsometryEquiv.atFinitePlace_trans [NumberField K]
-    {X : Type*} [AddCommGroup X] [Module K X] {S : _root_.QuadraticForm K X}
-    (f : Q.IsometryEquiv R) (g : R.IsometryEquiv S)
-    (v : HeightOneSpectrum (𝓞 K)) :
-    IsometryEquiv.atFinitePlace (f.trans g) v =
-      (IsometryEquiv.atFinitePlace f v).trans (IsometryEquiv.atFinitePlace g v) :=
-  QuadraticForm.IsometryEquiv.baseChange_trans f g
-
-/-- Finite localization commutes with inversion of isometric equivalences. -/
-@[simp]
-theorem IsometryEquiv.atFinitePlace_symm [NumberField K] (f : Q.IsometryEquiv R)
-    (v : HeightOneSpectrum (𝓞 K)) :
-    IsometryEquiv.atFinitePlace f.symm v = (IsometryEquiv.atFinitePlace f v).symm :=
-  QuadraticForm.IsometryEquiv.baseChange_symm f
-
-/-- A global isometric equivalence extends to every real localization. -/
-def IsometryEquiv.atRealPlace (f : Q.IsometryEquiv R)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    (atRealPlace Q w).IsometryEquiv (atRealPlace R w) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.IsometryEquiv.baseChange f ℝ
-
-/-- On pure tensors, an isometric equivalence localized at a real place applies the original
-equivalence to the vector. -/
-@[simp]
-theorem IsometryEquiv.atRealPlace_tmul (f : Q.IsometryEquiv R)
-    (w : {w : InfinitePlace K // w.IsReal}) (a : ℝ) (x : V) :
-    let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-    IsometryEquiv.atRealPlace f w (a ⊗ₜ x) = a ⊗ₜ f x := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.IsometryEquiv.baseChange_tmul f a x
-
-/-- Real localization sends the identity isometric equivalence to the identity equivalence. -/
-@[simp]
-theorem IsometryEquiv.atRealPlace_refl (Q : _root_.QuadraticForm K V)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    IsometryEquiv.atRealPlace (_root_.QuadraticMap.IsometryEquiv.refl Q) w =
-      _root_.QuadraticMap.IsometryEquiv.refl (_root_.QuadraticForm.atRealPlace Q w) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.IsometryEquiv.baseChange_refl Q
-
-/-- Real localization commutes with composition of isometric equivalences. -/
-@[simp]
-theorem IsometryEquiv.atRealPlace_trans
-    {X : Type*} [AddCommGroup X] [Module K X] {S : _root_.QuadraticForm K X}
-    (f : Q.IsometryEquiv R) (g : R.IsometryEquiv S)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    IsometryEquiv.atRealPlace (f.trans g) w =
-      (IsometryEquiv.atRealPlace f w).trans (IsometryEquiv.atRealPlace g w) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.IsometryEquiv.baseChange_trans f g
-
-/-- Real localization commutes with inversion of isometric equivalences. -/
-@[simp]
-theorem IsometryEquiv.atRealPlace_symm (f : Q.IsometryEquiv R)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    IsometryEquiv.atRealPlace f.symm w = (IsometryEquiv.atRealPlace f w).symm := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.IsometryEquiv.baseChange_symm f
-
-/-- A global isometric equivalence extends through every chosen complex embedding. -/
-def IsometryEquiv.atComplexEmbedding (f : Q.IsometryEquiv R) (w : InfinitePlace K) :
-    (atComplexEmbedding Q w).IsometryEquiv (atComplexEmbedding R w) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  letI : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.IsometryEquiv.baseChange f ℂ
-
-/-- On pure tensors, an isometric equivalence extended through a complex embedding applies the
-original equivalence to the vector. -/
-@[simp]
-theorem IsometryEquiv.atComplexEmbedding_tmul (f : Q.IsometryEquiv R)
-    (w : InfinitePlace K) (a : ℂ) (x : V) :
-    let _ : Algebra K ℂ := w.embedding.toAlgebra
-    IsometryEquiv.atComplexEmbedding f w (a ⊗ₜ x) = a ⊗ₜ f x := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.IsometryEquiv.baseChange_tmul f a x
-
-/-- Extension through a complex embedding sends the identity isometric equivalence to the
-identity equivalence. -/
-@[simp]
-theorem IsometryEquiv.atComplexEmbedding_refl (Q : _root_.QuadraticForm K V)
-    (w : InfinitePlace K) :
-    IsometryEquiv.atComplexEmbedding (_root_.QuadraticMap.IsometryEquiv.refl Q) w =
-      _root_.QuadraticMap.IsometryEquiv.refl
-        (_root_.QuadraticForm.atComplexEmbedding Q w) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.IsometryEquiv.baseChange_refl Q
-
-/-- Extension through a complex embedding commutes with composition of isometric
-equivalences. -/
-@[simp]
-theorem IsometryEquiv.atComplexEmbedding_trans
-    {X : Type*} [AddCommGroup X] [Module K X] {S : _root_.QuadraticForm K X}
-    (f : Q.IsometryEquiv R) (g : R.IsometryEquiv S) (w : InfinitePlace K) :
-    IsometryEquiv.atComplexEmbedding (f.trans g) w =
-      (IsometryEquiv.atComplexEmbedding f w).trans
-        (IsometryEquiv.atComplexEmbedding g w) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.IsometryEquiv.baseChange_trans f g
-
-/-- Extension through a complex embedding commutes with inversion of isometric equivalences. -/
-@[simp]
-theorem IsometryEquiv.atComplexEmbedding_symm (f : Q.IsometryEquiv R)
-    (w : InfinitePlace K) :
-    IsometryEquiv.atComplexEmbedding f.symm w =
-      (IsometryEquiv.atComplexEmbedding f w).symm := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.IsometryEquiv.baseChange_symm f
-
-/-- Equivalent global quadratic forms remain equivalent at every finite place. -/
-theorem Equivalent.atFinitePlace [NumberField K] (h : Q.Equivalent R)
-    (v : HeightOneSpectrum (𝓞 K)) :
-    (atFinitePlace Q v).Equivalent (atFinitePlace R v) :=
-  QuadraticForm.Equivalent.baseChange h (v.adicCompletion K)
-
-/-- Equivalent global quadratic forms remain equivalent at every real place. -/
-theorem Equivalent.atRealPlace (h : Q.Equivalent R)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    (atRealPlace Q w).Equivalent (atRealPlace R w) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.Equivalent.baseChange h ℝ
-
-/-- Equivalent global quadratic forms remain equivalent after extension through every chosen
-complex embedding. -/
-theorem Equivalent.atComplexEmbedding (h : Q.Equivalent R) (w : InfinitePlace K) :
-    (atComplexEmbedding Q w).Equivalent (atComplexEmbedding R w) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.Equivalent.baseChange h ℂ
-
-/-- The finite localization of an orthogonal sum is canonically isometric to the orthogonal sum
-of the finite localizations. -/
-def prodAtFinitePlace [NumberField K] (Q : _root_.QuadraticForm K V)
-    (R : _root_.QuadraticForm K W)
-    (v : HeightOneSpectrum (𝓞 K)) :
-    (atFinitePlace (Q.prod R) v).IsometryEquiv
-      ((atFinitePlace Q v).prod (atFinitePlace R v)) :=
-  QuadraticForm.baseChangeProd Q R
-
-/-- On pure tensors, the finite-place orthogonal-sum equivalence separates the two components. -/
-@[simp]
-theorem prodAtFinitePlace_tmul [NumberField K] (Q : _root_.QuadraticForm K V)
-    (R : _root_.QuadraticForm K W) (v : HeightOneSpectrum (𝓞 K))
-    (a : v.adicCompletion K) (x : V × W) :
-    prodAtFinitePlace Q R v (a ⊗ₜ x) = (a ⊗ₜ x.1, a ⊗ₜ x.2) :=
-  QuadraticForm.baseChangeProd_tmul Q R a x
-
-/-- The real localization of an orthogonal sum is canonically isometric to the orthogonal sum of
-the real localizations. -/
-def prodAtRealPlace (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K W)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    (atRealPlace (Q.prod R) w).IsometryEquiv
-      ((atRealPlace Q w).prod (atRealPlace R w)) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.baseChangeProd Q R
-
-/-- On pure tensors, the real-place orthogonal-sum equivalence separates the two components. -/
-@[simp]
-theorem prodAtRealPlace_tmul (Q : _root_.QuadraticForm K V)
-    (R : _root_.QuadraticForm K W) (w : {w : InfinitePlace K // w.IsReal})
-    (a : ℝ) (x : V × W) :
-    let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-    prodAtRealPlace Q R w (a ⊗ₜ x) = (a ⊗ₜ x.1, a ⊗ₜ x.2) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.baseChangeProd_tmul Q R a x
-
-/-- Extension of an orthogonal sum through a complex embedding is canonically isometric to the
-orthogonal sum of the extensions. -/
-def prodAtComplexEmbedding (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K W)
-    (w : InfinitePlace K) :
-    (atComplexEmbedding (Q.prod R) w).IsometryEquiv
-      ((atComplexEmbedding Q w).prod (atComplexEmbedding R w)) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  letI : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.baseChangeProd Q R
-
-/-- On pure tensors, the complex-embedding orthogonal-sum equivalence separates the two
-components. -/
-@[simp]
-theorem prodAtComplexEmbedding_tmul (Q : _root_.QuadraticForm K V)
-    (R : _root_.QuadraticForm K W) (w : InfinitePlace K) (a : ℂ) (x : V × W) :
-    let _ : Algebra K ℂ := w.embedding.toAlgebra
-    prodAtComplexEmbedding Q R w (a ⊗ₜ x) = (a ⊗ₜ x.1, a ⊗ₜ x.2) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.baseChangeProd_tmul Q R a x
-
-end Isometries
-
-section FiniteDimensional
-
-variable {Q : _root_.QuadraticForm K V}
-
-/-- A regular quadratic form stays regular at every finite place. -/
-theorem Nondegenerate.atFinitePlace [NumberField K] [FiniteDimensional K V]
-    (hQ : Q.Nondegenerate)
-    (v : HeightOneSpectrum (𝓞 K)) : (atFinitePlace Q v).Nondegenerate := by
-  exact QuadraticForm.Nondegenerate.baseChange hQ
-
-/-- A regular quadratic form stays regular at every real place. -/
-theorem Nondegenerate.atRealPlace [FiniteDimensional K V] (hQ : Q.Nondegenerate)
-    (w : {w : InfinitePlace K // w.IsReal}) : (atRealPlace Q w).Nondegenerate := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact QuadraticForm.Nondegenerate.baseChange hQ
-
-/-- A regular quadratic form stays regular after extension through every chosen complex
-embedding. -/
-theorem Nondegenerate.atComplexEmbedding [FiniteDimensional K V]
-    (hQ : Q.Nondegenerate) (w : InfinitePlace K) :
-    (atComplexEmbedding Q w).Nondegenerate := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  exact QuadraticForm.Nondegenerate.baseChange hQ
-
-end FiniteDimensional
 
 end QuadraticForm
