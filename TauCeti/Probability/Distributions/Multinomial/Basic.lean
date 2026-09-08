@@ -60,6 +60,13 @@ the multinomial measure specializes them to the weights of a probability vector.
 def multinomialWeightReal (w : ι → NNReal) (k : ι → ℕ) : ℝ :=
   (Nat.multinomial Finset.univ k : ℝ) * ∏ i, (w i : ℝ) ^ k i
 
+-- The parentheses in `(rfl)` opt out of the exported-theorem exposure check, so that the
+-- defining formula can be stated without exposing the body of `multinomialWeightReal`.
+/-- The defining formula of the real multinomial weight, for use across module boundaries. -/
+theorem multinomialWeightReal_def (w : ι → NNReal) (k : ι → ℕ) :
+    multinomialWeightReal w k = (Nat.multinomial Finset.univ k : ℝ) * ∏ i, (w i : ℝ) ^ k i :=
+  (rfl)
+
 /-- Every real multinomial weight is nonnegative. -/
 theorem multinomialWeightReal_nonneg (w : ι → NNReal) (k : ι → ℕ) :
     0 ≤ multinomialWeightReal w k := by
