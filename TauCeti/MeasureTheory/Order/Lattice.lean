@@ -10,16 +10,17 @@ public import Mathlib.MeasureTheory.Order.Lattice
 /-!
 # Measurability of finite lattice extrema
 
-The maximum or minimum of a nonempty finite family of measurable random variables is again
-measurable, and likewise for almost-everywhere measurable ones. This is what lets the extremes of
-a finite family — order statistics, the range, the first arrival among finitely many exponential
-clocks — be treated as random variables in their own right: their laws are pushforwards, and their
-distribution functions are computed from those of the family.
+The supremum of a nonempty finite family of measurable functions into a semilattice with
+measurable join is again measurable, and likewise for almost-everywhere measurable ones. In a
+linear order the supremum is the maximum, and this is what lets the extremes of a finite family
+of random variables — order statistics, the range, the first arrival among finitely many
+exponential clocks — be treated as random variables in their own right: their laws are
+pushforwards, and their distribution functions are computed from those of the family.
 
 Mathlib proves `Finset.measurable_sup'`; this file adds the almost-everywhere version and its
-coordinatewise form. Infima are the suprema of the order dual, so the minimum of a family is
-obtained by instantiating these at `OrderDual α`, exactly as `Finset.measurable_sup'` is used for
-`Finset.inf'`.
+coordinatewise form. Infima are the suprema of the order dual, so the infimum (in a linear order,
+the minimum) of a family is obtained by instantiating these at `OrderDual α`, exactly as
+`Finset.measurable_sup'` is used for `Finset.inf'`.
 -/
 
 public section
@@ -38,7 +39,7 @@ theorem aemeasurable_sup' (hs : s.Nonempty) (hf : ∀ n ∈ s, AEMeasurable (f n
   Finset.sup'_induction (p := fun g : δ → α => AEMeasurable g μ) hs f (fun _ h₁ _ h₂ => h₁.sup h₂)
     fun n hn => hf n hn
 
-/-- The coordinatewise form of `Finset.aemeasurable_sup'`: the pointwise maximum
+/-- The coordinatewise form of `Finset.aemeasurable_sup'`: the pointwise supremum
 `x ↦ sup' (fun n => f n x)` of a nonempty finite family of a.e.-measurable functions is a.e.
 measurable. -/
 @[fun_prop]
