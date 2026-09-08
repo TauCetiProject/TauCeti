@@ -58,6 +58,7 @@ variables, so `MvPowerSeries.hasEval_of_finite_of_isTopologicallyNilpotent` appl
 * `WeierstrassCurve.formalAddEval_formalInverseEval` : `F(t, ι(t)) = 0`, the inverse law.
 * `WeierstrassCurve.formalAddEval_zero_right` and
   `WeierstrassCurve.formalAddEval_zero_left` : the unit laws `F(t, 0) = t` and `F(0, t) = t`.
+* `WeierstrassCurve.formalAddEval_comm` : commutativity `F(t₁, t₂) = F(t₂, t₁)`.
 * `WeierstrassCurve.formalAddEval_assoc` : `F(F(t₁, t₂), t₃) = F(t₁, F(t₂, t₃))`, the group
   law's associativity read at parameters.
 * `WeierstrassCurve.hasEval_formalAddEval` : `F(t₁, t₂)` admits evaluation as soon as `t₁` and
@@ -446,6 +447,34 @@ theorem formalAddEval_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t₁ t₂ : O
   have := Ideal.add_mem _ (hle (W.formalAddEval_sub_add_mem hI hk₁ hk₂))
     (Ideal.add_mem _ hk₁ hk₂)
   simpa using this
+
+/-- **Commutativity of the group law at parameters**: `F(t₁, t₂) = F(t₂, t₁)`. -/
+theorem formalAddEval_comm {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
+    (h₂ : PowerSeries.HasEval t₂) : W.formalAddEval t₁ t₂ = W.formalAddEval t₂ t₁ := by
+  have hpair := hasEval_pair h₁ h₂
+  have hfam : (fun s : Unit ⊕ Unit ↦ MvPowerSeries.aeval hpair
+        ((MvPowerSeries.X ∘ Sum.swap : Unit ⊕ Unit →
+          MvPowerSeries (Unit ⊕ Unit) O) s)) =
+      Sum.elim (fun _ ↦ t₂) fun _ ↦ t₁ := by
+    funext s
+    rcases s with _ | _ <;> simp [MvPowerSeries.coe_aeval]
+  have hev : MvPowerSeries.HasEval fun s : Unit ⊕ Unit ↦ MvPowerSeries.aeval hpair
+      ((MvPowerSeries.X ∘ Sum.swap : Unit ⊕ Unit →
+        MvPowerSeries (Unit ⊕ Unit) O) s) := by
+    rw [hfam]
+    exact hasEval_pair h₂ h₁
+  have hrename := MvPowerSeries.aeval_subst (MvPowerSeries.HasSubst.X_comp Sum.swap)
+    (MvPowerSeries.continuous_aeval hpair) hev W.formalAdd
+  have hcomm := congrArg (MvPowerSeries.aeval hpair) (rename_swap_formalAdd W)
+  rw [MvPowerSeries.rename_eq_subst] at hcomm
+  rw [hrename] at hcomm
+  have hswap : (fun s : Unit ⊕ Unit ↦
+      (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂) s.swap) = Sum.elim (fun _ ↦ t₂) fun _ ↦ t₁ := by
+    funext s
+    rcases s with _ | _ <;> rfl
+  simpa [formalAddEval, MvPowerSeries.coe_aeval, Algebra.algebraMap_self, hfam, hswap]
+    using hcomm.symm
+
 /-- **Associativity of the group law at parameters**: `F(F(t₁, t₂), t₃) = F(t₁, F(t₂, t₃))`. -/
 theorem formalAddEval_assoc {t₁ t₂ t₃ : O} (h₁ : PowerSeries.HasEval t₁)
     (h₂ : PowerSeries.HasEval t₂) (h₃ : PowerSeries.HasEval t₃) :
