@@ -15,14 +15,11 @@ Each coordinate of a multinomial count vector has the binomial distribution with
 probability equal to the corresponding cell probability.  This file proves that statement at the
 level of measures.
 
-The proof separates the chosen coordinate from the remaining count antidiagonal.  Mathlib's
-`Nat.multinomial_cons` factors each coefficient, and `Finset.sum_pow_eq_sum_piAntidiag` sums the
-remaining cell weights.
-
 ## Main definitions and results
 
-* `TauCeti.Probability.multinomialCellProbability`: a cell weight as a unit-interval parameter.
-* `TauCeti.Probability.map_apply_multinomialMeasure`: a coordinate marginal is binomial.
+* `TauCeti.Convexity.StdSimplex.multinomialCellProbability`: a cell weight as a unit-interval
+  parameter.
+* `TauCeti.Probability.map_eval_multinomialMeasure`: a coordinate marginal is binomial.
 
 ## References
 
@@ -37,9 +34,7 @@ noncomputable section
 open Convexity MeasureTheory ProbabilityTheory
 open scoped ENNReal ProbabilityTheory
 
-namespace TauCeti
-
-namespace Probability
+namespace TauCeti.Convexity.StdSimplex
 
 variable {ι : Type*} [Fintype ι]
 
@@ -52,6 +47,12 @@ omit [Fintype ι] in
 @[simp]
 theorem coe_multinomialCellProbability (p : StdSimplex NNReal ι) (i : ι) :
     (multinomialCellProbability p i : ℝ) = p.weights i := (rfl)
+
+end TauCeti.Convexity.StdSimplex
+
+namespace TauCeti.Probability
+
+variable {ι : Type*} [Fintype ι]
 
 open Classical in
 private lemma multinomialWeight_add_apply (w : ι → NNReal) (i : ι) (m q : ℕ)
@@ -170,9 +171,9 @@ private lemma sum_multinomialWeight_eq_apply (w : ι → NNReal) (n m : ℕ) (i 
 
 /-- The count in a fixed cell of a multinomial random vector is binomial, with success probability
 equal to that cell's weight. -/
-theorem map_apply_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) (i : ι) :
+theorem map_eval_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) (i : ι) :
     (multinomialMeasure n p).map (fun k ↦ k i) =
-      Bin(n, multinomialCellProbability p i) := by
+      Bin(n, TauCeti.Convexity.StdSimplex.multinomialCellProbability p i) := by
   classical
   apply Measure.ext_of_singleton
   intro m
@@ -205,9 +206,7 @@ theorem map_apply_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) (i : �
     sub_nonneg.mpr (by exact_mod_cast p.weights_apply_le_one i)
   rw [ENNReal.toReal_ofReal]
   · simp
-  · rw [coe_multinomialCellProbability]
+  · rw [TauCeti.Convexity.StdSimplex.coe_multinomialCellProbability]
     exact mul_nonneg (mul_nonneg (by positivity) (by positivity)) (pow_nonneg hcomp _)
 
-end Probability
-
-end TauCeti
+end TauCeti.Probability
