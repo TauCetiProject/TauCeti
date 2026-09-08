@@ -15,6 +15,10 @@ This file gives the equivalence between partitions and conjugacy classes of perm
 proved for permutations of any finite type and specialized to `Equiv.Perm (Fin n)` for the roadmap
 API.  Mathlib's partition of a permutation includes the fixed points as parts of size one.
 
+The specialization to `Fin n` carries a transport along `Fintype.card (Fin n) = n`, which
+`TauCeti.parts_partitionEquivConjClasses_symm_mk` discharges on the parts: the partition indexing
+the class of `σ` has the parts of the cycle type of `σ`.
+
 ## References
 
 * [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
@@ -142,6 +146,21 @@ theorem partitionEquivConjClasses_symm_mk (n : ℕ) (σ : Equiv.Perm (Fin n)) :
       (Equiv.cast (congrArg Nat.Partition (Fintype.card_fin n).symm)).symm
         σ.partition := by
   simp [partitionEquivConjClasses]
+
+/-- Transporting a partition along an equality of the number being partitioned does not change
+its parts.  This is the bookkeeping behind
+`TauCeti.parts_partitionEquivConjClasses_symm_mk`, where the cast is the one built into
+`TauCeti.partitionEquivConjClasses`. -/
+private theorem parts_equivCast_symm {m l : ℕ} (h : m = l) (p : l.Partition) :
+    ((Equiv.cast (congrArg Nat.Partition h)).symm p).parts = p.parts := by
+  subst h; rfl
+
+/-- **The partition indexing the class of `σ` has the parts of the cycle type of `σ`.**  This is
+`TauCeti.partitionEquivConjClasses_symm_mk` with the transport along `Fintype.card (Fin n) = n`
+carried out on the parts, which is the form in which the partition is compared with `σ` itself. -/
+theorem parts_partitionEquivConjClasses_symm_mk (n : ℕ) (σ : Equiv.Perm (Fin n)) :
+    ((partitionEquivConjClasses n).symm (ConjClasses.mk σ)).parts = σ.partition.parts := by
+  rw [partitionEquivConjClasses_symm_mk, parts_equivCast_symm (Fintype.card_fin n).symm]
 
 /-- The number of conjugacy classes of permutations of a finite type is the number of partitions
 of its cardinality. -/

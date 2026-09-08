@@ -25,7 +25,10 @@ The main results are `nat_card_centralizer_eq_zPart`, the multiplicative class-s
 `card_partition_mul_zPart` with its transported form `card_partition_parts_mul_zPart_fin`, and the
 normalisation `sum_factorial_div_zPart`, which says the class sizes add up to `n !`.  These are the
 weights in the orthogonality relations for the characters of the symmetric group, where the class
-with partition `μ` is weighted by `1 / zPart μ`.
+with partition `μ` is weighted by `1 / zPart μ`.  The last section reads the formula on the
+conjugacy class `partitionEquivConjClasses n ν` itself, as
+`card_carrier_partitionEquivConjClasses`, which is the form those orthogonality relations
+consume.
 
 Mathlib counts permutations of a given *cycle type*, a multiset recording only the cycles of length
 at least two (`Equiv.Perm.nat_card_centralizer`, `Equiv.Perm.card_isConj_mul_eq`).  The translation
@@ -266,5 +269,48 @@ identity `∑_μ 1 / z_μ = 1`, which divides this one by `n !`, is not formalis
 theorem sum_factorial_div_zPart (n : ℕ) : ∑ μ : n.Partition, n ! / zPart μ = n ! :=
   Eq.trans (Finset.sum_congr rfl fun μ _ => (card_partition_parts_div_zPart_fin n μ).symm)
     (sum_card_partition_parts (Fin n) (Fintype.card_fin n))
+
+/-! ### The class attached to a partition -/
+
+/-- The weight of the partition indexing the class of `σ` is the weight of the partition of `σ`:
+the transport `TauCeti.parts_partitionEquivConjClasses_symm_mk` leaves the parts, hence the
+weight, alone. -/
+theorem zPart_partitionEquivConjClasses_symm_mk (n : ℕ) (σ : Equiv.Perm (Fin n)) :
+    zPart ((partitionEquivConjClasses n).symm (ConjClasses.mk σ)) = zPart σ.partition :=
+  zPart_congr (parts_partitionEquivConjClasses_symm_mk n σ)
+
+/-- **The weight of the partition of the identity is the order of the group**: the identity
+commutes with everything, so its centralizer is the whole of `Equiv.Perm α`. -/
+theorem zPart_partition_one (α : Type*) [Fintype α] [DecidableEq α] :
+    zPart ((1 : Equiv.Perm α).partition) = (Fintype.card α)! := by
+  rw [← nat_card_centralizer_eq_zPart,
+    show Subgroup.centralizer {(1 : Equiv.Perm α)} = ⊤ from by
+      ext x; simp [Subgroup.mem_centralizer_iff]]
+  simp [Nat.card_eq_fintype_card, Fintype.card_perm]
+
+/-- **The class-size formula on the conjugacy class attached to a partition**: the class
+`TauCeti.partitionEquivConjClasses n ν` has `n ! / zPart ν` elements.  This is
+`TauCeti.card_partition_parts_mul_zPart_fin` read on the class itself rather than on the
+permutations with the given cycle type; it is stated for `Equiv.Perm (Fin n)` because
+`TauCeti.partitionEquivConjClasses` is. -/
+theorem card_carrier_partitionEquivConjClasses_mul_zPart {n : ℕ} (ν : n.Partition) :
+    Nat.card (partitionEquivConjClasses n ν).carrier * zPart ν = n ! := by
+  obtain ⟨σ, hσ⟩ := ConjClasses.exists_rep (partitionEquivConjClasses n ν)
+  have hν : (partitionEquivConjClasses n).symm (ConjClasses.mk σ) = ν := by
+    rw [hσ, Equiv.symm_apply_apply]
+  have hcarrier : (partitionEquivConjClasses n ν).carrier =
+      {τ : Equiv.Perm (Fin n) | IsConj σ τ} := by
+    rw [← hσ]
+    ext τ
+    rw [ConjClasses.mem_carrier_iff_mk_eq, ConjClasses.mk_eq_mk_iff_isConj, Set.mem_ofPred_eq,
+      isConj_comm]
+  rw [hcarrier, ← hν, zPart_partitionEquivConjClasses_symm_mk]
+  simpa using card_isConj_mul_zPart σ
+
+/-- The quotient form of `TauCeti.card_carrier_partitionEquivConjClasses_mul_zPart`. -/
+theorem card_carrier_partitionEquivConjClasses {n : ℕ} (ν : n.Partition) :
+    Nat.card (partitionEquivConjClasses n ν).carrier = n ! / zPart ν :=
+  (Nat.div_eq_of_eq_mul_left (zPart_pos ν)
+    (card_carrier_partitionEquivConjClasses_mul_zPart ν).symm).symm
 
 end TauCeti
