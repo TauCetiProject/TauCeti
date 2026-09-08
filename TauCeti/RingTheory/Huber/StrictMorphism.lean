@@ -20,8 +20,9 @@ Wedhorn states the target side as a finite module over a noetherian ring; that c
 instance `isNoetherian_of_isNoetherianRing_of_finite` of the noetherian target asked for here.
 
 The strictness of a morphism is what makes a presentation of a module by finite free modules a
-topological presentation, so this is the result that lets finite modules over a Tate ring be
-glued and localised topologically. The open mapping theorem it rests on is Henkel's, credited in
+topological presentation, so this is the result that lets finite modules over a noetherian Tate
+ring — where finiteness of the target already gives the noetherian hypothesis — be glued and
+localised topologically. The open mapping theorem it rests on is Henkel's, credited in
 `TauCeti.RingTheory.Huber.OpenMapping`.
 
 ## Main result
