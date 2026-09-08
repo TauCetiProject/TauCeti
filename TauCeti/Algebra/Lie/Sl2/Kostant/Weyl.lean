@@ -85,7 +85,8 @@ noncomputable def rankOneWeylPoint (A : Type u) [CommRing A] : rankOneCarrierPoi
 
 /-- The Weyl representative is natural in the ring of points. -/
 @[simp]
-theorem map_rankOneWeylPoint {A : Type u} {B : Type v} [CommRing A] [CommRing B]
+theorem rankOneCarrierPointsMap_weylPoint
+    {A : Type u} {B : Type v} [CommRing A] [CommRing B]
     (φ : A →+* B) :
     rankOneCarrierPointsMap φ (rankOneWeylPoint A) = rankOneWeylPoint B := by
   apply Subtype.ext
@@ -228,6 +229,7 @@ theorem rankOneWeylPoint_conj_rootSubgroupPoint
       intro r s
       fin_cases r <;> fin_cases s <;>
         simp [z, x, Matrix.mul_apply, Fin.sum_univ_two]
+    -- After `fin_cases`, folding the displayed root point into the local name `x` is definitional.
     change rankOneWeylPoint A * rankOneCarrierRootSubgroupPoint 1 A t *
         (rankOneWeylPoint A)⁻¹ = x
     rw [← hzero]
@@ -241,7 +243,7 @@ theorem rankOneWeylPoint_conj_rootSubgroupPoint
       _ = x := by rw [hcomm]; group
 
 /-- Conjugation by the rank-one Weyl representative inverts the represented torus. -/
-theorem rankOneWeylPoint_conj_torus (A : Type u) [CommRing A] (s : Fin 1 → Aˣ) :
+theorem rankOneWeylPoint_conj_torusPoint (A : Type u) [CommRing A] (s : Fin 1 → Aˣ) :
     rankOneWeylPoint A * rankOneCarrierTorusPoint A s *
         (rankOneWeylPoint A)⁻¹ =
       rankOneCarrierTorusPoint A (fun _ ↦ (s 0)⁻¹) := by
@@ -263,10 +265,12 @@ theorem rankOneWeylPoint_conj_torus (A : Type u) [CommRing A] (s : Fin 1 → Aˣ
       (fun i ↦ torusCharacter t (rankOneWeight i)) = ![t 0, (t 0)⁻¹] := by
     funext i
     fin_cases i
-    · change torusCharacter t (rankOneWeight 0) = t 0
+    · -- `fin_cases` leaves an eta-expanded `Fin 2` index, so expose its canonical value first.
+      change torusCharacter t (rankOneWeight 0) = t 0
       rw [rankOneWeight_zero, torusCharacter_singleton]
       simp
-    · change torusCharacter t (rankOneWeight 1) = (t 0)⁻¹
+    · -- Likewise, expose the canonical value of the second finite index.
+      change torusCharacter t (rankOneWeight 1) = (t 0)⁻¹
       rw [rankOneWeight_one, torusCharacter_singleton]
       simp
   rw [hdiag s, hdiag (fun _ ↦ (s 0)⁻¹)] at hconj
@@ -284,12 +288,12 @@ theorem rankOneWeylPoint_mem_normalizer (A : Type u) [CommRing A] :
   intro x
   constructor
   · rintro ⟨s, rfl⟩
-    rw [rankOneWeylPoint_conj_torus]
+    rw [rankOneWeylPoint_conj_torusPoint]
     exact ⟨fun _ ↦ (s 0)⁻¹, rfl⟩
   · rintro ⟨s, hs⟩
     refine ⟨(fun _ ↦ (s 0)⁻¹), ?_⟩
     apply (MulAut.conj (rankOneWeylPoint A)).injective
-    have hconj := rankOneWeylPoint_conj_torus A (fun _ ↦ (s 0)⁻¹)
+    have hconj := rankOneWeylPoint_conj_torusPoint A (fun _ ↦ (s 0)⁻¹)
     have hinv : (fun _ : Fin 1 ↦ ((s 0)⁻¹)⁻¹) = s := by
       funext q
       fin_cases q

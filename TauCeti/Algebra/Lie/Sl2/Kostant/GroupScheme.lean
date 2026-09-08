@@ -388,8 +388,7 @@ theorem coe_rankOneCarrierTorusPoint (A : Type u) [CommRing A] (s : Fin 1 â†’ AË
   rw [rankOneCarrierTorusPoint, rankOneCarrierTorusHom,
     MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     MulEquiv.subgroupCongr_symm_apply, coe_kostantToralWeightTorusPoints]
-  change rankOneTorusMatrix s = _
-  exact rankOneTorusMatrix_apply s
+  simpa only [rankOneTorusMatrix] using rankOneTorusMatrix_apply s
 
 private theorem rankOneCarrierPoints_eq_hopfIdealPoints
     (A : Type u) [CommRing A] :
