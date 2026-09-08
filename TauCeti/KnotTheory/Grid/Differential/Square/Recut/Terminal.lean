@@ -44,7 +44,8 @@ the intermediate state and the side columns of the new cut.
   rectangles, whose intermediate state and side columns are computed.
 * `GridRectangleDecomposition.exists_isRepartition_of_mem_unblockedRectangles_of_right_eq_right`:
   for each two-step term of `∂⁻ ∘ ∂⁻` whose two rectangles share their terminal side column there
-  is a unique second such term through a different intermediate state.
+  is a second such term through a different intermediate state, and it is the only decomposition
+  carrying the side columns computed there.
 
 ## References
 
@@ -356,8 +357,9 @@ theorem exists_isRepartition_of_isEmpty_of_right_eq_right (D : GridRectangleDeco
       (hrights.2.trans hE2right.symm)
 
 /-- For each two-step term of `∂⁻ ∘ ∂⁻` whose two rectangles share their terminal side column
-there is a unique second such term through a different intermediate grid state. Its domain is a
-repartition of the original domain, so its weight agrees over every coefficient ring. -/
+there is a second such term through a different intermediate grid state, and it is the only one
+whose side columns are the ones computed here. Its domain is a repartition of the original
+domain, so its weight agrees over every coefficient ring. -/
 theorem exists_isRepartition_of_mem_unblockedRectangles_of_right_eq_right (G : GridDiagram n)
     (D : GridRectangleDecomposition x z)
     (hright : D.first.right = D.second.right) (hleft : D.first.left ≠ D.second.left)
