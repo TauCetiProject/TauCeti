@@ -195,7 +195,7 @@ group cohomology. -/
 @[simp]
 theorem tateCohomologyIsoEven_ofNat_succ (hg : ∀ x, x ∈ Subgroup.zpowers g) (k : ℕ)
     (hk : Even (k + 1)) :
-    tateCohomologyIsoEven M g hg (Int.ofNat (k + 1)) hk.natCast =
+    tateCohomologyIsoEven M g hg ((k : ℤ) + 1) hk.natCast =
       (TateCohomology.isoGroupCohomology (k + 1)).app M ≪≫
         groupCohomologyIsoEven M g hg (k + 1) hk := by
   rfl
@@ -221,7 +221,7 @@ cohomology. -/
 @[simp]
 theorem tateCohomologyIsoOdd_ofNat (hg : ∀ x, x ∈ Subgroup.zpowers g) (k : ℕ)
     (hk : Odd k) :
-    tateCohomologyIsoOdd M g hg (Int.ofNat k) hk.natCast =
+    tateCohomologyIsoOdd M g hg (k : ℤ) hk.natCast =
       (let _ : NeZero k := ⟨hk.pos.ne'⟩
        (TateCohomology.isoGroupCohomology k).app M ≪≫
          groupCohomologyIsoOdd M g hg k hk) := by
