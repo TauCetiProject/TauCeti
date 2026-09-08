@@ -193,6 +193,16 @@ public theorem SemilocallySimplyConnectedAt.of_semilocallySimplyConnectedSpace
   -- Left-cancel the shared `δ`: rewrite `δ ≃ δ.trans (refl u)`, then apply left cancellation.
   exact Path.Homotopic.trans_left_cancel (hδγ.trans (Path.Homotopic.trans_refl δ).symm)
 
+/-- Conversely, a space that is semilocally simply connected at each of its points, in the
+unbased sense, satisfies the based class `TauCeti.SemilocallySimplyConnectedSpace`: the based
+condition only asks about the loops of the unbased one that happen to be based at the point
+itself. No local path-connectedness is needed in this direction. -/
+public theorem TauCeti.SemilocallySimplyConnectedSpace.of_forall_semilocallySimplyConnectedAt
+    (h : ∀ x : X, SemilocallySimplyConnectedAt x) : SemilocallySimplyConnectedSpace X where
+  exists_mem_nhds_loops_nullhomotopic x := by
+    obtain ⟨U, hUopen, hxU, hloop⟩ := semilocallySimplyConnectedAt_iff.mp (h x)
+    exact ⟨U, hUopen.mem_nhds hxU, fun γ hγ ↦ hloop γ (range_subset_iff.mpr hγ)⟩
+
 /-- On a locally path-connected semilocally simply connected space, every subset is pointwise
 semilocally simply connected. -/
 public theorem SemilocallySimplyConnectedOn.of_semilocallySimplyConnectedSpace
