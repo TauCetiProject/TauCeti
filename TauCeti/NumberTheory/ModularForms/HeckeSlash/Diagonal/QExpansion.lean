@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
 public import TauCeti.NumberTheory.ModularForms.Degeneracy
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diagonal.Basic
-public import TauCeti.NumberTheory.ModularForms.SlashActionRat
 
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 

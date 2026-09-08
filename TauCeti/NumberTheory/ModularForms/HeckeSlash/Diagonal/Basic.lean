@@ -11,10 +11,10 @@ public import TauCeti.NumberTheory.ModularForms.SlashActionRat
 /-!
 # The rational slash action of a diagonal Hecke representative
 
-The Hecke coset representatives that are not upper triangular are the rational diagonal
-matrices `natDiagGL 2 a`. This file records how the weight-`k` rational slash action sees the
-scalar ones: `diag(c, c)` acts trivially on the upper half-plane, so it only contributes the
-automorphy factor, which is `c ^ (k - 2)`.
+This file treats the rational diagonal Hecke representatives `natDiagGL 2 a`, specifically
+the scalar ones, and records how the weight-`k` rational slash action sees them: `diag(c, c)`
+acts trivially on the upper half-plane, so it only contributes the automorphy factor, which is
+`c ^ (k - 2)`.
 
 ## Main results
 
