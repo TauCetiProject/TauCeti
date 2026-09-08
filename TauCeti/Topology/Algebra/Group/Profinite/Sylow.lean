@@ -33,6 +33,12 @@ compatible inverse-limit argument and are developed separately.
 
 ## References
 
+* The predicate, its per-quotient form and the comparison lemmas proved here follow Layer 2
+  ("profinite Sylow theory", the *Definition* milestone) of the human-authored roadmap
+  `TauCetiRoadmap/ProfiniteProPGroups/README.md`, whose API checklist for `IsProPSylow` asks
+  that "the per-quotient form and the supernatural form agree" and that "on a finite group the
+  predicate agrees with Mathlib's `Sylow`". The signature of `IsProPSylow` is the one pinned in
+  that area's `Suggested.lean`.
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Section 2.3.
 -/
 
@@ -55,7 +61,8 @@ def IsProPSylow (p : ℕ) {G : Type u} [Group G] [TopologicalSpace G]
 
 variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] {P : Subgroup G}
 
-/-- The defining conditions for a Sylow pro-`p` subgroup. -/
+/-- The defining conditions for a Sylow pro-`p` subgroup, available to modules that only see
+the declaration and not its body. -/
 theorem isProPSylow_iff : IsProPSylow p P ↔
     IsClosed (P : Set G) ∧ IsProP p P ∧
       ∀ U : OpenNormalSubgroup G, ¬ p ∣ (P.map (QuotientGroup.mk' U.toSubgroup)).index :=
@@ -122,6 +129,7 @@ variable [DiscreteTopology G]
 
 /-- On a finite discrete group, a subgroup is Sylow pro-`p` exactly when it is a `p`-group
 of index prime to `p`. -/
+@[simp]
 theorem isProPSylow_iff_isPGroup_and_not_dvd_index :
     IsProPSylow p P ↔ IsPGroup p P ∧ ¬ p ∣ P.index := by
   constructor
