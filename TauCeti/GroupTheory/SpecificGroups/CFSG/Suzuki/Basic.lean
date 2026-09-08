@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.SpecialIsogeny
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB2
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two
 
 /-!
 # The Steinberg endomorphism of the Suzuki family
