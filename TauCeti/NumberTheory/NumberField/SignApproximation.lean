@@ -26,6 +26,11 @@ or complex, keeps the element away from `0`.
 
 * `NumberField.exists_forall_infinitePlace_sub_lt`: weak approximation at the infinite
   places in `ε`-`δ` form, with targets in `K` measured by the places themselves.
+* `NumberField.exists_forall_apply_eq_one_and_embedding_of_isReal_eq`: the family of targets that
+  such an approximation is aimed at, of absolute value one at every infinite place and of
+  prescribed sign at every real place.
+* `NumberField.mul_pos_of_infinitePlace_sub_lt`: an element within `1` of a target of absolute
+  value one at a real place has the sign of that target there.
 * `NumberField.exists_ne_zero_forall_isReal_pos`: a nonzero element of `K` whose real
   embeddings have prescribed signs.
 * `NumberField.exists_ne_zero_neg_iff_mem`: the same statement with the prescription given
@@ -66,6 +71,52 @@ theorem exists_forall_infinitePlace_sub_lt (a : InfinitePlace K → K)
   rw [coe_apply, AbsoluteValue.map_sub]
   exact h.trans_le (Finset.inf'_le r (Finset.mem_univ v))
 
+omit [NumberField K] in
+/-- **A family of targets of absolute value one with prescribed signs.**  For any prescribed sign
+at each real place of a number field there is a family `b`, one element of `K` for each infinite
+place, whose entry at `v` has absolute value one at `v` and whose entry at a real place `w` has
+there exactly the prescribed sign.
+
+This is the family that weak approximation at the infinite places is aimed at: absolute value one
+keeps an approximation of it away from `0`, and
+`NumberField.mul_pos_of_infinitePlace_sub_lt` turns the approximation into a sign prescription. -/
+theorem exists_forall_apply_eq_one_and_embedding_of_isReal_eq
+    (s : {w : InfinitePlace K // w.IsReal} → ℤˣ) :
+    ∃ b : InfinitePlace K → K, (∀ v : InfinitePlace K, v (b v) = 1) ∧
+      ∀ w : {w : InfinitePlace K // w.IsReal},
+        embedding_of_isReal w.2 (b w.1) = ((s w : ℤ) : ℝ) := by
+  classical
+  refine ⟨fun v => if h : v.IsReal then ((s ⟨v, h⟩ : ℤ) : K) else 1, fun v => ?_, fun w => ?_⟩
+  · dsimp only
+    by_cases h : v.IsReal
+    · rw [dite_eq_left h]
+      rcases Int.units_eq_one_or (s ⟨v, h⟩) with hs | hs <;> rw [hs]
+      · simp
+      · rw [coe_apply]
+        simp
+    · rw [dite_eq_right h, map_one]
+  · dsimp only
+    rw [dite_eq_left w.2, Subtype.coe_eta, map_intCast]
+
+/-- **An approximation of a target of absolute value one has the sign of that target.**  At a real
+place `w`, an element `x` within `1` of a target `y` with `w y = 1` has the same sign as `y` under
+the real embedding at `w`.
+
+Together with `NumberField.exists_forall_apply_eq_one_and_embedding_of_isReal_eq` this is the whole
+archimedean content of a sign prescription: everything else is the approximation itself. -/
+theorem mul_pos_of_infinitePlace_sub_lt {w : InfinitePlace K} (hw : w.IsReal) {x y : K}
+    (hy : w y = 1) (h : w (x - y) < 1) :
+    0 < embedding_of_isReal hw y * embedding_of_isReal hw x := by
+  have hy' : |embedding_of_isReal hw y| = 1 := by
+    rw [← Real.norm_eq_abs, norm_embedding_of_isReal]
+    exact hy
+  have hσ : |embedding_of_isReal hw x - embedding_of_isReal hw y| < 1 := by
+    rw [← map_sub, ← Real.norm_eq_abs, norm_embedding_of_isReal]
+    exact h
+  rw [abs_lt] at hσ
+  rcases (abs_eq (by norm_num : (0 : ℝ) ≤ 1)).mp hy' with hy1 | hy1 <;> rw [hy1] at hσ ⊢ <;>
+    linarith [hσ.1, hσ.2]
+
 /-- **A nonzero element with prescribed signs at the real places.** For any family of nonzero
 reals `s`, indexed by the real infinite places of a number field `K`, some nonzero `x : K` has
 `s w` and the image of `x` under the real embedding at `w` of the same sign, at every real place
@@ -75,39 +126,28 @@ theorem exists_ne_zero_forall_isReal_pos (s : {w : InfinitePlace K // w.IsReal} 
     ∃ x : K, x ≠ 0 ∧
       ∀ w : {w : InfinitePlace K // w.IsReal}, 0 < s w * embedding_of_isReal w.2 x := by
   classical
-  -- Aim at `1` where the prescribed sign is positive and at `-1` where it is negative; at a
-  -- complex place the target is irrelevant, and `1` serves.
-  set a : InfinitePlace K → K := fun v =>
-    if h : v.IsReal then (if 0 < s ⟨v, h⟩ then 1 else -1) else 1 with ha
-  have hreal : ∀ w : {w : InfinitePlace K // w.IsReal}, a w.1 = if 0 < s w then 1 else -1 := by
-    intro w
-    simp [ha, w.2]
-  -- Every target has absolute value `1` at its own place, so it stays away from `0`.
-  have habs : ∀ v : InfinitePlace K, v (a v) = 1 := by
-    intro v
-    have h : a v = 1 ∨ a v = -1 := by
-      simp only [ha]
-      split_ifs <;> simp
-    rw [coe_apply]
-    rcases h with h | h <;> rw [h] <;> simp
-  obtain ⟨x, hx⟩ := exists_forall_infinitePlace_sub_lt a (fun _ => 1) fun _ => one_pos
+  -- Aim at `1` where the prescribed sign is positive and at `-1` where it is negative.
+  obtain ⟨b, habs, hb⟩ := exists_forall_apply_eq_one_and_embedding_of_isReal_eq (K := K)
+    fun w => if 0 < s w then 1 else -1
+  have hb' : ∀ w : {w : InfinitePlace K // w.IsReal},
+      embedding_of_isReal w.2 (b w.1) = if 0 < s w then (1 : ℝ) else -1 := fun w => by
+    rw [hb w]
+    split_ifs <;> simp
+  obtain ⟨x, hx⟩ := exists_forall_infinitePlace_sub_lt b (fun _ => 1) fun _ => one_pos
+  -- A point within `1` of a target of absolute value one at some place is nonzero.
   have hx0 : x ≠ 0 := by
     rintro rfl
     have h := hx (Classical.arbitrary (InfinitePlace K))
     rw [coe_apply, zero_sub, AbsoluteValue.map_neg, ← coe_apply, habs] at h
     exact lt_irrefl 1 h
   refine ⟨x, hx0, fun w => ?_⟩
-  -- At a real place the place is the absolute value of the real embedding.
-  have hσ : |embedding_of_isReal w.2 x - embedding_of_isReal w.2 (a w.1)| < 1 := by
-    rw [← map_sub, ← Real.norm_eq_abs, norm_embedding_of_isReal]
-    exact hx w.1
+  have h := mul_pos_of_infinitePlace_sub_lt w.2 (habs w.1) (hx w.1)
+  rw [hb' w] at h
   by_cases h' : 0 < s w
-  · have hax : a w.1 = 1 := by rw [hreal w]; simp [h']
-    rw [hax, map_one, abs_lt] at hσ
-    exact mul_pos h' (by linarith [hσ.1])
-  · have hax : a w.1 = -1 := by rw [hreal w]; simp [h']
-    rw [hax, map_neg, map_one, sub_neg_eq_add, abs_lt] at hσ
-    exact mul_pos_of_neg_of_neg (lt_of_le_of_ne (not_lt.mp h') (hs w)) (by linarith [hσ.2])
+  · rw [ite_eq_left h', one_mul] at h
+    exact mul_pos h' h
+  · rw [ite_eq_right h', neg_one_mul, neg_pos] at h
+    exact mul_pos_of_neg_of_neg (lt_of_le_of_ne (not_lt.mp h') (hs w)) h
 
 /-- **A nonzero element of `K` negative at exactly a prescribed set of real places.** Since the
 real places at which an element is negative determine its sign pattern, this is
