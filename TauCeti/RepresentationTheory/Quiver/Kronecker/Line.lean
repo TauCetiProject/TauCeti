@@ -52,16 +52,22 @@ them over any field at all.
 
 * `TauCeti.kroneckerLineRep`: the line `k` at both vertices of the generalized Kronecker quiver,
   the distinguished arrow acting by a scalar and every other arrow by the identity.
-* `TauCeti.kroneckerLineScalar`: the scalar recording a morphism between two line representations,
-  the value at `1` of its component at the source vertex.
+* `TauCeti.kroneckerLineRepScalar`: the scalar recording a morphism between two line
+  representations, the value at `1` of its component at the source vertex.
+* `TauCeti.kroneckerLineRepHom`: conversely, the morphism of line representations attached to a
+  scalar intertwining the two actions of the distinguished arrow.
 
 ## Main results
 
 * `TauCeti.kroneckerLineRep_hom_app_src_apply`, `TauCeti.kroneckerLineRep_hom_ext` and
-  `TauCeti.mul_kroneckerLineScalar`: a morphism of line representations is multiplication by its
-  scalar at the source vertex; that scalar determines the morphism as soon as the distinguished
-  arrow acts invertibly or some other arrow exists, and satisfies `c * s = d * s` for the two
-  scalars `c` and `d` of its source and target.
+  `TauCeti.kroneckerLineRepScalar_intertwine`: a morphism of line representations is
+  multiplication by its scalar at the source vertex; that scalar determines the morphism as soon
+  as the distinguished arrow acts invertibly or some other arrow exists, and satisfies
+  `c * s = d * s` for the two scalars `c` and `d` of its source and target.
+* `TauCeti.kroneckerLineRepScalar_kroneckerLineRepHom` and
+  `TauCeti.kroneckerLineRepHom_kroneckerLineRepScalar`: the converse identification, on a quiver
+  carrying an arrow other than the distinguished one, of those morphisms with the scalars `s`
+  satisfying `c * s = d * s`.
 * `TauCeti.indecomposable_kroneckerLineRep`: a line representation is indecomposable as soon as
   its scalar is nonzero or some arrow other than the distinguished one exists; its endomorphisms
   are recorded faithfully by a single scalar.
@@ -69,8 +75,9 @@ them over any field at all.
   distinguished one, two of them are isomorphic exactly when their scalars agree.**
 * `TauCeti.dimVector_kroneckerLineRep`: every line representation has dimension vector `1` at
   both vertices.
-* `TauCeti.exists_indecomposable_dimVector_eq_not_nonempty_iso`: **on a generalized Kronecker
-  quiver with two distinct arrows the dimension vector does not determine an indecomposable**:
+* `TauCeti.exists_indecomposable_dimVector_eq_not_nonempty_iso_kronecker`: **on a generalized
+  Kronecker quiver with two distinct arrows the dimension vector does not determine an
+  indecomposable**:
   over every field such a quiver carries two non-isomorphic finite-dimensional indecomposables of
   the same dimension vector.
 * `TauCeti.titsForm_dimVector_kroneckerLineRep`: the Tits value of that common dimension vector is
@@ -173,32 +180,15 @@ theorem not_isZero_kroneckerLineRep :
 
 /-! ### The morphisms between two line representations -/
 
-/-- The linear map underlying a morphism of line representations at the source vertex. Reading that
-component as an endomorphism of the base field is what lets the scalar below be spoken of at all,
-so it is kept as a definition rather than inlined. -/
-private noncomputable def lineApp (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) :
-    k →ₗ[k] k :=
-  (e.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A))).hom
-
-private theorem lineApp_zero :
-    lineApp (0 : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) = 0 := (rfl)
-
-private theorem lineApp_id : lineApp (𝟙 (kroneckerLineRep k a₁ c)) = LinearMap.id := (rfl)
-
-private theorem lineApp_comp {c' : k} (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d)
-    (e' : kroneckerLineRep k a₁ d ⟶ kroneckerLineRep k a₁ c') :
-    lineApp (e ≫ e') = (lineApp e').comp (lineApp e) := (rfl)
-
 /-- **The scalar recording a morphism of line representations**: the value at `1` of its component
 at the source vertex, that component being a linear endomorphism of the base field. The morphism is
 multiplication by this scalar at the source (`TauCeti.kroneckerLineRep_hom_app_src_apply`), the
 scalar determines the morphism whenever `TauCeti.kroneckerLineRep_hom_ext` applies, and it is
-constrained by `TauCeti.mul_kroneckerLineScalar`. -/
-noncomputable def kroneckerLineScalar (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) : k :=
-  lineApp e 1
-
-private theorem kroneckerLineScalar_def (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) :
-    kroneckerLineScalar e = lineApp e 1 := (rfl)
+constrained by `TauCeti.kroneckerLineRepScalar_intertwine`; conversely
+`TauCeti.kroneckerLineRepHom` builds the morphism back from a scalar meeting that constraint. -/
+noncomputable def kroneckerLineRepScalar
+    (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) : k :=
+  (e.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A))).hom (1 : k)
 
 /-- **A morphism of line representations acts at the source vertex by multiplication by its
 scalar.** -/
@@ -206,32 +196,53 @@ scalar.** -/
 theorem kroneckerLineRep_hom_app_src_apply
     (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) (x : k) :
     (e.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A))).hom x =
-      x * kroneckerLineScalar e := by
-  -- The rewrites need this component with its source and target read as the base field, which is
-  -- what `lineApp` records; the two statements are the same up to that reading.
-  have h : lineApp e x = x * kroneckerLineScalar e := by
-    rw [kroneckerLineScalar_def, ← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
-  exact h
+      x * kroneckerLineRepScalar e := by
+  have hx : (e.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A))).hom (x • (1 : k)) =
+      x • kroneckerLineRepScalar e := map_smul _ x (1 : k)
+  rwa [smul_eq_mul, mul_one, smul_eq_mul] at hx
 
-@[simp]
-theorem kroneckerLineScalar_zero :
-    kroneckerLineScalar (0 : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) = 0 := by
-  rw [kroneckerLineScalar_def, lineApp_zero, LinearMap.zero_apply]
+-- The three lemmas below read the component at the source vertex of the zero morphism, of the
+-- identity and of a composite. Their category-level statements
+-- `CategoryTheory.NatTrans.app_zero`, `CategoryTheory.NatTrans.id_app` and
+-- `CategoryTheory.NatTrans.comp_app` do not *rewrite* at a vertex of `Paths`, that component not
+-- being type-correct at the transparency `rw`/`simp` work at; they are therefore applied as terms,
+-- which elaborates, and the passage from the resulting morphism of `ModuleCat` to its linear map
+-- is `ModuleCat.hom_zero`, `ModuleCat.hom_id` and `ModuleCat.comp_apply`.
 
+/-- The zero morphism has scalar `0`. -/
 @[simp]
-theorem kroneckerLineScalar_id : kroneckerLineScalar (𝟙 (kroneckerLineRep k a₁ c)) = 1 := by
-  rw [kroneckerLineScalar_def, lineApp_id, LinearMap.id_apply]
+theorem kroneckerLineRepScalar_zero :
+    kroneckerLineRepScalar (0 : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) = 0 := by
+  have h : kroneckerLineRepScalar (0 : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) =
+      (ModuleCat.Hom.hom (0 : ModuleCat.of k k ⟶ ModuleCat.of k k)) (1 : k) :=
+    congrArg (fun g ↦ (ModuleCat.Hom.hom g) (1 : k))
+      (NatTrans.app_zero (F := kroneckerLineRep k a₁ c) (G := kroneckerLineRep k a₁ d)
+        (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)))
+  rw [h, ModuleCat.hom_zero, LinearMap.zero_apply]
 
+/-- The identity has scalar `1`. -/
 @[simp]
-theorem kroneckerLineScalar_comp {c' : k}
+theorem kroneckerLineRepScalar_id : kroneckerLineRepScalar (𝟙 (kroneckerLineRep k a₁ c)) = 1 := by
+  have h : kroneckerLineRepScalar (𝟙 (kroneckerLineRep k a₁ c)) =
+      (ModuleCat.Hom.hom (𝟙 (ModuleCat.of k k))) (1 : k) :=
+    congrArg (fun g ↦ (ModuleCat.Hom.hom g) (1 : k))
+      (NatTrans.id_app (kroneckerLineRep k a₁ c)
+        (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)))
+  rw [h, ModuleCat.hom_id, LinearMap.id_apply]
+
+/-- Composition multiplies the scalars. -/
+@[simp]
+theorem kroneckerLineRepScalar_comp {c' : k}
     (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d)
     (e' : kroneckerLineRep k a₁ d ⟶ kroneckerLineRep k a₁ c') :
-    kroneckerLineScalar (e ≫ e') = kroneckerLineScalar e * kroneckerLineScalar e' := by
-  have h : lineApp (e ≫ e') 1 = lineApp e' (lineApp e 1) := by
-    rw [lineApp_comp, LinearMap.comp_apply]
-  have h' : lineApp e' (lineApp e 1) = lineApp e 1 * kroneckerLineScalar e' :=
-    kroneckerLineRep_hom_app_src_apply e' (lineApp e 1)
-  rw [kroneckerLineScalar_def, h, h', ← kroneckerLineScalar_def]
+    kroneckerLineRepScalar (e ≫ e') = kroneckerLineRepScalar e * kroneckerLineRepScalar e' := by
+  have h : kroneckerLineRepScalar (e ≫ e') =
+      (e'.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A))).hom
+        (kroneckerLineRepScalar e : k) :=
+    (congrArg (fun g ↦ (ModuleCat.Hom.hom g) (1 : k))
+      (NatTrans.comp_app e e' (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)))).trans
+        (ModuleCat.comp_apply _ _ _)
+  exact h.trans (kroneckerLineRep_hom_app_src_apply e' (kroneckerLineRepScalar e))
 
 /-- **The two components of a morphism of line representations agree**, by naturality along an
 arrow that acts as the identity on both. -/
@@ -276,33 +287,100 @@ private theorem app_tgt_ext_of_ne_zero (hc : c ≠ 0)
 distinguished arrow acts invertibly or some other arrow exists. -/
 theorem kroneckerLineRep_hom_ext (h : c ≠ 0 ∨ ∃ a : A, a ≠ a₁)
     {e e' : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d}
-    (heq : kroneckerLineScalar e = kroneckerLineScalar e') : e = e' := by
-  rw [kroneckerLineScalar_def, kroneckerLineScalar_def] at heq
+    (heq : kroneckerLineRepScalar e = kroneckerLineRepScalar e') : e = e' := by
   have hsrc : e.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)) =
-      e'.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)) :=
-    ModuleCat.hom_ext (LinearMap.ext_ring heq)
+      e'.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)) := by
+    refine ModuleCat.hom_ext (LinearMap.ext fun (x : k) ↦ ?_)
+    rw [kroneckerLineRep_hom_app_src_apply, kroneckerLineRep_hom_app_src_apply, heq]
   refine kroneckerRep_hom_ext hsrc ?_
   obtain hc | ⟨a, ha⟩ := h
   · exact app_tgt_ext_of_ne_zero hc hsrc
   · rw [kroneckerLineRep_hom_app_tgt_of_ne ha e, kroneckerLineRep_hom_app_tgt_of_ne ha e', hsrc]
 
-private theorem kroneckerLineScalar_injective (h : c ≠ 0 ∨ ∃ a : A, a ≠ a₁) :
+private theorem kroneckerLineRepScalar_injective (h : c ≠ 0 ∨ ∃ a : A, a ≠ a₁) :
     Function.Injective
-      (kroneckerLineScalar : (kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) → k) :=
+      (kroneckerLineRepScalar : (kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) → k) :=
   fun _ _ heq ↦ kroneckerLineRep_hom_ext h heq
 
 /-- **The scalars of the two lines agree on the scalar of any morphism between them**, by
 naturality along the distinguished arrow. -/
-theorem mul_kroneckerLineScalar (h : a₀ ≠ a₁)
+theorem kroneckerLineRepScalar_intertwine (h : a₀ ≠ a₁)
     (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) :
-    c * kroneckerLineScalar e = d * kroneckerLineScalar e := by
+    c * kroneckerLineRepScalar e = d * kroneckerLineRepScalar e := by
   have hnat := app_tgt_comp_mulLeft e
   rw [kroneckerLineRep_hom_app_tgt_of_ne h e] at hnat
-  have h1 : lineApp e (c * 1) = d * lineApp e 1 :=
-    congrArg (fun g ↦ (ModuleCat.Hom.hom g) 1) hnat
-  have h2 : lineApp e c = c * kroneckerLineScalar e :=
-    kroneckerLineRep_hom_app_src_apply e c
-  rwa [mul_one, h2, ← kroneckerLineScalar_def] at h1
+  -- Reading the square at `1` gives the value of the component at `c`, which
+  -- `TauCeti.kroneckerLineRep_hom_app_src_apply` computes on the other side.
+  have h1 : (e.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A))).hom (c * 1 : k) =
+      d * kroneckerLineRepScalar e :=
+    congrArg (fun g ↦ (ModuleCat.Hom.hom g) (1 : k)) hnat
+  have h2 : (c * 1 : k) * kroneckerLineRepScalar e = d * kroneckerLineRepScalar e :=
+    (kroneckerLineRep_hom_app_src_apply e (c * 1 : k)).symm.trans h1
+  rwa [mul_one] at h2
+
+/-- **Multiplication by `s` carries multiplication by `c` to multiplication by `d`** exactly when
+`c * s = d * s`: the square along the distinguished arrow, stated on the base field, where the two
+vertex spaces of a line representation are read. -/
+private theorem mulLeft_comp_mulRight {s : k} (hs : c * s = d * s) :
+    ModuleCat.ofHom (LinearMap.mulLeft k c) ≫ ModuleCat.ofHom (LinearMap.mulRight k s) =
+      ModuleCat.ofHom (LinearMap.mulRight k s) ≫ ModuleCat.ofHom (LinearMap.mulLeft k d) := by
+  refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom,
+    LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
+  rw [mul_right_comm, hs, mul_assoc, mul_comm s x]
+
+/-- **The morphism of line representations attached to an intertwining scalar**: multiplication by
+`s` at both vertices. Every arrow other than the distinguished one acts by the identity on both
+lines, so naturality there is automatic; along the distinguished one it says exactly that `s`
+carries multiplication by `c` to multiplication by `d`. -/
+noncomputable def kroneckerLineRepHom (s : k) (hs : c * s = d * s) :
+    kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d :=
+  kroneckerHom (ModuleCat.ofHom (LinearMap.mulRight k s))
+    (ModuleCat.ofHom (LinearMap.mulRight k s)) fun a ↦ by
+      by_cases ha : a = a₁
+      · subst ha
+        rw [kroneckerLineRep_map_arrowPath_self, kroneckerLineRep_map_arrowPath_self]
+        exact mulLeft_comp_mulRight hs
+      · rw [kroneckerLineRep_map_arrowPath_of_ne ha, kroneckerLineRep_map_arrowPath_of_ne ha]
+        exact (Category.id_comp _).trans (Category.comp_id _).symm
+
+/-- At the source vertex, `TauCeti.kroneckerLineRepHom s hs` is multiplication by `s`. -/
+@[simp]
+theorem kroneckerLineRepHom_app_src (s : k) (hs : c * s = d * s) :
+    (kroneckerLineRepHom (a₁ := a₁) (c := c) (d := d) s hs).app
+        (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)) =
+      ModuleCat.ofHom (LinearMap.mulRight k s) :=
+  kroneckerHom_app_src _ _ _
+
+/-- At the target vertex, `TauCeti.kroneckerLineRepHom s hs` is multiplication by `s`. -/
+@[simp]
+theorem kroneckerLineRepHom_app_tgt (s : k) (hs : c * s = d * s) :
+    (kroneckerLineRepHom (a₁ := a₁) (c := c) (d := d) s hs).app
+        (Quiver.Kronecker.tgt : Paths (Quiver.Kronecker A)) =
+      ModuleCat.ofHom (LinearMap.mulRight k s) :=
+  kroneckerHom_app_tgt _ _ _
+
+/-- The scalar of `TauCeti.kroneckerLineRepHom s hs` is `s`. -/
+@[simp]
+theorem kroneckerLineRepScalar_kroneckerLineRepHom (s : k) (hs : c * s = d * s) :
+    kroneckerLineRepScalar (kroneckerLineRepHom (a₁ := a₁) (c := c) (d := d) s hs) = s := by
+  have h : kroneckerLineRepScalar (kroneckerLineRepHom (a₁ := a₁) (c := c) (d := d) s hs) =
+      1 * s :=
+    congrArg (fun g ↦ (ModuleCat.Hom.hom g) (1 : k))
+      (kroneckerLineRepHom_app_src (a₁ := a₁) (c := c) (d := d) s hs)
+  rw [h, one_mul]
+
+-- Not `@[simp]`: the arrow `a₀` of the hypothesis does not occur in the left-hand side, which
+-- `simpNF` rejects.
+/-- **Every morphism of line representations is the one attached to its scalar.** Together with
+`TauCeti.kroneckerLineRep_hom_ext` this identifies the morphisms `kroneckerLineRep k a₁ c ⟶
+kroneckerLineRep k a₁ d`, on a quiver carrying an arrow other than the distinguished one, with the
+scalars `s` satisfying `c * s = d * s`, mirroring the pair
+`TauCeti.oneLoopRepHom_oneLoopRepScalar` / `TauCeti.oneLoopRep_hom_ext` of the loop quiver. -/
+theorem kroneckerLineRepHom_kroneckerLineRepScalar (h : a₀ ≠ a₁)
+    (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) :
+    kroneckerLineRepHom (kroneckerLineRepScalar e) (kroneckerLineRepScalar_intertwine h e) = e :=
+  kroneckerLineRep_hom_ext (Or.inr ⟨a₀, h⟩) (kroneckerLineRepScalar_kroneckerLineRepHom _ _)
 
 /-! ### Indecomposability and the classification -/
 
@@ -319,19 +397,23 @@ simples. That quiver has only the three isomorphism classes counted by
 `TauCeti.card_skeleton_indecomposable_kronecker`, with no room for a family. -/
 theorem indecomposable_kroneckerLineRep (h : c ≠ 0 ∨ ∃ a : A, a ≠ a₁) :
     Indecomposable (kroneckerLineRep k a₁ c) :=
-  indecomposable_of_injective_of_isLocalRing not_isZero_kroneckerLineRep kroneckerLineScalar
-    (kroneckerLineScalar_injective h) kroneckerLineScalar_zero kroneckerLineScalar_id
-    fun e ↦ kroneckerLineScalar_comp e e
+  indecomposable_of_injective_of_isLocalRing not_isZero_kroneckerLineRep kroneckerLineRepScalar
+    (kroneckerLineRepScalar_injective h) kroneckerLineRepScalar_zero kroneckerLineRepScalar_id
+    fun e ↦ kroneckerLineRepScalar_comp e e
 
-/-- **Line representations at different scalars are non-isomorphic.** An isomorphism has an
-invertible scalar, and its naturality along the distinguished arrow then equates the two
-scalars. -/
+/-- **On a quiver carrying an arrow `a₀` other than the distinguished one, two isomorphic line
+representations have equal scalars.** An isomorphism has an invertible scalar, and its naturality
+along the distinguished arrow then equates the two scalars. The hypothesis `a₀ ≠ a₁` is essential:
+on the `A₂` quiver of the single arrow `a₁` nothing forces the two components of a morphism to
+agree, and the lines at any two nonzero scalars are isomorphic -- by the pair of multiplications
+by `1` and by `d / c`. -/
 theorem eq_of_nonempty_kroneckerLineRep_iso (h : a₀ ≠ a₁)
     (hiso : Nonempty (kroneckerLineRep k a₁ c ≅ kroneckerLineRep k a₁ d)) : c = d := by
   obtain ⟨e⟩ := hiso
-  have hunit : kroneckerLineScalar e.hom * kroneckerLineScalar e.inv = 1 := by
-    rw [← kroneckerLineScalar_comp, e.hom_inv_id, kroneckerLineScalar_id]
-  exact mul_right_cancel₀ (left_ne_zero_of_mul_eq_one hunit) (mul_kroneckerLineScalar h e.hom)
+  have hunit : kroneckerLineRepScalar e.hom * kroneckerLineRepScalar e.inv = 1 := by
+    rw [← kroneckerLineRepScalar_comp, e.hom_inv_id, kroneckerLineRepScalar_id]
+  exact mul_right_cancel₀ (left_ne_zero_of_mul_eq_one hunit)
+    (kroneckerLineRepScalar_intertwine h e.hom)
 
 /-- **Two line representations are isomorphic exactly when their scalars agree.** So over an
 infinite field the isomorphism classes of indecomposables at the dimension vector `(1, 1)` are
@@ -348,8 +430,8 @@ scalars `0` and `1`.
 This is the sharpness of `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic`:
 that theorem holds over an acyclic quiver whose Tits form is positive definite, and the Kronecker
 quiver is acyclic with a Tits form that is only positive semidefinite. -/
-theorem exists_indecomposable_dimVector_eq_not_nonempty_iso (k : Type u) [Field k] {A : Type v}
-    {a₀ a₁ : A} (h : a₀ ≠ a₁) :
+theorem exists_indecomposable_dimVector_eq_not_nonempty_iso_kronecker (k : Type u) [Field k]
+    {A : Type v} {a₀ a₁ : A} (h : a₀ ≠ a₁) :
     ∃ M N : QuiverRep.{u, 0, v, u} k (Quiver.Kronecker A),
       IsFinDim k (Quiver.Kronecker A) M ∧ Indecomposable M ∧
         IsFinDim k (Quiver.Kronecker A) N ∧ Indecomposable N ∧
