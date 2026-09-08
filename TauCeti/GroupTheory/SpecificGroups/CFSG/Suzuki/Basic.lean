@@ -62,11 +62,12 @@ and that numbering correspondence.
   `p ^ m * exponent i`.
 * `TauCeti.SuzukiLieIndex.halfFrobenius_simpleRootSubgroup`: the pinning equation at every
   numbered simple root, against the index's own length permutation and exponent.
+* `TauCeti.SuzukiLieIndex.halfFrobenius_halfFrobenius`: the relation that identifies the
+  half-Frobenius, that its square is the prime-field Frobenius, with
+  `TauCeti.SuzukiLieIndex.halfFrobenius_comp_halfFrobenius` for the composite itself.
 * `TauCeti.SuzukiLieIndex.steinberg_steinberg`: the square of the Steinberg endomorphism is the
   `q`-power Frobenius, with `TauCeti.SuzukiLieIndex.steinberg_comp_steinberg` for the composite
-  itself. The half-Frobenius square relation is the carrier's
-  `TauCeti.SpStd.specialIsogeny_specialIsogeny`, reached through
-  `TauCeti.SuzukiLieIndex.halfFrobenius_def`.
+  itself.
 
 ## What is not here
 
@@ -129,6 +130,24 @@ private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.toRankTwoBLieInde
       congr 1
       rw [pow_succ, hchar]
       ring
+
+/-- **The square of the half-Frobenius is the prime-field Frobenius**: this is the relation that
+identifies `τ` among the endomorphisms of the ambient group, `τ ^ 2 = Frob_p`, at the defining
+characteristic `p = 2`. -/
+@[simp]
+theorem halfFrobenius_halfFrobenius (g : d.toRankTwoBLieIndex.AmbientGroup) :
+    d.halfFrobenius (d.halfFrobenius g) = d.toRankTwoBLieIndex.primeFrobenius g := by
+  have h := d.halfFrobenius_iterate_two_mul 1 g
+  rw [show 2 * 1 = 1 + 1 from rfl, Function.iterate_add_apply, Function.iterate_one] at h
+  rw [RankTwoBLieIndex.primeFrobenius_def]
+  exact h
+
+/-- **The square of the half-Frobenius is the prime-field Frobenius**, as an identity of monoid
+homomorphisms, so a consumer taking odd powers can rewrite the composite itself. -/
+@[simp]
+theorem halfFrobenius_comp_halfFrobenius :
+    d.halfFrobenius.comp d.halfFrobenius = d.toRankTwoBLieIndex.primeFrobenius :=
+  MonoidHom.ext d.halfFrobenius_halfFrobenius
 
 /-- **The Steinberg endomorphism of a Suzuki index**: the odd power `τ ^ (2m+1)` of the
 half-Frobenius, for `2m+1` the field exponent the index records. -/
