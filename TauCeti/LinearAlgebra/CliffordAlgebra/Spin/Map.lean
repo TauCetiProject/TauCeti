@@ -6,25 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Action
-public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
-public import Mathlib.RingTheory.Flat.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 
 /-!
 # Functoriality of Spin groups
 
 A linear isometry of quadratic spaces induces an algebra homomorphism of their Clifford algebras.
 This file proves that the homomorphism preserves the Spin group and packages the restriction as a
-group homomorphism. It also records two facts needed for inclusions of quadratic summands: the
-Clifford map from the left summand of an orthogonal product is injective over a field, and the
-induced Spin map fixes the other summand under the vector action.
+group homomorphism. Isometry equivalences induce group equivalences, and these maps commute with
+the vector actions. The fixed-complement result specializes this naturality to an orthogonal
+summand.
 
 ## Main results
 
 * `spinGroup.map` is the homomorphism of Spin groups induced by a quadratic isometry.
+* `spinGroup.mapEquiv` is the group equivalence induced by a quadratic isometry equivalence.
 * `spinGroup.map_injective_of_leftInverse` proves injectivity when the isometry has an isometric
   left inverse.
-* `CliffordAlgebra.map_inl_injective` proves that the Clifford map of an orthogonal summand
-  inclusion is injective over a field of characteristic different from two.
+* `spinGroup.map_spinVectorAction` proves naturality of the Spin vector action.
 * `spinGroup.map_fixed_of_isometryEquiv_prod` proves that the Spin group of one summand fixes the
   other summand.
 -/
@@ -33,46 +32,6 @@ public section
 
 
 open QuadraticMap
-
-namespace CliffordAlgebra
-
-universe u v w x
-
-
-variable {R : Type u} [CommRing R]
-  {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
-  {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
-  {N : Type x} [AddCommGroup N] [Module R N]
-  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} {Q : QuadraticForm R N}
-
-/-- Clifford conjugation commutes with the algebra map induced by a quadratic isometry. -/
-@[simp]
-theorem map_star (f : Q₁ →qᵢ Q₂) (x : CliffordAlgebra Q₁) :
-    map f (star x) = star (map f x) := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap r => simp
-  | ι m => simp
-  | add x y hx hy => simp only [star_add, map_add, hx, hy]
-  | mul x y hx hy => simp only [star_mul, map_mul, hx, hy]
-
-/-- A quadratic isometry sends the even Clifford subalgebra into the even Clifford subalgebra. -/
-theorem map_mem_even (f : Q₁ →qᵢ Q₂) {x : CliffordAlgebra Q₁} (hx : x ∈ even Q₁) :
-    map f x ∈ even Q₂ := by
-  -- `even` is the subalgebra wrapper around degree zero of `evenOdd`; its induction principle is
-  -- stated for the underlying graded submodule.
-  change x ∈ evenOdd Q₁ 0 at hx
-  change map f x ∈ evenOdd Q₂ 0
-  induction x, hx using CliffordAlgebra.even_induction with
-  | algebraMap r =>
-      simpa using one_le_evenOdd_zero Q₂
-        (Submodule.mem_one.mpr ⟨r, (map f).commutes r |>.symm⟩)
-  | add x y _ _ hx hy => simpa only [map_add] using Submodule.add_mem _ hx hy
-  | ι_mul_ι_mul m₁ m₂ x _ hx =>
-      simpa only [map_mul, map_apply_ι, zero_add] using
-        SetLike.mul_mem_graded (ι_mul_ι_mem_evenOdd_zero Q₂ (f m₁) (f m₂)) hx
-
-end CliffordAlgebra
-
 
 namespace lipschitzGroup
 
@@ -165,6 +124,35 @@ theorem map_comp_map (f : Q₂ →qᵢ Q) (g : Q₁ →qᵢ Q₂) :
   ext x
   exact AlgHom.congr_fun (CliffordAlgebra.map_comp_map f g) (x : CliffordAlgebra Q₁)
 
+/-- The equivalence of Spin groups induced by a quadratic isometry equivalence. -/
+def mapEquiv (e : Q₁.IsometryEquiv Q₂) : spinGroup Q₁ ≃* spinGroup Q₂ :=
+  MonoidHom.toMulEquiv (map e.toIsometry) (map e.symm.toIsometry)
+    (by
+      rw [map_comp_map]
+      have h : e.symm.toIsometry.comp e.toIsometry = QuadraticMap.Isometry.id Q₁ := by
+        ext m
+        exact e.symm_apply_apply m
+      rw [h, map_id])
+    (by
+      rw [map_comp_map]
+      have h : e.toIsometry.comp e.symm.toIsometry = QuadraticMap.Isometry.id Q₂ := by
+        ext m
+        exact e.apply_symm_apply m
+      rw [h, map_id])
+
+/-- The equivalence induced on Spin groups agrees with the forward isometry map. -/
+@[simp]
+theorem mapEquiv_apply (e : Q₁.IsometryEquiv Q₂) (x : spinGroup Q₁) :
+    mapEquiv e x = map e.toIsometry x :=
+  (rfl)
+
+/-- The inverse of the induced Spin equivalence is induced by the inverse quadratic isometry. -/
+@[simp]
+theorem mapEquiv_symm (e : Q₁.IsometryEquiv Q₂) :
+    (mapEquiv e).symm = mapEquiv e.symm := by
+  ext x
+  rfl
+
 /-- A Spin-group map is injective if its underlying Clifford-algebra map is injective. -/
 theorem map_injective (f : Q₁ →qᵢ Q₂) (hf : Function.Injective (CliffordAlgebra.map f)) :
     Function.Injective (map f) := by
@@ -177,6 +165,17 @@ theorem map_injective (f : Q₁ →qᵢ Q₂) (hf : Function.Injective (Clifford
 theorem map_injective_of_leftInverse (f : Q₁ →qᵢ Q₂) (g : Q₂ →qᵢ Q₁)
     (h : Function.LeftInverse g f) : Function.Injective (map f) :=
   map_injective f (CliffordAlgebra.leftInverse_map_of_leftInverse f g h).injective
+
+/-- Spin-group maps commute with the vector actions induced by quadratic isometries. -/
+@[simp]
+theorem map_spinVectorAction [Invertible (2 : R)] (f : Q₁ →qᵢ Q₂)
+    (x : spinGroup Q₁) (m : M₁) :
+    CliffordAlgebra.spinVectorAction Q₂ (map f x) (f m) =
+      f (CliffordAlgebra.spinVectorAction Q₁ x m) := by
+  apply CliffordAlgebra.ι_injective Q₂
+  rw [CliffordAlgebra.ι_spinVectorAction_apply, ← CliffordAlgebra.map_apply_ι,
+    ← CliffordAlgebra.map_apply_ι, CliffordAlgebra.ι_spinVectorAction_apply, map_mul,
+    map_mul, coe_map_apply, CliffordAlgebra.map_star]
 
 /-- Under an orthogonal-product isometry, the image of the Spin group of the first summand fixes
 every vector in the second summand. -/
@@ -211,47 +210,3 @@ theorem map_fixed_of_isometryEquiv_prod (e : Q.IsometryEquiv (Q₁.prod Q₂)) [
     spinGroup.mul_star_self_of_mem x.2, map_one, mul_one]
 
 end spinGroup
-
-
-open scoped TensorProduct
-
-namespace CliffordAlgebra
-
-universe u v w
-
-
-variable {K : Type u} [Field K] [Invertible (2 : K)]
-  {M₁ : Type v} [AddCommGroup M₁] [Module K M₁]
-  {M₂ : Type w} [AddCommGroup M₂] [Module K M₂]
-
-private theorem gradedTensorIncludeLeft_injective
-    (Q₁ : QuadraticForm K M₁) (Q₂ : QuadraticForm K M₂) :
-    Function.Injective (GradedTensorProduct.includeLeft (evenOdd Q₁) (evenOdd Q₂)) := by
-  intro x y hxy
-  apply Algebra.TensorProduct.includeLeft_injective
-    (R := K) (S := K) (A := CliffordAlgebra Q₁) (B := CliffordAlgebra Q₂)
-    (FaithfulSMul.algebraMap_injective K (CliffordAlgebra Q₂))
-  have h := congrArg (GradedTensorProduct.auxEquiv K (evenOdd Q₁) (evenOdd Q₂)) hxy
-  simpa using h
-
-omit [Invertible (2 : K)] in
-private theorem toProd_includeLeft (Q₁ : QuadraticForm K M₁) (Q₂ : QuadraticForm K M₂)
-    (x : CliffordAlgebra Q₁) :
-    toProd Q₁ Q₂ (GradedTensorProduct.includeLeft (evenOdd Q₁) (evenOdd Q₂) x) =
-      map (QuadraticMap.Isometry.inl Q₁ Q₂) x := by
-  simp [toProd]
-
-/-- The Clifford-algebra map induced by the inclusion of the left summand of an orthogonal product
-is injective over a field of characteristic different from two. -/
-theorem map_inl_injective (Q₁ : QuadraticForm K M₁) (Q₂ : QuadraticForm K M₂) :
-    Function.Injective (map (QuadraticMap.Isometry.inl Q₁ Q₂)) := by
-  intro x y hxy
-  apply gradedTensorIncludeLeft_injective Q₁ Q₂
-  apply (prodEquiv Q₁ Q₂).symm.injective
-  -- Transport both elements through the product equivalence to expose `includeLeft`.
-  change toProd Q₁ Q₂ (GradedTensorProduct.includeLeft (evenOdd Q₁) (evenOdd Q₂) x) =
-    toProd Q₁ Q₂ (GradedTensorProduct.includeLeft (evenOdd Q₁) (evenOdd Q₂) y)
-  rw [toProd_includeLeft, toProd_includeLeft]
-  exact hxy
-
-end CliffordAlgebra
