@@ -241,10 +241,16 @@ theorem iSupIndep_groupLikeWeightSpace :
   rw [hfamily] at hc
   exact hc
 
+/-- A family of group-like weight spaces with finitely generated supremum has finite support. -/
+theorem finite_setOf_groupLikeWeightSpace_ne_bot_of_fg
+    (hfg : (⨆ c : GroupLike k C, _root_.GroupLike.weightSpace (M := M) c).FG) :
+    {c : GroupLike k C | _root_.GroupLike.weightSpace (M := M) c ≠ ⊥}.Finite :=
+  Submodule.finite_ne_bot_of_iSupIndep_of_fg iSupIndep_groupLikeWeightSpace hfg
+
 /-- A Noetherian comodule has only finitely many nonzero group-like weight spaces. -/
 theorem finite_setOf_groupLikeWeightSpace_ne_bot [IsNoetherian k M] :
     {c : GroupLike k C | _root_.GroupLike.weightSpace (M := M) c ≠ ⊥}.Finite :=
-  Submodule.finite_ne_bot_of_iSupIndep iSupIndep_groupLikeWeightSpace
+  finite_setOf_groupLikeWeightSpace_ne_bot_of_fg (IsNoetherian.noetherian _)
 
 /-- The nonzero group-like weights of a Noetherian comodule form a finite type. -/
 noncomputable instance instFiniteNonzeroGroupLikeWeight [IsNoetherian k M] :
