@@ -79,13 +79,16 @@ theorem eq_completionAlgHom_of_continuous {L : Type*} [Field L] [NumberField L] 
     f = (completionAlgHom v w : v.adicCompletion K →+* w.adicCompletion L) :=
   v.eq_adicCompletionExtension_of_continuous K L w hf hcomp
 
-/-- The algebra structure on `L_w` over `K_v` induced by the canonical completion map. -/
-@[reducible, scoped instance]
-noncomputable def completionAlgebra {L : Type*} [Field L] [NumberField L] [Algebra K L]
-    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
+/-- The algebra structure on `L_w` over `K_v` induced by the canonical completion map, for any
+Dedekind model of `L` over `𝒪 K`. -/
+@[expose, reducible, scoped instance]
+noncomputable def completionAlgebra {L : Type*} [Field L] [Algebra K L]
+    {B : Type*} [CommRing B] [IsDedekindDomain B] [Algebra (𝒪 K) B] [Algebra B L]
+    [IsFractionRing B L] [IsScalarTower (𝒪 K) B L]
+    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum B)
     [w.asIdeal.LiesOver v.asIdeal] :
     Algebra (v.adicCompletion K) (w.adicCompletion L) :=
-  (completionAlgHom v w).toRingHom.toAlgebra
+  (v.adicCompletionExtension K L w).toAlgebra
 
 open scoped IsDedekindDomain.HeightOneSpectrum
 
