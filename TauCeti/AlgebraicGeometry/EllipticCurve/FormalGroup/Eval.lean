@@ -22,23 +22,20 @@ evaluated at a parameter `t` for which the evaluation converges. This file provi
 evaluations, the identities they inherit from the series, and their membership, unit and
 non-vanishing properties.
 
-Two hypotheses appear here, and they do different work. `PowerSeries.HasEval t` is what evaluation
-itself requires, and it is what almost every result here asks for: the algebraic identities are
-each the image of an identity of series under the ring homomorphism `PowerSeries.eval₂Hom`, and
-`formalWEval_mem` and `formalInverseEval_mem` read their memberships off those identities, so
-neither takes an adic hypothesis. Exactly one result needs more — `formalUEval_sub_one_mem`, which
-also takes the ideal `I` and that the ambient topology is its adic one, being the file's one appeal
-to `MvPowerSeries.eval₂_mem_pow`, which sums the monomial estimates inside the closed set `I ^ k`.
+Three hypotheses appear here, and they do different work. `PowerSeries.HasEval t` is what
+evaluation itself requires, and most results ask for it directly. Others ask instead for an ideal
+`I` whose adic topology is the ambient one, together with a membership `t ∈ I` that supplies the
+convergence: `isUnit_formalUEval`, `formalWEval_ne_zero`, `algebraMap_formalWEval_ne_zero` and
+`hasEval_formalInverseEval`. `formalUEval_sub_one_mem` is the one result asking for both. And
+`isUnit_thirdRootDenom` asks for neither: it is a statement about the curve's coefficients and a
+topologically nilpotent element, so it takes `IsTopologicallyNilpotent` directly, and
+`[NonarchimedeanRing O]` in place of the ambient `[IsTopologicalRing O]`.
 
-Only two of the five values are confined to `I ^ k`, and neither needs that estimate: `w(t)` and
-`ι(t)` factor as `t ^ 3 * u(t)` and `-(t * d(t)⁻¹)`, so a parameter in `I ^ k` carries them there.
-The three unit statements have two different sources. `u(t)` is a unit because `u(t) - 1` lies in
-`I`, hence is topologically nilpotent, so Wedhorn 5.38
-(`IsTopologicallyNilpotent.isUnit_one_add`) applies; that membership,
-`formalUEval_sub_one_mem`, is the file's one use of `MvPowerSeries.eval₂_mem_pow`. The denominator
-`d(t) = 1 - a₁ t - a₃ w(t)` and its series inverse are units for an unrelated reason, needing no
-ideal at all: the series identity `mul_invOfUnit_formalInverseDenom` evaluates to
-`d(t) * d(t)⁻¹ = 1`.
+Only two of the five values are confined to `I ^ k`: `w(t)` and `ι(t)`. Of the four unit
+statements, only `u(t)`'s needs the ideal; the denominator `d(t) = 1 - a₁ t - a₃ w(t)` and its
+series inverse need nothing beyond evaluation, and the chord cubic's leading coefficient
+`1 + a₂l + a₄l² + a₆l³` needs only that `l` is topologically nilpotent. Each declaration's own
+docstring says where its conclusion comes from.
 
 ## Main definitions
 
@@ -55,7 +52,10 @@ ideal at all: the series identity `mul_invOfUnit_formalInverseDenom` evaluates t
   `I ^ k` has `w(t)` and `ι(t)` in `I ^ k`.
 * `WeierstrassCurve.formalUEval_sub_one_mem` : `u(t)` is congruent to `1` modulo `I ^ k`.
 * `WeierstrassCurve.isUnit_formalUEval`, `WeierstrassCurve.isUnit_formalInverseDenomEval`,
-  `WeierstrassCurve.isUnit_formalInverseDenomInvEval` : the three unit statements.
+  `WeierstrassCurve.isUnit_formalInverseDenomInvEval` : three of the four unit statements.
+* `WeierstrassCurve.isUnit_thirdRootDenom` : the fourth — the leading coefficient
+  `1 + a₂l + a₄l² + a₆l³` of the chord cubic, which Vieta's formula for the third root divides
+  by, is a unit at any topologically nilpotent `l`.
 * `WeierstrassCurve.formalInverseDenomEval_eq`, `WeierstrassCurve.formalInverseEval_eq` and
   `WeierstrassCurve.formalInverseEval_mul_formalInverseDenomEval` : the defining formulas for
   `d(t)` and `ι(t)`, the last in the form `ι(t) * d(t) = -t` that avoids the series inverse.
@@ -96,8 +96,8 @@ Adapted from Michael Stoll's `EllipticCurves` project
 `EllipticCurves/WeierstrassFormalGroup/Eval.lean` — its evaluation layer down to the formal
 inverse, declarations `wEval`, `vEval`, `wEval_mem`, `wEval_eq`, `wEval_eq_cube_mul`,
 `vEval_sub_one_mem`, `isUnit_vEval`, `uEval`, `duEval`, `iotaEval`, `uEval_eq`,
-`uEval_mul_duEval`, `isUnit_uEval`, `iotaEval_eq`, `iotaEval_mem`, `wEval_iotaEval` and
-`iotaEval_iotaEval`.
+`uEval_mul_duEval`, `isUnit_uEval`, `isUnit_chordCoeff`, `iotaEval_eq`, `iotaEval_mem`,
+`wEval_iotaEval` and `iotaEval_iotaEval`.
 
 Four things are spelled differently here.
 
@@ -205,6 +205,32 @@ theorem isUnit_formalUEval {I : Ideal O} (hI : IsAdic I) {t : O} (ht : t ∈ I) 
     simpa using W.formalUEval_sub_one_mem hI (k := 1)
       (hI.isTopologicallyNilpotent_of_mem ht) (by simpa using ht)
   simpa using (hI.isTopologicallyNilpotent_of_mem hsub).isUnit_one_add
+
+omit [IsTopologicalRing O] in
+/-- **The leading coefficient of the chord cubic is a unit** at any topologically nilpotent
+element. Substituting `w = λz + ν` into the Weierstrass equation produces a cubic in `z` whose
+leading coefficient is `1 + a₂λ + a₄λ² + a₆λ³`; Vieta's formula for its third root divides by that
+coefficient, so dividing is legitimate exactly when this holds.
+
+Stated for an arbitrary topologically nilpotent element rather than for the evaluated slope, since
+that is all the statement needs; `IsAdic.isTopologicallyNilpotent_of_mem` supplies it from
+membership in an adic ideal when that is how a consumer holds it. `[NonarchimedeanRing O]` stands
+in for the ambient `[IsTopologicalRing O]`, which it implies.
+
+Not the same fact as `Add/PairSubst.lean`'s `subst_pair_thirdRootDenom_ne_zero`, which says the
+corresponding multivariate *power series* is nonzero over a nontrivial base. That one lives in the
+series world and concludes nonvanishing; this one concludes invertibility, which is what dividing
+by it requires. -/
+theorem isUnit_thirdRootDenom [NonarchimedeanRing O] {l : O}
+    (hl : IsTopologicallyNilpotent l) :
+    IsUnit (1 + W.a₂ * l + W.a₄ * l ^ 2 + W.a₆ * l ^ 3) := by
+  -- the nonconstant part is a multiple of `l`, hence topologically nilpotent, so Wedhorn 5.38
+  -- applies; unlike `isUnit_formalUEval` this needs no monomial estimate and hence no ideal
+  have hfac : W.a₂ * l + W.a₄ * l ^ 2 + W.a₆ * l ^ 3 =
+      l * (W.a₂ + W.a₄ * l + W.a₆ * l ^ 2) := by ring
+  have h := (hl.mul_right (W.a₂ + W.a₄ * l + W.a₆ * l ^ 2)).isUnit_one_add
+  rw [← hfac] at h
+  simpa [add_assoc] using h
 
 /-! ### The inverse-side evaluations
 

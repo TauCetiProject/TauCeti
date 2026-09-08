@@ -98,18 +98,7 @@ private lemma multiplicity_const_le_one (c : ℕ) (hcN : Nat.Coprime c N) (b : F
       (((diagCosetGamma0 N (fun _ ↦ c) fun _ ↦ hcN).rep : GL (Fin 2) ℚ))) = 1 := by
     rw [← HeckeCoset.degree_eq_card_decompQuotient]
     exact degree_diagCosetGamma0_const N c _
-  have hsub : Subsingleton (DecompQuotient ((Gamma0 N).map (mapGL ℚ))
-      ((Gamma0 N).map (mapGL ℚ))
-      (((diagCosetGamma0 N (fun _ ↦ c) fun _ ↦ hcN).rep : GL (Fin 2) ℚ))) :=
-    Fintype.card_le_one_iff_subsingleton.mp hcard.le
-  rw [multiplicity_def, Nat.card_eq_fintype_card]
-  refine Fintype.card_le_one_iff_subsingleton.mpr ?_
-  constructor
-  rintro ⟨⟨i₁, j₁⟩, hp₁⟩ ⟨⟨i₂, j₂⟩, hp₂⟩
-  simp only [Set.mem_ofPred_eq] at hp₁ hp₂
-  obtain rfl : i₁ = i₂ := Subsingleton.elim i₁ i₂
-  obtain rfl : j₁ = j₂ := DoubleCoset.snd_eq_of_fst_eq hp₁ hp₂
-  rfl
+  exact multiplicity_le_one_of_subsingleton (Fintype.card_le_one_iff_subsingleton.mp hcard.le)
 
 /-- **Scalar multiplication at level `N`**: `T(c, c) · T(b) = T(c·b)`, the level-`N` analogue of
 `HeckeRing.GLn.diagElem_const_mul`. No hypothesis is needed: where a factor is degenerate — not

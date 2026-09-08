@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Ring.Ideal
+public import TauCeti.RingTheory.Huber.StronglyNoetherian
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
+
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
+import TauCeti.Topology.Algebra.GroupCompletion
 
 /-!
 # Homomorphisms topologically of finite type
@@ -79,6 +83,9 @@ it.
 * `TauCeti.Huber.isStrictlyTopologicallyFiniteType_quotientMk_algebraMap`: every quotient of
   `A⟨X₁, …, Xₖ⟩` is strictly topologically of finite type over `A` — the shape of every Laurent
   and rational presentation.
+* `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.isStronglyNoetherian`: over a strongly
+  noetherian Huber ring, an algebra strictly topologically of finite type is again strongly
+  noetherian.
 
 ## References
 
@@ -206,5 +213,38 @@ theorem isStrictlyTopologicallyFiniteType_quotientMk_algebraMap (k : ℕ)
   (isStrictlyTopologicallyFiniteType_algebraMap k).quotientMk I
 
 end OpenQuotient
+
+/-! ### Strong noetherianness
+
+Strong noetherianness passes from `A` to any algebra strictly topologically of finite type over
+it. This is the standing hypothesis of Wedhorn's §8.2 in the form the flatness results consume:
+rational localisations of a strongly noetherian ring are again strongly noetherian, once they are
+known to be strictly topologically of finite type.
+-/
+
+section StronglyNoetherian
+
+variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  [IsStronglyNoetherian A]
+  [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B]
+  [T0Space B]
+
+/-- **Strong noetherianness passes to an algebra strictly topologically of finite type.** Over a
+strongly noetherian Huber ring `A`, a complete Hausdorff nonarchimedean ring `B` admitting a map
+`φ : A →+* B` strictly topologically of finite type is again strongly noetherian.
+
+The intended use is Wedhorn's §8.2, where
+`TauCeti.Huber.PairOfDefinition.flat_restrictionRingHomOfSubset_of_forall_isStronglyNoetherian`
+asks that every rational localisation in a cover be strongly noetherian. Combined with a strict
+finite type presentation of such a localisation over its base — the shape
+`TauCeti.Huber.isStrictlyTopologicallyFiniteType_quotientMk_algebraMap` produces, and the one
+Wedhorn's Examples 6.38 and 6.39 exhibit — this theorem reduces that hypothesis to strong
+noetherianness of the base alone. -/
+theorem IsStrictlyTopologicallyFiniteType.isStronglyNoetherian {φ : A →+* B}
+    (hφ : IsStrictlyTopologicallyFiniteType φ) : IsStronglyNoetherian B := by
+  obtain ⟨k, π, hπ, -⟩ := isStrictlyTopologicallyFiniteType_iff.mp hφ
+  exact hπ.isStronglyNoetherian
+
+end StronglyNoetherian
 
 end TauCeti.Huber
