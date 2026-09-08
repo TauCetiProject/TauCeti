@@ -25,11 +25,12 @@ element whose square is not one. In particular, this holds over every infinite f
 The maximal-solvability theorem is the abstract-group input for proving that the
 upper-triangular closed subgroup scheme of `SL₂` is a Borel subgroup. The field hypothesis is
 used only to rule out solvability of `SL₂`; the Bruhat decomposition itself holds over every
-field.
+field. Entrywise mapping makes the construction functorial in the coefficient ring.
 
 ## Main declarations
 
 * `TauCeti.SL2Borel`: the upper-triangular subgroup of `SL₂`.
+* `TauCeti.SL2Borel.map`: entrywise mapping along a ring homomorphism.
 * `TauCeti.SL2Borel.mem_doubleCoset_modularGroup_S_iff`: the big cell of the rank-one Bruhat
   decomposition is detected by the lower-left entry.
 * `TauCeti.SL2Borel.closure_insert_modularGroup_S_eq_top`: the Borel and the Weyl element generate
@@ -50,7 +51,7 @@ open scoped MatrixGroups
 
 namespace TauCeti
 
-universe u
+universe u v
 
 /-- The standard upper-triangular subgroup of `SL₂(R)`, obtained by pulling the
 upper-triangular subgroup of `GL₂(R)` back along the canonical inclusion. -/
@@ -76,6 +77,46 @@ theorem mem_iff {g : SL(2, R)} :
 theorem apply_one_zero (g : SL2Borel R) :
     (g : Matrix (Fin 2) (Fin 2) R) 1 0 = 0 :=
   mem_iff.mp g.2
+
+/-- Apply a ring homomorphism entrywise to an upper-triangular determinant-one matrix. -/
+def map {S : Type v} [CommRing S] (phi : R →+* S) : SL2Borel R →* SL2Borel S :=
+  ((Matrix.SpecialLinearGroup.map phi).domRestrict (SL2Borel R)).codRestrict
+    (SL2Borel S) fun g ↦ by
+      rw [mem_iff]
+      rw [MonoidHom.domRestrict_apply, Matrix.SpecialLinearGroup.map_apply_coe,
+        RingHom.mapMatrix_apply, Matrix.map_apply, apply_one_zero, map_zero]
+
+/-- The special-linear matrix underlying an entrywise-mapped Borel element is the entrywise map
+of its underlying matrix. -/
+@[simp]
+theorem coe_map {S : Type v} [CommRing S] (phi : R →+* S) (g : SL2Borel R) :
+    (map phi g : SL(2, S)) = Matrix.SpecialLinearGroup.map phi g.1 :=
+  by simp only [map, MonoidHom.codRestrict_apply, MonoidHom.domRestrict_apply]
+
+/-- The `(i, j)` entry of the entrywise map of `g` is the image under `phi` of the `(i, j)`
+entry of `g`. -/
+theorem map_apply {S : Type v} [CommRing S] (phi : R →+* S) (g : SL2Borel R)
+    (i j : Fin 2) :
+    (map phi g : SL(2, S)) i j = phi ((g : SL(2, R)) i j) := by
+  rw [coe_map, Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+    Matrix.map_apply]
+
+/-- Entrywise mapping along the identity ring homomorphism is the identity. -/
+@[simp]
+theorem map_id : map (RingHom.id R) = MonoidHom.id (SL2Borel R) := by
+  ext g i j
+  simp only [map_apply, RingHom.id_apply, MonoidHom.id_apply]
+
+/-- Successive entrywise maps agree with mapping along the composite ring homomorphism. -/
+@[simp]
+theorem map_comp {S T : Type*} [CommRing S] [CommRing T]
+    (f : R →+* S) (g : S →+* T) :
+    map (g.comp f) = (map g).comp (map f) := by
+  apply MonoidHom.ext
+  intro x
+  apply Subtype.ext
+  ext i j
+  simp only [map_apply, RingHom.coe_comp, Function.comp_apply, MonoidHom.coe_comp]
 
 /-- The canonical inclusion from the `SL₂` Borel to the `GL₂` Borel. -/
 def toGL2Borel : SL2Borel R →* GL2Borel R :=

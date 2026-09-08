@@ -48,6 +48,8 @@ away from a finite set of primes.
 
 * `TauCeti.GlobalNumberFields.Modulus.mem_support_iff`: membership in the support is divisibility
   of the finite part.  `Modulus.support_one` and `Modulus.support_mono` are consequences.
+* `TauCeti.GlobalNumberFields.Modulus.pow_exponent_dvd_finitePart`: the prime power prescribed by
+  the exponent divides the finite part.
 * `TauCeti.GlobalNumberFields.congruenceSubgroup_le_primeToSubgroup`: an element congruent to one
   is a unit at every prime dividing the finite part.  This is what makes the ray a subgroup of the
   prime-to ideals.
@@ -145,20 +147,20 @@ theorem exponent_pos_of_mem_support {𝔪 : Modulus K} {v : HeightOneSpectrum (�
     (hv : v ∈ 𝔪.support) : 0 < 𝔪.exponent v :=
   Nat.pos_of_ne_zero ((mem_support_iff_exponent_ne_zero 𝔪 v).mp hv)
 
+/-- **The prescribed prime power divides the finite part.**  This is what turns membership in the
+finite part into the valuation bound recorded by `IsCongrOne`. -/
+theorem pow_exponent_dvd_finitePart (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) :
+    v.asIdeal ^ 𝔪.exponent v ∣ 𝔪.finitePart := by
+  have h : Associates.mk v.asIdeal ^ 𝔪.exponent v ≤ Associates.mk 𝔪.finitePart :=
+    (Associates.prime_pow_dvd_iff_le (Associates.mk_ne_zero.mpr 𝔪.finitePart_ne_zero)
+      (Associates.irreducible_mk.mpr v.irreducible)).mpr le_rfl
+  rwa [← Associates.mk_pow, Associates.mk_le_mk_iff_dvd] at h
+
 /-- Exponents grow with the modulus. -/
 theorem exponent_mono {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (v : HeightOneSpectrum (𝓞 K)) :
     𝔪.exponent v ≤ 𝔫.exponent v :=
   Associates.count_le_count_of_le (Associates.mk_ne_zero.mpr 𝔫.finitePart_ne_zero)
     (Associates.irreducible_mk.mpr v.irreducible) (Associates.mk_le_mk_of_dvd (dvd_iff.mp h).1)
-
-/-- **The prescribed power of a prime divides the finite part.**  The exponent of `v` is by
-definition its multiplicity in the finite part, so `v ^ (𝔪.exponent v)` divides it.  Read as the
-containment `𝔪.finitePart ≤ v.asIdeal ^ 𝔪.exponent v`, this is what turns a congruence modulo the
-finite part into the valuation bound recorded by `IsCongrOne`. -/
-theorem pow_exponent_dvd_finitePart (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) :
-    v.asIdeal ^ 𝔪.exponent v ∣ 𝔪.finitePart :=
-  Ideal.dvd_iff_le.mpr
-    ((le_count_associates_iff_le_pow v 𝔪.finitePart_ne_bot (𝔪.exponent v)).mp le_rfl)
 
 /-- The **trivial modulus**: unit finite part and no real places.  It imposes no condition, so its
 ray class group is the ordinary class group. -/
