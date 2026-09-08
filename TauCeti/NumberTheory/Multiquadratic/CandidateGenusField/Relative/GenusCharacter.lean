@@ -144,11 +144,28 @@ noncomputable def narrowElementaryTwoQuotientEquivRelativeSign (hd : Squarefree 
   (LinearEquiv.ofInjective _ (candidateGenusFieldBaseGenusCharLinearMap_injective hd hnsq)).trans
     (LinearEquiv.ofEq _ _ (range_candidateGenusFieldBaseGenusCharLinearMap hd hnsq))
 
+/-- The sign vector attached to a narrow class modulo squares is the vector of its genus
+characters: `narrowElementaryTwoQuotientEquivRelativeSign` is the genus-character map. -/
+theorem narrowElementaryTwoQuotientEquivRelativeSign_apply_coe (hd : Squarefree d)
+    (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
+    (x : NarrowClassGroup.ElementaryTwoQuotient (candidateGenusFieldBase hd)) :
+    (narrowElementaryTwoQuotientEquivRelativeSign hd hnsq x :
+        {P // P ∈ genusPrimeDiscriminants hd} → ZMod 2) =
+      candidateGenusFieldBaseGenusCharLinearMap hd hnsq x :=
+  (rfl)
+
 /-- **The genus-field isomorphism `Gal(K_gen/K) ≅ Cl⁺(K)/Cl⁺(K)²`.** For a squarefree integer `d`
 that is not a rational square, the Galois group of the candidate genus field over its embedded
 quadratic base `K = ℚ(√d)` is isomorphic to the maximal elementary-`2` quotient of the narrow class
 group of `K`. Both are the space of even-parity sign patterns on the prime discriminants dividing
-`disc K`: the Galois group by its sign patterns, the class group by its genus characters. -/
+`disc K`: the Galois group by its sign patterns, the class group by its genus characters.
+
+The map is pinned down coordinate for coordinate on those prime discriminants: it sends an
+automorphism `σ` to the unique narrow class modulo squares whose genus characters are the signs
+that `σ` puts on the chosen square roots
+(`autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_apply` together with
+`narrowElementaryTwoQuotientEquivRelativeSign_apply_coe`). Its identification with the inverse
+Artin map of `K_gen / K` is not proved here; see the module docstring. -/
 noncomputable def autCandidateGenusFieldEquivNarrowElementaryTwoQuotient (hd : Squarefree d)
     (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) :
     (candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) ≃*
@@ -156,6 +173,19 @@ noncomputable def autCandidateGenusFieldEquivNarrowElementaryTwoQuotient (hd : S
         (NarrowClassGroup.ElementaryTwoQuotient (candidateGenusFieldBase hd)) :=
   (galoisGroupEquivCandidateGenusFieldRelative hd).trans
     (narrowElementaryTwoQuotientEquivRelativeSign hd hnsq).symm.toAddEquiv.toMultiplicative
+
+/-- The genus-field isomorphism sends an automorphism to the narrow class modulo squares that the
+genus characters attach to its sign pattern. -/
+theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_apply (hd : Squarefree d)
+    (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
+    (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) :
+    autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd hnsq σ =
+      Multiplicative.ofAdd ((narrowElementaryTwoQuotientEquivRelativeSign hd hnsq).symm
+        ⟨candidateGenusFieldRelativeSignPattern hd σ,
+          candidateGenusFieldRelativeSignPattern_mem hd σ⟩) := by
+  rw [autCandidateGenusFieldEquivNarrowElementaryTwoQuotient, MulEquiv.trans_apply,
+    galoisGroupEquivCandidateGenusFieldRelative_apply]
+  rfl
 
 /-- **The genus-field isomorphism for an imaginary quadratic field,
 `Gal(K_gen/K) ≅ Cl(K)/Cl(K)²`.** For `d < 0` squarefree, the narrow and ordinary class groups of
