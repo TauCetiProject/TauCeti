@@ -15,7 +15,6 @@ public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.RingTheory.Discriminant
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-import TauCeti.RingTheory.Polynomial.Factors
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.Roots
 
@@ -58,11 +57,9 @@ separable.
   when its discriminant is a unit; over a field that reads `discr f ≠ 0`, and over a domain the
   correct statement passes to the fraction field.
 * `Polynomial.Monic.separable_map_iff_map_discr_ne_zero`,
-  `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`,
-  `Polynomial.Monic.nodup_normalizedFactors_map_zmod_of_not_dvd_discr`: the same criterion read
-  along a ring homomorphism into a field, and its specialization to reduction of an integral
-  polynomial modulo a prime, where it says that a prime not dividing the discriminant gives a
-  separable, hence repetition-free, factorization.
+  `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
+  homomorphism into a field, and its specialization to reduction of an integral polynomial modulo
+  a prime.
 * `Cubic.toPoly_discr`: the two discriminants of a cubic with nonzero leading coefficient agree,
   so that `Cubic.discr` and `Polynomial.discr` may be used interchangeably in degree three.
 * `Algebra.discr_powerBasis_eq_minpoly_discr`: the algebra discriminant of a power basis agrees
@@ -526,14 +523,6 @@ theorem _root_.Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr {f : ℤ[X]
     (f.map (Int.castRingHom (ZMod p))).Separable ↔ ¬ (p : ℤ) ∣ f.discr := by
   rw [hf.separable_map_iff_map_discr_ne_zero, Int.coe_castRingHom, ne_eq,
     ZMod.intCast_zmod_eq_zero_iff_dvd]
-
-/-- At a prime not dividing the discriminant of a monic integral polynomial, the normalized
-irreducible factors of its reduction modulo that prime have no repetitions: the factorization is
-squarefree. -/
-theorem _root_.Polynomial.Monic.nodup_normalizedFactors_map_zmod_of_not_dvd_discr {f : ℤ[X]}
-    (hf : f.Monic) (p : ℕ) [Fact p.Prime] (hp : ¬ (p : ℤ) ∣ f.discr) :
-    (UniqueFactorizationMonoid.normalizedFactors (f.map (Int.castRingHom (ZMod p)))).Nodup :=
-  ((hf.separable_map_zmod_iff_not_dvd_discr p).mpr hp).nodup_normalizedFactors
 
 /-! ### The discriminant of a power basis -/
 

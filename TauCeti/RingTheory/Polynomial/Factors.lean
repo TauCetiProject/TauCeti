@@ -45,8 +45,6 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
   factors, counted with multiplicity, sum to the degree.
 * `Polynomial.map_natDegree_normalizedFactors_eq_singleton_iff`: those degrees form a singleton
   exactly when the polynomial is irreducible.
-* `Polynomial.Separable.nodup_normalizedFactors`: a separable polynomial has no repeated
-  normalized irreducible factor.
 
 ## Roadmap
 
@@ -239,17 +237,12 @@ lemma irreducible_of_card_normalizedFactors_eq_one {g : K[X]}
 
 /-- The degrees of the normalized irreducible factors of a polynomial over a field form the
 singleton `{g.natDegree}` exactly when the polynomial is irreducible. -/
+@[simp]
 lemma map_natDegree_normalizedFactors_eq_singleton_iff {g : K[X]} :
     (normalizedFactors g).map natDegree = {g.natDegree} ↔ Irreducible g := by
   refine ⟨fun h ↦ irreducible_of_card_normalizedFactors_eq_one ?_, fun h ↦ ?_⟩
   · simpa using congrArg Multiset.card h
   · rw [normalizedFactors_irreducible h, Multiset.map_singleton, natDegree_normalize]
-
-/-- The normalized irreducible factors of a separable polynomial over a field are pairwise
-distinct: separability is exactly what rules out a repeated factor. -/
-lemma Separable.nodup_normalizedFactors {g : K[X]} (hg : g.Separable) :
-    (normalizedFactors g).Nodup :=
-  (squarefree_iff_nodup_normalizedFactors hg.ne_zero).mp hg.squarefree
 
 end Polynomial
 
