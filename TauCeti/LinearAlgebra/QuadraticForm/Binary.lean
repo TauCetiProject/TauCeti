@@ -120,14 +120,21 @@ def isometryEquivBinaryNormalForm (a b x y : R) (c : Rˣ) (h : a * x ^ 2 + b * y
       Matrix.cons_val_one, smul_eq_mul]
     linear_combination (v 0 * v 0 + a * b * (v 1 * v 1)) * h
 
-/-- The coordinates of the change of variables. The body of `isometryEquivBinaryNormalForm` is
-not exposed, so this equation lemma is the interface downstream modules rewrite with; the
-parentheses around `rfl` elaborate it against the expected type, which unfolds the sealed body. -/
+/-- The explicit coordinates of the isometry on a vector. -/
 @[simp]
 theorem isometryEquivBinaryNormalForm_apply (a b x y : R) (c : Rˣ)
     (h : a * x ^ 2 + b * y ^ 2 = c) (v : Fin 2 → R) :
     isometryEquivBinaryNormalForm a b x y c h v =
       ![x * v 0 - b * y * v 1, y * v 0 + a * x * v 1] :=
+  (rfl)
+
+/-- The explicit coordinates of the inverse isometry on a vector. -/
+@[simp]
+theorem isometryEquivBinaryNormalForm_symm_apply (a b x y : R) (c : Rˣ)
+    (h : a * x ^ 2 + b * y ^ 2 = c) (v : Fin 2 → R) :
+    (isometryEquivBinaryNormalForm a b x y c h).symm v =
+      ![(↑c⁻¹ : R) * (a * x * v 0 + b * y * v 1),
+        (↑c⁻¹ : R) * (x * v 1 - y * v 0)] :=
   (rfl)
 
 /-- **The binary representation normal form**, Lam I.2.3 (2): a unit represented by a binary
