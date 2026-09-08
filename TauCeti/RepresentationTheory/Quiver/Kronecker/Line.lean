@@ -21,7 +21,7 @@ indecomposable as soon as its scalar is nonzero or the quiver carries an arrow o
 distinguished one, and on a quiver carrying such a second arrow the family is pairwise
 non-isomorphic:
 
-`kroneckerLineRep k a₁ c ≅ kroneckerLineRep k a₁ d ↔ c = d`.
+`Nonempty (kroneckerLineRep k a₁ c ≅ kroneckerLineRep k a₁ d) ↔ c = d`.
 
 Every member of the family has dimension vector `(1, 1)`. So on a quiver with at least two arrows
 the dimension vector of a finite-dimensional indecomposable **does not determine it**, and its
@@ -29,7 +29,8 @@ Tits value is `2 - #arrows`, not `1`. Both facts are sharpness statements: the G
 `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic` and the real-root property
 `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic` are proved for an acyclic
 quiver whose Tits form is *positive definite*, and the Kronecker quiver -- acyclic, with the
-positive semidefinite Tits form `(a - b) ^ 2` of `TauCeti.Quiver.Kronecker.titsForm_apply` --
+positive semidefinite Tits form `TauCeti.Quiver.Kronecker.titsForm_apply`, which on the two arrows
+of `• ⇉ •` is the square `(a - b) ^ 2` of `TauCeti.Quiver.Kronecker.titsForm_eq_sq` --
 shows that neither survives the weakening of that hypothesis to acyclicity alone.
 
 The family is the affine chart of the `ℙ¹`-family the Kronecker quiver is known for, and only that
@@ -299,6 +300,7 @@ private theorem app_tgt_ext_of_ne_zero (hc : c ≠ 0)
 
 /-- **A morphism of line representations is determined by its scalar**, as soon as the
 distinguished arrow acts invertibly or some other arrow exists. -/
+@[ext]
 theorem kroneckerLineRep_hom_ext (h : c ≠ 0 ∨ ∃ a : A, a ≠ a₁)
     {e e' : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d}
     (heq : kroneckerLineRepScalar e = kroneckerLineRepScalar e') : e = e' := by
@@ -316,11 +318,14 @@ private theorem kroneckerLineRepScalar_injective (h : c ≠ 0 ∨ ∃ a : A, a �
       (kroneckerLineRepScalar : (kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) → k) :=
   fun _ _ heq ↦ kroneckerLineRep_hom_ext h heq
 
-/-- **The scalars of the two lines agree on the scalar of any morphism between them**, by
-naturality along the distinguished arrow. -/
-theorem kroneckerLineRepScalar_intertwine (h : a₀ ≠ a₁)
+/-- **On a quiver carrying more than one arrow the scalars of the two lines agree on the scalar of
+any morphism between them**, by naturality along the distinguished arrow. The hypothesis
+`Nontrivial A` is the existence of an arrow other than the distinguished one: it forces the two
+components of the morphism to agree. -/
+theorem kroneckerLineRepScalar_intertwine [Nontrivial A]
     (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) :
     c * kroneckerLineRepScalar e = d * kroneckerLineRepScalar e := by
+  obtain ⟨a₀, h⟩ := exists_ne a₁
   have hnat := app_tgt_comp_mulLeft e
   rw [kroneckerLineRep_hom_app_tgt_of_ne h e] at hnat
   -- Reading the square at `1` gives the value of the component at `c`, which
@@ -384,17 +389,16 @@ theorem kroneckerLineRepScalar_kroneckerLineRepHom (s : k) (hs : c * s = d * s) 
       (kroneckerLineRepHom_app_src (a₁ := a₁) (c := c) (d := d) s hs)
   rw [h, one_mul]
 
--- Not `@[simp]`: the arrow `a₀` of the hypothesis does not occur in the left-hand side, which
--- `simpNF` rejects.
 /-- **Every morphism of line representations is the one attached to its scalar.** Together with
 `TauCeti.kroneckerLineRep_hom_ext` this identifies the morphisms `kroneckerLineRep k a₁ c ⟶
 kroneckerLineRep k a₁ d`, on a quiver carrying an arrow other than the distinguished one, with the
 scalars `s` satisfying `c * s = d * s`, mirroring the pair
 `TauCeti.oneLoopRepHom_oneLoopRepScalar` / `TauCeti.oneLoopRep_hom_ext` of the loop quiver. -/
-theorem kroneckerLineRepHom_kroneckerLineRepScalar (h : a₀ ≠ a₁)
+@[simp]
+theorem kroneckerLineRepHom_kroneckerLineRepScalar [Nontrivial A]
     (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) :
-    kroneckerLineRepHom (kroneckerLineRepScalar e) (kroneckerLineRepScalar_intertwine h e) = e :=
-  kroneckerLineRep_hom_ext (Or.inr ⟨a₀, h⟩) (kroneckerLineRepScalar_kroneckerLineRepHom _ _)
+    kroneckerLineRepHom (kroneckerLineRepScalar e) (kroneckerLineRepScalar_intertwine e) = e :=
+  kroneckerLineRep_hom_ext (Or.inr (exists_ne a₁)) (kroneckerLineRepScalar_kroneckerLineRepHom _ _)
 
 /-! ### Indecomposability and the classification -/
 
@@ -415,26 +419,28 @@ theorem indecomposable_kroneckerLineRep (h : c ≠ 0 ∨ ∃ a : A, a ≠ a₁) 
     (kroneckerLineRepScalar_injective h) kroneckerLineRepScalar_zero kroneckerLineRepScalar_id
     fun e ↦ kroneckerLineRepScalar_comp e e
 
-/-- **On a quiver carrying an arrow `a₀` other than the distinguished one, two isomorphic line
+/-- **On a quiver carrying an arrow other than the distinguished one, two isomorphic line
 representations have equal scalars.** An isomorphism has an invertible scalar, and its naturality
-along the distinguished arrow then equates the two scalars. The hypothesis `a₀ ≠ a₁` is essential:
-on the `A₂` quiver of the single arrow `a₁` nothing forces the two components of a morphism to
-agree, and the lines at any two nonzero scalars are isomorphic -- by the pair of multiplications
-by `1` and by `d / c`. -/
-theorem eq_of_nonempty_kroneckerLineRep_iso (h : a₀ ≠ a₁)
+along the distinguished arrow then equates the two scalars. The hypothesis `Nontrivial A` is
+essential: on the `A₂` quiver of the single arrow `a₁` nothing forces the two components of a
+morphism to agree, and the lines at any two nonzero scalars are isomorphic -- by the pair of
+multiplications by `1` and by `d / c`. -/
+theorem eq_of_nonempty_kroneckerLineRep_iso [Nontrivial A]
     (hiso : Nonempty (kroneckerLineRep k a₁ c ≅ kroneckerLineRep k a₁ d)) : c = d := by
   obtain ⟨e⟩ := hiso
   have hunit : kroneckerLineRepScalar e.hom * kroneckerLineRepScalar e.inv = 1 := by
     rw [← kroneckerLineRepScalar_comp, e.hom_inv_id, kroneckerLineRepScalar_id]
   exact mul_right_cancel₀ (left_ne_zero_of_mul_eq_one hunit)
-    (kroneckerLineRepScalar_intertwine h e.hom)
+    (kroneckerLineRepScalar_intertwine e.hom)
 
-/-- **Two line representations are isomorphic exactly when their scalars agree.** So over an
-infinite field the isomorphism classes of indecomposables at the dimension vector `(1, 1)` are
-infinite in number, the affine chart of the `ℙ¹` of the Kronecker quiver. -/
-theorem nonempty_kroneckerLineRep_iso_iff (h : a₀ ≠ a₁) :
+/-- **On a quiver carrying an arrow other than the distinguished one, two line representations are
+isomorphic exactly when their scalars agree.** So over an infinite field the isomorphism classes of
+indecomposables at the dimension vector `(1, 1)` are infinite in number, the affine chart of the
+`ℙ¹` of the Kronecker quiver. -/
+@[simp]
+theorem nonempty_kroneckerLineRep_iso_iff [Nontrivial A] :
     Nonempty (kroneckerLineRep k a₁ c ≅ kroneckerLineRep k a₁ d) ↔ c = d :=
-  ⟨eq_of_nonempty_kroneckerLineRep_iso h, by rintro rfl; exact ⟨Iso.refl _⟩⟩
+  ⟨eq_of_nonempty_kroneckerLineRep_iso, by rintro rfl; exact ⟨Iso.refl _⟩⟩
 
 /-- **On a generalized Kronecker quiver with two distinct arrows the dimension vector does not
 determine an indecomposable.** Over every field such a quiver carries two non-isomorphic
@@ -445,16 +451,17 @@ This is the sharpness of `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable
 that theorem holds over an acyclic quiver whose Tits form is positive definite, and the Kronecker
 quiver is acyclic with a Tits form that is only positive semidefinite. -/
 theorem exists_indecomposable_dimVector_eq_not_nonempty_iso_kronecker (k : Type u) [Field k]
-    {A : Type v} {a₀ a₁ : A} (h : a₀ ≠ a₁) :
+    (A : Type v) [Nontrivial A] :
     ∃ M N : QuiverRep.{u, 0, v, u} k (Quiver.Kronecker A),
       IsFinDim k (Quiver.Kronecker A) M ∧ Indecomposable M ∧
         IsFinDim k (Quiver.Kronecker A) N ∧ Indecomposable N ∧
-        dimVector M = dimVector N ∧ ¬ Nonempty (M ≅ N) :=
-  ⟨kroneckerLineRep k a₁ 0, kroneckerLineRep k a₁ 1, isFinDim_kroneckerLineRep,
+        dimVector M = dimVector N ∧ ¬ Nonempty (M ≅ N) := by
+  obtain ⟨a₀, a₁, h⟩ := exists_pair_ne A
+  exact ⟨kroneckerLineRep k a₁ 0, kroneckerLineRep k a₁ 1, isFinDim_kroneckerLineRep,
     indecomposable_kroneckerLineRep (Or.inr ⟨a₀, h⟩), isFinDim_kroneckerLineRep,
     indecomposable_kroneckerLineRep (Or.inr ⟨a₀, h⟩),
     funext fun w ↦ (dimVector_kroneckerLineRep w).trans (dimVector_kroneckerLineRep w).symm,
-    fun hiso ↦ zero_ne_one (eq_of_nonempty_kroneckerLineRep_iso h hiso)⟩
+    fun hiso ↦ zero_ne_one (eq_of_nonempty_kroneckerLineRep_iso hiso)⟩
 
 /-- **The Tits value of the dimension vector of a line representation is `2 - #arrows`.** It is
 `1` exactly for the `A₂` quiver of a single arrow, and `0` for the Kronecker quiver `• ⇉ •`.
