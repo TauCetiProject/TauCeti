@@ -64,4 +64,28 @@ theorem coe_map {S : Type v} [CommRing S] (f : R →+* S)
     (map f M : Matrix n n S) = M.1.map f :=
   by simp [map]
 
+/-- A coefficient-ring map acts entrywise on special orthogonal matrices. -/
+theorem map_apply {S : Type v} [CommRing S] (f : R →+* S)
+    (M : Matrix.specialOrthogonalGroup n R) (i j : n) :
+    (map f M : Matrix n n S) i j = f ((M : Matrix n n R) i j) := by
+  rw [coe_map, Matrix.map_apply]
+
+/-- Mapping coefficients along the identity ring homomorphism is the identity. -/
+@[simp]
+theorem map_id :
+    map (n := n) (RingHom.id R) = MonoidHom.id (Matrix.specialOrthogonalGroup n R) := by
+  ext M i j
+  simp only [map_apply, RingHom.id_apply, MonoidHom.id_apply]
+
+/-- Successive coefficient-ring maps agree with mapping along their composite. -/
+@[simp]
+theorem map_comp {S T : Type*} [CommRing S] [CommRing T]
+    (f : R →+* S) (g : S →+* T) :
+    map (n := n) (g.comp f) = (map (n := n) g).comp (map (n := n) f) := by
+  apply MonoidHom.ext
+  intro M
+  apply Subtype.ext
+  ext i j
+  simp only [map_apply, RingHom.coe_comp, Function.comp_apply, MonoidHom.coe_comp]
+
 end Matrix.SpecialOrthogonalGroup
