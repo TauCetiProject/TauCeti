@@ -79,9 +79,6 @@ reductivity, maximality of the weight torus, or any finiteness or simplicity sta
   `TauCeti.DynkinType.geckGraphAutPoints_geckWeightTorusPoints`: those two equations read on the
   represented root subgroup and weight torus, which is the form a consumer of those homomorphisms
   uses.
-* `TauCeti.DynkinType.geckGraphAutPoints_pow_geckRootSubgroupPoints` and
-  `TauCeti.DynkinType.geckGraphAutPoints_pow_geckWeightTorusPoints`: the same two equations
-  iterated, renumbering by the `m`-th power of the symmetry and relabelling by its inverse.
 * `TauCeti.DynkinType.geckPointsMap_comp_geckGraphAutPoints`: the automorphism on points is natural
   in the value ring.
 * `TauCeti.DynkinType.geckGraphAutPoints_pow_eq_one` and
@@ -447,23 +444,6 @@ theorem geckGraphAutPoints_geckRootSubgroupPoints (hsigma : sigma ∈ t.diagramS
   rw [← geckPoints_mk_geckRootSubgroupMatrix, geckGraphAutPoints_geckRootSubgroupMatrix,
     geckPoints_mk_geckRootSubgroupMatrix]
 
-/-- **The `m`-th power of the graph automorphism renumbers the pinned root subgroups by the `m`-th
-power of the diagram symmetry**, again without changing their additive parameter. -/
-@[simp]
-theorem geckGraphAutPoints_pow_geckRootSubgroupPoints (hsigma : sigma ∈ t.diagramSymmetry)
-    (A : Type v) [CommRing A] (m : ℕ) (i : Fin t.rank ⊕ Fin t.rank) (u : Multiplicative A) :
-    (t.geckGraphAutPoints ht hsigma A ^ m) (t.geckRootSubgroupPoints ht i A u) =
-      t.geckRootSubgroupPoints ht ((diagramRootGeneratorPerm sigma ^ m) i) A u := by
-  have hsemiconj : Function.Semiconj (fun j ↦ t.geckRootSubgroupPoints ht j A u)
-      (diagramRootGeneratorPerm sigma) (t.geckGraphAutPoints ht hsigma A) :=
-    fun j ↦ (t.geckGraphAutPoints_geckRootSubgroupPoints ht hsigma A j u).symm
-  -- Expose the permutation power needed by `map_pow`; its application agrees definitionally with
-  -- the application of the corresponding multiplicative automorphism.
-  change (MulAut.toPerm _ (t.geckGraphAutPoints ht hsigma A ^ m))
-      (t.geckRootSubgroupPoints ht i A u) = _
-  rw [map_pow]
-  exact (hsemiconj.iterate_right m i).symm
-
 /-- **The graph automorphism relabels the coordinates of a pinned weight-torus point** by the
 inverse of the diagram symmetry. -/
 @[simp]
@@ -520,22 +500,6 @@ theorem geckGraphAutPoints_geckWeightTorusPoints (hsigma : sigma ∈ t.diagramSy
           t.geckPoints ht A) = t.geckWeightTorusPoints ht A r :=
     Subtype.ext (t.coe_geckWeightTorusPoints ht A r).symm
   rw [← htorus s, geckPoints_mk_geckTorusMatrix, geckGraphAutPoints_geckTorusMatrix, htorus]
-
-/-- **The `m`-th power of the graph automorphism relabels a point of the represented weight torus**
-by the inverse of the `m`-th power of the diagram symmetry. This is the torus half of the iterated
-pinning equation whose root-subgroup half is
-`TauCeti.DynkinType.geckGraphAutPoints_pow_geckRootSubgroupPoints`. -/
-@[simp]
-theorem geckGraphAutPoints_pow_geckWeightTorusPoints (hsigma : sigma ∈ t.diagramSymmetry)
-    (A : Type v) [CommRing A] (m : ℕ) (s : Fin t.rank → Aˣ) :
-    (t.geckGraphAutPoints ht hsigma A ^ m) (t.geckWeightTorusPoints ht A s) =
-      t.geckWeightTorusPoints ht A fun k => s ((sigma ^ m)⁻¹ k) := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-      rw [pow_succ', MulAut.mul_apply, ih, geckGraphAutPoints_geckWeightTorusPoints]
-      exact congrArg _ (funext fun k => by
-        rw [pow_succ', mul_inv_rev, Equiv.Perm.mul_apply])
 
 /-- **The graph automorphism on points is natural in the value ring.** In particular it commutes
 with the Frobenius endomorphism of the points of the carrier. -/
