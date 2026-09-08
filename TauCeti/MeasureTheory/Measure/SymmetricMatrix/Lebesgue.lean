@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -80,16 +81,12 @@ the ratio of the two normalizations. -/
 
 section comparison
 
-private theorem addHaar_basisFun (ι : Type*) [Fintype ι] :
-    (Pi.basisFun ℝ ι).addHaar = (volume : Measure (ι → ℝ)) := by
-  rw [Basis.addHaar_def, Basis.parallelepiped_basisFun, addHaarMeasure_eq_volume_pi]
-
 private theorem symmetricLebesgue_eq_addHaar (p : ℕ) :
     symmetricLebesgue p = (symmetricBasis p).addHaar := by
   have hb : (Pi.basisFun ℝ (upperTriangle p)).map
       (symmetricCoordinates p).symm.toLinearEquiv = symmetricBasis p :=
     Basis.eq_of_apply_eq fun ij => by simp [symmetricBasis_apply]
-  rw [symmetricLebesgue, ← addHaar_basisFun, Basis.map_addHaar, hb]
+  rw [symmetricLebesgue, ← Module.Basis.addHaar_basisFun, Basis.map_addHaar, hb]
 
 private theorem sum_mul_single (p : ℕ) (A : Matrix (Fin p) (Fin p) ℝ) (k l : Fin p) :
     ∑ a, ∑ b, A a b * Matrix.single k l (1 : ℝ) a b = A k l := by
