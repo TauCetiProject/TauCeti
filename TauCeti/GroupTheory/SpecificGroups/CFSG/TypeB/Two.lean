@@ -45,15 +45,18 @@ What this file supplies is `Frob_q`, the map the odd power `τ ^ (2m+1)` squares
 map below is the `q`-power Frobenius at the field order the index records, taken on this carrier.
 A Suzuki index reaches all of it through `TauCeti.SuzukiLieIndex.toRankTwoBLieIndex`.
 
-Neither branch gets a Steinberg endomorphism here, and neither gets a candidate simple group. The
-Steinberg endomorphism of either family is an endomorphism of the points of the *pinned* simply
-connected group scheme of the diagram, and no identification of the carrier below with that pinned
-group is available; so neither that endomorphism, nor the group of its fixed points, nor the
-quotient of the derived subgroup of those fixed points by its centre, is stated of the rank-two
-type-`C` carrier. What is named below is named after what it is:
+Neither branch gets a Steinberg endomorphism here. What is named below is named after what it is:
 `TauCeti.RankTwoBLieIndex.frobenius` is the Frobenius of this carrier, and
 `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff` describes the group it fixes as the
 points whose matrix entries lie in the field of definition `𝔽_q`.
+
+The Suzuki branch's Steinberg endomorphism and its candidate group are stated on this carrier in
+`TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`, in the shape milestones `L2` and `L3`
+ask of them, as `TypeA.lean`, `TypeD.lean`, `TypeE6.lean` and `Unimodular.lean` do on their own
+carriers. No identification of this carrier with the pinned simply connected group scheme of the
+diagram is available, so neither file offers it as a substitute for that pinned group: those
+constructions transfer to the milestone `L0` carrier along the Layer 9 identification, and not
+before.
 
 Nothing here asserts that the carrier is reductive, that its weight torus is maximal, that it is
 the symplectic group scheme, or that any group below is finite, perfect, or simple. In particular
