@@ -281,6 +281,7 @@ theorem refl_of_forall_mem_of_nullhomotopic {s : Set X}
 
 /-- Path homotopy is invariant under transporting both paths along equalities of their
 endpoints: `Path.cast` only relabels the endpoints, leaving the underlying map untouched. -/
+@[simp, grind =]
 theorem cast_iff {x y x' y' : X} (hx : x' = x) (hy : y' = y) {γ δ : Path x y} :
     (γ.cast hx hy).Homotopic (δ.cast hx hy) ↔ γ.Homotopic δ := by
   subst hx
