@@ -35,6 +35,8 @@ Chris Birkbeck), on top of the matrix-level Smith normal form
 
 ## Main results
 
+* `natDiagGL_const_eq_scalar`, `natDiagGL_const_mem_normalizer`: a constant natural diagonal
+  is scalar when positive and normalizes every subgroup unconditionally.
 * `exists_diagonal_representative`: every double coset of the arithmetic Hecke triple is
   `diagCoset a` for a positive divisibility chain `a` (Smith normal form).
 * `diagCoset_bijective`: positive divisibility chains biject with the double cosets.
@@ -144,7 +146,8 @@ lemma natDiagGL_comm (a b : Fin n → ℕ) :
     · rw [natDiagGL_of_not_pos n hb, one_mul, mul_one]
   · rw [natDiagGL_of_not_pos n ha, one_mul, mul_one]
 
-private lemma natDiagGL_const_eq_scalar {c : ℕ} (hc : 0 < c) :
+/-- A positive constant natural diagonal is the corresponding scalar matrix. -/
+lemma natDiagGL_const_eq_scalar {c : ℕ} (hc : 0 < c) :
     natDiagGL n (fun _ ↦ c) =
       Matrix.GeneralLinearGroup.scalar (Fin n)
         (Units.mk0 (c : ℚ) (by exact_mod_cast hc.ne')) := by
@@ -164,6 +167,20 @@ lemma natDiagGL_const_comm (c : ℕ) (g : GL (Fin n) ℚ) :
   · rw [natDiagGL_of_not_pos n (not_forall.mpr ⟨⟨0, hn⟩, by simp⟩), one_mul, mul_one]
   · rw [natDiagGL_const_eq_scalar n hc]
     exact Matrix.GeneralLinearGroup.scalar_commute _ _
+
+/-- A constant natural diagonal normalizes every subgroup of `GLₙ(ℚ)`. -/
+lemma natDiagGL_const_mem_normalizer (c : ℕ) (Γ : Subgroup (GL (Fin n) ℚ)) :
+    natDiagGL n (fun _ ↦ c) ∈ Subgroup.normalizer Γ := by
+  rw [Subgroup.mem_normalizer_iff]
+  intro x
+  rw [natDiagGL_const_comm n c x, mul_assoc, mul_inv_cancel, mul_one]
+
+/-- The two-entry vector with both entries `c` gives the constant natural diagonal. -/
+lemma natDiagGL_two_vec_const (c : ℕ) :
+    natDiagGL 2 ![c, c] = natDiagGL 2 (fun _ : Fin 2 ↦ c) := by
+  congr 1
+  funext i
+  fin_cases i <;> rfl
 
 @[simp] lemma natDiagGL_one : natDiagGL n (fun _ ↦ 1) = 1 := by
   ext1

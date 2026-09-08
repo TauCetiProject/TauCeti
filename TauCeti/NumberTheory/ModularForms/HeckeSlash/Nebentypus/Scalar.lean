@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Diagonal.PrimePower
-public import TauCeti.NumberTheory.HeckeRing.Normalizer
+public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diagonal.QExpansion
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Action
 
 /-!
 # Scalar cosets in the nebentypus Hecke action
 
 This file identifies the action of the scalar double coset
-`Γ₀(N) diag(c, c) Γ₀(N)` on modular and cusp forms of nebentypus `χ`. Since the scalar matrix
+`Γ₀(N) diag(c, c) Γ₀(N)` on functions, modular forms, and cusp forms of nebentypus `χ`.
+Since the scalar matrix
 normalizes `Γ₀(N)`, its double coset has one right coset. The twisting character reads its
 upper-left entry as `χ(c)`, while the weight-`k` slash action contributes `c ^ (k - 2)`.
 Consequently the scalar Hecke generator acts by
@@ -28,10 +29,14 @@ scalar representative is its upper-left unit `c`.
 
 ## Main results
 
+* `HeckeRing.GL2.twistedHeckeSlashSumCharEnd_diagCosetGamma0_const`: the scalar double coset
+  acts by the expected scalar on the function character space.
 * `HeckeRing.GL2.twistedHeckeSlashModularFormCharEnd_diagCosetGamma0_const`: the scalar
   double coset acts by the expected scalar on modular forms.
 * `HeckeRing.GL2.twistedHeckeSlashCuspFormCharEnd_diagCosetGamma0_const`: the corresponding
   statement for cusp forms.
+* `HeckeRing.GL2.heckeRingHomFunctionCharSpace_heckeTScalarGamma0`: the scalar generator under
+  the function-space Hecke-ring action.
 * `HeckeRing.GL2.heckeRingHomCharSpace_heckeTScalarGamma0`: the scalar generator under the
   modular-form Hecke-ring action.
 * `HeckeRing.GL2.heckeRingHomCuspCharSpace_heckeTScalarGamma0`: the cusp-form counterpart.
@@ -63,110 +68,31 @@ variable {N : ℕ} (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ)
 
 variable [NeZero N]
 
-omit [NeZero N] in
-/-- The twisting character reads the constant diagonal representative as its scalar entry. -/
-lemma delta0NebentypusChar_natDiagGL_const (c : ℕ) (hc : 0 < c)
+/-- The constant diagonal double coset acts on the function character space by
+`χ(c) * c ^ (k - 2)`. -/
+theorem twistedHeckeSlashSum_diagCosetGamma0_const (c : ℕ) (hc : 0 < c)
+    (hcN : Nat.Coprime c N) (f : ℍ → ℂ) (hf : f ∈ functionCharSpace k χ) :
+    twistedHeckeSlashSum k χ
+        (diagCosetGamma0 N ![c, c] fun _ ↦ by simpa using hcN) f =
+      ((χ (ZMod.unitOfCoprime c hcN) : ℂ) * (c : ℂ) ^ (k - 2)) • f := by
+  let _ : NeZero c := ⟨hc.ne'⟩
+  rw [twistedHeckeSlashSum_eq_sum_of_rightCosets k χ _
+    (fun _ : Unit ↦ natDiagGL 2 ![c, c])
+    (doubleCoset_out_diagCosetGamma0_const_eq_iUnion_rightCosets N c hcN)
+    (fun _ _ _ ↦ Subsingleton.elim _ _) f hf]
+  simp [delta0NebentypusChar_natDiagGL N χ ![c, c]
+    (fun i ↦ by fin_cases i <;> simpa using hc) hcN, smul_smul]
+
+/-- The constant diagonal double coset acts by `χ(c) * c ^ (k - 2)` as an endomorphism of
+the function character space. -/
+theorem twistedHeckeSlashSumCharEnd_diagCosetGamma0_const (c : ℕ) (hc : 0 < c)
     (hcN : Nat.Coprime c N) :
-    delta0NebentypusChar N χ
-        ⟨natDiagGL 2 ![c, c],
-          natDiagGL_mem_Delta0_of_coprime N _ fun _ ↦ by simpa using hcN⟩ =
-      χ (ZMod.unitOfCoprime c hcN) := by
-  rw [delta0NebentypusChar_apply]
-  apply congrArg χ
-  apply Units.ext
-  rw [Delta0UpperUnit_apply_val N
-    (A := Matrix.diagonal (fun _ : Fin 2 ↦ (c : ℤ)))
-    (by
-      rw [natDiagGL_coe_eq_map_intCast 2 _
-        (fun i ↦ by fin_cases i <;> simpa using hc)]
-      congr 2
-      funext i
-      fin_cases i <;> rfl)]
-  simp [ZMod.coe_unitOfCoprime]
-
-/-- A positive rational scalar matrix acts trivially on the upper half-plane and its
-weight-`k` slash is multiplication by `c ^ (k - 2)`. -/
-lemma rat_slash_natDiagGL_const (c : ℕ) (hc : 0 < c) (f : ℍ → ℂ) :
-    f ∣[k] natDiagGL 2 ![c, c] = (c : ℂ) ^ (k - 2) • f := by
-  have hcpos : ∀ i : Fin 2, 0 < ![c, c] i := by
-    intro i
-    fin_cases i <;> simpa using hc
-  have hdetpos : 0 <
-      (natDiagGL 2 ![c, c] : Matrix (Fin 2) (Fin 2) ℚ).det :=
-    natDiagGL_det_pos 2 _ hcpos
-  have hcne : (c : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hc.ne'
-  ext z
-  rw [ModularForm.rat_slash_apply_of_det_pos k hdetpos]
-  have hsmul :
-      Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)
-          (natDiagGL 2 ![c, c]) • z = z := by
-    apply UpperHalfPlane.ext
-    rw [UpperHalfPlane.coe_smul_of_det_pos (ModularForm.det_map_ratCast_pos hdetpos)]
-    change
-      ((Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)
-              (natDiagGL 2 ![c, c])) 0 0 * (z : ℂ) +
-          (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)
-              (natDiagGL 2 ![c, c])) 0 1) /
-          ((Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)
-              (natDiagGL 2 ![c, c])) 1 0 * (z : ℂ) +
-            (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)
-              (natDiagGL 2 ![c, c])) 1 1) = (z : ℂ)
-    simp [Matrix.GeneralLinearGroup.map, natDiagGL_coe 2 _ hcpos, Matrix.map_apply]
-    field_simp
-  have hdenom :
-      denom (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)
-          (natDiagGL 2 ![c, c])) z = (c : ℂ) := by
-    change
-      (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)
-            (natDiagGL 2 ![c, c])) 1 0 * (z : ℂ) +
-          (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)
-            (natDiagGL 2 ![c, c])) 1 1 = (c : ℂ)
-    simp [Matrix.GeneralLinearGroup.map, natDiagGL_coe 2 _ hcpos, Matrix.map_apply]
-  have habsdet :
-      (↑|(Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)
-          (natDiagGL 2 ![c, c])).det.val| : ℂ) = (c : ℂ) ^ 2 := by
-    have hdet :
-        (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)
-          (natDiagGL 2 ![c, c])).det.val =
-            algebraMap ℚ ℝ
-              (natDiagGL 2 ![c, c]).det.val :=
-      congrArg Units.val
-        (Matrix.GeneralLinearGroup.map_det (algebraMap ℚ ℝ)
-          (natDiagGL 2 ![c, c]))
-    rw [hdet, Matrix.GeneralLinearGroup.val_det_apply,
-      natDiagGL_coe 2 _ hcpos, Matrix.det_diagonal, Fin.prod_univ_two]
-    simp only [map_mul, map_natCast]
-    rw [abs_of_nonneg (by positivity)]
-    push_cast
-    ring
-  rw [hsmul, hdenom, habsdet]
-  change f z * ((c : ℂ) ^ 2) ^ (k - 1) * (c : ℂ) ^ (-k) =
-    (c : ℂ) ^ (k - 2) * f z
-  rw [show ((c : ℂ) ^ 2) = (c : ℂ) ^ (2 : ℤ) by norm_cast, ← _root_.zpow_mul,
-    mul_assoc, ← zpow_add₀ hcne, mul_comm]
-  congr 1
-  ring_nf
-
-omit [NeZero N] in
-private lemma scalarCoset_cover (c : ℕ) (hcN : Nat.Coprime c N) :
-    doubleCoset
-        ((diagCosetGamma0 N ![c, c] fun _ ↦ by simpa using hcN).out : GL (Fin 2) ℚ)
-        ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) =
-      ⋃ _ : Unit, MulOpposite.op (natDiagGL 2 ![c, c]) •
-        ((Gamma0 N).map (mapGL ℚ) : Set (GL (Fin 2) ℚ)) := by
-  rw [Set.iUnion_const, diagCosetGamma0_def]
-  apply HeckeCoset.doubleCoset_out_mk_eq_rightCoset_of_mem_normalizer
-  rw [Subgroup.mem_normalizer_iff]
-  intro x
-  change x ∈ (Gamma0 N).map (mapGL ℚ) ↔
-    natDiagGL 2 ![c, c] * x * (natDiagGL 2 ![c, c])⁻¹ ∈
-      (Gamma0 N).map (mapGL ℚ)
-  have hconst : natDiagGL 2 ![c, c] = natDiagGL 2 (fun _ : Fin 2 ↦ c) := by
-    congr 1
-    funext i
-    fin_cases i <;> rfl
-  rw [hconst]
-  rw [natDiagGL_const_comm 2 c x, mul_assoc, mul_inv_cancel, mul_one]
+    twistedHeckeSlashSumCharEnd k χ
+        (diagCosetGamma0 N ![c, c] fun _ ↦ by simpa using hcN) =
+      ((χ (ZMod.unitOfCoprime c hcN) : ℂ) * (c : ℂ) ^ (k - 2)) • 1 := by
+  refine LinearMap.ext fun f ↦ Subtype.ext ?_
+  rw [coe_twistedHeckeSlashSumCharEnd, LinearMap.smul_apply, Module.End.one_apply]
+  exact twistedHeckeSlashSum_diagCosetGamma0_const k χ c hc hcN f f.2
 
 /-- The constant diagonal double coset acts on modular forms by
 `χ(c) * c ^ (k - 2)`. -/
@@ -180,11 +106,17 @@ theorem twistedHeckeSlashModularFormCharEnd_diagCosetGamma0_const
   apply Subtype.ext
   apply ModularForm.ext
   intro z
-  rw [congrFun (coe_twistedHeckeSlashModularFormCharEnd_eq_sum k χ _
-    (fun _ : Unit ↦ natDiagGL 2 ![c, c])
-    (scalarCoset_cover c hcN) (fun _ _ _ ↦ Subsingleton.elim _ _) f) z]
-  simp [delta0NebentypusChar_natDiagGL_const χ c hc hcN,
-    rat_slash_natDiagGL_const k c hc, mul_assoc]
+  rw [coe_twistedHeckeSlashModularFormCharEnd]
+  have h := congrFun (twistedHeckeSlashSum_diagCosetGamma0_const k χ c hc hcN
+    (⇑(f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k))
+    ((coe_mem_functionCharSpace_iff k χ _).mpr f.2)) z
+  -- This exposes only scalar multiplication through the endomorphism, subtype, bundled form,
+  -- and function coercions; `h` is the function-space mathematical statement.
+  change twistedHeckeSlashSum k χ _
+      (⇑(f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)) z =
+    ((χ (ZMod.unitOfCoprime c hcN) : ℂ) * (c : ℂ) ^ (k - 2)) *
+      (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) z
+  exact h
 
 /-- The constant diagonal double coset has the same scalar action on cusp forms. -/
 theorem twistedHeckeSlashCuspFormCharEnd_diagCosetGamma0_const
@@ -197,11 +129,29 @@ theorem twistedHeckeSlashCuspFormCharEnd_diagCosetGamma0_const
   apply Subtype.ext
   apply CuspForm.ext
   intro z
-  rw [congrFun (coe_twistedHeckeSlashCuspFormCharEnd_eq_sum k χ _
-    (fun _ : Unit ↦ natDiagGL 2 ![c, c])
-    (scalarCoset_cover c hcN) (fun _ _ _ ↦ Subsingleton.elim _ _) f) z]
-  simp [delta0NebentypusChar_natDiagGL_const χ c hc hcN,
-    rat_slash_natDiagGL_const k c hc, mul_assoc]
+  rw [coe_twistedHeckeSlashCuspFormCharEnd]
+  have hmem : ⇑(f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ functionCharSpace k χ :=
+    (coe_mem_functionCharSpace_iff k χ _).mpr
+      ((coe_mem_modFormCharSpace_iff k χ _).mpr f.2)
+  have h := congrFun (twistedHeckeSlashSum_diagCosetGamma0_const k χ c hc hcN
+    (⇑(f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)) hmem) z
+  -- As above, this exposes only the bundled scalar/coercion layers before applying the
+  -- function-space statement.
+  change twistedHeckeSlashSum k χ _
+      (⇑(f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)) z =
+    ((χ (ZMod.unitOfCoprime c hcN) : ℂ) * (c : ℂ) ^ (k - 2)) *
+      (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) z
+  exact h
+
+/-- The scalar Hecke generator acts on the function character space by
+`χ(c) * c ^ (k - 2)`. -/
+theorem heckeRingHomFunctionCharSpace_heckeTScalarGamma0 (c : ℕ) (hc : 0 < c)
+    (hcN : Nat.Coprime c N) :
+    heckeRingHomFunctionCharSpace k χ (heckeTScalarGamma0 N c) =
+      ((χ (ZMod.unitOfCoprime c hcN) : ℂ) * (c : ℂ) ^ (k - 2)) • 1 := by
+  rw [heckeTScalarGamma0_of_coprime N hc hcN, heckeRingHomFunctionCharSpace_apply,
+    twistedHeckeSlashRingCharLinearMap_single, one_smul]
+  exact twistedHeckeSlashSumCharEnd_diagCosetGamma0_const k χ c hc hcN
 
 /-- The scalar Hecke generator acts on modular forms by
 `χ(c) * c ^ (k - 2)`. -/
