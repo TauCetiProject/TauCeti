@@ -186,8 +186,8 @@ theorem idealClass_surjective (𝔪 : Modulus K) : Function.Surjective (idealCla
 /-! ### The denominator-cleared triviality criterion -/
 
 /-- **The integral form of the triviality criterion.**  An integral ideal prime to `𝔪` has trivial
-ray class exactly when there are algebraic integers `a` and `b`, each generating a unit of `K`
-congruent to one modulo `𝔪`, with `I · (b) = (a)`.
+ray class exactly when there are `x y : Kˣ` congruent to one modulo `𝔪` whose underlying values
+are algebraic integers `a` and `b`, with `I · (b) = (a)`.
 
 The fractional criterion `idealClass_eq_one_iff` is the primary one; this is the denominator-cleared
 form derived from it.  A denominator congruent to one is available because the complementary ideal
