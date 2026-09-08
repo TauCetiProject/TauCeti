@@ -252,21 +252,21 @@ theorem cartierDivisor_add (hX : ∀ y : X, coheight y ≤ 1) (hD : IsLocallyPri
     exact map_add ((Scheme.cartierDivisorSheaf X).obj.map
       (homOfLE (le_top : (V ⊓ W : X.Opens) ≤ ⊤)).op).hom _ _
 
+/-- The Cartier divisor of a locally principal Weil divisor depends only on the divisor. -/
+theorem cartierDivisor_congr (hX : ∀ y : X, coheight y ≤ 1) (hD : IsLocallyPrincipal D)
+    (hE : IsLocallyPrincipal E) (h : D = E) : cartierDivisor hX hD = cartierDivisor hX hE := by
+  subst h
+  rfl
+
 /-- **The construction respects negation.** -/
 @[simp]
 theorem cartierDivisor_neg (hX : ∀ y : X, coheight y ≤ 1) (hD : IsLocallyPrincipal D) :
-    cartierDivisor hX hD.neg = -cartierDivisor hX hD := by
-  refine (eq_cartierDivisor hX hD.neg fun x ↦ ?_).symm
-  obtain ⟨V, hxV, g, hg⟩ := isLocallyPrincipal_iff.mp hD x
-  have hne : Nonempty V := ⟨⟨x, hxV⟩⟩
-  refine ⟨V, hne, -g, hxV, ?_, ?_⟩
-  · intro y hy
-    rw [WeilDivisor.coeff_neg, hg y hy, map_neg]
-  · have hV : (cartierDivisor hX hD) |_ V = Scheme.rationalUnitClass X V g :=
-      cartierDivisor_restrict hX hD _ g hg
-    rw [map_neg, ← hV]
-    exact map_neg ((Scheme.cartierDivisorSheaf X).obj.map
-      (homOfLE (le_top : V ≤ ⊤)).op).hom _
+    cartierDivisor hX hD.neg = -cartierDivisor hX hD :=
+  eq_neg_of_add_eq_zero_left <| by
+    rw [← cartierDivisor_add hX hD.neg hD,
+      cartierDivisor_congr hX (hD.neg.add hD) (isLocallyPrincipal_zero (X := X))
+        (neg_add_cancel D),
+      cartierDivisor_zero]
 
 end IsLocallyPrincipal
 
@@ -299,6 +299,7 @@ variable [IsNoetherian X]
 /-- **A principal Weil divisor has the principal Cartier divisor of the same rational function.**
 The rational function is a global equation, so the two constructions agree over the whole
 scheme. -/
+@[simp]
 theorem cartierDivisor_principalDivisor (hX : ∀ y : X, coheight y ≤ 1)
     (g : Additive X.functionFieldˣ) :
     IsLocallyPrincipal.cartierDivisor hX (isLocallyPrincipal_principalDivisor g) =

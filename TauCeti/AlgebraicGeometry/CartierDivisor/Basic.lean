@@ -274,8 +274,7 @@ lemma rationalUnitClass_germToFunctionField_eq_zero (U : X.Opens) [Nonempty U]
     ((toCartierDivisorSheaf X).hom.app (op U)).hom
       ((rationalUnitSectionsEquiv X U).symm
         (Additive.ofMul (Units.map (X.germToFunctionField U).hom f))) = 0 := by
-  change rationalUnitClass X U
-    (Additive.ofMul (Units.map (X.germToFunctionField U).hom f)) = 0
+  rw [← rationalUnitClass_apply]
   have hsymm :
       (rationalUnitSectionsEquiv X U).symm
           (Additive.ofMul (regularUnitToFunctionField X U f)) =
@@ -291,8 +290,7 @@ lemma rationalUnitClass_germToFunctionField_eq_zero (U : X.Opens) [Nonempty U]
     exact ConcreteCategory.congr_hom happ (Additive.ofMul f)
   refine (congrArg (rationalUnitClass X U)
     (congrArg Additive.ofMul (regularUnitToFunctionField_apply X U f).symm)).trans ?_
-  rw [rationalUnitClass_apply]
-  rw [hsymm]
+  rw [rationalUnitClass_apply, hsymm]
   exact hzero
 
 /-- A nonzero rational function determines its principal Cartier divisor. The multiplicative
