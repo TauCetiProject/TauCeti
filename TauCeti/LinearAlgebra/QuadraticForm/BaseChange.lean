@@ -173,6 +173,14 @@ theorem baseChangeProd_tmul (Q : _root_.QuadraticForm R M)
     baseChangeProd (A := A) Q Q' (a ⊗ₜ m) = (a ⊗ₜ m.1, a ⊗ₜ m.2) :=
   TensorProduct.prodRight_tmul R A A M N a m
 
+/-- The inverse equivalence identifying an orthogonal sum with a base change combines a pair of
+pure tensors with the same scalar into a pure tensor of the paired vectors. -/
+@[simp]
+theorem baseChangeProd_symm_tmul (Q : _root_.QuadraticForm R M)
+    (Q' : _root_.QuadraticForm R N) (a : A) (m : M) (n : N) :
+    (baseChangeProd (A := A) Q Q').symm (a ⊗ₜ m, a ⊗ₜ n) = a ⊗ₜ (m, n) :=
+  TensorProduct.prodRight_symm_tmul R A A M N a m n
+
 /-- Base change sends the zero quadratic form to the zero quadratic form. -/
 @[simp]
 theorem baseChange_zero : (0 : _root_.QuadraticForm R M).baseChange A = 0 := by
