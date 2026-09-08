@@ -183,6 +183,13 @@ theorem aemeasurable_arrayColumn (hY : ∀ p, AEMeasurable (Y p) μ) (k : ℕ) :
     AEMeasurable (arrayColumn Y k) μ :=
   AEMeasurable.of_eval fun a => hY (a, k)
 
+omit [Countable ι] in
+/-- **Entry measurability from column measurability**, the converse of
+`aemeasurable_arrayColumn`: an entry is a coordinate of its column. -/
+theorem aemeasurable_entry_of_aemeasurable_arrayColumn
+    (h : ∀ k, AEMeasurable (arrayColumn Y k) μ) (p : ι × ℕ) : AEMeasurable (Y p) μ :=
+  (measurable_pi_apply p.1).comp_aemeasurable (h p.2)
+
 /-- **Each row of a row exchangeable array is fully exchangeable.** -/
 theorem RowExchangeable.fullyExchangeable_row (h : RowExchangeable μ Y)
     (hY : ∀ p, AEMeasurable (Y p) μ) (a : ι) :
@@ -358,12 +365,14 @@ The proof is the second-moment computation described in the module docstring: th
 that make up the mean square of the difference are, by the two-block pattern lemma, one and the
 same array probability. -/
 theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangeable μ Y)
-    (hY : ∀ p, AEMeasurable (Y p) μ) (hlam : MixedIIDWith μ (arrayColumn Y) lam)
+    (hlam : MixedIIDWith μ (arrayColumn Y) lam)
     {F G : Finset ι} (hFG : Disjoint F G) {B : ι → Set α}
     (hB : ∀ a, a ∈ F ∨ a ∈ G → MeasurableSet (B a)) :
     ∀ᵐ ω ∂μ, (lam ω : Measure (ι → α)) (Set.pi (↑F ∪ ↑G) B) =
       (lam ω : Measure (ι → α)) (Set.pi (↑F) B) * (lam ω : Measure (ι → α)) (Set.pi (↑G) B) := by
   classical
+  have hY : ∀ p, AEMeasurable (Y p) μ :=
+    aemeasurable_entry_of_aemeasurable_arrayColumn hlam.aemeasurable
   set C : Set (ι → α) := Set.pi (↑F) B with hC
   set D : Set (ι → α) := Set.pi (↑G) B with hD
   have hCm : MeasurableSet C := MeasurableSet.pi F.countable_toSet fun a ha =>
@@ -591,7 +600,7 @@ theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangea
 gives to the box `{x | ∀ a ∈ F, x a ∈ B a}` is almost surely the product of the masses it gives to
 the individual rows. -/
 theorem RowExchangeable.ae_apply_pi_eq_prod [IsFiniteMeasure μ] (h : RowExchangeable μ Y)
-    (hY : ∀ p, AEMeasurable (Y p) μ) (hlam : MixedIIDWith μ (arrayColumn Y) lam)
+    (hlam : MixedIIDWith μ (arrayColumn Y) lam)
     {B : ι → Set α} (F : Finset ι) (hB : ∀ a ∈ F, MeasurableSet (B a)) :
     ∀ᵐ ω ∂μ, (lam ω : Measure (ι → α)) (Set.pi (↑F) B) =
       ∏ a ∈ F, (lam ω : Measure (ι → α)) {x : ι → α | x a ∈ B a} := by
@@ -602,7 +611,7 @@ theorem RowExchangeable.ae_apply_pi_eq_prod [IsFiniteMeasure μ] (h : RowExchang
       have hdisj : Disjoint ({a} : Finset ι) s := by simpa using ha
       have hcoe : ((↑(insert a s) : Set ι)) = (↑({a} : Finset ι) : Set ι) ∪ (↑s : Set ι) := by
         simp
-      filter_upwards [h.ae_apply_pi_union (B := B) hY hlam hdisj
+      filter_upwards [h.ae_apply_pi_union (B := B) hlam hdisj
         (fun b hb => hB b (by
           simpa only [Finset.mem_singleton, Finset.mem_insert] using hb)),
         ih (fun b hb => hB b (Finset.mem_insert_of_mem hb))] with ω h1 h2
@@ -624,8 +633,7 @@ column's contribution into one factor per row it constrains. Injectivity enters 
 cells in a single column pairwise distinct as rows, and it makes the two nested products a single
 product over cells. -/
 theorem RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod [IsFiniteMeasure μ]
-    (h : RowExchangeable μ Y) (hY : ∀ p, AEMeasurable (Y p) μ)
-    (hlam : MixedIIDWith μ (arrayColumn Y) lam)
+    (h : RowExchangeable μ Y) (hlam : MixedIIDWith μ (arrayColumn Y) lam)
     {r : ℕ} {c : Fin r → ι × ℕ} (hc : Function.Injective c)
     {B : Fin r → Set α} (hB : ∀ t, MeasurableSet (B t)) :
     μ {ω | ∀ t, Y (c t) ω ∈ B t} =
@@ -680,7 +688,7 @@ theorem RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod [IsFiniteMeas
       rw [htarget_eq t] at this
       rwa [arrayColumn_apply, hcell t] at this
   rw [hset, ← blockLaw_apply_rectangle μ (arrayColumn Y) (fun j : Fin m => (j : ℕ))
-      (fun j => aemeasurable_arrayColumn hY (j : ℕ)) _ hD_meas,
+      (fun j => hlam.aemeasurable (j : ℕ)) _ hD_meas,
     hlam.blockLaw_univ_pi (fun j : Fin m => (j : ℕ)) Fin.val_injective _ hD_meas]
   -- Split each column's mass into one factor per constrained row, then merge the two products.
   refine lintegral_congr_ae ?_
@@ -688,7 +696,7 @@ theorem RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod [IsFiniteMeas
       (lam ω : Measure (ι → α)) (Set.pi (↑(F j)) fun a => target a j) =
         ∏ a ∈ F j, (lam ω : Measure (ι → α)) {v : ι → α | v a ∈ target a j} := by
     rw [ae_all_iff]
-    exact fun j => h.ae_apply_pi_eq_prod hY hlam (B := fun a => target a j) (F j)
+    exact fun j => h.ae_apply_pi_eq_prod hlam (B := fun a => target a j) (F j)
       fun a _ => htarget_meas a j
   filter_upwards [hfac] with ω hω
   calc ∏ j : Fin m, (lam ω : Measure (ι → α)) (Set.pi (↑(F j)) fun a => target a j)
@@ -722,7 +730,7 @@ theorem RowExchangeable.exists_directing_pi_eq_prod [StandardBorelSpace α] [Non
   obtain ⟨lam, hlam⟩ := ConditionallyIID.exists_directing
     (deFinetti (X := arrayColumn Y) (aemeasurable_arrayColumn hY) (h.exchangeable_arrayColumn hY))
   exact ⟨lam, hlam, fun B F hB =>
-    h.ae_apply_pi_eq_prod hY (mixedIIDWith_of_conditionallyIIDWith hlam) F hB⟩
+    h.ae_apply_pi_eq_prod (mixedIIDWith_of_conditionallyIIDWith hlam) F hB⟩
 
 end Factorization
 
