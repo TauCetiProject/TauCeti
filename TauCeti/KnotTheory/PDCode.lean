@@ -195,7 +195,7 @@ def mirror (D : PDCode n) : PDCode n where
 @[simp] theorem mirror_overPair (D : PDCode n) (i : Fin n) :
     D.mirror.overPair i = !D.overPair i := by simp [mirror]
 /-- Reflection leaves every labelled crossing slot unchanged. -/
-@[simp] theorem mirror_crossing (D : PDCode n) (i : Fin n) (slot : Fin 4) :
+theorem mirror_crossing (D : PDCode n) (i : Fin n) (slot : Fin 4) :
     D.mirror.crossing i slot = D.crossing i slot := by simp [mirror, crossing]
 
 /-- Reflection interchanges over- and under-slots. -/
@@ -279,7 +279,6 @@ def relabel (D : PDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (D.relabel half cross).overPair i = D.overPair (cross.symm i) := by simp [relabel]
 
 /-- Relabelling transports every crossing block together with its slot order. -/
-@[simp]
 theorem relabel_crossing (D : PDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (cross : Equiv.Perm (Fin n)) (i : Fin n) (slot : Fin 4) :
     (D.relabel half cross).crossing i slot = half (D.crossing (cross.symm i) slot) := by
@@ -416,19 +415,19 @@ def mirror (D : OrientedPDCode n) : OrientedPDCode n where
 @[simp] theorem mirror_toPDCode (D : OrientedPDCode n) :
     D.mirror.toPDCode = D.toPDCode.mirror := by simp [mirror]
 /-- Reflection leaves the half-edge order unchanged. -/
-@[simp] theorem mirror_halfEdge (D : OrientedPDCode n) : D.mirror.halfEdge = D.halfEdge := by
+theorem mirror_halfEdge (D : OrientedPDCode n) : D.mirror.halfEdge = D.halfEdge := by
   simp [mirror]
 /-- Reflection leaves the arc matching unchanged. -/
-@[simp] theorem mirror_edgePair (D : OrientedPDCode n) : D.mirror.edgePair = D.edgePair := by
+theorem mirror_edgePair (D : OrientedPDCode n) : D.mirror.edgePair = D.edgePair := by
   simp [mirror]
 /-- Reflection preserves the orientation of every arc. -/
 @[simp] theorem mirror_orientation (D : OrientedPDCode n) :
     D.mirror.orientation = D.orientation := by simp [mirror]
 /-- Reflection complements each over-strand choice. -/
-@[simp] theorem mirror_overPair (D : OrientedPDCode n) (i : Fin n) :
+theorem mirror_overPair (D : OrientedPDCode n) (i : Fin n) :
     D.mirror.overPair i = !D.overPair i := by simp [mirror]
 /-- Reflection leaves every labelled crossing slot unchanged. -/
-@[simp] theorem mirror_crossing (D : OrientedPDCode n) (i : Fin n) (slot : Fin 4) :
+theorem mirror_crossing (D : OrientedPDCode n) (i : Fin n) (slot : Fin 4) :
     D.mirror.crossing i slot = D.crossing i slot := by simp [mirror, crossing]
 /-- Reflection preserves the oriented crossing-free components. -/
 @[simp] theorem mirror_crossinglessComponents (D : OrientedPDCode n) :
@@ -477,11 +476,11 @@ def relabel (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (cross : Equiv.Perm (Fin n)) : (D.relabel half cross).toPDCode =
       D.toPDCode.relabel half cross := by simp [relabel]
 /-- Relabelling transports the half-edge order between the new finite names. -/
-@[simp] theorem relabel_halfEdge (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
+theorem relabel_halfEdge (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (cross : Equiv.Perm (Fin n)) : (D.relabel half cross).halfEdge =
       (PDCode.crossingBlockPerm cross).equivCongr half D.halfEdge := by simp [relabel]
 /-- Relabelling transports the perfect matching along the half-edge permutation. -/
-@[simp] theorem relabel_edgePair (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
+theorem relabel_edgePair (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (cross : Equiv.Perm (Fin n)) : (D.relabel half cross).edgePair =
       PerfectMatching.congr half D.edgePair := by simp [relabel]
 /-- Relabelling transports arc orientations along the half-edge permutation. -/
@@ -489,7 +488,7 @@ def relabel (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) (h : Fin (4 * n)) :
     (D.relabel half cross).orientation h = D.orientation (half.symm h) := by simp [relabel]
 /-- Relabelling reads the over-strand choice at the old crossing name. -/
-@[simp] theorem relabel_overPair (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
+theorem relabel_overPair (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (cross : Equiv.Perm (Fin n)) (i : Fin n) :
     (D.relabel half cross).overPair i = D.overPair (cross.symm i) := by simp [relabel]
 /-- Relabelling leaves crossing-free oriented components unchanged. -/
@@ -498,7 +497,6 @@ def relabel (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (D.relabel half cross).crossinglessComponents = D.crossinglessComponents := by simp [relabel]
 
 /-- Relabelling transports every oriented crossing block together with its slot order. -/
-@[simp]
 theorem relabel_crossing (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (cross : Equiv.Perm (Fin n)) (i : Fin n) (slot : Fin 4) :
     (D.relabel half cross).crossing i slot = half (D.crossing (cross.symm i) slot) :=
@@ -656,7 +654,6 @@ theorem OrientedPDCode.mirror_eq_self_of_zero_crossings (D : OrientedPDCode 0) :
   · simp
 
 /-- Reflection fixes the empty PD-code. -/
-@[simp]
 theorem orientedPDCodeEmpty_mirror :
     orientedPDCodeEmpty.mirror = orientedPDCodeEmpty :=
   OrientedPDCode.mirror_eq_self_of_zero_crossings _
