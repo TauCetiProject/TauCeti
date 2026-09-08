@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Borel.Existence
+public import TauCeti.Algebra.AlgebraicGroup.Borel.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Semisimple
 import TauCeti.Algebra.AlgebraicGroup.Borel.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Connected.Product
