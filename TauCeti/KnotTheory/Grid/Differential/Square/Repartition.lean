@@ -75,6 +75,10 @@ theorem symm (h : D.IsRepartition E) : E.IsRepartition D where
 
 /-- Diagonal reflection preserves a repartition of two-step rectangle domains. -/
 theorem transpose (h : D.IsRepartition E) : D.transpose.IsRepartition E.transpose := by
+  -- `GridRectangleBetween.squares_transpose` is the reflection statement, but it is phrased with
+  -- `GridRectangle.squares`. Neither that definition nor `GridRectangle.coveredSquares` is
+  -- exposed outside its own module, so the two are not interchangeable by definitional equality
+  -- here; the local bridge below carries that lemma across their public defining equations.
   have transpose_coveredSquares {a b : GridState n} (R : GridRectangleBetween a b) :
       R.transpose.toGridRectangle.coveredSquares =
         R.toGridRectangle.coveredSquares.image Prod.swap := by
