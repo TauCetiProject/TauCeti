@@ -23,6 +23,8 @@ weights and avoidance of marked squares without requiring the two cuts to be dis
 
 ## Main results
 
+* `TauCeti.GridRectangleDecomposition.IsRepartition.transpose_iff`: diagonal reflection preserves
+  and reflects repartitions.
 * `TauCeti.GridRectangleDecomposition.IsRepartition.prod_coveredSquares_mul_prod_coveredSquares`:
   a repartition preserves the product of any multiplicative weight on squares.
 * `TauCeti.GridRectangleDecomposition.IsRepartition.OMonomial_mul_OMonomial`: a repartition
@@ -70,6 +72,50 @@ theorem symm (h : D.IsRepartition E) : E.IsRepartition D where
   disjoint_coveredSquares_left := h.disjoint_coveredSquares_right
   disjoint_coveredSquares_right := h.disjoint_coveredSquares_left
   coveredSquares_union_eq := h.coveredSquares_union_eq.symm
+
+/-- Diagonal reflection preserves a repartition of two-step rectangle domains. -/
+theorem transpose (h : D.IsRepartition E) : D.transpose.IsRepartition E.transpose where
+  disjoint_coveredSquares_left := by
+    have hfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_first
+    have hsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_second
+    simp only [GridRectangleBetween.coveredSquares_transpose] at hfirst hsecond
+    rw [hfirst, hsecond, Finset.disjoint_image Prod.swap_injective]
+    exact h.disjoint_coveredSquares_left
+  disjoint_coveredSquares_right := by
+    have hfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_first
+    have hsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_second
+    simp only [GridRectangleBetween.coveredSquares_transpose] at hfirst hsecond
+    rw [hfirst, hsecond, Finset.disjoint_image Prod.swap_injective]
+    exact h.disjoint_coveredSquares_right
+  coveredSquares_union_eq := by
+    have hEfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_first
+    have hEsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_second
+    have hDfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_first
+    have hDsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_second
+    simp only [GridRectangleBetween.coveredSquares_transpose] at hEfirst hEsecond hDfirst hDsecond
+    rw [hEfirst, hEsecond, hDfirst, hDsecond, ← Finset.image_union, ← Finset.image_union,
+      h.coveredSquares_union_eq]
+
+/-- Two decompositions are repartitions exactly when their diagonal reflections are. -/
+theorem transpose_iff : D.transpose.IsRepartition E.transpose ↔ D.IsRepartition E := by
+  constructor
+  · intro h
+    have hDfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_first
+    have hDsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_second
+    have hEfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_first
+    have hEsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_second
+    simp only [GridRectangleBetween.coveredSquares_transpose] at hDfirst hDsecond hEfirst hEsecond
+    refine ⟨?_, ?_, ?_⟩
+    · have hleft := h.disjoint_coveredSquares_left
+      rw [hDfirst, hDsecond, Finset.disjoint_image Prod.swap_injective] at hleft
+      exact hleft
+    · have hright := h.disjoint_coveredSquares_right
+      rw [hEfirst, hEsecond, Finset.disjoint_image Prod.swap_injective] at hright
+      exact hright
+    · apply Finset.image_injective Prod.swap_injective
+      simpa only [Finset.image_union, hEfirst, hEsecond, hDfirst, hDsecond] using
+        h.coveredSquares_union_eq
+  · exact fun h => h.transpose
 
 /-- A repartition preserves the product of any multiplicative weight on squares: both
 decompositions partition the same finite set of covered squares. -/

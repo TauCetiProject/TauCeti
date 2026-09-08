@@ -46,6 +46,8 @@ everything it feeds.
   exactly when their covered columns or their covered rows are disjoint.
 * `TauCeti.GridRectangle.card_coveredSquares`: the number of covered squares is the product of the
   two arc lengths.
+* `TauCeti.GridRectangle.coveredSquares_transpose`: diagonal reflection exchanges the coordinates
+  of every covered square.
 
 ## References
 
@@ -159,6 +161,28 @@ theorem card_coveredSquares :
     R.coveredSquares.card = R.coveredColumns.card * R.coveredRows.card := by
   simp [coveredSquares, Finset.card_product]
 
+/-- Diagonal reflection sends every covered square of a rectangle to the square with its
+coordinates exchanged. -/
+theorem coveredSquares_transpose :
+    R.transpose.coveredSquares = R.coveredSquares.image Prod.swap := by
+  simp only [coveredSquares_def, coveredColumns_def, coveredRows_def, transpose_left,
+    transpose_right, transpose_bottom, transpose_top]
+  exact (Finset.image_swap_product _ _).symm
+
 end GridRectangle
+
+namespace GridRectangleBetween
+
+variable {n : ℕ} {x y : GridState n}
+
+/-- Diagonal reflection sends every covered square of an oriented rectangle to the square with
+its coordinates exchanged. -/
+theorem coveredSquares_transpose (R : GridRectangleBetween x y) :
+    R.transpose.toGridRectangle.coveredSquares =
+      R.toGridRectangle.coveredSquares.image Prod.swap := by
+  rw [transpose_toGridRectangle]
+  exact R.toGridRectangle.coveredSquares_transpose
+
+end GridRectangleBetween
 
 end TauCeti
