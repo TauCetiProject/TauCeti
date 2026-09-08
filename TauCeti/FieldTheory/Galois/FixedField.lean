@@ -129,8 +129,8 @@ theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) 
       simpa only [MulAut.conj_apply, AlgEquiv.mul_apply, AlgEquiv.coe_inv,
         AlgEquiv.apply_symm_apply] using hx)
   · rintro ⟨y, hy, rfl⟩ g ⟨h, hh, rfl⟩
-    change (σ * h * σ⁻¹) (σ y) = σ y
-    rw [AlgEquiv.mul_apply, AlgEquiv.mul_apply, AlgEquiv.coe_inv, AlgEquiv.symm_apply_apply]
+    rw [MonoidHom.coe_coe, MulAut.conj_apply, AlgEquiv.mul_apply, AlgEquiv.mul_apply,
+      AlgEquiv.coe_inv, AlgEquiv.toAlgHom_apply, AlgEquiv.symm_apply_apply]
     exact congrArg σ (hy h hh)
 
 end Subgroup
