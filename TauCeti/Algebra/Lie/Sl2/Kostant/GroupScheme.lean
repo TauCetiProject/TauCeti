@@ -294,10 +294,10 @@ noncomputable def rankOneTorusMatrix {A : Type*} [CommRing A] :
     ((Fin 1 → Aˣ) →* Matrix.GeneralLinearGroup (Fin 2) A) :=
   kostantTorusMatrix M b rankOneWeight
 
-/-- The named rank-one torus matrix is the specialization of the general Kostant torus matrix. -/
-theorem rankOneTorusMatrix_eq_kostantTorusMatrix {A : Type*} [CommRing A]
-    (s : Fin 1 → Aˣ) :
-    rankOneTorusMatrix s = kostantTorusMatrix M b rankOneWeight s := by
+/-- The named rank-one torus homomorphism is the specialization of the general Kostant torus
+homomorphism. -/
+theorem rankOneTorusMatrix_def {A : Type*} [CommRing A] :
+    rankOneTorusMatrix (A := A) = kostantTorusMatrix M b rankOneWeight := by
   rw [rankOneTorusMatrix]
 
 /-- A rank-one torus point is the diagonal matrix `diag(s, s⁻¹)`. -/
