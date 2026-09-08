@@ -78,9 +78,7 @@ the roadmap fixes.
 
 `NormalLayer.subgroupGround` is the correspondence-theorem preimage of `H` — the subgroup
 `QuotientGroup.comapMk'OrderIso` attaches to `H` — pushed from `U` into the ambient group `G`, so
-that it can be an `OpenSubgroup G` and be compared with the other subgroups of a formation. It is
-spelled with `Subgroup.comap` and `Subgroup.map` directly, because only that subgroup, and not the
-order isomorphism, is used.
+that it can be an `OpenSubgroup G` and be compared with the other subgroups of a formation.
 
 ## References
 
@@ -150,18 +148,18 @@ theorem relativeDegree_pos (T : LayerRestriction small big) : 0 < T.relativeDegr
 (`galHom_injective`), and its image is the subgroup of `U/V` that the intermediate subgroup `U'`
 cuts out. -/
 def galHom (T : LayerRestriction small big) : small.Gal →* big.Gal :=
-  QuotientGroup.map small.relativeTop big.relativeTop
-    (Subgroup.inclusion T.ground_toSubgroup_le) fun _w hw ↦
-      Subgroup.mem_comap.2 <| Subgroup.mem_subgroupOf.2 <| by
-        rw [← T.same_top_toSubgroup]
-        exact Subgroup.mem_subgroupOf.1 hw
+  @QuotientGroup.quotientMapSubgroupOfOfLe G _ small.top.toSubgroup small.ground.toSubgroup
+    big.top.toSubgroup big.ground.toSubgroup small.normal big.normal
+    T.same_top_toSubgroup.le T.ground_toSubgroup_le
 
 /-- The homomorphism of Galois groups is induced by the inclusion of ground subgroups. -/
 @[simp]
 theorem galHom_mk (T : LayerRestriction small big) (w : small.ground) :
     T.galHom (QuotientGroup.mk w) =
       QuotientGroup.mk (Subgroup.inclusion T.ground_toSubgroup_le w) :=
-  rfl
+  @QuotientGroup.quotientMapSubgroupOfOfLe_mk G _ small.top.toSubgroup
+    small.ground.toSubgroup big.top.toSubgroup big.ground.toSubgroup small.normal big.normal
+    T.same_top_toSubgroup.le T.ground_toSubgroup_le w
 
 /-- **The Galois group of the smaller layer of a restriction embeds in the Galois group of the
 bigger one.** Both are quotients of subgroups of `U` by the *same* top subgroup `V`. -/
@@ -186,7 +184,11 @@ def repIso (T : LayerRestriction small big) (F : Formation G) :
   Rep.mkIso <| Representation.Equiv.mk
     (LinearEquiv.ofEq _ _ (congrArg F.level T.same_top)) fun γ ↦ by
       induction γ using QuotientGroup.induction_on with
-      | H w => rfl
+      | H w =>
+        simp only [MonoidHom.coe_comp, Function.comp_apply]
+        rw [galHom_mk]
+        ext x
+        rfl
 
 /-- The identification of coefficient modules moves no element of the ambient module. -/
 theorem repIso_hom_apply_coe (T : LayerRestriction small big) (F : Formation G)
@@ -205,7 +207,7 @@ variable (L : NormalLayer G) (H : Subgroup L.Gal)
 /-- The intermediate subgroup `V ≤ W ≤ U` attached to a subgroup `H` of the Galois group `U ⧸ V`:
 the preimage of `H` in `U`, read inside `G`. -/
 def subgroupGround : Subgroup G :=
-  (H.comap (QuotientGroup.mk' L.relativeTop)).map L.ground.toSubgroup.subtype
+  ((QuotientGroup.comapMk'OrderIso L.relativeTop H).1).map L.ground.toSubgroup.subtype
 
 /-- Membership in the intermediate subgroup: an element of `U` lies in it exactly when its class
 in the Galois group lies in `H`. -/
@@ -267,11 +269,14 @@ theorem range_galHom_subgroupRestriction : (L.subgroupRestriction H).galHom.rang
     induction δ using QuotientGroup.induction_on with
     | H w =>
       obtain ⟨_, hmem⟩ := (L.mem_subgroupGround H).1 w.2
-      exact hmem
+      rw [LayerRestriction.galHom_mk]
+      exact congrArg (fun x : L.ground ↦ (QuotientGroup.mk x : L.Gal)) (Subtype.ext rfl) ▸ hmem
   · intro hγ
     induction γ using QuotientGroup.induction_on with
     | H u =>
-      exact ⟨QuotientGroup.mk ⟨(u : G), (L.mem_subgroupGround H).2 ⟨u.2, hγ⟩⟩, rfl⟩
+      refine ⟨QuotientGroup.mk ⟨(u : G), (L.mem_subgroupGround H).2 ⟨u.2, hγ⟩⟩, ?_⟩
+      rw [LayerRestriction.galHom_mk]
+      congr 1
 
 /-- **The Galois group of the layer of `H` is `H`.** -/
 def subgroupGalEquiv : (L.subgroupLayer H).Gal ≃* H :=
