@@ -42,12 +42,9 @@ submodule.
   `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.nonempty_iso_sheaf_of_linearlyEquivalent`: linearly
   equivalent divisors have isomorphic sheaves.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "Divisors on a curve: Weil
-divisors `⊕_x ℤ` and Cartier divisors; the dictionaries `Cartier ≃ line bundles` and (smooth
-curve) `Weil ≃ Cartier`; principal divisors; `Cl(X) ≅ Pic X`". It supplies the map from divisors
-to sheaves and the invariance of that map under linear equivalence, which is the first half of
-`Cl(X) ≅ Pic X`; that `𝒪_X(D)` is invertible, and that the map is a bijection onto `Pic X`, are
-left to later work and need the local principality of `D`.
+For a locally principal divisor, the resulting sheaf is invertible; see
+`SchemeWeilDivisor.IsLocallyPrincipal.isInvertible_sheaf` in
+`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/LocalTriviality.lean`.
 
 No formalization is vendored. The construction reuses Mathlib's `AlgebraicGeometry.Scheme.ord`
 with its order-of-vanishing lemmas, `SheafOfModules.Submodule`, and the sheaf `𝒦_X` and its
@@ -172,6 +169,7 @@ lemma sections_map {D : SchemeWeilDivisor X} {U V : X.Opens} (i : V ⟶ U)
 of the rational functions whose divisor is at least `-D` at every codimension-one point of `U`.
 
 The membership condition is local, so this really is a submodule of the *sheaf* `𝒦_X`. -/
+@[expose]
 def submodule (D : SchemeWeilDivisor X) : (Scheme.rationalFunctions X).Submodule where
   obj U := sections D U.unop
   map i := fun {_} hs ↦ sections_map i.unop hs
@@ -193,14 +191,9 @@ lemma submodule_obj (D : SchemeWeilDivisor X) (U : X.Opens) :
   (rfl)
 
 /-- The sheaf `𝒪_X(D)` of `𝒪_X`-modules attached to a Weil divisor `D`. -/
+@[expose]
 def sheaf (D : SchemeWeilDivisor X) : X.Modules :=
   (submodule D).toSheafOfModules
-
-/-- The divisor sheaf is the sheaf of modules associated to its displayed submodule of rational
-functions. -/
-lemma sheaf_def (D : SchemeWeilDivisor X) :
-    sheaf D = (submodule D).toSheafOfModules :=
-  (rfl)
 
 /-- The sections of `𝒪_X(D)` over `U` are the subtype cut out by `sections D U`. -/
 @[simp]
@@ -211,6 +204,20 @@ lemma sheaf_val_obj (D : SchemeWeilDivisor X) (U : X.Opens) :
 /-- The inclusion `𝒪_X(D) ⟶ 𝒦_X`. -/
 def sheafι (D : SchemeWeilDivisor X) : sheaf D ⟶ Scheme.rationalFunctions X :=
   (submodule D).ι
+
+/-- The inclusion of a divisor sheaf sends a section to its underlying rational function. -/
+@[simp]
+lemma sheafι_app_apply (D : SchemeWeilDivisor X) (U : X.Opens) (t : Γ(sheaf D, U)) :
+    Scheme.Modules.Hom.app (sheafι D) U t = t.val :=
+  (rfl)
+
+/-- Restricting the divisor-sheaf inclusion to an over-site still sends each section to its
+underlying rational function. -/
+@[simp]
+lemma sheafι_over_app_apply (D : SchemeWeilDivisor X) (U : X.Opens) (V : (Over U)ᵒᵖ)
+    (t : ((sheaf D).over U).val.obj V) :
+    ((sheafι D).over U).val.app V t = t.val :=
+  (rfl)
 
 /-- The inclusion `𝒪_X(D) ⟶ 𝒦_X` is injective on sections over every open subset. -/
 lemma sheafι_app_injective (D : SchemeWeilDivisor X) (U : X.Opens) :
