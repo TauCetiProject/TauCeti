@@ -7,7 +7,8 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Primitive
 public import Mathlib.GroupTheory.GroupAction.SubMulAction.OfStabilizer
-import TauCeti.GroupTheory.Subgroup.Cover
+import Mathlib.Algebra.Group.Subgroup.Ker
+import Mathlib.Order.LatticeIntervals
 
 /-!
 # Primitive actions from extremal blocks
@@ -71,8 +72,13 @@ theorem _root_.MulAction.IsBlock.isPreprimitive_stabilizer_of_isAtom
   have hstab_le : stabilizer G a ≤ stabilizer G B := hB.stabilizer_le ha
   have hcover : stabilizer G a ⋖ stabilizer G B :=
     (hB.isAtom_iff_stabilizer_covBy ha).mp hmin
+  have hcoatom_Iic : IsCoatom
+      (⟨stabilizer G a, hstab_le⟩ : Set.Iic (stabilizer G B)) :=
+    (covBy_iff_coatom_Iic hcover.le).mp hcover
+  let _ : OrderTop { H' : Subgroup G // H' ≤ stabilizer G B } := Set.Iic.orderTop
   have hcoatom : IsCoatom ((stabilizer G a).subgroupOf (stabilizer G B)) :=
-    hcover.isCoatom_subgroupOf
+    (OrderIso.isCoatom_iff (Subgroup.MapSubtype.orderIso (stabilizer G B)).symm _).mpr
+      hcoatom_Iic
   have hB_ne : B ≠ {a} := by
     intro h
     apply hmin.ne_bot
@@ -118,10 +124,8 @@ elements are exactly the sets `g • B`. -/
 theorem _root_.MulAction.IsBlock.isPreprimitive_orbit_of_isCoatom
     (hB : IsBlock G B) (ha : a ∈ B)
     (hmax : IsCoatom (⟨B, ha, hB⟩ : BlockMem G a)) :
-    IsPreprimitive G
-      (orbitRel.Quotient.orbit (Quotient.mk'' B : orbitRel.Quotient G (Set X))) := by
-  let ω : orbitRel.Quotient G (Set X) := Quotient.mk'' B
-  let b : orbitRel.Quotient.orbit ω := ⟨B, mem_orbit_self B⟩
+    IsPreprimitive G (orbit G B) := by
+  let b : orbit G B := ⟨B, mem_orbit_self B⟩
   have hcoatom : IsCoatom (stabilizer G B) :=
     (hB.isCoatom_iff_isCoatom_stabilizer ha).mp hmax
   have horbit_nontrivial : (orbit G B).Nontrivial := by
@@ -132,8 +136,8 @@ theorem _root_.MulAction.IsBlock.isPreprimitive_orbit_of_isCoatom
     intro g _
     rw [mem_stabilizer_iff]
     exact (subsingleton_orbit_iff_mem_fixedPoints.mp hsub) g
-  let _ : Nontrivial (orbitRel.Quotient.orbit ω) :=
-    Set.Nontrivial.coe_sort (by simpa [ω] using horbit_nontrivial)
+  let _ : Nontrivial (orbit G B) :=
+    Set.Nontrivial.coe_sort horbit_nontrivial
   rw [← isCoatom_stabilizer_iff_preprimitive G b]
   convert hcoatom using 1
   ext g
