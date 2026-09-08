@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Fin.Basic
 public import Mathlib.Logic.Equiv.Fin.Basic
+public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Tactic
 
 /-!
@@ -58,7 +59,7 @@ namespace OrientedPDCode
 
 /-- The slot opposite a given slot in the cyclic order at a crossing. -/
 @[expose] def oppositeCrossingSlot : Equiv.Perm (Fin 4) :=
-  Equiv.swap 0 2 * Equiv.swap 1 3
+  finCycle 2
 
 end OrientedPDCode
 
@@ -76,15 +77,15 @@ structure OrientedPDCode (n : ℕ) where
   /-- The involution pairing the two visits of each arc. -/
   edgePair : Equiv.Perm (Fin (4 * n))
   /-- Pairing twice returns to the original visit. -/
-  edgePair_sq : ∀ h, edgePair (edgePair h) = h
+  edgePair_apply_edgePair : ∀ h, edgePair (edgePair h) = h
   /-- No visit is paired with itself. -/
-  edgePair_ne : ∀ h, edgePair h ≠ h
+  edgePair_ne_self : ∀ h, edgePair h ≠ h
   /-- Whether an arc points away from its incident crossing (`true`) or toward it (`false`). -/
   orientation : Fin (4 * n) → Bool
   /-- The direction on an arc reverses at its paired visit. -/
-  orientation_pair : ∀ h, orientation (edgePair h) = !orientation h
+  orientation_edgePair : ∀ h, orientation (edgePair h) = !orientation h
   /-- The orientation reverses between the opposite slots belonging to each local strand. -/
-  orientation_opposite : ∀ i slot,
+  orientation_oppositeCrossingSlot : ∀ i slot,
     orientation (halfEdge (OrientedPDCode.crossingSlotEquiv n
       (i, OrientedPDCode.oppositeCrossingSlot slot))) =
       !orientation (halfEdge (OrientedPDCode.crossingSlotEquiv n (i, slot)))
@@ -92,6 +93,9 @@ structure OrientedPDCode (n : ℕ) where
   crossinglessComponents : Multiset Bool
   /-- Which of the two opposite-slot strands is over at each crossing. -/
   overPair : Fin n → Bool
+
+attribute [simp] OrientedPDCode.edgePair_apply_edgePair
+  OrientedPDCode.orientation_edgePair OrientedPDCode.orientation_oppositeCrossingSlot
 
 namespace OrientedPDCode
 
@@ -129,13 +133,6 @@ theorem isOver_slots (D : OrientedPDCode n) (i : Fin n) :
       D.isOver i 0 = !D.isOver i 1 := by
   cases h : D.overPair i <;> simp [isOver, h]
 
-/-- The orientation reverses across each local strand at a crossing. -/
-@[simp]
-theorem orientation_oppositeCrossingSlot (D : OrientedPDCode n) (i : Fin n) (slot : Fin 4) :
-    D.orientation (D.halfEdge (crossingSlotEquiv n (i, oppositeCrossingSlot slot))) =
-      !D.orientation (D.crossing i slot) :=
-  D.orientation_opposite i slot
-
 /-- The sign of an oriented crossing, with slots read counterclockwise in the oriented plane.
 
 It is positive exactly when the parity of the outgoing directions in slots `0` and `1` agrees
@@ -149,38 +146,15 @@ theorem crossingSign_eq_one_or_neg_one (D : OrientedPDCode n) (i : Fin n) :
     D.crossingSign i = 1 ∨ D.crossingSign i = -1 :=
   by simp only [crossingSign]; split <;> simp_all
 
-/-- Pairing an arc visit twice returns to that visit. -/
-@[simp]
-theorem edgePair_apply_edgePair (D : OrientedPDCode n) (h : Fin (4 * n)) :
-    D.edgePair (D.edgePair h) = h :=
-  D.edgePair_sq h
-
-/-- The pairing of arc visits is injective. -/
-theorem edgePair_injective (D : OrientedPDCode n) :
-    Function.Injective D.edgePair := by
-  intro a b hab
-  rw [← D.edgePair_sq a, ← D.edgePair_sq b, hab]
-
-/-- An arc visit is never paired with itself. -/
-theorem edgePair_ne_self (D : OrientedPDCode n) (h : Fin (4 * n)) :
-    D.edgePair h ≠ h :=
-  D.edgePair_ne h
-
-/-- The two visits of an oriented arc have opposite directions. -/
-@[simp]
-theorem orientation_edgePair (D : OrientedPDCode n) (h : Fin (4 * n)) :
-    D.orientation (D.edgePair h) = !D.orientation h :=
-  D.orientation_pair h
-
 /-- Reflect a diagram by swapping the over- and under-strands while preserving its oriented arcs. -/
 @[expose] def mirror (D : OrientedPDCode n) : OrientedPDCode n where
   halfEdge := D.halfEdge
   edgePair := D.edgePair
-  edgePair_sq := D.edgePair_sq
-  edgePair_ne := D.edgePair_ne
+  edgePair_apply_edgePair := D.edgePair_apply_edgePair
+  edgePair_ne_self := D.edgePair_ne_self
   orientation := D.orientation
-  orientation_pair := D.orientation_pair
-  orientation_opposite := D.orientation_opposite
+  orientation_edgePair := D.orientation_edgePair
+  orientation_oppositeCrossingSlot := D.orientation_oppositeCrossingSlot
   crossinglessComponents := D.crossinglessComponents
   overPair := fun i => !D.overPair i
 
@@ -222,8 +196,7 @@ theorem mirror_mirror (D : OrientedPDCode n) : D.mirror.mirror = D := by
 
 /-- The permutation of half-edge positions induced by a permutation of crossing blocks. -/
 @[expose] def crossingBlockPerm (cross : Equiv.Perm (Fin n)) : Equiv.Perm (Fin (4 * n)) :=
-  (crossingSlotEquiv n).symm.trans
-    ((cross.prodCongr (Equiv.refl (Fin 4))).trans (crossingSlotEquiv n))
+  (crossingSlotEquiv n).permCongr (cross.prodCongr (.refl _))
 
 /-- A crossing-block permutation changes the crossing coordinate and preserves the slot. -/
 @[simp]
@@ -233,14 +206,31 @@ theorem crossingBlockPerm_apply_crossingSlotEquiv (cross : Equiv.Perm (Fin n))
       crossingSlotEquiv n (cross i, slot) := by
   simp [crossingBlockPerm]
 
-/-- Crossing-block permutations respect composition. -/
-theorem crossingBlockPerm_mul (cross₁ cross₂ : Equiv.Perm (Fin n)) :
-    crossingBlockPerm (cross₁ * cross₂) = crossingBlockPerm cross₁ * crossingBlockPerm cross₂ := by
+/-- The inverse crossing-block permutation changes only the crossing coordinate. -/
+@[simp]
+theorem crossingBlockPerm_symm_apply_crossingSlotEquiv (cross : Equiv.Perm (Fin n))
+    (i : Fin n) (slot : Fin 4) :
+    (crossingBlockPerm cross).symm (crossingSlotEquiv n (i, slot)) =
+      crossingSlotEquiv n (cross.symm i, slot) := by
+  apply (crossingBlockPerm cross).injective
+  simp
+
+/-- The identity crossing permutation induces the identity block permutation. -/
+@[simp]
+theorem crossingBlockPerm_refl :
+    crossingBlockPerm (Equiv.refl (Fin n)) = Equiv.refl _ := by
   apply Equiv.ext
   intro h
   rw [← (crossingSlotEquiv n).apply_symm_apply h]
   rcases (crossingSlotEquiv n).symm h with ⟨i, slot⟩
-  simp [Equiv.Perm.mul_apply]
+  simp
+
+/-- Crossing-block permutations respect composition. -/
+theorem crossingBlockPerm_mul (cross₁ cross₂ : Equiv.Perm (Fin n)) :
+    crossingBlockPerm (cross₁ * cross₂) = crossingBlockPerm cross₁ * crossingBlockPerm cross₂ := by
+  unfold crossingBlockPerm
+  rw [← Equiv.permCongr_mul]
+  congr 1
 
 /-- Relabel half-edge visits and crossings by permutations.
 
@@ -248,23 +238,23 @@ The relabelling is deliberately independent of the planar realization: it change
 names, so later equivalence relations can quotient out these bookkeeping choices. -/
 @[expose] def relabel (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (cross : Equiv.Perm (Fin n)) : OrientedPDCode n where
-  halfEdge := half * D.halfEdge * crossingBlockPerm cross.symm
-  edgePair := half * D.edgePair * half.symm
-  edgePair_sq := by
+  halfEdge := (crossingBlockPerm cross).equivCongr half D.halfEdge
+  edgePair := half.permCongr D.edgePair
+  edgePair_apply_edgePair := by
     intro h
-    simp [mul_assoc, D.edgePair_sq]
-  edgePair_ne := by
+    simp
+  edgePair_ne_self := by
     intro h hh
-    have := D.edgePair_ne (half.symm h)
+    have := D.edgePair_ne_self (half.symm h)
     apply this
-    simpa [mul_assoc] using congrArg (fun x => half.symm x) hh
+    simpa using congrArg (fun x => half.symm x) hh
   orientation := D.orientation ∘ half.symm
-  orientation_pair := by
+  orientation_edgePair := by
     intro h
-    simp [Function.comp_apply, mul_assoc, D.orientation_pair]
-  orientation_opposite := by
+    simp [Function.comp_apply]
+  orientation_oppositeCrossingSlot := by
     intro i slot
-    simp [Equiv.Perm.mul_apply, D.orientation_opposite]
+    simp
   crossinglessComponents := D.crossinglessComponents
   overPair := D.overPair ∘ cross.symm
 
@@ -275,7 +265,7 @@ theorem relabel_crossing (D : OrientedPDCode n)
     (i : Fin n) (slot : Fin 4) :
     (D.relabel half cross).halfEdge (crossingSlotEquiv n (i, slot)) =
       half (D.crossing (cross.symm i) slot) := by
-  simp [relabel, crossing, Equiv.Perm.mul_apply]
+  simp [relabel, crossing]
 
 /-- Relabelling crossing and half-edge names leaves crossing-free components unchanged. -/
 @[simp]
@@ -298,7 +288,7 @@ theorem relabel_refl (D : OrientedPDCode n) :
   apply ext
   · ext x
     rw [← (crossingSlotEquiv n).apply_symm_apply x]
-    simp [relabel, crossingBlockPerm, Equiv.Perm.mul_apply]
+    simp [relabel]
   · ext x
     rfl
   · rfl
@@ -312,13 +302,15 @@ theorem relabel_relabel (D : OrientedPDCode n)
     (D.relabel half₁ cross₁).relabel half₂ cross₂ =
       D.relabel (half₂ * half₁) (cross₂ * cross₁) := by
   apply ext
-  · change half₂ * (half₁ * D.halfEdge * crossingBlockPerm cross₁.symm) *
-      crossingBlockPerm cross₂.symm =
-        (half₂ * half₁) * D.halfEdge * crossingBlockPerm (cross₂ * cross₁).symm
-    have hcross : (cross₂ * cross₁).symm = cross₁.symm * cross₂.symm := by
-      simpa only [Equiv.Perm.inv_def] using (mul_inv_rev cross₂ cross₁)
-    rw [hcross, crossingBlockPerm_mul]
-    simp only [mul_assoc]
+  · change (crossingBlockPerm cross₂).equivCongr half₂
+        ((crossingBlockPerm cross₁).equivCongr half₁ D.halfEdge) =
+      (crossingBlockPerm (cross₂ * cross₁)).equivCongr (half₂ * half₁) D.halfEdge
+    have htransport := congrArg (fun e => e D.halfEdge)
+      (Equiv.equivCongr_trans (crossingBlockPerm cross₁) half₁
+        (crossingBlockPerm cross₂) half₂)
+    change _ = _ at htransport
+    rw [crossingBlockPerm_mul]
+    exact htransport
   · ext x
     rfl
   · rfl
@@ -332,11 +324,11 @@ orientations.  Multiplicity records distinct components without imposing an orde
 @[expose] def orientedPDCodeUnlink (orientations : Multiset Bool) : OrientedPDCode 0 where
   halfEdge := Equiv.refl _
   edgePair := Equiv.refl _
-  edgePair_sq := by intro h; exact rfl
-  edgePair_ne := by intro h; exact Fin.elim0 h
+  edgePair_apply_edgePair := by intro h; exact rfl
+  edgePair_ne_self := by intro h; exact Fin.elim0 h
   orientation := fun h => nomatch h
-  orientation_pair := by intro h; exact nomatch h
-  orientation_opposite := by intro i; exact Fin.elim0 i
+  orientation_edgePair := by intro h; exact nomatch h
+  orientation_oppositeCrossingSlot := by intro i; exact Fin.elim0 i
   crossinglessComponents := orientations
   overPair := fun h => nomatch h
 
@@ -383,17 +375,17 @@ not only the empty link. -/
 @[expose] def orientedPDCodeOne : OrientedPDCode 1 where
   halfEdge := Equiv.refl _
   edgePair := Equiv.swap 0 1 * Equiv.swap 2 3
-  edgePair_sq := by
+  edgePair_apply_edgePair := by
     intro h
     fin_cases h <;> simp [Equiv.swap_apply_def]
-  edgePair_ne := by
+  edgePair_ne_self := by
     intro h
     fin_cases h <;> simp [Equiv.swap_apply_def]
   orientation := fun h => decide (h = 1 ∨ h = 2)
-  orientation_pair := by
+  orientation_edgePair := by
     intro h
     fin_cases h <;> simp [Equiv.swap_apply_def]
-  orientation_opposite := by
+  orientation_oppositeCrossingSlot := by
     intro i slot
     fin_cases i
     fin_cases slot <;> decide
@@ -404,9 +396,5 @@ not only the empty link. -/
 theorem orientedPDCodeOne_crossingSign :
     orientedPDCodeOne.crossingSign 0 = 1 :=
   by decide
-
-theorem orientedPDCodeOne_mirror_crossingSign :
-    orientedPDCodeOne.mirror.crossingSign 0 = -1 := by
-  simp
 
 end TauCeti
