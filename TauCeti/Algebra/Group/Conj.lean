@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Group.ConjFinite
 public import Mathlib.Data.Set.Card
+public import Mathlib.Data.ZMod.Basic
 public import Mathlib.GroupTheory.Index
+public import Mathlib.GroupTheory.OrderOfElement
 
 /-!
 # Inversion and powers of conjugacy classes, and the size of a class
@@ -39,6 +41,10 @@ conjugation action.
   `Nat.card` form.
 * `TauCeti.ConjClasses.ncard_carrier_mk_of_mem_center`: the class of a central element is a single
   point.
+* `ConjClasses.card_carrier_mul_orderOf_dvd`: the class size times the order of a member
+  divides the order of the group, so the quotient below is an exact ratio.
+* `ConjClasses.card_div_card_carrier_mul_orderOf_eq_card_centralizer_div_orderOf`: that
+  quotient equals the order of the centralizer divided by the order of the member.
 * `TauCeti.ConjClasses.card_carrier_dvd_card`: the size of a conjugacy class divides the order of
   the group, with `TauCeti.ConjClasses.card_carrier_cast_ne_zero` the consequence that the size of
   a class is nonzero in any semiring where the group order is.
@@ -47,7 +53,10 @@ conjugation action.
   `j`-th power of a member of `C`, with `ConjClasses.mk_pow` the computation rule.
 * `ConjClasses.pow_zero`, `ConjClasses.pow_one` and
   `ConjClasses.pow_mul`: the identity and composition laws for that power.
-* `ConjClasses.map_pow`: the power is natural in the monoid.
+* `ConjClasses.map_mk`: the computation rule for `ConjClasses.map` on representatives,
+  with `ConjClasses.map_pow` the consequence that the power is natural in the monoid.
+* `ConjClasses.mk_ne_mk_of_orderOf_ne`: elements of different orders lie in different conjugacy
+  classes.
 
 ## Implementation notes
 
@@ -68,6 +77,12 @@ from one that collapses to the identity. It is `private`, being a check on this 
 rather than reusable conjugacy-class API. This operation is *not* adapted from the
 Birkbeck–Brasca `chebotarev-density` development, which works with `ConjClasses.mk` and
 `Subgroup.zpowers` directly and never forms `C ^ j`.
+
+The two arithmetic statements concern the quotient `#G / (#C * orderOf σ)`. The first says the
+division is exact — `#C` is the index of the centralizer of `σ`, and `orderOf σ` divides that
+centralizer's order, so their product divides `#G` — and the second evaluates the quotient as the
+centralizer's order over `orderOf σ`. Neither asserts that either side counts anything; a caller
+wanting a cardinality interpretation must supply it.
 -/
 
 public section
@@ -207,6 +222,54 @@ theorem isRealClass_mk_iff {g : G} : IsRealClass (ConjClasses.mk g) ↔ IsConj g
 
 end TauCeti
 
+/-! ### The size of a class against the order of a member
+
+These extend the centralizer-index description of the class size just above; they live in the root
+`ConjClasses` namespace so that `C.card_carrier_mul_orderOf_dvd` resolves. -/
+
+namespace ConjClasses
+
+-- Source. Both statements are specified by the Chebotarev roadmap. The divisibility is the
+-- declaration pinned at `TauCetiRoadmap/Chebotarev/Suggested.lean` lines 377-382, there stated
+-- with `[Finite G]`. The quotient identity is `TauCetiRoadmap/Chebotarev/README.md` §8.2, which
+-- writes it `#G / (#C * f) = #Centralizer_G(σ) / f` for `f = orderOf σ` and asks for
+-- `#C * f ∣ #G` as a separate statement.
+
+/-- **The size of a conjugacy class times the order of a member divides the order of the group.**
+
+For a *finite* group this is what makes `Nat.card G / (Nat.card C.carrier * orderOf σ)` an exact
+ratio rather than a truncated division, which
+`card_div_card_carrier_mul_orderOf_eq_card_centralizer_div_orderOf` then evaluates. No finiteness
+is assumed here: for an infinite group `Nat.card G` is `0`, and every natural number divides `0`. -/
+theorem card_carrier_mul_orderOf_dvd {G : Type*} [Group G] (C : ConjClasses G) (σ : G)
+    (hσ : σ ∈ C.carrier) :
+    Nat.card C.carrier * orderOf σ ∣ Nat.card G := by
+  rw [mem_carrier_iff_mk_eq] at hσ
+  subst hσ
+  obtain ⟨k, hk⟩ := (Subgroup.centralizer {σ}).orderOf_dvd_natCard
+    (Subgroup.mem_centralizer_singleton_iff.mpr rfl)
+  exact ⟨k, by rw [TauCeti.ConjClasses.card_carrier_mk, mul_assoc, ← hk, Subgroup.index_mul_card]⟩
+
+/-- **That quotient in closed form.** Dividing the order of the group by the class size times the
+order of a member leaves the order of the centralizer divided by that same order.
+
+`hindex` is what lets the centralizer's index cancel from both sides; it holds automatically when
+`G` is finite. The statement is an equality of `Nat.div` values, and no more: for a finite `G` both
+divisions are exact and it reads as an equality of ratios, but `hindex` alone does not give that.
+An infinite abelian group with an element of infinite order satisfies `hindex` while `Nat.card G`,
+the centralizer's cardinality and `orderOf σ` are all `0`, and the identity is then `0 / 0`. -/
+theorem card_div_card_carrier_mul_orderOf_eq_card_centralizer_div_orderOf {G : Type*} [Group G]
+    (C : ConjClasses G) (σ : G) (hσ : σ ∈ C.carrier)
+    (hindex : (Subgroup.centralizer {σ}).index ≠ 0) :
+    Nat.card G / (Nat.card C.carrier * orderOf σ)
+      = Nat.card (Subgroup.centralizer {σ}) / orderOf σ := by
+  rw [mem_carrier_iff_mk_eq] at hσ
+  subst hσ
+  rw [TauCeti.ConjClasses.card_carrier_mk, ← Subgroup.index_mul_card (Subgroup.centralizer {σ}),
+    Nat.mul_div_mul_left _ _ (Nat.pos_of_ne_zero hindex)]
+
+end ConjClasses
+
 /-! ### Powers of a conjugacy class
 
 These live in the root `ConjClasses` namespace, not under `TauCeti`, so that dot
@@ -274,26 +337,49 @@ theorem pow_mul (C : ConjClasses M) (i j : ℕ) : (C ^ i) ^ j = C ^ (i * j) := b
   obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
   rw [mk_pow, mk_pow, mk_pow, _root_.pow_mul]
 
+/-- The image of the class of `a` under `ConjClasses.map f` is the class of `f a`. -/
+-- Mathlib defines `ConjClasses.map` as a `Quotient.lift` and provides no computation rule for it,
+-- so this reduction is stated here once and every naturality statement below rewrites with it.
+@[simp]
+theorem map_mk {N : Type*} [Monoid N] (f : M →* N) (a : M) :
+    ConjClasses.map f (ConjClasses.mk a) = ConjClasses.mk (f a) := rfl
+
 /-- Powering a conjugacy class is natural in the monoid. -/
 @[simp]
 theorem map_pow {N : Type*} [Monoid N] (f : M →* N) (C : ConjClasses M) (j : ℕ) :
     ConjClasses.map f (C ^ j) = ConjClasses.map f C ^ j := by
   obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
-  -- Every reduction here is named rather than left to definitional unfolding. Mathlib has no
-  -- `map_mk` computation lemma for `ConjClasses.map`, which is a `Quotient.lift` and so computes
-  -- on representatives; that single reduction is isolated in `hmap` and used explicitly, after
-  -- which `mk_pow` handles both powers and `map_pow` finishes in `N`.
-  have hmap : ∀ x : M, ConjClasses.map f (ConjClasses.mk x) = ConjClasses.mk (f x) := fun _ ↦ rfl
-  rw [mk_pow, hmap, hmap, mk_pow, _root_.map_pow]
+  -- Every reduction here is named rather than left to definitional unfolding: `map_mk` computes
+  -- the map on representatives, after which `mk_pow` handles both powers and `map_pow` finishes
+  -- in `N`.
+  rw [mk_pow, map_mk, map_mk, mk_pow, _root_.map_pow]
 
-/-- **A nonidentity square in the cyclic group of order four.** The class of the generator
-squares to the class of the element of order two. A group of exponent two cannot witness this:
-it has no proper nonidentity square, so it cannot tell a correct power operation from one that
-collapses to the identity. -/
+/-- **Elements of different orders are not conjugate.** Conjugation is an automorphism, so it
+preserves the order of an element; hence two elements whose orders differ have distinct conjugacy
+classes. -/
+theorem mk_ne_mk_of_orderOf_ne {G : Type*} [Group G] {a b : G} (h : orderOf a ≠ orderOf b) :
+    ConjClasses.mk a ≠ ConjClasses.mk b := fun hclasses ↦ by
+  obtain ⟨c, hc⟩ := ConjClasses.mk_eq_mk_iff_isConj.mp hclasses
+  exact h (SemiconjBy.orderOf_eq (c : G) hc)
+
+/-- **A nonidentity square in the cyclic group of order four.** The generator has order four, its
+class squares to the class of the element of order two, and those two classes are distinct. A group
+of exponent two cannot witness this: it has no proper nonidentity square, so it cannot tell a
+correct power operation from one that collapses to the identity. -/
 private theorem pow_two_cyclicFour :
-    ConjClasses.mk (Multiplicative.ofAdd (1 : ZMod 4)) ^ 2 =
-      ConjClasses.mk (Multiplicative.ofAdd (2 : ZMod 4)) := by
-  rw [mk_pow, ← ofAdd_nsmul, nsmul_eq_mul, mul_one]
-  norm_cast
+    orderOf (Multiplicative.ofAdd (1 : ZMod 4)) = 4 ∧
+      ConjClasses.mk (Multiplicative.ofAdd (1 : ZMod 4)) ^ 2 =
+        ConjClasses.mk (Multiplicative.ofAdd (2 : ZMod 4)) ∧
+      ConjClasses.mk (Multiplicative.ofAdd (1 : ZMod 4)) ≠
+        ConjClasses.mk (Multiplicative.ofAdd (2 : ZMod 4)) := by
+  have horder : orderOf (Multiplicative.ofAdd (1 : ZMod 4)) = 4 := by
+    rw [orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
+  have hsquare : Multiplicative.ofAdd (1 : ZMod 4) ^ 2 = Multiplicative.ofAdd (2 : ZMod 4) := by
+    rw [← ofAdd_nsmul, nsmul_eq_mul, mul_one]
+    norm_cast
+  have horderSquare : orderOf (Multiplicative.ofAdd (2 : ZMod 4)) = 2 := by
+    rw [← hsquare, orderOf_pow_of_dvd (by decide) (by rw [horder]; decide), horder]
+  exact ⟨horder, by rw [mk_pow, hsquare],
+    mk_ne_mk_of_orderOf_ne (by rw [horder, horderSquare]; decide)⟩
 
 end ConjClasses

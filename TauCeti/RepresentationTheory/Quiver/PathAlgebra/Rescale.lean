@@ -196,6 +196,14 @@ theorem rescale_congr (h : ∀ ⦃a b : Q⦄ (e : a ⟶ b), c e = d e) : rescale
     simp only [AlgHom.toLinearMap_apply, coe_pathAlgebraBasis, rescale_ofPath,
       _root_.Quiver.Path.weight_congr c d h]
 
+/-- Two rescalings whose labellings have pointwise product one undo one another. The order of the
+product in the hypothesis matches the order of composition. -/
+theorem rescale_rescale_of_mul_eq_one
+    (h : ∀ ⦃a b : Q⦄ (e : a ⟶ b), c e * d e = 1) (x : pathAlgebra k Q) :
+    rescale c (rescale d x) = x := by
+  rw [← AlgHom.comp_apply, rescale_comp_rescale,
+    rescale_congr _ _ h, rescale_one, AlgHom.id_apply]
+
 end Rescale
 
 end PathAlgebra

@@ -54,7 +54,8 @@ condition and the `𝒪_X`-module structure automatic.
   as an endomorphism of `𝒦_X`, obtained by pushing forward multiplication by the corresponding
   global function on `Spec K(X)`; `rationalFunctionsEquiv_rationalFunctionsMul_app` identifies it
   with multiplication on sections, and `rationalFunctionsMul_mul` and `rationalFunctionsMul_one`
-  make it multiplicative, so that multiplying by a unit is an automorphism of `𝒦_X`;
+  make it multiplicative, so that multiplying by a unit is an automorphism of `𝒦_X`
+  (`rationalFunctionsMul_comp_inv` and `rationalFunctionsMul_inv_comp`);
 * the module morphism `TauCeti.AlgebraicGeometry.Scheme.toRationalFunctions` is
   `X.germToFunctionField` on sections
   (`TauCeti.AlgebraicGeometry.Scheme.rationalFunctionsEquiv_toRationalFunctions_app`), is
@@ -420,6 +421,20 @@ theorem rationalFunctionsMul_one : rationalFunctionsMul X 1 = 𝟙 _ := by
   change F.map (Scheme.Modules.globalSectionsSmul M 1) = 𝟙 _
   rw [Scheme.Modules.globalSectionsSmul_one]
   exact F.map_id M
+
+/-- Multiplying by a unit `g` and then by `g⁻¹` is the identity on `𝒦_X`. -/
+@[simp]
+theorem rationalFunctionsMul_comp_inv (g : X.functionFieldˣ) :
+    rationalFunctionsMul X (g : X.functionField) ≫
+        rationalFunctionsMul X ((g⁻¹ : X.functionFieldˣ) : X.functionField) = 𝟙 _ := by
+  rw [← rationalFunctionsMul_mul, g.inv_mul, rationalFunctionsMul_one]
+
+/-- Multiplying by the inverse of a unit `g` and then by `g` is the identity on `𝒦_X`. -/
+@[simp]
+theorem rationalFunctionsMul_inv_comp (g : X.functionFieldˣ) :
+    rationalFunctionsMul X ((g⁻¹ : X.functionFieldˣ) : X.functionField) ≫
+        rationalFunctionsMul X (g : X.functionField) = 𝟙 _ := by
+  rw [← rationalFunctionsMul_mul, g.mul_inv, rationalFunctionsMul_one]
 
 end Mul
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.Dihedral
+public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 public import TauCeti.LinearAlgebra.RootSystem.BraidRelation
 
 /-!
@@ -14,7 +14,7 @@ public import TauCeti.LinearAlgebra.RootSystem.BraidRelation
 A base with two simple roots presents its Weyl group by two generators: the two simple reflections
 generate it (`TauCeti.weylGroup_eq_closure_simple`), they are involutions, and the order of their
 product is the corresponding entry of the Coxeter matrix of the base
-(`TauCeti.RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_coxeterMatrixOfBase`). That is exactly
+(`RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_coxeterMatrixOfBase`). That is exactly
 the input of `TauCeti.nonempty_dihedralGroup_mulEquiv`, so the Weyl group *is* the dihedral group
 of order twice that entry — and, unlike the presentation of the Weyl group in general, this needs
 no completeness statement for the braid relations, since in rank two there is only one of them.

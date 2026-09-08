@@ -12,10 +12,17 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
 -- `DoubleCoset.doubleCoset`, `DoubleCoset.mk` and `DoubleCoset.Quotient` occur in the statements
 -- below.
 public import Mathlib.GroupTheory.DoubleCoset
+-- `Group.IsSolvable` occurs in the maximality statements below.
+public import Mathlib.GroupTheory.Solvable
 -- Non-public: the general double-coset identities — when two classes agree, and that the identity
 -- double coset of a subgroup is the subgroup itself — are used only inside the proofs of the
 -- double-coset results below, which are their specializations to the Borel subgroup of `GL₂`.
 import TauCeti.GroupTheory.DoubleCoset.Identity
+-- Non-public: the generic two-cell generation and maximal-solvability arguments are used only to
+-- derive their `GL₂` specializations below.
+import TauCeti.GroupTheory.DoubleCoset.Generation
+-- Non-public: nonsolvability of `GL₂` is used only in the maximal-solvability results below.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Solvable
 -- Non-public: the order of `GL₂` over a finite field is used only inside the proof of the size of
 -- the big cell.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
@@ -68,6 +75,8 @@ the Weyl element.
 * `TauCeti.GL2Borel.card_doubleCosetQuotient_eq_two`: `B` has exactly two double cosets in `GL₂`.
 * `TauCeti.GL2Borel.closure_insert_gl2WeylElement_eq_top`: the Borel subgroup and the Weyl element
   generate `GL₂`.
+* `TauCeti.GL2Borel.le_of_isSolvable`: every solvable subgroup containing the Borel subgroup
+  equals it when the field contains a nonzero element whose square is not one.
 * `TauCeti.GL2Borel.ncard_doubleCoset_weyl`: the big cell of `GL₂(𝔽_q)` has `q² (q - 1)²`
   elements.
 
@@ -102,7 +111,7 @@ public section
 
 namespace TauCeti
 
-open Matrix
+open _root_.Matrix
 
 universe u
 
@@ -321,15 +330,27 @@ triangular or a product `b₁ w b₂` of two upper-triangular matrices with the 
 the generation axiom of the `(B, N)`-pair of `GL₂`. -/
 theorem closure_insert_gl2WeylElement_eq_top :
     Subgroup.closure (insert (GL2WeylElement F) (GL2Borel F : Set (GL (Fin 2) F))) = ⊤ := by
-  refine eq_top_iff.mpr fun g _ => ?_
-  by_cases hg : g ∈ GL2Borel F
-  · exact Subgroup.subset_closure (Set.mem_insert_of_mem _ hg)
-  · obtain ⟨x, hx, y, hy, rfl⟩ :=
-      DoubleCoset.mem_doubleCoset.mp (mem_doubleCoset_weyl_of_notMem hg)
-    exact mul_mem
-      (mul_mem (Subgroup.subset_closure (Set.mem_insert_of_mem _ hx))
-        (Subgroup.subset_closure (Set.mem_insert _ _)))
-      (Subgroup.subset_closure (Set.mem_insert_of_mem _ hy))
+  exact Subgroup.closure_insert_eq_top_of_notMem_imp_mem_doubleCoset
+    (GL2Borel F) (GL2WeylElement F) mem_doubleCoset_weyl_of_notMem
+
+/-- Every solvable subgroup of `GL₂(F)` that contains the upper-triangular subgroup is contained
+in it if `F` has a nonzero element whose square is not one. -/
+theorem le_of_isSolvable (hF : ∃ a : F, a ≠ 0 ∧ a ^ 2 ≠ 1)
+    (P : Subgroup (GL (Fin 2) F)) [Group.IsSolvable P]
+    (hBP : GL2Borel F ≤ P) : P ≤ GL2Borel F := by
+  exact Subgroup.le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
+    (GL2Borel F) P (GL2WeylElement F) (Matrix.GeneralLinearGroup.not_isSolvable_fin_two F hF)
+    mem_doubleCoset_weyl_of_notMem hBP
+
+/-- Every solvable subgroup of `GL₂` over an infinite field that contains the upper-triangular
+subgroup is contained in it. -/
+theorem le_of_isSolvable_of_infinite [Infinite F]
+    (P : Subgroup (GL (Fin 2) F)) [Group.IsSolvable P]
+    (hBP : GL2Borel F ≤ P) : P ≤ GL2Borel F := by
+  exact Subgroup.le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
+    (GL2Borel F) P (GL2WeylElement F)
+    (Matrix.GeneralLinearGroup.not_isSolvable_fin_two_of_infinite F)
+    mem_doubleCoset_weyl_of_notMem hBP
 
 end GL2Borel
 

@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.AssociatedGraded
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 
 /-!
 # Homogeneous pieces of the PBW map
 
 The degree-`n` piece of a symmetric algebra is defined to be the `n`-th power of the range of its
-canonical generator map; no direct-sum decomposition into those pieces is proven. For a Lie algebra
-`L` over a commutative ring `R`, the canonical map
+canonical generator map, and these pieces form an internal direct sum. For a Lie algebra `L` over a
+commutative ring `R`, the canonical map
 
 `SymmetricAlgebra R L →ₐ[R] gr U(L)`
 
@@ -25,12 +25,12 @@ product of degree-one classes. A shorter word represents zero in the `n`-th succ
 Consequently every class in that quotient has a homogeneous symmetric representative of degree
 `n`.
 
-Under the standard hypotheses ensuring PBW over a commutative ring, such as projectivity of `L` as
-an `R`-module, injectivity of these component maps together with an internal direct-sum
-decomposition of `SymmetricAlgebra R L` into its homogeneous submodules would give the remaining
-linear-independence half of the Poincaré--Birkhoff--Witt theorem. Thus the componentwise
-surjections isolate one part of the next obstruction degree by degree, while retaining the global
-associated-graded map.
+The component maps also govern injectivity. An element of the kernel of the canonical map
+decomposes into homogeneous terms, each of which lands in a distinct summand of the associated
+graded and hence lies in the kernel of its own component map. So the canonical map is injective,
+giving the linear-independence half of the Poincaré--Birkhoff--Witt theorem, exactly when every
+component map is; the componentwise description reduces both halves to a degreewise statement,
+while retaining the global associated-graded map.
 
 ## Main definitions and results
 
@@ -41,14 +41,16 @@ associated-graded map.
   piece has a homogeneous symmetric representative of the same degree.
 * `TauCeti.UniversalEnvelopingAlgebra.pbwAssociatedGradedMap_surjective`: the canonical map is
   onto.
+* `TauCeti.UniversalEnvelopingAlgebra.pbwAssociatedGradedMap_eq_map_decompose`: the canonical map
+  is the direct sum of its degreewise components, read through the internal homogeneous
+  decomposition of the symmetric algebra.
+* `TauCeti.UniversalEnvelopingAlgebra.pbwAssociatedGradedMap_injective_iff`: the canonical map is
+  injective exactly when every component map is.
 
 ## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Chapter V, §17.
 * N. Bourbaki, *Lie Groups and Lie Algebras*, Chapter I, §2.7.
-
-This is the degreewise comparison step of the PBW sub-project in Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
 -/
 
 public section
@@ -151,5 +153,31 @@ theorem pbwAssociatedGradedMap_surjective :
           pbwAssociatedGradedMap_apply_homogeneous R L n p⟩
     | add x y hx hy => exact (pbwAssociatedGradedMap R L).range.add_mem hx hy
   exact hx
+
+/-- The canonical map is the direct sum of its degreewise components: it first decomposes a
+symmetric element into its homogeneous parts and then applies `pbwHomogeneousComponentMap` in each
+degree. -/
+theorem pbwAssociatedGradedMap_eq_map_decompose (x : SymmetricAlgebra R L) :
+    pbwAssociatedGradedMap R L x =
+      DirectSum.map (fun n ↦ (pbwHomogeneousComponentMap R L n).toAddMonoidHom)
+        (DirectSum.decompose (homogeneousSubmodule R L) x) := by
+  induction x using DirectSum.Decomposition.inductionOn (ℳ := homogeneousSubmodule R L) with
+  | zero => simp
+  | homogeneous p => simp
+  | add x y hx hy => rw [map_add, DirectSum.decompose_add, map_add, hx, hy]
+
+/-- The canonical map `Sym(L) → gr U(L)` is injective exactly when all of its degreewise components
+are. This is the degreewise reduction of the linear-independence half of the
+Poincaré--Birkhoff--Witt theorem: the homogeneous submodules decompose the symmetric algebra, and
+the canonical map carries the degree-`n` piece into the `n`-th summand of the associated graded. -/
+theorem pbwAssociatedGradedMap_injective_iff :
+    Function.Injective (pbwAssociatedGradedMap R L) ↔
+      ∀ n, Function.Injective (pbwHomogeneousComponentMap R L n) := by
+  have hcomp : ⇑(pbwAssociatedGradedMap R L) =
+      (DirectSum.map fun n ↦ (pbwHomogeneousComponentMap R L n).toAddMonoidHom) ∘
+        DirectSum.decompose (homogeneousSubmodule R L) :=
+    funext (pbwAssociatedGradedMap_eq_map_decompose R L)
+  rw [hcomp, Equiv.injective_comp, DirectSum.map_injective]
+  simp only [LinearMap.toAddMonoidHom_coe]
 
 end TauCeti.UniversalEnvelopingAlgebra

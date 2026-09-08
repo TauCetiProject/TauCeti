@@ -112,8 +112,10 @@ variable [IsDedekindDomain W.CoordinateRing]
 
 /-- **The place of a solution of a Weierstrass equation**: the ideal `⟨X - x, Y - y⟩` as a nonzero
 prime of the coordinate ring, for a solution `(x, y)` of `W.Equation`. The Dedekind hypothesis is an
-instance argument; for an elliptic curve it is
-`TauCeti.WeierstrassCurve.Affine.isDedekindDomain_coordinateRing`. -/
+instance argument, discharged by
+`WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed` once the coordinate
+ring is known integrally closed — which for an elliptic curve is
+`TauCeti.WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing`. -/
 noncomputable def pointPlace {y : F} (h : W.Equation x y) :
     HeightOneSpectrum W.CoordinateRing :=
   HeightOneSpectrum.ofPrime

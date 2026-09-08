@@ -8,6 +8,7 @@ module
 import Mathlib.Data.Nat.Squarefree
 public import TauCeti.NumberTheory.ModularForms.Degeneracy
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.LevelSupported
+public import TauCeti.NumberTheory.ModularForms.Newforms.QSupport
 
 /-!
 # Coprime-index filters on `S_k(Γ₁(N), χ)`
@@ -37,6 +38,11 @@ The construction never lowers a level.
 * `TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_of_squarefree`:
   Miyake's Lemma 4.6.5 as stated, for a squarefree `L` whose primes divide `N`, at level
   `L * N`.
+* `TauCeti.exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd`: for an `f` vanishing at every
+  index coprime to `p * L`, the filter is additionally **supported on the multiples of `p`** — the
+  hypothesis the Atkin–Lehner descent consumes — with
+  `TauCeti.exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd_of_squarefree` its squarefree
+  specialization at level `L * N`.
 * `TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero`: the complementary
   filter, under the filter's own hypothesis and at its own level — a nonzero `L` whose primes
   divide `N`, at level `∏ L.primeFactors * N`.
@@ -91,6 +97,14 @@ divide `N`, and the `h`-form for an arbitrary nonzero `L`, the source stating on
 forms at this stage (its `_general` variant generalizes the target level, not `L`). The `h`-form
 in particular is not built by a second recursion: in its general form it is one subtraction at
 the filter's own level, and each wider-`L` form adds a single `CuspForm.ofLe` on top of it.
+
+`exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd` and its squarefree specialization state
+AINTLIB's `miyake_g_p_supported`, which lives in
+`StrongMultiplicityOne/DescentCosets.lean` at the same pinned commit and license. The source
+states it for a squarefree `l'` and concludes membership in its `qSupportedOnDvdSubmodule`; here
+the general nonzero-`L` form is the primary statement, the conclusion is the
+`QExpansionSupportedOnDvd` predicate this repository already uses, and the squarefree form is
+derived from it rather than proved separately.
 
 `coprime_prod_primeFactors_iff` is AINTLIB's `coprime_prod_primeFactors_iff_coprime`, which
 lives one file up in `StrongMultiplicityOne.lean`. It is restated here for an arbitrary nonzero
@@ -208,7 +222,6 @@ private theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_pro
     have hq : q.Prime := Nat.prime_of_mem_primeFactors hqM
     have : NeZero q := ⟨hq.ne_zero⟩
     have hMqM : M ∣ q * M := Nat.dvd_mul_left M q
-    have : NeZero (q * M) := ⟨Nat.mul_ne_zero (NeZero.ne q) (NeZero.ne M)⟩
     obtain ⟨g₁, hg₁, hg₁q⟩ :=
       exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd χ hg
         (Nat.primeFactors_mono (Nat.dvd_of_mem_primeFactors hqM) (NeZero.ne M))
@@ -354,5 +367,60 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_mul_sq
     rwa [MonoidHom.comp_assoc, ZMod.unitsMap_comp] at this
   · rw [CuspForm.coe_ofLe]
     exact hhq n
+
+/-- **The filter of a form vanishing off `p · L` is supported on the multiples of `p`.** If
+`f ∈ S_k(Γ₁(N), χ)` has `aₙ(f) = 0` at every `n` coprime to `p · L`, then its coprime-to-`L`
+filter — the cusp form of level `∏ L.primeFactors * N` that
+`TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime` produces — satisfies
+`QExpansionSupportedOnDvd p`.
+
+`QExpansionSupportedOnDvd p g` is the hypothesis of
+`TauCeti.mem_cuspFormsOld_of_qExpansionSupportedOnDvd`, so this is what carries the coprime filter
+into the level-lowering dichotomy. The hypotheses on `L` are the filter's own, unchanged; `p` need
+not divide `N`, and no relation between `p` and `L` is assumed. -/
+theorem exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd
+    (χ : (ZMod N)ˣ →* ℂˣ) {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ cuspFormCharSpace k χ) {p L : ℕ} [NeZero L] (hp : p.Prime)
+    (hLN : L.primeFactors ⊆ N.primeFactors)
+    (hvan : ∀ n, Nat.Coprime n (p * L) → (qExpansion 1 f).coeff n = 0) :
+    ∃ g : CuspForm ((Gamma1 (L.primeFactors.prod id * N)).map (mapGL ℝ)) k,
+      g ∈ cuspFormCharSpace k
+          (χ.comp (ZMod.unitsMap (Nat.dvd_mul_left N (L.primeFactors.prod id)))) ∧
+        QExpansionSupportedOnDvd p g ∧
+        ∀ n, (qExpansion 1 g).coeff n =
+          if Nat.Coprime n L then (qExpansion 1 f).coeff n else 0 := by
+  obtain ⟨g, hgχ, hgq⟩ := exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime χ hf hLN
+  refine ⟨g, hgχ, ?_, hgq⟩
+  rw [qExpansionSupportedOnDvd_iff, PowerSeries.isSupportedOnDvd_iff]
+  intro n hn
+  -- at an `n` off the multiples of `p`, primality gives `(n, p) = 1`, so the filter's two cases
+  -- are `hvan` and the filter's own zero
+  rw [hgq n]
+  split_ifs with hcop
+  · exact hvan n (Nat.Coprime.mul_right (hp.coprime_iff_not_dvd.mpr hn).symm hcop)
+  · rfl
+
+/-- **The `p`-supported filter at a squarefree `L`**, where `∏ L.primeFactors` is `L` itself and
+the level is `L * N`.
+
+This is `TauCeti.exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd` at a squarefree `L`, in
+the same relation as
+`TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_of_squarefree` stands to the
+filter it specializes. -/
+theorem exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd_of_squarefree
+    (χ : (ZMod N)ˣ →* ℂˣ) {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ cuspFormCharSpace k χ) {p L : ℕ} (hp : p.Prime) (hL : Squarefree L)
+    (hLN : L.primeFactors ⊆ N.primeFactors)
+    (hvan : ∀ n, Nat.Coprime n (p * L) → (qExpansion 1 f).coeff n = 0) :
+    ∃ g : CuspForm ((Gamma1 (L * N)).map (mapGL ℝ)) k,
+      g ∈ cuspFormCharSpace k (χ.comp (ZMod.unitsMap (Nat.dvd_mul_left N L))) ∧
+        QExpansionSupportedOnDvd p g ∧
+        ∀ n, (qExpansion 1 g).coeff n =
+          if Nat.Coprime n L then (qExpansion 1 f).coeff n else 0 := by
+  have : NeZero L := ⟨hL.ne_zero⟩
+  have hprod : L.primeFactors.prod id = L := by
+    simpa using Nat.prod_primeFactors_of_squarefree hL
+  have key := exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd χ hf hp hLN hvan
+  rwa [hprod] at key
 
 end TauCeti

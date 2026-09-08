@@ -6,19 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Rectangle.Squares
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Juxtaposing toroidal grid rectangles
 
 Two rectangles in a nondiagonal term of the grid differential square can share one corner.
 Cutting their L-shaped union along its other internal edge gives the alternate two-rectangle
-decomposition. This file proves the finite-domain identity behind that cut.
+decomposition. This file proves the finite-domain identities behind that cut.
 
 The one-dimensional input is that an interior point `b` cuts the clockwise half-open interval
 from `a` to `c` into the disjoint intervals from `a` to `b` and from `b` to `c`. Applying this in
-both coordinates gives two forms of the L-shaped identity for `GridRectangle.coveredSquares`.
-The coordinate cuts and `GridRectangle.disjoint_coveredSquares_iff` ensure that both displayed
-unions are honest partitions, not merely equal unions with hidden overlap.
+both coordinates gives four forms of the L-shaped identity for `GridRectangle.coveredSquares`,
+two for each of the two ways the two rectangles being cut apart can share a vertical side: the
+shared side may be the initial side of both, or the terminal side of both. In each of those two
+configurations the third vertical side lies on one of the two arcs cut out by the other two, and
+the resulting column cut runs along a different line. The coordinate cuts and
+`GridRectangle.disjoint_coveredSquares_iff` ensure that all displayed unions are honest
+partitions, not merely equal unions with hidden overlap.
 
 These identities use the square-centred, half-open domains counted by the unblocked grid
 differential. They are the geometric step needed to show that the alternate decomposition
@@ -28,9 +33,13 @@ preserves `X`-avoidance and the product of the `O`-monomial weights in the one-c
 
 The following results are in the `TauCeti.GridRectangle` namespace:
 
-* `coveredSquares_union_eq_of_mem_cIoo`: the first L-shaped repartition identity.
+* `coveredSquares_union_eq_of_mem_cIoo`: the first L-shaped repartition identity, for two
+  rectangles sharing their initial vertical side.
 * `coveredSquares_union_eq_of_mem_cIoo_complementary_col_cut`: the complementary column-cut
   orientation of the same identity.
+* `coveredSquares_union_eq_of_mem_cIoo_common_right`,
+  `coveredSquares_union_eq_of_mem_cIoo_common_right_complementary_col_cut`: the two identities
+  for rectangles sharing their terminal vertical side instead.
 * `disjoint_coveredSquares_of_row_cut`, `disjoint_coveredSquares_of_col_cut`: the two rectangles
   on either side of a row or column cut cover disjoint sets of squares.
 
@@ -48,12 +57,6 @@ namespace TauCeti
 namespace GridRectangle
 
 variable {n : ℕ}
-
-private theorem product_union_eq_union_product {s s' : Finset α} {t t' : Finset β}
-    [DecidableEq α] [DecidableEq β] :
-    s ×ˢ t ∪ (s ∪ s') ×ˢ t' = s' ×ˢ t' ∪ s ×ˢ (t ∪ t') := by
-  rw [Finset.union_product, Finset.product_union]
-  ac_rfl
 
 /-- Rectangles on opposite sides of a row cut cover disjoint sets of squares, independently of
 their column spans. -/
@@ -103,6 +106,41 @@ theorem coveredSquares_union_eq_of_mem_cIoo_complementary_col_cut {a b c u v w :
     (product_union_eq_union_product
       (s := Grid.cIco a c) (s' := Grid.cIco c b)
       (t := Grid.cIco v w) (t' := Grid.cIco u v))
+
+/-- The mirror identity, for two rectangles sharing their *terminal* vertical side `c` rather
+than their initial one: the lower rectangle spans the columns from `a` to `c` and the upper one
+the columns from `b` to `c`, with `b` between `a` and `c`. Cutting along the column line `b`
+instead of the row line `v` gives the other pair. -/
+theorem coveredSquares_union_eq_of_mem_cIoo_common_right {a b c u v w : Fin n}
+    (hcol : b ∈ Grid.cIoo a c) (hrow : v ∈ Grid.cIoo u w) :
+    ({ left := b, right := c, bottom := v, top := w } : GridRectangle n).coveredSquares ∪
+        ({ left := a, right := c, bottom := u, top := v } : GridRectangle n).coveredSquares =
+      ({ left := a, right := b, bottom := u, top := v } : GridRectangle n).coveredSquares ∪
+        ({ left := b, right := c, bottom := u, top := w } : GridRectangle n).coveredSquares := by
+  simp only [coveredSquares_def, coveredColumns_def, coveredRows_def]
+  rw [← Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hcol,
+    ← Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hrow]
+  simpa only [Finset.union_comm] using
+    (product_union_eq_union_product
+      (s := Grid.cIco b c) (s' := Grid.cIco a b)
+      (t := Grid.cIco v w) (t' := Grid.cIco u v))
+
+/-- The complementary column cut for two rectangles sharing their terminal vertical side `c`:
+here the upper rectangle is the wider one, spanning the columns from `a` to `c`, and the cut runs
+along the column line `b` of the narrower lower rectangle. -/
+theorem coveredSquares_union_eq_of_mem_cIoo_common_right_complementary_col_cut
+    {a b c u v w : Fin n} (hcol : b ∈ Grid.cIoo a c) (hrow : v ∈ Grid.cIoo u w) :
+    ({ left := a, right := c, bottom := v, top := w } : GridRectangle n).coveredSquares ∪
+        ({ left := b, right := c, bottom := u, top := v } : GridRectangle n).coveredSquares =
+      ({ left := b, right := c, bottom := u, top := w } : GridRectangle n).coveredSquares ∪
+        ({ left := a, right := b, bottom := v, top := w } : GridRectangle n).coveredSquares := by
+  simp only [coveredSquares_def, coveredColumns_def, coveredRows_def]
+  rw [← Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hcol,
+    ← Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hrow]
+  simpa only [Finset.union_comm] using
+    (product_union_eq_union_product
+      (s := Grid.cIco b c) (s' := Grid.cIco a b)
+      (t := Grid.cIco u v) (t' := Grid.cIco v w))
 
 end GridRectangle
 
