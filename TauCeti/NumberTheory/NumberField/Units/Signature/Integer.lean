@@ -74,13 +74,13 @@ noncomputable def signHom : Kˣ →* ({w : InfinitePlace K // w.IsReal} → ℤ�
     signHom x w = Units.signEquiv ℝ (fieldUnitSignature x w) := (rfl)
 
 /-- **A sign is `1` exactly at a positive element.** -/
-@[simp] theorem signHom_apply_eq_one_iff (x : Kˣ) (w : {w : InfinitePlace K // w.IsReal}) :
+theorem signHom_apply_eq_one_iff (x : Kˣ) (w : {w : InfinitePlace K // w.IsReal}) :
     signHom x w = 1 ↔ 0 < embedding_of_isReal w.2 (x : K) := by
   rw [signHom_apply, fieldUnitSignature_apply, Units.signEquiv_mk_eq_one_iff]
   simp
 
 /-- **A sign is `-1` exactly at a negative element.** -/
-@[simp] theorem signHom_apply_eq_neg_one_iff (x : Kˣ) (w : {w : InfinitePlace K // w.IsReal}) :
+theorem signHom_apply_eq_neg_one_iff (x : Kˣ) (w : {w : InfinitePlace K // w.IsReal}) :
     signHom x w = -1 ↔ embedding_of_isReal w.2 (x : K) < 0 := by
   rw [signHom_apply, fieldUnitSignature_apply, Units.signEquiv_mk_eq_neg_one_iff]
   simp
