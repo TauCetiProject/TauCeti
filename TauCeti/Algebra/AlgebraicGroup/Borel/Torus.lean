@@ -14,14 +14,11 @@ public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 
 Every torus in a finite-type affine group over an algebraically closed field is contained in a
 Borel subgroup. The coordinate-ring order is contravariant: if `I` defines the torus and `J`
-defines the Borel, containment is the inequality `J ≤ I`. The result follows by viewing a torus
-as a smooth, geometrically connected, geometrically solvable Borel candidate and applying the
-maximal-candidate existence theorem.
+defines the Borel, containment is the inequality `J ≤ I`.
 
 Over an arbitrary field, a Borel containing a given torus need not descend to the ground field.
 The geometric form therefore base-changes both the ambient group and the torus ideal to an
-algebraic closure, then constructs a Borel there. The quotient-by-base-change comparison is needed
-to recognize the base-changed closed subgroup as a torus.
+algebraic closure, then constructs a Borel there.
 
 ## Main declarations
 
@@ -37,10 +34,6 @@ to recognize the base-changed closed subgroup as a torus.
 * J. S. Milne, *Algebraic Groups* (2017), Theorem 17.6 and §17.a.
 * A. Borel, *Linear Algebraic Groups*, 2nd ed. (1991), §11.1.
 * T. A. Springer, *Linear Algebraic Groups*, §6.2.
-
-This supplies the torus-to-Borel containment step in Layer 7, "Borel subgroups, maximal tori, and
-their conjugacy", of the ReductiveGroups roadmap. Conjugacy of Borel subgroups and maximal tori
-remains separate.
 -/
 
 public section
