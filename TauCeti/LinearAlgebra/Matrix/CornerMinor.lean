@@ -52,7 +52,32 @@ public section
 
 namespace Matrix
 
-variable {n : ℕ} {R : Type*} [CommRing R]
+variable {n : ℕ} {R : Type*}
+
+section NonAssocSemiring
+
+variable [NonAssocSemiring R]
+
+/-- Deleting the last row and column of a product is the product of the deletions, provided the
+left factor has the last standard basis vector as its last column. -/
+theorem submatrix_mul_of_mulVec_single (X Y : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
+    (hX : X *ᵥ Pi.single (Fin.last n) 1 = Pi.single (Fin.last n) 1) :
+    (X * Y).submatrix Fin.castSucc Fin.castSucc =
+      X.submatrix Fin.castSucc Fin.castSucc * Y.submatrix Fin.castSucc Fin.castSucc := by
+  have hcol : X.col (Fin.last n) = Pi.single (Fin.last n) 1 := by
+    rw [← Matrix.mulVec_single_one]
+    exact hX
+  have hentry : ∀ i : Fin (n + 1),
+      X i (Fin.last n) = (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) i :=
+    fun i => congrFun hcol i
+  ext u v
+  rw [Matrix.submatrix_apply, Matrix.mul_apply, Matrix.mul_apply, Fin.sum_univ_castSucc, hentry,
+    Pi.single_eq_of_ne (Fin.castSucc_lt_last u).ne, zero_mul, add_zero]
+  rfl
+
+end NonAssocSemiring
+
+variable [CommRing R]
 
 /-- Laplace expansion along the last row of a matrix whose last row vanishes off the diagonal. -/
 theorem det_eq_mul_det_submatrix_castSucc_of_row (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
@@ -82,23 +107,6 @@ theorem det_updateCol_last_single (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
   ext a b
   rw [Matrix.submatrix_apply, Matrix.submatrix_apply,
     Matrix.updateCol_ne (Fin.castSucc_lt_last b).ne]
-
-/-- Deleting the last row and column of a product is the product of the deletions, provided the
-left factor has the last standard basis vector as its last column. -/
-theorem submatrix_mul_of_mulVec_single (X Y : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-    (hX : X *ᵥ Pi.single (Fin.last n) 1 = Pi.single (Fin.last n) 1) :
-    (X * Y).submatrix Fin.castSucc Fin.castSucc =
-      X.submatrix Fin.castSucc Fin.castSucc * Y.submatrix Fin.castSucc Fin.castSucc := by
-  have hcol : X.col (Fin.last n) = Pi.single (Fin.last n) 1 := by
-    rw [← Matrix.mulVec_single_one]
-    exact hX
-  have hentry : ∀ i : Fin (n + 1),
-      X i (Fin.last n) = (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) i :=
-    fun i => congrFun hcol i
-  ext u v
-  rw [Matrix.submatrix_apply, Matrix.mul_apply, Matrix.mul_apply, Fin.sum_univ_castSucc, hentry,
-    Pi.single_eq_of_ne (Fin.castSucc_lt_last u).ne, zero_mul, add_zero]
-  rfl
 
 /-- The determinant of a matrix `M - 1` whose last column has been replaced by
 `c • M.col (last) - e (last)`, in terms of the corner minor of `M - 1`. -/

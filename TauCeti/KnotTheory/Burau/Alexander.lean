@@ -326,7 +326,7 @@ The value depends on the braid, not only on its closure, but only up to a unit o
 `t = T` the units are `± T ^ k`, which is the classical indeterminacy of the Alexander polynomial,
 and `TauCeti.KnotTheory.associated_burauAlexander_alexander_trefoilSeifertMatrix` checks the
 normalisation against the Seifert-matrix route on the trefoil. -/
-@[expose] def burauAlexander (β : MarkovBraid) (t : Rˣ) : R :=
+def burauAlexander (β : MarkovBraid) (t : Rˣ) : R :=
   (((burau (β.predStrands + 1) t β.braid :
       Matrix (Fin (β.predStrands + 1)) (Fin (β.predStrands + 1)) R) - 1).submatrix
     Fin.castSucc Fin.castSucc).det
@@ -337,7 +337,7 @@ theorem burauAlexander_def (β : MarkovBraid) (t : Rˣ) :
       (((burau (β.predStrands + 1) t β.braid :
           Matrix (Fin (β.predStrands + 1)) (Fin (β.predStrands + 1)) R) - 1).submatrix
         Fin.castSucc Fin.castSucc).det :=
-  rfl
+  (rfl)
 
 /-- On one strand there is nothing to delete: the corner minor of a `1 × 1` matrix is the empty
 determinant. Informally, the closure of the trivial one-strand braid is the unknot. -/
