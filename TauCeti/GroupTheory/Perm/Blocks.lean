@@ -87,13 +87,14 @@ theorem _root_.MulAction.IsBlock.isPreprimitive_stabilizer_of_isAtom
     exact h
   let _ : Nontrivial B :=
     Set.Nontrivial.coe_sort ((Set.nontrivial_iff_ne_singleton ha).2 hB_ne)
-  let _ : IsPretransitive (stabilizer G B) B := ⟨by
-    intro x y
-    have hy : (y : X) ∈ orbit (stabilizer G B) (x : X) := by
-      rw [hB.orbit_stabilizer_eq x.prop]
-      exact y.prop
-    obtain ⟨g, hg⟩ := hy
-    exact ⟨g, Subtype.ext hg⟩⟩
+  -- `B` is the orbit of `a` under `stabilizer G B`, so the action on `B` is transitive because
+  -- the action on an orbit is; the two carriers differ only by the identification of the sets.
+  let f : orbit (stabilizer G B) a →[stabilizer G B] (B : Set X) :=
+    { toFun := fun x ↦ ⟨x, (hB.orbit_stabilizer_eq ha).subset x.2⟩
+      map_smul' := fun _ _ ↦ rfl }
+  let _ : IsPretransitive (stabilizer G B) B :=
+    IsPretransitive.of_surjective_map (f := f)
+      (fun y ↦ ⟨⟨y, (hB.orbit_stabilizer_eq ha).symm.subset y.2⟩, rfl⟩) inferInstance
   rw [← isCoatom_stabilizer_iff_preprimitive (stabilizer G B) ⟨a, ha⟩]
   convert hcoatom using 1
   ext g
