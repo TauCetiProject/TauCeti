@@ -18,7 +18,7 @@ acts trivially on the upper half-plane, so it only contributes the automorphy fa
 
 ## Main results
 
-* `TauCeti.rat_slash_natDiagGL_const`: a nonzero constant rational diagonal acts by
+* `ModularForm.rat_slash_natDiagGL_const`: a nonzero constant rational diagonal acts by
   `c ^ (k - 2)`.
 
 ## References
@@ -33,7 +33,7 @@ open Matrix UpperHalfPlane HeckeRing.GLn
 
 open scoped MatrixGroups ModularForm
 
-namespace TauCeti
+namespace ModularForm
 
 /-- A nonzero constant natural diagonal acts through the rational weight-`k` slash by
 `c ^ (k - 2)`. -/
@@ -52,6 +52,6 @@ lemma rat_slash_natDiagGL_const {c : ℕ} [NeZero c] (k : ℤ) (f : ℍ → ℂ)
   have hu : (((u : ℝ) : ℂ)) = (c : ℂ) := by simp [u]
   rw [hu]
 
-end TauCeti
+end ModularForm
 
 end

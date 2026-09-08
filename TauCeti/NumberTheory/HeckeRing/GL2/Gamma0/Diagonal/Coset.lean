@@ -143,11 +143,14 @@ lemma exists_rep_diagCosetGamma0_eq_mul_natDiagGL_mul (a : Fin 2 → ℕ)
   exact DoubleCoset.mem_doubleCoset.mp hmem
 
 /-- The scalar `Γ₀(N)` double coset is the single right coset represented by its natural
-diagonal matrix. -/
+diagonal matrix. The coprimality hypothesis is only needed on the positive branch, matching
+the junk-branch convention of `diagCosetGamma0`: at `c = 0` the representative is the
+identity and the statement is the trivial decomposition of `Γ₀(N)` itself. -/
 theorem doubleCoset_out_diagCosetGamma0_const_eq_iUnion_rightCosets (c : ℕ)
-    (hcN : Nat.Coprime c N) :
+    (hcN : 0 < c → Nat.Coprime c N) :
     DoubleCoset.doubleCoset
-        ((diagCosetGamma0 N ![c, c] fun _ ↦ by simpa using hcN).out : GL (Fin 2) ℚ)
+        ((diagCosetGamma0 N ![c, c] fun h ↦ by simpa using hcN (by simpa using h 0)).out :
+          GL (Fin 2) ℚ)
         ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) =
       ⋃ _ : Unit, MulOpposite.op (natDiagGL 2 ![c, c]) •
         ((Gamma0 N).map (mapGL ℚ) : Set (GL (Fin 2) ℚ)) := by

@@ -78,7 +78,7 @@ theorem twistedHeckeSlashSum_diagCosetGamma0_const (c : ℕ) (hc : 0 < c)
   let _ : NeZero c := ⟨hc.ne'⟩
   rw [twistedHeckeSlashSum_eq_sum_of_rightCosets k χ _
     (fun _ : Unit ↦ natDiagGL 2 ![c, c])
-    (doubleCoset_out_diagCosetGamma0_const_eq_iUnion_rightCosets N c hcN)
+    (doubleCoset_out_diagCosetGamma0_const_eq_iUnion_rightCosets N c fun _ ↦ hcN)
     (fun _ _ _ ↦ Subsingleton.elim _ _) f hf]
   simp [delta0NebentypusChar_natDiagGL N χ ![c, c]
     (fun i ↦ by fin_cases i <;> simpa using hc) hcN, smul_smul]
