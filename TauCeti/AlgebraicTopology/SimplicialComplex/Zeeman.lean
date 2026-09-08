@@ -32,8 +32,6 @@ assuming the desired Zeeman conclusion.
 * `AbstractSimplicialComplex.contractible2Complex_iff`: the defining characterization.
 * `AbstractSimplicialComplex.contractible2Complex_standardOneSimplex`: the standard one-simplex
   is a non-void contractible 2-complex (the dimension bound is at most two).
-* `AbstractSimplicialComplex.contractible2Complex_standardOneSimplex_faces_finite`: its
-  finiteness component, useful when passing to the collapse API.
 
 No claim that a product with an interval is collapsible is made here.
 -/
@@ -49,7 +47,9 @@ namespace AbstractSimplicialComplex
 variable {ι : Type*}
 
 /-- A finite abstract simplicial complex of dimension at most two whose realization is
-contractible.  This is the class of complexes occurring in Zeeman's conjecture. -/
+contractible.  This is the class of complexes occurring in Zeeman's conjecture, as stated in
+R. Kirby (ed.), *Problems in Low-Dimensional Topology*, Problem 5.2 (1997), following E. C.
+Zeeman, *On the dunce hat*, Topology 2 (1964), 341--358. -/
 def Contractible2Complex (K : AbstractSimplicialComplex ι) : Prop :=
   K.faces.Finite ∧ dimension K ≤ (2 : WithBot ℕ∞) ∧ ContractibleSpace (Realization K)
 
@@ -87,7 +87,12 @@ theorem contractible2Complex_standardOneSimplex :
   have hreal : ContractibleSpace (Realization (⊤ : AbstractSimplicialComplex (Fin 2))) :=
     @Homeomorph.contractibleSpace _ _ _ _ hunit e
   refine ⟨?_, ?_, hreal⟩
-  · change ((⊤ : PreAbstractSimplicialComplex (Fin 2)).faces).Finite
+  · have hfaces :
+        (⊤ : AbstractSimplicialComplex (Fin 2)).faces =
+          (⊤ : PreAbstractSimplicialComplex (Fin 2)).faces := by
+      exact congrArg PreAbstractSimplicialComplex.faces
+        AbstractSimplicialComplex.top_toPreAbstractSimplicialComplex
+    rw [hfaces]
     simpa only [PreAbstractSimplicialComplex.simplex_univ] using
       (PreAbstractSimplicialComplex.finite_faces_simplex (Finset.univ : Finset (Fin 2)))
   · calc
@@ -96,10 +101,5 @@ theorem contractible2Complex_standardOneSimplex :
         dimension_le_card_sub_one (V := Finset.univ) (fun _ _ => Finset.subset_univ _)
       _ = (1 : WithBot ℕ∞) := by norm_num
       _ ≤ 2 := by norm_num
-
-/-- The standard one-simplex has finite face set, the finiteness component of the predicate. -/
-theorem contractible2Complex_standardOneSimplex_faces_finite :
-    ((⊤ : AbstractSimplicialComplex (Fin 2)).faces).Finite :=
-  (contractible2Complex_standardOneSimplex).finite_faces
 
 end AbstractSimplicialComplex
