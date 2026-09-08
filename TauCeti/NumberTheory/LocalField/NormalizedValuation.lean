@@ -38,7 +38,7 @@ decoding with `Multiplicative.toAdd`.
   valuation `1`; that is, uniformizers are exactly where the normalization is pinned.
 * `TauCeti.eq_normalizedValuation`: the kernel condition together with the uniformizer equation
   characterizes the normalized valuation among homomorphisms `Kˣ →* Multiplicative ℤ`.
-* `TauCeti.isUnit_iff_normalizedValuation_eq_one`,
+* `TauCeti.isUnit_iff_normalizedValuationWithZero_eq_one`,
   `TauCeti.mem_integer_iff_toAdd_normalizedValuation_nonneg` and
   `TauCeti.dvd_iff_toAdd_normalizedValuation_le`: the normalized valuation reads off the units,
   the elements and the divisibility relation of the ring of integers.
@@ -106,6 +106,8 @@ private theorem intValuation_surjective : Function.Surjective (intValuation (K :
 private theorem intValuation_valuationSubring :
     (intValuation (K := K)).valuationSubring.toSubring = 𝒪[K] := by
   ext x
+  -- Unfold mapped-valuation membership to expose the comparison transported by the order
+  -- isomorphism; the valuation-subring API has no lemma stating this composite equality.
   change valueGroupWithZeroIsoInt K (valuation K x) ≤ 1 ↔ valuation K x ≤ 1
   simpa only [map_one] using
     (OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
@@ -133,6 +135,8 @@ theorem toAdd_normalizedValuation_eq_neg_log (x : Kˣ) :
 private theorem toAdd_normalizedValuation_eq_ord (x : Kˣ) :
     (normalizedValuation K x).toAdd = Valuation.ord (intValuation (K := K)) (x : K) := by
   rw [toAdd_normalizedValuation_eq_neg_log, Valuation.ord_def]
+  -- Both sides now unfold to the logarithm of the transported valuation; there is no named
+  -- bridge between these two nested homomorphism presentations.
   rfl
 
 private theorem valueGroupWithZeroIsoInt_valuation_ne_zero (x : Kˣ) :
@@ -170,12 +174,16 @@ nonnegative. -/
 theorem mem_integer_iff_toAdd_normalizedValuation_nonneg (x : Kˣ) :
     (x : K) ∈ 𝒪[K] ↔ 0 ≤ (normalizedValuation K x).toAdd := by
   rw [Valuation.mem_integer_iff, toAdd_normalizedValuation_eq_ord]
+  -- Transport the valuation comparison through the order isomorphism before identifying the
+  -- mapped valuation below.
   rw [show valuation K (x : K) ≤ 1 ↔
       valueGroupWithZeroIsoInt K (valuation K (x : K)) ≤ valueGroupWithZeroIsoInt K 1 from
     (OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K) :
       valueGroupWithZeroIsoInt K (valuation K (x : K)) ≤ valueGroupWithZeroIsoInt K 1 ↔
         valuation K (x : K) ≤ 1).symm]
   simp only [map_one]
+  -- Unfold the mapped valuation and its valuation-subring membership so that the generic
+  -- order characterization applies; the API does not expose this as a rewrite lemma.
   change intValuation (K := K) (x : K) ≤ 1 ↔
     0 ≤ Valuation.ord (intValuation (K := K)) (x : K)
   exact Valuation.mem_valuationSubring_iff_ord_nonneg (intValuation (K := K))
@@ -194,17 +202,18 @@ theorem normalizedValuation_surjective : Function.Surjective (normalizedValuatio
     apply Multiplicative.toAdd.injective
     simpa [toAdd_normalizedValuation_eq_ord] using hx
 
-/-- An element of the ring of integers is a unit there exactly when its normalized valuation
-vanishes. -/
-theorem isUnit_iff_normalizedValuation_eq_one {u : 𝒪[K]} (hu : (u : K) ≠ 0) :
-    IsUnit u ↔ normalizedValuation K (Units.mk0 (u : K) hu) = 1 := by
-  rw [← toAdd_eq_zero, toAdd_normalizedValuation_eq_ord]
-  let v := intValuation (K := K)
-  let e : v.valuationSubring.toSubring ≃+* 𝒪[K] :=
-    RingEquiv.subringCongr intValuation_valuationSubring
-  let u' : v.valuationSubring := e.symm u
-  have hu' : (u' : K) ≠ 0 := by simpa [u', e] using hu
-  simpa [u', e] using Valuation.isUnit_iff_ord_eq_zero v hu'
+/-- An element of the ring of integers is a unit there exactly when its zero-preserving
+normalized valuation is one. -/
+theorem isUnit_iff_normalizedValuationWithZero_eq_one {u : 𝒪[K]} :
+    IsUnit u ↔ normalizedValuationWithZero K (u : K) = 1 := by
+  rw [Valuation.Integers.isUnit_iff_valuation_eq_one
+    (Valuation.integer.integers (valuation K))]
+  -- Expose the underlying composite: the normalized map first transports the valuation and
+  -- then inverts it. There is no propositional coercion lemma for this nested homomorphism.
+  change valuation K (u : K) = 1 ↔
+    (valueGroupWithZeroIsoInt K (valuation K (u : K)))⁻¹ = 1
+  rw [inv_eq_one, ← map_one (valueGroupWithZeroIsoInt K)]
+  exact (valueGroupWithZeroIsoInt K).injective.eq_iff.symm
 
 /-- Divisibility in the ring of integers is monotonicity of the normalized valuation. -/
 theorem dvd_iff_toAdd_normalizedValuation_le {a b : 𝒪[K]} (ha : (a : K) ≠ 0) (hb : (b : K) ≠ 0) :
@@ -227,6 +236,8 @@ theorem exists_eq_mul_zpow_of_irreducible {π : 𝒪[K]} (hπ : Irreducible π) 
   · exact (Valuation.Integers.isUnit_iff_valuation_eq_one
       (Valuation.integer.integers (valuation K))).mp u.isUnit
   · apply Units.ext
+    -- The algebra map from the valuation subring is definitionally its subtype coercion; expose
+    -- that equality before applying the DVR decomposition equation.
     rw [show algebraMap 𝒪[K] K π = (π : K) by rfl] at hx
     simpa [uK, Units.smul_def, Algebra.smul_def] using hx
 
