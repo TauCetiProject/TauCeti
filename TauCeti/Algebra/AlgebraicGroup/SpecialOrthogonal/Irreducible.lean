@@ -123,8 +123,9 @@ private theorem single_one_mem_of_ne_bot
   have hmultiple : ((4 : k) * v i) • Pi.single i 1 ∈ N := by
     simpa only [i] using four_smul_single_mem k n N hv hn
   have htwo : (2 : k) ≠ 0 := two_ne_zero
+  have h4 : (4 : k) = 2 * 2 := by norm_num
   have hfour : (4 : k) ≠ 0 := by
-    rw [show (4 : k) = 2 * 2 by norm_num]
+    rw [h4]
     exact mul_ne_zero htwo htwo
   have hc : (4 : k) * v i ≠ 0 := mul_ne_zero hfour hvi
   have hi : Pi.single i 1 ∈ N := by
@@ -135,8 +136,8 @@ private theorem single_one_mem_of_ne_bot
   · simpa [hai] using hi
   · let g := coordinateRotation (R := k) i a hai
     have hrotated := mulVec_mem k n N g hi
-    rw [coordinateRotation_mulVec_single_left] at hrotated
-    exact hrotated
+    simpa only [g, Matrix.mulVec_single, MulOpposite.op_one, one_smul,
+      coordinateRotation_col_left] using hrotated
 
 /-- **The standard comodule of `SOₙ` is simple in dimension at least three** over a field in
 characteristic different from two. -/
@@ -153,11 +154,12 @@ theorem isSimpleOrder_subcomodule_of_three_le (hn : 3 ≤ n) :
     by_cases hN : N = ⊥
     · exact Or.inl hN
     · right
-      apply top_unique
-      intro v _
-      rw [pi_eq_sum_univ' v]
-      exact N.toSubmodule.sum_mem fun a _ ↦
-        N.toSubmodule.smul_mem (v a) (single_one_mem_of_ne_bot k n N hN hn a)
+      have htop : N.toSubmodule = ⊤ :=
+        (Submodule.eq_top_iff_forall_basis_mem (Pi.basisFun k (Fin n))).2 fun a ↦ by
+          simpa using single_one_mem_of_ne_bot k n N hN hn a
+      exact Subcomodule.ext fun v ↦ by
+        rw [← Subcomodule.mem_toSubmodule, htop]
+        simp
 
 /-- **The standard comodule of `SOₙ` is completely reducible in dimension at least three** over
 a field of characteristic different from two. -/

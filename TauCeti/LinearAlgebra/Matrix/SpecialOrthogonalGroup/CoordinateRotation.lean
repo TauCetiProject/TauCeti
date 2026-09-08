@@ -86,9 +86,10 @@ theorem coordinateRotation_mulVec (i j : n) (hij : i ≠ j) (w : n → R) (a : n
     · simp [hai, haj, Equiv.swap_apply_of_ne_of_ne]
 
 /-- A coordinate rotation sends the `i`-th basis vector to the `j`-th basis vector. -/
-theorem coordinateRotation_mulVec_single_left (i j : n) (hij : i ≠ j) :
-    (coordinateRotation (R := R) i j hij : Matrix n n R) *ᵥ Pi.single i 1 =
-      Pi.single j 1 := by
+@[simp]
+theorem coordinateRotation_col_left (i j : n) (hij : i ≠ j) :
+    (coordinateRotation (R := R) i j hij : Matrix n n R).col i = Pi.single j 1 := by
+  rw [← Matrix.mulVec_single_one]
   ext a
   rw [coordinateRotation_mulVec]
   by_cases hai : a = i
@@ -98,9 +99,10 @@ theorem coordinateRotation_mulVec_single_left (i j : n) (hij : i ≠ j) :
 
 /-- A coordinate rotation sends the `j`-th basis vector to the negative of the `i`-th basis
 vector. -/
-theorem coordinateRotation_mulVec_single_right (i j : n) (hij : i ≠ j) :
-    (coordinateRotation (R := R) i j hij : Matrix n n R) *ᵥ Pi.single j 1 =
-      -Pi.single i 1 := by
+@[simp]
+theorem coordinateRotation_col_right (i j : n) (hij : i ≠ j) :
+    (coordinateRotation (R := R) i j hij : Matrix n n R).col j = -Pi.single i 1 := by
+  rw [← Matrix.mulVec_single_one]
   ext a
   rw [coordinateRotation_mulVec]
   by_cases hai : a = i
