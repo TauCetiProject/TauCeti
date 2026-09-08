@@ -46,13 +46,6 @@ hypothesis under which that sheaf is built.
 * `SchemeWeilDivisor.exists_isUnit_germToFunctionField_eq_of_forall_coeff_eq` says that two local
   equations for the same divisor on such an open subset differ by a unit of `Γ(X, U)`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, target "Divisors on a curve:
-Weil divisors and Cartier divisors; the dictionaries `Cartier ≃ line bundles` and (smooth curve)
-`Weil ≃ Cartier`". It isolates the exact local condition needed next: the construction of
-`𝒪_X(D)` can prove invertibility by reducing on a trivializing cover to the already constructed
-principal-divisor multiplication isomorphism, and on a curve every Weil divisor satisfies the
-condition.
-
 Existence and uniqueness of local equations are the two halves of the local comparison of Weil
 and Cartier divisors: near each point a divisor is the divisor of a nonzero rational function,
 and that function is determined up to a regular unit, so its class in `𝒦_X^× / 𝒪_X^×` is well

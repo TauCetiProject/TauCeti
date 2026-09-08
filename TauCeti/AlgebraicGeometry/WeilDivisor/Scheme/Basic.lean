@@ -24,10 +24,6 @@ with finite support entirely in codimension one, and
 The coefficient, support, effectivity, and point-divisor API is inherited directly from
 `WeilDivisor`; no scheme-specific copies of those declarations are introduced.
 
-`isClosed_singleton_of_coheight_eq_one` records the topological fact that on a scheme of
-dimension at most one the codimension-one points are closed, so that finitely many of them may
-be removed from an open subset.
-
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "Divisors on a curve:
 Weil divisors `⊕_x ℤ`", by supplying the scheme-theoretic codimension-one specialization needed
 before principal divisors can be constructed from `Scheme.ord`.
@@ -50,22 +46,6 @@ abbrev CodimensionOnePoint (X : Scheme.{u}) : Type u :=
 /-- A Weil divisor on a scheme is a finite formal integer sum of its codimension-one points. -/
 abbrev SchemeWeilDivisor (X : Scheme.{u}) : Type u :=
   WeilDivisor (CodimensionOnePoint X)
-
-/-- On a scheme whose points all have codimension at most one, a codimension-one point is
-closed. -/
-theorem isClosed_singleton_of_coheight_eq_one {X : Scheme.{u}} (hdim : ∀ y : X, coheight y ≤ 1)
-    {x : X} (hx : coheight x = 1) : IsClosed ({x} : Set X) := by
-  rw [← closure_eq_iff_isClosed]
-  refine Set.Subset.antisymm (fun y hy ↦ ?_) subset_closure
-  -- `y ∈ closure {x}` says `x ⤳ y`, which is exactly `y ≤ x` in the specialization preorder; a
-  -- strict such `y` would be a proper specialization of `x`, hence of codimension at least two.
-  have hyx : y ≤ x := specializes_iff_mem_closure.mpr hy
-  rcases eq_or_ne y x with rfl | hne
-  · exact Set.mem_singleton _
-  refine absurd (hdim y) (not_le.mpr ?_)
-  have hlt : y < x :=
-    ⟨hyx, fun hxy ↦ hne (Inseparable.eq (inseparable_iff_specializes_and.mpr ⟨hxy, hyx⟩))⟩
-  simpa [hx] using Order.coheight_strictAnti hlt (by simp [hx])
 
 namespace SchemeWeilDivisor
 
