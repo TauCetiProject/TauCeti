@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Coalgebra.Basic
-public import TauCeti.LinearAlgebra.TensorProduct.Basis
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Comodules over a coalgebra

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Tensor-product basis coordinates
@@ -17,8 +18,7 @@ commute with a map of the scalar-extension algebras.
 
 ## Main declarations
 
-* `TensorProduct.tensorComponent`: contraction against the right factor of a tensor product.
-* `TensorProduct.tensor_eq_of_forall_tensorComponent_eq`: contractions against a free right
+* `TensorProduct.tensor_eq_of_forall_tensorComponent_eq`: contractions against a projective right
   factor detect equality.
 * `Module.Basis.map_baseChange_repr`: applying a scalar map to a coordinate in a base-changed
   basis agrees with first mapping the tensor and then taking its coordinate.
@@ -39,44 +39,47 @@ variable {R : Type u} {M : Type v} {N : Type w}
 variable [CommSemiring R] [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module R N]
 
-/-- Apply a linear functional to the right factor of a tensor. -/
-noncomputable def tensorComponent (phi : N →ₗ[R] R) : M ⊗[R] N →ₗ[R] M :=
-  (TensorProduct.rid R M).toLinearMap ∘ₗ phi.lTensor M
-
-/-- A right tensor component sends a pure tensor to the corresponding scalar multiple. -/
-@[simp]
-theorem tensorComponent_tmul (phi : N →ₗ[R] R) (m : M) (n : N) :
-    tensorComponent (R := R) (M := M) phi (m ⊗ₜ[R] n) = phi n • m := by
-  simp [tensorComponent]
-
-/-- The coordinates of a tensor in a basis of its right factor are its tensor components. -/
-theorem equivFinsuppOfBasisRight_apply_eq_tensorComponent {ι : Type*} [DecidableEq ι]
-    (b : Module.Basis ι R N) (t : M ⊗[R] N) (i : ι) :
-    TensorProduct.equivFinsuppOfBasisRight b t i =
-      tensorComponent (R := R) (M := M) (b.coord i) t := by
-  rw [TensorProduct.equivFinsuppOfBasisRight_apply]
-  rfl
-
 /-- Equality of all contractions against the right factor detects equality in a tensor product
-over a commutative semiring when the right factor is free. -/
-theorem tensor_eq_of_forall_tensorComponent_eq [Module.Free R N] {x y : M ⊗[R] N}
+over a commutative semiring when the right factor is projective. -/
+theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M ⊗[R] N}
     (h : ∀ φ : Module.Dual R N,
       tensorComponent (R := R) (M := M) φ x = tensorComponent (R := R) (M := M) φ y) :
     x = y := by
   classical
-  let b := Module.Free.chooseBasis R N
-  apply (TensorProduct.equivFinsuppOfBasisRight b (M := M)).injective
-  ext i
-  rw [equivFinsuppOfBasisRight_apply_eq_tensorComponent,
-    equivFinsuppOfBasisRight_apply_eq_tensorComponent]
-  exact h (b.coord i)
-
-/-- Contraction by the zero functional is the zero linear map. -/
-@[simp]
-theorem tensorComponent_zero :
-    tensorComponent (R := R) (M := M) (0 : N →ₗ[R] R) = 0 := by
-  refine TensorProduct.ext' fun m n => ?_
-  simp
+  obtain ⟨s, hs⟩ := Module.projective_def'.mp (inferInstance : Module.Projective R N)
+  let b := Finsupp.basisSingleOne (R := R) (ι := N)
+  have hmap : TensorProduct.map LinearMap.id s x = TensorProduct.map LinearMap.id s y := by
+    apply (TensorProduct.equivFinsuppOfBasisRight b (M := M)).injective
+    ext i
+    rw [TensorProduct.equivFinsuppOfBasisRight_apply,
+      TensorProduct.equivFinsuppOfBasisRight_apply]
+    calc
+      TensorProduct.rid R M
+          ((b.coord i).lTensor M (TensorProduct.map LinearMap.id s x)) =
+          tensorComponent (b.coord i) (TensorProduct.map LinearMap.id s x) := by
+            simp [tensorComponent]
+      _ = LinearMap.id (tensorComponent ((b.coord i).comp s) x) :=
+        tensorComponent_map (b.coord i) LinearMap.id s x
+      _ = LinearMap.id (tensorComponent ((b.coord i).comp s) y) := by
+        rw [h ((b.coord i).comp s)]
+      _ = tensorComponent (b.coord i) (TensorProduct.map LinearMap.id s y) :=
+        (tensorComponent_map (b.coord i) LinearMap.id s y).symm
+      _ = TensorProduct.rid R M
+          ((b.coord i).lTensor M (TensorProduct.map LinearMap.id s y)) := by
+            simp [tensorComponent]
+  let p : (N →₀ R) →ₗ[R] N := Finsupp.linearCombination R id
+  have hleft (z : M ⊗[R] N) :
+      TensorProduct.map LinearMap.id p (TensorProduct.map LinearMap.id s z) = z := by
+    induction z using TensorProduct.induction_on with
+    | zero => simp
+    | add x y hx hy => simp only [map_add, hx, hy]
+    | tmul m n =>
+        simp only [TensorProduct.map_tmul, LinearMap.id_apply]
+        rw [← LinearMap.comp_apply, hs, LinearMap.id_apply]
+  calc
+    x = TensorProduct.map LinearMap.id p (TensorProduct.map LinearMap.id s x) := (hleft x).symm
+    _ = TensorProduct.map LinearMap.id p (TensorProduct.map LinearMap.id s y) := congrArg _ hmap
+    _ = y := hleft y
 
 end TensorProduct
 

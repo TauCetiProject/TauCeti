@@ -247,8 +247,9 @@ noncomputable def coactDecomposition : V →ₗ[R] (ℕ →₀ V) :=
 theorem coactDecomposition_apply (v : V) (n : ℕ) :
     coactDecomposition R V v n = coactComponent R V n v := by
   rw [coactDecomposition, LinearMap.coe_comp, Function.comp_apply, coactComponent_apply]
-  exact TensorProduct.equivFinsuppOfBasisRight_apply_eq_tensorComponent (monomialBasis R)
-    (Comodule.coact (R := R) (C := SymmetricAlgebra R R) v) n
+  simpa [coeff, TensorProduct.tensorComponent] using
+    TensorProduct.equivFinsuppOfBasisRight_apply (monomialBasis R)
+      (Comodule.coact (R := R) (C := SymmetricAlgebra R R) v) n
 
 /-- The coaction is recovered from its divided-power components: `ρ v = ∑ₙ Nₙ v ⊗ xⁿ`. -/
 theorem coact_eq_sum (v : V) :

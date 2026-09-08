@@ -477,24 +477,23 @@ theorem ofMapWeightSpace_toLinearMap (f : V →ₗ[R] W)
     (ofMapWeightSpace f hf).toLinearMap = f :=
   (rfl)
 
-omit [Comodule R (MonoidAlgebra R G) V] [Comodule R (MonoidAlgebra R G) W] in
-private theorem tensorComponent_map (f : V →ₗ[R] W) (g : G)
-    (t : V ⊗[R] MonoidAlgebra R G) :
-    f (TensorProduct.tensorComponent (R := R) (M := V) (monoidCoeff R G g) t) =
-      TensorProduct.tensorComponent (R := R) (M := W) (monoidCoeff R G g)
-        (TensorProduct.map f LinearMap.id t) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy]
-  | tmul v x => simp [TensorProduct.tensorComponent_tmul]
-
 /-- A comodule morphism over a monoid algebra commutes with every weight projection. -/
 @[simp]
 theorem map_weightProj (f : Hom R (MonoidAlgebra R G) V W) (g : G) (v : V) :
     f (weightProj R G V g v) = weightProj R G W g (f v) := by
   rw [weightProj_apply, weightProj_apply]
-  exact (tensorComponent_map f.toLinearMap g _).trans <|
-    congrArg (TensorProduct.tensorComponent (R := R) (M := W) (monoidCoeff R G g))
+  calc
+    f (TensorProduct.tensorComponent (monoidCoeff R G g)
+        (coact (R := R) (C := MonoidAlgebra R G) v)) =
+      TensorProduct.tensorComponent (monoidCoeff R G g)
+        (TensorProduct.map f.toLinearMap LinearMap.id
+          (coact (R := R) (C := MonoidAlgebra R G) v)) := by
+            rw [← Hom.coe_toLinearMap f]
+            simpa only [LinearMap.comp_id] using
+              (TensorProduct.tensorComponent_map (monoidCoeff R G g) f.toLinearMap
+                LinearMap.id (coact (R := R) (C := MonoidAlgebra R G) v)).symm
+    _ = _ := congrArg
+      (TensorProduct.tensorComponent (R := R) (M := W) (monoidCoeff R G g))
       (f.map_coact_apply v)
 
 /-- A morphism of comodules over `R[G]` sends the `g`-weight submodule into the `g`-weight
