@@ -185,8 +185,9 @@ theorem coeff_weilDifferentialDivisor (hF : IsFunctionField k F)
   (rfl)
 
 /-- A nonzero Weil differential is regular (or holomorphic), meaning that it is bounded by the
-zero divisor, exactly when its order is nonnegative at every place. -/
-@[simp]
+zero divisor, exactly when its order is nonnegative at every place.  This is deliberately not
+`@[simp]`: `TauCeti.mem_weilDifferentialFiltration_iff_le_weilDifferentialDivisor` already sends
+the left-hand side to the divisor inequality `0 ≤ (ω)`, which is the simp-normal form. -/
 theorem mem_weilDifferentialFiltration_zero_iff_forall_order_nonneg
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     {ω : Module.Dual k ↥(repartitionSpace k F)} (hmem : ω ∈ weilDifferentialSpace k F)
