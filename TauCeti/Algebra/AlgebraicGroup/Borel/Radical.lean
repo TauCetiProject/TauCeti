@@ -7,11 +7,10 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Borel.Existence
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Semisimple
-import Mathlib.RingTheory.Etale.Descent
+import TauCeti.Algebra.AlgebraicGroup.Borel.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Connected.Product
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Product.Properties
 import TauCeti.Algebra.AlgebraicGroup.Smooth.Product
-import TauCeti.Algebra.AlgebraicGroup.Solvable.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Solvable.NormalProduct
 import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.BaseChange
 
@@ -66,8 +65,6 @@ and the identity subgroup.
 * `TauCeti.HopfIdeal.IsBorel.baseChangeHopfIdeal_le_solvableRadicalDefiningIdeal` and
   `TauCeti.HopfIdeal.IsBorel.baseChangeHopfIdeal_le_unipotentRadicalDefiningIdeal`: over an
   arbitrary field, the base change of a Borel subgroup contains the two geometric radicals.
-* `TauCeti.HopfIdeal.IsBorel.isBorelCandidate`: every Borel subgroup over an arbitrary field is a
-  Borel candidate over that field.
 * `TauCeti.HopfIdeal.IsBorel.le_solvableRadicalDefiningIdeal` and
   `TauCeti.HopfIdeal.IsBorel.le_unipotentRadicalDefiningIdeal`: **over an arbitrary field, the
   solvable radical, and hence the unipotent radical, is contained in every Borel subgroup.**
@@ -271,39 +268,6 @@ theorem le_unipotentRadicalDefiningIdeal (hI : IsBorel k H I) :
       ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩ :=
   hI.le_solvableRadicalDefiningIdeal.trans
     (FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_le_unipotentRadicalDefiningIdeal _)
-
-/-- A Borel subgroup over an arbitrary field is a Borel candidate over that field: its quotient
-is smooth, geometrically connected, and geometrically solvable. -/
-theorem isBorelCandidate (hI : IsBorel k H I) :
-    IsBorelCandidate k ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩ I := by
-  let H' : FiniteTypeCommHopfAlgCat.{u, u} k :=
-    ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩
-  let qIso := CommHopfAlgCat.quotientBaseChangeIso (K := AlgebraicClosure k) I
-  have hIK : IsBorelCandidate (AlgebraicClosure k)
-      (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H')
-      (CommHopfAlgCat.baseChangeHopfIdeal (K := AlgebraicClosure k) I) :=
-    ((isBorelOverAlgClosed_iff _ _ _).mp
-      ((isBorel_iff_isBorelOverAlgClosed_baseChange k H I).mp hI)).2.1
-  refine IsBorelCandidate.mk ?_ ?_ ?_
-  · rw [smoothCommHopfAlgProperty_iff]
-    -- Unwrap the finite-type quotient for Mathlib's faithfully-flat smoothness descent lemma.
-    change Algebra.Smooth k (CommHopfAlgCat.quotient H I)
-    have hsmooth :=
-      (smoothCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso qIso hIK.smooth
-    let _ : Algebra.Smooth (AlgebraicClosure k)
-        (CommHopfAlgCat.baseChange (K := AlgebraicClosure k)
-          (CommHopfAlgCat.quotient H I)) :=
-      (smoothCommHopfAlgProperty_iff _).mp hsmooth
-    exact Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat (AlgebraicClosure k)
-  · apply geometricallyConnectedCommHopfAlgProperty.of_baseChange k (AlgebraicClosure k)
-      (FiniteTypeCommHopfAlgCat.quotient H' I).obj
-    exact (geometricallyConnectedCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso
-      qIso hIK.geometricallyConnected
-  · apply geometricallySolvablePointsCommHopfAlgProperty.of_baseChange
-      (K := AlgebraicClosure k)
-      (FiniteTypeCommHopfAlgCat.quotient H' I).obj
-    exact (geometricallySolvablePointsCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso
-      qIso hIK.geometricallySolvable
 
 /-- Over an arbitrary field, a normal Borel subgroup is exactly the solvable radical. -/
 theorem eq_solvableRadicalDefiningIdeal_of_isNormal
