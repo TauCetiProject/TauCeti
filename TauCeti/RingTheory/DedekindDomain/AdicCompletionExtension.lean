@@ -21,7 +21,8 @@ lying over the height-one prime `v` of `R`. Completing at `v` and at `w` gives f
 This file constructs that homomorphism, `adicCompletionExtension`, records that the valuation of
 `L_w` restricted along it is the valuation of `K_v` raised to the ramification index, restricts it
 to the rings of integers as `adicCompletionIntegersExtension`, and shows that the maximal ideal
-contracts to the maximal ideal. It also identifies the valuation attached to the maximal ideal of
+contracts to the maximal ideal. It also provides the induced algebra structure in the
+`AdicCompletionExtension` scope, and identifies the valuation attached to the maximal ideal of
 `𝒪_v` — a discrete valuation ring — with the valuation of the completion itself, which is what
 lets a statement about height-one primes of `𝒪_v` be read as a statement about `K_v`.
 
@@ -32,6 +33,8 @@ global étale algebra with its images in the completions passes through exactly 
 
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionExtension`: the induced ring homomorphism
   `K_v →+* L_w`.
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionExtensionAlgebra`: the algebra structure
+  induced by that map, available in the `AdicCompletionExtension` scope.
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersExtension`: its restriction
   `𝒪_v →+* 𝒪_w` to the rings of integers.
 
@@ -360,6 +363,25 @@ noncomputable def adicCompletionExtension : v.adicCompletion K →+* w.adicCompl
       (algebraMap (WithVal (v.valuation K)) (WithVal (w.valuation L)))
       (uniformContinuous_algebraMap_liesOver (K := K) (L := L) v w).continuous).comp
       (adicCompletion.equiv K v).toRingHom
+
+/-- The algebra structure on `L_w` over `K_v` induced by `adicCompletionExtension`, available in
+the `AdicCompletionExtension` scope. -/
+@[reducible]
+noncomputable def adicCompletionExtensionAlgebra :
+    Algebra (v.adicCompletion K) (w.adicCompletion L) :=
+  (adicCompletionExtension K L v w).toAlgebra
+
+scoped[AdicCompletionExtension] attribute [instance]
+  IsDedekindDomain.HeightOneSpectrum.adicCompletionExtensionAlgebra
+
+open scoped AdicCompletionExtension
+
+/-- The algebra map of `adicCompletionExtensionAlgebra` is `adicCompletionExtension`. -/
+@[simp]
+theorem algebraMap_adicCompletionExtensionAlgebra :
+    algebraMap (v.adicCompletion K) (w.adicCompletion L) =
+      adicCompletionExtension K L v w :=
+  RingHom.algebraMap_toAlgebra _
 
 /-- Under `toCompletion`, the image of `x` is `UniformSpace.Completion.map` of the algebra map
 applied to `x.toCompletion`. -/
