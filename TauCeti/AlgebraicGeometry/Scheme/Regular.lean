@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Basic
 public import Mathlib.AlgebraicGeometry.OrderOfVanishing
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
+import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
 
 /-!
 # Rational functions without poles are regular
@@ -89,13 +90,14 @@ theorem exists_algebraMap_stalk_eq_of_coheight_eq_zero {x : X} (hx : coheight x 
   exact IsFractionRing.surjective_iff_isField.mpr hfield f
 
 /-- **A rational function without poles is regular.** On a locally Noetherian integral scheme, let
-`U` be a nonempty open subset of dimension at most one whose codimension-one local rings are
-discrete valuation rings. A rational function whose order is nonnegative at every codimension-one
-point of `U` is the image of a section of `𝒪_X` over `U`.
+`U` be a nonempty open subset all of whose points have codimension at most one in `X` and whose
+codimension-one local rings are discrete valuation rings. A rational function whose order is
+nonnegative at every codimension-one point of `U` is the image of a section of `𝒪_X` over `U`.
 
-This is the one-dimensional case of algebraic Hartogs' principle. The hypothesis on the dimension
-enters only through the points of `U`: at a codimension-one point the discrete valuation gives the
-bound, and at a point with no proper generization the local ring is already the function field. -/
+This is the one-dimensional case of algebraic Hartogs' principle. The hypothesis on the
+codimension enters only through the points of `U`: at a codimension-one point the discrete
+valuation gives the bound, and at a point with no proper generization the local ring is already
+the function field. -/
 theorem exists_germToFunctionField_eq_of_ord_nonneg
     {U : X.Opens} [Nonempty U]
     (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
@@ -151,9 +153,10 @@ theorem exists_germToFunctionField_eq_of_ord_nonneg
     X.presheaf.germ_res_apply (homOfLE (hVU y)) (genericPoint X) (hgen _ (hne y)) a]
 
 /-- **A rational function without zeros or poles is a regular unit.** On a locally Noetherian
-integral scheme, let `U` be a nonempty open subset of dimension at most one whose
-codimension-one local rings are discrete valuation rings. A nonzero rational function whose order
-vanishes at every codimension-one point of `U` is the germ of a *unit* of `Γ(X, U)`.
+integral scheme, let `U` be a nonempty open subset all of whose points have codimension at most
+one in `X` and whose codimension-one local rings are discrete valuation rings. A nonzero rational
+function whose order vanishes at every codimension-one point of `U` is the germ of a *unit* of
+`Γ(X, U)`.
 
 This is the converse over such a `U` of `AlgebraicGeometry.Scheme.ord_of_isUnit`, which says
 that a regular unit has order zero wherever it is defined. -/
@@ -165,16 +168,10 @@ theorem exists_isUnit_germToFunctionField_eq_of_ord_eq_zero
     (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → X.ord f y = 0) :
     ∃ a : Γ(X, U), IsUnit a ∧ X.germToFunctionField U a = f := by
   -- The order of the inverse is the negative of the order, so both have no poles on `U`.
-  have hone : ∀ x : X, X.ord (1 : X.functionField) x = 0 := by
-    intro x
-    let _ : Nonempty (⊤ : X.Opens) := ⟨⟨x, trivial⟩⟩
-    -- Naming this proof fixes the open set before elaborating `ord_of_isUnit`.
-    have hx_top : x ∈ (⊤ : X.Opens) := by simp
-    simpa using X.ord_of_isUnit (U := ⊤) isUnit_one hx_top
   have hinv : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → X.ord f⁻¹ (y : X) = 0 := by
     intro y hy
     have h := X.ord_mul (x := (y : X)) hf0 (inv_ne_zero hf0)
-    rw [mul_inv_cancel₀ hf0, hone, hf y hy] at h
+    rw [mul_inv_cancel₀ hf0, ord_one, hf y hy] at h
     omega
   obtain ⟨a, ha⟩ :=
     exists_germToFunctionField_eq_of_ord_nonneg hDVR hU (fun y hy ↦ (hf y hy).ge)
