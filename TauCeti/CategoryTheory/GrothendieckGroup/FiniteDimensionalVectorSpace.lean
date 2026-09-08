@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Category.FGModuleCat.Projective
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
-public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 
 /-!
 # Grothendieck groups of finite-dimensional vector spaces
@@ -62,17 +61,6 @@ private noncomputable def standard (L : FGModuleCat.{v} k) : ℕ → FGModuleCat
   | 0 => 0
   | n + 1 => L ⊞ standard L n
 
-private theorem finrank_biprod (X Y : FGModuleCat.{v} k) :
-    Module.finrank k ((X ⊞ Y : FGModuleCat.{v} k) : Type v) =
-      Module.finrank k X + Module.finrank k Y := by
-  let F := forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)
-  let _ : PreservesBinaryBiproduct X Y F :=
-    preservesBinaryBiproduct_of_preservesBinaryProduct F
-  let e : F.obj (X ⊞ Y) ≅ ModuleCat.of k (X × Y) :=
-    F.mapBiprod X Y ≪≫ ModuleCat.biprodIsoProd X.obj Y.obj
-  let e' : (X ⊞ Y : FGModuleCat.{v} k) ≅ FGModuleCat.of k (X × Y) := F.preimageIso e
-  exact (FGModuleCat.isoToLinearEquiv e').finrank_eq.trans Module.finrank_prod
-
 private theorem finrank_standard (L : FGModuleCat.{v} k) (hL : Module.finrank k L = 1)
     (n : ℕ) : Module.finrank k (standard k L n) = n := by
   induction n with
@@ -83,7 +71,7 @@ private theorem finrank_standard (L : FGModuleCat.{v} k) (hL : Module.finrank k 
         ModuleCat.subsingleton_of_isZero (F.map_isZero (isZero_zero _))
       exact Module.finrank_zero_of_subsingleton
   | succ n ih =>
-      rw [standard, finrank_biprod, hL, ih, Nat.one_add]
+      rw [standard, FGModuleCat.finrank_biprod, hL, ih, Nat.one_add]
 
 private noncomputable def isoStandard (L : FGModuleCat.{v} k) (hL : Module.finrank k L = 1)
     (X : FGModuleCat.{v} k) : X ≅ standard k L (Module.finrank k X) := by
@@ -119,7 +107,7 @@ variable (k : Type u) [DivisionRing k]
 private noncomputable def finrankInvariant : AdditiveInvariant (FGModuleCat.{v} k) ℤ where
   obj X := Module.finrank k X
   map_iso {_ _} e := congrArg Int.ofNat (FGModuleCat.isoToLinearEquiv e).finrank_eq
-  map_biprod X Y := congrArg Int.ofNat (finrank_biprod k X Y)
+  map_biprod X Y := congrArg Int.ofNat (FGModuleCat.finrank_biprod k X Y)
 
 /-- Dimension as a homomorphism from split `K₀` of finite-dimensional vector spaces to `ℤ`. -/
 noncomputable def finrank : SplitK0 (FGModuleCat.{v} k) →+ ℤ :=
@@ -206,9 +194,8 @@ private noncomputable def fromSplitEquiv :
 
 @[simp] private theorem fromSplitEquiv_of (X : FGModuleCat.{v} k) :
     fromSplitEquiv k (SplitK0.of X) = of X := by
-  change (toExactK0 (FGModuleCat.{v} k)).symm
-    ((ExactK0.fromSplitEquiv (nonempty_splitting_of_conflation k)) (SplitK0.of X)) = of X
-  rw [ExactK0.fromSplitEquiv_apply, ExactK0.fromSplit_of, toExactK0_symm_of]
+  simp only [fromSplitEquiv, AddEquiv.trans_apply, ExactK0.fromSplitEquiv_apply,
+    ExactK0.fromSplit_of, toExactK0_symm_of]
 
 @[simp] private theorem fromSplitEquiv_symm_of (X : FGModuleCat.{v} k) :
     (fromSplitEquiv k).symm (of X) = SplitK0.of X := by
@@ -223,8 +210,8 @@ noncomputable def finrank : AbelianK0 (FGModuleCat.{v} k) →+ ℤ :=
 @[simp]
 theorem finrank_of (X : FGModuleCat.{v} k) :
     finrank k (of X) = Module.finrank k X := by
-  change SplitK0.finrank k ((fromSplitEquiv k).symm (of X)) = _
-  rw [fromSplitEquiv_symm_of, SplitK0.finrank_of]
+  simp only [finrank, AddMonoidHom.comp_apply, AddEquiv.toAddMonoidHom_eq_coe,
+    AddMonoidHom.coe_coe, fromSplitEquiv_symm_of, SplitK0.finrank_of]
 
 /-- Every object class in abelian `K₀` is its dimension times the class of the one-dimensional
 space. -/
@@ -241,9 +228,8 @@ noncomputable def finrankEquiv [Small.{v} k] : AbelianK0 (FGModuleCat.{v} k) ≃
 /-- The dimension equivalence agrees with the dimension homomorphism. -/
 theorem finrankEquiv_apply [Small.{v} k] (x : AbelianK0 (FGModuleCat.{v} k)) :
     finrankEquiv k x = finrank k x := by
-  change SplitK0.finrankEquiv k ((fromSplitEquiv k).symm x) =
-    SplitK0.finrank k ((fromSplitEquiv k).symm x)
-  rw [SplitK0.finrankEquiv_apply]
+  simp only [finrankEquiv, AddEquiv.trans_apply, finrank, AddMonoidHom.comp_apply,
+    AddEquiv.toAddMonoidHom_eq_coe, AddMonoidHom.coe_coe, SplitK0.finrankEquiv_apply]
 
 /-- The dimension equivalence sends an object class to its dimension. -/
 @[simp]
