@@ -60,6 +60,7 @@ theorem _root_.Polynomial.factorDegrees_def (f : ℤ[X]) (p : ℕ) [Fact p.Prime
 
 /-- A natural number occurs in `f.factorDegrees p` exactly when it is the degree of a normalized
 irreducible factor of the reduction of `f` modulo `p`. -/
+@[simp]
 theorem _root_.Polynomial.mem_factorDegrees_iff {f : ℤ[X]} {p d : ℕ} [Fact p.Prime] :
     d ∈ f.factorDegrees p ↔ ∃ q ∈ normalizedFactors (f.map (Int.castRingHom (ZMod p))),
       q.natDegree = d := by
