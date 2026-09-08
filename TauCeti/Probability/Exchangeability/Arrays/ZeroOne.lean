@@ -37,10 +37,8 @@ built to supply them: it is the **corner** tail, cutting *both* index axes at `n
 rows are all one common i.i.d. random path is separately dissociated, and its row tail carries the
 whole path.
 
-**The converse holds for a jointly exchangeable array.** If the corner tail is trivial, the array
-is jointly dissociated: joint exchangeability moves any block cylinder arbitrarily far into the
-corner tail without changing its mass or its joint mass with a fixed cylinder, and the
-factorization along the corner-tail filtration then follows from tail triviality.
+**The converse holds for a jointly exchangeable array**: if the corner tail is trivial, the array
+is jointly dissociated.
 
 The ergodic form of the Aldous--Hoover representation is the dissociated one, and this is the
 zero-one law separating it from the general form, together with its converse.
