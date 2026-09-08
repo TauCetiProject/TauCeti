@@ -72,7 +72,7 @@ survive, and they are imposed at every real place. -/
 
 /-- **The ray of the narrow modulus consists of the principal fractional ideals with a totally
 positive generator**, that is, of the ideals of `narrowPrincipalSubgroup K`. -/
-theorem mem_ray_narrowModulus_iff {I : idealsPrimeTo (narrowModulus K)} :
+@[simp] theorem mem_ray_narrowModulus_iff {I : idealsPrimeTo (narrowModulus K)} :
     I ∈ ray (narrowModulus K) ↔
       (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) ∈ narrowPrincipalSubgroup K := by
   rw [mem_ray_iff, mem_narrowPrincipalSubgroup]
