@@ -59,9 +59,8 @@ theorem definingHopfIdeal_zero :
     · simp
   apply HopfIdeal.ext
   intro x
-  change x ∈ (definingHopfIdeal R 0).toIdeal ↔
-    x ∈ (SpecialLinear.definingHopfIdeal R 0).toIdeal
-  rw [definingHopfIdeal_toIdeal, SpecialLinear.definingHopfIdeal_toIdeal]
+  rw [← HopfIdeal.mem_toIdeal, ← HopfIdeal.mem_toIdeal, definingHopfIdeal_toIdeal,
+    SpecialLinear.definingHopfIdeal_toIdeal]
   simp [hempty]
 
 /-- In rank one the special-orthogonal and special-linear defining Hopf ideals agree. -/
@@ -86,24 +85,16 @@ theorem definingHopfIdeal_one :
     have hj : j = 0 := Subsingleton.elim _ _
     subst i
     subst j
-    rw [hrelation, pow_two,
-      show (GeneralLinear.determinantGroupLike R 1 :
-          GeneralLinear.coordinateHopfAlgebra R 1) *
-          GeneralLinear.determinantGroupLike R 1 - 1 =
-        ((GeneralLinear.determinantGroupLike R 1 :
-            GeneralLinear.coordinateHopfAlgebra R 1) + 1) *
-          ((GeneralLinear.determinantGroupLike R 1 :
-            GeneralLinear.coordinateHopfAlgebra R 1) - 1) by ring]
-    exact (Ideal.span
-      {(GeneralLinear.determinantGroupLike R 1 :
-          GeneralLinear.coordinateHopfAlgebra R 1) - 1}).mul_mem_left _
-        (Ideal.mem_span_singleton_self _)
+    rw [hrelation]
+    exact Ideal.mem_of_dvd _
+      (sub_one_dvd_pow_sub_one
+        (GeneralLinear.determinantGroupLike R 1 :
+          GeneralLinear.coordinateHopfAlgebra R 1) 2)
+      (Ideal.mem_span_singleton_self _)
   apply HopfIdeal.ext
   intro x
-  change x ∈ (definingHopfIdeal R 1).toIdeal ↔
-    x ∈ (SpecialLinear.definingHopfIdeal R 1).toIdeal
-  rw [definingHopfIdeal_toIdeal, SpecialLinear.definingHopfIdeal_toIdeal,
-    sup_eq_right.mpr hrel]
+  rw [← HopfIdeal.mem_toIdeal, ← HopfIdeal.mem_toIdeal, definingHopfIdeal_toIdeal,
+    SpecialLinear.definingHopfIdeal_toIdeal, sup_eq_right.mpr hrel]
 
 /-- The finite-type coordinate Hopf algebra of `SO₀` is the one of `SL₀`. -/
 @[simp]
@@ -111,11 +102,8 @@ theorem finiteTypeCoordinateHopfAlgebra_zero :
     finiteTypeCoordinateHopfAlgebra R 0 = SpecialLinear.finiteTypeCoordinateHopfAlgebra R 0 := by
   apply CategoryTheory.ObjectProperty.FullSubcategory.ext
   rw [finiteTypeCoordinateHopfAlgebra_obj, SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj]
-  change CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R 0)
-      (definingHopfIdeal R 0) =
-    CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R 0)
-      (SpecialLinear.definingHopfIdeal R 0)
-  rw [definingHopfIdeal_zero]
+  exact congrArg (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R 0))
+    (definingHopfIdeal_zero R)
 
 /-- The finite-type coordinate Hopf algebra of `SO₁` is the one of `SL₁`. -/
 @[simp]
@@ -123,11 +111,8 @@ theorem finiteTypeCoordinateHopfAlgebra_one :
     finiteTypeCoordinateHopfAlgebra R 1 = SpecialLinear.finiteTypeCoordinateHopfAlgebra R 1 := by
   apply CategoryTheory.ObjectProperty.FullSubcategory.ext
   rw [finiteTypeCoordinateHopfAlgebra_obj, SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj]
-  change CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R 1)
-      (definingHopfIdeal R 1) =
-    CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R 1)
-      (SpecialLinear.definingHopfIdeal R 1)
-  rw [definingHopfIdeal_one]
+  exact congrArg (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R 1))
+    (definingHopfIdeal_one R)
 
 /-- **The rank-zero special orthogonal group is reductive over every field.** -/
 theorem reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_zero
