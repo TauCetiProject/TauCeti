@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation
+public import TauCeti.NumberTheory.NumberField.Global.Places.Sign
 public import TauCeti.RingTheory.Valuation.Approximation
 
 /-!
@@ -28,10 +29,27 @@ The resulting approximation inside the number field is then promoted to the actu
 Density of the field in each individual completion supplies nearby field-valued targets, and a
 second simultaneous approximation remains inside the prescribed product neighbourhood.
 
-## Main result
+Two consequences for a *unit* of `K` are derived from it.  Prescribing an approximation target at
+each of finitely many finite places and a sign at each real place is one open condition on the
+product, so one element of `Kˣ` meets all of them at once; specializing the finite targets to
+elements of prescribed valuation gives independent valuations instead.  Taking no finite place at
+all leaves the surjectivity of the total sign homomorphism, which is the archimedean input to the
+narrow class group.
+
+The conclusions are about `Kˣ` rather than `K`, and this is not cosmetic: an approximation
+statement in `K` cannot prescribe signs, because `0` is close to everything and has no sign.
+
+## Main results
 
 * `GlobalNumberFields.weakApproximation_denseRange`: the diagonal image of a number field is dense
   in every finite product of finite and infinite completions.
+* `GlobalNumberFields.exists_units_valuation_sub_lt_and_signHom_eq`: one unit of `K` approximates
+  independently prescribed targets at finitely many finite places while realizing a prescribed
+  sign at every real place.
+* `GlobalNumberFields.exists_units_valuation_eq_and_signHom_eq`: the same with prescribed
+  valuations in place of the approximation targets.
+* `GlobalNumberFields.signHom_surjective`: every pattern of signs at the real places is realized
+  by a unit of `K`.
 
 ## References
 
@@ -248,5 +266,103 @@ theorem weakApproximation_denseRange
       ← (WithAbs.equiv w.1.1).apply_symm_apply (x - ainf w),
       InfinitePlace.Completion.norm_coe]
     exact hxinf w
+
+/-! ### Simultaneous approximation in `Kˣ`
+
+The three statements below are all about `Kˣ`.  A version in `K` would be strictly weaker: `0` is
+within every prescribed distance of nothing in particular but carries no sign, so it satisfies the
+archimedean half of a sign prescription vacuously.
+-/
+
+/-- **Simultaneous approximation with prescribed signs.**  Given a finite set `S` of finite
+places, a target `a v` and a nonzero radius `γ v` at each place of `S`, and a prescribed sign at
+*every* real place, one and the same unit of `K` approximates each finite target to within its own
+radius and has each prescribed sign.
+
+The finite conditions are independent of one another and of the archimedean ones; this is the
+`Kˣ`-valued form of `weakApproximation_denseRange`, and it is what a congruence-and-positivity
+statement for a modulus is built from. -/
+theorem exists_units_valuation_sub_lt_and_signHom_eq
+    {S : Finset (HeightOneSpectrum (RingOfIntegers K))}
+    (a : HeightOneSpectrum (RingOfIntegers K) → K)
+    (γ : HeightOneSpectrum (RingOfIntegers K) → ℤᵐ⁰) (hγ : ∀ v ∈ S, γ v ≠ 0)
+    (s : {w : InfinitePlace K // w.IsReal} → ℤˣ) :
+    ∃ x : Kˣ, (∀ v ∈ S, v.valuation K ((x : K) - a v) < γ v) ∧ signHom x = s := by
+  classical
+  obtain ⟨w₀⟩ := (inferInstance : Nonempty (InfinitePlace K))
+  -- The archimedean targets: the prescribed sign at a real place, and `1` at a complex place.
+  obtain ⟨b, hbsign, hbabs⟩ : ∃ b : InfinitePlace K → K,
+      (∀ w : {w : InfinitePlace K // w.IsReal},
+        InfinitePlace.embedding_of_isReal w.2 (b w.1) = ((s w : ℤ) : ℝ)) ∧
+      ∀ w : InfinitePlace K, w (b w) = 1 := by
+    refine ⟨fun w => if h : w.IsReal then ((s ⟨w, h⟩ : ℤ) : K) else 1, fun w => ?_, fun w => ?_⟩
+    · dsimp only
+      rw [dite_eq_left w.2, Subtype.coe_eta, map_intCast]
+    · dsimp only
+      by_cases h : w.IsReal
+      · rw [dite_eq_left h]
+        rcases Int.units_eq_one_or (s ⟨w, h⟩) with hs | hs <;> rw [hs]
+        · simp
+        · rw [InfinitePlace.coe_apply]
+          simp
+      · rw [dite_eq_right h, map_one]
+  obtain ⟨x, hxf, hxi⟩ := exists_mixed_approximation (Sₑ := S) (Sinf := Finset.univ)
+    (fun v => a v.1) (fun w => b w.1) (fun v => γ v.1) (fun v => hγ v.1 v.2)
+    (fun _ => 1 / 2) (fun _ => by norm_num)
+  have hxi' : ∀ w : InfinitePlace K, w (x - b w) < 1 / 2 := fun w => hxi ⟨w, Finset.mem_univ w⟩
+  -- A point within `1/2` of an element of absolute value one at some place is nonzero.
+  have hx0 : x ≠ 0 := by
+    intro h
+    have h1 := hxi' w₀
+    rw [h, zero_sub, InfinitePlace.coe_apply, w₀.1.map_neg, ← InfinitePlace.coe_apply,
+      hbabs w₀] at h1
+    norm_num at h1
+  refine ⟨Units.mk0 x hx0, fun v hv => by simpa using hxf ⟨v, hv⟩, ?_⟩
+  funext w
+  have hclose : |InfinitePlace.embedding_of_isReal w.2 (x - b w.1)| < 1 / 2 := by
+    rw [← Real.norm_eq_abs, InfinitePlace.norm_embedding_of_isReal]
+    exact hxi' w.1
+  rw [map_sub, hbsign w, abs_lt] at hclose
+  rcases Int.units_eq_one_or (s w) with hs | hs <;> rw [hs] at hclose ⊢
+  · rw [signHom_apply_eq_one_iff, Units.val_mk0]
+    push_cast at hclose
+    linarith [hclose.1]
+  · rw [signHom_apply_eq_neg_one_iff, Units.val_mk0]
+    push_cast at hclose
+    linarith [hclose.2]
+
+/-- **Independent valuations at finitely many finite places, with prescribed signs.**  There is a
+unit of `K` whose valuation at each place of a finite set `S` is the prescribed one, and whose
+sign at each real place is the prescribed one.
+
+This is `exists_units_valuation_sub_lt_and_signHom_eq` with the approximation targets taken to be
+elements of the required valuation; the ultrametric inequality then turns "close to a target" into
+"equal valuation". -/
+theorem exists_units_valuation_eq_and_signHom_eq
+    (S : Finset (HeightOneSpectrum (RingOfIntegers K)))
+    (n : HeightOneSpectrum (RingOfIntegers K) → ℤ)
+    (s : {w : InfinitePlace K // w.IsReal} → ℤˣ) :
+    ∃ x : Kˣ, (∀ v ∈ S, v.valuation K (x : K) = WithZero.exp (n v)) ∧ signHom x = s := by
+  choose p hp using fun v : HeightOneSpectrum (RingOfIntegers K) =>
+    v.valuation_surjective K (WithZero.exp (n v))
+  obtain ⟨x, hxf, hxs⟩ := exists_units_valuation_sub_lt_and_signHom_eq (S := S) p
+    (fun v => WithZero.exp (n v)) (fun _ _ => WithZero.exp_ne_zero) s
+  refine ⟨x, fun v hv => ?_, hxs⟩
+  have hlt : v.valuation K ((x : K) - p v) < v.valuation K (p v) := by
+    rw [hp v]
+    exact hxf v hv
+  have h := Valuation.map_add_eq_of_lt_right (v.valuation K) hlt
+  rw [sub_add_cancel] at h
+  rw [h, hp v]
+
+/-- **The total sign homomorphism is surjective on `Kˣ`.**  Every pattern of signs at the real
+places of `K` is realized by an element of `Kˣ`.
+
+Surjectivity fails in general after restricting along `(𝓞 K)ˣ → Kˣ`, and that failure is the
+obstruction which separates the narrow class group of `K` from the wide one; nothing here bears on
+the restricted map. -/
+theorem signHom_surjective : Function.Surjective (signHom (K := K)) := fun s => by
+  obtain ⟨x, -, hx⟩ := exists_units_valuation_eq_and_signHom_eq (∅ : Finset _) (fun _ => 0) s
+  exact ⟨x, hx⟩
 
 end TauCeti.GlobalNumberFields
