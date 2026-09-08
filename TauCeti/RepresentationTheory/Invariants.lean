@@ -8,7 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Invariants
 
 /-!
-# The group sum of a finite-group representation has the invariants as its range
+# Invariants of group representations
 
 Mathlib names the group sum `∑ g, ρ g` of a finite-group representation `Representation.norm`,
 builds the averaging projection `Representation.averageMap` separately out of the group-algebra
@@ -28,6 +28,8 @@ as the projection: the invariants.
   `Representation.norm` scaled by the inverse of the group order.
 * `Representation.range_norm_eq_invariants`: the group sum `Representation.norm ρ` has the
   invariants as its range.
+* `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
+  kernel of the action of a generator minus the identity.
 -/
 public section
 
@@ -55,3 +57,16 @@ theorem range_norm_eq_invariants : LinearMap.range ρ.norm = ρ.invariants := by
   rw [smul_smul, mul_invOf_self, one_smul]
 
 end Representation
+
+namespace Rep.FiniteCyclicGroup
+
+variable {R G : Type*} [CommRing R] [Group G] (M : Rep R G) (g : G)
+
+/-- If `g` generates `G`, the invariants of a representation are the kernel of `ρ(g) - 1`. -/
+theorem invariants_eq_ker_apply_sub (hg : ∀ x, x ∈ Subgroup.zpowers g) :
+    M.ρ.invariants = LinearMap.ker (M.ρ g - LinearMap.id) := by
+  ext x
+  simpa [sub_eq_zero] using
+    Representation.mem_invariants_iff_of_forall_mem_zpowers M.ρ g hg x
+
+end Rep.FiniteCyclicGroup

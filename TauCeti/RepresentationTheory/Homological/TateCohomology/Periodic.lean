@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.FiniteCyclic
-public import TauCeti.RepresentationTheory.Homological.FiniteCyclic
+public import TauCeti.RepresentationTheory.Invariants
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 
 /-!

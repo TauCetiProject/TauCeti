@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 import Mathlib.RepresentationTheory.Homological.FiniteCyclic
-import TauCeti.RepresentationTheory.Homological.FiniteCyclic
+import TauCeti.RepresentationTheory.Invariants
 
 /-!
 # Herbrand quotients of finite cyclic group representations
