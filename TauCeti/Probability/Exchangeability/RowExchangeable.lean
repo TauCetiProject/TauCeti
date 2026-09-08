@@ -183,13 +183,6 @@ theorem aemeasurable_arrayColumn (hY : ∀ p, AEMeasurable (Y p) μ) (k : ℕ) :
     AEMeasurable (arrayColumn Y k) μ :=
   AEMeasurable.of_eval fun a => hY (a, k)
 
-omit [Countable ι] in
-/-- **Entry measurability from column measurability**, the converse of
-`aemeasurable_arrayColumn`: an entry is a coordinate of its column. -/
-theorem aemeasurable_entry_of_aemeasurable_arrayColumn
-    (h : ∀ k, AEMeasurable (arrayColumn Y k) μ) (p : ι × ℕ) : AEMeasurable (Y p) μ :=
-  (measurable_pi_apply p.1).comp_aemeasurable (h p.2)
-
 /-- **Each row of a row exchangeable array is fully exchangeable.** -/
 theorem RowExchangeable.fullyExchangeable_row (h : RowExchangeable μ Y)
     (hY : ∀ p, AEMeasurable (Y p) μ) (a : ι) :
@@ -371,8 +364,8 @@ theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangea
     ∀ᵐ ω ∂μ, (lam ω : Measure (ι → α)) (Set.pi (↑F ∪ ↑G) B) =
       (lam ω : Measure (ι → α)) (Set.pi (↑F) B) * (lam ω : Measure (ι → α)) (Set.pi (↑G) B) := by
   classical
-  have hY : ∀ p, AEMeasurable (Y p) μ :=
-    aemeasurable_entry_of_aemeasurable_arrayColumn hlam.aemeasurable
+  -- each entry is a coordinate of its column, which the witness makes a.e. measurable
+  have hY : ∀ p, AEMeasurable (Y p) μ := fun p => (hlam.aemeasurable p.2).eval p.1
   set C : Set (ι → α) := Set.pi (↑F) B with hC
   set D : Set (ι → α) := Set.pi (↑G) B with hD
   have hCm : MeasurableSet C := MeasurableSet.pi F.countable_toSet fun a ha =>
