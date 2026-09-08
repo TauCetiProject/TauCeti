@@ -457,6 +457,8 @@ theorem geckGraphAutPoints_pow_geckRootSubgroupPoints (hsigma : sigma ∈ t.diag
   have hsemiconj : Function.Semiconj (fun j ↦ t.geckRootSubgroupPoints ht j A u)
       (diagramRootGeneratorPerm sigma) (t.geckGraphAutPoints ht hsigma A) :=
     fun j ↦ (t.geckGraphAutPoints_geckRootSubgroupPoints ht hsigma A j u).symm
+  -- Expose the permutation power needed by `map_pow`; its application agrees definitionally with
+  -- the application of the corresponding multiplicative automorphism.
   change (MulAut.toPerm _ (t.geckGraphAutPoints ht hsigma A ^ m))
       (t.geckRootSubgroupPoints ht i A u) = _
   rw [map_pow]

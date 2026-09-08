@@ -271,7 +271,7 @@ theorem geckTwistedFrobenius_pow (m : ℕ) :
   have hmul : (show Monoid.End _ from t.geckTwistedFrobenius ht hsigma p k A) =
       (show Monoid.End _ from (t.geckGraphAutPoints ht hsigma A).toMonoidHom) *
         (show Monoid.End _ from t.geckFrobenius ht p k A) := rfl
-  rw [hmul, hcomm.mul_pow, ← TauCeti.mulAut_toMonoidHom_pow, geckFrobenius_pow]
+  rw [hmul, hcomm.mul_pow, ← TauCeti.MulAut.toMonoidHom_pow, geckFrobenius_pow]
   -- The remaining goal is the same product read as a composition.
   rfl
 
@@ -300,7 +300,7 @@ theorem geckTwistedFrobenius_pow_eq_geckFrobenius_comp (m : ℕ) :
   have hcomm : Commute (show Monoid.End _ from (t.geckGraphAutPoints ht hsigma A).toMonoidHom)
       (show Monoid.End _ from t.geckFrobenius ht p (k * m) A) :=
     geckGraphAutPoints_comp_geckFrobenius ht hsigma p (k * m) A
-  rw [geckTwistedFrobenius_pow, TauCeti.mulAut_toMonoidHom_pow]
+  rw [geckTwistedFrobenius_pow, TauCeti.MulAut.toMonoidHom_pow]
   exact (hcomm.pow_left m).eq
 
 /-- **The `m`-th power of the twisted Frobenius raises the parameter of a numbered Geck root
