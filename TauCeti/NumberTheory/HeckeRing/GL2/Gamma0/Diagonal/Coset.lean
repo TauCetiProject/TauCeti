@@ -153,9 +153,8 @@ theorem doubleCoset_out_diagCosetGamma0_const_eq_iUnion_rightCosets (c : ℕ)
         ((Gamma0 N).map (mapGL ℚ) : Set (GL (Fin 2) ℚ)) := by
   rw [Set.iUnion_const, diagCosetGamma0_def]
   apply HeckeCoset.doubleCoset_out_mk_eq_rightCoset_of_mem_normalizer
-  exact (show natDiagGL 2 ![c, c] ∈ Subgroup.normalizer ((Gamma0 N).map (mapGL ℚ)) by
-    simpa only [natDiagGL_two_vec_const] using
-      natDiagGL_const_mem_normalizer 2 c ((Gamma0 N).map (mapGL ℚ)))
+  simpa only [natDiagGL_two_vec_const] using
+    natDiagGL_const_mem_normalizer 2 c ((Gamma0 N).map (mapGL ℚ))
 
 /-- **The scalar double coset has degree one**: `diag(c, c)` is central, so its `Γ₀(N)`-double
 coset is a single right coset. The level-`N` companion of `degree_diagCoset_const`; it is what
