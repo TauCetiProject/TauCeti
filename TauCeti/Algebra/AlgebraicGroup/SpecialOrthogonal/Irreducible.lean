@@ -12,10 +12,10 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.CoordinateRota
 /-!
 # Irreducibility of the special orthogonal standard comodule
 
-Over a field in which `2` is invertible, the standard representation of `SOₙ` is irreducible in
-dimension at least three. Coordinate half-turns isolate a chosen coordinate of a vector in an
-invariant subspace, and coordinate rotations then carry that standard basis vector to every other
-one. Thus every nonzero subcomodule is the whole standard representation.
+Over a field of characteristic different from two, the standard representation of `SOₙ` is
+irreducible in dimension at least three. Coordinate half-turns isolate a chosen coordinate of a
+vector in an invariant subspace, and coordinate rotations then carry that standard basis vector to
+every other one. Thus every nonzero subcomodule is the whole standard representation.
 
 The dimension bound is sharp for this argument and for the statement: over an algebraically
 closed field, the standard representation of `SO₂` is the sum of two one-dimensional characters.
@@ -40,7 +40,7 @@ The proof uses the point-action interface of
 public section
 
 open Module
-open Matrix.SpecialOrthogonalGroup
+open TauCeti.Matrix.SpecialOrthogonalGroup
 open scoped Matrix
 
 namespace TauCeti.SpecialOrthogonal
@@ -49,7 +49,7 @@ universe u
 
 noncomputable section
 
-variable (k : Type u) [Field k] (n : ℕ) [Invertible (2 : k)]
+variable (k : Type u) [Field k] (n : ℕ) [NeZero (2 : k)]
 
 attribute [local instance] standardComodule
 
@@ -61,7 +61,7 @@ private theorem firstThree_ne (hn : 3 ≤ n) {a b : Fin 3} (hab : a ≠ b) :
     firstThree n hn a ≠ firstThree n hn b :=
   (firstThree n hn).injective.ne hab
 
-omit [Invertible (2 : k)] in
+omit [NeZero (2 : k)] in
 /-- In an invariant subspace, three coordinate half-turns isolate four times one coordinate of
 a vector. -/
 private theorem four_smul_single_mem
@@ -71,7 +71,7 @@ private theorem four_smul_single_mem
   let i := firstThree n hn 0
   let j := firstThree n hn 1
   let l := firstThree n hn 2
-  change (4 * w i) • Pi.single i 1 ∈ N
+  suffices (4 * w i) • Pi.single i 1 ∈ N by simpa only [i]
   have hij : i ≠ j := firstThree_ne n hn (by decide)
   have hil : i ≠ l := firstThree_ne n hn (by decide)
   have hjl : j ≠ l := firstThree_ne n hn (by decide)
@@ -120,9 +120,9 @@ private theorem single_one_mem_of_ne_bot
       refine ⟨(g : Matrix (Fin n) (Fin n) k) *ᵥ w, mulVec_mem k n N g hw, ?_⟩
       rw [coordinateRotation_mulVec]
       simpa [Ne.symm hpi] using hp
-  have hmultiple := four_smul_single_mem k n N hv hn
-  change ((4 : k) * v i) • Pi.single i 1 ∈ N at hmultiple
-  have htwo : (2 : k) ≠ 0 := IsUnit.ne_zero (isUnit_of_invertible (2 : k))
+  have hmultiple : ((4 : k) * v i) • Pi.single i 1 ∈ N := by
+    simpa only [i] using four_smul_single_mem k n N hv hn
+  have htwo : (2 : k) ≠ 0 := two_ne_zero
   have hfour : (4 : k) ≠ 0 := by
     rw [show (4 : k) = 2 * 2 by norm_num]
     exact mul_ne_zero htwo htwo
@@ -139,7 +139,7 @@ private theorem single_one_mem_of_ne_bot
     exact hrotated
 
 /-- **The standard comodule of `SOₙ` is simple in dimension at least three** over a field in
-which `2` is invertible. -/
+characteristic different from two. -/
 theorem isSimpleOrder_subcomodule_of_three_le (hn : 3 ≤ n) :
     IsSimpleOrder (Subcomodule k (coordinateHopfAlgebra k n) (Fin n → k)) := by
   refine { exists_pair_ne := ⟨⊥, ⊤, ?_⟩, eq_bot_or_eq_top := ?_ }
@@ -160,7 +160,7 @@ theorem isSimpleOrder_subcomodule_of_three_le (hn : 3 ≤ n) :
         N.toSubmodule.smul_mem (v a) (single_one_mem_of_ne_bot k n N hN hn a)
 
 /-- **The standard comodule of `SOₙ` is completely reducible in dimension at least three** over
-a field in which `2` is invertible. -/
+a field of characteristic different from two. -/
 theorem isCompletelyReducible_standardComodule_of_three_le (hn : 3 ≤ n) :
     Comodule.IsCompletelyReducible k (coordinateHopfAlgebra k n) (Fin n → k) := by
   let _ : IsSimpleOrder (Subcomodule k (coordinateHopfAlgebra k n) (Fin n → k)) :=

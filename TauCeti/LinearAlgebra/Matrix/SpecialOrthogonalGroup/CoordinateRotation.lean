@@ -18,8 +18,8 @@ interface for arguments with the standard representation of a special orthogonal
 
 ## Main declarations
 
-* `Matrix.SpecialOrthogonalGroup.coordinateRotation`: the signed coordinate transposition.
-* `Matrix.SpecialOrthogonalGroup.coordinateHalfTurn`: its square, negating two coordinates.
+* `TauCeti.Matrix.SpecialOrthogonalGroup.coordinateRotation`: the signed coordinate transposition.
+* `TauCeti.Matrix.SpecialOrthogonalGroup.coordinateHalfTurn`: its square, negating two coordinates.
 
 ## References
 
@@ -30,7 +30,7 @@ public section
 
 open Matrix
 
-namespace Matrix.SpecialOrthogonalGroup
+namespace TauCeti.Matrix.SpecialOrthogonalGroup
 
 universe u
 
@@ -113,10 +113,6 @@ coordinates. -/
 def coordinateHalfTurn (i j : n) (hij : i ≠ j) : Matrix.specialOrthogonalGroup n R :=
   coordinateRotation (R := R) i j hij ^ 2
 
-/-- A coordinate half-turn is the square of the corresponding coordinate rotation. -/
-theorem coordinateHalfTurn_def (i j : n) (hij : i ≠ j) :
-    coordinateHalfTurn (R := R) i j hij = coordinateRotation (R := R) i j hij ^ 2 := (rfl)
-
 /-- A coordinate half-turn negates exactly the two selected coordinates. -/
 @[simp]
 theorem coordinateHalfTurn_mulVec (i j : n) (hij : i ≠ j) (w : n → R) (a : n) :
@@ -132,4 +128,4 @@ theorem coordinateHalfTurn_mulVec (i j : n) (hij : i ≠ j) (w : n → R) (a : n
       simp [hij.symm]
     · simp [hai, haj]
 
-end Matrix.SpecialOrthogonalGroup
+end TauCeti.Matrix.SpecialOrthogonalGroup
