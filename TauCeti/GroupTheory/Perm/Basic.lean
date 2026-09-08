@@ -26,19 +26,12 @@ image of the other. -/
 theorem sameCycle_toPerm_iff {α : Type*} (f : α → α) (hf : Function.Involutive f) (a b : α) :
     (hf.toPerm f).SameCycle a b ↔ a = b ∨ a = f b := by
   constructor
-  · rintro ⟨i, hi⟩
-    have hp : (hf.toPerm f) ^ 2 = 1 := by
-      ext x
-      exact hf x
-    rw [zpow_eq_zpow_emod' i hp] at hi
-    rcases Int.emod_two_eq_zero_or_one i with h | h
-    · left
-      simpa [h] using hi
-    · right
-      have hfa : f a = b := by simpa [h] using hi
-      calc
-        a = f (f a) := (hf a).symm
-        _ = f b := congrArg f hfa
+  · intro h
+    obtain ⟨i, hi⟩ := h.symm
+    rcases Equiv.Perm.zpow_apply_eq_of_apply_apply_eq_self
+      (f := hf.toPerm f) (x := b) (hf b) i with h | h
+    · exact Or.inl (hi.symm.trans h)
+    · exact Or.inr (hi.symm.trans h)
   · rintro (rfl | h)
     · exact Equiv.Perm.SameCycle.rfl
     · refine ⟨1, ?_⟩

@@ -70,7 +70,7 @@ namespace BasedOrientedGaussCode
 
 variable {n : ℕ}
 
-attribute [simp] BasedOrientedGaussCode.over_partner
+attribute [simp] BasedOrientedGaussCode.visit_eq_iff BasedOrientedGaussCode.over_partner
 
 /-- Two Gauss codes are equal when their visit labels, over/under data, and signs agree.
 The partner matching is forced by the visit labels. -/
@@ -286,7 +286,7 @@ def relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) : BasedOriented
   partner := D.partner
   visit_eq_iff := by
     intro i j
-    simpa [Function.comp_def] using D.visit_eq_iff i j
+    simp
   over_partner := D.over_partner
 
 /-- Relabelling composes the visit labels with the given equivalence. -/
@@ -424,16 +424,14 @@ protected theorem inductionOn {motive : BasedUnorientedGaussCode n → Prop}
 
 /-- The writhe of a based unoriented Gauss code. -/
 def writhe (D : BasedUnorientedGaussCode n) : ℤ :=
-  Quotient.lift BasedOrientedGaussCode.writhe (by
-    intro E F h
-    rcases (BasedOrientedGaussCode.unorientedSetoid_apply E F).mp h with rfl | rfl
-    · rfl
-    · exact BasedOrientedGaussCode.writhe_reverse F) D
+  BasedUnorientedGaussCode.lift BasedOrientedGaussCode.writhe
+    BasedOrientedGaussCode.writhe_reverse D
 
 /-- The writhe of an unoriented class is the writhe of any oriented representative. -/
 @[simp] theorem writhe_forgetOrientation (D : BasedOrientedGaussCode n) :
     writhe D.forgetOrientation = D.writhe := by
-  simp [writhe, BasedOrientedGaussCode.forgetOrientation]
+  exact BasedUnorientedGaussCode.lift_forgetOrientation BasedOrientedGaussCode.writhe
+    BasedOrientedGaussCode.writhe_reverse D
 
 /-- Mirror a based unoriented Gauss code. -/
 def mirror (D : BasedUnorientedGaussCode n) : BasedUnorientedGaussCode n :=
