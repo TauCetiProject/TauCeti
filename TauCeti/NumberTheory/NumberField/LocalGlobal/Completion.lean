@@ -113,14 +113,27 @@ theorem algebraMap_completionAlgebra_eq_completionAlgHom
   rw [algebraMap_completionAlgebra]
   rfl
 
+/-- The global field, its completion, and the completion of an extension form a scalar tower for
+the canonical completion algebra. -/
+@[scoped instance]
+theorem completionIsScalarTower {L : Type*} [Field L] [NumberField L] [Algebra K L]
+    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
+    [w.asIdeal.LiesOver v.asIdeal] :
+    IsScalarTower K (v.adicCompletion K) (w.adicCompletion L) :=
+  IsScalarTower.of_algebraMap_eq fun x ↦ by
+    rw [algebraMap_completionAlgebra_eq_completionAlgHom v w]
+    exact ((completionAlgHom v w).commutes x).symm
+
 /-- Scalar multiplication by `K_v` on `L_w` is continuous for the canonical completion
 algebra. -/
 @[scoped instance]
 theorem completionContinuousSMul {L : Type*} [Field L] [NumberField L] [Algebra K L]
     (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
     [w.asIdeal.LiesOver v.asIdeal] :
-    ContinuousSMul (v.adicCompletion K) (w.adicCompletion L) :=
-  continuousSMul_of_algebraMap _ _ (continuous_completionAlgHom v w)
+    ContinuousSMul (v.adicCompletion K) (w.adicCompletion L) := by
+  apply continuousSMul_of_algebraMap
+  rw [algebraMap_completionAlgebra_eq_completionAlgHom v w]
+  exact continuous_completionAlgHom v w
 
 /-- Canonical completion maps compose in a tower of number fields. -/
 theorem completionAlgHom_comp {M L : Type*} [Field M] [NumberField M] [Algebra K M]
