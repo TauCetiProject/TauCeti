@@ -38,8 +38,8 @@ of the Lovász–Szegedy representability theorem.
   quantifies over `Fin n`-indexed families, to an arbitrary finite index type;
 * `TauCeti.DenseGraphLimits.IsReflectionPositive.nonneg_glue_self` is the diagonal consequence
   `0 ≤ f` on a self-gluing;
-* `TauCeti.DenseGraphLimits.IsMultiplicative.apply_sum_bot` is the added-vertex identity
-  `f (F ⊔ K₁) = f F`.
+* `TauCeti.DenseGraphLimits.IsMultiplicative.apply_sum_bot` says adjoining any finite edgeless
+  graph does not change a multiplicative, normalized parameter.
 
 The section `Examples` records that the four conditions are simultaneously satisfiable — the
 parameter constantly `1`, which is the homomorphism density of the constant graphon `W ≡ 1` — and
@@ -55,8 +55,7 @@ a connection matrix on `ι` is a submatrix of one on `Fin (Fintype.card ι)` alo
 
 ## References
 
-* `TauCetiRoadmap/DenseGraphLimits/Suggested.lean` — suggested signatures for the Layer 8 gluing
-  and connection-matrix API.
+* `TauCetiRoadmap/DenseGraphLimits/Suggested.lean` — source for the formal signatures.
 * L. Lovász, B. Szegedy, *Limits of dense graph sequences*, JCTB 96 (2006), 933–957, Theorem 2.2 —
   the four structural conditions and the representability theorem they characterise.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Chapters 5
@@ -148,11 +147,30 @@ theorem IsReflectionPositive.nonneg_glue_self {f : GraphParam} (hf : IsReflectio
   have h := (hf.posSemidef fun _ : Fin 1 => G).diag_nonneg (i := 0)
   simpa [connectionMatrix] using h
 
-/-- A multiplicative, normalized parameter is unchanged by adjoining an isolated vertex. -/
+/-- A multiplicative, normalized parameter is `1` on every edgeless graph. -/
+theorem IsMultiplicative.apply_bot {f : GraphParam} (hmul : IsMultiplicative f)
+    (hnorm : IsNormalized f) (n : ℕ) : f n (⊥ : SimpleGraph (Fin n)) = 1 := by
+  have map_sum_bot (a b : ℕ) :
+      (((⊥ : SimpleGraph (Fin a)) ⊕g (⊥ : SimpleGraph (Fin b))).map
+        finSumFinEquiv.toEmbedding) = ⊥ := by
+    rw [eq_bot_iff, SimpleGraph.map_le_iff_le_comap]
+    intro u v huv
+    cases u <;> cases v <;> simp_all
+  induction n with
+  | zero =>
+      have h := hmul 0 1 (⊥ : SimpleGraph (Fin 0)) (⊥ : SimpleGraph (Fin 1))
+      rw [map_sum_bot, hnorm, mul_one] at h
+      simpa using h.symm
+  | succ n ih =>
+      have h := hmul n 1 (⊥ : SimpleGraph (Fin n)) (⊥ : SimpleGraph (Fin 1))
+      rw [map_sum_bot, ih, hnorm, mul_one] at h
+      simpa using h
+
+/-- A multiplicative, normalized parameter is unchanged by adjoining any finite edgeless graph. -/
 theorem IsMultiplicative.apply_sum_bot {f : GraphParam} (hmul : IsMultiplicative f)
-    (hnorm : IsNormalized f) (n : ℕ) (F : SimpleGraph (Fin n)) :
-    f (n + 1) ((F ⊕g (⊥ : SimpleGraph (Fin 1))).map finSumFinEquiv.toEmbedding) = f n F := by
-  rw [hmul n 1 F ⊥, hnorm, mul_one]
+    (hnorm : IsNormalized f) (n m : ℕ) (F : SimpleGraph (Fin n)) :
+    f (n + m) ((F ⊕g (⊥ : SimpleGraph (Fin m))).map finSumFinEquiv.toEmbedding) = f n F := by
+  rw [hmul n m F ⊥, hmul.apply_bot hnorm m, mul_one]
 
 section Examples
 

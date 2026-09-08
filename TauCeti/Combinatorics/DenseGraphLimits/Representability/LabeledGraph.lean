@@ -60,8 +60,7 @@ collapses as soon as one of the two vertices is unlabeled
 
 ## References
 
-* `TauCetiRoadmap/DenseGraphLimits/Suggested.lean` — suggested signatures for the Layer 8 gluing
-  and connection-matrix API.
+* `TauCetiRoadmap/DenseGraphLimits/Suggested.lean` — source for the formal signatures.
 * L. Lovász, B. Szegedy, *Limits of dense graph sequences*, JCTB 96 (2006), 933–957, Section 2 —
   `k`-labeled graphs, their product, and connection matrices.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Chapter 6.
