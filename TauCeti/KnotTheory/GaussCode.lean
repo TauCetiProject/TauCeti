@@ -396,6 +396,24 @@ namespace BasedUnorientedGaussCode
 
 variable {n : ℕ}
 
+/-- A function on based oriented Gauss codes that is invariant under orientation reversal descends
+to based unoriented Gauss codes. -/
+protected def lift {α : Sort*} (f : BasedOrientedGaussCode n → α)
+    (h : ∀ D, f D.reverse = f D) : BasedUnorientedGaussCode n → α :=
+  Quotient.lift f fun D E hDE => by
+    rcases (BasedOrientedGaussCode.unorientedSetoid_apply D E).mp hDE with rfl | hrev
+    · rfl
+    · rw [hrev]
+      exact h E
+
+/-- Lifting an orientation-invariant function and applying it to an oriented representative
+recovers the original value. -/
+@[simp]
+protected theorem lift_forgetOrientation {α : Sort*} (f : BasedOrientedGaussCode n → α)
+    (h : ∀ D, f D.reverse = f D) (D : BasedOrientedGaussCode n) :
+    BasedUnorientedGaussCode.lift f h D.forgetOrientation = f D :=
+  by simp [BasedUnorientedGaussCode.lift, BasedOrientedGaussCode.forgetOrientation]
+
 /-- To prove a property of a based unoriented Gauss code, it suffices to prove it for every based
 oriented representative. -/
 @[elab_as_elim]
