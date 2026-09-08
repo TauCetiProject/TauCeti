@@ -41,9 +41,8 @@ equation.
 * J. S. Milne, *Algebraic Groups* (2017), §23 and §24.6.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), §26.3.
 
-This supplies the matrix calculation behind the type-`C` pinning in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. That pinning is consumed by milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md` for the `Cₙ(q)` ambient groups.
+These conjugation calculations supply the root-action equations used in the standard type-`C`
+pinning.
 -/
 
 public section
@@ -84,6 +83,17 @@ section Matrix
 
 variable [CommRing R]
 
+private theorem finSumFinEquiv_symm_addNat (i : Fin m) :
+    finSumFinEquiv.symm (i.addNat m) = Sum.inr i := by
+  rw [← Fin.natAdd_eq_addNat, finSumFinEquiv_symm_apply_natAdd]
+
+private theorem diagGL_inv (t : Fin m → Rˣ) :
+    (diagGL t)⁻¹ = diagGL (fun i ↦ (t i)⁻¹) := by
+  rw [← map_inv]
+  apply congrArg diagGL
+  funext i
+  rfl
+
 /-- **The diagonal split torus in the standard symplectic matrix group.** It sends `t` to the
 diagonal matrix with entries `t i` on the first block and `(t i)⁻¹` on the second. -/
 noncomputable def diagonal : (Fin m → Rˣ) →* GLSymplecticFin m R :=
@@ -97,36 +107,27 @@ theorem coe_diagonal (t : Fin m → Rˣ) :
   rw [diagonal, MonoidHom.comp_apply]
   apply Matrix.GeneralLinearGroup.ext
   intro i j
-  rw [show ((((leviHom (diagGL t) : GLSymplecticFin m R) : GL (Fin (m + m)) R) :
-    Matrix (Fin (m + m)) (Fin (m + m)) R)) = _ from coe_leviHom (diagGL t)]
+  rw [coe_leviHom]
   obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective i
   · obtain ⟨j | j, rfl⟩ := finSumFinEquiv.surjective j
     · simp [diagGL_apply, Matrix.diagonal_apply, finSumFinEquiv_symm_apply_castAdd]
     · have h : Fin.castAdd m i ≠ j.addNat m := by
         simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
           Fin.natAdd_eq_addNat] using finSumFinEquiv_inl_ne_inr i j
-      have hsymm : finSumFinEquiv.symm (j.addNat m) = Sum.inr j := by
-        rw [← Fin.natAdd_eq_addNat, finSumFinEquiv_symm_apply_natAdd]
-      simp [diagGL_apply, h, hsymm, finSumFinEquiv_symm_apply_castAdd]
+      simp [diagGL_apply, h, finSumFinEquiv_symm_addNat,
+        finSumFinEquiv_symm_apply_castAdd]
   · obtain ⟨j | j, rfl⟩ := finSumFinEquiv.surjective j
     · have h : i.addNat m ≠ Fin.castAdd m j := by
         simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
           Fin.natAdd_eq_addNat] using finSumFinEquiv_inr_ne_inl i j
-      have hsymm : finSumFinEquiv.symm (i.addNat m) = Sum.inr i := by
-        rw [← Fin.natAdd_eq_addNat, finSumFinEquiv_symm_apply_natAdd]
-      simp [diagGL_apply, h, hsymm, finSumFinEquiv_symm_apply_castAdd]
+      simp [diagGL_apply, h, finSumFinEquiv_symm_addNat,
+        finSumFinEquiv_symm_apply_castAdd]
     · simp only [Matrix.submatrix_apply, Equiv.symm_apply_apply,
         Matrix.fromBlocks_apply₂₂]
-      rw [show ((diagGL t)⁻¹ : GL (Fin m) R) = diagGL (fun i ↦ (t i)⁻¹) by
-        rw [← map_inv]
-        apply congrArg diagGL
-        funext k
-        rfl]
-      have hsymm : finSumFinEquiv.symm (i.addNat m) = Sum.inr i := by
-        rw [← Fin.natAdd_eq_addNat, finSumFinEquiv_symm_apply_natAdd]
+      rw [diagGL_inv]
       by_cases hij : i = j
       · subst j
-        simp [diagGL_apply, diagonalCoordinates, hsymm]
+        simp [diagGL_apply, diagonalCoordinates, finSumFinEquiv_symm_addNat]
       · have hji : j ≠ i := Ne.symm hij
         simp [diagGL_apply, hij, hji]
 

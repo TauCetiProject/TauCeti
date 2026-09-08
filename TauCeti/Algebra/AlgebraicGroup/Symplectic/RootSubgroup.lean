@@ -8,7 +8,7 @@ module
 -- The ambient root subgroups supply the coordinate maps through which the symplectic maps factor.
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Subgroup
 -- The symplectic scheme and its point equivalence identify the target of the root maps.
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Scheme
 
 /-!
 # Root subgroups of the symplectic group

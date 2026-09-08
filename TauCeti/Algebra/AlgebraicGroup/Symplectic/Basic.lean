@@ -49,8 +49,6 @@ the zero ring.
 * `TauCeti.Symplectic.pointsMulEquiv`: the group of algebra-valued points of the symplectic
   coordinate Hopf algebra is `TauCeti.GLSymplecticFin`, and
   `TauCeti.Symplectic.pointsMulEquivGLSymplectic` reads it in `Fin m ⊕ Fin m` coordinates.
-* `TauCeti.Symplectic.schemePointsMulEquiv`: the corresponding identification for
-  scheme-valued points.
 
 ## References
 
@@ -129,14 +127,6 @@ theorem groupScheme_def :
       CommHopfAlgCat.quotientSpec (GeneralLinear.coordinateHopfAlgebra R (m + m))
         (definingHopfIdeal R m) :=
   ConstantForm.groupScheme_def R (m + m) (JFin m R)
-
-/-- The scheme underlying the symplectic group scheme is the spectrum of its coordinate Hopf
-algebra. -/
-lemma groupScheme_X_left :
-    (groupScheme R m).X.left = Spec (CommRingCat.of (coordinateHopfAlgebra R m)) := by
-  simpa only [groupScheme, ConstantForm.groupScheme, coordinateHopfAlgebra,
-    ConstantForm.coordinateHopfAlgebra] using
-    hopfSpec_obj_X_left R (coordinateHopfAlgebra R m)
 
 /-- The symplectic coordinate Hopf algebra, bundled with its finite-type property. -/
 noncomputable abbrev finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
@@ -301,56 +291,5 @@ theorem coe_pointsMulEquivGLSymplectic
   GLSymplecticFin.coe_mulEquivGLSymplectic m A (pointsMulEquiv R m (A := A) f)
 
 end Points
-
-section SchemePoints
-
-variable {R} (A : Type u) [CommRing A] [Algebra R A]
-
-/-- Mathlib's spectrum-points equivalence for the symplectic coordinate Hopf algebra. -/
-noncomputable def groupSchemePointMulEquiv :
-    WithConv (coordinateHopfAlgebra R m →ₐ[R] A) ≃*
-      ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶
-        (groupScheme R m).X) :=
-  CommHopfAlgCat.mapMulEquivOfPresentation
-    (coordinateHopfAlgebra R m) A (groupScheme_def R m)
-
-/-- The underlying spectrum map of the scheme point associated to a symplectic algebra point. -/
--- Not `@[simp]`: `groupScheme` is a reducible specialization of the constant-form construction,
--- so the linter normalizes the target object before it can use this higher-level equation.
-lemma groupSchemePointMulEquiv_apply_left
-    (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
-    (groupSchemePointMulEquiv m A f).left =
-      Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) ≫
-        eqToHom (groupScheme_X_left R m).symm := by
-  simpa only [groupSchemePointMulEquiv] using
-    CommHopfAlgCat.mapMulEquivOfPresentation_apply_left
-      (coordinateHopfAlgebra R m) A (groupScheme_def R m)
-        (groupScheme_X_left R m) f
-
-/-- The group of scheme-valued points of `Sp₂ₘ` is the standard symplectic matrix group. -/
-noncomputable def schemePointsMulEquiv :
-    ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶
-      (groupScheme R m).X) ≃* GLSymplecticFin m A :=
-  (groupSchemePointMulEquiv m A).symm.trans (pointsMulEquiv (A := A) R m)
-
-/-- A scheme point presented by an algebra point corresponds to the same symplectic matrix. -/
--- Not `@[simp]`: the reducible `groupScheme` target prevents this statement from being in simp
--- normal form.
-theorem schemePointsMulEquiv_groupSchemePointMulEquiv
-    (q : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
-    schemePointsMulEquiv m A (groupSchemePointMulEquiv m A q) =
-      pointsMulEquiv (A := A) R m q := by
-  simp [schemePointsMulEquiv]
-
-/-- Evaluating the symplectic scheme-points equivalence directly on a scheme morphism. -/
-theorem schemePointsMulEquiv_apply
-    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶
-      (groupScheme R m).X) :
-    schemePointsMulEquiv m A p =
-      pointsMulEquiv (A := A) R m ((groupSchemePointMulEquiv m A).symm p) := by
-  unfold schemePointsMulEquiv
-  rfl
-
-end SchemePoints
 
 end TauCeti.Symplectic

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Basic
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Diagonal
@@ -24,9 +24,8 @@ ring. The construction is made simultaneously in the functor-of-points, coordina
 and affine-group-scheme models. On algebra-valued points it is injective, natural in the value
 algebra, and conjugates each symplectic root subgroup through its standard root character.
 
-This is the torus and pinning-equation part of the standard type-`C` pinning. It does not yet claim
-that the morphism is a closed immersion or that its image is maximal; those statements require the
-coordinate-surjectivity and root-datum work that remain in Layer 9.
+This is the torus and pinning-equation part of the standard type-`C` pinning. It does not claim that
+the morphism is a closed immersion or that its image is maximal.
 
 ## Main definitions
 
@@ -60,9 +59,6 @@ coordinate-surjectivity and root-datum work that remain in Layer 9.
   constructions follow the formal template in
   `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Basic`.
 
-This advances the pinnings and root-subgroup-map targets of Layer 9 in
-`TauCetiRoadmap/ReductiveGroups/README.md`. The resulting type-`C` pinning is consumed by milestone
-L0, "pinned ambient groups", of `TauCetiRoadmap/CFSGStatement/README.md` for the `Cₙ(q)` family.
 -/
 
 public section
@@ -130,6 +126,7 @@ theorem mapValue_diagonalTorusPoints (f : A →ₐ[R] B)
   funext i
   rw [GeneralLinear.diagonalTorusCoordinates_apply,
     GeneralLinear.diagonalTorusCoordinates_apply]
+  -- `Units.map` is definitionally the coefficient map exposed by the split-torus comparison.
   change Units.map f.toRingHom (SplitTorus.pointsMulEquiv t (ULift.up i)) =
     SplitTorus.pointsMulEquiv (AlgHom.mapValue f t) (ULift.up i)
   exact (SplitTorus.pointsMulEquiv_mapValue f t (ULift.up i)).symm
@@ -324,6 +321,34 @@ theorem coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne
   rw [diagonalTorusCoordinateMap_ambient_X_eq_entry]
   simp [diagonalTorusGenericMatrix, GLSymplecticFin.coe_diagonal, diagGL_apply, hij]
 
+/-- The paired weights of the standard symplectic representation. -/
+private def pairedWeight (i : Fin (m + m)) : ULift.{u} (Fin m) → ℤ :=
+  match finSumFinEquiv.symm i with
+  | Sum.inl k => Pi.single (ULift.up k) 1
+  | Sum.inr k => Pi.single (ULift.up k) (-1)
+
+/-- Restricting the symplectic diagonal-torus coordinate map to the ambient general linear group
+is the general weight-torus map for the paired weights. -/
+private theorem coordinateMap_comp_diagonalTorusCoordinateMap :
+    coordinateMap R m ≫ diagonalTorusCoordinateMap (R := R) (m := m) =
+      GeneralLinear.weightTorusCoordinateMap (pairedWeight (m := m)) := by
+  apply _root_.CommHopfAlgCat.hom_ext
+  apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext R (m + m)
+  intro i j
+  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp, Function.comp_apply]
+  rw [GeneralLinear.weightTorusCoordinateMap_X]
+  by_cases hij : i = j
+  · subst j
+    obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective i
+    · simp only [finSumFinEquiv_apply_left]
+      rw [coordinateMap_comp_diagonalTorusCoordinateMap_X_castAdd]
+      simp [pairedWeight]
+    · simp only [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat]
+      rw [coordinateMap_comp_diagonalTorusCoordinateMap_X_addNat]
+      simp [pairedWeight, ← Fin.natAdd_eq_addNat, finSumFinEquiv_symm_apply_natAdd]
+  · rw [coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne _ _ hij]
+    simp [hij]
+
 /-- **The symplectic diagonal-torus coordinate morphism commutes with base change.** -/
 theorem diagonalTorusCoordinateMap_baseChange
     (R K : Type u) [CommRing R] [CommRing K] [Algebra R K] :
@@ -333,77 +358,25 @@ theorem diagonalTorusCoordinateMap_baseChange
           (SplitTorus.characterGroup (ULift.{u} (Fin m)))).hom =
       diagonalTorusCoordinateMap (R := K) (m := m) := by
   let eSp := coordinateHopfAlgebraBaseChangeIso R K m
-  let eGL := GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)
-  let eT := DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso R K
-    (SplitTorus.characterGroup (ULift.{u} (Fin m)))
   have hpre :
       coordinateMap K m ≫ eSp.inv =
-        eGL.inv ≫ CommHopfAlgCat.baseChangeMap (coordinateMap R m) := by
+        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).inv ≫
+          CommHopfAlgCat.baseChangeMap (coordinateMap R m) := by
     apply (cancel_mono eSp.hom).mp
     simp only [Category.assoc]
     rw [baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom]
     simp
   apply CommHopfAlgCat.mkQuotient_hom_ext
   rw [← coordinateMap_def K m]
-  change coordinateMap K m ≫
-      (eSp.inv ≫ CommHopfAlgCat.baseChangeMap
-        (diagonalTorusCoordinateMap (R := R) (m := m)) ≫ eT.hom) =
-    coordinateMap K m ≫ diagonalTorusCoordinateMap (R := K) (m := m)
   rw [← Category.assoc, hpre, Category.assoc]
   rw [← Category.assoc (CommHopfAlgCat.baseChangeMap (coordinateMap R m))
-    (CommHopfAlgCat.baseChangeMap (diagonalTorusCoordinateMap (R := R) (m := m))) eT.hom]
+    (CommHopfAlgCat.baseChangeMap (diagonalTorusCoordinateMap (R := R) (m := m)))]
   rw [← (CommHopfAlgCat.baseChangeFunctor (K := K)).map_comp]
-  apply _root_.CommHopfAlgCat.hom_ext
-  apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext K (m + m)
-  intro i j
-  rw [GeneralLinear.coordinateHopfAlgebraBaseChangeMap_X]
-  obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective i
-  · obtain ⟨j | j, rfl⟩ := finSumFinEquiv.surjective j
-    all_goals simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp,
-      Function.comp_apply, finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
-      Fin.natAdd_eq_addNat]
-    · by_cases hij : i = j
-      · subst j
-        rw [coordinateMap_comp_diagonalTorusCoordinateMap_X_castAdd,
-          coordinateMap_comp_diagonalTorusCoordinateMap_X_castAdd,
-          DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply]
-        simp
-      · have hne : Fin.castAdd m i ≠ Fin.castAdd m j := by
-          exact fun h ↦ hij (Fin.castAdd_injective m m h)
-        rw [coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne _ _ hne,
-          coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne _ _ hne,
-          DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply]
-        simp
-    · have hne : Fin.castAdd m i ≠ j.addNat m := by
-        simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
-          Fin.natAdd_eq_addNat] using GLSymplecticFin.finSumFinEquiv_inl_ne_inr i j
-      rw [coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne _ _ hne,
-        coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne _ _ hne,
-        DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply]
-      simp
-  · obtain ⟨j | j, rfl⟩ := finSumFinEquiv.surjective j
-    all_goals simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp,
-      Function.comp_apply, finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
-      Fin.natAdd_eq_addNat]
-    · have hne : i.addNat m ≠ Fin.castAdd m j := by
-        simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
-          Fin.natAdd_eq_addNat] using GLSymplecticFin.finSumFinEquiv_inr_ne_inl i j
-      rw [coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne _ _ hne,
-        coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne _ _ hne,
-        DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply]
-      simp
-    · by_cases hij : i = j
-      · subst j
-        rw [coordinateMap_comp_diagonalTorusCoordinateMap_X_addNat,
-          coordinateMap_comp_diagonalTorusCoordinateMap_X_addNat,
-          DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply]
-        simp
-      · have hne : i.addNat m ≠ j.addNat m := by
-          exact fun h ↦ hij ((Fin.addNat_inj m).mp h)
-        rw [coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne _ _ hne,
-          coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne _ _ hne,
-          DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply]
-        simp
+  rw [coordinateMap_comp_diagonalTorusCoordinateMap,
+    coordinateMap_comp_diagonalTorusCoordinateMap]
+  rw [← GeneralLinear.weightTorusBaseChangeCoordinateMap_def]
+  exact GeneralLinear.weightTorusBaseChangeCoordinateMap_eq R K
+    (pairedWeight (m := m))
 
 /-- **The diagonal torus of `Sp₂ₘ` as a group-scheme morphism** from the rank-`m` split
 torus. -/
@@ -433,64 +406,32 @@ section SchemePoints
 variable (A : Type u) [CommRing A] [Algebra R A]
 
 private lemma groupSchemePointMulEquiv_comp_diagonalTorus
-    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶
-      (SplitTorus.groupScheme R (ULift.{u} (Fin m))).X) :
-    p ≫ (diagonalTorus (R := R) (m := m)).hom.hom =
-      groupSchemePointMulEquiv m A
-        (diagonalTorusPoints
-          (DiagonalizableGroup.groupSchemePointsMulEquiv (R := R) (A := A)
-            (SplitTorus.characterGroup (ULift.{u} (Fin m))) p)) := by
-  let q := DiagonalizableGroup.groupSchemePointsMulEquiv (R := R) (A := A)
-    (SplitTorus.characterGroup (ULift.{u} (Fin m))) p
-  have hmap : AlgebraicGeometry.Spec.mapMulEquiv
-      ((CommHopfAlgCat.mapPointsFunctor
-        (diagonalTorusCoordinateMap (R := R) (m := m))).app (CommAlgCat.of R A) q) =
-      AlgebraicGeometry.Spec.mapMulEquiv q ≫
-        ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-          (diagonalTorusCoordinateMap (R := R) (m := m)).op).hom.hom :=
-    CommHopfAlgCat.mapMulEquiv_mapDomain (CommAlgCat.of R A)
-      (diagonalTorusCoordinateMap (R := R) (m := m)).hom q
-  rw [mapPointsFunctor_diagonalTorusCoordinateMap_app] at hmap
-  apply Over.OverMorphism.ext
-  rw [groupSchemePointMulEquiv_apply_left, Over.comp_left]
-  unfold diagonalTorus
-  rw [show ((eqToHom (DiagonalizableGroup.groupScheme_def R
-        (SplitTorus.characterGroup (ULift.{u} (Fin m)))) ≫
-        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-          (diagonalTorusCoordinateMap (R := R) (m := m)).op ≫
-        eqToHom (groupScheme_def R m).symm)).hom.hom.left =
-      (eqToHom (DiagonalizableGroup.groupScheme_def R
-        (SplitTorus.characterGroup (ULift.{u} (Fin m))))).hom.hom.left ≫
-        ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-          (diagonalTorusCoordinateMap (R := R) (m := m)).op).hom.hom.left ≫
-        (eqToHom (groupScheme_def R m).symm).hom.hom.left from rfl]
-  rw [DiagonalizableGroup.eqToHom_hom_hom_left, DiagonalizableGroup.eqToHom_hom_hom_left]
-  change p.left ≫ eqToHom (DiagonalizableGroup.groupScheme_X_left R
-      (SplitTorus.characterGroup (ULift.{u} (Fin m)))) ≫
-      ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-        (diagonalTorusCoordinateMap (R := R) (m := m)).op).hom.hom.left ≫
-      eqToHom (groupScheme_X_left R m).symm =
-    (AlgebraicGeometry.Spec.mapMulEquiv (diagonalTorusPoints q)).left ≫
-      eqToHom (groupScheme_X_left R m).symm
-  rw [← Category.assoc p.left,
-    DiagonalizableGroup.groupSchemePointsMulEquiv_apply_left_comp]
-  change Spec.map (CommRingCat.ofHom q.ofConv.toRingHom) ≫
-      Spec.map (CommRingCat.ofHom
-        (diagonalTorusCoordinateMap (R := R) (m := m)).hom.toAlgHom.toRingHom) ≫
-      eqToHom (groupScheme_X_left R m).symm =
-    Spec.map (CommRingCat.ofHom (diagonalTorusPoints q).ofConv.toRingHom) ≫
-      eqToHom (groupScheme_X_left R m).symm
-  have hmapLeft :
-      (AlgebraicGeometry.Spec.mapMulEquiv (diagonalTorusPoints q)).left =
-        (AlgebraicGeometry.Spec.mapMulEquiv q).left ≫
-          ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-            (diagonalTorusCoordinateMap (R := R) (m := m)).op).hom.hom.left :=
-    congrArg Over.Hom.left hmap
-  change Spec.map (CommRingCat.ofHom (diagonalTorusPoints q).ofConv.toRingHom) =
-    Spec.map (CommRingCat.ofHom q.ofConv.toRingHom) ≫
-      Spec.map (CommRingCat.ofHom
-        (diagonalTorusCoordinateMap (R := R) (m := m)).hom.toAlgHom.toRingHom) at hmapLeft
-  rw [← Category.assoc, ← hmapLeft]
+    (q : HopfAlgebra.points
+      (R := R)
+      (H := MonoidAlgebra R (SplitTorus.characterGroup (ULift.{u} (Fin m))))
+      (CommAlgCat.of R A)) :
+    (DiagonalizableGroup.groupSchemePointsMulEquiv
+        (R := R) (A := A) (SplitTorus.characterGroup (ULift.{u} (Fin m)))).symm q ≫
+        (diagonalTorus (R := R) (m := m)).hom.hom =
+      groupSchemePointMulEquiv m A (diagonalTorusPoints q) := by
+  calc
+    _ = groupSchemePointMulEquiv m A
+        ((CommHopfAlgCat.mapPointsFunctor
+          (diagonalTorusCoordinateMap (R := R) (m := m))).app (CommAlgCat.of R A) q) := by
+      rw [diagonalTorus_def]
+      exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+        (R := R) A (groupScheme_def R m)
+          (DiagonalizableGroup.groupScheme_def R
+            (SplitTorus.characterGroup (ULift.{u} (Fin m))))
+          (groupSchemePointMulEquiv m A)
+          (DiagonalizableGroup.groupSchemePointsMulEquiv
+            (R := R) (A := A) (SplitTorus.characterGroup (ULift.{u} (Fin m)))).symm
+          (groupSchemePointMulEquiv_apply_left m A)
+          (DiagonalizableGroup.groupSchemePointsMulEquiv_symm_apply_left
+            (R := R) (A := A) (SplitTorus.characterGroup (ULift.{u} (Fin m))))
+          (diagonalTorusCoordinateMap (R := R) (m := m)) q
+    _ = _ := congrArg (groupSchemePointMulEquiv m A)
+      (mapPointsFunctor_diagonalTorusCoordinateMap_app (CommAlgCat.of R A) q)
 
 /-- **The symplectic diagonal torus on scheme-valued points** is the standard paired diagonal
 matrix. -/
@@ -503,19 +444,18 @@ theorem schemePointsMulEquiv_diagonalTorus
       GLSymplecticFin.diagonal
         (GeneralLinear.diagonalTorusCoordinates
           (SplitTorus.schemePointsMulEquiv (R := R) (A := A) p)) := by
-  let q := DiagonalizableGroup.groupSchemePointsMulEquiv (R := R) (A := A)
-    (SplitTorus.characterGroup (ULift.{u} (Fin m))) p
-  have hSp : schemePointsMulEquiv m A
-      (groupSchemePointMulEquiv m A (diagonalTorusPoints q)) =
-      pointsMulEquiv (R := R) (A := A) m (diagonalTorusPoints q) := by
-    rw [schemePointsMulEquiv_groupSchemePointMulEquiv]
-  have hTorus : SplitTorus.schemePointsMulEquiv (R := R) (A := A) p =
+  obtain ⟨q, rfl⟩ := (DiagonalizableGroup.groupSchemePointsMulEquiv
+    (R := R) (A := A) (SplitTorus.characterGroup (ULift.{u} (Fin m)))).symm.surjective p
+  have hsource : SplitTorus.schemePointsMulEquiv (R := R) (A := A)
+      ((DiagonalizableGroup.groupSchemePointsMulEquiv
+        (R := R) (A := A) (SplitTorus.characterGroup (ULift.{u} (Fin m)))).symm q) =
       SplitTorus.pointsMulEquiv q := by
-    ext i
-    exact (SplitTorus.schemePointsMulEquiv_apply_coe p i).trans
-      (SplitTorus.pointsMulEquiv_apply_coe q i).symm
-  rw [groupSchemePointMulEquiv_comp_diagonalTorus, hSp, hTorus,
-    pointsMulEquiv_diagonalTorusPoints]
+    rw [SplitTorus.schemePointsMulEquiv_eq_freeAbelianCharEquiv,
+      DiagonalizableGroup.schemePointsMulEquiv_eq_pointsMulEquiv_groupSchemePointsMulEquiv,
+      MulEquiv.apply_symm_apply, SplitTorus.pointsMulEquiv_eq_freeAbelianCharEquiv]
+  rw [groupSchemePointMulEquiv_comp_diagonalTorus,
+    schemePointsMulEquiv_groupSchemePointMulEquiv,
+    pointsMulEquiv_diagonalTorusPoints, hsource]
 
 /-- **The symplectic pinning equation on scheme-valued points.** Conjugating a root-subgroup
 point by a diagonal-torus point scales its additive parameter by the corresponding root
