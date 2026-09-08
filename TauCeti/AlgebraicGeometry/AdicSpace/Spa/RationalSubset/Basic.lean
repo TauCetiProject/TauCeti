@@ -69,6 +69,8 @@ layer deferred above.
   subset.
 * `TauCeti.ValuationSpectrum.rationalSubset_insert_self` : the denominator may be inserted
   among the numerators.
+* `TauCeti.ValuationSpectrum.rationalSubset_image_mul_right` : multiplying every numerator and
+  the denominator by the same unit does not change the rational subset.
 * `TauCeti.ValuationSpectrum.rationalSubset_singleton_one` : the whole spectrum is the
   rational subset `R({1}/1)` — Wedhorn's "`Spa (A, A⁺)` itself is rational".
 * `TauCeti.ValuationSpectrum.val_preimage_rationalSubset` : on the subtype `spa A⁺`, a
@@ -119,6 +121,8 @@ layer deferred above.
   source closely: the same `ext`/`constructor` split, the same three-part destructuring, and the
   same use of a witness from `hT` to transport the two `t`-independent conditions. Only the
   unfolding step differs, `mem_rationalSubset_iff` here against `rationalOpen` there.
+* `rationalSubset_image_mul_right` is proved directly from the valuative-relation cancellation
+  law and has no external formalization as its source.
 -/
 
 public section
@@ -213,6 +217,37 @@ theorem rationalSubset_insert_of_forall_vle (Aplus : Subring A) (T : Finset A) (
   rcases Finset.mem_insert.mp ht with rfl | ht
   · exact hu v hv
   · exact hv'.2.1 t ht
+
+open scoped Classical in
+/-- **Multiplying a presentation by a unit changes nothing.** If `u` is a unit, then multiplying
+every numerator and the denominator of `R(T/s)` by `u` gives the same rational subset.
+
+No injectivity of `t ↦ t * u` is needed: membership in `Finset.image` supplies the forward
+representative, and the original numerator itself supplies the reverse one. -/
+@[simp]
+theorem rationalSubset_image_mul_right (Aplus : Subring A) (T : Finset A) (s u : A)
+    (hu : IsUnit u) :
+    rationalSubset Aplus (T.image fun t ↦ t * u) (s * u) = rationalSubset Aplus T s := by
+  have hu0 (v : Spv A) : ¬v.toValuativeRel.vle u 0 :=
+    @TauCeti.ValuativeRel.not_vle_zero_of_isUnit A _ v.toValuativeRel u hu
+  have hmul (v : Spv A) (x y : A) :
+      v.toValuativeRel.vle (x * u) (y * u) ↔ v.toValuativeRel.vle x y :=
+    v.toValuativeRel.mul_vle_mul_iff_left (hu0 v)
+  have hzero (v : Spv A) (x : A) :
+      v.toValuativeRel.vle (x * u) 0 ↔ v.toValuativeRel.vle x 0 := by
+    simpa only [zero_mul] using hmul v x 0
+  ext v
+  simp only [mem_rationalSubset_iff]
+  constructor
+  · rintro ⟨hv, hT, hs⟩
+    exact ⟨hv, fun t ht ↦ (hmul v t s).mp
+      (hT (t * u) (Finset.mem_image_of_mem (fun x ↦ x * u) ht)),
+      fun h ↦ hs ((hzero v s).mpr h)⟩
+  · rintro ⟨hv, hT, hs⟩
+    refine ⟨hv, ?_, fun h ↦ hs ((hzero v s).mp h)⟩
+    intro t ht
+    obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp ht
+    exact (hmul v x s).mpr (hT x hx)
 
 /-- The whole adic spectrum is the rational subset `R({1}/1)` — Wedhorn's observation that
 `Spa (A, A⁺)` itself is rational. The single condition `v(1) ≤ v(1) ≠ 0` holds at every
