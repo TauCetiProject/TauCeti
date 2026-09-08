@@ -24,7 +24,8 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 
-/-- `|x y - q²| ≤ e (2q + e)` when `x` and `y ≥ 0` are within `e` of `q ≥ 0`. -/
+/-- `|x y - q²| ≤ e (2q + e)` when `x` is within `e` of `q` and so is `y`, with `y` and `q`
+nonnegative; `x` may have either sign. -/
 theorem abs_mul_sub_mul_self_le {x y q e : R} (hx : |x - q| ≤ e) (hy : |y - q| ≤ e)
     (hy0 : 0 ≤ y) (hq0 : 0 ≤ q) :
     |x * y - q * q| ≤ e * (2 * q + e) := by

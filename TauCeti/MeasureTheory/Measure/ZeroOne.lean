@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Typeclasses.ZeroOne
 import TauCeti.Algebra.Order.Ring.Abs
 import Mathlib.MeasureTheory.Measure.Real
+import TauCeti.MeasureTheory.Measure.SymmDiff
 
 /-!
 # Zero-one criteria and almost surely constant maps
@@ -29,8 +30,6 @@ countable power of `ℝ≥0∞`.
 * `TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_approx_factorization`: under a finite
   measure, a null-measurable event admitting arbitrarily close pairs whose intersection mass
   factors has mass `0` or `1`;
-* `TauCeti.MeasureTheory.abs_measureReal_inter_sub_lt`: two events within `e` of `s` have
-  intersection within `2e` of `s`;
 * `TauCeti.MeasureTheory.IsZeroOneMeasure.exists_ae_eq_const`: under a zero-one measure, an
   almost-everywhere measurable map into a standard Borel space agrees almost everywhere with a
   single value.
@@ -47,22 +46,6 @@ open scoped ENNReal symmDiff
 namespace TauCeti
 
 namespace MeasureTheory
-
-/-- Two events within `e` of `s` have intersection within `2e` of `s`. -/
-theorem abs_measureReal_inter_sub_lt {Ω : Type*} [MeasurableSpace Ω]
-    {μ : Measure Ω} [IsFiniteMeasure μ] {A B s : Set Ω}
-    (hA : NullMeasurableSet A μ) (hB : NullMeasurableSet B μ) (hs : NullMeasurableSet s μ)
-    {e : ℝ} (h1 : μ.real (symmDiff A s) < e) (h2 : μ.real (symmDiff B s) < e) :
-    |μ.real (A ∩ B) - μ.real s| < 2 * e := by
-  have hsub : symmDiff (A ∩ B) s ⊆ symmDiff A s ∪ symmDiff B s := by
-    simpa only [← compl_inter, compl_symmDiff_compl] using
-      (Set.union_symmDiff_subset (s := Aᶜ) (t := Bᶜ) (u := sᶜ))
-  have hIS : μ.real (symmDiff (A ∩ B) s) < 2 * e :=
-    calc μ.real (symmDiff (A ∩ B) s)
-        ≤ μ.real (symmDiff A s ∪ symmDiff B s) := measureReal_mono hsub (by finiteness)
-      _ ≤ μ.real (symmDiff A s) + μ.real (symmDiff B s) := measureReal_union_le _ _
-      _ < 2 * e := by linarith
-  exact lt_of_le_of_lt (abs_measureReal_sub_le_measureReal_symmDiff (hA.inter hB) hs) hIS
 
 /-- Two approximants within `e ≤ 1` of `s` whose intersection mass factors force
 `|μ s - (μ s)²| ≤ e (2 μ s + 3)`. -/
