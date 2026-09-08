@@ -10,10 +10,10 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Homeomorph
 /-!
 # Rational subsets under a localization homeomorphism
 
-Let `S` be a localization of `A` away from `s`. Every finite family of elements of `S` has a
-common denominator which is a power of `s`. Multiplying all the numerators and the denominator of
-a rational subset by that common denominator does not change the subset, because the multiplier is
-a unit. Thus every rational subset of `Spa(S, S⁺)` is cut out by elements coming from `A`.
+Let `S` be a localization of `A` at a submonoid `M`. Every finite family of elements of `S` has a
+common denominator in `M`. Multiplying all the numerators and the denominator of a rational subset
+by that common denominator does not change the subset, because the multiplier is a unit. Thus
+every rational subset of `Spa(S, S⁺)` is cut out by elements coming from `A`.
 
 This is the algebraic denominator-clearing part of Wedhorn Proposition 8.2(2), that a rational
 subset of a rational subset is rational in the original adic spectrum. Combined with the
@@ -41,8 +41,9 @@ an admissible finite presentation in `A` and pass from `A(T/s)` to the completed
 
 ## Provenance
 
-The proof uses Mathlib's `IsLocalization.exist_integer_multiples_of_finset` to clear a finite
-family of denominators. No external formalization was used.
+The proof uses Mathlib's `IsLocalization.commonDenomOfFinset` and
+`IsLocalization.integerMultiple` to clear a finite family of denominators. No external
+formalization was used.
 -/
 
 public section
@@ -54,49 +55,43 @@ open TauCeti.Huber TauCeti.Huber.PairOfDefinition TauCeti.Localization
 variable {A S : Type*} [CommRing A] [CommRing S] [Algebra A S]
 
 /-- **Clear denominators in a rational subset of a localization.** If `S` is a localization of
-`A` away from `s`, then every rational subset of `Spa(S, S⁺)` is the pullback of a basic rational
-locus presented by a finite family in `A`.
+`A` at a submonoid `M`, then every rational subset of `Spa(S, S⁺)` is the pullback of a basic
+rational locus presented by a finite family in `A`.
 
 No topological admissibility is asserted for the resulting numerator family in `A`. Establishing
 that extra property is the remaining topological-algebra step in Wedhorn Proposition 8.2(2). -/
 theorem exists_comap_preimage_rationalSubset_eq [TopologicalSpace A] [TopologicalSpace S]
-    (s : A) [IsLocalization.Away s S] (Aplus : Subring A) (Bplus : Subring S)
+    (M : Submonoid A) [IsLocalization M S] (Aplus : Subring A) (Bplus : Subring S)
     (hcont : Continuous (algebraMap A S))
     (hplus : ∀ a ∈ Aplus, algebraMap A S a ∈ Bplus) (U : Finset S) (q : S) :
     ∃ (V : Finset A) (r : A),
       comap (algebraMap A S) ⁻¹' rationalSubset Aplus V r ∩ spa Bplus =
         rationalSubset Bplus U q := by
   classical
-  obtain ⟨d, hd⟩ :=
-    IsLocalization.exist_integer_multiples_of_finset (Submonoid.powers s) (insert q U)
-  let a : S → A := fun x ↦ if hx : x ∈ insert q U then (hd x hx).choose else 0
-  let dS : S := algebraMap A S d
-  let V : Finset A := U.image a
-  let r : A := a q
-  have hclear (x : S) (hx : x ∈ insert q U) : x * dS = algebraMap A S (a x) := by
-    rw [show a x = (hd x hx).choose by
-      dsimp only [a]
-      split
-      · congr 1
-      · contradiction]
-    simpa only [dS, Algebra.smul_def, mul_comm] using (hd x hx).choose_spec.symm
-  have hq : q * dS = algebraMap A S r := hclear q (Finset.mem_insert_self q U)
-  have hV : V.image (algebraMap A S) = U.image fun u ↦ u * dS := by
-    ext x
-    constructor
-    · intro hx
-      obtain ⟨b, hb, rfl⟩ := Finset.mem_image.mp hx
-      obtain ⟨u, hu, rfl⟩ := Finset.mem_image.mp hb
-      exact Finset.mem_image.mpr ⟨u, hu, by
-        simpa only using hclear u (Finset.mem_insert_of_mem hu)⟩
-    · intro hx
-      obtain ⟨u, hu, rfl⟩ := Finset.mem_image.mp hx
-      exact Finset.mem_image.mpr ⟨a u, Finset.mem_image_of_mem a hu,
-        by simpa only using (hclear u (Finset.mem_insert_of_mem hu)).symm⟩
-  refine ⟨V, r, ?_⟩
-  rw [comap_preimage_rationalSubset_inter_spa (algebraMap A S) hcont hplus]
-  rw [hV, ← hq, rationalSubset_image_mul_right Bplus U q dS
-    (IsLocalization.map_units S d)]
+  -- Mathlib's `IsLocalization.commonDenom`/`integerMultiple` clear the finitely many
+  -- denominators of `insert q U` simultaneously; only the packaged data is used below.
+  obtain ⟨d, hd, num, hnum⟩ :
+      ∃ d : S, IsUnit d ∧ ∃ num : ∀ x ∈ insert q U, A,
+        ∀ (x : S) (hx : x ∈ insert q U), algebraMap A S (num x hx) = x * d :=
+    ⟨algebraMap A S (IsLocalization.commonDenom M (insert q U) id : A),
+      IsLocalization.map_units S _,
+      fun x hx ↦ IsLocalization.integerMultiple M (insert q U) id ⟨x, hx⟩, fun x hx ↦ by
+        rw [IsLocalization.map_integerMultiple, Submonoid.smul_def, Algebra.smul_def]
+        exact mul_comm _ _⟩
+  refine ⟨U.attach.image fun u ↦ num u.1 (Finset.mem_insert_of_mem u.2),
+    num q (Finset.mem_insert_self q U), ?_⟩
+  have hV : (U.attach.image fun u ↦ num u.1 (Finset.mem_insert_of_mem u.2)).image (algebraMap A S)
+      = U.image fun u ↦ u * d :=
+    calc (U.attach.image fun u ↦ num u.1 (Finset.mem_insert_of_mem u.2)).image (algebraMap A S)
+        = U.attach.image fun u : {x // x ∈ U} ↦ u.1 * d :=
+          Finset.image_image.trans
+            (Finset.image_congr fun u _ ↦ hnum u.1 (Finset.mem_insert_of_mem u.2))
+      _ = (U.attach.image Subtype.val).image fun x ↦ x * d :=
+          (Finset.image_image (f := Subtype.val) (g := fun x : S ↦ x * d)).symm
+      _ = U.image fun u ↦ u * d := by rw [Finset.attach_image_val]
+  rw [comap_preimage_rationalSubset_inter_spa (algebraMap A S) hcont hplus, hV,
+    hnum q (Finset.mem_insert_self q U),
+    rationalSubset_image_mul_right Bplus U q d hd]
 
 /-- **Rational subsets through the topological-localization homeomorphism.** Every rational
 subset of `Spa(A(T/s), A(T/s)⁺)` is the inverse image, under the canonical homeomorphism with
@@ -128,7 +123,7 @@ theorem exists_spaLocalizationHomeomorph_preimage_rationalSubset_eq
       (⟨_, Subalgebra.algebraMap_mem _ (⟨a, ha⟩ : Aplus)⟩ :
         ↥(Algebra.adjoin Aplus
           (Set.range fun t : T ↦ (TauCeti.Localization.divBy (t : A) s : S))))
-  obtain ⟨V, r, hVr⟩ := exists_comap_preimage_rationalSubset_eq s Aplus Bplus
+  obtain ⟨V, r, hVr⟩ := exists_comap_preimage_rationalSubset_eq (Submonoid.powers s) Aplus Bplus
     (continuous_algebraMap_locTopology P T s S hden) hplus U q
   refine ⟨V, r, Set.ext fun v ↦ ?_⟩
   have hpoint := Set.ext_iff.mp hVr v.1
