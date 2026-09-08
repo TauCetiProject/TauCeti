@@ -23,6 +23,8 @@ and its relationship with irreducibility. Worked examples for `X ^ 5 - X - 1` ar
 ## Main declarations
 
 * `Polynomial.factorDegrees`: the multiset of factor degrees of `f` modulo `p`.
+* `Polynomial.factorDegrees_def`: the defining equation, which is the only way to unfold the
+  carrier outside this file.
 * `Polynomial.mem_factorDegrees_iff`: a number occurs as a factor degree exactly when it is the
   degree of a normalized irreducible factor of the reduction.
 * `Polynomial.factorDegrees_mul`: the factor degrees of a product with nonzero reductions are the
@@ -57,13 +59,20 @@ noncomputable def _root_.Polynomial.factorDegrees (f : ℤ[X]) (p : ℕ) [Fact p
   Multiset.map Polynomial.natDegree
     (normalizedFactors (f.map (Int.castRingHom (ZMod p))))
 
+/-- The defining equation for `Polynomial.factorDegrees`, which the definition itself does not
+expose outside this file. -/
+theorem _root_.Polynomial.factorDegrees_def (f : ℤ[X]) (p : ℕ) [Fact p.Prime] :
+    f.factorDegrees p = Multiset.map Polynomial.natDegree
+      (normalizedFactors (f.map (Int.castRingHom (ZMod p)))) :=
+  (rfl)
+
 /-- A natural number occurs in `f.factorDegrees p` exactly when it is the degree of a normalized
 irreducible factor of the reduction of `f` modulo `p`. -/
 @[simp]
 theorem _root_.Polynomial.mem_factorDegrees_iff {f : ℤ[X]} {p d : ℕ} [Fact p.Prime] :
     d ∈ f.factorDegrees p ↔ ∃ q ∈ normalizedFactors (f.map (Int.castRingHom (ZMod p))),
       q.natDegree = d := by
-  simp [factorDegrees]
+  simp [factorDegrees_def]
 
 /-- Every degree occurring in `f.factorDegrees p` is positive. -/
 theorem _root_.Polynomial.pos_of_mem_factorDegrees {f : ℤ[X]} {p d : ℕ} [Fact p.Prime]
@@ -77,26 +86,26 @@ multiplicity. -/
 theorem _root_.Polynomial.card_factorDegrees (f : ℤ[X]) (p : ℕ) [Fact p.Prime] :
     (f.factorDegrees p).card =
       (normalizedFactors (f.map (Int.castRingHom (ZMod p)))).card := by
-  simp [factorDegrees]
+  simp [factorDegrees_def]
 
 /-- The zero polynomial has no factor degrees. -/
 @[simp]
 theorem _root_.Polynomial.factorDegrees_zero (p : ℕ) [Fact p.Prime] :
     (0 : ℤ[X]).factorDegrees p = 0 := by
-  simp [factorDegrees]
+  simp [factorDegrees_def]
 
 /-- The constant polynomial one has no factor degrees. -/
 @[simp]
 theorem _root_.Polynomial.factorDegrees_one (p : ℕ) [Fact p.Prime] :
     (1 : ℤ[X]).factorDegrees p = 0 := by
-  simp [factorDegrees]
+  simp [factorDegrees_def]
 
 /-- Factor degrees turn a product whose reductions are nonzero into multiset addition. -/
 theorem _root_.Polynomial.factorDegrees_mul (f g : ℤ[X]) (p : ℕ) [Fact p.Prime]
     (hf : f.map (Int.castRingHom (ZMod p)) ≠ 0)
     (hg : g.map (Int.castRingHom (ZMod p)) ≠ 0) :
     (f * g).factorDegrees p = f.factorDegrees p + g.factorDegrees p := by
-  simp [factorDegrees, normalizedFactors_mul hf hg]
+  simp [factorDegrees_def, normalizedFactors_mul hf hg]
 
 /-- The factor degrees are read off from any factorization of the reduction into irreducibles,
 without normalizing the factors first. -/
@@ -104,14 +113,14 @@ theorem _root_.Polynomial.factorDegrees_eq_map_natDegree_of_map_eq_prod {f : ℤ
     [Fact p.Prime] {s : Multiset (ZMod p)[X]} (hs : ∀ q ∈ s, Irreducible q)
     (hfs : f.map (Int.castRingHom (ZMod p)) = s.prod) :
     f.factorDegrees p = s.map Polynomial.natDegree := by
-  rw [factorDegrees, hfs, normalizedFactors_prod_eq s hs, Multiset.map_map]
+  rw [factorDegrees_def, hfs, normalizedFactors_prod_eq s hs, Multiset.map_map]
   exact Multiset.map_congr rfl fun q _ ↦ Polynomial.natDegree_normalize
 
 /-- The sum of the factor degrees is the degree of the polynomial after reduction. -/
 @[simp]
 theorem _root_.Polynomial.sum_factorDegrees_eq_natDegree_map (f : ℤ[X]) (p : ℕ) [Fact p.Prime] :
     (f.factorDegrees p).sum = (f.map (Int.castRingHom (ZMod p))).natDegree := by
-  rw [factorDegrees]
+  rw [factorDegrees_def]
   exact Polynomial.sum_natDegree_normalizedFactors _
 
 /-- For a monic polynomial, the degrees of all irreducible factors of its reduction modulo a
@@ -124,7 +133,7 @@ theorem _root_.Polynomial.Monic.sum_factorDegrees {f : ℤ[X]} (hf : f.Monic) (p
 theorem _root_.Polynomial.factorDegrees_eq_singleton_of_irreducible (f : ℤ[X]) (p : ℕ)
     [Fact p.Prime] (h : Irreducible (f.map (Int.castRingHom (ZMod p)))) :
     f.factorDegrees p = {(f.map (Int.castRingHom (ZMod p))).natDegree} := by
-  rw [factorDegrees]
+  rw [factorDegrees_def]
   exact Polynomial.map_natDegree_normalizedFactors_eq_singleton_iff.mpr h
 
 /-- A single factor degree, whatever it is, forces the reduction to be irreducible. -/
