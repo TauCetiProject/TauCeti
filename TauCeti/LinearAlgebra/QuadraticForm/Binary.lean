@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
+import Mathlib.Algebra.Ring.Identities
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -21,7 +22,8 @@ content is a single explicit change of variables. If `a x² + b y² = c` with `c
 the vector `(x, y)` and its orthogonal companion `(-b y, a x)` form a basis, because the
 determinant of the pair is exactly `c`, and reading `⟨a, b⟩` in that basis gives `⟨c, a b c⟩`.
 Since `a * b * c` and `a * b * c⁻¹` differ by the square `c²`, the two spellings of the second
-coefficient found in the sources present the same form.
+coefficient found in the sources present the same form. Only the *represented* value has to be a
+unit here, so this half of the theory is developed over a commutative ring.
 
 The second is the **binary equivalence criterion**: two binary forms with unit coefficients are
 isometric exactly when they have the same discriminant modulo squares and represent a common
@@ -65,9 +67,9 @@ namespace TauCeti
 
 universe u
 
-section CommRing
+section CommSemiring
 
-variable {R : Type u} [CommRing R]
+variable {R : Type u} [CommSemiring R]
 
 /-- A binary diagonal form represents its first coefficient. -/
 theorem represents_binary_left (a b : R) : Represents (weightedSumSquares R ![a, b]) a :=
@@ -79,15 +81,18 @@ theorem mem_unitValueSet_binary_left (a : Rˣ) (b : R) :
     a ∈ unitValueSet (weightedSumSquares R ![(a : R), b]) :=
   mem_unitValueSet.mpr (represents_binary_left _ _)
 
+end CommSemiring
+
+section CommRing
+
+variable {R : Type u} [CommRing R]
+
 /-- The **binary representation normal form** as an explicit change of variables: a solution of
 `a x² + b y² = c` with `c` invertible carries `⟨c, a * b * c⟩` to `⟨a, b⟩`.
 
 The map sends the first standard basis vector to `(x, y)`, on which `⟨a, b⟩` takes the value `c`,
 and the second to the orthogonal companion `(-b y, a x)`, on which `⟨a, b⟩` takes the value
 `a * b * c`. Its determinant is `a x² + b y² = c`, which is why the hypothesis asks for a unit. -/
--- `@[expose]`d because its own coordinate lemma `isometryEquivBinaryNormalForm_apply` below
--- unfolds the underlying function, which a sealed body does not permit.
-@[expose]
 def isometryEquivBinaryNormalForm (a b x y : R) (c : Rˣ) (h : a * x ^ 2 + b * y ^ 2 = c) :
     (weightedSumSquares R ![(c : R), a * b * c]).IsometryEquiv (weightedSumSquares R ![a, b]) where
   toFun v := ![x * v 0 - b * y * v 1, y * v 0 + a * x * v 1]
@@ -115,41 +120,38 @@ def isometryEquivBinaryNormalForm (a b x y : R) (c : Rˣ) (h : a * x ^ 2 + b * y
       Matrix.cons_val_one, smul_eq_mul]
     linear_combination (v 0 * v 0 + a * b * (v 1 * v 1)) * h
 
+/-- The coordinates of the change of variables. The body of `isometryEquivBinaryNormalForm` is
+not exposed, so this equation lemma is the interface downstream modules rewrite with; the
+parentheses around `rfl` elaborate it against the expected type, which unfolds the sealed body. -/
 @[simp]
 theorem isometryEquivBinaryNormalForm_apply (a b x y : R) (c : Rˣ)
     (h : a * x ^ 2 + b * y ^ 2 = c) (v : Fin 2 → R) :
     isometryEquivBinaryNormalForm a b x y c h v =
       ![x * v 0 - b * y * v 1, y * v 0 + a * x * v 1] :=
-  rfl
-
-end CommRing
-
-section Field
-
-variable {K : Type u} [Field K]
+  (rfl)
 
 /-- **The binary representation normal form**, Lam I.2.3 (2): a unit represented by a binary
 diagonal form may be taken as its first coefficient. -/
-theorem equivalent_binaryNormalForm_of_mem_unitValueSet {a b c : Kˣ}
-    (h : c ∈ unitValueSet (weightedSumSquares K ![(a : K), (b : K)])) :
-    (weightedSumSquares K ![(a : K), (b : K)]).Equivalent
-      (weightedSumSquares K ![(c : K), (a : K) * b * c]) := by
+theorem equivalent_binaryNormalForm_of_mem_unitValueSet {a b : R} {c : Rˣ}
+    (h : c ∈ unitValueSet (weightedSumSquares R ![a, b])) :
+    (weightedSumSquares R ![a, b]).Equivalent
+      (weightedSumSquares R ![(c : R), a * b * c]) := by
   obtain ⟨v, hv⟩ := Set.mem_range.mp
     ((represents_iff _ _).mp (mem_unitValueSet.mp h))
   rw [weightedSumSquares_apply, Fin.sum_univ_two] at hv
-  refine ⟨(isometryEquivBinaryNormalForm (a : K) b (v 0) (v 1) c ?_).symm⟩
+  refine ⟨(isometryEquivBinaryNormalForm a b (v 0) (v 1) c ?_).symm⟩
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, smul_eq_mul] at hv
   linear_combination hv
 
-/-- **The binary representation normal form**, Lam I.2.3 (2). A binary diagonal form with unit
-coefficients represents a unit `c` exactly when it is isometric to `⟨c, a * b * c⟩`.
+/-- **The binary representation normal form**, Lam I.2.3 (2). A binary diagonal form represents a
+unit `c` exactly when it is isometric to `⟨c, a * b * c⟩`.
 
 ⚠ That `c` is a unit is essential: every quadratic form represents the scalar `0` through the
 zero vector, and `⟨a, b⟩` is in general not isometric to `⟨0, 0⟩`. -/
-theorem mem_unitValueSet_binary_iff_equivalent (a b c : Kˣ) :
-    c ∈ unitValueSet (weightedSumSquares K ![(a : K), (b : K)]) ↔
-      (weightedSumSquares K ![(a : K), (b : K)]).Equivalent
-        (weightedSumSquares K ![(c : K), (a : K) * b * c]) := by
+theorem mem_unitValueSet_binary_iff_equivalent (a b : R) (c : Rˣ) :
+    c ∈ unitValueSet (weightedSumSquares R ![a, b]) ↔
+      (weightedSumSquares R ![a, b]).Equivalent
+        (weightedSumSquares R ![(c : R), a * b * c]) := by
   refine ⟨fun h => equivalent_binaryNormalForm_of_mem_unitValueSet h, fun h => ?_⟩
   rw [h.unitValueSet_eq]
   exact mem_unitValueSet_binary_left _ _
@@ -160,27 +162,33 @@ isometric.
 
 Sources state the normal form both ways, the second because the square class of the second
 coefficient is forced to be that of the discriminant `a * b` divided by `c`. -/
-theorem equivalent_binaryNormalForm_inv (a b c : Kˣ) :
-    (weightedSumSquares K ![(c : K), (a : K) * b * c]).Equivalent
-      (weightedSumSquares K ![(c : K), (a : K) * b * (c⁻¹ : Kˣ)]) :=
+theorem equivalent_binaryNormalForm_inv (a b : R) (c : Rˣ) :
+    (weightedSumSquares R ![(c : R), a * b * c]).Equivalent
+      (weightedSumSquares R ![(c : R), a * b * (c⁻¹ : Rˣ)]) :=
   ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares ![1, c] (by
     intro i
     fin_cases i
     · simp
     · simp
-      field_simp)⟩
+      linear_combination (a * b * (c : R)) * c.inv_mul)⟩
+
+end CommRing
+
+section Field
+
+variable {K : Type u} [Field K]
 
 /-- Isometric binary diagonal forms with unit coefficients have the same discriminant modulo
 squares: the discriminant of `⟨a, b⟩` is `a * b` and that of `⟨c, d⟩` is `c * d`, and the two
-differ by a square exactly when their product is one. -/
+agree modulo squares exactly when their product `a * b * (c * d)` is a square. -/
 theorem isSquare_mul_mul_of_equivalent_binary [Invertible (2 : K)] {a b c d : Kˣ}
     (h : (weightedSumSquares K ![(a : K), (b : K)]).Equivalent
       (weightedSumSquares K ![(c : K), (d : K)])) :
     IsSquare (a * b * (c * d)) := by
   -- Let `u` and `v` be the images of the two standard basis vectors. Comparing the values at
   -- `(1, 0)`, at `(0, 1)` and at `(1, 1)` shows that `u` and `v` are orthogonal for `⟨c, d⟩`, so
-  -- the Brahmagupta–Fibonacci identity
-  -- `a * b = (c u₀ v₀ + d u₁ v₁)² + c d (u₀ v₁ - u₁ v₀)²` collapses to its second summand.
+  -- Brahmagupta's identity `sq_add_mul_sq_mul_sq_add_mul_sq`, read at `n = c * d`, collapses to
+  -- its second summand.
   obtain ⟨f⟩ := h
   have key : ∀ p : Fin 2 → K,
       (c : K) * f p 0 ^ 2 + (d : K) * f p 1 ^ 2 = (a : K) * p 0 ^ 2 + (b : K) * p 1 ^ 2 := by
@@ -207,8 +215,14 @@ theorem isSquare_mul_mul_of_equivalent_binary [Invertible (2 : K)] {a b c d : K�
       linear_combination hw - hu - hv
     exact (mul_eq_zero.mp h2).resolve_left (isUnit_of_invertible (2 : K)).ne_zero
   have hdet : (a : K) * b = (c : K) * d * (u 0 * v 1 - u 1 * v 0) ^ 2 := by
-    rw [← hu, ← hv]
-    linear_combination ((c : K) * (u 0 * v 0) + (d : K) * (u 1 * v 1)) * hortho
+    -- Brahmagupta's identity at `n = c * d` reads `c² a b = c² (c u₀v₀ + d u₁v₁)²
+    -- + c² · c d (u₀v₁ - u₁v₀)²`, whose first summand vanishes by `hortho`.
+    have brahmagupta := sq_add_mul_sq_mul_sq_add_mul_sq (n := (c : K) * d)
+      (x₁ := (c : K) * u 0) (x₂ := u 1) (y₁ := (c : K) * v 0) (y₂ := -v 1)
+    refine mul_left_cancel₀ (mul_ne_zero c.ne_zero c.ne_zero) ?_
+    linear_combination brahmagupta - (c : K) ^ 2 * b * hu
+      - (c : K) ^ 2 * ((c : K) * u 0 ^ 2 + (d : K) * u 1 ^ 2) * hv
+      + (c : K) ^ 2 * ((c : K) * (u 0 * v 0) + (d : K) * (u 1 * v 1)) * hortho
   have hne : u 0 * v 1 - u 1 * v 0 ≠ 0 := fun h0 =>
     mul_ne_zero a.ne_zero b.ne_zero (by rw [hdet, h0]; ring)
   refine ⟨c * d * Units.mk0 _ hne, Units.ext ?_⟩
