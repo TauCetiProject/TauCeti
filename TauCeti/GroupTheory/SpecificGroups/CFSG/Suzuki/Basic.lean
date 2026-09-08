@@ -138,7 +138,8 @@ characteristic `p = 2`. -/
 theorem halfFrobenius_halfFrobenius (g : d.toRankTwoBLieIndex.AmbientGroup) :
     d.halfFrobenius (d.halfFrobenius g) = d.toRankTwoBLieIndex.primeFrobenius g := by
   have h := d.halfFrobenius_iterate_two_mul 1 g
-  rw [show 2 * 1 = 1 + 1 from rfl, Function.iterate_add_apply, Function.iterate_one] at h
+  have htwo : 2 * 1 = 1 + 1 := rfl
+  rw [htwo, Function.iterate_add_apply, Function.iterate_one] at h
   rw [RankTwoBLieIndex.primeFrobenius_def]
   exact h
 

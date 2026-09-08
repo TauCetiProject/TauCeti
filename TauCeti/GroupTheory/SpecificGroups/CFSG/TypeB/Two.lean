@@ -51,12 +51,11 @@ Neither branch gets a Steinberg endomorphism here. What is named below is named 
 points whose matrix entries lie in the field of definition `𝔽_q`.
 
 The Suzuki branch's Steinberg endomorphism and its candidate group are stated on this carrier in
-`TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`, in the shape milestones `L2` and `L3`
-ask of them, as `TypeA.lean`, `TypeD.lean`, `TypeE6.lean` and `Unimodular.lean` do on their own
-carriers. No identification of this carrier with the pinned simply connected group scheme of the
-diagram is available, so neither file offers it as a substitute for that pinned group: those
-constructions transfer to the milestone `L0` carrier along the Layer 9 identification, and not
-before.
+`TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`, as `TypeA.lean`, `TypeD.lean`,
+`TypeE6.lean` and `Unimodular.lean` state theirs on their own carriers. No identification of this
+carrier with the pinned simply connected group scheme of the diagram is available, so neither file
+offers it as a substitute for that pinned group: those constructions carry over to the pinned group
+once such an identification is proved, and not before.
 
 Nothing here asserts that the carrier is reductive, that its weight torus is maximal, that it is
 the symplectic group scheme, or that any group below is finite, perfect, or simple. In particular
