@@ -30,8 +30,6 @@ separately identifies `H` as a subgroup of the image of `p_*`.
 
 ## Main declarations
 
-* `IsCoveringMap.surjective`: a covering map with nonempty total space over a path-connected
-  base is surjective.
 * `TauCeti.IsCoveringMap.map_injective` and `TauCeti.IsCoveringMap.mapOfEq_injective`: a
   covering map is injective on fundamental groups.
 * `TauCeti.IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le_subgroup`: lift when
@@ -59,19 +57,6 @@ variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X} {
 variable {A : Type*} [TopologicalSpace A]
 
 open _root_.FundamentalGroup
-
-/-- **A covering map with nonempty total space over a path-connected base is surjective.** Lift a
-path from a point already in the image to an arbitrary point of the base; the endpoint of the lift
-is a preimage.
-
-Mathlib's `IsCoveringMap` allows empty fibres, so surjectivity has to be deduced rather than
-assumed; connectedness of the base is what rules out a cover of only part of it. -/
-theorem _root_.IsCoveringMap.surjective [PathConnectedSpace X] [Nonempty E]
-    (hp : _root_.IsCoveringMap p) : Function.Surjective p := fun x ↦ by
-  obtain ⟨e⟩ := ‹Nonempty E›
-  obtain ⟨Γ, hΓ, -⟩ :=
-    hp.exists_path_lifts (PathConnectedSpace.somePath (p e) x).toContinuousMap e (Path.source _)
-  exact ⟨Γ 1, by simpa using congrFun hΓ 1⟩
 
 /-- A covering map induces an injective map on fundamental groups. This is the fundamental-group
 form of Mathlib's `IsCoveringMap.injective_path_homotopic_map`, which states the same injectivity

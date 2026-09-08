@@ -43,8 +43,8 @@ if it admits a simply connected covering space.**
 
 The forward direction is the universal-cover construction, the reverse direction is
 `TauCeti.SemilocallySimplyConnectedSpace.of_isCoveringMap`; surjectivity of the covering map is
-automatic here, by `IsCoveringMap.surjective`, because the base is path-connected and a simply
-connected total space is nonempty. -/
+automatic here, by `IsCoveringMap.comp_subtypeVal_pathComponent_surjective`, because the base is
+path-connected and a simply connected total space is nonempty. -/
 theorem semilocallySimplyConnectedSpace_iff_exists_isCoveringMap_and_simplyConnectedSpace
     (X : Type u) [TopologicalSpace X]
     [PathConnectedSpace X] [LocallyPathConnectedSpace X] :
@@ -57,6 +57,9 @@ theorem semilocallySimplyConnectedSpace_iff_exists_isCoveringMap_and_simplyConne
       UniversalCover.isCoveringMap x₀, UniversalCover.simplyConnectedSpace x₀⟩
   · rintro ⟨E, _, p, hp, hE⟩
     have : PathConnectedSpace E := (simply_connected_iff_loops_nullhomotopic.mp hE).1
-    exact .of_isCoveringMap hp hp.surjective
+    obtain ⟨e⟩ := PathConnectedSpace.nonempty (X := E)
+    refine .of_isCoveringMap hp fun x ↦ ?_
+    obtain ⟨e', he'⟩ := hp.comp_subtypeVal_pathComponent_surjective e x
+    exact ⟨e', he'⟩
 
 end TauCeti
