@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Analysis.CompletelyMonotone.Stieltjes.Basic
 public import TauCeti.Analysis.CompletelyMonotone.Bernstein.OpenHalfLine
--- Non-public: Tonelli swaps the two exponential integrations, and the improper-integral
--- calculus evaluates the inner one.
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+-- Non-public: Tonelli swaps the two exponential integrations.
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Integral.ExpDecay
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
@@ -62,8 +60,6 @@ representation outwards, whereas the equivalence below also *produces* one.
 
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions: Theory and Applications*,
   de Gruyter, 2nd ed. (2012), Theorem 2.2 and Remark 2.3.
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B, the
-  Stieltjes/Bernstein-function relationships target.
 -/
 
 public section
@@ -101,16 +97,6 @@ theorem integrable_exp_neg_mul_of_integrable_stieltjesWeight
   exact (inv_le_inv₀ (Real.exp_pos _) (by positivity)).2 hkey
 
 /-! ## The inner exponential integral -/
-
-/-- The extended-real form of `TauCeti.integral_pow_mul_exp_neg_mul_Ioi` at power zero. -/
-private theorem lintegral_ofReal_exp_neg_mul_Ioi_zero {c : ℝ} (hc : 0 < c) :
-    ∫⁻ s in Ioi (0 : ℝ), ENNReal.ofReal (Real.exp (-(c * s))) = ENNReal.ofReal c⁻¹ := by
-  have hint : IntegrableOn (fun s : ℝ => Real.exp (-(c * s))) (Ioi 0) := by
-    simpa [neg_mul] using exp_neg_integrableOn_Ioi (0 : ℝ) hc
-  rw [← ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun s => (Real.exp_pos _).le),
-    show (∫ s in Ioi (0 : ℝ), Real.exp (-(c * s))) = c⁻¹ by
-      simpa only [pow_zero, one_mul, Nat.factorial_zero, Nat.cast_one, pow_one, one_div,
-        zero_add] using integral_pow_mul_exp_neg_mul_Ioi 0 hc]
 
 /-- **The Stieltjes kernel is an iterated exponential integral.**  Swapping the two integrations
 turns the outer Laplace integral of the inner one into the Stieltjes integral of `ν`. -/
@@ -279,19 +265,15 @@ theorem RepresentsStieltjes.exists_isCompletelyMonotoneOnIoi (h : RepresentsStie
           ∫ s in Ioi (0 : ℝ), Real.exp (-(t * s)) * laplaceTransform μ s := by
       simpa only [mul_add] using integral_add (hconst t ht) (hLint t ht)
     rw [hsplit, integral_mul_const,
-      show (∫ s in Ioi (0 : ℝ), Real.exp (-(t * s))) = t⁻¹ by
-        simpa only [pow_zero, one_mul, Nat.factorial_zero, Nat.cast_one, pow_one, one_div,
-          zero_add] using integral_pow_mul_exp_neg_mul_Ioi 0 ht]
+      integral_exp_neg_mul_Ioi_zero ht]
     rw [div_eq_inv_mul]
     ring
 
 /-! ## The characterization -/
 
 /-- **Stieltjes functions are exactly the Laplace transforms of completely monotone functions**,
-up to an additive nonnegative constant.  This is the Stieltjes half of the correspondence
-requested by the one-parameter-semigroups roadmap.  The constant `b` cannot be absorbed into the
-integrand: its representing data in the outer variable is a point mass at `0`, which no density
-supplies.
+up to an additive nonnegative constant.  The constant `b` cannot be absorbed into the integrand:
+its representing data in the outer variable is a point mass at `0`, which no density supplies.
 
 Compare `TauCeti.IsStieltjesFunction.isCompletelyMonotoneOnIoi`, which says that a Stieltjes
 function is itself completely monotone -- a strictly weaker conclusion, since a completely
