@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Free
+public import TauCeti.Algebra.Category.ModuleCat.Finrank
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 
 /-!
@@ -28,8 +29,9 @@ namespace AbelianK0.AdditiveInvariant
 
 variable (k : Type u) [DivisionRing k]
 
-/-- Finrank on `FGModuleCat k`, as a `ℤ`-valued invariant additive on short exact sequences. -/
-@[expose]
+/-- Finrank on `FGModuleCat k`, as a `ℤ`-valued invariant additive on short exact sequences.
+
+The definition is sealed; use `finrank_obj` to evaluate it on an object. -/
 noncomputable def finrank : AbelianK0.AdditiveInvariant (FGModuleCat.{v} k) ℤ where
   obj X := Module.finrank k X
   map_iso {_ _} e := congrArg Int.ofNat (FGModuleCat.isoToLinearEquiv e).finrank_eq
@@ -44,20 +46,8 @@ noncomputable def finrank : AbelianK0.AdditiveInvariant (FGModuleCat.{v} k) ℤ 
 
 @[simp]
 lemma finrank_obj (X : FGModuleCat.{v} k) :
-    (finrank k).obj X = (Module.finrank k X : ℤ) := rfl
+    (finrank k).obj X = (Module.finrank k X : ℤ) := (rfl)
 
 end AbelianK0.AdditiveInvariant
-
-namespace FGModuleCat
-
-variable (k : Type u) [DivisionRing k]
-
-/-- Forgetting the finite-generation witness does not change finrank. -/
-@[simp]
-theorem finrank_forget₂_obj (X : FGModuleCat.{v} k) :
-    Module.finrank k ((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).obj X) =
-      Module.finrank k X := rfl
-
-end FGModuleCat
 
 end TauCeti

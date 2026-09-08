@@ -49,29 +49,30 @@ universe u v
 
 variable {k : Type u} [DivisionRing k]
 
-private theorem finrank_eq_zero_of_isZero {X : ModuleCat.{v} k} (hX : IsZero X) :
-    Module.finrank k X = 0 := by
-  let _ : Subsingleton X := ModuleCat.subsingleton_of_isZero hX
-  exact Module.finrank_zero_of_subsingleton
+namespace HomologicalComplex
 
-private theorem finrankSupport_X_subset_Icc (K : CochainComplex (ModuleCat.{v} k) ℤ)
+/-- The finrank support of a strictly bounded complex of vector spaces lies in any interval
+supplied by its bounds. -/
+theorem finrankSupport_X_subset_Icc (K : CochainComplex (ModuleCat.{v} k) ℤ)
     (a b : ℤ) [K.IsStrictlyGE a] [K.IsStrictlyLE b] :
     GradedObject.finrankSupport K.X ⊆ Finset.Icc a b := by
   rw [GradedObject.finrankSupport_subset_iff]
   intro n hn
-  exact finrank_eq_zero_of_isZero (TauCeti.HomologicalComplex.isZero_X_of_notMem_Icc K a b
-    (fun h => hn (Finset.mem_coe.2 h)))
+  exact ModuleCat.finrank_eq_zero_of_isZero
+    (TauCeti.HomologicalComplex.isZero_X_of_notMem_Icc K a b
+      (fun h => hn (Finset.mem_coe.2 h)))
 
-private theorem finrankSupport_homology_subset_Icc
+/-- The finrank support of the homology of a strictly bounded complex of vector spaces lies in any
+interval supplied by its bounds. -/
+theorem finrankSupport_homology_subset_Icc
     (K : CochainComplex (ModuleCat.{v} k) ℤ) (a b : ℤ)
     [K.IsStrictlyGE a] [K.IsStrictlyLE b] :
     GradedObject.finrankSupport (fun n => K.homology n) ⊆ Finset.Icc a b := by
   rw [GradedObject.finrankSupport_subset_iff]
   intro n hn
-  exact finrank_eq_zero_of_isZero (TauCeti.HomologicalComplex.isZero_homology_of_notMem_Icc K a b
-    (fun h => hn (Finset.mem_coe.2 h)))
-
-namespace HomologicalComplex
+  exact ModuleCat.finrank_eq_zero_of_isZero
+    (TauCeti.HomologicalComplex.isZero_homology_of_notMem_Icc K a b
+      (fun h => hn (Finset.mem_coe.2 h)))
 
 variable (K : CochainComplex (FGModuleCat.{v} k) ℤ)
 
@@ -87,12 +88,15 @@ theorem eulerChar_forgetFG_eq_sum_finrank (a b : ℤ) [K.IsStrictlyGE a]
   rw [HomologicalComplex.eulerChar_eq_sum_finSet_of_finrankSupport_subset
     (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K) s]
   · simp only [Functor.mapHomologicalComplex_obj_X,
-      ComplexShape.eulerCharSignsUpInt_χ, FGModuleCat.finrank_forget₂_obj]
+      ComplexShape.eulerCharSignsUpInt_χ]
+    rfl
   · exact (finrankSupport_X_subset_Icc
       (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K)
       a b).trans hs
 
-private noncomputable def homologyForgetIso (n : ℤ) :
+/-- The canonical comparison between homology after forgetting an `FGModuleCat` complex and the
+underlying module of its homology. -/
+noncomputable def homologyForgetIso (n : ℤ) :
     (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K).homology n ≅
       (forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).obj (K.homology n) := by
   let i := n - 1
@@ -109,7 +113,9 @@ private noncomputable def homologyForgetIso (n : ℤ) :
       (K.homologyIsoSc' i j l
         ((ComplexShape.up ℤ).prev_eq' hij) ((ComplexShape.up ℤ).next_eq' hjl)).symm
 
-private theorem finrank_homology_forget (n : ℤ) :
+/-- Forgetting an `FGModuleCat` complex before taking homology does not change homology finrank. -/
+@[simp]
+theorem finrank_homology_forget (n : ℤ) :
     Module.finrank k
       ((((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj
         K).homology n) =

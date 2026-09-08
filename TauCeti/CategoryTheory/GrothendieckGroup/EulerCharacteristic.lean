@@ -71,13 +71,9 @@ open CategoryTheory CategoryTheory.Limits ZeroObject
 
 universe w v u
 
-variable {A : Type u} [Category.{v} A] [Abelian A]
-
-private theorem isZero_kernel_of_isZero {X Y : A} (f : X ⟶ Y) (hX : IsZero X) :
-    IsZero (kernel f) :=
-  IsZero.of_iso hX (kernelIsoOfEq (hX.eq_of_src f 0) ≪≫ kernelZeroIsoSource)
-
 namespace HomologicalComplex
+
+variable {A : Type u} [Category.{v} A] [HasZeroMorphisms A]
 
 /-- A strictly bounded cochain complex is zero outside any interval supplied by its bounds. -/
 theorem isZero_X_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsStrictlyGE a]
@@ -90,13 +86,20 @@ theorem isZero_X_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsStric
 /-- The homology of a strictly bounded cochain complex is zero outside any interval supplied by
 its bounds. -/
 theorem isZero_homology_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsStrictlyGE a]
-    [K.IsStrictlyLE b] {n : ℤ} (hn : n ∉ Finset.Icc a b) : IsZero (K.homology n) := by
+    [K.IsStrictlyLE b] [∀ n, K.HasHomology n] {n : ℤ} (hn : n ∉ Finset.Icc a b) :
+    IsZero (K.homology n) := by
   rw [Finset.mem_Icc] at hn
   rcases lt_or_ge n a with h | h
   · exact K.isZero_of_isGE a n h
   · exact K.isZero_of_isLE b n (by omega)
 
 end HomologicalComplex
+
+variable {A : Type u} [Category.{v} A] [Abelian A]
+
+private theorem isZero_kernel_of_isZero {X Y : A} (f : X ⟶ Y) (hX : IsZero X) :
+    IsZero (kernel f) :=
+  IsZero.of_iso hX (kernelIsoOfEq (hX.eq_of_src f 0) ≪≫ kernelZeroIsoSource)
 
 namespace AbelianK0
 
