@@ -43,11 +43,19 @@ variable [AddCommMonoid N] [Module R N]
 over a commutative semiring when the right factor is projective. -/
 theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M ⊗[R] N}
     (h : ∀ φ : Module.Dual R N,
-      tensorComponent (R := R) (M := M) φ x = tensorComponent (R := R) (M := M) φ y) :
+      TauCeti.LinearMap.tensorComponent (R := R) (M := M) φ x =
+        TauCeti.LinearMap.tensorComponent (R := R) (M := M) φ y) :
     x = y := by
   classical
   obtain ⟨s, hs⟩ := Module.projective_def'.mp (inferInstance : Module.Projective R N)
   let b := Finsupp.basisSingleOne (R := R) (ι := N)
+  have hcomponent (φ : (N →₀ R) →ₗ[R] R) (t : M ⊗[R] (N →₀ R)) :
+      TensorProduct.rid R M (φ.lTensor M t) =
+        TauCeti.LinearMap.tensorComponent φ t := by
+    induction t using TensorProduct.induction_on with
+    | zero => simp
+    | add x y hx hy => simp only [map_add, hx, hy]
+    | tmul m n => simp
   have hmap : TensorProduct.map LinearMap.id s x = TensorProduct.map LinearMap.id s y := by
     apply (TensorProduct.equivFinsuppOfBasisRight b (M := M)).injective
     ext i
@@ -56,17 +64,19 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
     calc
       TensorProduct.rid R M
           ((b.coord i).lTensor M (TensorProduct.map LinearMap.id s x)) =
-          tensorComponent (b.coord i) (TensorProduct.map LinearMap.id s x) := by
-            simp [tensorComponent]
-      _ = LinearMap.id (tensorComponent ((b.coord i).comp s) x) :=
-        tensorComponent_map (b.coord i) LinearMap.id s x
-      _ = LinearMap.id (tensorComponent ((b.coord i).comp s) y) := by
+          TauCeti.LinearMap.tensorComponent (b.coord i)
+            (TensorProduct.map LinearMap.id s x) := by
+            exact hcomponent (b.coord i) _
+      _ = LinearMap.id (TauCeti.LinearMap.tensorComponent ((b.coord i).comp s) x) :=
+        TauCeti.LinearMap.tensorComponent_map (b.coord i) LinearMap.id s x
+      _ = LinearMap.id (TauCeti.LinearMap.tensorComponent ((b.coord i).comp s) y) := by
         rw [h ((b.coord i).comp s)]
-      _ = tensorComponent (b.coord i) (TensorProduct.map LinearMap.id s y) :=
-        (tensorComponent_map (b.coord i) LinearMap.id s y).symm
+      _ = TauCeti.LinearMap.tensorComponent (b.coord i)
+          (TensorProduct.map LinearMap.id s y) :=
+        (TauCeti.LinearMap.tensorComponent_map (b.coord i) LinearMap.id s y).symm
       _ = TensorProduct.rid R M
           ((b.coord i).lTensor M (TensorProduct.map LinearMap.id s y)) := by
-            simp [tensorComponent]
+            exact (hcomponent (b.coord i) _).symm
   let p : (N →₀ R) →ₗ[R] N := Finsupp.linearCombination R id
   have hleft (z : M ⊗[R] N) :
       TensorProduct.map LinearMap.id p (TensorProduct.map LinearMap.id s z) = z := by

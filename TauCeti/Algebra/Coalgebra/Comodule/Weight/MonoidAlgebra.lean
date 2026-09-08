@@ -34,7 +34,7 @@ variable [Comodule R (MonoidAlgebra R G) M]
 space. -/
 @[simp]
 theorem groupLikeWeightSpace_single_one (g : G) :
-    groupLikeWeightSpace (M := M)
+    GroupLike.weightSpace (M := M)
         ⟨MonoidAlgebra.single g (1 : R),
           by
             constructor
@@ -42,6 +42,6 @@ theorem groupLikeWeightSpace_single_one (g : G) :
             · simp⟩ =
       weightSpace R G M g := by
   ext m
-  rw [mem_groupLikeWeightSpace, mem_weightSpace]
+  rw [GroupLike.mem_weightSpace, mem_weightSpace]
 
 end TauCeti.Comodule

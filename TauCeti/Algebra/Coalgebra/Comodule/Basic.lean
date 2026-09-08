@@ -131,34 +131,34 @@ theorem tensorPairComponent_tmul (phi psi : C →ₗ[R] R) (m : M) (t : C ⊗[R]
 omit [Coalgebra R C] [Comodule R C M] in
 /-- Applying two tensor components successively is applying their pair after reassociation. -/
 theorem tensorComponent_comp_tensorComponent (phi psi : C →ₗ[R] R) :
-    TensorProduct.tensorComponent (R := R) (M := M) phi ∘ₗ
-        TensorProduct.tensorComponent (R := R) (M := M ⊗[R] C) psi =
+    TauCeti.LinearMap.tensorComponent (R := R) (M := M) phi ∘ₗ
+        TauCeti.LinearMap.tensorComponent (R := R) (M := M ⊗[R] C) psi =
       tensorPairComponent (R := R) (M := M) phi psi ∘ₗ
         (TensorProduct.assoc R M C C).toLinearMap := by
   refine TensorProduct.ext_threefold fun m c d => ?_
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
     TensorProduct.assoc_tmul, tensorPairComponent_tmul, pairCoeff_tmul,
-    TensorProduct.tensorComponent_tmul,
+    TauCeti.LinearMap.tensorComponent_tmul,
     map_smul, smul_smul]
   rw [mul_comm]
 
 /-- Taking a tensor component commutes with a coaction on the other factor. -/
 theorem coact_comp_tensorComponent (phi : C →ₗ[R] R) :
     coact (R := R) (C := C) (M := M) ∘ₗ
-        TensorProduct.tensorComponent (R := R) (M := M) phi =
-      TensorProduct.tensorComponent (R := R) (M := M ⊗[R] C) phi ∘ₗ
+        TauCeti.LinearMap.tensorComponent (R := R) (M := M) phi =
+      TauCeti.LinearMap.tensorComponent (R := R) (M := M ⊗[R] C) phi ∘ₗ
         (coact (R := R) (C := C) (M := M)).rTensor C := by
   refine TensorProduct.ext' fun m c => ?_
   simp
 
 /-- The component of a coaction selected by a linear functional on the coalgebra. -/
 noncomputable def coactComponent (phi : C →ₗ[R] R) : M →ₗ[R] M :=
-  TensorProduct.tensorComponent (R := R) (M := M) phi ∘ₗ
+  TauCeti.LinearMap.tensorComponent (R := R) (M := M) phi ∘ₗ
     coact (R := R) (C := C) (M := M)
 
 theorem coactComponent_apply (phi : C →ₗ[R] R) (m : M) :
     coactComponent (R := R) (C := C) (M := M) phi m =
-      TensorProduct.tensorComponent (R := R) (M := M) phi (coact m) :=
+      TauCeti.LinearMap.tensorComponent (R := R) (M := M) phi (coact m) :=
   by rw [coactComponent, LinearMap.coe_comp, Function.comp_apply]
 
 /-- Coassociativity read off by two linear functionals on the coalgebra. -/
@@ -182,7 +182,7 @@ the two coefficient functionals. -/
 theorem tensorPairComponent_comp_lTensor_comul {phi psi theta : C →ₗ[R] R}
     (h : pairCoeff (R := R) phi psi ∘ₗ Coalgebra.comul = theta) :
     tensorPairComponent (R := R) (M := M) phi psi ∘ₗ Coalgebra.comul.lTensor M =
-      TensorProduct.tensorComponent (R := R) (M := M) theta := by
+      TauCeti.LinearMap.tensorComponent (R := R) (M := M) theta := by
   rw [tensorPairComponent, LinearMap.comp_assoc, ← LinearMap.lTensor_comp, h]
   refine TensorProduct.ext' fun m c ↦ ?_
   simp

@@ -15,8 +15,8 @@ and records its behavior on pure tensors and under tensor-product maps.
 
 ## Main declarations
 
-* `TensorProduct.tensorComponent`: contraction against the right factor of a tensor product.
-* `TensorProduct.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
+* `TauCeti.LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
+* `TauCeti.LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
 -/
 
 public section
@@ -24,7 +24,7 @@ public section
 open TensorProduct
 open scoped TensorProduct
 
-namespace TensorProduct
+namespace TauCeti.LinearMap
 
 universe u v w x y
 
@@ -33,7 +33,7 @@ variable [CommSemiring R] [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module R N]
 
 /-- Apply a linear functional to the right factor of a tensor. -/
-@[expose] noncomputable def tensorComponent (phi : N →ₗ[R] R) : M ⊗[R] N →ₗ[R] M :=
+noncomputable def tensorComponent (phi : N →ₗ[R] R) : M ⊗[R] N →ₗ[R] M :=
   (TensorProduct.rid R M).toLinearMap ∘ₗ phi.lTensor M
 
 /-- A right tensor component sends a pure tensor to the corresponding scalar multiple. -/
@@ -61,4 +61,4 @@ theorem tensorComponent_zero :
   refine TensorProduct.ext' fun m n => ?_
   simp
 
-end TensorProduct
+end TauCeti.LinearMap
