@@ -88,7 +88,6 @@ theorem etaFn_bijective_of_finite [Finite G] :
 
 /-- The projection from the profinite completion of `G` onto its finite quotient indexed by the
 finite-index normal subgroup `H`. -/
-@[expose]
 def coordinateHom (H : FiniteIndexNormalSubgroup G) :
     ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →* G ⧸ H.toSubgroup := by
   let f := ((ProfiniteGrp.limitCone
@@ -98,13 +97,17 @@ def coordinateHom (H : FiniteIndexNormalSubgroup G) :
   change ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →* G ⧸ H.toSubgroup at f
   exact f
 
+private theorem coordinateHom_apply_def (H : FiniteIndexNormalSubgroup G)
+    (x : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G)) :
+    coordinateHom G H x = x.val H :=
+  rfl
+
 /-- The projection onto the finite quotient by `H` evaluates the underlying compatible family of
 cosets at `H`. -/
 theorem coordinateHom_apply (H : FiniteIndexNormalSubgroup G)
     (x : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G)) :
     coordinateHom G H x = x.val H :=
-  -- `limitCone` projects a compatible family of cosets to its `H`-th component by definition.
-  rfl
+  coordinateHom_apply_def G H x
 
 /-- The `H`-coordinate of the canonical image of `g` is its coset modulo `H`. -/
 @[simp]

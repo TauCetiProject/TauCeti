@@ -244,15 +244,16 @@ theorem eq_one_of_forall_smul_eq
     g = 1 := by
   apply ProfiniteGrp.limit_ext
   intro H
-  -- `limit_ext` presents the coordinate as a bundled cone projection.
-  change coordinateHom G H g = 1
   let A : Action FintypeCat.{u} G := G ⧸ₐ H.toSubgroup
   have hg := h A (1 : G ⧸ H.toSubgroup)
   -- Reveal the finite-quotient action beneath the forgetful functor.
   change actionHom G A g (1 : G ⧸ H.toSubgroup) =
     (1 : G ⧸ H.toSubgroup) at hg
-  rw [actionHom_one_quotient] at hg
-  exact hg
+  have hg' : coordinateHom G H g = (1 : G ⧸ H.toSubgroup) := by
+    rw [← actionHom_one_quotient G H g]
+    exact hg
+  rw [← coordinateHom_apply G H g, ← coordinateHom_apply G H 1, map_one]
+  exact hg'
 
 /-- The profinite completion of `G` is a fundamental group of the forgetful fibre functor on
 finite `G`-sets. -/
