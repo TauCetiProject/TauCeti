@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Homology.EulerCharacteristic
 public import TauCeti.Algebra.Category.FGModuleCat.Finrank
+public import TauCeti.Algebra.Category.ModuleCat.Finrank
+public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.CategoryTheory.GrothendieckGroup.EulerCharacteristic
 
 /-!
@@ -25,11 +27,11 @@ possible junk value is used in the Euler--Poincaré identity.
 
 ## Main results
 
-* `TauCeti.HomologicalComplex.eulerChar_forgetFG_eq_sum_finrank`: Mathlib's term Euler
-  characteristic is the finite sum over any finite set containing the bounding interval.
-* `TauCeti.HomologicalComplex.homologyEulerChar_forgetFG_eq_sum_finrank`: Mathlib's homology Euler
+* `HomologicalComplex.eulerChar_forgetFG_eq_sum_finrank`: Mathlib's term Euler characteristic is
+  the finite sum over any finite set containing the bounding interval.
+* `HomologicalComplex.homologyEulerChar_forgetFG_eq_sum_finrank`: Mathlib's homology Euler
   characteristic is the corresponding finite sum of the homology dimensions in `FGModuleCat k`.
-* `TauCeti.HomologicalComplex.eulerChar_forgetFG_eq_homologyEulerChar`: the finite-dimensional
+* `HomologicalComplex.eulerChar_forgetFG_eq_homologyEulerChar`: the finite-dimensional
   Euler--Poincaré identity in Mathlib's Euler-characteristic API.
 
 ## References
@@ -41,15 +43,13 @@ possible junk value is used in the Euler--Poincaré identity.
 
 public section
 
-namespace TauCeti
-
 open CategoryTheory CategoryTheory.Limits
 
 universe u v
 
-variable {k : Type u} [DivisionRing k]
-
 namespace HomologicalComplex
+
+variable {k : Type u} [DivisionRing k]
 
 /-- The finrank support of a strictly bounded complex of vector spaces lies in any interval
 supplied by its bounds. -/
@@ -59,8 +59,7 @@ theorem finrankSupport_X_subset_Icc (K : CochainComplex (ModuleCat.{v} k) ℤ)
   rw [GradedObject.finrankSupport_subset_iff]
   intro n hn
   exact ModuleCat.finrank_eq_zero_of_isZero
-    (TauCeti.HomologicalComplex.isZero_X_of_notMem_Icc K a b
-      (fun h => hn (Finset.mem_coe.2 h)))
+    (K.isZero_X_of_notMem_Icc a b (fun h => hn (Finset.mem_coe.2 h)))
 
 /-- The finrank support of the homology of a strictly bounded complex of vector spaces lies in any
 interval supplied by its bounds. -/
@@ -71,8 +70,7 @@ theorem finrankSupport_homology_subset_Icc
   rw [GradedObject.finrankSupport_subset_iff]
   intro n hn
   exact ModuleCat.finrank_eq_zero_of_isZero
-    (TauCeti.HomologicalComplex.isZero_homology_of_notMem_Icc K a b
-      (fun h => hn (Finset.mem_coe.2 h)))
+    (K.isZero_homology_of_notMem_Icc a b (fun h => hn (Finset.mem_coe.2 h)))
 
 variable (K : CochainComplex (FGModuleCat.{v} k) ℤ)
 
@@ -82,21 +80,19 @@ interval `Finset.Icc a b`.
 -/
 theorem eulerChar_forgetFG_eq_sum_finrank (a b : ℤ) [K.IsStrictlyGE a]
     [K.IsStrictlyLE b] {s : Finset ℤ} (hs : Finset.Icc a b ⊆ s) :
-    HomologicalComplex.eulerChar
-      (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K) =
+    eulerChar (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K) =
       ∑ n ∈ s, (n.negOnePow : ℤ) * Module.finrank k (K.X n) := by
-  rw [HomologicalComplex.eulerChar_eq_sum_finSet_of_finrankSupport_subset
+  rw [eulerChar_eq_sum_finSet_of_finrankSupport_subset
     (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K) s]
-  · simp only [Functor.mapHomologicalComplex_obj_X,
-      ComplexShape.eulerCharSignsUpInt_χ]
-    rfl
+  · simp only [Functor.mapHomologicalComplex_obj_X, ComplexShape.eulerCharSignsUpInt_χ,
+      FGModuleCat.finrank_forget₂_obj]
   · exact (finrankSupport_X_subset_Icc
       (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K)
       a b).trans hs
 
-/-- The canonical comparison between homology after forgetting an `FGModuleCat` complex and the
-underlying module of its homology. -/
-noncomputable def homologyForgetIso (n : ℤ) :
+/-- The comparison between homology after forgetting an `FGModuleCat` complex and the underlying
+module of its homology, obtained from exactness of the forgetful functor. -/
+private noncomputable def homologyForgetIso (n : ℤ) :
     (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K).homology n ≅
       (forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).obj (K.homology n) := by
   let i := n - 1
@@ -104,7 +100,7 @@ noncomputable def homologyForgetIso (n : ℤ) :
   let l := n + 1
   have hij : i + 1 = j := by dsimp [i, j]; omega
   have hjl : j + 1 = l := by dsimp [j, l]
-  exact HomologicalComplex.homologyIsoSc'
+  exact homologyIsoSc'
       (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K) i j l
       ((ComplexShape.up ℤ).prev_eq' hij) ((ComplexShape.up ℤ).next_eq' hjl) ≪≫
     (K.sc' i j l).mapHomologyIso
@@ -120,7 +116,8 @@ theorem finrank_homology_forget (n : ℤ) :
       ((((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj
         K).homology n) =
       Module.finrank k (K.homology n) :=
-  (homologyForgetIso K n).toLinearEquiv.finrank_eq
+  (homologyForgetIso K n).toLinearEquiv.finrank_eq.trans
+    (FGModuleCat.finrank_forget₂_obj (K.homology n))
 
 /-- Mathlib's `finsum` homology Euler characteristic of a bounded complex of finite-dimensional
 vector spaces is the honest finite sum of the dimensions of its homology objects.  The homology on
@@ -128,10 +125,10 @@ the right is computed in `FGModuleCat k`; exactness of the forgetful functor ide
 homology used on the left. -/
 theorem homologyEulerChar_forgetFG_eq_sum_finrank (a b : ℤ) [K.IsStrictlyGE a]
     [K.IsStrictlyLE b] {s : Finset ℤ} (hs : Finset.Icc a b ⊆ s) :
-    HomologicalComplex.homologyEulerChar
+    homologyEulerChar
       (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K) =
       ∑ n ∈ s, (n.negOnePow : ℤ) * Module.finrank k (K.homology n) := by
-  rw [HomologicalComplex.homologyEulerChar_eq_sum_finSet_of_finrankSupport_subset
+  rw [homologyEulerChar_eq_sum_finSet_of_finrankSupport_subset
     (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K) s]
   · apply Finset.sum_congr rfl
     intro n _
@@ -150,18 +147,14 @@ The source category makes every term finite-dimensional, while the explicit boun
 -/
 theorem eulerChar_forgetFG_eq_homologyEulerChar (a b : ℤ) [K.IsStrictlyGE a]
     [K.IsStrictlyLE b] :
-    HomologicalComplex.eulerChar
+    eulerChar
         (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K) =
-      HomologicalComplex.homologyEulerChar
+      homologyEulerChar
         (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K) := by
-  rw [TauCeti.HomologicalComplex.eulerChar_forgetFG_eq_sum_finrank K a b
-      (s := Finset.Icc a b) subset_rfl,
-    TauCeti.HomologicalComplex.homologyEulerChar_forgetFG_eq_sum_finrank K a b
-      (s := Finset.Icc a b) subset_rfl]
-  have h := AbelianK0.AdditiveInvariant.sum_negOnePow_obj_X_eq_sum_negOnePow_obj_homology
-    (AbelianK0.AdditiveInvariant.finrank k) K a b (s := Finset.Icc a b) subset_rfl
-  simpa only [AbelianK0.AdditiveInvariant.finrank_obj, smul_eq_mul] using h
+  rw [eulerChar_forgetFG_eq_sum_finrank K a b (s := Finset.Icc a b) subset_rfl,
+    homologyEulerChar_forgetFG_eq_sum_finrank K a b (s := Finset.Icc a b) subset_rfl]
+  have h := TauCeti.AbelianK0.AdditiveInvariant.sum_negOnePow_obj_X_eq_sum_negOnePow_obj_homology
+    (TauCeti.AbelianK0.AdditiveInvariant.finrank k) K a b (s := Finset.Icc a b) subset_rfl
+  simpa only [TauCeti.AbelianK0.AdditiveInvariant.finrank_obj, smul_eq_mul] using h
 
 end HomologicalComplex
-
-end TauCeti

@@ -9,18 +9,23 @@ public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finite
 
 /-!
-# Finrank in `ModuleCat`
+# Finrank of a zero object of `ModuleCat`
 
-This file records basic categorical properties of finrank for vector spaces.
+Vanishing of an object of `ModuleCat k` is naturally expressed categorically, as
+`CategoryTheory.Limits.IsZero`, while the dimension counts that consume it speak of
+`Module.finrank`. This file supplies the one translation between the two: a zero object has
+finrank zero.
+
+That translation is what bounds the `Module.finrank` support of a bounded complex of vector
+spaces by its bounding interval, which is in turn what makes Mathlib's `finsum`-based Euler
+characteristic of such a complex an honest finite sum.
 -/
 
 public section
 
-namespace TauCeti
-
 open CategoryTheory CategoryTheory.Limits
 
-universe u v
+universe v u
 
 namespace ModuleCat
 
@@ -33,5 +38,3 @@ theorem finrank_eq_zero_of_isZero {X : ModuleCat.{v} k} (hX : IsZero X) :
   exact Module.finrank_zero_of_subsingleton
 
 end ModuleCat
-
-end TauCeti

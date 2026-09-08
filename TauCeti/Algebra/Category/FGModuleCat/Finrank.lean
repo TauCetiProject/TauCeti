@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Free
-public import TauCeti.Algebra.Category.ModuleCat.Finrank
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 
 /-!
@@ -15,15 +14,37 @@ public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 
 This file packages finrank on finite-dimensional vector spaces as an invariant additive on short
 exact sequences. It is the reusable bridge from `FGModuleCat` to abelian Grothendieck groups.
+
+Additivity has to be read off from `ModuleCat.free_shortExact_finrank_add`, which lives one
+category down, so the file first records how the forgetful functor
+`forget₂ (FGModuleCat k) (ModuleCat k)` interacts with finiteness and with finrank. Those two
+statements are the only place where the definitional identification of an `FGModuleCat` object
+with its underlying module is used; everything else goes through them.
 -/
 
 public section
 
-namespace TauCeti
-
 open CategoryTheory
 
 universe u v
+
+namespace FGModuleCat
+
+variable {R : Type u} [Ring R]
+
+/-- The module underlying an object of `FGModuleCat R` is finite. -/
+theorem moduleFinite_forget₂_obj (X : FGModuleCat.{v} R) :
+    Module.Finite R ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).obj X) := X.property
+
+/-- Forgetting the finite-generation witness does not change finrank. -/
+@[simp]
+theorem finrank_forget₂_obj (X : FGModuleCat.{v} R) :
+    Module.finrank R ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).obj X) =
+      Module.finrank R X := (rfl)
+
+end FGModuleCat
+
+namespace TauCeti
 
 namespace AbelianK0.AdditiveInvariant
 
@@ -38,10 +59,11 @@ noncomputable def finrank : AbelianK0.AdditiveInvariant (FGModuleCat.{v} k) ℤ 
   map_shortExact {S} hS := by
     let F := forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)
     have hS' : (S.map F).ShortExact := hS.map_of_exact F
-    let _ : Module.Finite k (S.map F).X₁ := S.X₁.property
-    let _ : Module.Finite k (S.map F).X₃ := S.X₃.property
+    let _ : Module.Finite k (S.map F).X₁ := FGModuleCat.moduleFinite_forget₂_obj S.X₁
+    let _ : Module.Finite k (S.map F).X₃ := FGModuleCat.moduleFinite_forget₂_obj S.X₃
     have h := ModuleCat.free_shortExact_finrank_add hS' (n := Module.finrank k S.X₁)
-      (p := Module.finrank k S.X₃) rfl rfl
+      (p := Module.finrank k S.X₃) (FGModuleCat.finrank_forget₂_obj S.X₁)
+      (FGModuleCat.finrank_forget₂_obj S.X₃)
     exact_mod_cast h
 
 @[simp]
