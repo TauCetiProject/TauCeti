@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Setoid.Basic
 public import TauCeti.KnotTheory.SmoothCircle
 
 /-!
@@ -60,33 +61,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 namespace SmoothCircleEmbedding
 
-/-- Two oriented smooth circle presentations represent the same unoriented presentation when they
-are equal or differ by the orientation-reversing circle reparametrization. -/
-private def UnorientedRel (f g : SmoothCircleEmbedding I M) : Prop := f = g ∨ f = g.reverse
-
-private theorem unorientedRel_refl (f : SmoothCircleEmbedding I M) : UnorientedRel f f :=
-  Or.inl rfl
-
-private theorem unorientedRel_symm {f g : SmoothCircleEmbedding I M}
-    (h : UnorientedRel f g) : UnorientedRel g f := by
-  rcases h with rfl | h
-  · exact Or.inl rfl
-  · exact Or.inr (by rw [h, reverse_reverse])
-
-private theorem unorientedRel_trans {f g h : SmoothCircleEmbedding I M}
-    (hfg : UnorientedRel f g) (hgh : UnorientedRel g h) : UnorientedRel f h := by
-  rcases hfg with hfg | hfg
-  · rcases hgh with hgh | hgh
-    · exact Or.inl (hfg.trans hgh)
-    · exact Or.inr (hfg.trans hgh)
-  · rcases hgh with hgh | hgh
-    · exact Or.inr (hfg.trans (congrArg reverse hgh))
-    · exact Or.inl (hfg.trans (by rw [hgh, reverse_reverse]))
-
 /-- The setoid of oriented smooth circle presentations modulo reversal. -/
-private def unorientedSetoid : Setoid (SmoothCircleEmbedding I M) where
-  r := UnorientedRel
-  iseqv := ⟨unorientedRel_refl, unorientedRel_symm, unorientedRel_trans⟩
+private def unorientedSetoid : Setoid (SmoothCircleEmbedding I M) :=
+  TauCeti.Setoid.involution reverse reverse_reverse
+
+private theorem unorientedSetoid_apply (f g : SmoothCircleEmbedding I M) :
+    unorientedSetoid f g ↔ f = g ∨ f = g.reverse :=
+  TauCeti.Setoid.involution_apply reverse reverse_reverse f g
 
 end SmoothCircleEmbedding
 
@@ -111,9 +92,7 @@ theorem forgetOrientation_eq_iff :
     forgetOrientation f = forgetOrientation g ↔ f = g ∨ f = g.reverse := by
   simp only [forgetOrientation, UnorientedSmoothCircleEmbedding]
   rw [Quotient.eq_iff_equiv]
-  -- The quotient theorem leaves the setoid relation; unfolding the private setoid and relation
-  -- reduces it to the public equality-or-reversal criterion stated above.
-  rfl
+  exact TauCeti.Setoid.involution_apply reverse reverse_reverse f g
 
 /-- Reversing the orientation does not change the unoriented presentation. -/
 @[simp]
@@ -131,10 +110,7 @@ def range (u : UnorientedSmoothCircleEmbedding I M) : Set M :=
   Quotient.lift (fun f : SmoothCircleEmbedding I M => Set.range f)
     (by
       intro f g h
-      -- `Quotient.lift` supplies the setoid relation via `≈`; its `r` field is definitionally
-      -- `UnorientedRel`, so this controlled reduction exposes the relation's two cases.
-      change SmoothCircleEmbedding.UnorientedRel f g at h
-      rcases h with rfl | h
+      rcases (SmoothCircleEmbedding.unorientedSetoid_apply f g).mp h with rfl | h
       · rfl
       · rw [h, SmoothCircleEmbedding.range_reverse]) u
 
