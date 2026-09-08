@@ -34,6 +34,7 @@ monoid, and that automorphism is what a shift-compatible invariant is compared a
 * `TauCeti.laurentEvalEquiv`: the units of `A` are the `R`-algebra maps `R[T;T⁻¹] →ₐ[R] A`.
 * `TauCeti.laurentTAut`: multiplication by `T` on an `R[T;T⁻¹]`-module, as an additive
   automorphism.
+* `TauCeti.Units.evaluationModule`: the module structure induced by evaluating at an integer unit.
 
 ## Main results
 
@@ -128,6 +129,18 @@ theorem laurentEval_eq_eval₂ {S : Type*} [CommSemiring S] [Algebra R S] (u : S
   | C_mul_T n a => simp
 
 end Eval
+
+namespace Units
+
+/-- The coefficient module `ℤ` obtained by evaluating `ℤ[q,q⁻¹]` at the integer unit `a`.
+
+It is kept as a named class-valued definition because tensor products over the Laurent coefficient
+ring must remember this particular module structure. -/
+@[expose, instance_reducible]
+noncomputable def evaluationModule (a : ℤˣ) : Module (LaurentPolynomial ℤ) ℤ :=
+  Module.compHom ℤ (laurentEval a).toRingHom
+
+end Units
 
 section TAut
 

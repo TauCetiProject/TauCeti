@@ -61,18 +61,6 @@ open LaurentPolynomial hiding C
 
 universe w w' v v' u u'
 
-namespace Units
-
-/-- The coefficient module `ℤ` obtained by evaluating `ℤ[q,q⁻¹]` at the integer unit `a`.
-
-It is kept as a named class-valued definition because the tensor product which defines
-`TauCeti.LaurentK0.Specialization E a` must remember this particular module structure. -/
-@[instance_reducible]
-noncomputable def evaluationModule (a : ℤˣ) : Module (LaurentPolynomial ℤ) ℤ :=
-  Module.compHom ℤ (laurentEval a).toRingHom
-
-end Units
-
 namespace LaurentK0
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
@@ -250,30 +238,45 @@ variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
   [HasBinaryBiproducts D] [EssentiallySmall.{w'} D]
 variable {E' : ExactStructure D} {F : C ⥤ D} [F.Additive]
 
-private noncomputable def forgetMap (hU : E.toExactStructure.IsConflationExact E' F) :
-    LaurentK0 E →+ ExactK0 E' :=
-  (ExactK0.map F hU).comp (LaurentK0.ofExactK0 E).symm.toAddMonoidHom
+private noncomputable def forgetLinearMap (hU : E.toExactStructure.IsConflationExact E' F)
+    (comm : E.shift.functor ⋙ F ≅ F) :
+    let _ : Module (LaurentPolynomial ℤ) (ExactK0 E') :=
+      Module.compHom (ExactK0 E') (laurentEval (1 : ℤˣ)).toRingHom
+    LaurentK0 E →ₗ[LaurentPolynomial ℤ] ExactK0 E' := by
+  let _ : Module (LaurentPolynomial ℤ) (ExactK0 E') :=
+    Module.compHom (ExactK0 E') (laurentEval (1 : ℤˣ)).toRingHom
+  exact LaurentK0.lift E
+    { obj := fun X => ExactK0.of (F.obj X)
+      map_iso := fun {_ _} e => ExactK0.of_congr (F.mapIso e)
+      map_conflation := fun {_} hS => ExactK0.of_conflation (hU.map_conflation hS)
+      map_shift := fun X => by
+        rw [laurentTAut_apply]
+        change ExactK0.of (F.obj (E.shift.functor.obj X)) =
+          (laurentEval (1 : ℤˣ) (T 1) : ℤ) • ExactK0.of (F.obj X)
+        simpa using ExactK0.of_congr (E := E') (comm.app X) }
+
+private noncomputable def forgetMap (hU : E.toExactStructure.IsConflationExact E' F)
+    (comm : E.shift.functor ⋙ F ≅ F) : LaurentK0 E →+ ExactK0 E' := by
+  let _ : Module (LaurentPolynomial ℤ) (ExactK0 E') :=
+    Module.compHom (ExactK0 E') (laurentEval (1 : ℤˣ)).toRingHom
+  exact (forgetLinearMap E hU comm).toAddMonoidHom
 
 @[simp]
-private theorem forgetMap_of (hU : E.toExactStructure.IsConflationExact E' F) (X : C) :
-    forgetMap E hU (LaurentK0.of E X) = ExactK0.of (F.obj X) := by
-  rw [← LaurentK0.ofExactK0_exactK0_of, forgetMap, AddMonoidHom.comp_apply,
-    AddEquiv.coe_toAddMonoidHom, AddEquiv.symm_apply_apply, ExactK0.map_of]
+private theorem forgetMap_of (hU : E.toExactStructure.IsConflationExact E' F)
+    (comm : E.shift.functor ⋙ F ≅ F) (X : C) :
+    forgetMap E hU comm (LaurentK0.of E X) = ExactK0.of (F.obj X) := by
+  simp [forgetMap, forgetLinearMap]
 
 private theorem forgetMap_smul (hU : E.toExactStructure.IsConflationExact E' F)
     (comm : E.shift.functor ⋙ F ≅ F) (p : LaurentPolynomial ℤ) (x : LaurentK0 E) :
-    forgetMap E hU (p • x) = (laurentEval (1 : ℤˣ) p : ℤ) • forgetMap E hU x := by
-  obtain ⟨y, rfl⟩ : ∃ y, LaurentK0.ofExactK0 E y = x :=
-    ⟨(LaurentK0.ofExactK0 E).symm x, by simp⟩
-  induction p using LaurentPolynomial.induction_on' with
-  | add p q hp hq => simp only [add_smul, map_add, hp, hq, map_add]
-  | C_mul_T n b =>
-      rw [mul_smul, LaurentK0.T_smul, laurentPolynomialC_smul, map_zsmul]
-      simp only [forgetMap, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
-        AddEquiv.symm_apply_apply]
-      rw [GradedExactStructure.map_shiftZPow_of_commShift hU comm, map_mul, laurentEval_C,
-        laurentEval_T]
-      simp
+    forgetMap E hU comm (p • x) =
+      (laurentEval (1 : ℤˣ) p : ℤ) • forgetMap E hU comm x := by
+  let _ : Module (LaurentPolynomial ℤ) (ExactK0 E') :=
+    Module.compHom (ExactK0 E') (laurentEval (1 : ℤˣ)).toRingHom
+  change forgetLinearMap E hU comm (p • x) =
+    (laurentEval (1 : ℤˣ) p : ℤ) • forgetLinearMap E hU comm x
+  rw [(forgetLinearMap E hU comm).map_smul]
+  rfl
 
 /-- **The map on `K₀` induced by forgetting grading factors through specialization at `q = 1`.**
 
@@ -282,7 +285,7 @@ not imply that this factor is an isomorphism. -/
 noncomputable def mapForgettingAtOne
     (hU : E.toExactStructure.IsConflationExact E' F) (comm : E.shift.functor ⋙ F ≅ F) :
     SpecializationAtOne E →+ ExactK0 E' :=
-  desc E 1 (forgetMap E hU) (forgetMap_smul E hU comm)
+  desc E 1 (forgetMap E hU comm) (forgetMap_smul E hU comm)
 
 /-- **The factor through specialization at `q = 1` sends a specialized object class to the
 ungraded class of its image**: `[X]` at `q = 1` maps to `[F X]` in the ungraded `K₀`. -/
@@ -299,7 +302,14 @@ theorem mapForgettingAtOne_comp_map (hU : E.toExactStructure.IsConflationExact E
       (ExactK0.map F hU).comp (LaurentK0.ofExactK0 E).symm.toAddMonoidHom := by
   apply AddMonoidHom.ext
   intro x
-  rw [AddMonoidHom.comp_apply, mapForgettingAtOne, desc_map, forgetMap]
+  obtain ⟨y, rfl⟩ : ∃ y, LaurentK0.ofExactK0 E y = x :=
+    ⟨(LaurentK0.ofExactK0 E).symm x, by simp⟩
+  rw [AddMonoidHom.comp_apply, mapForgettingAtOne, desc_map]
+  have key :
+      (forgetMap E hU comm).comp (LaurentK0.ofExactK0 E).toAddMonoidHom = ExactK0.map F hU :=
+    ExactK0.hom_ext fun X => by simp
+  simpa only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
+    AddEquiv.symm_apply_apply] using DFunLike.congr_fun key y
 
 /-- The factor through specialization at `q = 1` is characterized by its values on object
 classes. -/
