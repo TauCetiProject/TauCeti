@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Sl2.Kostant.RootSubgroup
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 
 /-!
 # The full-weight rank-one Kostant carrier
@@ -43,6 +44,8 @@ scheme-theoretic steps.
   lattice.
 * `TauCeti.Sl2Std.rankOneRootSubgroup` and `TauCeti.Sl2Std.rankOneWeightTorus`: the two root
   subgroups and the closed split torus in that carrier.
+* `TauCeti.Sl2Std.rankOneCarrierPoints`: the matrix-valued points of the carrier, with its
+  root-subgroup and torus points and their functoriality in the value ring.
 * `TauCeti.Sl2Std.rankOneTorusMatrix`: the associated torus representation.
 * `TauCeti.Sl2Std.rankOneTorusMatrix_apply`: its matrix equation `diag(s, s⁻¹)`.
 
@@ -60,7 +63,7 @@ namespace TauCeti.Sl2Std
 
 open TauCeti.UniversalEnvelopingAlgebra
 
-universe u
+universe u v
 
 local notation "e" => ![slFinTwoBasis ℚ 0, slFinTwoBasis ℚ 1]
 local notation "h" => ![slFinTwoBasis ℚ 2]
@@ -287,18 +290,12 @@ instance isClosedImmersion_rankOneRootSubgroup (i : Fin 2) :
   exact @IsClosedImmersion.of_comp _ _ _
     (rankOneRootSubgroup i).hom.hom.left rankOneGroupSchemeι.hom.hom.left hcomp inferInstance
 
-/-! ## Matrix equations -/
+/-! ## Matrix-valued points -/
 
 /-- The represented split torus on `A`-points, written in the integral basis. -/
 noncomputable def rankOneTorusMatrix {A : Type*} [CommRing A] :
     ((Fin 1 → Aˣ) →* Matrix.GeneralLinearGroup (Fin 2) A) :=
   kostantTorusMatrix M b rankOneWeight
-
-/-- The named rank-one torus homomorphism is the specialization of the general Kostant torus
-homomorphism. -/
-theorem rankOneTorusMatrix_def {A : Type*} [CommRing A] :
-    rankOneTorusMatrix (A := A) = kostantTorusMatrix M b rankOneWeight := by
-  rw [rankOneTorusMatrix]
 
 /-- A rank-one torus point is the diagonal matrix `diag(s, s⁻¹)`. -/
 @[simp]
@@ -309,6 +306,195 @@ theorem rankOneTorusMatrix_apply {A : Type*} [CommRing A] (s : Fin 1 → Aˣ) :
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [rankOneWeight, torusCharacter_def]
+
+/-- The points of the full-weight rank-one Kostant carrier, embedded in `GL₂`. -/
+noncomputable def rankOneCarrierPoints (A : Type u) [CommRing A] :
+    Subgroup (Matrix.GeneralLinearGroup (Fin 2) A) :=
+  kostantToralPointsSubgroup e h ρ M hM hnil b rankOneWeight A
+
+/-- The named rank-one carrier points are the specialization of the generic toral Kostant
+points. -/
+theorem rankOneCarrierPoints_def (A : Type u) [CommRing A] :
+    rankOneCarrierPoints A =
+      kostantToralPointsSubgroup e h ρ M hM hnil b rankOneWeight A := by
+  rw [rankOneCarrierPoints]
+
+/-- Membership in the rank-one carrier points is vanishing on its defining Hopf ideal. -/
+@[simp]
+theorem mem_rankOneCarrierPoints_iff (A : Type u) [CommRing A]
+    (g : Matrix.GeneralLinearGroup (Fin 2) A) :
+    g ∈ rankOneCarrierPoints A ↔
+      ∀ x ∈ kostantToralDefiningIdeal e h ρ M hM hnil b rankOneWeight,
+        ((GeneralLinear.pointsMulEquiv (R := ℤ) 2).symm g).ofConv x = 0 := by
+  rw [rankOneCarrierPoints_def]
+  exact mem_kostantToralPointsSubgroup_iff e h ρ M hM hnil b rankOneWeight A g
+
+/-- The two parametrized root subgroups in the points of the rank-one carrier. -/
+noncomputable def rankOneCarrierRootSubgroupHom (i : Fin 2) (A : Type u) [CommRing A] :
+    Multiplicative A →* rankOneCarrierPoints A :=
+  ((MulEquiv.subgroupCongr (rankOneCarrierPoints_def A)).symm.toMonoidHom).comp
+    (kostantToralRootSubgroupPoints e h ρ M hM hnil b rankOneWeight i A)
+
+/-- A parametrized root-subgroup point in the rank-one carrier. -/
+noncomputable abbrev rankOneCarrierRootSubgroupPoint
+    (i : Fin 2) (A : Type u) [CommRing A] (t : Multiplicative A) :
+    rankOneCarrierPoints A :=
+  rankOneCarrierRootSubgroupHom i A t
+
+/-- A carrier-valued root-subgroup point is its represented divided-power exponential matrix. -/
+theorem coe_rankOneCarrierRootSubgroupPoint
+    (i : Fin 2) (A : Type u) [CommRing A] (t : Multiplicative A) :
+    (rankOneCarrierRootSubgroupPoint i A t : Matrix.GeneralLinearGroup (Fin 2) A) =
+      kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b
+        ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm t) := by
+  rw [rankOneCarrierRootSubgroupPoint, rankOneCarrierRootSubgroupHom,
+    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    MulEquiv.subgroupCongr_symm_apply, coe_kostantToralRootSubgroupPoints]
+
+/-- The entries of a carrier-valued root-subgroup point are those of the corresponding elementary
+transvection. -/
+@[simp]
+theorem coe_rankOneCarrierRootSubgroupPoint_apply
+    (i : Fin 2) (A : Type u) [CommRing A] (t : Multiplicative A) (r s : Fin 2) :
+    ((rankOneCarrierRootSubgroupPoint i A t : Matrix.GeneralLinearGroup (Fin 2) A) :
+        Matrix (Fin 2) (Fin 2) A) r s =
+      (if r = s then 1 else 0) +
+        if s = i.rev ∧ r = i then Multiplicative.toAdd t else 0 := by
+  rw [coe_rankOneCarrierRootSubgroupPoint, kostantRootSubgroupMatrix_apply]
+  rw [kostantRootSubgroupPoints_apply_baseChange_basis_one]
+  by_cases hs : s = i.rev <;> simp [hs, Finsupp.single_apply, eq_comm]
+
+/-- The represented full-weight torus homomorphism into the points of the rank-one carrier. -/
+noncomputable def rankOneCarrierTorusHom (A : Type u) [CommRing A] :
+    (Fin 1 → Aˣ) →* rankOneCarrierPoints A :=
+  ((MulEquiv.subgroupCongr (rankOneCarrierPoints_def A)).symm.toMonoidHom).comp
+    (kostantToralWeightTorusPoints e h ρ M hM hnil b rankOneWeight A)
+
+/-- A represented full-weight torus point in the rank-one carrier. -/
+noncomputable abbrev rankOneCarrierTorusPoint
+    (A : Type u) [CommRing A] (s : Fin 1 → Aˣ) : rankOneCarrierPoints A :=
+  rankOneCarrierTorusHom A s
+
+/-- The represented full-weight torus subgroup inside the points of the rank-one carrier. -/
+noncomputable abbrev rankOneCarrierTorusPoints (A : Type u) [CommRing A] :
+    Subgroup (rankOneCarrierPoints A) :=
+  (rankOneCarrierTorusHom A).range
+
+/-- In the standard basis, a carrier torus point is `diag(s, s⁻¹)`. -/
+@[simp]
+theorem coe_rankOneCarrierTorusPoint (A : Type u) [CommRing A] (s : Fin 1 → Aˣ) :
+    (rankOneCarrierTorusPoint A s : Matrix.GeneralLinearGroup (Fin 2) A) =
+      diagGL ![s 0, (s 0)⁻¹] := by
+  rw [rankOneCarrierTorusPoint, rankOneCarrierTorusHom,
+    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    MulEquiv.subgroupCongr_symm_apply, coe_kostantToralWeightTorusPoints]
+  change rankOneTorusMatrix s = _
+  exact rankOneTorusMatrix_apply s
+
+private theorem rankOneCarrierPoints_eq_hopfIdealPoints
+    (A : Type u) [CommRing A] :
+    rankOneCarrierPoints A = GeneralLinear.hopfIdealPointsSubgroup 2
+      (kostantToralDefiningIdeal e h ρ M hM hnil b rankOneWeight) A :=
+  (rankOneCarrierPoints_def A).trans
+    (kostantToralPointsSubgroup_def e h ρ M hM hnil b rankOneWeight A)
+
+/-- The map on rank-one carrier points induced by a homomorphism of value rings. -/
+noncomputable def rankOneCarrierPointsMap
+    {A : Type u} {B : Type v} [CommRing A] [CommRing B]
+    (f : A →+* B) : rankOneCarrierPoints A →* rankOneCarrierPoints B :=
+  ((MulEquiv.subgroupCongr (rankOneCarrierPoints_eq_hopfIdealPoints B)).symm.toMonoidHom).comp
+    ((GeneralLinear.mapHopfIdealPointsSubgroup 2
+      (kostantToralDefiningIdeal e h ρ M hM hnil b rankOneWeight) f.toIntAlgHom).comp
+      (MulEquiv.subgroupCongr (rankOneCarrierPoints_eq_hopfIdealPoints A)).toMonoidHom)
+
+/-- The induced map on rank-one carrier points is the entrywise map. -/
+@[simp]
+theorem coe_rankOneCarrierPointsMap
+    {A : Type u} {B : Type v} [CommRing A] [CommRing B]
+    (f : A →+* B) (g : rankOneCarrierPoints A) :
+    (rankOneCarrierPointsMap f g : Matrix.GeneralLinearGroup (Fin 2) B) =
+      Matrix.GeneralLinearGroup.map f g := by
+  have hring : f.toIntAlgHom.toRingHom = f := RingHom.ext (RingHom.toIntAlgHom_apply f)
+  rw [rankOneCarrierPointsMap]
+  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    MulEquiv.subgroupCongr_symm_apply, GeneralLinear.coe_mapHopfIdealPointsSubgroup,
+    MulEquiv.subgroupCongr_apply, hring]
+
+/-- Entrywise, the induced map applies the value-ring homomorphism to each matrix entry. -/
+theorem coe_rankOneCarrierPointsMap_apply
+    {A : Type u} {B : Type v} [CommRing A] [CommRing B]
+    (f : A →+* B) (g : rankOneCarrierPoints A) (i j : Fin 2) :
+    ((rankOneCarrierPointsMap f g : Matrix.GeneralLinearGroup (Fin 2) B) :
+        Matrix (Fin 2) (Fin 2) B) i j =
+      f (((g : Matrix.GeneralLinearGroup (Fin 2) A) : Matrix (Fin 2) (Fin 2) A) i j) := by
+  rw [coe_rankOneCarrierPointsMap, Matrix.GeneralLinearGroup.map_apply]
+
+/-- The identity homomorphism induces the identity on rank-one carrier points. -/
+@[simp]
+theorem rankOneCarrierPointsMap_id {A : Type u} [CommRing A] :
+    rankOneCarrierPointsMap (RingHom.id A) = MonoidHom.id _ := by
+  have hid : (RingHom.id A).toIntAlgHom = AlgHom.id ℤ A := AlgHom.ext fun _ ↦ rfl
+  rw [rankOneCarrierPointsMap, hid, GeneralLinear.mapHopfIdealPointsSubgroup_id]
+  apply MonoidHom.ext
+  intro g
+  exact (MulEquiv.subgroupCongr
+    (rankOneCarrierPoints_eq_hopfIdealPoints A)).symm_apply_apply g
+
+/-- The induced maps on rank-one carrier points compose. -/
+@[simp]
+theorem rankOneCarrierPointsMap_comp
+    {A : Type u} {B : Type v} {C : Type*} [CommRing A] [CommRing B] [CommRing C]
+    (f : A →+* B) (g : B →+* C) :
+    rankOneCarrierPointsMap (g.comp f) =
+      (rankOneCarrierPointsMap g).comp (rankOneCarrierPointsMap f) := by
+  have hcomp : (g.comp f).toIntAlgHom = g.toIntAlgHom.comp f.toIntAlgHom :=
+    AlgHom.ext fun _ ↦ rfl
+  apply MonoidHom.ext
+  intro x
+  simp only [rankOneCarrierPointsMap, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hcomp,
+    GeneralLinear.mapHopfIdealPointsSubgroup_comp, MulEquiv.apply_symm_apply]
+
+/-- An injective value-ring homomorphism induces an injective map on rank-one carrier points. -/
+theorem rankOneCarrierPointsMap_injective
+    {A : Type u} {B : Type v} [CommRing A] [CommRing B]
+    {f : A →+* B} (hf : Function.Injective f) :
+    Function.Injective (rankOneCarrierPointsMap f) := by
+  rw [rankOneCarrierPointsMap]
+  exact (MulEquiv.subgroupCongr
+    (rankOneCarrierPoints_eq_hopfIdealPoints B)).symm.injective.comp
+    ((GeneralLinear.mapHopfIdealPointsSubgroup_injective 2
+      (kostantToralDefiningIdeal e h ρ M hM hnil b rankOneWeight) hf).comp
+      (MulEquiv.subgroupCongr (rankOneCarrierPoints_eq_hopfIdealPoints A)).injective)
+
+/-- The induced map carries rank-one root-subgroup parameters along the value-ring map. -/
+@[simp]
+theorem rankOneCarrierPointsMap_rootSubgroupPoint
+    {A : Type u} {B : Type v} [CommRing A] [CommRing B]
+    (f : A →+* B) (i : Fin 2) (t : Multiplicative A) :
+    rankOneCarrierPointsMap f (rankOneCarrierRootSubgroupPoint i A t) =
+      rankOneCarrierRootSubgroupPoint i B
+        (Multiplicative.ofAdd (f (Multiplicative.toAdd t))) := by
+  apply Subtype.ext
+  rw [coe_rankOneCarrierPointsMap]
+  simp only [rankOneCarrierRootSubgroupPoint, rankOneCarrierRootSubgroupHom,
+    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.subgroupCongr_symm_apply,
+    coe_kostantToralRootSubgroupPoints]
+  rw [map_kostantRootSubgroupMatrix, AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply,
+    RingHom.toIntAlgHom_apply]
+
+/-- The induced map carries a torus point coordinatewise along the value-ring map. -/
+@[simp]
+theorem rankOneCarrierPointsMap_torusPoint
+    {A : Type u} {B : Type v} [CommRing A] [CommRing B]
+    (f : A →+* B) (s : Fin 1 → Aˣ) :
+    rankOneCarrierPointsMap f (rankOneCarrierTorusPoint A s) =
+      rankOneCarrierTorusPoint B (fun i ↦ Units.map (f : A →* B) (s i)) := by
+  apply Subtype.ext
+  rw [coe_rankOneCarrierPointsMap]
+  simp only [rankOneCarrierTorusPoint, rankOneCarrierTorusHom,
+    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.subgroupCongr_symm_apply,
+    coe_kostantToralWeightTorusPoints]
+  exact map_kostantTorusMatrix M b rankOneWeight f s
 
 /-- The represented rank-one weight torus on points of a value algebra. -/
 noncomputable def rankOneTorusPoints (A : CommAlgCat.{u} ℤ) :

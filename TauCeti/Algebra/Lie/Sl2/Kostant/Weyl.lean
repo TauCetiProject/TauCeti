@@ -36,11 +36,10 @@ represented torus with the Weyl group in the pinned Chevalley--Demazure construc
 
 ## Main declarations
 
-* `TauCeti.Sl2Std.rankOneCarrierPoints`: the matrix-valued points of the full-weight rank-one
-  carrier.
-* `TauCeti.Sl2Std.rankOneCarrierTorusPoints`: its represented split-torus subgroup.
 * `TauCeti.Sl2Std.rankOneWeylPoint`: the canonical Weyl representative in the carrier.
 * `TauCeti.Sl2Std.rankOneWeylPoint_sq`: the relation `n² = h(-1)`.
+* `TauCeti.Sl2Std.rankOneWeylPoint_conj_rootSubgroupPoint`: conjugation by `n` interchanges the
+  two carrier-valued root subgroups.
 * `TauCeti.Sl2Std.rankOneWeylClass`: the representative's class in the torus normalizer quotient.
 * `TauCeti.Sl2Std.rankOneWeylClass_sq` and
   `TauCeti.Sl2Std.orderOf_rankOneWeylClass`: this class has square one over every commutative ring
@@ -77,72 +76,26 @@ local notation "wPts" =>
 attribute [local instance high] Algebra.toModule
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-! ## Carrier, torus, and Weyl points -/
-
-/-- The points of the full-weight rank-one Kostant carrier, embedded in `GL₂`. -/
-noncomputable abbrev rankOneCarrierPoints (A : Type u) [CommRing A] :
-    Subgroup (Matrix.GeneralLinearGroup (Fin 2) A) :=
-  kostantToralPointsSubgroup e h ρ M hM hnil b rankOneWeight A
-
-/-- The represented full-weight torus homomorphism into the points of the rank-one carrier. -/
-noncomputable def rankOneCarrierTorusHom (A : Type u) [CommRing A] :
-    (Fin 1 → Aˣ) →* rankOneCarrierPoints A :=
-  kostantToralWeightTorusPoints e h ρ M hM hnil b rankOneWeight A
-
-/-- A represented full-weight torus point in the rank-one carrier. -/
-noncomputable abbrev rankOneCarrierTorusPoint (A : Type u) [CommRing A] (s : Fin 1 → Aˣ) :
-    rankOneCarrierPoints A :=
-  rankOneCarrierTorusHom A s
-
-/-- The represented full-weight torus subgroup inside the points of the rank-one carrier. -/
-noncomputable def rankOneCarrierTorusPoints (A : Type u) [CommRing A] :
-    Subgroup (rankOneCarrierPoints A) :=
-  (rankOneCarrierTorusHom A).range
-
-/-- A carrier point belongs to the represented torus exactly when it is parametrized by a torus
-point. -/
-@[simp]
-theorem mem_rankOneCarrierTorusPoints_iff (A : Type u) [CommRing A]
-    (x : rankOneCarrierPoints A) :
-    x ∈ rankOneCarrierTorusPoints A ↔
-      ∃ s : Fin 1 → Aˣ, x = rankOneCarrierTorusPoint A s := by
-  rw [rankOneCarrierTorusPoints, MonoidHom.mem_range]
-  simp only [rankOneCarrierTorusPoint, eq_comm]
-
-/-- The map on rank-one carrier points induced by a homomorphism of value rings. -/
-noncomputable def rankOneCarrierPointsMap {A : Type u} {B : Type v} [CommRing A] [CommRing B]
-    (φ : A →+* B) : rankOneCarrierPoints A →* rankOneCarrierPoints B :=
-  ((MulEquiv.subgroupCongr
-      (kostantToralPointsSubgroup_def e h ρ M hM hnil b rankOneWeight B)).symm.toMonoidHom).comp
-    ((GeneralLinear.mapHopfIdealPointsSubgroup 2
-      (kostantToralDefiningIdeal e h ρ M hM hnil b rankOneWeight) φ.toIntAlgHom).comp
-      (MulEquiv.subgroupCongr
-        (kostantToralPointsSubgroup_def e h ρ M hM hnil b rankOneWeight A)).toMonoidHom)
+/-! ## The Weyl point -/
 
 /-- The canonical Weyl representative `x₀(1) x₁(-1) x₀(1)` in the rank-one carrier. -/
 noncomputable def rankOneWeylPoint (A : Type u) [CommRing A] : rankOneCarrierPoints A :=
-  kostantToralWeylPoint e h ρ M hM hnil b rankOneWeight 0 1 A
+  (MulEquiv.subgroupCongr (rankOneCarrierPoints_def A)).symm
+    (kostantToralWeylPoint e h ρ M hM hnil b rankOneWeight 0 1 A)
 
 /-- The Weyl representative is natural in the ring of points. -/
+@[simp]
 theorem map_rankOneWeylPoint {A : Type u} {B : Type v} [CommRing A] [CommRing B]
     (φ : A →+* B) :
     rankOneCarrierPointsMap φ (rankOneWeylPoint A) = rankOneWeylPoint B := by
-  rw [rankOneCarrierPointsMap]
-  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
-  simpa only [rankOneWeylPoint, MulEquiv.symm_apply_apply] using
-    congrArg
-      (MulEquiv.subgroupCongr
-        (kostantToralPointsSubgroup_def e h ρ M hM hnil b rankOneWeight B)).symm
-      (map_kostantToralWeylPoint e h ρ M hM hnil b rankOneWeight φ 0 1)
-
-/-- In the standard basis, a carrier torus point is `diag(s, s⁻¹)`. -/
-@[simp]
-theorem coe_rankOneCarrierTorusPoint (A : Type u) [CommRing A] (s : Fin 1 → Aˣ) :
-    (rankOneCarrierTorusPoint A s : Matrix.GeneralLinearGroup (Fin 2) A) =
-      diagGL ![s 0, (s 0)⁻¹] := by
-  rw [rankOneCarrierTorusPoint, rankOneCarrierTorusHom,
-    coe_kostantToralWeightTorusPoints]
-  rw [← rankOneTorusMatrix_def, rankOneTorusMatrix_apply]
+  apply Subtype.ext
+  rw [coe_rankOneCarrierPointsMap]
+  simp only [rankOneWeylPoint, MulEquiv.subgroupCongr_symm_apply]
+  have hmap := congrArg Subtype.val
+    (map_kostantToralWeylPoint e h ρ M hM hnil b rankOneWeight φ 0 1)
+  have hring : φ.toIntAlgHom.toRingHom = φ := RingHom.ext (RingHom.toIntAlgHom_apply φ)
+  simpa only [GeneralLinear.coe_mapHopfIdealPointsSubgroup,
+    MulEquiv.subgroupCongr_apply, hring] using hmap
 
 /-- The integral rank-one Weyl automorphism sends a standard lattice basis vector to the reversed
 basis vector with the usual sign. -/
@@ -169,10 +122,17 @@ private theorem basisMatrix_rankOneKostantWeylGL_apply (A : Type u) [CommRing A]
     (kostantWeylGL e h ρ M hM (hnil 0) (hnil 1) A).val) i j = _
   rw [kostantWeylGL_val, LinearMap.toMatrixAlgEquiv_apply,
     Module.Basis.baseChange_apply]
-  -- A matrix entry is definitionally the corresponding coordinate of the image of its column.
-  change (((b).baseChange A).repr (wPts A (1 ⊗ₜ[ℤ] b j))) i = _
-  rw [kostantWeylPoints_apply_tmul, rankOneKostantWeylRestrict_apply_basis]
+  rw [LinearEquiv.coe_coe, kostantWeylPoints_apply_tmul,
+    rankOneKostantWeylRestrict_apply_basis]
   fin_cases i <;> fin_cases j <;> simp
+
+/-- The carrier-valued Weyl point is the matrix of the integral Weyl automorphism. -/
+theorem coe_rankOneWeylPoint (A : Type u) [CommRing A] :
+    (rankOneWeylPoint A : Matrix.GeneralLinearGroup (Fin 2) A) =
+      Units.map (LinearMap.toMatrixAlgEquiv ((b).baseChange A)).toMulEquiv
+        (kostantWeylGL e h ρ M hM (hnil 0) (hnil 1) A) := by
+  rw [rankOneWeylPoint, MulEquiv.subgroupCongr_symm_apply,
+    coe_kostantToralWeylPoint]
 
 /-- The `(i,j)` entry of the rank-one Weyl representative is `(-1)^i` when `i` is the reversal
 of `j`, and zero otherwise. -/
@@ -181,7 +141,7 @@ theorem coe_rankOneWeylPoint_apply (A : Type u) [CommRing A] (i j : Fin 2) :
     ((rankOneWeylPoint A : Matrix.GeneralLinearGroup (Fin 2) A) :
         Matrix (Fin 2) (Fin 2) A) i j =
       if i = j.rev then (-1 : A) ^ (i : ℕ) else 0 := by
-  rw [rankOneWeylPoint, coe_kostantToralWeylPoint]
+  rw [coe_rankOneWeylPoint]
   exact basisMatrix_rankOneKostantWeylGL_apply A i j
 
 /-! ## The square relation -/
@@ -193,7 +153,7 @@ theorem rankOneWeylPoint_sq (A : Type u) [CommRing A] :
       rankOneCarrierTorusPoint A (fun _ ↦ (-1 : Aˣ)) := by
   apply Subtype.ext
   rw [coe_rankOneCarrierTorusPoint]
-  rw [Subgroup.coe_pow, rankOneWeylPoint, coe_kostantToralWeylPoint]
+  rw [Subgroup.coe_pow, coe_rankOneWeylPoint]
   rw [← map_pow, pow_two]
   apply Units.ext
   simp only [Units.coe_map, Units.val_mul, kostantWeylGL_val, Module.End.mul_eq_comp]
@@ -230,6 +190,56 @@ private theorem lie_cartan_root_one_eq_neg_smul (q : Fin 1) :
   fin_cases q
   simp [rankOneRootWeight_zero, rankOneRootWeight_one]
 
+private theorem rankOneWeylPoint_conj_rootSubgroupPoint_zero
+    (A : Type u) [CommRing A] (t : A) :
+    rankOneWeylPoint A *
+        rankOneCarrierRootSubgroupPoint 0 A (Multiplicative.ofAdd t) *
+        (rankOneWeylPoint A)⁻¹ =
+      rankOneCarrierRootSubgroupPoint 1 A (Multiplicative.ofAdd (-t)) := by
+  have hconj := congrArg Subtype.val
+    (kostantToralWeylPoint_conj_rootSubgroupPoints (wt := rankOneWeight)
+      (i := 0) (j := 1) e h ρ M hM hnil b isSl2Triple_repEnveloping_rankOne A t)
+  apply Subtype.ext
+  simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_rankOneWeylPoint,
+    coe_rankOneCarrierRootSubgroupPoint, coe_kostantToralWeylPoint,
+    coe_kostantToralRootSubgroupPoints] using hconj
+
+/-- Conjugation by the rank-one Weyl representative interchanges the two root subgroups and
+negates their parameters. -/
+theorem rankOneWeylPoint_conj_rootSubgroupPoint
+    (A : Type u) [CommRing A] (i : Fin 2) (t : Multiplicative A) :
+    rankOneWeylPoint A * rankOneCarrierRootSubgroupPoint i A t *
+        (rankOneWeylPoint A)⁻¹ =
+      rankOneCarrierRootSubgroupPoint i.rev A
+        (Multiplicative.ofAdd (-Multiplicative.toAdd t)) := by
+  fin_cases i
+  · exact rankOneWeylPoint_conj_rootSubgroupPoint_zero A (Multiplicative.toAdd t)
+  · have hzero := rankOneWeylPoint_conj_rootSubgroupPoint_zero A
+      (-Multiplicative.toAdd t)
+    simp only [neg_neg] at hzero
+    have hof : Multiplicative.ofAdd (Multiplicative.toAdd t) = t := rfl
+    rw [hof] at hzero
+    let z := rankOneCarrierTorusPoint A (fun _ ↦ (-1 : Aˣ))
+    let x := rankOneCarrierRootSubgroupPoint 0 A
+      (Multiplicative.ofAdd (-Multiplicative.toAdd t))
+    have hcomm : z * x = x * z := by
+      apply Subtype.ext
+      apply Matrix.GeneralLinearGroup.ext
+      intro r s
+      fin_cases r <;> fin_cases s <;>
+        simp [z, x, Matrix.mul_apply, Fin.sum_univ_two]
+    change rankOneWeylPoint A * rankOneCarrierRootSubgroupPoint 1 A t *
+        (rankOneWeylPoint A)⁻¹ = x
+    rw [← hzero]
+    calc
+      rankOneWeylPoint A * (rankOneWeylPoint A * x * (rankOneWeylPoint A)⁻¹) *
+          (rankOneWeylPoint A)⁻¹ =
+          rankOneWeylPoint A ^ 2 * x * (rankOneWeylPoint A ^ 2)⁻¹ := by
+        rw [pow_two]
+        group
+      _ = z * x * z⁻¹ := by rw [rankOneWeylPoint_sq]
+      _ = x := by rw [hcomm]; group
+
 /-- Conjugation by the rank-one Weyl representative inverts the represented torus. -/
 theorem rankOneWeylPoint_conj_torus (A : Type u) [CommRing A] (s : Fin 1 → Aˣ) :
     rankOneWeylPoint A * rankOneCarrierTorusPoint A s *
@@ -242,12 +252,27 @@ theorem rankOneWeylPoint_conj_torus (A : Type u) [CommRing A] (s : Fin 1 → Aˣ
     subst q
     rw [weylReflectTorusPoint_apply_same, rankOneRootWeight_zero, torusCharacter_singleton]
     group
-  simpa only [rankOneWeylPoint, rankOneCarrierTorusPoint, rankOneCarrierTorusHom,
-    hreflect] using
+  have hconj := congrArg Subtype.val
     (kostantToralWeylPoint_conj_weightTorusPoints (wt := rankOneWeight)
       (i := 0) (j := 1) (c := 0) (α := rankOneRootWeight 0) e h ρ M hM hnil b
       isSl2Triple_repEnveloping_rankOne (lie_cartan_root_eq_smul 0)
       lie_cartan_root_one_eq_neg_smul isCartanWeightVector_integralLatticeAddSubgroupBasis A s)
+  simp only [Subgroup.coe_mul, Subgroup.coe_inv, coe_kostantToralWeylPoint,
+    coe_kostantToralWeightTorusPoints, hreflect, kostantTorusMatrix_apply] at hconj
+  have hdiag (t : Fin 1 → Aˣ) :
+      (fun i ↦ torusCharacter t (rankOneWeight i)) = ![t 0, (t 0)⁻¹] := by
+    funext i
+    fin_cases i
+    · change torusCharacter t (rankOneWeight 0) = t 0
+      rw [rankOneWeight_zero, torusCharacter_singleton]
+      simp
+    · change torusCharacter t (rankOneWeight 1) = (t 0)⁻¹
+      rw [rankOneWeight_one, torusCharacter_singleton]
+      simp
+  rw [hdiag s, hdiag (fun _ ↦ (s 0)⁻¹)] at hconj
+  apply Subtype.ext
+  simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_rankOneWeylPoint,
+    coe_rankOneCarrierTorusPoint] using hconj
 
 /-- The rank-one Weyl representative belongs to the normalizer of the represented torus. -/
 theorem rankOneWeylPoint_mem_normalizer (A : Type u) [CommRing A] :
@@ -255,11 +280,22 @@ theorem rankOneWeylPoint_mem_normalizer (A : Type u) [CommRing A] :
       _root_.Subgroup.normalizer
         ((rankOneCarrierTorusPoints A : Subgroup (rankOneCarrierPoints A)) :
           Set (rankOneCarrierPoints A)) := by
-  simpa only [rankOneWeylPoint, rankOneCarrierTorusPoints, rankOneCarrierTorusHom] using
-    (kostantToralWeylPoint_mem_normalizer_weightTorusPoints (wt := rankOneWeight)
-      (i := 0) (j := 1) (c := 0) (α := rankOneRootWeight 0) e h ρ M hM hnil b
-      isSl2Triple_repEnveloping_rankOne (lie_cartan_root_eq_smul 0)
-      lie_cartan_root_one_eq_neg_smul isCartanWeightVector_integralLatticeAddSubgroupBasis A)
+  rw [_root_.Subgroup.mem_normalizer_iff]
+  intro x
+  constructor
+  · rintro ⟨s, rfl⟩
+    rw [rankOneWeylPoint_conj_torus]
+    exact ⟨fun _ ↦ (s 0)⁻¹, rfl⟩
+  · rintro ⟨s, hs⟩
+    refine ⟨(fun _ ↦ (s 0)⁻¹), ?_⟩
+    apply (MulAut.conj (rankOneWeylPoint A)).injective
+    have hconj := rankOneWeylPoint_conj_torus A (fun _ ↦ (s 0)⁻¹)
+    have hinv : (fun _ : Fin 1 ↦ ((s 0)⁻¹)⁻¹) = s := by
+      funext q
+      fin_cases q
+      simp
+    rw [hinv] at hconj
+    exact hconj.trans hs
 
 /-! ## The normalizer-quotient involution -/
 
@@ -299,7 +335,8 @@ theorem rankOneWeylClass_sq (A : Type u) [CommRing A] :
   simpa only [Subgroup.coe_pow, coe_rankOneWeylNormalizerPoint] using hsquare
 
 /-- Over a nontrivial ring, the Weyl representative does not belong to the represented torus. -/
-theorem rankOneWeylPoint_not_mem_torus (A : Type u) [CommRing A] [Nontrivial A] :
+theorem rankOneWeylPoint_notMem_rankOneCarrierTorusPoints
+    (A : Type u) [CommRing A] [Nontrivial A] :
     rankOneWeylPoint A ∉ rankOneCarrierTorusPoints A := by
   rintro ⟨s, hs⟩
   have hs' : rankOneCarrierTorusPoint A s = rankOneWeylPoint A := by
@@ -307,8 +344,8 @@ theorem rankOneWeylPoint_not_mem_torus (A : Type u) [CommRing A] [Nontrivial A] 
   have hentry := congrArg
     (fun g : rankOneCarrierPoints A ↦ ((g : Matrix.GeneralLinearGroup (Fin 2) A) :
       Matrix (Fin 2) (Fin 2) A) 0 1) hs'
-  simp [coe_rankOneCarrierTorusPoint, coe_rankOneWeylPoint_apply,
-    diagGL_apply] at hentry
+  rw [coe_rankOneCarrierTorusPoint, coe_rankOneWeylPoint_apply] at hentry
+  simp [diagGL_apply] at hentry
 
 /-- Over a nontrivial ring, the Weyl class in the torus normalizer quotient is not the identity.
 -/
@@ -318,7 +355,8 @@ theorem rankOneWeylClass_ne_one (A : Type u) [CommRing A] [Nontrivial A] :
   rw [rankOneWeylClass] at hclass
   have hm := (TauCeti.Subgroup.normalizerQuotientMk_eq_one_iff
     (rankOneCarrierTorusPoints A) (rankOneWeylNormalizerPoint A)).mp hclass
-  exact rankOneWeylPoint_not_mem_torus A (by simpa only [coe_rankOneWeylNormalizerPoint] using hm)
+  exact rankOneWeylPoint_notMem_rankOneCarrierTorusPoints A
+    (by simpa only [coe_rankOneWeylNormalizerPoint] using hm)
 
 /-- Over a nontrivial ring, the Weyl class has order exactly two in the pointwise torus
 normalizer quotient. -/
