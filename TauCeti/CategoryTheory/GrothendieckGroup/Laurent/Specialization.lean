@@ -37,6 +37,8 @@ categories.
 
 ## Main results
 
+* `TauCeti.LaurentK0.Specialization.of_conflation`: the defining relation `[M₂] = [M₁] + [M₃]`
+  of a conflation, in a specialization.
 * `TauCeti.LaurentK0.Specialization.map_smul`: Laurent scalars evaluate under specialization.
 * `TauCeti.LaurentK0.Specialization.atOne_map_shiftZPow`: every shift is unchanged at `q = 1`.
 * `TauCeti.LaurentK0.Specialization.atNegOne_map_shiftZPow`: an `n`-fold shift has sign
@@ -59,24 +61,28 @@ open LaurentPolynomial hiding C
 
 universe w w' v v' u u'
 
+namespace Units
+
+/-- The coefficient module `ℤ` obtained by evaluating `ℤ[q,q⁻¹]` at the integer unit `a`.
+
+It is kept as a named class-valued definition because the tensor product which defines
+`TauCeti.LaurentK0.Specialization E a` must remember this particular module structure. -/
+@[instance_reducible]
+noncomputable def evaluationModule (a : ℤˣ) : Module (LaurentPolynomial ℤ) ℤ :=
+  Module.compHom ℤ (laurentEval a).toRingHom
+
+end Units
+
 namespace LaurentK0
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
   [HasBinaryBiproducts C] [EssentiallySmall.{w} C]
 
-/-- The coefficient module `ℤ` obtained by evaluating `ℤ[q,q⁻¹]` at the integer unit `a`.
-
-It is kept as a named class-valued definition because the tensor product which defines
-`Specialization E a` must remember this particular module structure. -/
-@[instance_reducible]
-noncomputable def evaluationModule (a : ℤˣ) : Module (LaurentPolynomial ℤ) ℤ :=
-  Module.compHom ℤ (laurentEval a).toRingHom
-
 /-- **The graded Grothendieck group specialized at the integer unit `a`.**  This is extension of
 scalars from `ℤ[q,q⁻¹]` to `ℤ` along evaluation at `q = a`. -/
 noncomputable abbrev Specialization (E : GradedExactStructure C) (a : ℤˣ) : Type w :=
   @TensorProduct (LaurentPolynomial ℤ) inferInstance ℤ (LaurentK0 E) inferInstance inferInstance
-    (evaluationModule a) inferInstance
+    (Units.evaluationModule a) inferInstance
 
 /-- The graded Grothendieck group specialized at `q = 1`. -/
 noncomputable abbrev SpecializationAtOne (E : GradedExactStructure C) : Type w :=
@@ -93,20 +99,17 @@ variable (E : GradedExactStructure C) (a : ℤˣ)
 noncomputable instance : AddCommGroup (Specialization E a) := inferInstanceAs
   (AddCommGroup
     (@TensorProduct (LaurentPolynomial ℤ) inferInstance ℤ (LaurentK0 E) inferInstance
-      inferInstance (evaluationModule a) inferInstance))
+      inferInstance (Units.evaluationModule a) inferInstance))
 
 /-- The canonical additive map from graded `K₀` to its specialization. -/
 noncomputable def map : LaurentK0 E →+ Specialization E a := by
-  let _ : Module (LaurentPolynomial ℤ) ℤ := evaluationModule a
-  exact
-    { toFun := fun x => 1 ⊗ₜ[LaurentPolynomial ℤ] x
-      map_zero' := by rw [TensorProduct.tmul_zero]
-      map_add' := fun _ _ => by rw [TensorProduct.tmul_add] }
+  let _ : Module (LaurentPolynomial ℤ) ℤ := Units.evaluationModule a
+  exact (TensorProduct.mk (LaurentPolynomial ℤ) ℤ (LaurentK0 E) 1).toAddMonoidHom
 
 private theorem map_apply (x : LaurentK0 E) :
     map E a x =
       @TensorProduct.tmul (LaurentPolynomial ℤ) inferInstance ℤ (LaurentK0 E) inferInstance
-        inferInstance (evaluationModule a) inferInstance 1 x :=
+        inferInstance (Units.evaluationModule a) inferInstance 1 x :=
   (rfl)
 
 /-- The specialized class of an object. -/
@@ -116,10 +119,21 @@ noncomputable def of (X : C) : Specialization E a :=
 theorem of_eq_map (X : C) : of E a X = map E a (LaurentK0.of E X) :=
   (rfl)
 
+/-- Isomorphic objects have the same specialized class. -/
+theorem of_congr {X Y : C} (e : X ≅ Y) : of E a X = of E a Y := by
+  rw [of_eq_map, of_eq_map, LaurentK0.of_congr E e]
+
+/-- **The defining relation of a specialized graded `K₀`**: the specialized class of the middle
+term of a conflation is the sum of the specialized classes of its outer terms. -/
+theorem of_conflation {S : ShortComplex C} (hS : E.toExactStructure.Conflation S) :
+    of E a S.X₂ = of E a S.X₁ + of E a S.X₃ := by
+  rw [of_eq_map, of_eq_map, of_eq_map, LaurentK0.of_conflation E hS, map_add]
+
 /-- **Laurent scalars evaluate under specialization.** -/
+@[simp]
 theorem map_smul (p : LaurentPolynomial ℤ) (x : LaurentK0 E) :
     map E a (p • x) = (laurentEval a p : ℤ) • map E a x := by
-  let _ : Module (LaurentPolynomial ℤ) ℤ := evaluationModule a
+  let _ : Module (LaurentPolynomial ℤ) ℤ := Units.evaluationModule a
   calc
     map E a (p • x) = (p • (1 : ℤ)) ⊗ₜ[LaurentPolynomial ℤ] x :=
       TensorProduct.tmul_smul p 1 x
@@ -130,7 +144,7 @@ theorem map_smul (p : LaurentPolynomial ℤ) (x : LaurentK0 E) :
       simp
     _ = (laurentEval a p : ℤ) •
         @TensorProduct.tmul (LaurentPolynomial ℤ) inferInstance ℤ (LaurentK0 E) inferInstance
-          inferInstance (evaluationModule a) inferInstance 1 x :=
+          inferInstance (Units.evaluationModule a) inferInstance 1 x :=
       (TensorProduct.smul_tmul' _ _ _).symm
     _ = (laurentEval a p : ℤ) • map E a x := by
       rw [map_apply]
@@ -171,46 +185,35 @@ section UniversalProperty
 
 variable {G : Type*} [AddCommGroup G]
 
-private def zsmulAddHom (f : LaurentK0 E →+ G) : ℤ →+ LaurentK0 E →+ G where
-  toFun n :=
-    { toFun := fun x => n • f x
-      map_zero' := by simp
-      map_add' := fun x y => by simp }
-  map_zero' := by ext; simp
-  map_add' := fun m n => by ext; simp [add_smul]
-
-@[simp]
-private theorem zsmulAddHom_apply (f : LaurentK0 E →+ G) (n : ℤ) (x : LaurentK0 E) :
-    zsmulAddHom E f n x = n • f x :=
-  rfl
-
 /-- **The universal map out of a specialization.**  An additive map out of graded `K₀` factors
 through evaluation at `a` when it sends Laurent scalar multiplication to multiplication by the
 evaluated integer. -/
 noncomputable def desc (f : LaurentK0 E →+ G)
     (hf : ∀ (p : LaurentPolynomial ℤ) (x : LaurentK0 E),
       f (p • x) = (laurentEval a p : ℤ) • f x) : Specialization E a →+ G := by
-  let _ : Module (LaurentPolynomial ℤ) ℤ := evaluationModule a
-  refine TensorProduct.liftAddHom (zsmulAddHom E f) ?_
+  let _ : Module (LaurentPolynomial ℤ) ℤ := Units.evaluationModule a
+  refine TensorProduct.liftAddHom ((smulAddHom ℤ (LaurentK0 E →+ G)).flip f) ?_
   intro p n x
-  simp only [zsmulAddHom_apply]
+  simp only [AddMonoidHom.flip_apply, smulAddHom_apply, AddMonoidHom.smul_apply]
   rw [hf]
   simp [RingHom.toModule_smul, mul_smul, Int.mul_comm]
 
+/-- **`desc` restricts to `f` on the canonical image of graded `K₀`**: the universal map out of
+the specialization agrees with `f` on every class of the form `map E a x`. -/
 @[simp]
 theorem desc_map (f : LaurentK0 E →+ G)
     (hf : ∀ (p : LaurentPolynomial ℤ) (x : LaurentK0 E),
       f (p • x) = (laurentEval a p : ℤ) • f x) (x : LaurentK0 E) :
     desc E a f hf (map E a x) = f x := by
-  let _ : Module (LaurentPolynomial ℤ) ℤ := evaluationModule a
+  let _ : Module (LaurentPolynomial ℤ) ℤ := Units.evaluationModule a
   rw [desc, map_apply, TensorProduct.liftAddHom_tmul]
   simp
 
 /-- Additive maps out of a specialization are determined by their values on the image of graded
 `K₀`. -/
-theorem hom_ext {f g : Specialization E a →+ G}
+theorem hom_ext_map {f g : Specialization E a →+ G}
     (h : ∀ x : LaurentK0 E, f (map E a x) = g (map E a x)) : f = g := by
-  let _ : Module (LaurentPolynomial ℤ) ℤ := evaluationModule a
+  let _ : Module (LaurentPolynomial ℤ) ℤ := Units.evaluationModule a
   ext z
   induction z using TensorProduct.induction_on with
   | zero => simp
@@ -227,9 +230,9 @@ theorem hom_ext {f g : Specialization E a →+ G}
   | add x y hx hy => simp [hx, hy]
 
 /-- Additive maps out of a specialized graded `K₀` are determined by specialized object classes. -/
-theorem hom_ext_of {f g : Specialization E a →+ G} (h : ∀ X : C, f (of E a X) = g (of E a X)) :
+theorem hom_ext {f g : Specialization E a →+ G} (h : ∀ X : C, f (of E a X) = g (of E a X)) :
     f = g := by
-  apply hom_ext E a
+  apply hom_ext_map E a
   intro x
   obtain ⟨y, rfl⟩ : ∃ y, LaurentK0.ofExactK0 E y = x :=
     ⟨(LaurentK0.ofExactK0 E).symm x, by simp⟩
@@ -281,6 +284,8 @@ noncomputable def mapForgettingAtOne
     SpecializationAtOne E →+ ExactK0 E' :=
   desc E 1 (forgetMap E hU) (forgetMap_smul E hU comm)
 
+/-- **The factor through specialization at `q = 1` sends a specialized object class to the
+ungraded class of its image**: `[X]` at `q = 1` maps to `[F X]` in the ungraded `K₀`. -/
 @[simp]
 theorem mapForgettingAtOne_of (hU : E.toExactStructure.IsConflationExact E' F)
     (comm : E.shift.functor ⋙ F ≅ F) (X : C) :
@@ -302,7 +307,7 @@ theorem mapForgettingAtOne_unique (hU : E.toExactStructure.IsConflationExact E' 
     (comm : E.shift.functor ⋙ F ≅ F) (g : SpecializationAtOne E →+ ExactK0 E')
     (hg : ∀ X : C, g (of E 1 X) = ExactK0.of (F.obj X)) :
     g = mapForgettingAtOne E hU comm := by
-  apply hom_ext_of E 1
+  apply hom_ext E 1
   intro X
   rw [hg, mapForgettingAtOne_of]
 
