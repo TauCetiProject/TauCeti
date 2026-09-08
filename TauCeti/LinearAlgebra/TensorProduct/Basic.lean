@@ -15,8 +15,8 @@ and records its behavior on pure tensors and under tensor-product maps.
 
 ## Main declarations
 
-* `TauCeti.LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
-* `TauCeti.LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
+* `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
+* `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
 -/
 
 public section
@@ -24,7 +24,7 @@ public section
 open TensorProduct
 open scoped TensorProduct
 
-namespace TauCeti.LinearMap
+namespace LinearMap
 
 universe u v w x y
 
@@ -61,4 +61,4 @@ theorem tensorComponent_zero :
   refine TensorProduct.ext' fun m n => ?_
   simp
 
-end TauCeti.LinearMap
+end LinearMap

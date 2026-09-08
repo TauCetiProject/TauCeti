@@ -171,14 +171,14 @@ private theorem tensorPairComponent_comp_lTensor_comul (i j : ℕ) :
     Comodule.tensorPairComponent (R := R) (M := V) (coeff R i) (coeff R j) ∘ₗ
         (Coalgebra.comul (R := R) (A := SymmetricAlgebra R R)).lTensor V =
       ((i + j).choose i) •
-        TauCeti.LinearMap.tensorComponent (R := R) (M := V) (coeff R (i + j)) := by
+        _root_.LinearMap.tensorComponent (R := R) (M := V) (coeff R (i + j)) := by
   refine TensorProduct.ext' fun v h => ?_
   have hc := congr($(coeffPair_comp_comul R i j) h)
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.smul_apply] at hc
   simp only [coeffPair] at hc
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.lTensor_tmul,
     Comodule.tensorPairComponent_tmul, hc, LinearMap.smul_apply,
-    TauCeti.LinearMap.tensorComponent_tmul]
+    _root_.LinearMap.tensorComponent_tmul]
   rw [← Nat.cast_smul_eq_nsmul R, smul_eq_mul, mul_smul]
   simp only [Nat.cast_smul_eq_nsmul]
 
@@ -196,7 +196,7 @@ noncomputable def coactComponent (n : ℕ) : V →ₗ[R] V :=
 
 theorem coactComponent_apply (n : ℕ) (v : V) :
     coactComponent R V n v =
-      TauCeti.LinearMap.tensorComponent (R := R) (M := V) (coeff R n)
+      _root_.LinearMap.tensorComponent (R := R) (M := V) (coeff R n)
         (Comodule.coact (R := R) (C := SymmetricAlgebra R R) v) :=
   by rw [coactComponent, Comodule.coactComponent_apply]
 
@@ -206,7 +206,7 @@ theorem coactComponent_zero : coactComponent R V 0 = LinearMap.id := by
   ext v
   rw [coactComponent_apply, coeff_zero_eq_counit]
   have hcomponent :
-      TauCeti.LinearMap.tensorComponent (R := R) (M := V)
+      _root_.LinearMap.tensorComponent (R := R) (M := V)
           (Coalgebra.counit (R := R) (A := SymmetricAlgebra R R)) =
         (TensorProduct.rid R V).toLinearMap ∘ₗ
           (Coalgebra.counit (R := R) (A := SymmetricAlgebra R R)).lTensor V := by
@@ -254,7 +254,7 @@ theorem coactDecomposition_apply (v : V) (n : ℕ) :
           (((monomialBasis R).coord n).lTensor V
             (Comodule.coact (R := R) (C := SymmetricAlgebra R R) v)) :=
       TensorProduct.equivFinsuppOfBasisRight_apply _ _ _
-    _ = TauCeti.LinearMap.tensorComponent (coeff R n)
+    _ = _root_.LinearMap.tensorComponent (coeff R n)
         (Comodule.coact (R := R) (C := SymmetricAlgebra R R) v) := by
       induction Comodule.coact (R := R) (C := SymmetricAlgebra R R) v using
         TensorProduct.induction_on with
@@ -346,7 +346,7 @@ theorem mem_coactFiltration_zero_iff {v : V} :
       ((coactDecomposition_apply R V v i).trans (hv i (Nat.pos_of_ne_zero hi))) hmem)
       fun _ => TensorProduct.zero_tmul _ _]
     rw [coactDecomposition_apply, coactComponent_zero, LinearMap.id_apply, pow_zero]
-  · rw [coactComponent_apply, hv, TauCeti.LinearMap.tensorComponent_tmul,
+  · rw [coactComponent_apply, hv, _root_.LinearMap.tensorComponent_tmul,
       ← pow_zero (ι R R 1 : SymmetricAlgebra R R), coeff_pow, ite_eq_right (by omega),
       zero_smul]
 
