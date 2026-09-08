@@ -43,8 +43,8 @@ Applications 100 (2002), 147--165.
   `TauCeti.transitionCount_pathOfReindexedSuccessors`: the last-exit reconstruction has the same
   visit counts, the same endpoint, and the same transition counts as the original prefix.
 * `TauCeti.LastExitAdmissible.symm_pathOfReindexedSuccessors` and
-  `TauCeti.pathOfReindexedSuccessors_symm_apply`: inverse row reindexing is admissible and recovers
-  the original finite prefix.
+  `TauCeti.pathOfReindexedSuccessors_symm_apply_apply`: inverse row reindexing is admissible and
+  recovers the original finite prefix.
 
 ## References
 
@@ -585,34 +585,35 @@ and subsequently from the `π⁻¹`-reindexed rows returns `x i` for every `i �
 
 The conclusion is deliberately restricted to the admissible finite horizon: unused successor
 entries are unconstrained, so the two infinite reconstructions need not agree after `m`. -/
-theorem pathOfReindexedSuccessors_symm_apply {π : α → Equiv.Perm ℕ} {x : ℕ → α} {m : ℕ}
+theorem pathOfReindexedSuccessors_symm_apply_apply {π : α → Equiv.Perm ℕ} {x : ℕ → α} {m : ℕ}
     (h : LastExitAdmissible π x m) {i : ℕ} (hi : i ≤ m) :
     pathOfReindexedSuccessors (fun a => (π a).symm) (pathOfReindexedSuccessors π x) i = x i := by
   let y := pathOfReindexedSuccessors π x
   let z := pathOfReindexedSuccessors (fun a => (π a).symm) y
   have hinv : LastExitAdmissible (fun a => (π a).symm) y m :=
     h.symm_pathOfReindexedSuccessors
-  change z i = x i
-  refine eqOn_of_successorArray_visitCell_eq (x := z) (w := x) (n := m) ?_ ?_ i hi
-  · simp [z, y]
-  · intro j hj
-    rw [visitCell_def]
-    have hjm : j + 1 ≤ m := by omega
-    have hjcount : visitCount x (x j) j < visitCount x (x j) m := by
-      have hstep := visitCount_succ_of_eq (x := x) (a := x j) rfl
-      have hmono := visitCount_monotone x (x j) hjm
-      omega
-    have hycount : visitCount y (x j) m = visitCount x (x j) m :=
-      visitCount_pathOfReindexedSuccessors π x m h (x j)
-    have hzcount : visitCount z (x j) m = visitCount y (x j) m :=
-      visitCount_pathOfReindexedSuccessors (fun a => (π a).symm) y m hinv (x j)
-    have hjz : visitCount x (x j) j < visitCount z (x j) m := by omega
-    have hjy : (π (x j)).symm (visitCount x (x j) j) < visitCount y (x j) m :=
-      hinv.maps_lt_visitCount (by omega)
-    rw [successorArray_pathOfReindexedSuccessors_of_lt_visitCount
-        (fun a => (π a).symm) y (x j) hjz,
-      successorArray_pathOfReindexedSuccessors_of_lt_visitCount π x (x j) hjy,
-      (π (x j)).apply_symm_apply, successorArray_visitCount]
+  have hzxi : z i = x i := by
+    refine eqOn_of_successorArray_visitCell_eq (x := z) (w := x) (n := m) ?_ ?_ i hi
+    · simp [z, y]
+    · intro j hj
+      rw [visitCell_def]
+      have hjm : j + 1 ≤ m := by omega
+      have hjcount : visitCount x (x j) j < visitCount x (x j) m := by
+        have hstep := visitCount_succ_of_eq (x := x) (a := x j) rfl
+        have hmono := visitCount_monotone x (x j) hjm
+        omega
+      have hycount : visitCount y (x j) m = visitCount x (x j) m :=
+        visitCount_pathOfReindexedSuccessors π x m h (x j)
+      have hzcount : visitCount z (x j) m = visitCount y (x j) m :=
+        visitCount_pathOfReindexedSuccessors (fun a => (π a).symm) y m hinv (x j)
+      have hjz : visitCount x (x j) j < visitCount z (x j) m := by omega
+      have hjy : (π (x j)).symm (visitCount x (x j) j) < visitCount y (x j) m :=
+        hinv.maps_lt_visitCount (by omega)
+      rw [successorArray_pathOfReindexedSuccessors_of_lt_visitCount
+          (fun a => (π a).symm) y (x j) hjz,
+        successorArray_pathOfReindexedSuccessors_of_lt_visitCount π x (x j) hjy,
+        (π (x j)).apply_symm_apply, successorArray_visitCount]
+  simpa only [z, y] using hzxi
 
 end TauCeti
 
