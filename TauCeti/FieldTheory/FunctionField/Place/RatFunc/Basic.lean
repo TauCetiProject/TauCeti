@@ -312,6 +312,15 @@ theorem exists_algebraMap_notMem_integers_iff_eq_infty {P : Place k (RatFunc k)}
     rw [mem_integers_iff_ord_nonneg, RatFunc.algebraMap_X, ord_infty, RatFunc.intDegree_X]
     omega
 
+/-- A place of `k(x)` has valuation greater than one on a polynomial exactly when it is the
+place at infinity. This is the simp-normal form of
+`exists_algebraMap_notMem_integers_iff_eq_infty`. -/
+@[simp]
+theorem exists_one_lt_valuation_algebraMap_iff_eq_infty {P : Place k (RatFunc k)} :
+    (∃ f : k[X], 1 < P.valuation (algebraMap (k[X]) (RatFunc k) f)) ↔ P = infty k := by
+  simpa only [mem_integers_iff, not_le] using
+    exists_algebraMap_notMem_integers_iff_eq_infty (k := k) (P := P)
+
 variable (k)
 
 /-- **The places of the rational function field** (Stichtenoth, Theorem 1.2.2): they are the
