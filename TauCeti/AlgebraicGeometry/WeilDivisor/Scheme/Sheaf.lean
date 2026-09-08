@@ -183,8 +183,8 @@ def submodule (D : SchemeWeilDivisor X) : (Scheme.rationalFunctions X).Submodule
     rw [← key]
     exact h
 
-/-- The component of the submodule `𝒪_X(D) ⊆ 𝒦_X` on `U` is `sections D U`. -/
-@[simp]
+/-- The component of the submodule `𝒪_X(D) ⊆ 𝒦_X` on `U` is `sections D U`. This is the
+`op`-normalised special case of `submodule_obj_unop`, which is the `simp` form. -/
 lemma submodule_obj (D : SchemeWeilDivisor X) (U : X.Opens) :
     (submodule D).toSubmodule.obj (op U) = sections D U :=
   (rfl)
