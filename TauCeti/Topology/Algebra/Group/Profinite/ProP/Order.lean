@@ -84,29 +84,22 @@ theorem isProP_iff_profiniteOrder_apply_eq_zero :
 theorem isProP_iff_profiniteOrder_le_primePower :
     IsProP p G ↔
       profiniteOrder G ≤ Supernatural.primePower (⟨p, Fact.out⟩ : Nat.Primes) ⊤ := by
-  let pp : Nat.Primes := ⟨p, Fact.out⟩
-  have hpp : IsProP pp.val G ↔
-      profiniteOrder G ≤ Supernatural.primePower pp ⊤ := by
-    let _ : Fact pp.val.Prime := ⟨pp.prop⟩
-    rw [isProP_iff_profiniteOrder_apply_eq_zero]
-    constructor
-    · intro h
-      apply Supernatural.le_iff.mpr
-      intro q
-      by_cases hqp : q = pp
-      · calc
-          profiniteOrder G q ≤ ⊤ := le_top
-          _ = Supernatural.primePower pp ⊤ q := by
-            subst q
-            exact (TauCeti.Supernatural.primePower_apply_self pp ⊤).symm
-      · rw [TauCeti.Supernatural.primePower_apply_of_ne hqp]
-        exact (h q (fun hqp' ↦ hqp (Subtype.ext hqp'))).le
-    · intro h q hqp
-      have hq := Supernatural.le_iff.mp h q
-      rw [TauCeti.Supernatural.primePower_apply_of_ne
-        (p := pp) (q := q)
-        (fun h ↦ hqp (congrArg Subtype.val h))] at hq
-      exact bot_unique hq
-  exact hpp
+  rw [isProP_iff_profiniteOrder_apply_eq_zero]
+  constructor
+  · intro h
+    refine Supernatural.le_iff.mpr fun q ↦ ?_
+    by_cases hqp : q = (⟨p, Fact.out⟩ : Nat.Primes)
+    · calc
+        profiniteOrder G q ≤ ⊤ := le_top
+        _ = Supernatural.primePower (⟨p, Fact.out⟩ : Nat.Primes) ⊤ q := by
+          subst q
+          exact (Supernatural.primePower_apply_self _ ⊤).symm
+    · rw [Supernatural.primePower_apply_of_ne hqp]
+      exact (h q fun hq ↦ hqp (Subtype.ext hq)).le
+  · intro h q hqp
+    have hq := Supernatural.le_iff.mp h q
+    rw [Supernatural.primePower_apply_of_ne (p := (⟨p, Fact.out⟩ : Nat.Primes)) (q := q)
+      fun hq' ↦ hqp (congrArg Subtype.val hq')] at hq
+    exact bot_unique hq
 
 end TauCeti

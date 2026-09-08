@@ -37,7 +37,7 @@ description as the least common multiple of the indices of open overgroups.
 * `Subgroup.profiniteIndex_eq_bot_iff_topologicalClosure_eq_top` and
   `Subgroup.profiniteIndex_eq_bot_iff`: the simp-normal forms of the two previous results,
   since the supernatural unit is the bottom element.
-* `Subgroup.isOpen_iff_isClosed_and_profiniteIndex_isNatural`: openness is equivalent to
+* `Subgroup.isOpen_iff_isClosed_and_isNatural_profiniteIndex`: openness is equivalent to
   closedness and natural supernatural index.
 
 ## References
@@ -283,87 +283,39 @@ theorem _root_.Subgroup.profiniteIndex_eq_bot_iff (H : Subgroup G)
 
 /-- A subgroup of a profinite group is open exactly when it is closed and its supernatural
 index is a natural number. -/
-theorem _root_.Subgroup.isOpen_iff_isClosed_and_profiniteIndex_isNatural (H : Subgroup G) :
+theorem _root_.Subgroup.isOpen_iff_isClosed_and_isNatural_profiniteIndex (H : Subgroup G) :
     IsOpen (H : Set G) ↔
       IsClosed (H : Set G) ∧ Supernatural.IsNatural (Subgroup.profiniteIndex H) := by
   constructor
   · intro hH
-    let U : OpenSubgroup G := ⟨H, hH⟩
-    refine ⟨U.isClosed, ?_⟩
-    have hHU : H = U.toSubgroup := rfl
-    rw [hHU, OpenSubgroup.profiniteIndex_eq_ofNat_index]
-    exact Supernatural.isNatural_ofNat _
+    have : Finite (G ⧸ H) := H.quotient_finite_of_isOpen hH
+    -- The bundled open subgroup `⟨H, hH⟩` has `H` as its underlying subgroup, so the
+    -- computation of the index of an open subgroup applies verbatim to `H`.
+    have hindex : Subgroup.profiniteIndex H = Supernatural.ofNat
+        (⟨H.index, Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) :=
+      OpenSubgroup.profiniteIndex_eq_ofNat_index ⟨H, hH⟩
+    rw [hindex]
+    exact ⟨H.isClosed_of_isOpen hH, Supernatural.isNatural_ofNat _⟩
   · rintro ⟨hHclosed, hHindex⟩
-    rw [Supernatural.isNatural_def] at hHindex
-    obtain ⟨m, hm⟩ := hHindex
-    have hbound (N : OpenNormalSubgroup G) :
-        (H ⊔ N.toSubgroup).index ≤ (m : ℕ) := by
-      let U : OpenSubgroup G :=
-        { toSubgroup := H ⊔ N.toSubgroup
-          isOpen' := Subgroup.isOpen_mono le_sup_right N.toOpenSubgroup.isOpen }
-      let U' : {V : OpenSubgroup G // H ≤ V.toSubgroup} := ⟨U, le_sup_left⟩
-      have hpos : 0 < (H ⊔ N.toSubgroup).index := by
-        have : Finite (G ⧸ U.toSubgroup) :=
-          Subgroup.quotient_finite_of_isOpen U.toSubgroup U.isOpen
-        exact Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite
-      have hle : Supernatural.ofNat
-          (⟨(H ⊔ N.toSubgroup).index, hpos⟩ : ℕ+) ≤
-          Supernatural.ofNat m := by
-        calc
+    obtain ⟨m, hm⟩ := Supernatural.isNatural_def.mp hHindex
+    refine Subgroup.isOpen_of_index_sup_openNormalSubgroup_le (m := m) hHclosed fun N ↦ ?_
+    -- Each `H ⊔ N` is an open subgroup containing `H`, so its ordinary index is one of the
+    -- numbers whose supernatural join is the index of `H`, hence divides `m`.
+    have hUopen : IsOpen ((H ⊔ N.toSubgroup : Subgroup G) : Set G) :=
+      Subgroup.isOpen_mono le_sup_right N.toOpenSubgroup.isOpen
+    have : Finite (G ⧸ (H ⊔ N.toSubgroup)) :=
+      Subgroup.quotient_finite_of_isOpen _ hUopen
+    have hpos : 0 < (H ⊔ N.toSubgroup).index :=
+      Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite
+    have hle : Supernatural.ofNat (⟨(H ⊔ N.toSubgroup).index, hpos⟩ : ℕ+) ≤
+        Supernatural.ofNat m := by
+      rw [hm, Subgroup.profiniteIndex_eq_iSup_openSubgroup]
+      exact le_iSup (fun V : {V : OpenSubgroup G // H ≤ V.toSubgroup} ↦
           Supernatural.ofNat
-              (⟨(H ⊔ N.toSubgroup).index, hpos⟩ : ℕ+) =
-              Supernatural.ofNat
-                (⟨U.toSubgroup.index, hpos⟩ : ℕ+) := rfl
-          _ ≤ Subgroup.profiniteIndex H := by
-            rw [Subgroup.profiniteIndex_eq_iSup_openSubgroup]
-            exact le_iSup (fun V : {V : OpenSubgroup G // H ≤ V.toSubgroup} ↦
-              Supernatural.ofNat
-                (⟨V.1.toSubgroup.index,
-                  Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+)) U'
-          _ = Supernatural.ofNat m := hm.symm
-      exact Nat.le_of_dvd m.pos <| PNat.dvd_iff.mp <|
-        Supernatural.ofNat_le_ofNat_iff.mp hle
-    let f : OpenNormalSubgroup G → ℕ := fun N ↦ (H ⊔ N.toSubgroup).index
-    have hfinite : (f '' (Set.univ : Set (OpenNormalSubgroup G))).Finite := by
-      refine (Set.finite_Iic (m : ℕ)).subset ?_
-      rintro k ⟨N, -, rfl⟩
-      exact hbound N
-    let Ntop : OpenNormalSubgroup G :=
-      { toOpenSubgroup := ⊤
-        isNormal' := Subgroup.normal_top }
-    have hnonempty : (Set.univ : Set (OpenNormalSubgroup G)).Nonempty :=
-      ⟨Ntop, Set.mem_univ Ntop⟩
-    obtain ⟨N₀, -, hmax⟩ :=
-      Set.Finite.exists_maximalFor' f Set.univ hfinite hnonempty
-    have hmax_le (N : OpenNormalSubgroup G) : f N ≤ f N₀ := by
-      rcases le_total (f N) (f N₀) with hle | hle
-      · exact hle
-      · exact hmax (Set.mem_univ N) hle
-    have hsup_le (N : OpenNormalSubgroup G) : H ⊔ N₀.toSubgroup ≤ H ⊔ N.toSubgroup := by
-      let M : OpenNormalSubgroup G := N₀ ⊓ N
-      have hMsub : H ⊔ M.toSubgroup ≤ H ⊔ N₀.toSubgroup := by
-        exact sup_le_sup_left inf_le_left H
-      have hMeq : H ⊔ M.toSubgroup = H ⊔ N₀.toSubgroup := by
-        apply le_antisymm hMsub
-        by_contra hnot
-        have hlt : H ⊔ M.toSubgroup < H ⊔ N₀.toSubgroup :=
-          lt_of_le_of_ne hMsub fun heq ↦ hnot heq.ge
-        have hMopen : IsOpen ((H ⊔ M.toSubgroup : Subgroup G) : Set G) :=
-          Subgroup.isOpen_mono le_sup_right M.toOpenSubgroup.isOpen
-        let _ : (H ⊔ M.toSubgroup).FiniteIndex := by
-          have : Finite (G ⧸ (H ⊔ M.toSubgroup)) :=
-            Subgroup.quotient_finite_of_isOpen _ hMopen
-          exact Subgroup.finiteIndex_of_finite_quotient
-        exact (not_lt_of_ge (hmax_le M)) (Subgroup.index_strictAnti hlt)
-      rw [← hMeq]
-      exact sup_le_sup_left inf_le_right H
-    have hHeq : H = H ⊔ N₀.toSubgroup := by
-      calc
-        H = ⨅ N : OpenNormalSubgroup G, H ⊔ N.toSubgroup :=
-          Subgroup.eq_iInf_sup_openNormalSubgroup H hHclosed
-        _ = H ⊔ N₀.toSubgroup := le_antisymm (iInf_le _ N₀) (le_iInf hsup_le)
-    rw [hHeq]
-    exact Subgroup.isOpen_mono le_sup_right N₀.toOpenSubgroup.isOpen
+            (⟨V.1.toSubgroup.index,
+              Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+))
+        ⟨⟨H ⊔ N.toSubgroup, hUopen⟩, le_sup_left⟩
+    exact Nat.le_of_dvd m.pos <| PNat.dvd_iff.mp <| Supernatural.ofNat_le_ofNat_iff.mp hle
 
 end Profinite
 
