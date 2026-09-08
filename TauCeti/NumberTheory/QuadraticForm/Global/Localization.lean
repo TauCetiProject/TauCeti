@@ -278,12 +278,30 @@ def Isometry.atFinitePlace [NumberField K] (f : Q →qᵢ R)
     atFinitePlace Q v →qᵢ atFinitePlace R v :=
   QuadraticForm.Isometry.baseChange f (v.adicCompletion K)
 
+/-- On pure tensors, a localized isometry applies the original isometry to the vector. -/
+@[simp]
+theorem Isometry.atFinitePlace_tmul [NumberField K] (f : Q →qᵢ R)
+    (v : HeightOneSpectrum (𝓞 K)) (a : v.adicCompletion K) (x : V) :
+    Isometry.atFinitePlace f v (a ⊗ₜ x) = a ⊗ₜ f x :=
+  QuadraticForm.Isometry.baseChange_tmul f a x
+
 /-- An isometry of global quadratic forms extends to every real localization. -/
 def Isometry.atRealPlace (f : Q →qᵢ R) (w : {w : InfinitePlace K // w.IsReal}) :
     atRealPlace Q w →qᵢ atRealPlace R w := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   exact QuadraticForm.Isometry.baseChange f ℝ
+
+/-- On pure tensors, an isometry localized at a real place applies the original isometry to the
+vector. -/
+@[simp]
+theorem Isometry.atRealPlace_tmul (f : Q →qᵢ R)
+    (w : {w : InfinitePlace K // w.IsReal}) (a : ℝ) (x : V) :
+    let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    Isometry.atRealPlace f w (a ⊗ₜ x) = a ⊗ₜ f x := by
+  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
+  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  exact QuadraticForm.Isometry.baseChange_tmul f a x
 
 /-- An isometry of global quadratic forms extends through every chosen complex embedding. -/
 def Isometry.atComplexEmbedding (f : Q →qᵢ R) (w : InfinitePlace K) :
@@ -292,11 +310,30 @@ def Isometry.atComplexEmbedding (f : Q →qᵢ R) (w : InfinitePlace K) :
   letI : Algebra K ℂ := w.embedding.toAlgebra
   exact QuadraticForm.Isometry.baseChange f ℂ
 
+/-- On pure tensors, an isometry extended through a complex embedding applies the original
+isometry to the vector. -/
+@[simp]
+theorem Isometry.atComplexEmbedding_tmul (f : Q →qᵢ R) (w : InfinitePlace K)
+    (a : ℂ) (x : V) :
+    let _ : Algebra K ℂ := w.embedding.toAlgebra
+    Isometry.atComplexEmbedding f w (a ⊗ₜ x) = a ⊗ₜ f x := by
+  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  exact QuadraticForm.Isometry.baseChange_tmul f a x
+
 /-- A global isometric equivalence extends to every finite localization. -/
 def IsometryEquiv.atFinitePlace [NumberField K] (f : Q.IsometryEquiv R)
     (v : HeightOneSpectrum (𝓞 K)) :
     (atFinitePlace Q v).IsometryEquiv (atFinitePlace R v) :=
   QuadraticForm.IsometryEquiv.baseChange f (v.adicCompletion K)
+
+/-- On pure tensors, a localized isometric equivalence applies the original equivalence to the
+vector. -/
+@[simp]
+theorem IsometryEquiv.atFinitePlace_tmul [NumberField K] (f : Q.IsometryEquiv R)
+    (v : HeightOneSpectrum (𝓞 K)) (a : v.adicCompletion K) (x : V) :
+    IsometryEquiv.atFinitePlace f v (a ⊗ₜ x) = a ⊗ₜ f x :=
+  QuadraticForm.IsometryEquiv.baseChange_tmul f a x
 
 /-- A global isometric equivalence extends to every real localization. -/
 def IsometryEquiv.atRealPlace (f : Q.IsometryEquiv R)
@@ -306,12 +343,34 @@ def IsometryEquiv.atRealPlace (f : Q.IsometryEquiv R)
   letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   exact QuadraticForm.IsometryEquiv.baseChange f ℝ
 
+/-- On pure tensors, an isometric equivalence localized at a real place applies the original
+equivalence to the vector. -/
+@[simp]
+theorem IsometryEquiv.atRealPlace_tmul (f : Q.IsometryEquiv R)
+    (w : {w : InfinitePlace K // w.IsReal}) (a : ℝ) (x : V) :
+    let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    IsometryEquiv.atRealPlace f w (a ⊗ₜ x) = a ⊗ₜ f x := by
+  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
+  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  exact QuadraticForm.IsometryEquiv.baseChange_tmul f a x
+
 /-- A global isometric equivalence extends through every chosen complex embedding. -/
 def IsometryEquiv.atComplexEmbedding (f : Q.IsometryEquiv R) (w : InfinitePlace K) :
     (atComplexEmbedding Q w).IsometryEquiv (atComplexEmbedding R w) := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   letI : Algebra K ℂ := w.embedding.toAlgebra
   exact QuadraticForm.IsometryEquiv.baseChange f ℂ
+
+/-- On pure tensors, an isometric equivalence extended through a complex embedding applies the
+original equivalence to the vector. -/
+@[simp]
+theorem IsometryEquiv.atComplexEmbedding_tmul (f : Q.IsometryEquiv R)
+    (w : InfinitePlace K) (a : ℂ) (x : V) :
+    let _ : Algebra K ℂ := w.embedding.toAlgebra
+    IsometryEquiv.atComplexEmbedding f w (a ⊗ₜ x) = a ⊗ₜ f x := by
+  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  exact QuadraticForm.IsometryEquiv.baseChange_tmul f a x
 
 /-- Equivalent global quadratic forms remain equivalent at every finite place. -/
 theorem Equivalent.atFinitePlace [NumberField K] (h : Q.Equivalent R)
@@ -344,6 +403,14 @@ def prodAtFinitePlace [NumberField K] (Q : _root_.QuadraticForm K V)
       ((atFinitePlace Q v).prod (atFinitePlace R v)) :=
   QuadraticForm.baseChangeProd Q R
 
+/-- On pure tensors, the finite-place orthogonal-sum equivalence separates the two components. -/
+@[simp]
+theorem prodAtFinitePlace_tmul [NumberField K] (Q : _root_.QuadraticForm K V)
+    (R : _root_.QuadraticForm K W) (v : HeightOneSpectrum (𝓞 K))
+    (a : v.adicCompletion K) (x : V × W) :
+    prodAtFinitePlace Q R v (a ⊗ₜ x) = (a ⊗ₜ x.1, a ⊗ₜ x.2) :=
+  QuadraticForm.baseChangeProd_tmul Q R a x
+
 /-- The real localization of an orthogonal sum is canonically isometric to the orthogonal sum of
 the real localizations. -/
 def prodAtRealPlace (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K W)
@@ -354,6 +421,17 @@ def prodAtRealPlace (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K W
   letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   exact QuadraticForm.baseChangeProd Q R
 
+/-- On pure tensors, the real-place orthogonal-sum equivalence separates the two components. -/
+@[simp]
+theorem prodAtRealPlace_tmul (Q : _root_.QuadraticForm K V)
+    (R : _root_.QuadraticForm K W) (w : {w : InfinitePlace K // w.IsReal})
+    (a : ℝ) (x : V × W) :
+    let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    prodAtRealPlace Q R w (a ⊗ₜ x) = (a ⊗ₜ x.1, a ⊗ₜ x.2) := by
+  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
+  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  exact QuadraticForm.baseChangeProd_tmul Q R a x
+
 /-- Extension of an orthogonal sum through a complex embedding is canonically isometric to the
 orthogonal sum of the extensions. -/
 def prodAtComplexEmbedding (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K W)
@@ -363,6 +441,17 @@ def prodAtComplexEmbedding (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticF
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   letI : Algebra K ℂ := w.embedding.toAlgebra
   exact QuadraticForm.baseChangeProd Q R
+
+/-- On pure tensors, the complex-embedding orthogonal-sum equivalence separates the two
+components. -/
+@[simp]
+theorem prodAtComplexEmbedding_tmul (Q : _root_.QuadraticForm K V)
+    (R : _root_.QuadraticForm K W) (w : InfinitePlace K) (a : ℂ) (x : V × W) :
+    let _ : Algebra K ℂ := w.embedding.toAlgebra
+    prodAtComplexEmbedding Q R w (a ⊗ₜ x) = (a ⊗ₜ x.1, a ⊗ₜ x.2) := by
+  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  exact QuadraticForm.baseChangeProd_tmul Q R a x
 
 end Isometries
 
