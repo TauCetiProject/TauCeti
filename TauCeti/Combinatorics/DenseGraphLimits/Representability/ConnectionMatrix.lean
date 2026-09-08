@@ -24,8 +24,8 @@ of the Lovász–Szegedy representability theorem.
 
 * `TauCeti.DenseGraphLimits.GraphParam` is a real parameter of finite simple graphs, with
   `TauCeti.DenseGraphLimits.IsIsoInvariant` imposing agreement along isomorphisms;
-* `TauCeti.DenseGraphLimits.connectionMatrix` is a finite principal block of the connection
-  matrix `M(f, k)`;
+* `TauCeti.DenseGraphLimits.connectionMatrix` is an indexed block of the connection matrix
+  `M(f, k)`;
 * `TauCeti.DenseGraphLimits.IsReflectionPositive`,
   `TauCeti.DenseGraphLimits.IsMultiplicative` and
   `TauCeti.DenseGraphLimits.IsNormalized` are the three remaining structural conditions.
@@ -55,6 +55,8 @@ a connection matrix on `ι` is a submatrix of one on `Fin (Fintype.card ι)` alo
 
 ## References
 
+* `TauCetiRoadmap/DenseGraphLimits/Suggested.lean` — suggested signatures for the Layer 8 gluing
+  and connection-matrix API.
 * L. Lovász, B. Szegedy, *Limits of dense graph sequences*, JCTB 96 (2006), 933–957, Theorem 2.2 —
   the four structural conditions and the representability theorem they characterise.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Chapters 5
@@ -78,8 +80,8 @@ def IsIsoInvariant (f : GraphParam) : Prop :=
 
 /-- The **connection matrix** of a graph parameter on a family `A : ι → LabeledGraph k` of
 `k`-labeled graphs: the `ι × ι` matrix whose `(i, j)` entry is `f` on the unlabeled graph
-underlying the gluing of `A i` and `A j`.  It is a finite principal block of the full connection
-matrix `M(f, k)`. -/
+underlying the gluing of `A i` and `A j`.  It is an indexed block of the full connection matrix
+`M(f, k)`. -/
 noncomputable def connectionMatrix (f : GraphParam) {k : ℕ} {ι : Type*} (A : ι → LabeledGraph k) :
     Matrix ι ι ℝ :=
   Matrix.of fun i j =>
