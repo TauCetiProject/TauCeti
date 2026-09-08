@@ -103,10 +103,9 @@ variable [NeZero (d ! : k)]
 @[simp]
 theorem centralizer_range_tensorPowerRep_asAlgebraHom_eq_range_permTensorActionAlgHom :
     Subalgebra.centralizer k
-        ((tensorPowerRep k n d).asAlgebraHom.range :
-          Set (Module.End k (⨂[k] _ : Fin d, Fin n → k))) =
+        (Set.range ⇑(tensorPowerRep k n d).asAlgebraHom) =
       (permTensorActionAlgHom k n d).range := by
-  rw [← Subalgebra.coe_toSubmodule,
+  rw [← AlgHom.coe_range, ← Subalgebra.coe_toSubmodule,
     toSubmodule_range_tensorPowerRep_asAlgebraHom_eq_span_range_map_const,
     centralizer_span_range_map_const_eq_range_permTensorActionAlgHom]
 
@@ -114,11 +113,11 @@ theorem centralizer_range_tensorPowerRep_asAlgebraHom_eq_range_permTensorActionA
 @[simp]
 theorem centralizer_range_permTensorActionAlgHom_eq_range_tensorPowerRep_asAlgebraHom :
     Subalgebra.centralizer k
-        ((permTensorActionAlgHom k n d).range :
-          Set (Module.End k (⨂[k] _ : Fin d, Fin n → k))) =
+        (Set.range ⇑(permTensorActionAlgHom k n d)) =
       (tensorPowerRep k n d).asAlgebraHom.range :=
   SetLike.coe_injective <| by
-    rw [coe_centralizer_range_permTensorActionAlgHom_eq_span_range_map_const
+    rw [← AlgHom.coe_range,
+      coe_centralizer_range_permTensorActionAlgHom_eq_span_range_map_const
         (isUnit_iff_ne_zero.2 (NeZero.ne _)),
       ← Subalgebra.coe_toSubmodule,
       toSubmodule_range_tensorPowerRep_asAlgebraHom_eq_span_range_map_const]
