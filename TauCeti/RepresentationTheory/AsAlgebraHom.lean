@@ -58,18 +58,18 @@ finite `k`-combination of the operators `ρ g`, and conversely each `ρ g` is th
 element. -/
 theorem toSubmodule_range_asAlgebraHom (ρ : Representation k G V) :
     Subalgebra.toSubmodule ρ.asAlgebraHom.range = Submodule.span k (Set.range ρ) := by
-  have hmem : ∀ a : MonoidAlgebra k G, ρ.asAlgebraHom a ∈ Submodule.span k (Set.range ρ) := by
-    intro a
-    induction a using MonoidAlgebra.induction_on with
-    | of g => rw [asAlgebraHom_of]; exact Submodule.subset_span ⟨g, rfl⟩
-    | add a b ha hb => rw [map_add]; exact Submodule.add_mem _ ha hb
-    | smul r a ha => rw [map_smul]; exact Submodule.smul_mem _ r ha
-  refine le_antisymm (fun x hx => ?_) (Submodule.span_le.2 ?_)
-  · obtain ⟨a, ha⟩ := (Subalgebra.mem_toSubmodule _).mp hx
-    rw [← ha]
-    exact hmem a
-  · rintro _ ⟨g, rfl⟩
-    exact (Subalgebra.mem_toSubmodule _).mpr ⟨MonoidAlgebra.of k G g, asAlgebraHom_of ρ g⟩
+  -- `k[G]` is spanned by `G`: each element lies in the span of its support
+  -- (`MonoidAlgebra.mem_span_support_coeff`), a subset of the image of `MonoidAlgebra.of`
+  have htop : Submodule.span k (Set.range ⇑(MonoidAlgebra.of k G)) = ⊤ :=
+    eq_top_iff.2 fun a _ =>
+      Submodule.span_mono (Set.image_subset_range _ _) (MonoidAlgebra.mem_span_support_coeff a)
+  -- and `ρ` is the composite of `MonoidAlgebra.of` with the group-algebra action
+  have hrange : Set.range ρ = ρ.asAlgebraHom.toLinearMap '' Set.range ⇑(MonoidAlgebra.of k G) := by
+    rw [← Set.range_comp]
+    simp [Function.comp_def]
+  rw [hrange, ← Submodule.map_span, htop, Submodule.map_top]
+  ext x
+  simp [AlgHom.mem_range]
 
 end Range
 
