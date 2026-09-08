@@ -188,11 +188,9 @@ theorem JointlyDissociated.measure_eq_zero_or_one_of_tailProcess_arrayDiag
 
 /-! ## From tail triviality back to dissociation -/
 
-/-- **The core factorization.** For a cylinder `A` of the block over `S = range e × range e` and a
-cylinder `B` of the block over `T = range e' × range e'`, with `e`, `e'` of disjoint range,
-`μ (A ∩ B) = μ A * μ B`: fix the finitely many `S`-indices of `A`, push the finitely many
-`T`-indices of `B` past `n` by a permutation, and apply the Lévy factorization along the corner
-tail filtration. -/
+/-- **The core factorization.** Under corner-tail triviality and joint exchangeability, a cylinder
+`A` of the block over `range e × range e` and a cylinder `B` of the block over
+`range e' × range e'`, for `e`, `e'` of disjoint range, have `μ (A ∩ B) = μ A * μ B`. -/
 private theorem measure_inter_eq_mul_of_cylinders [IsProbabilityMeasure μ]
     {X : ℕ × ℕ → Ω → α} (hX : ∀ p, Measurable (X p)) (hexch : JointlyExchangeable μ X)
     (htriv : ∀ s, MeasurableSet[arrayTail X] s → μ s = 0 ∨ μ s = 1)
@@ -245,7 +243,7 @@ private theorem measure_inter_eq_mul_of_cylinders [IsProbabilityMeasure μ]
     intro i hi hj
     exact Set.disjoint_left.mp hd (hI_e i hi) (hJ_e' i hj)
   -- for each `n`, a permutation fixing `I` and pushing `J` past `n`
-  choose ρ hρI hρJ using fun n => I.exists_perm_fixOn_le_apply J hIJ n
+  choose ρ hρI hρJ using fun n => I.exists_perm_eqOn_le_apply J hIJ n
   have hρ_fixA : ∀ n, ∀ p ∈ tA, (ρ n p.1, ρ n p.2) = p := by
     intro n p hp
     have h1 : p.1 ∈ I := Finset.mem_union_left _ (Finset.mem_image_of_mem _ hp)
@@ -273,7 +271,7 @@ private theorem measure_inter_eq_mul_of_cylinders [IsProbabilityMeasure μ]
   have hcylB := hcyl_meas tB CB hCB
   -- the Lévy factorization along the corner tail filtration
   refine measure_inter_eq_mul_of_forall_zero_or_one_iInf (arrayTailFamily_antitone X)
-    (fun n => arrayTailFamily_le_ambient n (fun p _ _ => hX p))
+    (arrayTailFamily_le_ambient 0 (fun p _ _ => hX p))
     (by rw [← arrayTail_eq_iInf_arrayTailFamily]; exact htriv)
     (Finset.measurableSet_biInter _ fun p hp => by rw [← hCAeq p hp]; exact hX p (hCA p hp))
     hB'_meas ?_ ?_

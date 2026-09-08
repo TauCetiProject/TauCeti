@@ -19,7 +19,7 @@ exchangeability API:
 * finite selections inside a larger finite prefix, or in `ℕ`, extend to permutations by Mathlib's
   `Equiv.Perm.exists_extending_pair`, which this module publicly re-exports.
 * two disjoint finite index sets admit a permutation fixing the first pointwise and carrying the
-  second past any cutoff (`exists_perm_fixOn_le_apply`).
+  second past any cutoff (`Finset.exists_perm_eqOn_le_apply`).
 
 The strict-monotone `ℕ` extension helper is adapted from the `cameronfreer/exchangeability`
 Layer 0 sources pinned at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names
@@ -87,7 +87,7 @@ theorem exists_strictMono_nat_extending_fin {m : ℕ} {k : Fin m → ℕ} (hk : 
 
 /-- A permutation of `ℕ` that fixes a finite set `I` pointwise and carries a finite set `J`,
 disjoint from `I`, past `n`. -/
-theorem _root_.Finset.exists_perm_fixOn_le_apply (I J : Finset ℕ) (hIJ : Disjoint I J) (n : ℕ) :
+theorem _root_.Finset.exists_perm_eqOn_le_apply (I J : Finset ℕ) (hIJ : Disjoint I J) (n : ℕ) :
     ∃ ρ : Equiv.Perm ℕ, (∀ i ∈ I, ρ i = i) ∧ ∀ j ∈ J, n ≤ ρ j := by
   classical
   -- shift `J` by `N`, large enough to clear both `n` and everything in `I`

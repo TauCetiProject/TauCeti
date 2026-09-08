@@ -33,7 +33,7 @@ result (`Martingale/AntitoneLimit.lean`) all feed into `tendsto_ae_condExp_iInf`
   analytic uses want; it mirrors Mathlib's upward `MeasureTheory.tendsto_eLpNorm_condExp`.
 - `measure_inter_eq_mul_of_forall_zero_or_one_iInf`: factorization along a decreasing filtration
   with `μ`-trivial intersection — if `B' n` is `𝔽 n`-measurable with `μ (B' n)` and `μ (A ∩ B' n)`
-  independent of `n`, then `μ (A ∩ B) = μ A * μ B`, by Lévy's downward theorem applied to `1_A`.
+  independent of `n`, then `μ (A ∩ B) = μ A * μ B`.
 
 ## References
 
@@ -181,11 +181,10 @@ theorem tendsto_eLpNorm_condExp_iInf [IsFiniteMeasure μ] {𝔽 : ℕ → Measur
 
 /-- **Factorization along a decreasing filtration with trivial tail.** If `B' n` is `𝔽 n`-measurable
 along an antitone sequence of sub-σ-algebras whose intersection is `μ`-trivial, and neither
-`μ (B' n)` nor `μ (A ∩ B' n)` depends on `n`, then the joint mass factorizes: Lévy's downward
-theorem drives `μ[1_A | 𝔽 n]` to the tail conditional expectation, which triviality makes the
-constant `μ A`. -/
+`μ (B' n)` nor `μ (A ∩ B' n)` depends on `n`, then `μ (A ∩ B) = μ A * μ B`. This is the step that
+turns tail triviality into independence of events readable far apart. -/
 theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf [IsZeroOrProbabilityMeasure μ]
-    {𝔽 : ℕ → MeasurableSpace Ω} (hanti : Antitone 𝔽) (h𝔽 : ∀ n, 𝔽 n ≤ ‹MeasurableSpace Ω›)
+    {𝔽 : ℕ → MeasurableSpace Ω} (hanti : Antitone 𝔽) (h𝔽 : 𝔽 0 ≤ ‹MeasurableSpace Ω›)
     (htriv : ∀ s, MeasurableSet[⨅ n, 𝔽 n] s → μ s = 0 ∨ μ s = 1)
     {A B : Set Ω} (hA : MeasurableSet A) {B' : ℕ → Set Ω}
     (hB' : ∀ n, MeasurableSet[𝔽 n] (B' n)) (hBmass : ∀ n, μ (B' n) = μ B)
@@ -193,7 +192,8 @@ theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf [IsZeroOrProbabilityMeas
     μ (A ∩ B) = μ A * μ B := by
   rcases eq_zero_or_isProbabilityMeasure μ with rfl | _
   · simp
-  have hinf : (⨅ n, 𝔽 n) ≤ ‹MeasurableSpace Ω› := (iInf_le 𝔽 0).trans (h𝔽 0)
+  have h𝔽' : ∀ n, 𝔽 n ≤ ‹MeasurableSpace Ω› := fun n => (hanti (Nat.zero_le n)).trans h𝔽
+  have hinf : (⨅ n, 𝔽 n) ≤ ‹MeasurableSpace Ω› := (iInf_le 𝔽 0).trans h𝔽
   set f₀ : Ω → ℝ := A.indicator fun _ => 1 with hf₀def
   have hf₀ : Integrable f₀ μ := (integrable_const 1).indicator hA
   have hconst : μ[f₀|⨅ n, 𝔽 n] =ᵐ[μ] fun _ => ∫ x, f₀ x ∂μ :=
@@ -203,11 +203,11 @@ theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf [IsZeroOrProbabilityMeas
   have hbound : ∀ n, |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal| ≤
       (eLpNorm (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) 1 μ).toReal := by
     intro n
-    have hBn : MeasurableSet (B' n) := h𝔽 n _ (hB' n)
+    have hBn : MeasurableSet (B' n) := h𝔽' n _ (hB' n)
     have hg : Integrable (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) μ :=
       integrable_condExp.sub integrable_condExp
     have h1 : ∫ x in B' n, (μ[f₀|𝔽 n]) x ∂μ = (μ (A ∩ B)).toReal := by
-      rw [setIntegral_condExp (h𝔽 n) hf₀ (hB' n), hf₀def, setIntegral_indicator hA,
+      rw [setIntegral_condExp (h𝔽' n) hf₀ (hB' n), hf₀def, setIntegral_indicator hA,
         setIntegral_const, smul_eq_mul, mul_one, Set.inter_comm (B' n) A, measureReal_def,
         hjoint n]
     have h2 : ∫ x in B' n, (μ[f₀|⨅ m, 𝔽 m]) x ∂μ = (μ A).toReal * (μ B).toReal := by
@@ -230,7 +230,7 @@ theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf [IsZeroOrProbabilityMeas
   have hLevyReal : Tendsto
       (fun n => (eLpNorm (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) 1 μ).toReal) atTop (𝓝 0) := by
     simpa [Function.comp_def] using (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
-      (tendsto_eLpNorm_condExp_iInf hanti (h𝔽 0) f₀)
+      (tendsto_eLpNorm_condExp_iInf hanti h𝔽 f₀)
   have habs0 : |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal| = 0 :=
     le_antisymm (ge_of_tendsto' hLevyReal hbound) (abs_nonneg _)
   refine (ENNReal.toReal_eq_toReal_iff' (measure_ne_top μ _)
