@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Galois.Examples
 public import Mathlib.CategoryTheory.Galois.IsFundamentalgroup
-public import TauCeti.Topology.Algebra.Group.Profinite.Completion
+public import Mathlib.Topology.Algebra.Category.ProfiniteGrp.Completion
 
 /-!
 # Profinite completion and finite group actions
@@ -45,26 +45,21 @@ namespace TauCeti.ProfiniteCompletion
 
 variable (G : Type u) [Group G]
 
-/-- The permutation representation of the profinite completion extending a finite `G`-action. -/
-def actionHom (A : Action FintypeCat.{u} G) :
-    ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →* Equiv.Perm A.V := by
-  let _ : TopologicalSpace (Equiv.Perm A.V) := ⊥
-  let _ : DiscreteTopology (Equiv.Perm A.V) := ⟨rfl⟩
-  exact ((continuousMonoidHomEquiv G (Equiv.Perm A.V)).symm
-    (MulAction.toPermHom G A.V)).toMonoidHom
-
 /-- The continuous permutation representation of the profinite completion extending a finite
 `G`-action. -/
 def continuousActionHom (A : Action FintypeCat.{u} G) :
     ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) ⟶
-      ProfiniteGrp.ofFiniteGrp (FiniteGrp.of (Equiv.Perm A.V)) := by
-  apply ConcreteCategory.ofHom
-  let _ : TopologicalSpace (Equiv.Perm A.V) := ⊥
-  let _ : DiscreteTopology (Equiv.Perm A.V) := ⟨rfl⟩
-  let f := (continuousMonoidHomEquiv G (Equiv.Perm A.V)).symm
-    (MulAction.toPermHom G A.V)
+      ProfiniteGrp.ofFiniteGrp (FiniteGrp.of (Equiv.Perm A.V)) :=
+  ProfiniteGrp.ProfiniteCompletion.lift
+    (P := ProfiniteGrp.ofFiniteGrp (FiniteGrp.of (Equiv.Perm A.V)))
+    (GrpCat.ofHom (MulAction.toPermHom G A.V))
+
+/-- The permutation representation of the profinite completion extending a finite `G`-action. -/
+def actionHom (A : Action FintypeCat.{u} G) :
+    ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →* Equiv.Perm A.V := by
+  let f := (continuousActionHom G A).hom.toMonoidHom
   -- `ofFiniteGrp` hides its discrete underlying permutation group.
-  change ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →ₜ* Equiv.Perm A.V
+  change ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →* Equiv.Perm A.V at f
   exact f
 
 /-- A continuous permutation representation extending the action of `G` is the canonical
@@ -75,20 +70,11 @@ theorem continuousActionHom_unique (A : Action FintypeCat.{u} G)
     (h : ProfiniteGrp.ProfiniteCompletion.eta (GrpCat.of G) ≫
         (forget₂ ProfiniteGrp GrpCat).map f =
       GrpCat.ofHom (MulAction.toPermHom G A.V)) :
-    f = continuousActionHom G A := by
-  apply ProfiniteGrp.hom_ext
-  apply continuousMonoidHom_ext G
-  intro g
-  have hg := ConcreteCategory.congr_hom h g
-  change f.hom (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) =
-    MulAction.toPermHom G A.V g at hg
-  have hc : actionHom G A (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) =
-      MulAction.toPermHom G A.V g := by
-    let _ : TopologicalSpace (Equiv.Perm A.V) := ⊥
-    let _ : DiscreteTopology (Equiv.Perm A.V) := ⟨rfl⟩
-    exact continuousMonoidHomEquiv_symm_apply_etaFn G (Equiv.Perm A.V)
-      (MulAction.toPermHom G A.V) g
-  exact hg.trans hc.symm
+    f = continuousActionHom G A :=
+  ProfiniteGrp.ProfiniteCompletion.lift_unique _ _
+    (h.trans (ProfiniteGrp.ProfiniteCompletion.lift_eta
+      (P := ProfiniteGrp.ofFiniteGrp (FiniteGrp.of (Equiv.Perm A.V)))
+      (GrpCat.ofHom (MulAction.toPermHom G A.V))).symm)
 
 /-- The canonical action of the profinite completion of `G` on a finite `G`-set. -/
 @[instance_reducible]
@@ -122,10 +108,14 @@ instance instMulActionForgetObj (A : Action FintypeCat.{u} G) : MulAction
 theorem actionHom_etaFn (A : Action FintypeCat.{u} G) (g : G) :
     actionHom G A (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) =
       MulAction.toPermHom G A.V g := by
-  let _ : TopologicalSpace (Equiv.Perm A.V) := ⊥
-  let _ : DiscreteTopology (Equiv.Perm A.V) := ⟨rfl⟩
-  exact continuousMonoidHomEquiv_symm_apply_etaFn G (Equiv.Perm A.V)
-    (MulAction.toPermHom G A.V) g
+  have h := ConcreteCategory.congr_hom
+    (ProfiniteGrp.ProfiniteCompletion.lift_eta
+      (P := ProfiniteGrp.ofFiniteGrp (FiniteGrp.of (Equiv.Perm A.V)))
+      (GrpCat.ofHom (MulAction.toPermHom G A.V))) g
+  -- `lift_eta` presents the restriction as a composite of bundled group homomorphisms.
+  change actionHom G A (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) =
+    MulAction.toPermHom G A.V g at h
+  exact h
 
 /-- The extended action restricts along the canonical map `G → Ĝ` to the original action. -/
 @[simp]
@@ -297,16 +287,7 @@ instance instIsFundamentalGroup : CategoryTheory.PreGaloisCategory.IsFundamental
     (Action.forget FintypeCat.{u} G)
     (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G)) where
   naturality := CategoryTheory.PreGaloisCategory.IsNaturalSMul.naturality
-  transitive_of_isGalois A := by
-    intro
-    constructor
-    intro x y
-    let _ := CategoryTheory.FintypeCat.Action.pretransitive_of_isConnected G A
-    -- The forgetful functor's object is definitionally the action's underlying finite type.
-    obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G (show A.V from x) (show A.V from y)
-    refine ⟨ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g, ?_⟩
-    rw [etaFn_smul_forget]
-    exact hg
+  transitive_of_isGalois A := isPretransitive_of_isConnected G A
   continuous_smul A := continuousSMul G A
   non_trivial' g h := eq_one_of_forall_smul_eq G g h
 
