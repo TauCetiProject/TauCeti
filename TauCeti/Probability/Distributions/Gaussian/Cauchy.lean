@@ -22,7 +22,7 @@ absolute value does not change the quotient law. Finally,
 
 ## Main results
 
-* `TauCeti.Probability.gaussianReal_prod_map_div` -- mapping the product of two standard Gaussian
+* `TauCeti.Probability.map_div_prod_gaussianReal` -- mapping the product of two standard Gaussian
   measures under division gives the standard Cauchy measure;
 * `TauCeti.Probability.hasLaw_ratio_gaussian_cauchy` -- the corresponding random-variable theorem.
 
@@ -45,7 +45,7 @@ namespace Probability
 /-- Mapping the product of two standard Gaussian measures under division gives the standard
 Cauchy measure. -/
 @[simp]
-theorem gaussianReal_prod_map_div :
+theorem map_div_prod_gaussianReal :
     ((gaussianReal 0 1).prod (gaussianReal 0 1)).map (fun z : ℝ × ℝ ↦ z.1 / z.2) =
       cauchyMeasure 0 1 := by
   let γ := gaussianReal 0 1
@@ -124,7 +124,7 @@ theorem hasLaw_ratio_gaussian_cauchy (hXY : IndepFun X Y P)
       ((gaussianReal 0 1).prod (gaussianReal 0 1)) P := hXY.hasLaw_prod hX hY
   have hratio : HasLaw (fun z : ℝ × ℝ ↦ z.1 / z.2) (cauchyMeasure 0 1)
       ((gaussianReal 0 1).prod (gaussianReal 0 1)) :=
-    ⟨by fun_prop, gaussianReal_prod_map_div⟩
+    ⟨by fun_prop, map_div_prod_gaussianReal⟩
   exact hratio.fun_comp hpair
 
 end Probability
