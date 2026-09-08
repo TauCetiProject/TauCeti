@@ -40,8 +40,10 @@ class group (`oneEquivClassGroup`).
 
 ## Main results
 
-* `TauCeti.GlobalNumberFields.IsCongrOne.toPrincipalIdeal_mem_idealsPrimeTo`: the principal ideal
-  of an element congruent to one is prime to the modulus.
+* `TauCeti.GlobalNumberFields.toPrincipalIdeal_mem_idealsPrimeTo_iff`: a principal fractional ideal
+  is prime to the modulus exactly when its generator is a unit at every prime dividing the finite
+  part, with `TauCeti.GlobalNumberFields.IsCongrOne.toPrincipalIdeal_mem_idealsPrimeTo` the
+  consequence for an element congruent to one.
 * `TauCeti.GlobalNumberFields.idealClass_eq_one_iff`: an ideal has trivial ray class exactly when
   it is generated, as a fractional ideal, by an element of `Kˣ` congruent to one modulo `𝔪`.
 * `TauCeti.GlobalNumberFields.classMap_comp_classMap` and
@@ -69,14 +71,28 @@ namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
 
+/-- **A principal fractional ideal is prime to the modulus exactly when its generator is a unit at
+every prime dividing the finite part.**  The multiplicity of a principal ideal at `v` is the
+sign-flipped logarithm of the `v`-adic valuation of the generator, so it vanishes exactly when that
+valuation is one. -/
+theorem toPrincipalIdeal_mem_idealsPrimeTo_iff {𝔪 : Modulus K} {x : Kˣ} :
+    toPrincipalIdeal (𝓞 K) K x ∈ idealsPrimeTo 𝔪 ↔ x ∈ primeToSubgroup 𝔪 := by
+  rw [NumberFieldArithmetic.mem_idealsAway_iff, mem_primeToSubgroup]
+  refine ⟨fun h v hv ↦ ?_, fun h v hv ↦ ?_⟩
+  · have hcount := h v ((Modulus.mem_support_iff _ _).mpr hv)
+    rw [FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation K v x, neg_eq_zero] at hcount
+    have hne : v.valuation K (x : K) ≠ 0 := (Valuation.ne_zero_iff _).mpr x.ne_zero
+    rw [← WithZero.exp_log hne, hcount, WithZero.exp_zero]
+  · rw [FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation K v x,
+      h v ((Modulus.mem_support_iff _ _).mp hv), WithZero.log_one, neg_zero]
+
 /-- **The principal ideal of an element congruent to one is prime to the modulus.**  At a prime
 dividing the finite part such an element is a unit, so the multiplicity of its principal ideal
 vanishes there. -/
 theorem IsCongrOne.toPrincipalIdeal_mem_idealsPrimeTo {𝔪 : Modulus K} {x : Kˣ}
-    (hx : IsCongrOne 𝔪 x) : toPrincipalIdeal (𝓞 K) K x ∈ idealsPrimeTo 𝔪 := by
-  refine NumberFieldArithmetic.mem_idealsAway_iff.mpr fun v hv ↦ ?_
-  rw [FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation K v x,
-    hx.valuation_eq_one ((Modulus.mem_support_iff _ _).mp hv), WithZero.log_one, neg_zero]
+    (hx : IsCongrOne 𝔪 x) : toPrincipalIdeal (𝓞 K) K x ∈ idealsPrimeTo 𝔪 :=
+  toPrincipalIdeal_mem_idealsPrimeTo_iff.mpr
+    (congruenceSubgroup_le_primeToSubgroup 𝔪 (mem_congruenceSubgroup.mpr hx))
 
 /-- The homomorphism sending an element of `Kˣ` congruent to one modulo `𝔪` to its principal
 fractional ideal, viewed inside the ideals prime to `𝔪`. -/

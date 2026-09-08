@@ -151,6 +151,15 @@ theorem exponent_mono {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (v : HeightOne
   Associates.count_le_count_of_le (Associates.mk_ne_zero.mpr 𝔫.finitePart_ne_zero)
     (Associates.irreducible_mk.mpr v.irreducible) (Associates.mk_le_mk_of_dvd (dvd_iff.mp h).1)
 
+/-- **The prescribed power of a prime divides the finite part.**  The exponent of `v` is by
+definition its multiplicity in the finite part, so `v ^ (𝔪.exponent v)` divides it.  Read as the
+containment `𝔪.finitePart ≤ v.asIdeal ^ 𝔪.exponent v`, this is what turns a congruence modulo the
+finite part into the valuation bound recorded by `IsCongrOne`. -/
+theorem pow_exponent_dvd_finitePart (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) :
+    v.asIdeal ^ 𝔪.exponent v ∣ 𝔪.finitePart :=
+  Ideal.dvd_iff_le.mpr
+    ((le_count_associates_iff_le_pow v 𝔪.finitePart_ne_bot (𝔪.exponent v)).mp le_rfl)
+
 /-- The **trivial modulus**: unit finite part and no real places.  It imposes no condition, so its
 ray class group is the ordinary class group. -/
 def one (K : Type*) [Field K] [NumberField K] : Modulus K where
