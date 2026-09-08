@@ -8,30 +8,26 @@ module
 public import TauCeti.RingTheory.Huber.FiniteModuleTopology
 
 /-!
-# Strict morphisms between finite modules over a Tate ring
+# Strict morphisms out of a finite module over a Tate ring
 
-Let `A` be a complete Hausdorff noetherian Tate ring, and let `M` and `N` be finite `A`-modules
-with complete Hausdorff first-countable module topologies. This file proves that every linear map
-`M →ₗ[A] N` is continuous and strict: it is open onto its image. This is
+Let `A` be a complete Hausdorff Tate ring, let `M` be a finite `A`-module and let `N` be a
+noetherian `A`-module, each carrying a complete Hausdorff first-countable topology making it a
+topological `A`-module. This file proves that every linear map `M →ₗ[A] N` is strict: it is open
+onto its image, and in particular continuous, with no continuity hypothesis imposed on it. This is
 [Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition 6.18(2).
 
-The two conclusions use different halves of the preceding finite-module theory. The topology on
-`M` is forced to be Mathlib's `moduleTopology A M` by
-`TauCeti.Huber.IsTateRing.isModuleTopology`; hence every linear map out of `M` is continuous.
-Noetherianity makes the range, as a submodule of `N`, closed by
-`TauCeti.Huber.isClosed_of_isNoetherian`. The open mapping theorem applied to the range
-restriction then makes the map strict.
+Wedhorn states the target side as a finite module over a noetherian ring; that case is the
+instance `isNoetherian_of_isNoetherianRing_of_finite` of the noetherian target asked for here.
 
-Henkel's open mapping theorem needs the source additive group to be nonarchimedean. That is not an
-extra hypothesis here: once the source topology is identified with `moduleTopology A M`, it
-follows from `TauCeti.nonarchimedeanAddGroup_moduleTopology`. Thus the statement has exactly the
-complete, Hausdorff, first-countable topological hypotheses of the roadmap's derived form.
+The strictness of a morphism is what makes a presentation of a module by finite free modules a
+topological presentation, so this is the result that lets finite modules over a Tate ring be
+glued and localised topologically. The open mapping theorem it rests on is Henkel's, credited in
+`TauCeti.RingTheory.Huber.OpenMapping`.
 
 ## Main result
 
-* `LinearMap.isStrictMap_of_module_finite`: every linear map between finite complete
-  metrisable modules over a complete Hausdorff noetherian Tate ring is strict, and hence
-  continuous.
+* `LinearMap.isStrictMap_of_module_finite`: a linear map from a finite module to a noetherian
+  module, over a complete Hausdorff Tate ring, is strict.
 
 ## References
 
@@ -47,24 +43,19 @@ namespace LinearMap
 
 variable {A M N : Type*}
   [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [CompleteSpace A] [T0Space A]
-  [(𝓤 A).IsCountablyGenerated] [NonarchimedeanRing A] [TauCeti.Huber.IsTateRing A]
-  [IsNoetherianRing A]
+  [(𝓤 A).IsCountablyGenerated] [IsTopologicalRing A] [TauCeti.Huber.IsTateRing A]
   [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M] [CompleteSpace M]
   [(𝓤 M).IsCountablyGenerated] [T0Space M]
   [Module A M] [ContinuousSMul A M] [Module.Finite A M]
   [AddCommGroup N] [UniformSpace N] [IsUniformAddGroup N] [CompleteSpace N]
   [(𝓤 N).IsCountablyGenerated] [T0Space N]
-  [Module A N] [ContinuousSMul A N] [Module.Finite A N]
+  [Module A N] [ContinuousSMul A N] [IsNoetherian A N]
 
-/-- **Linear maps between finite modules over a complete noetherian Tate ring are strict**
-([Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition 6.18(2)).
+/-- **A linear map from a finite module to a noetherian module over a complete Tate ring is
+strict** ([Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition 6.18(2)): it is open onto its image.
 
-The supplied complete Hausdorff first-countable topology on the finite source is necessarily the
-module topology, so `f` is continuous without a continuity hypothesis. Its range is a submodule
-of the noetherian target and is therefore closed. The open mapping theorem, applied to the range
-restriction, then says exactly that `f` is strict, i.e. open onto its image.
-
-Continuity follows from the conclusion by `Topology.IsStrictMap.continuous`. -/
+No continuity hypothesis is imposed on `f`; continuity is part of the conclusion, obtained from
+it by `Topology.IsStrictMap.continuous`. -/
 theorem isStrictMap_of_module_finite (f : M →ₗ[A] N) : Topology.IsStrictMap f := by
   let _ : IsModuleTopology A M := TauCeti.Huber.IsTateRing.isModuleTopology
   let _ : NonarchimedeanAddGroup M := by
