@@ -315,7 +315,6 @@ theorem subgroupGalEquiv_apply_coe (γ : (L.subgroupLayer H).Gal) :
     (MonoidHom.ofInjective_apply (L.subgroupRestriction H).galHom_injective)
 
 /-- **The degree of the layer of `H` is the order of `H`.** -/
-@[simp]
 theorem degree_subgroupLayer : (L.subgroupLayer H).degree = Nat.card H := by
   rw [degree_eq_natCard_gal]
   exact Nat.card_congr (L.subgroupGalEquiv H).toEquiv
@@ -327,7 +326,6 @@ theorem galHom_subgroupRestriction :
   MonoidHom.ext fun γ ↦ (L.subgroupGalEquiv_apply_coe H γ).symm
 
 /-- **The relative degree of the restriction to `H` is the index of `H`.** -/
-@[simp]
 theorem relativeDegree_subgroupRestriction :
     (L.subgroupRestriction H).relativeDegree = H.index := by
   rw [LayerRestriction.relativeDegree_def, ground_subgroupLayer, Subgroup.relIndex,
