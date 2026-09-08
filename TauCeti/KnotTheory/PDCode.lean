@@ -131,7 +131,9 @@ structure FramedOrientedPDCode (n : ℕ) extends OrientedPDCode n where
 
 attribute [simp] OrientedPDCode.orientation_edgePair
   OrientedPDCode.orientation_oppositeCrossingSlot
+  OrientedPDCode.crossinglessComponents_card
   FramedOrientedPDCode.framing_edgePair FramedOrientedPDCode.framing_oppositeCrossingSlot
+  FramedOrientedPDCode.crossinglessFramings_map_fst
 
 namespace PDCode
 
@@ -409,7 +411,7 @@ def reverse (D : OrientedPDCode n) : OrientedPDCode n where
   orientation_edgePair := by simp
   orientation_oppositeCrossingSlot := by simp
   crossinglessComponents := D.crossinglessComponents.map (!·)
-  crossinglessComponents_card := by simpa using D.crossinglessComponents_card
+  crossinglessComponents_card := by simp
 
 /-- Forgetting orientation after reversal leaves the underlying code unchanged. -/
 @[simp] theorem reverse_toPDCode (D : OrientedPDCode n) :
@@ -439,7 +441,7 @@ def mirror (D : OrientedPDCode n) : OrientedPDCode n where
   orientation_edgePair := by simp
   orientation_oppositeCrossingSlot := by simp
   crossinglessComponents := D.crossinglessComponents
-  crossinglessComponents_card := by simpa using D.crossinglessComponents_card
+  crossinglessComponents_card := by simp
 
 /-- Forgetting orientation after reflection gives reflection of the underlying code. -/
 @[simp] theorem mirror_toPDCode (D : OrientedPDCode n) :
@@ -499,7 +501,7 @@ def relabel (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
     intro i slot
     simp [PDCode.relabel, Function.comp_apply]
   crossinglessComponents := D.crossinglessComponents
-  crossinglessComponents_card := by simpa using D.crossinglessComponents_card
+  crossinglessComponents_card := by simp
 
 /-- Forgetting orientation after relabelling gives relabelling of the underlying code. -/
 @[simp] theorem relabel_toPDCode (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
@@ -596,7 +598,7 @@ def mirror (D : FramedOrientedPDCode n) : FramedOrientedPDCode n where
   framing_edgePair := by simp
   framing_oppositeCrossingSlot := by simp
   crossinglessFramings := D.crossinglessFramings
-  crossinglessFramings_map_fst := by simpa using D.crossinglessFramings_map_fst
+  crossinglessFramings_map_fst := by simp
 
 /-- Forgetting framing after reflection gives reflection of the underlying oriented code. -/
 @[simp] theorem mirror_toOrientedPDCode (D : FramedOrientedPDCode n) :
@@ -623,7 +625,7 @@ def relabel (D : FramedOrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
     intro i slot
     simp [OrientedPDCode.relabel, PDCode.relabel, Function.comp_apply]
   crossinglessFramings := D.crossinglessFramings
-  crossinglessFramings_map_fst := by simpa using D.crossinglessFramings_map_fst
+  crossinglessFramings_map_fst := by simp
 
 /-- Forgetting framing after relabelling gives relabelling of the underlying oriented code. -/
 @[simp] theorem relabel_toOrientedPDCode (D : FramedOrientedPDCode n)
