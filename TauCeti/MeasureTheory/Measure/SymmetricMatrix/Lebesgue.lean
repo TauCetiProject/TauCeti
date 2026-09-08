@@ -150,25 +150,10 @@ private theorem addHaar_symScaled (p : ℕ) :
 private theorem card_offDiag (p : ℕ) :
     (Finset.univ.filter fun ij : upperTriangle p => ij.1.1 ≠ ij.1.2).card =
       ∑ i ∈ Finset.range p, i := by
-  have hdiag : (Finset.univ.filter fun ij : upperTriangle p => ij.1.1 = ij.1.2) =
-      Finset.univ.image fun i : Fin p => (⟨(i, i), le_rfl⟩ : upperTriangle p) := by
-    ext ij
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_image]
-    constructor
-    · exact fun h => ⟨ij.1.1, Subtype.ext (Prod.ext_iff.2 ⟨rfl, h⟩)⟩
-    · rintro ⟨i, -, rfl⟩
-      rfl
-  have hcard : (Finset.univ.filter fun ij : upperTriangle p => ij.1.1 = ij.1.2).card = p := by
-    rw [hdiag, Finset.card_image_of_injective _ fun a b hab => by
-      simpa [Subtype.ext_iff, Prod.ext_iff] using hab, Finset.card_univ, Fintype.card_fin]
-  have htotal := Finset.card_filter_add_card_filter_not
-    (s := (Finset.univ : Finset (upperTriangle p))) fun ij => ij.1.1 = ij.1.2
-  simp only [← ne_eq] at htotal
-  rw [hcard, Finset.card_univ, card_upperTriangle] at htotal
-  have hsum : p * (p + 1) / 2 = ∑ i ∈ Finset.range (p + 1), i := by
-    rw [Finset.sum_range_id, Nat.add_sub_cancel, Nat.mul_comm]
-  rw [hsum, Finset.sum_range_succ] at htotal
-  omega
+  have e : {a : Sym2 (Fin p) // ¬a.IsDiag} ≃ {ij : upperTriangle p // ij.1.1 ≠ ij.1.2} :=
+    (Sym2.sortEquiv (α := Fin p)).subtypeEquiv <| Sym2.ind fun a b => by simp
+  rw [← Fintype.card_subtype, ← Fintype.card_congr e, Sym2.card_subtype_not_diag,
+    Fintype.card_fin, Nat.choose_two_right, Finset.sum_range_id]
 
 /-- The triangular number of `p` doubles to `p * (p - 1)`; stated over `ℝ` so that the real
 subtraction on the right is unproblematic at `p = 0`. -/
