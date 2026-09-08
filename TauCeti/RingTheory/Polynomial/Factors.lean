@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 
+import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.PrincipalIdealDomain
@@ -40,6 +41,12 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
 * `Polynomial.Factors.isCoprime`: distinct factors are coprime.
 * `Polynomial.Factors.span_eq_iInf_span`: for `f` nonzero and squarefree,
   `(f) = ⨅ p, (p)`.
+* `Polynomial.sum_natDegree_normalizedFactors`: the degrees of the normalized irreducible
+  factors, counted with multiplicity, sum to the degree.
+* `Polynomial.map_natDegree_normalizedFactors_eq_singleton_iff`: those degrees form a singleton
+  exactly when the polynomial is irreducible.
+* `Polynomial.Separable.nodup_normalizedFactors`: a separable polynomial has no repeated
+  normalized irreducible factor.
 
 ## Roadmap
 
@@ -200,6 +207,49 @@ lemma exists_dvd_map {L : Type*} [Field L] (σ : K →+* L) (hf : f ≠ 0) {q : 
   exact ⟨⟨p₀, (Polynomial.mem_normalizedFactors_iff hf).mp hp₀⟩, hgdvd⟩
 
 end Factors
+
+/-! ### Degrees of the normalized irreducible factors
+
+`Polynomial.Factors` keeps `DecidableEq K` out of its statements by working with a subtype, at
+the cost of forgetting multiplicities. The lemmas below are the counterparts for
+`normalizedFactors`, which does record them.
+-/
+
+variable [DecidableEq K]
+
+/-- The degrees of the normalized irreducible factors of a polynomial over a field, counted with
+multiplicity, sum to its degree. -/
+lemma sum_natDegree_normalizedFactors (g : K[X]) :
+    ((normalizedFactors g).map natDegree).sum = g.natDegree := by
+  by_cases hg : g = 0
+  · simp [hg]
+  · rw [← natDegree_multiset_prod _ (zero_notMem_normalizedFactors g)]
+    exact natDegree_eq_of_degree_eq (degree_eq_degree_of_associated (prod_normalizedFactors hg))
+
+/-- A polynomial over a field with exactly one normalized irreducible factor, counted with
+multiplicity, is irreducible. -/
+lemma irreducible_of_card_normalizedFactors_eq_one {g : K[X]}
+    (h : (normalizedFactors g).card = 1) : Irreducible g := by
+  obtain ⟨q, hq⟩ := Multiset.card_eq_one.mp h
+  have hg : g ≠ 0 := by rintro rfl; simp at h
+  have hprod := prod_normalizedFactors hg
+  rw [hq, Multiset.prod_singleton] at hprod
+  exact hprod.irreducible
+    (irreducible_of_normalized_factor q (hq ▸ Multiset.mem_singleton_self q))
+
+/-- The degrees of the normalized irreducible factors of a polynomial over a field form the
+singleton `{g.natDegree}` exactly when the polynomial is irreducible. -/
+lemma map_natDegree_normalizedFactors_eq_singleton_iff {g : K[X]} :
+    (normalizedFactors g).map natDegree = {g.natDegree} ↔ Irreducible g := by
+  refine ⟨fun h ↦ irreducible_of_card_normalizedFactors_eq_one ?_, fun h ↦ ?_⟩
+  · simpa using congrArg Multiset.card h
+  · rw [normalizedFactors_irreducible h, Multiset.map_singleton, natDegree_normalize]
+
+/-- The normalized irreducible factors of a separable polynomial over a field are pairwise
+distinct: separability is exactly what rules out a repeated factor. -/
+lemma Separable.nodup_normalizedFactors {g : K[X]} (hg : g.Separable) :
+    (normalizedFactors g).Nodup :=
+  (squarefree_iff_nodup_normalizedFactors hg.ne_zero).mp hg.squarefree
 
 end Polynomial
 

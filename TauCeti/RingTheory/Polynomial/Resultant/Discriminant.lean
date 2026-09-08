@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CubicDiscriminant
+public import Mathlib.Algebra.Field.ZMod
 import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 import Mathlib.Data.Nat.Choose.Vandermonde
@@ -14,6 +15,7 @@ public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.RingTheory.Discriminant
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
+import TauCeti.RingTheory.Polynomial.Factors
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.Roots
 
@@ -55,6 +57,12 @@ separable.
   `Polynomial.Monic.discr_ne_zero_iff_separable_map`: a monic polynomial is separable exactly
   when its discriminant is a unit; over a field that reads `discr f ≠ 0`, and over a domain the
   correct statement passes to the fraction field.
+* `Polynomial.Monic.separable_map_iff_discr_ne_zero`,
+  `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`,
+  `Polynomial.Monic.nodup_normalizedFactors_map_zmod_of_not_dvd_discr`: the same criterion read
+  along a ring homomorphism into a field, and its specialization to reduction of an integral
+  polynomial modulo a prime, where it says that a prime not dividing the discriminant gives a
+  separable, hence repetition-free, factorization.
 * `Cubic.toPoly_discr`: the two discriminants of a cubic with nonzero leading coefficient agree,
   so that `Cubic.discr` and `Polynomial.discr` may be used interchangeably in degree three.
 * `Algebra.discr_powerBasis_eq_minpoly_discr`: the algebra discriminant of a power basis agrees
@@ -493,6 +501,13 @@ theorem _root_.Polynomial.Monic.discrSqrt_ne_zero {F E : Type*} [CommRing F] [Co
   apply ((hf.isUnit_discr_iff.mpr hsep).map (algebraMap F E)).ne_zero
   rw [← hf.discrSqrt_sq hsep e, h, zero_pow two_ne_zero]
 
+/-- A monic polynomial becomes separable along a ring homomorphism into a field exactly when its
+discriminant does not become zero. No injectivity is needed: the discriminant commutes with base
+change because monicity preserves the degree. -/
+theorem _root_.Polynomial.Monic.separable_map_iff_discr_ne_zero {K : Type*} [Field K] {f : R[X]}
+    (hf : f.Monic) (φ : R →+* K) : (f.map φ).Separable ↔ φ f.discr ≠ 0 := by
+  rw [← (hf.map φ).discr_ne_zero_iff, hf.discr_map]
+
 /-- Over a domain, the discriminant of a monic polynomial is nonzero exactly when the polynomial
 becomes separable over the fraction field: over a domain the separability criterion is the one
 formulated after passage to a fraction field. -/
@@ -500,8 +515,24 @@ formulated after passage to a fraction field. -/
 theorem _root_.Polynomial.Monic.discr_ne_zero_iff_separable_map (K : Type*) [Field K]
     [Algebra R K] [IsFractionRing R K] {f : R[X]} (hf : f.Monic) :
     f.discr ≠ 0 ↔ (f.map (algebraMap R K)).Separable := by
-  rw [← (hf.map (algebraMap R K)).discr_ne_zero_iff, hf.discr_map,
-    map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective R K)]
+  rw [hf.separable_map_iff_discr_ne_zero, map_ne_zero_iff _
+    (FaithfulSMul.algebraMap_injective R K)]
+
+/-- A monic integral polynomial has separable reduction modulo a prime exactly when that prime
+does not divide its discriminant. -/
+theorem _root_.Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr {f : ℤ[X]} (hf : f.Monic)
+    (p : ℕ) [Fact p.Prime] :
+    (f.map (Int.castRingHom (ZMod p))).Separable ↔ ¬ (p : ℤ) ∣ f.discr := by
+  rw [hf.separable_map_iff_discr_ne_zero, Int.coe_castRingHom, ne_eq,
+    ZMod.intCast_zmod_eq_zero_iff_dvd]
+
+/-- At a prime not dividing the discriminant of a monic integral polynomial, the normalized
+irreducible factors of its reduction modulo that prime have no repetitions: the factorization is
+squarefree. -/
+theorem _root_.Polynomial.Monic.nodup_normalizedFactors_map_zmod_of_not_dvd_discr {f : ℤ[X]}
+    (hf : f.Monic) (p : ℕ) [Fact p.Prime] (hp : ¬ (p : ℤ) ∣ f.discr) :
+    (UniqueFactorizationMonoid.normalizedFactors (f.map (Int.castRingHom (ZMod p)))).Nodup :=
+  ((hf.separable_map_zmod_iff_not_dvd_discr p).mpr hp).nodup_normalizedFactors
 
 /-! ### The discriminant of a power basis -/
 
