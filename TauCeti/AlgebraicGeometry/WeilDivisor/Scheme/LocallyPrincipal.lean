@@ -40,10 +40,13 @@ hypothesis under which that sheaf is built.
   the predicate: the sheaf `𝒪_X(D)` of
   `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Sheaf.lean` is isomorphic, near every point, to
   the sheaf of a divisor whose sections there are those of `𝒪_X(0)`;
-* `SchemeWeilDivisor.isLocallyPrincipal_of_forall_coheight_le_one` establishes the predicate on a
-  curve: when every point of `X` has codimension at most one and the codimension-one local rings
-  are discrete valuation rings, *every* Weil divisor is locally principal, equivalently
-  `SchemeWeilDivisor.locallyPrincipalSubgroup_eq_top`;
+* `SchemeWeilDivisor.isLocallyPrincipal_of_forall_isClosed_singleton` establishes the predicate
+  whenever the codimension-one points of `X` are closed and their local rings are discrete
+  valuation rings: then *every* Weil divisor is locally principal, equivalently
+  `SchemeWeilDivisor.locallyPrincipalSubgroup_eq_top_of_forall_isClosed_singleton`;
+* `SchemeWeilDivisor.isLocallyPrincipal_of_forall_coheight_le_one` and
+  `SchemeWeilDivisor.locallyPrincipalSubgroup_eq_top` specialize this to a curve, where every
+  point has codimension at most one and codimension-one points are therefore closed;
 * `SchemeWeilDivisor.exists_isUnit_germToFunctionField_eq_of_forall_coeff_eq` says that two local
   equations for the same divisor on such an open subset differ by a unit of `Γ(X, U)`.
 
@@ -233,14 +236,15 @@ lemma IsLocallyPrincipal.of_linearlyEquivalent {D E : SchemeWeilDivisor X}
 
 end Noetherian
 
-section DimensionOne
+section ClosedPoints
 
-variable [IsNoetherian X] (hdim : ∀ y : X, Order.coheight y ≤ 1)
+variable [IsNoetherian X]
+  (hclosed : ∀ y : CodimensionOnePoint X, IsClosed ({(y : X)} : Set X))
 
-include hdim
+include hclosed
 
-/-- **The divisor of a single codimension-one point on a curve is locally principal.** On a
-scheme all of whose points have codimension at most one, the prime divisor of a codimension-one
+/-- **The divisor of a single codimension-one point with closed points is locally principal.**
+On a scheme whose codimension-one points are closed, the prime divisor of a codimension-one
 point whose local ring is a discrete valuation ring has a local equation near every point. -/
 theorem isLocallyPrincipal_ofPoint (x : CodimensionOnePoint X)
     [IsDiscreteValuationRing (X.presheaf.stalk (x : X))] :
@@ -254,7 +258,7 @@ theorem isLocallyPrincipal_ofPoint (x : CodimensionOnePoint X)
     rw [← Set.biUnion_of_singleton T]
     refine hTfin.isClosed_biUnion fun t ht ↦ ?_
     obtain ⟨y, -, rfl⟩ := ht
-    exact isClosed_singleton_of_coheight_eq_one hdim y.property
+    exact hclosed y
   have hxT : (x : X) ∉ T := by
     rintro ⟨y, hy, hyx⟩
     exact hy.2 (Subtype.ext hyx)
@@ -273,19 +277,17 @@ theorem isLocallyPrincipal_ofPoint (x : CodimensionOnePoint X)
       rw [WeilDivisor.coeff_ofPoint_of_ne hyx, hy0]
   -- Away from `x` the divisor is zero on the open complement of the closed point `x`, where the
   -- constant function `1` — the zero of `Additive X.functionFieldˣ` — is a local equation.
-  · refine ⟨⟨({(x : X)} : Set X)ᶜ,
-      (isClosed_singleton_of_coheight_eq_one hdim x.property).isOpen_compl⟩, hz, 0, fun y hy ↦ ?_⟩
+  · refine ⟨⟨({(x : X)} : Set X)ᶜ, (hclosed x).isOpen_compl⟩, hz, 0, fun y hy ↦ ?_⟩
     have hyx : y ≠ x := fun h ↦ hy (by rw [h]; exact rfl)
     rw [WeilDivisor.coeff_ofPoint_of_ne hyx, map_zero]
 
-/-- **Every Weil divisor on a curve is locally principal.** Let `X` be a Noetherian integral
-scheme all of whose points have codimension at most one and whose codimension-one local rings are
-discrete valuation rings. Then every Weil divisor on `X` is locally principal, so
-`locallyPrincipalSubgroup X` is the whole divisor group.
+/-- **Every Weil divisor with closed codimension-one points is locally principal.** Let `X` be a
+Noetherian integral scheme whose codimension-one points are closed and whose codimension-one
+local rings are discrete valuation rings. Then every Weil divisor on `X` is locally principal.
 
 This is the local half of the comparison of Weil with Cartier divisors: near every point of `X`
 the divisor is cut out by a single nonzero rational function. -/
-theorem isLocallyPrincipal_of_forall_coheight_le_one
+theorem isLocallyPrincipal_of_forall_isClosed_singleton
     [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
     (D : SchemeWeilDivisor X) : IsLocallyPrincipal D := by
   refine mem_locallyPrincipalSubgroup.mp ?_
@@ -295,7 +297,37 @@ theorem isLocallyPrincipal_of_forall_coheight_le_one
   | single a b =>
       rw [WeilDivisor.single_eq_zsmul_ofPoint]
       exact (locallyPrincipalSubgroup X).zsmul_mem
-        (mem_locallyPrincipalSubgroup.mpr (isLocallyPrincipal_ofPoint hdim a)) b
+        (mem_locallyPrincipalSubgroup.mpr (isLocallyPrincipal_ofPoint hclosed a)) b
+
+/-- When the codimension-one points of `X` are closed, the locally principal divisors are all of
+them. -/
+theorem locallyPrincipalSubgroup_eq_top_of_forall_isClosed_singleton
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] :
+    locallyPrincipalSubgroup X = ⊤ :=
+  eq_top_iff.mpr fun D _ ↦ isLocallyPrincipal_of_forall_isClosed_singleton hclosed D
+
+end ClosedPoints
+
+section DimensionOne
+
+variable [IsNoetherian X] (hdim : ∀ y : X, Order.coheight y ≤ 1)
+
+include hdim
+
+/-- **Every Weil divisor on a curve is locally principal.** Let `X` be a Noetherian integral
+scheme all of whose points have codimension at most one and whose codimension-one local rings are
+discrete valuation rings. Then every Weil divisor on `X` is locally principal, so
+`locallyPrincipalSubgroup X` is the whole divisor group.
+
+On such a scheme a codimension-one point is closed, since a proper specialization of it would
+have codimension at least two; this is the special case of
+`SchemeWeilDivisor.isLocallyPrincipal_of_forall_isClosed_singleton` that the comparison of Weil
+with Cartier divisors on a curve uses. -/
+theorem isLocallyPrincipal_of_forall_coheight_le_one
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+    (D : SchemeWeilDivisor X) : IsLocallyPrincipal D :=
+  isLocallyPrincipal_of_forall_isClosed_singleton
+    (fun y ↦ isClosed_singleton_of_coheight_eq_one hdim y.property) D
 
 /-- On a curve the locally principal divisors are all of them. -/
 theorem locallyPrincipalSubgroup_eq_top
