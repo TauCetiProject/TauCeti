@@ -79,7 +79,7 @@ variable {V : Type u} (G : SimpleGraph V)
 
 section Scale
 
-variable {M : Type*} [Monoid M]
+variable {M : Type*} [Mul M]
 
 /-- The **backtrack scale** of a labelling `u` of the arrows of a doubled quiver along an edge: the
 product of the labels of the two orientations of that edge. Rescaling by `u` multiplies the
@@ -93,6 +93,10 @@ theorem backtrackScale_apply
     (u : ∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → M) {i j : V} (h : G.Adj i j) :
     backtrackScale G u h = u (arrow G h) * u (arrow G h.symm) := (rfl)
 
+end Scale
+
+section ScaleUnits
+
 /-- The backtrack scale of a unit-valued labelling is the backtrack scale of its underlying scalar
 labelling. -/
 theorem val_backtrackScale {k : Type w} [Monoid k]
@@ -100,7 +104,7 @@ theorem val_backtrackScale {k : Type w} [Monoid k]
     ((backtrackScale G u h : kˣ) : k) = backtrackScale G (fun _ _ e => ((u e : kˣ) : k)) h :=
   Units.val_mul _ _
 
-end Scale
+end ScaleUnits
 
 section ScaleComm
 

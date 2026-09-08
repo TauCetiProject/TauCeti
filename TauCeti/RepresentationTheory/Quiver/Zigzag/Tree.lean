@@ -61,15 +61,6 @@ private noncomputable def transition (c : SkewZigzagParameter k G) (hG : G.Conne
     [Nontrivial V] {v w : V} (h : G.Adj v w) : kˣ :=
   localCoordinate c hG h / localCoordinate c hG h.symm
 
-private theorem ratio_mul_ratio (c : SkewZigzagParameter k G) {i j j' j'' : V}
-    (h : G.Adj i j) (h' : G.Adj i j') (h'' : G.Adj i j'') :
-    c.ratio h h' * c.ratio h' h'' = c.ratio h h'' := by
-  calc
-    c.ratio h h' * c.ratio h' h'' = (c.ratio h'' h)⁻¹ :=
-      eq_inv_of_mul_eq_one_left (c.ratio_cocycle h h' h'')
-    _ = c.ratio h h'' := by
-      rw [eq_inv_of_mul_eq_one_left (c.ratio_inv h'' h), inv_inv]
-
 private theorem ratio_eq_localCoordinate_div (c : SkewZigzagParameter k G)
     (hG : G.Connected) [Nontrivial V] {i j j' : V} (h : G.Adj i j)
     (h' : G.Adj i j') :
