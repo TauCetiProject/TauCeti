@@ -29,7 +29,7 @@ complete, Hausdorff, first-countable topological hypotheses of the roadmap's der
 
 ## Main result
 
-* `TauCeti.LinearMap.isStrictMap_of_module_finite`: every linear map between finite complete
+* `LinearMap.isStrictMap_of_module_finite`: every linear map between finite complete
   metrisable modules over a complete Hausdorff noetherian Tate ring is strict, and hence
   continuous.
 
@@ -43,11 +43,12 @@ public section
 open Filter Topology
 open scoped Uniformity
 
-namespace TauCeti.LinearMap
+namespace LinearMap
 
 variable {A M N : Type*}
   [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [CompleteSpace A] [T0Space A]
-  [(𝓤 A).IsCountablyGenerated] [NonarchimedeanRing A] [Huber.IsTateRing A] [IsNoetherianRing A]
+  [(𝓤 A).IsCountablyGenerated] [NonarchimedeanRing A] [TauCeti.Huber.IsTateRing A]
+  [IsNoetherianRing A]
   [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M] [CompleteSpace M]
   [(𝓤 M).IsCountablyGenerated] [T0Space M]
   [Module A M] [ContinuousSMul A M] [Module.Finite A M]
@@ -65,14 +66,14 @@ restriction, then says exactly that `f` is strict, i.e. open onto its image.
 
 Continuity follows from the conclusion by `Topology.IsStrictMap.continuous`. -/
 theorem isStrictMap_of_module_finite (f : M →ₗ[A] N) : Topology.IsStrictMap f := by
-  let _ : IsModuleTopology A M := Huber.IsTateRing.isModuleTopology
+  let _ : IsModuleTopology A M := TauCeti.Huber.IsTateRing.isModuleTopology
   let _ : NonarchimedeanAddGroup M := by
-    rw [eq_moduleTopology A M]
+    rw [_root_.eq_moduleTopology A M]
     exact TauCeti.nonarchimedeanAddGroup_moduleTopology
   have hcont : Continuous f := IsModuleTopology.continuous_of_linearMap f
-  exact Huber.IsTateRing.isStrictMap_of_isClosed_range f hcont.continuousAt
-    (Huber.isClosed_of_isNoetherian (LinearMap.range f))
+  exact TauCeti.Huber.IsTateRing.isStrictMap_of_isClosed_range f hcont.continuousAt
+    (TauCeti.Huber.isClosed_of_isNoetherian (LinearMap.range f))
 
-end TauCeti.LinearMap
+end LinearMap
 
 end
