@@ -65,8 +65,8 @@ Everything is stated over an arbitrary commutative ring `R` and an arbitrary uni
 * `TauCeti.MarkovEquiv.associated_burauAlexander`: Markov-equivalent braids have associated
   invariants.
 * `TauCeti.MarkovBraid.burauAlexander_sigma_pow_three`: the trefoil value `-t (t ^ 2 - t + 1)`.
-* `TauCeti.KnotTheory.associated_alexander_trefoilSeifertMatrix`: on the trefoil this agrees, up
-  to a unit of `ℤ[T;T⁻¹]`, with the Alexander polynomial of a Seifert matrix.
+* `TauCeti.KnotTheory.associated_burauAlexander_alexander_trefoilSeifertMatrix`: on the trefoil
+  this agrees, up to a unit of `ℤ[T;T⁻¹]`, with the Alexander polynomial of a Seifert matrix.
 * `TauCeti.not_markovEquiv_sigma_pow_three_one`: the trefoil braid is not Markov equivalent to
   the trivial one-strand braid.
 
@@ -105,24 +105,6 @@ private theorem burauRow_castSucc (i : Fin n) (u : Fin (n + 1)) :
   rw [burauRow_apply, burauRow_apply]
   simp only [Fin.ext_iff, BraidGroup.val_strand, BraidGroup.val_strandSucc, Fin.val_castSucc]
 
-/-- Deleting the last row and column of a product is the product of the deletions, provided the
-left factor has the last standard basis vector as its last column. -/
-private theorem submatrix_mul_of_mulVec_single
-    (X Y : Matrix (Fin (n + 2)) (Fin (n + 2)) R)
-    (hX : X *ᵥ Pi.single (Fin.last (n + 1)) 1 = Pi.single (Fin.last (n + 1)) 1) :
-    (X * Y).submatrix Fin.castSucc Fin.castSucc =
-      X.submatrix Fin.castSucc Fin.castSucc * Y.submatrix Fin.castSucc Fin.castSucc := by
-  have hcol : X.col (Fin.last (n + 1)) = Pi.single (Fin.last (n + 1)) 1 := by
-    rw [← Matrix.mulVec_single_one]
-    exact hX
-  have hentry : ∀ i : Fin (n + 2),
-      X i (Fin.last (n + 1)) = (Pi.single (Fin.last (n + 1)) 1 : Fin (n + 2) → R) i :=
-    fun i => congrFun hcol i
-  ext u v
-  rw [Matrix.submatrix_apply, Matrix.mul_apply, Matrix.mul_apply, Fin.sum_univ_castSucc, hentry,
-    Pi.single_eq_of_ne (Fin.castSucc_lt_last u).ne, zero_mul, add_zero]
-  rfl
-
 private theorem burau_strandIncl_aux (t : Rˣ) (b : BraidGroup (n + 1)) :
     ((burau (n + 2) t (BraidGroup.strandIncl b) : Matrix (Fin (n + 2)) (Fin (n + 2)) R) *ᵥ
         Pi.single (Fin.last (n + 1)) 1 = Pi.single (Fin.last (n + 1)) 1) ∧
@@ -159,7 +141,8 @@ private theorem burau_strandIncl_aux (t : Rˣ) (b : BraidGroup (n + 1)) :
     rw [map_mul, map_mul, map_mul, Units.val_mul, Units.val_mul]
     refine ⟨?_, ?_⟩
     · rw [← Matrix.mulVec_mulVec, hb'.1, hb.1]
-    · rw [submatrix_mul_of_mulVec_single _ _ hb.1, hb.2, hb'.2, ← Units.val_mul, ← map_mul]
+    · rw [Matrix.submatrix_mul_of_mulVec_single _ _ hb.1, hb.2, hb'.2, ← Units.val_mul,
+        ← map_mul]
   | inv b hb =>
     have hunit : ((burau (n + 2) t (BraidGroup.strandIncl b))⁻¹ : GL (Fin (n + 2)) R) *
         (burau (n + 2) t (BraidGroup.strandIncl b)) = 1 := inv_mul_cancel _
@@ -175,20 +158,21 @@ private theorem burau_strandIncl_aux (t : Rˣ) (b : BraidGroup (n + 1)) :
     refine ⟨hcol, ?_⟩
     have hprod := congrArg (fun X : Matrix (Fin (n + 2)) (Fin (n + 2)) R =>
       X.submatrix Fin.castSucc Fin.castSucc) hmat
-    simp only [submatrix_mul_of_mulVec_single _ _ hcol, hb.2] at hprod
+    simp only [Matrix.submatrix_mul_of_mulVec_single _ _ hcol, hb.2] at hprod
     have hone : ((1 : Matrix (Fin (n + 2)) (Fin (n + 2)) R)).submatrix
         Fin.castSucc Fin.castSucc = 1 := by
       ext u v
       rw [Matrix.submatrix_apply, Matrix.one_apply, Matrix.one_apply]
       simp [Fin.castSucc_inj]
     rw [hone] at hprod
+    have hbinv : (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) *
+        (burau (n + 1) t b⁻¹ : Matrix (Fin (n + 1)) (Fin (n + 1)) R) = 1 := by
+      rw [map_inv, ← Units.val_mul, mul_inv_cancel, Units.val_one]
     calc (burau (n + 2) t (BraidGroup.strandIncl b⁻¹) :
           Matrix (Fin (n + 2)) (Fin (n + 2)) R).submatrix Fin.castSucc Fin.castSucc
         = _ * ((burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) *
             (burau (n + 1) t b⁻¹ : Matrix (Fin (n + 1)) (Fin (n + 1)) R)) := by
-          rw [show (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) *
-            (burau (n + 1) t b⁻¹ : Matrix (Fin (n + 1)) (Fin (n + 1)) R) = 1 by
-              rw [map_inv, ← Units.val_mul, mul_inv_cancel, Units.val_one], Matrix.mul_one]
+          rw [hbinv, Matrix.mul_one]
       _ = (burau (n + 1) t b⁻¹ : Matrix (Fin (n + 1)) (Fin (n + 1)) R) := by
           rw [← Matrix.mul_assoc, hprod, Matrix.one_mul]
 
@@ -312,23 +296,6 @@ private theorem submatrix_burau_strandIncl_mul (t : Rˣ) (b : BraidGroup (n + 1)
   · rw [Matrix.updateCol_ne hv, Matrix.sub_apply, Matrix.one_apply]
     simp only [hv, ite_false, mul_zero, zero_mul, sub_zero]
 
-/-- The determinant of a matrix `M - 1` whose last column has been replaced by
-`c • M.col (last) - e (last)`, in terms of the corner minor of `M - 1`. -/
-private theorem det_updateCol_last_aux (M : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-    (hdet : (M - 1).det = 0) (c : R) :
-    ((M - 1).updateCol (Fin.last n)
-        (fun u => c * M u (Fin.last n) - (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) u)).det =
-      (c - 1) * ((M - 1).submatrix Fin.castSucc Fin.castSucc).det := by
-  have hfun : (fun u => c * M u (Fin.last n) - (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) u) =
-      c • (fun u => (M - 1) u (Fin.last n)) +
-        (c - 1) • (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) := by
-    funext u
-    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Matrix.sub_apply, Matrix.one_apply,
-      Pi.single_apply]
-    split_ifs <;> ring
-  rw [hfun, Matrix.det_updateCol_add, Matrix.det_updateCol_smul, Matrix.det_updateCol_smul,
-    Matrix.updateCol_eq_self, hdet, Matrix.det_updateCol_last_single, mul_zero, zero_add]
-
 /-! ### The two-strand braids -/
 
 private theorem burauMatrix_two (t : R) : burauMatrix (n := 2) t 0 = !![1 - t, t; 1, 0] := by
@@ -357,19 +324,27 @@ representation: the determinant of `burau b - 1` with its last row and last colu
 The value depends on the braid, not only on its closure, but only up to a unit of `R`;
 `TauCeti.MarkovEquiv.associated_burauAlexander` is the precise statement. Over `R = ℤ[T;T⁻¹]` at
 `t = T` the units are `± T ^ k`, which is the classical indeterminacy of the Alexander polynomial,
-and `TauCeti.KnotTheory.associated_alexander_trefoilSeifertMatrix` checks the normalisation
-against the Seifert-matrix route on the trefoil. -/
-def burauAlexander (β : MarkovBraid) (t : Rˣ) : R :=
+and `TauCeti.KnotTheory.associated_burauAlexander_alexander_trefoilSeifertMatrix` checks the
+normalisation against the Seifert-matrix route on the trefoil. -/
+@[expose] def burauAlexander (β : MarkovBraid) (t : Rˣ) : R :=
   (((burau (β.predStrands + 1) t β.braid :
       Matrix (Fin (β.predStrands + 1)) (Fin (β.predStrands + 1)) R) - 1).submatrix
     Fin.castSucc Fin.castSucc).det
+
+/-- The Burau–Alexander invariant is the corner minor of `burau β.braid - 1`. -/
+theorem burauAlexander_def (β : MarkovBraid) (t : Rˣ) :
+    burauAlexander (R := R) β t =
+      (((burau (β.predStrands + 1) t β.braid :
+          Matrix (Fin (β.predStrands + 1)) (Fin (β.predStrands + 1)) R) - 1).submatrix
+        Fin.castSucc Fin.castSucc).det :=
+  rfl
 
 /-- On one strand there is nothing to delete: the corner minor of a `1 × 1` matrix is the empty
 determinant. Informally, the closure of the trivial one-strand braid is the unknot. -/
 @[simp]
 theorem burauAlexander_one_strand (t : Rˣ) (b : BraidGroup 1) :
     burauAlexander (R := R) ⟨0, b⟩ t = 1 :=
-  Matrix.det_fin_zero
+  by rw [burauAlexander_def, Matrix.det_fin_zero]
 
 /-- **Markov move I leaves the invariant unchanged.** Passing from `b` to `c * b * c⁻¹` conjugates
 `burau b - 1` by `burau c`, which fixes both of the vectors annihilating it, so
@@ -389,7 +364,7 @@ theorem burauAlexander_conj (t : Rˣ) (b c : BraidGroup (n + 1)) :
         (burau (n + 1) t c : Matrix (Fin (n + 1)) (Fin (n + 1)) R)⁻¹ := by
     rw [Matrix.mul_sub, Matrix.mul_one, Matrix.sub_mul, hnonsing, hinv, map_mul, map_mul,
       Units.val_mul, Units.val_mul]
-  rw [burauAlexander, burauAlexander, hconj]
+  rw [burauAlexander_def, burauAlexander_def, hconj]
   exact Matrix.det_submatrix_castSucc_conj _ _ (burau_sub_one_mulVec_one t b)
     (geom_vecMul_burau_sub_one t b) (burau_mulVec_one t c) (vecMul_burau_geom t c)
     (Matrix.isUnit_iff_isUnit_det _ |>.mp (burau (n + 1) t c).isUnit) (by simp)
@@ -412,8 +387,10 @@ theorem burauAlexander_stabilize (t : Rˣ) (b : BraidGroup (n + 1)) :
       (burau (n + 2) t (BraidGroup.strandIncl b) : Matrix (Fin (n + 2)) (Fin (n + 2)) R) *
         burauMatrix (t : R) (Fin.last n) := by
     rw [map_mul, Units.val_mul, burau_sigma, coe_burauGL]
-  rw [burauAlexander, burauAlexander, hmul, submatrix_burau_strandIncl_mul t b (t : R) _ hS,
-    det_updateCol_last_aux _ (det_burau_sub_one t b) (1 - (t : R))]
+  rw [burauAlexander_def, burauAlexander_def, hmul,
+    submatrix_burau_strandIncl_mul t b (t : R) _ hS,
+    Matrix.det_updateCol_last_smul_col_sub_single_of_det_sub_one_eq_zero _
+      (det_burau_sub_one t b) (1 - (t : R))]
   ring
 
 /-- **Markov move II, negative stabilization, multiplies the invariant by `-1`.** -/
@@ -435,8 +412,10 @@ theorem burauAlexander_stabilizeInv (t : Rˣ) (b : BraidGroup (n + 1)) :
       (burau (n + 2) t (BraidGroup.strandIncl b) : Matrix (Fin (n + 2)) (Fin (n + 2)) R) *
         (burauMatrix (t : R) (Fin.last n))⁻¹ := by
     rw [map_mul, Units.val_mul, map_inv, Matrix.coe_units_inv, burau_sigma, coe_burauGL]
-  rw [burauAlexander, burauAlexander, hmul, submatrix_burau_strandIncl_mul t b (1 : R) _ hS,
-    det_updateCol_last_aux _ (det_burau_sub_one t b) (1 - (1 : R))]
+  rw [burauAlexander_def, burauAlexander_def, hmul,
+    submatrix_burau_strandIncl_mul t b (1 : R) _ hS,
+    Matrix.det_updateCol_last_smul_col_sub_single_of_det_sub_one_eq_zero _
+      (det_burau_sub_one t b) (1 - (1 : R))]
   ring
 
 /-- **The Burau-Alexander polynomial of the closure of the three-fold crossing on two strands**,
@@ -448,9 +427,10 @@ theorem burauAlexander_sigma_pow_three (t : Rˣ) :
   have hm : (burau 2 t (BraidGroup.sigma 0 ^ 3) : Matrix (Fin 2) (Fin 2) R) =
       burauMatrix (t : R) 0 ^ 3 := by
     rw [map_pow, burau_sigma, Units.val_pow_eq_pow_val, coe_burauGL]
-  rw [burauAlexander, hm, Matrix.det_fin_one, Matrix.submatrix_apply, Matrix.sub_apply,
+  rw [burauAlexander_def, hm, Matrix.det_fin_one, Matrix.submatrix_apply, Matrix.sub_apply,
     Matrix.one_apply]
-  rw [show (Fin.castSucc (0 : Fin 1) : Fin 2) = 0 from rfl, burauMatrix_two_pow_three_apply]
+  have hcast : (Fin.castSucc (0 : Fin 1) : Fin 2) = 0 := rfl
+  rw [hcast, burauMatrix_two_pow_three_apply]
   simp only [ite_true]
   ring
 
@@ -507,15 +487,17 @@ trefoil.** The braid `σ₀ ^ 3` closes to the right-handed trefoil, and
 `TauCeti.KnotTheory.trefoilSeifertMatrix` is a Seifert matrix of that knot; the two invariants
 agree up to the unit `-T ^ (-2)` of `ℤ[T;T⁻¹]`, which is the exact indeterminacy that
 `TauCeti.MarkovEquiv.associated_burauAlexander` allows. -/
-theorem associated_alexander_trefoilSeifertMatrix :
+theorem associated_burauAlexander_alexander_trefoilSeifertMatrix :
     Associated (MarkovBraid.burauAlexander (R := ℤ[T;T⁻¹]) ⟨1, BraidGroup.sigma 0 ^ 3⟩
       (isUnit_T 1).unit) (alexander trefoilSeifertMatrix) := by
   have hTT : (T (-1) : ℤ[T;T⁻¹]) * T 1 = 1 := by
-    rw [← T_add, show (-1 : ℤ) + 1 = 0 from by norm_num, T_zero]
+    have hnegadd : (-1 : ℤ) + 1 = 0 := by norm_num
+    rw [← T_add, hnegadd, T_zero]
   have hsq : (T (-1) : ℤ[T;T⁻¹]) * (T 1) ^ 2 = T 1 := by
     rw [sq, ← mul_assoc, hTT, one_mul]
   have hmul : (T 1 : ℤ[T;T⁻¹]) * T (-2) = T (-1) := by
-    rw [← T_add, show (1 : ℤ) + -2 = -1 from by norm_num]
+    have hadd : (1 : ℤ) + -2 = -1 := by norm_num
+    rw [← T_add, hadd]
   refine ⟨-(isUnit_T (R := ℤ) (-2)).unit, ?_⟩
   rw [MarkovBraid.burauAlexander_sigma_pow_three, IsUnit.unit_spec, Units.val_neg,
     IsUnit.unit_spec, alexander_trefoilSeifertMatrix]

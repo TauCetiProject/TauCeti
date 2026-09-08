@@ -39,6 +39,11 @@ vector and `w` is the geometric vector `(1, t, …, t ^ n)`.
   or whose last column, vanishes off the diagonal is the corner entry times the corner minor.
 * `Matrix.det_updateCol_last_single`: replacing the last column by the last standard basis vector
   turns the determinant into the corner minor.
+* `Matrix.submatrix_mul_of_mulVec_single`: deleting the last row and column commutes with a
+  product when the left factor fixes the last standard basis vector.
+* `Matrix.det_updateCol_last_smul_col_sub_single_of_det_sub_one_eq_zero`: a determinant formula
+  for replacing the last column of `M - 1` by a linear combination of the last columns of `M`
+  and `1`.
 * `Matrix.det_submatrix_castSucc_conj`: the corner minor of `N * A * N⁻¹` equals that of `A`,
   when `A` is annihilated by `u` on the right and by `w` on the left and `N` fixes both.
 -/
@@ -77,6 +82,40 @@ theorem det_updateCol_last_single (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
   ext a b
   rw [Matrix.submatrix_apply, Matrix.submatrix_apply,
     Matrix.updateCol_ne (Fin.castSucc_lt_last b).ne]
+
+/-- Deleting the last row and column of a product is the product of the deletions, provided the
+left factor has the last standard basis vector as its last column. -/
+theorem submatrix_mul_of_mulVec_single (X Y : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
+    (hX : X *ᵥ Pi.single (Fin.last n) 1 = Pi.single (Fin.last n) 1) :
+    (X * Y).submatrix Fin.castSucc Fin.castSucc =
+      X.submatrix Fin.castSucc Fin.castSucc * Y.submatrix Fin.castSucc Fin.castSucc := by
+  have hcol : X.col (Fin.last n) = Pi.single (Fin.last n) 1 := by
+    rw [← Matrix.mulVec_single_one]
+    exact hX
+  have hentry : ∀ i : Fin (n + 1),
+      X i (Fin.last n) = (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) i :=
+    fun i => congrFun hcol i
+  ext u v
+  rw [Matrix.submatrix_apply, Matrix.mul_apply, Matrix.mul_apply, Fin.sum_univ_castSucc, hentry,
+    Pi.single_eq_of_ne (Fin.castSucc_lt_last u).ne, zero_mul, add_zero]
+  rfl
+
+/-- The determinant of a matrix `M - 1` whose last column has been replaced by
+`c • M.col (last) - e (last)`, in terms of the corner minor of `M - 1`. -/
+theorem det_updateCol_last_smul_col_sub_single_of_det_sub_one_eq_zero
+    (M : Matrix (Fin (n + 1)) (Fin (n + 1)) R) (hdet : (M - 1).det = 0) (c : R) :
+    ((M - 1).updateCol (Fin.last n)
+        (fun u => c * M u (Fin.last n) - (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) u)).det =
+      (c - 1) * ((M - 1).submatrix Fin.castSucc Fin.castSucc).det := by
+  have hfun : (fun u => c * M u (Fin.last n) - (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) u) =
+      c • (fun u => (M - 1) u (Fin.last n)) +
+        (c - 1) • (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) := by
+    funext u
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Matrix.sub_apply, Matrix.one_apply,
+      Pi.single_apply]
+    split_ifs <;> ring
+  rw [hfun, Matrix.det_updateCol_add, Matrix.det_updateCol_smul, Matrix.det_updateCol_smul,
+    Matrix.updateCol_eq_self, hdet, Matrix.det_updateCol_last_single, mul_zero, zero_add]
 
 /-! ### The two rectangular matrices that delete and restore the last coordinate -/
 
