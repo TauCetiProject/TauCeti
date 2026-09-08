@@ -13,13 +13,14 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Basic
 
 Let `V ◁ U` be a finite normal layer of a formation, the layer `K/F` in field notation. Raising
 the ground field to an intermediate field `F ⊆ E ⊆ K` leaves a layer `K/E`, again normal because
-`V` stays normal in the smaller ground subgroup. A **restriction datum** for the layer is exactly
-the choice of that intermediate field: an open subgroup `U'` with `V ≤ U' ≤ U`. Its
-**relative degree** is `[U : U']`, the degree `[E : F]` of the new ground field over the old one;
-the roadmap's corestriction normalisation `cor ∘ res = [E : F]` is stated with this number, and
-`⚠` it is the index of the *sub*group `U'` in `U`, not the other way round.
+`V` stays normal in the smaller ground subgroup. Two layers are related by a **restriction** when
+they have the same top subgroup and the ground subgroup of the first lies in the ground subgroup
+of the second; `LayerRestriction small big` is that relation. Its **relative degree** is
+`[U : U']`, the degree `[E : F]` of the new ground field over the old one; the roadmap's
+corestriction normalisation `cor ∘ res = [E : F]` is stated with this number, and `⚠` it is the
+index of the *sub*group `U'` in `U`, not the other way round.
 
-Restriction data on a fixed layer are the same thing as subgroups of its Galois group: `U'` is
+Restrictions of a fixed layer are the same thing as subgroups of its Galois group: `U'` is
 recovered from `H = U'/V ≤ Γ`, and this **finite quotient system** `H ↦ subgroupLayer H` is what
 Tate's theorem quantifies over. The two directions of the correspondence appear below as
 `NormalLayer.subgroupGround`, which builds the intermediate subgroup out of `H`, and
@@ -27,36 +28,35 @@ Tate's theorem quantifies over. The two directions of the correspondence appear 
 again.
 
 Three facts make the system usable in the cohomological arguments downstream. The Galois group of
-a restricted layer maps to the Galois group of the original one (`LayerRestriction.galHom`), and
-does so injectively; the degrees multiply along the restriction
-(`LayerRestriction.degree_layer_mul_relativeDegree`); and — because the two layers have the *same*
-top subgroup, hence literally the same coefficient module `A^V` — the coefficient module of the
-restricted layer *is* the coefficient module of the original one, restricted along `galHom`
+the smaller layer maps to the Galois group of the bigger one (`LayerRestriction.galHom`), and does
+so injectively; the degrees multiply along the restriction
+(`LayerRestriction.degree_mul_relativeDegree`); and — because the two layers have the *same* top
+subgroup, hence the same coefficient module `A^V` — the coefficient module of the smaller layer
+*is* the coefficient module of the bigger one, restricted along `galHom`
 (`LayerRestriction.repIso`). It is that last identification which lets a cohomology class of the
 layer be restricted to a subgroup of its Galois group at all.
 
 ## Main definitions
 
-* `TauCeti.ClassFieldTheory.LayerRestriction`: a restriction datum for a finite normal layer, an
-  intermediate open subgroup `V ≤ U' ≤ U`.
-* `TauCeti.ClassFieldTheory.LayerRestriction.layer`: the restricted layer `V ◁ U'`.
+* `TauCeti.ClassFieldTheory.LayerRestriction`: the relation `small` is `big` with its ground field
+  raised to an intermediate field.
 * `TauCeti.ClassFieldTheory.LayerRestriction.relativeDegree`: the relative degree `[U : U']`.
 * `TauCeti.ClassFieldTheory.LayerRestriction.galHom`: the induced homomorphism `U'/V → U/V`.
-* `TauCeti.ClassFieldTheory.LayerRestriction.repIso`: the coefficient module of the restricted
-  layer is the coefficient module of the original layer, restricted along `galHom`.
+* `TauCeti.ClassFieldTheory.LayerRestriction.repIso`: the coefficient module of the smaller layer
+  is the coefficient module of the bigger layer, restricted along `galHom`.
 * `TauCeti.ClassFieldTheory.NormalLayer.subgroupGround`: the intermediate open subgroup attached
   to a subgroup of the Galois group.
-* `TauCeti.ClassFieldTheory.NormalLayer.subgroupRestriction`,
-  `TauCeti.ClassFieldTheory.NormalLayer.subgroupLayer`: the restriction datum and the layer of a
-  subgroup of the Galois group.
+* `TauCeti.ClassFieldTheory.NormalLayer.subgroupLayer`: the layer of a subgroup of the Galois
+  group, and `TauCeti.ClassFieldTheory.NormalLayer.subgroupRestriction`, the restriction relating
+  it to the layer it comes from.
 * `TauCeti.ClassFieldTheory.NormalLayer.subgroupGalEquiv`: the Galois group of that layer is the
   chosen subgroup.
 
 ## Main statements
 
-* `TauCeti.ClassFieldTheory.LayerRestriction.galHom_injective`: the Galois group of a restricted
-  layer embeds in the Galois group of the layer.
-* `TauCeti.ClassFieldTheory.LayerRestriction.degree_layer_mul_relativeDegree`:
+* `TauCeti.ClassFieldTheory.LayerRestriction.galHom_injective`: the Galois group of the smaller
+  layer embeds in the Galois group of the bigger one.
+* `TauCeti.ClassFieldTheory.LayerRestriction.degree_mul_relativeDegree`:
   `[U' : V] * [U : U'] = [U : V]`.
 * `TauCeti.ClassFieldTheory.NormalLayer.degree_subgroupLayer`: the layer of `H` has degree `#H`.
 * `TauCeti.ClassFieldTheory.NormalLayer.relativeDegree_subgroupRestriction`: its relative degree
@@ -68,17 +68,19 @@ layer be restricted to a subgroup of its Galois group at all.
 
 ## Implementation notes
 
+`LayerRestriction` is a relation between two layers that already exist, not a bundle carrying a
+layer and constructing a second one. This is what lets the downstream restriction and
+corestriction maps be stated for an arbitrary pair `small`, `big` of layers, and it makes towers
+of restrictions compose without transporting a layer along an equality. Because it is a `Prop`,
+the relative degree cannot be read off the datum itself: `relativeDegree` is a function of the two
+layers, and takes the restriction only so that it is written `T.relativeDegree` at the call sites
+the roadmap fixes.
+
 `NormalLayer.subgroupGround` is the correspondence-theorem preimage of `H` — the subgroup
 `QuotientGroup.comapMk'OrderIso` attaches to `H` — pushed from `U` into the ambient group `G`, so
 that it can be an `OpenSubgroup G` and be compared with the other subgroups of a formation. It is
 spelled with `Subgroup.comap` and `Subgroup.map` directly, because only that subgroup, and not the
 order isomorphism, is used.
-
-The restricted layer is *built from* the layer being restricted rather than assumed alongside it:
-the field `LayerRestriction.ground` is the intermediate subgroup and `LayerRestriction.layer` is
-the layer it determines. This is what makes `LayerRestriction.top_layer` a definitional equality,
-so that the two coefficient modules are the same submodule of the ambient module and
-`LayerRestriction.repIso` can be the identity on elements.
 
 ## References
 
@@ -101,111 +103,95 @@ theorem NormalLayer.degree_eq_relIndex (L : NormalLayer G) :
     L.degree = L.top.toSubgroup.relIndex L.ground.toSubgroup :=
   L.degree_eq_natCard_gal
 
-/-! ### Restriction data -/
+/-! ### Restrictions -/
 
-/-- A **restriction datum** for a finite normal layer `V ◁ U`: an open subgroup `U'` with
-`V ≤ U' ≤ U`. In field notation it raises the ground field of the layer `K/F` to an intermediate
-field `E`, leaving the layer `K/E`. -/
-structure LayerRestriction (G : Type) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-    [CompactSpace G] [TotallyDisconnectedSpace G] where
-  /-- the layer `V ◁ U` that is being restricted -/
-  base : NormalLayer G
-  /-- the new ground subgroup `U'`, cutting out the intermediate field -/
-  ground : OpenSubgroup G
-  /-- the new ground subgroup lies in the old one -/
-  ground_le_base : ground ≤ base.ground
-  /-- the new ground subgroup still contains the top subgroup -/
-  top_le_ground : base.top ≤ ground
+/-- A **restriction** of finite normal layers: `small` is `big` with its ground field raised to an
+intermediate field. In field notation, `F ⊆ E ⊆ K` takes the layer `K/F` to the layer `K/E`, so
+the top subgroup is unchanged and the ground subgroup shrinks. -/
+structure LayerRestriction (small big : NormalLayer G) : Prop where
+  /-- a restriction does not move the top subgroup -/
+  same_top : small.top = big.top
+  /-- a restriction shrinks the ground subgroup -/
+  ground_le : small.ground ≤ big.ground
 
 namespace LayerRestriction
 
-variable (T : LayerRestriction G)
+variable {small big : NormalLayer G}
 
-/-- The **restricted layer** `V ◁ U'`. Its top subgroup, hence its coefficient module, is the top
-subgroup of the layer being restricted. -/
-def layer : NormalLayer G where
-  ground := T.ground
-  top := T.base.top
-  top_le_ground := T.top_le_ground
-  normal := ⟨fun _v hv w => Subgroup.mem_subgroupOf.2 (T.base.conj_mem_top
-    (T.ground_le_base w.2) (Subgroup.mem_subgroupOf.1 hv))⟩
+/-- The ground subgroups of a restriction, compared as subgroups of the ambient group. -/
+theorem ground_toSubgroup_le (T : LayerRestriction small big) :
+    small.ground.toSubgroup ≤ big.ground.toSubgroup :=
+  OpenSubgroup.toSubgroup_le.2 T.ground_le
 
-/-- The ground subgroup of the restricted layer is the intermediate subgroup. -/
-@[simp]
-theorem ground_layer : T.layer.ground = T.ground := rfl
+/-- The top subgroups of a restriction, compared as subgroups of the ambient group. -/
+theorem same_top_toSubgroup (T : LayerRestriction small big) :
+    small.top.toSubgroup = big.top.toSubgroup :=
+  congrArg OpenSubgroup.toSubgroup T.same_top
 
-/-- The restricted layer has the same top subgroup as the layer it comes from. -/
-@[simp]
-theorem top_layer : T.layer.top = T.base.top := rfl
-
-/-- The ground subgroup of a restricted layer sits inside the ground subgroup of the layer. -/
-theorem layer_ground_le : T.layer.ground.toSubgroup ≤ T.base.ground.toSubgroup := by
-  rw [ground_layer]
-  exact T.ground_le_base
-
-/-- The **relative degree** `[U : U']` of a restriction datum, the degree of the new ground field
-over the old one. `⚠` `U'` is the subgroup, so the relative degree is the index of `U'` in `U`. -/
-def relativeDegree : ℕ := T.ground.toSubgroup.relIndex T.base.ground.toSubgroup
+/-- The **relative degree** `[U : U']` of a restriction, the degree of the new ground field over
+the old one. `⚠` `U'` is the subgroup, so the relative degree is the index of `U'` in `U`. -/
+def relativeDegree (_T : LayerRestriction small big) : ℕ :=
+  small.ground.toSubgroup.relIndex big.ground.toSubgroup
 
 /-- **The degree of a layer is multiplicative along a restriction:** `[U' : V] * [U : U'] =
 [U : V]`. -/
-theorem degree_layer_mul_relativeDegree : T.layer.degree * T.relativeDegree = T.base.degree := by
-  rw [NormalLayer.degree_eq_relIndex, NormalLayer.degree_eq_relIndex, relativeDegree, top_layer,
-    ground_layer]
-  exact Subgroup.relIndex_mul_relIndex _ _ _ T.top_le_ground T.ground_le_base
+theorem degree_mul_relativeDegree (T : LayerRestriction small big) :
+    small.degree * T.relativeDegree = big.degree := by
+  rw [NormalLayer.degree_eq_relIndex, NormalLayer.degree_eq_relIndex, relativeDegree,
+    ← T.same_top_toSubgroup]
+  exact Subgroup.relIndex_mul_relIndex _ _ _
+    (OpenSubgroup.toSubgroup_le.2 small.top_le_ground) T.ground_toSubgroup_le
 
-/-- The homomorphism `U'/V → U/V` of Galois groups induced by a restriction datum. It is injective
+/-- The relative degree of a restriction is positive: the Galois groups involved are finite. -/
+theorem relativeDegree_pos (T : LayerRestriction small big) : 0 < T.relativeDegree :=
+  Nat.pos_of_mul_pos_left (T.degree_mul_relativeDegree ▸ big.degree_pos)
+
+/-- The homomorphism `U'/V → U/V` of Galois groups induced by a restriction. It is injective
 (`galHom_injective`), and its image is the subgroup of `U/V` that the intermediate subgroup `U'`
 cuts out. -/
-def galHom : T.layer.Gal →* T.base.Gal :=
-  QuotientGroup.lift T.layer.relativeTop
-    ((QuotientGroup.mk' T.base.relativeTop).comp (Subgroup.inclusion T.layer_ground_le))
-    fun x hx ↦ (QuotientGroup.eq_one_iff _).2 <| Subgroup.mem_subgroupOf.2 <| by
-      rw [← top_layer]
-      exact Subgroup.mem_subgroupOf.1 hx
+def galHom (T : LayerRestriction small big) : small.Gal →* big.Gal :=
+  QuotientGroup.map small.relativeTop big.relativeTop
+    (Subgroup.inclusion T.ground_toSubgroup_le) fun _w hw ↦
+      Subgroup.mem_comap.2 <| Subgroup.mem_subgroupOf.2 <| by
+        rw [← T.same_top_toSubgroup]
+        exact Subgroup.mem_subgroupOf.1 hw
 
 /-- The homomorphism of Galois groups is induced by the inclusion of ground subgroups. -/
 @[simp]
-theorem galHom_mk (w : T.layer.ground) :
+theorem galHom_mk (T : LayerRestriction small big) (w : small.ground) :
     T.galHom (QuotientGroup.mk w) =
-      QuotientGroup.mk (Subgroup.inclusion T.layer_ground_le w) :=
+      QuotientGroup.mk (Subgroup.inclusion T.ground_toSubgroup_le w) :=
   rfl
 
-/-- The relative degree of a restriction datum is positive: the Galois groups involved are
-finite. -/
-theorem relativeDegree_pos : 0 < T.relativeDegree :=
-  Nat.pos_of_mul_pos_left (T.degree_layer_mul_relativeDegree ▸ T.base.degree_pos)
-
-/-- **The Galois group of a restricted layer embeds in the Galois group of the layer.** Both are
-quotients of subgroups of `U` by the *same* top subgroup `V`. -/
-theorem galHom_injective : Function.Injective T.galHom := by
+/-- **The Galois group of the smaller layer of a restriction embeds in the Galois group of the
+bigger one.** Both are quotients of subgroups of `U` by the *same* top subgroup `V`. -/
+theorem galHom_injective (T : LayerRestriction small big) : Function.Injective T.galHom := by
   rw [injective_iff_map_eq_one]
   intro γ hγ
   induction γ using QuotientGroup.induction_on with
   | H w =>
     rw [galHom_mk] at hγ
-    have hw : (w : G) ∈ T.base.top := Subgroup.mem_subgroupOf.1
-      ((QuotientGroup.eq_one_iff (N := T.base.relativeTop)
-        (Subgroup.inclusion T.layer_ground_le w)).1 hγ)
+    have hw := Subgroup.mem_subgroupOf.1
+      ((QuotientGroup.eq_one_iff (N := big.relativeTop) _).1 hγ)
     refine (QuotientGroup.eq_one_iff w).2 (Subgroup.mem_subgroupOf.2 ?_)
-    rw [top_layer]
+    rw [T.same_top_toSubgroup]
     exact hw
 
-/-- **The coefficient module of a restricted layer is the coefficient module of the layer**, read
-as a representation of the smaller Galois group along `galHom`. The two modules are the same
-submodule `A^V` of the ambient module — the restriction does not move the top subgroup — so this
-isomorphism is the identity on elements. -/
-def repIso (F : Formation G) :
-    T.layer.rep F ≅ Rep.res T.galHom (T.base.rep F) :=
-  Rep.mkIso <| Representation.Equiv.mk (LinearEquiv.refl ℤ _) fun γ ↦ by
-    induction γ using QuotientGroup.induction_on with
-    | H w => rfl
+/-- **The coefficient module of the smaller layer of a restriction is the coefficient module of
+the bigger one**, read as a representation of the smaller Galois group along `galHom`. The two
+modules are the level `A^V` of one and the same top subgroup — a restriction does not move the top
+subgroup — so this isomorphism moves no element of the ambient module. -/
+def repIso (T : LayerRestriction small big) (F : Formation G) :
+    small.rep F ≅ Rep.res T.galHom (big.rep F) :=
+  Rep.mkIso <| Representation.Equiv.mk
+    (LinearEquiv.ofEq _ _ (congrArg F.level T.same_top)) fun γ ↦ by
+      induction γ using QuotientGroup.induction_on with
+      | H w => rfl
 
-/-- The identification of coefficient modules moves no element. It is not a `simp` lemma: its
-left-hand side is not in simp-normal form, since `simp` unfolds the two coefficient modules to
-the level `A^V` they are both built on. -/
-theorem repIso_hom_apply (F : Formation G) (x : T.layer.rep F) :
-    (T.repIso F).hom.hom x = x :=
+/-- The identification of coefficient modules moves no element of the ambient module. -/
+theorem repIso_hom_apply_coe (T : LayerRestriction small big) (F : Formation G)
+    (x : F.level small.top) :
+    (((T.repIso F).hom.hom x : F.level big.top) : F.toRep.V) = (x : F.toRep.V) :=
   rfl
 
 end LayerRestriction
@@ -245,42 +231,33 @@ theorem top_le_subgroupGround : L.top.toSubgroup ≤ L.subgroupGround H := by
   rw [h1]
   exact one_mem H
 
-/-- The restriction datum attached to a subgroup `H` of the Galois group: its intermediate ground
-subgroup is the preimage of `H`. -/
-def subgroupRestriction : LayerRestriction G where
-  base := L
-  ground := ⟨L.subgroupGround H, Subgroup.isOpen_mono (L.top_le_subgroupGround H) L.top.isOpen⟩
-  ground_le_base := L.subgroupGround_le_ground H
-  top_le_ground := L.top_le_subgroupGround H
-
-/-- The layer restricted by `subgroupRestriction` is the original layer. -/
-@[simp]
-theorem base_subgroupRestriction : (L.subgroupRestriction H).base = L := rfl
-
-/-- The intermediate ground subgroup of `subgroupRestriction H` is the preimage of `H`. -/
-@[simp]
-theorem ground_subgroupRestriction :
-    (L.subgroupRestriction H).ground.toSubgroup = L.subgroupGround H := rfl
-
 /-- The **layer of a subgroup** `H ≤ U ⧸ V`: the finite normal layer `V ◁ W` whose ground subgroup
 is the preimage `W` of `H`. The family `H ↦ subgroupLayer H` is the finite quotient system that
 Tate's theorem quantifies over. -/
-def subgroupLayer : NormalLayer G := (L.subgroupRestriction H).layer
-
-/-- The layer of `H` is the restricted layer of the restriction datum of `H`. -/
-theorem subgroupLayer_eq : L.subgroupLayer H = (L.subgroupRestriction H).layer := rfl
+def subgroupLayer : NormalLayer G where
+  ground := ⟨L.subgroupGround H, Subgroup.isOpen_mono (L.top_le_subgroupGround H) L.top.isOpen⟩
+  top := L.top
+  top_le_ground := OpenSubgroup.toSubgroup_le.1 (L.top_le_subgroupGround H)
+  normal := ⟨fun _v hv w ↦ Subgroup.mem_subgroupOf.2 (L.conj_mem_top
+    (L.subgroupGround_le_ground H w.2) (Subgroup.mem_subgroupOf.1 hv))⟩
 
 /-- The ground subgroup of the layer of `H` is the preimage of `H`. -/
 @[simp]
 theorem ground_subgroupLayer :
-    (L.subgroupLayer H).ground.toSubgroup = L.subgroupGround H := by
-  rw [subgroupLayer_eq, LayerRestriction.ground_layer, ground_subgroupRestriction]
+    (L.subgroupLayer H).ground.toSubgroup = L.subgroupGround H :=
+  rfl
 
 /-- The layer of `H` has the same top subgroup, hence the same coefficient module, as the layer
 it comes from. -/
 @[simp]
-theorem top_subgroupLayer : (L.subgroupLayer H).top = L.top := by
-  rw [subgroupLayer_eq, LayerRestriction.top_layer, base_subgroupRestriction]
+theorem top_subgroupLayer : (L.subgroupLayer H).top = L.top :=
+  rfl
+
+/-- **The layer of `H` is a restriction of the layer it comes from:** it has the same top field
+and a smaller ground field. This is the datum through which cohomology of the layer restricts to
+the layer of `H`. -/
+theorem subgroupRestriction : LayerRestriction (L.subgroupLayer H) L :=
+  ⟨rfl, OpenSubgroup.toSubgroup_le.1 (L.subgroupGround_le_ground H)⟩
 
 /-- The image of the Galois group of the layer of `H` is `H`. -/
 theorem range_galHom_subgroupRestriction : (L.subgroupRestriction H).galHom.range = H := by
@@ -289,7 +266,7 @@ theorem range_galHom_subgroupRestriction : (L.subgroupRestriction H).galHom.rang
   · rintro ⟨δ, rfl⟩
     induction δ using QuotientGroup.induction_on with
     | H w =>
-      obtain ⟨hw, hmem⟩ := (L.mem_subgroupGround H).1 w.2
+      obtain ⟨_, hmem⟩ := (L.mem_subgroupGround H).1 w.2
       exact hmem
   · intro hγ
     induction γ using QuotientGroup.induction_on with
@@ -302,7 +279,7 @@ def subgroupGalEquiv : (L.subgroupLayer H).Gal ≃* H :=
     (MulEquiv.subgroupCongr (L.range_galHom_subgroupRestriction H))
 
 /-- The identification of the Galois group of the layer of `H` with `H` is the homomorphism of
-Galois groups of the restriction datum. -/
+Galois groups of the restriction. -/
 @[simp]
 theorem subgroupGalEquiv_apply_coe (γ : (L.subgroupLayer H).Gal) :
     ((L.subgroupGalEquiv H γ : H) : L.Gal) = (L.subgroupRestriction H).galHom γ :=
@@ -322,8 +299,8 @@ theorem galHom_subgroupRestriction :
 /-- **The relative degree of the restriction to `H` is the index of `H`.** -/
 theorem relativeDegree_subgroupRestriction :
     (L.subgroupRestriction H).relativeDegree = H.index := by
-  rw [LayerRestriction.relativeDegree, ground_subgroupRestriction, base_subgroupRestriction,
-    Subgroup.relIndex, ← Subgroup.comap_subtype, subgroupGround,
+  rw [LayerRestriction.relativeDegree, ground_subgroupLayer, Subgroup.relIndex,
+    ← Subgroup.comap_subtype, subgroupGround,
     Subgroup.comap_map_eq_self_of_injective (Subgroup.subtype_injective _)]
   exact Subgroup.index_comap_of_surjective _ (QuotientGroup.mk'_surjective L.relativeTop)
 
