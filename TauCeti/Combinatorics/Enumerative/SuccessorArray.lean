@@ -296,6 +296,7 @@ theorem successorArray_eq_of_forall_ne (h : ∀ n, x n ≠ a) : successorArray x
   rw [successorArray_def, visitTime_eq_zero_of_forall_ne h]
 
 /-- The zeroth successor of a value the sequence starts at is its entry at time one. -/
+@[simp]
 theorem successorArray_zero_of_eq (h : x 0 = a) : successorArray x a 0 = x 1 := by
   rw [successorArray_def, visitTime_zero_of_eq h]
 

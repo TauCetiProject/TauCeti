@@ -10,6 +10,7 @@ public import TauCeti.Probability.Exchangeability.MarkovExchangeable
 public import TauCeti.Probability.Exchangeability.Recurrence.Basic
 public import TauCeti.Probability.Exchangeability.RowExchangeable
 public import TauCeti.Probability.Exchangeability.SuccessorArray
+public import Mathlib.Probability.Distributions.Uniform
 public import Mathlib.Probability.Independence.InfinitePi
 
 /-!
@@ -21,7 +22,7 @@ reached right after the `k`-th visit to `a`. The change of variables back from a
 array to a mixture of Markov chains is
 `TauCeti.Probability.mixedMarkovChain_of_rowExchangeable_successorProcess`, and its hypothesis is
 row exchangeability of that array. This file shows that recurrence and Markov exchangeability do
-not supply that hypothesis, and isolates exactly what obstructs it.
+not supply that hypothesis, and exhibits an obstruction to it.
 
 The obstruction is not the reordering of genuine transitions but the junk rows. A state the
 process never visits has no genuine successors, so its whole row is `Nat.nth`'s junk value: by
@@ -46,8 +47,7 @@ support — changes the law of its successor array
 (`spareStateProcess_not_rowExchangeable_successorProcess`), because on the positive-probability
 event that the path begins `0, 0, 1, 1` the swap breaks the tie above.
 
-So a row-exchangeability hypothesis on a successor array has to be restricted to the rows the
-process actually visits — which is all its consumer reads, since
+The cells the tie involves are not the ones the consumer of the array reads:
 `TauCeti.eqOn_iff_successorArray_visitCell` describes a finite path event through the cells a
 reference path designates, and those lie in visited rows.
 
@@ -64,17 +64,7 @@ reference path designates, and those lie in visited rows.
 
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115–130.
-
-The example uses Mathlib's countable product of probability measures
-(`MeasureTheory.Measure.infinitePi`) and the independence of its coordinates
-(`ProbabilityTheory.iIndepFun_infinitePi`); it needs no material from
-`cameronfreer/exchangeability`, which treats exchangeable rather than Markov exchangeable
-sequences.
 -/
-
--- Provenance: the Tau Ceti `Exchangeability` roadmap blueprint, `README.md`, section "Markov
--- exchangeability", which asks for the Diaconis–Freedman representation of a recurrent Markov
--- exchangeable process as a mixture of Markov chains.
 
 public section
 
@@ -88,43 +78,39 @@ namespace TauCeti
 
 namespace Probability
 
-/-- The fair-coin law on the three-letter alphabet `Fin 3`: mass `2⁻¹` on each of the letters `0`
-and `1`, and no mass on the spare letter `2`. -/
-@[expose] def spareStateLaw : Measure (Fin 3) :=
-  (2 : ℝ≥0∞)⁻¹ • (Measure.dirac 0 + Measure.dirac 1)
+/-- The fair-coin law on the three-letter alphabet `Fin 3`: the uniform law of the two letters `0`
+and `1`, giving no mass to the spare letter `2`. -/
+def spareStateLaw : Measure (Fin 3) :=
+  (PMF.uniformOfFinset {0, 1} (Finset.insert_nonempty 0 {1})).toMeasure
 
-/-- The value of `spareStateLaw` on an arbitrary set of letters. -/
-theorem spareStateLaw_apply (s : Set (Fin 3)) :
-    spareStateLaw s =
-      (2 : ℝ≥0∞)⁻¹ * (s.indicator 1 (0 : Fin 3) + s.indicator 1 (1 : Fin 3)) := by
-  rw [spareStateLaw, Measure.smul_apply, Measure.add_apply, Measure.dirac_apply,
-    Measure.dirac_apply, smul_eq_mul]
+instance : IsProbabilityMeasure spareStateLaw :=
+  PMF.toMeasure.isProbabilityMeasure _
 
 /-- The spare letter is null. -/
 @[simp]
 theorem spareStateLaw_singleton_two : spareStateLaw {(2 : Fin 3)} = 0 := by
-  rw [spareStateLaw_apply]
-  simp
+  rw [spareStateLaw, PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _),
+    PMF.uniformOfFinset_apply_of_notMem _ (by decide)]
 
 /-- Each of the two letters the process uses carries mass `2⁻¹`. -/
+@[simp]
 theorem spareStateLaw_singleton_of_ne_two {a : Fin 3} (ha : a ≠ 2) :
     spareStateLaw {a} = (2 : ℝ≥0∞)⁻¹ := by
-  rw [spareStateLaw_apply]
-  fin_cases a <;> simp_all
-
-instance : IsProbabilityMeasure spareStateLaw := by
-  constructor
-  rw [spareStateLaw_apply]
-  simp only [Set.indicator_univ, Pi.one_apply]
-  rw [show (1 : ℝ≥0∞) + 1 = 2 by norm_num]
-  exact ENNReal.inv_mul_cancel (by norm_num) (by norm_num)
+  have hmem : a ∈ ({0, 1} : Finset (Fin 3)) := by fin_cases a <;> revert ha <;> decide
+  rw [spareStateLaw, PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _),
+    PMF.uniformOfFinset_apply_of_mem _ hmem]
+  norm_num
 
 /-- The law of the example: fair-coin i.i.d. sequences in the alphabet `Fin 3`. -/
-@[expose] def spareStateMeasure : Measure (ℕ → Fin 3) :=
+def spareStateMeasure : Measure (ℕ → Fin 3) :=
   Measure.infinitePi fun _ : ℕ => spareStateLaw
 
+/-- The defining equation of `spareStateMeasure`. -/
+theorem spareStateMeasure_def :
+    spareStateMeasure = Measure.infinitePi fun _ : ℕ => spareStateLaw := (rfl)
+
 instance : IsProbabilityMeasure spareStateMeasure := by
-  rw [spareStateMeasure]
+  rw [spareStateMeasure_def]
   infer_instance
 
 /-- The example's process: the coordinates of a fair-coin sequence in the alphabet `Fin 3`. -/
@@ -168,21 +154,29 @@ theorem spareStateProcess_recurrent : Recurrent spareStateMeasure spareStateProc
 /-- Reading a coordinate law off the product law. -/
 private theorem spareStateMeasure_setOf_apply_eq (n : ℕ) (a : Fin 3) :
     spareStateMeasure {x | x n = a} = spareStateLaw {a} := by
-  rw [show {x : ℕ → Fin 3 | x n = a} = spareStateProcess n ⁻¹' {a} from rfl,
-    ← Measure.map_apply (measurable_spareStateProcess n) (measurableSet_singleton a),
+  have hset : {x : ℕ → Fin 3 | x n = a} = spareStateProcess n ⁻¹' {a} := by
+    ext x
+    simp [spareStateProcess]
+  rw [hset, ← Measure.map_apply (measurable_spareStateProcess n) (measurableSet_singleton a),
     spareStateMeasure_map_spareStateProcess]
 
 /-- The set of sequences avoiding the spare letter. -/
 private def avoidsTwo : Set (ℕ → Fin 3) := {x | ∀ n, x n ≠ 2}
 
 private theorem measurableSet_avoidsTwo : MeasurableSet avoidsTwo := by
-  rw [show avoidsTwo = ⋂ n : ℕ, spareStateProcess n ⁻¹' {(2 : Fin 3)}ᶜ by ext x; simp [avoidsTwo]]
+  have hset : avoidsTwo = ⋂ n : ℕ, spareStateProcess n ⁻¹' {(2 : Fin 3)}ᶜ := by
+    ext x
+    simp [avoidsTwo, spareStateProcess]
+  rw [hset]
   exact MeasurableSet.iInter fun n =>
     (measurable_spareStateProcess n) (measurableSet_singleton _).compl
 
 /-- **The spare letter is almost surely never taken.** -/
 private theorem spareStateMeasure_compl_avoidsTwo : spareStateMeasure avoidsTwoᶜ = 0 := by
-  rw [show avoidsTwoᶜ = ⋃ n : ℕ, {x : ℕ → Fin 3 | x n = 2} by ext x; simp [avoidsTwo]]
+  have hset : avoidsTwoᶜ = ⋃ n : ℕ, {x : ℕ → Fin 3 | x n = 2} := by
+    ext x
+    simp [avoidsTwo]
+  rw [hset]
   exact measure_iUnion_null fun n =>
     (spareStateMeasure_setOf_apply_eq n 2).trans spareStateLaw_singleton_two
 
@@ -199,7 +193,7 @@ private theorem mem_opening {x : ℕ → Fin 3} :
 
 /-- The opening has probability `16⁻¹`, in particular positive probability. -/
 private theorem spareStateMeasure_opening : spareStateMeasure opening = (16 : ℝ≥0∞)⁻¹ := by
-  rw [spareStateMeasure, opening,
+  rw [spareStateMeasure_def, opening,
     Measure.infinitePi_pi _ fun i _ => measurableSet_singleton (openingWord i)]
   have hword : ∀ i, openingWord i ≠ 2 := by
     intro i
@@ -251,17 +245,14 @@ or with the head of the row of `1`. -/
 private def tiedSpareRow : Set (Fin 3 × ℕ → Fin 3) :=
   {A | A (2, 0) = A (0, 0) ∨ A (2, 0) = A (1, 0)}
 
-private theorem measurableSet_setOf_apply_eq_apply (p q : Fin 3 × ℕ) :
-    MeasurableSet {A : Fin 3 × ℕ → Fin 3 | A p = A q} := by
-  have h : {A : Fin 3 × ℕ → Fin 3 | A p = A q} =
-      (fun A : Fin 3 × ℕ → Fin 3 => (A p, A q)) ⁻¹' {y : Fin 3 × Fin 3 | y.1 = y.2} := rfl
-  rw [h]
-  exact ((measurable_pi_apply p).prodMk (measurable_pi_apply q))
-    (Set.to_countable _).measurableSet
-
-private theorem measurableSet_tiedSpareRow : MeasurableSet tiedSpareRow :=
-  (measurableSet_setOf_apply_eq_apply (2, 0) (0, 0)).union
-    (measurableSet_setOf_apply_eq_apply (2, 0) (1, 0))
+private theorem measurableSet_tiedSpareRow : MeasurableSet tiedSpareRow := by
+  have hset : tiedSpareRow = {A : Fin 3 × ℕ → Fin 3 | A (2, 0) = A (0, 0)} ∪
+      {A : Fin 3 × ℕ → Fin 3 | A (2, 0) = A (1, 0)} := by
+    ext A
+    simp [tiedSpareRow]
+  rw [hset]
+  exact (measurableSet_eq_fun (measurable_pi_apply (2, 0)) (measurable_pi_apply (0, 0))).union
+    (measurableSet_eq_fun (measurable_pi_apply (2, 0)) (measurable_pi_apply (1, 0)))
 
 /-- The family of row permutations that breaks the tie: swap the first two entries of the row of
 the letter `0`, and leave the other two rows alone. It moves only two cells. -/
@@ -286,15 +277,14 @@ private theorem measurable_successorProcess_reindex (π : Fin 3 → Equiv.Perm �
 /-- **The successor array of a recurrent Markov exchangeable process need not be row
 exchangeable.** Row exchangeability would move the head of the row of `0` while leaving the spare
 row where it is, and the two are tied by
-`TauCeti.successorArray_eq_successorArray_zero_of_forall_ne`. On the positive-probability opening
-`0, 0, 1, 1` the tie is broken, so the reindexed array almost never satisfies an identity the
-original array always satisfies.
+`TauCeti.successorArray_eq_successorArray_zero_of_forall_ne`. On the opening `0, 0, 1, 1`, an
+event of probability `16⁻¹`, the tie is broken, so the reindexed array does not almost surely
+satisfy an identity the original array always satisfies.
 
 Together with `spareStateProcess_markovExchangeable` and `spareStateProcess_recurrent` this shows
 that the row-exchangeability input of
 `TauCeti.Probability.mixedMarkovChain_of_rowExchangeable_successorProcess` cannot be obtained from
-recurrence and Markov exchangeability alone: it has to be restricted to the rows the process
-visits. -/
+recurrence and Markov exchangeability alone. -/
 theorem spareStateProcess_not_rowExchangeable_successorProcess :
     ¬ RowExchangeable spareStateMeasure (successorProcess spareStateProcess) := by
   intro hrow
