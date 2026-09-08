@@ -74,17 +74,24 @@ theorem symm (h : D.IsRepartition E) : E.IsRepartition D where
   coveredSquares_union_eq := h.coveredSquares_union_eq.symm
 
 /-- Diagonal reflection preserves a repartition of two-step rectangle domains. -/
-theorem transpose (h : D.IsRepartition E) : D.transpose.IsRepartition E.transpose where
+theorem transpose (h : D.IsRepartition E) : D.transpose.IsRepartition E.transpose := by
+  have transpose_coveredSquares {a b : GridState n} (R : GridRectangleBetween a b) :
+      R.transpose.toGridRectangle.coveredSquares =
+        R.toGridRectangle.coveredSquares.image Prod.swap := by
+    simpa only [GridRectangle.coveredSquares_def, GridRectangle.coveredColumns_def,
+      GridRectangle.coveredRows_def, GridRectangle.squares, GridRectangle.columnSquares,
+      GridRectangle.rowSquares] using R.squares_transpose
+  refine {
   disjoint_coveredSquares_left := by
     have hfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_first
     have hsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_second
-    simp only [GridRectangleBetween.coveredSquares_transpose] at hfirst hsecond
+    simp only [transpose_coveredSquares] at hfirst hsecond
     rw [hfirst, hsecond, Finset.disjoint_image Prod.swap_injective]
     exact h.disjoint_coveredSquares_left
   disjoint_coveredSquares_right := by
     have hfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_first
     have hsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_second
-    simp only [GridRectangleBetween.coveredSquares_transpose] at hfirst hsecond
+    simp only [transpose_coveredSquares] at hfirst hsecond
     rw [hfirst, hsecond, Finset.disjoint_image Prod.swap_injective]
     exact h.disjoint_coveredSquares_right
   coveredSquares_union_eq := by
@@ -92,9 +99,10 @@ theorem transpose (h : D.IsRepartition E) : D.transpose.IsRepartition E.transpos
     have hEsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_second
     have hDfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_first
     have hDsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_second
-    simp only [GridRectangleBetween.coveredSquares_transpose] at hEfirst hEsecond hDfirst hDsecond
+    simp only [transpose_coveredSquares] at hEfirst hEsecond hDfirst hDsecond
     rw [hEfirst, hEsecond, hDfirst, hDsecond, ← Finset.image_union, ← Finset.image_union,
       h.coveredSquares_union_eq]
+  }
 
 /-- Two decompositions are repartitions exactly when their diagonal reflections are. -/
 theorem transpose_iff : D.transpose.IsRepartition E.transpose ↔ D.IsRepartition E := by
