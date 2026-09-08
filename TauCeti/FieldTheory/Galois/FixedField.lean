@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Basic
+public import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
 # Fixed fields and fixing subgroups
 
-Three complements to Mathlib's Galois correspondence.
+Complements to Mathlib's Galois correspondence: when a fixed field and an intermediate field
+generate the whole extension, when the correspondence survives dropping finiteness of `M / K` for
+a finite subgroup, and what the correspondence gives for a cyclic subgroup.
 
 For a finite Galois extension `M / K`, a subgroup `H ≤ Gal(M/K)` and an intermediate field `E`,
 the fixed field of `H` and `E` generate `M` exactly when `H` meets the fixers of `E` trivially.
@@ -24,6 +27,16 @@ fixed field of a finite `H`, and the fixers of that field are then exactly `H`. 
 subgroup of the automorphism group of an infinite extension is recovered from the field it cuts
 out; the fixing subgroup of a subfield of finite degree is finite for the same reason.
 
+The last results specialise the correspondence to a *cyclic* subgroup: the field fixed by a finite
+cyclic group of automorphisms has `M` cyclic over it, and for `⟨σ⟩` there is a named automorphism
+over the fixed field — `AlgEquiv.toFixedFieldAlgEquiv σ` acts on `M` as `σ` does, and generates
+once `⟨σ⟩` is finite.
+
+Neither `M / K` Galois nor `M / K` finite is needed, and neither is faithfulness of the action:
+`FixedPoints.toAlgAut_surjective` asks only that the group be finite, and cyclicity passes along
+its surjection. The fixed-point subfield it produces is the one underlying
+`IntermediateField.fixedField`.
+
 ## Main results
 
 * `Subgroup.fixedField_sup_eq_top_iff`
@@ -31,6 +44,8 @@ out; the fixing subgroup of a subfield of finite degree is finite for the same r
 * `IntermediateField.fixingSubgroup_fixedField_of_finite`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
+* `FixedPoints.isCyclic_algEquiv`
+* `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top`
 -/
 
 public section
@@ -134,3 +149,89 @@ theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) 
     exact congrArg σ (hy h hh)
 
 end Subgroup
+
+namespace FixedPoints
+
+/-- **The fixed subfield of a finite cyclic group action has cyclic Galois group.** For a finite
+cyclic group `G` acting on a field `F` by ring automorphisms, `F` is cyclic over its subfield of
+`G`-fixed points.
+
+No faithfulness is asked of the action: `FixedPoints.toAlgAut_surjective` needs only finiteness,
+and cyclicity passes along any surjection. A non-faithful action simply presents the Galois group
+as a proper quotient of `G`, which is cyclic all the same. -/
+theorem isCyclic_algEquiv (G F : Type*) [Group G] [Field F] [MulSemiringAction G F] [Finite G]
+    [IsCyclic G] : IsCyclic (F ≃ₐ[FixedPoints.subfield G F] F) :=
+  isCyclic_of_surjective _ (FixedPoints.toAlgAut_surjective G F)
+
+end FixedPoints
+
+namespace AlgEquiv
+
+variable {K M : Type*} [Field K] [Field M] [Algebra K M]
+
+-- Source. The fixed field of `⟨σ⟩` and its named generator are the constructions pinned at
+-- `TauCetiRoadmap/Chebotarev/Suggested.lean` lines 283-291, as `cyclicFixedField` and
+-- `fixedFieldGenerator`. Neither name is kept: the field is spelled
+-- `IntermediateField.fixedField (Subgroup.zpowers σ)` throughout rather than abbreviated, and the
+-- automorphism is `toFixedFieldAlgEquiv`, because it is defined without finiteness and only
+-- generates once `⟨σ⟩` is finite.
+
+/-- **The automorphism of `M` over `M ^ ⟨σ⟩` given by `σ`.** Acting through `⟨σ⟩` fixes
+`M ^ ⟨σ⟩` pointwise, so `σ` is an automorphism over that field; this is that automorphism, and
+nothing more. It is `σ` rebundled over a smaller base, so the name says only that.
+
+Named rather than inlined so that consumers have a term to talk about: a fibre count needs the
+relative Frobenius exhibited as a specific power of a specific generator, and `IsCyclic` supplies
+only an anonymous one. Use `toFixedFieldAlgEquiv_apply` to compute with it. That it *generates* is
+`zpowers_toFixedFieldAlgEquiv_eq_top`, a separate statement, and it is the only one that needs
+`⟨σ⟩` to be finite. -/
+def toFixedFieldAlgEquiv (σ : M ≃ₐ[K] M) :
+    M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M :=
+  MulSemiringAction.toAlgAut (Subgroup.zpowers σ)
+    (FixedPoints.subfield (Subgroup.zpowers σ) M) M ⟨σ, Subgroup.mem_zpowers σ⟩
+
+/-- **The rebundled automorphism acts as `σ`.** This is what makes `toFixedFieldAlgEquiv σ`
+usable: it is a different bundling of the same underlying map, over the fixed field rather than
+over `K`. It says nothing about generation, which needs `⟨σ⟩` finite and is
+`zpowers_toFixedFieldAlgEquiv_eq_top`. -/
+@[simp]
+theorem toFixedFieldAlgEquiv_apply (σ : M ≃ₐ[K] M) (x : M) :
+    toFixedFieldAlgEquiv σ x = σ x :=
+  (rfl)
+
+/-- **Restricting scalars undoes the rebundling.** Read back over `K`, `σ.toFixedFieldAlgEquiv`
+is `σ` itself — the elimination rule matching `toFixedFieldAlgEquiv_apply`, in bundled form, which
+is what a tower argument needs when it must produce an equation between automorphisms rather than
+between their values. -/
+@[simp]
+theorem restrictScalars_toFixedFieldAlgEquiv (σ : M ≃ₐ[K] M) :
+    AlgEquiv.restrictScalars K σ.toFixedFieldAlgEquiv = σ :=
+  AlgEquiv.ext fun x ↦ toFixedFieldAlgEquiv_apply σ x
+
+/-- **And, for finite `⟨σ⟩`, it generates.** The automorphisms of `M` fixing `M ^ ⟨σ⟩` are exactly
+the powers of `σ.toFixedFieldAlgEquiv`.
+
+Together with `FixedPoints.isCyclic_algEquiv`, applied to the action of `⟨σ⟩` on `M`, this is the
+cyclic picture of `M / M ^ ⟨σ⟩` with a named generator; neither statement asks `M / K` to be
+finite or Galois. -/
+@[simp]
+theorem zpowers_toFixedFieldAlgEquiv_eq_top (σ : M ≃ₐ[K] M) [Finite (Subgroup.zpowers σ)] :
+    Subgroup.zpowers (toFixedFieldAlgEquiv σ) = ⊤ := by
+  -- Generation is a statement about the `MulEquiv`, so it is proved for `toAlgAutMulEquiv` and
+  -- then transported to `toFixedFieldAlgEquiv` by `exact`, which works up to definitional equality:
+  -- `toAlgAutMulEquiv` is `MulEquiv.ofBijective` of the very `toAlgAut` the definition uses. It
+  -- cannot be done by rewriting with `toFixedFieldAlgEquiv` instead, because that term lives over
+  -- `FixedPoints.subfield`, defeq to `IntermediateField.fixedField` but not syntactically equal,
+  -- so `rw` produces a type-incorrect goal.
+  --
+  -- Within the `have`, `MonoidHom.map_zpowers` is about a `MonoidHom`, so the `MulEquiv`
+  -- application is restated through `MulEquiv.coe_toMonoidHom` rather than by unfolding the
+  -- coercion. The image of `⊤` is then `Subgroup.map_equiv_top`, which `simp` reaches through
+  -- `MulEquiv.toMonoidHom_eq_coe`.
+  have h : Subgroup.zpowers (FixedPoints.toAlgAutMulEquiv (Subgroup.zpowers σ) M
+      ⟨σ, Subgroup.mem_zpowers σ⟩) = ⊤ := by
+    rw [← MulEquiv.coe_toMonoidHom, ← MonoidHom.map_zpowers, Subgroup.zpowers_mk_self_eq_top]
+    simp
+  exact h
+
+end AlgEquiv
