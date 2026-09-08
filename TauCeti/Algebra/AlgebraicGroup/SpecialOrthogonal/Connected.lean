@@ -6,8 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
-public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
+public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
 import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
