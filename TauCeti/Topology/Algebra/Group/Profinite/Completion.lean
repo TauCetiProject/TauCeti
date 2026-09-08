@@ -12,10 +12,12 @@ public import Mathlib.Topology.Algebra.Category.ProfiniteGrp.Completion
 
 This file restates the categorical universal property of Mathlib's profinite completion for
 unbundled groups and continuous monoid homomorphisms. It also proves that the canonical map from
-a finite group to its profinite completion is bijective.
+a finite group to its profinite completion is bijective, and exposes the projections of the
+profinite completion onto the finite quotients it is the limit of.
 
 The correspondence is obtained from `ProfiniteGrp.ProfiniteCompletion.homEquiv`; the finite-group
-result uses its canonical map's dense range and Mathlib's residual-finiteness criterion.
+result uses its canonical map's dense range and Mathlib's residual-finiteness criterion. The
+projections are the components of Mathlib's explicit limit cone.
 -/
 
 public section
@@ -83,6 +85,44 @@ theorem etaFn_bijective_of_finite [Finite G] :
     exact Set.mem_univ x
   rw [(Set.finite_range _).isClosed.closure_eq] at hx
   exact hx
+
+/-- The projection from the profinite completion of `G` onto its finite quotient indexed by the
+finite-index normal subgroup `H`. -/
+@[expose]
+def coordinateHom (H : FiniteIndexNormalSubgroup G) :
+    ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →* G ⧸ H.toSubgroup := by
+  let f := ((ProfiniteGrp.limitCone
+    (ProfiniteGrp.ProfiniteCompletion.diagram (GrpCat.of G))).π.app H).hom
+    |>.toMonoidHom
+  -- The finite-quotient object hides its underlying quotient group.
+  change ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →* G ⧸ H.toSubgroup at f
+  exact f
+
+/-- The projection onto the finite quotient by `H` evaluates the underlying compatible family of
+cosets at `H`. -/
+theorem coordinateHom_apply (H : FiniteIndexNormalSubgroup G)
+    (x : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G)) :
+    coordinateHom G H x = x.val H :=
+  -- `limitCone` projects a compatible family of cosets to its `H`-th component by definition.
+  rfl
+
+/-- The `H`-coordinate of the canonical image of `g` is its coset modulo `H`. -/
+@[simp]
+theorem coordinateHom_etaFn (H : FiniteIndexNormalSubgroup G) (g : G) :
+    coordinateHom G H (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) =
+      QuotientGroup.mk g := by
+  rw [coordinateHom_apply]
+  -- `etaFn g` is the constant family of cosets of `g`.
+  rfl
+
+/-- The projection onto a finite quotient is continuous, that quotient carrying the discrete
+topology. -/
+theorem continuous_coordinateHom (H : FiniteIndexNormalSubgroup G) :
+    @Continuous (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G))
+      (G ⧸ H.toSubgroup) inferInstance ⊥ (coordinateHom G H) :=
+  -- The finite-quotient object hides its discrete underlying quotient group.
+  ((ProfiniteGrp.limitCone
+    (ProfiniteGrp.ProfiniteCompletion.diagram (GrpCat.of G))).π.app H).hom.continuous_toFun
 
 end ProfiniteCompletion
 
