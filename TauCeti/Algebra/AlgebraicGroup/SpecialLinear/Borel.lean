@@ -157,15 +157,9 @@ private noncomputable def definingPointsSubgroupMulEquiv :
       SL2Borel A :=
   Subgroup.congrOfMapEq (SpecialLinear.pointsMulEquiv (R := R) (A := A) 2) <| by
     ext g
-    rw [Subgroup.mem_map]
-    constructor
-    · rintro ⟨f, hf, rfl⟩
-      exact (mem_definingPointsSubgroup_iff R f).mp hf
-    · intro hg
-      refine ⟨(SpecialLinear.pointsMulEquiv (R := R) (A := A) 2).symm g,
-        (mem_definingPointsSubgroup_iff R _).mpr ?_, ?_⟩
-      · simpa only [MulEquiv.apply_symm_apply] using hg
-      · exact MulEquiv.apply_symm_apply _ g
+    rw [← (SpecialLinear.pointsMulEquiv (R := R) (A := A) 2).toMonoidHom_eq_coe,
+      Subgroup.mem_map_equiv, mem_definingPointsSubgroup_iff,
+      MulEquiv.apply_symm_apply]
 
 /-- The group of algebra-valued points of the upper-triangular special-linear coordinate Hopf
 algebra is the standard Borel subgroup `SL2Borel`. -/
@@ -275,7 +269,7 @@ theorem definingHopfIdeal_le_of_le_of_isReduced_of_geometricallySolvable
   let P : Subgroup SL(2, K) := Q.map e.toMonoidHom
   have hBP : SL2Borel K ≤ P := by
     intro g hg
-    refine ⟨e.symm g, ?_, e.apply_symm_apply g⟩
+    rw [Subgroup.mem_map_equiv]
     apply CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hIB (CommAlgCat.of k K)
     apply (mem_definingPointsSubgroup_iff k _).mpr
     simpa only [e, MulEquiv.apply_symm_apply] using hg

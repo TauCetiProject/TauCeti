@@ -365,18 +365,14 @@ theorem weightLeviInParabolicGroupSchemeIso_hom_comp_weightLeviToParabolic
   let hq := weightParabolicCoordinateMap_surjective R w
   let _ : Epi q := ConcreteCategory.epi_of_surjective q hq
   rw [← cancel_epi q]
-  have hq_def : weightParabolicCoordinateMap R w =
-      CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R N)
-        (weightParabolicDefiningHopfIdeal R w) := by
-    ext x
-    rw [weightParabolicCoordinateMap_apply, CommHopfAlgCat.mkQuotient_apply]
   dsimp only [q]
-  rw [hq_def, ← Category.assoc,
+  rw [weightParabolicCoordinateMap_eq_mkQuotient, ← Category.assoc,
     CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe]
   rw [weightLeviInParabolicCoordinateIso, Iso.trans_hom, ← Category.assoc,
     mkQuotient_comp_eqToIso (R := R)
       (weightLeviInParabolicHopfIdeal_comapOfSurjective R w).symm,
-    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfSurjective_hom, hq_def]
+    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfSurjective_hom,
+    weightParabolicCoordinateMap_eq_mkQuotient]
 
 /-- The quotient-coordinate isomorphism underlying the identification of the relative
 weight-unipotent quotient spectrum. -/
@@ -457,17 +453,13 @@ theorem weightUnipotentInParabolicGroupSchemeIso_hom_comp_weightUnipotentToParab
   let hq := weightParabolicCoordinateMap_surjective R w
   let _ : Epi q := ConcreteCategory.epi_of_surjective q hq
   rw [← cancel_epi q]
-  have hq_def : weightParabolicCoordinateMap R w =
-      CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R N)
-        (weightParabolicDefiningHopfIdeal R w) := by
-    ext x
-    rw [weightParabolicCoordinateMap_apply, CommHopfAlgCat.mkQuotient_apply]
   dsimp only [q]
-  rw [hq_def, ← Category.assoc,
+  rw [weightParabolicCoordinateMap_eq_mkQuotient, ← Category.assoc,
     CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe]
   rw [weightUnipotentInParabolicCoordinateIso, Iso.trans_hom, ← Category.assoc,
     mkQuotient_comp_eqToIso (R := R)
       (weightUnipotentInParabolicHopfIdeal_comapOfSurjective R w).symm,
-    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfSurjective_hom, hq_def]
+    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfSurjective_hom,
+    weightParabolicCoordinateMap_eq_mkQuotient]
 
 end TauCeti.GeneralLinear.Dynamic

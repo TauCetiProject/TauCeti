@@ -34,6 +34,8 @@ the point factors uniquely through the quotient algebra.
   the augmentation ideal consists only of the identity point.
 * `CommHopfAlgCat.instIsMulCommutativeQuotientPointsSubgroup`: when the quotient Hopf algebra is
   cocommutative, the cut-out point subgroup is commutative.
+* `CommHopfAlgCat.mem_quotientPointsSubgroup_map_mkQuotient_iff`: membership in the point
+  subgroup cut out by a mapped ideal is detected after pullback along the quotient map.
 * `CommHopfAlgCat.mapDomainMulEquiv_mem_quotientPointsSubgroup_comapOfSurjective_iff`: transport of
   quotient-subgroup membership along a bialgebra equivalence.
 
@@ -192,6 +194,25 @@ theorem mem_quotientPointsSubgroup_augmentation_iff (H : _root_.CommHopfAlgCat.{
   · exact eq_one_of_mem_quotientPointsSubgroup_augmentation H A
   · rintro rfl
     exact Subgroup.one_mem _
+
+/-- A point of a Hopf-algebra quotient vanishes on a mapped Hopf ideal exactly when its
+pullback along the quotient map vanishes on the original ideal. -/
+theorem mem_quotientPointsSubgroup_map_mkQuotient_iff
+    (H : _root_.CommHopfAlgCat.{v} R) (I J : HopfIdeal R H) (A : CommAlgCat.{w} R)
+    (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
+    f ∈ quotientPointsSubgroup (quotient H I) (J.map (mkQuotient H I).hom) A ↔
+      quotientPointsHom H I A f ∈ quotientPointsSubgroup H J A := by
+  rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
+  constructor
+  · intro hf x hx
+    rw [quotientPointsHom_apply_apply]
+    exact hf _ (HopfIdeal.mem_map_of_mem (mkQuotient H I).hom hx)
+  · intro hf y hy
+    obtain ⟨x, hx, rfl⟩ :=
+      (HopfIdeal.mem_map_iff_of_surjective (mkQuotient_surjective H I)).mp hy
+    have hx0 := hf x hx
+    rw [quotientPointsHom_apply_apply] at hx0
+    exact hx0
 
 /-- Precomposition by a bijective bialgebra morphism identifies the points cut out by a Hopf
 ideal with the points cut out by its pullback. -/

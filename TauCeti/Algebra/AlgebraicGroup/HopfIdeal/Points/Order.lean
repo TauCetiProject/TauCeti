@@ -26,8 +26,6 @@ value algebra.
   the Hopf ideal.
 * `CommHopfAlgCat.quotientPointsSubgroup_sup`: the point subgroup cut out by a join of Hopf
   ideals is the intersection of the point subgroups cut out by the joinands.
-* `CommHopfAlgCat.mem_quotientPointsSubgroup_map_mkQuotient_iff`: membership in the point
-  subgroup cut out by a mapped ideal is detected after pullback along the quotient map.
 * `CommHopfAlgCat.quotientPointsSubgroupInclusion`: the bundled natural inclusion between
   subgroup functors induced by `I ≤ J`.
 * `CommHopfAlgCat.mapQuotientPointsSubgroup_inclusion_apply`: these inclusions commute with
@@ -114,25 +112,6 @@ theorem quotientPointsSubgroup_sup (H : _root_.CommHopfAlgCat.{v} R)
   intro x hx
   obtain ⟨y, hy, z, hz, rfl⟩ := HopfIdeal.mem_sup.mp hx
   rw [map_add, hI y hy, hJ z hz, add_zero]
-
-/-- A point of a Hopf-algebra quotient vanishes on a mapped Hopf ideal exactly when its
-pullback along the quotient map vanishes on the original ideal. -/
-theorem mem_quotientPointsSubgroup_map_mkQuotient_iff
-    (H : _root_.CommHopfAlgCat.{v} R) (I J : HopfIdeal R H) (A : CommAlgCat.{w} R)
-    (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
-    f ∈ quotientPointsSubgroup (quotient H I) (J.map (mkQuotient H I).hom) A ↔
-      quotientPointsHom H I A f ∈ quotientPointsSubgroup H J A := by
-  rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
-  constructor
-  · intro hf x hx
-    rw [quotientPointsHom_apply_apply]
-    exact hf _ (HopfIdeal.mem_map_of_mem (mkQuotient H I).hom hx)
-  · intro hf y hy
-    obtain ⟨x, hx, rfl⟩ :=
-      (HopfIdeal.mem_map_iff_of_surjective (mkQuotient_surjective H I)).mp hy
-    have hx0 := hf x hx
-    rw [quotientPointsHom_apply_apply] at hx0
-    exact hx0
 
 /-- The subgroup inclusions associated to `I ≤ J` commute with maps of value algebras. -/
 @[simp]
