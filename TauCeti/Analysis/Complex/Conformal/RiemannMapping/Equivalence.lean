@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.RiemannMapping.Conformal
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Group
-import TauCeti.Analysis.Complex.Conformal.InverseFunction
+import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 
 /-!
 # Conformal equivalence of simply connected domains
@@ -32,7 +32,7 @@ other. This file proves those two statements, and the sharpness of the propernes
   homeomorphic to the disc.
 * `TauCeti.exists_bijOn_self_apply_eq_of_isSimplyConnected` — homogeneity: the biholomorphic
   self-maps of a simply connected open `Ω ⊆ ℂ` act transitively on `Ω`.
-* `TauCeti.Differentiable.exists_const_forall_eq_of_isSimplyConnected`,
+* `Differentiable.exists_const_forall_eq_of_isSimplyConnected`,
   `TauCeti.not_injOn_univ_of_isSimplyConnected` and
   `TauCeti.not_bijOn_univ_of_isSimplyConnected` — an entire function with values in a simply
   connected open proper set is constant, hence not injective, so `ℂ` itself is biholomorphic to no
@@ -44,7 +44,7 @@ other. This file proves those two statements, and the sharpness of the propernes
 
 Everything runs through the Riemann map. Transporting a domain `Ω` to the disc and a second domain
 `Ω'` back off it composes to a biholomorphism `Ω ≃ Ω'`; the inverse of a holomorphic injection on
-an open set is holomorphic by `TauCeti.DifferentiableOn.invFunOn`, so the composite inverse needs
+an open set is holomorphic by `DifferentiableOn.invFunOn`, so the composite inverse needs
 no separate argument. Homogeneity inserts, between the two transports of one and the same domain,
 a disc automorphism carrying one image point to the other; that automorphism is supplied by the
 transitivity of `TauCeti.unitDiscAut` and read back as a scalar map. The whole plane, which has no
@@ -89,12 +89,12 @@ private lemma bijOn_invFunOn_of_bijOn_ball {g : ℂ → ℂ} (hbij : BijOn g Ω 
 
 /-- A holomorphic bijection of an open set onto its image has a holomorphic inverse there.
 
-This repackages `TauCeti.DifferentiableOn.invFunOn` with the image identified by a `Set.BijOn`
+This repackages `DifferentiableOn.invFunOn` with the image identified by a `Set.BijOn`
 hypothesis, which is the form the constructions in this file produce. -/
 private lemma differentiableOn_invFunOn_of_bijOn {f : ℂ → ℂ} (hΩo : IsOpen Ω)
     (hfd : DifferentiableOn ℂ f Ω) (hbij : BijOn f Ω Ω') :
     DifferentiableOn ℂ (Function.invFunOn f Ω) Ω' := by
-  have hinv := TauCeti.DifferentiableOn.invFunOn hfd hΩo hbij.injOn
+  have hinv := DifferentiableOn.invFunOn hfd hΩo hbij.injOn
   rwa [hbij.image_eq] at hinv
 
 /-- **Any two simply connected proper domains of `ℂ` are conformally equivalent.** If `Ω` and `Ω'`
@@ -244,7 +244,7 @@ too.
 
 For bounded `Ω` this is Liouville's theorem itself, but the statement covers unbounded `Ω` such as
 the slit plane, where the Riemann map is doing genuine work. -/
-theorem Differentiable.exists_const_forall_eq_of_isSimplyConnected {f : ℂ → ℂ}
+theorem _root_.Differentiable.exists_const_forall_eq_of_isSimplyConnected {f : ℂ → ℂ}
     (hf : Differentiable ℂ f) (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω) (hΩ : Ω ≠ univ)
     (hmaps : ∀ z, f z ∈ Ω) :
     ∃ c, ∀ z, f z = c := by
@@ -259,7 +259,7 @@ theorem Differentiable.exists_const_forall_eq_of_isSimplyConnected {f : ℂ → 
   exact ⟨f 0, fun z => hrbij.injOn (hmaps z) (hmaps 0) ((hc z).trans (hc 0).symm)⟩
 
 /-- **No injective entire function takes its values in a simply connected proper domain.** Such a
-function is constant by `TauCeti.Differentiable.exists_const_forall_eq_of_isSimplyConnected`, and a
+function is constant by `Differentiable.exists_const_forall_eq_of_isSimplyConnected`, and a
 constant map on `ℂ` is not injective.
 
 Only the values of `f` are constrained, not the image: `f` is not required to cover `Ω`. -/

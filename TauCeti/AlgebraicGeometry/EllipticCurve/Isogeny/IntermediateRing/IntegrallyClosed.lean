@@ -21,8 +21,9 @@ formal reason that integrality is transitive: an element of `W₁.FunctionField`
 closure is integral over `W₂.CoordinateRing`, hence already in it. Since `W₁.FunctionField` is a
 field, being integrally closed *in* it upgrades to `IsIntegrallyClosed`
 (`IsIntegrallyClosed.of_isIntegrallyClosedIn`). In particular this holds for **inseparable**
-isogenies, Frobenius included, and does not inherit the separability hypothesis that the sibling
-`Isogeny.moduleFinite_intermediateRing` carries for want of a trace-free route to finiteness.
+isogenies, Frobenius included, and asks for no separability at all, as does the finiteness
+sibling `Isogeny.moduleFinite_intermediateRing_of_isDedekindDomain`; only
+`Isogeny.moduleFinite_intermediateRing` needs it.
 
 ## Main results
 
@@ -85,8 +86,10 @@ ambient ring by transitivity of integrality; over a field that upgrades to `IsIn
 No hypotheses beyond the isogeny: the algebra structures the proof runs through are the canonical
 pullback ones, installed locally rather than asked of the caller.
 
-No finiteness and no separability either: unlike the sibling `Isogeny.moduleFinite_intermediateRing`
-this covers inseparable isogenies, Frobenius included. -/
+No finiteness and no separability either, so this covers inseparable isogenies, Frobenius
+included, and asks nothing of the source curve. The finiteness sibling
+`Isogeny.moduleFinite_intermediateRing_of_isDedekindDomain` also drops separability, but pays
+for it with a Dedekind source coordinate ring. -/
 theorem isIntegrallyClosed_intermediateRing (φ : Isogeny W₁ W₂) :
     IsIntegrallyClosed φ.intermediateRing := by
   let _ := φ.pullback.toRingHom.toAlgebra

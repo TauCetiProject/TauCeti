@@ -44,8 +44,8 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
 ## Main results
 
 * `TauCeti.IsOpen.isOpen_constructibleTopology` — on a prespectral space the constructible
-  topology refines the given one; hence `TauCeti.IsClosed.isProConstructible`.
-* `TauCeti.IsCompact.isProConstructible` — a quasi-compact open subset is pro-constructible. It is
+  topology refines the given one; hence `IsClosed.isProConstructible`.
+* `IsCompact.isProConstructible` — a quasi-compact open subset is pro-constructible. It is
   in fact clopen for the constructible topology, which is what makes the two previous families
   interact.
 * `TauCeti.IsProConstructible.inter`, `.iInter`, `.sInter`, `.union`, `.iUnion` — the calculus of
@@ -60,7 +60,7 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
   the sobriety half of the main theorem.
 * `TauCeti.IsProConstructible.spectralSpace` — **a pro-constructible subspace of a spectral space
   is spectral**, together with `TauCeti.IsProConstructible.isSpectralMap_subtypeVal`: its
-  inclusion is a spectral map. `TauCeti.IsClosed.spectralSpace` is the closed special case, the
+  inclusion is a spectral map. `IsClosed.spectralSpace` is the closed special case, the
   counterpart of Mathlib's `Topology.IsOpenEmbedding.spectralSpace`.
 
 ## References
@@ -168,7 +168,7 @@ theorem IsProConstructible.sInter {S : Set (Set X)} (hS : ∀ s ∈ S, IsProCons
 
 /-- A quasi-compact open subset is pro-constructible: it is even clopen for the constructible
 topology, since it and its complement both belong to the defining subbasis. -/
-theorem IsCompact.isProConstructible {s : Set X} (hcomp : IsCompact s) (hopen : IsOpen s) :
+theorem _root_.IsCompact.isProConstructible {s : Set X} (hcomp : IsCompact s) (hopen : IsOpen s) :
     IsProConstructible s :=
   isProConstructible_iff_isClosed.2 <|
     (@isOpen_compl_iff X s (constructibleTopology X)).1 <|
@@ -176,7 +176,7 @@ theorem IsCompact.isProConstructible {s : Set X} (hcomp : IsCompact s) (hopen : 
         hopen.isClosed_compl
 
 /-- A closed subset of a prespectral space is pro-constructible. -/
-theorem IsClosed.isProConstructible [PrespectralSpace X] {s : Set X} (hs : IsClosed s) :
+theorem _root_.IsClosed.isProConstructible [PrespectralSpace X] {s : Set X} (hs : IsClosed s) :
     IsProConstructible s := by
   rw [IsProConstructible, ← isOpen_compl_iff, ← Set.preimage_compl]
   exact IsOpen.isOpen_preimage_ofTopology hs.isOpen_compl
@@ -268,7 +268,7 @@ theorem IsProConstructible.mem_of_isGenericPoint (hs : IsProConstructible s) {η
     ⟨⟨univ, isOpen_univ, isCompact_univ, mem_univ η⟩⟩
   have hcl : ∀ U : {U : Set X // IsOpen U ∧ IsCompact U ∧ η ∈ U},
       IsClosed (WithTopology.ofTopology ⁻¹' (s ∩ U.1) : Set (WithConstructibleTopology X)) :=
-    fun U ↦ hs.inter (IsCompact.isProConstructible U.2.2.1 U.2.1)
+    fun U ↦ hs.inter (U.2.2.1.isProConstructible U.2.1)
   have hnonempty : ∀ U : {U : Set X // IsOpen U ∧ IsCompact U ∧ η ∈ U},
       (WithTopology.ofTopology ⁻¹' (s ∩ U.1) : Set (WithConstructibleTopology X)).Nonempty :=
     fun U ↦ by
@@ -309,7 +309,7 @@ theorem IsProConstructible.isSpectralMap_subtypeVal (hs : IsProConstructible s) 
   toContinuous := continuous_subtype_val
   isCompact_preimage_of_isOpen := fun _ hUo hUc ↦ by
     rw [Subtype.isCompact_iff, Subtype.image_preimage_coe]
-    exact IsProConstructible.isCompact (hs.inter (IsCompact.isProConstructible hUc hUo))
+    exact IsProConstructible.isCompact (hs.inter (hUc.isProConstructible hUo))
 
 /-- A pro-constructible subspace of a spectral space is quasi-compact. -/
 theorem IsProConstructible.compactSpace (hs : IsProConstructible s) : CompactSpace s :=
@@ -369,7 +369,7 @@ theorem IsProConstructible.spectralSpace (hs : IsProConstructible s) : SpectralS
 
 /-- A closed subspace of a spectral space is spectral. Mathlib has the open counterpart,
 `Topology.IsOpenEmbedding.spectralSpace`; this is the closed one. -/
-theorem IsClosed.spectralSpace (hs : IsClosed s) : SpectralSpace s :=
+theorem _root_.IsClosed.spectralSpace (hs : IsClosed s) : SpectralSpace s :=
   IsProConstructible.spectralSpace (IsClosed.isProConstructible hs)
 
 end Spectral

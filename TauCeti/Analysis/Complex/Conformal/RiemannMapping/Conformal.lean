@@ -57,7 +57,7 @@ theorem riemannMapping_homeomorph {Ω : Set ℂ}
     (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω) (hΩ : Ω ≠ univ) :
     Nonempty (Ω ≃ₜ Complex.UnitDisc) := by
   obtain ⟨f, hbij, hfd, -⟩ := riemannMapping hΩo hΩc hΩ
-  exact ⟨TauCeti.DifferentiableOn.toHomeomorphOfBijOn hfd hΩo hbij⟩
+  exact ⟨DifferentiableOn.toHomeomorphOfBijOn hfd hΩo hbij⟩
 
 /-- **The Riemann mapping theorem as a conformal open partial homeomorphism.** A simply connected
 open proper subset `Ω` of `ℂ` is the source of an open partial homeomorphism whose target is the
@@ -73,21 +73,21 @@ theorem riemannMapping_openPartialHomeomorph {Ω : Set ℂ}
       (∀ z ∈ Ω, ConformalAt e z) ∧
       ∀ w ∈ ball (0 : ℂ) 1, ConformalAt e.symm w := by
   obtain ⟨f, hbij, hfd, -⟩ := riemannMapping hΩo hΩc hΩ
-  refine ⟨TauCeti.DifferentiableOn.toOpenPartialHomeomorph hfd hΩo hbij.injOn,
+  refine ⟨DifferentiableOn.toOpenPartialHomeomorph hfd hΩo hbij.injOn,
     ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · exact TauCeti.DifferentiableOn.toOpenPartialHomeomorph_source hfd hΩo hbij.injOn
+  · exact DifferentiableOn.toOpenPartialHomeomorph_source hfd hΩo hbij.injOn
   · exact
-      (TauCeti.DifferentiableOn.toOpenPartialHomeomorph_target hfd hΩo hbij.injOn).trans
+      (DifferentiableOn.toOpenPartialHomeomorph_target hfd hΩo hbij.injOn).trans
         hbij.image_eq
-  · rw [TauCeti.DifferentiableOn.toOpenPartialHomeomorph_coe hfd hΩo hbij.injOn]
+  · rw [DifferentiableOn.toOpenPartialHomeomorph_coe hfd hΩo hbij.injOn]
     exact hfd
   · have hinv :=
-      TauCeti.DifferentiableOn.differentiableOn_toOpenPartialHomeomorph_symm hfd hΩo hbij.injOn
+      DifferentiableOn.differentiableOn_toOpenPartialHomeomorph_symm hfd hΩo hbij.injOn
     simpa only [hbij.image_eq] using hinv
   · exact fun z hz =>
-      TauCeti.DifferentiableOn.conformalAt_toOpenPartialHomeomorph hfd hΩo hbij.injOn hz
+      DifferentiableOn.conformalAt_toOpenPartialHomeomorph hfd hΩo hbij.injOn hz
   · intro w hw
-    exact TauCeti.DifferentiableOn.conformalAt_toOpenPartialHomeomorph_symm hfd hΩo hbij.injOn
+    exact DifferentiableOn.conformalAt_toOpenPartialHomeomorph_symm hfd hΩo hbij.injOn
       (hbij.image_eq ▸ hw)
 
 end TauCeti

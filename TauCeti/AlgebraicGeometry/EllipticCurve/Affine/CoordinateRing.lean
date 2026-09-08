@@ -50,7 +50,9 @@ characteristic two that polynomial is the square `(a₁X + a₃)²`.
   conjugation formula computes the trace on the basis `{1, Y}`.
 * `TauCeti.WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing`: the coordinate ring of an
   elliptic curve over a field is integrally closed.
-* `TauCeti.WeierstrassCurve.Affine.isDedekindDomain_coordinateRing`: it is a Dedekind domain.
+* `WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed`: an integrally
+  closed coordinate ring is a Dedekind domain — so an elliptic curve's is, by
+  `isIntegrallyClosed_coordinateRing`.
 
 The integral closedness is the seeded milestone `isIntegrallyClosed_coordinateRing` of
 `TauCetiRoadmap/EllipticCurves/README.md`, Layer 1, where it is named as the normality input to
@@ -60,9 +62,14 @@ the coordinate ring rests.
 
 ## Provenance
 
-Not ported; this is a direct proof. Mathlib knows the coordinate ring, its `R[X]`-basis `{1, Y}`
+Not ported; these are direct proofs. Mathlib knows the coordinate ring, its `R[X]`-basis `{1, Y}`
 and the norm of `p • 1 + q • Y` (`WeierstrassCurve.Affine.CoordinateRing.norm_smul_basis`), all of
 which are used here, but has no normality or Dedekind statement about it.
+
+`isDedekindDomain_coordinateRing_of_isIntegrallyClosed` asks normality and nothing else because
+the coordinate ring is module-finite over `F[X]`, which carries Noetherianity and dimension at
+most one across; for an elliptic curve `isIntegrallyClosed_coordinateRing` then supplies the
+normality.
 -/
 
 public section
@@ -477,10 +484,12 @@ theorem isIntegrallyClosed_coordinateRing [W.IsElliptic] : IsIntegrallyClosed W.
       fun hx => exists_algebraMap_eq W (isIntegral_trans _ hx)⟩
   exact IsIntegrallyClosed.of_isIntegrallyClosedIn W.CoordinateRing W.FunctionField
 
-/-- **The coordinate ring of an elliptic curve is a Dedekind domain.** -/
-theorem isDedekindDomain_coordinateRing [W.IsElliptic] : IsDedekindDomain W.CoordinateRing := by
+/-- **An integrally closed coordinate ring is a Dedekind domain.** -/
+theorem _root_.WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
+    [IsIntegrallyClosed W.CoordinateRing] : IsDedekindDomain W.CoordinateRing := by
+  -- Noetherianity and dimension at most one are inherited from `F[X]`, over which the coordinate
+  -- ring is module-finite and hence integral, so normality is all that is assumed
   have : Algebra.IsIntegral F[X] W.CoordinateRing := Algebra.IsIntegral.of_finite _ _
-  have := isIntegrallyClosed_coordinateRing W
   exact { __ := Ring.DimensionLEOne.of_isIntegral F[X] W.CoordinateRing }
 
 end IntegrallyClosed

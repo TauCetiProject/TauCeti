@@ -19,7 +19,7 @@ if `f` is `C^{k+1}` and every iterated derivative of order `1 ≤ i ≤ k` vanis
 Morse--Sard theorem this is the estimate for the innermost stratum `Σ_k` of the critical set, the
 one place where regularity beyond `C¹` is genuinely needed; the two slices already available,
 `TauCeti.addHaar_image_eq_zero_of_not_surjective_fderivWithin` (equal dimensions, `C¹`) and
-`TauCeti.Differentiable.addHaar_image_eq_zero_of_finrank_lt_finrank` (smaller source,
+`Differentiable.addHaar_image_eq_zero_of_finrank_lt_finrank` (smaller source,
 differentiable), neither says anything when the source dimension exceeds the target dimension.
 
 The argument is the classical one, but the covering estimate is replaced by Hausdorff dimension.
