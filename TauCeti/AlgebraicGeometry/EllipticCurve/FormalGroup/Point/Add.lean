@@ -103,30 +103,13 @@ private theorem some_formalThirdRootEval_eq_some_formalAddEval {I : Ideal O} (hI
     W.hasEval_formalThirdRootEval hE₁ hE₂
   have hTmem : W.formalThirdRootEval t₁ t₂ ∈ I := by
     simpa using W.formalThirdRootEval_mem hI (k := 1) (by simpa using h₁) (by simpa using h₂)
-  -- the three the coordinate comparison consumes, stated so that `grind` can match on them
-  have hF : algebraMap O K (W.formalAddEval t₁ t₂) =
-      -(algebraMap O K (W.formalThirdRootEval t₁ t₂) *
-        algebraMap O K (W.formalInverseDenomInvEval (W.formalThirdRootEval t₁ t₂))) := by
-    rw [W.formalAddEval_eq hE₁ hE₂, W.formalInverseEval_eq hET]
-    simp [map_neg, map_mul]
-  have hu : algebraMap O K (W.formalInverseDenomEval (W.formalThirdRootEval t₁ t₂)) *
-      algebraMap O K (W.formalInverseDenomInvEval (W.formalThirdRootEval t₁ t₂)) = 1 := by
-    rw [← map_mul, ← map_one (algebraMap O K)]
-    exact congrArg (algebraMap O K) (W.formalInverseDenomEval_mul_inv hET)
-  have hden : algebraMap O K (W.formalInverseDenomEval (W.formalThirdRootEval t₁ t₂)) =
-      1 - (W.baseChange K).a₁ * algebraMap O K (W.formalThirdRootEval t₁ t₂) -
-        (W.baseChange K).a₃ *
-          algebraMap O K (W.formalWEval (W.formalThirdRootEval t₁ t₂)) := by
-    simpa [baseChange, map_sub, map_mul, map_one, map_a₁, map_a₃] using
-      congrArg (algebraMap O K) (W.formalInverseDenomEval_eq hET)
-  have hwF : algebraMap O K (W.formalWEval (W.formalAddEval t₁ t₂)) =
-      -(algebraMap O K (W.formalWEval (W.formalThirdRootEval t₁ t₂)) *
-        algebraMap O K (W.formalInverseDenomInvEval (W.formalThirdRootEval t₁ t₂))) := by
-    rw [W.formalAddEval_eq hE₁ hE₂,
-      W.formalWEval_formalInverseEval hET (W.hasEval_formalInverseEval hI hTmem)]
-    simp [map_neg, map_mul]
-  -- the coordinates of the two points agree, so the points do
-  grind
+  -- the addition series is the formal inverse of the third root, so the two coordinate identities
+  -- of the inverse law are exactly what distinguishes the two points
+  rw [Affine.Point.some.injEq, W.formalAddEval_eq hE₁ hE₂]
+  exact ⟨(W.algebraMap_formalInverseEval_div_algebraMap_formalWEval_formalInverseEval hET
+      (W.hasEval_formalInverseEval hI hTmem)).symm,
+    (W.neg_one_div_algebraMap_formalWEval_formalInverseEval hET
+      (W.hasEval_formalInverseEval hI hTmem)).symm⟩
 
 omit [(W.baseChange K).IsElliptic] in
 open scoped Classical in

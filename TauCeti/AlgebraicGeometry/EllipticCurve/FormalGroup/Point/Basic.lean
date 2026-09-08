@@ -41,6 +41,9 @@ into pole orders, but no order or valuation hypothesis is assumed here.
   `WeierstrassCurve.formalPoint_injective`.
 * `WeierstrassCurve.formalPoint_of_param_eq_zero` and
   `WeierstrassCurve.formalPoint_of_param_ne_zero`: the two branches of the definition.
+* `WeierstrassCurve.formalPoint_formalInverseEval`: **the parametrisation respects negation** —
+  the formal inverse on parameters becomes the group inverse on points, which on a generalised
+  Weierstrass curve sends `y` to `-y - a₁x - a₃` rather than to `-y`.
 * `WeierstrassCurve.xCoord_formalPoint` and `WeierstrassCurve.yCoord_formalPoint`: the point's
   coordinates, through which the closed forms
   `WeierstrassCurve.xCoord_formalPoint_mul_eq_one` and
@@ -55,9 +58,15 @@ into pole orders, but no order or valuation hypothesis is assumed here.
 The same parametrization is formalised in Michael Stoll's elliptic-curve development
 (`github.com/MichaelStollBayreuth/EllipticCurves` @ `66889eada51a`, Apache-2.0), file
 `EllipticCurves/WeierstrassFormalGroup/Filtration.lean`, declarations `formalPoint`,
-`formalPoint_of_param_eq_zero`, `formalPoint_of_param_ne_zero` and `formalPoint_nonsingular`. The
-first three keep their source names; the fourth is not restated, `Affine.Point.mk` carrying the
-equation-to-nonsingularity step itself.
+`formalPoint_of_param_eq_zero`, `formalPoint_of_param_ne_zero`, `formalPoint_nonsingular` and
+`formalPoint_negPoint`. The first three keep their source names; the fourth is not restated,
+`Affine.Point.mk` carrying the equation-to-nonsingularity step itself.
+
+`formalPoint_formalInverseEval` is that source's `formalPoint_negPoint`. It is what makes the
+parameters of an adic ideal closed under inverses as *points*, so that the chord case of
+additivity in `Point/Add.lean` can read the addition series as a negated third root. Its name
+takes this repository's vocabulary, `formalInverseEval` rather than the source's `negPoint`,
+since the object being applied is the evaluated formal inverse.
 
 That development states them over `v.adicCompletion K` for a height-one prime of a Dedekind domain
 and builds nonsingularity from a chord lemma of its own. The declarations below are stated over an
@@ -222,5 +231,41 @@ theorem formalPoint_injective {I : Ideal O} (hI : IsAdic I) :
   rw [← W.neg_xCoord_div_yCoord_formalPoint (K := K) hI t₁.property,
     ← W.neg_xCoord_div_yCoord_formalPoint (K := K) hI t₂.property]
   exact congrArg (fun P ↦ -P.xCoord / P.yCoord) h
+
+open scoped Classical in
+/-- **The parametrisation respects negation.** The formal inverse `ι` on parameters becomes the
+group inverse on points — on a generalised Weierstrass curve the `negY` transformation
+`y ↦ -y - a₁x - a₃`, not plain negation — so `formalPoint` carries the inverse law across.
+
+Tagged `@[simp]` in the reducing orientation, towards point negation. Note that `simp` reaches it
+only where the parameter is syntactically `formalInverseEval t`: the parameter sits in the
+membership proof's type, so matching it otherwise would need higher-order unification. -/
+@[simp]
+theorem formalPoint_formalInverseEval {I : Ideal O} (hI : IsAdic I) {t : O} (ht : t ∈ I) :
+    W.formalPoint (K := K) hI (pow_one I ▸ W.formalInverseEval_mem
+        (hI.isTopologicallyNilpotent_of_mem ht) (k := 1) ((pow_one I).symm ▸ ht)) =
+      -W.formalPoint (K := K) hI ht := by
+  have hE : PowerSeries.HasEval t := hI.isTopologicallyNilpotent_of_mem ht
+  by_cases h0 : t = 0
+  · subst h0
+    rw [W.formalPoint_of_param_eq_zero hI ht rfl, neg_zero,
+      W.formalPoint_of_param_eq_zero hI _ (by simp [W.formalInverseEval_eq hE])]
+  have hV0 : W.formalInverseEval t ≠ 0 := W.formalInverseEval_ne_zero hE h0
+  have hVmem : W.formalInverseEval t ∈ I := by
+    simpa using W.formalInverseEval_mem (I := I) (k := 1) hE (by simpa using ht)
+  have hWt : algebraMap O K (W.formalWEval t) ≠ 0 := W.algebraMap_formalWEval_ne_zero hI ht
+    ((map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective O K)).mpr h0)
+  rw [W.formalPoint_of_param_ne_zero hI hVmem hV0,
+    W.formalPoint_of_param_ne_zero hI ht h0]
+  -- `Point.mk` is the `some` constructor, and `negY` at the original point is the negated
+  -- `y`-coordinate the second lemma computes
+  simp only [Affine.Point.mk, Affine.Point.neg_some, Affine.Point.some.injEq, Affine.negY]
+  refine ⟨W.algebraMap_formalInverseEval_div_algebraMap_formalWEval_formalInverseEval hE
+      (W.hasEval_formalInverseEval hI ht), ?_⟩
+  have hy := W.neg_one_div_algebraMap_formalWEval_formalInverseEval (K := K) hE
+    (W.hasEval_formalInverseEval hI ht)
+  rw [neg_div, one_div] at hy
+  rw [hy]
+  field_simp
 
 end WeierstrassCurve

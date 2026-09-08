@@ -80,24 +80,10 @@ theorem eq_augmentation_of_isNormal_of_smoothUnipotent
       (FiniteTypeCommHopfAlgCat.quotient (finiteTypeCoordinateHopfAlgebra k n) I)) :
     I = HopfIdeal.augmentation k (finiteTypeCoordinateHopfAlgebra k n) := by
   let e := coordinateHopfAlgebraFiniteTypeObjIso k n
-  let f : coordinateHopfAlgebra k n →ₐc[k] (finiteTypeCoordinateHopfAlgebra k n) :=
-    CommHopfAlgCat.ofIso e
-  have hf : Function.Bijective f := ConcreteCategory.bijective_of_isIso e.hom
-  let J : HopfIdeal k (coordinateHopfAlgebra k n) := I.comapOfSurjective f hf.2
-  have hJnormal : J.IsNormal := hI.comapOfSurjective_of_bijective f hf.1 hf.2
-  let qIso : CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) J ≅
-      CommHopfAlgCat.quotient (finiteTypeCoordinateHopfAlgebra k n).obj I :=
-    CommHopfAlgCat.quotientIsoOfIso e I
   let H : FiniteTypeCommHopfAlgCat k :=
     ⟨coordinateHopfAlgebra k n, by
       rw [← finiteTypeCoordinateHopfAlgebra_obj]
       exact (finiteTypeCoordinateHopfAlgebra k n).property⟩
-  let qIso' : FiniteTypeCommHopfAlgCat.quotient H J ≅
-      FiniteTypeCommHopfAlgCat.quotient (finiteTypeCoordinateHopfAlgebra k n) I :=
-    ObjectProperty.isoMk _ qIso
-  have hUJ : smoothUnipotentCommHopfAlgProperty k
-      (FiniteTypeCommHopfAlgCat.quotient H J) :=
-    (smoothUnipotentCommHopfAlgProperty k).prop_of_iso qIso'.symm hU
   let _ : IsReduced H := by
     -- `H` packages this coordinate algebra with its finite-type proof, so its carrier is
     -- definitionally the coordinate algebra on which smoothness supplies reducedness.
@@ -110,12 +96,9 @@ theorem eq_augmentation_of_isNormal_of_smoothUnipotent
     | succ n =>
         let _ : NeZero n.succ := ⟨Nat.succ_ne_zero n⟩
         exact Comodule.isCompletelyReducible_of_isSimpleOrder
-  have hJ : J = HopfIdeal.augmentation k (coordinateHopfAlgebra k n) :=
-    HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful k H (Fin n → k)
-      hcr (isFaithful_standardComodule k n) J hJnormal hUJ
-  rw [← HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff f hf.2,
-    HopfIdeal.comapOfSurjective_augmentation]
-  exact hJ
+  exact HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful_of_iso
+    k H (Fin n → k) (finiteTypeCoordinateHopfAlgebra k n) e hcr
+      (isFaithful_standardComodule k n) I hI hU
 
 /-- **The special linear group is reductive over every field.** -/
 theorem reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
