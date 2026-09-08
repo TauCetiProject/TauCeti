@@ -32,7 +32,7 @@ any extra regularity on the graphon's carrier.
 ## Main results
 
 * `sampleMass_nonneg` and `sum_sampleMass_eq_one` show that the masses form a probability law;
-* `sampleGraph_apply_singleton` computes the probability of an individual graph;
+* `sampleGraph_singleton` computes the probability of an individual graph;
 * `sampleGraph_const` identifies sampling a constant graphon with Mathlib's binomial random graph.
 
 ## References
@@ -200,11 +200,6 @@ private def samplePMF (W : Graphon Ω μ) (n : ℕ) : PMF (SimpleGraph (Fin n)) 
     rw [← ENNReal.ofReal_sum_of_nonneg (fun G _ => sampleMass_nonneg W G),
       sum_sampleMass_eq_one, ENNReal.ofReal_one])
 
-/-- The probability assigned to a graph by `samplePMF`. -/
-@[simp]
-private theorem samplePMF_apply (W : Graphon Ω μ) (n : ℕ) (G : SimpleGraph (Fin n)) :
-    samplePMF W n G = ENNReal.ofReal (sampleMass W G) := (rfl)
-
 /-- The `W`-random graph law on `Fin n`. -/
 def sampleGraph (W : Graphon Ω μ) (n : ℕ) : Measure (SimpleGraph (Fin n)) :=
   (samplePMF W n).toMeasure
@@ -217,10 +212,10 @@ instance sampleGraph_isProbabilityMeasure (W : Graphon Ω μ) (n : ℕ) :
 
 /-- The probability that the sampled graph equals `G`. -/
 @[simp]
-theorem sampleGraph_apply_singleton (W : Graphon Ω μ) (n : ℕ) (G : SimpleGraph (Fin n)) :
+theorem sampleGraph_singleton (W : Graphon Ω μ) (n : ℕ) (G : SimpleGraph (Fin n)) :
     sampleGraph W n {G} = ENNReal.ofReal (sampleMass W G) := by
   classical
-  rw [sampleGraph, PMF.toMeasure_apply_singleton, samplePMF_apply]
+  rw [sampleGraph, PMF.toMeasure_apply_singleton, samplePMF, PMF.ofFintype_apply]
   have h : MeasurableSet ({G.edgeSet} : Set (Set (Sym2 (Fin n)))) :=
     MeasurableSet.singleton G.edgeSet
   have heq : SimpleGraph.edgeSet ⁻¹' {G.edgeSet} = {G} := by
@@ -268,7 +263,7 @@ theorem sampleGraph_const (p : I) (n : ℕ) :
     sampleGraph (Graphon.const μ p) n = SimpleGraph.binomialRandom (Fin n) p := by
   classical
   refine Measure.ext_of_singleton fun G => ?_
-  rw [sampleGraph_apply_singleton, sampleMass_const,
+  rw [sampleGraph_singleton, sampleMass_const,
     SimpleGraph.binomialRandom_singleton]
   have hp : 0 ≤ (p : ℝ) := p.2.1
   have hσ : 0 ≤ 1 - (p : ℝ) := sub_nonneg.mpr p.2.2
