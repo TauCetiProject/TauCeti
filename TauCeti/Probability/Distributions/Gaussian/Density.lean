@@ -118,7 +118,7 @@ theorem stdGaussian_eq_withDensity :
   have hvol : (volume : Measure (ι → ℝ)).map ⇑(MeasurableEquiv.toLp 2 (ι → ℝ)) = volume :=
     (PiLp.volume_preserving_toLp ι).map_eq
   rw [← map_pi_eq_stdGaussian, pi_gaussianReal_eq_withDensity,
-    ← MeasurableEquiv.coe_toLp 2 (ι → ℝ), map_withDensity_equiv, ← volume_pi, hvol]
+    ← MeasurableEquiv.coe_toLp 2 (ι → ℝ), MeasurableEquiv.map_withDensity, ← volume_pi, hvol]
   refine withDensity_congr_ae (.of_forall fun y => congrArg ENNReal.ofReal ?_)
   rw [prod_gaussianPDFReal_zero_one, MeasurableEquiv.coe_toLp_symm,
     ← EuclideanSpace.real_norm_sq_eq]
@@ -152,7 +152,7 @@ theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace 
     rw [Real.sqrt_eq_rpow, ← Real.rpow_neg hdetS.le]
     congr 1
     ring
-  rw [multivariateGaussian, stdGaussian_eq_withDensity, hAfun, map_affine_withDensity,
+  rw [multivariateGaussian, stdGaussian_eq_withDensity, hAfun, Measure.map_affine_withDensity,
     Matrix.det_toEuclideanCLE]
   refine withDensity_congr_ae (.of_forall fun y => ?_)
   simp only [multivariateGaussianPDF, multivariateGaussianPDFReal,

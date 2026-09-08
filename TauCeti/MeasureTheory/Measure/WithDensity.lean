@@ -26,11 +26,11 @@ into a density for every other member.
 
 ## Main statements
 
-* `TauCeti.map_withDensity_equiv`: the image of a weighted measure along a measurable
+* `MeasurableEquiv.map_withDensity`: the image of a weighted measure along a measurable
   equivalence is the image measure weighted by the transported weight.
-* `TauCeti.map_affine_withDensity`: the image of a weighted Haar measure under an invertible
-  affine map is that Haar measure weighted by the substituted density, rescaled by the constant
-  Jacobian factor.
+* `MeasureTheory.Measure.map_affine_withDensity`: the image of a weighted Haar measure under an
+  invertible affine map is that Haar measure weighted by the substituted density, rescaled by the
+  constant Jacobian factor.
 -/
 
 public section
@@ -41,7 +41,7 @@ open MeasureTheory
 
 open scoped ENNReal
 
-namespace TauCeti
+namespace MeasurableEquiv
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
 
@@ -51,13 +51,17 @@ measurable equivalence `e` gives the pushforward of `μ` weighted by `f ∘ e.sy
 No measurability of `f` is needed: on a measurable set both sides unfold to the lower integral of
 `f` over the preimage, and `MeasureTheory.lintegral_map_equiv` transports that integral along `e`
 with no hypothesis on the integrand. -/
-theorem map_withDensity_equiv (e : α ≃ᵐ β) (μ : Measure α) (f : α → ℝ≥0∞) :
+theorem map_withDensity (e : α ≃ᵐ β) (μ : Measure α) (f : α → ℝ≥0∞) :
     (μ.withDensity f).map e = (μ.map e).withDensity fun y => f (e.symm y) := by
   ext s hs
   rw [withDensity_apply _ hs, Measure.map_apply e.measurable hs,
     withDensity_apply _ (e.measurable hs), Measure.restrict_map e.measurable hs,
     lintegral_map_equiv]
   simp only [MeasurableEquiv.symm_apply_apply]
+
+end MeasurableEquiv
+
+namespace MeasureTheory.Measure
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [FiniteDimensional ℝ E]
@@ -77,7 +81,7 @@ theorem map_affine_withDensity (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃
     simpa using Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
   -- the linear part rescales the measure by the Jacobian, and substitutes `A⁻¹` in the density
   have hlin : (μ.withDensity g).map A = μ.withDensity fun y => r * g (A.symm y) := by
-    rw [← A.coe_toHomeomorph, ← Homeomorph.toMeasurableEquiv_coe, map_withDensity_equiv]
+    rw [← A.coe_toHomeomorph, ← Homeomorph.toMeasurableEquiv_coe, MeasurableEquiv.map_withDensity]
     simp only [Homeomorph.toMeasurableEquiv_coe, Homeomorph.toMeasurableEquiv_symm_coe,
       ContinuousLinearEquiv.coe_toHomeomorph, ContinuousLinearEquiv.coe_symm_toHomeomorph]
     rw [hmapA, withDensity_smul_measure, ← withDensity_smul' _ _ ENNReal.ofReal_ne_top]
@@ -88,8 +92,8 @@ theorem map_affine_withDensity (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃
         (Measure.map_map (by fun_prop) (by fun_prop)).symm
     _ = (μ.withDensity fun y => r * g (A.symm y)).map (fun y : E => c + y) := by rw [hlin]
     _ = μ.withDensity fun y => r * g (A.symm (y - c)) := by
-        rw [← MeasurableEquiv.coe_addLeft c, map_withDensity_equiv]
+        rw [← MeasurableEquiv.coe_addLeft c, MeasurableEquiv.map_withDensity]
         simp only [MeasurableEquiv.coe_addLeft, MeasurableEquiv.symm_addLeft,
           map_add_left_eq_self, neg_add_eq_sub]
 
-end TauCeti
+end MeasureTheory.Measure
