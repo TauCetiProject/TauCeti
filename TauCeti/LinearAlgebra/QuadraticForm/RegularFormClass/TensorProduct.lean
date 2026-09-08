@@ -178,6 +178,16 @@ noncomputable def presentedFormTensorIsometryEquiv (p q : RegularFormPresentatio
       smul_eq_mul, mul_comm]
   exact ⟨e.toLinearEquiv, fun x => hform ▸ e.map_app x⟩
 
+-- Mathlib's orthogonal-basis isometry is definitionally the basis representation map; this
+-- coordinate lemma isolates that implementation detail from the public evaluation theorem below.
+omit [Invertible (2 : K)] in
+private theorem presentedFormTensorBasis_repr_tmul_apply (p q : RegularFormPresentation K)
+    (x : Fin p.1 → K) (y : Fin q.1 → K) (i : Fin p.1) (j : Fin q.1) :
+    (presentedFormTensorBasis p q).repr (x ⊗ₜ[K] y)
+      (Fin.cast (RegularFormPresentation.fst_tmul p q).symm (finProdFinEquiv (i, j))) =
+        x i * y j := by
+  simp [presentedFormTensorBasis, presentedFormTensorIndexEquiv, smul_eq_mul, mul_comm]
+
 /-- The comparison isometry sends a pure tensor to the corresponding products of coordinates. -/
 @[simp]
 theorem presentedFormTensorIsometryEquiv_tmul_apply (p q : RegularFormPresentation K)
@@ -185,9 +195,7 @@ theorem presentedFormTensorIsometryEquiv_tmul_apply (p q : RegularFormPresentati
     presentedFormTensorIsometryEquiv p q (x ⊗ₜ[K] y)
       (Fin.cast (RegularFormPresentation.fst_tmul p q).symm (finProdFinEquiv (i, j))) =
         x i * y j := by
-  change (presentedFormTensorBasis p q).repr (x ⊗ₜ[K] y)
-    (Fin.cast (RegularFormPresentation.fst_tmul p q).symm (finProdFinEquiv (i, j))) = _
-  simp [presentedFormTensorBasis, presentedFormTensorIndexEquiv, smul_eq_mul, mul_comm]
+  exact presentedFormTensorBasis_repr_tmul_apply p q x y i j
 
 /-! ### Multiplication of isometry classes -/
 
