@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.DoubleCoset
 public import Mathlib.GroupTheory.Solvable
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Lift
 import TauCeti.GroupTheory.DoubleCoset.Generation
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Solvable
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
@@ -78,6 +79,21 @@ theorem apply_one_zero (g : SL2Borel R) :
     (g : Matrix (Fin 2) (Fin 2) R) 1 0 = 0 :=
   mem_iff.mp g.2
 
+/-- The upper-triangular determinant-one matrix with diagonal entries `a`, `a⁻¹` and
+upper-right entry `b`. -/
+def mk (a : Rˣ) (b : R) : SL2Borel R :=
+  let M : Matrix (Fin 2) (Fin 2) R := !![(a : R), b; 0, ((a⁻¹ : Rˣ) : R)]
+  have hdet : M.det = 1 := by
+    rw [Matrix.det_fin_two]
+    simp [M]
+  ⟨⟨M, hdet⟩, mem_iff.mpr (by simp [M])⟩
+
+/-- The matrix underlying `mk a b`. -/
+@[simp]
+theorem coe_mk (a : Rˣ) (b : R) :
+    (mk a b : Matrix (Fin 2) (Fin 2) R) = !![(a : R), b; 0, ((a⁻¹ : Rˣ) : R)] :=
+  by rw [mk]
+
 /-- Apply a ring homomorphism entrywise to an upper-triangular determinant-one matrix. -/
 def map {S : Type v} [CommRing S] (phi : R →+* S) : SL2Borel R →* SL2Borel S :=
   ((Matrix.SpecialLinearGroup.map phi).domRestrict (SL2Borel R)).codRestrict
@@ -117,6 +133,62 @@ theorem map_comp {S T : Type*} [CommRing S] [CommRing T]
   apply Subtype.ext
   ext i j
   simp only [map_apply, RingHom.coe_comp, Function.comp_apply, MonoidHom.coe_comp]
+
+/-- Every upper-triangular determinant-one matrix modulo a nilpotent ideal lifts to an
+upper-triangular determinant-one matrix.
+
+Starting from an arbitrary special-linear lift, a lower transvection with parameter in the ideal
+eliminates its lower-left entry without changing its reduction. -/
+theorem map_quotient_mk_surjective_of_isNilpotent (I : Ideal R) (hI : IsNilpotent I) :
+    Function.Surjective (map (Ideal.Quotient.mk I) : SL2Borel R → SL2Borel (R ⧸ I)) := by
+  intro g
+  obtain ⟨M, hM⟩ :=
+    Matrix.SpecialLinearGroup.map_quotient_mk_surjective_of_isNilpotent I hI g.1
+  have hMmap (i j : Fin 2) : Ideal.Quotient.mk I (M.1 i j) = g.1.1 i j := by
+    have h := congrArg (fun N : SL(2, R ⧸ I) ↦ N.1 i j) hM
+    simpa only [Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+      Matrix.map_apply] using h
+  have hM10 : M.1 1 0 ∈ I := by
+    rw [← Ideal.Quotient.eq_zero_iff_mem, hMmap, apply_one_zero]
+  have hg00 : IsUnit (g.1.1 0 0) := by
+    have hdet := g.1.2
+    rw [Matrix.det_fin_two, apply_one_zero, mul_zero, sub_zero] at hdet
+    exact ⟨⟨g.1.1 0 0, g.1.1 1 1, hdet, by simpa [mul_comm] using hdet⟩, rfl⟩
+  have hM00 : IsUnit (M.1 0 0) :=
+    (IsNilpotent.isUnit_quotient_mk_iff hI).mp (hMmap 0 0 ▸ hg00)
+  let a : Rˣ := hM00.unit
+  have ha : (a : R) = M.1 0 0 := hM00.unit_spec
+  let q : R := -(M.1 1 0) * ((a⁻¹ : Rˣ) : R)
+  let T : SL(2, R) :=
+    Matrix.SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0) q
+  let N : SL(2, R) := T * M
+  have hTcoe : T.1 = Matrix.transvection (1 : Fin 2) 0 q := by
+    exact Matrix.SpecialLinearGroup.transvection_coe _ _
+  have hNcoe : N.1 = T.1 * M.1 := Matrix.SpecialLinearGroup.coe_mul T M
+  have hN10 : N.1 1 0 = 0 := by
+    rw [hNcoe, hTcoe, Matrix.transvection_mul_apply_same]
+    rw [← ha]
+    simp [q]
+  refine ⟨⟨N, mem_iff.mpr hN10⟩, ?_⟩
+  apply Subtype.ext
+  apply Subtype.ext
+  ext i j
+  rw [coe_map, Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+    Matrix.map_apply]
+  have hq : Ideal.Quotient.mk I q = 0 := by
+    rw [Ideal.Quotient.eq_zero_iff_mem]
+    exact I.mul_mem_right _ (I.neg_mem hM10)
+  have hNmap : N.1.map (Ideal.Quotient.mk I) = g.1.1 := by
+    rw [hNcoe, hTcoe]
+    ext r s
+    rw [Matrix.map_apply]
+    by_cases hr : r = 1
+    · subst r
+      rw [Matrix.transvection_mul_apply_same, map_add, map_mul, hq, zero_mul, add_zero]
+      exact hMmap 1 s
+    · rw [Matrix.transvection_mul_apply_of_ne (i := (1 : Fin 2)) (j := 0) r s hr]
+      exact hMmap r s
+  exact congr_fun (congr_fun hNmap i) j
 
 /-- The canonical inclusion from the `SL₂` Borel to the `GL₂` Borel. -/
 def toGL2Borel : SL2Borel R →* GL2Borel R :=
