@@ -77,7 +77,7 @@ universe u v v'
 variable {k : Type u} {F : Type v} {F' : Type v'}
 variable [Field k] [Field F] [Field F']
 variable [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
-variable [Algebra.IsIntegral F F'] [FiniteDimensional F F'] [IsGalois F F']
+variable [FiniteDimensional F F'] [IsGalois F F']
 
 variable (F)
 
@@ -100,8 +100,7 @@ theorem card_decompositionSubgroup (P : Place k F') :
 def decompositionField (P : Place k F') : IntermediateField F F' :=
   IntermediateField.fixedField (P.integers.decompositionSubgroup F)
 
-omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] [FiniteDimensional F F']
-  [IsGalois F F'] in
+omit [Algebra k F] [IsScalarTower k F F'] [FiniteDimensional F F'] [IsGalois F F'] in
 /-- An element of `F'` lies in the decomposition field of `P` exactly when the decomposition
 group of `P` fixes it. -/
 @[simp]
@@ -109,7 +108,7 @@ theorem mem_decompositionField_iff (P : Place k F') (x : F') :
     x ∈ decompositionField F P ↔ ∀ σ ∈ P.integers.decompositionSubgroup F, σ x = x :=
   IntermediateField.mem_fixedField_iff _ x
 
-omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] [IsGalois F F'] in
+omit [Algebra k F] [IsScalarTower k F F'] [IsGalois F F'] in
 /-- **The Galois correspondence for the decomposition field**: the automorphisms of `F'` fixing
 the decomposition field of `P` pointwise are exactly the decomposition group of `P`. -/
 @[simp]
@@ -117,7 +116,7 @@ theorem fixingSubgroup_decompositionField (P : Place k F') :
     (decompositionField F P).fixingSubgroup = P.integers.decompositionSubgroup F :=
   IntermediateField.fixingSubgroup_fixedField _
 
-omit [Algebra.IsIntegral F F'] [IsGalois F F'] in
+omit [IsGalois F F'] in
 /-- An automorphism of `F'` over the decomposition field of `P`, read as an automorphism over
 `F`, fixes `P`. -/
 -- The priority keeps this ahead of `TauCeti.Place.restrictScalars_smul`, which would otherwise
@@ -129,7 +128,6 @@ theorem restrictScalars_smul_eq_self (P : Place k F') (τ : F' ≃ₐ[decomposit
   rw [stabilizer_eq_decompositionSubgroup, ← fixingSubgroup_decompositionField F P]
   exact (IntermediateField.mem_fixingSubgroup_iff _ _).mpr fun x hx ↦ τ.commutes ⟨x, hx⟩
 
-omit [Algebra.IsIntegral F F'] in
 /-- **A place is the only place of `F'` above its restriction to its decomposition field**
 (Stichtenoth, Theorem 3.8.2). -/
 theorem eq_of_restrict_decompositionField_eq {P Q : Place k F'}
@@ -139,7 +137,6 @@ theorem eq_of_restrict_decompositionField_eq {P Q : Place k F'}
   rw [← smul_left_cancel_iff (τ.restrictScalars F), restrictScalars_smul _ τ Q, hτ,
     restrictScalars_smul_eq_self F P τ]
 
-omit [Algebra.IsIntegral F F'] in
 /-- The fibre of a place over its restriction to its decomposition field is a single point. -/
 @[simp]
 theorem setOf_restrict_decompositionField_eq_eq_singleton (P : Place k F') :
@@ -234,7 +231,7 @@ theorem relativeDegree_decompositionField (P : Place k F') :
       (F₁ := (decompositionField F P : Type v')) P
   rw [hf, relativeDegree_restrict_decompositionField, mul_one]
 
-omit [Algebra.IsIntegral F F'] [FiniteDimensional F F'] [IsGalois F F'] in
+omit [FiniteDimensional F F'] [IsGalois F F'] in
 /-- **The decomposition group of a conjugate place is the conjugate decomposition group**
 (Stichtenoth, Theorem 3.8.2). -/
 @[simp]
@@ -245,7 +242,7 @@ theorem decompositionSubgroup_integers_smul (σ : F' ≃ₐ[F] F') (P : Place k 
     MulAction.stabilizer_smul_eq_stabilizer_map_conj]
   simp only [MulEquiv.toMonoidHom_eq_coe]
 
-omit [Algebra.IsIntegral F F'] [FiniteDimensional F F'] [IsGalois F F'] in
+omit [FiniteDimensional F F'] [IsGalois F F'] in
 /-- **The decomposition field of a conjugate place is the image of the decomposition field**
 (Stichtenoth, Theorem 3.8.2). -/
 @[simp]
