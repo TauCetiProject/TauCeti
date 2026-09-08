@@ -79,6 +79,27 @@ theorem eq_completionAlgHom_of_continuous {L : Type*} [Field L] [NumberField L] 
     f = (completionAlgHom v w : v.adicCompletion K →+* w.adicCompletion L) :=
   v.eq_adicCompletionExtension_of_continuous K L w hf hcomp
 
+/-- The canonical map from a completion to itself is the identity. -/
+@[simp]
+theorem completionAlgHom_self (v : HeightOneSpectrum (𝒪 K)) :
+    let _ : @Ideal.LiesOver (𝒪 K) _ (𝒪 K) _
+      (NumberField.inst_ringOfIntegersAlgebra (K := K) (L := K))
+      v.asIdeal v.asIdeal := ⟨by
+        change v.asIdeal = Ideal.comap (RingHom.id _) v.asIdeal
+        simp⟩
+    completionAlgHom v v = AlgHom.id K (v.adicCompletion K) := by
+  let _ : @Ideal.LiesOver (𝒪 K) _ (𝒪 K) _
+      (NumberField.inst_ringOfIntegersAlgebra (K := K) (L := K)) v.asIdeal v.asIdeal :=
+    ⟨by
+      change v.asIdeal = Ideal.comap (RingHom.id _) v.asIdeal
+      simp⟩
+  apply AlgHom.coe_ringHom_injective
+  symm
+  apply eq_completionAlgHom_of_continuous v v
+  · exact continuous_id
+  · intro x
+    simp
+
 /-- The algebra structure on `L_w` over `K_v` induced by the canonical completion map, for any
 Dedekind model of `L` over `𝒪 K`. -/
 @[reducible, scoped instance]
@@ -143,9 +164,12 @@ theorem completionAlgHom_comp {M L : Type*} [Field M] [NumberField M] [Algebra K
     [w.asIdeal.LiesOver u.asIdeal] :
     letI : w.asIdeal.LiesOver v.asIdeal :=
       Ideal.LiesOver.trans w.asIdeal u.asIdeal v.asIdeal
-    (completionAlgHom u w).toRingHom.comp (completionAlgHom v u).toRingHom =
-      (completionAlgHom v w).toRingHom := by
+    ((completionAlgHom u w).restrictScalars K).comp (completionAlgHom v u) =
+      completionAlgHom v w := by
   let _ : w.asIdeal.LiesOver v.asIdeal := Ideal.LiesOver.trans w.asIdeal u.asIdeal v.asIdeal
+  apply AlgHom.coe_ringHom_injective
+  change (completionAlgHom u w).toRingHom.comp (completionAlgHom v u).toRingHom =
+    (completionAlgHom v w).toRingHom
   apply eq_completionAlgHom_of_continuous v w
   · exact (continuous_completionAlgHom u w).comp (continuous_completionAlgHom v u)
   · intro x
