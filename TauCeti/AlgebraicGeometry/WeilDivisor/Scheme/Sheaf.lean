@@ -186,9 +186,27 @@ def submodule (D : SchemeWeilDivisor X) : (Scheme.rationalFunctions X).Submodule
     rw [← key]
     exact h
 
+/-- The component of the submodule `𝒪_X(D) ⊆ 𝒦_X` on `U` is `sections D U`. -/
+@[simp]
+lemma submodule_obj (D : SchemeWeilDivisor X) (U : X.Opens) :
+    (submodule D).toSubmodule.obj (op U) = sections D U :=
+  (rfl)
+
 /-- The sheaf `𝒪_X(D)` of `𝒪_X`-modules attached to a Weil divisor `D`. -/
 def sheaf (D : SchemeWeilDivisor X) : X.Modules :=
   (submodule D).toSheafOfModules
+
+/-- The divisor sheaf is the sheaf of modules associated to its displayed submodule of rational
+functions. -/
+lemma sheaf_def (D : SchemeWeilDivisor X) :
+    sheaf D = (submodule D).toSheafOfModules :=
+  (rfl)
+
+/-- The sections of `𝒪_X(D)` over `U` are the subtype cut out by `sections D U`. -/
+@[simp]
+lemma sheaf_val_obj (D : SchemeWeilDivisor X) (U : X.Opens) :
+    (sheaf D).val.obj (op U) = ModuleCat.of Γ(X, U) (sections D U) :=
+  (rfl)
 
 /-- The inclusion `𝒪_X(D) ⟶ 𝒦_X`. -/
 def sheafι (D : SchemeWeilDivisor X) : sheaf D ⟶ Scheme.rationalFunctions X :=
