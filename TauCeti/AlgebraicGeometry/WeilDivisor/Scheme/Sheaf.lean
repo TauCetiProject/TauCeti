@@ -169,7 +169,6 @@ lemma sections_map {D : SchemeWeilDivisor X} {U V : X.Opens} (i : V ⟶ U)
 of the rational functions whose divisor is at least `-D` at every codimension-one point of `U`.
 
 The membership condition is local, so this really is a submodule of the *sheaf* `𝒦_X`. -/
-@[expose]
 def submodule (D : SchemeWeilDivisor X) : (Scheme.rationalFunctions X).Submodule where
   obj U := sections D U.unop
   map i := fun {_} hs ↦ sections_map i.unop hs
@@ -190,10 +189,22 @@ lemma submodule_obj (D : SchemeWeilDivisor X) (U : X.Opens) :
     (submodule D).toSubmodule.obj (op U) = sections D U :=
   (rfl)
 
+/-- The component of the submodule `𝒪_X(D) ⊆ 𝒦_X` at an object of the opposite category. -/
+@[simp]
+lemma submodule_obj_unop (D : SchemeWeilDivisor X) (U : (Opens X)ᵒᵖ) :
+    (submodule D).toSubmodule.obj U = sections D U.unop := by
+  induction U using Opposite.rec
+  exact submodule_obj D _
+
 /-- The sheaf `𝒪_X(D)` of `𝒪_X`-modules attached to a Weil divisor `D`. -/
-@[expose]
 def sheaf (D : SchemeWeilDivisor X) : X.Modules :=
   (submodule D).toSheafOfModules
+
+/-- The divisor sheaf is the sheaf of modules associated to its displayed submodule of rational
+functions. -/
+lemma sheaf_def (D : SchemeWeilDivisor X) :
+    sheaf D = (submodule D).toSheafOfModules :=
+  (rfl)
 
 /-- The sections of `𝒪_X(D)` over `U` are the subtype cut out by `sections D U`. -/
 @[simp]
@@ -205,18 +216,11 @@ lemma sheaf_val_obj (D : SchemeWeilDivisor X) (U : X.Opens) :
 def sheafι (D : SchemeWeilDivisor X) : sheaf D ⟶ Scheme.rationalFunctions X :=
   (submodule D).ι
 
-/-- The inclusion of a divisor sheaf sends a section to its underlying rational function. -/
-@[simp]
-lemma sheafι_app_apply (D : SchemeWeilDivisor X) (U : X.Opens) (t : Γ(sheaf D, U)) :
-    Scheme.Modules.Hom.app (sheafι D) U t = t.val :=
-  (rfl)
-
-/-- Restricting the divisor-sheaf inclusion to an over-site still sends each section to its
-underlying rational function. -/
-@[simp]
-lemma sheafι_over_app_apply (D : SchemeWeilDivisor X) (U : X.Opens) (V : (Over U)ᵒᵖ)
-    (t : ((sheaf D).over U).val.obj V) :
-    ((sheafι D).over U).val.app V t = t.val :=
+/-- The divisor-sheaf inclusion is the inclusion of its displayed submodule, transported across
+`sheaf_def`. -/
+@[reassoc]
+lemma sheaf_eqToHom_ι (D : SchemeWeilDivisor X) :
+    eqToHom (sheaf_def D) ≫ (submodule D).ι = sheafι D :=
   (rfl)
 
 /-- The inclusion `𝒪_X(D) ⟶ 𝒦_X` is injective on sections over every open subset. -/

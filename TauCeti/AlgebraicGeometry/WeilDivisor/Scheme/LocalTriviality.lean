@@ -58,6 +58,47 @@ section LocallyNoetherian
 
 variable [IsLocallyNoetherian X]
 
+omit [∀ y : CodimensionOnePoint X,
+  IsDiscreteValuationRing (X.presheaf.stalk (y : X))] [IsLocallyNoetherian X]
+  [IsIntegral X] in
+private lemma eqToHom_over {M N : X.Modules} (h : M = N) (U : X.Opens) :
+    (eqToHom h).over U =
+      eqToHom (congrArg (fun P : X.Modules ↦ P.over U) h) := by
+  subst N
+  rfl
+
+private def submoduleSheafOverIsoOfSectionsEq (D E : SchemeWeilDivisor X) (U : X.Opens)
+    (h : ∀ V ≤ U, sections D V = sections E V) :
+    ((submodule D).toSheafOfModules).over U ≅
+      ((submodule E).toSheafOfModules).over U :=
+  (SheafOfModules.fullyFaithfulForget _).preimageIso <|
+    PresheafOfModules.isoMk
+      (fun V ↦ by
+        have hV : (submodule D).toSubmodule.obj ((Over.forget U).op.obj V) =
+            (submodule E).toSubmodule.obj ((Over.forget U).op.obj V) :=
+          by
+            -- The over-site forgetful functor sends `V` definitionally to its source open;
+            -- Mathlib provides no explicit rewrite lemma for this object-level identity.
+            rw [show ((Over.forget U).op.obj V) = op V.unop.left from rfl,
+              submodule_obj, submodule_obj]
+            exact h V.unop.left V.unop.hom.le
+        exact LinearEquiv.toModuleIso (LinearEquiv.ofEq _ _ hV))
+      (by
+        intro V W f
+        ext s
+        apply Subtype.ext
+        -- Both restriction maps come from the ambient rational-function sheaf, while the
+        -- component is the identity on underlying rational functions.
+        rfl)
+
+private lemma submoduleSheafOverIsoOfSectionsEq_hom_ι
+    (D E : SchemeWeilDivisor X) (U : X.Opens)
+    (h : ∀ V ≤ U, sections D V = sections E V) :
+    (submoduleSheafOverIsoOfSectionsEq D E U h).hom ≫ ((submodule E).ι).over U =
+      ((submodule D).ι).over U := by
+  ext V s
+  rfl
+
 /-- If two divisor sheaves have the same sections on every open subset of `U`, then their
 restrictions to the over-site of `U` are isomorphic.
 
@@ -66,26 +107,10 @@ as equality of the displayed section submodules, rather than equality of sheaves
 applied directly to local equations of a Weil divisor. -/
 def sheafOverIsoOfSectionsEq (D E : SchemeWeilDivisor X) (U : X.Opens)
     (h : ∀ V ≤ U, sections D V = sections E V) :
-    (sheaf D).over U ≅ (sheaf E).over U := by
-  let e : (sheaf D).over U ≅ (sheaf E).over U :=
-    (SheafOfModules.fullyFaithfulForget _).preimageIso <|
-      PresheafOfModules.isoMk
-        (fun V ↦ by
-          have hV : (submodule D).toSubmodule.obj ((Over.forget U).op.obj V) =
-              (submodule E).toSubmodule.obj ((Over.forget U).op.obj V) :=
-            by
-              rw [show ((Over.forget U).op.obj V) = op V.unop.left from rfl,
-                submodule_obj, submodule_obj]
-              exact h V.unop.left V.unop.hom.le
-          exact LinearEquiv.toModuleIso (LinearEquiv.ofEq _ _ hV))
-        (by
-          intro V W f
-          ext s
-          apply Subtype.ext
-          -- Both restriction maps come from the ambient rational-function sheaf, while the
-          -- component is the identity on underlying rational functions.
-          rfl)
-  exact e
+    (sheaf D).over U ≅ (sheaf E).over U :=
+  eqToIso (congrArg (fun M : X.Modules ↦ M.over U) (sheaf_def D)) ≪≫
+    submoduleSheafOverIsoOfSectionsEq D E U h ≪≫
+    (eqToIso (congrArg (fun M : X.Modules ↦ M.over U) (sheaf_def E))).symm
 
 /-- The restricted isomorphism induced by equality of section submodules commutes with their
 inclusions into the restricted rational-function sheaf. -/
@@ -93,10 +118,32 @@ inclusions into the restricted rational-function sheaf. -/
 lemma sheafOverIsoOfSectionsEq_hom_ι (D E : SchemeWeilDivisor X) (U : X.Opens)
     (h : ∀ V ≤ U, sections D V = sections E V) :
     (sheafOverIsoOfSectionsEq D E U h).hom ≫ (sheafι E).over U = (sheafι D).over U := by
-  ext V s
-  simp only [SheafOfModules.comp_val, PresheafOfModules.comp_app, ConcreteCategory.comp_apply]
-  rw [sheafι_over_app_apply, sheafι_over_app_apply]
-  rfl
+  rw [← sheaf_eqToHom_ι, ← sheaf_eqToHom_ι]
+  change _ ≫ (SheafOfModules.overFunctor X.ringCatSheaf U).map
+      (eqToHom (sheaf_def E) ≫ (submodule E).ι) =
+    (SheafOfModules.overFunctor X.ringCatSheaf U).map
+      (eqToHom (sheaf_def D) ≫ (submodule D).ι)
+  have hcompE : (SheafOfModules.overFunctor X.ringCatSheaf U).map
+      (eqToHom (sheaf_def E) ≫ (submodule E).ι) =
+      (SheafOfModules.overFunctor X.ringCatSheaf U).map (eqToHom (sheaf_def E)) ≫
+        (SheafOfModules.overFunctor X.ringCatSheaf U).map ((submodule E).ι) :=
+    (SheafOfModules.overFunctor X.ringCatSheaf U).map_comp _ _
+  have hcompD : (SheafOfModules.overFunctor X.ringCatSheaf U).map
+      (eqToHom (sheaf_def D) ≫ (submodule D).ι) =
+      (SheafOfModules.overFunctor X.ringCatSheaf U).map (eqToHom (sheaf_def D)) ≫
+        (SheafOfModules.overFunctor X.ringCatSheaf U).map ((submodule D).ι) :=
+    (SheafOfModules.overFunctor X.ringCatSheaf U).map_comp _ _
+  have hmapE : (SheafOfModules.overFunctor X.ringCatSheaf U).map
+      (eqToHom (sheaf_def E)) =
+      eqToHom (congrArg (fun M : X.Modules ↦ M.over U) (sheaf_def E)) :=
+    eqToHom_over (sheaf_def E) U
+  have hmapD : (SheafOfModules.overFunctor X.ringCatSheaf U).map
+      (eqToHom (sheaf_def D)) =
+      eqToHom (congrArg (fun M : X.Modules ↦ M.over U) (sheaf_def D)) :=
+    eqToHom_over (sheaf_def D) U
+  rw [hcompE, hcompD]
+  rw [hmapE, hmapD]
+  simp [sheafOverIsoOfSectionsEq, submoduleSheafOverIsoOfSectionsEq_hom_ι]
 
 private lemma rationalFunctionsMul_mem_sections_of_localEquation
     (g : Additive X.functionFieldˣ) {D E : SchemeWeilDivisor X} {U V : X.Opens}
@@ -123,19 +170,18 @@ private lemma rationalFunctionsMul_over_mem_sections_of_localEquation
     (V : (Over U)ᵒᵖ)
     (h : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
       WeilDivisor.coeff D y = WeilDivisor.coeff E y + orderAt y g)
-    (s : ((sheaf D).over U).val.obj V) :
+    (s : (((submodule D).toSheafOfModules).over U).val.obj V) :
     ((Scheme.rationalFunctionsMul X
       ((Additive.toMul g : X.functionFieldˣ) : X.functionField)).over U).val.app V s.val ∈
         (submodule E).toSubmodule.obj ((Over.forget U).op.obj V) := by
   -- Restriction to the over-site evaluates at the underlying open `V.unop.left`; Mathlib has
   -- no rewrite lemma exposing this definitional identification.
-  have hs : s.val ∈ sections D V.unop.left := s.2
+  have hD := submodule_obj_unop D ((Over.forget U).op.obj V)
+  have hE := submodule_obj_unop E ((Over.forget U).op.obj V)
+  have hs : s.val ∈ sections D V.unop.left := by
+    exact hD ▸ s.2
   have key := rationalFunctionsMul_mem_sections_of_localEquation g V.unop.hom.le h hs
-  change Scheme.Modules.Hom.app
-      (Scheme.rationalFunctionsMul X
-        ((Additive.toMul g : X.functionFieldˣ) : X.functionField)) V.unop.left s.val ∈
-    sections E V.unop.left
-  exact key
+  exact hE.symm ▸ key
 
 /-- A local equation for `D` identifies its divisor sheaf with the zero-divisor sheaf after
 restriction to the equation's neighbourhood. The forward map is multiplication by the local
@@ -153,11 +199,14 @@ private def sheafOverIsoZeroOfLocalEquation (D : SchemeWeilDivisor X) (U : X.Ope
       WeilDivisor.coeff (0 : SchemeWeilDivisor X) y = WeilDivisor.coeff D y + orderAt y (-g) := by
     intro y hy
     rw [WeilDivisor.coeff_zero, h y hy, map_neg, add_neg_cancel]
-  exact (SheafOfModules.fullyFaithfulForget _).preimageIso <|
-    PresheafOfModules.isoMk
+  let e : ((submodule D).toSheafOfModules).over U ≅
+      ((submodule (0 : SchemeWeilDivisor X)).toSheafOfModules).over U :=
+    (SheafOfModules.fullyFaithfulForget _).preimageIso <|
+      PresheafOfModules.isoMk
       (fun V ↦ by
-        letI := (((sheaf D).over U).val.obj V).isModule
-        letI := (((sheaf (0 : SchemeWeilDivisor X)).over U).val.obj V).isModule
+        letI := ((((submodule D).toSheafOfModules).over U).val.obj V).isModule
+        letI :=
+          ((((submodule (0 : SchemeWeilDivisor X)).toSheafOfModules).over U).val.obj V).isModule
         exact LinearEquiv.toModuleIso ({
           toFun := fun s ↦
             ⟨((Scheme.rationalFunctionsMul X
@@ -171,6 +220,8 @@ private def sheafOverIsoZeroOfLocalEquation (D : SchemeWeilDivisor X) (U : X.Ope
           left_inv := by
             intro s
             apply Subtype.ext
+            -- Evaluating an over-site morphism at `V` is definitionally evaluation of the
+            -- original morphism at `V.unop.left`; there is no explicit Mathlib rewrite lemma.
             change (Scheme.Modules.Hom.app
                 (Scheme.rationalFunctionsMul X
                   ((Additive.toMul g : X.functionFieldˣ) : X.functionField)) V.unop.left ≫
@@ -184,6 +235,7 @@ private def sheafOverIsoZeroOfLocalEquation (D : SchemeWeilDivisor X) (U : X.Ope
           right_inv := by
             intro s
             apply Subtype.ext
+            -- As above, unfold only the definitional object component of the over-site wrapper.
             change (Scheme.Modules.Hom.app
                 (Scheme.rationalFunctionsMul X
                   ((Additive.toMul (-g) : X.functionFieldˣ) : X.functionField)) V.unop.left ≫
@@ -205,8 +257,9 @@ private def sheafOverIsoZeroOfLocalEquation (D : SchemeWeilDivisor X) (U : X.Ope
               (((Scheme.rationalFunctionsMul X
                 ((Additive.toMul g : X.functionFieldˣ) : X.functionField)).over U).val.app V).hom
                   |>.map_smul r s.val } :
-          ((sheaf D).over U).val.obj V ≃ₗ[((X.ringCatSheaf.over U).obj.obj V : Type u)]
-            ((sheaf (0 : SchemeWeilDivisor X)).over U).val.obj V))
+          (((submodule D).toSheafOfModules).over U).val.obj V
+              ≃ₗ[((X.ringCatSheaf.over U).obj.obj V : Type u)]
+            (((submodule (0 : SchemeWeilDivisor X)).toSheafOfModules).over U).val.obj V))
       (by
         intro V W f
         ext s
@@ -214,6 +267,9 @@ private def sheafOverIsoZeroOfLocalEquation (D : SchemeWeilDivisor X) (U : X.Ope
         exact PresheafOfModules.naturality_apply
           ((Scheme.rationalFunctionsMul X
             ((Additive.toMul g : X.functionFieldˣ) : X.functionField)).over U).val f s.val)
+  exact eqToIso (congrArg (fun M : X.Modules ↦ M.over U) (sheaf_def D)) ≪≫ e ≪≫
+    (eqToIso (congrArg (fun M : X.Modules ↦ M.over U)
+      (sheaf_def (0 : SchemeWeilDivisor X)))).symm
 
 namespace IsLocallyPrincipal
 
