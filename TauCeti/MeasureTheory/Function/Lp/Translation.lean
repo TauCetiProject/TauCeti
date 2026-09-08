@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.SegmentIncrement
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.Topology.Instances.ENNReal
+public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Measure.Prod
@@ -15,8 +17,9 @@ import Mathlib.MeasureTheory.Measure.Prod
 /-!
 # The `Lᵖ` translation estimate
 
-This file proves the translation estimate for a `C¹` function on a finite-dimensional real normed
-space carrying an additive Haar measure:
+This file defines translation of `Lᵖ` classes as a linear isometry, proves its strong continuity
+for `p < ∞`, and proves the translation estimate for a `C¹` function on a finite-dimensional real
+normed space carrying an additive Haar measure:
 
 `‖u(· + h) - u‖_p ≤ ‖h‖ ‖Du‖_p`.
 
@@ -27,6 +30,12 @@ exchanging the order of integration.
 
 ## Main declarations
 
+* `TauCeti.translateLp`: translation by a vector as a linear isometry of `Lᵖ`.
+* `TauCeti.continuous_translateLp`: strong continuity of translation for `p < ∞`.
+* `TauCeti.enorm_translateLp_sub`: identifies the norm of an `Lᵖ` translation increment with its
+  pointwise `eLpNorm`.
+* `TauCeti.tendsto_eLpNorm_comp_add_sub_of_memLp`: translation increments of an `Lᵖ` function
+  tend to zero.
 * `TauCeti.lintegral_enorm_comp_add_sub_rpow_le`: the translation estimate in `∫⁻` form.
 * `TauCeti.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`: the `Lᵖ` translation estimate for a `C¹`
   function.
@@ -48,6 +57,78 @@ namespace TauCeti
 
 open MeasureTheory Set
 open scoped ENNReal
+
+section LpTranslation
+
+variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- Translation by `h` on `Lᵖ`, as a linear isometry. -/
+def translateLp (mu : Measure E) [mu.IsAddHaarMeasure] (p : ENNReal) [Fact (1 ≤ p)]
+    (h : E) : Lp F p mu →ₗᵢ[ℝ] Lp F p mu :=
+  Lp.compMeasurePreservingₗᵢ ℝ (· + h) (measurePreserving_add_right mu h)
+
+omit [NormedSpace ℝ E] in
+/-- Translation by zero is the identity on `Lᵖ`. -/
+@[simp]
+theorem translateLp_zero (f : Lp F p mu) : translateLp mu p 0 f = f := by
+  apply Lp.ext
+  filter_upwards [Lp.coeFn_compMeasurePreserving f
+    (measurePreserving_add_right mu (0 : E))] with x hx
+  simpa only [translateLp, Lp.compMeasurePreservingₗᵢ_apply, Function.comp_apply, add_zero] using hx
+
+omit [NormedSpace ℝ E] in
+/-- Translation of a fixed `Lᵖ` class depends continuously on the translation vector when
+`p < ∞`. -/
+theorem continuous_translateLp [ProperSpace E] (hp : p ≠ ∞) (f : Lp F p mu) :
+    Continuous fun h : E ↦ translateLp mu p h f := by
+  let T : E → C(E, E) := fun h ↦ ⟨fun x ↦ x + h, continuous_id.add continuous_const⟩
+  have hT : Continuous T := ContinuousMap.continuous_of_continuous_uncurry T <| by
+    dsimp only [T, Function.uncurry_apply_pair, ContinuousMap.coe_mk]
+    fun_prop
+  have hpres : ∀ h, MeasurePreserving (T h) mu mu := fun h ↦ by
+    simpa only [T, ContinuousMap.coe_mk] using measurePreserving_add_right mu h
+  have hcont : Continuous (fun h : E ↦ Lp.compMeasurePreserving (T h) (hpres h) f) :=
+    (continuous_const : Continuous fun _ : E ↦ f).compMeasurePreservingLp hT hpres hp
+  simpa only [translateLp, T, ContinuousMap.coe_mk,
+    Lp.compMeasurePreservingₗᵢ_apply] using hcont
+
+omit [NormedSpace ℝ E] in
+/-- The `Lᵖ` extended norm of a translation increment is its pointwise `eLpNorm`. -/
+theorem enorm_translateLp_sub (h : E) (f : Lp F p mu) :
+    ‖translateLp mu p h f - f‖ₑ = eLpNorm (fun x ↦ f (x + h) - f x) p mu := by
+  have hpres : MeasurePreserving (· + h) mu mu := measurePreserving_add_right mu h
+  have htr : ⇑(translateLp mu p h f) =ᵐ[mu] ⇑f ∘ (· + h) :=
+    Lp.coeFn_compMeasurePreserving f hpres
+  have hae : ⇑(translateLp mu p h f - f) =ᵐ[mu] fun x ↦ f (x + h) - f x := by
+    filter_upwards [Lp.coeFn_sub (translateLp mu p h f) f, htr] with x hx hy
+    rw [hx, Pi.sub_apply, hy]
+    rfl
+  rw [Lp.enorm_def, eLpNorm_congr_ae hae]
+
+omit [NormedSpace ℝ E] [Fact (1 ≤ p)] in
+/-- Translation increments of an `Lᵖ` function tend to zero as the translation tends to zero. -/
+theorem tendsto_eLpNorm_comp_add_sub_of_memLp [ProperSpace E] {u : E → F}
+    (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    (hu : MemLp u p mu) :
+    Filter.Tendsto (fun h : E ↦ eLpNorm (fun x ↦ u (x + h) - u x) p mu)
+      (nhds 0) (nhds 0) := by
+  let _ : Fact (1 ≤ p) := ⟨hp⟩
+  have hcont := (continuous_translateLp (mu := mu) hp' (hu.toLp u)).tendsto (0 : E)
+  have htend : Filter.Tendsto (fun h : E ↦ translateLp mu p h (hu.toLp u))
+      (nhds 0) (nhds (hu.toLp u)) := by
+    simpa only [translateLp_zero] using hcont
+  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at htend
+  apply htend.congr'
+  filter_upwards with h
+  apply eLpNorm_congr_ae
+  exact ((Lp.coeFn_compMeasurePreserving (hu.toLp u)
+    (measurePreserving_add_right mu h)).trans
+      ((measurePreserving_add_right mu h).quasiMeasurePreserving.ae_eq_comp hu.coeFn_toLp)).sub
+    hu.coeFn_toLp
+
+end LpTranslation
 
 section Calculus
 

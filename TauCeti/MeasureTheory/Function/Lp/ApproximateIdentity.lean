@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
+public import TauCeti.MeasureTheory.Function.Lp.Translation
 
 /-!
 # Smooth approximate identities in `Lᵖ`
@@ -57,93 +57,82 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
   [BorelSpace E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [CompleteSpace F] {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
 
-/-- Translation by `-t` on `Lᵖ`, used internally to express convolution without selecting a
-pointwise representative. -/
-private def subRightContinuousMap (t : E) : C(E, E) :=
-  ⟨fun x ↦ x - t, continuous_id.sub continuous_const⟩
-
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
-private theorem measurePreserving_subRightContinuousMap (t : E) :
-    MeasurePreserving (subRightContinuousMap t) mu mu := by
-  simpa only [subRightContinuousMap, ContinuousMap.coe_mk, sub_eq_add_neg] using
-    measurePreserving_add_right mu (-t)
-
-private def translateSubLp (t : E) (f : Lp F p mu) : Lp F p mu :=
-  Lp.compMeasurePreserving (subRightContinuousMap t)
-    (measurePreserving_subRightContinuousMap t) f
-
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F] [CompleteSpace F]
-  [Fact (1 ≤ p)] in
-private theorem translateSubLp_zero (f : Lp F p mu) :
-    translateSubLp (mu := mu) (p := p) 0 f = f := by
-  apply Lp.ext
-  filter_upwards [Lp.coeFn_compMeasurePreserving f
-    (measurePreserving_subRightContinuousMap (mu := mu) (0 : E))] with x hx
-  simpa only [translateSubLp, subRightContinuousMap, ContinuousMap.coe_mk,
-    Function.comp_apply, sub_zero] using hx
-
-omit [NormedSpace ℝ F] [CompleteSpace F] in
-private theorem continuous_translateSubLp (hp : p ≠ ∞) (f : Lp F p mu) :
-    Continuous fun t : E ↦ translateSubLp (mu := mu) (p := p) t f := by
-  let T : E → C(E, E) := fun t ↦ ⟨fun x ↦ x - t, continuous_id.sub continuous_const⟩
-  have hT : Continuous T := ContinuousMap.continuous_of_continuous_uncurry T <| by
-    dsimp only [T, Function.uncurry_apply_pair, ContinuousMap.coe_mk]
-    fun_prop
-  have hpres : ∀ t, MeasurePreserving (T t) mu mu := fun t ↦ by
-    simpa only [T, subRightContinuousMap] using
-      (measurePreserving_subRightContinuousMap (mu := mu) t)
-  have h : Continuous (fun t : E ↦ Lp.compMeasurePreserving (T t) (hpres t) f) :=
-    (continuous_const : Continuous fun _ : E ↦ f).compMeasurePreservingLp hT hpres hp
-  simpa only [translateSubLp, T, subRightContinuousMap] using h
-
 /-- Averaging an `Lᵖ` function against the normalized form of a smooth bump centred at zero.
 
 The average is a Bochner integral in `Lᵖ`, so it is independent of all choices of pointwise
-representative. The restriction `p < ∞` ensures that translation is strongly continuous, hence
-that the `Lᵖ`-valued integrand is integrable. -/
-def normedBumpLp (_hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
+representative. -/
+@[expose]
+def normedBumpLp (phi : ContDiffBump (0 : E))
     (mu : Measure E) [mu.IsAddHaarMeasure] (f : Lp F p mu) : Lp F p mu :=
-  ∫ t, phi.normed mu t • translateSubLp (mu := mu) (p := p) t f ∂mu
+  ∫ t, phi.normed mu t • translateLp mu p (-t) f ∂mu
 
 omit [CompleteSpace F] in
-private theorem integrable_normed_smul_translateSubLp (hp : p ≠ ∞)
+/-- The defining Bochner-integral formula for `normedBumpLp`. -/
+theorem normedBumpLp_apply (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
+    normedBumpLp phi mu f =
+      ∫ t, phi.normed mu t • translateLp mu p (-t) f ∂mu := rfl
+
+omit [CompleteSpace F] in
+private theorem integrable_normed_smul_translateLp_neg (hp : p ≠ ∞)
     (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
-    Integrable (fun t ↦ phi.normed mu t • translateSubLp (mu := mu) (p := p) t f) mu := by
+    Integrable (fun t ↦ phi.normed mu t • translateLp mu p (-t) f) mu := by
   apply Continuous.integrable_of_hasCompactSupport
-  · exact phi.continuous_normed.smul (continuous_translateSubLp hp f)
+  · exact phi.continuous_normed.smul ((continuous_translateLp (mu := mu) hp f).comp continuous_neg)
   · exact phi.hasCompactSupport_normed.smul_right
 
 omit [CompleteSpace F] in
 /-- Averaging against a normalized nonnegative bump does not increase the `Lᵖ` norm. -/
-theorem norm_normedBumpLp_le (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
+theorem norm_normedBumpLp_le (phi : ContDiffBump (0 : E))
     (f : Lp F p mu) :
-    ‖normedBumpLp hp phi mu f‖ ≤ ‖f‖ := by
+    ‖normedBumpLp phi mu f‖ ≤ ‖f‖ := by
   refine (norm_integral_le_of_norm_le (phi.integrable_normed.mul_const ‖f‖) ?_).trans_eq ?_
   · filter_upwards with t
-    have ht : ‖translateSubLp (mu := mu) (p := p) t f‖ = ‖f‖ := by
-      exact Lp.norm_compMeasurePreserving f (measurePreserving_subRightContinuousMap t)
+    have ht : ‖translateLp mu p (-t) f‖ = ‖f‖ := (translateLp mu p (-t)).norm_map f
     rw [norm_smul, Real.norm_of_nonneg (phi.nonneg_normed t), ht]
   · rw [integral_mul_const, phi.integral_normed, one_mul]
+
+omit [CompleteSpace F] in
+/-- `normedBumpLp` preserves addition when `p < ∞`. -/
+@[simp]
+theorem normedBumpLp_add (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
+    (f g : Lp F p mu) :
+    normedBumpLp phi mu (f + g) = normedBumpLp phi mu f + normedBumpLp phi mu g := by
+  rw [normedBumpLp, normedBumpLp, normedBumpLp,
+    ← integral_add (integrable_normed_smul_translateLp_neg hp phi f)
+      (integrable_normed_smul_translateLp_neg hp phi g)]
+  apply integral_congr_ae
+  filter_upwards with t
+  simp only [map_add, smul_add]
+
+omit [CompleteSpace F] in
+/-- `normedBumpLp` commutes with real scalar multiplication. -/
+@[simp]
+theorem normedBumpLp_smul (c : ℝ) (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
+    normedBumpLp phi mu (c • f) = c • normedBumpLp phi mu f := by
+  rw [normedBumpLp, normedBumpLp, ← integral_smul]
+  apply integral_congr_ae
+  filter_upwards with t
+  simp only [map_smul, smul_smul, mul_comm c]
 
 private theorem norm_normedBumpLp_sub_le (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (f : Lp F p mu) {C : ℝ}
     (htrans : ∀ t ∈ ball (0 : E) phi.rOut,
-      ‖translateSubLp (mu := mu) (p := p) t f - f‖ ≤ C) :
-    ‖normedBumpLp hp phi mu f - f‖ ≤ C := by
+      ‖translateLp mu p (-t) f - f‖ ≤ C) :
+    ‖normedBumpLp phi mu f - f‖ ≤ C := by
   have havg :
-      normedBumpLp hp phi mu f - f =
-        ∫ t, phi.normed mu t • (translateSubLp (mu := mu) (p := p) t f - f) ∂mu := by
+      normedBumpLp phi mu f - f =
+        ∫ t, phi.normed mu t • (translateLp mu p (-t) f - f) ∂mu := by
     calc
-      normedBumpLp hp phi mu f - f =
-          (∫ t, phi.normed mu t • translateSubLp (mu := mu) (p := p) t f ∂mu) -
+      normedBumpLp phi mu f - f =
+          (∫ t, phi.normed mu t • translateLp mu p (-t) f ∂mu) -
             ∫ t, phi.normed mu t • f ∂mu := by
               rw [normedBumpLp, phi.integral_normed_smul]
-      _ = ∫ t, (phi.normed mu t • translateSubLp (mu := mu) (p := p) t f) -
+      _ = ∫ t, (phi.normed mu t • translateLp mu p (-t) f) -
           phi.normed mu t • f ∂mu :=
-        (integral_sub (integrable_normed_smul_translateSubLp hp phi f)
+        (integral_sub (integrable_normed_smul_translateLp_neg hp phi f)
           (phi.integrable_normed.smul_const f)).symm
       _ = ∫ t, phi.normed mu t •
-          (translateSubLp (mu := mu) (p := p) t f - f) ∂mu := by
+          (translateLp mu p (-t) f - f) ∂mu := by
         apply integral_congr_ae
         filter_upwards with t
         rw [smul_sub]
@@ -162,21 +151,21 @@ private theorem norm_normedBumpLp_sub_le (hp : p ≠ ∞) (phi : ContDiffBump (0
 zero. If their outer radii tend to zero, then averaging any `f ∈ Lᵖ` against these bumps converges
 to `f` in the `Lᵖ` norm.
 
-The restriction `p < ∞` is essential: translation is strongly continuous on `Lᵖ` exactly in the
-finite-exponent range. No positivity or normalization hypotheses are exposed because they are
-already supplied by `ContDiffBump.normed`. -/
+The hypothesis `p < ∞` is used to obtain strong translation continuity in this general setting.
+No positivity or normalization hypotheses are exposed because they are already supplied by
+`ContDiffBump.normed`. -/
 theorem tendsto_normedBumpLp {I : Type*} {l : Filter I}
     (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
     (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) (f : Lp F p mu) :
-    Tendsto (fun i ↦ normedBumpLp hp (phi i) mu f) l (nhds f) := by
+    Tendsto (fun i ↦ normedBumpLp (phi i) mu f) l (nhds f) := by
   rw [Metric.tendsto_nhds]
   intro epsilon hepsilon
   have hcont : Tendsto
-      (fun t : E ↦ ‖translateSubLp (mu := mu) (p := p) t f - f‖)
+      (fun t : E ↦ ‖translateLp mu p (-t) f - f‖)
       (nhds 0) (nhds 0) := by
-    have hc : Continuous fun t : E ↦ translateSubLp (mu := mu) (p := p) t f - f :=
-      (continuous_translateSubLp hp f).sub continuous_const
-    simpa only [translateSubLp_zero, sub_self, norm_zero] using hc.norm.tendsto (0 : E)
+    have hc : Continuous fun t : E ↦ translateLp mu p (-t) f - f :=
+      ((continuous_translateLp (mu := mu) hp f).comp continuous_neg).sub continuous_const
+    simpa only [neg_zero, translateLp_zero, sub_self, norm_zero] using hc.norm.tendsto (0 : E)
   have hevent := hcont.eventually (Iio_mem_nhds (half_pos hepsilon))
   rw [Metric.eventually_nhds_iff] at hevent
   obtain ⟨delta, hdelta, hsmall⟩ := hevent
