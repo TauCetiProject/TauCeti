@@ -326,9 +326,7 @@ noncomputable def degreeZeroClassGroupEquiv :
         rintro ⟨c, hc⟩ h
         exact Subtype.ext (eq_zero_of_classGroupHom_eq_zero_of_degreeClass_eq_zero R hF hP hdeg
           (AddMonoidHom.mem_ker.mp hc) (by simpa using h)),
-      classGroupHom_comp_subtype_surjective R hF
-        (show P ∈ {Q : Place k F | ∃ r : R, algebraMap R F r ∉ Q.integers} by
-          rw [hP]; exact Set.mem_singleton P) hdeg⟩
+      classGroupHom_comp_subtype_surjective R hF ((Set.ext_iff.mp hP P).mpr rfl) hdeg⟩
 
 @[simp]
 theorem degreeZeroClassGroupEquiv_apply (c : (degreeClass hF).ker) :
