@@ -64,20 +64,6 @@ namespace Probability
 variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} [Fintype ι] [Nonempty ι] {P : Measure Ω}
   {μ : Measure ℝ} {X : ι → Ω → ℝ} {r : ℝ}
 
-/-- The maximum of an almost-everywhere measurable finite family is almost everywhere
-measurable: `Finset.aemeasurable_sup'` in the coordinatewise spelling. -/
-private theorem aemeasurable_max (hX : ∀ i, AEMeasurable (X i) P) :
-    AEMeasurable (fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) P :=
-  (Finset.aemeasurable_sup' Finset.univ_nonempty fun i _ => hX i).congr
-    (Filter.Eventually.of_forall fun ω => Finset.sup'_apply _ X ω)
-
-/-- The minimum of an almost-everywhere measurable finite family is almost everywhere
-measurable: `Finset.aemeasurable_inf'` in the coordinatewise spelling. -/
-private theorem aemeasurable_min (hX : ∀ i, AEMeasurable (X i) P) :
-    AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P :=
-  (Finset.aemeasurable_inf' Finset.univ_nonempty fun i _ => hX i).congr
-    (Filter.Eventually.of_forall fun ω => Finset.inf'_apply _ X ω)
-
 /-- The maximum of a finite family is at most `x` exactly when every member is. -/
 private theorem setOf_max_le (X : ι → Ω → ℝ) (x : ℝ) :
     {ω | (Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) ≤ x}
@@ -150,9 +136,12 @@ theorem measureReal_setOf_min_le_iid [IsProbabilityMeasure μ] (hindep : iIndepF
       = {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω}ᶜ := by
     ext ω
     simp
+  have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P :=
+    Finset.aemeasurable_sup'' (α := OrderDual ℝ) Finset.univ_nonempty fun i _ =>
+      (hlaw i).aemeasurable
   have hnull : NullMeasurableSet
       {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω} P :=
-    (aemeasurable_min fun i => (hlaw i).aemeasurable).nullMeasurableSet_preimage measurableSet_Ioi
+    hmin.nullMeasurableSet_preimage measurableSet_Ioi
   rw [hcompl, measureReal_compl₀ hnull, probReal_univ,
     measureReal_setOf_lt_min_iid hindep hlaw x]
 
@@ -163,7 +152,7 @@ theorem cdf_max_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
     cdf (P.map fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) x
       = cdf μ x ^ Fintype.card ι := by
   have hmax : AEMeasurable (fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) P :=
-    aemeasurable_max fun i => (hlaw i).aemeasurable
+    Finset.aemeasurable_sup'' Finset.univ_nonempty fun i _ => (hlaw i).aemeasurable
   have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
   rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hmax measurableSet_Iic,
     ← measureReal_setOf_max_le_iid hindep hlaw x]
@@ -176,7 +165,8 @@ theorem cdf_min_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
     cdf (P.map fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) x
       = 1 - (1 - cdf μ x) ^ Fintype.card ι := by
   have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P :=
-    aemeasurable_min fun i => (hlaw i).aemeasurable
+    Finset.aemeasurable_sup'' (α := OrderDual ℝ) Finset.univ_nonempty fun i _ =>
+      (hlaw i).aemeasurable
   have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
   rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hmin measurableSet_Iic,
     ← measureReal_setOf_min_le_iid hindep hlaw x]
