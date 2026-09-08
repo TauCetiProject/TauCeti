@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.MapsInfinity
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Neg
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.GenericPoint
 
 /-!
 # The multiplication isogenies compose: `[m] ∘ [n] = [m n]`
@@ -24,7 +25,7 @@ instead of assumed.
 and the distinctness statements range only over the integers at which `[·]` is defined.
 
 Distinctness rests on the generic point of `W` having infinite order, as established in
-`MulByInt/Basic.lean`.
+`MulByInt/GenericPoint.lean`.
 
 ## Main results
 
