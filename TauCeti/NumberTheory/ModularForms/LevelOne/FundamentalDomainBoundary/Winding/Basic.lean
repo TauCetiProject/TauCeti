@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.NumberTheory.ModularForms.LevelOne.FundamentalDomainBoundary.Containment
 
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.Analysis.Complex.HalfPlaneUnbounded
 import TauCeti.Analysis.Contour.Winding.UnboundedComponent
 
 /-!
@@ -85,15 +86,11 @@ theorem windingNumber_fdBoundary_eq_zero_of_im_lt (hH : Real.sqrt 3 / 2 ≤ H) {
     (hw : w.im < Real.sqrt 3 / 2) : windingNumber (fdBoundary H) 0 5 w = 0 := by
   refine windingNumber_fdBoundary_eq_zero_of_mem_preconnected
     (convex_halfSpace_im_lt _).isPreconnected
-    ?_ (fun R ↦ ⟨((-(max R 0 + 1) : ℝ) : ℂ) * Complex.I, ?_, ?_⟩) hw
+    ?_ (fun R ↦ (TauCeti.exists_im_lt_and_lt_norm (Real.sqrt 3 / 2) R).imp
+      fun _ h ↦ ⟨h.1, h.2⟩) hw
   · rintro z hz ⟨t, ht, rfl⟩
     rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 5)] at ht
     exact absurd hz (not_lt.mpr (sqrt_three_div_two_le_im_fdBoundary hH ht))
-  · rw [Set.mem_ofPred_eq, Complex.mul_I_im, Complex.ofReal_re]
-    nlinarith [le_max_right R 0, Real.sqrt_nonneg 3]
-  · rw [norm_mul, Complex.norm_I, mul_one, Complex.norm_real,
-      Real.norm_of_nonpos (by nlinarith [le_max_right R 0])]
-    nlinarith [le_max_left R 0]
 
 /-- Every point strictly right of the fundamental strip winds zero. The bound is stated
 in simp-normal form so the lemma can participate in simplification. -/
@@ -102,16 +99,14 @@ theorem windingNumber_fdBoundary_eq_zero_of_half_lt_re {w : ℂ}
     (hw : 2⁻¹ < w.re) : windingNumber (fdBoundary H) 0 5 w = 0 := by
   refine windingNumber_fdBoundary_eq_zero_of_mem_preconnected
     (convex_halfSpace_re_gt _).isPreconnected
-    ?_ (fun R ↦ ⟨((max R 0 + 1 : ℝ) : ℂ), ?_, ?_⟩) hw
+    ?_ (fun R ↦ (TauCeti.exists_lt_re_and_lt_norm 2⁻¹ R).imp
+      fun _ h ↦ ⟨h.1, h.2⟩) hw
   · rintro z hz ⟨t, ht, rfl⟩
     rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 5)] at ht
     have := (abs_le.mp (abs_re_fdBoundary_le_half (H := H) ht.2)).2
     rw [Set.mem_ofPred_eq] at hz
     linarith
-  · rw [Set.mem_ofPred_eq, Complex.ofReal_re]
-    nlinarith [le_max_right R 0]
-  · rw [Complex.norm_real, Real.norm_of_nonneg (by positivity)]
-    linarith [le_max_left R 0]
+
 
 /-- Every point strictly left of the fundamental strip winds zero. -/
 @[simp]
@@ -119,16 +114,14 @@ theorem windingNumber_fdBoundary_eq_zero_of_re_lt_neg_half {w : ℂ}
     (hw : w.re < -2⁻¹) : windingNumber (fdBoundary H) 0 5 w = 0 := by
   refine windingNumber_fdBoundary_eq_zero_of_mem_preconnected
     (convex_halfSpace_re_lt _).isPreconnected
-    ?_ (fun R ↦ ⟨((-(max R 0 + 1) : ℝ) : ℂ), ?_, ?_⟩) hw
+    ?_ (fun R ↦ (TauCeti.exists_re_lt_and_lt_norm (-2⁻¹) R).imp
+      fun _ h ↦ ⟨h.1, h.2⟩) hw
   · rintro z hz ⟨t, ht, rfl⟩
     rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 5)] at ht
     have := (abs_le.mp (abs_re_fdBoundary_le_half (H := H) ht.2)).1
     rw [Set.mem_ofPred_eq] at hz
     linarith
-  · rw [Set.mem_ofPred_eq, Complex.ofReal_re]
-    nlinarith [le_max_right R 0]
-  · rw [Complex.norm_real, Real.norm_of_nonpos (by nlinarith [le_max_right R 0])]
-    nlinarith [le_max_left R 0]
+
 
 /-- Every point strictly above the contour's height winds zero. -/
 @[simp]
@@ -136,19 +129,13 @@ theorem windingNumber_fdBoundary_eq_zero_of_lt_im (hH : 1 ≤ H) {w : ℂ}
     (hw : H < w.im) : windingNumber (fdBoundary H) 0 5 w = 0 := by
   refine windingNumber_fdBoundary_eq_zero_of_mem_preconnected
     (convex_halfSpace_im_gt _).isPreconnected
-    ?_ (fun R ↦ ⟨((H + max R 0 + 1 : ℝ) : ℂ) * Complex.I, ?_, ?_⟩) hw
+    ?_ (fun R ↦ (TauCeti.exists_lt_im_and_lt_norm H R).imp
+      fun _ h ↦ ⟨h.1, h.2⟩) hw
   · rintro z hz ⟨t, ht, rfl⟩
     rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 5)] at ht
     have := im_fdBoundary_le hH ht
     rw [Set.mem_ofPred_eq] at hz
     linarith
-  · rw [Set.mem_ofPred_eq]
-    have : (((H + max R 0 + 1 : ℝ) : ℂ) * Complex.I).im = H + max R 0 + 1 := by simp
-    rw [this]
-    nlinarith [le_max_right R 0]
-  · rw [norm_mul, Complex.norm_I, mul_one, Complex.norm_real,
-      Real.norm_of_nonneg (by nlinarith [le_max_right R 0])]
-    nlinarith [le_max_left R 0]
 
 /-- Every point of the open unit disc winds zero: the disc sits under the arc, inside the
 contour's complement, and connects through the origin to the region below the corner
@@ -165,18 +152,15 @@ theorem windingNumber_fdBoundary_eq_zero_of_norm_lt_one (hH : 1 ≤ H) {w : ℂ}
     positivity
   have h32 : Real.sqrt 3 / 2 ≤ 1 := sqrt_three_div_two_lt_one.le
   refine windingNumber_fdBoundary_eq_zero_of_mem_preconnected hconn ?_
-    (fun R ↦ ⟨((-(max R 0 + 1) : ℝ) : ℂ) * Complex.I, Or.inr ?_, ?_⟩)
+    (fun R ↦ (TauCeti.exists_im_lt_and_lt_norm (Real.sqrt 3 / 2) R).imp
+      fun _ h ↦ ⟨Or.inr h.1, h.2⟩)
     (Or.inl (by rwa [Metric.mem_ball, dist_zero_right]))
   · rintro z (hz | hz) ⟨t, ht, rfl⟩ <;>
       rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 5)] at ht
     · rw [Metric.mem_ball, dist_zero_right] at hz
       exact absurd hz (not_lt.mpr (one_le_norm_fdBoundary hH ht))
     · exact absurd hz (not_lt.mpr (sqrt_three_div_two_le_im_fdBoundary (h32.trans hH) ht))
-  · rw [Set.mem_ofPred_eq, Complex.mul_I_im, Complex.ofReal_re]
-    nlinarith [le_max_right R 0, Real.sqrt_nonneg 3]
-  · rw [norm_mul, Complex.norm_I, mul_one, Complex.norm_real,
-      Real.norm_of_nonpos (by nlinarith [le_max_right R 0])]
-    nlinarith [le_max_left R 0]
+
 
 /-- The boundary contour is null-homologous in the truncated fundamental domain: every
 point off the closed truncated domain lies in one of the five exterior regions, where the

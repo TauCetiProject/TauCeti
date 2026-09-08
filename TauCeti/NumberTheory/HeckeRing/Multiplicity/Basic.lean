@@ -172,6 +172,28 @@ theorem mulMap_eq_mk (H₁ H₂ H₃ : Subgroup G) [IsHeckeTriple Δ H₁ H₂] 
           (Δ.mul_mem (IsHeckeTriple.mem_of_mem_right H₁ p.2.out.2) g₂.2)⟩ :=
   mulMapOf_eq_mk _ _ H₃ g₁ g₂ p
 
+/-- **A factorisation `σᵢ g₁ τⱼ g₂ = l d r` with `l ∈ H₁` and `r ∈ H₃` names the double coset
+of the product**, from bare containments. This is the shape a structure-constant computation
+arrives at: the product of two representatives is rearranged until the intended representative
+`d` stands alone between a left factor and a right factor. -/
+lemma mulMapOf_eq_of_eq_mul_mul {H₁ H₂ H₃ : Subgroup G} {h₁ : H₁.toSubmonoid ≤ Δ}
+    {h₂ : H₂.toSubmonoid ≤ Δ} {g₁ g₂ d : Δ}
+    {p : DecompQuotient H₁ H₂ (g₁ : G) × DecompQuotient H₂ H₃ (g₂ : G)} {l r : G}
+    (hl : l ∈ H₁) (hr : r ∈ H₃)
+    (h : (p.1.out : G) * g₁ * ((p.2.out : G) * g₂) = l * (d : G) * r) :
+    mulMapOf h₁ h₂ H₃ g₁ g₂ p = mk H₁ H₃ d :=
+  (mulMapOf_eq_mk h₁ h₂ H₃ g₁ g₂ p).trans
+    (HeckeCoset.mk_eq_mk_of_mem (DoubleCoset.mem_doubleCoset.mpr ⟨l, hl, r, hr, h⟩))
+
+/-- A factorisation `σᵢ g₁ τⱼ g₂ = l d r` with `l ∈ H₁` and `r ∈ H₃` names the double coset of
+the product: the Hecke-triple form of `mulMapOf_eq_of_eq_mul_mul`. -/
+lemma mulMap_eq_of_eq_mul_mul {H₁ H₂ H₃ : Subgroup G} [IsHeckeTriple Δ H₁ H₂] {g₁ g₂ d : Δ}
+    {p : DecompQuotient H₁ H₂ (g₁ : G) × DecompQuotient H₂ H₃ (g₂ : G)} {l r : G}
+    (hl : l ∈ H₁) (hr : r ∈ H₃)
+    (h : (p.1.out : G) * g₁ * ((p.2.out : G) * g₂) = l * (d : G) * r) :
+    mulMap H₁ H₂ H₃ g₁ g₂ p = mk H₁ H₃ d :=
+  mulMapOf_eq_of_eq_mul_mul hl hr h
+
 /-- If `σᵢ g₁ τⱼ g₂ H₃ = d H₃` then the double coset of `σᵢ g₁ τⱼ g₂` equals that of `d`,
 from bare containments. -/
 lemma mulMapOf_eq_of_mk_eq {H₁ H₂ H₃ : Subgroup G} {h₁ : H₁.toSubmonoid ≤ Δ}
@@ -180,9 +202,8 @@ lemma mulMapOf_eq_of_mk_eq {H₁ H₂ H₃ : Subgroup G} {h₁ : H₁.toSubmonoi
     (h : ((p.1.out : G) * g₁ * ((p.2.out : G) * g₂) : G ⧸ H₃) = ((d : G) : G ⧸ H₃)) :
     mulMapOf h₁ h₂ H₃ g₁ g₂ p = mk H₁ H₃ d := by
   rw [QuotientGroup.eq] at h
-  rw [mulMapOf_eq_mk]
-  exact HeckeCoset.mk_eq_mk_of_mem (DoubleCoset.mem_doubleCoset.mpr
-    ⟨1, H₁.one_mem, _, H₃.inv_mem h, by rw [one_mul, mul_inv_rev, inv_inv, mul_inv_cancel_left]⟩)
+  exact mulMapOf_eq_of_eq_mul_mul H₁.one_mem (H₃.inv_mem h)
+    (by rw [one_mul, mul_inv_rev, inv_inv, mul_inv_cancel_left])
 
 /-- If `σᵢ g₁ τⱼ g₂ H₃ = d H₃` then the double coset of `σᵢ g₁ τⱼ g₂` equals that of `d`:
 the Hecke-triple form of `mulMapOf_eq_of_mk_eq`. -/

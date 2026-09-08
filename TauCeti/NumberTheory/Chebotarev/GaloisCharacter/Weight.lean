@@ -15,7 +15,9 @@ public import TauCeti.NumberTheory.NumberField.ArtinSymbol
 For a finite Galois extension `L / K` of number fields and a character `χ : Gal(L/K) →* ℂˣ`, this
 file builds the *canonical ideal weight* `galoisCharacterWeight χ`: the completely multiplicative
 function on the ideals of `𝓞 K` whose value at a height-one prime `𝔭` is `χ (Frob 𝔭)` when `𝔭` is
-unramified in `L`, and `0` when `𝔭` ramifies.
+unramified in `L`, and `0` when `𝔭` ramifies. Since `Gal(L/K)` is finite those unramified values
+are roots of unity, so the same weight is packaged a second time as a
+`TauCeti.UnitaryIdealWeight K`.
 
 Nothing here assumes that `L / K` is cyclotomic: the construction needs only `[IsGalois K L]`, and
 the character is an arbitrary degree-one complex character of the Galois group. The Dirichlet
@@ -35,6 +37,8 @@ primes is what makes the ramified Euler factors drop out as `(1 - 0)⁻¹ = 1`.
 
 * `MonoidHom.galoisCharacterWeight`: the weight of `χ`, packaged as a
   `TauCeti.MultiplicativeIdealWeight K`.
+* `MonoidHom.galoisCharacterUnitaryWeight`: the same weight packaged as a
+  `TauCeti.UnitaryIdealWeight K`, its values having modulus `1` away from the ramified primes.
 
 ## Main results
 
@@ -44,12 +48,21 @@ primes is what makes the ramified Euler factors drop out as `(1 - 0)⁻¹ = 1`.
   exactly when that prime ramifies in `L`.
 * `MonoidHom.badPrimes_galoisCharacterWeight`: the bad primes of the weight are exactly the
   ramified primes.
+* `MonoidHom.val_galoisCharacterUnitaryWeight`: the unitary packaging has the same underlying
+  weight.
 
 ## Implementation notes
 
 The weight is packaged as a `TauCeti.MultiplicativeIdealWeight K` rather than as a bare function
 `Ideal (𝓞 K) → ℂ`, so that the totality above is expressed in the carrier's own `badPrimes` API:
 the bad primes of `χ.galoisCharacterWeight` are exactly `ramifiedPrimes K L`.
+
+`TauCeti.UnitaryIdealWeight K` is the subtype of those multiplicative weights whose values have
+modulus `1` away from the bad primes, so the unitary packaging records strictly more than the
+multiplicative one and is not a replacement for it: `galoisCharacterWeight` remains the definition
+everything else is stated about, and `val_galoisCharacterUnitaryWeight` is the bridge. Unitarity is
+a property of the weight rather than of `χ`, so no hypothesis constrains `χ` itself to the unit
+circle.
 
 ## References
 
@@ -213,5 +226,30 @@ theorem badPrimes_galoisCharacterWeight (χ : (L ≃ₐ[K] L) →* ℂˣ) :
   ext 𝔭
   simpa only [TauCeti.MultiplicativeIdealWeight.mem_badPrimes, Finset.mem_coe] using
     galoisCharacterWeight_apply_eq_zero_iff χ 𝔭
+
+/-- **The weight of a Galois character is unitary.** Its values have modulus `1` at every
+unramified prime, and `0` at the ramified ones — which is exactly the `UnitaryIdealWeight`
+contract, `badPrimes` being the ramified set by `badPrimes_galoisCharacterWeight`.
+
+The underlying weight is `galoisCharacterWeight χ` itself, by
+`val_galoisCharacterUnitaryWeight`. No hypothesis beyond multiplicativity is placed on `χ`; in
+particular it is not assumed to take values in the unit circle. -/
+noncomputable def galoisCharacterUnitaryWeight (χ : (L ≃ₐ[K] L) →* ℂˣ) :
+    TauCeti.UnitaryIdealWeight K :=
+  TauCeti.UnitaryIdealWeight.ofPowEqOne (galoisCharacterWeight (L := L) χ)
+    (n := Nat.card (L ≃ₐ[K] L)) Nat.card_pos.ne' (fun 𝔭 h𝔭 ↦ by
+      have hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal],
+          Algebra.IsUnramifiedAt (𝓞 K) Q := by
+        by_contra h
+        exact h𝔭 (by simpa [badPrimes_galoisCharacterWeight] using
+          (NumberField.Chebotarev.mem_ramifiedPrimes_iff (L := L) 𝔭).mpr h)
+      rw [galoisCharacterWeight_apply_of_unramified χ 𝔭 hur, ← Units.val_pow_eq_pow_val,
+        ← map_pow, pow_card_eq_one', map_one, Units.val_one])
+
+/-- The unitary packaging has the same underlying weight. -/
+@[simp]
+theorem val_galoisCharacterUnitaryWeight (χ : (L ≃ₐ[K] L) →* ℂˣ) :
+    (galoisCharacterUnitaryWeight (L := L) χ).1 = galoisCharacterWeight (L := L) χ := by
+  simp [galoisCharacterUnitaryWeight]
 
 end MonoidHom

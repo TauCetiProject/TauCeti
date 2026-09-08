@@ -121,9 +121,8 @@ lemma mulMap_rep_mk_eq_of_mem_normalizer [IsHeckeTriple Δ Γ Γ]
       u * a * ((x : G) * (v * b) * (x : G)⁻¹) * ((x : G) * (y : G)) * 1 := fun u v ↦ by group
   have key := key₀ (p.1.out : G) (p.2.out : G)
   rw [← hA, ← hB] at key
-  rw [mulMap_eq_mk]
-  exact mk_eq_mk_of_mem (g₂ := x * y) (DoubleCoset.mem_doubleCoset.mpr
-    ⟨_, Subgroup.mul_mem _ (Subgroup.mul_mem _ p.1.out.2 ha) hc, 1, Subgroup.one_mem _, key⟩)
+  exact mulMap_eq_of_eq_mul_mul (d := x * y)
+    (Subgroup.mul_mem _ (Subgroup.mul_mem _ p.1.out.2 ha) hc) (Subgroup.one_mem _) key
 
 end HeckeCoset
 

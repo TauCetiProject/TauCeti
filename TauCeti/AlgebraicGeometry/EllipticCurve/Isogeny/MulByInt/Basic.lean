@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.ZSMul
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.TautologicalPoint
 -- Both `ΨSq ≠ 0` lemmas are used only inside proofs below, so both imports are private:
 -- Mathlib's `ΨSq_ne_zero` for the characteristic-conditional discharge, and this repository's
 -- `ΨSq_ne_zero_of_Δ_ne_zero` for the characteristic-free one.
@@ -89,6 +88,9 @@ is `WeierstrassCurve.Affine`'s, in `Affine/FunctionField/GenericPoint.lean`.
 * `TauCeti.Isogeny.mulByIntPullback_mk`: the pullback of an arbitrary class, as evaluation of a
   bivariate polynomial at `(φₙ/ψₙ², ωₙ/ψₙ³)`, with `TauCeti.Isogeny.mulByIntPullback_X` and
   `TauCeti.Isogeny.mulByIntPullback_Y` its values on the two coordinates.
+* `TauCeti.Isogeny.tautologicalPoint_mulByIntPullback`: the tautological point of `[n]` is
+  `n • ` the generic point. It lives here, next to the Jacobian-coordinate lemmas it is proved
+  from, which stay private.
 
 ## References
 
@@ -174,10 +176,10 @@ theorem mulByIntY_def (n : ℤ) :
 
 /-- The `Z`-coordinate of the Jacobian triple of `[n]` at the generic point is `ψₙ`.
 
-Private, like the two below: all three are `rw`-lemmas for `equation_mulByInt`, which is the
-public statement of what they add up to. They are not `@[simp]` either — `smulEval` is an
-`abbrev`, so `simp` unfolds the left-hand side through `Function.comp_apply` and `map_ψ` before
-these could fire, and `simpNF` rejects them. -/
+Private, like the two below: all three are `rw`-lemmas for `equation_mulByInt` and
+`tautologicalPoint_mulByIntPullback`, which are the public statements of what they add up to.
+They are not `@[simp]` either — `smulEval` is an `abbrev`, so `simp` unfolds the left-hand side
+through `Function.comp_apply` and `map_ψ` before these could fire, and `simpNF` rejects them. -/
 private theorem smulEval_genericPoint_Z (n : ℤ) :
   smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n 2 =
       psiFunctionField W n := by
@@ -334,6 +336,47 @@ theorem mulByIntPullback_X [W.IsElliptic] {n : ℤ} (hn : psiFunctionField W n �
 theorem mulByIntPullback_Y [W.IsElliptic] {n : ℤ} (hn : psiFunctionField W n ≠ 0) :
     mulByIntPullback W hn (AdjoinRoot.root W.polynomial) = mulByIntY W n := by
   simp [mulByIntPullback]
+
+section TautologicalPoint
+
+open _root_.WeierstrassCurve.Affine
+
+/-- **The tautological point of `[n]` is `n` times the generic point.** -/
+@[simp]
+theorem tautologicalPoint_mulByIntPullback [W.IsElliptic] {n : ℤ}
+    (hn : psiFunctionField W n ≠ 0) :
+    (mulByIntPullback W hn).tautologicalPoint = n • W.genericPoint := by
+  have hns' : (W⁄W.FunctionField).toAffine.Nonsingular (mulByIntX W n) (mulByIntY W n) :=
+    equation_iff_nonsingular.mp (equation_mulByInt W hn)
+  have hnsEval : Jacobian.Nonsingular (W⁄W.FunctionField).toAffine.toJacobian
+      (smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n) := by
+    rw [← Jacobian.nonsingularLift_iff,
+      ← zsmul_point_eq_smulEval _ W.nonsingular_genericX_genericY n]
+    exact (n • Jacobian.Point.fromAffine
+      (Affine.Point.some _ _ W.nonsingular_genericX_genericY)).nonsingular
+  have hpoint : n • Jacobian.Point.fromAffine
+        (Affine.Point.some _ _ W.nonsingular_genericX_genericY) =
+      (⟨(Jacobian.nonsingularLift_iff _).2 hnsEval⟩ :
+        (W⁄W.FunctionField).toAffine.toJacobian.Point) := by
+    rw [Jacobian.Point.ext_iff]
+    exact zsmul_point_eq_smulEval _ W.nonsingular_genericX_genericY n
+  have hZ : smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n 2 ≠ 0 := by
+    rw [smulEval_genericPoint_Z]
+    exact hn
+  have hsmul : n • W.genericPoint = Affine.Point.some _ _ hns' := by
+    have h := congrArg (Jacobian.Point.toAffineAddEquiv (W⁄W.FunctionField)) hpoint
+    simp only [map_zsmul, Jacobian.Point.toAffineAddEquiv_apply] at h
+    rw [Jacobian.Point.fromAffine_some, Jacobian.Point.toAffineLift_some] at h
+    rw [Jacobian.Point.toAffineLift_of_Z_ne_zero hZ] at h
+    simpa only [genericPoint_eq_some, smulEval_genericPoint_X, smulEval_genericPoint_Y,
+      smulEval_genericPoint_Z, mulByIntX_def, mulByIntY_def] using h
+  rw [hsmul]
+  refine Point.eq_of_coords (CoordinatePullback.tautologicalPoint_ne_zero _)
+    (Point.some_ne_zero _) ?_ ?_
+  · rw [CoordinatePullback.xCoord_tautologicalPoint, Point.xCoord_some, mulByIntPullback_X]
+  · rw [CoordinatePullback.yCoord_tautologicalPoint, Point.yCoord_some, mulByIntPullback_Y]
+
+end TautologicalPoint
 
 end Isogeny
 
