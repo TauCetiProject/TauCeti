@@ -93,11 +93,14 @@ theorem gaussianCondCov_def (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) :
           S.submatrix Sum.inr Sum.inl :=
   (rfl)
 
-omit [Fintype ι] [DecidableEq ι] in
+end TauCeti
+
+variable {ι κ : Type*} [Fintype κ] [DecidableEq κ]
+
 /-- The conditional covariance of a positive-definite block matrix is positive definite. -/
 theorem Matrix.PosDef.gaussianCondCov [Finite ι] {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
     (hS : S.PosDef) :
-    (gaussianCondCov S).PosDef := by
+    (TauCeti.gaussianCondCov S).PosDef := by
   classical
   let _ := Fintype.ofFinite ι
   let S₁₁ := S.submatrix Sum.inl Sum.inl
@@ -125,11 +128,15 @@ theorem Matrix.PosDef.gaussianCondCov [Finite ι] {S : Matrix (ι ⊕ κ) (ι �
   have hunit : IsUnit (S₁₁ - S₁₂ * S₂₂⁻¹ * Matrix.conjTranspose S₁₂) := by
     simpa only [Matrix.invOf_eq_nonsing_inv] using
       (isUnit_of_invertible (S₁₁ - S₁₂ * ⅟S₂₂ * Matrix.conjTranspose S₁₂))
-  rw [gaussianCondCov_def]
+  rw [TauCeti.gaussianCondCov_def]
   -- Expose the named block matrices so the Schur-complement theorem applies directly.
   change (S₁₁ - S₁₂ * S₂₂⁻¹ * S₂₁).PosDef
   rw [hS₂₁]
   exact hpos.posDef_iff_isUnit.mpr hunit
+
+namespace TauCeti
+
+variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
 /-- The conditional Gaussian Markov kernel. -/
 noncomputable def gaussianCondKernel (m : EuclideanSpace ℝ (ι ⊕ κ))
