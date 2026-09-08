@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
 public import TauCeti.NumberTheory.ModularForms.Degeneracy
+public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diagonal.Basic
 public import TauCeti.NumberTheory.ModularForms.SlashActionRat
 
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
@@ -34,8 +35,6 @@ from the diamond operator and is not part of the diagonal slash.
   scaling matrix used by `V_d`.
 * `TauCeti.slash_natDiagGL_d_one_eq_smul_levelRaise`: the rational diagonal slash is
   `d ^ (k - 1)` times the degeneracy map.
-* `TauCeti.rat_slash_natDiagGL_const`: a nonzero constant rational diagonal acts by
-  `c ^ (k - 2)`.
 * `ModularForm.qExpansion_slash_natDiagGL_d_one`: the resulting power-series identity.
 * The corresponding `_coeff` lemmas give the divisibility-conditional coefficient formula.
 
@@ -64,20 +63,6 @@ open scoped MatrixGroups ModularForm Pointwise
 namespace TauCeti
 
 variable {k : ℤ} {d : ℕ}
-
-/-- A nonzero constant natural diagonal acts through the rational weight-`k` slash by
-`c ^ (k - 2)`. -/
-@[simp]
-lemma rat_slash_natDiagGL_const {c : ℕ} [NeZero c] (k : ℤ) (f : ℍ → ℂ) :
-    f ∣[k] natDiagGL 2 ![c, c] = (c : ℂ) ^ (k - 2) • f := by
-  have hc : 0 < c := Nat.pos_of_ne_zero (NeZero.ne c)
-  rw [natDiagGL_two_vec_const, natDiagGL_const_eq_scalar 2 hc, ModularForm.rat_slash,
-    Matrix.GeneralLinearGroup.map_scalar]
-  let u : ℝˣ := Units.map (algebraMap ℚ ℝ)
-    (Units.mk0 (c : ℚ) (by exact_mod_cast hc.ne'))
-  rw [ModularForm.slash_scalar_of_pos k u (by simp [u, hc])]
-  have hu : (((u : ℝ) : ℂ)) = (c : ℂ) := by simp [u]
-  rw [hu]
 
 /-- The positive rational diagonal matrix `diag(d, 1)` maps to the real scaling matrix used to
 define the degeneracy operator `V_d`. -/
