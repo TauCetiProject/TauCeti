@@ -160,40 +160,28 @@ theorem mem_weilDifferentialFiltration_sup {D E : Divisor k F}
     {ω : Module.Dual k ↥(repartitionSpace k F)} (hD : ω ∈ weilDifferentialFiltration D)
     (hE : ω ∈ weilDifferentialFiltration E) :
     ω ∈ weilDifferentialFiltration (D ⊔ E) := by
-  -- By `adeleFiltration_sup` a repartition bounded by `D ⊔ E` is a sum of one bounded by `D` and
-  -- one bounded by `E`, on both of which the differential already vanishes.
-  have hsub : submoduleOfAdeleFiltrationSupDiagonalRepartitions (D ⊔ E) =
-      submoduleOfAdeleFiltrationSupDiagonalRepartitions D ⊔
-        submoduleOfAdeleFiltrationSupDiagonalRepartitions E := by
-    have htrace (X : Submodule k (Place k F → F))
-        (hX : X ≤ repartitionSpace k F) :
-        (X ⊔ diagonalRepartitions k F).submoduleOf (repartitionSpace k F) =
-          X.submoduleOf (repartitionSpace k F) ⊔
-            (diagonalRepartitions k F).submoduleOf (repartitionSpace k F) := by
-      apply Submodule.map_injective_of_injective (repartitionSpace k F).subtype_injective
-      simp only [Submodule.submoduleOf, Submodule.map_comap_eq, Submodule.map_sup,
-        Submodule.range_subtype]
-      rw [inf_comm (repartitionSpace k F) (X ⊔ diagonalRepartitions k F),
-        inf_comm (repartitionSpace k F) X,
-        inf_comm (repartitionSpace k F) (diagonalRepartitions k F),
-        sup_inf_assoc_of_le _ hX, inf_eq_left.mpr hX]
-    rw [submoduleOfAdeleFiltrationSupDiagonalRepartitions_eq_submoduleOf (D ⊔ E),
-      submoduleOfAdeleFiltrationSupDiagonalRepartitions_eq_submoduleOf D,
-      submoduleOfAdeleFiltrationSupDiagonalRepartitions_eq_submoduleOf E,
-      adeleFiltration_sup,
-      htrace (adeleFiltration D ⊔ adeleFiltration E)
-        (sup_le (adeleFiltration_le_repartitionSpace D)
-          (adeleFiltration_le_repartitionSpace E)),
-      Submodule.submoduleOf_sup_of_le (adeleFiltration_le_repartitionSpace D)
-        (adeleFiltration_le_repartitionSpace E),
-      htrace (adeleFiltration D) (adeleFiltration_le_repartitionSpace D),
-      htrace (adeleFiltration E) (adeleFiltration_le_repartitionSpace E)]
-    ac_rfl
-  rw [weilDifferentialFiltration_eq_dualAnnihilator D] at hD
-  rw [weilDifferentialFiltration_eq_dualAnnihilator E] at hE
-  rw [weilDifferentialFiltration_eq_dualAnnihilator (D ⊔ E), hsub,
-    Submodule.dualAnnihilator_sup_eq]
-  exact ⟨hD, hE⟩
+  refine mem_weilDifferentialFiltration_of_apply_eq_zero (fun a ha ↦ ?_)
+    (fun a ha ↦ weilDifferentialFiltration_apply_eq_zero_of_mem_diagonalRepartitions hD a ha)
+  rw [adeleFiltration_sup] at ha
+  obtain ⟨x, hx, y, hy, hxy⟩ := Submodule.mem_sup.mp ha
+  have hxA : x ∈ repartitionSpace k F := adeleFiltration_le_repartitionSpace D hx
+  have hyA : y ∈ repartitionSpace k F := adeleFiltration_le_repartitionSpace E hy
+  have hsplit : a = ⟨x, hxA⟩ + ⟨y, hyA⟩ := Subtype.ext hxy.symm
+  rw [hsplit, map_add,
+    weilDifferentialFiltration_apply_eq_zero_of_mem_adeleFiltration hD ⟨x, hxA⟩ hx,
+    weilDifferentialFiltration_apply_eq_zero_of_mem_adeleFiltration hE ⟨y, hyA⟩ hy, add_zero]
+
+/-- **The filtration turns suprema of divisors into intersections of spaces of Weil
+differentials**: `Ω_F(D ⊔ E) = Ω_F(D) ∩ Ω_F(E)`. -/
+@[simp]
+theorem weilDifferentialFiltration_sup (D E : Divisor k F) :
+    weilDifferentialFiltration (D ⊔ E) =
+      weilDifferentialFiltration D ⊓ weilDifferentialFiltration E := by
+  refine le_antisymm
+    (le_inf (weilDifferentialFiltration_antitone le_sup_left)
+      (weilDifferentialFiltration_antitone le_sup_right)) ?_
+  intro ω hω
+  exact mem_weilDifferentialFiltration_sup hω.1 hω.2
 
 /-- **`Ω_F(D)` vanishes exactly when `A_F(D) + F` is everything**: the only `k`-linear form on
 `A_F` vanishing on `A_F(D) + F` is `0` precisely when every repartition already differs from a
@@ -279,7 +267,7 @@ on a Riemann–Roch space. -/
 noncomputable def repartitionDualMulRight (hF : IsFunctionField k F)
     (ω : Module.Dual k ↥(repartitionSpace k F)) :
     F →ₗ[k] Module.Dual k ↥(repartitionSpace k F) :=
-  (LinearMap.applyₗ ω).comp (repartitionDualMul hF).toLinearMap
+  (repartitionDualMul hF).toLinearMap.flip ω
 
 @[simp]
 theorem repartitionDualMulRight_apply (hF : IsFunctionField k F)

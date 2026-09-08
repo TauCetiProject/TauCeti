@@ -48,7 +48,7 @@ the Riemann–Roch identity.
   fixed nonzero Weil differential have bounded degree.
 * `TauCeti.exists_isGreatest_mem_weilDifferentialFiltration`: **the divisor of a nonzero Weil
   differential** — among the divisors bounding it there is a greatest (Stichtenoth,
-  Proposition 1.5.11).
+  Lemma 1.5.10).
 * `TauCeti.mem_weilDifferentialFiltration_iff_le_of_isGreatest` and
   `TauCeti.mem_weilDifferentialFiltration_iff_le_weilDifferentialDivisor`: `ω ∈ Ω_F(D) ↔ D ≤ (ω)`,
   the characteristic property of that divisor.
@@ -77,7 +77,7 @@ the Riemann–Roch identity.
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Section I.5, in particular Proposition 1.5.11, Theorem 1.5.14 and Theorem 1.5.15, and
+  Section I.5, in particular Lemma 1.5.10, Theorem 1.5.14 and Theorem 1.5.15, and
   Proposition 1.6.2.
 * Tau Ceti pull request
   [#5207](https://github.com/TauCetiProject/TauCeti/pull/5207), the predecessor formalization of
@@ -106,7 +106,7 @@ theorem exists_forall_degree_lt_of_mem_weilDifferentialFiltration (hF : IsFuncti
     (weilDifferentialFiltration_eq_bot_iff_indexOfSpecialty_eq_zero hF hex D).2 (hc D hcon)
   exact hω (by simpa [hbot] using hD)
 
-/-- **The divisor of a nonzero Weil differential** (Stichtenoth, Proposition 1.5.11): the
+/-- **The divisor of a nonzero Weil differential** (Stichtenoth, Lemma 1.5.10): the
 divisors bounding `ω` have a greatest element. -/
 theorem exists_isGreatest_mem_weilDifferentialFiltration (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
@@ -437,11 +437,10 @@ theorem divisorClass_eq_canonicalClass_iff (hF : IsFunctionField k F)
     have hone : 1 ≤ Divisor.dim (weilDifferentialDivisor hF hex hωmem hω0 - D) := by
       rw [hdeg] at hid
       omega
-    obtain ⟨z, hz⟩ :=
-      (Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero hF hdegsub).mp hone
     have hclass : (Place.orderSystem hF).divisorClass
         (weilDifferentialDivisor hF hex hωmem hω0 - D) = 0 :=
-      (Divisor.divisorClass_eq_zero_iff hF).mpr ⟨z, hz⟩
+      (riemannRochSpace_ne_bot_iff_divisorClass_eq_zero_of_degree_eq_zero hF hdegsub).mp
+        ((Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF _).mp hone)
     rw [map_sub, sub_eq_zero, divisorClass_weilDifferentialDivisor hF hex hωmem hω0] at hclass
     exact hclass.symm
 
