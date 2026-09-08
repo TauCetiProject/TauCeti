@@ -16,8 +16,6 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ConjugacyClasses
 -- Non-public: the `q`-power map on a quadratic extension of a finite field, whose fixed points
 -- are the base field, is used only inside the proofs.
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
--- Non-public: the explicit trace and norm of a finite field extension, in the proofs only.
-import Mathlib.FieldTheory.Finite.Trace
 -- Non-public: `TauCeti.smul_quotientGroup_mk_eq_self_iff` is used only inside a proof.
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
@@ -34,8 +32,8 @@ element coming from `u : Eˣ` outside `F` it is `f(u) + f(u^q)`.
 Applied to a character `θ` of `Eˣ` this is the character of `Ind_{Eˣ}^{GL₂(F)} θ`, one of the two
 induced characters whose difference is the cuspidal (discrete series) character attached to a
 character of `Eˣ` in general position; the other is induced from the product of the centre with the
-unipotent radical. The vanishing on the two families that meet the Borel subgroup is the reason
-that difference has degree `q - 1` rather than `q (q - 1)`.
+unipotent radical. Its degree is the difference of the two inducing indices,
+`[GL₂(F) : Z·U] - [GL₂(F) : Eˣ] = (q² - 1) - q (q - 1) = q - 1`.
 
 ## The geometry behind the four values
 
@@ -91,62 +89,7 @@ namespace TauCeti
 namespace GL2NonSplitTorus
 
 variable {F : Type*} [Field F] {E : Type*} [Field E] [Algebra F E]
-  {k : Type*} [Semiring k] (hE : Module.finrank F E = 2)
-
-/-! ### Elements with an eigenvalue in the base field -/
-
-/-- **A non-scalar element with an eigenvalue in `F` has no conjugate in the non-split torus.**
-An element of the torus is either scalar or has no eigenvalue in `F`
-(`TauCeti.GL2NonSplitTorus.det_sub_algebraMap_ne_zero`), and both conditions are invariant under
-conjugation. This is what makes the induced class function vanish on the split semisimple and the
-non-semisimple classes. -/
-theorem conj_notMem_of_det_sub_algebraMap_eq_zero {g : GL (Fin 2) F}
-    (hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2))) {a : F}
-    (ha : ((g : Matrix (Fin 2) (Fin 2) F) -
-      algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det = 0) (x : GL (Fin 2) F) :
-    x⁻¹ * g * x ∉ GL2NonSplitTorus F E hE := by
-  have : Module.Finite F E := Module.finite_of_finrank_eq_succ (n := 1) hE
-  intro hmem
-  obtain ⟨v, hv⟩ := (mem_iff hE).mp hmem
-  -- the conjugated matrix is multiplication by `v`
-  have hmat : ((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) =
-      Algebra.leftMulMatrix (nonSplitTorusBasis F E hE) (v : E) := by
-    rw [← coe_gl2NonSplitTorusHom hE, hv]
-  -- conjugation does not change the determinant of `g - a`
-  have hdet : (((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) -
-      algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det = 0 := by
-    have hxx : ((x⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) *
-        (x : Matrix (Fin 2) (Fin 2) F) = 1 := by
-      rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
-    have hcancel : ((x⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) *
-        algebraMap F (Matrix (Fin 2) (Fin 2) F) a * (x : Matrix (Fin 2) (Fin 2) F) =
-        algebraMap F (Matrix (Fin 2) (Fin 2) F) a := by
-      rw [mul_assoc, Algebra.commutes a (x : Matrix (Fin 2) (Fin 2) F), ← mul_assoc, hxx, one_mul]
-    have hsplit : ((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) -
-        algebraMap F (Matrix (Fin 2) (Fin 2) F) a =
-        ((x⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) *
-          ((g : Matrix (Fin 2) (Fin 2) F) -
-            algebraMap F (Matrix (Fin 2) (Fin 2) F) a) * (x : Matrix (Fin 2) (Fin 2) F) := by
-      rw [mul_sub, sub_mul, hcancel, Units.val_mul, Units.val_mul]
-    rw [hsplit, Matrix.det_mul, Matrix.det_mul, ha, mul_zero, zero_mul]
-  -- so the norm of `v - a` vanishes, forcing `v` into `F`
-  have hnorm : Algebra.norm F ((v : E) - algebraMap F E a) = 0 := by
-    rw [Algebra.norm_eq_matrix_det (nonSplitTorusBasis F E hE), map_sub,
-      (Algebra.leftMulMatrix (nonSplitTorusBasis F E hE)).commutes, ← hmat, hdet]
-  have hvF : (v : E) = algebraMap F E a := sub_eq_zero.mp (Algebra.norm_eq_zero_iff.mp hnorm)
-  -- the conjugate is then a central scalar matrix, so `g` is scalar
-  have ha0 : a ≠ 0 := fun h => v.ne_zero (by rw [hvF, h, map_zero])
-  have hvu : v = Units.map (algebraMap F E : F →* E) (Units.mk0 a ha0) := by
-    ext
-    simpa using hvF
-  have hscal : x⁻¹ * g * x =
-      Matrix.GeneralLinearGroup.scalar (Fin 2) (Units.mk0 a ha0) := by
-    rw [← hv, hvu, gl2NonSplitTorusHom_map_algebraMap]
-  have hgeq : g = Matrix.GeneralLinearGroup.scalar (Fin 2) (Units.mk0 a ha0) := by
-    have hgx : g = x * (x⁻¹ * g * x) * x⁻¹ := by group
-    rw [hgx, hscal, ← Matrix.GeneralLinearGroup.scalar_commute, mul_assoc, mul_inv_cancel,
-      mul_one]
-  exact hg ⟨a, by rw [hgeq, Matrix.GeneralLinearGroup.coe_scalar, Units.val_mk0]⟩
+  {k : Type*} [AddCommMonoid k] (hE : Module.finrank F E = 2)
 
 variable [Finite F]
 
@@ -213,62 +156,7 @@ theorem indClassFun_jordanGL (f : GL2NonSplitTorus F E hE → k) (a : Fˣ) {b : 
 
 section Elliptic
 
-variable {u v : Eˣ}
-
-/-- **The elements of the elliptic torus conjugate to a given elliptic element.** For `u : Eˣ`
-outside `F`, the matrix of `v : Eˣ` is conjugate to that of `u` exactly when `v` is `u` or its
-Frobenius conjugate `u^q`.
-
-Conjugate matrices have the same trace and determinant, which on the torus are the trace and the
-norm of the field element; and `u`, `u^q` are the two roots of `X² - Tr(u) X + N(u)`, so an element
-with those invariants is one of them. -/
-theorem isConj_gl2NonSplitTorusHom_iff (hu : (u : E) ∉ Set.range (algebraMap F E)) :
-    IsConj (GL2NonSplitTorusHom F E hE u) (GL2NonSplitTorusHom F E hE v) ↔
-      v = u ∨ v = u ^ Nat.card F := by
-  have hfin : Module.Finite F E := Module.finite_of_finrank_eq_succ (n := 1) hE
-  have : Finite E := Module.finite_of_finite F
-  have hupow : ((u ^ Nat.card F : Eˣ) : E) ∉ Set.range (algebraMap F E) := by
-    rw [Units.val_pow_eq_pow_val]
-    exact FiniteField.pow_natCard_notMem_range_algebraMap hE hu
-  -- the trace and the norm of a quadratic extension of a finite field, written out
-  have htr : ∀ w : E, algebraMap F E (Algebra.trace F E w) = w + w ^ Nat.card F := by
-    intro w
-    rw [FiniteField.algebraMap_trace_eq_sum_pow, hE]
-    simp [Finset.sum_range_succ]
-  have hnm : ∀ w : E, algebraMap F E (Algebra.norm F w) = w * w ^ Nat.card F := by
-    intro w
-    rw [FiniteField.algebraMap_norm_eq_prod_pow, hE]
-    simp [Finset.prod_range_succ]
-  constructor
-  · intro hconj
-    have htrace : Algebra.trace F E (v : E) = Algebra.trace F E (u : E) := by
-      rw [← trace_gl2NonSplitTorusHom hE, ← trace_gl2NonSplitTorusHom hE,
-        trace_val_eq_of_isConj hconj]
-    have hnorm : Algebra.norm F (v : E) = Algebra.norm F (u : E) := by
-      rw [← val_det_gl2NonSplitTorusHom hE, ← val_det_gl2NonSplitTorusHom hE]
-      exact congrArg Units.val
-        (isConj_iff_eq.1 (Matrix.GeneralLinearGroup.det.map_isConj hconj)).symm
-    have h1 : (v : E) + (v : E) ^ Nat.card F = (u : E) + (u : E) ^ Nat.card F := by
-      rw [← htr, ← htr, htrace]
-    have h2 : (v : E) * (v : E) ^ Nat.card F = (u : E) * (u : E) ^ Nat.card F := by
-      rw [← hnm, ← hnm, hnorm]
-    have key : ((v : E) - (u : E)) * ((v : E) - (u : E) ^ Nat.card F) = 0 := by
-      linear_combination (v : E) * h1 - h2
-    rcases mul_eq_zero.mp key with h | h
-    · exact Or.inl (Units.ext (sub_eq_zero.mp h))
-    · exact Or.inr (Units.ext (by rw [Units.val_pow_eq_pow_val]; exact sub_eq_zero.mp h))
-  · rintro (rfl | rfl)
-    · exact IsConj.refl _
-    · refine (isConj_iff_of_notMem_range_scalar
-        (notMem_range_scalar_gl2NonSplitTorusHom hE hu)
-        (notMem_range_scalar_gl2NonSplitTorusHom hE hupow)).mpr ⟨?_, ?_⟩
-      · rw [trace_gl2NonSplitTorusHom, trace_gl2NonSplitTorusHom]
-        refine FaithfulSMul.algebraMap_injective F E ?_
-        rw [htr, htr, Units.val_pow_eq_pow_val, FiniteField.pow_natCard_pow_natCard hE, add_comm]
-      · rw [← Matrix.GeneralLinearGroup.val_det_apply, ← Matrix.GeneralLinearGroup.val_det_apply,
-          val_det_gl2NonSplitTorusHom, val_det_gl2NonSplitTorusHom]
-        refine FaithfulSMul.algebraMap_injective F E ?_
-        rw [hnm, hnm, Units.val_pow_eq_pow_val, FiniteField.pow_natCard_pow_natCard hE, mul_comm]
+variable {u : Eˣ}
 
 /-- **The induced class function at an elliptic element.** For `u : Eˣ` outside `F` exactly two
 cosets contribute, the trivial one and the one that conjugates `u` to `u^q`, so the value is
@@ -367,7 +255,7 @@ theorem indClassFun_gl2NonSplitTorusHom (f : GL2NonSplitTorus F E hE → k)
     intro h
     rw [QuotientGroup.eq, inv_one, one_mul] at h
     exact hdT h
-  -- the torus is abelian, so every function on it is a class function
+  -- the torus is abelian, so every function on it is invariant under conjugation
   have hcomm : ∀ y z : (GL2NonSplitTorus F E hE), z * y * z⁻¹ = y := by
     intro y z
     obtain ⟨p, hp⟩ := (mem_iff hE).mp y.2
@@ -375,16 +263,53 @@ theorem indClassFun_gl2NonSplitTorusHom (f : GL2NonSplitTorus F E hE → k)
     refine Subtype.ext ?_
     rw [Subgroup.coe_mul, Subgroup.coe_mul, Subgroup.coe_inv, ← hp, ← hr, ← map_inv, ← map_mul,
       ← map_mul, mul_comm r p, mul_assoc, mul_inv_cancel, mul_one]
-  have hcf : f ∈ ClassFunction k (GL2NonSplitTorus F E hE) :=
-    ClassFunction.mem_iff.mpr fun y z => by rw [hcomm y z]
+  -- Consequently a summand depends only on its coset representative. This direct form avoids
+  -- imposing the semiring structure needed to package `f` as a `ClassFunction`.
+  have hterm (g x y : GL (Fin 2) F)
+      (hxy : (QuotientGroup.mk x : GL (Fin 2) F ⧸ GL2NonSplitTorus F E hE) =
+        QuotientGroup.mk y) : indTerm f g x = indTerm f g y := by
+    have hs : x⁻¹ * y ∈ GL2NonSplitTorus F E hE :=
+      QuotientGroup.leftRel_apply.mp (Quotient.exact' hxy)
+    let s : GL2NonSplitTorus F E hE := ⟨x⁻¹ * y, hs⟩
+    have hy : x * (s : GL (Fin 2) F) = y := by simp [s]
+    rw [← hy]
+    classical
+    by_cases hx : x⁻¹ * g * x ∈ GL2NonSplitTorus F E hE
+    · have hxs : (x * (s : GL (Fin 2) F))⁻¹ * g * (x * s) ∈
+          GL2NonSplitTorus F E hE := by
+        have hm := (GL2NonSplitTorus F E hE).mul_mem
+          ((GL2NonSplitTorus F E hE).mul_mem
+            ((GL2NonSplitTorus F E hE).inv_mem s.2) hx) s.2
+        convert hm using 1
+        all_goals group
+      have helem :
+          (⟨(x * (s : GL (Fin 2) F))⁻¹ * g * (x * s), hxs⟩ :
+              GL2NonSplitTorus F E hE) =
+            s⁻¹ * ⟨x⁻¹ * g * x, hx⟩ * s := by
+        apply Subtype.ext
+        simp only [Subgroup.coe_mul, Subgroup.coe_inv]
+        group
+      rw [indTerm_apply, dite_eq_left hx, indTerm_apply, dite_eq_left hxs]
+      exact congrArg f (helem.trans (by
+        simpa using hcomm (⟨x⁻¹ * g * x, hx⟩ : GL2NonSplitTorus F E hE) s⁻¹)).symm
+    · have hxs : (x * (s : GL (Fin 2) F))⁻¹ * g * (x * s) ∉
+          GL2NonSplitTorus F E hE := by
+        intro h
+        apply hx
+        have hm := (GL2NonSplitTorus F E hE).mul_mem
+          ((GL2NonSplitTorus F E hE).mul_mem s.2 h)
+          ((GL2NonSplitTorus F E hE).inv_mem s.2)
+        convert hm using 1
+        all_goals group
+      rw [indTerm_apply, dite_eq_right hx, indTerm_apply, dite_eq_right hxs]
   rw [indClassFun_eq_sum_of_smul_eq_self_mem f _
     ({((1 : GL (Fin 2) F) : GL (Fin 2) F ⧸ GL2NonSplitTorus F E hE),
       (d : GL (Fin 2) F ⧸ GL2NonSplitTorus F E hE)} : Finset _) ?_, Finset.sum_pair hne]
   · congr 1
-    · rw [indTerm_eq_of_mk_eq hcf _ _ (1 : GL (Fin 2) F) (QuotientGroup.out_eq' _), indTerm_one,
+    · rw [hterm _ _ (1 : GL (Fin 2) F) (QuotientGroup.out_eq' _), indTerm_one,
         dite_eq_left hgmem]
       exact congrArg f (Subtype.ext (coe_unitsEquiv_apply hE u).symm)
-    · rw [indTerm_eq_of_mk_eq hcf _ _ d (QuotientGroup.out_eq' _), indTerm_apply, hdg,
+    · rw [hterm _ _ d (QuotientGroup.out_eq' _), indTerm_apply, hdg,
         dite_eq_left hgmem']
       exact congrArg f (Subtype.ext (coe_unitsEquiv_apply hE _).symm)
   · intro t ht

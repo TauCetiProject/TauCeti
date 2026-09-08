@@ -94,6 +94,7 @@ variable {K L : Type*} [Field K] [Finite K] [Field L] [Algebra K L]
 /-- **The `Nat.card` spelling of
 `TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`**, for a base field given as
 `Finite` rather than as a `Fintype`. -/
+@[simp]
 theorem pow_natCard_eq_self_iff (a : L) :
     a ^ Nat.card K = a ↔ a ∈ Set.range (algebraMap K L) := by
   let _ := Fintype.ofFinite K
@@ -108,6 +109,7 @@ theorem pow_natCard_ne {a : L} (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat
 
 /-- **In a quadratic extension of a field with `q` elements the `q`-power map is an involution**:
 `L` has `q²` elements, so `a ^ (q²) = a`. -/
+@[simp]
 theorem pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : L) :
     (a ^ Nat.card K) ^ Nat.card K = a := by
   have : Module.Finite K L := Module.finite_of_finrank_eq_succ (n := 1) h2

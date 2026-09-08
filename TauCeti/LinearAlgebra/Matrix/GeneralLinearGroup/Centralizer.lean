@@ -23,6 +23,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ScalarUnipotent
 -- Non-public: the order of `GL (Fin 2) F` over a finite field is used only inside the counting
 -- proofs, so downstream importers do not pay for it.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
+import TauCeti.GroupTheory.Index
 
 /-!
 # Centralizers of the regular elements of `GL₂`
@@ -203,15 +204,6 @@ end SplitTorus
 section Counting
 
 variable {F : Type*} [Field F] [Fintype F]
-
-/-- Orbit-stabilizer arithmetic: a subgroup of known nonzero order in a group whose order it
-divides in a known way has the complementary factor as its index. -/
-private theorem index_eq_of_natCard_eq_mul {G : Type*} [Group G] {H : Subgroup G} {c d : ℕ}
-    (hpos : 0 < c) (hH : Nat.card H = c) (hG : Nat.card G = c * d) : H.index = d := by
-  refine Nat.eq_of_mul_eq_mul_left hpos ?_
-  calc c * H.index = Nat.card H * H.index := by rw [hH]
-    _ = Nat.card G := Subgroup.card_mul_index H
-    _ = c * d := hG
 
 /-- The factor the split class-size computation cancels by is positive: `(q - 1)² > 0` for a field
 with `q > 1` elements. -/
