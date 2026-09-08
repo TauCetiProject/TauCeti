@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LocalField.Basic
+public import TauCeti.RingTheory.Valuation.Discrete.Order
 
 /-!
 # The normalized valuation of a nonarchimedean local field
@@ -30,14 +31,14 @@ decoding with `Multiplicative.toAdd`.
 
 ## Main results
 
-* `TauCeti.normalizedValuation_toAdd`: the translation between the multiplicative convention of
-  `ValuativeRel.valuation` and the additive normalization.
+* `TauCeti.toAdd_normalizedValuation_eq_neg_log`: the translation between the multiplicative
+  convention of `ValuativeRel.valuation` and the additive normalization.
 * `TauCeti.normalizedValuation_surjective`: the normalized value group is all of `ℤ`.
 * `TauCeti.normalizedValuation_irreducible`: an irreducible element of `𝒪[K]` has normalized
   valuation `1`; that is, uniformizers are exactly where the normalization is pinned.
-* `TauCeti.eq_normalizedValuation`: the two previous properties characterize the normalized
-  valuation among homomorphisms `Kˣ →* Multiplicative ℤ`.
-* `TauCeti.normalizedValuation_eq_one_iff_isUnit`,
+* `TauCeti.eq_normalizedValuation`: the kernel condition together with the uniformizer equation
+  characterizes the normalized valuation among homomorphisms `Kˣ →* Multiplicative ℤ`.
+* `TauCeti.isUnit_iff_normalizedValuation_eq_one`,
   `TauCeti.mem_integer_iff_toAdd_normalizedValuation_nonneg` and
   `TauCeti.dvd_iff_toAdd_normalizedValuation_le`: the normalized valuation reads off the units,
   the elements and the divisibility relation of the ring of integers.
@@ -47,7 +48,8 @@ decoding with `Multiplicative.toAdd`.
 Mathlib's convention is multiplicative and decreasing: `valuation K π < 1` at a uniformizer `π`,
 and the integers of `K` are the elements of valuation at most `1`. The additive normalization
 therefore carries a minus sign, and that sign is confined to the single translation lemma
-`normalizedValuation_toAdd`; every statement mixing the two conventions is derived from it.
+`toAdd_normalizedValuation_eq_neg_log`; every statement mixing the two conventions is derived
+from it.
 
 The group-valued normalized valuation is defined on `Kˣ` because `Multiplicative ℤ` has no room
 for the value at `0`; `normalizedValuationWithZero` supplies the corresponding map on all of `K`.
@@ -91,47 +93,75 @@ def normalizedValuationWithZero : K →*₀ ℤᵐ⁰ :=
     ((valueGroupWithZeroIsoInt K).toMonoidWithZeroHom.comp
       (valuation K).toMonoidWithZeroHom)
 
+private noncomputable def intValuation : Valuation K ℤᵐ⁰ :=
+  (valuation K).map (valueGroupWithZeroIsoInt K).toMonoidWithZeroHom
+    (valueGroupWithZeroIsoInt K).toOrderIso.monotone
+
+private theorem intValuation_surjective : Function.Surjective (intValuation (K := K)) := by
+  intro z
+  obtain ⟨x, hx⟩ := ValuativeRel.valuation_surjective ((valueGroupWithZeroIsoInt K).symm z)
+  refine ⟨x, ?_⟩
+  simp [intValuation, hx]
+
+private theorem intValuation_valuationSubring :
+    (intValuation (K := K)).valuationSubring.toSubring = 𝒪[K] := by
+  ext x
+  change valueGroupWithZeroIsoInt K (valuation K x) ≤ 1 ↔ valuation K x ≤ 1
+  simpa only [map_one] using
+    (OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
+      (a := valuation K x) (b := 1))
+
+/-- The zero-preserving normalized valuation vanishes exactly at zero. -/
+@[simp]
+theorem normalizedValuationWithZero_eq_zero_iff (x : K) :
+    normalizedValuationWithZero K x = 0 ↔ x = 0 := by
+  simp [normalizedValuationWithZero]
+
 /-- The zero-preserving normalized valuation restricts to `normalizedValuation` on `Kˣ`. -/
+@[simp]
 theorem normalizedValuationWithZero_coe (x : Kˣ) :
     normalizedValuationWithZero K (x : K) = (normalizedValuation K x : ℤᵐ⁰) := by
-  change (valueGroupWithZeroIsoInt K (valuation K (x : K)))⁻¹ = _
-  simp [normalizedValuation]
+  simp [normalizedValuationWithZero, normalizedValuation, invMonoidWithZeroHom]
 
 /-- The translation between Mathlib's multiplicative valuation and the additive normalization:
 the normalized valuation is minus the logarithm of `ValuativeRel.valuation`, transported to
 `ℤᵐ⁰`. Every comparison of the two conventions goes through this lemma. -/
-theorem normalizedValuation_toAdd (x : Kˣ) :
+theorem toAdd_normalizedValuation_eq_neg_log (x : Kˣ) :
     (normalizedValuation K x).toAdd
       = -WithZero.log (valueGroupWithZeroIsoInt K (valuation K (x : K))) := by
   simp [normalizedValuation, ← WithZero.toAdd_unzero_eq_log]
+
+private theorem toAdd_normalizedValuation_eq_ord (x : Kˣ) :
+    (normalizedValuation K x).toAdd = Valuation.ord (intValuation (K := K)) (x : K) := by
+  rw [toAdd_normalizedValuation_eq_neg_log, Valuation.ord_def]
+  rfl
 
 private theorem valueGroupWithZeroIsoInt_valuation_ne_zero (x : Kˣ) :
     valueGroupWithZeroIsoInt K (valuation K (x : K)) ≠ 0 := by
   simp
 
-/-- The translation of `normalizedValuation_toAdd` read in the other direction: Mathlib's
+/-- The translation of `toAdd_normalizedValuation_eq_neg_log` read in the other direction: Mathlib's
 valuation of a unit is recovered from the normalized valuation by exponentiating its negative. -/
 theorem valueGroupWithZeroIsoInt_valuation (x : Kˣ) :
     valueGroupWithZeroIsoInt K (valuation K (x : K))
       = WithZero.exp (-(normalizedValuation K x).toAdd) := by
-  rw [normalizedValuation_toAdd, neg_neg,
-    WithZero.exp_log (valueGroupWithZeroIsoInt_valuation_ne_zero x)]
+  rw [toAdd_normalizedValuation_eq_ord]
+  exact Valuation.valuation_eq_exp_neg_ord (intValuation (K := K)) x.ne_zero
 
 /-- The normalized valuation vanishes exactly on the elements of valuation `1`. -/
 @[simp]
 theorem normalizedValuation_eq_one_iff (x : Kˣ) :
     normalizedValuation K x = 1 ↔ valuation K (x : K) = 1 := by
-  rw [← toAdd_eq_zero, normalizedValuation_toAdd, neg_eq_zero]
-  refine ⟨fun h => ?_, fun h => by simp [h]⟩
-  have hx := WithZero.exp_log (valueGroupWithZeroIsoInt_valuation_ne_zero x)
-  rw [h] at hx
-  simpa using congrArg (valueGroupWithZeroIsoInt K).symm hx.symm
+  rw [← toAdd_eq_zero, toAdd_normalizedValuation_eq_ord,
+    Valuation.ord_eq_iff_valuation_eq_exp_neg (intValuation (K := K)) x.ne_zero]
+  simp [intValuation]
 
 /-- The normalized valuation reverses the order of Mathlib's valuation. -/
 theorem toAdd_normalizedValuation_le_iff_valuation_le (x y : Kˣ) :
     (normalizedValuation K x).toAdd ≤ (normalizedValuation K y).toAdd
       ↔ valuation K (y : K) ≤ valuation K (x : K) := by
-  rw [normalizedValuation_toAdd, normalizedValuation_toAdd, neg_le_neg_iff,
+  rw [toAdd_normalizedValuation_eq_neg_log, toAdd_normalizedValuation_eq_neg_log,
+    neg_le_neg_iff,
     WithZero.log_le_log (valueGroupWithZeroIsoInt_valuation_ne_zero y)
       (valueGroupWithZeroIsoInt_valuation_ne_zero x),
     OrderIsoClass.map_le_map_iff]
@@ -140,31 +170,42 @@ theorem toAdd_normalizedValuation_le_iff_valuation_le (x y : Kˣ) :
 nonnegative. -/
 theorem mem_integer_iff_toAdd_normalizedValuation_nonneg (x : Kˣ) :
     (x : K) ∈ 𝒪[K] ↔ 0 ≤ (normalizedValuation K x).toAdd := by
-  rw [normalizedValuation_toAdd, neg_nonneg,
-    WithZero.log_le_iff_le_exp (valueGroupWithZeroIsoInt_valuation_ne_zero x), WithZero.exp_zero,
-    ← map_one (valueGroupWithZeroIsoInt K), map_le_map_iff]
-  exact Valuation.mem_integer_iff _ _
+  rw [Valuation.mem_integer_iff, toAdd_normalizedValuation_eq_ord]
+  rw [show valuation K (x : K) ≤ 1 ↔
+      valueGroupWithZeroIsoInt K (valuation K (x : K)) ≤ valueGroupWithZeroIsoInt K 1 from
+    (OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K) :
+      valueGroupWithZeroIsoInt K (valuation K (x : K)) ≤ valueGroupWithZeroIsoInt K 1 ↔
+        valuation K (x : K) ≤ 1).symm]
+  simp only [map_one]
+  change intValuation (K := K) (x : K) ≤ 1 ↔
+    0 ≤ Valuation.ord (intValuation (K := K)) (x : K)
+  exact Valuation.mem_valuationSubring_iff_ord_nonneg (intValuation (K := K))
 
 /-- The normalized value group of a nonarchimedean local field is all of `ℤ`. -/
 theorem normalizedValuation_surjective : Function.Surjective (normalizedValuation K) := by
   intro n
-  obtain ⟨x, hx⟩ := ValuativeRel.valuation_surjective
-    ((valueGroupWithZeroIsoInt K).symm (WithZero.exp (-n.toAdd)))
-  have hx0 : x ≠ 0 := by
-    rw [← (valuation K).ne_zero_iff, hx]
-    simp
-  refine ⟨Units.mk0 x hx0, ?_⟩
-  apply Multiplicative.toAdd.injective
-  rw [normalizedValuation_toAdd]
-  simp [hx]
+  obtain ⟨x, hx⟩ := Valuation.ord_surjective (intValuation (K := K))
+    intValuation_surjective n.toAdd
+  rcases eq_or_ne x 0 with rfl | hx0
+  · have hn : n = 1 := by
+      apply Multiplicative.toAdd.injective
+      simpa using hx.symm
+    exact ⟨1, by simp [hn]⟩
+  · refine ⟨Units.mk0 x hx0, ?_⟩
+    apply Multiplicative.toAdd.injective
+    simpa [toAdd_normalizedValuation_eq_ord] using hx
 
 /-- An element of the ring of integers is a unit there exactly when its normalized valuation
 vanishes. -/
-theorem normalizedValuation_eq_one_iff_isUnit {u : 𝒪[K]} (hu : (u : K) ≠ 0) :
-    normalizedValuation K (Units.mk0 (u : K) hu) = 1 ↔ IsUnit u := by
-  rw [normalizedValuation_eq_one_iff, Units.val_mk0]
-  exact (Valuation.Integers.isUnit_iff_valuation_eq_one
-    (Valuation.integer.integers (valuation K))).symm
+theorem isUnit_iff_normalizedValuation_eq_one {u : 𝒪[K]} (hu : (u : K) ≠ 0) :
+    IsUnit u ↔ normalizedValuation K (Units.mk0 (u : K) hu) = 1 := by
+  rw [← toAdd_eq_zero, toAdd_normalizedValuation_eq_ord]
+  let v := intValuation (K := K)
+  let e : v.valuationSubring.toSubring ≃+* 𝒪[K] :=
+    RingEquiv.subringCongr intValuation_valuationSubring
+  let u' : v.valuationSubring := e.symm u
+  have hu' : (u' : K) ≠ 0 := by simpa [u', e] using hu
+  simpa [u', e] using Valuation.isUnit_iff_ord_eq_zero v hu'
 
 /-- Divisibility in the ring of integers is monotonicity of the normalized valuation. -/
 theorem dvd_iff_toAdd_normalizedValuation_le {a b : 𝒪[K]} (ha : (a : K) ≠ 0) (hb : (b : K) ≠ 0) :
@@ -173,95 +214,72 @@ theorem dvd_iff_toAdd_normalizedValuation_le {a b : 𝒪[K]} (ha : (a : K) ≠ 0
   rw [toAdd_normalizedValuation_le_iff_valuation_le]
   exact Valuation.Integers.dvd_iff_le (Valuation.integer.integers (valuation K))
 
-/-- A root of unity has vanishing normalized valuation. -/
-theorem normalizedValuation_eq_one_of_isOfFinOrder {x : Kˣ} (hx : IsOfFinOrder x) :
-    normalizedValuation K x = 1 := by
-  obtain ⟨n, hn, hxn⟩ := isOfFinOrder_iff_pow_eq_one.mp hx
-  have hpow : normalizedValuation K x ^ n = 1 := by rw [← map_pow, hxn, map_one]
-  rw [← toAdd_eq_zero] at hpow ⊢
-  simpa [hn.ne'] using hpow
-
 /-- Every unit of `K` is a unit of `𝒪[K]` times an integer power of a fixed irreducible element
 of `𝒪[K]`. -/
-theorem exists_eq_mul_zpow_of_irreducible {π : 𝒪[K]} (hπ : Irreducible π) (hπ0 : (π : K) ≠ 0)
-    (x : Kˣ) :
-    ∃ (u : Kˣ) (n : ℤ), valuation K (u : K) = 1 ∧ x = u * Units.mk0 (π : K) hπ0 ^ n := by
-  have key : ∀ y : Kˣ, (y : K) ∈ 𝒪[K] →
-      ∃ (u : Kˣ) (n : ℤ), valuation K (u : K) = 1 ∧ y = u * Units.mk0 (π : K) hπ0 ^ n := by
-    intro y hy
-    have hy0 : (⟨(y : K), hy⟩ : 𝒪[K]) ≠ 0 := by simp [Subtype.ext_iff]
-    obtain ⟨n, u, hu⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hy0 hπ
-    have hu0 : ((u : 𝒪[K]) : K) ≠ 0 := by simp
-    refine ⟨Units.mk0 ((u : 𝒪[K]) : K) hu0, n, ?_, ?_⟩
-    · exact (Valuation.Integers.isUnit_iff_valuation_eq_one
-        (Valuation.integer.integers (valuation K))).mp (u : 𝒪[K]ˣ).isUnit
-    · apply Units.ext
-      simpa using congrArg Subtype.val hu
-  rcases le_total (valuation K (x : K)) 1 with h | h
-  · exact key x h
-  · have hmem : ((x⁻¹ : Kˣ) : K) ∈ 𝒪[K] := by
-      rw [Valuation.mem_integer_iff, Units.val_inv_eq_inv_val, map_inv₀, inv_le_one₀]
-      · exact h
-      · exact zero_lt_iff.mpr ((valuation K).ne_zero_iff.mpr x.ne_zero)
-    obtain ⟨u, n, hu, hx⟩ := key x⁻¹ hmem
-    refine ⟨u⁻¹, -n, ?_, ?_⟩
-    · simp [hu]
-    · rw [← inv_inv x, hx]
-      simp [mul_comm]
+theorem exists_eq_mul_zpow_of_irreducible {π : 𝒪[K]} (hπ : Irreducible π) (x : Kˣ) :
+    ∃ (u : Kˣ) (n : ℤ), valuation K (u : K) = 1 ∧
+      x = u * Units.mk0 (π : K) (fun h => hπ.ne_zero (Subtype.ext h)) ^ n := by
+  let hπ0 : (π : K) ≠ 0 := fun h => hπ.ne_zero (Subtype.ext h)
+  obtain ⟨n, u, hx⟩ :=
+    IsDiscreteValuationRing.exists_units_eq_smul_zpow_of_irreducible
+      (R := 𝒪[K]) hπ x.ne_zero
+  let uK : Kˣ := Units.map (algebraMap 𝒪[K] K).toMonoidHom u
+  refine ⟨uK, n, ?_, ?_⟩
+  · exact (Valuation.Integers.isUnit_iff_valuation_eq_one
+      (Valuation.integer.integers (valuation K))).mp u.isUnit
+  · apply Units.ext
+    rw [show algebraMap 𝒪[K] K π = (π : K) by rfl] at hx
+    simpa [uK, Units.smul_def, Algebra.smul_def] using hx
 
 /-- The normalized valuation of an irreducible element of `𝒪[K]`, that is of a uniformizer of
 `K`, is `Multiplicative.ofAdd 1`. -/
-theorem normalizedValuation_irreducible {π : 𝒪[K]} (hπ : Irreducible π) (hπ0 : (π : K) ≠ 0) :
-    normalizedValuation K (Units.mk0 (π : K) hπ0) = Multiplicative.ofAdd 1 := by
-  have hlt : valuation K (π : K) < 1 := by
-    refine lt_of_le_of_ne π.2 fun h => hπ.not_isUnit ?_
-    exact (Valuation.Integers.isUnit_iff_valuation_eq_one
-      (Valuation.integer.integers (valuation K))).2 h
-  have hpos : 0 < (normalizedValuation K (Units.mk0 (π : K) hπ0)).toAdd := by
-    rw [normalizedValuation_toAdd, neg_pos,
-      WithZero.log_lt_iff_lt_exp
-        (valueGroupWithZeroIsoInt_valuation_ne_zero (Units.mk0 (π : K) hπ0)),
-      WithZero.exp_zero, ← map_one (valueGroupWithZeroIsoInt K),
-      map_lt_map_iff, Units.val_mk0]
-    exact hlt
-  obtain ⟨x, hx⟩ := normalizedValuation_surjective (K := K) (Multiplicative.ofAdd (1 : ℤ))
-  obtain ⟨u, n, hu, rfl⟩ := exists_eq_mul_zpow_of_irreducible hπ hπ0 x
-  rw [map_mul, (normalizedValuation_eq_one_iff u).2 hu, one_mul, map_zpow] at hx
+@[simp]
+theorem normalizedValuation_irreducible {π : 𝒪[K]} (hπ : Irreducible π) :
+    normalizedValuation K
+      (Units.mk0 (π : K) (fun h => hπ.ne_zero (Subtype.ext h))) = Multiplicative.ofAdd 1 := by
   apply Multiplicative.toAdd.injective
-  refine Int.eq_one_of_dvd_one hpos.le ⟨n, ?_⟩
-  simpa [mul_comm] using congrArg Multiplicative.toAdd hx.symm
+  rw [toAdd_normalizedValuation_eq_ord]
+  let v := intValuation (K := K)
+  have hv : Function.Surjective v := intValuation_surjective
+  let _ : Nontrivial (MonoidWithZeroHom.valueGroup (.ofClass v)) :=
+    Valuation.nontrivial_valueGroup_of_surjective v hv
+  let _ : IsDiscreteValuationRing v.valuationSubring :=
+    Valuation.valuationSubring_isDiscreteValuationRing_of_surjective v hv
+  let e : v.valuationSubring.toSubring ≃+* 𝒪[K] :=
+    RingEquiv.subringCongr intValuation_valuationSubring
+  let π' : v.valuationSubring := e.symm π
+  have hπ' : Irreducible π' := (MulEquiv.irreducible_iff e.symm.toMulEquiv).mpr hπ
+  have huni : v.IsUniformizer (π' : K) :=
+    Valuation.isUniformizer_of_maximalIdeal_eq_span v hπ'.maximalIdeal_eq
+  have hord := (Valuation.isUniformizer_iff_ord_eq_one_of_surjective v hv).mp huni
+  simpa [v, π', e] using hord
 
 /-- The normalized valuation is the unique homomorphism `Kˣ →* Multiplicative ℤ` that vanishes
 on the elements of valuation `1` and takes the value `Multiplicative.ofAdd 1` at a uniformizer. -/
 theorem eq_normalizedValuation (w : Kˣ →* Multiplicative ℤ)
     (hw : ∀ x : Kˣ, valuation K (x : K) = 1 → w x = 1)
-    {π : 𝒪[K]} (hπ : Irreducible π) (hπ0 : (π : K) ≠ 0)
-    (hwπ : w (Units.mk0 (π : K) hπ0) = Multiplicative.ofAdd 1) :
+    {π : 𝒪[K]} (hπ : Irreducible π)
+    (hwπ : w (Units.mk0 (π : K) (fun h => hπ.ne_zero (Subtype.ext h))) =
+      Multiplicative.ofAdd 1) :
     w = normalizedValuation K := by
   refine MonoidHom.ext fun x => ?_
-  obtain ⟨u, n, hu, rfl⟩ := exists_eq_mul_zpow_of_irreducible hπ hπ0 x
+  obtain ⟨u, n, hu, rfl⟩ := exists_eq_mul_zpow_of_irreducible hπ x
   rw [map_mul, map_mul, hw u hu, (normalizedValuation_eq_one_iff u).2 hu, one_mul, one_mul,
-    map_zpow, map_zpow, hwπ, normalizedValuation_irreducible hπ hπ0]
+    map_zpow, map_zpow, hwπ, normalizedValuation_irreducible hπ]
 
 /-- The valuation of an irreducible element of `𝒪[K]` generates the value group: every nonzero
 value is an integer power of it. -/
 theorem exists_eq_valuation_zpow_of_irreducible {π : 𝒪[K]} (hπ : Irreducible π)
-    (hπ0 : (π : K) ≠ 0) (γ : (ValueGroupWithZero K)ˣ) :
+    (γ : (ValueGroupWithZero K)ˣ) :
     ∃ n : ℤ, (γ : ValueGroupWithZero K) = valuation K (π : K) ^ n := by
-  obtain ⟨y, hy⟩ := ValuativeRel.valuation_surjective (γ : ValueGroupWithZero K)
-  have hy0 : y ≠ 0 := by
-    rw [← (valuation K).ne_zero_iff, hy]
-    exact γ.ne_zero
-  have hπval : valueGroupWithZeroIsoInt K (valuation K (π : K)) = WithZero.exp (-1 : ℤ) := by
-    have h := valueGroupWithZeroIsoInt_valuation (Units.mk0 (π : K) hπ0)
-    rw [normalizedValuation_irreducible hπ hπ0] at h
-    simpa using h
-  have hzpow : ∀ (a : ValueGroupWithZero K) (m : ℤ),
-      valueGroupWithZeroIsoInt K (a ^ m) = valueGroupWithZeroIsoInt K a ^ m :=
-    fun a m => map_zpow₀ (valueGroupWithZeroIsoInt K).toMulEquiv a m
-  refine ⟨(normalizedValuation K (Units.mk0 y hy0)).toAdd, ?_⟩
-  apply EquivLike.injective (valueGroupWithZeroIsoInt K)
-  rw [hzpow, hπval, ← hy]
-  simpa using valueGroupWithZeroIsoInt_valuation (Units.mk0 y hy0)
+  have huni : (valuation K).IsUniformizer (π : K) :=
+    Valuation.isUniformizer_of_maximalIdeal_eq_span (valuation K) hπ.maximalIdeal_eq
+  have hγ : γ ∈ MonoidWithZeroHom.valueGroup (.ofClass (valuation K)) := by
+    apply MonoidWithZeroHom.mem_valueGroup
+    exact ValuativeRel.valuation_surjective (γ : ValueGroupWithZero K)
+  rw [huni.zpowers_eq_valueGroup] at hγ
+  obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp hγ
+  refine ⟨n, ?_⟩
+  simpa using congrArg Units.val hn.symm
 
 end TauCeti
