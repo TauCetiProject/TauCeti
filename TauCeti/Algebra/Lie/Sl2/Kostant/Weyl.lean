@@ -284,22 +284,35 @@ theorem rankOneWeylPoint_mem_normalizer (A : Type u) [CommRing A] :
       _root_.Subgroup.normalizer
         ((rankOneCarrierTorusPoints A : Subgroup (rankOneCarrierPoints A)) :
           Set (rankOneCarrierPoints A)) := by
-  rw [_root_.Subgroup.mem_normalizer_iff]
-  intro x
-  constructor
-  · rintro ⟨s, rfl⟩
-    rw [rankOneWeylPoint_conj_torusPoint]
-    exact ⟨fun _ ↦ (s 0)⁻¹, rfl⟩
-  · rintro ⟨s, hs⟩
-    refine ⟨(fun _ ↦ (s 0)⁻¹), ?_⟩
-    apply (MulAut.conj (rankOneWeylPoint A)).injective
-    have hconj := rankOneWeylPoint_conj_torusPoint A (fun _ ↦ (s 0)⁻¹)
-    have hinv : (fun _ : Fin 1 ↦ ((s 0)⁻¹)⁻¹) = s := by
-      funext q
-      fin_cases q
-      simp
-    rw [hinv] at hconj
-    exact hconj.trans hs
+  let carrierEquiv : rankOneCarrierPoints A ≃*
+      kostantToralPointsSubgroup e h ρ M hM hnil b rankOneWeight A :=
+    MulEquiv.subgroupCongr (rankOneCarrierPoints_def A)
+  have htorusPoint (s : Fin 1 → Aˣ) :
+      carrierEquiv (rankOneCarrierTorusPoint A s) =
+        kostantToralWeightTorusPoints e h ρ M hM hnil b rankOneWeight A s := by
+    apply Subtype.ext
+    simp only [carrierEquiv, MulEquiv.subgroupCongr_apply]
+    rw [coe_rankOneCarrierTorusPoint,
+      coe_kostantToralWeightTorusPoints, kostantTorusMatrix_apply]
+    apply Units.ext
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [rankOneWeight_zero, rankOneWeight_one, torusCharacter_singleton, diagGL_apply]
+  have htorus : (rankOneCarrierTorusPoints A).map carrierEquiv.toMonoidHom =
+      (kostantToralWeightTorusPoints e h ρ M hM hnil b rankOneWeight A).range := by
+    ext x
+    constructor
+    · rintro ⟨_, ⟨s, rfl⟩, rfl⟩
+      exact ⟨s, (htorusPoint s).symm⟩
+    · rintro ⟨s, rfl⟩
+      exact ⟨rankOneCarrierTorusPoint A s, ⟨s, rfl⟩, htorusPoint s⟩
+  rw [← _root_.Subgroup.mem_map_iff_mem (f := carrierEquiv.toMonoidHom) carrierEquiv.injective,
+    _root_.Subgroup.map_equiv_normalizer_eq, htorus]
+  simpa [rankOneWeylPoint, carrierEquiv] using
+    (kostantToralWeylPoint_mem_normalizer_weightTorusPoints
+      e h ρ M hM hnil b rankOneWeight isSl2Triple_repEnveloping_rankOne
+      (lie_cartan_root_eq_smul 0) lie_cartan_root_one_eq_neg_smul
+      isCartanWeightVector_integralLatticeAddSubgroupBasis A)
 
 /-! ## The normalizer-quotient involution -/
 

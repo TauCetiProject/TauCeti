@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Sl2.Kostant.RootSubgroup
+public import TauCeti.Algebra.Lie.Sl2.Kostant.Points
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 
@@ -360,9 +360,10 @@ theorem coe_rankOneCarrierRootSubgroupPoint_apply
         Matrix (Fin 2) (Fin 2) A) r s =
       (if r = s then 1 else 0) +
         if s = i.rev ∧ r = i then Multiplicative.toAdd t else 0 := by
-  rw [coe_rankOneCarrierRootSubgroupPoint, kostantRootSubgroupMatrix_apply]
-  rw [kostantRootSubgroupPoints_apply_baseChange_basis_one]
-  by_cases hs : s = i.rev <;> simp [hs, Finsupp.single_apply, eq_comm]
+  rw [coe_rankOneCarrierRootSubgroupPoint, kostantRootSubgroupMatrix_eq_transvectionUnit,
+    TauCeti.coe_transvectionUnit]
+  simp [Matrix.transvection, Matrix.add_apply, Matrix.one_apply, Matrix.single_apply, eq_comm,
+    and_comm]
 
 /-- The represented full-weight torus homomorphism into the points of the rank-one carrier. -/
 noncomputable def rankOneCarrierTorusHom (A : Type u) [CommRing A] :
