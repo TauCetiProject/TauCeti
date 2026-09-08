@@ -37,6 +37,8 @@ carry the hypothesis, while the clopen-image statement is valid for an arbitrary
   the quotient of a profinite group by a closed normal subgroup is totally disconnected.
 * `Subgroup.iInf_openNormalSubgroup_eq_bot`: the infimum of the open normal subgroups of a
   profinite group is trivial.
+* `Subgroup.isOpen_iff_isClosed_and_finiteIndex`: in a compact topological group, openness
+  is equivalent to closedness and finite index.
 
 ## References
 
@@ -108,6 +110,20 @@ theorem _root_.Subgroup.iInf_openNormalSubgroup_eq_bot :
     (⨅ U : OpenNormalSubgroup G, U.toSubgroup) = ⊥ := by
   simpa using (Subgroup.eq_iInf_sup_openNormalSubgroup (⊥ : Subgroup G)
     isClosed_singleton).symm
+
+omit [IsTopologicalGroup G] [TotallyDisconnectedSpace G] in
+/-- A subgroup of a compact topological group is open exactly when it is closed and has
+finite index. -/
+theorem _root_.Subgroup.isOpen_iff_isClosed_and_finiteIndex [SeparatelyContinuousMul G]
+    (H : Subgroup G) :
+    IsOpen (H : Set G) ↔ IsClosed (H : Set G) ∧ H.FiniteIndex := by
+  constructor
+  · intro hH
+    have : Finite (G ⧸ H) := H.quotient_finite_of_isOpen hH
+    exact ⟨H.isClosed_of_isOpen hH, Subgroup.finiteIndex_of_finite_quotient⟩
+  · rintro ⟨hH, hindex⟩
+    let _ : H.FiniteIndex := hindex
+    exact H.isOpen_of_isClosed_of_finiteIndex hH
 
 namespace QuotientGroup
 
