@@ -28,10 +28,15 @@ the dimension vector of a finite-dimensional indecomposable **does not determine
 Tits value is `2 - #arrows`, not `1`. Both facts are sharpness statements: the Gabriel injection
 `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic` and the real-root property
 `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic` are proved for an acyclic
-quiver whose Tits form is *positive definite*, and the Kronecker quiver -- acyclic, with the
-positive semidefinite Tits form `TauCeti.Quiver.Kronecker.titsForm_apply`, which on the two arrows
-of `• ⇉ •` is the square `(a - b) ^ 2` of `TauCeti.Quiver.Kronecker.titsForm_eq_sq` --
-shows that neither survives the weakening of that hypothesis to acyclicity alone.
+quiver whose Tits form is *positive definite*, and every generalized Kronecker quiver is acyclic,
+so neither survives the weakening of that hypothesis to acyclicity alone. Already the *smallest*
+such weakening fails, at the Kronecker quiver `• ⇉ •` of exactly two arrows: its Tits form
+`TauCeti.Quiver.Kronecker.titsForm_apply` is there the square `(a - b) ^ 2` of
+`TauCeti.Quiver.Kronecker.titsForm_eq_sq`, hence positive semidefinite but not positive definite,
+which is the threshold `TauCeti.Quiver.Kronecker.titsForm_nonneg` records. That threshold is the
+only place semidefiniteness holds: on three or more arrows the form
+`a ^ 2 + b ^ 2 - #arrows * a * b` is indefinite, taking the negative value `2 - #arrows` at
+`(1, 1)`.
 
 The family is the affine chart of the `ℙ¹`-family the Kronecker quiver is known for, and only that
 chart: letting the two arrows of `• ⇉ •` act by a pair of scalars `(c₀, c₁)`, rescaling that pair
@@ -259,6 +264,34 @@ theorem kroneckerLineRepScalar_comp {c' : k}
         (ModuleCat.comp_apply _ _ _)
   exact h.trans (kroneckerLineRep_hom_app_src_apply e' (kroneckerLineRepScalar e))
 
+-- The three lemmas below record the additive behaviour of the scalar on the preadditive hom
+-- spaces. The addition, negation and subtraction of natural transformations are all defined
+-- componentwise (`CategoryTheory.functorCategoryPreadditive`), as are those of morphisms of
+-- `ModuleCat` and of linear maps, so each is a definitional equality outright and needs none of
+-- the term-level rewriting above. It has to be written `(rfl)` rather than `rfl`: the body of
+-- `TauCeti.kroneckerLineRepScalar` is not exposed, and the parenthesized form is what lets the
+-- elaborator unfold it inside this module.
+
+/-- The scalar of a sum is the sum of the scalars. -/
+@[simp]
+theorem kroneckerLineRepScalar_add
+    (e e' : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) :
+    kroneckerLineRepScalar (e + e') = kroneckerLineRepScalar e + kroneckerLineRepScalar e' :=
+  (rfl)
+
+/-- The scalar of a negation is the negation of the scalar. -/
+@[simp]
+theorem kroneckerLineRepScalar_neg (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) :
+    kroneckerLineRepScalar (-e) = -kroneckerLineRepScalar e :=
+  (rfl)
+
+/-- The scalar of a difference is the difference of the scalars. -/
+@[simp]
+theorem kroneckerLineRepScalar_sub
+    (e e' : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) :
+    kroneckerLineRepScalar (e - e') = kroneckerLineRepScalar e - kroneckerLineRepScalar e' :=
+  (rfl)
+
 /-- **The two components of a morphism of line representations agree**, by naturality along an
 arrow that acts as the identity on both. -/
 theorem kroneckerLineRep_hom_app_tgt_of_ne (h : a₀ ≠ a₁)
@@ -448,8 +481,11 @@ finite-dimensional indecomposable representations with the same dimension vector
 scalars `0` and `1`.
 
 This is the sharpness of `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic`:
-that theorem holds over an acyclic quiver whose Tits form is positive definite, and the Kronecker
-quiver is acyclic with a Tits form that is only positive semidefinite. -/
+that theorem holds over an acyclic quiver whose Tits form is positive definite, and every
+generalized Kronecker quiver is acyclic, so acyclicity alone does not suffice. Specializing `A` to
+a two-element type gives the boundary case, where the Tits form is still positive semidefinite by
+`TauCeti.Quiver.Kronecker.titsForm_nonneg`; for three or more arrows, covered here too, it is
+indefinite instead. -/
 theorem exists_indecomposable_dimVector_eq_not_nonempty_iso_kronecker (k : Type u) [Field k]
     (A : Type v) [Nontrivial A] :
     ∃ M N : QuiverRep.{u, 0, v, u} k (Quiver.Kronecker A),
@@ -467,11 +503,13 @@ theorem exists_indecomposable_dimVector_eq_not_nonempty_iso_kronecker (k : Type 
 `1` exactly for the `A₂` quiver of a single arrow, and `0` for the Kronecker quiver `• ⇉ •`.
 
 This is the sharpness of `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic`: over
-an acyclic quiver whose Tits form is only positive semidefinite, the dimension vector of an
+an acyclic quiver whose Tits form is not assumed positive definite, the dimension vector of an
 indecomposable need not have Tits value `1`, that is, need not be a *real* root. It remains a root
-of the Kronecker quiver, an imaginary one: for two arrows `(1, 1)` is the isotropic null root of
-`Ã₁` recorded by `TauCeti.Quiver.Kronecker.titsForm_eq_zero_iff_exists_smul`, and for more arrows
-its Tits value `2 - #arrows` is negative. -/
+of the Kronecker quiver, an imaginary one: on exactly two arrows -- the boundary case, where the
+form is still positive semidefinite by `TauCeti.Quiver.Kronecker.titsForm_nonneg` -- `(1, 1)` is
+the isotropic null root of `Ã₁` recorded by
+`TauCeti.Quiver.Kronecker.titsForm_eq_zero_iff_exists_smul`, and on three or more arrows, where the
+form is indefinite, its Tits value `2 - #arrows` is negative. -/
 theorem titsForm_dimVector_kroneckerLineRep [Fintype A] :
     titsForm (Quiver.Kronecker A)
         (fun j : Quiver.Kronecker A ↦ (dimVector (kroneckerLineRep k a₁ c) j : ℤ)) =
