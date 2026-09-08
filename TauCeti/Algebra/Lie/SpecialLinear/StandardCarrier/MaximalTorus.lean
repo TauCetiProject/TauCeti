@@ -14,8 +14,7 @@ import TauCeti.Data.Fin.Basic
 
 Over any commutative ring, the standard carrier's weight-torus points are precisely the
 determinant-one diagonal matrices. Over an infinite field, their centralizer is exactly that
-diagonal subgroup, so they form a maximal commutative subgroup of the carrier points. The
-centralizer calculation follows the ambient `TauCeti.centralizer_diagonalTorus` computation.
+diagonal subgroup, so they form a maximal commutative subgroup of the carrier points.
 
 ## Main declarations
 
