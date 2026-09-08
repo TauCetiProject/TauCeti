@@ -186,28 +186,16 @@ def submodule (D : SchemeWeilDivisor X) : (Scheme.rationalFunctions X).Submodule
     rw [← key]
     exact h
 
-/-- The component of the submodule `𝒪_X(D) ⊆ 𝒦_X` on `U` is `sections D U`. This is the
-`op`-normalised special case of `submodule_obj_unop`, which is the `simp` form. -/
-lemma submodule_obj (D : SchemeWeilDivisor X) (U : X.Opens) :
-    (submodule D).toSubmodule.obj (op U) = sections D U :=
-  (rfl)
-
 /-- The component of the submodule `𝒪_X(D) ⊆ 𝒦_X` at an object of the opposite category. -/
 @[simp]
 lemma submodule_obj_unop (D : SchemeWeilDivisor X) (U : (Opens X)ᵒᵖ) :
     (submodule D).toSubmodule.obj U = sections D U.unop := by
   induction U using Opposite.rec
-  exact submodule_obj D _
+  rfl
 
 /-- The sheaf `𝒪_X(D)` of `𝒪_X`-modules attached to a Weil divisor `D`. -/
 def sheaf (D : SchemeWeilDivisor X) : X.Modules :=
   (submodule D).toSheafOfModules
-
-/-- The divisor sheaf is the sheaf of modules associated to its displayed submodule of rational
-functions. -/
-lemma sheaf_def (D : SchemeWeilDivisor X) :
-    sheaf D = (submodule D).toSheafOfModules :=
-  (rfl)
 
 /-- The sections of `𝒪_X(D)` over `U` are the subtype cut out by `sections D U`. -/
 @[simp]
@@ -218,13 +206,6 @@ lemma sheaf_val_obj (D : SchemeWeilDivisor X) (U : X.Opens) :
 /-- The inclusion `𝒪_X(D) ⟶ 𝒦_X`. -/
 def sheafι (D : SchemeWeilDivisor X) : sheaf D ⟶ Scheme.rationalFunctions X :=
   (submodule D).ι
-
-/-- The divisor-sheaf inclusion is the inclusion of its displayed submodule, transported across
-`sheaf_def`. -/
-@[reassoc]
-lemma sheaf_eqToHom_ι (D : SchemeWeilDivisor X) :
-    eqToHom (sheaf_def D) ≫ (submodule D).ι = sheafι D :=
-  (rfl)
 
 /-- The inclusion `𝒪_X(D) ⟶ 𝒦_X` is injective on sections over every open subset. -/
 lemma sheafι_app_injective (D : SchemeWeilDivisor X) (U : X.Opens) :
@@ -320,7 +301,7 @@ private def submoduleSheafOverIsoOfSectionsEq (D E : SchemeWeilDivisor X) (U : X
             -- The over-site forgetful functor sends `V` definitionally to its source open;
             -- Mathlib provides no explicit rewrite lemma for this object-level identity.
             rw [show ((Over.forget U).op.obj V) = op V.unop.left from rfl,
-              submodule_obj, submodule_obj]
+              submodule_obj_unop, submodule_obj_unop]
             exact h V.unop.left V.unop.hom.le
         exact LinearEquiv.toModuleIso (LinearEquiv.ofEq _ _ hV))
       (by
@@ -348,9 +329,7 @@ applied directly to local equations of a Weil divisor. -/
 def sheafOverIsoOfSectionsEq (D E : SchemeWeilDivisor X) (U : X.Opens)
     (h : ∀ V ≤ U, sections D V = sections E V) :
     (sheaf D).over U ≅ (sheaf E).over U :=
-  eqToIso (congrArg (fun M : X.Modules ↦ M.over U) (sheaf_def D)) ≪≫
-    submoduleSheafOverIsoOfSectionsEq D E U h ≪≫
-    (eqToIso (congrArg (fun M : X.Modules ↦ M.over U) (sheaf_def E))).symm
+  submoduleSheafOverIsoOfSectionsEq D E U h
 
 /-- The restricted isomorphism induced by equality of section submodules commutes with their
 inclusions into the restricted rational-function sheaf. -/
@@ -358,8 +337,7 @@ inclusions into the restricted rational-function sheaf. -/
 lemma sheafOverIsoOfSectionsEq_hom_ι (D E : SchemeWeilDivisor X) (U : X.Opens)
     (h : ∀ V ≤ U, sections D V = sections E V) :
     (sheafOverIsoOfSectionsEq D E U h).hom ≫ (sheafι E).over U = (sheafι D).over U := by
-  ext V s
-  rfl
+  exact submoduleSheafOverIsoOfSectionsEq_hom_ι D E U h
 
 /-- The inverse of `SchemeWeilDivisor.sheafOverIsoOfSectionsEq`, followed by the restricted
 inclusion into `𝒦_X`, is again the restricted inclusion. -/
