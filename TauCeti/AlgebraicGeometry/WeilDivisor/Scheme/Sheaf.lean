@@ -37,9 +37,6 @@ submodule.
   `𝒪_X(D) ⟶ 𝒪_X(E)` for `D ≤ E`, and
   `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.unitToSheaf`, the factorization of `𝒪_X ⟶ 𝒦_X`
   through `𝒪_X(D)` for an effective `D`;
-* `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheafOverIsoOfSectionsEq`, the identification of
-  the restrictions of `𝒪_X(D)` and `𝒪_X(E)` to the over-site of an open set below which their
-  sections agree;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheafOverMulIsoOfCoeffEq`, multiplication by a
   local equation as an isomorphism between restricted divisor sheaves;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheafMulIso`, multiplication by a nonzero rational
@@ -290,65 +287,6 @@ lemma eqToHom_sheafι {D E : SchemeWeilDivisor X} (h : D = E) :
   subst h
   simp
 
-private def submoduleSheafOverIsoOfSectionsEq (D E : SchemeWeilDivisor X) (U : X.Opens)
-    (h : ∀ V ≤ U, sections D V = sections E V) :
-    ((submodule D).toSheafOfModules).over U ≅
-      ((submodule E).toSheafOfModules).over U :=
-  (SheafOfModules.fullyFaithfulForget _).preimageIso <|
-    PresheafOfModules.isoMk
-      (fun V ↦ by
-        have hV : (submodule D).toSubmodule.obj ((Over.forget U).op.obj V) =
-            (submodule E).toSubmodule.obj ((Over.forget U).op.obj V) :=
-          by
-            -- The over-site forgetful functor sends `V` definitionally to its source open;
-            -- Mathlib provides no explicit rewrite lemma for this object-level identity.
-            rw [show ((Over.forget U).op.obj V) = op V.unop.left from rfl,
-              submodule_obj_unop, submodule_obj_unop]
-            exact h V.unop.left V.unop.hom.le
-        exact LinearEquiv.toModuleIso (LinearEquiv.ofEq _ _ hV))
-      (by
-        intro V W f
-        ext s
-        apply Subtype.ext
-        -- Both restriction maps come from the ambient rational-function sheaf, while the
-        -- component is the identity on underlying rational functions.
-        rfl)
-
-private lemma submoduleSheafOverIsoOfSectionsEq_hom_ι
-    (D E : SchemeWeilDivisor X) (U : X.Opens)
-    (h : ∀ V ≤ U, sections D V = sections E V) :
-    (submoduleSheafOverIsoOfSectionsEq D E U h).hom ≫ ((submodule E).ι).over U =
-      ((submodule D).ι).over U := by
-  ext V s
-  rfl
-
-/-- If two divisor sheaves have the same sections on every open subset of `U`, then their
-restrictions to the over-site of `U` are isomorphic.
-
-The isomorphism is the identity on the underlying rational functions. The hypothesis is stated
-as equality of the displayed section submodules, rather than equality of sheaves, so it can be
-applied directly to local equations of a Weil divisor. -/
-def sheafOverIsoOfSectionsEq (D E : SchemeWeilDivisor X) (U : X.Opens)
-    (h : ∀ V ≤ U, sections D V = sections E V) :
-    (sheaf D).over U ≅ (sheaf E).over U :=
-  submoduleSheafOverIsoOfSectionsEq D E U h
-
-/-- The restricted isomorphism induced by equality of section submodules commutes with their
-inclusions into the restricted rational-function sheaf. -/
-@[reassoc (attr := simp)]
-lemma sheafOverIsoOfSectionsEq_hom_ι (D E : SchemeWeilDivisor X) (U : X.Opens)
-    (h : ∀ V ≤ U, sections D V = sections E V) :
-    (sheafOverIsoOfSectionsEq D E U h).hom ≫ (sheafι E).over U = (sheafι D).over U := by
-  exact submoduleSheafOverIsoOfSectionsEq_hom_ι D E U h
-
-/-- The inverse of `SchemeWeilDivisor.sheafOverIsoOfSectionsEq`, followed by the restricted
-inclusion into `𝒦_X`, is again the restricted inclusion. -/
-@[reassoc (attr := simp)]
-lemma sheafOverIsoOfSectionsEq_inv_ι (D E : SchemeWeilDivisor X) (U : X.Opens)
-    (h : ∀ V ≤ U, sections D V = sections E V) :
-    (sheafOverIsoOfSectionsEq D E U h).inv ≫ (sheafι D).over U = (sheafι E).over U :=
-  (Iso.inv_comp_eq _).mpr (sheafOverIsoOfSectionsEq_hom_ι D E U h).symm
-
 private lemma rationalFunctionsMul_mem_sections_of_coeffEq
     (g : Additive X.functionFieldˣ) {D E : SchemeWeilDivisor X} {U V : X.Opens}
     (hVU : V ≤ U)
@@ -384,12 +322,13 @@ private lemma rationalFunctionsMul_over_mem_sections_of_coeffEq
   have key := rationalFunctionsMul_mem_sections_of_coeffEq g V.unop.hom.le h hs
   exact hE.symm ▸ key
 
-private def submoduleSheafOverMulIsoOfCoeffEq
+/-- If the coefficients of `D` and `E` differ on `U` by the orders of a nonzero rational
+function `g`, then multiplication by `g` identifies their divisor sheaves over `U`. -/
+def sheafOverMulIsoOfCoeffEq
     (D E : SchemeWeilDivisor X) (U : X.Opens) (g : Additive X.functionFieldˣ)
     (h : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
       WeilDivisor.coeff D y = WeilDivisor.coeff E y + orderAt y g) :
-    ((submodule D).toSheafOfModules).over U ≅
-      ((submodule E).toSheafOfModules).over U := by
+    (sheaf D).over U ≅ (sheaf E).over U := by
   have hinverse : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
       WeilDivisor.coeff E y = WeilDivisor.coeff D y + orderAt y (-g) := by
     intro y hy
@@ -461,15 +400,6 @@ private def submoduleSheafOverMulIsoOfCoeffEq
         exact PresheafOfModules.naturality_apply
           ((Scheme.rationalFunctionsMul X
             ((Additive.toMul g : X.functionFieldˣ) : X.functionField)).over U).val f s.val)
-
-/-- If the coefficients of `D` and `E` differ on `U` by the orders of a nonzero rational
-function `g`, then multiplication by `g` identifies their divisor sheaves over `U`. -/
-def sheafOverMulIsoOfCoeffEq
-    (D E : SchemeWeilDivisor X) (U : X.Opens) (g : Additive X.functionFieldˣ)
-    (h : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
-      WeilDivisor.coeff D y = WeilDivisor.coeff E y + orderAt y g) :
-    (sheaf D).over U ≅ (sheaf E).over U :=
-  submoduleSheafOverMulIsoOfCoeffEq D E U g h
 
 /-- The forward map of the restricted multiplication isomorphism is multiplication by `g`. -/
 @[reassoc (attr := simp)]
