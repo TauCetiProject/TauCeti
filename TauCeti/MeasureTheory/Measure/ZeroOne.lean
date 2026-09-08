@@ -29,10 +29,8 @@ countable power of `ℝ≥0∞`.
 * `TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_approx_factorization`: under a finite
   measure, a null-measurable event admitting arbitrarily close pairs whose intersection mass
   factors has mass `0` or `1`;
-* `TauCeti.MeasureTheory.abs_measureReal_inter_sub_lt` and
-  `TauCeti.MeasureTheory.abs_measureReal_sub_mul_self_le_of_symmDiff_lt`: the symmetric-difference
-  estimates behind it — two events within `e` of `s` have intersection within `2e` of `s`, and a
-  factoring pair within `e ≤ 1` of `s` bounds `|μ s - (μ s)²|` by `e (2 μ s + 3)`;
+* `TauCeti.MeasureTheory.abs_measureReal_inter_sub_lt`: two events within `e` of `s` have
+  intersection within `2e` of `s`;
 * `TauCeti.MeasureTheory.IsZeroOneMeasure.exists_ae_eq_const`: under a zero-one measure, an
   almost-everywhere measurable map into a standard Borel space agrees almost everywhere with a
   single value.
@@ -66,8 +64,9 @@ theorem abs_measureReal_inter_sub_lt {Ω : Type*} [MeasurableSpace Ω]
       _ < 2 * e := by linarith
   exact lt_of_le_of_lt (abs_measureReal_sub_le_measureReal_symmDiff (hA.inter hB) hs) hIS
 
-/-- With `e ≤ 1`, the two-sided approximation forces `|μ s - (μ s)²| ≤ e (2 μ s + 3)`. -/
-theorem abs_measureReal_sub_mul_self_le_of_symmDiff_lt
+/-- Two approximants within `e ≤ 1` of `s` whose intersection mass factors force
+`|μ s - (μ s)²| ≤ e (2 μ s + 3)`. -/
+private theorem abs_measureReal_sub_mul_self_le_of_symmDiff_lt
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
     {t t' s : Set Ω} (ht : NullMeasurableSet t μ) (ht' : NullMeasurableSet t' μ)
     (hs : NullMeasurableSet s μ) {e : ℝ} (he : e ≤ 1) (h1 : μ.real (symmDiff t s) < e)
@@ -82,7 +81,7 @@ theorem abs_measureReal_sub_mul_self_le_of_symmDiff_lt
   have hbi : |μ.real (t ∩ t') - μ.real s| < 2 * e :=
     abs_measureReal_inter_sub_lt ht ht' hs h1 h2
   have hprod : |μ.real t * μ.real t' - μ.real s * μ.real s| ≤ e * (2 * μ.real s + e) :=
-    TauCeti.abs_mul_sub_mul_self_le hbt hbt' measureReal_nonneg measureReal_nonneg he0
+    TauCeti.abs_mul_sub_mul_self_le hbt hbt' measureReal_nonneg measureReal_nonneg
   rw [hinter] at hbi
   have hsplit : μ.real s - μ.real s * μ.real s =
       (μ.real s - μ.real t * μ.real t') + (μ.real t * μ.real t' - μ.real s * μ.real s) := by ring
