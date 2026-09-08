@@ -237,7 +237,6 @@ def upperRight (g : SL2Borel R) : R :=
   (g : Matrix (Fin 2) (Fin 2) R) 0 1
 
 /-- The upper-right parameter is the upper-right matrix entry. -/
-@[simp]
 theorem upperRight_apply (g : SL2Borel R) :
     upperRight g = (g : Matrix (Fin 2) (Fin 2) R) 0 1 :=
   by rw [upperRight]

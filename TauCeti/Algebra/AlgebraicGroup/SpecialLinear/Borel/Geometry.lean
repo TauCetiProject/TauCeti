@@ -103,7 +103,6 @@ noncomputable def tautologicalPoint : SL2Borel (coordinateHopfAlgebra R) :=
 noncomputable def diagonalUnit : (coordinateHopfAlgebra R)ˣ :=
   SL2Borel.diag (tautologicalPoint R)
 
-@[simp]
 theorem diagonalUnit_val :
     (diagonalUnit R : coordinateHopfAlgebra R) =
       (tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 0 0 := by
@@ -113,7 +112,6 @@ theorem diagonalUnit_val :
 noncomputable def upperRightCoordinate : coordinateHopfAlgebra R :=
   SL2Borel.upperRight (tautologicalPoint R)
 
-@[simp]
 theorem upperRightCoordinate_eq :
     upperRightCoordinate R =
       (tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 0 1 :=
@@ -211,7 +209,9 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
           presentationCoefficientToCoordinate R := by
       apply DFunLike.ext _ _
       intro x
-      simp [presentationToCoordinate]
+      change Polynomial.eval₂ (presentationCoefficientToCoordinate R).toRingHom
+        (upperRightCoordinate R) (Polynomial.C x) = _
+      simp
     rw [hcoeff]
     apply (MultiplicativeGroup.pointEquiv
       (R := R) (A := presentationRing R)).injective
