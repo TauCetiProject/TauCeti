@@ -55,10 +55,6 @@ represented value carries the whole content of the first theorem: every quadrati
   American Mathematical Society (2005), Chapter I, Proposition 2.3 and Proposition 5.1.
 -/
 
--- The statements formalised here are the "binary forms in normal form" milestone of Layer 0 of
--- the `TauCetiRoadmap/QuadraticFormInvariants` roadmap, whose `Suggested.lean` fixes the spelling
--- of a binary diagonal form as `weightedSumSquares K ![(a : K), b]`.
-
 public section
 
 open QuadraticMap
@@ -179,6 +175,32 @@ theorem equivalent_binaryNormalForm_inv (a b : R) (c : Rˣ) :
     · simp
       linear_combination (a * b * (c : R)) * c.inv_mul)⟩
 
+/-- Two binary diagonal forms with unit coefficients that have the same discriminant modulo
+squares and represent a common unit are isometric. This is the substantial direction of
+Lam I.5.1, and it needs no assumption on the characteristic. -/
+theorem equivalent_binary_of_isSquare_of_mem_unitValueSet {a b c d e : Rˣ}
+    (hdisc : IsSquare (a * b * (c * d)))
+    (hab : e ∈ unitValueSet (weightedSumSquares R ![(a : R), (b : R)]))
+    (hcd : e ∈ unitValueSet (weightedSumSquares R ![(c : R), (d : R)])) :
+    (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
+      (weightedSumSquares R ![(c : R), (d : R)]) := by
+  obtain ⟨t, ht⟩ := hdisc
+  refine (equivalent_binaryNormalForm_of_mem_unitValueSet hab).trans
+    (Equivalent.trans ?_
+      (equivalent_binaryNormalForm_of_mem_unitValueSet hcd).symm)
+  refine ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares ![1, t * (c * d)⁻¹] ?_⟩
+  intro i
+  fin_cases i
+  · simp
+  · have hu : c * (d * (e * (t * (c * d)⁻¹) ^ 2)) = a * (b * e) := by
+      rw [pow_two]
+      calc
+        c * (d * (e * ((t * (c * d)⁻¹) * (t * (c * d)⁻¹)))) =
+            (t * t) * ((c * d)⁻¹ * (c * d)⁻¹ * (c * d)) * e := by ac_rfl
+        _ = (a * b * (c * d)) * ((c * d)⁻¹ * (c * d)⁻¹ * (c * d)) * e := by rw [ht]
+        _ = a * (b * e) := by simp [mul_assoc]
+    simpa [mul_assoc] using congrArg Units.val hu
+
 end CommRing
 
 section Field
@@ -236,28 +258,6 @@ theorem isSquare_mul_mul_of_equivalent_binary [Invertible (2 : K)] {a b c d : K�
   simp only [Units.val_mul, Units.val_mk0]
   linear_combination ((c : K) * d) * hdet
 
-/-- Two binary diagonal forms with unit coefficients that have the same discriminant modulo
-squares and represent a common unit are isometric. This is the substantial direction of
-Lam I.5.1, and it needs no assumption on the characteristic. -/
-theorem equivalent_binary_of_isSquare_of_mem_unitValueSet {a b c d e : Kˣ}
-    (hdisc : IsSquare (a * b * (c * d)))
-    (hab : e ∈ unitValueSet (weightedSumSquares K ![(a : K), (b : K)]))
-    (hcd : e ∈ unitValueSet (weightedSumSquares K ![(c : K), (d : K)])) :
-    (weightedSumSquares K ![(a : K), (b : K)]).Equivalent
-      (weightedSumSquares K ![(c : K), (d : K)]) := by
-  obtain ⟨t, ht⟩ := hdisc
-  have ht' : (a : K) * b * ((c : K) * d) = (t : K) * t := congrArg Units.val ht
-  refine (equivalent_binaryNormalForm_of_mem_unitValueSet hab).trans
-    (Equivalent.trans ?_
-      (equivalent_binaryNormalForm_of_mem_unitValueSet hcd).symm)
-  refine ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares ![1, t * (c * d)⁻¹] ?_⟩
-  intro i
-  fin_cases i
-  · simp
-  · simp
-    field_simp
-    linear_combination -ht'
-
 /-- **The binary equivalence criterion**, Lam I.5.1. Two binary diagonal forms with unit
 coefficients are isometric exactly when their discriminants agree modulo squares and they
 represent a common unit.
@@ -280,10 +280,7 @@ end Field
 
 /-- **Worked example.** Over `ℚ` the binary forms `⟨1, 1⟩` and `⟨2, 2⟩` are isometric: their
 discriminants `1` and `4` agree modulo squares, and both represent `2`, once as `1² + 1²` and once
-as `2 · 1² + 2 · 0²`. Concretely `x² + y²` becomes `2 s² + 2 t²` under `(s, t) ↦ (s - t, s + t)`.
-
-This is the smallest instance in which a nontrivial isometry of diagonal forms is produced by the
-criterion, and it is the single binary move that Witt's chain-equivalence theorem starts from. -/
+as `2 · 1² + 2 · 0²`. Concretely `x² + y²` becomes `2 s² + 2 t²` under `(s, t) ↦ (s - t, s + t)`. -/
 example : (weightedSumSquares ℚ ![(1 : ℚ), 1]).Equivalent (weightedSumSquares ℚ ![(2 : ℚ), 2]) := by
   have : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
   have hu : ((Units.mk0 (2 : ℚ) two_ne_zero : ℚˣ) : ℚ) = 2 := rfl
