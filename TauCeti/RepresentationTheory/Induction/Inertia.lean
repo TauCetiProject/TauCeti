@@ -43,7 +43,8 @@ theorem identifies the constituents of a restriction with a single `G`-orbit.
 
 * `TauCeti.mem_inertia_iff`: membership in the inertia group is the existence of an isomorphism
   `{}^g A ≅ A`.
-* `TauCeti.le_inertia`: the inertia group contains `N`.
+* `TauCeti.le_inertia`: the inertia group contains `N`, so its index divides `[G : N]`
+  (`TauCeti.inertia_index_dvd_index`).
 * `TauCeti.inertia_congr`: isomorphic representations have the same inertia group, so the inertia
   group is an invariant of the isomorphism class.
 * `TauCeti.inertia_conjNormalFDRep`: conjugating the representation conjugates its inertia group.
@@ -99,6 +100,12 @@ theorem stabilizer_le_inertia (A : FDRep k N) :
 inner twist, so it fixes the isomorphism class. -/
 theorem le_inertia (A : FDRep k N) : N ≤ inertia A :=
   fun n hn => mem_inertia_iff.2 ⟨conjNormalFDRepIso A ⟨n, hn⟩⟩
+
+/-- **The index of the inertia group divides the index of `N`.**  The inertia group lies between
+`N` and `G`, so the number of its cosets, which is the number of distinct conjugates `{}^g A` in
+Clifford's theorem, divides `[G : N]`. -/
+theorem inertia_index_dvd_index (A : FDRep k N) : (inertia A).index ∣ N.index :=
+  Subgroup.index_dvd_of_le (le_inertia A)
 
 /-- Isomorphic representations have the same inertia group: the inertia group depends only on the
 isomorphism class of `A`, which — once `A` is irreducible — is a point of `Irr(N)`. -/
