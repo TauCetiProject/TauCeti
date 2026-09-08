@@ -314,14 +314,17 @@ theorem exists_fieldUnit_valuation_sub_lt_and_signHom_eq
 field unit of `K` whose valuation at each place of a finite set `S` is the prescribed one, and whose
 sign at each real place is the prescribed one.
 
-This is `exists_fieldUnit_valuation_sub_lt_and_signHom_eq` with the approximation targets taken to
-be elements of the required valuation; the ultrametric inequality then turns "close to a target"
-into "equal valuation". -/
+The valuations at the places of `S` are prescribed independently of one another and of the signs,
+and `WithZero.exp (n v)` is an arbitrary nonzero value of `v.valuation K`, so this produces a field
+unit of prescribed order at each prime of a modulus and of prescribed sign at each of its real
+places — the form in which an ideal is moved to a representative prime to that modulus. -/
 theorem exists_fieldUnit_valuation_eq_and_signHom_eq
     (S : Finset (HeightOneSpectrum (RingOfIntegers K)))
     (n : HeightOneSpectrum (RingOfIntegers K) → ℤ)
     (s : {w : InfinitePlace K // w.IsReal} → ℤˣ) :
     ∃ x : Kˣ, (∀ v ∈ S, v.valuation K (x : K) = WithZero.exp (n v)) ∧ signHom x = s := by
+  -- Approximate targets of the required valuation; `Valuation.map_eq_of_sub_lt` then turns
+  -- "close to a target" into "equal valuation".
   choose p hp using fun v : HeightOneSpectrum (RingOfIntegers K) =>
     v.valuation_surjective K (WithZero.exp (n v))
   obtain ⟨x, hxf, hxs⟩ := exists_fieldUnit_valuation_sub_lt_and_signHom_eq (S := S) p

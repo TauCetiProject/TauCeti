@@ -47,8 +47,8 @@ variable (R) in
 /-- **The sign isomorphism of a linearly ordered ring.** The units of `R` modulo the
 positive ones form the two-element sign group `ℤˣ`, the class of a unit being its sign.
 
-It is built as the inverse of the map `ℤˣ → Rˣ ⧸ Units.posSubgroup R` induced by `Int.cast`, which
-is what makes it a homomorphism without a case analysis. -/
+The class of a positive unit is sent to `1` and the class of a negative unit to `-1`; these two
+values are read off by `Units.signEquiv_mk_eq_one_iff` and `Units.signEquiv_mk_eq_neg_one_iff`. -/
 noncomputable def signEquiv : Rˣ ⧸ Units.posSubgroup R ≃* ℤˣ :=
   (MulEquiv.ofBijective
     ((QuotientGroup.mk' (Units.posSubgroup R)).comp (Units.map (Int.castRingHom R).toMonoidHom))
