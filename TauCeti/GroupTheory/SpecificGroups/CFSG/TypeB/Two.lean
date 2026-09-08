@@ -39,11 +39,11 @@ permutation that `TauCeti.TypeB2LieIndex.diagramPerm_toGraphTwistedIndex` comput
 diagram has no symmetry to twist by, its two nodes carrying different root lengths. On the Suzuki
 branch it is instead `τ ^ (2m+1)` for the special isogeny `τ` of the pinned `B₂` group scheme in
 characteristic two, which is not constructed here. That `τ` satisfies `τ ^ 2 = Frob_p` in the
-prime characteristic. Both Frobenius maps are supplied below and they are different maps: validity
-forces `1 ≤ m`, so the field order `q = 2 ^ (2m+1)` the index records is larger than the prime `p`.
-`TauCeti.RankTwoBLieIndex.frobenius` is the `q`-power Frobenius, the map the odd power
-`τ ^ (2m+1)` squares to, and `TauCeti.RankTwoBLieIndex.primeFrobenius` is the `p`-power one that
-`τ` itself squares to.
+prime characteristic. Both Frobenius maps are supplied below:
+`TauCeti.RankTwoBLieIndex.frobenius` is the `q`-power one, the map the odd power `τ ^ (2m+1)`
+squares to, and `TauCeti.RankTwoBLieIndex.primeFrobenius` is the `p`-power one that `τ` itself
+squares to. On a Suzuki index they differ, validity forcing `1 ≤ m` and so `q = 2 ^ (2m+1)` above
+the prime; on an untwisted index of prime field order they coincide.
 A Suzuki index reaches all of it through `TauCeti.SuzukiLieIndex.toRankTwoBLieIndex`.
 
 Neither branch gets a Steinberg endomorphism here. What is named below is named after what it is:
@@ -215,10 +215,11 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
 /-- **The prime-field Frobenius endomorphism of the ambient group of an index on the `B₂`
-diagram**, the `p`-power map for `p` the defining characteristic. It is not the `q`-power map
-`TauCeti.RankTwoBLieIndex.frobenius` above: validity forces the field order `q` strictly above the
-prime. It is the map that the half-Frobenius of a Suzuki index squares to, so it is the right-hand
-side of the relation that identifies that half-Frobenius. -/
+diagram**, the `p`-power map for `p` the defining characteristic. It agrees with the `q`-power map
+`TauCeti.RankTwoBLieIndex.frobenius` above exactly when the index has field order `p`, which
+happens on an untwisted branch of prime field order and never on a Suzuki index, whose validity
+forces `q = 2 ^ (2m+1)` with `1 ≤ m`. It is the map that the half-Frobenius of a Suzuki index
+squares to. -/
 def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
   SpStd.frobenius 1 d.1.characteristic 1 d.1.Closure
 
