@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Primitive
 public import Mathlib.GroupTheory.GroupAction.SubMulAction.OfStabilizer
-import Mathlib.Algebra.Group.Subgroup.Map
 import TauCeti.Algebra.Group.Subgroup.Cover
 
 /-!
