@@ -195,10 +195,10 @@ theorem unitsAutForgetActionMulEquiv_symm_apply_eq (η : Aut (Action.forget (Typ
   rw [MulEquiv.symm_apply_eq]
   constructor
   · intro h
-    rw [h]
-    -- The left regular scalar action is definitionally multiplication.
-    change (g : G) * 1 = (g : G)
-    exact mul_one (g : G)
+    subst h
+    exact (unitsAutForgetActionMulEquiv_hom_app_apply g (Action.leftRegular G) (1 : G)).trans
+      ((toEndForgetAction_app_apply (g : G) (Action.leftRegular G) (1 : G)).symm.trans
+        (toEndForgetAction_app_leftRegular_one (g : G)))
   · intro h
     refine Aut.ext (NatTrans.ext (funext fun A => ?_))
     ext x
@@ -238,7 +238,9 @@ from a category `C` to `G`-sets is an equivalence, then `Gˣ` is the automorphis
 composite `C ⥤ Type u`. -/
 def unitsAutCompForgetActionMulEquiv {C : Type*} [Category C] (e : C ⥤ Action (Type u) G)
     [e.IsEquivalence] : Gˣ ≃* Aut (e ⋙ Action.forget (Type u) G) :=
-  (Units.mapEquiv (endCompForgetActionMulEquiv G e)).trans (Aut.unitsEndEquivAut _)
+  (unitsAutForgetActionMulEquiv G).trans
+    ((Functor.FullyFaithful.ofFullyFaithful
+      ((Functor.whiskeringLeft C (Action (Type u) G) (Type u)).obj e)).autMulEquivOfFullyFaithful _)
 
 variable {G}
 
@@ -246,21 +248,19 @@ variable {G}
 the reason given at `TauCeti.endCompForgetActionMulEquiv_app_apply`. -/
 theorem unitsAutCompForgetActionMulEquiv_hom_app_apply {C : Type*} [Category C]
     (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : Gˣ) (p : C) (x : ToType (e.obj p)) :
-    (unitsAutCompForgetActionMulEquiv G e g).hom.app p x = (g : G) • x :=
-  by
-    -- `Aut.unitsEndEquivAut` keeps the underlying endomorphism as the `hom` projection.
-    change (endCompForgetActionMulEquiv G e (g : G)).app p x = _
-    exact endCompForgetActionMulEquiv_app_apply e (g : G) p x
+    (unitsAutCompForgetActionMulEquiv G e g).hom.app p x = (g : G) • x := by
+  -- The transport whiskers with `e`, so the value is the untransported one at `e.obj p`.
+  change (unitsAutForgetActionMulEquiv G g).hom.app (e.obj p) x = _
+  exact unitsAutForgetActionMulEquiv_hom_app_apply g (e.obj p) x
 
 /-- The inverse of a transported natural automorphism acts by the inverse unit on every fibre; not
 a `simp` lemma, for the reason given at `TauCeti.endCompForgetActionMulEquiv_app_apply`. -/
 theorem unitsAutCompForgetActionMulEquiv_inv_app_apply {C : Type*} [Category C]
     (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : Gˣ) (p : C) (x : ToType (e.obj p)) :
-    (unitsAutCompForgetActionMulEquiv G e g).inv.app p x = ((g⁻¹ : Gˣ) : G) • x :=
-  by
-    -- `Aut.unitsEndEquivAut` keeps the endomorphism of the inverse unit as the `inv` projection.
-    change (endCompForgetActionMulEquiv G e ((g⁻¹ : Gˣ) : G)).app p x = _
-    exact endCompForgetActionMulEquiv_app_apply e ((g⁻¹ : Gˣ) : G) p x
+    (unitsAutCompForgetActionMulEquiv G e g).inv.app p x = ((g⁻¹ : Gˣ) : G) • x := by
+  -- The transport whiskers with `e`, so the value is the untransported one at `e.obj p`.
+  change (unitsAutForgetActionMulEquiv G g).inv.app (e.obj p) x = _
+  exact unitsAutForgetActionMulEquiv_inv_app_apply g (e.obj p) x
 
 end Monoid
 
@@ -304,10 +304,10 @@ theorem autForgetActionMulEquiv_symm_apply_eq (η : Aut (Action.forget (Type u) 
   rw [MulEquiv.symm_apply_eq]
   constructor
   · intro h
-    rw [h]
-    -- The left regular scalar action is definitionally multiplication.
-    change g * 1 = g
-    exact mul_one g
+    subst h
+    exact (autForgetActionMulEquiv_hom_app_apply g (Action.leftRegular G) (1 : G)).trans
+      ((toEndForgetAction_app_apply g (Action.leftRegular G) (1 : G)).symm.trans
+        (toEndForgetAction_app_leftRegular_one g))
   · intro h
     refine Aut.ext (NatTrans.ext (funext fun A => ?_))
     ext x

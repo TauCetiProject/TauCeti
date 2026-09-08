@@ -56,10 +56,6 @@ restriction.
 * Lenstra, *Galois theory for schemes*, Section 3, for the automorphism group of a fibre functor.
 -/
 
--- Provenance: the Tau Ceti `UniversalCovers` roadmap, `README.md`, section "Stage 2: lifting
--- criterion and Galois correspondence", which asks for the classification of covers to be phrased
--- through `Mathlib/CategoryTheory/Galois` and its fibre-functor interface.
-
 public section
 noncomputable section
 
