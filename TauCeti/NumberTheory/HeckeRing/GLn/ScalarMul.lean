@@ -77,12 +77,10 @@ private lemma mulMap_const_eq (c : ℕ) (hc : 0 < c) (b : Fin n → ℕ) (hb : �
           rw [natDiagGL_const_comm n c]
       _ = σ * L₁ * R₁ * τ * L₂ * (natDiagGL n (fun _ ↦ c) * natDiagGL n b) * R₂ := by
           group
-  rw [HeckeCoset.mulMap_eq_mk]
-  exact (HeckeCoset.mk_eq_mk_of_mem (mem_doubleCoset.mpr
-    ⟨(p.1.out : GL (Fin n) ℚ) * L₁ * R₁ * p.2.out * L₂,
-      (SLnZ n).mul_mem ((SLnZ n).mul_mem ((SLnZ n).mul_mem
-        ((SLnZ n).mul_mem p.1.out.2 hL₁) hR₁) p.2.out.2) hL₂,
-      R₂, hR₂, hprod⟩)).trans (diagCoset_def _).symm
+  rw [diagCoset_def ((fun _ ↦ c) * b)]
+  exact HeckeCoset.mulMap_eq_of_eq_mul_mul
+    ((SLnZ n).mul_mem ((SLnZ n).mul_mem ((SLnZ n).mul_mem
+      ((SLnZ n).mul_mem p.1.out.2 hL₁) hR₁) p.2.out.2) hL₂) hR₂ hprod
 
 private lemma multiplicity_const_le_one (c : ℕ) (b : Fin n → ℕ)
     (A : HeckeCoset (posDetInt n) (SLnZ n) (SLnZ n)) :
@@ -94,17 +92,7 @@ private lemma multiplicity_const_le_one (c : ℕ) (b : Fin n → ℕ)
       (((diagCoset fun _ : Fin n ↦ c).rep : GL (Fin n) ℚ))) = 1 := by
     rw [← HeckeCoset.degree_eq_card_decompQuotient]
     exact degree_diagCoset_const n _
-  have hsub : Subsingleton (DecompQuotient (SLnZ n) (SLnZ n)
-      (((diagCoset fun _ : Fin n ↦ c).rep : GL (Fin n) ℚ))) :=
-    Fintype.card_le_one_iff_subsingleton.mp hcard.le
-  rw [multiplicity_def, Nat.card_eq_fintype_card]
-  refine Fintype.card_le_one_iff_subsingleton.mpr ?_
-  constructor
-  rintro ⟨⟨i₁, j₁⟩, hp₁⟩ ⟨⟨i₂, j₂⟩, hp₂⟩
-  simp only [Set.mem_ofPred_eq] at hp₁ hp₂
-  obtain rfl : i₁ = i₂ := Subsingleton.elim i₁ i₂
-  obtain rfl : j₁ = j₂ := DoubleCoset.snd_eq_of_fst_eq hp₁ hp₂
-  rfl
+  exact multiplicity_le_one_of_subsingleton (Fintype.card_le_one_iff_subsingleton.mp hcard.le)
 
 /-- Scalar multiplication in the Hecke ring (Shimura, Proposition 3.17):
 `T(c,...,c) · T(b) = T(c·b)`. -/

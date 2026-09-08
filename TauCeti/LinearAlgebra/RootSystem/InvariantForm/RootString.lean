@@ -32,7 +32,7 @@ open Function Set
 
 namespace TauCeti
 
-namespace RootPairing
+section
 
 variable {I R M N : Type*} [Finite I] [CommRing R] [CharZero R] [IsDomain R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -40,7 +40,7 @@ variable {I R M N : Type*} [Finite I] [CommRing R] [CharZero R] [IsDomain R]
 
 /-- The lower endpoint of the root string through two roots is symmetric when their sum is a
 root. -/
-theorem chainBotCoeff_comm_of_root_add_mem {i j : I}
+theorem _root_.RootPairing.chainBotCoeff_comm_of_root_add_mem {i j : I}
     (hadd : P.root i + P.root j ∈ range P.root) :
     P.chainBotCoeff i j = P.chainBotCoeff j i := by
   have hij := P.linearIndependent_of_add_mem_range_root' hadd
@@ -72,11 +72,10 @@ theorem chainBotCoeff_comm_of_root_add_mem {i j : I}
   rcases hpair with h | h | h | h | h | h | h | h | h | h | h | h | h <;>
     rcases h with ⟨h, h'⟩ <;> omega
 
-namespace InvariantForm
-
 /-- Two orthogonal roots whose sum is a root have the same squared length in every invariant
 form. -/
-theorem apply_root_self_eq_of_root_add_of_pairing_eq_zero (B : P.InvariantForm) {i j k : I}
+theorem _root_.RootPairing.InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero
+    (B : P.InvariantForm) {i j k : I}
     (hk : P.root k = P.root i + P.root j) (hij₀ : P.pairing i j = 0) :
     B.form (P.root i) (P.root i) = B.form (P.root j) (P.root j) := by
   -- Step 1: Establish orthogonality and compute pairings with the sum root k.
@@ -155,7 +154,8 @@ q (γ, γ) = (p + 1) (β, β),
 ```
 
 where `p = chainBotCoeff α β` and `q = chainTopCoeff α β`. -/
-theorem chainTopCoeff_mul_apply_root_self_eq (B : P.InvariantForm) {i j k : I}
+theorem _root_.RootPairing.InvariantForm.chainTopCoeff_mul_apply_root_self_eq
+    (B : P.InvariantForm) {i j k : I}
     (hk : P.root k = P.root i + P.root j) :
     (P.chainTopCoeff i j : R) * B.form (P.root k) (P.root k) =
       (P.chainBotCoeff i j + 1 : ℕ) * B.form (P.root j) (P.root j) := by
@@ -164,7 +164,7 @@ theorem chainTopCoeff_mul_apply_root_self_eq (B : P.InvariantForm) {i j k : I}
   have hij := P.linearIndependent_of_add_mem_range_root' hadd
   have hji := P.linearIndependent_of_add_mem_range_root' (i := j) (j := i)
     (by simpa [add_comm] using hadd)
-  have hbot := chainBotCoeff_comm_of_root_add_mem (P := P) hadd
+  have hbot := RootPairing.chainBotCoeff_comm_of_root_add_mem (P := P) hadd
   have htop := P.one_le_chainTopCoeff_of_root_add_mem hadd
   have htop' := P.one_le_chainTopCoeff_of_root_add_mem (i := j) (j := i)
     (by simpa [add_comm] using hadd)
@@ -240,7 +240,7 @@ theorem chainTopCoeff_mul_apply_root_self_eq (B : P.InvariantForm) {i j k : I}
       rw [hpqR', ← hbot, hp, hq']
       norm_num
     have heq :=
-      TauCeti.RootPairing.InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero
+      RootPairing.InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero
         (P := P) B hk hij₀
     norm_num [hp, hq] at heq ⊢
     linear_combination heq
@@ -248,8 +248,6 @@ theorem chainTopCoeff_mul_apply_root_self_eq (B : P.InvariantForm) {i j k : I}
     rw [hlength]
     ring
 
-end InvariantForm
-
-end RootPairing
+end
 
 end TauCeti
