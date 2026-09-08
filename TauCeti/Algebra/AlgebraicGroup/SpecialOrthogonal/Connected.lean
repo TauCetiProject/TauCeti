@@ -16,20 +16,23 @@ import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.FinTwo
 /-!
 # Geometric connectedness of the two-dimensional special orthogonal group
 
-Away from characteristic two, the coordinate Hopf algebra of the standard group `SO₂` is
-geometrically connected.  After extending to an algebraically closed field, choose a square root
-`i` of `-1`.  The explicit equivalence `SO₂(K) ≃* Kˣ` writes every rational point on a Laurent
-polynomial path from the identity.  An idempotent regular function is constant on each such path,
-so all right translations fix it; the standard Hopf-algebra criterion then proves connectedness.
+The coordinate Hopf algebra of the standard group `SO₂` is geometrically connected over every
+field. Away from characteristic two, after extending to an algebraically closed field, choose a
+square root `i` of `-1`. The explicit equivalence `SO₂(K) ≃* Kˣ` writes every rational point on a
+Laurent-polynomial path from the identity. In characteristic two, every rational point lies on an
+affine-line path of matrices `!![1 + tb, tb; -tb, 1 + tb]`. An idempotent regular function is
+constant on either kind of path, so all right translations fix it; the standard Hopf-algebra
+criterion then proves connectedness.
 
-The argument uses Laurent rather than ordinary polynomial paths because the parameter is a unit.
-It treats the standard symmetric form used by `TauCeti.SpecialOrthogonal`, whose characteristic-two
-behaviour is intentionally outside this statement.
+The argument away from characteristic two uses Laurent rather than ordinary polynomial paths
+because the parameter is a unit. It treats the standard symmetric form used by
+`TauCeti.SpecialOrthogonal`; in characteristic two this determinant-one model is nonreduced but
+has connected underlying space.
 
 ## Main declaration
 
 * `TauCeti.SpecialOrthogonal.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra_two`:
-  `SO₂` is geometrically connected when two is invertible.
+  `SO₂` is geometrically connected over every field.
 
 ## References
 
@@ -109,7 +112,76 @@ private theorem mapValue_laurentPath
   · fin_cases k <;> norm_num [Matrix.of_apply, hu, MultiplicativeGroup.point_C]
   · fin_cases k <;> norm_num [Matrix.of_apply, hu, MultiplicativeGroup.point_C]
 
-private theorem rightTranslationAlgHom_eq_self
+/-- The characteristic-two affine-line path with parameter `b`. -/
+private noncomputable def charTwoMatrixPath (b : K) (h2 : (2 : K) = 0) :
+    Matrix.specialOrthogonalGroup (Fin 2) (Polynomial K) := by
+  let _ : CharP K 2 := CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero h2
+  let t : Polynomial K := Polynomial.X * Polynomial.C b
+  refine ⟨!![1 + t, t; -t, 1 + t], ?_⟩
+  rw [Matrix.of_mem_specialOrthogonalGroup_fin_two_iff]
+  refine ⟨rfl, (neg_neg t).symm, ?_⟩
+  rw [CharTwo.add_sq]
+  simpa only [one_pow] using CharTwo.add_cancel_right (1 : Polynomial K) (t ^ 2)
+
+private theorem coe_charTwoMatrixPath (b : K) (h2 : (2 : K) = 0) :
+    (charTwoMatrixPath b h2 : Matrix (Fin 2) (Fin 2) (Polynomial K)) =
+      let t := Polynomial.X * Polynomial.C b
+      !![1 + t, t; -t, 1 + t] :=
+  by
+    unfold charTwoMatrixPath
+    rfl
+
+private theorem rightTranslationAlgHom_eq_self_of_char_two
+    [IsAlgClosed K] (h2 : (2 : K) = 0)
+    (e : K ⊗[k] coordinateHopfAlgebra k 2) (he : IsIdempotentElem e)
+    (g : WithConv (K ⊗[k] coordinateHopfAlgebra k 2 →ₐ[K] K)) :
+    HopfAlgebra.rightTranslationAlgHom g e = e := by
+  let _ : CharP K 2 := CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero h2
+  let E := baseChangePointsMulEquiv (k := k) (K := K) K
+  let M := E g
+  let b : K := M.val 0 1
+  let xX : WithConv (K ⊗[k] coordinateHopfAlgebra k 2 →ₐ[K] Polynomial K) :=
+    (baseChangePointsMulEquiv (k := k) (K := K) (Polynomial K)).symm
+      (charTwoMatrixPath b h2)
+  let eval (c : K) : Polynomial K →ₐ[K] K :=
+    Polynomial.aevalTower (AlgHom.id K K) c
+  have hM := Matrix.mem_specialOrthogonalGroup_fin_two_iff.mp M.2
+  have hM00 : M.val 0 0 = 1 + b := by
+    have hab : M.val 0 0 + b = 1 := by
+      apply CharTwo.sq_inj.mp
+      rw [CharTwo.add_sq, hM.2.2, one_pow]
+    calc
+      M.val 0 0 = M.val 0 0 + b + b := (CharTwo.add_cancel_right _ _).symm
+      _ = 1 + b := congrArg (· + b) hab
+  have hM10 : M.val 1 0 = -b := by
+    simpa only [b, neg_neg] using (congrArg Neg.neg hM.2.1).symm
+  apply HopfAlgebra.rightTranslationAlgHom_eq_self_of_path e he g xX (eval 1) (eval 0)
+  · apply E.injective
+    rw [baseChangePointsMulEquiv_mapValue]
+    simp only [xX, MulEquiv.apply_symm_apply, E]
+    apply Subtype.ext
+    rw [Matrix.SpecialOrthogonalGroup.coe_map, coe_charTwoMatrixPath]
+    -- Expose the local name `M` so its entry relations rewrite the target matrix.
+    change _ = (M : Matrix (Fin 2) (Fin 2) K)
+    ext i j
+    fin_cases i
+    · fin_cases j <;>
+        norm_num [Matrix.of_apply, eval, b, hM00]
+    · fin_cases j
+      · norm_num [Matrix.of_apply, eval, b, hM10]
+      · norm_num [Matrix.of_apply, eval, b]
+        exact hM00.symm.trans hM.1
+  · apply E.injective
+    rw [baseChangePointsMulEquiv_mapValue]
+    simp only [xX, MulEquiv.apply_symm_apply, map_one, E]
+    apply Subtype.ext
+    rw [Matrix.SpecialOrthogonalGroup.coe_map, coe_charTwoMatrixPath]
+    ext i j
+    fin_cases i
+    · fin_cases j <;> norm_num [Matrix.of_apply, eval]
+    · fin_cases j <;> norm_num [Matrix.of_apply, eval]
+
+private theorem rightTranslationAlgHom_eq_self_of_two_ne_zero
     [Invertible (2 : k)] [IsAlgClosed K]
     (e : K ⊗[k] coordinateHopfAlgebra k 2) (he : IsIdempotentElem e)
     (g : WithConv (K ⊗[k] coordinateHopfAlgebra k 2 →ₐ[K] K)) :
@@ -133,10 +205,22 @@ private theorem rightTranslationAlgHom_eq_self
   · rw [mapValue_laurentPath]
     simp
 
+private theorem rightTranslationAlgHom_eq_self
+    [IsAlgClosed K]
+    (e : K ⊗[k] coordinateHopfAlgebra k 2) (he : IsIdempotentElem e)
+    (g : WithConv (K ⊗[k] coordinateHopfAlgebra k 2 →ₐ[K] K)) :
+    HopfAlgebra.rightTranslationAlgHom g e = e := by
+  by_cases h2k : (2 : k) = 0
+  · have h2K : (2 : K) = 0 := by
+      simpa only [map_ofNat, map_zero] using congrArg (algebraMap k K) h2k
+    exact rightTranslationAlgHom_eq_self_of_char_two (k := k) h2K e he g
+  · let _ : Invertible (2 : k) := invertibleOfNonzero h2k
+    exact rightTranslationAlgHom_eq_self_of_two_ne_zero (k := k) (K := K) e he g
+
 /-- The coordinate Hopf algebra of the standard `SO₂` is geometrically connected over every
-field in which two is invertible. -/
+field. -/
 theorem geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra_two
-    (k : Type u) [Field k] [Invertible (2 : k)] :
+    (k : Type u) [Field k] :
     geometricallyConnectedCommHopfAlgProperty k (coordinateHopfAlgebra k 2) := by
   rw [geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_of_isAlgClosed]
   intro K _ _ _

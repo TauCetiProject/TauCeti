@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SmoothConnected
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Naturality
+import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Lift
 
 /-!
 # Smoothness of the special orthogonal group

@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
-public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Lift
+public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Basic
 
 /-!
 # Naturality of special orthogonal points
@@ -54,6 +54,17 @@ theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
     Matrix.SpecialOrthogonalGroup.coe_map]
   simpa only [Matrix.GeneralLinearGroup.val_map_apply] using
     congrArg (fun M : Matrix (Fin n) (Fin n) A ↦ M.map phi.toRingHom) hcoe_rhs
+
+/-- Naturality of the inverse pointwise equivalence in the value algebra. -/
+theorem mapValue_pointsMulEquiv_symm_apply (phi : A →ₐ[R] B)
+    (g : Matrix.specialOrthogonalGroup (Fin n) A) :
+    AlgHom.mapValue (H := coordinateHopfAlgebra R n) phi
+        ((pointsMulEquiv R n (A := A)).symm g) =
+      (pointsMulEquiv R n (A := B)).symm
+        (Matrix.SpecialOrthogonalGroup.map phi.toRingHom g) := by
+  apply (pointsMulEquiv R n (A := B)).injective
+  rw [pointsMulEquiv_mapValue]
+  simp
 
 end
 

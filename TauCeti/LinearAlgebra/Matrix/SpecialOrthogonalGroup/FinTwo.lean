@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Lift
+public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Basic
 
 /-!
 # The two-dimensional special orthogonal group
@@ -202,6 +202,19 @@ theorem map_finTwoOfUnit {S : Type*} [CommRing S] (f : R →+* S)
   fin_cases j
   · fin_cases k <;> norm_num [Matrix.of_apply, Units.coe_map]
   · fin_cases k <;> norm_num [Matrix.of_apply, Units.coe_map]
+
+/-- The unit attached to a two-dimensional matrix is natural under ring homomorphisms. -/
+theorem finTwoToUnit_map {S : Type*} [CommRing S] (f : R →+* S)
+    (i : R) (hi : i ^ 2 = -1) (M : Matrix.specialOrthogonalGroup (Fin 2) R) :
+    finTwoToUnit (f i)
+        (by simpa only [map_pow, map_neg, map_one] using congrArg f hi) (map f M) =
+      Units.map f (finTwoToUnit i hi M) := by
+  apply Units.ext
+  simp only [coe_finTwoToUnit, coe_map, Matrix.map_apply, Units.coe_map]
+  calc
+    f (M.val 0 0) + f i * f (M.val 0 1) =
+        f (M.val 0 0) + f (i * M.val 0 1) := by rw [map_mul]
+    _ = f (M.val 0 0 + i * M.val 0 1) := (map_add f _ _).symm
 
 /-- Over a commutative ring containing a square root of `-1` and a half, the standard
 two-dimensional special orthogonal group is the group of units. -/
