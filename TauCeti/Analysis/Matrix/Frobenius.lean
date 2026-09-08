@@ -72,6 +72,7 @@ section lemmas
 open scoped Matrix.Norms.Frobenius
 
 /-- The Frobenius inner product is the sum of the entrywise products. -/
+@[simp]
 theorem frobenius_inner_def (A B : Matrix m n ℝ) : ⟪A, B⟫ = ∑ i, ∑ j, A i j * B i j :=
   (rfl)
 
