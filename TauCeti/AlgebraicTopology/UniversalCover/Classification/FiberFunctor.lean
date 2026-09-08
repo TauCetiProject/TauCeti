@@ -47,8 +47,8 @@ restriction.
   fibre functor, which are therefore all invertible.
 * `TauCeti.CoveringSpace.existsUnique_monodromy_eq`: every natural automorphism of the fibre
   functor is monodromy along a unique loop class.
-* `TauCeti.CoveringSpace.monodromy_eq_self_iff`: a loop class acting trivially on every fibre is
-  trivial.
+* `TauCeti.CoveringSpace.forall_monodromy_eq_self_iff_eq_one`: a loop class acting trivially on
+  every fibre is trivial.
 
 ## References
 
@@ -74,7 +74,8 @@ variable {X : TopCat.{u}} (x₀ : X)
 /-- The functor taking a covering space of `X` to its fibre over `x₀`.
 
 It is the fibre-action functor followed by the forgetful functor from `π₁(X, x₀)`-sets to types,
-and is `@[expose]`d so that its values hold by `rfl` in downstream modules. -/
+and is `@[expose]`d so that the concrete fibre types in its public value lemmas are definitionally
+equal to the functor's values. -/
 @[expose] def fiberFunctor : CoveringSpace X ⥤ Type u :=
   fiberActionFunctor x₀ ⋙ Action.forget (Type u) (FundamentalGroup X x₀)
 
@@ -132,6 +133,15 @@ theorem autFiberFunctorMulEquiv_hom_app_apply (g : FundamentalGroup X x₀) (p :
     (autFiberFunctorMulEquiv x₀ g).hom.app p e = p.isCoveringMap_proj.monodromy g e :=
   autCompForgetActionMulEquiv_hom_app_apply (fiberActionFunctor x₀) g p e
 
+/-- The inverse of the automorphism attached to a loop class is monodromy along the inverse loop
+class. -/
+@[simp]
+theorem autFiberFunctorMulEquiv_inv_app_apply (g : FundamentalGroup X x₀)
+    (p : CoveringSpace X) (e : ⇑p.proj ⁻¹' {x₀}) :
+    (autFiberFunctorMulEquiv x₀ g).inv.app p e =
+      p.isCoveringMap_proj.monodromy (g⁻¹ : FundamentalGroup X x₀) e :=
+  autCompForgetActionMulEquiv_inv_app_apply (fiberActionFunctor x₀) g p e
+
 /-- Every natural automorphism of the fibre functor is monodromy along a unique loop class. -/
 theorem existsUnique_monodromy_eq (η : Aut (fiberFunctor x₀)) :
     ∃! g : FundamentalGroup X x₀, ∀ (p : CoveringSpace X) (e : ⇑p.proj ⁻¹' {x₀}),
@@ -146,7 +156,7 @@ theorem existsUnique_monodromy_eq (η : Aut (fiberFunctor x₀)) :
 /-- A loop class acting trivially by monodromy on the fibre of *every* covering space of `X` is
 trivial. This is the faithfulness condition that
 `CategoryTheory.PreGaloisCategory.IsFundamentalGroup` calls `non_trivial'`. -/
-theorem monodromy_eq_self_iff (g : FundamentalGroup X x₀) :
+theorem forall_monodromy_eq_self_iff_eq_one (g : FundamentalGroup X x₀) :
     (∀ (p : CoveringSpace X) (e : ⇑p.proj ⁻¹' {x₀}), p.isCoveringMap_proj.monodromy g e = e) ↔
       g = 1 := by
   refine ⟨fun hg => ?_, fun hg p e => ?_⟩
@@ -155,7 +165,11 @@ theorem monodromy_eq_self_iff (g : FundamentalGroup X x₀) :
     ext e
     exact (autFiberFunctorMulEquiv_hom_app_apply g p e).trans (hg p e)
   · subst hg
-    exact one_smul (FundamentalGroup X x₀) (show ToType ((fiberActionFunctor x₀).obj p) from e)
+    rw [← fiberActionFunctor_obj_ρ_apply]
+    have hV : ToType ((fiberActionFunctor x₀).obj p) = ⇑p.proj ⁻¹' {x₀} :=
+      fiberActionFunctor_obj_V x₀ p
+    cases hV
+    exact (Action.instMulAction ((fiberActionFunctor x₀).obj p)).one_smul e
 
 end Classification
 
