@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Ring.Units
-public import Mathlib.GroupTheory.QuotientGroup.Basic
 import Mathlib.Algebra.Ring.Int.Units
+import Mathlib.GroupTheory.IndexNormal
 
 /-!
 # The sign group of a linearly ordered ring
@@ -17,9 +17,8 @@ it has finite index. Together with the general finite-index-preimage instance
 (`Subgroup.instFiniteIndexComap`), this yields the finiteness of the totally positive units of a
 number field, hence of its narrow class group.
 
-Being of index `2`, the quotient `Rˣ ⧸ Units.posSubgroup R` is *the* two-element sign group; over a
-commutative ring, where that quotient is a group, `Units.signEquiv` identifies it with `ℤˣ`, which
-is how a sign is usually presented concretely.
+Being of index `2`, the quotient `Rˣ ⧸ Units.posSubgroup R` is *the* two-element sign group;
+`Units.signEquiv` identifies it with `ℤˣ`, which is how a sign is usually presented concretely.
 
 ## Main definitions and results
 
@@ -39,10 +38,13 @@ instance instFiniteIndexPosSubgroup (R : Type*) [Ring R] [LinearOrder R] [IsStri
     (Units.posSubgroup R).FiniteIndex :=
   ⟨by rw [Units.index_posSubgroup]; decide⟩
 
-variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+variable {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+
+local instance : (Units.posSubgroup R).Normal :=
+  Subgroup.normal_of_index_eq_two (Units.index_posSubgroup R)
 
 variable (R) in
-/-- **The sign isomorphism of a linearly ordered commutative ring.** The units of `R` modulo the
+/-- **The sign isomorphism of a linearly ordered ring.** The units of `R` modulo the
 positive ones form the two-element sign group `ℤˣ`, the class of a unit being its sign.
 
 It is built as the inverse of the map `ℤˣ → Rˣ ⧸ Units.posSubgroup R` induced by `Int.cast`, which
@@ -54,9 +56,10 @@ noncomputable def signEquiv : Rˣ ⧸ Units.posSubgroup R ≃* ℤˣ :=
       refine (injective_iff_map_eq_one _).mpr fun u hu => ?_
       rcases Int.units_eq_one_or u with h | h
       · exact h
-      · rw [h, MonoidHom.comp_apply, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff,
-          Units.mem_posSubgroup] at hu
-        exact absurd hu (by simp),
+      · subst u
+        have : (1 : R) < 0 := by
+          simpa [MonoidHom.comp_apply, QuotientGroup.eq_one_iff, Units.mem_posSubgroup] using hu
+        exact (not_lt_of_ge zero_le_one this).elim,
       by
       refine fun q => QuotientGroup.induction_on q fun u => ?_
       have hmap : Units.map (Int.castRingHom R).toMonoidHom (-1 : ℤˣ) = (-1 : Rˣ) := by
@@ -64,13 +67,10 @@ noncomputable def signEquiv : Rˣ ⧸ Units.posSubgroup R ≃* ℤˣ :=
         simp
       rcases lt_or_gt_of_ne u.ne_zero with h | h
       · refine ⟨-1, ?_⟩
-        rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply, hmap, QuotientGroup.eq,
-          Units.mem_posSubgroup, inv_eq_of_mul_eq_one_right (by simp : (-1 : Rˣ) * (-1) = 1),
-          neg_one_mul, Units.val_neg]
-        exact neg_pos.mpr h
+        simpa [MonoidHom.comp_apply, hmap, QuotientGroup.eq, Units.mem_posSubgroup] using
+          neg_pos.mpr h
       · refine ⟨1, ?_⟩
-        rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply, map_one, QuotientGroup.eq, inv_one,
-          one_mul, Units.mem_posSubgroup]
+        rw [map_one, eq_comm, QuotientGroup.eq_one_iff, Units.mem_posSubgroup]
         exact h⟩).symm
 
 -- Not a `simp` lemma: the simp set already reaches this statement through

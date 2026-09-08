@@ -31,6 +31,8 @@ or complex, keeps the element away from `0`.
   prescribed sign at every real place.
 * `NumberField.mul_pos_of_infinitePlace_sub_lt`: an element within `1` of a target of absolute
   value one at a real place has the sign of that target there.
+* `NumberField.ne_zero_of_infinitePlace_sub_lt`: an element within `1` of a target of absolute
+  value one at any infinite place is nonzero.
 * `NumberField.exists_ne_zero_forall_isReal_pos`: a nonzero element of `K` whose real
   embeddings have prescribed signs.
 * `NumberField.exists_ne_zero_neg_iff_mem`: the same statement with the prescription given
@@ -117,6 +119,14 @@ theorem mul_pos_of_infinitePlace_sub_lt {w : InfinitePlace K} (hw : w.IsReal) {x
   rcases (abs_eq (by norm_num : (0 : ℝ) ≤ 1)).mp hy' with hy1 | hy1 <;> rw [hy1] at hσ ⊢ <;>
     linarith [hσ.1, hσ.2]
 
+omit [NumberField K] in
+/-- An element within `1` of a target of absolute value one at an infinite place is nonzero. -/
+theorem ne_zero_of_infinitePlace_sub_lt {w : InfinitePlace K} {x y : K} (hy : w y = 1)
+    (h : w (x - y) < 1) : x ≠ 0 := by
+  rintro rfl
+  rw [coe_apply, zero_sub, AbsoluteValue.map_neg, ← coe_apply, hy] at h
+  exact lt_irrefl 1 h
+
 /-- **A nonzero element with prescribed signs at the real places.** For any family of nonzero
 reals `s`, indexed by the real infinite places of a number field `K`, some nonzero `x : K` has
 `s w` and the image of `x` under the real embedding at `w` of the same sign, at every real place
@@ -134,12 +144,8 @@ theorem exists_ne_zero_forall_isReal_pos (s : {w : InfinitePlace K // w.IsReal} 
     rw [hb w]
     split_ifs <;> simp
   obtain ⟨x, hx⟩ := exists_forall_infinitePlace_sub_lt b (fun _ => 1) fun _ => one_pos
-  -- A point within `1` of a target of absolute value one at some place is nonzero.
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    have h := hx (Classical.arbitrary (InfinitePlace K))
-    rw [coe_apply, zero_sub, AbsoluteValue.map_neg, ← coe_apply, habs] at h
-    exact lt_irrefl 1 h
+  have hx0 := ne_zero_of_infinitePlace_sub_lt
+    (habs (Classical.arbitrary (InfinitePlace K))) (hx (Classical.arbitrary (InfinitePlace K)))
   refine ⟨x, hx0, fun w => ?_⟩
   have h := mul_pos_of_infinitePlace_sub_lt w.2 (habs w.1) (hx w.1)
   rw [hb' w] at h

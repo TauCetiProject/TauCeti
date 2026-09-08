@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Order.Ring.Units
 public import TauCeti.NumberTheory.NumberField.Units.Signature.Surjective
 
 /-!
@@ -86,7 +85,7 @@ theorem signHom_apply (x : Kˣ) (w : {w : InfinitePlace K // w.IsReal}) :
   simp
 
 /-- **The kernel of the total sign homomorphism is the totally positive elements.** -/
-theorem signHom_eq_one_iff (x : Kˣ) : signHom x = 1 ↔ IsTotallyPositive (x : K) := by
+@[simp] theorem signHom_eq_one_iff (x : Kˣ) : signHom x = 1 ↔ IsTotallyPositive (x : K) := by
   rw [← fieldUnitSignature_eq_one_iff, funext_iff, funext_iff]
   exact forall_congr' fun w => by
     rw [Pi.one_apply, Pi.one_apply, signHom_apply,

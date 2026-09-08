@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation
 public import TauCeti.NumberTheory.NumberField.Global.Places.Sign
 public import TauCeti.RingTheory.Valuation.Approximation
-import TauCeti.NumberTheory.NumberField.SignApproximation
 
 /-!
 # Weak approximation at finite and infinite places
@@ -40,17 +39,18 @@ approximation of it are
 `NumberField.mul_pos_of_infinitePlace_sub_lt`, shared with the purely archimedean statement
 `NumberField.exists_ne_zero_forall_isReal_pos`.
 
-The conclusions are about `Kˣ` rather than `K`, and this is not cosmetic: an approximation
-statement in `K` cannot prescribe signs, because `0` is close to everything and has no sign.
+The conclusions use `Kˣ` to package the required nonvanishing and make `signHom` applicable.  A
+`K`-valued formulation would instead need an explicit `x ≠ 0` condition and sign predicates stated
+directly in terms of the real embeddings.
 
 ## Main results
 
 * `GlobalNumberFields.weakApproximation_denseRange`: the diagonal image of a number field is dense
   in every finite product of finite and infinite completions.
-* `GlobalNumberFields.exists_units_valuation_sub_lt_and_signHom_eq`: one unit of `K` approximates
+* `GlobalNumberFields.exists_unit_valuation_sub_lt_and_signHom_eq`: one unit of `K` approximates
   independently prescribed targets at finitely many finite places while realizing a prescribed
   sign at every real place.
-* `GlobalNumberFields.exists_units_valuation_eq_and_signHom_eq`: the same with prescribed
+* `GlobalNumberFields.exists_unit_valuation_eq_and_signHom_eq`: the same with prescribed
   valuations in place of the approximation targets.
 
 ## References
@@ -271,9 +271,9 @@ theorem weakApproximation_denseRange
 
 /-! ### Simultaneous approximation in `Kˣ`
 
-The two statements below are both about `Kˣ`.  A version in `K` would be strictly weaker: `0` is
-within every prescribed distance of nothing in particular but carries no sign, so it satisfies the
-archimedean half of a sign prescription vacuously.
+The two statements below use `Kˣ` to package the required nonvanishing and make `signHom`
+applicable.  A `K`-valued version would need an explicit `x ≠ 0` condition and would state the sign
+requirements directly as predicates on the real embeddings.
 -/
 
 /-- **Simultaneous approximation with prescribed signs.**  Given a finite set `S` of finite
@@ -284,7 +284,7 @@ radius and has each prescribed sign.
 The finite conditions are independent of one another and of the archimedean ones; this is the
 `Kˣ`-valued form of `weakApproximation_denseRange`, and it is what a congruence-and-positivity
 statement for a modulus is built from. -/
-theorem exists_units_valuation_sub_lt_and_signHom_eq
+theorem exists_unit_valuation_sub_lt_and_signHom_eq
     {S : Finset (HeightOneSpectrum (RingOfIntegers K))}
     (a : HeightOneSpectrum (RingOfIntegers K) → K)
     (γ : HeightOneSpectrum (RingOfIntegers K) → ℤᵐ⁰) (hγ : ∀ v ∈ S, γ v ≠ 0)
@@ -298,13 +298,7 @@ theorem exists_units_valuation_sub_lt_and_signHom_eq
     (fun v => a v.1) (fun w => b w.1) (fun v => γ v.1) (fun v => hγ v.1 v.2)
     (fun _ => 1) (fun _ => one_pos)
   have hxi' : ∀ w : InfinitePlace K, w (x - b w) < 1 := fun w => hxi ⟨w, Finset.mem_univ w⟩
-  -- A point within `1` of a target of absolute value one at some place is nonzero.
-  have hx0 : x ≠ 0 := by
-    intro h
-    have h1 := hxi' w₀
-    rw [h, zero_sub, InfinitePlace.coe_apply, w₀.1.map_neg, ← InfinitePlace.coe_apply,
-      hbabs w₀] at h1
-    exact lt_irrefl 1 h1
+  have hx0 := NumberField.ne_zero_of_infinitePlace_sub_lt (hbabs w₀) (hxi' w₀)
   refine ⟨Units.mk0 x hx0, fun v hv => by simpa using hxf ⟨v, hv⟩, ?_⟩
   funext w
   have h := NumberField.mul_pos_of_infinitePlace_sub_lt w.2 (hbabs w.1) (hxi' w.1)
@@ -319,17 +313,17 @@ theorem exists_units_valuation_sub_lt_and_signHom_eq
 unit of `K` whose valuation at each place of a finite set `S` is the prescribed one, and whose
 sign at each real place is the prescribed one.
 
-This is `exists_units_valuation_sub_lt_and_signHom_eq` with the approximation targets taken to be
+This is `exists_unit_valuation_sub_lt_and_signHom_eq` with the approximation targets taken to be
 elements of the required valuation; the ultrametric inequality then turns "close to a target" into
 "equal valuation". -/
-theorem exists_units_valuation_eq_and_signHom_eq
+theorem exists_unit_valuation_eq_and_signHom_eq
     (S : Finset (HeightOneSpectrum (RingOfIntegers K)))
     (n : HeightOneSpectrum (RingOfIntegers K) → ℤ)
     (s : {w : InfinitePlace K // w.IsReal} → ℤˣ) :
     ∃ x : Kˣ, (∀ v ∈ S, v.valuation K (x : K) = WithZero.exp (n v)) ∧ signHom x = s := by
   choose p hp using fun v : HeightOneSpectrum (RingOfIntegers K) =>
     v.valuation_surjective K (WithZero.exp (n v))
-  obtain ⟨x, hxf, hxs⟩ := exists_units_valuation_sub_lt_and_signHom_eq (S := S) p
+  obtain ⟨x, hxf, hxs⟩ := exists_unit_valuation_sub_lt_and_signHom_eq (S := S) p
     (fun v => WithZero.exp (n v)) (fun _ _ => WithZero.exp_ne_zero) s
   refine ⟨x, fun v hv => ?_, hxs⟩
   have hlt : v.valuation K ((x : K) - p v) < v.valuation K (p v) := by
