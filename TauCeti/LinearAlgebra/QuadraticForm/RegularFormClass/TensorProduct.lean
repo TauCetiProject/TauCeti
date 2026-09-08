@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct.Isometries
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.TensorProduct
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 /-!
@@ -106,15 +106,16 @@ private theorem associated_presentedForm_basisFun (p : RegularFormPresentation K
         · simp [Pi.basisFun_apply, hki, hkj]
     rw [QuadraticMap.associated_apply]
     simp only [Module.End.smul_def, presentedForm_apply]
-    rw [show
-      (∑ x, (p.2 x : K) *
-        ((Pi.basisFun K (Fin p.1) i + Pi.basisFun K (Fin p.1) j) x *
-          (Pi.basisFun K (Fin p.1) i + Pi.basisFun K (Fin p.1) j) x)) -
-          (∑ x, (p.2 x : K) *
-            (Pi.basisFun K (Fin p.1) i x * Pi.basisFun K (Fin p.1) i x)) -
-          (∑ x, (p.2 x : K) *
-            (Pi.basisFun K (Fin p.1) j x * Pi.basisFun K (Fin p.1) j x)) = 0 by
-        simpa only [Pi.add_apply] using hsum]
+    have hsum' :
+        (∑ x, (p.2 x : K) *
+          ((Pi.basisFun K (Fin p.1) i + Pi.basisFun K (Fin p.1) j) x *
+            (Pi.basisFun K (Fin p.1) i + Pi.basisFun K (Fin p.1) j) x)) -
+            (∑ x, (p.2 x : K) *
+              (Pi.basisFun K (Fin p.1) i x * Pi.basisFun K (Fin p.1) i x)) -
+            (∑ x, (p.2 x : K) *
+              (Pi.basisFun K (Fin p.1) j x * Pi.basisFun K (Fin p.1) j x)) = 0 := by
+      simpa only [Pi.add_apply] using hsum
+    rw [hsum']
     simp [h]
 
 private theorem presentedForm_basisFun (p : RegularFormPresentation K) (i : Fin p.1) :
@@ -178,41 +179,6 @@ noncomputable def presentedFormTensorIsometryEquiv (p q : RegularFormPresentatio
       smul_eq_mul, mul_comm]
   exact ⟨e.toLinearEquiv, fun x => hform ▸ e.map_app x⟩
 
-/-! ### Isometries used by the quotient construction -/
-
-/-- Tensor product of isometric equivalences of quadratic forms. -/
-noncomputable def _root_.QuadraticMap.IsometryEquiv.tmul
-    {M₁ M₂ N₁ N₂ : Type*}
-    [AddCommGroup M₁] [Module K M₁] [AddCommGroup M₂] [Module K M₂]
-    [AddCommGroup N₁] [Module K N₁] [AddCommGroup N₂] [Module K N₂]
-    {Q₁ : QuadraticForm K M₁} {Q₂ : QuadraticForm K M₂}
-    {R₁ : QuadraticForm K N₁} {R₂ : QuadraticForm K N₂}
-    (e : Q₁.IsometryEquiv Q₂) (f : R₁.IsometryEquiv R₂) :
-    (Q₁.tmul R₁).IsometryEquiv (Q₂.tmul R₂) where
-  toLinearEquiv := LinearEquiv.ofBijective
-    (TensorProduct.map e.toIsometry.toLinearMap f.toIsometry.toLinearMap)
-    (TensorProduct.map_bijective
-      (by
-        constructor
-        · exact e.injective
-        · exact e.surjective)
-      (by
-        constructor
-        · exact f.injective
-        · exact f.surjective))
-  map_app' x := QuadraticForm.tmul_tensorMap_apply e.toIsometry f.toIsometry x
-
-/-- Tensor product preserves equivalence of quadratic forms. -/
-theorem _root_.QuadraticMap.Equivalent.tmul
-    {M₁ M₂ N₁ N₂ : Type*}
-    [AddCommGroup M₁] [Module K M₁] [AddCommGroup M₂] [Module K M₂]
-    [AddCommGroup N₁] [Module K N₁] [AddCommGroup N₂] [Module K N₂]
-    {Q₁ : QuadraticForm K M₁} {Q₂ : QuadraticForm K M₂}
-    {R₁ : QuadraticForm K N₁} {R₂ : QuadraticForm K N₂}
-    (hQ : Q₁.Equivalent Q₂) (hR : R₁.Equivalent R₂) :
-    (Q₁.tmul R₁).Equivalent (Q₂.tmul R₂) :=
-  Nonempty.map2 QuadraticMap.IsometryEquiv.tmul hQ hR
-
 /-! ### Multiplication of isometry classes -/
 
 /-- The form presented by tensoring two presentations is isometric to the tensor product of the
@@ -231,24 +197,24 @@ theorem presentedForm_tmul_congr {p p' q q' : RegularFormPresentation K}
 
 /-- Tensoring presentations is commutative up to isometry. -/
 theorem presentedForm_tmul_comm (p q : RegularFormPresentation K) :
-    (presentedForm (p.tmul q)).Equivalent (presentedForm (q.tmul p)) :=
-  (equivalent_presentedForm_tmul p q).trans
-    ((show ((presentedForm p).tmul (presentedForm q)).Equivalent
-        ((presentedForm q).tmul (presentedForm p)) from
-      ⟨QuadraticForm.tensorComm (presentedForm p) (presentedForm q)⟩).trans
-      (equivalent_presentedForm_tmul q p).symm)
+    (presentedForm (p.tmul q)).Equivalent (presentedForm (q.tmul p)) := by
+  have hcomm : ((presentedForm p).tmul (presentedForm q)).Equivalent
+      ((presentedForm q).tmul (presentedForm p)) :=
+    ⟨QuadraticForm.tensorComm (presentedForm p) (presentedForm q)⟩
+  exact (equivalent_presentedForm_tmul p q).trans
+    (hcomm.trans (equivalent_presentedForm_tmul q p).symm)
 
 /-- Tensoring presentations is associative up to isometry. -/
 theorem presentedForm_tmul_assoc (p q r : RegularFormPresentation K) :
     (presentedForm ((p.tmul q).tmul r)).Equivalent
-      (presentedForm (p.tmul (q.tmul r))) :=
-  (equivalent_presentedForm_tmul (p.tmul q) r).trans
+      (presentedForm (p.tmul (q.tmul r))) := by
+  have hassoc : (((presentedForm p).tmul (presentedForm q)).tmul
+      (presentedForm r)).Equivalent
+        ((presentedForm p).tmul ((presentedForm q).tmul (presentedForm r))) :=
+    ⟨QuadraticForm.tensorAssoc (presentedForm p) (presentedForm q) (presentedForm r)⟩
+  exact (equivalent_presentedForm_tmul (p.tmul q) r).trans
     (((equivalent_presentedForm_tmul p q).tmul (QuadraticMap.Equivalent.refl _)).trans
-      ((show (((presentedForm p).tmul (presentedForm q)).tmul
-          (presentedForm r)).Equivalent
-            ((presentedForm p).tmul ((presentedForm q).tmul (presentedForm r))) from
-        ⟨QuadraticForm.tensorAssoc (presentedForm p) (presentedForm q)
-          (presentedForm r)⟩).trans
+      (hassoc.trans
         (((QuadraticMap.Equivalent.refl _).tmul
             (equivalent_presentedForm_tmul q r).symm).trans
           (equivalent_presentedForm_tmul p (q.tmul r)).symm)))
