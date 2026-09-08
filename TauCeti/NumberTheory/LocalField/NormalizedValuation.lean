@@ -18,13 +18,15 @@ homomorphism
 
 `normalizedValuation K : Kˣ →* Multiplicative ℤ`,
 
-whose value at a uniformizer is `Multiplicative.ofAdd 1`. An integer is recovered from it by
+whose value at a uniformizer is `Multiplicative.ofAdd 1`, and its zero-preserving extension
+`normalizedValuationWithZero K : K →*₀ ℤᵐ⁰`. An integer is recovered from a nonzero value by
 decoding with `Multiplicative.toAdd`.
 
 ## Main definitions
 
 * `TauCeti.normalizedValuation`: the normalized valuation `v_K^×` of a nonarchimedean local
   field, as a homomorphism from the unit group to `Multiplicative ℤ`.
+* `TauCeti.normalizedValuationWithZero`: its zero-preserving extension to all of the field.
 
 ## Main results
 
@@ -47,8 +49,8 @@ and the integers of `K` are the elements of valuation at most `1`. The additive 
 therefore carries a minus sign, and that sign is confined to the single translation lemma
 `normalizedValuation_toAdd`; every statement mixing the two conventions is derived from it.
 
-The normalized valuation is defined on `Kˣ` rather than on `K` because its target
-`Multiplicative ℤ` is a group with no room for the value at `0`.
+The group-valued normalized valuation is defined on `Kˣ` because `Multiplicative ℤ` has no room
+for the value at `0`; `normalizedValuationWithZero` supplies the corresponding map on all of `K`.
 
 ## References
 
@@ -80,6 +82,20 @@ def normalizedValuation : Kˣ →* Multiplicative ℤ :=
     ((((Units.mapEquiv (valueGroupWithZeroIsoInt K).toMulEquiv).trans
       WithZero.unitsWithZeroEquiv).toMonoidHom).comp
         (Units.map (valuation K).toMonoidWithZeroHom.toMonoidHom))
+
+variable (K) in
+/-- The normalized valuation extended across zero, as a zero-preserving monoid homomorphism
+from `K` to `ℤᵐ⁰`. -/
+def normalizedValuationWithZero : K →*₀ ℤᵐ⁰ :=
+  invMonoidWithZeroHom.comp
+    ((valueGroupWithZeroIsoInt K).toMonoidWithZeroHom.comp
+      (valuation K).toMonoidWithZeroHom)
+
+/-- The zero-preserving normalized valuation restricts to `normalizedValuation` on `Kˣ`. -/
+theorem normalizedValuationWithZero_coe (x : Kˣ) :
+    normalizedValuationWithZero K (x : K) = (normalizedValuation K x : ℤᵐ⁰) := by
+  change (valueGroupWithZeroIsoInt K (valuation K (x : K)))⁻¹ = _
+  simp [normalizedValuation]
 
 /-- The translation between Mathlib's multiplicative valuation and the additive normalization:
 the normalized valuation is minus the logarithm of `ValuativeRel.valuation`, transported to
