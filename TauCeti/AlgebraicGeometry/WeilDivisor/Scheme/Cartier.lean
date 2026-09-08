@@ -39,14 +39,9 @@ open subset carrying a local equation `g`.
 * `SchemeWeilDivisor.toCartierDivisorHom`, the resulting homomorphism from the group of locally
   principal Weil divisors to the group of Cartier divisors.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, target "Divisors on a curve:
-Weil divisors `⊕_x ℤ` and Cartier divisors; the dictionaries `Cartier ≃ line bundles` and (smooth
-curve) `Weil ≃ Cartier`". It supplies the forward map of the `Weil ≃ Cartier` dictionary; the
-inverse map, and the induced isomorphism `Cl(X) ≅ Pic X`, are left to later work.
-
 The construction follows Hartshorne, *Algebraic Geometry*, II.6.11, and the Stacks Project,
-*Divisors*, Tag 0BE9. No formalization is vendored: the gluing is Mathlib's unique gluing for
-sheaves on a topological space, applied to the Cartier-divisor sheaf.
+*Divisors*, Tag 0BE9. The gluing uses Mathlib's unique gluing for sheaves on a topological space,
+applied to the Cartier-divisor sheaf.
 -/
 
 public section
@@ -68,7 +63,6 @@ noncomputable section
 section Curve
 
 variable [IsLocallyNoetherian X]
-  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
 
 /-- **Two local equations agree as Cartier divisors.** If two nonzero rational functions both have
 the coefficients of `D` as their orders at every codimension-one point of a nonempty open subset
@@ -76,8 +70,10 @@ the coefficients of `D` as their orders at every codimension-one point of a none
 
 Their ratio has order zero at every codimension-one point of `U`, hence is a regular unit on `U`
 by the one-dimensional algebraic Hartogs' principle, and regular units have zero class. -/
-theorem rationalUnitClass_eq_of_forall_coeff_eq (hX : ∀ y : X, coheight y ≤ 1)
-    {D : SchemeWeilDivisor X} {U : X.Opens} [Nonempty U] {g h : Additive X.functionFieldˣ}
+theorem rationalUnitClass_eq_of_forall_coeff_eq {D : SchemeWeilDivisor X}
+    {U : X.Opens} [Nonempty U] (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
+      IsDiscreteValuationRing (X.presheaf.stalk (y : X)))
+    (hU : ∀ y ∈ U, coheight y ≤ 1) {g h : Additive X.functionFieldˣ}
     (hg : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → WeilDivisor.coeff D y = orderAt y g)
     (hh : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → WeilDivisor.coeff D y = orderAt y h) :
     Scheme.rationalUnitClass X U g = Scheme.rationalUnitClass X U h := by
@@ -85,11 +81,11 @@ theorem rationalUnitClass_eq_of_forall_coeff_eq (hX : ∀ y : X, coheight y ≤ 
       X.ord ((Additive.toMul (g - h) : X.functionFieldˣ) : X.functionField) (y : X) = 0 := by
     intro y hy
     rw [← orderAt_apply y (g - h), map_sub, ← hg y hy, ← hh y hy, sub_self]
-  obtain ⟨u, hu⟩ := Scheme.exists_units_germToFunctionField_eq_of_ord_eq_zero
-    (U := U) (fun _ _ ↦ inferInstance) (fun y _ ↦ hX y) hord
+  obtain ⟨u, hu⟩ := Scheme.exists_unit_germToFunctionField_eq_of_ord_eq_zero
+    (U := U) hDVR hU hord
   have hunit : Units.map (X.germToFunctionField U).hom u = Additive.toMul (g - h) :=
     Units.ext hu
-  have hzero := Scheme.rationalUnitClass_germToFunctionField X U u
+  have hzero := Scheme.rationalUnitClass_germToFunctionField_eq_zero X U u
   rw [hunit] at hzero
   refine sub_eq_zero.mp ?_
   rw [← map_sub]
@@ -101,12 +97,14 @@ open subset carrying a local equation of `D`.
 
 This is the sheaf-separatedness step: the two sections agree on a cover of the given open
 subset. -/
-theorem restrict_eq_rationalUnitClass (hX : ∀ y : X, coheight y ≤ 1)
-    {D : SchemeWeilDivisor X} {E : Scheme.CartierDivisor X}
+theorem restrict_eq_rationalUnitClass {D : SchemeWeilDivisor X} {E : Scheme.CartierDivisor X}
+    {U : X.Opens} [Nonempty U] (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
+      IsDiscreteValuationRing (X.presheaf.stalk (y : X)))
+    (hU : ∀ y ∈ U, coheight y ≤ 1)
     (hE : ∀ x : X, ∃ (W : X.Opens) (_ : Nonempty W) (k : Additive X.functionFieldˣ), x ∈ W ∧
       (∀ y : CodimensionOnePoint X, (y : X) ∈ W → WeilDivisor.coeff D y = orderAt y k) ∧
       E |_ W = Scheme.rationalUnitClass X W k)
-    {U : X.Opens} [Nonempty U] {g : Additive X.functionFieldˣ}
+    {g : Additive X.functionFieldˣ}
     (hg : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → WeilDivisor.coeff D y = orderAt y g) :
     E |_ U = Scheme.rationalUnitClass X U g := by
   choose W hWne k hxW hk hEW using hE
@@ -127,13 +125,16 @@ theorem restrict_eq_rationalUnitClass (hX : ∀ y : X, coheight y ≤ 1)
     Scheme.rationalUnitClass_restrict X inf_le_right g
   refine (TopCat.Presheaf.restrict_restrict (inf_le_right : W x ⊓ U ≤ U)
     (le_top : U ≤ ⊤) E).trans
-      (hleft.trans ((rationalUnitClass_eq_of_forall_coeff_eq (D := D) hX
+      (hleft.trans ((rationalUnitClass_eq_of_forall_coeff_eq (D := D)
+        (fun y hy ↦ hDVR y (Opens.mem_inf.mp hy).2)
+        (fun y hy ↦ hU y (Opens.mem_inf.mp hy).2)
         (fun y hy ↦ hk x y (Opens.mem_inf.mp hy).1)
         fun y hy ↦ hg y (Opens.mem_inf.mp hy).2).trans hright.symm))
 
 namespace IsLocallyPrincipal
 
 variable {D E : SchemeWeilDivisor X}
+  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
 
 /-- **The Cartier divisor of a locally principal Weil divisor exists and is unique.** On a curve,
 a locally principal Weil divisor `D` determines a unique Cartier divisor whose restriction to
@@ -158,7 +159,8 @@ theorem existsUnique_cartierDivisor (hX : ∀ y : X, coheight y ≤ 1)
     have hz : (Scheme.rationalUnitClass X (U z) (g z)) |_ (U x ⊓ U z : X.Opens) =
         Scheme.rationalUnitClass X (U x ⊓ U z : X.Opens) (g z) :=
       Scheme.rationalUnitClass_restrict X inf_le_right (g z)
-    exact hx.trans ((rationalUnitClass_eq_of_forall_coeff_eq (D := D) hX
+    exact hx.trans ((rationalUnitClass_eq_of_forall_coeff_eq (D := D)
+      (fun _ _ ↦ inferInstance) (fun y _ ↦ hX y)
       (fun y hy ↦ hg x y (Opens.mem_inf.mp hy).1)
       fun y hy ↦ hg z y (Opens.mem_inf.mp hy).2).trans hz.symm)
   obtain ⟨E, hE, -⟩ := (Scheme.cartierDivisorSheaf X).existsUnique_gluing' U ⊤
@@ -171,7 +173,7 @@ theorem existsUnique_cartierDivisor (hX : ∀ y : X, coheight y ≤ 1)
   refine ⟨E, fun V hV k hk ↦ ?_, fun E' hE' ↦ ?_⟩
   · -- The nonemptiness of `V` is carried by the statement, not by instance search.
     have := hV
-    exact restrict_eq_rationalUnitClass hX hlocal hk
+    exact restrict_eq_rationalUnitClass (fun _ _ ↦ inferInstance) (fun y _ ↦ hX y) hlocal hk
   · refine (Scheme.cartierDivisorSheaf X).eq_of_locally_eq' U ⊤ (fun _ ↦ homOfLE le_top)
       (fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxU x⟩) _ _ fun x ↦ ?_
     exact (hE' (U x) (hne x) (g x) (hg x)).trans (hE x).symm
@@ -200,7 +202,7 @@ theorem eq_cartierDivisor (hX : ∀ y : X, coheight y ≤ 1) (hD : IsLocallyPrin
   refine (existsUnique_cartierDivisor hX hD).choose_spec.2 E fun V hV k hk ↦ ?_
   -- The nonemptiness of `V` is carried by the statement, not by instance search.
   have := hV
-  exact restrict_eq_rationalUnitClass hX hE hk
+  exact restrict_eq_rationalUnitClass (fun _ _ ↦ inferInstance) (fun y _ ↦ hX y) hE hk
 
 /-- The zero Weil divisor has the zero Cartier divisor. -/
 @[simp]
@@ -217,6 +219,7 @@ theorem cartierDivisor_zero (hX : ∀ y : X, coheight y ≤ 1) :
 
 /-- **The construction is additive.** The Cartier divisor of a sum of locally principal Weil
 divisors is the sum of their Cartier divisors: local equations multiply. -/
+@[simp]
 theorem cartierDivisor_add (hX : ∀ y : X, coheight y ≤ 1) (hD : IsLocallyPrincipal D)
     (hE : IsLocallyPrincipal E) :
     cartierDivisor hX (hD.add hE) = cartierDivisor hX hD + cartierDivisor hX hE := by
@@ -238,6 +241,7 @@ theorem cartierDivisor_add (hX : ∀ y : X, coheight y ≤ 1) (hD : IsLocallyPri
       (homOfLE (le_top : (V ⊓ W : X.Opens) ≤ ⊤)).op).hom _ _
 
 /-- **The construction respects negation.** -/
+@[simp]
 theorem cartierDivisor_neg (hX : ∀ y : X, coheight y ≤ 1) (hD : IsLocallyPrincipal D) :
     cartierDivisor hX hD.neg = -cartierDivisor hX hD := by
   refine (eq_cartierDivisor hX hD.neg fun x ↦ ?_).symm
@@ -253,6 +257,25 @@ theorem cartierDivisor_neg (hX : ∀ y : X, coheight y ≤ 1) (hD : IsLocallyPri
       (homOfLE (le_top : V ≤ ⊤)).op).hom _
 
 end IsLocallyPrincipal
+
+variable [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+
+/-- **The Weil-to-Cartier homomorphism.** On a curve, the group of locally principal Weil divisors
+maps to the group of Cartier divisors, compatibly with local equations. -/
+def toCartierDivisorHom (hX : ∀ y : X, coheight y ≤ 1) :
+    locallyPrincipalSubgroup X →+ Scheme.CartierDivisor X where
+  toFun D := IsLocallyPrincipal.cartierDivisor hX (mem_locallyPrincipalSubgroup.mp D.2)
+  map_zero' := IsLocallyPrincipal.cartierDivisor_zero hX
+  map_add' D E := IsLocallyPrincipal.cartierDivisor_add hX
+    (mem_locallyPrincipalSubgroup.mp D.2) (mem_locallyPrincipalSubgroup.mp E.2)
+
+/-- The Weil-to-Cartier homomorphism computes the Cartier divisor of the underlying divisor. -/
+@[simp]
+lemma toCartierDivisorHom_apply (hX : ∀ y : X, coheight y ≤ 1)
+    (D : locallyPrincipalSubgroup X) :
+    toCartierDivisorHom hX D =
+      IsLocallyPrincipal.cartierDivisor hX (mem_locallyPrincipalSubgroup.mp D.2) :=
+  (rfl)
 
 end Curve
 
@@ -274,23 +297,6 @@ theorem cartierDivisor_principalDivisor (hX : ∀ y : X, coheight y ≤ 1)
   · intro y _
     rw [WeilDivisor.OrderSystem.coeff_principalDivisor, WeilDivisor.OrderSystem.ofScheme_ord]
   · exact Scheme.principalCartierDivisorAddHom_restrict X g ⊤
-
-/-- **The Weil-to-Cartier homomorphism.** On a curve, the group of locally principal Weil divisors
-maps to the group of Cartier divisors, compatibly with local equations. -/
-def toCartierDivisorHom (hX : ∀ y : X, coheight y ≤ 1) :
-    locallyPrincipalSubgroup X →+ Scheme.CartierDivisor X where
-  toFun D := IsLocallyPrincipal.cartierDivisor hX (mem_locallyPrincipalSubgroup.mp D.2)
-  map_zero' := IsLocallyPrincipal.cartierDivisor_zero hX
-  map_add' D E := IsLocallyPrincipal.cartierDivisor_add hX
-    (mem_locallyPrincipalSubgroup.mp D.2) (mem_locallyPrincipalSubgroup.mp E.2)
-
-/-- The Weil-to-Cartier homomorphism computes the Cartier divisor of the underlying divisor. -/
-@[simp]
-lemma toCartierDivisorHom_apply (hX : ∀ y : X, coheight y ≤ 1)
-    (D : locallyPrincipalSubgroup X) :
-    toCartierDivisorHom hX D =
-      IsLocallyPrincipal.cartierDivisor hX (mem_locallyPrincipalSubgroup.mp D.2) :=
-  (rfl)
 
 /-- The Weil-to-Cartier homomorphism carries principal Weil divisors to principal Cartier
 divisors. -/

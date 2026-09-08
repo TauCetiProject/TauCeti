@@ -216,6 +216,14 @@ def rationalUnitClass (U : X.Opens) [Nonempty U] :
   (((toCartierDivisorSheaf X).hom.app (op U)).hom).comp
     (rationalUnitSectionsEquiv X U).symm.toAddMonoidHom
 
+/-- Evaluating the rational-unit class applies the quotient map to the corresponding rational
+unit section. -/
+@[simp]
+lemma rationalUnitClass_apply (U : X.Opens) [Nonempty U] (g : Additive X.functionFieldˣ) :
+    rationalUnitClass X U g = ((toCartierDivisorSheaf X).hom.app (op U)).hom
+      ((rationalUnitSectionsEquiv X U).symm g) :=
+  AddMonoidHom.comp_apply _ _ _
+
 /-- Restricting a rational unit to a smaller nonempty open subset does not change the underlying
 nonzero rational function. -/
 @[simp]
@@ -262,7 +270,7 @@ lemma rationalUnitClass_restrict {U V : X.Opens} [Nonempty U] [Nonempty V] (h : 
 
 /-- A regular unit on `U` has zero Cartier-divisor class over `U`. -/
 @[simp]
-lemma rationalUnitClass_germToFunctionField (U : X.Opens) [Nonempty U]
+lemma rationalUnitClass_germToFunctionField_eq_zero (U : X.Opens) [Nonempty U]
     (f : ((X.presheaf.obj (op U)) : Type u)ˣ) :
     rationalUnitClass X U
       (Additive.ofMul (Units.map (X.germToFunctionField U).hom f)) = 0 := by
@@ -281,9 +289,7 @@ lemma rationalUnitClass_germToFunctionField (U : X.Opens) [Nonempty U]
     exact ConcreteCategory.congr_hom happ (Additive.ofMul f)
   refine (congrArg (rationalUnitClass X U)
     (congrArg Additive.ofMul (regularUnitToFunctionField_apply X U f).symm)).trans ?_
-  change ((toCartierDivisorSheaf X).hom.app (op U)).hom
-    ((rationalUnitSectionsEquiv X U).symm
-      (Additive.ofMul (regularUnitToFunctionField X U f))) = 0
+  rw [rationalUnitClass_apply]
   rw [hsymm]
   exact hzero
 
@@ -321,7 +327,7 @@ lemma principalCartierDivisor_regularUnitToFunctionField
     (f : ((X.presheaf.obj (op (⊤ : X.Opens))) : Type u)ˣ) :
     principalCartierDivisor X
       (Units.map (X.germToFunctionField (⊤ : X.Opens)).hom f) = 0 :=
-  rationalUnitClass_germToFunctionField X ⊤ f
+  rationalUnitClass_germToFunctionField_eq_zero X ⊤ f
 
 /-- Restricting a principal Cartier divisor to a nonempty open subset gives the class of the same
 rational function there: a principal divisor has a global equation. -/

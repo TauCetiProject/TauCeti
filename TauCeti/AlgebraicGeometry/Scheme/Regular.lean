@@ -27,7 +27,7 @@ of a regular function on `U`.
 * `TauCeti.AlgebraicGeometry.Scheme.exists_germToFunctionField_eq_of_ord_nonneg`: a rational
   function with nonnegative order at every codimension-one point of `U` is the germ at the generic
   point of a section of `𝒪_X` over `U`;
-* `TauCeti.AlgebraicGeometry.Scheme.exists_units_germToFunctionField_eq_of_ord_eq_zero`: a nonzero
+* `TauCeti.AlgebraicGeometry.Scheme.exists_unit_germToFunctionField_eq_of_ord_eq_zero`: a nonzero
   rational function with *zero* order at every codimension-one point of `U` is the germ of a unit
   of `Γ(X, U)`.
 
@@ -154,9 +154,8 @@ integral scheme, let `U` be a nonempty open subset of dimension at most one whos
 local rings are discrete valuation rings. A nonzero rational function whose order vanishes at
 every codimension-one point of `U` is the germ of a unit of `Γ(X, U)`.
 
-The proof applies algebraic Hartogs' principle to the function and to its inverse; the two
-resulting regular functions multiply to a section with germ `1`, hence to `1`. -/
-theorem exists_units_germToFunctionField_eq_of_ord_eq_zero
+Simultaneous regularity of the function and its inverse makes the resulting section a unit. -/
+theorem exists_unit_germToFunctionField_eq_of_ord_eq_zero
     {U : X.Opens} [Nonempty U]
     (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
       IsDiscreteValuationRing (X.presheaf.stalk (y : X)))
