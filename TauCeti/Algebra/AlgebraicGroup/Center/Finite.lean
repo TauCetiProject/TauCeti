@@ -6,25 +6,28 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Center.Reduced
-public import TauCeti.Algebra.AlgebraicGroup.Connected.GroupScheme
+public import TauCeti.Algebra.AlgebraicGroup.Connected.Comultiplication
 import Mathlib.RingTheory.Finiteness.NilpotentKer
 import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.TrivialIdentity
 
 /-!
 # Finiteness of a center from its reduction
 
-Let `H` be a finite-type commutative Hopf algebra over an algebraically closed field. Assuming
+Let `H` be a finite-type commutative Hopf algebra over a field. Assuming
 that the tensor square of the reduced center coordinate algebra is reduced, this file shows that
 the center is finite once its reduction is finite. The quotient map from the center to its
 reduction has nilradical kernel; finite type makes that kernel finitely generated, so finiteness
 lifts through it.
 
-The reduced center is finite in particular when its identity component is trivial. This is the
-algebraic last step in the standard proof that the center of a semisimple affine group is finite:
-semisimplicity must still be used geometrically to trivialize that identity component.
+Over an algebraically closed field, the reduced center is finite in particular when its identity
+component is trivial. This is the algebraic last step in the standard proof that the center of a
+semisimple affine group is finite: semisimplicity must still be used geometrically to trivialize
+that identity component.
 
 ## Main declarations
 
+* `moduleFinite_centerCoordinate_of_reducedCenter`: a center is finite when its reduction is
+  finite and the tensor square of the reduced center coordinate algebra is reduced.
 * `moduleFinite_centerCoordinate_of_reducedCenter_identityComponent_eq_augmentation`:
   a center is finite when its reduction has trivial identity component and the tensor square of
   the reduced center coordinate algebra is reduced.
@@ -39,7 +42,7 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti.CommHopfAlgCat
+namespace TauCeti.FiniteTypeCommHopfAlgCat
 
 universe u
 
@@ -47,11 +50,38 @@ variable {k : Type u} [Field k]
 variable (H : FiniteTypeCommHopfAlgCat.{u, u} k)
 
 variable [IsReduced
-  ((((centerCoordinateHopfAlgebra H.obj : _root_.CommHopfAlgCat.{u} k) : Type u) ⧸
+  ((((CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj :
+        _root_.CommHopfAlgCat.{u} k) : Type u) ⧸
       nilradical
-        ((centerCoordinateHopfAlgebra H.obj : _root_.CommHopfAlgCat.{u} k) : Type u)) ⊗[k]
-    (((centerCoordinateHopfAlgebra H.obj : _root_.CommHopfAlgCat.{u} k) : Type u) ⧸
-      nilradical ((centerCoordinateHopfAlgebra H.obj : _root_.CommHopfAlgCat.{u} k) : Type u)))]
+        ((CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj :
+          _root_.CommHopfAlgCat.{u} k) : Type u)) ⊗[k]
+    (((CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj :
+        _root_.CommHopfAlgCat.{u} k) : Type u) ⧸
+      nilradical ((CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj :
+        _root_.CommHopfAlgCat.{u} k) : Type u)))]
+
+/-- Assuming that the tensor square of the reduced center coordinate algebra is reduced, a
+finite-type affine group's center is finite when its reduced center is finite. -/
+theorem moduleFinite_centerCoordinate_of_reducedCenter
+    [Module.Finite k (CommHopfAlgCat.reducedCenterCoordinateHopfAlgebra H.obj)] :
+    Module.Finite k (CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj) := by
+  let C := CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj
+  let I := HopfIdeal.reduction k C
+  let q : C →ₐ[k] CommHopfAlgCat.reducedCenterCoordinateHopfAlgebra H.obj :=
+    (CommHopfAlgCat.mkQuotient C I).hom.toAlgHom
+  have hker : RingHom.ker q = nilradical C := by
+    calc
+      RingHom.ker q =
+          RingHom.ker (CommHopfAlgCat.mkQuotient C I).hom.toAlgHom.toRingHom := by
+        rfl
+      _ = I.toIdeal := CommHopfAlgCat.mkQuotient_ker C I
+      _ = nilradical C := by
+        simpa only [I] using HopfIdeal.reduction_toIdeal k C
+  apply Module.finite_of_surjective_of_ker_le_nilradical q
+    (CommHopfAlgCat.mkQuotient_surjective C I)
+  · exact hker.le
+  · rw [hker]
+    exact IsNoetherian.noetherian _
 
 /-- Assuming that the tensor square of the reduced center coordinate algebra is reduced, a
 finite-type affine group's center is finite when the identity component of its reduced center is
@@ -60,25 +90,13 @@ theorem
     moduleFinite_centerCoordinate_of_reducedCenter_identityComponent_eq_augmentation
     [IsAlgClosed k]
     (hidentity : HopfAlgebra.identityComponentHopfIdeal
-        (k := k) (H := reducedCenterCoordinateHopfAlgebra H.obj) =
-      HopfIdeal.augmentation k (reducedCenterCoordinateHopfAlgebra H.obj)) :
-    Module.Finite k (centerCoordinateHopfAlgebra H.obj) := by
+        (k := k) (H := CommHopfAlgCat.reducedCenterCoordinateHopfAlgebra H.obj) =
+      HopfIdeal.augmentation k (CommHopfAlgCat.reducedCenterCoordinateHopfAlgebra H.obj)) :
+    Module.Finite k (CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj) := by
   let Hred : FiniteTypeCommHopfAlgCat.{u, u} k :=
-    FiniteTypeCommHopfAlgCat.of k (reducedCenterCoordinateHopfAlgebra H.obj)
-  let _ : Module.Finite k (reducedCenterCoordinateHopfAlgebra H.obj) :=
-    FiniteTypeCommHopfAlgCat.moduleFinite_of_identityComponentHopfIdeal_eq_augmentation
-      Hred hidentity
-  let C := centerCoordinateHopfAlgebra H.obj
-  let I := HopfIdeal.reduction k C
-  let q : C →ₐ[k] reducedCenterCoordinateHopfAlgebra H.obj :=
-    (mkQuotient C I).hom.toAlgHom
-  have hker : RingHom.ker q = nilradical C := by
-    rw [show RingHom.ker q = I.toIdeal by
-      exact mkQuotient_ker C I, HopfIdeal.reduction_toIdeal]
-  apply Module.finite_of_surjective_of_ker_le_nilradical q
-    (mkQuotient_surjective C I)
-  · exact hker.le
-  · rw [hker]
-    exact IsNoetherian.noetherian _
+    of k (CommHopfAlgCat.reducedCenterCoordinateHopfAlgebra H.obj)
+  let _ : Module.Finite k (CommHopfAlgCat.reducedCenterCoordinateHopfAlgebra H.obj) :=
+    moduleFinite_of_identityComponentHopfIdeal_eq_augmentation Hred hidentity
+  exact moduleFinite_centerCoordinate_of_reducedCenter H
 
-end TauCeti.CommHopfAlgCat
+end TauCeti.FiniteTypeCommHopfAlgCat
