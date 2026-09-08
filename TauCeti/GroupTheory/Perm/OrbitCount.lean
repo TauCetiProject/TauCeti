@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.SetTheory.Cardinal.NatCard
+public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
 
 /-!
@@ -22,6 +23,10 @@ by one, both stated so that they apply to a permutation of a *different* type th
 are compared with.
 
 * `TauCeti.orbitCount_conj`: conjugation does not change the number of orbits.
+* `TauCeti.orbitCount_eq_card_parts_partition`: on a finite type, the orbit count is the number
+  of parts in Mathlib's full, fixed-point-aware permutation partition.
+* `TauCeti.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
+  the number of points minus the number of orbits.
 * `TauCeti.orbitCount_add_one_eq_of_semiconj`: if `σ : Equiv.Perm α` is carried by an injection
   `f : α → β` to `τ : Equiv.Perm β`, and `f` misses exactly one point `p` of `β`, then `τ` has one
   orbit more than `σ` — the extra orbit is the fixed point `p`.
@@ -81,6 +86,154 @@ theorem orbitCount_conj (g σ : Equiv.Perm α) : orbitCount (g * σ * g⁻¹) = 
     rw [sameCycle_conj]
     simp
   exact h.symm
+
+/-- Inverting a permutation does not change its number of orbits. -/
+@[simp]
+theorem orbitCount_inv (σ : Equiv.Perm α) : orbitCount σ⁻¹ = orbitCount σ := by
+  exact Nat.card_congr (Quotient.congr (ra := SameCycle.setoid σ⁻¹)
+    (rb := SameCycle.setoid σ) (Equiv.refl α) fun _ _ ↦ sameCycle_inv)
+
+/-- Transporting a permutation along an equivalence of its underlying type does not change its
+number of orbits. -/
+@[simp]
+theorem orbitCount_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
+    orbitCount (e.permCongr σ) = orbitCount σ := by
+  refine (Nat.card_congr (Quotient.congr (ra := SameCycle.setoid σ)
+    (rb := SameCycle.setoid (e.permCongr σ)) e fun x y ↦ ?_)).symm
+  constructor
+  · rintro ⟨i, hi⟩
+    refine ⟨i, ?_⟩
+    have hz : e.permCongr (σ ^ i) = (e.permCongr σ) ^ i := by
+      simpa only [Equiv.permCongrHom_coe] using map_zpow e.permCongrHom σ i
+    rw [← hz, Equiv.permCongr_apply, Equiv.symm_apply_apply, hi]
+  · rintro ⟨i, hi⟩
+    refine ⟨i, e.injective ?_⟩
+    have hz : e.permCongr (σ ^ i) = (e.permCongr σ) ^ i := by
+      simpa only [Equiv.permCongrHom_coe] using map_zpow e.permCongrHom σ i
+    rw [← hz, Equiv.permCongr_apply, Equiv.symm_apply_apply] at hi
+    exact hi
+
+section Finite
+
+variable [Fintype α] [DecidableEq α]
+
+/-- The orbits of a permutation are its nontrivial cycle factors together with its fixed points.
+This is the set-level decomposition underlying the full cycle partition: a nontrivial orbit is
+sent to the unique member of `cycleFactorsFinset`, while a singleton orbit is sent to its fixed
+point. -/
+noncomputable def orbitQuotientEquivCycleFactorsSumFixedPoints (σ : Equiv.Perm α) :
+    Quotient (Equiv.Perm.SameCycle.setoid σ) ≃
+      σ.cycleFactorsFinset ⊕ {x : α // σ x = x} := by
+  classical
+  let toCycleOrFixed (x : α) : σ.cycleFactorsFinset ⊕ {x : α // σ x = x} :=
+    if hx : σ x = x then Sum.inr ⟨x, hx⟩
+    else Sum.inl ⟨σ.cycleOf x, Equiv.Perm.cycleOf_mem_cycleFactorsFinset_iff.mpr
+      (Equiv.Perm.mem_support.mpr hx)⟩
+  let forward : Quotient (Equiv.Perm.SameCycle.setoid σ) →
+      σ.cycleFactorsFinset ⊕ {x : α // σ x = x} :=
+    Quotient.lift toCycleOrFixed fun x y hxy ↦ by
+      have hfixed : σ x = x ↔ σ y = y :=
+        Equiv.Perm.SameCycle.apply_eq_self_iff hxy
+      by_cases hx : σ x = x
+      · have hy : σ y = y := hfixed.mp hx
+        simp only [toCycleOrFixed, hx, hy, ↓reduceDIte]
+        exact congrArg Sum.inr (Subtype.ext (hxy.eq_of_left hx))
+      · have hy : σ y ≠ y := mt hfixed.mpr hx
+        simp only [toCycleOrFixed, hx, hy, ↓reduceDIte]
+        exact congrArg Sum.inl (Subtype.ext hxy.cycleOf_eq)
+  let backward : σ.cycleFactorsFinset ⊕ {x : α // σ x = x} →
+      Quotient (Equiv.Perm.SameCycle.setoid σ)
+    | Sum.inl c => Quotient.mk _ (Classical.choose
+        (Equiv.Perm.IsCycle.nonempty_support
+          (Equiv.Perm.mem_cycleFactorsFinset_iff.mp c.property).1))
+    | Sum.inr x => Quotient.mk _ x.1
+  refine
+    { toFun := forward
+      invFun := backward
+      left_inv := ?_
+      right_inv := ?_ }
+  · intro q
+    induction q using Quotient.ind with
+    | _ x =>
+      simp only [forward, Quotient.lift_mk, backward, toCycleOrFixed]
+      split_ifs with hx
+      · rfl
+      · apply Quotient.sound
+        exact ((Equiv.Perm.mem_support_cycleOf_iff' hx).mp
+          (Classical.choose_spec (Equiv.Perm.IsCycle.nonempty_support
+            (Equiv.Perm.mem_cycleFactorsFinset_iff.mp
+              (Equiv.Perm.cycleOf_mem_cycleFactorsFinset_iff.mpr
+                (Equiv.Perm.mem_support.mpr hx))).1))).symm
+  · rintro (c | x)
+    · simp only [backward, forward, Quotient.lift_mk, toCycleOrFixed]
+      have hc := Classical.choose_spec (Equiv.Perm.IsCycle.nonempty_support
+        (Equiv.Perm.mem_cycleFactorsFinset_iff.mp c.property).1)
+      have hne : σ (Classical.choose (Equiv.Perm.IsCycle.nonempty_support
+          (Equiv.Perm.mem_cycleFactorsFinset_iff.mp c.property).1)) ≠
+          Classical.choose (Equiv.Perm.IsCycle.nonempty_support
+            (Equiv.Perm.mem_cycleFactorsFinset_iff.mp c.property).1) :=
+        Equiv.Perm.mem_support.mp
+          (Equiv.Perm.mem_cycleFactorsFinset_support_le c.property hc)
+      simp only [hne, ↓reduceDIte]
+      exact congrArg Sum.inl (Subtype.ext
+        (Equiv.Perm.cycle_is_cycleOf hc c.property).symm)
+    · simp only [backward, forward, Quotient.lift_mk, toCycleOrFixed]
+      simp only [x.property, ↓reduceDIte]
+
+/-- The number of permutation orbits is the number of parts in its full cycle partition. This
+identifies `orbitCount`, defined from `SameCycle`, with Mathlib's fixed-point-aware cycle data. -/
+theorem orbitCount_eq_card_parts_partition (σ : Equiv.Perm α) :
+    orbitCount σ = σ.partition.parts.card := by
+  classical
+  rw [orbitCount, Nat.card_eq_fintype_card,
+    Fintype.card_congr (orbitQuotientEquivCycleFactorsSumFixedPoints σ), Fintype.card_sum,
+    Fintype.card_coe]
+  have hfixed : Fintype.card {x : α // σ x = x} = Fintype.card α - σ.support.card := by
+    have hp : (fun x : α ↦ σ x = x) = (fun x ↦ x ∈ σ.supportᶜ) := by
+      funext x
+      simp [Equiv.Perm.mem_support]
+    calc
+      _ = Fintype.card {x : α // x ∈ σ.supportᶜ} :=
+        Fintype.card_congr (Equiv.subtypeEquivProp hp)
+      _ = σ.supportᶜ.card := Fintype.card_coe _
+      _ = Fintype.card α - σ.support.card := Finset.card_compl (s := σ.support)
+  rw [hfixed, Equiv.Perm.card_parts_partition, Equiv.Perm.cycleType_def]
+  simp
+
+/-- On a finite type, the number of orbits is the number of nontrivial cycles plus the number of
+fixed points. This is the unbundled bookkeeping form of
+`TauCeti.orbitCount_eq_card_parts_partition`. -/
+theorem orbitCount_eq_card_cycleType_add_card_sub_support (σ : Equiv.Perm α) :
+    orbitCount σ =
+      σ.cycleType.card + (Fintype.card α - σ.support.card) := by
+  rw [orbitCount_eq_card_parts_partition, Equiv.Perm.card_parts_partition]
+
+private theorem card_le_sum_of_pos {s : Multiset ℕ} (hs : ∀ n ∈ s, 0 < n) : s.card ≤ s.sum := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | @cons a s ih =>
+    simp only [Multiset.card_cons, Multiset.sum_cons]
+    simpa [Nat.add_comm] using
+      Nat.add_le_add (ih fun n hn ↦ hs n (by simp [hn])) (hs a (by simp))
+
+/-- The sign of a finite permutation is the parity of the number of points minus the number of
+orbits. Fixed points contribute once to both numbers and hence do not affect the sign. -/
+theorem sign_eq_neg_one_pow_card_sub_orbitCount (σ : Equiv.Perm α) :
+    Equiv.Perm.sign σ = (-1 : ℤˣ) ^ (Fintype.card α - orbitCount σ) := by
+  rw [Equiv.Perm.sign_of_parts_partition, ← orbitCount_eq_card_parts_partition]
+  have hle : orbitCount σ ≤ Fintype.card α := by
+    rw [orbitCount_eq_card_parts_partition]
+    calc
+      σ.partition.parts.card ≤ σ.partition.parts.sum :=
+        card_le_sum_of_pos fun n hn ↦ σ.partition.parts_pos hn
+      _ = Fintype.card α := σ.partition.parts_sum
+  have h : Fintype.card α + orbitCount σ =
+      (Fintype.card α - orbitCount σ) + 2 * orbitCount σ := by
+    omega
+  rw [h, pow_add, pow_mul]
+  simp
+
+end Finite
 
 /-- Propagate a one-step comparison over all integer powers: if every point `x` of `β` lies in the
 same `π`-cycle as its image `g x` does after one step of `σ`, then it lies in the same `π`-cycle
