@@ -34,10 +34,10 @@ finite constant field `TauCeti.Divisor.finite_ker_degreeClass` supplies it.
 
 There is no separability hypothesis and no chosen rational subfield: `R` is any Dedekind
 `k`-subalgebra of `F` with fraction field `F`.  Mathlib's
-`FunctionField.RingOfIntegers.instFintypeClassGroup` is the special case `R = ` the integral
-closure of `𝔽_q[X]` in `F`, and it is proved by a different route (Minkowski-style counting
-through `ClassGroup.fintypeOfAdmissibleOfFinite`) under the extra hypothesis that `F` is separable
-over `𝔽_q(X)`.
+`FunctionField.RingOfIntegers.instFintypeClassGroup` is the special case where `R` is the
+integral closure of `𝔽_q[X]` in `F`, and it is proved by a different route (Minkowski-style
+counting through `ClassGroup.fintypeOfAdmissibleOfFinite`) under the extra hypothesis that `F` is
+separable over `𝔽_q(X)`.
 
 `TauCeti.FieldTheory.FunctionField.RiemannRoch.RatFunc` runs the bridge on the rational function
 field and its model `k[X]`, where it gives `Cl⁰(k(x)) = 0` and the class number `h = 1`.

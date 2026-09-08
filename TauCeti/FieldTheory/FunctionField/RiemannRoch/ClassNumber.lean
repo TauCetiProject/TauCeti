@@ -181,10 +181,12 @@ theorem finite_preimage_degreeClass_singleton (hF : IsFunctionField k F)
   rcases Set.eq_empty_or_nonempty (⇑(degreeClass hF) ⁻¹' {n}) with hempty | ⟨c₀, hc₀⟩
   · rw [hempty]
     exact Set.finite_empty
-  · refine Set.Finite.subset
-      (Set.Finite.image (· + c₀) (Set.toFinite ((degreeClass hF).ker : Set _))) fun c hc ↦ ?_
-    rw [Set.mem_preimage, Set.mem_singleton_iff] at hc hc₀
-    exact ⟨c - c₀, by simp [AddMonoidHom.mem_ker, hc, hc₀], by simp⟩
+  · rw [Set.mem_preimage, Set.mem_singleton_iff] at hc₀
+    subst hc₀
+    -- The fibre through `c₀` is a coset of the kernel.
+    have : Finite (⇑(degreeClass hF) ⁻¹' {degreeClass hF c₀} : Set _) :=
+      Finite.of_equiv _ ((degreeClass hF).fiberEquivKer c₀).symm
+    exact Set.toFinite _
 
 /-- **Only finitely many divisor classes have degree in a given finite set of integers**, as soon
 as `Cl⁰(F)` is finite: each degree fibre is empty or a coset of it. -/
