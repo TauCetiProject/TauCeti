@@ -81,7 +81,7 @@ theorem eq_completionAlgHom_of_continuous {L : Type*} [Field L] [NumberField L] 
 
 /-- The algebra structure on `L_w` over `K_v` induced by the canonical completion map, for any
 Dedekind model of `L` over `𝒪 K`. -/
-@[expose, reducible, scoped instance]
+@[reducible, scoped instance]
 noncomputable def completionAlgebra {L : Type*} [Field L] [Algebra K L]
     {B : Type*} [CommRing B] [IsDedekindDomain B] [Algebra (𝒪 K) B] [Algebra B L]
     [IsFractionRing B L] [IsScalarTower (𝒪 K) B L]
@@ -91,6 +91,27 @@ noncomputable def completionAlgebra {L : Type*} [Field L] [Algebra K L]
   (v.adicCompletionExtension K L w).toAlgebra
 
 open scoped IsDedekindDomain.HeightOneSpectrum
+
+/-- The algebra map of `completionAlgebra` is the continuous extension between completions. -/
+@[simp]
+theorem algebraMap_completionAlgebra {L : Type*} [Field L] [Algebra K L]
+    {B : Type*} [CommRing B] [IsDedekindDomain B] [Algebra (𝒪 K) B] [Algebra B L]
+    [IsFractionRing B L] [IsScalarTower (𝒪 K) B L]
+    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum B)
+    [w.asIdeal.LiesOver v.asIdeal] :
+    algebraMap (v.adicCompletion K) (w.adicCompletion L) =
+      v.adicCompletionExtension K L w :=
+  RingHom.algebraMap_toAlgebra _
+
+/-- For number fields, the algebra map of `completionAlgebra` is `completionAlgHom`. -/
+theorem algebraMap_completionAlgebra_eq_completionAlgHom
+    {L : Type*} [Field L] [NumberField L] [Algebra K L]
+    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
+    [w.asIdeal.LiesOver v.asIdeal] :
+    algebraMap (v.adicCompletion K) (w.adicCompletion L) =
+      (completionAlgHom v w).toRingHom := by
+  rw [algebraMap_completionAlgebra]
+  rfl
 
 /-- Scalar multiplication by `K_v` on `L_w` is continuous for the canonical completion
 algebra. -/
