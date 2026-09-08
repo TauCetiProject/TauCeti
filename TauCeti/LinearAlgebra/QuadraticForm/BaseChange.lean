@@ -130,10 +130,7 @@ theorem QuadraticMap.IsometryEquiv.baseChange_toIsometry (f : Q₁.IsometryEquiv
       QuadraticMap.Isometry.baseChange f.toIsometry A := by
   apply _root_.QuadraticMap.Isometry.ext
   intro x
-  change (QuadraticMap.IsometryEquiv.baseChange f A).toLinearEquiv x =
-    (QuadraticMap.Isometry.baseChange f.toIsometry A).toLinearMap x
-  rw [QuadraticMap.IsometryEquiv.baseChange_toLinearEquiv,
-    QuadraticMap.Isometry.baseChange_toLinearMap]
+  rw [_root_.QuadraticMap.IsometryEquiv.toIsometry_apply]
   have hbase : (f.toLinearEquiv.baseChange R A M N).toLinearMap =
       f.toLinearEquiv.toLinearMap.baseChange A :=
     _root_.LinearEquiv.coe_baseChange R A M N f.toLinearEquiv
@@ -141,10 +138,12 @@ theorem QuadraticMap.IsometryEquiv.baseChange_toIsometry (f : Q₁.IsometryEquiv
     apply LinearMap.ext
     intro m
     exact (_root_.QuadraticMap.IsometryEquiv.toIsometry_apply f m).symm
-  calc
-    _ = (f.toLinearEquiv.baseChange R A M N).toLinearMap x := rfl
-    _ = (f.toLinearEquiv.toLinearMap.baseChange A) x := DFunLike.congr_fun hbase x
-    _ = (f.toIsometry.toLinearMap.baseChange A) x := by rw [h]
+  have hmaps :
+      (QuadraticMap.IsometryEquiv.baseChange f A).toLinearEquiv.toLinearMap =
+        (QuadraticMap.Isometry.baseChange f.toIsometry A).toLinearMap := by
+    rw [QuadraticMap.IsometryEquiv.baseChange_toLinearEquiv,
+      QuadraticMap.Isometry.baseChange_toLinearMap, hbase, h]
+  exact DFunLike.congr_fun hmaps x
 
 /-- Base change sends the identity isometric equivalence to the identity equivalence. -/
 @[simp]
