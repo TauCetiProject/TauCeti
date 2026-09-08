@@ -117,6 +117,16 @@ theorem map_apply {S : Type v} [CommRing S] (phi : R →+* S) (g : SL2Borel R)
   rw [coe_map, Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
     Matrix.map_apply]
 
+/-- Entrywise mapping sends a matrix in standard coordinates to the matrix obtained by mapping
+both parameters. -/
+@[simp]
+theorem map_mk {S : Type v} [CommRing S] (phi : R →+* S) (a : Rˣ) (b : R) :
+    map phi (mk a b) = mk (Units.map phi a) (phi b) := by
+  apply Subtype.ext
+  apply Subtype.ext
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
 /-- Entrywise mapping along the identity ring homomorphism is the identity. -/
 @[simp]
 theorem map_id : map (RingHom.id R) = MonoidHom.id (SL2Borel R) := by
@@ -135,10 +145,8 @@ theorem map_comp {S T : Type*} [CommRing S] [CommRing T]
   simp only [map_apply, RingHom.coe_comp, Function.comp_apply, MonoidHom.coe_comp]
 
 /-- Every upper-triangular determinant-one matrix modulo a nilpotent ideal lifts to an
-upper-triangular determinant-one matrix.
-
-Starting from an arbitrary special-linear lift, a lower transvection with parameter in the ideal
-eliminates its lower-left entry without changing its reduction. -/
+upper-triangular determinant-one matrix. This is the infinitesimal lifting property used to prove
+smoothness of the standard Borel coordinate algebra. -/
 theorem map_quotient_mk_surjective_of_isNilpotent (I : Ideal R) (hI : IsNilpotent I) :
     Function.Surjective (map (Ideal.Quotient.mk I) : SL2Borel R → SL2Borel (R ⧸ I)) := by
   intro g
@@ -207,6 +215,64 @@ theorem coe_toGL2Borel (g : SL2Borel R) :
 /-- The inclusion from the `SL₂` Borel to the `GL₂` Borel is injective. -/
 theorem toGL2Borel_injective : Function.Injective (toGL2Borel (R := R)) :=
   MonoidHom.restrict_injective _ Matrix.SpecialLinearGroup.toGL_injective
+
+/-- The upper-left diagonal entry of an `SL₂` Borel matrix, bundled as a unit. -/
+def diag : SL2Borel R →* Rˣ where
+  toFun g := (GL2Borel.diag (toGL2Borel g)).1
+  map_one' := by
+    rw [map_one, map_one]
+    rfl
+  map_mul' g h := by
+    rw [map_mul, map_mul]
+    rfl
+
+/-- The value of the diagonal parameter is the upper-left matrix entry. -/
+@[simp]
+theorem diag_val (g : SL2Borel R) :
+    (diag g : R) = (g : Matrix (Fin 2) (Fin 2) R) 0 0 := by
+  exact GL2Borel.diag_fst_val (toGL2Borel g)
+
+/-- The free upper-right parameter of an `SL₂` Borel matrix. -/
+def upperRight (g : SL2Borel R) : R :=
+  (g : Matrix (Fin 2) (Fin 2) R) 0 1
+
+/-- The upper-right parameter is the upper-right matrix entry. -/
+@[simp]
+theorem upperRight_apply (g : SL2Borel R) :
+    upperRight g = (g : Matrix (Fin 2) (Fin 2) R) 0 1 :=
+  by rw [upperRight]
+
+/-- The diagonal parameter of a matrix built by `mk` is its first argument. -/
+@[simp]
+theorem diag_mk (a : Rˣ) (b : R) : diag (mk a b) = a := by
+  ext
+  simp
+
+/-- The upper-right parameter of a matrix built by `mk` is its second argument. -/
+@[simp]
+theorem upperRight_mk (a : Rˣ) (b : R) : upperRight (mk a b) = b := by
+  simp [upperRight]
+
+/-- Every `SL₂` Borel matrix is recovered from its diagonal and upper-right parameters. -/
+@[simp]
+theorem mk_diag_upperRight (g : SL2Borel R) : mk (diag g) (upperRight g) = g := by
+  have hdet := g.1.2
+  rw [Matrix.det_fin_two, apply_one_zero, mul_zero, sub_zero] at hdet
+  have hinv : (((diag g)⁻¹ : Rˣ) : R) = (g : Matrix (Fin 2) (Fin 2) R) 1 1 := by
+    apply Units.inv_eq_of_mul_eq_one_right
+    simpa only [diag_val] using hdet
+  apply Subtype.ext
+  apply Subtype.ext
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [upperRight, hinv]
+
+/-- An `SL₂` Borel matrix is equivalently a diagonal unit and a free upper-right entry. -/
+def equivProd : SL2Borel R ≃ Rˣ × R where
+  toFun g := (diag g, upperRight g)
+  invFun p := mk p.1 p.2
+  left_inv := mk_diag_upperRight
+  right_inv p := by
+    ext <;> simp
 
 /-- The upper-triangular subgroup of `SL₂(R)` is solvable. -/
 instance instIsSolvable : Group.IsSolvable (SL2Borel R) :=

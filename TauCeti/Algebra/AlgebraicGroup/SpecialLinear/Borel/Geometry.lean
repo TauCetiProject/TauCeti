@@ -26,9 +26,8 @@ where `T` is the upper-left diagonal entry and `X` is the upper-right entry. Thi
 also makes geometric connectedness transparent: after extending a field, the coordinate ring
 remains a polynomial ring over a Laurent polynomial domain.
 
-Smoothness is proved directly by the infinitesimal lifting criterion. An arbitrary special-linear
-lift of an upper-triangular matrix can be corrected by a lower transvection whose parameter lies
-in the nilpotent ideal, so the correction does not alter its reduction.
+Smoothness follows from the infinitesimal lifting property for upper-triangular determinant-one
+matrices across nilpotent quotients.
 
 These geometric properties combine with maximality among solvable closed subgroups to identify
 the standard subgroup as a Borel subgroup.
@@ -58,7 +57,7 @@ open scoped LaurentPolynomial TensorProduct
 
 namespace TauCeti.SpecialLinear.Borel
 
-universe u
+universe u v
 
 noncomputable section
 
@@ -96,34 +95,47 @@ private def coordinateToPresentation :
     (presentationPoint R)).ofConv
 
 /-- The tautological point of the standard Borel in its own coordinate algebra. -/
-private def tautologicalPoint : SL2Borel (coordinateHopfAlgebra R) :=
+noncomputable def tautologicalPoint : SL2Borel (coordinateHopfAlgebra R) :=
   pointsMulEquiv (R := R) (A := coordinateHopfAlgebra R)
     (toConv (AlgHom.id R (coordinateHopfAlgebra R)))
 
-/-- The upper-left diagonal entry of the tautological point, bundled as a unit. -/
-private def tautologicalUnit : (coordinateHopfAlgebra R)ˣ :=
-  (GL2Borel.diag (SL2Borel.toGL2Borel (tautologicalPoint R))).1
+/-- The upper-left diagonal coordinate of the standard `SL₂` Borel, bundled as a unit. -/
+noncomputable def diagonalUnit : (coordinateHopfAlgebra R)ˣ :=
+  SL2Borel.diag (tautologicalPoint R)
 
 @[simp]
-private theorem tautologicalUnit_val :
-    (tautologicalUnit R : coordinateHopfAlgebra R) =
+theorem diagonalUnit_val :
+    (diagonalUnit R : coordinateHopfAlgebra R) =
       (tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 0 0 := by
-  rw [tautologicalUnit, GL2Borel.diag_fst_val]
-  rw [SL2Borel.coe_toGL2Borel]
-  rfl
+  exact SL2Borel.diag_val (tautologicalPoint R)
+
+/-- The upper-right coordinate of the standard `SL₂` Borel. -/
+noncomputable def upperRightCoordinate : coordinateHopfAlgebra R :=
+  SL2Borel.upperRight (tautologicalPoint R)
+
+@[simp]
+theorem upperRightCoordinate_eq :
+    upperRightCoordinate R =
+      (tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 0 1 :=
+  SL2Borel.upperRight_apply (tautologicalPoint R)
 
 /-- Interpret Laurent coefficients through the tautological diagonal unit. -/
 private def presentationCoefficientToCoordinate :
     LaurentPolynomial R →ₐ[R] coordinateHopfAlgebra R :=
   ((MultiplicativeGroup.pointsMulEquiv
-    (R := R) (A := coordinateHopfAlgebra R)).symm (tautologicalUnit R)).ofConv
+    (R := R) (A := coordinateHopfAlgebra R)).symm (diagonalUnit R)).ofConv
 
 /-- Evaluate the polynomial coordinate at the tautological upper-right matrix entry. -/
 private def presentationToCoordinate :
     presentationRing R →ₐ[R] coordinateHopfAlgebra R :=
   Polynomial.eval₂AlgHom (presentationCoefficientToCoordinate R)
-    ((tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 0 1)
+    (upperRightCoordinate R)
     fun _ ↦ mul_comm _ _
+
+@[simp]
+private theorem presentationToCoordinate_X :
+    presentationToCoordinate R Polynomial.X = upperRightCoordinate R := by
+  exact Polynomial.eval₂_X _ _
 
 private theorem map_tautologicalPoint :
     SL2Borel.map (coordinateToPresentation R).toRingHom (tautologicalPoint R) =
@@ -142,9 +154,10 @@ private theorem map_presentationPoint :
   ext i j
   fin_cases i <;> fin_cases j
   · simp [presentationPoint, presentationToCoordinate, presentationCoefficientToCoordinate,
-      presentationUnit_val, MultiplicativeGroup.point_T, tautologicalUnit_val]
+      presentationUnit_val, MultiplicativeGroup.point_T, diagonalUnit_val]
   · rw [SL2Borel.map_apply, presentationPoint, SL2Borel.coe_mk]
-    exact Polynomial.eval₂_X _ _
+    simpa [AlgHom.coe_toRingHom, upperRightCoordinate_eq] using
+      presentationToCoordinate_X R
   · simp [presentationPoint, SL2Borel.apply_one_zero]
   · have hdet := (tautologicalPoint R).1.2
     rw [Matrix.det_fin_two, SL2Borel.apply_one_zero, mul_zero, sub_zero] at hdet
@@ -153,15 +166,15 @@ private theorem map_presentationPoint :
           ((tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 1 1) = 1 :=
       hdet
     have hunit' :
-        (tautologicalUnit R : coordinateHopfAlgebra R) *
+        (diagonalUnit R : coordinateHopfAlgebra R) *
           ((tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 1 1) = 1 := by
-      simpa only [tautologicalUnit_val] using hunit
+      simpa only [diagonalUnit_val] using hunit
     have hinv := Units.inv_eq_of_mul_eq_one_right hunit'
     simpa [presentationPoint, presentationToCoordinate, presentationCoefficientToCoordinate,
       presentationUnit_val, MultiplicativeGroup.point_T] using hinv
 
 private theorem map_tautologicalUnit :
-    Units.map (coordinateToPresentation R).toMonoidHom (tautologicalUnit R) =
+    Units.map (coordinateToPresentation R).toMonoidHom (diagonalUnit R) =
       presentationUnit R := by
   apply Units.ext
   have h := congrArg
@@ -169,7 +182,7 @@ private theorem map_tautologicalUnit :
       (g : Matrix (Fin 2) (Fin 2) (presentationRing R)) 0 0)
     (map_tautologicalPoint R)
   rw [SL2Borel.map_apply, presentationPoint, SL2Borel.coe_mk] at h
-  simpa [tautologicalUnit_val, presentationUnit_val] using h
+  simpa [diagonalUnit_val, presentationUnit_val] using h
 
 private theorem unitOfPoint_CAlgHom :
     MultiplicativeGroup.unitOfPoint
@@ -198,9 +211,7 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
           presentationCoefficientToCoordinate R := by
       apply DFunLike.ext _ _
       intro x
-      change Polynomial.eval₂ _ _ (Polynomial.C x) = _
-      rw [Polynomial.eval₂_C]
-      rfl
+      simp [presentationToCoordinate]
     rw [hcoeff]
     apply (MultiplicativeGroup.pointEquiv
       (R := R) (A := presentationRing R)).injective
@@ -215,7 +226,7 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
       (map_tautologicalPoint R)
     have hX : presentationToCoordinate R Polynomial.X =
         (tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 0 1 := by
-      exact Polynomial.eval₂_X _ _
+      rw [presentationToCoordinate_X, upperRightCoordinate_eq]
     rw [AlgHom.comp_apply, hX, AlgHom.id_apply]
     rw [SL2Borel.map_apply, presentationPoint, SL2Borel.coe_mk] at h
     exact h
@@ -229,36 +240,70 @@ noncomputable def coordinateAlgEquiv :
     (coordinateToPresentation_comp_presentationToCoordinate R)
     (presentationToCoordinate_comp_coordinateToPresentation R)
 
+/-- The coordinate equivalence sends the diagonal unit to the Laurent generator. -/
+@[simp]
+theorem coordinateAlgEquiv_diagonalUnit :
+    coordinateAlgEquiv R (diagonalUnit R : coordinateHopfAlgebra R) =
+      Polynomial.C (LaurentPolynomial.T 1) := by
+  have h := congrArg
+    (fun g : SL2Borel (presentationRing R) ↦
+      (g : Matrix (Fin 2) (Fin 2) (presentationRing R)) 0 0)
+    (map_tautologicalPoint R)
+  rw [SL2Borel.map_apply, presentationPoint, SL2Borel.coe_mk] at h
+  rw [coordinateAlgEquiv, AlgEquiv.ofAlgHom_apply]
+  simpa [AlgHom.coe_toRingHom, diagonalUnit_val, presentationUnit_val] using h
+
+/-- The coordinate equivalence sends the upper-right coordinate to the polynomial generator. -/
+@[simp]
+theorem coordinateAlgEquiv_upperRightCoordinate :
+    coordinateAlgEquiv R (upperRightCoordinate R) = Polynomial.X := by
+  have h := congrArg
+    (fun g : SL2Borel (presentationRing R) ↦
+      (g : Matrix (Fin 2) (Fin 2) (presentationRing R)) 0 1)
+    (map_tautologicalPoint R)
+  rw [SL2Borel.map_apply, presentationPoint, SL2Borel.coe_mk] at h
+  rw [coordinateAlgEquiv, AlgEquiv.ofAlgHom_apply]
+  simpa [AlgHom.coe_toRingHom, upperRightCoordinate_eq] using h
+
+/-- The inverse coordinate equivalence sends the Laurent generator to the diagonal unit. -/
+@[simp]
+theorem coordinateAlgEquiv_symm_C_T :
+    (coordinateAlgEquiv R).symm (Polynomial.C (LaurentPolynomial.T 1)) =
+      (diagonalUnit R : coordinateHopfAlgebra R) := by
+  apply (coordinateAlgEquiv R).injective
+  rw [AlgEquiv.apply_symm_apply, coordinateAlgEquiv_diagonalUnit]
+
+/-- The inverse coordinate equivalence sends the polynomial generator to the upper-right
+coordinate. -/
+@[simp]
+theorem coordinateAlgEquiv_symm_X :
+    (coordinateAlgEquiv R).symm Polynomial.X = upperRightCoordinate R := by
+  apply (coordinateAlgEquiv R).injective
+  rw [AlgEquiv.apply_symm_apply, coordinateAlgEquiv_upperRightCoordinate]
+
 /-! ## Base change -/
 
 private theorem coordinateHopfAlgebraBaseChangeIso_hom_lowerLeftCoordinate
-    (K : Type u) [CommRing K] [Algebra R K] :
+    (K : Type max u v) [CommRing K] [Algebra R K] :
     (SpecialLinear.coordinateHopfAlgebraBaseChangeIso R K 2).hom.hom
         (1 ⊗ₜ[R] lowerLeftCoordinate R) = lowerLeftCoordinate K := by
   have hcomp := baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom R K 2
   have h := congrArg
     (fun f ↦ f.hom (1 ⊗ₜ[R] GeneralLinear.Borel.lowerLeftCoordinate R)) hcomp
   have hGL :
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K 2).hom.hom
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K 2).hom
           (1 ⊗ₜ[R] GeneralLinear.Borel.lowerLeftCoordinate R) =
         GeneralLinear.Borel.lowerLeftCoordinate K := by
     rw [GeneralLinear.Borel.lowerLeftCoordinate_def,
       GeneralLinear.Borel.lowerLeftCoordinate_def]
-    simpa using GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_apply.{u, u}
+    simpa using GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_apply.{u, v}
       R K 2 1 (MvPolynomial.X ((1 : Fin 2), (0 : Fin 2)))
-  rw [CategoryTheory.comp_apply, CategoryTheory.comp_apply] at h
-  change (SpecialLinear.coordinateHopfAlgebraBaseChangeIso R K 2).hom.hom
-      ((CommHopfAlgCat.baseChangeMap (K := K)
-        (SpecialLinear.coordinateMap R 2)).hom
-          (1 ⊗ₜ[R] GeneralLinear.Borel.lowerLeftCoordinate R)) =
-    (SpecialLinear.coordinateMap K 2).hom
-      ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K 2).hom.hom
-        (1 ⊗ₜ[R] GeneralLinear.Borel.lowerLeftCoordinate R)) at h
+  rw [_root_.CommHopfAlgCat.comp_apply, _root_.CommHopfAlgCat.comp_apply] at h
   rw [CommHopfAlgCat.baseChangeMap_apply_tmul, hGL] at h
   simpa only [lowerLeftCoordinate_def] using h
 
 private theorem map_baseChangeHopfIdeal_definingHopfIdeal
-    (K : Type u) [CommRing K] [Algebra R K] :
+    (K : Type max u v) [CommRing K] [Algebra R K] :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (definingHopfIdeal R)).map
         (SpecialLinear.coordinateHopfAlgebraBaseChangeIso R K 2).hom.hom =
       definingHopfIdeal K := by
@@ -273,7 +318,7 @@ private theorem map_baseChangeHopfIdeal_definingHopfIdeal
 /-- Base change of the standard `SL₂` Borel coordinate Hopf algebra is canonically the same
 coordinate Hopf algebra constructed over the new base. -/
 noncomputable def coordinateHopfAlgebraBaseChangeIso
-    (K : Type u) [CommRing K] [Algebra R K] :
+    (K : Type max u v) [CommRing K] [Algebra R K] :
     CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra R) ≅
       coordinateHopfAlgebra K := by
   apply CommHopfAlgCat.quotientBaseChangeIsoOfMapEq
@@ -285,7 +330,7 @@ noncomputable def coordinateHopfAlgebraBaseChangeIso
 `O(SL₂)`. -/
 @[simp]
 theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom
-    (K : Type u) [CommRing K] [Algebra R K] :
+    (K : Type max u v) [CommRing K] [Algebra R K] :
     CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap R) ≫
         (coordinateHopfAlgebraBaseChangeIso R K).hom =
       (SpecialLinear.coordinateHopfAlgebraBaseChangeIso R K 2).hom ≫ coordinateMap K := by
@@ -365,60 +410,26 @@ section Field
 
 variable {k : Type u} [Field k]
 
-/-- The Borel-candidate minimality condition over one field, used below to transport the
-condition across the canonical base-change isomorphism. -/
-private def isBorelOverField (F : Type u) [Field F]
-    (H : FiniteTypeCommHopfAlgCat.{u, u} F) (I : HopfIdeal F H.obj) : Prop :=
-  Minimal (fun J : HopfIdeal F H.obj ↦
-    smoothCommHopfAlgProperty F (FiniteTypeCommHopfAlgCat.quotient H J).obj ∧
-      geometricallyConnectedCommHopfAlgProperty F
-        (FiniteTypeCommHopfAlgCat.quotient H J).obj ∧
-      geometricallySolvablePointsCommHopfAlgProperty F
-        (FiniteTypeCommHopfAlgCat.quotient H J).obj) I
-
-private theorem isBorelOverField_iff (F : Type u) [Field F]
-    (H : FiniteTypeCommHopfAlgCat.{u, u} F) (I : HopfIdeal F H.obj) :
-    isBorelOverField F H I ↔
-      smoothCommHopfAlgProperty F (FiniteTypeCommHopfAlgCat.quotient H I).obj ∧
-        geometricallyConnectedCommHopfAlgProperty F
-          (FiniteTypeCommHopfAlgCat.quotient H I).obj ∧
-        geometricallySolvablePointsCommHopfAlgProperty F
-          (FiniteTypeCommHopfAlgCat.quotient H I).obj ∧
-        ∀ J : HopfIdeal F H.obj,
-          smoothCommHopfAlgProperty F (FiniteTypeCommHopfAlgCat.quotient H J).obj →
-            geometricallyConnectedCommHopfAlgProperty F
-              (FiniteTypeCommHopfAlgCat.quotient H J).obj →
-            geometricallySolvablePointsCommHopfAlgProperty F
-              (FiniteTypeCommHopfAlgCat.quotient H J).obj →
-            J ≤ I → I ≤ J := by
-  constructor
-  · rintro ⟨⟨hsmooth, hconnected, hsolvable⟩, hmax⟩
-    exact ⟨hsmooth, hconnected, hsolvable,
-      fun J hJsmooth hJconnected hJsolvable hJI ↦
-        hmax ⟨hJsmooth, hJconnected, hJsolvable⟩ hJI⟩
-  · rintro ⟨hsmooth, hconnected, hsolvable, hmax⟩
-    exact ⟨⟨hsmooth, hconnected, hsolvable⟩,
-      fun J hJ hJI ↦ hmax J hJ.1 hJ.2.1 hJ.2.2 hJI⟩
-
-private theorem isBorelOverField_definingHopfIdeal :
-    isBorelOverField k
+private theorem isBorelOverAlgClosed_definingHopfIdeal [IsAlgClosed k] :
+    HopfIdeal.IsBorelOverAlgClosed k
       ⟨SpecialLinear.coordinateHopfAlgebra k 2,
         (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
       (definingHopfIdeal k) := by
-  rw [isBorelOverField_iff]
-  refine ⟨smoothCommHopfAlgProperty_coordinateHopfAlgebra k,
-    geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k,
-    geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra k, ?_⟩
-  intro I hIsmooth _ hIsolvable hIB
+  rw [HopfIdeal.isBorelOverAlgClosed_iff]
+  refine ⟨inferInstance, ?_⟩
+  refine ⟨HopfIdeal.IsBorelCandidate.mk
+    (smoothCommHopfAlgProperty_coordinateHopfAlgebra k)
+    (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k)
+    (geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra k), ?_⟩
+  intro I hI hIB
   exact definingHopfIdeal_le_of_le_of_smooth_of_geometricallySolvable
-    I hIB hIsmooth hIsolvable
+    I hIB hI.smooth hI.geometricallySolvable
 
 /-- **The upper-triangular determinant-one subgroup of `SL₂` is a Borel subgroup over every
 field.** Its base change to an algebraic closure is smooth, connected, solvable, and maximal
 among closed subgroups with those properties. -/
 theorem isBorel_definingHopfIdeal :
     HopfIdeal.IsBorel k (SpecialLinear.coordinateHopfAlgebra k 2) (definingHopfIdeal k) := by
-  simp only [HopfIdeal.isBorel_iff]
   let K := AlgebraicClosure k
   let H : FiniteTypeCommHopfAlgCat.{u, u} k :=
     ⟨SpecialLinear.coordinateHopfAlgebra k 2,
@@ -430,29 +441,13 @@ theorem isBorel_definingHopfIdeal :
   let e : H' ≅ L := ObjectProperty.isoMk _
     (SpecialLinear.coordinateHopfAlgebraBaseChangeIso k K 2)
   let I' := CommHopfAlgCat.baseChangeHopfIdeal (K := K) (definingHopfIdeal k)
-  rw [← isBorelOverField_iff K H' I']
-  have htarget : isBorelOverField K L (definingHopfIdeal K) := by
-    simpa only [L] using (isBorelOverField_definingHopfIdeal (k := K))
-  have hpull : isBorelOverField K H'
-      ((definingHopfIdeal K).comapOfSurjective
-        (FiniteTypeCommHopfAlgCat.toBialgHom e.hom)
-        (ConcreteCategory.bijective_of_isIso e.hom).2) :=
-    FiniteTypeCommHopfAlgCat.minimal_quotientProperty_comapOfIso
-      (H := H') (K := L)
-      ((smoothCommHopfAlgProperty K ⊓
-        (geometricallyConnectedCommHopfAlgProperty K ⊓
-          geometricallySolvablePointsCommHopfAlgProperty K)).inverseImage
-        (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} K)
-          (_root_.CommHopfAlgCat.{u} K))) (definingHopfIdeal K) htarget e
-  let f := FiniteTypeCommHopfAlgCat.toBialgHom e.hom
-  have hf : Function.Bijective f := ConcreteCategory.bijective_of_isIso e.hom
-  have hmap : I'.map f = definingHopfIdeal K := by
+  have hmap : I'.map (FiniteTypeCommHopfAlgCat.toBialgHom e.hom) = definingHopfIdeal K := by
     exact map_baseChangeHopfIdeal_definingHopfIdeal k K
-  have hcomap :
-      (definingHopfIdeal K).comapOfSurjective f hf.2 = I' := by
-    rw [← hmap]
-    exact HopfIdeal.comapOfSurjective_map_of_bijective I' f hf
-  rwa [hcomap] at hpull
+  have hpull := HopfIdeal.IsBorelOverAlgClosed.of_map_eq e hmap
+    (isBorelOverAlgClosed_definingHopfIdeal (k := K))
+  exact (HopfIdeal.isBorel_iff_isBorelOverAlgClosed_baseChange
+    k (SpecialLinear.coordinateHopfAlgebra k 2) (definingHopfIdeal k)).2 (by
+      simpa only [K, H, H', I'] using hpull)
 
 end Field
 
