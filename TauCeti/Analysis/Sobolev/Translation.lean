@@ -148,8 +148,8 @@ theorem W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient (hp : p ≠ �
         ≤ ‖h‖ₑ * ‖W1p.gradient v‖ₑ} := by
     simp only [hrw, ← W1p.gradientL_apply]
     exact isClosed_le
-      ((((translateLp (mu.restrict ((⊤ : Opens E) : Set E)) p h).toContinuousLinearMap.comp
-        W1p.valueL) -
+      ((((translateLp (mu.restrict ((⊤ : Opens E) : Set E)) p h).toLinearIsometry
+        |>.toContinuousLinearMap.comp W1p.valueL) -
         W1p.valueL).continuous.enorm)
       ((ENNReal.continuous_const_mul (by finiteness)).comp
         W1p.gradientL.continuous.enorm)

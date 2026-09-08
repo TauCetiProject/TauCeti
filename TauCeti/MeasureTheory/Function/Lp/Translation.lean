@@ -17,9 +17,9 @@ import Mathlib.MeasureTheory.Measure.Prod
 /-!
 # The `Lᵖ` translation estimate
 
-This file defines translation of `Lᵖ` classes as a linear isometry, proves its strong continuity
-for `p < ∞`, and proves the translation estimate for a `C¹` function on a finite-dimensional real
-normed space carrying an additive Haar measure:
+This file defines translation of `Lᵖ` classes as a linear isometric equivalence, proves its strong
+continuity for `p < ∞`, and proves the translation estimate for a `C¹` function on a
+finite-dimensional real normed space carrying an additive Haar measure:
 
 `‖u(· + h) - u‖_p ≤ ‖h‖ ‖Du‖_p`.
 
@@ -30,8 +30,10 @@ exchanging the order of integration.
 
 ## Main declarations
 
-* `TauCeti.translateLp`: translation by a vector as a linear isometry of `Lᵖ`.
+* `TauCeti.translateLp`: translation by a vector as a linear isometric equivalence of `Lᵖ`.
 * `TauCeti.coeFn_translateLp`: translation is almost everywhere precomposition by addition.
+* `TauCeti.translateLp_zero`, `TauCeti.translateLp_symm`, `TauCeti.translateLp_add`: translation
+  is an action of the additive group of vectors.
 * `TauCeti.continuous_translateLp`: strong continuity of translation for `p < ∞`.
 * `TauCeti.enorm_translateLp_sub`: identifies the norm of an `Lᵖ` translation increment with its
   pointwise `eLpNorm`.
@@ -65,17 +67,37 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
   [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
 
-/-- Translation by `h` on `Lᵖ`, as a linear isometry. -/
+/-- Translation by `h` on `Lᵖ`, as a linear isometric equivalence.
+
+Precomposition by `· + h` is invertible, its inverse being precomposition by `· + -h`; carrying
+that inverse makes the identity, inverse and composition laws
+`TauCeti.translateLp_zero`, `TauCeti.translateLp_symm` and `TauCeti.translateLp_add` available
+as an action of the additive group of vectors on `Lᵖ`. -/
 def translateLp (mu : Measure E) [mu.IsAddHaarMeasure] (p : ENNReal) [Fact (1 ≤ p)]
-    (h : E) : Lp F p mu →ₗᵢ[ℝ] Lp F p mu :=
-  Lp.compMeasurePreservingₗᵢ ℝ (· + h) (measurePreserving_add_right mu h)
+    (h : E) : Lp F p mu ≃ₗᵢ[ℝ] Lp F p mu :=
+  Lp.compMeasurePreservingₗᵢEquiv ℝ (measurePreserving_add_right mu h)
+    (measurePreserving_add_right mu (-h))
+    (Filter.EventuallyEq.of_eq (funext fun x ↦ by simp))
 
 omit [NormedSpace ℝ E] in
 /-- Translation by `h` is almost everywhere precomposition by addition of `h`. -/
 theorem coeFn_translateLp (h : E) (f : Lp F p mu) :
     ⇑(translateLp mu p h f) =ᵐ[mu] ⇑f ∘ (· + h) := by
-  simpa only [translateLp, Lp.compMeasurePreservingₗᵢ_apply] using
-    Lp.coeFn_compMeasurePreserving f (measurePreserving_add_right mu h)
+  rw [translateLp]
+  exact Lp.coeFn_compMeasurePreservingₗᵢEquiv ℝ _ _ _ f
+
+omit [NormedSpace ℝ E] in
+/-- Translating by `h₁ + h₂` is translating by `h₁` and then by `h₂`. -/
+theorem translateLp_add (h₁ h₂ : E) :
+    translateLp (F := F) mu p (h₁ + h₂) = (translateLp mu p h₁).trans (translateLp mu p h₂) := by
+  refine LinearIsometryEquiv.ext fun f => Lp.ext ?_
+  filter_upwards [coeFn_translateLp (mu := mu) (h₁ + h₂) f,
+    coeFn_translateLp (mu := mu) h₂ (translateLp mu p h₁ f),
+    (measurePreserving_add_right mu h₂).quasiMeasurePreserving.ae_eq_comp
+      (coeFn_translateLp (mu := mu) h₁ f)] with x hx hy hz
+  simp only [Function.comp_apply] at hx hy hz
+  rw [hx, LinearIsometryEquiv.trans_apply, hy, hz]
+  exact congrArg _ (by abel)
 
 omit [NormedSpace ℝ E] in
 /-- Translation by zero is the identity on `Lᵖ`. -/
@@ -84,6 +106,14 @@ theorem translateLp_zero (f : Lp F p mu) : translateLp mu p 0 f = f := by
   apply Lp.ext
   filter_upwards [coeFn_translateLp (mu := mu) 0 f] with x hx
   simpa only [Function.comp_apply, add_zero] using hx
+
+omit [NormedSpace ℝ E] in
+/-- The inverse of translation by `h` is translation by `-h`. -/
+@[simp]
+theorem translateLp_symm (h : E) :
+    (translateLp (F := F) mu p h).symm = translateLp mu p (-h) :=
+  LinearIsometryEquiv.ext fun f => (LinearIsometryEquiv.symm_apply_eq _).2 <| by
+    rw [← LinearIsometryEquiv.trans_apply, ← translateLp_add, neg_add_cancel, translateLp_zero]
 
 omit [NormedSpace ℝ E] in
 /-- Translation of a fixed `Lᵖ` class depends continuously on the translation vector when
@@ -99,7 +129,7 @@ theorem continuous_translateLp [ProperSpace E] (hp : p ≠ ∞) (f : Lp F p mu) 
   have hcont : Continuous (fun h : E ↦ Lp.compMeasurePreserving (T h) (hpres h) f) :=
     (continuous_const : Continuous fun _ : E ↦ f).compMeasurePreservingLp hT hpres hp
   simpa only [translateLp, T, ContinuousMap.coe_mk,
-    Lp.compMeasurePreservingₗᵢ_apply] using hcont
+    Lp.compMeasurePreservingₗᵢEquiv_apply] using hcont
 
 omit [NormedSpace ℝ E] in
 /-- The `Lᵖ` extended norm of a translation increment is its pointwise `eLpNorm`. -/
