@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.RingTheory.Localization.Integer
+public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 
 /-!
 # Localization of the different ideal
@@ -165,25 +165,9 @@ variable [IsIntegralClosure S R L] [IsIntegralClosure Sₘ Rₘ L]
 variable [FiniteDimensional K L] [Algebra.IsSeparable K L]
 variable [IsTorsionFree R S] [IsTorsionFree Rₘ Sₘ]
 
-namespace FractionalIdeal
-
-omit M [Module.Finite R S] [IsTorsionFree R S] [IsTorsionFree Rₘ Sₘ] in
-/-- Over a domain, the fractional-ideal trace dual of one coerces to the submodule trace dual. -/
-@[simp]
-theorem coe_dual_one_of_isDomain [IsDomain S] :
-    (↑(FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)) : Submodule S L) =
-      Submodule.traceDual R K (1 : Submodule S L) := by
-  ext x
-  change x ∈ FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L) ↔ _
-  have h : (1 : FractionalIdeal S⁰ L) ≠ 0 := one_ne_zero
-  simp [FractionalIdeal.dual, h]
-  rfl
-
-end FractionalIdeal
-
 section
 
-variable [IsDomain S] [IsDomain Sₘ]
+variable [IsDomain S]
 
 omit [IsTorsionFree R S] [IsTorsionFree Rₘ Sₘ] in
 /-- The trace-dual fractional ideal commutes with localization. -/
@@ -197,6 +181,7 @@ theorem extended_dual_one_eq_dual_one :
       IsFractionRing.isFractionRing_of_isDomain_of_isLocalization M Rₘ K
     let _ : IsIntegrallyClosed Rₘ :=
       isIntegrallyClosed_of_isLocalization Rₘ M hM
+    let _ : IsDomain Sₘ := IsLocalization.isDomain_of_le_nonZeroDivisors Sₘ hMS
     let _ : IsFractionRing Sₘ L :=
       IsFractionRing.isFractionRing_of_isDomain_of_isLocalization
         (Algebra.algebraMapSubmonoid S M) Sₘ L
@@ -215,6 +200,7 @@ theorem extended_dual_one_eq_dual_one :
     IsFractionRing.isFractionRing_of_isDomain_of_isLocalization M Rₘ K
   let _ : IsIntegrallyClosed Rₘ :=
     isIntegrallyClosed_of_isLocalization Rₘ M hM
+  let _ : IsDomain Sₘ := IsLocalization.isDomain_of_le_nonZeroDivisors Sₘ hMS
   let _ : IsFractionRing Sₘ L :=
     IsFractionRing.isFractionRing_of_isDomain_of_isLocalization
       (Algebra.algebraMapSubmonoid S M) Sₘ L
