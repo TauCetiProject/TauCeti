@@ -63,12 +63,9 @@ collapses as soon as one of the two vertices is unlabeled
 * L. Lovász, B. Szegedy, *Limits of dense graph sequences*, JCTB 96 (2006), 933–957, Section 2 —
   `k`-labeled graphs, their product, and connection matrices.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Chapter 6.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 8a — the gluing algebra behind the
-  representability theorem.  The signatures follow
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti.DenseGraphLimits
 
@@ -226,6 +223,7 @@ theorem glueLeft_surjective_or (G₁ G₂ : LabeledGraph k) (v : G₁.glueCarrie
 taking the union of the two edge sets.  The identified vertices keep their labels — and stay
 distinct — so the result is again a `k`-labeled graph and gluing iterates.  This is
 Lovász–Szegedy's product `F₁F₂`. -/
+@[expose]
 noncomputable def glue (G₁ G₂ : LabeledGraph k) : LabeledGraph k where
   n := Fintype.card (G₁.glueCarrier G₂)
   graph := (G₁.graph.map fun a => G₁.glueIndex G₂ (G₁.glueLeft G₂ a)) ⊔
@@ -234,11 +232,13 @@ noncomputable def glue (G₁ G₂ : LabeledGraph k) : LabeledGraph k where
   label_injective := (G₁.glueIndex G₂).injective.comp Sum.inl_injective
 
 /-- The vertex map of the left factor into the gluing. -/
+@[expose]
 noncomputable def glueInl (G₁ G₂ : LabeledGraph k) : Fin G₁.n ↪ Fin (G₁.glue G₂).n :=
   ⟨fun a => G₁.glueIndex G₂ (G₁.glueLeft G₂ a),
     (G₁.glueIndex G₂).injective.comp (G₁.glueLeft_injective G₂)⟩
 
 /-- The vertex map of the right factor into the gluing. -/
+@[expose]
 noncomputable def glueInr (G₁ G₂ : LabeledGraph k) : Fin G₂.n ↪ Fin (G₁.glue G₂).n :=
   ⟨fun b => G₁.glueIndex G₂ (G₁.glueRight G₂ b),
     (G₁.glueIndex G₂).injective.comp (G₁.glueRight_injective G₂)⟩
@@ -385,6 +385,7 @@ theorem not_glue_adj_of_unlabeled (G₁ G₂ : LabeledGraph k) {a : Fin G₁.n} 
 
 /-- **Unlabeling.**  The underlying finite simple graph of a `k`-labeled graph, labels forgotten —
 the object a graph parameter evaluates in a connection-matrix entry. -/
+@[expose]
 def forgetLabels (G : LabeledGraph k) : Σ m, SimpleGraph (Fin m) := ⟨G.n, G.graph⟩
 
 /-- Unlabeling keeps the vertex count. -/
@@ -398,11 +399,11 @@ theorem forgetLabels_snd (G : LabeledGraph k) : G.forgetLabels.2 = G.graph := rf
 /-! ### Commutativity of the gluing -/
 
 /-- Swapping the two private summands of a gluing carrier. -/
-def glueSwap (G₁ G₂ : LabeledGraph k) : G₁.glueCarrier G₂ ≃ G₂.glueCarrier G₁ :=
+private def glueSwap (G₁ G₂ : LabeledGraph k) : G₁.glueCarrier G₂ ≃ G₂.glueCarrier G₁ :=
   (Equiv.refl (Fin k)).sumCongr (Equiv.sumComm _ _)
 
 /-- Under the swap, the left factor of one order becomes the right factor of the other. -/
-theorem glueSwap_glueLeft (G₁ G₂ : LabeledGraph k) (a : Fin G₁.n) :
+private theorem glueSwap_glueLeft (G₁ G₂ : LabeledGraph k) (a : Fin G₁.n) :
     G₁.glueSwap G₂ (G₁.glueLeft G₂ a) = G₂.glueRight G₁ a := by
   by_cases ha : ∃ i, G₁.label i = a
   · obtain ⟨i, rfl⟩ := ha
@@ -413,7 +414,7 @@ theorem glueSwap_glueLeft (G₁ G₂ : LabeledGraph k) (a : Fin G₁.n) :
     rfl
 
 /-- Under the swap, the right factor of one order becomes the left factor of the other. -/
-theorem glueSwap_glueRight (G₁ G₂ : LabeledGraph k) (b : Fin G₂.n) :
+private theorem glueSwap_glueRight (G₁ G₂ : LabeledGraph k) (b : Fin G₂.n) :
     G₁.glueSwap G₂ (G₁.glueRight G₂ b) = G₂.glueLeft G₁ b := by
   by_cases hb : ∃ i, G₂.label i = b
   · obtain ⟨i, rfl⟩ := hb
@@ -424,28 +425,37 @@ theorem glueSwap_glueRight (G₁ G₂ : LabeledGraph k) (b : Fin G₂.n) :
     rfl
 
 /-- The vertex bijection between the two orders of a gluing. -/
-noncomputable def glueCommEquiv (G₁ G₂ : LabeledGraph k) :
+private noncomputable def glueCommEquiv (G₁ G₂ : LabeledGraph k) :
     Fin (G₁.glue G₂).n ≃ Fin (G₂.glue G₁).n :=
   (G₁.glueIndex G₂).symm.trans ((G₁.glueSwap G₂).trans (G₂.glueIndex G₁))
 
+/-- The commutativity bijection unfolds to the carrier swap. -/
+private theorem glueCommEquiv_apply (G₁ G₂ : LabeledGraph k) (v : Fin (G₁.glue G₂).n) :
+    G₁.glueCommEquiv G₂ v =
+      G₂.glueIndex G₁ (G₁.glueSwap G₂ ((G₁.glueIndex G₂).symm v)) := rfl
+
+/-- The left vertex map is induced by the left carrier map. -/
+private theorem glueInl_apply (G₁ G₂ : LabeledGraph k) (a : Fin G₁.n) :
+    G₁.glueInl G₂ a = G₁.glueIndex G₂ (G₁.glueLeft G₂ a) := rfl
+
+/-- The right vertex map is induced by the right carrier map. -/
+private theorem glueInr_apply (G₁ G₂ : LabeledGraph k) (b : Fin G₂.n) :
+    G₁.glueInr G₂ b = G₁.glueIndex G₂ (G₁.glueRight G₂ b) := rfl
+
 /-- The commutativity bijection exchanges the two vertex maps. -/
-theorem glueCommEquiv_glueInl (G₁ G₂ : LabeledGraph k) (a : Fin G₁.n) :
+private theorem glueCommEquiv_glueInl (G₁ G₂ : LabeledGraph k) (a : Fin G₁.n) :
     G₁.glueCommEquiv G₂ (G₁.glueInl G₂ a) = G₂.glueInr G₁ a := by
-  change G₂.glueIndex G₁ (G₁.glueSwap G₂ ((G₁.glueIndex G₂).symm
-    (G₁.glueIndex G₂ (G₁.glueLeft G₂ a)))) = _
-  rw [Equiv.symm_apply_apply, glueSwap_glueLeft]
-  rfl
+  rw [glueCommEquiv_apply, glueInl_apply, Equiv.symm_apply_apply, glueSwap_glueLeft,
+    glueInr_apply]
 
 /-- The commutativity bijection exchanges the two vertex maps, on the right. -/
-theorem glueCommEquiv_glueInr (G₁ G₂ : LabeledGraph k) (b : Fin G₂.n) :
+private theorem glueCommEquiv_glueInr (G₁ G₂ : LabeledGraph k) (b : Fin G₂.n) :
     G₁.glueCommEquiv G₂ (G₁.glueInr G₂ b) = G₂.glueInl G₁ b := by
-  change G₂.glueIndex G₁ (G₁.glueSwap G₂ ((G₁.glueIndex G₂).symm
-    (G₁.glueIndex G₂ (G₁.glueRight G₂ b)))) = _
-  rw [Equiv.symm_apply_apply, glueSwap_glueRight]
-  rfl
+  rw [glueCommEquiv_apply, glueInr_apply, Equiv.symm_apply_apply, glueSwap_glueRight,
+    glueInl_apply]
 
 /-- The commutativity bijection carries one glued graph onto the other. -/
-theorem glue_graph_map_glueCommEquiv (G₁ G₂ : LabeledGraph k) :
+private theorem glue_graph_map_glueCommEquiv (G₁ G₂ : LabeledGraph k) :
     (G₁.glue G₂).graph.map (G₁.glueCommEquiv G₂) = (G₂.glue G₁).graph := by
   have h₁ : (G₁.glueCommEquiv G₂ : Fin (G₁.glue G₂).n → Fin (G₂.glue G₁).n) ∘
       (G₁.glueInl G₂ : Fin G₁.n → Fin (G₁.glue G₂).n) = G₂.glueInr G₁ :=

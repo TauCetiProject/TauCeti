@@ -32,14 +32,14 @@ of the Lovász–Szegedy representability theorem.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.isHermitian_connectionMatrix` — an isomorphism-invariant parameter has
-  symmetric connection matrices, so reflection positivity is not asking for the impossible;
+* `TauCeti.DenseGraphLimits.isHermitian_connectionMatrix` — isomorphism invariance makes connection
+  matrices Hermitian because the two gluing orders are isomorphic;
 * `TauCeti.DenseGraphLimits.IsReflectionPositive.posSemidef` reindexes the definition, which
   quantifies over `Fin n`-indexed families, to an arbitrary finite index type;
 * `TauCeti.DenseGraphLimits.IsReflectionPositive.nonneg_glue_self` is the diagonal consequence
   `0 ≤ f` on a self-gluing;
-* `TauCeti.DenseGraphLimits.IsMultiplicative.apply_sum_bot` is the added-vertex telescope
-  `f (F ⊔ K₁) = f F`, the step the representability spine runs on.
+* `TauCeti.DenseGraphLimits.IsMultiplicative.apply_sum_bot` is the added-vertex identity
+  `f (F ⊔ K₁) = f F`.
 
 The section `Examples` records that the four conditions are simultaneously satisfiable — the
 parameter constantly `1`, which is the homomorphism density of the constant graphon `W ≡ 1` — and
@@ -59,13 +59,9 @@ a connection matrix on `ι` is a submatrix of one on `Fin (Fintype.card ι)` alo
   the four structural conditions and the representability theorem they characterise.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Chapters 5
   and 6.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 8a — quantum graphs and reflection
-  positivity.  The signatures follow `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`; the
-  Layer-8b Möbius spine and `lovasz_szegedy_representability` itself are separate targets and are
-  not built here.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti.DenseGraphLimits
 
@@ -90,10 +86,13 @@ noncomputable def connectionMatrix (f : GraphParam) {k : ℕ} {ι : Type*} (A : 
     f ((A i).glue (A j)).forgetLabels.1 ((A i).glue (A j)).forgetLabels.2
 
 /-- The connection-matrix entry law. -/
+@[simp]
 theorem connectionMatrix_apply (f : GraphParam) {k : ℕ} {ι : Type*} (A : ι → LabeledGraph k)
     (i j : ι) :
     connectionMatrix f A i j
-      = f ((A i).glue (A j)).forgetLabels.1 ((A i).glue (A j)).forgetLabels.2 := rfl
+      = f ((A i).glue (A j)).forgetLabels.1 ((A i).glue (A j)).forgetLabels.2 := by
+  rw [connectionMatrix.eq_1]
+  rfl
 
 /-- Connection matrices of an isomorphism-invariant parameter are symmetric: gluing commutes up to
 isomorphism. -/
@@ -102,9 +101,8 @@ theorem connectionMatrix_comm (f : GraphParam) (hf : IsIsoInvariant f) {k : ℕ}
     connectionMatrix f A i j = connectionMatrix f A j i :=
   hf _ _ _ _ ⟨LabeledGraph.glueCommIso (A i) (A j)⟩
 
-/-- Connection matrices of an isomorphism-invariant parameter are Hermitian.  Positive
-semidefiniteness includes this condition, so without isomorphism invariance reflection positivity
-would be asking for something a parameter cannot supply. -/
+/-- Connection matrices of an isomorphism-invariant parameter are Hermitian because the two
+gluing orders are isomorphic. -/
 theorem isHermitian_connectionMatrix (f : GraphParam) (hf : IsIsoInvariant f) {k : ℕ} {ι : Type*}
     (A : ι → LabeledGraph k) : (connectionMatrix f A).IsHermitian := by
   refine Matrix.ext fun i j => ?_
@@ -113,8 +111,8 @@ theorem isHermitian_connectionMatrix (f : GraphParam) (hf : IsIsoInvariant f) {k
 
 /-- A graph parameter is **reflection positive** when every finite connection matrix is positive
 semidefinite — every finite principal block of each `M(f, k)` is PSD.  The definition quantifies
-over `Fin n`-indexed families, matching the roadmap's `Fin`-representative convention;
-`IsReflectionPositive.posSemidef` recovers an arbitrary finite index type. -/
+over `Fin n`-indexed families; `IsReflectionPositive.posSemidef` recovers an arbitrary finite index
+type. -/
 def IsReflectionPositive (f : GraphParam) : Prop :=
   ∀ (k n : ℕ) (A : Fin n → LabeledGraph k), (connectionMatrix f A).PosSemidef
 
@@ -148,9 +146,7 @@ theorem IsReflectionPositive.nonneg_glue_self {f : GraphParam} (hf : IsReflectio
   have h := (hf.posSemidef fun _ : Fin 1 => G).diag_nonneg (i := 0)
   simpa [connectionMatrix] using h
 
-/-- **The added-vertex telescope.**  A multiplicative, normalized parameter is unchanged by
-adjoining an isolated vertex.  This is the step that makes the level-`n` masses of the Layer-8b
-Möbius spine consistent across levels. -/
+/-- A multiplicative, normalized parameter is unchanged by adjoining an isolated vertex. -/
 theorem IsMultiplicative.apply_sum_bot {f : GraphParam} (hmul : IsMultiplicative f)
     (hnorm : IsNormalized f) (n : ℕ) (F : SimpleGraph (Fin n)) :
     f (n + 1) ((F ⊕g (⊥ : SimpleGraph (Fin 1))).map finSumFinEquiv.toEmbedding) = f n F := by
@@ -160,9 +156,9 @@ section Examples
 
 /-! ### Consistency and adversarial checks
 
-The four structural conditions are simultaneously satisfiable, and none of them is automatic.  The
-parameter constantly `1` is the homomorphism density `t(·, W)` of the constant graphon `W ≡ 1`, so
-it is exactly the shape the representability theorem predicts. -/
+The four structural conditions are simultaneously satisfiable.  Reflection positivity is not
+implied by isomorphism invariance alone.  The parameter constantly `1` is the homomorphism density
+`t(·, W)` of the constant graphon `W ≡ 1`. -/
 
 /-- The constant parameter `1` is isomorphism invariant. -/
 theorem isIsoInvariant_one : IsIsoInvariant fun _ _ => (1 : ℝ) := fun _ _ _ _ _ => rfl
@@ -172,7 +168,8 @@ theorem isMultiplicative_one : IsMultiplicative fun _ _ => (1 : ℝ) :=
   fun _ _ _ _ => (one_mul 1).symm
 
 /-- The constant parameter `1` is normalized. -/
-theorem isNormalized_one : IsNormalized fun _ _ => (1 : ℝ) := rfl
+theorem isNormalized_one : IsNormalized fun _ _ => (1 : ℝ) := by
+  rw [IsNormalized.eq_1]
 
 /-- The constant parameter `1` is reflection positive: its connection matrices are the all-ones
 matrices, the outer square of the all-ones vector. -/
@@ -185,8 +182,8 @@ theorem isReflectionPositive_one : IsReflectionPositive fun _ _ => (1 : ℝ) := 
   rw [h]
   exact Matrix.posSemidef_vecMulVec_self_star _
 
-/-- Reflection positivity is a genuine constraint, not a consequence of the other conditions: the
-constant parameter `-1` is isomorphism invariant, yet it is negative on a self-gluing. -/
+/-- Isomorphism invariance alone does not imply reflection positivity: the constant parameter `-1`
+is isomorphism invariant, yet it is negative on a self-gluing. -/
 theorem not_isReflectionPositive_neg_one : ¬ IsReflectionPositive fun _ _ => (-1 : ℝ) := by
   intro h
   have := h.nonneg_glue_self (⟨1, ⊥, Fin.elim0, fun a => a.elim0⟩ : LabeledGraph 0)
