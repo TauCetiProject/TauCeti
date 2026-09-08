@@ -28,9 +28,9 @@ theorem**: it is Stichtenoth's `(1.45)` for `x = 1`, and it holds over an arbitr
 with no analysis and before any residue map has been constructed.
 
 This is Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., Definitions 1.7.1,
-Proposition 1.7.2 and the divisor-free half of Proposition 1.7.3(a).  The nonvanishing of every
-local component of a nonzero differential, and hence the fact that one local component determines
-the differential, are proved in
+Proposition 1.7.2 and the divisor-free half of Proposition 1.7.3(a).  For a function field with
+exact constants, the nonvanishing of every local component of a nonzero differential, and hence
+the fact that one local component determines the differential, are proved in
 `TauCeti.FieldTheory.FunctionField.Differential.LocalNonvanishing`.  The remaining statements of
 Section I.7 — that `v_P (ω)` is the largest bound its local component respects and the explicit
 generator of `Ω_{k(x)}` — need the divisor of a Weil differential.

@@ -11,9 +11,9 @@ public import TauCeti.FieldTheory.FunctionField.Differential.LocalComponent
 /-!
 # Nonvanishing of local components of Weil differentials
 
-Every local component of a nonzero Weil differential on an algebraic function field is nonzero.
-Consequently, fixing any one place `P`, the map `ω ↦ ω_P` is injective on the space of Weil
-differentials: one local component determines the global differential.
+Every local component of a nonzero Weil differential on an algebraic function field with exact
+constants is nonzero.  Consequently, fixing any one place `P`, the map `ω ↦ ω_P` is injective on
+the space of Weil differentials: one local component determines the global differential.
 
 The key point is that allowing a double pole at `P` strictly enlarges the space of regular Weil
 differentials.  Indeed,
@@ -32,12 +32,12 @@ differential and for comparing Weil differentials with Kähler differentials thr
 
 ## Main results
 
-* `TauCeti.repartitionDualComponent_ne_zero`: every local component of a nonzero Weil differential
-  is nonzero.
-* `TauCeti.repartitionDualComponent_eq_zero_iff`: a Weil differential is zero exactly when its
-  local component at one fixed place is zero.
-* `TauCeti.repartitionDualComponent_eq_iff`: two Weil differentials are equal exactly when their
-  local components at one fixed place are equal.
+* `TauCeti.repartitionDualComponent_ne_zero`: over an exact constant field, every local component
+  of a nonzero Weil differential is nonzero.
+* `TauCeti.repartitionDualComponent_eq_zero_iff`: over an exact constant field, a Weil differential
+  is zero exactly when its local component at one fixed place is zero.
+* `TauCeti.repartitionDualComponent_inj`: over an exact constant field, two Weil differentials are
+  equal exactly when their local components at one fixed place are equal.
 
 ## References
 
@@ -100,8 +100,8 @@ private theorem exists_repartitionDualComponent_ne_zero (hF : IsFunctionField k 
   · exact repartitionDualComponent_apply_eq_zero_of_le hωD Q (by
       simpa [D, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_of_ne hQP] using hx)
 
-/-- **Every local component of a nonzero Weil differential is nonzero**
-(Stichtenoth, Proposition 1.7.3(a)). -/
+/-- Over an exact constant field, **every local component of a nonzero Weil differential is
+nonzero** (Stichtenoth, Proposition 1.7.3(a)). -/
 theorem repartitionDualComponent_ne_zero (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
     (hω : ω ∈ weilDifferentialSpace k F) (hω0 : ω ≠ 0) (P : Place k F) :
@@ -114,7 +114,8 @@ theorem repartitionDualComponent_ne_zero (hF : IsFunctionField k F)
   rw [← hc, repartitionDualComponent_repartitionDualMul, hωP, LinearMap.zero_apply,
     LinearMap.zero_apply]
 
-/-- A Weil differential is zero exactly when its local component at one fixed place is zero. -/
+/-- Over an exact constant field, a Weil differential is zero exactly when its local component at
+one fixed place is zero. -/
 @[simp]
 theorem repartitionDualComponent_eq_zero_iff (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
@@ -126,10 +127,10 @@ theorem repartitionDualComponent_eq_zero_iff (hF : IsFunctionField k F)
   ext x
   simp
 
-/-- **One local component determines a Weil differential**: two Weil differentials are equal if
-and only if their local components at any one fixed place are equal. -/
+/-- Over an exact constant field, **one local component determines a Weil differential**: two Weil
+differentials are equal if and only if their local components at any one fixed place are equal. -/
 @[simp]
-theorem repartitionDualComponent_eq_iff (hF : IsFunctionField k F)
+theorem repartitionDualComponent_inj (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω η : Module.Dual k ↥(repartitionSpace k F)}
     (hω : ω ∈ weilDifferentialSpace k F) (hη : η ∈ weilDifferentialSpace k F)
     (P : Place k F) :
