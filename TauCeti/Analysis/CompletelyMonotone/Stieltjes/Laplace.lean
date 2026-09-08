@@ -11,7 +11,7 @@ public import TauCeti.Analysis.CompletelyMonotone.Bernstein.OpenHalfLine
 -- calculus evaluates the inner one.
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.Prod
-import Mathlib.MeasureTheory.Integral.ExpDecay
+import TauCeti.MeasureTheory.Integral.ExpDecay
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
@@ -102,20 +102,15 @@ theorem integrable_exp_neg_mul_of_integrable_stieltjesWeight
 
 /-! ## The inner exponential integral -/
 
-/-- The scalar Laplace integral `∫₀^∞ e^{-cs} ds = c⁻¹`. -/
-private theorem integral_exp_neg_mul_Ioi_zero {c : ℝ} (hc : 0 < c) :
-    ∫ s in Ioi (0 : ℝ), Real.exp (-(c * s)) = c⁻¹ := by
-  have h := integral_comp_mul_left_Ioi (fun y : ℝ => Real.exp (-y)) 0 hc
-  rw [mul_zero] at h
-  rw [h, integral_exp_neg_Ioi_zero, smul_eq_mul, mul_one]
-
-/-- The extended-real form of `TauCeti.integral_exp_neg_mul_Ioi_zero`. -/
+/-- The extended-real form of `TauCeti.integral_pow_mul_exp_neg_mul_Ioi` at power zero. -/
 private theorem lintegral_ofReal_exp_neg_mul_Ioi_zero {c : ℝ} (hc : 0 < c) :
     ∫⁻ s in Ioi (0 : ℝ), ENNReal.ofReal (Real.exp (-(c * s))) = ENNReal.ofReal c⁻¹ := by
   have hint : IntegrableOn (fun s : ℝ => Real.exp (-(c * s))) (Ioi 0) := by
     simpa [neg_mul] using exp_neg_integrableOn_Ioi (0 : ℝ) hc
   rw [← ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun s => (Real.exp_pos _).le),
-    integral_exp_neg_mul_Ioi_zero hc]
+    show (∫ s in Ioi (0 : ℝ), Real.exp (-(c * s))) = c⁻¹ by
+      simpa only [pow_zero, one_mul, Nat.factorial_zero, Nat.cast_one, pow_one, one_div,
+        zero_add] using integral_pow_mul_exp_neg_mul_Ioi 0 hc]
 
 /-- **The Stieltjes kernel is an iterated exponential integral.**  Swapping the two integrations
 turns the outer Laplace integral of the inner one into the Stieltjes integral of `ν`. -/
@@ -283,7 +278,10 @@ theorem RepresentsStieltjes.exists_isCompletelyMonotoneOnIoi (h : RepresentsStie
         = (∫ s in Ioi (0 : ℝ), Real.exp (-(t * s)) * (a : ℝ)) +
           ∫ s in Ioi (0 : ℝ), Real.exp (-(t * s)) * laplaceTransform μ s := by
       simpa only [mul_add] using integral_add (hconst t ht) (hLint t ht)
-    rw [hsplit, integral_mul_const, integral_exp_neg_mul_Ioi_zero ht]
+    rw [hsplit, integral_mul_const,
+      show (∫ s in Ioi (0 : ℝ), Real.exp (-(t * s))) = t⁻¹ by
+        simpa only [pow_zero, one_mul, Nat.factorial_zero, Nat.cast_one, pow_one, one_div,
+          zero_add] using integral_pow_mul_exp_neg_mul_Ioi 0 ht]
     rw [div_eq_inv_mul]
     ring
 
