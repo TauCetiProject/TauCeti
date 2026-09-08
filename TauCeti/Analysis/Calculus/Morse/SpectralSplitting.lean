@@ -35,12 +35,11 @@ negative-gradient field, supplied by
 * `ContDiffAt.map_neg_hessianOperator_stableLinearSubspace_le` and
   `ContDiffAt.map_neg_hessianOperator_unstableLinearSubspace_le`: both subspaces are invariant
   under the negative-gradient linearization `-hessianOperator f x`.
-* `TauCeti.IsNondegenerateCriticalPoint.isCompl_unstableLinearSubspace_stableLinearSubspace`: at a
-  nondegenerate critical point these subspaces are complementary, so the tangent space is their
-  direct sum.
+* `ContDiffAt.isCompl_unstableLinearSubspace_stableLinearSubspace`: when the Hessian is injective
+  these subspaces are complementary, so the tangent space is their direct sum.
 * `ContDiffAt.finrank_unstableLinearSubspace`: the unstable dimension is the Morse index.
-* `TauCeti.IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex`: the stable
-  dimension plus the Morse index is the ambient dimension.
+* `ContDiffAt.finrank_stableLinearSubspace_add_morseIndex`: the stable dimension plus the Morse
+  index is the ambient dimension.
 
 ## References
 
@@ -187,33 +186,26 @@ theorem finrank_unstableLinearSubspace (hf : ContDiffAt ℝ 2 f x) :
     hf.isSelfAdjoint_hessianOperator.isSymmetric.finrank_negativeSpectralSubspace,
     hf.morseIndex_eq_ncard_hessianOperator_eigenvalues_neg]
 
-end ContDiffAt
+/-- When the Hessian is injective, the unstable and stable linear subspaces are complementary,
+so the tangent space is their direct sum. Injectivity excludes the zero eigenspace; at a
+nondegenerate critical point it comes from
+`TauCeti.IsNondegenerateCriticalPoint.isInvertible_hessianOperator`. -/
+theorem isCompl_unstableLinearSubspace_stableLinearSubspace (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    IsCompl hf.unstableLinearSubspace hf.stableLinearSubspace := by
+  rw [unstableLinearSubspace_def, stableLinearSubspace_def]
+  exact hf.isSelfAdjoint_hessianOperator.isSymmetric
+    |>.isCompl_negativeSpectralSubspace_positiveSpectralSubspace_of_ker_eq_bot rfl hker
 
-namespace TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {f : E → ℝ} {x : E}
-
-/-- At a nondegenerate critical point, the unstable and stable linear subspaces are
-complementary, so the tangent space is their direct sum. Nondegeneracy excludes the zero
-eigenspace. -/
-theorem IsNondegenerateCriticalPoint.isCompl_unstableLinearSubspace_stableLinearSubspace
-    (h : IsNondegenerateCriticalPoint f x) :
-    IsCompl h.contDiffAt.unstableLinearSubspace h.contDiffAt.stableLinearSubspace := by
-  rw [ContDiffAt.unstableLinearSubspace_def, ContDiffAt.stableLinearSubspace_def]
-  exact h.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
-    |>.isCompl_negativeSpectralSubspace_positiveSpectralSubspace_of_ker_eq_bot rfl
-      (LinearMap.ker_eq_bot.mpr h.isInvertible_hessianOperator.injective)
-
-/-- At a nondegenerate critical point, the dimension of the stable linear subspace plus the Morse
+/-- When the Hessian is injective, the dimension of the stable linear subspace plus the Morse
 index is the dimension of the ambient tangent space. -/
-theorem IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex
-    (h : IsNondegenerateCriticalPoint f x) :
-    Module.finrank ℝ h.contDiffAt.stableLinearSubspace + morseIndex f x =
-      Module.finrank ℝ E := by
-  rw [← h.contDiffAt.finrank_unstableLinearSubspace, add_comm]
-  exact Submodule.finrank_add_eq_of_isCompl h.isCompl_unstableLinearSubspace_stableLinearSubspace
+theorem finrank_stableLinearSubspace_add_morseIndex (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    Module.finrank ℝ hf.stableLinearSubspace + morseIndex f x = Module.finrank ℝ E := by
+  rw [← hf.finrank_unstableLinearSubspace, add_comm]
+  exact Submodule.finrank_add_eq_of_isCompl (hf.isCompl_unstableLinearSubspace_stableLinearSubspace
+    hker)
 
-end TauCeti
+end ContDiffAt
 
 end
