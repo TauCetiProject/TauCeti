@@ -41,8 +41,8 @@ an admissible finite presentation in `A` and pass from `A(T/s)` to the completed
 
 ## Provenance
 
-The proof uses Mathlib's `IsLocalization.Away.sec`, which chooses a numerator and denominator
-exponent for each element of a localization. No external formalization was used.
+The proof uses Mathlib's `IsLocalization.exist_integer_multiples_of_finset` to clear a finite
+family of denominators. No external formalization was used.
 -/
 
 public section
@@ -67,27 +67,36 @@ theorem exists_comap_preimage_rationalSubset_eq [TopologicalSpace A] [Topologica
       comap (algebraMap A S) ⁻¹' rationalSubset Aplus V r ∩ spa Bplus =
         rationalSubset Bplus U q := by
   classical
-  obtain ⟨n, a, hclear⟩ := exists_finset_mul_pow_eq_algebraMap s (insert q U)
-  let d : S := algebraMap A S s ^ n
+  obtain ⟨d, hd⟩ :=
+    IsLocalization.exist_integer_multiples_of_finset (Submonoid.powers s) (insert q U)
+  let a : S → A := fun x ↦ if hx : x ∈ insert q U then (hd x hx).choose else 0
+  let dS : S := algebraMap A S d
   let V : Finset A := U.image a
   let r : A := a q
-  have hq : q * d = algebraMap A S r := hclear q (Finset.mem_insert_self q U)
-  have hV : V.image (algebraMap A S) = U.image fun u ↦ u * d := by
+  have hclear (x : S) (hx : x ∈ insert q U) : x * dS = algebraMap A S (a x) := by
+    rw [show a x = (hd x hx).choose by
+      dsimp only [a]
+      split
+      · congr 1
+      · contradiction]
+    simpa only [dS, Algebra.smul_def, mul_comm] using (hd x hx).choose_spec.symm
+  have hq : q * dS = algebraMap A S r := hclear q (Finset.mem_insert_self q U)
+  have hV : V.image (algebraMap A S) = U.image fun u ↦ u * dS := by
     ext x
     constructor
     · intro hx
       obtain ⟨b, hb, rfl⟩ := Finset.mem_image.mp hx
       obtain ⟨u, hu, rfl⟩ := Finset.mem_image.mp hb
       exact Finset.mem_image.mpr ⟨u, hu, by
-        simpa only [d] using hclear u (Finset.mem_insert_of_mem hu)⟩
+        simpa only using hclear u (Finset.mem_insert_of_mem hu)⟩
     · intro hx
       obtain ⟨u, hu, rfl⟩ := Finset.mem_image.mp hx
       exact Finset.mem_image.mpr ⟨a u, Finset.mem_image_of_mem a hu,
-        by simpa only [d] using (hclear u (Finset.mem_insert_of_mem hu)).symm⟩
+        by simpa only using (hclear u (Finset.mem_insert_of_mem hu)).symm⟩
   refine ⟨V, r, ?_⟩
   rw [comap_preimage_rationalSubset_inter_spa (algebraMap A S) hcont hplus]
-  rw [hV, ← hq, rationalSubset_image_mul_right Bplus U q d
-    (IsUnit.pow _ (IsLocalization.Away.algebraMap_isUnit s))]
+  rw [hV, ← hq, rationalSubset_image_mul_right Bplus U q dS
+    (IsLocalization.map_units S d)]
 
 /-- **Rational subsets through the topological-localization homeomorphism.** Every rational
 subset of `Spa(A(T/s), A(T/s)⁺)` is the inverse image, under the canonical homeomorphism with
@@ -124,6 +133,8 @@ theorem exists_spaLocalizationHomeomorph_preimage_rationalSubset_eq
   refine ⟨V, r, Set.ext fun v ↦ ?_⟩
   have hpoint := Set.ext_iff.mp hVr v.1
   rw [Set.mem_preimage, Set.mem_preimage, spaLocalizationHomeomorph_apply_val]
+  -- The remaining definitional change only unfolds the two subtype preimages: `v` carries its
+  -- membership in `spa Bplus`, while `hVr` is stated for the underlying point `v.1 : Spv S`.
   change comap (algebraMap A S) v.1 ∈ rationalSubset Aplus V r ↔
     v.1 ∈ rationalSubset Bplus U q
   exact ⟨fun hv ↦ hpoint.mp ⟨hv, v.2⟩, fun hv ↦ (hpoint.mpr hv).1⟩

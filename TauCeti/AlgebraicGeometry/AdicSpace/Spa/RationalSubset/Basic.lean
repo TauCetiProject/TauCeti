@@ -222,8 +222,7 @@ open scoped Classical in
 /-- **Multiplying a presentation by a unit changes nothing.** If `u` is a unit, then multiplying
 every numerator and the denominator of `R(T/s)` by `u` gives the same rational subset.
 
-No injectivity of `t ↦ t * u` is needed: membership in `Finset.image` supplies the forward
-representative, and the original numerator itself supplies the reverse one. -/
+No injectivity of `t ↦ t * u` is needed. -/
 @[simp]
 theorem rationalSubset_image_mul_right (Aplus : Subring A) (T : Finset A) (s u : A)
     (hu : IsUnit u) :

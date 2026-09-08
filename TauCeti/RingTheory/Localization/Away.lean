@@ -39,8 +39,6 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   splits as `(a · r)/s · (b · u)/s`, each half carrying one factor of the denominator.
 * `TauCeti.Localization.awayLift_divBy`: the comparison map to a localisation at a multiple
   `w = u * r` rescales fractions by the cofactor, sending `a/u` to `(a · r)/w`.
-* `TauCeti.Localization.exists_finset_mul_pow_eq_algebraMap`: a finite family in an away
-  localization has a common denominator which is a power of the distinguished element.
 
 ## Provenance
 
@@ -56,8 +54,6 @@ is `TauCeti/RingTheory/Huber/LocalizationTopology/Basic.lean`, which records the
 checked against `dev/adic-spaces` at commit `37bbdaeb9`, which has neither the splitting identity
 for a factored denominator nor any statement about `IsLocalization.Away.lift` on distinguished
 fractions. Both are proved here directly from Mathlib's `mk'` API.
-`exists_finset_mul_pow_eq_algebraMap` is also developed here: its proof applies Mathlib's
-`IsLocalization.Away.sec` to a finite family and sums the resulting exponents.
 
 ## References
 
@@ -203,29 +199,6 @@ theorem awayLift_divBy {V W : Type*} [CommSemiring V] [CommSemiring W] [Algebra 
     IsLocalization.Away.lift u hu (divBy a u : V) = (divBy (a * r) w : W) := by
   rw [divBy_def, IsLocalization.Away.lift, IsLocalization.lift_mk'_spec, ← divBy_mul,
     show u * (a * r) = a * w by rw [hw]; ring, divBy_mul_cancel_right]
-
-/-! ### Common denominators -/
-
-open scoped Classical in
-/-- **A finite family in an away localization has a common denominator.** Every element of `T`
-becomes the image of an element of `A` after multiplication by one fixed power of `s`.
-
-Mathlib's `IsLocalization.Away.sec` supplies a possibly different exponent for each element.
-Their sum is a common exponent: multiplying the corresponding numerator by the complementary
-power of `s` gives the required representative. -/
-theorem exists_finset_mul_pow_eq_algebraMap (T : Finset S) :
-    ∃ (n : ℕ) (a : S → A),
-      ∀ x ∈ T, x * algebraMap A S s ^ n = algebraMap A S (a x) := by
-  classical
-  let e : S → ℕ := fun x ↦ (IsLocalization.Away.sec s x).2
-  let n : ℕ := T.sum e
-  let a : S → A := fun x ↦ (IsLocalization.Away.sec s x).1 * s ^ (n - e x)
-  refine ⟨n, a, fun x hx ↦ ?_⟩
-  have he : e x ≤ n := Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) hx
-  have hpow : e x + (n - e x) = n := Nat.add_sub_of_le he
-  dsimp only [a]
-  rw [map_mul, map_pow, ← IsLocalization.Away.sec_spec s x, mul_assoc, map_pow,
-    ← pow_add, hpow]
 
 /-! ### The trivial denominator
 
