@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.Data.Int.Cast.Lemmas
-public import Mathlib.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Evaluating a Laurent polynomial at a unit of a not necessarily commutative algebra
@@ -30,10 +29,7 @@ The module-theoretic use is `TauCeti.laurentTAut`: on any `R[T;T⁻¹]`-module, 
 monoid, and that automorphism is what a shift-compatible invariant is compared against.
 
 Evaluation also lets a module of the target algebra be read as an `R[T;T⁻¹]`-module, by
-`TauCeti.laurentEvalModule`.  Over `ℤ` this is the coefficient module along which
-`TauCeti.LaurentSpecialization` extends scalars: `ℤ ⊗[ℤ[q,q⁻¹]] M` is the specialization of a
-`ℤ[q,q⁻¹]`-module `M` at `q = a`, and its universal property turns an additive map on `M` that
-evaluates Laurent scalars into a map on the specialization.
+`TauCeti.laurentEvalModule`.
 
 ## Main definitions
 
@@ -43,9 +39,6 @@ evaluates Laurent scalars into a map on the specialization.
   automorphism.
 * `TauCeti.laurentEvalModule`: the `R[T;T⁻¹]`-module structure induced on an `A`-module by
   evaluating the variable at a unit of `A`.
-* `TauCeti.LaurentSpecialization`: extension of scalars of a `ℤ[q,q⁻¹]`-module along evaluation
-  at an integer unit, together with `TauCeti.LaurentSpecialization.mk` and its universal property
-  `TauCeti.LaurentSpecialization.desc`.
 
 ## Main results
 
@@ -54,9 +47,6 @@ evaluates Laurent scalars into a map on the specialization.
   `LaurentPolynomial.eval₂`.
 * `TauCeti.laurentPolynomialC_smul`: a constant Laurent polynomial acts by integer scalar
   multiplication.
-* `TauCeti.LaurentSpecialization.mk_smul`: Laurent scalars evaluate under specialization.
-* `TauCeti.LaurentSpecialization.hom_ext_mk`: additive maps out of a specialization are determined
-  on the canonical image.
 
 ## References
 
@@ -212,107 +202,5 @@ lemma laurentPolynomialC_smul (a : ℤ) (x : N) :
   congr 1
 
 end Constants
-
-section Specialization
-
-variable (M : Type*) [AddCommGroup M] [Module (LaurentPolynomial ℤ) M] (a : ℤˣ)
-
-/-- **A `ℤ[q,q⁻¹]`-module specialized at the integer unit `a`.**  This is extension of scalars
-from `ℤ[q,q⁻¹]` to `ℤ` along evaluation at `q = a`. -/
-noncomputable abbrev LaurentSpecialization : Type _ :=
-  @TensorProduct (LaurentPolynomial ℤ) inferInstance ℤ M inferInstance inferInstance
-    (laurentEvalModule (R := ℤ) a ℤ) inferInstance
-
-namespace LaurentSpecialization
-
-noncomputable instance : AddCommGroup (LaurentSpecialization M a) := inferInstanceAs
-  (AddCommGroup
-    (@TensorProduct (LaurentPolynomial ℤ) inferInstance ℤ M inferInstance inferInstance
-      (laurentEvalModule (R := ℤ) a ℤ) inferInstance))
-
-/-- The canonical additive map from a `ℤ[q,q⁻¹]`-module to its specialization. -/
-noncomputable def mk : M →+ LaurentSpecialization M a := by
-  let _ : Module (LaurentPolynomial ℤ) ℤ := laurentEvalModule (R := ℤ) a ℤ
-  exact (TensorProduct.mk (LaurentPolynomial ℤ) ℤ M 1).toAddMonoidHom
-
-private theorem mk_apply (x : M) :
-    mk M a x =
-      @TensorProduct.tmul (LaurentPolynomial ℤ) inferInstance ℤ M inferInstance inferInstance
-        (laurentEvalModule (R := ℤ) a ℤ) inferInstance 1 x :=
-  (rfl)
-
-/-- **Laurent scalars evaluate under specialization.** -/
-@[simp]
-theorem mk_smul (p : LaurentPolynomial ℤ) (x : M) :
-    mk M a (p • x) = (laurentEval a p : ℤ) • mk M a x := by
-  let _ : Module (LaurentPolynomial ℤ) ℤ := laurentEvalModule (R := ℤ) a ℤ
-  have hsmul : ∀ n : ℤ, p • n = (laurentEval a p : ℤ) • n := fun n =>
-    laurentEvalModule_smul (R := ℤ) a p n
-  calc
-    mk M a (p • x) = (p • (1 : ℤ)) ⊗ₜ[LaurentPolynomial ℤ] x :=
-      TensorProduct.tmul_smul p 1 x
-    _ = ((laurentEval a p : ℤ) • (1 : ℤ)) ⊗ₜ[LaurentPolynomial ℤ] x := by
-      rw [hsmul]
-    _ = (laurentEval a p : ℤ) •
-        @TensorProduct.tmul (LaurentPolynomial ℤ) inferInstance ℤ M inferInstance inferInstance
-          (laurentEvalModule (R := ℤ) a ℤ) inferInstance 1 x :=
-      (TensorProduct.smul_tmul' _ _ _).symm
-    _ = (laurentEval a p : ℤ) • mk M a x := by
-      rw [mk_apply]
-
-section UniversalProperty
-
-variable {G : Type*} [AddCommGroup G]
-
-/-- **The universal map out of a specialization.**  An additive map out of `M` factors through
-evaluation at `a` when it sends Laurent scalar multiplication to multiplication by the evaluated
-integer. -/
-noncomputable def desc (f : M →+ G)
-    (hf : ∀ (p : LaurentPolynomial ℤ) (x : M), f (p • x) = (laurentEval a p : ℤ) • f x) :
-    LaurentSpecialization M a →+ G := by
-  let _ : Module (LaurentPolynomial ℤ) ℤ := laurentEvalModule (R := ℤ) a ℤ
-  refine TensorProduct.liftAddHom ((smulAddHom ℤ (M →+ G)).flip f) ?_
-  intro p n x
-  have hsmul : ∀ m : ℤ, p • m = (laurentEval a p : ℤ) • m := fun m =>
-    laurentEvalModule_smul (R := ℤ) a p m
-  simp only [AddMonoidHom.flip_apply, smulAddHom_apply, AddMonoidHom.smul_apply]
-  rw [hf, hsmul]
-  simp [mul_smul, Int.mul_comm]
-
-/-- **`desc` restricts to `f` on the canonical image**: the universal map out of the
-specialization agrees with `f` on every class of the form `mk M a x`. -/
-@[simp]
-theorem desc_mk (f : M →+ G)
-    (hf : ∀ (p : LaurentPolynomial ℤ) (x : M), f (p • x) = (laurentEval a p : ℤ) • f x) (x : M) :
-    desc M a f hf (mk M a x) = f x := by
-  let _ : Module (LaurentPolynomial ℤ) ℤ := laurentEvalModule (R := ℤ) a ℤ
-  rw [desc, mk_apply, TensorProduct.liftAddHom_tmul]
-  simp
-
-/-- **Additive maps out of a specialization are determined by their values on the canonical
-image.** -/
-theorem hom_ext_mk {f g : LaurentSpecialization M a →+ G}
-    (h : ∀ x : M, f (mk M a x) = g (mk M a x)) : f = g := by
-  let _ : Module (LaurentPolynomial ℤ) ℤ := laurentEvalModule (R := ℤ) a ℤ
-  ext z
-  induction z using TensorProduct.induction_on with
-  | zero => simp
-  | tmul n x =>
-      have hn : n ⊗ₜ[LaurentPolynomial ℤ] x =
-          n • (1 ⊗ₜ[LaurentPolynomial ℤ] x) := by
-        calc
-          n ⊗ₜ[LaurentPolynomial ℤ] x = (n • (1 : ℤ)) ⊗ₜ[LaurentPolynomial ℤ] x := by
-            simp
-          _ = n • (1 ⊗ₜ[LaurentPolynomial ℤ] x) :=
-            (TensorProduct.smul_tmul' _ _ _).symm
-      rw [hn, map_zsmul, map_zsmul]
-      exact congrArg (n • ·) (h x)
-  | add x y hx hy => simp [hx, hy]
-
-end UniversalProperty
-
-end LaurentSpecialization
-
-end Specialization
 
 end TauCeti
