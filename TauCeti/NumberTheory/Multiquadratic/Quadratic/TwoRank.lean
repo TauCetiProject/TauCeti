@@ -200,26 +200,16 @@ theorem card_sub_one_le_narrowTwoRank {s : Finset ℤ}
   · simp
   obtain ⟨P₀, hP₀⟩ := hne
   -- The family of singleton genus characters, and the coordinate-sum functional.
-  set Φ := genusCharFunElementaryTwoQuotientFamilyLinearMap hs heven hprod hmin hgen hsf with hΦ
+  set Φ := genusCharFunElementaryTwoQuotientFamilyLinearMap hs heven hprod hmin hgen hsf
   let σ : ((P : ↥s) → Additive ℤˣ) →ₗ[ZMod 2] Additive ℤˣ := ∑ P : ↥s, LinearMap.proj P
   have hσ : ∀ v, σ v = ∑ P : ↥s, v P := fun v => by simp [σ]
   -- Every vector of coordinate sum `0` is a value of `Φ`.
   have hker : LinearMap.ker σ ≤ LinearMap.range Φ := by
     intro v hv
     rw [LinearMap.mem_ker, hσ] at hv
-    let ε : ℤ → ℤˣ := fun P => if h : P ∈ s then Additive.toMul (v ⟨P, h⟩) else 1
-    have hε : ∏ P ∈ s, ε P = 1 := by
-      have hprodε : ∏ P ∈ s, ε P = ∏ P : ↥s, Additive.toMul (v P) := by
-        rw [← Finset.prod_coe_sort s]
-        exact Finset.prod_congr rfl fun P _ => by simp [ε, P.2]
-      rw [hprodε, ← toMul_sum, hv, toMul_zero]
-    obtain ⟨A, hA⟩ :=
-      exists_forall_genusCharFunNarrowClassGroupHom_singleton_eq hs heven hprod hmin hgen hsf ε hε
-    refine ⟨TauCeti.elementaryTwoQuotientMk A, ?_⟩
-    funext P
-    rw [hΦ, genusCharFunElementaryTwoQuotientFamilyLinearMap_apply,
-      genusCharFunElementaryTwoQuotientLinearMap_mk, hA P P.2]
-    simp [ε, P.2]
+    obtain ⟨x, hx⟩ :=
+      exists_genusCharFunElementaryTwoQuotientFamilyLinearMap_eq hs heven hprod hmin hgen hsf v hv
+    exact ⟨x, hx⟩
   -- Dimension count: the hyperplane has dimension `t - 1`.
   have hW : Module.finrank (ZMod 2) ((P : ↥s) → Additive ℤˣ) = s.card := by
     rw [Module.finrank_pi_fintype, TauCeti.finrank_zmod_two_additive_intUnits]
