@@ -102,7 +102,8 @@ private theorem evalIntAddEquiv_apply (n : evalIntModule a) : evalIntAddEquiv a 
 private noncomputable def evalIntOne (a : ℤˣ) : evalIntModule a :=
   (evalIntAddEquiv a).symm 1
 
-@[simp]
+-- Not a `simp` lemma: `evalIntAddEquiv_apply` already rewrites the left-hand side, so the
+-- pair is not simp-normal. It is passed explicitly to the `simp only` calls that need it.
 private theorem evalIntAddEquiv_one : evalIntAddEquiv a (evalIntOne a) = 1 := by
   simp [evalIntOne]
 
