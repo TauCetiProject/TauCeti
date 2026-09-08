@@ -243,14 +243,15 @@ theorem exists_degreeClass_mem_Ico_and_classGroupHom_eq (hF : IsFunctionField k 
   obtain ⟨c, hc⟩ := classGroupHom_surjective (R := R) hF x
   have hd : (0 : ℤ) < (P.degree : ℤ) := by
     exact_mod_cast P.one_le_degree_of_isFunctionField hF
+  have hmod : degreeClass hF c - degreeClass hF c / (P.degree : ℤ) * (P.degree : ℤ)
+      = degreeClass hF c % (P.degree : ℤ) :=
+    (eq_sub_of_add_eq (Int.emod_add_ediv_mul _ _)).symm
   refine ⟨c - (degreeClass hF c / (P.degree : ℤ)) •
     (Place.orderSystem hF).divisorClass (WeilDivisor.ofPoint P), ⟨?_, ?_⟩, ?_⟩
-  · rw [map_sub, map_zsmul, degreeClass_divisorClass, degree_ofPoint, smul_eq_mul, sub_nonneg]
-    exact Int.ediv_mul_le _ hd.ne'
-  · rw [map_sub, map_zsmul, degreeClass_divisorClass, degree_ofPoint, smul_eq_mul]
-    have h := Int.lt_ediv_add_one_mul_self (degreeClass hF c) hd
-    rw [add_mul, one_mul] at h
-    linarith
+  · rw [map_sub, map_zsmul, degreeClass_divisorClass, degree_ofPoint, smul_eq_mul, hmod]
+    exact Int.emod_nonneg _ hd.ne'
+  · rw [map_sub, map_zsmul, degreeClass_divisorClass, degree_ofPoint, smul_eq_mul, hmod]
+    exact Int.emod_lt_of_pos _ hd
   · rw [map_sub, map_zsmul,
       classGroupHom_divisorClass_ofPoint_of_exists_notMem_integers hF hP, smul_zero, sub_zero, hc]
 

@@ -99,8 +99,8 @@ variable (R) in
 /-- **With a rational place at infinity, the class number of the model divides the class number of
 `F / k`**: the ideal class group of the model is then a quotient of `Cl⁰(F)`
 (`TauCeti.Divisor.classGroupHom_comp_subtype_surjective`).  The statement carries content when
-`Cl⁰(F)` is finite, for instance over a finite constant field; otherwise both class numbers are
-the junk value `0`. -/
+`Cl⁰(F)` is finite, for instance over a finite constant field; otherwise `classNumber hF` is the
+junk value `0` and the divisibility is vacuous. -/
 theorem card_classGroup_dvd_classNumber (hF : IsFunctionField k F) {P : Place k F}
     (hP : ∃ r : R, algebraMap R F r ∉ P.integers) (hdeg : P.degree = 1) :
     Nat.card (ClassGroup R) ∣ classNumber hF := by
