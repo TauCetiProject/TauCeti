@@ -8,7 +8,6 @@ module
 public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Lebesgue measure on the symmetric subspace
