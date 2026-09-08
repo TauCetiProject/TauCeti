@@ -62,6 +62,15 @@ theorem QuadraticMap.Isometry.baseChange_tmul (f : Q₁ →qᵢ Q₂) (a : A) (m
     QuadraticMap.Isometry.baseChange f A (a ⊗ₜ m) = a ⊗ₜ f m :=
   LinearMap.baseChange_tmul f.toLinearMap a m
 
+/-- The linear map underlying a base-changed isometry is the base change of the original linear
+map. -/
+@[simp]
+theorem QuadraticMap.Isometry.baseChange_toLinearMap (f : Q₁ →qᵢ Q₂) :
+    (QuadraticMap.Isometry.baseChange f A).toLinearMap = f.toLinearMap.baseChange A := by
+  apply TensorProduct.AlgebraTensorModule.ext
+  intro a m
+  simp
+
 /-- Base change sends the identity isometry to the identity isometry. -/
 @[simp]
 theorem QuadraticMap.Isometry.baseChange_id (Q : _root_.QuadraticForm R M) :
@@ -103,6 +112,40 @@ theorem QuadraticMap.IsometryEquiv.baseChange_tmul
     QuadraticMap.IsometryEquiv.baseChange f A (a ⊗ₜ m) = a ⊗ₜ f m := by
   exact _root_.LinearEquiv.baseChange_tmul R A M N (e := f.toLinearEquiv) a m
 
+/-- The linear equivalence underlying a base-changed isometric equivalence is the base change of
+the original linear equivalence. -/
+@[simp]
+theorem QuadraticMap.IsometryEquiv.baseChange_toLinearEquiv (f : Q₁.IsometryEquiv Q₂) :
+    (QuadraticMap.IsometryEquiv.baseChange f A).toLinearEquiv =
+      f.toLinearEquiv.baseChange R A := by
+  apply LinearEquiv.toLinearMap_injective
+  apply TensorProduct.AlgebraTensorModule.ext
+  intro a m
+  simp
+
+/-- Passing from a base-changed isometric equivalence to an isometry commutes with base change. -/
+@[simp]
+theorem QuadraticMap.IsometryEquiv.baseChange_toIsometry (f : Q₁.IsometryEquiv Q₂) :
+    (QuadraticMap.IsometryEquiv.baseChange f A).toIsometry =
+      QuadraticMap.Isometry.baseChange f.toIsometry A := by
+  apply _root_.QuadraticMap.Isometry.ext
+  intro x
+  change (QuadraticMap.IsometryEquiv.baseChange f A).toLinearEquiv x =
+    (QuadraticMap.Isometry.baseChange f.toIsometry A).toLinearMap x
+  rw [QuadraticMap.IsometryEquiv.baseChange_toLinearEquiv,
+    QuadraticMap.Isometry.baseChange_toLinearMap]
+  have hbase : (f.toLinearEquiv.baseChange R A M N).toLinearMap =
+      f.toLinearEquiv.toLinearMap.baseChange A :=
+    _root_.LinearEquiv.coe_baseChange R A M N f.toLinearEquiv
+  have h : f.toLinearEquiv.toLinearMap = f.toIsometry.toLinearMap := by
+    apply LinearMap.ext
+    intro m
+    exact (_root_.QuadraticMap.IsometryEquiv.toIsometry_apply f m).symm
+  calc
+    _ = (f.toLinearEquiv.baseChange R A M N).toLinearMap x := rfl
+    _ = (f.toLinearEquiv.toLinearMap.baseChange A) x := DFunLike.congr_fun hbase x
+    _ = (f.toIsometry.toLinearMap.baseChange A) x := by rw [h]
+
 /-- Base change sends the identity isometric equivalence to the identity equivalence. -/
 @[simp]
 theorem QuadraticMap.IsometryEquiv.baseChange_refl (Q : _root_.QuadraticForm R M) :
@@ -110,10 +153,11 @@ theorem QuadraticMap.IsometryEquiv.baseChange_refl (Q : _root_.QuadraticForm R M
       _root_.QuadraticMap.IsometryEquiv.refl (Q.baseChange A) := by
   apply DFunLike.ext _ _
   intro x
-  induction x using TensorProduct.induction_on with
-  | zero => simp
-  | tmul a m => rfl
-  | add x y hx hy => simp [hx, hy]
+  have h : (QuadraticMap.IsometryEquiv.baseChange
+      (_root_.QuadraticMap.IsometryEquiv.refl Q) A).toLinearEquiv.toLinearMap =
+      (_root_.QuadraticMap.IsometryEquiv.refl (Q.baseChange A)).toLinearEquiv.toLinearMap :=
+    LinearMap.baseChange_id
+  exact DFunLike.congr_fun h x
 
 /-- Base change commutes with composition of isometric equivalences. -/
 @[simp]
