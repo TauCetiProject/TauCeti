@@ -32,6 +32,8 @@ The reconstruction is total: entries after the last genuine visit use the junk v
   up to that time.
 * `TauCeti.successorArray_visitCount`: the defining step relation of the successor array.
 * `TauCeti.visitTime_eq_iff`: the fibres of the visit times, including the junk-value branch.
+* `TauCeti.successorArray_eq_successorArray_zero_of_forall_ne`: the successor row of a value the
+  sequence never visits is constant, and repeats the cell the starting value indexes.
 * `TauCeti.apply_visitTime_of_infinite` and `TauCeti.visitTime_strictMono_of_infinite`: visit
   times are genuine and strictly increasing when the value occurs infinitely often.
 * `TauCeti.apply_visitTime_of_le` and `TauCeti.visitTime_lt_visitTime_of_le`: the same two facts
@@ -282,6 +284,30 @@ theorem visitTime_strictMono_of_infinite (h : {n | x n = a}.Infinite) :
 @[simp]
 theorem visitTime_zero_of_eq (h : x 0 = a) : visitTime x a 0 = 0 := by
   rw [visitTime_def, Nat.nth_zero_of_zero h]
+
+/-- **A value the sequence never takes has junk visit times.** Every one of them is `Nat.nth`'s
+junk value `0`, so the whole successor row of such a value is read off at time zero. -/
+theorem visitTime_eq_zero_of_forall_ne (h : ∀ n, x n ≠ a) : visitTime x a k = 0 :=
+  visitTime_eq_iff.2 (Or.inr ⟨rfl, fun n hn => h n hn.1⟩)
+
+/-- **The successor row of a value the sequence never visits is constant**, equal to the
+sequence's entry at time one. -/
+theorem successorArray_eq_of_forall_ne (h : ∀ n, x n ≠ a) : successorArray x a k = x 1 := by
+  rw [successorArray_def, visitTime_eq_zero_of_forall_ne h]
+
+/-- The zeroth successor of a value the sequence starts at is its entry at time one. -/
+theorem successorArray_zero_of_eq (h : x 0 = a) : successorArray x a 0 = x 1 := by
+  rw [successorArray_def, visitTime_zero_of_eq h]
+
+/-- **An unvisited row of the successor array duplicates the cell `(x 0, 0)`.** The row of a value
+the sequence never takes carries no information of its own: each of its entries repeats the first
+successor of the value the sequence starts at.
+
+This ties two cells of the successor array of every sequence, so a reindexing that moves the
+second of them does not preserve the array. -/
+theorem successorArray_eq_successorArray_zero_of_forall_ne (h : ∀ n, x n ≠ a) :
+    successorArray x a k = successorArray x (x 0) 0 := by
+  rw [successorArray_eq_of_forall_ne h, successorArray_zero_of_eq rfl]
 
 -- The single counting step behind the `*_of_lt_visitCount` family: below the visit count at some
 -- horizon there are at least that many visits in total.
