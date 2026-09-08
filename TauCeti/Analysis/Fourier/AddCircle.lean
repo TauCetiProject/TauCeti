@@ -276,7 +276,7 @@ theorem fourierPontryaginDualEquiv_apply (n : Multiplicative ℤ) :
 /-- The inverse of `TauCeti.fourierPontryaginDualEquiv` returns the Fourier index of a continuous
 character: the monomial at that index is the character one started from. -/
 @[simp]
-theorem fourierPontryaginDualEquiv_symm_apply
+theorem fourierPontryaginDualEquiv_apply_symm_apply
     (ψ : PontryaginDual (Multiplicative (AddCircle T))) :
     fourierPontryaginDual (Multiplicative.toAdd (fourierPontryaginDualEquiv.symm ψ)) = ψ :=
   fourierPontryaginDualEquiv.apply_symm_apply ψ
