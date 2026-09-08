@@ -7,10 +7,7 @@ module
 
 public import TauCeti.Analysis.CompletelyMonotone.Stieltjes.Basic
 public import TauCeti.Analysis.CompletelyMonotone.Bernstein.OpenHalfLine
--- Non-public: Tonelli swaps the two exponential integrations.
-import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Integral.ExpDecay
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
 # Stieltjes functions are the Laplace transforms of completely monotone functions
@@ -95,46 +92,6 @@ theorem integrable_exp_neg_mul_of_integrable_stieltjesWeight
   rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), stieltjesWeight_apply, ← mul_inv,
     Real.exp_neg]
   exact (inv_le_inv₀ (Real.exp_pos _) (by positivity)).2 hkey
-
-/-! ## The inner exponential integral -/
-
-/-- **The Stieltjes kernel is an iterated exponential integral.**  Swapping the two integrations
-turns the outer Laplace integral of the inner one into the Stieltjes integral of `ν`. -/
-private theorem lintegral_ofReal_exp_neg_mul_mul_lintegral (ν : Measure ℝ≥0) [SFinite ν] {t : ℝ}
-    (ht : 0 < t) :
-    ∫⁻ s in Ioi (0 : ℝ), ENNReal.ofReal (Real.exp (-(t * s))) *
-        ∫⁻ x : ℝ≥0, ENNReal.ofReal (Real.exp (-(s * (x : ℝ)))) ∂ν
-      = ∫⁻ x : ℝ≥0, ENNReal.ofReal (t + (x : ℝ))⁻¹ ∂ν := by
-  have hmeas : AEMeasurable (Function.uncurry fun (s : ℝ) (x : ℝ≥0) =>
-      ENNReal.ofReal (Real.exp (-((t + (x : ℝ)) * s))))
-      ((volume.restrict (Ioi (0 : ℝ))).prod ν) := by
-    refine Measurable.aemeasurable ?_
-    simp only [Function.uncurry_def]
-    fun_prop
-  calc
-    ∫⁻ s in Ioi (0 : ℝ), ENNReal.ofReal (Real.exp (-(t * s))) *
-          ∫⁻ x : ℝ≥0, ENNReal.ofReal (Real.exp (-(s * (x : ℝ)))) ∂ν
-        = ∫⁻ s in Ioi (0 : ℝ), ∫⁻ x : ℝ≥0,
-            ENNReal.ofReal (Real.exp (-((t + (x : ℝ)) * s))) ∂ν := by
-          refine lintegral_congr fun s => ?_
-          rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-          refine lintegral_congr fun x => ?_
-          rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add]
-          congr 2
-          ring
-    _ = ∫⁻ x : ℝ≥0, (∫⁻ s in Ioi (0 : ℝ),
-          ENNReal.ofReal (Real.exp (-((t + (x : ℝ)) * s)))) ∂ν := lintegral_lintegral_swap hmeas
-    _ = ∫⁻ x : ℝ≥0, ENNReal.ofReal (t + (x : ℝ))⁻¹ ∂ν := by
-          refine lintegral_congr fun x => ?_
-          have htx : 0 < t + (x : ℝ) := add_pos_of_pos_of_nonneg ht x.coe_nonneg
-          have hint : IntegrableOn
-              (fun s : ℝ => Real.exp (-((t + (x : ℝ)) * s))) (Ioi 0) := by
-            simpa only [pow_zero, one_mul] using
-              integrableOn_pow_mul_exp_neg_mul_Ioi 0 htx
-          rw [← ofReal_integral_eq_lintegral_ofReal hint
-            (.of_forall fun s => (Real.exp_pos _).le)]
-          simpa using congrArg ENNReal.ofReal
-            (integral_pow_mul_exp_neg_mul_Ioi 0 htx)
 
 /-! ## The two transforms of a Laplace representing measure -/
 
