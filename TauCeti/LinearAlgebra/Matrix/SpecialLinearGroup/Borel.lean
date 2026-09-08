@@ -78,13 +78,12 @@ theorem apply_one_zero (g : SL2Borel R) :
   mem_iff.mp g.2
 
 /-- Apply a ring homomorphism entrywise to an upper-triangular determinant-one matrix. -/
-@[expose]
 def map {S : Type v} [CommRing S] (phi : R →+* S) : SL2Borel R →* SL2Borel S :=
   ((Matrix.SpecialLinearGroup.map phi).domRestrict (SL2Borel R)).codRestrict
     (SL2Borel S) fun g ↦ by
       rw [mem_iff]
-      change phi ((g : Matrix (Fin 2) (Fin 2) R) 1 0) = 0
-      rw [apply_one_zero, map_zero]
+      rw [MonoidHom.domRestrict_apply, Matrix.SpecialLinearGroup.map_apply_coe,
+        RingHom.mapMatrix_apply, Matrix.map_apply, apply_one_zero, map_zero]
 
 /-- The special-linear matrix underlying an entrywise-mapped Borel element is the entrywise map
 of its underlying matrix. -/
@@ -92,6 +91,31 @@ of its underlying matrix. -/
 theorem coe_map {S : Type v} [CommRing S] (phi : R →+* S) (g : SL2Borel R) :
     (map phi g : SL(2, S)) = Matrix.SpecialLinearGroup.map phi g.1 :=
   by simp only [map, MonoidHom.codRestrict_apply, MonoidHom.domRestrict_apply]
+
+/-- Entrywise application of a ring homomorphism to an upper-triangular determinant-one
+matrix. -/
+theorem map_apply {S : Type v} [CommRing S] (phi : R →+* S) (g : SL2Borel R)
+    (i j : Fin 2) :
+    (map phi g : SL(2, S)) i j = phi ((g : SL(2, R)) i j) := by
+  rw [coe_map, Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+    Matrix.map_apply]
+
+/-- Entrywise mapping along the identity ring homomorphism is the identity. -/
+@[simp]
+theorem map_id : map (RingHom.id R) = MonoidHom.id (SL2Borel R) := by
+  ext g i j
+  simp only [map_apply, RingHom.id_apply, MonoidHom.id_apply]
+
+/-- Successive entrywise maps agree with mapping along the composite ring homomorphism. -/
+@[simp]
+theorem map_comp {S T : Type*} [CommRing S] [CommRing T]
+    (f : R →+* S) (g : S →+* T) :
+    map (g.comp f) = (map g).comp (map f) := by
+  apply MonoidHom.ext
+  intro x
+  apply Subtype.ext
+  ext i j
+  simp only [map_apply, RingHom.coe_comp, Function.comp_apply, MonoidHom.coe_comp]
 
 /-- The canonical inclusion from the `SL₂` Borel to the `GL₂` Borel. -/
 def toGL2Borel : SL2Borel R →* GL2Borel R :=

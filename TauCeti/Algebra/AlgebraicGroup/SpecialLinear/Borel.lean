@@ -39,6 +39,10 @@ connectedness, and base-change compatibility are separate coordinate-geometric i
 
 * J. S. Milne, *Algebraic Groups* (2017), Chapters 12 and 21.
 * R. W. Carter, *Simple Groups of Lie Type* (1972), Section 8.2.
+* The Hopf ideal and point-subgroup construction adapts
+  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel`.
+* The maximal-solvability input is `TauCeti.SL2Borel.le_of_isSolvable_of_infinite` from
+  `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Borel`.
 -/
 
 public section
@@ -55,6 +59,14 @@ variable (R : Type u) [CommRing R]
 /-- The lower-left coordinate of the generic determinant-one `2 × 2` matrix. -/
 noncomputable def lowerLeftCoordinate : SpecialLinear.coordinateHopfAlgebra R 2 :=
   (SpecialLinear.coordinateMap R 2).hom (GeneralLinear.Borel.lowerLeftCoordinate R)
+
+/-- The lower-left coordinate is the image of its general-linear counterpart. -/
+theorem lowerLeftCoordinate_def :
+    lowerLeftCoordinate R =
+      (SpecialLinear.coordinateMap R 2).hom (GeneralLinear.Borel.lowerLeftCoordinate R) :=
+  by
+    unfold lowerLeftCoordinate
+    rfl
 
 /-- The Hopf ideal cutting out upper-triangular matrices inside `SL₂`.
 
@@ -162,7 +174,7 @@ theorem mem_definingPointsSubgroup_iff
 
 /-- The point subgroup cut out by the special-linear Borel ideal is the ordinary subgroup of
 upper-triangular determinant-one matrices. -/
-noncomputable def definingPointsSubgroupMulEquiv :
+private noncomputable def definingPointsSubgroupMulEquiv :
     CommHopfAlgCat.quotientPointsSubgroup
         (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R)
         (CommAlgCat.of R A) ≃*
