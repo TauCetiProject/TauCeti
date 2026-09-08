@@ -39,10 +39,11 @@ permutation that `TauCeti.TypeB2LieIndex.diagramPerm_toGraphTwistedIndex` comput
 diagram has no symmetry to twist by, its two nodes carrying different root lengths. On the Suzuki
 branch it is instead `τ ^ (2m+1)` for the special isogeny `τ` of the pinned `B₂` group scheme in
 characteristic two, which is not constructed here. That `τ` satisfies `τ ^ 2 = Frob_p` in the
-prime characteristic, and `Frob_p` is not the map supplied here: validity
-forces `1 ≤ m`, so the field order `q = 2 ^ (2m+1)` the index records is larger than the prime.
-What this file supplies is `Frob_q`, the map the odd power `τ ^ (2m+1)` squares to. Either way the
-map below is the `q`-power Frobenius at the field order the index records, taken on this carrier.
+prime characteristic. Both Frobenius maps are supplied below and they are different maps: validity
+forces `1 ≤ m`, so the field order `q = 2 ^ (2m+1)` the index records is larger than the prime `p`.
+`TauCeti.RankTwoBLieIndex.frobenius` is the `q`-power Frobenius, the map the odd power
+`τ ^ (2m+1)` squares to, and `TauCeti.RankTwoBLieIndex.primeFrobenius` is the `p`-power one that
+`τ` itself squares to.
 A Suzuki index reaches all of it through `TauCeti.SuzukiLieIndex.toRankTwoBLieIndex`.
 
 Neither branch gets a Steinberg endomorphism here. What is named below is named after what it is:
