@@ -17,8 +17,7 @@ level of measures.
 
 ## Main definitions and results
 
-* `TauCeti.Convexity.StdSimplex.multinomialCellProbability`: a cell weight as a unit-interval
-  parameter.
+* `TauCeti.Probability.multinomialCellProbability`: a cell weight as a unit-interval parameter.
 * `TauCeti.Probability.map_eval_multinomialMeasure`: a coordinate marginal is binomial.
 
 ## References
@@ -34,25 +33,20 @@ noncomputable section
 open Convexity MeasureTheory ProbabilityTheory
 open scoped ENNReal ProbabilityTheory
 
-namespace TauCeti.Convexity.StdSimplex
+namespace TauCeti.Probability
 
-variable {ι : Type*} [Fintype ι]
+variable {ι : Type*}
 
 /-- The probability of one cell of a multinomial parameter, regarded as a binomial parameter. -/
 def multinomialCellProbability (p : StdSimplex NNReal ι) (i : ι) : unitInterval :=
   ⟨(p.weights i : ℝ), by positivity, by exact_mod_cast p.weights_apply_le_one i⟩
 
-omit [Fintype ι] in
 /-- A multinomial cell probability has the value of the corresponding simplex weight. -/
 @[simp]
 theorem coe_multinomialCellProbability (p : StdSimplex NNReal ι) (i : ι) :
     (multinomialCellProbability p i : ℝ) = p.weights i := (rfl)
 
-end TauCeti.Convexity.StdSimplex
-
-namespace TauCeti.Probability
-
-variable {ι : Type*} [Fintype ι]
+variable [Fintype ι]
 
 open Classical in
 private lemma multinomialWeight_add_apply (w : ι → NNReal) (i : ι) (m q : ℕ)
@@ -173,7 +167,7 @@ private lemma sum_multinomialWeight_eq_apply (w : ι → NNReal) (n m : ℕ) (i 
 equal to that cell's weight. -/
 theorem map_eval_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) (i : ι) :
     (multinomialMeasure n p).map (fun k ↦ k i) =
-      Bin(n, TauCeti.Convexity.StdSimplex.multinomialCellProbability p i) := by
+      Bin(n, multinomialCellProbability p i) := by
   classical
   apply Measure.ext_of_singleton
   intro m
@@ -206,7 +200,7 @@ theorem map_eval_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) (i : ι
     sub_nonneg.mpr (by exact_mod_cast p.weights_apply_le_one i)
   rw [ENNReal.toReal_ofReal]
   · simp
-  · rw [TauCeti.Convexity.StdSimplex.coe_multinomialCellProbability]
+  · rw [coe_multinomialCellProbability]
     exact mul_nonneg (mul_nonneg (by positivity) (by positivity)) (pow_nonneg hcomp _)
 
 end TauCeti.Probability
