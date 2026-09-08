@@ -41,8 +41,6 @@ base-change identification
 
 * J. S. Milne, *Algebraic Groups* (2017), §§19.b and 24.6.
 * T. A. Springer, *Linear Algebraic Groups*, §§2.2, 2.4, and Chapter 8.
-* The ReductiveGroups roadmap, Layer 6 and its `Sp₂ₙ` worked example, which requests this
-  geometric `R_u = 1` proof in arbitrary characteristic.
 -/
 
 public section
@@ -64,6 +62,9 @@ private noncomputable def coordinateHopfAlgebraFiniteTypeObjIso
     coordinateHopfAlgebra R m ≅ (finiteTypeCoordinateHopfAlgebra R m).obj :=
   eqToIso (finiteTypeCoordinateHopfAlgebra_obj R m).symm
 
+-- The normal-unipotent elimination below adapts the proof architecture from
+-- `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Reductive` and
+-- `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Reductive`.
 /-- A normal smooth unipotent closed subgroup of `Sp₂ₘ` over an algebraically closed field is
 trivial. No positivity hypothesis on `m` is needed. -/
 theorem eq_augmentation_of_isNormal_of_smoothUnipotent
