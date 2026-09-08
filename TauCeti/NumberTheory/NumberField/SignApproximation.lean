@@ -100,6 +100,7 @@ theorem exists_forall_apply_eq_one_and_embedding_of_isReal_eq
   · dsimp only
     rw [dite_eq_left w.2, Subtype.coe_eta, map_intCast]
 
+omit [NumberField K] in
 /-- **An approximation of a target of absolute value one has the sign of that target.**  At a real
 place `w`, an element `x` within `1` of a target `y` with `w y = 1` has the same sign as `y` under
 the real embedding at `w`.
