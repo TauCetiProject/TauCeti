@@ -8,6 +8,9 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Unit
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Eval
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
+-- Proof-only: supplies `MvPowerSeries.aeval_rename`, the transport of an evaluation along a
+-- renaming, named in no statement here.
+import TauCeti.RingTheory.MvPowerSeries.Rename
 -- Proof-only: supplies the shared `constantCoeff_subst_pair_formalAdd`. Not redundant with the
 -- `Add.Inverse` and `Add.Assoc` imports below: both import `Add.PairSubst` non-`public`, so
 -- nothing it declares is re-exported through them.
@@ -451,29 +454,10 @@ theorem formalAddEval_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t₁ t₂ : O
 /-- **Commutativity of the group law at parameters**: `F(t₁, t₂) = F(t₂, t₁)`. -/
 theorem formalAddEval_comm {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
     (h₂ : PowerSeries.HasEval t₂) : W.formalAddEval t₁ t₂ = W.formalAddEval t₂ t₁ := by
-  have hpair := hasEval_pair h₁ h₂
-  have hfam : (fun s : Unit ⊕ Unit ↦ MvPowerSeries.aeval hpair
-        ((MvPowerSeries.X ∘ Sum.swap : Unit ⊕ Unit →
-          MvPowerSeries (Unit ⊕ Unit) O) s)) =
-      Sum.elim (fun _ ↦ t₂) fun _ ↦ t₁ := by
-    funext s
-    rcases s with _ | _ <;> simp [MvPowerSeries.coe_aeval]
-  have hev : MvPowerSeries.HasEval fun s : Unit ⊕ Unit ↦ MvPowerSeries.aeval hpair
-      ((MvPowerSeries.X ∘ Sum.swap : Unit ⊕ Unit →
-        MvPowerSeries (Unit ⊕ Unit) O) s) := by
-    rw [hfam]
-    exact hasEval_pair h₂ h₁
-  have hrename := MvPowerSeries.aeval_subst (MvPowerSeries.HasSubst.X_comp Sum.swap)
-    (MvPowerSeries.continuous_aeval hpair) hev W.formalAdd
-  have hcomm := congrArg (MvPowerSeries.aeval hpair) (rename_swap_formalAdd W)
-  rw [MvPowerSeries.rename_eq_subst] at hcomm
-  rw [hrename] at hcomm
-  have hswap : (fun s : Unit ⊕ Unit ↦
-      (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂) s.swap) = Sum.elim (fun _ ↦ t₂) fun _ ↦ t₁ := by
-    funext s
-    rcases s with _ | _ <;> rfl
-  simpa [formalAddEval, MvPowerSeries.coe_aeval, Algebra.algebraMap_self, hfam, hswap]
-    using hcomm.symm
+  have h := congrArg (MvPowerSeries.aeval (hasEval_pair h₁ h₂)) (rename_swap_formalAdd W)
+  rw [MvPowerSeries.aeval_rename Sum.swap (hasEval_pair h₁ h₂) (hasEval_pair h₂ h₁)
+    (by rintro (_ | _) <;> rfl)] at h
+  simpa [formalAddEval, MvPowerSeries.coe_aeval, Algebra.algebraMap_self] using h.symm
 
 /-- **Associativity of the group law at parameters**: `F(F(t₁, t₂), t₃) = F(t₁, F(t₂, t₃))`. -/
 theorem formalAddEval_assoc {t₁ t₂ t₃ : O} (h₁ : PowerSeries.HasEval t₁)

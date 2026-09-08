@@ -13,14 +13,15 @@ import TauCeti.RingTheory.MvPowerSeries.Substitution
 /-!
 # Renaming the variables of a multivariate power series
 
-Two gaps in Mathlib's `rename` API, each about comparing a renaming with another operation on the
-same series, and one consequence of them: that reindexing a two-variable series along
+Three gaps in Mathlib's `rename` API, each about comparing a renaming with another operation on
+the same series, and one consequence of them: that reindexing a two-variable series along
 `unitSumUnitEquivFinTwo` carries an associativity identity with it.
 
-Substituting after renaming is the substitution along the renamed index: Mathlib has both
-operations and the law that lets them be compared — `rename_eq_subst`, which says a renaming *is*
-the substitution sending each variable to a variable — but not the comparison itself, which is
-what a caller reindexing a series needs.
+Substituting after renaming is the substitution along the renamed index, and evaluating after
+renaming is the evaluation at the reindexed family: Mathlib has all these operations and the law
+that lets them be compared — `rename_eq_subst`, which says a renaming *is* the substitution
+sending each variable to a variable — but not the comparisons themselves, which is what a caller
+reindexing a series needs.
 
 Reading the coefficient of a single-variable monomial through a renaming along an embedding is
 likewise available only through `coeff_embDomain_rename`, which speaks about `Finsupp.embDomain`;
@@ -37,14 +38,16 @@ three-variable ambient ring as well, along `unitSumUnitSumUnitEquivFinThree`.
   substituting `g ∘ e` into `p`.
 * `MvPowerSeries.coeff_single_rename`: the coefficient of `rename e p` at the single-variable
   monomial `single (e i) n` is the coefficient of `p` at `single i n`, for any exponent `n`.
+* `MvPowerSeries.aeval_rename`: evaluating `rename e p` at a family reindexes the family, i.e. it
+  is evaluating `p` at that family precomposed with `e`.
 * `MvPowerSeries.rename_unitSumUnitEquivFinTwo_assoc`: reindexing a two-variable associative
   series from `Unit ⊕ Unit` to `Fin 2` preserves its associativity identity.
 
 ## Provenance
 
-No external source. The first two statements are gaps in Mathlib's `MvPowerSeries` API and each
-proof is a few steps of that same API; the third is the reindexing they were extracted for, and
-its proof rewrites both sides of the identity through the three-variable renaming. All three are
+No external source. The first three statements are gaps in Mathlib's `MvPowerSeries` API and each
+proof is a few steps of that same API; the fourth is the reindexing they were extracted for, and
+its proof rewrites both sides of the identity through the three-variable renaming. All four are
 recorded here rather than inside their callers because they carry no elliptic content.
 -/
 
@@ -207,5 +210,39 @@ theorem rename_unitSumUnitEquivFinTwo_assoc (p : MvPowerSeries (Unit ⊕ Unit) R
   exact h
 
 end CommRing
+
+section Eval
+
+open WithPiTopology
+
+variable [CommRing R] [UniformSpace R] [IsUniformAddGroup R] [IsTopologicalSemiring R]
+variable {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [IsTopologicalRing S]
+  [IsLinearTopology S S] [T2Space S] [CompleteSpace S] [Algebra R S] [ContinuousSMul R S]
+
+/-- **Evaluating a renamed series reindexes the family**: evaluating `rename e p` at `a` is
+evaluating `p` at `a` precomposed with `e`. This is the evaluation counterpart of `subst_rename`,
+and Mathlib has neither.
+
+The reindexed family is a separate argument `b` together with the pointwise equation
+`b s = a (e s)`, rather than the composite `a ∘ e` itself, because `aeval` carries its family in
+the type of its `HasEval` argument: a caller who knows the reindexed family in a simplified form
+cannot rewrite it under `aeval` afterwards, and supplying it here is the only way to state the
+evaluation it actually wants. -/
+theorem aeval_rename (e : σ → τ) [TendstoCofinite e] {a : τ → S} {b : σ → S} (ha : HasEval a)
+    (hb : HasEval b) (hab : ∀ s, b s = a (e s)) (p : MvPowerSeries σ R) :
+    aeval ha (rename e p) = aeval hb p := by
+  have hfam : (fun s ↦ (aeval ha) ((X ∘ e) s : MvPowerSeries τ R)) = b := by
+    funext s
+    rw [coe_aeval, Function.comp_apply, eval₂_X, hab]
+  have hb' : HasEval fun s ↦ (aeval ha) ((X ∘ e) s : MvPowerSeries τ R) := by
+    rw [hfam]; exact hb
+  rw [rename_eq_subst, aeval_subst (HasSubst.X_comp e) (continuous_aeval ha) hb' p]
+  calc (aeval hb') p
+      = eval₂ (algebraMap R S) (fun s ↦ (aeval ha) ((X ∘ e) s : MvPowerSeries τ R)) p :=
+        congrFun (coe_aeval hb') p
+    _ = eval₂ (algebraMap R S) b p := by rw [hfam]
+    _ = aeval hb p := (congrFun (coe_aeval hb) p).symm
+
+end Eval
 
 end MvPowerSeries

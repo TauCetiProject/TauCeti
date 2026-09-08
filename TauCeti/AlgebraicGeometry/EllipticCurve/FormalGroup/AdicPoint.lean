@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.PairEval
+-- Public: `AddGroup.ofLeftAxioms` is an `abbrev`, so the group instance's exposed body names it
+-- and a private import would not make it available.
 public import Mathlib.Algebra.Group.MinimalAxioms
 
 /-!
-# Points of an elliptic formal group in an adic ideal
+# Points of a Weierstrass formal group in an adic ideal
 
 Let `I` be an adic ideal of a complete linearly topologised ring `O`. The elements of `I` form an
 additive commutative group under evaluation of the Weierstrass formal group law: addition is
@@ -59,7 +61,7 @@ namespace WeierstrassCurve
 variable {O : Type*} [CommRing O] [UniformSpace O] [IsUniformAddGroup O] [CompleteSpace O]
   [T2Space O] [IsTopologicalRing O] [IsLinearTopology O O]
 
-/-- A point of the elliptic formal group with parameter in the adic ideal `I`.
+/-- A point of the formal group of a Weierstrass curve, with parameter in the adic ideal `I`.
 
 This is a newtype rather than the ideal subtype itself: `I` already uses the ordinary addition of
 `O`, while `FormalGroupPoint W I` uses evaluation of `W.formalAdd`. -/
