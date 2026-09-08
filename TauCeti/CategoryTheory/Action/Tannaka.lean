@@ -79,6 +79,7 @@ variable {G}
 theorem toEndForgetAction_app_apply (g : G) (A : Action (Type u) G) (x : ToType A) :
     (toEndForgetAction G g).app A x = g • x :=
   by
+    -- Unfold the unexposed constructor once to establish its public computation rule.
     change A.ρ g x = g • x
     rfl
 
@@ -98,6 +99,7 @@ def leftRegularHom {A : Action (Type u) G} (x : ToType A) :
 theorem leftRegularHom_hom_apply {A : Action (Type u) G} (x : ToType A) (a : G) :
     (leftRegularHom x).hom a = a • x :=
   by
+    -- Unfold the unexposed constructor once to establish its public computation rule.
     change a • x = a • x
     rfl
 
@@ -146,8 +148,8 @@ theorem endForgetActionMulEquiv_symm_apply_eq (η : End (Action.forget (Type u) 
     rw [endForgetActionMulEquiv_apply]
     refine NatTrans.ext (funext fun A => ?_)
     ext x
-    change η.app A x = A.ρ g x
-    exact end_forgetAction_app_apply η h A x
+    exact (end_forgetAction_app_apply η h A x).trans
+      (toEndForgetAction_app_apply g A x).symm
 
 variable (G)
 
@@ -171,6 +173,7 @@ theorem endCompForgetActionMulEquiv_app_apply {C : Type*} [Category C]
     (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : G) (p : C) (x : ToType (e.obj p)) :
     (endCompForgetActionMulEquiv G e g).app p x = g • x :=
   by
+    -- Unfold the unexposed transport once; its value is then governed by the public base rule.
     change (endForgetActionMulEquiv G g).app (e.obj p) x = g • x
     rw [endForgetActionMulEquiv_apply, toEndForgetAction_app_apply]
 
@@ -199,6 +202,7 @@ variable {G}
 theorem toAutForgetAction_hom (g : G) :
     (toAutForgetAction G g).hom = toEndForgetAction G g :=
   by
+    -- Unfold the unexposed constructor once to establish its public projection rule.
     change toEndForgetAction G g = toEndForgetAction G g
     rfl
 
@@ -217,9 +221,7 @@ variable {G}
 @[simp]
 theorem autForgetActionMulEquiv_hom_app_apply (g : G) (A : Action (Type u) G) (x : ToType A) :
     (autForgetActionMulEquiv G g).hom.app A x = g • x :=
-  by
-    change (toEndForgetAction G g).app A x = g • x
-    exact toEndForgetAction_app_apply g A x
+  toEndForgetAction_app_apply g A x
 
 /-- The inverse Tannaka equivalence is characterized by evaluating the forward natural
 transformation at the identity of the left regular `G`-set. -/
@@ -231,18 +233,20 @@ theorem autForgetActionMulEquiv_symm_apply_eq (η : Aut (Action.forget (Type u) 
   constructor
   · intro h
     rw [h]
-    change g • (1 : G) = g
+    -- The left regular scalar action is definitionally multiplication.
+    change g * 1 = g
     exact mul_one g
   · intro h
     refine Aut.ext (NatTrans.ext (funext fun A => ?_))
     ext x
-    change η.hom.app A x = A.ρ g x
-    exact end_forgetAction_app_apply η.hom h A x
+    exact (end_forgetAction_app_apply η.hom h A x).trans
+      (autForgetActionMulEquiv_hom_app_apply g A x).symm
 
 /-- The inverse of the automorphism associated to `g` acts by `g⁻¹`. -/
 @[simp]
 theorem autForgetActionMulEquiv_inv_app_apply (g : G) (A : Action (Type u) G) (x : ToType A) :
     (autForgetActionMulEquiv G g).inv.app A x = g⁻¹ • x := by
+  -- `Aut` stores the group inverse's forward map in the `inv` projection.
   change ((autForgetActionMulEquiv G g)⁻¹).hom.app A x = _
   rw [← map_inv]
   exact autForgetActionMulEquiv_hom_app_apply g⁻¹ A x
@@ -265,6 +269,7 @@ theorem autCompForgetActionMulEquiv_hom_app_apply {C : Type*} [Category C]
     (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : G) (p : C) (x : ToType (e.obj p)) :
     (autCompForgetActionMulEquiv G e g).hom.app p x = g • x :=
   by
+    -- Unfold the unexposed transport once; its value is then governed by the public base rule.
     change (autForgetActionMulEquiv G g).hom.app (e.obj p) x = g • x
     exact autForgetActionMulEquiv_hom_app_apply g (e.obj p) x
 
@@ -273,6 +278,7 @@ lemma, for the reason given at `TauCeti.endCompForgetActionMulEquiv_app_apply`. 
 theorem autCompForgetActionMulEquiv_inv_app_apply {C : Type*} [Category C]
     (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : G) (p : C) (x : ToType (e.obj p)) :
     (autCompForgetActionMulEquiv G e g).inv.app p x = g⁻¹ • x := by
+  -- `Aut` stores the group inverse's forward map in the `inv` projection.
   change ((autCompForgetActionMulEquiv G e g)⁻¹).hom.app p x = _
   rw [← map_inv]
   exact autCompForgetActionMulEquiv_hom_app_apply e g⁻¹ p x
