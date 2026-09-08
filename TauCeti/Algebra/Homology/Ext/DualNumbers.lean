@@ -43,14 +43,15 @@ zero, because `ε` annihilates `S`. Hence `Extⁿ_A(S, S) ≅ k` as a `k`-module
 
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Cambridge Studies in Advanced
   Mathematics 38, Cambridge University Press (1994), Section 2.5 and Chapter 4.
-* The Tau Ceti `GrothendieckEulerForms` roadmap blueprint, `README.md`, section "The dual
-  numbers", which writes down the periodic resolution `⋯ ⟶ A --ε--> A --ε--> A ⟶ S ⟶ 0` and the
-  computation `Extⁿ_A(S, S) ≅ k` followed here.
 -/
 
 open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits TrivSqZeroExt DualNumber
 
 open scoped ModuleCat.Algebra
+
+-- Provenance: the periodic resolution `⋯ ⟶ A --ε--> A --ε--> A ⟶ S ⟶ 0` and the computation
+-- `Extⁿ_A(S, S) ≅ k` formalised below are written down in the Tau Ceti
+-- `GrothendieckEulerForms` roadmap blueprint, `README.md`, section "The dual numbers".
 
 public section
 

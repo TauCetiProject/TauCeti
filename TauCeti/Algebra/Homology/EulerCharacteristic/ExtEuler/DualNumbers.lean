@@ -32,15 +32,16 @@ totalised fallback value.
 
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Cambridge Studies in Advanced
   Mathematics 38, Cambridge University Press (1994), Section 2.5 and Chapter 4.
-* The Tau Ceti `GrothendieckEulerForms` roadmap blueprint, `README.md`, section "The dual
-  numbers", which records that each `Extⁿ(S, S)` is finite-dimensional while eventual vanishing
-  fails, so that `χ(S, S)` is undefined and this pair must be rejected with no `finsum` value
-  exposed.
 -/
 
 open CategoryTheory CategoryTheory.Abelian
 
 open scoped ModuleCat.Algebra
+
+-- Provenance: that each `Extⁿ(S, S)` is finite-dimensional while eventual vanishing fails, so
+-- that `χ(S, S)` is undefined and this pair must be rejected with no `finsum` value exposed, is
+-- recorded in the Tau Ceti `GrothendieckEulerForms` roadmap blueprint, `README.md`, section
+-- "The dual numbers".
 
 public section
 
