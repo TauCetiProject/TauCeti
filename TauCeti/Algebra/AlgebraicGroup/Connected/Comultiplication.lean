@@ -182,7 +182,7 @@ private theorem comul_one_sub_connectedComponentIdempotent_mem
     -- Unfold the local tensor-square map abbreviation before tensor-product exactness rewrites it.
     change RingHom.ker (Algebra.TensorProduct.map q q) = _
     simpa only [AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, hqker] using
-      AlgHom.tensor_map_ker_eq_left_sup_right q q hq hq
+      HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q hq hq
   rwa [hker_eq] at hker
 
 /-- The ideal cutting out the augmentation point's connected component is stable under

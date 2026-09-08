@@ -281,7 +281,7 @@ private theorem centerCoefficientIdeal_comul_mem {x : H}
         HopfIdeal.rightTensorIdeal (R := k) (H := H) I := by
     have hqker : RingHom.ker q = I := Ideal.Quotient.mkₐ_ker k I
     simpa only [AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, hqker] using
-      AlgHom.tensor_map_ker_eq_left_sup_right q q
+      HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
         (Ideal.Quotient.mkₐ_surjective k I) (Ideal.Quotient.mkₐ_surjective k I)
   rw [← hker, RingHom.mem_ker]
   exact hmapzero

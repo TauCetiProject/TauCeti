@@ -79,7 +79,7 @@ private theorem nilradical_comul_mem
         rightTensorIdeal (R := R) (H := H) (nilradical H) := by
     have hqker : RingHom.ker q = nilradical H := Ideal.Quotient.mkₐ_ker R (nilradical H)
     simpa only [AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, hqker] using
-        AlgHom.tensor_map_ker_eq_left_sup_right q q
+        HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
           (Ideal.Quotient.mkₐ_surjective R (nilradical H))
           (Ideal.Quotient.mkₐ_surjective R (nilradical H))
   rw [← hker, RingHom.mem_ker]

@@ -178,7 +178,7 @@ def kerOfSurjective (f : H →ₐc[R] K) (hf : Function.Surjective f) : HopfIdea
     have hker' : Coalgebra.comul (R := R) x ∈
         RingHom.ker (Algebra.TensorProduct.map (f : H →ₐ[R] K) (f : H →ₐ[R] K)) := by
       simpa using hker
-    rwa [AlgHom.tensor_map_ker_eq_left_sup_right (R := R)
+    rwa [HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal (R := R)
       (f : H →ₐ[R] K) (f : H →ₐ[R] K) hf hf] at hker')
 
 /-- The underlying ideal of the kernel Hopf ideal is the ring-hom kernel. -/
@@ -250,7 +250,7 @@ private theorem comul_mem_left_sup_right_of_mem_ker (f : H →ₐc[k] K) {x : H}
   have hker : RingHom.ker (Algebra.TensorProduct.map q q).toRingHom =
       leftTensorIdeal (R := k) (H := H) I ⊔ rightTensorIdeal (R := k) (H := H) I := by
     simpa only [q, AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, Ideal.Quotient.mkₐ_ker] using
-      AlgHom.tensor_map_ker_eq_left_sup_right (R := k) q q
+      HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal (R := k) q q
         (Ideal.Quotient.mkₐ_surjective k I) (Ideal.Quotient.mkₐ_surjective k I)
   rw [← hker, RingHom.mem_ker]
   exact hqzero
