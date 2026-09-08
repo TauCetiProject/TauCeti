@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Periodic
 import Mathlib.RepresentationTheory.Homological.FiniteCyclic
 
 /-!
@@ -80,13 +80,13 @@ theorem herbrandQuotient_eq_one_of_finite [IsCyclic G] (M : Rep R G) [Finite M] 
     herbrandQuotient M = 1 := by
   let hgen := isCyclic_iff_exists_zpowers_eq_top.mp (inferInstance : IsCyclic G)
   let g := hgen.choose
+  let _ : CommGroup G := IsCyclic.commGroup
   have hg : ∀ x : G, x ∈ Subgroup.zpowers g := fun x ↦
     hgen.choose_spec.ge (Subgroup.mem_top x)
   let D : Module.End R M := M.ρ g - LinearMap.id
   have hinv : M.ρ.invariants = ker D := by
-    ext x
-    simpa only [D, mem_ker, LinearMap.sub_apply, LinearMap.id_apply, sub_eq_zero] using
-      (Representation.mem_invariants_iff_of_forall_mem_zpowers M.ρ g hg x)
+    simpa [D, sub_hom, applyAsHom] using
+      Rep.FiniteCyclicGroup.invariants_eq_ker_applyAsHom_sub M g hg
   have hcoinv : Representation.Coinvariants.ker M.ρ = range D := by
     simpa only [D] using Representation.FiniteCyclicGroup.coinvariantsKer_eq_range M.ρ g hg
   have hnorm_le : range M.ρ.norm ≤ M.ρ.invariants := by

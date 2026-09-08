@@ -184,6 +184,71 @@ def tateCohomologyIsoOdd (hg : ∀ x, x ∈ Subgroup.zpowers g) (n : ℤ) (hn : 
       exact (TateCohomology.isoGroupHomology (Int.negSucc (j + 1)) (j + 1)
           (by rw [Int.negSucc_eq])).app M ≪≫ groupHomologyIsoEven M g hg (j + 1) hj
 
+/-- In degree zero, the all-degree even comparison is `tateCohomologyIso₀`. -/
+@[simp]
+theorem tateCohomologyIsoEven_zero (hg : ∀ x, x ∈ Subgroup.zpowers g) (h0 : Even (0 : ℤ)) :
+    tateCohomologyIsoEven M g hg 0 h0 = tateCohomologyIso₀ M g hg := by
+  rfl
+
+/-- In a positive even degree, the all-degree comparison is the composite through ordinary
+group cohomology. -/
+@[simp]
+theorem tateCohomologyIsoEven_ofNat_succ (hg : ∀ x, x ∈ Subgroup.zpowers g) (k : ℕ)
+    (hk : Even (k + 1)) :
+    tateCohomologyIsoEven M g hg (Int.ofNat (k + 1)) hk.natCast =
+      (TateCohomology.isoGroupCohomology (k + 1)).app M ≪≫
+        groupCohomologyIsoEven M g hg (k + 1) hk := by
+  rfl
+
+/-- In a degree at most `-2`, the all-degree even comparison is the composite through ordinary
+group homology in the corresponding odd degree. -/
+@[simp]
+theorem tateCohomologyIsoEven_negSucc (hg : ∀ x, x ∈ Subgroup.zpowers g) (k : ℕ)
+    (hk : Odd k) :
+    tateCohomologyIsoEven M g hg (Int.negSucc k) (by
+      rcases hk with ⟨a, ha⟩
+      refine ⟨-(a + 1 : ℤ), ?_⟩
+      norm_num [Int.negSucc_eq, ha]
+      ring) =
+      (let _ : NeZero k := ⟨hk.pos.ne'⟩
+       let _ := Classical.decEq G
+       (TateCohomology.isoGroupHomology (Int.negSucc k) k (by
+          rw [Int.negSucc_eq])).app M ≪≫ groupHomologyIsoOdd M g hg k hk) := by
+  rfl
+
+/-- In a positive odd degree, the all-degree comparison is the composite through ordinary group
+cohomology. -/
+@[simp]
+theorem tateCohomologyIsoOdd_ofNat (hg : ∀ x, x ∈ Subgroup.zpowers g) (k : ℕ)
+    (hk : Odd k) :
+    tateCohomologyIsoOdd M g hg (Int.ofNat k) hk.natCast =
+      (let _ : NeZero k := ⟨hk.pos.ne'⟩
+       (TateCohomology.isoGroupCohomology k).app M ≪≫
+         groupCohomologyIsoOdd M g hg k hk) := by
+  rfl
+
+/-- In degree `-1`, the all-degree odd comparison is `tateCohomologyIsoNegOne`. -/
+@[simp]
+theorem tateCohomologyIsoOdd_negOne (hg : ∀ x, x ∈ Subgroup.zpowers g)
+    (hneg : Odd (-1 : ℤ)) :
+    tateCohomologyIsoOdd M g hg (-1) hneg = tateCohomologyIsoNegOne M g hg := by
+  rfl
+
+/-- In a degree at most `-2`, the all-degree odd comparison is the composite through ordinary
+group homology in the corresponding nonzero even degree. -/
+@[simp]
+theorem tateCohomologyIsoOdd_negSucc_succ (hg : ∀ x, x ∈ Subgroup.zpowers g) (j : ℕ)
+    (hj : Even (j + 1)) :
+    tateCohomologyIsoOdd M g hg (Int.negSucc (j + 1)) (by
+      rcases hj with ⟨a, ha⟩
+      refine ⟨-(a : ℤ) - 1, ?_⟩
+      norm_num [Int.negSucc_eq, ha]
+      ring) =
+      (let _ := Classical.decEq G
+       (TateCohomology.isoGroupHomology (Int.negSucc (j + 1)) (j + 1) (by
+          rw [Int.negSucc_eq])).app M ≪≫ groupHomologyIsoEven M g hg (j + 1) hj) := by
+  rfl
+
 /-- The generator-dependent comparison underlying two-periodicity. It compares two degrees of the
 same parity with the same homology object of the standard periodic resolution, using the even
 model or the odd model according to that common parity. -/
