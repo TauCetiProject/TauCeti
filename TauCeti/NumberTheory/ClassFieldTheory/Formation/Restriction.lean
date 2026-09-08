@@ -16,9 +16,9 @@ the ground field to an intermediate field `F ⊆ E ⊆ K` leaves a layer `K/E`, 
 `V` stays normal in the smaller ground subgroup. Two layers are related by a **restriction** when
 they have the same top subgroup and the ground subgroup of the first lies in the ground subgroup
 of the second; `LayerRestriction small big` is that relation. Its **relative degree** is
-`[U : U']`, the degree `[E : F]` of the new ground field over the old one; the corestriction
-normalisation `cor ∘ res = [E : F]` is stated with this number, and `⚠` it is the index of the
-*sub*group `U'` in `U`, not the other way round.
+`[U : U']`, the degree `[E : F]` of the new ground field over the old one. This convention is
+intended to support the corestriction normalisation `cor ∘ res = [E : F]`; `⚠` it is the index
+of the *sub*group `U'` in `U`, not the other way round.
 
 Restrictions of a fixed layer are the same thing as subgroups of its Galois group: `U'` is
 recovered from `H = U'/V ≤ Γ`, and this **finite quotient system** `H ↦ subgroupLayer H` is what
@@ -189,6 +189,8 @@ def repIso (T : LayerRestriction small big) (F : Formation G) :
         simp only [MonoidHom.coe_comp, Function.comp_apply]
         rw [galHom_mk]
         ext x
+        -- `Rep.mkIso` hides the common ambient-module coercions behind nested representation and
+        -- linear-equivalence wrappers, so expose them before applying the public coercion lemmas.
         change
           ((LinearEquiv.ofEq _ _ (congrArg F.level T.same_top)
               ((small.rep F).ρ (QuotientGroup.mk w) x) : F.level big.top) : F.toRep.V) =
@@ -229,6 +231,7 @@ def subgroupGround : Subgroup G :=
 
 /-- Membership in the intermediate subgroup: an element of `U` lies in it exactly when its class
 in the Galois group lies in `H`. -/
+@[simp]
 theorem mem_subgroupGround {g : G} :
     g ∈ L.subgroupGround H ↔ ∃ hg : g ∈ L.ground, (QuotientGroup.mk ⟨g, hg⟩ : L.Gal) ∈ H := by
   constructor
@@ -312,6 +315,7 @@ theorem subgroupGalEquiv_apply_coe (γ : (L.subgroupLayer H).Gal) :
     (MonoidHom.ofInjective_apply (L.subgroupRestriction H).galHom_injective)
 
 /-- **The degree of the layer of `H` is the order of `H`.** -/
+@[simp]
 theorem degree_subgroupLayer : (L.subgroupLayer H).degree = Nat.card H := by
   rw [degree_eq_natCard_gal]
   exact Nat.card_congr (L.subgroupGalEquiv H).toEquiv
@@ -323,6 +327,7 @@ theorem galHom_subgroupRestriction :
   MonoidHom.ext fun γ ↦ (L.subgroupGalEquiv_apply_coe H γ).symm
 
 /-- **The relative degree of the restriction to `H` is the index of `H`.** -/
+@[simp]
 theorem relativeDegree_subgroupRestriction :
     (L.subgroupRestriction H).relativeDegree = H.index := by
   rw [LayerRestriction.relativeDegree_def, ground_subgroupLayer, Subgroup.relIndex,
