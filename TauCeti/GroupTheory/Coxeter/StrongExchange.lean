@@ -42,8 +42,8 @@ that is not reduced can be shortened by deleting two of its letters) follow.
   condition**, the case of a simple reflection, where the shortened word is again reduced.
 * `CoxeterSystem.deletionCondition`: **the deletion condition**, that a word which is not reduced
   spells the same element as the word with two of its letters deleted.
-* `CoxeterSystem.exists_isReduced_sublist`: iterating the deletion condition, **every word has a
-  reduced sublist spelling the same element**.
+* `CoxeterSystem.exists_isReduced_sublist`: **every word has a reduced sublist spelling the same
+  element**.
 
 ## References
 
@@ -450,9 +450,9 @@ theorem deletionCondition {ω : List B} (hω : ¬ cs.IsReduced ω) :
       List.eraseIdx_append_of_lt_length (by rw [hlenk]; exact hj)]
   rw [hera, cs.wordProd_append, ← hje, ← hprod, ← cs.wordProd_append, List.take_append_drop]
 
-/-- **Every word has a reduced sublist spelling the same element.** Deleting the two letters the
-deletion condition supplies leaves a strictly shorter word for the same element, so iterating it
-terminates at a reduced one. -/
+/-- **Every word has a reduced sublist spelling the same element.** This shrinks an arbitrary word
+to a reduced one without leaving the sublists of the original, so a subword of a given word can
+always be taken to be a reduced word for the element it spells. -/
 theorem exists_isReduced_sublist (ω : List B) :
     ∃ σ : List B, σ.Sublist ω ∧ cs.IsReduced σ ∧ π σ = π ω := by
   suffices H : ∀ n : ℕ, ∀ ω : List B, ω.length ≤ n →

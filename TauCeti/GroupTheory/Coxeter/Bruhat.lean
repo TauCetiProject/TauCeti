@@ -15,31 +15,22 @@ to `w` whenever `w = t * u` for a reflection `t` and `w` is the longer of the tw
 order** `cs.BruhatLE` is the reachability relation of that graph, the reflexive transitive closure
 of the edge relation.
 
-Two things make this a well-behaved order rather than a bare relation, and both are proved here.
-It is a **partial order**: an edge strictly increases the length, so a cycle would have to be
-constant, and `cs.bruhatPartialOrder` packages the three order axioms as data. And it satisfies
-the **necessary direction of the subword property**: if `u ≤ w` then `u` is spelled by a sublist
-of *every* word spelling `w`, reduced or not
-(`CoxeterSystem.BruhatLE.exists_sublist_wordProd_eq`). Since a reduced word for `w` is in
+Two things make this a well-behaved order rather than a bare relation. It is a **partial order**:
+an edge strictly increases the length, so a cycle would have to be constant, and
+`cs.bruhatPartialOrder` packages the three order axioms as data. And it satisfies the **necessary
+direction of the subword property**: if `u ≤ w` then `u` is spelled by a sublist of *every* word
+spelling `w`, reduced or not (`CoxeterSystem.BruhatLE.exists_sublist_wordProd_eq`). Since a
+reduced word for `w` is in
 particular a word for `w`, this says that *every* reduced word for `w`, not merely some one of
 them, has a subword spelling `u`.
 
-That direction is exactly the strong exchange condition of
-`TauCeti/GroupTheory/Coxeter/StrongExchange.lean`, iterated along the chain: an edge `u → w`
-means `u = t * w` for a reflection `t` that shortens `w`, and strong exchange deletes one letter
-of any word for `w` to spell `u`. No reducedness is needed anywhere in that argument, which is
-why the resulting statement quantifies over all words.
-
 The converse — that a subword of a reduced word for `w` spells an element `≤ w` — is the other
-half of the subword property and is **not** proved here. Consequently the equivalence of
-`cs.BruhatLE` with the classical reduced-word definition ("`u ≤ w` when *some* reduced word for
-`w` has a subword spelling `u`"), and with it the well-definedness of that definition — its
-independence of the chosen reduced word — remains pending: only the direction from the order to
-subword containment is available. The converse needs the lifting property, which compares `u` and
-`s * u` against `w` and `s * w` for a simple reflection `s`, and is a genuinely separate argument.
-What is available here in that direction is the one-letter case,
-`CoxeterSystem.bruhatLE_wordProd_eraseIdx`: deleting a single letter of a reduced word does move
-down the Bruhat order.
+half of the subword property, and is outside the scope of this file. So `cs.BruhatLE` is not
+identified here with the classical reduced-word description ("`u ≤ w` when *some* reduced word for
+`w` has a subword spelling `u`"), nor, with it, is that description shown to be well defined —
+independent of the chosen reduced word. In the direction of the converse this file has the
+one-letter case, `CoxeterSystem.bruhatLE_wordProd_eraseIdx`: deleting a single letter of a reduced
+word does move down the Bruhat order.
 
 ## Main definitions
 
@@ -65,6 +56,10 @@ down the Bruhat order.
   order.
 
 ## References
+
+The Coxeter-system input is `CoxeterSystem.strongExchange` of
+`TauCeti/GroupTheory/Coxeter/StrongExchange.lean`, together with Mathlib's length, reflection and
+inversion-sequence API for `CoxeterSystem`.
 
 * A. Björner and F. Brenti, *Combinatorics of Coxeter Groups*, Springer GTM 231 (2005),
   Sections 2.1 and 2.2.
@@ -103,10 +98,6 @@ variable {cs}
 theorem BruhatStep.length_lt (h : cs.BruhatStep u w) : ℓ u < ℓ w := by
   obtain ⟨-, -, -, h⟩ := h
   exact h
-
-theorem BruhatStep.ne (h : cs.BruhatStep u w) : u ≠ w := by
-  rintro rfl
-  exact absurd h.length_lt (lt_irrefl _)
 
 /-- The Bruhat graph is invariant under inversion: conjugating the reflection of an edge by `u`
 turns an edge `u → w` into an edge `u⁻¹ → w⁻¹`. -/
@@ -214,8 +205,8 @@ inverting a chain of edges term by term is an involution on chains. -/
 theorem bruhatLE_inv_iff : cs.BruhatLE u⁻¹ w⁻¹ ↔ cs.BruhatLE u w :=
   ⟨fun h => by simpa using h.inv, BruhatLE.inv⟩
 
-/-- **The identity is the least element** of the Bruhat order: a left descent supplies an edge one
-step down, and the length decreases. -/
+/-- **The identity is the least element** of the Bruhat order: every element of a Coxeter group
+lies above `1`. -/
 @[simp]
 theorem one_bruhatLE (w : W) : cs.BruhatLE 1 w := by
   suffices H : ∀ n : ℕ, ∀ w : W, ℓ w ≤ n → cs.BruhatLE 1 w from H (ℓ w) w le_rfl
@@ -271,11 +262,7 @@ variable {cs}
 /-- **An element below `w` is spelled by a sublist of every word spelling `w`.** The word need not
 be reduced, so in particular *every* reduced word for `w`, not merely some one of them, has a
 subword spelling `u`. This is the necessary direction of the subword property; the converse is not
-proved here.
-
-Each edge of the chain from `u` to `w` deletes one letter, by the strong exchange condition: an
-edge `v → w` says that a reflection `t` carries `w` to the shorter `v`, and strong exchange then
-spells `v` by `w`'s word with one letter gone. -/
+proved here. -/
 theorem BruhatLE.exists_sublist_wordProd_eq {u w : W} (h : cs.BruhatLE u w) :
     ∀ ω : List B, π ω = w → ∃ σ : List B, σ.Sublist ω ∧ π σ = u := by
   induction h with
