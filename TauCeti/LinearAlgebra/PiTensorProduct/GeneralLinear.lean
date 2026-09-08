@@ -80,7 +80,9 @@ theorem map_const_mem_span_range_map_const_units (f : V →ₗ[K] V) :
     (LinearMap.compMultilinearMap φ
       (mapMultilinear K (fun _ : ι => V) fun _ : ι => V)).compLinearMap
         fun _ => (Matrix.toLinAlgEquiv e).toLinearMap with hΘdef
-  have hΘ : ∀ X, (Θ fun _ => X) = φ (map fun _ : ι => Matrix.toLinAlgEquiv e X) := fun _ => rfl
+  have hΘ : ∀ X, (Θ fun _ => X) = φ (map fun _ : ι => Matrix.toLinAlgEquiv e X) := fun _ => by
+    simp only [hΘdef, MultilinearMap.compLinearMap_apply, LinearMap.compMultilinearMap_apply,
+      mapMultilinear_apply, AlgEquiv.toLinearMap_apply]
   have hgl : ∀ g : GL (Fin (Module.finrank K V)) K,
       (Θ fun _ => (g : Matrix (Fin (Module.finrank K V)) (Fin (Module.finrank K V)) K)) = 0 := by
     intro g

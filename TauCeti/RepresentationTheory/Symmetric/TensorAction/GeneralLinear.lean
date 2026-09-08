@@ -40,15 +40,14 @@ density argument identifying the two spans needs.
 * `TauCeti.centralizer_range_tensorPowerRep_asAlgebraHom_eq_range_permTensorActionAlgHom` and
   `TauCeti.centralizer_range_permTensorActionAlgHom_eq_range_tensorPowerRep_asAlgebraHom`: **the
   images of `k[GLₙ]` and of `k[S_d]` are each other's centralizers.**
-* `TauCeti.mem_range_permTensorActionAlgHom_iff_forall_commute_tensorPowerRep`: the same as a
-  membership criterion, an endomorphism acting as an element of `k[S_d]` exactly when it commutes
-  with the whole general linear group.
+* `TauCeti.mem_range_permTensorActionAlgHom_iff_forall_commute_tensorPowerRep` and
+  `TauCeti.mem_range_tensorPowerRep_asAlgebraHom_iff_forall_commute_permTensorAction`: the same as
+  membership criteria, an endomorphism acting as an element of `k[S_d]` exactly when it commutes
+  with the whole general linear group, and as an element of `k[GLₙ]` exactly when it commutes with
+  every factor permutation.
 
 ## References
 
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 8, "The double centralizer (image-level)", which asks for the mutual commutant of the two
-  group-algebra images.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Lecture 6 and Appendix B.1.
 * C. Procesi, *Lie Groups: An Approach through Invariants and Representations*, Chapter 9.
 -/
@@ -132,7 +131,8 @@ theorem mem_range_permTensorActionAlgHom_iff_forall_commute_tensorPowerRep
   rw [mem_range_permTensorActionAlgHom_iff_forall_commute]
   constructor
   · intro hx g
-    simpa using hx (Matrix.mulVecLin (g : Matrix (Fin n) (Fin n) k))
+    simpa only [tensorPowerRep, Representation.tensorPower_apply, stdRep_apply] using
+      hx (Matrix.mulVecLin (g : Matrix (Fin n) (Fin n) k))
   · intro hx f
     refine Commute.span_right (R := k) (s := Set.range (tensorPowerRep k n d))
       (fun y hy => ?_) _ ?_
@@ -140,5 +140,21 @@ theorem mem_range_permTensorActionAlgHom_iff_forall_commute_tensorPowerRep
       exact hx g
     · rw [span_range_tensorPowerRep_eq_span_range_map_const]
       exact Submodule.subset_span ⟨f, rfl⟩
+
+/-- **Schur-Weyl duality, as a membership criterion.** An endomorphism of `(kⁿ)^{⊗d}` is the
+diagonal action of an element of the group algebra `k[GLₙ]` exactly when it commutes with the
+permutation of the tensor factors by every element of `S_d`. This is the companion of
+`TauCeti.mem_range_permTensorActionAlgHom_iff_forall_commute_tensorPowerRep` with the roles of the
+two groups exchanged. -/
+theorem mem_range_tensorPowerRep_asAlgebraHom_iff_forall_commute_permTensorAction
+    (x : Module.End k (⨂[k] _ : Fin d, Fin n → k)) :
+    x ∈ (tensorPowerRep k n d).asAlgebraHom.range ↔
+      ∀ σ : Equiv.Perm (Fin d), Commute x (permTensorAction k n d σ) := by
+  rw [← centralizer_range_permTensorActionAlgHom_eq_range_tensorPowerRep_asAlgebraHom,
+    Subalgebra.mem_centralizer_iff]
+  refine ⟨fun hx σ => (hx _ ⟨MonoidAlgebra.of k _ σ, permTensorActionAlgHom_of k n d σ⟩).symm,
+    fun hx y hy => ?_⟩
+  obtain ⟨a, rfl⟩ := hy
+  exact (commute_permTensorActionAlgHom_of_forall_commute hx a).symm
 
 end TauCeti
