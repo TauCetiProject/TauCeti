@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.IdentityComponent
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 import TauCeti.Algebra.AlgebraicGroup.Connected.Translation
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
-import TauCeti.Algebra.HopfAlgebra.Kernel
 import TauCeti.RingTheory.FiniteType.PointSeparation
 public import TauCeti.Topology.NoetherianSpace.ConnectedComponents
 import Mathlib.RingTheory.FiniteStability

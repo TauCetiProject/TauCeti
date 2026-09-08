@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Center.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Reduction
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
-import Mathlib.RingTheory.Noetherian.Nilpotent
 
 /-!
 # The reduced center of an affine group
@@ -39,8 +38,8 @@ thickening controls the original center.
   agree.
 * `TauCeti.CommHopfAlgCat.smooth_reducedCenterCoordinateHopfAlgebra`: over an algebraically closed
   field, a finite-type reduced center is smooth.
-* `TauCeti.CommHopfAlgCat.isNilpotent_reducedCenterReduction_toIdeal`: over a Noetherian center
-  coordinate ring, the thickening from the reduced center to the full center is nilpotent.
+* `TauCeti.HopfIdeal.isNilpotent_reduction_toIdeal`: over a Noetherian coordinate ring, the
+  thickening discarded by any Hopf-algebra reduction is nilpotent.
 
 ## References
 
@@ -169,23 +168,14 @@ theorem reducedCenterDefiningIdeal_le_of_centerDefiningIdeal_le_of_isReduced_quo
   exact ((Ideal.isRadical_iff_quotient_reduced I.toIdeal).mpr inferInstance).radical_le_iff.mpr
     (HopfIdeal.toIdeal_le_toIdeal.mpr hcenter)
 
-/-- If the center coordinate ring is Noetherian, the ideal removed from the center to form its
-reduction is nilpotent. This records that the reduced center and the full center differ by a
-nilpotent thickening. -/
-theorem isNilpotent_reducedCenterReduction_toIdeal
-    [IsNoetherianRing (centerCoordinateHopfAlgebra H)] :
-    IsNilpotent (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H)).toIdeal := by
-  rw [HopfIdeal.reduction_toIdeal]
-  exact IsNoetherianRing.isNilpotent_nilradical (centerCoordinateHopfAlgebra H)
-
 section Smooth
 
-variable (G : _root_.CommHopfAlgCat.{u} k)
+variable (G : _root_.CommHopfAlgCat.{v} k)
 variable [IsReduced
-  ((((centerCoordinateHopfAlgebra G : _root_.CommHopfAlgCat.{u} k) : Type u) ⧸
-      nilradical ((centerCoordinateHopfAlgebra G : _root_.CommHopfAlgCat.{u} k) : Type u)) ⊗[k]
-    (((centerCoordinateHopfAlgebra G : _root_.CommHopfAlgCat.{u} k) : Type u) ⧸
-      nilradical ((centerCoordinateHopfAlgebra G : _root_.CommHopfAlgCat.{u} k) : Type u)))]
+  ((((centerCoordinateHopfAlgebra G : _root_.CommHopfAlgCat.{v} k) : Type v) ⧸
+      nilradical ((centerCoordinateHopfAlgebra G : _root_.CommHopfAlgCat.{v} k) : Type v)) ⊗[k]
+    (((centerCoordinateHopfAlgebra G : _root_.CommHopfAlgCat.{v} k) : Type v) ⧸
+      nilradical ((centerCoordinateHopfAlgebra G : _root_.CommHopfAlgCat.{v} k) : Type v)))]
 
 /-- Over an algebraically closed field, a finite-type reduced center is smooth. -/
 theorem smooth_reducedCenterCoordinateHopfAlgebra [IsAlgClosed k]

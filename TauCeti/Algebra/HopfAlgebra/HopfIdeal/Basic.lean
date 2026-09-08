@@ -28,6 +28,8 @@ must satisfy exactly these Hopf-ideal closure conditions.
 * `TauCeti.HopfIdeal`: a Hopf ideal in a Hopf algebra over a commutative semiring.
 * `TauCeti.HopfIdeal.leftTensorIdeal` and `TauCeti.HopfIdeal.rightTensorIdeal`: the two
   summands `I ⊗ H` and `H ⊗ I` inside `H ⊗ H`.
+* `AlgHom.tensor_map_ker_eq_left_sup_right`: the tensor product of two surjective algebra maps
+  has the expected kernel in tensor-ideal notation.
 * `⊥ : HopfIdeal R H`: the zero Hopf ideal.
 * `I ⊔ J : HopfIdeal R H`: the sum of two Hopf ideals.
 * `sSup S : HopfIdeal R H` and `⨆ i, I i : HopfIdeal R H`: arbitrary suprema of Hopf ideals,
@@ -633,3 +635,32 @@ end HopfIdeal
 end Bridge
 
 end TauCeti
+
+namespace AlgHom
+
+variable {R : Type u} {H : Type v}
+variable [CommRing R] [Ring H]
+
+/-- The tensor-kernel exactness theorem in the tensor-ideal notation used by `HopfIdeal`. -/
+theorem tensor_map_ker_eq_left_sup_right [Algebra R H]
+    {A B : Type*} [Ring A] [Ring B] [Algebra R A] [Algebra R B]
+    (f : H →ₐ[R] A) (g : H →ₐ[R] B)
+    (hf : Function.Surjective f) (hg : Function.Surjective g) :
+    RingHom.ker (Algebra.TensorProduct.map f g) =
+      TauCeti.HopfIdeal.leftTensorIdeal (R := R) (H := H) (RingHom.ker f) ⊔
+        TauCeti.HopfIdeal.rightTensorIdeal (R := R) (H := H) (RingHom.ker g) := by
+  have hleft :
+      (RingHom.ker f).map
+          (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)) =
+        TauCeti.HopfIdeal.leftTensorIdeal (R := R) (H := H) (RingHom.ker f) := by
+    rw [TauCeti.HopfIdeal.leftTensorIdeal_def, AlgHom.toRingHom_eq_coe]
+    exact AlgHom.coe_ideal_map _ _
+  have hright :
+      (RingHom.ker g).map
+          (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)) =
+        TauCeti.HopfIdeal.rightTensorIdeal (R := R) (H := H) (RingHom.ker g) := by
+    rw [TauCeti.HopfIdeal.rightTensorIdeal_def, AlgHom.toRingHom_eq_coe]
+    exact AlgHom.coe_ideal_map _ _
+  rw [Algebra.TensorProduct.map_ker (f := f) (g := g) hf hg, hleft, hright]
+
+end AlgHom

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Flat.Equalizer
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.Basic
@@ -41,8 +40,6 @@ dictionary.
   by the kernel to the codomain.
 * `TauCeti.HopfIdeal.kerOfSurjective_mkBialgHom`: the kernel of the quotient morphism by `I`
   is `I`.
-* `AlgHom.tensor_map_ker_eq_left_sup_right`: the tensor product of two surjective
-  algebra maps has the expected kernel in tensor-ideal notation.
 * `TauCeti.HopfIdeal.ker_lTensor_eq_rightTensorIdeal`: tensoring on the left by a flat algebra
   carries the kernel of an algebra map to the corresponding right tensor ideal.
 
@@ -57,35 +54,6 @@ public section
 open scoped TensorProduct
 
 universe u v w x
-
-namespace AlgHom
-
-variable {R : Type u} {H : Type v}
-variable [CommRing R] [Ring H]
-
-/-- The tensor-kernel exactness theorem in the tensor-ideal notation used by `HopfIdeal`. -/
-theorem tensor_map_ker_eq_left_sup_right [Algebra R H]
-    {A B : Type*} [Ring A] [Ring B] [Algebra R A] [Algebra R B]
-    (f : H →ₐ[R] A) (g : H →ₐ[R] B)
-    (hf : Function.Surjective f) (hg : Function.Surjective g) :
-    RingHom.ker (Algebra.TensorProduct.map f g) =
-      TauCeti.HopfIdeal.leftTensorIdeal (R := R) (H := H) (RingHom.ker f) ⊔
-        TauCeti.HopfIdeal.rightTensorIdeal (R := R) (H := H) (RingHom.ker g) := by
-  have hleft :
-      (RingHom.ker f).map
-          (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)) =
-        TauCeti.HopfIdeal.leftTensorIdeal (R := R) (H := H) (RingHom.ker f) := by
-    rw [TauCeti.HopfIdeal.leftTensorIdeal_def, AlgHom.toRingHom_eq_coe]
-    exact AlgHom.coe_ideal_map _ _
-  have hright :
-      (RingHom.ker g).map
-          (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)) =
-        TauCeti.HopfIdeal.rightTensorIdeal (R := R) (H := H) (RingHom.ker g) := by
-    rw [TauCeti.HopfIdeal.rightTensorIdeal_def, AlgHom.toRingHom_eq_coe]
-    exact AlgHom.coe_ideal_map _ _
-  rw [Algebra.TensorProduct.map_ker (f := f) (g := g) hf hg, hleft, hright]
-
-end AlgHom
 
 namespace TauCeti
 

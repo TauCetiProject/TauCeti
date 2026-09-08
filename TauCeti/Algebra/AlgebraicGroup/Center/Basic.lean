@@ -8,7 +8,6 @@ module
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
-import TauCeti.Algebra.HopfAlgebra.Kernel
 
 /-!
 # The center of an affine group scheme
