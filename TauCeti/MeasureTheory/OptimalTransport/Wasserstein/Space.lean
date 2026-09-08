@@ -133,6 +133,14 @@ theorem coe_mk (μ : ProbabilityMeasure X) (hμ) :
     toProbabilityMeasure (mk (p := p) (μ₀ := μ₀) μ hμ) = μ :=
   (rfl)
 
+/-- A measurably varying family of probability measures in an anchored component gives a
+measurable map into that component. -/
+theorem measurable_mk {Y : Type*} [MeasurableSpace Y] {f : Y → ProbabilityMeasure X}
+    (hf : Measurable f)
+    (hmem : ∀ y, wassersteinEDist p (μ₀ : Measure X) (f y : Measure X) ≠ ∞) :
+    Measurable fun y ↦ mk (f y) (hmem y) :=
+  hf.subtype_mk
+
 /-- Every element of the component anchored at `μ₀` is at finite Wasserstein distance from `μ₀`;
 together with `TauCeti.WassersteinComponent.mk` this characterises the elements of the
 component. -/
@@ -277,6 +285,13 @@ theorem measurable_toProbabilityMeasure :
 theorem coe_mk (μ : ProbabilityMeasure X) (hμ) :
     toProbabilityMeasure (mk (p := p) μ hμ) = μ :=
   (rfl)
+
+/-- A measurably varying family of finite-moment probability measures gives a measurable map into
+the Wasserstein space. -/
+theorem measurable_mk {Y : Type*} [MeasurableSpace Y] {f : Y → ProbabilityMeasure X}
+    (hf : Measurable f) (hmem : ∀ y, HasFiniteMoment p (f y : Measure X)) :
+    Measurable fun y ↦ mk (f y) (hmem y) :=
+  hf.subtype_mk
 
 /-- Every law in `WassersteinSpace p X` has finite `p`-moment; together with
 `TauCeti.WassersteinSpace.mk` this characterises its elements. -/
