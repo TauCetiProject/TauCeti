@@ -70,6 +70,12 @@ theorem multinomialWeightReal_nonneg (w : ι → NNReal) (k : ι → ℕ) :
 def multinomialWeight (w : ι → NNReal) (k : ι → ℕ) : ℝ≥0∞ :=
   (Nat.multinomial Finset.univ k : ℝ≥0∞) * ∏ i, (w i : ℝ≥0∞) ^ k i
 
+/-- The extended nonnegative multinomial weight in terms of the multinomial coefficient and cell
+weights. -/
+theorem multinomialWeight_eq (w : ι → NNReal) (k : ι → ℕ) :
+    multinomialWeight w k =
+      (Nat.multinomial Finset.univ k : ℝ≥0∞) * ∏ i, (w i : ℝ≥0∞) ^ k i := (rfl)
+
 /-- The extended nonnegative multinomial weight has the expected real value. -/
 @[simp]
 theorem multinomialWeight_toReal (w : ι → NNReal) (k : ι → ℕ) :
@@ -82,6 +88,13 @@ open Classical in
 The finite antidiagonal consists precisely of the count vectors whose coordinates sum to `n`. -/
 def multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) : Measure (ι → ℕ) :=
   ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p.weights k • Measure.dirac k
+
+open Classical in
+/-- The multinomial measure as its defining finite weighted sum of Dirac measures. -/
+theorem multinomialMeasure_eq_sum_dirac (n : ℕ) (p : StdSimplex NNReal ι) :
+    multinomialMeasure n p =
+      ∑ k ∈ Finset.piAntidiag Finset.univ n,
+        multinomialWeight p.weights k • Measure.dirac k := (rfl)
 
 open Classical in
 /-- The real multinomial weights on a fixed antidiagonal satisfy the multinomial theorem. -/
