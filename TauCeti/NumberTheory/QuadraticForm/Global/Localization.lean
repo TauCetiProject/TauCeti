@@ -21,10 +21,6 @@ The evaluation and algebraic-compatibility lemmas make the local forms usable wi
 the localization definitions.  They are the common input for local isotropy, representation,
 and invariant comparisons over number fields.
 
-## References
-
-* `TauCetiRoadmap/GlobalQuadraticForms/README.md`, Layer 0.1
-* `TauCetiRoadmap/GlobalQuadraticForms/Suggested.lean`
 -/
 
 public section
