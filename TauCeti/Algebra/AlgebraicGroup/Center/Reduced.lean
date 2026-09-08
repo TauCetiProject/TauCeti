@@ -32,12 +32,12 @@ thickening controls the original center.
 
 * `TauCeti.CommHopfAlgCat.reducedCenterDefiningIdeal`: the ambient ideal cutting out the reduced
   center.
-* `TauCeti.CommHopfAlgCat.reducedCenterCoordinateRing`: its coordinate Hopf algebra.
+* `TauCeti.CommHopfAlgCat.reducedCenterCoordinateHopfAlgebra`: its coordinate Hopf algebra.
 * `TauCeti.CommHopfAlgCat.reducedCenterDefiningIdeal_toIdeal`: the ambient defining ideal is the
   radical of the center ideal.
 * `TauCeti.CommHopfAlgCat.quotientReducedCenterIso`: the ambient and iterated quotient models
   agree.
-* `TauCeti.CommHopfAlgCat.smooth_reducedCenterCoordinateRing`: over an algebraically closed
+* `TauCeti.CommHopfAlgCat.smooth_reducedCenterCoordinateHopfAlgebra`: over an algebraically closed
   field, a finite-type reduced center is smooth.
 * `TauCeti.CommHopfAlgCat.isNilpotent_reducedCenterReduction_toIdeal`: over a Noetherian center
   coordinate ring, the thickening from the reduced center to the full center is nilpotent.
@@ -62,16 +62,16 @@ variable {k : Type u} [Field k]
 variable (H : _root_.CommHopfAlgCat.{v} k)
 
 variable [IsReduced
-  ((((centerCoordinateRing H : _root_.CommHopfAlgCat.{v} k) : Type v) ⧸
-      nilradical ((centerCoordinateRing H : _root_.CommHopfAlgCat.{v} k) : Type v)) ⊗[k]
-    (((centerCoordinateRing H : _root_.CommHopfAlgCat.{v} k) : Type v) ⧸
-      nilradical ((centerCoordinateRing H : _root_.CommHopfAlgCat.{v} k) : Type v)))]
+  ((((centerCoordinateHopfAlgebra H : _root_.CommHopfAlgCat.{v} k) : Type v) ⧸
+      nilradical ((centerCoordinateHopfAlgebra H : _root_.CommHopfAlgCat.{v} k) : Type v)) ⊗[k]
+    (((centerCoordinateHopfAlgebra H : _root_.CommHopfAlgCat.{v} k) : Type v) ⧸
+      nilradical ((centerCoordinateHopfAlgebra H : _root_.CommHopfAlgCat.{v} k) : Type v)))]
 
 /-- The Hopf ideal in the ambient coordinate algebra cutting out the reduced center.
 
 It is the inverse image of the nilradical Hopf ideal of the center coordinate algebra. -/
 noncomputable def reducedCenterDefiningIdeal : HopfIdeal k H :=
-  (HopfIdeal.reduction k (centerCoordinateRing H)).comapOfSurjective
+  (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H)).comapOfSurjective
     (mkQuotient H (centerDefiningIdeal H)).hom
     (mkQuotient_surjective H (centerDefiningIdeal H))
 
@@ -85,7 +85,7 @@ theorem centerDefiningIdeal_le_reducedCenterDefiningIdeal :
     (mkQuotient_eq_zero_iff H (centerDefiningIdeal H) x).mpr hx
   rw [hzero]
   exact HopfIdeal.mem_toIdeal.mp
-    (HopfIdeal.reduction k (centerCoordinateRing H)).toIdeal.zero_mem
+    (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H)).toIdeal.zero_mem
 
 /-- The ideal defining the reduced center is central. -/
 theorem isCentral_reducedCenterDefiningIdeal :
@@ -95,27 +95,33 @@ theorem isCentral_reducedCenterDefiningIdeal :
 
 /-- The coordinate Hopf algebra of the reduced center, formed by quotienting the center by its
 nilradical. -/
-noncomputable abbrev reducedCenterCoordinateRing : _root_.CommHopfAlgCat.{v} k :=
-  quotient (centerCoordinateRing H) (HopfIdeal.reduction k (centerCoordinateRing H))
+noncomputable abbrev reducedCenterCoordinateHopfAlgebra : _root_.CommHopfAlgCat.{v} k :=
+  quotient (centerCoordinateHopfAlgebra H) (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H))
 
 /-- The reduced-center coordinate algebra is reduced. -/
-theorem isReduced_reducedCenterCoordinateRing :
-    IsReduced (reducedCenterCoordinateRing H) :=
-  HopfIdeal.isReduced_quotient_reduction k (centerCoordinateRing H)
+theorem isReduced_reducedCenterCoordinateHopfAlgebra :
+    IsReduced (reducedCenterCoordinateHopfAlgebra H) :=
+  HopfIdeal.isReduced_quotient_reduction k (centerCoordinateHopfAlgebra H)
 
 /-- The ambient ideal defining the reduced center is the radical of the center ideal. -/
 @[simp]
 theorem reducedCenterDefiningIdeal_toIdeal :
     (reducedCenterDefiningIdeal H).toIdeal = (centerDefiningIdeal H).toIdeal.radical := by
   have hcomap :
-      Ideal.comap ((mkQuotient H (centerDefiningIdeal H)).hom :
-        H →+* centerCoordinateRing H) ⊥ =
-        (centerDefiningIdeal H).toIdeal := by
-    ext x
-    rw [Ideal.mem_comap, Ideal.mem_bot]
-    exact mkQuotient_eq_zero_iff H (centerDefiningIdeal H) x
+      RingHom.ker ((mkQuotient H (centerDefiningIdeal H)).hom :
+        H →+* centerCoordinateHopfAlgebra H) =
+        (centerDefiningIdeal H).toIdeal :=
+    calc
+      RingHom.ker ((mkQuotient H (centerDefiningIdeal H)).hom :
+          H →+* centerCoordinateHopfAlgebra H) =
+          RingHom.ker (mkQuotient H (centerDefiningIdeal H)).hom.toAlgHom.toRingHom := by
+        ext x
+        rfl
+      _ = (centerDefiningIdeal H).toIdeal :=
+        mkQuotient_ker H (centerDefiningIdeal H)
   rw [reducedCenterDefiningIdeal, HopfIdeal.comapOfSurjective_toIdeal,
-    HopfIdeal.reduction_toIdeal, nilradical, Ideal.comap_radical, Ideal.zero_eq_bot, hcomap]
+    HopfIdeal.reduction_toIdeal, nilradical, Ideal.comap_radical, Ideal.zero_eq_bot,
+    ← RingHom.ker_eq_comap_bot, hcomap]
 
 /-- An element belongs to the reduced-center ideal exactly when it belongs to the radical of the
 center ideal. -/
@@ -127,10 +133,10 @@ theorem mem_reducedCenterDefiningIdeal {x : H} :
 /-- The quotient by the ambient reduced-center ideal is canonically the iterated quotient formed
 by taking the center and then killing its nilradical. -/
 noncomputable def quotientReducedCenterIso :
-    quotient H (reducedCenterDefiningIdeal H) ≅ reducedCenterCoordinateRing H :=
+    quotient H (reducedCenterDefiningIdeal H) ≅ reducedCenterCoordinateHopfAlgebra H :=
   quotientIsoOfSurjective (mkQuotient H (centerDefiningIdeal H))
     (mkQuotient_surjective H (centerDefiningIdeal H))
-      (HopfIdeal.reduction k (centerCoordinateRing H))
+      (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H))
 
 /-- The canonical reduced-center isomorphism commutes with the ambient and iterated quotient
 morphisms. -/
@@ -138,23 +144,25 @@ morphisms. -/
 theorem mkQuotient_comp_quotientReducedCenterIso_hom :
     mkQuotient H (reducedCenterDefiningIdeal H) ≫ (quotientReducedCenterIso H).hom =
       mkQuotient H (centerDefiningIdeal H) ≫
-        mkQuotient (centerCoordinateRing H) (HopfIdeal.reduction k (centerCoordinateRing H)) := by
+        mkQuotient (centerCoordinateHopfAlgebra H)
+          (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H)) := by
   exact mkQuotient_comp_quotientIsoOfSurjective_hom
     (mkQuotient H (centerDefiningIdeal H))
       (mkQuotient_surjective H (centerDefiningIdeal H))
-        (HopfIdeal.reduction k (centerCoordinateRing H))
+        (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H))
 
 /-- The ambient quotient model of the reduced center has reduced coordinate ring. -/
 theorem isReduced_quotient_reducedCenterDefiningIdeal :
     IsReduced (quotient H (reducedCenterDefiningIdeal H)) := by
-  let _ : IsReduced (reducedCenterCoordinateRing H) :=
-    isReduced_reducedCenterCoordinateRing H
+  let _ : IsReduced (reducedCenterCoordinateHopfAlgebra H) :=
+    isReduced_reducedCenterCoordinateHopfAlgebra H
   exact isReduced_of_injective (quotientReducedCenterIso H).hom.hom.toAlgHom.toRingHom
     (ConcreteCategory.bijective_of_isIso (quotientReducedCenterIso H).hom).1
 
 /-- The reduced-center ideal is contained in every central Hopf ideal whose quotient is
 reduced. -/
-theorem reducedCenterDefiningIdeal_le_of_isReduced_quotient (I : HopfIdeal k H)
+theorem reducedCenterDefiningIdeal_le_of_centerDefiningIdeal_le_of_isReduced_quotient
+    (I : HopfIdeal k H)
     (hcenter : centerDefiningIdeal H ≤ I) [IsReduced (quotient H I)] :
     reducedCenterDefiningIdeal H ≤ I := by
   rw [← HopfIdeal.toIdeal_le_toIdeal, reducedCenterDefiningIdeal_toIdeal]
@@ -165,28 +173,29 @@ theorem reducedCenterDefiningIdeal_le_of_isReduced_quotient (I : HopfIdeal k H)
 reduction is nilpotent. This records that the reduced center and the full center differ by a
 nilpotent thickening. -/
 theorem isNilpotent_reducedCenterReduction_toIdeal
-    [IsNoetherianRing (centerCoordinateRing H)] :
-    IsNilpotent (HopfIdeal.reduction k (centerCoordinateRing H)).toIdeal := by
+    [IsNoetherianRing (centerCoordinateHopfAlgebra H)] :
+    IsNilpotent (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H)).toIdeal := by
   rw [HopfIdeal.reduction_toIdeal]
-  exact IsNoetherianRing.isNilpotent_nilradical (centerCoordinateRing H)
+  exact IsNoetherianRing.isNilpotent_nilradical (centerCoordinateHopfAlgebra H)
 
 section Smooth
 
 variable (G : _root_.CommHopfAlgCat.{u} k)
 variable [IsReduced
-  ((((centerCoordinateRing G : _root_.CommHopfAlgCat.{u} k) : Type u) ⧸
-      nilradical ((centerCoordinateRing G : _root_.CommHopfAlgCat.{u} k) : Type u)) ⊗[k]
-    (((centerCoordinateRing G : _root_.CommHopfAlgCat.{u} k) : Type u) ⧸
-      nilradical ((centerCoordinateRing G : _root_.CommHopfAlgCat.{u} k) : Type u)))]
+  ((((centerCoordinateHopfAlgebra G : _root_.CommHopfAlgCat.{u} k) : Type u) ⧸
+      nilradical ((centerCoordinateHopfAlgebra G : _root_.CommHopfAlgCat.{u} k) : Type u)) ⊗[k]
+    (((centerCoordinateHopfAlgebra G : _root_.CommHopfAlgCat.{u} k) : Type u) ⧸
+      nilradical ((centerCoordinateHopfAlgebra G : _root_.CommHopfAlgCat.{u} k) : Type u)))]
 
 /-- Over an algebraically closed field, a finite-type reduced center is smooth. -/
-theorem smooth_reducedCenterCoordinateRing [IsAlgClosed k]
-    [Algebra.FiniteType k (reducedCenterCoordinateRing G)] :
-    Algebra.Smooth k (reducedCenterCoordinateRing G) := by
-  let _ : IsReduced (reducedCenterCoordinateRing G) :=
-    isReduced_reducedCenterCoordinateRing G
-  exact (smoothCommHopfAlgProperty_iff (reducedCenterCoordinateRing G)).mp
-    (smoothCommHopfAlgProperty_of_isAlgClosed_of_isReduced k (reducedCenterCoordinateRing G))
+theorem smooth_reducedCenterCoordinateHopfAlgebra [IsAlgClosed k]
+    [Algebra.FiniteType k (reducedCenterCoordinateHopfAlgebra G)] :
+    Algebra.Smooth k (reducedCenterCoordinateHopfAlgebra G) := by
+  let _ : IsReduced (reducedCenterCoordinateHopfAlgebra G) :=
+    isReduced_reducedCenterCoordinateHopfAlgebra G
+  exact (smoothCommHopfAlgProperty_iff (reducedCenterCoordinateHopfAlgebra G)).mp
+    (smoothCommHopfAlgProperty_of_isAlgClosed_of_isReduced k
+      (reducedCenterCoordinateHopfAlgebra G))
 
 end Smooth
 
