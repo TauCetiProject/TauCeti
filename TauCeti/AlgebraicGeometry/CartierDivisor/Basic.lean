@@ -258,22 +258,24 @@ open subset: a local equation stays a local equation. -/
 @[simp]
 lemma rationalUnitClass_restrict {U V : X.Opens} [Nonempty U] [Nonempty V] (h : V ≤ U)
     (g : Additive X.functionFieldˣ) :
-    (rationalUnitClass X U g) |_ V = rationalUnitClass X V g := by
-  have hmap :
-      ((toCartierDivisorSheaf X).hom.app (op V)).hom
+    ((toCartierDivisorSheaf X).hom.app (op U)).hom
+        ((rationalUnitSectionsEquiv X U).symm g) |_ V = rationalUnitClass X V g := by
+  calc
+    _ = ((toCartierDivisorSheaf X).hom.app (op V)).hom
           (TopCat.Presheaf.restrictOpen (F := (rationalUnitSheaf X).obj)
-            ((rationalUnitSectionsEquiv X U).symm g) V h) =
-        (rationalUnitClass X U g) |_ V :=
-    TopCat.Presheaf.map_restrict (toCartierDivisorSheaf X).hom h _
-  rw [← hmap, rationalUnitSectionsEquiv_symm_restrict]
-  rfl
+            ((rationalUnitSectionsEquiv X U).symm g) V h) :=
+      (TopCat.Presheaf.map_restrict (toCartierDivisorSheaf X).hom h _).symm
+    _ = _ := by rw [rationalUnitSectionsEquiv_symm_restrict, ← rationalUnitClass_apply]
 
 /-- A regular unit on `U` has zero Cartier-divisor class over `U`. -/
 @[simp]
 lemma rationalUnitClass_germToFunctionField_eq_zero (U : X.Opens) [Nonempty U]
     (f : ((X.presheaf.obj (op U)) : Type u)ˣ) :
-    rationalUnitClass X U
-      (Additive.ofMul (Units.map (X.germToFunctionField U).hom f)) = 0 := by
+    ((toCartierDivisorSheaf X).hom.app (op U)).hom
+      ((rationalUnitSectionsEquiv X U).symm
+        (Additive.ofMul (Units.map (X.germToFunctionField U).hom f))) = 0 := by
+  change rationalUnitClass X U
+    (Additive.ofMul (Units.map (X.germToFunctionField U).hom f)) = 0
   have hsymm :
       (rationalUnitSectionsEquiv X U).symm
           (Additive.ofMul (regularUnitToFunctionField X U f)) =

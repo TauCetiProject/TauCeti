@@ -89,7 +89,7 @@ theorem rationalUnitClass_eq_of_forall_coeff_eq {D : SchemeWeilDivisor X}
   rw [hunit] at hzero
   refine sub_eq_zero.mp ?_
   rw [← map_sub]
-  exact hzero
+  simpa only [Scheme.rationalUnitClass_apply, ofMul_toMul] using hzero
 
 /-- **The local criterion for the Cartier divisor of `D`.** If a Cartier divisor `E` restricts,
 near every point, to the class of a local equation of `D`, then it does so over *every* nonempty
@@ -116,13 +116,21 @@ theorem restrict_eq_rationalUnitClass {D : SchemeWeilDivisor X} {E : Scheme.Cart
     (fun x hx ↦ Opens.mem_iSup.mpr ⟨x, ⟨hxW x, hx⟩⟩) _ _ fun x ↦ ?_
   -- Needed as an instance for the classes over `W x ⊓ U` below.
   have := hWne x
+  have hrestrictLeft :
+      (Scheme.rationalUnitClass X (W x) (k x)) |_ (W x ⊓ U : X.Opens) =
+        Scheme.rationalUnitClass X (W x ⊓ U : X.Opens) (k x) := by
+    simpa only [Scheme.rationalUnitClass_apply] using
+      Scheme.rationalUnitClass_restrict (X := X) (U := W x) (V := W x ⊓ U)
+        inf_le_left (k x)
   have hleft : E |_ (W x ⊓ U : X.Opens) =
       Scheme.rationalUnitClass X (W x ⊓ U : X.Opens) (k x) := by
     rw [← TopCat.Presheaf.restrict_restrict (inf_le_left : W x ⊓ U ≤ W x) (le_top : W x ≤ ⊤) E,
-      hEW x, Scheme.rationalUnitClass_restrict X inf_le_left]
+      hEW x, hrestrictLeft]
   have hright : (Scheme.rationalUnitClass X U g) |_ (W x ⊓ U : X.Opens) =
-      Scheme.rationalUnitClass X (W x ⊓ U : X.Opens) g :=
-    Scheme.rationalUnitClass_restrict X inf_le_right g
+      Scheme.rationalUnitClass X (W x ⊓ U : X.Opens) g := by
+    simpa only [Scheme.rationalUnitClass_apply] using
+      Scheme.rationalUnitClass_restrict (X := X) (U := U) (V := W x ⊓ U)
+        inf_le_right g
   refine (TopCat.Presheaf.restrict_restrict (inf_le_right : W x ⊓ U ≤ U)
     (le_top : U ≤ ⊤) E).trans
       (hleft.trans ((rationalUnitClass_eq_of_forall_coeff_eq (D := D)
@@ -154,11 +162,15 @@ theorem existsUnique_cartierDivisor (hX : ∀ y : X, coheight y ≤ 1)
       fun x ↦ Scheme.rationalUnitClass X (U x) (g x) := by
     intro x z
     have hx : (Scheme.rationalUnitClass X (U x) (g x)) |_ (U x ⊓ U z : X.Opens) =
-        Scheme.rationalUnitClass X (U x ⊓ U z : X.Opens) (g x) :=
-      Scheme.rationalUnitClass_restrict X inf_le_left (g x)
+        Scheme.rationalUnitClass X (U x ⊓ U z : X.Opens) (g x) := by
+      simpa only [Scheme.rationalUnitClass_apply] using
+        Scheme.rationalUnitClass_restrict (X := X) (U := U x) (V := U x ⊓ U z)
+          inf_le_left (g x)
     have hz : (Scheme.rationalUnitClass X (U z) (g z)) |_ (U x ⊓ U z : X.Opens) =
-        Scheme.rationalUnitClass X (U x ⊓ U z : X.Opens) (g z) :=
-      Scheme.rationalUnitClass_restrict X inf_le_right (g z)
+        Scheme.rationalUnitClass X (U x ⊓ U z : X.Opens) (g z) := by
+      simpa only [Scheme.rationalUnitClass_apply] using
+        Scheme.rationalUnitClass_restrict (X := X) (U := U z) (V := U x ⊓ U z)
+          inf_le_right (g z)
     exact hx.trans ((rationalUnitClass_eq_of_forall_coeff_eq (D := D)
       (fun _ _ ↦ inferInstance) (fun y _ ↦ hX y)
       (fun y hy ↦ hg x y (Opens.mem_inf.mp hy).1)
