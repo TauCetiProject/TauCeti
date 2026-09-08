@@ -126,10 +126,8 @@ theorem mem_diagonalPoints_iff {K : Type u} [CommRing K] {g : points r K} :
 theorem coe_weightTorusPoints_mem_diagonalTorus (K : Type u) [CommRing K] (s : Fin r → Kˣ) :
     (weightTorusPoints r K s : Matrix.GeneralLinearGroup (Fin (r + 1)) K) ∈
       diagonalTorus K (r + 1) := by
-  rw [mem_diagonalTorus_iff]
-  simp only [coe_weightTorusPoints,
-    UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
-  exact Matrix.isDiag_diagonal _
+  rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply]
+  exact mem_diagonalTorus_iff_exists_diagGL.mpr ⟨_, rfl⟩
 
 /-- The partial products of a determinant-one diagonal tuple give an explicit preimage under the
 standard weight-torus parametrization. -/
