@@ -40,9 +40,6 @@ an admissible finite presentation in `A` and pass from `A(T/s)` to the completed
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic], arXiv:1910.05934v1, Proposition 8.2(2).
-* The simultaneous clearing of denominators is Mathlib's
-  `IsLocalization.commonDenomOfFinset` and `IsLocalization.finsetIntegerMultiple`, used as
-  they stand.
 -/
 
 public section
@@ -93,9 +90,9 @@ theorem exists_comap_preimage_rationalSubset_inter_spa_eq [TopologicalSpace A]
         rationalSubset Bplus U q := by
   obtain ⟨V, r, hVr⟩ := exists_comap_preimage_basicOpenFinset_eq M U q
   refine ⟨V, r, ?_⟩
-  rw [rationalSubset_def, rationalSubset_def, Set.preimage_inter, hVr]
-  exact Set.ext fun v ↦ ⟨fun hv ↦ ⟨hv.2, hv.1.2⟩,
-    fun hv ↦ ⟨⟨comap_mem_spa hcont hplus hv.1, hv.2⟩, hv.1⟩⟩
+  rw [comap_preimage_basicOpenFinset] at hVr
+  rw [comap_preimage_rationalSubset_inter_spa _ hcont hplus,
+    rationalSubset_def, rationalSubset_def, hVr]
 
 /-- **Rational subsets through the topological-localization homeomorphism.** Every rational
 subset of `Spa(A(T/s), A(T/s)⁺)` is the inverse image, under the canonical homeomorphism with
@@ -118,6 +115,7 @@ theorem exists_spaLocalizationHomeomorph_preimage_rationalSubset_eq
           (integralClosure ↥(Algebra.adjoin Aplus
             (Set.range fun t : T ↦
               (TauCeti.Localization.divBy (t : A) s : S))) S).toSubring U q := by
+  classical
   let _ := locTopology P T s S hden
   have _ := isTopologicalRing_locTopology P T s S hden
   let Bplus := (integralClosure ↥(Algebra.adjoin Aplus
@@ -129,14 +127,16 @@ theorem exists_spaLocalizationHomeomorph_preimage_rationalSubset_eq
           (Set.range fun t : T ↦ (TauCeti.Localization.divBy (t : A) s : S))))
   obtain ⟨V, r, hVr⟩ := exists_comap_preimage_rationalSubset_inter_spa_eq (Submonoid.powers s)
     Aplus Bplus (continuous_algebraMap_locTopology P T s S hden) hplus U q
+  have himage : rationalSubset Bplus (V.image (algebraMap A S)) (algebraMap A S r) =
+      rationalSubset Bplus U q := by
+    rw [← comap_preimage_rationalSubset_inter_spa (algebraMap A S)
+      (continuous_algebraMap_locTopology P T s S hden) hplus]
+    exact hVr
   refine ⟨V, r, Set.ext fun v ↦ ?_⟩
-  have hpoint := Set.ext_iff.mp hVr v.1
-  rw [Set.mem_preimage, Set.mem_preimage, spaLocalizationHomeomorph_apply_val]
-  -- The remaining definitional change only unfolds the two subtype preimages: `v` carries its
-  -- membership in `spa Bplus`, while `hVr` is stated for the underlying point `v.1 : Spv S`.
-  change comap (algebraMap A S) v.1 ∈ rationalSubset Aplus V r ↔
-    v.1 ∈ rationalSubset Bplus U q
-  exact ⟨fun hv ↦ hpoint.mp ⟨hv, v.2⟩, fun hv ↦ (hpoint.mpr hv).1⟩
+  rw [Set.mem_preimage, Set.mem_preimage, spaLocalizationHomeomorph_apply_val, ← himage]
+  simpa only [Set.mem_preimage, spaComap_val] using
+    Set.ext_iff.mp (spaComap_preimage_rationalSubset (algebraMap A S)
+      (continuous_algebraMap_locTopology P T s S hden) Aplus Bplus hplus V r) v
 
 end TauCeti.ValuationSpectrum
 
