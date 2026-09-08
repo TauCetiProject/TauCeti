@@ -283,6 +283,17 @@ theorem constantCoeff_subst_pair_formalThirdRoot (h₁ : constantCoeff q₁ = 0)
   constantCoeff_subst_eq_zero (hasSubst_pair h₁ h₂) (by rintro (j | j) <;> simpa)
     (constantCoeff_formalThirdRoot W)
 
+/-- The addition series, read at the pair `(q₁, q₂)`, again has vanishing constant coefficient, so
+a bracketed sum is itself a legitimate parameter — which is what lets an associativity argument
+feed one bracketed sum into another. -/
+@[simp]
+theorem constantCoeff_subst_pair_formalAdd (h₁ : constantCoeff q₁ = 0)
+    (h₂ : constantCoeff q₂ = 0) :
+    constantCoeff (subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+      (formalAdd W)) = 0 :=
+  constantCoeff_subst_eq_zero (hasSubst_pair h₁ h₂) (by rintro (j | j) <;> simpa)
+    (constantCoeff_formalAdd W)
+
 /-- The addition series at the pair `(q₁, q₂)` is the formal inverse read at the third root
 `z₃(q₁, q₂)`.
 
