@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Permutation
+public import Mathlib.LinearAlgebra.Matrix.Swap
 public import Mathlib.LinearAlgebra.UnitaryGroup
 
 /-!
@@ -43,7 +43,7 @@ attribute [local instance] starRingOfComm
 vector, sends the `j`-th basis vector to the negative of the `i`-th basis vector, and fixes the
 remaining basis vectors. -/
 def coordinateRotation (i j : n) (hij : i ≠ j) : Matrix.specialOrthogonalGroup n R :=
-  ⟨(Equiv.swap i j).permMatrix R * Matrix.diagonal (Function.update 1 j (-1)), by
+  ⟨Matrix.swap R i j * Matrix.diagonal (Function.update 1 j (-1)), by
     rw [Matrix.mem_specialOrthogonalGroup_iff]
     constructor
     · rw [Matrix.mem_orthogonalGroup_iff]
@@ -54,20 +54,19 @@ def coordinateRotation (i j : n) (hij : i ≠ j) : Matrix.specialOrthogonalGroup
         · subst b
           by_cases haj : a = j <;> simp [haj]
         · simp [hab]
-      rw [Matrix.transpose_mul, Matrix.diagonal_transpose, Matrix.transpose_permMatrix]
+      rw [Matrix.transpose_mul, Matrix.diagonal_transpose, Matrix.transpose_swap]
       simp only [Matrix.mul_assoc]
       rw [← Matrix.mul_assoc (Matrix.diagonal _) (Matrix.diagonal _), hdiag,
-        Matrix.one_mul]
-      simp [← Matrix.permMatrix_mul]
-    · rw [Matrix.det_mul, Matrix.det_permutation, Matrix.det_diagonal]
+        Matrix.one_mul, Matrix.swap_mul_self]
+    · rw [Matrix.det_mul, Matrix.swap, Matrix.det_permutation, Matrix.det_diagonal]
       rw [Finset.prod_update_of_mem (Finset.mem_univ j)]
       simp [hij]⟩
 
-/-- The underlying matrix of a coordinate rotation is the signed permutation matrix used in its
+/-- The underlying matrix of a coordinate rotation is the signed swap matrix used in its
 definition. -/
 theorem coe_coordinateRotation (i j : n) (hij : i ≠ j) :
     (coordinateRotation (R := R) i j hij : Matrix n n R) =
-      (Equiv.swap i j).permMatrix R * Matrix.diagonal (Function.update 1 j (-1)) := (rfl)
+      Matrix.swap R i j * Matrix.diagonal (Function.update 1 j (-1)) := (rfl)
 
 /-- A coordinate rotation exchanges the selected coordinates with the sign on the first output
 coordinate. -/
@@ -75,7 +74,7 @@ coordinate. -/
 theorem coordinateRotation_mulVec (i j : n) (hij : i ≠ j) (w : n → R) (a : n) :
     ((coordinateRotation (R := R) i j hij : Matrix n n R) *ᵥ w) a =
       if a = i then -w j else if a = j then w i else w a := by
-  rw [coe_coordinateRotation, ← Matrix.mulVec_mulVec, Matrix.permMatrix_mulVec]
+  rw [coe_coordinateRotation, ← Matrix.mulVec_mulVec, Matrix.swap_mulVec]
   simp only [Function.comp_apply, Matrix.mulVec_diagonal, Function.update_apply]
   by_cases hai : a = i
   · subst a
