@@ -13,6 +13,8 @@ public import Mathlib.RingTheory.Finiteness.Prod
 # Finitely generated modules
 
 This file provides general results about Mathlib's category of finitely generated modules.
+Additivity of finite-free rank on biproducts makes dimension a split-additive invariant, which
+feeds the Grothendieck-group computation for finite-dimensional vector spaces.
 
 ## Main results
 
@@ -30,6 +32,7 @@ universe u v
 attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
 
 /-- The rank of a biproduct of finite free modules is the sum of their ranks. -/
+@[simp]
 theorem _root_.FGModuleCat.finrank_biprod (R : Type u) [Ring R] [StrongRankCondition R]
     (X Y : FGModuleCat.{v} R) [Module.Free R X] [Module.Free R Y] :
     Module.finrank R ((X ⊞ Y : FGModuleCat.{v} R) : Type v) =
