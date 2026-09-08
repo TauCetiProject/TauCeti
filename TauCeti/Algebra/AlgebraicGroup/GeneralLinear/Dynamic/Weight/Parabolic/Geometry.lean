@@ -5,30 +5,30 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Levi.DiagonalTorus
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Levi.SemidirectProduct
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Geometry
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Unipotent.Geometry
-public import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
 
 /-!
-# Geometry of injective-weight parabolics
+# Geometry of general-linear weight parabolics
 
-An injective weight has diagonal split torus as its Levi factor. Combining this identification
-with the represented weight-parabolic Levi decomposition
+Every weight Levi has a localized block-coordinate presentation that makes it smooth and
+geometrically connected. Combining these facts with the represented weight-parabolic Levi
+decomposition
 
 ```text
 U(w) ⋊ L(w) ≅ P(w)
 ```
 
-shows that its weight parabolic is smooth and geometrically connected over every field.
+shows that every weight parabolic is smooth and geometrically connected over a field.
 
 ## Main declarations
 
 * `TauCeti.GeneralLinear.smoothCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra`:
-  smoothness of an injective-weight parabolic.
+  smoothness of a weight parabolic.
 * `TauCeti.GeneralLinear.
   geometricallyConnectedCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra`:
-  geometric connectedness of an injective-weight parabolic.
+  geometric connectedness of a weight parabolic.
 
 ## References
 
@@ -51,41 +51,22 @@ noncomputable section
 
 variable {N : ℕ}
 
-private theorem smooth_weightLeviCoordinateHopfAlgebra
-    (k : Type u) [Field k] (w : Fin N → ℤ) (hw : Function.Injective w) :
-    smoothCommHopfAlgProperty k (weightLeviCoordinateHopfAlgebra k w) := by
-  apply (smoothCommHopfAlgProperty k).prop_of_iso
-    (weightLeviDiagonalCoordinateIso k w hw).symm
-  let H := DiagonalizableGroup.coordinateRing k
-    (SplitTorus.characterGroup (ULift.{u} (Fin N)))
-  exact torusCommHopfAlgProperty.smooth k H
-    ((SplitTorus.splitTorus_coordinateRing k (ULift.{u} (Fin N))).torus)
-
-private theorem geometricallyConnected_weightLeviCoordinateHopfAlgebra
-    (k : Type u) [Field k] (w : Fin N → ℤ) (hw : Function.Injective w) :
-    geometricallyConnectedCommHopfAlgProperty k (weightLeviCoordinateHopfAlgebra k w) := by
-  apply (geometricallyConnectedCommHopfAlgProperty k).prop_of_iso
-    (weightLeviDiagonalCoordinateIso k w hw).symm
-  let H := DiagonalizableGroup.coordinateRing k
-    (SplitTorus.characterGroup (ULift.{u} (Fin N)))
-  exact torusCommHopfAlgProperty.geometricallyConnected k H
-    ((SplitTorus.splitTorus_coordinateRing k (ULift.{u} (Fin N))).torus)
-
-/-- The coordinate Hopf algebra of an injective-weight parabolic is smooth over every field. -/
+/-- The coordinate Hopf algebra of a weight parabolic is smooth over every field. -/
 theorem smoothCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra
-    (k : Type u) [Field k] (w : Fin N → ℤ) (hw : Function.Injective w) :
+    (k : Type u) [Field k] (w : Fin N → ℤ) :
     smoothCommHopfAlgProperty k (weightParabolicCoordinateHopfAlgebra k w) := by
   apply (smoothCommHopfAlgProperty k).prop_of_iso
     (Dynamic.weightParabolicSemidirectProductCoordinateIso k w).symm
   apply Dynamic.smoothCommHopfAlgProperty_weightParabolicSemidirectProductCoordinateHopfAlgebra
   · rw [smoothCommHopfAlgProperty_iff]
     infer_instance
-  · exact smooth_weightLeviCoordinateHopfAlgebra k w hw
+  · rw [smoothCommHopfAlgProperty_iff]
+    infer_instance
 
-/-- The coordinate Hopf algebra of an injective-weight parabolic is geometrically connected
-over every field. -/
+/-- The coordinate Hopf algebra of a weight parabolic is geometrically connected over every
+field. -/
 theorem geometricallyConnectedCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra
-    (k : Type u) [Field k] (w : Fin N → ℤ) (hw : Function.Injective w) :
+    (k : Type u) [Field k] (w : Fin N → ℤ) :
     geometricallyConnectedCommHopfAlgProperty k
       (weightParabolicCoordinateHopfAlgebra k w) := by
   apply (geometricallyConnectedCommHopfAlgProperty k).prop_of_iso
@@ -93,7 +74,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_weightParabolicCoordinateHopfA
   exact
     geometricallyConnectedCommHopfAlgProperty_weightParabolicSemidirectProductCoordinateHopfAlgebra
       k w (geometricallyConnectedCommHopfAlgProperty_weightUnipotentCoordinateHopfAlgebra k w)
-      (geometricallyConnected_weightLeviCoordinateHopfAlgebra k w hw)
+      (geometricallyConnectedCommHopfAlgProperty_weightLeviCoordinateHopfAlgebra k w)
 
 end
 

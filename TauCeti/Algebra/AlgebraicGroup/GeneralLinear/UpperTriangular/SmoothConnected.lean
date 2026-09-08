@@ -12,9 +12,9 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 # Geometry of the upper-triangular subgroup scheme
 
 The standard upper-triangular subgroup of `GL_n` is the weight parabolic for the strictly
-decreasing weights `i ↦ n - 1 - i`. This file specializes the general geometry of
-injective-weight parabolics to establish smoothness and geometric connectedness of the
-upper-triangular group over every field.
+decreasing weights `i ↦ n - 1 - i`. This file specializes the general geometry of weight
+parabolics to establish smoothness and geometric connectedness of the upper-triangular group
+over every field.
 
 ## Main declarations
 
@@ -51,7 +51,7 @@ theorem smoothCommHopfAlgProperty_coordinateHopfAlgebra
     (k : Type u) [Field k] :
     smoothCommHopfAlgProperty k (coordinateHopfAlgebra k n) :=
   smoothCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra
-    k (weights n) (weights_injective n)
+    k (weights n)
 
 /-- **The standard upper-triangular subgroup of `GL_n` is geometrically connected over every
 field.** -/
@@ -59,7 +59,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra
     (k : Type u) [Field k] :
     geometricallyConnectedCommHopfAlgProperty k (coordinateHopfAlgebra k n) :=
   geometricallyConnectedCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra
-    k (weights n) (weights_injective n)
+    k (weights n)
 
 end UpperTriangular
 
