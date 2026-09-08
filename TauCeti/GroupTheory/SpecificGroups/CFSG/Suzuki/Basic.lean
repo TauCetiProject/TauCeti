@@ -102,31 +102,6 @@ theorem halfFrobenius_def :
     d.halfFrobenius = SpStd.specialIsogeny d.1.Closure :=
   (rfl)
 
-private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.toRankTwoBLieIndex.AmbientGroup) :
-    (⇑d.halfFrobenius)^[2 * k] g =
-      SpStd.frobenius 1 (d.toRankTwoBLieIndex.1).characteristic k
-        (d.toRankTwoBLieIndex.1).Closure g := by
-  -- The half-Frobenius is the carrier's special isogeny, which squares to the one-step Frobenius,
-  -- so an even iterate is an iterated Frobenius. Only the last step descends to matrix entries, to
-  -- identify the literal `2` of the carrier's square relation with the index's characteristic;
-  -- that equation cannot be rewritten at the exponent of `SpStd.frobenius`, whose instances
-  -- depend on it.
-  have hchar : (d.toRankTwoBLieIndex.1).characteristic = 2 := d.characteristic_eq_two
-  induction k generalizing g with
-  | zero => simp [SpStd.frobenius_zero]
-  | succ k ih =>
-      have hsucc : 2 * (k + 1) = 2 * k + 1 + 1 := by ring
-      rw [hsucc, Function.iterate_succ_apply', Function.iterate_succ_apply', ih,
-        halfFrobenius_def, SpStd.specialIsogeny_specialIsogeny, SpStd.frobenius_add]
-      apply Subtype.ext
-      apply Units.ext
-      ext a b
-      rw [SpStd.coe_frobenius_apply, SpStd.coe_frobenius_apply, MonoidHom.comp_apply,
-        SpStd.coe_frobenius_apply, SpStd.coe_frobenius_apply, ← pow_mul, ← pow_mul]
-      congr 1
-      rw [pow_succ, hchar]
-      ring
-
 /-- **The square of the half-Frobenius is the prime-field Frobenius**, that is `τ ^ 2 = Frob_p` at
 the defining characteristic `p = 2`. No uniqueness is claimed: nothing here shows that this
 relation, or the action on the simple root subgroups, determines an endomorphism of the ambient
@@ -134,11 +109,18 @@ group. -/
 @[simp]
 theorem halfFrobenius_halfFrobenius (g : d.toRankTwoBLieIndex.AmbientGroup) :
     d.halfFrobenius (d.halfFrobenius g) = d.toRankTwoBLieIndex.primeFrobenius g := by
-  have h := d.halfFrobenius_iterate_two_mul 1 g
-  have htwo : 2 * 1 = 1 + 1 := rfl
-  rw [htwo, Function.iterate_add_apply, Function.iterate_one] at h
-  rw [RankTwoBLieIndex.primeFrobenius_def]
-  exact h
+  -- The carrier's square relation is stated at the literal `2`, the index's at its characteristic.
+  -- Identifying the two is the one step that descends to matrix entries: the characteristic cannot
+  -- be rewritten at the exponent of `SpStd.frobenius`, whose instances depend on it.
+  have hchar : (d.toRankTwoBLieIndex.1).characteristic = 2 := d.characteristic_eq_two
+  rw [halfFrobenius_def, SpStd.specialIsogeny_specialIsogeny,
+    RankTwoBLieIndex.primeFrobenius_def]
+  apply Subtype.ext
+  apply Units.ext
+  ext a b
+  rw [SpStd.coe_frobenius_apply, SpStd.coe_frobenius_apply]
+  congr 1
+  rw [hchar]
 
 /-- **The square of the half-Frobenius is the prime-field Frobenius**, as an identity of monoid
 homomorphisms, so a consumer taking odd powers can rewrite the composite itself. -/
@@ -146,6 +128,19 @@ homomorphisms, so a consumer taking odd powers can rewrite the composite itself.
 theorem halfFrobenius_comp_halfFrobenius :
     d.halfFrobenius.comp d.halfFrobenius = d.toRankTwoBLieIndex.primeFrobenius :=
   MonoidHom.ext d.halfFrobenius_halfFrobenius
+
+private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.toRankTwoBLieIndex.AmbientGroup) :
+    (⇑d.halfFrobenius)^[2 * k] g =
+      SpStd.frobenius 1 (d.toRankTwoBLieIndex.1).characteristic k
+        (d.toRankTwoBLieIndex.1).Closure g := by
+  induction k generalizing g with
+  | zero => simp [SpStd.frobenius_zero]
+  | succ k ih =>
+      have hsucc : 2 * (k + 1) = 2 * k + 1 + 1 := by ring
+      have hk : k + 1 = 1 + k := Nat.add_comm k 1
+      rw [hsucc, Function.iterate_succ_apply', Function.iterate_succ_apply', ih,
+        d.halfFrobenius_halfFrobenius, RankTwoBLieIndex.primeFrobenius_def, hk,
+        SpStd.frobenius_add, MonoidHom.comp_apply]
 
 /-- **The Steinberg endomorphism of a Suzuki index**: the odd power `τ ^ (2m+1)` of the
 half-Frobenius, for `2m+1` the field exponent the index records. -/
