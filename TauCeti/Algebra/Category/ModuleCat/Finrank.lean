@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Dimension.Finite
 /-!
 # Finrank of a zero object of `ModuleCat`
 
-Vanishing of an object of `ModuleCat k` is naturally expressed categorically, as
+Vanishing of an object of `ModuleCat R` is naturally expressed categorically, as
 `CategoryTheory.Limits.IsZero`, while the dimension counts that consume it speak of
 `Module.finrank`. This file supplies the one translation between the two: a zero object has
 finrank zero.
@@ -29,11 +29,11 @@ universe v u
 
 namespace ModuleCat
 
-variable {k : Type u} [DivisionRing k]
+variable {R : Type u} [Ring R] [Nontrivial R]
 
-/-- A zero object in `ModuleCat k` has finrank zero. -/
-theorem finrank_eq_zero_of_isZero {X : ModuleCat.{v} k} (hX : IsZero X) :
-    Module.finrank k X = 0 := by
+/-- A zero object in `ModuleCat R` has finrank zero. -/
+theorem finrank_eq_zero_of_isZero {X : ModuleCat.{v} R} (hX : IsZero X) :
+    Module.finrank R X = 0 := by
   let _ : Subsingleton X := ModuleCat.subsingleton_of_isZero hX
   exact Module.finrank_zero_of_subsingleton
 
