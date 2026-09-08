@@ -22,6 +22,15 @@ This file supplies the bridge. Unfolding the group algebra once identifies `aver
 `norm` scaled by `⅟(#G)`, and since scaling by a unit changes no image, `norm` has the same range
 as the projection: the invariants.
 
+The file also records the companion description of the invariants available when `G` is cyclic.
+Invariance is a condition on every group element, but a vector fixed by a generator is fixed by all
+of its powers, so testing a single generator `g` suffices and the invariants are cut out by the one
+linear map `ρ(g) - 1`. Mathlib states this elementwise, in
+`Representation.mem_invariants_iff_of_forall_mem_zpowers`; the submodule-level equality with
+`ker (ρ(g) - 1)` is the form used to present the (co)homology of a finite cyclic group as a
+subquotient of `M`, where each group is the homology of `ρ(g) - 1` and the norm in one order or
+the other.
+
 ## Main results
 
 * `Representation.averageMap_eq_invOf_card_smul_norm`: the averaging projection is the group sum
