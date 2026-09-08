@@ -5,46 +5,34 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.Factors
-public import Mathlib.Algebra.Field.ZMod
+public import TauCeti.RingTheory.Polynomial.FactorDegrees
 public import Mathlib.Algebra.Polynomial.SpecificDegree
-public import Mathlib.RingTheory.Polynomial.UniqueFactorization
+import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
 
 import Mathlib.Algebra.CharP.Two
+import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.LinearCombination
 
 /-!
 # Degrees of factors modulo a prime
 
-For an integral polynomial `f` and a prime `p`, `Polynomial.factorDegrees f p` is the multiset of
-degrees of the monic irreducible factors of the reduction of `f` modulo `p`. Multiplicities are
-retained: a repeated irreducible factor contributes its degree repeatedly.
-
-This is the polynomial-side factorization datum compared with cycle types in Dedekind's
-factorization theorem. The API here records its total degree, computes it from any factorization
-of the reduction into irreducibles, and characterizes the polynomials whose reduction is
-irreducible. The underlying facts about `normalizedFactors` over a field are proved in
-`TauCeti/RingTheory/Polynomial/Factors.lean`, and the separability of the reduction at a prime
-not dividing the discriminant in `TauCeti/RingTheory/Polynomial/Resultant/Discriminant.lean`.
+This module supplies the Layer 5 worked computations of `Polynomial.factorDegrees` for
+`X ^ 5 - X - 1`. The generic polynomial carrier and API live in
+`TauCeti/RingTheory/Polynomial/FactorDegrees.lean`.
 
 ## Main declarations
 
-* `Polynomial.factorDegrees`: the multiset of factor degrees of `f` modulo `p`.
-* `Polynomial.factorDegrees_eq_map_natDegree_of_map_eq_prod`: the factor degrees are read off
-  from any factorization of the reduction into irreducibles.
-* `Polynomial.sum_factorDegrees_eq_natDegree_map`, `Polynomial.Monic.sum_factorDegrees`: the
-  factor degrees sum to the degree after reduction, which for monic `f` is `f.natDegree`.
-* `Polynomial.factorDegrees_eq_singleton_of_irreducible`,
-  `Polynomial.irreducible_map_of_card_factorDegrees_eq_one`,
-  `Polynomial.Monic.factorDegrees_eq_singleton_iff_irreducible`: a single factor degree is the
-  same thing as an irreducible reduction.
 * `Polynomial.factorDegrees_X_pow_five_sub_X_sub_one_two`: the worked example
   `factorDegrees (X ^ 5 - X - 1) 2 = {3, 2}`, with the two irreducibility facts over `ZMod 2`
   that it rests on.
+* `Polynomial.factorDegrees_X_pow_five_sub_X_sub_one_five`: the worked example
+  `factorDegrees (X ^ 5 - X - 1) 5 = {5}`.
 
 ## References
 
+* [Tau Ceti PolynomialGaloisGroups roadmap, Layer 5](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/PolynomialGaloisGroups/README.md#layer-5-frobenius-specialization),
+  with Lean signatures in its Layer 5 `Suggested.lean` specification.
 * D. A. Marcus, *Number Fields*, 2nd edition, Springer 2018, Chapter 4, where the factorization
   of `f mod p` is matched with the splitting of `p`.
 * J. Neukirch, *Algebraic Number Theory*, Springer 1999, Chapter I, §8.
@@ -53,109 +41,11 @@ not dividing the discriminant in `TauCeti/RingTheory/Polynomial/Resultant/Discri
 public section
 noncomputable section
 
-open Polynomial UniqueFactorizationMonoid
+open Polynomial
 
 namespace TauCeti
 
-/-- The multiset of degrees of the monic irreducible factors of the reduction of an integral
-polynomial modulo a prime. Repeated factors occur with their multiplicities. -/
-noncomputable def _root_.Polynomial.factorDegrees (f : ℤ[X]) (p : ℕ) [Fact p.Prime] :
-    Multiset ℕ :=
-  Multiset.map Polynomial.natDegree
-    (normalizedFactors (f.map (Int.castRingHom (ZMod p))))
-
-/-- The defining equation for `Polynomial.factorDegrees`. -/
-theorem _root_.Polynomial.factorDegrees_def (f : ℤ[X]) (p : ℕ) [Fact p.Prime] :
-    f.factorDegrees p = Multiset.map Polynomial.natDegree
-      (normalizedFactors (f.map (Int.castRingHom (ZMod p)))) :=
-  (rfl)
-
-/-- A natural number occurs in `f.factorDegrees p` exactly when it is the degree of a normalized
-irreducible factor of the reduction of `f` modulo `p`. -/
-theorem _root_.Polynomial.mem_factorDegrees_iff {f : ℤ[X]} {p d : ℕ} [Fact p.Prime] :
-    d ∈ f.factorDegrees p ↔ ∃ q ∈ normalizedFactors (f.map (Int.castRingHom (ZMod p))),
-      q.natDegree = d := by
-  simp [factorDegrees_def]
-
-/-- Every degree occurring in `f.factorDegrees p` is positive. -/
-theorem _root_.Polynomial.pos_of_mem_factorDegrees {f : ℤ[X]} {p d : ℕ} [Fact p.Prime]
-    (hd : d ∈ f.factorDegrees p) : 0 < d := by
-  obtain ⟨q, hq, rfl⟩ := mem_factorDegrees_iff.mp hd
-  exact (irreducible_of_normalized_factor q hq).natDegree_pos
-
-/-- The number of factor degrees is the number of normalized irreducible factors, counted with
-multiplicity. -/
-@[simp]
-theorem _root_.Polynomial.card_factorDegrees (f : ℤ[X]) (p : ℕ) [Fact p.Prime] :
-    (f.factorDegrees p).card =
-      (normalizedFactors (f.map (Int.castRingHom (ZMod p)))).card := by
-  simp [factorDegrees_def]
-
-/-- The zero polynomial has no factor degrees. -/
-@[simp]
-theorem _root_.Polynomial.factorDegrees_zero (p : ℕ) [Fact p.Prime] :
-    (0 : ℤ[X]).factorDegrees p = 0 := by
-  simp [factorDegrees_def]
-
-/-- The constant polynomial one has no factor degrees. -/
-@[simp]
-theorem _root_.Polynomial.factorDegrees_one (p : ℕ) [Fact p.Prime] :
-    (1 : ℤ[X]).factorDegrees p = 0 := by
-  simp [factorDegrees_def]
-
-/-- Factor degrees turn a product whose reductions are nonzero into multiset addition. -/
-theorem _root_.Polynomial.factorDegrees_mul (f g : ℤ[X]) (p : ℕ) [Fact p.Prime]
-    (hf : f.map (Int.castRingHom (ZMod p)) ≠ 0)
-    (hg : g.map (Int.castRingHom (ZMod p)) ≠ 0) :
-    (f * g).factorDegrees p = f.factorDegrees p + g.factorDegrees p := by
-  simp [factorDegrees_def, normalizedFactors_mul hf hg]
-
-/-- The factor degrees are read off from any factorization of the reduction into irreducibles,
-without normalizing the factors first. This is how the multiset is computed in practice: a
-factorization of `f mod p` need not come from a factorization over `ℤ`. -/
-theorem _root_.Polynomial.factorDegrees_eq_map_natDegree_of_map_eq_prod {f : ℤ[X]} {p : ℕ}
-    [Fact p.Prime] {s : Multiset (ZMod p)[X]} (hs : ∀ q ∈ s, Irreducible q)
-    (hfs : f.map (Int.castRingHom (ZMod p)) = s.prod) :
-    f.factorDegrees p = s.map Polynomial.natDegree := by
-  rw [factorDegrees_def, hfs, normalizedFactors_prod_eq s hs, Multiset.map_map]
-  exact Multiset.map_congr rfl fun q _ ↦ Polynomial.natDegree_normalize
-
-/-- The sum of the factor degrees is the degree of the polynomial after reduction. -/
-@[simp]
-theorem _root_.Polynomial.sum_factorDegrees_eq_natDegree_map (f : ℤ[X]) (p : ℕ) [Fact p.Prime] :
-    (f.factorDegrees p).sum = (f.map (Int.castRingHom (ZMod p))).natDegree := by
-  rw [factorDegrees_def]
-  exact Polynomial.sum_natDegree_normalizedFactors _
-
-/-- For a monic polynomial, the degrees of all irreducible factors of its reduction modulo a
-prime, counted with multiplicity, sum to the degree of the original polynomial. -/
-theorem _root_.Polynomial.Monic.sum_factorDegrees {f : ℤ[X]} (hf : f.Monic) (p : ℕ)
-    [Fact p.Prime] : (f.factorDegrees p).sum = f.natDegree := by
-  rw [sum_factorDegrees_eq_natDegree_map, hf.natDegree_map]
-
-/-- If the reduction of `f` modulo `p` is irreducible, its only factor degree is its degree. -/
-theorem _root_.Polynomial.factorDegrees_eq_singleton_of_irreducible (f : ℤ[X]) (p : ℕ)
-    [Fact p.Prime] (h : Irreducible (f.map (Int.castRingHom (ZMod p)))) :
-    f.factorDegrees p = {(f.map (Int.castRingHom (ZMod p))).natDegree} := by
-  rw [factorDegrees_def]
-  exact Polynomial.map_natDegree_normalizedFactors_eq_singleton_iff.mpr h
-
-/-- A single factor degree, whatever it is, forces the reduction to be irreducible. -/
-theorem _root_.Polynomial.irreducible_map_of_card_factorDegrees_eq_one {f : ℤ[X]} {p : ℕ}
-    [Fact p.Prime] (h : (f.factorDegrees p).card = 1) :
-    Irreducible (f.map (Int.castRingHom (ZMod p))) :=
-  Polynomial.irreducible_of_card_normalizedFactors_eq_one (by simpa using h)
-
-/-- For a monic integral polynomial, having its own degree as sole factor degree is equivalent to
-its reduction being irreducible. -/
-theorem _root_.Polynomial.Monic.factorDegrees_eq_singleton_iff_irreducible {f : ℤ[X]}
-    (hf : f.Monic) (p : ℕ) [Fact p.Prime] :
-    f.factorDegrees p = {f.natDegree} ↔ Irreducible (f.map (Int.castRingHom (ZMod p))) := by
-  refine ⟨fun h ↦ irreducible_map_of_card_factorDegrees_eq_one ?_, fun h ↦ ?_⟩
-  · rw [h, Multiset.card_singleton]
-  · rw [factorDegrees_eq_singleton_of_irreducible f p h, hf.natDegree_map]
-
-/-! ### The factorization of `X ^ 5 - X - 1` modulo `2` -/
+/-! ### The factorization of `X ^ 5 - X - 1` modulo `2` and `5` -/
 
 private theorem natDegree_X_pow_three_add_X_sq_add_one :
     (X ^ 3 + X ^ 2 + 1 : (ZMod 2)[X]).natDegree = 3 := by compute_degree!
@@ -205,5 +95,89 @@ theorem _root_.Polynomial.factorDegrees_X_pow_five_sub_X_sub_one_two :
   rw [factorDegrees_eq_map_natDegree_of_map_eq_prod hirr hmap]
   simp only [Multiset.insert_eq_cons, Multiset.map_cons, Multiset.map_singleton,
     natDegree_X_pow_three_add_X_sq_add_one, natDegree_X_sq_add_X_add_one]
+
+local instance factPrimeFive : Fact (Nat.Prime 5) := ⟨by decide⟩
+
+private theorem irreducible_X_pow_five_sub_X_sub_one_zmod_five :
+    Irreducible (X ^ 5 - X - 1 : (ZMod 5)[X]) := by
+  have hmonic : Monic (X ^ 5 - X - 1 : (ZMod 5)[X]) := by
+    rw [sub_sub]
+    apply Polynomial.monic_X_pow_sub
+    compute_degree!
+  have hpdeg : (X ^ 5 - X - 1 : (ZMod 5)[X]).natDegree = 5 := by
+    rw [sub_sub]
+    compute_degree!
+  have hpone : (X ^ 5 - X - 1 : (ZMod 5)[X]) ≠ 1 := by
+    intro h
+    rw [h, Polynomial.natDegree_one] at hpdeg
+    omega
+  rw [hmonic.irreducible_iff_lt_natDegree_lt hpone]
+  intro q hq hdeg hdvd
+  have hdeg' : q.natDegree = 1 ∨ q.natDegree = 2 := by
+    rw [hpdeg] at hdeg
+    simp only [Finset.mem_Ioc] at hdeg
+    norm_num at hdeg
+    omega
+  rcases hdeg' with hdeg' | hdeg'
+  · rw [hq.eq_X_add_C hdeg'] at hdvd
+    rw [← sub_neg_eq_add, ← Polynomial.C_neg, Polynomial.dvd_iff_isRoot,
+      Polynomial.IsRoot.def] at hdvd
+    simp only [Polynomial.eval_sub, Polynomial.eval_pow, Polynomial.eval_X,
+      Polynomial.eval_one] at hdvd
+    rw [ZMod.pow_card] at hdvd
+    norm_num at hdvd
+  · let a := q.coeff 1
+    let b := q.coeff 0
+    have hqeq : q = X ^ 2 + C a * X + C b := by
+      rw [Polynomial.eq_quadratic_of_degree_le_two
+        (Polynomial.degree_le_of_natDegree_le hdeg'.le)]
+      have hc : q.coeff 2 = 1 := by simpa [hdeg'] using hq.coeff_natDegree
+      rw [hc]
+      simp [a, b]
+    let quotient : (ZMod 5)[X] :=
+      X ^ 3 - C a * X ^ 2 + C (a ^ 2 - b) * X + C (-a ^ 3 + 2 * a * b)
+    let remainder : (ZMod 5)[X] :=
+      C (a ^ 4 - 3 * a ^ 2 * b + b ^ 2 - 1) * X + C (a ^ 3 * b - 2 * a * b ^ 2 - 1)
+    have hdivision : (X ^ 5 - X - 1 : (ZMod 5)[X]) = q * quotient + remainder := by
+      rw [hqeq]
+      simp only [quotient, remainder]
+      simp only [map_add, map_sub, map_mul, map_pow, map_neg, map_one, map_ofNat]
+      ring
+    have hrem : q ∣ remainder := by
+      rw [hdivision] at hdvd
+      obtain ⟨c, hc⟩ := hdvd
+      refine ⟨c - quotient, ?_⟩
+      rw [mul_sub, ← hc]
+      ring
+    have hremdeg : remainder.natDegree ≤ 1 := by
+      simp only [remainder]
+      compute_degree
+    have hremzero : remainder = 0 := by
+      by_contra hr
+      exact (hq.not_dvd_of_natDegree_lt hr (by omega)) hrem
+    have ha : a ^ 4 - 3 * a ^ 2 * b + b ^ 2 - 1 = 0 := by
+      simpa only [remainder, Polynomial.coeff_add, Polynomial.coeff_C_mul_X,
+        Polynomial.coeff_C, one_ne_zero, Polynomial.coeff_zero, ite_true, ite_false, add_zero]
+        using congrArg (fun g : (ZMod 5)[X] ↦ g.coeff 1) hremzero
+    have hb : a ^ 3 * b - 2 * a * b ^ 2 - 1 = 0 := by
+      simpa only [remainder, Polynomial.coeff_add, Polynomial.coeff_C_mul_X,
+        Polynomial.coeff_C, zero_ne_one, Polynomial.coeff_zero, ite_true, ite_false, zero_add]
+        using congrArg (fun g : (ZMod 5)[X] ↦ g.coeff 0) hremzero
+    simp only [a, b] at ha hb
+    generalize q.coeff 1 = a' at ha hb
+    generalize q.coeff 0 = b' at ha hb
+    fin_cases a' <;> fin_cases b' <;> revert ha hb <;> decide
+
+/-- The polynomial `X ^ 5 - X - 1` is irreducible modulo `5`, so its sole factor degree is `5`. -/
+theorem _root_.Polynomial.factorDegrees_X_pow_five_sub_X_sub_one_five :
+    (X ^ 5 - X - 1 : ℤ[X]).factorDegrees 5 = {5} := by
+  rw [Polynomial.factorDegrees_eq_singleton_iff]
+  have hmap : (X ^ 5 - X - 1 : ℤ[X]).map (Int.castRingHom (ZMod 5)) =
+      (X ^ 5 - X - 1 : (ZMod 5)[X]) := by norm_num
+  rw [hmap]
+  constructor
+  · exact irreducible_X_pow_five_sub_X_sub_one_zmod_five
+  · rw [sub_sub]
+    compute_degree!
 
 end TauCeti

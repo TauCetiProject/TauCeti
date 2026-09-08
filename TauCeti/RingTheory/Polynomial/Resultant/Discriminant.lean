@@ -57,7 +57,7 @@ separable.
   `Polynomial.Monic.discr_ne_zero_iff_separable_map`: a monic polynomial is separable exactly
   when its discriminant is a unit; over a field that reads `discr f ≠ 0`, and over a domain the
   correct statement passes to the fraction field.
-* `Polynomial.Monic.separable_map_iff_discr_ne_zero`,
+* `Polynomial.Monic.separable_map_iff_map_discr_ne_zero`,
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`,
   `Polynomial.Monic.nodup_normalizedFactors_map_zmod_of_not_dvd_discr`: the same criterion read
   along a ring homomorphism into a field, and its specialization to reduction of an integral
@@ -504,7 +504,8 @@ theorem _root_.Polynomial.Monic.discrSqrt_ne_zero {F E : Type*} [CommRing F] [Co
 /-- A monic polynomial becomes separable along a ring homomorphism into a field exactly when its
 discriminant does not become zero. No injectivity is needed: the discriminant commutes with base
 change because monicity preserves the degree. -/
-theorem _root_.Polynomial.Monic.separable_map_iff_discr_ne_zero {K : Type*} [Field K] {f : R[X]}
+theorem _root_.Polynomial.Monic.separable_map_iff_map_discr_ne_zero {K : Type*} [Field K]
+    {f : R[X]}
     (hf : f.Monic) (φ : R →+* K) : (f.map φ).Separable ↔ φ f.discr ≠ 0 := by
   rw [← (hf.map φ).discr_ne_zero_iff, hf.discr_map]
 
@@ -515,7 +516,7 @@ formulated after passage to a fraction field. -/
 theorem _root_.Polynomial.Monic.discr_ne_zero_iff_separable_map (K : Type*) [Field K]
     [Algebra R K] [IsFractionRing R K] {f : R[X]} (hf : f.Monic) :
     f.discr ≠ 0 ↔ (f.map (algebraMap R K)).Separable := by
-  rw [hf.separable_map_iff_discr_ne_zero, map_ne_zero_iff _
+  rw [hf.separable_map_iff_map_discr_ne_zero, map_ne_zero_iff _
     (FaithfulSMul.algebraMap_injective R K)]
 
 /-- A monic integral polynomial has separable reduction modulo a prime exactly when that prime
@@ -523,7 +524,7 @@ does not divide its discriminant. -/
 theorem _root_.Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr {f : ℤ[X]} (hf : f.Monic)
     (p : ℕ) [Fact p.Prime] :
     (f.map (Int.castRingHom (ZMod p))).Separable ↔ ¬ (p : ℤ) ∣ f.discr := by
-  rw [hf.separable_map_iff_discr_ne_zero, Int.coe_castRingHom, ne_eq,
+  rw [hf.separable_map_iff_map_discr_ne_zero, Int.coe_castRingHom, ne_eq,
     ZMod.intCast_zmod_eq_zero_iff_dvd]
 
 /-- At a prime not dividing the discriminant of a monic integral polynomial, the normalized
