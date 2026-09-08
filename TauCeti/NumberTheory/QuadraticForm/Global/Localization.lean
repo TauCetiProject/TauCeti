@@ -131,15 +131,6 @@ theorem atFinitePlace_def [NumberField K] (Q : _root_.QuadraticForm K V)
   intro x
   simp [atFinitePlace]
 
-private theorem atRealPlace_def_aux (Q : _root_.QuadraticForm K V)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    let _ : Invertible (2 : K) := by
-      letI : CharZero K := RingHom.charZero w.1.embedding
-      exact invertibleOfNonzero two_ne_zero
-    let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-    atRealPlace Q w = Q.baseChange ℝ :=
-  rfl
-
 /-- Real localization is base change along the embedding belonging to the real place. -/
 theorem atRealPlace_def (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace K // w.IsReal}) :
@@ -148,15 +139,6 @@ theorem atRealPlace_def (Q : _root_.QuadraticForm K V)
       exact invertibleOfNonzero two_ne_zero
     let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
     atRealPlace Q w = Q.baseChange ℝ := by
-  exact atRealPlace_def_aux Q w
-
-private theorem atComplexEmbedding_def_aux (Q : _root_.QuadraticForm K V)
-    (w : InfinitePlace K) :
-    let _ : Invertible (2 : K) := by
-      letI : CharZero K := RingHom.charZero w.embedding
-      exact invertibleOfNonzero two_ne_zero
-    let _ : Algebra K ℂ := w.embedding.toAlgebra
-    atComplexEmbedding Q w = Q.baseChange ℂ :=
   rfl
 
 /-- Complex localization is base change along the chosen complex embedding. -/
@@ -166,7 +148,7 @@ theorem atComplexEmbedding_def (Q : _root_.QuadraticForm K V) (w : InfinitePlace
       exact invertibleOfNonzero two_ne_zero
     let _ : Algebra K ℂ := w.embedding.toAlgebra
     atComplexEmbedding Q w = Q.baseChange ℂ := by
-  exact atComplexEmbedding_def_aux Q w
+  rfl
 
 section Evaluation
 
