@@ -70,12 +70,10 @@ simply connected `E₇` group scheme. -/
 def minusculeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
   E7Minuscule.frobenius d.1.characteristic d.1.fieldExponent d.1.Closure
 
-/-- The minuscule-carrier Frobenius uses the exponent recorded by the `E₇` index. This is its
-unfolding lemma; the definition itself stays sealed.
-
-It is deliberately not a `simp` lemma: `minusculeFrobenius_simpleRootSubgroup`,
-`minusculeFrobenius_weightTorusPoints` and `coe_minusculeFrobenius_apply` are the normal forms the
-equations of this file are stated against. -/
+/-- The minuscule-carrier Frobenius uses the exponent recorded by the `E₇` index. -/
+-- Not `@[simp]`: `minusculeFrobenius_simpleRootSubgroup`, `minusculeFrobenius_weightTorusPoints`
+-- and `coe_minusculeFrobenius_apply` are the normal forms the equations of this file are stated
+-- against, and unfolding to the carrier's Frobenius would keep them from firing.
 theorem minusculeFrobenius_def :
     d.minusculeFrobenius =
       E7Minuscule.frobenius d.1.characteristic d.1.fieldExponent d.1.Closure :=
