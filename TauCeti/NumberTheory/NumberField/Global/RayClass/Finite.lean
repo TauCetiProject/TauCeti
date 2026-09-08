@@ -97,14 +97,13 @@ theorem exists_algebraMap_eq_mul_of_mem_primeToSubgroup {𝔪 : Modulus K} {x : 
   have hL0 : L ≠ ⊥ := fun h ↦ hD0 (by simp [hL, h])
   -- The complementary factor of the denominator is prime to the finite part.
   have hLcop : L ⊔ 𝔪.finitePart = ⊤ := by
-    refine Ideal.isCoprime_iff_sup_eq.mp (Ideal.coprime_of_no_prime_ge fun 𝔭 h𝔭L h𝔭m h𝔭 ↦ ?_)
-    have h𝔭bot : 𝔭 ≠ ⊥ := fun hbot ↦ 𝔪.finitePart_ne_bot (le_bot_iff.mp (hbot ▸ h𝔭m))
-    set v : HeightOneSpectrum (𝓞 K) := ⟨𝔭, h𝔭, h𝔭bot⟩ with hv
+    refine (Modulus.isCoprimeTo_iff_sup_eq_top.mp
+      (Modulus.isCoprimeTo_iff.mpr ⟨hL0, fun v hv hdiv ↦ ?_⟩)).2
     set n : ℕ := (Associates.mk v.asIdeal).count (Associates.mk D).factors with hn
     -- The denominator lies in `vⁿ`, and so does the numerator, since `x` is a unit at `v`.
     have hDn : D ≤ v.asIdeal ^ n := (le_count_associates_iff_le_pow v hD0 n).mp le_rfl
     have hxv : v.valuation K (x : K) = 1 :=
-      mem_primeToSubgroup.mp hx v (Ideal.dvd_iff_le.mpr h𝔭m)
+      mem_primeToSubgroup.mp hx v ((Modulus.mem_support_iff _ _).mp hv)
     have hcd : v.intValuation c = v.intValuation (d : 𝓞 K) := by
       have hK : v.valuation K (algebraMap (𝓞 K) K c) =
           v.valuation K (algebraMap (𝓞 K) K (d : 𝓞 K)) := by
@@ -125,7 +124,7 @@ theorem exists_algebraMap_eq_mul_of_mem_primeToSubgroup {𝔪 : Modulus K} {x : 
       exact Associates.count_mul (Associates.mk_ne_zero.mpr hG0) (Associates.mk_ne_zero.mpr hL0)
         v.associates_irreducible
     have hLne : (Associates.mk v.asIdeal).count (Associates.mk L).factors ≠ 0 :=
-      (Associates.count_ne_zero_iff_dvd hL0 v.irreducible).mpr (Ideal.dvd_iff_le.mpr h𝔭L)
+      (Associates.count_ne_zero_iff_dvd hL0 v.irreducible).mpr hdiv
     omega
   -- Pick a denominator inside that factor and congruent to one.
   obtain ⟨b, hb, m, hm, hbm⟩ :=
@@ -182,7 +181,7 @@ theorem residue_eq {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) {a b : 𝓞 K}
 @[simp] theorem residue_one (𝔪 : Modulus K) : residue 𝔪 1 = 1 := by
   rw [residue_eq (a := 1) (b := 1) 1 (by simp) (by simp), map_one]
 
-theorem residue_mul (𝔪 : Modulus K) (x y : primeToSubgroup 𝔪) :
+@[simp] theorem residue_mul (𝔪 : Modulus K) (x y : primeToSubgroup 𝔪) :
     residue 𝔪 (x * y) = residue 𝔪 x * residue 𝔪 y := by
   obtain ⟨a₁, b₁, hb₁, hab₁, hr₁⟩ := exists_residue_eq 𝔪 x
   obtain ⟨a₂, b₂, hb₂, hab₂, hr₂⟩ := exists_residue_eq 𝔪 y
@@ -247,11 +246,6 @@ theorem isCongrOne_of_residue_eq_one {𝔪 : Modulus K} {x : Kˣ} (hx : x ∈ pr
 
 /-! ### Finiteness of the index -/
 
-/-- The residue ring of a modulus is finite: its finite part is a nonzero ideal of a ring of
-integers, which is a free `ℤ`-module of finite rank. -/
-instance instFiniteQuotientFinitePart (𝔪 : Modulus K) : Finite (𝓞 K ⧸ 𝔪.finitePart) :=
-  Ideal.finiteQuotientOfFreeOfNeBot _ 𝔪.finitePart_ne_bot
-
 /-- **The elements congruent to one modulo `𝔪` have finite index among the elements that are units
 at the primes dividing the finite part.**  Reduction modulo the finite part and total positivity cut
 out a subgroup of finite index inside `congruenceSubgroup 𝔪`, and both conditions have finite-index
@@ -259,10 +253,8 @@ kernels: the residue units are a finite group, and the totally positive elements
 `2 ^ r₁` in `Kˣ`. -/
 instance congruenceSubgroup_finiteIndex (𝔪 : Modulus K) :
     ((congruenceSubgroup 𝔪).subgroupOf (primeToSubgroup 𝔪)).FiniteIndex := by
-  have hker : (residueHom 𝔪).ker.FiniteIndex := by
-    refine ⟨?_⟩
-    rw [Subgroup.index_ker]
-    exact Nat.card_ne_zero.mpr ⟨⟨1⟩, inferInstance⟩
+  let _ : NeZero 𝔪.finitePart := ⟨𝔪.finitePart_ne_bot⟩
+  have hker : (residueHom 𝔪).ker.FiniteIndex := Subgroup.finiteIndex_ker _
   have hle : (residueHom 𝔪).ker ⊓
       (totallyPositiveUnits.subgroupOf (primeToSubgroup 𝔪)) ≤
         (congruenceSubgroup 𝔪).subgroupOf (primeToSubgroup 𝔪) := by
@@ -290,6 +282,11 @@ private noncomputable def unitsToPrimeToSubgroup (𝔪 : Modulus K) :
   MonoidHom.codRestrict (Units.map (algebraMap (𝓞 K) K).toMonoidHom) _
     (unitsMap_mem_primeToSubgroup 𝔪)
 
+@[simp] private theorem coe_unitsToPrimeToSubgroup (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
+    ((unitsToPrimeToSubgroup 𝔪 u : primeToSubgroup 𝔪) : Kˣ) =
+      Units.map (algebraMap (𝓞 K) K).toMonoidHom u := by
+  rw [unitsToPrimeToSubgroup, MonoidHom.codRestrict_apply]
+
 /-- **The units congruent to one modulo `𝔪` have finite index in `(𝓞 K)ˣ`.**  This is the unit
 correction in the ray class number formula, and the input that makes the implied constants of the
 ray-class ideal count uniform in the class. -/
@@ -299,8 +296,7 @@ instance unitsCongruenceSubgroup_finiteIndex (𝔪 : Modulus K) :
       (unitsToPrimeToSubgroup 𝔪) = unitsCongruenceSubgroup 𝔪 := by
     ext u
     rw [Subgroup.mem_comap, Subgroup.mem_subgroupOf, mem_unitsCongruenceSubgroup,
-      mem_congruenceSubgroup]
-    exact Iff.rfl
+      mem_congruenceSubgroup, coe_unitsToPrimeToSubgroup]
   rw [← hcomap]
   infer_instance
 
@@ -319,17 +315,34 @@ private instance instFiniteQuotientPrincipal :
     Finite ((FractionalIdeal (𝓞 K)⁰ K)ˣ ⧸ (toPrincipalIdeal (𝓞 K) K).range) :=
   Finite.of_equiv _ (ClassGroup.equiv (R := 𝓞 K) K).toEquiv
 
+/-- The principal ideal of an element that is a unit at the finite part, viewed among the ideals
+prime to the modulus. -/
+private noncomputable def principalIdealPrimeToHom (𝔪 : Modulus K) :
+    primeToSubgroup 𝔪 →* idealsPrimeTo 𝔪 :=
+  MonoidHom.codRestrict ((toPrincipalIdeal (𝓞 K) K).comp (primeToSubgroup 𝔪).subtype)
+    (idealsPrimeTo 𝔪) fun x ↦ toPrincipalIdeal_mem_idealsPrimeTo_iff.mpr x.2
+
+@[simp] private theorem coe_principalIdealPrimeToHom (𝔪 : Modulus K)
+    (x : primeToSubgroup 𝔪) :
+    ((principalIdealPrimeToHom 𝔪 x : idealsPrimeTo 𝔪) :
+        (FractionalIdeal (𝓞 K)⁰ K)ˣ) =
+      toPrincipalIdeal (𝓞 K) K (x : Kˣ) := by
+  rfl
+
 /-- The principal ideal of an element that is a unit at the finite part, viewed in the kernel of
 `classHom`. -/
 private noncomputable def principalIdealHom (𝔪 : Modulus K) :
     primeToSubgroup 𝔪 →* (classHom 𝔪).ker :=
-  MonoidHom.codRestrict
-    (MonoidHom.codRestrict ((toPrincipalIdeal (𝓞 K) K).comp (primeToSubgroup 𝔪).subtype)
-      (idealsPrimeTo 𝔪) fun x ↦ toPrincipalIdeal_mem_idealsPrimeTo_iff.mpr x.2)
-    (classHom 𝔪).ker fun x ↦ by
+  MonoidHom.codRestrict (principalIdealPrimeToHom 𝔪) (classHom 𝔪).ker fun x ↦ by
       rw [MonoidHom.mem_ker, classHom, MonoidHom.comp_apply, QuotientGroup.mk'_apply,
         QuotientGroup.eq_one_iff]
-      exact ⟨(x : Kˣ), rfl⟩
+      exact ⟨(x : Kˣ), (coe_principalIdealPrimeToHom 𝔪 x).symm⟩
+
+@[simp] private theorem coe_principalIdealHom (𝔪 : Modulus K) (x : primeToSubgroup 𝔪) :
+    (((principalIdealHom 𝔪 x : (classHom 𝔪).ker) : idealsPrimeTo 𝔪) :
+        (FractionalIdeal (𝓞 K)⁰ K)ˣ) =
+      toPrincipalIdeal (𝓞 K) K (x : Kˣ) := by
+  rw [principalIdealHom, MonoidHom.codRestrict_apply, coe_principalIdealPrimeToHom]
 
 private theorem principalIdealHom_surjective (𝔪 : Modulus K) :
     Function.Surjective (principalIdealHom 𝔪) := by
@@ -369,7 +382,8 @@ instance finiteIndex_ray (𝔪 : Modulus K) : (ray 𝔪).FiniteIndex := by
       rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff,
         Subgroup.mem_subgroupOf]
       exact mem_ray_iff.mpr
-        ⟨(x : Kˣ), mem_congruenceSubgroup.mp (Subgroup.mem_subgroupOf.mp hxmem), rfl⟩
+        ⟨(x : Kˣ), mem_congruenceSubgroup.mp (Subgroup.mem_subgroupOf.mp hxmem),
+          (coe_principalIdealHom 𝔪 x).symm⟩
     refine Finite.of_surjective (QuotientGroup.lift _ _ hkerle) fun z ↦ ?_
     obtain ⟨y, hy⟩ := hsurj z
     exact ⟨QuotientGroup.mk y, hy⟩
