@@ -66,6 +66,7 @@ noncomputable def finrank : AbelianK0.AdditiveInvariant (FGModuleCat.{v} k) ℤ 
       (FGModuleCat.finrank_forget₂_obj S.X₃)
     exact_mod_cast h
 
+/-- Evaluate the finrank additive invariant as the integer-valued module finrank. -/
 @[simp]
 lemma finrank_obj (X : FGModuleCat.{v} k) :
     (finrank k).obj X = (Module.finrank k X : ℤ) := (rfl)
