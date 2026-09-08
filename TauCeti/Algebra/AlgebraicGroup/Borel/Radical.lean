@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Borel.Existence
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Product.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Semisimple
 import Mathlib.RingTheory.Etale.Descent
-import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Connected.Product
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Product.Properties
 import TauCeti.Algebra.AlgebraicGroup.Smooth.Product
@@ -68,6 +66,9 @@ and the identity subgroup.
 * `TauCeti.HopfIdeal.IsBorel.baseChangeHopfIdeal_le_solvableRadicalDefiningIdeal` and
   `TauCeti.HopfIdeal.IsBorel.baseChangeHopfIdeal_le_unipotentRadicalDefiningIdeal`: over an
   arbitrary field, the base change of a Borel subgroup contains the two geometric radicals.
+* `TauCeti.HopfIdeal.IsBorel.le_solvableRadicalDefiningIdeal` and
+  `TauCeti.HopfIdeal.IsBorel.le_unipotentRadicalDefiningIdeal`: **over an arbitrary field, the
+  solvable radical, and hence the unipotent radical, is contained in every Borel subgroup.**
 * `TauCeti.HopfIdeal.IsBorel.eq_solvableRadicalDefiningIdeal_of_isNormal`: a normal Borel subgroup
   over an arbitrary field is exactly the solvable radical.
 * `TauCeti.HopfIdeal.IsBorel.eq_bot_of_solvableRadicalDefiningIdeal_eq_bot`: if the solvable
@@ -249,6 +250,26 @@ theorem baseChangeHopfIdeal_le_unipotentRadicalDefiningIdeal (hI : IsBorel k H I
   IsBorelOverAlgClosed.le_unipotentRadicalDefiningIdeal
     ((isBorel_iff_isBorelOverAlgClosed_baseChange k H I).mp hI)
 
+/-- **Over an arbitrary field, the solvable radical is contained in every Borel subgroup.**
+
+The containment is checked after base change to an algebraic closure, where it is the geometric
+statement, and descends because the base change of a Hopf ideal is faithfully flat. -/
+theorem le_solvableRadicalDefiningIdeal (hI : IsBorel k H I) :
+    I ≤ FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal
+      ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩ := by
+  apply (CommHopfAlgCat.baseChangeHopfIdeal_le_iff_of_faithfullyFlat
+    (K := AlgebraicClosure k) I _).mp
+  exact hI.baseChangeHopfIdeal_le_solvableRadicalDefiningIdeal.trans
+    (FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_baseChange_le _)
+
+/-- Over an arbitrary field, the unipotent radical is contained in every Borel subgroup, since it
+is contained in the solvable radical. -/
+theorem le_unipotentRadicalDefiningIdeal (hI : IsBorel k H I) :
+    I ≤ FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
+      ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩ :=
+  hI.le_solvableRadicalDefiningIdeal.trans
+    (FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_le_unipotentRadicalDefiningIdeal _)
+
 /-- Over an arbitrary field, a normal Borel subgroup is exactly the solvable radical. -/
 theorem eq_solvableRadicalDefiningIdeal_of_isNormal
     (hI : IsBorel k H I) (hnormal : I.IsNormal) :
@@ -283,14 +304,9 @@ theorem eq_solvableRadicalDefiningIdeal_of_isNormal
         (FiniteTypeCommHopfAlgCat.quotient H' I).obj
       exact (geometricallySolvablePointsCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso
         qIso hIK.geometricallySolvable
-  apply le_antisymm
-  · apply (CommHopfAlgCat.baseChangeHopfIdeal_le_iff_of_faithfullyFlat
-      (K := AlgebraicClosure k) I
-      (FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal H')).mp
-    exact hI.baseChangeHopfIdeal_le_solvableRadicalDefiningIdeal.trans
-      (FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_baseChange_le H')
-  · exact FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_le H' I
-      (hIcandidate.isSolvableRadicalCandidate_of_isNormal hnormal)
+  exact le_antisymm hI.le_solvableRadicalDefiningIdeal
+    (FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_le H' I
+      (hIcandidate.isSolvableRadicalCandidate_of_isNormal hnormal))
 
 /-- Over an arbitrary field, if the solvable radical is the whole group, every Borel subgroup is
 the whole group. -/
@@ -298,13 +314,8 @@ theorem eq_bot_of_solvableRadicalDefiningIdeal_eq_bot
     (hI : IsBorel k H I)
     (hH : FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal
       ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩ = ⊥) :
-    I = ⊥ := by
-  apply le_antisymm ?_ bot_le
-  rw [← hH]
-  apply (CommHopfAlgCat.baseChangeHopfIdeal_le_iff_of_faithfullyFlat
-    (K := AlgebraicClosure k) I _).mp
-  exact hI.baseChangeHopfIdeal_le_solvableRadicalDefiningIdeal.trans
-    (FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_baseChange_le _)
+    I = ⊥ :=
+  le_antisymm (hH ▸ hI.le_solvableRadicalDefiningIdeal) bot_le
 
 end HopfIdeal.IsBorel
 
