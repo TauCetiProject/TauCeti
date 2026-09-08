@@ -12,18 +12,17 @@ public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
 # The last-vector stabilizer in a special orthogonal group
 
 Let `Q` be a quadratic form on a finite free module `M`. Extending an element of `SO(Q)` by the
-identity on a rank-one summand embeds it into `SO(Q.prod QuadraticMap.sq)`. If two is not zero and
-the base ring has no zero divisors, its image is exactly the stabilizer of the last basis vector
-`(0, 1)`.
+identity on a rank-one summand embeds it into `SO(Q.prod QuadraticMap.sq)`. If two acts regularly on
+the base ring, its image is exactly the stabilizer of the last basis vector `(0, 1)`.
 
 The inverse map restricts a stabilizer element to the first summand. Orthogonality and fixation of
 `(0, 1)` force that summand to be preserved: polarizing the image of `(m, 0)` against `(0, 1)`
 shows that twice its last coordinate vanishes. The determinant-one condition then descends because
 the original map is the product of its restriction with the identity of the last summand.
 
-This is the special-orthogonal group calculation used in the compact Spin stabilizer
-identification. After applying the Spin action, it turns fixation of the last vector into a
-lower-rank special orthogonal transformation that can be lifted back to the lower-rank Spin group.
+This calculation is useful for inductive comparisons of orthogonal and Spin groups: after applying
+a Spin action, it turns fixation of the last vector into a lower-rank special orthogonal
+transformation.
 
 ## Main definitions
 
@@ -32,11 +31,6 @@ lower-rank special orthogonal transformation that can be lifted back to the lowe
 * `specialOrthogonalGroupProdLastStabilizer`: the subgroup fixing `(0, 1)`.
 * `specialOrthogonalGroupEquivProdLastStabilizer`: the extension-restriction equivalence between
   `SO(Q)` and that stabilizer.
-
-## References
-
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 7, the compact Spin stabilizer identification.
 -/
 
 public section
@@ -45,9 +39,9 @@ open QuadraticMap
 
 universe u v
 
-namespace TauCeti
-
 namespace QuadraticMap
+
+open TauCeti.QuadraticMap
 
 noncomputable section
 
@@ -101,6 +95,20 @@ theorem specialOrthogonalGroupProdLastInclusion_apply (Q : QuadraticForm R M)
       ((f : M ≃ₗ[R] M) x.1, x.2) := by
   rfl
 
+/-- Extension by the identity on the square line is injective. -/
+theorem specialOrthogonalGroupProdLastInclusion_injective (Q : QuadraticForm R M)
+    [Module.Free R M] [Module.Finite R M] :
+    Function.Injective (specialOrthogonalGroupProdLastInclusion Q) := by
+  intro f g h
+  apply Subtype.ext
+  apply LinearEquiv.ext
+  intro m
+  have h' := congrArg
+    (fun k : specialOrthogonalGroup
+        (Q.prod (QuadraticMap.sq (R := R) (A := R))) =>
+      (((k : (M × R) ≃ₗ[R] (M × R)) (m, 0)).1)) h
+  simpa using h'
+
 /-- The stabilizer of the last basis vector `(0, 1)` in the special orthogonal group of
 `Q.prod QuadraticMap.sq`. -/
 def specialOrthogonalGroupProdLastStabilizer (Q : QuadraticForm R M) :
@@ -129,7 +137,7 @@ private theorem specialOrthogonalGroupProdLastInclusion_mem_stabilizer
   exact Prod.ext (by simp) (by simp)
 
 private theorem snd_eq_zero_of_mem_specialOrthogonalGroupProdLastStabilizer
-    [NoZeroDivisors R] [NeZero (2 : R)] (Q : QuadraticForm R M)
+    (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
     (g : specialOrthogonalGroupProdLastStabilizer Q) (m : M) :
     (g.1.1 (m, 0)).2 = 0 := by
   have hfix : g.1.1 ((0 : M), (1 : R)) = ((0 : M), (1 : R)) :=
@@ -142,10 +150,10 @@ private theorem snd_eq_zero_of_mem_specialOrthogonalGroupProdLastStabilizer
   ring_nf at hpolar
   have htwo : (2 : R) * (g.1.1 (m, 0)).2 = 0 := by
     linear_combination hpolar
-  exact (mul_eq_zero.mp htwo).resolve_left (NeZero.ne (2 : R))
+  exact (isRegular_iff_eq_zero_of_mul.mp h2).1 _ htwo
 
 private def specialOrthogonalProdLastRestrictionLinearEquiv
-    [NoZeroDivisors R] [NeZero (2 : R)] (Q : QuadraticForm R M)
+    (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
     (g : specialOrthogonalGroupProdLastStabilizer Q) : M ≃ₗ[R] M where
   toFun m := (g.1.1 (m, 0)).1
   invFun m := ((g⁻¹).1.1 (m, 0)).1
@@ -154,29 +162,31 @@ private def specialOrthogonalProdLastRestrictionLinearEquiv
   map_smul' c x := by
     simpa using congrArg Prod.fst (g.1.1.map_smul c (x, 0))
   left_inv m := by
-    have hzero := snd_eq_zero_of_mem_specialOrthogonalGroupProdLastStabilizer Q g m
+    have hzero := snd_eq_zero_of_mem_specialOrthogonalGroupProdLastStabilizer Q h2 g m
     have hpair : g.1.1 (m, 0) = ((g.1.1 (m, 0)).1, 0) := Prod.ext rfl hzero
+    -- Unfold the restriction's inverse to expose the ambient inverse action.
     change ((g⁻¹).1.1 ((g.1.1 (m, 0)).1, 0)).1 = m
     rw [← hpair]
     simpa only [Prod.fst, Subgroup.coe_inv, LinearEquiv.coe_inv] using
       congrArg Prod.fst (g.1.1.symm_apply_apply (m, 0))
   right_inv m := by
-    have hzero := snd_eq_zero_of_mem_specialOrthogonalGroupProdLastStabilizer Q g⁻¹ m
+    have hzero := snd_eq_zero_of_mem_specialOrthogonalGroupProdLastStabilizer Q h2 g⁻¹ m
     have hpair : (g⁻¹).1.1 (m, 0) = (((g⁻¹).1.1 (m, 0)).1, 0) :=
       Prod.ext rfl hzero
+    -- Unfold the restriction to expose the ambient forward action.
     change (g.1.1 (((g⁻¹).1.1 (m, 0)).1, 0)).1 = m
     rw [← hpair]
     simpa only [Prod.fst, Subgroup.coe_inv, LinearEquiv.coe_inv] using
       congrArg Prod.fst (g.1.1.apply_symm_apply (m, 0))
 
 private theorem specialOrthogonalProdLast_eq_prodCongr_restriction
-    [NoZeroDivisors R] [NeZero (2 : R)] (Q : QuadraticForm R M)
+    (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
     (g : specialOrthogonalGroupProdLastStabilizer Q) :
-    g.1.1 = (specialOrthogonalProdLastRestrictionLinearEquiv Q g).prodCongr
+    g.1.1 = (specialOrthogonalProdLastRestrictionLinearEquiv Q h2 g).prodCongr
       (LinearEquiv.refl R R) := by
   apply LinearEquiv.ext
   intro x
-  have hzero := snd_eq_zero_of_mem_specialOrthogonalGroupProdLastStabilizer Q g x.1
+  have hzero := snd_eq_zero_of_mem_specialOrthogonalGroupProdLastStabilizer Q h2 g x.1
   have hfix : g.1.1 ((0 : M), (1 : R)) = ((0 : M), (1 : R)) :=
     mem_specialOrthogonalGroupProdLastStabilizer_iff Q |>.mp g.2
   have hline : g.1.1 (0, x.2) = (0, x.2) := by
@@ -184,27 +194,28 @@ private theorem specialOrthogonalProdLast_eq_prodCongr_restriction
       g.1.1 (0, x.2) = g.1.1 (x.2 • ((0 : M), (1 : R))) := by simp
       _ = x.2 • g.1.1 ((0 : M), (1 : R)) := g.1.1.map_smul _ _
       _ = (0, x.2) := by rw [hfix]; simp
-  rw [show x = (x.1, 0) + (0, x.2) by ext <;> simp, map_add, hline]
+  have hx : x = (x.1, 0) + (0, x.2) := by ext <;> simp
+  rw [hx, map_add, hline]
   apply Prod.ext <;>
     simp [specialOrthogonalProdLastRestrictionLinearEquiv, hzero]
 
 private theorem specialOrthogonalProdLastRestriction_mem
-    [NoZeroDivisors R] [NeZero (2 : R)] (Q : QuadraticForm R M)
+    (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
     [Module.Free R M] [Module.Finite R M]
     (g : specialOrthogonalGroupProdLastStabilizer Q) :
-    specialOrthogonalProdLastRestrictionLinearEquiv Q g ∈ specialOrthogonalGroup Q := by
+    specialOrthogonalProdLastRestrictionLinearEquiv Q h2 g ∈ specialOrthogonalGroup Q := by
   have hg := mem_specialOrthogonalGroup_iff.mp g.1.2
   apply mem_specialOrthogonalGroup_iff.mpr
   constructor
   · apply mem_orthogonalGroup_iff.mpr
     intro m
-    have hzero := snd_eq_zero_of_mem_specialOrthogonalGroupProdLastStabilizer Q g m
+    have hzero := snd_eq_zero_of_mem_specialOrthogonalGroupProdLastStabilizer Q h2 g m
     have hmap := map_app_of_mem_orthogonalGroup hg.1 (m, 0)
     simpa [specialOrthogonalProdLastRestrictionLinearEquiv, QuadraticMap.prod_apply,
       hzero] using hmap
   · apply Units.ext
     have hdet := congrArg Units.val hg.2
-    rw [LinearEquiv.coe_det, specialOrthogonalProdLast_eq_prodCongr_restriction Q g,
+    rw [LinearEquiv.coe_det, specialOrthogonalProdLast_eq_prodCongr_restriction Q h2 g,
       LinearEquiv.coe_prodCongr, LinearMap.det_prodMap] at hdet
     have hrefl :
         LinearMap.det ((LinearEquiv.refl R R : R ≃ₗ[R] R) : R →ₗ[R] R) = 1 := by
@@ -213,35 +224,28 @@ private theorem specialOrthogonalProdLastRestriction_mem
     simpa only [LinearEquiv.coe_det] using hdet
 
 private theorem specialOrthogonalProdLast_eq_extension_restriction
-    [NoZeroDivisors R] [NeZero (2 : R)] (Q : QuadraticForm R M)
+    (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
     [Module.Free R M] [Module.Finite R M]
     (g : specialOrthogonalGroupProdLastStabilizer Q) :
     g.1.1 = specialOrthogonalProdLastExtension Q
-      ⟨specialOrthogonalProdLastRestrictionLinearEquiv Q g,
-        specialOrthogonalProdLastRestriction_mem Q g⟩ := by
+      ⟨specialOrthogonalProdLastRestrictionLinearEquiv Q h2 g,
+        specialOrthogonalProdLastRestriction_mem Q h2 g⟩ := by
   simpa only [specialOrthogonalProdLastExtension] using
-    specialOrthogonalProdLast_eq_prodCongr_restriction Q g
+    specialOrthogonalProdLast_eq_prodCongr_restriction Q h2 g
 
 private def specialOrthogonalProdLastInclusionToStabilizer
     (Q : QuadraticForm R M) [Module.Free R M] [Module.Finite R M] :
-    specialOrthogonalGroup Q →* specialOrthogonalGroupProdLastStabilizer Q where
-  toFun f :=
-    ⟨specialOrthogonalGroupProdLastInclusion Q f,
-      specialOrthogonalGroupProdLastInclusion_mem_stabilizer Q f⟩
-  map_one' := by
-    apply Subtype.ext
-    exact (specialOrthogonalGroupProdLastInclusion Q).map_one
-  map_mul' f g := by
-    apply Subtype.ext
-    exact (specialOrthogonalGroupProdLastInclusion Q).map_mul f g
+    specialOrthogonalGroup Q →* specialOrthogonalGroupProdLastStabilizer Q :=
+  (specialOrthogonalGroupProdLastInclusion Q).codRestrict _
+    (specialOrthogonalGroupProdLastInclusion_mem_stabilizer Q)
 
 private def specialOrthogonalProdLastRestriction
-    [NoZeroDivisors R] [NeZero (2 : R)] (Q : QuadraticForm R M)
+    (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
     [Module.Free R M] [Module.Finite R M] :
     specialOrthogonalGroupProdLastStabilizer Q →* specialOrthogonalGroup Q where
   toFun g :=
-    ⟨specialOrthogonalProdLastRestrictionLinearEquiv Q g,
-      specialOrthogonalProdLastRestriction_mem Q g⟩
+    ⟨specialOrthogonalProdLastRestrictionLinearEquiv Q h2 g,
+      specialOrthogonalProdLastRestriction_mem Q h2 g⟩
   map_one' := by
     apply Subtype.ext
     apply LinearEquiv.ext
@@ -251,23 +255,23 @@ private def specialOrthogonalProdLastRestriction
     apply Subtype.ext
     apply LinearEquiv.ext
     intro m
-    have hzero := snd_eq_zero_of_mem_specialOrthogonalGroupProdLastStabilizer Q h m
+    have hzero := snd_eq_zero_of_mem_specialOrthogonalGroupProdLastStabilizer Q h2 h m
     have hpair : h.1.1 (m, 0) = ((h.1.1 (m, 0)).1, 0) := Prod.ext rfl hzero
+    -- Unfold multiplication of the restricted linear equivalences.
     change (g.1.1 (h.1.1 (m, 0))).1 = (g.1.1 ((h.1.1 (m, 0)).1, 0)).1
     rw [hpair]
 
 /-- Extension by the identity identifies `SO(Q)` with the last-vector stabilizer in
 `SO(Q.prod QuadraticMap.sq)`.
 
-The inverse sends a stabilizer element `g` to its restriction `m ↦ (g (m, 0)).1`. The assumptions
-that the ring has no zero divisors and that `2 ≠ 0` ensure that fixation of `(0, 1)` forces `g` to
-preserve the first summand. -/
+The inverse sends a stabilizer element `g` to its restriction `m ↦ (g (m, 0)).1`. Regularity of
+`2` ensures that fixation of `(0, 1)` forces `g` to preserve the first summand. -/
 def specialOrthogonalGroupEquivProdLastStabilizer
-    [NoZeroDivisors R] [NeZero (2 : R)] (Q : QuadraticForm R M)
+    (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
     [Module.Free R M] [Module.Finite R M] :
     specialOrthogonalGroup Q ≃* specialOrthogonalGroupProdLastStabilizer Q :=
   MonoidHom.toMulEquiv (specialOrthogonalProdLastInclusionToStabilizer Q)
-    (specialOrthogonalProdLastRestriction Q)
+    (specialOrthogonalProdLastRestriction Q h2)
     (MonoidHom.ext fun f => by
       apply Subtype.ext
       apply LinearEquiv.ext
@@ -276,29 +280,27 @@ def specialOrthogonalGroupEquivProdLastStabilizer
     (MonoidHom.ext fun g => by
       apply Subtype.ext
       apply Subtype.ext
-      exact (specialOrthogonalProdLast_eq_extension_restriction Q g).symm)
+      exact (specialOrthogonalProdLast_eq_extension_restriction Q h2 g).symm)
 
 /-- The stabilizer equivalence sends `f` to its extension by the identity. -/
 @[simp]
 theorem coe_specialOrthogonalGroupEquivProdLastStabilizer_apply
-    [NoZeroDivisors R] [NeZero (2 : R)] (Q : QuadraticForm R M)
+    (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
     [Module.Free R M] [Module.Finite R M] (f : specialOrthogonalGroup Q) (x : M × R) :
-    ((specialOrthogonalGroupEquivProdLastStabilizer Q f).1.1 x) =
+    ((specialOrthogonalGroupEquivProdLastStabilizer Q h2 f).1.1 x) =
       ((f : M ≃ₗ[R] M) x.1, x.2) := by
   rfl
 
 /-- The inverse stabilizer equivalence restricts to the first summand. -/
 @[simp]
 theorem coe_specialOrthogonalGroupEquivProdLastStabilizer_symm_apply
-    [NoZeroDivisors R] [NeZero (2 : R)] (Q : QuadraticForm R M)
+    (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
     [Module.Free R M] [Module.Finite R M]
     (g : specialOrthogonalGroupProdLastStabilizer Q) (m : M) :
-    ((specialOrthogonalGroupEquivProdLastStabilizer Q).symm g : M ≃ₗ[R] M) m =
+    ((specialOrthogonalGroupEquivProdLastStabilizer Q h2).symm g : M ≃ₗ[R] M) m =
       (g.1.1 (m, 0)).1 := by
   rfl
 
 end
 
 end QuadraticMap
-
-end TauCeti
