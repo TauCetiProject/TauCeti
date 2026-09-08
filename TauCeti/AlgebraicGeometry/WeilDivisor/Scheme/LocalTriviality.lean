@@ -12,22 +12,14 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.LocallyPrincipal
 /-!
 # Line bundles from locally principal Weil divisors
 
-Let `X` be a Noetherian integral scheme of dimension at most one whose codimension-one local
-rings are discrete valuation rings. This file proves that a locally principal Weil divisor `D`
-defines a line bundle `𝒪_X(D)`.
+Let `X` be a locally Noetherian integral scheme of dimension at most one whose codimension-one
+local rings are discrete valuation rings. This file proves that a locally principal Weil divisor
+`D` defines a line bundle `𝒪_X(D)`.
 
-The local-principality API supplies, around every point, a divisor `E` whose sheaf is isomorphic
-to `𝒪_X(D)` and whose sections agree with those of `𝒪_X(0)` on every smaller open subset. This is
-`SchemeWeilDivisor.IsLocallyPrincipal.exists_iso_sheaf_sections_eq_sections_zero`.
-Restricting that isomorphism and composing it with
-`SchemeWeilDivisor.sheafOverIsoOfSectionsEq` and the identification
-`SchemeWeilDivisor.unitIsoSheafZero` of `𝒪_X(0)` with `𝒪_X` therefore gives a rank-one
-trivialization atlas, in the sense of
-`TauCeti.SheafOfModules.LocalTrivializations`.
-
-The hypothesis is `IsNoetherian X`, rather than the `IsLocallyNoetherian X` under which
-`𝒪_X(D)` itself is built, because the existing local-principality comparison used here is
-currently available under the stronger hypothesis.
+The local-principality API supplies, around every point, a nonzero rational function whose order
+agrees with `D`. Multiplication by this local equation identifies the restriction of `𝒪_X(D)`
+with that of `𝒪_X(0)`. Since `𝒪_X(0) ≅ 𝒪_X`, these local isomorphisms form a rank-one
+trivialization atlas.
 
 ## Main declarations
 
@@ -57,9 +49,9 @@ variable {X : Scheme.{u}} [IsIntegral X]
 
 noncomputable section
 
-section Noetherian
+section LocallyNoetherian
 
-variable [IsNoetherian X]
+variable [IsLocallyNoetherian X]
 
 namespace IsLocallyPrincipal
 
@@ -67,22 +59,19 @@ variable {D : SchemeWeilDivisor X}
 
 /-- A rank-one local trivialization atlas for the sheaf of a locally principal Weil divisor.
 
-The cover is indexed by the points of `X`: at `x`, choose a neighbourhood `U`, a divisor `E`
-whose sheaf is isomorphic to `𝒪_X(D)`, and section equalities between `𝒪_X(E)` and `𝒪_X(0)` below
-`U`. Restricting the chosen isomorphism and composing with `𝒪_X(0) ≅ 𝒪_X` gives the required
-trivialization. -/
+The cover is indexed by the points of `X`: at `x`, choose a neighbourhood `U` and a local equation
+`g`. Multiplication by `g` identifies `𝒪_X(D)|_U` with `𝒪_X(0)|_U`; composing with
+`𝒪_X(0) ≅ 𝒪_X` gives the required trivialization. -/
 private def localTrivializations (hD : IsLocallyPrincipal D) (hX : ∀ y : X, coheight y ≤ 1) :
     TauCeti.SheafOfModules.LocalTrivializations.{u, u, u} (sheaf D) := by
   classical
-  let hU := fun x : X ↦ hD.exists_iso_sheaf_sections_eq_sections_zero x
-  let U : X → X.Opens := fun x ↦ (hU x).choose
-  let E : X → SchemeWeilDivisor X := fun x ↦ (hU x).choose_spec.choose
-  let hx : ∀ x, x ∈ U x := fun x ↦ (hU x).choose_spec.choose_spec.1
-  let e : ∀ x, sheaf D ≅ sheaf (E x) := fun x ↦
-    (hU x).choose_spec.choose_spec.2.1.some
-  let hsec : ∀ (x : X), ∀ V ≤ U x,
-      sections (E x) V = sections (0 : SchemeWeilDivisor X) V :=
-    fun x ↦ (hU x).choose_spec.choose_spec.2.2
+  let hD' := isLocallyPrincipal_iff.mp hD
+  let U : X → X.Opens := fun x ↦ (hD' x).choose
+  let hx : ∀ x, x ∈ U x := fun x ↦ (hD' x).choose_spec.1
+  let g : X → Additive X.functionFieldˣ := fun x ↦ (hD' x).choose_spec.2.choose
+  let hg : ∀ x (y : CodimensionOnePoint X), (y : X) ∈ U x →
+      WeilDivisor.coeff D y = orderAt y (g x) :=
+    fun x ↦ (hD' x).choose_spec.2.choose_spec
   exact
     { I := X
       X := U
@@ -96,10 +85,11 @@ private def localTrivializations (hD : IsLocallyPrincipal D) (hX : ∀ y : X, co
         TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over (U x)) ≪≫
           (SheafOfModules.overFunctor X.ringCatSheaf (U x)).mapIso
             (unitIsoSheafZero hX) ≪≫
-          (sheafOverIsoOfSectionsEq (E x) 0 (U x) (hsec x)).symm ≪≫
-          ((SheafOfModules.overFunctor X.ringCatSheaf (U x)).mapIso (e x)).symm }
+          (sheafOverMulIsoOfCoeffEq D 0 (U x) (g x) (by
+            intro y hy
+            simpa using hg x y hy)).symm }
 
-/-- **The sheaf of a locally principal Weil divisor is a line bundle.** On a Noetherian
+/-- **The sheaf of a locally principal Weil divisor is a line bundle.** On a locally Noetherian
 integral scheme of dimension at most one whose codimension-one local rings are discrete
 valuation rings, local equations for `D` trivialize `𝒪_X(D)` as a rank-one module sheaf. -/
 theorem isInvertible_sheaf (hD : IsLocallyPrincipal D) (hX : ∀ y : X, coheight y ≤ 1) :
@@ -119,7 +109,7 @@ lemma toInvertibleSheaf_obj (hD : IsLocallyPrincipal D) (hX : ∀ y : X, coheigh
 
 end IsLocallyPrincipal
 
-end Noetherian
+end LocallyNoetherian
 
 end
 
