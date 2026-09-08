@@ -40,6 +40,9 @@ an admissible finite presentation in `A` and pass from `A(T/s)` to the completed
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic], arXiv:1910.05934v1, Proposition 8.2(2).
+* For simultaneous denominator clearing in a localization, see Mathlib's
+  `IsLocalization.commonDenomOfFinset`, `IsLocalization.finsetIntegerMultiple`, and
+  `IsLocalization.finsetIntegerMultiple_image`.
 -/
 
 public section
