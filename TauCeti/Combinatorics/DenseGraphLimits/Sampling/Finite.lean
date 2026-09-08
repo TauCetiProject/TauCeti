@@ -27,7 +27,6 @@ any extra regularity on the graphon's carrier.
 * `TauCeti.DenseGraphLimits.sampleIntegrand` — the conditional mass of a graph at fixed sampled
   vertex positions;
 * `TauCeti.DenseGraphLimits.sampleMass` — that mass after integrating over the positions;
-* `TauCeti.DenseGraphLimits.samplePMF` — the finite probability mass function;
 * `TauCeti.DenseGraphLimits.sampleGraph` — the resulting probability measure.
 
 ## Main results
@@ -78,6 +77,14 @@ def sampleMass {n : ℕ} (W : Graphon Ω μ) (G : SimpleGraph (Fin n)) : ℝ :=
 section Mass
 
 variable {n : ℕ} (W : Graphon Ω μ) (G : SimpleGraph (Fin n))
+
+open Classical in
+/-- The defining edge/nonedge product of the sampled-graph integrand. -/
+theorem sampleIntegrand_def (x : Fin n → Ω) :
+    sampleIntegrand W G x =
+      (∏ e ∈ G.edgeFinset, edgeFactor W x e) *
+        ∏ e ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset \ G.edgeFinset,
+          (1 - edgeFactor W x e) := (rfl)
 
 /-- The defining integral of a sampled graph's mass. -/
 theorem sampleMass_def :
@@ -187,15 +194,15 @@ end Mass
 section Law
 
 open Classical in
-/-- The probability mass function of the `W`-random graph on `Fin n`. -/
-def samplePMF (W : Graphon Ω μ) (n : ℕ) : PMF (SimpleGraph (Fin n)) :=
+/-- The probability mass function used to construct the `W`-random graph law. -/
+private def samplePMF (W : Graphon Ω μ) (n : ℕ) : PMF (SimpleGraph (Fin n)) :=
   PMF.ofFintype (fun G => ENNReal.ofReal (sampleMass W G)) (by
     rw [← ENNReal.ofReal_sum_of_nonneg (fun G _ => sampleMass_nonneg W G),
       sum_sampleMass_eq_one, ENNReal.ofReal_one])
 
 /-- The probability assigned to a graph by `samplePMF`. -/
 @[simp]
-theorem samplePMF_apply (W : Graphon Ω μ) (n : ℕ) (G : SimpleGraph (Fin n)) :
+private theorem samplePMF_apply (W : Graphon Ω μ) (n : ℕ) (G : SimpleGraph (Fin n)) :
     samplePMF W n G = ENNReal.ofReal (sampleMass W G) := (rfl)
 
 /-- The `W`-random graph law on `Fin n`. -/
