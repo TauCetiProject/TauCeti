@@ -112,7 +112,9 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 disconnected topological group. In the arithmetic applications `G` is the Galois group of a
 Galois extension and the module is the multiplicative group of the top field, read additively. The
 distinguished family of subgroups of the Artin–Tate definition is the family of open subgroups of
-`G`, which is why the levels below are indexed by `OpenSubgroup G`. -/
+`G`, which is why the levels below are indexed by `OpenSubgroup G`. This is the roadmap's
+domain-specific name for `SmoothDiscreteTopRep`; it is definitionally the same type and introduces
+no second representation bundle. -/
 -- The underlying category of smooth discrete objects makes sense over any topological monoid, so
 -- the three profinite hypotheses are mentioned nowhere in the body; they are named with a leading
 -- underscore, the convention for an argument that is deliberately unused there. They are kept
