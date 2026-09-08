@@ -87,6 +87,7 @@ noncomputable def diagonalTorusPoints :
         (SplitTorus.pointsMulEquiv (R := R) (A := A)).toMonoidHom))
 
 /-- Reading a diagonal-torus point as a symplectic matrix gives the standard diagonal matrix. -/
+@[simp]
 theorem pointsMulEquiv_diagonalTorusPoints
     (t : WithConv (MonoidAlgebra R
       (Multiplicative (ULift.{u} (Fin m) →₀ ℤ)) →ₐ[R] A)) :
