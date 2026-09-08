@@ -31,6 +31,7 @@ exchanging the order of integration.
 ## Main declarations
 
 * `TauCeti.translateLp`: translation by a vector as a linear isometry of `Lᵖ`.
+* `TauCeti.coeFn_translateLp`: translation is almost everywhere precomposition by addition.
 * `TauCeti.continuous_translateLp`: strong continuity of translation for `p < ∞`.
 * `TauCeti.enorm_translateLp_sub`: identifies the norm of an `Lᵖ` translation increment with its
   pointwise `eLpNorm`.
@@ -70,13 +71,19 @@ def translateLp (mu : Measure E) [mu.IsAddHaarMeasure] (p : ENNReal) [Fact (1 �
   Lp.compMeasurePreservingₗᵢ ℝ (· + h) (measurePreserving_add_right mu h)
 
 omit [NormedSpace ℝ E] in
+/-- Translation by `h` is almost everywhere precomposition by addition of `h`. -/
+theorem coeFn_translateLp (h : E) (f : Lp F p mu) :
+    ⇑(translateLp mu p h f) =ᵐ[mu] ⇑f ∘ (· + h) := by
+  simpa only [translateLp, Lp.compMeasurePreservingₗᵢ_apply] using
+    Lp.coeFn_compMeasurePreserving f (measurePreserving_add_right mu h)
+
+omit [NormedSpace ℝ E] in
 /-- Translation by zero is the identity on `Lᵖ`. -/
 @[simp]
 theorem translateLp_zero (f : Lp F p mu) : translateLp mu p 0 f = f := by
   apply Lp.ext
-  filter_upwards [Lp.coeFn_compMeasurePreserving f
-    (measurePreserving_add_right mu (0 : E))] with x hx
-  simpa only [translateLp, Lp.compMeasurePreservingₗᵢ_apply, Function.comp_apply, add_zero] using hx
+  filter_upwards [coeFn_translateLp (mu := mu) 0 f] with x hx
+  simpa only [Function.comp_apply, add_zero] using hx
 
 omit [NormedSpace ℝ E] in
 /-- Translation of a fixed `Lᵖ` class depends continuously on the translation vector when
@@ -98,11 +105,9 @@ omit [NormedSpace ℝ E] in
 /-- The `Lᵖ` extended norm of a translation increment is its pointwise `eLpNorm`. -/
 theorem enorm_translateLp_sub (h : E) (f : Lp F p mu) :
     ‖translateLp mu p h f - f‖ₑ = eLpNorm (fun x ↦ f (x + h) - f x) p mu := by
-  have hpres : MeasurePreserving (· + h) mu mu := measurePreserving_add_right mu h
-  have htr : ⇑(translateLp mu p h f) =ᵐ[mu] ⇑f ∘ (· + h) :=
-    Lp.coeFn_compMeasurePreserving f hpres
   have hae : ⇑(translateLp mu p h f - f) =ᵐ[mu] fun x ↦ f (x + h) - f x := by
-    filter_upwards [Lp.coeFn_sub (translateLp mu p h f) f, htr] with x hx hy
+    filter_upwards [Lp.coeFn_sub (translateLp mu p h f) f,
+      coeFn_translateLp (mu := mu) h f] with x hx hy
     rw [hx, Pi.sub_apply, hy]
     rfl
   rw [Lp.enorm_def, eLpNorm_congr_ae hae]
@@ -123,8 +128,7 @@ theorem tendsto_eLpNorm_comp_add_sub_of_memLp [ProperSpace E] {u : E → F}
   apply htend.congr'
   filter_upwards with h
   apply eLpNorm_congr_ae
-  exact ((Lp.coeFn_compMeasurePreserving (hu.toLp u)
-    (measurePreserving_add_right mu h)).trans
+  exact ((coeFn_translateLp (mu := mu) h (hu.toLp u)).trans
       ((measurePreserving_add_right mu h).quasiMeasurePreserving.ae_eq_comp hu.coeFn_toLp)).sub
     hu.coeFn_toLp
 
