@@ -155,13 +155,13 @@ theorem weilDifferentialFiltration_antitone :
       Submodule k (Module.Dual k ↥(repartitionSpace k F))) := fun _ _ h ↦
   Submodule.dualAnnihilator_anti (submoduleOfAdeleFiltrationSupDiagonalRepartitions_mono h)
 
-/-- **A Weil differential bounded by each of two divisors is bounded by their supremum.** By
-`TauCeti.adeleFiltration_sup` a repartition bounded by `D ⊔ E` is a sum of one bounded by `D` and
-one bounded by `E`, on both of which the differential already vanishes. -/
+/-- **A Weil differential bounded by each of two divisors is bounded by their supremum.** -/
 theorem mem_weilDifferentialFiltration_sup {D E : Divisor k F}
     {ω : Module.Dual k ↥(repartitionSpace k F)} (hD : ω ∈ weilDifferentialFiltration D)
     (hE : ω ∈ weilDifferentialFiltration E) :
     ω ∈ weilDifferentialFiltration (D ⊔ E) := by
+  -- By `adeleFiltration_sup` a repartition bounded by `D ⊔ E` is a sum of one bounded by `D` and
+  -- one bounded by `E`, on both of which the differential already vanishes.
   have hsub : submoduleOfAdeleFiltrationSupDiagonalRepartitions (D ⊔ E) =
       submoduleOfAdeleFiltrationSupDiagonalRepartitions D ⊔
         submoduleOfAdeleFiltrationSupDiagonalRepartitions E := by
@@ -261,8 +261,8 @@ theorem repartitionDualMul_repartitionDualMul (hF : IsFunctionField k F) (f g : 
     repartitionDualMul hF f (repartitionDualMul hF g ω) = repartitionDualMul hF (f * g) ω := by
   rw [← Module.End.mul_apply, ← map_mul]
 
-/-- **Multiplying by a nonzero function and then by its inverse restores the linear form.** The
-cancellation that makes multiplication by a nonzero function invertible on `Ω_F`. -/
+/-- **Multiplying by a nonzero function and then by its inverse restores the linear form**, so
+multiplication by a nonzero function is invertible on `Ω_F`. -/
 @[simp]
 theorem repartitionDualMul_inv_repartitionDualMul (hF : IsFunctionField k F) {x : F} (hx : x ≠ 0)
     (ω : Module.Dual k ↥(repartitionSpace k F)) :
@@ -287,12 +287,13 @@ theorem repartitionDualMulRight_apply (hF : IsFunctionField k F)
     repartitionDualMulRight hF ω x = repartitionDualMul hF x ω :=
   (rfl)
 
-/-- **Multiplication by a nonzero linear form is injective.** A function in the kernel is
-either zero or a unit, and a unit can be cancelled by
-`TauCeti.repartitionDualMul_inv_repartitionDualMul`, forcing `ω = 0`. -/
+/-- **Multiplication by a nonzero linear form is injective**: a function `x` with `x · ω = 0`
+is itself zero. -/
 theorem repartitionDualMulRight_injective (hF : IsFunctionField k F)
     {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0) :
     Function.Injective (repartitionDualMulRight hF ω) := by
+  -- A function in the kernel is either zero or a unit, and a unit can be cancelled by
+  -- `repartitionDualMul_inv_repartitionDualMul`, forcing `ω = 0`.
   rw [injective_iff_map_eq_zero]
   intro x hx
   by_contra hx0
@@ -301,8 +302,7 @@ theorem repartitionDualMulRight_injective (hF : IsFunctionField k F)
   rw [← repartitionDualMul_inv_repartitionDualMul hF (Units.ne_zero z) ω,
     ← repartitionDualMulRight_apply hF ω (z : F), hx, map_zero]
 
-/-- **A nonzero function times a nonzero linear form is nonzero**, by injectivity of
-`TauCeti.repartitionDualMulRight`. -/
+/-- **A nonzero function times a nonzero linear form is nonzero.** -/
 theorem repartitionDualMul_ne_zero (hF : IsFunctionField k F) {z : F} (hz : z ≠ 0)
     {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0) :
     repartitionDualMul hF z ω ≠ 0 := fun h ↦ hz <|

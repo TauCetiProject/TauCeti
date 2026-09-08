@@ -12,10 +12,9 @@ public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Uniqueness
 # The divisor of a Weil differential, and the Riemann–Roch theorem
 
 `TauCeti.Divisor.IsRiemannRochDivisor` records what it means for a divisor `W` to satisfy the
-Riemann–Roch identity `ℓ(D) = deg D + 1 - g₀ + ℓ(W - D)`, and everything about such a `W` —
-that `g₀` is the genus, that `deg W = 2g - 2` and `ℓ(W) = g`, that any two are linearly
-equivalent — is proved there.  What is missing, and is supplied here, is that **one exists**.
-That is the Riemann–Roch theorem.
+Riemann–Roch identity `ℓ(D) = deg D + 1 - g₀ + ℓ(W - D)`; for such a `W` the number `g₀` is the
+genus, `deg W = 2g - 2` and `ℓ(W) = g`, and any two such divisors are linearly equivalent.
+**The Riemann–Roch theorem**, proved here, is that such a `W` exists.
 
 The witness is the divisor of a nonzero Weil differential.  Enlarging a divisor shrinks the space
 `Ω_F(D)` of Weil differentials it bounds, so the divisors bounding a fixed `ω` form a downward
@@ -28,7 +27,7 @@ A divisor of maximal degree in the family is then the greatest, since places hav
 Writing `W` for that greatest divisor, multiplication by a function is an injective `k`-linear map
 `F → Ω_F` carrying `L(W - D)` onto `Ω_F(D)`: a nonzero `x` has `x · ω ∈ Ω_F(D)` exactly when
 `ω ∈ Ω_F(D - div x)`, which by maximality says `D - div x ≤ W`, that is `x ∈ L(W - D)`; and it is
-onto because every Weil differential is a multiple of `ω` (Proposition 1.5.9, already available as
+onto because every Weil differential is a multiple of `ω` (Proposition 1.5.9,
 `TauCeti.exists_repartitionDualMul_eq`).  So `ℓ(W - D) = dim_k Ω_F(D) = i(D)`, which rearranges to
 the Riemann–Roch identity.
 
@@ -68,6 +67,7 @@ the Riemann–Roch identity.
   for the genus (Stichtenoth, Theorem 1.5.15).
 * `TauCeti.dim_weilDifferentialDivisor` and `TauCeti.degree_weilDifferentialDivisor`:
   `ℓ((ω)) = g` and `deg (ω) = 2g - 2` (Stichtenoth, Corollary 1.5.16).
+* `TauCeti.degreeClass_canonicalClass`: the canonical class has degree `2g - 2`.
 * `TauCeti.exists_isRiemannRochDivisor`: **the Riemann–Roch theorem** — a Riemann–Roch divisor
   exists.
 * `TauCeti.divisorClass_eq_canonicalClass_iff`: **the characterization of canonical divisors**
@@ -79,6 +79,9 @@ the Riemann–Roch identity.
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Section I.5, in particular Proposition 1.5.11, Theorem 1.5.14 and Theorem 1.5.15, and
   Proposition 1.6.2.
+* Tau Ceti pull request
+  [#5207](https://github.com/TauCetiProject/TauCeti/pull/5207), the predecessor formalization of
+  these results, which the present development adapts.
 -/
 
 public section
@@ -89,12 +92,12 @@ variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
 /-! ### The divisor of a nonzero Weil differential -/
 
-/-- The divisors bounding a fixed nonzero Weil differential have bounded degree: past the
-threshold of `TauCeti.exists_forall_indexOfSpecialty_eq_zero` the divisor is nonspecial, and a
-nonspecial divisor bounds no nonzero Weil differential. -/
+/-- The divisors bounding a fixed nonzero Weil differential have bounded degree. -/
 theorem exists_forall_degree_lt_of_mem_weilDifferentialFiltration (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0) :
     ∃ c : ℤ, ∀ D : Divisor k F, ω ∈ weilDifferentialFiltration D → Divisor.degree D < c := by
+  -- Past the threshold of `exists_forall_indexOfSpecialty_eq_zero` a divisor is nonspecial, and
+  -- a nonspecial divisor bounds no nonzero Weil differential.
   obtain ⟨c, hc⟩ := exists_forall_indexOfSpecialty_eq_zero hF hex
   refine ⟨c, fun D hD ↦ ?_⟩
   by_contra hcon
@@ -104,15 +107,15 @@ theorem exists_forall_degree_lt_of_mem_weilDifferentialFiltration (hF : IsFuncti
   exact hω (by simpa [hbot] using hD)
 
 /-- **The divisor of a nonzero Weil differential** (Stichtenoth, Proposition 1.5.11): the
-divisors bounding `ω` have a greatest element.
-
-Degrees are bounded above, so a divisor `W` of maximal degree among them exists; for any other
-`D` bounding `ω`, the supremum `D ⊔ W` also bounds `ω` and has degree at least that of `W` by
-monotonicity and at most by maximality, hence equals `W` because places have positive degree. -/
+divisors bounding `ω` have a greatest element. -/
 theorem exists_isGreatest_mem_weilDifferentialFiltration (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
     (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) :
     ∃ W : Divisor k F, IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D} W := by
+  -- Degrees are bounded above, so a divisor `W` of maximal degree among them exists; for any
+  -- other `D` bounding `ω`, the supremum `D ⊔ W` also bounds `ω` and has degree at least that of
+  -- `W` by monotonicity and at most by maximality, hence equals `W` because places have positive
+  -- degree.
   classical
   obtain ⟨c, hc⟩ := exists_forall_degree_lt_of_mem_weilDifferentialFiltration hF hex hω
   obtain ⟨D₀, hD₀⟩ := mem_weilDifferentialSpace_iff.mp hmem
@@ -130,8 +133,7 @@ theorem exists_isGreatest_mem_weilDifferentialFiltration (hF : IsFunctionField k
   exact hWeq ▸ le_sup_left
 
 /-- The characteristic property of the divisor of `ω`, in the form consumers use: `ω` is bounded
-by `D` exactly when `D` is at most the divisor of `ω`.  The forward direction is maximality; the
-reverse is antitonicity of the filtration. -/
+by `D` exactly when `D` is at most the divisor of `ω`. -/
 theorem mem_weilDifferentialFiltration_iff_le_of_isGreatest
     {ω : Module.Dual k ↥(repartitionSpace k F)} {W : Divisor k F}
     (hW : IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D} W) (D : Divisor k F) :
@@ -185,12 +187,7 @@ theorem coeff_weilDifferentialDivisor (hF : IsFunctionField k F)
 /-- **The transformation law `(z · ω) = div z + (ω)`** (Stichtenoth, Proposition 1.5.13): the
 divisor of a Weil differential changes by a principal divisor when the differential is multiplied
 by a nonzero function, so the class of `(ω)` in the divisor class group — the canonical class —
-does not depend on `ω`.
-
-Multiplication translates the filtration by `div z`
-(`TauCeti.repartitionDualMul_mem_weilDifferentialFiltration_iff`), so it carries the divisors
-bounding `ω` bijectively onto those bounding `z · ω`, hence greatest element to greatest
-element. -/
+does not depend on `ω`. -/
 @[simp]
 theorem weilDifferentialDivisor_repartitionDualMul (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
@@ -198,6 +195,10 @@ theorem weilDifferentialDivisor_repartitionDualMul (hF : IsFunctionField k F)
     weilDifferentialDivisor hF hex (repartitionDualMul_mem_weilDifferentialSpace hF (z : F) hmem)
         (repartitionDualMul_ne_zero hF (Units.ne_zero z) hω) =
       Divisor.principal hF z + weilDifferentialDivisor hF hex hmem hω := by
+  -- Multiplication translates the filtration by `div z`
+  -- (`repartitionDualMul_mem_weilDifferentialFiltration_iff`), so it carries the divisors
+  -- bounding `ω` bijectively onto those bounding `z · ω`, hence greatest element to greatest
+  -- element.
   have hW := isGreatest_weilDifferentialDivisor hF hex hmem hω
   refine (isGreatest_weilDifferentialDivisor hF hex
     (repartitionDualMul_mem_weilDifferentialSpace hF (z : F) hmem)
@@ -213,15 +214,15 @@ theorem weilDifferentialDivisor_repartitionDualMul (hF : IsFunctionField k F)
     rw [add_comm]
     exact sub_le_iff_le_add.mp (hW.2 h)
 
-/-- The divisors of any two nonzero Weil differentials have the same divisor class.  Indeed,
-one differential is a nonzero function multiple of the other, and the transformation law says
-that their divisors differ by the corresponding principal divisor. -/
+/-- The divisors of any two nonzero Weil differentials have the same divisor class. -/
 theorem divisorClass_weilDifferentialDivisor_eq (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω η : Module.Dual k ↥(repartitionSpace k F)}
     (hωmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0)
     (hηmem : η ∈ weilDifferentialSpace k F) (hη : η ≠ 0) :
     (Place.orderSystem hF).divisorClass (weilDifferentialDivisor hF hex hωmem hω) =
       (Place.orderSystem hF).divisorClass (weilDifferentialDivisor hF hex hηmem hη) := by
+  -- One differential is a nonzero function multiple of the other, and the transformation law
+  -- says that their divisors differ by the corresponding principal divisor.
   obtain ⟨c, hc⟩ := exists_repartitionDualMul_eq hF hex hωmem hω hηmem
   subst hc
   have hc0 : c ≠ 0 := by
@@ -256,16 +257,15 @@ theorem divisorClass_weilDifferentialDivisor (hF : IsFunctionField k F)
 /-! ### The Riemann–Roch theorem -/
 
 /-- **Duality between `L(W - D)` and `Ω_F(D)`**, for `W` the divisor of `ω`: a function `x`
-multiplies `ω` into `Ω_F(D)` exactly when it lies in `L(W - D)`.
-
-For nonzero `x`, multiplication translates the filtration by the principal divisor of `x`
-(`TauCeti.repartitionDualMul_mem_weilDifferentialFiltration_iff`), so `x · ω ∈ Ω_F(D)` says
-`ω ∈ Ω_F(D - div x)`, which by maximality of `W` says `D - div x ≤ W`. -/
+multiplies `ω` into `Ω_F(D)` exactly when it lies in `L(W - D)`. -/
 theorem repartitionDualMul_mem_weilDifferentialFiltration_iff_mem_riemannRochSpace
     (hF : IsFunctionField k F) {ω : Module.Dual k ↥(repartitionSpace k F)} {W : Divisor k F}
     (hW : IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D} W)
     (D : Divisor k F) (x : F) :
     repartitionDualMul hF x ω ∈ weilDifferentialFiltration D ↔ x ∈ riemannRochSpace (W - D) := by
+  -- For nonzero `x`, multiplication translates the filtration by the principal divisor of `x`
+  -- (`repartitionDualMul_mem_weilDifferentialFiltration_iff`), so `x · ω ∈ Ω_F(D)` says
+  -- `ω ∈ Ω_F(D - div x)`, which by maximality of `W` says `D - div x ≤ W`.
   rcases eq_or_ne x 0 with rfl | hx
   · simp
   obtain ⟨z, rfl⟩ : ∃ z : Fˣ, (z : F) = x := ⟨Units.mk0 x hx, rfl⟩
@@ -283,16 +283,18 @@ theorem repartitionDualMul_mem_weilDifferentialFiltration_iff_mem_riemannRochSpa
       (weilDifferentialFiltration_antitone h hW.1)
     rwa [hrw] at hmem
 
-/-- **The image of `L(W - D)` under multiplication by `ω` is `Ω_F(D)`.**  One inclusion is
-`TauCeti.repartitionDualMul_mem_weilDifferentialFiltration_iff_mem_riemannRochSpace`; the other
-is Proposition 1.5.9, every Weil differential being a multiple of `ω`
-(`TauCeti.exists_repartitionDualMul_eq`). -/
+/-- **The image of `L(W - D)` under multiplication by `ω` is `Ω_F(D)`**, for `W` the divisor of
+a nonzero Weil differential `ω`. -/
 theorem map_riemannRochSpace_repartitionDualMulRight (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0)
     {W : Divisor k F}
     (hW : IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D} W) (D : Divisor k F) :
     Submodule.map (repartitionDualMulRight hF ω) (riemannRochSpace (W - D)) =
       weilDifferentialFiltration D := by
+  -- One inclusion is
+  -- `repartitionDualMul_mem_weilDifferentialFiltration_iff_mem_riemannRochSpace`; the other is
+  -- Proposition 1.5.9, every Weil differential being a multiple of `ω`
+  -- (`exists_repartitionDualMul_eq`).
   have key (x : F) : repartitionDualMulRight hF ω x ∈ weilDifferentialFiltration D ↔
       x ∈ riemannRochSpace (W - D) := by
     simpa using repartitionDualMul_mem_weilDifferentialFiltration_iff_mem_riemannRochSpace hF hW D x
@@ -305,9 +307,7 @@ theorem map_riemannRochSpace_repartitionDualMulRight (hF : IsFunctionField k F)
     exact ⟨c, (key c).mp (by simpa [hc] using hη), by simpa using hc⟩
 
 /-- **The duality theorem** (Stichtenoth, Theorem 1.5.14): for `W` the divisor of a nonzero Weil
-differential `ω`, multiplication by `ω` is a `k`-linear isomorphism `L(W - D) ≃ Ω_F(D)`.  It is
-injective by `TauCeti.repartitionDualMulRight_injective` and onto by
-`TauCeti.map_riemannRochSpace_repartitionDualMulRight`. -/
+differential `ω`, multiplication by `ω` is a `k`-linear isomorphism `L(W - D) ≃ Ω_F(D)`. -/
 noncomputable def riemannRochSpaceEquivWeilDifferentialFiltration (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0)
     {W : Divisor k F}
@@ -340,16 +340,15 @@ theorem dim_sub_eq_finrank_weilDifferentialFiltration (hF : IsFunctionField k F)
   exact (riemannRochSpaceEquivWeilDifferentialFiltration hF hex hω hW D).finrank_eq
 
 /-- **The Riemann–Roch theorem** (Stichtenoth, Theorem 1.5.15): the divisor of a nonzero Weil
-differential is a Riemann–Roch divisor for the genus.
-
-Duality gives `ℓ(W - D) = dim_k Ω_F(D)`, which is `i(D)` by
-`TauCeti.finrank_weilDifferentialFiltration` (Lemma 1.5.7); unfolding the index of specialty
-rearranges that to the Riemann–Roch identity. -/
+differential is a Riemann–Roch divisor for the genus. -/
 theorem isRiemannRochDivisor_of_isGreatest_mem_weilDifferentialFiltration
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0) {W : Divisor k F}
     (hW : IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D} W) :
     W.IsRiemannRochDivisor (genus k F) := by
+  -- Duality gives `ℓ(W - D) = dim_k Ω_F(D)`, which is `i(D)` by
+  -- `finrank_weilDifferentialFiltration` (Lemma 1.5.7); unfolding the index of specialty
+  -- rearranges that to the Riemann–Roch identity.
   rw [Divisor.isRiemannRochDivisor_iff]
   intro D
   have hi := finrank_weilDifferentialFiltration hF hex D
@@ -382,6 +381,14 @@ theorem degree_weilDifferentialDivisor (hF : IsFunctionField k F)
     Divisor.degree (weilDifferentialDivisor hF hex hmem hω) = 2 * genus k F - 2 :=
   (isRiemannRochDivisor_weilDifferentialDivisor hF hex hmem hω).degree_eq hF hex
 
+/-- **The canonical class has degree `2g - 2`** (Stichtenoth, Corollary 1.5.16). -/
+@[simp]
+theorem degreeClass_canonicalClass (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) :
+    Divisor.degreeClass hF (canonicalClass hF hex) = 2 * genus k F - 2 := by
+  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  rw [← divisorClass_weilDifferentialDivisor hF hex hωmem hω0, Divisor.degreeClass_divisorClass,
+    degree_weilDifferentialDivisor]
+
 /-- **The Riemann–Roch theorem, existence form** (Stichtenoth, Theorem 1.5.15): every algebraic
 function field with exact constant field has a Riemann–Roch divisor, namely the divisor of any
 nonzero Weil differential, whose dimension and degree are recorded by
@@ -395,14 +402,13 @@ theorem exists_isRiemannRochDivisor (hF : IsFunctionField k F)
 
 /-! ### The characterization of canonical divisors -/
 
-/-- A divisor representing the canonical class is a Riemann–Roch divisor for the genus: it is
-linearly equivalent to the divisor of a nonzero Weil differential, and being a Riemann–Roch
-divisor depends only on the divisor class
-(`TauCeti.Divisor.IsRiemannRochDivisor.of_linearlyEquivalent`). -/
+/-- A divisor representing the canonical class is a Riemann–Roch divisor for the genus. -/
 theorem isRiemannRochDivisor_of_divisorClass_eq_canonicalClass (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {D : Divisor k F}
     (hD : (Place.orderSystem hF).divisorClass D = canonicalClass hF hex) :
     D.IsRiemannRochDivisor (genus k F) := by
+  -- Such a `D` is linearly equivalent to the divisor of a nonzero Weil differential, and being a
+  -- Riemann–Roch divisor depends only on the divisor class.
   obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
   refine (isRiemannRochDivisor_weilDifferentialDivisor hF hex hωmem hω0).of_linearlyEquivalent hF
     ((Place.orderSystem hF).divisorClass_eq_iff.mp ?_)
@@ -410,18 +416,16 @@ theorem isRiemannRochDivisor_of_divisorClass_eq_canonicalClass (hF : IsFunctionF
 
 /-- **The characterization of canonical divisors** (Stichtenoth, Proposition 1.6.2): a divisor
 represents the canonical class exactly when it has degree `2g - 2` and its Riemann–Roch space
-has dimension at least the genus.
-
-For the substantial direction, take `W` to be the divisor of a nonzero Weil differential.  Once
-`deg D = 2g - 2`, the Riemann–Roch identity at `D` reads `ℓ(D) = g - 1 + ℓ(W - D)`, so `ℓ(D) ≥ g`
-forces `ℓ(W - D) ≥ 1`; as `W - D` has degree zero it is then principal
-(`TauCeti.Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero`), that is, `D` has the
-class of `W`.  Conversely such a `D` is itself a Riemann–Roch divisor, whose degree and dimension
-are `2g - 2` and `g` by Corollary 1.5.16. -/
+has dimension at least the genus. -/
 theorem divisorClass_eq_canonicalClass_iff (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (D : Divisor k F) :
     (Place.orderSystem hF).divisorClass D = canonicalClass hF hex ↔
       Divisor.degree D = 2 * genus k F - 2 ∧ genus k F ≤ Divisor.dim D := by
+  -- For the substantial direction, take `W` to be the divisor of a nonzero Weil differential.
+  -- Once `deg D = 2g - 2`, the Riemann–Roch identity at `D` reads `ℓ(D) = g - 1 + ℓ(W - D)`, so
+  -- `ℓ(D) ≥ g` forces `ℓ(W - D) ≥ 1`; as `W - D` has degree zero it is then principal, that is,
+  -- `D` has the class of `W`.  Conversely such a `D` is itself a Riemann–Roch divisor, whose
+  -- degree and dimension are `2g - 2` and `g` by Corollary 1.5.16.
   obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
   refine ⟨fun hD ↦ ?_, fun ⟨hdeg, hdim⟩ ↦ ?_⟩
   · have hRR := isRiemannRochDivisor_of_divisorClass_eq_canonicalClass hF hex hD
