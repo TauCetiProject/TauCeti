@@ -87,6 +87,12 @@ backtrack along the edge by this factor. -/
 def backtrackScale (u : ∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → M) {i j : V} (h : G.Adj i j) : M :=
   u (arrow G h) * u (arrow G h.symm)
 
+/-- The backtrack scale is the product of the labels on the two orientations of an edge. -/
+@[simp]
+theorem backtrackScale_apply
+    (u : ∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → M) {i j : V} (h : G.Adj i j) :
+    backtrackScale G u h = u (arrow G h) * u (arrow G h.symm) := (rfl)
+
 /-- The backtrack scale of a unit-valued labelling is the backtrack scale of its underlying scalar
 labelling. -/
 theorem val_backtrackScale {k : Type w} [Monoid k]
