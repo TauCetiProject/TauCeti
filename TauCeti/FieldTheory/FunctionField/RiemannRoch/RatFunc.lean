@@ -270,22 +270,22 @@ theorem Divisor.degreeZeroClassGroupEquivPolynomial_apply
       Divisor.classGroupHom k[X] (IsFunctionField.ratFunc k) c :=
   Divisor.degreeZeroClassGroupEquiv_apply k[X] (IsFunctionField.ratFunc k) _ _ c
 
-/-- **Every degree-zero divisor class of the rational function field is trivial**: through the
-affine bridge it is an ideal class of `k[X]`, and `k[X]` is a principal ideal domain.  The
-description of the divisor classes of `k(x)` in
-`TauCeti.Divisor.linearlyEquivalent_zsmul_ofPoint_infty` gives the same conclusion directly. -/
+/-- **Every degree-zero divisor class of the rational function field is trivial**: by
+`TauCeti.Divisor.linearlyEquivalent_zsmul_ofPoint_infty`, a degree-zero divisor is linearly
+equivalent to zero.  The affine bridge `TauCeti.Divisor.degreeZeroClassGroupEquivPolynomial`
+gives the same conclusion from the fact that `k[X]` is a principal ideal domain. -/
 @[simp]
 theorem Divisor.ker_degreeClass_ratFunc_eq_bot :
-    (Divisor.degreeClass (IsFunctionField.ratFunc k)).ker = ⊥ :=
-  -- Neither `Subsingleton (ClassGroup k[X])` nor its `Additive` copy is found by instance
-  -- search unaided, so both are installed as local instances here.
-  have : Subsingleton (ClassGroup k[X]) :=
-    Fintype.card_le_one_iff_subsingleton.mp (card_classGroup_eq_one (R := k[X])).le
-  have : Subsingleton (Additive (ClassGroup k[X])) :=
-    inferInstanceAs (Subsingleton (ClassGroup k[X]))
-  have : Subsingleton (Divisor.degreeClass (IsFunctionField.ratFunc k)).ker :=
-    (Divisor.degreeZeroClassGroupEquivPolynomial k).toEquiv.subsingleton
-  AddSubgroup.eq_bot_of_subsingleton _
+    (Divisor.degreeClass (IsFunctionField.ratFunc k)).ker = ⊥ := by
+  rw [eq_bot_iff]
+  intro c hc
+  obtain ⟨D, rfl⟩ := (Place.orderSystem (IsFunctionField.ratFunc k)).divisorClass_surjective c
+  rw [AddSubgroup.mem_bot, Divisor.divisorClass_eq_zero_iff]
+  have hdeg : Divisor.degree D = 0 := by
+    simpa only [AddMonoidHom.mem_ker, Divisor.degreeClass_divisorClass] using hc
+  obtain ⟨z, hz⟩ := (Divisor.linearlyEquivalent_iff (IsFunctionField.ratFunc k)).mp
+    (by simpa only [hdeg, zero_smul] using Divisor.linearlyEquivalent_zsmul_ofPoint_infty D)
+  exact ⟨z, hz.trans (sub_zero D)⟩
 
 /-- **The rational function field has class number one** (Stichtenoth, Example 5.1). -/
 @[simp]
