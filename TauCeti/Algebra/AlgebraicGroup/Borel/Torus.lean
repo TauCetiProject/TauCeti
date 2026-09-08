@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Borel.Existence
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 
 /-!
