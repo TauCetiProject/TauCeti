@@ -261,6 +261,13 @@ def relabelOppositeConvention (τ : Perm (Fin n))
 def Equivalent (t t' : PermutationTriple n) : Prop :=
   MulAction.orbitRel (Perm (Fin n)) (PermutationTriple n) t t'
 
+/-- Two permutation triples are isomorphic exactly when one is obtained from the other by a
+simultaneous relabeling. -/
+theorem equivalent_iff_exists_smul_eq {t t' : PermutationTriple n} :
+    Equivalent t t' ↔ ∃ τ : Perm (Fin n), τ • t = t' := by
+  rw [Equivalent, MulAction.orbitRel_apply, MulAction.mem_orbit_symm,
+    MulAction.mem_orbit_iff]
+
 /-- Isomorphism of triples — relabeling the sheets — is decidable, by searching the finitely many
 relabelings. -/
 instance : DecidableRel (@Equivalent n) :=
@@ -273,6 +280,15 @@ instance : DecidableRel (@Equivalent n) :=
 /-- Isomorphism classes of degree-`n` permutation triples. -/
 def IsoClass (n : ℕ) : Type :=
   MulAction.orbitRel.Quotient (Perm (Fin n)) (PermutationTriple n)
+
+/-- The isomorphism class of a permutation triple. -/
+def IsoClass.mk (t : PermutationTriple n) : IsoClass n :=
+  Quotient.mk'' t
+
+/-- Two triples determine the same isomorphism class exactly when they are isomorphic. -/
+@[simp] theorem IsoClass.mk_eq_mk_iff {t t' : PermutationTriple n} :
+    IsoClass.mk t = IsoClass.mk t' ↔ Equivalent t t' := by
+  exact Quotient.eq''
 
 /-! ### The monodromy group -/
 
