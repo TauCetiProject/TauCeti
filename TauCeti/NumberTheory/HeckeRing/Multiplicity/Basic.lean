@@ -91,6 +91,25 @@ lemma snd_eq_of_fst_eq {Γ₁ Γ₂ Γ₃ : Subgroup G} {g h d : G} {i : DecompQ
   rw [QuotientGroup.eq] at h ⊢
   simpa [mul_assoc] using h
 
+/-- **A first factor that does not split forces multiplicity at most one.** When `Γ₁ g Γ₂`
+consists of a single left coset, no double coset occurs more than once in the product, for any
+`h` and `d`.
+
+No finiteness hypothesis is needed, in particular none on the second decomposition quotient. -/
+lemma multiplicity_le_one_of_subsingleton {Γ₁ Γ₂ Γ₃ : Subgroup G} {g h d : G}
+    (hs : Subsingleton (DecompQuotient Γ₁ Γ₂ g)) :
+    multiplicity Γ₁ Γ₂ Γ₃ g h d ≤ 1 := by
+  rw [multiplicity_def]
+  have hfib : Subsingleton {p : DecompQuotient Γ₁ Γ₂ g × DecompQuotient Γ₂ Γ₃ h |
+      ((p.1.out : G) * g * ((p.2.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)} := by
+    constructor
+    rintro ⟨⟨i₁, j₁⟩, hp₁⟩ ⟨⟨i₂, j₂⟩, hp₂⟩
+    simp only [Set.mem_ofPred_eq] at hp₁ hp₂
+    obtain rfl : i₁ = i₂ := hs.elim i₁ i₂
+    obtain rfl : j₁ = j₂ := snd_eq_of_fst_eq hp₁ hp₂
+    rfl
+  exact Finite.card_le_one_iff_subsingleton.mpr hfib
+
 /-- When the common second component of two pairs in the fibre of the multiplicity satisfies
 `τⱼ h ∈ Γ₂`, the first components agree. -/
 lemma fst_eq_of_mul_snd_mem {Γ₁ Γ₂ : Subgroup G} {g h d : G} {i₁ i₂ : DecompQuotient Γ₁ Γ₂ g}

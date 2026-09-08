@@ -94,17 +94,7 @@ private lemma multiplicity_const_le_one (c : ℕ) (b : Fin n → ℕ)
       (((diagCoset fun _ : Fin n ↦ c).rep : GL (Fin n) ℚ))) = 1 := by
     rw [← HeckeCoset.degree_eq_card_decompQuotient]
     exact degree_diagCoset_const n _
-  have hsub : Subsingleton (DecompQuotient (SLnZ n) (SLnZ n)
-      (((diagCoset fun _ : Fin n ↦ c).rep : GL (Fin n) ℚ))) :=
-    Fintype.card_le_one_iff_subsingleton.mp hcard.le
-  rw [multiplicity_def, Nat.card_eq_fintype_card]
-  refine Fintype.card_le_one_iff_subsingleton.mpr ?_
-  constructor
-  rintro ⟨⟨i₁, j₁⟩, hp₁⟩ ⟨⟨i₂, j₂⟩, hp₂⟩
-  simp only [Set.mem_ofPred_eq] at hp₁ hp₂
-  obtain rfl : i₁ = i₂ := Subsingleton.elim i₁ i₂
-  obtain rfl : j₁ = j₂ := DoubleCoset.snd_eq_of_fst_eq hp₁ hp₂
-  rfl
+  exact multiplicity_le_one_of_subsingleton (Fintype.card_le_one_iff_subsingleton.mp hcard.le)
 
 /-- Scalar multiplication in the Hecke ring (Shimura, Proposition 3.17):
 `T(c,...,c) · T(b) = T(c·b)`. -/
