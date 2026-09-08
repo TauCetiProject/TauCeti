@@ -187,6 +187,7 @@ Multiplication translates the filtration by `div z`
 (`TauCeti.repartitionDualMul_mem_weilDifferentialFiltration_iff`), so it carries the divisors
 bounding `ω` bijectively onto those bounding `z · ω`, hence greatest element to greatest
 element. -/
+@[simp]
 theorem weilDifferentialDivisor_repartitionDualMul (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
     (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) (z : Fˣ) :
@@ -239,6 +240,7 @@ noncomputable def canonicalClass (hF : IsFunctionField k F)
       ((Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)).choose_spec.2)
 
 /-- Every nonzero Weil differential represents the canonical class. -/
+@[simp]
 theorem divisorClass_weilDifferentialDivisor (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
     (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) :
