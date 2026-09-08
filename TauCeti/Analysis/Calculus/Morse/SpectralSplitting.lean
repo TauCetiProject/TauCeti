@@ -32,10 +32,10 @@ negative-gradient field, supplied by
 
 * `ContDiffAt.stableLinearSubspace`: the positive spectral subspace of the Hessian.
 * `ContDiffAt.unstableLinearSubspace`: the negative spectral subspace of the Hessian.
-* `TauCeti.IsNondegenerateCriticalPoint.unstableLinearSubspace_sup_stableLinearSubspace`: at a
-  nondegenerate critical point these subspaces span the whole tangent space.
-* `TauCeti.IsNondegenerateCriticalPoint.finrank_unstableLinearSubspace`: the unstable dimension is
-  the Morse index.
+* `TauCeti.IsNondegenerateCriticalPoint.isCompl_unstableLinearSubspace_stableLinearSubspace`: at a
+  nondegenerate critical point these subspaces are complementary, so the tangent space is their
+  direct sum.
+* `ContDiffAt.finrank_unstableLinearSubspace`: the unstable dimension is the Morse index.
 * `TauCeti.IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex`: the stable
   dimension plus the Morse index is the ambient dimension.
 
@@ -56,8 +56,8 @@ namespace ContDiffAt
 
 open TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-  [FiniteDimensional ℝ E] {f : E → ℝ} {x : E}
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {f : E → ℝ} {x : E}
 
 /-- The stable linear subspace of the negative-gradient field at a `C²` point: the span of the
 Hessian eigenvectors with positive eigenvalues. The negative Hessian linearization contracts
@@ -71,24 +71,57 @@ directions in forward time. -/
 noncomputable def unstableLinearSubspace (hf : ContDiffAt ℝ 2 f x) : Submodule ℝ E :=
   hf.isSelfAdjoint_hessianOperator.isSymmetric.negativeSpectralSubspace rfl
 
+/-- The stable linear subspace is the positive spectral subspace of the Hessian. -/
+theorem stableLinearSubspace_def (hf : ContDiffAt ℝ 2 f x) :
+    hf.stableLinearSubspace =
+      hf.isSelfAdjoint_hessianOperator.isSymmetric.positiveSpectralSubspace rfl := by
+  rw [stableLinearSubspace]
+
+/-- The unstable linear subspace is the negative spectral subspace of the Hessian. -/
+theorem unstableLinearSubspace_def (hf : ContDiffAt ℝ 2 f x) :
+    hf.unstableLinearSubspace =
+      hf.isSelfAdjoint_hessianOperator.isSymmetric.negativeSpectralSubspace rfl := by
+  rw [unstableLinearSubspace]
+
+/-- A vector is stable exactly when its Hessian eigenbasis representation is supported on the
+positive eigenvalues. -/
+theorem mem_stableLinearSubspace_iff (hf : ContDiffAt ℝ 2 f x) {v : E} :
+    v ∈ hf.stableLinearSubspace ↔
+      ∀ i ∈ ((hf.isSelfAdjoint_hessianOperator.isSymmetric.eigenvectorBasis
+        rfl).toBasis.repr v).support,
+        0 < hf.isSelfAdjoint_hessianOperator.isSymmetric.eigenvalues rfl i := by
+  rw [stableLinearSubspace_def,
+    LinearMap.IsSymmetric.mem_positiveSpectralSubspace_iff]
+
+/-- A vector is unstable exactly when its Hessian eigenbasis representation is supported on the
+negative eigenvalues. -/
+theorem mem_unstableLinearSubspace_iff (hf : ContDiffAt ℝ 2 f x) {v : E} :
+    v ∈ hf.unstableLinearSubspace ↔
+      ∀ i ∈ ((hf.isSelfAdjoint_hessianOperator.isSymmetric.eigenvectorBasis
+        rfl).toBasis.repr v).support,
+        hf.isSelfAdjoint_hessianOperator.isSymmetric.eigenvalues rfl i < 0 := by
+  rw [unstableLinearSubspace_def,
+    LinearMap.IsSymmetric.mem_negativeSpectralSubspace_iff]
+
 /-- The Hessian preserves the stable linear subspace. -/
 theorem map_hessianOperator_stableLinearSubspace_le (hf : ContDiffAt ℝ 2 f x) :
     Submodule.map (hessianOperator f x).toLinearMap hf.stableLinearSubspace ≤
       hf.stableLinearSubspace := by
-  rw [stableLinearSubspace]
+  rw [stableLinearSubspace_def]
   exact hf.isSelfAdjoint_hessianOperator.isSymmetric.map_positiveSpectralSubspace_le rfl
 
 /-- The Hessian preserves the unstable linear subspace. -/
 theorem map_hessianOperator_unstableLinearSubspace_le (hf : ContDiffAt ℝ 2 f x) :
     Submodule.map (hessianOperator f x).toLinearMap hf.unstableLinearSubspace ≤
       hf.unstableLinearSubspace := by
-  rw [unstableLinearSubspace]
+  rw [unstableLinearSubspace_def]
   exact hf.isSelfAdjoint_hessianOperator.isSymmetric.map_negativeSpectralSubspace_le rfl
 
 /-- The stable and unstable linear subspaces at a `C²` point are disjoint. This does not require
 nondegeneracy: the zero eigenspace belongs to neither subspace. -/
 theorem disjoint_unstableLinearSubspace_stableLinearSubspace (hf : ContDiffAt ℝ 2 f x) :
     Disjoint hf.unstableLinearSubspace hf.stableLinearSubspace := by
+  rw [unstableLinearSubspace_def, stableLinearSubspace_def]
   exact hf.isSelfAdjoint_hessianOperator.isSymmetric
     |>.disjoint_negativeSpectralSubspace_positiveSpectralSubspace rfl
 
@@ -125,30 +158,31 @@ theorem morseIndex_eq_ncard_hessianOperator_eigenvalues_neg (hf : ContDiffAt ℝ
   simpa only [hT] using
     QuadraticForm.sigNeg_of_equiv_weightedSumSquares hequiv
 
+/-- The dimension of the unstable linear subspace at a `C²` point is its Morse index. -/
+@[simp]
+theorem finrank_unstableLinearSubspace (hf : ContDiffAt ℝ 2 f x) :
+    Module.finrank ℝ hf.unstableLinearSubspace = morseIndex f x := by
+  rw [unstableLinearSubspace_def,
+    hf.isSelfAdjoint_hessianOperator.isSymmetric.finrank_negativeSpectralSubspace,
+    hf.morseIndex_eq_ncard_hessianOperator_eigenvalues_neg]
+
 end ContDiffAt
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-  [FiniteDimensional ℝ E] {f : E → ℝ} {x : E}
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {f : E → ℝ} {x : E}
 
-/-- At a nondegenerate critical point, the unstable and stable linear subspaces span the whole
-tangent space. Nondegeneracy excludes the zero eigenspace. -/
-theorem IsNondegenerateCriticalPoint.unstableLinearSubspace_sup_stableLinearSubspace
+/-- At a nondegenerate critical point, the unstable and stable linear subspaces are
+complementary, so the tangent space is their direct sum. Nondegeneracy excludes the zero
+eigenspace. -/
+theorem IsNondegenerateCriticalPoint.isCompl_unstableLinearSubspace_stableLinearSubspace
     (h : IsNondegenerateCriticalPoint f x) :
-    h.contDiffAt.unstableLinearSubspace ⊔ h.contDiffAt.stableLinearSubspace = ⊤ := by
-  apply h.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
-    |>.negativeSpectralSubspace_sup_positiveSpectralSubspace_of_ker_eq_bot rfl
-  exact LinearMap.ker_eq_bot.mpr h.isInvertible_hessianOperator.injective
-
-/-- The dimension of the unstable linear subspace at a nondegenerate critical point is its Morse
-index. -/
-theorem IsNondegenerateCriticalPoint.finrank_unstableLinearSubspace
-    (h : IsNondegenerateCriticalPoint f x) :
-    Module.finrank ℝ h.contDiffAt.unstableLinearSubspace = morseIndex f x := by
-  rw [ContDiffAt.unstableLinearSubspace,
-    h.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric.finrank_negativeSpectralSubspace,
-    h.contDiffAt.morseIndex_eq_ncard_hessianOperator_eigenvalues_neg]
+    IsCompl h.contDiffAt.unstableLinearSubspace h.contDiffAt.stableLinearSubspace := by
+  rw [ContDiffAt.unstableLinearSubspace_def, ContDiffAt.stableLinearSubspace_def]
+  exact h.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
+    |>.isCompl_negativeSpectralSubspace_positiveSpectralSubspace_of_ker_eq_bot rfl
+      (LinearMap.ker_eq_bot.mpr h.isInvertible_hessianOperator.injective)
 
 /-- At a nondegenerate critical point, the dimension of the stable linear subspace plus the Morse
 index is the dimension of the ambient tangent space. -/
@@ -156,12 +190,8 @@ theorem IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex
     (h : IsNondegenerateCriticalPoint f x) :
     Module.finrank ℝ h.contDiffAt.stableLinearSubspace + morseIndex f x =
       Module.finrank ℝ E := by
-  have hdim := Submodule.finrank_sup_add_finrank_inf_eq
-    h.contDiffAt.unstableLinearSubspace h.contDiffAt.stableLinearSubspace
-  rw [h.unstableLinearSubspace_sup_stableLinearSubspace,
-    h.contDiffAt.disjoint_unstableLinearSubspace_stableLinearSubspace.eq_bot,
-    finrank_top, finrank_bot, add_zero, h.finrank_unstableLinearSubspace] at hdim
-  omega
+  rw [← h.contDiffAt.finrank_unstableLinearSubspace, add_comm]
+  exact Submodule.finrank_add_eq_of_isCompl h.isCompl_unstableLinearSubspace_stableLinearSubspace
 
 end TauCeti
 

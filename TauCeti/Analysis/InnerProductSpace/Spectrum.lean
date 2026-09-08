@@ -247,24 +247,10 @@ theorem finrank_spectralSubspace (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 
 theorem map_spectralSubspace_le (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     (s : Set (Fin n)) :
     Submodule.map T (hT.spectralSubspace hn s) ≤ hT.spectralSubspace hn s := by
-  rw [Submodule.map_le_iff_le_comap, spectralSubspace]
-  apply Submodule.span_le.mpr
+  rw [spectralSubspace, Submodule.map_span_le]
   rintro _ ⟨i, hi, rfl⟩
-  apply Submodule.mem_comap.mpr
   rw [hT.apply_eigenvectorBasis hn i]
   exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hi, rfl⟩)
-
-/-- The sum of spectral subspaces associated to complementary index sets is the whole space. -/
-theorem spectralSubspace_sup_compl (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
-    (s : Set (Fin n)) :
-    hT.spectralSubspace hn s ⊔ hT.spectralSubspace hn sᶜ = ⊤ := by
-  rw [← hT.spectralSubspace_union hn, Set.union_compl_self, hT.spectralSubspace_univ hn]
-
-/-- Spectral subspaces associated to complementary index sets are disjoint. -/
-theorem disjoint_spectralSubspace_compl (hT : T.IsSymmetric)
-    (hn : Module.finrank 𝕜 E = n) (s : Set (Fin n)) :
-    Disjoint (hT.spectralSubspace hn s) (hT.spectralSubspace hn sᶜ) :=
-  hT.disjoint_spectralSubspace hn (Set.disjoint_left.2 fun _ hs hsc ↦ hsc hs)
 
 /-- The negative spectral subspace of a finite-dimensional symmetric operator. -/
 noncomputable def negativeSpectralSubspace (hT : T.IsSymmetric)
@@ -275,6 +261,36 @@ noncomputable def negativeSpectralSubspace (hT : T.IsSymmetric)
 noncomputable def positiveSpectralSubspace (hT : T.IsSymmetric)
     (hn : Module.finrank 𝕜 E = n) : Submodule 𝕜 E :=
   hT.spectralSubspace hn {i | 0 < hT.eigenvalues hn i}
+
+/-- The negative spectral subspace is the spectral subspace of the negative eigenvalue
+indices. -/
+theorem negativeSpectralSubspace_def (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) :
+    hT.negativeSpectralSubspace hn = hT.spectralSubspace hn {i | hT.eigenvalues hn i < 0} := by
+  rw [negativeSpectralSubspace]
+
+/-- The positive spectral subspace is the spectral subspace of the positive eigenvalue
+indices. -/
+theorem positiveSpectralSubspace_def (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) :
+    hT.positiveSpectralSubspace hn = hT.spectralSubspace hn {i | 0 < hT.eigenvalues hn i} := by
+  rw [positiveSpectralSubspace]
+
+/-- A vector belongs to the negative spectral subspace exactly when its eigenbasis representation
+is supported on the negative eigenvalues. -/
+theorem mem_negativeSpectralSubspace_iff (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
+    {v : E} :
+    v ∈ hT.negativeSpectralSubspace hn ↔
+      ∀ i ∈ ((hT.eigenvectorBasis hn).toBasis.repr v).support, hT.eigenvalues hn i < 0 := by
+  rw [negativeSpectralSubspace_def, mem_spectralSubspace_iff]
+  exact Iff.rfl
+
+/-- A vector belongs to the positive spectral subspace exactly when its eigenbasis representation
+is supported on the positive eigenvalues. -/
+theorem mem_positiveSpectralSubspace_iff (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
+    {v : E} :
+    v ∈ hT.positiveSpectralSubspace hn ↔
+      ∀ i ∈ ((hT.eigenvectorBasis hn).toBasis.repr v).support, 0 < hT.eigenvalues hn i := by
+  rw [positiveSpectralSubspace_def, mem_spectralSubspace_iff]
+  exact Iff.rfl
 
 /-- The dimension of the negative spectral subspace counts the negative eigenvalues, with
 multiplicity. -/
@@ -298,21 +314,22 @@ theorem finrank_positiveSpectralSubspace (hT : T.IsSymmetric)
 theorem map_negativeSpectralSubspace_le (hT : T.IsSymmetric)
     (hn : Module.finrank 𝕜 E = n) :
     Submodule.map T (hT.negativeSpectralSubspace hn) ≤ hT.negativeSpectralSubspace hn := by
-  rw [negativeSpectralSubspace]
+  rw [negativeSpectralSubspace_def]
   exact hT.map_spectralSubspace_le hn _
 
 /-- A symmetric operator preserves its positive spectral subspace. -/
 theorem map_positiveSpectralSubspace_le (hT : T.IsSymmetric)
     (hn : Module.finrank 𝕜 E = n) :
     Submodule.map T (hT.positiveSpectralSubspace hn) ≤ hT.positiveSpectralSubspace hn := by
-  rw [positiveSpectralSubspace]
+  rw [positiveSpectralSubspace_def]
   exact hT.map_spectralSubspace_le hn _
 
 /-- The negative and positive spectral subspaces are disjoint. -/
 theorem disjoint_negativeSpectralSubspace_positiveSpectralSubspace
     (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) :
-    Disjoint (hT.negativeSpectralSubspace hn) (hT.positiveSpectralSubspace hn) :=
-  hT.disjoint_spectralSubspace hn
+    Disjoint (hT.negativeSpectralSubspace hn) (hT.positiveSpectralSubspace hn) := by
+  rw [negativeSpectralSubspace_def, positiveSpectralSubspace_def]
+  exact hT.disjoint_spectralSubspace hn
     (Set.disjoint_left.2 fun i (hneg : hT.eigenvalues hn i < 0)
       (hpos : 0 < hT.eigenvalues hn i) ↦ (not_lt_of_ge hpos.le) hneg)
 
@@ -321,18 +338,18 @@ theorem eigenvalues_ne_zero_of_ker_eq_bot (hT : T.IsSymmetric)
     (hn : Module.finrank 𝕜 E = n) (hker : LinearMap.ker T = ⊥) (i : Fin n) :
     hT.eigenvalues hn i ≠ 0 := by
   intro hi
-  have hmem : hT.eigenvectorBasis hn i ∈ LinearMap.ker T := by
-    rw [LinearMap.mem_ker, hT.apply_eigenvectorBasis hn i, hi, RCLike.ofReal_zero, zero_smul]
-  rw [hker, Submodule.mem_bot] at hmem
-  exact (hT.eigenvectorBasis hn).toBasis.ne_zero i hmem
+  have hev := hT.hasEigenvalue_eigenvalues hn i
+  rw [hi, RCLike.ofReal_zero, Module.End.hasEigenvalue_iff, Module.End.eigenspace_zero,
+    hker] at hev
+  exact hev rfl
 
-/-- For an injective symmetric operator, its negative and positive spectral subspaces sum to the
-whole space. -/
-theorem negativeSpectralSubspace_sup_positiveSpectralSubspace_of_ker_eq_bot
+/-- For an injective symmetric operator, its negative and positive spectral subspaces are
+complementary: they are disjoint and together span the whole space. -/
+theorem isCompl_negativeSpectralSubspace_positiveSpectralSubspace_of_ker_eq_bot
     (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) (hker : LinearMap.ker T = ⊥) :
-    hT.negativeSpectralSubspace hn ⊔ hT.positiveSpectralSubspace hn = ⊤ := by
-  rw [negativeSpectralSubspace, positiveSpectralSubspace]
-  rw [← hT.spectralSubspace_union hn]
+    IsCompl (hT.negativeSpectralSubspace hn) (hT.positiveSpectralSubspace hn) := by
+  refine ⟨hT.disjoint_negativeSpectralSubspace_positiveSpectralSubspace hn, codisjoint_iff.2 ?_⟩
+  rw [negativeSpectralSubspace_def, positiveSpectralSubspace_def, ← hT.spectralSubspace_union hn]
   have hindices : {i | hT.eigenvalues hn i < 0} ∪
       {i | 0 < hT.eigenvalues hn i} = Set.univ := by
     ext i
