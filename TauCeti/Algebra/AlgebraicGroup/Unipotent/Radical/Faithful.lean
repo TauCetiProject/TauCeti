@@ -37,6 +37,8 @@ nor connectedness of `H` itself is needed; reducedness of `H` is.
   a normal subgroup with reduced quotient and only unipotent points is trivial.
 * `TauCeti.HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful`: a normal
   smooth unipotent closed subgroup of such an `H` is trivial.
+* `TauCeti.HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful_of_iso`:
+  the same conclusion after transporting the subgroup across an isomorphism.
 * `TauCeti.FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_augmentation_of_isFaithful`:
   the unipotent radical of such an `H` is trivial.
 
@@ -110,6 +112,38 @@ theorem eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful
     geometricallyUnipotentPointsCommHopfAlgProperty.forall_isUnipotentPoint hgeom
   exact eq_augmentation_of_isNormal_of_forall_isUnipotentPoint_of_isFaithful
     k H M hcr hM I hI hu
+
+/-- **A normal smooth unipotent closed subgroup is trivial when an isomorphic presentation of
+the ambient group has a faithful completely reducible representation.**
+
+This packages the transport of the subgroup ideal, quotient, and augmentation ideal across the
+chosen isomorphism. -/
+theorem eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful_of_iso
+    (H' : FiniteTypeCommHopfAlgCat.{u, u} k) (e : H.obj ≅ H'.obj)
+    (hcr : Comodule.IsCompletelyReducible k H M)
+    (hM : Comodule.IsFaithful (k := k) (H := H) (V := M))
+    (I : HopfIdeal k H') (hI : I.IsNormal)
+    (hU : smoothUnipotentCommHopfAlgProperty k
+      (FiniteTypeCommHopfAlgCat.quotient H' I)) :
+    I = HopfIdeal.augmentation k H' := by
+  let f : H →ₐc[k] H' := CommHopfAlgCat.ofIso e
+  have hf : Function.Bijective f := ConcreteCategory.bijective_of_isIso e.hom
+  let J : HopfIdeal k H := I.comapOfSurjective f hf.2
+  have hJnormal : J.IsNormal := hI.comapOfSurjective_of_bijective f hf.1 hf.2
+  let qIso : CommHopfAlgCat.quotient H.obj J ≅ CommHopfAlgCat.quotient H'.obj I :=
+    CommHopfAlgCat.quotientIsoOfIso e I
+  let qIso' : FiniteTypeCommHopfAlgCat.quotient H J ≅
+      FiniteTypeCommHopfAlgCat.quotient H' I :=
+    ObjectProperty.isoMk _ qIso
+  have hUJ : smoothUnipotentCommHopfAlgProperty k
+      (FiniteTypeCommHopfAlgCat.quotient H J) :=
+    (smoothUnipotentCommHopfAlgProperty k).prop_of_iso qIso'.symm hU
+  have hJ : J = HopfIdeal.augmentation k H :=
+    eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful
+      k H M hcr hM J hJnormal hUJ
+  rw [← HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff f hf.2,
+    HopfIdeal.comapOfSurjective_augmentation]
+  exact hJ
 
 end HopfIdeal
 

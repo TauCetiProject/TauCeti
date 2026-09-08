@@ -41,6 +41,8 @@ base-change identification
 
 * J. S. Milne, *Algebraic Groups* (2017), §§19.b and 24.6.
 * T. A. Springer, *Linear Algebraic Groups*, §§2.2, 2.4, and Chapter 8.
+* The ReductiveGroups roadmap, Layer 6 and its `Sp₂ₙ` worked example, which requests this
+  geometric `R_u = 1` proof in arbitrary characteristic.
 
 The proof follows the normal-unipotent elimination used for the general and special linear groups
 in `TauCeti.Algebra.AlgebraicGroup.{GeneralLinear,SpecialLinear}.Reductive`, applied to the
@@ -75,25 +77,13 @@ theorem eq_augmentation_of_isNormal_of_smoothUnipotent
       (FiniteTypeCommHopfAlgCat.quotient (finiteTypeCoordinateHopfAlgebra k m) I)) :
     I = HopfIdeal.augmentation k (finiteTypeCoordinateHopfAlgebra k m) := by
   let e := coordinateHopfAlgebraFiniteTypeObjIso k m
-  let f : coordinateHopfAlgebra k m →ₐc[k] (finiteTypeCoordinateHopfAlgebra k m) :=
-    CommHopfAlgCat.ofIso e
-  have hf : Function.Bijective f := ConcreteCategory.bijective_of_isIso e.hom
-  let J : HopfIdeal k (coordinateHopfAlgebra k m) := I.comapOfSurjective f hf.2
-  have hJnormal : J.IsNormal := hI.comapOfSurjective_of_bijective f hf.1 hf.2
-  let qIso : CommHopfAlgCat.quotient (coordinateHopfAlgebra k m) J ≅
-      CommHopfAlgCat.quotient (finiteTypeCoordinateHopfAlgebra k m).obj I :=
-    CommHopfAlgCat.quotientIsoOfIso e I
   let H : FiniteTypeCommHopfAlgCat k :=
     ⟨coordinateHopfAlgebra k m, by
       rw [← finiteTypeCoordinateHopfAlgebra_obj]
       exact (finiteTypeCoordinateHopfAlgebra k m).property⟩
-  let qIso' : FiniteTypeCommHopfAlgCat.quotient H J ≅
-      FiniteTypeCommHopfAlgCat.quotient (finiteTypeCoordinateHopfAlgebra k m) I :=
-    ObjectProperty.isoMk _ qIso
-  have hUJ : smoothUnipotentCommHopfAlgProperty k
-      (FiniteTypeCommHopfAlgCat.quotient H J) :=
-    (smoothUnipotentCommHopfAlgProperty k).prop_of_iso qIso'.symm hU
   let _ : IsReduced H := by
+    -- `H` packages this coordinate algebra with its finite-type proof, so its carrier is
+    -- definitionally the coordinate algebra on which smoothness supplies reducedness.
     change IsReduced (coordinateHopfAlgebra k m)
     exact isReduced_of_smooth_of_field k _
   let _ : Comodule k (coordinateHopfAlgebra k m) (Fin (m + m) → k) := standardComodule k m
@@ -107,12 +97,9 @@ theorem eq_augmentation_of_isNormal_of_smoothUnipotent
     | succ m =>
         let _ : NeZero m.succ := ⟨Nat.succ_ne_zero m⟩
         exact Comodule.isCompletelyReducible_of_isSimpleOrder
-  have hJ : J = HopfIdeal.augmentation k (coordinateHopfAlgebra k m) :=
-    HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful k H
-      (Fin (m + m) → k) hcr (isFaithful_standardComodule k m) J hJnormal hUJ
-  rw [← HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff f hf.2,
-    HopfIdeal.comapOfSurjective_augmentation]
-  exact hJ
+  exact HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful_of_iso
+    k H (Fin (m + m) → k) (finiteTypeCoordinateHopfAlgebra k m) e hcr
+      (isFaithful_standardComodule k m) I hI hU
 
 /-- **The standard symplectic group is reductive over every field.** -/
 theorem reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
