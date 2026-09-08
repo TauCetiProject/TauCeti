@@ -38,8 +38,8 @@ branch that endomorphism is the `q`-power Frobenius outright, in keeping with th
 permutation that `TauCeti.TypeB2LieIndex.diagramPerm_toGraphTwistedIndex` computes: the `B₂`
 diagram has no symmetry to twist by, its two nodes carrying different root lengths. On the Suzuki
 branch it is instead `τ ^ (2m+1)` for the special isogeny `τ` of the pinned `B₂` group scheme in
-characteristic two, which is not constructed here. That `τ` is identified by the relation
-`τ ^ 2 = Frob_p` in the prime characteristic, and `Frob_p` is not the map supplied here: validity
+characteristic two, which is not constructed here. That `τ` satisfies `τ ^ 2 = Frob_p` in the
+prime characteristic, and `Frob_p` is not the map supplied here: validity
 forces `1 ≤ m`, so the field order `q = 2 ^ (2m+1)` the index records is larger than the prime.
 What this file supplies is `Frob_q`, the map the odd power `τ ^ (2m+1)` squares to. Either way the
 map below is the `q`-power Frobenius at the field order the index records, taken on this carrier.
@@ -51,11 +51,10 @@ Neither branch gets a Steinberg endomorphism here. What is named below is named 
 points whose matrix entries lie in the field of definition `𝔽_q`.
 
 The Suzuki branch's Steinberg endomorphism is stated on this carrier in
-`TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`, as `TypeA.lean`, `TypeD.lean`,
-`TypeE6.lean` and `Unimodular.lean` state theirs on their own carriers. No identification of this
-carrier with the pinned simply connected group scheme of the diagram is available, so neither file
-offers it as a substitute for that pinned group: that construction carries over to the pinned group
-once such an identification is proved, and not before.
+`TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`. No identification of this carrier with
+the pinned simply connected group scheme of the diagram is available, so neither file offers it as
+a substitute for that pinned group: that construction carries over to the pinned group once such an
+identification is proved, and not before.
 
 Nothing here asserts that the carrier is reductive, that its weight torus is maximal, that it is
 the symplectic group scheme, or that any group below is finite, perfect, or simple. In particular
