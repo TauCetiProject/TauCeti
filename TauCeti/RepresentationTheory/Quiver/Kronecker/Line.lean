@@ -127,6 +127,20 @@ noncomputable def kroneckerLineRep (a₁ : A) (c : k) : QuiverRep k (Quiver.Kron
 
 variable {a₀ a₁ : A} {c d : k}
 
+/-- The source vertex of a line representation carries the base field. -/
+@[simp]
+theorem kroneckerLineRep_obj_src :
+    (kroneckerLineRep k a₁ c).obj (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)) =
+      ModuleCat.of k k :=
+  kroneckerRep_obj_src _ _ _
+
+/-- The target vertex of a line representation carries the base field. -/
+@[simp]
+theorem kroneckerLineRep_obj_tgt :
+    (kroneckerLineRep k a₁ c).obj (Quiver.Kronecker.tgt : Paths (Quiver.Kronecker A)) =
+      ModuleCat.of k k :=
+  kroneckerRep_obj_tgt _ _ _
+
 -- Not `@[simp]`: this and `TauCeti.kroneckerLineRep_map_arrowPath_of_ne` rewrite inside the
 -- `ModuleCat.Hom.hom` of the two `_apply` lemmas below, taking those left-hand sides out of
 -- simp-normal form (`simpNF`), exactly as the corresponding pair for the Jordan blocks does.
