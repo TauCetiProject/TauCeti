@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.GaloisGroup
+public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.InfinitePlace
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.Quadratic
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.PrincipalGenus
 import TauCeti.NumberTheory.NumberField.NarrowClassGroup.TotallyComplex
-import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 
 /-!
 # The genus field of a quadratic field has Galois group `Cl⁺(K)/Cl⁺(K)²`
@@ -22,9 +22,7 @@ discriminants dividing `disc K`. It is the narrow genus field of `K`
 
 `Gal(K_gen / K) ≅ Cl⁺(K) / Cl⁺(K)²`,
 
-and, for imaginary `K`, its ordinary form `Gal(K_gen / K) ≅ Cl(K) / Cl(K)²`. Only the equality of
-the two cardinalities was known before
-(`card_aut_candidateGenusField_over_base_eq_card_narrowElementaryTwoQuotient`).
+and, for imaginary `K`, its ordinary form `Gal(K_gen / K) ≅ Cl(K) / Cl(K)²`.
 
 Both sides are described by the same space of sign patterns on the prime discriminants, and the
 isomorphism is the identification of the two descriptions. On the Galois side, an automorphism is
@@ -69,7 +67,7 @@ map into the sign patterns on the prime discriminants of its discriminant. This 
 `genusCharFunElementaryTwoQuotientFamilyLinearMap` for the chosen factorization
 `genusPrimeDiscriminants hd`, with the sign group `ℤˣ` written as `ZMod 2` so that the target is
 the one carrying the relative Galois group. -/
-@[expose] noncomputable def candidateGenusFieldBaseGenusCharLinearMap (hd : Squarefree d)
+noncomputable def candidateGenusFieldBaseGenusCharLinearMap (hd : Squarefree d)
     (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) :
     NarrowClassGroup.ElementaryTwoQuotient (candidateGenusFieldBase hd) →ₗ[ZMod 2]
       ({P // P ∈ genusPrimeDiscriminants hd} → ZMod 2) :=
@@ -92,7 +90,7 @@ theorem candidateGenusFieldBaseGenusCharLinearMap_apply (hd : Squarefree d)
           (genusPrimeDiscriminants_spec hd).2.1 (genusPrimeDiscriminants_spec hd).2.2
           (minpoly_candidateGenusFieldBaseGen hd hnsq)
           (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd x P) :=
-  rfl
+  (rfl)
 
 /-- **The genus characters of the base realize exactly the even-parity sign patterns.** -/
 theorem range_candidateGenusFieldBaseGenusCharLinearMap (hd : Squarefree d)
@@ -201,10 +199,24 @@ noncomputable def autCandidateGenusFieldEquivElementaryTwoQuotient (hd : Squaref
   have hnsq : ¬ IsSquare ((d : ℤ) : ℚ) := fun h =>
     absurd h.nonneg (not_le.mpr (by exact_mod_cast hneg))
   haveI : NumberField.IsTotallyComplex (candidateGenusFieldBase hd) :=
-    NumberField.isTotallyComplex_of_minpoly_eq_X_sq_sub_C_of_neg
-      (minpoly_candidateGenusFieldBaseGen hd hnsq) hneg
+    isTotallyComplex_candidateGenusFieldBase hd hneg
   (autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd hnsq).trans
     (NarrowClassGroup.toClassGroupElementaryTwoQuotientEquiv
       (candidateGenusFieldBase hd)).toAddEquiv.toMultiplicative
+
+/-- The imaginary genus-field isomorphism is the narrow genus-field isomorphism followed by the
+identification of the narrow and ordinary class-group quotients. -/
+theorem autCandidateGenusFieldEquivElementaryTwoQuotient_apply (hd : Squarefree d)
+    (hneg : d < 0)
+    (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) :
+    autCandidateGenusFieldEquivElementaryTwoQuotient hd hneg σ =
+      let hnsq : ¬ IsSquare ((d : ℤ) : ℚ) := fun h =>
+        absurd h.nonneg (not_le.mpr (by exact_mod_cast hneg))
+      let _ : NumberField.IsTotallyComplex (candidateGenusFieldBase hd) :=
+        isTotallyComplex_candidateGenusFieldBase hd hneg
+      (NarrowClassGroup.toClassGroupElementaryTwoQuotientEquiv
+        (candidateGenusFieldBase hd)).toAddEquiv.toMultiplicative
+          (autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd hnsq σ) :=
+  (rfl)
 
 end TauCeti.Multiquadratic

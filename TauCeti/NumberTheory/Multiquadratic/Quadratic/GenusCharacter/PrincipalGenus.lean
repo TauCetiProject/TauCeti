@@ -54,34 +54,6 @@ namespace TauCeti.Multiquadratic
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 
-/-! ### The sum of the sign coordinates -/
-
-/-- The sum of the coordinates of a sign vector indexed by a finite set of prime discriminants,
-as a `ZMod 2`-linear functional. Its kernel is the hyperplane of sign patterns of product one. -/
-private noncomputable def signSum (s : Finset ℤ) :
-    ((P : ↥s) → Additive ℤˣ) →ₗ[ZMod 2] Additive ℤˣ :=
-  ∑ P : ↥s, LinearMap.proj P
-
-/-- The coordinate-sum functional is the sum of the coordinates. -/
-private theorem signSum_apply (s : Finset ℤ) (v : ↥s → Additive ℤˣ) :
-    signSum s v = ∑ P : ↥s, v P := by
-  simp [signSum]
-
-/-- The hyperplane of sign vectors of coordinate sum zero has dimension `#s - 1`. -/
-private theorem finrank_ker_signSum {s : Finset ℤ} (hne : s.Nonempty) :
-    Module.finrank (ZMod 2) (LinearMap.ker (signSum s)) = s.card - 1 := by
-  obtain ⟨P₀, hP₀⟩ := hne
-  have hpi : Module.finrank (ZMod 2) ((P : ↥s) → Additive ℤˣ) = s.card := by
-    rw [Module.finrank_pi_fintype, TauCeti.finrank_zmod_two_additive_intUnits]
-    simp
-  have hsurj : Function.Surjective (signSum s) := fun w =>
-    ⟨Pi.single ⟨P₀, hP₀⟩ w, by rw [signSum_apply]; simp⟩
-  have hrange : Module.finrank (ZMod 2) (LinearMap.range (signSum s)) = 1 := by
-    rw [LinearMap.range_eq_top.mpr hsurj, finrank_top, TauCeti.finrank_zmod_two_additive_intUnits]
-  have hrn := LinearMap.finrank_range_add_finrank_ker (signSum s)
-  rw [hpi, hrange] at hrn
-  omega
-
 /-! ### The image and the kernel of the genus-character family -/
 
 /-- The dimension of `Cl⁺(K)/Cl⁺(K)²` is `#s - 1`, read off the narrow `2`-rank formula. -/
@@ -119,18 +91,20 @@ theorem mem_range_genusCharFunElementaryTwoQuotientFamilyLinearMap_iff {s : Fins
     subst hv
     simp
   · set Φ := genusCharFunElementaryTwoQuotientFamilyLinearMap hs heven hprod hmin hgen hsf
-    have hrange : LinearMap.range Φ = LinearMap.ker (signSum s) := by
+    let _ : Nonempty ↥s := hne.to_subtype
+    have hrange : LinearMap.range Φ =
+        LinearMap.ker (TauCeti.additiveIntUnitsCoordinateSum ↥s) := by
       refine (Submodule.eq_of_le_of_finrank_le ?_ ?_).symm
       · intro w hw
-        rw [LinearMap.mem_ker, signSum_apply] at hw
+        rw [LinearMap.mem_ker, TauCeti.additiveIntUnitsCoordinateSum_apply] at hw
         obtain ⟨x, hx⟩ :=
           exists_genusCharFunElementaryTwoQuotientFamilyLinearMap_eq hs heven hprod hmin hgen hsf
             w hw
         exact ⟨x, hx⟩
-      · rw [finrank_ker_signSum hne]
+      · rw [TauCeti.finrank_ker_additiveIntUnitsCoordinateSum, Fintype.card_coe]
         exact (LinearMap.finrank_range_le Φ).trans
           (finrank_narrowElementaryTwoQuotient_eq hs heven hprod hmin hgen hsf).le
-    rw [hrange, LinearMap.mem_ker, signSum_apply]
+    rw [hrange, LinearMap.mem_ker, TauCeti.additiveIntUnitsCoordinateSum_apply]
 
 /-- **The genus characters separate narrow classes modulo squares.** The `ZMod 2`-linear family of
 singleton genus characters is injective on `Cl⁺(K)/Cl⁺(K)²`. Equivalently, the `#s` genus
@@ -150,12 +124,15 @@ theorem genusCharFunElementaryTwoQuotientFamilyLinearMap_injective {s : Finset �
     have : Subsingleton (NarrowClassGroup.ElementaryTwoQuotient K) :=
       Module.finrank_zero_iff.mp (by simpa using hsrc)
     exact fun a b _ => Subsingleton.elim a b
-  · have hrange : LinearMap.range Φ = LinearMap.ker (signSum s) :=
+  · let _ : Nonempty ↥s := hne.to_subtype
+    have hrange : LinearMap.range Φ =
+        LinearMap.ker (TauCeti.additiveIntUnitsCoordinateSum ↥s) :=
       Submodule.ext fun v =>
         (mem_range_genusCharFunElementaryTwoQuotientFamilyLinearMap_iff hs heven hprod hmin hgen
-          hsf v).trans (by rw [LinearMap.mem_ker, signSum_apply])
+          hsf v).trans
+            (by rw [LinearMap.mem_ker, TauCeti.additiveIntUnitsCoordinateSum_apply])
     have hrn := LinearMap.finrank_range_add_finrank_ker Φ
-    rw [hrange, finrank_ker_signSum hne, hsrc] at hrn
+    rw [hrange, TauCeti.finrank_ker_additiveIntUnitsCoordinateSum, Fintype.card_coe, hsrc] at hrn
     have hker : Module.finrank (ZMod 2) (LinearMap.ker Φ) = 0 := by
       have : 1 ≤ s.card := Finset.card_pos.mpr hne
       omega
