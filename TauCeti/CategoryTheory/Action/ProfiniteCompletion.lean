@@ -24,9 +24,9 @@ finite `G`-sets.
 * `TauCeti.ProfiniteCompletion.etaFn_smul`: the extended action restricts to the original action
   along the canonical map from `G`.
 * `TauCeti.ProfiniteCompletion.instIsFundamentalGroup`: the profinite completion is a fundamental
-  group of the forgetful functor on finite `G`-sets.
-* `TauCeti.ProfiniteCompletion.autForgetFiniteActionMulEquiv`: the resulting canonical
-  isomorphism with the automorphism group of the forgetful functor.
+  group of the forgetful functor on finite `G`-sets. Consequently
+  `CategoryTheory.PreGaloisCategory.toAutMulEquiv` identifies the profinite completion with the
+  automorphism group of that functor.
 
 The construction uses Mathlib's profinite completion and its universal property.
 -/
@@ -247,33 +247,5 @@ instance instIsFundamentalGroup : CategoryTheory.PreGaloisCategory.IsFundamental
   transitive_of_isGalois A := isPretransitive_of_isConnected G A
   continuous_smul A := continuousSMul G A
   non_trivial' g h := eq_one_of_forall_smul_eq G g h
-
-/-- The profinite completion of `G` is canonically isomorphic to the automorphism group of the
-forgetful fibre functor on finite `G`-sets. -/
-noncomputable def autForgetFiniteActionMulEquiv :
-    ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) ≃*
-      Aut (Action.forget FintypeCat.{u} G) :=
-  CategoryTheory.PreGaloisCategory.toAutMulEquiv
-    (Action.forget FintypeCat.{u} G)
-    (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G))
-
-/-- Under `autForgetFiniteActionMulEquiv`, an element of the profinite completion acts on every
-finite `G`-set by its extended action. -/
-@[simp]
-theorem autForgetFiniteActionMulEquiv_hom_app_apply
-    (g : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G))
-    (A : Action FintypeCat.{u} G) (x : (Action.forget FintypeCat G).obj A) :
-    (autForgetFiniteActionMulEquiv G g).hom.app A x = g • x := by
-  -- Reveal the `toAut` homomorphism packaged by `toAutMulEquiv`.
-  change (CategoryTheory.PreGaloisCategory.toAut
-    (Action.forget FintypeCat.{u} G)
-    (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G)) g).hom.app A x = _
-  rw [CategoryTheory.PreGaloisCategory.toAut_hom_app_apply]
-
-/-- The canonical isomorphism with the automorphism group of the forgetful functor is a
-homeomorphism. -/
-theorem autForgetFiniteActionMulEquiv_isHomeomorph :
-    IsHomeomorph (autForgetFiniteActionMulEquiv G) :=
-  CategoryTheory.PreGaloisCategory.toAutMulEquiv_isHomeomorph _ _
 
 end TauCeti.ProfiniteCompletion

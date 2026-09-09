@@ -97,18 +97,15 @@ def coordinateHom (H : FiniteIndexNormalSubgroup G) :
   change ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →* G ⧸ H.toSubgroup at f
   exact f
 
-private theorem coordinateHom_apply_def (H : FiniteIndexNormalSubgroup G)
-    (x : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G)) :
-    coordinateHom G H x = x.val H :=
-  rfl
-
 /-- The projection onto the finite quotient by `H` evaluates the underlying compatible family of
 cosets at `H`. -/
 @[simp]
 theorem coordinateHom_apply (H : FiniteIndexNormalSubgroup G)
     (x : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G)) :
     coordinateHom G H x = x.val H :=
-  coordinateHom_apply_def G H x
+  -- The limit-cone projection computes on coordinates by definition; isolate that reduction in
+  -- this opaque theorem so that `coordinateHom` itself stays unexposed.
+  (rfl)
 
 /-- The `H`-coordinate of the canonical image of `g` is its coset modulo `H`. -/
 -- The priority keeps this specialization ahead of `coordinateHom_apply`, which would otherwise
