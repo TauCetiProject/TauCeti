@@ -159,8 +159,8 @@ theorem tendsto_normedBumpLp {I : Type*} {l : Filter I}
     Tendsto (fun i ↦ normedBumpLp hp (phi i) mu f) l (nhds f) := by
   have hval : ∀ i, normedBumpLp hp (phi i) mu f =
       ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] fun h ↦ translateLp mu p h f) 0 := fun i ↦ by
-    rw [normedBumpLp]
-    rfl
+    rw [normedBumpLp_apply, convolution_lsmul]
+    simp only [zero_sub]
   simpa only [hval, translateLp_zero] using
     ContDiffBump.convolution_tendsto_right_of_continuous hphi
       (continuous_translateLp (mu := mu) hp f) (0 : E)
