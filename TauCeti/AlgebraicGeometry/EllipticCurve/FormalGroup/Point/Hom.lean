@@ -14,12 +14,13 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 
 For a height-one prime `v` of a Dedekind domain, the maximal ideal of the ring of integers
 `O_v` of the completion is an adic ideal.  The Weierstrass formal group law therefore makes its
-elements into `WeierstrassCurve.FormalGroupPoint W m_v`.  This file proves that the usual
-parametrisation
+elements into `WeierstrassCurve.FormalGroupPoint W m_v`.  The usual parametrisation sends zero to
+the point at infinity and, for a nonzero parameter, is given by
 
 `t ↦ (t / w(t), -1 / w(t))`
 
-is an additive homomorphism into the points of the base-changed curve.
+This file proves that this map is an additive homomorphism into the points of the base-changed
+curve.
 
 The chord case is `WeierstrassCurve.add_eq_formalPoint_formalAddEval_of_ne_of_ne_formalInverseEval`.
 The inverse case follows from the already established compatibility with negation.  For doubling,
@@ -149,7 +150,8 @@ private theorem exists_aux_param [NeZero (2 : v.adicCompletion K)] {t : O_v}
   have htwo : ((2 : O_v) : K_v) ≠ 0 := NeZero.ne (2 : K_v)
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible O_v
   have hπv : Valued.v (π : K_v) = exp (-1) := by
-    change Valued.v (algebraMap O_v K_v π) = exp (-1)
+    rw [← Algebra.algebraMap_ofSubsemiring_apply
+      (Valued.v : Valuation K_v (WithZero (Multiplicative ℤ))).valuationSubring π]
     exact v.valued_algebraMap_eq_exp_neg_one_of_irreducible hπ
   have htval0 : Valued.v (t : K_v) ≠ 0 := by
     simp only [ne_eq, _root_.map_eq_zero, ZeroMemClass.coe_eq_zero]
@@ -221,14 +223,15 @@ private noncomputable def formalPointMap (P : FormalGroupPoint W m_v) :
 
 private theorem formalPointMap_injective : Function.Injective (formalPointMap v W) := by
   intro P Q hPQ
-  change W.formalPoint (K := K_v)
-    (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)) P.property =
-      W.formalPoint (K := K_v)
-        (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)) Q.property at hPQ
+  have hPQ' : W.formalPoint (K := K_v)
+      (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)) P.property =
+        W.formalPoint (K := K_v)
+          (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)) Q.property := by
+    simpa only [formalPointMap] using hPQ
   have hinj := W.formalPoint_injective (K := K_v)
     (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K))
   have heq := hinj (a₁ := (⟨P.val, P.property⟩ : m_v))
-    (a₂ := (⟨Q.val, Q.property⟩ : m_v)) hPQ
+    (a₂ := (⟨Q.val, Q.property⟩ : m_v)) hPQ'
   exact FormalGroupPoint.ext (congrArg Subtype.val heq)
 
 private theorem formalPointMap_neg (P : FormalGroupPoint W m_v) :
@@ -282,7 +285,9 @@ theorem formalPoint_add (P Q : FormalGroupPoint W m_v) :
           P.property +
         W.formalPoint (K := K_v) (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K))
           Q.property := by
-  change formalPointMap v W (P + Q) = formalPointMap v W P + formalPointMap v W Q
+  suffices h : formalPointMap v W (P + Q) =
+      formalPointMap v W P + formalPointMap v W Q by
+    simpa only [formalPointMap] using h
   rcases eq_or_ne P 0 with rfl | hP0
   · simp [formalPointMap]
   rcases eq_or_ne Q 0 with rfl | hQ0
