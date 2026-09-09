@@ -281,52 +281,6 @@ theorem _root_.Subgroup.profiniteIndex_eq_bot_iff (H : Subgroup G)
     Subgroup.profiniteIndex H = ⊥ ↔ H = ⊤ := by
   rw [← Supernatural.one_eq_bot, Subgroup.profiniteIndex_eq_one_iff H hH]
 
-/-- A bounded-index stabilization criterion used in the natural-index characterization. -/
-private theorem isOpen_of_index_sup_openNormalSubgroup_le {H : Subgroup G} {m : ℕ}
-    (hH : IsClosed (H : Set G))
-    (hbound : ∀ N : OpenNormalSubgroup G, (H ⊔ N.toSubgroup).index ≤ m) :
-    IsOpen (H : Set G) := by
-  -- The bounded range has a largest attained index; fix a subgroup `N₀` attaining it.
-  let f : OpenNormalSubgroup G → ℕ := fun N ↦ (H ⊔ N.toSubgroup).index
-  have hfinite : (f '' (Set.univ : Set (OpenNormalSubgroup G))).Finite := by
-    refine (Set.finite_Iic m).subset ?_
-    rintro k ⟨N, -, rfl⟩
-    exact hbound N
-  have hnonempty : (Set.univ : Set (OpenNormalSubgroup G)).Nonempty :=
-    ⟨{ toOpenSubgroup := ⊤, isNormal' := Subgroup.normal_top }, Set.mem_univ _⟩
-  obtain ⟨N₀, -, hmax⟩ :=
-    Set.Finite.exists_maximalFor' f Set.univ hfinite hnonempty
-  have hmax_le (N : OpenNormalSubgroup G) : f N ≤ f N₀ := by
-    rcases le_total (f N) (f N₀) with hle | hle
-    · exact hle
-    · exact hmax (Set.mem_univ N) hle
-  -- Intersecting `N₀` with any `N` cannot strictly increase its maximal index, so the
-  -- corresponding join is unchanged and `H ⊔ N₀` lies in every join of the family.
-  have hsup_le (N : OpenNormalSubgroup G) : H ⊔ N₀.toSubgroup ≤ H ⊔ N.toSubgroup := by
-    let M : OpenNormalSubgroup G := N₀ ⊓ N
-    have hMsub : H ⊔ M.toSubgroup ≤ H ⊔ N₀.toSubgroup := sup_le_sup_left inf_le_left H
-    have hMeq : H ⊔ M.toSubgroup = H ⊔ N₀.toSubgroup := by
-      apply le_antisymm hMsub
-      by_contra hnot
-      have hlt : H ⊔ M.toSubgroup < H ⊔ N₀.toSubgroup :=
-        lt_of_le_of_ne hMsub fun heq ↦ hnot heq.ge
-      have hMopen : IsOpen ((H ⊔ M.toSubgroup : Subgroup G) : Set G) :=
-        Subgroup.isOpen_mono le_sup_right M.toOpenSubgroup.isOpen
-      have : Finite (G ⧸ (H ⊔ M.toSubgroup)) :=
-        Subgroup.quotient_finite_of_isOpen _ hMopen
-      let _ : (H ⊔ M.toSubgroup).FiniteIndex :=
-        Subgroup.finiteIndex_of_finite_quotient
-      exact absurd (Subgroup.index_strictAnti hlt) (not_lt_of_ge (hmax_le M))
-    rw [← hMeq]
-    exact sup_le_sup_left inf_le_right H
-  -- Closedness identifies the infimum of those joins with `H`; hence `H` is the open join
-  -- with `N₀`.
-  have hHeq : H = H ⊔ N₀.toSubgroup :=
-    (Subgroup.eq_iInf_sup_openNormalSubgroup H hH).trans
-      (le_antisymm (iInf_le _ N₀) (le_iInf hsup_le))
-  rw [hHeq]
-  exact Subgroup.isOpen_mono le_sup_right N₀.toOpenSubgroup.isOpen
-
 /-- A subgroup of a profinite group is open exactly when it is closed and its supernatural
 index is a natural number. -/
 theorem _root_.Subgroup.isOpen_iff_isClosed_and_isNatural_profiniteIndex (H : Subgroup G) :
@@ -344,7 +298,7 @@ theorem _root_.Subgroup.isOpen_iff_isClosed_and_isNatural_profiniteIndex (H : Su
     exact ⟨H.isClosed_of_isOpen hH, Supernatural.isNatural_ofNat _⟩
   · rintro ⟨hHclosed, hHindex⟩
     obtain ⟨m, hm⟩ := Supernatural.isNatural_def.mp hHindex
-    refine isOpen_of_index_sup_openNormalSubgroup_le (m := m) hHclosed fun N ↦ ?_
+    refine Subgroup.isOpen_of_index_sup_openNormalSubgroup_le (m := m) hHclosed fun N ↦ ?_
     -- Each `H ⊔ N` is an open subgroup containing `H`, so its ordinary index is one of the
     -- numbers whose supernatural join is the index of `H`, hence divides `m`.
     have hUopen : IsOpen ((H ⊔ N.toSubgroup : Subgroup G) : Set G) :=
