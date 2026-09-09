@@ -159,7 +159,7 @@ noncomputable def reducedCenterCoordinateMap : H ⟶ reducedCenterCoordinateHopf
 
 /-- The reduced-center inclusion factors through its ambient defining ideal and the canonical
 comparison with the iterated quotient. -/
-theorem reducedCenterCoordinateMap_def :
+theorem reducedCenterCoordinateMap_eq_mkQuotient_comp_quotientReducedCenterIso_hom :
     reducedCenterCoordinateMap H =
       mkQuotient H (reducedCenterDefiningIdeal H) ≫ (quotientReducedCenterIso H).hom :=
   (mkQuotient_comp_quotientReducedCenterIso_hom H).symm
@@ -167,8 +167,8 @@ theorem reducedCenterCoordinateMap_def :
 /-- The coordinate morphism of the reduced-center inclusion is surjective. -/
 theorem reducedCenterCoordinateMap_surjective :
     Function.Surjective (reducedCenterCoordinateMap H).hom := by
-  rw [reducedCenterCoordinateMap_def, _root_.CommHopfAlgCat.hom_comp,
-    BialgHom.coe_comp]
+  rw [reducedCenterCoordinateMap_eq_mkQuotient_comp_quotientReducedCenterIso_hom,
+    _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
   exact (ConcreteCategory.bijective_of_isIso (quotientReducedCenterIso H).hom).2.comp
     (mkQuotient_surjective H (reducedCenterDefiningIdeal H))
 
@@ -176,7 +176,8 @@ theorem reducedCenterCoordinateMap_surjective :
 @[simp]
 theorem reducedCenterCoordinateMap_eq_zero_iff (x : H) :
     (reducedCenterCoordinateMap H).hom x = 0 ↔ x ∈ reducedCenterDefiningIdeal H := by
-  rw [reducedCenterCoordinateMap_def, _root_.CommHopfAlgCat.hom_comp,
+  rw [reducedCenterCoordinateMap_eq_mkQuotient_comp_quotientReducedCenterIso_hom,
+    _root_.CommHopfAlgCat.hom_comp,
     BialgHom.comp_apply, map_eq_zero_iff _
       (ConcreteCategory.bijective_of_isIso (quotientReducedCenterIso H).hom).1,
     mkQuotient_eq_zero_iff, HopfIdeal.mem_toIdeal]
