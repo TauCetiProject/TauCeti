@@ -229,7 +229,7 @@ noncomputable def splitTorusCoordinateIso :
 /-- On every value algebra, the point map induced by the forward coordinate isomorphism is the
 inverse pointwise split-torus equivalence. -/
 @[simp]
-theorem mapPointsFunctor_splitTorusCoordinateIso_hom_app
+theorem mapPointsFunctor_splitTorusCoordinateIso_hom_app_apply
     (A : CommAlgCat.{u} R)
     (s : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A) :
     (CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom).app A s =
@@ -255,7 +255,7 @@ theorem mapPointsFunctor_splitTorusCoordinateIso_hom_app
 /-- On every value algebra, the point map induced by the inverse coordinate isomorphism is the
 forward pointwise split-torus equivalence. -/
 @[simp]
-theorem mapPointsFunctor_splitTorusCoordinateIso_inv_app
+theorem mapPointsFunctor_splitTorusCoordinateIso_inv_app_apply
     (A : CommAlgCat.{u} R)
     (t : HopfAlgebra.points (R := R)
       (H := (DiagonalizableGroup.coordinateRing R
