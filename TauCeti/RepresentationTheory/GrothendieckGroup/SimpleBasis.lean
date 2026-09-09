@@ -95,6 +95,7 @@ theorem jordanHolderCoordinate_congr
   exact congrArg Int.ofNat (jordanHolderMultiplicity_congr e)
 
 /-- A simple module has coordinate one on its own class. -/
+@[simp high]
 theorem jordanHolderCoordinate_self [IsSimpleModule R S] [Module.Finite R S] :
     jordanHolderCoordinate R S (ExactK0.of (FGModuleCat.of R S)) = 1 := by
   rw [jordanHolderCoordinate_of]
@@ -102,6 +103,7 @@ theorem jordanHolderCoordinate_self [IsSimpleModule R S] [Module.Finite R S] :
     (LinearEquiv.refl R S)
 
 /-- Two nonisomorphic simple modules have zero mutual Jordan--Hölder coordinate. -/
+@[simp high]
 theorem jordanHolderCoordinate_of_eq_zero_of_isEmpty_linearEquiv
     {T : Type u} [AddCommGroup T] [Module R T] [Module.Finite R T] [IsSimpleModule R T]
     (h : IsEmpty (T ≃ₗ[R] S)) :
@@ -135,6 +137,7 @@ theorem jordanHolderCoordinate_exactK0OfFamily_eq_zero {i j : I}
 
 /-- On a pairwise nonisomorphic simple family, the Jordan--Hölder coordinates form the
 Kronecker-delta matrix. -/
+@[simp]
 theorem jordanHolderCoordinate_exactK0OfFamily
     [DecidableEq I]
     (hnoniso : Pairwise fun i j ↦ IsEmpty ((S i : Type u) ≃ₗ[R] S j)) (i j : I) :
@@ -165,10 +168,12 @@ def IsExhaustiveSimpleFamily : Prop :=
     ∃ i, Nonempty ((M : Type u) ≃ₗ[R] S i)
 
 omit [IsArtinianRing R] hS in
+/-- Unfolding lemma for `IsExhaustiveSimpleFamily`: its body is not exposed outside this
+module, so consumers need this to build or use the predicate. -/
 theorem isExhaustiveSimpleFamily_iff : IsExhaustiveSimpleFamily S ↔
     ∀ (M : FGModuleCat.{u} R), IsSimpleModule R M →
       ∃ i, Nonempty ((M : Type u) ≃ₗ[R] S i) :=
-  Iff.rfl
+  (Iff.rfl)
 
 omit hS in
 private theorem exactK0_of_type_mem_span_range_simple
@@ -264,22 +269,11 @@ theorem simpleClassBasis_repr_apply (hexhaustive : IsExhaustiveSimpleFamily S)
     (x : ExactK0 (finiteModulesExactStructure R)) (i : I) :
     (simpleClassBasis S hnoniso hexhaustive).repr x i = jordanHolderCoordinate R (S i) x := by
   classical
-  let b := simpleClassBasis S hnoniso hexhaustive
-  have hlin : (Finsupp.lapply i).comp b.repr.toLinearMap =
-      (jordanHolderCoordinate R (S i)).toIntLinearMap := by
-    apply b.ext
-    intro j
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Finsupp.lapply_apply,
-      AddMonoidHom.coe_toIntLinearMap]
-    rw [b.repr_self]
-    have hb : b j = exactK0OfFamily S j := by
-      simp [b, exactK0OfFamily]
-    rw [hb, jordanHolderCoordinate_exactK0OfFamily S hnoniso]
-    by_cases hji : j = i
-    · subst j
-      simp
-    · simp [hji, Ne.symm hji]
-  exact DFunLike.congr_fun hlin x
+  refine (simpleClassBasis S hnoniso hexhaustive).repr_apply_eq
+    (fun x i ↦ jordanHolderCoordinate R (S i) x) (fun x y ↦ funext fun i ↦ map_add _ x y)
+    (fun c x ↦ funext fun i ↦ map_zsmul _ c x) (fun j ↦ funext fun k ↦ ?_) x i
+  rw [simpleClassBasis_apply, Finsupp.single_apply]
+  exact jordanHolderCoordinate_exactK0OfFamily S hnoniso k j
 
 end SimpleFamily
 
