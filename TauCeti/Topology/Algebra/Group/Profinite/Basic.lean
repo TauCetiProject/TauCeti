@@ -33,6 +33,8 @@ carry the hypothesis, while the clopen-image statement is valid for an arbitrary
 
 * `Subgroup.eq_iInf_sup_openNormalSubgroup`: a closed subgroup is the infimum of the
   subgroups `N ⊔ U` with `U` open normal.
+* `Subgroup.exists_openNormalSubgroup_comap_le`: open normal subgroups of a subgroup are
+  refined by pullbacks of ambient open normal subgroups.
 * `QuotientGroup.connectedComponent_one`, `QuotientGroup.instTotallyDisconnectedSpace`:
   the quotient of a profinite group by a closed normal subgroup is totally disconnected.
 * `Subgroup.iInf_openNormalSubgroup_eq_bot`: the infimum of the open normal subgroups of a
@@ -93,6 +95,21 @@ theorem _root_.Subgroup.eq_iInf_sup_openNormalSubgroup (N : Subgroup G)
   obtain ⟨U₀, hU₀⟩ :=
     ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hKopen (Subgroup.one_mem K)
   exact hxK ((sup_le hKN fun y hy => hU₀ hy) (Subgroup.mem_iInf.mp hx U₀))
+
+/-- Every open normal subgroup of a subgroup of a profinite group contains the pullback of
+an ambient open normal subgroup. -/
+theorem _root_.Subgroup.exists_openNormalSubgroup_comap_le (H : Subgroup G)
+    (V : OpenNormalSubgroup H) :
+    ∃ N : OpenNormalSubgroup G, N.toSubgroup.comap H.subtype ≤ V.toSubgroup := by
+  obtain ⟨s, hs, hpre⟩ := isOpen_induced_iff.mp V.toOpenSubgroup.isOpen
+  have h_one : (1 : G) ∈ s := by
+    have : (1 : H) ∈ V := V.toSubgroup.one_mem
+    exact hpre.symm.subset this
+  obtain ⟨N, hN⟩ :=
+    ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hs h_one
+  refine ⟨N, fun x hx ↦ ?_⟩
+  have : (x : G) ∈ s := hN hx
+  exact hpre.subset this
 
 /-- In a profinite group, an element that lies in every open normal subgroup is `1`. -/
 theorem _root_.Subgroup.eq_one_of_mem_iInf_openNormalSubgroup {x : G}
