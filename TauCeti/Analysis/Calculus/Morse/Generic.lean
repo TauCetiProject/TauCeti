@@ -113,9 +113,12 @@ theorem isNondegenerateCriticalPoint_sub_iff (hf : ContDiffAt ℝ 2 f x) (a : E 
 
 /-- **A perturbation that is Morse on `U` has only finitely many critical points on a compact
 subset of `U`.** Continuity of `fderiv ℝ f` on the compact set closes the critical locus, and
-nondegeneracy makes it discrete. Nothing beyond those two hypotheses on `K` is needed: the
-perturbation shifts the differential of `f` by the constant `a`, so it neither disturbs the
-continuity nor requires any regularity of its own. -/
+nondegeneracy makes it discrete. The hypotheses are that `K` is compact and contained in `U`,
+that `f` is differentiable at each point of `K`, and that `fderiv ℝ f` is continuous on `K`;
+note that continuity of `fderiv ℝ f` does not by itself give differentiability, since `fderiv`
+is defined at points where `f` is not differentiable. The perturbation itself needs no
+regularity: it shifts the differential of `f` by the constant `a`, which disturbs neither the
+differentiability nor the continuity. -/
 theorem finite_setOfPred_fderiv_sub_eq_zero {K : Set E} (hK : IsCompact K)
     (hd : ∀ x ∈ K, DifferentiableAt ℝ f x) (hcont : ContinuousOn (fderiv ℝ f) K)
     (ha : HasNondegenerateCriticalPointsOn (fun y ↦ f y - a y) U) (hKU : K ⊆ U) :
