@@ -77,10 +77,10 @@ the notion be read off in any chart.
   locus is finite on a compact set on which `fderiv ℝ f` is continuous.
 * `TauCeti.isNondegenerateCriticalPoint_comp_iff` and `TauCeti.IsNondegenerateCriticalPoint.comp`:
   nondegeneracy is invariant under a change of coordinates with invertible differential.
-* `TauCeti.ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self`: the local model. A
+* `ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self`: the local model. A
   continuous bilinear form `B` whose polarization `B.flip + B` is invertible makes `z ↦ B z z` a
   function with a nondegenerate critical point at the origin.
-* `TauCeti.ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self_of_flip_eq_self`: the
+* `ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self_of_flip_eq_self`: the
   symmetric case of the model, where the polarization is `2 • B`, so an invertible symmetric `B`
   suffices.
 
@@ -269,23 +269,23 @@ section Model
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-namespace ContinuousLinearMap
 
 /-- **The local model of a nondegenerate critical point.** If the polarization `B.flip + B` of a
 continuous bilinear form `B` on `E` is invertible as a map into the dual space, then the quadratic
 function `z ↦ B z z` has a nondegenerate critical point at the origin. -/
-theorem isNondegenerateCriticalPoint_apply_self (B : E →L[ℝ] E →L[ℝ] ℝ)
+theorem _root_.ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self (B : E →L[ℝ] E →L[ℝ] ℝ)
     (hB : (B.flip + B).IsInvertible) : IsNondegenerateCriticalPoint (fun z ↦ B z z) 0 :=
-  ⟨(contDiff_apply_self B).contDiffAt, by simp,
-    by rw [fderiv_fderiv_apply_self]; exact hB⟩
+  ⟨(ContinuousLinearMap.contDiff_apply_self B).contDiffAt, by simp,
+    by rw [ContinuousLinearMap.fderiv_fderiv_apply_self]; exact hB⟩
 
 /-- A symmetric continuous bilinear form `B` on `E` which is invertible as a map into the dual
 space makes `z ↦ B z z` a function with a nondegenerate critical point at the origin: its
 polarization is then `2 • B`. -/
-theorem isNondegenerateCriticalPoint_apply_self_of_flip_eq_self (B : E →L[ℝ] E →L[ℝ] ℝ)
+theorem _root_.ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self_of_flip_eq_self
+    (B : E →L[ℝ] E →L[ℝ] ℝ)
     (hsymm : B.flip = B) (hB : B.IsInvertible) :
     IsNondegenerateCriticalPoint (fun z ↦ B z z) 0 := by
-  refine isNondegenerateCriticalPoint_apply_self B ?_
+  refine ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self B ?_
   obtain ⟨e, rfl⟩ := hB
   have hflip : (e : E →L[ℝ] E →L[ℝ] ℝ).flip + (e : E →L[ℝ] E →L[ℝ] ℝ) =
       (2 : ℝ) • (e : E →L[ℝ] E →L[ℝ] ℝ) := by
@@ -295,7 +295,6 @@ theorem isNondegenerateCriticalPoint_apply_self_of_flip_eq_self (B : E →L[ℝ]
   refine _root_.ContinuousLinearMap.IsInvertible.of_inverse
     (g := (2 : ℝ)⁻¹ • (e.symm : (E →L[ℝ] ℝ) →L[ℝ] E)) ?_ ?_ <;> ext v <;> simp [smul_smul]
 
-end ContinuousLinearMap
 
 end Model
 

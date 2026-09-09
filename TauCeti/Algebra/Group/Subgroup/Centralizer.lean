@@ -11,7 +11,7 @@ public import Mathlib.GroupTheory.Subgroup.Centralizer
 public import Mathlib.Algebra.Group.Commute.Units
 
 /-!
-# The centralizer of a single unit
+# Centralizers and maximal commutative subgroups
 
 Centralizers of a group of units are computed on the underlying monoid: a unit centralizes another
 exactly when their values commute. Mathlib has both halves —
@@ -23,6 +23,8 @@ which is the form every concrete centralizer computation in a matrix group start
 
 * `TauCeti.mem_centralizer_singleton_iff_commute_val`: a unit lies in the centralizer of a unit `g`
   exactly when the two commute as elements of the monoid.
+* `Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative`: a self-centralizing subgroup is
+  maximal among commutative subgroups.
 -/
 
 public section
@@ -36,3 +38,19 @@ theorem mem_centralizer_singleton_iff_commute_val {M : Type*} [Monoid M] {g h : 
     fun hh => Subgroup.mem_centralizer_singleton_iff.mpr (Commute.units_val_iff.mp hh).symm⟩
 
 end TauCeti
+
+namespace Subgroup
+
+/-- A self-centralizing subgroup is maximal among commutative subgroups. -/
+theorem eq_of_centralizer_eq_self_of_le_of_isMulCommutative {G : Type*} [Group G]
+    {S H : Subgroup G} (hS : Subgroup.centralizer (S : Set G) = S) [IsMulCommutative H]
+    (hle : S ≤ H) :
+    H = S :=
+  le_antisymm
+    (by
+      rw [← hS]
+      exact (Subgroup.le_centralizer (H := H)).trans
+        (Subgroup.centralizer_le (SetLike.coe_subset_coe.mpr hle)))
+    hle
+
+end Subgroup

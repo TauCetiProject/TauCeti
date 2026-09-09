@@ -487,15 +487,11 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
       ρ q₂ / ρ (PowerSeries.subst q₂ (formalW W)) := by
     rw [div_eq_div_iff hw₁0 hw₂0, ← map_mul, ← map_mul]
     exact congrArg ρ (by linear_combination hqw)
-  have hcase := (Affine.Point.X_eq_iff
-    (h₁ := chord_point_nonsingular (fracCurve W σ KK)
-      (by
-        simpa [wEquationRHS_def] using W.algebraMap_subst_formalW_wEquation (KK := KK)
-          (PowerSeries.HasSubst.of_constantCoeff_zero h₁))
-      hw₁0 hΔ)
-    (h₂ := chord_point_nonsingular (fracCurve W σ KK)
-      (by simpa [wEquationRHS_def] using W.algebraMap_subst_formalW_wEquation (KK := KK) hs₂)
-      hw₂0 hΔ)).mp hx
+  -- `xRep` is the projective `x`-coordinate, so the dichotomy comes out on the points themselves
+  have hxr : (W.thetaPoint hΔ h₁ hq₁0).xRep = (W.thetaPoint hΔ h₂ hq₂0).xRep := by
+    simp only [thetaPoint, Affine.Point.xRep_some, Matrix.vecCons_inj, and_true]
+    exact hx
+  have hcase := Affine.Point.eq_or_eq_neg_of_xRep_eq_xRep hxr
   -- the data carried by the inverted parameter
   have hs0 : PowerSeries.subst q₂ (PowerSeries.invOfUnit (formalInverseDenom W) 1) ≠ 0 := by
     intro hh
@@ -509,10 +505,8 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
     exact neg_ne_zero.mpr (mul_ne_zero hq₂0 hs0)
   rcases hcase with hc | hc
   · exact hne₁ (W.thetaPoint_inj hΔ h₁ h₂ hq₁0 hq₂0 hc)
-  · -- `hc` comes out of `X_eq_iff` with `thetaPoint` unfolded, so fold it back before rewriting
-    have hc' : W.thetaPoint hΔ h₁ hq₁0 = -W.thetaPoint hΔ h₂ hq₂0 := hc
-    rw [← W.thetaPoint_neg hΔ h₂ hq₂0 hi hi0] at hc'
-    exact hne₂ (W.thetaPoint_inj hΔ h₁ hi hq₁0 hi0 hc')
+  · rw [← W.thetaPoint_neg hΔ h₂ hq₂0 hi hi0] at hc
+    exact hne₂ (W.thetaPoint_inj hΔ h₁ hi hq₁0 hi0 hc)
 
 variable [DecidableEq KK] in
 /-- **The chord addition of parametrized points, from distinctness alone**: `θ(q₁) + θ(q₂) =

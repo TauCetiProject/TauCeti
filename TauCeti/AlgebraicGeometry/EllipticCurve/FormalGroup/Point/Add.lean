@@ -18,11 +18,12 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.ThirdPoint
 the case where the chord through the two points is not vertical: the point of the parameter
 `F(t₁, t₂)` is the sum of the points of `t₁` and `t₂`.
 
-This is one case of the additivity of `formalPoint`, not the whole of it. The zero parameter, the
-doubling case `t₁ = t₂`, and the inverse case, where the two points share an `x`-coordinate, each
-need a different argument and are not treated here. Only with all of them does `formalPoint` become
-a homomorphism, and only then are the parameters of an adic ideal a subgroup of the points of `W⁄K`
-rather than an indexed family of them.
+This is one case of the additivity of `formalPoint`, not the whole of it. The doubling case
+`t₁ = t₂` and the inverse case `t₂ = ι(t₁)` — the two ways the points can share an `x`-coordinate —
+each need a different argument and are not treated here. A vanishing parameter is treated, by the
+unit laws. Only with the two remaining cases does `formalPoint` become a homomorphism, and only
+then are the parameters of an adic ideal a subgroup of the points of `W⁄K` rather than an indexed
+family of them.
 
 ## The hypotheses
 
@@ -39,16 +40,28 @@ excludes the zero parameter on either side; the sum is nonzero for the same reas
 `formalPoint` needs of its argument, which is why the conclusion names that term rather than a
 hypothesis.
 
+`mul_formalWEval_eq_mul_formalWEval_iff` in `Point/Basic.lean` characterises the cross-product: it
+holds exactly when a parameter vanishes, or the two are equal, or they are exchanged by `ι`. So
+for two nonzero parameters those two exclusions already give the chord condition. A vanishing
+parameter is the unit law `F(0, t) = t` or `F(t, 0) = t`. That is the second form of the theorem
+below, and the one a caller can discharge without computing `w`.
+
 ## Main results
 
 * `WeierstrassCurve.add_eq_formalPoint_formalAddEval_of_X_ne`: the point of `F(t₁, t₂)` is the
   sum of the points of `t₁` and `t₂`, for parameters whose points have distinct `x`-coordinates.
+* `WeierstrassCurve.add_eq_formalPoint_formalAddEval_of_ne_of_ne_formalInverseEval`: the same
+  conclusion, asked of the parameters themselves — two nonzero parameters must be distinct and not
+  exchanged by `ι`, while a vanishing parameter is asked nothing, being a unit law.
 
 ## Provenance
 
 Adapted from Michael Stoll's `EllipticCurves` project
 (`github.com/MichaelStollBayreuth/EllipticCurves` @ `66889eada51a`, Apache-2.0),
-`EllipticCurves/WeierstrassFormalGroup/Filtration.lean`, declaration `paramPoint_add`.
+`EllipticCurves/WeierstrassFormalGroup/Filtration.lean`, declarations `paramPoint_add` (the chord
+case) and `formalPoint_add_of_ne` (the theorem below). The dichotomy the latter rests on is that
+source's `eq_or_eq_negPoint_of_x_cond`, ported as an iff alongside `formalPoint` in
+`Point/Basic.lean`.
 
 The argument here is a transposition of this repository's own `FormalGroup/Add/Assoc.lean`, whose
 private `thetaPoint_add` runs the same chord computation one level up — over a fraction field of
@@ -205,5 +218,38 @@ theorem add_eq_formalPoint_formalAddEval_of_X_ne {I : Ideal O} (hI : IsAdic I) {
   -- `Affine.Point.mk` is the `some` constructor at `-(w(t))⁻¹`
   simpa only [Affine.Point.mk, neg_div, one_div] using
     W.some_add_some_formalAddEval_of_X_ne hI h₁ h₂ h₁0 h₂0 hx (hn h₁ h₁0) (hn h₂ h₂0) (hn hF hF0)
+
+open scoped Classical in
+/-- **The parametrisation carries the group law**, for two parameters that are not equal and not
+exchanged by the formal inverse — conditions asked only of a pair that is nowhere zero.
+
+`add_eq_formalPoint_formalAddEval_of_X_ne` asks instead that the chord through the two points be
+non-vertical, a condition on the product `t₁ * w(t₂)`. For two nonzero parameters the two requests
+agree, by `mul_formalWEval_eq_mul_formalWEval_iff`. The exclusions are guarded on both parameters
+being nonzero because a vanishing one is a unit law and needs no exclusion at all: `t₁ = 0` and
+`t₂ = 0` are both cases of this theorem, `t₁ = t₂ = 0` among them.
+
+Tagged `@[simp]` like the sibling, whose left-hand side it shares. Both carry side conditions
+`simp` cannot invent, so reaching either needs the hypotheses passed in, as `simp [*]` does; the
+gain here is that they are inequalities of parameters rather than of products of `w`-values. -/
+@[simp]
+theorem add_eq_formalPoint_formalAddEval_of_ne_of_ne_formalInverseEval {I : Ideal O}
+    (hI : IsAdic I) {t₁ t₂ : O} (h₁ : t₁ ∈ I) (h₂ : t₂ ∈ I)
+    (hne : t₁ ≠ 0 → t₂ ≠ 0 → t₂ ≠ t₁)
+    (hnι : t₁ ≠ 0 → t₂ ≠ 0 → t₂ ≠ W.formalInverseEval t₁) :
+    W.formalPoint (K := K) hI h₁ + W.formalPoint (K := K) hI h₂ =
+      W.formalPoint (K := K) hI (pow_one I ▸ W.formalAddEval_mem hI (k := 1)
+        ((pow_one I).symm ▸ h₁) ((pow_one I).symm ▸ h₂)) := by
+  rcases eq_or_ne t₁ 0 with rfl | h₁0
+  · rw [W.formalPoint_of_param_eq_zero hI h₁ rfl, zero_add]
+    congr 1
+    exact (W.formalAddEval_zero_left (hI.isTopologicallyNilpotent_of_mem h₂)).symm
+  rcases eq_or_ne t₂ 0 with rfl | h₂0
+  · rw [W.formalPoint_of_param_eq_zero hI h₂ rfl, add_zero]
+    congr 1
+    exact (W.formalAddEval_zero_right (hI.isTopologicallyNilpotent_of_mem h₁)).symm
+  exact W.add_eq_formalPoint_formalAddEval_of_X_ne hI h₁ h₂ fun hx ↦
+    ((((W.mul_formalWEval_eq_mul_formalWEval_iff K hI h₁ h₂).mp hx).resolve_left h₁0).resolve_left
+      h₂0).elim (hne h₁0 h₂0) (hnι h₁0 h₂0)
 
 end WeierstrassCurve
