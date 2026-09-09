@@ -111,16 +111,15 @@ theorem connectionMatrix_apply (f : GraphParam) {k : ℕ} {ι : Type*} (A : ι �
     (i j : ι) :
     connectionMatrix f A i j
       = f ((A i).glue (A j)).forgetLabels.1 ((A i).glue (A j)).forgetLabels.2 := by
-  rw [connectionMatrix.eq_1]
-  rfl
+  simp [connectionMatrix]
 
 /-- Connection matrices of an isomorphism-invariant parameter are symmetric: gluing commutes up to
 isomorphism. -/
 theorem connectionMatrix_comm (f : GraphParam) (hf : IsIsoInvariant f) {k : ℕ} {ι : Type*}
     (A : ι → LabeledGraph k) (i j : ι) :
     connectionMatrix f A i j = connectionMatrix f A j i := by
-  rw [connectionMatrix_apply, connectionMatrix_apply, LabeledGraph.forgetLabels_eq,
-    LabeledGraph.forgetLabels_eq]
+  rw [connectionMatrix_apply, connectionMatrix_apply, LabeledGraph.forgetLabels_def,
+    LabeledGraph.forgetLabels_def]
   exact hf.eq_of_iso (LabeledGraph.glueCommIso (A i) (A j))
 
 /-- Connection matrices of an isomorphism-invariant parameter are Hermitian because the two
@@ -187,7 +186,7 @@ nonnegative on every self-gluing. -/
 theorem IsReflectionPositive.nonneg_glue_self {f : GraphParam} (hf : IsReflectionPositive f)
     {k : ℕ} (G : LabeledGraph k) : 0 ≤ f (G.glue G).n (G.glue G).graph := by
   have h := (hf.posSemidef fun _ : Fin 1 => G).diag_nonneg (i := 0)
-  rw [connectionMatrix_apply, LabeledGraph.forgetLabels_eq] at h
+  rw [connectionMatrix_apply, LabeledGraph.forgetLabels_def] at h
   exact h
 
 /-- A multiplicative, normalized parameter is `1` on every edgeless graph. -/
@@ -226,7 +225,7 @@ theorem isMultiplicative_one : IsMultiplicative fun _ _ => (1 : ℝ) :=
 
 /-- The constant parameter `1` is normalized. -/
 theorem isNormalized_one : IsNormalized fun _ _ => (1 : ℝ) := by
-  rw [IsNormalized.eq_1]
+  simp only [IsNormalized]
 
 /-- The constant parameter `1` is reflection positive: its connection matrices are the all-ones
 matrices, the outer square of the all-ones vector. -/

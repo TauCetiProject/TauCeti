@@ -32,8 +32,8 @@ underlying connection matrices and reflection positivity.
   the two mapped sources, so no edge is created that neither source carries;
 * `TauCeti.DenseGraphLimits.LabeledGraph.glueInl_eq_glueInr_iff` says the two sides meet exactly at
   corresponding labels, and
-  `TauCeti.DenseGraphLimits.LabeledGraph.glue_surjective` that they cover the gluing: together they
-  present the vertex set as the pushout;
+  `TauCeti.DenseGraphLimits.LabeledGraph.exists_glueInl_or_exists_glueInr` that they cover the
+  gluing: together they present the vertex set as the pushout;
 * `TauCeti.DenseGraphLimits.LabeledGraph.glue_card` is the resulting vertex count
   `n₁ + n₂ - k`;
 * `TauCeti.DenseGraphLimits.LabeledGraph.glue_adj_inl`,
@@ -41,7 +41,7 @@ underlying connection matrices and reflection positivity.
   `TauCeti.DenseGraphLimits.LabeledGraph.glue_adj_inl_inr` are the adjacency eliminators, and
   `TauCeti.DenseGraphLimits.LabeledGraph.not_glue_adj_of_unlabeled` records that unlabeled vertices
   of the two sides are never joined;
-* `TauCeti.DenseGraphLimits.LabeledGraph.forgetLabels_eq` is the elimination law for unlabeling, by
+* `TauCeti.DenseGraphLimits.LabeledGraph.forgetLabels_def` is the defining law for unlabeling, by
   which a dependent value `f G.forgetLabels.1 G.forgetLabels.2` is evaluated;
 * `TauCeti.DenseGraphLimits.LabeledGraph.glueCommIso` is the commutativity of the gluing algebra,
   the isomorphism between the two orders of a gluing that makes connection matrices symmetric.
@@ -273,7 +273,8 @@ theorem glueInr_label (G₁ G₂ : LabeledGraph k) :
   funext fun i => congrArg _ (glueRight_label G₁ G₂ i).symm
 
 /-- Every vertex of the gluing comes from one of the two sides. -/
-theorem glue_surjective (G₁ G₂ : LabeledGraph k) (v : Fin (G₁.glue G₂).n) :
+theorem exists_glueInl_or_exists_glueInr (G₁ G₂ : LabeledGraph k)
+    (v : Fin (G₁.glue G₂).n) :
     (∃ a, v = G₁.glueInl G₂ a) ∨ ∃ b, v = G₁.glueInr G₂ b := by
   obtain h | h := glueLeft_surjective_or G₁ G₂ ((G₁.glueIndex G₂).symm v)
   · obtain ⟨a, ha⟩ := h
@@ -285,7 +286,7 @@ theorem glue_surjective (G₁ G₂ : LabeledGraph k) (v : Fin (G₁.glue G₂).n
 theorem glue_card (G₁ G₂ : LabeledGraph k) : (G₁.glue G₂).n = G₁.n + G₂.n - k := by
   have h₁ := G₁.le_n
   have h₂ := G₂.le_n
-  have hcard : (G₁.glue G₂).n = Fintype.card (G₁.glueCarrier G₂) := by rw [glue.eq_1]
+  have hcard : (G₁.glue G₂).n = Fintype.card (G₁.glueCarrier G₂) := rfl
   rw [hcard, Fintype.card_sum, Fintype.card_sum, Fintype.card_fin, card_unlabeled, card_unlabeled]
   omega
 
@@ -391,13 +392,13 @@ def forgetLabels (G : LabeledGraph k) : Σ m, SimpleGraph (Fin m) := ⟨G.n, G.g
 count and its graph.  Both projections are read off from this law, and it is the form a dependent
 occurrence `f G.forgetLabels.1 G.forgetLabels.2` is rewritten by, since the two projections can
 only be replaced simultaneously: the type of the second mentions the first. -/
-theorem forgetLabels_eq (G : LabeledGraph k) : G.forgetLabels = ⟨G.n, G.graph⟩ := by
-  rw [forgetLabels.eq_1]
+theorem forgetLabels_def (G : LabeledGraph k) : G.forgetLabels = ⟨G.n, G.graph⟩ := by
+  simp only [forgetLabels]
 
 /-- Unlabeling keeps the vertex count. -/
 @[simp]
 theorem forgetLabels_fst (G : LabeledGraph k) : G.forgetLabels.1 = G.n := by
-  rw [forgetLabels_eq]
+  rw [forgetLabels_def]
 
 /-! ### Commutativity of the gluing -/
 
