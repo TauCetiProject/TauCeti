@@ -29,8 +29,9 @@ its degree into `[0, deg P)` without changing its image, so `ClassGroup R` is th
 divisor classes of degree `0, …, deg P − 1`, of which there are finitely many because each degree
 fibre is empty or a coset of the finite group `Cl⁰(F)`.
 
-Only the finiteness of `Cl⁰(F)` enters, so that is the hypothesis the results below take; over a
-finite constant field `TauCeti.Divisor.finite_ker_degreeClass` supplies it.
+Only the finiteness of `Cl⁰(F)` enters, so that is the hypothesis the general results below take;
+over a finite constant field `TauCeti.Divisor.finite_ker_degreeClass` supplies it, which is what
+`TauCeti.Divisor.finite_classGroup_of_finite` records.
 
 There is no separability hypothesis and no chosen rational subfield: `R` is any Dedekind
 `k`-subalgebra of `F` with fraction field `F`.  Mathlib's
@@ -47,6 +48,8 @@ field and its model `k[X]`, where it gives `Cl⁰(k(x)) = 0` and the class numbe
 * `TauCeti.Divisor.finite_classGroup`: **the ideal class group of an affine model of an algebraic
   function field with a finite degree-zero class group is finite**; over a finite constant field
   this is the affine half of Stichtenoth's Proposition 5.1.3.
+* `TauCeti.Divisor.finite_classGroup_of_finite`: that specialization, with the finiteness of
+  `Cl⁰(F)` supplied by `TauCeti.Divisor.finite_ker_degreeClass`.
 * `TauCeti.Divisor.card_classGroup_dvd_classNumber`: when some place infinite on the model is
   rational, the class number of the model divides the class number of `F / k`.
 
@@ -94,6 +97,15 @@ theorem finite_classGroup (hF : IsFunctionField k F) (hker : Finite (degreeClass
     obtain ⟨c, hc, hcx⟩ := exists_degreeClass_mem_Ico_and_classGroupHom_eq R hF hP x
     exact ⟨c, hc, hcx⟩
   exact Finite.of_equiv _ (Additive.ofMul (α := ClassGroup R)).symm
+
+variable (R) in
+/-- **The ideal class group of an affine model of an algebraic function field with a finite
+constant field is finite** — the affine half of Stichtenoth's Proposition 5.1.3.  This is
+`TauCeti.Divisor.finite_classGroup` with its hypothesis discharged by
+`TauCeti.Divisor.finite_ker_degreeClass`. -/
+theorem finite_classGroup_of_finite (hF : IsFunctionField k F) [Finite k] :
+    Finite (ClassGroup R) :=
+  finite_classGroup R hF (finite_ker_degreeClass hF)
 
 variable (R) in
 /-- **With a rational place at infinity, the class number of the model divides the class number of
