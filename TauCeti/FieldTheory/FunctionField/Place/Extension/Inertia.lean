@@ -44,7 +44,8 @@ order of the decomposition group, and the decomposition field — is in
   automorphism group of the residue extension, with `TauCeti.Place.residueAut_residue` computing
   it on residues.
 * `TauCeti.Place.decompositionQuotientInertiaEquiv`: the induced isomorphism of the decomposition
-  group modulo the inertia group with the automorphism group of the residue extension.
+  group modulo the inertia group with the automorphism group of the residue extension, with
+  `TauCeti.Place.decompositionQuotientInertiaEquiv_mk` computing it on classes.
 
 ## Main results
 
@@ -89,7 +90,12 @@ variable (F) [Algebra.IsIntegral F F'] (P : Place k F')
 omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
 /-- The decomposition group acts on the valuation ring of `P` through its action on `F'`. -/
 theorem coe_decompositionSubgroup_smul (g : P.integers.decompositionSubgroup F)
-    (x : P.integers) : ((g • x : P.integers) : F') = (g : F' ≃ₐ[F] F') (x : F') := (rfl)
+    (x : P.integers) : ((g • x : P.integers) : F') = (g : F' ≃ₐ[F] F') (x : F') := by
+  rw [← AlgEquiv.smul_def, ← Submonoid.smul_def]
+  -- Mathlib builds `ValuationSubring.decompositionSubgroupMulSemiringAction` by restricting the
+  -- action on `F'` along `ValuationSubring.subMulAction`, and states no lemma for the coercion of
+  -- the restricted action, so this last step has to be definitional.
+  rfl
 
 /-- The decomposition group of `P` fixes the valuation ring of the place below `P` pointwise, so
 its action on `𝒪_P` is by `𝒪_{P ∩ F}`-algebra automorphisms. -/
@@ -118,10 +124,14 @@ noncomputable def residueAut : P.integers.decompositionSubgroup F →*
     (P.ResidueField ≃ₐ[(P.restrict k F).ResidueField] P.ResidueField) :=
   MulSemiringAction.toAlgAut _ _ _
 
+/-- **The residue action, on residues** (Stichtenoth, Theorem 3.8.2): the automorphism of `F'_P`
+induced by `g` sends the residue of an element `x` of `𝒪_P` to the residue of `g x`. -/
 @[simp]
 theorem residueAut_residue (g : P.integers.decompositionSubgroup F) (x : P.integers) :
     residueAut F P g (IsLocalRing.residue P.integers x) =
-      IsLocalRing.residue P.integers (g • x) := (rfl)
+      IsLocalRing.residue P.integers (g • x) := by
+  rw [residueAut, MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply,
+    IsLocalRing.ResidueField.residue_smul]
 
 /-- **The inertia group is the kernel of the residue action** (Stichtenoth, Theorem 3.8.2): this
 identifies Mathlib's `ValuationSubring.inertiaSubgroup`, defined as the kernel of the action on
@@ -133,21 +143,23 @@ theorem ker_residueAut : (residueAut F P).ker = P.integers.inertiaSubgroup F := 
     RingEquiv.ext_iff]
   exact Iff.rfl
 
+omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
 /-- **The inertia group, elementwise** (Stichtenoth, Definition 3.8.1): an automorphism fixing `P`
 lies in the inertia group exactly when it acts trivially on the residue field. -/
+@[simp]
 theorem mem_inertiaSubgroup_iff (g : P.integers.decompositionSubgroup F) :
     g ∈ P.integers.inertiaSubgroup F ↔
       ∀ x : P.integers, IsLocalRing.residue P.integers (g • x) =
         IsLocalRing.residue P.integers x := by
-  rw [← ker_residueAut F P, MonoidHom.mem_ker, AlgEquiv.ext_iff]
+  rw [ValuationSubring.inertiaSubgroup, MonoidHom.mem_ker, RingEquiv.ext_iff]
   refine ⟨fun h x ↦ by simpa using h (IsLocalRing.residue P.integers x), fun h z ↦ ?_⟩
   obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective (R := P.integers) z
   simpa using h x
 
+omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
 /-- The inertia group is normal in the decomposition group, being a kernel. -/
-instance normal_inertiaSubgroup : (P.integers.inertiaSubgroup F).Normal := by
-  rw [← ker_residueAut F P]
-  infer_instance
+instance normal_inertiaSubgroup : (P.integers.inertiaSubgroup F).Normal :=
+  MonoidHom.normal_ker _
 
 end ResidueAction
 
@@ -258,6 +270,13 @@ noncomputable def decompositionQuotientInertiaEquiv :
     P.integers.decompositionSubgroup F ⧸ P.integers.inertiaSubgroup F ≃*
       (P.ResidueField ≃ₐ[(P.restrict k F).ResidueField] P.ResidueField) :=
   QuotientGroup.liftEquiv _ (residueAut_surjective F P) (ker_residueAut F P).symm
+
+/-- The isomorphism of `TauCeti.Place.decompositionQuotientInertiaEquiv` is induced by the residue
+action: it sends the class of `g` to the residue automorphism of `g`. -/
+@[simp]
+theorem decompositionQuotientInertiaEquiv_mk (g : P.integers.decompositionSubgroup F) :
+    decompositionQuotientInertiaEquiv F P (QuotientGroup.mk g) = residueAut F P g := by
+  rw [decompositionQuotientInertiaEquiv, QuotientGroup.liftEquiv_mk]
 
 /-- **The order of the inertia group, unconditionally** (Stichtenoth, Theorem 3.8.2): together
 with the residue automorphism group it accounts for the order `e · f` of the decomposition
