@@ -156,6 +156,7 @@ theorem mem_inertiaSubgroup_iff (g : P.integers.decompositionSubgroup F) :
 identifies Mathlib's `ValuationSubring.inertiaSubgroup`, defined as the kernel of the action on
 the residue field, with the kernel of `TauCeti.Place.residueAut`, which records that the action
 is by automorphisms over the residue field of the place below. -/
+@[simp]
 theorem ker_residueAut : (residueAut F P).ker = P.integers.inertiaSubgroup F := by
   ext g
   rw [MonoidHom.mem_ker, mem_inertiaSubgroup_iff]

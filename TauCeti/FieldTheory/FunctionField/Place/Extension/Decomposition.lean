@@ -134,6 +134,7 @@ omit [IsGalois F F'] in
 /-- **Over its decomposition field a place is fixed by the whole Galois group** (Stichtenoth,
 Theorem 3.8.2): the decomposition group of `P` in `F' / Z` is everything, because the
 decomposition group of `P` in `F' / F` is by construction the Galois group of `F'` over `Z`. -/
+@[simp]
 theorem decompositionSubgroup_decompositionField_eq_top (P : Place k F') :
     P.integers.decompositionSubgroup (decompositionField F P) = ⊤ := by
   rw [← stabilizer_eq_decompositionSubgroup]
