@@ -86,8 +86,12 @@ that it can be an `OpenSubgroup G` and be compared with the other subgroups of a
 * J. Neukirch, *Class Field Theory*, Chapter III, §1.
 * J. Tate, *The higher dimensional cohomology groups of class field theory*, Ann. of Math. **56**
   (1952), 294–297.
-* TauCetiRoadmap, `TauCetiRoadmap/ClassFieldTheory/Suggested.lean`.
 -/
+
+-- The signatures of `LayerRestriction`, `relativeDegree`, `subgroupLayer` and `subgroupGalEquiv`
+-- below follow the Tau Ceti `ClassFieldTheory` blueprint, `README.md` and `Suggested.lean`, which
+-- write down the restriction relation between two normal layers and the subgroup-indexed system
+-- of intermediate layers formalised here.
 
 public noncomputable section
 
@@ -215,6 +219,14 @@ theorem repIso_hom_apply_coe (T : LayerRestriction small big) (F : Formation G)
     (x : F.level small.top) :
     (((T.repIso F).hom.hom x : F.level big.top) : F.toRep.V) = (x : F.toRep.V) :=
   LinearEquiv.coe_ofEq_apply (congrArg F.level T.same_top) x
+
+/-- The inverse of the identification of coefficient modules moves no element of the ambient
+module either. -/
+@[simp]
+theorem repIso_inv_apply_coe (T : LayerRestriction small big) (F : Formation G)
+    (x : F.level big.top) :
+    (((T.repIso F).inv.hom x : F.level small.top) : F.toRep.V) = (x : F.toRep.V) :=
+  LinearEquiv.coe_ofEq_apply (congrArg F.level T.same_top).symm x
 
 end LayerRestriction
 
