@@ -134,8 +134,6 @@ theorem locallyIntegrable_fderiv_newtonianKernel (n : ℕ) :
         simp
       rw [hzero]
       simp only [fderiv_zero]
-      change LocallyIntegrable (fun _ : EuclideanSpace ℝ (Fin 0) =>
-        (0 : EuclideanSpace ℝ (Fin 0) →L[ℝ] ℝ))
       simpa only [Pi.zero_apply] using
         (locallyIntegrable_const (μ := volume)
           (0 : EuclideanSpace ℝ (Fin 0) →L[ℝ] ℝ))
@@ -145,8 +143,6 @@ theorem locallyIntegrable_fderiv_newtonianKernel (n : ℕ) :
         norm_num
       rw [hzero]
       simp only [fderiv_zero]
-      change LocallyIntegrable (fun _ : EuclideanSpace ℝ (Fin 2) =>
-        (0 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ))
       simpa only [Pi.zero_apply] using
         (locallyIntegrable_const (μ := volume)
           (0 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ))
