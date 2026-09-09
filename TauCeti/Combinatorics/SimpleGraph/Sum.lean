@@ -17,14 +17,14 @@ both summands is decidable, `(G ⊕g H).edgeFinset` is not expressible without s
 instance. `TauCeti.instDecidableRelSumAdj` supplies it by the four-way case split in the definition
 of `SimpleGraph.sum`.
 
-A disjoint sum of edgeless graphs is edgeless, and `SimpleGraph.map` carries no edge to a
-reindexing: `TauCeti.map_sum_bot_bot` combines the two, the form in which a graph parameter that is
+`SimpleGraph.sum` has no `bot` law in Mathlib either: `TauCeti.SimpleGraph.sum_bot_bot` says a
+disjoint sum of edgeless graphs is edgeless, the form in which a graph parameter that is
 multiplicative over disjoint sums is evaluated on an edgeless graph.
 
 ## Main results
 
 * `TauCeti.instDecidableRelSumAdj` — adjacency in a disjoint sum is decidable;
-* `TauCeti.map_sum_bot_bot` — a reindexed disjoint sum of edgeless graphs is edgeless.
+* `TauCeti.SimpleGraph.sum_bot_bot` — a disjoint sum of edgeless graphs is edgeless.
 -/
 
 public section
@@ -44,12 +44,14 @@ instance instDecidableRelSumAdj (G : SimpleGraph V) (H : SimpleGraph W)
   | .inl _, .inr _ => isFalse (by simp)
   | .inr _, .inl _ => isFalse (by simp)
 
-/-- A disjoint sum of edgeless graphs is edgeless, in any reindexing of its vertices: no edge is
-contributed by either summand, and none across the two sides. -/
-theorem map_sum_bot_bot {X : Type*} (f : V ⊕ W ↪ X) :
-    ((⊥ : SimpleGraph V) ⊕g (⊥ : SimpleGraph W)).map f = ⊥ := by
-  rw [eq_bot_iff, SimpleGraph.map_le_iff_le_comap]
-  intro u v huv
-  cases u <;> cases v <;> simp_all
+namespace SimpleGraph
+
+/-- A disjoint sum of edgeless graphs is edgeless: no edge is contributed by either summand, and
+none across the two sides. -/
+theorem sum_bot_bot : ((⊥ : SimpleGraph V) ⊕g (⊥ : SimpleGraph W)) = ⊥ := by
+  ext u v
+  cases u <;> cases v <;> simp
+
+end SimpleGraph
 
 end TauCeti

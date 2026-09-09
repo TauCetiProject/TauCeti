@@ -195,11 +195,15 @@ theorem IsMultiplicative.apply_bot {f : GraphParam} (hmul : IsMultiplicative f)
   induction n with
   | zero =>
       have h := hmul 0 1 (⊥ : SimpleGraph (Fin 0)) (⊥ : SimpleGraph (Fin 1))
-      rw [map_sum_bot_bot, hnorm, mul_one] at h
+      rw [SimpleGraph.sum_bot_bot,
+        GaloisConnection.l_bot (SimpleGraph.map_le_iff_le_comap finSumFinEquiv.toEmbedding),
+        hnorm, mul_one] at h
       simpa using h.symm
   | succ n ih =>
       have h := hmul n 1 (⊥ : SimpleGraph (Fin n)) (⊥ : SimpleGraph (Fin 1))
-      rw [map_sum_bot_bot, ih, hnorm, mul_one] at h
+      rw [SimpleGraph.sum_bot_bot,
+        GaloisConnection.l_bot (SimpleGraph.map_le_iff_le_comap finSumFinEquiv.toEmbedding),
+        ih, hnorm, mul_one] at h
       simpa using h
 
 /-- A multiplicative, normalized parameter is unchanged by adjoining any finite edgeless graph. -/

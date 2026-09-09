@@ -32,8 +32,8 @@ underlying connection matrices and reflection positivity.
   the two mapped sources, so no edge is created that neither source carries;
 * `TauCeti.DenseGraphLimits.LabeledGraph.glueInl_eq_glueInr_iff` says the two sides meet exactly at
   corresponding labels, and
-  `TauCeti.DenseGraphLimits.LabeledGraph.exists_glueInl_or_exists_glueInr` that they cover the
-  gluing: together they present the vertex set as the pushout;
+  `TauCeti.DenseGraphLimits.LabeledGraph.glue_surjective` that they cover the gluing: together
+  they present the vertex set as the pushout;
 * `TauCeti.DenseGraphLimits.LabeledGraph.glue_card` is the resulting vertex count
   `n₁ + n₂ - k`;
 * `TauCeti.DenseGraphLimits.LabeledGraph.glue_adj_inl`,
@@ -44,7 +44,9 @@ underlying connection matrices and reflection positivity.
 * `TauCeti.DenseGraphLimits.LabeledGraph.forgetLabels_def` is the defining law for unlabeling, by
   which a dependent value `f G.forgetLabels.1 G.forgetLabels.2` is evaluated;
 * `TauCeti.DenseGraphLimits.LabeledGraph.glueCommIso` is the commutativity of the gluing algebra,
-  the isomorphism between the two orders of a gluing that makes connection matrices symmetric.
+  the isomorphism between the two orders of a gluing that makes connection matrices symmetric, and
+  `TauCeti.DenseGraphLimits.LabeledGraph.glueCommIso_label` says it retains the labels, so it is an
+  isomorphism of `k`-labeled graphs and commutativity survives a further gluing.
 
 ## Implementation
 
@@ -273,8 +275,7 @@ theorem glueInr_label (G₁ G₂ : LabeledGraph k) :
   funext fun i => congrArg _ (glueRight_label G₁ G₂ i).symm
 
 /-- Every vertex of the gluing comes from one of the two sides. -/
-theorem exists_glueInl_or_exists_glueInr (G₁ G₂ : LabeledGraph k)
-    (v : Fin (G₁.glue G₂).n) :
+theorem glue_surjective (G₁ G₂ : LabeledGraph k) (v : Fin (G₁.glue G₂).n) :
     (∃ a, v = G₁.glueInl G₂ a) ∨ ∃ b, v = G₁.glueInr G₂ b := by
   obtain h | h := glueLeft_surjective_or G₁ G₂ ((G₁.glueIndex G₂).symm v)
   · obtain ⟨a, ha⟩ := h
@@ -483,6 +484,14 @@ noncomputable def glueCommIso (G₁ G₂ : LabeledGraph k) :
   map_rel_iff' {u v} := by
     conv_lhs => rw [← glue_graph_map_glueCommEquiv G₁ G₂]
     exact SimpleGraph.map_adj_apply (f := (G₁.glueCommEquiv G₂).toEmbedding)
+
+/-- **Commutativity retains the labels.**  `glueCommIso` carries the `i`-th label of one order of a
+gluing to the `i`-th label of the other, so it is an isomorphism of `k`-labeled graphs and not
+merely of the underlying graphs: commutativity may therefore be used inside a further gluing. -/
+theorem glueCommIso_label (G₁ G₂ : LabeledGraph k) (i : Fin k) :
+    G₁.glueCommIso G₂ ((G₁.glue G₂).label i) = (G₂.glue G₁).label i := by
+  rw [congrFun (glueInl_label G₁ G₂) i]
+  exact (glueCommEquiv_glueInl G₁ G₂ (G₁.label i)).trans (congrFun (glueInr_label G₂ G₁) i).symm
 
 end LabeledGraph
 
