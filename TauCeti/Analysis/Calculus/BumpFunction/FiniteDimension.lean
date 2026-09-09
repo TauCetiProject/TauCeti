@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+public import Mathlib.Geometry.Manifold.PartitionOfUnity
+public import Mathlib.Topology.Compactness.SigmaCompact
+public import Mathlib.Topology.Sets.Opens
 
 /-!
 # Extending finite-dimensional smooth germs
@@ -28,10 +31,76 @@ globally Lipschitz field.
 
 public section
 
+open Function Set TopologicalSpace
 open scoped ContDiff
+open scoped Topology
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E]
+
+/-- A compact set contained in an open set admits a smooth cutoff equal to one on a neighborhood
+of the compact set.
+
+The cutoff takes values in `[0, 1]`, has compact support, and its topological support is contained
+in the prescribed open set. -/
+theorem exists_contDiff_cutoff {K U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
+    ∃ ψ : E → ℝ,
+      ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧ EqOn ψ 1 K ∧
+        K ⊆ interior (ψ ⁻¹' {1}) ∧ HasCompactSupport ψ ∧ tsupport ψ ⊆ U := by
+  obtain ⟨L, hL, hL_closed, hKL, hLU⟩ := exists_compact_closed_between hK hU hKU
+  obtain ⟨f, hfK, hfL, hf_range⟩ :=
+    exists_contMDiffMap_one_nhds_of_subset_interior (modelWithCornersSelf ℝ E)
+      hK.isClosed hKL (n := (⊤ : ℕ∞))
+  let ψ : E → ℝ := f
+  have hψ_smooth : ContDiff ℝ ∞ ψ := by
+    dsimp [ψ]
+    exact f.contMDiff.contDiff
+  have hψ_eq_one : EqOn ψ 1 K := by
+    intro x hx
+    exact hfK.self_of_nhdsSet x hx
+  have hψ_eq_one_nhds : K ⊆ interior (ψ ⁻¹' {1}) := by
+    intro x hx
+    apply mem_interior_iff_mem_nhds.mpr
+    exact mem_nhdsSet_iff_forall.mp hfK x hx
+  have hψ_support : support ψ ⊆ L := by
+    intro x hx
+    by_contra hnot
+    exact hx (hfL x hnot)
+  have hψ_compact : HasCompactSupport ψ :=
+    HasCompactSupport.of_support_subset_isCompact hL hψ_support
+  have hψ_tsupp : tsupport ψ ⊆ U := by
+    rw [tsupport]
+    exact (closure_minimal hψ_support hL_closed).trans hLU
+  have hψ_range : range ψ ⊆ Icc 0 1 := by
+    rintro y ⟨x, rfl⟩
+    exact hf_range x
+  exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
+
+/-- A compact-exhaustion term in an open set admits a smooth cutoff supported in the interior of
+the next term. -/
+theorem _root_.CompactExhaustion.exists_contDiff_cutoff {Omega : Opens E}
+    (K : CompactExhaustion Omega) (n : ℕ) :
+    ∃ ψ : E → ℝ,
+      ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
+        EqOn ψ 1 ((Subtype.val : Omega → E) '' K n) ∧
+        (Subtype.val : Omega → E) '' K n ⊆ interior (ψ ⁻¹' {1}) ∧
+        HasCompactSupport ψ ∧
+          tsupport ψ ⊆ (Subtype.val : Omega → E) '' interior (K (n + 1)) := by
+  have hK : IsCompact ((Subtype.val : Omega → E) '' K n) :=
+    (K.isCompact n).image continuous_subtype_val
+  have hU : IsOpen ((Subtype.val : Omega → E) '' interior (K (n + 1))) :=
+    Omega.isOpen.isOpenMap_subtype_val _ isOpen_interior
+  have hKU :
+      (Subtype.val : Omega → E) '' K n ⊆ (Subtype.val : Omega → E) '' interior (K (n + 1)) :=
+    image_mono (K.subset_interior_succ n)
+  exact TauCeti.exists_contDiff_cutoff hK hU hKU
+
+end TauCeti
 
 /-- A function which is smooth on a neighbourhood of a point of a finite-dimensional real normed
 space agrees near that point with a compactly supported globally smooth function of the same
