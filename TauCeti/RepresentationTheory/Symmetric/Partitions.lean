@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.ConjFinite
 public import Mathlib.GroupTheory.Perm.Cycle.PossibleTypes
+public import TauCeti.Combinatorics.Enumerative.Partition.Basic
 
 /-!
 # Partitions and conjugacy classes of permutations
@@ -146,13 +147,6 @@ theorem partitionEquivConjClasses_symm_mk (n : ℕ) (σ : Equiv.Perm (Fin n)) :
       (Equiv.cast (congrArg Nat.Partition (Fintype.card_fin n).symm)).symm
         σ.partition := by
   simp [partitionEquivConjClasses]
-
-/-- **Transporting a partition along an equality of the number being partitioned does not change
-its parts.**  This is the bookkeeping behind `TauCeti.parts_partitionEquivConjClasses_symm_mk`,
-where the cast is the one built into `TauCeti.partitionEquivConjClasses`. -/
-theorem parts_equivCast {m l : ℕ} (h : m = l) (p : m.Partition) :
-    (Equiv.cast (congrArg Nat.Partition h) p).parts = p.parts := by
-  subst h; rfl
 
 /-- **The partition indexing the class of `σ` has the parts of the cycle type of `σ`.**  This is
 `TauCeti.partitionEquivConjClasses_symm_mk` with the transport along `Fintype.card (Fin n) = n`
