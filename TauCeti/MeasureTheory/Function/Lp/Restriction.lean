@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.Lp.Translation
-import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 
 /-!
 # Restriction and set integration on finite-measure sets
@@ -40,7 +39,7 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
   {mu : Measure E} {p : ENNReal} [Fact (1 ≤ p)]
 
 /-- Restrict an `Lᵖ` class to a finite-measure set and view it as an `L¹` class. -/
-noncomputable def lpToL1Restrict (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu s < ∞) :
+noncomputable def lpToL1Restrict (s : Set E) (hμs : mu s < ∞) :
     Lp F p mu →L[ℝ] Lp F 1 (mu.restrict s) := by
   letI : IsFiniteMeasure (mu.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
   let hp : (1 : ENNReal) ≤ p := Fact.out
@@ -93,14 +92,16 @@ noncomputable def lpToL1Restrict (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu 
   have hrestrict : eLpNorm f p (mu.restrict s) ≤ eLpNorm f p mu :=
     eLpNorm_mono_measure _ Measure.restrict_le_self
   have hfinite : (mu s) ^ (1 - (1 / p.toReal)) ≠ ∞ := by
-    apply ENNReal.rpow_ne_top_of_nonneg
-    · have hp0 : (0 : ENNReal) < p := (zero_lt_one.trans_le Fact.out)
-      have hp_real : 1 ≤ p.toReal := by
-        exact ENNReal.toReal_mono (a := (1 : ENNReal)) (b := p) hp_ne_top Fact.out
-      exact sub_nonneg.mpr (by
-        rw [one_div]
-        exact (inv_le_one₀ (by positivity)).2 hp_real)
-    exact hμs.ne
+    by_cases hp_top : p = ∞
+    · simp [hp_top, hμs.ne]
+    · apply ENNReal.rpow_ne_top_of_nonneg
+      · have hp0 : (0 : ENNReal) < p := (zero_lt_one.trans_le Fact.out)
+        have hp_real : 1 ≤ p.toReal := by
+          exact ENNReal.toReal_mono (a := (1 : ENNReal)) (b := p) hp_top Fact.out
+        exact sub_nonneg.mpr (by
+          rw [one_div]
+          exact (inv_le_one₀ (by positivity)).2 hp_real)
+      exact hμs.ne
   have hnorm_le : ‖f₁‖ ≤
       (mu s).toReal ^ (1 - (1 / p.toReal)) * ‖f‖ := by
     rw [hnorm, Lp.norm_def]
@@ -117,9 +118,9 @@ noncomputable def lpToL1Restrict (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu 
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace F] in
 /-- The restricted `L¹` class agrees almost everywhere with the original `Lᵖ` class. -/
-theorem lpToL1Restrict_coeFn (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu s < ∞)
+theorem lpToL1Restrict_coeFn (s : Set E) (hμs : mu s < ∞)
     (f : Lp F p mu) :
-    lpToL1Restrict hp_ne_top s hμs f =ᵐ[mu.restrict s] f := by
+    lpToL1Restrict s hμs f =ᵐ[mu.restrict s] f := by
   let _ : IsFiniteMeasure (mu.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
   -- `lpToL1Restrict` is built from a local linear map and `mkContinuous`; unfolding it here
   -- exposes the representative needed by `MemLp.coeFn_toLp`, with no separate representative
@@ -128,19 +129,19 @@ theorem lpToL1Restrict_coeFn (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu s < 
   exact MemLp.coeFn_toLp _
 
 /-- Integrate an `Lᵖ` class over a finite-measure set as a continuous linear map. -/
-noncomputable def setIntegralLp (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu s < ∞) :
+noncomputable def setIntegralLp (s : Set E) (hμs : mu s < ∞) :
     Lp F p mu →L[ℝ] F :=
   (L1.integralCLM (α := E) (E := F) (μ := mu.restrict s)).comp
-    (lpToL1Restrict hp_ne_top s hμs)
+    (lpToL1Restrict s hμs)
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 /-- The set integral of an `Lᵖ` class agrees with the integral of its representative. -/
 @[simp]
-theorem setIntegralLp_apply (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu s < ∞)
+theorem setIntegralLp_apply (s : Set E) (hμs : mu s < ∞)
     (f : Lp F p mu) :
-    setIntegralLp hp_ne_top s hμs f = ∫ x in s, f x ∂mu := by
+    setIntegralLp s hμs f = ∫ x in s, f x ∂mu := by
   rw [setIntegralLp, ContinuousLinearMap.comp_apply, ← L1.integral_eq, L1.integral_eq_integral]
-  exact integral_congr_ae (lpToL1Restrict_coeFn hp_ne_top s hμs f)
+  exact integral_congr_ae (lpToL1Restrict_coeFn s hμs f)
 
 omit [NormedSpace ℝ E] [CompleteSpace F] in
 /-- The set integral of a translated `Lᵖ` class is the integral of its translated representative. -/

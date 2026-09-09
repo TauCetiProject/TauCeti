@@ -114,13 +114,13 @@ theorem normedBumpLp_ae_eq_convolution (hp_ne_top : p ≠ ∞) (phi : ContDiffBu
       · exact phi.hasCompactSupport_normed.smul_right
     calc
       ∫ x in s, (normedBumpLp hp_ne_top phi mu (hfLp.toLp f)) x ∂mu =
-          setIntegralLp hp_ne_top s hμs
+          setIntegralLp s hμs
             (normedBumpLp hp_ne_top phi mu (hfLp.toLp f)) :=
-        (setIntegralLp_apply hp_ne_top s hμs _).symm
-      _ = ∫ t, setIntegralLp hp_ne_top s hμs
+        (setIntegralLp_apply s hμs _).symm
+      _ = ∫ t, setIntegralLp s hμs
             (phi.normed mu t • mu.translateLp p (-t) (hfLp.toLp f)) ∂mu := by
         rw [normedBumpLp_apply]
-        exact (setIntegralLp hp_ne_top s hμs).integral_comp_comm hLp_int |>.symm
+        exact (setIntegralLp s hμs).integral_comp_comm hLp_int |>.symm
       _ = ∫ t, phi.normed mu t • ∫ x in s, f (x - t) ∂mu ∂mu := by
         apply integral_congr_ae
         filter_upwards with t
