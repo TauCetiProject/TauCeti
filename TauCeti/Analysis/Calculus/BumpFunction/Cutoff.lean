@@ -75,7 +75,6 @@ theorem _root_.CompactExhaustion.exists_contDiff_cutoff {Omega : Opens E}
     (K : CompactExhaustion Omega) (n : ℕ) :
     ∃ ψ : E → ℝ,
       ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
-        EqOn ψ 1 ((Subtype.val : Omega → E) '' K n) ∧
         (Subtype.val : Omega → E) '' K n ⊆ interior (ψ ⁻¹' {1}) ∧
         HasCompactSupport ψ ∧
           tsupport ψ ⊆ (Subtype.val : Omega → E) '' interior (K (n + 1)) := by
@@ -88,10 +87,6 @@ theorem _root_.CompactExhaustion.exists_contDiff_cutoff {Omega : Opens E}
     image_mono (K.subset_interior_succ n)
   obtain ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩ :=
     hK.exists_contDiff_cutoff hU hKU
-  have hψ_eq_one : EqOn ψ 1 ((Subtype.val : Omega → E) '' K n) := by
-    intro x hx
-    simpa only [mem_preimage, mem_singleton_iff, Pi.one_apply] using
-      interior_subset (hψ_eq_one_nhds hx)
-  exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
+  exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
 
 end TauCeti
