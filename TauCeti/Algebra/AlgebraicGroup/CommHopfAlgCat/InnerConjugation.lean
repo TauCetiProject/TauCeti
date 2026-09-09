@@ -38,8 +38,6 @@ H --conj#--> H ⊗ H --(g ⊗ id)--> H.
 
 * J. S. Milne, *Algebraic Groups* (2017), §§3.5 and 10.20.
 * A. Borel, *Linear Algebraic Groups*, 2nd ed. (1991), §8.
-* Prior Tau Ceti formalization: [TauCeti#5490](https://github.com/TauCetiProject/TauCeti/pull/5490),
-  retained at commit `8419e7ceed8e87e7a14be030b7a0dda52aea2d41`.
 -/
 
 public section
@@ -51,7 +49,10 @@ namespace CommHopfAlgCat
 universe u v w
 
 variable {R : Type u} [CommRing R]
-variable (H : _root_.CommHopfAlgCat.{u} R)
+
+section Pointwise
+
+variable (H : _root_.CommHopfAlgCat.{w} R)
 
 /-- Conjugation by the extension of a rational point, as an automorphism of `A`-valued points. -/
 noncomputable def innerConjugationPointIso
@@ -96,8 +97,8 @@ theorem innerConjugationPointIso_inv_apply
 /-- Conjugation by a rational point, naturally on the full functor of points. -/
 noncomputable def innerConjugationPointNatIso
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
-    HopfAlgebra.pointsFunctor.{u, u, v} (R := R) (H := H) ≅
-      HopfAlgebra.pointsFunctor.{u, u, v} (R := R) (H := H) :=
+    HopfAlgebra.pointsFunctor.{u, w, v} (R := R) (H := H) ≅
+      HopfAlgebra.pointsFunctor.{u, w, v} (R := R) (H := H) :=
   NatIso.ofComponents (innerConjugationPointIso H g) fun {A B} f ↦ by
     apply GrpCat.hom_ext
     apply MonoidHom.ext
@@ -131,8 +132,8 @@ theorem innerConjugationPointNatIso_inv_app_apply
   innerConjugationPointIso_inv_apply H g A x
 
 private theorem pointNatIso_ext
-    {e₁ e₂ : HopfAlgebra.pointsFunctor.{u, u, v} (R := R) (H := H) ≅
-      HopfAlgebra.pointsFunctor.{u, u, v} (R := R) (H := H)}
+    {e₁ e₂ : HopfAlgebra.pointsFunctor.{u, w, v} (R := R) (H := H) ≅
+      HopfAlgebra.pointsFunctor.{u, w, v} (R := R) (H := H)}
     (h : ∀ (A : CommAlgCat.{v} R) (x : HopfAlgebra.points (R := R) (H := H) A),
       e₁.hom.app A x = e₂.hom.app A x) : e₁ = e₂ := by
   apply Iso.ext
@@ -184,6 +185,10 @@ theorem innerConjugationPointNatIso_inv
   intro A x
   rw [innerConjugationPointNatIso_hom_app_apply, Iso.symm_hom,
     innerConjugationPointNatIso_inv_app_apply, map_inv, inv_inv]
+
+end Pointwise
+
+variable (H : _root_.CommHopfAlgCat.{u} R)
 
 /-- The coordinate Hopf-algebra automorphism representing conjugation by a rational point.
 
