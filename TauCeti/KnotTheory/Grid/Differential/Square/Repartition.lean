@@ -109,6 +109,7 @@ theorem transpose (h : D.IsRepartition E) : D.transpose.IsRepartition E.transpos
   }
 
 /-- Two decompositions are repartitions exactly when their diagonal reflections are. -/
+@[simp]
 theorem transpose_iff : D.transpose.IsRepartition E.transpose ↔ D.IsRepartition E := by
   constructor
   · intro h
