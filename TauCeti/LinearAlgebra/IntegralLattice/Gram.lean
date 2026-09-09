@@ -248,7 +248,7 @@ theorem isPosDef_ofGramMatrix {ι : Type v} [Fintype ι] (b : Basis ι ℚ V) (G
     refine b.repr.injective ?_
     ext i
     simpa using congrFun h i)
-  simpa [Matrix.map_apply] using TauCeti.Matrix.PosDef.sum_pos hpd hrepr
+  simpa [Matrix.map_apply] using TauCeti.Matrix.sum_pos_of_posDef hpd hrepr
 
 open Classical in
 /-- An integral lattice constructed from a nonsingular Gram matrix is nondegenerate. -/

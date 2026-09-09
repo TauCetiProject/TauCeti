@@ -36,7 +36,7 @@ Cartan families need.
 * `Matrix.posDef_of_isEmpty`: a matrix on an empty index type is positive definite.
 * `TauCeti.Matrix.posDef_map_intCast`: an integer matrix that is positive definite over `ℤ` is
   positive definite over `ℚ`.
-* `TauCeti.Matrix.PosDef.sum_pos`: over a finite index type, positive definiteness read as the
+* `TauCeti.Matrix.sum_pos_of_posDef`: over a finite index type, positive definiteness read as the
   plain double sum rather than through finitely supported test vectors.
 * `TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit`: an invertible rational matrix of the
 
@@ -130,7 +130,7 @@ theorem posDef_map_intCast {A : Matrix n n ℤ} (hA : A.PosDef) :
 /-- **The quadratic form of a positive definite matrix, over a finite index type.**  Mathlib
 states positive definiteness through finitely supported test vectors; over a `Fintype` the
 condition reads as the plain double sum, which is the form the Gram-matrix calculations use. -/
-theorem PosDef.sum_pos [Fintype n] {A : _root_.Matrix n n ℚ} (hA : A.PosDef) {x : n → ℚ}
+theorem sum_pos_of_posDef [Fintype n] {A : _root_.Matrix n n ℚ} (hA : A.PosDef) {x : n → ℚ}
     (hx : x ≠ 0) : 0 < ∑ i, ∑ j, x i * A i j * x j := by
   classical
   have hne : (Finsupp.equivFunOnFinite.symm x) ≠ 0 := by
