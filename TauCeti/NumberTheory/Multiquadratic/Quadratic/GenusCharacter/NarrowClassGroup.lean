@@ -189,7 +189,7 @@ noncomputable def genusCharFunNarrowClassGroupHom
 Let `D = ∏ P ∈ s, P` be the prime-discriminant factorization for `K = ℚ(√d)`. If a nonzero
 integral ideal `I` has absolute norm coprime to `P`, then the singleton genus character of its
 narrow class at `P ∈ s` is `primeDiscriminantCharFun P (absNorm I)`. -/
-theorem genusCharFunNarrowClassGroupHom_mk0_eq_primeDiscriminantCharFun_absNorm
+@[simp] theorem genusCharFunNarrowClassGroupHom_mk0_eq_primeDiscriminantCharFun_absNorm
     {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
     (heven : ∀ P ∈ s, ∀ P' ∈ s,
       IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
