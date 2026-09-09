@@ -11,8 +11,8 @@ public import TauCeti.GroupTheory.GroupAction.Transitive
 /-!
 # Topological orbit-stabilizer for transitive actions
 
-For a continuous transitive action of a compact group `G` on a Hausdorff space `X`, the
-orbit-stabilizer equivalence is a homeomorphism
+For a continuous transitive action on a Hausdorff space `X`, if the quotient by the stabilizer is
+compact, then the orbit-stabilizer equivalence is a homeomorphism
 
 `G ⧸ MulAction.stabilizer G b ≃ₜ X`.
 
@@ -23,8 +23,8 @@ is compact, so its continuous bijection with the Hausdorff space `X` has continu
 
 * `TauCeti.continuous_quotientStabilizerEquiv` proves continuity of the algebraic
   orbit-stabilizer equivalence.
-* `TauCeti.quotientStabilizerHomeomorph` is its canonical topological upgrade for compact `G` and
-  Hausdorff `X`.
+* `TauCeti.quotientStabilizerHomeomorph` is its canonical topological upgrade for compact quotient
+  and Hausdorff `X`.
 * `TauCeti.quotientStabilizerHomeomorph_mk` and
   `TauCeti.quotientStabilizerHomeomorph_smul` record its representative and equivariance laws.
 -/
@@ -48,25 +48,25 @@ theorem continuous_quotientStabilizerEquiv (b : X) :
   funext g
   exact quotientStabilizerEquiv_mk G b g
 
-/-- For a continuous transitive action of a compact group on a Hausdorff space, the quotient by
-the stabilizer of a point is canonically homeomorphic to the space. -/
-noncomputable def quotientStabilizerHomeomorph [CompactSpace G] [T2Space X] (b : X) :
+/-- For a continuous transitive action on a Hausdorff space, a compact quotient by the stabilizer
+of a point is canonically homeomorphic to the space. -/
+noncomputable def quotientStabilizerHomeomorph (b : X)
+    [CompactSpace (G ⧸ (stabilizer G b))] [T2Space X] :
     G ⧸ (stabilizer G b) ≃ₜ X :=
-  (quotientStabilizerEquiv G b).toHomeomorphOfContinuousClosed
-    (continuous_quotientStabilizerEquiv G b)
-    (continuous_quotientStabilizerEquiv G b).isClosedMap
+  (continuous_quotientStabilizerEquiv G b).homeoOfEquivCompactToT2
 
 /-- The quotient-stabilizer homeomorphism sends the coset of `g` to `g • b`. -/
 @[simp]
-theorem quotientStabilizerHomeomorph_mk [CompactSpace G] [T2Space X]
-    (b : X) (g : G) :
+theorem quotientStabilizerHomeomorph_mk (b : X)
+    [CompactSpace (G ⧸ (stabilizer G b))] [T2Space X] (g : G) :
     quotientStabilizerHomeomorph G b (QuotientGroup.mk g) = g • b :=
   quotientStabilizerEquiv_mk G b g
 
 /-- The quotient-stabilizer homeomorphism is equivariant for the canonical left actions. -/
 @[simp]
-theorem quotientStabilizerHomeomorph_smul [CompactSpace G] [T2Space X]
-    (b : X) (g : G) (q : G ⧸ (stabilizer G b)) :
+theorem quotientStabilizerHomeomorph_smul (b : X)
+    [CompactSpace (G ⧸ (stabilizer G b))] [T2Space X]
+    (g : G) (q : G ⧸ (stabilizer G b)) :
     quotientStabilizerHomeomorph G b (g • q) =
       g • quotientStabilizerHomeomorph G b q :=
   quotientStabilizerEquiv_smul G b g q
