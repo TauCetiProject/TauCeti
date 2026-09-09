@@ -19,16 +19,8 @@ the point at infinity and, for a nonzero parameter, is given by
 
 `t ↦ (t / w(t), -1 / w(t))`
 
-This file proves that this map is an additive homomorphism into the points of the base-changed
-curve.
-
-The chord case is `WeierstrassCurve.add_eq_formalPoint_formalAddEval_of_ne_of_ne_formalInverseEval`.
-The inverse case follows from the already established compatibility with negation.  For doubling,
-one chooses a sufficiently high power of a uniformizer, so its valuation avoids the original
-parameter, both formal inverses, and its own formal inverse.  Three chord additions and cancellation
-then give the tangent case without a second coordinate computation.  The hypothesis `2 ≠ 0` in
-the completed field is used only to ensure that the auxiliary parameter can be chosen with
-valuation strictly below that of `2`.
+When `2 ≠ 0` in the completed field, this file proves that this map is an additive homomorphism
+into the points of the base-changed curve.
 
 ## Main definitions
 
