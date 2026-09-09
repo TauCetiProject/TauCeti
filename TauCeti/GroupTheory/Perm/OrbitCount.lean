@@ -23,9 +23,9 @@ by one, both stated so that they apply to a permutation of a *different* type th
 are compared with.
 
 * `TauCeti.orbitCount_conj`: conjugation does not change the number of orbits.
-* `TauCeti.orbitCount_eq_card_parts_partition`: on a finite type, the orbit count is the number
+* `Equiv.Perm.orbitCount_eq_card_parts_partition`: on a finite type, the orbit count is the number
   of parts in Mathlib's full, fixed-point-aware permutation partition.
-* `TauCeti.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
+* `Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
   the number of points minus the number of orbits.
 * `TauCeti.orbitCount_add_one_eq_of_semiconj`: if `σ : Equiv.Perm α` is carried by an injection
   `f : α → β` to `τ : Equiv.Perm β`, and `f` misses exactly one point `p` of `β`, then `τ` has one
@@ -89,14 +89,14 @@ theorem orbitCount_conj (g σ : Equiv.Perm α) : orbitCount (g * σ * g⁻¹) = 
 
 /-- Inverting a permutation does not change its number of orbits. -/
 @[simp]
-theorem orbitCount_inv (σ : Equiv.Perm α) : orbitCount σ⁻¹ = orbitCount σ := by
+theorem _root_.Equiv.Perm.orbitCount_inv (σ : Equiv.Perm α) : orbitCount σ⁻¹ = orbitCount σ := by
   exact Nat.card_congr (Quotient.congr (ra := SameCycle.setoid σ⁻¹)
     (rb := SameCycle.setoid σ) (Equiv.refl α) fun _ _ ↦ sameCycle_inv)
 
 /-- Transporting a permutation along an equivalence of its underlying type does not change its
 number of orbits. -/
 @[simp]
-theorem orbitCount_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
+theorem _root_.Equiv.orbitCount_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
     orbitCount (e.permCongr σ) = orbitCount σ := by
   refine (Nat.card_congr (Quotient.congr (ra := SameCycle.setoid σ)
     (rb := SameCycle.setoid (e.permCongr σ)) e fun x y ↦ ?_)).symm
@@ -121,7 +121,7 @@ variable [Fintype α] [DecidableEq α]
 This is the set-level decomposition underlying the full cycle partition: a nontrivial orbit is
 sent to the unique member of `cycleFactorsFinset`, while a singleton orbit is sent to its fixed
 point. -/
-noncomputable def orbitQuotientEquivCycleFactorsSumFixedPoints (σ : Equiv.Perm α) :
+private noncomputable def orbitQuotientEquivCycleFactorsSumFixedPoints (σ : Equiv.Perm α) :
     Quotient (Equiv.Perm.SameCycle.setoid σ) ≃
       σ.cycleFactorsFinset ⊕ {x : α // σ x = x} := by
   classical
@@ -182,7 +182,7 @@ noncomputable def orbitQuotientEquivCycleFactorsSumFixedPoints (σ : Equiv.Perm 
 
 /-- The number of permutation orbits is the number of parts in its full cycle partition. This
 identifies `orbitCount`, defined from `SameCycle`, with Mathlib's fixed-point-aware cycle data. -/
-theorem orbitCount_eq_card_parts_partition (σ : Equiv.Perm α) :
+theorem _root_.Equiv.Perm.orbitCount_eq_card_parts_partition (σ : Equiv.Perm α) :
     orbitCount σ = σ.partition.parts.card := by
   classical
   rw [orbitCount, Nat.card_eq_fintype_card,
@@ -202,30 +202,32 @@ theorem orbitCount_eq_card_parts_partition (σ : Equiv.Perm α) :
 
 /-- On a finite type, the number of orbits is the number of nontrivial cycles plus the number of
 fixed points. This is the unbundled bookkeeping form of
-`TauCeti.orbitCount_eq_card_parts_partition`. -/
-theorem orbitCount_eq_card_cycleType_add_card_sub_support (σ : Equiv.Perm α) :
+`Equiv.Perm.orbitCount_eq_card_parts_partition`. -/
+theorem _root_.Equiv.Perm.orbitCount_eq_card_cycleType_add_card_sub_support
+    (σ : Equiv.Perm α) :
     orbitCount σ =
       σ.cycleType.card + (Fintype.card α - σ.support.card) := by
   rw [orbitCount_eq_card_parts_partition, Equiv.Perm.card_parts_partition]
 
-private theorem card_le_sum_of_pos {s : Multiset ℕ} (hs : ∀ n ∈ s, 0 < n) : s.card ≤ s.sum := by
-  induction s using Multiset.induction_on with
-  | empty => simp
-  | @cons a s ih =>
-    simp only [Multiset.card_cons, Multiset.sum_cons]
-    simpa [Nat.add_comm] using
-      Nat.add_le_add (ih fun n hn ↦ hs n (by simp [hn])) (hs a (by simp))
-
 /-- The sign of a finite permutation is the parity of the number of points minus the number of
 orbits. Fixed points contribute once to both numbers and hence do not affect the sign. -/
-theorem sign_eq_neg_one_pow_card_sub_orbitCount (σ : Equiv.Perm α) :
+theorem _root_.Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount (σ : Equiv.Perm α) :
     Equiv.Perm.sign σ = (-1 : ℤˣ) ^ (Fintype.card α - orbitCount σ) := by
   rw [Equiv.Perm.sign_of_parts_partition, ← orbitCount_eq_card_parts_partition]
   have hle : orbitCount σ ≤ Fintype.card α := by
     rw [orbitCount_eq_card_parts_partition]
     calc
-      σ.partition.parts.card ≤ σ.partition.parts.sum :=
-        card_le_sum_of_pos fun n hn ↦ σ.partition.parts_pos hn
+      σ.partition.parts.card = (σ.partition.parts.sort (· ≥ ·)).length := by
+        rw [Multiset.length_sort]
+      _ ≤ (σ.partition.parts.sort (· ≥ ·)).sum :=
+        List.length_le_sum_of_one_le _ fun n hn ↦
+          σ.partition.parts_pos ((Multiset.mem_sort (· ≥ ·)).mp hn)
+      _ = σ.partition.parts.sum := by
+        calc
+          _ = (↑(σ.partition.parts.sort (· ≥ ·)) : Multiset ℕ).sum :=
+            (Multiset.sum_coe _).symm
+          _ = σ.partition.parts.sum :=
+            congrArg Multiset.sum (Multiset.sort_eq σ.partition.parts (· ≥ ·))
       _ = Fintype.card α := σ.partition.parts_sum
   have h : Fintype.card α + orbitCount σ =
       (Fintype.card α - orbitCount σ) + 2 * orbitCount σ := by
