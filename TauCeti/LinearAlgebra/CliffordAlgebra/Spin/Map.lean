@@ -96,7 +96,11 @@ theorem map_mem_spinGroup (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
     have hmap :
         (↑(Units.map (CliffordAlgebra.map f).toMonoidHom (spinGroup.toUnits x)) :
             CliffordAlgebra Q₂) = CliffordAlgebra.map f (x : CliffordAlgebra Q₁) :=
-      rfl
+      by
+        change ↑(Units.map (CliffordAlgebra.map f).toMonoidHom (spinGroup.toUnits x)) =
+          (CliffordAlgebra.map f).toMonoidHom
+            (↑(spinGroup.toUnits x) : CliffordAlgebra Q₁)
+        exact Units.coe_map (CliffordAlgebra.map f).toMonoidHom (spinGroup.toUnits x)
     rw [← hmap]
     exact hu
   · rw [Unitary.mem_iff]
