@@ -28,10 +28,6 @@ over an arbitrary commutative ring for smoothness and over a field for geometric
 
 * J. S. Milne, *Algebraic Groups* (2017), Chapters 12--13 and 17.
 * T. A. Springer, *Linear Algebraic Groups*, Sections 6.2--6.3.
-
-This advances the Borel-subgroup milestone in Layer 7, "Structure theory", of the
-ReductiveGroups roadmap: together with the existing solvability theorem, it supplies the smooth
-connected solvable standard subgroup that will be shown maximal among such subgroups.
 -/
 
 public section
