@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Function.Lp.Translation
+public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Restriction and set integration on finite-measure sets
@@ -37,7 +38,8 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {mu : Measure E} {p : ENNReal} [Fact (1 ≤ p)]
 
-private noncomputable def lpToLpOneCLM (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
+/-- The continuous inclusion from `Lᵖ` to `L¹` on a finite-measure space. -/
+noncomputable def lpToLpOneCLM (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
     [Fact (1 ≤ p)] : Lp F p μ →L[ℝ] Lp F 1 μ := by
   let hp : (1 : ENNReal) ≤ p := Fact.out
   let toFun : Lp F p μ → Lp F 1 μ := fun f =>
@@ -110,8 +112,11 @@ private noncomputable def lpToLpOneCLM (μ : Measure E) (p : ENNReal) [IsFiniteM
   exact hnorm_le
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace F] in
-private theorem lpToLpOneCLM_coeFn (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
+/-- The finite-measure `Lᵖ` to `L¹` inclusion has the original representative almost everywhere. -/
+theorem lpToLpOneCLM_coeFn (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
     [Fact (1 ≤ p)] (f : Lp F p μ) : lpToLpOneCLM μ p f =ᵐ[μ] f := by
+  -- No stable rewrite theorem exposes the representative of `LinearMap.mkContinuous`, so this
+  -- conversion unfolds the definition to apply `MemLp.coeFn_toLp`.
   change (Lp.memLp f).mono_exponent Fact.out |>.toLp f =ᵐ[μ] f
   exact MemLp.coeFn_toLp _
 
@@ -128,6 +133,7 @@ theorem lpToL1Restrict_coeFn (s : Set E) (hμs : mu s < ∞)
     (f : Lp F p mu) :
     lpToL1Restrict s hμs f =ᵐ[mu.restrict s] f := by
   let _ : IsFiniteMeasure (mu.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
+  -- Unfold the composition so the public inclusion and restriction representative lemmas apply.
   change lpToLpOneCLM (mu.restrict s) p
       (LpToLpRestrictCLM E F ℝ mu p s f) =ᵐ[mu.restrict s] f
   exact (lpToLpOneCLM_coeFn (mu.restrict s) p _).trans

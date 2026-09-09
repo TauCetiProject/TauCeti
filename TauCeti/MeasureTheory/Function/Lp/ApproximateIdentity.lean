@@ -19,7 +19,7 @@ This file defines the corresponding averaging operator on `Lᵖ` by the Bochner 
 as a continuous linear map of norm at most one, and proves that these operators converge strongly
 to the identity when the outer radii of the bumps tend to zero.  The result holds for `1 ≤ p < ∞`,
 for functions with values in an arbitrary real Banach space, and for every additive Haar measure
-on a finite-dimensional real normed space.
+on a proper real normed space with smooth bumps.
 
 The integral is taken directly in `Lᵖ`.  This avoids choosing pointwise representatives: translation
 is continuous in `Lᵖ`, so the average is a Bochner integral of a continuous compactly supported
@@ -39,6 +39,8 @@ by the same smooth kernel.
 * `TauCeti.norm_normedBumpLp_le_one`: this averaging operator is an `Lᵖ` contraction.
 * `TauCeti.tendsto_normedBumpLp`: normalized bumps whose radii shrink to zero converge strongly
   to the identity on `Lᵖ`.
+* `TauCeti.setIntegral_normedConvolution`: a finite-set integral formula for normalized-bump
+  convolution.
 
 ## References
 
@@ -53,17 +55,64 @@ noncomputable section
 namespace TauCeti
 
 open ContinuousLinearMap Filter MeasureTheory Metric Set
-open scoped Convolution ENNReal
+open scoped Convolution ENNReal Pointwise
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [BorelSpace E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [BorelSpace E] [ProperSpace E] [HasContDiffBump E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
+
+private theorem hasCompactSupport_normed_of_proper (phi : ContDiffBump (0 : E)) :
+    HasCompactSupport (phi.normed mu) := by
+  let _ : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompactSpace ℝ
+  exact phi.hasCompactSupport_normed
+
+/-- Integrating a normalized-bump convolution over a set can be done by integrating the
+normalized translates over the bump parameter. -/
+theorem setIntegral_normedConvolution (phi : ContDiffBump (0 : E)) {f : E → F}
+    (hf : Continuous f) (hfc : HasCompactSupport f) (s : Set E) :
+    (∫ t, phi.normed mu t • ∫ x in s, f (x - t) ∂mu ∂mu) =
+      ∫ x in s, (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) x ∂mu := by
+  have hF_cont : Continuous (Function.uncurry fun t x : E => phi.normed mu t • f (x - t)) := by
+    exact (phi.continuous_normed.comp continuous_fst).smul
+      (hf.comp (continuous_snd.sub continuous_fst))
+  have hF_cpt : HasCompactSupport
+      (Function.uncurry fun t x : E => phi.normed mu t • f (x - t)) := by
+    apply HasCompactSupport.intro
+      ((hasCompactSupport_normed_of_proper phi (mu := mu)).isCompact.prod
+        (hfc.isCompact.add (hasCompactSupport_normed_of_proper phi (mu := mu)).isCompact))
+    intro x hx
+    -- Expose the pairwise integrand before using the support of either factor.
+    change phi.normed mu x.1 • f (x.2 - x.1) = 0
+    by_cases ht : x.1 ∈ tsupport (phi.normed mu)
+    · have hxsum : x.2 ∉ tsupport f + tsupport (phi.normed mu) := by
+        intro hxsum
+        exact hx ⟨ht, hxsum⟩
+      have hsub : x.2 - x.1 ∉ tsupport f := by
+        intro hsub
+        apply hxsum
+        exact Set.mem_add.mpr ⟨x.2 - x.1, hsub, x.1, ht, sub_add_cancel _ _⟩
+      rw [image_eq_zero_of_notMem_tsupport hsub, smul_zero]
+    · rw [image_eq_zero_of_notMem_tsupport ht, zero_smul]
+  calc
+    (∫ t, phi.normed mu t • ∫ x in s, f (x - t) ∂mu ∂mu) =
+        ∫ t, ∫ x in s, phi.normed mu t • f (x - t) ∂mu ∂mu := by
+      apply integral_congr_ae
+      filter_upwards with t
+      rw [integral_smul]
+    _ = ∫ x in s, ∫ t, phi.normed mu t • f (x - t) ∂mu ∂mu :=
+      integral_integral_swap_of_hasCompactSupport
+        (μ := mu) (ν := mu.restrict s) hF_cont hF_cpt
+    _ = ∫ x in s, (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) x ∂mu := by
+      apply integral_congr_ae
+      filter_upwards with x
+      rw [convolution_lsmul]
 
 /-- The average of an `Lᵖ` class against the normalized form of a smooth bump centred at zero,
 before it is bundled as a continuous linear map by `TauCeti.normedBumpLp`. -/
 private def normedBumpFun (phi : ContDiffBump (0 : E)) (f : Lp F p mu) : Lp F p mu :=
   (phi.normed mu ⋆[lsmul ℝ ℝ, mu] fun h ↦ mu.translateLp p h f) 0
 
+omit [ProperSpace E] in
 private theorem normedBumpFun_apply (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
     normedBumpFun phi f = ∫ t, phi.normed mu t • mu.translateLp p (-t) f ∂mu := by
   rw [normedBumpFun, convolution_lsmul]
@@ -75,7 +124,7 @@ private theorem integrable_normed_smul_translateLp_neg (hp : p ≠ ∞)
   apply Continuous.integrable_of_hasCompactSupport
   · exact phi.continuous_normed.smul
       ((Measure.continuous_translateLp (mu := mu) hp f).comp continuous_neg)
-  · exact phi.hasCompactSupport_normed.smul_right
+  · exact (hasCompactSupport_normed_of_proper phi (mu := mu)).smul_right
 
 private theorem normedBumpFun_add (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (f g : Lp F p mu) :
     normedBumpFun phi (f + g) = normedBumpFun phi f + normedBumpFun phi g := by
@@ -86,6 +135,7 @@ private theorem normedBumpFun_add (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) 
   filter_upwards with t
   simp only [map_add, smul_add]
 
+omit [ProperSpace E] in
 private theorem normedBumpFun_smul (c : ℝ) (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
     normedBumpFun phi (c • f) = c • normedBumpFun phi f := by
   rw [normedBumpFun_apply, normedBumpFun_apply, ← integral_smul]
@@ -96,6 +146,7 @@ private theorem normedBumpFun_smul (c : ℝ) (phi : ContDiffBump (0 : E)) (f : L
 private theorem norm_normedBumpFun_le (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (f : Lp F p mu) :
     ‖normedBumpFun phi f‖ ≤ ‖f‖ := by
+  let _ : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompactSpace ℝ
   calc
     ‖normedBumpFun phi f‖ ≤
         ∫ t, ‖phi.normed mu t • mu.translateLp p (-t) f‖ ∂mu := by
@@ -157,6 +208,7 @@ theorem tendsto_normedBumpLp [CompleteSpace F] {I : Type*} {l : Filter I}
     (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
     (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) (f : Lp F p mu) :
     Tendsto (fun i ↦ normedBumpLp hp (phi i) mu f) l (nhds f) := by
+  let _ : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompactSpace ℝ
   have hval : ∀ i, normedBumpLp hp (phi i) mu f =
       ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] fun h ↦ mu.translateLp p h f) 0 := fun i ↦ by
     rw [normedBumpLp_apply, convolution_lsmul]
