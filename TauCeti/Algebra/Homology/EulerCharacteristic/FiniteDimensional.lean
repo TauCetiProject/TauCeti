@@ -50,11 +50,13 @@ universe u v
 
 namespace HomologicalComplex
 
-variable {k : Type u} [DivisionRing k]
+section Ring
 
-/-- The finrank support of a strictly bounded complex of vector spaces lies in any interval
+variable {R : Type u} [Ring R] [Nontrivial R]
+
+/-- The finrank support of a strictly bounded complex of modules lies in any interval
 supplied by its bounds. -/
-theorem finrankSupport_X_subset_Icc (K : CochainComplex (ModuleCat.{v} k) ℤ)
+theorem finrankSupport_X_subset_Icc (K : CochainComplex (ModuleCat.{v} R) ℤ)
     (a b : ℤ) [K.IsStrictlyGE a] [K.IsStrictlyLE b] :
     GradedObject.finrankSupport K.X ⊆ Finset.Icc a b := by
   rw [GradedObject.finrankSupport_subset_iff]
@@ -62,10 +64,10 @@ theorem finrankSupport_X_subset_Icc (K : CochainComplex (ModuleCat.{v} k) ℤ)
   exact ModuleCat.finrank_eq_zero_of_isZero
     (K.isZero_X_of_notMem_Icc a b (fun h => hn (Finset.mem_coe.2 h)))
 
-/-- The finrank support of the homology of a cohomologically bounded complex of vector spaces lies
+/-- The finrank support of the homology of a cohomologically bounded complex of modules lies
 in any interval supplied by its bounds. -/
 theorem finrankSupport_homology_subset_Icc
-    (K : CochainComplex (ModuleCat.{v} k) ℤ) (a b : ℤ)
+    (K : CochainComplex (ModuleCat.{v} R) ℤ) (a b : ℤ)
     [K.IsGE a] [K.IsLE b] :
     GradedObject.finrankSupport (fun n => K.homology n) ⊆ Finset.Icc a b := by
   rw [GradedObject.finrankSupport_subset_iff]
@@ -73,7 +75,9 @@ theorem finrankSupport_homology_subset_Icc
   exact ModuleCat.finrank_eq_zero_of_isZero
     (K.isZero_homology_of_notMem_Icc a b (fun h => hn (Finset.mem_coe.2 h)))
 
-variable (K : CochainComplex (FGModuleCat.{v} k) ℤ)
+end Ring
+
+variable {k : Type u} [DivisionRing k] (K : CochainComplex (FGModuleCat.{v} k) ℤ)
 
 /-- Mathlib's `finsum` Euler characteristic of a bounded complex of finite-dimensional vector
 spaces is the honest finite sum of its term dimensions over any finite set containing the bounding
