@@ -27,6 +27,8 @@ Everything here concerns one completion. The comparison of two completions along
   prime lying under the maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.mem_maximalIdeal_pow_iff`: membership in `𝔪 ^ n` is the
   valuation bound `≤ exp (-n)`, identifying the ideal filtration with the valuation filtration.
+* `IsDedekindDomain.HeightOneSpectrum.exists_ne_zero_mem_maximalIdeal_valued_lt`: the maximal
+  ideal contains a nonzero element whose valuation is below two prescribed nonzero bounds.
 * `IsDedekindDomain.HeightOneSpectrum.isAdic_maximalIdeal_adicCompletionIntegers`: the subspace
   topology on `𝒪_v` is the `𝔪`-adic one.
 * `IsDedekindDomain.HeightOneSpectrum.henselianLocalRing_adicCompletionIntegers`: `𝒪_v` is a
@@ -123,6 +125,51 @@ theorem mem_maximalIdeal_pow_iff {x : v.adicCompletionIntegers K} {n : ℕ} :
     simp
   rw [← hπn]
   exact Set.ext_iff.mp (hint.maximalIdeal_pow_eq_setOfPred_le_v_algebraMap_pow hπ n) x
+
+/-- The maximal ideal of the ring of integers of an adic completion contains a nonzero element
+whose valuation is below the valuations of `a` and `b`, and below `1`. -/
+theorem exists_ne_zero_mem_maximalIdeal_valued_lt {a b : v.adicCompletionIntegers K}
+    (ha : a ∈ IsLocalRing.maximalIdeal (v.adicCompletionIntegers K)) (ha0 : a ≠ 0)
+    (hb0 : b ≠ 0) :
+    ∃ s : v.adicCompletionIntegers K,
+      s ∈ IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ∧ s ≠ 0 ∧
+        Valued.v (s : v.adicCompletion K) < Valued.v (a : v.adicCompletion K) ∧
+        Valued.v (s : v.adicCompletion K) < Valued.v (b : v.adicCompletion K) ∧
+        Valued.v (s : v.adicCompletion K) < 1 := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (v.adicCompletionIntegers K)
+  have hπv : Valued.v (π : v.adicCompletion K) = exp (-1) := by
+    rw [← Algebra.algebraMap_ofSubsemiring_apply
+      (Valued.v : Valuation (v.adicCompletion K) (WithZero (Multiplicative ℤ))).valuationSubring π]
+    exact v.valued_algebraMap_eq_exp_neg_one_of_irreducible hπ
+  have haval0 : Valued.v (a : v.adicCompletion K) ≠ 0 := by
+    simp only [ne_eq, _root_.map_eq_zero, ZeroMemClass.coe_eq_zero]
+    exact ha0
+  have hbval0 : Valued.v (b : v.adicCompletion K) ≠ 0 := by
+    simp only [ne_eq, _root_.map_eq_zero, ZeroMemClass.coe_eq_zero]
+    exact hb0
+  obtain ⟨n, hna, hnb⟩ := exists_exp_neg_natCast_lt_and_lt haval0 hbval0
+  let s : v.adicCompletionIntegers K := π ^ n
+  have hsv : Valued.v (s : v.adicCompletion K) = exp (-(n : ℤ)) := by
+    simp only [s]
+    push_cast
+    rw [map_pow, hπv, ← exp_nsmul, nsmul_eq_mul]
+    congr 1
+    ring
+  have ha_le : Valued.v (a : v.adicCompletion K) ≤ exp (-1) := by
+    apply (v.mem_maximalIdeal_pow_iff (K := K) (x := a) (n := 1)).mp
+    simpa using ha
+  have hsm : s ∈ IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) := by
+    have h := v.mem_maximalIdeal_pow_iff (K := K) (x := s) (n := 1)
+    rw [pow_one] at h
+    apply h.mpr
+    rw [hsv]
+    exact (hna.trans_le ha_le).le
+  have hs0 : s ≠ 0 := pow_ne_zero _ hπ.ne_zero
+  refine ⟨s, hsm, hs0, ?_, ?_, ?_⟩
+  · rwa [hsv]
+  · rwa [hsv]
+  · rw [hsv, ← exp_zero, exp_lt_exp]
+    exact (exp_lt_exp.mp (hna.trans_le ha_le)).trans_le (by omega)
 
 /-! ### `𝒪_v` is a complete adic Henselian local ring
 
