@@ -263,9 +263,7 @@ instance congruenceSubgroup_finiteIndex (𝔪 : Modulus K) :
     refine isCongrOne_of_residue_eq_one hx ?_
       fun w _ ↦ isTotallyPositive_iff.mp (mem_totallyPositiveUnits.mp h2) w.1 w.2
     rw [← coe_residueHom 𝔪 ⟨x, hx⟩, MonoidHom.mem_ker.mp h1, Units.val_one]
-  refine ⟨fun h ↦ Subgroup.FiniteIndex.index_ne_zero (H := (residueHom 𝔪).ker ⊓
-    (totallyPositiveUnits.subgroupOf (primeToSubgroup 𝔪))) ?_⟩
-  exact Nat.eq_zero_of_zero_dvd (h ▸ Subgroup.index_dvd_of_le hle)
+  exact Subgroup.finiteIndex_of_le hle
 
 /-- The image of an integer unit is a unit at every finite place, hence lies in
 `primeToSubgroup 𝔪`. -/
