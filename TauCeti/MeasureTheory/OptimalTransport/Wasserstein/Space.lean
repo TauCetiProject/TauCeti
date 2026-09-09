@@ -351,24 +351,15 @@ section PseudoMetric
 
 variable [MeasurableSpace X] [PseudoMetricSpace X] [StandardBorelSpace X]
 
-/-- Two finite-moment laws are at finite Wasserstein distance. -/
+/-- Two finite-moment laws are at finite Wasserstein distance: this is the general finite-moment
+anchor criterion with the source law as the anchor. -/
 theorem wassersteinEDist_ne_top
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp : 1 ≤ p)
     (μ ν : WassersteinSpace p X) :
     wassersteinEDist p
-      ((μ : ProbabilityMeasure X) : Measure X) ((ν : ProbabilityMeasure X) : Measure X) ≠ ∞ := by
-  obtain ⟨x₀, _⟩ := hasFiniteMoment_def.1 μ.2
-  have hleft : wassersteinEDist p
-      ((μ : ProbabilityMeasure X) : Measure X) (Measure.dirac x₀) ≠ ∞ := by
-    rw [wassersteinEDist_comm hd]
-    exact (hasFiniteMoment_iff_wassersteinEDist_dirac_ne_top hd x₀ _).1 μ.2
-  have hright : wassersteinEDist p
-      (Measure.dirac x₀) ((ν : ProbabilityMeasure X) : Measure X) ≠ ∞ := by
-    exact (hasFiniteMoment_iff_wassersteinEDist_dirac_ne_top hd x₀ _).1 ν.2
-  apply ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hleft, hright⟩)
-  exact wassersteinEDist_triangle hd hp
-    ((μ : ProbabilityMeasure X) : Measure X) (Measure.dirac x₀)
-    ((ν : ProbabilityMeasure X) : Measure X)
+      ((μ : ProbabilityMeasure X) : Measure X) ((ν : ProbabilityMeasure X) : Measure X) ≠ ∞ :=
+  (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hp
+    (hasFiniteMoment μ)).1 (hasFiniteMoment ν)
 
 /-- The Wasserstein extended distance equips finite-moment laws with a pseudoemetric space
 structure whenever the ground distance is measurable and `1 ≤ p`. -/

@@ -74,6 +74,10 @@ what the gluing lemma consumes.
   basepoint independence, with `TauCeti.hasFiniteMoment_iff_memLp_edist` and
   `TauCeti.hasFiniteMoment_iff_wassersteinEDist_dirac_ne_top` testing the finite-moment predicate
   itself at a prescribed basepoint of a pseudometric ground space;
+* `TauCeti.hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment` — the same test against
+  a general finite-moment anchor, with
+  `TauCeti.hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top` recording that
+  the finite-moment hypothesis on the anchor cannot be dropped;
 * `TauCeti.wassersteinEDist_rpow_eq_transportCost` and
   `TauCeti.wassersteinEDist_eq_transportCost_rpow` — for `0 < p < ∞`, the exact bridge to Layer 1's
   transport cost of `edist ^ p`, with `TauCeti.isOptimalCoupling_edist_rpow_iff` identifying the
@@ -590,6 +594,53 @@ theorem hasFiniteMoment_iff_wassersteinEDist_dirac_ne_top
   (hasFiniteMoment_iff_memLp_edist (x := x)
       (hd.comp (measurable_const.prodMk measurable_id)).aestronglyMeasurable).trans
     (memLp_edist_iff_wassersteinEDist_dirac_ne_top hd x ν)
+
+section Anchor
+
+variable [StandardBorelSpace X]
+
+/-- A probability measure has finite `p`-moment exactly when it lies at finite `p`-Wasserstein
+distance from a finite-moment anchor.
+
+The hypothesis on the anchor is necessary, and
+`TauCeti.hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top` records that
+guardrail: an infinite-moment probability law always belongs to its own finite-distance component,
+but it does not have finite moment. -/
+theorem hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp : 1 ≤ p) {μ₀ ν : Measure X}
+    [IsProbabilityMeasure μ₀] [IsProbabilityMeasure ν] (hμ₀ : HasFiniteMoment p μ₀) :
+    HasFiniteMoment p ν ↔ wassersteinEDist p μ₀ ν ≠ ∞ := by
+  obtain ⟨x₀, hx₀⟩ := hasFiniteMoment_def.mp hμ₀
+  have hdirac₀ : wassersteinEDist p (Measure.dirac x₀) μ₀ ≠ ∞ :=
+    (memLp_edist_iff_wassersteinEDist_dirac_ne_top hd x₀ μ₀).mp hx₀
+  constructor
+  · intro hν
+    have hleft : wassersteinEDist p μ₀ (Measure.dirac x₀) ≠ ∞ := by
+      rw [wassersteinEDist_comm hd]
+      exact hdirac₀
+    have hright : wassersteinEDist p (Measure.dirac x₀) ν ≠ ∞ :=
+      (hasFiniteMoment_iff_wassersteinEDist_dirac_ne_top hd x₀ ν).mp hν
+    apply ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hleft, hright⟩)
+    exact wassersteinEDist_triangle hd hp μ₀ (Measure.dirac x₀) ν
+  · intro hν
+    apply (hasFiniteMoment_iff_wassersteinEDist_dirac_ne_top hd x₀ _).mpr
+    apply ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hdirac₀, hν⟩)
+    exact wassersteinEDist_triangle hd hp (Measure.dirac x₀) μ₀ ν
+
+/-- Finite moment of the anchor is exactly the condition under which its finite-distance component
+is the finite-moment space: the criterion above holds for every probability law if and only if the
+anchor itself has finite `p`-moment. Necessity is the case `ν = μ₀`, since every law lies at
+Wasserstein distance zero from itself. -/
+theorem hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp : 1 ≤ p) (μ₀ : Measure X)
+    [IsProbabilityMeasure μ₀] :
+    HasFiniteMoment p μ₀ ↔
+      ∀ (ν : Measure X) [IsProbabilityMeasure ν],
+        HasFiniteMoment p ν ↔ wassersteinEDist p μ₀ ν ≠ ∞ :=
+  ⟨fun hμ₀ _ _ ↦ hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hp hμ₀,
+    fun h ↦ (h μ₀).mpr (by simp)⟩
+
+end Anchor
 
 end MetricMoment
 
