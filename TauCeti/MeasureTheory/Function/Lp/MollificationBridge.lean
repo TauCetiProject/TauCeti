@@ -24,7 +24,11 @@ on finite-measure sets.
 The design follows LeanPool's `RellichKondrachov/L2Compactness/Smoothing.lean`, especially its
 `smoothFun` and `smoothL2` constructions, and Tau Ceti's
 `RepresentationTheory/Compact/Convolution.lean`, especially
-`convolutionCLM_toLp_apply`.
+`convolutionCLM_toLp_apply`.  The proof also uses Mathlib's
+`integral_integral_swap_of_hasCompactSupport` from
+`Mathlib/MeasureTheory/Integral/Prod.lean` and
+`Lp.ae_eq_of_forall_setIntegral_eq` from
+`Mathlib/MeasureTheory/Function/AEEqOfIntegral.lean`.
 -/
 
 public section
