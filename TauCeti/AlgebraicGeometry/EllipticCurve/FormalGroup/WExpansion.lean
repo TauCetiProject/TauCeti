@@ -50,6 +50,8 @@ equation at the substituted parameter rather than at `z`.
   a sibling of `eq_of_wEquation` and not a generalisation of it: filtering by total degree needs
   subtraction, so this one asks for `[CommRing S]` on the *coefficient algebra*. The curve's base
   ring `R` is a `CommSemiring` for both.
+* `WeierstrassCurve.algebraMap_wEquationRHS`: the equation's right-hand side commutes with an
+  algebra map, so a solution over a ring is a solution over any algebra over it.
 * `WeierstrassCurve.subst_wEquationRHS` and `WeierstrassCurve.subst_formalW_wEquation`:
   substituting a series `q` into the equation gives the equation at `q`, so `w(q)` solves it
   there. When moreover `constantCoeff q = 0`, `eq_subst_formalW_of_wEquation` combines this with
@@ -270,6 +272,16 @@ theorem wEquationRHS_def {A : Type*} [CommSemiring A] [Algebra R A] (W : Weierst
         algebraMap R A W.a₃ * v ^ 2 + algebraMap R A W.a₄ * q * v ^ 2 +
         algebraMap R A W.a₆ * v ^ 3 :=
   (rfl)
+
+/-- The right-hand side of the `w`-equation commutes with an algebra map, both the parameter and
+the unknown being carried along. This is the element-level companion of `map_wEquationRHS`, which
+transports series along a ring homomorphism; here the coefficients stay put and only the two
+arguments move up the tower. -/
+theorem algebraMap_wEquationRHS {A B : Type*} [CommSemiring A] [CommSemiring B] [Algebra R A]
+    [Algebra R B] [Algebra A B] [IsScalarTower R A B] (q v : A) :
+    algebraMap A B (wEquationRHS W q v) =
+      wEquationRHS W (algebraMap A B q) (algebraMap A B v) := by
+  simp only [wEquationRHS_def, map_add, map_mul, map_pow, ← IsScalarTower.algebraMap_apply]
 
 /-- The `w`-equation in `R⟦z⟧` itself, where the structure map is `PowerSeries.C`. This is the
 spelling the coefficient lemmas below match against. -/

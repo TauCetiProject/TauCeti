@@ -68,6 +68,9 @@ docstring says where its conclusion comes from.
   `WeierstrassCurve.formalInverseEval_mul_formalInverseDenomEval` : the defining formulas for
   `d(t)` and `ι(t)`, the last in the form `ι(t) * d(t) = -t` that avoids the series inverse.
 * `WeierstrassCurve.formalWEval_wEquation` : the `w`-equation at a parameter.
+* `WeierstrassCurve.eq_formalWEval_of_wEquation` : **`w(t)` is the only solution of the
+  `w`-equation lying in the ideal**, the evaluated counterpart of `WExpansion.lean`'s
+  `eq_of_wEquation`.
 * `WeierstrassCurve.formalWEval_ne_zero`, `WeierstrassCurve.formalInverseEval_ne_zero` : the two
   non-vanishing statements, and `WeierstrassCurve.algebraMap_formalWEval_ne_zero` for the image of
   `w(t)` in a nontrivial domain over `O`.
@@ -341,6 +344,43 @@ theorem formalWEval_wEquation {t : O} (ht : PowerSeries.HasEval t) :
   simp only [map_add, map_mul, map_pow] at h
   simpa [formalWEval, wEquationRHS_def, coe_evalAt, PowerSeries.eval₂_C,
     PowerSeries.eval₂_X] using h
+
+/-- **Uniqueness of the solution of the `w`-equation at a parameter.** For a parameter `t` of an
+adic ideal `I`, the value `w(t)` is the only element of `I` solving the `w`-equation at `t`.
+
+This is the evaluated counterpart of `WExpansion.lean`'s `eq_of_wEquation`, and it is proved
+differently: that one compares coefficients, and a value has none. Here the difference `s - w(t)`
+of two solutions factors as `c * (s - w(t))` with `c` a combination of the coefficients and of the
+two solutions that lies in `I`, so `1 - c` is a unit by Wedhorn 5.38 and the difference vanishes.
+Membership in `I` is what both hypotheses are for: it is what makes `c` topologically nilpotent.
+
+This is the step that recognises a point of the curve as a parametrised one: the coordinates of
+such a point supply *some* solution of the `w`-equation, and only this identifies it as `w(t)`. -/
+theorem eq_formalWEval_of_wEquation {I : Ideal O} (hI : IsAdic I) {t s : O} (ht : t ∈ I)
+    (hs : s ∈ I) (h : s = wEquationRHS W t s) : s = W.formalWEval t := by
+  have : NonarchimedeanRing O := hI ▸ I.nonarchimedean
+  have hE : PowerSeries.HasEval t := hI.isTopologicallyNilpotent_of_mem ht
+  set w := W.formalWEval t with hw_def
+  have hw : w = wEquationRHS W t w := W.formalWEval_wEquation hE
+  have hwI : w ∈ I := by simpa using W.formalWEval_mem (k := 1) hE (by simpa using ht)
+  -- the factor pulled out of the difference of the two sides of the equation
+  set c := W.a₁ * t + W.a₂ * t ^ 2 + W.a₃ * (s + w) + W.a₄ * (t * (s + w)) +
+    W.a₆ * (s ^ 2 + s * w + w ^ 2) with hc_def
+  have hsw : s + w ∈ I := add_mem hs hwI
+  have hcI : c ∈ I := by
+    refine add_mem (add_mem (add_mem (add_mem (Ideal.mul_mem_left _ _ ht)
+      (Ideal.mul_mem_left _ _ ?_)) (Ideal.mul_mem_left _ _ hsw))
+      (Ideal.mul_mem_left _ _ (Ideal.mul_mem_left _ _ hsw))) (Ideal.mul_mem_left _ _ ?_)
+    · rw [sq]; exact Ideal.mul_mem_left _ _ ht
+    · exact add_mem (add_mem (by rw [sq]; exact Ideal.mul_mem_left _ _ hs)
+        (Ideal.mul_mem_left _ _ hwI)) (by rw [sq]; exact Ideal.mul_mem_left _ _ hwI)
+  have hzero : (1 - c) * (s - w) = 0 := by
+    rw [wEquationRHS_def] at h hw
+    simp only [Algebra.algebraMap_self, RingHom.id_apply] at h hw
+    rw [hc_def]
+    linear_combination h - hw
+  exact sub_eq_zero.mp
+    (((hI.isTopologicallyNilpotent_of_mem hcI).isUnit_one_sub.mul_right_eq_zero).mp hzero)
 
 /-- `w` does not vanish at a parameter of `I` whose cube is nonzero: the factorisation
 `w(t) = t ^ 3 * u(t)` has a unit second factor. Over a domain the hypothesis is `t ≠ 0`. -/
