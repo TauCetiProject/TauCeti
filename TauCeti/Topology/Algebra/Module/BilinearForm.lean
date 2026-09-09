@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
-public import TauCeti.Analysis.Normed.Module.FiniteDimension
+-- Private: `ContinuousLinearMap.finrank_dual_eq` is used only inside proofs.
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Nondegeneracy of the bilinear form of a continuous linear map into the dual

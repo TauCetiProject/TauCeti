@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import TauCeti.Analysis.Calculus.Morse.Basic
-public import TauCeti.Analysis.Calculus.Sard.EqualDimension
 -- Private: used only inside proofs.
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.Sard.EqualDimension
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -150,11 +150,6 @@ theorem hasNondegenerateCriticalPointsOn_sub_iff (hU : IsOpen U) (hf : ContDiffO
     by_contra hs
     exact ha ⟨y, ⟨hyU, hs⟩, hy0⟩
 
-section Measurable
-
-variable [MeasurableSpace E] [BorelSpace E]
-  [MeasurableSpace (E →L[ℝ] ℝ)] [BorelSpace (E →L[ℝ] ℝ)]
-
 /-! ### Genericity -/
 
 /-- **Almost every linear perturbation of a `C²` function is Morse.** For a Haar measure `ν` on
@@ -163,10 +158,16 @@ nondegenerate critical points on the open set `U`.
 
 The exceptional set is the set of critical values on `U` of the differential `fderiv ℝ f`, a map
 between spaces of the same finite dimension, so it is null by the equal-dimensional case of
-Sard's theorem. -/
-theorem ae_hasNondegenerateCriticalPointsOn_sub (ν : Measure (E →L[ℝ] ℝ)) [ν.IsAddHaarMeasure]
+Sard's theorem.
+
+Only the dual carries a measurable structure in the statement, since that is where `ν` lives; the
+source `E` is measured only inside the proof, by Sard's lemma, and gets its Borel structure
+there. -/
+theorem ae_hasNondegenerateCriticalPointsOn_sub [MeasurableSpace (E →L[ℝ] ℝ)]
+    [BorelSpace (E →L[ℝ] ℝ)] (ν : Measure (E →L[ℝ] ℝ)) [ν.IsAddHaarMeasure]
     (hU : IsOpen U) (hf : ContDiffOn ℝ 2 f U) :
     ∀ᵐ a ∂ν, HasNondegenerateCriticalPointsOn (fun y ↦ f y - a y) U := by
+  borelize E
   have hdf : DifferentiableOn ℝ (fderiv ℝ f) U :=
     (hf.fderiv_of_isOpen (m := 1) hU (by norm_num)).differentiableOn one_ne_zero
   have hnull : ν (fderiv ℝ f '' {x ∈ U | ¬ Surjective (fderiv ℝ (fderiv ℝ f) x)}) = 0 := by
@@ -178,10 +179,12 @@ theorem ae_hasNondegenerateCriticalPointsOn_sub (ν : Measure (E →L[ℝ] ℝ))
   exact not_not.1 fun h ↦ ha ((hasNondegenerateCriticalPointsOn_sub_iff hU hf a).2 h)
 
 /-- The linear perturbations that make a `C²` function Morse on an open set are dense in the
-continuous dual. -/
+continuous dual. No measurable structure appears in the statement: the Haar measure that produces
+the density is an auxiliary object of the proof, which installs the Borel structure it needs. -/
 theorem dense_setOfPred_hasNondegenerateCriticalPointsOn_sub (hU : IsOpen U)
     (hf : ContDiffOn ℝ 2 f U) :
     Dense {a : E →L[ℝ] ℝ | HasNondegenerateCriticalPointsOn (fun y ↦ f y - a y) U} := by
+  borelize (E →L[ℝ] ℝ)
   refine Measure.dense_of_ae (μ := (addHaar : Measure (E →L[ℝ] ℝ))) ?_
   filter_upwards [ae_hasNondegenerateCriticalPointsOn_sub addHaar hU hf] with a ha using ha
 
@@ -195,8 +198,6 @@ theorem exists_norm_lt_hasNondegenerateCriticalPointsOn_sub (hU : IsOpen U)
     (dense_setOfPred_hasNondegenerateCriticalPointsOn_sub hU hf).exists_mem_open
       Metric.isOpen_ball ⟨0, Metric.mem_ball_self hε⟩
   exact ⟨a, by simpa [Metric.mem_ball, dist_zero_right] using hball, hmem⟩
-
-end Measurable
 
 end FiniteDimensional
 
@@ -212,7 +213,7 @@ section InnerProduct
 open InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {f : E → ℝ} {U : Set E}
+  {f : E → ℝ} {U : Set E}
 
 /-- **Almost every perturbation by a linear form `⟪v, ·⟫` of a `C²` function is Morse.** This is
 `TauCeti.ae_hasNondegenerateCriticalPointsOn_sub` transported along the Riesz isometry, which is a
@@ -221,8 +222,8 @@ gradient `∇f - v`, which is the shape the negative gradient flow is stated in.
 
 No measurable structure on the dual appears in the statement: the Borel one is installed inside
 the proof, where the Haar measure of the dual is the auxiliary object being transported. -/
-theorem ae_hasNondegenerateCriticalPointsOn_sub_inner (μ : Measure E) [μ.IsAddHaarMeasure]
-    (hU : IsOpen U) (hf : ContDiffOn ℝ 2 f U) :
+theorem ae_hasNondegenerateCriticalPointsOn_sub_inner [MeasurableSpace E] [BorelSpace E]
+    (μ : Measure E) [μ.IsAddHaarMeasure] (hU : IsOpen U) (hf : ContDiffOn ℝ 2 f U) :
     ∀ᵐ v ∂μ, HasNondegenerateCriticalPointsOn (fun y ↦ f y - ⟪v, y⟫_ℝ) U := by
   borelize (E →L[ℝ] ℝ)
   have hbad := ae_hasNondegenerateCriticalPointsOn_sub (addHaar : Measure (E →L[ℝ] ℝ)) hU hf
@@ -237,10 +238,12 @@ theorem ae_hasNondegenerateCriticalPointsOn_sub_inner (μ : Measure E) [μ.IsAdd
     addHaar).preimage_null hbad
 
 /-- The vectors `v` for which subtracting `⟪v, ·⟫` makes a `C²` function Morse on an open set are
-dense. -/
+dense. As above, the Haar measure witnessing the density is internal to the proof, so the
+statement mentions no measurable structure. -/
 theorem dense_setOfPred_hasNondegenerateCriticalPointsOn_sub_inner (hU : IsOpen U)
     (hf : ContDiffOn ℝ 2 f U) :
     Dense {v : E | HasNondegenerateCriticalPointsOn (fun y ↦ f y - ⟪v, y⟫_ℝ) U} := by
+  borelize E
   refine Measure.dense_of_ae (μ := (addHaar : Measure E)) ?_
   filter_upwards [ae_hasNondegenerateCriticalPointsOn_sub_inner addHaar hU hf] with v hv using hv
 
