@@ -32,8 +32,6 @@ representative, while changing that representative changes the summand only up t
 
 * `FDRep.cliffordSum`: the finite sum of `e` copies of the conjugate of `V` attached to every
   inertia coset.
-* `FDRep.cliffordSumEquiv`: its public identification with the displayed product representation.
-
 ## Main properties
 
 * `FDRep.finrank_cliffordSum` and `FDRep.character_cliffordSum`: its dimension and character.
@@ -72,16 +70,6 @@ noncomputable def cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
   FDRep.ofShrink <| Representation.ofModule' (k := k) (G := N)
     ((q : G ⧸ inertia V) → Fin e →
       _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ)
-
-/-- The representation carried by `V.cliffordSum e` is the product of the conjugates of `V`,
-with one copy for each element of `Fin e` and one summand for each inertia coset. -/
-noncomputable def cliffordSumEquiv {k : Type u} {G : Type v} [Field k] [Group G]
-    {N : Subgroup G} [N.Normal] (V : FDRep k N) [Finite (G ⧸ inertia V)] (e : ℕ) :
-    _root_.Representation.Equiv (V.cliffordSum e).ρ
-      (_root_.Representation.ofModule' (k := k) (G := N)
-        ((q : G ⧸ inertia V) → Fin e →
-          _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ)) :=
-  FDRep.ofShrinkEquiv _
 
 /-- The dimension of `V.cliffordSum e` is the number of inertia cosets times `e` times the
 dimension of `V`. -/
@@ -131,7 +119,7 @@ theorem character_cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
     rw [Pi.smul_apply, Pi.smul_apply, _root_.Representation.single_smul, one_smul,
       _root_.Representation.asModuleEquiv_apply]
     rfl
-  rw [LinearMap.trace_pi_apply_eq _ f htarget]
+  rw [LinearMap.trace_pi_of_apply_eq_dependent _ f htarget]
   let g (q : G ⧸ inertia V) :
       _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ →ₗ[k]
       _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ :=
