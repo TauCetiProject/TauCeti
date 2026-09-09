@@ -132,7 +132,7 @@ theorem _root_.Subgroup.profiniteIndex_eq_iSup_openSubgroup (H : Subgroup G) :
         isOpen' := Subgroup.isOpen_of_openSubgroup _ le_sup_right }
     let V' : {U : OpenSubgroup G // H ≤ U.toSubgroup} := ⟨V, le_sup_left⟩
     have hVpos : 0 < V.toSubgroup.index := by
-      rw [← H.index_map_quotient_eq_index_sup N.toSubgroup]
+      rw [← H.index_map_mk'_eq_index_sup N.toSubgroup]
       exact Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite
     calc
       Supernatural.ofNat
@@ -142,7 +142,7 @@ theorem _root_.Subgroup.profiniteIndex_eq_iSup_openSubgroup (H : Subgroup G) :
             (⟨V.toSubgroup.index,
               hVpos⟩ : ℕ+) := by
         apply congrArg Supernatural.ofNat
-        exact Subtype.ext (H.index_map_quotient_eq_index_sup N.toSubgroup)
+        exact Subtype.ext (H.index_map_mk'_eq_index_sup N.toSubgroup)
       _ ≤ ⨆ U : {U : OpenSubgroup G // H ≤ U.toSubgroup},
           Supernatural.ofNat
             (⟨U.1.toSubgroup.index,
@@ -157,7 +157,7 @@ theorem _root_.Subgroup.profiniteIndex_eq_iSup_openSubgroup (H : Subgroup G) :
         U.1.one_mem'
     have hdvd : U.1.toSubgroup.index ∣
         (H.map (QuotientGroup.mk' N.toSubgroup)).index := by
-      rw [H.index_map_quotient_eq_index_sup N.toSubgroup]
+      rw [H.index_map_mk'_eq_index_sup N.toSubgroup]
       exact Subgroup.index_dvd_of_le (sup_le U.2 fun _ hx ↦ hN hx)
     refine le_trans ?_ (le_iSup (fun N : OpenNormalSubgroup G ↦
       Supernatural.ofNat

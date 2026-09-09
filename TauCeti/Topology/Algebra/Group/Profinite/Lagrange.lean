@@ -84,8 +84,8 @@ theorem _root_.Subgroup.profiniteOrder_apply_eq_add_profiniteIndex (H : Subgroup
       · rw [padicValNat_eq_emultiplicity Subgroup.index_ne_zero_of_finite,
           padicValNat_eq_emultiplicity Subgroup.index_ne_zero_of_finite]
         apply emultiplicity_le_emultiplicity_of_dvd_right
-        rw [H.index_map_quotient_eq_index_sup M.toSubgroup,
-          H.index_map_quotient_eq_index_sup K.toSubgroup]
+        rw [H.index_map_mk'_eq_index_sup M.toSubgroup,
+          H.index_map_mk'_eq_index_sup K.toSubgroup]
         apply Subgroup.index_dvd_of_le
         exact sup_le_sup_left inf_le_right H
 
