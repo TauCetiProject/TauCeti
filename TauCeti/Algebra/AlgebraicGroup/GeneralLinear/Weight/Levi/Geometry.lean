@@ -431,6 +431,26 @@ def weightLeviCoordinateRingBaseChangeAlgEquiv
     IsLocalization.algEquivOfAlgEquiv _ _ p (by
       rw [Submonoid.map_powers, hp])
 
+/-- Base change sends a scalar tensored with a localized polynomial coordinate to that scalar
+times the same polynomial with its coefficients extended to the new base. -/
+@[simp]
+theorem weightLeviCoordinateRingBaseChangeAlgEquiv_tmul_algebraMap
+    (k K : Type u) [CommRing k] [CommRing K] [Algebra k K] (w : Fin N → ℤ)
+    (s : K) (p : MvPolynomial (WeightLeviIndex w) k) :
+    weightLeviCoordinateRingBaseChangeAlgEquiv k K w
+        (s ⊗ₜ[k] algebraMap (MvPolynomial (WeightLeviIndex w) k)
+          (WeightLeviCoordinateRing k w) p) =
+      s • algebraMap (MvPolynomial (WeightLeviIndex w) K)
+        (WeightLeviCoordinateRing K w) (MvPolynomial.map (algebraMap k K) p) := by
+  rw [weightLeviCoordinateRingBaseChangeAlgEquiv, AlgEquiv.trans_apply,
+    IsLocalization.Away.tensorProductEquivTMulRight_tmul]
+  rw [IsLocalization.algEquivOfAlgEquiv_eq]
+  change algebraMap _ _
+      (MvPolynomial.algebraTensorAlgEquiv k K (s ⊗ₜ[k] p)) = _
+  rw [MvPolynomial.algebraTensorAlgEquiv_tmul, Algebra.smul_def, map_mul,
+    ← IsScalarTower.algebraMap_apply K (MvPolynomial (WeightLeviIndex w) K)]
+  rw [Algebra.smul_def]
+
 /-- Scalar extension of the weight-Levi coordinate Hopf algebra is ring-equivalent to the
 weight-Levi coordinate Hopf algebra over the extended base ring. -/
 def weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv
@@ -442,6 +462,39 @@ def weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv
   (Algebra.TensorProduct.comm k (WeightLeviCoordinateRing k w) K).toRingEquiv.trans <|
   (weightLeviCoordinateRingBaseChangeAlgEquiv k K w).toRingEquiv.trans <|
   (weightLeviCoordinateAlgEquiv K w).symm.toRingEquiv
+
+/-- Base change carries each quotient generic-matrix entry of the weight Levi to the
+corresponding quotient generic-matrix entry over the new base. -/
+@[simp]
+theorem weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv_tmul_mk_genericMatrix_apply
+    (k K : Type u) [CommRing k] [CommRing K] [Algebra k K] (w : Fin N → ℤ)
+    (i j : Fin N) :
+    weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv k K w
+        (Ideal.Quotient.mk (weightLeviDefiningHopfIdeal k w).toIdeal
+          (coordinateHopfAlgebraAlgEquiv k N
+            (coordinateRingMap k N (MvPolynomial.X (i, j)))) ⊗ₜ[k] (1 : K)) =
+      Ideal.Quotient.mk (weightLeviDefiningHopfIdeal K w).toIdeal
+        (coordinateHopfAlgebraAlgEquiv K N
+          (coordinateRingMap K N (MvPolynomial.X (i, j)))) := by
+  rw [← genericMatrix_apply (R := k) (n := N) i j,
+    ← genericMatrix_apply (R := K) (n := N) i j,
+    ← Ideal.Quotient.mkₐ_eq_mk (R₁ := k),
+    ← Ideal.Quotient.mkₐ_eq_mk (R₁ := K)]
+  by_cases hij : w i = w j
+  · change (weightLeviCoordinateAlgEquiv K w).symm
+        (weightLeviCoordinateRingBaseChangeAlgEquiv k K w
+          ((1 : K) ⊗ₜ[k] weightLeviCoordinateAlgEquiv k w
+            (Ideal.Quotient.mkₐ k (weightLeviDefiningHopfIdeal k w).toIdeal
+              ((genericMatrix k N) i j)))) = _
+    rw [weightLeviCoordinateAlgEquiv_mk_genericMatrix_apply,
+      weightLeviLocalizedGenericMatrix_apply_of_eq k w hij,
+      IsScalarTower.toAlgHom_apply,
+      weightLeviCoordinateRingBaseChangeAlgEquiv_tmul_algebraMap,
+      MvPolynomial.map_X, one_smul,
+      weightLeviCoordinateAlgEquiv_symm_algebraMap_X]
+  · simp [weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv,
+      weightLeviQuotient_mk_genericMatrix_apply_of_ne k w hij,
+      weightLeviQuotient_mk_genericMatrix_apply_of_ne K w hij]
 
 /-- The weight Levi is geometrically connected over every field. -/
 theorem geometricallyConnectedCommHopfAlgProperty_weightLeviCoordinateHopfAlgebra
