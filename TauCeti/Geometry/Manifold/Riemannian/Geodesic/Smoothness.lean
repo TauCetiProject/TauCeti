@@ -50,9 +50,8 @@ variable
   [IsContMDiffRiemannianBundle I k E (fun x : M ↦ TangentSpace I x)]
 
 /-- **The geodesic spray is a `C^n` vector field on the tangent bundle.** A `C^(n + 1)` metric
-and `C^(n + 2)` manifold structure suffice: one derivative forms the Christoffel map, while one
-more makes the tangent-bundle coordinate changes `C^(n + 1)`. In particular, the spray of a
-smooth Riemannian manifold is smooth. -/
+and `C^(n + 2)` manifold structure suffice. In particular, the spray of a smooth Riemannian
+manifold is smooth. -/
 theorem contMDiff_geodesicSpray (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) :
     ContMDiff I.tangent I.tangent.tangent n
       (fun z : TangentBundle I M ↦
@@ -78,8 +77,8 @@ theorem contMDiff_geodesicSpray (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) :
   have hz₀ : z₀ ∈ eT.baseSet := FiberBundle.mem_baseSet_trivializationAt _ _ _
   rw [eT.contMDiffAt_section_iff hz₀]
   have hz₀e : z₀ ∈ e.source := by
-    change z₀.proj ∈ (chartAt H z₀.proj).source
-    exact mem_chart_source _ _
+    simpa only [e, TangentBundle.trivializationAt_source, mem_preimage] using
+      mem_chart_source H z₀.proj
   have hopen : IsOpen e.source := e.open_source
   suffices hcoord : ContMDiffOn I.tangent 𝓘(ℝ, E × E) n
       (fun z : TangentBundle I M ↦
@@ -88,13 +87,15 @@ theorem contMDiff_geodesicSpray (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) :
           (e z).2 (e z).2)) e.source by
     refine (hcoord z₀ hz₀e).contMDiffAt (hopen.mem_nhds hz₀e) |>.congr_of_eventuallyEq ?_
     · filter_upwards [hopen.mem_nhds hz₀e] with z hz
-      have hzbase : z.proj ∈ (chartAt H z₀.proj).source := hz
+      have hzbase : z.proj ∈ (chartAt H z₀.proj).source := by
+        simpa only [e, TangentBundle.trivializationAt_source, mem_preimage] using hz
       have hbase : z.proj ∈ (extChartAt I z₀.proj).source := by
         rw [extChartAt_source I z₀.proj]
         exact hzbase
-      have hze : z.proj ∈ e.baseSet := hz
+      have hze : z.proj ∈ e.baseSet := by
+        simpa only [e, TangentBundle.trivializationAt_baseSet] using hzbase
       have hzT : z ∈ eT.baseSet := by
-        change z ∈ (chartAt (ModelProd H E) z₀).source
+        rw [TangentBundle.trivializationAt_baseSet]
         exact (TangentBundle.mem_chart_source_iff z z₀).2 hzbase
       rw [← Bundle.Trivialization.continuousLinearMapAt_apply_of_mem ℝ eT hzT,
         ← Bundle.Trivialization.continuousLinearMapAt_apply_of_mem ℝ e hze,
@@ -109,7 +110,8 @@ theorem contMDiff_geodesicSpray (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) :
     exact Bundle.contMDiffOn_proj (E := fun x : M ↦ TangentSpace I x)
   have hmaps : MapsTo (fun z : TangentBundle I M ↦ z.proj) e.source e.baseSet := by
     intro z hz
-    exact hz
+    simpa only [e, TangentBundle.trivializationAt_source, mem_preimage,
+      TangentBundle.trivializationAt_baseSet] using hz
   have hΓ : ContMDiffOn I 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E) n
       (christoffelMap (finBasis ℝ E)
         ((leviCivita I M).isCovariantDerivativeOn (s := e.baseSet))) e.baseSet :=
