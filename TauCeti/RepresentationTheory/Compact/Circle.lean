@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Fourier.AddCircle
 public import TauCeti.MeasureTheory.Group.TypeTags
 public import TauCeti.RepresentationTheory.Compact.Character.Basic
-public import TauCeti.RepresentationTheory.Continuous.Transport
 public import TauCeti.RepresentationTheory.LinearCharacter
+import TauCeti.RepresentationTheory.Continuous.Transport
 
 /-!
 # The circle group: Fourier monomials are its finite-dimensional irreducible representations
