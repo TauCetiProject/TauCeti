@@ -57,8 +57,8 @@ group of `Q` embeds into the automorphism group of the residue extension, so an 
   pointwise.
 * `NumberField.restrictScalars_eq_of_inertiaDeg_eq_one`: at residue degree one the restriction
   of the relative Frobenius is `σ` itself, with no power.
-* `NumberField.isArithFrobAt_int_of_absNorm_eq`: a relative Frobenius at a prime of absolute norm
-  `p` is also a Frobenius over the underlying rational prime `p`.
+* `NumberField.isArithFrobAt_int_of_absNorm_eq`: a relative Frobenius above an ideal of absolute
+  norm `p` is also a Frobenius over the ideal `(p)` of `ℤ`.
 
 ## References
 
@@ -79,13 +79,13 @@ variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Alge
 
 omit [IsGalois K L] [Field M] [NumberField M] [Algebra K M] [Algebra M L]
   [IsScalarTower K M L] [Q.IsPrime] in
-/-- **A relative Frobenius at a degree-one prime is a rational Frobenius.**
-Let `P` be a prime of a number field `K` above the rational prime `p`, with absolute norm
-`p`. If `Q` lies above `P`, then a Frobenius at `Q` relative to `K` is also a Frobenius
-relative to `ℤ` after restricting its automorphism from `K`-linearity to `ℚ`-linearity.
+/-- **A relative Frobenius above an ideal of norm `p` is a Frobenius over `(p)`.**
+Let `P` be an ideal of a number field `K` above `(p)` with absolute norm `p`. If `Q` lies above
+`P`, then a Frobenius at `Q` relative to `K` is also a Frobenius relative to `ℤ` after
+restricting its automorphism from `K`-linearity to `ℚ`-linearity.
 
-The norm hypothesis is the residue-degree-one condition: it makes the two residue cardinalities
-in the definitions of the relative and rational Frobenius equal. -/
+The norm equality makes the two residue cardinalities in the definitions equal; no primality
+hypothesis on `p`, `P`, or `Q` is required. -/
 theorem isArithFrobAt_int_of_absNorm_eq {p : ℕ}
     (P : Ideal (𝓞 K)) [P.LiesOver (Ideal.span {(p : ℤ)})]
     (hnorm : Ideal.absNorm P = p) (Q : Ideal (𝓞 L)) [Q.LiesOver P]

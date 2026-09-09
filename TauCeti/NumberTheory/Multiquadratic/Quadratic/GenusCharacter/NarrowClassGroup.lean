@@ -27,6 +27,8 @@ theorem used here are developed in the preceding Tau Ceti modules.
   the map to the narrow class group.
 * `genusCharFunNarrowClassGroupHom`: the descended genus character on `Cl⁺(K)`.
 * `genusCharFunNarrowClassGroupHom_mk0`: its computation on a coprime integral ideal.
+* `genusCharFunNarrowClassGroupHom_mk0_eq_primeDiscriminantCharFun_absNorm`: the singleton
+  character evaluated at an ideal whose norm is coprime to the selected prime discriminant.
 * `genusCharFunNarrowClassGroupHom_eq_prod_singleton`: a subset-indexed narrow genus character is
   the product of its singleton characters.
 -/
@@ -182,6 +184,34 @@ noncomputable def genusCharFunNarrowClassGroupHom
     exact (Con.kerLift_mk (f := q) I).symm
   rw [he]
   exact Con.lift_mk' hχ I
+
+/-- **The genus character of an ideal is its character at the absolute norm.**
+Let `D = ∏ P ∈ s, P` be the prime-discriminant factorization for `K = ℚ(√d)`. If a nonzero
+integral ideal `I` has absolute norm coprime to `P`, then the singleton genus character of its
+narrow class at `P ∈ s` is `primeDiscriminantCharFun P (absNorm I)`. -/
+theorem genusCharFunNarrowClassGroupHom_mk0_eq_primeDiscriminantCharFun_absNorm
+    {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
+    (heven : ∀ P ∈ s, ∀ P' ∈ s,
+      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
+    (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    (hsf : Squarefree d) (I : Ideal (𝓞 K)) (hI : I ∈ (Ideal (𝓞 K))⁰)
+    (P : ℤ) (hP : P ∈ s) (hcop : IsCoprime (Ideal.absNorm I : ℤ) P) :
+    ((genusCharFunNarrowClassGroupHom hs heven hprod hmin hgen hsf
+        (Finset.singleton_subset_iff.mpr hP)
+        (NumberField.NarrowClassGroup.mk0 ⟨I, hI⟩) : ℤˣ) : ℤ) =
+      primeDiscriminantCharFun P (Ideal.absNorm I : ℤ) := by
+  have hcopP :
+      IsCoprime ((Ideal.absNorm I : ℤ)) (∏ P' ∈ ({P} : Finset ℤ), P') := by
+    rw [Finset.prod_singleton]
+    exact hcop
+  let I' : genusCharFunCoprimeIdealSubmonoid (K := K) {P} :=
+    ⟨⟨I, hI⟩, (mem_genusCharFunCoprimeIdealSubmonoid_iff _).mpr hcopP⟩
+  rw [← genusCharFun_singleton,
+    ← genusCharFunCoprimeIdealHom_apply
+      (fun P' hP' => hs P' (Finset.mem_singleton.mp hP' ▸ hP)) I',
+    ← genusCharFunNarrowClassGroupHom_mk0 hs heven hprod hmin hgen hsf
+      (Finset.singleton_subset_iff.mpr hP) I']
 
 /-- A genus character indexed by a set `t` of prime discriminants is the product of the
 characters indexed by the singletons in `t`.

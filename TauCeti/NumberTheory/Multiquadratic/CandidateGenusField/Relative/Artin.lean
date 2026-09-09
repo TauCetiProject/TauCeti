@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.G
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.Ramification
 public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 import TauCeti.NumberTheory.NumberField.Frobenius.Tower
-import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.SplitPrime
+import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.NarrowClassGroup
 import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminants
 
 /-!
@@ -26,10 +26,10 @@ constructed from sign patterns and genus characters agrees with the inverse Arti
 degree-one prime above an odd rational prime away from the discriminant. Namely, the Frobenius at
 such a prime is sent to the elementary-2 class of that prime.
 
-The proof compares both sides coordinate by coordinate. A relative Frobenius at a degree-one
-prime is also a Frobenius over the underlying rational prime, hence acts on the chosen square root
-of each prime discriminant by the corresponding Legendre symbol. The genus character of the
-prime's narrow class has the same value.
+This module exposes the local compatibility between relative Frobenius elements and singleton
+genus characters: both associate to each prime discriminant the same quadratic character value.
+Consequently, the sign-pattern isomorphism identifies Frobenius and Artin elements with the
+elementary-2 narrow ideal classes of the primes below them.
 
 This is the local compatibility that determines the Artin map on ideals. The classical account is
 in D. A. Cox, *Primes of the Form x² + ny²*, §6.A, and F. Lemmermeyer,
@@ -51,6 +51,16 @@ open scoped IsMulCommutative NumberField nonZeroDivisors
 namespace TauCeti.Multiquadratic
 
 variable {d : ℤ}
+
+/-- Relative automorphisms of the candidate genus field commute because their restrictions to
+the abelian Galois group over `ℚ` commute. -/
+theorem candidateGenusFieldRelativeAut_comm (hd : Squarefree d)
+    (σ τ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) :
+    σ * τ = τ * σ := by
+  apply AlgEquiv.restrictScalars_injective ℚ
+  change σ.restrictScalars ℚ * τ.restrictScalars ℚ =
+    τ.restrictScalars ℚ * σ.restrictScalars ℚ
+  exact IsMulCommutative.is_comm.comm (σ.restrictScalars ℚ) (τ.restrictScalars ℚ)
 
 /-- **The genus-field isomorphism sends Frobenius to the prime class.**
 Let q be an odd rational prime not dividing the discriminant of K = ℚ(√d), let qIdeal be a
@@ -92,6 +102,13 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
     apply (narrowElementaryTwoQuotientEquivRelativeSign hd hnsq).injective
     rw [(narrowElementaryTwoQuotientEquivRelativeSign hd hnsq).apply_symm_apply]
     apply Subtype.ext
+    have hsignCoe :
+        (↑(⟨candidateGenusFieldRelativeSignPattern hd σ,
+            candidateGenusFieldRelativeSignPattern_mem hd σ⟩ :
+          ↑(candidateGenusFieldRelativeSignSubmodule hd)) :
+            {P // P ∈ genusPrimeDiscriminants hd} → ZMod 2) =
+          candidateGenusFieldRelativeSignPattern hd σ := rfl
+    rw [hsignCoe, narrowElementaryTwoQuotientEquivRelativeSign_apply_coe]
     funext P
     let u : ℤˣ :=
       genusCharFunNarrowClassGroupHom
@@ -101,9 +118,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
         (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd
         (Finset.singleton_subset_iff.mpr P.property)
         (NarrowClassGroup.mk0 ⟨qIdeal, hqIdeal⟩)
-    change candidateGenusFieldRelativeSignPattern hd σ P = _
-    rw [narrowElementaryTwoQuotientEquivRelativeSign_apply_coe,
-      candidateGenusFieldBaseGenusCharLinearMap_apply,
+    rw [candidateGenusFieldBaseGenusCharLinearMap_apply,
       genusCharFunElementaryTwoQuotientFamilyLinearMap_apply,
       genusCharFunElementaryTwoQuotientLinearMap_mk,
       candidateGenusFieldRelativeSignPattern_apply,
@@ -134,8 +149,9 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
         (genusPrimeDiscriminants_spec hd).1 (genusPrimeDiscriminants_spec hd).2.1
         (genusPrimeDiscriminants_spec hd).2.2
         (minpoly_candidateGenusFieldBaseGen hd hnsq)
-        (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd qIdeal hqIdeal (by rwa [hnorm])
-        P.val P.property,
+        (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd qIdeal hqIdeal P.val P.property (by
+          rw [hnorm]
+          exact IsCoprime.prod_right_iff.mp hcop P.val P.property),
         hnorm,
         primeDiscriminantCharFun_eq_legendreSym
           ((genusPrimeDiscriminants_spec hd).1 P.val P.property) hodd,
@@ -160,14 +176,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinElement
     [qIdeal.LiesOver (Ideal.span {(q : ℤ)})] (hnorm : Ideal.absNorm qIdeal = q) :
     autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd hnsq
         (NumberFieldArithmetic.artinElement
-          (fun σ τ => by
-            apply AlgEquiv.restrictScalars_injective ℚ
-            -- Restriction of scalars is a monoid homomorphism, so commutativity follows from the
-            -- abelian absolute Galois group after exposing the two products.
-            change σ.restrictScalars ℚ * τ.restrictScalars ℚ =
-              τ.restrictScalars ℚ * σ.restrictScalars ℚ
-            exact IsMulCommutative.is_comm.comm
-              (σ.restrictScalars ℚ) (τ.restrictScalars ℚ)) qIdeal
+          (candidateGenusFieldRelativeAut_comm hd) qIdeal
           (fun Q hQ hQl =>
             (isUnramifiedIn_candidateGenusField hd hnsq qIdeal) Q hQ hQl)) =
       Multiplicative.ofAdd
@@ -184,13 +193,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinElement
   apply autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
     hd hnsq hodd hqD qIdeal hnorm Q
   exact NumberFieldArithmetic.isArithFrobAt_artinElement
-    (fun σ τ => by
-      apply AlgEquiv.restrictScalars_injective ℚ
-      -- As in the Artin element above, compare the two products after restricting to ℚ.
-      change σ.restrictScalars ℚ * τ.restrictScalars ℚ =
-        τ.restrictScalars ℚ * σ.restrictScalars ℚ
-      exact IsMulCommutative.is_comm.comm
-        (σ.restrictScalars ℚ) (τ.restrictScalars ℚ)) qIdeal
+    (candidateGenusFieldRelativeAut_comm hd) qIdeal
       (fun Q hQ hQl =>
         (isUnramifiedIn_candidateGenusField hd hnsq qIdeal) Q hQ hQl) Q
 
