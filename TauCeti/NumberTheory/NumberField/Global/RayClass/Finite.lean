@@ -327,7 +327,8 @@ private noncomputable def principalIdealPrimeToHom (𝔪 : Modulus K) :
     ((principalIdealPrimeToHom 𝔪 x : idealsPrimeTo 𝔪) :
         (FractionalIdeal (𝓞 K)⁰ K)ˣ) =
       toPrincipalIdeal (𝓞 K) K (x : Kˣ) := by
-  rfl
+  simp only [principalIdealPrimeToHom, MonoidHom.codRestrict_apply, MonoidHom.comp_apply,
+    Subgroup.subtype_apply]
 
 /-- The principal ideal of an element that is a unit at the finite part, viewed in the kernel of
 `classHom`. -/
@@ -365,9 +366,9 @@ instance finiteIndex_ray (𝔪 : Modulus K) : (ray 𝔪).FiniteIndex := by
     rw [MonoidHom.mem_ker, classHom, MonoidHom.comp_apply, QuotientGroup.mk'_apply,
       QuotientGroup.eq_one_iff]
     exact ⟨x, hxI⟩
-  have hkerindex : (classHom 𝔪).ker.index ≠ 0 := by
-    rw [Subgroup.index_ker]
-    exact Nat.card_ne_zero.mpr ⟨⟨1⟩, inferInstance⟩
+  let _ : (classHom 𝔪).ker.FiniteIndex := Subgroup.finiteIndex_ker _
+  have hkerindex : (classHom 𝔪).ker.index ≠ 0 :=
+    Subgroup.FiniteIndex.index_ne_zero
   have hrel : (ray 𝔪).relIndex (classHom 𝔪).ker ≠ 0 := by
     rw [Subgroup.relIndex, Subgroup.index_eq_card]
     refine Nat.card_ne_zero.mpr ⟨⟨1⟩, ?_⟩
