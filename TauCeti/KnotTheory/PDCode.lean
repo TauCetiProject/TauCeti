@@ -22,12 +22,15 @@ Crossing-free components are recorded separately.
 components. `FramedOrientedPDCode` further assigns an integer framing to every component. The
 forgetful maps between these three presentation layers let results use only the data they need.
 
-This is a code-level presentation: planarity and realization in the plane are intentionally
-separate predicates. Keeping the code finite and explicit makes it a hub for later Reidemeister
-moves and conversions to Gauss codes, without choosing a privileged geometric embedding.
+This is a code-level presentation: `PDCode` neither imposes planarity nor provides a geometric
+realization, so these must be supplied separately. Keeping the code finite and explicit avoids
+choosing a privileged geometric embedding.
 
-The encoding follows Lickorish, *An Introduction to Knot Theory*, GTM 175, Chapter 1. No planar
-realization theorem is asserted here; that is the subsequent geometric-to-combinatorial step.
+The PD-code encoding follows M. Mastin, *Links and Planar Diagram Codes*, Definitions 2--3,
+which develops the Bar-Natan/KnotTheory PD convention. The diagram and crossing-sign conventions
+follow W. B. R. Lickorish, *An Introduction to Knot Theory*, GTM 175, Chapter 1. The framing
+convention follows R. Gompf and A. Stipsicz, *4-Manifolds and Kirby Calculus*, GSM 20, Section 4.5,
+especially Proposition 4.5.8.
 
 ## Main definitions
 
@@ -323,9 +326,8 @@ theorem relabel_refl (D : PDCode n) :
     simp
   · exact PerfectMatching.congr_refl D.edgePair
   · simp
-  · change Equiv.arrowCongr (Equiv.refl _) (Equiv.refl _) D.overPair = D.overPair
-    rw [Equiv.arrowCongr_refl]
-    rfl
+  · funext i
+    simp
 
 /-- Consecutive relabellings compose their half-edge and crossing permutations. -/
 @[simp]
@@ -342,13 +344,9 @@ theorem relabel_relabel (D : PDCode n)
   · simpa only [relabel_edgePair, Equiv.Perm.mul_def] using
       PerfectMatching.congr_trans half₁ half₂ D.edgePair
   · simp
-  · have htransport := congrArg (fun e => e D.overPair)
-      (Equiv.arrowCongr_trans cross₁ (Equiv.refl Bool) cross₂ (Equiv.refl Bool))
-    change Equiv.arrowCongr cross₂ (Equiv.refl Bool)
-        (Equiv.arrowCongr cross₁ (Equiv.refl Bool) D.overPair) =
-      Equiv.arrowCongr (cross₂ * cross₁) (Equiv.refl Bool) D.overPair
-    simpa only [Equiv.Perm.mul_def, Equiv.trans_apply, Equiv.refl_trans] using
-      htransport.symm
+  · funext i
+    simp
+    rfl
 
 end PDCode
 
@@ -540,9 +538,8 @@ theorem relabel_refl (D : OrientedPDCode n) :
     D.relabel (Equiv.refl _) (Equiv.refl _) = D := by
   apply ext
   · exact PDCode.relabel_refl D.toPDCode
-  · change Equiv.arrowCongr (Equiv.refl _) (Equiv.refl _) D.orientation = D.orientation
-    rw [Equiv.arrowCongr_refl]
-    rfl
+  · funext h
+    simp
   · simp
 
 /-- Consecutive relabellings compose their half-edge and crossing permutations. -/
@@ -553,13 +550,9 @@ theorem relabel_relabel (D : OrientedPDCode n)
       D.relabel (half₂ * half₁) (cross₂ * cross₁) := by
   apply ext
   · exact PDCode.relabel_relabel D.toPDCode half₁ half₂ cross₁ cross₂
-  · have htransport := congrArg (fun e => e D.orientation)
-      (Equiv.arrowCongr_trans half₁ (Equiv.refl Bool) half₂ (Equiv.refl Bool))
-    change Equiv.arrowCongr half₂ (Equiv.refl Bool)
-        (Equiv.arrowCongr half₁ (Equiv.refl Bool) D.orientation) =
-      Equiv.arrowCongr (half₂ * half₁) (Equiv.refl Bool) D.orientation
-    simpa only [Equiv.Perm.mul_def, Equiv.trans_apply, Equiv.refl_trans] using
-      htransport.symm
+  · funext h
+    simp
+    rfl
   · simp
 
 end OrientedPDCode
@@ -640,9 +633,8 @@ def relabel (D : FramedOrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
     D.relabel (Equiv.refl _) (Equiv.refl _) = D := by
   apply ext
   · simp
-  · change Equiv.arrowCongr (Equiv.refl _) (Equiv.refl _) D.framing = D.framing
-    rw [Equiv.arrowCongr_refl]
-    rfl
+  · funext h
+    simp
   · simp
 /-- Consecutive framed relabellings compose their half-edge and crossing permutations. -/
 @[simp]
@@ -652,13 +644,9 @@ theorem relabel_relabel (D : FramedOrientedPDCode n)
       D.relabel (half₂ * half₁) (cross₂ * cross₁) := by
   apply ext
   · simp
-  · have htransport := congrArg (fun e => e D.framing)
-      (Equiv.arrowCongr_trans half₁ (Equiv.refl ℤ) half₂ (Equiv.refl ℤ))
-    change Equiv.arrowCongr half₂ (Equiv.refl ℤ)
-        (Equiv.arrowCongr half₁ (Equiv.refl ℤ) D.framing) =
-      Equiv.arrowCongr (half₂ * half₁) (Equiv.refl ℤ) D.framing
-    simpa only [Equiv.Perm.mul_def, Equiv.trans_apply, Equiv.refl_trans] using
-      htransport.symm
+  · funext h
+    simp
+    rfl
   · simp
 
 /-- Reverse every component orientation of a framed code, preserving all framing integers. -/
@@ -750,9 +738,9 @@ theorem orientedPDCodeUnknot_ne_empty (orientation : Bool) :
     orientedPDCodeUnknot orientation ≠ orientedPDCodeEmpty := by
   intro h
   have heq : ({orientation} : Multiset Bool) = 0 :=
-    orientedPDCodeUnlinkEquiv.injective (by
-      change orientedPDCodeUnlink {orientation} = orientedPDCodeUnlink 0
-      simpa only [orientedPDCodeUnknot, orientedPDCodeEmpty] using h)
+    by simpa only [orientedPDCodeUnknot, orientedPDCodeEmpty,
+      orientedPDCodeUnlink_crossinglessComponents] using
+      congrArg OrientedPDCode.crossinglessComponents h
   simpa using congrArg Multiset.card heq
 
 /-- The two explicit orientation choices give distinct crossing-free circle presentations. -/
@@ -760,9 +748,8 @@ theorem orientedPDCodeUnknot_true_ne_false :
     orientedPDCodeUnknot true ≠ orientedPDCodeUnknot false := by
   intro h
   have heq : ({true} : Multiset Bool) = {false} :=
-    orientedPDCodeUnlinkEquiv.injective (by
-      change orientedPDCodeUnlink {true} = orientedPDCodeUnlink {false}
-      simpa only [orientedPDCodeUnknot] using h)
+    by simpa only [orientedPDCodeUnknot, orientedPDCodeUnlink_crossinglessComponents] using
+      congrArg OrientedPDCode.crossinglessComponents h
   simp at heq
 
 /-- Reflection fixes every zero-crossing oriented PD-code. -/
