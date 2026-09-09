@@ -501,6 +501,7 @@ theorem _root_.Polynomial.Monic.discrSqrt_ne_zero {F E : Type*} [CommRing F] [Co
 /-- A monic polynomial becomes separable along a ring homomorphism into a field exactly when its
 discriminant does not become zero. No injectivity is needed: the discriminant commutes with base
 change because monicity preserves the degree. -/
+@[simp]
 theorem _root_.Polynomial.Monic.separable_map_iff_map_discr_ne_zero {K : Type*} [Field K]
     {f : R[X]}
     (hf : f.Monic) (φ : R →+* K) : (f.map φ).Separable ↔ φ f.discr ≠ 0 := by
@@ -518,6 +519,10 @@ theorem _root_.Polynomial.Monic.discr_ne_zero_iff_separable_map (K : Type*) [Fie
 
 /-- A monic integral polynomial has separable reduction modulo a prime exactly when that prime
 does not divide its discriminant. -/
+-- Tagged `@[simp high]` rather than `@[simp]`: at the default priority the general
+-- `Monic.separable_map_iff_map_discr_ne_zero` rewrites this left-hand side first, so the prime
+-- divisibility form would not be the simp normal form.
+@[simp high]
 theorem _root_.Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr {f : ℤ[X]} (hf : f.Monic)
     (p : ℕ) [Fact p.Prime] :
     (f.map (Int.castRingHom (ZMod p))).Separable ↔ ¬ (p : ℤ) ∣ f.discr := by

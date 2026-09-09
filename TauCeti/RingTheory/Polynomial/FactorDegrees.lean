@@ -42,9 +42,6 @@ and its relationship with irreducibility. Worked examples for `X ^ 5 - X - 1` ar
 * J. Neukirch, *Algebraic Number Theory*, Springer 1999, Chapter I, §8.
 -/
 
--- Provenance: the Tau Ceti `PolynomialGaloisGroups` roadmap README and its `Suggested.lean`,
--- which write down the Lean signature of the factor-degree multiset defined here.
-
 public section
 noncomputable section
 
@@ -75,6 +72,7 @@ theorem _root_.Polynomial.mem_factorDegrees_iff {f : ℤ[X]} {p d : ℕ} [Fact p
   simp [factorDegrees_def]
 
 /-- Every degree occurring in `f.factorDegrees p` is positive. -/
+@[grind →]
 theorem _root_.Polynomial.pos_of_mem_factorDegrees {f : ℤ[X]} {p d : ℕ} [Fact p.Prime]
     (hd : d ∈ f.factorDegrees p) : 0 < d := by
   obtain ⟨q, hq, rfl⟩ := mem_factorDegrees_iff.mp hd

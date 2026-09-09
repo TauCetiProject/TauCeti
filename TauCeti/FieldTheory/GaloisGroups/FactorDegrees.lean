@@ -40,9 +40,6 @@ polynomial carrier and API live in `TauCeti/RingTheory/Polynomial/FactorDegrees.
 * J. Neukirch, *Algebraic Number Theory*, Springer 1999, Chapter I, §8.
 -/
 
--- Provenance: the Tau Ceti `PolynomialGaloisGroups` roadmap README and its `Suggested.lean`,
--- which write down the Lean signatures for these factorization patterns of `X ^ 5 - X - 1`.
-
 public section
 noncomputable section
 
