@@ -517,7 +517,10 @@ theorem exists_norm_sub_le_mul_exp_atBot (hγ : IsIntegralCurveOn γ (fun _ x �
     have hneg : HasDerivWithinAt (fun t : ℝ ↦ -t) (-1) (Ici (-a)) t :=
       ((hasDerivAt_id t).neg).hasDerivWithinAt
     have hcomp := (hγ (-t) (hmaps ht)).scomp t hneg hmaps
-    simpa [Function.comp_def, gradient_neg] using hcomp
+    have hgrad : ∇ (-f) (γ (-t)) = -∇ f (γ (-t)) := by
+      simpa using
+        (gradient_const_smul (𝕜 := ℝ) (F := E) (f := f) (x := γ (-t)) (-1))
+    simpa [Function.comp_def, hgrad] using hcomp
   have hconv' : Tendsto (fun t ↦ γ (-t)) atTop (𝓝 p) := hconv.comp tendsto_neg_atTop_atBot
   obtain ⟨μ, hμ, C, hC, hbound⟩ := exists_norm_sub_le_mul_exp_atTop hrev hp.neg hconv'
   refine ⟨μ, hμ, C, hC, ?_⟩
