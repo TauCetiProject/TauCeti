@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.Clifford.Decomposition
+import TauCeti.LinearAlgebra.Trace.Pi
 import TauCeti.RepresentationTheory.OfModule
 import TauCeti.RepresentationTheory.Simple.Basic
 
@@ -35,12 +36,15 @@ representative, while changing that representative changes the summand only up t
 
 ## Main result
 
+* `TauCeti.clifford_restrict_iso_of_isAtom`: **Clifford's theorem for a specified constituent**.
 * `TauCeti.clifford_restrict_iso`: **Clifford's theorem, representation form**. It supplies a
   simple constituent, a positive common multiplicity, and an isomorphism from the restriction to
   `cliffordSum`.
 
 ## References
 
+* [Induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md),
+  Layer 5.
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 6.
 * C. W. Curtis and I. Reiner, *Representation Theory of Finite Groups and Associative Algebras*,
   §49.
@@ -56,27 +60,6 @@ universe u v
 namespace FDRep
 
 open TauCeti
-
-/-- The trace of a coordinatewise endomorphism of a finite dependent product is the sum of the
-traces on its factors. -/
-private theorem trace_pi_apply_same {k : Type u} {ι : Type v} {M : ι → Type*}
-    [Field k] [Fintype ι] [∀ i, AddCommGroup (M i)] [∀ i, Module k (M i)]
-    [∀ i, FiniteDimensional k (M i)]
-    (T : ((i : ι) → M i) →ₗ[k] ((i : ι) → M i)) (f : ∀ i, M i →ₗ[k] M i)
-    (hT : ∀ x i, T x i = f i (x i)) :
-    LinearMap.trace k ((i : ι) → M i) T = ∑ i, LinearMap.trace k (M i) (f i) := by
-  classical
-  let b (i : ι) := Module.Free.chooseBasis k (M i)
-  let _ (i : ι) : Fintype (Module.Free.ChooseBasisIndex k (M i)) := Fintype.ofFinite _
-  let B : Module.Basis (Σ i, Module.Free.ChooseBasisIndex k (M i)) k ((i : ι) → M i) :=
-    Pi.basis b
-  rw [LinearMap.trace_eq_matrix_trace k B, Matrix.trace, Fintype.sum_sigma]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [LinearMap.trace_eq_matrix_trace k (b i), Matrix.trace]
-  apply Finset.sum_congr rfl
-  intro j _
-  simp [LinearMap.toMatrix_apply, B, b, hT]
 
 /-- The finite sum of `e` copies of every conjugate of `V` indexed by the left cosets of its
 inertia group. A finite product of modules is their direct sum; `FDRep.ofShrink` only returns its
@@ -115,12 +98,13 @@ theorem finrank_cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
 summands. -/
 @[simp]
 theorem character_cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
-    {N : Subgroup G} [N.Normal] [Finite G] (V : FDRep k N)
-    [Fintype (G ⧸ inertia V)] (e : ℕ) (x : N) :
+    {N : Subgroup G} [N.Normal] [Finite G] (V : FDRep k N) (e : ℕ) (x : N) :
     (V.cliffordSum e).character x =
-      (e : k) * ∑ q : G ⧸ inertia V,
+      (e : k) * ∑ᶠ q : G ⧸ inertia V,
         (conjNormalFDRep (Quotient.out q) V).character x := by
   classical
+  let _ : Fintype (G ⧸ inertia V) := Fintype.ofFinite _
+  rw [finsum_eq_sum_of_support_subset (s := Finset.univ) _ (by simp)]
   rw [cliffordSum, character_ofShrink, _root_.Representation.character]
   let f (q : G ⧸ inertia V) :
       (Fin e → _root_.Representation.asModule
@@ -138,37 +122,33 @@ theorem character_cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
         f q (z q) := by
     intro z q
     ext i
-    change
-      (_root_.Representation.ofModule' (k := k) (G := N)
-        ((q : G ⧸ inertia V) → Fin e →
-          _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ)) x z q i =
-        (conjNormalFDRep (Quotient.out q) V).ρ x (z q i)
+    simp only [f]
     rw [TauCeti.Representation.ofModule'_apply]
     rw [Pi.smul_apply, Pi.smul_apply, _root_.Representation.single_smul, one_smul,
       _root_.Representation.asModuleEquiv_apply]
-  rw [trace_pi_apply_same _ f htarget]
+    rfl
+  rw [LinearMap.trace_pi_apply_eq _ f htarget]
   let g (q : G ⧸ inertia V) :
       _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ →ₗ[k]
-      _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ := {
-    toFun z := (conjNormalFDRep (Quotient.out q) V).ρ x z
-    map_add' := map_add _
-    map_smul' := map_smul _
-  }
+      _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ :=
+    (_root_.Representation.asModuleEquiv
+      (conjNormalFDRep (Quotient.out q) V).ρ).symm.conj
+        ((conjNormalFDRep (Quotient.out q) V).ρ x)
   have hg (q : G ⧸ inertia V) : LinearMap.trace k _ (g q) =
       (conjNormalFDRep (Quotient.out q) V).character x := by
-    have hconj : g q =
-        (_root_.Representation.asModuleEquiv
-          (conjNormalFDRep (Quotient.out q) V).ρ).symm.conj
-            ((conjNormalFDRep (Quotient.out q) V).ρ x) := by
-      ext z
-      rfl
-    rw [hconj, LinearMap.trace_conj', FDRep.character]
+    simp only [g]
+    rw [LinearMap.trace_conj', FDRep.character]
   have hf (q : G ⧸ inertia V) : LinearMap.trace k _ (f q) =
       (e : k) * (conjNormalFDRep (Quotient.out q) V).character x := by
     have hfg : ∀ z i, f q z i = g q (z i) := by
       intro z i
+      simp only [f, g, LinearEquiv.conj_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+        LinearEquiv.symm_symm]
+      apply (_root_.Representation.asModuleEquiv
+        (conjNormalFDRep (Quotient.out q) V).ρ).injective
+      rw [LinearEquiv.apply_symm_apply, _root_.Representation.asModuleEquiv_apply]
       rfl
-    rw [trace_pi_apply_same (f q) (fun _ ↦ g q) hfg]
+    rw [LinearMap.trace_pi_of_apply_eq (f q) id (fun _ ↦ g q) hfg]
     simp [hg]
   simp_rw [hf]
   rw [Finset.mul_sum]
@@ -220,17 +200,19 @@ private noncomputable def componentLinearEquiv
   simpa only [τ, g] using
     eComponent.trans (LinearEquiv.piCongrRight fun _ ↦ eConj)
 
-/-- **Clifford's theorem, representation form.** The restriction of an irreducible
-representation to a normal subgroup is isomorphic to `e` copies of every conjugate of one simple
-constituent, with the distinct conjugates indexed by the left cosets of its inertia group.
+/-- **Clifford's theorem for a specified constituent.** Given a simple constituent `σ` of the
+restriction of an irreducible representation to a normal subgroup, the restriction is isomorphic
+to `e` copies of every conjugate of `σ`, with the distinct conjugates indexed by the left cosets
+of its inertia group.
 
 Algebraic closure makes `k` a splitting field, so the Hom-space dimension in the multiplicity
 theorem is the actual number of copies. -/
-theorem clifford_restrict_iso {k : Type u} {G : Type v} [Field k] [Group G]
+theorem clifford_restrict_iso_of_isAtom {k : Type u} {G : Type v} [Field k] [Group G]
     {N : Subgroup G} [N.Normal] [Finite G] [IsAlgClosed k]
-    (W : FDRep k G) [Simple W] :
-    ∃ (V : FDRep k N) (_ : Simple V) (e : ℕ),
-      e ≠ 0 ∧ Nonempty (resFDRep N W ≅ V.cliffordSum e) := by
+    (W : FDRep k G) [Simple W] (σ : Subrepresentation (W.ρ.comp N.subtype))
+    (hσ : IsAtom σ) :
+    ∃ e : ℕ, e ≠ 0 ∧
+      Nonempty (resFDRep N W ≅ (FDRep.of σ.toRepresentation).cliffordSum e) := by
   classical
   let _ : Fintype G := Fintype.ofFinite G
   let _ : Fintype N := Fintype.ofFinite N
@@ -240,8 +222,6 @@ theorem clifford_restrict_iso {k : Type u} {G : Type v} [Field k] [Group G]
     (_root_.Representation.isSemisimpleRepresentation_iff_isSemisimpleModule_asModule
       (W.ρ.comp N.subtype)).mp
       (Representation.isSemisimpleRepresentation_comp_subtype W.ρ)
-  obtain ⟨σ, hσ, -⟩ :=
-    Representation.exists_isAtom_forall_nonempty_linearEquiv_conjSubrep (N := N) W.ρ
   let V : FDRep k N := FDRep.of σ.toRepresentation
   let _ : Representation.IsIrreducible V.ρ :=
     Representation.isIrreducible_toRepresentation_of_isAtom hσ
@@ -284,6 +264,34 @@ theorem clifford_restrict_iso {k : Type u} {G : Type v} [Field k] [Group G]
   have hfinal : Nonempty (_root_.Representation.Equiv
       (resFDRep N W).ρ (V.cliffordSum e).ρ) :=
     ⟨representationEquiv.trans (FDRep.ofShrinkEquiv target).symm⟩
-  exact ⟨V, inferInstance, e, Nat.ne_of_gt he, nonempty_fdRepIso_iff.mpr hfinal⟩
+  exact ⟨e, Nat.ne_of_gt he, nonempty_fdRepIso_iff.mpr hfinal⟩
+
+/-- **Clifford's theorem, representation form.** The restriction of an irreducible
+representation to a normal subgroup is isomorphic to `e` copies of every conjugate of one simple
+constituent, with the distinct conjugates indexed by the left cosets of its inertia group.
+
+Algebraic closure makes `k` a splitting field, so the Hom-space dimension in the multiplicity
+theorem is the actual number of copies. -/
+theorem clifford_restrict_iso {k : Type u} {G : Type v} [Field k] [Group G]
+    {N : Subgroup G} [N.Normal] [Finite G] [IsAlgClosed k]
+    (W : FDRep k G) [Simple W] :
+    ∃ (V : FDRep k N) (_ : Simple V) (e : ℕ),
+      e ≠ 0 ∧ Nonempty (resFDRep N W ≅ V.cliffordSum e) := by
+  classical
+  let _ : Fintype G := Fintype.ofFinite G
+  let _ : Representation.IsIrreducible W.ρ := FDRep.isIrreducible_of_simple W
+  let _ : IsSemisimpleModule k[N]
+      (_root_.Representation.asModule (W.ρ.comp N.subtype)) :=
+    (_root_.Representation.isSemisimpleRepresentation_iff_isSemisimpleModule_asModule
+      (W.ρ.comp N.subtype)).mp
+      (Representation.isSemisimpleRepresentation_comp_subtype W.ρ)
+  obtain ⟨σ, hσ, -⟩ :=
+    Representation.exists_isAtom_forall_nonempty_linearEquiv_conjSubrep (N := N) W.ρ
+  let V : FDRep k N := FDRep.of σ.toRepresentation
+  let _ : Representation.IsIrreducible V.ρ :=
+    Representation.isIrreducible_toRepresentation_of_isAtom hσ
+  let _ : Simple V := FDRep.simple_of_isIrreducible V
+  obtain ⟨e, he, h⟩ := clifford_restrict_iso_of_isAtom W σ hσ
+  exact ⟨V, inferInstance, e, he, h⟩
 
 end TauCeti
