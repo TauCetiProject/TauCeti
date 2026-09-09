@@ -34,6 +34,11 @@ for representations of a reductive Lie algebra unless its centre acts semisimply
 
 This is the single-weight criterion in Layer 9 of the Lie highest-weight roadmap. It supplies the
 isotypy step for the CAR module in Layer 9 of the spin-representation roadmap.
+
+## References
+
+The formal precedent is `TauCeti.isIsotypicOfType_of_forall_isHighestWeightVector` in
+`TauCeti/Algebra/Lie/HighestWeight/Isotypic.lean`.
 -/
 
 public section
