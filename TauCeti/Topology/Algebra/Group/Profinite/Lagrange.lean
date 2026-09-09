@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.NumberTheory.Padics.PadicVal.Basic
-public import TauCeti.Topology.Algebra.Group.Profinite.Index
+public import TauCeti.Topology.Algebra.Group.Profinite.Index.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Order
 
 /-!
