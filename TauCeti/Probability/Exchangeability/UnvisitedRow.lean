@@ -116,6 +116,7 @@ instance : IsProbabilityMeasure spareStateMeasure := by
 /-- The example's process: the coordinates of a fair-coin sequence in the alphabet `Fin 3`. -/
 abbrev spareStateProcess : ℕ → (ℕ → Fin 3) → Fin 3 := fun n x => x n
 
+/-- Each coordinate of the example is measurable. -/
 theorem measurable_spareStateProcess (n : ℕ) : Measurable (spareStateProcess n) :=
   measurable_pi_apply n
 
@@ -128,6 +129,7 @@ theorem spareStateMeasure_map_spareStateProcess (n : ℕ) :
 theorem spareStateProcess_iIndepFun : iIndepFun spareStateProcess spareStateMeasure :=
   iIndepFun_infinitePi (X := fun _ : ℕ => (id : Fin 3 → Fin 3)) fun _ => measurable_id
 
+/-- Every coordinate of the example is identically distributed with its zeroth coordinate. -/
 theorem spareStateProcess_identDistrib (n : ℕ) :
     IdentDistrib (spareStateProcess n) (spareStateProcess 0) spareStateMeasure
       spareStateMeasure :=

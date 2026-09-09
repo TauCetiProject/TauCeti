@@ -287,11 +287,13 @@ theorem visitTime_zero_of_eq (h : x 0 = a) : visitTime x a 0 = 0 := by
 
 /-- **A value the sequence never takes has junk visit times.** Every one of them is `Nat.nth`'s
 junk value `0`, so the whole successor row of such a value is read off at time zero. -/
+@[simp]
 theorem visitTime_eq_zero_of_forall_ne (h : ∀ n, x n ≠ a) : visitTime x a k = 0 :=
   visitTime_eq_iff.2 (Or.inr ⟨rfl, fun n hn => h n hn.1⟩)
 
 /-- **The successor row of a value the sequence never visits is constant**, equal to the
 sequence's entry at time one. -/
+@[simp]
 theorem successorArray_eq_of_forall_ne (h : ∀ n, x n ≠ a) : successorArray x a k = x 1 := by
   rw [successorArray_def, visitTime_eq_zero_of_forall_ne h]
 
