@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Real.Basic
-public import Mathlib.Geometry.Convex.Cone.Face.Lattice
-public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.Geometry.Convex.Cone.Basic
+public import TauCeti.Geometry.Convex.Cone.Face.Finite
 
 /-!
 # Toric cones in a real vector space with a lattice map
@@ -159,26 +158,14 @@ theorem IsLatticeRational.of_isFaceOf (hσ : IsLatticeRational i σ) (hτ : τ.I
     IsLatticeRational i τ := by
   classical
   obtain ⟨s, rfl⟩ := hσ
-  refine ⟨s.filter fun v ↦ i v ∈ τ, le_antisymm ?_ ?_⟩
-  · intro x hx
-    obtain ⟨c, hcs, hc0, hcx⟩ := PointedCone.mem_hull_set.1 (hτ.le hx)
-    rw [Finsupp.sum] at hcx
-    have hmem : ∀ y ∈ c.support, y ∈ PointedCone.hull ℝ (i '' (s : Set N)) := fun y hy ↦
-      PointedCone.subset_hull (hcs hy)
-    have hsum : ∑ j : c.support, c (j : V) • (j : V) ∈ τ := by
-      rw [Finset.univ_eq_attach, Finset.sum_attach c.support fun y ↦ c y • y, hcx]
-      exact hx
-    have hface : ∀ y ∈ c.support, y ∈ τ := fun y hy ↦
-      hτ.mem_of_sum_smul_mem (f := fun j : c.support ↦ (j : V)) (c := fun j ↦ c (j : V))
-        (fun j ↦ hmem j j.2) (fun j ↦ hc0 _) hsum ⟨y, hy⟩
-        (lt_of_le_of_ne (hc0 y) (Ne.symm (Finsupp.mem_support_iff.1 hy)))
-    rw [← hcx]
-    refine Submodule.sum_mem _ fun y hy ↦ PointedCone.smul_mem _ (hc0 y) ?_
-    obtain ⟨v, hv, rfl⟩ := hcs hy
-    exact PointedCone.subset_hull ⟨v, by simpa using ⟨hv, hface _ hy⟩, rfl⟩
-  · refine Submodule.span_le.2 ?_
-    rintro _ ⟨v, hv, rfl⟩
-    exact (Finset.mem_filter.1 hv).2
+  let F : (PointedCone.hull ℝ (i '' (s : Set N))).Face := ⟨τ, hτ⟩
+  refine ⟨s.filter fun v ↦ i v ∈ τ,
+    (F.eq_hull_inter_of_eq_hull (s.image i) (by simp)).trans ?_⟩
+  congr 1
+  ext x
+  simp only [Finset.coe_image, Set.mem_inter_iff, Set.mem_image, Finset.coe_filter,
+    Finset.mem_coe]
+  aesop
 
 /-- A face of a toric cone is a toric cone. Since the pairwise intersection of two cones of a fan
 is a face of each of them, this also supplies the toricity of those intersections. -/
