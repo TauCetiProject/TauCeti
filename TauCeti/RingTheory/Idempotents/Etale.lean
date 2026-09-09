@@ -15,9 +15,6 @@ The quotient of a commutative ring by an idempotent-generated ideal is étale ov
 ring. This applies to the coordinate algebras of clopen subschemes, including connected
 components when the prime spectrum is locally connected.
 
-The proof uses Mathlib's `IsLocalization.Away.quotient_of_isIdempotentElem` and
-`Algebra.Etale.of_isLocalizationAway` to view the quotient as a localization.
-
 ## References
 
 * The Stacks Project, Section 10.143, Étale ring maps.
