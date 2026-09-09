@@ -124,12 +124,22 @@ variable [hS : ∀ i, IsSimpleModule R (S i)]
 noncomputable def exactK0OfFamily (i : I) : ExactK0 (finiteModulesExactStructure R) :=
   ExactK0.of (S i)
 
+omit [IsArtinianRing R] hS in
+/-- A member of the family maps to its class in the exact Grothendieck group.
+
+This is a rewrite lemma rather than a simp lemma because simplifying through it makes the
+specialized Jordan--Hölder coordinate simp lemmas fail the `simpNF` linter. -/
+theorem exactK0OfFamily_apply (i : I) :
+    exactK0OfFamily S i = ExactK0.of (S i) :=
+  (Eq.refl _)
+
 @[simp]
 theorem jordanHolderCoordinate_exactK0OfFamily_self (i : I) :
     jordanHolderCoordinate R (S i) (exactK0OfFamily S i) = 1 :=
   jordanHolderCoordinate_self R (S i)
 
 /-- A Jordan--Hölder coordinate is zero on a nonisomorphic member of a simple family. -/
+@[simp]
 theorem jordanHolderCoordinate_exactK0OfFamily_eq_zero {i j : I}
     (hij : IsEmpty ((S j : Type u) ≃ₗ[R] S i)) :
     jordanHolderCoordinate R (S i) (exactK0OfFamily S j) = 0 :=
@@ -227,12 +237,6 @@ private theorem exactK0_of_type_mem_span_range_simple
     exact G.add_mem hNmem hQ
 
 omit hS in
-private theorem exactK0_of_mem_span_range_simple
-    (hexhaustive : IsExhaustiveSimpleFamily S) (M : FGModuleCat.{u} R) :
-    ExactK0.of M ∈ Submodule.span ℤ (Set.range (exactK0OfFamily S)) :=
-  exactK0_of_type_mem_span_range_simple S hexhaustive
-
-omit hS in
 /-- **An exhaustive family of simple classes spans `G₀(mod R)`.** Every finitely generated
 module over an Artinian ring has finite length, and induction on a simple-quotient filtration
 expresses its class as a sum of simple classes. -/
@@ -244,7 +248,7 @@ theorem span_range_exactK0OfFamily_eq_top
   clear hx
   induction x using ExactK0.induction_on with
   | zero => exact Submodule.zero_mem _
-  | of M => exact exactK0_of_mem_span_range_simple S hexhaustive M
+  | of M => exact exactK0_of_type_mem_span_range_simple S hexhaustive
   | add x y hx hy => exact Submodule.add_mem _ hx hy
   | neg x hx => exact Submodule.neg_mem _ hx
 
