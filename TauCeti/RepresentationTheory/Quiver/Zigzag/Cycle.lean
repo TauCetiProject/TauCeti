@@ -18,13 +18,14 @@ unit-valued ratio between the two backtracks they carry, and gauge equivalent pa
 isomorphic algebras.  This file settles the cycles, the invariant detecting that a parameter is
 *not* gauge trivial being the monodromy around a closed edge cycle.
 
-Around a cycle graph on `m` vertices the monodromy of the exterior parameter is `(-1) ^ m`, and
-consequently:
+Around a cycle graph on `m ≥ 3` vertices the monodromy of the exterior parameter is `(-1) ^ m`,
+and consequently:
 
-* on an even cycle it is gauge equivalent to the constant parameter, the gauge being the
-  alternating sign on the edges of the cycle, so it presents the ordinary zigzag algebra;
-* on an odd cycle, over a coefficient ring in which `2` is not zero, it is not gauge equivalent to
-  the constant parameter.
+* on an even cycle with at least three vertices it is gauge equivalent to the constant parameter,
+  the gauge being the alternating sign on the edges of the cycle, so it presents the ordinary
+  zigzag algebra;
+* on an odd cycle with at least three vertices, over a coefficient ring in which `2` is not zero,
+  it is not gauge equivalent to the constant parameter.
 
 In characteristic two the exterior parameter *is* the constant parameter, on any graph, so the two
 presentations agree identically by `TauCeti.SkewZigzagParameter.exterior_eq_one`.
@@ -42,12 +43,13 @@ vertex-fixing graded isomorphism classes with `H¹(G, kˣ)`.
 * `TauCeti.SkewZigzagParameter.exteriorCycle_ratio`: the exterior ratio of two incident edges of
   a cycle graph is one when they agree and minus one otherwise.
 * `TauCeti.SkewZigzagParameter.monodromy_exteriorCycle`: the monodromy of the exterior parameter
-  around a cycle graph on `m` vertices is `(-1) ^ m`.
+  around a cycle graph on `m ≥ 3` vertices is `(-1) ^ m`.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_exteriorCycle` and
-  `TauCeti.nonempty_algEquiv_zigzagAlgebra_exteriorCycle`: on an even cycle the exterior parameter
-  is gauge trivial, and therefore presents the ordinary zigzag algebra.
-* `TauCeti.SkewZigzagParameter.not_isGaugeEquivalent_one_exteriorCycle`: on an odd cycle, over a
-  ring in which `2` is not zero, it is not gauge trivial.
+  `TauCeti.nonempty_algEquiv_zigzagAlgebra_exteriorCycle`: on an even cycle with at least three
+  vertices the exterior parameter is gauge trivial, and therefore presents the ordinary zigzag
+  algebra.
+* `TauCeti.SkewZigzagParameter.not_isGaugeEquivalent_one_exteriorCycle`: on an odd cycle with at
+  least three vertices, over a ring in which `2` is not zero, it is not gauge trivial.
 
 ## References
 
@@ -75,9 +77,10 @@ section ExteriorCycle
 
 variable (k : Type w) [CommRing k] (m : ℕ) [NeZero m]
 
-/-- The **exterior skew-zigzag parameter of a cycle graph**: the two backtracks at a vertex of the
-cycle sum to zero.  On an odd cycle over a field of characteristic other than two this is the
-nontrivial skew class; on an even cycle it is gauge equivalent to the constant parameter. -/
+/-- The **exterior skew-zigzag parameter of a cycle graph**.  On a cycle with at least three
+vertices, the two backtracks at a vertex sum to zero.  On such an odd cycle over a field of
+characteristic other than two this is the nontrivial skew class; on such an even cycle it is gauge
+equivalent to the constant parameter. -/
 def exteriorCycle : SkewZigzagParameter k (cycleGraph m) :=
   exterior k (Or.inr fun _ _ _ _ h h' h'' => eq_or_eq_or_eq_of_cycleGraph_adj h h' h'')
 
@@ -131,9 +134,10 @@ private theorem neg_one_pow_val_add_one (hev : Even m) (v : Fin m) :
     have hodd : Odd v.val := Nat.not_even_iff_odd.mp (Nat.even_add_one.mp hev')
     rw [hv, Nat.mod_self, pow_zero, hodd.neg_one_pow, neg_neg]
 
-/-- **On an even cycle the exterior parameter is gauge equivalent to the constant parameter**, and
-so presents the ordinary zigzag relations.  The gauge is the alternating sign on the edges of the
-cycle, which closes up exactly because the number of vertices is even. -/
+/-- **On an even cycle with at least three vertices the exterior parameter is gauge equivalent to
+the constant parameter**, and so presents the ordinary zigzag relations.  The gauge is the
+alternating sign on the edges of the cycle, which closes up exactly because the number of vertices
+is even. -/
 theorem isGaugeEquivalent_one_exteriorCycle (hm : 3 ≤ m) (hev : Even m) :
     IsGaugeEquivalent (1 : SkewZigzagParameter k (cycleGraph m)) (exteriorCycle k m) := by
   rw [isGaugeEquivalent_iff]
@@ -172,9 +176,9 @@ theorem isGaugeEquivalent_one_exteriorCycle (hm : 3 ≤ m) (hev : Even m) :
     subst hjj
     exact ((exteriorCycle k m).ratio_self h).trans (div_self' _).symm
 
-/-- **On an odd cycle, over a coefficient ring in which `2` is not zero, the exterior parameter is
-not gauge equivalent to the constant parameter**: its monodromy around the cycle is `-1`.  For a
-field this is the hypothesis that the characteristic is not two. -/
+/-- **On an odd cycle with at least three vertices, over a coefficient ring in which `2` is not
+zero, the exterior parameter is not gauge equivalent to the constant parameter**: its monodromy
+around the cycle is `-1`.  For a field this is the hypothesis that the characteristic is not two. -/
 theorem not_isGaugeEquivalent_one_exteriorCycle (hm : 3 ≤ m) (hodd : Odd m) (h2 : (2 : k) ≠ 0) :
     ¬ IsGaugeEquivalent (1 : SkewZigzagParameter k (cycleGraph m)) (exteriorCycle k m) := by
   intro hgauge
@@ -194,15 +198,16 @@ section ExteriorCycleAlgebra
 
 variable (k : Type w) [CommRing k] (m : ℕ) [NeZero m]
 
-/-- **On an even cycle the exterior skew-zigzag relation quotient is the ordinary zigzag relation
-quotient.** -/
+/-- **On an even cycle with at least three vertices the exterior skew-zigzag relation quotient is
+the ordinary zigzag relation quotient.** -/
 theorem nonempty_algEquiv_nonisolatedZigzagQuotient_exteriorCycle (hm : 3 ≤ m) (hev : Even m) :
     Nonempty (skewZigzagQuotient k (cycleGraph m) (SkewZigzagParameter.exteriorCycle k m) ≃ₐ[k]
       nonisolatedZigzagQuotient k (cycleGraph m)) :=
   nonempty_algEquiv_nonisolatedZigzagQuotient_of_isGaugeEquivalent_one k (cycleGraph m)
     (SkewZigzagParameter.isGaugeEquivalent_one_exteriorCycle hm hev)
 
-/-- **On an even cycle the exterior skew-zigzag algebra is the public zigzag algebra.** -/
+/-- **On an even cycle with at least three vertices the exterior skew-zigzag algebra is the public
+zigzag algebra.** -/
 theorem nonempty_algEquiv_zigzagAlgebra_exteriorCycle (hm : 3 ≤ m) (hev : Even m) :
     Nonempty (skewZigzagQuotient k (cycleGraph m) (SkewZigzagParameter.exteriorCycle k m) ≃ₐ[k]
       zigzagAlgebra k (cycleGraph m)) := by
