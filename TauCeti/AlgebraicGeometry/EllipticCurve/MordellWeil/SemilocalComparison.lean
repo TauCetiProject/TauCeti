@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.LocalCondition
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.SelmerGroupA
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
+public import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
 
 /-!
 # The semilocal comparison of `2`-descent at the good finite places

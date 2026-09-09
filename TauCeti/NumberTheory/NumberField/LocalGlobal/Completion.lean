@@ -61,10 +61,9 @@ def completionAlgHom {L : Type*} [Field L] [NumberField L] [Algebra K L]
   toRingHom := v.adicCompletionExtension K L w
   commutes' x := v.adicCompletionExtension_coe K L w x
 
-/-- The algebra map of the canonical completion algebra is `completionAlgHom`.
-
-Not `@[simp]`: `algebraMap_adicCompletionExtensionAlgebra` already simplifies the left-hand side
-to the underlying `adicCompletionExtension`, so the `simpNF` linter rejects this wrapper theorem. -/
+/-- The algebra map of the canonical completion algebra is `completionAlgHom`. -/
+-- Not `@[simp]`: `algebraMap_adicCompletionExtensionAlgebra` already simplifies the left-hand side
+-- to the underlying `adicCompletionExtension`, so the `simpNF` linter rejects this wrapper theorem.
 theorem algebraMap_eq_completionAlgHom {L : Type*} [Field L] [NumberField L] [Algebra K L]
     (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
     [w.asIdeal.LiesOver v.asIdeal] :
