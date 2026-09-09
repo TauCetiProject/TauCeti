@@ -14,8 +14,8 @@ public import TauCeti.LinearAlgebra.TensorProduct.Basis
 Points of a reduced finite-type algebra valued in an algebraically closed extension detect
 not only its elements but also tensors with any vector space. This allows identities in a
 family of vectors to be checked at every geometric point of the parameter algebra.
-The proof uses `Module.Basis.map_baseChange_repr` to reduce to the Nullstellensatz
-point-separation theorem `eq_of_forall_algHom_apply_eq`.
+The proof uses `TensorProduct.tensor_eq_of_forall_tensorComponent_eq` to reduce to the
+Nullstellensatz point-separation theorem `eq_of_forall_algHom_apply_eq`.
 -/
 
 public section
@@ -33,12 +33,11 @@ theorem tensor_eq_of_forall_map_algHom_eq
     (h : ∀ p : B →ₐ[k] K,
       TensorProduct.map p.toLinearMap LinearMap.id x =
         TensorProduct.map p.toLinearMap LinearMap.id y) : x = y := by
-  let b := Module.Free.chooseBasis k M
-  apply (b.baseChange B).repr.injective
-  ext i
+  apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
+  intro φ
   apply eq_of_forall_algHom_apply_eq (k := k) (K := K)
   intro p
-  simpa only [← AlgHom.toLinearMap_apply, Module.Basis.map_baseChange_repr] using
-    congrArg (fun z ↦ (b.baseChange K).repr z i) (h p)
+  simpa only [LinearMap.tensorComponent_map, LinearMap.comp_id,
+    AlgHom.toLinearMap_apply] using congrArg (LinearMap.tensorComponent φ) (h p)
 
 end TauCeti

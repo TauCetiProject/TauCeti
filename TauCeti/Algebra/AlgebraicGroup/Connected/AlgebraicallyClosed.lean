@@ -47,9 +47,6 @@ connectedness; no finite-type hypothesis is required.
 
 * J. S. Milne, *Algebraic Groups* (2017), §2.a.
 
-This is the algebraically-closed-field reduction for Layer 3, "Identity component and component
-group", of the ReductiveGroups roadmap. It is the first reduction toward expressing geometric
-connectedness using a chosen algebraic closure of the ground field.
 -/
 
 public section

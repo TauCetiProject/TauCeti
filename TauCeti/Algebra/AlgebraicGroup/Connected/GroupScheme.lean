@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.Comultiplication
 public import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
+public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Connected
 
 /-!
 # The identity-component affine group scheme
@@ -34,6 +35,8 @@ hypothesis used when testing identity components of closed subgroups against a g
 * `TauCeti.FiniteTypeCommHopfAlgCat.geometricallyConnected_identityComponent`: geometric
   connectedness of the identity component.
 * `TauCeti.FiniteTypeCommHopfAlgCat.identityComponentSpec`: its affine group scheme.
+* `TauCeti.FiniteTypeCommHopfAlgCat.geometricallyConnected_identityComponentSpec`: geometric
+  connectedness of its structural morphism.
 * `TauCeti.FiniteTypeCommHopfAlgCat.identityComponentSpecι`: the canonical closed immersion into
   the ambient affine group scheme.
 * `TauCeti.FiniteTypeCommHopfAlgCat.identityComponentPrimeSpectrumHomeomorph`: the identification
@@ -47,9 +50,6 @@ hypothesis used when testing identity components of closed subgroups against a g
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 6.7.
 
-This advances Layer 3, "Identity component `G⁰` and component group `π₀(G)`", of the
-ReductiveGroups roadmap by constructing `G⁰` over an algebraically closed field.  Descent,
-geometric base-change compatibility, and construction of `π₀(G)` remain.
 -/
 
 public section
@@ -143,6 +143,14 @@ noncomputable def identityComponentSpec
     Grp (Over (Spec (CommRingCat.of k))) :=
   CommHopfAlgCat.quotientSpec H.obj
     (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H))
+
+/-- The structural morphism of the identity-component affine group scheme is geometrically
+connected. -/
+theorem geometricallyConnected_identityComponentSpec
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    GeometricallyConnected (identityComponentSpec H).X.hom :=
+  (geometricallyConnectedCommHopfAlg_iff_geometricallyConnected_hopfSpec k
+    (identityComponent H).obj).mp (geometricallyConnected_identityComponent H)
 
 /-- The identity-component group scheme is represented by its coordinate Hopf algebra. -/
 theorem identityComponentSpec_X_left
