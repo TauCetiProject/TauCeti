@@ -33,7 +33,7 @@ namespace FGModuleCat
 variable {R : Type u} [Ring R]
 
 /-- The module underlying an object of `FGModuleCat R` is finite. -/
-theorem moduleFinite_forget₂_obj (X : FGModuleCat.{v} R) :
+instance moduleFinite_forget₂_obj (X : FGModuleCat.{v} R) :
     Module.Finite R ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).obj X) := X.property
 
 /-- Forgetting the finite-generation witness does not change finrank. -/

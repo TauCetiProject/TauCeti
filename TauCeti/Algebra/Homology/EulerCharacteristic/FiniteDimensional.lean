@@ -62,11 +62,11 @@ theorem finrankSupport_X_subset_Icc (K : CochainComplex (ModuleCat.{v} k) ℤ)
   exact ModuleCat.finrank_eq_zero_of_isZero
     (K.isZero_X_of_notMem_Icc a b (fun h => hn (Finset.mem_coe.2 h)))
 
-/-- The finrank support of the homology of a strictly bounded complex of vector spaces lies in any
-interval supplied by its bounds. -/
+/-- The finrank support of the homology of a cohomologically bounded complex of vector spaces lies
+in any interval supplied by its bounds. -/
 theorem finrankSupport_homology_subset_Icc
     (K : CochainComplex (ModuleCat.{v} k) ℤ) (a b : ℤ)
-    [K.IsStrictlyGE a] [K.IsStrictlyLE b] :
+    [K.IsGE a] [K.IsLE b] :
     GradedObject.finrankSupport (fun n => K.homology n) ⊆ Finset.Icc a b := by
   rw [GradedObject.finrankSupport_subset_iff]
   intro n hn
@@ -105,11 +105,20 @@ theorem finrank_homology_forget (n : ℤ) :
 vector spaces is the honest finite sum of the dimensions of its homology objects.  The homology on
 the right is computed in `FGModuleCat k`; exactness of the forgetful functor identifies it with the
 homology used on the left. -/
-theorem homologyEulerChar_forgetFG_eq_sum_finrank (a b : ℤ) [K.IsStrictlyGE a]
-    [K.IsStrictlyLE b] {s : Finset ℤ} (hs : Finset.Icc a b ⊆ s) :
+theorem homologyEulerChar_forgetFG_eq_sum_finrank (a b : ℤ) [K.IsGE a]
+    [K.IsLE b] {s : Finset ℤ} (hs : Finset.Icc a b ⊆ s) :
     homologyEulerChar
       (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K) =
       ∑ n ∈ s, (n.negOnePow : ℤ) * Module.finrank k (K.homology n) := by
+  let F := forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)
+  let _ : CochainComplex.IsGE ((F.mapHomologicalComplex _).obj K) a := by
+    rw [CochainComplex.isGE_iff]
+    intro i hi
+    exact (K.exactAt_of_isGE a i hi).map F
+  let _ : CochainComplex.IsLE ((F.mapHomologicalComplex _).obj K) b := by
+    rw [CochainComplex.isLE_iff]
+    intro i hi
+    exact (K.exactAt_of_isLE b i hi).map F
   rw [homologyEulerChar_eq_sum_finSet_of_finrankSupport_subset
     (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K) s]
   · apply Finset.sum_congr rfl

@@ -12,7 +12,8 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 # Homology and the forgetful functor from `FGModuleCat`
 
 This file records the comparison between taking homology in `FGModuleCat` and taking homology
-after forgetting to `ModuleCat`.
+after forgetting to `ModuleCat`.  It lets invariants of homology objects, such as finrank, be
+transported between the two categories for Euler-characteristic computations.
 -/
 
 public section

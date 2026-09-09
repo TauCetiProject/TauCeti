@@ -17,9 +17,10 @@ statements one strict inequality at a time. An argument that runs over the degre
 complex instead wants the two bounds packaged as a single finite interval `Finset.Icc a b`, so
 that membership in the summation range is the only case distinction left.
 
-This file records the resulting two statements: outside `Finset.Icc a b` both the terms and the
-cohomology of a complex strictly supported in `[a, b]` vanish. They are the finiteness input to
-alternating-sum (Euler characteristic) computations over a bounded complex.
+This file records the resulting two statements: outside `Finset.Icc a b`, the terms of a strictly
+bounded complex vanish, while its cohomology vanishes under the corresponding cohomological
+bounds. They are the finiteness input to alternating-sum (Euler characteristic) computations over
+a bounded complex.
 
 ## Main results
 
@@ -46,10 +47,10 @@ theorem isZero_X_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsStric
   · exact K.isZero_of_isStrictlyGE a n h
   · exact K.isZero_of_isStrictlyLE b n (by omega)
 
-/-- The homology of a strictly bounded cochain complex is zero outside any interval supplied by
-its bounds. -/
-theorem isZero_homology_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsStrictlyGE a]
-    [K.IsStrictlyLE b] {n : ℤ} [K.HasHomology n] (hn : n ∉ Finset.Icc a b) :
+/-- The homology of a cochain complex is zero outside any interval supplied by its cohomological
+bounds. -/
+theorem isZero_homology_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsGE a]
+    [K.IsLE b] {n : ℤ} [K.HasHomology n] (hn : n ∉ Finset.Icc a b) :
     IsZero (K.homology n) := by
   rw [Finset.mem_Icc] at hn
   rcases lt_or_ge n a with h | h
