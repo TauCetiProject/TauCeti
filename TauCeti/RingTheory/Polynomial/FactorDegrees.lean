@@ -23,8 +23,7 @@ and its relationship with irreducibility. Worked examples for `X ^ 5 - X - 1` ar
 ## Main declarations
 
 * `Polynomial.factorDegrees`: the multiset of factor degrees of `f` modulo `p`.
-* `Polynomial.factorDegrees_def`: the defining equation, which is the only way to unfold the
-  carrier outside this file.
+* `Polynomial.factorDegrees_def`: a convenient defining equation for the carrier.
 * `Polynomial.mem_factorDegrees_iff`: a number occurs as a factor degree exactly when it is the
   degree of a normalized irreducible factor of the reduction.
 * `Polynomial.factorDegrees_mul`: the factor degrees of a product with nonzero reductions are the
@@ -56,8 +55,7 @@ noncomputable def _root_.Polynomial.factorDegrees (f : ℤ[X]) (p : ℕ) [Fact p
   Multiset.map Polynomial.natDegree
     (normalizedFactors (f.map (Int.castRingHom (ZMod p))))
 
-/-- The defining equation for `Polynomial.factorDegrees`, which the definition itself does not
-expose outside this file. -/
+/-- A convenient defining equation for `Polynomial.factorDegrees`. -/
 theorem _root_.Polynomial.factorDegrees_def (f : ℤ[X]) (p : ℕ) [Fact p.Prime] :
     f.factorDegrees p = Multiset.map Polynomial.natDegree
       (normalizedFactors (f.map (Int.castRingHom (ZMod p)))) :=
