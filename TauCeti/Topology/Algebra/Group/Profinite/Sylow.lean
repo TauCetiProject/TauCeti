@@ -63,8 +63,8 @@ def IsProPSylow (p : ℕ) {G : Type u} [Group G] [TopologicalSpace G]
 
 variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] {P : Subgroup G}
 
-/-- The defining conditions for a Sylow pro-`p` subgroup, available to modules that only see
-the declaration and not its body. -/
+/-- A subgroup is Sylow pro-`p` exactly when it is closed, pro-`p`, and its image in every
+quotient by an open normal subgroup has index prime to `p`. -/
 theorem isProPSylow_iff : IsProPSylow p P ↔
     IsClosed (P : Set G) ∧ IsProP p P ∧
       ∀ U : OpenNormalSubgroup G, ¬ p ∣ (P.map (QuotientGroup.mk' U.toSubgroup)).index :=
