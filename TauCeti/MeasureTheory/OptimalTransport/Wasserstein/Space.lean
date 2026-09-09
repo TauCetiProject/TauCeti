@@ -28,7 +28,9 @@ inside a single component are finite. On an ordinary pseudometric space, finite 
 point is equivalent to finite Wasserstein distance from the Dirac mass at any point.
 Consequently `WassersteinSpace p X` is canonically equivalent, after choosing a point `x₀`, to
 the component anchored at `δ_[x₀]`, and it carries the same Wasserstein pseudometric without a
-basepoint appearing in its definition.
+basepoint appearing in its definition. More generally, every finite-moment probability measure
+anchors exactly the same carrier; this identification is measurable in both directions and is an
+isometry for the Wasserstein pseudometrics.
 
 When moreover the ground space is Polish and its distance separates points, both pseudometrics
 are metrics. The measurable structures are the subtype structures inherited from
@@ -49,6 +51,9 @@ pseudometrics and is measurable in both directions.
 * `TauCeti.WassersteinSpace p X` — probability laws with finite `p`-moment;
 * `TauCeti.WassersteinSpace.equivComponent` — identification with a Dirac-anchored component.
 * `TauCeti.WassersteinSpace.isometryEquivComponent` — the isometric form of that identification.
+* `TauCeti.WassersteinSpace.measurableEquivComponentOfFiniteMoment` — identification with the
+  component of an arbitrary finite-moment anchor;
+* `TauCeti.WassersteinSpace.isometryEquivComponentOfFiniteMoment` — its isometric form.
 
 ## References
 
@@ -347,9 +352,55 @@ theorem measurable_equivComponent_symm (x₀ : X) :
 
 end MetricGround
 
+section GeneralAnchor
+
+variable [MeasurableSpace X] [PseudoMetricSpace X] {μ₀ : ProbabilityMeasure X}
+
+/-- A finite-moment anchor identifies the usual finite-moment Wasserstein space with its
+finite-distance component. The equivalence leaves the underlying probability measure unchanged,
+hence is measurable in both directions: both carriers inherit the measurable structure of
+`ProbabilityMeasure`. -/
+def measurableEquivComponentOfFiniteMoment
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp : 1 ≤ p)
+    (hμ₀ : HasFiniteMoment p (μ₀ : Measure X)) :
+    WassersteinSpace p X ≃ᵐ WassersteinComponent p μ₀ where
+  toFun μ := WassersteinComponent.mk (μ : ProbabilityMeasure X)
+    ((hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hp hμ₀).mp
+      μ.hasFiniteMoment)
+  invFun μ := mk (μ : ProbabilityMeasure X)
+    ((hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hp hμ₀).mpr
+      μ.wassersteinEDist_anchor_ne_top)
+  left_inv μ := ext <| by
+    rw [coe_mk]
+    exact WassersteinComponent.coe_mk _ _
+  right_inv μ := WassersteinComponent.ext <| by
+    rw [WassersteinComponent.coe_mk]
+    exact coe_mk _ _
+  measurable_toFun := WassersteinComponent.measurable_mk measurable_toProbabilityMeasure _
+  measurable_invFun := measurable_mk WassersteinComponent.measurable_toProbabilityMeasure _
+
+@[simp]
+theorem coe_measurableEquivComponentOfFiniteMoment
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp : 1 ≤ p)
+    (hμ₀ : HasFiniteMoment p (μ₀ : Measure X)) (μ : WassersteinSpace p X) :
+    WassersteinComponent.toProbabilityMeasure
+        (measurableEquivComponentOfFiniteMoment hd hp hμ₀ μ) =
+      (μ : ProbabilityMeasure X) :=
+  WassersteinComponent.coe_mk _ _
+
+@[simp]
+theorem coe_measurableEquivComponentOfFiniteMoment_symm
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp : 1 ≤ p)
+    (hμ₀ : HasFiniteMoment p (μ₀ : Measure X)) (μ : WassersteinComponent p μ₀) :
+    toProbabilityMeasure ((measurableEquivComponentOfFiniteMoment hd hp hμ₀).symm μ) =
+      WassersteinComponent.toProbabilityMeasure μ :=
+  coe_mk _ _
+
+end GeneralAnchor
+
 section PseudoMetric
 
-variable [MeasurableSpace X] [PseudoMetricSpace X] [StandardBorelSpace X]
+variable [MeasurableSpace X] [PseudoMetricSpace X]
 
 /-- Two finite-moment laws are at finite Wasserstein distance: this is the general finite-moment
 anchor criterion with the source law as the anchor. -/
@@ -360,6 +411,8 @@ theorem wassersteinEDist_ne_top
       ((μ : ProbabilityMeasure X) : Measure X) ((ν : ProbabilityMeasure X) : Measure X) ≠ ∞ :=
   (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hp
     (hasFiniteMoment μ)).1 (hasFiniteMoment ν)
+
+variable [StandardBorelSpace X]
 
 /-- The Wasserstein extended distance equips finite-moment laws with a pseudoemetric space
 structure whenever the ground distance is measurable and `1 ≤ p`. -/
@@ -433,6 +486,52 @@ distance. -/
 theorem dist_equivComponent (x₀ : X) (μ ν : WassersteinSpace p X) :
     dist (equivComponent x₀ μ) (equivComponent x₀ ν) = dist μ ν :=
   (isometry_equivComponent x₀).dist_eq μ ν
+
+/-- The identification with a finite-moment anchored component preserves the Wasserstein extended
+distance. -/
+theorem edist_measurableEquivComponentOfFiniteMoment {μ₀ : ProbabilityMeasure X}
+    (hμ₀ : HasFiniteMoment p (μ₀ : Measure X)) (μ ν : WassersteinSpace p X) :
+    edist (measurableEquivComponentOfFiniteMoment measurable_edist Fact.out hμ₀ μ)
+        (measurableEquivComponentOfFiniteMoment measurable_edist Fact.out hμ₀ ν) =
+      edist μ ν := by
+  rw [WassersteinComponent.edist_def, edist_def,
+    coe_measurableEquivComponentOfFiniteMoment, coe_measurableEquivComponentOfFiniteMoment]
+
+/-- The identification with a finite-moment anchored component is an isometry. -/
+theorem isometry_measurableEquivComponentOfFiniteMoment {μ₀ : ProbabilityMeasure X}
+    (hμ₀ : HasFiniteMoment p (μ₀ : Measure X)) :
+    Isometry (measurableEquivComponentOfFiniteMoment measurable_edist Fact.out hμ₀) :=
+  edist_measurableEquivComponentOfFiniteMoment hμ₀
+
+/-- A finite-moment anchor gives an isometric equivalence from `P_p(X)` to its finite-distance
+component. -/
+def isometryEquivComponentOfFiniteMoment {μ₀ : ProbabilityMeasure X}
+    (hμ₀ : HasFiniteMoment p (μ₀ : Measure X)) :
+    WassersteinSpace p X ≃ᵢ WassersteinComponent p μ₀ :=
+  ⟨(measurableEquivComponentOfFiniteMoment measurable_edist Fact.out hμ₀).toEquiv,
+    isometry_measurableEquivComponentOfFiniteMoment hμ₀⟩
+
+@[simp]
+theorem coe_isometryEquivComponentOfFiniteMoment {μ₀ : ProbabilityMeasure X}
+    (hμ₀ : HasFiniteMoment p (μ₀ : Measure X)) (μ : WassersteinSpace p X) :
+    WassersteinComponent.toProbabilityMeasure (isometryEquivComponentOfFiniteMoment hμ₀ μ) =
+      (μ : ProbabilityMeasure X) :=
+  WassersteinComponent.coe_mk _ _
+
+@[simp]
+theorem coe_isometryEquivComponentOfFiniteMoment_symm {μ₀ : ProbabilityMeasure X}
+    (hμ₀ : HasFiniteMoment p (μ₀ : Measure X)) (μ : WassersteinComponent p μ₀) :
+    toProbabilityMeasure ((isometryEquivComponentOfFiniteMoment hμ₀).symm μ) =
+      WassersteinComponent.toProbabilityMeasure μ :=
+  coe_mk _ _
+
+/-- The finite-moment-anchor identification preserves the real-valued Wasserstein distance. -/
+theorem dist_measurableEquivComponentOfFiniteMoment {μ₀ : ProbabilityMeasure X}
+    (hμ₀ : HasFiniteMoment p (μ₀ : Measure X)) (μ ν : WassersteinSpace p X) :
+    dist (measurableEquivComponentOfFiniteMoment measurable_edist Fact.out hμ₀ μ)
+        (measurableEquivComponentOfFiniteMoment measurable_edist Fact.out hμ₀ ν) =
+      dist μ ν :=
+  (isometry_measurableEquivComponentOfFiniteMoment hμ₀).dist_eq μ ν
 
 end EquivMetric
 
