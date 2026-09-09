@@ -57,41 +57,8 @@ theorem isResolventAt_vadd (B : X →L[ℝ] X) (h : lambda ∈ resolventSet A)
     (hr : ‖resolvent A lambda‖ ≤ r) (hB : ‖B‖ * r < 1) :
     IsResolventAt ((B : X →ₗ[ℝ] X) +ᵥ A) lambda
       (resolvent A lambda * Ring.inverse (1 - B * resolvent A lambda)) := by
-  set R := resolvent A lambda with hRdef
-  have hnorm : ‖B * R‖ < 1 :=
-    lt_of_le_of_lt ((norm_mul_le B R).trans
-      (mul_le_mul_of_nonneg_left hr (norm_nonneg B))) hB
-  obtain ⟨u, hu⟩ := isUnit_one_sub_of_norm_lt_one hnorm
-  have hinv : Ring.inverse (1 - B * R) = ((u⁻¹ : (X →L[ℝ] X)ˣ) : X →L[ℝ] X) := by
-    rw [← hu, Ring.inverse_unit]
-  rw [hinv, ContinuousLinearMap.mul_def]
-  set U : X →L[ℝ] X := ((u⁻¹ : (X →L[ℝ] X)ˣ) : X →L[ℝ] X) with hUdef
-  have hcancel : ∀ y : X, U y - B (R (U y)) = y := by
-    intro y
-    have h1 : (u : X →L[ℝ] X) * U = 1 := u.mul_inv
-    rw [hu] at h1
-    simpa using congrArg (fun S : X →L[ℝ] X => S y) h1
-  have hsolve : ∀ y : X, U (y - B (R y)) = y := by
-    intro y
-    have h1 : U * (u : X →L[ℝ] X) = 1 := u.inv_mul
-    rw [hu] at h1
-    simpa using congrArg (fun S : X →L[ℝ] X => S y) h1
-  refine ⟨fun y => resolvent_mem_domain h (U y), fun y => ?_, fun x => ?_⟩
-  · have hstep : lambda • (R ∘L U) y -
-        ((B : X →ₗ[ℝ] X) +ᵥ A) ⟨(R ∘L U) y, resolvent_mem_domain h (U y)⟩
-        = (lambda • R (U y) - A ⟨R (U y), resolvent_mem_domain h (U y)⟩) - B (R (U y)) := by
-      rw [LinearPMap.vadd_apply]
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_coe]
-      abel
-    rw [hstep, smul_sub_apply_resolvent h (U y), hcancel y]
-  · have hx : R (lambda • (x : X) - A x) = (x : X) :=
-      resolvent_smul_sub_apply h ⟨(x : X), x.2⟩
-    have hstep : lambda • (x : X) - ((B : X →ₗ[ℝ] X) +ᵥ A) x
-        = (lambda • (x : X) - A x) - B (R (lambda • (x : X) - A x)) := by
-      rw [LinearPMap.vadd_apply, hx]
-      simp only [ContinuousLinearMap.coe_coe]
-      abel
-    rw [ContinuousLinearMap.comp_apply, hstep, hsolve, hx]
+  apply isResolventAt_vadd_of_norm_mul_resolvent_lt_one B h
+  exact lt_of_le_of_lt (mul_le_mul_of_nonneg_left hr (norm_nonneg B)) hB
 
 /-- **A resolvent point survives a small bounded perturbation.** If `lambda` lies in the
 resolvent set of `A` and the bounded operator `B` satisfies `‖B‖ * r < 1` for some bound `r` on
