@@ -246,7 +246,7 @@ noncomputable def explicitFiniteQuotientSystem1 :
 theorem explicitFiniteQuotientSystem1_obj (U : OpenNormalSubgroup G) :
     (explicitFiniteQuotientSystem1 G M).obj (Opposite.op U) =
       AddCommGrpCat.of (H1 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :=
-  by with_unfolding_all rfl
+  by rfl
 
 /-- Under the object identifications above, every arrow of the explicit degree-one finite-quotient
 system is the direct transition built from `explicitMap1`. -/
@@ -256,7 +256,7 @@ theorem explicitFiniteQuotientSystem1_map {U V : (OpenNormalSubgroup G)ᵒᵖ} (
         (explicitFiniteQuotientSystem1 G M).map f ≫
       eqToHom (explicitFiniteQuotientSystem1_obj G M V.unop) = AddCommGrpCat.ofHom
       (explicitFiniteQuotientTransition1 G M U.unop V.unop (leOfHom f.unop)) :=
-  by with_unfolding_all rfl
+  by rfl
 
 end System
 
