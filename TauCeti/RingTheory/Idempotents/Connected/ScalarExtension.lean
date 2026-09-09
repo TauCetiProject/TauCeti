@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
-public import TauCeti.RingTheory.FiniteType.TensorPointSeparation
+public import TauCeti.RingTheory.FiniteType.Tensor.PointSeparation
 public import Mathlib.RingTheory.TensorProduct.Basic
 import Mathlib.RingTheory.TensorProduct.DirectLimitFG
 import Mathlib.RingTheory.Flat.Basic
@@ -18,12 +18,8 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 A connected algebra over an algebraically closed field remains connected after any extension
 of that field. No finite-type or reducedness assumption on the connected algebra is needed.
 
-An idempotent after scalar extension is defined over a finitely generated subalgebra of the
-extension field. Specializing that subalgebra at rational points gives idempotents in the
-original connected algebra, hence only zero or one. Point separation then forces the original
-idempotent to be a scalar, which is itself zero or one in the extension field.
-The finite coefficient algebra is supplied by Mathlib's `TensorProduct.Algebra.exists_of_fg`;
-contractions use `LinearMap.tensorComponent` and its naturality law.
+Thus ordinary connectedness of an affine scheme over an algebraically closed field implies
+geometric connectedness. In particular, this applies to identity components of affine groups.
 
 ## References
 
@@ -68,7 +64,10 @@ extension, without finite-type or reducedness assumptions. -/
 theorem connectedSpace_primeSpectrum_tensorProduct_of_isAlgClosed
     (k A K : Type*) [Field k] [IsAlgClosed k]
     [CommRing A] [Algebra k A] [ConnectedSpace (PrimeSpectrum A)]
-    [Field K] [Algebra k K] : ConnectedSpace (PrimeSpectrum (K ⊗[k] A)) := by
+    [Field K] [Algebra k K] : ConnectedSpace (PrimeSpectrum (A ⊗[k] K)) := by
+  suffices h : ConnectedSpace (PrimeSpectrum (K ⊗[k] A)) from
+    (PrimeSpectrum.homeomorphOfRingEquiv
+      (Algebra.TensorProduct.comm k A K).toRingEquiv).connectedSpace_iff.mpr h
   let : Nontrivial A := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
   let : Nontrivial (K ⊗[k] A) :=
     Algebra.TensorProduct.nontrivial_of_algebraMap_injective_of_flat_left k K A

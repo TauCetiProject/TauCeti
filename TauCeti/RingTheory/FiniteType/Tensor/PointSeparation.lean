@@ -14,8 +14,6 @@ public import TauCeti.LinearAlgebra.TensorProduct.Basis
 Points of a reduced finite-type algebra valued in an algebraically closed extension detect
 not only its elements but also tensors with any vector space. This allows identities in a
 family of vectors to be checked at every geometric point of the parameter algebra.
-The proof uses `TensorProduct.tensor_eq_of_forall_tensorComponent_eq` to reduce to the
-Nullstellensatz point-separation theorem `eq_of_forall_algHom_apply_eq`.
 -/
 
 public section

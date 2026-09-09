@@ -146,7 +146,7 @@ noncomputable def identityComponentSpec
 
 /-- The structural morphism of the identity-component affine group scheme is geometrically
 connected. -/
-theorem geometricallyConnected_identityComponentSpec
+instance geometricallyConnected_identityComponentSpec
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     GeometricallyConnected (identityComponentSpec H).X.hom :=
   (geometricallyConnectedCommHopfAlg_iff_geometricallyConnected_hopfSpec k

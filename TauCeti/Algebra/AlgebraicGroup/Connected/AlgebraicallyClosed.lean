@@ -89,9 +89,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace
   · intro h
     rw [geometricallyConnectedCommHopfAlgProperty_iff]
     intro K _ _
-    have := connectedSpace_primeSpectrum_tensorProduct_of_isAlgClosed k H K
-    exact (PrimeSpectrum.homeomorphOfRingEquiv
-      (Algebra.TensorProduct.comm k H K).toRingEquiv).connectedSpace_iff.mpr this
+    exact connectedSpace_primeSpectrum_tensorProduct_of_isAlgClosed k H K
 
 namespace HopfAlgebra
 

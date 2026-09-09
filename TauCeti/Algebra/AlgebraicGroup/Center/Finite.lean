@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Center.Reduced
-public import TauCeti.RingTheory.FiniteType.TensorProduct
+public import TauCeti.RingTheory.FiniteType.Tensor.Product
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Comultiplication
 import Mathlib.RingTheory.Finiteness.NilpotentKer
 import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.TrivialIdentity
