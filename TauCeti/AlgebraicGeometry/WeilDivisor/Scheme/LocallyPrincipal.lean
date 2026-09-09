@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Scheme.Regular
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Sheaf
 import Mathlib.Tactic.Abel
 import TauCeti.Topology.KrullDimension
@@ -46,14 +45,13 @@ hypothesis under which that sheaf is built.
   `SchemeWeilDivisor.locallyPrincipalSubgroup_eq_top_of_forall_isClosed_singleton`;
 * `SchemeWeilDivisor.isLocallyPrincipal_of_forall_coheight_le_one` and
   `SchemeWeilDivisor.locallyPrincipalSubgroup_eq_top` specialize this to a curve, where every
-  point has codimension at most one and codimension-one points are therefore closed;
-* `SchemeWeilDivisor.exists_isUnit_germToFunctionField_eq_of_forall_coeff_eq` says that two local
-  equations for the same divisor on such an open subset differ by a unit of `Γ(X, U)`.
+  point has codimension at most one and codimension-one points are therefore closed.
 
-Existence and uniqueness of local equations are the two halves of the local comparison of Weil
-and Cartier divisors: near each point a divisor is the divisor of a nonzero rational function,
-and that function is determined up to a regular unit, so its class in `𝒦_X^× / 𝒪_X^×` is well
-defined.
+Existence of local equations is the first half of the local comparison of Weil and Cartier
+divisors: near each point a divisor is the divisor of a nonzero rational function. The matching
+uniqueness half — that such a function is determined up to a regular unit, so that its class in
+`𝒦_X^× / 𝒪_X^×` is well defined — is in
+`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Cartier.lean`.
 
 In higher dimension the same conclusion needs the local rings of `X` to be unique factorization
 domains rather than merely one-dimensional; without such a hypothesis a Weil divisor need not be
@@ -174,27 +172,6 @@ def locallyPrincipalSubgroup (X : Scheme.{u}) [IsIntegral X] [IsLocallyNoetheria
 lemma mem_locallyPrincipalSubgroup {D : SchemeWeilDivisor X} :
     D ∈ locallyPrincipalSubgroup X ↔ IsLocallyPrincipal D :=
   (Iff.rfl)
-
-/-- **Local equations are unique up to a regular unit.** If two nonzero rational functions `g` and
-`h` are both local equations for `D` on a nonempty open `U` all of whose points have codimension
-at most one and whose codimension-one local rings are discrete valuation rings, then `g / h` is
-the germ of a unit of `Γ(X, U)`.
-
-This is the second half of the local comparison of Weil and Cartier divisors: the first half
-produces local equations, and this one says that the class of a local equation in
-`𝒦_X^× / 𝒪_X^×` does not depend on the equation chosen. -/
-theorem exists_isUnit_germToFunctionField_eq_of_forall_coeff_eq {U : X.Opens} [Nonempty U]
-    (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
-      IsDiscreteValuationRing (X.presheaf.stalk (y : X)))
-    (hU : ∀ y ∈ U, Order.coheight y ≤ 1) {D : SchemeWeilDivisor X}
-    {g h : Additive X.functionFieldˣ}
-    (hg : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → WeilDivisor.coeff D y = orderAt y g)
-    (hh : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → WeilDivisor.coeff D y = orderAt y h) :
-    ∃ a : Γ(X, U), IsUnit a ∧ X.germToFunctionField U a =
-      ((Additive.toMul (g - h) : X.functionFieldˣ) : X.functionField) := by
-  refine Scheme.exists_isUnit_germToFunctionField_eq_of_ord_eq_zero hDVR hU
-    (Units.ne_zero _) fun y hy ↦ ?_
-  rw [← orderAt_apply, map_sub, ← hg y hy, ← hh y hy, sub_self]
 
 end LocallyNoetherian
 

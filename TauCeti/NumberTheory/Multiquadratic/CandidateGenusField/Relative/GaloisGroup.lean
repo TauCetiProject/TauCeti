@@ -25,10 +25,12 @@ when its sign vector has even parity. Restriction of scalars then gives
 
 `Gal(candidateGenusField hd / candidateGenusFieldBase hd) ≃* Multiplicative U`.
 
-This is the relative Galois-group side of the genus-field construction. The Layer 3 target will
-identify this relative group, after proving the required ramification statement, with the maximal
-elementary-2 quotient `Cl(ℚ(√d)) / Cl(ℚ(√d))²`. When `d` is nonsquare, its order is already the
-predicted `2 ^ (t - 1)`, where `t` is the number of chosen prime discriminants.
+This is the relative Galois-group side of the genus-field construction; the sign subspace found
+here is matched with the genus characters of `ℚ(√d)`, hence with the maximal elementary-2 quotient
+`Cl⁺(ℚ(√d)) / Cl⁺(ℚ(√d))²`, in
+`TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.GenusCharacter`. When `d` is
+nonsquare, its order is the predicted `2 ^ (t - 1)`, where `t` is the number of chosen prime
+discriminants.
 
 The prime-discriminant description of the genus field is classical; see D. A. Cox,
 *Primes of the Form x² + ny²*, and F. Lemmermeyer, *Reciprocity Laws*.

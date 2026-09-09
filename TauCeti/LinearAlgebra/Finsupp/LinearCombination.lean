@@ -16,19 +16,20 @@ of a unique finitely supported linear combination.
 
 ## Main statements
 
-* `TauCeti.LinearIndependent.mem_span_range_iff_existsUnique`: membership in the span of a
+* `LinearIndependent.mem_span_range_iff_existsUnique`: membership in the span of a
   linearly independent family is equivalent to having unique finitely supported coordinates.
 -/
 
 public section
 
-namespace TauCeti.LinearIndependent
+section
 
 variable {ι R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 
 /-- An element lies in the span of a linearly independent family exactly when it has a unique
 finitely supported expression in that family. -/
-theorem mem_span_range_iff_existsUnique {v : ι → M} (h : LinearIndependent R v) (x : M) :
+theorem _root_.LinearIndependent.mem_span_range_iff_existsUnique {v : ι → M}
+    (h : LinearIndependent R v) (x : M) :
     x ∈ Submodule.span R (Set.range v) ↔
       ∃! a : ι →₀ R, a.sum (fun i r => r • v i) = x := by
   rw [Finsupp.mem_span_range_iff_exists_finsupp]
@@ -39,4 +40,4 @@ theorem mem_span_range_iff_existsUnique {v : ι → M} (h : LinearIndependent R 
     simpa only [Finsupp.linearCombination_apply] using hb.trans ha.symm
   · exact ExistsUnique.exists
 
-end TauCeti.LinearIndependent
+end
