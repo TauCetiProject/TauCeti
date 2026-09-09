@@ -295,12 +295,15 @@ def realCliffordSpinEquivLastStabilizer (n : ℕ) [NeZero n] :
     ⟨realCliffordSpinStabilizerInclusion_injective n,
       realCliffordSpinStabilizerInclusion_surjective n⟩
 
+/-- The forward compact Spin stabilizer equivalence is the lower-rank stabilizer inclusion. -/
 @[simp]
 theorem realCliffordSpinEquivLastStabilizer_apply
     (n : ℕ) [NeZero n] (x : realCliffordSpinGroupZero n) :
     realCliffordSpinEquivLastStabilizer n x = realCliffordSpinStabilizerInclusion n x := by
   rfl
 
+/-- The inverse compact Spin stabilizer equivalence sends an included element back to its
+lower-rank source. -/
 @[simp]
 theorem realCliffordSpinEquivLastStabilizer_symm_apply_inclusion
     (n : ℕ) [NeZero n] (x : realCliffordSpinGroupZero n) :

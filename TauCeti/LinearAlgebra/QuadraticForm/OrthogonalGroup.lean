@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
+import Mathlib.LinearAlgebra.SpecialLinearGroup
 import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
@@ -315,23 +316,23 @@ private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
   · rintro ⟨f, hf, rfl⟩
     constructor
     · exact (orthogonalGroupCongr e ⟨f, hf.1⟩).2
-    · -- `det_conj` exposes conjugation as a chain of `trans`, unlike `congrAut`.
+    · -- Restate `congrAut` through Mathlib's special-linear congruence.
       rw [show (LinearEquiv.congrAut e.toLinearEquiv) f =
           (e.toLinearEquiv.symm.trans f).trans e.toLinearEquiv by
         ext m
         exact LinearEquiv.congrAut_apply e.toLinearEquiv f m]
-      exact (LinearEquiv.det_conj f e.toLinearEquiv).trans hf.2
+      exact (SpecialLinearGroup.congr_linearEquiv e.toLinearEquiv ⟨f, hf.2⟩).prop
   · intro hg
     refine ⟨(LinearEquiv.congrAut e.toLinearEquiv).symm g, ?_,
       (LinearEquiv.congrAut e.toLinearEquiv).apply_symm_apply g⟩
     constructor
     · exact ((orthogonalGroupCongr e).symm ⟨g, hg.1⟩).2
-    · -- Rewrite inverse conjugation to the `trans` chain expected by `det_conj`.
+    · -- Restate inverse `congrAut` through Mathlib's special-linear congruence.
       rw [show (LinearEquiv.congrAut e.toLinearEquiv).symm g =
           (e.toLinearEquiv.trans g).trans e.toLinearEquiv.symm by
         ext m
         exact LinearEquiv.congrAut_symm_apply e.toLinearEquiv g m]
-      exact (LinearEquiv.det_conj g e.toLinearEquiv.symm).trans hg.2
+      exact (SpecialLinearGroup.congr_linearEquiv e.toLinearEquiv.symm ⟨g, hg.2⟩).prop
 
 /-- Isometric quadratic maps have isomorphic special orthogonal groups: conjugation by an
 isometric equivalence `e : Q₁ ≃qᵢ Q₂` carries `SO(Q₁)` onto `SO(Q₂)`. -/
@@ -340,6 +341,7 @@ noncomputable def specialOrthogonalGroupCongr (e : Q₁.IsometryEquiv Q₂) :
   Subgroup.congrOfMapEq (LinearEquiv.congrAut e.toLinearEquiv)
     (map_specialOrthogonalGroup e)
 
+/-- Evaluating special-orthogonal transport is conjugation by the isometry `e`. -/
 @[simp]
 theorem coe_specialOrthogonalGroupCongr_apply
     (e : Q₁.IsometryEquiv Q₂) (f : specialOrthogonalGroup Q₁) (m : M₂) :
@@ -349,6 +351,8 @@ theorem coe_specialOrthogonalGroupCongr_apply
     LinearEquiv.congrAut_apply]
   rfl
 
+/-- Evaluating inverse special-orthogonal transport is conjugation by the inverse isometry
+`e.symm`. -/
 @[simp]
 theorem coe_specialOrthogonalGroupCongr_symm_apply
     (e : Q₁.IsometryEquiv Q₂) (g : specialOrthogonalGroup Q₂) (m : M₁) :
