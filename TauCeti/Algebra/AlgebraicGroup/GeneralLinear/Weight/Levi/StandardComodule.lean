@@ -72,10 +72,9 @@ theorem weightLeviStandardComodule_coact :
   intro v
   rw [Comodule.corestrictCoact_apply, standardComodule_coact, LinearMap.comp_apply]
 
-/-- The standard weight-Levi coaction on a basis vector is its quotient generic column.
-
-This is an explicit rewrite lemma: the generic corestriction and standard-coaction simp rules
-already reduce its left-hand side, so it is not a simp-normal-form rule. -/
+/-- The standard weight-Levi coaction on a basis vector is its quotient generic column. -/
+-- This is an explicit rewrite lemma: the generic corestriction and standard-coaction simp rules
+-- already reduce its left-hand side, so it is not a simp-normal-form rule.
 theorem weightLeviStandardComodule_coact_single (j : Fin N) :
     Comodule.coact (R := R) (C := weightLeviCoordinateHopfAlgebra R w)
         (Pi.single j (1 : R)) =
