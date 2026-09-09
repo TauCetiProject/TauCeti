@@ -67,26 +67,38 @@ variable {U V W : OpenNormalSubgroup G}
 
 /-- The quotient homomorphism `G ⧸ V → G ⧸ U`, bundled with its automatic continuity for open
 normal subgroups. -/
-def continuousFiniteQuotientMap (hVU : V ≤ U) : G ⧸ V.toSubgroup →ₜ* G ⧸ U.toSubgroup where
-  toMonoidHom := finiteQuotientMap hVU
+def continuousFiniteQuotientMap [CompactSpace G] [TotallyDisconnectedSpace G] (hVU : V ≤ U) :
+    G ⧸ V.toSubgroup →ₜ* G ⧸ U.toSubgroup where
+  toMonoidHom :=
+    ((ProfiniteGrp.of G).toFiniteQuotientFunctor.map (homOfLE hVU)).hom.hom
   continuous_toFun := continuous_of_discreteTopology
+
+variable [CompactSpace G] [TotallyDisconnectedSpace G]
 
 @[simp]
 theorem continuousFiniteQuotientMap_mk (hVU : V ≤ U) (g : G) :
     continuousFiniteQuotientMap G hVU (g : G ⧸ V.toSubgroup) = (g : G ⧸ U.toSubgroup) :=
-  finiteQuotientMap_mk hVU g
+  by
+    rw [continuousFiniteQuotientMap]
+    change ((ProfiniteGrp.of G).toFiniteQuotientFunctor.map (homOfLE hVU)).hom.hom
+        (g : G ⧸ V.toSubgroup) = (g : G ⧸ U.toSubgroup)
+    rw [toFiniteQuotientFunctor_map_hom_hom]
+    exact finiteQuotientMap_mk hVU g
 
 @[simp]
 theorem continuousFiniteQuotientMap_refl (U : OpenNormalSubgroup G) :
     continuousFiniteQuotientMap G (le_refl U) = ContinuousMonoidHom.id _ := by
   ext q
-  exact DFunLike.congr_fun finiteQuotientMap_refl q
+  induction q using QuotientGroup.induction_on with
+  | H g => simp
 
 @[simp]
 theorem continuousFiniteQuotientMap_comp (hWV : W ≤ V) (hVU : V ≤ U) :
     (continuousFiniteQuotientMap G hVU).comp (continuousFiniteQuotientMap G hWV) =
-      continuousFiniteQuotientMap G (hWV.trans hVU) :=
-  ContinuousMonoidHom.ext fun q => DFunLike.congr_fun (finiteQuotientMap_comp hWV hVU) q
+      continuousFiniteQuotientMap G (hWV.trans hVU) := by
+  ext q
+  induction q using QuotientGroup.induction_on with
+  | H g => simp
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
 /-- The coefficient inclusion `M^U → M^V` is equivariant after restriction along the quotient
@@ -98,9 +110,12 @@ theorem fixedPointsInclusion_equivariant (hVU : V ≤ U) (q : G ⧸ V.toSubgroup
       q • fixedPointsInclusion hVU m := by
   have hmap : continuousFiniteQuotientMap G hVU q =
       QuotientGroup.map V.toSubgroup U.toSubgroup (MonoidHom.id G)
-        (fun _ hv => hVU hv) q := by
+        ((show V.toSubgroup ≤ U.toSubgroup from hVU).trans_eq
+          (Subgroup.comap_id U.toSubgroup).symm) q := by
     induction q using QuotientGroup.induction_on with
-    | H g => exact finiteQuotientMap_mk hVU g
+    | H g =>
+      rw [continuousFiniteQuotientMap_mk, QuotientGroup.map_mk]
+      rfl
   rw [hmap]
   exact fixedPointsInclusion_quotientGroupMap_smul hVU q m
 
@@ -222,6 +237,8 @@ theorem explicitFiniteQuotientTransition1_comp (U V W : OpenNormalSubgroup G)
 end Transition
 
 section System
+
+variable [CompactSpace G] [TotallyDisconnectedSpace G]
 
 /-- The explicit degree-one finite-quotient system of a discrete module.  It sends an open normal
 subgroup `U` to `H¹(G ⧸ U, M^U)` and an inclusion `V ≤ U` to the direct explicit transition from
