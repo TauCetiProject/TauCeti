@@ -104,13 +104,16 @@ private theorem coordinateHom_apply_def (H : FiniteIndexNormalSubgroup G)
 
 /-- The projection onto the finite quotient by `H` evaluates the underlying compatible family of
 cosets at `H`. -/
+@[simp]
 theorem coordinateHom_apply (H : FiniteIndexNormalSubgroup G)
     (x : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G)) :
     coordinateHom G H x = x.val H :=
   coordinateHom_apply_def G H x
 
 /-- The `H`-coordinate of the canonical image of `g` is its coset modulo `H`. -/
-@[simp]
+-- The priority keeps this specialization ahead of `coordinateHom_apply`, which would otherwise
+-- rewrite its left-hand side to the raw coordinate of the canonical image.
+@[simp high]
 theorem coordinateHom_etaFn (H : FiniteIndexNormalSubgroup G) (g : G) :
     coordinateHom G H (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) =
       QuotientGroup.mk g := by

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.Galois.Examples
 public import Mathlib.CategoryTheory.Galois.IsFundamentalgroup
-public import Mathlib.Topology.Algebra.Category.ProfiniteGrp.Completion
 public import TauCeti.Topology.Algebra.Group.Profinite.Completion
 
 /-!
@@ -71,9 +70,9 @@ theorem continuousActionHom_eta (A : Action FintypeCat.{u} G) :
       GrpCat.ofHom (MulAction.toPermHom G A.V) :=
   ProfiniteGrp.ProfiniteCompletion.lift_eta _
 
-/-- The canonical action of the profinite completion of `G` on a finite `G`-set. -/
+/-- The profinite completion acts on every finite `G`-set. -/
 @[instance_reducible]
-def mulAction (A : Action FintypeCat.{u} G) : MulAction
+instance instMulAction (A : Action FintypeCat.{u} G) : MulAction
     (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G)) A.V where
   smul g x := actionHom G A g x
   one_smul x := by
@@ -87,16 +86,12 @@ def mulAction (A : Action FintypeCat.{u} G) : MulAction
     rw [map_mul (actionHom G A) g h]
     rfl
 
-/-- The profinite completion acts on every finite `G`-set. -/
-instance instMulAction (A : Action FintypeCat.{u} G) : MulAction
-    (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G)) A.V :=
-  mulAction G A
-
-/-- The profinite-completion action, in the exact form expected by the forgetful functor. -/
+/-- Specialize `instMulAction` to assist typeclass inference: `Action.forget` is not reducible,
+so instance synthesis does not see `(Action.forget FintypeCat G).obj A` as `A.V`. -/
 instance instMulActionForgetObj (A : Action FintypeCat.{u} G) : MulAction
     (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G))
     ((Action.forget FintypeCat G).obj A) :=
-  mulAction G A
+  instMulAction G A
 
 /-- The extended permutation representation restricts along `G → Ĝ` to the original one. -/
 @[simp]
@@ -116,18 +111,6 @@ theorem etaFn_smul (A : Action FintypeCat.{u} G) (g : G) (x : A.V) :
     ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g • x = g • x := by
   -- Unfold only the registered action, leaving the completion construction opaque.
   change actionHom G A (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) x = g • x
-  rw [actionHom_etaFn]
-  rfl
-
-/-- The restriction formula for the action carried by the forgetful functor. -/
-@[simp]
-theorem etaFn_smul_forget (A : Action FintypeCat.{u} G) (g : G)
-    (x : (Action.forget FintypeCat G).obj A) :
-    ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g • x =
-      ConcreteCategory.hom (A.ρ g) x := by
-  -- `Action.forget` hides the underlying finite type and hence the registered action.
-  change actionHom G A (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) x =
-    ConcreteCategory.hom (A.ρ g) x
   rw [actionHom_etaFn]
   rfl
 
