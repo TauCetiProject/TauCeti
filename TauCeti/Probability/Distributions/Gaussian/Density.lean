@@ -22,7 +22,8 @@ A multivariate Gaussian law with positive-definite covariance `S` is Lebesgue me
 `(2π)^(-d/2) * (det S)^(-1/2) * exp (-⟪x - m, S⁻¹ (x - m)⟫ / 2)`,
 
 where `d` is the dimension. Every other covariance parameter gives a law carried by a proper
-affine subspace, hence singular with respect to Lebesgue measure and with no density at all.
+affine subspace, so it is singular with respect to Lebesgue measure and has no density against
+it.
 
 The nondegenerate case comes from the isotropic product density
 (`TauCeti.pi_gaussianReal_eq_withDensity`) by an affine change of variables along the square root
@@ -64,8 +65,8 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- The **density of the multivariate Gaussian law** with mean `m` and covariance `S`, as a real
 number. It is the density of `multivariateGaussian m S` when `S` is positive definite
-(`TauCeti.multivariateGaussian_eq_withDensity`); at every other `S` that law has no density
-(`TauCeti.mutuallySingular_multivariateGaussian_volume`). -/
+(`TauCeti.multivariateGaussian_eq_withDensity`); at every other `S` that law has no density with
+respect to Lebesgue measure (`TauCeti.mutuallySingular_multivariateGaussian_volume`). -/
 def multivariateGaussianPDFReal (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
     (x : EuclideanSpace ℝ ι) : ℝ :=
   (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) * S.det ^ (-(1 : ℝ) / 2) *
@@ -103,8 +104,10 @@ theorem multivariateGaussianPDFReal_nonneg (m : EuclideanSpace ℝ ι) (S : Matr
   have hdet : 0 ≤ S.det ^ (-(1 : ℝ) / 2) := by
     rcases le_or_gt 0 S.det with h | h
     · exact Real.rpow_nonneg h _
-    · rw [Real.rpow_def_of_neg h, show -(1 : ℝ) / 2 * π = -(π / 2) by ring, Real.cos_neg,
-        Real.cos_pi_div_two, mul_zero]
+    -- at a negative base the real power is `exp (log · * y) * cos (y * π)`, which vanishes at
+    -- the exponent `y = -1/2`
+    · have harg : -(1 : ℝ) / 2 * π = -(π / 2) := by ring
+      rw [Real.rpow_def_of_neg h, harg, Real.cos_neg, Real.cos_pi_div_two, mul_zero]
   have hπ : (0 : ℝ) ≤ (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) := Real.rpow_nonneg (by positivity) _
   rw [multivariateGaussianPDFReal]
   exact mul_nonneg (mul_nonneg hπ hdet) (Real.exp_nonneg _)
