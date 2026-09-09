@@ -9,7 +9,6 @@ public import TauCeti.Combinatorics.DenseGraphLimits.Representability.LabeledGra
 public import Mathlib.Combinatorics.SimpleGraph.Sum
 public import Mathlib.Algebra.Order.Star.Real
 public import Mathlib.LinearAlgebra.Matrix.PosDef
-public import Mathlib.Logic.Equiv.Fin.Basic
 
 /-!
 # Graph parameters, connection matrices and reflection positivity

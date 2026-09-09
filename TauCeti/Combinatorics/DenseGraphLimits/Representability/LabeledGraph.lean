@@ -249,15 +249,10 @@ noncomputable def glueInr (G₁ G₂ : LabeledGraph k) : Fin G₂.n ↪ Fin (G�
   ⟨fun b => G₁.glueIndex G₂ (G₁.glueRight G₂ b),
     (G₁.glueIndex G₂).injective.comp (G₁.glueRight_injective G₂)⟩
 
--- Definitional form used to export the characteristic law without exposing the constructors.
-private theorem glue_graph_def (G₁ G₂ : LabeledGraph k) :
-    (G₁.glue G₂).graph = G₁.graph.map (G₁.glueInl G₂) ⊔ G₂.graph.map (G₁.glueInr G₂) := rfl
-
 /-- **The glued graph is exactly the supremum of the two mapped sources**: gluing creates no edge
 that neither side carries. -/
 theorem glue_graph (G₁ G₂ : LabeledGraph k) :
-    (G₁.glue G₂).graph = G₁.graph.map (G₁.glueInl G₂) ⊔ G₂.graph.map (G₁.glueInr G₂) :=
-  glue_graph_def G₁ G₂
+    (G₁.glue G₂).graph = G₁.graph.map (G₁.glueInl G₂) ⊔ G₂.graph.map (G₁.glueInr G₂) := (rfl)
 
 /-- **No other identifications**: the two sides meet exactly at corresponding labels. -/
 theorem glueInl_eq_glueInr_iff (G₁ G₂ : LabeledGraph k) (a : Fin G₁.n) (b : Fin G₂.n) :
