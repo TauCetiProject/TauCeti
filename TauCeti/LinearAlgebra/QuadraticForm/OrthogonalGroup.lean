@@ -64,6 +64,8 @@ negating it and is a transvection rather than a reflection in `v ^ ⊥`.
 * `TauCeti.QuadraticMap.orthogonalGroupCongr`: isometric quadratic maps have isomorphic orthogonal
   groups. Over an algebraically closed field this is what makes `O(Q)` depend only on the rank of
   `Q`.
+* `TauCeti.QuadraticMap.specialOrthogonalGroupCongr`: isometric quadratic maps have isomorphic
+  special orthogonal groups as well.
 * `TauCeti.QuadraticMap.reflection_mem_orthogonalGroup`: the reflection in a vector of invertible
   norm is orthogonal; `TauCeti.QuadraticMap.reflection_mul_self` says it is an involution, and
   `TauCeti.QuadraticMap.reflection_apply_of_isOrtho` that it fixes the orthogonal hyperplane, while
@@ -295,6 +297,61 @@ instance specialOrthogonalGroup_normal (Q : QuadraticMap R M N) :
     ((specialOrthogonalGroup Q).subgroupOf (orthogonalGroup Q)).Normal := by
   rw [specialOrthogonalGroup, Subgroup.inf_subgroupOf_left]
   infer_instance
+
+section SpecialCongr
+
+variable {M₁ : Type*} {M₂ : Type*} [AddCommGroup M₁] [Module R M₁]
+  [AddCommGroup M₂] [Module R M₂]
+  {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+
+/-- Conjugation by an isometric equivalence carries `SO(Q₁)` onto `SO(Q₂)`. -/
+private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
+    (specialOrthogonalGroup Q₁).map (LinearEquiv.congrAut e.toLinearEquiv : _ →* _) =
+      specialOrthogonalGroup Q₂ := by
+  ext g
+  simp only [Subgroup.mem_map, MonoidHom.coe_coe, mem_specialOrthogonalGroup_iff]
+  constructor
+  · rintro ⟨f, hf, rfl⟩
+    constructor
+    · exact (orthogonalGroupCongr e ⟨f, hf.1⟩).2
+    · rw [show (LinearEquiv.congrAut e.toLinearEquiv) f =
+          (e.toLinearEquiv.symm.trans f).trans e.toLinearEquiv by
+        ext m
+        exact LinearEquiv.congrAut_apply e.toLinearEquiv f m]
+      exact (LinearEquiv.det_conj f e.toLinearEquiv).trans hf.2
+  · intro hg
+    refine ⟨(LinearEquiv.congrAut e.toLinearEquiv).symm g, ?_,
+      (LinearEquiv.congrAut e.toLinearEquiv).apply_symm_apply g⟩
+    constructor
+    · exact ((orthogonalGroupCongr e).symm ⟨g, hg.1⟩).2
+    · rw [show (LinearEquiv.congrAut e.toLinearEquiv).symm g =
+          (e.toLinearEquiv.trans g).trans e.toLinearEquiv.symm by
+        ext m
+        exact LinearEquiv.congrAut_symm_apply e.toLinearEquiv g m]
+      exact (LinearEquiv.det_conj g e.toLinearEquiv.symm).trans hg.2
+
+/-- Isometric quadratic maps have isomorphic special orthogonal groups: conjugation by an
+isometric equivalence `e : Q₁ ≃qᵢ Q₂` carries `SO(Q₁)` onto `SO(Q₂)`. -/
+noncomputable def specialOrthogonalGroupCongr (e : Q₁.IsometryEquiv Q₂) :
+    specialOrthogonalGroup Q₁ ≃* specialOrthogonalGroup Q₂ :=
+  ((LinearEquiv.congrAut e.toLinearEquiv).subgroupMap _).trans
+    (MulEquiv.subgroupCongr (map_specialOrthogonalGroup e))
+
+@[simp]
+theorem coe_specialOrthogonalGroupCongr_apply
+    (e : Q₁.IsometryEquiv Q₂) (f : specialOrthogonalGroup Q₁) (m : M₂) :
+    (specialOrthogonalGroupCongr e f : M₂ ≃ₗ[R] M₂) m =
+      e ((f : M₁ ≃ₗ[R] M₁) (e.symm m)) := by
+  simp [specialOrthogonalGroupCongr, LinearEquiv.congrAut_apply]
+
+@[simp]
+theorem coe_specialOrthogonalGroupCongr_symm_apply
+    (e : Q₁.IsometryEquiv Q₂) (g : specialOrthogonalGroup Q₂) (m : M₁) :
+    ((specialOrthogonalGroupCongr e).symm g : M₁ ≃ₗ[R] M₁) m =
+      e.symm ((g : M₂ ≃ₗ[R] M₂) (e m)) := by
+  simp [specialOrthogonalGroupCongr, LinearEquiv.congrAut_symm_apply]
+
+end SpecialCongr
 
 end Det
 

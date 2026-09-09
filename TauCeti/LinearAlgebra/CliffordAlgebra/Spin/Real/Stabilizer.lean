@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonalStabilizer
 
 /-!
 # The lower-rank subgroup of a compact real Spin group
@@ -16,8 +17,10 @@ an injective homomorphism `Spin(n) → Spin(n + 1)`. Its image fixes the last co
 canonically factors through that vector's stabilizer.
 
 This is the algebraic half of the familiar stabilizer description
-`Spin(n + 1) / Spin(n) ≃ Sⁿ`. The converse identification of the full stabilizer, and the topology
-of the resulting homogeneous space, are separate results.
+`Spin(n + 1) / Spin(n) ≃ Sⁿ`. In positive rank the inclusion is exactly the full stabilizer: the
+special orthogonal stabilizer calculation lifts through the double cover, and its two possible
+lifts differ by the canonical `-1`, which is already in the image. The topology of the resulting
+homogeneous space is a separate result.
 
 The split-coordinate action equation below compares the lower-rank inclusion with the Spin
 projection. When `n > 0`, the projection has kernel `{1, -1}`; since the inclusion preserves the
@@ -31,6 +34,8 @@ converse stabilizer identification.
 * `CliffordAlgebra.realCliffordSpinLastStabilizer` is the stabilizer of the last unit vector.
 * `CliffordAlgebra.realCliffordSpinStabilizerInclusion` is the injective homomorphism into that
   stabilizer.
+* `CliffordAlgebra.realCliffordSpinEquivLastStabilizer` identifies `Spin(n)` with the full
+  last-vector stabilizer for positive `n`.
 * `CliffordAlgebra.realCliffordSpinInclusion_spinVectorAction_split` computes the full vector
   action of the inclusion in split coordinates.
 * `eq_or_eq_realCliffordSpinInclusion_negOne_mul_of_spinToSpecialOrthogonal_eq`
@@ -49,6 +54,7 @@ open QuadraticMap
 namespace CliffordAlgebra
 
 open TauCeti
+open TauCeti.QuadraticMap
 
 noncomputable section
 
@@ -206,6 +212,94 @@ theorem eq_or_eq_realCliffordSpinInclusion_negOne_mul_of_spinToSpecialOrthogonal
     hOne | hNeg
   · exact Or.inl hOne
   · exact Or.inr (hNeg.trans (by rw [map_mul, realCliffordSpinInclusion_negOne]))
+
+private def realCliffordSpinLastStabilizerProjection (n : ℕ)
+    (x : realCliffordSpinLastStabilizer n) :
+    specialOrthogonalGroupProdLastStabilizer (realCliffordForm n 0) := by
+  let e := realCliffordPositiveSplitIsometry n 0
+  let g : specialOrthogonalGroup (realCliffordForm (n + 1) 0) :=
+    spinToSpecialOrthogonal (realCliffordForm (n + 1) 0) x.1
+  let ge : specialOrthogonalGroup
+      ((realCliffordForm n 0).prod (QuadraticMap.sq (R := ℝ) (A := ℝ))) :=
+    TauCeti.QuadraticMap.specialOrthogonalGroupCongr e g
+  refine ⟨ge, ?_⟩
+  rw [mem_specialOrthogonalGroupProdLastStabilizer_iff,
+    TauCeti.QuadraticMap.coe_specialOrthogonalGroupCongr_apply]
+  have hlast : e.symm (0, 1) = Pi.single (Fin.last n) 1 := by
+    simpa [e, realCliffordSpinLastIsometry] using realCliffordSpinLastIsometry_one n
+  rw [hlast]
+  have hx := mem_realCliffordSpinLastStabilizer_iff.mp x.2
+  rw [← coe_spinToSpecialOrthogonal_apply] at hx
+  rw [hx]
+  exact (congrArg e hlast).symm.trans (e.apply_symm_apply (0, 1))
+
+/-- For positive `n`, every element of `Spin(n + 1)` fixing the last coordinate vector comes from
+the lower-rank inclusion `Spin(n) → Spin(n + 1)`. -/
+theorem realCliffordSpinStabilizerInclusion_surjective (n : ℕ) [NeZero n] :
+    Function.Surjective (realCliffordSpinStabilizerInclusion n) := by
+  intro x
+  let gx := realCliffordSpinLastStabilizerProjection n x
+  let f : specialOrthogonalGroup (realCliffordForm n 0) :=
+    (specialOrthogonalGroupEquivProdLastStabilizer (realCliffordForm n 0)
+      (isUnit_of_invertible (2 : ℝ)).isRegular).symm gx
+  obtain ⟨y, hy⟩ := spinToSpecialOrthogonal_surjective_of_posDef
+    (realCliffordForm n 0) (posDef_realCliffordForm_zero n) f
+  have hproj : spinToSpecialOrthogonal (realCliffordForm (n + 1) 0) x.1 =
+      spinToSpecialOrthogonal (realCliffordForm (n + 1) 0)
+        (realCliffordSpinInclusion n y) := by
+    apply Subtype.ext
+    apply LinearEquiv.ext
+    intro v
+    let e := realCliffordPositiveSplitIsometry n 0
+    obtain ⟨m, rfl⟩ := e.symm.surjective v
+    simp only [coe_spinToSpecialOrthogonal_apply]
+    -- Restate coercions through the named split isometry so its action theorem applies.
+    change spinVectorAction (realCliffordForm (n + 1) 0) x.1 (e.symm m) =
+      spinVectorAction (realCliffordForm (n + 1) 0)
+        (realCliffordSpinInclusion n y) (e.symm m)
+    rw [realCliffordSpinInclusion_spinVectorAction_split]
+    have hge := TauCeti.QuadraticMap.coe_specialOrthogonalGroupCongr_apply e
+      (spinToSpecialOrthogonal (realCliffordForm (n + 1) 0) x.1) m
+    have hgx := coe_specialOrthogonalGroupEquivProdLastStabilizer_apply
+      (realCliffordForm n 0) (isUnit_of_invertible (2 : ℝ)).isRegular f m
+    rw [MulEquiv.apply_symm_apply] at hgx
+    have hleft :
+        e (spinVectorAction (realCliffordForm (n + 1) 0) x.1 (e.symm m)) = gx.1.1 m := by
+      rw [← coe_spinToSpecialOrthogonal_apply]
+      exact hge.symm
+    have hright : gx.1.1 m =
+        (spinVectorAction (realCliffordForm n 0) y m.1, m.2) := by
+      rw [← coe_spinToSpecialOrthogonal_apply, hy]
+      exact hgx
+    apply e.toLinearEquiv.injective
+    calc
+      e.toLinearEquiv
+          (spinVectorAction (realCliffordForm (n + 1) 0) x.1 (e.symm m)) =
+          gx.1.1 m := hleft
+      _ = (spinVectorAction (realCliffordForm n 0) y m.1, m.2) := hright
+      _ = e.toLinearEquiv (e.symm
+          (spinVectorAction (realCliffordForm n 0) y m.1, m.2)) :=
+        (e.apply_symm_apply _).symm
+  rcases eq_or_eq_realCliffordSpinInclusion_negOne_mul_of_spinToSpecialOrthogonal_eq
+      n x.1 y hproj with h | h
+  · exact ⟨y, Subtype.ext h.symm⟩
+  · refine ⟨spinGroup.negOne (realCliffordForm n 0)
+      (nondegenerate_realCliffordForm n 0).ne_zero * y, ?_⟩
+    exact Subtype.ext h.symm
+
+/-- For positive `n`, `Spin(n)` is multiplicatively equivalent to the full stabilizer of the last
+coordinate vector in `Spin(n + 1)`. The forward map is the lower-rank stabilizer inclusion. -/
+def realCliffordSpinEquivLastStabilizer (n : ℕ) [NeZero n] :
+    realCliffordSpinGroupZero n ≃* realCliffordSpinLastStabilizer n :=
+  MulEquiv.ofBijective (realCliffordSpinStabilizerInclusion n)
+    ⟨realCliffordSpinStabilizerInclusion_injective n,
+      realCliffordSpinStabilizerInclusion_surjective n⟩
+
+@[simp]
+theorem realCliffordSpinEquivLastStabilizer_apply
+    (n : ℕ) [NeZero n] (x : realCliffordSpinGroupZero n) :
+    realCliffordSpinEquivLastStabilizer n x = realCliffordSpinStabilizerInclusion n x := by
+  rfl
 
 end
 
