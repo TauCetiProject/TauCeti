@@ -22,7 +22,7 @@ by one, both stated so that they apply to a permutation of a *different* type th
 are compared with.
 
 * `TauCeti.orbitCount_conj`: conjugation does not change the number of orbits.
-* `TauCeti.orbitQuotientEquivCycleFactorsSumFixedPoints`: on a finite type, the orbits are the
+* `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints`: on a finite type, the orbits are the
   nontrivial cycle factors of the permutation together with its fixed points.
 * `Equiv.Perm.orbitCount_eq_card_parts_partition`: on a finite type, the orbit count is the number
   of parts in Mathlib's full, fixed-point-aware permutation partition.
@@ -122,7 +122,8 @@ variable [Fintype α] [DecidableEq α]
 This is the set-level decomposition underlying the full cycle partition: a nontrivial orbit is
 sent to the unique member of `cycleFactorsFinset`, while a singleton orbit is sent to its fixed
 point. -/
-noncomputable def orbitQuotientEquivCycleFactorsSumFixedPoints (σ : Equiv.Perm α) :
+noncomputable def _root_.Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints
+    (σ : Equiv.Perm α) :
     Quotient (Equiv.Perm.SameCycle.setoid σ) ≃
       σ.cycleFactorsFinset ⊕ {x : α // σ x = x} := by
   classical
@@ -187,7 +188,7 @@ theorem _root_.Equiv.Perm.orbitCount_eq_card_parts_partition (σ : Equiv.Perm α
     orbitCount σ = σ.partition.parts.card := by
   classical
   rw [orbitCount, Nat.card_eq_fintype_card,
-    Fintype.card_congr (orbitQuotientEquivCycleFactorsSumFixedPoints σ), Fintype.card_sum,
+    Fintype.card_congr σ.orbitQuotientEquivCycleFactorsSumFixedPoints, Fintype.card_sum,
     Fintype.card_coe]
   have hfixed : Fintype.card {x : α // σ x = x} = Fintype.card α - σ.support.card := by
     have hp : (fun x : α ↦ σ x = x) = (fun x ↦ x ∈ σ.supportᶜ) := by
@@ -209,17 +210,9 @@ theorem _root_.Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount (σ : Equiv.Pe
   have hle : orbitCount σ ≤ Fintype.card α := by
     rw [orbitCount_eq_card_parts_partition]
     calc
-      σ.partition.parts.card = (σ.partition.parts.sort (· ≥ ·)).length := by
-        rw [Multiset.length_sort]
-      _ ≤ (σ.partition.parts.sort (· ≥ ·)).sum :=
-        List.length_le_sum_of_one_le _ fun n hn ↦
-          σ.partition.parts_pos ((Multiset.mem_sort (· ≥ ·)).mp hn)
-      _ = σ.partition.parts.sum := by
-        calc
-          _ = (↑(σ.partition.parts.sort (· ≥ ·)) : Multiset ℕ).sum :=
-            (Multiset.sum_coe _).symm
-          _ = σ.partition.parts.sum :=
-            congrArg Multiset.sum (Multiset.sort_eq σ.partition.parts (· ≥ ·))
+      σ.partition.parts.card = σ.partition.parts.card • 1 := by simp
+      _ ≤ σ.partition.parts.sum :=
+        Multiset.card_nsmul_le_sum fun n hn ↦ σ.partition.parts_pos hn
       _ = Fintype.card α := σ.partition.parts_sum
   have h : Fintype.card α + orbitCount σ =
       (Fintype.card α - orbitCount σ) + 2 * orbitCount σ := by
