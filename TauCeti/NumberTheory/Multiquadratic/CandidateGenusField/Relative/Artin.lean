@@ -58,8 +58,6 @@ theorem candidateGenusFieldRelativeAut_comm (hd : Squarefree d)
     (σ τ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) :
     σ * τ = τ * σ := by
   apply AlgEquiv.restrictScalars_injective ℚ
-  change σ.restrictScalars ℚ * τ.restrictScalars ℚ =
-    τ.restrictScalars ℚ * σ.restrictScalars ℚ
   exact IsMulCommutative.is_comm.comm (σ.restrictScalars ℚ) (τ.restrictScalars ℚ)
 
 /-- **The genus-field isomorphism sends Frobenius to the prime class.**
@@ -72,7 +70,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
     {q : ℕ} [Fact q.Prime] (hodd : q ≠ 2)
     (hqD : ¬ (q : ℤ) ∣ fundamentalDiscriminant d)
     (qIdeal : Ideal (𝓞 (candidateGenusFieldBase hd)))
-    [qIdeal.LiesOver (Ideal.span {(q : ℤ)})] (hnorm : Ideal.absNorm qIdeal = q)
+    (hnorm : Ideal.absNorm qIdeal = q)
     (Q : Ideal (𝓞 (candidateGenusField hd))) [Q.LiesOver qIdeal]
     (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd)
     (hσ : IsArithFrobAt (𝓞 (candidateGenusFieldBase hd)) σ Q) :
@@ -83,6 +81,13 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
             ⟨qIdeal, by
               rw [← Ideal.absNorm_ne_zero_iff_mem_nonZeroDivisors, hnorm]
               exact (Fact.out : q.Prime).ne_zero⟩)) := by
+  have hprimeNorm : (Ideal.absNorm qIdeal).Prime := by
+    rw [hnorm]
+    exact Fact.out
+  let _ : qIdeal.IsPrime := Ideal.isPrime_of_irreducible_absNorm hprimeNorm
+  let _ : qIdeal.LiesOver (Ideal.span {(q : ℤ)}) := ⟨by
+    simpa [hnorm, Ideal.under_def] using
+      Ideal.span_singleton_absNorm (I := qIdeal) hprimeNorm⟩
   have hqIdeal : qIdeal ∈ (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰ := by
     rw [← Ideal.absNorm_ne_zero_iff_mem_nonZeroDivisors, hnorm]
     exact (Fact.out : q.Prime).ne_zero
@@ -172,8 +177,16 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinElement
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
     {q : ℕ} [Fact q.Prime] (hodd : q ≠ 2)
     (hqD : ¬ (q : ℤ) ∣ fundamentalDiscriminant d)
-    (qIdeal : Ideal (𝓞 (candidateGenusFieldBase hd))) [qIdeal.IsMaximal]
-    [qIdeal.LiesOver (Ideal.span {(q : ℤ)})] (hnorm : Ideal.absNorm qIdeal = q) :
+    (qIdeal : Ideal (𝓞 (candidateGenusFieldBase hd)))
+    (hnorm : Ideal.absNorm qIdeal = q) :
+    let hprimeNorm : (Ideal.absNorm qIdeal).Prime := by
+      rw [hnorm]
+      exact Fact.out
+    let _ : qIdeal.IsPrime := Ideal.isPrime_of_irreducible_absNorm hprimeNorm
+    let _ : qIdeal.IsMaximal := Ideal.IsPrime.isMaximal inferInstance (by
+      intro hbot
+      rw [hbot, Ideal.absNorm_bot] at hnorm
+      exact (Fact.out : q.Prime).ne_zero hnorm.symm)
     autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd hnsq
         (NumberFieldArithmetic.artinElement
           (candidateGenusFieldRelativeAut_comm hd) qIdeal
@@ -185,6 +198,17 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinElement
             ⟨qIdeal, by
               rw [← Ideal.absNorm_ne_zero_iff_mem_nonZeroDivisors, hnorm]
               exact (Fact.out : q.Prime).ne_zero⟩)) := by
+  have hprimeNorm : (Ideal.absNorm qIdeal).Prime := by
+    rw [hnorm]
+    exact Fact.out
+  let _ : qIdeal.IsPrime := Ideal.isPrime_of_irreducible_absNorm hprimeNorm
+  let _ : qIdeal.LiesOver (Ideal.span {(q : ℤ)}) := ⟨by
+    simpa [hnorm, Ideal.under_def] using
+      Ideal.span_singleton_absNorm (I := qIdeal) hprimeNorm⟩
+  let _ : qIdeal.IsMaximal := Ideal.IsPrime.isMaximal inferInstance (by
+    intro hbot
+    rw [hbot, Ideal.absNorm_bot] at hnorm
+    exact (Fact.out : q.Prime).ne_zero hnorm.symm)
   obtain ⟨Q, hQprime, hQlies⟩ :=
     (inferInstance :
       Nonempty (qIdeal.primesOver (𝓞 (candidateGenusField hd))))
