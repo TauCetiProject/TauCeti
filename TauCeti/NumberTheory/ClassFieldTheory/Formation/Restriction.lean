@@ -130,7 +130,7 @@ def relativeDegree (_T : LayerRestriction small big) : ℕ :=
 @[simp]
 theorem relativeDegree_def (T : LayerRestriction small big) :
     T.relativeDegree = small.ground.toSubgroup.relIndex big.ground.toSubgroup :=
-  relativeDegree.eq_1 T
+  by simp only [relativeDegree]
 
 /-- **The degree of a layer is multiplicative along a restriction:** `[U' : V] * [U : U'] =
 [U : V]`. -/
@@ -268,14 +268,13 @@ def subgroupLayer : NormalLayer G where
 @[simp]
 theorem ground_subgroupLayer :
     (L.subgroupLayer H).ground.toSubgroup = L.subgroupGround H :=
-  congrArg (fun M : NormalLayer G ↦ M.ground.toSubgroup) (subgroupLayer.eq_1 L H)
+  by simp only [subgroupLayer]
 
 /-- The layer of `H` has the same top subgroup, hence the same coefficient module, as the layer
 it comes from. -/
 @[simp]
 theorem top_subgroupLayer : (L.subgroupLayer H).top = L.top := by
-  simpa only using
-    congrArg (fun M : NormalLayer G ↦ M.top) (subgroupLayer.eq_1 L H)
+  simp only [subgroupLayer]
 
 /-- **The layer of `H` is a restriction of the layer it comes from:** it has the same top field
 and a smaller ground field. This is the datum through which cohomology of the layer restricts to
