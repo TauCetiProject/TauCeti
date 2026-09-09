@@ -75,10 +75,11 @@ Hessian spectral subspace. -/
 theorem stableSet_linearizedNegativeGradientFlow (hf : ContDiffAt ℝ 2 f x) :
     _root_.Flow.stableSet (linearizedNegativeGradientFlow f x) 0 =
       hf.stableLinearSubspace := by
-  rw [linearizedNegativeGradientFlow]
+  rw [linearizedNegativeGradientFlow, ContinuousLinearMap.flow_neg,
+    _root_.Flow.stableSet_reverse]
   calc
     _ = (hf.isSelfAdjoint_hessianOperator.isSymmetric.positiveSpectralSubspace rfl : Set E) :=
-      LinearMap.IsSymmetric.stableSet_flow_neg_eq_positiveSpectralSubspace
+      LinearMap.IsSymmetric.unstableSet_flow_eq_positiveSpectralSubspace
         hf.isSelfAdjoint_hessianOperator.isSymmetric rfl
     _ = hf.stableLinearSubspace := by
       ext v
@@ -92,10 +93,11 @@ Hessian spectral subspace. -/
 theorem unstableSet_linearizedNegativeGradientFlow (hf : ContDiffAt ℝ 2 f x) :
     _root_.Flow.unstableSet (linearizedNegativeGradientFlow f x) 0 =
       hf.unstableLinearSubspace := by
-  rw [linearizedNegativeGradientFlow]
+  rw [linearizedNegativeGradientFlow, ContinuousLinearMap.flow_neg,
+    _root_.Flow.unstableSet_reverse]
   calc
     _ = (hf.isSelfAdjoint_hessianOperator.isSymmetric.negativeSpectralSubspace rfl : Set E) :=
-      LinearMap.IsSymmetric.unstableSet_flow_neg_eq_negativeSpectralSubspace
+      LinearMap.IsSymmetric.stableSet_flow_eq_negativeSpectralSubspace
         hf.isSelfAdjoint_hessianOperator.isSymmetric rfl
     _ = hf.unstableLinearSubspace := by
       ext v
