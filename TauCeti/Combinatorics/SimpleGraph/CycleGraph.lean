@@ -11,7 +11,8 @@ public import Mathlib.Combinatorics.SimpleGraph.CycleGraph
 # Neighbours in a cycle graph
 
 Mathlib's `SimpleGraph.cycleGraph m` joins two elements of `Fin m` exactly when they differ by one,
-and states that adjacency as a difference. This file reads the same adjacency in the form a
+records the neighbour set of a vertex as the pair `{v - 1, v + 1}` and computes the degree of a
+cycle graph on at least three vertices to be two. This file reads those two facts in the form a
 consumer usually wants: a neighbour of a vertex is its successor or its predecessor, so a vertex
 has at most the two neighbours `v + 1` and `v - 1`, and on at least three vertices those two are
 distinct and really are neighbours.
@@ -41,9 +42,11 @@ theorem eq_add_one_or_eq_add_one_of_cycleGraph_adj {u v : Fin m} (h : (cycleGrap
   obtain ⟨n, rfl⟩ : ∃ n, m = n + 1 := ⟨m - 1, by have := NeZero.ne m; omega⟩
   obtain _ | n := n
   · exact absurd h cycleGraph_one_adj
-  · rcases cycleGraph_adj.mp h with hd | hd
-    · exact Or.inr ((sub_eq_iff_eq_add.mp hd).trans (add_comm 1 v))
-    · exact Or.inl ((sub_eq_iff_eq_add.mp hd).trans (add_comm 1 u))
+  · have hv : v ∈ (cycleGraph (n + 2)).neighborSet u := h
+    rw [cycleGraph_neighborSet, Set.mem_insert_iff, Set.mem_singleton_iff] at hv
+    rcases hv with hv | hv
+    · exact Or.inr (by rw [hv, sub_add_cancel])
+    · exact Or.inl hv
 
 /-- **No vertex of a cycle graph has three pairwise distinct neighbours**: every degree is at most
 two. -/
@@ -65,22 +68,18 @@ theorem cycleGraph_eq_or_eq_or_eq_of_adj {i j j' j'' : Fin m} (h : (cycleGraph m
 /-- **Consecutive vertices of a cycle graph on at least three vertices are adjacent.** -/
 theorem cycleGraph_adj_add_one (hm : 3 ≤ m) (v : Fin m) : (cycleGraph m).Adj v (v + 1) := by
   obtain ⟨n, rfl⟩ : ∃ n, m = n + 2 := ⟨m - 2, by omega⟩
-  exact cycleGraph_adj.mpr (Or.inr (add_sub_cancel_left v 1))
-
-/-- The underlying natural number of a successor in `Fin m`. -/
-private theorem val_add_one (v : Fin m) : ((v + 1 : Fin m) : ℕ) = (v.val + 1) % m := by
-  rw [Fin.val_add, Fin.val_one', Nat.add_mod_mod]
-
-private theorem one_add_one_ne_zero (hm : 3 ≤ m) : (1 : Fin m) + 1 ≠ 0 := by
-  have h1 : ((1 : Fin m) : ℕ) = 1 := by rw [Fin.val_one', Nat.mod_eq_of_lt (by omega)]
-  rw [Ne, Fin.ext_iff, val_add_one, h1, Fin.val_zero, Nat.mod_eq_of_lt (by omega)]
-  omega
+  have hv : v + 1 ∈ (cycleGraph (n + 2)).neighborSet v := by
+    rw [cycleGraph_neighborSet]
+    exact Set.mem_insert_of_mem _ rfl
+  exact hv
 
 /-- **Adding one twice in `Fin m` never returns to the same element** when `3 ≤ m`.  For a cycle
-graph this says that the two neighbours of a vertex are distinct. -/
+graph this says that the two neighbours of a vertex are distinct, and it is read off from
+Mathlib's computation of the degree of a cycle graph on at least three vertices. -/
 theorem add_one_add_one_ne_self (hm : 3 ≤ m) (v : Fin m) : v + 1 + 1 ≠ v := by
-  intro h
-  refine one_add_one_ne_zero hm (add_left_cancel (a := v) ?_)
-  rw [add_zero, ← add_assoc, h]
+  obtain ⟨n, rfl⟩ : ∃ n, m = n + 3 := ⟨m - 3, by omega⟩
+  have hne : v - 1 ≠ v + 1 :=
+    Finset.card_pair_eq_two_iff.mp (cycleGraph_degree_two_le.symm.trans cycleGraph_degree_three_le)
+  exact fun hv => hne (eq_sub_of_add_eq hv).symm
 
 end TauCeti

@@ -14,8 +14,10 @@ A skew-zigzag parameter labels each ordered pair of incident edges of a simple g
 unit-valued ratio between the two backtracks they carry.  The **exterior** parameter of a graph in
 which no vertex has three pairwise distinct neighbours, that is of a graph all of whose degrees are
 at most two, gives distinct incident edges the ratio `-1`, so its relation makes the two backtracks
-at a vertex sum to zero.  The degree hypothesis is exactly what makes the signs a cocycle: at a
-vertex with three pairwise distinct neighbours the three signs would multiply to `-1`.
+at a vertex sum to zero.  The degree hypothesis is what guarantees the signs are a cocycle over
+every coefficient ring: at a vertex with three pairwise distinct neighbours the three signs would
+multiply to `-1`, which obstructs the cocycle identity unless `2` is zero, where the sign collapses
+anyway.
 
 This is the parameter carried by the basic algebra of the exterior skew group algebra of an odd
 cyclic subgroup of `SU(2)`.  When `2` is zero in the coefficient ring the sign collapses, the
@@ -71,8 +73,10 @@ private theorem exteriorSign_mul_exteriorSign (a b : V) :
 /-- The **exterior skew-zigzag parameter** of a graph no vertex of which has three pairwise
 distinct neighbours, that is, of a graph all of whose degrees are at most two: the ratio between
 the backtracks along two distinct incident edges is `-1`, so the relation it imposes makes the two
-backtracks at a vertex sum to zero.  The degree hypothesis is what makes the ratios a cocycle: at
-a vertex with three pairwise distinct neighbours the three signs would multiply to `-1`.
+backtracks at a vertex sum to zero.  The degree hypothesis is what makes the ratios a cocycle over
+every coefficient ring: at a vertex with three pairwise distinct neighbours the three signs would
+multiply to `-1`, which obstructs the cocycle identity unless `2` is zero, where the sign collapses
+anyway.
 
 The odd cycles are the McKay graphs of the odd cyclic subgroups of `SU(2)`, and it is this
 relation, rather than the ordinary one, that the exterior skew group algebras of those subgroups

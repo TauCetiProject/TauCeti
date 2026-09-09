@@ -9,20 +9,15 @@ public import TauCeti.Combinatorics.SimpleGraph.CycleGraph
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Exterior
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Gauge
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Monodromy
 
 /-!
 # The skew-zigzag algebras of the cycles
 
 A skew-zigzag parameter labels each ordered pair of incident edges of a simple graph by the
 unit-valued ratio between the two backtracks they carry, and gauge equivalent parameters present
-isomorphic algebras.  This file supplies the invariant which detects that a parameter is *not*
-gauge trivial, and settles the cycles.
-
-The invariant is the **monodromy** of a closed edge cycle: the product, over the vertices of the
-cycle, of the ratio from the edge along which the cycle arrives at a vertex to the edge along
-which it leaves.  A gauge transform multiplies each factor by the quotient of two backtrack
-scales, and consecutive factors share those scales, so the correction telescopes around the cycle
-and the monodromy depends only on the gauge class.  It is one for the constant parameter.
+isomorphic algebras.  This file settles the cycles, the invariant detecting that a parameter is
+*not* gauge trivial being the monodromy around a closed edge cycle.
 
 Around a cycle graph on `m` vertices the monodromy of the exterior parameter is `(-1) ^ m`, and
 consequently:
@@ -42,13 +37,10 @@ vertex-fixing graded isomorphism classes with `H¹(G, kˣ)`.
 
 ## Main definitions
 
-* `TauCeti.SkewZigzagParameter.monodromy`: the monodromy of a parameter around a closed edge
-  cycle.
 * `TauCeti.SkewZigzagParameter.exteriorCycle`: the exterior parameter of a cycle graph.
 
 ## Main results
 
-* `TauCeti.SkewZigzagParameter.monodromy_gauge`: the monodromy is a gauge invariant.
 * `TauCeti.SkewZigzagParameter.monodromy_exteriorCycle`: the monodromy of the exterior parameter
   around a cycle graph on `m` vertices is `(-1) ^ m`.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_exteriorCycle` and
@@ -76,56 +68,6 @@ open DoubledQuiver SimpleGraph
 universe u w
 
 namespace SkewZigzagParameter
-
-/-! ### The monodromy of a closed edge cycle -/
-
-section Monodromy
-
-variable {k : Type w} [CommMonoid k] {V : Type u} {G : SimpleGraph V} {m : ℕ} [NeZero m]
-  {x : Fin m → V}
-
-/-- The **monodromy** of a skew-zigzag parameter around a closed edge cycle `x`, a cyclically
-indexed family of vertices consecutive ones of which are adjacent: the product, over the vertices
-of the cycle, of the ratio from the edge along which the cycle arrives at a vertex to the edge
-along which it leaves.  It is unchanged by a gauge transform and is one for the constant
-parameter, so it obstructs gauge triviality. -/
-def monodromy (c : SkewZigzagParameter k G) (hx : ∀ i : Fin m, G.Adj (x i) (x (i + 1))) : kˣ :=
-  ∏ i : Fin m, c.ratio (hx i).symm (hx (i + 1))
-
-/-- **The constant parameter has trivial monodromy.** -/
-@[simp]
-theorem monodromy_one (hx : ∀ i : Fin m, G.Adj (x i) (x (i + 1))) :
-    monodromy (1 : SkewZigzagParameter k G) hx = 1 :=
-  Finset.prod_eq_one fun _ _ => one_ratio _ _
-
-/-- **The monodromy is a gauge invariant**: the backtrack scales a gauge transform contributes at
-a vertex of the cycle cancel against those it contributes at the neighbouring vertices. -/
-@[simp]
-theorem monodromy_gauge (c : SkewZigzagParameter k G)
-    (u : ∀ ⦃y z : DoubledQuiver G⦄, (y ⟶ z) → kˣ)
-    (hx : ∀ i : Fin m, G.Adj (x i) (x (i + 1))) :
-    monodromy (c.gauge u) hx = monodromy c hx := by
-  have hshift : ∏ i : Fin m, backtrackScale G u (hx (i + 1)) =
-      ∏ i : Fin m, backtrackScale G u (hx i).symm :=
-    Fintype.prod_equiv (Equiv.addRight 1) _ _ fun i =>
-      (backtrackScale_symm G u (hx (i + 1))).symm
-  simp only [monodromy, gauge_ratio]
-  rw [Finset.prod_mul_distrib, Finset.prod_div_distrib, hshift, div_self', mul_one]
-
-/-- **Gauge equivalent parameters have the same monodromy.** -/
-theorem monodromy_eq_of_isGaugeEquivalent {c c' : SkewZigzagParameter k G}
-    (hc : c.IsGaugeEquivalent c') (hx : ∀ i : Fin m, G.Adj (x i) (x (i + 1))) :
-    monodromy c hx = monodromy c' hx := by
-  obtain ⟨u, rfl⟩ := isGaugeEquivalent_iff.mp hc
-  rw [monodromy_gauge]
-
-/-- **A gauge-trivial parameter has trivial monodromy around every closed edge cycle.** -/
-theorem monodromy_eq_one_of_isGaugeEquivalent_one {c : SkewZigzagParameter k G}
-    (hc : IsGaugeEquivalent (1 : SkewZigzagParameter k G) c)
-    (hx : ∀ i : Fin m, G.Adj (x i) (x (i + 1))) : monodromy c hx = 1 := by
-  rw [← monodromy_eq_of_isGaugeEquivalent hc hx, monodromy_one]
-
-end Monodromy
 
 /-! ### The exterior parameter of a cycle -/
 
@@ -163,7 +105,7 @@ theorem exteriorCycle_eq_one (h2 : (2 : k) = 0) : exteriorCycle k m = 1 :=
 incident edges. -/
 theorem monodromy_exteriorCycle (hm : 3 ≤ m) :
     monodromy (exteriorCycle k m) (cycleGraph_adj_add_one hm) = (-1 : kˣ) ^ m := by
-  rw [monodromy, Finset.prod_congr rfl fun i _ =>
+  rw [monodromy_eq_prod, Finset.prod_congr rfl fun i _ =>
     exteriorCycle_ratio_of_ne (k := k) _ _ (add_one_add_one_ne_self hm i).symm,
     Finset.prod_const, Finset.card_univ, Fintype.card_fin]
 
