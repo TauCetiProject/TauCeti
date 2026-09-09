@@ -146,9 +146,11 @@ theorem _root_.ContinuousLinearMap.exp_smul_apply_of_apply_eq_smul
     induction n with
     | zero => simp
     | succ n hn =>
-        rw [pow_succ, mul_apply_eq_comp, smul_apply, hx, smul_smul,
-          map_smul, hn, smul_smul, pow_succ]
-        ring_nf
+        calc ((t • B) ^ (n + 1)) x
+            = ((t • B) ^ n) ((t * μ) • x) := by
+              simp [pow_succ, mul_apply_eq_comp, hx, smul_smul]
+          _ = (t * μ) • ((t * μ) ^ n • x) := by rw [map_smul, hn]
+          _ = (t * μ) ^ (n + 1) • x := by rw [smul_smul, ← pow_succ']
   have hop := (NormedSpace.exp_series_hasSum_exp' (𝕂 := 𝕜) (𝔸 := Y →L[𝕜] Y)
     (t • B)).mapL (ContinuousLinearMap.apply 𝕜 Y x)
   have hscalar := (NormedSpace.exp_series_hasSum_exp' (𝕂 := 𝕜) (𝔸 := 𝕜) (t * μ)).smul_const x
