@@ -11,13 +11,13 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 /-!
 # Quadratic and matrix orthogonal groups
 
-When two is invertible in the base ring, a linear automorphism preserves the standard
-quadratic form exactly when its matrix is orthogonal. Adding determinant one identifies the
-two special orthogonal groups. These criteria transfer quadratic-space results to the matrix
-models of the classical groups.
+When multiplication by two is injective in the base ring, a linear automorphism preserves the
+standard quadratic form exactly when its matrix is orthogonal. Adding determinant one
+identifies the two special orthogonal groups. These criteria transfer quadratic-space results
+to the matrix models of the classical groups.
 
-The proof uses the Gram-matrix criterion `TauCeti.BilinForm.isIsometry_iff_toMatrix` and
-Mathlib's compatibility of the associated bilinear form with composition.
+The criteria apply to any finite index type, including the empty type, and to rings such as
+`ℤ` where two is regular but not invertible.
 -/
 
 public section
@@ -30,8 +30,9 @@ universe u v
 
 /-- The coordinate matrix of a linear automorphism is orthogonal exactly when the
 automorphism preserves the standard quadratic form. -/
+@[simp]
 theorem toMatrix_mem_orthogonalGroup_iff (R : Type u) [CommRing R]
-    (n : Type v) [Fintype n] [DecidableEq n] [Invertible (2 : R)]
+    (n : Type v) [Fintype n] [DecidableEq n] (h2 : IsSMulRegular R (2 : R))
     (e : (n → R) ≃ₗ[R] (n → R)) :
     LinearMap.toMatrix' e.toLinearMap ∈ Matrix.orthogonalGroup n R ↔
       e ∈ QuadraticMap.orthogonalGroup (Matrix.toQuadraticForm' (1 : Matrix n n R)) := by
@@ -43,34 +44,25 @@ theorem toMatrix_mem_orthogonalGroup_iff (R : Type u) [CommRing R]
     simp only [B, LinearMap.toMatrix_eq_toMatrix', LinearMap.BilinForm.toMatrix_basisFun,
       LinearMap.BilinForm.toMatrix', LinearMap.toMatrix'_toLinearMap₂', mul_one,
       Matrix.mem_orthogonalGroup_iff']
-  rw [← hgram, QuadraticMap.mem_orthogonalGroup_iff]
-  constructor
-  · intro he x
-    exact he.apply x x
-  · intro he
-    have hcomp :
-        (Matrix.toQuadraticForm' (1 : Matrix n n R)).comp e.toLinearMap =
-          Matrix.toQuadraticForm' (1 : Matrix n n R) := by
-      ext x
-      exact he x
-    have hassoc := congrArg (QuadraticMap.associatedHom R) hcomp
-    have hB : (Matrix.toQuadraticForm' (1 : Matrix n n R)).associated = B := by
-      apply QuadraticMap.associated_left_inverse
-      intro x y
-      simpa only [Matrix.toLinearMap₂'_apply', Matrix.one_mulVec] using dotProduct_comm x y
-    rw [QuadraticMap.associated_comp, hB] at hassoc
-    exact BilinForm.isIsometry_iff.mpr (fun x y ↦ DFunLike.congr_fun
-      (DFunLike.congr_fun hassoc x) y)
+  rw [← hgram, QuadraticMap.mem_orthogonalGroup_iff_polar h2]
+  have hpolar (x y : n → R) :
+      QuadraticMap.polar (Matrix.toQuadraticForm' (1 : Matrix n n R)) x y =
+        (2 : R) • B x y := by
+    simp only [Matrix.toQuadraticForm', LinearMap.BilinMap.polar_toQuadraticMap,
+      Matrix.toLinearMap₂'_apply', Matrix.one_mulVec, B, two_smul,
+      dotProduct_comm y x]
+  simp only [hpolar, h2.eq_iff, BilinForm.isIsometry_iff, LinearEquiv.coe_coe]
 
 /-- The coordinate matrix is special orthogonal exactly when the linear automorphism is
 special orthogonal for the standard quadratic form. -/
+@[simp]
 theorem toMatrix_mem_specialOrthogonalGroup_iff (R : Type u) [CommRing R]
-    (n : Type v) [Fintype n] [DecidableEq n] [Invertible (2 : R)]
+    (n : Type v) [Fintype n] [DecidableEq n] (h2 : IsSMulRegular R (2 : R))
     (e : (n → R) ≃ₗ[R] (n → R)) :
     LinearMap.toMatrix' e.toLinearMap ∈ Matrix.specialOrthogonalGroup n R ↔
       e ∈ QuadraticMap.specialOrthogonalGroup
         (Matrix.toQuadraticForm' (1 : Matrix n n R)) := by
-  rw [Matrix.mem_specialOrthogonalGroup_iff, toMatrix_mem_orthogonalGroup_iff,
+  rw [Matrix.mem_specialOrthogonalGroup_iff, toMatrix_mem_orthogonalGroup_iff R n h2,
     QuadraticMap.mem_specialOrthogonalGroup_iff, LinearMap.det_toMatrix',
     ← LinearEquiv.coe_det]
   simp only [Units.val_eq_one]

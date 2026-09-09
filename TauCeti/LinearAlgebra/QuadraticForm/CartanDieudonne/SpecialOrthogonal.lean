@@ -17,9 +17,8 @@ This is the determinant-one form of the Cartan--Dieudonné theorem. It reduces q
 all special orthogonal transformations to reflection pairs, as needed when proving connectedness
 by putting those pairs in the identity component.
 
-The proof reuses `TauCeti.QuadraticMap.subgroup_eq_top_of_reflection_mem`. Reflections are
-involutions, so their monoid closure is already the orthogonal group. Left induction on that
-closure keeps track of the two possible determinants and groups adjacent reflections into pairs.
+The full orthogonal group is generated as a monoid by individual reflections, as expressed by
+`closure_reflectionOrthogonal_eq_top`.
 
 ## References
 
@@ -35,7 +34,8 @@ universe u v
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] [NeZero (2 : K)]
 
-private theorem monoidClosure_reflections_eq_top
+/-- Reflections generate the full orthogonal group as a monoid. -/
+theorem closure_reflectionOrthogonal_eq_top
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
     Submonoid.closure {g : orthogonalGroup Q |
       ∃ (v : V) (_ : Invertible (Q v)), reflectionOrthogonal Q v = g} = ⊤ := by
@@ -49,8 +49,7 @@ private theorem monoidClosure_reflections_eq_top
   have htop : Subgroup.closure S = ⊤ :=
     subgroup_eq_top_of_reflection_mem Q hQ (Subgroup.closure S)
       (fun v hv ↦ Subgroup.subset_closure ⟨v, hv, rfl⟩)
-  rw [htop]
-  rfl
+  rw [htop, Subgroup.top_toSubmonoid]
 
 /-- Every determinant-one orthogonal transformation belongs to any submonoid containing all
 products of two reflections. No nonzero-dimensional hypothesis is required. -/
@@ -69,7 +68,7 @@ theorem specialOrthogonalGroup_le_of_reflection_mul_mem
         (LinearEquiv.det g.val = 1 → g.val ∈ M) ∧
         (LinearEquiv.det g.val = -1 →
           ∀ (v : V) [Invertible (Q v)], reflection Q v * g.val ∈ M))
-      (monoidClosure_reflections_eq_top Q hQ) g ?_ ?_
+      (closure_reflectionOrthogonal_eq_top Q hQ) g ?_ ?_
     · refine ⟨fun _ ↦ M.one_mem, ?_⟩
       intro h
       have hneg : (1 : K) = -1 := by simpa using congrArg Units.val h

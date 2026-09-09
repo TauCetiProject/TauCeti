@@ -61,14 +61,17 @@ theorem closure_reflection_mul_eq_matrixSpecialOrthogonalGroup :
     simp only [LinearMap.flip_apply, Matrix.toLinearMap₂'_apply', Matrix.one_mulVec]
     exact dotProduct_comm y x
   let F : ((n → K) ≃ₗ[K] (n → K)) →* Matrix n n K :=
-    LinearMap.toMatrixAlgEquiv'.toMonoidHom.comp
+    LinearMap.toMatrixAlgEquiv'.toAlgHom.toMonoidHom.comp
       LinearEquiv.automorphismGroup.toLinearMapMonoidHom
-  have hF (e : (n → K) ≃ₗ[K] (n → K)) : F e = LinearMap.toMatrix' e.toLinearMap := rfl
+  have hF (e : (n → K) ≃ₗ[K] (n → K)) : F e = LinearMap.toMatrix' e.toLinearMap := by
+    ext i j
+    simp [F, LinearMap.toMatrix'_apply]
   apply le_antisymm
   · apply Submonoid.closure_le.mpr
     rintro _ ⟨v, w, hv, hw, rfl⟩
     rw [← hF, ← hF, ← map_mul, hF]
-    apply (toMatrix_mem_specialOrthogonalGroup_iff K n _).mpr
+    apply (toMatrix_mem_specialOrthogonalGroup_iff K n
+      ((isUnit_of_invertible (2 : K)).isSMulRegular K) _).mpr
     apply QuadraticMap.mem_specialOrthogonalGroup_iff.mpr
     exact ⟨(QuadraticMap.orthogonalGroup Q).mul_mem
       (QuadraticMap.reflection_mem_orthogonalGroup Q v)
@@ -79,7 +82,8 @@ theorem closure_reflection_mul_eq_matrixSpecialOrthogonalGroup :
     let e := A.toLinearEquiv' hunit.invertible
     have he : LinearMap.toMatrix' e.toLinearMap = A := by
       rw [Matrix.toLinearEquiv'_apply, LinearMap.toMatrix'_toLin']
-    have hmem := (toMatrix_mem_specialOrthogonalGroup_iff K n e).mp (he.symm ▸ hA)
+    have hmem := (toMatrix_mem_specialOrthogonalGroup_iff K n
+      ((isUnit_of_invertible (2 : K)).isSMulRegular K) e).mp (he.symm ▸ hA)
     have hle := QuadraticMap.specialOrthogonalGroup_le_of_reflection_mul_mem Q hQ
       ((Submonoid.closure S).comap F) (fun v w hv hw ↦ ?_)
     · simpa only [Submonoid.mem_comap, hF, he] using hle hmem
