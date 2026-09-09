@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Invariants
 
 /-!
 # The explicit degree-one finite-quotient system
 
-For a profinite group `G` acting continuously on a discrete additive group `M`, the explicit
+For a topological group `G` acting continuously on a discrete additive group `M`, the explicit
 first cohomology groups
 
 ```text
@@ -22,6 +21,8 @@ H¹(G ⧸ U, M^U)
 form a directed system as the open normal subgroup `U` shrinks.  If `V ≤ U`, its transition
 map is the compatible-pair pullback along the quotient homomorphism `G ⧸ V → G ⧸ U` and the
 coefficient inclusion `M^U → M^V`.
+When `G` is compact these discrete quotient groups are finite; the construction itself does not
+require compactness.
 
 `TauCeti.finiteQuotientSystem` already packages the corresponding system in Mathlib's discrete
 `groupCohomology`.  The system here is instead constructed directly with
@@ -64,52 +65,6 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 section Transition
 
 variable {U V W : OpenNormalSubgroup G}
-
-/-- The quotient homomorphism `G ⧸ V → G ⧸ U`, bundled with its automatic continuity for open
-normal subgroups. -/
-def continuousFiniteQuotientMap (hVU : V ≤ U) :
-    G ⧸ V.toSubgroup →ₜ* G ⧸ U.toSubgroup where
-  toMonoidHom := finiteQuotientMap hVU
-  continuous_toFun := continuous_of_discreteTopology
-
-@[simp]
-theorem continuousFiniteQuotientMap_mk (hVU : V ≤ U) (g : G) :
-    continuousFiniteQuotientMap G hVU (g : G ⧸ V.toSubgroup) = (g : G ⧸ U.toSubgroup) :=
-  finiteQuotientMap_mk hVU g
-
-@[simp]
-theorem continuousFiniteQuotientMap_refl (U : OpenNormalSubgroup G) :
-    continuousFiniteQuotientMap G (le_refl U) = ContinuousMonoidHom.id _ := by
-  ext q
-  exact DFunLike.congr_fun finiteQuotientMap_refl q
-
-@[simp]
-theorem continuousFiniteQuotientMap_comp (hWV : W ≤ V) (hVU : V ≤ U) :
-    (continuousFiniteQuotientMap G hVU).comp (continuousFiniteQuotientMap G hWV) =
-      continuousFiniteQuotientMap G (hWV.trans hVU) := by
-  ext q
-  exact DFunLike.congr_fun (finiteQuotientMap_comp hWV hVU) q
-
-omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
-/-- The coefficient inclusion `M^U → M^V` is equivariant after restriction along the quotient
-homomorphism `G ⧸ V → G ⧸ U`. -/
-@[simp]
-theorem fixedPointsInclusion_equivariant (hVU : V ≤ U) (q : G ⧸ V.toSubgroup)
-    (m : FixedPoints.addSubgroup U.toSubgroup M) :
-    fixedPointsInclusion hVU (continuousFiniteQuotientMap G hVU q • m) =
-      q • fixedPointsInclusion hVU m := by
-  have hsubgroup : V.toSubgroup ≤ U.toSubgroup := hVU
-  have hmap : continuousFiniteQuotientMap G hVU q =
-      QuotientGroup.map V.toSubgroup U.toSubgroup (MonoidHom.id G)
-        (hsubgroup.trans_eq
-          (Subgroup.comap_id U.toSubgroup).symm) q := by
-    -- `finiteQuotientMap` is sealed in `FiniteQuotient.Basic`, so compare the two maps through
-    -- its public formula on quotient representatives.
-    induction q using QuotientGroup.induction_on with
-    | H g =>
-      simp only [continuousFiniteQuotientMap_mk, QuotientGroup.map_mk, MonoidHom.id_apply]
-  rw [hmap]
-  exact fixedPointsInclusion_quotientGroupMap_smul hVU q m
 
 /-- The explicit degree-one transition from the `U`-level to the `V`-level, for `V ≤ U`.
 
@@ -230,17 +185,14 @@ end Transition
 
 section System
 
-variable [CompactSpace G] [TotallyDisconnectedSpace G]
-
 /-- The explicit degree-one finite-quotient system of a discrete module.  It sends an open normal
 subgroup `U` to `H¹(G ⧸ U, M^U)` and an inclusion `V ≤ U` to the direct explicit transition from
 the `U`-level to the `V`-level. -/
 noncomputable def explicitFiniteQuotientSystem1 :
     (OpenNormalSubgroup G)ᵒᵖ ⥤ AddCommGrpCat.{max u v} where
   obj U :=
-    let P := ProfiniteGrp.of G
     AddCommGrpCat.of
-      (H1 (P ⧸ U.unop.toSubgroup) (FixedPoints.addSubgroup U.unop.toSubgroup M))
+      (H1 (G ⧸ U.unop.toSubgroup) (FixedPoints.addSubgroup U.unop.toSubgroup M))
   map := fun {U V} f => AddCommGrpCat.ofHom
     (explicitFiniteQuotientTransition1 G M U.unop V.unop (leOfHom f.unop))
   map_id U := by
@@ -262,7 +214,8 @@ theorem explicitFiniteQuotientSystem1_obj (U : OpenNormalSubgroup G) :
 /-- Under the object identifications above, every arrow of the explicit degree-one finite-quotient
 system is the direct transition built from `explicitMap1`. -/
 @[simp]
-theorem explicitFiniteQuotientSystem1_map {U V : (OpenNormalSubgroup G)ᵒᵖ} (f : U ⟶ V) :
+theorem explicitFiniteQuotientSystem1_map
+    {U V : (OpenNormalSubgroup G)ᵒᵖ} (f : U ⟶ V) :
     eqToHom (explicitFiniteQuotientSystem1_obj G M U.unop).symm ≫
         (explicitFiniteQuotientSystem1 G M).map f ≫
       eqToHom (explicitFiniteQuotientSystem1_obj G M V.unop) = AddCommGrpCat.ofHom

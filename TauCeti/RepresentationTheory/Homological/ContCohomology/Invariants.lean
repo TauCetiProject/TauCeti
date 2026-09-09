@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.GroupAction.FixedPoints
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Basic
 
 /-!
 # Invariants of a discrete module as a module over a quotient
@@ -48,6 +49,8 @@ unbundled classes freely.
   `H` of a group with a topology acting continuously on a discrete module, the quotient `G ⧸ H`
   acts continuously on `M ^ H`; no compatibility of the topology of `G` with its group structure
   is used.
+* `TauCeti.ContCohomology.fixedPointsInclusion_equivariant`: the inclusion `M^U → M^V` for open
+  normal subgroups `V ≤ U` is equivariant along the continuous quotient map `G ⧸ V → G ⧸ U`.
 * `TauCeti.continuous_fixedPointsPairing`: a jointly continuous equivariant pairing remains
   jointly continuous after restriction to invariant coefficients.
 
@@ -59,7 +62,8 @@ This file addresses the "Constructions" bullet of Layer 0 of
 the inclusions `M ^ U ↪ M ^ V` and `M ^ U ↪ M`, functoriality in `M` along equivariant maps and in
 `U` along inclusions, and the edge cases at `⊥` and `⊤`. Milestones 2 and 3 of Layer 4's transition
 system — the coefficient inclusion and its equivariance after restriction along the quotient
-homomorphism — are exactly those Layer 0 items, supplied by the imported generic fixed-point API;
+homomorphism — are exactly those Layer 0 items, specialized below from the imported generic
+fixed-point API;
 milestones 5 and 6 are the identity and composition laws of the *induced map on cohomology* and
 need Layers 1 to 3, so the generic identity and composition laws are the coefficient-inclusion half
 they will rest on.
@@ -144,6 +148,38 @@ instance continuousSMulQuotientFixedPoints (U : OpenNormalSubgroup G) :
     (FixedPoints.addSubmonoid U.toSubgroup M)
 
 end FiniteLevelAddGroup
+
+namespace ContCohomology
+
+section FiniteQuotient
+
+variable (G : Type*) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable (M : Type*) [AddCommGroup M] [DistribMulAction G M]
+variable {U V : OpenNormalSubgroup G}
+
+/-- The coefficient inclusion `M^U → M^V` is equivariant after restriction along the quotient
+homomorphism `G ⧸ V → G ⧸ U`. -/
+@[simp]
+theorem fixedPointsInclusion_equivariant (hVU : V ≤ U) (q : G ⧸ V.toSubgroup)
+    (m : FixedPoints.addSubgroup U.toSubgroup M) :
+    fixedPointsInclusion hVU (continuousFiniteQuotientMap G hVU q • m) =
+      q • fixedPointsInclusion hVU m := by
+  have hsubgroup : V.toSubgroup ≤ U.toSubgroup := hVU
+  have hmap : continuousFiniteQuotientMap G hVU q =
+      QuotientGroup.map V.toSubgroup U.toSubgroup (MonoidHom.id G)
+        (hsubgroup.trans_eq
+          (Subgroup.comap_id U.toSubgroup).symm) q := by
+    -- `finiteQuotientMap` is sealed in `FiniteQuotient.Basic`, so compare the two maps through
+    -- its public formula on quotient representatives.
+    induction q using QuotientGroup.induction_on with
+    | H g =>
+      simp only [continuousFiniteQuotientMap_mk, QuotientGroup.map_mk, MonoidHom.id_apply]
+  rw [hmap]
+  exact fixedPointsInclusion_quotientGroupMap_smul hVU q m
+
+end FiniteQuotient
+
+end ContCohomology
 
 section Subtype
 
