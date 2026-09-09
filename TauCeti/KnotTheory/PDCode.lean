@@ -601,10 +601,8 @@ def mirror (D : FramedOrientedPDCode n) : FramedOrientedPDCode n where
   crossinglessFramings := D.crossinglessFramings.map fun component =>
     (component.1, -component.2)
   crossinglessFramings_map_fst := by
-    rw [Multiset.map_map]
-    change _ = D.crossinglessComponents
-    rw [← D.crossinglessFramings_map_fst]
-    rfl
+    simpa only [OrientedPDCode.mirror, Multiset.map_map, Function.comp_apply] using
+      D.crossinglessFramings_map_fst
 
 /-- Forgetting framing after reflection gives reflection of the underlying oriented code. -/
 @[simp] theorem mirror_toOrientedPDCode (D : FramedOrientedPDCode n) :
