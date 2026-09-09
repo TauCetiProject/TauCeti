@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Irreducible
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Faithful
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Smooth
-import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
 # The unipotent radical obstruction for higher-dimensional special orthogonal groups
@@ -43,6 +42,7 @@ standard special-orthogonal groups.
 
 * J. S. Milne, *Algebraic Groups* (2017), §§ 4.a, 19.b, and 21.
 * T. A. Springer, *Linear Algebraic Groups*, §§ 2.2, 2.4, and Chapter 8.
+* Formal proof architecture: `TauCeti.Algebra.AlgebraicGroup.Symplectic.Reductive`.
 -/
 
 public section
