@@ -19,7 +19,7 @@ finite `G`-sets.
 
 ## Main declarations
 
-* `TauCeti.ProfiniteCompletion.continuousActionHom`: the continuous permutation representation
+* `TauCeti.ProfiniteCompletion.actionHom`: the continuous permutation representation
   extending a finite `G`-action.
 * `TauCeti.ProfiniteCompletion.etaFn_smul`: the extended action restricts to the original action
   along the canonical map from `G`.
@@ -46,7 +46,7 @@ variable (G : Type u) [Group G]
 
 /-- The continuous permutation representation of the profinite completion extending a finite
 `G`-action. -/
-def continuousActionHom (A : Action FintypeCat.{u} G) :
+private def continuousActionHom (A : Action FintypeCat.{u} G) :
     ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) ⟶
       ProfiniteGrp.ofFiniteGrp (FiniteGrp.of (Equiv.Perm A.V)) :=
   ProfiniteGrp.ProfiniteCompletion.lift
