@@ -119,10 +119,10 @@ structure OrientedPDCode (n : ℕ) extends PDCode n where
 
 On a component meeting a crossing, `framing` is an integer constant along arc pairings and local
 strands. For crossing-free components, `crossinglessFramings` keeps each orientation paired with
-its framing integer. These integers measure the chosen framing relative to the diagram's
-blackboard framing. -/
+its framing integer. These integers measure the chosen framing relative to the Seifert (`0`-)
+framing. The diagram's blackboard framing instead has coefficient equal to the component writhe. -/
 structure FramedOrientedPDCode (n : ℕ) extends OrientedPDCode n where
-  /-- The integer framing of the component through each crossing visit. -/
+  /-- The Seifert-relative framing coefficient of the component through each crossing visit. -/
   framing : Fin (4 * n) → ℤ
   /-- Framing is constant along an arc. -/
   framing_edgePair : ∀ h, framing (edgePair.val h) = framing h
@@ -130,7 +130,7 @@ structure FramedOrientedPDCode (n : ℕ) extends OrientedPDCode n where
   framing_oppositeCrossingSlot : ∀ i slot,
     framing (halfEdge (PDCode.crossingSlotEquiv n (i, PDCode.oppositeCrossingSlot slot))) =
       framing (halfEdge (PDCode.crossingSlotEquiv n (i, slot)))
-  /-- The orientation and integer framing of each crossing-free component. -/
+  /-- The orientation and Seifert-relative framing coefficient of each crossing-free component. -/
   crossinglessFramings : Multiset (Bool × ℤ)
   /-- Forgetting framings recovers the oriented crossing-free components. -/
   crossinglessFramings_map_fst : crossinglessFramings.map Prod.fst = crossinglessComponents
@@ -579,7 +579,7 @@ theorem ext {D E : FramedOrientedPDCode n}
   cases E
   simp_all
 
-/-- Reflect a framed oriented diagram, negating its blackboard-relative framing integers. -/
+/-- Reflect a framed oriented diagram, negating its Seifert-relative framing coefficients. -/
 def mirror (D : FramedOrientedPDCode n) : FramedOrientedPDCode n where
   toOrientedPDCode := D.toOrientedPDCode.mirror
   framing := fun h => -D.framing h
@@ -594,7 +594,7 @@ def mirror (D : FramedOrientedPDCode n) : FramedOrientedPDCode n where
 /-- Forgetting framing after reflection gives reflection of the underlying oriented code. -/
 @[simp] theorem mirror_toOrientedPDCode (D : FramedOrientedPDCode n) :
     D.mirror.toOrientedPDCode = D.toOrientedPDCode.mirror := by simp [mirror]
-/-- Reflection negates the blackboard-relative framing at every crossing visit. -/
+/-- Reflection negates the Seifert-relative framing coefficient at every crossing visit. -/
 @[simp] theorem mirror_framing (D : FramedOrientedPDCode n) :
     D.mirror.framing = -D.framing := by
   funext h
