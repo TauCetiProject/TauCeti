@@ -20,8 +20,8 @@ prime-to-`p` supernatural index, and for a discrete group the predicate picks ou
 subgroups of finite index underlying Mathlib's `Sylow` subgroups.
 
 The finite comparison supplies the nonempty finite-level systems from which profinite Sylow
-subgroups are constructed. Existence and conjugacy in an arbitrary profinite group require a
-compatible inverse-limit argument and are developed separately.
+subgroups are constructed. Existence and conjugacy in an arbitrary profinite group still require
+a separate compatible inverse-limit argument.
 
 ## Main definitions and results
 
