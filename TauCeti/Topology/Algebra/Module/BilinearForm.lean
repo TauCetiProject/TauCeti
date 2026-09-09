@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Nondegeneracy of the bilinear form of a continuous linear map into the dual
@@ -26,12 +25,10 @@ itself, rather than with any of its users.
 
 * `ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective`: the bilinear form of a
   continuous linear map into the dual is left-separating if and only if the map is injective.
-* `ContinuousLinearMap.finrank_dual_eq`: in finite dimensions the continuous dual has the same
-  dimension as the space.
 * `ContinuousLinearMap.isInvertible_of_injective` and
   `ContinuousLinearMap.isInvertible_of_surjective`: in finite dimensions an injective, equivalently
   a surjective, map into the dual is already invertible, the dual having the same dimension as the
-  space.
+  space (`ContinuousLinearMap.finrank_dual_eq`).
 -/
 
 public section
@@ -57,15 +54,6 @@ section FiniteDimensional
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] {L : E →L[𝕜] E →L[𝕜] 𝕜}
-
-/-- In finite dimensions the continuous dual `E →L[𝕜] 𝕜` has the same dimension as `E`: every
-linear functional on a finite-dimensional space is continuous, so the continuous dual coincides
-with the algebraic one. -/
-theorem _root_.ContinuousLinearMap.finrank_dual_eq :
-    Module.finrank 𝕜 (E →L[𝕜] 𝕜) = Module.finrank 𝕜 E := by
-  rw [← LinearEquiv.finrank_eq
-    (LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] E →L[𝕜] 𝕜)]
-  exact Subspace.dual_finrank_eq
 
 /-- In finite dimensions an injective continuous linear map into the dual is invertible: injectivity
 makes it a linear equivalence onto its range, and the dual has the same finite dimension as the

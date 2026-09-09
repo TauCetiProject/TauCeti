@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.Analysis.Calculus.Sard.EqualDimension
 -- Private: used only inside proofs.
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -211,17 +212,19 @@ section InnerProduct
 open InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-  [MeasurableSpace (E →L[ℝ] ℝ)] [BorelSpace (E →L[ℝ] ℝ)]
-  {f : E → ℝ} {U : Set E}
+  [MeasurableSpace E] [BorelSpace E] {f : E → ℝ} {U : Set E}
 
 /-- **Almost every perturbation by a linear form `⟪v, ·⟫` of a `C²` function is Morse.** This is
 `TauCeti.ae_hasNondegenerateCriticalPointsOn_sub` transported along the Riesz isometry, which is a
 continuous linear equivalence and so carries null sets to null sets; the perturbed function has
-gradient `∇f - v`, which is the shape the negative gradient flow is stated in. -/
+gradient `∇f - v`, which is the shape the negative gradient flow is stated in.
+
+No measurable structure on the dual appears in the statement: the Borel one is installed inside
+the proof, where the Haar measure of the dual is the auxiliary object being transported. -/
 theorem ae_hasNondegenerateCriticalPointsOn_sub_inner (μ : Measure E) [μ.IsAddHaarMeasure]
     (hU : IsOpen U) (hf : ContDiffOn ℝ 2 f U) :
     ∀ᵐ v ∂μ, HasNondegenerateCriticalPointsOn (fun y ↦ f y - ⟪v, y⟫_ℝ) U := by
+  borelize (E →L[ℝ] ℝ)
   have hbad := ae_hasNondegenerateCriticalPointsOn_sub (addHaar : Measure (E →L[ℝ] ℝ)) hU hf
   rw [ae_iff] at hbad ⊢
   have hpre : {v : E | ¬ HasNondegenerateCriticalPointsOn (fun y ↦ f y - ⟪v, y⟫_ℝ) U} =
