@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
-public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.IsTensorProduct
+public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 
 /-!
 # Integral lattices in a real vector space
@@ -34,8 +34,7 @@ integral and real ranks to agree.
   `isIntegralLattice_iff` is the equivalent formulation by an `ℝ`-linear equivalence
   `ℝ ⊗[ℤ] N ≃ₗ[ℝ] V` restricting to `i`.
 * `TauCeti.Toric.isIntegralLattice_of_basis`: an integral basis of `N` whose image is a real
-  basis of `V` exhibits an integral lattice, and `TauCeti.Toric.IsIntegralLattice.basis` is the
-  converse construction of that real basis.
+  basis of `V` exhibits an integral lattice.
 * `TauCeti.Toric.IsIntegralLattice.injective`, `TauCeti.Toric.IsIntegralLattice.span_range_eq_top`
   and `TauCeti.Toric.IsIntegralLattice.finrank_eq`: an integral lattice is injective with full
   real span, and the integral rank of `N` equals the real dimension of `V`.
@@ -102,16 +101,6 @@ theorem isIntegralLattice_of_basis {n : ℕ} (b : Module.Basis (Fin n) ℤ N)
     (b.ext fun j ↦ he j : (e.restrictScalars ℤ).comp (TensorProduct.mk ℤ ℝ N 1)
       = i.toIntLinearMap) n
 
-/-- The real basis of `V` obtained from an integral basis of the lattice `N`. -/
-noncomputable def IsIntegralLattice.basis (h : IsIntegralLattice i) {ι : Type*}
-    (b : Module.Basis ι ℤ N) : Module.Basis ι ℝ V :=
-  (b.baseChange ℝ).map h.isBaseChange.equiv
-
-@[simp]
-theorem IsIntegralLattice.basis_apply (h : IsIntegralLattice i) {ι : Type*}
-    (b : Module.Basis ι ℤ N) (j : ι) : h.basis b j = i (b j) := by
-  simp [IsIntegralLattice.basis]
-
 /-- An integral lattice is injective. -/
 theorem IsIntegralLattice.injective (h : IsIntegralLattice i) :
     Function.Injective i := by
@@ -146,9 +135,11 @@ theorem IsIntegralLattice.finiteDimensional (h : IsIntegralLattice i) :
 basis of `N`. -/
 theorem IsIntegralLattice.range_eq_span {ι : Type*} (h : IsIntegralLattice i)
     (b : Module.Basis ι ℤ N) :
-    LinearMap.range i.toIntLinearMap = Submodule.span ℤ (Set.range (h.basis b)) := by
+    LinearMap.range i.toIntLinearMap = Submodule.span ℤ (Set.range (h.isBaseChange.basis b)) := by
   rw [LinearMap.range_eq_map, ← b.span_eq, Submodule.map_span, ← Set.range_comp]
-  exact congrArg (Submodule.span ℤ) (congrArg Set.range (funext fun j ↦ (h.basis_apply b j).symm))
+  exact congrArg (Submodule.span ℤ) (congrArg Set.range (funext fun j ↦ by
+    simpa only [Function.comp_apply, AddMonoidHom.coe_toIntLinearMap] using
+      (h.isBaseChange.basis_apply b j).symm))
 
 end Basic
 
