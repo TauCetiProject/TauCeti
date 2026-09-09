@@ -295,8 +295,8 @@ theorem IsNondegenerateCriticalPoint.exists_mul_norm_sub_le_norm_gradient
 
 /-- **The Morse form of Łojasiewicz's gradient inequality.** Near a nondegenerate critical point
 the absolute energy difference is bounded by a multiple of the squared norm of the gradient;
-equivalently the Łojasiewicz inequality holds there with the optimal exponent `1 / 2`. For a
-merely smooth function no such inequality is available, and a gradient trajectory can spiral
+equivalently the Łojasiewicz inequality holds there with the optimal exponent `1 / 2`.
+Smoothness alone does not guarantee such an inequality, and a gradient trajectory can spiral
 forever without converging. -/
 theorem IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_gradient_sq
     (h : IsNondegenerateCriticalPoint f x) :
