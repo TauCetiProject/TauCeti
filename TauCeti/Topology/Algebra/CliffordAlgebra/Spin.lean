@@ -51,7 +51,7 @@ topologized special orthogonal group.
   group structure for its canonical subtype topology.
 * `CliffordAlgebra.continuous_spinVectorAction_apply` proves fixed-vector continuity of the Spin
   action.
-* `CliffordAlgebra.isClosed_spinVectorStabilizer` proves that every vector stabilizer is closed.
+* `QuadraticForm.isClosed_spinVectorStabilizer` proves that every vector stabilizer is closed.
 * `CliffordAlgebra.continuous_spinToSpecialOrthogonal_pi` proves continuity of the Spin
   projection for every quadratic form on a finite real coordinate space.
 * `CliffordAlgebra.continuous_realCliffordSpinDoubleCoverZero_rightHom` specializes this result to
@@ -164,11 +164,11 @@ theorem continuous_spinVectorAction_apply [TopologicalSpace V] [IsModuleTopology
   rfl
 
 /-- The subgroup of a finite-dimensional real Spin group fixing a vector is closed. -/
-theorem isClosed_spinVectorStabilizer [TopologicalSpace V] [IsModuleTopology ℝ V] [T1Space V]
+theorem _root_.QuadraticForm.isClosed_spinVectorStabilizer
+    [TopologicalSpace V] [IsModuleTopology ℝ V] [T1Space V]
     (Q : QuadraticForm ℝ V) (v : V) :
     IsClosed {x : spinGroup Q | spinVectorAction Q x v = v} := by
-  change IsClosed ((fun x : spinGroup Q => spinVectorAction Q x v) ⁻¹' {v})
-  exact isClosed_singleton.preimage (continuous_spinVectorAction_apply Q v)
+  exact isClosed_singleton.preimage (CliffordAlgebra.continuous_spinVectorAction_apply Q v)
 
 /-- The real Spin action of a quadratic form on a finite coordinate space is continuous as a map to
 the special orthogonal group with its standard coordinate topology. -/
@@ -206,13 +206,7 @@ theorem isEmbedding_realCliffordSpinInclusion (n : ℕ) :
     (LinearMap.isClosedEmbedding_of_injective
       ((CliffordAlgebra.map (realCliffordSpinInclusionIsometry n)).toLinearMap.ker_eq_bot.mpr
         (realCliffordSpinInclusionIsometry_map_injective n))).isEmbedding
-  have hIncl : (realCliffordSpinInclusion n :
-      realCliffordSpinGroupZero n → realCliffordSpinGroupZero (n + 1)) =
-      (realCliffordSpinInclusionIsometry n).spinGroupMap := by
-    funext x
-    exact Subtype.ext ((coe_realCliffordSpinInclusion_apply n x).trans
-      (QuadraticMap.Isometry.coe_spinGroupMap_apply _ x).symm)
-  rw [hIncl]
+  rw [realCliffordSpinInclusion_eq_spinGroupMap]
   exact (realCliffordSpinInclusionIsometry n).isEmbedding_spinGroupMap hmap
 
 /-- The lower-rank inclusion `Spin(n) → Spin(n + 1)` is continuous for the canonical real
@@ -226,7 +220,7 @@ theorem continuous_realCliffordSpinInclusion (n : ℕ) :
 theorem isClosed_realCliffordSpinLastStabilizer (n : ℕ) :
     IsClosed (realCliffordSpinLastStabilizer n :
       Set (realCliffordSpinGroupZero (n + 1))) := by
-  convert isClosed_spinVectorStabilizer (realCliffordForm (n + 1) 0)
+  convert QuadraticForm.isClosed_spinVectorStabilizer (realCliffordForm (n + 1) 0)
     (Pi.single (Fin.last n) 1) using 1
   ext x
   exact mem_realCliffordSpinLastStabilizer_iff
@@ -235,10 +229,8 @@ theorem isClosed_realCliffordSpinLastStabilizer (n : ℕ) :
 a topological embedding. -/
 theorem isEmbedding_realCliffordSpinStabilizerInclusion (n : ℕ) :
     Topology.IsEmbedding (realCliffordSpinStabilizerInclusion n) := by
-  let hmem : ∀ x, realCliffordSpinInclusion n x ∈ realCliffordSpinLastStabilizer n :=
-    fun x => mem_realCliffordSpinLastStabilizer_iff.mpr
-      (realCliffordSpinInclusion_fixed_last n x)
-  convert (isEmbedding_realCliffordSpinInclusion n).codRestrict _ hmem using 1
+  convert (isEmbedding_realCliffordSpinInclusion n).codRestrict _
+    (realCliffordSpinInclusion_mem_lastStabilizer n) using 1
   ext x
   exact congrArg Subtype.val (coe_realCliffordSpinStabilizerInclusion_apply n x)
 

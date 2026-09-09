@@ -84,6 +84,13 @@ theorem coe_realCliffordSpinInclusion_apply (n : ℕ) (x : realCliffordSpinGroup
         (x : CliffordAlgebra (realCliffordForm n 0)) :=
   QuadraticMap.Isometry.coe_spinGroupMap_apply _ _
 
+/-- The lower-rank Spin inclusion is the map induced by its defining quadratic isometry. -/
+theorem realCliffordSpinInclusion_eq_spinGroupMap (n : ℕ) :
+    realCliffordSpinInclusion n = (realCliffordSpinInclusionIsometry n).spinGroupMap := by
+  ext x
+  exact (coe_realCliffordSpinInclusion_apply n x).trans
+    (QuadraticMap.Isometry.coe_spinGroupMap_apply _ x).symm
+
 private theorem realCliffordSpinLastIsometry_one (n : ℕ) :
     realCliffordSpinLastIsometry n 1 = Pi.single (Fin.last n) 1 := by
   funext j
@@ -157,7 +164,8 @@ theorem mem_realCliffordSpinLastStabilizer_iff
         (Pi.single (Fin.last n) 1) = Pi.single (Fin.last n) 1
   rw [coe_spinToOrthogonal_apply]
 
-private theorem realCliffordSpinInclusion_mem_lastStabilizer (n : ℕ)
+/-- The lower-rank Spin inclusion fixes the last coordinate vector. -/
+theorem realCliffordSpinInclusion_mem_lastStabilizer (n : ℕ)
     (x : realCliffordSpinGroupZero n) :
     realCliffordSpinInclusion n x ∈ realCliffordSpinLastStabilizer n :=
   mem_realCliffordSpinLastStabilizer_iff.mpr
