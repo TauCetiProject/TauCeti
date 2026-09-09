@@ -46,10 +46,11 @@ The square relation has an arithmetic reading. Every point fixed by the twisted 
 `Frob_(q ^ 2)`, so its matrix entries lie in the subring of `A` fixed by the `q ^ 2`-power
 Frobenius. That subring is a field of `q ^ 2` elements only under hypotheses none of the statements
 below assume: `p` prime, `0 < k`, and `A` an algebraic closure of `ZMod p`. Under those hypotheses
-it is the usual statement that the graph-twisted family of type `E₆` at parameter `q` has a matrix
-realization over `𝔽_{q ^ 2}` while its Frobenius parameter is `q`. At `k = 0` the exponent `q ^ 2`
-is `1` and the fixed subring is all of `A`. Only the containment is proved; no reverse containment
-is claimed, and nothing here asserts that either fixed group is finite, is perfect, or is simple.
+this is the field-of-definition containment required of the eventual graph-twisted Steinberg map.
+At `k = 0` the exponent `q ^ 2` is `1` and the fixed subring is all of `A`. Only the containment is
+proved; no reverse containment is claimed, and nothing here identifies this carrier with the pinned
+simply connected Chevalley--Demazure group required by the CFSG roadmap's L0 milestone or attaches
+the composite to a classification index.
 
 ## Main definitions
 
@@ -120,9 +121,9 @@ theorem graphAutomorphismPoints_comp_frobenius :
 /-- **The graph-twisted `p ^ k`-power Frobenius of the doubled type-`E₆` minuscule carrier**, the
 composite `γ₂ ∘ Frob_q` of the carrier's graph automorphism with its Frobenius endomorphism.
 
-For `p` prime, `0 < k`, and `A` an algebraic closure of `ZMod p`, this is the Steinberg map of the
-graph-twisted family `²E₆(p ^ k)`. None of those hypotheses are assumed here, and nothing here
-asserts that the fixed group is finite, perfect or simple. -/
+For `p` prime, `0 < k`, and `A` an algebraic closure of `ZMod p`, this has the formula required of
+the Steinberg map of the graph-twisted family `²E₆(p ^ k)`. Identifying its carrier with the pinned
+group required by the CFSG roadmap is separate work and is not asserted here. -/
 def twistedFrobenius : points A →* points A :=
   (graphAutomorphismPoints A).toMonoidHom.comp (frobenius p k A)
 
@@ -194,9 +195,9 @@ theorem fixedSubgroup_twistedFrobenius_le_fixedSubgroup_frobenius :
 /-- **Every matrix entry of a point fixed by the twisted Frobenius lies in the subring fixed by the
 `p ^ (2 * k)`-power Frobenius.** For `p` prime, `0 < k`, and `A` an algebraic closure of `ZMod p`
 that subring is the field of `p ^ (2 * k)` elements, so this is the statement that the graph-twisted
-type-`E₆` family at Frobenius parameter `q = p ^ k` is realized by `54 × 54` matrices over
-`𝔽_{q ^ 2}`. Without those hypotheses the subring need not be a finite field; at `k = 0` it is all
-of `A`. -/
+type-`E₆` formula at Frobenius parameter `q = p ^ k` has entries in `𝔽_{q ^ 2}`. Without those
+hypotheses the subring need not be a finite field; at `k = 0` it is all of `A`. This statement does
+not identify the carrier or its fixed group with the corresponding classification objects. -/
 theorem mem_frobeniusFixedSubring_of_twistedFrobenius_eq_self {g : points A}
     (hg : twistedFrobenius p k A g = g) (i j : Fin 54) :
     ((g : _root_.Matrix.GeneralLinearGroup (Fin 54) A) :
