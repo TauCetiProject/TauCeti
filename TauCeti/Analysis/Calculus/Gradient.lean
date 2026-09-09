@@ -28,6 +28,7 @@ theorem about `‖Dφ‖`.
 
 * `TauCeti.norm_gradient_eq_norm_fderiv`: `‖∇ f x‖ = ‖fderiv 𝕜 f x‖`.
 * `TauCeti.gradient_add`: additivity of the gradient at a point of differentiability.
+* `TauCeti.gradient_neg`: `∇ (-f) = -∇ f`.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
 -/
 
@@ -52,6 +53,11 @@ theorem gradient_add (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt �
     ∇ (f + g) x = ∇ f x + ∇ g x := by
   apply (toDual 𝕜 F).injective
   simp only [toDual_gradient, map_add, fderiv_add hf hg]
+
+/-- The gradient of a negated function is the negated gradient. -/
+theorem gradient_neg : ∇ (-f) x = -∇ f x := by
+  apply (toDual 𝕜 F).injective
+  simp only [toDual_gradient, map_neg, fderiv_neg]
 
 /-- The gradient is conjugate-homogeneous: `toDual` is conjugate-linear, so scaling the function
 by `c` scales the gradient by `conj c`. Over `ℝ` the conjugation is the identity. -/
