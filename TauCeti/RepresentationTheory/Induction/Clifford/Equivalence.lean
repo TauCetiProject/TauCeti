@@ -40,8 +40,8 @@ representative, while changing that representative changes the summand only up t
 
 ## Main result
 
-* `TauCeti.clifford_restrict_iso_of_isAtom`: **Clifford's theorem for a specified constituent**.
-* `TauCeti.clifford_restrict_iso`: **Clifford's theorem, representation form**. It supplies a
+* `FDRep.clifford_restrict_iso_of_isAtom`: **Clifford's theorem for a specified constituent**.
+* `FDRep.clifford_restrict_iso`: **Clifford's theorem, representation form**. It supplies a
   simple constituent, a positive common multiplicity, and an isomorphism from the restriction to
   `cliffordSum`.
 
@@ -67,7 +67,8 @@ open TauCeti
 inertia group. A finite product of modules is their direct sum; `FDRep.ofShrink` only returns its
 possibly larger carrier to the universe in which `FDRep k N` lives. -/
 noncomputable def cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
-    {N : Subgroup G} [N.Normal] [Finite G] (V : FDRep k N) (e : ℕ) : FDRep k N :=
+    {N : Subgroup G} [N.Normal] (V : FDRep k N) [Finite (G ⧸ inertia V)]
+    (e : ℕ) : FDRep k N :=
   FDRep.ofShrink <| Representation.ofModule' (k := k) (G := N)
     ((q : G ⧸ inertia V) → Fin e →
       _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ)
@@ -75,7 +76,7 @@ noncomputable def cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
 /-- The representation carried by `V.cliffordSum e` is the product of the conjugates of `V`,
 with one copy for each element of `Fin e` and one summand for each inertia coset. -/
 noncomputable def cliffordSumEquiv {k : Type u} {G : Type v} [Field k] [Group G]
-    {N : Subgroup G} [N.Normal] [Finite G] (V : FDRep k N) (e : ℕ) :
+    {N : Subgroup G} [N.Normal] (V : FDRep k N) [Finite (G ⧸ inertia V)] (e : ℕ) :
     _root_.Representation.Equiv (V.cliffordSum e).ρ
       (_root_.Representation.ofModule' (k := k) (G := N)
         ((q : G ⧸ inertia V) → Fin e →
@@ -86,7 +87,7 @@ noncomputable def cliffordSumEquiv {k : Type u} {G : Type v} [Field k] [Group G]
 dimension of `V`. -/
 @[simp]
 theorem finrank_cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
-    {N : Subgroup G} [N.Normal] [Finite G] (V : FDRep k N) (e : ℕ) :
+    {N : Subgroup G} [N.Normal] (V : FDRep k N) [Finite (G ⧸ inertia V)] (e : ℕ) :
     Module.finrank k (V.cliffordSum e) =
       Nat.card (G ⧸ inertia V) * e * Module.finrank k V := by
   classical
@@ -100,7 +101,8 @@ theorem finrank_cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
 summands. -/
 @[simp]
 theorem character_cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
-    {N : Subgroup G} [N.Normal] [Finite G] (V : FDRep k N) (e : ℕ) (x : N) :
+    {N : Subgroup G} [N.Normal] (V : FDRep k N) [Finite (G ⧸ inertia V)]
+    (e : ℕ) (x : N) :
     (V.cliffordSum e).character x =
       (e : k) * ∑ᶠ q : G ⧸ inertia V,
         (conjNormalFDRep (Quotient.out q) V).character x := by
@@ -202,6 +204,12 @@ private noncomputable def componentLinearEquiv
   simpa only [τ, g] using
     eComponent.trans (LinearEquiv.piCongrRight fun _ ↦ eConj)
 
+end TauCeti
+
+namespace FDRep
+
+open TauCeti
+
 /-- **Clifford's theorem for a specified constituent.** Given a simple constituent `σ` of the
 restriction of an irreducible representation to a normal subgroup, the restriction is isomorphic
 to `e` copies of every conjugate of `σ`, with the distinct conjugates indexed by the left cosets
@@ -293,7 +301,7 @@ theorem clifford_restrict_iso {k : Type u} {G : Type v} [Field k] [Group G]
   let _ : Representation.IsIrreducible V.ρ :=
     Representation.isIrreducible_toRepresentation_of_isAtom hσ
   let _ : Simple V := FDRep.simple_of_isIrreducible V
-  obtain ⟨e, he, h⟩ := clifford_restrict_iso_of_isAtom W σ hσ
+  obtain ⟨e, he, h⟩ := W.clifford_restrict_iso_of_isAtom σ hσ
   exact ⟨V, inferInstance, e, he, h⟩
 
-end TauCeti
+end FDRep

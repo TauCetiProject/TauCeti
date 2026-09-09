@@ -39,7 +39,7 @@ variable {k : Type u} {ι : Type v} {M : Type w}
 open scoped Classical in
 /-- The trace of a coordinate-reindexing endomorphism of a finite product is the sum of the
 traces on its fixed coordinates. -/
-theorem LinearMap.trace_pi_of_apply_eq (T : (ι → M) →ₗ[k] (ι → M)) (σ : ι → ι)
+theorem _root_.LinearMap.trace_pi_of_apply_eq (T : (ι → M) →ₗ[k] (ι → M)) (σ : ι → ι)
     (f : ι → M →ₗ[k] M) (hT : ∀ x i, T x i = f i (x (σ i))) :
     LinearMap.trace k (ι → M) T =
       ∑ i : ι, if σ i = i then LinearMap.trace k M (f i) else 0 := by
