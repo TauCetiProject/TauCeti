@@ -112,6 +112,7 @@ theorem covariance_inner_matrix_multivariateGaussian
 
 /-- The two complementary coordinate blocks of a multivariate Gaussian with positive-semidefinite
 covariance are independent exactly when their cross-covariance block vanishes. -/
+-- Source: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 4.
 theorem indepFun_sumEquivProd_multivariateGaussian_iff
     {κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
     (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
