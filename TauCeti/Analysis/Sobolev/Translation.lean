@@ -138,9 +138,9 @@ theorem W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient (hp : p ≠ �
       (inferInstance : mu.IsAddHaarMeasure)
   have hrw : ∀ v : W1p mu (⊤ : Opens E) p,
       eLpNorm (fun x => W1p.value v (x + h) - W1p.value v x) p mu
-        = ‖translateLp (mu.restrict ((⊤ : Opens E) : Set E)) p h (W1p.valueL v) -
+        = ‖(mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h (W1p.valueL v) -
           W1p.valueL v‖ₑ := fun v => by
-    rw [enorm_translateLp_sub, W1p.valueL_apply]
+    rw [Measure.enorm_translateLp_sub, W1p.valueL_apply]
     exact (congrArg (fun nu : Measure E =>
       eLpNorm (fun x => W1p.value v (x + h) - W1p.value v x) p nu) htop).symm
   have hclosed : IsClosed {v : W1p mu ⊤ p |
@@ -148,7 +148,7 @@ theorem W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient (hp : p ≠ �
         ≤ ‖h‖ₑ * ‖W1p.gradient v‖ₑ} := by
     simp only [hrw, ← W1p.gradientL_apply]
     exact isClosed_le
-      ((((translateLp (mu.restrict ((⊤ : Opens E) : Set E)) p h).toLinearIsometry
+      (((((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h).toLinearIsometry
         |>.toContinuousLinearMap.comp W1p.valueL) -
         W1p.valueL).continuous.enorm)
       ((ENNReal.continuous_const_mul (by finiteness)).comp

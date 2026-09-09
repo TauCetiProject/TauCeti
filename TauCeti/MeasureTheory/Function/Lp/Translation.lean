@@ -30,13 +30,16 @@ exchanging the order of integration.
 
 ## Main declarations
 
-* `TauCeti.translateLp`: translation by a vector as a linear isometric equivalence of `Lᵖ`.
-* `TauCeti.coeFn_translateLp`: translation is almost everywhere precomposition by addition.
-* `TauCeti.translateLp_zero`, `TauCeti.translateLp_symm`, `TauCeti.translateLp_add`: translation
-  is an action of the additive group of vectors.
-* `TauCeti.continuous_translateLp`: strong continuity of translation for `p < ∞`.
-* `TauCeti.enorm_translateLp_sub`: identifies the norm of an `Lᵖ` translation increment with its
-  pointwise `eLpNorm`.
+* `MeasureTheory.Measure.translateLp`: translation by a vector as a linear isometric equivalence
+  of `Lᵖ`.
+* `MeasureTheory.Measure.coeFn_translateLp`: translation is almost everywhere precomposition by
+  addition.
+* `MeasureTheory.Measure.translateLp_zero`, `MeasureTheory.Measure.translateLp_symm`,
+  `MeasureTheory.Measure.translateLp_add`: translation is an action of the additive group of
+  vectors.
+* `MeasureTheory.Measure.continuous_translateLp`: strong continuity of translation for `p < ∞`.
+* `MeasureTheory.Measure.enorm_translateLp_sub`: identifies the norm of an `Lᵖ` translation
+  increment with its pointwise `eLpNorm`.
 * `TauCeti.tendsto_eLpNorm_comp_add_sub_of_memLp`: translation increments of an `Lᵖ` function
   tend to zero.
 * `TauCeti.lintegral_enorm_comp_add_sub_rpow_le`: the translation estimate in `∫⁻` form.
@@ -56,10 +59,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open MeasureTheory Set
 open scoped ENNReal
+
+namespace MeasureTheory.Measure
 
 section LpTranslation
 
@@ -71,8 +74,9 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
 
 Precomposition by `· + h` is invertible, its inverse being precomposition by `· + -h`; carrying
 that inverse makes the identity, inverse and composition laws
-`TauCeti.translateLp_zero`, `TauCeti.translateLp_symm` and `TauCeti.translateLp_add` available
-as an action of the additive group of vectors on `Lᵖ`. -/
+`MeasureTheory.Measure.translateLp_zero`, `MeasureTheory.Measure.translateLp_symm` and
+`MeasureTheory.Measure.translateLp_add` available as an action of the additive group of vectors
+on `Lᵖ`. -/
 def translateLp (mu : Measure E) [mu.IsAddHaarMeasure] (p : ENNReal) [Fact (1 ≤ p)]
     (h : E) : Lp F p mu ≃ₗᵢ[ℝ] Lp F p mu :=
   Lp.compMeasurePreservingₗᵢEquiv ℝ (measurePreserving_add_right mu h)
@@ -142,7 +146,18 @@ theorem enorm_translateLp_sub (h : E) (f : Lp F p mu) :
     rfl
   rw [Lp.enorm_def, eLpNorm_congr_ae hae]
 
-omit [NormedSpace ℝ E] [Fact (1 ≤ p)] in
+end LpTranslation
+
+end MeasureTheory.Measure
+
+namespace TauCeti
+
+section MemLpTranslation
+
+variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal}
+
 /-- Translation increments of an `Lᵖ` function tend to zero as the translation tends to zero. -/
 theorem tendsto_eLpNorm_comp_add_sub_of_memLp [ProperSpace E] {u : E → F}
     (hp : 1 ≤ p) (hp' : p ≠ ∞)
@@ -150,19 +165,19 @@ theorem tendsto_eLpNorm_comp_add_sub_of_memLp [ProperSpace E] {u : E → F}
     Filter.Tendsto (fun h : E ↦ eLpNorm (fun x ↦ u (x + h) - u x) p mu)
       (nhds 0) (nhds 0) := by
   let _ : Fact (1 ≤ p) := ⟨hp⟩
-  have hcont := (continuous_translateLp (mu := mu) hp' (hu.toLp u)).tendsto (0 : E)
-  have htend : Filter.Tendsto (fun h : E ↦ translateLp mu p h (hu.toLp u))
+  have hcont := (Measure.continuous_translateLp (mu := mu) hp' (hu.toLp u)).tendsto (0 : E)
+  have htend : Filter.Tendsto (fun h : E ↦ mu.translateLp p h (hu.toLp u))
       (nhds 0) (nhds (hu.toLp u)) := by
-    simpa only [translateLp_zero] using hcont
+    simpa only [Measure.translateLp_zero] using hcont
   rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at htend
   apply htend.congr'
   filter_upwards with h
   apply eLpNorm_congr_ae
-  exact ((coeFn_translateLp (mu := mu) h (hu.toLp u)).trans
+  exact ((Measure.coeFn_translateLp (mu := mu) h (hu.toLp u)).trans
       ((measurePreserving_add_right mu h).quasiMeasurePreserving.ae_eq_comp hu.coeFn_toLp)).sub
     hu.coeFn_toLp
 
-end LpTranslation
+end MemLpTranslation
 
 section Calculus
 

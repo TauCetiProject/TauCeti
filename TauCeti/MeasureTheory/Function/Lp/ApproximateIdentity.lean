@@ -62,18 +62,19 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
 /-- The average of an `Lᵖ` class against the normalized form of a smooth bump centred at zero,
 before it is bundled as a continuous linear map by `TauCeti.normedBumpLp`. -/
 private def normedBumpFun (phi : ContDiffBump (0 : E)) (f : Lp F p mu) : Lp F p mu :=
-  (phi.normed mu ⋆[lsmul ℝ ℝ, mu] fun h ↦ translateLp mu p h f) 0
+  (phi.normed mu ⋆[lsmul ℝ ℝ, mu] fun h ↦ mu.translateLp p h f) 0
 
 private theorem normedBumpFun_apply (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
-    normedBumpFun phi f = ∫ t, phi.normed mu t • translateLp mu p (-t) f ∂mu := by
+    normedBumpFun phi f = ∫ t, phi.normed mu t • mu.translateLp p (-t) f ∂mu := by
   rw [normedBumpFun, convolution_lsmul]
   simp only [zero_sub]
 
 private theorem integrable_normed_smul_translateLp_neg (hp : p ≠ ∞)
     (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
-    Integrable (fun t ↦ phi.normed mu t • translateLp mu p (-t) f) mu := by
+    Integrable (fun t ↦ phi.normed mu t • mu.translateLp p (-t) f) mu := by
   apply Continuous.integrable_of_hasCompactSupport
-  · exact phi.continuous_normed.smul ((continuous_translateLp (mu := mu) hp f).comp continuous_neg)
+  · exact phi.continuous_normed.smul
+      ((Measure.continuous_translateLp (mu := mu) hp f).comp continuous_neg)
   · exact phi.hasCompactSupport_normed.smul_right
 
 private theorem normedBumpFun_add (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (f g : Lp F p mu) :
@@ -97,7 +98,7 @@ private theorem norm_normedBumpFun_le (hp : p ≠ ∞) (phi : ContDiffBump (0 : 
     ‖normedBumpFun phi f‖ ≤ ‖f‖ := by
   calc
     ‖normedBumpFun phi f‖ ≤
-        ∫ t, ‖phi.normed mu t • translateLp mu p (-t) f‖ ∂mu := by
+        ∫ t, ‖phi.normed mu t • mu.translateLp p (-t) f‖ ∂mu := by
       rw [normedBumpFun_apply]
       exact norm_integral_le_of_norm_le
         (integrable_normed_smul_translateLp_neg hp phi f).norm
@@ -105,7 +106,7 @@ private theorem norm_normedBumpFun_le (hp : p ≠ ∞) (phi : ContDiffBump (0 : 
     _ = ∫ t, phi.normed mu t * ‖f‖ ∂mu := by
       apply integral_congr_ae
       filter_upwards with t
-      have ht : ‖translateLp mu p (-t) f‖ = ‖f‖ := (translateLp mu p (-t)).norm_map f
+      have ht : ‖mu.translateLp p (-t) f‖ = ‖f‖ := (mu.translateLp p (-t)).norm_map f
       rw [norm_smul, Real.norm_of_nonneg (phi.nonneg_normed t), ht]
     _ = ‖f‖ := by rw [integral_mul_const, phi.integral_normed, one_mul]
 
@@ -130,7 +131,7 @@ def normedBumpLp (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
 /-- The defining Bochner-integral formula for `normedBumpLp`. -/
 theorem normedBumpLp_apply (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
     normedBumpLp hp phi mu f =
-      ∫ t, phi.normed mu t • translateLp mu p (-t) f ∂mu := by
+      ∫ t, phi.normed mu t • mu.translateLp p (-t) f ∂mu := by
   rw [normedBumpLp]
   exact normedBumpFun_apply phi f
 
@@ -154,11 +155,11 @@ theorem tendsto_normedBumpLp [CompleteSpace F] {I : Type*} {l : Filter I}
     (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) (f : Lp F p mu) :
     Tendsto (fun i ↦ normedBumpLp hp (phi i) mu f) l (nhds f) := by
   have hval : ∀ i, normedBumpLp hp (phi i) mu f =
-      ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] fun h ↦ translateLp mu p h f) 0 := fun i ↦ by
+      ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] fun h ↦ mu.translateLp p h f) 0 := fun i ↦ by
     rw [normedBumpLp_apply, convolution_lsmul]
     simp only [zero_sub]
-  simpa only [hval, translateLp_zero] using
+  simpa only [hval, Measure.translateLp_zero] using
     ContDiffBump.convolution_tendsto_right_of_continuous hphi
-      (continuous_translateLp (mu := mu) hp f) (0 : E)
+      (Measure.continuous_translateLp (mu := mu) hp f) (0 : E)
 
 end TauCeti
