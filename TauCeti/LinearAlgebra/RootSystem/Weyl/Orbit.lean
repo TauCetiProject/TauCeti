@@ -64,7 +64,7 @@ theorem exists_mem_support_weylGroupToPerm_eq [CharZero R] [Finite ι] [IsDomain
       ∃ i ∈ b.support, ∃ w : P.weylGroup, P.weylGroupToPerm w i = P.reflectionPerm k x := by
     rintro k x ⟨i, hi, w, rfl⟩
     exact ⟨i, hi, _root_.RootPairing.weylGroup.ofIdx P k * w,
-      TauCeti.RootPairing.weylGroupToPerm_ofIdx_mul_apply P w k i⟩
+      RootPairing.weylGroupToPerm_ofIdx_mul_apply P w k i⟩
   exact b.induction_reflect j (fun k hk ↦ step k k hk) (fun i hi ↦ ⟨i, hi, 1, by simp⟩)
     fun x k hx _ ↦ step k x hx
 
@@ -92,7 +92,7 @@ theorem _root_.RootPairing.RootPositiveForm.rootLength_weylGroupToPerm
 theorem _root_.RootPairing.RootPositiveForm.rootLength_reflectionPerm
     (B : P.RootPositiveForm S) (i j : ι) :
     B.rootLength (P.reflectionPerm i j) = B.rootLength j := by
-  rw [← TauCeti.RootPairing.weylGroupToPerm_ofIdx_apply P i j]
+  rw [← RootPairing.weylGroupToPerm_ofIdx_apply P i j]
   exact RootPairing.RootPositiveForm.rootLength_weylGroupToPerm B _ j
 
 /-- **Every root has the length of one of the simple roots.** Consequently the set of root lengths

@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.RingTheory.DividedPowers.RootString.G2
+public import TauCeti.RingTheory.DividedPowers.RootString.G2.Basic
 public import TauCeti.RingTheory.Nilpotent.RootString.Basic
 
 /-!
@@ -35,7 +35,7 @@ of a root system of type `G₂`, `α` short and `β` long, and in no other type;
 is `t ^ i * u ^ j` for the root `i α + j β` it belongs to; in particular the last factor has the
 parameter `t ^ 3 * u ^ 2`, which is what makes this case not a chain in `ad x` alone. The one
 remaining type-`G₂` configuration, the pair `α`, `α + β`, is not treated here; see
-`TauCeti.RingTheory.DividedPowers.RootString.G2` for what it needs instead.
+`TauCeti.RingTheory.Nilpotent.RootString.G2.ShortPair` for its exponential relation.
 
 Nothing here divides by a factorial in `R`, so the relation holds over a ring of arbitrary
 characteristic. The whole point is the coefficient-one straightening rule

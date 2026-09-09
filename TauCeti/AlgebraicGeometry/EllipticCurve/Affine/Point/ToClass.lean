@@ -641,7 +641,7 @@ private theorem mk_eq_mk_XYIdeal'_of_finrank_quotient_eq_one
       ClassGroup.mk W.FunctionField hIunit.unit =
         ClassGroup.mk W.FunctionField (CoordinateRing.XYIdeal' h) := by
   obtain ⟨x, y, heq, hxy⟩ :=
-    TauCeti.WeierstrassCurve.Affine.CoordinateRing.finrank_quotient_eq_one_iff.mp hfin
+    WeierstrassCurve.Affine.CoordinateRing.finrank_quotient_eq_one_iff.mp hfin
   have hXYunit : IsUnit (CoordinateRing.XYIdeal W x (C y) :
       FractionalIdeal W.CoordinateRing⁰ W.FunctionField) := hxy ▸ hIunit
   have hns : W.Nonsingular x y := nonsingular_of_isUnit_XYIdeal heq hXYunit

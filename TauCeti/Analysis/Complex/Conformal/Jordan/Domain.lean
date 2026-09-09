@@ -228,7 +228,7 @@ already carried across by `f`: the image of an open set under an injective holom
 and the image is bounded because `F` is continuous on the compact `closure U`. A caller holding
 `h : TauCeti.IsJordanDomain (f '' U)` supplies `h.isConnected` and `h.isJordanCurve_frontier`.
 Connectedness of `U` itself is likewise not assumed: `f` is an open partial homeomorphism of `U`
-onto `f '' U` (`TauCeti.DifferentiableOn.toOpenPartialHomeomorph`), so `U` is the image of the
+onto `f '' U` (`DifferentiableOn.toOpenPartialHomeomorph`), so `U` is the image of the
 connected `f '' U` under the continuous inverse. -/
 theorem isJordanDomain_of_isJordanCurve_frontier_image (hUo : IsOpen U)
     (hUb : Bornology.IsBounded U) (hfd : DifferentiableOn ℂ f U)

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ReflectionLift
-public import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne
+public import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.Basic
 
 /-!
 # Cartan--Dieudonné for Lipschitz and Pin actions

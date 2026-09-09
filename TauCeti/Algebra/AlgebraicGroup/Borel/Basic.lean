@@ -32,6 +32,8 @@ maximality only among subgroups defined over the ground field is not the Borel c
   solvable closed subgroup, before imposing maximality.
 * `TauCeti.HopfIdeal.IsBorelOverAlgClosed`: the Borel-subgroup predicate over an algebraically
   closed field.
+* `TauCeti.HopfIdeal.IsBorelOverAlgClosed.of_map_eq`: transport of the algebraically closed
+  Borel property across an ambient Hopf-algebra isomorphism.
 * `TauCeti.HopfIdeal.IsBorel`: the Borel-subgroup predicate in Hopf coordinates.
 * `TauCeti.HopfIdeal.IsBorel.comapOfIso_iff`: Borel status is invariant under an ambient
   Hopf-algebra isomorphism.
@@ -144,6 +146,29 @@ theorem isBorelOverAlgClosed_iff (k : Type u) [Field k]
     (H : FiniteTypeCommHopfAlgCat.{u, v} k) (I : HopfIdeal k H) :
     IsBorelOverAlgClosed k H I ↔ IsAlgClosed k ∧ Minimal (IsBorelCandidate k H) I :=
   Iff.rfl
+
+namespace IsBorelOverAlgClosed
+
+variable {k : Type u} [Field k]
+variable {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
+variable {I : HopfIdeal k H.obj} {J : HopfIdeal k L.obj}
+
+/-- Transport the algebraically closed Borel property across an ambient Hopf-algebra
+isomorphism that maps one defining ideal to the other. -/
+theorem of_map_eq (e : H ≅ L)
+    (hmap : I.map (FiniteTypeCommHopfAlgCat.toBialgHom e.hom) = J)
+    (hJ : IsBorelOverAlgClosed k L J) : IsBorelOverAlgClosed k H I := by
+  let f := FiniteTypeCommHopfAlgCat.toBialgHom e.hom
+  have hf : Function.Bijective f := ConcreteCategory.bijective_of_isIso e.hom
+  have hpull : IsBorelOverAlgClosed k H (J.comapOfSurjective f hf.2) := ⟨hJ.1,
+    FiniteTypeCommHopfAlgCat.minimal_quotientProperty_comapOfIso
+      (borelQuotientProperty k) J hJ.2 e⟩
+  have hcomap : J.comapOfSurjective f hf.2 = I := by
+    rw [← hmap]
+    exact HopfIdeal.comapOfSurjective_map_of_bijective I f hf
+  rwa [hcomap] at hpull
+
+end IsBorelOverAlgClosed
 
 /-- A Hopf ideal defines a Borel subgroup when, after base change to an algebraic closure, its
 quotient coordinate algebra is smooth, geometrically connected, and geometrically solvable, and

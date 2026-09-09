@@ -11,6 +11,8 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Complex.RemovableSingularity
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
+import TauCeti.Topology.Order.OrderClosed
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
@@ -316,6 +318,20 @@ private theorem norm_integral_perronFn_vertical_le (hx : 0 < x) (hc : c ≠ 0) (
     ring
   rwa [hlen] at h
 
+/-- **The far side of the rectangle.**  At an abscissa `b` at least as far from the origin as the
+near abscissa `c`, the vertical side is at most `x ^ b / c * (2 * T)`.  Stating the hypothesis as
+`c ≤ |b|` covers both endpoint estimates at once: the far side sits at `b = B` below the endpoint
+and at `b = -B` above it. -/
+private theorem norm_integral_perronFn_vertical_le_of_le_abs (hx : 0 < x) (hc : 0 < c)
+    (hT : 0 ≤ T) {b : ℝ}
+    (hb : c ≤ |b|) : ‖∫ t in (-T)..T, perronFn x ((b : ℂ) + t * I)‖ ≤ x ^ b / c * (2 * T) := by
+  have hb0 : b ≠ 0 := by
+    rintro rfl
+    rw [abs_zero] at hb
+    linarith
+  refine (norm_integral_perronFn_vertical_le (c := b) hx hb0 hT).trans ?_
+  gcongr
+
 /-- The Cauchy–Goursat theorem for the rectangle with horizontal sides at heights `±T` and
 vertical sides at abscissae `a` and `b`, in the parameterization used throughout this file. -/
 private theorem integral_perronRectangle_eq_zero (f : ℂ → ℂ) (a b T : ℝ)
@@ -346,58 +362,67 @@ For `x < 1` the function `x ^ s` decays as `Re s` grows, so the segment may be p
 sides survive; each of them is at most `x ^ c / (T * |log x|)`.
 -/
 
+/-- On a rectangle whose abscissae stay to the right of `0` the Perron integrand is holomorphic:
+the only singularity is at the origin. -/
+private theorem differentiableOn_perronFn_rectangle (hx : x ≠ 0) (hc : 0 < c) {B : ℝ}
+    (hcB : c ≤ B) (T : ℝ) :
+    DifferentiableOn ℂ (perronFn x) (Set.uIcc c B ×ℂ Set.uIcc (-T) T) := by
+  intro s hs
+  refine (differentiableAt_perronFn hx ?_).differentiableWithinAt
+  have hre : s.re ∈ Set.uIcc c B := hs.1
+  rw [Set.uIcc_of_le hcB] at hre
+  have hpos : 0 < s.re := lt_of_lt_of_le hc hre.1
+  exact Complex.ne_zero_of_re_pos hpos
+
+/-- Each horizontal side of the rectangle contributes at most `x ^ c / (T * |log x|)`.  Below the
+endpoint `log x` is negative, so passing from `log x` to `|log x|` also swaps the two powers, and
+the surviving one is the near side `x ^ c`. -/
+private theorem norm_integral_perronFn_horizontal_le_of_lt_one (hx : 0 < x) (hx1 : x < 1)
+    (hT : 0 < T) {B : ℝ} (hcB : c ≤ B) {u : ℝ} (habs : |u| = T) :
+    ‖∫ σ in c..B, perronFn x ((σ : ℂ) + u * I)‖ ≤ x ^ c / (T * |Real.log x|) := by
+  have hu : u ≠ 0 := fun h ↦ hT.ne' (by rw [← habs, h, abs_zero])
+  have hlogneg : Real.log x < 0 := Real.log_neg hx hx1
+  refine (norm_integral_perronFn_horizontal_le hx hu hcB).trans ?_
+  have hflip : (x ^ B - x ^ c) / Real.log x = (x ^ c - x ^ B) / |Real.log x| := by
+    rw [abs_of_neg hlogneg]
+    ring
+  rw [habs, integral_rpow_const_base hx hx1.ne, hflip]
+  have hxB : 0 ≤ x ^ B := Real.rpow_nonneg hx.le B
+  calc (x ^ c - x ^ B) / |Real.log x| / T ≤ x ^ c / |Real.log x| / T := by
+        gcongr
+        linarith
+    _ = x ^ c / (T * |Real.log x|) := by ring
+
 private theorem norm_integral_perronFn_le_of_lt_one (hx : 0 < x) (hx1 : x < 1) (hc : 0 < c)
     (hT : 0 < T) :
     ‖∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)‖ ≤ 2 * (x ^ c / (T * |Real.log x|)) := by
-  have hlogneg : Real.log x < 0 := Real.log_neg hx hx1
-  have hL : 0 < |Real.log x| := abs_pos.2 hlogneg.ne
   have key : ∀ B, c ≤ B → ‖∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)‖
       ≤ 2 * (x ^ c / (T * |Real.log x|)) + x ^ B / c * (2 * T) := by
     intro B hcB
     have hB0 : 0 < B := lt_of_lt_of_le hc hcB
-    have hdiff : DifferentiableOn ℂ (perronFn x) (Set.uIcc c B ×ℂ Set.uIcc (-T) T) := by
-      intro s hs
-      refine (differentiableAt_perronFn hx.ne' ?_).differentiableWithinAt
-      have hre : s.re ∈ Set.uIcc c B := hs.1
-      rw [Set.uIcc_of_le hcB] at hre
-      have hpos : 0 < s.re := lt_of_lt_of_le hc hre.1
-      exact fun h0 => by simp [h0] at hpos
-    have hcauchy := integral_perronRectangle_eq_zero (perronFn x) c B T hdiff
+    have hcauchy := integral_perronRectangle_eq_zero (perronFn x) c B T
+      (differentiableOn_perronFn_rectangle hx.ne' hc hcB T)
     -- Cauchy's theorem rewrites the segment as the far side plus the two horizontal sides.
     have hsplit : I * ∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)
         = ((∫ σ in c..B, perronFn x ((σ : ℂ) + (-T : ℝ) * I))
             - ∫ σ in c..B, perronFn x ((σ : ℂ) + (T : ℝ) * I))
           + I * ∫ t in (-T)..T, perronFn x ((B : ℂ) + t * I) := by
       linear_combination -hcauchy
-    have hhoriz : ∀ u : ℝ, u ≠ 0 → |u| = T →
-        ‖∫ σ in c..B, perronFn x ((σ : ℂ) + u * I)‖ ≤ x ^ c / (T * |Real.log x|) := by
-      intro u hu habs
-      refine (norm_integral_perronFn_horizontal_le hx hu hcB).trans ?_
-      -- `log x` is negative here, so moving to `|log x|` also swaps the two powers.
-      have hflip : (x ^ B - x ^ c) / Real.log x = (x ^ c - x ^ B) / |Real.log x| := by
-        rw [abs_of_neg hlogneg]
-        ring
-      rw [habs, integral_rpow_const_base hx hx1.ne, hflip]
-      have hxB : 0 ≤ x ^ B := Real.rpow_nonneg hx.le B
-      calc (x ^ c - x ^ B) / |Real.log x| / T ≤ x ^ c / |Real.log x| / T := by
-            gcongr
-            linarith
-        _ = x ^ c / (T * |Real.log x|) := by ring
-    have hfar : ‖∫ t in (-T)..T, perronFn x ((B : ℂ) + t * I)‖ ≤ x ^ B / c * (2 * T) := by
-      refine (norm_integral_perronFn_vertical_le hx hB0.ne' hT.le).trans ?_
-      rw [abs_of_pos hB0]
-      gcongr
+    have hhoriz : ∀ u : ℝ, |u| = T →
+        ‖∫ σ in c..B, perronFn x ((σ : ℂ) + u * I)‖ ≤ x ^ c / (T * |Real.log x|) :=
+      fun _ habs ↦ norm_integral_perronFn_horizontal_le_of_lt_one hx hx1 hT hcB habs
+    have hfar : ‖∫ t in (-T)..T, perronFn x ((B : ℂ) + t * I)‖ ≤ x ^ B / c * (2 * T) :=
+      norm_integral_perronFn_vertical_le_of_le_abs hx hc hT.le (by rwa [abs_of_pos hB0])
     rw [← norm_I_mul (∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)), hsplit]
     refine (norm_sub_add_I_mul_le _ _ _).trans ?_
-    have h₁ := hhoriz (-T) (neg_ne_zero.2 hT.ne') (by rw [abs_neg, abs_of_pos hT])
-    have h₂ := hhoriz T hT.ne' (abs_of_pos hT)
+    have h₁ := hhoriz (-T) (by rw [abs_neg, abs_of_pos hT])
+    have h₂ := hhoriz T (abs_of_pos hT)
     linarith
-  have hlim : Tendsto (fun B : ℝ => 2 * (x ^ c / (T * |Real.log x|)) + x ^ B / c * (2 * T)) atTop
-      (𝓝 (2 * (x ^ c / (T * |Real.log x|)))) := by
-    have h0 : Tendsto (fun B : ℝ => x ^ B) atTop (𝓝 0) :=
-      tendsto_rpow_atTop_of_base_lt_one x (by linarith) hx1
-    simpa using tendsto_const_nhds.add ((h0.div_const c).mul tendsto_const_nhds)
-  exact ge_of_tendsto hlim (eventually_atTop.2 ⟨c, key⟩)
+  have hzero : Tendsto (fun B : ℝ ↦ x ^ B * (2 * T / c)) atTop (𝓝 0) := by
+    simpa using (tendsto_rpow_atTop_of_base_lt_one x (by linarith) hx1).mul_const (2 * T / c)
+  refine Tendsto.le_of_eventually_le_add hzero ?_
+  filter_upwards [eventually_ge_atTop c] with B hB
+  simpa [div_mul_eq_mul_div, mul_div_assoc] using key B hB
 
 /-- **Below the endpoint the truncated Perron kernel is small.**  For `0 < x < 1` it differs from
 `0` by at most `x ^ c / (π * T * |log x|)`. -/
@@ -427,11 +452,6 @@ theorem, the integrand is split as `(x ^ s - 1) / s + 1 / s`: the first summand 
 origin as `dslope`, so Cauchy's theorem applies to it verbatim, and the second is integrated in
 closed form, its four sides contributing the four arctangents that add up to `2 π i`.
 -/
-
-private theorem arctan_div_add_arctan_div (ha : 0 < a) (hb : 0 < b) :
-    Real.arctan (a / b) + Real.arctan (b / a) = π / 2 := by
-  rw [← inv_div a b, Real.arctan_inv_of_pos (by positivity)]
-  ring
 
 /-- The Perron integrand with its pole removed: `s ↦ (x ^ s - 1) / s`, given the value `log x` at
 the origin.  Off the origin it is the difference of the integrands at `x` and at `1`. -/
@@ -506,12 +526,28 @@ private theorem integral_perronFn_one_horizontal_diff (hT : T ≠ 0) (a b : ℝ)
     (((hcont _ (neg_ne_zero.2 hT)).sub (hcont _ hT)))]
   ring
 
+/-- The horizontal side running from `a` to `c` at height `u ≠ 0` contributes at most
+`x ^ c / (|u| * |log x|)`, provided `1 < x` and `a ≤ c`. -/
+private theorem norm_integral_perronFn_horizontal_le_of_one_lt (hx1 : 1 < x) {a : ℝ}
+    (hac : a ≤ c) {u : ℝ} (hu : u ≠ 0) :
+    ‖∫ σ in a..c, perronFn x ((σ : ℂ) + u * I)‖ ≤ x ^ c / (|u| * |Real.log x|) := by
+  have hx : 0 < x := lt_trans zero_lt_one hx1
+  have hL : |Real.log x| = Real.log x := abs_of_pos (Real.log_pos hx1)
+  refine (norm_integral_perronFn_horizontal_le hx hu hac).trans ?_
+  rw [hL, integral_rpow_const_base hx hx1.ne']
+  have hxa : 0 < x ^ a := Real.rpow_pos_of_pos hx _
+  have hlog : 0 < Real.log x := Real.log_pos hx1
+  have habs : 0 < |u| := abs_pos.2 hu
+  calc (x ^ c - x ^ a) / Real.log x / |u| ≤ x ^ c / Real.log x / |u| := by
+        gcongr
+        linarith
+    _ = x ^ c / (|u| * Real.log x) := by ring
+
 private theorem norm_integral_perronFn_sub_two_pi_le_of_one_lt (hx1 : 1 < x) (hc : 0 < c)
     (hT : 0 < T) :
     ‖(∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)) - 2 * π‖
       ≤ 2 * (x ^ c / (T * |Real.log x|)) := by
   have hx : 0 < x := lt_trans zero_lt_one hx1
-  have hL : |Real.log x| = Real.log x := abs_of_pos (Real.log_pos hx1)
   have key : ∀ B, c ≤ B → ‖(∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)) - 2 * π‖
       ≤ 2 * (x ^ c / (T * |Real.log x|)) + x ^ (-B) / c * (2 * T) := by
     intro B hcB
@@ -532,55 +568,29 @@ private theorem norm_integral_perronFn_sub_two_pi_le_of_one_lt (hx1 : 1 < x) (hc
     have e₁ := integral_perronFn_one_horizontal_diff hT.ne' (-B) c
     have e₂ := integral_perronFn_one_vertical hc.ne' T
     have e₃ := integral_perronFn_one_vertical (neg_ne_zero.2 hB0.ne') T
-    have hres : 2 * I * ((Real.arctan (c / T) : ℂ) - (Real.arctan (-B / T) : ℂ))
-        + I * (2 * (Real.arctan (T / c) : ℂ)) - I * (2 * (Real.arctan (T / -B) : ℂ))
-        = 2 * π * I := by
-      have hA : ((Real.arctan (c / T) : ℝ) : ℂ) + ((Real.arctan (T / c) : ℝ) : ℂ)
-          = (π : ℂ) / 2 := by
-        rw [← Complex.ofReal_add, arctan_div_add_arctan_div hc hT]
-        push_cast
-        ring
-      have hB : ((Real.arctan (B / T) : ℝ) : ℂ) + ((Real.arctan (T / B) : ℝ) : ℂ)
-          = (π : ℂ) / 2 := by
-        rw [← Complex.ofReal_add, arctan_div_add_arctan_div hB0 hT]
-        push_cast
-        ring
-      rw [neg_div, Real.arctan_neg, div_neg, Real.arctan_neg]
-      push_cast
-      linear_combination (2 * I) * hA + (2 * I) * hB
+    have hres := TauCeti.arctan_corner_sum_eq_two_mul_pi_mul_I hc hB0 hT
     have hmain : I * ((∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)) - 2 * π)
         = (∫ σ in (-B)..c, perronFn x ((σ : ℂ) + (T : ℝ) * I))
           - (∫ σ in (-B)..c, perronFn x ((σ : ℂ) + (-T : ℝ) * I))
           + I * ∫ t in (-T)..T, perronFn x (((-B : ℝ) : ℂ) + t * I) := by
       linear_combination hcauchy + e₁ + I * e₂ - I * e₃ + hres
-    have hhoriz : ∀ u : ℝ, u ≠ 0 → |u| = T →
-        ‖∫ σ in (-B)..c, perronFn x ((σ : ℂ) + u * I)‖ ≤ x ^ c / (T * |Real.log x|) := by
-      intro u hu habs
-      refine (norm_integral_perronFn_horizontal_le hx hu hab).trans ?_
-      rw [habs, hL, integral_rpow_const_base hx hx1.ne']
-      have hxB : 0 < x ^ (-B) := Real.rpow_pos_of_pos hx _
-      have hlog : 0 < Real.log x := Real.log_pos hx1
-      calc (x ^ c - x ^ (-B)) / Real.log x / T ≤ x ^ c / Real.log x / T := by
-            gcongr
-            linarith
-        _ = x ^ c / (T * Real.log x) := by ring
     have hfar : ‖∫ t in (-T)..T, perronFn x (((-B : ℝ) : ℂ) + t * I)‖
-        ≤ x ^ (-B) / c * (2 * T) := by
-      refine (norm_integral_perronFn_vertical_le hx (neg_ne_zero.2 hB0.ne') hT.le).trans ?_
-      rw [abs_neg, abs_of_pos hB0]
-      gcongr
+        ≤ x ^ (-B) / c * (2 * T) :=
+      norm_integral_perronFn_vertical_le_of_le_abs hx hc hT.le (by rwa [abs_neg, abs_of_pos hB0])
     rw [← norm_I_mul ((∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)) - 2 * π), hmain]
     refine (norm_sub_add_I_mul_le _ _ _).trans ?_
-    have h₁ := hhoriz (-T) (neg_ne_zero.2 hT.ne') (by rw [abs_neg, abs_of_pos hT])
-    have h₂ := hhoriz T hT.ne' (abs_of_pos hT)
+    have h₁ := norm_integral_perronFn_horizontal_le_of_one_lt (u := -T) hx1 hab
+      (neg_ne_zero.2 hT.ne')
+    have h₂ := norm_integral_perronFn_horizontal_le_of_one_lt (u := T) hx1 hab hT.ne'
+    rw [abs_neg, abs_of_pos hT] at h₁
+    rw [abs_of_pos hT] at h₂
     linarith
-  have hlim : Tendsto (fun B : ℝ => 2 * (x ^ c / (T * |Real.log x|)) + x ^ (-B) / c * (2 * T))
-      atTop (𝓝 (2 * (x ^ c / (T * |Real.log x|)))) := by
-    have h0 : Tendsto (fun B : ℝ => x ^ (-B)) atTop (𝓝 0) := by
-      refine (tendsto_rpow_atTop_of_base_gt_one x hx1).inv_tendsto_atTop.congr fun B => ?_
-      rw [Pi.inv_apply, ← Real.rpow_neg hx.le]
-    simpa using tendsto_const_nhds.add ((h0.div_const c).mul tendsto_const_nhds)
-  exact ge_of_tendsto hlim (eventually_atTop.2 ⟨c, key⟩)
+  have hzero : Tendsto (fun B : ℝ ↦ x ^ (-B) * (2 * T / c)) atTop (𝓝 0) := by
+    simpa using ((tendsto_rpow_atBot_of_base_gt_one x hx1).comp
+      tendsto_neg_atTop_atBot).mul_const (2 * T / c)
+  refine Tendsto.le_of_eventually_le_add hzero ?_
+  filter_upwards [eventually_ge_atTop c] with B hB
+  simpa [div_mul_eq_mul_div, mul_div_assoc] using key B hB
 
 /-- **Above the endpoint the truncated Perron kernel is close to one.**  For `1 < x` it differs
 from `1` by at most `x ^ c / (π * T * |log x|)`. -/

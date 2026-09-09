@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SmoothConnected
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
-public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Lift
+import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Lift
 
 /-!
 # Smoothness of the special orthogonal group
@@ -45,32 +45,13 @@ open WithConv
 
 namespace TauCeti.SpecialOrthogonal
 
-universe u v
+universe u
 
 noncomputable section
 
 attribute [local instance] starRingOfComm
 
 variable (R : Type u) [CommRing R] (n : ℕ)
-
-private theorem pointsMulEquiv_mapValue
-    {A : Type u} {B : Type v} [CommRing A] [CommRing B]
-    [Algebra R A] [Algebra R B] (phi : A →ₐ[R] B)
-    (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
-    pointsMulEquiv R n (A := B)
-        (AlgHom.mapValue (H := coordinateHopfAlgebra R n) phi f) =
-      Matrix.SpecialOrthogonalGroup.map phi.toRingHom
-        (pointsMulEquiv R n (A := A) f) := by
-  apply Subtype.ext
-  have hcoe_lhs := pointsMulEquiv_coe R n
-    (AlgHom.mapValue (H := coordinateHopfAlgebra R n) phi f)
-  have hcoe_rhs := pointsMulEquiv_coe R n f
-  have hnatural := (CommHopfAlgCat.mapValue_quotientPointsHom
-    (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n) phi f).symm
-  rw [← hcoe_lhs, hnatural, GeneralLinear.pointsMulEquiv_mapValue,
-    Matrix.SpecialOrthogonalGroup.coe_map]
-  simpa only [Matrix.GeneralLinearGroup.val_map_apply] using
-    congrArg (fun M : Matrix (Fin n) (Fin n) A ↦ M.map phi.toRingHom) hcoe_rhs
 
 /-- The special orthogonal coordinate algebra is formally smooth when `2` is invertible in the
 ground ring. -/

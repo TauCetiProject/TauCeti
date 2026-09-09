@@ -103,6 +103,8 @@ it is what makes the Hecke ring commutative there (Shimura's Proposition 3.8).
   representatives lands in — the map the double sum is fibred over.
 * `HeckeRing.GL2.pairCoset_eq_iff`: a pair lies in the fibre over `D` exactly when the product
   of its two representatives lies in `D`'s double coset.
+* `HeckeRing.GL2.PairCosetFiber`: among the pairs lying over `D`, those whose product spans the
+  right coset `Γ₁ x` — the type the multiplicity counts.
 * `HeckeRing.GL2.card_pairs_pairCoset_rightCoset_eq_multiplicity`: each right coset of a double
   coset `D` is met by `m(D₁, D₂; D)` of the pairs, whichever right coset of `D` is chosen.
 * `HeckeRing.GL2.heckeSlashSum_heckeSlashSum_eq_sum_nsmul`: **the multiplicity-weighted
@@ -310,14 +312,22 @@ private lemma pairCoset_eq_of_mem_rightCoset {x : GL (Fin 2) ℚ}
   rw [← doubleCoset_eq_of_mem hx]
   exact mem_doubleCoset.mpr ⟨_, (mem_rightCoset_iff x).mp hp, 1, one_mem _, by group⟩
 
+/-- **The pairs over `D` whose product spans the right coset `Γ₁ x`.** Among the index pairs
+whose product lies in the double coset `D`, those whose product generates the same right coset
+of `Γ₁` as `x` does. `card_pairs_pairCoset_rightCoset_eq_multiplicity` counts this type; its
+nonemptiness is what identifies the support of the Hecke structure constants downstream. -/
+abbrev PairCosetFiber (D₁ : HeckeCoset Δ Γ₁ Γ₂) (D₂ : HeckeCoset Δ Γ₂ Γ₃)
+    (D : HeckeCoset Δ Γ₁ Γ₃) (x : GL (Fin 2) ℚ) : Type :=
+  {i : {q // pairCoset D₁ D₂ q = D} //
+    MulOpposite.op (rightCosetRep D₁ i.1.1 * rightCosetRep D₂ i.1.2) •
+        (Γ₁ : Set (GL (Fin 2) ℚ)) = MulOpposite.op x • (Γ₁ : Set (GL (Fin 2) ℚ))}
+
 /-- **Each right coset of a double coset `D` is met by Shimura's multiplicity `m(D₁, D₂; D)`
 many pairs**, whichever `x ∈ D` names that right coset: among the pairs lying over `D`, the
 number whose product spans the right coset `Γ₁ x` does not depend on `x`. -/
 lemma card_pairs_pairCoset_rightCoset_eq_multiplicity {x : GL (Fin 2) ℚ}
     (hx : x ∈ doubleCoset (D.out : GL (Fin 2) ℚ) (Γ₁ : Set (GL (Fin 2) ℚ)) Γ₃) :
-    Nat.card {i : {q // pairCoset D₁ D₂ q = D} //
-        MulOpposite.op (rightCosetRep D₁ i.1.1 * rightCosetRep D₂ i.1.2) •
-            (Γ₁ : Set (GL (Fin 2) ℚ)) = MulOpposite.op x • (Γ₁ : Set (GL (Fin 2) ℚ))} =
+    Nat.card (PairCosetFiber D₁ D₂ D x) =
       DoubleCoset.multiplicity Γ₃ Γ₂ Γ₁ (D₂.out : GL (Fin 2) ℚ)⁻¹ (D₁.out : GL (Fin 2) ℚ)⁻¹
         (D.out : GL (Fin 2) ℚ)⁻¹ := by
   have hiff (y : GL (Fin 2) ℚ) :

@@ -13,16 +13,18 @@ public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 # Weight vectors of a comodule
 
 A **weight vector** of a comodule `M` over a coalgebra `C` is a vector `v` whose coaction is
-`v ↦ v ⊗ c` for a single element `c` of `C`; equivalently, the line it spans is a subcomodule.
+`v ↦ v ⊗ c` for a single element `c` of `C`. Over a field, this is equivalent to the line it
+spans being a subcomodule.
 When `C` is the coordinate Hopf algebra of an affine group, this says that every point of the
 group scales `v`, by the value it takes on `c`.
 
-The weight of a nonzero weight vector is automatically group-like: the counit law forces
-`ε c = 1` and coassociativity forces `Δ c = c ⊗ c`, because a nonzero vector of a vector space is
-detected by a linear functional. So a one-dimensional subcomodule of a comodule over a field is
-specified by a group-like element. When `C` is the coordinate Hopf algebra of an affine group,
-that group-like element is a character, so there is no need to carry group-likeness as a
-hypothesis.
+Over a field, the weight of a nonzero weight vector is automatically group-like: the counit law
+forces `ε c = 1` and coassociativity forces `Δ c = c ⊗ c`, because a nonzero vector of a vector
+space is detected by a linear functional. So a one-dimensional subcomodule of a comodule over a
+field is specified by a group-like element. When `C` is the coordinate Hopf algebra of an affine
+group, that group-like element is a character, so there is no need to carry group-likeness as a
+hypothesis. Over a general commutative semiring, `HasNonzeroWeightVector` instead explicitly
+requires its exhibited weight to be group-like.
 
 Weight vectors are the eigenvector form of the fixed vectors of
 `TauCeti.Algebra.Coalgebra.Comodule.Fixed`: a fixed vector is a weight vector of weight `1`. They
@@ -43,9 +45,6 @@ are unavailable, and the flag induction of
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §§2.4 and 6.3.
-
-This is a Layer 5 ingredient of the ReductiveGroups roadmap, for the "Lie--Kolchin; solvable
-groups" milestone.
 -/
 
 public section
@@ -58,9 +57,11 @@ universe u v w
 
 noncomputable section
 
+section Semiring
+
 variable {k : Type u} {C : Type v} {M : Type w}
-variable [Field k] [AddCommMonoid C] [Module k C] [Coalgebra k C]
-variable [AddCommGroup M] [Module k M] [Comodule k C M]
+variable [CommSemiring k] [AddCommMonoid C] [Module k C] [Coalgebra k C]
+variable [AddCommMonoid M] [Module k M] [Comodule k C M]
 
 /-- A comodule has a nonzero weight vector if some nonzero `v` has coaction `v ⊗ c` for a
 group-like `c`.
@@ -68,8 +69,8 @@ group-like `c`.
 When `C` is the coordinate Hopf algebra of an affine group, this says that the group acts on the
 line spanned by `v` through the character corresponding to `c`. -/
 def HasNonzeroWeightVector (k : Type u) (C : Type v) (M : Type w)
-    [Field k] [AddCommMonoid C] [Module k C] [Coalgebra k C]
-    [AddCommGroup M] [Module k M] [Comodule k C M] : Prop :=
+    [CommSemiring k] [AddCommMonoid C] [Module k C] [Coalgebra k C]
+    [AddCommMonoid M] [Module k M] [Comodule k C M] : Prop :=
   ∃ (v : M) (c : C), v ≠ 0 ∧ IsGroupLikeElem k c ∧
     coact (R := k) (C := C) (M := M) v = v ⊗ₜ[k] c
 
@@ -80,6 +81,12 @@ theorem hasNonzeroWeightVector_iff :
       ∃ (v : M) (c : C), v ≠ 0 ∧ IsGroupLikeElem k c ∧
         coact (R := k) (C := C) (M := M) v = v ⊗ₜ[k] c :=
   Iff.rfl
+
+end Semiring
+
+variable {k : Type u} {C : Type v} {M : Type w}
+variable [Field k] [AddCommMonoid C] [Module k C] [Coalgebra k C]
+variable [AddCommGroup M] [Module k M] [Comodule k C M]
 
 /-- The weight of a nonzero weight vector is a group-like element. -/
 theorem isGroupLikeElem_of_coact_eq_tmul {v : M} (hv : v ≠ 0) {c : C}

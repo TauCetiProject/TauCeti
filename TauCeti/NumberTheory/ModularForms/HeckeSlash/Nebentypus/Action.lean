@@ -129,21 +129,15 @@ private lemma image_pairCoset_eq_support_structureConstants (D₁ D₂ : Coset�
   · rintro ⟨p, hp⟩
     have hx := pairCoset_eq_iff.mp hp
     have hcard := card_pairs_pairCoset_rightCoset_eq_multiplicity (D₁ := D₁) (D₂ := D₂) hx
-    have : Nonempty {i : {q // pairCoset D₁ D₂ q = D} //
-        MulOpposite.op (rightCosetRep D₁ i.1.1 * rightCosetRep D₂ i.1.2) •
-            ((Γ₀Q(N)) : Set (GL (Fin 2) ℚ)) =
-          MulOpposite.op (rightCosetRep D₁ p.1 * rightCosetRep D₂ p.2) •
-            ((Γ₀Q(N)) : Set (GL (Fin 2) ℚ))} :=
+    have : Nonempty
+        (PairCosetFiber D₁ D₂ D (rightCosetRep D₁ p.1 * rightCosetRep D₂ p.2)) :=
       ⟨⟨⟨p, hp⟩, rfl⟩⟩
     have hne : multiplicity (Γ₀Q(N)) (Γ₀Q(N)) (Γ₀Q(N))
         (D₂.out : GL (Fin 2) ℚ)⁻¹ (D₁.out : GL (Fin 2) ℚ)⁻¹
           (D.out : GL (Fin 2) ℚ)⁻¹ ≠ 0 := by
       rw [← hcard]
-      exact (Nat.card_pos (α := {i : {q // pairCoset D₁ D₂ q = D} //
-        MulOpposite.op (rightCosetRep D₁ i.1.1 * rightCosetRep D₂ i.1.2) •
-            ((Γ₀Q(N)) : Set (GL (Fin 2) ℚ)) =
-          MulOpposite.op (rightCosetRep D₁ p.1 * rightCosetRep D₂ p.2) •
-            ((Γ₀Q(N)) : Set (GL (Fin 2) ℚ))})).ne'
+      exact (Nat.card_pos (α :=
+        PairCosetFiber D₁ D₂ D (rightCosetRep D₁ p.1 * rightCosetRep D₂ p.2))).ne'
     rwa [multiplicity_inv_reverse_eq D₁ D₂ D] at hne
   · intro hne
     have hne' : multiplicity (Γ₀Q(N)) (Γ₀Q(N)) (Γ₀Q(N))
@@ -152,11 +146,8 @@ private lemma image_pairCoset_eq_support_structureConstants (D₁ D₂ : Coset�
       rwa [multiplicity_inv_reverse_eq D₁ D₂ D]
     have hcard := card_pairs_pairCoset_rightCoset_eq_multiplicity (D₁ := D₁) (D₂ := D₂)
       (mem_doubleCoset_self (Γ₀Q(N)) (Γ₀Q(N)) (D.out : GL (Fin 2) ℚ))
-    have hcardne : Nat.card {i : {q // pairCoset D₁ D₂ q = D} //
-        MulOpposite.op (rightCosetRep D₁ i.1.1 * rightCosetRep D₂ i.1.2) •
-            ((Γ₀Q(N)) : Set (GL (Fin 2) ℚ)) =
-          MulOpposite.op (D.out : GL (Fin 2) ℚ) •
-            ((Γ₀Q(N)) : Set (GL (Fin 2) ℚ))} ≠ 0 := by
+    have hcardne :
+        Nat.card (PairCosetFiber D₁ D₂ D (D.out : GL (Fin 2) ℚ)) ≠ 0 := by
       rwa [hcard]
     obtain ⟨i⟩ := (Nat.card_ne_zero.mp hcardne).1
     exact ⟨i.1.1, i.1.2⟩

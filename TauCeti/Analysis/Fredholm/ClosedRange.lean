@@ -34,7 +34,7 @@ check.
 
 ## Main declarations
 
-* `TauCeti.ContinuousLinearMap.isClosed_range_of_finite_coker`: a continuous linear map
+* `ContinuousLinearMap.isClosed_range_of_finite_coker`: a continuous linear map
   between Banach spaces with finite-dimensional cokernel has closed range.
 * `ContinuousLinearMap.IsFredholm.of_finite_ker_coker`: over Banach spaces over an
   `IsRCLikeNormedField`, finite-dimensional kernel and cokernel suffice for Fredholmness.
@@ -58,7 +58,6 @@ variable {E F : Type*}
 variable [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
 variable [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
-namespace ContinuousLinearMap
 
 omit [IsRCLikeNormedField 𝕜] in
 /-- A continuous linear map between Banach spaces whose cokernel `F ⧸ range T` is finite
@@ -68,7 +67,7 @@ Closedness of the range is therefore not an independent hypothesis in the Banach
 forced by finite dimensionality of the cokernel. The proof runs the Banach open mapping theorem on
 the surjection `Φ(x, n) = T x + n` from `E × N`, where `N` is a finite-dimensional algebraic
 complement of `range T`. -/
-theorem isClosed_range_of_finite_coker (T : E →L[𝕜] F)
+theorem _root_.ContinuousLinearMap.isClosed_range_of_finite_coker (T : E →L[𝕜] F)
     [FiniteDimensional 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F))] :
     IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F) := by
   set R := LinearMap.range (T : E →ₗ[𝕜] F) with hR
@@ -102,7 +101,6 @@ theorem isClosed_range_of_finite_coker (T : E →L[𝕜] F)
     rw [hpre]; exact isClosed_eq continuous_snd continuous_const
   exact (Φ.isQuotientMap hsurj).isClosed_preimage.mp hclosed
 
-end ContinuousLinearMap
 
 /-- Over Banach spaces over an `IsRCLikeNormedField`, a continuous linear map with
 finite-dimensional kernel and cokernel is Fredholm: the closed-range condition is automatic.

@@ -35,7 +35,7 @@ degenerate case `w = 0`, and covers every pair of non-proportional roots in a si
 system; the rule proved here covers the additional chains in types `B`, `C`, and `F₄`. Type `G₂`
 also needs the longer chain containing `3α + β` and `3α + 2β`, which is
 `TauCeti.Associative.dividedPower_mul_dividedPower_of_commutator_eq_three_nsmul` in
-`TauCeti.RingTheory.DividedPowers.RootString.G2`.
+`TauCeti.RingTheory.DividedPowers.RootString.G2.Basic`.
 
 The proof feeds `TauCeti.Associative.dividedPower_mul_of_ad_dividedPower_series` the sequence
 

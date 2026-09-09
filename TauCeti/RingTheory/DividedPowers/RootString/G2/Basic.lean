@@ -37,9 +37,10 @@ The two exponents attached to a summand are the pair `(i, j)` of the root `i α 
 `TauCeti.RingTheory.DividedPowers.RootString.Basic`: `3α + 2β` is not on the `α`-string through `β`,
 and it enters through the bracket `w * z = z * w + 3 • s` rather than through `ad x`.
 
-Type `G₂` has one further configuration, not treated here: for the pair `α`, `α + β` the roots
-`i α + j (α + β)` with `i, j > 0` are `2α + β`, `3α + β`, and `3α + 2β`, the last of them carrying
-the exponents `(i, j) = (1, 2)` and arising from `⁅y, ⁅x, y⁆⁆` rather than from `⁅w, z⁆`.
+For the other nontrivial pair `α`, `α + β`, the root `3α + 2β` arises instead from
+`⁅e_(2α + β), e_(α + β)⁆`. Its divided-power straightening rule is
+`TauCeti.Associative.dividedPower_mul_dividedPower_of_g2_short_pair` in
+`TauCeti.RingTheory.DividedPowers.RootString.G2.ShortPair`.
 
 The proof feeds `TauCeti.Associative.dividedPower_mul_of_ad_dividedPower_series` the sequence
 

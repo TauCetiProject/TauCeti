@@ -86,7 +86,7 @@ open Polynomial
 
 namespace WeierstrassCurve
 
-open TauCeti.WeierstrassCurve
+open WeierstrassCurve
 
 variable {W : WeierstrassCurve ℤ} [W.IsCharNeTwoNF]
 

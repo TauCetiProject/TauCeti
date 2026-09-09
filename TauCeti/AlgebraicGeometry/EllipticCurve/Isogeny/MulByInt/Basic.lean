@@ -163,7 +163,7 @@ theorem phiFunctionField_def (n : ℤ) : phiFunctionField W n =
 theorem phiFunctionField_eq_algebraMap (n : ℤ) :
     phiFunctionField W n = algebraMap F[X] W.FunctionField (W.Φ n) := by
   rw [phiFunctionField_def, Affine.CoordinateRing.mk_φ,
-    TauCeti.WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
+    WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
     ← IsScalarTower.algebraMap_apply]
 
 /-- **The defining equation of `mulByIntX`**: the `x`-coordinate of `[n]` is `φₙ / ψₙ²`. -/
@@ -222,7 +222,7 @@ theorem mulByIntX_mul_aeval_ΨSq (n : ℤ) (hn : psiFunctionField W n ≠ 0) :
   have hphi : phiFunctionField W n = aeval W.genericX (W.Φ n) := by
     rw [phiFunctionField_eq_algebraMap, W.algebraMap_eq_aeval_genericX]
   have hpsi : psiFunctionField W n ^ 2 = aeval W.genericX (W.ΨSq n) := by
-    rw [psiFunctionField_sq, TauCeti.WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
+    rw [psiFunctionField_sq, WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
       ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField,
       W.algebraMap_eq_aeval_genericX]
   rw [← hphi, ← hpsi, mulByIntX_def]

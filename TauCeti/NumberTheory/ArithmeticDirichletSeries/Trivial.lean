@@ -104,14 +104,6 @@ theorem dedekindZeta_eq_LSeries_normCoeff_one (s : ℂ) :
   intro n hn
   rw [normCoeff_one_apply, ite_eq_right hn]
 
-private theorem absNorm_map_ringEquiv {R S : Type*} [CommRing R] [CommRing S]
-    [IsDedekindDomain R] [IsDedekindDomain S] [Infinite R] [Infinite S]
-    (e : R ≃+* S) (I : Ideal R) :
-    Ideal.absNorm (I.map e) = Ideal.absNorm I := by
-  rw [Ideal.absNorm_apply, Ideal.absNorm_apply, Submodule.cardQuot_apply,
-    Submodule.cardQuot_apply]
-  exact Nat.card_congr (Ideal.quotientEquiv I (I.map e) e rfl).symm
-
 private theorem rat_normFiber_subsingleton (n : ℕ) :
     Subsingleton {I : Ideal (𝓞 ℚ) // Ideal.absNorm I = n} := by
   constructor
@@ -120,8 +112,8 @@ private theorem rat_normFiber_subsingleton (n : ℕ) :
   have hmap : I.1.map Rat.ringOfIntegersEquiv = J.1.map Rat.ringOfIntegersEquiv := by
     rw [← Int.ideal_span_absNorm_eq_self (I.1.map Rat.ringOfIntegersEquiv),
       ← Int.ideal_span_absNorm_eq_self (J.1.map Rat.ringOfIntegersEquiv),
-      absNorm_map_ringEquiv Rat.ringOfIntegersEquiv I.1,
-      absNorm_map_ringEquiv Rat.ringOfIntegersEquiv J.1, I.2, J.2]
+      Ideal.absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv I.1,
+      Ideal.absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv J.1, I.2, J.2]
   calc
     I.1 = Ideal.comap Rat.ringOfIntegersEquiv (I.1.map Rat.ringOfIntegersEquiv) :=
       (Ideal.comap_map_of_bijective _ Rat.ringOfIntegersEquiv.bijective).symm
@@ -132,7 +124,7 @@ private theorem rat_normFiber_subsingleton (n : ℕ) :
 private theorem rat_normFiber_nonempty (n : ℕ) :
     Nonempty {I : Ideal (𝓞 ℚ) // Ideal.absNorm I = n} := by
   refine ⟨⟨(Ideal.span {(n : ℤ)}).map Rat.ringOfIntegersEquiv.symm, ?_⟩⟩
-  rw [absNorm_map_ringEquiv, Ideal.absNorm_span_singleton]
+  rw [Ideal.absNorm_map_of_ringEquiv, Ideal.absNorm_span_singleton]
   simp
 
 /-- There is exactly one integral ideal of `ℚ` of each absolute norm. -/

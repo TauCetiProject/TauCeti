@@ -103,7 +103,7 @@ open Polynomial
 
 namespace WeierstrassCurve
 
-open TauCeti.WeierstrassCurve
+open WeierstrassCurve
 
 
 variable {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]

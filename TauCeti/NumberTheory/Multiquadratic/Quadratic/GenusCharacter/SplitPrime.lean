@@ -118,22 +118,11 @@ theorem exists_forall_genusCharFunNarrowClassGroupHom_eq {s : Finset ℤ}
     rw [hprod, dvd_fundamentalDiscriminant_iff (Int.isCoprime_two_right.mpr hodd)]
     exact hqd
   refine ⟨NumberField.NarrowClassGroup.mk0 ⟨𝔮, h𝔮0⟩, fun P hP => ?_⟩
-  have hcop : IsCoprime ((Ideal.absNorm 𝔮 : ℤ)) (∏ P' ∈ ({P} : Finset ℤ), P') := by
-    rw [Finset.prod_singleton, hnorm]
-    exact IsCoprime.prod_right_iff.mp hcopD P hP
-  -- Evaluate the descended character on an arbitrary coprime ideal, then feed `𝔮` in: the
-  -- coprime-ideal submonoid is a subtype of `(Ideal (𝓞 K))⁰`, so `𝔮` enters as the two nested
-  -- projections of the element built from `hcop`.
-  have key : ∀ I : genusCharFunCoprimeIdealSubmonoid (K := K) {P},
-      ((genusCharFunNarrowClassGroupHom hs heven hprod hmin hgen hsf
-          (Finset.singleton_subset_iff.mpr hP)
-          (NumberField.NarrowClassGroup.mk0 I.1) : ℤˣ) : ℤ) =
-        primeDiscriminantCharFun P
-          (Ideal.absNorm ((I.1 : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) : ℤ) := fun I => by
-    rw [genusCharFunNarrowClassGroupHom_mk0, genusCharFunCoprimeIdealHom_apply,
-      genusCharFun_singleton]
   rw [← hnorm]
-  exact key ⟨⟨𝔮, h𝔮0⟩, (mem_genusCharFunCoprimeIdealSubmonoid_iff _).mpr hcop⟩
+  exact genusCharFunNarrowClassGroupHom_mk0_eq_primeDiscriminantCharFun_absNorm
+    hs heven hprod hmin hgen hsf 𝔮 h𝔮0 P hP (by
+      rw [hnorm]
+      exact IsCoprime.prod_right_iff.mp hcopD P hP)
 
 /-- **The linear family on `Cl⁺(K)/Cl⁺(K)²` realizes the character values of a split prime.**
 The elementary-`2` form of `exists_forall_genusCharFunNarrowClassGroupHom_eq`: the vector of

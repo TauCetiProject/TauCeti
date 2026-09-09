@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
 
 /-!
-# Structural isometries of orthogonal products of quadratic maps
+# Structural isometries and special orthogonal groups of quadratic-map products
 
 Mathlib records the commutativity isometries of `QuadraticMap.prod`
 (`QuadraticMap.IsometryEquiv.prodComm` and `QuadraticMap.IsometryEquiv.prodProdProdComm`). This
@@ -16,10 +17,14 @@ file adds the two remaining structural ones: the associator, and the deletion of
 module is trivial. Together with `QuadraticMap.IsometryEquiv.prodComm` they are what makes
 orthogonal sum a commutative monoid operation on isometry classes of quadratic forms.
 
+It also combines special orthogonal transformations of two finite free quadratic maps with a
+common codomain into a special orthogonal transformation of their product.
+
 ## Main definitions
 
 * `QuadraticMap.IsometryEquiv.prodAssoc`: `LinearEquiv.prodAssoc` is isometric.
 * `QuadraticMap.IsometryEquiv.uniqueProd`: `LinearEquiv.uniqueProd` is isometric.
+* `QuadraticMap.specialOrthogonalGroupProd`: combine two special orthogonal transformations.
 -/
 
 public section
@@ -78,5 +83,83 @@ theorem IsometryEquiv.uniqueProd_symm_apply [Unique M₁] (Q₁ : QuadraticMap R
   -- Expose the underlying linear equivalence so its public inverse application lemma applies.
   change (LinearEquiv.uniqueProd (R := R) (M := M₂) (M₂ := M₁)).symm m = _
   exact LinearEquiv.uniqueProd_symm_apply m
+
+end QuadraticMap
+
+open QuadraticMap
+
+universe u v w
+
+namespace QuadraticMap
+
+open TauCeti.QuadraticMap
+
+noncomputable section
+
+variable {R : Type u} [CommRing R]
+
+private theorem specialOrthogonalProd_mem
+    {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
+    {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
+    {N : Type*} [AddCommMonoid N] [Module R N]
+    (Q₁ : QuadraticMap R M₁ N) (Q₂ : QuadraticMap R M₂ N)
+    [Module.Free R M₁] [Module.Finite R M₁]
+    [Module.Free R M₂] [Module.Finite R M₂]
+    (f : specialOrthogonalGroup Q₁) (g : specialOrthogonalGroup Q₂) :
+    (f : M₁ ≃ₗ[R] M₁).prodCongr (g : M₂ ≃ₗ[R] M₂) ∈
+      specialOrthogonalGroup (Q₁.prod Q₂) := by
+  have hf := mem_specialOrthogonalGroup_iff.mp f.2
+  have hg := mem_specialOrthogonalGroup_iff.mp g.2
+  apply mem_specialOrthogonalGroup_iff.mpr
+  constructor
+  · apply mem_orthogonalGroup_iff.mpr
+    intro x
+    let e := (orthogonalGroupEquivIsometryEquiv Q₁
+      ⟨f, specialOrthogonalGroup_le_orthogonalGroup Q₁ f.2⟩).prod
+        (orthogonalGroupEquivIsometryEquiv Q₂
+          ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q₂ g.2⟩)
+    have he : e x = (f.1.prodCongr g.1) x := by
+      apply Prod.ext
+      · exact congrFun (coe_orthogonalGroupEquivIsometryEquiv Q₁ _) x.1
+      · exact congrFun (coe_orthogonalGroupEquivIsometryEquiv Q₂ _) x.2
+    rw [← he]
+    exact e.map_app x
+  · apply Units.ext
+    rw [LinearEquiv.coe_det, LinearEquiv.coe_prodCongr, LinearMap.det_prodMap]
+    simpa only [LinearEquiv.coe_det, Units.val_one, mul_one] using
+      congrArg₂ (fun a b : R ↦ a * b) (congrArg Units.val hf.2) (congrArg Units.val hg.2)
+
+/-- Combine special orthogonal transformations of two finite free quadratic maps with a common
+codomain into a special orthogonal transformation of their product. -/
+def specialOrthogonalGroupProd
+    {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
+    {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
+    {N : Type*} [AddCommMonoid N] [Module R N]
+    (Q₁ : QuadraticMap R M₁ N) (Q₂ : QuadraticMap R M₂ N)
+    [Module.Free R M₁] [Module.Finite R M₁]
+    [Module.Free R M₂] [Module.Finite R M₂] :
+    specialOrthogonalGroup Q₁ × specialOrthogonalGroup Q₂ →*
+      specialOrthogonalGroup (Q₁.prod Q₂) where
+  toFun fg := ⟨(fg.1 : M₁ ≃ₗ[R] M₁).prodCongr (fg.2 : M₂ ≃ₗ[R] M₂),
+    specialOrthogonalProd_mem Q₁ Q₂ fg.1 fg.2⟩
+  map_one' := by ext x <;> simp
+  map_mul' f g := by ext x <;> simp
+
+/-- The product of two special orthogonal transformations acts componentwise. -/
+@[simp]
+theorem specialOrthogonalGroupProd_apply
+    {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
+    {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
+    {N : Type*} [AddCommMonoid N] [Module R N]
+    (Q₁ : QuadraticMap R M₁ N) (Q₂ : QuadraticMap R M₂ N)
+    [Module.Free R M₁] [Module.Finite R M₁]
+    [Module.Free R M₂] [Module.Finite R M₂]
+    (fg : specialOrthogonalGroup Q₁ × specialOrthogonalGroup Q₂) (x : M₁ × M₂) :
+    ((specialOrthogonalGroupProd Q₁ Q₂ fg : specialOrthogonalGroup _) :
+      (M₁ × M₂) ≃ₗ[R] (M₁ × M₂)) x =
+      ((fg.1 : M₁ ≃ₗ[R] M₁) x.1, (fg.2 : M₂ ≃ₗ[R] M₂) x.2) := by
+  rfl
+
+end
 
 end QuadraticMap

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharZero.Infinite
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Basic
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Analysis.Complex.Order
 public import Mathlib.NumberTheory.ArithmeticFunction.Defs
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
@@ -142,6 +143,24 @@ theorem normCoeff_star_apply (f : IdealArithmeticFunction K) (n : ℕ) :
     normCoeff K (fun I ↦ (starRingEnd ℂ) (f I)) n = star (normCoeff K f n) := by
   simp only [normCoeff_apply]
   exact ((starAddEquiv : ℂ ≃+ ℂ).map_finsum_mem f (finite_normFiber K n)).symm
+
+/-- **A factor depending on the ideal only through its norm pulls out of the regrouping.** The
+fibre summed over is exactly the ideals of absolute norm `n`, so such a factor is constant on it. -/
+@[simp]
+theorem normCoeff_fun_mul_comp_absNorm (f : IdealArithmeticFunction K) (g : ℕ → ℂ) (n : ℕ) :
+    normCoeff K (fun I ↦ f I * g (Ideal.absNorm (I : Ideal (𝓞 K)))) n = normCoeff K f n * g n := by
+  rw [normCoeff_eq_sum_normFiber, normCoeff_eq_sum_normFiber, Finset.sum_mul]
+  exact Finset.sum_congr rfl fun I hI ↦ by rw [(mem_normFiber K).1 hI]
+
+/-- **Regrouping absorbs a norm twist.** Twisting an ideal arithmetic function by `N(I) ^ (-z)`
+twists its `n`-th norm coefficient by `n ^ (-z)`. This is the compatibility of `normCoeff` with the
+norm twists of a weight, general and purely imaginary alike, since the unitary twist is the
+multiplicative one. -/
+@[simp]
+theorem normCoeff_mul_absNorm_cpow (f : IdealArithmeticFunction K) (z : ℂ) (n : ℕ) :
+    normCoeff K (fun I ↦ f I * (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-z)) n =
+      normCoeff K f n * (n : ℂ) ^ (-z) :=
+  normCoeff_fun_mul_comp_absNorm K f (fun m ↦ (m : ℂ) ^ (-z)) n
 
 /-- **Absence of cancellation inside norm fibres**, for a nonnegative ideal arithmetic function:
 the absolute value of a norm coefficient is the sum of the absolute values over the fibre. -/

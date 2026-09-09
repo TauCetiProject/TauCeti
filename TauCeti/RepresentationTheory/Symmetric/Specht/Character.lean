@@ -32,10 +32,11 @@ column of the identity holds the degrees.
 The general half of the argument is stated for an arbitrary rational representation of a finite
 group, as `TauCeti.FDRep.intCharacter`, and is what this file specializes. Nothing here computes
 an entry of the table: the recursion that does is the Murnaghan--Nakayama rule, which needs rim
-hooks and is not proved here. Neither is `symmetricCharacterTable n` compared with the library's
-general `TauCeti.characterTable k G`, which lives over an algebraically closed field and enumerates
-its rows by `Fin (Nat.card (ConjClasses G))`, nor is any of the table properties that one carries —
-the orthogonality relations, the specification `TauCeti.IsCharacterTableSpec` — proved for it.
+hooks and is not proved here. The comparison with the library's general
+`TauCeti.characterTable k G`, which lives over an algebraically closed field and enumerates its
+rows by `Fin (Nat.card (ConjClasses G))`, and the table properties that one carries — the
+orthogonality relations and the specification `TauCeti.IsCharacterTableSpec` — are in
+`TauCeti/RepresentationTheory/Symmetric/Specht/Orthogonality.lean`.
 
 ## Main definitions
 
@@ -168,9 +169,10 @@ Implementation note: this is not the library's general `TauCeti.characterTable k
 defined over an algebraically closed field, takes values there, and enumerates its rows by
 `Fin (Nat.card (ConjClasses G))` through an arbitrary choice of ordering of the irreducible
 characters. This matrix is the `ℤ`-valued table of `Sₙ` re-indexed on both sides by the partitions
-of `n`. No comparison with `TauCeti.characterTable ℂ (Equiv.Perm (Fin n))` is proved here, and
-neither are any of the table properties — the orthogonality relations, or the character-table
-specification `TauCeti.IsCharacterTableSpec` — which the general table carries. -/
+of `n`; the comparison with `TauCeti.characterTable ℂ (Equiv.Perm (Fin n))` and the table
+properties the general table carries — the orthogonality relations and the character-table
+specification `TauCeti.IsCharacterTableSpec` — are proved in
+`TauCeti/RepresentationTheory/Symmetric/Specht/Orthogonality.lean`. -/
 noncomputable def symmetricCharacterTable (n : ℕ) : Matrix n.Partition n.Partition ℤ :=
   Matrix.of fun μ ν => spechtCharValue μ ν
 
