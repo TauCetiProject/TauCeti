@@ -227,6 +227,21 @@ theorem contIntertwiningMap_fourierRep_eq_zero_of_ne (hT : T ≠ 0) {m n : ℤ} 
   refine ContinuousLinearMap.ext fun z => ?_
   simp [hlin z, hone]
 
+/-- **Two Fourier representations are equivalent only if they are equal.** The Fourier
+representations of the circle group are therefore indexed by `ℤ` without repetition. -/
+@[simp]
+theorem nonempty_equiv_fourierRep_iff (hT : T ≠ 0) {m n : ℤ} :
+    Nonempty ((fourierRep T m).Equiv (fourierRep T n)) ↔ m = n := by
+  -- For `m ≠ n` every intertwiner is zero by `contIntertwiningMap_fourierRep_eq_zero_of_ne`, but
+  -- the underlying map of an equivalence is invertible, so it does not kill `1`.
+  refine ⟨fun ⟨φ⟩ => by_contra fun hmn => ?_, fun h => h ▸ ⟨.refl _⟩⟩
+  have h0 : φ.toContIntertwiningMap.toContinuousLinearMap = 0 :=
+    contIntertwiningMap_fourierRep_eq_zero_of_ne T hT (Ne.symm hmn) φ.toContIntertwiningMap
+  have h1 : φ (1 : ℂ) = 0 := by
+    simpa using congrArg (fun L : ℂ →L[ℂ] ℂ => L (1 : ℂ)) h0
+  have h2 : (0 : ℂ) = 1 := by simpa [h1] using φ.symm_apply_apply (1 : ℂ)
+  exact one_ne_zero h2.symm
+
 variable [hT : Fact (0 < T)]
 
 /-- **Normalized Haar measure on the circle group is Mathlib's `AddCircle.haarAddCircle`.** Both
@@ -299,26 +314,6 @@ theorem exists_fourierChar_eq (χ : Multiplicative (AddCircle T) →* ℂˣ)
 
 end MonoidHom
 
-namespace TauCeti
-
-include hT in
-/-- **Two Fourier representations are equivalent only if they are equal.** The Fourier
-representations of the circle group are therefore indexed by `ℤ` without repetition. -/
-@[simp]
-theorem nonempty_equiv_fourierRep_iff {m n : ℤ} :
-    Nonempty ((fourierRep T m).Equiv (fourierRep T n)) ↔ m = n := by
-  -- For `m ≠ n` every intertwiner is zero by `contIntertwiningMap_fourierRep_eq_zero_of_ne`, but
-  -- the underlying map of an equivalence is invertible, so it does not kill `1`.
-  refine ⟨fun ⟨φ⟩ => by_contra fun hmn => ?_, fun h => h ▸ ⟨.refl _⟩⟩
-  have h0 : φ.toContIntertwiningMap.toContinuousLinearMap = 0 :=
-    contIntertwiningMap_fourierRep_eq_zero_of_ne T hT.out.ne' (Ne.symm hmn) φ.toContIntertwiningMap
-  have h1 : φ (1 : ℂ) = 0 := by
-    simpa using congrArg (fun L : ℂ →L[ℂ] ℂ => L (1 : ℂ)) h0
-  have h2 : (0 : ℂ) = 1 := by simpa [h1] using φ.symm_apply_apply (1 : ℂ)
-  exact one_ne_zero h2.symm
-
-end TauCeti
-
 namespace ContRepresentation
 
 include hT in
@@ -381,6 +376,6 @@ theorem existsUnique_nonempty_equiv_fourierRep
     (hπ : Continuous π) (hirr : π.toRepresentation.IsIrreducible) :
     ∃! n : ℤ, Nonempty (π.Equiv (fourierRep T n)) := by
   obtain ⟨n, ⟨ψ⟩⟩ := exists_nonempty_equiv_fourierRep π hπ hirr
-  exact ⟨n, ⟨ψ⟩, fun m hm => nonempty_equiv_fourierRep_iff.mp ⟨hm.some.symm.trans ψ⟩⟩
+  exact ⟨n, ⟨ψ⟩, fun m hm => (nonempty_equiv_fourierRep_iff T hT.out.ne').mp ⟨hm.some.symm.trans ψ⟩⟩
 
 end ContRepresentation
