@@ -218,7 +218,6 @@ def rationalUnitClass (U : X.Opens) [Nonempty U] :
 
 /-- Evaluating the rational-unit class applies the quotient map to the corresponding rational
 unit section. -/
-@[simp]
 lemma rationalUnitClass_apply (U : X.Opens) [Nonempty U] (g : Additive X.functionFieldˣ) :
     rationalUnitClass X U g = ((toCartierDivisorSheaf X).hom.app (op U)).hom
       ((rationalUnitSectionsEquiv X U).symm g) :=
@@ -258,8 +257,8 @@ open subset: a local equation stays a local equation. -/
 @[simp]
 lemma rationalUnitClass_restrict {U V : X.Opens} [Nonempty U] [Nonempty V] (h : V ≤ U)
     (g : Additive X.functionFieldˣ) :
-    ((toCartierDivisorSheaf X).hom.app (op U)).hom
-        ((rationalUnitSectionsEquiv X U).symm g) |_ V = rationalUnitClass X V g := by
+    rationalUnitClass X U g |_ V = rationalUnitClass X V g := by
+  rw [rationalUnitClass_apply]
   calc
     _ = ((toCartierDivisorSheaf X).hom.app (op V)).hom
           (TopCat.Presheaf.restrictOpen (F := (rationalUnitSheaf X).obj)
@@ -271,10 +270,8 @@ lemma rationalUnitClass_restrict {U V : X.Opens} [Nonempty U] [Nonempty V] (h : 
 @[simp]
 lemma rationalUnitClass_germToFunctionField_eq_zero (U : X.Opens) [Nonempty U]
     (f : ((X.presheaf.obj (op U)) : Type u)ˣ) :
-    ((toCartierDivisorSheaf X).hom.app (op U)).hom
-      ((rationalUnitSectionsEquiv X U).symm
-        (Additive.ofMul (Units.map (X.germToFunctionField U).hom f))) = 0 := by
-  rw [← rationalUnitClass_apply]
+    rationalUnitClass X U
+      (Additive.ofMul (Units.map (X.germToFunctionField U).hom f)) = 0 := by
   have hsymm :
       (rationalUnitSectionsEquiv X U).symm
           (Additive.ofMul (regularUnitToFunctionField X U f)) =
