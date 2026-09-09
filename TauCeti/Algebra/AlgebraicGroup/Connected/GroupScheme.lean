@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Comultiplication
+public import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
 
@@ -22,14 +23,16 @@ augmentation point in `Spec H`.  The morphism `G⁰ ⟶ G` is the closed immersi
 quotient coordinate map.  On rational points its image consists exactly of the points whose
 kernel belongs to the augmentation point's connected component.
 
-The construction here is over an algebraically closed ground field.  Descent to an arbitrary
-field, compatibility with geometric base change, and the finite étale component group are
-separate parts of the roadmap.
+The identity component is geometrically connected: over the algebraically closed ground field,
+ordinary connectedness is already geometric connectedness. This provides the connectedness
+hypothesis used when testing identity components of closed subgroups against a geometric radical.
 
 ## Main declarations
 
 * `TauCeti.FiniteTypeCommHopfAlgCat.identityComponent`: the quotient coordinate Hopf algebra of
   the identity component.
+* `TauCeti.FiniteTypeCommHopfAlgCat.geometricallyConnected_identityComponent`: geometric
+  connectedness of the identity component.
 * `TauCeti.FiniteTypeCommHopfAlgCat.identityComponentSpec`: its affine group scheme.
 * `TauCeti.FiniteTypeCommHopfAlgCat.identityComponentSpecι`: the canonical closed immersion into
   the ambient affine group scheme.
@@ -125,6 +128,14 @@ noncomputable instance connectedSpace_identityComponent
   rw [HopfAlgebra.identityComponentHopfIdeal_toIdeal]
   exact PrimeSpectrum.connectedSpace_quotient_connectedComponentIdeal
     (Bialgebra.augmentationPoint k H)
+
+/-- The identity component of a finite-type affine group over an algebraically closed field is
+geometrically connected, even when the group is not smooth. -/
+theorem geometricallyConnected_identityComponent
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    geometricallyConnectedCommHopfAlgProperty k (identityComponent H).obj :=
+  (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k
+    (identityComponent H).obj).mpr inferInstance
 
 /-- The identity-component affine group scheme represented by `identityComponent H`. -/
 noncomputable def identityComponentSpec

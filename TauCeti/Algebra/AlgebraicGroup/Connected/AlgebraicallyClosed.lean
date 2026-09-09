@@ -12,6 +12,7 @@ import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.Algebra.GroupWithZero.Idempotent
 import Mathlib.RingTheory.Flat.Basic
 import TauCeti.RingTheory.FiniteType.PointSeparation
+import TauCeti.RingTheory.Idempotents.Connected.ScalarExtension
 
 /-!
 # Testing geometric connectedness over algebraically closed fields
@@ -27,8 +28,13 @@ H ⊗[k] K → H ⊗[k] Ω
 is injective because `H` is flat over the field `k`. Connectedness of the target therefore
 descends to the source by the idempotent characterization of connected affine spectra.
 
-## Main declaration
+Over an algebraically closed ground field, ordinary connectedness is already geometric
+connectedness; no finite-type hypothesis is required.
 
+## Main declarations
+
+* `TauCeti.geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace`: over an algebraically
+  closed field, geometric connectedness is equivalent to ordinary connectedness.
 * `TauCeti.geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_of_isAlgClosed`:
   geometric connectedness is equivalent to connectedness after every algebraically closed field
   extension.
@@ -53,7 +59,7 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-universe u
+universe u v
 
 /-- **Geometric connectedness of a commutative Hopf algebra can be tested after algebraically
 closed field extensions.** -/
@@ -75,6 +81,20 @@ theorem geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_of_isAlgClo
     have hf : Function.Injective f :=
       Module.Flat.lTensor_preserves_injective_linearMap g.toLinearMap hg
     exact connectedSpace_primeSpectrum_of_injective f.toRingHom hf
+
+/-- Over an algebraically closed field, a commutative Hopf algebra is geometrically connected
+exactly when its prime spectrum is connected. No finite-type assumption is needed. -/
+theorem geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace
+    (k : Type u) [Field k] [IsAlgClosed k] (H : CommHopfAlgCat.{v} k) :
+    geometricallyConnectedCommHopfAlgProperty k H ↔ ConnectedSpace (PrimeSpectrum H) := by
+  constructor
+  · exact geometricallyConnectedCommHopfAlgProperty.connectedSpace k H
+  · intro h
+    rw [geometricallyConnectedCommHopfAlgProperty_iff]
+    intro K _ _
+    have := connectedSpace_primeSpectrum_tensorProduct_of_isAlgClosed k H K
+    exact (PrimeSpectrum.homeomorphOfRingEquiv
+      (Algebra.TensorProduct.comm k H K).toRingEquiv).connectedSpace_iff.mpr this
 
 namespace HopfAlgebra
 
