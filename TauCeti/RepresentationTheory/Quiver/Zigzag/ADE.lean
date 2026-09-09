@@ -151,21 +151,18 @@ theorem card_edgeFinset_zigzagE8Graph : zigzagE8Graph.edgeFinset.card = 7 := by
 /-! ### Zigzag dimensions -/
 
 /-- The zigzag algebra of `D₄` has dimension `14`. -/
-@[simp]
 theorem finrank_zigzagAlgebra_D4 (k : Type*) [CommRing k] [Nontrivial k] :
     Module.finrank k (zigzagAlgebra k zigzagD4Graph) = 14 := by
   rw [finrank_zigzagAlgebra]
   norm_num
 
 /-- The zigzag algebra of `E₈` has dimension `30`. -/
-@[simp]
 theorem finrank_zigzagAlgebra_E8 (k : Type*) [CommRing k] [Nontrivial k] :
     Module.finrank k (zigzagAlgebra k zigzagE8Graph) = 30 := by
   rw [finrank_zigzagAlgebra]
   norm_num
 
 /-- The zigzag algebra of affine `E₈` has dimension `34`. -/
-@[simp]
 theorem finrank_zigzagAlgebra_affineE8 (k : Type*) [CommRing k] [Nontrivial k] :
     Module.finrank k (zigzagAlgebra k zigzagAffineE8Graph) = 34 := by
   rw [finrank_zigzagAlgebra]
