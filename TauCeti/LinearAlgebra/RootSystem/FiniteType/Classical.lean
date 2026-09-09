@@ -190,6 +190,19 @@ theorem isFiniteType_cartanMatrix_A (n : ℕ) : IsFiniteType (CartanMatrix.A n) 
   rw [← simpleCorootsA_mul_conjTranspose]
   exact Matrix.PosDef.mul_conjTranspose_self _ (simpleCorootsA_vecMul_injective n)
 
+/-- **The Cartan matrix of type `Aₙ` is positive definite** over `ℚ`. The family is simply laced,
+so the matrix is its own symmetrization and the Gram model of the simple coroots proves it
+directly. -/
+theorem posDef_cartanMatrix_A (n : ℕ) :
+    ((CartanMatrix.A n).map (Int.cast : ℤ → ℚ)).PosDef := by
+  have h := Matrix.PosDef.mul_conjTranspose_self _ (simpleCorootsA_vecMul_injective n)
+  rw [simpleCorootsA_mul_conjTranspose] at h
+  have heq : (Matrix.of fun i j ↦ (1 : ℚ) * ((CartanMatrix.A n i j : ℤ) : ℚ))
+      = (CartanMatrix.A n).map (Int.cast : ℤ → ℚ) := by
+    ext i j
+    simp
+  rwa [heq] at h
+
 /-! ### Type `Bₙ` -/
 
 /-- **The simple coroots of type `Bₙ`**: the `i`-th row is `eᵢ - eᵢ₊₁` in `ℚ^n`, except for the last
@@ -374,5 +387,24 @@ theorem isFiniteType_cartanMatrix_D : ∀ n : ℕ, IsFiniteType (CartanMatrix.D 
         (fun _ ↦ one_pos) ?_
       rw [← simpleCorootsD_mul_conjTranspose]
       exact Matrix.PosDef.mul_conjTranspose_self _ (simpleCorootsD_vecMul_injective k)
+
+/-- **The Cartan matrix of type `Dₙ` is positive definite** over `ℚ`, at every rank. Like type
+`Aₙ` the family is simply laced, so the matrix is its own symmetrization. -/
+theorem posDef_cartanMatrix_D : ∀ n : ℕ, ((CartanMatrix.D n).map (Int.cast : ℤ → ℚ)).PosDef
+  | 0 => by
+      have hD0 : CartanMatrix.D 0 = CartanMatrix.A 0 := by
+        ext i
+        exact i.elim0
+      rw [hD0]
+      exact posDef_cartanMatrix_A 0
+  | 1 => by rw [CartanMatrix.D_one]; exact posDef_cartanMatrix_A 1
+  | (k + 2) => by
+      have h := Matrix.PosDef.mul_conjTranspose_self _ (simpleCorootsD_vecMul_injective k)
+      rw [simpleCorootsD_mul_conjTranspose] at h
+      have heq : (Matrix.of fun i j ↦ (1 : ℚ) * ((CartanMatrix.D (k + 2) i j : ℤ) : ℚ))
+          = (CartanMatrix.D (k + 2)).map (Int.cast : ℤ → ℚ) := by
+        ext i j
+        simp
+      rwa [heq] at h
 
 end TauCeti
