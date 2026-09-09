@@ -8,10 +8,8 @@ module
 public import TauCeti.RepresentationTheory.Spin.Exceptional.Three.Basic
 public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
 import TauCeti.RepresentationTheory.Spin.OddStructure
-import TauCeti.RepresentationTheory.Spin.Polarization.Exists
 import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.KostantLattice
-import TauCeti.RepresentationTheory.Spin.Representation
-import TauCeti.LinearAlgebra.CliffordAlgebra.ReflectionLift
+import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 
 /-!
@@ -290,9 +288,10 @@ private theorem spinThreeEquivMatrix_negativeRoot
 group isomorphic to `SL₂`. The equivalence is noncanonical because its construction chooses a
 polarization and bases. -/
 theorem nonempty_spinGroup_mulEquiv_specialLinearGroup_of_finrank_eq_three
-    [NeZero (2 : K)] [IsSepClosed K] [FiniteDimensional K V]
+    [NeZero (2 : K)] [IsSepClosed K]
     (hQ : Q.Nondegenerate) (hV : finrank K V = 3) :
     Nonempty (spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 2) K) := by
+  let _ : FiniteDimensional K V := .of_finrank_eq_succ (by omega)
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   let P := SpinPolarizationData.ofNondegenerate Q hQ
   have hW : finrank K P.W = 1 :=
