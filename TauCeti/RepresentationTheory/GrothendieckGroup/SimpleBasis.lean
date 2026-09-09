@@ -52,7 +52,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits CategoryTheory.ObjectProperty
 
-universe u v
+universe u v w w'
 
 variable {R : Type u} [Ring R] [IsArtinianRing R]
 
@@ -60,7 +60,7 @@ variable {R : Type u} [Ring R] [IsArtinianRing R]
 
 section Coordinate
 
-variable (R) (S : Type u) [AddCommGroup S] [Module R S]
+variable (R) (S : Type w) [AddCommGroup S] [Module R S]
 
 private noncomputable def jordanHolderInvariant :
     ExactK0.AdditiveInvariant (finiteModulesExactStructure R) ℤ where
@@ -88,15 +88,22 @@ theorem jordanHolderCoordinate_of (M : FGModuleCat.{u} R) :
 
 /-- Isomorphic modules define the same Jordan--Hölder coordinate. -/
 theorem jordanHolderCoordinate_congr
-    {T : Type u} [AddCommGroup T] [Module R T] (e : S ≃ₗ[R] T) :
+    {T : Type w'} [AddCommGroup T] [Module R T] (e : S ≃ₗ[R] T) :
     jordanHolderCoordinate R S = jordanHolderCoordinate R T := by
   refine ExactK0.hom_ext fun M ↦ ?_
   simp only [jordanHolderCoordinate_of]
   exact congrArg Int.ofNat (jordanHolderMultiplicity_congr e)
 
+end Coordinate
+
+section CoordinateClasses
+
+variable (R)
+
 /-- A simple module has coordinate one on its own class. -/
 @[simp high]
-theorem jordanHolderCoordinate_self [IsSimpleModule R S] [Module.Finite R S] :
+theorem jordanHolderCoordinate_self (S : Type u) [AddCommGroup S] [Module R S]
+    [IsSimpleModule R S] [Module.Finite R S] :
     jordanHolderCoordinate R S (ExactK0.of (FGModuleCat.of R S)) = 1 := by
   rw [jordanHolderCoordinate_of]
   exact_mod_cast jordanHolderMultiplicity_eq_one_of_isSimpleModule_of_linearEquiv S
@@ -105,13 +112,14 @@ theorem jordanHolderCoordinate_self [IsSimpleModule R S] [Module.Finite R S] :
 /-- Two nonisomorphic simple modules have zero mutual Jordan--Hölder coordinate. -/
 @[simp high]
 theorem jordanHolderCoordinate_of_eq_zero_of_isEmpty_linearEquiv
+    (S : Type w) [AddCommGroup S] [Module R S]
     {T : Type u} [AddCommGroup T] [Module R T] [Module.Finite R T] [IsSimpleModule R T]
     (h : IsEmpty (T ≃ₗ[R] S)) :
     jordanHolderCoordinate R S (ExactK0.of (FGModuleCat.of R T)) = 0 := by
   rw [jordanHolderCoordinate_of]
   exact_mod_cast jordanHolderMultiplicity_eq_zero_of_isEmpty_linearEquiv_of_isSimpleModule S h
 
-end Coordinate
+end CoordinateClasses
 
 /-! ### Linear independence and spanning -/
 
