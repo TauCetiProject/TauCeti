@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-public import Mathlib.Topology.Compactness.SigmaCompact
-public import Mathlib.Topology.Sets.Opens
+import Mathlib.Topology.Compactness.SigmaCompact
+import Mathlib.Topology.Sets.Opens
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
@@ -21,10 +21,6 @@ compact exhaustions in domain arguments.
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, §5.2.
-* [Partial differential equations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/PDE/README.md),
-  Lane A.2, "Density and `W^{k,p}_0`."
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The exponential map".
 -/
 
 public section
@@ -72,5 +68,30 @@ theorem _root_.IsCompact.exists_contDiff_cutoff {K U : Set E} (hK : IsCompact K)
     rintro y ⟨x, rfl⟩
     exact hf_range x
   exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
+
+/-- A compact-exhaustion term in an open set admits a smooth cutoff supported in the interior of
+the next term. -/
+theorem _root_.CompactExhaustion.exists_contDiff_cutoff {Omega : Opens E}
+    (K : CompactExhaustion Omega) (n : ℕ) :
+    ∃ ψ : E → ℝ,
+      ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
+        EqOn ψ 1 ((Subtype.val : Omega → E) '' K n) ∧
+        (Subtype.val : Omega → E) '' K n ⊆ interior (ψ ⁻¹' {1}) ∧
+        HasCompactSupport ψ ∧
+          tsupport ψ ⊆ (Subtype.val : Omega → E) '' interior (K (n + 1)) := by
+  have hK : IsCompact ((Subtype.val : Omega → E) '' K n) :=
+    (K.isCompact n).image continuous_subtype_val
+  have hU : IsOpen ((Subtype.val : Omega → E) '' interior (K (n + 1))) :=
+    Omega.isOpen.isOpenMap_subtype_val _ isOpen_interior
+  have hKU :
+      (Subtype.val : Omega → E) '' K n ⊆ (Subtype.val : Omega → E) '' interior (K (n + 1)) :=
+    image_mono (K.subset_interior_succ n)
+  obtain ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩ :=
+    hK.exists_contDiff_cutoff hU hKU
+  have hψ_eq_one : EqOn ψ 1 ((Subtype.val : Omega → E) '' K n) := by
+    intro x hx
+    simpa only [mem_preimage, mem_singleton_iff, Pi.one_apply] using
+      interior_subset (hψ_eq_one_nhds hx)
+  exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
 
 end TauCeti
