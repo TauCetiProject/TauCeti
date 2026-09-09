@@ -28,7 +28,7 @@ LeanPool code is copied here.
 
 * `TauCeti.locallyIntegrable_newtonianKernel`: local integrability of `Gₙ`.
 * `TauCeti.newtonianKernelDistribution`: the distribution induced by `Gₙ` on all of Euclidean
-  space.
+  space in dimensions `n ≥ 3`.
 * `TauCeti.newtonianKernelDistribution_apply`: its test-function pairing.
 
 The distributional Laplacian identity and its flux-to-test-function proof remain to be formalized.
@@ -141,8 +141,9 @@ theorem locallyIntegrable_fderiv_newtonianKernel (n : ℕ) (hn : 3 ≤ n) :
       exact fderiv_newtonianKernel n (by omega) hx
     exact hg.aestronglyMeasurable.congr hfg.symm
 
-/-- The distribution induced by the Newtonian kernel on all of Euclidean space. -/
-noncomputable def newtonianKernelDistribution (n : ℕ) :
+/-- The distribution induced by the Newtonian kernel on all of Euclidean space in dimensions
+`n ≥ 3`. -/
+noncomputable def newtonianKernelDistribution (n : ℕ) (_hn : 3 ≤ n) :
     𝓓'((⊤ : Opens (EuclideanSpace ℝ (Fin n))), ℝ) :=
   Distribution.ofFun (⊤ : Opens (EuclideanSpace ℝ (Fin n)))
     (newtonianKernel n) volume ⊤
@@ -151,7 +152,7 @@ noncomputable def newtonianKernelDistribution (n : ℕ) :
 test function. -/
 theorem newtonianKernelDistribution_apply (n : ℕ) (hn : 3 ≤ n)
     (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin n))), ℝ)) :
-    newtonianKernelDistribution n φ =
+    newtonianKernelDistribution n hn φ =
       ∫ x, φ x • newtonianKernel n x := by
   rw [newtonianKernelDistribution, Distribution.ofFun_apply]
   exact (locallyIntegrable_newtonianKernel n hn).locallyIntegrableOn _
