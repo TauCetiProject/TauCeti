@@ -52,14 +52,6 @@ namespace TauCeti.Multiquadratic
 
 variable {d : ℤ}
 
-/-- Relative automorphisms of the candidate genus field commute because their restrictions to
-the abelian Galois group over `ℚ` commute. -/
-theorem candidateGenusFieldRelativeAut_comm (hd : Squarefree d)
-    (σ τ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) :
-    σ * τ = τ * σ := by
-  apply AlgEquiv.restrictScalars_injective ℚ
-  exact IsMulCommutative.is_comm.comm (σ.restrictScalars ℚ) (τ.restrictScalars ℚ)
-
 /-- **The genus-field isomorphism sends Frobenius to the prime class.**
 Let q be an odd rational prime not dividing the discriminant of K = ℚ(√d), let qIdeal be a
 degree-one prime of K above q, and let Q be a prime of the candidate genus field above qIdeal.
@@ -189,7 +181,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinElement
       exact (Fact.out : q.Prime).ne_zero hnorm.symm)
     autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd hnsq
         (NumberFieldArithmetic.artinElement
-          (candidateGenusFieldRelativeAut_comm hd) qIdeal
+          IsMulCommutative.is_comm.comm qIdeal
           (fun Q hQ hQl =>
             (isUnramifiedIn_candidateGenusField hd hnsq qIdeal) Q hQ hQl)) =
       Multiplicative.ofAdd
@@ -217,7 +209,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinElement
   apply autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
     hd hnsq hodd hqD qIdeal hnorm Q
   exact NumberFieldArithmetic.isArithFrobAt_artinElement
-    (candidateGenusFieldRelativeAut_comm hd) qIdeal
+    IsMulCommutative.is_comm.comm qIdeal
       (fun Q hQ hQl =>
         (isUnramifiedIn_candidateGenusField hd hnsq qIdeal) Q hQ hQl) Q
 
