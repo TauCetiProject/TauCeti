@@ -12,24 +12,30 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 /-!
 # The formal parameter map is additive
 
-For a height-one prime `v` of a Dedekind domain, the maximal ideal of the ring of integers
-`O_v` of the completion is an adic ideal.  The Weierstrass formal group law therefore makes its
-elements into `WeierstrassCurve.FormalGroupPoint W m_v`.  The usual parametrisation sends zero to
-the point at infinity and, for a nonzero parameter, is given by
+For an adic ideal `I` of a complete ring `O` mapping injectively to a field `K`, the Weierstrass
+formal group law makes its elements into `WeierstrassCurve.FormalGroupPoint W I`.  The usual
+parametrisation sends zero to the point at infinity and, for a nonzero parameter, is given by
 
 `t ↦ (t / w(t), -1 / w(t))`
 
 This file proves that this map is an additive homomorphism into the points of the base-changed
-curve, in every characteristic.
+curve whenever every nonzero parameter admits an auxiliary parameter distinct from it, its
+inverse, and its own inverse.  It then establishes that property for the maximal ideal in the
+completion at a height-one prime of a Dedekind domain, in every characteristic.
 
 ## Main definitions
 
-* `WeierstrassCurve.formalPointHom`: the additive homomorphism from formal-group parameters in the
-  maximal ideal of `O_v` to points of the curve over the completion.
+* `WeierstrassCurve.formalPointHom`: the additive homomorphism from formal-group parameters in an
+  adic ideal to points of the curve over a field.
+* `WeierstrassCurve.formalPointHomAdicCompletion`: its specialization to the maximal ideal in an
+  adic completion.
 
 ## Main results
 
-* `WeierstrassCurve.formalPoint_add`: the parametrisation preserves addition.
+* `WeierstrassCurve.formalPoint_add`: the parametrisation preserves addition when auxiliary
+  parameters exist.
+* `WeierstrassCurve.formalPoint_add_adicCompletion`: the unconditional adic-completion
+  specialization.
 * `WeierstrassCurve.formalPointHom_injective`: the resulting homomorphism is injective.
 
 ## References
@@ -143,18 +149,10 @@ private theorem exists_small_param {a b : O_v} (ha : a ∈ m_v) (ha0 : a ≠ 0) 
   have haval0 : Valued.v (a : K_v) ≠ 0 := by
     simp only [ne_eq, _root_.map_eq_zero, ZeroMemClass.coe_eq_zero]
     exact ha0
-  obtain ⟨i, hi⟩ : ∃ i : ℤ, Valued.v (a : K_v) = exp i :=
-    ⟨_, (exp_log haval0).symm⟩
-  have hi_le : i ≤ -1 := by
-    have h := v.mem_maximalIdeal_pow_iff (K := K) (n := 1) |>.mp (pow_one m_v ▸ ha)
-    rwa [hi, exp_le_exp] at h
   have hbval0 : Valued.v (b : K_v) ≠ 0 := by
     simp only [ne_eq, _root_.map_eq_zero, ZeroMemClass.coe_eq_zero]
     exact hb0
-  obtain ⟨j, hj⟩ : ∃ j : ℤ, Valued.v (b : K_v) = exp j :=
-    ⟨_, (exp_log hbval0).symm⟩
-  obtain ⟨n, hn⟩ : ∃ n : ℕ, (n : ℤ) = max (-i) (-j) + 1 :=
-    ⟨(max (-i) (-j) + 1).toNat, Int.toNat_of_nonneg (by omega)⟩
+  obtain ⟨n, hna, hnb⟩ := exists_exp_neg_natCast_lt_and_lt haval0 hbval0
   let s : O_v := π ^ n
   have hsv : Valued.v (s : K_v) = exp (-(n : ℤ)) := by
     simp only [s]
@@ -162,23 +160,22 @@ private theorem exists_small_param {a b : O_v} (ha : a ∈ m_v) (ha0 : a ≠ 0) 
     rw [map_pow, hπv, ← exp_nsmul, nsmul_eq_mul]
     congr 1
     ring
-  have hni : -(n : ℤ) < i := by omega
-  have hnj : -(n : ℤ) < j := by omega
+  have ha_le : Valued.v (a : K_v) ≤ exp (-1) := by
+    apply (v.mem_maximalIdeal_pow_iff (K := K) (x := a) (n := 1)).mp
+    simpa using ha
   have hsm : s ∈ m_v := by
     have h := v.mem_maximalIdeal_pow_iff (K := K) (x := s) (n := 1)
     rw [pow_one] at h
     apply h.mpr
-    rw [hsv, exp_le_exp]
-    omega
+    rw [hsv]
+    exact (hna.trans_le ha_le).le
   have hs0 : s ≠ 0 := by
     exact pow_ne_zero _ hπ.ne_zero
   refine ⟨s, hsm, hs0, ?_, ?_, ?_⟩
-  · rw [hsv, hi, exp_lt_exp]
-    exact hni
-  · rw [hsv, hj, exp_lt_exp]
-    exact hnj
+  · rwa [hsv]
+  · rwa [hsv]
   · rw [hsv, ← exp_zero, exp_lt_exp]
-    omega
+    exact (exp_lt_exp.mp (hna.trans_le ha_le)).trans_le (by omega)
 
 private theorem exists_aux_param [(W.baseChange K_v).IsElliptic] {t : O_v}
     (ht : t ∈ m_v) (ht0 : t ≠ 0) :
@@ -284,111 +281,186 @@ private theorem exists_aux_point [(W.baseChange K_v).IsElliptic]
 
 section PointMap
 
-variable [(W.baseChange (v.adicCompletion K)).IsElliptic]
+variable {O : Type*} [CommRing O] [UniformSpace O] [IsUniformAddGroup O] [CompleteSpace O]
+  [T2Space O] [IsTopologicalRing O] [IsLinearTopology O O]
+  {S : Type*} [Field S] [Algebra O S] [FaithfulSMul O S]
+  (I : Ideal O) [Fact (IsAdic I)] (E : WeierstrassCurve O) [(E.baseChange S).IsElliptic]
 
-private noncomputable def formalPointMap (P : FormalGroupPoint W m_v) :
-    (W.baseChange K_v).toAffine.Point :=
-  W.formalPoint (K := K_v) (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)) P.property
+private noncomputable def formalPointMap (P : FormalGroupPoint E I) :
+    (E.baseChange S).toAffine.Point :=
+  E.formalPoint (K := S) (Fact.out : IsAdic I) P.property
 
-private theorem formalPointMap_injective : Function.Injective (formalPointMap v W) := by
+private theorem formalPointMap_injective :
+    Function.Injective (formalPointMap (S := S) I E) := by
   intro P Q hPQ
-  have hPQ' : W.formalPoint (K := K_v)
-      (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)) P.property =
-        W.formalPoint (K := K_v)
-          (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)) Q.property := by
+  have hPQ' : E.formalPoint (K := S) (Fact.out : IsAdic I) P.property =
+      E.formalPoint (K := S) (Fact.out : IsAdic I) Q.property := by
     simpa only [formalPointMap] using hPQ
-  have hinj := W.formalPoint_injective (K := K_v)
-    (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K))
-  have heq := hinj (a₁ := (⟨P.val, P.property⟩ : m_v))
-    (a₂ := (⟨Q.val, Q.property⟩ : m_v)) hPQ'
+  have hinj := E.formalPoint_injective (K := S) (Fact.out : IsAdic I)
+  have heq := hinj (a₁ := (⟨P.val, P.property⟩ : I))
+    (a₂ := (⟨Q.val, Q.property⟩ : I)) hPQ'
   exact FormalGroupPoint.ext (congrArg Subtype.val heq)
 
-private theorem formalPointMap_neg (P : FormalGroupPoint W m_v) :
-    formalPointMap v W (-P) = -formalPointMap v W P := by
-  let hI := v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)
+private theorem formalPointMap_neg (P : FormalGroupPoint E I) :
+    formalPointMap (S := S) I E (-P) = -formalPointMap (S := S) I E P := by
   simp only [formalPointMap, FormalGroupPoint.coe_neg]
-  exact W.formalPoint_formalInverseEval hI P.property
+  exact E.formalPoint_formalInverseEval (Fact.out : IsAdic I) P.property
 
 open Classical in
-private theorem formalPointMap_add_of_ne (P Q : FormalGroupPoint W m_v)
+private theorem formalPointMap_add_of_ne (P Q : FormalGroupPoint E I)
     (hne : Q ≠ P) (hnneg : Q ≠ -P) :
-    formalPointMap v W (P + Q) = formalPointMap v W P + formalPointMap v W Q := by
-  exact (W.add_eq_formalPoint_formalAddEval_of_ne_of_ne_formalInverseEval
-    (K := K_v) (Fact.out : IsAdic m_v) P.property Q.property
+    formalPointMap (S := S) I E (P + Q) =
+      formalPointMap (S := S) I E P + formalPointMap (S := S) I E Q := by
+  exact (E.add_eq_formalPoint_formalAddEval_of_ne_of_ne_formalInverseEval
+    (K := S) (Fact.out : IsAdic I) P.property Q.property
     (fun _ _ h ↦ hne (FormalGroupPoint.ext h))
     (fun _ _ h ↦ hnneg (FormalGroupPoint.ext (by simpa using h)))).symm
 
 open Classical in
-private theorem formalPointMap_add_self (P : FormalGroupPoint W m_v) (hP0 : P ≠ 0)
-    (hself : P ≠ -P) :
-    formalPointMap v W (P + P) = formalPointMap v W P + formalPointMap v W P := by
-  obtain ⟨U, _, hUP, hUnP, hnUP, hnUnP, hUnegn⟩ := exists_aux_point v W hP0
-  have c1 := formalPointMap_add_of_ne v W P U hUP hUnP
-  have c2 := formalPointMap_add_of_ne v W P (-U) hnUP hnUnP
+private theorem formalPointMap_add_self (P : FormalGroupPoint E I) (hself : P ≠ -P)
+    (haux : ∃ U : FormalGroupPoint E I, U ≠ P ∧ U ≠ -P ∧ U ≠ -U) :
+    formalPointMap (S := S) I E (P + P) =
+      formalPointMap (S := S) I E P + formalPointMap (S := S) I E P := by
+  obtain ⟨U, hUP, hUnP, hUnegn⟩ := haux
+  have hnUP : -U ≠ P := fun h ↦ hUnP (by simpa using congrArg Neg.neg h)
+  have hnUnP : -U ≠ -P := fun h ↦ hUP (neg_injective h)
+  have c1 := formalPointMap_add_of_ne (S := S) I E P U hUP hUnP
+  have c2 := formalPointMap_add_of_ne (S := S) I E P (-U) hnUP hnUnP
   have hne : P + -U ≠ P + U := by
     intro h
-    have h' := congrArg (formalPointMap v W) h
+    have h' := congrArg (formalPointMap (S := S) I E) h
     rw [c1, c2] at h'
-    exact hUnegn (formalPointMap_injective v W (add_left_cancel h').symm)
+    exact hUnegn (formalPointMap_injective (S := S) I E (add_left_cancel h').symm)
   have hnneg : P + -U ≠ -(P + U) := by
     intro h
-    have h' := congrArg (formalPointMap v W) h
-    rw [c2, formalPointMap_neg v W, formalPointMap_neg v W, c1, neg_add] at h'
+    have h' := congrArg (formalPointMap (S := S) I E) h
+    rw [c2, formalPointMap_neg (S := S) I E, formalPointMap_neg (S := S) I E,
+      c1, neg_add] at h'
     have h'' := add_right_cancel h'
-    rw [← formalPointMap_neg v W] at h''
-    exact hself (formalPointMap_injective v W h'')
-  have c3 := formalPointMap_add_of_ne v W (P + U) (P + -U) hne hnneg
+    rw [← formalPointMap_neg (S := S) I E] at h''
+    exact hself (formalPointMap_injective (S := S) I E h'')
+  have c3 := formalPointMap_add_of_ne (S := S) I E (P + U) (P + -U) hne hnneg
   have hkey : (P + U) + (P + -U) = P + P := by abel
-  rw [← hkey, c3, c1, c2, formalPointMap_neg v W]
+  rw [← hkey, c3, c1, c2, formalPointMap_neg (S := S) I E]
   abel
 
 open Classical in
-/-- **The formal parametrisation preserves addition.** -/
-@[simp]
-theorem formalPoint_add (P Q : FormalGroupPoint W m_v) :
-    W.formalPoint (K := K_v) (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K))
-        (P + Q).property =
-      W.formalPoint (K := K_v) (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K))
-          P.property +
-        W.formalPoint (K := K_v) (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K))
-          Q.property := by
-  suffices h : formalPointMap v W (P + Q) =
-      formalPointMap v W P + formalPointMap v W Q by
+/-- **The formal parametrisation preserves addition** whenever every nonzero parameter has an
+auxiliary parameter distinct from it, its inverse, and the auxiliary parameter's own inverse. -/
+theorem formalPoint_add
+    (haux : ∀ P : FormalGroupPoint E I, P ≠ 0 →
+      ∃ U : FormalGroupPoint E I, U ≠ P ∧ U ≠ -P ∧ U ≠ -U)
+    (P Q : FormalGroupPoint E I) :
+    E.formalPoint (K := S) (Fact.out : IsAdic I) (P + Q).property =
+      E.formalPoint (K := S) (Fact.out : IsAdic I) P.property +
+        E.formalPoint (K := S) (Fact.out : IsAdic I) Q.property := by
+  suffices h : formalPointMap (S := S) I E (P + Q) =
+      formalPointMap (S := S) I E P + formalPointMap (S := S) I E Q by
     simpa only [formalPointMap] using h
   rcases eq_or_ne P 0 with rfl | hP0
   · simp [formalPointMap]
   rcases eq_or_ne Q 0 with rfl | hQ0
   · simp [formalPointMap]
   rcases eq_or_ne Q (-P) with rfl | hQneg
-  · rw [add_neg_cancel, formalPointMap_neg v W]
+  · rw [add_neg_cancel, formalPointMap_neg (S := S) I E]
     simp [formalPointMap]
   rcases eq_or_ne Q P with hQP | hQP
   · subst Q
-    exact formalPointMap_add_self v W P hP0 hQneg
-  · exact formalPointMap_add_of_ne v W P Q hQP hQneg
+    exact formalPointMap_add_self (S := S) I E P hQneg (haux P hP0)
+  · exact formalPointMap_add_of_ne (S := S) I E P Q hQP hQneg
 
 open Classical in
-/-- **The formal parameter map into the curve's points**, as an additive homomorphism. -/
-noncomputable def formalPointHom :
-    FormalGroupPoint W m_v →+ (W.baseChange K_v).toAffine.Point where
-  toFun := formalPointMap v W
+/-- **The formal parameter map into the curve's points**, as an additive homomorphism whenever
+the required auxiliary parameters exist. -/
+noncomputable def formalPointHom
+    (haux : ∀ P : FormalGroupPoint E I, P ≠ 0 →
+      ∃ U : FormalGroupPoint E I, U ≠ P ∧ U ≠ -P ∧ U ≠ -U) :
+    FormalGroupPoint E I →+ (E.baseChange S).toAffine.Point where
+  toFun := formalPointMap (S := S) I E
   map_zero' := by simp [formalPointMap]
-  map_add' := formalPoint_add v W
+  map_add' := formalPoint_add I E haux
 
 open Classical in
 /-- The formal point homomorphism evaluates to the usual formal parametrisation. -/
 @[simp]
-theorem formalPointHom_apply (P : FormalGroupPoint W m_v) :
-    W.formalPointHom v P =
-      W.formalPoint (K := K_v) (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)) P.property :=
+theorem formalPointHom_apply
+    (haux : ∀ P : FormalGroupPoint E I, P ≠ 0 →
+      ∃ U : FormalGroupPoint E I, U ≠ P ∧ U ≠ -P ∧ U ≠ -U)
+    (P : FormalGroupPoint E I) :
+    E.formalPointHom I haux P =
+      E.formalPoint (K := S) (Fact.out : IsAdic I) P.property :=
   (rfl)
 
 open Classical in
 /-- **The formal point homomorphism is injective.** -/
-theorem formalPointHom_injective : Function.Injective (W.formalPointHom v) :=
-  formalPointMap_injective v W
+theorem formalPointHom_injective
+    (haux : ∀ P : FormalGroupPoint E I, P ≠ 0 →
+      ∃ U : FormalGroupPoint E I, U ≠ P ∧ U ≠ -P ∧ U ≠ -U) :
+    Function.Injective (E.formalPointHom (S := S) I haux) :=
+  formalPointMap_injective (S := S) I E
 
 end PointMap
+
+section AdicCompletion
+
+variable {A : Type*} [CommRing A] [IsDedekindDomain A]
+  {F : Type*} [Field F] [Algebra A F] [IsFractionRing A F]
+  (u : HeightOneSpectrum A)
+
+variable (C : WeierstrassCurve (u.adicCompletionIntegers F))
+  [(C.baseChange (u.adicCompletion F)).IsElliptic]
+
+private theorem exists_aux_point_simple
+    {P : FormalGroupPoint C (IsLocalRing.maximalIdeal (u.adicCompletionIntegers F))}
+    (hP0 : P ≠ 0) :
+    ∃ U : FormalGroupPoint C (IsLocalRing.maximalIdeal (u.adicCompletionIntegers F)),
+      U ≠ P ∧ U ≠ -P ∧ U ≠ -U := by
+  obtain ⟨U, _, hUP, hUnP, _, _, hUnegn⟩ := exists_aux_point u C hP0
+  exact ⟨U, hUP, hUnP, hUnegn⟩
+
+open Classical in
+/-- **The formal parametrisation preserves addition in an adic completion.** -/
+@[simp]
+theorem formalPoint_add_adicCompletion
+    (P Q : FormalGroupPoint C (IsLocalRing.maximalIdeal (u.adicCompletionIntegers F))) :
+    C.formalPoint (K := u.adicCompletion F)
+        (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F))
+        (P + Q).property =
+      C.formalPoint (K := u.adicCompletion F)
+          (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F))
+          P.property +
+        C.formalPoint (K := u.adicCompletion F)
+          (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F))
+          Q.property :=
+  formalPoint_add (IsLocalRing.maximalIdeal (u.adicCompletionIntegers F)) C
+    (fun P hP ↦ exists_aux_point_simple u C (P := P) hP) P Q
+
+open Classical in
+/-- **The formal parameter map for an adic completion**, as an additive homomorphism. -/
+noncomputable def formalPointHomAdicCompletion :
+    FormalGroupPoint C (IsLocalRing.maximalIdeal (u.adicCompletionIntegers F)) →+
+      (C.baseChange (u.adicCompletion F)).toAffine.Point :=
+  C.formalPointHom (IsLocalRing.maximalIdeal (u.adicCompletionIntegers F))
+    (fun P hP ↦ exists_aux_point_simple u C (P := P) hP)
+
+open Classical in
+/-- The adic-completion formal point homomorphism evaluates to the usual parametrisation. -/
+@[simp]
+theorem formalPointHomAdicCompletion_apply
+    (P : FormalGroupPoint C (IsLocalRing.maximalIdeal (u.adicCompletionIntegers F))) :
+    C.formalPointHomAdicCompletion u P =
+      C.formalPoint (K := u.adicCompletion F)
+        (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)) P.property :=
+  (rfl)
+
+open Classical in
+/-- **The adic-completion formal point homomorphism is injective.** -/
+theorem formalPointHomAdicCompletion_injective :
+    Function.Injective (C.formalPointHomAdicCompletion u) :=
+  formalPointHom_injective (IsLocalRing.maximalIdeal (u.adicCompletionIntegers F)) C
+    (fun P hP ↦ exists_aux_point_simple u C (P := P) hP)
+
+end AdicCompletion
 
 end WeierstrassCurve
 
