@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.Flat.Basic
-public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 
 /-!
@@ -23,9 +22,9 @@ development gives this interface.
 
 Injectivity of `i` together with a full real span is strictly weaker and is not enough. The map
 `ℤ² →+ ℝ`, `(a, b) ↦ a + √2 * b`, is injective and its image spans `ℝ`, yet its image is dense,
-so a ray of `ℝ` can contain lattice vectors of two incomparable lengths and a "primitive
-generator" of a ray need not exist. The scalar-extension condition rules this out by forcing the
-integral and real ranks to agree.
+so its positive image has arbitrarily small elements and a ray has no least positive lattice
+vector to serve as its "primitive generator". The scalar-extension condition rules this out by
+forcing the integral and real ranks to agree.
 
 ## Main declarations
 
@@ -89,10 +88,10 @@ theorem isIntegralLattice_iff :
 
 /-- An integral basis of `N` whose image under `i` is a real basis of `V` exhibits `i` as an
 integral lattice. -/
-theorem isIntegralLattice_of_basis {n : ℕ} (b : Module.Basis (Fin n) ℤ N)
-    (c : Module.Basis (Fin n) ℝ V) (hbc : ∀ j, i (b j) = c j) : IsIntegralLattice i := by
+theorem isIntegralLattice_of_basis {ι : Type*} [Finite ι] (b : Module.Basis ι ℤ N)
+    (c : Module.Basis ι ℝ V) (hbc : ∀ j, i (b j) = c j) : IsIntegralLattice i := by
   obtain ⟨e, he⟩ : ∃ e : ℝ ⊗[ℤ] N ≃ₗ[ℝ] V, ∀ j, e (1 ⊗ₜ[ℤ] b j) = i (b j) := by
-    refine ⟨(b.baseChange ℝ).equiv c (Equiv.refl (Fin n)), fun j ↦ ?_⟩
+    refine ⟨(b.baseChange ℝ).equiv c (Equiv.refl ι), fun j ↦ ?_⟩
     rw [← Module.Basis.baseChange_apply ℝ b j, Module.Basis.equiv_apply]
     exact (hbc j).symm
   refine isIntegralLattice_iff.2
