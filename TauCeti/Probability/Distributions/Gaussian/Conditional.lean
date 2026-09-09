@@ -112,10 +112,10 @@ theorem Matrix.PosSemidef.gaussianCondCov [Finite ι] {S : Matrix (ι ⊕ κ) (�
   have hblocks : Matrix.fromBlocks S₁₁ S₁₂ (Matrix.conjTranspose S₁₂) S₂₂ = S := by
     rw [← hS₂₁]
     ext (i | i) (j | j) <;> rfl
-  rw [TauCeti.gaussianCondCov_def]
-  change (S₁₁ - S₁₂ * S₂₂⁻¹ * S₂₁).PosSemidef
-  rw [hS₂₁]
-  exact (Matrix.PosDef.fromBlocks₂₂ S₁₁ S₁₂ hS₂₂).mp (hblocks ▸ hS)
+  have hcond : (S₁₁ - S₁₂ * S₂₂⁻¹ * Matrix.conjTranspose S₁₂).PosSemidef :=
+    (Matrix.PosDef.fromBlocks₂₂ S₁₁ S₁₂ hS₂₂).mp (hblocks ▸ hS)
+  rw [← hS₂₁] at hcond
+  simpa only [TauCeti.gaussianCondCov_def, S₁₁, S₁₂, S₂₁, S₂₂] using hcond
 
 /-- The conditional covariance of a positive-definite block matrix is positive definite. -/
 theorem Matrix.PosDef.gaussianCondCov [Finite ι] {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
@@ -158,7 +158,9 @@ namespace TauCeti
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
-/-- The conditional Gaussian Markov kernel. -/
+/-- The Gaussian Markov kernel given by the conditional-law formula.
+`condDistrib_multivariateGaussian` identifies it with the conditional distribution when the joint
+covariance is positive semidefinite and the observed covariance block is positive definite. -/
 noncomputable def gaussianCondKernel (m : EuclideanSpace ℝ (ι ⊕ κ))
     (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) :
     Kernel (EuclideanSpace ℝ κ) (EuclideanSpace ℝ ι) where
