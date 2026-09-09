@@ -49,27 +49,15 @@ unbundled classes freely.
   `H` of a group with a topology acting continuously on a discrete module, the quotient `G ⧸ H`
   acts continuously on `M ^ H`; no compatibility of the topology of `G` with its group structure
   is used.
-* `TauCeti.ContCohomology.fixedPointsInclusion_equivariant`: the inclusion `M^U → M^V` for open
-  normal subgroups `V ≤ U` is equivariant along the continuous quotient map `G ⧸ V → G ⧸ U`.
+* `TauCeti.ContCohomology.fixedPointsInclusion_continuousFiniteQuotientMap_smul`: the inclusion
+  `M^U → M^V` for open normal subgroups `V ≤ U` commutes with the actions along the continuous
+  quotient map `G ⧸ V → G ⧸ U`.
 * `TauCeti.continuous_fixedPointsPairing`: a jointly continuous equivariant pairing remains
   jointly continuous after restriction to invariant coefficients.
 
-## Roadmap
-
-This file addresses the "Constructions" bullet of Layer 0 of
-`TauCetiRoadmap/ProfiniteCohomology/README.md`, which asks for the invariants `M ^ U` as a
-`G ⧸ U`-module with their induced discrete action, together with that layer's API line for `M ^ U`:
-the inclusions `M ^ U ↪ M ^ V` and `M ^ U ↪ M`, functoriality in `M` along equivariant maps and in
-`U` along inclusions, and the edge cases at `⊥` and `⊤`. Milestones 2 and 3 of Layer 4's transition
-system — the coefficient inclusion and its equivariance after restriction along the quotient
-homomorphism — are exactly those Layer 0 items, specialized below from the imported generic
-fixed-point API;
-milestones 5 and 6 are the identity and composition laws of the *induced map on cohomology* and
-need Layers 1 to 3, so the generic identity and composition laws are the coefficient-inclusion half
-they will rest on.
-The "Openness" bullet of Layer 0 lives in
-`TauCeti/RepresentationTheory/Homological/ContCohomology/Discrete.lean` and is not restated here.
-Directedness is what makes Layer 4's colimit over the finite quotients filtered.
+For open normal subgroups `V ≤ U`, the inclusion `M ^ U ↪ M ^ V` commutes with the actions
+after restriction along `G ⧸ V → G ⧸ U`. Thus the quotient homomorphism and coefficient
+inclusion form the compatible pair used by finite-quotient cohomology transition maps.
 -/
 
 public section
@@ -160,7 +148,8 @@ variable {U V : OpenNormalSubgroup G}
 /-- The coefficient inclusion `M^U → M^V` is equivariant after restriction along the quotient
 homomorphism `G ⧸ V → G ⧸ U`. -/
 @[simp]
-theorem fixedPointsInclusion_equivariant (hVU : V ≤ U) (q : G ⧸ V.toSubgroup)
+theorem fixedPointsInclusion_continuousFiniteQuotientMap_smul (hVU : V ≤ U)
+    (q : G ⧸ V.toSubgroup)
     (m : FixedPoints.addSubgroup U.toSubgroup M) :
     fixedPointsInclusion hVU (continuousFiniteQuotientMap G hVU q • m) =
       q • fixedPointsInclusion hVU m := by

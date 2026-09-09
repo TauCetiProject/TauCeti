@@ -76,7 +76,8 @@ noncomputable def explicitFiniteQuotientTransition1 (U V : OpenNormalSubgroup G)
   explicitMap1 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
     (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
     (continuousFiniteQuotientMap G hVU) (fixedPointsInclusion hVU)
-    continuous_of_discreteTopology (fixedPointsInclusion_equivariant G M hVU)
+    continuous_of_discreteTopology
+      (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU)
 
 omit [ContinuousSMul G M] in
 /-- A degree-one finite-quotient transition sends the class of a cocycle to its compatible-pair
@@ -90,7 +91,8 @@ theorem explicitFiniteQuotientTransition1_mk (hVU : V ≤ U)
         (cocyclesMap1 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
         (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
         (continuousFiniteQuotientMap G hVU) (fixedPointsInclusion hVU)
-        continuous_of_discreteTopology (fixedPointsInclusion_equivariant G M hVU) c) :=
+        continuous_of_discreteTopology
+          (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) c) :=
   explicitMap1_mk _ _ _ _ _ _ _ _ c
 
 omit [ContinuousSMul G M] in
@@ -134,8 +136,8 @@ theorem explicitFiniteQuotientTransition1_comp (U V W : OpenNormalSubgroup G)
             FixedPoints.addSubgroup U.toSubgroup M →+
               FixedPoints.addSubgroup V.toSubgroup M) m) := by
     intro q m
-    rw [fixedPointsInclusion_equivariant G M hVU]
-    exact fixedPointsInclusion_equivariant G M hWV q
+    rw [fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU]
+    exact fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hWV q
       ((fixedPointsInclusion hVU :
         FixedPoints.addSubgroup U.toSubgroup M →+
           FixedPoints.addSubgroup V.toSubgroup M) m)
@@ -170,14 +172,16 @@ theorem explicitFiniteQuotientTransition1_comp (U V W : OpenNormalSubgroup G)
         (continuousFiniteQuotientMap G hVU)
         (fixedPointsInclusion hVU : FixedPoints.addSubgroup U.toSubgroup M →+
           FixedPoints.addSubgroup V.toSubgroup M)
-        continuous_of_discreteTopology (fixedPointsInclusion_equivariant G M hVU)
+        continuous_of_discreteTopology
+          (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU)
         (G ⧸ W.toSubgroup) inferInstance inferInstance
         (FixedPoints.addSubgroup W.toSubgroup M) inferInstance inferInstance inferInstance
         inferInstance (continuousSMulQuotientFixedPointsOfContinuousSMul G M W.toSubgroup)
         (continuousFiniteQuotientMap G hWV)
         (fixedPointsInclusion hWV : FixedPoints.addSubgroup V.toSubgroup M →+
           FixedPoints.addSubgroup W.toSubgroup M)
-        continuous_of_discreteTopology (fixedPointsInclusion_equivariant G M hWV)
+        continuous_of_discreteTopology
+          (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hWV)
         (fun q m ↦ hcomp q m) using 1
       apply explicitMap1_congr_of_eq <;> rfl
 
