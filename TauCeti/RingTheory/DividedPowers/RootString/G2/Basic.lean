@@ -5,7 +5,6 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Algebra.BigOperators.Finset.Reindex
 public import TauCeti.RingTheory.DividedPowers.RootString.Basic
 
 /-!
@@ -342,8 +341,8 @@ private theorem g2Series_zero (n : ℕ) : g2Series y z w v s n 0 = dividedPower 
 /-! ### Reindexing the four exponent shifts
 
 Each of the four ways to advance the series moves the index `p` of weighted degree `k` to an
-index of weighted degree `k + 1` by a fixed shift of the exponents.  All four are instances of
-one reindexing lemma, which leaves each of them only the arithmetic of its own shift. -/
+index of weighted degree `k + 1` by a fixed shift of the exponents. Each is reindexed directly
+with `Finset.sum_nbij'`. -/
 
 -- `mul_dividedPower_quintuple` in the coordinates the series is indexed by: `g2Monomial n p`
 -- pins the exponent of `y` to `n` minus the weighted degree of `p`, so each of the four releases
@@ -416,70 +415,73 @@ private theorem mul_g2Series (hxy : x * y = y * x + z) (hxz : x * z = z * x + 2 
   have hshiftA : ∑ p ∈ {p ∈ g2SeriesIndex n k | 0 < n - p.1 - p.2.1 - p.2.2.1 - 2 * p.2.2.2},
         (p.1 + 1) • g2Monomial y z w v s n (p.1 + 1, p.2.1, p.2.2.1, p.2.2.2) =
       ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.1}, q.1 • g2Monomial y z w v s n q := by
-    refine sum_nbij_filter_of_mem_iff
-      (P := fun p => 0 < n - p.1 - p.2.1 - p.2.2.1 - 2 * p.2.2.2)
-      (Q := fun q => 0 < q.1) (g := fun q => q.1 • g2Monomial y z w v s n q)
-      (fun _ => mem_g2SeriesIndex)
-      (fun _ => mem_g2SeriesIndex) (fun p => (p.1 + 1, p.2.1, p.2.2.1, p.2.2.2))
-      (fun q => (q.1 - 1, q.2.1, q.2.2.1, q.2.2.2)) ?_ ?_ ?_ ?_
+    refine Finset.sum_nbij' (fun p => (p.1 + 1, p.2.1, p.2.2.1, p.2.2.2))
+      (fun q => (q.1 - 1, q.2.1, q.2.2.1, q.2.2.2)) ?_ ?_ ?_ ?_ (fun _ _ => rfl)
     · rintro ⟨b, c, d, e⟩ hp
-      dsimp at *; omega
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hp ⊢
+      omega
     · rintro ⟨b, c, d, e⟩ hq
-      dsimp at *; omega
-    · rintro ⟨b, c, d, e⟩ _
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hq ⊢
+      omega
+    · rintro ⟨b, c, d, e⟩ hp
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hp
       simp
     · rintro ⟨b, c, d, e⟩ hq
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hq
       simp [Nat.sub_add_cancel hq.2]
   have hshiftB : ∑ p ∈ {p ∈ g2SeriesIndex n k | 0 < p.1},
         (2 * (p.2.1 + 1)) • g2Monomial y z w v s n (p.1 - 1, p.2.1 + 1, p.2.2.1, p.2.2.2) =
       ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.1},
         (2 * q.2.1) • g2Monomial y z w v s n q := by
-    refine sum_nbij_filter_of_mem_iff (P := fun p => 0 < p.1) (Q := fun q => 0 < q.2.1)
-      (g := fun q => (2 * q.2.1) • g2Monomial y z w v s n q)
-      (fun _ => mem_g2SeriesIndex)
-      (fun _ => mem_g2SeriesIndex) (fun p => (p.1 - 1, p.2.1 + 1, p.2.2.1, p.2.2.2))
-      (fun q => (q.1 + 1, q.2.1 - 1, q.2.2.1, q.2.2.2)) ?_ ?_ ?_ ?_
+    refine Finset.sum_nbij' (fun p => (p.1 - 1, p.2.1 + 1, p.2.2.1, p.2.2.2))
+      (fun q => (q.1 + 1, q.2.1 - 1, q.2.2.1, q.2.2.2)) ?_ ?_ ?_ ?_ (fun _ _ => rfl)
     · rintro ⟨b, c, d, e⟩ hp
-      dsimp at *; omega
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hp ⊢
+      omega
     · rintro ⟨b, c, d, e⟩ hq
-      dsimp at *; omega
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hq ⊢
+      omega
     · rintro ⟨b, c, d, e⟩ hp
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hp
       simp [Nat.sub_add_cancel hp.2]
     · rintro ⟨b, c, d, e⟩ hq
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hq
       simp [Nat.sub_add_cancel hq.2]
   have hshiftC : ∑ p ∈ {p ∈ g2SeriesIndex n k | 1 < p.1},
         (3 * (p.2.2.2 + 1)) • g2Monomial y z w v s n (p.1 - 2, p.2.1, p.2.2.1, p.2.2.2 + 1) =
       ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.2.2},
         (3 * q.2.2.2) • g2Monomial y z w v s n q := by
-    refine sum_nbij_filter_of_mem_iff (P := fun p => 1 < p.1) (Q := fun q => 0 < q.2.2.2)
-      (g := fun q => (3 * q.2.2.2) • g2Monomial y z w v s n q)
-      (fun _ => mem_g2SeriesIndex)
-      (fun _ => mem_g2SeriesIndex) (fun p => (p.1 - 2, p.2.1, p.2.2.1, p.2.2.2 + 1))
-      (fun q => (q.1 + 2, q.2.1, q.2.2.1, q.2.2.2 - 1)) ?_ ?_ ?_ ?_
+    refine Finset.sum_nbij' (fun p => (p.1 - 2, p.2.1, p.2.2.1, p.2.2.2 + 1))
+      (fun q => (q.1 + 2, q.2.1, q.2.2.1, q.2.2.2 - 1)) ?_ ?_ ?_ ?_ (fun _ _ => rfl)
     · rintro ⟨b, c, d, e⟩ hp
-      dsimp at *; omega
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hp ⊢
+      omega
     · rintro ⟨b, c, d, e⟩ hq
-      dsimp at *; omega
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hq ⊢
+      omega
     · rintro ⟨b, c, d, e⟩ hp
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hp
       simp [show b - 2 + 2 = b from by omega]
     · rintro ⟨b, c, d, e⟩ hq
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hq
       simp [Nat.sub_add_cancel hq.2]
   have hshiftD : ∑ p ∈ {p ∈ g2SeriesIndex n k | 0 < p.2.1},
         (3 * (p.2.2.1 + 1)) • g2Monomial y z w v s n (p.1, p.2.1 - 1, p.2.2.1 + 1, p.2.2.2) =
       ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.2.1},
         (3 * q.2.2.1) • g2Monomial y z w v s n q := by
-    refine sum_nbij_filter_of_mem_iff (P := fun p => 0 < p.2.1) (Q := fun q => 0 < q.2.2.1)
-      (g := fun q => (3 * q.2.2.1) • g2Monomial y z w v s n q)
-      (fun _ => mem_g2SeriesIndex)
-      (fun _ => mem_g2SeriesIndex) (fun p => (p.1, p.2.1 - 1, p.2.2.1 + 1, p.2.2.2))
-      (fun q => (q.1, q.2.1 + 1, q.2.2.1 - 1, q.2.2.2)) ?_ ?_ ?_ ?_
+    refine Finset.sum_nbij' (fun p => (p.1, p.2.1 - 1, p.2.2.1 + 1, p.2.2.2))
+      (fun q => (q.1, q.2.1 + 1, q.2.2.1 - 1, q.2.2.2)) ?_ ?_ ?_ ?_ (fun _ _ => rfl)
     · rintro ⟨b, c, d, e⟩ hp
-      dsimp at *; omega
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hp ⊢
+      omega
     · rintro ⟨b, c, d, e⟩ hq
-      dsimp at *; omega
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hq ⊢
+      omega
     · rintro ⟨b, c, d, e⟩ hp
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hp
       simp [Nat.sub_add_cancel hp.2]
     · rintro ⟨b, c, d, e⟩ hq
+      simp only [Finset.mem_filter, mem_g2SeriesIndex] at hq
       simp [Nat.sub_add_cancel hq.2]
   -- Every summand of the next term is reached with total coefficient `b + 2c + 3d + 3e = k + 1`.
   have hcombine : ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.1}, q.1 • g2Monomial y z w v s n q +

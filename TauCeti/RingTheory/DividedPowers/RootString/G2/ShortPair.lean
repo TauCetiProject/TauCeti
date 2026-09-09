@@ -200,54 +200,57 @@ private theorem mul_g2ShortPairSeries (hxy : x * y = y * x + z)
         (p.1 + 1) • g2ShortPairMonomial y z w s n (p.1 + 1, p.2.1, p.2.2) =
       ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.1},
         q.1 • g2ShortPairMonomial y z w s n q := by
-    refine sum_nbij_filter_of_mem_iff (P := fun p => 0 < n - p.1 - p.2.1 - 2 * p.2.2)
-      (Q := fun q => 0 < q.1) (g := fun q => q.1 • g2ShortPairMonomial y z w s n q)
-      (fun _ => mem_g2ShortPairSeriesIndex)
-      (fun _ => mem_g2ShortPairSeriesIndex) (fun p => (p.1 + 1, p.2.1, p.2.2))
-      (fun q => (q.1 - 1, q.2.1, q.2.2)) ?_ ?_ ?_ ?_
+    refine Finset.sum_nbij' (fun p => (p.1 + 1, p.2.1, p.2.2))
+      (fun q => (q.1 - 1, q.2.1, q.2.2)) ?_ ?_ ?_ ?_ (fun _ _ => rfl)
     · rintro ⟨b, c, d⟩ hp
-      dsimp at *; omega
+      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hp ⊢
+      omega
     · rintro ⟨b, c, d⟩ hq
-      dsimp at *; omega
-    · rintro ⟨b, c, d⟩ _
+      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hq ⊢
+      omega
+    · rintro ⟨b, c, d⟩ hp
+      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hp
       simp
     · rintro ⟨b, c, d⟩ hq
+      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hq
       simp [Nat.sub_add_cancel hq.2]
   have hshiftB : ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k | 0 < p.1},
         (2 * (p.2.1 + 1)) •
           g2ShortPairMonomial y z w s n (p.1 - 1, p.2.1 + 1, p.2.2) =
       ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.1},
         (2 * q.2.1) • g2ShortPairMonomial y z w s n q := by
-    refine sum_nbij_filter_of_mem_iff (P := fun p => 0 < p.1) (Q := fun q => 0 < q.2.1)
-      (g := fun q => (2 * q.2.1) • g2ShortPairMonomial y z w s n q)
-      (fun _ => mem_g2ShortPairSeriesIndex)
-      (fun _ => mem_g2ShortPairSeriesIndex) (fun p => (p.1 - 1, p.2.1 + 1, p.2.2))
-      (fun q => (q.1 + 1, q.2.1 - 1, q.2.2)) ?_ ?_ ?_ ?_
+    refine Finset.sum_nbij' (fun p => (p.1 - 1, p.2.1 + 1, p.2.2))
+      (fun q => (q.1 + 1, q.2.1 - 1, q.2.2)) ?_ ?_ ?_ ?_ (fun _ _ => rfl)
     · rintro ⟨b, c, d⟩ hp
-      dsimp at *; omega
+      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hp ⊢
+      omega
     · rintro ⟨b, c, d⟩ hq
-      dsimp at *; omega
+      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hq ⊢
+      omega
     · rintro ⟨b, c, d⟩ hp
+      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hp
       simp [Nat.sub_add_cancel hp.2]
     · rintro ⟨b, c, d⟩ hq
+      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hq
       simp [Nat.sub_add_cancel hq.2]
   have hshiftC : ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k |
         1 < n - p.1 - p.2.1 - 2 * p.2.2},
         (p.2.2 + 1) • g2ShortPairMonomial y z w s n (p.1, p.2.1, p.2.2 + 1) =
       ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.2},
         q.2.2 • g2ShortPairMonomial y z w s n q := by
-    refine sum_nbij_filter_of_mem_iff (P := fun p => 1 < n - p.1 - p.2.1 - 2 * p.2.2)
-      (Q := fun q => 0 < q.2.2) (g := fun q => q.2.2 • g2ShortPairMonomial y z w s n q)
-      (fun _ => mem_g2ShortPairSeriesIndex)
-      (fun _ => mem_g2ShortPairSeriesIndex) (fun p => (p.1, p.2.1, p.2.2 + 1))
-      (fun q => (q.1, q.2.1, q.2.2 - 1)) ?_ ?_ ?_ ?_
+    refine Finset.sum_nbij' (fun p => (p.1, p.2.1, p.2.2 + 1))
+      (fun q => (q.1, q.2.1, q.2.2 - 1)) ?_ ?_ ?_ ?_ (fun _ _ => rfl)
     · rintro ⟨b, c, d⟩ hp
-      dsimp at *; omega
+      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hp ⊢
+      omega
     · rintro ⟨b, c, d⟩ hq
-      dsimp at *; omega
-    · rintro ⟨b, c, d⟩ _
+      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hq ⊢
+      omega
+    · rintro ⟨b, c, d⟩ hp
+      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hp
       simp
     · rintro ⟨b, c, d⟩ hq
+      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hq
       simp [Nat.sub_add_cancel hq.2]
   have hcombine : ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.1},
         q.1 • g2ShortPairMonomial y z w s n q +
