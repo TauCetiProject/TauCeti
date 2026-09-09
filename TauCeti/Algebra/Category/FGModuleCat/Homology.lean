@@ -22,7 +22,7 @@ open CategoryTheory
 
 universe u v
 
-namespace TauCeti.HomologicalComplex
+namespace HomologicalComplex
 
 variable {k : Type u} [DivisionRing k]
 
@@ -45,4 +45,4 @@ noncomputable def homologyForgetIso (K : CochainComplex (FGModuleCat.{v} k) ℤ)
       (K.homologyIsoSc' i j l
         ((ComplexShape.up ℤ).prev_eq' hij) ((ComplexShape.up ℤ).next_eq' hjl)).symm
 
-end TauCeti.HomologicalComplex
+end HomologicalComplex
