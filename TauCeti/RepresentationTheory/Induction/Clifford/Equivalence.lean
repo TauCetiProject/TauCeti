@@ -218,14 +218,12 @@ of its inertia group.
 Algebraic closure makes `k` a splitting field, so the Hom-space dimension in the multiplicity
 theorem is the actual number of copies. -/
 theorem clifford_restrict_iso_of_isAtom {k : Type u} {G : Type v} [Field k] [Group G]
-    {N : Subgroup G} [N.Normal] [Finite G] [IsAlgClosed k]
+    {N : Subgroup G} [N.Normal] [IsAlgClosed k]
     (W : FDRep k G) [Simple W] (σ : Subrepresentation (W.ρ.comp N.subtype))
-    (hσ : IsAtom σ) :
+    (hσ : IsAtom σ) [Finite (G ⧸ inertia (FDRep.of σ.toRepresentation))] :
     ∃ e : ℕ, e ≠ 0 ∧
       Nonempty (resFDRep N W ≅ (FDRep.of σ.toRepresentation).cliffordSum e) := by
   classical
-  let _ : Fintype G := Fintype.ofFinite G
-  let _ : Fintype N := Fintype.ofFinite N
   let _ : Representation.IsIrreducible W.ρ := FDRep.isIrreducible_of_simple W
   let _ : IsSemisimpleModule k[N]
       (_root_.Representation.asModule (W.ρ.comp N.subtype)) :=
