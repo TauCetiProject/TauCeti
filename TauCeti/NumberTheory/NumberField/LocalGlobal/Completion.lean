@@ -28,6 +28,10 @@ an unrelated algebra structure on `L_w` over `K_v`.
 
 ## Main results
 
+* `IsDedekindDomain.HeightOneSpectrum.continuous_completionAlgHom`: continuity of the canonical
+  map.
+* `IsDedekindDomain.HeightOneSpectrum.eq_completionAlgHom_of_continuous`: its continuous
+  universal property.
 * `IsDedekindDomain.HeightOneSpectrum.completionAlgHom_comp`: compatibility in a tower of number
   fields.
 
@@ -57,12 +61,32 @@ def completionAlgHom {L : Type*} [Field L] [NumberField L] [Algebra K L]
   toRingHom := v.adicCompletionExtension K L w
   commutes' x := v.adicCompletionExtension_coe K L w x
 
+/-- The canonical map between completions is continuous. -/
+theorem continuous_completionAlgHom {L : Type*} [Field L] [NumberField L] [Algebra K L]
+    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
+    [w.asIdeal.LiesOver v.asIdeal] :
+    Continuous (completionAlgHom v w) :=
+  v.continuous_adicCompletionExtension K L w
+
+/-- A continuous ring homomorphism `K_v → L_w` extending `K → L` is the canonical completion
+map. -/
+theorem eq_completionAlgHom_of_continuous {L : Type*} [Field L] [NumberField L] [Algebra K L]
+    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
+    [w.asIdeal.LiesOver v.asIdeal]
+    (f : v.adicCompletion K →+* w.adicCompletion L) (hf : Continuous f)
+    (hcomp : ∀ x : K, f (algebraMap K (v.adicCompletion K) x) =
+      algebraMap L (w.adicCompletion L) (algebraMap K L x)) :
+    f = (completionAlgHom v w).toRingHom :=
+  v.eq_adicCompletionExtension_of_continuous K L w hf hcomp
+
 /-- The canonical map from a completion to itself is the identity. -/
 @[simp]
 theorem completionAlgHom_self (v : HeightOneSpectrum (𝒪 K)) :
     let _ : @Ideal.LiesOver (𝒪 K) _ (𝒪 K) _
       (NumberField.inst_ringOfIntegersAlgebra (K := K) (L := K))
       v.asIdeal v.asIdeal := ⟨by
+        -- The self-extension algebra map on rings of integers reduces definitionally to
+        -- `RingHom.id`; expose that normal form before proving that the ideal lies over itself.
         change v.asIdeal = Ideal.comap (RingHom.id _) v.asIdeal
         simp⟩
     completionAlgHom v v = AlgHom.id K (v.adicCompletion K) := by
@@ -71,6 +95,7 @@ theorem completionAlgHom_self (v : HeightOneSpectrum (𝒪 K)) :
   let _ : @Ideal.LiesOver (𝒪 K) _ (𝒪 K) _
       (NumberField.inst_ringOfIntegersAlgebra (K := K) (L := K)) v.asIdeal v.asIdeal :=
     ⟨by
+      -- As in the statement, normalize the self-extension algebra map to `RingHom.id`.
       change v.asIdeal = Ideal.comap (RingHom.id _) v.asIdeal
       simp⟩
   apply AlgHom.coe_ringHom_injective
@@ -118,6 +143,8 @@ theorem completionAlgHom_comp {M L : Type*} [Field M] [NumberField M] [Algebra K
       completionAlgHom v w := by
   let _ : w.asIdeal.LiesOver v.asIdeal := Ideal.LiesOver.trans w.asIdeal u.asIdeal v.asIdeal
   apply AlgHom.coe_ringHom_injective
+  -- After forgetting the `AlgHom` structure, `restrictScalars` and `AlgHom.comp` reduce to the
+  -- composition of the underlying canonical completion ring maps.
   change (u.adicCompletionExtension M L w).comp (v.adicCompletionExtension K M u) =
     v.adicCompletionExtension K L w
   apply v.eq_adicCompletionExtension_of_continuous K L w
