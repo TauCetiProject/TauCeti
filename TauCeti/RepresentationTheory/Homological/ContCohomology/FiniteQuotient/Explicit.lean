@@ -67,38 +67,28 @@ variable {U V W : OpenNormalSubgroup G}
 
 /-- The quotient homomorphism `G ⧸ V → G ⧸ U`, bundled with its automatic continuity for open
 normal subgroups. -/
-def continuousFiniteQuotientMap [CompactSpace G] [TotallyDisconnectedSpace G] (hVU : V ≤ U) :
+def continuousFiniteQuotientMap (hVU : V ≤ U) :
     G ⧸ V.toSubgroup →ₜ* G ⧸ U.toSubgroup where
-  toMonoidHom :=
-    ((ProfiniteGrp.of G).toFiniteQuotientFunctor.map (homOfLE hVU)).hom.hom
+  toMonoidHom := finiteQuotientMap hVU
   continuous_toFun := continuous_of_discreteTopology
-
-variable [CompactSpace G] [TotallyDisconnectedSpace G]
 
 @[simp]
 theorem continuousFiniteQuotientMap_mk (hVU : V ≤ U) (g : G) :
     continuousFiniteQuotientMap G hVU (g : G ⧸ V.toSubgroup) = (g : G ⧸ U.toSubgroup) :=
-  by
-    rw [continuousFiniteQuotientMap]
-    change ((ProfiniteGrp.of G).toFiniteQuotientFunctor.map (homOfLE hVU)).hom.hom
-        (g : G ⧸ V.toSubgroup) = (g : G ⧸ U.toSubgroup)
-    rw [toFiniteQuotientFunctor_map_hom_hom]
-    exact finiteQuotientMap_mk hVU g
+  finiteQuotientMap_mk hVU g
 
 @[simp]
 theorem continuousFiniteQuotientMap_refl (U : OpenNormalSubgroup G) :
     continuousFiniteQuotientMap G (le_refl U) = ContinuousMonoidHom.id _ := by
   ext q
-  induction q using QuotientGroup.induction_on with
-  | H g => simp
+  exact DFunLike.congr_fun finiteQuotientMap_refl q
 
 @[simp]
 theorem continuousFiniteQuotientMap_comp (hWV : W ≤ V) (hVU : V ≤ U) :
     (continuousFiniteQuotientMap G hVU).comp (continuousFiniteQuotientMap G hWV) =
       continuousFiniteQuotientMap G (hWV.trans hVU) := by
   ext q
-  induction q using QuotientGroup.induction_on with
-  | H g => simp
+  exact DFunLike.congr_fun (finiteQuotientMap_comp hWV hVU) q
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
 /-- The coefficient inclusion `M^U → M^V` is equivariant after restriction along the quotient
@@ -108,14 +98,16 @@ theorem fixedPointsInclusion_equivariant (hVU : V ≤ U) (q : G ⧸ V.toSubgroup
     (m : FixedPoints.addSubgroup U.toSubgroup M) :
     fixedPointsInclusion hVU (continuousFiniteQuotientMap G hVU q • m) =
       q • fixedPointsInclusion hVU m := by
+  have hsubgroup : V.toSubgroup ≤ U.toSubgroup := hVU
   have hmap : continuousFiniteQuotientMap G hVU q =
       QuotientGroup.map V.toSubgroup U.toSubgroup (MonoidHom.id G)
-        ((show V.toSubgroup ≤ U.toSubgroup from hVU).trans_eq
+        (hsubgroup.trans_eq
           (Subgroup.comap_id U.toSubgroup).symm) q := by
+    -- `finiteQuotientMap` is sealed in `FiniteQuotient.Basic`, so compare the two maps through
+    -- its public formula on quotient representatives.
     induction q using QuotientGroup.induction_on with
     | H g =>
-      rw [continuousFiniteQuotientMap_mk, QuotientGroup.map_mk]
-      rfl
+      simp only [continuousFiniteQuotientMap_mk, QuotientGroup.map_mk, MonoidHom.id_apply]
   rw [hmap]
   exact fixedPointsInclusion_quotientGroupMap_smul hVU q m
 
@@ -245,8 +237,10 @@ subgroup `U` to `H¹(G ⧸ U, M^U)` and an inclusion `V ≤ U` to the direct exp
 the `U`-level to the `V`-level. -/
 noncomputable def explicitFiniteQuotientSystem1 :
     (OpenNormalSubgroup G)ᵒᵖ ⥤ AddCommGrpCat.{max u v} where
-  obj U := AddCommGrpCat.of
-    (H1 (G ⧸ U.unop.toSubgroup) (FixedPoints.addSubgroup U.unop.toSubgroup M))
+  obj U :=
+    let P := ProfiniteGrp.of G
+    AddCommGrpCat.of
+      (H1 (P ⧸ U.unop.toSubgroup) (FixedPoints.addSubgroup U.unop.toSubgroup M))
   map := fun {U V} f => AddCommGrpCat.ofHom
     (explicitFiniteQuotientTransition1 G M U.unop V.unop (leOfHom f.unop))
   map_id U := by
