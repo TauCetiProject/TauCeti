@@ -1,0 +1,128 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Codex
+-/
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.Center.Reduced
+public import TauCeti.Algebra.AlgebraicGroup.Connected.Comultiplication
+public import TauCeti.RingTheory.FiniteType.TensorProduct
+
+/-!
+# The reduced center's identity component as an ambient closed subgroup
+
+For a finite-type affine group over an algebraically closed field, the identity component of
+the reduced center is a central closed subgroup of the original group. Its coordinate algebra
+is naturally an iterated quotient: first take the center, then its reduction, then its identity
+component. To apply a theorem about closed subgroups of the original group, one instead needs a
+single Hopf ideal in the original coordinate algebra.
+
+This file constructs that ambient ideal and identifies its quotient with the iterated quotient.
+The comparison respects the quotient maps, and triviality in the ambient group is equivalent to
+triviality of the identity component inside the reduced center. These are the coordinate
+identifications needed to apply the central-subgroup criterion for semisimplicity and then the
+finite-center criterion.
+
+## Main declarations
+
+* `reducedCenterIdentityComponentDefiningIdeal`: the ambient defining ideal.
+* `isCentral_reducedCenterIdentityComponentDefiningIdeal`: its centrality.
+* `quotientReducedCenterIdentityComponentIso`: comparison with the iterated quotient.
+* `reducedCenterIdentityComponentDefiningIdeal_eq_augmentation_iff`: triviality agrees in the
+  two ambient groups.
+
+## References
+
+* J. S. Milne, *Algebraic Groups* (2017), §§2.g and 19.a–b.
+-/
+
+public section
+
+open CategoryTheory
+
+namespace TauCeti.CommHopfAlgCat
+
+universe u v
+
+variable {k : Type u} [Field k] [IsAlgClosed k]
+variable (H : _root_.CommHopfAlgCat.{v} k) [Algebra.FiniteType k H]
+
+local instance : IsReduced ((centerCoordinateHopfAlgebra H) ⧸
+    nilradical (centerCoordinateHopfAlgebra H)) :=
+  (Ideal.isRadical_iff_quotient_reduced _).mp (Ideal.radical_isRadical ⊥)
+
+/-- The ambient Hopf ideal cutting out the identity component of the reduced center. -/
+noncomputable def reducedCenterIdentityComponentDefiningIdeal : HopfIdeal k H :=
+  (HopfAlgebra.identityComponentHopfIdeal
+    (k := k) (H := reducedCenterCoordinateHopfAlgebra H)).comapOfSurjective
+      (reducedCenterCoordinateMap H).hom (reducedCenterCoordinateMap_surjective H)
+
+/-- The ambient identity-component ideal is the inverse image of the identity-component ideal
+under the reduced-center coordinate map. -/
+theorem reducedCenterIdentityComponentDefiningIdeal_def :
+    reducedCenterIdentityComponentDefiningIdeal H =
+      (HopfAlgebra.identityComponentHopfIdeal
+        (k := k) (H := reducedCenterCoordinateHopfAlgebra H)).comapOfSurjective
+          (reducedCenterCoordinateMap H).hom (reducedCenterCoordinateMap_surjective H) :=
+  (rfl)
+
+/-- Membership in the ambient defining ideal is membership in the identity-component ideal
+after restriction to the reduced center. -/
+@[simp]
+theorem mem_reducedCenterIdentityComponentDefiningIdeal {x : H} :
+    x ∈ reducedCenterIdentityComponentDefiningIdeal H ↔
+      (reducedCenterCoordinateMap H).hom x ∈ HopfAlgebra.identityComponentHopfIdeal
+        (k := k) (H := reducedCenterCoordinateHopfAlgebra H) := by
+  rw [reducedCenterIdentityComponentDefiningIdeal_def, HopfIdeal.mem_comapOfSurjective]
+
+/-- The identity component of the reduced center is contained in the reduced center. -/
+theorem reducedCenterDefiningIdeal_le_reducedCenterIdentityComponentDefiningIdeal :
+    reducedCenterDefiningIdeal H ≤ reducedCenterIdentityComponentDefiningIdeal H := by
+  intro x hx
+  rw [mem_reducedCenterIdentityComponentDefiningIdeal,
+    (reducedCenterCoordinateMap_eq_zero_iff H x).mpr hx]
+  exact HopfIdeal.mem_toIdeal.mp (Ideal.zero_mem _)
+
+/-- The identity component of the reduced center is central in the original affine group. -/
+theorem isCentral_reducedCenterIdentityComponentDefiningIdeal :
+    (reducedCenterIdentityComponentDefiningIdeal H).IsCentral :=
+  (isCentral_reducedCenterDefiningIdeal H).mono
+    (reducedCenterDefiningIdeal_le_reducedCenterIdentityComponentDefiningIdeal H)
+
+/-- The ambient quotient by the reduced center's identity-component ideal is canonically the
+identity-component quotient of the reduced center coordinate algebra. -/
+noncomputable def quotientReducedCenterIdentityComponentIso :
+    quotient H (reducedCenterIdentityComponentDefiningIdeal H) ≅
+      quotient (reducedCenterCoordinateHopfAlgebra H)
+        (HopfAlgebra.identityComponentHopfIdeal
+          (k := k) (H := reducedCenterCoordinateHopfAlgebra H)) :=
+  quotientIsoOfSurjective (reducedCenterCoordinateMap H)
+    (reducedCenterCoordinateMap_surjective H) _
+
+/-- The comparison of the ambient and iterated quotients respects their coordinate maps. -/
+@[simp]
+theorem mkQuotient_comp_quotientReducedCenterIdentityComponentIso_hom :
+    mkQuotient H (reducedCenterIdentityComponentDefiningIdeal H) ≫
+        (quotientReducedCenterIdentityComponentIso H).hom =
+      reducedCenterCoordinateMap H ≫
+        mkQuotient (reducedCenterCoordinateHopfAlgebra H)
+          (HopfAlgebra.identityComponentHopfIdeal
+            (k := k) (H := reducedCenterCoordinateHopfAlgebra H)) :=
+  mkQuotient_comp_quotientIsoOfSurjective_hom (reducedCenterCoordinateMap H)
+    (reducedCenterCoordinateMap_surjective H) _
+
+/-- The reduced center's identity component is trivial as an ambient closed subgroup exactly
+when it is trivial as a closed subgroup of the reduced center. -/
+@[simp]
+theorem reducedCenterIdentityComponentDefiningIdeal_eq_augmentation_iff :
+    reducedCenterIdentityComponentDefiningIdeal H = HopfIdeal.augmentation k H ↔
+      HopfAlgebra.identityComponentHopfIdeal
+          (k := k) (H := reducedCenterCoordinateHopfAlgebra H) =
+        HopfIdeal.augmentation k (reducedCenterCoordinateHopfAlgebra H) := by
+  rw [reducedCenterIdentityComponentDefiningIdeal_def,
+    ← HopfIdeal.comapOfSurjective_augmentation (reducedCenterCoordinateMap H).hom
+      (reducedCenterCoordinateMap_surjective H),
+    HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff]
+
+end TauCeti.CommHopfAlgCat
