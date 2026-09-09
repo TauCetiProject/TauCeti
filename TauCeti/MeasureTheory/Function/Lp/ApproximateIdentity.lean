@@ -61,12 +61,10 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
 
 /-- The average of an `Lᵖ` class against the normalized form of a smooth bump centred at zero,
 before it is bundled as a continuous linear map by `TauCeti.normedBumpLp`. -/
-private def normedBumpFun [CompleteSpace F]
-    (phi : ContDiffBump (0 : E)) (f : Lp F p mu) : Lp F p mu :=
+private def normedBumpFun (phi : ContDiffBump (0 : E)) (f : Lp F p mu) : Lp F p mu :=
   (phi.normed mu ⋆[lsmul ℝ ℝ, mu] fun h ↦ translateLp mu p h f) 0
 
-private theorem normedBumpFun_apply [CompleteSpace F]
-    (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
+private theorem normedBumpFun_apply (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
     normedBumpFun phi f = ∫ t, phi.normed mu t • translateLp mu p (-t) f ∂mu := by
   rw [normedBumpFun, convolution_lsmul]
   simp only [zero_sub]
@@ -77,8 +75,6 @@ private theorem integrable_normed_smul_translateLp_neg (hp : p ≠ ∞)
   apply Continuous.integrable_of_hasCompactSupport
   · exact phi.continuous_normed.smul ((continuous_translateLp (mu := mu) hp f).comp continuous_neg)
   · exact phi.hasCompactSupport_normed.smul_right
-
-variable [CompleteSpace F]
 
 private theorem normedBumpFun_add (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (f g : Lp F p mu) :
     normedBumpFun phi (f + g) = normedBumpFun phi f + normedBumpFun phi g := by
@@ -119,7 +115,10 @@ continuous linear operator on `Lᵖ`.
 The average is a Bochner integral in `Lᵖ`, so it is independent of all choices of pointwise
 representative. The restriction `p < ∞` ensures that translation is strongly continuous, hence
 that the `Lᵖ`-valued integrand is integrable; that integrability is what makes the average
-additive, and the operator is a contraction by `TauCeti.norm_normedBumpLp_le_one`. -/
+additive, and the operator is a contraction by `TauCeti.norm_normedBumpLp_le_one`.
+
+Completeness of `F` is not needed to build the operator or to bound its norm; it is assumed only
+where the average has to be a genuine Bochner integral, in `TauCeti.tendsto_normedBumpLp`. -/
 def normedBumpLp (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (mu : Measure E) [mu.IsAddHaarMeasure] : Lp F p mu →L[ℝ] Lp F p mu :=
   LinearMap.mkContinuous
@@ -146,10 +145,11 @@ theorem norm_normedBumpLp_le_one (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
 zero. If their outer radii tend to zero, then averaging any `f ∈ Lᵖ` against these bumps converges
 to `f` in the `Lᵖ` norm.
 
-The hypothesis `p < ∞` is used to obtain strong translation continuity in this general setting.
-No positivity or normalization hypotheses are exposed because they are already supplied by
-`ContDiffBump.normed`. -/
-theorem tendsto_normedBumpLp {I : Type*} {l : Filter I}
+The hypothesis `p < ∞` is used to obtain strong translation continuity in this general setting, and
+`F` is assumed complete so that the `Lᵖ`-valued Bochner integral defining the average is the limit
+of its approximating sums. No positivity or normalization hypotheses are exposed because they are
+already supplied by `ContDiffBump.normed`. -/
+theorem tendsto_normedBumpLp [CompleteSpace F] {I : Type*} {l : Filter I}
     (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
     (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) (f : Lp F p mu) :
     Tendsto (fun i ↦ normedBumpLp hp (phi i) mu f) l (nhds f) := by
