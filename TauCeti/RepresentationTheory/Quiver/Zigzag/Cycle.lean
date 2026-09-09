@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.CycleGraph
+public import TauCeti.Combinatorics.SimpleGraph.CycleGraph
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Exterior
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Gauge
 
 /-!
-# The exterior skew-zigzag parameter and the skew-zigzag algebras of cycles
+# The skew-zigzag algebras of the cycles
 
 A skew-zigzag parameter labels each ordered pair of incident edges of a simple graph by the
 unit-valued ratio between the two backtracks they carry, and gauge equivalent parameters present
@@ -23,18 +24,17 @@ which it leaves.  A gauge transform multiplies each factor by the quotient of tw
 scales, and consecutive factors share those scales, so the correction telescopes around the cycle
 and the monodromy depends only on the gauge class.  It is one for the constant parameter.
 
-The **exterior** parameter of a graph in which no vertex has three pairwise distinct neighbours
-gives distinct incident edges the ratio `-1`, so its relation makes the two backtracks at a vertex
-sum to zero.  This is the parameter carried by the basic algebra of the exterior skew group algebra
-of an odd cyclic group.  Around a cycle graph on `m` vertices its monodromy is `(-1) ^ m`, and
+Around a cycle graph on `m` vertices the monodromy of the exterior parameter is `(-1) ^ m`, and
 consequently:
 
 * on an even cycle it is gauge equivalent to the constant parameter, the gauge being the
   alternating sign on the edges of the cycle, so it presents the ordinary zigzag algebra;
 * on an odd cycle, over a coefficient ring in which `2` is not zero, it is not gauge equivalent to
-  the constant parameter;
-* when `2` is zero the exterior parameter *is* the constant parameter, on any graph, so the two
-  presentations agree identically in characteristic two.
+  the constant parameter.
+
+In characteristic two the exterior parameter *is* the constant parameter, on any graph, so the two
+presentations agree identically; `TauCeti.SkewZigzagParameter.exteriorCycle_eq_one` records that
+identification for a cycle.
 
 The odd-cycle statement is a statement about gauge classes.  Whether inequivalent classes present
 nonisomorphic algebras is the separate classification question, which needs the identification of
@@ -44,17 +44,11 @@ vertex-fixing graded isomorphism classes with `H¹(G, kˣ)`.
 
 * `TauCeti.SkewZigzagParameter.monodromy`: the monodromy of a parameter around a closed edge
   cycle.
-* `TauCeti.SkewZigzagParameter.exterior`: the exterior skew-zigzag parameter of a graph whose
-  degrees are at most two.
 * `TauCeti.SkewZigzagParameter.exteriorCycle`: the exterior parameter of a cycle graph.
 
 ## Main results
 
 * `TauCeti.SkewZigzagParameter.monodromy_gauge`: the monodromy is a gauge invariant.
-* `TauCeti.skewZigzagMk_backtrackElem_add_backtrackElem`: in the exterior relation quotient the two
-  backtracks at a vertex sum to zero.
-* `TauCeti.skewZigzagIdeal_exterior_eq_zigzagIdeal`: in characteristic two the exterior parameter
-  presents the ordinary zigzag relations.
 * `TauCeti.SkewZigzagParameter.monodromy_exteriorCycle`: the monodromy of the exterior parameter
   around a cycle graph on `m` vertices is `(-1) ^ m`.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_exteriorCycle` and
@@ -133,147 +127,6 @@ theorem monodromy_eq_one_of_isGaugeEquivalent_one {c : SkewZigzagParameter k G}
 
 end Monodromy
 
-/-! ### The exterior parameter -/
-
-section Exterior
-
-variable (k : Type w) [CommRing k] {V : Type u} [DecidableEq V] {G : SimpleGraph V}
-  (hG : ∀ ⦃i j j' j'' : V⦄, G.Adj i j → G.Adj i j' → G.Adj i j'' → j = j' ∨ j' = j'' ∨ j'' = j)
-
-/-- The two signs comparing a pair of neighbours in either order cancel. -/
-private theorem exteriorSign_mul_exteriorSign (a b : V) :
-    (if a = b then (1 : kˣ) else -1) * (if b = a then 1 else -1) = 1 := by
-  rcases eq_or_ne a b with rfl | hne
-  · rw [ite_eq_left rfl, one_mul]
-  · rw [ite_eq_right hne, ite_eq_right hne.symm, neg_mul_neg, one_mul]
-
-/-- The **exterior skew-zigzag parameter** of a graph no vertex of which has three pairwise
-distinct neighbours, that is, of a graph all of whose degrees are at most two: the ratio between
-the backtracks along two distinct incident edges is `-1`, so the relation it imposes makes the two
-backtracks at a vertex sum to zero.  The degree hypothesis is what makes the ratios a cocycle: at
-a vertex with three pairwise distinct neighbours the three signs would multiply to `-1`.
-
-The odd cycles are the McKay graphs of the odd cyclic subgroups of `SU(2)`, and it is this
-relation, rather than the ordinary one, that the exterior skew group algebras of those subgroups
-carry. -/
-def exterior : SkewZigzagParameter k G where
-  ratio _ j j' _ _ := if j = j' then 1 else -1
-  ratio_self := by intro i j h; exact ite_eq_left rfl
-  ratio_inv := by
-    intro i j j' h h'
-    exact exteriorSign_mul_exteriorSign k j j'
-  ratio_cocycle := by
-    intro i j j' j'' h h' h''
-    rcases hG h h' h'' with rfl | rfl | rfl
-    · rw [ite_eq_left rfl, one_mul, exteriorSign_mul_exteriorSign]
-    · rw [ite_eq_left rfl, mul_one, exteriorSign_mul_exteriorSign]
-    · rw [ite_eq_left rfl, mul_one, exteriorSign_mul_exteriorSign]
-
-variable {k}
-
-/-- **The exterior ratio of two distinct incident edges is minus one.** -/
-theorem exterior_ratio_of_ne {i j j' : V} (h : G.Adj i j) (h' : G.Adj i j') (hne : j ≠ j') :
-    (exterior k hG).ratio h h' = -1 :=
-  ite_eq_right hne
-
-/-- **In characteristic two the exterior parameter is the constant parameter.** The sign
-distinguishing the two backtracks at a vertex collapses, so the exterior and the ordinary zigzag
-presentations agree identically. -/
-theorem exterior_eq_one (h2 : (2 : k) = 0) : exterior k hG = 1 := by
-  have hneg : (-1 : kˣ) = 1 :=
-    Units.ext (by rw [Units.val_neg, Units.val_one]; linear_combination -h2)
-  ext i j j' h h'
-  rw [← Units.ext_iff]
-  rcases eq_or_ne j j' with rfl | hne
-  · rw [one_ratio]
-    exact (exterior k hG).ratio_self h
-  · rw [exterior_ratio_of_ne hG h h' hne, one_ratio, hneg]
-
-end Exterior
-
-end SkewZigzagParameter
-
-section ExteriorRelations
-
-variable (k : Type w) [CommRing k] {V : Type u} [DecidableEq V] [Finite V] (G : SimpleGraph V)
-  (hG : ∀ ⦃i j j' j'' : V⦄, G.Adj i j → G.Adj i j' → G.Adj i j'' → j = j' ∨ j' = j'' ∨ j'' = j)
-
-/-- **In the exterior relation quotient the two backtracks at a vertex sum to zero.** This is the
-shape in which the exterior relation appears for the basic algebra of an exterior skew group
-algebra. -/
-theorem skewZigzagMk_backtrackElem_add_backtrackElem {i j j' : V} (h : G.Adj i j)
-    (h' : G.Adj i j') (hne : j ≠ j') :
-    skewZigzagMk k G (SkewZigzagParameter.exterior k hG) (backtrackElem G k h) +
-        skewZigzagMk k G (SkewZigzagParameter.exterior k hG) (backtrackElem G k h') = 0 := by
-  rw [skewZigzagMk_backtrackElem_eq_smul k G _ h h',
-    SkewZigzagParameter.exterior_ratio_of_ne hG h h' hne, Units.val_neg, Units.val_one,
-    neg_one_smul, neg_add_cancel]
-
-/-- **In characteristic two the exterior parameter presents the ordinary zigzag relations.** -/
-theorem skewZigzagIdeal_exterior_eq_zigzagIdeal (h2 : (2 : k) = 0) :
-    skewZigzagIdeal k G (SkewZigzagParameter.exterior k hG) = zigzagIdeal k G := by
-  rw [SkewZigzagParameter.exterior_eq_one hG h2, skewZigzagIdeal_one_eq_zigzagIdeal]
-
-end ExteriorRelations
-
-/-! ### Cycle graphs -/
-
-section CycleGraph
-
-variable {m : ℕ} [NeZero m]
-
-/-- **Adjacent vertices of a cycle graph differ by one.** -/
-theorem eq_add_one_or_eq_add_one_of_cycleGraph_adj {u v : Fin m} (h : (cycleGraph m).Adj u v) :
-    v = u + 1 ∨ u = v + 1 := by
-  obtain ⟨n, rfl⟩ : ∃ n, m = n + 1 := ⟨m - 1, by have := NeZero.ne m; omega⟩
-  obtain _ | n := n
-  · exact absurd h cycleGraph_one_adj
-  · rcases cycleGraph_adj.mp h with hd | hd
-    · exact Or.inr ((sub_eq_iff_eq_add.mp hd).trans (add_comm 1 v))
-    · exact Or.inl ((sub_eq_iff_eq_add.mp hd).trans (add_comm 1 u))
-
-/-- **No vertex of a cycle graph has three pairwise distinct neighbours**: every degree is at most
-two. -/
-theorem cycleGraph_eq_or_eq_or_eq_of_adj {i j j' j'' : Fin m} (h : (cycleGraph m).Adj i j)
-    (h' : (cycleGraph m).Adj i j') (h'' : (cycleGraph m).Adj i j'') :
-    j = j' ∨ j' = j'' ∨ j'' = j := by
-  rcases eq_add_one_or_eq_add_one_of_cycleGraph_adj h with hj | hj <;>
-    rcases eq_add_one_or_eq_add_one_of_cycleGraph_adj h' with hj' | hj' <;>
-      rcases eq_add_one_or_eq_add_one_of_cycleGraph_adj h'' with hj'' | hj''
-  · exact Or.inl (hj.trans hj'.symm)
-  · exact Or.inl (hj.trans hj'.symm)
-  · exact Or.inr (Or.inr (hj''.trans hj.symm))
-  · exact Or.inr (Or.inl (add_right_cancel (hj'.symm.trans hj'')))
-  · exact Or.inr (Or.inl (hj'.trans hj''.symm))
-  · exact Or.inr (Or.inr (add_right_cancel (hj''.symm.trans hj)))
-  · exact Or.inl (add_right_cancel (hj.symm.trans hj'))
-  · exact Or.inl (add_right_cancel (hj.symm.trans hj'))
-
-/-- **Consecutive vertices of a cycle graph on at least three vertices are adjacent.** -/
-theorem cycleGraph_adj_add_one (hm : 3 ≤ m) (v : Fin m) : (cycleGraph m).Adj v (v + 1) := by
-  obtain ⟨n, rfl⟩ : ∃ n, m = n + 2 := ⟨m - 2, by omega⟩
-  exact cycleGraph_adj.mpr (Or.inr (add_sub_cancel_left v 1))
-
-/-- The underlying natural number of a successor in `Fin m`. -/
-private theorem val_add_one (v : Fin m) : ((v + 1 : Fin m) : ℕ) = (v.val + 1) % m := by
-  rw [Fin.val_add, Fin.val_one', Nat.add_mod_mod]
-
-private theorem one_add_one_ne_zero (hm : 3 ≤ m) : (1 : Fin m) + 1 ≠ 0 := by
-  have h1 : ((1 : Fin m) : ℕ) = 1 := by rw [Fin.val_one', Nat.mod_eq_of_lt (by omega)]
-  rw [Ne, Fin.ext_iff, val_add_one, h1, Fin.val_zero, Nat.mod_eq_of_lt (by omega)]
-  omega
-
-/-- **Adding one twice in `Fin m` never returns to the same element** when `3 ≤ m`.  For a cycle
-graph this says that the two neighbours of a vertex are distinct. -/
-theorem add_one_add_one_ne_self (hm : 3 ≤ m) (v : Fin m) : v + 1 + 1 ≠ v := by
-  intro h
-  refine one_add_one_ne_zero hm (add_left_cancel (a := v) ?_)
-  rw [add_zero, ← add_assoc, h]
-
-end CycleGraph
-
-namespace SkewZigzagParameter
-
 /-! ### The exterior parameter of a cycle -/
 
 section ExteriorCycle
@@ -287,6 +140,14 @@ def exteriorCycle : SkewZigzagParameter k (cycleGraph m) :=
   exterior k fun _ _ _ _ h h' h'' => cycleGraph_eq_or_eq_or_eq_of_adj h h' h''
 
 variable {k m}
+
+/-- **The exterior ratio of two edges at a vertex of a cycle** is one when they agree and minus one
+otherwise. -/
+@[simp]
+theorem exteriorCycle_ratio {i j j' : Fin m} (h : (cycleGraph m).Adj i j)
+    (h' : (cycleGraph m).Adj i j') :
+    (exteriorCycle k m).ratio h h' = if j = j' then 1 else -1 :=
+  exterior_ratio _ h h'
 
 /-- **The exterior ratio of the two distinct edges at a vertex of a cycle is minus one.** -/
 theorem exteriorCycle_ratio_of_ne {i j j' : Fin m} (h : (cycleGraph m).Adj i j)
@@ -325,7 +186,9 @@ private theorem backtrackScale_cycleLabelling (hm : 3 ≤ m) (v : Fin m)
 
 private theorem neg_one_pow_val_add_one (hev : Even m) (v : Fin m) :
     (-1 : kˣ) ^ ((v + 1 : Fin m) : ℕ) = -((-1 : kˣ) ^ (v : ℕ)) := by
-  rw [val_add_one]
+  have hval : ((v + 1 : Fin m) : ℕ) = (v.val + 1) % m := by
+    rw [Fin.val_add, Fin.val_one', Nat.add_mod_mod]
+  rw [hval]
   rcases Nat.lt_or_ge (v.val + 1) m with h1 | h1
   · rw [Nat.mod_eq_of_lt h1, pow_succ, mul_neg_one]
   · have hv : v.val + 1 = m := by have := v.isLt; omega
