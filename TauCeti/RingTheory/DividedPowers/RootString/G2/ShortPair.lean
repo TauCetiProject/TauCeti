@@ -149,6 +149,42 @@ private theorem g2ShortPairSeries_zero (n : ℕ) :
   rw [g2ShortPairSeries, hindex]
   simp [g2ShortPairMonomial]
 
+private theorem mem_filter_g2ShortPairSeriesIndex {n k : ℕ}
+    {P : (ℕ × ℕ × ℕ) → Prop} [DecidablePred P] {p : ℕ × ℕ × ℕ} :
+    p ∈ {p ∈ g2ShortPairSeriesIndex n k | P p} ↔
+      (p.1 + p.2.1 + 2 * p.2.2 ≤ n ∧ p.1 + 2 * p.2.1 + p.2.2 = k) ∧ P p := by
+  rw [Finset.mem_filter, mem_g2ShortPairSeriesIndex]
+
+private theorem sum_g2ShortPairMonomial_shift {n k : ℕ}
+    {P Q : (ℕ × ℕ × ℕ) → Prop} [DecidablePred P] [DecidablePred Q]
+    (f finv : (ℕ × ℕ × ℕ) → (ℕ × ℕ × ℕ)) (coeff : (ℕ × ℕ × ℕ) → ℕ)
+    (hf : ∀ p, (p.1 + p.2.1 + 2 * p.2.2 ≤ n ∧
+        p.1 + 2 * p.2.1 + p.2.2 = k) ∧ P p →
+      ((f p).1 + (f p).2.1 + 2 * (f p).2.2 ≤ n ∧
+        (f p).1 + 2 * (f p).2.1 + (f p).2.2 = k + 1) ∧ Q (f p))
+    (hfinv : ∀ q, (q.1 + q.2.1 + 2 * q.2.2 ≤ n ∧
+        q.1 + 2 * q.2.1 + q.2.2 = k + 1) ∧ Q q →
+      ((finv q).1 + (finv q).2.1 + 2 * (finv q).2.2 ≤ n ∧
+        (finv q).1 + 2 * (finv q).2.1 + (finv q).2.2 = k) ∧ P (finv q))
+    (hleft : ∀ p, (p.1 + p.2.1 + 2 * p.2.2 ≤ n ∧
+        p.1 + 2 * p.2.1 + p.2.2 = k) ∧ P p → finv (f p) = p)
+    (hright : ∀ q, (q.1 + q.2.1 + 2 * q.2.2 ≤ n ∧
+        q.1 + 2 * q.2.1 + q.2.2 = k + 1) ∧ Q q → f (finv q) = q) :
+    ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k | P p},
+        (coeff (f p)) • g2ShortPairMonomial y z w s n (f p) =
+      ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | Q q},
+        coeff q • g2ShortPairMonomial y z w s n q :=
+  Finset.sum_nbij' f finv
+    (fun _ hp =>
+      mem_filter_g2ShortPairSeriesIndex.mpr
+        (hf _ (mem_filter_g2ShortPairSeriesIndex.mp hp)))
+    (fun _ hq =>
+      mem_filter_g2ShortPairSeriesIndex.mpr
+        (hfinv _ (mem_filter_g2ShortPairSeriesIndex.mp hq)))
+    (fun _ hp => hleft _ (mem_filter_g2ShortPairSeriesIndex.mp hp))
+    (fun _ hq => hright _ (mem_filter_g2ShortPairSeriesIndex.mp hq))
+    (fun _ _ => rfl)
+
 private theorem mul_g2ShortPairMonomial (hxy : x * y = y * x + z)
     (hxz : x * z = z * x + 2 • w) (hzy : z * y = y * z + 2 • s) (hxw : Commute x w)
     (hxs : Commute x s) (hys : Commute y s) (hzw : Commute z w) (hzs : Commute z s)
@@ -200,57 +236,45 @@ private theorem mul_g2ShortPairSeries (hxy : x * y = y * x + z)
         (p.1 + 1) • g2ShortPairMonomial y z w s n (p.1 + 1, p.2.1, p.2.2) =
       ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.1},
         q.1 • g2ShortPairMonomial y z w s n q := by
-    refine Finset.sum_nbij' (fun p => (p.1 + 1, p.2.1, p.2.2))
-      (fun q => (q.1 - 1, q.2.1, q.2.2)) ?_ ?_ ?_ ?_ (fun _ _ => rfl)
+    refine sum_g2ShortPairMonomial_shift (fun p => (p.1 + 1, p.2.1, p.2.2))
+      (fun q => (q.1 - 1, q.2.1, q.2.2)) (fun q => q.1) ?_ ?_ ?_ ?_
     · rintro ⟨b, c, d⟩ hp
-      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hp ⊢
-      omega
+      dsimp at *; omega
     · rintro ⟨b, c, d⟩ hq
-      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hq ⊢
-      omega
-    · rintro ⟨b, c, d⟩ hp
-      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hp
+      dsimp at *; omega
+    · rintro ⟨b, c, d⟩ _
       simp
     · rintro ⟨b, c, d⟩ hq
-      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hq
       simp [Nat.sub_add_cancel hq.2]
   have hshiftB : ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k | 0 < p.1},
         (2 * (p.2.1 + 1)) •
           g2ShortPairMonomial y z w s n (p.1 - 1, p.2.1 + 1, p.2.2) =
       ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.1},
         (2 * q.2.1) • g2ShortPairMonomial y z w s n q := by
-    refine Finset.sum_nbij' (fun p => (p.1 - 1, p.2.1 + 1, p.2.2))
-      (fun q => (q.1 + 1, q.2.1 - 1, q.2.2)) ?_ ?_ ?_ ?_ (fun _ _ => rfl)
+    refine sum_g2ShortPairMonomial_shift (fun p => (p.1 - 1, p.2.1 + 1, p.2.2))
+      (fun q => (q.1 + 1, q.2.1 - 1, q.2.2)) (fun q => 2 * q.2.1) ?_ ?_ ?_ ?_
     · rintro ⟨b, c, d⟩ hp
-      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hp ⊢
-      omega
+      dsimp at *; omega
     · rintro ⟨b, c, d⟩ hq
-      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hq ⊢
-      omega
+      dsimp at *; omega
     · rintro ⟨b, c, d⟩ hp
-      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hp
       simp [Nat.sub_add_cancel hp.2]
     · rintro ⟨b, c, d⟩ hq
-      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hq
       simp [Nat.sub_add_cancel hq.2]
   have hshiftC : ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k |
         1 < n - p.1 - p.2.1 - 2 * p.2.2},
         (p.2.2 + 1) • g2ShortPairMonomial y z w s n (p.1, p.2.1, p.2.2 + 1) =
       ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.2},
         q.2.2 • g2ShortPairMonomial y z w s n q := by
-    refine Finset.sum_nbij' (fun p => (p.1, p.2.1, p.2.2 + 1))
-      (fun q => (q.1, q.2.1, q.2.2 - 1)) ?_ ?_ ?_ ?_ (fun _ _ => rfl)
+    refine sum_g2ShortPairMonomial_shift (fun p => (p.1, p.2.1, p.2.2 + 1))
+      (fun q => (q.1, q.2.1, q.2.2 - 1)) (fun q => q.2.2) ?_ ?_ ?_ ?_
     · rintro ⟨b, c, d⟩ hp
-      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hp ⊢
-      omega
+      dsimp at *; omega
     · rintro ⟨b, c, d⟩ hq
-      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hq ⊢
-      omega
-    · rintro ⟨b, c, d⟩ hp
-      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hp
+      dsimp at *; omega
+    · rintro ⟨b, c, d⟩ _
       simp
     · rintro ⟨b, c, d⟩ hq
-      simp only [Finset.mem_filter, mem_g2ShortPairSeriesIndex] at hq
       simp [Nat.sub_add_cancel hq.2]
   have hcombine : ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.1},
         q.1 • g2ShortPairMonomial y z w s n q +
