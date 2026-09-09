@@ -16,9 +16,10 @@ public import Mathlib.RingTheory.IsTensorProduct
 
 The combinatorics of a toric variety takes place in a real vector space `V` carrying a
 distinguished additive map `i : N →+ V` from an abelian group of integral vectors. For that
-picture to determine anything, `V` has to be the real scalar extension of `N` along `i`: this is
-exactly Mathlib's `IsBaseChange ℝ` condition on the `ℤ`-linear map underlying `i`, and
-`TauCeti.Toric.IsIntegralLattice` is the name this development gives it.
+picture to determine anything, `N` has to be finite free over `ℤ` and `V` has to be the real
+scalar extension of `N` along `i`: the latter is exactly Mathlib's `IsBaseChange ℝ` condition on
+the `ℤ`-linear map underlying `i`, and `TauCeti.Toric.IsIntegralLattice` is the name this
+development gives this interface.
 
 Injectivity of `i` together with a full real span is strictly weaker and is not enough. The map
 `ℤ² →+ ℝ`, `(a, b) ↦ a + √2 * b`, is injective and its image spans `ℝ`, yet its image is dense,
@@ -28,10 +29,11 @@ integral and real ranks to agree.
 
 ## Main declarations
 
-* `TauCeti.Toric.IsIntegralLattice`: the scalar-extension condition on `i : N →+ V`, stated as
-  Mathlib's `IsBaseChange ℝ` for the underlying `ℤ`-linear map. `isIntegralLattice_iff` is the
-  equivalent formulation by an `ℝ`-linear equivalence `ℝ ⊗[ℤ] N ≃ₗ[ℝ] V` restricting to `i`, and
-  `isIntegralLattice_iff_isBaseChange` opens Mathlib's base-change API on it.
+* `TauCeti.Toric.IsIntegralLattice`: for finite free `N`, the scalar-extension condition on
+  `i : N →+ V`, stated as Mathlib's `IsBaseChange ℝ` for the underlying `ℤ`-linear map.
+  `isIntegralLattice_iff` is the equivalent formulation by an `ℝ`-linear equivalence
+  `ℝ ⊗[ℤ] N ≃ₗ[ℝ] V` restricting to `i`, and `isIntegralLattice_iff_isBaseChange` opens
+  Mathlib's base-change API on it.
 * `TauCeti.Toric.isIntegralLattice_of_basis`: an integral basis of `N` whose image is a real
   basis of `V` exhibits an integral lattice, and `TauCeti.Toric.IsIntegralLattice.basis` is the
   converse construction of that real basis.
@@ -46,11 +48,12 @@ integral and real ranks to agree.
 
 ## Implementation notes
 
-`IsIntegralLattice` is a named specialization of `IsBaseChange`, not a reimplementation of it:
-it fixes the ring extension `ℤ → ℝ`, takes the bare additive map `i` that the ambient cone
-geometry uses, and is the vocabulary in which toric cones, fans and their morphisms are stated.
-Since the definition is not exposed, `isIntegralLattice_iff_isBaseChange` is the interface that
-downstream modules use to reach the whole of Mathlib's base-change API.
+`IsIntegralLattice` is a named specialization of `IsBaseChange` for a finite free `ℤ`-module,
+not a reimplementation of it: it fixes the ring extension `ℤ → ℝ`, takes the bare additive map
+`i` that the ambient cone geometry uses, and is the vocabulary in which toric cones, fans and
+their morphisms are stated. Since the definition is not exposed,
+`isIntegralLattice_iff_isBaseChange` is the interface that downstream modules use to reach the
+whole of Mathlib's base-change API.
 
 ## References
 
@@ -68,10 +71,13 @@ section Basic
 
 variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N →+ V}
 
-/-- An additive map `i : N →+ V` into a real vector space is an *integral lattice* when it
-exhibits `V` as the extension of scalars of `N` from `ℤ` to `ℝ`. -/
+/-- An additive map `i : N →+ V` from a finite free `ℤ`-module into a real vector space is an
+*integral lattice* when it exhibits `V` as the extension of scalars of `N` from `ℤ` to `ℝ`. -/
 -- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
-def IsIntegralLattice (i : N →+ V) : Prop := IsBaseChange ℝ i.toIntLinearMap
+def IsIntegralLattice [Module.Free ℤ N] [Module.Finite ℤ N] (i : N →+ V) : Prop :=
+  IsBaseChange ℝ i.toIntLinearMap
+
+variable [Module.Free ℤ N] [Module.Finite ℤ N]
 
 /-- The definition of `IsIntegralLattice` in terms of Mathlib's `IsBaseChange`. The definition is
 not `@[expose]`, so this theorem, and not unfolding, is how downstream modules move between the
@@ -109,9 +115,8 @@ theorem IsIntegralLattice.basis_apply (h : IsIntegralLattice i) {ι : Type*}
     (b : Module.Basis ι ℤ N) (j : ι) : h.basis b j = i (b j) := by
   simp [IsIntegralLattice.basis]
 
-/-- An integral lattice is injective. Only torsion-freeness of `N` is used, in the form of
-flatness over `ℤ`; it holds in particular for a free `N`. -/
-theorem IsIntegralLattice.injective [Module.Flat ℤ N] (h : IsIntegralLattice i) :
+/-- An integral lattice is injective. -/
+theorem IsIntegralLattice.injective (h : IsIntegralLattice i) :
     Function.Injective i := by
   obtain ⟨e, he⟩ := isIntegralLattice_iff.1 h
   intro x y hxy
@@ -127,13 +132,13 @@ theorem IsIntegralLattice.span_range_eq_top (h : IsIntegralLattice i) :
     (fun _ _ h₁ h₂ ↦ Submodule.add_mem _ h₁ h₂)
 
 /-- The integral rank of the lattice equals the real dimension of the ambient space. -/
-theorem IsIntegralLattice.finrank_eq [Module.Free ℤ N] (h : IsIntegralLattice i) :
+theorem IsIntegralLattice.finrank_eq (h : IsIntegralLattice i) :
     Module.finrank ℤ N = Module.finrank ℝ V := by
   rw [← Module.finrank_baseChange (R := ℝ) (S := ℤ) (M' := N),
     (isIntegralLattice_iff_isBaseChange.1 h).equiv.finrank_eq]
 
-/-- A lattice of finite rank sits in a finite-dimensional real vector space. -/
-theorem IsIntegralLattice.finiteDimensional [Module.Finite ℤ N] (h : IsIntegralLattice i) :
+/-- An integral lattice sits in a finite-dimensional real vector space. -/
+theorem IsIntegralLattice.finiteDimensional (h : IsIntegralLattice i) :
     FiniteDimensional ℝ V :=
   Module.Finite.equiv (isIntegralLattice_iff_isBaseChange.1 h).equiv
 
@@ -154,6 +159,7 @@ section Naturality
 variable {N N' N'' V V' V'' : Type*} [AddCommGroup N] [AddCommGroup N'] [AddCommGroup N'']
   [AddCommGroup V] [AddCommGroup V'] [AddCommGroup V''] [Module ℝ V] [Module ℝ V'] [Module ℝ V'']
   {i : N →+ V} {i' : N' →+ V'} {i'' : N'' →+ V''}
+variable [Module.Free ℤ N] [Module.Finite ℤ N]
 
 /-- Two real-linear maps out of the ambient space of an integral lattice that agree on the
 lattice are equal. -/
@@ -182,14 +188,15 @@ theorem IsIntegralLattice.extend_id (h : IsIntegralLattice i) :
     h.extend i (AddMonoidHom.id N) = LinearMap.id :=
   (h.eq_extend fun _ ↦ rfl).symm
 
-theorem IsIntegralLattice.extend_comp (h : IsIntegralLattice i) (h' : IsIntegralLattice i')
-    (f : N →+ N') (f' : N' →+ N'') :
+theorem IsIntegralLattice.extend_comp [Module.Free ℤ N'] [Module.Finite ℤ N']
+    (h : IsIntegralLattice i) (h' : IsIntegralLattice i') (f : N →+ N') (f' : N' →+ N'') :
     (h'.extend i'' f').comp (h.extend i' f) = h.extend i'' (f'.comp f) :=
   h.eq_extend (i' := i'') (f := f'.comp f) fun n ↦ by simp
 
 /-- Being an integral lattice transfers along an isomorphism of the integral vectors together
 with a compatible real-linear equivalence. -/
-theorem isIntegralLattice_congr (f : N ≃+ N') (e : V ≃ₗ[ℝ] V')
+theorem isIntegralLattice_congr [Module.Free ℤ N'] [Module.Finite ℤ N']
+    (f : N ≃+ N') (e : V ≃ₗ[ℝ] V')
     (hfe : ∀ n, e (i n) = i' (f n)) : IsIntegralLattice i ↔ IsIntegralLattice i' :=
   IsBaseChange.iff_of_equiv_comm f.toIntLinearEquiv e (by ext n; exact (hfe n).symm)
 
@@ -200,17 +207,17 @@ end Naturality
 section Discrete
 
 variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V] {i : N →+ V}
+variable [Module.Free ℤ N] [Module.Finite ℤ N]
 
-/-- The image of an integral lattice of finite rank is a discrete subgroup of a normed real
-vector space; this is what fails for an injective map with dense image. -/
-theorem IsIntegralLattice.discreteTopology [Module.Free ℤ N] [Module.Finite ℤ N]
-    (h : IsIntegralLattice i) : DiscreteTopology (LinearMap.range i.toIntLinearMap) := by
+/-- The image of an integral lattice is a discrete subgroup of a normed real vector space; this
+is what fails for an injective map with dense image. -/
+theorem IsIntegralLattice.discreteTopology (h : IsIntegralLattice i) :
+    DiscreteTopology (LinearMap.range i.toIntLinearMap) := by
   rw [h.range_eq_span (Module.Free.chooseBasis ℤ N)]
   infer_instance
 
-/-- The image of an integral lattice of finite rank is a `ℤ`-lattice in Mathlib's sense. -/
-theorem IsIntegralLattice.isZLattice [Module.Free ℤ N] [Module.Finite ℤ N]
-    (h : IsIntegralLattice i) :
+/-- The image of an integral lattice is a `ℤ`-lattice in Mathlib's sense. -/
+theorem IsIntegralLattice.isZLattice (h : IsIntegralLattice i) :
     haveI := h.discreteTopology
     IsZLattice ℝ (LinearMap.range i.toIntLinearMap) :=
   haveI := h.discreteTopology
