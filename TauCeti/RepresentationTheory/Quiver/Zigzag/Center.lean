@@ -602,12 +602,13 @@ theorem finrank_center_zigzagAlgebra [Nontrivial k] :
 
 /-- **The centre of the public zigzag algebra of a connected graph has dimension `|V| + 1`.**
 This includes the one-vertex case, where the public algebra is the dual numbers. -/
-theorem finrank_center_zigzagAlgebra_of_connected [Nontrivial k] [Fintype V]
+theorem finrank_center_zigzagAlgebra_of_connected [Nontrivial k]
     (hconn : G.Connected) :
-    Module.finrank k (Subalgebra.center k (zigzagAlgebra k G)) = Fintype.card V + 1 := by
+    Module.finrank k (Subalgebra.center k (zigzagAlgebra k G)) = Nat.card V + 1 := by
   obtain ⟨v⟩ := hconn.nonempty
   let _ : Nonempty G.ConnectedComponent := ⟨G.connectedComponentMk v⟩
   let _ : Subsingleton G.ConnectedComponent := hconn.preconnected.subsingleton_connectedComponent
-  rw [finrank_center_zigzagAlgebra k G, Nat.card_eq_fintype_card (α := V), Nat.card_unique]
+  rw [finrank_center_zigzagAlgebra k G,
+    Nat.card_unique (α := G.ConnectedComponent)]
 
 end TauCeti
