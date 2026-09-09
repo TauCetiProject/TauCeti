@@ -362,7 +362,7 @@ private theorem isResolventAt_of_norm_mul_lt_one (h : lambda ∈ resolventSet A)
     resolvent A lambda * Ring.inverse (1 - (lambda - mu) • resolvent A lambda)
   have hpert : IsResolventAt ((B : X →ₗ[𝕜] X) +ᵥ A) lambda U := by
     simpa only [U, hBR] using isResolventAt_vadd_of_norm_mul_resolvent_lt_one B h hB
-  change IsResolventAt A mu U
+  suffices IsResolventAt A mu U by simpa only [U]
   refine ⟨hpert.mem_domain, fun y => ?_, fun x => ?_⟩
   · calc
       mu • _ - A ⟨_, hpert.mem_domain y⟩ =
