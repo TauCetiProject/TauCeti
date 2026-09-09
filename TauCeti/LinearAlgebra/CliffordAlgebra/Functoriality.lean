@@ -15,8 +15,8 @@ public import Mathlib.RingTheory.Flat.Basic
 
 This file records structural properties of the algebra map induced by a quadratic isometry. Such
 maps commute with Clifford conjugation and preserve the even subalgebra. For an orthogonal product,
-the map induced by the left-summand inclusion is injective over a field of characteristic different
-from two.
+the map induced by the left-summand inclusion is injective when the left Clifford algebra is flat
+and scalar action on the right Clifford algebra is faithful.
 
 ## Main results
 
@@ -69,7 +69,7 @@ theorem map_mem_even (f : Q₁ →qᵢ Q₂) {x : CliffordAlgebra Q₁} (hx : x 
 
 section OrthogonalProduct
 
-variable {K : Type u} [Field K] [Invertible (2 : K)]
+variable {K : Type u} [CommRing K] [Invertible (2 : K)]
   {N₁ : Type v} [AddCommGroup N₁] [Module K N₁]
   {N₂ : Type w} [AddCommGroup N₂] [Module K N₂]
 
@@ -101,7 +101,8 @@ private theorem auxEquiv_includeLeft (P₁ : QuadraticForm K N₁) (P₂ : Quadr
   rw [h₁, h₂]
 
 private theorem gradedTensorIncludeLeft_injective
-    (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂) :
+    (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂)
+    [Module.Flat K (CliffordAlgebra P₁)] :
     Function.Injective (GradedTensorProduct.includeLeft (evenOdd P₁) (evenOdd P₂)) := by
   intro x y hxy
   apply Algebra.TensorProduct.includeLeft_injective
@@ -119,8 +120,9 @@ private theorem toProd_includeLeft (P₁ : QuadraticForm K N₁) (P₂ : Quadrat
   simp [toProd]
 
 /-- The Clifford-algebra map induced by the inclusion of the left summand of an orthogonal product
-is injective over a field of characteristic different from two. -/
-theorem map_inl_injective (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂) :
+is injective when the left Clifford algebra is flat and `2` is invertible. -/
+theorem map_inl_injective (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂)
+    [Module.Flat K (CliffordAlgebra P₁)] :
     Function.Injective (map (QuadraticMap.Isometry.inl P₁ P₂)) := by
   intro x y hxy
   apply gradedTensorIncludeLeft_injective P₁ P₂

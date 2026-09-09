@@ -93,7 +93,12 @@ theorem map_mem_spinGroup (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
             (Units.coeHom (CliffordAlgebra Q₂)) :=
       lipschitzGroup.coe_mem_iff_mem.mpr
         (f.map_mem_lipschitzGroup (spinGroup.units_mem_lipschitzGroup x.2))
-    simpa using hu
+    have hmap :
+        (↑(Units.map (CliffordAlgebra.map f).toMonoidHom (spinGroup.toUnits x)) :
+            CliffordAlgebra Q₂) = CliffordAlgebra.map f (x : CliffordAlgebra Q₁) :=
+      rfl
+    rw [← hmap]
+    exact hu
   · rw [Unitary.mem_iff]
     constructor
     · rw [← CliffordAlgebra.map_star, ← map_mul, spinGroup.star_mul_self_of_mem x.2,
