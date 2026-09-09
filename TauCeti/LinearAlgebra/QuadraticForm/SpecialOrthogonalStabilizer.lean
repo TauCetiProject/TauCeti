@@ -180,7 +180,7 @@ theorem specialOrthogonalGroupProdLastInclusion_mem_stabilizer
 
 /-- An orthogonal transformation fixing the last basis vector maps the first summand back into the
 first summand. -/
-theorem orthogonalGroupProdLast_fixed_apply_snd
+theorem orthogonalGroupProdLast_apply_snd_of_fixed
     (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
     (g : orthogonalGroup (Q.prod (QuadraticMap.sq (R := R) (A := R))))
     (hfix : (g : (M × R) ≃ₗ[R] (M × R)) ((0 : M), (1 : R)) = (0, 1))
@@ -200,7 +200,7 @@ theorem specialOrthogonalGroupProdLastStabilizer_apply_snd
     (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
     (g : specialOrthogonalGroupProdLastStabilizer Q) (m : M) :
     (g.1.1 (m, 0)).2 = 0 :=
-  orthogonalGroupProdLast_fixed_apply_snd Q h2
+  orthogonalGroupProdLast_apply_snd_of_fixed Q h2
     ⟨g.1.1, specialOrthogonalGroup_le_orthogonalGroup _ g.1.2⟩
     (mem_specialOrthogonalGroupProdLastStabilizer_iff Q |>.mp g.2) m
 
