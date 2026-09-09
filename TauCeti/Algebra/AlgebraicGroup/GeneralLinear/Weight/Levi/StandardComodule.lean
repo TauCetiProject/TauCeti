@@ -59,17 +59,23 @@ attribute [local instance] standardComodule weightLeviStandardComodule
 quotient map on the coordinate factor. -/
 @[simp]
 theorem weightLeviStandardComodule_coact :
-    (weightLeviStandardComodule R w).coact =
+    Comodule.corestrictCoact
+        (R := R) (C := coordinateHopfAlgebra R N)
+        (D := weightLeviCoordinateHopfAlgebra R w) (M := Fin N → R)
+        (Bialgebra.Quotient.mkBialgHom (R := R)
+          (weightLeviDefiningHopfIdeal R w).toIdeal).toCoalgHom =
       TensorProduct.map LinearMap.id
-          (CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R N)
-            (weightLeviDefiningHopfIdeal R w)).hom.toLinearMap ∘ₗ
+          (Bialgebra.Quotient.mkBialgHom (R := R)
+            (weightLeviDefiningHopfIdeal R w).toIdeal).toLinearMap ∘ₗ
         standardCoact R N := by
   apply LinearMap.ext
   intro v
-  rw [Comodule.corestrict_coact_apply, standardComodule_coact, LinearMap.comp_apply]
+  rw [Comodule.corestrictCoact_apply, standardComodule_coact, LinearMap.comp_apply]
 
-/-- The standard weight-Levi coaction on a basis vector is its quotient generic column. -/
-@[simp]
+/-- The standard weight-Levi coaction on a basis vector is its quotient generic column.
+
+This is an explicit rewrite lemma: the generic corestriction and standard-coaction simp rules
+already reduce its left-hand side, so it is not a simp-normal-form rule. -/
 theorem weightLeviStandardComodule_coact_single (j : Fin N) :
     Comodule.coact (R := R) (C := weightLeviCoordinateHopfAlgebra R w)
         (Pi.single j (1 : R)) =
