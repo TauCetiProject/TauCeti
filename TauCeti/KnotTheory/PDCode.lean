@@ -592,24 +592,33 @@ theorem ext {D E : FramedOrientedPDCode n}
   cases E
   simp_all
 
-/-- Reflect a framed oriented diagram, preserving its framing data. -/
+/-- Reflect a framed oriented diagram, negating its blackboard-relative framing integers. -/
 def mirror (D : FramedOrientedPDCode n) : FramedOrientedPDCode n where
   toOrientedPDCode := D.toOrientedPDCode.mirror
-  framing := D.framing
+  framing := fun h => -D.framing h
   framing_edgePair := by simp
   framing_oppositeCrossingSlot := by simp
-  crossinglessFramings := D.crossinglessFramings
-  crossinglessFramings_map_fst := by simp
+  crossinglessFramings := D.crossinglessFramings.map fun component =>
+    (component.1, -component.2)
+  crossinglessFramings_map_fst := by
+    rw [Multiset.map_map]
+    change _ = D.crossinglessComponents
+    rw [← D.crossinglessFramings_map_fst]
+    rfl
 
 /-- Forgetting framing after reflection gives reflection of the underlying oriented code. -/
 @[simp] theorem mirror_toOrientedPDCode (D : FramedOrientedPDCode n) :
     D.mirror.toOrientedPDCode = D.toOrientedPDCode.mirror := by simp [mirror]
-/-- Reflection preserves the framing at every crossing visit. -/
+/-- Reflection negates the blackboard-relative framing at every crossing visit. -/
 @[simp] theorem mirror_framing (D : FramedOrientedPDCode n) :
-    D.mirror.framing = D.framing := by simp [mirror]
-/-- Reflection preserves all crossing-free orientation-framing pairs. -/
+    D.mirror.framing = -D.framing := by
+  funext h
+  simp [mirror]
+/-- Reflection preserves orientation and negates framing on every crossing-free component. -/
 @[simp] theorem mirror_crossinglessFramings (D : FramedOrientedPDCode n) :
-    D.mirror.crossinglessFramings = D.crossinglessFramings := by simp [mirror]
+    D.mirror.crossinglessFramings =
+      D.crossinglessFramings.map (fun component => (component.1, -component.2)) := by
+  simp [mirror]
 /-- Reflecting a framed oriented PD-code twice gives the original code. -/
 @[simp] theorem mirror_mirror (D : FramedOrientedPDCode n) : D.mirror.mirror = D := by
   apply ext <;> simp
