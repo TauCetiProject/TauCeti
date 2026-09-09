@@ -77,11 +77,10 @@ theorem _root_.Subgroup.profiniteOrder_apply_eq_add_profiniteIndex (H : Subgroup
       · rw [padicValNat_eq_emultiplicity Nat.card_pos.ne',
           padicValNat_eq_emultiplicity Nat.card_pos.ne']
         apply emultiplicity_le_emultiplicity_of_dvd_right
-        rw [← H.index_comap_quotient_eq_card_map N,
-          ← H.index_comap_quotient_eq_card_map K]
-        apply Subgroup.index_dvd_of_le
-        apply Subgroup.comap_mono
-        exact inf_le_left
+        rw [← Subgroup.relIndex_ker H (QuotientGroup.mk' N.toSubgroup),
+          ← Subgroup.relIndex_ker H (QuotientGroup.mk' K.toSubgroup),
+          QuotientGroup.ker_mk', QuotientGroup.ker_mk']
+        exact Subgroup.relIndex_dvd_of_le_left _ inf_le_left
       · rw [padicValNat_eq_emultiplicity Subgroup.index_ne_zero_of_finite,
           padicValNat_eq_emultiplicity Subgroup.index_ne_zero_of_finite]
         apply emultiplicity_le_emultiplicity_of_dvd_right

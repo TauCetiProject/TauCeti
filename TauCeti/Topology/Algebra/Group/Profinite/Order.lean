@@ -174,7 +174,9 @@ theorem _root_.Subgroup.profiniteOrder_eq_iSup_image (H : Subgroup G)
     apply PNat.dvd_iff.mpr
     have hdvd : Nat.card (H ⧸ V.toSubgroup) ∣
         Nat.card (H.map (QuotientGroup.mk' N.toSubgroup)) := by
-      rw [← V.toSubgroup.index_eq_card, ← H.index_comap_quotient_eq_card_map N]
+      rw [← V.toSubgroup.index_eq_card,
+        ← Subgroup.relIndex_ker H (QuotientGroup.mk' N.toSubgroup), QuotientGroup.ker_mk',
+        Subgroup.relIndex, ← Subgroup.comap_subtype]
       exact Subgroup.index_dvd_of_le hNV
     exact hdvd
   · refine iSup_le fun N ↦ ?_
@@ -185,11 +187,11 @@ theorem _root_.Subgroup.profiniteOrder_eq_iSup_image (H : Subgroup G)
     apply Subtype.ext
     have hcard : Nat.card (H ⧸ V.toSubgroup) =
         Nat.card (H.map (QuotientGroup.mk' N.toSubgroup)) := by
-      rw [← V.toSubgroup.index_eq_card]
       have hV : V.toSubgroup = N.toSubgroup.comap H.subtype :=
         OpenNormalSubgroup.toSubgroup_comap N H.subtype continuous_subtype_val
-      rw [hV]
-      exact H.index_comap_quotient_eq_card_map N
+      rw [← V.toSubgroup.index_eq_card, hV,
+        ← Subgroup.relIndex_ker H (QuotientGroup.mk' N.toSubgroup), QuotientGroup.ker_mk',
+        Subgroup.relIndex, ← Subgroup.comap_subtype]
     exact hcard.symm
 
 /-- Primewise form of `Subgroup.profiniteOrder_eq_iSup_image`. -/

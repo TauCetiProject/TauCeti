@@ -26,8 +26,6 @@ description as the least common multiple of the indices of open overgroups.
 * `Subgroup.profiniteIndex`: the supernatural index of a subgroup of a profinite group.
 * `Subgroup.index_map_quotient_eq_index_sup`: the ordinary index of a subgroup's image in a
   quotient.
-* `Subgroup.index_comap_quotient_eq_card_map`: the index of a pulled-back quotient kernel
-  equals the cardinality of the corresponding image.
 * `Subgroup.profiniteIndex_anti`: subgroup inclusion reverses supernatural indices.
 * `Subgroup.profiniteIndex_eq_iSup_openSubgroup`: the description as the least common
   multiple of the indices of open overgroups.
@@ -66,22 +64,6 @@ theorem _root_.Subgroup.index_map_quotient_eq_index_sup (H : Subgroup G)
   rw [H.index_map, QuotientGroup.ker_mk',
     (QuotientGroup.mk' N.toSubgroup).range_eq_top_of_surjective
       (QuotientGroup.mk'_surjective N.toSubgroup), Subgroup.index_top, mul_one]
-
-/-- The index in a subgroup of the pullback of an open normal subgroup equals the cardinality
-of the subgroup's image in the corresponding quotient. -/
-theorem _root_.Subgroup.index_comap_quotient_eq_card_map (H : Subgroup G)
-    (N : OpenNormalSubgroup G) :
-    (N.toSubgroup.comap H.subtype).index =
-      Nat.card (H.map (QuotientGroup.mk' N.toSubgroup)) := by
-  let f : H →* G ⧸ N.toSubgroup :=
-    (QuotientGroup.mk' N.toSubgroup).comp H.subtype
-  have hker : f.ker = N.toSubgroup.comap H.subtype := by
-    ext x
-    simp [f, Subgroup.mem_subgroupOf]
-  have hrange : f.range = H.map (QuotientGroup.mk' N.toSubgroup) := by
-    ext x
-    simp [f]
-  rw [← hker, Subgroup.index_ker, hrange]
 
 /-- The **index of a subgroup of a profinite group**, as a supernatural number. At a prime
 `ℓ`, it is the supremum over open normal subgroups `N` of the `ℓ`-adic valuations of
