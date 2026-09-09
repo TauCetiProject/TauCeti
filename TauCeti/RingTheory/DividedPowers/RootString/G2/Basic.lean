@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Finset.Reindex
 public import TauCeti.RingTheory.DividedPowers.RootString.Basic
 
 /-!
@@ -38,7 +39,7 @@ The two exponents attached to a summand are the pair `(i, j)` of the root `i α 
 and it enters through the bracket `w * z = z * w + 3 • s` rather than through `ad x`.
 
 For the other nontrivial pair `α`, `α + β`, the root `3α + 2β` arises instead from
-`⁅e_(α + β), e_(2α + β)⁆`. Its divided-power straightening rule is
+`⁅e_(2α + β), e_(α + β)⁆`. Its divided-power straightening rule is
 `TauCeti.Associative.dividedPower_mul_dividedPower_of_g2_short_pair` in
 `TauCeti.RingTheory.DividedPowers.RootString.G2.ShortPair`.
 

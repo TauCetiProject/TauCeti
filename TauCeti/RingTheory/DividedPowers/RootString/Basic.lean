@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.BigOperators.Finset.Reindex
 public import TauCeti.RingTheory.DividedPowers.NormalOrdering
 
 /-!
