@@ -34,9 +34,6 @@ with Mathlib's regular conditional distribution.
 ## References
 
 * T. W. Anderson, *An Introduction to Multivariate Statistical Analysis*, 3rd ed., Wiley, 2003.
-* `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 4, and
-  `TauCetiRoadmap/StandardDistributions/Suggested.lean`, which supplies the declaration skeleton
-  and proof plan.
 -/
 
 public section
