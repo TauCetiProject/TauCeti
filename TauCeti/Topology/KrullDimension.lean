@@ -18,8 +18,9 @@ specialization of such a point would have codimension at least two.
 
 ## Main declarations
 
-* `TauCeti.isClosed_singleton_of_coheight_eq_one`: on a T₀ space all of whose points have
-  codimension at most one for the specialization order, a point of codimension one is closed.
+* `TauCeti.isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one`: on a T₀ space all
+  of whose points have codimension at most one for the specialization order, a point of
+  codimension one is closed.
 -/
 
 public section
@@ -31,7 +32,8 @@ namespace TauCeti
 attribute [local instance] specializationOrder in
 /-- On a T₀ topological space all of whose points have codimension at most one for the
 specialization order, a point of codimension one is closed. -/
-theorem isClosed_singleton_of_coheight_eq_one {α : Type*} [TopologicalSpace α] [T0Space α]
+theorem isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one {α : Type*}
+    [TopologicalSpace α] [T0Space α]
     (hdim : ∀ y : α, coheight y ≤ 1) {x : α} (hx : coheight x = 1) :
     IsClosed ({x} : Set α) := by
   rw [← closure_eq_iff_isClosed]

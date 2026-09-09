@@ -57,7 +57,7 @@ lemma ord_germToFunctionField_nonneg {U : X.Opens} [Nonempty U] (a : Γ(X, U)) {
   rcases eq_or_ne a 0 with rfl | ha
   · simp
   · have h := Scheme.ord_le_smul hx ha (1 : X.functionField)
-    rwa [Algebra.smul_def, mul_one, RingHom.algebraMap_toAlgebra, ord_one] at h
+    rwa [Algebra.smul_def, mul_one, RingHom.algebraMap_toAlgebra, X.ord_one] at h
 
 end Scheme
 

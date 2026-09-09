@@ -171,7 +171,7 @@ theorem exists_isUnit_germToFunctionField_eq_of_ord_eq_zero
   have hinv : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → X.ord f⁻¹ (y : X) = 0 := by
     intro y hy
     have h := X.ord_mul (x := (y : X)) hf0 (inv_ne_zero hf0)
-    rw [mul_inv_cancel₀ hf0, ord_one, hf y hy] at h
+    rw [mul_inv_cancel₀ hf0, X.ord_one, hf y hy] at h
     omega
   obtain ⟨a, ha⟩ :=
     exists_germToFunctionField_eq_of_ord_nonneg hDVR hU (fun y hy ↦ (hf y hy).ge)

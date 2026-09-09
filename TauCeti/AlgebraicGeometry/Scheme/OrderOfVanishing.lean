@@ -16,7 +16,7 @@ For a locally Noetherian integral scheme `X`, Mathlib defines the order of vanis
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.Scheme.ord_one`: the constant function `1` has order zero at every
+* `AlgebraicGeometry.Scheme.ord_one`: the constant function `1` has order zero at every
   point. This is the companion of Mathlib's `ord_zero`: at a codimension-one point the order is
   the valuation of a unit of the local ring, and at every other point the order is zero by
   definition.
@@ -28,24 +28,16 @@ open AlgebraicGeometry
 
 namespace TauCeti
 
-namespace AlgebraicGeometry
-
 universe u
 
 variable {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X]
 
-namespace Scheme
-
 /-- The rational function `1` has order zero at every point. -/
 @[simp]
-lemma ord_one (x : X) : X.ord (1 : X.functionField) x = 0 := by
+lemma _root_.AlgebraicGeometry.Scheme.ord_one (x : X) : X.ord (1 : X.functionField) x = 0 := by
   rcases eq_or_ne (Order.coheight x) 1 with hx | hx
   · rw [X.ord_eq_iff hx one_ne_zero]
     simp
   · simp [hx]
-
-end Scheme
-
-end AlgebraicGeometry
 
 end TauCeti

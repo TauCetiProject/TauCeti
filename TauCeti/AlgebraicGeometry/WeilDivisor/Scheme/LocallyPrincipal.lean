@@ -299,8 +299,8 @@ theorem isLocallyPrincipal_of_forall_isClosed_singleton
       exact (locallyPrincipalSubgroup X).zsmul_mem
         (mem_locallyPrincipalSubgroup.mpr (isLocallyPrincipal_ofPoint hclosed a)) b
 
-/-- When the codimension-one points of `X` are closed, the locally principal divisors are all of
-them. -/
+/-- When the codimension-one points of `X` are closed and their local rings are discrete
+valuation rings, the locally principal divisors are all of them. -/
 theorem locallyPrincipalSubgroup_eq_top_of_forall_isClosed_singleton
     [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] :
     locallyPrincipalSubgroup X = ⊤ :=
@@ -327,9 +327,10 @@ theorem isLocallyPrincipal_of_forall_coheight_le_one
     [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
     (D : SchemeWeilDivisor X) : IsLocallyPrincipal D :=
   isLocallyPrincipal_of_forall_isClosed_singleton
-    (fun y ↦ isClosed_singleton_of_coheight_eq_one hdim y.property) D
+    (fun y ↦ isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim y.property) D
 
-/-- On a curve the locally principal divisors are all of them. -/
+/-- On a curve whose codimension-one local rings are discrete valuation rings, the locally
+principal divisors are all of them. -/
 theorem locallyPrincipalSubgroup_eq_top
     [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] :
     locallyPrincipalSubgroup X = ⊤ :=
