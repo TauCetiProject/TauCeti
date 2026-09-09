@@ -77,7 +77,7 @@ theorem cycleCounts_eq_card_cycleData (t : PermutationTriple n) :
   simp only [cycleCounts, cycleData, orbitCount_eq_card_parts_partition]
 
 /-- Each full cycle partition of a degree-`n` triple sums to `n`. -/
-theorem cycleData_sums (t : PermutationTriple n) :
+theorem sum_cycleData (t : PermutationTriple n) :
     (t.cycleData.1.sum, t.cycleData.2.1.sum, t.cycleData.2.2.sum) = (n, n, n) := by
   simp only [cycleData]
   rw [t.σ0.partition.parts_sum, t.σ1.partition.parts_sum, t.σinf.partition.parts_sum]

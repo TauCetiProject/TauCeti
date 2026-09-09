@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.SetTheory.Cardinal.NatCard
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
@@ -23,6 +22,8 @@ by one, both stated so that they apply to a permutation of a *different* type th
 are compared with.
 
 * `TauCeti.orbitCount_conj`: conjugation does not change the number of orbits.
+* `TauCeti.orbitQuotientEquivCycleFactorsSumFixedPoints`: on a finite type, the orbits are the
+  nontrivial cycle factors of the permutation together with its fixed points.
 * `Equiv.Perm.orbitCount_eq_card_parts_partition`: on a finite type, the orbit count is the number
   of parts in Mathlib's full, fixed-point-aware permutation partition.
 * `Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
@@ -121,7 +122,7 @@ variable [Fintype α] [DecidableEq α]
 This is the set-level decomposition underlying the full cycle partition: a nontrivial orbit is
 sent to the unique member of `cycleFactorsFinset`, while a singleton orbit is sent to its fixed
 point. -/
-private noncomputable def orbitQuotientEquivCycleFactorsSumFixedPoints (σ : Equiv.Perm α) :
+noncomputable def orbitQuotientEquivCycleFactorsSumFixedPoints (σ : Equiv.Perm α) :
     Quotient (Equiv.Perm.SameCycle.setoid σ) ≃
       σ.cycleFactorsFinset ⊕ {x : α // σ x = x} := by
   classical
@@ -199,15 +200,6 @@ theorem _root_.Equiv.Perm.orbitCount_eq_card_parts_partition (σ : Equiv.Perm α
       _ = Fintype.card α - σ.support.card := Finset.card_compl (s := σ.support)
   rw [hfixed, Equiv.Perm.card_parts_partition, Equiv.Perm.cycleType_def]
   simp
-
-/-- On a finite type, the number of orbits is the number of nontrivial cycles plus the number of
-fixed points. This is the unbundled bookkeeping form of
-`Equiv.Perm.orbitCount_eq_card_parts_partition`. -/
-theorem _root_.Equiv.Perm.orbitCount_eq_card_cycleType_add_card_sub_support
-    (σ : Equiv.Perm α) :
-    orbitCount σ =
-      σ.cycleType.card + (Fintype.card α - σ.support.card) := by
-  rw [orbitCount_eq_card_parts_partition, Equiv.Perm.card_parts_partition]
 
 /-- The sign of a finite permutation is the parity of the number of points minus the number of
 orbits. Fixed points contribute once to both numbers and hence do not affect the sign. -/
