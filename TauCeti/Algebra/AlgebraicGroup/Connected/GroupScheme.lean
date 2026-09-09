@@ -144,6 +144,12 @@ noncomputable def identityComponentSpec
   CommHopfAlgCat.quotientSpec H.obj
     (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H))
 
+/-- The identity-component group scheme is the Hopf spectrum of its coordinate algebra. -/
+theorem identityComponentSpec_def (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    identityComponentSpec H =
+      (hopfSpec (CommRingCat.of k)).obj (op (identityComponent H).obj) :=
+  (rfl)
+
 /-- The structural morphism of the identity-component affine group scheme is geometrically
 connected. -/
 instance geometricallyConnected_identityComponentSpec
@@ -175,6 +181,16 @@ noncomputable def identityComponentSpecι
       (hopfSpec (CommRingCat.of k)).obj (op H.obj) :=
   CommHopfAlgCat.quotientSpecι H.obj
     (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H))
+
+/-- The underlying identity-component inclusion is the spectrum of its quotient algebra map,
+after identifying the source with the spectrum of its coordinate algebra. -/
+theorem identityComponentSpecι_hom_left (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    (identityComponentSpecι H).hom.hom.left =
+      eqToHom (identityComponentSpec_X_left H) ≫
+        Spec.map (CommRingCat.ofHom (algebraMap H (identityComponent H))) := by
+  unfold identityComponentSpecι identityComponentSpec
+  rw [CommHopfAlgCat.quotientSpecι_def]
+  rfl
 
 /-- The canonical inclusion of the identity-component affine group scheme is a closed
 immersion. -/
