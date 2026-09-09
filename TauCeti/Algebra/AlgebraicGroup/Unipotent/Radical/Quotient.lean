@@ -21,8 +21,7 @@ ideal containment and triviality gives the other.
     unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_quotient_image_eq_augmentation`:
   a unipotent-radical candidate kernel is the radical when the radical has trivial image.
 
-This advances the exact-sequence infrastructure needed for the dynamic parabolic and Levi route in
-Layer 7, "Structure theory", of the ReductiveGroups roadmap.
+This reduction supports identifying kernels of quotient homomorphisms with unipotent radicals.
 -/
 
 public section

@@ -76,13 +76,10 @@ theorem unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_eq_augmentation
     rw [geometricallyUnipotentPointsCommHopfAlgProperty_iff]
     exact hQ'.2
   have hker : HopfIdeal.ker g.hom = J.comap f.hom := by
-    ext x
-    rw [HopfIdeal.mem_ker, HopfIdeal.mem_comap]
-    -- The category coercion hides the quotient morphism from its application lemma.
-    change (CommHopfAlgCat.mkQuotient H.obj J).hom (f.hom x) = 0 ↔ f.hom x ∈ J
-    rw [CommHopfAlgCat.mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk,
-      Ideal.Quotient.eq_zero_iff_mem]
-    rfl
+    change HopfIdeal.ker (q.hom.comp f.hom) = J.comap f.hom
+    rw [HopfIdeal.ker_comp]
+    dsimp only [q]
+    rw [CommHopfAlgCat.hom_mkQuotient, HopfIdeal.ker_mkBialgHom]
   have himageNormal : (HopfIdeal.ker g.hom).IsNormal := by
     rw [hker]
     exact (isNormal_unipotentRadicalDefiningIdeal H).comap_of_injective

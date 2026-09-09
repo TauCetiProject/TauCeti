@@ -308,6 +308,16 @@ theorem mem_comap {I : HopfIdeal k K} {f : H →ₐc[k] K} {h : H} :
   rw [← mem_toIdeal, comap_toIdeal, Ideal.mem_comap]
   exact mem_toIdeal
 
+/-- The kernel of a composite is the inverse image of the second morphism's kernel. -/
+theorem ker_comp (f : H →ₐc[k] K) (g : K →ₐc[k] L) :
+    ker (g.comp f) = (ker g).comap f := by
+  ext x
+  rw [← mem_toIdeal (I := ker (g.comp f)), ← mem_toIdeal (I := (ker g).comap f),
+    ker_toIdeal, comap_toIdeal, ker_toIdeal]
+  change x ∈ RingHom.ker (g.toAlgHom.toRingHom.comp f.toAlgHom.toRingHom) ↔
+    x ∈ Ideal.comap f.toAlgHom.toRingHom (RingHom.ker g.toAlgHom.toRingHom)
+  rw [RingHom.comap_ker]
+
 /-- Over a field, the surjective inverse image agrees with the unrestricted construction. -/
 theorem comapOfSurjective_eq_comap (I : HopfIdeal k K) (f : H →ₐc[k] K)
     (hf : Function.Surjective f) :
