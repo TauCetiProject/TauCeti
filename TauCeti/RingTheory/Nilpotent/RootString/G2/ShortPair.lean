@@ -29,10 +29,6 @@ The parameter ring is an arbitrary commutative ring: the factors `2` and `3` are
 never inverted. This supplies the second nontrivial root-pair configuration in type `G₂`,
 complementing the relation for its two simple roots. The conjugation form is also recorded.
 
-The proof uses `Associative.dividedPower_mul_dividedPower_of_g2_short_pair`; its finite-sum
-argument follows the long-pair construction in
-`TauCeti.RingTheory.Nilpotent.RootString.G2.Basic`, with five factors and the short-pair weights.
-
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §4.2 and Theorem 5.2.2.
@@ -203,6 +199,10 @@ theorem baseChangeExp_mul_baseChangeExp_of_g2_short_pair
       baseChangeExp y M hMy u * baseChangeExp z M hMz (2 * t * u) *
         baseChangeExp w M hMw (3 * t ^ 2 * u) * baseChangeExp s M hMs (3 * t * u ^ 2) *
         baseChangeExp x M hMx t := by
+  -- The proof uses `Associative.dividedPower_mul_dividedPower_of_g2_short_pair`; its finite-sum
+  -- argument follows the long-pair construction in
+  -- `TauCeti.RingTheory.Nilpotent.RootString.G2.Basic`,
+  -- with five factors and the short-pair weights.
   classical
   obtain ⟨kx, hkx⟩ := hx
   obtain ⟨ky, hky⟩ := hy
