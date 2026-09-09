@@ -35,8 +35,9 @@ description as the least common multiple of the indices of open overgroups.
 * `Subgroup.profiniteIndex_eq_one_iff_topologicalClosure_eq_top`: the index is one exactly
   for dense subgroups.
 * `Subgroup.profiniteIndex_eq_one_iff`: the closed-subgroup specialization.
-* `not_dvd_profiniteIndex_iff_forall_not_dvd_index`: a prime divides the supernatural index
-  exactly when it divides the index of some image in a finite continuous quotient.
+* `Subgroup.not_dvd_profiniteIndex_iff_forall_not_dvd_index`: a prime divides the
+  supernatural index exactly when it divides the index of some image in a finite continuous
+  quotient.
 * `Subgroup.profiniteIndex_eq_bot_iff_topologicalClosure_eq_top` and
   `Subgroup.profiniteIndex_eq_bot_iff`: the simp-normal forms of the two previous results,
   since the supernatural unit is the bottom element.
@@ -213,7 +214,8 @@ theorem _root_.OpenSubgroup.profiniteIndex_apply_eq_padicValNat (U : OpenSubgrou
 
 /-- The finite-quotient and supernatural-index formulations of the prime-to-`ℓ` condition
 for a subgroup of a profinite group agree. -/
-theorem not_dvd_profiniteIndex_iff_forall_not_dvd_index (H : Subgroup G) (ℓ : Nat.Primes) :
+theorem _root_.Subgroup.not_dvd_profiniteIndex_iff_forall_not_dvd_index (H : Subgroup G)
+    (ℓ : Nat.Primes) :
     ¬ (ℓ : Supernatural) ∣ Subgroup.profiniteIndex H ↔
       ∀ N : OpenNormalSubgroup G, ¬ ℓ.val ∣
         (H.map (QuotientGroup.mk' N.toSubgroup)).index := by

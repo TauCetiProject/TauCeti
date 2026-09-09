@@ -96,7 +96,7 @@ variable [IsTopologicalGroup G] [CompactSpace G]
 theorem isProPSylow_iff_not_dvd_profiniteIndex (q : Nat.Primes) : IsProPSylow q.val P ↔
     IsClosed (P : Set G) ∧ IsProP q.val P ∧
       ¬ (q : Supernatural) ∣ P.profiniteIndex := by
-  rw [isProPSylow_iff, not_dvd_profiniteIndex_iff_forall_not_dvd_index P q]
+  rw [isProPSylow_iff, P.not_dvd_profiniteIndex_iff_forall_not_dvd_index q]
 
 end ProfiniteIndex
 
