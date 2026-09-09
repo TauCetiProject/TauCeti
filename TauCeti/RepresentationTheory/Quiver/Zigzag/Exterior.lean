@@ -11,22 +11,22 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew
 # The exterior skew-zigzag parameter
 
 A skew-zigzag parameter labels each ordered pair of incident edges of a simple graph by the
-unit-valued ratio between the two backtracks they carry.  The **exterior** parameter of a graph in
-which no vertex has three pairwise distinct neighbours, that is of a graph all of whose degrees are
-at most two, gives distinct incident edges the ratio `-1`, so its relation makes the two backtracks
-at a vertex sum to zero.  The degree hypothesis is what guarantees the signs are a cocycle over
-every coefficient ring: at a vertex with three pairwise distinct neighbours the three signs would
-multiply to `-1`, which obstructs the cocycle identity unless `2` is zero, where the sign collapses
-anyway.
+unit-valued ratio between the two backtracks they carry.  The **exterior** parameter gives
+distinct incident edges the ratio `-1`, so its relation makes the two backtracks at a vertex sum
+to zero.  Those signs are a cocycle under either of two hypotheses, which is the disjunction the
+construction takes: no vertex of the graph has three pairwise distinct neighbours, that is all of
+its degrees are at most two, or `2` is zero in the coefficient ring.  One of the two is needed,
+since at a vertex with three pairwise distinct neighbours the three signs multiply to `-1`, which
+obstructs the cocycle identity unless the sign collapses.
 
 This is the parameter carried by the basic algebra of the exterior skew group algebra of an odd
-cyclic subgroup of `SU(2)`.  When `2` is zero in the coefficient ring the sign collapses, the
-exterior parameter is the constant parameter, and its relation ideal is the ordinary zigzag ideal.
+cyclic subgroup of `SU(2)`.  When `2` is zero the sign collapses, the exterior parameter of any
+graph is the constant parameter, and its relation ideal is the ordinary zigzag ideal.
 
 ## Main definitions
 
 * `TauCeti.SkewZigzagParameter.exterior`: the exterior skew-zigzag parameter of a graph whose
-  degrees are at most two.
+  degrees are at most two, or of an arbitrary graph over a ring in which `2` is zero.
 
 ## Main results
 
@@ -61,7 +61,13 @@ namespace SkewZigzagParameter
 section Exterior
 
 variable (k : Type w) [CommRing k] {V : Type u} [DecidableEq V] {G : SimpleGraph V}
-  (hG : ∀ ⦃i j j' j'' : V⦄, G.Adj i j → G.Adj i j' → G.Adj i j'' → j = j' ∨ j' = j'' ∨ j'' = j)
+  (hG : (2 : k) = 0 ∨
+    ∀ ⦃i j j' j'' : V⦄, G.Adj i j → G.Adj i j' → G.Adj i j'' → j = j' ∨ j' = j'' ∨ j'' = j)
+
+/-- When `2` is zero in the coefficient ring the sign distinguishing two incident edges
+collapses. -/
+private theorem neg_one_eq_one (h2 : (2 : k) = 0) : (-1 : kˣ) = 1 :=
+  Units.ext (by rw [Units.val_neg, Units.val_one]; linear_combination -h2)
 
 /-- The two signs comparing a pair of neighbours in either order cancel. -/
 private theorem exteriorSign_mul_exteriorSign (a b : V) :
@@ -70,13 +76,14 @@ private theorem exteriorSign_mul_exteriorSign (a b : V) :
   · rw [ite_eq_left rfl, one_mul]
   · rw [ite_eq_right hne, ite_eq_right hne.symm, neg_mul_neg, one_mul]
 
-/-- The **exterior skew-zigzag parameter** of a graph no vertex of which has three pairwise
-distinct neighbours, that is, of a graph all of whose degrees are at most two: the ratio between
-the backtracks along two distinct incident edges is `-1`, so the relation it imposes makes the two
-backtracks at a vertex sum to zero.  The degree hypothesis is what makes the ratios a cocycle over
-every coefficient ring: at a vertex with three pairwise distinct neighbours the three signs would
-multiply to `-1`, which obstructs the cocycle identity unless `2` is zero, where the sign collapses
-anyway.
+/-- The **exterior skew-zigzag parameter**: the ratio between the backtracks along two distinct
+incident edges is `-1`, so the relation it imposes makes the two backtracks at a vertex sum to
+zero.  The hypothesis is the disjunction under which those signs are a cocycle: either no vertex
+has three pairwise distinct neighbours, that is all degrees are at most two, or `2` is zero in the
+coefficient ring.  One of the two is needed, since at a vertex with three pairwise distinct
+neighbours the three signs multiply to `-1`, which obstructs the cocycle identity unless the sign
+collapses.  Over a ring in which `2` is zero, `Or.inl` therefore supplies the hypothesis for every
+graph.
 
 The odd cycles are the McKay graphs of the odd cyclic subgroups of `SU(2)`, and it is this
 relation, rather than the ordinary one, that the exterior skew group algebras of those subgroups
@@ -89,10 +96,12 @@ def exterior : SkewZigzagParameter k G where
     exact exteriorSign_mul_exteriorSign k j j'
   ratio_cocycle := by
     intro i j j' j'' h h' h''
-    rcases hG h h' h'' with rfl | rfl | rfl
-    · rw [ite_eq_left rfl, one_mul, exteriorSign_mul_exteriorSign]
-    · rw [ite_eq_left rfl, mul_one, exteriorSign_mul_exteriorSign]
-    · rw [ite_eq_left rfl, mul_one, exteriorSign_mul_exteriorSign]
+    rcases hG with h2 | hdeg
+    · simp only [neg_one_eq_one k h2, ite_self, one_mul]
+    · rcases hdeg h h' h'' with rfl | rfl | rfl
+      · rw [ite_eq_left rfl, one_mul, exteriorSign_mul_exteriorSign]
+      · rw [ite_eq_left rfl, mul_one, exteriorSign_mul_exteriorSign]
+      · rw [ite_eq_left rfl, mul_one, exteriorSign_mul_exteriorSign]
 
 variable {k}
 
@@ -108,16 +117,14 @@ theorem exterior_ratio_of_ne {i j j' : V} (h : G.Adj i j) (h' : G.Adj i j') (hne
 
 /-- **In characteristic two the exterior parameter is the constant parameter.** The sign
 distinguishing the two backtracks at a vertex collapses, so the exterior and the ordinary zigzag
-presentations agree identically. -/
+presentations agree identically.  The graph is arbitrary here: `Or.inl h2` supplies `hG`. -/
 theorem exterior_eq_one (h2 : (2 : k) = 0) : exterior k hG = 1 := by
-  have hneg : (-1 : kˣ) = 1 :=
-    Units.ext (by rw [Units.val_neg, Units.val_one]; linear_combination -h2)
   ext i j j' h h'
   rw [← Units.ext_iff]
   rcases eq_or_ne j j' with rfl | hne
   · rw [one_ratio]
     exact (exterior k hG).ratio_self h
-  · rw [exterior_ratio_of_ne hG h h' hne, one_ratio, hneg]
+  · rw [exterior_ratio_of_ne hG h h' hne, one_ratio, neg_one_eq_one k h2]
 
 end Exterior
 
@@ -126,7 +133,8 @@ end SkewZigzagParameter
 section ExteriorRelations
 
 variable (k : Type w) [CommRing k] {V : Type u} [DecidableEq V] [Finite V] (G : SimpleGraph V)
-  (hG : ∀ ⦃i j j' j'' : V⦄, G.Adj i j → G.Adj i j' → G.Adj i j'' → j = j' ∨ j' = j'' ∨ j'' = j)
+  (hG : (2 : k) = 0 ∨
+    ∀ ⦃i j j' j'' : V⦄, G.Adj i j → G.Adj i j' → G.Adj i j'' → j = j' ∨ j' = j'' ∨ j'' = j)
 
 /-- **In the exterior relation quotient the two backtracks at a vertex sum to zero.** This is the
 shape in which the exterior relation appears for the basic algebra of an exterior skew group
@@ -139,7 +147,8 @@ theorem skewZigzagMk_exterior_backtrackElem_add_backtrackElem_eq_zero {i j j' : 
     SkewZigzagParameter.exterior_ratio_of_ne hG h h' hne, Units.val_neg, Units.val_one,
     neg_one_smul, neg_add_cancel]
 
-/-- **In characteristic two the exterior parameter presents the ordinary zigzag relations.** -/
+/-- **In characteristic two the exterior parameter presents the ordinary zigzag relations.** The
+graph is arbitrary here: `Or.inl h2` supplies `hG`. -/
 theorem skewZigzagIdeal_exterior_eq_zigzagIdeal (h2 : (2 : k) = 0) :
     skewZigzagIdeal k G (SkewZigzagParameter.exterior k hG) = zigzagIdeal k G := by
   rw [SkewZigzagParameter.exterior_eq_one hG h2, skewZigzagIdeal_one_eq_zigzagIdeal]

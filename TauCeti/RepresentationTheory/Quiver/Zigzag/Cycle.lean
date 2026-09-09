@@ -39,6 +39,8 @@ vertex-fixing graded isomorphism classes with `H¹(G, kˣ)`.
 
 ## Main results
 
+* `TauCeti.SkewZigzagParameter.exteriorCycle_ratio`: the exterior ratio of two incident edges of
+  a cycle graph is one when they agree and minus one otherwise.
 * `TauCeti.SkewZigzagParameter.monodromy_exteriorCycle`: the monodromy of the exterior parameter
   around a cycle graph on `m` vertices is `(-1) ^ m`.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_exteriorCycle` and
@@ -77,7 +79,15 @@ variable (k : Type w) [CommRing k] (m : ℕ) [NeZero m]
 cycle sum to zero.  On an odd cycle over a field of characteristic other than two this is the
 nontrivial skew class; on an even cycle it is gauge equivalent to the constant parameter. -/
 def exteriorCycle : SkewZigzagParameter k (cycleGraph m) :=
-  exterior k fun _ _ _ _ h h' h'' => eq_or_eq_or_eq_of_cycleGraph_adj h h' h''
+  exterior k (Or.inr fun _ _ _ _ h h' h'' => eq_or_eq_or_eq_of_cycleGraph_adj h h' h'')
+
+/-- **The exterior ratio of two incident edges of a cycle graph** is one when they agree and minus
+one otherwise. -/
+@[simp]
+theorem exteriorCycle_ratio {i j j' : Fin m} (h : (cycleGraph m).Adj i j)
+    (h' : (cycleGraph m).Adj i j') :
+    (exteriorCycle k m).ratio h h' = if j = j' then 1 else -1 :=
+  exterior_ratio _ h h'
 
 variable {k m}
 
@@ -88,7 +98,7 @@ theorem monodromy_exteriorCycle (hm : 3 ≤ m) :
     monodromy (exteriorCycle k m) (cycleGraph_adj_add_one hm) = (-1 : kˣ) ^ m := by
   have hratio (i : Fin m) : (exteriorCycle k m).ratio (cycleGraph_adj_add_one hm i).symm
       (cycleGraph_adj_add_one hm (i + 1)) = -1 :=
-    exterior_ratio_of_ne _ _ _ (add_one_add_one_ne_self hm i).symm
+    (exteriorCycle_ratio k m _ _).trans (ite_eq_right (add_one_add_one_ne_self hm i).symm)
   rw [monodromy_def, Finset.prod_congr rfl fun i _ => hratio i,
     Finset.prod_const, Finset.card_univ, Fintype.card_fin]
 
@@ -143,7 +153,7 @@ theorem isGaugeEquivalent_one_exteriorCycle (hm : 3 ≤ m) (hev : Even m) :
       rw [← backtrackScale_symm (cycleGraph m) (cycleLabelling k m) h',
         backtrackScale_cycleLabelling hm _ h'.symm]
     have hratio : (exteriorCycle k m).ratio h h' = -1 :=
-      exterior_ratio_of_ne _ h h' (add_one_add_one_ne_self hm j')
+      (exteriorCycle_ratio k m h h').trans (ite_eq_right (add_one_add_one_ne_self hm j'))
     rw [hratio, hS, hS',
       eq_div_iff_mul_eq', neg_one_mul, neg_neg]
   · subst hv
@@ -154,7 +164,7 @@ theorem isGaugeEquivalent_one_exteriorCycle (hm : 3 ≤ m) (hev : Even m) :
     have hS' : backtrackScale (cycleGraph m) (cycleLabelling k m) h' = -((-1 : kˣ) ^ (j : ℕ)) := by
       rw [backtrackScale_cycleLabelling hm _ h', neg_one_pow_val_add_one hev]
     have hratio : (exteriorCycle k m).ratio h h' = -1 :=
-      exterior_ratio_of_ne _ h h' (add_one_add_one_ne_self hm j).symm
+      (exteriorCycle_ratio k m h h').trans (ite_eq_right (add_one_add_one_ne_self hm j).symm)
     rw [hratio, hS, hS',
       eq_div_iff_mul_eq', neg_one_mul]
   · subst hv
