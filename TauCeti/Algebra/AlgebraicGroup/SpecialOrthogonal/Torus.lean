@@ -222,15 +222,9 @@ torus** when the base contains a square root of `-1` and a half. -/
 noncomputable def splitTorusCoordinateIso :
     (DiagonalizableGroup.coordinateRing R
         (SplitTorus.characterGroup (ULift.{u} (Fin 1)))).obj ≅
-      coordinateHopfAlgebra R 2 where
-  hom := CommHopfAlgCat.homOfPointsMap (splitTorusPointsNatIso R i half hi hhalf).inv
-  inv := CommHopfAlgCat.homOfPointsMap (splitTorusPointsNatIso R i half hi hhalf).hom
-  hom_inv_id := by
-    rw [← CommHopfAlgCat.homOfPointsMap_comp, Iso.hom_inv_id,
-      CommHopfAlgCat.homOfPointsMap_id]
-  inv_hom_id := by
-    rw [← CommHopfAlgCat.homOfPointsMap_comp, Iso.inv_hom_id,
-      CommHopfAlgCat.homOfPointsMap_id]
+      coordinateHopfAlgebra R 2 :=
+  ((CommHopfAlgCat.pointsFunctor (R := R)).preimageIso
+    (splitTorusPointsNatIso R i half hi hhalf).symm).unop
 
 /-- On every value algebra, the point map induced by the forward coordinate isomorphism is the
 inverse pointwise split-torus equivalence. -/
@@ -240,7 +234,17 @@ theorem mapPointsFunctor_splitTorusCoordinateIso_hom_app
     (s : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A) :
     (CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom).app A s =
       (splitTorusPointsMulEquiv R i half hi hhalf A).symm s := by
-  rw [splitTorusCoordinateIso, CommHopfAlgCat.mapPointsFunctor_homOfPointsMap]
+  have hmap :
+      CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom =
+        (splitTorusPointsNatIso R i half hi hhalf).inv := by
+    change (CommHopfAlgCat.pointsFunctor (R := R)).map
+        (splitTorusCoordinateIso R i half hi hhalf).hom.op = _
+    rw [splitTorusCoordinateIso]
+    change (CommHopfAlgCat.pointsFunctor (R := R)).map
+        ((CommHopfAlgCat.pointsFunctor (R := R)).preimage
+          (splitTorusPointsNatIso R i half hi hhalf).symm.hom) = _
+    exact Functor.map_preimage (CommHopfAlgCat.pointsFunctor (R := R)) _
+  rw [hmap]
   exact splitTorusPointsNatIso_inv_app_apply R i half hi hhalf A s
 
 /-- On every value algebra, the point map induced by the inverse coordinate isomorphism is the
@@ -253,7 +257,17 @@ theorem mapPointsFunctor_splitTorusCoordinateIso_inv_app
         (SplitTorus.characterGroup (ULift.{u} (Fin 1)))).obj) A) :
     (CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv).app A t =
       splitTorusPointsMulEquiv R i half hi hhalf A t := by
-  rw [splitTorusCoordinateIso, CommHopfAlgCat.mapPointsFunctor_homOfPointsMap]
+  have hmap :
+      CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv =
+        (splitTorusPointsNatIso R i half hi hhalf).hom := by
+    change (CommHopfAlgCat.pointsFunctor (R := R)).map
+        (splitTorusCoordinateIso R i half hi hhalf).inv.op = _
+    rw [splitTorusCoordinateIso]
+    change (CommHopfAlgCat.pointsFunctor (R := R)).map
+        ((CommHopfAlgCat.pointsFunctor (R := R)).preimage
+          (splitTorusPointsNatIso R i half hi hhalf).symm.inv) = _
+    exact Functor.map_preimage (CommHopfAlgCat.pointsFunctor (R := R)) _
+  rw [hmap]
   exact splitTorusPointsNatIso_hom_app_apply R i half hi hhalf A t
 
 /-- The finite-type coordinate Hopf algebra of `SO₂` is isomorphic to the standard rank-one
