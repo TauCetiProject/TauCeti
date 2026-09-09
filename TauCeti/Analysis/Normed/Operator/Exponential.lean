@@ -130,6 +130,37 @@ theorem _root_.ContinuousLinearMap.exp_smul_apply_sub_eq_intervalIntegral [Compl
     (hcont.intervalIntegrable 0 t)]
   simp
 
+/-- **The exponential of an operator acts exponentially on an eigenvector.** If `B x = μ • x`,
+then `exp (t B) x = exp (t μ) • x`. The statement also covers `x = 0`, without requiring a
+bundled `Module.End.HasEigenvector` witness. -/
+theorem _root_.ContinuousLinearMap.exp_smul_apply_of_apply_eq_smul [CompleteSpace X]
+    (B : X →L[ℝ] X) {x : X} {μ : ℝ} (hx : B x = μ • x) (t : ℝ) :
+    exp (t • B) x = Real.exp (t * μ) • x := by
+  have hpow : ∀ n : ℕ, ((t • B) ^ n) x = (t * μ) ^ n • x := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n hn =>
+        rw [pow_succ, mul_apply_eq_comp, smul_apply, hx, smul_smul,
+          map_smul, hn, smul_smul, pow_succ]
+        ring_nf
+  have hop := (NormedSpace.exp_series_hasSum_exp' (𝕂 := ℝ) (𝔸 := X →L[ℝ] X)
+    (t • B)).mapL (ContinuousLinearMap.apply ℝ X x)
+  have hscalar := (NormedSpace.exp_series_hasSum_exp' (𝕂 := ℝ) (𝔸 := ℝ) (t * μ)).smul_const x
+  have hscalar' : HasSum (fun n : ℕ => ((n.factorial : ℝ)⁻¹ • (t * μ) ^ n) • x)
+      (Real.exp (t * μ) • x) := by
+    simpa only [Real.exp_eq_exp_ℝ] using hscalar
+  have hterms :
+      (fun n : ℕ => ContinuousLinearMap.apply ℝ X x
+        ((n.factorial : ℝ)⁻¹ • (t • B) ^ n)) =
+        fun n : ℕ => ((n.factorial : ℝ)⁻¹ • (t * μ) ^ n) • x := by
+    funext n
+    simp only [ContinuousLinearMap.apply_apply, smul_apply, hpow, smul_smul, smul_eq_mul]
+  rw [hterms] at hop
+  have hop' : HasSum (fun n : ℕ => ((n.factorial : ℝ)⁻¹ • (t * μ) ^ n) • x)
+      (exp (t • B) x) := hop
+  exact HasSum.unique hop' hscalar'
+
 
 end TauCeti
 
