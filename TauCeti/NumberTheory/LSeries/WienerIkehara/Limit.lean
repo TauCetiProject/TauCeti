@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Integrable
+public import TauCeti.MeasureTheory.Integral.ExpDamped
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.Fourier
 
 /-!
@@ -29,14 +30,14 @@ values.
 
 ## Main results
 
-* `TauCeti.LSeries.tendsto_tsum_term_mul_fourier`,
-  `TauCeti.LSeries.tendsto_integral_exp_mul` and
-  `TauCeti.LSeries.tendsto_integral_vertical` are the three one-sided limits.
+* `TauCeti.LSeries.tendsto_tsum_term_mul_fourier` and
+  `TauCeti.LSeries.tendsto_integral_vertical` are two of the three one-sided limits; the third,
+  for the pole term, is the general `TauCeti.tendsto_integral_exp_mul`.
 * `TauCeti.LSeries.tsum_term_mul_fourier_sub_pole_eq_integral_boundary` is the identity they
   combine into, and
   `TauCeti.LSeries.tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff` is its form
   for a smooth test function, where the half-line integrability hypothesis is automatic by
-  `TauCeti.integrable_fourier_of_contDiff`.
+  `TauCeti.integrable_fourier_of_contDiff_of_hasCompactSupport`.
 
 ## Provenance
 
@@ -62,7 +63,7 @@ namespace TauCeti.LSeries
 open Complex Filter FourierTransform MeasureTheory Real Set
 open scoped ContDiff Topology
 
-variable {a : ℕ → ℂ} {f psi : ℝ → ℂ} {G : ℂ → ℂ} {A : ℂ} {x : ℝ}
+variable {a : ℕ → ℂ} {psi : ℝ → ℂ} {G : ℂ → ℂ} {A : ℂ} {x : ℝ}
 
 /-! ### The Dirichlet series -/
 
@@ -87,51 +88,6 @@ theorem tendsto_tsum_term_mul_fourier (hFsum : LSeriesSummable
   rw [Complex.ofReal_one] at h
   simp only [hterm]
   exact h
-
-/-! ### The simple-pole term -/
-
-/-- On the half-line `u ≥ -log x` the damping factor `exp (-u (sigma - 1))` stays below a bound
-depending only on `x`, uniformly for `sigma ∈ (1, 2]`. -/
-private lemma exp_neg_mul_sub_one_le {u sigma : ℝ} (hu : -Real.log x ≤ u) (h1 : 1 < sigma)
-    (h2 : sigma ≤ 2) : Real.exp (-u * (sigma - 1)) ≤ Real.exp (max 0 (Real.log x)) := by
-  refine Real.exp_le_exp.mpr ?_
-  have hu' : -u ≤ Real.log x := by linarith
-  rcases le_or_gt (-u) 0 with h | h
-  · have hle : -u * (sigma - 1) ≤ 0 := by nlinarith
-    exact hle.trans (le_max_left _ _)
-  · have hle : -u * (sigma - 1) ≤ -u := by nlinarith
-    exact hle.trans (hu'.trans (le_max_right _ _))
-
-/-- As `sigma` decreases to `1`, the normalized one-sided Laplace transform of a function
-integrable on the half-line `u ≥ -log x` converges to its undamped integral. -/
-theorem tendsto_integral_exp_mul (hx : 0 < x) (hf : IntegrableOn f (Ici (-Real.log x))) :
-    Tendsto (fun sigma : ℝ ↦ ((x ^ (1 - sigma) : ℝ) : ℂ) *
-        ∫ u in Ici (-Real.log x), (Real.exp (-u * (sigma - 1)) : ℂ) * f u)
-      (𝓝[>] 1) (𝓝 (∫ u in Ici (-Real.log x), f u)) := by
-  have hrpow : Tendsto (fun sigma : ℝ ↦ ((x ^ (1 - sigma) : ℝ) : ℂ)) (𝓝[>] 1) (𝓝 1) := by
-    have hcont : Continuous fun sigma : ℝ ↦ ((x ^ (1 - sigma) : ℝ) : ℂ) := by
-      simp only [Real.rpow_def_of_pos hx]
-      fun_prop
-    simpa using (hcont.tendsto 1).mono_left nhdsWithin_le_nhds
-  have hint : Tendsto (fun sigma : ℝ ↦ ∫ u in Ici (-Real.log x),
-      (Real.exp (-u * (sigma - 1)) : ℂ) * f u) (𝓝[>] 1)
-      (𝓝 (∫ u in Ici (-Real.log x), f u)) := by
-    refine tendsto_integral_filter_of_dominated_convergence
-      (fun u ↦ Real.exp (max 0 (Real.log x)) * ‖f u‖)
-      (.of_forall fun sigma ↦ (Continuous.aestronglyMeasurable (by fun_prop)).mul hf.1) ?_
-      (hf.norm.const_mul _) (.of_forall fun u ↦ ?_)
-    · filter_upwards [Ioc_mem_nhdsGT (by norm_num : (1 : ℝ) < 2)] with sigma hsigma
-      filter_upwards [ae_restrict_mem measurableSet_Ici] with u hu
-      rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
-      exact mul_le_mul_of_nonneg_right (exp_neg_mul_sub_one_le hu hsigma.1 hsigma.2)
-        (norm_nonneg _)
-    · have hone : Tendsto (fun sigma : ℝ ↦ ((Real.exp (-u * (sigma - 1)) : ℝ) : ℂ)) (𝓝[>] 1)
-          (𝓝 1) := by
-        have hcont : Continuous fun sigma : ℝ ↦ ((Real.exp (-u * (sigma - 1)) : ℝ) : ℂ) := by
-          fun_prop
-        simpa using (hcont.tendsto 1).mono_left nhdsWithin_le_nhds
-      simpa using hone.mul_const (f u)
-  simpa using hrpow.mul hint
 
 /-! ### The integral along the vertical line -/
 
@@ -235,6 +191,7 @@ theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff (hx : 0 
       ∫ t : ℝ, G (1 + t * I) * psi t * (x : ℂ) ^ (t * I) :=
   tsum_term_mul_fourier_sub_pole_eq_integral_boundary hx hG hG' hsum
     (hpsi.continuous.integrable_of_hasCompactSupport hsupp) hsupp
-    ((integrable_fourier_of_contDiff hpsi hsupp).comp_div (by positivity)).integrableOn hFsum
+    (((integrable_fourier_of_contDiff_of_hasCompactSupport hpsi hsupp).comp_div
+      (by positivity)).integrableOn) hFsum
 
 end TauCeti.LSeries
