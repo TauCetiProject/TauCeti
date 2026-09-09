@@ -49,10 +49,6 @@ noncomputable section
 variable {R : Type u} [CommRing R]
   {M : Type v} [AddCommGroup M] [Module R M]
 
-private def specialOrthogonalProdLastExtension (Q : QuadraticForm R M)
-    (f : specialOrthogonalGroup Q) : (M × R) ≃ₗ[R] (M × R) :=
-  (f : M ≃ₗ[R] M).prodCongr (LinearEquiv.refl R R)
-
 /-- Extend a special orthogonal transformation by the identity on the square line. -/
 def specialOrthogonalGroupProdLastInclusion (Q : QuadraticForm R M)
     [Module.Free R M] [Module.Finite R M] :
@@ -103,15 +99,6 @@ theorem mem_specialOrthogonalGroupProdLastStabilizer_iff
     g ∈ specialOrthogonalGroupProdLastStabilizer Q ↔
       (g : (M × R) ≃ₗ[R] (M × R)) ((0 : M), (1 : R)) = (0, 1) :=
   MulAction.mem_stabilizer_iff
-
-/-- Extension by the identity on the square line fixes the last basis vector. -/
-theorem specialOrthogonalGroupProdLastInclusion_mem_stabilizer
-    (Q : QuadraticForm R M) [Module.Free R M] [Module.Finite R M]
-    (f : specialOrthogonalGroup Q) :
-    specialOrthogonalGroupProdLastInclusion Q f ∈
-      specialOrthogonalGroupProdLastStabilizer Q := by
-  rw [mem_specialOrthogonalGroupProdLastStabilizer_iff]
-  exact Prod.ext (by simp) (by simp)
 
 /-- An orthogonal transformation fixing the last basis vector maps the first summand back into the
 first summand. -/
@@ -210,23 +197,13 @@ private theorem specialOrthogonalProdLastRestriction_mem
     rw [hrefl, mul_one] at hdet
     simpa only [LinearEquiv.coe_det] using hdet
 
-private theorem specialOrthogonalProdLast_eq_extension_restriction
-    (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
-    [Module.Free R M] [Module.Finite R M]
-    (g : specialOrthogonalGroupProdLastStabilizer Q) :
-    g.1.1 = specialOrthogonalProdLastExtension Q
-      ⟨specialOrthogonalProdLastRestrictionLinearEquiv Q h2 g,
-        specialOrthogonalProdLastRestriction_mem Q h2 g⟩ := by
-  simpa only [specialOrthogonalProdLastExtension] using
-    specialOrthogonalProdLast_eq_prodCongr_restriction Q h2 g
-
 /-- Extend a special orthogonal transformation by the identity, as an element of the last-vector
 stabilizer. -/
 def specialOrthogonalGroupProdLastInclusionToStabilizer
     (Q : QuadraticForm R M) [Module.Free R M] [Module.Finite R M] :
     specialOrthogonalGroup Q →* specialOrthogonalGroupProdLastStabilizer Q :=
   (specialOrthogonalGroupProdLastInclusion Q).codRestrict _
-    (specialOrthogonalGroupProdLastInclusion_mem_stabilizer Q)
+    (fun f => by simp)
 
 /-- The stabilizer-valued identity extension acts componentwise. -/
 @[simp]
@@ -284,8 +261,8 @@ def specialOrthogonalGroupEquivProdLastStabilizer
       simp only [MonoidHom.comp_apply, MonoidHom.id_apply]
       rw [specialOrthogonalGroupProdLastInclusionToStabilizer_apply]
       have h := congrArg (fun e : (M × R) ≃ₗ[R] (M × R) => e x)
-        (specialOrthogonalProdLast_eq_extension_restriction Q h2 g)
-      simpa [specialOrthogonalProdLastRestriction, specialOrthogonalProdLastExtension] using h.symm)
+        (specialOrthogonalProdLast_eq_prodCongr_restriction Q h2 g)
+      simpa [specialOrthogonalProdLastRestriction] using h.symm)
 
 /-- The stabilizer equivalence sends `f` to its extension by the identity. -/
 @[simp]
