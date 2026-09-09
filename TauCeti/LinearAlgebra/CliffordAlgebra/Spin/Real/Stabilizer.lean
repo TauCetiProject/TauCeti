@@ -301,6 +301,14 @@ theorem realCliffordSpinEquivLastStabilizer_apply
     realCliffordSpinEquivLastStabilizer n x = realCliffordSpinStabilizerInclusion n x := by
   rfl
 
+@[simp]
+theorem realCliffordSpinEquivLastStabilizer_symm_apply_inclusion
+    (n : ℕ) [NeZero n] (x : realCliffordSpinGroupZero n) :
+    (realCliffordSpinEquivLastStabilizer n).symm
+      (realCliffordSpinStabilizerInclusion n x) = x := by
+  rw [← realCliffordSpinEquivLastStabilizer_apply]
+  exact (realCliffordSpinEquivLastStabilizer n).symm_apply_apply x
+
 end
 
 

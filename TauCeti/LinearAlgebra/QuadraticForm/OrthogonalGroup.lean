@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
+import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # The orthogonal group of a quadratic form
@@ -314,7 +315,8 @@ private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
   · rintro ⟨f, hf, rfl⟩
     constructor
     · exact (orthogonalGroupCongr e ⟨f, hf.1⟩).2
-    · rw [show (LinearEquiv.congrAut e.toLinearEquiv) f =
+    · -- `det_conj` exposes conjugation as a chain of `trans`, unlike `congrAut`.
+      rw [show (LinearEquiv.congrAut e.toLinearEquiv) f =
           (e.toLinearEquiv.symm.trans f).trans e.toLinearEquiv by
         ext m
         exact LinearEquiv.congrAut_apply e.toLinearEquiv f m]
@@ -324,7 +326,8 @@ private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
       (LinearEquiv.congrAut e.toLinearEquiv).apply_symm_apply g⟩
     constructor
     · exact ((orthogonalGroupCongr e).symm ⟨g, hg.1⟩).2
-    · rw [show (LinearEquiv.congrAut e.toLinearEquiv).symm g =
+    · -- Rewrite inverse conjugation to the `trans` chain expected by `det_conj`.
+      rw [show (LinearEquiv.congrAut e.toLinearEquiv).symm g =
           (e.toLinearEquiv.trans g).trans e.toLinearEquiv.symm by
         ext m
         exact LinearEquiv.congrAut_symm_apply e.toLinearEquiv g m]
@@ -334,22 +337,26 @@ private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
 isometric equivalence `e : Q₁ ≃qᵢ Q₂` carries `SO(Q₁)` onto `SO(Q₂)`. -/
 noncomputable def specialOrthogonalGroupCongr (e : Q₁.IsometryEquiv Q₂) :
     specialOrthogonalGroup Q₁ ≃* specialOrthogonalGroup Q₂ :=
-  ((LinearEquiv.congrAut e.toLinearEquiv).subgroupMap _).trans
-    (MulEquiv.subgroupCongr (map_specialOrthogonalGroup e))
+  Subgroup.congrOfMapEq (LinearEquiv.congrAut e.toLinearEquiv)
+    (map_specialOrthogonalGroup e)
 
 @[simp]
 theorem coe_specialOrthogonalGroupCongr_apply
     (e : Q₁.IsometryEquiv Q₂) (f : specialOrthogonalGroup Q₁) (m : M₂) :
     (specialOrthogonalGroupCongr e f : M₂ ≃ₗ[R] M₂) m =
       e ((f : M₁ ≃ₗ[R] M₁) (e.symm m)) := by
-  simp [specialOrthogonalGroupCongr, LinearEquiv.congrAut_apply]
+  simp only [specialOrthogonalGroupCongr, Subgroup.coe_congrOfMapEq_apply,
+    LinearEquiv.congrAut_apply]
+  rfl
 
 @[simp]
 theorem coe_specialOrthogonalGroupCongr_symm_apply
     (e : Q₁.IsometryEquiv Q₂) (g : specialOrthogonalGroup Q₂) (m : M₁) :
     ((specialOrthogonalGroupCongr e).symm g : M₁ ≃ₗ[R] M₁) m =
       e.symm ((g : M₂ ≃ₗ[R] M₂) (e m)) := by
-  simp [specialOrthogonalGroupCongr, LinearEquiv.congrAut_symm_apply]
+  simp only [specialOrthogonalGroupCongr, Subgroup.coe_congrOfMapEq_symm_apply,
+    LinearEquiv.congrAut_symm_apply]
+  rfl
 
 end SpecialCongr
 
