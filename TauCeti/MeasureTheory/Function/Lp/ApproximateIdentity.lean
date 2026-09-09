@@ -118,8 +118,11 @@ representative. The restriction `p < ∞` ensures that translation is strongly c
 that the `Lᵖ`-valued integrand is integrable; that integrability is what makes the average
 additive, and the operator is a contraction by `TauCeti.norm_normedBumpLp_le_one`.
 
-Completeness of `F` is not needed to build the operator or to bound its norm; it is assumed only
-where the average has to be a genuine Bochner integral, in `TauCeti.tendsto_normedBumpLp`. -/
+Completeness of `F` is not part of the definition, exactly as for `MeasureTheory.average` and
+`convolution`: the Bochner integral is formed in whatever normed space is at hand, and it is `0`
+unless that space is complete. So this operator is the advertised average of the translates of
+its argument precisely when `F` is a Banach space, which is the setting of
+`TauCeti.tendsto_normedBumpLp`; the contraction bound holds in either case. -/
 def normedBumpLp (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (mu : Measure E) [mu.IsAddHaarMeasure] : Lp F p mu →L[ℝ] Lp F p mu :=
   LinearMap.mkContinuous
