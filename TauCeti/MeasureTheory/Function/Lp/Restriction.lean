@@ -22,7 +22,7 @@ useful whenever an `Lᵖ` identity is tested against integrals on finite-measure
   everywhere.
 * `TauCeti.setIntegralLp`: integration on a finite-measure set as a continuous linear map on
   `Lᵖ`.
-* `TauCeti.setIntegralLp_apply` and `TauCeti.setIntegralLp_translateLp`: pointwise formulas for
+* `TauCeti.setIntegralLp_apply` and `TauCeti.setIntegral_translateLp_toLp`: pointwise formulas for
   this map and for translated representatives.
 -/
 
@@ -121,6 +121,9 @@ theorem lpToL1Restrict_coeFn (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu s < 
     (f : Lp F p mu) :
     lpToL1Restrict hp_ne_top s hμs f =ᵐ[mu.restrict s] f := by
   let _ : IsFiniteMeasure (mu.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
+  -- `lpToL1Restrict` is built from a local linear map and `mkContinuous`; unfolding it here
+  -- exposes the representative needed by `MemLp.coeFn_toLp`, with no separate representative
+  -- available through the continuous-map interface.
   change ((Lp.memLp f).restrict s).mono_exponent Fact.out |>.toLp f =ᵐ[mu.restrict s] f
   exact MemLp.coeFn_toLp _
 
@@ -142,7 +145,7 @@ theorem setIntegralLp_apply (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu s < �
 omit [NormedSpace ℝ E] [CompleteSpace F] in
 /-- The set integral of a translated `Lᵖ` class is the integral of its translated representative. -/
 @[simp]
-theorem setIntegralLp_translateLp [BorelSpace E] [mu.IsAddHaarMeasure]
+theorem setIntegral_translateLp_toLp [BorelSpace E] [mu.IsAddHaarMeasure]
     (s : Set E) {f : E → F} (hfLp : MemLp f p mu) (t : E) :
     (∫ x in s, (mu.translateLp p (-t) (hfLp.toLp f)) x ∂mu) =
       ∫ x in s, f (x - t) ∂mu := by
