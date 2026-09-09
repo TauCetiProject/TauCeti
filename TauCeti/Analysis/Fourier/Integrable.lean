@@ -17,7 +17,7 @@ in dominated-convergence arguments, such as the Wiener--Ikehara boundary identit
 ## Main declarations
 
 * `TauCeti.integrable_fourier_of_contDiff`: the Fourier transform of a smooth compactly supported
-  function from `ℝ` to `ℂ` is integrable.
+  function on a finite-dimensional real inner product space is integrable.
 -/
 
 public section
@@ -27,7 +27,8 @@ open scoped ContDiff FourierTransform
 
 namespace TauCeti
 
-variable {f : ℝ → ℂ}
+variable {V E : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup E] [NormedSpace ℂ E] {f : V → E}
 
 /-- The Fourier transform of a smooth compactly supported function is integrable. -/
 theorem integrable_fourier_of_contDiff (hf : ContDiff ℝ ∞ f) (hsupp : HasCompactSupport f) :
@@ -35,7 +36,7 @@ theorem integrable_fourier_of_contDiff (hf : ContDiff ℝ ∞ f) (hsupp : HasCom
   have hcoe : ⇑(hsupp.toSchwartzMap hf) = f := by
     ext x
     simp
-  have h : Integrable ((𝓕 (hsupp.toSchwartzMap hf) : SchwartzMap ℝ ℂ) : ℝ → ℂ) :=
+  have h : Integrable ((𝓕 (hsupp.toSchwartzMap hf) : SchwartzMap V E) : V → E) :=
     SchwartzMap.integrable _
   rwa [SchwartzMap.fourier_coe, hcoe] at h
 
