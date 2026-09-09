@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.Basic
-public import TauCeti.RingTheory.Nilpotent.RootString.G2
+public import TauCeti.RingTheory.Nilpotent.RootString.G2.Basic
 
 /-!
 # The type-G₂ commutator relation for Kostant root subgroups
@@ -50,7 +50,7 @@ three as well as in characteristic zero. Together with the commuting, class-two,
 relations in `Commutator.Basic`, this supplies one exceptional rank-two pointwise Chevalley
 relation needed by the integral Chevalley--Demazure construction. The remaining type-`G₂`
 configuration, the pair `α`, `α + β`, is not transported here; see
-`TauCeti.RingTheory.DividedPowers.RootString.G2.ShortPair` for the integral identity it needs.
+`TauCeti.RingTheory.Nilpotent.RootString.G2.ShortPair` for the exponential identity it needs.
 
 ## Main results
 
