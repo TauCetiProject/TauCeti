@@ -124,7 +124,7 @@ theorem normedBumpLp_ae_eq_convolution (hp_ne_top : p ≠ ∞) (phi : ContDiffBu
       _ = ∫ t, phi.normed mu t • ∫ x in s, f (x - t) ∂mu ∂mu := by
         apply integral_congr_ae
         filter_upwards with t
-        rw [map_smul, setIntegralLp_translateLp hp_ne_top s hμs hfLp t]
+        rw [map_smul, setIntegralLp_apply, setIntegralLp_translateLp s hfLp t]
       _ = ∫ x in s, conv x ∂mu := by
         exact setIntegral_convolution phi hf hfc s
       _ = ∫ x in s, (hconvLp.toLp conv) x ∂mu := by

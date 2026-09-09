@@ -139,15 +139,13 @@ theorem setIntegralLp_apply (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu s < �
   rw [setIntegralLp, ContinuousLinearMap.comp_apply, ← L1.integral_eq, L1.integral_eq_integral]
   exact integral_congr_ae (lpToL1Restrict_coeFn hp_ne_top s hμs f)
 
-omit [NormedSpace ℝ E] in
+omit [NormedSpace ℝ E] [CompleteSpace F] in
 /-- The set integral of a translated `Lᵖ` class is the integral of its translated representative. -/
 @[simp]
 theorem setIntegralLp_translateLp [BorelSpace E] [mu.IsAddHaarMeasure]
-    (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu s < ∞)
-    {f : E → F} (hfLp : MemLp f p mu) (t : E) :
-    setIntegralLp hp_ne_top s hμs (mu.translateLp p (-t) (hfLp.toLp f)) =
+    (s : Set E) {f : E → F} (hfLp : MemLp f p mu) (t : E) :
+    (∫ x in s, (mu.translateLp p (-t) (hfLp.toLp f)) x ∂mu) =
       ∫ x in s, f (x - t) ∂mu := by
-  rw [setIntegralLp_apply]
   apply integral_congr_ae
   filter_upwards [ae_restrict_of_ae
       ((Measure.coeFn_translateLp (mu := mu) (-t) (hfLp.toLp f)).trans
