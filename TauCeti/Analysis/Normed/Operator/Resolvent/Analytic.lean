@@ -26,7 +26,7 @@ analyticity after applying the resolvent to a vector.
 
 * `TauCeti.LinearPMap.analyticAt_resolvent`: the resolvent is analytic at each point of its
   resolvent set.
-* `TauCeti.LinearPMap.analyticOnNhd_resolvent`: the resolvent is analytic throughout its
+* `LinearPMap.analyticOnNhd_resolvent`: the resolvent is analytic throughout its
   resolvent set.
 
 ## References
@@ -82,7 +82,7 @@ theorem analyticAt_resolvent (h : lambda ∈ resolventSet A) :
   exact (analyticAt_const.mul hinv).congr heq.symm
 
 /-- The resolvent of a `LinearPMap` is analytic in operator norm on its resolvent set. -/
-theorem analyticOnNhd_resolvent (A : X →ₗ.[𝕜] X) :
+theorem _root_.LinearPMap.analyticOnNhd_resolvent (A : X →ₗ.[𝕜] X) :
     AnalyticOnNhd 𝕜 (resolvent A) (resolventSet A) :=
   fun _ h => analyticAt_resolvent h
 
