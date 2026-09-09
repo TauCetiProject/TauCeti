@@ -14,7 +14,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 The standard upper-triangular subgroup of `GL_n` is the weight parabolic for the strictly
 decreasing weights `i ↦ n - 1 - i`. This file specializes the general geometry of weight
 parabolics to establish smoothness and geometric connectedness of the upper-triangular group
-over every field.
+over an arbitrary commutative ring for smoothness and over a field for geometric connectedness.
 
 ## Main declarations
 
@@ -46,12 +46,12 @@ namespace UpperTriangular
 
 variable (n : ℕ)
 
-/-- **The standard upper-triangular subgroup of `GL_n` is smooth over every field.** -/
+/-- **The standard upper-triangular subgroup of `GL_n` is smooth over every commutative ring.** -/
 theorem smoothCommHopfAlgProperty_coordinateHopfAlgebra
-    (k : Type u) [Field k] :
-    smoothCommHopfAlgProperty k (coordinateHopfAlgebra k n) :=
+    (R : Type u) [CommRing R] :
+    smoothCommHopfAlgProperty R (coordinateHopfAlgebra R n) :=
   smoothCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra
-    k (weights n)
+    R (weights n)
 
 /-- **The standard upper-triangular subgroup of `GL_n` is geometrically connected over every
 field.** -/

@@ -27,6 +27,8 @@ the weight Levi is geometrically connected.
 
 * `TauCeti.GeneralLinear.WeightLeviIndex`: the matrix entries within equal-weight blocks.
 * `TauCeti.GeneralLinear.weightLeviCoordinateAlgEquiv`: the localized polynomial presentation.
+* `TauCeti.GeneralLinear.weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv`: compatibility of
+  the presentation with scalar extension.
 * `TauCeti.GeneralLinear.instSmoothWeightLeviCoordinateHopfAlgebra`: every weight Levi is smooth.
 * `TauCeti.GeneralLinear.geometricallyConnectedCommHopfAlgProperty_weightLeviCoordinateHopfAlgebra`:
   every weight Levi over a field is geometrically connected.
@@ -81,31 +83,20 @@ theorem weightLeviPolynomialGenericMatrix_apply_of_ne (w : Fin N → ℤ)
 abbrev WeightLeviCoordinateRing (w : Fin N → ℤ) :=
   Localization.Away (Matrix.det (weightLeviPolynomialGenericMatrix R w))
 
-/-- The canonical map into the localized polynomial presentation. -/
-def weightLeviCoordinateRingMap (w : Fin N → ℤ) :
-    MvPolynomial (WeightLeviIndex w) R →ₐ[R] WeightLeviCoordinateRing R w :=
-  IsScalarTower.toAlgHom R _ _
-
-/-- The canonical map into the weight-Levi determinant localization is its algebra map. -/
-@[simp ←]
-theorem weightLeviCoordinateRingMap_apply (w : Fin N → ℤ)
-    (x : MvPolynomial (WeightLeviIndex w) R) :
-    weightLeviCoordinateRingMap R w x = algebraMap _ _ x :=
-  by
-    rw [weightLeviCoordinateRingMap]
-    rfl
-
 /-- The generic weight-Levi matrix in its localized coordinate ring. -/
 def weightLeviLocalizedGenericMatrix (w : Fin N → ℤ) :
     Matrix (Fin N) (Fin N) (WeightLeviCoordinateRing R w) :=
-  (weightLeviPolynomialGenericMatrix R w).map (weightLeviCoordinateRingMap R w)
+  (weightLeviPolynomialGenericMatrix R w).map
+    (IsScalarTower.toAlgHom R (MvPolynomial (WeightLeviIndex w) R)
+      (WeightLeviCoordinateRing R w))
 
 /-- A localized generic entry within one weight block is the corresponding localized variable. -/
 @[simp]
 theorem weightLeviLocalizedGenericMatrix_apply_of_eq (w : Fin N → ℤ)
     {i j : Fin N} (hij : w i = w j) :
     weightLeviLocalizedGenericMatrix R w i j =
-      weightLeviCoordinateRingMap R w (MvPolynomial.X ⟨(i, j), hij⟩) := by
+      IsScalarTower.toAlgHom R (MvPolynomial (WeightLeviIndex w) R)
+        (WeightLeviCoordinateRing R w) (MvPolynomial.X ⟨(i, j), hij⟩) := by
   simp [weightLeviLocalizedGenericMatrix,
     weightLeviPolynomialGenericMatrix_apply_of_eq R w hij]
 
@@ -125,7 +116,7 @@ theorem isUnit_det_weightLeviLocalizedGenericMatrix (w : Fin N → ℤ) :
 
 /-- In the weight-Levi quotient, an ambient entry between different weight blocks is zero. -/
 @[simp]
-theorem weightLeviCoordinateMap_genericMatrix_apply_of_ne (w : Fin N → ℤ)
+theorem weightLeviQuotient_mk_genericMatrix_apply_of_ne (w : Fin N → ℤ)
     {i j : Fin N} (hij : w i ≠ w j) :
     Ideal.Quotient.mk (weightLeviDefiningHopfIdeal R w).toIdeal
       (coordinateHopfAlgebraAlgEquiv R N
@@ -265,7 +256,7 @@ private theorem weightLeviPolynomialToQuotient_determinant_isUnit (w : Fin N →
     · rw [Matrix.map_apply, weightLeviPolynomialGenericMatrix_apply_of_ne R w hij,
         map_zero, Matrix.map_apply]
       simpa only [Ideal.Quotient.mkₐ_eq_mk, genericMatrix_apply] using
-        (weightLeviCoordinateMap_genericMatrix_apply_of_ne R w hij).symm
+        (weightLeviQuotient_mk_genericMatrix_apply_of_ne R w hij).symm
   -- `AlgHom.map_det` exposes `mapMatrix`, whereas the pointwise matrix map is the stable form
   -- used by `hmatrix`.
   change IsUnit (Matrix.det ((weightLeviPolynomialGenericMatrix R w).map
@@ -284,10 +275,11 @@ private def weightLeviCoordinateRingToQuotient (w : Fin N → ℤ) :
 
 private theorem weightLeviCoordinateRingToQuotient_coordinateRingMap
     (w : Fin N → ℤ) (x : MvPolynomial (WeightLeviIndex w) R) :
-    weightLeviCoordinateRingToQuotient R w (weightLeviCoordinateRingMap R w x) =
+    weightLeviCoordinateRingToQuotient R w
+        (IsScalarTower.toAlgHom R (MvPolynomial (WeightLeviIndex w) R)
+          (WeightLeviCoordinateRing R w) x) =
       weightLeviPolynomialToQuotient R w x := by
-  simp [-weightLeviCoordinateRingMap_apply,
-    weightLeviCoordinateRingToQuotient, weightLeviCoordinateRingMap]
+  simp [weightLeviCoordinateRingToQuotient]
 
 private theorem weightLeviQuotientToCoordinateRing_comp_coordinateRingToQuotient
     (w : Fin N → ℤ) :
@@ -298,12 +290,14 @@ private theorem weightLeviQuotientToCoordinateRing_comp_coordinateRingToQuotient
   apply MvPolynomial.algHom_ext
   intro ij
   simp only [AlgHom.comp_apply, AlgHom.id_apply]
-  -- Localization extensionality inserts the canonical algebra map; name it with the public map
-  -- before applying its computation theorem.
+  -- Localization extensionality inserts the canonical algebra map; expose it as the scalar-tower
+  -- algebra hom before applying the computation theorem.
   change weightLeviQuotientToCoordinateRing R w
       (weightLeviCoordinateRingToQuotient R w
-        (weightLeviCoordinateRingMap R w (MvPolynomial.X ij))) =
-    weightLeviCoordinateRingMap R w (MvPolynomial.X ij)
+        (IsScalarTower.toAlgHom R (MvPolynomial (WeightLeviIndex w) R)
+          (WeightLeviCoordinateRing R w) (MvPolynomial.X ij))) =
+    IsScalarTower.toAlgHom R (MvPolynomial (WeightLeviIndex w) R)
+      (WeightLeviCoordinateRing R w) (MvPolynomial.X ij)
   rw [weightLeviCoordinateRingToQuotient_coordinateRingMap,
     weightLeviPolynomialToQuotient, MvPolynomial.aeval_X,
     weightLeviQuotientToCoordinateRing_mk_genericMatrix_apply,
@@ -337,7 +331,7 @@ private theorem weightLeviCoordinateRingToQuotient_comp_quotientToCoordinateRing
     · rw [weightLeviLocalizedGenericMatrix, Matrix.map_apply,
         weightLeviPolynomialGenericMatrix_apply_of_ne R w hij, map_zero, map_zero]
       simpa only [Ideal.Quotient.mkₐ_eq_mk, genericMatrix_apply] using
-        (weightLeviCoordinateMap_genericMatrix_apply_of_ne R w hij).symm
+        (weightLeviQuotient_mk_genericMatrix_apply_of_ne R w hij).symm
   exact DFunLike.congr_fun hcomp y
 
 /-- The weight-Levi coordinate algebra is the determinant localization of the polynomial algebra
@@ -363,16 +357,18 @@ theorem weightLeviCoordinateAlgEquiv_mk_genericMatrix_apply
 /-- The inverse localized-polynomial presentation sends a block variable to its surviving
 quotient-matrix entry. -/
 @[simp]
-theorem weightLeviCoordinateAlgEquiv_symm_coordinateRingMap_X
+theorem weightLeviCoordinateAlgEquiv_symm_algebraMap_X
     (w : Fin N → ℤ) (ij : WeightLeviIndex w) :
     (weightLeviCoordinateAlgEquiv R w).symm
-        (weightLeviCoordinateRingMap R w (MvPolynomial.X ij)) =
+        (algebraMap (MvPolynomial (WeightLeviIndex w) R)
+          (WeightLeviCoordinateRing R w) (MvPolynomial.X ij)) =
       Ideal.Quotient.mkₐ R (weightLeviDefiningHopfIdeal R w).toIdeal
         ((genericMatrix R N) ij.1.1 ij.1.2) := by
   apply (weightLeviCoordinateAlgEquiv R w).injective
   rw [AlgEquiv.apply_symm_apply,
     weightLeviCoordinateAlgEquiv_mk_genericMatrix_apply,
     weightLeviLocalizedGenericMatrix_apply_of_eq R w ij.2]
+  rw [IsScalarTower.toAlgHom_apply]
 
 /-- The weight-Levi coordinate algebra is smooth over its base ring. -/
 instance instSmoothWeightLeviCoordinateHopfAlgebra (w : Fin N → ℤ) :
@@ -384,17 +380,17 @@ instance instSmoothWeightLeviCoordinateHopfAlgebra (w : Fin N → ℤ) :
   exact Algebra.Smooth.of_equiv (weightLeviCoordinateAlgEquiv R w).symm
 
 private theorem weightLeviPolynomialGenericMatrix_det_ne_zero
-    (k : Type u) [Field k] (w : Fin N → ℤ) :
-    Matrix.det (weightLeviPolynomialGenericMatrix k w) ≠ 0 := by
+    (R : Type u) [CommRing R] [Nontrivial R] (w : Fin N → ℤ) :
+    Matrix.det (weightLeviPolynomialGenericMatrix R w) ≠ 0 := by
   intro hzero
-  let e : MvPolynomial (WeightLeviIndex w) k →ₐ[k] k :=
+  let e : MvPolynomial (WeightLeviIndex w) R →ₐ[R] R :=
     MvPolynomial.aeval fun ij ↦ if ij.1.1 = ij.1.2 then 1 else 0
-  have hmatrix : (weightLeviPolynomialGenericMatrix k w).map e = 1 := by
+  have hmatrix : (weightLeviPolynomialGenericMatrix R w).map e = 1 := by
     ext i j
     by_cases hij : w i = w j
-    · rw [Matrix.map_apply, weightLeviPolynomialGenericMatrix_apply_of_eq k w hij]
+    · rw [Matrix.map_apply, weightLeviPolynomialGenericMatrix_apply_of_eq R w hij]
       simp [e, Matrix.one_apply]
-    · rw [Matrix.map_apply, weightLeviPolynomialGenericMatrix_apply_of_ne k w hij,
+    · rw [Matrix.map_apply, weightLeviPolynomialGenericMatrix_apply_of_ne R w hij,
         map_zero]
       have hne : i ≠ j := fun h ↦ hij (congrArg w h)
       simp [hne]
@@ -402,18 +398,18 @@ private theorem weightLeviPolynomialGenericMatrix_det_ne_zero
   rw [map_zero, AlgHom.map_det, AlgHom.mapMatrix_apply, hmatrix, Matrix.det_one] at hdet
   exact one_ne_zero hdet
 
-/-- Over a field, the weight-Levi coordinate algebra is an integral domain. -/
+/-- Over an integral domain, the weight-Levi coordinate algebra is an integral domain. -/
 instance instIsDomainWeightLeviCoordinateHopfAlgebra
-    (k : Type u) [Field k] (w : Fin N → ℤ) :
-    IsDomain (weightLeviCoordinateHopfAlgebra k w) := by
-  let _ : IsDomain (WeightLeviCoordinateRing k w) :=
-    Localization.Away.isDomain (weightLeviPolynomialGenericMatrix_det_ne_zero k w)
-  exact (weightLeviCoordinateAlgEquiv k w).toRingEquiv.isDomain_iff.mpr inferInstance
+    (R : Type u) [CommRing R] [IsDomain R] (w : Fin N → ℤ) :
+    IsDomain (weightLeviCoordinateHopfAlgebra R w) := by
+  let _ : IsDomain (WeightLeviCoordinateRing R w) :=
+    Localization.Away.isDomain (weightLeviPolynomialGenericMatrix_det_ne_zero R w)
+  exact (weightLeviCoordinateAlgEquiv R w).toRingEquiv.isDomain_iff.mpr inferInstance
 
 /-- Scalar extension of the localized polynomial presentation is the corresponding presentation
-over the extended field. -/
-private def weightLeviCoordinateRingBaseChangeAlgEquiv
-    (k K : Type u) [Field k] [Field K] [Algebra k K] (w : Fin N → ℤ) :
+over the extended base ring. -/
+def weightLeviCoordinateRingBaseChangeAlgEquiv
+    (k K : Type u) [CommRing k] [CommRing K] [Algebra k K] (w : Fin N → ℤ) :
     K ⊗[k] WeightLeviCoordinateRing k w ≃ₐ[K] WeightLeviCoordinateRing K w := by
   let p : K ⊗[k] MvPolynomial (WeightLeviIndex w) k ≃ₐ[K]
       MvPolynomial (WeightLeviIndex w) K := MvPolynomial.algebraTensorAlgEquiv k K
@@ -435,6 +431,18 @@ private def weightLeviCoordinateRingBaseChangeAlgEquiv
     IsLocalization.algEquivOfAlgEquiv _ _ p (by
       rw [Submonoid.map_powers, hp])
 
+/-- Scalar extension of the weight-Levi coordinate Hopf algebra is ring-equivalent to the
+weight-Levi coordinate Hopf algebra over the extended base ring. -/
+def weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv
+    (k K : Type u) [CommRing k] [CommRing K] [Algebra k K] (w : Fin N → ℤ) :
+    weightLeviCoordinateHopfAlgebra k w ⊗[k] K ≃+*
+      weightLeviCoordinateHopfAlgebra K w :=
+  (Algebra.TensorProduct.congr (weightLeviCoordinateAlgEquiv k w)
+    (AlgEquiv.refl : K ≃ₐ[k] K)).toRingEquiv.trans <|
+  (Algebra.TensorProduct.comm k (WeightLeviCoordinateRing k w) K).toRingEquiv.trans <|
+  (weightLeviCoordinateRingBaseChangeAlgEquiv k K w).toRingEquiv.trans <|
+  (weightLeviCoordinateAlgEquiv K w).symm.toRingEquiv
+
 /-- The weight Levi is geometrically connected over every field. -/
 theorem geometricallyConnectedCommHopfAlgProperty_weightLeviCoordinateHopfAlgebra
     (k : Type u) [Field k] (w : Fin N → ℤ) :
@@ -442,14 +450,9 @@ theorem geometricallyConnectedCommHopfAlgProperty_weightLeviCoordinateHopfAlgebr
       (weightLeviCoordinateHopfAlgebra k w) := by
   rw [geometricallyConnectedCommHopfAlgProperty_iff]
   intro K _ _
-  let e : weightLeviCoordinateHopfAlgebra k w ⊗[k] K ≃+*
-      weightLeviCoordinateHopfAlgebra K w :=
-    (Algebra.TensorProduct.congr (weightLeviCoordinateAlgEquiv k w)
-      (AlgEquiv.refl : K ≃ₐ[k] K)).toRingEquiv.trans <|
-    (Algebra.TensorProduct.comm k (WeightLeviCoordinateRing k w) K).toRingEquiv.trans <|
-    (weightLeviCoordinateRingBaseChangeAlgEquiv k K w).toRingEquiv.trans <|
-    (weightLeviCoordinateAlgEquiv K w).symm.toRingEquiv
-  exact (PrimeSpectrum.homeomorphOfRingEquiv e).connectedSpace_iff.mpr inferInstance
+  exact (PrimeSpectrum.homeomorphOfRingEquiv
+    (weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv k K w)).connectedSpace_iff.mpr
+      inferInstance
 
 end
 

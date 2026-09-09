@@ -20,7 +20,8 @@ decomposition
 U(w) ⋊ L(w) ≅ P(w)
 ```
 
-shows that every weight parabolic is smooth and geometrically connected over a field.
+shows that every weight parabolic is smooth over a commutative ring and geometrically connected
+over a field.
 
 ## Main declarations
 
@@ -51,12 +52,12 @@ noncomputable section
 
 variable {N : ℕ}
 
-/-- The coordinate Hopf algebra of a weight parabolic is smooth over every field. -/
+/-- The coordinate Hopf algebra of a weight parabolic is smooth over every commutative ring. -/
 theorem smoothCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra
-    (k : Type u) [Field k] (w : Fin N → ℤ) :
-    smoothCommHopfAlgProperty k (weightParabolicCoordinateHopfAlgebra k w) := by
-  apply (smoothCommHopfAlgProperty k).prop_of_iso
-    (Dynamic.weightParabolicSemidirectProductCoordinateIso k w).symm
+    (R : Type u) [CommRing R] (w : Fin N → ℤ) :
+    smoothCommHopfAlgProperty R (weightParabolicCoordinateHopfAlgebra R w) := by
+  apply (smoothCommHopfAlgProperty R).prop_of_iso
+    (Dynamic.weightParabolicSemidirectProductCoordinateIso R w).symm
   apply Dynamic.smoothCommHopfAlgProperty_weightParabolicSemidirectProductCoordinateHopfAlgebra
   · rw [smoothCommHopfAlgProperty_iff]
     infer_instance
