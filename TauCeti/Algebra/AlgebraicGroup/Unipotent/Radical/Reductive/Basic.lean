@@ -15,17 +15,14 @@ import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.BaseChange
 This file connects the construction of the geometric unipotent radical to the definition of a
 reductive finite-type affine group. It records that reductivity is equivalent to smoothness,
 geometric connectedness, and triviality of the unipotent radical after base change to an
-algebraic closure. It also records that triviality of the radical after any field extension
-descends to the ground field.
+algebraic closure. It also records that the unipotent radical of a reductive group over its
+ground field is trivial.
 
 ## Main declarations
 
 * `reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation`:
   reductivity is equivalent to smoothness, geometric connectedness, and triviality of the
   geometric unipotent radical.
-* `TauCeti.FiniteTypeCommHopfAlgCat.
-    unipotentRadicalDefiningIdeal_eq_augmentation_of_baseChange_eq_augmentation`:
-  triviality of the unipotent radical after a field extension descends to the ground field.
 * `TauCeti.reductiveCommHopfAlgProperty.unipotentRadicalDefiningIdeal_eq_augmentation`:
   a reductive group's unipotent radical over the ground field is trivial.
 
@@ -72,28 +69,6 @@ theorem reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChang
         (HopfIdeal.IsUnipotentRadicalCandidate.mk hnormal hIconnected hIunipotent)
 
 variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
-
-namespace FiniteTypeCommHopfAlgCat
-
-/-- Triviality of the unipotent radical after base change to a field extension descends to the
-ground field. -/
-theorem unipotentRadicalDefiningIdeal_eq_augmentation_of_baseChange_eq_augmentation
-    {K : Type u} [Field K] [Algebra k K]
-    (hgeometric :
-      FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
-          (FiniteTypeCommHopfAlgCat.baseChange (K := K) H) =
-        HopfIdeal.augmentation K
-          (FiniteTypeCommHopfAlgCat.baseChange (K := K) H)) :
-    FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal H =
-      HopfIdeal.augmentation k H := by
-  apply CommHopfAlgCat.baseChangeHopfIdeal_injective (K := K)
-  rw [CommHopfAlgCat.baseChangeHopfIdeal_augmentation]
-  apply le_antisymm
-  · exact HopfIdeal.le_augmentation K _ _
-  · rw [← hgeometric]
-    exact FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_baseChange_le H
-
-end FiniteTypeCommHopfAlgCat
 
 namespace reductiveCommHopfAlgProperty
 
