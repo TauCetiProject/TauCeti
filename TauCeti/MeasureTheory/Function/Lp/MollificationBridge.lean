@@ -41,7 +41,7 @@ open ContinuousLinearMap Filter MeasureTheory Set
 open scoped Convolution ENNReal Pointwise
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [BorelSpace E] [ProperSpace E] [HasContDiffBump E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [BorelSpace E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [CompleteSpace F] {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
 
 /-- The `Lᵖ` approximate identity is represented almost everywhere by the usual pointwise
@@ -51,7 +51,6 @@ theorem normedBumpLp_ae_eq_convolution (hp_ne_top : p ≠ ∞) (phi : ContDiffBu
     (normedBumpLp hp_ne_top phi mu
       (MemLp.toLp f (hf.memLp_of_hasCompactSupport hfc))) =ᵐ[mu]
       (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) := by
-  let _ : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompactSpace ℝ
   let hfLp : MemLp f p mu := hf.memLp_of_hasCompactSupport hfc
   let conv : E → F := phi.normed mu ⋆[lsmul ℝ ℝ, mu] f
   have hconv_cont : Continuous conv := by
