@@ -175,14 +175,14 @@ what makes the real-linear part of a map of lattices determined rather than chos
 theorem IsIntegralLattice.eq_extend (h : IsIntegralLattice i) {f : N →+ N'} {g : V →ₗ[ℝ] V'}
     (hg : ∀ n, g (i n) = i' (f n)) : g = h.extend i' f :=
   h.isBaseChange.algHom_ext g (h.extend i' f) fun n ↦ by
-    change g (i n) = h.extend i' f (i n)
-    rw [hg, IsIntegralLattice.extend_apply]
+    simp only [AddMonoidHom.coe_toIntLinearMap, hg, IsIntegralLattice.extend_apply]
 
 @[simp]
 theorem IsIntegralLattice.extend_id (h : IsIntegralLattice i) :
     h.extend i (AddMonoidHom.id N) = LinearMap.id :=
   (h.eq_extend fun _ ↦ rfl).symm
 
+@[simp]
 theorem IsIntegralLattice.extend_comp (h : IsIntegralLattice i) (h' : IsIntegralLattice i')
     (f : N →+ N') (f' : N' →+ N'') :
     (h'.extend i'' f').comp (h.extend i' f) = h.extend i'' (f'.comp f) :=
