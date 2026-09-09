@@ -35,9 +35,9 @@ the projective/simple coordinates used to express the Cartan map as a matrix.
 
 * `TauCeti.jordanHolderCoordinate_of`: the coordinate of an object class is its
   Jordan--Hölder multiplicity.
-* `TauCeti.linearIndependent_exactK0Of_simple`: pairwise nonisomorphic simple classes are
+* `TauCeti.linearIndependent_exactK0OfFamily`: pairwise nonisomorphic simple classes are
   linearly independent.
-* `TauCeti.span_range_exactK0Of_simple_eq_top`: an exhaustive family of simple classes spans.
+* `TauCeti.span_range_exactK0OfFamily_eq_top`: an exhaustive family of simple classes spans.
 
 ## References
 
@@ -147,34 +147,14 @@ theorem jordanHolderCoordinate_exactK0OfFamily
     exact jordanHolderCoordinate_exactK0OfFamily_eq_zero S (hnoniso hji)
 
 /-- **Pairwise nonisomorphic simple classes are linearly independent in `G₀(mod R)`.** -/
-theorem linearIndependent_exactK0Of_simple
+theorem linearIndependent_exactK0OfFamily
     (hnoniso : Pairwise fun i j ↦ IsEmpty ((S i : Type u) ≃ₗ[R] S j)) :
     LinearIndependent ℤ (exactK0OfFamily S) := by
-  rw [linearIndependent_iff]
-  classical
-  intro l
-  have heval (i : I) :
-      jordanHolderCoordinate R (S i) ((Finsupp.linearCombination ℤ (exactK0OfFamily S)) l) =
-        l i := by
-    induction l using Finsupp.induction with
-    | zero => simp
-    | single_add j a l hj ha ih =>
-        rw [(Finsupp.linearCombination ℤ (exactK0OfFamily S)).map_add,
-          Finsupp.linearCombination_single,
-          (jordanHolderCoordinate R (S i)).map_add,
-          (jordanHolderCoordinate R (S i)).map_zsmul, ih, Finsupp.add_apply]
-        by_cases hji : j = i
-        · subst j
-          simp
-        · have hzero : jordanHolderCoordinate R (S i) (exactK0OfFamily S j) = 0 :=
-            jordanHolderCoordinate_exactK0OfFamily_eq_zero S (hnoniso hji)
-          rw [hzero, smul_zero, zero_add, Finsupp.single_eq_of_ne (Ne.symm hji), zero_add]
-  intro hl
-  apply Finsupp.ext
-  intro i
-  have hi := congrArg (jordanHolderCoordinate R (S i)) hl
-  rw [heval i, map_zero] at hi
-  exact hi
+  apply LinearIndependent.of_pairwise_dual_eq_zero_one (exactK0OfFamily S)
+    (fun i ↦ (jordanHolderCoordinate R (S i)).toIntLinearMap)
+  · intro i j hij
+    exact jordanHolderCoordinate_exactK0OfFamily_eq_zero S (hnoniso hij.symm)
+  · exact jordanHolderCoordinate_exactK0OfFamily_self S
 
 variable (hnoniso : Pairwise fun i j ↦ IsEmpty ((S i : Type u) ≃ₗ[R] S j))
 
@@ -251,7 +231,7 @@ omit hS in
 /-- **An exhaustive family of simple classes spans `G₀(mod R)`.** Every finitely generated
 module over an Artinian ring has finite length, and induction on a simple-quotient filtration
 expresses its class as a sum of simple classes. -/
-theorem span_range_exactK0Of_simple_eq_top
+theorem span_range_exactK0OfFamily_eq_top
     (hexhaustive : IsExhaustiveSimpleFamily S) :
     Submodule.span ℤ (Set.range (exactK0OfFamily S)) = ⊤ := by
   apply top_unique
@@ -268,8 +248,8 @@ The hypotheses say precisely that the chosen modules are simple, pairwise noniso
 exhaust all simple finitely generated modules. -/
 noncomputable def simpleClassBasis (hexhaustive : IsExhaustiveSimpleFamily S) :
     Module.Basis I ℤ (ExactK0 (finiteModulesExactStructure R)) :=
-  Module.Basis.mk (linearIndependent_exactK0Of_simple S hnoniso)
-    (span_range_exactK0Of_simple_eq_top S hexhaustive).ge
+  Module.Basis.mk (linearIndependent_exactK0OfFamily S hnoniso)
+    (span_range_exactK0OfFamily_eq_top S hexhaustive).ge
 
 /-- The basis vector indexed by `i` is the Grothendieck class `[S i]`. -/
 @[simp]
@@ -279,6 +259,7 @@ theorem simpleClassBasis_apply (hexhaustive : IsExhaustiveSimpleFamily S) (i : I
 
 /-- The `i`th coefficient in the simple-class basis is the Jordan--Hölder multiplicity
 coordinate attached to `S i`. -/
+@[simp]
 theorem simpleClassBasis_repr_apply (hexhaustive : IsExhaustiveSimpleFamily S)
     (x : ExactK0 (finiteModulesExactStructure R)) (i : I) :
     (simpleClassBasis S hnoniso hexhaustive).repr x i = jordanHolderCoordinate R (S i) x := by
@@ -288,7 +269,8 @@ theorem simpleClassBasis_repr_apply (hexhaustive : IsExhaustiveSimpleFamily S)
       (jordanHolderCoordinate R (S i)).toIntLinearMap := by
     apply b.ext
     intro j
-    change (b.repr (b j)) i = jordanHolderCoordinate R (S i) (b j)
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Finsupp.lapply_apply,
+      AddMonoidHom.coe_toIntLinearMap]
     rw [b.repr_self]
     have hb : b j = exactK0OfFamily S j := by
       simp [b, exactK0OfFamily]
