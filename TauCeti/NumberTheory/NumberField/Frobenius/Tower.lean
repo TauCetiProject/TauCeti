@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
+import Mathlib.RingTheory.Ideal.Int
 
 /-!
 # Raising the base field: the tower formula for arithmetic Frobenius elements
@@ -56,6 +57,8 @@ group of `Q` embeds into the automorphism group of the residue extension, so an 
   pointwise.
 * `NumberField.restrictScalars_eq_of_inertiaDeg_eq_one`: at residue degree one the restriction
   of the relative Frobenius is `σ` itself, with no power.
+* `NumberField.isArithFrobAt_int_of_absNorm_eq`: a relative Frobenius at a prime of absolute norm
+  `p` is also a Frobenius over the underlying rational prime `p`.
 
 ## References
 
@@ -73,6 +76,33 @@ namespace NumberField
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L] {M : Type*} [Field M] [NumberField M] [Algebra K M] [Algebra M L]
   [IsScalarTower K M L] {Q : Ideal (𝓞 L)} [Q.IsPrime]
+
+omit [IsGalois K L] [Field M] [NumberField M] [Algebra K M] [Algebra M L]
+  [IsScalarTower K M L] [Q.IsPrime] in
+/-- **A relative Frobenius at a degree-one prime is a rational Frobenius.**
+Let `P` be a prime of a number field `K` above the rational prime `p`, with absolute norm
+`p`. If `Q` lies above `P`, then a Frobenius at `Q` relative to `K` is also a Frobenius
+relative to `ℤ` after restricting its automorphism from `K`-linearity to `ℚ`-linearity.
+
+The norm hypothesis is the residue-degree-one condition: it makes the two residue cardinalities
+in the definitions of the relative and rational Frobenius equal. -/
+theorem isArithFrobAt_int_of_absNorm_eq {p : ℕ}
+    (P : Ideal (𝓞 K)) [P.LiesOver (Ideal.span {(p : ℤ)})]
+    (hnorm : Ideal.absNorm P = p) (Q : Ideal (𝓞 L)) [Q.LiesOver P]
+    {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
+    IsArithFrobAt ℤ (σ.restrictScalars ℚ) Q := by
+  intro x
+  have hx := hσ x
+  have hunderK : Q.under (𝓞 K) = P := Ideal.LiesOver.over
+  rw [hunderK, ← Submodule.cardQuot_apply, ← Ideal.absNorm_apply, hnorm] at hx
+  let _ : Q.LiesOver (Ideal.span {(p : ℤ)}) :=
+    Ideal.LiesOver.trans Q P (Ideal.span {(p : ℤ)})
+  -- Restricting scalars preserves the action on the top ring; expose that action so only the
+  -- two residue-cardinality expressions remain to compare.
+  change σ • x - x ^ Nat.card (ℤ ⧸ Q.under ℤ) ∈ Q
+  have hunder : Q.under ℤ = Ideal.span {(p : ℤ)} := Ideal.LiesOver.over.symm
+  rw [hunder, Int.card_ideal_quot]
+  exact hx
 
 /-- **Raising the base field raises the Frobenius to the residue degree.** For number fields
 `K ⊆ M ⊆ L` with `L / K` and `L / M` Galois and `Q` a prime of `𝓞 L` unramified over `𝓞 K`, the

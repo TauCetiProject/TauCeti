@@ -81,6 +81,37 @@ theorem ncard_primesOver_eq_finrank_iff_genusCharFun_eq_one {s : Finset ℤ}
     rw [hcard, hfinrank, genusCharFun_natCast_eq_legendreSym hs hprod hq, hleg]
     norm_num
 
+/-- **The genus character of an ideal is its character at the absolute norm.**
+Let `D = ∏ P ∈ s, P` be the prime-discriminant factorization for `K = ℚ(√d)`. If a nonzero
+integral ideal `I` has absolute norm coprime to `D`, then the singleton genus character of its
+narrow class at `P ∈ s` is `primeDiscriminantCharFun P (absNorm I)`.
+
+This is the representative-level form used to compare genus characters with Artin symbols: at a
+degree-one prime above a rational prime `q`, the absolute norm is exactly `q`. -/
+theorem genusCharFunNarrowClassGroupHom_mk0_eq_primeDiscriminantCharFun_absNorm
+    {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
+    (heven : ∀ P ∈ s, ∀ P' ∈ s,
+      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
+    (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    (hsf : Squarefree d) (I : Ideal (𝓞 K)) (hI : I ∈ (Ideal (𝓞 K))⁰)
+    (hcop : IsCoprime (Ideal.absNorm I : ℤ) (∏ P ∈ s, P)) (P : ℤ) (hP : P ∈ s) :
+    ((genusCharFunNarrowClassGroupHom hs heven hprod hmin hgen hsf
+        (Finset.singleton_subset_iff.mpr hP)
+        (NumberField.NarrowClassGroup.mk0 ⟨I, hI⟩) : ℤˣ) : ℤ) =
+      primeDiscriminantCharFun P (Ideal.absNorm I : ℤ) := by
+  have hcopP :
+      IsCoprime ((Ideal.absNorm I : ℤ)) (∏ P' ∈ ({P} : Finset ℤ), P') := by
+    rw [Finset.prod_singleton]
+    exact IsCoprime.prod_right_iff.mp hcop P hP
+  let I' : genusCharFunCoprimeIdealSubmonoid (K := K) {P} :=
+    ⟨⟨I, hI⟩, (mem_genusCharFunCoprimeIdealSubmonoid_iff _).mpr hcopP⟩
+  rw [← genusCharFun_singleton,
+    ← genusCharFunCoprimeIdealHom_apply
+      (fun P' hP' => hs P' (Finset.mem_singleton.mp hP' ▸ hP)) I',
+    ← genusCharFunNarrowClassGroupHom_mk0 hs heven hprod hmin hgen hsf
+      (Finset.singleton_subset_iff.mpr hP) I']
+
 /-- **The narrow class of a split prime realizes the prescribed character values.**
 Let `D = ∏ P ∈ s, P` be a prime-discriminant factorization of the discriminant of `K = ℚ(√d)`
 and let `q` be an odd prime with trivial genus character. Then `q` splits in `K`, and the narrow
@@ -118,22 +149,9 @@ theorem exists_forall_genusCharFunNarrowClassGroupHom_eq {s : Finset ℤ}
     rw [hprod, dvd_fundamentalDiscriminant_iff (Int.isCoprime_two_right.mpr hodd)]
     exact hqd
   refine ⟨NumberField.NarrowClassGroup.mk0 ⟨𝔮, h𝔮0⟩, fun P hP => ?_⟩
-  have hcop : IsCoprime ((Ideal.absNorm 𝔮 : ℤ)) (∏ P' ∈ ({P} : Finset ℤ), P') := by
-    rw [Finset.prod_singleton, hnorm]
-    exact IsCoprime.prod_right_iff.mp hcopD P hP
-  -- Evaluate the descended character on an arbitrary coprime ideal, then feed `𝔮` in: the
-  -- coprime-ideal submonoid is a subtype of `(Ideal (𝓞 K))⁰`, so `𝔮` enters as the two nested
-  -- projections of the element built from `hcop`.
-  have key : ∀ I : genusCharFunCoprimeIdealSubmonoid (K := K) {P},
-      ((genusCharFunNarrowClassGroupHom hs heven hprod hmin hgen hsf
-          (Finset.singleton_subset_iff.mpr hP)
-          (NumberField.NarrowClassGroup.mk0 I.1) : ℤˣ) : ℤ) =
-        primeDiscriminantCharFun P
-          (Ideal.absNorm ((I.1 : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) : ℤ) := fun I => by
-    rw [genusCharFunNarrowClassGroupHom_mk0, genusCharFunCoprimeIdealHom_apply,
-      genusCharFun_singleton]
   rw [← hnorm]
-  exact key ⟨⟨𝔮, h𝔮0⟩, (mem_genusCharFunCoprimeIdealSubmonoid_iff _).mpr hcop⟩
+  exact genusCharFunNarrowClassGroupHom_mk0_eq_primeDiscriminantCharFun_absNorm
+    hs heven hprod hmin hgen hsf 𝔮 h𝔮0 (by rwa [hnorm]) P hP
 
 /-- **The linear family on `Cl⁺(K)/Cl⁺(K)²` realizes the character values of a split prime.**
 The elementary-`2` form of `exists_forall_genusCharFunNarrowClassGroupHom_eq`: the vector of
