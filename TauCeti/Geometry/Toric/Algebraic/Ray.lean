@@ -50,8 +50,10 @@ instance : SetLike (ToricRay σ) V where
   coe ρ := ρ.toPointedCone
   coe_injective _ρ _τ h := Subtype.ext (PointedCone.Face.ext fun x ↦ Set.ext_iff.mp h x)
 
+/-- Membership in the face underlying a ray is membership in the ray. Mathlib's
+`PointedCone.Face.mem_toPointedCone` already normalises `x ∈ ρ.toPointedCone` to this form. -/
 @[simp]
-theorem mem_toPointedCone (ρ : ToricRay σ) (x : V) : x ∈ ρ.toPointedCone ↔ x ∈ ρ := Iff.rfl
+theorem mem_coe_face (ρ : ToricRay σ) (x : V) : x ∈ (ρ : σ.Face) ↔ x ∈ ρ := Iff.rfl
 
 /-- The span of the cone underlying a ray has real dimension one. -/
 @[simp]
