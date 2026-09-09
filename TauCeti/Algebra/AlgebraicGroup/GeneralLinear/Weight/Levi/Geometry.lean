@@ -445,6 +445,8 @@ theorem weightLeviCoordinateRingBaseChangeAlgEquiv_tmul_algebraMap
   rw [weightLeviCoordinateRingBaseChangeAlgEquiv, AlgEquiv.trans_apply,
     IsLocalization.Away.tensorProductEquivTMulRight_tmul]
   rw [IsLocalization.algEquivOfAlgEquiv_eq]
+  -- The localization lift still wraps the polynomial base-change equivalence; expose its
+  -- underlying algebra-map application so `algebraTensorAlgEquiv_tmul` can rewrite it.
   change algebraMap _ _
       (MvPolynomial.algebraTensorAlgEquiv k K (s ⊗ₜ[k] p)) = _
   rw [MvPolynomial.algebraTensorAlgEquiv_tmul, Algebra.smul_def, map_mul,
@@ -481,7 +483,9 @@ theorem weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv_tmul_mk_genericMatrix
     ← Ideal.Quotient.mkₐ_eq_mk (R₁ := k),
     ← Ideal.Quotient.mkₐ_eq_mk (R₁ := K)]
   by_cases hij : w i = w j
-  · change (weightLeviCoordinateAlgEquiv K w).symm
+  · -- Unfold the composed ring equivalence just enough to expose its presentation and
+    -- localization base-change stages, whose generator computation lemmas apply below.
+    change (weightLeviCoordinateAlgEquiv K w).symm
         (weightLeviCoordinateRingBaseChangeAlgEquiv k K w
           ((1 : K) ⊗ₜ[k] weightLeviCoordinateAlgEquiv k w
             (Ideal.Quotient.mkₐ k (weightLeviDefiningHopfIdeal k w).toIdeal
