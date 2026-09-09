@@ -41,6 +41,8 @@ underlying connection matrices and reflection positivity.
   `TauCeti.DenseGraphLimits.LabeledGraph.glue_adj_inl_inr` are the adjacency eliminators, and
   `TauCeti.DenseGraphLimits.LabeledGraph.not_glue_adj_of_unlabeled` records that unlabeled vertices
   of the two sides are never joined;
+* `TauCeti.DenseGraphLimits.LabeledGraph.forgetLabels_eq` is the elimination law for unlabeling, by
+  which a dependent value `f G.forgetLabels.1 G.forgetLabels.2` is evaluated;
 * `TauCeti.DenseGraphLimits.LabeledGraph.glueCommIso` is the commutativity of the gluing algebra,
   the isomorphism between the two orders of a gluing that makes connection matrices symmetric.
 
@@ -383,16 +385,19 @@ theorem not_glue_adj_of_unlabeled (G₁ G₂ : LabeledGraph k) {a : Fin G₁.n} 
 
 /-- **Unlabeling.**  The underlying finite simple graph of a `k`-labeled graph, labels forgotten —
 the object a graph parameter evaluates in a connection-matrix entry. -/
-@[expose]
 def forgetLabels (G : LabeledGraph k) : Σ m, SimpleGraph (Fin m) := ⟨G.n, G.graph⟩
+
+/-- **Elimination law for unlabeling**: forgetting the labels of `G` leaves the pair of its vertex
+count and its graph.  Both projections are read off from this law, and it is the form a dependent
+occurrence `f G.forgetLabels.1 G.forgetLabels.2` is rewritten by, since the two projections can
+only be replaced simultaneously: the type of the second mentions the first. -/
+theorem forgetLabels_eq (G : LabeledGraph k) : G.forgetLabels = ⟨G.n, G.graph⟩ := by
+  rw [forgetLabels.eq_1]
 
 /-- Unlabeling keeps the vertex count. -/
 @[simp]
-theorem forgetLabels_fst (G : LabeledGraph k) : G.forgetLabels.1 = G.n := rfl
-
-/-- Unlabeling keeps the graph. -/
-@[simp]
-theorem forgetLabels_snd (G : LabeledGraph k) : G.forgetLabels.2 = G.graph := rfl
+theorem forgetLabels_fst (G : LabeledGraph k) : G.forgetLabels.1 = G.n := by
+  rw [forgetLabels_eq]
 
 /-! ### Commutativity of the gluing -/
 

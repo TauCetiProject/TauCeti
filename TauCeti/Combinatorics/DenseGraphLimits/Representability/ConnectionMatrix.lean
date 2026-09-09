@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Representability.LabeledGraph
-public import Mathlib.Combinatorics.SimpleGraph.Sum
+public import TauCeti.Combinatorics.SimpleGraph.Sum
 public import Mathlib.Algebra.Order.Star.Real
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 
@@ -118,8 +118,10 @@ theorem connectionMatrix_apply (f : GraphParam) {k : ℕ} {ι : Type*} (A : ι �
 isomorphism. -/
 theorem connectionMatrix_comm (f : GraphParam) (hf : IsIsoInvariant f) {k : ℕ} {ι : Type*}
     (A : ι → LabeledGraph k) (i j : ι) :
-    connectionMatrix f A i j = connectionMatrix f A j i :=
-  hf.eq_of_iso (LabeledGraph.glueCommIso (A i) (A j))
+    connectionMatrix f A i j = connectionMatrix f A j i := by
+  rw [connectionMatrix_apply, connectionMatrix_apply, LabeledGraph.forgetLabels_eq,
+    LabeledGraph.forgetLabels_eq]
+  exact hf.eq_of_iso (LabeledGraph.glueCommIso (A i) (A j))
 
 /-- Connection matrices of an isomorphism-invariant parameter are Hermitian because the two
 gluing orders are isomorphic. -/
@@ -173,7 +175,9 @@ theorem IsReflectionPositive.posSemidef {f : GraphParam} (hf : IsReflectionPosit
   classical
   have _inst : Fintype ι := Fintype.ofFinite ι
   have hsub : connectionMatrix f (A ∘ (Fintype.equivFin ι).symm) =
-      (connectionMatrix f A).submatrix (Fintype.equivFin ι).symm (Fintype.equivFin ι).symm := rfl
+      (connectionMatrix f A).submatrix (Fintype.equivFin ι).symm (Fintype.equivFin ι).symm := by
+    ext i j
+    simp only [connectionMatrix_apply, Matrix.submatrix_apply, Function.comp_apply]
   have h := hf k (Fintype.card ι) (A ∘ (Fintype.equivFin ι).symm)
   rw [hsub] at h
   exact (Matrix.posSemidef_submatrix_equiv (Fintype.equivFin ι).symm).1 h
@@ -183,25 +187,20 @@ nonnegative on every self-gluing. -/
 theorem IsReflectionPositive.nonneg_glue_self {f : GraphParam} (hf : IsReflectionPositive f)
     {k : ℕ} (G : LabeledGraph k) : 0 ≤ f (G.glue G).n (G.glue G).graph := by
   have h := (hf.posSemidef fun _ : Fin 1 => G).diag_nonneg (i := 0)
-  simpa [connectionMatrix] using h
+  rw [connectionMatrix_apply, LabeledGraph.forgetLabels_eq] at h
+  exact h
 
 /-- A multiplicative, normalized parameter is `1` on every edgeless graph. -/
 theorem IsMultiplicative.apply_bot {f : GraphParam} (hmul : IsMultiplicative f)
     (hnorm : IsNormalized f) (n : ℕ) : f n (⊥ : SimpleGraph (Fin n)) = 1 := by
-  have map_sum_bot (a b : ℕ) :
-      (((⊥ : SimpleGraph (Fin a)) ⊕g (⊥ : SimpleGraph (Fin b))).map
-        finSumFinEquiv.toEmbedding) = ⊥ := by
-    rw [eq_bot_iff, SimpleGraph.map_le_iff_le_comap]
-    intro u v huv
-    cases u <;> cases v <;> simp_all
   induction n with
   | zero =>
       have h := hmul 0 1 (⊥ : SimpleGraph (Fin 0)) (⊥ : SimpleGraph (Fin 1))
-      rw [map_sum_bot, hnorm, mul_one] at h
+      rw [map_sum_bot_bot, hnorm, mul_one] at h
       simpa using h.symm
   | succ n ih =>
       have h := hmul n 1 (⊥ : SimpleGraph (Fin n)) (⊥ : SimpleGraph (Fin 1))
-      rw [map_sum_bot, ih, hnorm, mul_one] at h
+      rw [map_sum_bot_bot, ih, hnorm, mul_one] at h
       simpa using h
 
 /-- A multiplicative, normalized parameter is unchanged by adjoining any finite edgeless graph. -/
