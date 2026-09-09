@@ -46,8 +46,10 @@ finite-index input to the geometry-of-numbers count of ideals in a ray class.
 
 * `TauCeti.GlobalNumberFields.exists_algebraMap_eq_mul_of_mem_primeToSubgroup`: an element that is
   a unit at the primes dividing `𝔪₀` has a denominator congruent to one modulo `𝔪₀`.
-* `TauCeti.GlobalNumberFields.isCongrOne_of_residue_eq_one`: an element that reduces to one and is
-  totally positive is congruent to one modulo `𝔪`.
+* `TauCeti.GlobalNumberFields.residue_eq_one_iff`: reducing to one is congruence to one at the
+  primes dividing `𝔪₀`, with `TauCeti.GlobalNumberFields.isCongrOne_of_residue_eq_one` and
+  `TauCeti.GlobalNumberFields.residueHom_eq_one_of_mem_congruenceSubgroup` the two directions
+  read off against `IsCongrOne`.
 * `TauCeti.GlobalNumberFields.congruenceSubgroup_finiteIndex` and
   `TauCeti.GlobalNumberFields.unitsCongruenceSubgroup_finiteIndex`: the two finite-index
   statements.
@@ -72,12 +74,8 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- **An element that is a unit at the finite part has a denominator congruent to one.**  If `x` is
 a unit at every prime dividing `𝔪.finitePart`, then `x = a / b` with `a b : 𝓞 K` and
-`b ≡ 1 mod 𝔪.finitePart`.
-
-The greatest common divisor `G` of a numerator and a denominator of `x` absorbs the primes dividing
-`𝔪.finitePart`, because `x` has neither a zero nor a pole there; the complementary factor `L` of
-the denominator is therefore prime to `𝔪.finitePart`, and any element of `L` congruent to one
-modulo `𝔪.finitePart` clears the denominator. -/
+`b ≡ 1 mod 𝔪.finitePart`.  Such a presentation is what makes the reduction `residue` of `x`
+modulo the finite part available. -/
 theorem exists_algebraMap_eq_mul_of_mem_primeToSubgroup {𝔪 : Modulus K} {x : Kˣ}
     (hx : x ∈ primeToSubgroup 𝔪) :
     ∃ a b : 𝓞 K, b - 1 ∈ 𝔪.finitePart ∧
@@ -205,52 +203,78 @@ noncomputable def residueHom (𝔪 : Modulus K) :
     ((residueHom 𝔪 x : (𝓞 K ⧸ 𝔪.finitePart)ˣ) : 𝓞 K ⧸ 𝔪.finitePart) = residue 𝔪 x :=
   MonoidHom.coe_toHomUnits _ x
 
-/-- **An element reducing to one and positive at the real places of `𝔪` is congruent to one.**  The
-reduction carries exactly the finite conditions of `IsCongrOne`, so the archimedean half has to be
-supplied separately; total positivity is one way to supply it. -/
+/-- **Reduction to one is exactly congruence to one at the primes dividing the finite part.**  The
+reduction carries the finite conditions of `IsCongrOne` and nothing else, so the archimedean
+conditions are independent of it and have to be supplied separately. -/
+theorem residue_eq_one_iff {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) :
+    residue 𝔪 x = 1 ↔ ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
+      v.valuation K (((x : Kˣ) : K) - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ)) := by
+  obtain ⟨a, b, hb, hab, hr⟩ := exists_residue_eq 𝔪 x
+  -- The reduction is one exactly when the numerator is congruent to one.
+  have hnum : residue 𝔪 x = 1 ↔ a - 1 ∈ 𝔪.finitePart := by
+    rw [hr, ← map_one (Ideal.Quotient.mk 𝔪.finitePart)]
+    exact Ideal.Quotient.eq
+  -- At a prime dividing the finite part the denominator is a unit, so `x - 1` and `a - b` have
+  -- the same valuation there.
+  have hval : ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
+      v.valuation K (((x : Kˣ) : K) - 1) = v.intValuation (a - b) := by
+    intro v hv
+    -- `b` is a unit at `v`, since it is congruent to one modulo an ideal contained in `v`.
+    have hbv : b ∉ v.asIdeal := by
+      intro hbv
+      refine v.isPrime.ne_top (Ideal.eq_top_iff_one _ |>.mpr ?_)
+      have hone : (1 : 𝓞 K) = b - (b - 1) := by ring
+      rw [hone]
+      exact Ideal.sub_mem _ hbv (Ideal.le_of_dvd hv hb)
+    have hb0 : algebraMap (𝓞 K) K b ≠ 0 :=
+      (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).mpr fun h ↦
+        hbv (h ▸ v.asIdeal.zero_mem)
+    have hbval : v.valuation K (algebraMap (𝓞 K) K b) = 1 := by
+      rw [valuation_of_algebraMap]
+      exact intValuation_eq_one_iff.mpr hbv
+    have hxsub : ((x : Kˣ) : K) - 1 = algebraMap (𝓞 K) K (a - b) / algebraMap (𝓞 K) K b := by
+      rw [map_sub, hab]
+      field_simp
+    rw [hxsub, map_div₀, valuation_of_algebraMap, hbval, div_one]
+  rw [hnum]
+  refine ⟨fun ha1 v hv ↦ ?_, fun h ↦ ?_⟩
+  · -- Both `a` and `b` are congruent to one, so `a - b` lies in the finite part.
+    have hab' : a - b ∈ 𝔪.finitePart := by
+      have hsub : a - b = (a - 1) - (b - 1) := by ring
+      rw [hsub]
+      exact Ideal.sub_mem _ ha1 hb
+    rw [hval v hv]
+    exact (v.intValuation_le_pow_iff_mem (a - b) (𝔪.exponent v)).mpr
+      (Ideal.le_of_dvd (𝔪.pow_exponent_dvd_finitePart v) hab')
+  · -- Conversely the local conditions on `a - b` assemble into membership in the finite part.
+    have hab' : a - b ∈ 𝔪.finitePart :=
+      𝔪.mem_finitePart_of_forall_mem_pow_exponent fun v hv ↦
+        (v.intValuation_le_pow_iff_mem (a - b) (𝔪.exponent v)).mp (hval v hv ▸ h v hv)
+    have hsum : a - 1 = (a - b) + (b - 1) := by ring
+    rw [hsum]
+    exact Ideal.add_mem _ hab' hb
+
+/-- **An element reducing to one and positive at the real places of `𝔪` is congruent to one.** -/
 theorem isCongrOne_of_residue_eq_one {𝔪 : Modulus K} {x : Kˣ} (hx : x ∈ primeToSubgroup 𝔪)
     (hres : residue 𝔪 ⟨x, hx⟩ = 1)
     (hpos : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K)) :
-    IsCongrOne 𝔪 x := by
-  obtain ⟨a, b, hb, hab, hr⟩ := exists_residue_eq 𝔪 ⟨x, hx⟩
-  refine isCongrOne_iff.mpr ⟨fun v hv ↦ ?_, hpos⟩
-  -- Both `a` and `b` are congruent to one, so `a - b` lies in the finite part.
-  have ha1 : a - 1 ∈ 𝔪.finitePart := by
-    rw [hr] at hres
-    rw [← map_one (Ideal.Quotient.mk 𝔪.finitePart)] at hres
-    exact Ideal.Quotient.eq.mp hres
-  have hab' : a - b ∈ 𝔪.finitePart := by
-    have hsub : a - b = (a - 1) - (b - 1) := by ring
-    rw [hsub]
-    exact Ideal.sub_mem _ ha1 hb
-  -- `b` is a unit at `v`, since it is congruent to one modulo an ideal contained in `v`.
-  have hbv : b ∉ v.asIdeal := by
-    intro hbv
-    refine v.isPrime.ne_top (Ideal.eq_top_iff_one _ |>.mpr ?_)
-    have : (1 : 𝓞 K) = b - (b - 1) := by ring
-    rw [this]
-    exact Ideal.sub_mem _ hbv (Ideal.le_of_dvd hv hb)
-  have hb0 : algebraMap (𝓞 K) K b ≠ 0 :=
-    (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).mpr fun h ↦ hbv (h ▸ v.asIdeal.zero_mem)
-  have hbval : v.valuation K (algebraMap (𝓞 K) K b) = 1 := by
-    rw [valuation_of_algebraMap]
-    exact intValuation_eq_one_iff.mpr hbv
-  -- The finite part is contained in the prescribed power of `v`.
-  have hpow : 𝔪.finitePart ≤ v.asIdeal ^ 𝔪.exponent v :=
-    Ideal.le_of_dvd (𝔪.pow_exponent_dvd_finitePart v)
-  have hxsub : (x : K) - 1 = algebraMap (𝓞 K) K (a - b) / algebraMap (𝓞 K) K b := by
-    rw [map_sub, hab]
-    field_simp
-  rw [hxsub, map_div₀, valuation_of_algebraMap, hbval, div_one]
-  exact (v.intValuation_le_pow_iff_mem (a - b) (𝔪.exponent v)).mpr (hpow hab')
+    IsCongrOne 𝔪 x :=
+  isCongrOne_iff.mpr ⟨(residue_eq_one_iff ⟨x, hx⟩).mp hres, hpos⟩
+
+/-- **An element congruent to one modulo `𝔪` reduces to one**: the congruence subgroup lies in the
+kernel of `residueHom 𝔪`. -/
+theorem residueHom_eq_one_of_mem_congruenceSubgroup {𝔪 : Modulus K} {x : primeToSubgroup 𝔪}
+    (hx : (x : Kˣ) ∈ congruenceSubgroup 𝔪) : residueHom 𝔪 x = 1 := by
+  refine Units.ext ?_
+  rw [coe_residueHom, Units.val_one]
+  exact (residue_eq_one_iff x).mpr fun v hv ↦
+    (mem_congruenceSubgroup.mp hx).valuation_sub_one_le hv
 
 /-! ### Finiteness of the index -/
 
 /-- **The elements congruent to one modulo `𝔪` have finite index among the elements that are units
-at the primes dividing the finite part.**  Reduction modulo the finite part and total positivity cut
-out a subgroup of finite index inside `congruenceSubgroup 𝔪`, and both conditions have finite-index
-kernels: the residue units are a finite group, and the totally positive elements have index
-`2 ^ r₁` in `Kˣ`. -/
+at the primes dividing the finite part.**  This relative finite index is the arithmetic content
+behind the finiteness of the ray class group. -/
 instance congruenceSubgroup_finiteIndex (𝔪 : Modulus K) :
     ((congruenceSubgroup 𝔪).subgroupOf (primeToSubgroup 𝔪)).FiniteIndex := by
   let _ : NeZero 𝔪.finitePart := ⟨𝔪.finitePart_ne_bot⟩
@@ -352,10 +376,8 @@ private theorem principalIdealHom_surjective (𝔪 : Modulus K) :
   refine ⟨⟨x, toPrincipalIdeal_mem_idealsPrimeTo_iff.mp (hx ▸ hI)⟩, ?_⟩
   exact Subtype.ext (Subtype.ext hx)
 
-/-- **The ray has finite index in the invertible fractional ideals prime to `𝔪`.**  Its index
-factors through the class group: the index of the kernel of `classHom` is the size of a subgroup of
-the finite class group, and the ray has finite index inside that kernel because the kernel is a
-quotient of `primeToSubgroup 𝔪 ⧸ congruenceSubgroup 𝔪`. -/
+/-- **The ray has finite index in the invertible fractional ideals prime to `𝔪`.**  This index is
+the ray class number, and its finiteness is what makes `RayClassGroup 𝔪` a finite group. -/
 instance finiteIndex_ray (𝔪 : Modulus K) : (ray 𝔪).FiniteIndex := by
   refine ⟨?_⟩
   have hle : ray 𝔪 ≤ (classHom 𝔪).ker := by
