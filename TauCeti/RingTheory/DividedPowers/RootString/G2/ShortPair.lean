@@ -35,6 +35,8 @@ two nontrivial normal-ordering configurations needed for type `G₂`.
 
 ## Main results
 
+* `TauCeti.Associative.dividedPower_mul_dividedPower_of_g2_short_pair_scaled`: the
+  coefficient-one straightening rule for scaled short-pair root vectors.
 * `TauCeti.Associative.dividedPower_mul_dividedPower_of_g2_short_pair`: the Chevalley-basis
   straightening rule for the pair `α`, `α + β` in type `G₂`.
 
@@ -315,9 +317,15 @@ theorem mem_g2ShortPairIndex {m n : ℕ} {p : ℕ × ℕ × ℕ} :
   simp only [g2ShortPairIndex, Finset.mem_filter, Finset.mem_product, Finset.mem_range]
   omega
 
-/-- Auxiliary coefficient-one normal ordering for the scaled short-pair root vectors in type
-`G₂`. -/
-private theorem dividedPower_mul_dividedPower_of_g2_short_pair_scaled
+/-- **Coefficient-one normal ordering for scaled short-pair root vectors in type `G₂`.**
+The bracket constants are `1, 2, 2`: `x * y = y * x + z`, `x * z = z * x + 2 • w`, and
+`z * y = y * z + 2 • s`. Assume also that `w` and `s` commute with `x`, that `s` commutes
+with `y`, and that `z`, `w`, `s` commute pairwise. Then every coefficient in the displayed
+divided-power expansion is `1`.
+
+For Chevalley root vectors with bracket constants `2, 3, 3`, apply this identity to
+`2 • z`, `3 • w`, and `3 • s`; see `dividedPower_mul_dividedPower_of_g2_short_pair`. -/
+theorem dividedPower_mul_dividedPower_of_g2_short_pair_scaled
     (hxy : x * y = y * x + z)
     (hxz : x * z = z * x + 2 • w) (hzy : z * y = y * z + 2 • s) (hxw : Commute x w)
     (hxs : Commute x s) (hys : Commute y s) (hzw : Commute z w) (hzs : Commute z s)
