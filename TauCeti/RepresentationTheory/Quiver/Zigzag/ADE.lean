@@ -68,40 +68,6 @@ abbrev zigzagE8Graph : SimpleGraph (Fin 8) :=
 abbrev zigzagAffineE8Graph : SimpleGraph (Fin 9) :=
   AffineDynkinType.E8.graph
 
-/-- A computational edge-list model of the affine `E₈` graph. -/
-private def affineE8ArmRel (i j : Fin 9) : Prop :=
-  (i.1, j.1) = (0, 1) ∨ (i.1, j.1) = (0, 2) ∨ (i.1, j.1) = (2, 3) ∨
-    (i.1, j.1) = (0, 4) ∨ (i.1, j.1) = (4, 5) ∨ (i.1, j.1) = (5, 6) ∨
-      (i.1, j.1) = (6, 7) ∨ (i.1, j.1) = (7, 8)
-
-private instance : DecidableRel affineE8ArmRel := by
-  intro i j
-  unfold affineE8ArmRel
-  infer_instance
-
-private abbrev affineE8ArmGraph : SimpleGraph (Fin 9) :=
-  SimpleGraph.fromRel affineE8ArmRel
-
-private instance : DecidableRel affineE8ArmGraph.Adj := by
-  unfold affineE8ArmGraph
-  infer_instance
-
-/-- The computational edge list has the canonical affine `E₈` adjacency. -/
-private theorem zigzagAffineE8Graph_eq_fromRel :
-    zigzagAffineE8Graph = affineE8ArmGraph := by
-  ext i j
-  refine (AffineDynkinType.graph_E8_adj i j).trans ?_
-  change (min (i : ℕ) (j : ℕ), max (i : ℕ) (j : ℕ)) ∈
-      [((0 : ℕ), (1 : ℕ)), (0, 2), (2, 3), (0, 4), (4, 5), (5, 6), (6, 7), (7, 8)] ↔
-    (SimpleGraph.fromRel affineE8ArmRel).Adj i j
-  rw [SimpleGraph.fromRel_adj]
-  unfold affineE8ArmRel
-  fin_cases i <;> fin_cases j <;> decide
-
-private noncomputable def zigzagAffineE8GraphIsoFromRel :
-    zigzagAffineE8Graph ≃g affineE8ArmGraph :=
-  zigzagAffineE8Graph_eq_fromRel ▸ SimpleGraph.Iso.refl
-
 instance : DecidableRel zigzagD4Graph.Adj :=
   inferInstanceAs (DecidableRel (diagramGraph (DynkinType.D 4).cartanMatrix).Adj)
 
@@ -140,10 +106,26 @@ theorem isTree_zigzagE8Graph : zigzagE8Graph.IsTree :=
 /-- The affine `E₈` graph has eight edges. -/
 @[simp]
 theorem card_edgeFinset_zigzagAffineE8Graph : zigzagAffineE8Graph.edgeFinset.card = 8 := by
-  calc
-    _ = affineE8ArmGraph.edgeFinset.card :=
-      zigzagAffineE8GraphIsoFromRel.card_edgeFinset_eq
-    _ = 8 := by unfold affineE8ArmGraph; decide
+  have h := zigzagAffineE8Graph.two_mul_card_edgeFinset
+  let edgePairs : List (ℕ × ℕ) :=
+    [(0, 1), (0, 2), (2, 3), (0, 4), (4, 5), (5, 6), (6, 7), (7, 8)]
+  have hfilter :
+      (Finset.univ.filter fun x : Fin 9 × Fin 9 ↦
+        AffineDynkinType.E8.graph.Adj x.1 x.2) =
+      Finset.univ.filter fun x : Fin 9 × Fin 9 ↦
+        (min (x.1 : ℕ) (x.2 : ℕ), max (x.1 : ℕ) (x.2 : ℕ)) ∈ edgePairs := by
+    ext x
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+    simpa only [edgePairs] using AffineDynkinType.graph_E8_adj x.1 x.2
+  have hcard :
+      (Finset.univ.filter fun x : Fin 9 × Fin 9 ↦
+        (min (x.1 : ℕ) (x.2 : ℕ), max (x.1 : ℕ) (x.2 : ℕ)) ∈ edgePairs).card = 16 := by
+    decide
+  change 2 * zigzagAffineE8Graph.edgeFinset.card =
+    (Finset.univ.filter fun x : Fin 9 × Fin 9 ↦
+      AffineDynkinType.E8.graph.Adj x.1 x.2).card at h
+  rw [hfilter, hcard] at h
+  omega
 
 /-- The affine `E₈ = T_{2,3,6}` graph is a tree. -/
 theorem isTree_zigzagAffineE8Graph : zigzagAffineE8Graph.IsTree := by
@@ -169,19 +151,22 @@ theorem card_edgeFinset_zigzagE8Graph : zigzagE8Graph.edgeFinset.card = 7 := by
 /-! ### Zigzag dimensions -/
 
 /-- The zigzag algebra of `D₄` has dimension `14`. -/
-theorem finrank_zigzagAlgebra_D4 (k : Type*) [Field k] :
+@[simp]
+theorem finrank_zigzagAlgebra_D4 (k : Type*) [CommRing k] [Nontrivial k] :
     Module.finrank k (zigzagAlgebra k zigzagD4Graph) = 14 := by
   rw [finrank_zigzagAlgebra]
   norm_num
 
 /-- The zigzag algebra of `E₈` has dimension `30`. -/
-theorem finrank_zigzagAlgebra_E8 (k : Type*) [Field k] :
+@[simp]
+theorem finrank_zigzagAlgebra_E8 (k : Type*) [CommRing k] [Nontrivial k] :
     Module.finrank k (zigzagAlgebra k zigzagE8Graph) = 30 := by
   rw [finrank_zigzagAlgebra]
   norm_num
 
 /-- The zigzag algebra of affine `E₈` has dimension `34`. -/
-theorem finrank_zigzagAlgebra_affineE8 (k : Type*) [Field k] :
+@[simp]
+theorem finrank_zigzagAlgebra_affineE8 (k : Type*) [CommRing k] [Nontrivial k] :
     Module.finrank k (zigzagAlgebra k zigzagAffineE8Graph) = 34 := by
   rw [finrank_zigzagAlgebra]
   norm_num
@@ -190,21 +175,21 @@ theorem finrank_zigzagAlgebra_affineE8 (k : Type*) [Field k] :
 
 /-- The centre of the zigzag algebra of `D₄` has dimension `5`. -/
 @[simp]
-theorem finrank_center_zigzagAlgebra_D4 (k : Type*) [Field k] :
+theorem finrank_center_zigzagAlgebra_D4 (k : Type*) [CommRing k] [Nontrivial k] :
     Module.finrank k (Subalgebra.center k (zigzagAlgebra k zigzagD4Graph)) = 5 := by
   rw [finrank_center_zigzagAlgebra_of_connected k zigzagD4Graph connected_zigzagD4Graph]
   norm_num
 
 /-- The centre of the zigzag algebra of `E₈` has dimension `9`. -/
 @[simp]
-theorem finrank_center_zigzagAlgebra_E8 (k : Type*) [Field k] :
+theorem finrank_center_zigzagAlgebra_E8 (k : Type*) [CommRing k] [Nontrivial k] :
     Module.finrank k (Subalgebra.center k (zigzagAlgebra k zigzagE8Graph)) = 9 := by
   rw [finrank_center_zigzagAlgebra_of_connected k zigzagE8Graph connected_zigzagE8Graph]
   norm_num
 
 /-- The centre of the zigzag algebra of affine `E₈` has dimension `10`. -/
 @[simp]
-theorem finrank_center_zigzagAlgebra_affineE8 (k : Type*) [Field k] :
+theorem finrank_center_zigzagAlgebra_affineE8 (k : Type*) [CommRing k] [Nontrivial k] :
     Module.finrank k (Subalgebra.center k (zigzagAlgebra k zigzagAffineE8Graph)) = 10 := by
   rw [finrank_center_zigzagAlgebra_of_connected k zigzagAffineE8Graph
     connected_zigzagAffineE8Graph]

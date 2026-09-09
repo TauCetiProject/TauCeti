@@ -492,8 +492,7 @@ theorem finrank_center_nonisolatedZigzagQuotient [Nontrivial k] [Fintype V] [Non
 /-! ### The centre of the public algebra -/
 
 /-- **The centre of the public zigzag algebra of a connected nontrivial graph has dimension
-`|V| + 1`.** This transports the basis calculation for the relation quotient across the canonical
-comparison with the componentwise public algebra. -/
+`|V| + 1`.** This applies to finite connected graphs with at least two vertices. -/
 theorem finrank_center_zigzagAlgebra_of_connected [Nontrivial k] [Fintype V] [Nontrivial V]
     (hconn : G.Connected) :
     Module.finrank k (Subalgebra.center k (zigzagAlgebra k G)) = Fintype.card V + 1 := by
