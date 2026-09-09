@@ -50,11 +50,6 @@ instance : SetLike (ToricRay σ) V where
   coe ρ := ρ.toPointedCone
   coe_injective _ρ _τ h := Subtype.ext (PointedCone.Face.ext fun x ↦ Set.ext_iff.mp h x)
 
-/-- Membership in the face underlying a ray is membership in the ray. Mathlib's
-`PointedCone.Face.mem_toPointedCone` already normalises `x ∈ ρ.toPointedCone` to this form. -/
-@[simp]
-theorem mem_coe_face (ρ : ToricRay σ) (x : V) : x ∈ (ρ : σ.Face) ↔ x ∈ ρ := Iff.rfl
-
 /-- The span of the cone underlying a ray has real dimension one. -/
 @[simp]
 theorem finrank_span (ρ : ToricRay σ) :
@@ -71,14 +66,7 @@ theorem toPointedCone_ne_bot (ρ : ToricRay σ) : ρ.toPointedCone ≠ ⊥ := by
 
 /-- Every ray contains a nonzero point. -/
 theorem exists_mem_ne_zero (ρ : ToricRay σ) : ∃ x : V, x ∈ ρ ∧ x ≠ 0 := by
-  by_contra h
-  push Not at h
-  apply ρ.toPointedCone_ne_bot
-  apply le_antisymm
-  · intro x hx
-    have hx0 : x = 0 := h x hx
-    simp [hx0]
-  · exact bot_le
+  exact Submodule.exists_mem_ne_zero_of_ne_bot ρ.toPointedCone_ne_bot
 
 /-- In a salient ambient cone, every nonzero point of a ray generates the ray as a pointed cone.
 The ambient space need not be finite-dimensional: one-dimensionality of the ray's own span is
