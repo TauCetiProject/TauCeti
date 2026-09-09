@@ -19,8 +19,8 @@ the point at infinity and, for a nonzero parameter, is given by
 
 `t ↦ (t / w(t), -1 / w(t))`
 
-When `2 ≠ 0` in the completed field, this file proves that this map is an additive homomorphism
-into the points of the base-changed curve.
+This file proves that this map is an additive homomorphism into the points of the base-changed
+curve, in every characteristic.
 
 ## Main definitions
 
@@ -69,9 +69,6 @@ local instance : Fact (IsAdic m_v) :=
   ⟨v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)⟩
 
 variable (W : WeierstrassCurve (v.adicCompletionIntegers K))
-
-private theorem valued_coe_le_one (a : O_v) : Valued.v (a : K_v) ≤ 1 :=
-  a.property
 
 private theorem valued_coe_isUnit {a : O_v} (ha : IsUnit a) :
     Valued.v (a : K_v) = 1 :=
@@ -135,31 +132,29 @@ private theorem ne_formalInverseEval_self {t : O_v} (ht : t ∈ m_v) (ht0 : t �
       exact (mul_le_mul' W.a₃.property hw_le).trans_eq (one_mul _)
   exact (not_le_of_gt h2) hval
 
-private theorem exists_aux_param [NeZero (2 : v.adicCompletion K)] {t : O_v}
-    (ht : t ∈ m_v) (ht0 : t ≠ 0) :
-    ∃ s : O_v, s ∈ m_v ∧ s ≠ 0 ∧ s ≠ t ∧ s ≠ W.formalInverseEval t ∧
-      s ≠ W.formalInverseEval s := by
-  have htwo : ((2 : O_v) : K_v) ≠ 0 := NeZero.ne (2 : K_v)
+private theorem exists_small_param {a b : O_v} (ha : a ∈ m_v) (ha0 : a ≠ 0) (hb0 : b ≠ 0) :
+    ∃ s : O_v, s ∈ m_v ∧ s ≠ 0 ∧ Valued.v (s : K_v) < Valued.v (a : K_v) ∧
+      Valued.v (s : K_v) < Valued.v (b : K_v) ∧ Valued.v (s : K_v) < 1 := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible O_v
   have hπv : Valued.v (π : K_v) = exp (-1) := by
     rw [← Algebra.algebraMap_ofSubsemiring_apply
       (Valued.v : Valuation K_v (WithZero (Multiplicative ℤ))).valuationSubring π]
     exact v.valued_algebraMap_eq_exp_neg_one_of_irreducible hπ
-  have htval0 : Valued.v (t : K_v) ≠ 0 := by
+  have haval0 : Valued.v (a : K_v) ≠ 0 := by
     simp only [ne_eq, _root_.map_eq_zero, ZeroMemClass.coe_eq_zero]
-    exact ht0
-  obtain ⟨a, ha⟩ : ∃ a : ℤ, Valued.v (t : K_v) = exp a :=
-    ⟨_, (exp_log htval0).symm⟩
-  have ha_le : a ≤ -1 := by
-    have h := v.mem_maximalIdeal_pow_iff (K := K) (n := 1) |>.mp (pow_one m_v ▸ ht)
-    rwa [ha, exp_le_exp] at h
-  obtain ⟨b, hb⟩ : ∃ b : ℤ, Valued.v ((2 : O_v) : K_v) = exp b :=
-    ⟨_, (exp_log (by simp [htwo])).symm⟩
-  have hb_le : b ≤ 0 := by
-    have h := valued_coe_le_one v (2 : O_v)
-    rwa [hb, ← exp_zero, exp_le_exp] at h
-  obtain ⟨n, hn⟩ : ∃ n : ℕ, (n : ℤ) = max (-a) (-b) + 1 :=
-    ⟨(max (-a) (-b) + 1).toNat, Int.toNat_of_nonneg (by omega)⟩
+    exact ha0
+  obtain ⟨i, hi⟩ : ∃ i : ℤ, Valued.v (a : K_v) = exp i :=
+    ⟨_, (exp_log haval0).symm⟩
+  have hi_le : i ≤ -1 := by
+    have h := v.mem_maximalIdeal_pow_iff (K := K) (n := 1) |>.mp (pow_one m_v ▸ ha)
+    rwa [hi, exp_le_exp] at h
+  have hbval0 : Valued.v (b : K_v) ≠ 0 := by
+    simp only [ne_eq, _root_.map_eq_zero, ZeroMemClass.coe_eq_zero]
+    exact hb0
+  obtain ⟨j, hj⟩ : ∃ j : ℤ, Valued.v (b : K_v) = exp j :=
+    ⟨_, (exp_log hbval0).symm⟩
+  obtain ⟨n, hn⟩ : ∃ n : ℕ, (n : ℤ) = max (-i) (-j) + 1 :=
+    ⟨(max (-i) (-j) + 1).toNat, Int.toNat_of_nonneg (by omega)⟩
   let s : O_v := π ^ n
   have hsv : Valued.v (s : K_v) = exp (-(n : ℤ)) := by
     simp only [s]
@@ -167,8 +162,8 @@ private theorem exists_aux_param [NeZero (2 : v.adicCompletion K)] {t : O_v}
     rw [map_pow, hπv, ← exp_nsmul, nsmul_eq_mul]
     congr 1
     ring
-  have hna : -(n : ℤ) < a := by omega
-  have hnb : -(n : ℤ) < b := by omega
+  have hni : -(n : ℤ) < i := by omega
+  have hnj : -(n : ℤ) < j := by omega
   have hsm : s ∈ m_v := by
     have h := v.mem_maximalIdeal_pow_iff (K := K) (x := s) (n := 1)
     rw [pow_one] at h
@@ -178,15 +173,97 @@ private theorem exists_aux_param [NeZero (2 : v.adicCompletion K)] {t : O_v}
   have hs0 : s ≠ 0 := by
     exact pow_ne_zero _ hπ.ne_zero
   refine ⟨s, hsm, hs0, ?_, ?_, ?_⟩
-  · exact ne_of_valued_lt v (by rw [hsv, ha, exp_lt_exp]; exact hna)
-  · exact ne_of_valued_lt v (by
-      rw [valued_formalInverseEval v W ht, hsv, ha, exp_lt_exp]
-      exact hna)
-  · exact ne_formalInverseEval_self v W hsm hs0 (by
-      rw [hsv, hb, exp_lt_exp]
-      exact hnb)
+  · rw [hsv, hi, exp_lt_exp]
+    exact hni
+  · rw [hsv, hj, exp_lt_exp]
+    exact hnj
+  · rw [hsv, ← exp_zero, exp_lt_exp]
+    omega
 
-private theorem exists_aux_point [NeZero (2 : v.adicCompletion K)]
+private theorem exists_aux_param [(W.baseChange K_v).IsElliptic] {t : O_v}
+    (ht : t ∈ m_v) (ht0 : t ≠ 0) :
+    ∃ s : O_v, s ∈ m_v ∧ s ≠ 0 ∧ s ≠ t ∧ s ≠ W.formalInverseEval t ∧
+      s ≠ W.formalInverseEval s := by
+  by_cases htwo : (2 : K_v) = 0
+  -- In characteristic two, ellipticity forces at least one of `a₁` and `a₃` to be nonzero.
+  -- A sufficiently small parameter then cannot satisfy the formal-inverse fixed-point equation.
+  · let _ : CharP K_v 2 :=
+      (CharP.charP_iff_prime_eq_zero Nat.prime_two).2 htwo
+    have htwo' : ((2 : O_v) : K_v) = 0 := by
+      calc
+        ((2 : O_v) : K_v) = algebraMap O_v K_v (2 : O_v) :=
+          (Algebra.algebraMap_ofSubsemiring_apply
+            (Valued.v : Valuation K_v (WithZero (Multiplicative ℤ))).valuationSubring _).symm
+        _ = (2 : K_v) := map_ofNat (algebraMap O_v K_v) 2
+        _ = 0 := htwo
+    have ha₁a₃ : (W.a₁ : K_v) ≠ 0 ∨ (W.a₃ : K_v) ≠ 0 := by
+      by_contra h
+      push Not at h
+      have hΔ : (W.baseChange K_v).Δ = 0 := by
+        rw [(W.baseChange K_v).Δ_of_char_two]
+        simp [h.1, h.2]
+      exact (W.baseChange K_v).isUnit_Δ.ne_zero hΔ
+    by_cases ha₁ : (W.a₁ : K_v) = 0
+    · have ha₃ := ha₁a₃.resolve_left (fun h ↦ h ha₁)
+      have ha₃O : W.a₃ ≠ 0 := fun h ↦ ha₃ (by simp [h])
+      obtain ⟨s, hsm, hs0, hst, _, _⟩ := exists_small_param v ht ht0 ha₃O
+      refine ⟨s, hsm, hs0, ne_of_valued_lt v hst,
+        ne_of_valued_lt v (valued_formalInverseEval v W ht ▸ hst), ?_⟩
+      intro hfix
+      have hcoe := congrArg (fun a : O_v ↦ (a : K_v))
+        (eq_two_of_formalInverseEval_self v W hsm hs0 hfix)
+      push_cast at hcoe
+      rw [htwo', ha₁, zero_mul, zero_add] at hcoe
+      have hw0 : (W.formalWEval s : K_v) ≠ 0 :=
+        W.algebraMap_formalWEval_ne_zero (Fact.out : IsAdic m_v) hsm
+          ((FaithfulSMul.algebraMap_injective O_v K_v).ne hs0)
+      exact (mul_ne_zero ha₃ hw0) hcoe.symm
+    · have ha₁O : W.a₁ ≠ 0 := fun h ↦ ha₁ (by simp [h])
+      obtain ⟨s, hsm, hs0, hst, hsa₁, hsone⟩ :=
+        exists_small_param v ht ht0 ha₁O
+      refine ⟨s, hsm, hs0, ne_of_valued_lt v hst,
+        ne_of_valued_lt v (valued_formalInverseEval v W ht ▸ hst), ?_⟩
+      intro hfix
+      have hcoe := congrArg (fun a : O_v ↦ (a : K_v))
+        (eq_two_of_formalInverseEval_self v W hsm hs0 hfix)
+      push_cast at hcoe
+      rw [htwo'] at hcoe
+      have hsval0 : Valued.v (s : K_v) ≠ 0 := by
+        exact (_root_.map_eq_zero (Valued.v :
+          Valuation K_v (WithZero (Multiplicative ℤ)))).not.mpr
+            (fun h ↦ hs0 (ZeroMemClass.coe_eq_zero.mp h))
+      have hsq : Valued.v (s : K_v) ^ 2 < Valued.v (W.a₁ : K_v) := by
+        calc
+          Valued.v (s : K_v) ^ 2 = Valued.v (s : K_v) * Valued.v (s : K_v) :=
+            pow_two _
+          _ < 1 * Valued.v (s : K_v) :=
+            mul_lt_mul_of_pos_right hsone (pos_iff_ne_zero.mpr hsval0)
+          _ = Valued.v (s : K_v) := one_mul _
+          _ < Valued.v (W.a₁ : K_v) := hsa₁
+      have hw_le : Valued.v (W.a₃ * W.formalWEval s : K_v) ≤
+          Valued.v (s : K_v) ^ 3 := by
+        rw [map_mul, valued_formalWEval v W hsm]
+        exact (mul_le_mul' W.a₃.property le_rfl).trans_eq (one_mul _)
+      have hval : Valued.v (W.a₃ * W.formalWEval s : K_v) <
+          Valued.v (W.a₁ * s : K_v) := hw_le.trans_lt (by
+        rw [map_mul, pow_succ]
+        exact mul_lt_mul_of_pos_right hsq (pos_iff_ne_zero.mpr hsval0))
+      have heq : (W.a₁ * s : K_v) = -(W.a₃ * W.formalWEval s : K_v) :=
+        eq_neg_of_add_eq_zero_left hcoe.symm
+      exact hval.ne (by rw [heq, Valuation.map_neg])
+  · have htwoO : (2 : O_v) ≠ 0 := fun h ↦ htwo (by
+      calc
+        (2 : K_v) = algebraMap O_v K_v (2 : O_v) :=
+          (map_ofNat (algebraMap O_v K_v) 2).symm
+        _ = ((2 : O_v) : K_v) := Algebra.algebraMap_ofSubsemiring_apply
+          (Valued.v : Valuation K_v (WithZero (Multiplicative ℤ))).valuationSubring _
+        _ = 0 := congrArg (fun a : O_v ↦ (a : K_v)) h)
+    obtain ⟨s, hsm, hs0, hst, hs2, _⟩ := exists_small_param v ht ht0 htwoO
+    refine ⟨s, hsm, hs0, ne_of_valued_lt v hst,
+      ne_of_valued_lt v (valued_formalInverseEval v W ht ▸ hst),
+      ne_formalInverseEval_self v W hsm hs0 hs2⟩
+
+private theorem exists_aux_point [(W.baseChange K_v).IsElliptic]
     {P : FormalGroupPoint W m_v} (hP0 : P ≠ 0) :
     ∃ U : FormalGroupPoint W m_v, U ≠ 0 ∧ U ≠ P ∧ U ≠ -P ∧ -U ≠ P ∧
       -U ≠ -P ∧ U ≠ -U := by
@@ -240,8 +317,6 @@ private theorem formalPointMap_add_of_ne (P Q : FormalGroupPoint W m_v)
     (K := K_v) (Fact.out : IsAdic m_v) P.property Q.property
     (fun _ _ h ↦ hne (FormalGroupPoint.ext h))
     (fun _ _ h ↦ hnneg (FormalGroupPoint.ext (by simpa using h)))).symm
-
-variable [NeZero (2 : v.adicCompletion K)]
 
 open Classical in
 private theorem formalPointMap_add_self (P : FormalGroupPoint W m_v) (hP0 : P ≠ 0)
