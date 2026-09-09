@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.PadicVal.Basic
+import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Order
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 
@@ -14,8 +14,8 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 
 A profinite group is pro-`p` exactly when its supernatural order is supported at `p`. This
 connects the finite-quotient definition of `IsProP` with the primewise invariant
-`profiniteOrder`: every finite quotient has prime-power order precisely when every other
-prime has exponent zero in the supremum of the quotient orders.
+`profiniteOrder`: every quotient by an open normal subgroup has prime-power order precisely
+when every other prime has exponent zero in the supremum of the quotient orders.
 
 The equivalent bound by the infinite supernatural prime power is the form used in
 divisibility arguments.
