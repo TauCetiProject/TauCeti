@@ -26,8 +26,8 @@ transformation.
 
 ## Main definitions
 
-* `specialOrthogonalGroupProd`: combine special orthogonal transformations of two forms into one
-  of their product.
+* `specialOrthogonalGroupProd`: combine special orthogonal transformations of two quadratic maps
+  with a common codomain into one of their product.
 * `specialOrthogonalGroupProdLastInclusion`: extend a special orthogonal transformation by the
   identity on the square line.
 * `specialOrthogonalGroupProdLastInclusionToStabilizer`: the same extension, codrestricted to the
@@ -55,7 +55,8 @@ variable {R : Type u} [CommRing R]
 private theorem specialOrthogonalProd_mem
     {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
     {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
-    (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂)
+    {N : Type*} [AddCommMonoid N] [Module R N]
+    (Q₁ : QuadraticMap R M₁ N) (Q₂ : QuadraticMap R M₂ N)
     [Module.Free R M₁] [Module.Finite R M₁]
     [Module.Free R M₂] [Module.Finite R M₂]
     (f : specialOrthogonalGroup Q₁) (g : specialOrthogonalGroup Q₂) :
@@ -73,10 +74,8 @@ private theorem specialOrthogonalProd_mem
           ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q₂ g.2⟩)
     have he : e x = (f.1.prodCongr g.1) x := by
       apply Prod.ext
-      · change (orthogonalGroupEquivIsometryEquiv Q₁ _ x.1) = f.1 x.1
-        exact congrFun (coe_orthogonalGroupEquivIsometryEquiv Q₁ _) x.1
-      · change (orthogonalGroupEquivIsometryEquiv Q₂ _ x.2) = g.1 x.2
-        exact congrFun (coe_orthogonalGroupEquivIsometryEquiv Q₂ _) x.2
+      · exact congrFun (coe_orthogonalGroupEquivIsometryEquiv Q₁ _) x.1
+      · exact congrFun (coe_orthogonalGroupEquivIsometryEquiv Q₂ _) x.2
     rw [← he]
     exact e.map_app x
   · apply Units.ext
@@ -84,12 +83,13 @@ private theorem specialOrthogonalProd_mem
     simpa only [LinearEquiv.coe_det, Units.val_one, mul_one] using
       congrArg₂ (fun a b : R ↦ a * b) (congrArg Units.val hf.2) (congrArg Units.val hg.2)
 
-/-- Combine special orthogonal transformations of two finite free quadratic forms into a special
-orthogonal transformation of their product. -/
+/-- Combine special orthogonal transformations of two finite free quadratic maps with a common
+codomain into a special orthogonal transformation of their product. -/
 def specialOrthogonalGroupProd
     {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
     {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
-    (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂)
+    {N : Type*} [AddCommMonoid N] [Module R N]
+    (Q₁ : QuadraticMap R M₁ N) (Q₂ : QuadraticMap R M₂ N)
     [Module.Free R M₁] [Module.Finite R M₁]
     [Module.Free R M₂] [Module.Finite R M₂] :
     specialOrthogonalGroup Q₁ × specialOrthogonalGroup Q₂ →*
@@ -104,7 +104,8 @@ def specialOrthogonalGroupProd
 theorem specialOrthogonalGroupProd_apply
     {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
     {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
-    (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂)
+    {N : Type*} [AddCommMonoid N] [Module R N]
+    (Q₁ : QuadraticMap R M₁ N) (Q₂ : QuadraticMap R M₂ N)
     [Module.Free R M₁] [Module.Finite R M₁]
     [Module.Free R M₂] [Module.Finite R M₂]
     (fg : specialOrthogonalGroup Q₁ × specialOrthogonalGroup Q₂) (x : M₁ × M₂) :
