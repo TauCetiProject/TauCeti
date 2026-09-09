@@ -17,7 +17,7 @@ level of measures.
 
 ## Main definitions and results
 
-* `TauCeti.Probability.multinomialCellProbability`: a cell weight as a unit-interval parameter.
+* `Convexity.StdSimplex.multinomialCellProbability`: a cell weight as a unit-interval parameter.
 * `TauCeti.Probability.map_eval_multinomialMeasure`: a coordinate marginal is binomial.
 
 ## References
@@ -33,7 +33,7 @@ noncomputable section
 open Convexity MeasureTheory ProbabilityTheory
 open scoped ENNReal ProbabilityTheory
 
-namespace TauCeti.Probability
+namespace Convexity.StdSimplex
 
 variable {ι : Type*}
 
@@ -44,9 +44,13 @@ def multinomialCellProbability (p : StdSimplex NNReal ι) (i : ι) : unitInterva
 /-- A multinomial cell probability has the value of the corresponding simplex weight. -/
 @[simp]
 theorem coe_multinomialCellProbability (p : StdSimplex NNReal ι) (i : ι) :
-    (multinomialCellProbability p i : ℝ) = p.weights i := (rfl)
+    (p.multinomialCellProbability i : ℝ) = p.weights i := (rfl)
 
-variable [Fintype ι]
+end Convexity.StdSimplex
+
+namespace TauCeti.Probability
+
+variable {ι : Type*} [Fintype ι]
 
 open Classical in
 private lemma eq_zero_of_mem_piAntidiag_erase (i : ι) {q : ℕ} {g : ι → ℕ}
@@ -162,7 +166,7 @@ private lemma sum_multinomialWeight_eq_apply (w : ι → NNReal) (n m : ℕ) (i 
 equal to that cell's weight. -/
 theorem map_eval_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) (i : ι) :
     (multinomialMeasure n p).map (fun k ↦ k i) =
-      Bin(n, multinomialCellProbability p i) := by
+      Bin(n, p.multinomialCellProbability i) := by
   classical
   apply Measure.ext_of_singleton
   intro m
@@ -195,7 +199,7 @@ theorem map_eval_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) (i : ι
     sub_nonneg.mpr (by exact_mod_cast p.weights_apply_le_one i)
   rw [ENNReal.toReal_ofReal]
   · simp
-  · rw [coe_multinomialCellProbability]
+  · rw [StdSimplex.coe_multinomialCellProbability]
     exact mul_nonneg (mul_nonneg (by positivity) (by positivity)) (pow_nonneg hcomp _)
 
 end TauCeti.Probability
