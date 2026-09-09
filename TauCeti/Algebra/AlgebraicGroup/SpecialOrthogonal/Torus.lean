@@ -237,9 +237,14 @@ theorem mapPointsFunctor_splitTorusCoordinateIso_hom_app
   have hmap :
       CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom =
         (splitTorusPointsNatIso R i half hi hhalf).inv := by
+    -- `pointsFunctor_map` does not cancel `op`/`unop` at rewrite transparency.
+    -- Reduce them here to expose the categorical map needed by `Functor.map_preimage`.
     change (CommHopfAlgCat.pointsFunctor (R := R)).map
         (splitTorusCoordinateIso R i half hi hhalf).hom.op = _
     rw [splitTorusCoordinateIso]
+    -- `preimageIso_hom` cannot match at rewrite transparency: its object types require
+    -- reducing `pointsFunctor.obj`. This `change` performs that reduction, cancels
+    -- `op`/`unop`, and projects the preimage isomorphism's forward component.
     change (CommHopfAlgCat.pointsFunctor (R := R)).map
         ((CommHopfAlgCat.pointsFunctor (R := R)).preimage
           (splitTorusPointsNatIso R i half hi hhalf).symm.hom) = _
@@ -260,9 +265,14 @@ theorem mapPointsFunctor_splitTorusCoordinateIso_inv_app
   have hmap :
       CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv =
         (splitTorusPointsNatIso R i half hi hhalf).hom := by
+    -- `pointsFunctor_map` does not cancel `op`/`unop` at rewrite transparency.
+    -- Reduce them here to expose the categorical map needed by `Functor.map_preimage`.
     change (CommHopfAlgCat.pointsFunctor (R := R)).map
         (splitTorusCoordinateIso R i half hi hhalf).inv.op = _
     rw [splitTorusCoordinateIso]
+    -- `preimageIso_inv` cannot match at rewrite transparency: its object types require
+    -- reducing `pointsFunctor.obj`. This `change` performs that reduction, cancels
+    -- `op`/`unop`, and projects the preimage isomorphism's inverse component.
     change (CommHopfAlgCat.pointsFunctor (R := R)).map
         ((CommHopfAlgCat.pointsFunctor (R := R)).preimage
           (splitTorusPointsNatIso R i half hi hhalf).symm.inv) = _
