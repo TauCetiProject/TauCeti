@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Invariant.Galois
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Decomposition
 
 /-!
@@ -29,10 +30,10 @@ the automorphisms of the residue extension — applies verbatim.  Descending the
 `F_{P ∩ F}` is possible because the residue extension of `Z / F` at `P` is trivial: `𝒪_{P ∩ Z}`
 and `𝒪_{P ∩ F}` have the same image in `F'_P`.
 
-Consequently `G_Z(P) / G_T(P)` is the automorphism group of the residue extension, and
-`|G_T(P)| · |Aut(F'_P / F_{P ∩ F})| = e(P ∣ P ∩ F) · f(P ∣ P ∩ F)`.  The residue extension is
-always normal, so when it is separable it is Galois, its automorphism group has order
-`f(P ∣ P ∩ F)`, and the inertia group has order exactly `e(P ∣ P ∩ F)`.
+Consequently `G_Z(P) / G_T(P)` is the automorphism group of the residue extension and of its
+separable closure.  Its order is the separable residue degree, while the inertia group has order
+the ramification index times the inseparable residue degree.  When the residue extension is
+separable, these specialize to orders `f(P ∣ P ∩ F)` and `e(P ∣ P ∩ F)`, respectively.
 
 This is Stichtenoth, Definition 3.8.1 and the second half of Theorem 3.8.2; the first half — the
 order of the decomposition group, and the decomposition field — is in
@@ -46,6 +47,8 @@ order of the decomposition group, and the decomposition field — is in
 * `TauCeti.Place.decompositionQuotientInertiaEquiv`: the induced isomorphism of the decomposition
   group modulo the inertia group with the automorphism group of the residue extension, with
   `TauCeti.Place.decompositionQuotientInertiaEquiv_mk` computing it on classes.
+* `TauCeti.Place.decompositionQuotientInertiaEquivSeparableClosure`: the corresponding
+  identification with the automorphism group of the separable part of the residue extension.
 
 ## Main results
 
@@ -55,6 +58,9 @@ order of the decomposition group, and the decomposition field — is in
   group of the residue extension**.
 * `TauCeti.Place.card_inertiaSubgroup_mul_card_residueFieldAut`: the order of the inertia group
   times the order of the residue automorphism group is `e · f`.
+* `TauCeti.Place.card_decompositionQuotientInertia_eq_finSepDegree` and
+  `TauCeti.Place.card_inertiaSubgroup_eq_ramificationIdx_mul_finInsepDegree`: the unconditional
+  formulas `|G_Z/G_T| = f_sep` and `|G_T| = e · f_ins`.
 * `TauCeti.Place.normal_residueField`: the residue extension at a place of a Galois extension is
   normal; hence `TauCeti.Place.card_residueFieldAut` and
   `TauCeti.Place.card_inertiaSubgroup`, which give the residue automorphism group order
@@ -133,16 +139,6 @@ theorem residueAut_residue (g : P.integers.decompositionSubgroup F) (x : P.integ
   rw [residueAut, MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply,
     IsLocalRing.ResidueField.residue_smul]
 
-/-- **The inertia group is the kernel of the residue action** (Stichtenoth, Theorem 3.8.2): this
-identifies Mathlib's `ValuationSubring.inertiaSubgroup`, defined as the kernel of the action on
-the residue field, with the kernel of `TauCeti.Place.residueAut`, which records that the action
-is by automorphisms over the residue field of the place below. -/
-theorem ker_residueAut : (residueAut F P).ker = P.integers.inertiaSubgroup F := by
-  ext g
-  simp only [MonoidHom.mem_ker, ValuationSubring.inertiaSubgroup, AlgEquiv.ext_iff,
-    RingEquiv.ext_iff]
-  exact Iff.rfl
-
 omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
 /-- **The inertia group, elementwise** (Stichtenoth, Definition 3.8.1): an automorphism fixing `P`
 lies in the inertia group exactly when it acts trivially on the residue field. -/
@@ -156,6 +152,24 @@ theorem mem_inertiaSubgroup_iff (g : P.integers.decompositionSubgroup F) :
   obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective (R := P.integers) z
   simpa using h x
 
+/-- **The inertia group is the kernel of the residue action** (Stichtenoth, Theorem 3.8.2): this
+identifies Mathlib's `ValuationSubring.inertiaSubgroup`, defined as the kernel of the action on
+the residue field, with the kernel of `TauCeti.Place.residueAut`, which records that the action
+is by automorphisms over the residue field of the place below. -/
+theorem ker_residueAut : (residueAut F P).ker = P.integers.inertiaSubgroup F := by
+  ext g
+  rw [MonoidHom.mem_ker, mem_inertiaSubgroup_iff]
+  constructor
+  · intro hg x
+    rw [← residueAut_residue]
+    exact DFunLike.congr_fun hg _
+  · intro hg
+    apply AlgEquiv.ext
+    intro z
+    obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective (R := P.integers) z
+    rw [residueAut_residue]
+    exact hg x
+
 omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
 /-- The inertia group is normal in the decomposition group, being a kernel. -/
 instance normal_inertiaSubgroup : (P.integers.inertiaSubgroup F).Normal :=
@@ -166,18 +180,6 @@ end ResidueAction
 section Galois
 
 variable (F) [FiniteDimensional F F'] [IsGalois F F'] (P : Place k F')
-
-omit [IsGalois F F'] in
-/-- **Over its decomposition field a place is fixed by the whole Galois group** (Stichtenoth,
-Theorem 3.8.2): the decomposition group of `P` in `F' / Z` is everything, because the
-decomposition group of `P` in `F' / F` is by construction the Galois group of `F'` over `Z`. -/
-theorem decompositionSubgroup_decompositionField_eq_top :
-    P.integers.decompositionSubgroup (decompositionField F P) = ⊤ := by
-  rw [← stabilizer_eq_decompositionSubgroup]
-  ext τ
-  simp only [Subgroup.mem_top, iff_true, MulAction.mem_stabilizer_iff]
-  rw [← restrictScalars_smul (decompositionField F P) τ P]
-  exact restrictScalars_smul_eq_self F P τ
 
 /-- The valuation ring of `P` is an invariant extension of the valuation ring of its restriction
 to the decomposition field: an element fixed by every automorphism of `F'` over `Z` lies in `Z`,
@@ -314,6 +316,86 @@ theorem normal_residueField : Normal (P.restrict k F).ResidueField P.ResidueFiel
           ((RingEquiv.ofLeftInverse h).symm w) = (w : P.ResidueField) := fun w ↦ by
     rw [← RingEquiv.ofLeftInverse_apply h, RingEquiv.apply_symm_apply]
   exact hcoe _
+
+/-- **The residue automorphism group is the automorphism group of the separable part**
+(Stichtenoth, Theorem 3.8.2).  Restriction to the separable closure is an isomorphism because the
+remaining residue extension is purely inseparable. -/
+noncomputable def residueFieldAutEquivSeparableClosure :
+    (P.ResidueField ≃ₐ[(P.restrict k F).ResidueField] P.ResidueField) ≃*
+      Gal(separableClosure (P.restrict k F).ResidueField P.ResidueField /
+        (P.restrict k F).ResidueField) := by
+  let := normal_residueField F P
+  exact (separableClosureRestrictEquiv (P.restrict k F).ResidueField P.ResidueField).toMulEquiv
+
+/-- `residueFieldAutEquivSeparableClosure` acts by restricting a residue automorphism to the
+separable closure. -/
+@[simp]
+theorem coe_residueFieldAutEquivSeparableClosure_apply
+    (σ : P.ResidueField ≃ₐ[(P.restrict k F).ResidueField] P.ResidueField)
+    (x : separableClosure (P.restrict k F).ResidueField P.ResidueField) :
+    ((residueFieldAutEquivSeparableClosure F P σ) x : P.ResidueField) = σ x := by
+  let := normal_residueField F P
+  exact coe_separableClosureRestrictEquiv_apply σ x
+
+/-- The quotient of the decomposition group by inertia, identified with the automorphism group
+of the separable part of the residue extension (Stichtenoth, Theorem 3.8.2). -/
+noncomputable def decompositionQuotientInertiaEquivSeparableClosure :
+    P.integers.decompositionSubgroup F ⧸ P.integers.inertiaSubgroup F ≃*
+      Gal(separableClosure (P.restrict k F).ResidueField P.ResidueField /
+        (P.restrict k F).ResidueField) :=
+  (decompositionQuotientInertiaEquiv F P).trans (residueFieldAutEquivSeparableClosure F P)
+
+/-- On the separable closure, the separable-part quotient equivalence sends the class of `g` to
+the residue automorphism of `g`. -/
+@[simp]
+theorem coe_decompositionQuotientInertiaEquivSeparableClosure_mk_apply
+    (g : P.integers.decompositionSubgroup F)
+    (x : separableClosure (P.restrict k F).ResidueField P.ResidueField) :
+    ((decompositionQuotientInertiaEquivSeparableClosure F P (QuotientGroup.mk g)) x :
+        P.ResidueField) = residueAut F P g x := by
+  rw [decompositionQuotientInertiaEquivSeparableClosure, MulEquiv.trans_apply,
+    decompositionQuotientInertiaEquiv_mk, coe_residueFieldAutEquivSeparableClosure_apply]
+
+/-- **The residue automorphism group has order equal to the separable residue degree**
+(Stichtenoth, Theorem 3.8.2). -/
+theorem card_residueFieldAut_eq_finSepDegree :
+    Nat.card (P.ResidueField ≃ₐ[(P.restrict k F).ResidueField] P.ResidueField) =
+      Field.finSepDegree (P.restrict k F).ResidueField P.ResidueField := by
+  let := normal_residueField F P
+  rw [Nat.card_congr (residueFieldAutEquivSeparableClosure F P).toEquiv,
+    IsGalois.card_aut_eq_finrank, Field.finSepDegree_eq, Field.sepDegree]
+  rfl
+
+/-- **The decomposition group modulo inertia has order equal to the separable residue degree**
+(Stichtenoth, Theorem 3.8.2). -/
+theorem card_decompositionQuotientInertia_eq_finSepDegree :
+    Nat.card (P.integers.decompositionSubgroup F ⧸ P.integers.inertiaSubgroup F) =
+      Field.finSepDegree (P.restrict k F).ResidueField P.ResidueField := by
+  rw [Nat.card_congr (decompositionQuotientInertiaEquiv F P).toEquiv,
+    card_residueFieldAut_eq_finSepDegree F P]
+
+/-- **The unconditional order of the inertia group** (Stichtenoth, Theorem 3.8.2): it is the
+ramification index times the inseparable residue degree. -/
+theorem card_inertiaSubgroup_eq_ramificationIdx_mul_finInsepDegree :
+    Nat.card (P.integers.inertiaSubgroup F) =
+      ramificationIdx F P *
+        Field.finInsepDegree (P.restrict k F).ResidueField P.ResidueField := by
+  have h := card_inertiaSubgroup_mul_card_residueFieldAut F P
+  rw [card_residueFieldAut_eq_finSepDegree F P] at h
+  refine Nat.eq_of_mul_eq_mul_right (NeZero.pos
+    (Field.finSepDegree (P.restrict k F).ResidueField P.ResidueField)) ?_
+  calc
+    Nat.card (P.integers.inertiaSubgroup F) *
+          Field.finSepDegree (P.restrict k F).ResidueField P.ResidueField =
+        ramificationIdx F P * relativeDegree k F P := h
+    _ = ramificationIdx F P *
+          (Field.finSepDegree (P.restrict k F).ResidueField P.ResidueField *
+            Field.finInsepDegree (P.restrict k F).ResidueField P.ResidueField) := by
+      rw [Field.finSepDegree_mul_finInsepDegree, relativeDegree_def]
+    _ = (ramificationIdx F P *
+          Field.finInsepDegree (P.restrict k F).ResidueField P.ResidueField) *
+            Field.finSepDegree (P.restrict k F).ResidueField P.ResidueField := by
+      ring
 
 variable [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField]
 
