@@ -186,9 +186,11 @@ theorem tendsto_integral_vertical (hx : 0 < x) (hG : ContinuousOn G {z : ℂ | 1
 `Re s = 1`. The Dirichlet series is tested against an integrable, compactly supported `psi`, and
 the pole term has lost its exponential damping.
 
-The hypotheses are exactly the three convergence facts that the passage to the limit needs: the
-Fourier-weighted series is summable at `s = 1`, the Fourier transform of `psi` is integrable on
-the half-line, and the pole-subtracted remainder `G` extends continuously to `Re s ≥ 1`. -/
+The principal analytic inputs for the passage to the limit are that the Fourier-weighted series
+is summable at `s = 1`, the Fourier transform of `psi` is integrable on the half-line, and the
+pole-subtracted remainder `G` extends continuously to `Re s ≥ 1`. The additional hypotheses make
+`x` positive, supply the interior identity through the formula for `G` and summability of the
+original series, and give the integrability and compact support of the test function. -/
 theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary (hx : 0 < x)
     (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
     (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
