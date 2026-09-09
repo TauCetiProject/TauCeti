@@ -175,6 +175,8 @@ theorem indepFun_sumEquivProd_multivariateGaussian_iff
         ((EuclideanSpace.equiv ι ℝ).prodCongr (EuclideanSpace.equiv κ ℝ))
     have hind_eval := hpair_eval.indepFun_of_covariance_eval fun i j => by
       have hentry := covariance_eval_multivariateGaussian (μ := m) hS (Sum.inl i) (Sum.inr j)
+      -- The coordinate functions from `map_equiv_fun` reduce through `sumEquivProd` and
+      -- `EuclideanSpace.equiv` only definitionally; there is no named rewrite lemma exposing them.
       change cov[fun x => x.ofLp (Sum.inl i), fun x => x.ofLp (Sum.inr j);
         multivariateGaussian m S] = 0
       rw [hentry]
