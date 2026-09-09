@@ -14,7 +14,9 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 For a Weierstrass curve over the ring of integers `O_v` in the completion of a Dedekind domain at
 a height-one prime, the maximal ideal has enough auxiliary parameters to apply the generic formal
 point homomorphism construction. This file packages the resulting unconditional additive and
-injective map from the formal group on that maximal ideal into the points over the completion.
+injective map from the formal group on that maximal ideal into the points over the completion. It
+is the discrete adic-completion specialization; the generic construction, conditional on the
+existence of auxiliary parameters, is in `Point.Hom`.
 
 ## Main definitions
 
