@@ -132,6 +132,7 @@ noncomputable def setIntegralLp (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu s
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 /-- The set integral of an `Lᵖ` class agrees with the integral of its representative. -/
+@[simp]
 theorem setIntegralLp_apply (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu s < ∞)
     (f : Lp F p mu) :
     setIntegralLp hp_ne_top s hμs f = ∫ x in s, f x ∂mu := by
@@ -140,6 +141,7 @@ theorem setIntegralLp_apply (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu s < �
 
 omit [NormedSpace ℝ E] in
 /-- The set integral of a translated `Lᵖ` class is the integral of its translated representative. -/
+@[simp]
 theorem setIntegralLp_translateLp [BorelSpace E] [mu.IsAddHaarMeasure]
     (hp_ne_top : p ≠ ∞) (s : Set E) (hμs : mu s < ∞)
     {f : E → F} (hfLp : MemLp f p mu) (t : E) :
