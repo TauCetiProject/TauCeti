@@ -155,7 +155,7 @@ private theorem exists_aux_param [(W.baseChange K_v).IsElliptic] {t : O_v}
     · have ha₃ := ha₁a₃.resolve_left (fun h ↦ h ha₁)
       have ha₃O : W.a₃ ≠ 0 := fun h ↦ ha₃ (by simp [h])
       obtain ⟨s, hsm, hs0, hst, _, _⟩ :=
-        v.exists_ne_zero_mem_maximalIdeal_valued_lt ht ht0 ha₃O
+        v.exists_ne_zero_mem_maximalIdeal_valued_lt ht0 ha₃O
       refine ⟨s, hsm, hs0, ne_of_valued_lt v hst,
         ne_of_valued_lt v (valued_formalInverseEval v W ht ▸ hst), ?_⟩
       intro hfix
@@ -169,7 +169,7 @@ private theorem exists_aux_param [(W.baseChange K_v).IsElliptic] {t : O_v}
       exact (mul_ne_zero ha₃ hw0) hcoe.symm
     · have ha₁O : W.a₁ ≠ 0 := fun h ↦ ha₁ (by simp [h])
       obtain ⟨s, hsm, hs0, hst, hsa₁, hsone⟩ :=
-        v.exists_ne_zero_mem_maximalIdeal_valued_lt ht ht0 ha₁O
+        v.exists_ne_zero_mem_maximalIdeal_valued_lt ht0 ha₁O
       refine ⟨s, hsm, hs0, ne_of_valued_lt v hst,
         ne_of_valued_lt v (valued_formalInverseEval v W ht ▸ hst), ?_⟩
       intro hfix
@@ -208,7 +208,7 @@ private theorem exists_aux_param [(W.baseChange K_v).IsElliptic] {t : O_v}
           (Valued.v : Valuation K_v (WithZero (Multiplicative ℤ))).valuationSubring _
         _ = 0 := congrArg (fun a : O_v ↦ (a : K_v)) h)
     obtain ⟨s, hsm, hs0, hst, hs2, _⟩ :=
-      v.exists_ne_zero_mem_maximalIdeal_valued_lt ht ht0 htwoO
+      v.exists_ne_zero_mem_maximalIdeal_valued_lt ht0 htwoO
     refine ⟨s, hsm, hs0, ne_of_valued_lt v hst,
       ne_of_valued_lt v (valued_formalInverseEval v W ht ▸ hst),
       ne_formalInverseEval_self v W hsm hs0 hs2⟩
