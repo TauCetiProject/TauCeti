@@ -385,7 +385,8 @@ theorem resolvent_eq_mul_inverse_one_sub (h : lambda ∈ resolventSet A)
       _ = (U * B) * Ring.inverse B := (mul_assoc _ _ _).symm
       _ = Ring.inverse B := by rw [hUB, one_mul]
   rw [hU]
-  rfl
+  ext y
+  simp only [mul_apply_eq_comp, ContinuousLinearMap.comp_apply, B]
 
 /-- **The resolvent set is open.** -/
 theorem isOpen_resolventSet (A : X →ₗ.[𝕜] X) : IsOpen (resolventSet A) := by
