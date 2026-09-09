@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
 /-!
 # The map of a matrix on Euclidean space
@@ -50,38 +49,37 @@ theorem inner_toEuclideanLin_toEuclideanLin (A : Matrix κ ι 𝕜) (B : Matrix 
 
 section Invertible
 
-/-- **The continuous linear equivalence of an invertible matrix** on Euclidean space. Its inverse
-is the map of the inverse matrix, so a change of variables along it substitutes `A⁻¹` with no
-further work. -/
+/-- **The continuous linear equivalence of an invertible matrix** on Euclidean space.
+
+This specialises `ContinuousLinearMap.toContinuousLinearEquivOfDetNeZero` to a matrix: the
+hypothesis becomes invertibility of `A.det`, and `Matrix.toEuclideanCLE_symm_apply` identifies the
+inverse with the map of `A⁻¹` rather than with the abstract `LinearMap.inverse`, so a change of
+variables along it substitutes `A⁻¹` with no further work. -/
 noncomputable def toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : IsUnit A.det) :
     EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι :=
-  ContinuousLinearEquiv.equivOfInverse (toEuclideanCLM (𝕜 := 𝕜) A) (toEuclideanCLM (𝕜 := 𝕜) A⁻¹)
-    (fun x => by
-      rw [← mul_apply_eq_comp, ← map_mul, nonsing_inv_mul _ hA, map_one, one_apply_eq_self])
-    (fun x => by
-      rw [← mul_apply_eq_comp, ← map_mul, mul_nonsing_inv _ hA, map_one, one_apply_eq_self])
+  (toEuclideanCLM (𝕜 := 𝕜) A).toContinuousLinearEquivOfDetNeZero <| by
+    rw [ContinuousLinearMap.det, coe_toEuclideanCLM_eq_toEuclideanLin, LinearMap.det_toLpLin]
+    exact hA.ne_zero
 
 @[simp]
 theorem toEuclideanCLE_apply (A : Matrix ι ι 𝕜) (hA : IsUnit A.det) (x : EuclideanSpace 𝕜 ι) :
     A.toEuclideanCLE hA x = A.toEuclideanLin x := by
-  rw [toEuclideanCLE, ContinuousLinearEquiv.equivOfInverse_apply,
+  rw [toEuclideanCLE, ContinuousLinearMap.toContinuousLinearEquivOfDetNeZero_apply,
     ← coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe]
 
 @[simp]
 theorem toEuclideanCLE_symm_apply (A : Matrix ι ι 𝕜) (hA : IsUnit A.det)
     (y : EuclideanSpace 𝕜 ι) : (A.toEuclideanCLE hA).symm y = A⁻¹.toEuclideanLin y := by
-  rw [toEuclideanCLE, ContinuousLinearEquiv.symm_equivOfInverse,
-    ContinuousLinearEquiv.equivOfInverse_apply, ← coe_toEuclideanCLM_eq_toEuclideanLin,
-    ContinuousLinearMap.coe_coe]
-
-theorem coe_toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : IsUnit A.det) :
-    (A.toEuclideanCLE hA : EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι) = A.toEuclideanLin :=
-  LinearMap.ext fun x => A.toEuclideanCLE_apply hA x
+  rw [ContinuousLinearEquiv.symm_apply_eq, toEuclideanCLE_apply]
+  simp only [← coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe]
+  rw [← mul_apply_eq_comp, ← map_mul, mul_nonsing_inv _ hA, map_one, one_apply_eq_self]
 
 @[simp]
 theorem det_toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : IsUnit A.det) :
     LinearMap.det (A.toEuclideanCLE hA : EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι) = A.det := by
-  rw [coe_toEuclideanCLE, LinearMap.det_toLpLin]
+  have hcoe : (A.toEuclideanCLE hA : EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι)
+      = A.toEuclideanLin := LinearMap.ext fun x => A.toEuclideanCLE_apply hA x
+  rw [hcoe, LinearMap.det_toLpLin]
 
 end Invertible
 
