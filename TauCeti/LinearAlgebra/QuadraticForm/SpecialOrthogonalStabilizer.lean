@@ -26,6 +26,8 @@ transformation.
 
 ## Main definitions
 
+* `specialOrthogonalGroupProd`: combine special orthogonal transformations of two forms into one
+  of their product.
 * `specialOrthogonalGroupProdLastInclusion`: extend a special orthogonal transformation by the
   identity on the square line.
 * `specialOrthogonalGroupProdLastInclusionToStabilizer`: the same extension, codrestricted to the
@@ -39,7 +41,7 @@ public section
 
 open QuadraticMap
 
-universe u v
+universe u v w
 
 namespace QuadraticMap
 
@@ -50,50 +52,78 @@ noncomputable section
 variable {R : Type u} [CommRing R]
   {M : Type v} [AddCommGroup M] [Module R M]
 
-private def specialOrthogonalProdLastExtension (Q : QuadraticForm R M)
-    (f : specialOrthogonalGroup Q) : (M × R) ≃ₗ[R] (M × R) :=
-  (f : M ≃ₗ[R] M).prodCongr (LinearEquiv.refl R R)
-
-private theorem specialOrthogonalProdLastExtension_mem (Q : QuadraticForm R M)
-    [Module.Free R M] [Module.Finite R M] (f : specialOrthogonalGroup Q) :
-    specialOrthogonalProdLastExtension Q f ∈ specialOrthogonalGroup
-      (Q.prod (QuadraticMap.sq (R := R) (A := R))) := by
+private theorem specialOrthogonalProd_mem
+    {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
+    {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
+    (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂)
+    [Module.Free R M₁] [Module.Finite R M₁]
+    [Module.Free R M₂] [Module.Finite R M₂]
+    (f : specialOrthogonalGroup Q₁) (g : specialOrthogonalGroup Q₂) :
+    (f : M₁ ≃ₗ[R] M₁).prodCongr (g : M₂ ≃ₗ[R] M₂) ∈
+      specialOrthogonalGroup (Q₁.prod Q₂) := by
   have hf := mem_specialOrthogonalGroup_iff.mp f.2
+  have hg := mem_specialOrthogonalGroup_iff.mp g.2
   apply mem_specialOrthogonalGroup_iff.mpr
   constructor
   · apply mem_orthogonalGroup_iff.mpr
     intro x
-    let e := (orthogonalGroupEquivIsometryEquiv Q
-      ⟨f, specialOrthogonalGroup_le_orthogonalGroup Q f.2⟩).prod
-        (QuadraticMap.IsometryEquiv.refl (QuadraticMap.sq (R := R) (A := R)))
-    have he : e x = specialOrthogonalProdLastExtension Q f x := by
+    let e := (orthogonalGroupEquivIsometryEquiv Q₁
+      ⟨f, specialOrthogonalGroup_le_orthogonalGroup Q₁ f.2⟩).prod
+        (orthogonalGroupEquivIsometryEquiv Q₂
+          ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q₂ g.2⟩)
+    have he : e x = (f.1.prodCongr g.1) x := by
       apply Prod.ext
-      -- Expose the first component so the orthogonal-group/isometry coercion lemma applies.
-      · change (orthogonalGroupEquivIsometryEquiv Q _ x.1) = f.1 x.1
-        exact congrFun (coe_orthogonalGroupEquivIsometryEquiv Q _) x.1
-      · rfl
+      · change (orthogonalGroupEquivIsometryEquiv Q₁ _ x.1) = f.1 x.1
+        exact congrFun (coe_orthogonalGroupEquivIsometryEquiv Q₁ _) x.1
+      · change (orthogonalGroupEquivIsometryEquiv Q₂ _ x.2) = g.1 x.2
+        exact congrFun (coe_orthogonalGroupEquivIsometryEquiv Q₂ _) x.2
     rw [← he]
     exact e.map_app x
   · apply Units.ext
-    rw [LinearEquiv.coe_det, specialOrthogonalProdLastExtension,
-      LinearEquiv.coe_prodCongr, LinearMap.det_prodMap]
-    have hrefl :
-        LinearMap.det ((LinearEquiv.refl R R : R ≃ₗ[R] R) : R →ₗ[R] R) = 1 := by
-      simp
-    rw [hrefl, mul_one]
-    simpa only [LinearEquiv.coe_det] using congrArg Units.val hf.2
+    rw [LinearEquiv.coe_det, LinearEquiv.coe_prodCongr, LinearMap.det_prodMap]
+    simpa only [LinearEquiv.coe_det, Units.val_one, mul_one] using
+      congrArg₂ (fun a b : R ↦ a * b) (congrArg Units.val hf.2) (congrArg Units.val hg.2)
+
+/-- Combine special orthogonal transformations of two finite free quadratic forms into a special
+orthogonal transformation of their product. -/
+def specialOrthogonalGroupProd
+    {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
+    {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
+    (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂)
+    [Module.Free R M₁] [Module.Finite R M₁]
+    [Module.Free R M₂] [Module.Finite R M₂] :
+    specialOrthogonalGroup Q₁ × specialOrthogonalGroup Q₂ →*
+      specialOrthogonalGroup (Q₁.prod Q₂) where
+  toFun fg := ⟨(fg.1 : M₁ ≃ₗ[R] M₁).prodCongr (fg.2 : M₂ ≃ₗ[R] M₂),
+    specialOrthogonalProd_mem Q₁ Q₂ fg.1 fg.2⟩
+  map_one' := by ext x <;> simp
+  map_mul' f g := by ext x <;> simp
+
+/-- The product of two special orthogonal transformations acts componentwise. -/
+@[simp]
+theorem specialOrthogonalGroupProd_apply
+    {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
+    {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
+    (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂)
+    [Module.Free R M₁] [Module.Finite R M₁]
+    [Module.Free R M₂] [Module.Finite R M₂]
+    (fg : specialOrthogonalGroup Q₁ × specialOrthogonalGroup Q₂) (x : M₁ × M₂) :
+    ((specialOrthogonalGroupProd Q₁ Q₂ fg : specialOrthogonalGroup _) :
+      (M₁ × M₂) ≃ₗ[R] (M₁ × M₂)) x =
+      ((fg.1 : M₁ ≃ₗ[R] M₁) x.1, (fg.2 : M₂ ≃ₗ[R] M₂) x.2) := by
+  rfl
+
+private def specialOrthogonalProdLastExtension (Q : QuadraticForm R M)
+    (f : specialOrthogonalGroup Q) : (M × R) ≃ₗ[R] (M × R) :=
+  (f : M ≃ₗ[R] M).prodCongr (LinearEquiv.refl R R)
 
 /-- Extend a special orthogonal transformation by the identity on the square line. -/
 def specialOrthogonalGroupProdLastInclusion (Q : QuadraticForm R M)
     [Module.Free R M] [Module.Finite R M] :
     specialOrthogonalGroup Q →* specialOrthogonalGroup
-      (Q.prod (QuadraticMap.sq (R := R) (A := R))) where
-  toFun f :=
-    ⟨specialOrthogonalProdLastExtension Q f, specialOrthogonalProdLastExtension_mem Q f⟩
-  map_one' := by
-    ext x <;> simp [specialOrthogonalProdLastExtension]
-  map_mul' f g := by
-    ext x <;> simp [specialOrthogonalProdLastExtension]
+      (Q.prod (QuadraticMap.sq (R := R) (A := R))) :=
+  (specialOrthogonalGroupProd Q (QuadraticMap.sq (R := R) (A := R))).comp
+    (MonoidHom.inl _ _)
 
 /-- Extending a special orthogonal transformation acts componentwise and fixes the square-line
 coordinate. -/
@@ -147,23 +177,31 @@ theorem specialOrthogonalGroupProdLastInclusion_mem_stabilizer
   rw [mem_specialOrthogonalGroupProdLastStabilizer_iff]
   exact Prod.ext (by simp) (by simp)
 
+/-- An orthogonal transformation fixing the last basis vector maps the first summand back into the
+first summand. -/
+theorem orthogonalGroupProdLast_fixed_apply_snd
+    (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
+    (g : orthogonalGroup (Q.prod (QuadraticMap.sq (R := R) (A := R))))
+    (hfix : (g : (M × R) ≃ₗ[R] (M × R)) ((0 : M), (1 : R)) = (0, 1))
+    (m : M) : (g.1 (m, 0)).2 = 0 := by
+  have hpolar := polar_apply_of_mem_orthogonalGroup g.2 (m, 0) (0, 1)
+  rw [hfix, QuadraticMap.polar_prod, QuadraticMap.polar_prod] at hpolar
+  simp only [map_zero, add_zero, zero_add, QuadraticMap.sq_apply, QuadraticMap.polar,
+    mul_one, sub_zero] at hpolar
+  ring_nf at hpolar
+  have htwo : (2 : R) * (g.1 (m, 0)).2 = 0 := by
+    linear_combination hpolar
+  exact (isRegular_iff_eq_zero_of_mul.mp h2).1 _ htwo
+
 /-- A last-vector stabilizer element maps the first summand back into the first summand. -/
 @[simp]
 theorem specialOrthogonalGroupProdLastStabilizer_apply_snd
     (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
     (g : specialOrthogonalGroupProdLastStabilizer Q) (m : M) :
-    (g.1.1 (m, 0)).2 = 0 := by
-  have hfix : g.1.1 ((0 : M), (1 : R)) = ((0 : M), (1 : R)) :=
-    mem_specialOrthogonalGroupProdLastStabilizer_iff Q |>.mp g.2
-  have hg := mem_specialOrthogonalGroup_iff.mp g.1.2
-  have hpolar := polar_apply_of_mem_orthogonalGroup hg.1 (m, 0) (0, 1)
-  rw [hfix, QuadraticMap.polar_prod, QuadraticMap.polar_prod] at hpolar
-  simp only [map_zero, add_zero, zero_add, QuadraticMap.sq_apply, QuadraticMap.polar,
-    mul_one, sub_zero] at hpolar
-  ring_nf at hpolar
-  have htwo : (2 : R) * (g.1.1 (m, 0)).2 = 0 := by
-    linear_combination hpolar
-  exact (isRegular_iff_eq_zero_of_mul.mp h2).1 _ htwo
+    (g.1.1 (m, 0)).2 = 0 :=
+  orthogonalGroupProdLast_fixed_apply_snd Q h2
+    ⟨g.1.1, specialOrthogonalGroup_le_orthogonalGroup _ g.1.2⟩
+    (mem_specialOrthogonalGroupProdLastStabilizer_iff Q |>.mp g.2) m
 
 private def specialOrthogonalProdLastRestrictionLinearEquiv
     (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
