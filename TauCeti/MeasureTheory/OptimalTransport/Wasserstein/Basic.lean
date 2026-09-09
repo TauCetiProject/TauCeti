@@ -601,9 +601,7 @@ section Anchor
 
 /-- **Displacement versus moment along a coupling.** If the first marginal of `π` has finite
 `p`-moment at `x₀`, then the `L^p (π)` displacement is finite exactly when the second marginal has
-finite `p`-moment. Both directions are the ground triangle inequality through `x₀`: the
-displacement is at most `dist · x₀ + dist x₀ ·`, and the distance to `x₀` of the second coordinate
-is at most that of the first plus the displacement. -/
+finite `p`-moment. -/
 theorem memLp_edist_iff_hasFiniteMoment_of_isCoupling
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2) {x₀ : X} {μ₀ ν : Measure X}
     {π : Measure (X × X)} [IsFiniteMeasure ν] (hπ : IsCoupling π μ₀ ν)
@@ -669,8 +667,7 @@ theorem hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment
 
 /-- Finite moment of the anchor is exactly the condition under which its finite-distance component
 is the finite-moment space: the criterion above holds for every probability law if and only if the
-anchor itself has finite `p`-moment. Necessity is the case `ν = μ₀`, since every law lies at
-Wasserstein distance zero from itself. -/
+anchor itself has finite `p`-moment. -/
 theorem hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (μ₀ : Measure X)
     [IsProbabilityMeasure μ₀] :
