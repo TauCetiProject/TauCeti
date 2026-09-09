@@ -70,46 +70,35 @@ private lemma mk_tmul_zero (p : RegularFormPresentation K) :
     Quotient.mk (regularFormSetoid K) (p.tmul ⟨0, Fin.elim0⟩) =
       (0 : RegularFormClass K) := by
   rw [RegularFormClass.zero_def]
-  let indexEquiv : Fin (p.tmul ⟨0, Fin.elim0⟩).1 ≃ Fin 0 := finCongr (by simp)
-  let _ : IsEmpty (Fin (p.tmul ⟨0, Fin.elim0⟩).1) := Function.isEmpty indexEquiv
-  apply RegularFormClass.mk_eq_mk_iff.mpr
-  exact ⟨{
-    toLinearEquiv := LinearEquiv.funCongrLeft K K indexEquiv.symm
-    map_app' := fun x ↦ by
-      calc
-        presentedForm ⟨0, Fin.elim0⟩
-            (LinearEquiv.funCongrLeft K K indexEquiv.symm x) = 0 := by
-          rw [presentedForm_apply]
-          simp
-        _ = presentedForm (p.tmul ⟨0, Fin.elim0⟩) x := by
-          rw [presentedForm_apply]
-          simp
-  }⟩
+  apply congrArg (Quotient.mk (regularFormSetoid K))
+  let h : (p.tmul ⟨0, Fin.elim0⟩).1 = 0 := by simp
+  refine Sigma.ext (x := p.tmul ⟨0, Fin.elim0⟩) (y := ⟨0, Fin.elim0⟩) h ?_
+  let hf : (Fin (p.tmul ⟨0, Fin.elim0⟩).1 → Kˣ) = (Fin 0 → Kˣ) :=
+    congrArg (fun n ↦ Fin n → Kˣ) h
+  apply (cast_eq_iff_heq (e := hf)).mp
+  exact Subsingleton.elim _ _
 
 /-! ### The commutative semiring -/
 
-/-- Tensor product distributes over orthogonal sum on regular-form classes. -/
-theorem RegularFormClass.mul_add (x y z : RegularFormClass K) :
-    x * (y + z) = x * y + x * z := by
-  refine Quotient.inductionOn₃ x y z fun p q r ↦ ?_
-  rw [RegularFormClass.mk_add_mk, RegularFormClass.mk_mul_mk,
-    RegularFormClass.mk_mul_mk, RegularFormClass.mk_mul_mk,
-    RegularFormClass.mk_add_mk]
-  exact RegularFormClass.mk_eq_mk_iff.mpr (equivalent_presentedForm_tmul_append p q r)
-
-/-- Tensoring a regular-form class with the zero class gives the zero class. -/
-theorem RegularFormClass.mul_zero (x : RegularFormClass K) : x * 0 = 0 := by
-  refine Quotient.inductionOn x fun p ↦ ?_
-  rw [RegularFormClass.zero_def, RegularFormClass.mk_mul_mk]
-  exact mk_tmul_zero p
-
 /-- Orthogonal sum and tensor product make regular-form classes a commutative semiring. -/
-instance instCommSemiringRegularFormClass : CommSemiring (RegularFormClass K) where
-  left_distrib := RegularFormClass.mul_add
-  right_distrib x y z := by
-    rw [mul_comm (x + y), RegularFormClass.mul_add, mul_comm z x, mul_comm z y]
-  zero_mul x := by rw [mul_comm, RegularFormClass.mul_zero]
-  mul_zero := RegularFormClass.mul_zero
+instance instCommSemiringRegularFormClass : CommSemiring (RegularFormClass K) := by
+  let hmul_add (x y z : RegularFormClass K) : x * (y + z) = x * y + x * z := by
+    refine Quotient.inductionOn₃ x y z fun p q r ↦ ?_
+    rw [RegularFormClass.mk_add_mk, RegularFormClass.mk_mul_mk,
+      RegularFormClass.mk_mul_mk, RegularFormClass.mk_mul_mk,
+      RegularFormClass.mk_add_mk]
+    exact RegularFormClass.mk_eq_mk_iff.mpr (equivalent_presentedForm_tmul_append p q r)
+  let hmul_zero (x : RegularFormClass K) : x * 0 = 0 := by
+    refine Quotient.inductionOn x fun p ↦ ?_
+    rw [RegularFormClass.zero_def, RegularFormClass.mk_mul_mk]
+    exact mk_tmul_zero p
+  exact {
+    left_distrib := hmul_add
+    right_distrib := fun x y z ↦ by
+      rw [mul_comm (x + y), hmul_add, mul_comm z x, mul_comm z y]
+    zero_mul := fun x ↦ by rw [mul_comm, hmul_zero]
+    mul_zero := hmul_zero
+  }
 
 /-! ### Rank -/
 

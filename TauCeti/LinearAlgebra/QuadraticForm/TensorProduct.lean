@@ -105,4 +105,18 @@ theorem _root_.QuadraticForm.IsometryEquiv.tmulProd_tmul
       (m ⊗ₜ[R] np.1, m ⊗ₜ[R] np.2) :=
   TensorProduct.prodRight_tmul R R M N P m np
 
+/-- The inverse distributivity isometry combines a pair of pure tensors with the same first
+factor into a pure tensor with product-valued second factor. -/
+@[simp]
+theorem _root_.QuadraticForm.IsometryEquiv.tmulProd_symm_tmul
+    {M N P : Type*}
+    [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N]
+    [AddCommGroup P] [Module R P]
+    (Q : QuadraticForm R M) (S : QuadraticForm R N) (T : QuadraticForm R P)
+    (m : M) (n : N) (p : P) :
+    (QuadraticForm.IsometryEquiv.tmulProd Q S T).symm (m ⊗ₜ[R] n, m ⊗ₜ[R] p) =
+      m ⊗ₜ[R] (n, p) :=
+  TensorProduct.prodRight_symm_tmul R R M N P m n p
+
 end TauCeti
