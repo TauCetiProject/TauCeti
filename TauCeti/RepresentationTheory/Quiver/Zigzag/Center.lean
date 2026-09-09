@@ -491,12 +491,27 @@ theorem finrank_center_nonisolatedZigzagQuotient [Nontrivial k] [Fintype V] [Non
 
 /-! ### The centre of the public algebra -/
 
-/-- **The centre of the public zigzag algebra of a connected nontrivial graph has dimension
-`|V| + 1`.** This applies to finite connected graphs with at least two vertices. -/
-theorem finrank_center_zigzagAlgebra_of_connected [Nontrivial k] [Fintype V] [Nontrivial V]
+/-- **The centre of the public zigzag algebra of a connected graph has dimension `|V| + 1`.**
+This includes the one-vertex case, where the public algebra is the dual numbers. -/
+theorem finrank_center_zigzagAlgebra_of_connected [Nontrivial k] [Fintype V]
     (hconn : G.Connected) :
     Module.finrank k (Subalgebra.center k (zigzagAlgebra k G)) = Fintype.card V + 1 := by
-  rw [(centerCongr (zigzagAlgebraEquivNonisolated k G hconn)).toLinearEquiv.finrank_eq,
-    finrank_center_nonisolatedZigzagQuotient k G hconn.preconnected]
+  cases subsingleton_or_nontrivial V with
+  | inr _ =>
+      rw [(centerCongr (zigzagAlgebraEquivNonisolated k G hconn)).toLinearEquiv.finrank_eq,
+        finrank_center_nonisolatedZigzagQuotient k G hconn.preconnected]
+  | inl hV =>
+      let _ : Subsingleton V := hV
+      let _ : Unique V := { default := hconn.nonempty.some, uniq := fun _ => Subsingleton.elim _ _ }
+      let e : G ≃g (⊥ : SimpleGraph (Fin 1)) :=
+        { Equiv.ofUnique V (Fin 1) with
+          map_rel_iff' := by
+            intro i j
+            simp [Subsingleton.elim i j] }
+      rw [(centerCongr ((zigzagAlgebraEquiv k G e).trans
+        (zigzagAlgebraEquivA1 k))).toLinearEquiv.finrank_eq, Subalgebra.center_eq_top]
+      rw [(Subalgebra.topEquiv (R := k) (A := DualNumber k)).toLinearEquiv.finrank_eq]
+      change Module.finrank k (k × k) = Fintype.card V + 1
+      simp
 
 end TauCeti

@@ -46,6 +46,10 @@ The definitions retain the established node labels: finite nodes use the indices
 
 ## References
 
+This file implements the named-example dimension and centre targets in
+`TauCetiRoadmap/ZigzagPreprojective/README.md`, following the prototype graph presentations in
+`TauCetiRoadmap/ZigzagPreprojective/Suggested.lean`.
+
 The zigzag conventions and invariant formulas follow Huerfano--Khovanov, *A category for the
 adjoint representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag
 algebras*, Section 2. The affine `E₈ = T_{2,3,6}` labelling follows Kac, *Infinite dimensional Lie
@@ -121,10 +125,11 @@ theorem card_edgeFinset_zigzagAffineE8Graph : zigzagAffineE8Graph.edgeFinset.car
       (Finset.univ.filter fun x : Fin 9 × Fin 9 ↦
         (min (x.1 : ℕ) (x.2 : ℕ), max (x.1 : ℕ) (x.2 : ℕ)) ∈ edgePairs).card = 16 := by
     decide
-  change 2 * zigzagAffineE8Graph.edgeFinset.card =
-    (Finset.univ.filter fun x : Fin 9 × Fin 9 ↦
-      AffineDynkinType.E8.graph.Adj x.1 x.2).card at h
-  rw [hfilter, hcard] at h
+  have h' : 2 * zigzagAffineE8Graph.edgeFinset.card =
+      (Finset.univ.filter fun x : Fin 9 × Fin 9 ↦
+        AffineDynkinType.E8.graph.Adj x.1 x.2).card := by
+    simpa only [zigzagAffineE8Graph] using h
+  rw [hfilter, hcard] at h'
   omega
 
 /-- The affine `E₈ = T_{2,3,6}` graph is a tree. -/
