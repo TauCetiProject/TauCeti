@@ -24,6 +24,8 @@ description as the least common multiple of the indices of open overgroups.
 ## Main results
 
 * `Subgroup.profiniteIndex`: the supernatural index of a subgroup of a profinite group.
+* `Subgroup.index_map_quotient_eq_index_sup`: the ordinary index of a subgroup's image in a
+  quotient.
 * `Subgroup.profiniteIndex_anti`: subgroup inclusion reverses supernatural indices.
 * `Subgroup.profiniteIndex_eq_iSup_openSubgroup`: the description as the least common
   multiple of the indices of open overgroups.
@@ -52,6 +54,16 @@ namespace TauCeti
 open scoped ENat
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
+
+/-- The index of the image of a subgroup in a quotient is the index of its join with the
+quotienting subgroup. -/
+theorem _root_.Subgroup.index_map_quotient_eq_index_sup (H : Subgroup G)
+    (N : OpenNormalSubgroup G) :
+    (H.map (QuotientGroup.mk' N.toSubgroup)).index =
+      (H ⊔ N.toSubgroup).index := by
+  rw [H.index_map, QuotientGroup.ker_mk',
+    (QuotientGroup.mk' N.toSubgroup).range_eq_top_of_surjective
+      (QuotientGroup.mk'_surjective N.toSubgroup), Subgroup.index_top, mul_one]
 
 /-- The **index of a subgroup of a profinite group**, as a supernatural number. At a prime
 `ℓ`, it is the supremum over open normal subgroups `N` of the `ℓ`-adic valuations of
@@ -124,12 +136,6 @@ theorem _root_.Subgroup.profiniteIndex_eq_iSup_openSubgroup (H : Subgroup G) :
         (⟨U.1.toSubgroup.index,
           Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) := by
   rw [Subgroup.profiniteIndex_eq_iSup_ofNat]
-  have index_image_eq (N : OpenNormalSubgroup G) :
-      (H.map (QuotientGroup.mk' N.toSubgroup)).index =
-        (H ⊔ N.toSubgroup).index := by
-    rw [H.index_map, QuotientGroup.ker_mk',
-      (QuotientGroup.mk' N.toSubgroup).range_eq_top_of_surjective
-        (QuotientGroup.mk'_surjective N.toSubgroup), Subgroup.index_top, mul_one]
   apply le_antisymm
   · refine iSup_le fun N ↦ ?_
     let V : OpenSubgroup G :=
@@ -137,7 +143,7 @@ theorem _root_.Subgroup.profiniteIndex_eq_iSup_openSubgroup (H : Subgroup G) :
         isOpen' := Subgroup.isOpen_of_openSubgroup _ le_sup_right }
     let V' : {U : OpenSubgroup G // H ≤ U.toSubgroup} := ⟨V, le_sup_left⟩
     have hVpos : 0 < V.toSubgroup.index := by
-      rw [← index_image_eq N]
+      rw [← H.index_map_quotient_eq_index_sup N]
       exact Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite
     calc
       Supernatural.ofNat
@@ -147,7 +153,7 @@ theorem _root_.Subgroup.profiniteIndex_eq_iSup_openSubgroup (H : Subgroup G) :
             (⟨V.toSubgroup.index,
               hVpos⟩ : ℕ+) := by
         apply congrArg Supernatural.ofNat
-        exact Subtype.ext (index_image_eq N)
+        exact Subtype.ext (H.index_map_quotient_eq_index_sup N)
       _ ≤ ⨆ U : {U : OpenSubgroup G // H ≤ U.toSubgroup},
           Supernatural.ofNat
             (⟨U.1.toSubgroup.index,
@@ -162,7 +168,7 @@ theorem _root_.Subgroup.profiniteIndex_eq_iSup_openSubgroup (H : Subgroup G) :
         U.1.one_mem'
     have hdvd : U.1.toSubgroup.index ∣
         (H.map (QuotientGroup.mk' N.toSubgroup)).index := by
-      rw [index_image_eq N]
+      rw [H.index_map_quotient_eq_index_sup N]
       exact Subgroup.index_dvd_of_le (sup_le U.2 fun _ hx ↦ hN hx)
     refine le_trans ?_ (le_iSup (fun N : OpenNormalSubgroup G ↦
       Supernatural.ofNat
