@@ -226,6 +226,22 @@ noncomputable def finTwoMulEquivUnits (i half : R) (hi : i ^ 2 = -1)
   right_inv := finTwoToUnit_finTwoOfUnit i half hi hhalf
   map_mul' := finTwoToUnit_mul i hi
 
+/-- The explicit equivalence from two-dimensional special orthogonal matrices to units is given
+by `finTwoToUnit`. -/
+@[simp]
+theorem finTwoMulEquivUnits_apply (i half : R) (hi : i ^ 2 = -1)
+    (hhalf : 2 * half = 1) (M : Matrix.specialOrthogonalGroup (Fin 2) R) :
+    finTwoMulEquivUnits i half hi hhalf M = finTwoToUnit i hi M :=
+  (rfl)
+
+/-- The inverse of the explicit equivalence from two-dimensional special orthogonal matrices to
+units is given by `finTwoOfUnit`. -/
+@[simp]
+theorem finTwoMulEquivUnits_symm_apply (i half : R) (hi : i ^ 2 = -1)
+    (hhalf : 2 * half = 1) (u : Rˣ) :
+    (finTwoMulEquivUnits i half hi hhalf).symm u = finTwoOfUnit i half hi hhalf u :=
+  (rfl)
+
 /-- The unit `1` determines the identity two-dimensional special orthogonal matrix. -/
 @[simp]
 theorem finTwoOfUnit_one (i half : R) (hi : i ^ 2 = -1) (hhalf : 2 * half = 1) :
