@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
--- Non-public: the natural-floor asymptotic is used only to approximate real parameters by
--- integer multiples of the sequence of scales.
-import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
 # A limit criterion for the Lie algebra of a closed subgroup
@@ -66,24 +63,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 attribute [local instance] LieGroup.minSmoothnessThree
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-/-- If positive real numbers `uₙ` tend to zero, the largest integer multiple of `uₙ` not
-exceeding a fixed positive `s` tends to `s`. -/
-private theorem tendsto_natFloor_div_mul_of_tendsto_zero
-    {u : ℕ → ℝ} (hu : Tendsto u atTop (𝓝 0)) (hu_pos : ∀ n, 0 < u n)
-    {s : ℝ} (hs : 0 < s) :
-    Tendsto (fun n => (⌊s / u n⌋₊ : ℝ) * u n) atTop (𝓝 s) := by
-  have hu' : Tendsto u atTop (𝓝[>] 0) :=
-    tendsto_nhdsWithin_iff.mpr ⟨hu, Eventually.of_forall hu_pos⟩
-  have hdiv : Tendsto (fun n => s / u n) atTop atTop := by
-    simpa only [div_eq_mul_inv, Pi.inv_apply] using
-      hu'.inv_tendsto_nhdsGT_zero.const_mul_atTop hs
-  have hfloor := (tendsto_nat_floor_div_atTop (R := ℝ)).comp hdiv
-  convert hfloor.mul_const s using 1
-  · funext n
-    simp only [Function.comp_apply]
-    field_simp [ne_of_gt hs, ne_of_gt (hu_pos n)]
-  · simp
-
 /-- A limit criterion for the Lie algebra of a closed subgroup. Suppose positive scales `tₙ`
 tend to zero, derivations `Xₙ` tend to `X`, and every `lieExp (tₙ • Xₙ)` lies in `K`. Then `X`
 belongs to the Lie algebra of `K`.
@@ -103,13 +82,25 @@ theorem mem_lieSubalgebraOfSubgroup_of_tendsto {K : Subgroup G}
   have hpos : ∀ {r : ℝ}, 0 < r → lieExp (I := I) (r • X) ∈ K := by
     intro r hr
     let m : ℕ → ℕ := fun n => ⌊r / t n⌋₊
-    have hc : Tendsto (fun n => (m n : ℝ) * t n) atTop (𝓝 r) :=
-      tendsto_natFloor_div_mul_of_tendsto_zero ht ht_pos hr
+    have hc : Tendsto (fun n => (m n : ℝ) * t n) atTop (𝓝 r) := by
+      have ht' : Tendsto t atTop (𝓝[>] 0) :=
+        tendsto_nhdsWithin_iff.mpr ⟨ht, Eventually.of_forall ht_pos⟩
+      have hdiv : Tendsto (fun n => r / t n) atTop atTop := by
+        simpa only [div_eq_mul_inv, Pi.inv_apply] using
+          ht'.inv_tendsto_nhdsGT_zero.const_mul_atTop hr
+      have hfloor := (tendsto_nat_floor_div_atTop (R := ℝ)).comp hdiv
+      convert hfloor.mul_const r using 1
+      · funext n
+        simp only [m, Function.comp_apply]
+        field_simp [ne_of_gt hr, ne_of_gt (ht_pos n)]
+      · simp
     have hv : Tendsto (fun n => ((m n : ℝ) * t n) • Xn n) atTop (𝓝 (r • X)) :=
       hc.smul hXn
     refine hK.mem_of_tendsto
       ((contMDiff_lieExp (I := I) (G := G)).continuous.continuousAt.tendsto.comp hv) ?_
     filter_upwards with n
+    -- `filter_upwards` exposes membership in the underlying set; restate it as subgroup
+    -- membership so that `Subgroup.pow_mem` applies to the approximating exponential.
     change lieExp (I := I) (((m n : ℝ) * t n) • Xn n) ∈ K
     have hp := K.pow_mem (hmem n) (m n)
     rw [← lieExp_nsmul (I := I) (G := G) (t n • Xn n) (m n)] at hp
