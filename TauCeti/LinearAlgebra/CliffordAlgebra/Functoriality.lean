@@ -69,7 +69,7 @@ theorem map_mem_even (f : Q₁ →qᵢ Q₂) {x : CliffordAlgebra Q₁} (hx : x 
 
 section OrthogonalProduct
 
-variable {K : Type u} [CommRing K] [Invertible (2 : K)]
+variable {K : Type u} [CommRing K]
   {N₁ : Type v} [AddCommGroup N₁] [Module K N₁]
   {N₂ : Type w} [AddCommGroup N₂] [Module K N₂]
 
@@ -83,7 +83,6 @@ private noncomputable def decomposeTensorEquiv
     ((DirectSum.decomposeAlgEquiv (evenOdd P₂)).toLinearEquiv.lTensor
       (DirectSum (ZMod 2) fun i ↦ evenOdd P₁ i))
 
-omit [Invertible (2 : K)] in
 private theorem auxEquiv_includeLeft (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂)
     (x : CliffordAlgebra P₁) :
     GradedTensorProduct.auxEquiv K (evenOdd P₁) (evenOdd P₂)
@@ -95,14 +94,16 @@ private theorem auxEquiv_includeLeft (P₁ : QuadraticForm K N₁) (P₂ : Quadr
     decomposeTensorEquiv, Algebra.TensorProduct.includeLeft_apply, LinearEquiv.trans_apply,
     LinearEquiv.rTensor_tmul, LinearEquiv.lTensor_tmul]
   have h₁ : (DirectSum.decomposeAlgEquiv (evenOdd P₁)).toLinearEquiv x =
-      DirectSum.decompose (evenOdd P₁) x := rfl
+      DirectSum.decompose (evenOdd P₁) x :=
+    DirectSum.decomposeAlgEquiv_apply (evenOdd P₁) x
   have h₂ : (DirectSum.decomposeAlgEquiv (evenOdd P₂)).toLinearEquiv 1 =
-      DirectSum.decompose (evenOdd P₂) 1 := rfl
+      DirectSum.decompose (evenOdd P₂) 1 :=
+    DirectSum.decomposeAlgEquiv_apply (evenOdd P₂) 1
   rw [h₁, h₂]
 
 private theorem gradedTensorIncludeLeft_injective
     (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂)
-    [Module.Flat K (CliffordAlgebra P₁)] :
+    [Module.Flat K (CliffordAlgebra P₁)] [FaithfulSMul K (CliffordAlgebra P₂)] :
     Function.Injective (GradedTensorProduct.includeLeft (evenOdd P₁) (evenOdd P₂)) := by
   intro x y hxy
   apply Algebra.TensorProduct.includeLeft_injective
@@ -112,7 +113,6 @@ private theorem gradedTensorIncludeLeft_injective
   rw [auxEquiv_includeLeft, auxEquiv_includeLeft] at h
   exact (decomposeTensorEquiv P₁ P₂).injective h
 
-omit [Invertible (2 : K)] in
 private theorem toProd_includeLeft (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂)
     (x : CliffordAlgebra P₁) :
     toProd P₁ P₂ (GradedTensorProduct.includeLeft (evenOdd P₁) (evenOdd P₂) x) =
@@ -120,9 +120,10 @@ private theorem toProd_includeLeft (P₁ : QuadraticForm K N₁) (P₂ : Quadrat
   simp [toProd]
 
 /-- The Clifford-algebra map induced by the inclusion of the left summand of an orthogonal product
-is injective when the left Clifford algebra is flat and `2` is invertible. -/
+is injective when the left Clifford algebra is flat and scalar action on the right Clifford algebra
+is faithful. -/
 theorem map_inl_injective (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂)
-    [Module.Flat K (CliffordAlgebra P₁)] :
+    [Module.Flat K (CliffordAlgebra P₁)] [FaithfulSMul K (CliffordAlgebra P₂)] :
     Function.Injective (map (QuadraticMap.Isometry.inl P₁ P₂)) := by
   intro x y hxy
   apply gradedTensorIncludeLeft_injective P₁ P₂
