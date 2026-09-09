@@ -116,31 +116,37 @@ variable {X : Type u} {p : ℝ≥0∞} [PseudoMetricSpace X] [MeasurableSpace X]
   [BorelSpace X] [SecondCountableTopology X]
   [StandardBorelSpace X] [Fact (1 ≤ p)]
 
+omit [StandardBorelSpace X] in
+private theorem continuous_toProbabilityMeasure_of_edist_eq
+    {Y : Type*} [PseudoMetricSpace Y] (toProbabilityMeasure : Y → ProbabilityMeasure X)
+    (hedist : ∀ μ ν, edist μ ν = wassersteinEDist p
+      (toProbabilityMeasure μ : Measure X) (toProbabilityMeasure ν : Measure X)) :
+    Continuous toProbabilityMeasure := by
+  let f : Y → LevyProkhorov (ProbabilityMeasure X) :=
+    fun μ ↦ LevyProkhorov.ofMeasure (toProbabilityMeasure μ)
+  have hf : Continuous f := Metric.continuous_iff.mpr fun μ ε hε ↦ by
+    refine ⟨(ε / 2) ^ 2, sq_pos_of_pos (half_pos hε), fun ν hν ↦ ?_⟩
+    have hW : wassersteinEDist p (toProbabilityMeasure ν : Measure X)
+        (toProbabilityMeasure μ : Measure X) <
+        ENNReal.ofReal (ε / 2) * ENNReal.ofReal (ε / 2) := by
+      rw [← ENNReal.ofReal_mul (half_pos hε).le]
+      rw [← hedist ν μ, edist_dist,
+        ENNReal.ofReal_lt_ofReal_iff (mul_pos (half_pos hε) (half_pos hε))]
+      simpa only [pow_two] using hν
+    have hLP := levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self
+      measurable_edist Fact.out hW
+    rw [LevyProkhorov.dist_probabilityMeasure_def, levyProkhorovDist]
+    exact (ENNReal.toReal_mono (by finiteness) hLP).trans_lt <| by
+      simpa only [ENNReal.toReal_ofReal (half_pos hε).le] using half_lt_self hε
+  exact LevyProkhorov.continuous_toMeasure_probabilityMeasure.comp hf
+
 namespace WassersteinSpace
 
 /-- The inclusion of the finite-moment `p`-Wasserstein space into probability measures is
 continuous when the codomain carries its weak topology. -/
 theorem continuous_toProbabilityMeasure :
-    Continuous (toProbabilityMeasure : WassersteinSpace p X → ProbabilityMeasure X) := by
-  let f : WassersteinSpace p X → LevyProkhorov (ProbabilityMeasure X) :=
-    fun μ ↦ LevyProkhorov.ofMeasure (μ : ProbabilityMeasure X)
-  have hf : Continuous f := Metric.continuous_iff.mpr fun μ ε hε ↦ by
-    refine ⟨(ε / 2) ^ 2, sq_pos_of_pos (half_pos hε), fun ν hν ↦ ?_⟩
-    have hW : wassersteinEDist p
-        (((ν : WassersteinSpace p X) : ProbabilityMeasure X) : Measure X)
-        (((μ : WassersteinSpace p X) : ProbabilityMeasure X) : Measure X) <
-        ENNReal.ofReal (ε / 2) * ENNReal.ofReal (ε / 2) := by
-      rw [← ENNReal.ofReal_mul (half_pos hε).le]
-      rw [← WassersteinSpace.edist_def, edist_dist,
-        ENNReal.ofReal_lt_ofReal_iff (mul_pos (half_pos hε) (half_pos hε))]
-      simpa only [pow_two] using hν
-    have hLP := levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self
-      measurable_edist Fact.out hW
-    change levyProkhorovDist _ _ < ε
-    rw [levyProkhorovDist]
-    exact (ENNReal.toReal_mono (by finiteness) hLP).trans_lt <| by
-      simpa only [ENNReal.toReal_ofReal (half_pos hε).le] using half_lt_self hε
-  exact LevyProkhorov.continuous_toMeasure_probabilityMeasure.comp hf
+    Continuous (toProbabilityMeasure : WassersteinSpace p X → ProbabilityMeasure X) :=
+  continuous_toProbabilityMeasure_of_edist_eq toProbabilityMeasure edist_def
 
 end WassersteinSpace
 
@@ -151,26 +157,8 @@ variable {μ₀ : ProbabilityMeasure X}
 /-- The inclusion of an anchored finite-distance `p`-Wasserstein component into probability
 measures is continuous when the codomain carries its weak topology. -/
 theorem continuous_toProbabilityMeasure :
-    Continuous (toProbabilityMeasure : WassersteinComponent p μ₀ → ProbabilityMeasure X) := by
-  let f : WassersteinComponent p μ₀ → LevyProkhorov (ProbabilityMeasure X) :=
-    fun μ ↦ LevyProkhorov.ofMeasure (μ : ProbabilityMeasure X)
-  have hf : Continuous f := Metric.continuous_iff.mpr fun μ ε hε ↦ by
-    refine ⟨(ε / 2) ^ 2, sq_pos_of_pos (half_pos hε), fun ν hν ↦ ?_⟩
-    have hW : wassersteinEDist p
-        (((ν : WassersteinComponent p μ₀) : ProbabilityMeasure X) : Measure X)
-        (((μ : WassersteinComponent p μ₀) : ProbabilityMeasure X) : Measure X) <
-        ENNReal.ofReal (ε / 2) * ENNReal.ofReal (ε / 2) := by
-      rw [← ENNReal.ofReal_mul (half_pos hε).le]
-      rw [← WassersteinComponent.edist_def, edist_dist,
-        ENNReal.ofReal_lt_ofReal_iff (mul_pos (half_pos hε) (half_pos hε))]
-      simpa only [pow_two] using hν
-    have hLP := levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self
-      measurable_edist Fact.out hW
-    change levyProkhorovDist _ _ < ε
-    rw [levyProkhorovDist]
-    exact (ENNReal.toReal_mono (by finiteness) hLP).trans_lt <| by
-      simpa only [ENNReal.toReal_ofReal (half_pos hε).le] using half_lt_self hε
-  exact LevyProkhorov.continuous_toMeasure_probabilityMeasure.comp hf
+    Continuous (toProbabilityMeasure : WassersteinComponent p μ₀ → ProbabilityMeasure X) :=
+  continuous_toProbabilityMeasure_of_edist_eq toProbabilityMeasure edist_def
 
 end WassersteinComponent
 
