@@ -194,9 +194,9 @@ theorem mem_weilDifferentialFiltration_zero_iff_forall_order_nonneg
     (hω : ω ≠ 0) :
     ω ∈ weilDifferentialFiltration (0 : Divisor k F) ↔
       ∀ P : Place k F, 0 ≤ weilDifferentialOrder hF hex hmem hω P := by
-  rw [mem_weilDifferentialFiltration_iff_le_weilDifferentialDivisor hF hex hmem hω]
-  change (∀ P : Place k F, 0 ≤ (weilDifferentialDivisor hF hex hmem hω).coeff P) ↔ _
-  simp only [coeff_weilDifferentialDivisor]
+  rw [mem_weilDifferentialFiltration_iff_le_weilDifferentialDivisor hF hex hmem hω,
+    AlgebraicGeometry.WeilDivisor.le_iff]
+  simp only [AlgebraicGeometry.WeilDivisor.coeff_zero, coeff_weilDifferentialDivisor]
 
 /-- **The transformation law `(z · ω) = div z + (ω)`** (Stichtenoth, Proposition 1.5.13): the
 divisor of a Weil differential changes by a principal divisor when the differential is multiplied
