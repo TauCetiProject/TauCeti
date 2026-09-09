@@ -125,14 +125,14 @@ noncomputable def exactK0OfFamily (i : I) : ExactK0 (finiteModulesExactStructure
   ExactK0.of (S i)
 
 omit [IsArtinianRing R] hS in
-/-- A member of the family maps to its class in the exact Grothendieck group.
-
-This is a rewrite lemma rather than a simp lemma because simplifying through it makes the
-specialized Jordan--Hölder coordinate simp lemmas fail the `simpNF` linter. -/
+/-- The characteristic equation of `exactK0OfFamily`: the member at `i` is the class `[S i]` in
+the exact Grothendieck group. Intended for explicit rewriting; the specialized Jordan--Hölder
+coordinate lemmas below are the `simp` normal forms. -/
 theorem exactK0OfFamily_apply (i : I) :
     exactK0OfFamily S i = ExactK0.of (S i) :=
   (Eq.refl _)
 
+/-- A member of a simple family has Jordan--Hölder coordinate one on its own class. -/
 @[simp]
 theorem jordanHolderCoordinate_exactK0OfFamily_self (i : I) :
     jordanHolderCoordinate R (S i) (exactK0OfFamily S i) = 1 :=
@@ -178,8 +178,10 @@ def IsExhaustiveSimpleFamily : Prop :=
     ∃ i, Nonempty ((M : Type u) ≃ₗ[R] S i)
 
 omit [IsArtinianRing R] hS in
-/-- Unfolding lemma for `IsExhaustiveSimpleFamily`: its body is not exposed outside this
-module, so consumers need this to build or use the predicate. -/
+/-- Characterization of `IsExhaustiveSimpleFamily`: the family is exhaustive exactly when every
+simple finitely generated module is isomorphic to one of its members. Importing modules build and
+use the predicate through this lemma, since the body of the definition above is not exposed to
+them. -/
 theorem isExhaustiveSimpleFamily_iff : IsExhaustiveSimpleFamily S ↔
     ∀ (M : FGModuleCat.{u} R), IsSimpleModule R M →
       ∃ i, Nonempty ((M : Type u) ≃ₗ[R] S i) :=
