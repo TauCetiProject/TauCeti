@@ -264,9 +264,11 @@ theorem realCliffordSpinContinuousMulEquivLastStabilizer_apply
 
 /-- The multiplicative equivalence underlying the topological stabilizer equivalence is the
 canonical algebraic stabilizer equivalence. -/
+@[simp]
 theorem realCliffordSpinContinuousMulEquivLastStabilizer_toMulEquiv
     (n : ℕ) [NeZero n] :
-    (realCliffordSpinContinuousMulEquivLastStabilizer n).toMulEquiv =
+    (realCliffordSpinContinuousMulEquivLastStabilizer n :
+        realCliffordSpinGroupZero n ≃* realCliffordSpinLastStabilizer n) =
       realCliffordSpinEquivLastStabilizer n := by
   apply MulEquiv.ext
   intro x
