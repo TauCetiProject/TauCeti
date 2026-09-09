@@ -28,9 +28,9 @@ transport roadmap.
 
 ## Main statements
 
-* `TauCeti.Measure.separationQuotient` is pushforward along Mathlib's separation-quotient map,
+* `MeasureTheory.Measure.separationQuotient` is pushforward along Mathlib's separation-quotient map,
   carrying the quotient's Borel measurable structure.
-* `TauCeti.Measure.separationQuotient_eq_iff` says that two finite Borel measures on a
+* `MeasureTheory.Measure.separationQuotient_eq_iff` says that two finite Borel measures on a
   pseudometric space have the same quotient pushforward exactly when they agree.
 * `TauCeti.wassersteinEDist_eq_zero_iff_map_separationQuotient_mk` characterizes zero Wasserstein
   distance by equality after pushforward to the metric separation quotient, for every nonzero
@@ -50,11 +50,9 @@ noncomputable section
 open MeasureTheory Set
 open scoped ENNReal
 
-namespace TauCeti
-
 universe u
 
-namespace Measure
+namespace MeasureTheory.Measure
 
 variable {X : Type u} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
@@ -103,7 +101,9 @@ theorem dirac_eq_dirac_of_dist_eq_zero {x y : X} (hxy : dist x y = 0) :
     exact if_congr ((Metric.inseparable_iff.2 hxy).mem_open_iff hs) rfl rfl
   · simp
 
-end Measure
+end MeasureTheory.Measure
+
+namespace TauCeti
 
 variable {X : Type u} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
   [SecondCountableTopology X] {p : ℝ≥0∞}
