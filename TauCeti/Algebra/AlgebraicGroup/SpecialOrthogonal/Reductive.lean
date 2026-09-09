@@ -13,7 +13,7 @@ import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Smooth
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
-# The unipotent radical obstruction for higher-rank special orthogonal groups
+# The unipotent radical obstruction for higher-dimensional special orthogonal groups
 
 Let `SOₙ` be the special orthogonal group of the standard symmetric form over a field of
 characteristic different from two. In dimension at least three, every normal smooth unipotent
@@ -26,8 +26,8 @@ identifies its defining Hopf ideal with the augmentation ideal.
 
 Smoothness is already known away from characteristic two. Consequently reductivity of `SOₙ`
 in dimension at least three is equivalent to the one remaining geometric condition,
-connectedness. This isolates exactly what is still needed for the higher-rank standard
-special-orthogonal groups.
+connectedness. This isolates exactly what is still needed for the dimension-at-least-three
+standard special-orthogonal groups.
 
 ## Main declarations
 
@@ -43,10 +43,6 @@ special-orthogonal groups.
 
 * J. S. Milne, *Algebraic Groups* (2017), §§ 4.a, 19.b, and 21.
 * T. A. Springer, *Linear Algebraic Groups*, §§ 2.2, 2.4, and Chapter 8.
-
-The formal assembly follows the corresponding standard-representation argument in
-`TauCeti.Algebra.AlgebraicGroup.Symplectic.Reductive`, using the shared normal-unipotent
-elimination theorem rather than repeating its invariant-subspace proof.
 -/
 
 public section
@@ -86,6 +82,8 @@ theorem eq_augmentation_of_isNormal_of_smoothUnipotent_of_three_le
       rw [← finiteTypeCoordinateHopfAlgebra_obj]
       exact (finiteTypeCoordinateHopfAlgebra k n).property⟩
   let _ : IsReduced H := by
+    -- `H` packages this coordinate algebra with its finite-type proof, so its carrier is
+    -- definitionally the coordinate algebra on which smoothness supplies reducedness.
     change IsReduced (coordinateHopfAlgebra k n)
     exact isReduced_of_smooth_of_field k _
   let _ : Comodule k (coordinateHopfAlgebra k n) (Fin n → k) := standardComodule k n
