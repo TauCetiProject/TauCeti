@@ -51,8 +51,7 @@ above becomes the bijection `S ≃ HeightOneSpectrum 𝒪_S`.
   mutually inverse, and `TauCeti.Place.exists_eq_ofPrime_iff` identifies the places in the image
   as exactly the places finite on the model, with `TauCeti.Place.range_ofPrime` and
   `TauCeti.Place.compl_range_ofPrime` the same statement for the finite chart and its complement
-  as sets of places; `TauCeti.Place.exists_algebraMap_notMem_integers` records that the complement
-  is nonempty — every model has a place at infinity.
+  as sets of places.
 * `TauCeti.Place.ord_ofPrime_algebraMap`: the coefficient formula `ord_P r = mult_𝔭 (r)`, for
   `r ≠ 0`, the `𝔭`-form of `TauCeti.Place.ord_algebraMap_eq_multiplicity_center`.
 * `TauCeti.Place.quotientAlgEquivResidueField`: the residue field of a place finite on the model
@@ -183,24 +182,6 @@ theorem compl_range_ofPrime :
   rw [range_ofPrime]
   ext P
   simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_forall]
-
-omit [IsDedekindDomain R] [Algebra k R] [IsScalarTower k R F] in
-variable (R) in
-/-- **Every affine model of an algebraic function field has a place at infinity.**  If no place
-were infinite on `R`, every element of `R` would be regular at every place, hence algebraic over
-`k` (`TauCeti.Place.mem_algebraicClosure_iff_forall_mem_integers`); the algebraic elements form a
-subfield, so every fraction of two elements of `R` would be algebraic too, and `F` is the fraction
-field of `R`.  That contradicts the transcendental element of an algebraic function field. -/
-theorem exists_algebraMap_notMem_integers (hF : IsFunctionField k F) :
-    ∃ (P : Place k F) (r : R), algebraMap R F r ∉ P.integers := by
-  by_contra hcon
-  have hmem : ∀ (P : Place k F) (r : R), algebraMap R F r ∈ P.integers :=
-    fun P r ↦ not_not.mp fun hr ↦ hcon ⟨P, r, hr⟩
-  have hR : ∀ r : R, algebraMap R F r ∈ algebraicClosure k F := fun r ↦
-    (mem_algebraicClosure_iff_forall_mem_integers hF).mpr fun P ↦ hmem P r
-  obtain ⟨x, hx⟩ := IsFunctionField.exists_transcendental hF
-  obtain ⟨a, b, -, rfl⟩ := IsFractionRing.div_surjective (A := R) x
-  exact hx (_root_.mem_algebraicClosure_iff.mp (div_mem (hR a) (hR b)))
 
 /-- **The coefficient formula on the finite chart**: the order at the place of `𝔭` of a nonzero
 element of the model is the multiplicity of `𝔭` in the ideal it generates. This is

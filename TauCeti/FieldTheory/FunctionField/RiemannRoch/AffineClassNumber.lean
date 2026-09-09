@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Divisor.AffineModel
+public import TauCeti.FieldTheory.FunctionField.Place.Existence
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.ClassNumber
 
 /-!

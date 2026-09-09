@@ -33,6 +33,8 @@ subring is discrete, and that is
 * `TauCeti.Place.mem_algebraicClosure_iff_forall_mem_integers` and
   `TauCeti.Place.coe_algebraicClosure_eq_iInter_integers`: `algebraicClosure k F = ⋂_P 𝒪_P`, the
   constants are the everywhere-regular functions.
+* `TauCeti.Place.exists_algebraMap_notMem_integers`: every subring with fraction field `F` has a
+  place at infinity.
 
 ## References
 
@@ -46,7 +48,7 @@ open Polynomial
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
 
@@ -143,6 +145,32 @@ theorem coe_algebraicClosure_eq_iInter_integers (hF : IsFunctionField k F) :
     (algebraicClosure k F : Set F) = ⋂ P : Place k F, (P.integers : Set F) := by
   ext f
   simpa using mem_algebraicClosure_iff_forall_mem_integers hF
+
+/-! ### Places at infinity of affine models -/
+
+section PlacesAtInfinity
+
+variable (k F)
+variable {R : Type w} [CommRing R] [Algebra R F] [IsFractionRing R F]
+
+variable (R) in
+/-- **Every affine model of an algebraic function field has a place at infinity.** If no place
+were infinite on `R`, every element of `R` would be regular at every place, hence algebraic over
+`k` (`TauCeti.Place.mem_algebraicClosure_iff_forall_mem_integers`); the algebraic elements form a
+subfield, so every fraction of two elements of `R` would be algebraic too, and `F` is the fraction
+field of `R`. That contradicts the transcendental element of an algebraic function field. -/
+theorem exists_algebraMap_notMem_integers (hF : IsFunctionField k F) :
+    ∃ (P : Place k F) (r : R), algebraMap R F r ∉ P.integers := by
+  by_contra hcon
+  have hmem : ∀ (P : Place k F) (r : R), algebraMap R F r ∈ P.integers :=
+    fun P r ↦ not_not.mp fun hr ↦ hcon ⟨P, r, hr⟩
+  have hR : ∀ r : R, algebraMap R F r ∈ algebraicClosure k F := fun r ↦
+    (mem_algebraicClosure_iff_forall_mem_integers hF).mpr fun P ↦ hmem P r
+  obtain ⟨x, hx⟩ := IsFunctionField.exists_transcendental hF
+  obtain ⟨a, b, -, rfl⟩ := IsFractionRing.div_surjective (A := R) x
+  exact hx (_root_.mem_algebraicClosure_iff.mp (div_mem (hR a) (hR b)))
+
+end PlacesAtInfinity
 
 end Place
 
