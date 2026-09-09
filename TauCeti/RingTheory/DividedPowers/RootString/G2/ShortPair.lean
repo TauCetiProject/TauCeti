@@ -5,7 +5,7 @@ Authors: Claude, The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.DividedPowers.RootString.G2
+public import TauCeti.RingTheory.DividedPowers.RootString.G2.Basic
 
 /-!
 # Normal ordering divided powers for the short pair in type `G₂`
@@ -29,23 +29,14 @@ x⁽ᵐ⁾ y⁽ⁿ⁾ = ∑ b + c + 2d ≤ n, b + 2c + d ≤ m,
               2ᵇ 3ᶜ⁺ᵈ • y⁽ⁿ⁻ᵇ⁻ᶜ⁻²ᵈ⁾ z⁽ᵇ⁾ w⁽ᶜ⁾ s⁽ᵈ⁾ x⁽ᵐ⁻ᵇ⁻²ᶜ⁻ᵈ⁾.
 ```
 
-Its coefficients are integers, so it restricts to the Kostant integral form and survives base
-change to a ring of arbitrary characteristic. Together with
+Its displayed coefficients are natural numbers. Together with
 `TauCeti.Associative.dividedPower_mul_dividedPower_of_commutator_eq_three_nsmul`, this covers the
 two nontrivial normal-ordering configurations needed for type `G₂`.
 
-The proof first uses `TauCeti.Associative.dividedPower_mul_of_ad_dividedPower_series` for the
-scaled vectors `2 • z`, `3 • w`, and `3 • s`, where the straightening coefficients are one, and
-then uses `TauCeti.Associative.dividedPower_smul` to recover the displayed Chevalley-basis
-coefficients.
-
-The proof architecture is adapted from Claude's formalization of the other type-`G₂`
-configuration in `TauCeti.RingTheory.DividedPowers.RootString.G2`.
-
 ## Main results
 
-* `TauCeti.Associative.dividedPower_mul_dividedPower_of_g2_short_pair`: the integral
-  Chevalley-basis straightening rule for the pair `α`, `α + β` in type `G₂`.
+* `TauCeti.Associative.dividedPower_mul_dividedPower_of_g2_short_pair`: the Chevalley-basis
+  straightening rule for the pair `α`, `α + β` in type `G₂`.
 
 ## References
 
@@ -158,12 +149,6 @@ private theorem g2ShortPairSeries_zero (n : ℕ) :
   rw [g2ShortPairSeries, hindex]
   simp [g2ShortPairMonomial]
 
-private theorem mem_filter_g2ShortPairSeriesIndex {n k : ℕ} {P : (ℕ × ℕ × ℕ) → Prop}
-    [DecidablePred P] {p : ℕ × ℕ × ℕ} :
-    p ∈ {p ∈ g2ShortPairSeriesIndex n k | P p} ↔
-      (p.1 + p.2.1 + 2 * p.2.2 ≤ n ∧ p.1 + 2 * p.2.1 + p.2.2 = k) ∧ P p := by
-  rw [Finset.mem_filter, mem_g2ShortPairSeriesIndex]
-
 private theorem mul_g2ShortPairMonomial (hxy : x * y = y * x + z)
     (hxz : x * z = z * x + 2 • w) (hzy : z * y = y * z + 2 • s) (hxw : Commute x w)
     (hxs : Commute x s) (hys : Commute y s) (hzw : Commute z w) (hzs : Commute z s)
@@ -208,67 +193,62 @@ private theorem mul_g2ShortPairSeries (hxy : x * y = y * x + z)
     x * g2ShortPairSeries y z w s n k =
       g2ShortPairSeries y z w s n k * x + (k + 1) • g2ShortPairSeries y z w s n (k + 1) := by
   classical
+  -- The reindexing architecture follows Claude's proof of the other type-`G₂` configuration in
+  -- `TauCeti.RingTheory.DividedPowers.RootString.G2.Basic`.
   have hshiftA : ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k |
         0 < n - p.1 - p.2.1 - 2 * p.2.2},
         (p.1 + 1) • g2ShortPairMonomial y z w s n (p.1 + 1, p.2.1, p.2.2) =
       ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.1},
         q.1 • g2ShortPairMonomial y z w s n q := by
-    refine Finset.sum_nbij' (fun p => (p.1 + 1, p.2.1, p.2.2))
-      (fun q => (q.1 - 1, q.2.1, q.2.2)) ?_ ?_ ?_ ?_ ?_
+    refine sum_nbij_filter_of_mem_iff (P := fun p => 0 < n - p.1 - p.2.1 - 2 * p.2.2)
+      (Q := fun q => 0 < q.1) (g := fun q => q.1 • g2ShortPairMonomial y z w s n q)
+      (fun _ => mem_g2ShortPairSeriesIndex)
+      (fun _ => mem_g2ShortPairSeriesIndex) (fun p => (p.1 + 1, p.2.1, p.2.2))
+      (fun q => (q.1 - 1, q.2.1, q.2.2)) ?_ ?_ ?_ ?_
     · rintro ⟨b, c, d⟩ hp
-      simp only [mem_filter_g2ShortPairSeriesIndex] at hp ⊢
-      omega
+      dsimp at *; omega
     · rintro ⟨b, c, d⟩ hq
-      simp only [mem_filter_g2ShortPairSeriesIndex] at hq ⊢
-      omega
+      dsimp at *; omega
     · rintro ⟨b, c, d⟩ _
       simp
     · rintro ⟨b, c, d⟩ hq
-      simp only [mem_filter_g2ShortPairSeriesIndex] at hq
       simp [Nat.sub_add_cancel hq.2]
-    · rintro ⟨b, c, d⟩ _
-      rfl
   have hshiftB : ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k | 0 < p.1},
         (2 * (p.2.1 + 1)) •
           g2ShortPairMonomial y z w s n (p.1 - 1, p.2.1 + 1, p.2.2) =
       ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.1},
         (2 * q.2.1) • g2ShortPairMonomial y z w s n q := by
-    refine Finset.sum_nbij' (fun p => (p.1 - 1, p.2.1 + 1, p.2.2))
-      (fun q => (q.1 + 1, q.2.1 - 1, q.2.2)) ?_ ?_ ?_ ?_ ?_
+    refine sum_nbij_filter_of_mem_iff (P := fun p => 0 < p.1) (Q := fun q => 0 < q.2.1)
+      (g := fun q => (2 * q.2.1) • g2ShortPairMonomial y z w s n q)
+      (fun _ => mem_g2ShortPairSeriesIndex)
+      (fun _ => mem_g2ShortPairSeriesIndex) (fun p => (p.1 - 1, p.2.1 + 1, p.2.2))
+      (fun q => (q.1 + 1, q.2.1 - 1, q.2.2)) ?_ ?_ ?_ ?_
     · rintro ⟨b, c, d⟩ hp
-      simp only [mem_filter_g2ShortPairSeriesIndex] at hp ⊢
-      omega
+      dsimp at *; omega
     · rintro ⟨b, c, d⟩ hq
-      simp only [mem_filter_g2ShortPairSeriesIndex] at hq ⊢
-      omega
+      dsimp at *; omega
     · rintro ⟨b, c, d⟩ hp
-      simp only [mem_filter_g2ShortPairSeriesIndex] at hp
       simp [Nat.sub_add_cancel hp.2]
     · rintro ⟨b, c, d⟩ hq
-      simp only [mem_filter_g2ShortPairSeriesIndex] at hq
       simp [Nat.sub_add_cancel hq.2]
-    · rintro ⟨b, c, d⟩ _
-      rfl
   have hshiftC : ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k |
         1 < n - p.1 - p.2.1 - 2 * p.2.2},
         (p.2.2 + 1) • g2ShortPairMonomial y z w s n (p.1, p.2.1, p.2.2 + 1) =
       ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.2},
         q.2.2 • g2ShortPairMonomial y z w s n q := by
-    refine Finset.sum_nbij' (fun p => (p.1, p.2.1, p.2.2 + 1))
-      (fun q => (q.1, q.2.1, q.2.2 - 1)) ?_ ?_ ?_ ?_ ?_
+    refine sum_nbij_filter_of_mem_iff (P := fun p => 1 < n - p.1 - p.2.1 - 2 * p.2.2)
+      (Q := fun q => 0 < q.2.2) (g := fun q => q.2.2 • g2ShortPairMonomial y z w s n q)
+      (fun _ => mem_g2ShortPairSeriesIndex)
+      (fun _ => mem_g2ShortPairSeriesIndex) (fun p => (p.1, p.2.1, p.2.2 + 1))
+      (fun q => (q.1, q.2.1, q.2.2 - 1)) ?_ ?_ ?_ ?_
     · rintro ⟨b, c, d⟩ hp
-      simp only [mem_filter_g2ShortPairSeriesIndex] at hp ⊢
-      omega
+      dsimp at *; omega
     · rintro ⟨b, c, d⟩ hq
-      simp only [mem_filter_g2ShortPairSeriesIndex] at hq ⊢
-      omega
+      dsimp at *; omega
     · rintro ⟨b, c, d⟩ _
       simp
     · rintro ⟨b, c, d⟩ hq
-      simp only [mem_filter_g2ShortPairSeriesIndex] at hq
       simp [Nat.sub_add_cancel hq.2]
-    · rintro ⟨b, c, d⟩ _
-      rfl
   have hcombine : ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.1},
         q.1 • g2ShortPairMonomial y z w s n q +
       ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.1},
@@ -363,7 +343,7 @@ x⁽ᵐ⁾ y⁽ⁿ⁾ = ∑ b + c + 2d ≤ n, b + 2c + d ≤ m,
 Here `x`, `y`, `z`, `w`, and `s` model Chevalley root vectors for `α`, `α + β`, `2α + β`,
 `3α + β`, and `3α + 2β`, respectively. The powers of `2` and `3` are the structure constants
 introduced by passing from the scaled vectors `2 • z`, `3 • w`, and `3 • s` back to the
-Chevalley basis. In particular, every displayed coefficient is integral. -/
+Chevalley basis. In particular, every displayed coefficient is a natural number. -/
 theorem dividedPower_mul_dividedPower_of_g2_short_pair (hxy : x * y = y * x + 2 • z)
     (hxz : x * z = z * x + 3 • w) (hzy : z * y = y * z + 3 • s) (hxw : Commute x w)
     (hxs : Commute x s) (hys : Commute y s) (hzw : Commute z w) (hzs : Commute z s)

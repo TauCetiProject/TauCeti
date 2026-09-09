@@ -40,7 +40,7 @@ and it enters through the bracket `w * z = z * w + 3 • s` rather than through 
 For the other nontrivial pair `α`, `α + β`, the root `3α + 2β` arises instead from
 `⁅e_(α + β), e_(2α + β)⁆`. Its divided-power straightening rule is
 `TauCeti.Associative.dividedPower_mul_dividedPower_of_g2_short_pair` in
-`TauCeti.RingTheory.DividedPowers.RootString.ShortPair`.
+`TauCeti.RingTheory.DividedPowers.RootString.G2.ShortPair`.
 
 The proof feeds `TauCeti.Associative.dividedPower_mul_of_ad_dividedPower_series` the sequence
 
@@ -344,38 +344,6 @@ Each of the four ways to advance the series moves the index `p` of weighted degr
 index of weighted degree `k + 1` by a fixed shift of the exponents.  All four are instances of
 one reindexing lemma, which leaves each of them only the arithmetic of its own shift. -/
 
-private theorem mem_filter_g2SeriesIndex {n k : ℕ} {P : (ℕ × ℕ × ℕ × ℕ) → Prop} [DecidablePred P]
-    {p : ℕ × ℕ × ℕ × ℕ} :
-    p ∈ {p ∈ g2SeriesIndex n k | P p} ↔
-      (p.1 + p.2.1 + p.2.2.1 + 2 * p.2.2.2 ≤ n ∧
-        p.1 + 2 * p.2.1 + 3 * p.2.2.1 + 3 * p.2.2.2 = k) ∧ P p := by
-  rw [Finset.mem_filter, mem_g2SeriesIndex]
-
-private theorem sum_g2Monomial_shift {n k : ℕ} {P Q : (ℕ × ℕ × ℕ × ℕ) → Prop}
-    [DecidablePred P] [DecidablePred Q]
-    (f finv : (ℕ × ℕ × ℕ × ℕ) → (ℕ × ℕ × ℕ × ℕ)) (coeff : (ℕ × ℕ × ℕ × ℕ) → ℕ)
-    (hf : ∀ p, (p.1 + p.2.1 + p.2.2.1 + 2 * p.2.2.2 ≤ n ∧
-        p.1 + 2 * p.2.1 + 3 * p.2.2.1 + 3 * p.2.2.2 = k) ∧ P p →
-      ((f p).1 + (f p).2.1 + (f p).2.2.1 + 2 * (f p).2.2.2 ≤ n ∧
-        (f p).1 + 2 * (f p).2.1 + 3 * (f p).2.2.1 + 3 * (f p).2.2.2 = k + 1) ∧ Q (f p))
-    (hfinv : ∀ q, (q.1 + q.2.1 + q.2.2.1 + 2 * q.2.2.2 ≤ n ∧
-        q.1 + 2 * q.2.1 + 3 * q.2.2.1 + 3 * q.2.2.2 = k + 1) ∧ Q q →
-      ((finv q).1 + (finv q).2.1 + (finv q).2.2.1 + 2 * (finv q).2.2.2 ≤ n ∧
-        (finv q).1 + 2 * (finv q).2.1 + 3 * (finv q).2.2.1 + 3 * (finv q).2.2.2 = k) ∧ P (finv q))
-    (hleft : ∀ p, (p.1 + p.2.1 + p.2.2.1 + 2 * p.2.2.2 ≤ n ∧
-        p.1 + 2 * p.2.1 + 3 * p.2.2.1 + 3 * p.2.2.2 = k) ∧ P p → finv (f p) = p)
-    (hright : ∀ q, (q.1 + q.2.1 + q.2.2.1 + 2 * q.2.2.2 ≤ n ∧
-        q.1 + 2 * q.2.1 + 3 * q.2.2.1 + 3 * q.2.2.2 = k + 1) ∧ Q q → f (finv q) = q) :
-    ∑ p ∈ {p ∈ g2SeriesIndex n k | P p},
-        (coeff (f p)) • g2Monomial y z w v s n (f p) =
-      ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | Q q}, coeff q • g2Monomial y z w v s n q :=
-  Finset.sum_nbij' f finv
-    (fun _ hp => mem_filter_g2SeriesIndex.mpr (hf _ (mem_filter_g2SeriesIndex.mp hp)))
-    (fun _ hq => mem_filter_g2SeriesIndex.mpr (hfinv _ (mem_filter_g2SeriesIndex.mp hq)))
-    (fun _ hp => hleft _ (mem_filter_g2SeriesIndex.mp hp))
-    (fun _ hq => hright _ (mem_filter_g2SeriesIndex.mp hq))
-    (fun _ _ => rfl)
-
 -- `mul_dividedPower_quintuple` in the coordinates the series is indexed by: `g2Monomial n p`
 -- pins the exponent of `y` to `n` minus the weighted degree of `p`, so each of the four releases
 -- lands on a genuine `g2Monomial` only after the arithmetic of its own shift is discharged. The
@@ -447,8 +415,12 @@ private theorem mul_g2Series (hxy : x * y = y * x + z) (hxz : x * z = z * x + 2 
   have hshiftA : ∑ p ∈ {p ∈ g2SeriesIndex n k | 0 < n - p.1 - p.2.1 - p.2.2.1 - 2 * p.2.2.2},
         (p.1 + 1) • g2Monomial y z w v s n (p.1 + 1, p.2.1, p.2.2.1, p.2.2.2) =
       ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.1}, q.1 • g2Monomial y z w v s n q := by
-    refine sum_g2Monomial_shift (fun p => (p.1 + 1, p.2.1, p.2.2.1, p.2.2.2))
-      (fun q => (q.1 - 1, q.2.1, q.2.2.1, q.2.2.2)) (fun q => q.1) ?_ ?_ ?_ ?_
+    refine sum_nbij_filter_of_mem_iff
+      (P := fun p => 0 < n - p.1 - p.2.1 - p.2.2.1 - 2 * p.2.2.2)
+      (Q := fun q => 0 < q.1) (g := fun q => q.1 • g2Monomial y z w v s n q)
+      (fun _ => mem_g2SeriesIndex)
+      (fun _ => mem_g2SeriesIndex) (fun p => (p.1 + 1, p.2.1, p.2.2.1, p.2.2.2))
+      (fun q => (q.1 - 1, q.2.1, q.2.2.1, q.2.2.2)) ?_ ?_ ?_ ?_
     · rintro ⟨b, c, d, e⟩ hp
       dsimp at *; omega
     · rintro ⟨b, c, d, e⟩ hq
@@ -461,8 +433,11 @@ private theorem mul_g2Series (hxy : x * y = y * x + z) (hxz : x * z = z * x + 2 
         (2 * (p.2.1 + 1)) • g2Monomial y z w v s n (p.1 - 1, p.2.1 + 1, p.2.2.1, p.2.2.2) =
       ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.1},
         (2 * q.2.1) • g2Monomial y z w v s n q := by
-    refine sum_g2Monomial_shift (fun p => (p.1 - 1, p.2.1 + 1, p.2.2.1, p.2.2.2))
-      (fun q => (q.1 + 1, q.2.1 - 1, q.2.2.1, q.2.2.2)) (fun q => 2 * q.2.1) ?_ ?_ ?_ ?_
+    refine sum_nbij_filter_of_mem_iff (P := fun p => 0 < p.1) (Q := fun q => 0 < q.2.1)
+      (g := fun q => (2 * q.2.1) • g2Monomial y z w v s n q)
+      (fun _ => mem_g2SeriesIndex)
+      (fun _ => mem_g2SeriesIndex) (fun p => (p.1 - 1, p.2.1 + 1, p.2.2.1, p.2.2.2))
+      (fun q => (q.1 + 1, q.2.1 - 1, q.2.2.1, q.2.2.2)) ?_ ?_ ?_ ?_
     · rintro ⟨b, c, d, e⟩ hp
       dsimp at *; omega
     · rintro ⟨b, c, d, e⟩ hq
@@ -475,8 +450,11 @@ private theorem mul_g2Series (hxy : x * y = y * x + z) (hxz : x * z = z * x + 2 
         (3 * (p.2.2.2 + 1)) • g2Monomial y z w v s n (p.1 - 2, p.2.1, p.2.2.1, p.2.2.2 + 1) =
       ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.2.2},
         (3 * q.2.2.2) • g2Monomial y z w v s n q := by
-    refine sum_g2Monomial_shift (fun p => (p.1 - 2, p.2.1, p.2.2.1, p.2.2.2 + 1))
-      (fun q => (q.1 + 2, q.2.1, q.2.2.1, q.2.2.2 - 1)) (fun q => 3 * q.2.2.2) ?_ ?_ ?_ ?_
+    refine sum_nbij_filter_of_mem_iff (P := fun p => 1 < p.1) (Q := fun q => 0 < q.2.2.2)
+      (g := fun q => (3 * q.2.2.2) • g2Monomial y z w v s n q)
+      (fun _ => mem_g2SeriesIndex)
+      (fun _ => mem_g2SeriesIndex) (fun p => (p.1 - 2, p.2.1, p.2.2.1, p.2.2.2 + 1))
+      (fun q => (q.1 + 2, q.2.1, q.2.2.1, q.2.2.2 - 1)) ?_ ?_ ?_ ?_
     · rintro ⟨b, c, d, e⟩ hp
       dsimp at *; omega
     · rintro ⟨b, c, d, e⟩ hq
@@ -489,8 +467,11 @@ private theorem mul_g2Series (hxy : x * y = y * x + z) (hxz : x * z = z * x + 2 
         (3 * (p.2.2.1 + 1)) • g2Monomial y z w v s n (p.1, p.2.1 - 1, p.2.2.1 + 1, p.2.2.2) =
       ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.2.1},
         (3 * q.2.2.1) • g2Monomial y z w v s n q := by
-    refine sum_g2Monomial_shift (fun p => (p.1, p.2.1 - 1, p.2.2.1 + 1, p.2.2.2))
-      (fun q => (q.1, q.2.1 + 1, q.2.2.1 - 1, q.2.2.2)) (fun q => 3 * q.2.2.1) ?_ ?_ ?_ ?_
+    refine sum_nbij_filter_of_mem_iff (P := fun p => 0 < p.2.1) (Q := fun q => 0 < q.2.2.1)
+      (g := fun q => (3 * q.2.2.1) • g2Monomial y z w v s n q)
+      (fun _ => mem_g2SeriesIndex)
+      (fun _ => mem_g2SeriesIndex) (fun p => (p.1, p.2.1 - 1, p.2.2.1 + 1, p.2.2.2))
+      (fun q => (q.1, q.2.1 + 1, q.2.2.1 - 1, q.2.2.2)) ?_ ?_ ?_ ?_
     · rintro ⟨b, c, d, e⟩ hp
       dsimp at *; omega
     · rintro ⟨b, c, d, e⟩ hq

@@ -35,7 +35,7 @@ degenerate case `w = 0`, and covers every pair of non-proportional roots in a si
 system; the rule proved here covers the additional chains in types `B`, `C`, and `F₄`. Type `G₂`
 also needs the longer chain containing `3α + β` and `3α + 2β`, which is
 `TauCeti.Associative.dividedPower_mul_dividedPower_of_commutator_eq_three_nsmul` in
-`TauCeti.RingTheory.DividedPowers.RootString.G2`.
+`TauCeti.RingTheory.DividedPowers.RootString.G2.Basic`.
 
 The proof feeds `TauCeti.Associative.dividedPower_mul_of_ad_dividedPower_series` the sequence
 
@@ -67,6 +67,35 @@ namespace TauCeti.Associative
 open Finset
 
 variable {A : Type*} [Semiring A] [Algebra ℚ A] {x y z w : A}
+
+/-- Reindex filtered double finite sums through inverse maps after expressing membership in the
+unfiltered source and target finsets as predicates. -/
+theorem sum_nbij_filter_of_mem_iff {ι κ M : Type*} [AddCommMonoid M]
+    {s : Finset ι} {t : Finset κ} {S : ι → Prop} {T : κ → Prop}
+    {P : ι → Prop} {Q : κ → Prop} [DecidablePred P] [DecidablePred Q] {g : κ → M}
+    (hs : ∀ i, i ∈ s ↔ S i) (ht : ∀ j, j ∈ t ↔ T j) (f : ι → κ) (finv : κ → ι)
+    (hf : ∀ i, S i ∧ P i → T (f i) ∧ Q (f i))
+    (hfinv : ∀ j, T j ∧ Q j → S (finv j) ∧ P (finv j))
+    (hleft : ∀ i, S i ∧ P i → finv (f i) = i)
+    (hright : ∀ j, T j ∧ Q j → f (finv j) = j) :
+    ∑ i ∈ {i ∈ s | P i}, g (f i) = ∑ j ∈ {j ∈ t | Q j}, g j := by
+  classical
+  exact Finset.sum_nbij' f finv
+    (fun i hi =>
+      let hi' := Finset.mem_filter.mp hi
+      let hfi := hf i ⟨(hs i).mp hi'.1, hi'.2⟩
+      Finset.mem_filter.mpr ⟨(ht _).mpr hfi.1, hfi.2⟩)
+    (fun j hj =>
+      let hj' := Finset.mem_filter.mp hj
+      let hfinvj := hfinv j ⟨(ht j).mp hj'.1, hj'.2⟩
+      Finset.mem_filter.mpr ⟨(hs _).mpr hfinvj.1, hfinvj.2⟩)
+    (fun i hi =>
+      let hi' := Finset.mem_filter.mp hi
+      hleft i ⟨(hs i).mp hi'.1, hi'.2⟩)
+    (fun j hj =>
+      let hj' := Finset.mem_filter.mp hj
+      hright j ⟨(ht j).mp hj'.1, hj'.2⟩)
+    (fun _ _ => rfl)
 
 /-! ## Moving one element across a single normal-ordered monomial -/
 

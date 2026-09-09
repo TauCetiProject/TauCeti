@@ -50,7 +50,7 @@ three as well as in characteristic zero. Together with the commuting, class-two,
 relations in `Commutator.Basic`, this supplies one exceptional rank-two pointwise Chevalley
 relation needed by the integral Chevalley--Demazure construction. The remaining type-`G₂`
 configuration, the pair `α`, `α + β`, is not transported here; see
-`TauCeti.RingTheory.DividedPowers.RootString.G2` for the integral identity it needs.
+`TauCeti.RingTheory.DividedPowers.RootString.G2.ShortPair` for the integral identity it needs.
 
 ## Main results
 
