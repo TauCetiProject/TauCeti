@@ -23,9 +23,9 @@ on scalar tensors of quotient coordinates is explicit. Repeated weights and rank
 allowed. The universe restriction on the bundled isomorphism is inherited from
 `coordinateHopfAlgebraBaseChangeIso`.
 
-The quotient-transport construction follows
-`TauCeti.SpecialLinear.coordinateHopfAlgebraBaseChangeIso`, using the two opposite
-weight-parabolic relation sets in place of the determinant-one relation.
+The two opposite weight parabolics impose vanishing of entries in opposite strict weight
+directions. Together their relations kill exactly the entries between distinct weight blocks,
+so their intersection is the weight Levi.
 
 ## References
 
@@ -83,6 +83,9 @@ theorem map_baseChangeHopfIdeal_weightLeviDefiningHopfIdeal :
       obtain ⟨i, j, hij, rfl⟩ := (mem_weightParabolicRelationSet_iff K a x).mp hx
       exact ⟨_, X_mem_weightParabolicRelationSet R a hij, hentry i j⟩
   rw [Set.image_union, hrel, hrel]
+
+-- The quotient-transport construction is adapted from
+-- `TauCeti.SpecialLinear.coordinateHopfAlgebraBaseChangeIso`.
 
 /-- Scalar extension of a weight-Levi coordinate Hopf algebra is canonically the weight-Levi
 coordinate Hopf algebra over the new base. -/
