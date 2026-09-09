@@ -121,6 +121,46 @@ private theorem pointsMulEquiv_splitTorusPointsMulEquiv
   rw [splitTorusPointsMulEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
     MulEquiv.apply_symm_apply]
 
+/-- The split-torus point equivalence sends a point to the point represented by the
+two-dimensional special orthogonal matrix attached to its unique unit coordinate. -/
+@[simp]
+theorem splitTorusPointsMulEquiv_apply
+    (A : Type v) [CommRing A] [Algebra R A]
+    (t : WithConv ((DiagonalizableGroup.coordinateRing R
+      (SplitTorus.characterGroup (ULift.{u} (Fin 1)))) →ₐ[R] A)) :
+    splitTorusPointsMulEquiv R i half hi hhalf A t =
+      (pointsMulEquiv R 2 (A := A)).symm
+        (Matrix.SpecialOrthogonalGroup.finTwoOfUnit
+          (algebraMap R A i) (algebraMap R A half)
+          (by simpa only [map_pow, map_neg, map_one] using congrArg (algebraMap R A) hi)
+          (by simpa only [map_ofNat, map_mul, map_one] using
+            congrArg (algebraMap R A) hhalf)
+          (SplitTorus.pointsMulEquiv t default)) := by
+  apply (pointsMulEquiv R 2 (A := A)).injective
+  rw [MulEquiv.apply_symm_apply, pointsMulEquiv_splitTorusPointsMulEquiv]
+  rw [rankOneCoordinatesSpecialOrthogonalMulEquiv, MulEquiv.trans_apply,
+    Matrix.SpecialOrthogonalGroup.finTwoMulEquivUnits_symm_apply]
+  rfl
+
+/-- The inverse split-torus point equivalence reads off the unit of a two-dimensional special
+orthogonal matrix and makes it the unique split-torus coordinate. -/
+@[simp]
+theorem splitTorusPointsMulEquiv_symm_apply
+    (A : Type v) [CommRing A] [Algebra R A]
+    (s : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] A)) :
+    (splitTorusPointsMulEquiv R i half hi hhalf A).symm s =
+      (SplitTorus.pointsMulEquiv (R := R) (A := A)).symm
+        (fun _ ↦ Matrix.SpecialOrthogonalGroup.finTwoToUnit
+          (algebraMap R A i)
+          (by simpa only [map_pow, map_neg, map_one] using congrArg (algebraMap R A) hi)
+          (pointsMulEquiv R 2 (A := A) s)) := by
+  rw [splitTorusPointsMulEquiv, MulEquiv.symm_trans_apply, MulEquiv.symm_trans_apply,
+    rankOneCoordinatesSpecialOrthogonalMulEquiv, MulEquiv.symm_trans_apply]
+  simp only [MulEquiv.symm_symm]
+  rw [
+    Matrix.SpecialOrthogonalGroup.finTwoMulEquivUnits_apply]
+  rfl
+
 /-- The rank-one split-torus point equivalence is natural in the commutative value algebra. -/
 theorem splitTorusPointsMulEquiv_mapValue
     {A B : Type v} [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
@@ -155,6 +195,28 @@ noncomputable def splitTorusPointsNatIso :
       intro t
       exact (splitTorusPointsMulEquiv_mapValue R i half hi hhalf f.hom t).symm)
 
+/-- The forward component of the natural split-torus identification is the pointwise
+equivalence `splitTorusPointsMulEquiv`. -/
+@[simp]
+theorem splitTorusPointsNatIso_hom_app_apply
+    (A : CommAlgCat.{u} R)
+    (t : HopfAlgebra.points (R := R)
+      (H := (DiagonalizableGroup.coordinateRing R
+        (SplitTorus.characterGroup (ULift.{u} (Fin 1)))).obj) A) :
+    (splitTorusPointsNatIso R i half hi hhalf).hom.app A t =
+      splitTorusPointsMulEquiv R i half hi hhalf A t :=
+  by unfold splitTorusPointsNatIso; rfl
+
+/-- The inverse component of the natural split-torus identification is the inverse pointwise
+equivalence `splitTorusPointsMulEquiv`. -/
+@[simp]
+theorem splitTorusPointsNatIso_inv_app_apply
+    (A : CommAlgCat.{u} R)
+    (s : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A) :
+    (splitTorusPointsNatIso R i half hi hhalf).inv.app A s =
+      (splitTorusPointsMulEquiv R i half hi hhalf A).symm s :=
+  by unfold splitTorusPointsNatIso; rfl
+
 /-- **The coordinate Hopf algebra of `SO₂` is the coordinate Hopf algebra of the rank-one split
 torus** when the base contains a square root of `-1` and a half. -/
 noncomputable def splitTorusCoordinateIso :
@@ -169,6 +231,30 @@ noncomputable def splitTorusCoordinateIso :
   inv_hom_id := by
     rw [← CommHopfAlgCat.homOfPointsMap_comp, Iso.inv_hom_id,
       CommHopfAlgCat.homOfPointsMap_id]
+
+/-- On every value algebra, the point map induced by the forward coordinate isomorphism is the
+inverse pointwise split-torus equivalence. -/
+@[simp]
+theorem mapPointsFunctor_splitTorusCoordinateIso_hom_app
+    (A : CommAlgCat.{u} R)
+    (s : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A) :
+    (CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom).app A s =
+      (splitTorusPointsMulEquiv R i half hi hhalf A).symm s := by
+  rw [splitTorusCoordinateIso, CommHopfAlgCat.mapPointsFunctor_homOfPointsMap]
+  exact splitTorusPointsNatIso_inv_app_apply R i half hi hhalf A s
+
+/-- On every value algebra, the point map induced by the inverse coordinate isomorphism is the
+forward pointwise split-torus equivalence. -/
+@[simp]
+theorem mapPointsFunctor_splitTorusCoordinateIso_inv_app
+    (A : CommAlgCat.{u} R)
+    (t : HopfAlgebra.points (R := R)
+      (H := (DiagonalizableGroup.coordinateRing R
+        (SplitTorus.characterGroup (ULift.{u} (Fin 1)))).obj) A) :
+    (CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv).app A t =
+      splitTorusPointsMulEquiv R i half hi hhalf A t := by
+  rw [splitTorusCoordinateIso, CommHopfAlgCat.mapPointsFunctor_homOfPointsMap]
+  exact splitTorusPointsNatIso_hom_app_apply R i half hi hhalf A t
 
 /-- The finite-type coordinate Hopf algebra of `SO₂` is isomorphic to the standard rank-one
 split-torus coordinate Hopf algebra under the same splitting hypotheses. -/
