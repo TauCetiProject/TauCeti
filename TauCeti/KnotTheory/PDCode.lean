@@ -255,6 +255,7 @@ theorem crossingBlockPerm_refl :
   simp
 
 /-- Crossing-block permutations preserve permutation multiplication. -/
+@[simp]
 theorem crossingBlockPerm_mul (cross₁ cross₂ : Equiv.Perm (Fin n)) :
     crossingBlockPerm (cross₁ * cross₂) = crossingBlockPerm cross₁ * crossingBlockPerm cross₂ := by
   unfold crossingBlockPerm
