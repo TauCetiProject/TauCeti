@@ -164,10 +164,11 @@ theorem continuous_spinVectorAction_apply [TopologicalSpace V] [IsModuleTopology
   rfl
 
 /-- The subgroup of a finite-dimensional real Spin group fixing a vector is closed. -/
-theorem isClosed_spinVectorStabilizer [TopologicalSpace V] [IsModuleTopology ℝ V] [T2Space V]
+theorem isClosed_spinVectorStabilizer [TopologicalSpace V] [IsModuleTopology ℝ V] [T1Space V]
     (Q : QuadraticForm ℝ V) (v : V) :
-    IsClosed {x : spinGroup Q | spinVectorAction Q x v = v} :=
-  isClosed_eq (continuous_spinVectorAction_apply Q v) continuous_const
+    IsClosed {x : spinGroup Q | spinVectorAction Q x v = v} := by
+  change IsClosed ((fun x : spinGroup Q => spinVectorAction Q x v) ⁻¹' {v})
+  exact isClosed_singleton.preimage (continuous_spinVectorAction_apply Q v)
 
 /-- The real Spin action of a quadratic form on a finite coordinate space is continuous as a map to
 the special orthogonal group with its standard coordinate topology. -/
