@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.QuadraticForm.Prod
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
+public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
 # The last-vector stabilizer in a special orthogonal group
@@ -26,8 +25,6 @@ transformation.
 
 ## Main definitions
 
-* `specialOrthogonalGroupProd`: combine special orthogonal transformations of two quadratic maps
-  with a common codomain into one of their product.
 * `specialOrthogonalGroupProdLastInclusion`: extend a special orthogonal transformation by the
   identity on the square line.
 * `specialOrthogonalGroupProdLastInclusionToStabilizer`: the same extension, codrestricted to the
@@ -41,7 +38,7 @@ public section
 
 open QuadraticMap
 
-universe u v w
+universe u v
 
 namespace QuadraticMap
 
@@ -51,68 +48,6 @@ noncomputable section
 
 variable {R : Type u} [CommRing R]
   {M : Type v} [AddCommGroup M] [Module R M]
-
-private theorem specialOrthogonalProd_mem
-    {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
-    {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
-    {N : Type*} [AddCommMonoid N] [Module R N]
-    (Q₁ : QuadraticMap R M₁ N) (Q₂ : QuadraticMap R M₂ N)
-    [Module.Free R M₁] [Module.Finite R M₁]
-    [Module.Free R M₂] [Module.Finite R M₂]
-    (f : specialOrthogonalGroup Q₁) (g : specialOrthogonalGroup Q₂) :
-    (f : M₁ ≃ₗ[R] M₁).prodCongr (g : M₂ ≃ₗ[R] M₂) ∈
-      specialOrthogonalGroup (Q₁.prod Q₂) := by
-  have hf := mem_specialOrthogonalGroup_iff.mp f.2
-  have hg := mem_specialOrthogonalGroup_iff.mp g.2
-  apply mem_specialOrthogonalGroup_iff.mpr
-  constructor
-  · apply mem_orthogonalGroup_iff.mpr
-    intro x
-    let e := (orthogonalGroupEquivIsometryEquiv Q₁
-      ⟨f, specialOrthogonalGroup_le_orthogonalGroup Q₁ f.2⟩).prod
-        (orthogonalGroupEquivIsometryEquiv Q₂
-          ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q₂ g.2⟩)
-    have he : e x = (f.1.prodCongr g.1) x := by
-      apply Prod.ext
-      · exact congrFun (coe_orthogonalGroupEquivIsometryEquiv Q₁ _) x.1
-      · exact congrFun (coe_orthogonalGroupEquivIsometryEquiv Q₂ _) x.2
-    rw [← he]
-    exact e.map_app x
-  · apply Units.ext
-    rw [LinearEquiv.coe_det, LinearEquiv.coe_prodCongr, LinearMap.det_prodMap]
-    simpa only [LinearEquiv.coe_det, Units.val_one, mul_one] using
-      congrArg₂ (fun a b : R ↦ a * b) (congrArg Units.val hf.2) (congrArg Units.val hg.2)
-
-/-- Combine special orthogonal transformations of two finite free quadratic maps with a common
-codomain into a special orthogonal transformation of their product. -/
-def specialOrthogonalGroupProd
-    {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
-    {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
-    {N : Type*} [AddCommMonoid N] [Module R N]
-    (Q₁ : QuadraticMap R M₁ N) (Q₂ : QuadraticMap R M₂ N)
-    [Module.Free R M₁] [Module.Finite R M₁]
-    [Module.Free R M₂] [Module.Finite R M₂] :
-    specialOrthogonalGroup Q₁ × specialOrthogonalGroup Q₂ →*
-      specialOrthogonalGroup (Q₁.prod Q₂) where
-  toFun fg := ⟨(fg.1 : M₁ ≃ₗ[R] M₁).prodCongr (fg.2 : M₂ ≃ₗ[R] M₂),
-    specialOrthogonalProd_mem Q₁ Q₂ fg.1 fg.2⟩
-  map_one' := by ext x <;> simp
-  map_mul' f g := by ext x <;> simp
-
-/-- The product of two special orthogonal transformations acts componentwise. -/
-@[simp]
-theorem specialOrthogonalGroupProd_apply
-    {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
-    {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
-    {N : Type*} [AddCommMonoid N] [Module R N]
-    (Q₁ : QuadraticMap R M₁ N) (Q₂ : QuadraticMap R M₂ N)
-    [Module.Free R M₁] [Module.Finite R M₁]
-    [Module.Free R M₂] [Module.Finite R M₂]
-    (fg : specialOrthogonalGroup Q₁ × specialOrthogonalGroup Q₂) (x : M₁ × M₂) :
-    ((specialOrthogonalGroupProd Q₁ Q₂ fg : specialOrthogonalGroup _) :
-      (M₁ × M₂) ≃ₗ[R] (M₁ × M₂)) x =
-      ((fg.1 : M₁ ≃ₗ[R] M₁) x.1, (fg.2 : M₂ ≃ₗ[R] M₂) x.2) := by
-  rfl
 
 private def specialOrthogonalProdLastExtension (Q : QuadraticForm R M)
     (f : specialOrthogonalGroup Q) : (M × R) ≃ₗ[R] (M × R) :=
@@ -134,7 +69,7 @@ theorem specialOrthogonalGroupProdLastInclusion_apply (Q : QuadraticForm R M)
     ((specialOrthogonalGroupProdLastInclusion Q f :
       specialOrthogonalGroup _) : (M × R) ≃ₗ[R] (M × R)) x =
       ((f : M ≃ₗ[R] M) x.1, x.2) := by
-  rfl
+  simp [specialOrthogonalGroupProdLastInclusion]
 
 /-- Extension by the identity on the square line is injective. -/
 theorem specialOrthogonalGroupProdLastInclusion_injective (Q : QuadraticForm R M)
@@ -300,7 +235,7 @@ theorem specialOrthogonalGroupProdLastInclusionToStabilizer_apply
     (f : specialOrthogonalGroup Q) (x : M × R) :
     (specialOrthogonalGroupProdLastInclusionToStabilizer Q f).1.1 x =
       ((f : M ≃ₗ[R] M) x.1, x.2) := by
-  rfl
+  exact specialOrthogonalGroupProdLastInclusion_apply Q f x
 
 private def specialOrthogonalProdLastRestriction
     (Q : QuadraticForm R M) (h2 : IsRegular (2 : R))
@@ -339,11 +274,18 @@ def specialOrthogonalGroupEquivProdLastStabilizer
       apply Subtype.ext
       apply LinearEquiv.ext
       intro m
-      rfl)
+      simp [specialOrthogonalProdLastRestriction,
+        specialOrthogonalProdLastRestrictionLinearEquiv])
     (MonoidHom.ext fun g => by
       apply Subtype.ext
       apply Subtype.ext
-      exact (specialOrthogonalProdLast_eq_extension_restriction Q h2 g).symm)
+      apply LinearEquiv.ext
+      intro x
+      simp only [MonoidHom.comp_apply, MonoidHom.id_apply]
+      rw [specialOrthogonalGroupProdLastInclusionToStabilizer_apply]
+      have h := congrArg (fun e : (M × R) ≃ₗ[R] (M × R) => e x)
+        (specialOrthogonalProdLast_eq_extension_restriction Q h2 g)
+      simpa [specialOrthogonalProdLastRestriction, specialOrthogonalProdLastExtension] using h.symm)
 
 /-- The stabilizer equivalence sends `f` to its extension by the identity. -/
 @[simp]
@@ -352,7 +294,7 @@ theorem coe_specialOrthogonalGroupEquivProdLastStabilizer_apply
     [Module.Free R M] [Module.Finite R M] (f : specialOrthogonalGroup Q) (x : M × R) :
     ((specialOrthogonalGroupEquivProdLastStabilizer Q h2 f).1.1 x) =
       ((f : M ≃ₗ[R] M) x.1, x.2) := by
-  rfl
+  exact specialOrthogonalGroupProdLastInclusionToStabilizer_apply Q f x
 
 /-- The inverse stabilizer equivalence restricts to the first summand. -/
 @[simp]
