@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Subalgebra.Center
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Multiplication
 
 /-!
@@ -52,6 +54,8 @@ becomes the standard basis of `Option V → k`.
   classes span the centre and are independent.
 * `TauCeti.finrank_center_nonisolatedZigzagQuotient`: the centre of the zigzag algebra of a
   connected graph with at least two vertices has dimension `|V| + 1`.
+* `TauCeti.finrank_center_zigzagAlgebra_of_connected`: the same dimension formula for the public
+  componentwise zigzag algebra.
 
 ## References
 
@@ -484,5 +488,16 @@ theorem finrank_center_nonisolatedZigzagQuotient [Nontrivial k] [Fintype V] [Non
     Module.finrank k (Subalgebra.center k (nonisolatedZigzagQuotient k G))
       = Fintype.card V + 1 := by
   rw [Module.finrank_eq_card_basis (zigzagCenterBasis k G hconn), Fintype.card_option]
+
+/-! ### The centre of the public algebra -/
+
+/-- **The centre of the public zigzag algebra of a connected nontrivial graph has dimension
+`|V| + 1`.** This transports the basis calculation for the relation quotient across the canonical
+comparison with the componentwise public algebra. -/
+theorem finrank_center_zigzagAlgebra_of_connected [Nontrivial k] [Fintype V] [Nontrivial V]
+    (hconn : G.Connected) :
+    Module.finrank k (Subalgebra.center k (zigzagAlgebra k G)) = Fintype.card V + 1 := by
+  rw [(centerCongr (zigzagAlgebraEquivNonisolated k G hconn)).toLinearEquiv.finrank_eq,
+    finrank_center_nonisolatedZigzagQuotient k G hconn.preconnected]
 
 end TauCeti
