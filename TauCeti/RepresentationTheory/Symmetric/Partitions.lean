@@ -147,12 +147,11 @@ theorem partitionEquivConjClasses_symm_mk (n : ℕ) (σ : Equiv.Perm (Fin n)) :
         σ.partition := by
   simp [partitionEquivConjClasses]
 
-/-- Transporting a partition along an equality of the number being partitioned does not change
-its parts.  This is the bookkeeping behind
-`TauCeti.parts_partitionEquivConjClasses_symm_mk`, where the cast is the one built into
-`TauCeti.partitionEquivConjClasses`. -/
-private theorem parts_equivCast_symm {m l : ℕ} (h : m = l) (p : l.Partition) :
-    ((Equiv.cast (congrArg Nat.Partition h)).symm p).parts = p.parts := by
+/-- **Transporting a partition along an equality of the number being partitioned does not change
+its parts.**  This is the bookkeeping behind `TauCeti.parts_partitionEquivConjClasses_symm_mk`,
+where the cast is the one built into `TauCeti.partitionEquivConjClasses`. -/
+theorem parts_equivCast {m l : ℕ} (h : m = l) (p : m.Partition) :
+    (Equiv.cast (congrArg Nat.Partition h) p).parts = p.parts := by
   subst h; rfl
 
 /-- **The partition indexing the class of `σ` has the parts of the cycle type of `σ`.**  This is
@@ -160,7 +159,8 @@ private theorem parts_equivCast_symm {m l : ℕ} (h : m = l) (p : l.Partition) :
 carried out on the parts, which is the form in which the partition is compared with `σ` itself. -/
 theorem parts_partitionEquivConjClasses_symm_mk (n : ℕ) (σ : Equiv.Perm (Fin n)) :
     ((partitionEquivConjClasses n).symm (ConjClasses.mk σ)).parts = σ.partition.parts := by
-  rw [partitionEquivConjClasses_symm_mk, parts_equivCast_symm (Fintype.card_fin n).symm]
+  rw [partitionEquivConjClasses_symm_mk]
+  exact parts_equivCast (Fintype.card_fin n) _
 
 /-- The number of conjugacy classes of permutations of a finite type is the number of partitions
 of its cardinality. -/

@@ -37,15 +37,15 @@ its conjugate coincide.
 
 ## Main definitions
 
-* `TauCeti.spechtCharIndex`: the row of the complex character table of `Sₙ` carrying `χ^μ`, with
-  `TauCeti.partitionEquivIrreducibleIndex` the bijection it defines.
+* `TauCeti.partitionEquivIrreducibleIndex`: the bijection sending `μ` to the row of the complex
+  character table of `Sₙ` carrying `χ^μ`.
 * `TauCeti.symmetricCharacterTableℂ`: the integer character table of `Sₙ` read in `ℂ` and
   reindexed on both sides into the shape `TauCeti.IsCharacterTableSpec` asks for.
 
 ## Main results
 
-* `TauCeti.characterTable_spechtCharIndex`: the entries of the complex character table of `Sₙ` are
-  the entries of `TauCeti.symmetricCharacterTable`.
+* `TauCeti.characterTable_partitionEquivIrreducibleIndex`: the entries of the complex character
+  table of `Sₙ` are the entries of `TauCeti.symmetricCharacterTable`.
 * `TauCeti.symmetricCharacterTableℂ_eq_characterTable` and
   `TauCeti.isCharacterTableSpec_symmetricCharacterTableℂ`: **the character table of `Sₙ` is the
   complex character table of `Sₙ`, and satisfies the character-table specification.**
@@ -87,68 +87,66 @@ theorem spechtChar_mem_irreducibleCharacters (μ : n.Partition) :
   rw [hcharacter] at h
   exact h
 
-/-- **The row of the complex character table of `Sₙ` carrying `χ^μ`.** The enumeration
+/-- The row of the complex character table of `Sₙ` carrying `χ^μ`. The enumeration
 `TauCeti.irreducibleCharacter` of the irreducible characters is an arbitrary one, so this index is
-found rather than computed; what matters is that it is a bijection
-(`TauCeti.partitionEquivIrreducibleIndex`). -/
-noncomputable def spechtCharIndex (μ : n.Partition) :
+found rather than computed; only the bijection it defines,
+`TauCeti.partitionEquivIrreducibleIndex`, is part of the API. -/
+private noncomputable def spechtCharIndex (μ : n.Partition) :
     Fin (Nat.card (ConjClasses (Equiv.Perm (Fin n)))) :=
   (exists_irreducibleCharacter_eq ℂ (spechtChar_mem_irreducibleCharacters μ)).choose
 
-/-- The character enumerated at `TauCeti.spechtCharIndex μ` is `χ^μ`. -/
-theorem irreducibleCharacter_spechtCharIndex (μ : n.Partition) :
-    irreducibleCharacter ℂ (spechtCharIndex μ) = fun σ ↦ (spechtChar μ σ : ℂ) :=
-  (exists_irreducibleCharacter_eq ℂ (spechtChar_mem_irreducibleCharacters μ)).choose_spec
-
-@[simp]
-theorem irreducibleCharacter_spechtCharIndex_apply (μ : n.Partition) (σ : Equiv.Perm (Fin n)) :
+/-- The character enumerated at `spechtCharIndex μ` is `χ^μ`. -/
+private theorem irreducibleCharacter_spechtCharIndex (μ : n.Partition)
+    (σ : Equiv.Perm (Fin n)) :
     irreducibleCharacter ℂ (spechtCharIndex μ) σ = (spechtChar μ σ : ℂ) :=
-  congrFun (irreducibleCharacter_spechtCharIndex μ) σ
+  congrFun (exists_irreducibleCharacter_eq ℂ (spechtChar_mem_irreducibleCharacters μ)).choose_spec σ
 
 /-- **Distinct partitions occupy distinct rows**: a complex Specht module is determined by its
 character. -/
-theorem spechtCharIndex_injective : Function.Injective (spechtCharIndex (n := n)) := by
+private theorem spechtCharIndex_injective : Function.Injective (spechtCharIndex (n := n)) := by
   intro μ ν h
   have hchar : (spechtModuleℂ μ).character = (spechtModuleℂ ν).character := funext fun σ ↦ by
     rw [character_spechtModuleℂ_intCast, character_spechtModuleℂ_intCast]
-    exact (irreducibleCharacter_spechtCharIndex_apply μ σ).symm.trans
-      (h ▸ irreducibleCharacter_spechtCharIndex_apply ν σ)
+    exact (irreducibleCharacter_spechtCharIndex μ σ).symm.trans
+      (h ▸ irreducibleCharacter_spechtCharIndex ν σ)
   exact spechtModuleℂ_character_injective hchar
 
 /-- **Every row is occupied**: there are as many partitions of `n` as conjugacy classes of `Sₙ`,
-so the injection of `TauCeti.spechtCharIndex_injective` is a bijection. -/
-theorem spechtCharIndex_bijective : Function.Bijective (spechtCharIndex (n := n)) := by
+so the injection `spechtCharIndex_injective` is a bijection. -/
+private theorem spechtCharIndex_bijective : Function.Bijective (spechtCharIndex (n := n)) := by
   refine (Fintype.bijective_iff_injective_and_card _).2 ⟨spechtCharIndex_injective, ?_⟩
   rw [Fintype.card_fin, Fintype.card_eq_nat_card]
   exact Nat.card_congr (partitionEquivConjClasses n)
 
 /-- **The partitions of `n` index the rows of the complex character table of `Sₙ`**, by
-`μ ↦ χ^μ`. -/
+`μ ↦ χ^μ`: the row `partitionEquivIrreducibleIndex n μ` carries the character `χ^μ`
+(`TauCeti.irreducibleCharacter_partitionEquivIrreducibleIndex`), and every row is of this form
+exactly once. -/
 noncomputable def partitionEquivIrreducibleIndex (n : ℕ) :
     n.Partition ≃ Fin (Nat.card (ConjClasses (Equiv.Perm (Fin n)))) :=
   Equiv.ofBijective _ spechtCharIndex_bijective
 
+/-- **The character enumerated at the row `TauCeti.partitionEquivIrreducibleIndex n μ` is
+`χ^μ`**, the character of the complex Specht module `S^μ`. -/
 @[simp]
-theorem partitionEquivIrreducibleIndex_apply (μ : n.Partition) :
-    partitionEquivIrreducibleIndex n μ = spechtCharIndex μ := (rfl)
-
-@[simp]
-theorem partitionEquivIrreducibleIndex_symm_spechtCharIndex (μ : n.Partition) :
-    (partitionEquivIrreducibleIndex n).symm (spechtCharIndex μ) = μ :=
-  (partitionEquivIrreducibleIndex n).symm_apply_apply μ
+theorem irreducibleCharacter_partitionEquivIrreducibleIndex (μ : n.Partition)
+    (σ : Equiv.Perm (Fin n)) :
+    irreducibleCharacter ℂ (partitionEquivIrreducibleIndex n μ) σ = (spechtChar μ σ : ℂ) :=
+  irreducibleCharacter_spechtCharIndex μ σ
 
 /-! ### The integer table is the complex character table -/
 
 /-- **The complex character table of `Sₙ` has the entries of `TauCeti.symmetricCharacterTable`**,
-once its rows are indexed by `TauCeti.spechtCharIndex` and its columns by
+once its rows are indexed by `TauCeti.partitionEquivIrreducibleIndex` and its columns by
 `TauCeti.partitionEquivConjClasses`. The entry at a representative `σ` of the class,
 `χ^μ(σ)`, is `TauCeti.characterTable_apply` followed by
-`TauCeti.irreducibleCharacter_spechtCharIndex_apply`, which `simp` does on its own. -/
-theorem characterTable_spechtCharIndex (μ ν : n.Partition) :
-    characterTable ℂ (Equiv.Perm (Fin n)) (spechtCharIndex μ) (partitionEquivConjClasses n ν)
+`TauCeti.irreducibleCharacter_partitionEquivIrreducibleIndex`. -/
+theorem characterTable_partitionEquivIrreducibleIndex (μ ν : n.Partition) :
+    characterTable ℂ (Equiv.Perm (Fin n)) (partitionEquivIrreducibleIndex n μ)
+        (partitionEquivConjClasses n ν)
       = (symmetricCharacterTable n μ ν : ℂ) := by
   obtain ⟨σ, hσ⟩ := ConjClasses.exists_rep (partitionEquivConjClasses n ν)
-  rw [← hσ, characterTable_apply, irreducibleCharacter_spechtCharIndex_apply,
+  rw [← hσ, characterTable_apply, irreducibleCharacter_partitionEquivIrreducibleIndex,
     symmetricCharacterTable_apply, spechtCharValue_eq_spechtChar μ ν hσ]
 
 /-- **The character table of `Sₙ` in the shape the specification asks for**: the integer entries
@@ -177,10 +175,8 @@ theorem symmetricCharacterTableℂ_apply (n : ℕ)
 theorem symmetricCharacterTableℂ_eq_characterTable (n : ℕ) :
     symmetricCharacterTableℂ n = characterTable ℂ (Equiv.Perm (Fin n)) := by
   ext i C
-  have hi : spechtCharIndex ((partitionEquivIrreducibleIndex n).symm i) = i := by
-    rw [← partitionEquivIrreducibleIndex_apply, Equiv.apply_symm_apply]
-  rw [symmetricCharacterTableℂ_apply, ← characterTable_spechtCharIndex]
-  rw [hi, Equiv.apply_symm_apply]
+  rw [symmetricCharacterTableℂ_apply, ← characterTable_partitionEquivIrreducibleIndex,
+    Equiv.apply_symm_apply, Equiv.apply_symm_apply]
 
 /-- **The character table of `Sₙ` satisfies the character-table specification**: its identity
 column consists of positive divisors of `n !` whose squares sum to `n !`, its rows are orthonormal
@@ -194,11 +190,6 @@ theorem isCharacterTableSpec_symmetricCharacterTableℂ (n : ℕ) :
 
 /-! ### The orthogonality relations -/
 
-/-- The order of `Sₙ`, as a `Nat.card`: this is `Fintype.card_perm`, in the counting the character
-table is stated with. -/
-private theorem nat_card_perm_fin (n : ℕ) : Nat.card (Equiv.Perm (Fin n)) = n ! := by
-  simp [Nat.card_eq_fintype_card, Fintype.card_perm]
-
 /-- A column pairing of `TauCeti.symmetricCharacterTable`, read in `ℂ` as the corresponding
 pairing of the complex character table. Conjugation is invisible: the entries are integers. -/
 private theorem intCast_sum_symmetricCharacterTable (ν ν' : n.Partition) :
@@ -210,8 +201,8 @@ private theorem intCast_sum_symmetricCharacterTable (ν ν' : n.Partition) :
   rw [← Equiv.sum_comp (partitionEquivIrreducibleIndex n)]
   push_cast
   exact Finset.sum_congr rfl fun μ _ ↦ by
-    rw [partitionEquivIrreducibleIndex_apply, characterTable_spechtCharIndex,
-      characterTable_spechtCharIndex, map_intCast]
+    rw [characterTable_partitionEquivIrreducibleIndex,
+      characterTable_partitionEquivIrreducibleIndex, map_intCast]
 
 /-- **Second (column) orthogonality for `Sₙ`**: two columns of the character table pair to the
 weight `z_ν` of their common cycle type, and to `0` when the cycle types differ. The weight is the
@@ -224,12 +215,10 @@ theorem symmetricCharacterTable_column_orthogonality (ν ν' : n.Partition) :
   · rw [ite_eq_left rfl]
     refine Int.cast_injective (α := ℂ) ?_
     rw [intCast_sum_symmetricCharacterTable, sum_characterTable_mul_conj, ite_eq_left rfl,
-      nat_card_perm_fin]
+      Nat.card_perm, Nat.card_fin]
     have hmul := card_carrier_partitionEquivConjClasses_mul_zPart ν
-    have hne0 : (Nat.card (partitionEquivConjClasses n ν).carrier : ℂ) ≠ 0 := by
-      refine Nat.cast_ne_zero.mpr fun h ↦ ?_
-      rw [h, zero_mul] at hmul
-      exact (Nat.factorial_pos n).ne' hmul.symm
+    have hne0 : (Nat.card (partitionEquivConjClasses n ν).carrier : ℂ) ≠ 0 :=
+      Nat.cast_ne_zero.mpr (ConjClasses.card_carrier_pos _).ne'
     rw [div_eq_iff hne0, mul_comm]
     exact_mod_cast hmul.symm
   · rw [ite_eq_right hne]
@@ -245,18 +234,18 @@ theorem symmetricCharacterTable_row_orthogonality (μ μ' : n.Partition) :
         symmetricCharacterTable n μ' ν = if μ = μ' then (n ! : ℤ) else 0 := by
   have hfac : (n ! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_pos n).ne'
   have key := card_inv_mul_sum_card_conjClass_mul_characterTable_mul_conj
-    (spechtCharIndex μ) (spechtCharIndex μ')
+    (partitionEquivIrreducibleIndex n μ) (partitionEquivIrreducibleIndex n μ')
   rw [← Equiv.sum_comp (partitionEquivConjClasses n)] at key
-  simp only [characterTable_spechtCharIndex, map_intCast,
+  simp only [characterTable_partitionEquivIrreducibleIndex, map_intCast,
     card_carrier_partitionEquivConjClasses] at key
-  rw [nat_card_perm_fin, inv_mul_eq_iff_eq_mul₀ hfac] at key
+  rw [Nat.card_perm, Nat.card_fin, inv_mul_eq_iff_eq_mul₀ hfac] at key
   rcases eq_or_ne μ μ' with rfl | hne
   · rw [ite_eq_left rfl, mul_one] at key
     rw [ite_eq_left rfl]
     refine Int.cast_injective (α := ℂ) ?_
     push_cast
     exact key
-  · rw [ite_eq_right fun h ↦ hne (spechtCharIndex_injective h), mul_zero] at key
+  · rw [ite_eq_right fun h ↦ hne ((partitionEquivIrreducibleIndex n).injective h), mul_zero] at key
     rw [ite_eq_right hne]
     refine Int.cast_injective (α := ℂ) ?_
     push_cast

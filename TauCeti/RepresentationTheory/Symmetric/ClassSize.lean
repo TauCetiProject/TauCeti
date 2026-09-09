@@ -279,15 +279,11 @@ theorem zPart_partitionEquivConjClasses_symm_mk (n : ℕ) (σ : Equiv.Perm (Fin 
     zPart ((partitionEquivConjClasses n).symm (ConjClasses.mk σ)) = zPart σ.partition :=
   zPart_congr (parts_partitionEquivConjClasses_symm_mk n σ)
 
-/-- **The weight of the partition of the identity is the order of the group**: the identity
-commutes with everything, so its centralizer is the whole of `Equiv.Perm α`. -/
+/-- **The weight of the partition of the identity is the order of the group**: the cycle type of
+the identity is empty, so all `Fintype.card α` of its parts equal `1`. -/
 theorem zPart_partition_one (α : Type*) [Fintype α] [DecidableEq α] :
     zPart ((1 : Equiv.Perm α).partition) = (Fintype.card α)! := by
-  have hcentralizer : Subgroup.centralizer {(1 : Equiv.Perm α)} = ⊤ := by
-    ext x
-    simp [Subgroup.mem_centralizer_iff]
-  rw [← nat_card_centralizer_eq_zPart, hcentralizer]
-  simp [Nat.card_eq_fintype_card, Fintype.card_perm]
+  simpa using zPart_partition (1 : Equiv.Perm α)
 
 /-- **The class-size formula on the conjugacy class attached to a partition**: the class
 `TauCeti.partitionEquivConjClasses n ν` has `n ! / zPart ν` elements.  This is
