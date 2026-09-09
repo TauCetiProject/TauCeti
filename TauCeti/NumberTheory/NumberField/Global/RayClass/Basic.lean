@@ -81,9 +81,7 @@ namespace TauCeti.GlobalNumberFields
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- **A principal fractional ideal is prime to the modulus exactly when its generator is a unit at
-every prime dividing the finite part.**  The multiplicity of a principal ideal at `v` is the
-sign-flipped logarithm of the `v`-adic valuation of the generator, so it vanishes exactly when that
-valuation is one. -/
+every prime dividing the finite part.** -/
 theorem toPrincipalIdeal_mem_idealsPrimeTo_iff {𝔪 : Modulus K} {x : Kˣ} :
     toPrincipalIdeal (𝓞 K) K x ∈ idealsPrimeTo 𝔪 ↔ x ∈ primeToSubgroup 𝔪 := by
   rw [NumberFieldArithmetic.mem_idealsAway_iff, mem_primeToSubgroup]
