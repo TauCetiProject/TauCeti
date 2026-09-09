@@ -605,7 +605,7 @@ The hypothesis on the anchor is necessary, and
 guardrail: an infinite-moment probability law always belongs to its own finite-distance component,
 but it does not have finite moment. -/
 theorem hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment
-    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (_hp : 1 ≤ p) {μ₀ ν : Measure X}
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) {μ₀ ν : Measure X}
     [IsProbabilityMeasure μ₀] [IsProbabilityMeasure ν] (hμ₀ : HasFiniteMoment p μ₀) :
     HasFiniteMoment p ν ↔ wassersteinEDist p μ₀ ν ≠ ∞ := by
   obtain ⟨x₀, hx₀⟩ := hasFiniteMoment_def.mp hμ₀
@@ -665,12 +665,12 @@ is the finite-moment space: the criterion above holds for every probability law 
 anchor itself has finite `p`-moment. Necessity is the case `ν = μ₀`, since every law lies at
 Wasserstein distance zero from itself. -/
 theorem hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top
-    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp : 1 ≤ p) (μ₀ : Measure X)
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (μ₀ : Measure X)
     [IsProbabilityMeasure μ₀] :
     HasFiniteMoment p μ₀ ↔
       ∀ (ν : Measure X) [IsProbabilityMeasure ν],
         HasFiniteMoment p ν ↔ wassersteinEDist p μ₀ ν ≠ ∞ :=
-  ⟨fun hμ₀ _ _ ↦ hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hp hμ₀,
+  ⟨fun hμ₀ _ _ ↦ hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ₀,
     fun h ↦ (h μ₀).mpr (by
       apply ne_top_of_le_ne_top ENNReal.zero_ne_top
       refine (wassersteinEDist_le (isCoupling_graphPlan_id μ₀) p).trans_eq ?_
