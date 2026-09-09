@@ -27,8 +27,7 @@ consequently:
   the constant parameter.
 
 In characteristic two the exterior parameter *is* the constant parameter, on any graph, so the two
-presentations agree identically; `TauCeti.SkewZigzagParameter.exteriorCycle_eq_one` records that
-identification for a cycle.
+presentations agree identically by `TauCeti.SkewZigzagParameter.exterior_eq_one`.
 
 The odd-cycle statement is a statement about gauge classes.  Whether inequivalent classes present
 nonisomorphic algebras is the separate classification question, which needs the identification of
@@ -78,34 +77,19 @@ variable (k : Type w) [CommRing k] (m : ℕ) [NeZero m]
 cycle sum to zero.  On an odd cycle over a field of characteristic other than two this is the
 nontrivial skew class; on an even cycle it is gauge equivalent to the constant parameter. -/
 def exteriorCycle : SkewZigzagParameter k (cycleGraph m) :=
-  exterior k fun _ _ _ _ h h' h'' => cycleGraph_eq_or_eq_or_eq_of_adj h h' h''
+  exterior k fun _ _ _ _ h h' h'' => eq_or_eq_or_eq_of_cycleGraph_adj h h' h''
 
 variable {k m}
-
-/-- **The exterior ratio of two edges at a vertex of a cycle** is one when they agree and minus one
-otherwise. -/
-@[simp]
-theorem exteriorCycle_ratio {i j j' : Fin m} (h : (cycleGraph m).Adj i j)
-    (h' : (cycleGraph m).Adj i j') :
-    (exteriorCycle k m).ratio h h' = if j = j' then 1 else -1 :=
-  exterior_ratio _ h h'
-
-/-- **The exterior ratio of the two distinct edges at a vertex of a cycle is minus one.** -/
-theorem exteriorCycle_ratio_of_ne {i j j' : Fin m} (h : (cycleGraph m).Adj i j)
-    (h' : (cycleGraph m).Adj i j') (hne : j ≠ j') : (exteriorCycle k m).ratio h h' = -1 :=
-  exterior_ratio_of_ne _ h h' hne
-
-/-- **In characteristic two the exterior parameter of a cycle is the constant parameter.** -/
-theorem exteriorCycle_eq_one (h2 : (2 : k) = 0) : exteriorCycle k m = 1 :=
-  exterior_eq_one _ h2
 
 /-- **The monodromy of the exterior parameter around a cycle graph on `m` vertices is
 `(-1) ^ m`.** Every one of the `m` vertices contributes the sign between its two distinct
 incident edges. -/
 theorem monodromy_exteriorCycle (hm : 3 ≤ m) :
     monodromy (exteriorCycle k m) (cycleGraph_adj_add_one hm) = (-1 : kˣ) ^ m := by
-  rw [monodromy_eq_prod, Finset.prod_congr rfl fun i _ =>
-    exteriorCycle_ratio_of_ne (k := k) _ _ (add_one_add_one_ne_self hm i).symm,
+  have hratio (i : Fin m) : (exteriorCycle k m).ratio (cycleGraph_adj_add_one hm i).symm
+      (cycleGraph_adj_add_one hm (i + 1)) = -1 :=
+    exterior_ratio_of_ne _ _ _ (add_one_add_one_ne_self hm i).symm
+  rw [monodromy_def, Finset.prod_congr rfl fun i _ => hratio i,
     Finset.prod_const, Finset.card_univ, Fintype.card_fin]
 
 /-- The alternating sign on the edges of a cycle graph, carried by the arrow which increases the
@@ -158,7 +142,9 @@ theorem isGaugeEquivalent_one_exteriorCycle (hm : 3 ≤ m) (hev : Even m) :
     have hS' : backtrackScale (cycleGraph m) (cycleLabelling k m) h' = (-1 : kˣ) ^ (j' : ℕ) := by
       rw [← backtrackScale_symm (cycleGraph m) (cycleLabelling k m) h',
         backtrackScale_cycleLabelling hm _ h'.symm]
-    rw [exteriorCycle_ratio_of_ne h h' (add_one_add_one_ne_self hm j'), hS, hS',
+    have hratio : (exteriorCycle k m).ratio h h' = -1 :=
+      exterior_ratio_of_ne _ h h' (add_one_add_one_ne_self hm j')
+    rw [hratio, hS, hS',
       eq_div_iff_mul_eq', neg_one_mul, neg_neg]
   · subst hv
     subst hj'
@@ -167,7 +153,9 @@ theorem isGaugeEquivalent_one_exteriorCycle (hm : 3 ≤ m) (hev : Even m) :
         backtrackScale_cycleLabelling hm _ h.symm]
     have hS' : backtrackScale (cycleGraph m) (cycleLabelling k m) h' = -((-1 : kˣ) ^ (j : ℕ)) := by
       rw [backtrackScale_cycleLabelling hm _ h', neg_one_pow_val_add_one hev]
-    rw [exteriorCycle_ratio_of_ne h h' (add_one_add_one_ne_self hm j).symm, hS, hS',
+    have hratio : (exteriorCycle k m).ratio h h' = -1 :=
+      exterior_ratio_of_ne _ h h' (add_one_add_one_ne_self hm j).symm
+    rw [hratio, hS, hS',
       eq_div_iff_mul_eq', neg_one_mul]
   · subst hv
     have hjj : j = j' := add_right_cancel hv'

@@ -20,7 +20,7 @@ distinct and really are neighbours.
 ## Main results
 
 * `TauCeti.eq_add_one_or_eq_add_one_of_cycleGraph_adj`: adjacent vertices differ by one.
-* `TauCeti.cycleGraph_eq_or_eq_or_eq_of_adj`: no vertex has three pairwise distinct neighbours,
+* `TauCeti.eq_or_eq_or_eq_of_cycleGraph_adj`: no vertex has three pairwise distinct neighbours,
   that is, every degree is at most two.
 * `TauCeti.cycleGraph_adj_add_one`: on at least three vertices a vertex is adjacent to its
   successor.
@@ -50,7 +50,7 @@ theorem eq_add_one_or_eq_add_one_of_cycleGraph_adj {u v : Fin m} (h : (cycleGrap
 
 /-- **No vertex of a cycle graph has three pairwise distinct neighbours**: every degree is at most
 two. -/
-theorem cycleGraph_eq_or_eq_or_eq_of_adj {i j j' j'' : Fin m} (h : (cycleGraph m).Adj i j)
+theorem eq_or_eq_or_eq_of_cycleGraph_adj {i j j' j'' : Fin m} (h : (cycleGraph m).Adj i j)
     (h' : (cycleGraph m).Adj i j') (h'' : (cycleGraph m).Adj i j'') :
     j = j' ∨ j' = j'' ∨ j'' = j := by
   rcases eq_add_one_or_eq_add_one_of_cycleGraph_adj h with hj | hj <;>

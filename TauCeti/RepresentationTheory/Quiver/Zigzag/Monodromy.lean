@@ -29,7 +29,10 @@ parameter whose monodromy around some closed edge cycle is not one is not gauge 
 
 ## Main results
 
-* `TauCeti.SkewZigzagParameter.monodromy_eq_prod`: the monodromy as a product around the cycle.
+* `TauCeti.SkewZigzagParameter.monodromy_def`: the defining product for monodromy.
+* `TauCeti.SkewZigzagParameter.monodromy_rotate`: changing the starting vertex does not change
+  monodromy.
+* `TauCeti.SkewZigzagParameter.monodromy_reverse`: reversing orientation inverts monodromy.
 * `TauCeti.SkewZigzagParameter.monodromy_gauge`: the monodromy is a gauge invariant.
 * `TauCeti.SkewZigzagParameter.monodromy_eq_one_of_isGaugeEquivalent_one`: a gauge-trivial
   parameter has trivial monodromy.
@@ -63,9 +66,47 @@ def monodromy (c : SkewZigzagParameter k G) (hx : ∀ i : Fin m, G.Adj (x i) (x 
 
 /-- **The monodromy is the product, over the vertices of the cycle, of the ratio between the
 edge along which the cycle arrives and the edge along which it leaves.** -/
-theorem monodromy_eq_prod (c : SkewZigzagParameter k G)
+theorem monodromy_def (c : SkewZigzagParameter k G)
     (hx : ∀ i : Fin m, G.Adj (x i) (x (i + 1))) :
     monodromy c hx = ∏ i : Fin m, c.ratio (hx i).symm (hx (i + 1)) := (rfl)
+
+/-- **Changing the starting vertex of a closed edge cycle does not change its monodromy.** -/
+theorem monodromy_rotate (c : SkewZigzagParameter k G)
+    (hx : ∀ i : Fin m, G.Adj (x i) (x (i + 1))) (n : Fin m) :
+    monodromy (x := fun i => x (i + n)) c (fun i => by
+      simpa only [add_assoc, add_comm, add_left_comm] using hx (i + n)) = monodromy c hx := by
+  unfold monodromy
+  exact Fintype.prod_equiv (Equiv.addRight n) _ _ fun i => by
+    -- Reindexing changes the endpoints definitionally but leaves different adjacency proofs.
+    change c.ratio _ _ = c.ratio (hx (i + n)).symm (hx (i + n + 1))
+    congr 1
+    all_goals
+      apply congrArg x
+      abel_nf
+
+/-- **Reversing the orientation of a closed edge cycle inverts its monodromy.** -/
+theorem monodromy_reverse (c : SkewZigzagParameter k G)
+    (hx : ∀ i : Fin m, G.Adj (x i) (x (i + 1))) :
+    monodromy (x := fun i => x (-i)) c (fun i => by
+      convert (hx (-i - 1)).symm using 1 <;> congr 1 <;> abel) =
+      (monodromy c hx)⁻¹ := by
+  unfold monodromy
+  rw [← Finset.prod_inv_distrib]
+  let e : Fin m ≃ Fin m :=
+    { toFun := fun i => -i - 1 - 1
+      invFun := fun i => -i - 1 - 1
+      left_inv := by intro i; dsimp; abel
+      right_inv := by intro i; dsimp; abel }
+  exact Fintype.prod_equiv e _ _ fun i => by
+    -- Align the reversed edge proofs with the original ratio in the opposite order.
+    change c.ratio _ _ = (c.ratio (hx (-i - 1 - 1)).symm (hx (-i - 1 - 1 + 1)))⁻¹
+    apply eq_inv_of_mul_eq_one_right
+    convert c.ratio_inv (hx (-i - 1 - 1)).symm (hx (-i - 1 - 1 + 1)) using 1
+    congr 1
+    all_goals congr 1
+    all_goals
+      apply congrArg x
+      abel
 
 /-- **The constant parameter has trivial monodromy.** -/
 @[simp]

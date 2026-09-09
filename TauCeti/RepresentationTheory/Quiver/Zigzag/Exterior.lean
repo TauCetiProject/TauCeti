@@ -34,8 +34,8 @@ exterior parameter is the constant parameter, and its relation ideal is the ordi
   they agree and `-1` otherwise.
 * `TauCeti.SkewZigzagParameter.exterior_eq_one`: in characteristic two the exterior parameter is
   the constant parameter.
-* `TauCeti.skewZigzagMk_exterior_backtrackElem_add_backtrackElem`: in the exterior relation
-  quotient the two backtracks at a vertex sum to zero.
+* `TauCeti.skewZigzagMk_exterior_backtrackElem_add_backtrackElem_eq_zero`: in the exterior
+  relation quotient the two backtracks at a vertex sum to zero.
 * `TauCeti.skewZigzagIdeal_exterior_eq_zigzagIdeal`: in characteristic two the exterior parameter
   presents the ordinary zigzag relations.
 
@@ -131,8 +131,8 @@ variable (k : Type w) [CommRing k] {V : Type u} [DecidableEq V] [Finite V] (G : 
 /-- **In the exterior relation quotient the two backtracks at a vertex sum to zero.** This is the
 shape in which the exterior relation appears for the basic algebra of an exterior skew group
 algebra. -/
-theorem skewZigzagMk_exterior_backtrackElem_add_backtrackElem {i j j' : V} (h : G.Adj i j)
-    (h' : G.Adj i j') (hne : j ≠ j') :
+theorem skewZigzagMk_exterior_backtrackElem_add_backtrackElem_eq_zero {i j j' : V}
+    (h : G.Adj i j) (h' : G.Adj i j') (hne : j ≠ j') :
     skewZigzagMk k G (SkewZigzagParameter.exterior k hG) (backtrackElem G k h) +
         skewZigzagMk k G (SkewZigzagParameter.exterior k hG) (backtrackElem G k h') = 0 := by
   rw [skewZigzagMk_backtrackElem_eq_smul k G _ h h',
