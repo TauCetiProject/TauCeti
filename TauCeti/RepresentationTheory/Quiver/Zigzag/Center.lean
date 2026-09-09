@@ -509,21 +509,20 @@ private noncomputable def zigzagAlgebraPiAlgEquiv :
   map_add' x y := funext fun C => map_add (zigzagComponentProjection k G C) x y
   commutes' r := funext fun C => (zigzagComponentProjection k G C).commutes r
 
--- Mathlib exposes `DualNumber k` as `TrivSqZeroExt k k`, whose carrier is `k × k` and whose module
--- structure is `inferInstanceAs <| Module k (k × k)`; both are public and `@[expose]`d.  There is
--- no `Module.Free`/`Module.Finite` instance, basis or linear equivalence for `TrivSqZeroExt` in
--- Mathlib, so this definitional identification is the only route to the dual-number dimension, and
--- collecting it here keeps it to a single place.
-private noncomputable def uliftDualNumberLinearEquiv :
-    ULift.{u} (DualNumber k) ≃ₗ[k] ULift.{u} (k × k) :=
-  LinearEquiv.refl k (ULift.{u} (k × k))
-
-/-- The centre of a universe lift of the dual numbers is the whole algebra: the dual numbers are
-commutative. -/
-private noncomputable def centerULiftDualNumberAlgEquiv :
-    Subalgebra.center k (ULift.{u} (DualNumber k)) ≃ₐ[k] ULift.{u} (DualNumber k) :=
-  (Subalgebra.equivOfEq _ _
-    (Subalgebra.center_eq_top (R := k) (ULift.{u} (DualNumber k)))).trans Subalgebra.topEquiv
+-- The centre of a singleton component factor is the whole factor, since the dual numbers are
+-- commutative, and Mathlib exposes `DualNumber k` as `TrivSqZeroExt k k`, whose carrier is `k × k`
+-- and whose module structure is `inferInstanceAs <| Module k (k × k)`, both of them public and
+-- `@[expose]`d.  There is no `Module.Free`/`Module.Finite` instance, basis or linear equivalence
+-- for `TrivSqZeroExt` in Mathlib, so that definitional identification is the only route to the
+-- dual-number dimension; stating the equivalence directly for the component factor confines the
+-- dependence on Mathlib's representation of `TrivSqZeroExt` to this one declaration.
+private noncomputable def centerZigzagComponentAlgebraSubsingletonLinearEquiv
+    (C : G.ConnectedComponent) [Subsingleton C] :
+    Subalgebra.center k (zigzagComponentAlgebra k G C) ≃ₗ[k] ULift.{u} (k × k) :=
+  ((centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).trans
+    ((Subalgebra.equivOfEq _ _
+      (Subalgebra.center_eq_top (R := k) (ULift.{u} (DualNumber k)))).trans
+        Subalgebra.topEquiv)).toLinearEquiv
 
 /-- The centre of a component factor of the zigzag algebra is free over the coefficient ring. -/
 instance instFreeCenterZigzagComponentAlgebra (C : G.ConnectedComponent) :
@@ -538,12 +537,8 @@ instance instFreeCenterZigzagComponentAlgebra (C : G.ConnectedComponent) :
     exact Module.Free.of_equiv
       (centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).symm.toLinearEquiv
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
-    have : Module.Free k (ULift.{u} (DualNumber k)) :=
-      Module.Free.of_equiv (uliftDualNumberLinearEquiv k).symm
-    have : Module.Free k (Subalgebra.center k (ULift.{u} (DualNumber k))) :=
-      Module.Free.of_equiv (centerULiftDualNumberAlgEquiv k).symm.toLinearEquiv
     exact Module.Free.of_equiv
-      (centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).symm.toLinearEquiv
+      (centerZigzagComponentAlgebraSubsingletonLinearEquiv k G C).symm
 
 /-- The centre of a component factor of the zigzag algebra is finite over the coefficient ring. -/
 instance instFiniteCenterZigzagComponentAlgebra (C : G.ConnectedComponent) :
@@ -560,16 +555,13 @@ instance instFiniteCenterZigzagComponentAlgebra (C : G.ConnectedComponent) :
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
     have : Module.Finite k (ULift.{u} (k × k)) :=
       Module.Finite.equiv (ULift.moduleEquiv (R := k) (M := k × k)).symm
-    have : Module.Finite k (ULift.{u} (DualNumber k)) :=
-      Module.Finite.equiv (uliftDualNumberLinearEquiv k).symm
-    have : Module.Finite k (Subalgebra.center k (ULift.{u} (DualNumber k))) :=
-      Module.Finite.equiv (centerULiftDualNumberAlgEquiv k).symm.toLinearEquiv
     exact Module.Finite.equiv
-      (centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).symm.toLinearEquiv
+      (centerZigzagComponentAlgebraSubsingletonLinearEquiv k G C).symm
 
 /-- **The dimension of the centre of a component factor.** A component with an edge has the unit
 and one volume class at each of its vertices as a basis of its centre, while a singleton component
 carries the commutative dual numbers, whose centre is all two dimensions of it. -/
+@[simp]
 theorem finrank_center_zigzagComponentAlgebra [Nontrivial k] (C : G.ConnectedComponent) :
     Module.finrank k (Subalgebra.center k (zigzagComponentAlgebra k G C)) = Nat.card C + 1 := by
   classical
@@ -583,14 +575,13 @@ theorem finrank_center_zigzagComponentAlgebra [Nontrivial k] (C : G.ConnectedCom
     let c : C := ⟨C.nonempty_supp.some, C.nonempty_supp.some_mem⟩
     let _ : Inhabited C := ⟨c⟩
     let _ : Unique C := Unique.mk' C
-    rw [(centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).toLinearEquiv.finrank_eq,
-      (centerULiftDualNumberAlgEquiv k).toLinearEquiv.finrank_eq,
-      (uliftDualNumberLinearEquiv k).finrank_eq, finrank_ulift, Module.finrank_prod,
-      Module.finrank_self, Nat.card_unique]
+    rw [(centerZigzagComponentAlgebraSubsingletonLinearEquiv k G C).finrank_eq, finrank_ulift,
+      Module.finrank_prod, Module.finrank_self, Nat.card_unique]
 
 /-- **The dimension of the centre of the public zigzag algebra.** For every finite simple graph the
 centre has dimension `|V|` plus the number of connected components: each component contributes its
 own unit together with one volume class at each of its vertices. -/
+@[simp]
 theorem finrank_center_zigzagAlgebra [Nontrivial k] :
     Module.finrank k (Subalgebra.center k (zigzagAlgebra k G)) =
       Nat.card V + Nat.card G.ConnectedComponent := by

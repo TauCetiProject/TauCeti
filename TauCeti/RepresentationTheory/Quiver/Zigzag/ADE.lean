@@ -175,21 +175,21 @@ theorem finrank_zigzagAlgebra_affineE8 (k : Type*) [CommRing k] [Nontrivial k] :
 /-! ### Centre dimensions -/
 
 /-- The centre of the zigzag algebra of `D₄` has dimension `5`. -/
-@[simp]
+@[simp high]
 theorem finrank_center_zigzagAlgebra_D4 (k : Type*) [CommRing k] [Nontrivial k] :
     Module.finrank k (Subalgebra.center k (zigzagAlgebra k zigzagD4Graph)) = 5 := by
   rw [finrank_center_zigzagAlgebra_of_connected k zigzagD4Graph connected_zigzagD4Graph]
   norm_num
 
 /-- The centre of the zigzag algebra of `E₈` has dimension `9`. -/
-@[simp]
+@[simp high]
 theorem finrank_center_zigzagAlgebra_E8 (k : Type*) [CommRing k] [Nontrivial k] :
     Module.finrank k (Subalgebra.center k (zigzagAlgebra k zigzagE8Graph)) = 9 := by
   rw [finrank_center_zigzagAlgebra_of_connected k zigzagE8Graph connected_zigzagE8Graph]
   norm_num
 
 /-- The centre of the zigzag algebra of affine `E₈` has dimension `10`. -/
-@[simp]
+@[simp high]
 theorem finrank_center_zigzagAlgebra_affineE8 (k : Type*) [CommRing k] [Nontrivial k] :
     Module.finrank k (Subalgebra.center k (zigzagAlgebra k zigzagAffineE8Graph)) = 10 := by
   rw [finrank_center_zigzagAlgebra_of_connected k zigzagAffineE8Graph
