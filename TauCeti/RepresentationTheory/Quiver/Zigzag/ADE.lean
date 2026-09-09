@@ -46,10 +46,6 @@ The definitions retain the established node labels: finite nodes use the indices
 
 ## References
 
-This file implements the named-example dimension and centre targets in
-`TauCetiRoadmap/ZigzagPreprojective/README.md`, following the prototype graph presentations in
-`TauCetiRoadmap/ZigzagPreprojective/Suggested.lean`.
-
 The zigzag conventions and invariant formulas follow Huerfano--Khovanov, *A category for the
 adjoint representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag
 algebras*, Section 2. The affine `E₈ = T_{2,3,6}` labelling follows Kac, *Infinite dimensional Lie
@@ -72,6 +68,9 @@ abbrev zigzagE8Graph : SimpleGraph (Fin 8) :=
 abbrev zigzagAffineE8Graph : SimpleGraph (Fin 9) :=
   AffineDynkinType.E8.graph
 
+-- `SimpleGraph.Adj` is not an instance-reducible head, so instance synthesis does not see through
+-- the graph abbreviations on its own: without these three declarations every `edgeFinset` and
+-- `finrank` statement below fails to elaborate.
 instance : DecidableRel zigzagD4Graph.Adj :=
   inferInstanceAs (DecidableRel (diagramGraph (DynkinType.D 4).cartanMatrix).Adj)
 
