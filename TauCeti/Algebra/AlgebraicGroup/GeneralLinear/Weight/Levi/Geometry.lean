@@ -384,7 +384,9 @@ instance instSmoothWeightLeviCoordinateHopfAlgebra (w : Fin N → ℤ) :
     ⟨inferInstance, inferInstance⟩
   exact Algebra.Smooth.of_equiv (weightLeviCoordinateAlgEquiv R w).symm
 
-private theorem weightLeviPolynomialGenericMatrix_det_ne_zero
+/-- The determinant of the generic block-diagonal matrix is a nonzero polynomial over a
+nontrivial base ring. -/
+theorem weightLeviPolynomialGenericMatrix_det_ne_zero
     (R : Type u) [CommRing R] [Nontrivial R] (w : Fin N → ℤ) :
     Matrix.det (weightLeviPolynomialGenericMatrix R w) ≠ 0 := by
   intro hzero
