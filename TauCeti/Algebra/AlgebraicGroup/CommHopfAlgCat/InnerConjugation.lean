@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
 /-!
 # Inner conjugation in Hopf coordinates
 
-A rational point `g` of an affine group acts on all algebra-valued points by inner
+An `R`-valued point `g` of an affine group acts on all algebra-valued points by inner
 conjugation. This action is natural in the value algebra and is a group automorphism. Full
 faithfulness of the functor of points therefore recovers a coordinate Hopf-algebra
 automorphism.
@@ -25,26 +25,29 @@ H --conj#--> H ⊗ H --(g ⊗ id)--> H.
 
 ## Main declarations
 
-* `CommHopfAlgCat.innerConjugationPointIso`: inner conjugation on `A`-valued points.
-* `CommHopfAlgCat.innerConjugationPointNatIso`: inner conjugation naturally on the
+* `TauCeti.CommHopfAlgCat.innerConjugationPointIso`: inner conjugation on `A`-valued points.
+* `TauCeti.CommHopfAlgCat.innerConjugationPointNatIso`: inner conjugation naturally on the
   functor of points.
-* `CommHopfAlgCat.innerConjugationIso`: the corresponding coordinate Hopf-algebra
+* `TauCeti.CommHopfAlgCat.innerConjugationIso`: the corresponding coordinate Hopf-algebra
   automorphism.
-* `CommHopfAlgCat.innerConjugationIso_hom_toAlgHom`: its explicit coordinate formula.
-* `CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom_app_apply`: its action on
+* `TauCeti.CommHopfAlgCat.innerConjugationIso_hom_toAlgHom`: its explicit coordinate formula.
+* `TauCeti.CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom_app_apply`: its action on
   arbitrary algebra-valued points.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §§3.5 and 10.20.
 * A. Borel, *Linear Algebraic Groups*, 2nd ed. (1991), §8.
+* The Tau Ceti contributors, prior formalization of inner conjugation,
+  [TauCeti#5490](https://github.com/TauCetiProject/TauCeti/pull/5490),
+  commit `8419e7ceed8e87e7a14be030b7a0dda52aea2d41`.
 -/
 
 public section
 
 open CategoryTheory TauCeti TauCeti.CommHopfAlgCat TauCeti.HopfAlgebra WithConv
 
-namespace CommHopfAlgCat
+namespace TauCeti.CommHopfAlgCat
 
 universe u v w
 
@@ -54,7 +57,7 @@ section Pointwise
 
 variable (H : _root_.CommHopfAlgCat.{w} R)
 
-/-- Conjugation by the extension of a rational point, as an automorphism of `A`-valued points. -/
+/-- Conjugation by the extension of an `R`-valued point, as an automorphism of `A`-valued points. -/
 noncomputable def innerConjugationPointIso
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
     (A : CommAlgCat.{v} R) :
@@ -94,7 +97,7 @@ theorem innerConjugationPointIso_inv_apply
       (extendPoint H A g)⁻¹ * x * extendPoint H A g := by
   rw [innerConjugationPointIso_inv_apply_def, MulAut.conj_symm_apply]
 
-/-- Conjugation by a rational point, naturally on the full functor of points. -/
+/-- Conjugation by an `R`-valued point, naturally on the full functor of points. -/
 noncomputable def innerConjugationPointNatIso
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
     HopfAlgebra.pointsFunctor.{u, w, v} (R := R) (H := H) ≅
@@ -190,28 +193,28 @@ end Pointwise
 
 variable (H : _root_.CommHopfAlgCat.{u} R)
 
-/-- The coordinate Hopf-algebra automorphism representing conjugation by a rational point.
+/-- The coordinate Hopf-algebra automorphism representing conjugation by an `R`-valued point.
 
 Contravariance means that its underlying coordinate map is the pullback of the pointwise inner
 automorphism. -/
 noncomputable def innerConjugationIso
-    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) : H ≅ H where
-  hom := homOfPointsMap (innerConjugationPointNatIso H g).hom
-  inv := homOfPointsMap (innerConjugationPointNatIso H g).inv
-  hom_inv_id := by
-    rw [← homOfPointsMap_comp, Iso.inv_hom_id, homOfPointsMap_id]
-  inv_hom_id := by
-    rw [← homOfPointsMap_comp, Iso.hom_inv_id, homOfPointsMap_id]
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) : H ≅ H :=
+  ((pointsFunctor (R := R)).preimageIso (X := Opposite.op H) (Y := Opposite.op H)
+    (innerConjugationPointNatIso H g)).unop
 
 private theorem innerConjugationIso_hom_def
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
-    (innerConjugationIso H g).hom = homOfPointsMap (innerConjugationPointNatIso H g).hom :=
-  (rfl)
+    (innerConjugationIso H g).hom = homOfPointsMap (innerConjugationPointNatIso H g).hom := by
+  rw [← homOfPointsMap_mapPointsFunctor (innerConjugationIso H g).hom]
+  congr 1
+  exact Functor.map_preimage (pointsFunctor (R := R)) _
 
 private theorem innerConjugationIso_inv_def
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
-    (innerConjugationIso H g).inv = homOfPointsMap (innerConjugationPointNatIso H g).inv :=
-  (rfl)
+    (innerConjugationIso H g).inv = homOfPointsMap (innerConjugationPointNatIso H g).inv := by
+  rw [← homOfPointsMap_mapPointsFunctor (innerConjugationIso H g).inv]
+  congr 1
+  exact Functor.map_preimage (pointsFunctor (R := R)) _
 
 /-- Conjugation by the identity point is the identity coordinate Hopf-algebra automorphism. -/
 @[simp]
@@ -249,7 +252,7 @@ theorem innerConjugationIso_inv
     innerConjugationPointNatIso_inv, Iso.symm_hom]
 
 /-- The coordinate algebra map of inner conjugation is obtained from the universal conjugation
-map by evaluating its conjugating variable at the given rational point. -/
+map by evaluating its conjugating variable at the given `R`-valued point. -/
 theorem innerConjugationIso_hom_toAlgHom
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
     (innerConjugationIso H g).hom.hom.toAlgHom =
@@ -288,7 +291,7 @@ theorem innerConjugationIso_hom_toAlgHom
             (toConv ((Algebra.ofId R H).comp g.ofConv)) (toConv (AlgHom.id R H))).symm x
 
 /-- On points over any commutative value algebra, the coordinate inner automorphism acts by
-conjugation by the extended rational point. -/
+conjugation by the extended `R`-valued point. -/
 theorem mapPointsFunctor_innerConjugationIso_hom_app_apply
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
     (A : CommAlgCat.{v} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
@@ -314,7 +317,7 @@ theorem mapPointsFunctor_innerConjugationIso_hom_app_apply
     (extendPoint H A g) x)
 
 /-- On points over any commutative value algebra, the inverse coordinate inner automorphism acts
-by conjugation by the inverse of the extended rational point. -/
+by conjugation by the inverse of the extended `R`-valued point. -/
 theorem mapPointsFunctor_innerConjugationIso_inv_app_apply
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
     (A : CommAlgCat.{v} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
@@ -323,4 +326,4 @@ theorem mapPointsFunctor_innerConjugationIso_inv_app_apply
   rw [← Iso.symm_hom, ← innerConjugationIso_inv,
     mapPointsFunctor_innerConjugationIso_hom_app_apply, map_inv, inv_inv]
 
-end CommHopfAlgCat
+end TauCeti.CommHopfAlgCat
