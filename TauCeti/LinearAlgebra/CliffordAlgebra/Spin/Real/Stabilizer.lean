@@ -27,7 +27,11 @@ converse stabilizer identification.
 
 ## Main results
 
+* `CliffordAlgebra.realCliffordSpinInclusionIsometry` is the quadratic isometry inducing the
+  lower-rank inclusion.
 * `CliffordAlgebra.realCliffordSpinInclusion` is the lower-rank Spin homomorphism.
+* `CliffordAlgebra.realCliffordSpinInclusionIsometry_map_injective` proves injectivity of the
+  induced Clifford-algebra map.
 * `CliffordAlgebra.realCliffordSpinLastStabilizer` is the stabilizer of the last unit vector.
 * `CliffordAlgebra.realCliffordSpinStabilizerInclusion` is the injective homomorphism into that
   stabilizer.
@@ -53,7 +57,8 @@ open TauCeti
 noncomputable section
 
 
-private def realCliffordSpinInclusionIsometry (n : ℕ) :
+/-- The quadratic isometry inducing the lower-rank inclusion `Spin(n) → Spin(n + 1)`. -/
+def realCliffordSpinInclusionIsometry (n : ℕ) :
     realCliffordForm n 0 →qᵢ realCliffordForm (n + 1) 0 :=
   (realCliffordPositiveSplitIsometry n 0).symm.toIsometry.comp
     (QuadraticMap.Isometry.inl (realCliffordForm n 0)
@@ -75,10 +80,7 @@ def realCliffordSpinInclusion (n : ℕ) :
 @[simp]
 theorem coe_realCliffordSpinInclusion_apply (n : ℕ) (x : realCliffordSpinGroupZero n) :
     (realCliffordSpinInclusion n x : CliffordAlgebra (realCliffordForm (n + 1) 0)) =
-      CliffordAlgebra.map
-        ((realCliffordPositiveSplitIsometry n 0).symm.toIsometry.comp
-          (QuadraticMap.Isometry.inl (realCliffordForm n 0)
-            (QuadraticMap.sq (R := ℝ) (A := ℝ))))
+      CliffordAlgebra.map (realCliffordSpinInclusionIsometry n)
         (x : CliffordAlgebra (realCliffordForm n 0)) :=
   QuadraticMap.Isometry.coe_spinGroupMap_apply _ _
 
@@ -114,10 +116,9 @@ theorem realCliffordSpinInclusion_spinVectorAction_split (n : ℕ)
         (spinVectorAction (realCliffordForm n 0) x m, r) := by
   exact (realCliffordPositiveSplitIsometry n 0).spinGroupMap_spinVectorAction_prod x m r
 
-/-- The lower-rank homomorphism `Spin(n) → Spin(n + 1)` is injective. -/
-theorem realCliffordSpinInclusion_injective (n : ℕ) :
-    Function.Injective (realCliffordSpinInclusion n) := by
-  apply QuadraticMap.Isometry.spinGroupMap_injective
+/-- The Clifford-algebra map induced by the lower-rank inclusion is injective. -/
+theorem realCliffordSpinInclusionIsometry_map_injective (n : ℕ) :
+    Function.Injective (CliffordAlgebra.map (realCliffordSpinInclusionIsometry n)) := by
   rw [realCliffordSpinInclusionIsometry, ← CliffordAlgebra.map_comp_map]
   exact (CliffordAlgebra.leftInverse_map_of_leftInverse
       (realCliffordPositiveSplitIsometry n 0).symm.toIsometry
@@ -125,6 +126,12 @@ theorem realCliffordSpinInclusion_injective (n : ℕ) :
       (realCliffordPositiveSplitIsometry n 0).apply_symm_apply).injective.comp
     (CliffordAlgebra.map_inl_injective (realCliffordForm n 0)
       (QuadraticMap.sq (R := ℝ) (A := ℝ)))
+
+/-- The lower-rank homomorphism `Spin(n) → Spin(n + 1)` is injective. -/
+theorem realCliffordSpinInclusion_injective (n : ℕ) :
+    Function.Injective (realCliffordSpinInclusion n) := by
+  apply QuadraticMap.Isometry.spinGroupMap_injective
+  exact realCliffordSpinInclusionIsometry_map_injective n
 
 /-- The subgroup of `Spin(n + 1)` fixing the last coordinate vector under the vector action. -/
 def realCliffordSpinLastStabilizer (n : ℕ) :
