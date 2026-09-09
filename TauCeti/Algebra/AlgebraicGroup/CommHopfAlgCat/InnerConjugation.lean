@@ -55,7 +55,7 @@ variable {R : Type u} [CommRing R]
 
 section Pointwise
 
-variable (H : _root_.CommHopfAlgCat.{w} R)
+variable (H : Type w) [Semiring H] [_root_.HopfAlgebra R H]
 
 /-- Conjugation by the extension of an `R`-valued point, as an automorphism of `A`-valued points. -/
 noncomputable def innerConjugationPointIso
