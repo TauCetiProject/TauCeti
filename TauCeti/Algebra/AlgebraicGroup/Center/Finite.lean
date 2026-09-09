@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Center.Reduced
+public import TauCeti.RingTheory.FiniteType.TensorProduct
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Comultiplication
 import Mathlib.RingTheory.Finiteness.NilpotentKer
 import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.TrivialIdentity
@@ -29,8 +30,8 @@ that identity component.
 * `moduleFinite_centerCoordinate_of_reducedCenter`: a center is finite when its reduction is
   finite and the tensor square of the reduced center coordinate algebra is reduced.
 * `moduleFinite_centerCoordinate_of_reducedCenter_identityComponent_eq_augmentation`:
-  a center is finite when its reduction has trivial identity component and the tensor square of
-  the reduced center coordinate algebra is reduced.
+  over an algebraically closed field, a center is finite when its reduction has trivial identity
+  component; no tensor-reducedness hypothesis is needed.
 
 ## References
 
@@ -49,20 +50,24 @@ universe u
 variable {k : Type u} [Field k]
 variable (H : FiniteTypeCommHopfAlgCat.{u, u} k)
 
-variable [IsReduced
-  ((((CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj :
-        _root_.CommHopfAlgCat.{u} k) : Type u) ⧸
-      nilradical
-        ((CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj :
-          _root_.CommHopfAlgCat.{u} k) : Type u)) ⊗[k]
-    (((CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj :
-        _root_.CommHopfAlgCat.{u} k) : Type u) ⧸
-      nilradical ((CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj :
-        _root_.CommHopfAlgCat.{u} k) : Type u)))]
+/-- The center coordinate algebra modulo its nilradical is reduced. -/
+local instance : IsReduced ((CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj) ⧸
+    nilradical (CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj)) :=
+  (Ideal.isRadical_iff_quotient_reduced _).mp (Ideal.radical_isRadical ⊥)
 
 /-- Assuming that the tensor square of the reduced center coordinate algebra is reduced, a
 finite-type affine group's center is finite when its reduced center is finite. -/
 theorem moduleFinite_centerCoordinate_of_reducedCenter
+    [IsReduced
+      ((((CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj :
+            _root_.CommHopfAlgCat.{u} k) : Type u) ⧸
+          nilradical
+            ((CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj :
+              _root_.CommHopfAlgCat.{u} k) : Type u)) ⊗[k]
+        (((CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj :
+            _root_.CommHopfAlgCat.{u} k) : Type u) ⧸
+          nilradical ((CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj :
+            _root_.CommHopfAlgCat.{u} k) : Type u)))]
     [Module.Finite k (CommHopfAlgCat.reducedCenterCoordinateHopfAlgebra H.obj)] :
     Module.Finite k (CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj) := by
   let C := CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj
@@ -83,9 +88,8 @@ theorem moduleFinite_centerCoordinate_of_reducedCenter
   · rw [hker]
     exact IsNoetherian.noetherian _
 
-/-- Assuming that the tensor square of the reduced center coordinate algebra is reduced, a
-finite-type affine group's center is finite when the identity component of its reduced center is
-the trivial subgroup scheme. -/
+/-- Over an algebraically closed field, a finite-type affine group's center is finite when
+the identity component of its reduced center is the trivial subgroup scheme. -/
 theorem
     moduleFinite_centerCoordinate_of_reducedCenter_identityComponent_eq_augmentation
     [IsAlgClosed k]
