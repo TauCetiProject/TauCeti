@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.FunctionSeries
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
-public import Mathlib.NumberTheory.LSeries.Convergence
+public import Mathlib.NumberTheory.LSeries.Deriv
 
 /-!
 # Continuity of an L-series along a vertical line
@@ -39,15 +39,6 @@ open Complex Filter Topology
 
 variable {a : ℕ → ℂ} {s : ℂ}
 
-/-- Each term of a Dirichlet series is an entire function of the evaluation variable. -/
-private lemma continuous_term (a : ℕ → ℂ) (n : ℕ) :
-    Continuous fun z : ℂ ↦ _root_.LSeries.term a z n := by
-  by_cases hn : n = 0
-  · simpa [_root_.LSeries.term, hn] using continuous_const
-  · simp only [_root_.LSeries.term, hn, ite_false]
-    exact continuous_const.div₀ (continuous_const.cpow continuous_id (by simp [hn]))
-      (fun z ↦ by simp [hn])
-
 /-- A Dirichlet series summable at `s` converges uniformly on the closed half-plane
 `{z | s.re ≤ z.re}`, hence is continuous there.
 
@@ -56,8 +47,9 @@ of absolute convergence, but says nothing on its boundary line, which is where t
 Wiener--Ikehara argument works. -/
 theorem continuousOn_LSeries (hs : LSeriesSummable a s) :
     ContinuousOn (LSeries a) {z : ℂ | s.re ≤ z.re} :=
-  continuousOn_tsum (fun n ↦ (continuous_term a n).continuousOn) (summable_norm_iff.mpr hs)
-    (fun n _ hz ↦ _root_.LSeries.norm_term_le_of_re_le_re a hz n)
+  continuousOn_tsum
+    (fun n z _ ↦ (_root_.LSeries.hasDerivAt_term a n z).continuousAt.continuousWithinAt)
+    (summable_norm_iff.mpr hs) (fun n _ hz ↦ _root_.LSeries.norm_term_le_of_re_le_re a hz n)
 
 /-- A Dirichlet series summable at `s` is continuous along the vertical line through `s`. -/
 theorem continuous_LSeries_vertical (hs : LSeriesSummable a s) :

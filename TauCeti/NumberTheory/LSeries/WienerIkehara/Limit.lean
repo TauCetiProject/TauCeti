@@ -16,12 +16,12 @@ integrable function on a vertical line `Re s = sigma` strictly inside the half-p
 convergence. This file lets `sigma` decrease to `1` and records the resulting identity on the
 boundary line itself.
 
-Each of the three terms of that identity is handled by its own dominated-convergence argument, and
-each is stated separately so that a later step can reuse it: the Dirichlet series converges by the
-uniform convergence of a summable Dirichlet series on a closed half-plane, the pole term converges
-because the exponential damping `exp (-u (sigma - 1))` is bounded on the half-line of integration,
-and the vertical integral converges because a test function with compact support confines the
-integrand to a compact box on which `G` is continuous.
+Each of the three terms of that identity has its own limit argument, and each is stated separately
+so that a later step can reuse it: the Dirichlet series converges by the uniform convergence of a
+summable Dirichlet series on a closed half-plane, while the two integrals converge by dominated
+convergence, the pole term because the exponential damping `exp (-u (sigma - 1))` is bounded on
+the half-line of integration, and the vertical integral because a test function with compact
+support confines the integrand to a compact box on which `G` is continuous.
 
 Only the pole-subtracted remainder `G` is assumed continuous on the closed half-plane
 `Re s ≥ 1`; nothing is assumed about `LSeries a` there, where it is a total function with junk
@@ -36,7 +36,7 @@ values.
   combine into, and
   `TauCeti.LSeries.tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff` is its form
   for a smooth test function, where the half-line integrability hypothesis is automatic by
-  `TauCeti.LSeries.integrableOn_fourier_div_of_contDiff`.
+  `TauCeti.LSeries.integrable_fourier_div_of_contDiff`.
 
 ## Provenance
 
@@ -46,7 +46,7 @@ and `limiting_fourier` in `PrimeNumberTheoremAnd/Wiener.lean` of the Apache-2.0
 `AxiomMath/PrimeNumberTheoremAnd` repository, revision
 `2667e414c38e5a5dc9aa1946f16f13001e5cd3ed`, the same source as the sibling file
 `TauCeti.NumberTheory.LSeries.WienerIkehara.Fourier`. The proofs here are written against
-Mathlib's dominated-convergence lemmas, and the hypotheses differ: the Chebyshev-type growth
+Mathlib's uniform- and dominated-convergence lemmas, and the hypotheses differ: the Chebyshev-type
 bound of the source is replaced by the summability of the Fourier-weighted series at `s = 1`,
 which is what the limit actually consumes.
 
@@ -135,11 +135,11 @@ theorem tendsto_integral_exp_mul_fourier (hx : 0 < x)
   simpa using hrpow.mul hint
 
 /-- The Fourier transform of a smooth, compactly supported function is a Schwartz function, hence
-integrable; rescaling and restricting gives the half-line hypothesis of
+integrable; rescaling keeps it integrable, and restricting to a half-line gives the hypothesis of
 `tsum_term_mul_fourier_sub_pole_eq_integral_boundary`. -/
-theorem integrableOn_fourier_div_of_contDiff (hpsi : ContDiff ℝ ∞ psi)
-    (hsupp : HasCompactSupport psi) (c : ℝ) :
-    IntegrableOn (fun u : ℝ ↦ 𝓕 psi (u / (2 * π))) (Ici c) := by
+theorem integrable_fourier_div_of_contDiff (hpsi : ContDiff ℝ ∞ psi)
+    (hsupp : HasCompactSupport psi) :
+    Integrable (fun u : ℝ ↦ 𝓕 psi (u / (2 * π))) := by
   have hcoe : ⇑(hsupp.toSchwartzMap hpsi) = psi := by
     ext u
     simp
@@ -147,7 +147,7 @@ theorem integrableOn_fourier_div_of_contDiff (hpsi : ContDiff ℝ ∞ psi)
     have h : Integrable ((𝓕 (hsupp.toSchwartzMap hpsi) : SchwartzMap ℝ ℂ) : ℝ → ℂ) :=
       SchwartzMap.integrable _
     rwa [SchwartzMap.fourier_coe, hcoe] at h
-  exact (hS.comp_div (by positivity)).integrableOn
+  exact hS.comp_div (by positivity)
 
 /-! ### The integral along the vertical line -/
 
@@ -249,6 +249,6 @@ theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff (hx : 0 
         A * ∫ u in Ici (-Real.log x), 𝓕 psi (u / (2 * π)) =
       ∫ t : ℝ, G (1 + t * I) * psi t * (x : ℂ) ^ (t * I) :=
   tsum_term_mul_fourier_sub_pole_eq_integral_boundary hx hG hG' hsum hpsi.continuous hsupp
-    (integrableOn_fourier_div_of_contDiff hpsi hsupp _) hFsum
+    (integrable_fourier_div_of_contDiff hpsi hsupp).integrableOn hFsum
 
 end TauCeti.LSeries
