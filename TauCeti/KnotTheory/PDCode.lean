@@ -190,6 +190,12 @@ theorem isOver_two (D : PDCode n) (i : Fin n) : D.isOver i 2 = !D.overPair i := 
 theorem isOver_three (D : PDCode n) (i : Fin n) : D.isOver i 3 = D.overPair i := by
   simp [isOver]
 
+/-- Opposite slots belong to the same over- or under-strand. -/
+@[simp]
+theorem isOver_oppositeCrossingSlot (D : PDCode n) (i : Fin n) (slot : Fin 4) :
+    D.isOver i (oppositeCrossingSlot slot) = D.isOver i slot := by
+  fin_cases slot <;> simp [oppositeCrossingSlot, isOver]
+
 /-- Reflect a diagram by swapping the over- and under-strands. -/
 def mirror (D : PDCode n) : PDCode n where
   halfEdge := D.halfEdge
