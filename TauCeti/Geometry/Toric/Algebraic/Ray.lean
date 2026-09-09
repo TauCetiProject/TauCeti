@@ -5,24 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.Cone
+public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+public import TauCeti.Geometry.Convex.Cone.Face.Finite
 
 /-!
 # Rays of toric cones
 
 A ray of a cone is a one-dimensional face. This file defines the ray type on Mathlib's face
-lattice and proves the finiteness needed to index the primitive ray generators of a toric cone.
-It also records the geometric content of one-dimensionality: every nonzero point of a ray spans
-it as a pointed cone when the ambient cone is salient.
+lattice and proves the finiteness needed to index the primitive ray generators of a toric cone:
+finite generation of the ambient cone alone already bounds the rays. It also records the
+geometric content of one-dimensionality: every nonzero point of a salient ray spans it as a
+pointed cone.
 
 ## Main declarations
 
 * `TauCeti.Toric.ToricRay`: the one-dimensional faces of a pointed cone.
-* `TauCeti.Toric.IsToricCone.finite_toricRay`: a toric cone has finitely many rays.
+* `TauCeti.Toric.ToricRay.finite_of_fg`: a finitely generated pointed cone, and hence a toric
+  cone, has finitely many rays.
 * `TauCeti.Toric.ToricRay.exists_mem_ne_zero`: every ray contains a nonzero point.
-* `TauCeti.Toric.ToricRay.eq_hull_singleton`: every nonzero point of a ray in a salient cone
-  generates that ray.
+* `TauCeti.Toric.ToricRay.eq_hull_singleton`: every nonzero point of a salient ray generates
+  that ray.
 
 ## References
 
@@ -46,6 +49,9 @@ namespace ToricRay
 /-- The pointed cone underlying a ray. -/
 abbrev toPointedCone (ρ : ToricRay σ) : PointedCone ℝ V := ρ.1.toPointedCone
 
+/-- Rays are viewed as sets of vectors: membership `x ∈ ρ` and the coercion `(ρ : Set V)` both
+refer to the pointed cone `ρ.toPointedCone` underlying the ray, and two rays with the same
+points are equal. -/
 instance : SetLike (ToricRay σ) V where
   coe ρ := ρ.toPointedCone
   coe_injective _ρ _τ h := Subtype.ext (PointedCone.Face.ext fun x ↦ Set.ext_iff.mp h x)
@@ -68,21 +74,17 @@ theorem toPointedCone_ne_bot (ρ : ToricRay σ) : ρ.toPointedCone ≠ ⊥ := by
 theorem exists_mem_ne_zero (ρ : ToricRay σ) : ∃ x : V, x ∈ ρ ∧ x ≠ 0 := by
   exact Submodule.exists_mem_ne_zero_of_ne_bot ρ.toPointedCone_ne_bot
 
-/-- In a salient ambient cone, every nonzero point of a ray generates the ray as a pointed cone.
-The ambient space need not be finite-dimensional: one-dimensionality of the ray's own span is
-already part of the hypotheses. -/
-theorem eq_hull_singleton (hσ : (σ : ConvexCone ℝ V).Salient) (ρ : ToricRay σ)
+/-- Every nonzero point of a salient ray generates it as a pointed cone. Only the ray itself has
+to be salient; for a ray of a salient ambient cone this follows from `ConvexCone.Salient.anti`
+along the face inclusion. -/
+theorem eq_hull_singleton (ρ : ToricRay σ) (hρ : (ρ.toPointedCone : ConvexCone ℝ V).Salient)
     {x : V} (hx : x ∈ ρ) (hx0 : x ≠ 0) : ρ.toPointedCone = PointedCone.hull ℝ {x} := by
-  have : FiniteDimensional ℝ (Submodule.span ℝ (ρ : Set V)) :=
-    FiniteDimensional.of_finrank_pos (by rw [ρ.finrank_span]; norm_num)
   apply le_antisymm
   · rw [PointedCone.le_hull_singleton_iff]
     intro y hy
-    have hspan_le : ℝ ∙ x ≤ Submodule.span ℝ (ρ : Set V) :=
-      Submodule.span_mono (Set.singleton_subset_iff.mpr hx)
-    have hspan_eq : ℝ ∙ x = Submodule.span ℝ (ρ : Set V) :=
-      Submodule.eq_of_le_of_finrank_eq hspan_le (by rw [finrank_span_singleton hx0,
-        ρ.finrank_span])
+    have hspan_eq : Submodule.span ℝ (ρ : Set V) = ℝ ∙ x :=
+      eq_span_singleton_of_mem_of_finrank_eq_one ρ.finrank_span
+        (Submodule.subset_span hx) hx0
     obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp (hspan_eq ▸ Submodule.subset_span hy)
     refine ⟨a, ?_, ha⟩
     by_contra ha0
@@ -92,17 +94,16 @@ theorem eq_hull_singleton (hσ : (σ : ConvexCone ℝ V).Salient) (ρ : ToricRay
         ρ.toPointedCone.smul_mem (neg_nonneg.mpr (inv_nonpos.mpr ha_neg.le)) hy
       rw [← ha, smul_smul, neg_mul, inv_mul_cancel₀ ha_neg.ne, neg_one_smul] at hscale
       exact hscale
-    exact hσ x (ρ.1.isFaceOf.le hx) hx0 (ρ.1.isFaceOf.le hnegx)
+    exact hρ x hx hx0 hnegx
   · exact Submodule.span_le.2 fun _ hx' ↦ by simpa using hx' ▸ hx
 
-end ToricRay
-
-variable {N : Type*} [AddCommGroup N] {i : N →+ V}
-
-/-- A toric cone has finitely many rays. In fact finite generation alone makes its entire face
-lattice finite; this is inherited by the subtype of one-dimensional faces. -/
-theorem IsToricCone.finite_toricRay (hσ : IsToricCone i σ) : Finite (ToricRay σ) := by
-  let _ := PointedCone.FG.finite_face hσ.fg
+/-- A finitely generated pointed cone has finitely many rays. In fact finite generation alone
+makes its entire face lattice finite; this is inherited by the subtype of one-dimensional
+faces. -/
+theorem finite_of_fg (hσ : σ.FG) : Finite (ToricRay σ) := by
+  let _ := PointedCone.FG.finite_face hσ
   infer_instance
+
+end ToricRay
 
 end TauCeti.Toric
