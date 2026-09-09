@@ -19,9 +19,9 @@ parametrisation sends zero to the point at infinity and, for a nonzero parameter
 `t ↦ (t / w(t), -1 / w(t))`
 
 This file proves that this map is an additive homomorphism into the points of the base-changed
-curve whenever every nonzero parameter admits an auxiliary parameter distinct from it, its
-inverse, and its own inverse.  It then establishes that property for the maximal ideal in the
-completion at a height-one prime of a Dedekind domain, in every characteristic.
+curve whenever every parameter distinct from its inverse admits an auxiliary parameter distinct
+from it, its inverse, and its own inverse.  It then establishes that property for the maximal ideal
+in the completion at a height-one prime of a Dedekind domain, in every characteristic.
 
 ## Main definitions
 
@@ -345,10 +345,11 @@ private theorem formalPointMap_add_self (P : FormalGroupPoint E I) (hself : P �
   abel
 
 open Classical in
-/-- **The formal parametrisation preserves addition** whenever every nonzero parameter has an
-auxiliary parameter distinct from it, its inverse, and the auxiliary parameter's own inverse. -/
+/-- **The formal parametrisation preserves addition** whenever every parameter distinct from its
+inverse has an auxiliary parameter distinct from it, its inverse, and the auxiliary parameter's
+own inverse. -/
 theorem formalPoint_add
-    (haux : ∀ P : FormalGroupPoint E I, P ≠ 0 →
+    (haux : ∀ P : FormalGroupPoint E I, P ≠ -P →
       ∃ U : FormalGroupPoint E I, U ≠ P ∧ U ≠ -P ∧ U ≠ -U)
     (P Q : FormalGroupPoint E I) :
     E.formalPoint (K := S) (Fact.out : IsAdic I) (P + Q).property =
@@ -366,14 +367,14 @@ theorem formalPoint_add
     simp [formalPointMap]
   rcases eq_or_ne Q P with hQP | hQP
   · subst Q
-    exact formalPointMap_add_self (S := S) I E P hQneg (haux P hP0)
+    exact formalPointMap_add_self (S := S) I E P hQneg (haux P hQneg)
   · exact formalPointMap_add_of_ne (S := S) I E P Q hQP hQneg
 
 open Classical in
 /-- **The formal parameter map into the curve's points**, as an additive homomorphism whenever
 the required auxiliary parameters exist. -/
 noncomputable def formalPointHom
-    (haux : ∀ P : FormalGroupPoint E I, P ≠ 0 →
+    (haux : ∀ P : FormalGroupPoint E I, P ≠ -P →
       ∃ U : FormalGroupPoint E I, U ≠ P ∧ U ≠ -P ∧ U ≠ -U) :
     FormalGroupPoint E I →+ (E.baseChange S).toAffine.Point where
   toFun := formalPointMap (S := S) I E
@@ -384,7 +385,7 @@ open Classical in
 /-- The formal point homomorphism evaluates to the usual formal parametrisation. -/
 @[simp]
 theorem formalPointHom_apply
-    (haux : ∀ P : FormalGroupPoint E I, P ≠ 0 →
+    (haux : ∀ P : FormalGroupPoint E I, P ≠ -P →
       ∃ U : FormalGroupPoint E I, U ≠ P ∧ U ≠ -P ∧ U ≠ -U)
     (P : FormalGroupPoint E I) :
     E.formalPointHom I haux P =
@@ -394,7 +395,7 @@ theorem formalPointHom_apply
 open Classical in
 /-- **The formal point homomorphism is injective.** -/
 theorem formalPointHom_injective
-    (haux : ∀ P : FormalGroupPoint E I, P ≠ 0 →
+    (haux : ∀ P : FormalGroupPoint E I, P ≠ -P →
       ∃ U : FormalGroupPoint E I, U ≠ P ∧ U ≠ -P ∧ U ≠ -U) :
     Function.Injective (E.formalPointHom (S := S) I haux) :=
   formalPointMap_injective (S := S) I E
@@ -412,9 +413,12 @@ variable (C : WeierstrassCurve (u.adicCompletionIntegers F))
 
 private theorem exists_aux_point_simple
     {P : FormalGroupPoint C (IsLocalRing.maximalIdeal (u.adicCompletionIntegers F))}
-    (hP0 : P ≠ 0) :
+    (hPneg : P ≠ -P) :
     ∃ U : FormalGroupPoint C (IsLocalRing.maximalIdeal (u.adicCompletionIntegers F)),
       U ≠ P ∧ U ≠ -P ∧ U ≠ -U := by
+  have hP0 : P ≠ 0 := by
+    rintro rfl
+    exact hPneg (by simp)
   obtain ⟨U, _, hUP, hUnP, _, _, hUnegn⟩ := exists_aux_point u C hP0
   exact ⟨U, hUP, hUnP, hUnegn⟩
 
