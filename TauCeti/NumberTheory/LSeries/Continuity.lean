@@ -10,11 +10,13 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import Mathlib.NumberTheory.LSeries.Deriv
 
 /-!
-# Continuity of an L-series along a vertical line
+# Continuity of an L-series on a closed half-plane of summability
 
-If a Dirichlet series is summable at `s`, then at every point of the vertical line `s + ℝ * I`
-its terms have exactly the same norms, so the series converges uniformly along that line and
-`LSeries a` is continuous there.
+If a Dirichlet series is summable at `s`, then at every point `z` with `s.re ≤ z.re` its terms
+have norms at most those of the terms at `s`, so the series converges uniformly on the closed
+half-plane `{z | s.re ≤ z.re}` and `LSeries a` is continuous there. On the vertical line
+`s + ℝ * I` through `s` the norms even agree exactly, and continuity along that line is a special
+case of the half-plane statement.
 
 Mathlib's `LSeries_differentiableOn` gives more, but only *strictly* inside the half-plane of
 absolute convergence: it needs `abscissaOfAbsConv a < s.re`, whereas `LSeriesSummable a s` only
