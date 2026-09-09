@@ -57,20 +57,20 @@ open scoped Convolution ENNReal
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [BorelSpace E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [CompleteSpace F] {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
+  {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
 
 /-- The average of an `Lᵖ` class against the normalized form of a smooth bump centred at zero,
 before it is bundled as a continuous linear map by `TauCeti.normedBumpLp`. -/
-private def normedBumpFun (phi : ContDiffBump (0 : E)) (f : Lp F p mu) : Lp F p mu :=
+private def normedBumpFun [CompleteSpace F]
+    (phi : ContDiffBump (0 : E)) (f : Lp F p mu) : Lp F p mu :=
   (phi.normed mu ⋆[lsmul ℝ ℝ, mu] fun h ↦ translateLp mu p h f) 0
 
-omit [CompleteSpace F] in
-private theorem normedBumpFun_apply (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
+private theorem normedBumpFun_apply [CompleteSpace F]
+    (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
     normedBumpFun phi f = ∫ t, phi.normed mu t • translateLp mu p (-t) f ∂mu := by
   rw [normedBumpFun, convolution_lsmul]
   simp only [zero_sub]
 
-omit [CompleteSpace F] in
 private theorem integrable_normed_smul_translateLp_neg (hp : p ≠ ∞)
     (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
     Integrable (fun t ↦ phi.normed mu t • translateLp mu p (-t) f) mu := by
@@ -78,7 +78,8 @@ private theorem integrable_normed_smul_translateLp_neg (hp : p ≠ ∞)
   · exact phi.continuous_normed.smul ((continuous_translateLp (mu := mu) hp f).comp continuous_neg)
   · exact phi.hasCompactSupport_normed.smul_right
 
-omit [CompleteSpace F] in
+variable [CompleteSpace F]
+
 private theorem normedBumpFun_add (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (f g : Lp F p mu) :
     normedBumpFun phi (f + g) = normedBumpFun phi f + normedBumpFun phi g := by
   rw [normedBumpFun_apply, normedBumpFun_apply, normedBumpFun_apply,
@@ -88,7 +89,6 @@ private theorem normedBumpFun_add (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) 
   filter_upwards with t
   simp only [map_add, smul_add]
 
-omit [CompleteSpace F] in
 private theorem normedBumpFun_smul (c : ℝ) (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
     normedBumpFun phi (c • f) = c • normedBumpFun phi f := by
   rw [normedBumpFun_apply, normedBumpFun_apply, ← integral_smul]
@@ -96,7 +96,6 @@ private theorem normedBumpFun_smul (c : ℝ) (phi : ContDiffBump (0 : E)) (f : L
   filter_upwards with t
   simp only [map_smul, smul_smul, mul_comm c]
 
-omit [CompleteSpace F] in
 private theorem norm_normedBumpFun_le (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (f : Lp F p mu) :
     ‖normedBumpFun phi f‖ ≤ ‖f‖ := by
@@ -114,7 +113,6 @@ private theorem norm_normedBumpFun_le (hp : p ≠ ∞) (phi : ContDiffBump (0 : 
       rw [norm_smul, Real.norm_of_nonneg (phi.nonneg_normed t), ht]
     _ = ‖f‖ := by rw [integral_mul_const, phi.integral_normed, one_mul]
 
-omit [CompleteSpace F] in
 /-- Averaging an `Lᵖ` function against the normalized form of a smooth bump centred at zero, as a
 continuous linear operator on `Lᵖ`.
 
@@ -130,7 +128,6 @@ def normedBumpLp (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
       map_smul' := fun c f ↦ normedBumpFun_smul c phi f } 1
     fun f ↦ by rw [one_mul]; exact norm_normedBumpFun_le hp phi f
 
-omit [CompleteSpace F] in
 /-- The defining Bochner-integral formula for `normedBumpLp`. -/
 theorem normedBumpLp_apply (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
     normedBumpLp hp phi mu f =
@@ -138,7 +135,6 @@ theorem normedBumpLp_apply (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (f : Lp
   rw [normedBumpLp]
   exact normedBumpFun_apply phi f
 
-omit [CompleteSpace F] in
 /-- Averaging against a normalized nonnegative bump does not increase the `Lᵖ` norm when
 `p < ∞`. -/
 theorem norm_normedBumpLp_le_one (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
