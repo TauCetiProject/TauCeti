@@ -26,7 +26,8 @@ a separate compatible inverse-limit argument.
 ## Main definitions and results
 
 * `IsProPSylow`: the predicate for a Sylow pro-`p` subgroup.
-* `isProPSylow_iff_not_dvd_profiniteIndex`: its supernatural-index formulation.
+* `isProPSylow_iff_isClosed_and_isProP_and_not_dvd_profiniteIndex`: its
+  supernatural-index formulation.
 * `isProPSylow_iff_isPGroup_and_not_dvd_index`: its specialization to a discrete group.
 * `Sylow.isProPSylow`: a Sylow subgroup of finite index in a discrete group satisfies the
   profinite predicate.
@@ -36,12 +37,6 @@ a separate compatible inverse-limit argument.
 
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Section 2.3.
 -/
-
--- Provenance: the predicate `IsProPSylow` defined below, in the per-quotient form used here,
--- and its comparison with the supernatural index and with Mathlib's `Sylow` subgroups are
--- written down in the Tau Ceti `ProfiniteProPGroups` roadmap blueprint, `README.md`, section
--- "profinite Sylow theory"; the signature of the predicate is the one pinned in that area's
--- `Suggested.lean`.
 
 public section
 
@@ -92,10 +87,12 @@ section ProfiniteIndex
 
 variable [IsTopologicalGroup G] [CompactSpace G]
 
-/-- A closed pro-`p` subgroup is Sylow exactly when its supernatural index is prime to `p`. -/
-theorem isProPSylow_iff_not_dvd_profiniteIndex (q : Nat.Primes) : IsProPSylow q.val P ↔
-    IsClosed (P : Set G) ∧ IsProP q.val P ∧
-      ¬ (q : Supernatural) ∣ P.profiniteIndex := by
+/-- A subgroup of a profinite group is Sylow pro-`p` exactly when it is closed, is pro-`p`,
+and its supernatural index is prime to `p`. -/
+theorem isProPSylow_iff_isClosed_and_isProP_and_not_dvd_profiniteIndex (q : Nat.Primes) :
+    IsProPSylow q.val P ↔
+      IsClosed (P : Set G) ∧ IsProP q.val P ∧
+        ¬ (q : Supernatural) ∣ P.profiniteIndex := by
   rw [isProPSylow_iff, P.not_dvd_profiniteIndex_iff_forall_not_dvd_index q]
 
 end ProfiniteIndex
