@@ -96,6 +96,26 @@ theorem multivariateGaussianPDFReal_pos (hdet : 0 < S.det) (m : EuclideanSpace �
   rw [multivariateGaussianPDFReal]
   positivity
 
+/-- The real-valued density is nonnegative at every covariance parameter. At a negative
+determinant the real power `S.det ^ (-1/2)` vanishes, so the density is `0` there. -/
+theorem multivariateGaussianPDFReal_nonneg (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
+    (x : EuclideanSpace ℝ ι) : 0 ≤ multivariateGaussianPDFReal m S x := by
+  have hdet : 0 ≤ S.det ^ (-(1 : ℝ) / 2) := by
+    rcases le_or_gt 0 S.det with h | h
+    · exact Real.rpow_nonneg h _
+    · rw [Real.rpow_def_of_neg h, show -(1 : ℝ) / 2 * π = -(π / 2) by ring, Real.cos_neg,
+        Real.cos_pi_div_two, mul_zero]
+  have hπ : (0 : ℝ) ≤ (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) := Real.rpow_nonneg (by positivity) _
+  rw [multivariateGaussianPDFReal]
+  exact mul_nonneg (mul_nonneg hπ hdet) (Real.exp_nonneg _)
+
+/-- The `ℝ≥0∞`-valued density carries the real-valued one back through `ENNReal.toReal`. -/
+@[simp]
+theorem toReal_multivariateGaussianPDF (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
+    (x : EuclideanSpace ℝ ι) :
+    (multivariateGaussianPDF m S x).toReal = multivariateGaussianPDFReal m S x := by
+  rw [multivariateGaussianPDF, ENNReal.toReal_ofReal (multivariateGaussianPDFReal_nonneg m S x)]
+
 /-- The real-valued density is measurable. -/
 @[fun_prop]
 theorem measurable_multivariateGaussianPDFReal (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
@@ -204,19 +224,22 @@ theorem mutuallySingular_multivariateGaussian_volume (hS : ¬ S.PosDef)
       LinearMap.range (Matrix.toEuclideanLin (CFC.sqrt S)) with hp
     have hptop : p ≠ ⊤ :=
       (LinearMap.range_lt_top_of_det_eq_zero (by rw [LinearMap.det_toLpLin]; exact hdet0)).ne
-    set t : Set (EuclideanSpace ℝ ι) :=
-      (fun y => -m + y) ⁻¹' (p : Set (EuclideanSpace ℝ ι)) with ht
-    have htc : MeasurableSet tᶜ :=
-      ((p.closed_of_finiteDimensional.preimage (by fun_prop)).measurableSet).compl
-    refine ⟨tᶜ, htc, ?_, ?_⟩
-    · rw [multivariateGaussian, Measure.map_apply (by fun_prop) htc]
+    -- the law is carried by the proper affine subspace through `m` with direction `p`
+    set A : AffineSubspace ℝ (EuclideanSpace ℝ ι) := AffineSubspace.mk' m p with hA
+    have hAtop : A ≠ ⊤ := fun h => hptop <| by
+      rw [← AffineSubspace.direction_mk' m p, ← hA, h, AffineSubspace.direction_top]
+    have hAc : MeasurableSet (A : Set (EuclideanSpace ℝ ι))ᶜ :=
+      A.closed_of_finiteDimensional.measurableSet.compl
+    refine ⟨(A : Set (EuclideanSpace ℝ ι))ᶜ, hAc, ?_, ?_⟩
+    · rw [multivariateGaussian, Measure.map_apply (by fun_prop) hAc]
       convert measure_empty (μ := stdGaussian (EuclideanSpace ℝ ι))
       ext x
       simp only [Set.mem_preimage, Set.mem_compl_iff, Set.mem_empty_iff_false, iff_false, not_not,
-        ht, neg_add_cancel_left, SetLike.mem_coe, hp]
+        hA, SetLike.mem_coe, AffineSubspace.mem_mk', vsub_eq_sub,
+        add_sub_cancel_left, hp]
       exact LinearMap.mem_range_self _ x
-    · rw [compl_compl, ht, measure_preimage_add]
-      exact Measure.addHaar_submodule volume p hptop
+    · rw [compl_compl]
+      exact Measure.addHaar_affineSubspace volume A hAtop
   · rw [multivariateGaussian_of_not_posSemidef m hSS]
     exact mutuallySingular_dirac m volume
 
