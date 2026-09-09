@@ -111,7 +111,7 @@ theorem jordanHolderCoordinate_self (S : Type u) [AddCommGroup S] [Module R S]
 
 /-- Two nonisomorphic simple modules have zero mutual Jordan--Hölder coordinate. -/
 @[simp high]
-theorem jordanHolderCoordinate_of_eq_zero_of_isEmpty_linearEquiv
+theorem jordanHolderCoordinate_eq_zero_of_isEmpty_linearEquiv
     (S : Type w) [AddCommGroup S] [Module R S]
     {T : Type u} [AddCommGroup T] [Module R T] [Module.Finite R T] [IsSimpleModule R T]
     (h : IsEmpty (T ≃ₗ[R] S)) :
@@ -151,7 +151,7 @@ theorem jordanHolderCoordinate_exactK0OfFamily_self (i : I) :
 theorem jordanHolderCoordinate_exactK0OfFamily_eq_zero {i j : I}
     (hij : IsEmpty ((S j : Type u) ≃ₗ[R] S i)) :
     jordanHolderCoordinate R (S i) (exactK0OfFamily S j) = 0 :=
-  jordanHolderCoordinate_of_eq_zero_of_isEmpty_linearEquiv R (S i) hij
+  jordanHolderCoordinate_eq_zero_of_isEmpty_linearEquiv R (S i) hij
 
 /-- On a pairwise nonisomorphic simple family, the Jordan--Hölder coordinates form the
 Kronecker-delta matrix. -/
