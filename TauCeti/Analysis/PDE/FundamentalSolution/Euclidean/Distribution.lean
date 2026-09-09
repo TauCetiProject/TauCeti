@@ -19,10 +19,9 @@ identity `-Δ Gₙ = δ₀` will apply.
 
 The decay estimate is the standard one from Evans, *Partial Differential Equations*, Section 2.2.
 The local-integrability argument uses Mathlib's general radial-power criterion
-`MeasureTheory.locallyIntegrable_of_norm_le_rpow`.  A search of the local LeanPool archive found
-related three-dimensional potential estimates in
-`LeanPool/Clawristotle/NewtonianPotential.lean`, but no distributional Newtonian identity; no
-LeanPool code is copied here.
+`MeasureTheory.locallyIntegrable_of_norm_le_rpow`.  These declarations provide the
+local-integrability and test-function pairing needed for the later proof of the distributional
+identity `-Δ Gₙ = δ₀`.
 
 ## Main declarations
 
@@ -30,8 +29,6 @@ LeanPool code is copied here.
 * `TauCeti.newtonianKernelDistribution`: the distribution induced by `Gₙ` on all of Euclidean
   space in dimensions `n ≥ 3`.
 * `TauCeti.newtonianKernelDistribution_apply`: its test-function pairing.
-
-The distributional Laplacian identity and its flux-to-test-function proof remain to be formalized.
 -/
 
 public section
@@ -93,11 +90,12 @@ theorem locallyIntegrable_newtonianKernel (n : ℕ) (hn : 3 ≤ n) :
     apply AEMeasurable.aestronglyMeasurable
     measurability
 
-/-- The Fréchet derivative of the Newtonian kernel is locally integrable away from its pole.
+/-- The Fréchet derivative of the Newtonian kernel is locally integrable on all of Euclidean space.
 
 Its norm has the radial singularity `‖x‖^(1-n)`, whose exponent is still below the ambient
-dimension.  This is the integrability input for the punctured-domain integration-by-parts step
-in the distributional fundamental-solution proof. -/
+dimension.  The formula away from the pole and the null singleton at the pole establish the
+global result, which is the integrability input for the punctured-domain integration-by-parts
+step in the distributional fundamental-solution proof. -/
 theorem locallyIntegrable_fderiv_newtonianKernel (n : ℕ) (hn : 3 ≤ n) :
     LocallyIntegrable (fun x => fderiv ℝ (newtonianKernel n) x) := by
   have hnontrivial : Nontrivial (EuclideanSpace ℝ (Fin n)) := by
@@ -150,7 +148,7 @@ noncomputable def newtonianKernelDistribution (n : ℕ) (_hn : 3 ≤ n) :
 
 /-- Evaluation of the Newtonian-kernel distribution on a smooth compactly supported
 test function. -/
-theorem newtonianKernelDistribution_apply (n : ℕ) (hn : 3 ≤ n)
+@[simp] theorem newtonianKernelDistribution_apply (n : ℕ) (hn : 3 ≤ n)
     (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin n))), ℝ)) :
     newtonianKernelDistribution n hn φ =
       ∫ x, φ x • newtonianKernel n x := by
