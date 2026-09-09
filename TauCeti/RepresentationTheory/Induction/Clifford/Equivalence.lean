@@ -17,7 +17,7 @@ Roadmap source: `TauCetiRoadmap/RepresentationTheory/InductionRestriction/README
 /-!
 # The representation decomposition in Clifford's theorem
 
-Let `N` be a normal subgroup of a finite group `G`, and let `W` be an irreducible
+Let `N` be a normal subgroup of a group `G`, and let `W` be an irreducible
 finite-dimensional representation of `G` over a splitting field. The isotypic components of the
 restriction of `W` to `N` are indexed by the inertia cosets of any one constituent `V`, and every
 component is a power of its constituent with one common positive exponent `e`. Combining these
@@ -42,8 +42,8 @@ representative, while changing that representative changes the summand only up t
 
 * `FDRep.clifford_restrict_iso_of_isAtom`: **Clifford's theorem for a specified constituent**.
 * `FDRep.clifford_restrict_iso`: **Clifford's theorem, representation form**. It supplies a
-  simple constituent, a positive common multiplicity, and an isomorphism from the restriction to
-  `cliffordSum`.
+  simple constituent, finiteness of its inertia quotient, a positive common multiplicity, and an
+  isomorphism from the restriction to `cliffordSum`.
 
 ## References
 
@@ -216,13 +216,16 @@ to `e` copies of every conjugate of `σ`, with the distinct conjugates indexed b
 of its inertia group.
 
 Algebraic closure makes `k` a splitting field, so the Hom-space dimension in the multiplicity
-theorem is the actual number of copies. -/
+theorem is the actual number of copies. Finite dimensionality makes the set of isotypic components,
+and hence the inertia quotient indexing the sum, finite. -/
 theorem clifford_restrict_iso_of_isAtom {k : Type u} {G : Type v} [Field k] [Group G]
     {N : Subgroup G} [N.Normal] [IsAlgClosed k]
     (W : FDRep k G) [Simple W] (σ : Subrepresentation (W.ρ.comp N.subtype))
-    (hσ : IsAtom σ) [Finite (G ⧸ inertia (FDRep.of σ.toRepresentation))] :
-    ∃ e : ℕ, e ≠ 0 ∧
-      Nonempty (resFDRep N W ≅ (FDRep.of σ.toRepresentation).cliffordSum e) := by
+    (hσ : IsAtom σ) :
+    ∃ hfinite : Finite (G ⧸ inertia (FDRep.of σ.toRepresentation)),
+      let _ := hfinite
+      ∃ e : ℕ, e ≠ 0 ∧
+        Nonempty (resFDRep N W ≅ (FDRep.of σ.toRepresentation).cliffordSum e) := by
   classical
   let _ : Representation.IsIrreducible W.ρ := FDRep.isIrreducible_of_simple W
   let _ : IsSemisimpleModule k[N]
@@ -230,6 +233,9 @@ theorem clifford_restrict_iso_of_isAtom {k : Type u} {G : Type v} [Field k] [Gro
     (_root_.Representation.isSemisimpleRepresentation_iff_isSemisimpleModule_asModule
       (W.ρ.comp N.subtype)).mp
       (Representation.isSemisimpleRepresentation_comp_subtype W.ρ)
+  let _ : Module.Finite k[N]
+      (_root_.Representation.asModule (W.ρ.comp N.subtype)) :=
+    Module.Finite.of_restrictScalars_finite k k[N] _
   let V : FDRep k N := FDRep.of σ.toRepresentation
   let _ : Representation.IsIrreducible V.ρ :=
     Representation.isIrreducible_toRepresentation_of_isAtom hσ
@@ -240,7 +246,10 @@ theorem clifford_restrict_iso_of_isAtom {k : Type u} {G : Type v} [Field k] [Gro
     (_root_.Representation.asModule (W.ρ.comp N.subtype))
   let orbitEquiv : C ≃ G ⧸ inertia V :=
     Representation.isotypicComponentsEquivQuotientInertia W.ρ σ hσ
-  let _ : Finite C := Finite.of_injective orbitEquiv orbitEquiv.injective
+  let hfinite : Finite (G ⧸ inertia V) :=
+    Finite.of_surjective orbitEquiv orbitEquiv.surjective
+  refine ⟨hfinite, ?_⟩
+  let _ := hfinite
   let _ : Fintype C := Fintype.ofFinite C
   have hind : iSupIndep (fun c : C ↦ c.1) :=
     (sSupIndep_iff _).mp (sSupIndep_isotypicComponents k[N]
@@ -279,27 +288,23 @@ representation to a normal subgroup is isomorphic to `e` copies of every conjuga
 constituent, with the distinct conjugates indexed by the left cosets of its inertia group.
 
 Algebraic closure makes `k` a splitting field, so the Hom-space dimension in the multiplicity
-theorem is the actual number of copies. -/
+theorem is the actual number of copies. The conclusion includes the finite inertia quotient that
+indexes the sum. -/
 theorem clifford_restrict_iso {k : Type u} {G : Type v} [Field k] [Group G]
-    {N : Subgroup G} [N.Normal] [Finite G] [IsAlgClosed k]
+    {N : Subgroup G} [N.Normal] [IsAlgClosed k]
     (W : FDRep k G) [Simple W] :
-    ∃ (V : FDRep k N) (_ : Simple V) (e : ℕ),
-      e ≠ 0 ∧ Nonempty (resFDRep N W ≅ V.cliffordSum e) := by
+    ∃ (V : FDRep k N) (_ : Simple V) (hfinite : Finite (G ⧸ inertia V)),
+      let _ := hfinite
+      ∃ e : ℕ, e ≠ 0 ∧ Nonempty (resFDRep N W ≅ V.cliffordSum e) := by
   classical
-  let _ : Fintype G := Fintype.ofFinite G
   let _ : Representation.IsIrreducible W.ρ := FDRep.isIrreducible_of_simple W
-  let _ : IsSemisimpleModule k[N]
-      (_root_.Representation.asModule (W.ρ.comp N.subtype)) :=
-    (_root_.Representation.isSemisimpleRepresentation_iff_isSemisimpleModule_asModule
-      (W.ρ.comp N.subtype)).mp
-      (Representation.isSemisimpleRepresentation_comp_subtype W.ρ)
   obtain ⟨σ, hσ, -⟩ :=
     Representation.exists_isAtom_forall_nonempty_linearEquiv_conjSubrep (N := N) W.ρ
   let V : FDRep k N := FDRep.of σ.toRepresentation
   let _ : Representation.IsIrreducible V.ρ :=
     Representation.isIrreducible_toRepresentation_of_isAtom hσ
   let _ : Simple V := FDRep.simple_of_isIrreducible V
-  obtain ⟨e, he, h⟩ := W.clifford_restrict_iso_of_isAtom σ hσ
-  exact ⟨V, inferInstance, e, he, h⟩
+  obtain ⟨hfinite, e, he, h⟩ := W.clifford_restrict_iso_of_isAtom σ hσ
+  exact ⟨V, inferInstance, hfinite, e, he, h⟩
 
 end FDRep
