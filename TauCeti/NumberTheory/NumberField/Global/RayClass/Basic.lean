@@ -32,6 +32,8 @@ class group (`oneEquivClassGroup`).
 
 * `TauCeti.GlobalNumberFields.rayHom`, `TauCeti.GlobalNumberFields.ray`: the principal ideals of
   the elements congruent to one, and the subgroup they form.
+* `TauCeti.GlobalNumberFields.idealsPrimeToClassGroup`: the ordinary ideal class of an invertible
+  fractional ideal prime to a modulus.
 * `TauCeti.GlobalNumberFields.RayClassGroup`: the quotient of `idealsPrimeTo 𝔪` by the ray, with
   `TauCeti.GlobalNumberFields.rayClassMk` and the universal property
   `TauCeti.GlobalNumberFields.rayClassLift`.
@@ -124,6 +126,18 @@ noncomputable def ray (𝔪 : Modulus K) : Subgroup (idealsPrimeTo 𝔪) :=
   refine ⟨fun ⟨x, hx⟩ ↦ ⟨x, mem_congruenceSubgroup.mp x.2, ?_⟩, fun ⟨x, hx, hxI⟩ ↦ ?_⟩
   · rw [← coe_rayHom 𝔪 x, hx]
   · exact ⟨⟨x, mem_congruenceSubgroup.mpr hx⟩, Subtype.ext (Units.ext (by rw [coe_rayHom, hxI]))⟩
+
+/-- **The ordinary ideal class of an invertible fractional ideal prime to a modulus.** This is the
+canonical map from `idealsPrimeTo 𝔪` to the ordinary class group; it descends to the right-hand
+transition in the ray-class exact sequence. -/
+noncomputable def idealsPrimeToClassGroup (𝔪 : Modulus K) :
+    idealsPrimeTo 𝔪 →* ClassGroup (𝓞 K) :=
+  (ClassGroup.mk K).comp (idealsPrimeTo 𝔪).subtype
+
+@[simp] theorem idealsPrimeToClassGroup_apply (𝔪 : Modulus K) (I : idealsPrimeTo 𝔪) :
+    idealsPrimeToClassGroup 𝔪 I =
+      ClassGroup.mk K (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :=
+  by simp only [idealsPrimeToClassGroup, MonoidHom.comp_apply, Subgroup.subtype_apply]
 
 /-- **The ray class group of a modulus**: the invertible fractional ideals prime to the finite part
 of `𝔪`, modulo the principal ideals of the elements congruent to one modulo `𝔪`. -/
