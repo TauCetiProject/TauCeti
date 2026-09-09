@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.DividedPowers.RootString.G2
 Let `x`, `y`, `z`, `w`, and `s` belong to an associative algebra over `ℚ`, with
 
 ```text
-x * y = y * x + z,   x * z = z * x + 2 • w,   z * y = y * z + 2 • s,
+x * y = y * x + 2 • z,   x * z = z * x + 3 • w,   z * y = y * z + 3 • s,
 ```
 
 `w` and `s` commuting with `x`, `s` commuting with `y`, and `z`, `w`, `s` commuting pairwise.
@@ -22,30 +22,30 @@ vectors of `α` and `α + β`, respectively, then `z`, `w`, and `s` belong to th
 `2α + β`, `3α + β`, and `3α + 2β`. The last root has coordinates `(1, 2)` relative to the pair
 `α`, `α + β`, and enters through the bracket of `z` with `y`.
 
-The resulting straightening rule is coefficient-one:
+For these canonically normalized Chevalley root vectors, the resulting straightening rule is
 
 ```text
 x⁽ᵐ⁾ y⁽ⁿ⁾ = ∑ b + c + 2d ≤ n, b + 2c + d ≤ m,
-              y⁽ⁿ⁻ᵇ⁻ᶜ⁻²ᵈ⁾ z⁽ᵇ⁾ w⁽ᶜ⁾ s⁽ᵈ⁾ x⁽ᵐ⁻ᵇ⁻²ᶜ⁻ᵈ⁾.
+              2ᵇ 3ᶜ⁺ᵈ • y⁽ⁿ⁻ᵇ⁻ᶜ⁻²ᵈ⁾ z⁽ᵇ⁾ w⁽ᶜ⁾ s⁽ᵈ⁾ x⁽ᵐ⁻ᵇ⁻²ᶜ⁻ᵈ⁾.
 ```
 
-Thus it restricts to a Kostant integral form and survives base change to a ring of arbitrary
-characteristic. Together with
+Its coefficients are integers, so it restricts to the Kostant integral form and survives base
+change to a ring of arbitrary characteristic. Together with
 `TauCeti.Associative.dividedPower_mul_dividedPower_of_commutator_eq_three_nsmul`, this covers the
 two nontrivial normal-ordering configurations needed for type `G₂`.
 
-The proof uses `TauCeti.Associative.dividedPower_mul_of_ad_dividedPower_series`. Moving `x` across
-one normal-ordered monomial can lengthen the `z`-power with coefficient `b + 1`, lengthen the
-`w`-power with coefficient `2 (c + 1)`, or lengthen the `s`-power with coefficient `d + 1`. These
-contributions add to the weighted degree `b + 2c + d`.
+The proof first uses `TauCeti.Associative.dividedPower_mul_of_ad_dividedPower_series` for the
+scaled vectors `2 • z`, `3 • w`, and `3 • s`, where the straightening coefficients are one, and
+then uses `TauCeti.Associative.dividedPower_smul` to recover the displayed Chevalley-basis
+coefficients.
 
 The proof architecture is adapted from Claude's formalization of the other type-`G₂`
 configuration in `TauCeti.RingTheory.DividedPowers.RootString.G2`.
 
 ## Main results
 
-* `TauCeti.Associative.dividedPower_mul_dividedPower_of_g2_short_pair`: the coefficient-one
-  straightening rule for the pair `α`, `α + β` in type `G₂`.
+* `TauCeti.Associative.dividedPower_mul_dividedPower_of_g2_short_pair`: the integral
+  Chevalley-basis straightening rule for the pair `α`, `α + β` in type `G₂`.
 
 ## References
 
@@ -140,10 +140,12 @@ private theorem mem_g2ShortPairSeriesIndex {n k : ℕ} {p : ℕ × ℕ × ℕ} :
   simp only [g2ShortPairSeriesIndex, Finset.mem_filter, Finset.mem_product, Finset.mem_range]
   omega
 
+/-- The normal-ordered monomial attached to a triple of short-pair root exponents. -/
 private noncomputable def g2ShortPairMonomial (y z w s : A) (n : ℕ) (p : ℕ × ℕ × ℕ) : A :=
   dividedPower (n - p.1 - p.2.1 - 2 * p.2.2) y *
     (dividedPower p.1 z * (dividedPower p.2.1 w * dividedPower p.2.2 s))
 
+/-- The `k`-th divided power of `ad x` applied to `y⁽ⁿ⁾`, expressed in normal order. -/
 private noncomputable def g2ShortPairSeries (y z w s : A) (n k : ℕ) : A :=
   ∑ p ∈ g2ShortPairSeriesIndex n k, g2ShortPairMonomial y z w s n p
 
@@ -306,23 +308,10 @@ theorem mem_g2ShortPairIndex {m n : ℕ} {p : ℕ × ℕ × ℕ} :
   simp only [g2ShortPairIndex, Finset.mem_filter, Finset.mem_product, Finset.mem_range]
   omega
 
-/-- **Coefficient-one normal ordering for the short pair in type `G₂`.** Suppose
-
-```text
-x * y = y * x + z,   x * z = z * x + 2 • w,   z * y = y * z + 2 • s,
-```
-
-that `w` and `s` commute with `x`, `s` commutes with `y`, and `z`, `w`, `s` commute pairwise. Then
-
-```text
-x⁽ᵐ⁾ y⁽ⁿ⁾ = ∑ b + c + 2d ≤ n, b + 2c + d ≤ m,
-              y⁽ⁿ⁻ᵇ⁻ᶜ⁻²ᵈ⁾ z⁽ᵇ⁾ w⁽ᶜ⁾ s⁽ᵈ⁾ x⁽ᵐ⁻ᵇ⁻²ᶜ⁻ᵈ⁾.
-```
-
-Here `x` and `y` model root vectors for `α` and `α + β` in type `G₂`; the factor `s` models the
-root vector for `3α + 2β`. Every coefficient in the divided-power basis is `1`, so the identity is
-integral and survives arbitrary base change. -/
-theorem dividedPower_mul_dividedPower_of_g2_short_pair (hxy : x * y = y * x + z)
+/-- Auxiliary coefficient-one normal ordering for the scaled short-pair root vectors in type
+`G₂`. -/
+private theorem dividedPower_mul_dividedPower_of_g2_short_pair_scaled
+    (hxy : x * y = y * x + z)
     (hxz : x * z = z * x + 2 • w) (hzy : z * y = y * z + 2 • s) (hxw : Commute x w)
     (hxs : Commute x s) (hys : Commute y s) (hzw : Commute z w) (hzs : Commute z s)
     (hws : Commute w s) (m n : ℕ) :
@@ -357,5 +346,54 @@ theorem dividedPower_mul_dividedPower_of_g2_short_pair (hxy : x * y = y * x + z)
   have hq : m - p.1 - 2 * p.2.1 - p.2.2 = m - k := by omega
   rw [hq, g2ShortPairMonomial]
   simp only [mul_assoc]
+
+/-- **Chevalley-basis normal ordering for the short pair in type `G₂`.** Suppose
+
+```text
+x * y = y * x + 2 • z,   x * z = z * x + 3 • w,   z * y = y * z + 3 • s,
+```
+
+that `w` and `s` commute with `x`, `s` commutes with `y`, and `z`, `w`, `s` commute pairwise. Then
+
+```text
+x⁽ᵐ⁾ y⁽ⁿ⁾ = ∑ b + c + 2d ≤ n, b + 2c + d ≤ m,
+              2ᵇ 3ᶜ⁺ᵈ • y⁽ⁿ⁻ᵇ⁻ᶜ⁻²ᵈ⁾ z⁽ᵇ⁾ w⁽ᶜ⁾ s⁽ᵈ⁾ x⁽ᵐ⁻ᵇ⁻²ᶜ⁻ᵈ⁾.
+```
+
+Here `x`, `y`, `z`, `w`, and `s` model Chevalley root vectors for `α`, `α + β`, `2α + β`,
+`3α + β`, and `3α + 2β`, respectively. The powers of `2` and `3` are the structure constants
+introduced by passing from the scaled vectors `2 • z`, `3 • w`, and `3 • s` back to the
+Chevalley basis. In particular, every displayed coefficient is integral. -/
+theorem dividedPower_mul_dividedPower_of_g2_short_pair (hxy : x * y = y * x + 2 • z)
+    (hxz : x * z = z * x + 3 • w) (hzy : z * y = y * z + 3 • s) (hxw : Commute x w)
+    (hxs : Commute x s) (hys : Commute y s) (hzw : Commute z w) (hzs : Commute z s)
+    (hws : Commute w s) (m n : ℕ) :
+    dividedPower m x * dividedPower n y =
+      ∑ p ∈ g2ShortPairIndex m n,
+        (2 ^ p.1 * 3 ^ (p.2.1 + p.2.2)) •
+          (dividedPower (n - p.1 - p.2.1 - 2 * p.2.2) y * dividedPower p.1 z *
+            dividedPower p.2.1 w * dividedPower p.2.2 s *
+            dividedPower (m - p.1 - 2 * p.2.1 - p.2.2) x) := by
+  classical
+  have hxy' : x * y = y * x + (2 : ℚ) • z := by
+    simpa only [← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_ofNat] using hxy
+  have hxz' : x * ((2 : ℚ) • z) = (2 : ℚ) • z * x + 2 • ((3 : ℚ) • w) := by
+    rw [mul_smul_comm, smul_mul_assoc, hxz, smul_add]
+    simp only [← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_ofNat]
+  have hzy' : (2 : ℚ) • z * y = y * ((2 : ℚ) • z) + 2 • ((3 : ℚ) • s) := by
+    rw [smul_mul_assoc, mul_smul_comm, hzy, smul_add]
+    simp only [← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_ofNat]
+  have h := dividedPower_mul_dividedPower_of_g2_short_pair_scaled hxy' hxz' hzy'
+    (hxw.smul_right (3 : ℚ)) (hxs.smul_right (3 : ℚ)) (hys.smul_right (3 : ℚ))
+    ((hzw.smul_left (2 : ℚ)).smul_right (3 : ℚ))
+    ((hzs.smul_left (2 : ℚ)).smul_right (3 : ℚ))
+    ((hws.smul_left (3 : ℚ)).smul_right (3 : ℚ)) m n
+  rw [h]
+  refine Finset.sum_congr rfl fun p _ => ?_
+  simp only [dividedPower_smul, mul_assoc, mul_smul_comm, smul_mul_assoc, smul_smul,
+    ← Nat.cast_smul_eq_nsmul ℚ]
+  congr 1
+  norm_num
+  ring
 
 end TauCeti.Associative
