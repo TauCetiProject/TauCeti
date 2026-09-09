@@ -55,7 +55,21 @@ def weightLeviStandardComodule :
 
 attribute [local instance] standardComodule weightLeviStandardComodule
 
+/-- The standard weight-Levi coaction is the standard `GL_N` coaction followed by the
+quotient map on the coordinate factor. -/
+@[simp]
+theorem weightLeviStandardComodule_coact :
+    (weightLeviStandardComodule R w).coact =
+      TensorProduct.map LinearMap.id
+          (CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R N)
+            (weightLeviDefiningHopfIdeal R w)).hom.toLinearMap ∘ₗ
+        standardCoact R N := by
+  apply LinearMap.ext
+  intro v
+  rw [Comodule.corestrict_coact_apply, standardComodule_coact, LinearMap.comp_apply]
+
 /-- The standard weight-Levi coaction on a basis vector is its quotient generic column. -/
+@[simp]
 theorem weightLeviStandardComodule_coact_single (j : Fin N) :
     Comodule.coact (R := R) (C := weightLeviCoordinateHopfAlgebra R w)
         (Pi.single j (1 : R)) =
