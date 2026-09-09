@@ -61,15 +61,6 @@ def actionHom (A : Action FintypeCat.{u} G) :
   change ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →* Equiv.Perm A.V at f
   exact f
 
-/-- The extended continuous representation restricts along the canonical morphism `G → Ĝ` to the
-original permutation representation. -/
-@[simp]
-theorem continuousActionHom_eta (A : Action FintypeCat.{u} G) :
-    ProfiniteGrp.ProfiniteCompletion.eta (GrpCat.of G) ≫
-        (forget₂ ProfiniteGrp GrpCat).map (continuousActionHom G A) =
-      GrpCat.ofHom (MulAction.toPermHom G A.V) :=
-  ProfiniteGrp.ProfiniteCompletion.lift_eta _
-
 /-- The profinite completion acts on every finite `G`-set. -/
 @[instance_reducible]
 instance instMulAction (A : Action FintypeCat.{u} G) : MulAction
@@ -98,9 +89,10 @@ instance instMulActionForgetObj (A : Action FintypeCat.{u} G) : MulAction
 theorem actionHom_etaFn (A : Action FintypeCat.{u} G) (g : G) :
     actionHom G A (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) =
       MulAction.toPermHom G A.V g := by
-  have h := ConcreteCategory.congr_hom (continuousActionHom_eta G A) g
-  -- `continuousActionHom_eta` presents the restriction as a composite of bundled group
-  -- homomorphisms.
+  have h := ConcreteCategory.congr_hom (ProfiniteGrp.ProfiniteCompletion.lift_eta
+    (P := ProfiniteGrp.ofFiniteGrp (FiniteGrp.of (Equiv.Perm A.V)))
+    (GrpCat.ofHom (MulAction.toPermHom G A.V))) g
+  -- `lift_eta` presents the restriction as a composite of bundled group homomorphisms.
   change actionHom G A (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) =
     MulAction.toPermHom G A.V g at h
   exact h
