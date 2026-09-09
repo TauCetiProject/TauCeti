@@ -61,6 +61,8 @@ its conjugate coincide.
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapter 6.
 * B. E. Sagan, *The Symmetric Group*, 2nd ed. (2001), Sections 1.9 and 4.7.
+* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
+  Layer 6, "The Specht character".
 -/
 
 public section
@@ -141,6 +143,7 @@ once its rows are indexed by `TauCeti.partitionEquivIrreducibleIndex` and its co
 `TauCeti.partitionEquivConjClasses`. The entry at a representative `σ` of the class,
 `χ^μ(σ)`, is `TauCeti.characterTable_apply` followed by
 `TauCeti.irreducibleCharacter_partitionEquivIrreducibleIndex`. -/
+@[simp]
 theorem characterTable_partitionEquivIrreducibleIndex (μ ν : n.Partition) :
     characterTable ℂ (Equiv.Perm (Fin n)) (partitionEquivIrreducibleIndex n μ)
         (partitionEquivConjClasses n ν)

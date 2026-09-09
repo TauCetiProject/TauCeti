@@ -291,8 +291,9 @@ theorem zPart_partition_one (α : Type*) [Fintype α] [DecidableEq α] :
     zPart ((1 : Equiv.Perm α).partition) = (Fintype.card α)! := by
   simpa using zPart_partition (1 : Equiv.Perm α)
 
-/-- **The class-size formula on a conjugacy class**: a conjugacy class `C` of permutations of `α`
-has `(Fintype.card α)! / zPart (permConjClassPartition C)` elements.  This is
+/-- **The multiplicative class-size formula on a conjugacy class**: the cardinality of a
+conjugacy class `C` of permutations of `α`, multiplied by
+`zPart (permConjClassPartition C)`, is `(Fintype.card α)!`. This is
 `TauCeti.card_isConj_mul_zPart` read on the class itself rather than on the permutations conjugate
 to a representative. -/
 theorem card_carrier_mul_zPart (C : ConjClasses (Equiv.Perm α)) :
@@ -305,8 +306,9 @@ theorem card_carrier_mul_zPart (C : ConjClasses (Equiv.Perm α)) :
   rw [hcarrier, permConjClassPartition_mk]
   simpa using card_isConj_mul_zPart σ
 
-/-- The class-size formula on the class attached to a partition: the class
-`TauCeti.partitionEquivPermConjClasses α p` has `(Fintype.card α)! / zPart p` elements. -/
+/-- The multiplicative class-size formula on the class attached to a partition: the cardinality
+of `TauCeti.partitionEquivPermConjClasses α p`, multiplied by `zPart p`, is
+`(Fintype.card α)!`. -/
 theorem card_carrier_partitionEquivPermConjClasses_mul_zPart (p : (Fintype.card α).Partition) :
     Nat.card (partitionEquivPermConjClasses α p).carrier * zPart p = (Fintype.card α)! := by
   simpa using card_carrier_mul_zPart (partitionEquivPermConjClasses α p)
@@ -317,8 +319,9 @@ theorem card_carrier_partitionEquivPermConjClasses (p : (Fintype.card α).Partit
   (Nat.div_eq_of_eq_mul_left (zPart_pos p)
     (card_carrier_partitionEquivPermConjClasses_mul_zPart p).symm).symm
 
-/-- The class-size formula on the class attached to a partition, for `Equiv.Perm (Fin n)`: the
-class `TauCeti.partitionEquivConjClasses n ν` has `n ! / zPart ν` elements.  This is
+/-- The multiplicative class-size formula on the class attached to a partition, for
+`Equiv.Perm (Fin n)`: the cardinality of `TauCeti.partitionEquivConjClasses n ν`, multiplied by
+`zPart ν`, is `n !`. This is
 `TauCeti.card_carrier_mul_zPart` with the transport along `Fintype.card (Fin n) = n` carried out;
 it is the form the orthogonality relations consume. -/
 theorem card_carrier_partitionEquivConjClasses_mul_zPart {n : ℕ} (ν : n.Partition) :
