@@ -232,9 +232,13 @@ variable {K : Type u} [Field K]
 
 /-- A Spin-group map induced by a quadratic isometry preserves the canonical scalar `-1`. -/
 @[simp]
-theorem spinGroupMap_negOne (f : Q →qᵢ P) (hQ : Q ≠ 0) (hP : P ≠ 0) :
+theorem spinGroupMap_negOne (f : Q →qᵢ P) (hQ : Q ≠ 0) :
     f.spinGroupMap (CliffordAlgebra.spinGroup.negOne Q hQ) =
-      CliffordAlgebra.spinGroup.negOne P hP := by
+      CliffordAlgebra.spinGroup.negOne P (by
+        intro hP
+        apply hQ
+        ext x
+        simpa [hP] using (f.map_app x).symm) := by
   apply Subtype.ext
   rw [coe_spinGroupMap_apply, CliffordAlgebra.spinGroup.coe_negOne,
     CliffordAlgebra.spinGroup.coe_negOne, map_neg, map_one]

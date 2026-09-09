@@ -277,26 +277,15 @@ theorem spinGroupMap_spinVectorAction_prod
       e.symm (CliffordAlgebra.spinVectorAction Q₁ x m₁, m₂) := by
   let f₁ := e.symm.toIsometry.comp (QuadraticMap.Isometry.inl Q₁ Q₂)
   let f₂ := e.symm.toIsometry.comp (QuadraticMap.Isometry.inr Q₁ Q₂)
-  have hsource : (m₁, m₂) = (m₁, 0) + (0, m₂) := by
-    ext <;> simp
-  have hdecomp : e.symm (m₁, m₂) = f₁ m₁ + f₂ m₂ := by
+  have hdecomp (a : M₁) (b : M₂) : e.symm (a, b) = f₁ a + f₂ b := by
     calc
-      e.symm (m₁, m₂) = e.symm ((m₁, 0) + (0, m₂)) := congrArg e.symm hsource
-      _ = e.symm (m₁, 0) + e.symm (0, m₂) := map_add e.symm _ _
-      _ = f₁ m₁ + f₂ m₂ := rfl
-  have htargetSource : (CliffordAlgebra.spinVectorAction Q₁ x m₁, m₂) =
-      (CliffordAlgebra.spinVectorAction Q₁ x m₁, 0) + (0, m₂) := by
-    ext <;> simp
-  have htarget : e.symm (CliffordAlgebra.spinVectorAction Q₁ x m₁, m₂) =
-      f₁ (CliffordAlgebra.spinVectorAction Q₁ x m₁) + f₂ m₂ := by
-    calc
-      e.symm (CliffordAlgebra.spinVectorAction Q₁ x m₁, m₂) =
-          e.symm ((CliffordAlgebra.spinVectorAction Q₁ x m₁, 0) + (0, m₂)) :=
-        congrArg e.symm htargetSource
-      _ = e.symm (CliffordAlgebra.spinVectorAction Q₁ x m₁, 0) + e.symm (0, m₂) :=
-        map_add e.symm _ _
-      _ = f₁ (CliffordAlgebra.spinVectorAction Q₁ x m₁) + f₂ m₂ := rfl
-  rw [hdecomp, map_add, htarget]
+      e.symm (a, b) = e.symm ((a, 0) + (0, b)) := by simp
+      _ = e.symm (a, 0) + e.symm (0, b) := map_add e.symm _ _
+      _ = f₁ a + f₂ b := by
+        simp only [f₁, f₂, QuadraticMap.Isometry.comp_apply,
+          QuadraticMap.Isometry.inl_apply, QuadraticMap.Isometry.inr_apply,
+          QuadraticMap.IsometryEquiv.toIsometry_apply]
+  rw [hdecomp, map_add, hdecomp]
   congr 1
   · simpa [f₁] using
       (QuadraticMap.Isometry.spinGroupMap_spinVectorAction f₁ x m₁)

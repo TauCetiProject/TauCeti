@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
 
 /-!
@@ -21,9 +20,10 @@ This is the algebraic half of the familiar stabilizer description
 of the resulting homogeneous space, are separate results.
 
 The split-coordinate action equation below compares the lower-rank inclusion with the Spin
-projection. Since the projection has kernel `{1, -1}` and the inclusion preserves `-1`, every
-element sharing a projection with an included element is itself included. This is the residual
-kernel calculation needed by the converse stabilizer identification.
+projection. When `n > 0`, the projection has kernel `{1, -1}`; since the inclusion preserves the
+canonical `-1` whenever its source form is nonzero, every element sharing a projection with an
+included element is itself included. This is the residual kernel calculation needed by the
+converse stabilizer identification.
 
 ## Main results
 
@@ -33,8 +33,8 @@ kernel calculation needed by the converse stabilizer identification.
   stabilizer.
 * `CliffordAlgebra.realCliffordSpinInclusion_spinVectorAction_split` computes the full vector
   action of the inclusion in split coordinates.
-* `eq_realCliffordSpinInclusion_or_eq_realCliffordSpinInclusion_negOne_mul_of_projection_eq`
-  identifies the two possible lifts of the projection of an included element.
+* `eq_or_eq_realCliffordSpinInclusion_negOne_mul_of_spinToSpecialOrthogonal_eq`
+  identifies the two possible lifts of the `spinToSpecialOrthogonal` image of an included element.
 
 ## References
 
@@ -187,11 +187,10 @@ theorem realCliffordSpinInclusion_negOne (n : ℕ) [NeZero n] :
         (nondegenerate_realCliffordForm (n + 1) 0).ne_zero :=
   (realCliffordSpinInclusionIsometry n).spinGroupMap_negOne
     (nondegenerate_realCliffordForm n 0).ne_zero
-    (nondegenerate_realCliffordForm (n + 1) 0).ne_zero
 
 /-- An element of `Spin(n + 1)` over the projection of an included element of `Spin(n)` is that
 element or its translate by the canonical nontrivial kernel element. -/
-theorem eq_realCliffordSpinInclusion_or_eq_realCliffordSpinInclusion_negOne_mul_of_projection_eq
+theorem eq_or_eq_realCliffordSpinInclusion_negOne_mul_of_spinToSpecialOrthogonal_eq
     (n : ℕ) [NeZero n] (x : realCliffordSpinGroupZero (n + 1))
     (y : realCliffordSpinGroupZero n)
     (h : spinToSpecialOrthogonal (realCliffordForm (n + 1) 0) x =

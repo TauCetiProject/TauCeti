@@ -27,7 +27,7 @@ the topology is Hausdorff.
 
 * `CliffordAlgebra.instTopologicalSpaceRealCliffordAlgebra` installs the real module topology.
 * `CliffordAlgebra.instIsTopologicalAddGroupRealCliffordAlgebra` makes addition continuous.
-* `CliffordAlgebra.continuous_map_realCliffordAlgebra` proves continuity of maps induced by
+* `QuadraticMap.Isometry.continuous_cliffordAlgebraMap` proves continuity of maps induced by
   quadratic isometries.
 * `CliffordAlgebra.instIsTopologicalRingRealCliffordAlgebra` makes multiplication continuous.
 * `CliffordAlgebra.instT2SpaceRealCliffordAlgebra` proves the topology is Hausdorff.
@@ -64,7 +64,7 @@ instance instIsTopologicalAddGroupRealCliffordAlgebra (Q : QuadraticForm ℝ V) 
 /-- The Clifford-algebra map induced by an isometry of real quadratic spaces is continuous for
 the canonical module topologies. -/
 @[fun_prop]
-theorem continuous_map_realCliffordAlgebra
+theorem _root_.QuadraticMap.Isometry.continuous_cliffordAlgebraMap
     {W : Type*} [AddCommGroup W] [Module ℝ W]
     {Q : QuadraticForm ℝ V} {P : QuadraticForm ℝ W} (f : Q →qᵢ P) :
     Continuous (CliffordAlgebra.map f) :=

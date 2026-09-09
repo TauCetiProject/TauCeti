@@ -54,6 +54,8 @@ topologized special orthogonal group.
   the projection field of the packaged compact real double cover.
 * `CliffordAlgebra.continuous_realCliffordSpinInclusion` proves continuity of the lower-rank
   inclusion used in the compact stabilizer construction.
+* `CliffordAlgebra.continuous_realCliffordSpinStabilizerInclusion` proves continuity after
+  restricting the inclusion's codomain to the last-vector stabilizer.
 
 ## References
 
@@ -79,7 +81,7 @@ canonical subtype topologies. -/
 @[fun_prop]
 theorem continuous_spinGroupMap (f : Q →qᵢ P) : Continuous f.spinGroupMap := by
   apply continuous_induced_rng.mpr
-  refine ((CliffordAlgebra.continuous_map_realCliffordAlgebra f).comp
+  refine (f.continuous_cliffordAlgebraMap.comp
     continuous_subtype_val).congr ?_
   exact fun x ↦ (coe_spinGroupMap_apply f x).symm
 
@@ -166,6 +168,16 @@ theorem continuous_realCliffordSpinInclusion (n : ℕ) :
     apply Subtype.ext
     rw [QuadraticMap.Isometry.coe_spinGroupMap_apply,
       coe_realCliffordSpinInclusion_apply]
+
+/-- The canonical inclusion `Spin(n) → Spin(n + 1)` is continuous after restricting its codomain
+to the last-vector stabilizer. -/
+@[fun_prop]
+theorem continuous_realCliffordSpinStabilizerInclusion (n : ℕ) :
+    Continuous (realCliffordSpinStabilizerInclusion n) := by
+  refine ((continuous_realCliffordSpinInclusion n).subtype_mk (fun x ↦ ?_)).congr ?_
+  · rw [← coe_realCliffordSpinStabilizerInclusion_apply n x]
+    exact (realCliffordSpinStabilizerInclusion n x).property
+  · exact fun x ↦ Subtype.ext (coe_realCliffordSpinStabilizerInclusion_apply n x).symm
 
 end
 
