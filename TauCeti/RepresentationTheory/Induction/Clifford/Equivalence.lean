@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.Clifford.Decomposition
-import TauCeti.GroupTheory.Index
-import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.OfModule
 import TauCeti.RepresentationTheory.Simple.Basic
 
@@ -27,8 +25,13 @@ representative, while changing that representative changes the summand only up t
 
 ## Main definitions
 
-* `TauCeti.cliffordSum`: the finite sum of `e` copies of the conjugate of `V` attached to every
+* `FDRep.cliffordSum`: the finite sum of `e` copies of the conjugate of `V` attached to every
   inertia coset.
+* `FDRep.cliffordSumEquiv`: its public identification with the displayed product representation.
+
+## Main properties
+
+* `FDRep.finrank_cliffordSum` and `FDRep.character_cliffordSum`: its dimension and character.
 
 ## Main result
 
@@ -50,7 +53,30 @@ open scoped MonoidAlgebra
 
 universe u v
 
-namespace TauCeti
+namespace FDRep
+
+open TauCeti
+
+/-- The trace of a coordinatewise endomorphism of a finite dependent product is the sum of the
+traces on its factors. -/
+private theorem trace_pi_apply_same {k : Type u} {ι : Type v} {M : ι → Type*}
+    [Field k] [Fintype ι] [∀ i, AddCommGroup (M i)] [∀ i, Module k (M i)]
+    [∀ i, FiniteDimensional k (M i)]
+    (T : ((i : ι) → M i) →ₗ[k] ((i : ι) → M i)) (f : ∀ i, M i →ₗ[k] M i)
+    (hT : ∀ x i, T x i = f i (x i)) :
+    LinearMap.trace k ((i : ι) → M i) T = ∑ i, LinearMap.trace k (M i) (f i) := by
+  classical
+  let b (i : ι) := Module.Free.chooseBasis k (M i)
+  let _ (i : ι) : Fintype (Module.Free.ChooseBasisIndex k (M i)) := Fintype.ofFinite _
+  let B : Module.Basis (Σ i, Module.Free.ChooseBasisIndex k (M i)) k ((i : ι) → M i) :=
+    Pi.basis b
+  rw [LinearMap.trace_eq_matrix_trace k B, Matrix.trace, Fintype.sum_sigma]
+  apply Finset.sum_congr rfl
+  intro i _
+  rw [LinearMap.trace_eq_matrix_trace k (b i), Matrix.trace]
+  apply Finset.sum_congr rfl
+  intro j _
+  simp [LinearMap.toMatrix_apply, B, b, hT]
 
 /-- The finite sum of `e` copies of every conjugate of `V` indexed by the left cosets of its
 inertia group. A finite product of modules is their direct sum; `FDRep.ofShrink` only returns its
@@ -60,6 +86,96 @@ noncomputable def cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
   FDRep.ofShrink <| Representation.ofModule' (k := k) (G := N)
     ((q : G ⧸ inertia V) → Fin e →
       _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ)
+
+/-- The representation carried by `V.cliffordSum e` is the product of the conjugates of `V`,
+with one copy for each element of `Fin e` and one summand for each inertia coset. -/
+noncomputable def cliffordSumEquiv {k : Type u} {G : Type v} [Field k] [Group G]
+    {N : Subgroup G} [N.Normal] [Finite G] (V : FDRep k N) (e : ℕ) :
+    _root_.Representation.Equiv (V.cliffordSum e).ρ
+      (_root_.Representation.ofModule' (k := k) (G := N)
+        ((q : G ⧸ inertia V) → Fin e →
+          _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ)) :=
+  FDRep.ofShrinkEquiv _
+
+/-- The dimension of `V.cliffordSum e` is the number of inertia cosets times `e` times the
+dimension of `V`. -/
+@[simp]
+theorem finrank_cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
+    {N : Subgroup G} [N.Normal] [Finite G] (V : FDRep k N) (e : ℕ) :
+    Module.finrank k (V.cliffordSum e) =
+      Nat.card (G ⧸ inertia V) * e * Module.finrank k V := by
+  classical
+  let _ : Fintype (G ⧸ inertia V) := Fintype.ofFinite _
+  rw [cliffordSum, finrank_ofShrink, Module.finrank_pi_fintype]
+  simp_rw [Module.finrank_pi_fintype,
+    (_root_.Representation.asModuleEquiv _).finrank_eq]
+  simp [Nat.card_eq_fintype_card, mul_assoc]
+
+/-- The character of `V.cliffordSum e` is `e` times the sum of the characters of its conjugate
+summands. -/
+@[simp]
+theorem character_cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
+    {N : Subgroup G} [N.Normal] [Finite G] (V : FDRep k N)
+    [Fintype (G ⧸ inertia V)] (e : ℕ) (x : N) :
+    (V.cliffordSum e).character x =
+      (e : k) * ∑ q : G ⧸ inertia V,
+        (conjNormalFDRep (Quotient.out q) V).character x := by
+  classical
+  rw [cliffordSum, character_ofShrink, _root_.Representation.character]
+  let f (q : G ⧸ inertia V) :
+      (Fin e → _root_.Representation.asModule
+        (conjNormalFDRep (Quotient.out q) V).ρ) →ₗ[k]
+      (Fin e → _root_.Representation.asModule
+        (conjNormalFDRep (Quotient.out q) V).ρ) := {
+    toFun z i := (conjNormalFDRep (Quotient.out q) V).ρ x (z i)
+    map_add' a b := funext fun i ↦ map_add _ _ _
+    map_smul' a b := funext fun i ↦ map_smul _ _ _
+  }
+  have htarget : ∀ z q,
+      (_root_.Representation.ofModule' (k := k) (G := N)
+        ((q : G ⧸ inertia V) → Fin e →
+          _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ)) x z q =
+        f q (z q) := by
+    intro z q
+    ext i
+    change
+      (_root_.Representation.ofModule' (k := k) (G := N)
+        ((q : G ⧸ inertia V) → Fin e →
+          _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ)) x z q i =
+        (conjNormalFDRep (Quotient.out q) V).ρ x (z q i)
+    rw [TauCeti.Representation.ofModule'_apply]
+    rw [Pi.smul_apply, Pi.smul_apply, _root_.Representation.single_smul, one_smul,
+      _root_.Representation.asModuleEquiv_apply]
+  rw [trace_pi_apply_same _ f htarget]
+  let g (q : G ⧸ inertia V) :
+      _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ →ₗ[k]
+      _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ := {
+    toFun z := (conjNormalFDRep (Quotient.out q) V).ρ x z
+    map_add' := map_add _
+    map_smul' := map_smul _
+  }
+  have hg (q : G ⧸ inertia V) : LinearMap.trace k _ (g q) =
+      (conjNormalFDRep (Quotient.out q) V).character x := by
+    have hconj : g q =
+        (_root_.Representation.asModuleEquiv
+          (conjNormalFDRep (Quotient.out q) V).ρ).symm.conj
+            ((conjNormalFDRep (Quotient.out q) V).ρ x) := by
+      ext z
+      rfl
+    rw [hconj, LinearMap.trace_conj', FDRep.character]
+  have hf (q : G ⧸ inertia V) : LinearMap.trace k _ (f q) =
+      (e : k) * (conjNormalFDRep (Quotient.out q) V).character x := by
+    have hfg : ∀ z i, f q z i = g q (z i) := by
+      intro z i
+      rfl
+    rw [trace_pi_apply_same (f q) (fun _ ↦ g q) hfg]
+    simp [hg]
+  simp_rw [hf]
+  rw [Finset.mul_sum]
+
+end FDRep
+
+namespace TauCeti
 
 /-- The module carried by an isotypic component is `e` copies of the translated constituent that
 defines it, where `e` is the common Clifford multiplicity. -/
@@ -108,21 +224,22 @@ private noncomputable def componentLinearEquiv
 representation to a normal subgroup is isomorphic to `e` copies of every conjugate of one simple
 constituent, with the distinct conjugates indexed by the left cosets of its inertia group.
 
-The hypothesis on `Nat.card G` is Maschke's condition. Algebraic closure makes `k` a splitting
-field, so the Hom-space dimension in the multiplicity theorem is the actual number of copies. -/
+Algebraic closure makes `k` a splitting field, so the Hom-space dimension in the multiplicity
+theorem is the actual number of copies. -/
 theorem clifford_restrict_iso {k : Type u} {G : Type v} [Field k] [Group G]
     {N : Subgroup G} [N.Normal] [Finite G] [IsAlgClosed k]
-    (hG : IsUnit (Nat.card G : k)) (W : FDRep k G) [Simple W] :
+    (W : FDRep k G) [Simple W] :
     ∃ (V : FDRep k N) (_ : Simple V) (e : ℕ),
-      e ≠ 0 ∧ Nonempty (resFDRep N W ≅ cliffordSum V e) := by
+      e ≠ 0 ∧ Nonempty (resFDRep N W ≅ V.cliffordSum e) := by
   classical
   let _ : Fintype G := Fintype.ofFinite G
-  let _ : Invertible (Nat.card G : k) := hG.invertible
   let _ : Fintype N := Fintype.ofFinite N
-  let _ : Invertible (Nat.card N : k) := (isUnit_natCard_subgroup N hG).invertible
   let _ : Representation.IsIrreducible W.ρ := FDRep.isIrreducible_of_simple W
-  let _ : Representation.IsSemisimpleRepresentation (W.ρ.comp N.subtype) :=
-    Representation.isSemisimpleRepresentation_comp_subtype W.ρ
+  let _ : IsSemisimpleModule k[N]
+      (_root_.Representation.asModule (W.ρ.comp N.subtype)) :=
+    (_root_.Representation.isSemisimpleRepresentation_iff_isSemisimpleModule_asModule
+      (W.ρ.comp N.subtype)).mp
+      (Representation.isSemisimpleRepresentation_comp_subtype W.ρ)
   obtain ⟨σ, hσ, -⟩ :=
     Representation.exists_isAtom_forall_nonempty_linearEquiv_conjSubrep (N := N) W.ρ
   let V : FDRep k N := FDRep.of σ.toRepresentation
@@ -165,7 +282,7 @@ theorem clifford_restrict_iso {k : Type u} {G : Type v} [Field k] [Group G]
   let representationEquiv : _root_.Representation.Equiv (resFDRep N W).ρ target :=
     Representation.equivOfAsModuleLinearEquiv moduleEquiv
   have hfinal : Nonempty (_root_.Representation.Equiv
-      (resFDRep N W).ρ (cliffordSum V e).ρ) :=
+      (resFDRep N W).ρ (V.cliffordSum e).ρ) :=
     ⟨representationEquiv.trans (FDRep.ofShrinkEquiv target).symm⟩
   exact ⟨V, inferInstance, e, Nat.ne_of_gt he, nonempty_fdRepIso_iff.mpr hfinal⟩
 
