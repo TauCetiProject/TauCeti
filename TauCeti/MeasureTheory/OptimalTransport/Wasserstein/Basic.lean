@@ -323,6 +323,22 @@ theorem wassersteinEDist_self [MeasurableEq X] (p : ℝ≥0∞) (μ : Measure X)
   filter_upwards [ae_snd_eq_graphPlan (T := (id : X → X)) (μ := μ) aemeasurable_id] with z hz
   simp [hz]
 
+/-- Wasserstein distance from a measure to itself vanishes when the ground extended distance is
+measurable. Unlike `TauCeti.wassersteinEDist_self`, this form does not require a measurable
+diagonal, which need not exist on a non-separated pseudometric Borel space. -/
+theorem wassersteinEDist_self_of_measurable_edist
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (p : ℝ≥0∞) (μ : Measure X) :
+    wassersteinEDist p μ μ = 0 := by
+  apply nonpos_iff_eq_zero.mp
+  refine (wassersteinEDist_le (isCoupling_graphPlan_id μ) p).trans_eq ?_
+  have hgraph : AEMeasurable (fun x : X ↦ (x, id x)) μ := by fun_prop
+  calc
+    eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (graphPlan id μ) =
+        eLpNorm ((fun z : X × X ↦ edist z.1 z.2) ∘ fun x : X ↦ (x, id x)) p μ := by
+      rw [graphPlan_def]
+      exact eLpNorm_map_measure hd.aestronglyMeasurable hgraph
+    _ = 0 := eLpNorm_eq_zero_of_ae_zero (.of_forall fun z ↦ by simp)
+
 /-- **Symmetry.** Exchanging the two measures does not change their Wasserstein distance. -/
 theorem wassersteinEDist_comm (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (p : ℝ≥0∞)
     (μ ν : Measure X) : wassersteinEDist p μ ν = wassersteinEDist p ν μ := by
