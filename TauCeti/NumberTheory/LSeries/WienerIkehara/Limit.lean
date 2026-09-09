@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
+public import TauCeti.Analysis.Fourier.Integrable
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.Fourier
 
 /-!
@@ -36,7 +36,7 @@ values.
   combine into, and
   `TauCeti.LSeries.tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff` is its form
   for a smooth test function, where the half-line integrability hypothesis is automatic by
-  `TauCeti.LSeries.integrable_fourier_div_of_contDiff`.
+  `TauCeti.integrable_fourier_of_contDiff`.
 
 ## Provenance
 
@@ -134,28 +134,13 @@ theorem tendsto_integral_exp_mul_fourier (hx : 0 < x)
       simpa using hone.mul_const (𝓕 psi (u / (2 * π)))
   simpa using hrpow.mul hint
 
-/-- The Fourier transform of a smooth, compactly supported function is a Schwartz function, hence
-integrable; rescaling keeps it integrable, and restricting to a half-line gives the hypothesis of
-`tsum_term_mul_fourier_sub_pole_eq_integral_boundary`. -/
-theorem integrable_fourier_div_of_contDiff (hpsi : ContDiff ℝ ∞ psi)
-    (hsupp : HasCompactSupport psi) :
-    Integrable (fun u : ℝ ↦ 𝓕 psi (u / (2 * π))) := by
-  have hcoe : ⇑(hsupp.toSchwartzMap hpsi) = psi := by
-    ext u
-    simp
-  have hS : Integrable (𝓕 psi) := by
-    have h : Integrable ((𝓕 (hsupp.toSchwartzMap hpsi) : SchwartzMap ℝ ℂ) : ℝ → ℂ) :=
-      SchwartzMap.integrable _
-    rwa [SchwartzMap.fourier_coe, hcoe] at h
-  exact hS.comp_div (by positivity)
-
 /-! ### The integral along the vertical line -/
 
 /-- As `sigma` decreases to `1`, the integral of `G` along the vertical line `Re s = sigma`
 against a compactly supported test function converges to the same integral along the boundary
 line, because the integrand is confined to a compact box on which `G` is continuous. -/
 theorem tendsto_integral_vertical (hx : 0 < x) (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
-    (hpsi : Continuous psi) (hsupp : HasCompactSupport psi) :
+    (hpsi : Integrable psi) (hsupp : HasCompactSupport psi) :
     Tendsto (fun sigma : ℝ ↦ ∫ t : ℝ, G (sigma + t * I) * psi t * (x : ℂ) ^ (t * I))
       (𝓝[>] 1) (𝓝 (∫ t : ℝ, G (1 + t * I) * psi t * (x : ℂ) ^ (t * I))) := by
   have hmem {sigma : ℝ} (hsigma : 1 ≤ sigma) (t : ℝ) :
@@ -171,10 +156,10 @@ theorem tendsto_integral_vertical (hx : 0 < x) (hG : ContinuousOn G {z : ℂ | 1
   have hxpow : Continuous fun t : ℝ ↦ (x : ℂ) ^ (t * I) :=
     continuous_const.cpow (continuous_ofReal.mul continuous_const) (by simp [hx])
   refine tendsto_integral_filter_of_dominated_convergence (fun t ↦ C * ‖psi t‖) ?_ ?_
-    ((hpsi.integrable_of_hasCompactSupport hsupp).norm.const_mul C) (.of_forall fun t ↦ ?_)
+    (hpsi.norm.const_mul C) (.of_forall fun t ↦ ?_)
   · filter_upwards [self_mem_nhdsWithin] with sigma hsigma
-    exact (((hG.comp_continuous (by fun_prop) (hmem (le_of_lt hsigma))).mul hpsi).mul
-      hxpow).aestronglyMeasurable
+    exact ((hG.comp_continuous (by fun_prop) (hmem (le_of_lt hsigma))).aestronglyMeasurable.mul
+      hpsi.aestronglyMeasurable).mul hxpow.aestronglyMeasurable
   · filter_upwards [Ioc_mem_nhdsGT (by norm_num : (1 : ℝ) < 2)] with sigma hsigma
     filter_upwards with t
     by_cases ht : psi t = 0
@@ -198,7 +183,7 @@ theorem tendsto_integral_vertical (hx : 0 < x) (hG : ContinuousOn G {z : ℂ | 1
 /-! ### The identity on the boundary line -/
 
 /-- The Fourier identity of `tsum_term_mul_fourier_sub_pole_eq_integral` on the boundary line
-`Re s = 1`. The Dirichlet series is tested against a continuous, compactly supported `psi`, and
+`Re s = 1`. The Dirichlet series is tested against an integrable, compactly supported `psi`, and
 the pole term has lost its exponential damping.
 
 The hypotheses are exactly the three convergence facts that the passage to the limit needs: the
@@ -208,7 +193,7 @@ theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary (hx : 0 < x)
     (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
     (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
     (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma)
-    (hpsi : Continuous psi) (hsupp : HasCompactSupport psi)
+    (hpsi : Integrable psi) (hsupp : HasCompactSupport psi)
     (hFint : IntegrableOn (fun u : ℝ ↦ 𝓕 psi (u / (2 * π))) (Ici (-Real.log x)))
     (hFsum : LSeriesSummable
       (fun n : ℕ ↦ a n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) 1) :
@@ -222,8 +207,7 @@ theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary (hx : 0 < x)
         ∫ t : ℝ, G (sigma + t * I) * psi t * (x : ℂ) ^ (t * I) := by
     rw [← mul_assoc]
     exact tsum_term_mul_fourier_sub_pole_eq_integral
-      (fun t ↦ hG' _ (by simpa using hsigma)) (hpsi.integrable_of_hasCompactSupport hsupp) hx
-      hsigma (hsum sigma hsigma)
+      (fun t ↦ hG' _ (by simpa using hsigma)) hpsi hx hsigma (hsum sigma hsigma)
   refine tendsto_nhds_unique (l := 𝓝[>] (1 : ℝ)) (f := fun sigma : ℝ ↦
     (∑' n : ℕ, _root_.LSeries.term a sigma n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) -
       A * (((x ^ (1 - sigma) : ℝ) : ℂ) * ∫ u in Ici (-Real.log x),
@@ -234,10 +218,10 @@ theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary (hx : 0 < x)
     filter_upwards [self_mem_nhdsWithin] with sigma hsigma
     exact (key sigma hsigma).symm
 
-/-- The boundary Fourier identity for a smooth, compactly supported test function: the test
-function's own regularity supplies the integrability of its Fourier transform, so only the
-summability of the weighted Dirichlet series at `s = 1` and the boundary behaviour of `G` are
-left as hypotheses. -/
+/-- The boundary Fourier identity for a smooth, compactly supported test function. Its regularity
+supplies both its own integrability and the integrability of its Fourier transform, removing only
+the explicit Fourier-integrability hypothesis from
+`tsum_term_mul_fourier_sub_pole_eq_integral_boundary`. -/
 theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff (hx : 0 < x)
     (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
     (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
@@ -248,7 +232,8 @@ theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff (hx : 0 
     (∑' n : ℕ, _root_.LSeries.term a 1 n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) -
         A * ∫ u in Ici (-Real.log x), 𝓕 psi (u / (2 * π)) =
       ∫ t : ℝ, G (1 + t * I) * psi t * (x : ℂ) ^ (t * I) :=
-  tsum_term_mul_fourier_sub_pole_eq_integral_boundary hx hG hG' hsum hpsi.continuous hsupp
-    (integrable_fourier_div_of_contDiff hpsi hsupp).integrableOn hFsum
+  tsum_term_mul_fourier_sub_pole_eq_integral_boundary hx hG hG' hsum
+    (hpsi.continuous.integrable_of_hasCompactSupport hsupp) hsupp
+    ((integrable_fourier_of_contDiff hpsi hsupp).comp_div (by positivity)).integrableOn hFsum
 
 end TauCeti.LSeries
