@@ -273,6 +273,18 @@ def equivProd : SL2Borel R ≃ Rˣ × R where
   right_inv p := by
     ext <;> simp
 
+/-- The product equivalence records the diagonal unit and upper-right entry. -/
+@[simp]
+theorem equivProd_apply (g : SL2Borel R) :
+    equivProd g = (diag g, upperRight g) :=
+  (rfl)
+
+/-- The inverse product equivalence constructs the matrix with the given parameters. -/
+@[simp]
+theorem equivProd_symm_apply (p : Rˣ × R) :
+    (equivProd (R := R)).symm p = mk p.1 p.2 :=
+  (rfl)
+
 /-- The upper-triangular subgroup of `SL₂(R)` is solvable. -/
 instance instIsSolvable : Group.IsSolvable (SL2Borel R) :=
   Group.isSolvable_of_isSolvable_injective (toGL2Borel_injective (R := R))
