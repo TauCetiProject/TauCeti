@@ -38,15 +38,6 @@ open scoped ENat
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
-private theorem padicValNat_mono_of_dvd (p : Nat.Primes) {m n : ℕ} (hm : m ≠ 0)
-    (hn : n ≠ 0) (h : m ∣ n) :
-    (padicValNat p m : ℕ∞) ≤ (padicValNat p n : ℕ∞) := by
-  have : Fact (p : ℕ).Prime := ⟨p.prop⟩
-  obtain ⟨k, rfl⟩ := h
-  have hk : k ≠ 0 := fun hk ↦ hn (by simp [hk])
-  rw [padicValNat.mul hm hk, Nat.cast_add]
-  exact le_add_right le_rfl
-
 section Profinite
 
 variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
@@ -83,14 +74,17 @@ theorem _root_.Subgroup.profiniteOrder_apply_eq_add_profiniteIndex (H : Subgroup
       intro N M
       let K : OpenNormalSubgroup G := N ⊓ M
       refine ⟨K, add_le_add ?_ ?_⟩
-      · apply padicValNat_mono_of_dvd ℓ Nat.card_pos.ne' Nat.card_pos.ne'
+      · rw [padicValNat_eq_emultiplicity Nat.card_pos.ne',
+          padicValNat_eq_emultiplicity Nat.card_pos.ne']
+        apply emultiplicity_le_emultiplicity_of_dvd_right
         rw [← H.index_comap_quotient_eq_card_map N,
           ← H.index_comap_quotient_eq_card_map K]
         apply Subgroup.index_dvd_of_le
         apply Subgroup.comap_mono
         exact inf_le_left
-      · apply padicValNat_mono_of_dvd ℓ Subgroup.index_ne_zero_of_finite
-          Subgroup.index_ne_zero_of_finite
+      · rw [padicValNat_eq_emultiplicity Subgroup.index_ne_zero_of_finite,
+          padicValNat_eq_emultiplicity Subgroup.index_ne_zero_of_finite]
+        apply emultiplicity_le_emultiplicity_of_dvd_right
         rw [H.index_map_quotient_eq_index_sup M, H.index_map_quotient_eq_index_sup K]
         apply Subgroup.index_dvd_of_le
         exact sup_le_sup_left inf_le_right H
