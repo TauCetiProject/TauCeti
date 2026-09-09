@@ -61,6 +61,19 @@ def completionAlgHom {L : Type*} [Field L] [NumberField L] [Algebra K L]
   toRingHom := v.adicCompletionExtension K L w
   commutes' x := v.adicCompletionExtension_coe K L w x
 
+/-- The algebra map of the canonical completion algebra is `completionAlgHom`.
+
+Not `@[simp]`: `algebraMap_adicCompletionExtensionAlgebra` already simplifies the left-hand side
+to the underlying `adicCompletionExtension`, so the `simpNF` linter rejects this wrapper theorem. -/
+theorem algebraMap_eq_completionAlgHom {L : Type*} [Field L] [NumberField L] [Algebra K L]
+    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
+    [w.asIdeal.LiesOver v.asIdeal] :
+    algebraMap (v.adicCompletion K) (w.adicCompletion L) =
+      (completionAlgHom v w).toRingHom := by
+  rw [algebraMap_adicCompletionExtensionAlgebra]
+  -- The `toRingHom` field of the number-field wrapper is the generic completion extension.
+  rfl
+
 /-- The canonical map between completions is continuous. -/
 theorem continuous_completionAlgHom {L : Type*} [Field L] [NumberField L] [Algebra K L]
     (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
@@ -112,7 +125,7 @@ theorem completionIsScalarTower {L : Type*} [Field L] [NumberField L] [Algebra K
     [w.asIdeal.LiesOver v.asIdeal] :
     IsScalarTower K (v.adicCompletion K) (w.adicCompletion L) :=
   IsScalarTower.of_algebraMap_eq fun x ↦ by
-    rw [algebraMap_adicCompletionExtensionAlgebra]
+    rw [algebraMap_eq_completionAlgHom]
     exact ((completionAlgHom v w).commutes x).symm
 
 scoped[AdicCompletionExtension] attribute [instance]
@@ -125,8 +138,8 @@ theorem completionContinuousSMul {L : Type*} [Field L] [NumberField L] [Algebra 
     [w.asIdeal.LiesOver v.asIdeal] :
     ContinuousSMul (v.adicCompletion K) (w.adicCompletion L) := by
   apply continuousSMul_of_algebraMap
-  rw [algebraMap_adicCompletionExtensionAlgebra]
-  exact v.continuous_adicCompletionExtension K L w
+  rw [algebraMap_eq_completionAlgHom]
+  exact continuous_completionAlgHom v w
 
 scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.completionContinuousSMul
