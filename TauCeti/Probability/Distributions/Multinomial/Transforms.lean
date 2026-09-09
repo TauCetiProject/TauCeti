@@ -18,8 +18,10 @@ finite everywhere and equals
 `(∑ i, p i * exp (t * θ i)) ^ n`: the multinomial theorem, with the cell weights tilted by
 `exp (t * θ i)`. The cumulant generating function is its real logarithm.
 
-Every statement holds for `n = 0` (the law is a Dirac mass at zero, and the formula is `1`) and
-for probability vectors with zero cells, which contribute nothing to the tilted sum.
+A probability vector on `ι` forces `ι` to be nonempty, so the statements need no separate
+hypothesis for it beyond the parameter `p`. Every statement holds for `n = 0`
+(the law is a Dirac mass at zero, and the formula is `1`) and for probability vectors with zero
+cells, which contribute nothing to the tilted sum.
 
 ## Main results
 
@@ -71,7 +73,8 @@ private theorem coe_tiltedWeights (p : ι → NNReal) (θ : ι → ℝ) (t : ℝ
 
 /-- **Directional moment generating function of the multinomial law**: for every direction `θ`
 and every `t`, it is `(∑ i, pᵢ exp (t θᵢ)) ^ n`. -/
-theorem mgf_inner_multinomial (n : ℕ) (p : StdSimplex NNReal ι) (θ : EuclideanSpace ℝ ι) (t : ℝ) :
+theorem mgf_inner_multinomial (n : ℕ) (p : StdSimplex NNReal ι)
+    (θ : EuclideanSpace ℝ ι) (t : ℝ) :
     mgf (fun x => inner ℝ θ x) ((multinomialMeasure n p).map multinomialToEuclidean) t =
       (∑ i, (p.weights i : ℝ) * exp (t * θ i)) ^ n := by
   classical
@@ -106,7 +109,8 @@ theorem integrableExpSet_inner_multinomial (n : ℕ) (p : StdSimplex NNReal ι)
 
 /-- **Directional cumulant generating function of the multinomial law**: the real logarithm of
 the moment generating function. -/
-theorem cgf_inner_multinomial (n : ℕ) (p : StdSimplex NNReal ι) (θ : EuclideanSpace ℝ ι) (t : ℝ) :
+theorem cgf_inner_multinomial (n : ℕ) (p : StdSimplex NNReal ι)
+    (θ : EuclideanSpace ℝ ι) (t : ℝ) :
     cgf (fun x => inner ℝ θ x) ((multinomialMeasure n p).map multinomialToEuclidean) t =
       Real.log ((∑ i, (p.weights i : ℝ) * exp (t * θ i)) ^ n) := by
   rw [cgf, mgf_inner_multinomial]
