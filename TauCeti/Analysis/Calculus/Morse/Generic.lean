@@ -35,7 +35,7 @@ the map `fderiv ℝ f : E → (E →L[ℝ] ℝ)`** taken on `U`; this is
 `TauCeti.hasNondegenerateCriticalPointsOn_sub_iff`, and it is the whole content of the argument.
 Domain and codomain of `fderiv ℝ f` have the same dimension, the continuous dual of a
 finite-dimensional space having the dimension of the space
-(`ContinuousLinearMap.finrank_dual_eq`), so
+(`ContinuousLinearMap.dual_finrank_eq`), so
 `TauCeti.addHaar_image_eq_zero_of_not_surjective_fderivWithin` applies and the bad set of `a` is
 null. Note that only `C²` regularity of `f` is used: the map `fderiv ℝ f` is then merely
 differentiable, which is all the equal-dimensional Sard lemma asks for, and no higher-stratum
@@ -86,9 +86,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-! ### Morse perturbations are the regular values of the differential
 
-The effect of the perturbation on the first two derivatives is general calculus, with no Morse
-theory in it, so it lives in `TauCeti.Analysis.Calculus.SecondDerivative` as
-`TauCeti.fderiv_sub_continuousLinearMap` and `TauCeti.fderiv_fderiv_sub_continuousLinearMap`.
+The effect of the perturbation on the first two derivatives follows from Mathlib's general
+calculus lemmas for derivatives of differences and constant shifts.
 -/
 
 /-- A point at which `f` is `C²` is a nondegenerate critical point of `f - a` exactly when the
@@ -99,8 +98,13 @@ theorem isNondegenerateCriticalPoint_sub_iff (hf : ContDiffAt ℝ 2 f x) (a : E 
     IsNondegenerateCriticalPoint (fun y ↦ f y - a y) x ↔
       fderiv ℝ f x = a ∧ (fderiv ℝ (fderiv ℝ f) x).IsInvertible := by
   have hax : ContDiffAt ℝ 2 (fun y : E ↦ a y) x := a.contDiff.contDiffAt
-  have h1 := fderiv_sub_continuousLinearMap (hf.differentiableAt (by norm_num)) a
-  have h2 := fderiv_fderiv_sub_continuousLinearMap hf (by norm_num) a
+  have h1 : fderiv ℝ (fun y ↦ f y - a y) x = fderiv ℝ f x - a := by
+    simpa using fderiv_fun_sub (hf.differentiableAt (by norm_num)) a.differentiableAt
+  have hEq : (fderiv ℝ fun y ↦ f y - a y) =ᶠ[nhds x] fun y ↦ fderiv ℝ f y - a := by
+    filter_upwards [hf.eventually (by norm_num)] with y hy using by
+      simpa using fderiv_fun_sub (hy.differentiableAt (by norm_num)) a.differentiableAt
+  have h2 : fderiv ℝ (fderiv ℝ fun y ↦ f y - a y) x = fderiv ℝ (fderiv ℝ f) x := by
+    rw [hEq.fderiv_eq, fderiv_sub_const]
   constructor
   · rintro ⟨-, h0, hinv⟩
     rw [h1, sub_eq_zero] at h0
@@ -125,7 +129,7 @@ theorem finite_setOfPred_fderiv_sub_eq_zero {K : Set E} (hK : IsCompact K)
     {x ∈ K | fderiv ℝ (fun y ↦ f y - a y) x = 0}.Finite :=
   (ha.mono hKU).finite_setOfPred_fderiv_eq_zero hK
     ((hcont.sub continuousOn_const).congr fun y hy ↦
-      fderiv_sub_continuousLinearMap (hd y hy) a)
+      (by simpa using fderiv_fun_sub (hd y hy) a.differentiableAt))
 
 section FiniteDimensional
 
@@ -143,11 +147,16 @@ theorem hasNondegenerateCriticalPointsOn_sub_iff (hU : IsOpen U) (hf : ContDiffO
   constructor
   · rintro hM ⟨y, ⟨hyU, hyc⟩, rfl⟩
     have hcrit : fderiv ℝ (fun z ↦ f z - (fderiv ℝ f y) z) y = 0 := by
-      rw [fderiv_sub_continuousLinearMap (hd.differentiableAt (hU.mem_nhds hyU)), sub_self]
+      rw [show fderiv ℝ (fun z ↦ f z - (fderiv ℝ f y) z) y =
+          fderiv ℝ f y - fderiv ℝ f y by
+        simpa using fderiv_fun_sub (hd.differentiableAt (hU.mem_nhds hyU))
+          (fderiv ℝ f y).differentiableAt, sub_self]
     exact hyc (((isNondegenerateCriticalPoint_sub_iff (hf.contDiffAt (hU.mem_nhds hyU)) _).1
       (hasNondegenerateCriticalPointsOn_iff.1 hM hyU hcrit)).2.surjective)
   · refine fun ha ↦ hasNondegenerateCriticalPointsOn_iff.2 fun y hyU hy0 ↦ ?_
-    rw [fderiv_sub_continuousLinearMap (hd.differentiableAt (hU.mem_nhds hyU)), sub_eq_zero] at hy0
+    rw [show fderiv ℝ (fun z ↦ f z - a z) y = fderiv ℝ f y - a by
+      simpa using fderiv_fun_sub (hd.differentiableAt (hU.mem_nhds hyU)) a.differentiableAt,
+      sub_eq_zero] at hy0
     refine (isNondegenerateCriticalPoint_sub_iff (hf.contDiffAt (hU.mem_nhds hyU)) a).2
       ⟨hy0, ContinuousLinearMap.isInvertible_of_surjective ?_⟩
     by_contra hs
@@ -175,7 +184,7 @@ theorem ae_hasNondegenerateCriticalPointsOn_sub [MeasurableSpace (E →L[ℝ] �
     (hf.fderiv_of_isOpen (m := 1) hU (by norm_num)).differentiableOn one_ne_zero
   have hnull : ν (fderiv ℝ f '' {x ∈ U | ¬ Surjective (fderiv ℝ (fderiv ℝ f) x)}) = 0 := by
     refine addHaar_image_eq_zero_of_not_surjective_fderivWithin ν
-      ContinuousLinearMap.finrank_dual_eq.symm (fun y hy ↦ ?_) fun _ hy ↦ hy.2
+      ContinuousLinearMap.dual_finrank_eq.symm (fun y hy ↦ ?_) fun _ hy ↦ hy.2
     exact ((hdf y hy.1).differentiableAt (hU.mem_nhds hy.1)).hasFDerivAt.hasFDerivWithinAt
   rw [ae_iff]
   refine measure_mono_null (fun a ha ↦ ?_) hnull

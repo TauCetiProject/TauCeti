@@ -19,7 +19,7 @@ counts need, namely that the continuous dual has the same dimension as the space
 
 ## Main results
 
-* `ContinuousLinearMap.finrank_dual_eq`: in finite dimensions the continuous dual has the same
+* `ContinuousLinearMap.dual_finrank_eq`: in finite dimensions the continuous dual has the same
   dimension as the space.
 -/
 
@@ -33,7 +33,7 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 /-- In finite dimensions the continuous dual `E →L[𝕜] 𝕜` has the same dimension as `E`: every
 linear functional on a finite-dimensional space is continuous, so the continuous dual coincides
 with the algebraic one. -/
-theorem _root_.ContinuousLinearMap.finrank_dual_eq :
+theorem _root_.ContinuousLinearMap.dual_finrank_eq :
     Module.finrank 𝕜 (E →L[𝕜] 𝕜) = Module.finrank 𝕜 E := by
   rw [← LinearEquiv.finrank_eq
     (LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] E →L[𝕜] 𝕜)]

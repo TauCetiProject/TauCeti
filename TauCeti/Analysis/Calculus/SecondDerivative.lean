@@ -22,10 +22,6 @@ on some punctured neighbourhood of the point, the neighbourhood being allowed to
 That fixed-value avoidance is the local rigidity behind the isolation of nondegenerate critical
 points, and it asks nothing of the value taken.
 
-Subtracting a continuous linear map is the perturbation that the second derivative does not see:
-it shifts the differential by a constant, so the derivative of the differential is unchanged. Both
-halves of that statement are recorded here.
-
 The file also records the second-order chain rule at a point where the differential of the outer
 function vanishes: there the first-order term drops out, so the second derivative of a composition
 is the second derivative of the outer function evaluated on the images of the differential of the
@@ -37,11 +33,6 @@ them.
 
 * `ContDiffAt.hasFDerivAt_fderiv`: at a twice continuously differentiable point,
   `fderiv 𝕜 g` is differentiable, with derivative the second derivative of `g`.
-* `ContDiffAt.eventually_differentiableAt`: a continuously differentiable germ is differentiable
-  at every point near the base point.
-* `TauCeti.fderiv_sub_continuousLinearMap` and `TauCeti.fderiv_fderiv_sub_continuousLinearMap`:
-  subtracting a continuous linear map shifts the differential by that map and leaves the second
-  derivative unchanged.
 * `TauCeti.eventually_fderiv_ne`: where the second derivative is invertible, the differential
   avoids any prescribed value on a punctured neighbourhood of the point.
 * `TauCeti.fderiv_fderiv_comp_apply_of_fderiv_eq_zero`: for `C²` maps, where the differential of
@@ -64,30 +55,6 @@ theorem _root_.ContDiffAt.hasFDerivAt_fderiv {n : WithTop ℕ∞} {g : E → F} 
     (h : ContDiffAt 𝕜 n g x) (hn : 2 ≤ n) :
     HasFDerivAt (fderiv 𝕜 g) (fderiv 𝕜 (fderiv 𝕜 g) x) x :=
   ((h.fderiv_right (m := 1) (by exact_mod_cast hn)).differentiableAt one_ne_zero).hasFDerivAt
-
-/-- A continuously differentiable germ is differentiable at every point of a neighbourhood of the
-base point. Differentiability at the base point alone is `ContDiffAt.differentiableAt`; here the
-`C¹` hypothesis is what propagates it to nearby points. -/
-theorem _root_.ContDiffAt.eventually_differentiableAt {n : WithTop ℕ∞} {g : E → F} {x : E}
-    (h : ContDiffAt 𝕜 n g x) (hn : 1 ≤ n) : ∀ᶠ y in 𝓝 x, DifferentiableAt 𝕜 g y :=
-  ((h.of_le hn).eventually (by norm_num)).mono fun _ hy ↦ hy.differentiableAt one_ne_zero
-
-/-- Subtracting a continuous linear map shifts the differential by that map. This is the
-`ContinuousLinearMap` counterpart of `fderiv_sub_const`. -/
-theorem fderiv_sub_continuousLinearMap {g : E → F} {x : E} (hg : DifferentiableAt 𝕜 g x)
-    (a : E →L[𝕜] F) : fderiv 𝕜 (fun y ↦ g y - a y) x = fderiv 𝕜 g x - a :=
-  (hg.hasFDerivAt.sub a.hasFDerivAt).fderiv
-
-/-- **Subtracting a continuous linear map does not change the second derivative.** By
-`TauCeti.fderiv_sub_continuousLinearMap` the differential is shifted by the constant `a`, and a
-constant shift is invisible to the next derivative. -/
-theorem fderiv_fderiv_sub_continuousLinearMap {g : E → F} {x : E} {n : WithTop ℕ∞}
-    (hg : ContDiffAt 𝕜 n g x) (hn : 1 ≤ n) (a : E →L[𝕜] F) :
-    fderiv 𝕜 (fderiv 𝕜 fun y ↦ g y - a y) x = fderiv 𝕜 (fderiv 𝕜 g) x := by
-  have hEq : (fderiv 𝕜 fun y ↦ g y - a y) =ᶠ[𝓝 x] fun y ↦ fderiv 𝕜 g y - a := by
-    filter_upwards [hg.eventually_differentiableAt hn] with y hy using
-      fderiv_sub_continuousLinearMap hy a
-  rw [hEq.fderiv_eq, fderiv_sub_const]
 
 /-- **Where the second derivative is invertible, the differential avoids any prescribed value near
 the point.** Nothing is assumed about the value `c`, and in particular the differential need not
@@ -118,9 +85,13 @@ theorem fderiv_fderiv_comp_apply_of_fderiv_eq_zero {f : E → G} {φ : F → E} 
   have hA : HasFDerivAt (fun y ↦ fderiv 𝕜 f (φ y))
       ((fderiv 𝕜 (fderiv 𝕜 f) (φ b)).comp (fderiv 𝕜 φ b)) b := hf1.comp b hφ0
   have hev : ∀ᶠ y in 𝓝 b, fderiv 𝕜 (f ∘ φ) y = (fderiv 𝕜 f (φ y)).comp (fderiv 𝕜 φ y) := by
-    have h1 : ∀ᶠ y in 𝓝 b, DifferentiableAt 𝕜 φ y := hφ.eventually_differentiableAt (by norm_num)
+    have h1 : ∀ᶠ y in 𝓝 b, DifferentiableAt 𝕜 φ y :=
+      ((hφ.of_le (by norm_num)).eventually (by norm_num)).mono fun _ hy ↦
+        hy.differentiableAt one_ne_zero
     have h2 : ∀ᶠ y in 𝓝 b, DifferentiableAt 𝕜 f (φ y) :=
-      hφ.continuousAt.eventually (hf.eventually_differentiableAt (by norm_num))
+      hφ.continuousAt.eventually
+        (((hf.of_le (by norm_num)).eventually (by norm_num)).mono fun _ hy ↦
+          hy.differentiableAt one_ne_zero)
     filter_upwards [h1, h2] with y hy1 hy2 using fderiv_comp (x := y) hy2 hy1
   rw [((hA.clm_comp hφ1).congr_of_eventuallyEq hev).fderiv]
   simp [hc]

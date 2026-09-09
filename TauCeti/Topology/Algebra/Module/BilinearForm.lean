@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
--- Private: `ContinuousLinearMap.finrank_dual_eq` is used only inside proofs.
+-- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -30,7 +30,7 @@ itself, rather than with any of its users.
 * `ContinuousLinearMap.isInvertible_of_injective` and
   `ContinuousLinearMap.isInvertible_of_surjective`: in finite dimensions an injective, equivalently
   a surjective, map into the dual is already invertible, the dual having the same dimension as the
-  space (`ContinuousLinearMap.finrank_dual_eq`).
+  space (`ContinuousLinearMap.dual_finrank_eq`).
 -/
 
 public section
@@ -63,7 +63,7 @@ space, so that range is everything. -/
 theorem _root_.ContinuousLinearMap.isInvertible_of_injective
     (hinj : Function.Injective L) : L.IsInvertible :=
   ⟨((L : E →ₗ[𝕜] E →L[𝕜] 𝕜).linearEquivOfInjective hinj
-      ContinuousLinearMap.finrank_dual_eq.symm).toContinuousLinearEquiv, by ext v; simp⟩
+      ContinuousLinearMap.dual_finrank_eq.symm).toContinuousLinearEquiv, by ext v; simp⟩
 
 /-- In finite dimensions a surjective continuous linear map into the dual is invertible: the dual
 has the same finite dimension as the space, so surjectivity forces injectivity. -/
@@ -71,7 +71,7 @@ theorem _root_.ContinuousLinearMap.isInvertible_of_surjective
     (hsurj : Function.Surjective L) : L.IsInvertible :=
   ContinuousLinearMap.isInvertible_of_injective
     ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank (V₂ := E →L[𝕜] 𝕜)
-      ContinuousLinearMap.finrank_dual_eq.symm (f := (L : E →ₗ[𝕜] E →L[𝕜] 𝕜))).2 hsurj)
+      ContinuousLinearMap.dual_finrank_eq.symm (f := (L : E →ₗ[𝕜] E →L[𝕜] 𝕜))).2 hsurj)
 
 end FiniteDimensional
 
