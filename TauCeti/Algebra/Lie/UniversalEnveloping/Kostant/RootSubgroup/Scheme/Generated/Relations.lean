@@ -8,7 +8,8 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Generated.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.MultiplyLacedRelations
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Relations.Basic
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Relations.G2
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Relations.G2.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Relations.G2.ShortPair
 
 /-!
 # Chevalley relations in the generated Kostant group scheme
@@ -29,10 +30,9 @@ give commuting generated-group points, while a class-two root string
 
 The file also transports the multiply-laced relation from
 `Scheme/MultiplyLacedRelations.lean` and the type-`G₂` relation from
-`Scheme/Relations/G2.lean`. Together these complete the four currently available relation
-families on the single `kostantRootSubgroupToGenerated` interface requested by Layer 9 of the
-ReductiveGroups roadmap. That carrier and its root subgroups are consumed by milestone L0 of the
-CFSGStatement roadmap.
+`Scheme/Relations/G2/Basic.lean`, together with its short-pair counterpart in
+`Scheme/Relations/G2/ShortPair.lean`. All these relations hold intrinsically on the
+`kostantRootSubgroupToGenerated` interface.
 
 ## Main declarations
 
@@ -303,5 +303,42 @@ theorem kostantRootSubgroupToGenerated_mul_of_lie_eq_three_nsmul'
         ((AdditiveGroup.schemePointsMulEquiv A).apply_symm_apply _))
       (congrArg Multiplicative.toAdd
         ((AdditiveGroup.schemePointsMulEquiv A).apply_symm_apply _))
+
+/-- The G₂ short-pair relation inside the generated group scheme, with the output points
+at parameters `2ctu`, `3dt²u`, and `3atu²`. The indices `i, j, k, l, m` correspond to
+`α, α + β, 2α + β, 3α + β, 3α + 2β`. -/
+theorem kostantRootSubgroupToGenerated_mul_of_g2_short_pair
+    {i j k l m : I} {c d a : ℤ}
+    (hij : ⁅e i, e j⁆ = (2 * c) • e k)
+    (hik : c • ⁅e i, e k⁆ = (3 * d) • e l)
+    (hkj : c • ⁅e k, e j⁆ = (3 * a) • e m)
+    (hil : ⁅e i, e l⁆ = 0) (him : ⁅e i, e m⁆ = 0) (hjm : ⁅e j, e m⁆ = 0)
+    (hkl : ⁅e k, e l⁆ = 0) (hkm : ⁅e k, e m⁆ = 0) (hlm : ⁅e l, e m⁆ = 0)
+    (f g p q r : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+      (AdditiveGroup.groupScheme ℤ).X)
+    (hp : Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A p) =
+      (c : A) * (2 * Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A f) *
+        Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A g)))
+    (hq : Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A q) =
+      (d : A) * (3 * Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A f) ^ 2 *
+        Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A g)))
+    (hr : Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A r) =
+      (a : A) * (3 * Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A f) *
+        Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A g) ^ 2)) :
+    (f ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b i).hom.hom) *
+        (g ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b j).hom.hom) =
+      (g ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b j).hom.hom) *
+        (p ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b k).hom.hom) *
+        (q ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b l).hom.hom) *
+        (r ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b m).hom.hom) *
+        (f ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b i).hom.hom) := by
+  apply kostantGeneratedGroupSchemeι_monoidHom_injective e h ρ M hM b hnil A
+  simp only [map_mul, IsMonHom.monoidHom_apply, Category.assoc, ← Grp.comp_hom_hom,
+    kostantRootSubgroupToGenerated_comp_ι]
+  apply (GeneralLinear.schemePointsMulEquiv n A).injective
+  simpa only [map_mul] using
+    schemePointsMulEquiv_kostantRootSubgroup_mul_of_g2_short_pair
+      e h ρ M hM b A hij hik hkj hil him hjm hkl hkm hlm
+        (hnil i) (hnil j) (hnil k) (hnil l) (hnil m) f g p q r hp hq hr
 
 end TauCeti.UniversalEnvelopingAlgebra
