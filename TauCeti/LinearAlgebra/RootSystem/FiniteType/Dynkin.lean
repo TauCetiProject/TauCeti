@@ -10,10 +10,12 @@ import TauCeti.LinearAlgebra.RootSystem.E8Coordinates
 import Mathlib.Data.Rat.Star
 
 /-!
-# Exceptional Cartan matrices are of finite type
+# Exceptional Cartan matrices are of finite type, and the simply-laced ones positive definite
 
 This file proves that the five exceptional Cartan matrices in `TauCeti.DynkinType` are of finite
-type.  The proof exhibits each symmetrized Cartan matrix as `Bᴴ * B` for an explicit rational
+type, and that the three simply-laced ones are positive definite over `ℚ` -- for those the
+symmetriser is trivial, so the Gram model below proves positive definiteness of the Cartan matrix
+itself.  The proof exhibits each symmetrized Cartan matrix as `Bᴴ * B` for an explicit rational
 matrix `B` and reads off positive definiteness from
 `TauCeti.isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero`.
 
@@ -40,6 +42,9 @@ recorded in `TauCeti.DynkinType.rootLength_F4` and `TauCeti.DynkinType.rootLengt
 * `TauCeti.DynkinType.isFiniteType_cartanMatrix_E7`
 * `TauCeti.DynkinType.isFiniteType_cartanMatrix_F4`
 * `TauCeti.DynkinType.isFiniteType_cartanMatrix_G2`
+* `TauCeti.DynkinType.posDef_cartanMatrix_E6`, `posDef_cartanMatrix_E7` and
+  `posDef_cartanMatrix_E8`: the exceptional simply-laced Cartan matrices are positive definite
+  over `ℚ`, `E₆` and `E₇` as principal submatrices of `E₈`.
 * `TauCeti.DynkinType.cartanMatrix_E6_eq_submatrix_E8` and
   `TauCeti.DynkinType.cartanMatrix_E7_eq_submatrix_E8`: the nesting `E₆ ⊂ E₇ ⊂ E₈` at the level of
   Cartan matrices, which is what makes the two derivations above possible.
@@ -104,9 +109,11 @@ private theorem map_cartanMatrix_E8 :
 theorem posDef_cartanMatrix_E8 : ((CartanMatrix.E 8).map (Int.cast : ℤ → ℚ)).PosDef := by
   rw [map_cartanMatrix_E8]
   refine TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit _ ?_
-  rw [← map_cartanMatrix_E8, _root_.Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero,
-    show ((CartanMatrix.E 8).map (Int.cast : ℤ → ℚ))
-      = (Int.castRingHom ℚ).mapMatrix (CartanMatrix.E 8) from rfl,
+  have hmap : (CartanMatrix.E 8).map (Int.cast : ℤ → ℚ)
+      = (Int.castRingHom ℚ).mapMatrix (CartanMatrix.E 8) := by
+    ext i j
+    simp [RingHom.mapMatrix_apply]
+  rw [← map_cartanMatrix_E8, _root_.Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero, hmap,
     ← RingHom.map_det, CartanMatrix.E₈_det]
   norm_num
 

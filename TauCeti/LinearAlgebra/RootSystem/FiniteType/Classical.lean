@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.Triangular
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
 
 /-!
-# The classical Cartan matrices are of finite type
+# The classical Cartan matrices are of finite type, and the simply-laced ones positive definite
 
 `TauCeti.IsFiniteType` asks of an integer matrix that it be a generalized Cartan matrix carrying a
 positive rational symmetriser whose symmetrisation is positive definite. This file certifies the
@@ -57,6 +57,10 @@ again.
   matrix of each classical family is of finite type, at every rank. No rank restriction is imposed:
   the low-rank coincidences `B 1 = C 1 = A 1`, `C 2 = B 2` and `D 3 = A 3` are finite-type matrices
   too, and it is `TauCeti.DynkinType.Valid`, not this file, that discards them.
+* `TauCeti.posDef_cartanMatrix_A`, `TauCeti.posDef_cartanMatrix_D`: those two families being
+  simply laced, their symmetriser is trivial, so the same Gram models give positive definiteness of
+  the Cartan matrix itself over `ℚ`, with no symmetriser in the way. Types `B` and `C` have no such
+  statement: their Cartan matrices are not symmetric.
 
 Since `TauCeti.DynkinType.cartanMatrix` is Mathlib's matrix on each of these four constructors, a
 consumer that needs the standard Cartan matrix of a classical Dynkin type to be nonsingular reaches
