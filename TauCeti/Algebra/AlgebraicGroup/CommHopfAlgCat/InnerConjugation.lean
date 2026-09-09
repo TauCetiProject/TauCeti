@@ -38,6 +38,8 @@ H --conj#--> H ⊗ H --(g ⊗ id)--> H.
 
 * J. S. Milne, *Algebraic Groups* (2017), §§3.5 and 10.20.
 * A. Borel, *Linear Algebraic Groups*, 2nd ed. (1991), §8.
+* Prior Tau Ceti formalization: [TauCeti#5490](https://github.com/TauCetiProject/TauCeti/pull/5490),
+  retained at commit `8419e7ceed8e87e7a14be030b7a0dda52aea2d41`.
 -/
 
 public section
