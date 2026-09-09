@@ -1,0 +1,254 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
+public import TauCeti.NumberTheory.LSeries.WienerIkehara.Fourier
+
+/-!
+# The limiting Fourier identity for Wiener--Ikehara
+
+`TauCeti.LSeries.tsum_term_mul_fourier_sub_pole_eq_integral` tests a Dirichlet series against an
+integrable function on a vertical line `Re s = sigma` strictly inside the half-plane of
+convergence. This file lets `sigma` decrease to `1` and records the resulting identity on the
+boundary line itself.
+
+Each of the three terms of that identity is handled by its own dominated-convergence argument, and
+each is stated separately so that a later step can reuse it: the Dirichlet series converges by the
+uniform convergence of a summable Dirichlet series on a closed half-plane, the pole term converges
+because the exponential damping `exp (-u (sigma - 1))` is bounded on the half-line of integration,
+and the vertical integral converges because a test function with compact support confines the
+integrand to a compact box on which `G` is continuous.
+
+Only the pole-subtracted remainder `G` is assumed continuous on the closed half-plane
+`Re s ≥ 1`; nothing is assumed about `LSeries a` there, where it is a total function with junk
+values.
+
+## Main results
+
+* `TauCeti.LSeries.tendsto_tsum_term_mul_fourier`,
+  `TauCeti.LSeries.tendsto_integral_exp_mul_fourier` and
+  `TauCeti.LSeries.tendsto_integral_vertical` are the three one-sided limits.
+* `TauCeti.LSeries.tsum_term_mul_fourier_sub_pole_eq_integral_boundary` is the identity they
+  combine into, and
+  `TauCeti.LSeries.tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff` is its form
+  for a smooth test function, where the half-line integrability hypothesis is automatic by
+  `TauCeti.LSeries.integrableOn_fourier_div_of_contDiff`.
+
+## Provenance
+
+The decomposition into three separate one-sided limits, and the shape of the identity they
+combine into, follow `limiting_fourier_lim1`, `limiting_fourier_lim2`, `limiting_fourier_lim3`
+and `limiting_fourier` in `PrimeNumberTheoremAnd/Wiener.lean` of the Apache-2.0
+`AxiomMath/PrimeNumberTheoremAnd` repository, revision
+`2667e414c38e5a5dc9aa1946f16f13001e5cd3ed`, the same source as the sibling file
+`TauCeti.NumberTheory.LSeries.WienerIkehara.Fourier`. The proofs here are written against
+Mathlib's dominated-convergence lemmas, and the hypotheses differ: the Chebyshev-type growth
+bound of the source is replaced by the summability of the Fourier-weighted series at `s = 1`,
+which is what the limit actually consumes.
+
+## References
+
+* J. Korevaar, *Tauberian Theory: A Century of Developments*, Chapter III.
+-/
+
+public section
+
+namespace TauCeti.LSeries
+
+open Complex Filter FourierTransform MeasureTheory Real Set
+open scoped ContDiff Topology
+
+variable {a : ℕ → ℂ} {psi : ℝ → ℂ} {G : ℂ → ℂ} {A : ℂ} {x : ℝ}
+
+/-! ### The Dirichlet series -/
+
+/-- As `sigma` decreases to `1`, the Fourier-weighted Dirichlet series converges to its value on
+the boundary line, provided the weighted series is summable there. -/
+theorem tendsto_tsum_term_mul_fourier (hFsum : LSeriesSummable
+    (fun n : ℕ ↦ a n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) 1) :
+    Tendsto (fun sigma : ℝ ↦ ∑' n : ℕ,
+        _root_.LSeries.term a sigma n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) (𝓝[>] 1)
+      (𝓝 (∑' n : ℕ, _root_.LSeries.term a 1 n * 𝓕 psi (1 / (2 * π) * Real.log (n / x)))) := by
+  have hterm (s : ℂ) (n : ℕ) :
+      _root_.LSeries.term a s n * 𝓕 psi (1 / (2 * π) * Real.log (n / x)) =
+        _root_.LSeries.term
+          (fun n : ℕ ↦ a n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) s n := by
+    by_cases hn : n = 0
+    · simp [_root_.LSeries.term, hn]
+    · simp only [_root_.LSeries.term, hn, ite_false]
+      ring
+  have h := tendsto_LSeries_nhdsGT
+    (a := fun n : ℕ ↦ a n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) (σ := 1)
+    (by simpa using hFsum)
+  rw [Complex.ofReal_one] at h
+  simp only [hterm]
+  exact h
+
+/-! ### The simple-pole term -/
+
+/-- On the half-line `u ≥ -log x` the damping factor `exp (-u (sigma - 1))` stays below a bound
+depending only on `x`, uniformly for `sigma ∈ (1, 2]`. -/
+private lemma exp_neg_mul_sub_one_le {u sigma : ℝ} (hu : -Real.log x ≤ u) (h1 : 1 < sigma)
+    (h2 : sigma ≤ 2) : Real.exp (-u * (sigma - 1)) ≤ Real.exp (max 0 (Real.log x)) := by
+  refine Real.exp_le_exp.mpr ?_
+  have hu' : -u ≤ Real.log x := by linarith
+  rcases le_or_gt (-u) 0 with h | h
+  · have hle : -u * (sigma - 1) ≤ 0 := by nlinarith
+    exact hle.trans (le_max_left _ _)
+  · have hle : -u * (sigma - 1) ≤ -u := by nlinarith
+    exact hle.trans (hu'.trans (le_max_right _ _))
+
+/-- As `sigma` decreases to `1`, the normalized one-sided Laplace transform of the Fourier
+transform of `psi` converges to its undamped value, an integral that is assumed to converge. -/
+theorem tendsto_integral_exp_mul_fourier (hx : 0 < x)
+    (hFint : IntegrableOn (fun u : ℝ ↦ 𝓕 psi (u / (2 * π))) (Ici (-Real.log x))) :
+    Tendsto (fun sigma : ℝ ↦ ((x ^ (1 - sigma) : ℝ) : ℂ) *
+        ∫ u in Ici (-Real.log x), (Real.exp (-u * (sigma - 1)) : ℂ) * 𝓕 psi (u / (2 * π)))
+      (𝓝[>] 1) (𝓝 (∫ u in Ici (-Real.log x), 𝓕 psi (u / (2 * π)))) := by
+  have hrpow : Tendsto (fun sigma : ℝ ↦ ((x ^ (1 - sigma) : ℝ) : ℂ)) (𝓝[>] 1) (𝓝 1) := by
+    have hcont : Continuous fun sigma : ℝ ↦ ((x ^ (1 - sigma) : ℝ) : ℂ) := by
+      simp only [Real.rpow_def_of_pos hx]
+      fun_prop
+    simpa using (hcont.tendsto 1).mono_left nhdsWithin_le_nhds
+  have hint : Tendsto (fun sigma : ℝ ↦ ∫ u in Ici (-Real.log x),
+      (Real.exp (-u * (sigma - 1)) : ℂ) * 𝓕 psi (u / (2 * π))) (𝓝[>] 1)
+      (𝓝 (∫ u in Ici (-Real.log x), 𝓕 psi (u / (2 * π)))) := by
+    refine tendsto_integral_filter_of_dominated_convergence
+      (fun u ↦ Real.exp (max 0 (Real.log x)) * ‖𝓕 psi (u / (2 * π))‖)
+      (.of_forall fun sigma ↦ (Continuous.aestronglyMeasurable (by fun_prop)).mul hFint.1) ?_
+      (hFint.norm.const_mul _) (.of_forall fun u ↦ ?_)
+    · filter_upwards [Ioc_mem_nhdsGT (by norm_num : (1 : ℝ) < 2)] with sigma hsigma
+      filter_upwards [ae_restrict_mem measurableSet_Ici] with u hu
+      rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+      exact mul_le_mul_of_nonneg_right (exp_neg_mul_sub_one_le hu hsigma.1 hsigma.2)
+        (norm_nonneg _)
+    · have hone : Tendsto (fun sigma : ℝ ↦ ((Real.exp (-u * (sigma - 1)) : ℝ) : ℂ)) (𝓝[>] 1)
+          (𝓝 1) := by
+        have hcont : Continuous fun sigma : ℝ ↦ ((Real.exp (-u * (sigma - 1)) : ℝ) : ℂ) := by
+          fun_prop
+        simpa using (hcont.tendsto 1).mono_left nhdsWithin_le_nhds
+      simpa using hone.mul_const (𝓕 psi (u / (2 * π)))
+  simpa using hrpow.mul hint
+
+/-- The Fourier transform of a smooth, compactly supported function is a Schwartz function, hence
+integrable; rescaling and restricting gives the half-line hypothesis of
+`tsum_term_mul_fourier_sub_pole_eq_integral_boundary`. -/
+theorem integrableOn_fourier_div_of_contDiff (hpsi : ContDiff ℝ ∞ psi)
+    (hsupp : HasCompactSupport psi) (c : ℝ) :
+    IntegrableOn (fun u : ℝ ↦ 𝓕 psi (u / (2 * π))) (Ici c) := by
+  have hcoe : ⇑(hsupp.toSchwartzMap hpsi) = psi := by
+    ext u
+    simp
+  have hS : Integrable (𝓕 psi) := by
+    have h : Integrable ((𝓕 (hsupp.toSchwartzMap hpsi) : SchwartzMap ℝ ℂ) : ℝ → ℂ) :=
+      SchwartzMap.integrable _
+    rwa [SchwartzMap.fourier_coe, hcoe] at h
+  exact (hS.comp_div (by positivity)).integrableOn
+
+/-! ### The integral along the vertical line -/
+
+/-- As `sigma` decreases to `1`, the integral of `G` along the vertical line `Re s = sigma`
+against a compactly supported test function converges to the same integral along the boundary
+line, because the integrand is confined to a compact box on which `G` is continuous. -/
+theorem tendsto_integral_vertical (hx : 0 < x) (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
+    (hpsi : Continuous psi) (hsupp : HasCompactSupport psi) :
+    Tendsto (fun sigma : ℝ ↦ ∫ t : ℝ, G (sigma + t * I) * psi t * (x : ℂ) ^ (t * I))
+      (𝓝[>] 1) (𝓝 (∫ t : ℝ, G (1 + t * I) * psi t * (x : ℂ) ^ (t * I))) := by
+  have hmem {sigma : ℝ} (hsigma : 1 ≤ sigma) (t : ℝ) :
+      (sigma : ℂ) + t * I ∈ {z : ℂ | 1 ≤ z.re} := by simpa using hsigma
+  have hcompact : IsCompact ((fun p : ℝ × ℝ ↦ (p.1 : ℂ) + p.2 * I) '' (Icc 1 2 ×ˢ tsupport psi)) :=
+    (isCompact_Icc.prod hsupp).image (by fun_prop)
+  obtain ⟨C, hC⟩ := hcompact.exists_bound_of_continuousOn <| hG.mono <| by
+    rintro _ ⟨⟨s, t⟩, ⟨hs, -⟩, rfl⟩
+    exact hmem hs.1 t
+  have hxnorm (t : ℝ) : ‖(x : ℂ) ^ (t * I)‖ = 1 := by
+    rw [Complex.norm_cpow_eq_rpow_re_of_pos hx]
+    simp
+  have hxpow : Continuous fun t : ℝ ↦ (x : ℂ) ^ (t * I) :=
+    continuous_const.cpow (continuous_ofReal.mul continuous_const) (by simp [hx])
+  refine tendsto_integral_filter_of_dominated_convergence (fun t ↦ C * ‖psi t‖) ?_ ?_
+    ((hpsi.integrable_of_hasCompactSupport hsupp).norm.const_mul C) (.of_forall fun t ↦ ?_)
+  · filter_upwards [self_mem_nhdsWithin] with sigma hsigma
+    exact (((hG.comp_continuous (by fun_prop) (hmem (le_of_lt hsigma))).mul hpsi).mul
+      hxpow).aestronglyMeasurable
+  · filter_upwards [Ioc_mem_nhdsGT (by norm_num : (1 : ℝ) < 2)] with sigma hsigma
+    filter_upwards with t
+    by_cases ht : psi t = 0
+    · simp [ht]
+    · have hmemK : (sigma : ℂ) + t * I ∈
+          (fun p : ℝ × ℝ ↦ (p.1 : ℂ) + p.2 * I) '' (Icc 1 2 ×ˢ tsupport psi) :=
+        ⟨(sigma, t), ⟨⟨hsigma.1.le, hsigma.2⟩, subset_tsupport _ ht⟩, rfl⟩
+      calc ‖G (sigma + t * I) * psi t * (x : ℂ) ^ (t * I)‖
+          = ‖G (sigma + t * I)‖ * ‖psi t‖ := by
+            rw [norm_mul, norm_mul, hxnorm t, mul_one]
+        _ ≤ C * ‖psi t‖ := mul_le_mul_of_nonneg_right (hC _ hmemK) (norm_nonneg _)
+  · have hmem1 : (1 : ℂ) + t * I ∈ {z : ℂ | 1 ≤ z.re} := by simp
+    refine Filter.Tendsto.mul_const _ (Filter.Tendsto.mul_const _ ?_)
+    refine Filter.Tendsto.comp (hG.continuousWithinAt hmem1) ?_
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (((by fun_prop : Continuous fun sigma : ℝ ↦ (sigma : ℂ) + t * I).tendsto' 1 _
+        (by simp)).mono_left nhdsWithin_le_nhds) ?_
+    filter_upwards [self_mem_nhdsWithin] with sigma hsigma
+    exact hmem (le_of_lt hsigma) t
+
+/-! ### The identity on the boundary line -/
+
+/-- The Fourier identity of `tsum_term_mul_fourier_sub_pole_eq_integral` on the boundary line
+`Re s = 1`. The Dirichlet series is tested against a continuous, compactly supported `psi`, and
+the pole term has lost its exponential damping.
+
+The hypotheses are exactly the three convergence facts that the passage to the limit needs: the
+Fourier-weighted series is summable at `s = 1`, the Fourier transform of `psi` is integrable on
+the half-line, and the pole-subtracted remainder `G` extends continuously to `Re s ≥ 1`. -/
+theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary (hx : 0 < x)
+    (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
+    (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
+    (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma)
+    (hpsi : Continuous psi) (hsupp : HasCompactSupport psi)
+    (hFint : IntegrableOn (fun u : ℝ ↦ 𝓕 psi (u / (2 * π))) (Ici (-Real.log x)))
+    (hFsum : LSeriesSummable
+      (fun n : ℕ ↦ a n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) 1) :
+    (∑' n : ℕ, _root_.LSeries.term a 1 n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) -
+        A * ∫ u in Ici (-Real.log x), 𝓕 psi (u / (2 * π)) =
+      ∫ t : ℝ, G (1 + t * I) * psi t * (x : ℂ) ^ (t * I) := by
+  have key (sigma : ℝ) (hsigma : 1 < sigma) :
+      (∑' n : ℕ, _root_.LSeries.term a sigma n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) -
+          A * (((x ^ (1 - sigma) : ℝ) : ℂ) * ∫ u in Ici (-Real.log x),
+            (Real.exp (-u * (sigma - 1)) : ℂ) * 𝓕 psi (u / (2 * π))) =
+        ∫ t : ℝ, G (sigma + t * I) * psi t * (x : ℂ) ^ (t * I) := by
+    rw [← mul_assoc]
+    exact tsum_term_mul_fourier_sub_pole_eq_integral
+      (fun t ↦ hG' _ (by simpa using hsigma)) (hpsi.integrable_of_hasCompactSupport hsupp) hx
+      hsigma (hsum sigma hsigma)
+  refine tendsto_nhds_unique (l := 𝓝[>] (1 : ℝ)) (f := fun sigma : ℝ ↦
+    (∑' n : ℕ, _root_.LSeries.term a sigma n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) -
+      A * (((x ^ (1 - sigma) : ℝ) : ℂ) * ∫ u in Ici (-Real.log x),
+        (Real.exp (-u * (sigma - 1)) : ℂ) * 𝓕 psi (u / (2 * π)))) ?_ ?_
+  · exact (tendsto_tsum_term_mul_fourier hFsum).sub
+      ((tendsto_integral_exp_mul_fourier hx hFint).const_mul A)
+  · refine (tendsto_integral_vertical hx hG hpsi hsupp).congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with sigma hsigma
+    exact (key sigma hsigma).symm
+
+/-- The boundary Fourier identity for a smooth, compactly supported test function: the test
+function's own regularity supplies the integrability of its Fourier transform, so only the
+summability of the weighted Dirichlet series at `s = 1` and the boundary behaviour of `G` are
+left as hypotheses. -/
+theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff (hx : 0 < x)
+    (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
+    (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
+    (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma)
+    (hpsi : ContDiff ℝ ∞ psi) (hsupp : HasCompactSupport psi)
+    (hFsum : LSeriesSummable
+      (fun n : ℕ ↦ a n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) 1) :
+    (∑' n : ℕ, _root_.LSeries.term a 1 n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) -
+        A * ∫ u in Ici (-Real.log x), 𝓕 psi (u / (2 * π)) =
+      ∫ t : ℝ, G (1 + t * I) * psi t * (x : ℂ) ^ (t * I) :=
+  tsum_term_mul_fourier_sub_pole_eq_integral_boundary hx hG hG' hsum hpsi.continuous hsupp
+    (integrableOn_fourier_div_of_contDiff hpsi hsupp _) hFsum
+
+end TauCeti.LSeries
