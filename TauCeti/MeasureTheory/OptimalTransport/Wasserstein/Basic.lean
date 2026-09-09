@@ -75,7 +75,9 @@ what the gluing lemma consumes.
   `TauCeti.hasFiniteMoment_iff_wassersteinEDist_dirac_ne_top` testing the finite-moment predicate
   itself at a prescribed basepoint of a pseudometric ground space;
 * `TauCeti.hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment` — the same test against
-  a general finite-moment anchor, with
+  a general finite-moment anchor, read off from
+  `TauCeti.memLp_edist_iff_hasFiniteMoment_of_isCoupling`, which compares displacement and moment
+  along a single coupling, and with
   `TauCeti.hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top` recording that
   the finite-moment hypothesis on the anchor cannot be dropped;
 * `TauCeti.wassersteinEDist_rpow_eq_transportCost` and
@@ -597,6 +599,52 @@ theorem hasFiniteMoment_iff_wassersteinEDist_dirac_ne_top
 
 section Anchor
 
+/-- **Displacement versus moment along a coupling.** If the first marginal of `π` has finite
+`p`-moment at `x₀`, then the `L^p (π)` displacement is finite exactly when the second marginal has
+finite `p`-moment. Both directions are the ground triangle inequality through `x₀`: the
+displacement is at most `dist · x₀ + dist x₀ ·`, and the distance to `x₀` of the second coordinate
+is at most that of the first plus the displacement. -/
+theorem memLp_edist_iff_hasFiniteMoment_of_isCoupling
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) {x₀ : X} {μ₀ ν : Measure X}
+    {π : Measure (X × X)} [IsFiniteMeasure ν] (hπ : IsCoupling π μ₀ ν)
+    (hx₀ : MemLp (fun y ↦ edist x₀ y) p μ₀) :
+    MemLp (fun z : X × X ↦ edist z.1 z.2) p π ↔ HasFiniteMoment p ν := by
+  have hdR : Measurable fun z : X × X ↦ dist z.1 z.2 := by
+    simpa only [edist_dist, ENNReal.toReal_ofReal dist_nonneg] using hd.ennreal_toReal
+  have hbase : ∀ σ : Measure X, AEStronglyMeasurable (fun y : X ↦ dist y x₀) σ := fun _ ↦
+    (hdR.comp (measurable_id.prodMk measurable_const)).aestronglyMeasurable
+  have hmoment : MemLp (fun y ↦ dist y x₀) p ν ↔ HasFiniteMoment p ν :=
+    (memLp_dist_iff_memLp_edist (hbase ν)).trans
+      (hasFiniteMoment_iff_memLp_edist
+        (hd.comp (measurable_const.prodMk measurable_id)).aestronglyMeasurable).symm
+  have hmap : MemLp (fun z : X × X ↦ dist z.2 x₀) p π ↔ MemLp (fun y ↦ dist y x₀) p ν := by
+    rw [← hπ.measurePreserving_snd.map_eq]
+    simpa only [Function.comp_def] using
+      (memLp_map_measure_iff (g := fun y : X ↦ dist y x₀) (hbase _)
+        measurable_snd.aemeasurable).symm
+  have hfst : MemLp (fun z : X × X ↦ dist z.1 x₀) p π := by
+    simpa only [Function.comp_def] using
+      ((memLp_dist_iff_memLp_edist (hbase μ₀)).mpr hx₀).comp_measurePreserving
+        hπ.measurePreserving_fst
+  constructor
+  · intro hdist
+    have hdistR : MemLp (fun z : X × X ↦ dist z.1 z.2) p π := by
+      refine hdist.congr_enorm hdR.aestronglyMeasurable (.of_forall fun z ↦ ?_)
+      simp only [enorm_eq_self, Real.enorm_eq_ofReal dist_nonneg, edist_dist]
+    refine hmoment.mp (hmap.mp ((hfst.add hdistR).mono
+      (hdR.comp (measurable_snd.prodMk measurable_const)).aestronglyMeasurable
+      (.of_forall fun z ↦ ?_)))
+    simp only [Real.norm_eq_abs, abs_of_nonneg dist_nonneg, Pi.add_apply,
+      abs_of_nonneg (add_nonneg dist_nonneg dist_nonneg)]
+    simpa only [dist_comm, add_comm] using dist_triangle z.2 z.1 x₀
+  · intro hν
+    refine (hfst.add (hmap.mpr (hmoment.mpr hν))).of_le_enorm hd.aestronglyMeasurable
+      (.of_forall fun z ↦ ?_)
+    simp only [enorm_eq_self, Pi.add_apply, Real.enorm_eq_ofReal (add_nonneg dist_nonneg
+      dist_nonneg), edist_dist]
+    exact ENNReal.ofReal_le_ofReal (by
+      simpa only [dist_comm x₀] using dist_triangle z.1 x₀ z.2)
+
 /-- A probability measure has finite `p`-moment exactly when it lies at finite `p`-Wasserstein
 distance from a finite-moment anchor.
 
@@ -609,56 +657,15 @@ theorem hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment
     [IsProbabilityMeasure μ₀] [IsProbabilityMeasure ν] (hμ₀ : HasFiniteMoment p μ₀) :
     HasFiniteMoment p ν ↔ wassersteinEDist p μ₀ ν ≠ ∞ := by
   obtain ⟨x₀, hx₀⟩ := hasFiniteMoment_def.mp hμ₀
-  have hdR : Measurable fun z : X × X ↦ dist z.1 z.2 := by
-    simpa only [edist_dist, ENNReal.toReal_ofReal dist_nonneg] using hd.ennreal_toReal
-  have hx₀R : MemLp (fun y ↦ dist y x₀) p μ₀ :=
-    (memLp_dist_iff_memLp_edist
-      (hdR.comp (measurable_id.prodMk measurable_const)).aestronglyMeasurable).mpr hx₀
   constructor
   · intro hν
-    have hxν : MemLp (fun y ↦ edist x₀ y) p ν :=
-      (hasFiniteMoment_iff_memLp_edist
-        (hd.comp (measurable_const.prodMk measurable_id)).aestronglyMeasurable).mp hν
-    have hxνR : MemLp (fun y ↦ dist y x₀) p ν :=
-      (memLp_dist_iff_memLp_edist
-        (hdR.comp (measurable_id.prodMk measurable_const)).aestronglyMeasurable).mpr hxν
-    have hπ : IsCoupling (μ₀.prod ν) μ₀ ν := isCoupling_prod μ₀ ν
-    have hfst : MemLp (fun z : X × X ↦ dist z.1 x₀) p (μ₀.prod ν) := by
-      simpa only [Function.comp_def] using hx₀R.comp_measurePreserving hπ.measurePreserving_fst
-    have hsnd : MemLp (fun z : X × X ↦ dist z.2 x₀) p (μ₀.prod ν) := by
-      simpa only [Function.comp_def] using hxνR.comp_measurePreserving hπ.measurePreserving_snd
-    have hdist : MemLp (fun z : X × X ↦ edist z.1 z.2) p (μ₀.prod ν) := by
-      refine (hfst.add hsnd).of_le_enorm hd.aestronglyMeasurable (.of_forall fun z ↦ ?_)
-      simp only [enorm_eq_self, Pi.add_apply, Real.enorm_eq_ofReal (add_nonneg dist_nonneg
-        dist_nonneg), edist_dist]
-      exact ENNReal.ofReal_le_ofReal (by
-        simpa only [dist_comm x₀] using dist_triangle z.1 x₀ z.2)
-    exact ne_top_of_le_ne_top hdist.eLpNorm_ne_top
-      (wassersteinEDist_le hπ p)
+    exact ne_top_of_le_ne_top
+      ((memLp_edist_iff_hasFiniteMoment_of_isCoupling hd (isCoupling_prod μ₀ ν) hx₀).mpr
+        hν).eLpNorm_ne_top (wassersteinEDist_le (isCoupling_prod μ₀ ν) p)
   · intro hν
     obtain ⟨π, hπ, hπtop⟩ := wassersteinEDist_lt_iff.mp hν.lt_top
-    have hdist : MemLp (fun z : X × X ↦ edist z.1 z.2) p π :=
+    exact (memLp_edist_iff_hasFiniteMoment_of_isCoupling hd hπ hx₀).mp
       ⟨hd.aestronglyMeasurable, hπtop⟩
-    have hdistR : MemLp (fun z : X × X ↦ dist z.1 z.2) p π := by
-      refine hdist.congr_enorm hdR.aestronglyMeasurable (.of_forall fun z ↦ ?_)
-      simp only [enorm_eq_self, Real.enorm_eq_ofReal dist_nonneg, edist_dist]
-    have hfst : MemLp (fun z : X × X ↦ dist z.1 x₀) p π := by
-      simpa only [Function.comp_def] using hx₀R.comp_measurePreserving hπ.measurePreserving_fst
-    have hsndR : MemLp (fun z : X × X ↦ dist z.2 x₀) p π := by
-      refine (hfst.add hdistR).mono
-        (hdR.comp (measurable_snd.prodMk measurable_const)).aestronglyMeasurable
-        (.of_forall fun z ↦ ?_)
-      simp only [Real.norm_eq_abs, abs_of_nonneg dist_nonneg, Pi.add_apply,
-        abs_of_nonneg (add_nonneg dist_nonneg dist_nonneg)]
-      simpa only [dist_comm, add_comm] using dist_triangle z.2 z.1 x₀
-    refine ⟨x₀, ?_⟩
-    apply (memLp_dist_iff_memLp_edist
-      (hdR.comp (measurable_id.prodMk measurable_const)).aestronglyMeasurable).mp
-    rw [← hπ.measurePreserving_snd.map_eq]
-    refine (memLp_map_measure_iff (g := fun y : X ↦ dist y x₀)
-      (hdR.comp (measurable_id.prodMk measurable_const)).aestronglyMeasurable
-      measurable_snd.aemeasurable).mpr ?_
-    simpa only [Function.comp_def] using hsndR
 
 /-- Finite moment of the anchor is exactly the condition under which its finite-distance component
 is the finite-moment space: the criterion above holds for every probability law if and only if the
