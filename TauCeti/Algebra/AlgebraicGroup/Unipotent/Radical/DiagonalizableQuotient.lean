@@ -57,24 +57,19 @@ theorem unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_geometricallySemisim
       (CommHopfAlgCat.kernelHopfIdeal f)) :
     unipotentRadicalDefiningIdeal H = CommHopfAlgCat.kernelHopfIdeal f := by
   apply unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_quotient_image_eq_augmentation
-    H D f hf
+    H D.obj f hf
   let J := unipotentRadicalDefiningIdeal H
   let Q := quotient H J
   let q : H.obj ⟶ Q.obj := CommHopfAlgCat.mkQuotient H.obj J
   let g : D.obj ⟶ Q.obj := f ≫ q
-  have hQ := smoothUnipotent_unipotentRadical H
-  have hQ' := (smoothUnipotentCommHopfAlgProperty_iff k Q).mp hQ
-  let _ : Algebra.Smooth k Q := hQ'.1
-  let _ : IsReduced Q := isReduced_of_smooth_of_field k Q
-  have hQunipotent : geometricallyUnipotentPointsCommHopfAlgProperty k Q.obj := by
-    rw [geometricallyUnipotentPointsCommHopfAlgProperty_iff]
-    exact hQ'.2
+  have himageProperties := smoothUnipotent_image_quotient_unipotentRadical H f
+  let _ : Algebra.Smooth k (CommHopfAlgCat.image g) :=
+    (smoothCommHopfAlgProperty_iff _).mp himageProperties.1
   let _ : IsReduced (CommHopfAlgCat.image g) :=
-    isReduced_of_injective (CommHopfAlgCat.imageι g).hom
-      (CommHopfAlgCat.imageι_injective g)
+    isReduced_of_smooth_of_field k (CommHopfAlgCat.image g)
   have himage : geometricallyUnipotentPointsCommHopfAlgProperty k
       (CommHopfAlgCat.image g) :=
-    geometricallyUnipotentPointsCommHopfAlgProperty.image_of_reduced g hQunipotent
+    himageProperties.2
   exact eq_augmentation_of_geometricallySemisimple_of_geometricallyUnipotent
     D (HopfIdeal.ker g.hom)
     (geometricallySemisimplePointsCommHopfAlgProperty_of_surjective k

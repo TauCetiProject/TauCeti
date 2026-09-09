@@ -312,11 +312,7 @@ theorem mem_comap {I : HopfIdeal k K} {f : H →ₐc[k] K} {h : H} :
 theorem ker_comp (f : H →ₐc[k] K) (g : K →ₐc[k] L) :
     ker (g.comp f) = (ker g).comap f := by
   ext x
-  rw [← mem_toIdeal (I := ker (g.comp f)), ← mem_toIdeal (I := (ker g).comap f),
-    ker_toIdeal, comap_toIdeal, ker_toIdeal]
-  change x ∈ RingHom.ker (g.toAlgHom.toRingHom.comp f.toAlgHom.toRingHom) ↔
-    x ∈ Ideal.comap f.toAlgHom.toRingHom (RingHom.ker g.toAlgHom.toRingHom)
-  rw [RingHom.comap_ker]
+  rw [mem_ker, mem_comap, mem_ker, BialgHom.comp_apply]
 
 /-- Over a field, the surjective inverse image agrees with the unrestricted construction. -/
 theorem comapOfSurjective_eq_comap (I : HopfIdeal k K) (f : H →ₐc[k] K)
