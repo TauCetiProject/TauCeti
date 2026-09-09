@@ -20,7 +20,7 @@ compact sets.  This file does not claim any density theorem.
 
 * `TauCeti.exists_contDiff_cutoff` gives a smooth, compactly supported cutoff which is one on a
   neighborhood of a compact set and supported in a prescribed open neighborhood.
-* `TauCeti.CompactExhaustion.exists_contDiff_cutoff` gives the corresponding cutoff for two
+* `CompactExhaustion.exists_contDiff_cutoff` gives the corresponding cutoff for two
   successive terms of a compact exhaustion of an open set.
 
 ## References
@@ -145,11 +145,10 @@ theorem exists_contDiff_cutoff {K U : Set E} (hK : IsCompact K) (hU : IsOpen U) 
     exact (closure_minimal hψ_support hC.isClosed).trans hCU
   exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
 
-namespace CompactExhaustion
-
 /-- A compact-exhaustion term in an open set admits a smooth cutoff supported in the interior of
 the next term. -/
-theorem exists_contDiff_cutoff {Omega : Opens E} (K : CompactExhaustion Omega) (n : ℕ) :
+theorem _root_.CompactExhaustion.exists_contDiff_cutoff {Omega : Opens E}
+    (K : CompactExhaustion Omega) (n : ℕ) :
     ∃ ψ : E → ℝ,
       ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
         EqOn ψ 1 ((Subtype.val : Omega → E) '' K n) ∧
@@ -164,7 +163,5 @@ theorem exists_contDiff_cutoff {Omega : Opens E} (K : CompactExhaustion Omega) (
       (Subtype.val : Omega → E) '' K n ⊆ (Subtype.val : Omega → E) '' interior (K (n + 1)) :=
     image_mono (K.subset_interior_succ n)
   exact TauCeti.exists_contDiff_cutoff hK hU hKU
-
-end CompactExhaustion
 
 end TauCeti
