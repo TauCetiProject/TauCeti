@@ -71,6 +71,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-- The stable set of zero for the linearized negative-gradient flow is exactly the positive
 Hessian spectral subspace. -/
+@[simp]
 theorem stableSet_linearizedNegativeGradientFlow (hf : ContDiffAt ℝ 2 f x) :
     _root_.Flow.stableSet (linearizedNegativeGradientFlow f x) 0 =
       hf.stableLinearSubspace := by
@@ -87,6 +88,7 @@ theorem stableSet_linearizedNegativeGradientFlow (hf : ContDiffAt ℝ 2 f x) :
 
 /-- The unstable set of zero for the linearized negative-gradient flow is exactly the negative
 Hessian spectral subspace. -/
+@[simp]
 theorem unstableSet_linearizedNegativeGradientFlow (hf : ContDiffAt ℝ 2 f x) :
     _root_.Flow.unstableSet (linearizedNegativeGradientFlow f x) 0 =
       hf.unstableLinearSubspace := by

@@ -18,7 +18,7 @@ The operator exponential of a bounded endomorphism `A` gives a linear flow
 `(t, x) ↦ exp (t A) x`. For a symmetric operator on a finite-dimensional real inner-product
 space, its ordered orthonormal eigenbasis makes the asymptotic directions of this flow explicit.
 
-This file proves the hyperbolic linear model used by the stable-manifold theorem. For the flow of
+This file proves the linear spectral model used by the stable-manifold theorem. For the flow of
 `-T`, a vector converges to zero in forward time exactly when it belongs to the positive spectral
 subspace of `T`, and it converges in backward time exactly when it belongs to the negative spectral
 subspace. No invertibility hypothesis is needed: a component in the zero eigenspace is constant
@@ -79,22 +79,19 @@ private theorem flow_neg_apply_eq_sum (hT : (T : E →ₗ[ℝ] E).IsSymmetric)
     (hn : Module.finrank ℝ E = n) (t : ℝ) (v : E) :
     (-T).flow t v = ∑ i, (Real.exp (-(t * hT.eigenvalues hn i)) *
       (hT.eigenvectorBasis hn).toBasis.repr v i) • hT.eigenvectorBasis hn i := by
-  let b := (hT.eigenvectorBasis hn).toBasis
-  conv_lhs => rw [← b.sum_repr v]
+  conv_lhs => rw [← (hT.eigenvectorBasis hn).toBasis.sum_repr v]
   rw [ContinuousLinearMap.flow_apply, map_sum]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [map_smul]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
   have hi : (-T) (hT.eigenvectorBasis hn i) =
       (-hT.eigenvalues hn i) • hT.eigenvectorBasis hn i := by
     have hi' : T (hT.eigenvectorBasis hn i) =
         hT.eigenvalues hn i • hT.eigenvectorBasis hn i :=
       hT.apply_eigenvectorBasis hn i
     simpa using congrArg (fun w : E ↦ -w) hi'
-  change b.repr v i • exp (t • -T) (hT.eigenvectorBasis hn i) = _
-  rw [ContinuousLinearMap.exp_smul_apply_of_apply_eq_smul (-T) hi t]
+  rw [OrthonormalBasis.coe_toBasis, map_smul,
+    ContinuousLinearMap.exp_smul_apply_of_apply_eq_smul (-T) hi t, ← Real.exp_eq_exp_ℝ]
   simp only [mul_neg, smul_smul]
-  rw [mul_comm (b.repr v i)]
+  rw [mul_comm ((hT.eigenvectorBasis hn).toBasis.repr v i)]
 
 private theorem repr_flow_neg_apply (hT : (T : E →ₗ[ℝ] E).IsSymmetric)
     (hn : Module.finrank ℝ E = n) (t : ℝ) (v : E) (i : Fin n) :
@@ -104,107 +101,84 @@ private theorem repr_flow_neg_apply (hT : (T : E →ₗ[ℝ] E).IsSymmetric)
   rw [flow_neg_apply_eq_sum hT hn t v, map_sum]
   simp
 
-private theorem tendsto_flow_neg_atTop_iff (hT : (T : E →ₗ[ℝ] E).IsSymmetric)
-    (hn : Module.finrank ℝ E = n) (v : E) :
-    Tendsto (fun t : ℝ ↦ (-T).flow t v) atTop (𝓝 0) ↔
+/-- The orbit of `v` under the flow of `-T`, reparametrised by the linear time change
+`t ↦ s * t`, converges to zero in forward time exactly when every eigencoordinate of `v` that
+is present has `0 < s * λ`. Taking `s = 1` and `s = -1` gives the forward- and backward-time
+characterizations. -/
+private theorem tendsto_flow_neg_mul_atTop_iff (hT : (T : E →ₗ[ℝ] E).IsSymmetric)
+    (hn : Module.finrank ℝ E = n) (s : ℝ) (v : E) :
+    Tendsto (fun t : ℝ ↦ (-T).flow (s * t) v) atTop (𝓝 0) ↔
       ∀ i ∈ ((hT.eigenvectorBasis hn).toBasis.repr v).support,
-        0 < hT.eigenvalues hn i := by
+        0 < s * hT.eigenvalues hn i := by
   let b := (hT.eigenvectorBasis hn).toBasis
   constructor
   · intro hlim i hi
-    have hcoord : Tendsto (fun t : ℝ ↦ b.repr ((-T).flow t v) i) atTop (𝓝 0) := by
+    have hcoord : Tendsto (fun t : ℝ ↦ b.repr ((-T).flow (s * t) v) i) atTop (𝓝 0) := by
       have hc : Continuous fun w : E ↦ b.repr w i :=
         (b.coord i).toContinuousLinearMap.continuous
       simpa [Function.comp_def] using
         (hc.tendsto 0).comp hlim
     have hcoord' : Tendsto (fun t : ℝ ↦
-        Real.exp (-(t * hT.eigenvalues hn i)) * b.repr v i) atTop (𝓝 0) := by
+        Real.exp (-(s * t * hT.eigenvalues hn i)) * b.repr v i) atTop (𝓝 0) := by
       simpa only [b, repr_flow_neg_apply hT hn] using hcoord
     have hcoeff : b.repr v i ≠ 0 := Finsupp.mem_support_iff.mp hi
     by_contra hnot
-    have hnonpos : hT.eigenvalues hn i ≤ 0 := le_of_not_gt hnot
+    have hnonpos : s * hT.eigenvalues hn i ≤ 0 := le_of_not_gt hnot
     have hbound : ∀ᶠ t in atTop, |b.repr v i| ≤
-        |Real.exp (-(t * hT.eigenvalues hn i)) * b.repr v i| := by
+        |Real.exp (-(s * t * hT.eigenvalues hn i)) * b.repr v i| := by
       filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
       rw [abs_mul, Real.abs_exp]
-      exact le_mul_of_one_le_left (abs_nonneg _) (Real.one_le_exp (neg_nonneg.mpr
-        (mul_nonpos_of_nonneg_of_nonpos ht hnonpos)))
+      refine le_mul_of_one_le_left (abs_nonneg _) (Real.one_le_exp (neg_nonneg.mpr ?_))
+      calc s * t * hT.eigenvalues hn i
+          = t * (s * hT.eigenvalues hn i) := by ring
+        _ ≤ 0 := mul_nonpos_of_nonneg_of_nonpos ht hnonpos
     have hzero : Tendsto (fun _ : ℝ ↦ |b.repr v i|) atTop (𝓝 0) :=
       squeeze_zero' (Eventually.of_forall fun _ ↦ abs_nonneg _) hbound (by
         simpa only [abs_zero] using hcoord'.abs)
     exact hcoeff (abs_eq_zero.mp (tendsto_nhds_unique tendsto_const_nhds hzero))
   · intro hsupp
     have hterm (i : Fin n) : Tendsto (fun t : ℝ ↦
-        (Real.exp (-(t * hT.eigenvalues hn i)) * b.repr v i) •
+        (Real.exp (-(s * t * hT.eigenvalues hn i)) * b.repr v i) •
           hT.eigenvectorBasis hn i) atTop (𝓝 0) := by
       by_cases hi : b.repr v i = 0
       · simp [hi]
-      · have hpos : 0 < hT.eigenvalues hn i :=
+      · have hpos : 0 < s * hT.eigenvalues hn i :=
           hsupp i (Finsupp.mem_support_iff.mpr hi)
-        have harg : Tendsto (fun t : ℝ ↦ -(t * hT.eigenvalues hn i)) atTop atBot := by
+        have harg : Tendsto (fun t : ℝ ↦ -(s * t * hT.eigenvalues hn i)) atTop atBot := by
           convert tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.mpr hpos) using 1
           funext t
-          simp [mul_comm]
-        have hexp : Tendsto (fun t : ℝ ↦ Real.exp (-(t * hT.eigenvalues hn i)))
+          simp only [id_eq]
+          ring
+        have hexp : Tendsto (fun t : ℝ ↦ Real.exp (-(s * t * hT.eigenvalues hn i)))
             atTop (𝓝 0) := Real.tendsto_exp_atBot.comp harg
         simpa [b, mul_comm] using (hexp.const_mul (b.repr v i)).smul_const
           (hT.eigenvectorBasis hn i)
-    have hsum : Tendsto (fun t : ℝ ↦ ∑ i, (Real.exp (-(t * hT.eigenvalues hn i)) *
+    have hsum : Tendsto (fun t : ℝ ↦ ∑ i, (Real.exp (-(s * t * hT.eigenvalues hn i)) *
         b.repr v i) • hT.eigenvectorBasis hn i) atTop (𝓝 0) := by
       simpa only [Finset.sum_const_zero] using
         tendsto_finsetSum Finset.univ fun i _ ↦ hterm i
     simpa only [flow_neg_apply_eq_sum hT hn] using hsum
+
+private theorem tendsto_flow_neg_atTop_iff (hT : (T : E →ₗ[ℝ] E).IsSymmetric)
+    (hn : Module.finrank ℝ E = n) (v : E) :
+    Tendsto (fun t : ℝ ↦ (-T).flow t v) atTop (𝓝 0) ↔
+      ∀ i ∈ ((hT.eigenvectorBasis hn).toBasis.repr v).support,
+        0 < hT.eigenvalues hn i := by
+  simpa only [one_mul] using tendsto_flow_neg_mul_atTop_iff hT hn 1 v
 
 private theorem tendsto_flow_neg_atBot_iff (hT : (T : E →ₗ[ℝ] E).IsSymmetric)
     (hn : Module.finrank ℝ E = n) (v : E) :
     Tendsto (fun t : ℝ ↦ (-T).flow t v) atBot (𝓝 0) ↔
       ∀ i ∈ ((hT.eigenvectorBasis hn).toBasis.repr v).support,
         hT.eigenvalues hn i < 0 := by
-  let b := (hT.eigenvectorBasis hn).toBasis
+  have h := tendsto_flow_neg_mul_atTop_iff hT hn (-1) v
+  simp only [neg_mul, one_mul, neg_pos] at h
+  rw [← h]
   constructor
-  · intro hlim i hi
-    have hcoord : Tendsto (fun t : ℝ ↦ b.repr ((-T).flow t v) i) atBot (𝓝 0) := by
-      have hc : Continuous fun w : E ↦ b.repr w i :=
-        (b.coord i).toContinuousLinearMap.continuous
-      simpa [Function.comp_def] using
-        (hc.tendsto 0).comp hlim
-    have hcoord' : Tendsto (fun t : ℝ ↦
-        Real.exp (-(t * hT.eigenvalues hn i)) * b.repr v i) atBot (𝓝 0) := by
-      simpa only [b, repr_flow_neg_apply hT hn] using hcoord
-    have hcoeff : b.repr v i ≠ 0 := Finsupp.mem_support_iff.mp hi
-    by_contra hnot
-    have hnonneg : 0 ≤ hT.eigenvalues hn i := le_of_not_gt hnot
-    have hbound : ∀ᶠ t in atBot, |b.repr v i| ≤
-        |Real.exp (-(t * hT.eigenvalues hn i)) * b.repr v i| := by
-      filter_upwards [eventually_le_atBot (0 : ℝ)] with t ht
-      rw [abs_mul, Real.abs_exp]
-      exact le_mul_of_one_le_left (abs_nonneg _) (Real.one_le_exp (neg_nonneg.mpr
-        (mul_nonpos_of_nonpos_of_nonneg ht hnonneg)))
-    have hzero : Tendsto (fun _ : ℝ ↦ |b.repr v i|) atBot (𝓝 0) :=
-      squeeze_zero' (Eventually.of_forall fun _ ↦ abs_nonneg _) hbound (by
-        simpa only [abs_zero] using hcoord'.abs)
-    exact hcoeff (abs_eq_zero.mp (tendsto_nhds_unique tendsto_const_nhds hzero))
-  · intro hsupp
-    have hterm (i : Fin n) : Tendsto (fun t : ℝ ↦
-        (Real.exp (-(t * hT.eigenvalues hn i)) * b.repr v i) •
-          hT.eigenvectorBasis hn i) atBot (𝓝 0) := by
-      by_cases hi : b.repr v i = 0
-      · simp [hi]
-      · have hneg : hT.eigenvalues hn i < 0 :=
-          hsupp i (Finsupp.mem_support_iff.mpr hi)
-        have harg : Tendsto (fun t : ℝ ↦ -(t * hT.eigenvalues hn i)) atBot atBot := by
-          convert tendsto_id.const_mul_atBot (neg_pos.mpr hneg) using 1
-          funext t
-          simp [mul_comm]
-        have hexp : Tendsto (fun t : ℝ ↦ Real.exp (-(t * hT.eigenvalues hn i)))
-            atBot (𝓝 0) := Real.tendsto_exp_atBot.comp harg
-        simpa [b, mul_comm] using (hexp.const_mul (b.repr v i)).smul_const
-          (hT.eigenvectorBasis hn i)
-    have hsum : Tendsto (fun t : ℝ ↦ ∑ i, (Real.exp (-(t * hT.eigenvalues hn i)) *
-        b.repr v i) • hT.eigenvectorBasis hn i) atBot (𝓝 0) := by
-      simpa only [Finset.sum_const_zero] using
-        tendsto_finsetSum Finset.univ fun i _ ↦ hterm i
-    simpa only [flow_neg_apply_eq_sum hT hn] using hsum
+  · intro hlim
+    simpa only [Function.comp_def] using hlim.comp tendsto_neg_atTop_atBot
+  · intro hlim
+    simpa only [Function.comp_def, neg_neg] using hlim.comp tendsto_neg_atBot_atTop
 
 /-- For a finite-dimensional symmetric operator `T`, the stable set of zero under the linear
 flow generated by `-T` is exactly the positive spectral subspace of `T`. -/
