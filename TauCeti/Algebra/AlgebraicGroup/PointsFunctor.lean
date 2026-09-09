@@ -72,6 +72,16 @@ theorem extendPoint_ofConv (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
   simp only [extendPoint, AlgHom.mapValue_apply, WithConv.ofConv_toConv, AlgHom.comp_apply,
     Algebra.ofId_apply]
 
+/-- Extending a ground-ring-valued point back to the ground ring leaves it unchanged. -/
+@[simp]
+theorem extendPoint_self (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
+    (g : points (H := H) (CommAlgCat.of R R)) :
+    extendPoint H (CommAlgCat.of R R) g = g := by
+  apply WithConv.ofConv_injective
+  ext h
+  simpa only [Algebra.algebraMap_self, RingHom.id_apply] using
+    extendPoint_ofConv H (CommAlgCat.of R R) g h
+
 /-- Post-composition of an extended point is extension to the target algebra. -/
 theorem mapValue_extendPoint (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
     {A : CommAlgCat.{w} R} {B : CommAlgCat.{x} R} (f : A →ₐ[R] B)
