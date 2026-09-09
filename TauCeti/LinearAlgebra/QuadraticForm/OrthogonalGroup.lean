@@ -66,7 +66,7 @@ negating it and is a transvection rather than a reflection in `v ^ ⊥`.
 * `TauCeti.QuadraticMap.orthogonalGroupCongr`: isometric quadratic maps have isomorphic orthogonal
   groups. Over an algebraically closed field this is what makes `O(Q)` depend only on the rank of
   `Q`.
-* `TauCeti.QuadraticMap.specialOrthogonalGroupCongr`: isometric quadratic maps have isomorphic
+* `QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr`: isometric quadratic maps have isomorphic
   special orthogonal groups as well.
 * `TauCeti.QuadraticMap.reflection_mem_orthogonalGroup`: the reflection in a vector of invertible
   norm is orthogonal; `TauCeti.QuadraticMap.reflection_mul_self` says it is an involution, and
@@ -336,29 +336,32 @@ private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
 
 /-- Isometric quadratic maps have isomorphic special orthogonal groups: conjugation by an
 isometric equivalence `e : Q₁ ≃qᵢ Q₂` carries `SO(Q₁)` onto `SO(Q₂)`. -/
-noncomputable def specialOrthogonalGroupCongr (e : Q₁.IsometryEquiv Q₂) :
+noncomputable def _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr
+    (e : Q₁.IsometryEquiv Q₂) :
     specialOrthogonalGroup Q₁ ≃* specialOrthogonalGroup Q₂ :=
   Subgroup.congrOfMapEq (LinearEquiv.congrAut e.toLinearEquiv)
     (map_specialOrthogonalGroup e)
 
 /-- Evaluating special-orthogonal transport is conjugation by the isometry `e`. -/
 @[simp]
-theorem coe_specialOrthogonalGroupCongr_apply
+theorem _root_.QuadraticMap.IsometryEquiv.coe_specialOrthogonalGroupCongr_apply
     (e : Q₁.IsometryEquiv Q₂) (f : specialOrthogonalGroup Q₁) (m : M₂) :
-    (specialOrthogonalGroupCongr e f : M₂ ≃ₗ[R] M₂) m =
+    (e.specialOrthogonalGroupCongr f : M₂ ≃ₗ[R] M₂) m =
       e ((f : M₁ ≃ₗ[R] M₁) (e.symm m)) := by
-  simp only [specialOrthogonalGroupCongr, Subgroup.coe_congrOfMapEq_apply,
+  simp only [QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr,
+    Subgroup.coe_congrOfMapEq_apply,
     LinearEquiv.congrAut_apply]
   rfl
 
 /-- Evaluating inverse special-orthogonal transport is conjugation by the inverse isometry
 `e.symm`. -/
 @[simp]
-theorem coe_specialOrthogonalGroupCongr_symm_apply
+theorem _root_.QuadraticMap.IsometryEquiv.coe_specialOrthogonalGroupCongr_symm_apply
     (e : Q₁.IsometryEquiv Q₂) (g : specialOrthogonalGroup Q₂) (m : M₁) :
-    ((specialOrthogonalGroupCongr e).symm g : M₁ ≃ₗ[R] M₁) m =
+    (e.specialOrthogonalGroupCongr.symm g : M₁ ≃ₗ[R] M₁) m =
       e.symm ((g : M₂ ≃ₗ[R] M₂) (e m)) := by
-  simp only [specialOrthogonalGroupCongr, Subgroup.coe_congrOfMapEq_symm_apply,
+  simp only [QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr,
+    Subgroup.coe_congrOfMapEq_symm_apply,
     LinearEquiv.congrAut_symm_apply]
   rfl
 

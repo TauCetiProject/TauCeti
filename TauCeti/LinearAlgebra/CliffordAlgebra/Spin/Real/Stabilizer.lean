@@ -221,10 +221,10 @@ private def realCliffordSpinLastStabilizerProjection (n : ℕ)
     spinToSpecialOrthogonal (realCliffordForm (n + 1) 0) x.1
   let ge : specialOrthogonalGroup
       ((realCliffordForm n 0).prod (QuadraticMap.sq (R := ℝ) (A := ℝ))) :=
-    TauCeti.QuadraticMap.specialOrthogonalGroupCongr e g
+    e.specialOrthogonalGroupCongr g
   refine ⟨ge, ?_⟩
   rw [mem_specialOrthogonalGroupProdLastStabilizer_iff,
-    TauCeti.QuadraticMap.coe_specialOrthogonalGroupCongr_apply]
+    e.coe_specialOrthogonalGroupCongr_apply]
   have hlast : e.symm (0, 1) = Pi.single (Fin.last n) 1 := by
     simpa [e, realCliffordSpinLastIsometry] using realCliffordSpinLastIsometry_one n
   rw [hlast]
@@ -258,7 +258,7 @@ theorem realCliffordSpinStabilizerInclusion_surjective (n : ℕ) [NeZero n] :
       spinVectorAction (realCliffordForm (n + 1) 0)
         (realCliffordSpinInclusion n y) (e.symm m)
     rw [realCliffordSpinInclusion_spinVectorAction_split]
-    have hge := TauCeti.QuadraticMap.coe_specialOrthogonalGroupCongr_apply e
+    have hge := e.coe_specialOrthogonalGroupCongr_apply
       (spinToSpecialOrthogonal (realCliffordForm (n + 1) 0) x.1) m
     have hgx := coe_specialOrthogonalGroupEquivProdLastStabilizer_apply
       (realCliffordForm n 0) (isUnit_of_invertible (2 : ℝ)).isRegular f m
