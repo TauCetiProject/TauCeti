@@ -304,8 +304,11 @@ theorem successorArray_zero_of_eq (h : x 0 = a) : successorArray x a 0 = x 1 := 
 the sequence never takes carries no information of its own: each of its entries repeats the first
 successor of the value the sequence starts at.
 
-This ties two cells of the successor array of every sequence, so a reindexing that moves the
-second of them does not preserve the array. -/
+This ties two cells of the successor array of any sequence that leaves a value unvisited, so a
+reindexing that moves the second of them can break the tie, and with it the array. Whether it
+does depends on the sequence;
+`TauCeti.Probability.spareStateProcess_not_rowExchangeable_successorProcess` exhibits one where
+it does. -/
 theorem successorArray_eq_successorArray_zero_of_forall_ne (h : ∀ n, x n ≠ a) :
     successorArray x a k = successorArray x (x 0) 0 := by
   rw [successorArray_eq_of_forall_ne h, successorArray_zero_of_eq rfl]
