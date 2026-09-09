@@ -135,13 +135,22 @@ transitively on the edge set. -/
 def IsConnected : Prop :=
   Nonempty Γ.E ∧ MulAction.IsPretransitive Γ.rotationGroup Γ.E
 
-/-- A connected ribbon graph has exactly one connected component. -/
-theorem card_connectedComponent_eq_one (hΓ : Γ.IsConnected) :
-    Fintype.card Γ.ConnectedComponent = 1 := by
-  let _ : Nonempty Γ.E := hΓ.1
-  let _ : MulAction.IsPretransitive Γ.rotationGroup Γ.E := hΓ.2
-  rw [← Nat.card_eq_fintype_card]
-  exact card_orbitQuotient_eq_one (G := Γ.rotationGroup) (X := Γ.E)
+/-- A ribbon graph is connected exactly when it has one connected component. -/
+@[simp]
+theorem isConnected_iff_card_connectedComponent_eq_one :
+    Γ.IsConnected ↔ Fintype.card Γ.ConnectedComponent = 1 := by
+  constructor
+  · intro hΓ
+    let _ : Nonempty Γ.E := hΓ.1
+    let _ : MulAction.IsPretransitive Γ.rotationGroup Γ.E := hΓ.2
+    rw [← Nat.card_eq_fintype_card]
+    exact card_orbitQuotient_eq_one (G := Γ.rotationGroup) (X := Γ.E)
+  · intro hcard
+    have hcardPos : 0 < Fintype.card Γ.ConnectedComponent := hcard ▸ Nat.zero_lt_one
+    have hE : Nonempty Γ.E :=
+      (nonempty_quotient_iff _).mp (Fintype.card_pos_iff.mp hcardPos)
+    exact ⟨hE, (MulAction.pretransitive_iff_subsingleton_quotient Γ.rotationGroup Γ.E).mpr
+      (Fintype.card_le_one_iff_subsingleton.mp hcard.le)⟩
 
 /-! ### Degrees and Euler characteristic -/
 
@@ -248,21 +257,31 @@ def comp (g : Δ.Hom Θ) (f : Γ.Hom Δ) : Γ.Hom Θ where
     (comp g f).white w = g.white (f.white w) := (rfl)
 
 @[ext]
-theorem ext {f g : Γ.Hom Δ} (hedge : f.edge = g.edge) (hblack : f.black = g.black)
-    (hwhite : f.white = g.white) : f = g := by
+theorem ext {f g : Γ.Hom Δ} (hedge : f.edge = g.edge) : f = g := by
+  have hblack : f.black = g.black := by
+    funext b
+    obtain ⟨e, rfl⟩ := Γ.blackEnd_surjective b
+    rw [← f.map_blackEnd, ← g.map_blackEnd, hedge]
+  have hwhite : f.white = g.white := by
+    funext w
+    obtain ⟨e, rfl⟩ := Γ.whiteEnd_surjective w
+    rw [← f.map_whiteEnd, ← g.map_whiteEnd, hedge]
   cases f
   cases g
   simp_all
 
 @[simp] theorem id_comp (f : Γ.Hom Δ) : comp (id Δ) f = f := by
-  apply ext <;> rfl
+  apply ext
+  rfl
 
 @[simp] theorem comp_id (f : Γ.Hom Δ) : comp f (id Γ) = f := by
-  apply ext <;> rfl
+  apply ext
+  rfl
 
 theorem comp_assoc (h : Θ.Hom Ξ) (g : Δ.Hom Θ) (f : Γ.Hom Δ) :
     comp h (comp g f) = comp (comp h g) f := by
-  ext <;> rfl
+  ext
+  rfl
 
 end Hom
 
@@ -508,31 +527,37 @@ theorem eulerChar_eq (f : Γ.Iso Δ) : Γ.eulerChar = Δ.eulerChar := by
     Fintype.card_congr f.edge, f.faceCount_eq]
 
 @[ext]
-theorem ext {f g : Γ.Iso Δ} (hedge : f.edge = g.edge) (hblack : f.black = g.black)
-    (hwhite : f.white = g.white) : f = g := by
+theorem ext {f g : Γ.Iso Δ} (hedge : f.edge = g.edge) : f = g := by
+  have hblack : f.black = g.black := by
+    apply Equiv.ext
+    intro b
+    obtain ⟨e, rfl⟩ := Γ.blackEnd_surjective b
+    rw [← f.map_blackEnd, ← g.map_blackEnd, hedge]
+  have hwhite : f.white = g.white := by
+    apply Equiv.ext
+    intro w
+    obtain ⟨e, rfl⟩ := Γ.whiteEnd_surjective w
+    rw [← f.map_whiteEnd, ← g.map_whiteEnd, hedge]
   cases f
   cases g
   simp_all
 
-@[simp] theorem refl_trans (f : Γ.Iso Δ) : (refl Γ).trans f = f := by ext <;> rfl
+@[simp] theorem refl_trans (f : Γ.Iso Δ) : (refl Γ).trans f = f := by ext; rfl
 
-@[simp] theorem trans_refl (f : Γ.Iso Δ) : f.trans (refl Δ) = f := by ext <;> rfl
+@[simp] theorem trans_refl (f : Γ.Iso Δ) : f.trans (refl Δ) = f := by ext; rfl
 
 @[simp] theorem symm_trans_self (f : Γ.Iso Δ) : f.symm.trans f = refl Δ := by
   apply ext
-  · simpa only [symm, trans, refl] using Equiv.symm_trans_self f.edge
-  · simpa only [symm, trans, refl] using Equiv.symm_trans_self f.black
-  · simpa only [symm, trans, refl] using Equiv.symm_trans_self f.white
+  simpa only [symm, trans, refl] using Equiv.symm_trans_self f.edge
 
 @[simp] theorem trans_symm_self (f : Γ.Iso Δ) : f.trans f.symm = refl Γ := by
   apply ext
-  · simpa only [symm, trans, refl] using Equiv.self_trans_symm f.edge
-  · simpa only [symm, trans, refl] using Equiv.self_trans_symm f.black
-  · simpa only [symm, trans, refl] using Equiv.self_trans_symm f.white
+  simpa only [symm, trans, refl] using Equiv.self_trans_symm f.edge
 
 theorem trans_assoc (f : Γ.Iso Δ) (g : Δ.Iso Θ) (h : Θ.Iso Ξ) :
     (f.trans g).trans h = f.trans (g.trans h) := by
-  ext <;> rfl
+  ext
+  rfl
 
 end Iso
 
