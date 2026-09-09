@@ -32,8 +32,7 @@ integral and real ranks to agree.
 * `TauCeti.Toric.IsIntegralLattice`: for finite free `N`, the scalar-extension condition on
   `i : N →+ V`, stated as Mathlib's `IsBaseChange ℝ` for the underlying `ℤ`-linear map.
   `isIntegralLattice_iff` is the equivalent formulation by an `ℝ`-linear equivalence
-  `ℝ ⊗[ℤ] N ≃ₗ[ℝ] V` restricting to `i`, and `isIntegralLattice_iff_isBaseChange` opens
-  Mathlib's base-change API on it.
+  `ℝ ⊗[ℤ] N ≃ₗ[ℝ] V` restricting to `i`.
 * `TauCeti.Toric.isIntegralLattice_of_basis`: an integral basis of `N` whose image is a real
   basis of `V` exhibits an integral lattice, and `TauCeti.Toric.IsIntegralLattice.basis` is the
   converse construction of that real basis.
@@ -80,15 +79,6 @@ structure IsIntegralLattice (i : N →+ V) : Prop where
   finite : Module.Finite ℤ N
   /-- Extending scalars from `ℤ` to `ℝ` along `i` gives the ambient real vector space. -/
   isBaseChange : IsBaseChange ℝ i.toIntLinearMap
-
-/-- The components of an integral lattice: finite freeness and Mathlib's `IsBaseChange`. -/
-theorem isIntegralLattice_iff_isBaseChange :
-    IsIntegralLattice i ↔ Module.Free ℤ N ∧ Module.Finite ℤ N ∧
-      IsBaseChange ℝ i.toIntLinearMap := by
-  constructor
-  · exact fun h ↦ ⟨h.free, h.finite, h.isBaseChange⟩
-  · rintro ⟨hfree, hfinite, hbase⟩
-    exact ⟨hfree, hfinite, hbase⟩
 
 /-- An integral lattice, spelled by the scalar-extension equivalence it provides. -/
 theorem isIntegralLattice_iff :
@@ -170,12 +160,6 @@ variable {N N' N'' V V' V'' : Type*} [AddCommGroup N] [AddCommGroup N'] [AddComm
   [AddCommGroup V] [AddCommGroup V'] [AddCommGroup V''] [Module ℝ V] [Module ℝ V'] [Module ℝ V'']
   {i : N →+ V} {i' : N' →+ V'} {i'' : N'' →+ V''}
 
-/-- Two real-linear maps out of the ambient space of an integral lattice that agree on the
-lattice are equal. -/
-theorem IsIntegralLattice.linearMap_ext (h : IsIntegralLattice i) {g g' : V →ₗ[ℝ] V'}
-    (hgg' : ∀ n, g (i n) = g' (i n)) : g = g' :=
-  h.isBaseChange.algHom_ext g g' hgg'
-
 /-- The real-linear map extending a map `f : N →+ N'` of integral vectors. -/
 noncomputable def IsIntegralLattice.extend (h : IsIntegralLattice i) (i' : N' →+ V')
     (f : N →+ N') : V →ₗ[ℝ] V' :=
@@ -190,7 +174,9 @@ theorem IsIntegralLattice.extend_apply (h : IsIntegralLattice i) (i' : N' →+ V
 what makes the real-linear part of a map of lattices determined rather than chosen. -/
 theorem IsIntegralLattice.eq_extend (h : IsIntegralLattice i) {f : N →+ N'} {g : V →ₗ[ℝ] V'}
     (hg : ∀ n, g (i n) = i' (f n)) : g = h.extend i' f :=
-  h.linearMap_ext fun n ↦ by rw [hg, IsIntegralLattice.extend_apply]
+  h.isBaseChange.algHom_ext g (h.extend i' f) fun n ↦ by
+    change g (i n) = h.extend i' f (i n)
+    rw [hg, IsIntegralLattice.extend_apply]
 
 @[simp]
 theorem IsIntegralLattice.extend_id (h : IsIntegralLattice i) :
