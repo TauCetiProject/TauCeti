@@ -7,21 +7,22 @@ module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
 public import Mathlib.Analysis.Distribution.Distribution
-public import Mathlib.Analysis.SpecialFunctions.Pow.Integral
+-- Used only by the local-integrability proofs below.
+import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 
 /-!
 # The distribution induced by the Euclidean Newtonian kernel
 
-The singularity of the `n`-dimensional Newtonian kernel is locally integrable for `n ≥ 3`.
+The singularity of the `n`-dimensional Newtonian kernel is locally integrable for `n = 1` or
+`n ≥ 3`.
 This file packages that fact with Mathlib's canonical distribution induced by a locally
 integrable function.  The resulting distribution is the object to which the distributional
 identity `-Δ Gₙ = δ₀` will apply.
 
-The decay estimate is the standard one from Evans, *Partial Differential Equations*, Section 2.2.
-The local-integrability argument uses Mathlib's general radial-power criterion
-`MeasureTheory.locallyIntegrable_of_norm_le_rpow`.  These declarations provide the
-local-integrability and test-function pairing needed for the later proof of the distributional
-identity `-Δ Gₙ = δ₀`.
+The normalization and decay estimate are the standard ones from Evans, *Partial Differential
+Equations*, Section 2.2.  The kernel and its derivative have locally integrable singularities;
+their induced distribution and test-function pairing provide the input for the later proof of
+the distributional identity `-Δ Gₙ = δ₀`.
 
 ## Main declarations
 
@@ -60,12 +61,23 @@ private lemma newtonianKernel_norm_le_rpow (n : ℕ) (hn : 3 ≤ n) (x : Euclide
     -- Put both powers in the exponent form used by the radial integrability criterion.
     rw [show (2 : ℝ) - n = -((n : ℝ) - 2) by ring]
 
-/-- The Newtonian kernel is locally integrable in every dimension `n ≥ 3`.
+/-- The Newtonian kernel is locally integrable in dimension `n = 1` or `n ≥ 3`.
 
-The exponent `n - 2` is strictly smaller than the ambient dimension `n`, so the radial
-singularity is covered by Mathlib's general `rpow` integrability theorem. -/
-theorem locallyIntegrable_newtonianKernel (n : ℕ) (hn : 3 ≤ n) :
+Its radial singularity has order `n - 2`, strictly below the ambient dimension; in dimension one
+the totalized kernel is continuous. -/
+theorem locallyIntegrable_newtonianKernel (n : ℕ) (hn : n = 1 ∨ 3 ≤ n) :
     LocallyIntegrable (newtonianKernel n) := by
+  rcases hn with rfl | hn
+  · have hcont : Continuous (newtonianKernel 1) := by
+      rw [show newtonianKernel 1 = (fun x : EuclideanSpace ℝ (Fin 1) ↦
+        ((1 : ℝ) * ((1 : ℝ) - 2) *
+          volume.real (ball (0 : EuclideanSpace ℝ (Fin 1)) 1))⁻¹ *
+          ‖x‖ ^ (2 - (1 : ℝ))) by
+        funext x
+        simpa using newtonianKernel_def 1 x]
+      norm_num
+      fun_prop
+    exact hcont.locallyIntegrable
   let C : ℝ := ((n : ℝ) * ((n : ℝ) - 2) *
     volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
   refine locallyIntegrable_of_norm_le_rpow (μ := volume)
@@ -90,28 +102,21 @@ theorem locallyIntegrable_newtonianKernel (n : ℕ) (hn : 3 ≤ n) :
     apply AEMeasurable.aestronglyMeasurable
     measurability
 
-/-- The Fréchet derivative of the Newtonian kernel is locally integrable on all of Euclidean space.
+/-- The Fréchet derivative of the Newtonian kernel is locally integrable in dimension `n = 1` or
+`n ≥ 3`.
 
-Its norm has the radial singularity `‖x‖^(1-n)`, whose exponent is still below the ambient
-dimension.  The formula away from the pole and the null singleton at the pole establish the
-global result, which is the integrability input for the punctured-domain integration-by-parts
-step in the distributional fundamental-solution proof. -/
-theorem locallyIntegrable_fderiv_newtonianKernel (n : ℕ) (hn : 3 ≤ n) :
+Its derivative has radial order `1 - n`, strictly below the ambient dimension. -/
+theorem locallyIntegrable_fderiv_newtonianKernel (n : ℕ) (hn : n = 1 ∨ 3 ≤ n) :
     LocallyIntegrable (fun x => fderiv ℝ (newtonianKernel n) x) := by
+  have hn1 : 1 ≤ n := by omega
+  have hn2 : n ≠ 2 := by omega
   have hnontrivial : Nontrivial (EuclideanSpace ℝ (Fin n)) := by
     apply Module.nontrivial_of_finrank_pos (R := ℝ)
     rw [finrank_euclideanSpace_fin]
-    omega
-  -- The derivative formula is needed only off the pole; its exceptional singleton is
-  -- null for Euclidean volume in these nontrivial dimensions.
-  have hpunct : NeBot (nhdsWithin (0 : EuclideanSpace ℝ (Fin n))
-      ({0} : Set (EuclideanSpace ℝ (Fin n)))ᶜ) :=
-    @Real.punctured_nhds_module_neBot (EuclideanSpace ℝ (Fin n)) _ _ _ hnontrivial _ _ 0
-  have hnull : NullSingletonClass (volume : Measure (EuclideanSpace ℝ (Fin n))) :=
-    @Measure.IsAddHaarMeasure.nullSingletonClass (EuclideanSpace ℝ (Fin n))
-      _ _ _ _ _ _ _ hpunct volume inferInstance
+    exact_mod_cast hn1
   have hae : ∀ᵐ x : EuclideanSpace ℝ (Fin n) ∂volume, x ≠ 0 :=
-    @Measure.ae_ne (EuclideanSpace ℝ (Fin n)) _ volume hnull 0
+    letI := hnontrivial
+    volume.ae_ne 0
   let C : ℝ := ((n : ℝ) *
     volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
   refine locallyIntegrable_of_norm_le_rpow (μ := volume)
@@ -119,12 +124,12 @@ theorem locallyIntegrable_fderiv_newtonianKernel (n : ℕ) (hn : 3 ≤ n) :
     (F := EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ)
     (f := fun x => fderiv ℝ (newtonianKernel n) x)
     (α := (n : ℝ) - 1) (C := C) ?_ ?_ ?_ ?_
-  · have hn1 : 1 ≤ n := le_trans (by norm_num) hn
-    simpa [finrank_euclideanSpace, Fintype.card_fin] using hn1
+  · simpa [finrank_euclideanSpace, Fintype.card_fin] using hn1
   · rw [finrank_euclideanSpace_fin]
+    have hnℝ : (1 : ℝ) ≤ n := by exact_mod_cast hn1
     linarith
   · filter_upwards [hae] with x hx
-    rw [norm_fderiv_newtonianKernel n (by omega) hx]
+    rw [norm_fderiv_newtonianKernel n hn2 hx]
     dsimp [C]
     -- Match the derivative decay exponent with the radial-power criterion.
     rw [show 1 - (n : ℝ) = -((n : ℝ) - 1) by ring]
@@ -136,11 +141,12 @@ theorem locallyIntegrable_fderiv_newtonianKernel (n : ℕ) (hn : 3 ≤ n) :
       fun_prop
     have hfg : (fun x => fderiv ℝ (newtonianKernel n) x) =ᵐ[volume] g := by
       filter_upwards [hae] with x hx
-      exact fderiv_newtonianKernel n (by omega) hx
+      exact fderiv_newtonianKernel n hn2 hx
     exact hg.aestronglyMeasurable.congr hfg.symm
 
 /-- The distribution induced by the Newtonian kernel on all of Euclidean space in dimensions
-`n ≥ 3`. -/
+`n ≥ 3`.  The dimension hypothesis reserves this name for the higher-dimensional fundamental
+solution, since the totalized kernel formula is defined in every dimension. -/
 noncomputable def newtonianKernelDistribution (n : ℕ) (_hn : 3 ≤ n) :
     𝓓'((⊤ : Opens (EuclideanSpace ℝ (Fin n))), ℝ) :=
   Distribution.ofFun (⊤ : Opens (EuclideanSpace ℝ (Fin n)))
@@ -153,7 +159,7 @@ test function. -/
     newtonianKernelDistribution n hn φ =
       ∫ x, φ x • newtonianKernel n x := by
   rw [newtonianKernelDistribution, Distribution.ofFun_apply]
-  exact (locallyIntegrable_newtonianKernel n hn).locallyIntegrableOn _
+  exact (locallyIntegrable_newtonianKernel n (Or.inr hn)).locallyIntegrableOn _
 
 end TauCeti
 
