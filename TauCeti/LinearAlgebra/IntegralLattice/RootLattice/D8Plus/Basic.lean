@@ -38,6 +38,7 @@ does not need a change of coordinates.
 * `TauCeti.IntegralLattice.d8PlusLattice`: the resulting even integral lattice.
 * `TauCeti.IntegralLattice.toIntegralLattice_eq_d8PlusLattice`: the general glued-overlattice
   construction along the spinor subgroup is `d8PlusLattice`.
+* `TauCeti.IntegralLattice.isPosDef_d8PlusLattice`: `D₈⁺` is positive definite.
 * `TauCeti.IntegralLattice.isUnimodular_d8PlusLattice`: `D₈⁺` is unimodular.
 
 ## References
@@ -202,6 +203,14 @@ theorem discriminant_d8PlusLattice : d8PlusLattice.discriminant = 1 := by
     IntermediateCarrier.IsIntegral.discriminant_eq_discriminant_div_index_sq,
     index_d8PlusCarrier, discriminant_checkerboardLattice]
   norm_num
+
+/-- **`D₈⁺` is positive definite**: gluing takes place inside the ambient space of `D₈` and keeps
+its form. -/
+theorem isPosDef_d8PlusLattice : d8PlusLattice.IsPosDef := by
+  rw [isPosDef_iff]
+  intro x hx
+  rw [d8PlusLattice, IntermediateCarrier.IsIntegral.toIntegralLattice_form]
+  exact (isPosDef_iff _).mp (isPosDef_checkerboardLattice 8) x hx
 
 /-- **The spinor glue enlargement `D₈⁺` is unimodular.** -/
 theorem isUnimodular_d8PlusLattice : d8PlusLattice.IsUnimodular := by

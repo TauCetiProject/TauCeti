@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
+public import TauCeti.LinearAlgebra.IntegralLattice.Signature
+public import TauCeti.LinearAlgebra.Matrix.PosDef
 import Mathlib.LinearAlgebra.Determinant
 
 /-!
@@ -40,6 +42,8 @@ discriminant group.
   canonical basis is `G`.
 * `TauCeti.IntegralLattice.determinant_ofGramMatrix`: the signed determinant of `ofGramMatrix` is
   the determinant of `G`.
+* `TauCeti.IntegralLattice.isPosDef_ofGramMatrix`: a positive definite Gram matrix produces a
+  positive definite lattice.
 * `TauCeti.IntegralLattice.isNondegenerate_ofGramMatrix`: a nonsingular Gram matrix produces a
   nondegenerate integral lattice.
 * `TauCeti.IntegralLattice.discriminant_ofGramMatrix`: the discriminant of `ofGramMatrix` is the
@@ -228,6 +232,23 @@ theorem determinant_ne_zero_iff (L : IntegralLattice V) :
     L.determinant ≠ 0 ↔ L.form.Nondegenerate := by
   classical
   rw [determinant, gramDet_ne_zero_iff]
+
+open Classical in
+open Classical in
+/-- **A lattice presented by a positive definite Gram matrix is positive definite.**  The rational
+form of `ofGramMatrix b G hG` is the quadratic form of `G` read in the coordinates of `b`, so the
+two positive-definiteness statements are the same one. -/
+theorem isPosDef_ofGramMatrix {ι : Type v} [Fintype ι] (b : Basis ι ℚ V) (G : Matrix ι ι ℤ)
+    (hG : G.IsSymm) (hpd : (G.map (Int.cast : ℤ → ℚ)).PosDef) :
+    (ofGramMatrix b G hG).IsPosDef := by
+  rw [isPosDef_iff]
+  intro x hx
+  rw [ofGramMatrix_form, Matrix.toBilin_apply]
+  have hrepr : ⇑(b.repr x) ≠ 0 := fun h ↦ hx (by
+    refine b.repr.injective ?_
+    ext i
+    simpa using congrFun h i)
+  simpa [Matrix.map_apply] using TauCeti.Matrix.PosDef.sum_pos hpd hrepr
 
 open Classical in
 /-- An integral lattice constructed from a nonsingular Gram matrix is nondegenerate. -/

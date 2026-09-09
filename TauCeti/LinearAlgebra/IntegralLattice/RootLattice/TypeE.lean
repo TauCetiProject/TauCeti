@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Cartan
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Dynkin
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
@@ -59,6 +60,8 @@ the branch node of the diagram is `α₄`, and `α₂` is the short arm.
 * `TauCeti.IntegralLattice.form_typeE₆SimpleRoot_typeE₆SimpleRoot` and its analogues: the
   simple-root Gram matrix is the Cartan matrix.
 * `TauCeti.IntegralLattice.isEven_typeE₆RootLattice` and its analogues: the lattices are even.
+* `TauCeti.IntegralLattice.isPosDef_typeE₆RootLattice` and its analogues: they are positive
+  definite.
 * `TauCeti.IntegralLattice.determinant_typeE₆RootLattice` and its analogues: the determinants are
   `3`, `2`, `1`.
 * `TauCeti.IntegralLattice.typeE₆MinusculeWeight`, `typeE₇MinusculeWeight`: the minuscule
@@ -137,6 +140,12 @@ noncomputable instance instIsNondegenerateTypeE₆RootLattice :
   rw [typeE₆RootLattice]
   refine isNondegenerate_ofGramMatrix _ _ _ ?_
   convert det_cartanMatrixE₆_ne_zero
+
+/-- **The type `E₆` root lattice is positive definite**, its Gram matrix being the positive
+definite Cartan matrix of the type. -/
+theorem isPosDef_typeE₆RootLattice : typeE₆RootLattice.IsPosDef := by
+  rw [typeE₆RootLattice]
+  exact isPosDef_ofGramMatrix _ _ _ DynkinType.posDef_cartanMatrix_E6
 
 /-- The type `E₆` root lattice is even: every diagonal Cartan entry is `2`. -/
 theorem isEven_typeE₆RootLattice : typeE₆RootLattice.IsEven := by
@@ -408,6 +417,12 @@ noncomputable instance instIsNondegenerateTypeE₇RootLattice :
   rw [typeE₇RootLattice]
   refine isNondegenerate_ofGramMatrix _ _ _ ?_
   convert det_cartanMatrixE₇_ne_zero
+
+/-- **The type `E₇` root lattice is positive definite**, its Gram matrix being the positive
+definite Cartan matrix of the type. -/
+theorem isPosDef_typeE₇RootLattice : typeE₇RootLattice.IsPosDef := by
+  rw [typeE₇RootLattice]
+  exact isPosDef_ofGramMatrix _ _ _ DynkinType.posDef_cartanMatrix_E7
 
 /-- The type `E₇` root lattice is even: every diagonal Cartan entry is `2`. -/
 theorem isEven_typeE₇RootLattice : typeE₇RootLattice.IsEven := by
@@ -688,6 +703,12 @@ noncomputable instance instIsNondegenerateTypeE₈RootLattice :
   rw [typeE₈RootLattice]
   refine isNondegenerate_ofGramMatrix _ _ _ ?_
   convert det_cartanMatrixE₈_ne_zero
+
+/-- **The type `E₈` root lattice is positive definite**, its Gram matrix being the positive
+definite Cartan matrix of the type. -/
+theorem isPosDef_typeE₈RootLattice : typeE₈RootLattice.IsPosDef := by
+  rw [typeE₈RootLattice]
+  exact isPosDef_ofGramMatrix _ _ _ DynkinType.posDef_cartanMatrix_E8
 
 /-- The type `E₈` root lattice is even: every diagonal Cartan entry is `2`. -/
 theorem isEven_typeE₈RootLattice : typeE₈RootLattice.IsEven := by
