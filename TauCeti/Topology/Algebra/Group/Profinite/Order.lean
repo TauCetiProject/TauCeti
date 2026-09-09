@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Topology.Algebra.Group.Profinite.Basic
-import TauCeti.Topology.Algebra.Group.Profinite.Index
 public import Mathlib.GroupTheory.Index
 public import TauCeti.NumberTheory.Supernatural
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup

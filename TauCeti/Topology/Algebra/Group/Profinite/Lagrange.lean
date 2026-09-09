@@ -13,10 +13,10 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Order
 # Lagrange's theorem for profinite groups
 
 For a closed subgroup `H` of a profinite group `G`, the supernatural order of `G` is the
-product of the supernatural order of `H` and its supernatural index in `G`. The proof first
-shows that the finite images of `H` in the quotients of `G` are cofinal among all finite
-continuous quotients of `H`. Finite Lagrange's theorem then applies in every ambient quotient,
-and directedness of the open normal subgroups lets the two suprema be combined.
+product of the supernatural order of `H` and its supernatural index in `G`. The order of `H`
+is represented by its finite images in the quotients of `G`, and finite Lagrange formulas in
+these quotients relate their orders to the corresponding finite indices. This yields both the
+primewise additive formula and the multiplicative supernatural-number formula.
 
 ## Main results
 
@@ -84,7 +84,8 @@ theorem _root_.Subgroup.profiniteOrder_apply_eq_add_profiniteIndex (H : Subgroup
       · rw [padicValNat_eq_emultiplicity Subgroup.index_ne_zero_of_finite,
           padicValNat_eq_emultiplicity Subgroup.index_ne_zero_of_finite]
         apply emultiplicity_le_emultiplicity_of_dvd_right
-        rw [H.index_map_quotient_eq_index_sup M, H.index_map_quotient_eq_index_sup K]
+        rw [H.index_map_quotient_eq_index_sup M.toSubgroup,
+          H.index_map_quotient_eq_index_sup K.toSubgroup]
         apply Subgroup.index_dvd_of_le
         exact sup_le_sup_left inf_le_right H
 
