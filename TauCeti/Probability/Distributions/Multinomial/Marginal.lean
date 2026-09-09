@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Distributions.Binomial
 public import TauCeti.Probability.Distributions.Multinomial.Basic
+import TauCeti.Algebra.Order.Antidiag.Pi
 
 /-!
 # Coordinate marginals of the multinomial distribution
@@ -53,12 +54,6 @@ namespace TauCeti.Probability
 variable {ι : Type*} [Fintype ι]
 
 open Classical in
-private lemma eq_zero_of_mem_piAntidiag_erase (i : ι) {q : ℕ} {g : ι → ℕ}
-    (hg : g ∈ Finset.piAntidiag (Finset.univ.erase i) q) : g i = 0 := by
-  by_contra h
-  exact Finset.notMem_erase i Finset.univ ((Finset.mem_piAntidiag.mp hg).2 i h)
-
-open Classical in
 private lemma multinomialWeight_add_apply (w : ι → NNReal) (i : ι) (m q : ℕ)
     (g : ι → ℕ) (hg : g ∈ Finset.piAntidiag (Finset.univ.erase i) q) :
     multinomialWeight w ((addRightEmbedding fun j ↦ if j = i then m else 0) g) =
@@ -66,7 +61,7 @@ private lemma multinomialWeight_add_apply (w : ι → NNReal) (i : ι) (m q : �
         ((Nat.multinomial (Finset.univ.erase i) g : ℝ≥0∞) *
           ∏ j ∈ Finset.univ.erase i, (w j : ℝ≥0∞) ^ g j) := by
   have hi : i ∉ Finset.univ.erase i := Finset.notMem_erase i Finset.univ
-  have hgi := eq_zero_of_mem_piAntidiag_erase i hg
+  have hgi := Finset.eq_zero_of_notMem_of_mem_piAntidiag hi hg
   have hsum : ∑ j ∈ Finset.univ.erase i, g j = q :=
     (Finset.mem_piAntidiag.mp hg).1
   have huniv : (Finset.univ.erase i).cons i hi = Finset.univ := by ext; simp
@@ -104,8 +99,8 @@ private lemma sum_multinomialWeight_eq_apply (w : ι → NNReal) (n m : ℕ) (i 
         if k i = m then multinomialWeight w k else 0) =
       (n.choose m : ℝ≥0∞) * (w i : ℝ≥0∞) ^ m *
         (∑ j ∈ Finset.univ.erase i, (w j : ℝ≥0∞)) ^ (n - m) := by
-  have huniv : (Finset.univ.erase i).cons i (Finset.notMem_erase i Finset.univ) =
-      Finset.univ := by ext; simp
+  have hi : i ∉ Finset.univ.erase i := Finset.notMem_erase i Finset.univ
+  have huniv : (Finset.univ.erase i).cons i hi = Finset.univ := by ext; simp
   conv_lhs =>
     rw [← huniv, Finset.piAntidiag_cons, Finset.sum_disjiUnion]
   simp only [Finset.sum_map]
@@ -121,7 +116,7 @@ private lemma sum_multinomialWeight_eq_apply (w : ι → NNReal) (n m : ℕ) (i 
                 ((addRightEmbedding fun j ↦ if j = i then m else 0) g) := by
           apply Finset.sum_congr rfl
           intro g hg
-          have hgi := eq_zero_of_mem_piAntidiag_erase i hg
+          have hgi := Finset.eq_zero_of_notMem_of_mem_piAntidiag hi hg
           simp [addRightEmbedding_apply, hgi]
         _ = (n.choose m : ℝ≥0∞) * (w i : ℝ≥0∞) ^ m *
             ∑ g ∈ Finset.piAntidiag (Finset.univ.erase i) (n - m),
@@ -144,7 +139,7 @@ private lemma sum_multinomialWeight_eq_apply (w : ι → NNReal) (n m : ℕ) (i 
           omega
       apply Finset.sum_eq_zero
       intro g hg
-      have hgi := eq_zero_of_mem_piAntidiag_erase i hg
+      have hgi := Finset.eq_zero_of_notMem_of_mem_piAntidiag hi hg
       simp [addRightEmbedding_apply, hgi, ha]
     · intro hnot
       exact (hnot (by simp [Finset.mem_antidiagonal, Nat.add_sub_of_le hmn])).elim
@@ -159,7 +154,7 @@ private lemma sum_multinomialWeight_eq_apply (w : ι → NNReal) (n m : ℕ) (i 
           have := Finset.mem_antidiagonal.mp hab
           omega
         omega
-      have hgi := eq_zero_of_mem_piAntidiag_erase i hg
+      have hgi := Finset.eq_zero_of_notMem_of_mem_piAntidiag hi hg
       simp [addRightEmbedding_apply, hgi, ha]
 
 /-- The count in a fixed cell of a multinomial random vector is binomial, with success probability
