@@ -80,10 +80,13 @@ theorem exists_mem_ne_zero (ρ : ToricRay σ) : ∃ x : V, x ∈ ρ ∧ x ≠ 0 
     simp [hx0]
   · exact bot_le
 
-/-- In a salient ambient cone, every nonzero point of a ray generates the ray as a pointed cone. -/
-theorem eq_hull_singleton [FiniteDimensional ℝ V]
-    (hσ : (σ : ConvexCone ℝ V).Salient) (ρ : ToricRay σ)
+/-- In a salient ambient cone, every nonzero point of a ray generates the ray as a pointed cone.
+The ambient space need not be finite-dimensional: one-dimensionality of the ray's own span is
+already part of the hypotheses. -/
+theorem eq_hull_singleton (hσ : (σ : ConvexCone ℝ V).Salient) (ρ : ToricRay σ)
     {x : V} (hx : x ∈ ρ) (hx0 : x ≠ 0) : ρ.toPointedCone = PointedCone.hull ℝ {x} := by
+  have : FiniteDimensional ℝ (Submodule.span ℝ (ρ : Set V)) :=
+    FiniteDimensional.of_finrank_pos (by rw [ρ.finrank_span]; norm_num)
   apply le_antisymm
   · rw [PointedCone.le_hull_singleton_iff]
     intro y hy

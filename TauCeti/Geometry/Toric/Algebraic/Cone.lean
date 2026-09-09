@@ -160,11 +160,10 @@ theorem IsLatticeRational.of_isFaceOf (hσ : IsLatticeRational i σ) (hτ : τ.I
   obtain ⟨s, rfl⟩ := hσ
   let F : (PointedCone.hull ℝ (i '' (s : Set N))).Face := ⟨τ, hτ⟩
   refine ⟨s.filter fun v ↦ i v ∈ τ,
-    (F.eq_hull_inter_of_eq_hull (s.image i) (by simp)).trans ?_⟩
+    (F.eq_hull_inter_of_eq_hull (i '' (s : Set N)) rfl).trans ?_⟩
   congr 1
   ext x
-  simp only [Finset.coe_image, Set.mem_inter_iff, Set.mem_image, Finset.coe_filter,
-    Finset.mem_coe]
+  simp only [Set.mem_inter_iff, Set.mem_image, Finset.coe_filter, Finset.mem_coe]
   aesop
 
 /-- A face of a toric cone is a toric cone. Since the pairwise intersection of two cones of a fan
