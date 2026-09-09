@@ -64,7 +64,7 @@ theorem LinearMap.trace_pi_of_apply_eq (T : (ι → M) →ₗ[k] (ι → M)) (σ
 open scoped Classical in
 /-- The trace of a coordinatewise endomorphism of a finite dependent product is the sum of the
 traces on its factors. -/
-theorem LinearMap.trace_pi_apply_eq {M : ι → Type*}
+theorem _root_.LinearMap.trace_pi_apply_eq {M : ι → Type*}
     [∀ i, AddCommGroup (M i)] [∀ i, Module k (M i)] [∀ i, FiniteDimensional k (M i)]
     (T : ((i : ι) → M i) →ₗ[k] ((i : ι) → M i)) (f : ∀ i, M i →ₗ[k] M i)
     (hT : ∀ x i, T x i = f i (x i)) :
