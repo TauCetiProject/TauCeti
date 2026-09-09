@@ -158,12 +158,14 @@ Clifford-algebra subtype topologies. -/
 @[fun_prop]
 theorem continuous_realCliffordSpinInclusion (n : ℕ) :
     Continuous (realCliffordSpinInclusion n) := by
-  apply continuous_induced_rng.mpr
-  refine ((CliffordAlgebra.continuous_map_realCliffordAlgebra
-      ((realCliffordPositiveSplitIsometry n 0).symm.toIsometry.comp
-        (QuadraticMap.Isometry.inl (realCliffordForm n 0)
-          (QuadraticMap.sq (R := ℝ) (A := ℝ))))).comp continuous_subtype_val).congr ?_
-  exact fun x ↦ (coe_realCliffordSpinInclusion_apply n x).symm
+  refine (QuadraticMap.Isometry.continuous_spinGroupMap
+    ((realCliffordPositiveSplitIsometry n 0).symm.toIsometry.comp
+      (QuadraticMap.Isometry.inl (realCliffordForm n 0)
+        (QuadraticMap.sq (R := ℝ) (A := ℝ))))).congr ?_
+  exact fun x ↦ by
+    apply Subtype.ext
+    rw [QuadraticMap.Isometry.coe_spinGroupMap_apply,
+      coe_realCliffordSpinInclusion_apply]
 
 end
 

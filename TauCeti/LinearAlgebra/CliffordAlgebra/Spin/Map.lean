@@ -29,6 +29,8 @@ summand.
   action.
 * `QuadraticMap.IsometryEquiv.spinGroupMap_fixed_of_prod` proves that the Spin group of one
   summand fixes the other summand.
+* `QuadraticMap.IsometryEquiv.spinGroupMap_spinVectorAction_prod` combines these facts into the
+  full action formula on an orthogonal product.
 -/
 
 public section
@@ -262,5 +264,42 @@ theorem spinGroupMap_fixed_of_prod (e : Q.IsometryEquiv (Q₁.prod Q₂)) [Inver
       star (CliffordAlgebra.map f₁ (x : CliffordAlgebra Q₁)) = CliffordAlgebra.ι Q (f₂ m₂)
   rw [hcomm.eq, mul_assoc, ← CliffordAlgebra.map_star, ← map_mul,
     spinGroup.mul_star_self_of_mem x.2, map_one, mul_one]
+
+/-- Under an orthogonal-product isometry, the image of a Spin element acts on the first summand
+by the original Spin action and fixes the second summand. -/
+@[simp]
+theorem spinGroupMap_spinVectorAction_prod
+    (e : Q.IsometryEquiv (Q₁.prod Q₂)) [Invertible (2 : R)]
+    (x : spinGroup Q₁) (m₁ : M₁) (m₂ : M₂) :
+    CliffordAlgebra.spinVectorAction Q
+        ((e.symm.toIsometry.comp (QuadraticMap.Isometry.inl Q₁ Q₂)).spinGroupMap x)
+        (e.symm (m₁, m₂)) =
+      e.symm (CliffordAlgebra.spinVectorAction Q₁ x m₁, m₂) := by
+  let f₁ := e.symm.toIsometry.comp (QuadraticMap.Isometry.inl Q₁ Q₂)
+  let f₂ := e.symm.toIsometry.comp (QuadraticMap.Isometry.inr Q₁ Q₂)
+  have hsource : (m₁, m₂) = (m₁, 0) + (0, m₂) := by
+    ext <;> simp
+  have hdecomp : e.symm (m₁, m₂) = f₁ m₁ + f₂ m₂ := by
+    calc
+      e.symm (m₁, m₂) = e.symm ((m₁, 0) + (0, m₂)) := congrArg e.symm hsource
+      _ = e.symm (m₁, 0) + e.symm (0, m₂) := map_add e.symm _ _
+      _ = f₁ m₁ + f₂ m₂ := rfl
+  have htargetSource : (CliffordAlgebra.spinVectorAction Q₁ x m₁, m₂) =
+      (CliffordAlgebra.spinVectorAction Q₁ x m₁, 0) + (0, m₂) := by
+    ext <;> simp
+  have htarget : e.symm (CliffordAlgebra.spinVectorAction Q₁ x m₁, m₂) =
+      f₁ (CliffordAlgebra.spinVectorAction Q₁ x m₁) + f₂ m₂ := by
+    calc
+      e.symm (CliffordAlgebra.spinVectorAction Q₁ x m₁, m₂) =
+          e.symm ((CliffordAlgebra.spinVectorAction Q₁ x m₁, 0) + (0, m₂)) :=
+        congrArg e.symm htargetSource
+      _ = e.symm (CliffordAlgebra.spinVectorAction Q₁ x m₁, 0) + e.symm (0, m₂) :=
+        map_add e.symm _ _
+      _ = f₁ (CliffordAlgebra.spinVectorAction Q₁ x m₁) + f₂ m₂ := rfl
+  rw [hdecomp, map_add, htarget]
+  congr 1
+  · simpa [f₁] using
+      (QuadraticMap.Isometry.spinGroupMap_spinVectorAction f₁ x m₁)
+  · simpa [f₁, f₂] using e.spinGroupMap_fixed_of_prod x m₂
 
 end QuadraticMap.IsometryEquiv

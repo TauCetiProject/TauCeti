@@ -105,36 +105,14 @@ theorem realCliffordSpinInclusion_fixed_last (n : ℕ) (x : realCliffordSpinGrou
 
 /-- In positive-split coordinates, the lower-rank Spin inclusion acts on the first summand by
 the original Spin element and fixes the complementary line. -/
+@[simp]
 theorem realCliffordSpinInclusion_spinVectorAction_split (n : ℕ)
     (x : realCliffordSpinGroupZero n) (m : Fin n → ℝ) (r : ℝ) :
     spinVectorAction (realCliffordForm (n + 1) 0) (realCliffordSpinInclusion n x)
         ((realCliffordPositiveSplitIsometry n 0).symm (m, r)) =
       (realCliffordPositiveSplitIsometry n 0).symm
         (spinVectorAction (realCliffordForm n 0) x m, r) := by
-  let e := realCliffordPositiveSplitIsometry n 0
-  let f₁ := e.symm.toIsometry.comp
-    (QuadraticMap.Isometry.inl (realCliffordForm n 0)
-      (QuadraticMap.sq (R := ℝ) (A := ℝ)))
-  let f₂ := e.symm.toIsometry.comp
-    (QuadraticMap.Isometry.inr (realCliffordForm n 0)
-      (QuadraticMap.sq (R := ℝ) (A := ℝ)))
-  have hinclusion : realCliffordSpinInclusion n x = f₁.spinGroupMap x := by
-    apply Subtype.ext
-    rw [coe_realCliffordSpinInclusion_apply,
-      QuadraticMap.Isometry.coe_spinGroupMap_apply]
-  have hdecomp : e.symm (m, r) = f₁ m + f₂ r := by
-    rw [show (m, r) = (m, 0) + (0, r) by ext <;> simp, map_add]
-    rfl
-  have htarget : e.symm (spinVectorAction (realCliffordForm n 0) x m, r) =
-      f₁ (spinVectorAction (realCliffordForm n 0) x m) + f₂ r := by
-    rw [show (spinVectorAction (realCliffordForm n 0) x m, r) =
-      (spinVectorAction (realCliffordForm n 0) x m, 0) + (0, r) by ext <;> simp, map_add]
-    rfl
-  rw [hinclusion, hdecomp, map_add, htarget]
-  congr 1
-  · simpa [f₁] using
-      (QuadraticMap.Isometry.spinGroupMap_spinVectorAction f₁ x m)
-  · simpa [f₁, f₂] using e.spinGroupMap_fixed_of_prod x r
+  exact (realCliffordPositiveSplitIsometry n 0).spinGroupMap_spinVectorAction_prod x m r
 
 /-- The lower-rank homomorphism `Spin(n) → Spin(n + 1)` is injective. -/
 theorem realCliffordSpinInclusion_injective (n : ℕ) :
@@ -206,10 +184,10 @@ theorem realCliffordSpinInclusion_negOne (n : ℕ) [NeZero n] :
         (spinGroup.negOne (realCliffordForm n 0)
           (nondegenerate_realCliffordForm n 0).ne_zero) =
       spinGroup.negOne (realCliffordForm (n + 1) 0)
-        (nondegenerate_realCliffordForm (n + 1) 0).ne_zero := by
-  apply Subtype.ext
-  rw [coe_realCliffordSpinInclusion_apply, spinGroup.coe_negOne,
-    spinGroup.coe_negOne, map_neg, map_one]
+        (nondegenerate_realCliffordForm (n + 1) 0).ne_zero :=
+  (realCliffordSpinInclusionIsometry n).spinGroupMap_negOne
+    (nondegenerate_realCliffordForm n 0).ne_zero
+    (nondegenerate_realCliffordForm (n + 1) 0).ne_zero
 
 /-- An element of `Spin(n + 1)` over the projection of an included element of `Spin(n)` is that
 element or its translate by the canonical nontrivial kernel element. -/
@@ -223,29 +201,12 @@ theorem eq_realCliffordSpinInclusion_or_eq_realCliffordSpinInclusion_negOne_mul_
       x = realCliffordSpinInclusion n
         (spinGroup.negOne (realCliffordForm n 0)
           (nondegenerate_realCliffordForm n 0).ne_zero * y) := by
-  have hker : x / realCliffordSpinInclusion n y ∈
-      MonoidHom.ker (spinToSpecialOrthogonal (realCliffordForm (n + 1) 0)) :=
-    (spinToSpecialOrthogonal (realCliffordForm (n + 1) 0)).div_mem_ker_iff.mpr h
-  rcases (mem_ker_spinToSpecialOrthogonal_iff
+  rcases eq_or_eq_negOne_mul_of_spinToSpecialOrthogonal_eq
       (realCliffordForm (n + 1) 0)
-      (nondegenerate_realCliffordForm (n + 1) 0)
-      (x / realCliffordSpinInclusion n y)).mp hker with hOne | hNeg
-  · left
-    calc
-      x = (x / realCliffordSpinInclusion n y) * realCliffordSpinInclusion n y :=
-        (div_mul_cancel x _).symm
-      _ = realCliffordSpinInclusion n y := by rw [hOne, one_mul]
-  · right
-    calc
-      x = (x / realCliffordSpinInclusion n y) * realCliffordSpinInclusion n y :=
-        (div_mul_cancel x _).symm
-      _ = spinGroup.negOne (realCliffordForm (n + 1) 0)
-          (nondegenerate_realCliffordForm (n + 1) 0).ne_zero *
-            realCliffordSpinInclusion n y := by rw [hNeg]
-      _ = realCliffordSpinInclusion n
-          (spinGroup.negOne (realCliffordForm n 0)
-            (nondegenerate_realCliffordForm n 0).ne_zero * y) := by
-        rw [map_mul, realCliffordSpinInclusion_negOne]
+      (nondegenerate_realCliffordForm (n + 1) 0) x (realCliffordSpinInclusion n y) h with
+    hOne | hNeg
+  · exact Or.inl hOne
+  · exact Or.inr (hNeg.trans (by rw [map_mul, realCliffordSpinInclusion_negOne]))
 
 end
 

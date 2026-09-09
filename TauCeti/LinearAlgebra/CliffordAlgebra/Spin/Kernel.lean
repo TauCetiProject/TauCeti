@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 
@@ -21,6 +22,10 @@ contraction and the exterior-algebra basis. Unitarity then restricts the scalar 
 
 * `CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_iff`: a Spin element is in the kernel
 exactly when it is `1` or the canonical scalar `-1`.
+* `QuadraticMap.Isometry.spinGroupMap_negOne`: maps induced by quadratic isometries preserve the
+  canonical scalar `-1`.
+* `CliffordAlgebra.eq_or_eq_negOne_mul_of_spinToSpecialOrthogonal_eq`: two Spin elements with the
+  same projection differ by at most the canonical scalar `-1`.
 * `CliffordAlgebra.card_ker_spinToSpecialOrthogonal`: the kernel of the Spin action on
 the special orthogonal group has cardinality two.
 * `CliffordAlgebra.zmodTwoMulEquivKerSpinToSpecialOrthogonal`: the kernel is canonically
@@ -215,6 +220,27 @@ end NegOne
 
 end CliffordAlgebra
 
+namespace QuadraticMap.Isometry
+
+universe u v w
+
+
+variable {K : Type u} [Field K]
+  {M : Type v} [AddCommGroup M] [Module K M]
+  {N : Type w} [AddCommGroup N] [Module K N]
+  {Q : QuadraticForm K M} {P : QuadraticForm K N}
+
+/-- A Spin-group map induced by a quadratic isometry preserves the canonical scalar `-1`. -/
+@[simp]
+theorem spinGroupMap_negOne (f : Q →qᵢ P) (hQ : Q ≠ 0) (hP : P ≠ 0) :
+    f.spinGroupMap (CliffordAlgebra.spinGroup.negOne Q hQ) =
+      CliffordAlgebra.spinGroup.negOne P hP := by
+  apply Subtype.ext
+  rw [coe_spinGroupMap_apply, CliffordAlgebra.spinGroup.coe_negOne,
+    CliffordAlgebra.spinGroup.coe_negOne, map_neg, map_one]
+
+end QuadraticMap.Isometry
+
 namespace CliffordAlgebra
 
 section Kernel
@@ -243,6 +269,25 @@ theorem mem_ker_spinToSpecialOrthogonal_iff
   · rintro (rfl | rfl)
     · exact Subgroup.one_mem _
     · exact spinGroup.negOne_mem_ker_spinToSpecialOrthogonal Q hQ.ne_zero
+
+/-- Two Spin elements with the same special-orthogonal projection are equal or differ by the
+canonical scalar `-1`. -/
+theorem eq_or_eq_negOne_mul_of_spinToSpecialOrthogonal_eq
+    (Q : QuadraticForm K M) [Invertible (2 : K)] [Nontrivial M]
+    (hQ : Q.Nondegenerate) (x z : spinGroup Q)
+    (h : spinToSpecialOrthogonal Q x = spinToSpecialOrthogonal Q z) :
+    x = z ∨ x = spinGroup.negOne Q hQ.ne_zero * z := by
+  have hker : x / z ∈ MonoidHom.ker (spinToSpecialOrthogonal Q) :=
+    (spinToSpecialOrthogonal Q).div_mem_ker_iff.mpr h
+  rcases (mem_ker_spinToSpecialOrthogonal_iff Q hQ (x / z)).mp hker with hOne | hNeg
+  · left
+    calc
+      x = (x / z) * z := (div_mul_cancel x z).symm
+      _ = z := by rw [hOne, one_mul]
+  · right
+    calc
+      x = (x / z) * z := (div_mul_cancel x z).symm
+      _ = spinGroup.negOne Q hQ.ne_zero * z := by rw [hNeg]
 
 /-- A Spin element lies in the kernel of the orthogonal action exactly when it is
 the scalar `1` or the canonical scalar `-1`. -/
