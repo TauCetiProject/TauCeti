@@ -30,9 +30,9 @@ multiquadratic generators.
 
 ## Main results
 
-* `TauCeti.AlgHom.IsArithFrobAt.apply_sqrt`: `φ x = legendreSym p d • x` for an arithmetic
+* `AlgHom.IsArithFrobAt.apply_sqrt`: `φ x = legendreSym p d • x` for an arithmetic
   Frobenius `φ : S →ₐ[ℤ] S` at `Q` and `x² = d`.
-* `TauCeti.IsArithFrobAt.smul_sqrt`: the same for a Frobenius element `σ` of a monoid acting
+* `IsArithFrobAt.smul_sqrt`: the same for a Frobenius element `σ` of a monoid acting
   on `S`.
 -/
 
@@ -57,7 +57,8 @@ omit [Fact p.Prime] in
 /-- The base Frobenius congruence over a rational prime: for an arithmetic Frobenius
 `φ : S →ₐ[ℤ] S` at an ideal `Q` lying over `(p)`, `φ y ≡ y ^ p (mod Q)`, the exponent being `p`,
 the cardinality of the base residue ring `ℤ ⧸ Q ∩ ℤ`. Internal plumbing for `apply_sqrt`. -/
-private theorem AlgHom.IsArithFrobAt.sub_pow_mem {φ : S →ₐ[ℤ] S} (H : φ.IsArithFrobAt Q)
+private theorem _root_.AlgHom.IsArithFrobAt.sub_pow_mem {φ : S →ₐ[ℤ] S}
+    (H : φ.IsArithFrobAt Q)
     [Q.LiesOver (span {(p : ℤ)})] (y : S) : φ y - y ^ p ∈ Q := by
   have h := H y
   rwa [natCard_quotient_under (p := p) Q] at h
@@ -68,7 +69,7 @@ omit [IsDomain S] in
 /-- The **Frobenius congruence for a square root, refined by Euler's criterion**: for an
 arithmetic Frobenius `φ : S →ₐ[ℤ] S` at `Q` lying over the odd rational prime `p`, if
 `x² = d` then `φ x ≡ legendreSym p d • x (mod Q)`. Internal step of `apply_sqrt`. -/
-private theorem AlgHom.IsArithFrobAt.sub_legendreSym_smul_mem {φ : S →ₐ[ℤ] S}
+private theorem _root_.AlgHom.IsArithFrobAt.sub_legendreSym_smul_mem {φ : S →ₐ[ℤ] S}
     (H : φ.IsArithFrobAt Q) [Q.LiesOver (span {(p : ℤ)})] (hodd : p ≠ 2)
     (hx : x ^ 2 = algebraMap ℤ S d) : φ x - legendreSym p d • x ∈ Q := by
   -- `p` is odd, so `p = 2·(p/2) + 1`; hence `x ^ p = (x²)^(p/2) · x = d^(p/2) · x`.
@@ -120,7 +121,7 @@ Frobenius at `Q`. If `x² = d` for an integer `d` not divisible by `p`, then
 `φ x = legendreSym p d • x`: the Frobenius fixes `√d` when `d` is a quadratic residue mod `p`
 and negates it otherwise. (Primality of `Q` is not needed: the sign separation comes from `S`
 being a domain and `Q ∩ ℤ = (p)`.) -/
-theorem AlgHom.IsArithFrobAt.apply_sqrt {φ : S →ₐ[ℤ] S} (H : φ.IsArithFrobAt Q)
+theorem _root_.AlgHom.IsArithFrobAt.apply_sqrt {φ : S →ₐ[ℤ] S} (H : φ.IsArithFrobAt Q)
     [Q.LiesOver (span {(p : ℤ)})] (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
     (hx : x ^ 2 = algebraMap ℤ S d) :
     φ x = legendreSym p d • x := by
@@ -148,12 +149,12 @@ theorem AlgHom.IsArithFrobAt.apply_sqrt {φ : S →ₐ[ℤ] S} (H : φ.IsArithFr
 /-- **A Frobenius element acts on square roots by the Legendre symbol**, action form: if `σ : M`
 is an arithmetic Frobenius at an ideal `Q` over the odd prime `p` and `x² = d` with `p ∤ d`,
 then `σ • x = legendreSym p d • x`. Only a monoid action is needed. -/
-theorem IsArithFrobAt.smul_sqrt {M : Type*} [Monoid M] [MulSemiringAction M S]
+theorem _root_.IsArithFrobAt.smul_sqrt {M : Type*} [Monoid M] [MulSemiringAction M S]
     [SMulCommClass M ℤ S] {σ : M} (H : _root_.IsArithFrobAt ℤ σ Q)
     [Q.LiesOver (span {(p : ℤ)})] (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
     (hx : x ^ 2 = algebraMap ℤ S d) :
     σ • x = legendreSym p d • x := by
   simpa only [MulSemiringAction.toAlgHom_apply] using
-    TauCeti.AlgHom.IsArithFrobAt.apply_sqrt H hodd hd hx
+    AlgHom.IsArithFrobAt.apply_sqrt H hodd hd hx
 
 end TauCeti

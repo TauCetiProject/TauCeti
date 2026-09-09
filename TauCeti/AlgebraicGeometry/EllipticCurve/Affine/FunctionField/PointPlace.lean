@@ -301,7 +301,8 @@ open TauCeti TauCeti.WeierstrassCurve.Affine
 variable {F : Type*} [Field F] (W : _root_.WeierstrassCurve.Affine F) [W.IsElliptic]
 
 local instance : IsDedekindDomain W.CoordinateRing :=
-  isDedekindDomain_coordinateRing W
+  have := isIntegrallyClosed_coordinateRing W
+  W.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
 
 /-- **The point--place dictionary for an elliptic curve**: rational points correspond to the
 degree-one normalized places of the function field.  The point at infinity goes to

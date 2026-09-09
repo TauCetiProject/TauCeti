@@ -79,6 +79,23 @@ attribute [simp] SkewZigzagParameter.ratio_self
 
 namespace SkewZigzagParameter
 
+section Ratio
+
+variable {k : Type w} [Monoid k] {V : Type u} {G : SimpleGraph V}
+
+/-- **Skew-zigzag ratios compose along incident edges.** -/
+@[simp]
+theorem ratio_mul_ratio (c : SkewZigzagParameter k G) {i j j' j'' : V}
+    (h : G.Adj i j) (h' : G.Adj i j') (h'' : G.Adj i j'') :
+    c.ratio h h' * c.ratio h' h'' = c.ratio h h'' := by
+  calc
+    c.ratio h h' * c.ratio h' h'' = (c.ratio h'' h)⁻¹ :=
+      eq_inv_of_mul_eq_one_left (c.ratio_cocycle h h' h'')
+    _ = c.ratio h h'' := by
+      rw [eq_inv_of_mul_eq_one_left (c.ratio_inv h'' h), inv_inv]
+
+end Ratio
+
 section One
 
 variable {k : Type w} [Monoid k] {V : Type u} {G : SimpleGraph V}

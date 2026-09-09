@@ -147,8 +147,9 @@ theorem moduleFinite_intermediateRing_of_isElliptic (φ : Isogeny W₁ W₂) [W�
     [IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField]
     (h : ∀ x, algebraMap W₂.CoordinateRing W₁.FunctionField x = φ.pullback x) :
     Module.Finite W₂.CoordinateRing φ.intermediateRing := by
+  have := WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing W₁
   have : IsDedekindDomain W₁.CoordinateRing :=
-    WeierstrassCurve.Affine.isDedekindDomain_coordinateRing W₁
+    W₁.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
   exact φ.moduleFinite_intermediateRing_of_isDedekindDomain h
 
 end Isogeny

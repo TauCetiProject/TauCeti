@@ -32,6 +32,9 @@ Eisenstein*, §2.2.
   genus characters at some narrow class.
 * `TauCeti.Multiquadratic.exists_forall_genusCharFunNarrowClassGroupHom_subset_eq`: the same class
   has the prescribed product of signs as the value of every subset-indexed genus character.
+* `TauCeti.Multiquadratic.exists_genusCharFunElementaryTwoQuotientFamilyLinearMap_eq`: the same
+  statement for the `ZMod 2`-linear family on `Cl⁺(K)/Cl⁺(K)²`, where the product-one condition
+  becomes the vanishing of the coordinate sum.
 -/
 
 public section
@@ -86,5 +89,32 @@ theorem exists_forall_genusCharFunNarrowClassGroupHom_subset_eq
   rw [genusCharFunNarrowClassGroupHom_eq_prod_singleton hs heven hprod hmin hgen hsf hts,
     MonoidHom.finsetProd_apply, ← Finset.prod_coe_sort t]
   exact Finset.prod_congr rfl fun P _ => hA P (hts P.2)
+
+/-- **Every sign vector of coordinate sum zero is a value of the genus characters.** The linear
+form of `exists_forall_genusCharFunNarrowClassGroupHom_singleton_eq`: writing the sign group
+additively, the family of singleton genus characters on `Cl⁺(K)/Cl⁺(K)²` takes every value whose
+coordinates sum to zero. -/
+theorem exists_genusCharFunElementaryTwoQuotientFamilyLinearMap_eq
+    {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
+    (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
+    (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    (hsf : Squarefree d) (v : ↥s → Additive ℤˣ) (hv : ∑ P : ↥s, v P = 0) :
+    ∃ x : NarrowClassGroup.ElementaryTwoQuotient K,
+      genusCharFunElementaryTwoQuotientFamilyLinearMap hs heven hprod hmin hgen hsf x = v := by
+  classical
+  -- Read the vector as a sign function on `ℤ`, whose product over `s` is one.
+  let ε : ℤ → ℤˣ := fun P => if h : P ∈ s then Additive.toMul (v ⟨P, h⟩) else 1
+  have hε : ∏ P ∈ s, ε P = 1 := by
+    have hprodε : ∏ P ∈ s, ε P = ∏ P : ↥s, Additive.toMul (v P) := by
+      rw [← Finset.prod_coe_sort s]
+      exact Finset.prod_congr rfl fun P _ => by simp [ε, P.2]
+    rw [hprodε, ← toMul_sum, hv, toMul_zero]
+  obtain ⟨A, hA⟩ :=
+    exists_forall_genusCharFunNarrowClassGroupHom_singleton_eq hs heven hprod hmin hgen hsf ε hε
+  refine ⟨TauCeti.elementaryTwoQuotientMk A, funext fun P => ?_⟩
+  rw [genusCharFunElementaryTwoQuotientFamilyLinearMap_apply,
+    genusCharFunElementaryTwoQuotientLinearMap_mk, hA P P.2]
+  simp [ε, P.2]
 
 end TauCeti.Multiquadratic

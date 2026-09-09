@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Frobenius
 public import TauCeti.Algebra.Group.Conj
 public import TauCeti.NumberTheory.NumberField.Frobenius.Restriction
 public import TauCeti.NumberTheory.NumberField.UnramifiedTower
+public import TauCeti.NumberTheory.RamificationInertia.Tower
 import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 import TauCeti.NumberTheory.NumberField.Frobenius.Tower
 import TauCeti.NumberTheory.NumberField.SplitsCompletely
@@ -117,7 +118,9 @@ theorem artinSymbol_map_restrictNormalHom {M L : Type*} [Field M] [NumberField M
       Algebra.IsUnramifiedAt (𝓞 K) Q) :
     ConjClasses.map (AlgEquiv.restrictNormalHom (F := K) (K₁ := L) M)
         (artinSymbol 𝔭 hur) =
-      artinSymbol 𝔭 (isUnramifiedAt_of_intermediateExtension (M := M) (L := L) 𝔭 hur) := by
+      artinSymbol 𝔭 (fun P _ _ ↦
+        TauCeti.RamificationInertia.isUnramifiedAt_of_isUnramifiedIn (S := 𝓞 L)
+          (fun Q hQ hQ' ↦ @hur Q hQ hQ') P) := by
   let Q : 𝔭.primesOver (𝓞 L) := Classical.choice inferInstance
   let _ : Q.1.IsPrime := Q.2.1
   let _ : Q.1.LiesOver 𝔭 := Q.2.2
@@ -127,7 +130,9 @@ theorem artinSymbol_map_restrictNormalHom {M L : Type*} [Field M] [NumberField M
     (Ideal.ne_bot_of_liesOver_of_ne_bot h𝔭ne Q.1)
   rw [artinSymbol_eq_mk_of_isArithFrobAt 𝔭 hur Q.1 σ hσ,
     artinSymbol_eq_mk_of_isArithFrobAt 𝔭
-      (isUnramifiedAt_of_intermediateExtension (M := M) (L := L) 𝔭 hur)
+      (fun P _ _ ↦
+        TauCeti.RamificationInertia.isUnramifiedAt_of_isUnramifiedIn (S := 𝓞 L)
+          (fun Q hQ hQ' ↦ @hur Q hQ hQ') P)
       (Q.1.under (𝓞 M))
       (σ.restrictNormal M) hσ.restrictNormal]
   -- `AlgEquiv.restrictNormalHom M σ` is `σ.restrictNormal M`, so this is exactly the computation

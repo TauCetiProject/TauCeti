@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.Localization.Away.Basic
 
 /-!
@@ -35,6 +36,10 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
 * `TauCeti.Localization.divBy_mul_cancel_left` and
   `TauCeti.Localization.divBy_mul_cancel_right`: `(s · t)/s = t` and `(t · s)/s = t`.
 * `TauCeti.Localization.divBy_self`: `s/s = 1`.
+* `TauCeti.Localization.adjoin_invSelf_eq_top`: `S` is generated over `A` by `1/s`.
+* `TauCeti.Localization.adjoin_divBy_eq_top`: as soon as the numerators `T` together with the
+  denominator `s` generate the unit ideal, the fractions `t/s` alone already generate `S` over
+  `A`.
 * `TauCeti.Localization.divBy_mul_divBy_of_eq_mul`: for `s = u * r`, the fraction `(a · b)/s`
   splits as `(a · r)/s · (b · u)/s`, each half carrying one factor of the denominator.
 * `TauCeti.Localization.awayLift_divBy`: the comparison map to a localisation at a multiple
@@ -54,6 +59,14 @@ is `TauCeti/RingTheory/Huber/LocalizationTopology/Basic.lean`, which records the
 checked against `dev/adic-spaces` at commit `37bbdaeb9`, which has neither the splitting identity
 for a factored denominator nor any statement about `IsLocalization.Away.lift` on distinguished
 fractions. Both are proved here directly from Mathlib's `mk'` API.
+
+`adjoin_invSelf_eq_top` and `adjoin_divBy_eq_top` are **also later additions with no AINTLIB
+analogue**, checked against the same commit. What that source has is
+`locSubring_isNoetherianRing`, which presents the *ring of definition* `A₀[t₁/s, …, tₙ/s]` as an
+image of `MvPolynomial T A₀`; that surjectivity is true by construction, since `locSubring` is
+defined as the adjoin, and it says nothing about the localisation `S` itself. Generating the whole
+of `S` over `A` is a strictly stronger statement and needs the hypothesis on `T` below, which the
+source never states.
 
 ## References
 
@@ -199,6 +212,70 @@ theorem awayLift_divBy {V W : Type*} [CommSemiring V] [CommSemiring W] [Algebra 
     IsLocalization.Away.lift u hu (divBy a u : V) = (divBy (a * r) w : W) := by
   rw [divBy_def, IsLocalization.Away.lift, IsLocalization.lift_mk'_spec, ← divBy_mul,
     show u * (a * r) = a * w by rw [hw]; ring, divBy_mul_cancel_right]
+
+/-! ### The fractions generate
+
+A localisation away from `s` is generated over `A` by `1/s` alone; and as soon as the numerators
+together with `s` generate the unit ideal, already by the fractions `t/s` themselves. Including `s`
+among the generators is what makes the second statement usable: its own fraction `s/s` is `1`, so
+the term it contributes after dividing through is a constant, not a further fraction. Nothing
+topological enters —
+this is the algebraic half of the statement that a rational localisation is a quotient of a
+polynomial ring, one variable per numerator.
+
+Neither statement is phrased as a surjectivity of `MvPolynomial.aeval`, although that is what
+each of them says: Mathlib's `Algebra.adjoin_range_eq_range_aeval` rewrites one into the other,
+and stating it here would cost the file an `MvPolynomial` import to say what a consumer can
+already say in a line. -/
+
+/-- **A localisation away from `s` is generated over `A` by `1/s`.** Every element is `a/sⁿ`,
+which is `a · (1/s)ⁿ`. -/
+theorem adjoin_invSelf_eq_top :
+    Algebra.adjoin A {(IsLocalization.Away.invSelf s : S)} = ⊤ := by
+  rw [eq_top_iff]
+  rintro x -
+  obtain ⟨⟨a, m⟩, hx⟩ := IsLocalization.surj (Submonoid.powers s) x
+  obtain ⟨n, hn⟩ := m.2
+  have hx' : x = algebraMap A S a * (IsLocalization.Away.invSelf s : S) ^ n := by
+    rw [← hx, ← hn, map_pow, mul_assoc, ← mul_pow, IsLocalization.Away.mul_invSelf, one_pow,
+      mul_one]
+  rw [hx']
+  refine mul_mem (Subalgebra.algebraMap_mem _ a) (pow_mem ?_ n)
+  exact Algebra.subset_adjoin rfl
+
+/-- **Numerators generating the unit ideal together with `s` make their fractions generate the
+localisation.** If `T ∪ {s}` spans `A` as an ideal then `S` is already `A[t/s : t ∈ T]` — no
+separate `1/s` is needed.
+
+Including `s` among the generators costs nothing and is what the intended application supplies:
+writing `1 = c · s + ∑ cₜ · t` and dividing by `s` exhibits `1/s` as `c + ∑ cₜ · (t/s)`, after
+which `adjoin_invSelf_eq_top` finishes. The `c · s` term contributes the coefficient `c`, which
+lies in `A` and so is already in the subalgebra; that is why `s` may be one of the generators
+without being one of the numerators. The hypothesis cannot be dropped: over
+`A = ℤ` with `s = p` and `T = ∅` the fractions generate only `ℤ`, not `ℤ[1/p]`.
+
+The hypothesis is exactly what Wedhorn's rational subsets supply: there `T · A` is required to be
+*open*, and an open ideal of a Tate ring is `⊤` by
+`TauCeti.Huber.IsTateRing.eq_top_of_isOpen`. -/
+theorem adjoin_divBy_eq_top {T : Set A} (hT : Ideal.span (insert s T) = ⊤) :
+    Algebra.adjoin A (Set.range fun t : T ↦ (divBy (t : A) s : S)) = ⊤ := by
+  set E := Algebra.adjoin A (Set.range fun t : T ↦ (divBy (t : A) s : S))
+  have key : ∀ a ∈ Ideal.span (insert s T),
+      algebraMap A S a * (IsLocalization.Away.invSelf s : S) ∈ E := by
+    intro a ha
+    induction ha using Submodule.span_induction with
+    | mem y hy =>
+        rcases hy with rfl | hy
+        · simp [IsLocalization.Away.mul_invSelf]
+        · exact algebraMap_mul_invSelf (S := S) y s ▸ Algebra.subset_adjoin ⟨⟨y, hy⟩, rfl⟩
+    | zero => simp
+    | add y z _ _ hy hz => rw [map_add, add_mul]; exact add_mem hy hz
+    | smul c y _ hy =>
+        rw [smul_eq_mul, map_mul, mul_assoc]
+        exact mul_mem (Subalgebra.algebraMap_mem _ _) hy
+  rw [eq_top_iff, ← adjoin_invSelf_eq_top s (S := S), Algebra.adjoin_le_iff,
+    Set.singleton_subset_iff]
+  simpa using key 1 ((Ideal.eq_top_iff_one _).mp hT)
 
 /-! ### The trivial denominator
 

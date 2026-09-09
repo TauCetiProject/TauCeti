@@ -69,7 +69,7 @@ cokernel of `D₁` (`TauCeti.quotientRangeParameterProjEquiv`), and the surjecti
 the degenerate case of that identification.
 
 The index statement needs neither completeness nor the Fredholm property, because
-`TauCeti.ContinuousLinearMap.index` is a difference of two `Module.finrank`s and the sequence
+`ContinuousLinearMap.index` is a difference of two `Module.finrank`s and the sequence
 matches both of them. The Fredholm statement additionally assumes that `D₁` is Fredholm and asks
 for Banach spaces, then certifies the two dimensions finite through
 `ContinuousLinearMap.IsFredholm.of_finite_ker_coker`.

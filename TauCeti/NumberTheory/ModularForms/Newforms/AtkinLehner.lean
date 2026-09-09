@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.ConductorDichotomy
 public import TauCeti.NumberTheory.ModularForms.Newforms.Basic
-public import TauCeti.NumberTheory.ModularForms.Newforms.Descent
+public import TauCeti.NumberTheory.ModularForms.Newforms.Descent.Basic
 
 /-!
 # A form with a periodic level-`l` descent is old
@@ -39,7 +39,7 @@ instead assumes `QExpansionSupportedOnDvd l f` and obtains `φ` from it.
   level-`l` descent is invariant under the weight-`k` slash action of `T`, is old.
 * `TauCeti.mem_cuspFormsOld_of_qExpansionSupportedOnDvd`: **the Atkin–Lehner step at one
   divisor** — the same conclusion from the `q`-expansion support condition alone, the descent
-  being supplied by `Newforms/Descent.lean`.
+  being supplied by `Newforms/Descent/Basic.lean`.
 
 ## Provenance
 
@@ -115,7 +115,8 @@ theorem mem_cuspFormsOld_of_qExpansionSupportedOnDvd {l : ℕ} (hl : l ≠ 1) (h
     (hf : haveI : NeZero l := NeZero.of_dvd hlN
       QExpansionSupportedOnDvd l f) :
     f ∈ cuspFormsOld N k := by
-  -- The support condition is spent entirely on manufacturing the descent: `Descent.lean` turns
+  -- The support condition is spent entirely on manufacturing the descent:
+  -- `Newforms/Descent/Basic.lean` turns
   -- it into a `T`-invariant `φ` with `f = l ^ (1 - k) • (φ ∣[k] diag(l, 1))`, and
   -- `mem_cuspFormsOld_of_slash_T_eq` reads the level-lowering dichotomy off that.
   have : NeZero l := NeZero.of_dvd hlN

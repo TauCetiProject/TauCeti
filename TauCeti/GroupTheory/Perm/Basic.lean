@@ -5,21 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Perm.Support
+public import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.GroupTheory.Perm.ViaEmbedding
 
 /-!
 # Elementary facts about permutations
 
 This file records general-purpose facts about permutations: an identity between transpositions,
-a characterization of permutations with a unique fixed point, a permutation transported along an
-injection, and the combination of two permutations transported along injections with disjoint
-ranges.
+a characterization of permutations with a unique fixed point, the orbit relation of an involution,
+a permutation transported along an injection, and the combination of two permutations transported
+along injections with disjoint ranges.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- Two points lie in the same orbit of an involution exactly when they are equal or one is the
+image of the other. -/
+theorem sameCycle_toPerm_iff {α : Type*} (f : α → α) (hf : Function.Involutive f) (a b : α) :
+    (hf.toPerm f).SameCycle a b ↔ a = b ∨ a = f b := by
+  constructor
+  · intro h
+    obtain ⟨i, hi⟩ := h.symm
+    rcases Equiv.Perm.zpow_apply_eq_of_apply_apply_eq_self
+      (f := hf.toPerm f) (x := b) (hf b) i with h | h
+    · exact Or.inl (hi.symm.trans h)
+    · exact Or.inr (hi.symm.trans h)
+  · rintro (rfl | h)
+    · exact Equiv.Perm.SameCycle.rfl
+    · refine ⟨1, ?_⟩
+      have : f a = b := by
+        calc
+          f a = f (f b) := congrArg f h
+          _ = b := hf b
+      simpa using this
 
 variable {α : Type*} [Fintype α] [DecidableEq α]
 
