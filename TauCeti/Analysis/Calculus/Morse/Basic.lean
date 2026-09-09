@@ -81,8 +81,8 @@ the notion be read off in any chart.
   locus is finite on a compact set on which `fderiv ℝ f` is continuous.
 * `TauCeti.isNondegenerateCriticalPoint_comp_iff` and `TauCeti.IsNondegenerateCriticalPoint.comp`:
   nondegeneracy is invariant under a change of coordinates with invertible differential.
-* `TauCeti.IsNondegenerateCriticalPoint.neg`: nondegeneracy is invariant under negating the
-  function.
+* `TauCeti.IsNondegenerateCriticalPoint.neg` and `TauCeti.isNondegenerateCriticalPoint_neg`:
+  nondegeneracy is invariant under negating the function.
 * `ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self`: the local model. A
   continuous bilinear form `B` whose polarization `B.flip + B` is invertible makes `z ↦ B z z` a
   function with a nondegenerate critical point at the origin.
@@ -277,6 +277,14 @@ theorem IsNondegenerateCriticalPoint.neg (h : IsNondegenerateCriticalPoint f x) 
     simp
   rw [hsnd, hcomp]
   exact ContinuousLinearMap.isInvertible_equiv.comp h.isInvertible
+
+/-- **Nondegeneracy of a critical point is invariant under negating the function.** Negation is
+involutive, so the one-way implication `TauCeti.IsNondegenerateCriticalPoint.neg` applied twice
+gives both directions. -/
+@[simp]
+theorem isNondegenerateCriticalPoint_neg :
+    IsNondegenerateCriticalPoint (-f) x ↔ IsNondegenerateCriticalPoint f x :=
+  ⟨fun h ↦ by simpa using h.neg, IsNondegenerateCriticalPoint.neg⟩
 
 end Morse
 
