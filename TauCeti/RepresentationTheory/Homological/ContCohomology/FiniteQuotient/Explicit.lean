@@ -143,9 +143,7 @@ theorem explicitFiniteQuotientTransition1_id (U : OpenNormalSubgroup G) :
         (ContinuousMonoidHom.id _) (AddMonoidHom.id _) continuous_id (fun _ _ => rfl) := by
       apply explicitMap1_congr_of_eq
       · exact continuousFiniteQuotientMap_refl G U
-      · apply AddMonoidHom.ext
-        intro m
-        exact Subtype.ext (coe_fixedPointsInclusion (le_refl U.toSubgroup) m)
+      · exact fixedPointsInclusion_self M U.toSubgroup
     _ = AddMonoidHom.id _ := explicitMap1_id _ _ _
 
 /-- For `W ≤ V ≤ U`, the transition from the `U`-level to the `W`-level is the composite
@@ -157,9 +155,36 @@ theorem explicitFiniteQuotientTransition1_comp (U V W : OpenNormalSubgroup G)
         (explicitFiniteQuotientTransition1 G M U V hVU) := by
   rw [explicitFiniteQuotientTransition1, explicitFiniteQuotientTransition1,
     explicitFiniteQuotientTransition1]
+  have hcomp : ∀ (q : G ⧸ W.toSubgroup)
+      (m : FixedPoints.addSubgroup U.toSubgroup M),
+      (fixedPointsInclusion hWV :
+          FixedPoints.addSubgroup V.toSubgroup M →+
+            FixedPoints.addSubgroup W.toSubgroup M)
+          ((fixedPointsInclusion hVU :
+            FixedPoints.addSubgroup U.toSubgroup M →+
+              FixedPoints.addSubgroup V.toSubgroup M)
+            (continuousFiniteQuotientMap G hVU
+              (continuousFiniteQuotientMap G hWV q) • m)) =
+        q • (fixedPointsInclusion hWV :
+          FixedPoints.addSubgroup V.toSubgroup M →+
+            FixedPoints.addSubgroup W.toSubgroup M)
+          ((fixedPointsInclusion hVU :
+            FixedPoints.addSubgroup U.toSubgroup M →+
+              FixedPoints.addSubgroup V.toSubgroup M) m) := by
+    intro q m
+    rw [fixedPointsInclusion_equivariant G M hVU]
+    exact fixedPointsInclusion_equivariant G M hWV q
+      ((fixedPointsInclusion hVU :
+        FixedPoints.addSubgroup U.toSubgroup M →+
+          FixedPoints.addSubgroup V.toSubgroup M) m)
   calc
-    _ = explicitMap1 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
-        (G ⧸ W.toSubgroup) (FixedPoints.addSubgroup W.toSubgroup M)
+    _ = @explicitMap1
+        (G ⧸ U.toSubgroup) inferInstance inferInstance
+        (FixedPoints.addSubgroup U.toSubgroup M) inferInstance inferInstance inferInstance
+        inferInstance (continuousSMulQuotientFixedPointsOfContinuousSMul G M U.toSubgroup)
+        (G ⧸ W.toSubgroup) inferInstance inferInstance
+        (FixedPoints.addSubgroup W.toSubgroup M) inferInstance inferInstance inferInstance
+        inferInstance (continuousSMulQuotientFixedPointsOfContinuousSMul G M W.toSubgroup)
         ((continuousFiniteQuotientMap G hVU).comp (continuousFiniteQuotientMap G hWV))
         ((fixedPointsInclusion hWV :
           FixedPoints.addSubgroup V.toSubgroup M →+
@@ -168,24 +193,10 @@ theorem explicitFiniteQuotientTransition1_comp (U V W : OpenNormalSubgroup G)
             FixedPoints.addSubgroup U.toSubgroup M →+
               FixedPoints.addSubgroup V.toSubgroup M))
         (continuous_of_discreteTopology.comp continuous_of_discreteTopology)
-        (fun q m => by
-          change fixedPointsInclusion hWV
-              (fixedPointsInclusion hVU
-                (continuousFiniteQuotientMap G hVU
-                  (continuousFiniteQuotientMap G hWV q) • m)) =
-            q • fixedPointsInclusion hWV (fixedPointsInclusion hVU m)
-          rw [fixedPointsInclusion_equivariant G M hVU]
-          exact fixedPointsInclusion_equivariant G M hWV q
-            ((fixedPointsInclusion hVU :
-              FixedPoints.addSubgroup U.toSubgroup M →+
-                FixedPoints.addSubgroup V.toSubgroup M) m)) := by
+        (fun q m ↦ hcomp q m) := by
       apply explicitMap1_congr_of_eq
       · exact (continuousFiniteQuotientMap_comp G hWV hVU).symm
-      · apply AddMonoidHom.ext
-        intro m
-        exact Subtype.ext <| (coe_fixedPointsInclusion (hWV.trans hVU) m).trans <|
-          ((coe_fixedPointsInclusion hWV (fixedPointsInclusion hVU m)).trans
-            (coe_fixedPointsInclusion hVU m)).symm
+      · exact (fixedPointsInclusion_comp_fixedPointsInclusion hVU hWV).symm
     _ = _ := by
       convert @explicitMap1_comp
         (G ⧸ U.toSubgroup) inferInstance inferInstance
@@ -205,17 +216,7 @@ theorem explicitFiniteQuotientTransition1_comp (U V W : OpenNormalSubgroup G)
         (fixedPointsInclusion hWV : FixedPoints.addSubgroup V.toSubgroup M →+
           FixedPoints.addSubgroup W.toSubgroup M)
         continuous_of_discreteTopology (fixedPointsInclusion_equivariant G M hWV)
-        (fun q m => by
-          change fixedPointsInclusion hWV
-              (fixedPointsInclusion hVU
-                (continuousFiniteQuotientMap G hVU
-                  (continuousFiniteQuotientMap G hWV q) • m)) =
-            q • fixedPointsInclusion hWV (fixedPointsInclusion hVU m)
-          rw [fixedPointsInclusion_equivariant G M hVU]
-          exact fixedPointsInclusion_equivariant G M hWV q
-            ((fixedPointsInclusion hVU :
-              FixedPoints.addSubgroup U.toSubgroup M →+
-                FixedPoints.addSubgroup V.toSubgroup M) m)) using 1
+        (fun q m ↦ hcomp q m) using 1
       apply explicitMap1_congr_of_eq <;> rfl
 
 end Transition
@@ -225,7 +226,7 @@ section System
 /-- The explicit degree-one finite-quotient system of a discrete module.  It sends an open normal
 subgroup `U` to `H¹(G ⧸ U, M^U)` and an inclusion `V ≤ U` to the direct explicit transition from
 the `U`-level to the `V`-level. -/
-@[expose] noncomputable def explicitFiniteQuotientSystem1 :
+noncomputable def explicitFiniteQuotientSystem1 :
     (OpenNormalSubgroup G)ᵒᵖ ⥤ AddCommGrpCat.{max u v} where
   obj U := AddCommGrpCat.of
     (H1 (G ⧸ U.unop.toSubgroup) (FixedPoints.addSubgroup U.unop.toSubgroup M))
@@ -245,15 +246,17 @@ the `U`-level to the `V`-level. -/
 theorem explicitFiniteQuotientSystem1_obj (U : OpenNormalSubgroup G) :
     (explicitFiniteQuotientSystem1 G M).obj (Opposite.op U) =
       AddCommGrpCat.of (H1 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :=
-  (rfl)
+  by with_unfolding_all rfl
 
-/-- Every arrow of the explicit degree-one finite-quotient system is the direct transition built
-from `explicitMap1`. -/
+/-- Under the object identifications above, every arrow of the explicit degree-one finite-quotient
+system is the direct transition built from `explicitMap1`. -/
 @[simp]
 theorem explicitFiniteQuotientSystem1_map {U V : (OpenNormalSubgroup G)ᵒᵖ} (f : U ⟶ V) :
-    (explicitFiniteQuotientSystem1 G M).map f = AddCommGrpCat.ofHom
+    eqToHom (explicitFiniteQuotientSystem1_obj G M U.unop).symm ≫
+        (explicitFiniteQuotientSystem1 G M).map f ≫
+      eqToHom (explicitFiniteQuotientSystem1_obj G M V.unop) = AddCommGrpCat.ofHom
       (explicitFiniteQuotientTransition1 G M U.unop V.unop (leOfHom f.unop)) :=
-  (rfl)
+  by with_unfolding_all rfl
 
 end System
 
