@@ -47,6 +47,9 @@ namespace EuclideanSpace
 
 variable {ι κ : Type*}
 
+-- Source blueprint for `gaussianCondMean`, `gaussianCondCov`, `gaussianCondKernel`, and
+-- `condDistrib_multivariateGaussian`: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5,
+-- item 4, and its `Suggested.lean` conditional multivariate Gaussian prototypes.
 /-- The affine conditional-mean formula for the `ι`-block given the `κ`-block.
 Its interpretation as a conditional-law parameter requires a positive-semidefinite joint
 covariance and a positive-definite observed covariance block, as in
