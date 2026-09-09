@@ -34,6 +34,16 @@ statement is about the isotypic component as it stands, not about a decompositio
 module. Those hypotheses enter only where the isotypic component is known to exhaust the module,
 which is `TauCeti/Algebra/Lie/HighestWeight/Isotypic.lean`.
 
+The statements whose *conclusion* names `chi_lam` carry the hypothesis `vermaGenerator b lam ≠ 0`,
+because `TauCeti.vermaCentralCharacter` does: the character of a weight is read off the Verma
+module `M(lam)`, and that `M(lam) ≠ 0` for every `lam` is the Poincaré--Birkhoff--Witt input
+isolated in `TauCeti/Algebra/Lie/HighestWeight/Verma.lean`. In the form the milestone is really
+stated in, on a module carrying a highest weight vector, the hypothesis is discharged by the vector
+itself (`TauCeti.vermaGenerator_ne_zero_of_isHighestWeightVector`), and the Casimir statements
+below, whose conclusions name only the Casimir scalar, need no hypothesis on `lam` at all: at a
+weight with `L(lam) = 0` the isotypic component is `⊥`
+(`LieModule.isotypicComponent_eq_bot_of_subsingleton`).
+
 ## Consequences
 
 Two isotypic components attached to weights with different central characters meet in `0`, so a
@@ -132,16 +142,23 @@ theorem representation_eq_vermaCentralCharacter_smul_of_mem_isotypicComponent
 
 /-- **The Casimir element acts on the `L(lam)`-isotypic component by the Casimir scalar.** The
 concrete instance of the previous theorem, through
-`TauCeti.vermaCentralCharacter_casimirElement`. -/
-theorem representation_casimirElement_eq_casimirScalar_smul_of_mem_isotypicComponent
-    (hne : vermaGenerator b lam ≠ 0) {m : M}
+`TauCeti.vermaCentralCharacter_casimirElement`. Unlike that theorem this one needs no hypothesis on
+`lam`: the Casimir scalar is defined at every weight, and at a weight with `L(lam) = 0` the isotypic
+component is `⊥`. -/
+theorem representation_casimirElement_eq_casimirScalar_smul_of_mem_isotypicComponent {m : M}
     (hm : m ∈ isotypicComponent K L M (irreducibleQuotient b lam)) :
     UniversalEnvelopingAlgebra.representation K L M (casimirElement K L) m =
       casimirScalar b lam • m := by
-  have h := representation_eq_vermaCentralCharacter_smul_of_mem_isotypicComponent hne
-    ⟨casimirElement K L, casimirElement_mem_center K L⟩ hm
-  rw [vermaCentralCharacter_casimirElement b lam hne] at h
-  simpa using h
+  by_cases hne : vermaGenerator b lam = 0
+  · have : Subsingleton (irreducibleQuotient b lam) :=
+      (subsingleton_irreducibleQuotient_iff b lam).mpr hne
+    rw [isotypicComponent_eq_bot_of_subsingleton K L M (irreducibleQuotient b lam),
+      LieSubmodule.mem_bot] at hm
+    simp [hm]
+  · have h := representation_eq_vermaCentralCharacter_smul_of_mem_isotypicComponent hne
+      ⟨casimirElement K L, casimirElement_mem_center K L⟩ hm
+    rw [vermaCentralCharacter_casimirElement b lam hne] at h
+    simpa using h
 
 /-! ### Separating isotypic components -/
 
@@ -165,16 +182,24 @@ theorem isotypicComponent_inf_isotypicComponent_eq_bot_of_vermaCentralCharacter_
 
 /-- **Different Casimir scalars separate isotypic components.** The Casimir form of the previous
 theorem: the Casimir element is a single central element, so its eigenvalue already distinguishes
-the two components. -/
+the two components. As for the Casimir action above, no hypothesis on the weights is needed, a
+weight with `L(lam) = 0` contributing the isotypic component `⊥`. -/
 theorem isotypicComponent_inf_isotypicComponent_eq_bot_of_casimirScalar_ne
-    (hlam : vermaGenerator b lam ≠ 0) (hmu : vermaGenerator b mu ≠ 0)
     (h : casimirScalar b lam ≠ casimirScalar b mu) :
     isotypicComponent K L M (irreducibleQuotient b lam) ⊓
         isotypicComponent K L M (irreducibleQuotient b mu) = ⊥ := by
-  refine isotypicComponent_inf_isotypicComponent_eq_bot_of_vermaCentralCharacter_ne hlam hmu ?_
-  intro heq
-  apply h
-  rw [← vermaCentralCharacter_casimirElement b lam hlam,
-    ← vermaCentralCharacter_casimirElement b mu hmu, heq]
+  by_cases hlam : vermaGenerator b lam = 0
+  · have : Subsingleton (irreducibleQuotient b lam) :=
+      (subsingleton_irreducibleQuotient_iff b lam).mpr hlam
+    rw [isotypicComponent_eq_bot_of_subsingleton K L M (irreducibleQuotient b lam), bot_inf_eq]
+  · by_cases hmu : vermaGenerator b mu = 0
+    · have : Subsingleton (irreducibleQuotient b mu) :=
+        (subsingleton_irreducibleQuotient_iff b mu).mpr hmu
+      rw [isotypicComponent_eq_bot_of_subsingleton K L M (irreducibleQuotient b mu), inf_bot_eq]
+    · refine isotypicComponent_inf_isotypicComponent_eq_bot_of_vermaCentralCharacter_ne hlam hmu ?_
+      intro heq
+      apply h
+      rw [← vermaCentralCharacter_casimirElement b lam hlam,
+        ← vermaCentralCharacter_casimirElement b mu hmu, heq]
 
 end TauCeti
