@@ -244,7 +244,7 @@ private noncomputable def outgoingQuotMap
 private theorem outgoingQuotMap_mk
     {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) (i : Q)
     (f : (e : Σ b : Q, (i ⟶ b)) → M.obj e.1) :
-    outgoingQuotMap η i ((LinearMap.range (outgoingMap M i)).mkQ f) =
+    outgoingQuotMap η i (Submodule.Quotient.mk f) =
       (LinearMap.range (outgoingMap N i)).mkQ (fun e ↦ η.app e.1 (f e)) :=
   rfl
 
@@ -291,7 +291,6 @@ private theorem sourceReflectRepMapApp_self
   · rename_i h
     exact (h rfl).elim
 
-@[simp]
 private theorem sourceReflectRepMapApp_of_ne
     {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) {i : Q} (hi : IsSource i)
     {j : Reflect Q i} (hj : j ≠ i) :
