@@ -10,6 +10,10 @@ import TauCeti.LinearAlgebra.Trace.Pi
 import TauCeti.RepresentationTheory.OfModule
 import TauCeti.RepresentationTheory.Simple.Basic
 
+/-
+Roadmap source: `TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, Layer 5.
+-/
+
 /-!
 # The representation decomposition in Clifford's theorem
 
@@ -43,8 +47,6 @@ representative, while changing that representative changes the summand only up t
 
 ## References
 
-* [Induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md),
-  Layer 5.
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 6.
 * C. W. Curtis and I. Reiner, *Representation Theory of Finite Groups and Associative Algebras*,
   §49.
