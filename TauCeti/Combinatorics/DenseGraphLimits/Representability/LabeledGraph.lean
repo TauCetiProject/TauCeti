@@ -60,11 +60,13 @@ collapses as soon as one of the two vertices is unlabeled
 
 ## References
 
-* `TauCetiRoadmap/DenseGraphLimits/Suggested.lean` — source for the formal signatures.
 * L. Lovász, B. Szegedy, *Limits of dense graph sequences*, JCTB 96 (2006), 933–957, Section 2 —
   `k`-labeled graphs, their product, and connection matrices.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Chapter 6.
 -/
+
+-- Provenance: the names and signatures of the declarations below follow
+-- `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 
 public section
 
@@ -95,6 +97,8 @@ theorem le_n (G : LabeledGraph k) : k ≤ G.n := by
 side. -/
 abbrev Unlabeled (G : LabeledGraph k) : Type := {a : Fin G.n // ∀ i, G.label i ≠ a}
 
+/-- The unlabeled vertices of a labeled graph inherit a finite type from `Fin G.n`, of which they
+are a subtype. -/
 instance (G : LabeledGraph k) : Fintype G.Unlabeled := Subtype.fintype _
 
 /-- The number of unlabeled vertices. -/

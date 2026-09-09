@@ -32,6 +32,11 @@ of the Lovász–Szegedy representability theorem.
 
 ## Main results
 
+* `TauCeti.DenseGraphLimits.isIsoInvariant_iff`,
+  `TauCeti.DenseGraphLimits.isReflectionPositive_iff`,
+  `TauCeti.DenseGraphLimits.isMultiplicative_iff` and
+  `TauCeti.DenseGraphLimits.isNormalized_iff` are the characteristic laws of the four structural
+  conditions, by which each of them is both established and applied;
 * `TauCeti.DenseGraphLimits.isHermitian_connectionMatrix` — isomorphism invariance makes connection
   matrices Hermitian because the two gluing orders are isomorphic;
 * `TauCeti.DenseGraphLimits.IsReflectionPositive.posSemidef` reindexes the definition, which
@@ -55,12 +60,14 @@ a connection matrix on `ι` is a submatrix of one on `Fin (Fintype.card ι)` alo
 
 ## References
 
-* `TauCetiRoadmap/DenseGraphLimits/Suggested.lean` — source for the formal signatures.
 * L. Lovász, B. Szegedy, *Limits of dense graph sequences*, JCTB 96 (2006), 933–957, Theorem 2.2 —
   the four structural conditions and the representability theorem they characterise.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Chapters 5
   and 6.
 -/
+
+-- Provenance: the names and signatures of the declarations below follow
+-- `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 
 public section
 
@@ -76,6 +83,19 @@ labelling-sensitive function on `Fin n`. -/
 def IsIsoInvariant (f : GraphParam) : Prop :=
   ∀ (n₁ n₂ : ℕ) (F₁ : SimpleGraph (Fin n₁)) (F₂ : SimpleGraph (Fin n₂)),
     Nonempty (F₁ ≃g F₂) → f n₁ F₁ = f n₂ F₂
+
+/-- **Characteristic law of isomorphism invariance**: `f` is isomorphism invariant exactly when it
+takes equal values at any two isomorphic graphs.  This is both the way to prove `IsIsoInvariant`
+and the way to apply it. -/
+theorem isIsoInvariant_iff {f : GraphParam} :
+    IsIsoInvariant f ↔ ∀ (n₁ n₂ : ℕ) (F₁ : SimpleGraph (Fin n₁)) (F₂ : SimpleGraph (Fin n₂)),
+      Nonempty (F₁ ≃g F₂) → f n₁ F₁ = f n₂ F₂ := (Iff.rfl)
+
+/-- An isomorphism-invariant parameter agrees along an isomorphism. -/
+theorem IsIsoInvariant.eq_of_iso {f : GraphParam} (hf : IsIsoInvariant f) {n₁ n₂ : ℕ}
+    {F₁ : SimpleGraph (Fin n₁)} {F₂ : SimpleGraph (Fin n₂)} (e : F₁ ≃g F₂) :
+    f n₁ F₁ = f n₂ F₂ :=
+  isIsoInvariant_iff.1 hf _ _ _ _ ⟨e⟩
 
 /-- The **connection matrix** of a graph parameter on a family `A : ι → LabeledGraph k` of
 `k`-labeled graphs: the `ι × ι` matrix whose `(i, j)` entry is `f` on the unlabeled graph
@@ -100,7 +120,7 @@ isomorphism. -/
 theorem connectionMatrix_comm (f : GraphParam) (hf : IsIsoInvariant f) {k : ℕ} {ι : Type*}
     (A : ι → LabeledGraph k) (i j : ι) :
     connectionMatrix f A i j = connectionMatrix f A j i :=
-  hf _ _ _ _ ⟨LabeledGraph.glueCommIso (A i) (A j)⟩
+  hf.eq_of_iso (LabeledGraph.glueCommIso (A i) (A j))
 
 /-- Connection matrices of an isomorphism-invariant parameter are Hermitian because the two
 gluing orders are isomorphic. -/
@@ -117,6 +137,13 @@ type. -/
 def IsReflectionPositive (f : GraphParam) : Prop :=
   ∀ (k n : ℕ) (A : Fin n → LabeledGraph k), (connectionMatrix f A).PosSemidef
 
+/-- **Characteristic law of reflection positivity**: `f` is reflection positive exactly when the
+connection matrix of every `Fin n`-indexed family of `k`-labeled graphs is positive semidefinite.
+This is both the way to prove `IsReflectionPositive` and the way to apply it. -/
+theorem isReflectionPositive_iff {f : GraphParam} :
+    IsReflectionPositive f ↔
+      ∀ (k n : ℕ) (A : Fin n → LabeledGraph k), (connectionMatrix f A).PosSemidef := (Iff.rfl)
+
 /-- A graph parameter is **multiplicative** when it turns disjoint unions into products, with the
 disjoint union reindexed to `Fin (n₁ + n₂)` along `finSumFinEquiv` to stay on
 `Fin`-representatives. -/
@@ -124,8 +151,20 @@ def IsMultiplicative (f : GraphParam) : Prop :=
   ∀ (n₁ n₂ : ℕ) (F₁ : SimpleGraph (Fin n₁)) (F₂ : SimpleGraph (Fin n₂)),
     f (n₁ + n₂) ((F₁ ⊕g F₂).map finSumFinEquiv.toEmbedding) = f n₁ F₁ * f n₂ F₂
 
+/-- **Characteristic law of multiplicativity**: `f` is multiplicative exactly when it sends every
+reindexed disjoint union to the product of the two values.  This is both the way to prove
+`IsMultiplicative` and the way to apply it. -/
+theorem isMultiplicative_iff {f : GraphParam} :
+    IsMultiplicative f ↔ ∀ (n₁ n₂ : ℕ) (F₁ : SimpleGraph (Fin n₁)) (F₂ : SimpleGraph (Fin n₂)),
+      f (n₁ + n₂) ((F₁ ⊕g F₂).map finSumFinEquiv.toEmbedding) = f n₁ F₁ * f n₂ F₂ := (Iff.rfl)
+
 /-- A graph parameter is **normalized** when its value on the one-vertex graph `K₁` is `1`. -/
 def IsNormalized (f : GraphParam) : Prop := f 1 ⊥ = 1
+
+/-- **Characteristic law of normalization**: `f` is normalized exactly when its value at the
+one-vertex graph `K₁` is `1`.  This is both the way to prove `IsNormalized` and the way to apply
+it. -/
+theorem isNormalized_iff {f : GraphParam} : IsNormalized f ↔ f 1 ⊥ = 1 := (Iff.rfl)
 
 /-- Reflection positivity for an arbitrary finite index type.  A connection matrix on `ι` is the
 `Fintype.equivFin ι` submatrix of one on `Fin (Fintype.card ι)`, and positive semidefiniteness is
