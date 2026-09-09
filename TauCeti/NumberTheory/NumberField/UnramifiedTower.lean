@@ -7,27 +7,37 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.NumberTheory.RamificationInertia.Unramified
-import Mathlib.RingTheory.Ideal.GoingUp
+public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
+
+import TauCeti.NumberTheory.RamificationInertia.Tower
 
 /-!
 # Unramifiedness descends along a tower of number fields
 
-For a tower `L / M / K` of number fields and a prime `𝔭` of `𝓞 K`, unramifiedness over `K` of
-every prime of `𝓞 L` above `𝔭` implies unramifiedness over `K` of every prime of `𝓞 M` above
-`𝔭`. Every prime `P` of `𝓞 M` above `𝔭` carries a prime of `𝓞 L` above it, and Mathlib's
-`Algebra.IsUnramifiedAt.of_liesOver` transfers unramifiedness downwards along that prime.
+For a tower `L / M / K` of number fields, unramifiedness over `K` of every prime of `𝓞 L` above a
+place of `𝓞 K` descends to the primes of `𝓞 M` above it. The prime-by-prime statement is
+`TauCeti.RamificationInertia.isUnramifiedAt_of_isUnramifiedIn`, proved there for an
+arbitrary base ring; what this file adds is the version quantified over the places outside a finite
+set, which is the shape the unramified-away hypotheses take.
 
 The hypothesis and conclusion are stated as the quantified `Algebra.IsUnramifiedAt` condition
 rather than through `Algebra.IsUnramifiedIn`, which is the form the Artin symbol takes as its
 defining side condition.
 
+The same descent, read simultaneously at every prime outside a finite set of finite places of
+`K`, is `NumberField.isUnramifiedAway_of_intermediateField`; that is the form a construction
+defined away from a finite set of primes consumes, since it turns one hypothesis about the top
+field into the corresponding hypothesis about every subextension.
+
 ## Main results
 
-* `NumberField.isUnramifiedAt_of_intermediateExtension`: unramifiedness above `𝔭` in the top
-  field descends to the intermediate field.
+* `NumberField.isUnramifiedAway_of_intermediateField`: unramifiedness outside a finite set of
+  finite places descends to an intermediate field.
 -/
 
 public section
+
+open IsDedekindDomain
 
 open scoped NumberField
 
@@ -35,22 +45,19 @@ namespace NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- **Unramifiedness descends to an intermediate extension.** If every prime of `L` over `𝔭` is
-unramified over `K`, then every prime of an intermediate field `M` over `𝔭` is unramified over
-`K` as well. -/
-theorem isUnramifiedAt_of_intermediateExtension {M L : Type*} [Field M] [NumberField M]
-    [Field L] [NumberField L] [Algebra K M] [Algebra M L] [Algebra K L]
-    [IsScalarTower K M L] (𝔭 : Ideal (𝓞 K))
-    (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭],
-      Algebra.IsUnramifiedAt (𝓞 K) Q) :
-    ∀ (P : Ideal (𝓞 M)) [P.IsPrime] [P.LiesOver 𝔭],
-      Algebra.IsUnramifiedAt (𝓞 K) P := by
-  intro P _ _
-  let Q : P.primesOver (𝓞 L) := Classical.choice inferInstance
-  let _ : Q.1.IsPrime := Q.2.1
-  let _ : Q.1.LiesOver P := Q.2.2
-  let _ : Q.1.LiesOver 𝔭 := Ideal.LiesOver.trans Q.1 P 𝔭
-  let _ : Algebra.IsUnramifiedAt (𝓞 K) Q.1 := hur Q.1
-  exact Algebra.IsUnramifiedAt.of_liesOver (𝓞 K) P Q.1
+/-- **Unramifiedness outside a finite set of finite places descends to an intermediate field.**
+If every prime of `L` above a place of `K` outside `S` is unramified over `K`, then so is every
+prime of an intermediate field `M` above such a place. This is what makes the unramified
+hypothesis for a subextension a consequence of the one for the top field rather than a second
+assumption. -/
+theorem isUnramifiedAway_of_intermediateField (M : Type*) [Field M] [NumberField M]
+    {L : Type*} [Field L] [NumberField L] [Algebra K M] [Algebra M L] [Algebra K L]
+    [IsScalarTower K M L] (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (hur : ∀ v : HeightOneSpectrum (𝓞 K), v ∉ S →
+      ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver v.asIdeal], Algebra.IsUnramifiedAt (𝓞 K) Q) :
+    ∀ v : HeightOneSpectrum (𝓞 K), v ∉ S →
+      ∀ (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver v.asIdeal], Algebra.IsUnramifiedAt (𝓞 K) Q :=
+  fun v hv P _ _ ↦
+    TauCeti.RamificationInertia.isUnramifiedAt_of_isUnramifiedIn (S := 𝓞 L) (hur v hv) P
 
 end NumberField

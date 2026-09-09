@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Finset.Fiber
 public import TauCeti.NumberTheory.HeckeRing.Multiplicity.Handedness
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.CuspRing
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Ring
@@ -368,12 +369,9 @@ theorem heckeSlashSum_heckeSlashSum_eq_sum_nsmul
   -- points rather than found by synthesis
   let _ : IsHeckeTriple Δ Γ₁ Γ₃ := IsHeckeTriple.trans (H₂ := Γ₂)
   rw [heckeSlashSum_heckeSlashSum, ← Fintype.sum_prod_type',
-    ← Finset.sum_fiberwise_of_maps_to (g := pairCoset D₁ D₂)
-      (fun p _ ↦ Finset.mem_image_of_mem _ (Finset.mem_univ p))]
+    TauCeti.sum_eq_sum_image_fiber (pairCoset D₁ D₂)
+      fun q ↦ f ∣[k] (rightCosetRep D₁ q.1 * rightCosetRep D₂ q.2)]
   refine Finset.sum_congr rfl fun D _ ↦ ?_
-  rw [Finset.sum_subtype (p := fun q ↦ pairCoset D₁ D₂ q = D)
-    (Finset.univ.filter fun q ↦ pairCoset D₁ D₂ q = D) (fun q ↦ by simp)
-    fun q ↦ f ∣[k] (rightCosetRep D₁ q.1 * rightCosetRep D₂ q.2)]
   exact sum_slash_eq_nsmul_heckeSlashSum k D _ _ (fun i ↦ pairCoset_eq_iff.mp i.2)
     (fun _ hx ↦ card_pairs_pairCoset_rightCoset_eq_multiplicity hx) f hf
 
@@ -415,8 +413,7 @@ theorem heckeSlashGamma1ModularFormEnd_mul_of_doubleCoset_eq_mul :
       heckeSlashGamma1ModularFormEnd k D₃ := by
   ext f τ
   have hf : ∀ γ ∈ (Gamma1 N).map (mapGL ℚ), ⇑f ∣[k] γ = ⇑f := fun _ hγ ↦
-    ModularForm.slash_eq_of_mem_map_mapGL
-      (fun γ' hγ' ↦ SlashInvariantFormClass.slash_action_eq f γ' hγ') hγ
+    SlashInvariantFormClass.slash_eq_of_mem_map_mapGL f hγ
   have := heckeSlashSum_heckeSlashSum_eq_heckeSlashSum k D₁ D₂ a b hcover₁ hinj₁ hcover₂ hinj₂
     D₃ hD₃ hinj₃ ⇑f hf
   simpa [coe_heckeSlashGamma1ModularFormEnd] using congrFun this τ
@@ -429,8 +426,7 @@ theorem heckeSlashGamma1CuspFormEnd_mul_of_doubleCoset_eq_mul :
       heckeSlashGamma1CuspFormEnd k D₃ := by
   ext f τ
   have hf : ∀ γ ∈ (Gamma1 N).map (mapGL ℚ), ⇑f ∣[k] γ = ⇑f := fun _ hγ ↦
-    ModularForm.slash_eq_of_mem_map_mapGL
-      (fun γ' hγ' ↦ SlashInvariantFormClass.slash_action_eq f γ' hγ') hγ
+    SlashInvariantFormClass.slash_eq_of_mem_map_mapGL f hγ
   have := heckeSlashSum_heckeSlashSum_eq_heckeSlashSum k D₁ D₂ a b hcover₁ hinj₁ hcover₂ hinj₂
     D₃ hD₃ hinj₃ ⇑f hf
   simpa [coe_heckeSlashGamma1CuspFormEnd] using congrFun this τ

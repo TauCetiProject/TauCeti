@@ -69,6 +69,8 @@ layer deferred above.
   subset.
 * `TauCeti.ValuationSpectrum.rationalSubset_insert_self` : the denominator may be inserted
   among the numerators.
+* `TauCeti.ValuationSpectrum.rationalSubset_image_mul_right` : multiplying every numerator and
+  the denominator by the same unit does not change the rational subset.
 * `TauCeti.ValuationSpectrum.rationalSubset_singleton_one` : the whole spectrum is the
   rational subset `R({1}/1)` — Wedhorn's "`Spa (A, A⁺)` itself is rational".
 * `TauCeti.ValuationSpectrum.val_preimage_rationalSubset` : on the subtype `spa A⁺`, a
@@ -213,6 +215,17 @@ theorem rationalSubset_insert_of_forall_vle (Aplus : Subring A) (T : Finset A) (
   rcases Finset.mem_insert.mp ht with rfl | ht
   · exact hu v hv
   · exact hv'.2.1 t ht
+
+open scoped Classical in
+/-- **Multiplying a presentation by a unit changes nothing.** If `u` is a unit, then multiplying
+every numerator and the denominator of `R(T/s)` by `u` gives the same rational subset.
+
+No injectivity of `t ↦ t * u` is needed. -/
+@[simp]
+theorem rationalSubset_image_mul_right (Aplus : Subring A) (T : Finset A) (s u : A)
+    (hu : IsUnit u) :
+    rationalSubset Aplus (T.image fun t ↦ t * u) (s * u) = rationalSubset Aplus T s := by
+  rw [rationalSubset_def, rationalSubset_def, basicOpenFinset_image_mul_right T s u hu]
 
 /-- The whole adic spectrum is the rational subset `R({1}/1)` — Wedhorn's observation that
 `Spa (A, A⁺)` itself is rational. The single condition `v(1) ≤ v(1) ≠ 0` holds at every

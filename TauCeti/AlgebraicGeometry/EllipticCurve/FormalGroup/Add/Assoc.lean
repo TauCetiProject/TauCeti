@@ -161,15 +161,6 @@ private theorem subst_formalW_subst_formalInverse {q : MvPowerSeries σ O}
     subst_formalInverse_formalW, ← PowerSeries.coe_substAlgHom hq]
   simp only [map_neg, map_mul]
 
-/-- The addition series read at a pair of variables again has vanishing constant coefficient, so
-it is itself a legitimate parameter — which is what lets the associativity argument feed one
-bracketed sum into another. -/
-private theorem constantCoeff_subst_pair_X_formalAdd {σ' : Type*} (s₁ s₂ : σ') :
-    constantCoeff (subst (Sum.elim (fun _ ↦ (X s₁ : MvPowerSeries σ' O)) (fun _ ↦ X s₂) :
-      Unit ⊕ Unit → MvPowerSeries σ' O) (formalAdd W)) = 0 :=
-  constantCoeff_subst_eq_zero (hasSubst_pair (constantCoeff_X _) (constantCoeff_X _))
-    (by rintro (j | j) <;> simp) (constantCoeff_formalAdd W)
-
 /-- Base change commutes with reading the addition series at a pair of variables: the variables
 are fixed by `MvPowerSeries.map`, so only `map_formalAdd` is doing any work. -/
 private theorem map_subst_pair_X_formalAdd {σ' S : Type*} [CommRing S] (φ : O →+* S)
@@ -496,15 +487,11 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
       ρ q₂ / ρ (PowerSeries.subst q₂ (formalW W)) := by
     rw [div_eq_div_iff hw₁0 hw₂0, ← map_mul, ← map_mul]
     exact congrArg ρ (by linear_combination hqw)
-  have hcase := (Affine.Point.X_eq_iff
-    (h₁ := chord_point_nonsingular (fracCurve W σ KK)
-      (by
-        simpa [wEquationRHS_def] using W.algebraMap_subst_formalW_wEquation (KK := KK)
-          (PowerSeries.HasSubst.of_constantCoeff_zero h₁))
-      hw₁0 hΔ)
-    (h₂ := chord_point_nonsingular (fracCurve W σ KK)
-      (by simpa [wEquationRHS_def] using W.algebraMap_subst_formalW_wEquation (KK := KK) hs₂)
-      hw₂0 hΔ)).mp hx
+  -- `xRep` is the projective `x`-coordinate, so the dichotomy comes out on the points themselves
+  have hxr : (W.thetaPoint hΔ h₁ hq₁0).xRep = (W.thetaPoint hΔ h₂ hq₂0).xRep := by
+    simp only [thetaPoint, Affine.Point.xRep_some, Matrix.vecCons_inj, and_true]
+    exact hx
+  have hcase := Affine.Point.eq_or_eq_neg_of_xRep_eq_xRep hxr
   -- the data carried by the inverted parameter
   have hs0 : PowerSeries.subst q₂ (PowerSeries.invOfUnit (formalInverseDenom W) 1) ≠ 0 := by
     intro hh
@@ -518,10 +505,8 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
     exact neg_ne_zero.mpr (mul_ne_zero hq₂0 hs0)
   rcases hcase with hc | hc
   · exact hne₁ (W.thetaPoint_inj hΔ h₁ h₂ hq₁0 hq₂0 hc)
-  · -- `hc` comes out of `X_eq_iff` with `thetaPoint` unfolded, so fold it back before rewriting
-    have hc' : W.thetaPoint hΔ h₁ hq₁0 = -W.thetaPoint hΔ h₂ hq₂0 := hc
-    rw [← W.thetaPoint_neg hΔ h₂ hq₂0 hi hi0] at hc'
-    exact hne₂ (W.thetaPoint_inj hΔ h₁ hi hq₁0 hi0 hc')
+  · rw [← W.thetaPoint_neg hΔ h₂ hq₂0 hi hi0] at hc
+    exact hne₂ (W.thetaPoint_inj hΔ h₁ hi hq₁0 hi0 hc)
 
 variable [DecidableEq KK] in
 /-- **The chord addition of parametrized points, from distinctness alone**: `θ(q₁) + θ(q₂) =
@@ -656,9 +641,11 @@ private theorem assoc_formalAdd_universal :
     (fun _ ↦ X (Sum.inr (Sum.inr ()))) : Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
     (formalAdd Universal.curve) with hF₂₃def
   have hF₁₂c : constantCoeff F₁₂ = 0 :=
-    constantCoeff_subst_pair_X_formalAdd Universal.curve _ _
+    constantCoeff_subst_pair_formalAdd Universal.curve (constantCoeff_X _)
+        (constantCoeff_X _)
   have hF₂₃c : constantCoeff F₂₃ = 0 :=
-    constantCoeff_subst_pair_X_formalAdd Universal.curve _ _
+    constantCoeff_subst_pair_formalAdd Universal.curve (constantCoeff_X _)
+        (constantCoeff_X _)
   have hχF₁₂ : subst χ F₁₂ = PowerSeries.X :=
     subst_subst_pair_formalAdd_eq_X Universal.curve hχ hc₁ hc₂ hχ1 hχ2
   have hχF₂₃ : subst χ F₂₃ = 0 :=
@@ -724,9 +711,11 @@ theorem formalAdd_assoc :
       (formalAdd W) := by
   have h := congrArg (MvPowerSeries.map W.specialize) assoc_formalAdd_universal
   rw [MvPowerSeries.map_subst (hasSubst_pair
-      (constantCoeff_subst_pair_X_formalAdd Universal.curve _ _) (constantCoeff_X _)),
+      (constantCoeff_subst_pair_formalAdd Universal.curve (constantCoeff_X _)
+        (constantCoeff_X _)) (constantCoeff_X _)),
     MvPowerSeries.map_subst (hasSubst_pair (constantCoeff_X _)
-      (constantCoeff_subst_pair_X_formalAdd Universal.curve _ _)),
+      (constantCoeff_subst_pair_formalAdd Universal.curve (constantCoeff_X _)
+        (constantCoeff_X _))),
     ← map_formalAdd] at h
   refine .trans ?_ (.trans h ?_)
   all_goals

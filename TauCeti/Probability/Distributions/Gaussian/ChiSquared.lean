@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.ChiSquared
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
+public import TauCeti.Probability.Moments.Pi
 
 /-!
 # Squares of standard Gaussian variables
@@ -17,6 +18,11 @@ the sum of the squares of a finite independent standard Gaussian family has the 
 whose degrees of freedom are the cardinality of the family. The empty family is included: both
 the empty sum and `chiSquaredMeasure 0` are the point mass at zero.
 
+It also computes the exponential-integrability domain and the moment-generating function of a
+weighted square `w * x ^ 2` of a standard Gaussian variable, and of a weighted sum of squares
+`∑ j, w j * c j ^ 2` of finitely many independent ones, which is the form a Gaussian quadratic
+statistic takes in eigen-coordinates.
+
 These laws identify Gaussian quadratic statistics with chi-squared distributions. In particular,
 they provide the scalar foundation for distributional results about Gaussian norms and Gaussian
 Gram matrices.
@@ -26,7 +32,14 @@ Gram matrices.
 * `TauCeti.Probability.gaussianReal_map_sq` — the square of the standard Gaussian measure is
   `chiSquaredMeasure 1`;
 * `TauCeti.Probability.iIndepFun.hasLaw_sum_sq_gaussian` — a finite sum of independent squared
-  standard Gaussian variables has the corresponding chi-squared law.
+  standard Gaussian variables has the corresponding chi-squared law;
+* `TauCeti.Probability.mem_integrableExpSet_mul_sq_gaussianReal_iff` and
+  `TauCeti.Probability.mgf_mul_sq_gaussianReal` — the exponential moments of `w * x ^ 2` are
+  finite exactly when `2 * t * w < 1`, where the moment-generating function is
+  `(1 - 2 * t * w) ^ (-1 / 2)`;
+* `TauCeti.Probability.mem_integrableExpSet_sum_mul_sq_pi_gaussianReal_iff` and
+  `TauCeti.Probability.mgf_sum_mul_sq_pi_gaussianReal` — the same for a weighted sum of squares of
+  independent standard Gaussian coordinates, with the product of the one-dimensional values.
 
 ## References
 
@@ -93,6 +106,63 @@ theorem gaussianReal_map_sq :
     rw [Real.erf_eq_regularizedGamma_half_sq herf]
     rw [div_pow, Real.sq_sqrt hx', Real.sq_sqrt (by positivity : (0 : ℝ) ≤ 2)]
     ring
+
+section scalar
+
+variable {w t : ℝ}
+
+/-- The exponential moment of order `t` of `w * x ^ 2` under the standard Gaussian is finite
+exactly when `2 * t * w < 1`. -/
+@[simp]
+theorem mem_integrableExpSet_mul_sq_gaussianReal_iff (w t : ℝ) :
+    t ∈ integrableExpSet (fun x ↦ w * x ^ 2) (gaussianReal 0 1) ↔ 2 * t * w < 1 := by
+  have key : t ∈ integrableExpSet (fun x ↦ w * x ^ 2) (gaussianReal 0 1) ↔
+      t * w ∈ integrableExpSet id (chiSquaredMeasure 1) := by
+    simp only [integrableExpSet, Set.mem_ofPred_eq, id_eq]
+    rw [← gaussianReal_map_sq, integrable_map_measure (by fun_prop) (by fun_prop),
+      Function.comp_def]
+    simp only [mul_assoc]
+  rw [key, integrableExpSet_id_chiSquaredMeasure zero_lt_one, Set.mem_Iio]
+  constructor <;> intro h <;> linarith
+
+/-- The moment-generating function of `w * x ^ 2` under the standard Gaussian is
+`(1 - 2 * t * w) ^ (-1 / 2)` on its domain `2 * t * w < 1`. -/
+@[simp]
+theorem mgf_mul_sq_gaussianReal (ht : 2 * t * w < 1) :
+    mgf (fun x ↦ w * x ^ 2) (gaussianReal 0 1) t = (1 - 2 * t * w) ^ (-1 / 2 : ℝ) := by
+  rw [mgf_const_mul, ← mgf_id_map (X := fun x : ℝ ↦ x ^ 2) (by fun_prop), gaussianReal_map_sq,
+    mgf_id_chiSquaredMeasure zero_le_one (by linarith), mul_comm w t, ← mul_assoc]
+  norm_num
+
+end scalar
+
+section pi
+
+variable {ι : Type*} [Fintype ι] {w : ι → ℝ} {t : ℝ}
+
+/-- The exponential moment of order `t` of the weighted sum of squares `∑ j, w j * c j ^ 2` of
+independent standard Gaussian coordinates is finite exactly when `2 * t * w j < 1` for every
+`j`. -/
+@[simp]
+theorem mem_integrableExpSet_sum_mul_sq_pi_gaussianReal_iff (w : ι → ℝ) (t : ℝ) :
+    t ∈ integrableExpSet (fun c : ι → ℝ ↦ ∑ j, w j * c j ^ 2)
+        (Measure.pi fun _ : ι ↦ gaussianReal 0 1) ↔
+      ∀ j, 2 * t * w j < 1 := by
+  rw [integrableExpSet_sum_pi fun j (u : ℝ) ↦ w j * u ^ 2, Set.mem_iInter]
+  simp only [mem_integrableExpSet_mul_sq_gaussianReal_iff]
+
+/-- The moment-generating function of the weighted sum of squares `∑ j, w j * c j ^ 2` of
+independent standard Gaussian coordinates is `∏ j, (1 - 2 * t * w j) ^ (-1 / 2)` on its
+domain. -/
+@[simp]
+theorem mgf_sum_mul_sq_pi_gaussianReal (ht : ∀ j, 2 * t * w j < 1) :
+    mgf (fun c : ι → ℝ ↦ ∑ j, w j * c j ^ 2)
+        (Measure.pi fun _ : ι ↦ gaussianReal 0 1) t =
+      ∏ j, (1 - 2 * t * w j) ^ (-1 / 2 : ℝ) := by
+  rw [mgf_sum_pi fun j (u : ℝ) ↦ w j * u ^ 2]
+  exact Finset.prod_congr rfl fun j _ ↦ mgf_mul_sq_gaussianReal (ht j)
+
+end pi
 
 variable {Omega iota : Type*} [MeasurableSpace Omega] [Fintype iota] {P : Measure Omega}
   {X : iota → Omega → ℝ}

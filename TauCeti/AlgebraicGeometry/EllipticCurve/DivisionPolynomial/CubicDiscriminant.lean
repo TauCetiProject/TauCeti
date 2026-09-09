@@ -35,8 +35,8 @@ makes `y²` a divisor of `f(x)`.
 
 ## Main results
 
-* `TauCeti.WeierstrassCurve.eval_Ψ₃_of_a₁_eq_zero_of_a₃_eq_zero`: for `a₁ = a₃ = 0`, `Ψ₃` is `Q`.
-* `TauCeti.WeierstrassCurve.sq_dvd_cubic_discr`: `y² ∣ Cubic.discr ⟨1, a₂, a₄, a₆⟩`, the three
+* `WeierstrassCurve.eval_Ψ₃_of_a₁_eq_zero_of_a₃_eq_zero`: for `a₁ = a₃ = 0`, `Ψ₃` is `Q`.
+* `WeierstrassCurve.sq_dvd_cubic_discr`: `y² ∣ Cubic.discr ⟨1, a₂, a₄, a₆⟩`, the three
   composed.
 
 Both are over an arbitrary commutative ring, for an arbitrary point of the curve — no domain,
@@ -70,7 +70,7 @@ open Polynomial
 
 namespace TauCeti
 
-namespace WeierstrassCurve
+section
 
 open Polynomial
 
@@ -79,7 +79,8 @@ variable {R : Type*} [CommRing R] (W : _root_.WeierstrassCurve R) {x y : R}
 /-- For a model with `a₁ = a₃ = 0`, the univariate `Ψ₃` is the quartic
 `3x⁴ + 4a₂x³ + 6a₄x² + 12a₆x + (4a₂a₆ − a₄²)`. -/
 @[simp]
-theorem eval_Ψ₃_of_a₁_eq_zero_of_a₃_eq_zero (ha₁ : W.a₁ = 0) (ha₃ : W.a₃ = 0) :
+theorem _root_.WeierstrassCurve.eval_Ψ₃_of_a₁_eq_zero_of_a₃_eq_zero
+    (ha₁ : W.a₁ = 0) (ha₃ : W.a₃ = 0) :
     (W.Ψ₃).eval x = 3 * x ^ 4 + 4 * W.a₂ * x ^ 3 + 6 * W.a₄ * x ^ 2 + 12 * W.a₆ * x +
       (4 * W.a₂ * W.a₆ - W.a₄ ^ 2) := by
   simp only [_root_.WeierstrassCurve.Ψ₃, _root_.WeierstrassCurve.b₂, _root_.WeierstrassCurve.b₄,
@@ -92,14 +93,15 @@ theorem eval_Ψ₃_of_a₁_eq_zero_of_a₃_eq_zero (ha₁ : W.a₁ = 0) (ha₃ :
 For a model with `a₁ = a₃ = 0`, a point whose `y²` divides `Ψ₃(x)` has `y²` dividing the
 discriminant of the defining cubic `x³ + a₂x² + a₄x + a₆`. For a short model (`a₂ = 0` as well)
 this is the classical `y² ∣ 4a₄³ + 27a₆²` up to sign. -/
-theorem sq_dvd_cubic_discr (ha₁ : W.a₁ = 0) (ha₃ : W.a₃ = 0)
+theorem _root_.WeierstrassCurve.sq_dvd_cubic_discr (ha₁ : W.a₁ = 0) (ha₃ : W.a₃ = 0)
     (hcurve : y ^ 2 = x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆)
     (hΨ₃ : y ^ 2 ∣ (W.Ψ₃).eval x) :
     y ^ 2 ∣ (_root_.Cubic.mk 1 W.a₂ W.a₄ W.a₆).discr :=
   have hf : y ^ 2 ∣ x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆ := hcurve ▸ dvd_rfl
   Cubic.dvd_discr hf
-    (Cubic.dvd_derivative_sq hf (eval_Ψ₃_of_a₁_eq_zero_of_a₃_eq_zero W ha₁ ha₃ ▸ hΨ₃))
+    (Cubic.dvd_derivative_sq hf (WeierstrassCurve.eval_Ψ₃_of_a₁_eq_zero_of_a₃_eq_zero W ha₁ ha₃ ▸
+        hΨ₃))
 
-end WeierstrassCurve
+end
 
 end TauCeti

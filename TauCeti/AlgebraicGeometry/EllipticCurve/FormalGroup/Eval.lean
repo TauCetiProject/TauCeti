@@ -22,23 +22,21 @@ evaluated at a parameter `t` for which the evaluation converges. This file provi
 evaluations, the identities they inherit from the series, and their membership, unit and
 non-vanishing properties.
 
-Two hypotheses appear here, and they do different work. `PowerSeries.HasEval t` is what evaluation
-itself requires, and it is what almost every result here asks for: the algebraic identities are
-each the image of an identity of series under the ring homomorphism `PowerSeries.eval₂Hom`, and
-`formalWEval_mem` and `formalInverseEval_mem` read their memberships off those identities, so
-neither takes an adic hypothesis. Exactly one result needs more — `formalUEval_sub_one_mem`, which
-also takes the ideal `I` and that the ambient topology is its adic one, being the file's one appeal
-to `MvPowerSeries.eval₂_mem_pow`, which sums the monomial estimates inside the closed set `I ^ k`.
+Three hypotheses appear here, and they do different work. `PowerSeries.HasEval t` is what
+evaluation itself requires, and most results ask for it directly. Others ask instead for an ideal
+`I` whose adic topology is the ambient one, together with a membership `t ∈ I` that supplies the
+convergence: `isUnit_formalUEval`, `formalWEval_ne_zero`, `algebraMap_formalWEval_ne_zero` and
+`hasEval_formalInverseEval`. `formalUEval_sub_one_mem` is the one result asking for both.
+`isUnit_thirdRootDenom` asks for neither: it is a statement about the curve's coefficients and a
+topologically nilpotent element, so it takes `IsTopologicallyNilpotent` directly, and
+`[NonarchimedeanRing O]` in place of the ambient `[IsTopologicalRing O]`. `formalWEval_zero` asks
+for neither either, being an evaluation at a parameter that needs no convergence hypothesis.
 
-Only two of the five values are confined to `I ^ k`, and neither needs that estimate: `w(t)` and
-`ι(t)` factor as `t ^ 3 * u(t)` and `-(t * d(t)⁻¹)`, so a parameter in `I ^ k` carries them there.
-The three unit statements have two different sources. `u(t)` is a unit because `u(t) - 1` lies in
-`I`, hence is topologically nilpotent, so Wedhorn 5.38
-(`IsTopologicallyNilpotent.isUnit_one_add`) applies; that membership,
-`formalUEval_sub_one_mem`, is the file's one use of `MvPowerSeries.eval₂_mem_pow`. The denominator
-`d(t) = 1 - a₁ t - a₃ w(t)` and its series inverse are units for an unrelated reason, needing no
-ideal at all: the series identity `mul_invOfUnit_formalInverseDenom` evaluates to
-`d(t) * d(t)⁻¹ = 1`.
+Only two of the five values are confined to `I ^ k`: `w(t)` and `ι(t)`. Of the four unit
+statements, only `u(t)`'s needs the ideal; the denominator `d(t) = 1 - a₁ t - a₃ w(t)` and its
+series inverse need nothing beyond evaluation, and the chord cubic's leading coefficient
+`1 + a₂l + a₄l² + a₆l³` needs only that `l` is topologically nilpotent. Each declaration's own
+docstring says where its conclusion comes from.
 
 ## Main definitions
 
@@ -51,17 +49,28 @@ ideal at all: the series identity `mul_invOfUnit_formalInverseDenom` evaluates t
 ## Main results
 
 * `WeierstrassCurve.formalWEval_eq_pow_mul_formalUEval` : the factorisation `w(t) = t ^ 3 * u(t)`.
+* `WeierstrassCurve.algebraMap_formalInverseEval_div_algebraMap_formalWEval_formalInverseEval` and
+  `WeierstrassCurve.neg_one_div_algebraMap_formalWEval_formalInverseEval` : the two division
+  identities the inverse law rests on, over a field and with no nonvanishing hypothesis. Where
+  `w(t) ≠ 0` they say `ι` fixes the `x`-coordinate `t / w(t)` and sends `-1 / w(t)` to the curve's
+  `negY` of it, `y ↦ -y - a₁x - a₃`.
+* `WeierstrassCurve.formalWEval_zero` : `w(0) = 0`, an immediate consequence of that
+  factorisation and the reason the zero parameter carries no affine coordinates.
 * `WeierstrassCurve.formalWEval_mem`, `WeierstrassCurve.formalInverseEval_mem` : a parameter in
   `I ^ k` has `w(t)` and `ι(t)` in `I ^ k`.
 * `WeierstrassCurve.formalUEval_sub_one_mem` : `u(t)` is congruent to `1` modulo `I ^ k`.
 * `WeierstrassCurve.isUnit_formalUEval`, `WeierstrassCurve.isUnit_formalInverseDenomEval`,
-  `WeierstrassCurve.isUnit_formalInverseDenomInvEval` : the three unit statements.
+  `WeierstrassCurve.isUnit_formalInverseDenomInvEval` : three of the four unit statements.
+* `WeierstrassCurve.isUnit_thirdRootDenom` : the fourth — the leading coefficient
+  `1 + a₂l + a₄l² + a₆l³` of the chord cubic, which Vieta's formula for the third root divides
+  by, is a unit at any topologically nilpotent `l`.
 * `WeierstrassCurve.formalInverseDenomEval_eq`, `WeierstrassCurve.formalInverseEval_eq` and
   `WeierstrassCurve.formalInverseEval_mul_formalInverseDenomEval` : the defining formulas for
   `d(t)` and `ι(t)`, the last in the form `ι(t) * d(t) = -t` that avoids the series inverse.
 * `WeierstrassCurve.formalWEval_wEquation` : the `w`-equation at a parameter.
 * `WeierstrassCurve.formalWEval_ne_zero`, `WeierstrassCurve.formalInverseEval_ne_zero` : the two
-  non-vanishing statements.
+  non-vanishing statements, and `WeierstrassCurve.algebraMap_formalWEval_ne_zero` for the image of
+  `w(t)` in a nontrivial domain over `O`.
 * `WeierstrassCurve.formalInverseEval_formalInverseEval` : the involution `ι(ι(t)) = t`, and
   `WeierstrassCurve.formalWEval_formalInverseEval` : `w(ι(t)) = -(w(t) * d(t)⁻¹)`. Both ask only
   that `t` and `ι(t)` admit evaluation; `WeierstrassCurve.hasEval_formalInverseEval` supplies the
@@ -95,8 +104,8 @@ Adapted from Michael Stoll's `EllipticCurves` project
 `EllipticCurves/WeierstrassFormalGroup/Eval.lean` — its evaluation layer down to the formal
 inverse, declarations `wEval`, `vEval`, `wEval_mem`, `wEval_eq`, `wEval_eq_cube_mul`,
 `vEval_sub_one_mem`, `isUnit_vEval`, `uEval`, `duEval`, `iotaEval`, `uEval_eq`,
-`uEval_mul_duEval`, `isUnit_uEval`, `iotaEval_eq`, `iotaEval_mem`, `wEval_iotaEval` and
-`iotaEval_iotaEval`.
+`uEval_mul_duEval`, `isUnit_uEval`, `isUnit_chordCoeff`, `iotaEval_eq`, `iotaEval_mem`,
+`wEval_iotaEval` and `iotaEval_iotaEval`.
 
 Four things are spelled differently here.
 
@@ -171,6 +180,13 @@ theorem formalWEval_eq_pow_mul_formalUEval {t : O} (ht : PowerSeries.HasEval t) 
   rw [map_mul, map_pow] at h
   simpa [formalWEval, formalUEval, coe_evalAt, PowerSeries.eval₂_X] using h
 
+/-- **The `w`-expansion vanishes at the zero parameter**, `w` being a multiple of `z ^ 3`. This is
+why the zero parameter is the point at infinity: the coordinates `t / w(t)` and `-1 / w(t)` have no
+value there. -/
+@[simp]
+theorem formalWEval_zero : W.formalWEval 0 = 0 := by
+  simp [W.formalWEval_eq_pow_mul_formalUEval PowerSeries.HasEval.zero]
+
 /-- The value of the `w`-expansion at a parameter of `I ^ k` again lies in `I ^ k`: it is
 `t ^ 3` times the value of the unit part. -/
 theorem formalWEval_mem {I : Ideal O} {k : ℕ} {t : O} (ht : PowerSeries.HasEval t)
@@ -204,6 +220,32 @@ theorem isUnit_formalUEval {I : Ideal O} (hI : IsAdic I) {t : O} (ht : t ∈ I) 
     simpa using W.formalUEval_sub_one_mem hI (k := 1)
       (hI.isTopologicallyNilpotent_of_mem ht) (by simpa using ht)
   simpa using (hI.isTopologicallyNilpotent_of_mem hsub).isUnit_one_add
+
+omit [IsTopologicalRing O] in
+/-- **The leading coefficient of the chord cubic is a unit** at any topologically nilpotent
+element. Substituting `w = λz + ν` into the Weierstrass equation produces a cubic in `z` whose
+leading coefficient is `1 + a₂λ + a₄λ² + a₆λ³`; Vieta's formula for its third root divides by that
+coefficient, so dividing is legitimate exactly when this holds.
+
+Stated for an arbitrary topologically nilpotent element rather than for the evaluated slope, since
+that is all the statement needs; `IsAdic.isTopologicallyNilpotent_of_mem` supplies it from
+membership in an adic ideal when that is how a consumer holds it. `[NonarchimedeanRing O]` stands
+in for the ambient `[IsTopologicalRing O]`, which it implies.
+
+Not the same fact as `Add/PairSubst.lean`'s `subst_pair_thirdRootDenom_ne_zero`, which says the
+corresponding multivariate *power series* is nonzero over a nontrivial base. That one lives in the
+series world and concludes nonvanishing; this one concludes invertibility, which is what dividing
+by it requires. -/
+theorem isUnit_thirdRootDenom [NonarchimedeanRing O] {l : O}
+    (hl : IsTopologicallyNilpotent l) :
+    IsUnit (1 + W.a₂ * l + W.a₄ * l ^ 2 + W.a₆ * l ^ 3) := by
+  -- the nonconstant part is a multiple of `l`, hence topologically nilpotent, so Wedhorn 5.38
+  -- applies; unlike `isUnit_formalUEval` this needs no monomial estimate and hence no ideal
+  have hfac : W.a₂ * l + W.a₄ * l ^ 2 + W.a₆ * l ^ 3 =
+      l * (W.a₂ + W.a₄ * l + W.a₆ * l ^ 2) := by ring
+  have h := (hl.mul_right (W.a₂ + W.a₄ * l + W.a₆ * l ^ 2)).isUnit_one_add
+  rw [← hfac] at h
+  simpa [add_assoc] using h
 
 /-! ### The inverse-side evaluations
 
@@ -307,6 +349,19 @@ theorem formalWEval_ne_zero {I : Ideal O} (hI : IsAdic I) {t : O} (ht : t ∈ I)
   rw [W.formalWEval_eq_pow_mul_formalUEval (hI.isTopologicallyNilpotent_of_mem ht)]
   exact fun h ↦ ht0 ((W.isUnit_formalUEval hI ht).mul_left_eq_zero.mp h)
 
+/-- **`w(t)` has nonzero image** in any nontrivial domain over `O` once the image of `t` does:
+the expansion factors as `t ^ 3 * u(t)` with `u(t)` a unit, and both factors have nonzero image —
+the cube because there are no zero divisors, the unit because units map to units. Unlike
+`formalWEval_ne_zero` this needs no hypothesis on `t ^ 3`, because the cube is checked in the
+codomain. -/
+theorem algebraMap_formalWEval_ne_zero {S : Type*} [CommRing S] [Nontrivial S] [NoZeroDivisors S]
+    [Algebra O S] {I : Ideal O} (hI : IsAdic I) {t : O} (ht : t ∈ I)
+    (ht0 : algebraMap O S t ≠ 0) : algebraMap O S (W.formalWEval t) ≠ 0 := by
+  rw [W.formalWEval_eq_pow_mul_formalUEval (hI.isTopologicallyNilpotent_of_mem ht), map_mul,
+    map_pow]
+  exact mul_ne_zero (pow_ne_zero _ ht0)
+    ((W.isUnit_formalUEval hI ht).map (algebraMap O S)).ne_zero
+
 /-- The formal inverse does not vanish at a nonzero parameter: `ι(t)` is `-t` times a unit, and
 multiplying by a unit cannot create a zero. No hypothesis on `t ^ 3` is needed — unlike
 `formalWEval_ne_zero`, whose factor `t ^ 3` can vanish at a nonzero nilpotent `t`. -/
@@ -350,6 +405,59 @@ theorem formalWEval_formalInverseEval {t : O} (hE : PowerSeries.HasEval t)
   rw [W.subst_formalInverse_formalW, map_neg, map_mul,
     congrFun (PowerSeries.coe_aeval hV') W.formalW, hsub] at h
   simpa [hcoe, formalWEval, formalInverseEval, formalInverseDenomInvEval] using h.symm
+
+/-- **The formal inverse fixes the `x`-coordinate.** `ι(t) = -(t · d(t)⁻¹)` and
+`w(ι t) = -(w(t) · d(t)⁻¹)` share the unit `d(t)⁻¹ = formalInverseDenomInvEval t`, so the sign and
+that unit cancel in the ratio. No nonvanishing is needed: if `w(t) = 0` then `w(ι t) = 0` too and
+both sides are zero. -/
+theorem algebraMap_formalInverseEval_div_algebraMap_formalWEval_formalInverseEval
+    {K : Type*} [Field K] [Algebra O K] {t : O} (hE : PowerSeries.HasEval t)
+    (hEV : PowerSeries.HasEval (W.formalInverseEval t)) :
+    algebraMap O K (W.formalInverseEval t) /
+        algebraMap O K (W.formalWEval (W.formalInverseEval t)) =
+      algebraMap O K t / algebraMap O K (W.formalWEval t) := by
+  have hiota := congrArg (algebraMap O K) (W.formalInverseEval_eq hE)
+  have hwiota := congrArg (algebraMap O K) (W.formalWEval_formalInverseEval hE hEV)
+  simp only [map_neg, map_mul] at hiota hwiota
+  by_cases hWt : algebraMap O K (W.formalWEval t) = 0
+  · simp [hwiota, hWt]
+  have hU0 : algebraMap O K (W.formalInverseDenomInvEval t) ≠ 0 :=
+    ((W.isUnit_formalInverseDenomInvEval hE).map (algebraMap O K)).ne_zero
+  rw [hiota, hwiota]
+  field_simp
+
+/-- **The formal inverse's `y`-value in closed form**: `d(t)⁻¹` inverts `d(t) = 1 - a₁t - a₃w(t)`,
+which is what turns `-1 / w(ι t)` into the displayed ratio. The identity holds with no nonvanishing
+hypothesis, both sides being zero when `w(t) = 0`.
+
+**When `w(t) ≠ 0` the right-hand side is the curve's `negY`** at the coordinates `t / w(t)` and
+`-1 / w(t)`, so the formal inverse applies `y ↦ -y - a₁x - a₃` rather than plain negation. That
+reading needs the hypothesis: at `w(t) = 0` both ratios are zero by field division, while
+`negY 0 0 = -a₃`. -/
+theorem neg_one_div_algebraMap_formalWEval_formalInverseEval {K : Type*} [Field K] [Algebra O K]
+    {t : O} (hE : PowerSeries.HasEval t)
+    (hEV : PowerSeries.HasEval (W.formalInverseEval t)) :
+    -1 / algebraMap O K (W.formalWEval (W.formalInverseEval t)) =
+      (1 - (W.baseChange K).a₁ * algebraMap O K t -
+          (W.baseChange K).a₃ * algebraMap O K (W.formalWEval t)) /
+        algebraMap O K (W.formalWEval t) := by
+  have hwiota := congrArg (algebraMap O K) (W.formalWEval_formalInverseEval hE hEV)
+  simp only [map_neg, map_mul] at hwiota
+  by_cases hWt : algebraMap O K (W.formalWEval t) = 0
+  · simp [hwiota, hWt]
+  have hU0 : algebraMap O K (W.formalInverseDenomInvEval t) ≠ 0 :=
+    ((W.isUnit_formalInverseDenomInvEval hE).map (algebraMap O K)).ne_zero
+  have hDU := congrArg (algebraMap O K) (W.formalInverseDenomEval_mul_inv hE)
+  have hD := congrArg (algebraMap O K) (W.formalInverseDenomEval_eq hE)
+  simp only [map_mul, map_sub, map_one] at hDU hD
+  -- `d(t)⁻¹` inverts the closed form of `d(t)`; cross-multiplying leaves exactly that
+  have hUD : algebraMap O K (W.formalInverseDenomInvEval t) *
+      (1 - algebraMap O K W.a₁ * algebraMap O K t -
+        algebraMap O K W.a₃ * algebraMap O K (W.formalWEval t)) = 1 := by
+    rw [← hD, mul_comm]; exact hDU
+  simp only [baseChange, map_a₁, map_a₃]
+  rw [hwiota, div_neg, neg_div, neg_neg, div_eq_div_iff (mul_ne_zero hWt hU0) hWt]
+  linear_combination -algebraMap O K (W.formalWEval t) * hUD
 
 /-- **The formal inverse is an involution at a parameter**: `ι(ι(t)) = t`. This is `-(-P) = P` for
 the group law near the origin, evaluated at `t`. -/

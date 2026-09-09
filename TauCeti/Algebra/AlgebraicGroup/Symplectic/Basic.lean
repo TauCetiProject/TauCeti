@@ -63,7 +63,8 @@ proved for an arbitrary constant form in `TauCeti.ConstantForm`.
 
 public section
 
-open CategoryTheory Matrix WithConv
+open AlgebraicGeometry CategoryTheory Matrix WithConv
+open scoped CategoryTheory.MonObj
 
 namespace TauCeti.Symplectic
 

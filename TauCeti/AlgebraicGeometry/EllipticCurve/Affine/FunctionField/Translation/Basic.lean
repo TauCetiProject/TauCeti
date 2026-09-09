@@ -130,7 +130,7 @@ private theorem transcendental_xCoord_translatedGenericPoint (P : (W⁄F).toAffi
   have hns : (W⁄W.FunctionField).toAffine.Nonsingular u v := Point.nonsingular_coords hQ
   have hu : u ∈ 𝔽 := halg.isIntegral
   have hv : v ∈ 𝔽 :=
-    TauCeti.WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x W hns.left hu
+    WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x W hns.left hu
   -- the point therefore descends to the algebraic closure, and so does the generic point
   have hnsE : (W⁄𝔽).toAffine.Nonsingular (⟨u, hu⟩ : 𝔽) ⟨v, hv⟩ :=
     (_root_.WeierstrassCurve.Affine.baseChange_nonsingular (W := W)

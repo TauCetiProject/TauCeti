@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.GroupTheory.Perm.Finite
 public import TauCeti.Combinatorics.Enumerative.SuccessorArray
 
 /-!
@@ -41,6 +42,9 @@ Applications 100 (2002), 147--165.
 * `TauCeti.visitCount_pathOfReindexedSuccessors`, `TauCeti.pathOfReindexedSuccessors_eq` and
   `TauCeti.transitionCount_pathOfReindexedSuccessors`: the last-exit reconstruction has the same
   visit counts, the same endpoint, and the same transition counts as the original prefix.
+* `TauCeti.LastExitAdmissible.symm_pathOfReindexedSuccessors` and
+  `TauCeti.pathOfReindexedSuccessors_symm_apply_apply`: inverse row reindexing is admissible and
+  recovers the original finite prefix.
 
 ## References
 
@@ -556,6 +560,61 @@ theorem transitionCount_pathOfReindexedSuccessors (π : α → Equiv.Perm ℕ) (
   refine Fintype.card_congr ((reindexStepEquiv π x m hmaps hlast).subtypeEquiv fun i => ?_)
   simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.val_castSucc, Fin.val_succ]
   rw [reindexStepEquiv_source π x m hmaps hlast i, reindexStepEquiv_target π x m hmaps hlast i]
+
+/-- **The inverse row permutations are last-exit admissible for the reconstructed prefix.** This
+allows the reconstructed path to be reindexed in reverse through the same finite horizon. -/
+theorem LastExitAdmissible.symm_pathOfReindexedSuccessors {π : α → Equiv.Perm ℕ}
+    {x : ℕ → α} {m : ℕ} (h : LastExitAdmissible π x m) :
+    LastExitAdmissible (fun a => (π a).symm) (pathOfReindexedSuccessors π x) m := by
+  rw [lastExitAdmissible_iff]
+  constructor
+  · intro a k hk
+    rw [visitCount_pathOfReindexedSuccessors π x m h] at hk ⊢
+    exact Equiv.Perm.perm_symm_on_of_perm_on_finite (f := π a)
+      (p := fun j => j < visitCount x a m)
+      (fun j hj => h.maps_lt_visitCount hj) hk
+  · intro a ha
+    rw [visitCount_pathOfReindexedSuccessors π x m h] at ha ⊢
+    have hlast := h.apply_visitCount_sub_one ha
+    rw [← hlast, (π a).symm_apply_apply]
+    exact hlast.symm
+
+/-- **Reindexing a finite prefix by inverse row permutations recovers the prefix.** If `π` is
+last-exit admissible through time `m`, then reconstructing from the `π`-reindexed successor rows
+and subsequently from the `π⁻¹`-reindexed rows returns `x i` for every `i ≤ m`.
+
+The conclusion is deliberately restricted to the admissible finite horizon: unused successor
+entries are unconstrained, so the two infinite reconstructions need not agree after `m`. -/
+@[grind =>]
+theorem pathOfReindexedSuccessors_symm_apply_apply {π : α → Equiv.Perm ℕ} {x : ℕ → α} {m : ℕ}
+    (h : LastExitAdmissible π x m) {i : ℕ} (hi : i ≤ m) :
+    pathOfReindexedSuccessors (fun a => (π a).symm) (pathOfReindexedSuccessors π x) i = x i := by
+  let y := pathOfReindexedSuccessors π x
+  let z := pathOfReindexedSuccessors (fun a => (π a).symm) y
+  have hinv : LastExitAdmissible (fun a => (π a).symm) y m :=
+    h.symm_pathOfReindexedSuccessors
+  have hzxi : z i = x i := by
+    refine eqOn_of_successorArray_visitCell_eq (x := z) (w := x) (n := m) ?_ ?_ i hi
+    · simp [z, y]
+    · intro j hj
+      rw [visitCell_def]
+      have hjm : j + 1 ≤ m := by omega
+      have hjcount : visitCount x (x j) j < visitCount x (x j) m := by
+        have hstep := visitCount_succ_of_eq (x := x) (a := x j) rfl
+        have hmono := visitCount_monotone x (x j) hjm
+        omega
+      have hycount : visitCount y (x j) m = visitCount x (x j) m :=
+        visitCount_pathOfReindexedSuccessors π x m h (x j)
+      have hzcount : visitCount z (x j) m = visitCount y (x j) m :=
+        visitCount_pathOfReindexedSuccessors (fun a => (π a).symm) y m hinv (x j)
+      have hjz : visitCount x (x j) j < visitCount z (x j) m := by omega
+      have hjy : (π (x j)).symm (visitCount x (x j) j) < visitCount y (x j) m :=
+        hinv.maps_lt_visitCount (by omega)
+      rw [successorArray_pathOfReindexedSuccessors_of_lt_visitCount
+          (fun a => (π a).symm) y (x j) hjz,
+        successorArray_pathOfReindexedSuccessors_of_lt_visitCount π x (x j) hjy,
+        (π (x j)).apply_symm_apply, successorArray_visitCount]
+  simpa only [z, y] using hzxi
 
 end TauCeti
 

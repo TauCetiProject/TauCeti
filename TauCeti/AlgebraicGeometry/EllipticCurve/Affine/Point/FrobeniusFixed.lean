@@ -70,7 +70,7 @@ Mathlib or on `main`, and the rest are omitted deliberately, for the reasons giv
 `geomFrobeniusPointFun` and `geomFrobeniusPoint` are both
 `Affine.Point.map (frobeniusAlgHom K L)`. Its `includePointBC` is not quite that map: it is the
 source's own ring-homomorphism transport applied to `algebraMap K L`, which `main` already carries
-as `TauCeti.WeierstrassCurve.Affine.Point.mapAlong`, itself ported from the source's own import
+as `WeierstrassCurve.Affine.Point.mapAlong`, itself ported from the source's own import
 `HasseWeil/EC/AffinePointMap.lean`, and whose `mapAlong_eq_map` identifies it with Mathlib's
 `Affine.Point.baseChange K L`, used here directly.
 Its `includePointBC_injective` is `Affine.Point.map_injective`; its `geomFrobRingHom`,

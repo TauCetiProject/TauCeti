@@ -91,6 +91,25 @@ lemma snd_eq_of_fst_eq {Γ₁ Γ₂ Γ₃ : Subgroup G} {g h d : G} {i : DecompQ
   rw [QuotientGroup.eq] at h ⊢
   simpa [mul_assoc] using h
 
+/-- **A first factor that does not split forces multiplicity at most one.** When `Γ₁ g Γ₂`
+consists of a single left coset, no double coset occurs more than once in the product, for any
+`h` and `d`.
+
+No finiteness hypothesis is needed, in particular none on the second decomposition quotient. -/
+lemma multiplicity_le_one_of_subsingleton {Γ₁ Γ₂ Γ₃ : Subgroup G} {g h d : G}
+    (hs : Subsingleton (DecompQuotient Γ₁ Γ₂ g)) :
+    multiplicity Γ₁ Γ₂ Γ₃ g h d ≤ 1 := by
+  rw [multiplicity_def]
+  have hfib : Subsingleton {p : DecompQuotient Γ₁ Γ₂ g × DecompQuotient Γ₂ Γ₃ h |
+      ((p.1.out : G) * g * ((p.2.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)} := by
+    constructor
+    rintro ⟨⟨i₁, j₁⟩, hp₁⟩ ⟨⟨i₂, j₂⟩, hp₂⟩
+    simp only [Set.mem_ofPred_eq] at hp₁ hp₂
+    obtain rfl : i₁ = i₂ := hs.elim i₁ i₂
+    obtain rfl : j₁ = j₂ := snd_eq_of_fst_eq hp₁ hp₂
+    rfl
+  exact Finite.card_le_one_iff_subsingleton.mpr hfib
+
 /-- When the common second component of two pairs in the fibre of the multiplicity satisfies
 `τⱼ h ∈ Γ₂`, the first components agree. -/
 lemma fst_eq_of_mul_snd_mem {Γ₁ Γ₂ : Subgroup G} {g h d : G} {i₁ i₂ : DecompQuotient Γ₁ Γ₂ g}
@@ -153,6 +172,28 @@ theorem mulMap_eq_mk (H₁ H₂ H₃ : Subgroup G) [IsHeckeTriple Δ H₁ H₂] 
           (Δ.mul_mem (IsHeckeTriple.mem_of_mem_right H₁ p.2.out.2) g₂.2)⟩ :=
   mulMapOf_eq_mk _ _ H₃ g₁ g₂ p
 
+/-- **A factorisation `σᵢ g₁ τⱼ g₂ = l d r` with `l ∈ H₁` and `r ∈ H₃` names the double coset
+of the product**, from bare containments. This is the shape a structure-constant computation
+arrives at: the product of two representatives is rearranged until the intended representative
+`d` stands alone between a left factor and a right factor. -/
+lemma mulMapOf_eq_of_eq_mul_mul {H₁ H₂ H₃ : Subgroup G} {h₁ : H₁.toSubmonoid ≤ Δ}
+    {h₂ : H₂.toSubmonoid ≤ Δ} {g₁ g₂ d : Δ}
+    {p : DecompQuotient H₁ H₂ (g₁ : G) × DecompQuotient H₂ H₃ (g₂ : G)} {l r : G}
+    (hl : l ∈ H₁) (hr : r ∈ H₃)
+    (h : (p.1.out : G) * g₁ * ((p.2.out : G) * g₂) = l * (d : G) * r) :
+    mulMapOf h₁ h₂ H₃ g₁ g₂ p = mk H₁ H₃ d :=
+  (mulMapOf_eq_mk h₁ h₂ H₃ g₁ g₂ p).trans
+    (HeckeCoset.mk_eq_mk_of_mem (DoubleCoset.mem_doubleCoset.mpr ⟨l, hl, r, hr, h⟩))
+
+/-- A factorisation `σᵢ g₁ τⱼ g₂ = l d r` with `l ∈ H₁` and `r ∈ H₃` names the double coset of
+the product: the Hecke-triple form of `mulMapOf_eq_of_eq_mul_mul`. -/
+lemma mulMap_eq_of_eq_mul_mul {H₁ H₂ H₃ : Subgroup G} [IsHeckeTriple Δ H₁ H₂] {g₁ g₂ d : Δ}
+    {p : DecompQuotient H₁ H₂ (g₁ : G) × DecompQuotient H₂ H₃ (g₂ : G)} {l r : G}
+    (hl : l ∈ H₁) (hr : r ∈ H₃)
+    (h : (p.1.out : G) * g₁ * ((p.2.out : G) * g₂) = l * (d : G) * r) :
+    mulMap H₁ H₂ H₃ g₁ g₂ p = mk H₁ H₃ d :=
+  mulMapOf_eq_of_eq_mul_mul hl hr h
+
 /-- If `σᵢ g₁ τⱼ g₂ H₃ = d H₃` then the double coset of `σᵢ g₁ τⱼ g₂` equals that of `d`,
 from bare containments. -/
 lemma mulMapOf_eq_of_mk_eq {H₁ H₂ H₃ : Subgroup G} {h₁ : H₁.toSubmonoid ≤ Δ}
@@ -161,9 +202,8 @@ lemma mulMapOf_eq_of_mk_eq {H₁ H₂ H₃ : Subgroup G} {h₁ : H₁.toSubmonoi
     (h : ((p.1.out : G) * g₁ * ((p.2.out : G) * g₂) : G ⧸ H₃) = ((d : G) : G ⧸ H₃)) :
     mulMapOf h₁ h₂ H₃ g₁ g₂ p = mk H₁ H₃ d := by
   rw [QuotientGroup.eq] at h
-  rw [mulMapOf_eq_mk]
-  exact HeckeCoset.mk_eq_mk_of_mem (DoubleCoset.mem_doubleCoset.mpr
-    ⟨1, H₁.one_mem, _, H₃.inv_mem h, by rw [one_mul, mul_inv_rev, inv_inv, mul_inv_cancel_left]⟩)
+  exact mulMapOf_eq_of_eq_mul_mul H₁.one_mem (H₃.inv_mem h)
+    (by rw [one_mul, mul_inv_rev, inv_inv, mul_inv_cancel_left])
 
 /-- If `σᵢ g₁ τⱼ g₂ H₃ = d H₃` then the double coset of `σᵢ g₁ τⱼ g₂` equals that of `d`:
 the Hecke-triple form of `mulMapOf_eq_of_mk_eq`. -/

@@ -71,21 +71,10 @@ theorem homDensityFin_sub_injHomDensity_le (F : SimpleGraph V) (G : SimpleGraph 
           right_inv := fun ⟨_, _⟩ => rfl }
       rw [Nat.card_congr e, hk0, pow_zero, Nat.descFactorial_zero, Nat.cast_one]
       simp [hW0]
-    · have hhom0 : Nat.card (F →g G) = 0 := by
-        apply Nat.eq_zero_of_le_zero
-        calc Nat.card (F →g G) ≤ Fintype.card W ^ Fintype.card V :=
-              F.card_hom_le G
-          _ = 0 := by rw [hW0]; exact zero_pow hk0
-      have hinj0 : Nat.card {φ : F →g G // Function.Injective ⇑φ} = 0 := by
-        apply Nat.eq_zero_of_le_zero
-        calc Nat.card {φ : F →g G // Function.Injective ⇑φ} ≤
-                (Fintype.card W).descFactorial (Fintype.card V) :=
-              F.card_injective_hom_le G
-          _ = 0 := by
-            rw [hW0]
-            exact Nat.descFactorial_eq_zero_iff_lt.mpr (by omega)
-      rw [hhom0, hinj0, Nat.cast_zero, zero_div, zero_div]
-      simp [hW0]
+    -- both denominators vanish, so both quotients are zero whatever the numerators
+    · rw [hW0, Nat.descFactorial_eq_zero_iff_lt.mpr (Nat.pos_of_ne_zero hk0), Nat.cast_zero,
+        zero_pow hk0]
+      simp
   · have hn : 0 < Fintype.card W := Nat.pos_of_ne_zero hW0
     let _ : MeasurableSpace W := ⊤
     let A : Set (V → W) := {f | ∀ a b, F.Adj a b → G.Adj (f a) (f b)}
@@ -140,11 +129,7 @@ theorem homDensityFin_sub_injHomDensity_le (F : SimpleGraph V) (G : SimpleGraph 
       rw [Nat.card_congr]
       exact Equiv.Set.univ (V → W)
     have hUA : Nat.card {f : V → W // f ∈ Set.univ ∩ A} = Nat.card {f : V → W // f ∈ A} := by
-      apply Nat.card_congr
-      exact { toFun := fun f => ⟨f.1, by simpa using f.2⟩
-              invFun := fun f => ⟨f.1, by simp [f.2]⟩
-              left_inv := by intro f; rfl
-              right_inv := by intro f; rfl }
+      rw [Set.univ_inter]
     rw [hUA, hU0, hA, hEA, hE, hU] at hleftR hrightR
     push_cast at hleftR hrightR
     rw [abs_le]

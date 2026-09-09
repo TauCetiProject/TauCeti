@@ -166,6 +166,75 @@ end IdealArithmeticFunction
 
 namespace Ideal
 
+-- The four obligations of the reindexing in `sum_moebius_divisorsAntidiagonal_of_ne_one`, kept
+-- separate because each is a distinct fact about squarefree divisors rather than a step in one
+-- argument.
+
+private theorem toFinset_normalizedFactors_mem_powerset {A : (Ideal (𝓞 K))⁰}
+    {p : (Ideal (𝓞 K))⁰ × (Ideal (𝓞 K))⁰} (hp : p ∈ divisorsAntidiagonal A) :
+    (normalizedFactors ((p.1 : Ideal (𝓞 K)))).toFinset ∈
+      (normalizedFactors (A : Ideal (𝓞 K))).toFinset.powerset := by
+  have hp0 : ((p.1 : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) ≠ 0 := nonZeroDivisors.coe_ne_zero p.1
+  have hA0 : (A : Ideal (𝓞 K)) ≠ 0 := nonZeroDivisors.coe_ne_zero A
+  exact Finset.mem_powerset.mpr (Multiset.toFinset_subset.mpr (Multiset.subset_of_le
+    ((dvd_iff_normalizedFactors_le_normalizedFactors hp0 hA0).mp
+      (fst_dvd_of_mem_divisorsAntidiagonal hp))))
+
+private theorem eq_of_toFinset_normalizedFactors_eq {A : (Ideal (𝓞 K))⁰}
+    {p q : (Ideal (𝓞 K))⁰ × (Ideal (𝓞 K))⁰}
+    (hp : p ∈ divisorsAntidiagonal A) (hq : q ∈ divisorsAntidiagonal A)
+    (hps : Squarefree ((p.1 : Ideal (𝓞 K)))) (hqs : Squarefree ((q.1 : Ideal (𝓞 K))))
+    (hpq : (normalizedFactors ((p.1 : Ideal (𝓞 K)))).toFinset =
+      (normalizedFactors ((q.1 : Ideal (𝓞 K)))).toFinset) :
+    p = q := by
+  have hp0 : ((p.1 : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) ≠ 0 := nonZeroDivisors.coe_ne_zero p.1
+  have hq0 : ((q.1 : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) ≠ 0 := nonZeroDivisors.coe_ne_zero q.1
+  have hfac : normalizedFactors ((p.1 : Ideal (𝓞 K))) =
+      normalizedFactors ((q.1 : Ideal (𝓞 K))) := by
+    rw [← ((squarefree_iff_nodup_normalizedFactors hp0).mp hps).dedup,
+      ← ((squarefree_iff_nodup_normalizedFactors hq0).mp hqs).dedup,
+      ← Multiset.toFinset_val, ← Multiset.toFinset_val, hpq]
+  have hassoc : Associated ((p.1 : Ideal (𝓞 K))) ((q.1 : Ideal (𝓞 K))) := by
+    have h := (prod_normalizedFactors hp0).symm
+    rw [hfac] at h
+    exact h.trans (prod_normalizedFactors hq0)
+  have h1 : p.1 = q.1 := Subtype.ext (associated_iff_eq.mp hassoc)
+  refine Prod.ext h1 (mul_left_cancel (a := p.1) ?_)
+  rw [mem_divisorsAntidiagonal.mp hp, ← mem_divisorsAntidiagonal.mp hq, h1]
+
+private theorem exists_mem_divisorsAntidiagonal_toFinset_eq {A : (Ideal (𝓞 K))⁰}
+    {S : Finset (Ideal (𝓞 K))}
+    (hS : S ∈ (normalizedFactors (A : Ideal (𝓞 K))).toFinset.powerset) :
+    ∃ p : (Ideal (𝓞 K))⁰ × (Ideal (𝓞 K))⁰, p ∈ divisorsAntidiagonal A ∧
+      Squarefree ((p.1 : Ideal (𝓞 K))) ∧
+      (normalizedFactors ((p.1 : Ideal (𝓞 K)))).toFinset = S := by
+  have hA0 : (A : Ideal (𝓞 K)) ≠ 0 := nonZeroDivisors.coe_ne_zero A
+  rw [Finset.mem_powerset] at hS
+  have hsub : (S.val : Multiset (Ideal (𝓞 K))) ⊆ normalizedFactors (A : Ideal (𝓞 K)) :=
+    fun _ hx ↦ Multiset.mem_toFinset.mp (hS (Finset.mem_val.mp hx))
+  have hB0 : S.val.prod ≠ 0 := prod_ne_zero_of_subset_normalizedFactors hsub
+  have hBfac : normalizedFactors S.val.prod = S.val :=
+    normalizedFactors_prod_eq_self_of_subset hsub
+  obtain ⟨C, hC⟩ : S.val.prod ∣ (A : Ideal (𝓞 K)) :=
+    (Multiset.prod_dvd_prod_of_le ((Multiset.le_iff_subset S.nodup).mpr hsub)).trans
+      (prod_normalizedFactors hA0).dvd
+  have hC0 : C ≠ 0 := by
+    rintro rfl
+    exact hA0 (by rw [hC, mul_zero])
+  refine ⟨(⟨S.val.prod, mem_nonZeroDivisors_of_ne_zero hB0⟩,
+    ⟨C, mem_nonZeroDivisors_of_ne_zero hC0⟩),
+    mem_divisorsAntidiagonal.mpr (Subtype.ext (by simpa using hC.symm)),
+    (squarefree_iff_nodup_normalizedFactors hB0).mpr (by rw [hBfac]; exact S.nodup), ?_⟩
+  rw [hBfac, Finset.val_toFinset]
+
+private theorem moebius_eq_neg_one_pow_card_toFinset {B : (Ideal (𝓞 K))⁰}
+    (hB : Squarefree ((B : Ideal (𝓞 K)))) :
+    UniqueFactorizationMonoid.moebius ((B : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) =
+      (-1 : ℤ) ^ (normalizedFactors ((B : Ideal (𝓞 K)))).toFinset.card := by
+  have hB0 : ((B : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) ≠ 0 := nonZeroDivisors.coe_ne_zero B
+  rw [hB.moebius_eq, factors_eq_normalizedFactors,
+    Multiset.toFinset_card_of_nodup ((squarefree_iff_nodup_normalizedFactors hB0).mp hB)]
+
 /-- **The Möbius function sums to zero over the factorizations of a nonzero ideal that is not the
 unit ideal.**
 
@@ -178,82 +247,27 @@ theorem sum_moebius_divisorsAntidiagonal_of_ne_one {A : (Ideal (𝓞 K))⁰} (hA
       UniqueFactorizationMonoid.moebius ((p.1 : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) = 0 := by
   classical
   have hA0 : (A : Ideal (𝓞 K)) ≠ 0 := nonZeroDivisors.coe_ne_zero A
-  set P : Finset (Ideal (𝓞 K)) := (normalizedFactors (A : Ideal (𝓞 K))).toFinset with hPdef
-  -- `A` is not the unit ideal, so it has at least one prime factor.
-  have hPne : P.Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty, hPdef, Ne, Multiset.toFinset_eq_empty,
+  have hPne : (normalizedFactors (A : Ideal (𝓞 K))).toFinset.Nonempty := by
+    rw [Finset.nonempty_iff_ne_empty, Ne, Multiset.toFinset_eq_empty,
       normalizedFactors_eq_zero_iff hA0, _root_.Ideal.isUnit_iff]
     exact fun h ↦ hA (Subtype.ext (by simpa [_root_.Ideal.one_eq_top] using h))
-  -- Drop the factorizations whose first entry is not squarefree.
   rw [← Finset.sum_filter_of_ne
     (p := fun p : (Ideal (𝓞 K))⁰ × (Ideal (𝓞 K))⁰ ↦ Squarefree ((p.1 : Ideal (𝓞 K))))
     (fun p _ hp ↦ by
       by_contra hcon
       exact hp (UniqueFactorizationMonoid.moebius_of_not_squarefree hcon))]
-  -- Reindex the surviving factorizations by the subsets of `P`.
   have hreindex : ∑ p ∈ {p ∈ divisorsAntidiagonal A | Squarefree ((p.1 : Ideal (𝓞 K)))},
       UniqueFactorizationMonoid.moebius ((p.1 : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) =
-      ∑ S ∈ P.powerset, (-1 : ℤ) ^ S.card := by
-    refine Finset.sum_nbij (fun p ↦ (normalizedFactors ((p.1 : Ideal (𝓞 K)))).toFinset) ?_ ?_ ?_ ?_
-    · -- The primes dividing a divisor of `A` divide `A`.
-      intro p hp
-      rw [Finset.mem_filter] at hp
-      have hp0 : ((p.1 : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) ≠ 0 := nonZeroDivisors.coe_ne_zero p.1
-      refine Finset.mem_powerset.mpr ?_
-      rw [hPdef]
-      exact Multiset.toFinset_subset.mpr (Multiset.subset_of_le
-        ((dvd_iff_normalizedFactors_le_normalizedFactors hp0 hA0).mp
-          (fst_dvd_of_mem_divisorsAntidiagonal hp.1)))
-    · -- A squarefree ideal is determined by the set of primes dividing it, and the first entry of a
-      -- factorization determines the second.
-      intro p hp q hq hpq
-      rw [Finset.mem_coe, Finset.mem_filter] at hp hq
-      have hp0 : ((p.1 : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) ≠ 0 := nonZeroDivisors.coe_ne_zero p.1
-      have hq0 : ((q.1 : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) ≠ 0 := nonZeroDivisors.coe_ne_zero q.1
-      have hpq' : (normalizedFactors ((p.1 : Ideal (𝓞 K)))).toFinset =
-          (normalizedFactors ((q.1 : Ideal (𝓞 K)))).toFinset := hpq
-      have hfac : normalizedFactors ((p.1 : Ideal (𝓞 K))) =
-          normalizedFactors ((q.1 : Ideal (𝓞 K))) := by
-        rw [← ((squarefree_iff_nodup_normalizedFactors hp0).mp hp.2).dedup,
-          ← ((squarefree_iff_nodup_normalizedFactors hq0).mp hq.2).dedup,
-          ← Multiset.toFinset_val, ← Multiset.toFinset_val, hpq']
-      have hassoc : Associated ((p.1 : Ideal (𝓞 K))) ((q.1 : Ideal (𝓞 K))) := by
-        have h := (prod_normalizedFactors hp0).symm
-        rw [hfac] at h
-        exact h.trans (prod_normalizedFactors hq0)
-      have h1 : p.1 = q.1 := Subtype.ext (associated_iff_eq.mp hassoc)
-      have h2 : p.2 = q.2 := by
-        refine mul_left_cancel (a := p.1) ?_
-        rw [mem_divisorsAntidiagonal.mp hp.1, ← mem_divisorsAntidiagonal.mp hq.1, h1]
-      exact Prod.ext h1 h2
-    · -- Every subset of `P` arises: its product is a squarefree divisor of `A`.
-      intro S hS
-      rw [Finset.mem_coe, Finset.mem_powerset] at hS
-      have hsub : (S.val : Multiset (Ideal (𝓞 K))) ⊆ normalizedFactors (A : Ideal (𝓞 K)) :=
-        fun _ hx ↦ Multiset.mem_toFinset.mp (hS (Finset.mem_val.mp hx))
-      have hB0 : S.val.prod ≠ 0 := prod_ne_zero_of_subset_normalizedFactors hsub
-      have hBfac : normalizedFactors S.val.prod = S.val :=
-        normalizedFactors_prod_eq_self_of_subset hsub
-      obtain ⟨C, hC⟩ : S.val.prod ∣ (A : Ideal (𝓞 K)) :=
-        (Multiset.prod_dvd_prod_of_le ((Multiset.le_iff_subset S.nodup).mpr hsub)).trans
-          (prod_normalizedFactors hA0).dvd
-      have hC0 : C ≠ 0 := by
-        rintro rfl
-        exact hA0 (by rw [hC, mul_zero])
-      refine ⟨(⟨S.val.prod, mem_nonZeroDivisors_of_ne_zero hB0⟩,
-        ⟨C, mem_nonZeroDivisors_of_ne_zero hC0⟩), ?_, ?_⟩
-      · rw [Finset.mem_coe, Finset.mem_filter]
-        refine ⟨mem_divisorsAntidiagonal.mpr (Subtype.ext (by simpa using hC.symm)), ?_⟩
-        exact (squarefree_iff_nodup_normalizedFactors hB0).mpr (by rw [hBfac]; exact S.nodup)
-      · have hval : (normalizedFactors S.val.prod).toFinset = S := by
-          rw [hBfac, Finset.val_toFinset]
-        exact hval
-    · -- The Möbius function of a squarefree ideal is `(-1)` to the number of primes dividing it.
-      intro p hp
-      rw [Finset.mem_filter] at hp
-      have hp0 : ((p.1 : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) ≠ 0 := nonZeroDivisors.coe_ne_zero p.1
-      rw [hp.2.moebius_eq, factors_eq_normalizedFactors,
-        Multiset.toFinset_card_of_nodup ((squarefree_iff_nodup_normalizedFactors hp0).mp hp.2)]
+      ∑ S ∈ (normalizedFactors (A : Ideal (𝓞 K))).toFinset.powerset, (-1 : ℤ) ^ S.card := by
+    refine Finset.sum_nbij (fun p ↦ (normalizedFactors ((p.1 : Ideal (𝓞 K)))).toFinset)
+      (fun p hp ↦ toFinset_normalizedFactors_mem_powerset (Finset.mem_filter.mp hp).1)
+      (fun p hp q hq hpq ↦ ?_) (fun S hS ↦ ?_)
+      (fun p hp ↦ moebius_eq_neg_one_pow_card_toFinset (Finset.mem_filter.mp hp).2)
+    · rw [Finset.mem_coe, Finset.mem_filter] at hp hq
+      exact eq_of_toFinset_normalizedFactors_eq hp.1 hq.1 hp.2 hq.2 hpq
+    · obtain ⟨p, hpA, hps, hpS⟩ :=
+        exists_mem_divisorsAntidiagonal_toFinset_eq (Finset.mem_coe.mp hS)
+      exact ⟨p, Finset.mem_coe.mpr (Finset.mem_filter.mpr ⟨hpA, hps⟩), hpS⟩
   rw [hreindex]
   exact Finset.sum_powerset_neg_one_pow_card_of_nonempty hPne
 

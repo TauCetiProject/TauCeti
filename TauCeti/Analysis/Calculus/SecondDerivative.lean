@@ -31,7 +31,7 @@ them.
 
 ## Main results
 
-* `TauCeti.ContDiffAt.hasFDerivAt_fderiv`: at a twice continuously differentiable point,
+* `ContDiffAt.hasFDerivAt_fderiv`: at a twice continuously differentiable point,
   `fderiv 𝕜 g` is differentiable, with derivative the second derivative of `g`.
 * `TauCeti.eventually_fderiv_ne`: where the second derivative is invertible, the differential
   avoids any prescribed value on a punctured neighbourhood of the point.
@@ -51,7 +51,7 @@ variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup
 
 /-- At a twice continuously differentiable point, `fderiv 𝕜 g` is differentiable, with derivative
 the second derivative of `g`. -/
-theorem ContDiffAt.hasFDerivAt_fderiv {n : WithTop ℕ∞} {g : E → F} {x : E}
+theorem _root_.ContDiffAt.hasFDerivAt_fderiv {n : WithTop ℕ∞} {g : E → F} {x : E}
     (h : ContDiffAt 𝕜 n g x) (hn : 2 ≤ n) :
     HasFDerivAt (fderiv 𝕜 g) (fderiv 𝕜 (fderiv 𝕜 g) x) x :=
   ((h.fderiv_right (m := 1) (by exact_mod_cast hn)).differentiableAt one_ne_zero).hasFDerivAt

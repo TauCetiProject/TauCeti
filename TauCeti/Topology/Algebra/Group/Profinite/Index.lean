@@ -37,6 +37,8 @@ description as the least common multiple of the indices of open overgroups.
 * `Subgroup.profiniteIndex_eq_bot_iff_topologicalClosure_eq_top` and
   `Subgroup.profiniteIndex_eq_bot_iff`: the simp-normal forms of the two previous results,
   since the supernatural unit is the bottom element.
+* `Subgroup.isOpen_iff_isClosed_and_isNatural_profiniteIndex`: openness is equivalent to
+  closedness and natural supernatural index.
 
 ## References
 
@@ -50,8 +52,6 @@ namespace TauCeti
 open scoped ENat
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
-
-namespace Subgroup
 
 /-- The **index of a subgroup of a profinite group**, as a supernatural number. At a prime
 `ℓ`, it is the supremum over open normal subgroups `N` of the `ℓ`-adic valuations of
@@ -81,13 +81,9 @@ theorem _root_.Subgroup.profiniteIndex_top : Subgroup.profiniteIndex (⊤ : Subg
   simp_rw [Subgroup.profiniteIndex_apply, hmap]
   simp
 
-end Subgroup
-
 section Profinite
 
 variable [IsTopologicalGroup G] [CompactSpace G]
-
-namespace Subgroup
 
 /-- The supernatural index is equivalently the supremum of the ordinary positive indices of
 the images in finite continuous quotients. -/
@@ -185,10 +181,6 @@ theorem _root_.Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup (H : Subgroup 
   funext U
   exact Supernatural.ofNat_apply _ _
 
-end Subgroup
-
-namespace OpenSubgroup
-
 /-- For an open subgroup, the supernatural index is the prime factorization of its ordinary
 index. -/
 @[simp]
@@ -217,10 +209,6 @@ theorem _root_.OpenSubgroup.profiniteIndex_apply_eq_padicValNat (U : OpenSubgrou
   exact Supernatural.ofNat_apply
     (⟨U.toSubgroup.index,
       Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) ℓ
-
-end OpenSubgroup
-
-namespace Subgroup
 
 omit [CompactSpace G] in
 /-- Taking the topological closure of a subgroup does not change its supernatural index. -/
@@ -293,7 +281,41 @@ theorem _root_.Subgroup.profiniteIndex_eq_bot_iff (H : Subgroup G)
     Subgroup.profiniteIndex H = ⊥ ↔ H = ⊤ := by
   rw [← Supernatural.one_eq_bot, Subgroup.profiniteIndex_eq_one_iff H hH]
 
-end Subgroup
+/-- A subgroup of a profinite group is open exactly when it is closed and its supernatural
+index is a natural number. -/
+theorem _root_.Subgroup.isOpen_iff_isClosed_and_isNatural_profiniteIndex (H : Subgroup G) :
+    IsOpen (H : Set G) ↔
+      IsClosed (H : Set G) ∧ Supernatural.IsNatural (Subgroup.profiniteIndex H) := by
+  constructor
+  · intro hH
+    have : Finite (G ⧸ H) := H.quotient_finite_of_isOpen hH
+    -- The bundled open subgroup `⟨H, hH⟩` has `H` as its underlying subgroup, so the
+    -- computation of the index of an open subgroup applies verbatim to `H`.
+    have hindex : Subgroup.profiniteIndex H = Supernatural.ofNat
+        (⟨H.index, Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) :=
+      OpenSubgroup.profiniteIndex_eq_ofNat_index ⟨H, hH⟩
+    rw [hindex]
+    exact ⟨H.isClosed_of_isOpen hH, Supernatural.isNatural_ofNat _⟩
+  · rintro ⟨hHclosed, hHindex⟩
+    obtain ⟨m, hm⟩ := Supernatural.isNatural_def.mp hHindex
+    refine Subgroup.isOpen_of_index_sup_openNormalSubgroup_le (m := m) hHclosed fun N ↦ ?_
+    -- Each `H ⊔ N` is an open subgroup containing `H`, so its ordinary index is one of the
+    -- numbers whose supernatural join is the index of `H`, hence divides `m`.
+    have hUopen : IsOpen ((H ⊔ N.toSubgroup : Subgroup G) : Set G) :=
+      Subgroup.isOpen_mono le_sup_right N.toOpenSubgroup.isOpen
+    have : Finite (G ⧸ (H ⊔ N.toSubgroup)) :=
+      Subgroup.quotient_finite_of_isOpen _ hUopen
+    have hpos : 0 < (H ⊔ N.toSubgroup).index :=
+      Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite
+    have hle : Supernatural.ofNat (⟨(H ⊔ N.toSubgroup).index, hpos⟩ : ℕ+) ≤
+        Supernatural.ofNat m := by
+      rw [hm, Subgroup.profiniteIndex_eq_iSup_openSubgroup]
+      exact le_iSup (fun V : {V : OpenSubgroup G // H ≤ V.toSubgroup} ↦
+          Supernatural.ofNat
+            (⟨V.1.toSubgroup.index,
+              Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+))
+        ⟨⟨H ⊔ N.toSubgroup, hUopen⟩, le_sup_left⟩
+    exact Nat.le_of_dvd m.pos <| PNat.dvd_iff.mp <| Supernatural.ofNat_le_ofNat_iff.mp hle
 
 end Profinite
 

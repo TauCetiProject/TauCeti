@@ -65,7 +65,7 @@ theorem
     rintro _ ⟨z, hz, rfl⟩
     simpa only [e.left_inv (hΩe hz)] using hz
   have he_invFunOn :=
-    TauCeti.DifferentiableOn.invFunOn he hΩ (e.injOn.mono hΩe)
+    DifferentiableOn.invFunOn he hΩ (e.injOn.mono hΩe)
   have he_inv : DifferentiableOn ℂ e.symm (e '' Ω) :=
     he_invFunOn.congr fun _ hw => by
       rcases hw with ⟨z, hz, rfl⟩
