@@ -26,8 +26,12 @@ itself, rather than with any of its users.
 
 * `ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective`: the bilinear form of a
   continuous linear map into the dual is left-separating if and only if the map is injective.
-* `ContinuousLinearMap.isInvertible_of_injective`: in finite dimensions an injective map
-  into the dual is already invertible, the dual having the same dimension as the space.
+* `ContinuousLinearMap.finrank_dual_eq`: in finite dimensions the continuous dual has the same
+  dimension as the space.
+* `ContinuousLinearMap.isInvertible_of_injective` and
+  `ContinuousLinearMap.isInvertible_of_surjective`: in finite dimensions an injective, equivalently
+  a surjective, map into the dual is already invertible, the dual having the same dimension as the
+  space.
 -/
 
 public section
@@ -47,21 +51,39 @@ theorem _root_.ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective (L :
   exact ⟨fun h v w hvw ↦ h (LinearMap.ext fun u ↦ by simp [hvw]),
     fun h v w hvw ↦ h (ContinuousLinearMap.ext fun u ↦ by simpa using LinearMap.congr_fun hvw u)⟩
 
+end
+
+section FiniteDimensional
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] {L : E →L[𝕜] E →L[𝕜] 𝕜}
+
+/-- In finite dimensions the continuous dual `E →L[𝕜] 𝕜` has the same dimension as `E`: every
+linear functional on a finite-dimensional space is continuous, so the continuous dual coincides
+with the algebraic one. -/
+theorem _root_.ContinuousLinearMap.finrank_dual_eq :
+    Module.finrank 𝕜 (E →L[𝕜] 𝕜) = Module.finrank 𝕜 E := by
+  rw [← LinearEquiv.finrank_eq
+    (LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] E →L[𝕜] 𝕜)]
+  exact Subspace.dual_finrank_eq
+
 /-- In finite dimensions an injective continuous linear map into the dual is invertible: injectivity
 makes it a linear equivalence onto its range, and the dual has the same finite dimension as the
 space, so that range is everything. -/
-theorem _root_.ContinuousLinearMap.isInvertible_of_injective {𝕜 E : Type*}
-    [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] {L : E →L[𝕜] E →L[𝕜] 𝕜}
-    (hinj : Function.Injective L) : L.IsInvertible := by
-  have hrank : Module.finrank 𝕜 E = Module.finrank 𝕜 (E →L[𝕜] 𝕜) := by
-    rw [← LinearEquiv.finrank_eq
-      (LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] E →L[𝕜] 𝕜)]
-    exact Subspace.dual_finrank_eq.symm
-  exact ⟨((L : E →ₗ[𝕜] E →L[𝕜] 𝕜).linearEquivOfInjective hinj hrank).toContinuousLinearEquiv,
-    by ext v; simp⟩
+theorem _root_.ContinuousLinearMap.isInvertible_of_injective
+    (hinj : Function.Injective L) : L.IsInvertible :=
+  ⟨((L : E →ₗ[𝕜] E →L[𝕜] 𝕜).linearEquivOfInjective hinj
+      ContinuousLinearMap.finrank_dual_eq.symm).toContinuousLinearEquiv, by ext v; simp⟩
 
-end
+/-- In finite dimensions a surjective continuous linear map into the dual is invertible: the dual
+has the same finite dimension as the space, so surjectivity forces injectivity. -/
+theorem _root_.ContinuousLinearMap.isInvertible_of_surjective
+    (hsurj : Function.Surjective L) : L.IsInvertible :=
+  ContinuousLinearMap.isInvertible_of_injective
+    ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank (V₂ := E →L[𝕜] 𝕜)
+      ContinuousLinearMap.finrank_dual_eq.symm (f := (L : E →ₗ[𝕜] E →L[𝕜] 𝕜))).2 hsurj)
+
+end FiniteDimensional
 
 end TauCeti
 
