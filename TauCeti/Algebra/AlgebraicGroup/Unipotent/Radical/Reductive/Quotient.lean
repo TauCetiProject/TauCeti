@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Quotient
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Image
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Image.Smooth
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Image.Unipotent
 
 /-!
 # Unipotent radicals and reductive quotients

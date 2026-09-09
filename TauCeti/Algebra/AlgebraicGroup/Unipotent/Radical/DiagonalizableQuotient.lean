@@ -5,7 +5,6 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Image.Unipotent
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Quotient
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Semisimple
 import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
