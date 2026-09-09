@@ -130,7 +130,16 @@ theorem IsHighestWeightVector.representation_eq_vermaCentralCharacter_smul_of_me
   exact (UniversalEnvelopingAlgebra.mem_centralEigenLieSubmodule_iff K L M).mp (key hm)
 
 /-- **The centre acts on the `L(lam)`-isotypic component by `chi_lam`**, at the fixed carrier
-`L(lam) = TauCeti.irreducibleQuotient b lam`. -/
+`L(lam) = TauCeti.irreducibleQuotient b lam`.
+
+The nonvanishing hypothesis is the argument `TauCeti.vermaCentralCharacter` itself takes, not a
+side condition of this statement: `vermaCentralCharacter b lam` is not a term, so without it the
+conclusion has no scalar to name. It costs no coverage either. At a weight with
+`vermaGenerator b lam = 0` the module `L(lam)` is zero, so its isotypic component is `⊥`
+(`TauCeti.subsingleton_irreducibleQuotient_iff` with
+`LieModule.isotypicComponent_eq_bot_of_subsingleton`) and the conclusion holds for every scalar;
+the highest-weight-vector form above, in which the milestone is really stated, assumes nothing
+about `lam`. -/
 theorem representation_eq_vermaCentralCharacter_smul_of_mem_isotypicComponent
     (hne : vermaGenerator b lam ≠ 0) (u : Subalgebra.center K U) {m : M}
     (hm : m ∈ isotypicComponent K L M (irreducibleQuotient b lam)) :
@@ -164,7 +173,11 @@ theorem representation_casimirElement_eq_casimirScalar_smul_of_mem_isotypicCompo
 
 /-- **Isotypic components attached to weights with different central characters are disjoint.** A
 central element on which the two characters differ acts on the intersection by two different
-scalars, which forces the intersection to vanish. -/
+scalars, which forces the intersection to vanish.
+
+As in the previous theorem the two nonvanishing hypotheses are the arguments
+`TauCeti.vermaCentralCharacter` takes, here needed to write down the two characters being
+compared; the Casimir form of the separation below needs no hypothesis on the weights. -/
 theorem isotypicComponent_inf_isotypicComponent_eq_bot_of_vermaCentralCharacter_ne
     (hlam : vermaGenerator b lam ≠ 0) (hmu : vermaGenerator b mu ≠ 0)
     (h : vermaCentralCharacter b lam hlam ≠ vermaCentralCharacter b mu hmu) :
