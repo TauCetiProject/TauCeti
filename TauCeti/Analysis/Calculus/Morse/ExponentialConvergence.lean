@@ -36,7 +36,7 @@ compactness and gluing arguments of Lane M of the analytic Heegaard Floer roadma
 Everything rests on the **Morse form of Łojasiewicz's gradient inequality**, with the optimal
 exponent `1/2`: near a nondegenerate critical point,
 
-`lam * (f x - f p) ≤ ‖∇ f x‖ ^ 2`.
+`lam * |f x - f p| ≤ ‖∇ f x‖ ^ 2`.
 
 Both halves of it come from the linearization `TauCeti.hessianOperator` of the gradient. Since the
 Hessian operator is invertible, the gradient is bounded below by a multiple of the distance to `p`
@@ -146,11 +146,11 @@ theorem exists_norm_gradient_le_mul_norm_sub (h : IsNondegenerateCriticalPoint f
       _ ≤ _ := norm_sub_le _ _
   nlinarith
 
-/-- Near a nondegenerate critical point the energy `f x - f p` is bounded by a multiple of the
-squared distance to that point. This is the mean value inequality applied along the segment from
-`p` to `x`, on which the gradient is bounded by a multiple of `‖x - p‖`. -/
+/-- Near a nondegenerate critical point the absolute energy difference `|f x - f p|` is bounded by
+a multiple of the squared distance to that point. This is the mean value inequality applied along
+the segment from `p` to `x`, on which the gradient is bounded by a multiple of `‖x - p‖`. -/
 theorem exists_sub_le_mul_norm_sub_sq (h : IsNondegenerateCriticalPoint f p) :
-    ∃ C > 0, ∀ᶠ x in 𝓝 p, f x - f p ≤ C * ‖x - p‖ ^ 2 := by
+    ∃ C > 0, ∀ᶠ x in 𝓝 p, |f x - f p| ≤ C * ‖x - p‖ ^ 2 := by
   obtain ⟨C, hC, hgrad⟩ := h.exists_norm_gradient_le_mul_norm_sub
   have hdiff : ∀ᶠ x in 𝓝 p, DifferentiableAt ℝ f x := by
     filter_upwards [h.contDiffAt.eventually (by simp)] with x hx
@@ -171,22 +171,23 @@ theorem exists_sub_le_mul_norm_sub_sq (h : IsNondegenerateCriticalPoint f p) :
       rwa [dist_eq_norm] at hy'
     · exact Metric.mem_closedBall_self (norm_nonneg _)
     · simp [Metric.mem_closedBall, dist_eq_norm]
-  calc f x - f p ≤ ‖f x - f p‖ := le_abs_self _
+  calc |f x - f p| = ‖f x - f p‖ := by rw [Real.norm_eq_abs]
     _ ≤ C * ‖x - p‖ * ‖x - p‖ := hkey
     _ = C * ‖x - p‖ ^ 2 := by ring
 
 /-- **The Morse form of Łojasiewicz's gradient inequality.** Near a nondegenerate critical point
-the energy is bounded by a multiple of the squared norm of the gradient; equivalently the
+the absolute energy difference is bounded by a multiple of the squared norm of the gradient;
+equivalently the
 Łojasiewicz inequality holds there with the optimal exponent `1 / 2`. For a merely smooth function
 no such inequality is available, and a gradient trajectory can spiral forever without converging. -/
 theorem exists_mul_sub_le_norm_gradient_sq (h : IsNondegenerateCriticalPoint f p) :
-    ∃ lam > 0, ∀ᶠ x in 𝓝 p, lam * (f x - f p) ≤ ‖∇ f x‖ ^ 2 := by
+    ∃ lam > 0, ∀ᶠ x in 𝓝 p, lam * |f x - f p| ≤ ‖∇ f x‖ ^ 2 := by
   obtain ⟨c, hc, h1⟩ := h.exists_mul_norm_sub_le_norm_gradient
   obtain ⟨C, hC, h2⟩ := h.exists_sub_le_mul_norm_sub_sq
   refine ⟨c ^ 2 / C, by positivity, ?_⟩
   filter_upwards [h1, h2] with x hx1 hx2
   have h3 : (c * ‖x - p‖) ^ 2 ≤ ‖∇ f x‖ ^ 2 := pow_le_pow_left₀ (by positivity) hx1 2
-  calc c ^ 2 / C * (f x - f p) ≤ c ^ 2 / C * (C * ‖x - p‖ ^ 2) :=
+  calc c ^ 2 / C * |f x - f p| ≤ c ^ 2 / C * (C * ‖x - p‖ ^ 2) :=
         mul_le_mul_of_nonneg_left hx2 (by positivity)
     _ = (c * ‖x - p‖) ^ 2 := by field_simp
     _ ≤ ‖∇ f x‖ ^ 2 := h3
@@ -318,10 +319,13 @@ private theorem exists_time_of_tendsto
       (∀ t ∈ Ici T, lam * (f (γ t) - f p) ≤ ‖∇ f (γ t)‖ ^ 2) ∧
       (∀ t ∈ Ici T, f p ≤ f (γ t)) := by
   obtain ⟨lam, hlam, hloj⟩ := hp.exists_mul_sub_le_norm_gradient_sq
+  have hloj' : ∀ᶠ x in 𝓝 p, lam * (f x - f p) ≤ ‖∇ f x‖ ^ 2 := by
+    filter_upwards [hloj] with x hx
+    exact (mul_le_mul_of_nonneg_left (le_abs_self _) hlam.le).trans hx
   have hC2 : ∀ᶠ x in 𝓝 p, ContDiffAt ℝ 2 f x := hp.contDiffAt.eventually (by simp)
   have hev : ∀ᶠ t in atTop,
       (lam * (f (γ t) - f p) ≤ ‖∇ f (γ t)‖ ^ 2 ∧ ContDiffAt ℝ 2 f (γ t)) ∧ a < t :=
-    (hconv.eventually (hloj.and hC2)).and (eventually_gt_atTop a)
+    (hconv.eventually (hloj'.and hC2)).and (eventually_gt_atTop a)
   obtain ⟨T, hT⟩ := eventually_atTop.1 hev
   have hTa : a < T := (hT T le_rfl).2
   have hderiv : ∀ t ∈ Ici T, HasDerivAt γ (-∇ f (γ t)) t := by
