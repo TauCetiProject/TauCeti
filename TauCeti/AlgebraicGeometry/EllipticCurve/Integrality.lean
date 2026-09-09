@@ -36,12 +36,12 @@ factorisation, only an `R`-algebra.
 
 ## Main results
 
-* `TauCeti.WeierstrassCurve.isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff`: the
+* `WeierstrassCurve.isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff`: the
   `x`-coordinate of a point is integral if it is a root of a polynomial over `R` with squarefree
   leading coefficient.
-* `TauCeti.WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x`: over **any** `R`-algebra, a
+* `WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x`: over **any** `R`-algebra, a
   point whose `x`-coordinate is integral over `R` has `y`-coordinate integral over `R`.
-* `TauCeti.WeierstrassCurve.isInteger_y_of_equation_of_isInteger_x`: its `IsLocalization.IsInteger`
+* `WeierstrassCurve.isInteger_y_of_equation_of_isInteger_x`: its `IsLocalization.IsInteger`
   corollary over any commutative `R`-algebra in which `R` is integrally closed, the shape the
   Nagell–Lutz argument consumes.
 * `WeierstrassCurve.isInteger_eight_mul_y_of_evalEval_polynomialY_eq_zero`: the third step, for the
@@ -82,7 +82,7 @@ open Polynomial IsFractionRing
 
 namespace TauCeti
 
-namespace WeierstrassCurve
+section
 
 variable {R : Type*} [CommRing R] (W : _root_.WeierstrassCurve R)
 
@@ -91,7 +91,8 @@ variable {R : Type*} [CommRing R] (W : _root_.WeierstrassCurve R)
 On the curve, `y` is a root of the monic quadratic `Y² + (a₁x + a₃)Y − (x³ + a₂x² + a₄x + a₆)`,
 whose coefficients are polynomial in `x` and so are integral whenever `x` is. No domain,
 fraction-field or factorisation hypothesis is needed, and `x` need not come from `R` itself. -/
-theorem isIntegral_y_of_equation_of_isIntegral_x {A : Type*} [CommRing A] [Algebra R A] {x y : A}
+theorem _root_.WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x
+    {A : Type*} [CommRing A] [Algebra R A] {x y : A}
     (h : (W.baseChange A).toAffine.Equation x y) (hx : IsIntegral R x) : IsIntegral R y := by
   rw [_root_.WeierstrassCurve.Affine.equation_iff] at h
   simp only [_root_.WeierstrassCurve.baseChange, _root_.WeierstrassCurve.map_a₁,
@@ -119,11 +120,11 @@ variable [IsDomain R] [UniqueFactorizationMonoid R]
 The rational root theorem gives `den x ∣ f.leadingCoeff`; powerfulness of the denominator
 (`sq_dvd_den_of_prime_of_dvd`) upgrades any prime factor `q` of `den x` to `q * q ∣ f.leadingCoeff`,
 which squarefreeness forbids. -/
-theorem isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff
+theorem _root_.WeierstrassCurve.isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff
     (h : (W.baseChange K).toAffine.Equation x y) {f : R[X]} (hroot : aeval x f = 0)
     (hsf : Squarefree f.leadingCoeff) : IsLocalization.IsInteger R x :=
   isInteger_of_isUnit_den <|
-    isUnit_den_of_dvd_squarefree W h hsf (den_dvd_of_is_root hroot)
+    WeierstrassCurve.isUnit_den_of_dvd_squarefree W h hsf (den_dvd_of_is_root hroot)
 
 end UniqueFactorization
 
@@ -142,15 +143,16 @@ is what the argument uses, over any commutative `R`-algebra. It is strictly weak
 `[IsIntegrallyClosed R] [IsFractionRing R K]` — those two imply it
 (`isIntegrallyClosed_iff_isIntegrallyClosedIn`, and Mathlib supplies the instance), but not
 conversely. -/
-theorem isInteger_y_of_equation_of_isInteger_x (h : (W.baseChange K).toAffine.Equation x y)
+theorem _root_.WeierstrassCurve.isInteger_y_of_equation_of_isInteger_x
+    (h : (W.baseChange K).toAffine.Equation x y)
     (hx : IsLocalization.IsInteger R x) : IsLocalization.IsInteger R y := by
   obtain ⟨x₀, hx₀⟩ := hx
   exact RingHom.mem_rangeS.mpr (IsIntegrallyClosedIn.isIntegral_iff.mp
-    (isIntegral_y_of_equation_of_isIntegral_x W h (hx₀ ▸ isIntegral_algebraMap)))
+    (WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x W h (hx₀ ▸ isIntegral_algebraMap)))
 
 end IntegrallyClosedIn
 
-end WeierstrassCurve
+end
 
 end TauCeti
 

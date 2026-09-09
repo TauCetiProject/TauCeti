@@ -79,8 +79,8 @@ private theorem isIntegralElem_genericX [W.IsElliptic] {n : ℤ}
   -- both are already available: the witness is `Φₙ − C ([n]*x) * ΨSqₙ` over the coordinate ring.
   refine ⟨(W.map (algebraMap F W.CoordinateRing)).Φ n -
       C (AdjoinRoot.of W.polynomial X) * (W.map (algebraMap F W.CoordinateRing)).ΨSq n,
-    TauCeti.WeierstrassCurve.monic_Φ_sub_C_mul_ΨSq _ n _, ?_⟩
-  refine TauCeti.WeierstrassCurve.aeval_Φ_sub_C_mul_ΨSq_eq_zero _ ?_
+    WeierstrassCurve.monic_Φ_sub_C_mul_ΨSq _ n _, ?_⟩
+  refine WeierstrassCurve.aeval_Φ_sub_C_mul_ΨSq_eq_zero _ ?_
   have hx : algebraMap W.CoordinateRing W.FunctionField (AdjoinRoot.of W.polynomial X) =
       mulByIntX W n := mulByIntPullback_X W hn
   simp only [hx, _root_.WeierstrassCurve.baseChange, _root_.WeierstrassCurve.map_Φ,

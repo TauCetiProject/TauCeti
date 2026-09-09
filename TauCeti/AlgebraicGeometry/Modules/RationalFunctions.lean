@@ -26,6 +26,8 @@ condition and the `𝒪_X`-module structure automatic.
 
 ## Main declarations
 
+* `TauCeti.AlgebraicGeometry.Scheme.genericPoint_mem`, the elementary fact that every nonempty open
+  subset of an irreducible scheme contains the generic point;
 * `TauCeti.AlgebraicGeometry.Scheme.fromSpecFunctionField`, the canonical morphism
   `Spec K(X) ⟶ X` from the spectrum of the function field, and
   `TauCeti.AlgebraicGeometry.Scheme.fromSpecFunctionField_preimage`: it pulls a nonempty open

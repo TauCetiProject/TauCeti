@@ -78,9 +78,7 @@ variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
 
 namespace Isogeny
 
--- `mk_C_eq_algebraMap` sits under TauCeti's own `WeierstrassCurve.Affine` root, not Mathlib's,
--- so it is opened by name rather than reached through the `Affine.` prefix used elsewhere here.
-open TauCeti.WeierstrassCurve.Affine.CoordinateRing (mk_C_eq_algebraMap)
+open WeierstrassCurve.Affine.CoordinateRing (mk_C_eq_algebraMap)
 
 /-- **`Φₙ` has a pole of order `2n²` at infinity.** Its degree is `n²` and it is nonzero for
 every `n`, both without any hypothesis on the characteristic. -/

@@ -87,7 +87,7 @@ open Polynomial
 
 namespace WeierstrassCurve
 
-open TauCeti.WeierstrassCurve
+open WeierstrassCurve
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve F)
 

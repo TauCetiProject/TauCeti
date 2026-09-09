@@ -174,29 +174,24 @@ theorem cuspFormsOld_le_of_prime [NeZero N]
   · -- `V₁` from a proper divisor level `M`: split off a prime factor `p` of `N / M`
     obtain ⟨m, hm⟩ : M ∣ N := by rwa [one_mul] at hdvd
     have hm1 : m ≠ 1 := fun h ↦ hM (by rw [hm, h, mul_one])
-    obtain ⟨p, hp, t, ht⟩ : ∃ p, p.Prime ∧ ∃ t, m = p * t := by
-      obtain ⟨p, hp, q, hq⟩ := Nat.exists_prime_and_dvd hm1
-      exact ⟨p, hp, q, hq⟩
-    have hpL : p * (M * t) = N := by rw [hm, ht]; ring
-    have : NeZero (M * t) := ⟨fun h ↦ NeZero.ne N (by rw [← hpL, h, mul_zero])⟩
+    obtain ⟨p, hp, t, rfl⟩ := Nat.exists_prime_and_dvd hm1
+    have hpL : p * (M * t) = N := by rw [hm]; ring
+    have : NeZero (M * t) := NeZero.of_dvd (Dvd.intro_left p hpL)
     have h1M : 1 * M ∣ M * t := ⟨t, by rw [one_mul]⟩
     have hmem := hV p (M * t) hp hpL 1 (Or.inl rfl)
       (CuspForm.levelRaise 1 (Gamma1_map_le_conjAct_scaleGL_of_dvd h1M) f)
     simpa only [CuspForm.levelRaise_levelRaise, one_mul] using hmem
   · -- `V_d` with `d ≠ 1`: split off a prime factor `q` of `d`
-    obtain ⟨q, hq, e, he⟩ : ∃ q, q.Prime ∧ ∃ e, d = q * e := by
-      obtain ⟨q, hq, e, hqe⟩ := Nat.exists_prime_and_dvd hd1
-      exact ⟨q, hq, e, hqe⟩
+    obtain ⟨q, hq, e, rfl⟩ := Nat.exists_prime_and_dvd hd1
     obtain ⟨s, hs⟩ := id hdvd
-    have : NeZero q := ⟨hq.ne_zero⟩
-    have : NeZero e := ⟨fun h ↦ NeZero.ne N (by rw [hs, he, h]; simp)⟩
-    have hqL : q * (e * M * s) = N := by rw [hs, he]; ring
-    have : NeZero (e * M * s) := ⟨fun h ↦ NeZero.ne N (by rw [← hqL, h, mul_zero])⟩
+    have hqL : q * (e * M * s) = N := by rw [hs]; ring
+    have heN : e ∣ N := ⟨q * M * s, by rw [← hqL]; ring⟩
+    have : NeZero e := NeZero.of_dvd heN
+    have : NeZero (e * M * s) := NeZero.of_dvd (Dvd.intro_left q hqL)
     have heM : e * M ∣ e * M * s := ⟨s, rfl⟩
     have hmem := hV q (e * M * s) hq hqL q (Or.inr rfl)
       (CuspForm.levelRaise e (Gamma1_map_le_conjAct_scaleGL_of_dvd heM) f)
-    have levelRaise_index : e * q = d := by rw [he, Nat.mul_comm]
-    simpa only [CuspForm.levelRaise_levelRaise, levelRaise_index] using hmem
+    simpa only [CuspForm.levelRaise_levelRaise, Nat.mul_comm e q] using hmem
 
 /-! ### The new subspace -/
 
