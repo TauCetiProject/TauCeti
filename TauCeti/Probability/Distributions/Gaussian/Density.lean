@@ -50,6 +50,9 @@ form into the one of `S⁻¹`.
 ## References
 
 * M. L. Eaton, *Multivariate Statistics: A Vector Space Approach*.
+* `TauCetiRoadmap/StandardDistributions/README.md`, which prescribes deriving the nondegenerate
+  case from `TauCeti.pi_gaussianReal_eq_withDensity` by an affine change of variables rather than
+  rebuilding the product-density calculation.
 -/
 
 public section
