@@ -22,9 +22,8 @@ The six vanishing brackets are listed explicitly in the theorem. The parameters 
 an arbitrary commutative ring, so the relation includes characteristics two and three.
 The integral coefficients allow different choices of signs for the distinguished root vectors.
 
-The proof transports `baseChangeExp_mul_baseChangeExp_of_g2_short_pair` along the
-Kostant lattice action, following the long-pair transport in `Commutator.G2.Basic`.
-This is the short-pair input for the relations of the represented root-subgroup morphisms.
+This is the Kostant-lattice form of `baseChangeExp_mul_baseChangeExp_of_g2_short_pair`
+and the short-pair input for the relations of the represented root-subgroup morphisms.
 
 ## References
 
@@ -125,5 +124,48 @@ theorem kostantRootSubgroupPoints_mul_of_g2_short_pair
       (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM m n hv) hMs hm]
   exact baseChangeExp_mul_baseChangeExp_of_g2_short_pair M hxy hxz hzy hxw hxs hys hzw hzs hws
     hi hj (hk.smul c) _ _ hMz hMw hMs _ _
+
+/-- The G₂ short-pair product relation on an admissible Kostant lattice, with the three output
+points written explicitly at parameters `2ctu`, `3dt²u`, and `3atu²`. -/
+theorem kostantRootSubgroupPoints_mul_of_g2_short_pair'
+    {i j k l m : ι} {c d a : ℤ}
+    (hij : ⁅e i, e j⁆ = (2 * c) • e k)
+    (hik : c • ⁅e i, e k⁆ = (3 * d) • e l)
+    (hkj : c • ⁅e k, e j⁆ = (3 * a) • e m)
+    (hil : ⁅e i, e l⁆ = 0) (him : ⁅e i, e m⁆ = 0) (hjm : ⁅e j, e m⁆ = 0)
+    (hkl : ⁅e k, e l⁆ = 0) (hkm : ⁅e k, e m⁆ = 0) (hlm : ⁅e l, e m⁆ = 0)
+    (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
+    (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
+    (hl : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))))
+    (hm : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e m))))
+    (f g : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
+    kostantRootSubgroupPoints e h ρ M hM i hi f *
+        kostantRootSubgroupPoints e h ρ M hM j hj g =
+      kostantRootSubgroupPoints e h ρ M hM j hj g *
+        kostantRootSubgroupPoints e h ρ M hM k hk
+          ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
+            (Multiplicative.ofAdd ((c : A) *
+              (2 * Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) *
+                Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g))))) *
+        kostantRootSubgroupPoints e h ρ M hM l hl
+          ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
+            (Multiplicative.ofAdd ((d : A) *
+              (3 * Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) ^ 2 *
+                Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g))))) *
+        kostantRootSubgroupPoints e h ρ M hM m hm
+          ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
+            (Multiplicative.ofAdd ((a : A) *
+              (3 * Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) *
+                Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g) ^ 2)))) *
+        kostantRootSubgroupPoints e h ρ M hM i hi f :=
+  kostantRootSubgroupPoints_mul_of_g2_short_pair
+    e h ρ M hM hij hik hkj hil him hjm hkl hkm hlm hi hj hk hl hm f g _ _ _
+      (congrArg Multiplicative.toAdd
+        ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
+      (congrArg Multiplicative.toAdd
+        ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
+      (congrArg Multiplicative.toAdd
+        ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
 
 end TauCeti.UniversalEnvelopingAlgebra

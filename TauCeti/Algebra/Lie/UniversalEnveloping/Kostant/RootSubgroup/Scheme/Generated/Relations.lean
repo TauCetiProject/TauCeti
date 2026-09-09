@@ -341,4 +341,43 @@ theorem kostantRootSubgroupToGenerated_mul_of_g2_short_pair
       e h ρ M hM b A hij hik hkj hil him hjm hkl hkm hlm
         (hnil i) (hnil j) (hnil k) (hnil l) (hnil m) f g p q r hp hq hr
 
+/-- The G₂ short-pair product relation inside the generated group scheme, with the three output
+points written explicitly at parameters `2ctu`, `3dt²u`, and `3atu²`. -/
+theorem kostantRootSubgroupToGenerated_mul_of_g2_short_pair'
+    {i j k l m : I} {c d a : ℤ}
+    (hij : ⁅e i, e j⁆ = (2 * c) • e k)
+    (hik : c • ⁅e i, e k⁆ = (3 * d) • e l)
+    (hkj : c • ⁅e k, e j⁆ = (3 * a) • e m)
+    (hil : ⁅e i, e l⁆ = 0) (him : ⁅e i, e m⁆ = 0) (hjm : ⁅e j, e m⁆ = 0)
+    (hkl : ⁅e k, e l⁆ = 0) (hkm : ⁅e k, e m⁆ = 0) (hlm : ⁅e l, e m⁆ = 0)
+    (f g : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+      (AdditiveGroup.groupScheme ℤ).X) :
+    (f ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b i).hom.hom) *
+        (g ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b j).hom.hom) =
+      (g ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b j).hom.hom) *
+        ((AdditiveGroup.schemePointsMulEquiv A).symm
+            (Multiplicative.ofAdd ((c : A) *
+              (2 * Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A f) *
+                Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A g)))) ≫
+          (kostantRootSubgroupToGenerated e h ρ M hM hnil b k).hom.hom) *
+        ((AdditiveGroup.schemePointsMulEquiv A).symm
+            (Multiplicative.ofAdd ((d : A) *
+              (3 * Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A f) ^ 2 *
+                Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A g)))) ≫
+          (kostantRootSubgroupToGenerated e h ρ M hM hnil b l).hom.hom) *
+        ((AdditiveGroup.schemePointsMulEquiv A).symm
+            (Multiplicative.ofAdd ((a : A) *
+              (3 * Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A f) *
+                Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A g) ^ 2))) ≫
+          (kostantRootSubgroupToGenerated e h ρ M hM hnil b m).hom.hom) *
+        (f ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b i).hom.hom) :=
+  kostantRootSubgroupToGenerated_mul_of_g2_short_pair
+    e h ρ M hM b hnil A hij hik hkj hil him hjm hkl hkm hlm f g _ _ _
+      (congrArg Multiplicative.toAdd
+        ((AdditiveGroup.schemePointsMulEquiv A).apply_symm_apply _))
+      (congrArg Multiplicative.toAdd
+        ((AdditiveGroup.schemePointsMulEquiv A).apply_symm_apply _))
+      (congrArg Multiplicative.toAdd
+        ((AdditiveGroup.schemePointsMulEquiv A).apply_symm_apply _))
+
 end TauCeti.UniversalEnvelopingAlgebra
