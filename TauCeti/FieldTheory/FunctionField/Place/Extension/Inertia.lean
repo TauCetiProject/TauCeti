@@ -20,15 +20,10 @@ is a homomorphism
 `TauCeti.Place.residueAut : G_Z(P) →* (F'_P ≃ₐ[F_{P ∩ F}] F'_P)`.
 Its kernel is Mathlib's `ValuationSubring.inertiaSubgroup`, the **inertia group** of `P`.
 
-The main theorem is that `residueAut` is **surjective**: every automorphism of the residue
-extension comes from an automorphism of `F'` fixing `P`.  The proof passes to the decomposition
-field `Z`, over which `P` is the only place of `F'` and the residue extension is unchanged.  There
-the valuation ring `𝒪_P` is a ring on which the full Galois group `Gal(F' / Z)` acts with
-`𝒪_{P ∩ Z}` as its ring of invariants, and Mathlib's `Ideal.Quotient.stabilizerHom_surjective` —
-the general statement that the stabilizer of a prime of an invariant ring extension surjects onto
-the automorphisms of the residue extension — applies verbatim.  Descending the base back to
-`F_{P ∩ F}` is possible because the residue extension of `Z / F` at `P` is trivial: `𝒪_{P ∩ Z}`
-and `𝒪_{P ∩ F}` have the same image in `F'_P`.
+The residue action distinguishes the automorphisms that become invisible after reduction from
+those detected on the residue field.  Its surjectivity shows that every automorphism of the
+residue extension arises this way, so the inertia quotient captures exactly the residue-field
+symmetries and relates ramification to the separable and inseparable residue degrees.
 
 Consequently `G_Z(P) / G_T(P)` is the automorphism group of the residue extension and of its
 separable closure.  Its order is the separable residue degree, while the inertia group has order
