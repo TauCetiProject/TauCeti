@@ -7,14 +7,12 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.GradientFlow
 public import TauCeti.Analysis.Calculus.Morse.Linearization
--- Private: the mean value inequality, monotonicity from the sign of a derivative, the fundamental
--- theorem of calculus, the reparametrization of an integral curve and the norm comparison for the
--- gradient are used only inside proofs; no declaration below exposes their APIs.
+-- Private: Grönwall's inequality, the fundamental theorem of calculus, reparametrization of an
+-- integral curve, and scalar multiplication of the gradient are used only inside proofs; no
+-- declaration below exposes their APIs.
 import TauCeti.Analysis.Calculus.Gradient
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.ODE.Gronwall
 import Mathlib.Analysis.ODE.Transform
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
@@ -50,10 +48,10 @@ Along the trajectory the energy `g t = f (γ t) - f p` is nonnegative — `f ∘
 tends to `f p` — and satisfies `g' = -‖∇ f (γ t)‖ ^ 2 ≤ -lam * g`, so `g` decays like
 `exp (-lam * t)`.
 
-That decay does not by itself bound `‖γ t - p‖`: the energy vanishes on the cone where the
-Hessian quadratic form does, and that cone meets every neighbourhood of `p` as soon as the Morse
-index is neither `0` nor maximal. The distance is instead recovered from the *length* of the
-trajectory. On a time interval of length one the energy identity
+That decay does not by itself bound `‖γ t - p‖`: an indefinite quadratic approximation has null
+directions, so the energy difference does not uniformly control the squared distance to `p`. The
+distance is instead recovered from the *length* of the trajectory. On a time interval of length
+one the energy identity
 `TauCeti.IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` computes `∫ ‖∇ f (γ s)‖ ^ 2`, and the
 elementary bound `v ≤ (α * v ^ 2 + 1 / α) / 2`, optimized in `α`, converts it into a bound for
 `∫ ‖∇ f (γ s)‖ = ∫ ‖γ' s‖`, hence for `‖γ (t + 1) - γ t‖`, by the square root of the energy.
@@ -68,8 +66,11 @@ bounds `‖γ t - p‖` by a multiple of `sqrt (g t)`, which decays like `exp (-
   converging to a nondegenerate critical point decays exponentially.
 * `TauCeti.IsIntegralCurveOn.exists_norm_sub_le_mul_exp_atTop`: **the trajectory itself
   converges exponentially fast**.
-* `TauCeti.IsIntegralCurveOn.exists_norm_sub_le_mul_exp_atBot`: the backward-time statement,
-  obtained from the forward one by reversing time and negating the function.
+* `TauCeti.IsIntegralCurveOn.exists_norm_gradient_le_mul_exp_atTop` and
+  `TauCeti.IsIntegralCurveOn.exists_norm_deriv_le_mul_exp_atTop`: the gradient and velocity decay
+  exponentially.
+* The corresponding `atBot` theorems give backward-time energy, position, gradient, and velocity
+  decay by reversing time and negating the function.
 
 ## References
 
@@ -83,124 +84,10 @@ public section
 open Filter InnerProductSpace MeasureTheory Metric Set
 open scoped Gradient Interval Topology
 
-/-! ### The Morse form of Łojasiewicz's gradient inequality -/
-
-namespace ContDiffAt
-
-open TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-  {f : E → ℝ} {p : E}
-
-/-- Near a critical point of a twice continuously differentiable function the gradient is bounded
-above by a multiple of the distance to that point: it vanishes at the point and is differentiable
-there. -/
-theorem exists_norm_gradient_le_mul_norm_sub (hf : ContDiffAt ℝ 2 f p) (hgrad : ∇ f p = 0) :
-    ∃ C > 0, ∀ᶠ x in 𝓝 p, ‖∇ f x‖ ≤ C * ‖x - p‖ := by
-  refine ⟨‖hessianOperator f p‖ + 1, by positivity, ?_⟩
-  filter_upwards [(hf.neg_gradient_sub_linearization_isLittleO hgrad).def one_pos] with x hx
-  rw [one_mul] at hx
-  have h2 : ‖hessianOperator f p (x - p)‖ ≤ ‖hessianOperator f p‖ * ‖x - p‖ :=
-    (hessianOperator f p).le_opNorm _
-  have h1 : ‖∇ f x‖ ≤ ‖(-∇ f) x + hessianOperator f p (x - p)‖
-      + ‖hessianOperator f p (x - p)‖ := by
-    calc ‖∇ f x‖ = ‖(-∇ f) x‖ := by simp
-      _ = ‖((-∇ f) x + hessianOperator f p (x - p)) - hessianOperator f p (x - p)‖ := by
-          rw [add_sub_cancel_right]
-      _ ≤ _ := norm_sub_le _ _
-  nlinarith
-
-/-- Near a critical point of a twice continuously differentiable function the absolute energy
-difference `|f x - f p|` is bounded by a multiple of the squared distance to that point. This is
-the mean value inequality applied along the segment from `p` to `x`, on which the gradient is
-bounded by a multiple of `‖x - p‖`. -/
-theorem exists_abs_sub_le_mul_norm_sub_sq (hf : ContDiffAt ℝ 2 f p) (hgrad : ∇ f p = 0) :
-    ∃ C > 0, ∀ᶠ x in 𝓝 p, |f x - f p| ≤ C * ‖x - p‖ ^ 2 := by
-  obtain ⟨C, hC, hbd⟩ := hf.exists_norm_gradient_le_mul_norm_sub hgrad
-  have hdiff : ∀ᶠ x in 𝓝 p, DifferentiableAt ℝ f x := by
-    filter_upwards [hf.eventually (by simp)] with x hx
-    exact hx.differentiableAt (by simp)
-  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.1 (hbd.and hdiff)
-  refine ⟨C, hC, Metric.eventually_nhds_iff.2 ⟨r, hr, fun {x} hx ↦ ?_⟩⟩
-  have hxr : ‖x - p‖ < r := by rwa [← dist_eq_norm]
-  have hsub : Metric.closedBall p ‖x - p‖ ⊆ Metric.ball p r := fun y hy ↦
-    lt_of_le_of_lt (Metric.mem_closedBall.1 hy) hxr
-  have hkey : ‖f x - f p‖ ≤ C * ‖x - p‖ * ‖x - p‖ := by
-    refine Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le
-      (s := Metric.closedBall p ‖x - p‖) (f' := fun y ↦ fderiv ℝ f y)
-      (fun y hy ↦ ?_) (fun y hy ↦ ?_) (convex_closedBall p ‖x - p‖) ?_ ?_
-    · exact ((hball (hsub hy)).2).hasFDerivAt.hasFDerivWithinAt
-    · rw [← norm_gradient_eq_norm_fderiv]
-      refine ((hball (hsub hy)).1).trans (mul_le_mul_of_nonneg_left ?_ hC.le)
-      have hy' := Metric.mem_closedBall.1 hy
-      rwa [dist_eq_norm] at hy'
-    · exact Metric.mem_closedBall_self (norm_nonneg _)
-    · simp [Metric.mem_closedBall, dist_eq_norm]
-  calc |f x - f p| = ‖f x - f p‖ := by rw [Real.norm_eq_abs]
-    _ ≤ C * ‖x - p‖ * ‖x - p‖ := hkey
-    _ = C * ‖x - p‖ ^ 2 := by ring
-
-end ContDiffAt
-
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {f : E → ℝ} {γ : ℝ → E} {p : E} {a : ℝ}
-
-namespace IsNondegenerateCriticalPoint
-
-/-- Near a nondegenerate critical point the gradient is bounded below by a multiple of the
-distance to that point: the Hessian operator is invertible, hence bounded below, and the gradient
-differs from it by a term of smaller order. -/
-theorem exists_mul_norm_sub_le_norm_gradient (h : IsNondegenerateCriticalPoint f p) :
-    ∃ c > 0, ∀ᶠ x in 𝓝 p, c * ‖x - p‖ ≤ ‖∇ f x‖ := by
-  obtain ⟨A, hA⟩ := h.isInvertible_hessianOperator
-  set M : ℝ := ‖(A.symm : E →L[ℝ] E)‖ + 1 with hMdef
-  have hMpos : 0 < M := by positivity
-  have hlow : ∀ v : E, ‖v‖ ≤ M * ‖hessianOperator f p v‖ := by
-    intro v
-    have h1 : ‖v‖ ≤ ‖(A.symm : E →L[ℝ] E)‖ * ‖(A : E →L[ℝ] E) v‖ := by
-      conv_lhs => rw [← A.symm_apply_apply v]
-      exact (A.symm : E →L[ℝ] E).le_opNorm _
-    rw [← hA]
-    nlinarith [norm_nonneg ((A : E →L[ℝ] E) v)]
-  have h2M : (0 : ℝ) < 2 * M := by positivity
-  have hinv : (0 : ℝ) < (2 * M)⁻¹ := by positivity
-  refine ⟨(2 * M)⁻¹, hinv, ?_⟩
-  filter_upwards [h.neg_gradient_sub_linearization_isLittleO.def hinv] with x hx
-  set R : ℝ := ‖(-∇ f) x + hessianOperator f p (x - p)‖ with hRdef
-  have hR : 2 * M * R ≤ ‖x - p‖ := by
-    calc 2 * M * R ≤ 2 * M * ((2 * M)⁻¹ * ‖x - p‖) := mul_le_mul_of_nonneg_left hx h2M.le
-      _ = ‖x - p‖ := by field_simp
-  have h1 : ‖x - p‖ ≤ M * ‖hessianOperator f p (x - p)‖ := hlow _
-  have h2 : ‖hessianOperator f p (x - p)‖ ≤ R + ‖∇ f x‖ := by
-    calc ‖hessianOperator f p (x - p)‖
-        = ‖((-∇ f) x + hessianOperator f p (x - p)) - (-∇ f) x‖ := by rw [add_sub_cancel_left]
-      _ ≤ ‖(-∇ f) x + hessianOperator f p (x - p)‖ + ‖(-∇ f) x‖ := norm_sub_le _ _
-      _ = R + ‖∇ f x‖ := by simp [hRdef]
-  have h3 : M * ‖hessianOperator f p (x - p)‖ ≤ M * (R + ‖∇ f x‖) :=
-    mul_le_mul_of_nonneg_left h2 hMpos.le
-  rw [inv_mul_le_iff₀ h2M]
-  nlinarith
-
-/-- **The Morse form of Łojasiewicz's gradient inequality.** Near a nondegenerate critical point
-the absolute energy difference is bounded by a multiple of the squared norm of the gradient;
-equivalently the
-Łojasiewicz inequality holds there with the optimal exponent `1 / 2`. For a merely smooth function
-no such inequality is available, and a gradient trajectory can spiral forever without converging. -/
-theorem exists_mul_abs_sub_le_norm_gradient_sq (h : IsNondegenerateCriticalPoint f p) :
-    ∃ lam > 0, ∀ᶠ x in 𝓝 p, lam * |f x - f p| ≤ ‖∇ f x‖ ^ 2 := by
-  obtain ⟨c, hc, h1⟩ := h.exists_mul_norm_sub_le_norm_gradient
-  obtain ⟨C, hC, h2⟩ := h.contDiffAt.exists_abs_sub_le_mul_norm_sub_sq h.gradient_eq_zero
-  refine ⟨c ^ 2 / C, by positivity, ?_⟩
-  filter_upwards [h1, h2] with x hx1 hx2
-  have h3 : (c * ‖x - p‖) ^ 2 ≤ ‖∇ f x‖ ^ 2 := pow_le_pow_left₀ (by positivity) hx1 2
-  calc c ^ 2 / C * |f x - f p| ≤ c ^ 2 / C * (C * ‖x - p‖ ^ 2) :=
-        mul_le_mul_of_nonneg_left hx2 (by positivity)
-    _ = (c * ‖x - p‖) ^ 2 := by field_simp
-    _ ≤ ‖∇ f x‖ ^ 2 := h3
-
-end IsNondegenerateCriticalPoint
 
 /-! ### Decay along a trajectory -/
 
@@ -210,52 +97,33 @@ variable {T lam : ℝ}
 
 /-- **Exponential decay of the energy.** If along a trajectory the energy is nonnegative and
 satisfies Łojasiewicz's inequality with constant `lam`, then it decays like `exp (-lam * t)`,
-because the derivative of `t ↦ (f (γ t) - f p) * exp (lam * t)` is nonpositive. -/
+by Grönwall's inequality. -/
 private theorem energy_le_mul_exp
     (hderiv : ∀ t ∈ Ici T, HasDerivAt γ (-∇ f (γ t)) t)
     (hdiff : ∀ t ∈ Ici T, DifferentiableAt ℝ f (γ t))
     (hloj : ∀ t ∈ Ici T, lam * (f (γ t) - f p) ≤ ‖∇ f (γ t)‖ ^ 2)
     {t : ℝ} (ht : T ≤ t) :
     f (γ t) - f p ≤ (f (γ T) - f p) * Real.exp (-(lam * (t - T))) := by
-  set g : ℝ → ℝ := fun s ↦ (f (γ s) - f p) * Real.exp (lam * s)
-  set g' : ℝ → ℝ := fun s ↦
-    (-‖∇ f (γ s)‖ ^ 2 + lam * (f (γ s) - f p)) * Real.exp (lam * s) with hg'
+  let g : ℝ → ℝ := fun s ↦ f (γ s) - f p
+  let g' : ℝ → ℝ := fun s ↦ -‖∇ f (γ s)‖ ^ 2
   have hgderiv : ∀ s ∈ Ici T, HasDerivAt g (g' s) s := by
     intro s hs
-    have h1 : HasDerivAt (fun u ↦ f (γ u) - f p) (-‖∇ f (γ s)‖ ^ 2) s := by
-      have hc := (hdiff s hs).hasFDerivAt.comp_hasDerivAt s (hderiv s hs)
-      have h1' : HasDerivAt (fun u ↦ f (γ u)) (-‖∇ f (γ s)‖ ^ 2) s := by
-        refine hc.congr_deriv ?_
-        rw [map_neg, ← inner_gradient_left, real_inner_self_eq_norm_sq]
-      exact h1'.sub_const _
-    have h2 : HasDerivAt (fun u : ℝ ↦ Real.exp (lam * u)) (Real.exp (lam * s) * lam) s := by
-      have hmul : HasDerivAt (fun u : ℝ ↦ lam * u) lam s := by
-        simpa using (hasDerivAt_id s).const_mul lam
-      simpa using hmul.exp
-    refine (h1.mul h2).congr_deriv ?_
-    rw [hg']
-    ring
-  have hanti : AntitoneOn g (Ici T) := by
-    refine antitoneOn_of_hasDerivWithinAt_nonpos (f' := g') (convex_Ici T)
-      (fun s hs ↦ (hgderiv s hs).continuousAt.continuousWithinAt) (fun s hs ↦ ?_) (fun s hs ↦ ?_)
-    · exact (hgderiv s (interior_subset hs)).hasDerivWithinAt
-    · have hlj := hloj s (interior_subset hs)
-      have hexp : (0 : ℝ) < Real.exp (lam * s) := Real.exp_pos _
-      rw [hg']
-      nlinarith
-  have hle : g t ≤ g T := hanti (le_refl T) ht ht
-  have hexp : Real.exp (-(lam * (t - T))) = Real.exp (lam * T) * Real.exp (-(lam * t)) := by
-    rw [← Real.exp_add]
-    congr 1
-    ring
-  rw [hexp]
-  have hone : (f (γ t) - f p) * Real.exp (lam * t) * Real.exp (-(lam * t)) = f (γ t) - f p := by
-    rw [mul_assoc, ← Real.exp_add]
-    simp
-  calc f (γ t) - f p = (f (γ t) - f p) * Real.exp (lam * t) * Real.exp (-(lam * t)) := hone.symm
-    _ ≤ (f (γ T) - f p) * Real.exp (lam * T) * Real.exp (-(lam * t)) :=
-        mul_le_mul_of_nonneg_right hle (Real.exp_pos _).le
-    _ = (f (γ T) - f p) * (Real.exp (lam * T) * Real.exp (-(lam * t))) := by ring
+    have hc := (hdiff s hs).hasFDerivAt.comp_hasDerivAt s (hderiv s hs)
+    have hcomp : HasDerivAt (fun u ↦ f (γ u)) (-‖∇ f (γ s)‖ ^ 2) s := by
+      refine hc.congr_deriv ?_
+      rw [map_neg, ← inner_gradient_left, real_inner_self_eq_norm_sq]
+    exact hcomp.sub_const _
+  have hgronwall := le_gronwallBound_of_liminf_deriv_right_le
+    (f := g) (f' := g') (δ := g T) (K := -lam) (ε := 0) (a := T) (b := t)
+    (fun s hs ↦ (hgderiv s (mem_Ici.2 hs.1)).continuousAt.continuousWithinAt)
+    (fun s hs r hr ↦
+      (hgderiv s (mem_Ici.2 hs.1)).hasDerivWithinAt.liminf_right_slope_le hr)
+    le_rfl (fun s hs ↦ by
+      have hlj := hloj s (mem_Ici.2 hs.1)
+      dsimp [g, g']
+      linarith)
+    t ⟨ht, le_rfl⟩
+  simpa only [g, gronwallBound_ε0, neg_mul] using hgronwall
 
 /-- **The unit-time step estimate.** Over a time interval of length one the trajectory moves by at
 most `(α * energy + 1 / α) / 2`, for every `α > 0`. The distance travelled is at most the integral
@@ -289,11 +157,12 @@ private theorem norm_sub_add_one_le
     calc ‖∫ s in t..(t + 1), -∇ f (γ s)‖ ≤ ∫ s in t..(t + 1), ‖-∇ f (γ s)‖ :=
           intervalIntegral.norm_integral_le_integral_norm htt
       _ = ∫ s in t..(t + 1), ‖∇ f (γ s)‖ := by simp
-  have hinv : α * (1 / α) = 1 := by field_simp
   have step2 : (∫ s in t..(t + 1), ‖∇ f (γ s)‖)
       ≤ ∫ s in t..(t + 1), (α * ‖∇ f (γ s)‖ ^ 2 + 1 / α) / 2 := by
     refine intervalIntegral.integral_mono_on htt hint1 hint3 fun s _ ↦ ?_
-    nlinarith [sq_nonneg (α * ‖∇ f (γ s)‖ - 1), norm_nonneg (∇ f (γ s)), hα, hinv]
+    have hyoung := two_mul_le_add_mul_sq (a := ‖∇ f (γ s)‖) (b := 1) hα
+    norm_num [one_div] at hyoung ⊢
+    linarith
   have step3 : (∫ s in t..(t + 1), (α * ‖∇ f (γ s)‖ ^ 2 + 1 / α) / 2)
       = (α * (∫ s in t..(t + 1), ‖∇ f (γ s)‖ ^ 2) + 1 / α) / 2 := by
     rw [intervalIntegral.integral_div, intervalIntegral.integral_add (hint2.const_mul α)
@@ -509,12 +378,40 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
   rw [hexp]
   ring
 
-/-- **The backward-time form.** A negative gradient trajectory converging to a nondegenerate
-critical point as `t → -∞` converges to it exponentially fast. Reversing time turns the trajectory
-into a negative gradient trajectory of `-f`, whose critical point at `p` is again nondegenerate. -/
-theorem exists_norm_sub_le_mul_exp_atBot (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a))
-    (hp : IsNondegenerateCriticalPoint f p) (hconv : Tendsto γ atBot (𝓝 p)) :
-    ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atBot, ‖γ t - p‖ ≤ C * Real.exp (μ * t) := by
+/-- **The gradient along a trajectory converging to a nondegenerate critical point decays
+exponentially.** -/
+theorem exists_norm_gradient_le_mul_exp_atTop
+    (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Ici a))
+    (hp : IsNondegenerateCriticalPoint f p) (hconv : Tendsto γ atTop (𝓝 p)) :
+    ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atTop, ‖∇ f (γ t)‖ ≤ C * Real.exp (-(μ * t)) := by
+  obtain ⟨μ, hμ, C, hC, hpos⟩ := exists_norm_sub_le_mul_exp_atTop hγ hp hconv
+  obtain ⟨D, hD, hgrad⟩ := hp.contDiffAt.exists_norm_gradient_le_mul_norm_sub
+    hp.gradient_eq_zero
+  refine ⟨μ, hμ, D * C, mul_pos hD hC, ?_⟩
+  filter_upwards [hpos, hconv.eventually hgrad] with t ht hgradt
+  calc ‖∇ f (γ t)‖ ≤ D * ‖γ t - p‖ := hgradt
+    _ ≤ D * (C * Real.exp (-(μ * t))) := mul_le_mul_of_nonneg_left ht hD.le
+    _ = D * C * Real.exp (-(μ * t)) := by ring
+
+/-- **The velocity of a trajectory converging to a nondegenerate critical point decays
+exponentially.** -/
+theorem exists_norm_deriv_le_mul_exp_atTop
+    (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Ici a))
+    (hp : IsNondegenerateCriticalPoint f p) (hconv : Tendsto γ atTop (𝓝 p)) :
+    ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atTop, ‖deriv γ t‖ ≤ C * Real.exp (-(μ * t)) := by
+  obtain ⟨μ, hμ, C, hC, hbound⟩ :=
+    exists_norm_gradient_le_mul_exp_atTop hγ hp hconv
+  refine ⟨μ, hμ, C, hC, ?_⟩
+  filter_upwards [hbound, eventually_gt_atTop a] with t ht hta
+  have hderiv := (hγ t hta.le).hasDerivAt (Ici_mem_nhds hta)
+  rw [hderiv.deriv, norm_neg]
+  exact ht
+
+/-- Reversing time turns a negative gradient trajectory for `f` on `Iic a` into a negative
+gradient trajectory for `-f` on `Ici (-a)`. -/
+private theorem comp_neg_isIntegralCurveOn_neg
+    (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a)) :
+    IsIntegralCurveOn (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) (Ici (-a)) := by
   have hgrad_neg : ∀ y : E, ∇ (-f) y = -∇ f y := fun y ↦ by
     simpa using (gradient_const_smul (𝕜 := ℝ) (F := E) (f := f) (x := y) (-1))
   have hdomain : {t : ℝ | t * (-1) ∈ Iic a} = Ici (-a) := by
@@ -524,17 +421,65 @@ theorem exists_norm_sub_le_mul_exp_atBot (hγ : IsIntegralCurveOn γ (fun _ x �
       (fun _ : ℝ ↦ fun x ↦ -∇ (-f) x) := by
     funext t y
     simp only [Function.comp_apply, neg_one_smul, Pi.neg_apply, hgrad_neg, neg_neg]
-  have hrev : IsIntegralCurveOn (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) (Ici (-a)) := by
-    have hcomp : γ ∘ (fun t : ℝ ↦ t * (-1)) = fun t ↦ γ (-t) := by
-      funext t
-      simp
-    rw [← hcomp, ← hdomain, ← hfield]
-    exact hγ.comp_mul (-1)
+  have hcomp : γ ∘ (fun t : ℝ ↦ t * (-1)) = fun t ↦ γ (-t) := by
+    funext t
+    simp
+  rw [← hcomp, ← hdomain, ← hfield]
+  exact hγ.comp_mul (-1)
+
+/-- **The energy along a backward trajectory converging to a nondegenerate critical point decays
+exponentially.** -/
+theorem exists_sub_le_mul_exp_atBot (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a))
+    (hp : IsNondegenerateCriticalPoint f p) (hconv : Tendsto γ atBot (𝓝 p)) :
+    ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atBot, f p - f (γ t) ≤ C * Real.exp (μ * t) := by
+  have hrev := comp_neg_isIntegralCurveOn_neg hγ
+  have hconv' : Tendsto (fun t ↦ γ (-t)) atTop (𝓝 p) := hconv.comp tendsto_neg_atTop_atBot
+  obtain ⟨μ, hμ, C, hC, hbound⟩ := exists_sub_le_mul_exp_atTop hrev hp.neg hconv'
+  refine ⟨μ, hμ, C, hC, ?_⟩
+  filter_upwards [tendsto_neg_atBot_atTop.eventually hbound] with t ht
+  simpa [sub_eq_add_neg, add_comm] using ht
+
+/-- **The backward-time form.** A negative gradient trajectory converging to a nondegenerate
+critical point as `t → -∞` converges to it exponentially fast. Reversing time turns the trajectory
+into a negative gradient trajectory of `-f`, whose critical point at `p` is again nondegenerate. -/
+theorem exists_norm_sub_le_mul_exp_atBot (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a))
+    (hp : IsNondegenerateCriticalPoint f p) (hconv : Tendsto γ atBot (𝓝 p)) :
+    ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atBot, ‖γ t - p‖ ≤ C * Real.exp (μ * t) := by
+  have hrev := comp_neg_isIntegralCurveOn_neg hγ
   have hconv' : Tendsto (fun t ↦ γ (-t)) atTop (𝓝 p) := hconv.comp tendsto_neg_atTop_atBot
   obtain ⟨μ, hμ, C, hC, hbound⟩ := exists_norm_sub_le_mul_exp_atTop hrev hp.neg hconv'
   refine ⟨μ, hμ, C, hC, ?_⟩
   filter_upwards [tendsto_neg_atBot_atTop.eventually hbound] with t ht
   simpa using ht
+
+/-- **The gradient along a backward trajectory converging to a nondegenerate critical point
+decays exponentially.** -/
+theorem exists_norm_gradient_le_mul_exp_atBot
+    (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a))
+    (hp : IsNondegenerateCriticalPoint f p) (hconv : Tendsto γ atBot (𝓝 p)) :
+    ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atBot, ‖∇ f (γ t)‖ ≤ C * Real.exp (μ * t) := by
+  obtain ⟨μ, hμ, C, hC, hpos⟩ := exists_norm_sub_le_mul_exp_atBot hγ hp hconv
+  obtain ⟨D, hD, hgrad⟩ := hp.contDiffAt.exists_norm_gradient_le_mul_norm_sub
+    hp.gradient_eq_zero
+  refine ⟨μ, hμ, D * C, mul_pos hD hC, ?_⟩
+  filter_upwards [hpos, hconv.eventually hgrad] with t ht hgradt
+  calc ‖∇ f (γ t)‖ ≤ D * ‖γ t - p‖ := hgradt
+    _ ≤ D * (C * Real.exp (μ * t)) := mul_le_mul_of_nonneg_left ht hD.le
+    _ = D * C * Real.exp (μ * t) := by ring
+
+/-- **The velocity of a backward trajectory converging to a nondegenerate critical point decays
+exponentially.** -/
+theorem exists_norm_deriv_le_mul_exp_atBot
+    (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a))
+    (hp : IsNondegenerateCriticalPoint f p) (hconv : Tendsto γ atBot (𝓝 p)) :
+    ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atBot, ‖deriv γ t‖ ≤ C * Real.exp (μ * t) := by
+  obtain ⟨μ, hμ, C, hC, hbound⟩ :=
+    exists_norm_gradient_le_mul_exp_atBot hγ hp hconv
+  refine ⟨μ, hμ, C, hC, ?_⟩
+  filter_upwards [hbound, eventually_lt_atBot a] with t ht hta
+  have hderiv := (hγ t hta.le).hasDerivAt (Iic_mem_nhds hta)
+  rw [hderiv.deriv, norm_neg]
+  exact ht
 
 end IsIntegralCurveOn
 
