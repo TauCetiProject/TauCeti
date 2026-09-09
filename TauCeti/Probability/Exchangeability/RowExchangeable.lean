@@ -365,7 +365,8 @@ theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangea
       (lam ω : Measure (ι → α)) (Set.pi (↑F) B) * (lam ω : Measure (ι → α)) (Set.pi (↑G) B) := by
   classical
   -- each entry is a coordinate of its column, which the witness makes a.e. measurable
-  have hY : ∀ p, AEMeasurable (Y p) μ := fun p => (hlam.aemeasurable p.2).eval p.1
+  have hY : ∀ p, AEMeasurable (Y p) μ := fun p => by
+    simpa only [arrayColumn_apply] using (hlam.aemeasurable p.2).eval p.1
   set C : Set (ι → α) := Set.pi (↑F) B with hC
   set D : Set (ι → α) := Set.pi (↑G) B with hD
   have hCm : MeasurableSet C := MeasurableSet.pi F.countable_toSet fun a ha =>
@@ -375,7 +376,6 @@ theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangea
   have hCDm : MeasurableSet (C ∩ D) := hCm.inter hDm
   have hunion : Set.pi (↑F ∪ ↑G) B = C ∩ D := Set.union_pi
   simp only [hunion]
-  have hZ := aemeasurable_arrayColumn (μ := μ) hY
   have hmem : ∀ (H : Finset ι) (k : ℕ) (ω : Ω),
       arrayColumn Y k ω ∈ Set.pi (↑H : Set ι) B ↔ ∀ a ∈ H, Y (a, k) ω ∈ B a := by
     intro H k ω; simp [Set.mem_pi]
@@ -386,7 +386,7 @@ theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangea
           μ {ω | ∀ j, arrayColumn Y (k j) ω ∈ E j} := by
     intro r k hk E hE
     rw [← hlam.blockLaw_univ_pi k hk E hE,
-      blockLaw_apply_rectangle μ (arrayColumn Y) k (fun j => hZ (k j)) E hE]
+      blockLaw_apply_rectangle μ (arrayColumn Y) k (fun j => hlam.aemeasurable (k j)) E hE]
   set T : ℝ≥0∞ := μ {ω | (∀ a ∈ F, Y (a, 0) ω ∈ B a ∧ Y (a, 1) ω ∈ B a) ∧
     ∀ a ∈ G, Y (a, 0) ω ∈ B a ∧ Y (a, 1) ω ∈ B a} with hT
   have hinj2 : Function.Injective (![0, 1] : Fin 2 → ℕ) := by
