@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.SimpleGraph.CycleGraph
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Exterior
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Gauge
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Monodromy
 
 /-!
