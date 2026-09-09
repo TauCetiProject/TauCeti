@@ -112,6 +112,22 @@ theorem multivariateGaussianPDFReal_nonneg (m : EuclideanSpace ℝ ι) (S : Matr
   rw [multivariateGaussianPDFReal]
   exact mul_nonneg (mul_nonneg hπ hdet) (Real.exp_nonneg _)
 
+/-- The `ℝ≥0∞`-valued density is positive wherever the determinant is. -/
+theorem multivariateGaussianPDF_pos (hdet : 0 < S.det) (m : EuclideanSpace ℝ ι)
+    (x : EuclideanSpace ℝ ι) : 0 < multivariateGaussianPDF m S x :=
+  ENNReal.ofReal_pos.mpr (multivariateGaussianPDFReal_pos hdet m x)
+
+/-- The `ℝ≥0∞`-valued density is finite at every covariance parameter. -/
+@[simp]
+theorem multivariateGaussianPDF_ne_top (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
+    (x : EuclideanSpace ℝ ι) : multivariateGaussianPDF m S x ≠ ⊤ :=
+  ENNReal.ofReal_ne_top
+
+/-- The `ℝ≥0∞`-valued density is finite at every covariance parameter. -/
+theorem multivariateGaussianPDF_lt_top (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
+    (x : EuclideanSpace ℝ ι) : multivariateGaussianPDF m S x < ⊤ :=
+  ENNReal.ofReal_lt_top
+
 /-- The `ℝ≥0∞`-valued density carries the real-valued one back through `ENNReal.toReal`. -/
 @[simp]
 theorem toReal_multivariateGaussianPDF (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
