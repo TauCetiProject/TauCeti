@@ -56,7 +56,6 @@ def weightLeviStandardComodule :
 attribute [local instance] standardComodule weightLeviStandardComodule
 
 /-- The standard weight-Levi coaction on a basis vector is its quotient generic column. -/
-@[simp]
 theorem weightLeviStandardComodule_coact_single (j : Fin N) :
     Comodule.coact (R := R) (C := weightLeviCoordinateHopfAlgebra R w)
         (Pi.single j (1 : R)) =
