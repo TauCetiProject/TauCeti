@@ -25,8 +25,8 @@ H --conj#--> H ⊗ H --(g ⊗ id)--> H.
 
 ## Main declarations
 
-* `TauCeti.CommHopfAlgCat.innerConjugationPointIso`: inner conjugation on `A`-valued points.
-* `TauCeti.CommHopfAlgCat.innerConjugationPointNatIso`: inner conjugation naturally on the
+* `TauCeti.HopfAlgebra.innerConjugationPointIso`: inner conjugation on `A`-valued points.
+* `TauCeti.HopfAlgebra.innerConjugationPointNatIso`: inner conjugation naturally on the
   functor of points.
 * `TauCeti.CommHopfAlgCat.innerConjugationIso`: the corresponding coordinate Hopf-algebra
   automorphism.
@@ -47,13 +47,13 @@ public section
 
 open CategoryTheory TauCeti TauCeti.CommHopfAlgCat TauCeti.HopfAlgebra WithConv
 
-namespace TauCeti.CommHopfAlgCat
+namespace TauCeti
 
 universe u v w
 
 variable {R : Type u} [CommRing R]
 
-section Pointwise
+namespace HopfAlgebra
 
 variable (H : Type w) [Semiring H] [_root_.HopfAlgebra R H]
 
@@ -189,7 +189,9 @@ theorem innerConjugationPointNatIso_inv
   rw [innerConjugationPointNatIso_hom_app_apply, Iso.symm_hom,
     innerConjugationPointNatIso_inv_app_apply, map_inv, inv_inv]
 
-end Pointwise
+end HopfAlgebra
+
+namespace CommHopfAlgCat
 
 variable (H : _root_.CommHopfAlgCat.{u} R)
 
@@ -200,18 +202,20 @@ automorphism. -/
 noncomputable def innerConjugationIso
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) : H ≅ H :=
   ((pointsFunctor (R := R)).preimageIso (X := Opposite.op H) (Y := Opposite.op H)
-    (innerConjugationPointNatIso H g)).unop
+    (HopfAlgebra.innerConjugationPointNatIso H g)).unop
 
 private theorem innerConjugationIso_hom_def
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
-    (innerConjugationIso H g).hom = homOfPointsMap (innerConjugationPointNatIso H g).hom := by
+    (innerConjugationIso H g).hom =
+      homOfPointsMap (HopfAlgebra.innerConjugationPointNatIso H g).hom := by
   rw [← homOfPointsMap_mapPointsFunctor (innerConjugationIso H g).hom]
   congr 1
   exact Functor.map_preimage (pointsFunctor (R := R)) _
 
 private theorem innerConjugationIso_inv_def
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
-    (innerConjugationIso H g).inv = homOfPointsMap (innerConjugationPointNatIso H g).inv := by
+    (innerConjugationIso H g).inv =
+      homOfPointsMap (HopfAlgebra.innerConjugationPointNatIso H g).inv := by
   rw [← homOfPointsMap_mapPointsFunctor (innerConjugationIso H g).inv]
   congr 1
   exact Functor.map_preimage (pointsFunctor (R := R)) _
@@ -224,7 +228,7 @@ theorem innerConjugationIso_one :
       Iso.refl H := by
   apply Iso.ext
   rw [innerConjugationIso_hom_def]
-  rw [innerConjugationPointNatIso_one]
+  rw [HopfAlgebra.innerConjugationPointNatIso_one]
   exact homOfPointsMap_id H
 
 /-- Coordinate pullback reverses the pointwise composition order: the coordinate automorphism for
@@ -237,7 +241,7 @@ theorem innerConjugationIso_mul
   apply Iso.ext
   rw [innerConjugationIso_hom_def, Iso.trans_hom, innerConjugationIso_hom_def,
     innerConjugationIso_hom_def]
-  have hmul := congrArg Iso.hom (innerConjugationPointNatIso_mul H g h)
+  have hmul := congrArg Iso.hom (HopfAlgebra.innerConjugationPointNatIso_mul H g h)
   simp only [Iso.trans_hom] at hmul
   rw [hmul, homOfPointsMap_comp]
 
@@ -249,7 +253,7 @@ theorem innerConjugationIso_inv
     innerConjugationIso H g⁻¹ = (innerConjugationIso H g).symm := by
   apply Iso.ext
   rw [innerConjugationIso_hom_def, Iso.symm_hom, innerConjugationIso_inv_def,
-    innerConjugationPointNatIso_inv, Iso.symm_hom]
+    HopfAlgebra.innerConjugationPointNatIso_inv, Iso.symm_hom]
 
 /-- The coordinate algebra map of inner conjugation is obtained from the universal conjugation
 map by evaluating its conjugating variable at the given `R`-valued point. -/
@@ -267,7 +271,7 @@ theorem innerConjugationIso_hom_toAlgHom
         extendPoint H (CommAlgCat.of R H) g * toConv (AlgHom.id R H) *
           (extendPoint H (CommAlgCat.of R H) g)⁻¹ := by
     rw [innerConjugationIso_hom_def, mapPointsFunctor_homOfPointsMap]
-    exact innerConjugationPointIso_hom_apply H g _ _
+    exact HopfAlgebra.innerConjugationPointIso_hom_apply H g _ _
   have hx := congrArg (fun p : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R H) ↦
     p.ofConv x) hpoint
   rw [mapPointsFunctor_app_apply] at hx
@@ -290,13 +294,23 @@ theorem innerConjugationIso_hom_toAlgHom
           (HopfAlgebra.productMap_comp_conjugationAlgHom (R := R) (H := H)
             (toConv ((Algebra.ofId R H).comp g.ofConv)) (toConv (AlgHom.id R H))).symm x
 
+/-- The inverse coordinate algebra map is obtained from the universal conjugation map by
+evaluating its conjugating variable at the inverse of the given `R`-valued point. -/
+theorem innerConjugationIso_inv_toAlgHom
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    (innerConjugationIso H g).inv.hom.toAlgHom =
+      (Algebra.TensorProduct.productMap
+        ((Algebra.ofId R H).comp (g⁻¹).ofConv) (AlgHom.id R H)).comp
+          (HopfAlgebra.conjugationAlgHom (R := R) (H := H)) := by
+  rw [← Iso.symm_hom, ← innerConjugationIso_inv, innerConjugationIso_hom_toAlgHom]
+
 /-- The coordinate inner automorphism induces natural inner conjugation on points over
 commutative value algebras in any universe. -/
 @[simp]
 theorem mapPointsFunctor_innerConjugationIso_hom
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
     mapPointsFunctor.{u, u, v} (innerConjugationIso H g).hom =
-      (innerConjugationPointNatIso H g).hom := by
+      (HopfAlgebra.innerConjugationPointNatIso H g).hom := by
   apply NatTrans.ext
   funext A
   apply GrpCat.hom_ext
@@ -305,9 +319,9 @@ theorem mapPointsFunctor_innerConjugationIso_hom
   -- the point type and categorical application for the public pointwise equations.
   change ∀ x : HopfAlgebra.points (R := R) (H := H) A,
     (mapPointsFunctor (innerConjugationIso H g).hom).app A x =
-      (innerConjugationPointNatIso H g).hom.app A x
+      (HopfAlgebra.innerConjugationPointNatIso H g).hom.app A x
   intro x
-  rw [innerConjugationPointNatIso_hom_app_apply]
+  rw [HopfAlgebra.innerConjugationPointNatIso_hom_app_apply]
   apply WithConv.ofConv_injective
   rw [mapPointsFunctor_app_apply]
   rw [innerConjugationIso_hom_toAlgHom]
@@ -333,9 +347,10 @@ on points over commutative value algebras in any universe. -/
 theorem mapPointsFunctor_innerConjugationIso_inv
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
     mapPointsFunctor.{u, u, v} (innerConjugationIso H g).inv =
-      (innerConjugationPointNatIso H g).inv := by
+      (HopfAlgebra.innerConjugationPointNatIso H g).inv := by
   rw [← Iso.symm_hom, ← innerConjugationIso_inv,
-    mapPointsFunctor_innerConjugationIso_hom, innerConjugationPointNatIso_inv, Iso.symm_hom]
+    mapPointsFunctor_innerConjugationIso_hom,
+    HopfAlgebra.innerConjugationPointNatIso_inv, Iso.symm_hom]
 
 /-- On points over any commutative value algebra, the coordinate inner automorphism acts by
 conjugation by the extended `R`-valued point. -/
@@ -344,7 +359,8 @@ theorem mapPointsFunctor_innerConjugationIso_hom_app_apply
     (A : CommAlgCat.{v} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
     (mapPointsFunctor (innerConjugationIso H g).hom).app A x =
       extendPoint H A g * x * (extendPoint H A g)⁻¹ := by
-  rw [mapPointsFunctor_innerConjugationIso_hom, innerConjugationPointNatIso_hom_app_apply]
+  rw [mapPointsFunctor_innerConjugationIso_hom,
+    HopfAlgebra.innerConjugationPointNatIso_hom_app_apply]
 
 /-- On points over any commutative value algebra, the inverse coordinate inner automorphism acts
 by conjugation by the inverse of the extended `R`-valued point. -/
@@ -353,6 +369,9 @@ theorem mapPointsFunctor_innerConjugationIso_inv_app_apply
     (A : CommAlgCat.{v} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
     (mapPointsFunctor (innerConjugationIso H g).inv).app A x =
       (extendPoint H A g)⁻¹ * x * extendPoint H A g := by
-  rw [mapPointsFunctor_innerConjugationIso_inv, innerConjugationPointNatIso_inv_app_apply]
+  rw [mapPointsFunctor_innerConjugationIso_inv,
+    HopfAlgebra.innerConjugationPointNatIso_inv_app_apply]
 
-end TauCeti.CommHopfAlgCat
+end CommHopfAlgCat
+
+end TauCeti
