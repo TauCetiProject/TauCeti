@@ -96,20 +96,28 @@ theorem glCliffordHom_apply (X : Matrix n n K) :
   change traceQuadraticLift X + scalarTrace X = _
   rfl
 
+/-- On a central matrix the lift is its normal-ordering constant alone: the adjoint action the
+quadratic part lifts already vanishes there. -/
+private theorem glCliffordHom_eq_algebraMap_of_commute {X : Matrix n n K}
+    (hX : ∀ Y : Matrix n n K, Commute Y X) :
+    glCliffordHom (K := K) (n := n) X =
+      algebraMap K (CliffordAlgebra (traceQuadraticForm K n))
+        ((Fintype.card n / 2 : K) * X.trace) := by
+  have hzero : traceAdjointSO K n X = 0 := by
+    refine Subtype.ext (LinearMap.ext fun Y => ?_)
+    rw [coe_traceAdjointSO, _root_.LieAlgebra.ad_apply, Ring.lie_def, (hX Y).eq, sub_self]
+    rfl
+  rw [glCliffordHom_apply, CliffordAlgebra.quadraticLift_apply, hzero, map_zero,
+    ZeroMemClass.coe_zero, zero_add]
+
 /-- The normal-ordered lift sends the identity matrix to the scalar
 `(Fintype.card n : K) ^ 2 / 2`. -/
+@[simp]
 theorem glCliffordHom_one :
     glCliffordHom (K := K) (n := n) 1 =
       algebraMap K (CliffordAlgebra (traceQuadraticForm K n))
         ((Fintype.card n : K) ^ 2 / 2) := by
-  have had : traceAdjointSO K n 1 = 0 := by
-    apply Subtype.ext
-    apply LinearMap.ext
-    intro X
-    rw [coe_traceAdjointSO, _root_.LieAlgebra.ad_apply, Ring.lie_def, one_mul, mul_one, sub_self]
-    rfl
-  rw [glCliffordHom_apply, CliffordAlgebra.quadraticLift_apply, had, map_zero,
-    ZeroMemClass.coe_zero, zero_add, Matrix.trace_one]
+  rw [glCliffordHom_eq_algebraMap_of_commute fun Y ↦ Commute.one_right Y, Matrix.trace_one]
   congr 1
   ring
 
@@ -257,20 +265,6 @@ private theorem commute_of_glCliffordHom_eq_zero {X : Matrix n n K}
   have hXY : ⁅X, Y⁆ = 0 := by rwa [ι_eq_zero_iff] at h
   rw [Ring.lie_def, sub_eq_zero] at hXY
   exact hXY.symm
-
-/-- On a central matrix the lift is its normal-ordering constant alone: the adjoint action the
-quadratic part lifts already vanishes there. -/
-private theorem glCliffordHom_eq_algebraMap_of_commute {X : Matrix n n K}
-    (hX : ∀ Y : Matrix n n K, Commute Y X) :
-    glCliffordHom (K := K) (n := n) X =
-      algebraMap K (CliffordAlgebra (traceQuadraticForm K n))
-        ((Fintype.card n / 2 : K) * X.trace) := by
-  have hzero : traceAdjointSO K n X = 0 := by
-    refine Subtype.ext (LinearMap.ext fun Y => ?_)
-    rw [coe_traceAdjointSO, _root_.LieAlgebra.ad_apply, Ring.lie_def, (hX Y).eq, sub_self]
-    rfl
-  rw [glCliffordHom_apply, CliffordAlgebra.quadraticLift_apply, hzero, map_zero,
-    ZeroMemClass.coe_zero, zero_add]
 
 /-- **The normal-ordered lift is injective as soon as `Fintype.card n` is invertible in `K`.**
 The adjoint action of `gl n K` is not faithful — its kernel is the centre, the scalar matrices

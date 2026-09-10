@@ -51,7 +51,7 @@ one by a right multiplication (`TauCeti.car_lie_sub_mul`) and is not the isotypi
 ## Main results
 
 * `TauCeti.car_lie_def`: the defining equation of the action.
-* `TauCeti.car_one_lie_eq_smul`: the scalar by which the identity matrix acts.
+* `CliffordAlgebra.car_one_lie_eq_smul`: the scalar by which the identity matrix acts.
 * `TauCeti.car_lie_ι`: its value on a Clifford generator, where the matrix commutator reappears
   together with a right-multiplication term.
 * `TauCeti.car_lie_sub_mul`: the comparison with the inner derivation action.
@@ -105,7 +105,9 @@ theorem car_lie_def (X : Matrix n n K) (c : CliffordAlgebra (traceQuadraticForm 
 
 /-- The identity matrix acts on the CAR module by the scalar
 `(Fintype.card n : K) ^ 2 / 2`. -/
-theorem car_one_lie_eq_smul (c : CliffordAlgebra (traceQuadraticForm K n)) :
+@[grind =]
+theorem _root_.CliffordAlgebra.car_one_lie_eq_smul
+    (c : CliffordAlgebra (traceQuadraticForm K n)) :
     ⁅(1 : Matrix n n K), c⁆ = ((Fintype.card n : K) ^ 2 / 2) • c := by
   rw [car_lie_def, glCliffordHom_one, Algebra.smul_def]
 
