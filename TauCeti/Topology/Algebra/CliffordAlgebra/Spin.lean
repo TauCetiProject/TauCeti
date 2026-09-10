@@ -68,6 +68,8 @@ topologized special orthogonal group.
 * `CliffordAlgebra.isClosed_realCliffordSpinLastStabilizer` proves that this stabilizer is closed.
 * `CliffordAlgebra.continuous_realCliffordSpinStabilizerInclusion` proves continuity after
   restricting the inclusion's codomain to the last-vector stabilizer.
+* `CliffordAlgebra.realCliffordSpinContinuousMulEquivLastStabilizer` identifies the lower-rank
+  Spin group with the full last-vector stabilizer as a topological group.
 
 ## References
 
@@ -272,6 +274,48 @@ to the last-vector stabilizer. -/
 theorem continuous_realCliffordSpinStabilizerInclusion (n : ℕ) :
     Continuous (realCliffordSpinStabilizerInclusion n) :=
   (isEmbedding_realCliffordSpinStabilizerInclusion n).continuous
+
+/-- For positive `n`, the lower-rank compact Spin group is isomorphic as a topological group to
+the full last-vector stabilizer in `Spin(n + 1)`. -/
+noncomputable def realCliffordSpinContinuousMulEquivLastStabilizer
+    (n : ℕ) [NeZero n] :
+    realCliffordSpinGroupZero n ≃ₜ* realCliffordSpinLastStabilizer n :=
+  ContinuousMulEquiv.mk'
+    ((isEmbedding_realCliffordSpinStabilizerInclusion n).toHomeomorphOfSurjective
+      (realCliffordSpinStabilizerInclusion_surjective n))
+    (map_mul (realCliffordSpinStabilizerInclusion n))
+
+/-- The forward map of the topological stabilizer equivalence is the canonical lower-rank Spin
+inclusion into the stabilizer. -/
+@[simp]
+theorem realCliffordSpinContinuousMulEquivLastStabilizer_apply
+    (n : ℕ) [NeZero n] (x : realCliffordSpinGroupZero n) :
+    realCliffordSpinContinuousMulEquivLastStabilizer n x =
+      realCliffordSpinStabilizerInclusion n x :=
+  (rfl)
+
+/-- The multiplicative equivalence underlying the topological stabilizer equivalence is the
+canonical algebraic stabilizer equivalence. -/
+@[simp]
+theorem realCliffordSpinContinuousMulEquivLastStabilizer_toMulEquiv
+    (n : ℕ) [NeZero n] :
+    (realCliffordSpinContinuousMulEquivLastStabilizer n :
+        realCliffordSpinGroupZero n ≃* realCliffordSpinLastStabilizer n) =
+      realCliffordSpinEquivLastStabilizer n := by
+  apply MulEquiv.ext
+  intro x
+  exact (realCliffordSpinContinuousMulEquivLastStabilizer_apply n x).trans
+    (realCliffordSpinEquivLastStabilizer_apply n x).symm
+
+/-- The inverse topological stabilizer equivalence sends an included element back to the original
+lower-rank Spin element. -/
+@[simp]
+theorem realCliffordSpinContinuousMulEquivLastStabilizer_symm_apply_inclusion
+    (n : ℕ) [NeZero n] (x : realCliffordSpinGroupZero n) :
+    (realCliffordSpinContinuousMulEquivLastStabilizer n).symm
+      (realCliffordSpinStabilizerInclusion n x) = x := by
+  rw [← realCliffordSpinContinuousMulEquivLastStabilizer_apply]
+  exact (realCliffordSpinContinuousMulEquivLastStabilizer n).symm_apply_apply x
 
 end Real
 

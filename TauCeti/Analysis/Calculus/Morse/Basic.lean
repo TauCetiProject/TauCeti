@@ -9,6 +9,10 @@ public import Mathlib.Topology.DiscreteSubset
 public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Analysis.Calculus.SecondDerivative
 public import TauCeti.Topology.Algebra.Module.BilinearForm
+-- Private: the negation rules for `ContDiffAt` and for the Fréchet derivative are used only
+-- inside the proof of `TauCeti.IsNondegenerateCriticalPoint.neg`.
+import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.FDeriv.Add
 
 /-!
 # Nondegenerate critical points
@@ -77,6 +81,8 @@ the notion be read off in any chart.
   locus is finite on a compact set on which `fderiv ℝ f` is continuous.
 * `TauCeti.isNondegenerateCriticalPoint_comp_iff` and `TauCeti.IsNondegenerateCriticalPoint.comp`:
   nondegeneracy is invariant under a change of coordinates with invertible differential.
+* `TauCeti.IsNondegenerateCriticalPoint.neg` and `TauCeti.isNondegenerateCriticalPoint_neg`:
+  nondegeneracy is invariant under negating the function.
 * `ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self`: the local model. A
   continuous bilinear form `B` whose polarization `B.flip + B` is invertible makes `z ↦ B z z` a
   function with a nondegenerate critical point at the origin.
@@ -254,6 +260,31 @@ theorem IsNondegenerateCriticalPoint.comp {φ : F → E} {b : F}
     (hinv : (fderiv ℝ φ b).IsInvertible) :
     IsNondegenerateCriticalPoint (f ∘ φ) b :=
   (isNondegenerateCriticalPoint_comp_iff h.contDiffAt hφ hinv).2 h
+
+/-- Negating the function preserves nondegenerate critical points: the differential and the second
+derivative are both negated, and negation of the dual is a linear homeomorphism. This is the
+symmetry exchanging the forward and backward directions of a negative gradient trajectory. -/
+theorem IsNondegenerateCriticalPoint.neg (h : IsNondegenerateCriticalPoint f x) :
+    IsNondegenerateCriticalPoint (-f) x := by
+  have hfun : fderiv ℝ (-f) = -fderiv ℝ f := funext fun _ ↦ fderiv_neg
+  refine ⟨ContDiffAt.neg h.contDiffAt, by rw [hfun]; simp [h.fderiv_eq_zero], ?_⟩
+  have hsnd : fderiv ℝ (fderiv ℝ (-f)) x = -fderiv ℝ (fderiv ℝ f) x := by
+    rw [hfun, fderiv_neg]
+  have hcomp : -fderiv ℝ (fderiv ℝ f) x =
+      (ContinuousLinearEquiv.neg ℝ : (E →L[ℝ] ℝ) ≃L[ℝ] (E →L[ℝ] ℝ)) ∘L
+        fderiv ℝ (fderiv ℝ f) x := by
+    ext v w
+    simp
+  rw [hsnd, hcomp]
+  exact ContinuousLinearMap.isInvertible_equiv.comp h.isInvertible
+
+/-- **Nondegeneracy of a critical point is invariant under negating the function.** Negation is
+involutive, so the one-way implication `TauCeti.IsNondegenerateCriticalPoint.neg` applied twice
+gives both directions. -/
+@[simp]
+theorem isNondegenerateCriticalPoint_neg :
+    IsNondegenerateCriticalPoint (-f) x ↔ IsNondegenerateCriticalPoint f x :=
+  ⟨fun h ↦ by simpa using h.neg, IsNondegenerateCriticalPoint.neg⟩
 
 end Morse
 

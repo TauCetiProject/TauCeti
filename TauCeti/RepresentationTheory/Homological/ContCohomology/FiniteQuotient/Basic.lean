@@ -32,6 +32,8 @@ describe; the references below state the colimit theorem this system is the sour
 ## Main definitions
 
 * `TauCeti.finiteQuotientMap hVU`: the quotient homomorphism `G ⧸ V →* G ⧸ U` for `V ≤ U`.
+* `TauCeti.ContCohomology.continuousFiniteQuotientMap G hVU`: the same quotient homomorphism,
+  bundled as a continuous homomorphism when `U` and `V` are open normal subgroups.
 * `TauCeti.invariantsInclusion A hVU`: the inclusion `A^U ↪ A^V` for `V ≤ U`.
 * `TauCeti.transitionPair A hVU`: the compatible pair assembled from the two.
 * `TauCeti.finiteLevelTransition A hVU n`: the induced map `Hⁿ(G ⧸ U, A^U) ⟶ Hⁿ(G ⧸ V, A^V)`.
@@ -55,10 +57,11 @@ describe; the references below state the colimit theorem this system is the sour
 
 ## Implementation notes
 
-Everything except the two `OpenNormalSubgroup`-indexed functors and the comparison theorem is
-stated for arbitrary normal subgroups `V ≤ U` of an arbitrary group, since that is all the proofs
-use. Openness enters only through the index poset `OpenNormalSubgroup G`. Profiniteness enters
-only in `TauCeti.toFiniteQuotientFunctor_map_hom_hom`, which quantifies over an object of
+Everything except the continuous quotient map, the two `OpenNormalSubgroup`-indexed functors,
+and the comparison theorem is stated for arbitrary normal subgroups `V ≤ U` of an arbitrary
+group, since that is all the proofs use. Openness makes the source of the continuous quotient map
+discrete and supplies the index poset `OpenNormalSubgroup G`. Profiniteness enters only in
+`TauCeti.toFiniteQuotientFunctor_map_hom_hom`, which quantifies over an object of
 `ProfiniteGrp` because it compares with a functor Mathlib defines on that category; it is a
 hypothesis of no construction and of no transition law here. What the later colimit theorem adds,
 over this same index poset, is profiniteness of `G` as an unbundled hypothesis together with
@@ -154,6 +157,38 @@ theorem invariantsInclusion_comp (hWV : W ≤ V) (hVU : V ≤ U) :
   (rfl)
 
 end Pair
+
+namespace ContCohomology
+
+variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable {U V W : OpenNormalSubgroup G}
+
+/-- The quotient homomorphism `G ⧸ V → G ⧸ U`, bundled with its automatic continuity for open
+normal subgroups. -/
+def continuousFiniteQuotientMap (hVU : V ≤ U) :
+    G ⧸ V.toSubgroup →ₜ* G ⧸ U.toSubgroup where
+  toMonoidHom := finiteQuotientMap hVU
+  continuous_toFun := continuous_of_discreteTopology
+
+@[simp]
+theorem continuousFiniteQuotientMap_mk (hVU : V ≤ U) (g : G) :
+    continuousFiniteQuotientMap G hVU (g : G ⧸ V.toSubgroup) = (g : G ⧸ U.toSubgroup) :=
+  finiteQuotientMap_mk hVU g
+
+@[simp]
+theorem continuousFiniteQuotientMap_refl (U : OpenNormalSubgroup G) :
+    continuousFiniteQuotientMap G (le_refl U) = ContinuousMonoidHom.id _ := by
+  ext q
+  exact DFunLike.congr_fun finiteQuotientMap_refl q
+
+@[simp]
+theorem continuousFiniteQuotientMap_comp (hWV : W ≤ V) (hVU : V ≤ U) :
+    (continuousFiniteQuotientMap G hVU).comp (continuousFiniteQuotientMap G hWV) =
+      continuousFiniteQuotientMap G (hWV.trans hVU) := by
+  ext q
+  exact DFunLike.congr_fun (finiteQuotientMap_comp hWV hVU) q
+
+end ContCohomology
 
 /-! ### The transition maps of the system -/
 

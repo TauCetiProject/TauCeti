@@ -49,8 +49,8 @@ No factorial is inverted in the value ring. Thus the formula is valid in charact
 three as well as in characteristic zero. Together with the commuting, class-two, and length-two
 relations in `Commutator.Basic`, this supplies one exceptional rank-two pointwise Chevalley
 relation needed by the integral Chevalley--Demazure construction. The remaining type-`G₂`
-configuration, the pair `α`, `α + β`, is not transported here; see
-`TauCeti.RingTheory.Nilpotent.RootString.G2.ShortPair` for the exponential identity it needs.
+configuration, the pair `α`, `α + β`, is treated in
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.G2.ShortPair`.
 
 ## Main results
 

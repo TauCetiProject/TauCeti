@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct.Isometries
+public import Mathlib.LinearAlgebra.QuadraticForm.Prod
+public import Mathlib.LinearAlgebra.TensorProduct.Prod
 
 /-!
 # Tensor products of equivalent quadratic forms
@@ -17,6 +19,7 @@ forms. It complements Mathlib's tensor product of quadratic-form isometries.
 
 * `QuadraticMap.IsometryEquiv.tmul`: the tensor product of two isometric equivalences.
 * `QuadraticMap.Equivalent.tmul`: tensor products preserve equivalence of quadratic forms.
+* `QuadraticForm.IsometryEquiv.tmulProd`: tensor product distributes over orthogonal product.
 -/
 
 public section
@@ -24,6 +27,7 @@ public section
 namespace TauCeti
 
 open scoped TensorProduct
+open QuadraticMap
 
 variable {R : Type*} [CommRing R] [Invertible (2 : R)]
 
@@ -61,5 +65,63 @@ theorem _root_.QuadraticMap.Equivalent.tmul
     (hQ : Q₁.Equivalent Q₂) (hS : S₁.Equivalent S₂) :
     (Q₁.tmul S₁).Equivalent (Q₂.tmul S₂) :=
   Nonempty.map2 QuadraticMap.IsometryEquiv.tmul hQ hS
+
+/-- Tensor product distributes over the orthogonal product of quadratic forms. -/
+def _root_.QuadraticForm.IsometryEquiv.tmulProd
+    {A M N P : Type*} [CommRing A] [Algebra R A]
+    [AddCommGroup M] [Module R M] [Module A M]
+    [SMulCommClass R A M] [IsScalarTower R A M]
+    [AddCommGroup N] [Module R N]
+    [AddCommGroup P] [Module R P]
+    (Q : QuadraticForm A M) (S : QuadraticForm R N) (T : QuadraticForm R P) :
+    (Q.tmul (S.prod T)).IsometryEquiv ((Q.tmul S).prod (Q.tmul T)) where
+  toLinearEquiv := TensorProduct.prodRight R A M N P
+  map_app' x := by
+    let : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    rw [← associated_eq_self_apply (S := A), ← associated_eq_self_apply (S := A)]
+    have hassoc :
+        (associated ((Q.tmul S).prod (Q.tmul T))).compl₁₂
+            (TensorProduct.prodRight R A M N P).toLinearMap
+            (TensorProduct.prodRight R A M N P).toLinearMap =
+          associated (Q.tmul (S.prod T)) := by
+      apply TensorProduct.AlgebraTensorModule.ext
+      intro m np
+      apply TensorProduct.AlgebraTensorModule.ext
+      intro m' np'
+      rcases np with ⟨n, p⟩
+      rcases np' with ⟨n', p'⟩
+      simp [QuadraticMap.associated_prod, QuadraticForm.associated_tmul, add_smul]
+    exact DFunLike.congr_fun (DFunLike.congr_fun hassoc x) x
+
+/-- The distributivity isometry acts on a pure tensor by projecting its product-valued
+factor. -/
+@[simp]
+theorem _root_.QuadraticForm.IsometryEquiv.tmulProd_tmul
+    {A M N P : Type*} [CommRing A] [Algebra R A]
+    [AddCommGroup M] [Module R M] [Module A M]
+    [SMulCommClass R A M] [IsScalarTower R A M]
+    [AddCommGroup N] [Module R N]
+    [AddCommGroup P] [Module R P]
+    (Q : QuadraticForm A M) (S : QuadraticForm R N) (T : QuadraticForm R P)
+    (m : M) (np : N × P) :
+    QuadraticForm.IsometryEquiv.tmulProd Q S T (m ⊗ₜ[R] np) =
+      (m ⊗ₜ[R] np.1, m ⊗ₜ[R] np.2) :=
+  TensorProduct.prodRight_tmul R A M N P m np
+
+/-- The inverse distributivity isometry combines a pair of pure tensors with the same first
+factor into a pure tensor with product-valued second factor. -/
+@[simp]
+theorem _root_.QuadraticForm.IsometryEquiv.tmulProd_symm_tmul
+    {A M N P : Type*} [CommRing A] [Algebra R A]
+    [AddCommGroup M] [Module R M] [Module A M]
+    [SMulCommClass R A M] [IsScalarTower R A M]
+    [AddCommGroup N] [Module R N]
+    [AddCommGroup P] [Module R P]
+    (Q : QuadraticForm A M) (S : QuadraticForm R N) (T : QuadraticForm R P)
+    (m : M) (n : N) (p : P) :
+    (QuadraticForm.IsometryEquiv.tmulProd Q S T).symm (m ⊗ₜ[R] n, m ⊗ₜ[R] p) =
+      m ⊗ₜ[R] (n, p) :=
+  TensorProduct.prodRight_symm_tmul R A M N P m n p
 
 end TauCeti
