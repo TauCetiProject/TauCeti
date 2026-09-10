@@ -80,7 +80,7 @@ torsion basis element of a group algebra.** -/
 @[simp]
 theorem _root_.BialgHom.monoidAlgebra_single_eq_one
     [IsReduced H] [ConnectedSpace (PrimeSpectrum H)]
-    {M : Type w} [CommGroup M] (f : MonoidAlgebra k M →ₐc[k] H) {m : M} (hm : IsOfFinOrder m) :
+    {M : Type w} [Monoid M] (f : MonoidAlgebra k M →ₐc[k] H) {m : M} (hm : IsOfFinOrder m) :
     f (MonoidAlgebra.single m 1) = 1 := by
   refine ((MonoidAlgebra.isGroupLikeElem_single_one m).map f).eq_one_of_pow_eq_one
     (n := orderOf m) (orderOf_ne_zero_iff.mpr hm) ?_
@@ -91,7 +91,7 @@ theorem _root_.BialgHom.monoidAlgebra_single_eq_one
 algebra with connected spectrum factors through the counit.** -/
 theorem _root_.BialgHom.monoidAlgebra_eq_algebraMap_counit
     [IsReduced H] [ConnectedSpace (PrimeSpectrum H)]
-    {M : Type w} [CommGroup M] (f : MonoidAlgebra k M →ₐc[k] H) (hM : IsMulTorsion M) :
+    {M : Type w} [Monoid M] (f : MonoidAlgebra k M →ₐc[k] H) (hM : IsMulTorsion M) :
     (f : MonoidAlgebra k M →ₐ[k] H) =
       (Algebra.ofId k H).comp (Bialgebra.counitAlgHom k (MonoidAlgebra k M)) := by
   refine MonoidAlgebra.algHom_ext (fun m ↦ ?_) (Subsingleton.elim _ _)

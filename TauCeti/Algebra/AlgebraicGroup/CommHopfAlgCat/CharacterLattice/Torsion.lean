@@ -9,8 +9,8 @@ public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterLattice.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.CommHopfAlgCat
+public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.GroupLikeTorsion
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
-public import TauCeti.Algebra.Bialgebra.GroupLike.Torsion
 
 /-!
 # The characters of a geometrically connected affine group are torsion free
