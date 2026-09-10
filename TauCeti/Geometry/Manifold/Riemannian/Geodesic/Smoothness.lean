@@ -24,8 +24,6 @@ geodesic equation.
 
 * `TauCeti.Manifold.contMDiff_geodesicSpray`: the geodesic spray is `C^n` when the manifold is
   `C^(n + 2)` and its Riemannian metric is `C^(n + 1)`.
-* `TauCeti.Manifold.contMDiff_geodesicSpray_infty`: the geodesic spray of a smooth Riemannian
-  manifold is smooth.
 
 ## References
 
@@ -140,17 +138,6 @@ theorem contMDiff_geodesicSpray [IsManifold I 2 M] [IsManifold I m M]
     hΓ.comp hproj hmaps
   exact (contMDiffOn_prod_module_iff _).2
     ⟨hv, ((hΓ'.clm_apply hv).clm_apply hv).neg⟩
-
-/-- The geodesic spray of a smooth Riemannian manifold is smooth. -/
-theorem contMDiff_geodesicSpray_infty [IsManifold I ∞ M]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] :
-    ContMDiff I.tangent I.tangent.tangent ∞
-      (fun z : TangentBundle I M ↦
-        TotalSpace.mk' (E × E) z (geodesicSpray I M z)) := by
-  let _ : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
-  let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-    IsContMDiffRiemannianBundle.of_le (n := ∞) (by simp)
-  exact contMDiff_geodesicSpray (n := ∞) (m := ∞) (k := ∞) le_rfl le_rfl
 
 end TauCeti.Manifold
 
