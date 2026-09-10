@@ -7,21 +7,22 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Copy
 public import Mathlib.SetTheory.Cardinal.Finite
+import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 import Mathlib.Data.Fintype.CardEmbedding
 
 /-!
 # Counting graph homomorphisms
 
-Finite combinatorial facts about simple graphs, including cardinality bounds for homomorphisms and
-injective homomorphisms. These compare graph homomorphism counts with all vertex maps and
-embeddings, enabling the normalization and estimates used for finite homomorphism densities.
+Cardinality bounds for homomorphisms and injective homomorphisms between finite simple graphs.
+These compare graph homomorphism counts with all vertex maps and embeddings, enabling the
+normalization and estimates used for finite homomorphism densities.
 
 ## Main results
 
 * `SimpleGraph.card_hom_le` bounds homomorphisms by all vertex maps.
 * `SimpleGraph.card_injective_hom_le` bounds injective homomorphisms by vertex embeddings.
-* `SimpleGraph.edgeFinset_fromEdgeSet_eq_of_subset_top` reconstructs a graph from a finite set of
-  loop-free edges.
+* `SimpleGraph.card_injective_hom_eq_sum_map_le` counts injective homomorphisms by the vertex
+  embeddings whose mapped graph lies below the target.
 -/
 
 public section
@@ -29,16 +30,6 @@ public section
 namespace SimpleGraph
 
 variable {V W : Type*} [Fintype V] [Fintype W]
-
-/-- The edge finset of a graph rebuilt from a loop-free finite edge set is the original set. -/
-theorem edgeFinset_fromEdgeSet_eq_of_subset_top [DecidableEq V]
-    (S : Finset (Sym2 V)) (hS : S ⊆ (⊤ : SimpleGraph V).edgeFinset) :
-    (fromEdgeSet (↑S : Set (Sym2 V))).edgeFinset = S := by
-  ext e
-  simp only [mem_edgeFinset, edgeSet_fromEdgeSet, Set.mem_sdiff, Finset.mem_coe,
-    Sym2.mem_diagSet]
-  exact ⟨fun h => h.1, fun h => ⟨h, fun hdiag =>
-    (⊤ : SimpleGraph V).not_isDiag_of_mem_edgeSet (mem_edgeFinset.mp (hS h)) hdiag⟩⟩
 
 /-- The number of homomorphisms from `F` to `G` is bounded by the number of vertex maps. -/
 theorem card_hom_le (F : SimpleGraph V) (G : SimpleGraph W) :
@@ -61,5 +52,26 @@ theorem card_injective_hom_le (F : SimpleGraph V) (G : SimpleGraph W) :
             ext x; exact congrFun (congrArg (fun e : V ↪ W => (e : V → W)) h) x)
     _ = (Fintype.card W).descFactorial (Fintype.card V) := by
         rw [Nat.card_eq_fintype_card, Fintype.card_embedding_eq]
+
+open Classical in
+/-- Injective graph homomorphisms are counted by the vertex embeddings whose mapped graph lies
+below the host graph. -/
+theorem card_injective_hom_eq_sum_map_le (F : SimpleGraph V) (G : SimpleGraph W) :
+    Nat.card {φ : F →g G // Function.Injective φ} =
+      ∑ f : V ↪ W, if F.map f ≤ G then 1 else 0 := by
+  let e : {φ : F →g G // Function.Injective φ} ≃ {f : V ↪ W // F.map f ≤ G} :=
+    { toFun := fun φ =>
+        ⟨⟨φ.1, φ.2⟩, (map_le_iff_le_comap _ _ _).2 fun {_ _} hab => φ.1.map_rel hab⟩
+      invFun := fun f =>
+        ⟨⟨f.1, fun {_ _} hab => (map_le_iff_le_comap _ _ _).1 f.2 hab⟩, f.1.injective⟩
+      left_inv := by
+        intro φ
+        apply Subtype.ext
+        exact RelHom.ext fun _ => rfl
+      right_inv := by
+        intro f
+        apply Subtype.ext
+        exact DFunLike.ext _ _ fun _ => rfl }
+  rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_filter]
 
 end SimpleGraph

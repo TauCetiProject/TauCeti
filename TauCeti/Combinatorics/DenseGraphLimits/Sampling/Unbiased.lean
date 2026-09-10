@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Finite
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Structural
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
+import TauCeti.Combinatorics.SimpleGraph.Finite
 import Mathlib.Data.Fintype.CardEmbedding
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 
@@ -28,7 +29,7 @@ as the pattern makes this denominator nonzero.
 
 * `TauCeti.DenseGraphLimits.sum_sampleMass_supergraph_eq_homDensity` — the probability that the
   sample contains every edge of `F` is `t(F, W)`;
-* `TauCeti.DenseGraphLimits.injHomDensity_integral_sampleGraph` — injective homomorphism density is
+* `TauCeti.DenseGraphLimits.integral_injHomDensity_sampleGraph` — injective homomorphism density is
   unbiased under graphon sampling.
 
 ## References
@@ -67,16 +68,21 @@ private theorem sum_sampleIntegrand_supergraph_bij {n : ℕ} (W : Graphon Ω μ)
   let _ : DecidableRel F.Adj := decF
   have hFtop : F.edgeFinset ⊆ (⊤ : SimpleGraph (Fin n)).edgeFinset :=
     SimpleGraph.edgeFinset_mono le_top
+  -- A supergraph of `F` is the same data as the set `S` of edges it adds to `F`, so the two maps
+  -- below are mutually inverse bijections between the supergraphs of `F` and the subsets of the
+  -- optional edges `E(⊤) \ E(F)`.
   refine Finset.sum_nbij'
     (fun G => G.edgeFinset \ F.edgeFinset)
     (fun S => SimpleGraph.fromEdgeSet (↑(F.edgeFinset ∪ S) : Set (Sym2 (Fin n))))
     ?_ ?_ ?_ ?_ ?_
+  -- The added edges of a supergraph are optional edges.
   · intro G hG
     rw [Finset.mem_filter] at hG
     rw [Finset.mem_powerset]
     intro e he
     rw [Finset.mem_sdiff] at he ⊢
     exact ⟨SimpleGraph.edgeFinset_mono le_top he.1, he.2⟩
+  -- Adding a set of optional edges to `F` produces a supergraph of `F`.
   · intro S hS
     rw [Finset.mem_filter]
     refine ⟨Finset.mem_univ _, ?_⟩
@@ -85,6 +91,7 @@ private theorem sum_sampleIntegrand_supergraph_bij {n : ℕ} (W : Graphon Ω μ)
     · exact Finset.subset_union_left
     · exact Finset.union_subset hFtop
         ((Finset.mem_powerset.mp hS).trans Finset.sdiff_subset)
+  -- Adding back the edges a supergraph adds to `F` recovers that supergraph.
   · intro G hG
     rw [Finset.mem_filter] at hG
     apply SimpleGraph.edgeFinset_inj.mp
@@ -92,6 +99,7 @@ private theorem sum_sampleIntegrand_supergraph_bij {n : ℕ} (W : Graphon Ω μ)
     · exact Finset.union_sdiff_of_subset (SimpleGraph.edgeFinset_mono hG.2)
     · exact Finset.union_subset hFtop
         (Finset.sdiff_subset.trans (SimpleGraph.edgeFinset_mono le_top))
+  -- The edges that `F ∪ S` adds to `F` are exactly `S`, since `S` avoids `E(F)`.
   · intro S hS
     ext e
     simp only [Finset.mem_sdiff, SimpleGraph.mem_edgeFinset,
@@ -110,6 +118,8 @@ private theorem sum_sampleIntegrand_supergraph_bij {n : ℕ} (W : Graphon Ω μ)
       intro heFset
       exact (Finset.mem_sdiff.mp heSDiff).2
         (SimpleGraph.mem_edgeFinset.mpr heFset)
+  -- The summands agree: the edges of `G` split as `E(F)` together with the added edges, and the
+  -- optional edges missing from `G` are the optional edges outside the added ones.
   · intro G hG
     rw [Finset.mem_filter] at hG
     have hFG : F.edgeFinset ⊆ G.edgeFinset := SimpleGraph.edgeFinset_mono hG.2
@@ -178,7 +188,7 @@ theorem sum_sampleMass_supergraph_eq_homDensity {n : ℕ} (W : Graphon Ω μ)
 /-- The injective homomorphism density of a graphon sample is an unbiased estimator of the
 graphon's homomorphism density, provided the sample has at least as many vertices as the pattern.
 The size condition is exactly the nonvanishing condition for the falling-factorial denominator. -/
-theorem injHomDensity_integral_sampleGraph (W : Graphon Ω μ) {V : Type*} [Fintype V]
+theorem integral_injHomDensity_sampleGraph (W : Graphon Ω μ) {V : Type*} [Fintype V]
     (F : SimpleGraph V) [DecidableRel F.Adj] {m : ℕ}
     (hkm : Fintype.card V ≤ m) :
     ∫ G, injHomDensity F G ∂sampleGraph W m = homDensity F W := by
@@ -186,7 +196,8 @@ theorem injHomDensity_integral_sampleGraph (W : Graphon Ω μ) {V : Type*} [Fint
   rw [integral_fintype Integrable.of_finite]
   simp_rw [Measure.real_def, sampleGraph_singleton,
     ENNReal.toReal_ofReal (sampleMass_nonneg W _), smul_eq_mul]
-  simp_rw [injHomDensity_def, SimpleGraph.card_injective_hom_eq_sum_map_le]
+  simp_rw [injHomDensity_def, SimpleGraph.card_injective_hom_eq_sum_map_le, Nat.cast_sum,
+    Nat.cast_ite, Nat.cast_one, Nat.cast_zero]
   simp only [Fintype.card_fin]
   have hd : (m.descFactorial (Fintype.card V) : ℝ) ≠ 0 := by
     exact_mod_cast (Nat.descFactorial_pos.mpr hkm).ne'

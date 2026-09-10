@@ -22,8 +22,9 @@ the countable product space. This supplies the discrete integration API for fini
 ## Reference
 
 * C. Freer, `cameronfreer/graphon` at commit
-  `6eccca5bbe5c9df46d7129bf59575b8b9b1d6699`, Apache-2.0, `Graphon/SamplingLaw.lean`. The proof is
-  adapted from its measurable singleton instance.
+  `6eccca5bbe5c9df46d7129bf59575b8b9b1d6699`, Apache-2.0, `Graphon/SamplingLaw.lean`. The
+  instance is adapted from its measurable singleton instance; the proof here goes through
+  Mathlib's `SimpleGraph.measurableEmbedding_edgeSet`.
 -/
 
 public section
@@ -37,12 +38,7 @@ singletons. -/
 instance instMeasurableSingletonClass [Countable V] :
     MeasurableSingletonClass (SimpleGraph V) where
   measurableSet_singleton G := by
-    have h : MeasurableSet ({G.edgeSet} : Set (Set (Sym2 V))) :=
-      MeasurableSet.singleton G.edgeSet
-    have heq : edgeSet ⁻¹' {G.edgeSet} = {G} := by
-      ext H
-      simp only [Set.mem_preimage, Set.mem_singleton_iff, edgeSet_injective.eq_iff]
-    rw [← heq]
-    exact h.preimage measurable_edgeSet
+    rw [← measurableEmbedding_edgeSet.measurableSet_image, Set.image_singleton]
+    exact MeasurableSet.singleton _
 
 end SimpleGraph
