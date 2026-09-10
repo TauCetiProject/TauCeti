@@ -181,7 +181,6 @@ variable (S : Set (PointedCone ℝ V)) (hS : S ⊆ Φ.cones)
   (hface : ∀ ⦃σ τ⦄, σ ∈ S → τ.IsFaceOf σ → τ ∈ S)
 
 /-- A subset of the cones of a fan which is itself closed under passing to faces is a fan. -/
-@[expose]
 def subfan : Fan i where
   lattice := Φ.lattice
   cones := S
@@ -192,7 +191,7 @@ def subfan : Fan i where
 
 /-- The cones of a subfan are the chosen subset. -/
 @[simp]
-theorem subfan_cones : (Φ.subfan S hS hface).cones = S := rfl
+theorem subfan_cones : (Φ.subfan S hS hface).cones = S := (rfl)
 
 /-- The support of a subfan is contained in the support of the ambient fan. -/
 theorem support_subfan_subset : (Φ.subfan S hS hface).support ⊆ Φ.support := by
@@ -250,7 +249,6 @@ theorem ext {f g : FanHom Φ Ψ} (h : f.latticeMap = g.latticeMap) : f = g := by
 
 /-- Build a fan morphism from a map of integral vectors alone, using that its real-linear part is
 forced to be the scalar extension. -/
-@[expose]
 noncomputable def ofLatticeMap (Φ : Fan i) (Ψ : Fan i') (f : N →+ N')
     (hf : ∀ ⦃σ⦄, σ ∈ Φ.cones → ∃ τ ∈ Ψ.cones, σ.map (Φ.lattice.extend i' f) ≤ τ) :
     FanHom Φ Ψ where
@@ -263,10 +261,16 @@ noncomputable def ofLatticeMap (Φ : Fan i) (Ψ : Fan i') (f : N →+ N')
 @[simp]
 theorem ofLatticeMap_latticeMap (Φ : Fan i) (Ψ : Fan i') (f : N →+ N')
     (hf : ∀ ⦃σ⦄, σ ∈ Φ.cones → ∃ τ ∈ Ψ.cones, σ.map (Φ.lattice.extend i' f) ≤ τ) :
-    (ofLatticeMap Φ Ψ f hf).latticeMap = f := rfl
+    (ofLatticeMap Φ Ψ f hf).latticeMap = f := (rfl)
+
+/-- The real-linear part of a fan morphism built from a map of integral vectors is the scalar
+extension of that map. -/
+@[simp]
+theorem ofLatticeMap_realMap (Φ : Fan i) (Ψ : Fan i') (f : N →+ N')
+    (hf : ∀ ⦃σ⦄, σ ∈ Φ.cones → ∃ τ ∈ Ψ.cones, σ.map (Φ.lattice.extend i' f) ≤ τ) :
+    (ofLatticeMap Φ Ψ f hf).realMap = Φ.lattice.extend i' f := (rfl)
 
 /-- The identity morphism of a fan. -/
-@[expose]
 protected def id (Φ : Fan i) : FanHom Φ Φ where
   latticeMap := AddMonoidHom.id N
   realMap := LinearMap.id
@@ -275,11 +279,11 @@ protected def id (Φ : Fan i) : FanHom Φ Φ where
 
 /-- The integral part of the identity morphism is the identity. -/
 @[simp]
-theorem id_latticeMap (Φ : Fan i) : (FanHom.id Φ).latticeMap = AddMonoidHom.id N := rfl
+theorem id_latticeMap (Φ : Fan i) : (FanHom.id Φ).latticeMap = AddMonoidHom.id N := (rfl)
 
 /-- The real-linear part of the identity morphism is the identity. -/
 @[simp]
-theorem id_realMap (Φ : Fan i) : (FanHom.id Φ).realMap = LinearMap.id := rfl
+theorem id_realMap (Φ : Fan i) : (FanHom.id Φ).realMap = LinearMap.id := (rfl)
 
 section Comp
 
@@ -287,7 +291,6 @@ variable {N'' V'' : Type*} [AddCommGroup N''] [AddCommGroup V''] [Module ℝ V''
   {i'' : N'' →+ V''} {Ω : Fan i''}
 
 /-- The composite of two fan morphisms. -/
-@[expose]
 def comp (g : FanHom Ψ Ω) (f : FanHom Φ Ψ) : FanHom Φ Ω where
   latticeMap := g.latticeMap.comp f.latticeMap
   realMap := g.realMap ∘ₗ f.realMap
@@ -299,19 +302,17 @@ def comp (g : FanHom Ψ Ω) (f : FanHom Φ Ψ) : FanHom Φ Ω where
     obtain ⟨υ, hυ, hτυ⟩ := g.map_cone hτ
     refine ⟨υ, hυ, ?_⟩
     rw [← PointedCone.map_map]
-    refine le_trans (fun y hy ↦ ?_) hτυ
-    obtain ⟨x, hx, rfl⟩ := hy
-    exact ⟨x, hστ hx, rfl⟩
+    exact (Submodule.map_mono hστ).trans hτυ
 
 /-- The integral part of a composite is the composite of the integral parts. -/
 @[simp]
 theorem comp_latticeMap (g : FanHom Ψ Ω) (f : FanHom Φ Ψ) :
-    (g.comp f).latticeMap = g.latticeMap.comp f.latticeMap := rfl
+    (g.comp f).latticeMap = g.latticeMap.comp f.latticeMap := (rfl)
 
 /-- The real-linear part of a composite is the composite of the real-linear parts. -/
 @[simp]
 theorem comp_realMap (g : FanHom Ψ Ω) (f : FanHom Φ Ψ) :
-    (g.comp f).realMap = g.realMap ∘ₗ f.realMap := rfl
+    (g.comp f).realMap = g.realMap ∘ₗ f.realMap := (rfl)
 
 /-- The identity morphism is a right unit for composition. -/
 @[simp]
@@ -338,10 +339,6 @@ theorem mapsTo_support (f : FanHom Φ Ψ) : Set.MapsTo f.realMap Φ.support Ψ.s
   obtain ⟨σ, hσ, hxσ⟩ := Φ.mem_support.1 hx
   obtain ⟨τ, hτ, hστ⟩ := f.map_cone hσ
   exact Ψ.subset_support hτ (hστ ⟨x, hxσ, rfl⟩)
-
-/-- The image of the support of the source fan is contained in the support of the target fan. -/
-theorem image_support_subset (f : FanHom Φ Ψ) : f.realMap '' Φ.support ⊆ Ψ.support :=
-  f.mapsTo_support.image_subset
 
 /-! ### The least target cone of a source cone -/
 
