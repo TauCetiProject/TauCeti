@@ -132,11 +132,7 @@ def IsRecut (G : GridDiagram n) (D E : GridRectangleDecomposition x z) : Prop :=
 /-! ### Existence and uniqueness of the recut -/
 
 /-- A two-step decomposition counted by the unblocked differential whose two rectangles share
-exactly one side column has exactly one recut.
-
-Existence is the recut construction in each of the four orientations of the common column;
-uniqueness holds because the orientation of the common column of `D` is unique, so only the
-matching one of the four side-data alternatives can occur. -/
+exactly one side column has exactly one recut. -/
 theorem existsUnique_isRecut (G : GridDiagram n) (D : GridRectangleDecomposition x z)
     (hone : D.HasOneCommonSide)
     (hfirst : D.first ∈ G.unblockedRectangles x D.middle)
@@ -204,15 +200,8 @@ private theorem eq_swap_of_swapColumns_apply_eq {a b c d : Fin n}
     (h : x.swapColumns a b c = x d) : c = Equiv.swap a b d :=
   Equiv.swap_apply_eq_iff.mp (x.toPerm.injective (by rwa [GridState.swapColumns_apply] at h))
 
-/-- The recut of the recut of a two-step decomposition is the decomposition itself.
-
-The recut of a decomposition whose common column is initial or terminal for both rectangles has
-a mixed common column, and conversely; in each of the eight configurations the original
-decomposition carries exactly the side data computed for the recut, so it is the recut of the
-recut. The geometric input is the same cyclic order used to build the recut: for a common initial
-or terminal column, the corner row of the common side lies between the other two corner rows,
-and for a mixed common column the terminal side of the first rectangle lies between the other two
-side columns. -/
+/-- If `E` is a recut of a counted two-step decomposition `D` whose rectangles share exactly one
+side column, then `D` is a recut of `E`. -/
 theorem IsRecut.symm {G : GridDiagram n} {D E : GridRectangleDecomposition x z}
     (h : D.IsRecut G E) (hone : D.HasOneCommonSide)
     (hfirst : D.first ∈ G.unblockedRectangles x D.middle)
@@ -343,10 +332,10 @@ theorem IsRecut.symm {G : GridDiagram n} {D E : GridRectangleDecomposition x z}
     · -- the recut has both its rectangles on the same initial side column
       have hEmid' : E.middle = x.swapColumns D.second.left D.first.left := by
         rw [hEmid, hDbot₂, GridRectangleBetween.bottom_def, GridState.swapColumns_eq_swapRows]
-      have hEl₁ : E.first.left = D.second.left :=
-        x.toPerm.injective (show x E.first.left = x D.second.left from hE₁.trans hDbot₂)
-      have hEr₁ : E.first.right = D.first.left :=
-        x.toPerm.injective (show x E.first.right = x D.first.left from hEt₁)
+      have hxEl₁ : x E.first.left = x D.second.left := by exact hE₁.trans hDbot₂
+      have hEl₁ : E.first.left = D.second.left := x.toPerm.injective hxEl₁
+      have hxEr₁ : x E.first.right = x D.first.left := by exact hEt₁
+      have hEr₁ : E.first.right = D.first.left := x.toPerm.injective hxEr₁
       have hEl₂ : E.second.left = Equiv.swap D.second.left D.first.left D.first.left :=
         eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hE₂)
       have hEr₂ : E.second.right = Equiv.swap D.second.left D.first.left D.first.right :=
@@ -365,10 +354,10 @@ theorem IsRecut.symm {G : GridDiagram n} {D E : GridRectangleDecomposition x z}
     · -- the recut has both its rectangles on the same terminal side column
       have hEmid' : E.middle = x.swapColumns D.second.left D.first.right := by
         rw [hEmid, hDbot₂, GridRectangleBetween.top_def, GridState.swapColumns_eq_swapRows]
-      have hEl₁ : E.first.left = D.second.left :=
-        x.toPerm.injective (show x E.first.left = x D.second.left from hE₁.trans hDbot₂)
-      have hEr₁ : E.first.right = D.first.right :=
-        x.toPerm.injective (show x E.first.right = x D.first.right from hEt₁)
+      have hxEl₁ : x E.first.left = x D.second.left := by exact hE₁.trans hDbot₂
+      have hEl₁ : E.first.left = D.second.left := x.toPerm.injective hxEl₁
+      have hxEr₁ : x E.first.right = x D.first.right := by exact hEt₁
+      have hEr₁ : E.first.right = D.first.right := x.toPerm.injective hxEr₁
       have hEl₂ : E.second.left = Equiv.swap D.second.left D.first.right D.first.left :=
         eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hE₂)
       have hEr₂ : E.second.right = Equiv.swap D.second.left D.first.right D.second.left :=
@@ -403,10 +392,10 @@ theorem IsRecut.symm {G : GridDiagram n} {D E : GridRectangleDecomposition x z}
     · -- the recut has both its rectangles on the same terminal side column
       have hEmid' : E.middle = x.swapColumns D.first.right D.second.right := by
         rw [hEmid, hDtop₂, GridRectangleBetween.top_def, GridState.swapColumns_eq_swapRows]
-      have hEl₁ : E.first.left = D.first.right :=
-        x.toPerm.injective (show x E.first.left = x D.first.right from hEb₁)
-      have hEr₁ : E.first.right = D.second.right :=
-        x.toPerm.injective (show x E.first.right = x D.second.right from hE₁.trans hDtop₂)
+      have hxEl₁ : x E.first.left = x D.first.right := by exact hEb₁
+      have hEl₁ : E.first.left = D.first.right := x.toPerm.injective hxEl₁
+      have hxEr₁ : x E.first.right = x D.second.right := by exact hE₁.trans hDtop₂
+      have hEr₁ : E.first.right = D.second.right := x.toPerm.injective hxEr₁
       have hEl₂ : E.second.left = Equiv.swap D.first.right D.second.right D.first.left :=
         eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hEb₂)
       have hEr₂ : E.second.right = Equiv.swap D.first.right D.second.right D.first.right :=
@@ -425,10 +414,10 @@ theorem IsRecut.symm {G : GridDiagram n} {D E : GridRectangleDecomposition x z}
     · -- the recut has both its rectangles on the same initial side column
       have hEmid' : E.middle = x.swapColumns D.first.left D.second.right := by
         rw [hEmid, hDtop₂, GridRectangleBetween.bottom_def, GridState.swapColumns_eq_swapRows]
-      have hEl₁ : E.first.left = D.first.left :=
-        x.toPerm.injective (show x E.first.left = x D.first.left from hEb₁)
-      have hEr₁ : E.first.right = D.second.right :=
-        x.toPerm.injective (show x E.first.right = x D.second.right from hE₁.trans hDtop₂)
+      have hxEl₁ : x E.first.left = x D.first.left := by exact hEb₁
+      have hEl₁ : E.first.left = D.first.left := x.toPerm.injective hxEl₁
+      have hxEr₁ : x E.first.right = x D.second.right := by exact hE₁.trans hDtop₂
+      have hEr₁ : E.first.right = D.second.right := x.toPerm.injective hxEr₁
       have hEl₂ : E.second.left = Equiv.swap D.first.left D.second.right D.second.right :=
         eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hEb₂.trans hDtop₂)
       have hEr₂ : E.second.right = Equiv.swap D.first.left D.second.right D.first.right :=
@@ -516,17 +505,21 @@ theorem recut_ne (G : GridDiagram n) (D : GridRectangleDecomposition x z)
 
 /-- Recutting is an involution on the two-step decompositions counted by the unblocked
 differential whose two rectangles share exactly one side column. -/
-theorem recut_recut (G : GridDiagram n) (D : GridRectangleDecomposition x z)
+@[simp] theorem recut_recut (G : GridDiagram n) (D : GridRectangleDecomposition x z)
     (hone : D.HasOneCommonSide) (hfirst : D.first ∈ G.unblockedRectangles x D.middle)
-    (hsecond : D.second ∈ G.unblockedRectangles D.middle z)
-    (hone' : (D.recut G hone hfirst hsecond).HasOneCommonSide)
-    (hfirst' : (D.recut G hone hfirst hsecond).first ∈
-      G.unblockedRectangles x (D.recut G hone hfirst hsecond).middle)
-    (hsecond' : (D.recut G hone hfirst hsecond).second ∈
-      G.unblockedRectangles (D.recut G hone hfirst hsecond).middle z) :
-    (D.recut G hone hfirst hsecond).recut G hone' hfirst' hsecond' = D :=
-  ((D.recut G hone hfirst hsecond).existsUnique_isRecut G hone' hfirst' hsecond').unique
-    ((D.recut G hone hfirst hsecond).isRecut_recut G hone' hfirst' hsecond')
+    (hsecond : D.second ∈ G.unblockedRectangles D.middle z) :
+    (D.recut G hone hfirst hsecond).recut G
+      (D.hasOneCommonSide_recut G hone hfirst hsecond)
+      ((D.isRecut_recut G hone hfirst hsecond).mem_unblockedRectangles_first)
+      ((D.isRecut_recut G hone hfirst hsecond).mem_unblockedRectangles_second) = D :=
+  ((D.recut G hone hfirst hsecond).existsUnique_isRecut G
+      (D.hasOneCommonSide_recut G hone hfirst hsecond)
+      ((D.isRecut_recut G hone hfirst hsecond).mem_unblockedRectangles_first)
+      ((D.isRecut_recut G hone hfirst hsecond).mem_unblockedRectangles_second)).unique
+    ((D.recut G hone hfirst hsecond).isRecut_recut G
+      (D.hasOneCommonSide_recut G hone hfirst hsecond)
+      ((D.isRecut_recut G hone hfirst hsecond).mem_unblockedRectangles_first)
+      ((D.isRecut_recut G hone hfirst hsecond).mem_unblockedRectangles_second))
     ((D.isRecut_recut G hone hfirst hsecond).symm hone hfirst hsecond)
 
 end GridRectangleDecomposition

@@ -103,7 +103,7 @@ theorem sum_unblockedCoefficient_mul_unblockedCoefficient_eq_zero (x z : GridSta
       · exact (D.isRecut_recut G _ _ _).mem_unblockedRectangles_second
       · exact GridRectangleDecomposition.not_hasDisjointSides_of_hasOneCommonSide _
           (D.hasOneCommonSide_recut G _ _ _)
-    · exact D.recut_recut G _ _ _ _ _ _
+    · exact D.recut_recut G _ _ _
   rw [hdisjoint, hcommon, add_zero]
 
 /-- In characteristic two the square of the unblocked grid differential vanishes on a
