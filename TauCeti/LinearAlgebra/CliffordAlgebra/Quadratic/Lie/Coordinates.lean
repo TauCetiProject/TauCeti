@@ -32,8 +32,6 @@ the basis-independent Killing contraction and root-space projection API.
 * `CliffordAlgebra.adjointBivector`: the bilinear map `(y, z) ↦ bivector Q [x, y] z`.
 * `CliffordAlgebra.soEquivQuadratic_eq_sum_bivector`: the coordinate formula for an arbitrary
   skew-adjoint endomorphism.
-* `Module.Basis.dualBasis_polarBilin_killingQuadraticForm_apply`: the comparison between the
-  polar-dual and Killing-dual bases.
 * `CliffordAlgebra.adjointCliffordHom_eq_sum_bivector`: the adjoint lift as a `1 / 4`-scaled sum
   against a Killing-dual basis.
 
@@ -168,48 +166,6 @@ theorem soEquivQuadratic_eq_sum_bivector {ι : Type w} [Fintype ι] [DecidableEq
       inv_mul_cancel₀ (Invertible.ne_zero (2 : K)), one_smul]
   simpa [a, d] using congrArg Subtype.val ha
 
-end CliffordAlgebra
-
-namespace Module.Basis
-
-variable {K : Type u} [Field K] [Invertible (2 : K)]
-
-/-- The basis dual to `b` for the polar form of the Killing quadratic form is half the
-Killing-dual basis. The factor records that this polar form is `2 • killingForm K L`. -/
-theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Fintype ι]
-    [DecidableEq ι] {L : Type v} [LieRing L] [LieAlgebra K L]
-    [_root_.LieAlgebra.IsKilling K L]
-    (b : Module.Basis ι K L) (i : ι) :
-    LinearMap.BilinForm.dualBasis
-        (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L).polarBilin
-        (QuadraticMap.nondegenerate_polar_iff.mpr
-          (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)) b i =
-      (2 : K)⁻¹ • killingDualBasis b i := by
-  let Q := _root_.TauCeti.LieAlgebra.killingQuadraticForm K L
-  let B := Q.polarBilin
-  let hB : LinearMap.BilinForm.Nondegenerate B :=
-    QuadraticMap.nondegenerate_polar_iff.mpr
-      (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)
-  let d := LinearMap.BilinForm.dualBasis B hB b
-  apply LinearMap.ker_eq_bot.mp hB.ker_eq_bot
-  apply b.ext
-  intro j
-  simp only [map_smul]
-  rw [LinearMap.BilinForm.apply_dualBasis_left]
-  simp only [B, Q, _root_.TauCeti.LieAlgebra.polarBilin_killingQuadraticForm,
-    LinearMap.smul_apply, smul_eq_mul]
-  rw [LieModule.traceForm_comm K L L (killingDualBasis b i) (b j),
-    killingForm_killingDualBasis]
-  split_ifs
-  · simp only [mul_one, inv_mul_cancel₀ (Invertible.ne_zero (2 : K))]
-  · simp only [mul_zero]
-
-end Module.Basis
-
-namespace CliffordAlgebra
-
-variable {K : Type u} [Field K] [Invertible (2 : K)]
-
 /-- **The adjoint quadratic lift in Killing-dual coordinates.** For any basis `b` of a
 finite-dimensional Killing-semisimple Lie algebra,
 `adjointCliffordHom K L x` is one quarter of the sum of the bivectors of `[x, b i]` with the
@@ -235,8 +191,9 @@ theorem adjointCliffordHom_eq_sum_bivector {ι : Type w} [Fintype ι]
       LinearMap.BilinForm.dualBasis Q.polarBilin
           (QuadraticMap.nondegenerate_polar_iff.mpr
             (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)) b i =
-        (2 : K)⁻¹ • killingDualBasis b i :=
-    b.dualBasis_polarBilin_killingQuadraticForm_apply i
+        (2 : K)⁻¹ • killingDualBasis b i := by
+    simpa only [Q, _root_.TauCeti.LieAlgebra.polarBilin_killingQuadraticForm] using
+      b.dualBasis_polarBilin_killingQuadraticForm_apply i
   simp_rw [hdual]
   have hbiv (y z : L) : bivector Q y ((2 : K)⁻¹ • z) =
       (2 : K)⁻¹ • bivector Q y z := by

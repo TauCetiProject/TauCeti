@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Killing
 public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import TauCeti.Algebra.Lie.Killing.DualBasis
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 /-!
@@ -73,6 +74,8 @@ composite is not built here.
   form is `2 • killingForm`.
 * `TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate`: over a ring in which `2` is invertible,
   the Killing quadratic form of a Killing-semisimple Lie algebra is nondegenerate.
+* `Module.Basis.dualBasis_polarBilin_killingQuadraticForm_apply`: the basis dual for the polar form
+  is half the Killing-dual basis.
 
 ## Implementation notes
 
@@ -338,3 +341,44 @@ theorem killingAdjointSO_injective_iff :
 end Killing
 
 end TauCeti.LieAlgebra
+
+open TauCeti
+
+namespace Module.Basis
+
+variable {K : Type u} [Field K] [Invertible (2 : K)]
+
+/-- The basis dual to `b` for the polar form of the Killing quadratic form is half the
+Killing-dual basis. The factor records that this polar form is `2 • killingForm K L`. -/
+@[simp]
+theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Fintype ι]
+    [DecidableEq ι] {L : Type v} [LieRing L] [LieAlgebra K L]
+    [_root_.LieAlgebra.IsKilling K L]
+    (b : Module.Basis ι K L) (i : ι) :
+    LinearMap.BilinForm.dualBasis
+        ((2 : K) • killingForm K L)
+        (by
+          rw [← _root_.TauCeti.LieAlgebra.polarBilin_killingQuadraticForm]
+          exact QuadraticMap.nondegenerate_polar_iff.mpr
+            (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)) b i =
+      (2 : K)⁻¹ • killingDualBasis b i := by
+  let B := (2 : K) • killingForm K L
+  let hB : LinearMap.BilinForm.Nondegenerate B := by
+    dsimp only [B]
+    rw [← _root_.TauCeti.LieAlgebra.polarBilin_killingQuadraticForm]
+    exact QuadraticMap.nondegenerate_polar_iff.mpr
+      (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)
+  let d := LinearMap.BilinForm.dualBasis B hB b
+  apply LinearMap.ker_eq_bot.mp hB.ker_eq_bot
+  apply b.ext
+  intro j
+  simp only [map_smul]
+  rw [LinearMap.BilinForm.apply_dualBasis_left]
+  simp only [B, LinearMap.smul_apply, smul_eq_mul]
+  rw [LieModule.traceForm_comm K L L (killingDualBasis b i) (b j),
+    killingForm_killingDualBasis]
+  split_ifs
+  · simp only [mul_one, inv_mul_cancel₀ (Invertible.ne_zero (2 : K))]
+  · simp only [mul_zero]
+
+end Module.Basis
