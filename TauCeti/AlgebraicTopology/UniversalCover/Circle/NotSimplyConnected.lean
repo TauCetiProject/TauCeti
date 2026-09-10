@@ -107,8 +107,7 @@ connected. -/
 theorem isEmpty_homeomorph_realTopologicalVectorSpace (hp : p ≠ 0) (E : Type*)
     [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul ℝ E] :
     IsEmpty (AddCircle p ≃ₜ E) :=
-  TauCeti.isEmpty_homeomorph_realTopologicalVectorSpace_of_not_simplyConnectedSpace
-    (not_simplyConnectedSpace p hp) E
+  isEmpty_homeomorph_of_simplyConnectedSpace p hp E
 
 /-- The circle `AddCircle p` (`p ≠ 0`) is not homeomorphic to the real line: the circle is not
 simply connected but `ℝ` is contractible. -/
@@ -176,8 +175,7 @@ theorem isEmpty_homeomorph_of_simplyConnectedSpace (Y : Type*) [TopologicalSpace
 connected. -/
 theorem isEmpty_homeomorph_realTopologicalVectorSpace (E : Type*) [AddCommGroup E] [Module ℝ E]
     [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul ℝ E] : IsEmpty (Circle ≃ₜ E) :=
-  TauCeti.isEmpty_homeomorph_realTopologicalVectorSpace_of_not_simplyConnectedSpace
-    not_simplyConnectedSpace E
+  isEmpty_homeomorph_of_simplyConnectedSpace E
 
 /-- The complex unit circle `Circle` is not homeomorphic to the real line: the circle is not
 simply connected but `ℝ` is contractible. -/
