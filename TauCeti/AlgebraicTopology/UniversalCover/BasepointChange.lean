@@ -1,0 +1,256 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicTopology.UniversalCover.Action
+
+/-!
+# Basepoint change for the universal cover
+
+A path `γ : Path x₀ x₁` identifies the universal covers based at its endpoints. In the
+based-path model, the identification removes the initial path `γ`: it sends the class of a path
+`α` starting at `x₀` to the class of `γ.symm.trans α`, now regarded as a path starting at `x₁`.
+
+The construction is expressed first as `TauCeti.UniversalCover.prepend`, which prepends a fixed
+path to every representative. This operation is continuous for the quotient topology on the
+universal cover. Prepending a path and its reverse gives inverse continuous maps, producing
+`TauCeti.UniversalCover.basepointChangeHomeomorph`.
+
+The resulting homeomorphism lies over the identity of the base, sends the point represented by
+`γ` to the constant-path point over `x₁`, depends only on the endpoint-preserving homotopy class
+of `γ`, and respects reflexivity, reversal, and concatenation. These properties make explicit the
+basepoint-change coherence of the based-path universal-cover construction.
+
+## Main declarations
+
+* `TauCeti.UniversalCover.prepend`: prepend a fixed path to universal-cover path classes.
+* `TauCeti.UniversalCover.continuous_prepend`: prepending a path is continuous.
+* `TauCeti.UniversalCover.basepointChangeHomeomorph`: the homeomorphism between universal covers
+  based at the endpoints of a path.
+* `TauCeti.UniversalCover.basepointChangeHomeomorph_trans`: basepoint change respects path
+  concatenation.
+
+## References
+
+This is the standard change-of-basepoint map in the based-path construction of the universal
+cover; compare Hatcher, *Algebraic Topology*, Section 1.3. The quotient model used here is adapted
+from Kim Morrison's [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292)
+and is credited in `TauCeti.AlgebraicTopology.UniversalCover.Basic`. The continuity argument
+generalizes the fixed-loop argument in `TauCeti.AlgebraicTopology.UniversalCover.Action`, also
+adapted from that pull request.
+-/
+
+public section
+noncomputable section
+
+open scoped unitInterval
+
+variable {X : Type*} [TopologicalSpace X]
+
+namespace TauCeti.UniversalCover
+
+variable {x₀ x₁ x₂ : X}
+
+/-- Prepend a path from `x₁` to `x₀` to the path class represented by a point of the
+universal cover based at `x₀`. -/
+def prepend (gamma : Path x₁ x₀) (p : UniversalCover x₀) : UniversalCover x₁ :=
+  mk p.proj ((Path.Homotopic.Quotient.mk gamma).trans p.path)
+
+/-- Prepending to an endpoint-and-path-class pair prepends the corresponding homotopy class. -/
+@[simp]
+theorem prepend_mk (gamma : Path x₁ x₀) (x : X)
+    (q : Path.Homotopic.Quotient x₀ x) :
+    prepend gamma (mk x q) = mk x ((Path.Homotopic.Quotient.mk gamma).trans q) :=
+  (rfl)
+
+/-- Prepending a path does not change the endpoint projection. -/
+@[simp]
+theorem proj_prepend (gamma : Path x₁ x₀) (p : UniversalCover x₀) :
+    proj (prepend gamma p) = proj p :=
+  (rfl)
+
+/-- On the quotient constructor, prepending is represented by concatenating paths. -/
+@[simp]
+theorem prepend_ofBasedPath (gamma : Path x₁ x₀) (beta : BasedPath x₀) :
+    prepend gamma (ofBasedPath x₀ beta) =
+      ofBasedPath x₁ (BasedPath.ofPath (gamma.trans beta.toPath)) := by
+  rw [ofBasedPath_ofPath, prepend_mk, ofBasedPath_def,
+    Path.Homotopic.Quotient.mk_trans]
+
+/-- Prepending a fixed path is continuous for the quotient topologies on the two universal
+covers. -/
+@[fun_prop]
+theorem continuous_prepend (gamma : Path x₁ x₀) :
+    Continuous (prepend gamma : UniversalCover x₀ → UniversalCover x₁) := by
+  rw [(isQuotientMap_ofBasedPath x₀).continuous_iff]
+  suffices hcont : Continuous (fun beta : BasedPath x₀ =>
+      ofBasedPath x₁ (BasedPath.ofPath (gamma.trans beta.toPath))) by
+    apply hcont.congr
+    intro beta
+    simpa only [Function.comp_apply] using (prepend_ofBasedPath gamma beta).symm
+  refine (continuous_ofBasedPath x₁).comp (Continuous.subtype_mk ?_ _)
+  refine ContinuousMap.continuous_of_continuous_uncurry _ ?_
+  have heval : Continuous fun p : BasedPath x₀ × unitInterval => p.1.1 p.2 :=
+    continuous_eval.comp (continuous_subtype_val.prodMap continuous_id)
+  -- Unfolding the path wrappers identifies the uncurried goal with concatenation.
+  change Continuous fun p : BasedPath x₀ × unitInterval => gamma.trans p.1.toPath p.2
+  exact Path.trans_continuous_family (a := fun _ : BasedPath x₀ => x₁)
+    (b := fun _ : BasedPath x₀ => x₀)
+    (c := fun beta : BasedPath x₀ => BasedPath.endpoint beta)
+    (fun _ => gamma) (Path.continuous_uncurry_iff.mpr continuous_const)
+    (fun beta => beta.toPath) heval
+
+/-- Prepending a constant path is the identity. -/
+@[simp]
+theorem prepend_refl (p : UniversalCover x₀) : prepend (Path.refl x₀) p = p := by
+  rcases p with ⟨x, q⟩
+  rw [prepend_mk, Path.Homotopic.Quotient.mk_refl,
+    Path.Homotopic.Quotient.refl_trans]
+
+/-- Successive prepending combines by path concatenation. -/
+@[simp]
+theorem prepend_trans (gamma : Path x₂ x₁) (delta : Path x₁ x₀)
+    (p : UniversalCover x₀) :
+    prepend (gamma.trans delta) p = prepend gamma (prepend delta p) := by
+  rcases p with ⟨x, q⟩
+  rw [prepend_mk, prepend_mk, prepend_mk, Path.Homotopic.Quotient.mk_trans,
+    Path.Homotopic.Quotient.trans_assoc]
+
+/-- **A path identifies the universal covers based at its endpoints.** The forward map removes
+the chosen initial path by prepending its reverse; the inverse map prepends the path itself. -/
+def basepointChangeHomeomorph (gamma : Path x₀ x₁) :
+    UniversalCover x₀ ≃ₜ UniversalCover x₁ where
+  toFun := prepend gamma.symm
+  invFun := prepend gamma
+  left_inv p := by
+    rcases p with ⟨x, q⟩
+    rw [prepend_mk, prepend_mk]
+    congr 1
+    rw [Path.Homotopic.Quotient.mk_symm, ← Path.Homotopic.Quotient.trans_assoc,
+      Path.Homotopic.Quotient.trans_symm, Path.Homotopic.Quotient.refl_trans]
+  right_inv p := by
+    rcases p with ⟨x, q⟩
+    rw [prepend_mk, prepend_mk]
+    congr 1
+    rw [Path.Homotopic.Quotient.mk_symm, ← Path.Homotopic.Quotient.trans_assoc,
+      Path.Homotopic.Quotient.symm_trans, Path.Homotopic.Quotient.refl_trans]
+  continuous_toFun := continuous_prepend gamma.symm
+  continuous_invFun := continuous_prepend gamma
+
+/-- Basepoint change prepends the reverse path class to a representative. -/
+@[simp]
+theorem basepointChangeHomeomorph_apply_mk (gamma : Path x₀ x₁) (x : X)
+    (q : Path.Homotopic.Quotient x₀ x) :
+    basepointChangeHomeomorph gamma (mk x q) =
+      mk x ((Path.Homotopic.Quotient.mk gamma).symm.trans q) :=
+  (rfl)
+
+/-- The inverse basepoint change prepends the original path class to a representative. -/
+@[simp]
+theorem basepointChangeHomeomorph_symm_apply_mk (gamma : Path x₀ x₁) (x : X)
+    (q : Path.Homotopic.Quotient x₁ x) :
+    (basepointChangeHomeomorph gamma).symm (mk x q) =
+      mk x ((Path.Homotopic.Quotient.mk gamma).trans q) :=
+  (rfl)
+
+/-- Basepoint change lies over the identity map of the base. -/
+@[simp]
+theorem proj_basepointChangeHomeomorph (gamma : Path x₀ x₁) (p : UniversalCover x₀) :
+    proj (basepointChangeHomeomorph gamma p) = proj p :=
+  (rfl)
+
+/-- The inverse basepoint change also lies over the identity map of the base. -/
+@[simp]
+theorem proj_basepointChangeHomeomorph_symm (gamma : Path x₀ x₁) (p : UniversalCover x₁) :
+    proj ((basepointChangeHomeomorph gamma).symm p) = proj p :=
+  (rfl)
+
+/-- On a based-path representative, basepoint change prepends the reverse of the changing path. -/
+@[simp]
+theorem basepointChangeHomeomorph_apply_ofBasedPath (gamma : Path x₀ x₁)
+    (beta : BasedPath x₀) :
+    basepointChangeHomeomorph gamma (ofBasedPath x₀ beta) =
+      ofBasedPath x₁ (BasedPath.ofPath (gamma.symm.trans beta.toPath)) :=
+  prepend_ofBasedPath gamma.symm beta
+
+/-- On a based-path representative, inverse basepoint change prepends the changing path. -/
+@[simp]
+theorem basepointChangeHomeomorph_symm_apply_ofBasedPath (gamma : Path x₀ x₁)
+    (beta : BasedPath x₁) :
+    (basepointChangeHomeomorph gamma).symm (ofBasedPath x₁ beta) =
+      ofBasedPath x₀ (BasedPath.ofPath (gamma.trans beta.toPath)) :=
+  prepend_ofBasedPath gamma beta
+
+/-- The basepoint-change homeomorphism is the unique continuous map over `X` that sends the point
+represented by the changing path to the constant-path point. -/
+theorem eq_basepointChangeHomeomorph (gamma : Path x₀ x₁) [PathConnectedSpace X]
+    [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+    {f : C(UniversalCover x₀, UniversalCover x₁)}
+    (hgamma : f (ofBasedPath x₀ (BasedPath.ofPath gamma)) = basepointLift x₁)
+    (hproj : proj ∘ f = proj) :
+    f = (basepointChangeHomeomorph gamma : C(UniversalCover x₀, UniversalCover x₁)) := by
+  have hbase :
+      basepointChangeHomeomorph gamma (ofBasedPath x₀ (BasedPath.ofPath gamma)) =
+        basepointLift x₁ := by
+    rw [ofBasedPath_ofPath, basepointChangeHomeomorph_apply_mk, basepointLift_coe,
+      Path.Homotopic.Quotient.symm_trans]
+  apply ContinuousMap.ext
+  exact congrFun ((isCoveringMap x₁).eq_of_comp_eq f.continuous
+    (basepointChangeHomeomorph gamma).continuous hproj
+    (ofBasedPath x₀ (BasedPath.ofPath gamma)) (hgamma.trans hbase.symm))
+
+/-- Homotopic basepoint-change paths induce the same homeomorphism. -/
+theorem basepointChangeHomeomorph_eq_of_homotopic {gamma delta : Path x₀ x₁}
+    (h : gamma.Homotopic delta) :
+    basepointChangeHomeomorph gamma = basepointChangeHomeomorph delta := by
+  apply Homeomorph.ext
+  rintro ⟨x, q⟩
+  simp only [basepointChangeHomeomorph_apply_mk]
+  congr 1
+  exact congrArg (fun r => r.trans q)
+    (congrArg Path.Homotopic.Quotient.symm (Quotient.sound h))
+
+/-- Changing basepoint along a constant path gives the identity homeomorphism. -/
+@[simp]
+theorem basepointChangeHomeomorph_refl (x : X) :
+    basepointChangeHomeomorph (Path.refl x) = Homeomorph.refl (UniversalCover x) := by
+  apply Homeomorph.ext
+  intro p
+  exact prepend_refl p
+
+/-- Reversing the changing path reverses the basepoint-change homeomorphism. -/
+@[simp]
+theorem basepointChangeHomeomorph_symm (gamma : Path x₀ x₁) :
+    basepointChangeHomeomorph gamma.symm = (basepointChangeHomeomorph gamma).symm := by
+  apply Homeomorph.ext
+  rintro ⟨x, q⟩
+  simp only [basepointChangeHomeomorph_apply_mk,
+    basepointChangeHomeomorph_symm_apply_mk]
+  congr 1
+  congr 1
+  exact (Path.Homotopic.Quotient.mk_symm gamma.symm).symm.trans
+    (congrArg Path.Homotopic.Quotient.mk (Path.symm_symm gamma))
+
+/-- Changing basepoint along a concatenation is the composite of the two basepoint changes. -/
+@[simp]
+theorem basepointChangeHomeomorph_trans (gamma : Path x₀ x₁) (delta : Path x₁ x₂) :
+    basepointChangeHomeomorph (gamma.trans delta) =
+      (basepointChangeHomeomorph gamma).trans (basepointChangeHomeomorph delta) := by
+  apply Homeomorph.ext
+  rintro ⟨x, q⟩
+  simp only [Homeomorph.trans_apply, basepointChangeHomeomorph_apply_mk,
+    Path.Homotopic.Quotient.mk_trans]
+  congr 1
+  have hsymm : ((Path.Homotopic.Quotient.mk gamma).trans
+      (Path.Homotopic.Quotient.mk delta)).symm =
+      (Path.Homotopic.Quotient.mk delta).symm.trans
+        (Path.Homotopic.Quotient.mk gamma).symm := by
+    rw [← Path.Homotopic.Quotient.mk_trans, ← Path.Homotopic.Quotient.mk_symm,
+      Path.trans_symm, Path.Homotopic.Quotient.mk_trans,
+      Path.Homotopic.Quotient.mk_symm, Path.Homotopic.Quotient.mk_symm]
+  rw [hsymm, Path.Homotopic.Quotient.trans_assoc]
+
+end TauCeti.UniversalCover
