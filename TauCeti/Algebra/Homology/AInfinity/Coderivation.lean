@@ -101,7 +101,7 @@ theorem IsSuspension.isHomogeneous {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n)) :
+    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n)) :
     LinearMap.IsHomogeneous F (ReducedTensorWords.gradedPiece (G.shift 1))
       (G.shift 1).piece 1 := by
   rw [LinearMap.isHomogeneous_def]
@@ -121,7 +121,7 @@ theorem IsSuspension.isHomogeneous {G : InternalGrading R A}
     rw [← hyx]
     rw [hFm.apply n hn d y hy, evalNat_suspend]
     apply Submodule.smul_mem
-    have hop := (hm n).map_mem (fun i : Fin n ↦ d i) (fun i : Fin n ↦ y i)
+    have hop := (hm n hn).map_mem (fun i : Fin n ↦ d i) (fun i : Fin n ↦ y i)
       (fun i ↦ hy i i.isLt)
     have hsum : (∑ i : Fin n, d i) = D + n := by
       simp only [d, Fin.isLt, dite_true, Finset.sum_add_distrib, Finset.sum_const,
@@ -147,7 +147,7 @@ theorem IsSuspension.taylorComponent_comp_self_apply {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
+    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
     {n : ℕ} (hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A)
     (hx : ∀ i < n, x i ∈ G.piece (d i)) :
     ((ReducedTensorWords.gradedCoderiv (G.shift 1) F 1) ∘ₗ
@@ -179,7 +179,7 @@ theorem IsSuspension.taylorComponent_comp_self_apply {G : InternalGrading R A}
     have he : e ∈ G.piece (blockDeg d p s) := by
       simp only [e, evalNat_suspend]
       exact Submodule.smul_mem _ _
-        (evalNat_mem_blockDeg G.piece (m s) (hm s) p (fun j hj ↦ hx (p + j) (by omega)))
+        (evalNat_mem_blockDeg G.piece (m s) (hm s hspos) p (fun j hj ↦ hx (p + j) (by omega)))
     have hreplace : ∀ i < p + 1 + (n - p - s),
         replaceBlock x p s e i ∈ G.piece (replaceDeg d p s i) := by
       intro i hi
@@ -231,7 +231,7 @@ theorem IsSuspension.taylorComponent_comp_self_eq_smul_stasheff {G : InternalGra
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
+    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
     {n : ℕ} (hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A)
     (hx : ∀ i < n, x i ∈ G.piece (d i)) :
     ((ReducedTensorWords.gradedCoderiv (G.shift 1) F 1) ∘ₗ
@@ -247,7 +247,7 @@ theorem IsSuspension.taylorComponent_comp_self_eq_zero_iff {G : InternalGrading 
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
+    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
     {n : ℕ} (hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A)
     (hx : ∀ i < n, x i ∈ G.piece (d i)) :
     ((ReducedTensorWords.gradedCoderiv (G.shift 1) F 1) ∘ₗ
@@ -264,7 +264,7 @@ theorem IsSuspension.taylorComponent_comp_self_one {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
+    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
     (d : ℕ → ℤ) (x : ℕ → A) (hx : x 0 ∈ G.piece (d 0)) :
     ((ReducedTensorWords.gradedCoderiv (G.shift 1) F 1) ∘ₗ
         ReducedTensorWords.gradedCoderiv (G.shift 1) F 1).taylorComponent ⟨1, by omega⟩
@@ -283,7 +283,7 @@ theorem IsSuspension.taylorComponent_comp_self_two {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
+    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
     (d : ℕ → ℤ) (x : ℕ → A) (hx : ∀ i < 2, x i ∈ G.piece (d i)) :
     ((ReducedTensorWords.gradedCoderiv (G.shift 1) F 1) ∘ₗ
         ReducedTensorWords.gradedCoderiv (G.shift 1) F 1).taylorComponent ⟨2, by omega⟩
@@ -299,7 +299,7 @@ theorem IsSuspension.taylorComponent_comp_self_three {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
+    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
     (d : ℕ → ℤ) (x : ℕ → A) (hx : ∀ i < 3, x i ∈ G.piece (d i)) :
     ((ReducedTensorWords.gradedCoderiv (G.shift 1) F 1) ∘ₗ
         ReducedTensorWords.gradedCoderiv (G.shift 1) F 1).taylorComponent ⟨3, by omega⟩
@@ -318,7 +318,7 @@ theorem IsSuspension.taylorComponent_comp_self_four {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
+    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
     (d : ℕ → ℤ) (x : ℕ → A) (hx : ∀ i < 4, x i ∈ G.piece (d i)) :
     ((ReducedTensorWords.gradedCoderiv (G.shift 1) F 1) ∘ₗ
         ReducedTensorWords.gradedCoderiv (G.shift 1) F 1).taylorComponent ⟨4, by omega⟩
@@ -343,7 +343,7 @@ theorem IsSuspension.comp_self_eq_zero_iff_stasheff {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n)) :
+    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n)) :
     ReducedTensorWords.gradedCoderiv (G.shift 1) F 1 ∘ₗ
         ReducedTensorWords.gradedCoderiv (G.shift 1) F 1 = 0 ↔
       ∀ (n : ℕ) (_hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A),
