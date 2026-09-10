@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Stabilizer
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Basic
 public import TauCeti.Topology.Algebra.QuadraticForm.SpecialOrthogonal
+public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.Topology.Algebra.Ring.Real
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
@@ -188,8 +189,7 @@ theorem _root_.QuadraticForm.isClosed_spinVectorStabilizer
 the special orthogonal group with its standard coordinate topology. -/
 @[fun_prop]
 theorem continuous_spinToSpecialOrthogonal_pi [IsTopologicalRing R] [Invertible (2 : R)]
-    {n : Type v} [Fintype n] [DecidableEq n] (Q : QuadraticForm R (n → R))
-    [ContinuousMul (CliffordAlgebra Q)] :
+    {n : Type v} [Fintype n] [DecidableEq n] (Q : QuadraticForm R (n → R)) :
     Continuous (spinToSpecialOrthogonal Q) := by
   apply (TauCeti.QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear
     Q).isInducing.continuous_iff.mpr
@@ -208,8 +208,7 @@ theorem continuous_spinToSpecialOrthogonal_pi [IsTopologicalRing R] [Invertible 
 
 /-- The Spin projection to the special orthogonal group as a continuous monoid homomorphism. -/
 noncomputable def spinToSpecialOrthogonalHom [IsTopologicalRing R] [Invertible (2 : R)]
-    {n : Type v} [Fintype n] [DecidableEq n] (Q : QuadraticForm R (n → R))
-    [ContinuousMul (CliffordAlgebra Q)] :
+    {n : Type v} [Fintype n] [DecidableEq n] (Q : QuadraticForm R (n → R)) :
     ContinuousMonoidHom (spinGroup Q) (TauCeti.QuadraticMap.specialOrthogonalGroup Q) where
   toMonoidHom := spinToSpecialOrthogonal Q
   continuous_toFun := continuous_spinToSpecialOrthogonal_pi Q
@@ -217,7 +216,7 @@ noncomputable def spinToSpecialOrthogonalHom [IsTopologicalRing R] [Invertible (
 @[simp]
 theorem spinToSpecialOrthogonalHom_apply [IsTopologicalRing R] [Invertible (2 : R)]
     {n : Type v} [Fintype n] [DecidableEq n] (Q : QuadraticForm R (n → R))
-    [ContinuousMul (CliffordAlgebra Q)] (x : spinGroup Q) :
+    (x : spinGroup Q) :
     spinToSpecialOrthogonalHom Q x = spinToSpecialOrthogonal Q x :=
   (rfl)
 

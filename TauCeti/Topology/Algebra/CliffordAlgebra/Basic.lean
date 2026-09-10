@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
-public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Algebra.Star
