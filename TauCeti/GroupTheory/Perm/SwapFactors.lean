@@ -42,8 +42,9 @@ of `b` to the single step that `Equiv.swap a b` diverts to `a`.
 reconnects them into two lines again, so the two orbits do not merge.
 
 `TauCeti.orbitCount_mul_swap_add_one` in `TauCeti/GroupTheory/Perm/OrbitCount.lean` is a different
-statement, not a special case of the ones here: it compares permutations of two different types and
-asks for nothing beyond finitely many orbits.
+statement, not a special case of the ones here: there the transposition moves a fixed point of the
+permutation, so it splices that one-point orbit into another one, and the hypothesis is only that
+there are finitely many orbits, not that the underlying type is finite.
 
 ## Source
 
