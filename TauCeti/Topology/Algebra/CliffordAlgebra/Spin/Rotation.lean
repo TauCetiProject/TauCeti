@@ -25,6 +25,7 @@ nontrivial point of the two-element kernel.
 
 * `CliffordAlgebra.spinRotation`: the Spin element associated to an angle in an orthonormal
   two-plane.
+* `CliffordAlgebra.spinRotation_pi`: the rotation at angle `π` is the scalar `-1`.
 * `CliffordAlgebra.spinRotationPath`: the resulting path from `1` to `-1`.
 * `CliffordAlgebra.realCliffordSpinGroupZero_two_joined_one_negOne`: the two central elements of
   `Spin(2)` are joined.
@@ -55,7 +56,8 @@ variable {V : Type u} [AddCommGroup V] [Module ℝ V]
 
 /-- The Spin element obtained by multiplying an orthonormal vector `x` by the unit vector at
 angle `t` in the oriented plane spanned by `x` and `y`. -/
-abbrev spinRotation (hx : Q x = 1) (hy : Q y = 1)
+@[expose]
+def spinRotation (hx : Q x = 1) (hy : Q y = 1)
     (hxy : Q.IsOrtho x y) (t : ℝ) : spinGroup Q :=
   ⟨ι Q x * ι Q (Real.cos t • x + Real.sin t • y),
     ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one x
@@ -82,25 +84,42 @@ theorem spinRotation_zero (hx : Q x = 1) (hy : Q y = 1)
   apply Subtype.ext
   simp [hx]
 
+/-- The Spin rotation at angle `π` is the canonical scalar `-1`. -/
+@[simp]
+theorem spinRotation_pi (hx : Q x = 1) (hy : Q y = 1)
+    (hxy : Q.IsOrtho x y) :
+    spinRotation Q x y hx hy hxy Real.pi =
+      spinGroup.negOne Q (by
+        intro hQ
+        simp [hQ] at hx) := by
+  apply Subtype.ext
+  rw [spinGroup.coe_negOne]
+  simp [hx]
+
 /-- The Spin element associated to an angle varies continuously with that angle. -/
 @[fun_prop]
-theorem continuous_spinRotation [Module.Finite ℝ V]
+theorem continuous_spinRotation [SeparatelyContinuousMul (CliffordAlgebra Q)]
     (hx : Q x = 1) (hy : Q y = 1) (hxy : Q.IsOrtho x y) :
     Continuous (spinRotation Q x y hx hy hxy) := by
   apply continuous_induced_rng.mpr
-  change Continuous (fun t : ℝ =>
-    ι Q x * ι Q (Real.cos t • x + Real.sin t • y))
+  rw [show Subtype.val ∘ spinRotation Q x y hx hy hxy = fun t =>
+      ι Q x * ι Q (Real.cos t • x + Real.sin t • y) from by
+    funext t
+    exact coe_spinRotation Q x y hx hy hxy t]
   simp_rw [map_add, map_smul]
-  exact (continuous_const : Continuous (fun _ : ℝ => ι Q x)).mul
+  exact (continuous_const_mul (ι Q x)).comp
     ((Real.continuous_cos.smul
         (continuous_const : Continuous (fun _ : ℝ => ι Q x))).add
       (Real.continuous_sin.smul
         (continuous_const : Continuous (fun _ : ℝ => ι Q y))))
 
 /-- An orthonormal pair determines a path in the Spin group from `1` to the scalar `-1`. -/
-def spinRotationPath [Module.Finite ℝ V] (hx : Q x = 1) (hy : Q y = 1)
+def spinRotationPath [SeparatelyContinuousMul (CliffordAlgebra Q)]
+    (hx : Q x = 1) (hy : Q y = 1)
     (hxy : Q.IsOrtho x y) :
-    Path (1 : spinGroup Q) (spinRotation Q x y hx hy hxy Real.pi) :=
+    Path (1 : spinGroup Q) (spinGroup.negOne Q (by
+      intro hQ
+      simp [hQ] at hx)) :=
   Path.mk
     ⟨fun t : unitInterval => spinRotation Q x y hx hy hxy (Real.pi * (t : ℝ)),
       (continuous_spinRotation Q x y hx hy hxy).comp <| by fun_prop⟩
@@ -131,16 +150,9 @@ theorem realCliffordSpinGroupZero_two_joined_one_negOne :
     Joined (1 : realCliffordSpinGroupZero 2)
       (spinGroup.negOne (realCliffordForm 2 0)
         (nondegenerate_realCliffordForm 2 0).ne_zero) := by
-  have hjoined : Joined (1 : realCliffordSpinGroupZero 2)
-      (spinRotation (realCliffordForm 2 0) (spinTwoBasis 0) (spinTwoBasis 1)
-        (spinTwoBasis_norm 0) (spinTwoBasis_norm 1) spinTwoBasis_isOrtho Real.pi) :=
-    ⟨spinRotationPath (realCliffordForm 2 0)
-      (spinTwoBasis 0) (spinTwoBasis 1) (spinTwoBasis_norm 0) (spinTwoBasis_norm 1)
-        spinTwoBasis_isOrtho⟩
-  convert hjoined using 1
-  apply Subtype.ext
-  rw [spinGroup.coe_negOne]
-  simp [spinTwoBasis_norm]
+  exact ⟨spinRotationPath (realCliffordForm 2 0)
+    (spinTwoBasis 0) (spinTwoBasis 1) (spinTwoBasis_norm 0) (spinTwoBasis_norm 1)
+      spinTwoBasis_isOrtho⟩
 
 /-- The identity and the canonical scalar `-1` are joined in every compact Spin group of
 dimension at least two. -/
