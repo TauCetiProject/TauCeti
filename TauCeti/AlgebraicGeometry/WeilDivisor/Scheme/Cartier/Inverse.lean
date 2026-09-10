@@ -17,9 +17,10 @@ equation, since two equations differ by a regular unit near the point. Only fini
 are nonzero, so they form a Weil divisor.
 
 This file constructs the resulting homomorphism from Cartier divisors to Weil divisors. It proves
-that its values are locally principal and that it is inverse to the homomorphism which glues the
-local equations of a locally principal Weil divisor. Consequently, locally principal Weil
-divisors and Cartier divisors are additively equivalent on such a curve.
+that its values are locally principal and that, when the codimension-one local rings are discrete
+valuation rings, it is inverse to the homomorphism which glues the local equations of a locally
+principal Weil divisor. Consequently, locally principal Weil divisors and Cartier divisors are
+additively equivalent under these hypotheses.
 
 ## Main declarations
 
@@ -29,7 +30,7 @@ divisors and Cartier divisors are additively equivalent on such a curve.
 * `SchemeWeilDivisor.equivCartierDivisor` is the Weil--Cartier additive equivalence.
 
 The construction follows Hartshorne, *Algebraic Geometry*, II.6.11, and the Stacks Project,
-*Divisors*, Tag 0BE9. No external formalization is vendored.
+*Divisors*, Tag 0BE9.
 -/
 
 public section
@@ -54,10 +55,8 @@ lemma orderAt_regularUnitToFunctionField (U : X.Opens) [Nonempty U]
     (hx : (x : X) ∈ U) :
     orderAt x (Additive.ofMul (Scheme.regularUnitToFunctionField X U r)) = 0 := by
   rw [orderAt_apply, toMul_ofMul, Scheme.regularUnitToFunctionField_apply, Units.coe_map]
-  have hmap : (X.germToFunctionField U).hom (r : Γ(X, U)) =
-      X.germToFunctionField U (r : Γ(X, U)) := rfl
-  exact (congrArg (fun f : X.functionField ↦ X.ord f (x : X)) hmap).trans
-    (X.ord_of_isUnit r.isUnit hx)
+  change X.ord (X.germToFunctionField U (r : Γ(X, U))) (x : X) = 0
+  exact X.ord_of_isUnit r.isUnit hx
 
 /-- Two rational functions representing the same Cartier-divisor section have the same order at
 each codimension-one point of the open subset. -/
@@ -269,6 +268,21 @@ def toWeilDivisorHom : CartierDivisor X →+ SchemeWeilDivisor X where
 theorem toWeilDivisorHom_apply (D : CartierDivisor X) :
     toWeilDivisorHom D = D.toWeilDivisor :=
   (rfl)
+
+/-- The Cartier-to-Weil homomorphism carries principal Cartier divisors to principal Weil
+divisors. -/
+@[simp]
+theorem toWeilDivisor_principalCartierDivisor (g : Additive X.functionFieldˣ) :
+    (principalCartierDivisorAddHom X g).toWeilDivisor =
+      (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g := by
+  apply WeilDivisor.ext
+  intro x
+  let _ : Nonempty (⊤ : X.Opens) := ⟨⟨x, by simp⟩⟩
+  rw [coeff_toWeilDivisor,
+    orderAt_eq_of_restrict_eq_rationalUnitClass _ x ⊤ (by simp) g
+      (principalCartierDivisorAddHom_restrict X g ⊤),
+    WeilDivisor.OrderSystem.coeff_principalDivisor,
+    WeilDivisor.OrderSystem.ofScheme_ord]
 
 /-- The Weil divisor associated with a Cartier divisor is locally principal, with the same
 rational local equations. -/
