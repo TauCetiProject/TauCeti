@@ -34,6 +34,13 @@ as the pattern makes this denominator nonzero.
 
 ## References
 
+* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 9a — the unbiasedness anchor
+  `E_{G(m,W)}[t₀(F, ·)] = t(F, W)` that pins the falling-factorial normalization. The signature
+  follows `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`, where it is sketched as
+  `injHomDensity_integral_sampleGraph`; it is landed here under the conclusion-outward name
+  `integral_injHomDensity_sampleGraph` and without the sketch's `[DecidableEq V]`, which the
+  `homDensity` side does not need. The supergraph-mass identity is a supporting result, not a
+  separate roadmap target.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Sections
   5.2 and 10.2.
 * C. Freer, `cameronfreer/graphon` at commit
