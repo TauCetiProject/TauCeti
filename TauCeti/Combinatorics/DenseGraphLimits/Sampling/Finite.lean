@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Basic
 public import Mathlib.Probability.Combinatorics.BinomialRandomGraph.Defs
 public import Mathlib.Probability.ProbabilityMassFunction.Constructions
+import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # Finite sampling from a graphon
@@ -164,15 +165,12 @@ theorem sum_sampleIntegrand_eq_one (x : Fin n → Ω) :
     · intro H _
       rw [SimpleGraph.coe_edgeFinset, SimpleGraph.fromEdgeSet_edgeSet]
     · intro S hS
-      ext e
-      simp only [SimpleGraph.mem_edgeFinset, SimpleGraph.edgeSet_fromEdgeSet, Set.mem_sdiff,
-        Finset.mem_coe, Sym2.mem_diagSet]
-      constructor
-      · exact fun h => h.1
-      · intro he
-        refine ⟨he, ?_⟩
-        exact (⊤ : SimpleGraph (Fin n)).not_isDiag_of_mem_edgeSet
-          (SimpleGraph.mem_edgeFinset.mp ((Finset.mem_powerset.mp hS) he))
+      -- `sampleIntegrand` is defined with classical decidability, so the ambient `Fintype` on the
+      -- edge set is not the canonical one; passing through the edge *set* makes the step
+      -- instance-independent.
+      apply Finset.coe_injective
+      rw [SimpleGraph.coe_edgeFinset, ← SimpleGraph.coe_edgeFinset,
+        SimpleGraph.edgeFinset_fromEdgeSet_eq_of_subset_top S (Finset.mem_powerset.mp hS)]
     · exact fun H _ => rfl
   rw [hsum, ← Finset.prod_add]
   calc
