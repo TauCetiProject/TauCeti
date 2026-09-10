@@ -17,12 +17,6 @@ Over every commutative ring, the diagonal map from the rank-`m` split torus to `
 closed immersion. Its defining Hopf ideal is the kernel of restriction to diagonal coordinates,
 and the quotient is isomorphic to the split-torus coordinate Hopf algebra. These constructions
 make the diagonal torus available as a closed subgroup when studying maximal tori and pinnings.
-
-The coordinate surjectivity proved in `Symplectic.DiagonalTorus.Basic` uses
-`GeneralLinear.weightTorusCoordinateMap_surjective`: the weights of the standard symplectic
-representation include a basis of the character lattice. The quotient identification uses
-`HopfIdeal.kerLiftBialgEquiv`, the existing first isomorphism theorem for Hopf algebras.
-The scheme packaging follows `GeneralLinear.DiagonalTorus.ClosedImmersion`.
 -/
 
 public section
@@ -38,6 +32,7 @@ variable (R : Type u) [CommRing R] (m : ℕ)
 /-- The diagonal split torus is a closed subgroup of `Sp₂ₘ` over every commutative ring. -/
 instance isClosedImmersion_diagonalTorus :
     IsClosedImmersion (diagonalTorus (R := R) (m := m)).hom.hom.left := by
+  -- Scheme packaging follows `GeneralLinear.DiagonalTorus.ClosedImmersion`.
   rw [diagonalTorus_def]
   simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
   rw [MorphismProperty.cancel_left_of_respectsIso (P := @IsClosedImmersion),
@@ -58,15 +53,17 @@ theorem coe_diagonalTorusClosedSubgroup :
 
 /-- The defining Hopf ideal of the diagonal torus is the kernel of coordinate restriction. -/
 noncomputable def diagonalTorusDefiningIdeal : HopfIdeal R (coordinateHopfAlgebra R m) :=
-  HopfIdeal.kerOfSurjective (diagonalTorusCoordinateMap (R := R) (m := m)).hom
+  (⊥ : HopfIdeal R _).comapOfSurjective
+    (diagonalTorusCoordinateMap (R := R) (m := m)).hom
     diagonalTorusCoordinateMap_surjective
 
 /-- A function belongs to the diagonal-torus ideal precisely when its restriction vanishes. -/
 @[simp]
 theorem mem_diagonalTorusDefiningIdeal (x : coordinateHopfAlgebra R m) :
     x ∈ diagonalTorusDefiningIdeal R m ↔
-      (diagonalTorusCoordinateMap (R := R) (m := m)).hom x = 0 :=
-  HopfIdeal.mem_kerOfSurjective _ _
+      (diagonalTorusCoordinateMap (R := R) (m := m)).hom x = 0 := by
+  rw [diagonalTorusDefiningIdeal, HopfIdeal.comapOfSurjective_bot,
+    HopfIdeal.mem_kerOfSurjective]
 
 /-- The quotient by the diagonal-torus ideal is the rank-`m` split-torus coordinate algebra. -/
 noncomputable def diagonalTorusCoordinateIso :
@@ -76,9 +73,11 @@ noncomputable def diagonalTorusCoordinateIso :
       DiagonalizableGroup.coordinateRing R
         (SplitTorus.characterGroup (ULift.{u} (Fin m))) :=
   ObjectProperty.isoMk _ <|
-    _root_.CommHopfAlgCat.isoMk
-      (HopfIdeal.kerLiftBialgEquiv (diagonalTorusCoordinateMap (R := R) (m := m)).hom
-        diagonalTorusCoordinateMap_surjective)
+    -- Quotient comparison follows `GeneralLinear.DiagonalTorus.Maximal`.
+    CommHopfAlgCat.quotientIsoOfSurjective
+      (diagonalTorusCoordinateMap (R := R) (m := m))
+      diagonalTorusCoordinateMap_surjective ⊥ ≪≫
+    CommHopfAlgCat.quotientBotIso _
 
 /-- The quotient isomorphism identifies the quotient map with restriction to the torus. -/
 @[simp]
@@ -89,12 +88,12 @@ theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom :
         (diagonalTorusCoordinateIso R m).hom =
       ObjectProperty.homMk (diagonalTorusCoordinateMap (R := R) (m := m)) := by
   apply ObjectProperty.hom_ext
-  apply _root_.CommHopfAlgCat.hom_ext
-  apply DFunLike.ext
-  intro x
-  exact HopfIdeal.kerLiftBialgHom_mk
-    (diagonalTorusCoordinateMap (R := R) (m := m)).hom
-    diagonalTorusCoordinateMap_surjective x
+  simp only [ObjectProperty.FullSubcategory.comp_hom, diagonalTorusCoordinateIso,
+    ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom, diagonalTorusDefiningIdeal,
+    Iso.trans_hom]
+  rw [← Category.assoc, CommHopfAlgCat.mkQuotient_comp_quotientIsoOfSurjective_hom
+      (diagonalTorusCoordinateMap (R := R) (m := m)) diagonalTorusCoordinateMap_surjective,
+    ← CommHopfAlgCat.quotientBotIso_inv, Category.assoc, Iso.inv_hom_id, Category.comp_id]
 
 /-- The coordinate quotient defining the symplectic diagonal torus is a split torus. -/
 theorem splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :
@@ -104,5 +103,20 @@ theorem splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :
         (diagonalTorusDefiningIdeal R m)) := by
   rw [splitTorusCommHopfAlgProperty_iff]
   exact ⟨m, ⟨(diagonalTorusCoordinateIso R m).symm⟩⟩
+
+grind_pattern splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal =>
+  diagonalTorusDefiningIdeal R m
+
+/-- Over a field, the coordinate quotient defining the symplectic diagonal torus is a torus. -/
+theorem torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal
+    (k : Type u) [Field k] (m : ℕ) :
+    torusCommHopfAlgProperty k
+      (FiniteTypeCommHopfAlgCat.quotient ⟨coordinateHopfAlgebra k m,
+        (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
+        (diagonalTorusDefiningIdeal k m)) :=
+  (splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal k m).torus k _
+
+grind_pattern torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal =>
+  diagonalTorusDefiningIdeal k m
 
 end TauCeti.Symplectic
