@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.AbsoluteValue.Basic
 public import Mathlib.RingTheory.Valuation.Discrete.Basic
 
 /-!
@@ -14,6 +15,9 @@ This file packages the additive order attached to a `ℤᵐ⁰`-valued valuation
 facts that do not depend on a choice of constant field.  The convention is
 `ord_v f = -log (v f)`, so a uniformizer has order one.  As `WithZero.log 0 = 0`, the order
 has the junk value `ord_v 0 = 0`; hypotheses excluding zero are included where necessary.
+
+It also constructs an absolute value by composing a `ℤᵐ⁰`-valued valuation with an ordered
+zero-preserving monoid embedding.
 -/
 
 public section
@@ -23,6 +27,67 @@ open scoped WithZero
 open MonoidWithZeroHom
 
 namespace Valuation
+
+section AbsoluteValue
+
+variable {K S : Type*} [DivisionRing K] [Semiring S] [PartialOrder S]
+  [addLeftMono : AddLeftMono S] [addRightMono : AddRightMono S]
+
+private theorem comp_apply_add_le_add_of_monotone (v : _root_.Valuation K ℤᵐ⁰)
+    (f : ℤᵐ⁰ →*₀ S) (hf : ∀ ⦃a b⦄, a ≤ b → f a ≤ f b) (x y : K) :
+    f (v (x + y)) ≤ f (v x) + f (v y) := by
+  refine (hf (v.map_add x y)).trans ?_
+  rcases le_total (v x) (v y) with h | h
+  · rw [max_eq_right h]
+    exact le_add_of_nonneg_left <| by rw [← map_zero f]; exact hf bot_le
+  · rw [max_eq_left h]
+    exact le_add_of_nonneg_right <| by rw [← map_zero f]; exact hf bot_le
+
+/-- Compose a `ℤᵐ⁰`-valued valuation with an order-embedding zero-preserving monoid homomorphism
+to obtain an absolute value. -/
+noncomputable def toAbsoluteValue (v : _root_.Valuation K ℤᵐ⁰) (f : ℤᵐ⁰ →*₀ S)
+    (hf : ∀ ⦃a b⦄, a ≤ b → f a ≤ f b) (hf_injective : Function.Injective f) :
+    AbsoluteValue K S :=
+  AbsoluteValue.mk (f.comp v.toMonoidWithZeroHom)
+    (fun x ↦ by rw [← map_zero f]; exact hf bot_le)
+    (fun x ↦ by
+      change f (v x) = 0 ↔ x = 0
+      rw [← map_zero f]
+      rw [hf_injective.eq_iff]
+      simp)
+    (comp_apply_add_le_add_of_monotone v f hf)
+
+include addLeftMono addRightMono in
+/-- Evaluation of the absolute value obtained by composing a valuation with a strictly monotone
+zero-preserving monoid homomorphism. -/
+@[simp]
+theorem toAbsoluteValue_apply (v : _root_.Valuation K ℤᵐ⁰) (f : ℤᵐ⁰ →*₀ S)
+    (hf : ∀ ⦃a b⦄, a ≤ b → f a ≤ f b) (hf_injective : Function.Injective f) (x : K) :
+    v.toAbsoluteValue f hf hf_injective x = f (v x) := by
+  change (f.comp v.toMonoidWithZeroHom) x = f (v x)
+  rfl
+
+include addLeftMono addRightMono in
+/-- If one input has no larger valuation than another, their sum has absolute value at most that
+of the latter. -/
+theorem toAbsoluteValue_add_le_right (v : _root_.Valuation K ℤᵐ⁰) (f : ℤᵐ⁰ →*₀ S)
+    (hf : ∀ ⦃a b⦄, a ≤ b → f a ≤ f b) (hf_injective : Function.Injective f)
+    {x y : K} (h : v x ≤ v y) :
+    v.toAbsoluteValue f hf hf_injective (x + y) ≤ v.toAbsoluteValue f hf hf_injective y := by
+  change f (v (x + y)) ≤ f (v y)
+  exact hf ((v.map_add x y).trans_eq (max_eq_right h))
+
+include addLeftMono addRightMono in
+/-- If one input has no smaller valuation than another, their sum has absolute value at most that
+of the former. -/
+theorem toAbsoluteValue_add_le_left (v : _root_.Valuation K ℤᵐ⁰) (f : ℤᵐ⁰ →*₀ S)
+    (hf : ∀ ⦃a b⦄, a ≤ b → f a ≤ f b) (hf_injective : Function.Injective f)
+    {x y : K} (h : v y ≤ v x) :
+    v.toAbsoluteValue f hf hf_injective (x + y) ≤ v.toAbsoluteValue f hf hf_injective x := by
+  change f (v (x + y)) ≤ f (v x)
+  exact hf ((v.map_add x y).trans_eq (max_eq_left h))
+
+end AbsoluteValue
 
 variable {F : Type*} [Field F]
 

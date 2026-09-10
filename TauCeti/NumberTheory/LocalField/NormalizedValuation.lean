@@ -115,10 +115,6 @@ private noncomputable def intValuation : Valuation K ℤᵐ⁰ :=
   (valuation K).map (valueGroupWithZeroIsoInt K).toMonoidWithZeroHom
     (valueGroupWithZeroIsoInt K).toOrderIso.monotone
 
-private theorem intValuation_apply (x : K) :
-    intValuation (K := K) x = valueGroupWithZeroIsoInt K (valuation K x) :=
-  rfl
-
 private theorem intValuation_surjective : Function.Surjective (intValuation (K := K)) := by
   intro z
   obtain ⟨x, hx⟩ := ValuativeRel.valuation_surjective ((valueGroupWithZeroIsoInt K).symm z)
@@ -343,41 +339,16 @@ private theorem one_lt_residueFieldCard :
     (1 : ℚ≥0) < Nat.card 𝓀[K] := by
   exact_mod_cast (Finite.one_lt_card : 1 < Nat.card 𝓀[K])
 
-private noncomputable def normalizedAbsoluteValueHom : K →*₀ ℚ≥0 :=
-  (WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero).comp
-    (intValuation (K := K)).toMonoidWithZeroHom
-
-private theorem normalizedAbsoluteValueHom_apply (x : K) :
-    normalizedAbsoluteValueHom (K := K) x =
-      WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero
-        (intValuation (K := K) x) :=
-  rfl
-
-private theorem isNonarchimedean_normalizedAbsoluteValueHom :
-    IsNonarchimedean (normalizedAbsoluteValueHom (K := K)) := by
-  intro x y
-  rw [normalizedAbsoluteValueHom_apply, normalizedAbsoluteValueHom_apply,
-    normalizedAbsoluteValueHom_apply,
-    ← (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).monotone.map_max]
-  exact (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).monotone
-    ((intValuation (K := K)).map_add x y)
-
 variable (K) in
 /-- The normalized absolute value of a nonarchimedean local field, with values in `ℚ≥0`.
 For a nonzero element `x`, its value is `q ^ (-v_K(x))`, where
 `q = Nat.card 𝓀[K]` is the cardinality of the residue field. -/
-noncomputable def normalizedAbsoluteValue : AbsoluteValue K ℚ≥0 where
-  toFun := normalizedAbsoluteValueHom (K := K)
-  map_mul' := map_mul (normalizedAbsoluteValueHom (K := K))
-  nonneg' _ := bot_le
-  eq_zero' x := by
-    simp [normalizedAbsoluteValueHom, intValuation]
-  add_le' x y := IsNonarchimedean.add_le (fun _ ↦ bot_le)
-    isNonarchimedean_normalizedAbsoluteValueHom
-
-private theorem normalizedAbsoluteValue_apply (x : K) :
-    normalizedAbsoluteValue K x = normalizedAbsoluteValueHom (K := K) x :=
-  rfl
+noncomputable def normalizedAbsoluteValue : AbsoluteValue K ℚ≥0 :=
+  (intValuation (K := K)).toAbsoluteValue
+    (WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero)
+    (fun _ _ h ↦
+      (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).monotone h)
+    (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).injective
 
 /-- The normalized absolute value is the rational power `q ^ (-v_K(x))` at every nonzero
 element, where `q` is the cardinality of the residue field. -/
@@ -385,14 +356,15 @@ theorem normalizedAbsoluteValue_apply_ne_zero (x : K) (hx : x ≠ 0) :
     normalizedAbsoluteValue K x =
       (Nat.card 𝓀[K] : ℚ≥0) ^
         (-(normalizedValuation K (Units.mk0 x hx)).toAdd) := by
-  rw [normalizedAbsoluteValue_apply, normalizedAbsoluteValueHom_apply,
+  rw [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply,
     WithZeroMulInt.toNNRat_apply_of_ne_zero]
   · rw [toAdd_normalizedValuation_eq_ord, Valuation.ord_def, neg_neg,
       WithZero.toAdd_unzero_eq_log]
-    simp only [intValuation_apply, Units.val_mk0]
-  · simp [intValuation_apply, hx]
+    simp only [Units.val_mk0]
+  · simp [intValuation, hx]
 
 /-- The normalized absolute value on `Kˣ` is the rational power `q ^ (-v_K(x))`. -/
+@[simp]
 theorem normalizedAbsoluteValue_coe (x : Kˣ) :
     normalizedAbsoluteValue K (x : K) =
       (Nat.card 𝓀[K] : ℚ≥0) ^ (-(normalizedValuation K x).toAdd) := by
@@ -403,24 +375,43 @@ of `K`, is the inverse of the residue-field cardinality. -/
 @[simp]
 theorem normalizedAbsoluteValue_irreducible {π : 𝒪[K]} (hπ : Irreducible π) :
     normalizedAbsoluteValue K (π : K) = (Nat.card 𝓀[K] : ℚ≥0)⁻¹ := by
-  rw [show (π : K) =
-      ((Units.mk0 (π : K) (fun h => hπ.ne_zero (Subtype.ext h)) : Kˣ) : K) from rfl,
-    normalizedAbsoluteValue_coe, normalizedValuation_irreducible hπ]
+  rw [normalizedAbsoluteValue_apply_ne_zero (π : K)
+      (fun h ↦ hπ.ne_zero (Subtype.ext h)),
+    normalizedValuation_irreducible hπ]
   simp
 
 /-- The normalized absolute value satisfies the strong triangle inequality. -/
 theorem isNonarchimedean_normalizedAbsoluteValue :
-    IsNonarchimedean (normalizedAbsoluteValue K) :=
-  isNonarchimedean_normalizedAbsoluteValueHom
+    IsNonarchimedean (normalizedAbsoluteValue K) := by
+  intro x y
+  rcases le_total (intValuation (K := K) x) (intValuation (K := K) y) with h | h
+  · have hxy : normalizedAbsoluteValue K x ≤ normalizedAbsoluteValue K y := by
+      simp only [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply]
+      exact (WithZeroMulInt.toNNRat_strictMono
+        (one_lt_residueFieldCard (K := K))).monotone h
+    rw [max_eq_right hxy]
+    apply Valuation.toAbsoluteValue_add_le_right
+      (v := intValuation (K := K))
+      (f := WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero)
+    exact h
+  · have hyx : normalizedAbsoluteValue K y ≤ normalizedAbsoluteValue K x := by
+      simp only [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply]
+      exact (WithZeroMulInt.toNNRat_strictMono
+        (one_lt_residueFieldCard (K := K))).monotone h
+    rw [max_eq_left hyx]
+    apply Valuation.toAbsoluteValue_add_le_left
+      (v := intValuation (K := K))
+      (f := WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero)
+    exact h
 
 /-- The normalized absolute value takes the value one exactly on the elements of valuation one,
 that is, on the units of the ring of integers. -/
 @[simp]
 theorem normalizedAbsoluteValue_eq_one_iff (x : K) :
     normalizedAbsoluteValue K x = 1 ↔ valuation K x = 1 := by
-  rw [normalizedAbsoluteValue_apply, normalizedAbsoluteValueHom_apply,
+  rw [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply,
     WithZeroMulInt.toNNRat_eq_one_iff]
-  · rw [intValuation_apply]
+  · change valueGroupWithZeroIsoInt K (valuation K x) = 1 ↔ valuation K x = 1
     have hone : valueGroupWithZeroIsoInt K (1 : ValueGroupWithZero K) = 1 := map_one _
     rw [← hone]
     exact (valueGroupWithZeroIsoInt K).injective.eq_iff
@@ -430,13 +421,21 @@ theorem normalizedAbsoluteValue_eq_one_iff (x : K) :
 most one. -/
 theorem mem_integer_iff_normalizedAbsoluteValue_le_one (x : K) :
     x ∈ 𝒪[K] ↔ normalizedAbsoluteValue K x ≤ 1 := by
-  rw [Valuation.mem_integer_iff, normalizedAbsoluteValue_apply, normalizedAbsoluteValueHom_apply,
+  rw [Valuation.mem_integer_iff, normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply,
     WithZeroMulInt.toNNRat_le_one_iff]
-  · rw [intValuation_apply]
+  · change valuation K x ≤ 1 ↔ valueGroupWithZeroIsoInt K (valuation K x) ≤ 1
     simpa only [map_one] using
       (OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
         (a := valuation K x) (b := 1)).symm
   · exact one_lt_residueFieldCard (K := K)
+
+/-- The normalized absolute value is one on every unit of the ring of integers. -/
+@[simp]
+theorem normalizedAbsoluteValue_integerRingUnit (u : 𝒪[K]ˣ) :
+    normalizedAbsoluteValue K ((u : 𝒪[K]) : K) = 1 := by
+  rw [normalizedAbsoluteValue_eq_one_iff]
+  exact (Valuation.Integers.isUnit_iff_valuation_eq_one
+    (Valuation.integer.integers (valuation K))).mp u.isUnit
 
 /-- The normalized absolute value is one on every root of unity. -/
 theorem normalizedAbsoluteValue_eq_one_of_isOfFinOrder {x : Kˣ} (hx : IsOfFinOrder x) :
