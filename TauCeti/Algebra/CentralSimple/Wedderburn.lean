@@ -38,6 +38,11 @@ the failure being exactly that its structure map is not surjective.
   simple algebras**. A finite-dimensional central simple `K`-algebra `A` is
   `Matrix (Fin n) (Fin n) D` for a finite-dimensional **central** division `K`-algebra `D`, and
   `finrank K A = n ^ 2 * finrank K D`.
+* `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_forall_nonempty_algEquiv`: over a field whose
+  finite-dimensional central division algebras are all the field itself, every
+  finite-dimensional central simple algebra is a full matrix algebra over that field. This is
+  the criterion behind the two matrix presentations below, over a finite and over a separably
+  closed base field.
 * `TauCeti.baseFieldAlgEquivOfFinite`: a finite central division algebra over a field is the base
   field.
 * `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_finite`: a central simple algebra over a
