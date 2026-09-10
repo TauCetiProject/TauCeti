@@ -127,7 +127,7 @@ The action on each transported fibre is the original action on the corresponding
 Connectedness transports along the equivalence, while faithfulness is reflected using essential
 surjectivity and naturality along a chosen isomorphism. -/
 theorem _root_.CategoryTheory.Functor.isFundamentalGroup_comp [K.IsEquivalence]
-    [GaloisCategory C] [GaloisCategory D] [FiberFunctor F] [TopologicalSpace G]
+    [GaloisCategory C] [GaloisCategory D] [TopologicalSpace G]
     [IsTopologicalGroup G] [CompactSpace G] [IsFundamentalGroup F G] :
     IsFundamentalGroup (K ⋙ F) G := by
   refine
@@ -138,8 +138,21 @@ theorem _root_.CategoryTheory.Functor.isFundamentalGroup_comp [K.IsEquivalence]
       non_trivial' := fun g h => ?_ }
   · let : IsConnected X := IsGalois.toIsConnected
     let : IsConnected (K.obj X) := isConnected_map K X
-    change MulAction.IsPretransitive G (F.obj (K.obj X))
-    exact inferInstance
+    let : IsGalois (K.obj X) := by
+      obtain ⟨H, hH⟩ := GaloisCategory.hasFiberFunctor D
+      let : FiberFunctor H := hH
+      let : FiberFunctor (K ⋙ H) := fiberFunctor_comp_of_equivalence K.asEquivalence H
+      apply (isGalois_iff_pretransitive H (K.obj X)).2
+      refine ⟨fun y z => ?_⟩
+      let : MulAction (Aut X) (H.obj (K.obj X)) := by
+        change MulAction (Aut X) ((K ⋙ H).obj X)
+        infer_instance
+      let : MulAction.IsPretransitive (Aut X) (H.obj (K.obj X)) := by
+        change MulAction.IsPretransitive (Aut X) ((K ⋙ H).obj X)
+        infer_instance
+      obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (Aut X) y z
+      exact ⟨K.mapIso φ, hφ⟩
+    exact IsFundamentalGroup.transitive_of_isGalois (F := F) (G := G) (K.obj X)
   · apply IsFundamentalGroup.non_trivial (F := F) g
     intro Y y
     let X := K.objPreimage Y

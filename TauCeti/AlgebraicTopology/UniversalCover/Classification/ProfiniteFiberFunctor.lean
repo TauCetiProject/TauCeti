@@ -117,17 +117,16 @@ theorem profiniteCompletionAutFiberFunctorMulEquiv_inv_app_apply
     (g : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of (FundamentalGroup X x₀)))
     (p : FiniteCoveringSpace X) (e : (fiberFunctor x₀).obj p) :
     (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).inv.app p e = g⁻¹ • e := by
-  let η : fiberFunctor x₀ ≅ fiberFunctor x₀ :=
-    profiniteCompletionAutFiberFunctorMulEquiv x₀ g
-  have hg : η.hom.app p (η.inv.app p e) = g • η.inv.app p e := by
-    simpa only [η] using profiniteCompletionAutFiberFunctorMulEquiv_hom_app_apply
-      (x₀ := x₀) g p (η.inv.app p e)
-  have hi : η.hom.app p (η.inv.app p e) = e :=
-    FintypeCat.inv_hom_id_apply (η.app p) e
-  change η.inv.app p e = g⁻¹ • e
+  have hg := profiniteCompletionAutFiberFunctorMulEquiv_hom_app_apply
+    (x₀ := x₀) g p ((profiniteCompletionAutFiberFunctorMulEquiv x₀ g).inv.app p e)
+  have hi := FintypeCat.inv_hom_id_apply
+    ((profiniteCompletionAutFiberFunctorMulEquiv x₀ g).app p) e
   calc
-    _ = g⁻¹ • (g • η.inv.app p e) := by simp
-    _ = g⁻¹ • η.hom.app p (η.inv.app p e) := congrArg (g⁻¹ • ·) hg.symm
+    (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).inv.app p e =
+        g⁻¹ • (g • (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).inv.app p e) := by simp
+    _ = g⁻¹ • (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).hom.app p
+        ((profiniteCompletionAutFiberFunctorMulEquiv x₀ g).inv.app p e) :=
+      congrArg (g⁻¹ • ·) hg.symm
     _ = g⁻¹ • e := congrArg (g⁻¹ • ·) hi
 
 /-- Every natural automorphism of the finite-cover fibre functor is induced on every fibre by a
