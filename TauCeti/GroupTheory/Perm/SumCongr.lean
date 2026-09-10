@@ -83,9 +83,9 @@ variable [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
 @[simp]
 theorem _root_.Equiv.Perm.cycleType_sumCongr (σ : Perm α) (τ : Perm β) :
     (Perm.sumCongr σ τ).cycleType = σ.cycleType + τ.cycleType := by
-  have h := Perm.sumCongr_mul σ (1 : Perm β) (1 : Perm α) τ
-  simp only [mul_one, one_mul] at h
-  rw [← h, (Perm.disjoint_sumCongr_one_one_sumCongr σ τ).cycleType_mul,
+  have h : Perm.sumCongr σ τ = Perm.sumCongr σ (1 : Perm β) * Perm.sumCongr (1 : Perm α) τ := by
+    rw [Perm.sumCongr_mul, mul_one, one_mul]
+  rw [h, (Perm.disjoint_sumCongr_one_one_sumCongr σ τ).cycleType_mul,
     Perm.sumCongr_one_eq_extendDomain, Perm.one_sumCongr_eq_extendDomain,
     cycleType_extendDomain, cycleType_extendDomain]
 
@@ -128,74 +128,65 @@ theorem _root_.Equiv.Perm.orbitCount_sumCongr [Finite α] [Finite β] (σ : Perm
 
 variable {m n : ℕ}
 
-end TauCeti
-
-namespace Equiv.Perm
-
-open TauCeti
+/-- The permutation of `Fin (m + n)` that acts as `σ` on the first `m` labels and as `τ` on the
+last `n`, the two blocks being separated by `finSumFinEquiv`. -/
+def _root_.Equiv.Perm.finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) : Perm (Fin (m + n)) :=
+  finSumFinEquiv.permCongr (Perm.sumCongr σ τ)
 
 /-- Permuting the first `m` labels and the last `n` labels separately, as a monoid homomorphism.
 Its range is the subgroup of `Equiv.Perm (Fin (m + n))` preserving the two blocks. -/
-def finSumPermHom (m n : ℕ) : Perm (Fin m) × Perm (Fin n) →* Perm (Fin (m + n)) :=
-  finSumFinEquiv.permCongrHom.toMonoidHom.comp (sumCongrHom (Fin m) (Fin n))
-
-/-- The permutation of `Fin (m + n)` that acts as `σ` on the first `m` labels and as `τ` on the
-last `n`, the two blocks being separated by `finSumFinEquiv`. -/
-def finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) : Perm (Fin (m + n)) :=
-  finSumPermHom m n (σ, τ)
+def _root_.Equiv.Perm.finSumPermHom (m n : ℕ) :
+    Perm (Fin m) × Perm (Fin n) →* Perm (Fin (m + n)) :=
+  finSumFinEquiv.permCongrHom.toMonoidHom.comp (Perm.sumCongrHom (Fin m) (Fin n))
 
 @[simp]
-theorem finSumPermHom_apply (p : Perm (Fin m) × Perm (Fin n)) :
-    finSumPermHom m n p = finSumPerm p.1 p.2 := by
-  rfl
+theorem _root_.Equiv.Perm.finSumPermHom_apply (p : Perm (Fin m) × Perm (Fin n)) :
+    finSumPermHom m n p = finSumPerm p.1 p.2 := (rfl)
 
-theorem finSumPerm_apply (σ : Perm (Fin m)) (τ : Perm (Fin n)) (x : Fin (m + n)) :
-    finSumPerm σ τ x = finSumFinEquiv (Sum.map σ τ (finSumFinEquiv.symm x)) := by
-  rfl
+theorem _root_.Equiv.Perm.finSumPerm_apply (σ : Perm (Fin m)) (τ : Perm (Fin n))
+    (x : Fin (m + n)) :
+    finSumPerm σ τ x = finSumFinEquiv (Sum.map σ τ (finSumFinEquiv.symm x)) := (rfl)
 
 @[simp]
-theorem finSumPerm_apply_castAdd (σ : Perm (Fin m)) (τ : Perm (Fin n)) (i : Fin m) :
+theorem _root_.Equiv.Perm.finSumPerm_apply_castAdd (σ : Perm (Fin m)) (τ : Perm (Fin n))
+    (i : Fin m) :
     finSumPerm σ τ (Fin.castAdd n i) = Fin.castAdd n (σ i) := by
-  rw [← finSumFinEquiv_apply_left, finSumPerm_apply,
-    Equiv.symm_apply_apply, Sum.map_inl, finSumFinEquiv_apply_left]
+  rw [← finSumFinEquiv_apply_left, finSumPerm_apply, Equiv.symm_apply_apply, Sum.map_inl,
+    finSumFinEquiv_apply_left]
 
 @[simp]
-theorem finSumPerm_apply_natAdd (σ : Perm (Fin m)) (τ : Perm (Fin n)) (j : Fin n) :
+theorem _root_.Equiv.Perm.finSumPerm_apply_natAdd (σ : Perm (Fin m)) (τ : Perm (Fin n))
+    (j : Fin n) :
     finSumPerm σ τ (Fin.natAdd m j) = Fin.natAdd m (τ j) := by
-  rw [← finSumFinEquiv_apply_right, finSumPerm_apply,
-    Equiv.symm_apply_apply, Sum.map_inr, finSumFinEquiv_apply_right]
+  rw [← finSumFinEquiv_apply_right, finSumPerm_apply, Equiv.symm_apply_apply, Sum.map_inr,
+    finSumFinEquiv_apply_right]
 
 @[simp]
-theorem finSumPerm_one : finSumPerm (1 : Perm (Fin m)) (1 : Perm (Fin n)) = 1 := by
-  change finSumPermHom m n (1, 1) = 1
-  exact map_one (finSumPermHom m n)
+theorem _root_.Equiv.Perm.finSumPerm_one :
+    finSumPerm (1 : Perm (Fin m)) (1 : Perm (Fin n)) = 1 :=
+  map_one (finSumPermHom m n)
 
 @[simp]
-theorem finSumPerm_inv (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
-    (finSumPerm σ τ)⁻¹ = finSumPerm σ⁻¹ τ⁻¹ := by
-  change (finSumPermHom m n (σ, τ))⁻¹ = finSumPermHom m n (σ⁻¹, τ⁻¹)
-  exact (map_inv (finSumPermHom m n) (σ, τ)).symm
+theorem _root_.Equiv.Perm.finSumPerm_inv (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
+    (finSumPerm σ τ)⁻¹ = finSumPerm σ⁻¹ τ⁻¹ :=
+  (map_inv (finSumPermHom m n) (σ, τ)).symm
 
-theorem finSumPerm_mul (σ σ' : Perm (Fin m)) (τ τ' : Perm (Fin n)) :
-    finSumPerm σ τ * finSumPerm σ' τ' = finSumPerm (σ * σ') (τ * τ') := by
-  change finSumPermHom m n (σ, τ) * finSumPermHom m n (σ', τ') =
-    finSumPermHom m n (σ * σ', τ * τ')
-  exact (map_mul (finSumPermHom m n) (σ, τ) (σ', τ')).symm
+theorem _root_.Equiv.Perm.finSumPerm_mul (σ σ' : Perm (Fin m)) (τ τ' : Perm (Fin n)) :
+    finSumPerm σ τ * finSumPerm σ' τ' = finSumPerm (σ * σ') (τ * τ') :=
+  (map_mul (finSumPermHom m n) (σ, τ) (σ', τ')).symm
 
 /-- The full cycle partition of `Equiv.Perm.finSumPerm σ τ` is the concatenation of those of `σ`
 and of `τ`. -/
 @[simp]
-theorem parts_partition_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
+theorem _root_.Equiv.Perm.parts_partition_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
     (finSumPerm σ τ).partition.parts = σ.partition.parts + τ.partition.parts := by
-  change (finSumFinEquiv.permCongr (Perm.sumCongr σ τ)).partition.parts = _
-  rw [parts_partition_permCongr, parts_partition_sumCongr]
+  rw [finSumPerm, parts_partition_permCongr, parts_partition_sumCongr]
 
 /-- The number of orbits of `Equiv.Perm.finSumPerm σ τ`, fixed points included, is the sum of the
 numbers of orbits of `σ` and of `τ`. -/
 @[simp]
-theorem orbitCount_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
+theorem _root_.Equiv.Perm.orbitCount_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
     orbitCount (finSumPerm σ τ) = orbitCount σ + orbitCount τ := by
-  change orbitCount (finSumFinEquiv.permCongr (Perm.sumCongr σ τ)) = _
-  rw [orbitCount_permCongr, orbitCount_sumCongr]
+  rw [finSumPerm, orbitCount_permCongr, orbitCount_sumCongr]
 
-end Equiv.Perm
+end TauCeti
