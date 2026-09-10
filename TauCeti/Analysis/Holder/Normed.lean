@@ -156,26 +156,30 @@ instance : Module ℝ (HolderSpace α X Y) :=
 instance instNorm : Norm (HolderSpace α X Y) where
   norm f := holderNorm α f.toBoundedContinuousFunction
 
+/-- The Hölder-space norm is the supremum-plus-Hölder norm of the underlying bounded continuous
+function.  This is the single unfolding of `instNorm`; every other norm computation rewrites with
+it instead of reducing through the wrapper again. -/
+theorem norm_eq_holderNorm (f : HolderSpace α X Y) :
+    ‖f‖ = holderNorm α f.toBoundedContinuousFunction := (rfl)
+
 /-- The Hölder-space norm is the sum of the supremum norm and the global Hölder seminorm. -/
 @[simp]
 theorem norm_def (f : HolderSpace α X Y) :
     ‖f‖ = ‖f.toBoundedContinuousFunction‖ +
       nnHolderNorm α (f.toBoundedContinuousFunction : X → Y) := by
-  -- Expose the custom `Norm` instance so `holderNorm_def` can rewrite its value.
-  change holderNorm α f.toBoundedContinuousFunction = _
-  rw [holderNorm_def]
+  rw [norm_eq_holderNorm, holderNorm_def]
 
 noncomputable instance instNormedAddCommGroup : NormedAddCommGroup (HolderSpace α X Y) :=
   let core : NormedSpace.Core ℝ (HolderSpace α X Y) :=
     { norm_nonneg := fun f ↦ by
+        rw [norm_eq_holderNorm]
         exact holderNorm_nonneg f.toBoundedContinuousFunction
       norm_smul := fun c f ↦ by
-        change holderNorm α (c • f.toBoundedContinuousFunction) =
-          ‖c‖ * holderNorm α f.toBoundedContinuousFunction
+        rw [norm_eq_holderNorm, norm_eq_holderNorm, toBoundedContinuousFunction_smul]
         exact holderNorm_smul c f.toBoundedContinuousFunction f.memHolder
       norm_triangle := fun f g ↦ by
-        change holderNorm α (f.toBoundedContinuousFunction + g.toBoundedContinuousFunction) ≤
-          holderNorm α f.toBoundedContinuousFunction + holderNorm α g.toBoundedContinuousFunction
+        rw [norm_eq_holderNorm, norm_eq_holderNorm, norm_eq_holderNorm,
+          toBoundedContinuousFunction_add]
         exact holderNorm_add_le f.toBoundedContinuousFunction g.toBoundedContinuousFunction
           f.memHolder g.memHolder
       norm_eq_zero_iff := fun f ↦ by
@@ -186,18 +190,18 @@ noncomputable instance instNormedAddCommGroup : NormedAddCommGroup (HolderSpace 
           apply norm_eq_zero.mp
           exact le_antisymm
             ((f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
-              ((norm_le_holderNorm f.toBoundedContinuousFunction).trans_eq hf))
+              ((norm_le_holderNorm f.toBoundedContinuousFunction).trans_eq
+                ((norm_eq_holderNorm f).symm.trans hf)))
             (norm_nonneg (f x))
         · rintro rfl
-          change holderNorm α (0 : X →ᵇ Y) = 0
+          rw [norm_eq_holderNorm, toBoundedContinuousFunction_zero]
           exact holderNorm_zero α }
   NormedAddCommGroup.ofCore core
 
 noncomputable instance instNormedSpace : NormedSpace ℝ (HolderSpace α X Y) :=
   { toModule := inferInstance
     norm_smul_le := fun c f ↦ by
-      change holderNorm α (c • f.toBoundedContinuousFunction) ≤
-        ‖c‖ * holderNorm α f.toBoundedContinuousFunction
+      rw [norm_eq_holderNorm, norm_eq_holderNorm, toBoundedContinuousFunction_smul]
       exact (holderNorm_smul c f.toBoundedContinuousFunction f.memHolder).le }
 
 /-- The supremum norm is controlled by the Hölder-space norm. -/
