@@ -34,7 +34,7 @@ empty.
   kills the closure of zero.
 * `TauCeti.ValuationSpectrum.spaSeparatedQuotientHomeomorph`: the adic spectrum is unchanged by
   quotienting by the closure of zero.
-* `TauCeti.ValuationSpectrum.spaComapSeparatedQuotient_preimage_spaAnalytic`: this
+* `TauCeti.ValuationSpectrum.spaComap_preimage_spaAnalytic_separatedQuotient`: this
   homeomorphism identifies the two analytic loci.
 * `TauCeti.ValuationSpectrum.spaAnalytic_eq_empty_iff_separatedQuotient`: emptiness of the
   analytic locus is invariant under passage to the separated quotient.
@@ -133,81 +133,63 @@ abbrev separatedQuotientPlus (Aplus : Subring A) :
     Subring (separatedQuotientRing (A := A)) :=
   Aplus.map (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))
 
-/-- Pullback on adic spectra along the quotient by the closure of zero. -/
-def spaComapSeparatedQuotient (Aplus : Subring A) :
-    spa (separatedQuotientPlus Aplus) → spa Aplus := fun v ↦
-  ⟨comap (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A))) v.1,
-    comap_mem_spa continuous_quotient_mk'
-      (fun a ha ↦
-        (Subring.mem_map (f := Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))).mpr
-          ⟨a, ha, rfl⟩)
-      v.property⟩
-
-/-- The valuation underlying pullback from the separated quotient is the ordinary pullback along
-the quotient homomorphism. -/
-@[simp]
-theorem spaComapSeparatedQuotient_val (Aplus : Subring A)
-    (v : spa (separatedQuotientPlus Aplus)) :
-    (spaComapSeparatedQuotient Aplus v).1 =
-      comap (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A))) v.1 := by
-  rfl
-
-/-- Pullback from the separated quotient is a topological embedding. -/
-theorem isEmbedding_spaComapSeparatedQuotient (Aplus : Subring A) :
-    Topology.IsEmbedding (spaComapSeparatedQuotient Aplus) := by
-  have hcomp : Subtype.val ∘ spaComapSeparatedQuotient Aplus =
-      comap (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A))) ∘ Subtype.val := by
-    funext v
-    exact spaComapSeparatedQuotient_val Aplus v
-  refine Topology.IsEmbedding.of_comp_iff Topology.IsEmbedding.subtypeVal |>.mp ?_
-  rw [hcomp]
-  exact (isEmbedding_comap_quotientMk (Ideal.closure (⊥ : Ideal A))).comp
-    Topology.IsEmbedding.subtypeVal
-
-/-- Pullback from the quotient by the closure of zero is surjective on adic spectra. -/
-private theorem spaComapSeparatedQuotient_surjective (Aplus : Subring A) :
-    Function.Surjective (spaComapSeparatedQuotient Aplus) := by
-  intro v
-  let J : Ideal A := Ideal.closure ⊥
-  have hJ : J ≤ v.1.supp :=
-    closure_zero_le_supp_of_isContinuous ((mem_spa_iff Aplus v).mp v.property).1
-  have hwSpa : quotientLift J hJ ∈ spa (separatedQuotientPlus Aplus) := by
-    rw [mem_spa_iff]
-    refine ⟨IsContinuous.quotientLift J hJ ((mem_spa_iff Aplus v).mp v.property).1, ?_⟩
-    rintro _ ⟨a, ha, rfl⟩
-    rw [← map_one (Ideal.Quotient.mk J), ← comap_vle, comap_quotientLift]
-    exact (mem_spa_iff Aplus v).mp v.property |>.2 a ha
-  refine ⟨⟨quotientLift J hJ, hwSpa⟩, ?_⟩
-  apply Subtype.ext
-  rw [spaComapSeparatedQuotient_val, comap_quotientLift]
-
 /-- **Wedhorn Proposition 7.49(2), separated-quotient invariance.** Pullback along the quotient by
 the closure of zero is a homeomorphism on adic spectra. The plus ring on the quotient is the image
 of `Aplus`. -/
 noncomputable def spaSeparatedQuotientHomeomorph (Aplus : Subring A) :
-    spa (separatedQuotientPlus Aplus) ≃ₜ spa Aplus :=
-  (isEmbedding_spaComapSeparatedQuotient Aplus).toHomeomorphOfSurjective
-    (spaComapSeparatedQuotient_surjective Aplus)
+    spa (separatedQuotientPlus Aplus) ≃ₜ spa Aplus := by
+  apply Topology.IsEmbedding.toHomeomorphOfSurjective
+    (isEmbedding_spaComap_quotientMk (Ideal.closure (⊥ : Ideal A)) Aplus)
+  rw [← Set.range_eq_univ,
+    range_spaComap_quotientMk (Ideal.closure (⊥ : Ideal A)) Aplus]
+  ext v
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
+  exact closure_zero_le_supp_of_isContinuous ((mem_spa_iff Aplus v).mp v.property).1
 
 /-- The separated-quotient homeomorphism is pullback along the quotient map. -/
 @[simp]
 theorem spaSeparatedQuotientHomeomorph_apply (Aplus : Subring A)
     (v : spa (separatedQuotientPlus Aplus)) :
-    spaSeparatedQuotientHomeomorph Aplus v = spaComapSeparatedQuotient Aplus v :=
-  by
-    exact Topology.IsEmbedding.toHomeomorphOfSurjective_apply
-      (isEmbedding_spaComapSeparatedQuotient Aplus)
-      (spaComapSeparatedQuotient_surjective Aplus) v
+    spaSeparatedQuotientHomeomorph Aplus v =
+      spaComap (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))
+        (continuous_quotient_mk' : Continuous
+          (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A))))
+        Aplus (separatedQuotientPlus Aplus)
+        (fun a ha ↦ (Subring.mem_map
+          (f := Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))).mpr ⟨a, ha, rfl⟩) v := by
+  exact Topology.IsEmbedding.toHomeomorphOfSurjective_apply _ _ v
 
 /-- Under pullback from the quotient by the closure of zero, the preimage of the analytic locus is
 the analytic locus of the quotient. -/
-theorem spaComapSeparatedQuotient_preimage_spaAnalytic (Aplus : Subring A) :
-    spaComapSeparatedQuotient Aplus ⁻¹' (Subtype.val ⁻¹' spaAnalytic Aplus) =
+theorem spaComap_preimage_spaAnalytic_separatedQuotient (Aplus : Subring A) :
+    spaComap (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))
+        (continuous_quotient_mk' : Continuous
+          (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A))))
+        Aplus (separatedQuotientPlus Aplus)
+        (fun a ha ↦ (Subring.mem_map
+          (f := Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))).mpr ⟨a, ha, rfl⟩) ⁻¹'
+      (Subtype.val ⁻¹' spaAnalytic Aplus) =
       Subtype.val ⁻¹' spaAnalytic (separatedQuotientPlus Aplus) := by
   ext v
   simp only [Set.mem_preimage, mem_spaAnalytic_iff]
-  rw [and_iff_right (spaComapSeparatedQuotient Aplus v).property, and_iff_right v.property]
-  rw [spaComapSeparatedQuotient_val]
+  rw [and_iff_right (spaComap (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))
+    (continuous_quotient_mk' : Continuous
+      (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A))))
+    Aplus (separatedQuotientPlus Aplus) _ v).property,
+    and_iff_right v.property]
+  have hval :
+      (spaComap (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))
+        (continuous_quotient_mk' : Continuous
+          (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A))))
+        Aplus (separatedQuotientPlus Aplus)
+        (fun a ha ↦ (Subring.mem_map
+          (f := Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))).mpr ⟨a, ha, rfl⟩) v).1 =
+      comap (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A))) v.1 :=
+    spaComap_val (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))
+      (continuous_quotient_mk' : Continuous
+        (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A))))
+      Aplus (separatedQuotientPlus Aplus) _ v
+  rw [hval]
   rw [isAnalyticPoint_def, isAnalyticPoint_def, isOpen_supp_comap_quotientMk_iff]
 
 /-- **Wedhorn Proposition 7.49(2)(iii), locus form.** The homeomorphism induced by passage to the
@@ -217,7 +199,7 @@ theorem spaSeparatedQuotientHomeomorph_preimage_spaAnalytic (Aplus : Subring A) 
       Subtype.val ⁻¹' spaAnalytic (separatedQuotientPlus Aplus) := by
   ext v
   rw [Set.mem_preimage, spaSeparatedQuotientHomeomorph_apply]
-  exact Set.ext_iff.mp (spaComapSeparatedQuotient_preimage_spaAnalytic Aplus) v
+  exact Set.ext_iff.mp (spaComap_preimage_spaAnalytic_separatedQuotient Aplus) v
 
 /-- Emptiness of the analytic locus is invariant under passage to the separated quotient. -/
 theorem spaAnalytic_eq_empty_iff_separatedQuotient (Aplus : Subring A) :
