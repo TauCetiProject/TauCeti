@@ -17,8 +17,8 @@ Bernstein function `f`, the completely monotone functions `t ↦ e^{-x f(t)}` fo
 the Laplace transforms of the convolution semigroup subordinate to `f`.  This file proves the
 converse, so that the two classes determine each other:
 
-**`f` is a Bernstein function if and only if `f` is nonnegative on `[0, ∞)` and `e^{-x f}` is
-completely monotone for every `x > 0`.**
+**`f` is a Bernstein function if and only if `f` is nonnegative on `[0, ∞)` and, for every
+`x > 0`, `e^{-x f}` is continuous on `[0, ∞)` and completely monotone on `(0, ∞)`.**
 
 This is the standard correspondence between the two classes, and the form in which Bernstein
 functions enter probability theory: `e^{-x f}` completely monotone for all `x > 0` says exactly
@@ -75,14 +75,14 @@ private lemma eq_neg_inv_mul_log_exp {x : ℝ} (hx : x ≠ 0) (t : ℝ) :
 /-- Smoothness of `f` on `(0, ∞)` is inherited from a single exponential `e^{-x f}`: the
 exponential is positive, so composing with the logarithm stays inside the domain of smoothness of
 `Real.log`. -/
-private lemma contDiffOn_of_contDiffOn_exp_neg_mul {x : ℝ} (hx : x ≠ 0) {s : Set ℝ}
+lemma contDiffOn_of_contDiffOn_exp_neg_mul {x : ℝ} (hx : x ≠ 0) {s : Set ℝ}
     (h : ContDiffOn ℝ ∞ (fun t => Real.exp (-x * f t)) s) : ContDiffOn ℝ ∞ f s := by
   have hlog : ContDiffOn ℝ ∞ (fun t => -x⁻¹ * Real.log (Real.exp (-x * f t))) s :=
     (h.log fun t _ => (Real.exp_pos _).ne').const_smul (-x⁻¹)
   exact hlog.congr fun t _ => eq_neg_inv_mul_log_exp hx t
 
 /-- Continuity of `f` on a set is inherited from a single exponential `e^{-x f}`. -/
-private lemma continuousOn_of_continuousOn_exp_neg_mul {x : ℝ} (hx : x ≠ 0) {s : Set ℝ}
+lemma continuousOn_of_continuousOn_exp_neg_mul {x : ℝ} (hx : x ≠ 0) {s : Set ℝ}
     (h : ContinuousOn (fun t => Real.exp (-x * f t)) s) : ContinuousOn f s := by
   have hlog : ContinuousOn (fun t => -x⁻¹ * Real.log (Real.exp (-x * f t))) s :=
     continuousOn_const.mul (h.log fun t _ => (Real.exp_pos _).ne')
