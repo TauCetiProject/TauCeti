@@ -56,20 +56,15 @@ that of `R`.
 
 ## References
 
-The design of this package is not original to this file: it adapts the interface proposed by the
-stable-reduction roadmap. `TauCetiRoadmap/StableReduction/README.md` states the convention "DVR
-extensions are local data" — choose a maximal ideal of the integral closure above the closed point
-and localize, never pretending the integral closure is itself a discrete valuation ring — and its
-Layer 0 asks for exactly this package; `TauCetiRoadmap/StableReduction/Suggested.lean` pins the
-suggested signature, whose carriers, algebra maps, scalar towers and `prime` field are followed
-here field for field. The two deliberate departures are that the local ring is pinned by
-`IsLocalization.AtPrime` instead of by an explicit `≃ₐ` to `Localization.AtPrime` together with a
-commuting square, and that the sketch's `localRingDomain`, `localRingDVR`, `localRingDominates`
-and `fractionIdentification` assumptions are theorems below rather than fields.
+The interface here is not original to this file: it adapts the one proposed by the Tau Ceti
+`StableReduction` roadmap, whose `README.md` states the convention "DVR extensions are local
+data" — choose a maximal ideal of the integral closure above the closed point and localize, never
+treating the integral closure itself as a discrete valuation ring — and whose `Suggested.lean`
+writes down the signature followed below: the same carriers, algebra maps, scalar towers and
+chosen prime.
 
-The mathematics itself is standard and is not attributed to any one source; the roadmap's own
-References section collects the literature it works from, of which Q. Liu, *Algebraic Geometry and
-Arithmetic Curves* is the one covering reduction of curves over a discrete valuation ring.
+The mathematics is standard; Q. Liu, *Algebraic Geometry and Arithmetic Curves*, covers reduction
+of curves over a discrete valuation ring.
 -/
 
 public section
