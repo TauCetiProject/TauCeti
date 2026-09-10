@@ -18,9 +18,9 @@ are nonzero, so they form a Weil divisor.
 
 This file constructs the resulting homomorphism from Cartier divisors to Weil divisors. It proves
 that its values are locally principal and that, when the codimension-one local rings are discrete
-valuation rings, it is inverse to the homomorphism which glues the local equations of a locally
-principal Weil divisor. Consequently, locally principal Weil divisors and Cartier divisors are
-additively equivalent under these hypotheses.
+valuation rings, it is inverse to the construction which glues the local equations of a Weil
+divisor. Consequently, Weil divisors and Cartier divisors are additively equivalent under these
+hypotheses.
 
 ## Main declarations
 
@@ -362,35 +362,37 @@ theorem cartierDivisor_toWeilDivisor (hX : ∀ x : X, coheight x ≤ 1)
     Scheme.CartierDivisor.orderAt_eq_of_restrict_eq_rationalUnitClass D y U hy g hDg]
 
 /-- **The Weil--Cartier equivalence.** On a Noetherian integral curve whose codimension-one local
-rings are discrete valuation rings, locally principal Weil divisors are additively equivalent to
-Cartier divisors. -/
+rings are discrete valuation rings, Weil divisors are additively equivalent to Cartier divisors. -/
 def equivCartierDivisor (hX : ∀ x : X, coheight x ≤ 1) :
-    locallyPrincipalSubgroup X ≃+ Scheme.CartierDivisor X where
-  toFun := toCartierDivisorHom hX
-  invFun D := ⟨D.toWeilDivisor, mem_locallyPrincipalSubgroup.mpr
-    (Scheme.CartierDivisor.isLocallyPrincipal_toWeilDivisor D)⟩
-  left_inv D := Subtype.ext <| by
-    simpa only [toCartierDivisorHom_apply] using toWeilDivisor_cartierDivisor hX D
+    SchemeWeilDivisor X ≃+ Scheme.CartierDivisor X where
+  toFun D := IsLocallyPrincipal.cartierDivisor hX
+    (isLocallyPrincipal_of_forall_coheight_le_one hX D)
+  invFun := Scheme.CartierDivisor.toWeilDivisorHom
+  left_inv D := by
+    simpa only [Scheme.CartierDivisor.toWeilDivisorHom_apply] using
+      toWeilDivisor_cartierDivisor hX
+        ⟨D, mem_locallyPrincipalSubgroup.mpr
+          (isLocallyPrincipal_of_forall_coheight_le_one hX D)⟩
   right_inv D := by
-    simpa only [toCartierDivisorHom_apply] using cartierDivisor_toWeilDivisor hX D
-  map_add' := map_add (toCartierDivisorHom hX)
+    simpa only [Scheme.CartierDivisor.toWeilDivisorHom_apply] using
+      cartierDivisor_toWeilDivisor hX D
+  map_add' D E := IsLocallyPrincipal.cartierDivisor_add hX
+    (isLocallyPrincipal_of_forall_coheight_le_one hX D)
+    (isLocallyPrincipal_of_forall_coheight_le_one hX E)
 
-/-- The forward map of the Weil--Cartier equivalence glues the local equations of a locally
-principal Weil divisor. -/
+/-- The forward map of the Weil--Cartier equivalence glues the local equations of a Weil divisor. -/
 @[simp]
 theorem equivCartierDivisor_apply (hX : ∀ x : X, coheight x ≤ 1)
-    (D : locallyPrincipalSubgroup X) :
-    equivCartierDivisor hX D = toCartierDivisorHom hX D :=
+    (D : SchemeWeilDivisor X) :
+    equivCartierDivisor hX D = IsLocallyPrincipal.cartierDivisor hX
+      (isLocallyPrincipal_of_forall_coheight_le_one hX D) :=
   (rfl)
 
-/-- The inverse of the Weil--Cartier equivalence is the associated Weil divisor with its local
-principalness witness. -/
+/-- The inverse of the Weil--Cartier equivalence is the associated Weil divisor. -/
 @[simp]
 theorem equivCartierDivisor_symm_apply (hX : ∀ x : X, coheight x ≤ 1)
     (D : Scheme.CartierDivisor X) :
-    (equivCartierDivisor hX).symm D =
-      ⟨D.toWeilDivisor, mem_locallyPrincipalSubgroup.mpr
-        (Scheme.CartierDivisor.isLocallyPrincipal_toWeilDivisor D)⟩ :=
+    (equivCartierDivisor hX).symm D = D.toWeilDivisor :=
   (rfl)
 
 end SchemeWeilDivisor
