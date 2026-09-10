@@ -80,7 +80,8 @@ theorem orbitCount_one : orbitCount (1 : Equiv.Perm α) = Nat.card α := by
   exact sameCycle_one.mp (Quotient.eq.mp hxy)
 
 /-- A permutation of a finite type has at most as many orbits as there are points. -/
-theorem orbitCount_le_card [Finite α] (σ : Equiv.Perm α) : orbitCount σ ≤ Nat.card α :=
+theorem _root_.Equiv.Perm.orbitCount_le_card [Finite α] (σ : Equiv.Perm α) :
+    orbitCount σ ≤ Nat.card α :=
   Nat.card_le_card_of_surjective (Quotient.mk (SameCycle.setoid σ)) Quotient.mk_surjective
 
 /-- Conjugate permutations have the same number of orbits: conjugation by `g` relabels the points
