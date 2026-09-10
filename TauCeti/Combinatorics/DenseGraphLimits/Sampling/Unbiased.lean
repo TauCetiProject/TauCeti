@@ -34,9 +34,6 @@ as the pattern makes this denominator nonzero.
 
 ## References
 
-* `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 9a, and its
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean` unbiasedness anchor
-  `E_{G(m,W)}[t₀(F, ·)] = t(F, W)` — the specification whose statement is formalized here.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Sections
   5.2 and 10.2.
 * C. Freer, `cameronfreer/graphon` at commit
@@ -44,6 +41,9 @@ as the pattern makes this denominator nonzero.
   supergraph-mass proof is adapted from its Boolean-cube argument to Tau Ceti's strict graphon
   carrier.
 -/
+
+-- The statement of `integral_injHomDensity_sampleGraph` follows the `E_{G(m,W)}[t₀(F, ·)] =
+-- t(F, W)` signature written down in the Tau Ceti `DenseGraphLimits` roadmap's `Suggested.lean`.
 
 public section
 
