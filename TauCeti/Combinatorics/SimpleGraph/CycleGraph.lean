@@ -6,16 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.CycleGraph
+public import TauCeti.Data.Fin.Basic
 
 /-!
 # Neighbours in a cycle graph
 
-Mathlib's `SimpleGraph.cycleGraph m` joins two elements of `Fin m` exactly when they differ by one,
-records the neighbour set of a vertex as the pair `{v - 1, v + 1}` and computes the degree of a
-cycle graph on at least three vertices to be two. This file reads those two facts in the form a
-consumer usually wants: a neighbour of a vertex is its successor or its predecessor, so a vertex
-has at most the two neighbours `v + 1` and `v - 1`, and on at least three vertices those two are
-distinct and really are neighbours.
+For `m ≥ 2`, Mathlib's `SimpleGraph.cycleGraph m` joins two elements of `Fin m` exactly when they
+differ by one and records the neighbour set of a vertex as the pair `{v - 1, v + 1}`; for `m ≥ 3`,
+it computes the degree to be two. This file derives the weaker fact valid for every nonzero `m`
+that an adjacent vertex is the successor or predecessor, and shows that there are at most the two
+neighbours `v + 1` and `v - 1`; when `m ≥ 3`, they are distinct and really are neighbours.
 
 ## Main results
 
@@ -24,8 +24,6 @@ distinct and really are neighbours.
   that is, every degree is at most two.
 * `TauCeti.cycleGraph_adj_add_one`: on at least three vertices a vertex is adjacent to its
   successor.
-* `TauCeti.add_one_add_one_ne_self`: on at least three vertices the two neighbours of a vertex are
-  distinct.
 -/
 
 public section
@@ -72,14 +70,5 @@ theorem cycleGraph_adj_add_one (hm : 3 ≤ m) (v : Fin m) : (cycleGraph m).Adj v
     rw [cycleGraph_neighborSet]
     exact Set.mem_insert_of_mem _ rfl
   exact hv
-
-/-- **Adding one twice in `Fin m` never returns to the same element** when `3 ≤ m`.  For a cycle
-graph this says that the two neighbours of a vertex are distinct, and it is read off from
-Mathlib's computation of the degree of a cycle graph on at least three vertices. -/
-theorem add_one_add_one_ne_self (hm : 3 ≤ m) (v : Fin m) : v + 1 + 1 ≠ v := by
-  obtain ⟨n, rfl⟩ : ∃ n, m = n + 3 := ⟨m - 3, by omega⟩
-  have hne : v - 1 ≠ v + 1 :=
-    Finset.card_pair_eq_two_iff.mp (cycleGraph_degree_two_le.symm.trans cycleGraph_degree_three_le)
-  exact fun hv => hne (eq_sub_of_add_eq hv).symm
 
 end TauCeti

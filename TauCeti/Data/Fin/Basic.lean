@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Group.End
 
+import Mathlib.Algebra.Group.Fin.Basic
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -28,6 +29,7 @@ range, so the value is a `dite` rather than a plain application.
   transposition.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
+* `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`.
 * `TauCeti.sum_ite_val_add`: a sum against the indicator of `b = k + j` picks out the summand at
   `b - j`, or vanishes when there is no such index.
 -/
@@ -46,6 +48,16 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
 end Fin
 
 namespace TauCeti
+
+/-- **Adding one twice in `Fin n` never returns to the same element** when `3 ≤ n`. -/
+theorem add_one_add_one_ne_self {n : ℕ} [NeZero n] (hn : 3 ≤ n) (i : Fin n) :
+    i + 1 + 1 ≠ i := by
+  intro h
+  have htwo : (1 + 1 : Fin n) = 0 := by
+    apply add_left_cancel (a := i)
+    simpa [add_assoc] using h
+  have hval := congrArg Fin.val htwo
+  simp [Fin.val_add, Nat.mod_eq_of_lt (by omega : 2 < n)] at hval
 
 /-- A permutation of `Fin 2` is either the identity or the transposition. -/
 theorem perm_fin_two_eq_one_or_swap (e : Equiv.Perm (Fin 2)) :
