@@ -33,8 +33,12 @@ imposed later as structure data.
 
 ## Main declarations
 
-* `TauCeti.Hodge.rationalToComplexLinearEquiv`: the canonical tower equivalence from an abstract
+* `TauCeti.Hodge.rationalToComplexMap`: the canonical structure map from an abstract
   rationalification to an abstract complexification.
+* `TauCeti.Hodge.isBaseChange_rationalToComplexMap`: the complex space is the base change of the
+  rational space along this structure map.
+* `TauCeti.Hodge.rationalToComplexLinearEquiv`: the canonical tower equivalence between the
+  concrete rational base change and the abstract complexification.
 * `TauCeti.Hodge.rationalToComplexSubmodule`: the complexification of a rational subspace inside
   the chosen ambient complexification.
 * `TauCeti.Hodge.rationalToComplexSubmoduleEquiv`: the canonical identification of the concrete
@@ -54,10 +58,11 @@ imposed later as structure data.
 * `TauCeti.Hodge.rationalToComplexSubmodule_le_iff`: an inclusion of rational subspaces can be
   tested on their complexifications.
 
-The design follows the base-change interface specified in the Hodge structures roadmap. Its only
-nontrivial comparison map is Mathlib's
-`TensorProduct.AlgebraTensorModule.cancelBaseChange`, which cancels the middle `ℚ` in the concrete
-tower before the result is transported to the two abstract models.
+The design follows the base-change interface specified in the Hodge structures roadmap. The
+`ℚ → ℂ` structure map is obtained from the universal property of the first leg, and Mathlib's
+`IsBaseChange.comp` and `IsBaseChange.of_comp` show that it is the second leg of a base-change
+tower. Consumers needing only this property can therefore use it directly; the concrete tower
+equivalence remains available for constructions which need an equivalence as data.
 
 ## References
 
@@ -105,6 +110,62 @@ theorem integralMapToComplex_ratTensorMap {U U' : Type*} [AddCommGroup U] [Modul
   (isBaseChange_ratTensorMap ℂ U).algHom_ext _ _ fun u ↦ by
     rw [integralMapToComplex_apply_ι, ratTensorMap_apply, ratTensorMap_apply,
       LinearMap.restrictScalars_apply, LinearMap.baseChange_tmul]
+
+noncomputable section RationalComplexMap
+
+local instance : Module ℚ Vℂ := Module.restrictScalars ℚ ℂ Vℂ
+local instance : IsScalarTower ℚ ℂ Vℂ := IsScalarTower.restrictScalars ℚ ℂ Vℂ
+local instance : IsScalarTower ℤ ℚ ℂ where
+  smul_assoc z q w := by
+    norm_num [Algebra.smul_def, smul_eq_mul]
+    ring
+local instance : IsScalarTower ℤ ℚ Vℂ := IsScalarTower.to₁₂₄ ℤ ℚ ℂ Vℂ
+
+/-- The canonical `ℚ`-linear structure map from an abstract rationalification to an abstract
+complexification of the same integral module.
+
+It is the unique map whose composite with the integral structure map `ιℚ` is `ιℂ`. -/
+noncomputable def rationalToComplexMap (hℚ : IsBaseChange ℚ ιℚ) (ιℂ : Vℤ →ₗ[ℤ] Vℂ) :
+    Vℚ →ₗ[ℚ] Vℂ :=
+  hℚ.lift ιℂ
+
+/-- The rational-to-complex structure map carries an integral vector to the corresponding vector
+in the complexification. -/
+@[simp]
+theorem rationalToComplexMap_apply_ι (hℚ : IsBaseChange ℚ ιℚ) (ιℂ : Vℤ →ₗ[ℤ] Vℂ) (x : Vℤ) :
+    rationalToComplexMap hℚ ιℂ (ιℚ x) = ιℂ x := by
+  exact LinearMap.congr_fun (hℚ.lift_comp ιℂ) x
+
+/-- Composing the rational-to-complex structure map with rationalification recovers the given
+integral-to-complex structure map. -/
+@[simp]
+theorem rationalToComplexMap_restrictScalars_comp (hℚ : IsBaseChange ℚ ιℚ)
+    (ιℂ : Vℤ →ₗ[ℤ] Vℂ) :
+    (rationalToComplexMap hℚ ιℂ).restrictScalars ℤ ∘ₗ ιℚ = ιℂ :=
+  hℚ.lift_comp ιℂ
+
+/-- The rational-to-complex structure map is the unique `ℚ`-linear map extending `ιℂ` along
+`ιℚ`. -/
+theorem rationalToComplexMap_eq_of_restrictScalars_comp_eq (hℚ : IsBaseChange ℚ ιℚ)
+    (ιℂ : Vℤ →ₗ[ℤ] Vℂ) (f : Vℚ →ₗ[ℚ] Vℂ)
+    (hf : f.restrictScalars ℤ ∘ₗ ιℚ = ιℂ) : f = rationalToComplexMap hℚ ιℂ := by
+  apply hℚ.algHom_ext'
+  rw [hf, rationalToComplexMap_restrictScalars_comp]
+
+/-- The abstract complexification is the base change of the abstract rationalification along the
+canonical rational-to-complex structure map. -/
+theorem isBaseChange_rationalToComplexMap (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) : IsBaseChange ℂ (rationalToComplexMap hℚ ιℂ) := by
+  apply IsBaseChange.of_comp hℚ
+  simpa only [rationalToComplexMap_restrictScalars_comp] using hℂ
+
+/-- The two abstract legs `Vℤ → Vℚ → Vℂ` compose to a base change from `ℤ` to `ℂ`. -/
+theorem isBaseChange_rationalToComplexMap_comp (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) :
+    IsBaseChange ℂ ((rationalToComplexMap hℚ ιℂ).restrictScalars ℤ ∘ₗ ιℚ) :=
+  hℚ.comp (isBaseChange_rationalToComplexMap hℚ hℂ)
+
+end RationalComplexMap
 
 /-- The canonical tower equivalence from an abstract rational base change to an abstract complex
 base change of the same integral module. -/
