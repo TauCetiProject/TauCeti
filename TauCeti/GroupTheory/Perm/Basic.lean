@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Dynamics.PeriodicPts.Lemmas
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.GroupTheory.Perm.ViaEmbedding
 
@@ -13,8 +14,9 @@ import Mathlib.GroupTheory.Perm.ViaEmbedding
 
 This file records general-purpose facts about permutations: an identity between transpositions,
 a characterization of permutations with a unique fixed point, the orbit relation of an involution,
-a permutation transported along an injection, and the combination of two permutations transported
-along injections with disjoint ranges.
+a positive-power representative of a relation inside a periodic orbit, a permutation transported
+along an injection, and the combination of two permutations transported along injections with
+disjoint ranges.
 -/
 
 public section
@@ -40,6 +42,29 @@ theorem sameCycle_toPerm_iff {α : Type*} (f : α → α) (hf : Function.Involut
           f a = f (f b) := congrArg f h
           _ = b := hf b
       simpa using this
+
+/-- If a periodic point `a` of `σ` shares its orbit with `b`, some positive natural power of `σ`
+carries `a` to `b`. Adding a period to an integer exponent witnessing `σ.SameCycle a b` preserves
+its action on `a` and gives a positive representative. -/
+theorem _root_.Equiv.Perm.exists_pos_pow_apply_eq_of_mem_periodicPts {α : Type*}
+    (σ : Equiv.Perm α) {a b : α} (ha : a ∈ Function.periodicPts (σ : α → α))
+    (h : σ.SameCycle a b) : ∃ j : ℕ, 0 < j ∧ (σ ^ j) a = b := by
+  obtain ⟨m, hmpos, hm⟩ := Function.mem_periodicPts.mp ha
+  have hma : (σ ^ m) a = a := hm
+  obtain ⟨k, hk⟩ := h
+  have hz : ∀ q : ℤ, (σ ^ ((m : ℤ) * q)) a = a := by
+    intro q
+    rw [zpow_mul, zpow_natCast]
+    exact Equiv.Perm.zpow_apply_eq_self_of_apply_eq_self hma q
+  have hr : (σ ^ (k % (m : ℤ))) a = b := by
+    have heq : ((σ ^ (k % (m : ℤ))) * (σ ^ ((m : ℤ) * (k / m)))) a = b := by
+      rw [← zpow_add, Int.emod_add_mul_ediv]
+      exact hk
+    rwa [Equiv.Perm.mul_apply, hz (k / m)] at heq
+  have hnonneg : 0 ≤ k % (m : ℤ) := Int.emod_nonneg k (by exact_mod_cast hmpos.ne')
+  refine ⟨(k % (m : ℤ)).toNat + m, by omega, ?_⟩
+  rw [pow_add, Equiv.Perm.mul_apply, hma, ← zpow_natCast, Int.toNat_of_nonneg hnonneg]
+  exact hr
 
 variable {α : Type*} [Fintype α] [DecidableEq α]
 
