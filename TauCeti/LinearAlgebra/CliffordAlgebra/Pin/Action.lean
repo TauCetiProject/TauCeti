@@ -52,8 +52,8 @@ Twisted conjugation is the one that extends to the odd part.
   forced by Mathlib's conventions: `star` is the reversal composed with the grade involution, so
   `star (ι Q v) = -ι Q v` and the unitarity condition defining `pinGroup Q` reads `-Q v = 1` on a
   vector.
-* `TauCeti.ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one`: two vectors whose norms multiply to
-  one define an element of the Spin group.
+* `CliffordAlgebra.ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one`: two vectors whose norms
+  multiply to one define an element of the Spin group.
 * `CliffordAlgebra.pinToOrthogonal_spinToPin`: on the spin group, twisted conjugation is
   plain conjugation.
 
@@ -385,12 +385,6 @@ theorem pinToOrthogonal_spinToPin (x : spinGroup Q) :
   rw [ι_pinToOrthogonal_apply, coe_spinToPin_apply, spinGroup.involute_eq x.2,
     coe_spinToOrthogonal_apply, ι_spinVectorAction_apply]
 
-end CliffordAlgebra
-
-namespace TauCeti
-
-open CliffordAlgebra
-
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   {Q : QuadraticForm R M}
 
@@ -420,4 +414,4 @@ theorem ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one (x y : M)
   · rw [← Subalgebra.mem_toSubmodule, CliffordAlgebra.even_toSubmodule]
     exact ι_mul_ι_mem_evenOdd_zero Q x y
 
-end TauCeti
+end CliffordAlgebra

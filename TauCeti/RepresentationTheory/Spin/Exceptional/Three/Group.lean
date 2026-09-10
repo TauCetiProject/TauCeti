@@ -116,14 +116,14 @@ private noncomputable def positiveRootLift
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (c : K) : spinGroup Q :=
   ⟨ι Q ((z : V) + c • (b 0 : V)) * ι Q (z : V),
-    ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one _ _ (by
+    CliffordAlgebra.ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one _ _ (by
       rw [add_smul_W_line_norm P (b 0) z hz c, hz, one_mul])⟩
 
 private noncomputable def negativeRootLift
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (c : K) : spinGroup Q :=
   ⟨ι Q (z : V) * ι Q ((z : V) + c • (P.dualVector b 0 : V)),
-    ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one _ _ (by
+    CliffordAlgebra.ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one _ _ (by
       rw [hz, add_smul_line_W'_norm P z (P.dualVector b 0) hz c, one_mul])⟩
 
 private theorem coe_positiveRootLift
