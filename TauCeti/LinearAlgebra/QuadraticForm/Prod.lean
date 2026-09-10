@@ -19,8 +19,8 @@ file adds the two remaining structural ones: the associator, and the deletion of
 module is trivial. Together with `QuadraticMap.IsometryEquiv.prodComm` they are what makes
 orthogonal sum a commutative monoid operation on isometry classes of quadratic forms.
 
-For a quadratic form over a field of characteristic different from two, it also records the
-isometry associated to an orthogonal direct-sum decomposition of the underlying space.
+For a quadratic form over a commutative ring in which two is invertible, it also records the
+isometry associated to an orthogonal direct-sum decomposition of the underlying module.
 
 It also combines special orthogonal transformations of two finite free quadratic maps with a
 common codomain into a special orthogonal transformation of their product.
@@ -93,12 +93,12 @@ theorem IsometryEquiv.uniqueProd_symm_apply [Unique M₁] (Q₁ : QuadraticMap R
 
 section OrthogonalDecomposition
 
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [Invertible (2 : K)]
+variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V] [Invertible (2 : R)]
 
 /-- An orthogonal direct-sum decomposition of a quadratic space gives an isometry from the
 product of the two restricted forms to the original form. -/
-noncomputable def IsometryEquiv.prodRestrictOrthogonal (Q : QuadraticForm K V)
-    (W : Submodule K V)
+noncomputable def IsometryEquiv.prodRestrictOrthogonal (Q : QuadraticForm R V)
+    (W : Submodule R V)
     (hW : IsCompl W (LinearMap.BilinForm.orthogonal (QuadraticMap.associated Q) W)) :
     ((Q.restrict W).prod
       (Q.restrict (LinearMap.BilinForm.orthogonal (QuadraticMap.associated Q) W))).IsometryEquiv Q
@@ -115,8 +115,8 @@ noncomputable def IsometryEquiv.prodRestrictOrthogonal (Q : QuadraticForm K V)
 
 /-- The orthogonal-decomposition isometry sends a pair to the sum of its components. -/
 @[simp]
-theorem IsometryEquiv.prodRestrictOrthogonal_apply (Q : QuadraticForm K V)
-    (W : Submodule K V)
+theorem IsometryEquiv.prodRestrictOrthogonal_apply (Q : QuadraticForm R V)
+    (W : Submodule R V)
     (hW : IsCompl W (LinearMap.BilinForm.orthogonal (QuadraticMap.associated Q) W))
     (x : W × LinearMap.BilinForm.orthogonal (QuadraticMap.associated Q) W) :
     IsometryEquiv.prodRestrictOrthogonal Q W hW x = (x.1 : V) + x.2 := by

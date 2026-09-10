@@ -23,6 +23,8 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 
 * `QuadraticMap.radical_neg`: negating a quadratic map does not change its radical.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
+* `QuadraticMap.associated_restrict`: the associated bilinear form of a restriction is the
+  restriction of the associated bilinear form.
 * `QuadraticMap.Nondegenerate.prod`: nondegeneracy passes to an orthogonal product.
 * `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic form on a nontrivial module is
   nonzero.
@@ -43,6 +45,15 @@ namespace QuadraticMap
 
 variable {R M P : Type*} [CommRing R] [AddCommGroup M] [AddCommGroup P]
   [Module R M] [Module R P]
+
+/-- The associated bilinear form of a restricted quadratic form is the restriction of its
+associated bilinear form. -/
+@[simp]
+theorem associated_restrict [Invertible (2 : R)] (Q : QuadraticForm R M) (S : Submodule R M) :
+    QuadraticMap.associated (Q.restrict S) =
+      LinearMap.BilinForm.restrict (QuadraticMap.associated Q) S := by
+  ext x y
+  rfl
 
 /-- Negating a quadratic map does not change its radical. -/
 @[simp]
