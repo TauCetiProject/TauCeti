@@ -52,7 +52,7 @@ theorem LDL.lowerInv_apply_diag (i : n) : LDL.lowerInv hS i i = 1 := by
   let := Sᵀ.toInnerProductSpace hS.transpose.posSemidef
   rw [LDL.lowerInv]
   simpa only [Pi.basisFun_repr] using
-    TauCeti.InnerProductSpace.repr_gramSchmidt_self_eq_one (Pi.basisFun 𝕜 n) i
+    (Pi.basisFun 𝕜 n).repr_gramSchmidt_self_eq_one i
 
 /-- The lower factor in Mathlib's LDL decomposition carries `1` on the diagonal, being the
 inverse of a matrix that does. -/

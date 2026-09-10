@@ -18,8 +18,8 @@ the Gram-Schmidt process is lower unitriangular.
 
 ## Main results
 
-* `TauCeti.InnerProductSpace.repr_gramSchmidt_self_eq_one` — the Gram-Schmidt process leaves the
-  coefficient of a basis vector along itself equal to `1`.
+* `Module.Basis.repr_gramSchmidt_self_eq_one` — the Gram-Schmidt process leaves the coefficient of a
+  basis vector along itself equal to `1`.
 -/
 
 public section
@@ -28,8 +28,6 @@ open Finset InnerProductSpace Module
 
 namespace TauCeti
 
-namespace InnerProductSpace
-
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 variable {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι] [WellFoundedLT ι]
 
@@ -37,7 +35,7 @@ variable {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι] [WellFoundedLT
 `gramSchmidt 𝕜 b i` differs from `b i` by a combination of the strictly earlier `gramSchmidt`
 vectors, each of which has no component along `b i`. -/
 @[simp]
-theorem repr_gramSchmidt_self_eq_one (b : Basis ι 𝕜 E) (i : ι) :
+theorem _root_.Module.Basis.repr_gramSchmidt_self_eq_one (b : Basis ι 𝕜 E) (i : ι) :
     b.repr (gramSchmidt 𝕜 b i) i = 1 := by
   have h := congrArg (fun x ↦ b.repr x i) (gramSchmidt_def'' 𝕜 (b : ι → E) i)
   simp only [Basis.repr_self, Finsupp.single_eq_same, map_add, map_sum, map_smul,
@@ -46,7 +44,5 @@ theorem repr_gramSchmidt_self_eq_one (b : Basis ι 𝕜 E) (i : ι) :
   rw [Finset.sum_eq_zero (fun j hj ↦ ?_), add_zero] at h
   · exact h.symm
   · rw [gramSchmidt_triangular (Finset.mem_Iio.mp hj) b, mul_zero]
-
-end InnerProductSpace
 
 end TauCeti
