@@ -8,7 +8,6 @@ module
 public import TauCeti.RepresentationTheory.Spin.Exceptional.Three.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import TauCeti.RepresentationTheory.Spin.Representation
-public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
 public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Spin.OddStructure
 import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.KostantLattice
@@ -28,6 +27,7 @@ required polarization.
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Lecture 20.
+* [Tau Ceti's Spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md).
 -/
 
 public section
@@ -116,21 +116,15 @@ private noncomputable def spinThreeHom
 private noncomputable def positiveRootLift
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (c : K) : spinGroup Q :=
-  let _ : Invertible (Q ((z : V) + c • (b 0 : V))) :=
-    (add_smul_W_line_norm P (b 0) z hz c) ▸ invertibleOne
-  let _ : Invertible (Q (z : V)) := hz ▸ invertibleOne
   ⟨ι Q ((z : V) + c • (b 0 : V)) * ι Q (z : V),
-    ι_mul_ι_mem_spinGroup_of_mul_norm_eq_one _ _ (by
+    ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one _ _ (by
       rw [add_smul_W_line_norm P (b 0) z hz c, hz, one_mul])⟩
 
 private noncomputable def negativeRootLift
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (c : K) : spinGroup Q :=
-  let _ : Invertible (Q (z : V)) := hz ▸ invertibleOne
-  let _ : Invertible (Q ((z : V) + c • (P.dualVector b 0 : V))) :=
-    (add_smul_line_W'_norm P z (P.dualVector b 0) hz c) ▸ invertibleOne
   ⟨ι Q (z : V) * ι Q ((z : V) + c • (P.dualVector b 0 : V)),
-    ι_mul_ι_mem_spinGroup_of_mul_norm_eq_one _ _ (by
+    ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one _ _ (by
       rw [hz, add_smul_line_W'_norm P z (P.dualVector b 0) hz c, one_mul])⟩
 
 private theorem coe_positiveRootLift
@@ -292,7 +286,9 @@ private theorem spinThreeHom_intertwines
   have hmatrix :
       LinearMap.toMatrixAlgEquiv (spinThreeExteriorBasis P b) (spinAction Q P g) =
         LinearMap.toMatrix (spinThreeExteriorBasis P b) (spinThreeExteriorBasis P b)
-          (spinAction Q P g) := rfl
+          (spinAction Q P g) := by
+    ext i j
+    rw [LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply]
   rw [hmatrix]
   simpa only [Basis.equivFun_apply] using
       (LinearMap.toMatrix_mulVec_repr (spinThreeExteriorBasis P b)

@@ -115,11 +115,10 @@ private noncomputable def spinReflectionPairLift (v w : V) [Invertible (Q v)]
   have : Invertible (sqrtOfIsSquare h) :=
     (isUnit_sqrtOfIsSquare Q v w h).invertible
   have hnorm := sqrtOfIsSquare_smul_norm_eq_invOf Q v w h
-  have : Invertible (Q (sqrtOfIsSquare h • v)) := by rw [hnorm]; infer_instance
   have hprod : Q (sqrtOfIsSquare h • v) * Q w = 1 := by
     rw [hnorm, invOf_mul_self]
   exact ⟨ι Q (sqrtOfIsSquare h • v) * ι Q w,
-    ι_mul_ι_mem_spinGroup_of_mul_norm_eq_one _ _ hprod⟩
+    ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one _ _ hprod⟩
 
 variable [Invertible (2 : K)]
 
