@@ -21,7 +21,7 @@ order `i + 1`:
 At `i = 0` this is the condition that `σ` act trivially on the residue field, so `G_0(P)` is the
 inertia group; the groups then decrease, are normal in the decomposition group, and meet in the
 trivial group.  This is the lower numbering, and no completion is taken: the condition is read off
-the order filtration of `F` at `P` built in
+the order filtration of `F'` at `P` built in
 `TauCeti/FieldTheory/FunctionField/Place/Filtration.lean`.
 
 The structure of the successive quotients comes from a single map.  Fix a uniformizer `t` at `P`.
@@ -33,10 +33,9 @@ where the hypothesis `i + 1 ≥ 1` enters: an automorphism in `G_1(P)` moves `t`
 congruent to `1` at `P`, and one in `G_0(P)` does not move residues at all, so the two error terms
 produced by expanding `(στ) z - z` disappear on reduction.
 
-Consequently every quotient `G_{i+1}(P) / G_{i+2}(P)` embeds in the additive group of the residue
-field: it is abelian, and in characteristic `p` it is killed by `p`, while in characteristic zero
-it is trivial and hence — the groups meeting in `1` — `G_1(P)` is trivial and the ramification is
-tame.
+Consequently every quotient `G_{i+1}(P) / G_{i+2}(P)` embeds in the additive group of functions
+from `𝒪_P` to the residue field: it is abelian, and in characteristic `p` it is killed by `p`, while
+in characteristic zero it is trivial and hence — the groups meeting in `1` — `G_1(P)` is trivial.
 
 This is Stichtenoth, Definition 3.8.4 and Proposition 3.8.5.  Nothing here consumes perfectness of
 the residue fields; the complementary statement that `G_0(P) / G_1(P)` is cyclic of order prime to
@@ -155,6 +154,7 @@ theorem mem_ramificationGroup_iff {i : ℕ} {g : P.integers.decompositionSubgrou
 
 /-- **The `0`-th ramification group is the inertia group** (Stichtenoth, Definition 3.8.4): acting
 trivially on the residue field is acting trivially to order `1` on the valuation ring. -/
+@[simp]
 theorem ramificationGroup_zero : ramificationGroup F P 0 = P.integers.inertiaSubgroup F := by
   ext g
   rw [mem_ramificationGroup_iff, mem_inertiaSubgroup_iff]
@@ -213,6 +213,7 @@ theorem iInf_ramificationGroup_eq_bot : ⨅ i, ramificationGroup F P i = ⊥ := 
     omega
   rw [Subgroup.mem_bot]
   refine Subtype.ext (AlgEquiv.ext fun y ↦ ?_)
+  -- Unfold the nested subgroup and equivalence coercions to state pointwise equality in `F'`.
   change (g : F' ≃ₐ[F] F') y = y
   rcases eq_or_ne y 0 with rfl | hy0
   · simp
@@ -224,7 +225,7 @@ theorem iInf_ramificationGroup_eq_bot : ⨅ i, ramificationGroup F P i = ⊥ := 
 
 /-- **The ramification groups are trivial from some index on**
 (Stichtenoth, Proposition 3.8.5). -/
-theorem exists_forall_ramificationGroup_eq_bot [FiniteDimensional F F'] :
+theorem exists_forall_ramificationGroup_eq_bot [Finite (P.integers.decompositionSubgroup F)] :
     ∃ N : ℕ, ∀ i, N ≤ i → ramificationGroup F P i = ⊥ := by
   classical
   have := Fintype.ofFinite (P.integers.decompositionSubgroup F)
@@ -263,11 +264,13 @@ private theorem sub_mem_filtration_add_two {i : ℕ} (g : ramificationGroup F P 
     ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') x - x ∈
       P.filtration ((i : ℤ) + 2) := by
   have h := g.2 x hx
+  -- Normalize the coerced natural-number index to the integer index used by `filtration`.
   rwa [show (((i + 1 : ℕ) : ℤ) + 1) = (i : ℤ) + 2 by push_cast; ring] at h
 
 private theorem residue_eq_of_sub_mem_filtration_one {y z : P.integers}
     (h : (y : F') - (z : F') ∈ P.filtration 1) :
     IsLocalRing.residue P.integers y = IsLocalRing.residue P.integers z := by
+  -- Expose subtraction in the valuation subring as subtraction in its fraction field.
   rw [← sub_eq_zero, ← map_sub, IsLocalRing.residue_eq_zero_iff,
     mem_maximalIdeal_iff_valuation_lt_one, ← mem_filtration_one_iff,
     show ((y - z : P.integers) : F') = (y : F') - (z : F') from rfl]
@@ -280,6 +283,7 @@ private theorem pow_sub_one_mem_filtration_one {u : F'} (hu : u ∈ P.integers)
     rw [pow_zero, sub_self]
     exact Submodule.zero_mem (P.filtration 1)
   | succ n ih =>
+    -- Split the successor power difference into the induction term and `u - 1`.
     rw [show u ^ (n + 1) - 1 = u * (u ^ n - 1) + (u - 1) by ring]
     refine Submodule.add_mem _ ?_ h
     simpa using P.mul_mem_filtration (P.mem_filtration_zero_iff.mpr hu) ih
@@ -303,6 +307,7 @@ noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
       set s : F' := (t ^ (i + 2))⁻¹ with hs
       set σ : F' ≃ₐ[F] F' := ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') with hσ
       set τ : F' ≃ₐ[F] F' := ((h : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') with hτ
+      -- Normalize the error of `τ` by the chosen power of the uniformizer.
       have hw : τ (x : F') - (x : F') ∈ P.filtration ((i : ℤ) + 2) :=
         sub_mem_filtration_add_two F P h x.2
       have hc : s * (τ (x : F') - (x : F')) ∈ P.integers :=
@@ -316,13 +321,16 @@ noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
       have hσt : σ t - t ∈ P.filtration ((i : ℤ) + 2) := sub_mem_filtration_add_two F P g htmem
       set u : F' := σ t * t⁻¹ with hu
       have hu1 : u - 1 ∈ P.filtration 1 := by
+        -- Rewrite the uniformizer ratio so its filtration follows from `σ t - t`.
         rw [show u - 1 = (σ t - t) * t⁻¹ by rw [hu]; field_simp]
         have hord : P.ord t⁻¹ = -1 := by rw [ord_inv, ht]
         have h2 : (2 : ℤ) ≤ (i : ℤ) + 2 := by omega
         have h3 := P.mul_mem_filtration (P.filtration_antitone h2 hσt)
           (P.mem_filtration_ord t⁻¹)
+        -- The filtration indices add to `2 + (-1) = 1`.
         rwa [hord, show (2 : ℤ) + -1 = 1 by ring] at h3
       have humem : u ∈ P.integers := by
+        -- Recover integrality of `u` from the integral summands `u - 1` and `1`.
         rw [show u = (u - 1) + 1 by ring]
         have h0 : (0 : ℤ) ≤ 1 := by norm_num
         exact add_mem (P.mem_filtration_zero_iff.mp (P.filtration_antitone h0 hu1)) (one_mem _)
@@ -331,10 +339,12 @@ noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
         have h2 : (1 : ℤ) ≤ ((i + 1 : ℕ) : ℤ) + 1 := by push_cast; omega
         exact P.filtration_antitone h2 h1
       have hσcmem : σ c ∈ P.integers := (mem_integers_decompositionSubgroup_apply F P _).mpr hc
+      -- Expand the composite-action error using `σ t = u * t`.
       have hexp : s * (σ (τ (x : F')) - σ (x : F')) = u ^ (i + 2) * σ c := by
         rw [← map_sub, hwc, map_mul, map_pow, hu, mul_pow, inv_pow, hs]
         ring
       have hkey : s * (σ (τ (x : F')) - σ (x : F')) - c ∈ P.filtration 1 := by
+        -- Separate the two error terms: `u^(i+2) - 1` and `σ c - c`.
         rw [hexp, show u ^ (i + 2) * σ c - c = (u ^ (i + 2) - 1) * σ c + (σ c - c) by ring]
         refine Submodule.add_mem _ ?_ hσc
         simpa using P.mul_mem_filtration (pow_sub_one_mem_filtration_one P humem hu1 (i + 2))
@@ -342,6 +352,7 @@ noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
       simp only [Pi.add_apply, filtrationResidue_apply, ← map_add]
       refine residue_eq_of_sub_mem_filtration_one P ?_
       convert hkey using 1
+      -- Unfold the three residue numerators to the field identity supplied by `hkey`.
       change s * (σ (τ (x : F')) - (x : F')) -
           (s * (σ (x : F') - (x : F')) + s * (τ (x : F') - (x : F'))) =
         s * (σ (τ (x : F')) - σ (x : F')) - c
@@ -418,17 +429,12 @@ theorem commutator_ramificationGroup_le (i : ℕ) :
 /-- **In characteristic `p` the successive quotients of the ramification filtration are killed by
 `p`** (Stichtenoth, Proposition 3.8.5): the `p`-th power of an element of `G_{i+1}(P)` lies in
 `G_{i+2}(P)`, so `G_{i+1}(P) / G_{i+2}(P)` is elementary abelian. -/
-theorem pow_mem_ramificationGroup_of_charP (p : ℕ) [CharP F' p] (i : ℕ)
+theorem pow_mem_ramificationGroup_of_charP (p : ℕ) [CharP P.ResidueField p] (i : ℕ)
     {g : P.integers.decompositionSubgroup F} (hg : g ∈ ramificationGroup F P (i + 1)) :
     g ^ p ∈ ramificationGroup F P (i + 2) := by
   obtain ⟨t, ht⟩ := P.exists_isUniformizer
   rw [isUniformizer_iff_ord_eq_one] at ht
-  have hp : (p : P.ResidueField) = 0 := by
-    have hz : (p : P.integers) = 0 := by
-      refine Subtype.ext ?_
-      push_cast
-      exact CharP.cast_eq_zero F' p
-    rw [← map_natCast (IsLocalRing.residue P.integers) p, hz, map_zero]
+  have hp : (p : P.ResidueField) = 0 := CharP.cast_eq_zero P.ResidueField p
   have hmem : (⟨g, hg⟩ : ramificationGroup F P (i + 1)) ^ p ∈
       (ramificationResidueHom F P ht i).ker := by
     rw [MonoidHom.mem_ker, map_pow, ← toAdd_eq_zero]
@@ -438,8 +444,9 @@ theorem pow_mem_ramificationGroup_of_charP (p : ℕ) [CharP F' p] (i : ℕ)
   simpa using hmem
 
 /-- **In characteristic zero the first ramification group is trivial**
-(Stichtenoth, Proposition 3.8.5): the ramification is tame. -/
-theorem ramificationGroup_one_eq_bot [FiniteDimensional F F'] [CharZero F'] :
+(Stichtenoth, Proposition 3.8.5). -/
+theorem ramificationGroup_one_eq_bot [Finite (P.integers.decompositionSubgroup F)]
+    [CharZero P.ResidueField] :
     ramificationGroup F P 1 = ⊥ := by
   obtain ⟨t, ht⟩ := P.exists_isUniformizer
   rw [isUniformizer_iff_ord_eq_one] at ht
@@ -455,16 +462,7 @@ theorem ramificationGroup_one_eq_bot [FiniteDimensional F F'] [CharZero F'] :
         rw [← map_pow, pow_orderOf_eq_one, map_one]
       have hval := congrFun (congrArg Multiplicative.toAdd hpow) x
       rw [toAdd_pow, toAdd_one, Pi.zero_apply, Pi.smul_apply, nsmul_eq_mul] at hval
-      have hncast : (n : P.ResidueField) ≠ 0 := by
-        have hn0 : ((n : ℕ) : F') ≠ 0 := Nat.cast_ne_zero.mpr hfin.ne'
-        have hord : P.ord ((n : ℕ) : F') = 0 := by
-          rw [show ((n : ℕ) : F') = algebraMap k F' (n : k) by push_cast; ring]
-          exact P.ord_algebraMap _
-        have : IsLocalRing.residue P.integers (n : P.integers) ≠ 0 := by
-          rw [Ne, P.residue_eq_zero_iff_ord_pos (by push_cast; exact hn0)]
-          rw [show (((n : P.integers) : F')) = ((n : ℕ) : F') by push_cast; ring, hord]
-          omega
-        rwa [map_natCast] at this
+      have hncast : (n : P.ResidueField) ≠ 0 := Nat.cast_ne_zero.mpr hfin.ne'
       rw [Pi.zero_apply]
       exact (mul_eq_zero.mp hval).resolve_left hncast
     rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
