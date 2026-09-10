@@ -7,7 +7,8 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Basic
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
-public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.GaussSum
+public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.GaussSum
 
 /-!
 # Square roots of prime discriminants in a field of roots of unity

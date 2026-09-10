@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.Cyclotomic.GaussSum
-public import TauCeti.NumberTheory.Multiquadratic.Galois.Kummer
-public import Mathlib.RingTheory.RootsOfUnity.Complex
+public import Mathlib.NumberTheory.Cyclotomic.Basic
+import Mathlib.RingTheory.RootsOfUnity.Complex
+import TauCeti.NumberTheory.Multiquadratic.Galois.Kummer
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
@@ -19,10 +20,10 @@ field. Concretely, inside any field `L` of characteristic zero holding a primiti
 unity `ζ` with `0 < N`, every square root of an integer `m` with `4 |m| ∣ N` already lies in
 `ℚ(ζ)`.
 
-The engine is the prime case: a square root of a prime `p` is assembled from a root of unity of
-order `4p`. For odd `p` the quadratic Gauss sum supplies a square root of the prime discriminant
-`p* = ±p` (`exists_mem_sq_eq_oddPrimeDiscriminant`), and the fourth root of unity corrects its sign
-when `p ≡ 3 (mod 4)`; for `p = 2` the eighth root of unity supplies `√2` directly
+The engine is the prime case: a square root of a prime `p` is assembled from a root of unity whose
+order is divisible by `4p`. For odd `p` the quadratic Gauss sum supplies a square root of the prime
+discriminant `p* = ±p` (`exists_mem_sq_eq_oddPrimeDiscriminant`), and the fourth root of unity
+corrects its sign when `p ≡ 3 (mod 4)`; for `p = 2` the eighth root of unity supplies `√2` directly
 (`exists_mem_sq_eq_two`). Multiplying square roots along a prime factorization reaches every
 positive integer, the fourth root of unity reaches the negative ones, and clearing denominators
 reaches every rational number. Since the two square roots of an element differ by a sign, *every*
@@ -53,9 +54,9 @@ Classical Introduction to Modern Number Theory*, Chapter 6.
   radicands is contained in any such intermediate field.
 * `TauCeti.Multiquadratic.adjoin_range_le_adjoin_exp`: over `ℂ`, `ℚ(√d₁, …, √dₙ) ⊆ ℚ(ζ_N)` for the
   root of unity `ζ_N = exp (2 π i / N)` and the order `N = 4 ∏ᵢ |num dᵢ · den dᵢ|`.
-* `TauCeti.Multiquadratic.exists_isCyclotomicExtension_adjoin_range_le`: every multiquadratic field
-  with rational radicands lies in a cyclotomic field.
-* `TauCeti.Multiquadratic.exists_isCyclotomicExtension_nonempty_algHom`: the abstract form — a
+* `TauCeti.Multiquadratic.exists_isCyclotomicExtension_and_adjoin_range_le`: every
+  multiquadratic field with rational radicands lies in a cyclotomic field.
+* `TauCeti.Multiquadratic.exists_isCyclotomicExtension_and_nonempty_algHom`: the abstract form — a
   finite Galois extension of `ℚ` whose Galois group has exponent dividing two admits a
   `ℚ`-algebra embedding into a cyclotomic extension of `ℚ`.
 -/
@@ -68,9 +69,11 @@ namespace TauCeti.Multiquadratic
 
 variable {L : Type*} [Field L] [CharZero L] {F : IntermediateField ℚ L} {ζ : L} {N : ℕ}
 
-/-- **A root of unity of order `4p` carries a square root of the prime `p`.** For an odd prime the
-Gauss sum gives a square root of `p* = ±p`, and a primitive fourth root of unity repairs the sign;
-for `p = 2` a primitive eighth root of unity gives `√2`. -/
+/-- **A root of unity of order divisible by `4p` carries a square root of the prime `p`.** The
+primitive `N`-th root of unity `ζ` is powered down to the roots of unity the construction needs,
+which `4 * p ∣ N` makes available. For an odd prime the Gauss sum gives a square root of
+`p* = ±p`, and a primitive fourth root of unity repairs the sign; for `p = 2` a primitive eighth
+root of unity gives `√2`. -/
 theorem exists_mem_sq_eq_prime (hN : 0 < N) (hζ : IsPrimitiveRoot ζ N) (hmem : ζ ∈ F) {p : ℕ}
     (hp : p.Prime) (hdvd : 4 * p ∣ N) :
     ∃ x ∈ F, x ^ 2 = (p : L) := by
@@ -177,10 +180,9 @@ reads `4 |d i| ∣ N`. -/
 theorem adjoin_range_le_of_sq_eq_intCast {ι : Type*} (hN : 0 < N) (hζ : IsPrimitiveRoot ζ N)
     (hmem : ζ ∈ F) {d : ι → ℤ} {r : ι → L} (hr : ∀ i, r i ^ 2 = (d i : L))
     (hdvd : ∀ i, 4 * (d i).natAbs ∣ N) :
-    adjoin ℚ (Set.range r) ≤ F := by
-  rw [adjoin_le_iff]
-  rintro x ⟨i, rfl⟩
-  exact mem_of_sq_eq_intCast hN hζ hmem (hdvd i) (hr i)
+    adjoin ℚ (Set.range r) ≤ F :=
+  adjoin_range_le_of_sq_eq_ratCast hN hζ hmem (d := fun i => ((d i : ℚ)))
+    (fun i => by rw [hr i]; push_cast; ring) fun i => by simpa using hdvd i
 
 /-! ### Over `ℂ` no root of unity need be assumed -/
 
@@ -206,7 +208,7 @@ contained in a cyclotomic extension of `ℚ`. The order and the field are named 
 zero radicands, whose square roots are `0`.
 
 This is the explicit Kronecker–Weber theorem for multiquadratic fields. -/
-theorem exists_isCyclotomicExtension_adjoin_range_le {ι : Type*} [Finite ι] {d : ι → ℚ}
+theorem exists_isCyclotomicExtension_and_adjoin_range_le {ι : Type*} [Finite ι] {d : ι → ℚ}
     {r : ι → ℂ} (hr : ∀ i, r i ^ 2 = (d i : ℂ)) :
     ∃ N : ℕ, 0 < N ∧ ∃ G : IntermediateField ℚ ℂ,
       IsCyclotomicExtension {N} ℚ G ∧ adjoin ℚ (Set.range r) ≤ G := by
@@ -243,15 +245,15 @@ This is the abstract form of the containment above: nothing is assumed about how
 only about the shape of its Galois group. Exponent-two Kummer theory
 (`exists_root_adjoin_range_eq_top`) supplies rational radicands and square roots generating `E`,
 a complex embedding carries them into `ℂ`, and
-`exists_isCyclotomicExtension_adjoin_range_le` places the image in a cyclotomic field. -/
-theorem exists_isCyclotomicExtension_nonempty_algHom (E : Type*) [Field E] [Algebra ℚ E]
+`exists_isCyclotomicExtension_and_adjoin_range_le` places the image in a cyclotomic field. -/
+theorem exists_isCyclotomicExtension_and_nonempty_algHom (E : Type*) [Field E] [Algebra ℚ E]
     [FiniteDimensional ℚ E] [IsGalois ℚ E] (hexp : Monoid.exponent (E ≃ₐ[ℚ] E) ∣ 2) :
     ∃ N : ℕ, 0 < N ∧ ∃ G : IntermediateField ℚ ℂ,
       IsCyclotomicExtension {N} ℚ G ∧ Nonempty (E →ₐ[ℚ] G) := by
   obtain ⟨n, d, root, hroot, -, hadjoin, -⟩ :=
     exists_root_adjoin_range_eq_top (K := ℚ) (L := E) hexp
   let φ : E →ₐ[ℚ] ℂ := IsAlgClosed.lift
-  obtain ⟨N, hN, G, hG, hle⟩ := exists_isCyclotomicExtension_adjoin_range_le (d := d)
+  obtain ⟨N, hN, G, hG, hle⟩ := exists_isCyclotomicExtension_and_adjoin_range_le (d := d)
     (r := fun i => φ (root i)) fun i => by rw [← map_pow, hroot i, AlgHom.commutes, eq_ratCast]
   refine ⟨N, hN, G, hG, ⟨(IntermediateField.inclusion ?_).comp φ.equivFieldRange.toAlgHom⟩⟩
   rintro _ ⟨x, rfl⟩
@@ -262,8 +264,7 @@ theorem exists_isCyclotomicExtension_nonempty_algHom (E : Type*) [Field E] [Alge
 /-- **Worked example: `ℚ(√2, √3) ⊆ ℚ(ζ₂₄)`.** A biquadratic field lies in the `24`-th cyclotomic
 field, for either choice of the two square roots. The order `24` is what the construction uses:
 `√2` is built from an eighth root of unity and `√3` from a twelfth. -/
-theorem adjoin_pair_le_adjoin_of_sq_eq_two_of_sq_eq_three {ζ x y : ℂ} (hζ : IsPrimitiveRoot ζ 24)
-    (hx : x ^ 2 = 2) (hy : y ^ 2 = 3) :
+example {ζ x y : ℂ} (hζ : IsPrimitiveRoot ζ 24) (hx : x ^ 2 = 2) (hy : y ^ 2 = 3) :
     adjoin ℚ {x, y} ≤ adjoin ℚ {ζ} := by
   have hmem : ∀ {m : ℤ} {z : ℂ}, 4 * m.natAbs ∣ 24 → z ^ 2 = (m : ℂ) →
       z ∈ adjoin ℚ {ζ} := fun hdvd hz =>
