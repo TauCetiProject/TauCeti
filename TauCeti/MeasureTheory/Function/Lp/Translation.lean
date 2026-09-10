@@ -281,7 +281,11 @@ theorem tendsto_eLpNorm_comp_add_sub (hu : ContDiff ℝ 1 u) {p : ℝ≥0∞} (h
 
 end Translation
 
-section SetIntegralTranslation
+end TauCeti
+
+namespace Set
+
+open MeasureTheory
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
@@ -301,6 +305,4 @@ theorem setIntegral_translateLp_toLp
           hfLp.coeFn_toLp))] with x hx
   simpa only [Function.comp_apply, sub_eq_add_neg] using hx
 
-end SetIntegralTranslation
-
-end TauCeti
+end Set

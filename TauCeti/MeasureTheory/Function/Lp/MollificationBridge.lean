@@ -63,6 +63,8 @@ private theorem setIntegral_normedConvolution (phi : ContDiffBump (0 : E)) {f : 
     _ = ∫ x in s, ∫ t, phi.normed mu t • f (x - t) ∂mu ∂mu := by
       apply integral_integral_swap
       have hi := hF_int.integrableOn (s := univ ×ˢ s)
+      -- `IntegrableOn` is definitionally `Integrable` against a restricted measure, and this
+      -- form is required to apply the product-measure restriction rewrite below.
       change Integrable _ ((mu.prod mu).restrict (univ ×ˢ s)) at hi
       rw [← Measure.prod_restrict univ s] at hi
       simpa only [Measure.restrict_univ] using hi
@@ -80,6 +82,9 @@ theorem normedBumpLp_ae_eq_convolution (hp_ne_top : p ≠ ∞) (phi : ContDiffBu
       (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) := by
   have hf_int : Integrable f mu := by
     apply (integrableOn_iff_integrable_of_support_subset (subset_tsupport f)).mp
+    -- `IntegrableOn` is definitionally `Integrable` against a restricted measure; this
+    -- conversion is needed because the support lemma produces the former while the Lp lemma
+    -- expects the latter.
     change Integrable f (mu.restrict (tsupport f))
     exact (integrableOn_Lp_of_measure_ne_top (hfLp.toLp f) Fact.out
       hfc.measure_lt_top.ne).congr (ae_restrict_of_ae hfLp.coeFn_toLp)
@@ -109,17 +114,18 @@ theorem normedBumpLp_ae_eq_convolution (hp_ne_top : p ≠ ∞) (phi : ContDiffBu
       · exact phi.hasCompactSupport_normed.smul_right
     calc
       ∫ x in s, (normedBumpLp hp_ne_top phi mu (hfLp.toLp f)) x ∂mu =
-          setIntegralLp s hμs
+          Set.setIntegralLp (𝕜 := ℝ) s hμs
             (normedBumpLp hp_ne_top phi mu (hfLp.toLp f)) :=
-        (setIntegralLp_apply s hμs _).symm
-      _ = ∫ t, setIntegralLp s hμs
+        (Set.setIntegralLp_apply (𝕜 := ℝ) s hμs _).symm
+      _ = ∫ t, Set.setIntegralLp (𝕜 := ℝ) s hμs
             (phi.normed mu t • mu.translateLp p (-t) (hfLp.toLp f)) ∂mu := by
         rw [normedBumpLp_apply]
-        exact (setIntegralLp s hμs).integral_comp_comm hLp_int |>.symm
+        exact (Set.setIntegralLp (𝕜 := ℝ) s hμs).integral_comp_comm hLp_int |>.symm
       _ = ∫ t, phi.normed mu t • ∫ x in s, f (x - t) ∂mu ∂mu := by
         apply integral_congr_ae
         filter_upwards with t
-        rw [map_smul, setIntegralLp_apply, setIntegral_translateLp_toLp s hfLp t]
+        rw [map_smul, Set.setIntegralLp_apply (𝕜 := ℝ),
+          Set.setIntegral_translateLp_toLp s hfLp t]
       _ = ∫ x in s, conv x ∂mu := by
         exact setIntegral_normedConvolution phi hf_int s
       _ = ∫ x in s, (hconvLp.toLp conv) x ∂mu := by
