@@ -11,14 +11,13 @@ public import Mathlib.Algebra.Module.Equiv.Basic
 # Evaluating multiplication by a unit of the base ring
 
 Mathlib's `LinearEquiv.smulOfUnit` packages multiplication by a unit `u` of the base ring as a
-linear equivalence, but records no lemmas evaluating it at a vector. This file supplies those
-evaluation lemmas, in the `simp`-normal forms that rewrite an application of
+linear equivalence, but records no lemma evaluating it at a vector. This file supplies that
+evaluation lemma, in the `simp`-normal form that rewrites an application of
 `LinearEquiv.smulOfUnit` to a scalar multiplication.
 
 ## Main results
 
 * `LinearEquiv.smulOfUnit_apply`: `LinearEquiv.smulOfUnit u` acts as multiplication by `u`.
-* `LinearEquiv.smulOfUnit_symm_apply`: its inverse acts as multiplication by `u⁻¹`.
 -/
 
 public section
@@ -31,12 +30,6 @@ variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 `u • x`. -/
 @[simp]
 theorem smulOfUnit_apply (u : Rˣ) (x : M) : (smulOfUnit u : M ≃ₗ[R] M) x = (u : R) • x :=
-  (rfl)
-
-/-- The inverse of multiplication by a unit `u`, evaluated at `x`, is multiplication by `u⁻¹`. -/
-@[simp]
-theorem smulOfUnit_symm_apply (u : Rˣ) (x : M) :
-    (smulOfUnit u : M ≃ₗ[R] M).symm x = ((u⁻¹ : Rˣ) : R) • x :=
   (rfl)
 
 end LinearEquiv

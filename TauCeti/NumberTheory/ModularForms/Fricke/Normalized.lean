@@ -139,17 +139,6 @@ public theorem frickeNormalizer_sq_mul_frickeScalar (k : ℤ) :
     mul_assoc, ← zpow_add₀ hN]
   simp
 
-/-- The inverse scalar needed to express the inverse of the normalized Fricke equivalences. -/
-private theorem frickeNormalizer_inv_mul_frickeScalar_inv (k : ℤ) :
-    (frickeNormalizer N k)⁻¹ * (frickeScalar N k)⁻¹ =
-      (-1 : ℂ) ^ k * frickeNormalizer N k := by
-  have hn := frickeNormalizer_ne_zero (N := N) k
-  have hs := frickeScalar_ne_zero (N := N) k
-  field_simp
-  rw [frickeNormalizer_sq_mul_frickeScalar]
-  rw [← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, zpow_mul]
-  norm_num
-
 /-! ### The operator -/
 
 /-- **The normalized Fricke operator `𝒲_N` on `M_k(Γ₁(N))`**: the raw slash by `W` scaled by
@@ -401,13 +390,14 @@ public theorem coe_normalizedFrickeCharEquiv_symm_apply (k : ℤ) (χ : (ZMod N)
         ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
       ((-1 : ℂ) ^ k) •
         normalizedFrickeOperator k (g : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
-  simp only [normalizedFrickeCharEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
-    LinearEquiv.smulOfUnit_symm_apply, coe_frickeCharEquiv_symm_apply,
-    normalizedFrickeOperator_def, LinearMap.smul_apply, Submodule.coe_smul,
-    Units.val_inv_eq_inv_val, Units.val_mk0]
-  rw [map_smul, ← mul_smul, ← mul_smul,
-    mul_comm (frickeScalar N k)⁻¹ (frickeNormalizer N k)⁻¹,
-    frickeNormalizer_inv_mul_frickeScalar_inv]
+  have hg : (g : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      normalizedFrickeOperator k
+        (((normalizedFrickeCharEquiv k χ).symm g : modFormCharSpace k χ) :
+          ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
+    rw [← coe_normalizedFrickeCharEquiv_apply, LinearEquiv.apply_symm_apply]
+  rw [hg, normalizedFrickeOperator_normalizedFrickeOperator_apply, smul_smul,
+    ← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, zpow_mul]
+  norm_num
 
 /-- **The normalized Fricke automorphism carries the `χ`-space of cusp forms onto the
 `χ⁻¹`-space.** -/
@@ -451,13 +441,14 @@ public theorem coe_normalizedFrickeCharCuspEquiv_symm_apply (k : ℤ) (χ : (ZMo
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
       ((-1 : ℂ) ^ k) •
         normalizedFrickeOperatorCusp k (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
-  simp only [normalizedFrickeCharCuspEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
-    LinearEquiv.smulOfUnit_symm_apply, coe_frickeCharCuspEquiv_symm_apply,
-    normalizedFrickeOperatorCusp_def, LinearMap.smul_apply, Submodule.coe_smul,
-    Units.val_inv_eq_inv_val, Units.val_mk0]
-  rw [map_smul, ← mul_smul, ← mul_smul,
-    mul_comm (frickeScalar N k)⁻¹ (frickeNormalizer N k)⁻¹,
-    frickeNormalizer_inv_mul_frickeScalar_inv]
+  have hg : (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      normalizedFrickeOperatorCusp k
+        (((normalizedFrickeCharCuspEquiv k χ).symm g : cuspFormCharSpace k χ) :
+          CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
+    rw [← coe_normalizedFrickeCharCuspEquiv_apply, LinearEquiv.apply_symm_apply]
+  rw [hg, normalizedFrickeOperatorCusp_normalizedFrickeOperatorCusp_apply, smul_smul,
+    ← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, zpow_mul]
+  norm_num
 
 /-! ### The eigenspace splitting in even weight -/
 
