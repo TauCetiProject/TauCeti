@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.GeneralLinear.Clifford
 
 /-!
-# Occupation projections in the CAR algebra
+# Occupation elements in the CAR algebra
 
 For the Clifford algebra of the trace form on matrices, write `dᵢⱼ = ι(Eᵢⱼ)`. This file studies
 the normalized quadratic elements
@@ -21,18 +21,18 @@ When `i ≠ j`, these are occupation projections for the hyperbolic plane spanne
 idempotent in every characteristic. All of the occupation elements commute with one another.
 Finally, the diagonal normal-ordered lift is the sum `Fᵢᵢ = ∑ k, pᵢₖ`; for a linearly ordered index
 type this can be oriented using only the positive pairs. These formulas supply the commuting
-zero-one operators used to calculate weights in the left regular CAR module.
+off-diagonal zero-one operators used to calculate weights in the left regular CAR module.
 
 ## Main definitions
 
-* `TauCeti.carOccupationProjection`: the normalized quadratic element `pᵢⱼ`.
+* `TauCeti.carOccupationElement`: the normalized quadratic element `pᵢⱼ`.
 
 ## Main results
 
-* `TauCeti.carOccupationProjection_add_swap`: `pᵢⱼ + pⱼᵢ = 1`.
-* `TauCeti.isIdempotentElem_carOccupationProjection`: off-diagonal `pᵢⱼ` are idempotent.
-* `TauCeti.carOccupationProjection_mul_self`: the corresponding multiplication normal form.
-* `TauCeti.commute_carOccupationProjection`: all occupation elements commute.
+* `TauCeti.carOccupationElement_add_swap`: `pᵢⱼ + pⱼᵢ = 1`.
+* `TauCeti.isIdempotentElem_carOccupationElement`: off-diagonal `pᵢⱼ` are idempotent.
+* `TauCeti.carOccupationElement_mul_self`: the corresponding multiplication normal form.
+* `TauCeti.commute_carOccupationElement`: all occupation elements commute.
 * `TauCeti.glCliffordHom_single_self_eq_sum_occupation`: `Fᵢᵢ = ∑ k, pᵢₖ`.
 
 ## References
@@ -61,15 +61,23 @@ private noncomputable abbrev carD (i j : n) :
     CliffordAlgebra (traceQuadraticForm K n) :=
   ι (traceQuadraticForm K n) (Matrix.single i j 1)
 
+private theorem polar_single_single_eq_zero (i j k l : n)
+    (h : ¬(j = k ∧ l = i)) :
+    QuadraticMap.polar (traceQuadraticForm K n)
+      (Matrix.single i j 1) (Matrix.single k l 1) = 0 := by
+  rw [← QuadraticMap.polarBilin_apply_apply, polarBilin_traceQuadraticForm,
+    ← traceBilinForm_apply, traceBilinForm_single_single, ite_eq_right h]
+  simp
+
 /-- The occupation element for the ordered matrix-unit pair `(i, j)`, normalized so that it is an
 idempotent off the diagonal. For `i = j` it is the scalar `1/2`. -/
-noncomputable def carOccupationProjection (i j : n) :
+noncomputable def carOccupationElement (i j : n) :
     CliffordAlgebra (traceQuadraticForm K n) :=
   (2 : K)⁻¹ • (carD i j * carD j i)
 
 /-- The occupation element written directly in terms of the two matrix-unit generators. -/
-theorem carOccupationProjection_def [decEq : DecidableEq n] (i j : n) :
-    carOccupationProjection (K := K) i j =
+theorem carOccupationElement_def [decEq : DecidableEq n] (i j : n) :
+    carOccupationElement (K := K) i j =
       (2 : K)⁻¹ •
         (ι (traceQuadraticForm K n) (Matrix.single i j 1) *
           ι (traceQuadraticForm K n) (Matrix.single j i 1)) := by
@@ -78,15 +86,15 @@ theorem carOccupationProjection_def [decEq : DecidableEq n] (i j : n) :
 
 /-- The diagonal occupation element is the scalar `1/2`. -/
 @[simp]
-theorem carOccupationProjection_self (i : n) :
-    carOccupationProjection (K := K) i i = (2 : K)⁻¹ • 1 := by
-  simp [carOccupationProjection, carD]
+theorem carOccupationElement_self (i : n) :
+    carOccupationElement (K := K) i i = (2 : K)⁻¹ • 1 := by
+  simp [carOccupationElement, carD]
 
 /-- Oppositely oriented off-diagonal occupation elements are orthogonal in this order. -/
 @[simp]
-theorem carOccupationProjection_mul_swap {i j : n} (hij : i ≠ j) :
-    carOccupationProjection (K := K) i j * carOccupationProjection (K := K) j i = 0 := by
-  rw [carOccupationProjection, carOccupationProjection, smul_mul_assoc, mul_smul_comm, smul_smul]
+theorem carOccupationElement_mul_swap {i j : n} (hij : i ≠ j) :
+    carOccupationElement (K := K) i j * carOccupationElement (K := K) j i = 0 := by
+  rw [carOccupationElement, carOccupationElement, smul_mul_assoc, mul_smul_comm, smul_smul]
   -- Expose the common scalar and reassociate so `simp` can see the nilpotent middle pair.
   change ((2 : K)⁻¹ * (2 : K)⁻¹) •
     ((carD (K := K) i j * carD j i) * (carD j i * carD i j)) = 0
@@ -101,43 +109,43 @@ variable [Invertible (2 : K)]
 /-- The two orientations of an occupation element are complementary. This also holds on the
 diagonal, where both terms are the scalar `1/2`. -/
 @[simp]
-theorem carOccupationProjection_add_swap (i j : n) :
-    carOccupationProjection (K := K) i j + carOccupationProjection (K := K) j i = 1 := by
-  rw [carOccupationProjection, carOccupationProjection, ← smul_add]
+theorem carOccupationElement_add_swap (i j : n) :
+    carOccupationElement (K := K) i j + carOccupationElement (K := K) j i = 1 := by
+  rw [carOccupationElement, carOccupationElement, ← smul_add]
   have hcar := traceQuadraticForm_ι_single_mul_ι_single_add_swap
     (R := K) i j j i 1 1
   simp only [one_mul] at hcar
   rw [hcar, Algebra.smul_def, ← map_mul]
   simp
 
-/-- Reversing an occupation element gives its complementary projection. -/
-theorem carOccupationProjection_swap (i j : n) :
-    carOccupationProjection (K := K) j i = 1 - carOccupationProjection (K := K) i j :=
-  eq_sub_iff_add_eq.mpr (carOccupationProjection_add_swap (K := K) j i)
+/-- Reversing an occupation element gives its complement. -/
+theorem carOccupationElement_swap (i j : n) :
+    carOccupationElement (K := K) j i = 1 - carOccupationElement (K := K) i j :=
+  eq_sub_iff_add_eq.mpr (carOccupationElement_add_swap (K := K) j i)
 
 end Half
 
 /-- Every off-diagonal occupation element is idempotent over every field. -/
-theorem isIdempotentElem_carOccupationProjection {i j : n} (hij : i ≠ j) :
-    IsIdempotentElem (carOccupationProjection (K := K) i j) := by
+theorem isIdempotentElem_carOccupationElement {i j : n} (hij : i ≠ j) :
+    IsIdempotentElem (carOccupationElement (K := K) i j) := by
   by_cases h2 : (2 : K) = 0
-  · simp [carOccupationProjection, h2, IsIdempotentElem]
+  · simp [carOccupationElement, h2, IsIdempotentElem]
   · let _ : Invertible (2 : K) := invertibleOfNonzero h2
     exact (IsIdempotentElem.of_mul_add
-      (carOccupationProjection_mul_swap (K := K) hij)
-      (carOccupationProjection_add_swap (K := K) i j)).1
+      (carOccupationElement_mul_swap (K := K) hij)
+      (carOccupationElement_add_swap (K := K) i j)).1
 
 /-- Multiplication by an off-diagonal occupation element twice is multiplication by it once. -/
 @[simp]
-theorem carOccupationProjection_mul_self {i j : n} (hij : i ≠ j) :
-    carOccupationProjection (K := K) i j * carOccupationProjection (K := K) i j =
-      carOccupationProjection (K := K) i j :=
-  (isIdempotentElem_carOccupationProjection (K := K) hij).eq
+theorem carOccupationElement_mul_self {i j : n} (hij : i ≠ j) :
+    carOccupationElement (K := K) i j * carOccupationElement (K := K) i j =
+      carOccupationElement (K := K) i j :=
+  (isIdempotentElem_carOccupationElement (K := K) hij).eq
 
 /-- All occupation elements commute, including equal and oppositely oriented pairs. -/
-theorem commute_carOccupationProjection {i j k l : n} :
-    Commute (carOccupationProjection (K := K) i j)
-      (carOccupationProjection (K := K) k l) := by
+theorem commute_carOccupationElement {i j k l : n} :
+    Commute (carOccupationElement (K := K) i j)
+      (carOccupationElement (K := K) k l) := by
   by_cases heq : (i, j) = (k, l)
   · cases heq
     exact Commute.refl _
@@ -150,13 +158,9 @@ theorem commute_carOccupationProjection {i j k l : n} :
       intro hij
       subst j
       exact heq rfl
-    change carOccupationProjection (K := K) i j * carOccupationProjection (K := K) j i =
-      carOccupationProjection (K := K) j i * carOccupationProjection (K := K) i j
-    rw [carOccupationProjection_mul_swap (K := K) hij,
-      carOccupationProjection_mul_swap (K := K) hij.symm]
-  · rw [commute_iff_lie_eq, carOccupationProjection, carOccupationProjection]
-    change ⁅(2 : K)⁻¹ • (carD i j * carD j i),
-      (2 : K)⁻¹ • (carD k l * carD l k)⁆ = 0
+    rw [commute_iff_lie_eq, Ring.lie_def, carOccupationElement_mul_swap (K := K) hij,
+      carOccupationElement_mul_swap (K := K) hij.symm, sub_self]
+  · rw [commute_iff_lie_eq, carOccupationElement, carOccupationElement]
     rw [Ring.lie_def, smul_mul_assoc, mul_smul_comm, smul_smul,
       smul_mul_assoc, mul_smul_comm, smul_smul, ← smul_sub, ← Ring.lie_def,
       lie_ι_mul_ι_ι_mul_ι]
@@ -174,24 +178,16 @@ theorem commute_carOccupationProjection {i j k l : n} :
       exact heq rfl
     have hpzy : QuadraticMap.polar (traceQuadraticForm K n)
         (Matrix.single k l 1) (Matrix.single j i 1) = 0 := by
-      rw [← QuadraticMap.polarBilin_apply_apply, polarBilin_traceQuadraticForm,
-        ← traceBilinForm_apply, traceBilinForm_single_single, ite_eq_right hzy]
-      simp
+      exact polar_single_single_eq_zero (K := K) k l j i hzy
     have hpzx : QuadraticMap.polar (traceQuadraticForm K n)
         (Matrix.single k l 1) (Matrix.single i j 1) = 0 := by
-      rw [← QuadraticMap.polarBilin_apply_apply, polarBilin_traceQuadraticForm,
-        ← traceBilinForm_apply, traceBilinForm_single_single, ite_eq_right hzx]
-      simp
+      exact polar_single_single_eq_zero (K := K) k l i j hzx
     have hpwy : QuadraticMap.polar (traceQuadraticForm K n)
         (Matrix.single l k 1) (Matrix.single j i 1) = 0 := by
-      rw [← QuadraticMap.polarBilin_apply_apply, polarBilin_traceQuadraticForm,
-        ← traceBilinForm_apply, traceBilinForm_single_single, ite_eq_right hwy]
-      simp
+      exact polar_single_single_eq_zero (K := K) l k j i hwy
     have hpxw : QuadraticMap.polar (traceQuadraticForm K n)
         (Matrix.single i j 1) (Matrix.single l k 1) = 0 := by
-      rw [← QuadraticMap.polarBilin_apply_apply, polarBilin_traceQuadraticForm,
-        ← traceBilinForm_apply, traceBilinForm_single_single, ite_eq_right hxw]
-      simp
+      exact polar_single_single_eq_zero (K := K) i j l k hxw
     simp [hpzy, hpzx, hpwy, hpxw]
 
 section Diagonal
@@ -202,22 +198,22 @@ variable [Invertible (2 : K)]
 index fixed. The diagonal summand is the scalar `1/2`. -/
 theorem glCliffordHom_single_self_eq_sum_occupation (i : n) :
     glCliffordHom (K := K) (n := n) (Matrix.single i i 1) =
-      ∑ k : n, carOccupationProjection (K := K) i k := by
+      ∑ k : n, carOccupationElement (K := K) i k := by
   rw [glCliffordHom_single, Finset.smul_sum]
-  rfl
+  simp only [carOccupationElement, carD]
 
 /-- Orient the diagonal lift using only positive-pair occupation projections. Below `i`, the
 opposite orientation is replaced by its complement. -/
 theorem glCliffordHom_single_self_eq_sum_positive_occupation
     [LinearOrder n] (i : n) :
     glCliffordHom (K := K) (n := n) (Matrix.single i i 1) =
-      ∑ k : n, if k < i then 1 - carOccupationProjection (K := K) k i
-        else carOccupationProjection (K := K) i k := by
+      ∑ k : n, if k < i then 1 - carOccupationElement (K := K) k i
+        else carOccupationElement (K := K) i k := by
   rw [glCliffordHom_single_self_eq_sum_occupation]
   apply Finset.sum_congr rfl
   intro k _
   split_ifs with hki
-  · exact eq_sub_iff_add_eq.mpr (carOccupationProjection_add_swap (K := K) i k)
+  · exact eq_sub_iff_add_eq.mpr (carOccupationElement_add_swap (K := K) i k)
   · rfl
 
 end Diagonal
