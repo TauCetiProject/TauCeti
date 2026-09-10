@@ -14,6 +14,7 @@ public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.RingTheory.Int.Basic
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 public import Mathlib.Topology.Instances.AddCircle.Real
+public import TauCeti.Algebra.Module.Primitive
 
 /-!
 # Slopes on a framed boundary torus
@@ -95,26 +96,6 @@ ordinary propositional lemmas instead of implicitly `@[defeq]` ones; an exported
 would have to expose every definition it unfolds. -/
 
 variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Module ℤ M] [Module ℤ N]
-
-/-- A homology class `v : M` on a boundary torus is **primitive** when some `ℤ`-linear functional
-`M →ₗ[ℤ] ℤ` sends it to `1`, so the span of `v` splits off a copy of `ℤ`. Over the standard
-lattice `ℤ × ℤ` this is coprimality of the two coordinates (`TauCeti.isPrimitive_prod_iff`). The
-definition mentions no basis, so it is preserved by every `ℤ`-linear equivalence
-(`TauCeti.isPrimitive_congr`). -/
-def IsPrimitive (v : M) : Prop := ∃ f : M →ₗ[ℤ] ℤ, f v = 1
-
-/-- Primitivity is unchanged by the sign action `v ↦ -v`. -/
-theorem IsPrimitive.neg {v : M} (h : IsPrimitive v) : IsPrimitive (-v) := by
-  obtain ⟨f, hf⟩ := h
-  exact ⟨-f, by simp [hf]⟩
-
-/-- Primitivity transports along a `ℤ`-linear equivalence: it is a basis-free property. -/
-theorem isPrimitive_congr (φ : M ≃ₗ[ℤ] N) {v : M} : IsPrimitive (φ v) ↔ IsPrimitive v := by
-  constructor
-  · rintro ⟨g, hg⟩
-    exact ⟨g.comp (φ : M →ₗ[ℤ] N), by simpa using hg⟩
-  · rintro ⟨f, hf⟩
-    exact ⟨f.comp (φ.symm : N →ₗ[ℤ] M), by simpa using hf⟩
 
 /-- Two primitive classes represent the same slope when they agree up to sign. This is an
 equivalence relation on primitive classes. -/
@@ -207,6 +188,7 @@ bijection through its coordinate isomorphism. -/
 
 /-- Over `ℤ × ℤ`, a class is primitive exactly when its two coordinates are coprime. -/
 theorem isPrimitive_prod_iff {v : ℤ × ℤ} : IsPrimitive v ↔ IsCoprime v.1 v.2 := by
+  rw [isPrimitive_iff]
   constructor
   · rintro ⟨f, hf⟩
     have hv : v = v.1 • ((1 : ℤ), (0 : ℤ)) + v.2 • ((0 : ℤ), (1 : ℤ)) := by
