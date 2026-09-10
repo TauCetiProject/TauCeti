@@ -8,8 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.LDL
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef
 import Mathlib.Algebra.Order.Star.Real
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
-import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.Analysis.Matrix.LDL
 
 /-!
 # Cholesky factors of positive-definite real matrices
@@ -33,6 +32,9 @@ triangular and positive on the diagonal.
   2013, Section 7.2.
 -/
 
+-- The declaration names and signatures of the Cholesky API below follow the skeleton pinned in
+-- `TauCetiRoadmap/StandardDistributions/Suggested.lean`, section "Cholesky coordinates".
+
 public section
 
 noncomputable section
@@ -47,41 +49,7 @@ abbrev PosDiagLowerTriangular (p : ℕ) :=
 
 namespace Matrix
 
-section General
-
-open scoped ComplexOrder
-
-variable {𝕜 n : Type*} [RCLike 𝕜] [LinearOrder n] [WellFoundedLT n]
-  [LocallyFiniteOrderBot n] [Fintype n] {S : Matrix n n 𝕜} (hS : S.PosDef)
-
-/-- The diagonal entries in Mathlib's LDL decomposition of a positive-definite matrix are
-positive. -/
-theorem LDL.diagEntries_pos (i : n) : 0 < LDL.diagEntries hS i := by
-  have hdiag : (LDL.diag hS).PosDef := by
-    rw [LDL.diag_eq_lowerInv_conj]
-    exact hS.mul_mul_conjTranspose_same
-      (Matrix.vecMul_injective_of_invertible (LDL.lowerInv hS))
-  simpa [LDL.diag] using hdiag.diag_pos (i := i)
-
-/-- The lower factor in Mathlib's LDL decomposition is unitriangular: its inverse is the
-Gram-Schmidt matrix, which carries `1` on the diagonal. -/
-theorem LDL.lowerInv_apply_diag (i : n) : LDL.lowerInv hS i i = 1 := by
-  let := Sᵀ.toNormedAddCommGroup hS.transpose
-  let := Sᵀ.toInnerProductSpace hS.transpose.posSemidef
-  rw [LDL.lowerInv]
-  simpa only [Pi.basisFun_repr] using
-    TauCeti.InnerProductSpace.repr_gramSchmidt_self_eq_one (Pi.basisFun 𝕜 n) i
-
-end General
-
 variable {p : ℕ} {S : Matrix (Fin p) (Fin p) ℝ} (hS : S.PosDef)
-
-private theorem LDL.lower_apply_diag (i : Fin p) : LDL.lower hS i i = 1 := by
-  have htri : (LDL.lowerInv hS)ᵀ.IsUpperTriangular :=
-    (LDL.isLowerTriangular_lowerInv hS).transpose
-  have hinv := Matrix.inv_apply_diag_of_isUpperTriangular htri
-    (LDL.lowerInv_apply_diag hS i)
-  simpa [LDL.lower, ← Matrix.transpose_nonsing_inv] using hinv
 
 private noncomputable def choleskyFactor : Matrix (Fin p) (Fin p) ℝ :=
   LDL.lower hS * Matrix.diagonal fun i ↦ Real.sqrt (LDL.diagEntries hS i)
