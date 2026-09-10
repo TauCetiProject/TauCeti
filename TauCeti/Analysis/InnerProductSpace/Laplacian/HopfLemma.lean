@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
-public import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
+import TauCeti.Analysis.InnerProductSpace.NormPow
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Slope
@@ -75,8 +75,9 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-- The **Hopf barrier** through the sphere of radius `R` about `y`, with exponent `p`: the radial
 function `x ↦ ‖x - y‖ ^ p - R ^ p`, which vanishes on that sphere.  It is the comparison function
-of the Hopf boundary-point lemma: for `p < 0` it is positive inside the sphere, and its Laplacian
-is `p (p + dim E - 2) ‖x - y‖ ^ (p - 2)`, which is nonnegative off the pole once `p ≤ 2 - dim E`.
+of the Hopf boundary-point lemma: when `R > 0` and `p < 0`, it is positive at points satisfying
+`0 < ‖x - y‖ < R`.  Its Laplacian is
+`p (p + dim E - 2) ‖x - y‖ ^ (p - 2)`, which is nonnegative off the pole once `p ≤ 2 - dim E`.
 -/
 private def hopfBarrier (y : E) (R p : ℝ) : E → ℝ := fun x => ‖x - y‖ ^ p - R ^ p
 
