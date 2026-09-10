@@ -16,9 +16,12 @@ The coordinate dot product on `V = kⁿ` is a cap `V ⊗ V → k`
 (`TauCeti.orthogonalCap`).  Applied to two of the `d` slots of `V^{⊗d}` it contracts them away and
 leaves a tensor of rank `d - 2`: the **contraction**, or trace, map.  A tensor killed by every one
 of them is **harmonic**, or traceless, and the harmonic tensors are the submodule
-`TauCeti.harmonicTensors`.  They are the orthogonal-group half of Schur-Weyl duality: the
-irreducible `O(V)`-modules are cut out of the tensor power by a Young symmetrizer *and* the
-vanishing of every trace, and the cups rebuild the non-harmonic part from lower tensor powers.
+`TauCeti.harmonicTensors`.  They are the orthogonal-group half of the classical Schur-Weyl
+picture over `ℂ`: there the irreducible `O(V)`-modules are cut out of the tensor power by a Young
+symmetrizer for a partition with at most `n` boxes in its first two columns *and* the vanishing of
+every trace, and the cups rebuild the non-harmonic part from lower tensor powers.  None of that is
+proved here; this file builds the traces, the submodule they cut out, and its stability under the
+two group actions.
 
 A pair of slots is presented here not as a pair of indices but as an equivalence
 `σ : Fin d ≃ Fin m ⊕ Fin 2`: the two slots to be capped are the ones `σ` names `Sum.inr 0` and
@@ -64,9 +67,9 @@ orthogonal group needs a commutative ring, and the invariance statements are col
 * `TauCeti.orthogonalContract_trans_sumCongr` and
   `TauCeti.ker_orthogonalContract_trans_sumCongr`: reordering the surviving slots post-composes the
   contraction with a permutation, so its kernel depends only on the capped pair.
-* `TauCeti.orthogonalContract_comp_map`: a matrix preserving the dot product commutes with every
-  contraction, and `TauCeti.orthogonalContract_comp_tensorPower` reads that off for the orthogonal
-  group.
+* `TauCeti.orthogonalContract_comp_piTensorProductMap`: a matrix preserving the dot product
+  commutes with every contraction, and `TauCeti.orthogonalContract_comp_tensorPower` reads that
+  off for the orthogonal group.
 * `TauCeti.tensorPower_mem_harmonicTensors`: the harmonic tensors are stable under the orthogonal
   group.
 
@@ -104,6 +107,7 @@ noncomputable def orthogonalContract (σ : Fin d ≃ Fin m ⊕ Fin 2) :
         (PiTensorProduct.tmulEquiv k (Fin n → k)).symm).toLinearMap
 
 /-- A contraction dots the two capped slots of a pure tensor and keeps the others. -/
+@[simp]
 theorem orthogonalContract_tprod (σ : Fin d ≃ Fin m ⊕ Fin 2) (v : Fin d → (Fin n → k)) :
     orthogonalContract k n σ (PiTensorProduct.tprod k v) =
       (v (σ.symm (Sum.inr 0)) ⬝ᵥ v (σ.symm (Sum.inr 1))) •
@@ -161,6 +165,7 @@ theorem isEmptyEquiv_comp_orthogonalContract (σ : Fin 2 ≃ Fin 0 ⊕ Fin 2) :
   exact dotProduct_of_ne k n (orthogonalContract_slots_ne σ) v
 
 /-- **On the tensor square the harmonic tensors are the kernel of the cap.** -/
+@[simp]
 theorem harmonicTensors_two :
     harmonicTensors k n 2 = LinearMap.ker (orthogonalCap k n) := by
   ext x
@@ -208,7 +213,7 @@ theorem orthogonalContract_comp_permTensorAction (τ : Equiv.Perm (Fin d))
       orthogonalContract k n (τ.trans σ) := by
   refine PiTensorProduct.ext ?_
   ext v
-  simp [orthogonalContract_tprod]
+  simp
 
 /-- **Reordering the surviving slots** post-composes the contraction with a permutation of the
 tensor factors of the target: which pair of slots is capped is all that a contraction records. -/
@@ -217,7 +222,7 @@ theorem orthogonalContract_trans_sumCongr (σ : Fin d ≃ Fin m ⊕ Fin 2) (τ :
       permTensorAction k n m τ ∘ₗ orthogonalContract k n σ := by
   refine PiTensorProduct.ext ?_
   ext v
-  simp [orthogonalContract_tprod]
+  simp
 
 /-- Reordering the surviving slots does not change the kernel of a contraction, which is why the
 harmonic tensors may be defined by quantifying over all the equivalences `σ` rather than over the
@@ -230,9 +235,8 @@ theorem ker_orthogonalContract_trans_sumCongr (σ : Fin d ≃ Fin m ⊕ Fin 2)
   rw [LinearMap.mem_ker, LinearMap.mem_ker, orthogonalContract_trans_sumCongr]
   simp
 
-/-- **The harmonic tensors are stable under permuting the tensor factors.**  This is what lets a
-Young symmetrizer be applied inside them, cutting the irreducible `O(V)`-modules out of the
-tensor power. -/
+/-- **The harmonic tensors are stable under permuting the tensor factors**, so the action of the
+symmetric group on the tensor power restricts to them. -/
 theorem permTensorAction_mem_harmonicTensors (τ : Equiv.Perm (Fin d))
     {x : ⨂[k]^d (Fin n → k)} (hx : x ∈ harmonicTensors k n d) :
     permTensorAction k n d τ x ∈ harmonicTensors k n d := by
@@ -258,7 +262,7 @@ private theorem dotProduct_mulVec_mulVec {A : Matrix (Fin n) (Fin n) k} (hA : A�
 /-- **Contractions commute with an isometry.**  A matrix `A` with `Aᵀ * A = 1` acts diagonally on
 every tensor power, and contracting a pair of slots is unaffected: the cap it contracts against is
 exactly what `A` preserves. -/
-theorem orthogonalContract_comp_map {A : Matrix (Fin n) (Fin n) k} (hA : Aᵀ * A = 1)
+theorem orthogonalContract_comp_piTensorProductMap {A : Matrix (Fin n) (Fin n) k} (hA : Aᵀ * A = 1)
     (σ : Fin d ≃ Fin m ⊕ Fin 2) :
     orthogonalContract k n σ ∘ₗ PiTensorProduct.map (fun _ : Fin d => Matrix.mulVecLin A) =
       PiTensorProduct.map (fun _ : Fin m => Matrix.mulVecLin A) ∘ₗ orthogonalContract k n σ := by
@@ -283,8 +287,8 @@ theorem orthogonalContract_comp_tensorPower (g : Matrix.orthogonalGroup (Fin n) 
     orthogonalContract k n σ ∘ₗ (stdOrthogonalRep k n).tensorPower d g =
       (stdOrthogonalRep k n).tensorPower m g ∘ₗ orthogonalContract k n σ := by
   rw [Representation.tensorPower_apply, Representation.tensorPower_apply]
-  simpa only [stdOrthogonalRep_apply] using
-    orthogonalContract_comp_map ((Matrix.mem_orthogonalGroup_iff' (Fin n) k).mp g.prop) σ
+  simpa only [stdOrthogonalRep_apply] using orthogonalContract_comp_piTensorProductMap
+    ((Matrix.mem_orthogonalGroup_iff' (Fin n) k).mp g.prop) σ
 
 /-- **The harmonic tensors are stable under the orthogonal group.** -/
 theorem tensorPower_mem_harmonicTensors (g : Matrix.orthogonalGroup (Fin n) k)
