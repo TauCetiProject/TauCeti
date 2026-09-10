@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
-public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Product
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 
@@ -24,10 +23,10 @@ supremum distance that `X × Y` carries by default. Accordingly the product law 
 measurable structure of `WithLp p (X × Y)` is the one pulled back from `X × Y`, so this pushforward
 changes nothing but the distance.
 
-The proof is the `cᵢ = edist ^ p` case of `TauCeti.transportCost_prod_add`: raising the `ℓ^p`
-product distance to the power `p` makes the cost additively separable, and the transport cost of a
-separable cost on a product problem splits. In particular no attainment theorem and no topological
-hypothesis are needed, and the identity is an identity in `ℝ≥0∞` with no finiteness assumption.
+Tensorization holds because raising the `ℓ^p` product distance to the power `p` makes the ground
+cost additively separable across the two factors, so the two coordinates of a transport problem on
+the product never interact. The identity holds in `ℝ≥0∞`, with no finiteness assumption on either
+factor distance.
 
 The exponent is finite throughout. At `p = ∞` the `ℓ^p` product distance is the maximum of the two
 factor distances rather than an `ℓ^p` sum, so tensorization there is a maximum formula and a
@@ -41,8 +40,9 @@ separate statement; it is not obtained from the identity below.
   the hypothesis that the two-variable Wasserstein API asks for;
 * `TauCeti.wassersteinEDist_map_toLp_prod_rpow` and `TauCeti.wassersteinEDist_map_toLp_prod` — the
   tensorization identity, in its `p`-th power form and its root form;
-* `TauCeti.wassersteinEDist_map_toLp_prod_right` — tensorizing two laws with a common second
-  factor leaves their Wasserstein distance unchanged;
+* `TauCeti.wassersteinEDist_map_toLp_prod_left` and
+  `TauCeti.wassersteinEDist_map_toLp_prod_right` — tensorizing two laws with a common first, resp.
+  second, factor leaves their Wasserstein distance unchanged;
 * `TauCeti.hasFiniteMoment_map_toLp_prod` — a product law has finite `p`-moment exactly when both
   factors do.
 
@@ -142,12 +142,13 @@ theorem wassersteinEDist_map_toLp_prod_rpow (hp : p ≠ ∞)
     wassersteinEDist_rpow_eq_transportCost hp0 hp, ← MeasurableEquiv.coe_toLp p (X × Y),
     ← transportCost_comp_prodMap (MeasurableEquiv.toLp p (X × Y))
       (MeasurableEquiv.toLp p (X × Y)) hcZ]
-  rw [show (fun z : (X × Y) × X × Y ↦
+  have hsep : (fun z : (X × Y) × X × Y ↦
         edist (MeasurableEquiv.toLp p (X × Y) z.1) (MeasurableEquiv.toLp p (X × Y) z.2)
           ^ p.toReal)
       = fun z : (X × Y) × X × Y ↦
-        edist z.1.1 z.2.1 ^ p.toReal + edist z.1.2 z.2.2 ^ p.toReal from
-      funext fun z ↦ edist_toLp_rpow hp z.1 z.2]
+        edist z.1.1 z.2.1 ^ p.toReal + edist z.1.2 z.2.2 ^ p.toReal :=
+    funext fun z ↦ edist_toLp_rpow hp z.1 z.2
+  rw [hsep]
   exact transportCost_prod_add hcX hcY
 
 /-- **Tensorization of the Wasserstein distance**, in root form. -/
@@ -160,6 +161,20 @@ theorem wassersteinEDist_map_toLp_prod (hp : p ≠ ∞)
   have hr : 0 < p.toReal := toReal_exponent_pos hp
   rw [← wassersteinEDist_map_toLp_prod_rpow hp hdX hdY, ← ENNReal.rpow_mul,
     mul_one_div_cancel hr.ne', ENNReal.rpow_one]
+
+omit [IsProbabilityMeasure ν₁] in
+/-- Tensorizing two laws with a common first factor leaves their `p`-Wasserstein distance
+unchanged: the common factor contributes a vanishing term to the tensorization identity. -/
+theorem wassersteinEDist_map_toLp_prod_left (hp : p ≠ ∞)
+    (hdX : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hdY : Measurable fun z : Y × Y ↦ edist z.1 z.2) :
+    wassersteinEDist p ((μ₁.prod μ₂).map (WithLp.toLp p)) ((μ₁.prod ν₂).map (WithLp.toLp p))
+      = wassersteinEDist p μ₂ ν₂ := by
+  have hr : 0 < p.toReal := toReal_exponent_pos hp
+  have h := wassersteinEDist_map_toLp_prod_rpow (μ₁ := μ₁) (ν₁ := μ₁) (μ₂ := μ₂) (ν₂ := ν₂)
+    hp hdX hdY
+  rw [wassersteinEDist_self_of_measurable_edist hdX, ENNReal.zero_rpow_of_pos hr, zero_add] at h
+  exact ENNReal.rpow_left_injective hr.ne' h
 
 omit [IsProbabilityMeasure ν₂] in
 /-- Tensorizing two laws with a common second factor leaves their `p`-Wasserstein distance

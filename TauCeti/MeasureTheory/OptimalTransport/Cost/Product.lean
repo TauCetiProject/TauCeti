@@ -19,11 +19,8 @@ separable* function
 This file proves that the assembled problem decouples exactly: its value is the sum of the two
 values, and rearranging a pair of optimal plans produces an optimal plan of the product problem.
 
-Neither inequality needs a topology, an attainment theorem or a finiteness hypothesis on the
-values. The upper bound rearranges a pair of feasible plans into a feasible plan of the product
-problem and passes to the infimum through `ENNReal.le_iInf₂_add_iInf₂`; the lower bound pushes a
-feasible plan of the product problem forward to the two coordinate problems, which is where
-measurability of the two costs is used.
+The decoupling is an identity in `ℝ≥0∞`: no value is assumed finite, and both sides are `∞` as
+soon as one of the two coordinate values is.
 
 The four marginals are probability measures. That normalisation is what makes the coordinate
 pushforwards of a plan of `μ₁ ⊗ μ₂` and `ν₁ ⊗ ν₂` land on `μᵢ` and `νᵢ` rather than on a rescaling
@@ -37,13 +34,6 @@ of them; the rearrangement lemma below carries no such hypothesis.
   transport problems is the sum of the two values;
 * `TauCeti.IsOptimalCoupling.prod` — rearranging the product of two optimal plans gives an optimal
   plan for the separable cost.
-
-## Implementation notes
-
-The rearrangement `((x₁, y₁), (x₂, y₂)) ↦ ((x₁, x₂), (y₁, y₂))` that turns a product of plans into
-a plan of the product problem is written out as a lambda. It is `Equiv.prodProdProdComm`, whose
-name the lemmas below reuse, but `Measure.map` consumes a bare function and Mathlib has no
-measurable-equivalence form of that rearrangement to name here.
 
 ## References
 
@@ -75,24 +65,20 @@ protected theorem IsCoupling.prodProdProdComm [SFinite π₁] [SFinite π₂]
     (h₁ : IsCoupling π₁ μ₁ ν₁) (h₂ : IsCoupling π₂ μ₂ ν₂) :
     IsCoupling ((π₁.prod π₂).map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2)))
       (μ₁.prod μ₂) (ν₁.prod ν₂) := by
-  have hX : Measurable fun w : (X₁ × Y₁) × X₂ × Y₂ ↦ (w.1.1, w.2.1) :=
-    (measurable_fst.comp measurable_fst).prodMk (measurable_fst.comp measurable_snd)
-  have hY : Measurable fun w : (X₁ × Y₁) × X₂ × Y₂ ↦ (w.1.2, w.2.2) :=
-    (measurable_snd.comp measurable_fst).prodMk (measurable_snd.comp measurable_snd)
+  have hX : Measurable (Prod.map Prod.fst Prod.fst : (X₁ × Y₁) × X₂ × Y₂ → X₁ × X₂) :=
+    measurable_fst.prodMap measurable_fst
+  have hY : Measurable (Prod.map Prod.snd Prod.snd : (X₁ × Y₁) × X₂ × Y₂ → Y₁ × Y₂) :=
+    measurable_snd.prodMap measurable_snd
   constructor
   · have h : ((π₁.prod π₂).map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2))).fst
-        = (π₁.prod π₂).map fun w : (X₁ × Y₁) × X₂ × Y₂ ↦ (w.1.1, w.2.1) :=
+        = (π₁.prod π₂).map (Prod.map Prod.fst Prod.fst) :=
       Measure.fst_map_prodMk hX hY
-    rw [h, show (fun w : (X₁ × Y₁) × X₂ × Y₂ ↦ (w.1.1, w.2.1))
-        = Prod.map Prod.fst Prod.fst from rfl,
-      ← Measure.map_prod_map π₁ π₂ measurable_fst measurable_fst]
+    rw [h, ← Measure.map_prod_map π₁ π₂ measurable_fst measurable_fst]
     exact congrArg₂ Measure.prod h₁.fst_eq h₂.fst_eq
   · have h : ((π₁.prod π₂).map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2))).snd
-        = (π₁.prod π₂).map fun w : (X₁ × Y₁) × X₂ × Y₂ ↦ (w.1.2, w.2.2) :=
+        = (π₁.prod π₂).map (Prod.map Prod.snd Prod.snd) :=
       Measure.snd_map_prodMk hX hY
-    rw [h, show (fun w : (X₁ × Y₁) × X₂ × Y₂ ↦ (w.1.2, w.2.2))
-        = Prod.map Prod.snd Prod.snd from rfl,
-      ← Measure.map_prod_map π₁ π₂ measurable_snd measurable_snd]
+    rw [h, ← Measure.map_prod_map π₁ π₂ measurable_snd measurable_snd]
     exact congrArg₂ Measure.prod h₁.snd_eq h₂.snd_eq
 
 /-- The cost of a rearranged product of plans is the sum of the two coordinate costs. -/
