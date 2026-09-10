@@ -16,13 +16,13 @@ that component its orientation; the `Fin n` index records a component labeling. 
 exactly those data and develops their basic transformations.
 
 Component relabeling changes only the `Fin n` labels.  Orientation reversal is performed on every
-component, while an ambient diffeomorphism transports all components at once.  All three operations
-preserve the underlying subset of the ambient manifold in the expected way.  The zero-component
-link and the one-component link show that this presentation includes the empty link and recovers
+component, while an ambient diffeomorphism transports all components at once.  Relabeling and
+orientation reversal preserve the underlying subset of the ambient manifold, while ambient
+transport carries it to its image under the diffeomorphism.  The zero-component link and the
+one-component link show that this presentation includes the empty link and recovers
 `SmoothCircleEmbedding` exactly.
 
-Framings are not part of this presentation: a smooth framing is additional normal-bundle data and
-will be carried by a separate type once tubular neighbourhoods are available.
+Framings are not part of this presentation: a smooth framing is separate normal-bundle data.
 
 ## Main definitions
 
@@ -69,6 +69,7 @@ namespace SmoothLinkEmbedding
 
 variable {L K : SmoothLinkEmbedding I M n}
 
+/-- A smooth link coerces to its `Fin n`-indexed family of component embeddings. -/
 instance instFunLike : FunLike (SmoothLinkEmbedding I M n) (Fin n) (SmoothCircleEmbedding I M) where
   coe L := L.component
   coe_injective L K h := by
@@ -92,6 +93,7 @@ def range (L : SmoothLinkEmbedding I M n) : Set M :=
   ⋃ i, Set.range (L i)
 
 /-- A point lies in a smooth link exactly when it lies on one of its components. -/
+@[simp]
 theorem mem_range_iff (L : SmoothLinkEmbedding I M n) (x : M) :
     x ∈ L.range ↔ ∃ i y, L i y = x := by
   simp only [range, Set.mem_iUnion, Set.mem_range]
@@ -104,12 +106,21 @@ theorem component_range_subset (L : SmoothLinkEmbedding I M n) (i : Fin n) :
 /-- A point of a link lies on a unique labeled component. -/
 theorem existsUnique_component_of_mem_range (L : SmoothLinkEmbedding I M n) {x : M}
     (hx : x ∈ L.range) : ∃! i, x ∈ Set.range (L i) := by
-  rw [mem_range_iff] at hx
-  obtain ⟨i, y, rfl⟩ := hx
-  refine ⟨i, Set.mem_range_self y, ?_⟩
+  let x' : ⋃ i, Set.range (L i) := ⟨x, hx⟩
+  let p := Set.unionEqSigmaOfDisjoint L.pairwiseDisjoint_range x'
+  have hp : (p.2 : M) = x :=
+    Set.coe_snd_unionEqSigmaOfDisjoint L.pairwiseDisjoint_range x'
+  refine ⟨p.1, ?_, ?_⟩
+  · obtain ⟨y, hy⟩ := p.2.2
+    refine ⟨y, ?_⟩
+    have hi : L p.1 = L.component p.1 := rfl
+    rw [hi, hy, hp]
   intro j hj
-  by_contra hij
-  exact Set.disjoint_left.1 (L.disjoint_range hij) hj (Set.mem_range_self y)
+  have hpair : (⟨j, ⟨x, hj⟩⟩ : Σ i, Set.range (L i)) = p := by
+    apply (Set.sigmaToiUnion_bijective _ L.pairwiseDisjoint_range).1
+    apply Subtype.ext
+    exact hp.symm
+  exact congrArg Sigma.fst hpair
 
 /-! ### Empty and one-component links -/
 
@@ -188,14 +199,8 @@ theorem relabel_relabel (L : SmoothLinkEmbedding I M n) (e f : Equiv.Perm (Fin n
 @[simp]
 theorem range_relabel (L : SmoothLinkEmbedding I M n) (e : Equiv.Perm (Fin n)) :
     (L.relabel e).range = L.range := by
-  ext x
-  constructor
-  · rw [mem_range_iff, mem_range_iff]
-    rintro ⟨i, y, hiy⟩
-    exact ⟨e.symm i, y, hiy⟩
-  · rw [mem_range_iff, mem_range_iff]
-    rintro ⟨i, y, hiy⟩
-    exact ⟨e i, y, by simpa using hiy⟩
+  simpa only [range, relabel_apply] using
+    e.symm.surjective.iUnion_comp (fun i ↦ Set.range (L i))
 
 /-- Component permutations act on smooth links by relabeling. -/
 instance instMulActionPerm : MulAction (Equiv.Perm (Fin n)) (SmoothLinkEmbedding I M n) where
@@ -288,18 +293,8 @@ diffeomorphism. -/
 @[simp]
 theorem range_transDiffeomorph (L : SmoothLinkEmbedding I M n) (e : M ≃ₘ⟮I, I⟯ P) :
     (L.transDiffeomorph e).range = e '' L.range := by
-  ext x
-  constructor
-  · rw [mem_range_iff]
-    rintro ⟨i, y, rfl⟩
-    exact ⟨L i y, component_range_subset L i (Set.mem_range_self y),
-      by
-        symm
-        rw [transDiffeomorph_apply, SmoothEmbedding.transDiffeomorph_apply]⟩
-  · rintro ⟨z, hz, rfl⟩
-    rw [mem_range_iff] at hz ⊢
-    obtain ⟨i, y, rfl⟩ := hz
-    exact ⟨i, y, by rw [transDiffeomorph_apply, SmoothEmbedding.transDiffeomorph_apply]⟩
+  simp only [range, transDiffeomorph_apply, SmoothEmbedding.range_transDiffeomorph,
+    Set.image_iUnion]
 
 /-- Ambient transport commutes with component relabeling. -/
 @[simp]
