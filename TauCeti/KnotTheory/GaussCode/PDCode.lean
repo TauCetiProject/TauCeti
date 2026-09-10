@@ -341,17 +341,17 @@ theorem toOrientedPDCode_orientation_halfEdge (D : BasedOrientedGaussCode n)
 slot. -/
 @[simp]
 theorem toOrientedPDCode_crossing (D : BasedOrientedGaussCode n) (c : Fin n) (slot : Fin 4) :
-    D.toOrientedPDCode.crossing c slot =
+    D.toOrientedPDCode.halfEdge (PDCode.crossingSlotEquiv n (c, slot)) =
       halfEdge (D.crossingVisit c slot) (D.crossingOutgoing c slot) := by
-  rw [OrientedPDCode.crossing_apply, toOrientedPDCode, Equiv.trans_apply,
-    Equiv.symm_apply_apply, crossingHalfEdgeEquiv_apply]
+  rw [toOrientedPDCode, Equiv.trans_apply, Equiv.symm_apply_apply,
+    crossingHalfEdgeEquiv_apply]
 
 /-- The orientation at a crossing slot agrees with the incoming/outgoing direction extracted from
 the Gauss code. -/
-@[simp]
 theorem toOrientedPDCode_orientation_crossing (D : BasedOrientedGaussCode n)
     (c : Fin n) (slot : Fin 4) :
-    D.toOrientedPDCode.orientation (D.toOrientedPDCode.crossing c slot) =
+    D.toOrientedPDCode.orientation
+        (D.toOrientedPDCode.halfEdge (PDCode.crossingSlotEquiv n (c, slot))) =
       D.crossingOutgoing c slot := by
   rw [D.toOrientedPDCode_crossing, D.toOrientedPDCode_orientation_halfEdge]
 
@@ -371,13 +371,15 @@ theorem toOrientedPDCode_crossingSign (D : BasedOrientedGaussCode n) (c : Fin n)
   rcases Int.units_eq_one_or (D.sign c) with hsign | hsign
   · rw [hsign]
     apply (OrientedPDCode.crossingSign_eq_one_iff _ _).2
-    rw [D.toOrientedPDCode_orientation_crossing, D.toOrientedPDCode_orientation_crossing,
+    rw [OrientedPDCode.crossing_apply, OrientedPDCode.crossing_apply,
+      D.toOrientedPDCode_orientation_crossing, D.toOrientedPDCode_orientation_crossing,
       D.toOrientedPDCode_overPair]
     simp only [crossingOutgoing, hsign, ↓reduceIte]
     decide
   · rw [hsign]
     apply (OrientedPDCode.crossingSign_eq_neg_one_iff _ _).2
-    rw [D.toOrientedPDCode_orientation_crossing, D.toOrientedPDCode_orientation_crossing,
+    rw [OrientedPDCode.crossing_apply, OrientedPDCode.crossing_apply,
+      D.toOrientedPDCode_orientation_crossing, D.toOrientedPDCode_orientation_crossing,
       D.toOrientedPDCode_overPair]
     have hne : D.sign c ≠ 1 := hsign ▸ (by decide)
     simp only [crossingOutgoing, hne, ↓reduceIte]
