@@ -123,9 +123,7 @@ theorem _root_.CategoryTheory.Functor.isNaturalSMul_comp
 /-- **A fundamental group of a fibre functor remains a fundamental group after transport along
 an equivalence of its source category.**
 
-The action on each transported fibre is the original action on the corresponding object.
-Connectedness transports along the equivalence, while faithfulness is reflected using essential
-surjectivity and naturality along a chosen isomorphism. -/
+The action on each transported fibre is the original action on the corresponding object. -/
 theorem _root_.CategoryTheory.Functor.isFundamentalGroup_comp [K.IsEquivalence]
     [GaloisCategory C] [GaloisCategory D] [TopologicalSpace G]
     [IsTopologicalGroup G] [CompactSpace G] [IsFundamentalGroup F G] :
@@ -144,6 +142,8 @@ theorem _root_.CategoryTheory.Functor.isFundamentalGroup_comp [K.IsEquivalence]
       let : FiberFunctor (K ⋙ H) := fiberFunctor_comp_of_equivalence K.asEquivalence H
       apply (isGalois_iff_pretransitive H (K.obj X)).2
       refine ⟨fun y z => ?_⟩
+      -- Typeclass inference does not unfold functor composition here, so expose the definitional
+      -- equality between `H.obj (K.obj X)` and `(K ⋙ H).obj X` before synthesizing both instances.
       let : MulAction (Aut X) (H.obj (K.obj X)) := by
         change MulAction (Aut X) ((K ⋙ H).obj X)
         infer_instance
