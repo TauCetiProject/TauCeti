@@ -339,25 +339,12 @@ theorem smul_def (e : Diff I M ∞) (L : SmoothLinkEmbedding I M n) :
     e • L = L.transDiffeomorph e :=
   rfl
 
-/-- The ambient diffeomorphism action is simultaneous transport of all link components. -/
-@[simp]
-theorem smul_apply (e : Diff I M ∞) (L : SmoothLinkEmbedding I M n) (i : Fin n) :
-    (e • L) i = e • L i := by
-  rw [smul_def, transDiffeomorph_apply, SmoothEmbedding.smul_def]
-
 /-- Ambient transport commutes with component relabeling. -/
 instance instSMulCommClassPerm :
     SMulCommClass (Diff I M ∞) (Equiv.Perm (Fin n)) (SmoothLinkEmbedding I M n) where
   smul_comm e σ L := by
     rw [smul_def, perm_smul_def, smul_def, perm_smul_def]
     exact (L.transDiffeomorph_relabel e σ).symm
-
-/-- Ambient transport commutes with reversing all component orientations. -/
-@[simp]
-theorem reverse_smul (e : Diff I M ∞) (L : SmoothLinkEmbedding I M n) :
-    (e • L).reverse = e • L.reverse := by
-  rw [smul_def, smul_def]
-  exact L.reverse_transDiffeomorph e
 
 end AmbientAction
 
