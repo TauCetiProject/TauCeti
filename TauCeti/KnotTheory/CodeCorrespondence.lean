@@ -28,9 +28,9 @@ entering the next visit, and the four half-edges at a crossing are the two at ea
 visits. The two slot pairs `{0, 2}` and `{1, 3}` are the strands of the first and of the second
 visit to the crossing, so `overPair` is exactly the over/under datum at the second visit. The
 crossing sign is *not* stored by a PD-code, so it has to be encoded in the slot order: which of
-the two half-edges of the second visit occupies slot `1` is chosen, in
-`TauCeti.BasedOrientedGaussCode.slotOneDirection`, so that the sign the PD-code derives is the
-sign the Gauss code records (`TauCeti.BasedOrientedGaussCode.crossingSign_toOrientedPDCode`).
+the two half-edges of the second visit occupies slot `1` is chosen so that the sign the PD-code
+derives is the sign the Gauss code records
+(`TauCeti.BasedOrientedGaussCode.toOrientedPDCode_crossingSign`).
 
 Neither presentation imposes planarity, so this is a correspondence of codes, not a statement
 that either side is realised by a drawing in the plane. The map is injective, so the passage
@@ -48,84 +48,83 @@ in the two files this one joins.
 
 ## Main definitions
 
-* `TauCeti.BasedOrientedGaussCode.visitEquiv`: the two visits to a crossing, indexed by the
-  crossing together with which of the two comes first along the traversal.
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode`: the oriented PD-code of a based oriented
   Gauss code.
 * `TauCeti.FramedBasedOrientedGaussCode.toFramedOrientedPDCode`: the framed refinement.
 
 ## Main results
 
-* `TauCeti.BasedOrientedGaussCode.crossingSign_toOrientedPDCode`: the sign a PD-code derives
+* `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_crossingSign`: the sign a PD-code derives
   from its slot order is the sign the Gauss code records.
-* `TauCeti.BasedOrientedGaussCode.writhe_toOrientedPDCode`: the two writhes agree.
+* `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_writhe`: the two writhes agree.
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_injective`: the map is injective.
-* `TauCeti.BasedOrientedGaussCode.isOver_toOrientedPDCode_one` and
-  `isOver_toOrientedPDCode_zero`: the over and under strands of a crossing are the strands of
-  the visits the Gauss code records as over and as under.
+* `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_isOver_one` and
+  `toOrientedPDCode_isOver_zero`: the over and under strands of a crossing are the strands of the
+  visits the Gauss code records as over and as under.
 -/
 
 public section
 
 namespace TauCeti
 
-namespace PDCode
+namespace BasedOrientedGaussCode
 
 /-- The half-edges of an `n`-crossing code, indexed by a visit of the traversal together with a
 direction: `(v, false)` is the half-edge entering the crossing at visit `v` and `(v, true)` is
 the half-edge leaving it. -/
-def halfEdgeEquiv (n : ℕ) : Fin (2 * n) × Bool ≃ Fin (4 * n) :=
+private def halfEdgeEquiv (n : ℕ) : Fin (2 * n) × Bool ≃ Fin (4 * n) :=
   ((Equiv.refl (Fin (2 * n))).prodCongr finTwoEquiv.symm).trans
     (finProdFinEquiv.trans (finCongr (by ring)))
 
 /-- Read a crossing slot as a pair of Booleans: whether the slot lies on the strand of the
 second visit to the crossing, and whether its half-edge leaves the crossing. The parameter `b`
 is the direction of slot `1`, which is what a PD-code uses to record the crossing sign. -/
-def slotSplit (b : Bool) : Fin 4 ≃ Bool × Bool where
+private def slotSplit (b : Bool) : Fin 4 ≃ Bool × Bool where
   toFun := ![(false, false), (true, b), (false, true), (true, !b)]
   invFun p := if p.1 then (if p.2 = b then 1 else 3) else (if p.2 then 2 else 0)
   left_inv s := by fin_cases s <;> cases b <;> decide
   right_inv p := by obtain ⟨x, y⟩ := p; cases x <;> cases y <;> cases b <;> decide
 
 /-- Slot `0` enters the crossing along the strand of its first visit. -/
-@[simp] theorem slotSplit_zero (b : Bool) : slotSplit b 0 = (false, false) := (rfl)
+@[simp] private theorem slotSplit_zero (b : Bool) : slotSplit b 0 = (false, false) := (rfl)
 
 /-- Slot `1` lies on the strand of the second visit, with the recorded direction. -/
-@[simp] theorem slotSplit_one (b : Bool) : slotSplit b 1 = (true, b) := (rfl)
+@[simp] private theorem slotSplit_one (b : Bool) : slotSplit b 1 = (true, b) := (rfl)
 
 /-- Slot `2` leaves the crossing along the strand of its first visit. -/
-@[simp] theorem slotSplit_two (b : Bool) : slotSplit b 2 = (false, true) := (rfl)
+@[simp] private theorem slotSplit_two (b : Bool) : slotSplit b 2 = (false, true) := (rfl)
 
 /-- Slot `3` lies on the strand of the second visit, opposite to slot `1`. -/
-@[simp] theorem slotSplit_three (b : Bool) : slotSplit b 3 = (true, !b) := (rfl)
+@[simp] private theorem slotSplit_three (b : Bool) : slotSplit b 3 = (true, !b) := (rfl)
 
 /-- The two slots of a strand carry opposite directions: one enters the crossing and the other
 leaves it. -/
-@[simp] theorem slotSplit_snd_oppositeCrossingSlot (b : Bool) (s : Fin 4) :
-    (slotSplit b (oppositeCrossingSlot s)).2 = !(slotSplit b s).2 := by
-  have h : ∀ t : Fin 4, oppositeCrossingSlot t = t + 2 := fun t =>
-    Fin.eq_of_val_eq (oppositeCrossingSlot_apply t)
+@[simp] private theorem slotSplit_snd_oppositeCrossingSlot (b : Bool) (s : Fin 4) :
+    (slotSplit b (PDCode.oppositeCrossingSlot s)).2 = !(slotSplit b s).2 := by
+  have h : ∀ t : Fin 4, PDCode.oppositeCrossingSlot t = t + 2 := fun t =>
+    Fin.eq_of_val_eq (PDCode.oppositeCrossingSlot_apply t)
   fin_cases s <;> rw [h] <;> cases b <;> exact (rfl)
 
 /-- Following an arc of the diagram: the half-edge leaving a visit is joined to the half-edge
 entering the next visit along the traversal, cyclically. -/
-def visitArcMap (m : ℕ) : Fin m × Bool → Fin m × Bool
+private def visitArcMap (m : ℕ) : Fin m × Bool → Fin m × Bool
   | (v, true) => (finRotate m v, false)
   | (v, false) => ((finRotate m).symm v, true)
 
 /-- Following an arc exchanges entering and leaving a crossing. -/
-@[simp] theorem visitArcMap_snd (m : ℕ) (p : Fin m × Bool) : (visitArcMap m p).2 = !p.2 := by
+@[simp] private theorem visitArcMap_snd (m : ℕ) (p : Fin m × Bool) :
+    (visitArcMap m p).2 = !p.2 := by
   obtain ⟨v, b⟩ := p
   cases b <;> simp [visitArcMap]
 
 /-- Following an arc from either of its ends returns to the other. -/
-theorem visitArcMap_involutive (m : ℕ) : Function.Involutive (visitArcMap m) := by
+private theorem visitArcMap_involutive (m : ℕ) : Function.Involutive (visitArcMap m) := by
   rintro ⟨v, b⟩
   cases b <;>
     simp only [visitArcMap, Equiv.symm_apply_apply, Equiv.apply_symm_apply]
 
 /-- The arcs of a based traversal of `m` visits, as a perfect matching of the half-edges. -/
-def visitArcMatching (m : ℕ) : PerfectMatching (Fin m × Bool) :=
+private def visitArcMatching (m : ℕ) : PerfectMatching (Fin m × Bool) :=
   ⟨Function.Involutive.toPerm _ (visitArcMap_involutive m),
     isPerfectMatching_iff.mpr ⟨visitArcMap_involutive m, by
       intro p hp
@@ -134,119 +133,41 @@ def visitArcMatching (m : ℕ) : PerfectMatching (Fin m × Bool) :=
       exact Bool.not_ne_self _ h2⟩⟩
 
 /-- The matching of arcs is given by following an arc. -/
-@[simp] theorem visitArcMatching_val (m : ℕ) (p : Fin m × Bool) :
+@[simp] private theorem visitArcMatching_val (m : ℕ) (p : Fin m × Bool) :
     (visitArcMatching m).val p = visitArcMap m p := (rfl)
 
-end PDCode
-
-namespace BasedOrientedGaussCode
-
 variable {n : ℕ} (D : BasedOrientedGaussCode n)
-
-/-- Whether a visit is the later of the two visits to its crossing. -/
-def isSecondVisit (v : Fin (2 * n)) : Bool :=
-  decide (D.partner.val v < v)
-
-/-- Exactly one of the two visits to a crossing is the later one. -/
-@[simp] theorem isSecondVisit_partner (v : Fin (2 * n)) :
-    D.isSecondVisit (D.partner.val v) = !D.isSecondVisit v := by
-  have hne : D.partner.val v ≠ v := D.partner.apply_ne v
-  simp only [isSecondVisit, PerfectMatching.apply_apply]
-  rcases lt_or_gt_of_ne hne with h | h
-  · simp [h, asymm h]
-  · simp [h, asymm h]
-
-/-- A visit is determined by its crossing together with whether it is the later of the two
-visits to that crossing. -/
-theorem visit_isSecondVisit_injective :
-    Function.Injective fun v : Fin (2 * n) => (D.visit v, D.isSecondVisit v) := by
-  intro v w h
-  simp only [Prod.mk.injEq] at h
-  rcases (D.visit_eq_iff v w).mp h.1 with rfl | rfl
-  · rfl
-  · rw [isSecondVisit_partner] at h
-    exact absurd h.2.symm (Bool.not_ne_self _)
-
-/-- The visits of the traversal, indexed by the crossing visited together with whether the visit
-is the later of the two to that crossing. -/
-noncomputable def visitEquiv : Fin (2 * n) ≃ Fin n × Bool :=
-  Equiv.ofBijective (fun v => (D.visit v, D.isSecondVisit v))
-    ((Fintype.bijective_iff_injective_and_card _).mpr
-      ⟨D.visit_isSecondVisit_injective, by
-        simp [Fintype.card_prod, Nat.mul_comm]⟩)
-
-/-- The index of a visit is its crossing together with its position in the pair. -/
-@[simp] theorem visitEquiv_apply (v : Fin (2 * n)) :
-    D.visitEquiv v = (D.visit v, D.isSecondVisit v) := by
-  simp [visitEquiv]
-
-/-- The visit to crossing `i` that is the first (`second = false`) or the second
-(`second = true`) of the two along the traversal. -/
-noncomputable def visitAt (i : Fin n) (second : Bool) : Fin (2 * n) :=
-  D.visitEquiv.symm (i, second)
-
-/-- The visit at a crossing and index is a visit to that crossing with that index. -/
-theorem visitEquiv_visitAt (i : Fin n) (s : Bool) :
-    D.visitEquiv (D.visitAt i s) = (i, s) :=
-  D.visitEquiv.apply_symm_apply (i, s)
-
-/-- The visit selected at a crossing is a visit to that crossing. -/
-@[simp] theorem visit_visitAt (i : Fin n) (s : Bool) : D.visit (D.visitAt i s) = i := by
-  have h := D.visitEquiv_visitAt i s
-  rw [visitEquiv_apply] at h
-  exact congrArg Prod.fst h
-
-/-- The visit selected at a crossing has the requested position in the pair. -/
-@[simp] theorem isSecondVisit_visitAt (i : Fin n) (s : Bool) :
-    D.isSecondVisit (D.visitAt i s) = s := by
-  have h := D.visitEquiv_visitAt i s
-  rw [visitEquiv_apply] at h
-  exact congrArg Prod.snd h
-
-/-- Selecting the visit at a visit's own crossing and position recovers it. -/
-@[simp] theorem visitAt_visit (v : Fin (2 * n)) :
-    D.visitAt (D.visit v) (D.isSecondVisit v) = v := by
-  have h := D.visitEquiv.symm_apply_apply v
-  rwa [visitEquiv_apply] at h
-
-/-- The two visits to a crossing are partners in the matching. -/
-theorem partner_visitAt (i : Fin n) (s : Bool) :
-    D.partner.val (D.visitAt i s) = D.visitAt i (!s) := by
-  have h := D.visitAt_visit (D.partner.val (D.visitAt i s))
-  rw [visit_partner, visit_visitAt, isSecondVisit_partner, isSecondVisit_visitAt] at h
-  exact h.symm
-
-/-- The two visits to a crossing carry opposite over/under data. -/
-theorem over_visitAt_not (i : Fin n) (s : Bool) :
-    D.over (D.visitAt i (!s)) = !D.over (D.visitAt i s) := by
-  rw [← partner_visitAt, over_partner]
 
 /-- The direction to give to slot `1` of a crossing: it agrees with the over/under datum of the
 second visit exactly when the crossing is positive. This is the choice that makes the sign
 derived from the PD-code equal the sign recorded by the Gauss code. -/
-noncomputable def slotOneDirection (i : Fin n) : Bool :=
+private noncomputable def slotOneDirection (i : Fin n) : Bool :=
   if D.sign i = 1 then D.over (D.visitAt i true) else !D.over (D.visitAt i true)
 
 /-- The direction of slot `1` agrees with the over/under datum of the second visit exactly at a
 positive crossing. -/
-theorem slotOneDirection_eq_over_iff (i : Fin n) :
+private theorem slotOneDirection_eq_over_iff (i : Fin n) :
     D.slotOneDirection i = D.over (D.visitAt i true) ↔ D.sign i = 1 := by
   unfold slotOneDirection
   split <;> simp_all
 
 /-- The half-edge in slot `s` of crossing `i`, as a visit together with a direction. -/
-noncomputable def slotEquiv : Fin n × Fin 4 ≃ Fin (2 * n) × Bool :=
+private noncomputable def slotEquiv : Fin n × Fin 4 ≃ Fin (2 * n) × Bool :=
   (Equiv.sigmaEquivProd (Fin n) (Fin 4)).symm.trans
-    (((Equiv.sigmaCongrRight fun i => PDCode.slotSplit (D.slotOneDirection i)).trans
+    (((Equiv.sigmaCongrRight fun i => slotSplit (D.slotOneDirection i)).trans
         (Equiv.sigmaEquivProd (Fin n) (Bool × Bool))).trans
       ((Equiv.prodAssoc (Fin n) Bool Bool).symm.trans
         (D.visitEquiv.symm.prodCongr (Equiv.refl Bool))))
 
 /-- The half-edge in a slot is read off the visit and direction that slot records. -/
-@[simp] theorem slotEquiv_apply (i : Fin n) (s : Fin 4) :
+@[simp] private theorem slotEquiv_apply (i : Fin n) (s : Fin 4) :
     D.slotEquiv (i, s) =
-      (D.visitAt i (PDCode.slotSplit (D.slotOneDirection i) s).1,
-        (PDCode.slotSplit (D.slotOneDirection i) s).2) := (rfl)
+      (D.visitAt i (slotSplit (D.slotOneDirection i) s).1,
+        (slotSplit (D.slotOneDirection i) s).2) := by
+  apply Prod.ext
+  · apply D.visitEquiv.injective
+    simp [slotEquiv]
+  · rfl
 
 /-- The oriented PD-code of a based oriented Gauss code.
 
@@ -255,19 +176,19 @@ strand of its second, so `overPair` is the over/under datum at the second visit;
 of slot `1` encodes the crossing sign. A code with no crossings is the single crossing-free
 circle the traversal walks, recorded with the reference orientation. -/
 noncomputable def toOrientedPDCode : OrientedPDCode n where
-  halfEdge := (PDCode.crossingSlotEquiv n).symm.trans (D.slotEquiv.trans (PDCode.halfEdgeEquiv n))
-  edgePair := PerfectMatching.congr (PDCode.halfEdgeEquiv n) (PDCode.visitArcMatching (2 * n))
+  halfEdge := (PDCode.crossingSlotEquiv n).symm.trans (D.slotEquiv.trans (halfEdgeEquiv n))
+  edgePair := PerfectMatching.congr (halfEdgeEquiv n) (visitArcMatching (2 * n))
   crossinglessComponentCount := if n = 0 then 1 else 0
   overPair i := D.over (D.visitAt i true)
-  orientation h := ((PDCode.halfEdgeEquiv n).symm h).2
+  orientation h := ((halfEdgeEquiv n).symm h).2
   orientation_edgePair := by
     intro h
-    rw [PerfectMatching.congr_val_apply, Equiv.symm_apply_apply, PDCode.visitArcMatching_val,
-      PDCode.visitArcMap_snd]
+    rw [PerfectMatching.congr_val_apply, Equiv.symm_apply_apply, visitArcMatching_val,
+      visitArcMap_snd]
   orientation_oppositeCrossingSlot := by
     intro i slot
     simp only [Equiv.trans_apply, Equiv.symm_apply_apply, slotEquiv_apply,
-      PDCode.slotSplit_snd_oppositeCrossingSlot]
+      slotSplit_snd_oppositeCrossingSlot]
   crossinglessComponents := if n = 0 then {true} else 0
   crossinglessComponents_card := by
     by_cases h : n = 0 <;> simp [h]
@@ -283,45 +204,104 @@ single circle its traversal walks. -/
     D.toOrientedPDCode.crossinglessComponents = if n = 0 then {true} else 0 := (rfl)
 
 /-- The half-edges of the PD-code are the ones the slot assignment names. -/
-@[simp] theorem toOrientedPDCode_halfEdge (i : Fin n) (s : Fin 4) :
+private theorem toOrientedPDCode_halfEdge (i : Fin n) (s : Fin 4) :
     D.toOrientedPDCode.halfEdge (PDCode.crossingSlotEquiv n (i, s)) =
-      PDCode.halfEdgeEquiv n (D.slotEquiv (i, s)) := by
+      halfEdgeEquiv n (D.slotEquiv (i, s)) := by
   simp [toOrientedPDCode]
 
 /-- The half-edge in slot `s` of crossing `i` is the one at the visit that slot belongs to,
 carrying the direction that slot records. -/
-theorem toOrientedPDCode_crossing (i : Fin n) (s : Fin 4) :
+private theorem toOrientedPDCode_crossing_raw (i : Fin n) (s : Fin 4) :
     D.toOrientedPDCode.crossing i s =
-      PDCode.halfEdgeEquiv n
-        (D.visitAt i (PDCode.slotSplit (D.slotOneDirection i) s).1,
-          (PDCode.slotSplit (D.slotOneDirection i) s).2) := by
+      halfEdgeEquiv n
+        (D.visitAt i (slotSplit (D.slotOneDirection i) s).1,
+          (slotSplit (D.slotOneDirection i) s).2) := by
   rw [OrientedPDCode.crossing_apply, toOrientedPDCode_halfEdge, slotEquiv_apply]
+
+private noncomputable def slotAtVisit (v : Fin (2 * n)) (outgoing : Bool) : Fin 4 :=
+  if D.isSecondVisit v then
+    if D.slotOneDirection (D.visit v) = outgoing then 1 else 3
+  else if outgoing then 2 else 0
+
+private theorem slotSplit_slotAtVisit (v : Fin (2 * n)) (outgoing : Bool) :
+    slotSplit (D.slotOneDirection (D.visit v)) (D.slotAtVisit v outgoing) =
+      (D.isSecondVisit v, outgoing) := by
+  cases hv : D.isSecondVisit v <;> cases hd : D.slotOneDirection (D.visit v) <;>
+    cases outgoing <;> simp [slotAtVisit, hv, hd]
+
+private theorem toOrientedPDCode_crossing_slotAtVisit (v : Fin (2 * n)) (outgoing : Bool) :
+    D.toOrientedPDCode.crossing (D.visit v) (D.slotAtVisit v outgoing) =
+      halfEdgeEquiv n (v, outgoing) := by
+  rw [toOrientedPDCode_crossing_raw, slotSplit_slotAtVisit, visitAt_visit]
+
+private theorem toOrientedPDCode_edgePair_raw (v : Fin (2 * n)) :
+    D.toOrientedPDCode.edgePair.val (halfEdgeEquiv n (v, true)) =
+      halfEdgeEquiv n (finRotate (2 * n) v, false) := by
+  have h : D.toOrientedPDCode.edgePair =
+      PerfectMatching.congr (halfEdgeEquiv n) (visitArcMatching (2 * n)) := (rfl)
+  rw [h, PerfectMatching.congr_val_apply_apply, visitArcMatching_val]
+  rfl
+
+private theorem toOrientedPDCode_orientation_crossing_raw (i : Fin n) (s : Fin 4) :
+    D.toOrientedPDCode.orientation (D.toOrientedPDCode.crossing i s) =
+      (slotSplit (D.slotOneDirection i) s).2 := by
+  simp [toOrientedPDCode]
+
+/-- The directions in the four crossing slots are the ones determined by the traversal and the
+recorded crossing sign. -/
+@[simp] theorem toOrientedPDCode_orientation_crossing (i : Fin n) (s : Fin 4) :
+    D.toOrientedPDCode.orientation (D.toOrientedPDCode.crossing i s) =
+      ![false,
+        if D.sign i = 1 then D.over (D.visitAt i true) else !D.over (D.visitAt i true),
+        true,
+        !(if D.sign i = 1 then D.over (D.visitAt i true) else !D.over (D.visitAt i true))] s := by
+  rw [toOrientedPDCode_orientation_crossing_raw]
+  fin_cases s <;> simp [slotOneDirection]
+
+/-- The crossing slot selected by a visit and a direction has that direction. -/
+@[simp] theorem toOrientedPDCode_crossing (v : Fin (2 * n)) (outgoing : Bool) :
+    let b := if D.sign (D.visit v) = 1 then D.over (D.visitAt (D.visit v) true)
+      else !D.over (D.visitAt (D.visit v) true)
+    let s : Fin 4 := if D.isSecondVisit v then
+      if b = outgoing then 1 else 3
+    else if outgoing then 2 else 0
+    D.toOrientedPDCode.orientation (D.toOrientedPDCode.crossing (D.visit v) s) = outgoing := by
+  -- Fold the expanded public formula back to the private slot selector used by the construction.
+  change D.toOrientedPDCode.orientation
+    (D.toOrientedPDCode.crossing (D.visit v) (D.slotAtVisit v outgoing)) = outgoing
+  rw [toOrientedPDCode_crossing_slotAtVisit]
+  simp [toOrientedPDCode]
 
 /-- The arcs of the diagram join the half-edge leaving a visit to the half-edge entering the
 next visit along the traversal. -/
-theorem toOrientedPDCode_edgePair (v : Fin (2 * n)) :
-    D.toOrientedPDCode.edgePair.val (PDCode.halfEdgeEquiv n (v, true)) =
-      PDCode.halfEdgeEquiv n (finRotate (2 * n) v, false) := by
-  have h : D.toOrientedPDCode.edgePair =
-      PerfectMatching.congr (PDCode.halfEdgeEquiv n) (PDCode.visitArcMatching (2 * n)) := (rfl)
-  rw [h, PerfectMatching.congr_val_apply_apply, PDCode.visitArcMatching_val]
-  rfl
-
-/-- The direction of the half-edge in a slot is the one that slot records. -/
-theorem toOrientedPDCode_orientation_crossing (i : Fin n) (s : Fin 4) :
-    D.toOrientedPDCode.orientation (D.toOrientedPDCode.crossing i s) =
-      (PDCode.slotSplit (D.slotOneDirection i) s).2 := by
-  simp [toOrientedPDCode]
+@[simp] theorem toOrientedPDCode_edgePair (v : Fin (2 * n)) :
+    let slotAt := fun (w : Fin (2 * n)) (outgoing : Bool) =>
+      let b := if D.sign (D.visit w) = 1 then D.over (D.visitAt (D.visit w) true)
+        else !D.over (D.visitAt (D.visit w) true)
+      (if D.isSecondVisit w then
+        if b = outgoing then 1 else 3
+      else if outgoing then 2 else 0 : Fin 4)
+    D.toOrientedPDCode.edgePair.val
+        (D.toOrientedPDCode.crossing (D.visit v) (slotAt v true)) =
+      D.toOrientedPDCode.crossing (D.visit (finRotate (2 * n) v))
+        (slotAt (finRotate (2 * n) v) false) := by
+  -- Fold the expanded public formula back to the private slot selector used by the construction.
+  change D.toOrientedPDCode.edgePair.val
+      (D.toOrientedPDCode.crossing (D.visit v) (D.slotAtVisit v true)) =
+    D.toOrientedPDCode.crossing (D.visit (finRotate (2 * n) v))
+      (D.slotAtVisit (finRotate (2 * n) v) false)
+  rw [toOrientedPDCode_crossing_slotAtVisit, toOrientedPDCode_edgePair_raw,
+    toOrientedPDCode_crossing_slotAtVisit]
 
 /-- The over strand of a crossing of the PD-code is the strand of the visit the Gauss code
 records as over. -/
-theorem isOver_toOrientedPDCode_one (i : Fin n) :
+@[simp] theorem toOrientedPDCode_isOver_one (i : Fin n) :
     D.toOrientedPDCode.toPDCode.isOver i 1 = D.over (D.visitAt i true) := by
   simp
 
 /-- The under strand of a crossing of the PD-code is the strand of the visit the Gauss code
 records as under. -/
-theorem isOver_toOrientedPDCode_zero (i : Fin n) :
+@[simp] theorem toOrientedPDCode_isOver_zero (i : Fin n) :
     D.toOrientedPDCode.toPDCode.isOver i 0 = D.over (D.visitAt i false) := by
   have h := D.over_visitAt_not i true
   simp only [Bool.not_true] at h
@@ -329,13 +309,13 @@ theorem isOver_toOrientedPDCode_zero (i : Fin n) :
 
 /-- **The signs agree**: the sign the PD-code derives from its slot order at a crossing is the
 sign the Gauss code records there. -/
-@[simp] theorem crossingSign_toOrientedPDCode (i : Fin n) :
+@[simp] theorem toOrientedPDCode_crossingSign (i : Fin n) :
     D.toOrientedPDCode.crossingSign i = (D.sign i : ℤ) := by
   have hpos : D.toOrientedPDCode.crossingSign i = 1 ↔ D.sign i = 1 := by
     rw [OrientedPDCode.crossingSign_eq_one_iff]
-    simp only [toOrientedPDCode_orientation_crossing, PDCode.slotSplit_zero, PDCode.slotSplit_one,
-      Bool.false_xor, toOrientedPDCode_overPair]
-    exact D.slotOneDirection_eq_over_iff i
+    rw [toOrientedPDCode_orientation_crossing, toOrientedPDCode_orientation_crossing,
+      toOrientedPDCode_overPair]
+    simp
   rcases Int.units_eq_one_or (D.sign i) with h | h
   · rw [hpos.mpr h, h]
     rfl
@@ -349,7 +329,7 @@ sign the Gauss code records there. -/
       rfl
 
 /-- The two writhes agree. -/
-@[simp] theorem writhe_toOrientedPDCode : D.toOrientedPDCode.writhe = D.writhe := by
+@[simp] theorem toOrientedPDCode_writhe : D.toOrientedPDCode.writhe = D.writhe := by
   simp [OrientedPDCode.writhe_def, writhe_def]
 
 /-- The map to oriented PD-codes is injective: the crossing-incidence data remembers the whole
@@ -359,9 +339,10 @@ theorem toOrientedPDCode_injective :
   intro D E h
   have hslot : ∀ (i : Fin n) (s : Fin 4), D.slotEquiv (i, s) = E.slotEquiv (i, s) := by
     intro i s
-    refine (PDCode.halfEdgeEquiv n).injective ?_
+    refine (halfEdgeEquiv n).injective ?_
     have := congrArg (fun C => C.halfEdge (PDCode.crossingSlotEquiv n (i, s))) h
-    simpa using this
+    rw [← D.toOrientedPDCode_halfEdge, ← E.toOrientedPDCode_halfEdge]
+    exact this
   have hvisitAt : ∀ (i : Fin n) (s : Bool), D.visitAt i s = E.visitAt i s := by
     intro i s
     cases s
@@ -371,8 +352,17 @@ theorem toOrientedPDCode_injective :
     intro i
     simpa using congrArg Prod.snd (hslot i 1)
   have hequiv : D.visitEquiv = E.visitEquiv := by
-    have : D.visitEquiv.symm = E.visitEquiv.symm :=
-      Equiv.ext fun p => hvisitAt p.1 p.2
+    have : D.visitEquiv.symm = E.visitEquiv.symm := by
+      apply Equiv.ext
+      intro p
+      calc
+        D.visitEquiv.symm p = D.visitAt p.1 p.2 := by
+          apply D.visitEquiv.injective
+          simp
+        _ = E.visitAt p.1 p.2 := hvisitAt p.1 p.2
+        _ = E.visitEquiv.symm p := by
+          apply E.visitEquiv.injective
+          simp
     simpa using congrArg Equiv.symm this
   have hvisit : D.visit = E.visit := by
     funext v
@@ -447,6 +437,13 @@ noncomputable def toFramedOrientedPDCode (D : FramedBasedOrientedGaussCode n) :
 /-- Every crossing visit of a framed code carries the single framing coefficient. -/
 @[simp] theorem toFramedOrientedPDCode_framing (D : FramedBasedOrientedGaussCode n)
     (h : Fin (4 * n)) : D.toFramedOrientedPDCode.framing h = D.framing := (rfl)
+
+/-- A crossing-free framed code carries the Gauss code's framing on its unique component, while
+a code with crossings has no crossing-free components. -/
+@[simp] theorem toFramedOrientedPDCode_crossinglessFramings
+    (D : FramedBasedOrientedGaussCode n) :
+    D.toFramedOrientedPDCode.crossinglessFramings =
+      if n = 0 then {(true, D.framing)} else 0 := (rfl)
 
 end FramedBasedOrientedGaussCode
 
