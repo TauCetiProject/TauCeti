@@ -30,10 +30,14 @@ reaches every rational number. Since the two square roots of an element differ b
 square root of such an `m` lies in the field, not just the constructed one. A zero radicand is
 excluded automatically: `4 · 0 ∣ N` forces `N = 0`.
 
-Taking `L = ℂ` makes the statement unconditional: with `N = 4 ∏ᵢ |num dᵢ · den dᵢ|` one may use
-`ζ = exp (2 π i / N)`, so `ℚ(√d₁, …, √dₙ) ⊆ ℚ(ζ_N)` for any choice of square roots. The target
-`ℚ(ζ_N)` is the `N`-th cyclotomic field: `IsPrimitiveRoot.adjoin_isCyclotomicExtension` identifies
-it as a cyclotomic extension of `ℚ`.
+Taking `L = ℂ` makes the statement unconditional, provided every radicand is nonzero: for
+`d i ≠ 0` and `N = 4 ∏ᵢ |num dᵢ · den dᵢ|` one may use `ζ = exp (2 π i / N)`, so
+`ℚ(√d₁, …, √dₙ) ⊆ ℚ(ζ_N)` for any choice of square roots. Nonvanishing of the radicands is what
+makes this `N` positive. The existential form below needs no such hypothesis: a zero radicand has
+only the square root `0`, so those indices are discarded before the order is formed. The target
+`ℚ(ζ_N)` is the `N`-th cyclotomic field:
+`IntermediateField.isCyclotomicExtension_singleton_iff_eq_adjoin` identifies it as a cyclotomic
+extension of `ℚ`.
 
 No presentation by radicals need be assumed of the input field: exponent-two Kummer theory
 (`TauCeti.Multiquadratic.exists_root_adjoin_range_eq_top`) writes any finite Galois extension of
@@ -52,8 +56,9 @@ Classical Introduction to Modern Number Theory*, Chapter 6.
 * `TauCeti.Multiquadratic.mem_of_sq_eq_ratCast`: the same for a rational number.
 * `TauCeti.Multiquadratic.adjoin_range_le_of_sq_eq_ratCast`: a multiquadratic field with rational
   radicands is contained in any such intermediate field.
-* `TauCeti.Multiquadratic.adjoin_range_le_adjoin_exp`: over `ℂ`, `ℚ(√d₁, …, √dₙ) ⊆ ℚ(ζ_N)` for the
-  root of unity `ζ_N = exp (2 π i / N)` and the order `N = 4 ∏ᵢ |num dᵢ · den dᵢ|`.
+* `TauCeti.Multiquadratic.adjoin_range_le_adjoin_exp`: over `ℂ`, for nonzero radicands,
+  `ℚ(√d₁, …, √dₙ) ⊆ ℚ(ζ_N)` for the root of unity `ζ_N = exp (2 π i / N)` and the order
+  `N = 4 ∏ᵢ |num dᵢ · den dᵢ|`.
 * `TauCeti.Multiquadratic.exists_isCyclotomicExtension_and_adjoin_range_le`: every
   multiquadratic field with rational radicands lies in a cyclotomic field.
 * `TauCeti.Multiquadratic.exists_isCyclotomicExtension_and_nonempty_algHom`: the abstract form — a
