@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+public import TauCeti.Analysis.Normed.Lp.MeasurableSpace
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Product
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 
@@ -34,17 +34,13 @@ separate statement; it is not obtained from the identity below.
 
 ## Main statements
 
-* `TauCeti.edist_toLp_rpow` — the defining additivity of the `ℓ^p` product distance after raising
-  to the power `p`;
-* `TauCeti.measurable_edist_toLp_prod` — joint measurability of the `ℓ^p` product ground distance,
-  the hypothesis that the two-variable Wasserstein API asks for;
 * `TauCeti.wassersteinEDist_map_toLp_prod_rpow` and `TauCeti.wassersteinEDist_map_toLp_prod` — the
   tensorization identity, in its `p`-th power form and its root form;
 * `TauCeti.wassersteinEDist_map_toLp_prod_left` and
   `TauCeti.wassersteinEDist_map_toLp_prod_right` — tensorizing two laws with a common first, resp.
   second, factor leaves their Wasserstein distance unchanged;
-* `TauCeti.hasFiniteMoment_map_toLp_prod` — a product law has finite `p`-moment exactly when both
-  factors do.
+* `TauCeti.hasFiniteMoment_map_toLp_prod_iff` — a product law has finite `p`-moment exactly when
+  both factors do.
 
 ## References
 
@@ -64,54 +60,8 @@ namespace TauCeti
 
 universe u v
 
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- An exponent carrying the `Fact (1 ≤ p)` instance that the `ℓ^p` product distance needs is
-nonzero. -/
-private theorem exponent_ne_zero : p ≠ 0 :=
-  (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
-
-/-- A finite exponent carrying the `Fact (1 ≤ p)` instance has positive real part. -/
-private theorem toReal_exponent_pos (hp : p ≠ ∞) : 0 < p.toReal :=
-  ENNReal.toReal_pos exponent_ne_zero hp
-
-variable {X : Type u} {Y : Type v} [MeasurableSpace X] [MeasurableSpace Y]
-  [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
-
-omit [MeasurableSpace X] [MeasurableSpace Y] in
-/-- Raising the `ℓ^p` product distance to the power `p` makes it additive in the two factors.
-This is the reason the tensorization identity below is an identity of `p`-th powers. -/
-theorem edist_toLp_rpow (hp : p ≠ ∞) (z w : X × Y) :
-    edist (WithLp.toLp p z) (WithLp.toLp p w) ^ p.toReal
-      = edist z.1 w.1 ^ p.toReal + edist z.2 w.2 ^ p.toReal := by
-  have hr : 0 < p.toReal := toReal_exponent_pos hp
-  rw [WithLp.prod_edist_eq_add hr, ← ENNReal.rpow_mul, one_div_mul_cancel hr.ne',
-    ENNReal.rpow_one, WithLp.toLp_fst, WithLp.toLp_fst, WithLp.toLp_snd, WithLp.toLp_snd]
-
-/-- The `ℓ^p` product ground distance is jointly measurable as soon as the two factor distances
-are. This is the hypothesis under which the two-variable Wasserstein API applies on
-`WithLp p (X × Y)`. -/
-theorem measurable_edist_toLp_prod (hp : p ≠ ∞)
-    (hdX : Measurable fun z : X × X ↦ edist z.1 z.2)
-    (hdY : Measurable fun z : Y × Y ↦ edist z.1 z.2) :
-    Measurable fun w : WithLp p (X × Y) × WithLp p (X × Y) ↦ edist w.1 w.2 := by
-  have hr : 0 < p.toReal := toReal_exponent_pos hp
-  have m₁ : Measurable fun w : WithLp p (X × Y) × WithLp p (X × Y) ↦ WithLp.ofLp w.1 :=
-    (WithLp.measurable_ofLp p (X × Y)).comp measurable_fst
-  have m₂ : Measurable fun w : WithLp p (X × Y) × WithLp p (X × Y) ↦ WithLp.ofLp w.2 :=
-    (WithLp.measurable_ofLp p (X × Y)).comp measurable_snd
-  have h₁ : Measurable fun w : WithLp p (X × Y) × WithLp p (X × Y) ↦
-      edist w.1.fst w.2.fst := by
-    simpa [Function.comp_def] using
-      hdX.comp ((measurable_fst.comp m₁).prodMk (measurable_fst.comp m₂))
-  have h₂ : Measurable fun w : WithLp p (X × Y) × WithLp p (X × Y) ↦
-      edist w.1.snd w.2.snd := by
-    simpa [Function.comp_def] using
-      hdY.comp ((measurable_snd.comp m₁).prodMk (measurable_snd.comp m₂))
-  simp only [WithLp.prod_edist_eq_add hr]
-  exact (ENNReal.continuous_rpow_const.measurable).comp
-    ((ENNReal.continuous_rpow_const.measurable.comp h₁).add
-      (ENNReal.continuous_rpow_const.measurable.comp h₂))
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {X : Type u} {Y : Type v}
+  [MeasurableSpace X] [MeasurableSpace Y] [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
 
 section Tensorization
 
@@ -130,7 +80,7 @@ theorem wassersteinEDist_map_toLp_prod_rpow (hp : p ≠ ∞)
     wassersteinEDist p ((μ₁.prod μ₂).map (WithLp.toLp p)) ((ν₁.prod ν₂).map (WithLp.toLp p))
         ^ p.toReal
       = wassersteinEDist p μ₁ ν₁ ^ p.toReal + wassersteinEDist p μ₂ ν₂ ^ p.toReal := by
-  have hp0 : p ≠ 0 := exponent_ne_zero
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
   have hcZ : Measurable fun w : WithLp p (X × Y) × WithLp p (X × Y) ↦
       edist w.1 w.2 ^ p.toReal :=
     ENNReal.continuous_rpow_const.measurable.comp (measurable_edist_toLp_prod hp hdX hdY)
@@ -158,7 +108,7 @@ theorem wassersteinEDist_map_toLp_prod (hp : p ≠ ∞)
     wassersteinEDist p ((μ₁.prod μ₂).map (WithLp.toLp p)) ((ν₁.prod ν₂).map (WithLp.toLp p))
       = (wassersteinEDist p μ₁ ν₁ ^ p.toReal + wassersteinEDist p μ₂ ν₂ ^ p.toReal)
           ^ (1 / p.toReal) := by
-  have hr : 0 < p.toReal := toReal_exponent_pos hp
+  have hr : 0 < p.toReal := p.toReal_pos_iff_ne_top.mpr hp
   rw [← wassersteinEDist_map_toLp_prod_rpow hp hdX hdY, ← ENNReal.rpow_mul,
     mul_one_div_cancel hr.ne', ENNReal.rpow_one]
 
@@ -170,7 +120,7 @@ theorem wassersteinEDist_map_toLp_prod_left (hp : p ≠ ∞)
     (hdY : Measurable fun z : Y × Y ↦ edist z.1 z.2) :
     wassersteinEDist p ((μ₁.prod μ₂).map (WithLp.toLp p)) ((μ₁.prod ν₂).map (WithLp.toLp p))
       = wassersteinEDist p μ₂ ν₂ := by
-  have hr : 0 < p.toReal := toReal_exponent_pos hp
+  have hr : 0 < p.toReal := p.toReal_pos_iff_ne_top.mpr hp
   have h := wassersteinEDist_map_toLp_prod_rpow (μ₁ := μ₁) (ν₁ := μ₁) (μ₂ := μ₂) (ν₂ := ν₂)
     hp hdX hdY
   rw [wassersteinEDist_self_of_measurable_edist hdX, ENNReal.zero_rpow_of_pos hr, zero_add] at h
@@ -184,7 +134,7 @@ theorem wassersteinEDist_map_toLp_prod_right (hp : p ≠ ∞)
     (hdY : Measurable fun z : Y × Y ↦ edist z.1 z.2) :
     wassersteinEDist p ((μ₁.prod μ₂).map (WithLp.toLp p)) ((ν₁.prod μ₂).map (WithLp.toLp p))
       = wassersteinEDist p μ₁ ν₁ := by
-  have hr : 0 < p.toReal := toReal_exponent_pos hp
+  have hr : 0 < p.toReal := p.toReal_pos_iff_ne_top.mpr hp
   have h := wassersteinEDist_map_toLp_prod_rpow (μ₁ := μ₁) (ν₁ := ν₁) (μ₂ := μ₂) (ν₂ := μ₂)
     hp hdX hdY
   rw [wassersteinEDist_self_of_measurable_edist hdY, ENNReal.zero_rpow_of_pos hr, add_zero] at h
@@ -192,12 +142,12 @@ theorem wassersteinEDist_map_toLp_prod_right (hp : p ≠ ∞)
 
 /-- A product law has finite `p`-moment for the `ℓ^p` product distance exactly when both of its
 factors do. -/
-theorem hasFiniteMoment_map_toLp_prod (hp : p ≠ ∞)
+theorem hasFiniteMoment_map_toLp_prod_iff (hp : p ≠ ∞)
     (hdX : Measurable fun z : X × X ↦ edist z.1 z.2)
     (hdY : Measurable fun z : Y × Y ↦ edist z.1 z.2) :
     HasFiniteMoment p ((μ₁.prod μ₂).map (WithLp.toLp p)) ↔
       HasFiniteMoment p μ₁ ∧ HasFiniteMoment p μ₂ := by
-  have hr : 0 < p.toReal := toReal_exponent_pos hp
+  have hr : 0 < p.toReal := p.toReal_pos_iff_ne_top.mpr hp
   have hd : Measurable fun w : WithLp p (X × Y) × WithLp p (X × Y) ↦ edist w.1 w.2 :=
     measurable_edist_toLp_prod hp hdX hdY
   have key : ∀ x₀ : X, ∀ y₀ : Y,

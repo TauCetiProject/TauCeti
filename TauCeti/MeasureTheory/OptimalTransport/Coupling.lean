@@ -38,6 +38,8 @@ measures, and the probability case is packaged separately as a subtype of
 * `TauCeti.IsCoupling.measurePreserving_fst`, `TauCeti.IsCoupling.measurePreserving_snd`,
   `TauCeti.IsCoupling.integral_comp_fst`, and `TauCeti.IsCoupling.integral_comp_snd` — projection
   and integral-transfer forms of the marginal conditions;
+* `TauCeti.IsCoupling.prodProdProdComm` — exchanging the two middle coordinates of a product of
+  two couplings couples the two product measures;
 * `TauCeti.exists_isCoupling_iff` — a finite measure and any other measure admit a coupling
   exactly when they have the same total mass, the witness being their normalised product;
 * `TauCeti.isCoupling_map_swap_iff` and `TauCeti.isCoupling_map_prodMap_iff` —
@@ -232,6 +234,28 @@ protected theorem map_left (hπ : IsCoupling π μ ν) {f : X → X'} (hf : Meas
 protected theorem map_right (hπ : IsCoupling π μ ν) {g : Y → Y'} (hg : Measurable g) :
     IsCoupling (π.map (Prod.map id g)) μ (ν.map g) := by
   simpa only [Measure.map_id] using hπ.map measurable_id hg
+
+/-- **Rearranging a product of plans.** Exchanging the two middle coordinates of the product of a
+coupling of `μ, ν` and a coupling of `μ', ν'` gives a coupling of `μ ⊗ μ'` and `ν ⊗ ν'`. -/
+protected theorem prodProdProdComm {π' : Measure (X' × Y')} {μ' : Measure X'} {ν' : Measure Y'}
+    [SFinite π] [SFinite π'] (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ' ν') :
+    IsCoupling ((π.prod π').map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2)))
+      (μ.prod μ') (ν.prod ν') := by
+  have hX : Measurable (Prod.map Prod.fst Prod.fst : (X × Y) × X' × Y' → X × X') :=
+    measurable_fst.prodMap measurable_fst
+  have hY : Measurable (Prod.map Prod.snd Prod.snd : (X × Y) × X' × Y' → Y × Y') :=
+    measurable_snd.prodMap measurable_snd
+  constructor
+  · have h : ((π.prod π').map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2))).fst
+        = (π.prod π').map (Prod.map Prod.fst Prod.fst) :=
+      Measure.fst_map_prodMk hX hY
+    rw [h, ← Measure.map_prod_map π π' measurable_fst measurable_fst]
+    exact congrArg₂ Measure.prod hπ.fst_eq hπ'.fst_eq
+  · have h : ((π.prod π').map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2))).snd
+        = (π.prod π').map (Prod.map Prod.snd Prod.snd) :=
+      Measure.snd_map_prodMk hX hY
+    rw [h, ← Measure.map_prod_map π π' measurable_snd measurable_snd]
+    exact congrArg₂ Measure.prod hπ.snd_eq hπ'.snd_eq
 
 end IsCoupling
 

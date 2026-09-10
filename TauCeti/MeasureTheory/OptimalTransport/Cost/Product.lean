@@ -24,12 +24,13 @@ soon as one of the two coordinate values is.
 
 The four marginals are probability measures. That normalisation is what makes the coordinate
 pushforwards of a plan of `μ₁ ⊗ μ₂` and `ν₁ ⊗ ν₂` land on `μᵢ` and `νᵢ` rather than on a rescaling
-of them; the rearrangement lemma below carries no such hypothesis.
+of them. The rearrangement of a product of plans that the proofs use is
+`TauCeti.IsCoupling.prodProdProdComm`, which needs no such hypothesis.
 
 ## Main statements
 
-* `TauCeti.IsCoupling.prodProdProdComm` — rearranging the product of two plans gives a plan of the
-  product problem, and `TauCeti.lintegral_map_prodProdProdComm` computes its separable cost;
+* `TauCeti.lintegral_map_prodProdProdComm` — the separable cost of the rearranged product of two
+  plans, `TauCeti.IsCoupling.prodProdProdComm`, is the sum of the two coordinate costs;
 * `TauCeti.transportCost_prod_add` — the value of an additively separable cost on a product of two
   transport problems is the sum of the two values;
 * `TauCeti.IsOptimalCoupling.prod` — rearranging the product of two optimal plans gives an optimal
@@ -58,28 +59,6 @@ variable {X₁ : Type u} {X₂ : Type v} {Y₁ : Type w} {Y₂ : Type*}
   {c₁ : X₁ × Y₁ → ℝ≥0∞} {c₂ : X₂ × Y₂ → ℝ≥0∞}
   {μ₁ : Measure X₁} {μ₂ : Measure X₂} {ν₁ : Measure Y₁} {ν₂ : Measure Y₂}
   {π₁ : Measure (X₁ × Y₁)} {π₂ : Measure (X₂ × Y₂)}
-
-/-- **Rearranging a product of plans.** Exchanging the two middle coordinates of the product of a
-plan of `μ₁, ν₁` and a plan of `μ₂, ν₂` gives a plan of `μ₁ ⊗ μ₂` and `ν₁ ⊗ ν₂`. -/
-protected theorem IsCoupling.prodProdProdComm [SFinite π₁] [SFinite π₂]
-    (h₁ : IsCoupling π₁ μ₁ ν₁) (h₂ : IsCoupling π₂ μ₂ ν₂) :
-    IsCoupling ((π₁.prod π₂).map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2)))
-      (μ₁.prod μ₂) (ν₁.prod ν₂) := by
-  have hX : Measurable (Prod.map Prod.fst Prod.fst : (X₁ × Y₁) × X₂ × Y₂ → X₁ × X₂) :=
-    measurable_fst.prodMap measurable_fst
-  have hY : Measurable (Prod.map Prod.snd Prod.snd : (X₁ × Y₁) × X₂ × Y₂ → Y₁ × Y₂) :=
-    measurable_snd.prodMap measurable_snd
-  constructor
-  · have h : ((π₁.prod π₂).map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2))).fst
-        = (π₁.prod π₂).map (Prod.map Prod.fst Prod.fst) :=
-      Measure.fst_map_prodMk hX hY
-    rw [h, ← Measure.map_prod_map π₁ π₂ measurable_fst measurable_fst]
-    exact congrArg₂ Measure.prod h₁.fst_eq h₂.fst_eq
-  · have h : ((π₁.prod π₂).map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2))).snd
-        = (π₁.prod π₂).map (Prod.map Prod.snd Prod.snd) :=
-      Measure.snd_map_prodMk hX hY
-    rw [h, ← Measure.map_prod_map π₁ π₂ measurable_snd measurable_snd]
-    exact congrArg₂ Measure.prod h₁.snd_eq h₂.snd_eq
 
 /-- The cost of a rearranged product of plans is the sum of the two coordinate costs. -/
 theorem lintegral_map_prodProdProdComm [IsProbabilityMeasure π₁] [IsProbabilityMeasure π₂]
