@@ -66,8 +66,9 @@ The classical account is in D. A. Cox, *Primes of the Form x² + ny²*, §6.A, a
   ideal class, and `…_artinHomAway_excludedPrimes` is its canonical instance.
 * `TauCeti.Multiquadratic.artinHomAway_candidateGenusField_eq_one_iff`: the Artin automorphism of
   an ideal is trivial exactly when its narrow class is a square.
-* `TauCeti.Multiquadratic.artinHomAway_candidateGenusField_surjective`: every automorphism of
-  `K_gen` over `K` is the Artin automorphism of an ideal prime to the discriminant.
+* `TauCeti.Multiquadratic.artinHomAwayIntegral_candidateGenusField_surjective`: every automorphism
+  of `K_gen` over `K` is the Artin automorphism of an integral ideal prime to the discriminant;
+  `…artinHomAway_candidateGenusField_surjective` is the corresponding fractional-ideal statement.
 -/
 
 public section
@@ -457,11 +458,12 @@ Artin automorphism of an integral ideal of `K` prime to `2 · disc K`. The genus
 turns this into the statement that every narrow ideal class modulo squares is represented by such
 an ideal, which is the coprime-representative theorem
 `NumberField.NarrowClassGroup.exists_mk0_eq_and_isCoprime`. -/
-theorem artinHomAway_candidateGenusField_surjective
+theorem artinHomAwayIntegral_candidateGenusField_surjective
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) :
     Function.Surjective
-      (NumberFieldArithmetic.artinHomAway (L := candidateGenusField hd)
-        IsMulCommutative.is_comm.comm (genusFieldArtinExcludedPrimes hd)
+      (NumberFieldArithmetic.artinHomAwayIntegral (L := candidateGenusField hd)
+        (fun σ τ ↦ (commute_iff_eq σ τ).2 (IsMulCommutative.is_comm.comm σ τ))
+        (genusFieldArtinExcludedPrimes hd)
         (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
           inferInstance inferInstance)) := by
   intro σ
@@ -488,9 +490,10 @@ theorem artinHomAway_candidateGenusField_surjective
     refine v.isPrime.ne_top (top_le_iff.mp ?_)
     rw [← Ideal.isCoprime_iff_sup_eq.mp hcop]
     exact sup_le (Ideal.le_of_dvd hdvdJ) (Ideal.le_of_dvd hdvdM)
-  refine ⟨NumberFieldArithmetic.integralIdealsAwayHom _ ⟨_, hmem⟩, ?_⟩
+  refine ⟨⟨J, hmem⟩, ?_⟩
   apply (autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd hnsq).injective
-  rw [autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway_excludedPrimes]
+  rw [NumberFieldArithmetic.artinHomAwayIntegral_apply,
+    autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway_excludedPrimes]
   have hcoe : ((NumberFieldArithmetic.integralIdealsAwayHom
       (K := candidateGenusFieldBase hd) (genusFieldArtinExcludedPrimes hd) ⟨_, hmem⟩ :
         NumberFieldArithmetic.idealsAway (genusFieldArtinExcludedPrimes hd)) :
@@ -499,5 +502,20 @@ theorem artinHomAway_candidateGenusField_surjective
     Units.ext (by
       rw [NumberFieldArithmetic.coe_integralIdealsAwayHom, FractionalIdeal.coe_mk0])
   rw [hcoe, NarrowClassGroup.mk_mk0, hJC, hC, ofAdd_toAdd]
+
+/-- **The genus-field Artin map on fractional ideals is surjective.** This follows from
+`artinHomAwayIntegral_candidateGenusField_surjective` by including the integral ideals prime to
+`2 · disc K` into the corresponding group of fractional ideals. -/
+theorem artinHomAway_candidateGenusField_surjective
+    (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) :
+    Function.Surjective
+      (NumberFieldArithmetic.artinHomAway (L := candidateGenusField hd)
+        IsMulCommutative.is_comm.comm (genusFieldArtinExcludedPrimes hd)
+        (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
+          inferInstance inferInstance)) := by
+  intro σ
+  obtain ⟨I, hI⟩ := artinHomAwayIntegral_candidateGenusField_surjective hd hnsq σ
+  refine ⟨NumberFieldArithmetic.integralIdealsAwayHom _ I, ?_⟩
+  simpa only [NumberFieldArithmetic.artinHomAwayIntegral_apply] using hI
 
 end TauCeti.Multiquadratic
