@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.KleinFour
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
+public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 
 /-!
 # The checkerboard lattice and the type `Dₙ` discriminant form
@@ -257,9 +258,7 @@ theorem isPosDef_checkerboardLattice : (checkerboardLattice n).IsPosDef := by
   rw [isPosDef_iff]
   intro x hx
   rw [checkerboardLattice_form_apply]
-  obtain ⟨i, hi⟩ := Function.ne_iff.mp hx
-  exact Finset.sum_pos' (fun j _ ↦ mul_self_nonneg (x j))
-    ⟨i, Finset.mem_univ i, mul_self_pos.mpr hi⟩
+  simpa [dotProduct] using Matrix.dotProduct_star_self_pos_iff.mpr hx
 
 variable {n} in
 /-- Membership in the checkerboard lattice: every coordinate is an integer and their sum is

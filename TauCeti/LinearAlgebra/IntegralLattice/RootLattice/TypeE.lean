@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Cartan
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
+public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.IntegralLattice.StandardCoordinates
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Dynkin
@@ -143,9 +144,8 @@ noncomputable instance instIsNondegenerateTypeE₆RootLattice :
 
 /-- **The type `E₆` root lattice is positive definite**, its Gram matrix being the positive
 definite Cartan matrix of the type. -/
-theorem isPosDef_typeE₆RootLattice : typeE₆RootLattice.IsPosDef := by
-  rw [typeE₆RootLattice]
-  exact isPosDef_ofGramMatrix _ _ _ posDef_cartanMatrix_E6
+theorem isPosDef_typeE₆RootLattice : typeE₆RootLattice.IsPosDef :=
+  (isPosDef_ofGramMatrix_iff _ _ _).mpr posDef_map_intCast_cartanMatrix_E6
 
 /-- The type `E₆` root lattice is even: every diagonal Cartan entry is `2`. -/
 theorem isEven_typeE₆RootLattice : typeE₆RootLattice.IsEven := by
@@ -420,9 +420,8 @@ noncomputable instance instIsNondegenerateTypeE₇RootLattice :
 
 /-- **The type `E₇` root lattice is positive definite**, its Gram matrix being the positive
 definite Cartan matrix of the type. -/
-theorem isPosDef_typeE₇RootLattice : typeE₇RootLattice.IsPosDef := by
-  rw [typeE₇RootLattice]
-  exact isPosDef_ofGramMatrix _ _ _ posDef_cartanMatrix_E7
+theorem isPosDef_typeE₇RootLattice : typeE₇RootLattice.IsPosDef :=
+  (isPosDef_ofGramMatrix_iff _ _ _).mpr posDef_map_intCast_cartanMatrix_E7
 
 /-- The type `E₇` root lattice is even: every diagonal Cartan entry is `2`. -/
 theorem isEven_typeE₇RootLattice : typeE₇RootLattice.IsEven := by
@@ -706,9 +705,8 @@ noncomputable instance instIsNondegenerateTypeE₈RootLattice :
 
 /-- **The type `E₈` root lattice is positive definite**, its Gram matrix being the positive
 definite Cartan matrix of the type. -/
-theorem isPosDef_typeE₈RootLattice : typeE₈RootLattice.IsPosDef := by
-  rw [typeE₈RootLattice]
-  exact isPosDef_ofGramMatrix _ _ _ posDef_cartanMatrix_E8
+theorem isPosDef_typeE₈RootLattice : typeE₈RootLattice.IsPosDef :=
+  (isPosDef_ofGramMatrix_iff _ _ _).mpr posDef_map_intCast_cartanMatrix_E8
 
 /-- The type `E₈` root lattice is even: every diagonal Cartan entry is `2`. -/
 theorem isEven_typeE₈RootLattice : typeE₈RootLattice.IsEven := by

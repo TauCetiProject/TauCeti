@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
+public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Classical
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 
@@ -100,9 +101,8 @@ noncomputable def typeARootLattice : IntegralLattice (Fin n → ℚ) :=
 
 /-- **The type `Aₙ` root lattice is positive definite**, its Gram matrix being the positive
 definite Cartan matrix of the type. -/
-theorem isPosDef_typeARootLattice : (typeARootLattice n).IsPosDef := by
-  rw [typeARootLattice]
-  exact isPosDef_ofGramMatrix _ _ _ (posDef_cartanMatrix_A n)
+theorem isPosDef_typeARootLattice : (typeARootLattice n).IsPosDef :=
+  (isPosDef_ofGramMatrix_iff _ _ _).mpr (posDef_map_intCast_cartanMatrix_A n)
 
 /-- The `i`-th simple root of the type `Aₙ` root lattice, as a vector of the ambient space.
 
