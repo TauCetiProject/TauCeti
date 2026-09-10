@@ -18,6 +18,14 @@ to the matrix models of the classical groups.
 
 The criteria apply to any finite index type, including the empty type, and to rings such as
 `ℤ` where two is regular but not invertible.
+
+## Main results
+
+* `TauCeti.weightedSumSquares_one_eq_toQuadraticForm_one`: the standard weighted sum of squares
+  is the quadratic form of the identity matrix.
+* `TauCeti.toMatrix_mem_orthogonalGroup_iff`: the coordinate criterion for the orthogonal group.
+* `TauCeti.toMatrix_mem_specialOrthogonalGroup_iff`: the coordinate criterion for the special
+  orthogonal group.
 -/
 
 public section
@@ -27,6 +35,17 @@ namespace TauCeti
 open Matrix
 
 universe u v
+
+/-- The standard weighted sum-of-squares quadratic form is the quadratic form associated to the
+identity matrix. -/
+theorem weightedSumSquares_one_eq_toQuadraticForm_one (R : Type u) [CommRing R]
+    (n : Type v) [Fintype n] [DecidableEq n] :
+    QuadraticMap.weightedSumSquares R (1 : n → R) =
+      Matrix.toQuadraticForm' (1 : Matrix n n R) := by
+  ext x
+  simp only [QuadraticMap.weightedSumSquares_apply, Pi.one_apply, one_smul,
+    Matrix.toQuadraticForm', LinearMap.BilinMap.toQuadraticMap_apply,
+    Matrix.toLinearMap₂'_apply', Matrix.one_mulVec, dotProduct]
 
 /-- The coordinate matrix of a linear automorphism is orthogonal exactly when the
 automorphism preserves the standard quadratic form. -/
