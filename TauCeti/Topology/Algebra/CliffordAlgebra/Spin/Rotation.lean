@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Rotation
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 public import Mathlib.Analysis.Convex.PathConnected
-public import Mathlib.Topology.Connected.PathConnected
 
 /-!
 # Rotation paths in real Spin groups
@@ -82,7 +81,7 @@ def spinRotationPath (hx : Q x = 1) (hy : Q y = 1)
     (spinRotation_zero Q x y hx hy hxy).symm
     (spinRotation_pi Q x y hx hy hxy).symm
 
-/-- Evaluating the rotation path at `t` gives rotation through angle `π t`. -/
+/-- Evaluating the rotation path at `t` gives the rotation with Spin parameter `π t`. -/
 @[simp]
 theorem spinRotationPath_apply (hx : Q x = 1) (hy : Q y = 1)
     (hxy : Q.IsOrtho x y) (t : unitInterval) :
