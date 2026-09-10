@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Edge
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
@@ -22,8 +21,9 @@ That hypothesis is the classical closing condition: for a bounded polygon with i
 `α i` and no prevertex at infinity, `e i = α i / π - 1` and the angle sum forces `∑ i, e i = -2`.
 
 Far from all the prevertices, `dist z (a i)` is caught between `‖z‖ / 2` and `2 ‖z‖`, so the
-integrand `∏ i, (z - a i) ^ (e i)` is dominated by `C * ‖z‖ ^ ∑ i, e i`
-(`TauCeti.exists_norm_schwarzChristoffelIntegrand_le_of_le_norm`).  With `∑ i, e i < -1` that
+integrand `∏ i, (z - a i) ^ (e i)` is bounded by `C * ‖z‖ ^ ∑ i, e i`
+(`TauCeti.exists_norm_schwarzChristoffelIntegrand_le_of_le_norm`), for any exponents whatever.
+Only the sign of `∑ i, e i` makes that a decay estimate, and with `∑ i, e i < -1` the
 dominating function is integrable along a vertical ray, and the map is estimated between any two
 far-away points of the half-plane by running up a vertical ray from the first, across a horizontal
 segment at the common height `‖z‖ + ‖w‖`, and back down to the second: all three pieces stay far
@@ -31,7 +31,7 @@ from the prevertices, and all three contributions are `O(R ^ (∑ i, e i + 1))` 
 norm at least `R`.  That is the Cauchy criterion along `cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet`, and
 completeness of `ℂ` turns it into the limit `TauCeti.schwarzChristoffelVertexAtInfinity`.
 
-The boundary consequence is `TauCeti.tendsto_nhds_schwarzChristoffelVertexAtInfinity`: any
+The boundary consequence is `TauCeti.tendsto_schwarzChristoffelBoundaryValue_atInfinity`: any
 family of boundary values of the map along the real axis converges to that same point as the
 real parameter leaves every bounded set.  Applied to the two unbounded boundary intervals it says
 that the two unbounded image edges run to one and the same point, which is what closes the
@@ -51,8 +51,8 @@ image of the half-plane with its interior, is left to later work.
   `schwarzChristoffelVertexAtInfinity` along the upper half-plane at infinity.
 * `TauCeti.schwarzChristoffelVertexAtInfinity_change_base` -- changing the base point translates
   that boundary value by the same constant as every other one.
-* `TauCeti.tendsto_nhds_schwarzChristoffelVertexAtInfinity` -- boundary values along the real axis
-  converge to it, and hence
+* `TauCeti.tendsto_schwarzChristoffelBoundaryValue_atInfinity` -- boundary values along the real
+  axis converge to it, and hence
   `TauCeti.tendsto_limUnder_schwarzChristoffelPrimitive_atTop` and
   `TauCeti.tendsto_limUnder_schwarzChristoffelPrimitive_atBot`: the two unbounded image edges close
   up at one point.
@@ -75,12 +75,13 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
-/-! ### The decay of the integrand at infinity -/
+/-! ### The size of the integrand at infinity -/
 
-/-- **The Schwarz--Christoffel integrand decays like `‖z‖ ^ ∑ i, e i` at infinity.**  Once `‖z‖`
-is large compared with the prevertices, every distance `dist z (a i)` lies between `‖z‖ / 2` and
-`2 ‖z‖`, so each factor `dist z (a i) ^ e i` differs from `‖z‖ ^ e i` by at most the fixed factor
-`2 ^ |e i|`. -/
+/-- **The Schwarz--Christoffel integrand is bounded by a multiple of `‖z‖ ^ ∑ i, e i` at
+infinity.**  Once `‖z‖` is large compared with the prevertices, every distance `dist z (a i)` lies
+between `‖z‖ / 2` and `2 ‖z‖`, so each factor `dist z (a i) ^ e i` differs from `‖z‖ ^ e i` by at
+most the fixed factor `2 ^ |e i|`.  No sign hypothesis is placed on `e`, so the bound is a genuine
+decay estimate only when `∑ i, e i < 0`. -/
 theorem exists_norm_schwarzChristoffelIntegrand_le_of_le_norm (a e : ι → ℝ) :
     ∃ C > 0, ∃ R > 0, ∀ z : ℂ, R ≤ ‖z‖ →
       ‖schwarzChristoffelIntegrand a e z‖ ≤ C * ‖z‖ ^ ∑ i, e i := by
@@ -121,37 +122,6 @@ theorem exists_norm_schwarzChristoffelIntegrand_le_of_le_norm (a e : ι → ℝ)
         rw [Finset.prod_mul_distrib, ← Real.rpow_sum_of_pos h2, ← Real.rpow_sum_of_pos hz0]
 
 /-! ### Displacement along segments of the half-plane -/
-
-/-- Displacement of the Schwarz--Christoffel primitive along a segment of the upper half-plane is
-at most the integral of any integrable bound on the speed. -/
-private theorem norm_schwarzChristoffelPrimitive_sub_le (a e : ι → ℝ) (z₀ : UpperHalfPlane)
-    {α β : ℝ} (hab : α ≤ β) {c v : ℂ} {B : ℝ → ℝ}
-    (hmem : ∀ s ∈ Icc α β, c + (s : ℂ) * v ∈ upperHalfPlaneSet)
-    (hB : ∀ s ∈ Icc α β,
-      ‖v‖ * ‖schwarzChristoffelIntegrand a e (c + (s : ℂ) * v)‖ ≤ B s)
-    (hBi : IntervalIntegrable B volume α β) :
-    ‖schwarzChristoffelPrimitive a e z₀ (c + (β : ℂ) * v) -
-        schwarzChristoffelPrimitive a e z₀ (c + (α : ℂ) * v)‖ ≤ ∫ s in α..β, B s := by
-  have hderiv : ∀ s ∈ Icc α β,
-      HasDerivAt (fun s : ℝ => schwarzChristoffelPrimitive a e z₀ (c + (s : ℂ) * v))
-        (v * schwarzChristoffelIntegrand a e (c + (s : ℂ) * v)) s := by
-    intro s hs
-    have h1 : HasDerivAt (fun s : ℝ => c + (s : ℂ) * v) v s := by
-      simpa using ((Complex.ofRealCLM.hasDerivAt (x := s)).mul_const v).const_add c
-    have h2 := hasDerivAt_schwarzChristoffelPrimitive a e z₀ (hmem s hs)
-    simpa [Function.comp_def, smul_eq_mul] using h2.scomp s h1
-  have hfc : ContinuousOn
-      (fun s : ℝ => schwarzChristoffelPrimitive a e z₀ (c + (s : ℂ) * v)) (Icc α β) :=
-    fun s hs => (hderiv s hs).continuousAt.continuousWithinAt
-  have hfd : DifferentiableOn ℝ
-      (fun s : ℝ => schwarzChristoffelPrimitive a e z₀ (c + (s : ℂ) * v)) (Ioo α β) :=
-    fun s hs => (hderiv s (Ioo_subset_Icc_self hs)).differentiableAt.differentiableWithinAt
-  have hfB : ∀ᵐ t : ℝ, t ∈ Ioo α β →
-      ‖deriv (fun s : ℝ => schwarzChristoffelPrimitive a e z₀ (c + (s : ℂ) * v)) t‖ ≤ B t :=
-    .of_forall fun t ht => by
-      rw [(hderiv t (Ioo_subset_Icc_self ht)).deriv, norm_mul]
-      exact hB t (Ioo_subset_Icc_self ht)
-  exact norm_sub_le_integral_of_norm_deriv_le_of_le hab hfc hfd hfB hBi
 
 /-- Running up the vertical ray from a far-away point `z` of the upper half-plane to the height
 `T` moves the Schwarz--Christoffel primitive by `O (‖z‖ ^ (∑ i, e i + 1))`, uniformly in `T`.  The
@@ -229,7 +199,7 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_vertical (a e : ι → �
       simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
         Complex.ofReal_im, Complex.I_re, Complex.I_im, hβdef] <;> ring
   have hstart : z + ((0 : ℝ) : ℂ) * Complex.I = z := by simp
-  have hmain := norm_schwarzChristoffelPrimitive_sub_le a e z₀ hβ0 hmem hB hBi
+  have hmain := norm_schwarzChristoffelPrimitive_sub_le_integral a e z₀ hβ0 hmem hB hBi
   rw [hend, hstart] at hmain
   refine hmain.trans ?_
   -- evaluate the dominating integral
@@ -293,7 +263,7 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_horizontal (a e : ι →
     push_cast
     ring
   have hstart : c + ((0 : ℝ) : ℂ) * v = c := by simp
-  have hmain := norm_schwarzChristoffelPrimitive_sub_le a e z₀ zero_le_one hmem hB hBi
+  have hmain := norm_schwarzChristoffelPrimitive_sub_le_integral a e z₀ zero_le_one hmem hB hBi
   rw [hend, hstart] at hmain
   refine hmain.trans (le_of_eq ?_)
   rw [intervalIntegral.integral_const, smul_eq_mul]
@@ -428,7 +398,7 @@ theorem schwarzChristoffelVertexAtInfinity_change_base (a e : ι → ℝ) (b c :
 `L x` is the boundary value at the real point `x` — the limit of the map along the upper
 half-plane at `x` — for all `x` in a filter along which `|x|` tends to infinity, then `L` tends to
 `schwarzChristoffelVertexAtInfinity` along that filter. -/
-theorem tendsto_nhds_schwarzChristoffelVertexAtInfinity (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+theorem tendsto_schwarzChristoffelBoundaryValue_atInfinity (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hS : ∑ i, e i < -1) {l : Filter ℝ} {L : ℝ → ℂ}
     (hl : Tendsto (fun x : ℝ => |x|) l atTop)
     (hL : ∀ᶠ x in l, Tendsto (schwarzChristoffelPrimitive a e z₀)
@@ -473,7 +443,7 @@ theorem tendsto_limUnder_schwarzChristoffelPrimitive_atTop (a e : ι → ℝ) (z
     Tendsto (fun x : ℝ => limUnder (𝓝[upperHalfPlaneSet] ((x : ℂ)))
         (schwarzChristoffelPrimitive a e z₀)) atTop
       (𝓝 (schwarzChristoffelVertexAtInfinity a e z₀)) := by
-  refine tendsto_nhds_schwarzChristoffelVertexAtInfinity a e z₀ hS tendsto_abs_atTop_atTop ?_
+  refine tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hS tendsto_abs_atTop_atTop ?_
   filter_upwards [eventually_gt_atTop (∑ i, |a i|)] with x hx
   have hle : ∀ i, a i ≤ ∑ j, |a j| := fun i => (le_abs_self (a i)).trans
     (Finset.single_le_sum (fun j _ => abs_nonneg (a j)) (Finset.mem_univ i))
@@ -491,7 +461,7 @@ theorem tendsto_limUnder_schwarzChristoffelPrimitive_atBot (a e : ι → ℝ) (z
     Tendsto (fun x : ℝ => limUnder (𝓝[upperHalfPlaneSet] ((x : ℂ)))
         (schwarzChristoffelPrimitive a e z₀)) atBot
       (𝓝 (schwarzChristoffelVertexAtInfinity a e z₀)) := by
-  refine tendsto_nhds_schwarzChristoffelVertexAtInfinity a e z₀ hS tendsto_abs_atBot_atTop ?_
+  refine tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hS tendsto_abs_atBot_atTop ?_
   filter_upwards [eventually_lt_atBot (-∑ i, |a i|)] with x hx
   have hle : ∀ i, -∑ j, |a j| ≤ a i := fun i => neg_le_of_neg_le
     ((neg_le_abs (a i)).trans
