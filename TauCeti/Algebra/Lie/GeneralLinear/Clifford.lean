@@ -21,6 +21,7 @@ corresponding Clifford algebra.
 
 * `TauCeti.glCliffordHom`: the normal-ordered Lie homomorphism from matrices to the Clifford
   algebra of their trace quadratic form.
+* `TauCeti.glCliffordHom_one`: its scalar value on the identity matrix.
 * `TauCeti.glCliffordHom_lie_ι`: its commutator action on Clifford generators.
 * `TauCeti.glCliffordHom_single`: its formula on matrix units.
 * `TauCeti.glCliffordHom_normalOrdering`: its decomposition into bivectors and the central
@@ -94,6 +95,23 @@ theorem glCliffordHom_apply (X : Matrix n n K) :
   -- Expose the two private summands used to assemble the public homomorphism.
   change traceQuadraticLift X + scalarTrace X = _
   rfl
+
+/-- The normal-ordered lift sends the identity matrix to the scalar
+`(Fintype.card n : K) ^ 2 / 2`. -/
+theorem glCliffordHom_one :
+    glCliffordHom (K := K) (n := n) 1 =
+      algebraMap K (CliffordAlgebra (traceQuadraticForm K n))
+        ((Fintype.card n : K) ^ 2 / 2) := by
+  have had : traceAdjointSO K n 1 = 0 := by
+    apply Subtype.ext
+    apply LinearMap.ext
+    intro X
+    rw [coe_traceAdjointSO, _root_.LieAlgebra.ad_apply, Ring.lie_def, one_mul, mul_one, sub_self]
+    rfl
+  rw [glCliffordHom_apply, CliffordAlgebra.quadraticLift_apply, had, map_zero,
+    ZeroMemClass.coe_zero, zero_add, Matrix.trace_one]
+  congr 1
+  ring
 
 /-- The normal-ordered lift acts on Clifford generators by the matrix commutator. -/
 @[simp, grind =]
