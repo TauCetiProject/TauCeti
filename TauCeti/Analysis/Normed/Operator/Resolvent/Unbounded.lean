@@ -298,18 +298,17 @@ section CompleteSpace
 variable [CompleteSpace X]
 
 /-- **The common Neumann perturbation witness.** If `lambda` lies in the resolvent set of `A`
-and `B` is small against its resolvent, then
+and `‖B R(lambda, A)‖ < 1`, then
 `R(lambda, A) (I - B R(lambda, A))⁻¹` inverts `lambda • I - (B + A)`.
 
 This is the lower-level construction shared by bounded perturbations and perturbations of the
 spectral parameter. -/
 theorem isResolventAt_vadd_of_norm_mul_resolvent_lt_one (B : X →L[𝕜] X)
-    (h : lambda ∈ resolventSet A) (hB : ‖B‖ * ‖resolvent A lambda‖ < 1) :
+    (h : lambda ∈ resolventSet A) (hB : ‖B * resolvent A lambda‖ < 1) :
     IsResolventAt ((B : X →ₗ[𝕜] X) +ᵥ A) lambda
       (resolvent A lambda * Ring.inverse (1 - B * resolvent A lambda)) := by
   set R := resolvent A lambda with hRdef
-  have hnorm : ‖B * R‖ < 1 :=
-    lt_of_le_of_lt (norm_mul_le B R) hB
+  have hnorm : ‖B * R‖ < 1 := by simpa only [hRdef] using hB
   obtain ⟨u, hu⟩ := isUnit_one_sub_of_norm_lt_one hnorm
   have hinv : Ring.inverse (1 - B * R) = ((u⁻¹ : (X →L[𝕜] X)ˣ) : X →L[𝕜] X) := by
     rw [← hu, Ring.inverse_unit]
@@ -347,7 +346,7 @@ private theorem isResolventAt_of_norm_mul_lt_one (h : lambda ∈ resolventSet A)
     IsResolventAt A mu
       (resolvent A lambda * Ring.inverse (1 - (lambda - mu) • resolvent A lambda)) := by
   let B : X →L[𝕜] X := (lambda - mu) • 1
-  have hB : ‖B‖ * ‖resolvent A lambda‖ < 1 := by
+  have hbound : ‖B‖ * ‖resolvent A lambda‖ < 1 := by
     have hBnorm : ‖B‖ ≤ ‖lambda - mu‖ := by
       dsimp only [B]
       rw [norm_smul]
@@ -356,6 +355,8 @@ private theorem isResolventAt_of_norm_mul_lt_one (h : lambda ∈ resolventSet A)
             mul_le_mul_of_nonneg_left ContinuousLinearMap.norm_id_le (norm_nonneg _)
         _ = ‖lambda - mu‖ := mul_one _
     exact (mul_le_mul_of_nonneg_right hBnorm (norm_nonneg _)).trans_lt (by rwa [norm_sub_rev])
+  have hB : ‖B * resolvent A lambda‖ < 1 :=
+    lt_of_le_of_lt (norm_mul_le _ _) hbound
   have hBR : B * resolvent A lambda = (lambda - mu) • resolvent A lambda := by
     simp only [B, smul_mul_assoc, one_mul]
   let U : X →L[𝕜] X :=

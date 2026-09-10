@@ -58,7 +58,8 @@ theorem isResolventAt_vadd (B : X →L[ℝ] X) (h : lambda ∈ resolventSet A)
     IsResolventAt ((B : X →ₗ[ℝ] X) +ᵥ A) lambda
       (resolvent A lambda * Ring.inverse (1 - B * resolvent A lambda)) := by
   apply isResolventAt_vadd_of_norm_mul_resolvent_lt_one B h
-  exact lt_of_le_of_lt (mul_le_mul_of_nonneg_left hr (norm_nonneg B)) hB
+  exact lt_of_le_of_lt (norm_mul_le _ _)
+    (lt_of_le_of_lt (mul_le_mul_of_nonneg_left hr (norm_nonneg B)) hB)
 
 /-- **A resolvent point survives a small bounded perturbation.** If `lambda` lies in the
 resolvent set of `A` and the bounded operator `B` satisfies `‖B‖ * r < 1` for some bound `r` on
