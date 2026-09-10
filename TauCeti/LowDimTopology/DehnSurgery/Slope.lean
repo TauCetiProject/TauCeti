@@ -150,8 +150,8 @@ theorem induction_on {C : Slope M → Prop} (s : Slope M)
 isomorphism uses this to carry a slope to the standard lattice. -/
 def congr (φ : M ≃ₗ[ℤ] N) : Slope M ≃ Slope N :=
   Quotient.congr
-    { toFun := fun v => ⟨φ v.1, (isPrimitive_congr φ).mpr v.2⟩
-      invFun := fun w => ⟨φ.symm w.1, (isPrimitive_congr φ.symm).mpr w.2⟩
+    { toFun := fun v => ⟨φ v.1, φ.isPrimitive_iff.mpr v.2⟩
+      invFun := fun w => ⟨φ.symm w.1, φ.symm.isPrimitive_iff.mpr w.2⟩
       left_inv := fun v => Subtype.ext (φ.symm_apply_apply v.1)
       right_inv := fun w => Subtype.ext (φ.apply_symm_apply w.1) }
     fun a b => by
@@ -166,7 +166,7 @@ def congr (φ : M ≃ₗ[ℤ] N) : Slope M ≃ Slope N :=
 
 @[simp]
 theorem congr_mk (φ : M ≃ₗ[ℤ] N) (v : M) (h : IsPrimitive v) :
-    congr φ (mk v h) = mk (φ v) ((isPrimitive_congr φ).mpr h) :=
+    congr φ (mk v h) = mk (φ v) (φ.isPrimitive_iff.mpr h) :=
   (rfl)
 
 /-- Transporting slopes along `φ` and along `φ.symm` are inverse to one another. -/
@@ -188,7 +188,7 @@ bijection through its coordinate isomorphism. -/
 
 /-- Over `ℤ × ℤ`, a class is primitive exactly when its two coordinates are coprime. -/
 theorem isPrimitive_prod_iff {v : ℤ × ℤ} : IsPrimitive v ↔ IsCoprime v.1 v.2 := by
-  rw [isPrimitive_iff]
+  rw [isPrimitive_def]
   constructor
   · rintro ⟨f, hf⟩
     have hv : v = v.1 • ((1 : ℤ), (0 : ℤ)) + v.2 • ((0 : ℤ), (1 : ℤ)) := by
@@ -389,10 +389,10 @@ theorem coord_symm_apply (v : ℤ × ℤ) : T.coord.symm v = v.1 • T.basis 0 +
   simp [coord, Basis.equivFun_symm_apply, Fin.sum_univ_two]
 
 theorem isPrimitive_basis_zero : IsPrimitive (T.basis 0) :=
-  (isPrimitive_congr T.coord).mp (by rw [T.coord_basis_zero]; exact isPrimitive_prod_one_zero)
+  T.coord.isPrimitive_iff.mp (by rw [T.coord_basis_zero]; exact isPrimitive_prod_one_zero)
 
 theorem isPrimitive_basis_one : IsPrimitive (T.basis 1) :=
-  (isPrimitive_congr T.coord).mp (by rw [T.coord_basis_one]; exact isPrimitive_prod_zero_one)
+  T.coord.isPrimitive_iff.mp (by rw [T.coord_basis_one]; exact isPrimitive_prod_zero_one)
 
 /-- The meridian slope `μ = basis 0` of the framing. -/
 noncomputable def meridian : Slope T.H := Slope.mk (T.basis 0) T.isPrimitive_basis_zero

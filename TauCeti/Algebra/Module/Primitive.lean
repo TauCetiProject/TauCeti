@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.GCDMonoid.Finset
-public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.Int.Basic
-public import Mathlib.RingTheory.PrincipalIdealDomain
 
 /-!
 # Primitive vectors in integer modules
@@ -27,7 +24,7 @@ rational ray is initially described by arbitrary nonzero lattice vectors.
 ## Main declarations
 
 * `TauCeti.IsPrimitive`: some integer-valued linear functional takes the value one on the vector.
-* `TauCeti.isPrimitive_congr`: primitivity is invariant under integer-linear equivalences.
+* `LinearEquiv.isPrimitive_iff`: primitivity is invariant under integer-linear equivalences.
 * `TauCeti.exists_eq_zsmul_isPrimitive`: a nonzero vector in a free integer module is a
   positive integer multiple of a primitive vector.
 -/
@@ -44,8 +41,7 @@ def IsPrimitive (v : M) : Prop := ∃ f : M →ₗ[ℤ] ℤ, f v = 1
 
 /-- A vector is primitive exactly when an integer-valued linear functional takes the value one
 on it. This is the introduction and elimination interface for `IsPrimitive`. -/
-@[simp]
-theorem isPrimitive_iff {v : M} : IsPrimitive v ↔ ∃ f : M →ₗ[ℤ] ℤ, f v = 1 := Iff.rfl
+theorem isPrimitive_def {v : M} : IsPrimitive v ↔ ∃ f : M →ₗ[ℤ] ℤ, f v = 1 := Iff.rfl
 
 /-- A primitive vector is nonzero. -/
 theorem IsPrimitive.ne_zero {v : M} (h : IsPrimitive v) : v ≠ 0 := by
@@ -58,13 +54,31 @@ theorem IsPrimitive.neg {v : M} (h : IsPrimitive v) : IsPrimitive (-v) := by
   obtain ⟨f, hf⟩ := h
   exact ⟨-f, by simp [hf]⟩
 
+/-- Primitivity is invariant under negation. -/
+@[simp]
+theorem isPrimitive_neg {v : M} : IsPrimitive (-v) ↔ IsPrimitive v :=
+  ⟨fun h ↦ by simpa using h.neg, IsPrimitive.neg⟩
+
+end TauCeti
+
+namespace LinearEquiv
+
+variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Module ℤ M] [Module ℤ N]
+
 /-- Primitivity transports along an integer-linear equivalence. -/
-theorem isPrimitive_congr (φ : M ≃ₗ[ℤ] N) {v : M} : IsPrimitive (φ v) ↔ IsPrimitive v := by
+theorem isPrimitive_iff (φ : M ≃ₗ[ℤ] N) {v : M} :
+    TauCeti.IsPrimitive (φ v) ↔ TauCeti.IsPrimitive v := by
   constructor
   · rintro ⟨g, hg⟩
     exact ⟨g.comp (φ : M →ₗ[ℤ] N), by simpa using hg⟩
   · rintro ⟨f, hf⟩
     exact ⟨f.comp (φ.symm : N →ₗ[ℤ] M), by simpa using hf⟩
+
+end LinearEquiv
+
+namespace TauCeti
+
+variable {M : Type*} [AddCommGroup M] [Module ℤ M]
 
 /-- Every nonzero vector in a free integer module is a positive integer multiple of a
 primitive vector. The multiplier is the greatest common divisor of the coordinates in any
@@ -79,14 +93,11 @@ theorem exists_eq_zsmul_isPrimitive [Module.Free ℤ M] {v : M}
   let d : ℤ := s.gcd c
   have hc0 : c ≠ 0 := fun h ↦ hv (b.repr.injective (h.trans (map_zero b.repr).symm))
   have hs : s.Nonempty := by
-    change c.support.Nonempty
-    exact Finsupp.support_nonempty_iff.mpr hc0
+    simpa only [s] using Finsupp.support_nonempty_iff.mpr hc0
   obtain ⟨j, hj⟩ := hs
   have hcj : c j ≠ 0 := Finsupp.mem_support_iff.mp hj
   have hd0 : d ≠ 0 := by
-    change s.gcd c ≠ 0
-    rw [Finset.gcd_ne_zero_iff]
-    exact ⟨j, hj, hcj⟩
+    simpa only [d, Finset.gcd_ne_zero_iff] using ⟨j, hj, hcj⟩
   have hd_nonneg : 0 ≤ d := by
     apply Int.nonneg_of_normalize_eq_self
     exact Finset.normalize_gcd
@@ -108,8 +119,7 @@ theorem exists_eq_zsmul_isPrimitive [Module.Free ℤ M] {v : M}
     have hrepr : b.repr v = d • qf := by
       ext j
       simp only [Finsupp.smul_apply, qf, Finsupp.ofSupportFinite_coe, smul_eq_mul]
-      change c j = d * q j
-      exact hcd j
+      simpa only [c, d, q] using hcd j
     calc
       v = b.repr.symm (b.repr v) := (b.repr.symm_apply_apply v).symm
       _ = b.repr.symm (d • qf) := congrArg b.repr.symm hrepr
@@ -121,7 +131,7 @@ theorem exists_eq_zsmul_isPrimitive [Module.Free ℤ M] {v : M}
   obtain ⟨a, ha⟩ := Finset.gcd_eq_sum_mul (R := ℤ) s q
   refine ⟨d, w, hd, ?_, hvw⟩
   let f : M →ₗ[ℤ] ℤ := ∑ k ∈ s, a k • b.coord k
-  refine isPrimitive_iff.2 ⟨f, ?_⟩
+  refine isPrimitive_def.2 ⟨f, ?_⟩
   simp only [f, LinearMap.sum_apply, LinearMap.smul_apply, w, b.coord_repr_symm, qf,
     Finsupp.ofSupportFinite_coe, smul_eq_mul]
   simpa only [mul_comm] using (hqgcd.symm.trans ha).symm
