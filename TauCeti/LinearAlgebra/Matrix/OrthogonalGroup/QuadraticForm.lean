@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
 public import Mathlib.LinearAlgebra.UnitaryGroup
+import TauCeti.LinearAlgebra.QuadraticForm.Standard
 
 /-!
 # Quadratic and matrix orthogonal groups
@@ -21,8 +22,6 @@ The criteria apply to any finite index type, including the empty type, and to ri
 
 ## Main results
 
-* `TauCeti.weightedSumSquares_eq_toQuadraticForm_diagonal`: a weighted sum of squares is the
-  quadratic form of the diagonal weight matrix.
 * `TauCeti.weightedSumSquares_one_eq_toQuadraticForm_one`: the unit-weight specialization is the
   quadratic form of the identity matrix.
 * `TauCeti.toMatrix_mem_orthogonalGroup_iff`: the coordinate criterion for the orthogonal group.
@@ -37,16 +36,6 @@ namespace TauCeti
 open Matrix
 
 universe u v
-
-/-- A weighted sum-of-squares quadratic form is the quadratic form associated to the diagonal
-matrix of its weights. -/
-theorem weightedSumSquares_eq_toQuadraticForm_diagonal (R : Type u) [CommRing R]
-    (n : Type v) [Fintype n] [DecidableEq n] (w : n → R) :
-    QuadraticMap.weightedSumSquares R w = Matrix.toQuadraticForm' (Matrix.diagonal w) := by
-  ext x
-  simp [QuadraticMap.weightedSumSquares_apply, Matrix.toQuadraticForm',
-    LinearMap.BilinMap.toQuadraticMap_apply, Matrix.toLinearMap₂'_apply', Matrix.mulVec,
-    Matrix.diagonal, dotProduct, smul_eq_mul, mul_comm, mul_left_comm]
 
 /-- The standard weighted sum-of-squares quadratic form is the quadratic form associated to the
 identity matrix. -/

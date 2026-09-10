@@ -60,8 +60,7 @@ private def matrixSpecialOrthogonalToWeightedSumSquares
   simpa only [e, Matrix.UnitaryGroup.toLinearEquiv,
     Matrix.UnitaryGroup.toLin', LinearMap.toMatrix'_toLin'] using A.prop
 
-/-- The forward map of the coordinate equivalence is matrix-vector multiplication; its inverse
-data does not affect evaluation in the surjectivity round trip. -/
+/-- The underlying linear equivalence acts by matrix-vector multiplication. -/
 private theorem matrixSpecialOrthogonalToWeightedSumSquares_apply
     (ι : Type u) [Fintype ι]
     (A : Matrix.specialOrthogonalGroup ι ℝ) (x : ι → ℝ) :
