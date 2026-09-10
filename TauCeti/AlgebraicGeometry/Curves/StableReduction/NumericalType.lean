@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
-public import Mathlib.LinearAlgebra.Matrix.Notation
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
-public import Mathlib.Tactic.FinCases
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.LinearCombination
-public import Mathlib.Tactic.Ring
+import Mathlib.LinearAlgebra.Matrix.Notation
+import Mathlib.Tactic.FinCases
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
+import TauCeti.Logic.Relation
 
 /-!
 # Numerical types and their signed genus
@@ -70,13 +72,16 @@ Symmetry of the intersection matrix is recorded through Mathlib's `Matrix.IsSymm
 a bare pointwise equation, so that a reindexed matrix inherits it from `Matrix.IsSymm.submatrix`.
 -/
 
+-- The `NumericalType` structure, the signed genus and the two worked examples follow the
+-- signatures written down in `StableReduction/Suggested.lean` of the Tau Ceti roadmap.
+
 public section
 
 namespace TauCeti
 
 open Finset
 
-universe u
+universe u v
 
 /-- A numerical type, in the sense of
 [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z).
@@ -128,6 +133,7 @@ lemma intersection_comm (i j : T.Component) : T.intersection i j = T.intersectio
 def Adj (i j : T.Component) : Prop := i ≠ j ∧ 0 < T.intersection i j
 
 /-- Unfolding of `TauCeti.NumericalType.Adj`. -/
+@[simp]
 lemma adj_iff {i j : T.Component} : T.Adj i j ↔ i ≠ j ∧ 0 < T.intersection i j := Iff.rfl
 
 /-- The connectedness axiom, phrased with `TauCeti.NumericalType.Adj`. -/
@@ -138,42 +144,11 @@ variable {T} in
 lemma Adj.symm {i j : T.Component} (h : T.Adj i j) : T.Adj j i :=
   ⟨h.1.symm, T.intersection_comm i j ▸ h.2⟩
 
-/-- Totality of the reflexive transitive closure of a relation is exactly the absence of a
-nonempty proper subset with no outgoing edge. -/
-private lemma forall_reflTransGen_iff {α : Type*} (r : α → α → Prop) :
-    (∀ i j, Relation.ReflTransGen r i j) ↔
-      ∀ s : Set α, s.Nonempty → s ≠ Set.univ → ∃ i ∈ s, ∃ j ∉ s, r i j := by
-  constructor
-  · rintro h s ⟨a, ha⟩ hs
-    obtain ⟨b, hb⟩ : ∃ b, b ∉ s := by
-      by_contra hcon
-      exact hs (Set.eq_univ_of_forall fun x ↦ by
-        by_contra hx
-        exact hcon ⟨x, hx⟩)
-    have key : ∀ x y, Relation.ReflTransGen r x y → x ∈ s → y ∉ s → ∃ i ∈ s, ∃ j ∉ s, r i j := by
-      intro x y hxy
-      induction hxy with
-      | refl => exact fun hx hy ↦ absurd hx hy
-      | @tail c d _ hcd ih =>
-        intro hx hd
-        by_cases hc : c ∈ s
-        · exact ⟨c, hc, d, hd, hcd⟩
-        · exact ih hx hc
-    exact key a b (h a b) ha hb
-  · intro h i j
-    by_contra hij
-    have hs : {k | Relation.ReflTransGen r i k} ≠ Set.univ := by
-      intro hs
-      have hj : j ∈ {k | Relation.ReflTransGen r i k} := by rw [hs]; trivial
-      exact hij hj
-    obtain ⟨a, ha, b, hb, hab⟩ := h _ ⟨i, Relation.ReflTransGen.refl⟩ hs
-    exact hb (Relation.ReflTransGen.tail ha hab)
-
 /-- Every nonempty proper set of components of a numerical type meets its complement: this is the
 no-disconnected-cut form of the connectedness axiom. -/
 lemma exists_mem_notMem_adj (s : Set T.Component) (hne : s.Nonempty) (hs : s ≠ Set.univ) :
     ∃ i ∈ s, ∃ j ∉ s, T.Adj i j :=
-  (forall_reflTransGen_iff T.Adj).1 T.reflTransGen_adj s hne hs
+  (TauCeti.forall_reflTransGen_iff T.Adj).1 T.reflTransGen_adj s hne hs
 
 /-- For a matrix `A` of intersection numbers whose off-diagonal entries are nonnegative, the
 connectedness axiom of a numerical type is equivalent to the absence of a disconnecting cut: no
@@ -186,7 +161,7 @@ so cannot be dropped. -/
 lemma reflTransGen_adj_iff {C : Type*} (A : Matrix C C ℤ) (hA : ∀ i j, i ≠ j → 0 ≤ A i j) :
     (∀ i j, Relation.ReflTransGen (fun i j ↦ i ≠ j ∧ 0 < A i j) i j) ↔
       ∀ s : Set C, s.Nonempty → s ≠ Set.univ → ¬ ∀ i ∈ s, ∀ j ∉ s, A i j = 0 := by
-  rw [forall_reflTransGen_iff]
+  rw [TauCeti.forall_reflTransGen_iff]
   refine forall_congr' fun s ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
   constructor
   · rintro ⟨i, hi, j, hj, -, hpos⟩ hcut
@@ -252,33 +227,15 @@ lemma intersection_self_neg (h : 1 < Fintype.card T.Component) (i : T.Component)
 
 /-! ### Integrality of the signed genus -/
 
-/-- The sum of a symmetric function over the off-diagonal of a finite set is even. -/
-private lemma two_dvd_sum_sum_erase {α : Type*} [DecidableEq α] {f : α → α → ℤ}
-    (hf : ∀ i j, f i j = f j i) (s : Finset α) :
-    (2 : ℤ) ∣ ∑ i ∈ s, ∑ j ∈ s.erase i, f i j := by
-  induction s using Finset.induction with
-  | empty => simp
-  | insert a s ha ih =>
-    have hstep : ∀ i ∈ s, ∑ j ∈ (insert a s).erase i, f i j = f i a + ∑ j ∈ s.erase i, f i j := by
-      intro i hi
-      have hai : a ≠ i := fun h ↦ ha (h ▸ hi)
-      rw [Finset.erase_insert_of_ne hai,
-        Finset.sum_insert (fun h ↦ ha (Finset.mem_of_mem_erase h))]
-    rw [Finset.sum_insert ha, Finset.erase_insert ha, Finset.sum_congr rfl hstep,
-      Finset.sum_add_distrib, ← add_assoc]
-    refine dvd_add ?_ ih
-    rw [Finset.sum_congr rfl fun i (_ : i ∈ s) ↦ hf i a, ← two_mul]
-    exact dvd_mul_right 2 _
-
 /-- The multiplicity-weighted sum of the self-intersections of a numerical type is even.
 
 This is what makes the halving in the genus formula exact; the individual terms `mᵢ aᵢᵢ` need not
 be even, as `oddDiagonalExample` shows. -/
 lemma even_sum_multiplicity_mul_diagonal :
     Even (∑ i, (T.multiplicity i : ℤ) * T.intersection i i) := by
-  have hoff : (2 : ℤ) ∣ ∑ i, ∑ j ∈ univ.erase i,
-      (T.multiplicity i : ℤ) * (T.multiplicity j : ℤ) * T.intersection i j :=
-    two_dvd_sum_sum_erase (s := univ)
+  have hoff : Even (∑ i, ∑ j ∈ univ.erase i,
+      (T.multiplicity i : ℤ) * (T.multiplicity j : ℤ) * T.intersection i j) :=
+    TauCeti.even_sum_sum_erase (s := univ)
       (f := fun i j ↦ (T.multiplicity i : ℤ) * (T.multiplicity j : ℤ) * T.intersection i j)
       (fun i j ↦ by rw [T.intersection_comm i j]; ring)
   have htotal : ∑ i, ∑ j,
@@ -299,7 +256,7 @@ lemma even_sum_multiplicity_mul_diagonal :
         (fun j ↦ (T.multiplicity i : ℤ) * (T.multiplicity j : ℤ) * T.intersection i j)
         (mem_univ i)
     rw [hsplit]
-    exact dvd_neg.2 hoff
+    exact dvd_neg.2 hoff.two_dvd
   have hcorr : (2 : ℤ) ∣ ∑ i, ((T.multiplicity i : ℤ) * (T.multiplicity i : ℤ) *
       T.intersection i i - (T.multiplicity i : ℤ) * T.intersection i i) := by
     refine Finset.dvd_sum fun i _ ↦ ?_
@@ -342,37 +299,41 @@ lemma two_mul_arithmeticGenus :
 
 /-! ### Reindexing -/
 
-/-- The numerical type obtained by transporting the component set along an equivalence. -/
-@[expose]
-def reindex {C : Type u} [Fintype C] [DecidableEq C] (e : T.Component ≃ C) :
-    NumericalType.{u} where
-  Component := C
-  componentNonempty := T.componentNonempty.map e
-  multiplicity c := T.multiplicity (e.symm c)
-  weight c := T.weight (e.symm c)
-  intersection := T.intersection.submatrix e.symm e.symm
-  intersection_isSymm := T.intersection_isSymm.submatrix _
-  offDiagonal_nonneg _ _ h := T.offDiagonal_nonneg _ _ fun hh ↦ h (e.symm.injective hh)
-  connected i j := by
-    have key : ∀ a b : T.Component,
-        Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < T.intersection x y) a b →
-        Relation.ReflTransGen
-          (fun x y : C ↦ x ≠ y ∧ 0 < T.intersection.submatrix e.symm e.symm x y) (e a) (e b) := by
-      intro a b hab
-      induction hab with
-      | refl => exact Relation.ReflTransGen.refl
-      | @tail c d _ hcd ih =>
-        refine ih.tail ⟨fun hh ↦ hcd.1 (e.injective hh), ?_⟩
-        simpa using hcd.2
-    simpa using key (e.symm i) (e.symm j) (T.connected _ _)
-  fiber_relation i :=
-    (Fintype.sum_equiv e.symm _
-      (fun k ↦ (T.multiplicity k : ℤ) * T.intersection (e.symm i) k) fun _ ↦ rfl).trans
-      (T.fiber_relation (e.symm i))
-  weight_dvd _ _ := T.weight_dvd _ _
-  genus c := T.genus (e.symm c)
+/-- The numerical type obtained by transporting the component set along an equivalence.
 
-variable {C : Type u} [Fintype C] [DecidableEq C] (e : T.Component ≃ C)
+The finiteness and decidable equality of the new component set are transported along the
+equivalence, so the target needs no instances of its own and may live in any universe. -/
+@[expose]
+def reindex {C : Type v} (e : T.Component ≃ C) : NumericalType.{v} :=
+  letI : Fintype C := Fintype.ofEquiv _ e
+  letI : DecidableEq C := e.symm.decidableEq
+  { Component := C
+    componentNonempty := T.componentNonempty.map e
+    multiplicity c := T.multiplicity (e.symm c)
+    weight c := T.weight (e.symm c)
+    intersection := T.intersection.submatrix e.symm e.symm
+    intersection_isSymm := T.intersection_isSymm.submatrix _
+    offDiagonal_nonneg _ _ h := T.offDiagonal_nonneg _ _ fun hh ↦ h (e.symm.injective hh)
+    connected i j := by
+      have key : ∀ a b : T.Component,
+          Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < T.intersection x y) a b →
+          Relation.ReflTransGen
+            (fun x y : C ↦ x ≠ y ∧ 0 < T.intersection.submatrix e.symm e.symm x y) (e a) (e b) := by
+        intro a b hab
+        induction hab with
+        | refl => exact Relation.ReflTransGen.refl
+        | @tail c d _ hcd ih =>
+          refine ih.tail ⟨fun hh ↦ hcd.1 (e.injective hh), ?_⟩
+          simpa using hcd.2
+      simpa using key (e.symm i) (e.symm j) (T.connected _ _)
+    fiber_relation i :=
+      (Fintype.sum_equiv e.symm _
+        (fun k ↦ (T.multiplicity k : ℤ) * T.intersection (e.symm i) k) fun _ ↦ rfl).trans
+        (T.fiber_relation (e.symm i))
+    weight_dvd _ _ := T.weight_dvd _ _
+    genus c := T.genus (e.symm c) }
+
+variable {C : Type v} (e : T.Component ≃ C)
 
 /-- Multiplicities of a reindexed numerical type. -/
 @[simp]
@@ -395,6 +356,9 @@ lemma reindex_intersection (c d : C) :
 /-- The signed genus does not depend on the chosen indexing of the components. -/
 @[simp]
 lemma arithmeticGenus_reindex : (T.reindex e).arithmeticGenus = T.arithmeticGenus := by
+  -- name the `Fintype C` that `reindex` transported along `e`, so that the two sums below can
+  -- be compared with `Fintype.sum_equiv`
+  let _ : Fintype C := (T.reindex e).componentFintype
   refine mul_left_cancel₀ (a := (2 : ℤ)) two_ne_zero ?_
   have h1 : ∑ i, ((T.reindex e).multiplicity i : ℤ) * ((T.reindex e).weight i : ℤ) *
       (((T.reindex e).genus i : ℤ) - 1)
