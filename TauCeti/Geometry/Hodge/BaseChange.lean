@@ -113,7 +113,10 @@ theorem integralMapToComplex_ratTensorMap {U U' : Type*} [AddCommGroup U] [Modul
 
 noncomputable section RationalComplexMap
 
-local instance : Module ℚ Vℂ := Module.restrictScalars ℚ ℂ Vℂ
+/-- The `ℚ`-module structure on an abstract complexification, obtained by restricting its
+`ℂ`-module structure along `ℚ → ℂ`. It is local to this section, where it is needed to state that
+the rational-to-complex structure map is `ℚ`-linear. -/
+local instance moduleRatOfComplex : Module ℚ Vℂ := Module.restrictScalars ℚ ℂ Vℂ
 local instance : IsScalarTower ℚ ℂ Vℂ := IsScalarTower.restrictScalars ℚ ℂ Vℂ
 local instance : IsScalarTower ℤ ℚ ℂ where
   smul_assoc z q w := by
