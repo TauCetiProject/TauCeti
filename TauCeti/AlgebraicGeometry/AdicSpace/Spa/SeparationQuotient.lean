@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Data.Set.Image
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Analytic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 public import Mathlib.Topology.Algebra.UniformRing
@@ -30,7 +31,7 @@ that if the separation quotient is discrete, then the analytic locus is empty.
 
 * `TauCeti.ValuationSpectrum.spaSeparationQuotientHomeomorph`: the adic spectrum is unchanged by
   quotienting by the closure of zero.
-* `TauCeti.ValuationSpectrum.spaComap_preimage_spaAnalytic_separationQuotient`: this
+* `TauCeti.ValuationSpectrum.spaSeparationQuotientHomeomorph_preimage_spaAnalytic`: this
   homeomorphism identifies the two analytic loci.
 * `TauCeti.ValuationSpectrum.spaAnalytic_eq_empty_iff_separationQuotient`: emptiness of the
   analytic locus is invariant under passage to the separation quotient.
@@ -114,19 +115,6 @@ theorem spaSeparationQuotientHomeomorph_apply (Aplus : Subring A)
           (f := Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))).mpr ⟨a, ha, rfl⟩) v := by
   exact Topology.IsEmbedding.toHomeomorphOfSurjective_apply _ _ v
 
-/-- Under pullback from the quotient by the closure of zero, the preimage of the analytic locus is
-the analytic locus of the quotient. -/
-theorem spaComap_preimage_spaAnalytic_separationQuotient (Aplus : Subring A) :
-    spaComap (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))
-        (continuous_quotient_mk' : Continuous
-          (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A))))
-        Aplus (separationQuotientPlus Aplus)
-        (fun a ha ↦ (Subring.mem_map
-          (f := Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))).mpr ⟨a, ha, rfl⟩) ⁻¹'
-      (Subtype.val ⁻¹' spaAnalytic Aplus) =
-      Subtype.val ⁻¹' spaAnalytic (separationQuotientPlus Aplus) :=
-  spaComap_preimage_spaAnalytic_quotientMk (Ideal.closure (⊥ : Ideal A)) Aplus
-
 /-- **Wedhorn Proposition 7.49(2)(iii), locus form.** The homeomorphism induced by passage to the
 separated quotient identifies the analytic loci. -/
 theorem spaSeparationQuotientHomeomorph_preimage_spaAnalytic (Aplus : Subring A) :
@@ -134,13 +122,16 @@ theorem spaSeparationQuotientHomeomorph_preimage_spaAnalytic (Aplus : Subring A)
       Subtype.val ⁻¹' spaAnalytic (separationQuotientPlus Aplus) := by
   ext v
   rw [Set.mem_preimage, spaSeparationQuotientHomeomorph_apply]
-  exact Set.ext_iff.mp (spaComap_preimage_spaAnalytic_separationQuotient Aplus) v
+  exact Set.ext_iff.mp
+    (spaComap_preimage_spaAnalytic_quotientMk (Ideal.closure (⊥ : Ideal A)) Aplus) v
 
 /-- Emptiness of the analytic locus is invariant under passage to the separated quotient. -/
 theorem spaAnalytic_eq_empty_iff_separationQuotient (Aplus : Subring A) :
     spaAnalytic Aplus = ∅ ↔ spaAnalytic (separationQuotientPlus Aplus) = ∅ := by
-  rw [← val_preimage_spaAnalytic_eq_empty_iff Aplus,
-    ← val_preimage_spaAnalytic_eq_empty_iff (separationQuotientPlus Aplus)]
+  rw [← Set.inter_eq_right.mpr (spaAnalytic_subset_spa Aplus),
+    ← Subtype.preimage_coe_eq_empty,
+    ← Set.inter_eq_right.mpr (spaAnalytic_subset_spa (separationQuotientPlus Aplus)),
+    ← Subtype.preimage_coe_eq_empty]
   let e := spaSeparationQuotientHomeomorph Aplus
   have he : e ⁻¹' (Subtype.val ⁻¹' spaAnalytic Aplus) = ∅ ↔
       (Subtype.val ⁻¹' spaAnalytic Aplus : Set (spa Aplus)) = ∅ := by

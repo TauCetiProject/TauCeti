@@ -33,8 +33,6 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
   `Spv A` (and hence `Spa(A, A⁺)`) is analytic.
 * `TauCeti.ValuationSpectrum.spaAnalytic_eq_spa_of_isTateRing` : **Wedhorn Remark 7.40(3)**,
   for a Tate ring `A`, the analytic locus is the entire adic spectrum.
-* `TauCeti.ValuationSpectrum.val_preimage_spaAnalytic_eq_empty_iff`: emptiness can be tested in
-  the subtype `spa Aplus`.
 * `TauCeti.ValuationSpectrum.isOpen_val_preimage_spaAnalytic` : the analytic locus is open.
 * `TauCeti.ValuationSpectrum.isCompact_val_preimage_spaAnalytic` : **Wedhorn Remark 7.40(2)**,
   the analytic locus is quasi-compact; with the previous result, open and quasi-compact.
@@ -89,20 +87,6 @@ theorem mem_spaAnalytic_iff (Aplus : Subring A) (v : Spv A) :
 theorem spaAnalytic_subset_spa (Aplus : Subring A) :
     spaAnalytic Aplus ⊆ spa Aplus :=
   Set.inter_subset_left
-
-/-- The analytic locus is empty if and only if its preimage in the subtype `spa Aplus` is empty. -/
-theorem val_preimage_spaAnalytic_eq_empty_iff (Aplus : Subring A) :
-    Subtype.val ⁻¹' spaAnalytic Aplus = (∅ : Set (spa Aplus)) ↔ spaAnalytic Aplus = ∅ := by
-  constructor
-  · intro h
-    apply Set.eq_empty_iff_forall_notMem.mpr
-    intro v hv
-    have hvSpa := (mem_spaAnalytic_iff Aplus v).mp hv |>.1
-    have : (⟨v, hvSpa⟩ : spa Aplus) ∈ Subtype.val ⁻¹' spaAnalytic Aplus := hv
-    rw [h] at this
-    exact this
-  · intro h
-    rw [h, Set.preimage_empty]
 
 /-- Enlarging the plus ring shrinks the analytic locus. -/
 theorem spaAnalytic_antitone : Antitone (spaAnalytic (A := A)) := fun _ _ hle ↦

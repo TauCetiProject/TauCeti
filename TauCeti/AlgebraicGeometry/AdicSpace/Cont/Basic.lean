@@ -195,13 +195,8 @@ theorem cont_eq_empty_of_one_mem_closure_zero (h : (1 : A) ∈ closure ({0} : Se
   ext v
   simp only [Set.mem_empty_iff_false, iff_false, mem_cont_iff]
   intro hv
-  have hcont : v.valuation.IsContinuous := (isContinuous_def v).mp hv
-  have h_nhds : {y : A | v.valuation (y - 1) < 1} ∈ nhds (1 : A) := by
-    have h1_ne : v.valuation 1 ≠ 0 := by simp [v.valuation.map_one]
-    have := hcont.sub_lt_mem_nhds 1 h1_ne
-    simpa [v.valuation.map_one] using this
-  obtain ⟨x, hx, rfl⟩ := mem_closure_iff_nhds.mp h _ h_nhds
-  simp [v.valuation.map_one] at hx
+  exact (inferInstance : v.supp.IsPrime).ne_top ((Ideal.eq_top_iff_one _).mpr
+    (closure_zero_subset_supp_of_isContinuous hv h))
 
 end SeparatelyContinuousAdd
 
