@@ -46,7 +46,9 @@ reconnects them into two lines again, so the two orbits do not merge.
 `TauCeti.orbitCount_mul_swap_add_one` in `TauCeti/GroupTheory/Perm/OrbitCount.lean` is a different
 statement, not a special case of the ones here: there the transposition moves a fixed point of the
 permutation, so it splices that one-point orbit into another one, and the hypothesis is only that
-there are finitely many orbits, not that the underlying type is finite.
+there are finitely many orbits. The generalized merging lemmas below use the same quotient-level
+finiteness together with an explicit periodic-point hypothesis; their `@[simp]` corollaries assume
+that the underlying type is finite.
 
 ## Source
 
@@ -54,10 +56,9 @@ there are finitely many orbits, not that the underlying type is finite.
 recursion of `Equiv.Perm.swapFactorsAux` in Mathlib's `Mathlib/GroupTheory/Perm/Sign.lean`: pick a
 point `x` with `σ x ≠ x`, recurse on `Equiv.swap x (σ x) * σ`, and prepend `Equiv.swap x (σ x)`.
 What is new here is the measure of that recursion. Mathlib's `Equiv.Perm.swapFactorsAux` and
-`Equiv.Perm.swapFactors` record no length, and recurse on a list of candidate points; the version
-below recurses on the number of orbits still to be split, so the list it returns has exactly
-`Nat.card α - TauCeti.orbitCount σ` entries, which `TauCeti.card_le_orbitCount_add_length` then
-shows to be the shortest possible.
+`Equiv.Perm.swapFactors` record no length; the proof below establishes that their existing
+construction returns exactly `Nat.card α - TauCeti.orbitCount σ` entries, which
+`TauCeti.card_le_orbitCount_add_length` then shows to be the shortest possible.
 -/
 
 public section
@@ -259,15 +260,25 @@ theorem not_sameCycle_swap_mul_of_sameCycle (ha : a ∈ Function.periodicPts (σ
   · rw [pow_swap_mul_apply_of_lt hwalk r (by omega)] at hr
     exact hjmin r hrpos (by omega) hr
 
+/-- **The transposition step lemma, merging, for a finite set of orbits.** If `a` and `b` lie in
+different orbits of `σ`, the orbit set of `σ` is finite, and `b` is periodic, then
+`Equiv.swap a b * σ` has one orbit fewer than `σ`. -/
+theorem orbitCount_swap_mul_add_one_of_not_sameCycle_of_mem_periodicPts
+    [Finite (Quotient (SameCycle.setoid σ))]
+    (hb : b ∈ Function.periodicPts (σ : α → α)) (h : ¬ σ.SameCycle a b) :
+    orbitCount (Equiv.swap a b * σ) + 1 = orbitCount σ :=
+  have hab := sameCycle_swap_mul_of_not_sameCycle hb h
+  orbitCount_add_one_of_merge (fun huv => sameCycle_swap_mul_of_sameCycle hab huv)
+    (fun huv => sameCycle_or_of_sameCycle_swap_mul huv) hab h
+
 /-- **The transposition step lemma, merging.** If `a` and `b` lie in different orbits of `σ`, then
 `Equiv.swap a b * σ` has one orbit fewer than `σ`: its orbits are those of `σ`, with the orbit of
 `a` and the orbit of `b` merged. -/
 @[simp]
 theorem orbitCount_swap_mul_add_one_of_not_sameCycle [Finite α] (h : ¬ σ.SameCycle a b) :
     orbitCount (Equiv.swap a b * σ) + 1 = orbitCount σ :=
-  have hab := sameCycle_swap_mul_of_not_sameCycle (σ.injective.mem_periodicPts b) h
-  orbitCount_add_one_of_merge (fun huv => sameCycle_swap_mul_of_sameCycle hab huv)
-    (fun huv => sameCycle_or_of_sameCycle_swap_mul huv) hab h
+  orbitCount_swap_mul_add_one_of_not_sameCycle_of_mem_periodicPts
+    (σ.injective.mem_periodicPts b) h
 
 /-- **The transposition step lemma, splitting.** If `a ≠ b` lie in one orbit of `σ`, then
 `Equiv.swap a b * σ` has one orbit more than `σ`: that orbit has been cut in two. -/
@@ -291,16 +302,27 @@ theorem _root_.Equiv.Perm.orbitCount_le_orbitCount_swap_mul_add_one [Finite α] 
     omega
   · exact (orbitCount_swap_mul_add_one_of_not_sameCycle h).symm.le
 
+/-- **The transposition step lemma on the other side, merging, for a finite set of orbits.** If
+`a` and `b` lie in different orbits of `σ`, the orbit set of `σ` is finite, and `b` is periodic,
+then `σ * Equiv.swap a b` has one orbit fewer than `σ`. -/
+theorem orbitCount_mul_swap_add_one_of_not_sameCycle_of_mem_periodicPts
+    [Finite (Quotient (SameCycle.setoid σ))]
+    (hb : b ∈ Function.periodicPts (σ : α → α)) (h : ¬ σ.SameCycle a b) :
+    orbitCount (σ * Equiv.swap a b) + 1 = orbitCount σ := by
+  rw [Equiv.mul_swap_eq_swap_mul]
+  refine orbitCount_swap_mul_add_one_of_not_sameCycle_of_mem_periodicPts
+    ((Function.Commute.refl (σ : α → α)).mapsTo_periodicPts hb) ?_
+  rwa [sameCycle_apply_left, sameCycle_apply_right]
+
 /-- **The transposition step lemma on the other side, merging.** If `a` and `b` lie in different
 orbits of `σ`, then multiplying on the right merges those two orbits just as multiplying on the
 left does, so `σ * Equiv.swap a b` has one orbit fewer than `σ`:
 `orbitCount (σ * Equiv.swap a b) + 1 = orbitCount σ`. -/
 @[simp]
 theorem orbitCount_mul_swap_add_one_of_not_sameCycle [Finite α] (h : ¬ σ.SameCycle a b) :
-    orbitCount (σ * Equiv.swap a b) + 1 = orbitCount σ := by
-  rw [Equiv.mul_swap_eq_swap_mul]
-  refine orbitCount_swap_mul_add_one_of_not_sameCycle ?_
-  rwa [sameCycle_apply_left, sameCycle_apply_right]
+    orbitCount (σ * Equiv.swap a b) + 1 = orbitCount σ :=
+  orbitCount_mul_swap_add_one_of_not_sameCycle_of_mem_periodicPts
+    (σ.injective.mem_periodicPts b) h
 
 /-- **The transposition step lemma on the other side, splitting.** If `a ≠ b` lie in one orbit of
 `σ`, then multiplying on the right cuts that orbit in two just as multiplying on the left does, so
@@ -348,6 +370,40 @@ theorem card_le_orbitCount_add_length [Finite α] {L : List (Perm α)} (hL : ∀
     rw [List.prod_cons, List.length_cons]
     omega
 
+/-- Mathlib's `Equiv.Perm.swapFactorsAux` construction has exactly the reflection length. -/
+private theorem swapFactorsAux_orbitCount_add_length_eq_card [Fintype α]
+    (l : List α) (σ : Perm α) (h : ∀ {x}, σ x ≠ x → x ∈ l) :
+    orbitCount σ + (Equiv.Perm.swapFactorsAux l σ h).1.length = Fintype.card α := by
+  induction l generalizing σ with
+  | nil =>
+    have h1 : σ = 1 := by
+      apply Equiv.ext
+      intro x
+      simpa using not_not.mp (mt h List.not_mem_nil)
+    subst h1
+    change orbitCount (1 : Perm α) + 0 = Fintype.card α
+    simp
+  | cons x l ih =>
+    by_cases hx : x = σ x
+    · rw [Equiv.Perm.swapFactorsAux.eq_2]
+      dsimp only
+      rw [dite_eq_left hx]
+      exact ih σ (fun {y} hy => List.mem_of_ne_of_mem
+        (fun hxy : y = x => by simp [hxy, hx.symm] at hy) (h hy))
+    · let τ := Equiv.swap x (σ x) * σ
+      have hτ : ∀ {y}, τ y ≠ y → y ∈ l := fun {y} hy =>
+        List.mem_of_ne_of_mem (Equiv.Perm.ne_and_ne_of_swap_mul_apply_ne_self hy).2
+          (h (Equiv.Perm.ne_and_ne_of_swap_mul_apply_ne_self hy).1)
+      have hrec := ih τ hτ
+      have hsplit : orbitCount τ = orbitCount σ + 1 :=
+        orbitCount_swap_mul_of_sameCycle hx ⟨1, by simp⟩
+      rw [Equiv.Perm.swapFactorsAux.eq_2]
+      dsimp only
+      rw [dite_eq_right hx]
+      change orbitCount σ + ((Equiv.Perm.swapFactorsAux l τ hτ).1.length + 1) =
+        Fintype.card α
+      omega
+
 /-- **A factorization into transpositions of exactly the reflection length exists.** Splitting off
 the transposition `Equiv.swap x (σ x)` adds one orbit, so after `Nat.card α - orbitCount σ` such
 steps the identity is reached. -/
@@ -355,39 +411,13 @@ theorem _root_.Equiv.Perm.exists_isSwap_list_prod_eq_and_orbitCount_add_length_e
     [Finite α] (σ : Perm α) :
     ∃ L : List (Perm α), (∀ g ∈ L, g.IsSwap) ∧ L.prod = σ ∧
       orbitCount σ + L.length = Nat.card α := by
-  suffices H : ∀ k (σ : Perm α), Nat.card α - orbitCount σ ≤ k →
-      ∃ L : List (Perm α), (∀ g ∈ L, g.IsSwap) ∧ L.prod = σ ∧
-        orbitCount σ + L.length = Nat.card α from H _ σ le_rfl
-  intro k
-  induction k with
-  | zero =>
-    intro σ hσ
-    have h1 : σ = 1 := by
-      by_contra h1
-      have := orbitCount_lt_card_of_ne_one h1
-      omega
-    subst h1
-    exact ⟨[], by simp, by simp, by simp⟩
-  | succ k ih =>
-    intro σ hσ
-    by_cases h1 : σ = 1
-    · subst h1
-      exact ⟨[], by simp, by simp, by simp⟩
-    obtain ⟨x, hx⟩ : ∃ x, σ x ≠ x := by
-      by_contra hcon
-      refine h1 (Equiv.ext fun x => ?_)
-      simpa using not_not.mp (not_exists.mp hcon x)
-    have hsplit : orbitCount (Equiv.swap x (σ x) * σ) = orbitCount σ + 1 :=
-      orbitCount_swap_mul_of_sameCycle (Ne.symm hx) ⟨1, by simp⟩
-    obtain ⟨L, hL, hprod, hlen⟩ := ih (Equiv.swap x (σ x) * σ) (by omega)
-    refine ⟨Equiv.swap x (σ x) :: L, ?_, ?_, ?_⟩
-    · intro g hg
-      rcases List.mem_cons.mp hg with rfl | hg
-      · exact ⟨x, σ x, Ne.symm hx, rfl⟩
-      · exact hL g hg
-    · rw [List.prod_cons, hprod, Equiv.swap_mul_self_mul]
-    · rw [List.length_cons]
-      omega
+  cases nonempty_fintype α
+  let _ : LinearOrder α := LinearOrder.lift' (Fintype.equivFin α) (Fintype.equivFin α).injective
+  let L := Equiv.Perm.swapFactors σ
+  refine ⟨L.1, L.2.2, L.2.1, ?_⟩
+  simpa only [L, Equiv.Perm.swapFactors, Nat.card_eq_fintype_card] using
+    swapFactorsAux_orbitCount_add_length_eq_card
+      ((Finset.univ : Finset α).sort (· ≤ ·)) σ (fun {_ _} => by simp)
 
 /-- **The reflection length of a permutation of a finite type.** The least number of transpositions
 whose product is `σ` is `Nat.card α - orbitCount σ`. -/
