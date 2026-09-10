@@ -77,12 +77,10 @@ private lemma mulMap_const_eq (c : ℕ) (hc : 0 < c) (b : Fin n → ℕ) (hb : �
           rw [natDiagGL_const_comm n c]
       _ = σ * L₁ * R₁ * τ * L₂ * (natDiagGL n (fun _ ↦ c) * natDiagGL n b) * R₂ := by
           group
-  rw [HeckeCoset.mulMap_eq_mk]
-  exact (HeckeCoset.mk_eq_mk_of_mem (mem_doubleCoset.mpr
-    ⟨(p.1.out : GL (Fin n) ℚ) * L₁ * R₁ * p.2.out * L₂,
-      (SLnZ n).mul_mem ((SLnZ n).mul_mem ((SLnZ n).mul_mem
-        ((SLnZ n).mul_mem p.1.out.2 hL₁) hR₁) p.2.out.2) hL₂,
-      R₂, hR₂, hprod⟩)).trans (diagCoset_def _).symm
+  rw [diagCoset_def ((fun _ ↦ c) * b)]
+  exact HeckeCoset.mulMap_eq_of_eq_mul_mul
+    ((SLnZ n).mul_mem ((SLnZ n).mul_mem ((SLnZ n).mul_mem
+      ((SLnZ n).mul_mem p.1.out.2 hL₁) hR₁) p.2.out.2) hL₂) hR₂ hprod
 
 private lemma multiplicity_const_le_one (c : ℕ) (b : Fin n → ℕ)
     (A : HeckeCoset (posDetInt n) (SLnZ n) (SLnZ n)) :

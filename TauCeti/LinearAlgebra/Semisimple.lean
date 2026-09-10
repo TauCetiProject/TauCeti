@@ -17,7 +17,7 @@ module is semisimple.
 
 ## Main results
 
-* `TauCeti.Module.End.IsSemisimple.of_injective`: semisimplicity passes to an endomorphism that
+* `Module.End.IsSemisimple.of_injective`: semisimplicity passes to an endomorphism that
   admits an injective intertwiner into a semisimple one.
 -/
 
@@ -27,13 +27,14 @@ namespace TauCeti
 
 open Polynomial
 
-namespace Module.End
+section
 
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
 /-- **Semisimplicity descends along an injective intertwiner.** If `i` is injective and carries
 `f` to `g`, and `g` is semisimple, then so is `f`. -/
-theorem IsSemisimple.of_injective {f : _root_.Module.End R M} {g : _root_.Module.End R N}
+theorem _root_.Module.End.IsSemisimple.of_injective {f : _root_.Module.End R M}
+    {g : _root_.Module.End R N}
     (hg : _root_.Module.End.IsSemisimple g) (i : M →ₗ[R] N) (hi : Function.Injective i)
     (hcomm : i ∘ₗ f = g ∘ₗ i) : _root_.Module.End.IsSemisimple f := by
   rw [_root_.Module.End.IsSemisimple] at hg ⊢
@@ -50,6 +51,6 @@ theorem IsSemisimple.of_injective {f : _root_.Module.End R M} {g : _root_.Module
   apply (Module.AEval'.of g).injective
   exact hxy
 
-end Module.End
+end
 
 end TauCeti

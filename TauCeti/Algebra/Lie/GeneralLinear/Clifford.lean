@@ -204,13 +204,15 @@ private theorem matrixUnit_ι_mul_eq_bivector_add (i j k : n) :
   · simp [eq_comm, h]
 
 /-- On a matrix unit, the lift is the normal-ordered quadratic sum
-`Eᵢⱼ ↦ 1/2 ∑ₖ dᵢₖ dₖⱼ`. -/
+`Eᵢⱼ ↦ 1/2 ∑ₖ dᵢₖ dₖⱼ`. The decidable equality is explicit so the equation uses the consumer's
+matrix units rather than a noncanonical internal choice. -/
 @[simp, grind =]
-theorem glCliffordHom_single (i j : n) :
+theorem glCliffordHom_single [decEq : DecidableEq n] (i j : n) :
     glCliffordHom (K := K) (n := n) (Matrix.single i j (1 : K)) =
       (2⁻¹ : K) • ∑ k : n,
-        ι (traceQuadraticForm K n) (Matrix.single i k 1) *
+          ι (traceQuadraticForm K n) (Matrix.single i k 1) *
           ι (traceQuadraticForm K n) (Matrix.single k j 1) := by
+  cases Subsingleton.elim decEq (Classical.decEq n)
   rw [glCliffordHom_normalOrdering]
   simp_rw [matrixUnit_ι_mul_eq_bivector_add]
   by_cases h : i = j

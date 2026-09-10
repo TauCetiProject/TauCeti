@@ -31,6 +31,8 @@ sum.
 * `TauCeti.regroupByNorm`: if the ideal-indexed series has sum `L` at `s`, then so does the
   `LSeries` of `TauCeti.normCoeff f`; `TauCeti.LSeriesSummable_normCoeff` and
   `TauCeti.LSeries_normCoeff` are the summability and value statements it packages.
+* `TauCeti.summable_log_absNorm_mul_norm_idealTerm_of_re_lt_re`: weighting the ideal terms
+  by `log N(I)` keeps them summable strictly to the right of a point of absolute convergence.
 * `TauCeti.abscissaOfAbsConv_normCoeff_le`: consequently the grouped abscissa of absolute
   convergence is at most the ideal-indexed one.
 * `TauCeti.summable_idealTerm_of_norm_normCoeff_eq_sum_norm`: the converse holds whenever no
@@ -119,6 +121,42 @@ theorem summable_idealTerm_of_re_le_re {f : IdealArithmeticFunction K} {s s' : �
 theorem summable_idealTerm_iff_of_re_eq_re {f : IdealArithmeticFunction K} {s s' : ℂ}
     (h : s.re = s'.re) : Summable (idealTerm K f s) ↔ Summable (idealTerm K f s') :=
   ⟨summable_idealTerm_of_re_le_re K h.le, summable_idealTerm_of_re_le_re K h.ge⟩
+
+/-- **Log-weighted ideal terms stay summable strictly to the right.**  If the ideal-indexed
+Dirichlet series of `f` converges absolutely at `s`, then weighting each term by `log N(I)` leaves
+it summable at every `s'` with `Re s < Re s'`.
+
+The strict inequality is what separates this from `summable_idealTerm_of_re_le_re`, which
+propagates unweighted convergence along `Re s ≤ Re s'`: the logarithmic weight can destroy
+summability at `Re s' = Re s`.  This is the ideal-indexed counterpart of Mathlib's
+`LSeriesSummable_logMul_of_lt_re`, and the logarithmic weight is what appears when the terms are
+differentiated in `s`. -/
+theorem summable_log_absNorm_mul_norm_idealTerm_of_re_lt_re
+    {f : IdealArithmeticFunction K} {s s' : ℂ}
+    (h : s.re < s'.re) (hs : Summable (idealTerm K f s)) :
+    Summable fun I : (Ideal (𝓞 K))⁰ ↦
+      Real.log (Ideal.absNorm (I : Ideal (𝓞 K))) * ‖idealTerm K f s' I‖ := by
+  have hδ : 0 < s'.re - s.re := sub_pos.2 h
+  refine Summable.of_nonneg_of_le (fun I ↦ ?_) (fun I ↦ ?_)
+    ((summable_norm_iff.2 hs).mul_left (s'.re - s.re)⁻¹)
+  · have h1 : (1:ℝ) ≤ (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) := by
+      exact_mod_cast Ideal.absNorm_pos_of_nonZeroDivisors I
+    exact mul_nonneg (Real.log_nonneg h1) (norm_nonneg _)
+  · have hN : (0:ℝ) < (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) := by
+      exact_mod_cast Ideal.absNorm_pos_of_nonZeroDivisors I
+    rw [norm_idealTerm, norm_idealTerm]
+    -- `log x ≤ x ^ δ / δ` with `δ = Re s' - Re s`; the extra `N(I) ^ δ` is exactly what turns the
+    -- term at `s'` into the term at `s`.
+    have hlog := Real.log_le_rpow_div hN.le hδ
+    rw [Real.rpow_sub hN] at hlog
+    calc Real.log (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ)
+            * (‖f I‖ / (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ s'.re)
+        ≤ ((Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ s'.re
+            / (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ s.re / (s'.re - s.re))
+            * (‖f I‖ / (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ s'.re) := by
+          gcongr
+      _ = (s'.re - s.re)⁻¹ * (‖f I‖ / (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ s.re) := by
+          field_simp
 
 /-! ### Regrouping -/
 

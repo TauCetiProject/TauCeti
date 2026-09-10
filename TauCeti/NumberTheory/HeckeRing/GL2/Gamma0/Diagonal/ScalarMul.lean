@@ -74,13 +74,12 @@ private lemma mulMap_const_eq (c : ℕ) (hc : 0 < c) (hcN : Nat.Coprime c N) (b 
           rw [natDiagGL_const_comm 2 c]
       _ = σ * L₁ * R₁ * τ * L₂ * (natDiagGL 2 (fun _ ↦ c) * natDiagGL 2 b) * R₂ := by
           group
-  rw [HeckeCoset.mulMap_eq_mk]
-  exact (HeckeCoset.mk_eq_mk_of_mem (mem_doubleCoset.mpr
-    ⟨(p.1.out : GL (Fin 2) ℚ) * L₁ * R₁ * p.2.out * L₂,
-      ((Gamma0 N).map (mapGL ℚ)).mul_mem (((Gamma0 N).map (mapGL ℚ)).mul_mem
-        (((Gamma0 N).map (mapGL ℚ)).mul_mem
-          (((Gamma0 N).map (mapGL ℚ)).mul_mem p.1.out.2 hL₁) hR₁) p.2.out.2) hL₂,
-      R₂, hR₂, hprod⟩)).trans (diagCosetGamma0_def N _ _).symm
+  rw [diagCosetGamma0_def N ((fun _ ↦ c) * b) fun _ ↦ hcb]
+  exact HeckeCoset.mulMap_eq_of_eq_mul_mul
+    (((Gamma0 N).map (mapGL ℚ)).mul_mem (((Gamma0 N).map (mapGL ℚ)).mul_mem
+      (((Gamma0 N).map (mapGL ℚ)).mul_mem
+        (((Gamma0 N).map (mapGL ℚ)).mul_mem p.1.out.2 hL₁) hR₁) p.2.out.2) hL₂)
+    hR₂ hprod
 
 /-- The scalar double coset occurs at most once in any product it takes part in. The other
 hypothesis of the structure-constant criterion. -/

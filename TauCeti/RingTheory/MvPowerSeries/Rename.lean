@@ -8,28 +8,29 @@ module
 public import TauCeti.Data.Fin.Sum
 public import Mathlib.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
-import TauCeti.RingTheory.MvPowerSeries.Substitution
+public import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # Renaming the variables of a multivariate power series
 
-Two gaps in Mathlib's `rename` API, each about comparing a renaming with another operation on the
-same series, and one consequence of them: that reindexing a two-variable series along
+Three gaps in Mathlib's `rename` API, each about comparing a renaming with another operation on
+the same series, and one consequence of them: that reindexing a two-variable series along
 `unitSumUnitEquivFinTwo` carries an associativity identity with it.
 
-Substituting after renaming is the substitution along the renamed index: Mathlib has both
-operations and the law that lets them be compared — `rename_eq_subst`, which says a renaming *is*
-the substitution sending each variable to a variable — but not the comparison itself, which is
-what a caller reindexing a series needs.
+Substituting after renaming is the substitution along the renamed index, and evaluating after
+renaming is the evaluation at the reindexed family: Mathlib has all these operations and the law
+that lets them be compared — `rename_eq_subst`, which says a renaming *is* the substitution
+sending each variable to a variable — but not the comparisons themselves, which is what a caller
+reindexing a series needs.
 
 Reading the coefficient of a single-variable monomial through a renaming along an embedding is
 likewise available only through `coeff_embDomain_rename`, which speaks about `Finsupp.embDomain`;
 at one variable raised to an arbitrary power the `single (e i) n` spelling is the more usable one.
 
 Associativity is where the two spellings of a two-variable series genuinely diverge: the named
-form substitutes an already-substituted series through `Sum.elim`, the `Fin 2` form through a
-`Matrix.cons` family over `Fin 3`. Transporting the identity therefore means reindexing the
-three-variable ambient ring as well, along `unitSumUnitSumUnitEquivFinThree`.
+form substitutes an already-substituted series through `pairSubstitution`, the `Fin 2` form
+through a `Matrix.cons` family over `Fin 3`. Transporting the identity therefore means
+reindexing the three-variable ambient ring as well, along `unitSumUnitSumUnitEquivFinThree`.
 
 ## Main results
 
@@ -37,14 +38,16 @@ three-variable ambient ring as well, along `unitSumUnitSumUnitEquivFinThree`.
   substituting `g ∘ e` into `p`.
 * `MvPowerSeries.coeff_single_rename`: the coefficient of `rename e p` at the single-variable
   monomial `single (e i) n` is the coefficient of `p` at `single i n`, for any exponent `n`.
+* `MvPowerSeries.aeval_rename`: evaluating `rename e p` at a family reindexes the family, i.e. it
+  is evaluating `p` at that family precomposed with `e`.
 * `MvPowerSeries.rename_unitSumUnitEquivFinTwo_assoc`: reindexing a two-variable associative
   series from `Unit ⊕ Unit` to `Fin 2` preserves its associativity identity.
 
 ## Provenance
 
-No external source. The first two statements are gaps in Mathlib's `MvPowerSeries` API and each
-proof is a few steps of that same API; the third is the reindexing they were extracted for, and
-its proof rewrites both sides of the identity through the three-variable renaming. All three are
+No external source. The first three statements are gaps in Mathlib's `MvPowerSeries` API and each
+proof is a few steps of that same API; the fourth is the reindexing they were extracted for, and
+its proof rewrites both sides of the identity through the three-variable renaming. All four are
 recorded here rather than inside their callers because they carry no elliptic content.
 -/
 
@@ -79,13 +82,12 @@ private theorem rename_unitSumUnitEquivFinTwo_assoc_left_family
     (![subst (![X 0, X 1] ∘ unitSumUnitEquivFinTwo) p, X 2] ∘
         unitSumUnitEquivFinTwo) =
       (fun s ↦ subst (X (R := R) ∘ unitSumUnitSumUnitEquivFinThree)
-        (Sum.elim (fun _ ↦ subst
-            (Sum.elim (fun _ ↦ (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R))
-              (fun _ ↦ X (Sum.inr (Sum.inl ())))) p)
-          (fun _ ↦ X (Sum.inr (Sum.inr ()))) s)) := by
+        (pairSubstitution (subst
+            (pairSubstitution (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
+              (X (Sum.inr (Sum.inl ())))) p) (X (Sum.inr (Sum.inr ()))) s)) := by
   have h₀₁ : HasSubst
-      (Sum.elim (fun _ ↦ (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R))
-        (fun _ ↦ X (Sum.inr (Sum.inl ())))) := hasSubst_pair (by simp) (by simp)
+      (pairSubstitution (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
+        (X (Sum.inr (Sum.inl ())))) := hasSubst_pair (by simp) (by simp)
   have hrename : HasSubst
       (X (R := R) ∘ unitSumUnitSumUnitEquivFinThree) := HasSubst.X_comp _
   funext s
@@ -105,13 +107,11 @@ private theorem rename_unitSumUnitEquivFinTwo_assoc_right_family
     (![X 0, subst (![X 1, X 2] ∘ unitSumUnitEquivFinTwo) p] ∘
         unitSumUnitEquivFinTwo) =
       (fun s ↦ subst (X (R := R) ∘ unitSumUnitSumUnitEquivFinThree)
-        (Sum.elim (fun _ ↦ (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R))
-          (fun _ ↦ subst
-            (Sum.elim (fun _ ↦ X (Sum.inr (Sum.inl ())))
-              (fun _ ↦ X (Sum.inr (Sum.inr ())))) p) s)) := by
+        (pairSubstitution (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) (subst
+            (pairSubstitution (X (Sum.inr (Sum.inl ()))) (X (Sum.inr (Sum.inr ())))) p) s)) := by
   have h₁₂ : HasSubst
-      (Sum.elim (fun _ ↦ (X (Sum.inr (Sum.inl ())) :
-        MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)) (fun _ ↦ X (Sum.inr (Sum.inr ())))) :=
+      (pairSubstitution (X (Sum.inr (Sum.inl ())) :
+        MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) (X (Sum.inr (Sum.inr ())))) :=
     hasSubst_pair (by simp) (by simp)
   have hrename : HasSubst
       (X (R := R) ∘ unitSumUnitSumUnitEquivFinThree) := HasSubst.X_comp _
@@ -148,16 +148,13 @@ the target is exactly the identity expected by `FormalGroup.assoc`. -/
 theorem rename_unitSumUnitEquivFinTwo_assoc (p : MvPowerSeries (Unit ⊕ Unit) R)
     (hp : constantCoeff p = 0)
     (hassoc :
-      subst (Sum.elim
-          (fun _ ↦ subst (Sum.elim
-              (fun _ ↦ (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R))
-              (fun _ ↦ X (Sum.inr (Sum.inl ())))) p)
-          (fun _ ↦ X (Sum.inr (Sum.inr ())))) p =
-        subst (Sum.elim
-          (fun _ ↦ (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R))
-          (fun _ ↦ subst
-            (Sum.elim (fun _ ↦ X (Sum.inr (Sum.inl ())))
-              (fun _ ↦ X (Sum.inr (Sum.inr ())))) p)) p) :
+      subst (pairSubstitution
+          (subst (pairSubstitution (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
+            (X (Sum.inr (Sum.inl ())))) p)
+          (X (Sum.inr (Sum.inr ())))) p =
+        subst (pairSubstitution (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
+          (subst (pairSubstitution (X (Sum.inr (Sum.inl ())))
+            (X (Sum.inr (Sum.inr ())))) p)) p) :
     subst ![subst ![(X 0 : MvPowerSeries (Fin 3) R), X 1]
         (rename unitSumUnitEquivFinTwo p), X 2]
         (rename unitSumUnitEquivFinTwo p) =
@@ -172,30 +169,29 @@ theorem rename_unitSumUnitEquivFinTwo_assoc (p : MvPowerSeries (Unit ⊕ Unit) R
   rw [subst_rename unitSumUnitEquivFinTwo _ HasSubst.X_X,
     subst_rename unitSumUnitEquivFinTwo _ HasSubst.X_X]
   have h₀₁ : HasSubst
-      (Sum.elim (fun _ ↦ (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R))
-        (fun _ ↦ X (Sum.inr (Sum.inl ())))) := hasSubst_pair (by simp) (by simp)
+      (pairSubstitution (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
+        (X (Sum.inr (Sum.inl ())))) := hasSubst_pair (by simp) (by simp)
   have h₁₂ : HasSubst
-      (Sum.elim (fun _ ↦ (X (Sum.inr (Sum.inl ())) :
-        MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)) (fun _ ↦ X (Sum.inr (Sum.inr ())))) :=
+      (pairSubstitution (X (Sum.inr (Sum.inl ())) :
+        MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) (X (Sum.inr (Sum.inr ())))) :=
     hasSubst_pair (by simp) (by simp)
   have hz₀₁ : constantCoeff (subst
-      (Sum.elim (fun _ ↦ (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R))
-        (fun _ ↦ X (Sum.inr (Sum.inl ())))) p) = 0 :=
+      (pairSubstitution (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
+        (X (Sum.inr (Sum.inl ())))) p) = 0 :=
     constantCoeff_subst_eq_zero h₀₁ (by rintro (u | u) <;> simp) hp
   have hz₁₂ : constantCoeff (subst
-      (Sum.elim (fun _ ↦ (X (Sum.inr (Sum.inl ())) :
-        MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)) (fun _ ↦ X (Sum.inr (Sum.inr ())))) p) = 0 :=
+      (pairSubstitution (X (Sum.inr (Sum.inl ())) :
+        MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) (X (Sum.inr (Sum.inr ())))) p) = 0 :=
     constantCoeff_subst_eq_zero h₁₂ (by rintro (u | u) <;> simp) hp
   have hsourceLeft : HasSubst
-      (Sum.elim (fun _ ↦ subst
-          (Sum.elim (fun _ ↦ (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R))
-            (fun _ ↦ X (Sum.inr (Sum.inl ())))) p)
-        (fun _ ↦ X (Sum.inr (Sum.inr ())))) := hasSubst_pair hz₀₁ (by simp)
+      (pairSubstitution (subst
+          (pairSubstitution (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
+            (X (Sum.inr (Sum.inl ())))) p) (X (Sum.inr (Sum.inr ())))) :=
+              hasSubst_pair hz₀₁ (by simp)
   have hsourceRight : HasSubst
-      (Sum.elim (fun _ ↦ (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R))
-        (fun _ ↦ subst
-          (Sum.elim (fun _ ↦ X (Sum.inr (Sum.inl ())))
-            (fun _ ↦ X (Sum.inr (Sum.inr ())))) p)) := hasSubst_pair (by simp) hz₁₂
+      (pairSubstitution (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) (subst
+          (pairSubstitution (X (Sum.inr (Sum.inl ()))) (X (Sum.inr (Sum.inr ())))) p)) :=
+            hasSubst_pair (by simp) hz₁₂
   have hrename : HasSubst
       (X (R := R) ∘ unitSumUnitSumUnitEquivFinThree) := HasSubst.X_comp _
   have h := congrArg (rename unitSumUnitSumUnitEquivFinThree) hassoc
@@ -207,5 +203,41 @@ theorem rename_unitSumUnitEquivFinTwo_assoc (p : MvPowerSeries (Unit ⊕ Unit) R
   exact h
 
 end CommRing
+
+section Eval
+
+open WithPiTopology
+
+variable [CommRing R] [UniformSpace R] [IsUniformAddGroup R] [IsTopologicalSemiring R]
+variable {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [IsTopologicalRing S]
+  [IsLinearTopology S S] [T2Space S] [CompleteSpace S] [Algebra R S] [ContinuousSMul R S]
+
+/-- **Evaluating a renamed series reindexes the family**: evaluating `rename e p` at `a` is
+evaluating `p` at `a` precomposed with `e`. This is the evaluation counterpart of `subst_rename`,
+and Mathlib has neither.
+
+The reindexed family is a separate argument `b` together with the pointwise equation
+`b s = a (e s)`, rather than the composite `a ∘ e` itself, because `aeval` carries its family in
+the type of its `HasEval` argument: a caller who knows the reindexed family in a simplified form
+cannot rewrite it under `aeval` afterwards, and supplying it here is the only way to state the
+evaluation it actually wants. -/
+theorem aeval_rename (e : σ → τ) [TendstoCofinite e] {a : τ → S} {b : σ → S} (ha : HasEval a)
+    (hab : ∀ s, b s = a (e s)) (p : MvPowerSeries σ R) :
+    aeval ha (rename e p) = eval₂ (algebraMap R S) b p := by
+  have hb : HasEval b := by
+    rw [show b = a ∘ e from funext hab]
+    exact ⟨fun s ↦ ha.hpow (e s), ha.tendsto_zero.comp (TendstoCofinite.tendsto_cofinite e)⟩
+  have hfam : (fun s ↦ (aeval ha) ((X ∘ e) s : MvPowerSeries τ R)) = b := by
+    funext s
+    rw [coe_aeval, Function.comp_apply, eval₂_X, hab]
+  have hb' : HasEval fun s ↦ (aeval ha) ((X ∘ e) s : MvPowerSeries τ R) := by
+    rw [hfam]; exact hb
+  rw [rename_eq_subst, aeval_subst (HasSubst.X_comp e) (continuous_aeval ha) hb' p]
+  calc (aeval hb') p
+      = eval₂ (algebraMap R S) (fun s ↦ (aeval ha) ((X ∘ e) s : MvPowerSeries τ R)) p :=
+        congrFun (coe_aeval hb') p
+    _ = eval₂ (algebraMap R S) b p := by rw [hfam]
+
+end Eval
 
 end MvPowerSeries

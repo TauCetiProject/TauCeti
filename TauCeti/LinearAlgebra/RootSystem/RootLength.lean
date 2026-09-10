@@ -83,11 +83,11 @@ transposed matrix instead would make that identity false.
   diagrams.
 * `TauCeti.DynkinType.isLongSimpleRoot_C_iff_not_isLongSimpleRoot_B`: `Bₙ` and `Cₙ` carry the same
   diagram with the lengths exchanged.
-* `TauCeti.RootPairing.RootPositiveForm.rootLength_le_iff_pairingIn_le`: in any root pairing
+* `RootPairing.RootPositiveForm.rootLength_le_iff_pairingIn_le`: in any root pairing
   carrying a root-positive form, two roots meeting at a strictly negative pairing compare in length
   exactly as the transposed pair of pairings compares. This is the statement that makes the
   Cartan-matrix reading above meaningful.
-* `TauCeti.RootPairing.RootPositiveForm.rootLength_le_iff_dynkinRootLength_le`: for a base matched
+* `RootPairing.RootPositiveForm.rootLength_le_iff_dynkinRootLength_le`: for a base matched
   to a Dynkin type, adjacent simple roots compare in length exactly as
   `TauCeti.DynkinType.rootLength` says they do.
 
@@ -470,7 +470,7 @@ private lemma le_iff_le_of_mul_eq_mul {S : Type*} [CommRing S] [LinearOrder S]
   · have h1 : a * y ≤ a * x := h ▸ mul_le_mul_of_nonneg_right hca hx.le
     exact (mul_le_mul_left_of_neg ha).mp h1
 
-namespace RootPairing.RootPositiveForm
+section
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
@@ -488,7 +488,8 @@ belongs to the longer root.
 The negativity hypothesis is what pins the direction. It is automatic for two distinct simple roots
 of a base, whose pairings are nonpositive, once they are not orthogonal; for a pair with positive
 pairings the comparison is reversed. -/
-theorem rootLength_le_iff_pairingIn_le (B : P.RootPositiveForm S) {i j : ι}
+theorem _root_.RootPairing.RootPositiveForm.rootLength_le_iff_pairingIn_le
+    (B : P.RootPositiveForm S) {i j : ι}
     (h : P.pairingIn S i j < 0) :
     B.rootLength i ≤ B.rootLength j ↔ P.pairingIn S j i ≤ P.pairingIn S i j :=
   le_iff_le_of_mul_eq_mul (B.rootLength_pos i) h
@@ -509,14 +510,15 @@ comparison read off the type is the same for every witness.
 The hypothesis that the two nodes are joined is necessary: two simple roots that are orthogonal are
 constrained by nothing, and in `Cₙ` for instance the first node is short although no neighbour of
 it is longer. -/
-theorem rootLength_le_iff_dynkinRootLength_le {b : P.Base} {t : DynkinType}
+theorem _root_.RootPairing.RootPositiveForm.rootLength_le_iff_dynkinRootLength_le
+    {b : P.Base} {t : DynkinType}
     {e : b.support ≃ Fin t.rank} (he : ∀ i j, b.cartanMatrix i j = t.cartanMatrix (e i) (e j))
     (B : P.RootPositiveForm ℤ) {i j : b.support} (h : b.cartanMatrix i j < 0) :
     B.rootLength i ≤ B.rootLength j ↔ t.rootLength (e i) ≤ t.rootLength (e j) := by
   -- The comparison of `rootLength_le_iff_pairingIn_le` is one of pairings, and the Cartan
   -- entries of a base are those pairings definitionally (`RootPairing.Base.cartanMatrixIn_def`).
   have key : B.rootLength i ≤ B.rootLength j ↔ b.cartanMatrix j i ≤ b.cartanMatrix i j :=
-    rootLength_le_iff_pairingIn_le B h
+    RootPairing.RootPositiveForm.rootLength_le_iff_pairingIn_le B h
   rw [key, he i j, he j i]
   refine (le_iff_le_of_mul_eq_mul (t.rootLength_pos (e i)) ?_
     (t.cartanMatrix_mul_rootLength (e i) (e j))).symm
@@ -524,6 +526,6 @@ theorem rootLength_le_iff_dynkinRootLength_le {b : P.Base} {t : DynkinType}
 
 end IsCrystallographic
 
-end RootPairing.RootPositiveForm
+end
 
 end TauCeti

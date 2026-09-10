@@ -31,6 +31,7 @@ ideal, so the represented closed subgroup is canonical.
 ## Main declarations
 
 * `TauCeti.CommHopfAlgCat.centerDefiningIdeal`: the Hopf ideal cutting out the center.
+* `TauCeti.CommHopfAlgCat.centerCoordinateHopfAlgebra`: the coordinate Hopf algebra of the center.
 * `TauCeti.CommHopfAlgCat.centerGroupScheme`: the center as a closed affine group scheme.
 * `TauCeti.CommHopfAlgCat.mem_centerPointsSubgroup_iff`: its points are exactly the universally
   central points.
@@ -278,21 +279,10 @@ private theorem centerCoefficientIdeal_comul_mem {x : H}
   have hker : RingHom.ker (Algebra.TensorProduct.map q q).toRingHom =
       HopfIdeal.leftTensorIdeal (R := k) (H := H) I ⊔
         HopfIdeal.rightTensorIdeal (R := k) (H := H) I := by
-    have hqker_eq : RingHom.ker (q : H →+* Q) = I := Ideal.Quotient.mkₐ_ker k I
-    -- `map_ker` uses algebra-hom coercions while the tensor ideals store explicit ring homs.
-    change RingHom.ker (Algebra.TensorProduct.map q q) =
-      Ideal.map Algebra.TensorProduct.includeLeft.toRingHom I ⊔
-        Ideal.map Algebra.TensorProduct.includeRight.toRingHom I
-    calc
-      RingHom.ker (Algebra.TensorProduct.map q q) =
-          Ideal.map Algebra.TensorProduct.includeLeft (RingHom.ker (q : H →+* Q)) ⊔
-            Ideal.map Algebra.TensorProduct.includeRight (RingHom.ker (q : H →+* Q)) :=
-        Algebra.TensorProduct.map_ker (f := q) (g := q)
-          (Ideal.Quotient.mkₐ_surjective k I) (Ideal.Quotient.mkₐ_surjective k I)
-      _ = Ideal.map Algebra.TensorProduct.includeLeft.toRingHom I ⊔
-          Ideal.map Algebra.TensorProduct.includeRight.toRingHom I := by
-        rw [hqker_eq]
-        rfl
+    have hqker : RingHom.ker q = I := Ideal.Quotient.mkₐ_ker k I
+    simpa only [AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, hqker] using
+      HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
+        (Ideal.Quotient.mkₐ_surjective k I) (Ideal.Quotient.mkₐ_surjective k I)
   rw [← hker, RingHom.mem_ker]
   exact hmapzero
 
@@ -314,6 +304,11 @@ uses coefficients in a chosen vector-space basis internally; `centerDefiningIdea
 characterizes it without that choice. -/
 noncomputable def centerDefiningIdeal (H : _root_.CommHopfAlgCat.{v} k) : HopfIdeal k H :=
   centerCoefficientHopfIdeal (k := k) (H := H)
+
+/-- The coordinate Hopf algebra of the center of an affine group. -/
+noncomputable abbrev centerCoordinateHopfAlgebra (H : _root_.CommHopfAlgCat.{v} k) :
+    _root_.CommHopfAlgCat.{v} k :=
+  quotient H (centerDefiningIdeal H)
 
 /-- The underlying ideal of the center is the coefficient ideal of the cocommutativity defect. -/
 private theorem mem_centerDefiningIdeal_iff (H : _root_.CommHopfAlgCat.{v} k) {x : H} :

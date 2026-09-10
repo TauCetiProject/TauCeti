@@ -35,7 +35,8 @@ index type of the index's own Dynkin type, rather than by a node of the carrier.
 
 The two families differ exactly in the endomorphism whose fixed points are taken. On the untwisted
 branch that endomorphism is the `q`-power Frobenius outright, in keeping with the trivial diagram
-permutation that `TauCeti.TypeB2LieIndex.diagramPerm_toGraphTwistedIndex` computes: the `B₂`
+permutation that `TauCeti.TypeBLieIndex.diagramPerm_eq_one` computes after the canonical inclusion
+into the general type-`B` family: the `B₂`
 diagram has no symmetry to twist by, its two nodes carrying different root lengths. On the Suzuki
 branch it is instead an odd power `τ ^ (2m+1)` of a half-Frobenius `τ`, a map squaring to the
 prime-field Frobenius. On this carrier that role is played by the carrier's own special isogeny
@@ -51,7 +52,8 @@ A Suzuki index reaches all of it through `TauCeti.SuzukiLieIndex.toRankTwoBLieIn
 Neither branch gets a Steinberg endomorphism here. What is named below is named after what it is:
 `TauCeti.RankTwoBLieIndex.frobenius` is the Frobenius of this carrier, and
 `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff` describes the group it fixes as the
-points whose matrix entries lie in the field of definition `𝔽_q`.
+points whose matrix entries lie in the field of definition `𝔽_q`. The Steinberg and fixed-group
+APIs require a pinned carrier, which this file does not supply.
 
 The Suzuki branch's Steinberg endomorphism and its candidate group are stated on this carrier in
 `TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`. No identification of this carrier with

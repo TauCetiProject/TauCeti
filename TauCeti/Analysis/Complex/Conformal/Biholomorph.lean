@@ -19,7 +19,7 @@ their source, target, inverse, and topological equivalence in one existing Mathl
 
 The forward map of `DifferentiableOn.toOpenPartialHomeomorph` is the original function, its source
 is the given open set, its target is the image, and its inverse is `Function.invFunOn`. The inverse
-is holomorphic by `TauCeti.DifferentiableOn.invFunOn`. Both directions are conformal: injectivity
+is holomorphic by `DifferentiableOn.invFunOn`. Both directions are conformal: injectivity
 on an open neighbourhood forces the complex derivative to be nonzero, so Mathlib's
 `DifferentiableAt.conformalAt` applies.
 
@@ -29,11 +29,11 @@ equivalence and `ConformalAt` API from a holomorphic bijection.
 
 ## Main declarations
 
-* `TauCeti.DifferentiableOn.toOpenPartialHomeomorph` packages an injective holomorphic map.
-* `TauCeti.DifferentiableOn.toHomeomorphOfBijOn` packages a holomorphic bijection between open
+* `DifferentiableOn.toOpenPartialHomeomorph` packages an injective holomorphic map.
+* `DifferentiableOn.toHomeomorphOfBijOn` packages a holomorphic bijection between open
   sets as a homeomorphism of their subtypes.
-* `TauCeti.DifferentiableOn.conformalAt_of_isOpen_of_injOn` proves its pointwise conformality.
-* `TauCeti.DifferentiableOn.conformalAt_toOpenPartialHomeomorph_symm` proves conformality of the
+* `DifferentiableOn.conformalAt_of_isOpen_of_injOn` proves its pointwise conformality.
+* `DifferentiableOn.conformalAt_toOpenPartialHomeomorph_symm` proves conformality of the
   inverse.
 
 ## Coordination with upstream Mathlib
@@ -57,7 +57,7 @@ image.
 
 On the image, `Function.invFunOn f U` selects the unique preimage in `U`; no injectivity of `f`
 outside `U` is required. -/
-noncomputable def DifferentiableOn.toOpenPartialHomeomorph
+noncomputable def _root_.DifferentiableOn.toOpenPartialHomeomorph
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hinj : InjOn f U) :
     OpenPartialHomeomorph ℂ ℂ :=
   OpenPartialHomeomorph.ofContinuousOpenRestrict (hinj.toPartialEquiv f U) hf.continuousOn
@@ -66,96 +66,96 @@ noncomputable def DifferentiableOn.toOpenPartialHomeomorph
 /-- The source of the partial homeomorphism associated to an injective holomorphic map is its
 given domain. -/
 @[simp]
-theorem DifferentiableOn.toOpenPartialHomeomorph_source
+theorem _root_.DifferentiableOn.toOpenPartialHomeomorph_source
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hinj : InjOn f U) :
-    (TauCeti.DifferentiableOn.toOpenPartialHomeomorph hf hU hinj).source = U :=
+    (DifferentiableOn.toOpenPartialHomeomorph hf hU hinj).source = U :=
   (rfl)
 
 /-- The target of the partial homeomorphism associated to an injective holomorphic map is its
 image. -/
 @[simp]
-theorem DifferentiableOn.toOpenPartialHomeomorph_target
+theorem _root_.DifferentiableOn.toOpenPartialHomeomorph_target
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hinj : InjOn f U) :
-    (TauCeti.DifferentiableOn.toOpenPartialHomeomorph hf hU hinj).target = f '' U :=
+    (DifferentiableOn.toOpenPartialHomeomorph hf hU hinj).target = f '' U :=
   (rfl)
 
 /-- The partial homeomorphism associated to an injective holomorphic map applies as the original
 map. -/
 @[simp]
-theorem DifferentiableOn.toOpenPartialHomeomorph_apply
+theorem _root_.DifferentiableOn.toOpenPartialHomeomorph_apply
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hinj : InjOn f U) (z : ℂ) :
-    TauCeti.DifferentiableOn.toOpenPartialHomeomorph hf hU hinj z = f z :=
+    DifferentiableOn.toOpenPartialHomeomorph hf hU hinj z = f z :=
   (rfl)
 
 /-- The underlying function of the partial homeomorphism associated to an injective holomorphic
 map is the original map. -/
 @[simp]
-theorem DifferentiableOn.toOpenPartialHomeomorph_coe
+theorem _root_.DifferentiableOn.toOpenPartialHomeomorph_coe
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hinj : InjOn f U) :
-    (TauCeti.DifferentiableOn.toOpenPartialHomeomorph hf hU hinj : ℂ → ℂ) = f :=
-  funext (TauCeti.DifferentiableOn.toOpenPartialHomeomorph_apply hf hU hinj)
+    (DifferentiableOn.toOpenPartialHomeomorph hf hU hinj : ℂ → ℂ) = f :=
+  funext (DifferentiableOn.toOpenPartialHomeomorph_apply hf hU hinj)
 
 /-- The inverse of the partial homeomorphism associated to an injective holomorphic map is
 `Function.invFunOn` for the specified domain. -/
 @[simp]
-theorem DifferentiableOn.toOpenPartialHomeomorph_symm_apply
+theorem _root_.DifferentiableOn.toOpenPartialHomeomorph_symm_apply
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hinj : InjOn f U) (w : ℂ) :
-    (TauCeti.DifferentiableOn.toOpenPartialHomeomorph hf hU hinj).symm w =
+    (DifferentiableOn.toOpenPartialHomeomorph hf hU hinj).symm w =
       Function.invFunOn f U w :=
   (rfl)
 
 /-- The underlying inverse function of the partial homeomorphism associated to an injective
 holomorphic map is `Function.invFunOn` for the specified domain. -/
 @[simp]
-theorem DifferentiableOn.toOpenPartialHomeomorph_coe_symm
+theorem _root_.DifferentiableOn.toOpenPartialHomeomorph_coe_symm
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hinj : InjOn f U) :
-    ((TauCeti.DifferentiableOn.toOpenPartialHomeomorph hf hU hinj).symm : ℂ → ℂ) =
+    ((DifferentiableOn.toOpenPartialHomeomorph hf hU hinj).symm : ℂ → ℂ) =
       Function.invFunOn f U :=
-  funext (TauCeti.DifferentiableOn.toOpenPartialHomeomorph_symm_apply hf hU hinj)
+  funext (DifferentiableOn.toOpenPartialHomeomorph_symm_apply hf hU hinj)
 
 /-- Package a holomorphic bijection from an open set `U` onto a set `V` as a homeomorphism between
 the corresponding subtypes.
 
 This is the subtype equivalence carried by
-`TauCeti.DifferentiableOn.toOpenPartialHomeomorph`, with its target identified using the supplied
+`DifferentiableOn.toOpenPartialHomeomorph`, with its target identified using the supplied
 `BijOn` hypothesis. -/
-noncomputable def DifferentiableOn.toHomeomorphOfBijOn {V : Set ℂ}
+noncomputable def _root_.DifferentiableOn.toHomeomorphOfBijOn {V : Set ℂ}
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hbij : BijOn f U V) : U ≃ₜ V :=
-  (TauCeti.DifferentiableOn.toOpenPartialHomeomorph hf hU hbij.injOn)
+  (DifferentiableOn.toOpenPartialHomeomorph hf hU hbij.injOn)
     |>.homeomorphOfImageSubsetSource
       (by
-        rw [TauCeti.DifferentiableOn.toOpenPartialHomeomorph_source hf hU hbij.injOn])
+        rw [DifferentiableOn.toOpenPartialHomeomorph_source hf hU hbij.injOn])
       (by
-        simpa only [TauCeti.DifferentiableOn.toOpenPartialHomeomorph_apply hf hU hbij.injOn]
+        simpa only [DifferentiableOn.toOpenPartialHomeomorph_apply hf hU hbij.injOn]
           using hbij.image_eq)
 
 /-- The homeomorphism induced by a holomorphic bijection applies as the original map. -/
 @[simp]
-theorem DifferentiableOn.toHomeomorphOfBijOn_apply {V : Set ℂ}
+theorem _root_.DifferentiableOn.toHomeomorphOfBijOn_apply {V : Set ℂ}
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hbij : BijOn f U V) (z : U) :
-    ((TauCeti.DifferentiableOn.toHomeomorphOfBijOn hf hU hbij z : V) : ℂ) = f z :=
+    ((DifferentiableOn.toHomeomorphOfBijOn hf hU hbij z : V) : ℂ) = f z :=
   (rfl)
 
 /-- The inverse homeomorphism induced by a holomorphic bijection applies as
 `Function.invFunOn`. -/
 @[simp]
-theorem DifferentiableOn.toHomeomorphOfBijOn_symm_apply {V : Set ℂ}
+theorem _root_.DifferentiableOn.toHomeomorphOfBijOn_symm_apply {V : Set ℂ}
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hbij : BijOn f U V) (w : V) :
-    (((TauCeti.DifferentiableOn.toHomeomorphOfBijOn hf hU hbij).symm w : U) : ℂ) =
+    (((DifferentiableOn.toHomeomorphOfBijOn hf hU hbij).symm w : U) : ℂ) =
       Function.invFunOn f U w :=
   (rfl)
 
 /-- The inverse of the open partial homeomorphism associated to an injective holomorphic map is
 holomorphic on its target. -/
-theorem DifferentiableOn.differentiableOn_toOpenPartialHomeomorph_symm
+theorem _root_.DifferentiableOn.differentiableOn_toOpenPartialHomeomorph_symm
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hinj : InjOn f U) :
     DifferentiableOn ℂ
-      (TauCeti.DifferentiableOn.toOpenPartialHomeomorph hf hU hinj).symm (f '' U) := by
-  rw [TauCeti.DifferentiableOn.toOpenPartialHomeomorph_coe_symm hf hU hinj]
-  exact TauCeti.DifferentiableOn.invFunOn hf hU hinj
+      (DifferentiableOn.toOpenPartialHomeomorph hf hU hinj).symm (f '' U) := by
+  rw [DifferentiableOn.toOpenPartialHomeomorph_coe_symm hf hU hinj]
+  exact DifferentiableOn.invFunOn hf hU hinj
 
 /-- An injective holomorphic map on an open set is conformal at every point of that set. -/
-theorem DifferentiableOn.conformalAt_of_isOpen_of_injOn
+theorem _root_.DifferentiableOn.conformalAt_of_isOpen_of_injOn
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hinj : InjOn f U)
     {z : ℂ} (hz : z ∈ U) : ConformalAt f z := by
   exact (hf.analyticAt (hU.mem_nhds hz)).differentiableAt.conformalAt
@@ -163,26 +163,26 @@ theorem DifferentiableOn.conformalAt_of_isOpen_of_injOn
 
 /-- The open partial homeomorphism associated to an injective holomorphic map is conformal on its
 source. -/
-theorem DifferentiableOn.conformalAt_toOpenPartialHomeomorph
+theorem _root_.DifferentiableOn.conformalAt_toOpenPartialHomeomorph
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hinj : InjOn f U)
     {z : ℂ} (hz : z ∈ U) :
-    ConformalAt (TauCeti.DifferentiableOn.toOpenPartialHomeomorph hf hU hinj) z := by
-  rw [TauCeti.DifferentiableOn.toOpenPartialHomeomorph_coe hf hU hinj]
-  exact TauCeti.DifferentiableOn.conformalAt_of_isOpen_of_injOn hf hU hinj hz
+    ConformalAt (DifferentiableOn.toOpenPartialHomeomorph hf hU hinj) z := by
+  rw [DifferentiableOn.toOpenPartialHomeomorph_coe hf hU hinj]
+  exact DifferentiableOn.conformalAt_of_isOpen_of_injOn hf hU hinj hz
 
 /-- The inverse of the open partial homeomorphism associated to an injective holomorphic map is
 conformal on its target. -/
-theorem DifferentiableOn.conformalAt_toOpenPartialHomeomorph_symm
+theorem _root_.DifferentiableOn.conformalAt_toOpenPartialHomeomorph_symm
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hinj : InjOn f U)
     {w : ℂ} (hw : w ∈ f '' U) :
     ConformalAt
-      (TauCeti.DifferentiableOn.toOpenPartialHomeomorph hf hU hinj).symm w := by
-  let e := TauCeti.DifferentiableOn.toOpenPartialHomeomorph hf hU hinj
+      (DifferentiableOn.toOpenPartialHomeomorph hf hU hinj).symm w := by
+  let e := DifferentiableOn.toOpenPartialHomeomorph hf hU hinj
   have hinv : InjOn e.symm (f '' U) := by
     simpa only [e, OpenPartialHomeomorph.symm_source,
-      TauCeti.DifferentiableOn.toOpenPartialHomeomorph_target] using e.symm.injOn
-  exact TauCeti.DifferentiableOn.conformalAt_of_isOpen_of_injOn
-    (TauCeti.DifferentiableOn.differentiableOn_toOpenPartialHomeomorph_symm hf hU hinj)
+      DifferentiableOn.toOpenPartialHomeomorph_target] using e.symm.injOn
+  exact DifferentiableOn.conformalAt_of_isOpen_of_injOn
+    (DifferentiableOn.differentiableOn_toOpenPartialHomeomorph_symm hf hU hinj)
     (isOpen_image_of_differentiableOn_of_injOn hU hf hinj) hinv hw
 
 end TauCeti

@@ -70,14 +70,6 @@ namespace HeckeRing.GL2
 
 variable {N p : ℕ} (k : ℤ)
 
-/-- Slash-invariance of a form at level `Γ₁(N)`, transported to the rational action — the
-hypothesis `UpperTri/Invariance.lean` asks for. -/
-private lemma rat_slash_eq_of_mem_Gamma1 {F : Type*} [FunLike F ℍ ℂ]
-    [SlashInvariantFormClass F ((Gamma1 N).map (mapGL ℝ)) k] (f : F) {δ : SL(2, ℤ)}
-    (hδ : δ ∈ Gamma1 N) : (⇑f) ∣[k] (mapGL ℚ δ : GL (Fin 2) ℚ) = ⇑f := by
-  rw [ModularForm.rat_slash_mapGL]
-  exact SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hδ)
-
 variable [NeZero N]
 
 /-- **The upper-triangular sum acting on modular forms of level `Γ₁(N)`**, for `p ∣ N`.
@@ -94,7 +86,7 @@ private noncomputable def heckeSlashUpperTriModularForm (hpN : p ∣ N)
     let _ : NeZero p := NeZero.of_dvd hpN
     rw [← ModularForm.rat_slash_mapGL]
     exact heckeSlashUpperTri_slash_mapGL_of_mem_Gamma1 k hpN hδ
-      fun _ hε ↦ rat_slash_eq_of_mem_Gamma1 k f hε
+      fun _ hε ↦ SlashInvariantFormClass.slash_eq_of_mem_map_mapGL f (Subgroup.mem_map_of_mem _ hε)
   holo' := mdifferentiable_heckeSlashUpperTri k p (ModularFormClass.holo f)
   bdd_at_cusps' hc :=
     isBoundedAt_heckeSlashUpperTri k p (fun _ h ↦ ModularFormClass.bdd_at_cusps f h) hc

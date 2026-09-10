@@ -86,8 +86,7 @@ private noncomputable def heckeSlashInvariant (f : SlashInvariantForm (G.map (ma
   slash_action_eq' γ hγ := by
     refine ModularForm.slash_eq_of_mem_map_mapGL_real (fun δ hδ ↦ ?_) hγ
     exact heckeSlashSum_slash_invariant k D (⇑f)
-      (fun _ hε ↦ ModularForm.slash_eq_of_mem_map_mapGL
-        (fun γ' hγ' ↦ SlashInvariantFormClass.slash_action_eq f γ' hγ') hε) hδ
+      (fun _ hε ↦ SlashInvariantFormClass.slash_eq_of_mem_map_mapGL f hε) hδ
 
 /-- **The double coset as a `ℂ`-linear endomorphism of `SlashInvariantForm (G.map (mapGL ℝ)) k`.**
 Bundling it as a `Module.End ℂ` is what lets Hecke operators compose and later carry a ring
