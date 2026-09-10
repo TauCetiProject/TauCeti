@@ -37,6 +37,9 @@ denominators. The symmetrization itself is not redone here: Mathlib packages it 
 
 * `TauCeti.isFiniteType_of`: a constructor that does not ask for the symmetric vanishing pattern,
   which the symmetrizer already forces.
+* `TauCeti.of_one_mul_intCast_eq_map`: with the constant-one symmetrizer, the symmetrization of
+  `A` is `A` itself read over `ℚ`. This is the symmetrizer of every simply-laced Cartan matrix, and
+  it is how positive definiteness of such a matrix and its being of finite type are exchanged.
 * `TauCeti.isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero`: the constructor used for a
   matrix presented by its entries. Positive definiteness of the symmetrization is certified by an
   explicit Gram model `Cᴴ * C` together with nonsingularity, both of which are finite
@@ -118,6 +121,15 @@ irreducibility; `TauCeti.isFiniteType_cartanMatrix` proves one direction. -/
 def IsFiniteType [Fintype B] (A : Matrix B B ℤ) : Prop :=
   (∀ i, A i i = 2) ∧ (∀ i j, i ≠ j → A i j ≤ 0) ∧ (∀ i j, A i j = 0 → A j i = 0) ∧
     ∃ d : B → ℚ, (∀ i, 0 < d i) ∧ (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef
+
+/-- **The constant-one symmetrizer.** The symmetrization of `A` by the vector `fun _ ↦ 1` is `A`
+itself, read over `ℚ`. Whenever `A` is symmetric this is a valid choice of symmetrizer, so
+positive definiteness of `A.map Int.cast` and finite type are then the same condition
+(`TauCeti.isFiniteType_of`). -/
+theorem of_one_mul_intCast_eq_map (A : Matrix B B ℤ) :
+    (Matrix.of fun i j ↦ (1 : ℚ) * ((A i j : ℤ) : ℚ)) = A.map (Int.cast : ℤ → ℚ) := by
+  ext i j
+  simp
 
 variable [Fintype B]
 

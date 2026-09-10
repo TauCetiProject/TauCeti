@@ -14,10 +14,12 @@ import Mathlib.Data.Rat.Star
 
 This file proves that the five exceptional Cartan matrices in `TauCeti.DynkinType` are of finite
 type, and that the three simply-laced ones are positive definite over `ℚ` -- for those the
-symmetriser is trivial, so the Gram model below proves positive definiteness of the Cartan matrix
-itself.  The proof exhibits each symmetrized Cartan matrix as `Bᴴ * B` for an explicit rational
-matrix `B` and reads off positive definiteness from
-`TauCeti.isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero`.
+constant-one vector is a symmetriser, whose symmetrisation is the Cartan matrix itself read over
+`ℚ`, so the Gram model below proves positive definiteness of the Cartan matrix directly.  The
+proof exhibits each symmetrized Cartan matrix as `Bᴴ * B` for an explicit rational matrix `B` and
+reads off positive definiteness from
+`TauCeti.isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero`, or, for `E₈`, from
+`TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit` followed by `TauCeti.isFiniteType_of`.
 
 The columns of `B` are the simple **coroots** `αᵢ^∨ = 2 αᵢ / (αᵢ, αᵢ)`, in orthonormal rational
 coordinates and up to one common positive scale, rather than the simple roots themselves.  That is
@@ -72,10 +74,10 @@ whose rows are twice them. -/
 private def rootsE8 : _root_.Matrix (Fin 8) (Fin 8) ℚ :=
   (2 : ℚ)⁻¹ • (e8DoubledSimpleRoot.map ((↑) : ℤ → ℚ))ᵀ
 
-/-- The Gram matrix of the coordinate model of `E₈` is the `E₈` Cartan matrix: the family is
-simply laced, so no symmetrizer is needed. -/
+/-- The Gram matrix of the coordinate model of `E₈` is the `E₈` Cartan matrix read over `ℚ`: the
+family is simply laced, so no symmetrizer is needed. -/
 private theorem gram_rootsE8 :
-    _root_.Matrix.of (fun i j ↦ (1 : ℚ) * (CartanMatrix.E 8 i j : ℚ)) = rootsE8ᴴ * rootsE8 := by
+    (CartanMatrix.E 8).map (Int.cast : ℤ → ℚ) = rootsE8ᴴ * rootsE8 := by
     ext i j
     -- The `(i, j)` entry of the Gram matrix of the doubled rows is four times the Cartan entry.
     have hrowQ : ∑ k, (e8DoubledSimpleRoot i k : ℚ) * (e8DoubledSimpleRoot j k : ℚ)
@@ -86,36 +88,36 @@ private theorem gram_rootsE8 :
         ((2 : ℚ)⁻¹ * (e8DoubledSimpleRoot j k : ℚ))
         = 4⁻¹ * ((e8DoubledSimpleRoot i k : ℚ) * (e8DoubledSimpleRoot j k : ℚ)) :=
       fun k ↦ by ring
-    simp only [rootsE8, _root_.Matrix.of_apply, _root_.Matrix.mul_apply,
+    simp only [rootsE8, _root_.Matrix.map_apply, _root_.Matrix.mul_apply,
       _root_.Matrix.conjTranspose_apply, _root_.Matrix.smul_apply, _root_.Matrix.transpose_apply,
-      _root_.Matrix.map_apply, star_trivial, smul_eq_mul]
+      star_trivial, smul_eq_mul]
     rw [Finset.sum_congr rfl fun k _ ↦ hpoint k, ← Finset.mul_sum, hrowQ]
     ring
-/-- The standard Cartan matrix of type `E₈` is of finite type. -/
-theorem isFiniteType_cartanMatrix_E8 : IsFiniteType E8.cartanMatrix := by
-  have hdet : (CartanMatrix.E 8).det ≠ 0 := by rw [CartanMatrix.E₈_det]; norm_num
-  rw [cartanMatrix_E8]
-  exact isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero (CartanMatrix.E_diag 8)
-    (CartanMatrix.E_off_diag_nonpos 8) (d := fun _ ↦ 1) (fun _ ↦ by positivity) gram_rootsE8 hdet
 
-/-- The `E₈` Cartan matrix, read over `ℚ`, is the Gram matrix of the coordinate model. -/
-private theorem map_cartanMatrix_E8 :
-    ((CartanMatrix.E 8).map (Int.cast : ℤ → ℚ)) = rootsE8ᴴ * rootsE8 := by
-  rw [← gram_rootsE8]
-  ext i j
-  simp
-
-/-- **The `E₈` Cartan matrix is positive definite** over `ℚ`. -/
+/-- **The `E₈` Cartan matrix is positive definite** over `ℚ`: it is the Gram matrix of the
+coordinate model, and it is nonsingular. -/
 theorem posDef_cartanMatrix_E8 : ((CartanMatrix.E 8).map (Int.cast : ℤ → ℚ)).PosDef := by
-  rw [map_cartanMatrix_E8]
+  rw [gram_rootsE8]
   refine TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit _ ?_
   have hmap : (CartanMatrix.E 8).map (Int.cast : ℤ → ℚ)
       = (Int.castRingHom ℚ).mapMatrix (CartanMatrix.E 8) := by
     ext i j
     simp [RingHom.mapMatrix_apply]
-  rw [← map_cartanMatrix_E8, _root_.Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero, hmap,
+  rw [← gram_rootsE8, _root_.Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero, hmap,
     ← RingHom.map_det, CartanMatrix.E₈_det]
   norm_num
+
+/-- The standard Cartan matrix of type `E₈` is of finite type: the family is simply laced, so the
+constant-one vector is a symmetriser and `TauCeti.DynkinType.posDef_cartanMatrix_E8` is the
+positive definiteness of its symmetrisation. -/
+theorem isFiniteType_cartanMatrix_E8 : IsFiniteType E8.cartanMatrix := by
+  have h : IsFiniteType (CartanMatrix.E 8) := by
+    refine isFiniteType_of (CartanMatrix.E_diag 8) (CartanMatrix.E_off_diag_nonpos 8)
+      (d := fun _ ↦ 1) (fun _ ↦ one_pos) ?_
+    rw [of_one_mul_intCast_eq_map]
+    exact posDef_cartanMatrix_E8
+  rw [cartanMatrix_E8]
+  exact h
 
 
 /-- The `E₆` Cartan matrix is the principal submatrix of the `E₈` one on the first six nodes: in
