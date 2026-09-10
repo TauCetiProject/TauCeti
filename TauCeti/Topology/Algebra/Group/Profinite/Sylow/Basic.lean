@@ -26,6 +26,8 @@ a separate compatible inverse-limit argument.
 ## Main definitions and results
 
 * `IsProPSylow`: the predicate for a Sylow pro-`p` subgroup.
+* `IsProPSylow.isPGroup_map_mk'`: its image in every finite continuous quotient is a
+  `p`-group.
 * `isProPSylow_iff_isClosed_and_isProP_and_not_dvd_profiniteIndex`: its
   supernatural-index formulation.
 * `isProPSylow_iff_isPGroup_and_not_dvd_index`: its specialization to a discrete group.
@@ -80,6 +82,24 @@ index prime to `p`. -/
 theorem not_dvd_index (hP : IsProPSylow p P) (U : OpenNormalSubgroup G) :
     ¬ p ∣ (P.map (QuotientGroup.mk' U.toSubgroup)).index :=
   (isProPSylow_iff.mp hP).2.2 U
+
+section
+
+variable [IsTopologicalGroup G]
+
+/-- The image of a Sylow pro-`p` subgroup in a finite continuous quotient is a `p`-group. -/
+theorem isPGroup_map_mk' (hP : IsProPSylow p P) (U : OpenNormalSubgroup G) :
+    IsPGroup p (P.map (QuotientGroup.mk' U.toSubgroup)) := by
+  let f : P →* G ⧸ U.toSubgroup :=
+    (QuotientGroup.mk' U.toSubgroup).domRestrict P
+  have hf : Continuous f := QuotientGroup.continuous_mk.comp continuous_subtype_val
+  have hrange : IsProP p f.range :=
+    hP.isProP.of_surjective f.rangeRestrict
+      (continuous_induced_rng.mpr hf) f.rangeRestrict_surjective
+  rw [← MonoidHom.domRestrict_range]
+  exact isProP_iff_isPGroup.mp hrange
+
+end
 
 end IsProPSylow
 
