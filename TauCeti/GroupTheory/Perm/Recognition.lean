@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.Transitive
 public import Mathlib.GroupTheory.Perm.Cycle.Type
+import Mathlib.GroupTheory.GroupAction.Jordan
 
 /-!
 # Recognizing cycles and transpositions in a permutation group
@@ -28,6 +29,8 @@ through the Frobenius element.
 
 * `TauCeti.exists_isCycle_mem_of_isPretransitive_of_prime_card`: a transitive permutation group
   of prime degree contains a full cycle.
+* `TauCeti.subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem`: a transitive
+  permutation group of prime degree that contains a transposition is the full symmetric group.
 * `Equiv.Perm.isSwap_pow_prod_erase_two_cycleType_and_odd`: if a permutation has exactly one
   2-cycle and all its other cycles have odd length, an explicit odd power is a transposition.
 * `Equiv.Perm.exists_odd_isSwap_pow`: the corresponding existential form.
@@ -69,6 +72,21 @@ theorem exists_isCycle_mem_of_isPretransitive_of_prime_card
   have hsupport : (g : Equiv.Perm α).support = Finset.univ :=
     Finset.eq_univ_of_card (g : Equiv.Perm α).support (hcycle.orderOf.symm.trans horder)
   exact ⟨g, g.property, hcycle, hsupport⟩
+
+/-- A transitive subgroup of a symmetric group of prime degree that contains a transposition is
+the full symmetric group.
+
+Prime degree promotes transitivity to primitivity, after which Jordan's transposition criterion
+applies. This is the prime-degree recognition step used to identify Galois groups from an
+irreducible polynomial and a factorization pattern exhibiting a transposition. -/
+theorem subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem
+    {β : Type*} [Finite β] [DecidableEq β] {G : Subgroup (Equiv.Perm β)}
+    (hG : IsPretransitive G β)
+    (hp : Nat.Prime (Nat.card β)) (g : Equiv.Perm β) (hgSwap : g.IsSwap) (hg : g ∈ G) :
+    G = ⊤ := by
+  let _ : IsPretransitive G β := hG
+  exact Equiv.Perm.subgroup_eq_top_of_isPreprimitive_of_isSwap_mem
+    (IsPreprimitive.of_prime_card hp) g hgSwap hg
 
 /-- If a permutation has exactly one cycle of length two and every other cycle has odd length,
 then raising it to the product of those other cycle lengths gives a transposition.
