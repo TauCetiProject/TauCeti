@@ -39,8 +39,6 @@ instance: connected, not reduced, and with a character of order `p`.
   `p`-th power map of a `p`-torsion group algebra is the `p`-th power of its counit.
 * `TauCeti.connectedSpace_primeSpectrum_monoidAlgebra_of_pow_eq_one`: a `p`-torsion group algebra
   in exponential characteristic `p` has connected prime spectrum.
-* `TauCeti.connectedSpace_primeSpectrum_monoidAlgebra_and_not_isMulTorsionFree`: connectedness
-  alone does not force torsion-freeness, so the reducedness hypothesis above is necessary.
 
 ## References
 
@@ -145,18 +143,23 @@ The two hypotheses of `isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedS
 independent. Connectedness alone does not suffice: over a field of characteristic `p`, the group
 algebra of a group killed by `p` is connected, while `not_isReduced_monoidAlgebra` shows it is not
 reduced as soon as the group is nontrivial. The coordinate Hopf algebra of `μ_p` is the standard
-instance, and it is exactly the roadmap's designated non-smooth example. -/
+instance. -/
 
 section ExpChar
 
-variable (k : Type*) [Field k] {M : Type*} [CommGroup M] (p : ℕ) [ExpChar k p]
+section Power
 
-/-- In a group algebra over a field of exponential characteristic `p`, indexed by a group killed
-by `p`, the `p`-th power map is the `p`-th power of the counit. -/
+variable (k : Type*) [CommSemiring k] {M : Type*} [CommMonoid M] (p : ℕ) [ExpChar k p]
+
+/-- In a monoid algebra over a commutative semiring of exponential characteristic `p`, indexed by a
+commutative monoid killed by `p`, the `p`-th power map is the `p`-th power of the counit. -/
 theorem pow_expChar_monoidAlgebra_eq_algebraMap (hM : ∀ m : M, m ^ p = 1) (x : k[M]) :
     x ^ p = algebraMap k k[M] (Coalgebra.counit (R := k) x ^ p) := by
+  have hinj : Function.Injective (algebraMap k k[M]) := by
+    change Function.Injective (MonoidAlgebra.single (R := k) (1 : M))
+    exact MonoidAlgebra.single_right_injective
   have _ : ExpChar k[M] p :=
-    expChar_of_injective_algebraMap (algebraMap k k[M]).injective p
+    expChar_of_injective_algebraMap hinj p
   induction x using MonoidAlgebra.induction_linear with
   | zero => simp [(expChar_pos k p).ne']
   | add x y hx hy =>
@@ -165,14 +168,25 @@ theorem pow_expChar_monoidAlgebra_eq_algebraMap (hM : ∀ m : M, m ^ p = 1) (x :
       rw [MonoidAlgebra.single_pow, hM m, MonoidAlgebra.counit_single]
       simp [MonoidAlgebra.coe_algebraMap]
 
-/-- Over a field of exponential characteristic `p`, the group algebra of a group killed by `p`
-has connected prime spectrum: every element differs from its counit by a `p`-nilpotent element,
-so the only idempotents are the two trivial ones. -/
+end Power
+
+section Connected
+
+variable (k : Type*) [CommRing k] [ConnectedSpace (PrimeSpectrum k)]
+  {M : Type*} [CommMonoid M] (p : ℕ) [ExpChar k p]
+
+/-- Over a connected commutative ring of exponential characteristic `p`, the monoid algebra of a
+commutative monoid killed by `p` has connected prime spectrum: every element differs from its
+counit by a `p`-nilpotent element, so the only idempotents are the two trivial ones. -/
 theorem connectedSpace_primeSpectrum_monoidAlgebra_of_pow_eq_one (hM : ∀ m : M, m ^ p = 1) :
     ConnectedSpace (PrimeSpectrum k[M]) := by
+  let : Nontrivial k := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
   have hp : p ≠ 0 := (expChar_pos k p).ne'
+  have hinj : Function.Injective (algebraMap k k[M]) := by
+    change Function.Injective (MonoidAlgebra.single (R := k) (1 : M))
+    exact MonoidAlgebra.single_right_injective
   have _ : ExpChar k[M] p :=
-    expChar_of_injective_algebraMap (algebraMap k k[M]).injective p
+    expChar_of_injective_algebraMap hinj p
   -- Every element differs from the image of its counit by an element killed by the `p`-th power.
   have hnil : ∀ x : k[M], (x - algebraMap k k[M] (Coalgebra.counit (R := k) x)) ^ p = 0 := by
     intro x
@@ -188,25 +202,14 @@ theorem connectedSpace_primeSpectrum_monoidAlgebra_of_pow_eq_one (hM : ∀ m : M
   have hcounit : IsIdempotentElem (Coalgebra.counit (R := k) e) := by
     have h := congrArg (Bialgebra.counitAlgHom k k[M]) he
     simpa [IsIdempotentElem] using h
-  rcases IsIdempotentElem.iff_eq_zero_or_one.mp hcounit with hc | hc
+  rcases eq_zero_or_eq_one_of_isIdempotentElem hcounit with hc | hc
   · exact Or.inl (hkill e he (by simpa [hc] using hnil e))
   · refine Or.inr (sub_eq_zero.mp (hkill (1 - e) he.one_sub ?_)).symm
     have h := hnil e
     rw [hc, map_one] at h
-    rw [show (1 : k[M]) - e = -(e - 1) by ring, neg_pow, h, mul_zero]
+    rw [← neg_sub e 1, neg_pow, h, mul_zero]
 
-/-- **Connectedness alone does not force torsion-freeness.** Over a field of exponential
-characteristic `p`, the group algebra of a nontrivial group killed by `p` has connected prime
-spectrum, yet the indexing group has torsion. The reducedness hypothesis of
-`isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace` therefore cannot be dropped, and
-`not_isReduced_monoidAlgebra` says exactly which hypothesis fails. The coordinate Hopf algebra of
-`μ_p` in characteristic `p` is the standard instance. -/
-theorem connectedSpace_primeSpectrum_monoidAlgebra_and_not_isMulTorsionFree
-    (hM : ∀ m : M, m ^ p = 1) {m : M} (hm : m ≠ 1) :
-    ConnectedSpace (PrimeSpectrum k[M]) ∧ ¬IsMulTorsionFree M := by
-  refine ⟨connectedSpace_primeSpectrum_monoidAlgebra_of_pow_eq_one k p hM, fun htorsion ↦ ?_⟩
-  exact (isMulTorsionFree_iff_not_isOfFinOrder.mp htorsion hm)
-    (isOfFinOrder_iff_pow_eq_one.mpr ⟨p, expChar_pos k p, hM m⟩)
+end Connected
 
 end ExpChar
 

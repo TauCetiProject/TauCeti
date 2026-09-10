@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Torsion
-public import Mathlib.RingTheory.HopfAlgebra.GroupLike
 public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterLattice.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
@@ -19,8 +18,9 @@ public import TauCeti.Algebra.Bialgebra.GroupLike.Evaluation
 # The characters of a connected affine group are torsion free
 
 A character of an affine group `Spec H` is a group-like element of its coordinate Hopf algebra
-`H`. This file proves that when `H` is reduced with connected prime spectrum, that is when the
-group is smooth and connected, no character has finite order.
+`H`. This file proves that when `H` is reduced with connected prime spectrum, no character has
+finite order. It also gives the corresponding result for smooth geometrically connected affine
+groups of finite type.
 
 The argument is a reduction to the diagonalizable case. Group-like elements of a Hopf algebra over
 a field are linearly independent, so evaluation embeds the group algebra on them into `H`. A
@@ -28,12 +28,11 @@ subring of a reduced ring is reduced, and connectedness of a prime spectrum desc
 injective ring homomorphism, so both hypotheses pass to that group algebra, where
 `TauCeti.isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace` already rules out torsion.
 
-Neither hypothesis can be dropped, which is the roadmap's warning that smoothness must stay an
-explicit hypothesis. Connectedness alone fails in characteristic `p`, where the coordinate Hopf
-algebra of `μ_p` is connected and carries a character of order `p`; that is the content of
-`TauCeti.connectedSpace_primeSpectrum_monoidAlgebra_and_not_isMulTorsionFree`. Reducedness alone
-fails for the constant group `ℤ/n` over a field containing a primitive `n`-th root of unity: its
-coordinate algebra is reduced but disconnected, and it has characters of order `n`.
+Neither hypothesis can be dropped. Connectedness alone fails in characteristic `p`, where the
+coordinate Hopf algebra of `μ_p` is connected, non-reduced, and carries a character of order `p`.
+Reducedness alone fails for the constant group `ℤ/n` over a field containing a primitive `n`-th
+root of unity: its coordinate algebra is reduced but disconnected, and it has characters of
+order `n`.
 
 Contravariantly, a homomorphism from `Spec H` to the diagonalizable group `D(M)` is a morphism of
 coordinate bialgebras `k[M] ⟶ H`. Torsion-freeness therefore says that a smooth connected affine
@@ -51,23 +50,14 @@ particular no nontrivial `μ_n`-quotient.
 * `TauCeti.isMulTorsionFree_geometricCharacterGroup` and
   `TauCeti.isMulTorsionFree_geometricCharacterGroup_of_smooth`: **the character lattice of a
   smooth geometrically connected affine group of finite type is torsion free.**
-* `TauCeti.isAddTorsionFree_additiveCharacterGroup_of_smooth`: its additive form.
-* `TauCeti.eq_one_of_isGroupLikeElem_baseChange_of_pow_eq_one` and
-  `TauCeti.monoidAlgebra_bialgHom_baseChange_eq_algebraMap_counit`: the geometric forms of the two
-  triviality statements.
+* `TauCeti.isAddTorsionFree_additiveCharacterGroup` and
+  `TauCeti.isAddTorsionFree_additiveCharacterGroup_of_smooth`: their additive forms.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-* T. A. Springer, *Linear Algebraic Groups*, Theorem 6.3.1, whose induction step is the
-  consumer described below.
-
-Layer 5 of `TauCetiRoadmap/ReductiveGroups/README.md` asks for Lie--Kolchin. The induction step
-of the classical proof reaches a character of a connected subgroup whose values are roots of unity
-of bounded order, and closes by declaring it trivial; this file supplies exactly that step.
-Layer 4's character lattice `X*(T)` and Layer 7's root datum consume the same statement for a
-general smooth connected group rather than only for a torus.
+* T. A. Springer, *Linear Algebraic Groups*, Theorem 6.3.1.
 -/
 
 public section
@@ -129,16 +119,12 @@ theorem monoidAlgebra_bialgHom_single_eq_one
 group is trivial**: its coordinate morphism factors through the counit of `k[M]`. -/
 theorem monoidAlgebra_bialgHom_eq_algebraMap_counit
     [IsReduced H] [ConnectedSpace (PrimeSpectrum H)]
-    {M : Type w} [CommGroup M] (hM : IsMulTorsion M) (f : MonoidAlgebra k M →ₐc[k] H)
-    (x : MonoidAlgebra k M) :
-    f x = algebraMap k H (Coalgebra.counit (R := k) x) := by
-  have hext : (f : MonoidAlgebra k M →ₐ[k] H) =
+    {M : Type w} [CommGroup M] (hM : IsMulTorsion M) (f : MonoidAlgebra k M →ₐc[k] H) :
+    (f : MonoidAlgebra k M →ₐ[k] H) =
       (Algebra.ofId k H).comp (Bialgebra.counitAlgHom k (MonoidAlgebra k M)) := by
-    refine MonoidAlgebra.algHom_ext (fun m ↦ ?_) (Subsingleton.elim _ _)
-    rw [AlgHom.comp_apply, BialgHom.coe_toAlgHom, monoidAlgebra_bialgHom_single_eq_one f (hM m)]
-    simp [Bialgebra.counitAlgHom, Algebra.ofId]
-  simpa only [BialgHom.coe_toAlgHom, AlgHom.comp_apply, Algebra.ofId_apply,
-    Bialgebra.counitAlgHom_apply] using congrFun (congrArg DFunLike.coe hext) x
+  refine MonoidAlgebra.algHom_ext (fun m ↦ ?_) (Subsingleton.elim _ _)
+  rw [AlgHom.comp_apply, BialgHom.coe_toAlgHom, monoidAlgebra_bialgHom_single_eq_one f (hM m)]
+  simp [Bialgebra.counitAlgHom, Algebra.ofId]
 
 end Absolute
 
@@ -157,9 +143,18 @@ theorem isMulTorsionFree_geometricCharacterGroup
   exact isMulTorsionFree_groupLike_of_isReduced_of_connectedSpace (AlgebraicClosure k)
     (AlgebraicClosure k ⊗[k] (H : Type u))
 
+/-- The additive character group of a geometrically reduced, geometrically connected commutative
+Hopf algebra has no additive torsion. -/
+theorem isAddTorsionFree_additiveCharacterGroup
+    (hred : geometricallyReducedCommHopfAlgProperty k H)
+    (hconn : geometricallyConnectedCommHopfAlgProperty k H) :
+    IsAddTorsionFree (CommHopfAlgCat.additiveCharacterGroup H) := by
+  have _ := isMulTorsionFree_geometricCharacterGroup H hred hconn
+  infer_instance
+
 /-- **The character lattice of a smooth geometrically connected affine group of finite type is
-torsion free.** Smoothness is the roadmap's standing hypothesis; over a field it is exactly
-geometric reducedness for a finite-type coordinate algebra. -/
+torsion free.** Over a field, smoothness of an affine group of finite type is equivalent to
+geometric reducedness of its coordinate algebra. -/
 theorem isMulTorsionFree_geometricCharacterGroup_of_smooth [Algebra.FiniteType k H]
     (hsmooth : smoothCommHopfAlgProperty k H)
     (hconn : geometricallyConnectedCommHopfAlgProperty k H) :
@@ -172,36 +167,9 @@ has no additive torsion. -/
 theorem isAddTorsionFree_additiveCharacterGroup_of_smooth [Algebra.FiniteType k H]
     (hsmooth : smoothCommHopfAlgProperty k H)
     (hconn : geometricallyConnectedCommHopfAlgProperty k H) :
-    IsAddTorsionFree (CommHopfAlgCat.additiveCharacterGroup H) := by
-  have _ := isMulTorsionFree_geometricCharacterGroup_of_smooth H hsmooth hconn
-  infer_instance
-
-/-- A geometric character of finite order of a geometrically reduced, geometrically connected
-affine group is trivial. -/
-theorem eq_one_of_isGroupLikeElem_baseChange_of_pow_eq_one
-    (hred : geometricallyReducedCommHopfAlgProperty k H)
-    (hconn : geometricallyConnectedCommHopfAlgProperty k H)
-    {a : AlgebraicClosure k ⊗[k] (H : Type u)} (ha : IsGroupLikeElem (AlgebraicClosure k) a)
-    {n : ℕ} (hn : n ≠ 0) (hpow : a ^ n = 1) : a = 1 := by
-  have _ := hred.isReduced_algebraicClosureBaseChange
-  have _ := hconn.connectedSpace_algebraicClosureBaseChange
-  exact eq_one_of_isGroupLikeElem_of_pow_eq_one ha hn hpow
-
-/-- **A homomorphism from the geometric fibre of a geometrically reduced, geometrically connected
-affine group to a diagonalizable group on a torsion group is trivial.** In particular such a group
-has no nontrivial `μ_n`-quotient over an algebraic closure. -/
-theorem monoidAlgebra_bialgHom_baseChange_eq_algebraMap_counit
-    (hred : geometricallyReducedCommHopfAlgProperty k H)
-    (hconn : geometricallyConnectedCommHopfAlgProperty k H)
-    {M : Type w} [CommGroup M] (hM : IsMulTorsion M)
-    (f : MonoidAlgebra (AlgebraicClosure k) M →ₐc[AlgebraicClosure k]
-      AlgebraicClosure k ⊗[k] (H : Type u))
-    (x : MonoidAlgebra (AlgebraicClosure k) M) :
-    f x = algebraMap (AlgebraicClosure k) (AlgebraicClosure k ⊗[k] (H : Type u))
-      (Coalgebra.counit (R := AlgebraicClosure k) x) := by
-  have _ := hred.isReduced_algebraicClosureBaseChange
-  have _ := hconn.connectedSpace_algebraicClosureBaseChange
-  exact monoidAlgebra_bialgHom_eq_algebraMap_counit hM f x
+    IsAddTorsionFree (CommHopfAlgCat.additiveCharacterGroup H) :=
+  isAddTorsionFree_additiveCharacterGroup H
+    ((smoothCommHopfAlgProperty_iff_geometricallyReduced k H).mp hsmooth) hconn
 
 end Geometric
 
