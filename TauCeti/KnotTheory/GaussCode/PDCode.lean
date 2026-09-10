@@ -38,8 +38,8 @@ Diagram Codes*, Definitions 2--3, and the oriented crossing convention of W. B. 
 
 * `TauCeti.BasedOrientedGaussCode.visitDataEquiv` identifies a visit with its crossing label and
   over/under status.
-* `TauCeti.BasedOrientedGaussCode.visitHalfEdgeEquiv` labels the incoming and outgoing half-edges
-  of each visit.
+* `TauCeti.visitHalfEdgeEquiv` labels the incoming and outgoing half-edges of a prescribed number of
+  visits.
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode` converts a based oriented Gauss code to an
   oriented PD-code.
 
@@ -56,6 +56,19 @@ Diagram Codes*, Definitions 2--3, and the oriented crossing convention of W. B. 
 public section
 
 namespace TauCeti
+
+/-- The standard equivalence enumerating the incoming and outgoing half-edges of `2 * n` visits. -/
+def visitHalfEdgeEquiv (n : ℕ) : Fin (2 * n) × Bool ≃ Fin (4 * n) :=
+  (Equiv.prodCongr (Equiv.refl _) finTwoEquiv.symm).trans <|
+    finProdFinEquiv.trans (finCongr (by omega))
+
+/-- The visit-half-edge equivalence numbers the incoming end of visit `i` by `2 * i` and its
+outgoing end by `2 * i + 1`. -/
+@[simp]
+theorem visitHalfEdgeEquiv_apply (n : ℕ) (i : Fin (2 * n)) (outgoing : Bool) :
+    (visitHalfEdgeEquiv n (i, outgoing)).val = 2 * i.val + outgoing.toNat := by
+  cases outgoing <;>
+    simp [visitHalfEdgeEquiv, finTwoEquiv, finProdFinEquiv, Nat.add_comm]
 
 namespace BasedOrientedGaussCode
 
@@ -202,21 +215,6 @@ private def crossingSlotDataEquiv (D : BasedOrientedGaussCode n) :
 ### Half-edges and traversal
 -/
 
-/-- The standard equivalence enumerating the incoming and outgoing half-edges of the visits of a
-Gauss code. -/
-def visitHalfEdgeEquiv (_D : BasedOrientedGaussCode n) : Fin (2 * n) × Bool ≃ Fin (4 * n) :=
-  (Equiv.prodCongr (Equiv.refl _) finTwoEquiv.symm).trans <|
-    finProdFinEquiv.trans (finCongr (by omega))
-
-/-- The visit-half-edge equivalence numbers the incoming end of visit `i` by `2 * i` and its
-outgoing end by `2 * i + 1`. -/
-@[simp]
-theorem visitHalfEdgeEquiv_apply (D : BasedOrientedGaussCode n) (i : Fin (2 * n))
-    (outgoing : Bool) :
-    (D.visitHalfEdgeEquiv (i, outgoing)).val = 2 * i.val + outgoing.toNat := by
-  cases outgoing <;>
-    simp [visitHalfEdgeEquiv, finTwoEquiv, finProdFinEquiv, Nat.add_comm]
-
 /-- On visit ends, arc pairing joins an outgoing half-edge to the incoming half-edge of the next
 visit, and conversely joins an incoming half-edge to the outgoing half-edge of the previous visit.
 -/
@@ -244,12 +242,12 @@ private noncomputable def crossingHalfEdgeEquiv (D : BasedOrientedGaussCode n) :
     Fin n × Fin 4 ≃ Fin (4 * n) :=
   (crossingSlotDataEquiv D).trans <|
     (Equiv.prodCongr D.visitDataEquiv.symm (Equiv.refl Bool)).trans
-      D.visitHalfEdgeEquiv
+      (visitHalfEdgeEquiv n)
 
 private theorem crossingHalfEdgeEquiv_apply (D : BasedOrientedGaussCode n)
     (c : Fin n) (slot : Fin 4) :
     crossingHalfEdgeEquiv D (c, slot) =
-      D.visitHalfEdgeEquiv (D.crossingVisit c slot, D.crossingOutgoing c slot) := by
+      visitHalfEdgeEquiv n (D.crossingVisit c slot, D.crossingOutgoing c slot) := by
   simp [crossingHalfEdgeEquiv, crossingSlotDataEquiv, crossingVisit,
     slotEquiv_fst, slotEquiv_snd]
 
@@ -261,14 +259,14 @@ private theorem crossingHalfEdgeEquiv_apply (D : BasedOrientedGaussCode n)
 only to number the visits; forgetting the half-edge labels forgets that choice. -/
 noncomputable def toOrientedPDCode (D : BasedOrientedGaussCode n) : OrientedPDCode n where
   halfEdge := (PDCode.crossingSlotEquiv n).symm.trans (crossingHalfEdgeEquiv D)
-  edgePair := PerfectMatching.congr D.visitHalfEdgeEquiv (traversalEdgePair n)
+  edgePair := PerfectMatching.congr (visitHalfEdgeEquiv n) (traversalEdgePair n)
   crossinglessComponentCount := if n = 0 then 1 else 0
   overPair := fun _ => false
-  orientation := fun h => (D.visitHalfEdgeEquiv.symm h).2
+  orientation := fun h => ((visitHalfEdgeEquiv n).symm h).2
   orientation_edgePair := by
     intro h
     rw [PerfectMatching.congr_val_apply]
-    obtain ⟨i, outgoing⟩ := D.visitHalfEdgeEquiv.symm h
+    obtain ⟨i, outgoing⟩ := (visitHalfEdgeEquiv n).symm h
     rw [Equiv.symm_apply_apply]
     cases outgoing <;> simp [traversalEdgePair, traversalEdgePerm, traversalEdge]
   orientation_oppositeCrossingSlot := by
@@ -290,14 +288,14 @@ case. -/
 theorem toOrientedPDCode_crossinglessComponentCount (D : BasedOrientedGaussCode n) :
     D.toOrientedPDCode.crossinglessComponentCount = if n = 0 then 1 else 0 := (rfl)
 
-/-- The orientation of the crossing-free component in the zero-crossing case is the canonical
-positive choice. -/
+/-- In the zero-crossing case, the crossing-free component uses the convention represented by
+`true`. -/
 @[simp]
 theorem toOrientedPDCode_crossinglessComponents (D : BasedOrientedGaussCode n) :
     D.toOrientedPDCode.crossinglessComponents = if n = 0 then {true} else 0 := (rfl)
 
-/-- The conversion sends the crossing-free Gauss code to the positively oriented crossing-free
-unknot, not to the empty link. -/
+/-- The conversion sends the crossing-free Gauss code to the `true`-oriented crossing-free unknot,
+not to the empty link. -/
 @[simp]
 theorem toOrientedPDCode_empty :
     (empty : BasedOrientedGaussCode 0).toOrientedPDCode = orientedPDCodeUnknot true := by
@@ -311,8 +309,8 @@ theorem toOrientedPDCode_empty :
 
 private theorem toOrientedPDCode_edgePair_outgoing_aux (D : BasedOrientedGaussCode n)
     (i : Fin (2 * n)) :
-    D.toOrientedPDCode.edgePair.val (D.visitHalfEdgeEquiv (i, true)) =
-      D.visitHalfEdgeEquiv (finRotate _ i, false) := by
+    D.toOrientedPDCode.edgePair.val (visitHalfEdgeEquiv n (i, true)) =
+      visitHalfEdgeEquiv n (finRotate _ i, false) := by
   simp [toOrientedPDCode, traversalEdgePair, traversalEdgePerm, traversalEdge]
 
 /-- Arc pairing follows the cyclic traversal, changing an outgoing end to the next incoming end
@@ -320,8 +318,8 @@ and an incoming end to the previous outgoing end. -/
 @[simp]
 theorem toOrientedPDCode_edgePair_visitHalfEdge (D : BasedOrientedGaussCode n)
     (i : Fin (2 * n)) (outgoing : Bool) :
-    D.toOrientedPDCode.edgePair.val (D.visitHalfEdgeEquiv (i, outgoing)) =
-      D.visitHalfEdgeEquiv
+    D.toOrientedPDCode.edgePair.val (visitHalfEdgeEquiv n (i, outgoing)) =
+      visitHalfEdgeEquiv n
         (if outgoing then (finRotate _ i, false) else ((finRotate _).symm i, true)) := by
   cases outgoing
   · apply D.toOrientedPDCode.edgePair.apply_eq_of_apply_eq
@@ -333,7 +331,7 @@ theorem toOrientedPDCode_edgePair_visitHalfEdge (D : BasedOrientedGaussCode n)
 @[simp]
 theorem toOrientedPDCode_orientation_halfEdge (D : BasedOrientedGaussCode n)
     (i : Fin (2 * n)) (outgoing : Bool) :
-    D.toOrientedPDCode.orientation (D.visitHalfEdgeEquiv (i, outgoing)) = outgoing := by
+    D.toOrientedPDCode.orientation (visitHalfEdgeEquiv n (i, outgoing)) = outgoing := by
   simp [toOrientedPDCode]
 
 /-- The half-edge in a crossing slot is the corresponding end of the Gauss visit occupying that
@@ -341,7 +339,7 @@ slot. -/
 @[simp]
 theorem toOrientedPDCode_crossing (D : BasedOrientedGaussCode n) (c : Fin n) (slot : Fin 4) :
     D.toOrientedPDCode.halfEdge (PDCode.crossingSlotEquiv n (c, slot)) =
-      D.visitHalfEdgeEquiv (D.crossingVisit c slot, D.crossingOutgoing c slot) := by
+      visitHalfEdgeEquiv n (D.crossingVisit c slot, D.crossingOutgoing c slot) := by
   rw [toOrientedPDCode, Equiv.trans_apply, Equiv.symm_apply_apply,
     crossingHalfEdgeEquiv_apply]
 
