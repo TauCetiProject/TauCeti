@@ -60,9 +60,8 @@ pinned group; and its order is the superscript in the printed family name, recor
   `TauCeti.GraphTwistedIndex.orderOf_diagramPerm` and
   `TauCeti.GraphTwistedIndex.twistOrder_pos`: the twist order annihilates the permutation, is
   exactly its order, and is positive.
-* `TauCeti.TypeBLieIndex.diagramPerm_eq_one`: the untwisted family `Bₙ(q)` twists by nothing.
-* `TauCeti.TypeB2LieIndex.diagramPerm_toGraphTwistedIndex`: the untwisted family on the `B₂`
-  diagram takes the identity, the `B₂` diagram having no symmetry to twist by.
+* `TauCeti.TypeBLieIndex.diagramPerm_eq_one`: the untwisted family `Bₙ(q)`, including its rank-two
+  specialization, twists by nothing.
 * `TauCeti.TypeE6LieIndex.diagramPerm_toGraphTwistedIndex` and
   `TauCeti.TypeTwistedE6LieIndex.diagramPerm_toGraphTwistedIndex`: the two families on the `E₆`
   diagram take the identity and `TauCeti.graphPermE6` respectively, which is the distinction
@@ -393,13 +392,6 @@ namespace TypeB2LieIndex
 its specialization to the general type-`B` family. -/
 abbrev toGraphTwistedIndex (d : TypeB2LieIndex) : GraphTwistedIndex :=
   d.toTypeBLieIndex.toGraphTwistedIndex
-
-/-- **The diagram permutation of the untwisted family `B₂(q)` is the identity**, as the rank-two
-specialization of the general type-`B` convention. -/
-@[simp]
-theorem diagramPerm_toGraphTwistedIndex (d : TypeB2LieIndex) :
-    d.toGraphTwistedIndex.diagramPerm = 1 :=
-  TypeBLieIndex.diagramPerm_eq_one d.toTypeBLieIndex
 
 end TypeB2LieIndex
 
