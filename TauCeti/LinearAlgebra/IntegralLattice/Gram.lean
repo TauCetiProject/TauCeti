@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
-public import TauCeti.LinearAlgebra.Matrix.PosDef
+public import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.LinearAlgebra.Determinant
 
 /-!
@@ -234,7 +234,6 @@ theorem determinant_ne_zero_iff (L : IntegralLattice V) :
   rw [determinant, gramDet_ne_zero_iff]
 
 open Classical in
-open Classical in
 /-- **A lattice presented by a positive definite Gram matrix is positive definite.**  The rational
 form of `ofGramMatrix b G hG` is the quadratic form of `G` read in the coordinates of `b`, so the
 two positive-definiteness statements are the same one. -/
@@ -248,7 +247,10 @@ theorem isPosDef_ofGramMatrix {ι : Type v} [Fintype ι] (b : Basis ι ℚ V) (G
     refine b.repr.injective ?_
     ext i
     simpa using congrFun h i)
-  simpa [Matrix.map_apply] using TauCeti.Matrix.sum_pos_of_posDef hpd hrepr
+  have h := hpd.dotProduct_mulVec_pos hrepr
+  simp only [Matrix.dot_mulVec_eq_sum_sum, star_trivial] at h
+  rw [Finset.sum_comm] at h
+  simpa using h
 
 open Classical in
 /-- An integral lattice constructed from a nonsingular Gram matrix is nondegenerate. -/

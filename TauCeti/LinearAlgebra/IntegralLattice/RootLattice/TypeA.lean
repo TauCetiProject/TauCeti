@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Classical
-public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 
 /-!

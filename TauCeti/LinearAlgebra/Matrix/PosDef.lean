@@ -36,10 +36,7 @@ Cartan families need.
 * `Matrix.posDef_of_isEmpty`: a matrix on an empty index type is positive definite.
 * `TauCeti.Matrix.posDef_map_intCast`: an integer matrix that is positive definite over `ℤ` is
   positive definite over `ℚ`.
-* `TauCeti.Matrix.sum_pos_of_posDef`: over a finite index type, positive definiteness read as the
-  plain double sum rather than through finitely supported test vectors.
 * `TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit`: an invertible rational matrix of the
-
   form `Bᴴ * B` is positive definite.
 -/
 
@@ -126,23 +123,6 @@ theorem posDef_map_intCast {A : Matrix n n ℤ} (hA : A.PosDef) :
   have hne : Finsupp.comapDomain e x hinj.injOn ≠ 0 := fun h ↦ hx (by rw [← hmap, h]; simp)
   rw [← hmap]
   simpa [Finsupp.sum_mapDomain_index, add_mul, mul_add] using hsub.2 hne
-
-/-- **The quadratic form of a positive definite matrix, over a finite index type.**  Mathlib
-states positive definiteness through finitely supported test vectors; over a `Fintype` the
-condition reads as the plain double sum, which is the form the Gram-matrix calculations use. -/
-theorem sum_pos_of_posDef [Fintype n] {A : _root_.Matrix n n ℚ} (hA : A.PosDef) {x : n → ℚ}
-    (hx : x ≠ 0) : 0 < ∑ i, ∑ j, x i * A i j * x j := by
-  classical
-  have hne : (Finsupp.equivFunOnFinite.symm x) ≠ 0 := by
-    intro h
-    refine hx (funext fun i ↦ ?_)
-    have := congrFun (congrArg (fun f : n →₀ ℚ ↦ (f : n → ℚ)) h) i
-    simpa using this
-  have h := hA.2 hne
-  rw [Finsupp.sum_fintype _ _ (by simp)] at h
-  refine lt_of_lt_of_le h (le_of_eq (Finset.sum_congr rfl fun i _ ↦ ?_))
-  rw [Finsupp.sum_fintype _ _ (by simp)]
-  exact Finset.sum_congr rfl fun j _ ↦ by simp
 
 /-- **An invertible rational matrix of the form `Bᴴ * B` is positive definite.** Being of that
 form gives positive *semi*definiteness for free; invertibility upgrades it, by way of the
