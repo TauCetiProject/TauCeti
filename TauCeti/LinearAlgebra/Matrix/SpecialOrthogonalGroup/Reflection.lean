@@ -184,6 +184,24 @@ theorem coe_reflectionPair {v w : n → R} {c d : R} (hc : c * (v ⬝ᵥ v) = 2)
       reflectionMatrix v c * reflectionMatrix w d :=
   (rfl)
 
+omit [DecidableEq n] in
+/-- A ring homomorphism carries the normalizing equation of a reflection to the normalizing
+equation of the reflection in the mapped vector with the mapped scalar. -/
+theorem map_mul_dotProduct_eq_two (f : R →+* S) {v : n → R} {c : R} (hc : c * (v ⬝ᵥ v) = 2) :
+    f c * ((f ∘ v) ⬝ᵥ (f ∘ v)) = 2 := by
+  rw [← RingHom.map_dotProduct, ← map_mul, hc, map_ofNat]
+
+/-- Products of two reflections are natural in the coefficient ring. -/
+@[simp]
+theorem map_reflectionPair (f : R →+* S) {v w : n → R} {c d : R} (hc : c * (v ⬝ᵥ v) = 2)
+    (hd : d * (w ⬝ᵥ w) = 2) :
+    Matrix.SpecialOrthogonalGroup.map f (reflectionPair v w c d hc hd) =
+      reflectionPair (f ∘ v) (f ∘ w) (f c) (f d) (map_mul_dotProduct_eq_two f hc)
+        (map_mul_dotProduct_eq_two f hd) :=
+  Subtype.ext <| by
+    rw [Matrix.SpecialOrthogonalGroup.coe_map, coe_reflectionPair, coe_reflectionPair,
+      Matrix.map_mul, map_reflectionMatrix, map_reflectionMatrix]
+
 end Pair
 
 /-! ### Generation of the special orthogonal group -/

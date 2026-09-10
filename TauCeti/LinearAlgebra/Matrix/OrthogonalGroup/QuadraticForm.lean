@@ -65,9 +65,8 @@ theorem toMatrix_mem_orthogonalGroup_iff (R : Type u) [CommRing R]
   have hpolar (x y : n → R) :
       QuadraticMap.polar (Matrix.toQuadraticForm' (1 : Matrix n n R)) x y =
         (2 : R) • B x y := by
-    simp only [Matrix.toQuadraticForm', LinearMap.BilinMap.polar_toQuadraticMap,
-      Matrix.toLinearMap₂'_apply', Matrix.one_mulVec, B, two_smul,
-      dotProduct_comm y x]
+    simp only [polar_toQuadraticForm'_one, B, Matrix.toLinearMap₂'_apply', Matrix.one_mulVec,
+      smul_eq_mul]
   simp only [hpolar, h2.eq_iff, BilinForm.isIsometry_iff, LinearEquiv.coe_coe]
 
 /-- The coordinate matrix is special orthogonal exactly when the linear automorphism is
