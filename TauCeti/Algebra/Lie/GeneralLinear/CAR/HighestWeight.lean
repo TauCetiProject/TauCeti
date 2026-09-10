@@ -73,11 +73,33 @@ theorem mem_carPositiveRootPairs {n : Type*} [Fintype n] [LinearOrder n] {i j : 
   let _ : LinearOrder (n ×ₗ n) := Prod.Lex.instLinearOrder n n
   exact LinearOrder.lift' toLex (Equiv.injective toLex)
 
+/-- The increasing enumeration of positive-root pairs, valued in the lexicographically ordered
+pair type. -/
+noncomputable def carPositiveRootPairOrderEmbedding
+    (n : Type*) [Fintype n] [LinearOrder n] :
+    Fin (carPositiveRootPairs n).card ↪o n ×ₗ n := by
+  let _ : LinearOrder (n ×ₗ n) := Prod.Lex.instLinearOrder n n
+  let _ : LinearOrder (n × n) := carPairLinearOrder n
+  exact ((carPositiveRootPairs n).orderEmbOfFin rfl).trans
+    { toFun := toLex
+      inj' := Equiv.injective toLex
+      map_rel_iff' := Iff.rfl }
+
 /-- The positive-root pair at a given place in the canonical lexicographic enumeration. -/
 noncomputable def carPositiveRootPair (n : Type*) [Fintype n] [LinearOrder n]
     (r : Fin (carPositiveRootPairs n).card) : n × n := by
   let _ := carPairLinearOrder n
   exact (carPositiveRootPairs n).orderEmbOfFin rfl r
+
+/-- The order embedding enumerates the same pair as `carPositiveRootPair`. -/
+@[simp]
+theorem carPositiveRootPairOrderEmbedding_apply (n : Type*) [Fintype n] [LinearOrder n]
+    (r : Fin (carPositiveRootPairs n).card) :
+    ofLex (carPositiveRootPairOrderEmbedding n r) = carPositiveRootPair n r := by
+  let _ : LinearOrder (n ×ₗ n) := Prod.Lex.instLinearOrder n n
+  let _ : LinearOrder (n × n) := carPairLinearOrder n
+  rw [carPositiveRootPair.eq_def]
+  rfl
 
 /-- Every pair in the canonical enumeration is a positive-root pair. -/
 @[simp]
@@ -87,6 +109,23 @@ theorem carPositiveRootPair_mem (n : Type*) [Fintype n] [LinearOrder n]
   let _ := carPairLinearOrder n
   rw [carPositiveRootPair.eq_def]
   exact Finset.orderEmbOfFin_mem (carPositiveRootPairs n) rfl r
+
+/-- The canonical enumeration ranges over exactly the positive-root pairs. -/
+theorem range_carPositiveRootPair (n : Type*) [Fintype n] [LinearOrder n] :
+    Set.range (carPositiveRootPair n) = carPositiveRootPairs n := by
+  let _ : LinearOrder (n ×ₗ n) := Prod.Lex.instLinearOrder n n
+  let _ : LinearOrder (n × n) := carPairLinearOrder n
+  ext p
+  constructor
+  · rintro ⟨r, rfl⟩
+    exact carPositiveRootPair_mem n r
+  · intro hp
+    have hp' : p ∈ (carPositiveRootPairs n : Set (n × n)) := hp
+    rw [← Finset.range_orderEmbOfFin (carPositiveRootPairs n) rfl] at hp'
+    obtain ⟨r, hr⟩ := hp'
+    refine ⟨r, ?_⟩
+    rw [carPositiveRootPair.eq_def]
+    exact hr
 
 /-- The positive matrix units in the lexicographic order on their index pairs. -/
 noncomputable def carPositiveMatrixUnitFamily (K : Type*) [CommRing K]
