@@ -18,9 +18,7 @@ space. Generic reversal results live in `LinearAlgebra/CliffordAlgebra/Reversal/
 
 ## References
 
-This is the matrix-model step of Layer 6 in the
-[SpinRepresentations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md).
-See Fulton and Harris, *Representation Theory: A First Course*, Lecture 20.
+* W. Fulton and J. Harris, *Representation Theory: A First Course*, Lecture 20.
 -/
 
 public section

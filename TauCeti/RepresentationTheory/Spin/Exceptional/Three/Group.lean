@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Spin.Exceptional.Three.Basic
+public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
+public import TauCeti.RepresentationTheory.Spin.Representation
 public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
+public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Spin.OddStructure
 import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.KostantLattice
 import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
@@ -15,9 +18,12 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 /-!
 # The three-dimensional Spin group
 
-A nondegenerate quadratic space of dimension three has an even Clifford algebra isomorphic to
-`M₂(K)`. Clifford reversal corresponds to adjugation, so the Spin group maps into `SL₂(K)`.
-Explicit lifts of the two elementary root subgroups show that this map is onto.
+Over a field with `2 ≠ 0`, a three-dimensional quadratic space equipped with polarization data
+has an even Clifford algebra isomorphic to `M₂(K)`. Clifford reversal corresponds to adjugation,
+so the Spin group maps into `SL₂(K)`. Explicit lifts of the two elementary root subgroups show
+that this map is onto, and the polarization's spin representation is the standard representation
+under this equivalence. A nondegenerate quadratic space over a separably closed field supplies the
+required polarization.
 
 ## References
 
@@ -65,30 +71,6 @@ private theorem lineCoordinate_surjective [FiniteDimensional K V]
   rw [P.finrank_line_eq_one_of_finrank_eq_two_mul_add_one (l := 1) (by omega)]
   simp
 
-private theorem ι_mul_ι_mem_spinGroup_of_norm_one (x y : V)
-    (hx : Q x = 1) (hy : Q y = 1) :
-    ι Q x * ι Q y ∈ spinGroup Q := by
-  let _ : Invertible (Q x) := hx ▸ invertibleOne
-  let _ : Invertible (Q y) := hy ▸ invertibleOne
-  let a := unitι Q x * unitι Q y
-  have ha : (a : CliffordAlgebra Q) = ι Q x * ι Q y := by simp [a]
-  refine ⟨?_, ?_⟩
-  · refine ⟨⟨a, mul_mem (unitι_mem_lipschitzGroup x) (unitι_mem_lipschitzGroup y), ha⟩,
-      (ha ▸ a.isUnit).mem_unitary_of_star_mul_self ?_⟩
-    rw [star_mul, star_ι, star_ι, neg_mul_neg]
-    calc
-      (ι Q y * ι Q x) * (ι Q x * ι Q y) =
-          ι Q y * (ι Q x * ι Q x) * ι Q y := by noncomm_ring
-      _ = ι Q y * algebraMap K _ (Q x) * ι Q y := by rw [ι_sq_scalar]
-      _ = algebraMap K _ (Q x) * (ι Q y * ι Q y) := by
-        rw [← Algebra.commutes (Q x) (ι Q y), mul_assoc]
-      _ = algebraMap K _ (Q x) * algebraMap K _ (Q y) := by rw [ι_sq_scalar]
-      _ = 1 := by rw [← map_mul, hx, hy, one_mul, map_one]
-  · -- Expose the even-subalgebra carrier to apply the grading membership theorem.
-    change ι Q x * ι Q y ∈ CliffordAlgebra.even Q
-    rw [← Subalgebra.mem_toSubmodule, CliffordAlgebra.even_toSubmodule]
-    exact ι_mul_ι_mem_evenOdd_zero Q x y
-
 private theorem add_smul_W_line_norm (P : SpinPolarizationData Q) (x : P.W)
     (z : P.line) (hz : Q (z : V) = 1) (c : K) :
     Q ((z : V) + c • (x : V)) = 1 := by
@@ -134,16 +116,22 @@ private noncomputable def spinThreeHom
 private noncomputable def positiveRootLift
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (c : K) : spinGroup Q :=
+  let _ : Invertible (Q ((z : V) + c • (b 0 : V))) :=
+    (add_smul_W_line_norm P (b 0) z hz c) ▸ invertibleOne
+  let _ : Invertible (Q (z : V)) := hz ▸ invertibleOne
   ⟨ι Q ((z : V) + c • (b 0 : V)) * ι Q (z : V),
-    ι_mul_ι_mem_spinGroup_of_norm_one _ _
-      (add_smul_W_line_norm P (b 0) z hz c) hz⟩
+    ι_mul_ι_mem_spinGroup_of_mul_norm_eq_one _ _ (by
+      rw [add_smul_W_line_norm P (b 0) z hz c, hz, one_mul])⟩
 
 private noncomputable def negativeRootLift
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (c : K) : spinGroup Q :=
+  let _ : Invertible (Q (z : V)) := hz ▸ invertibleOne
+  let _ : Invertible (Q ((z : V) + c • (P.dualVector b 0 : V))) :=
+    (add_smul_line_W'_norm P z (P.dualVector b 0) hz c) ▸ invertibleOne
   ⟨ι Q (z : V) * ι Q ((z : V) + c • (P.dualVector b 0 : V)),
-    ι_mul_ι_mem_spinGroup_of_norm_one _ _ hz
-      (add_smul_line_W'_norm P z (P.dualVector b 0) hz c)⟩
+    ι_mul_ι_mem_spinGroup_of_mul_norm_eq_one _ _ (by
+      rw [hz, add_smul_line_W'_norm P z (P.dualVector b 0) hz c, one_mul])⟩
 
 private theorem coe_positiveRootLift
     [Invertible (2 : K)]
@@ -284,16 +272,42 @@ private theorem spinThreeEquivMatrix_negativeRoot
     simpa [bas, spinThreeExteriorBasis, vacuumIndex, occupiedIndex, evenBivector] using
       spinAction_negativeRoot_singleton P b z hz hcoord
 
-/-- A nondegenerate three-dimensional quadratic space over a separably closed field has Spin
-group isomorphic to `SL₂`. The equivalence is noncanonical because its construction chooses a
-polarization and bases. -/
-theorem nonempty_spinGroup_mulEquiv_specialLinearGroup_of_finrank_eq_three
-    [NeZero (2 : K)] [IsSepClosed K]
-    (hQ : Q.Nondegenerate) (hV : finrank K V = 3) :
-    Nonempty (spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 2) K) := by
+private theorem spinThreeHom_intertwines
+    [NeZero (2 : K)] [FiniteDimensional K V]
+    (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
+    (hV : finrank K V = 3) (g : spinGroup Q) :
+    (spinThreeExteriorBasis P b).equivFun.toLinearMap.comp (spinRep Q P g) =
+      (stdSLRep K 2 (spinThreeHom hV (spinThreeEquivMatrix P b hV) g)).comp
+        (spinThreeExteriorBasis P b).equivFun.toLinearMap := by
+  apply LinearMap.ext
+  intro s
+  simp only [LinearMap.comp_apply, spinRep_apply, stdSLRep_apply, Matrix.mulVecLin_apply]
+  -- Expose the matrix carried by `spinThreeHom`; the remaining equality is the canonical
+  -- coordinate formula for the matrix of a linear map.
+  change (spinThreeExteriorBasis P b).equivFun (spinAction Q P g s) =
+    Matrix.mulVec (spinThreeEquivMatrix P b hV (spinGroupToEven Q g))
+      ((spinThreeExteriorBasis P b).equivFun s)
+  rw [spinThreeEquivMatrix, AlgEquiv.trans_apply, P.evenCliffordEquivEnd_apply,
+    coe_spinGroupToEven_apply]
+  have hmatrix :
+      LinearMap.toMatrixAlgEquiv (spinThreeExteriorBasis P b) (spinAction Q P g) =
+        LinearMap.toMatrix (spinThreeExteriorBasis P b) (spinThreeExteriorBasis P b)
+          (spinAction Q P g) := rfl
+  rw [hmatrix]
+  simpa only [Basis.equivFun_apply] using
+      (LinearMap.toMatrix_mulVec_repr (spinThreeExteriorBasis P b)
+        (spinThreeExteriorBasis P b) (spinAction Q P g) s).symm
+
+/-- For a three-dimensional quadratic space with polarization data over a field with `2 ≠ 0`,
+there is an equivalence from its Spin group to `SL₂` under which the spin representation is the
+standard two-dimensional representation. The equivalence depends on a basis of the isotropic
+line. -/
+theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_of_finrank_eq_three
+    [NeZero (2 : K)] (P : SpinPolarizationData Q) (hV : finrank K V = 3) :
+    ∃ f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 2) K,
+      Nonempty ((spinRep Q P).Equiv ((stdSLRep K 2).comp f.toMonoidHom)) := by
   let _ : FiniteDimensional K V := .of_finrank_eq_succ (by omega)
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
-  let P := SpinPolarizationData.ofNondegenerate Q hQ
   have hW : finrank K P.W = 1 :=
     P.finrank_W_of_finrank_eq_two_mul_add_one (l := 1) (by omega)
   let b := Module.finBasisOfFinrankEq K P.W hW
@@ -361,6 +375,27 @@ theorem nonempty_spinGroup_mulEquiv_specialLinearGroup_of_finrank_eq_three
       rw [Matrix.SpecialLinearGroup.closure_range_toSpecialLinearGroup_eq_top_of_field]
       exact Subgroup.mem_top g
     exact MonoidHom.mem_range.mp hg
-  exact ⟨MulEquiv.ofBijective f ⟨hf_inj, hf_surj⟩⟩
+  let φ := MulEquiv.ofBijective f ⟨hf_inj, hf_surj⟩
+  refine ⟨φ, ⟨Representation.Equiv.mk (spinThreeExteriorBasis P b).equivFun ?_⟩⟩
+  intro g
+  have hφ : φ g = f g := rfl
+  have hφ' : φ.toMonoidHom g = f g := hφ
+  simp only [MonoidHom.comp_apply]
+  rw [hφ']
+  simpa only [f, e] using spinThreeHom_intertwines P b hV g
+
+/-- A nondegenerate three-dimensional quadratic space over a separably closed field of
+characteristic not two has Spin group isomorphic to `SL₂`. The equivalence is noncanonical because
+its construction chooses a polarization and a basis. -/
+theorem nonempty_spinGroup_mulEquiv_specialLinearGroup_of_finrank_eq_three
+    [NeZero (2 : K)] [IsSepClosed K]
+    (hQ : Q.Nondegenerate) (hV : finrank K V = 3) :
+    Nonempty (spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 2) K) := by
+  let _ : FiniteDimensional K V := .of_finrank_eq_succ (by omega)
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  obtain ⟨f, -⟩ :=
+    exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_of_finrank_eq_three
+      (SpinPolarizationData.ofNondegenerate Q hQ) hV
+  exact ⟨f⟩
 
 end TauCeti

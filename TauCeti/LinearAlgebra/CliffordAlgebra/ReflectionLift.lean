@@ -110,41 +110,16 @@ private theorem reflection_smul_eq (a : K) (v : V) [Invertible (Q v)]
         (⅟(Q (a • v)) * a * a) * polar Q v m := by ring
     _ = ⅟(Q v) * polar Q v m := by rw [hcoeff]
 
-private theorem reflectionPairLift_mem_pinGroup (v w : V) [Invertible (Q v)]
-    [Invertible (Q w)] (h : IsSquare (⅟(Q v) * ⅟(Q w))) :
-    ι Q (sqrtOfIsSquare h • v) * ι Q w ∈ pinGroup Q := by
+private noncomputable def spinReflectionPairLift (v w : V) [Invertible (Q v)]
+    [Invertible (Q w)] (h : IsSquare (⅟(Q v) * ⅟(Q w))) : spinGroup Q := by
   have : Invertible (sqrtOfIsSquare h) :=
     (isUnit_sqrtOfIsSquare Q v w h).invertible
   have hnorm := sqrtOfIsSquare_smul_norm_eq_invOf Q v w h
   have : Invertible (Q (sqrtOfIsSquare h • v)) := by rw [hnorm]; infer_instance
   have hprod : Q (sqrtOfIsSquare h • v) * Q w = 1 := by
     rw [hnorm, invOf_mul_self]
-  let x := unitι Q (sqrtOfIsSquare h • v) * unitι Q w
-  have hx : (x : CliffordAlgebra Q) =
-      ι Q (sqrtOfIsSquare h • v) * ι Q w := by
-    simp only [x, Units.val_mul, coe_unitι]
-  refine ⟨⟨x, mul_mem (unitι_mem_lipschitzGroup _) (unitι_mem_lipschitzGroup _), hx⟩,
-    (hx ▸ x.isUnit).mem_unitary_of_star_mul_self ?_⟩
-  rw [star_mul, star_ι, star_ι, neg_mul_neg]
-  calc
-    (ι Q w * ι Q (sqrtOfIsSquare h • v)) *
-        (ι Q (sqrtOfIsSquare h • v) * ι Q w) =
-        ι Q w * (ι Q (sqrtOfIsSquare h • v) *
-          ι Q (sqrtOfIsSquare h • v)) * ι Q w := by noncomm_ring
-    _ = ι Q w * algebraMap K _ (Q (sqrtOfIsSquare h • v)) * ι Q w := by
-      rw [ι_sq_scalar]
-    _ = algebraMap K _ (Q (sqrtOfIsSquare h • v)) * (ι Q w * ι Q w) := by
-      rw [← Algebra.commutes (Q (sqrtOfIsSquare h • v)) (ι Q w)]
-      rw [mul_assoc]
-    _ = algebraMap K _ (Q (sqrtOfIsSquare h • v)) * algebraMap K _ (Q w) := by
-      rw [ι_sq_scalar]
-    _ = algebraMap K _ (Q (sqrtOfIsSquare h • v) * Q w) := by rw [map_mul]
-    _ = 1 := by rw [hprod, map_one]
-
-private noncomputable def spinReflectionPairLift (v w : V) [Invertible (Q v)]
-    [Invertible (Q w)] (h : IsSquare (⅟(Q v) * ⅟(Q w))) : spinGroup Q :=
-  ⟨ι Q (sqrtOfIsSquare h • v) * ι Q w,
-    reflectionPairLift_mem_pinGroup Q v w h, ι_mul_ι_mem_evenOdd_zero Q _ _⟩
+  exact ⟨ι Q (sqrtOfIsSquare h • v) * ι Q w,
+    ι_mul_ι_mem_spinGroup_of_mul_norm_eq_one _ _ hprod⟩
 
 variable [Invertible (2 : K)]
 
