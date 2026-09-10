@@ -50,6 +50,8 @@ describe; the references below state the colimit theorem this system is the sour
   tower of Mathlib's `ProfiniteGrp.toFiniteQuotientFunctor`.
 * `TauCeti.invariantsInclusion_equivariant`: the coefficient inclusion is equivariant after
   restriction along `finiteQuotientMap`, which is what makes `transitionPair` a compatible pair.
+* `TauCeti.finiteQuotientMap_surjective`: the quotient homomorphism `G ⧸ V →* G ⧸ U` is
+  surjective.
 * `TauCeti.finiteLevelTransition_refl` and `TauCeti.finiteLevelTransition_comp`: the two functor
   laws, which are what make the transition maps a system on the opposite poset.
 * `TauCeti.transitionPair_naturality` and `TauCeti.finiteLevelTransition_naturality`: a morphism
@@ -129,6 +131,11 @@ theorem finiteQuotientMap_refl [U.Normal] :
 theorem finiteQuotientMap_comp [U.Normal] [V.Normal] [W.Normal] (hWV : W ≤ V) (hVU : V ≤ U) :
     (finiteQuotientMap hVU).comp (finiteQuotientMap hWV) = finiteQuotientMap (hWV.trans hVU) :=
   QuotientGroup.map_comp_map W V U (.id G) (.id G) _ _ _
+
+/-- The quotient homomorphism `G ⧸ V →* G ⧸ U` is surjective. -/
+theorem finiteQuotientMap_surjective [U.Normal] [V.Normal] (hVU : V ≤ U) :
+    Function.Surjective (finiteQuotientMap hVU) :=
+  QuotientGroup.map_surjective_of_surjective V U (.id G) QuotientGroup.mk_surjective _
 
 /-- Invariants grow as the subgroup shrinks: a vector fixed by `U` is fixed by every `V ≤ U`. -/
 theorem invariants_le (hVU : V ≤ U) :

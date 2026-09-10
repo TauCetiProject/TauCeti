@@ -45,16 +45,6 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Com
 
 namespace ProfiniteSylow
 
-omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [TotallyDisconnectedSpace G] in
-/-- The transition map of the finite-quotient system is surjective: every class modulo the
-larger subgroup is already the image of a class modulo the smaller one. -/
-private theorem finiteQuotientMap_surjective {U V : Subgroup G} [U.Normal] [V.Normal]
-    (hVU : V ≤ U) : Function.Surjective (finiteQuotientMap hVU) := by
-  intro x
-  obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective U x
-  exact ⟨(g : G ⧸ V), finiteQuotientMap_mk hVU g⟩
-
 /-- The cofiltered system of Sylow `p`-subgroups of the finite quotients of `G`. -/
 private noncomputable def system : OpenNormalSubgroup G ⥤ Type u where
   obj U := Sylow p (G ⧸ U.toSubgroup)
@@ -96,10 +86,10 @@ theorem exists_isProPSylow (p : ℕ) [Fact p.Prime] (G : Type u) [Group G]
       (S U : Subgroup (G ⧸ U.toSubgroup)).map (finiteQuotientMap hUV) =
         (S V : Subgroup (G ⧸ V.toSubgroup)) := by
     have h := hs (homOfLE hUV)
-    have h' : (S U).mapSurjective (ProfiniteSylow.finiteQuotientMap_surjective hUV) = S V := by
+    have h' : (S U).mapSurjective (finiteQuotientMap_surjective hUV) = S V := by
       -- A morphism in `Type` is a bundled function, so expose its application before using
       -- the section equation.
-      change (S U).mapSurjective (ProfiniteSylow.finiteQuotientMap_surjective hUV) = S V at h
+      change (S U).mapSurjective (finiteQuotientMap_surjective hUV) = S V at h
       exact h
     exact congrArg (fun Q : Sylow p (G ⧸ V.toSubgroup) ↦ Q.1) h'
   -- Pull the compatible family back to `G` and intersect all its members.
