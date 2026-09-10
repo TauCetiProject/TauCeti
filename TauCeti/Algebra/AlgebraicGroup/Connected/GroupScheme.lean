@@ -184,7 +184,7 @@ noncomputable def identityComponentSpecι
 
 /-- The underlying identity-component inclusion is the spectrum of its quotient algebra map,
 after identifying the source with the spectrum of its coordinate algebra. -/
-theorem identityComponentSpecι_hom_left (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+@[simp] theorem identityComponentSpecι_hom_left (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     (identityComponentSpecι H).hom.hom.left =
       eqToHom (identityComponentSpec_X_left H) ≫
         Spec.map (CommRingCat.ofHom (algebraMap H (identityComponent H))) := by
