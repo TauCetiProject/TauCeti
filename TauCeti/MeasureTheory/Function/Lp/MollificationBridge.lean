@@ -41,8 +41,10 @@ open ContinuousLinearMap Filter MeasureTheory Set
 open scoped Convolution ENNReal Pointwise
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [BorelSpace E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [BorelSpace E] [ProperSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [CompleteSpace F] {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
+
+local instance : FiniteDimensional ℝ E := .of_locallyCompactSpace ℝ
 
 /-- The `Lᵖ` approximate identity is represented almost everywhere by the usual pointwise
 convolution whenever the input is continuous and compactly supported. -/

@@ -17,9 +17,9 @@ useful whenever an `Lᵖ` identity is tested against integrals on finite-measure
 
 ## Main declarations
 
-* `MeasureTheory.Measure.lpToLpOneCLM`: the continuous inclusion from `Lᵖ` to `L¹` on
+* `MeasureTheory.Measure.lpToL1CLM`: the continuous inclusion from `Lᵖ` to `L¹` on
   a finite-measure space.
-* `MeasureTheory.Measure.lpToLpOneCLM_coeFn`: the inclusion has the original representative almost
+* `MeasureTheory.Measure.lpToL1CLM_coeFn`: the inclusion has the original representative almost
   everywhere.
 * `TauCeti.lpToL1Restrict`: restriction from `Lᵖ` to `L¹` on a finite-measure set.
 * `TauCeti.lpToL1Restrict_coeFn`: the restricted class has the original representative almost
@@ -43,7 +43,7 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
   {mu : Measure E} {p : ENNReal} [Fact (1 ≤ p)]
 
 /-- The continuous inclusion from `Lᵖ` to `L¹` on a finite-measure space. -/
-noncomputable def lpToLpOneCLM (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
+noncomputable def lpToL1CLM (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
     [Fact (1 ≤ p)] : Lp F p μ →L[ℝ] Lp F 1 μ := by
   let hp : (1 : ENNReal) ≤ p := Fact.out
   let toFun : Lp F p μ → Lp F 1 μ := fun f =>
@@ -117,8 +117,8 @@ noncomputable def lpToLpOneCLM (μ : Measure E) (p : ENNReal) [IsFiniteMeasure �
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace F] in
 /-- The finite-measure `Lᵖ` to `L¹` inclusion has the original representative almost everywhere. -/
-theorem lpToLpOneCLM_coeFn (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
-    [Fact (1 ≤ p)] (f : Lp F p μ) : lpToLpOneCLM μ p f =ᵐ[μ] f := by
+theorem lpToL1CLM_coeFn (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
+    [Fact (1 ≤ p)] (f : Lp F p μ) : lpToL1CLM μ p f =ᵐ[μ] f := by
   -- No stable rewrite theorem exposes the representative of `LinearMap.mkContinuous`, so this
   -- conversion unfolds the definition to apply `MemLp.coeFn_toLp`.
   change (Lp.memLp f).mono_exponent Fact.out |>.toLp f =ᵐ[μ] f
@@ -139,7 +139,7 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
 noncomputable def lpToL1Restrict (s : Set E) (hμs : mu s < ∞) :
     Lp F p mu →L[ℝ] Lp F 1 (mu.restrict s) := by
   letI : IsFiniteMeasure (mu.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
-  exact (Measure.lpToLpOneCLM (μ := mu.restrict s) p).comp
+  exact (Measure.lpToL1CLM (μ := mu.restrict s) p).comp
     (LpToLpRestrictCLM E F ℝ mu p s)
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace F] in
@@ -149,9 +149,9 @@ theorem lpToL1Restrict_coeFn (s : Set E) (hμs : mu s < ∞)
     lpToL1Restrict s hμs f =ᵐ[mu.restrict s] f := by
   let _ : IsFiniteMeasure (mu.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
   -- Unfold the composition so the public inclusion and restriction representative lemmas apply.
-  change Measure.lpToLpOneCLM (mu.restrict s) p
+  change Measure.lpToL1CLM (mu.restrict s) p
       (LpToLpRestrictCLM E F ℝ mu p s f) =ᵐ[mu.restrict s] f
-  exact (Measure.lpToLpOneCLM_coeFn (mu.restrict s) p _).trans
+  exact (Measure.lpToL1CLM_coeFn (mu.restrict s) p _).trans
     (LpToLpRestrictCLM_coeFn ℝ s f)
 
 /-- Integrate an `Lᵖ` class over a finite-measure set as a continuous linear map. -/
