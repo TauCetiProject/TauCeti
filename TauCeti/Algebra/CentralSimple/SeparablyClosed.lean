@@ -137,11 +137,9 @@ variable (A : Type u) [Ring A] [Algebra K A] [Algebra.IsCentral K A] [IsSimpleRi
 `K`-algebra is a full matrix algebra over `K`. -/
 theorem exists_algEquiv_matrix_of_isSepClosed :
     ∃ (n : ℕ) (_ : NeZero n), Module.finrank K A = n ^ 2 ∧
-      Nonempty (A ≃ₐ[K] Matrix (Fin n) (Fin n) K) := by
-  obtain ⟨n, hn, D, _, _, _, _, hrank, ⟨e⟩⟩ :=
-    exists_algEquiv_matrix_centralDivisionRing K A
-  refine ⟨n, hn, ?_, ⟨e.trans (AlgEquiv.mapMatrix (baseFieldAlgEquivOfIsSepClosed K D))⟩⟩
-  rw [hrank, finrank_eq_one_of_isSepClosed K D, mul_one]
+      Nonempty (A ≃ₐ[K] Matrix (Fin n) (Fin n) K) :=
+  exists_algEquiv_matrix_of_forall_nonempty_algEquiv K A fun D ↦
+    ⟨baseFieldAlgEquivOfIsSepClosed K D⟩
 
 end IsSimpleRing
 

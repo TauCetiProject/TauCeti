@@ -99,6 +99,26 @@ theorem exists_algEquiv_matrix_centralDivisionRing [Algebra.IsCentral K A] [IsSi
   rw [e.toLinearEquiv.finrank_eq, Module.finrank_matrix, Fintype.card_fin]
   ring
 
+/-- **A field whose central division algebras are all itself splits every central simple
+algebra.** Given the Wedderburn presentation `A ≃ₐ Mₙ(D)`, the hypothesis collapses `D` to `K`.
+
+This is the common content of `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_finite` and
+`TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_isSepClosed`; each supplies the hypothesis from a
+different property of `K`. It takes a universally quantified hypothesis rather than a class
+because the class one wants -- triviality of the Brauer group -- is only definable further
+downstream, where this statement reappears as
+`TauCeti.Algebra.isSplittingField_self_of_isBrauerTrivial`. -/
+theorem exists_algEquiv_matrix_of_forall_nonempty_algEquiv [Algebra.IsCentral K A]
+    [IsSimpleRing A] [FiniteDimensional K A]
+    (h : ∀ (D : Type u) [DivisionRing D] [Algebra K D] [Algebra.IsCentral K D]
+      [FiniteDimensional K D], Nonempty (D ≃ₐ[K] K)) :
+    ∃ (n : ℕ) (_ : NeZero n), Module.finrank K A = n ^ 2 ∧
+      Nonempty (A ≃ₐ[K] Matrix (Fin n) (Fin n) K) := by
+  obtain ⟨n, hn, D, _, _, _, _, hrank, ⟨e⟩⟩ := exists_algEquiv_matrix_centralDivisionRing K A
+  obtain ⟨d⟩ := h D
+  refine ⟨n, hn, ?_, ⟨e.trans (AlgEquiv.mapMatrix d)⟩⟩
+  rw [hrank, d.toLinearEquiv.finrank_eq, Module.finrank_self, mul_one]
+
 end IsSimpleRing
 
 /-! ### Finite central division algebras and finite base fields -/
@@ -150,11 +170,10 @@ This is the finite-field analogue of Mathlib's
 suffice, since `A` could be a proper field extension of `K`. -/
 theorem exists_algEquiv_matrix_of_finite :
     ∃ (n : ℕ) (_ : NeZero n), Module.finrank K A = n ^ 2 ∧
-      Nonempty (A ≃ₐ[K] Matrix (Fin n) (Fin n) K) := by
-  obtain ⟨n, hn, D, _, _, _, _, hrank, ⟨e⟩⟩ := exists_algEquiv_matrix_centralDivisionRing K A
-  have : Finite D := Module.finite_of_finite K
-  refine ⟨n, hn, ?_, ⟨e.trans (AlgEquiv.mapMatrix (baseFieldAlgEquivOfFinite K D))⟩⟩
-  rw [hrank, finrank_eq_one_of_finite K D, mul_one]
+      Nonempty (A ≃ₐ[K] Matrix (Fin n) (Fin n) K) :=
+  exists_algEquiv_matrix_of_forall_nonempty_algEquiv K A fun D ↦
+    have : Finite D := Module.finite_of_finite K
+    ⟨baseFieldAlgEquivOfFinite K D⟩
 
 end IsSimpleRing
 
