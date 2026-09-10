@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.GraphAutomorphism
 /-!
 # The graph-twisted Frobenius of the doubled type-E6 minuscule carrier
 
-`TauCeti.E6DoubledMinuscule.groupScheme` is the explicit full-weight type-`E₆` Chevalley carrier
+`TauCeti.E6DoubledMinuscule.groupScheme` is the doubled minuscule Kostant toral-closure carrier
 built on `V(ϖ₁) ⊕ V(ϖ₆)` inside `GL₅₄` over `ℤ`, and its point group over a commutative ring `A`
 of exponential characteristic `p` carries two pinned endomorphisms: the `p ^ k`-power Frobenius
 `TauCeti.E6DoubledMinuscule.frobenius`, which raises every matrix entry to its `p ^ k`-th power,
@@ -30,10 +30,13 @@ factors commute, `γ₂` is an involution, and consequently
 twistedFrobenius ∘ twistedFrobenius = Frob_(q ^ 2).
 ```
 
-The commutation is not a computation about the carrier. The graph automorphism is conjugation by
-`TauCeti.E6DoubledMinuscule.graphAutomorphismMatrix`, whose entries are `0` and `±1` and which is
-therefore natural in the coefficient ring, while the Frobenius is the entrywise action of a ring
-endomorphism of that same coefficient ring.
+The commutation is not a computation about the carrier, and nothing here reproves it. The graph
+automorphism is conjugation by `TauCeti.E6DoubledMinuscule.graphAutomorphismMatrix`, whose entries
+are `0` and `±1`, so it is natural in the coefficient ring by
+`TauCeti.E6DoubledMinuscule.pointsMap_comp_graphAutomorphismPoints`, while the Frobenius is the
+map on points induced by a ring endomorphism of that same coefficient ring, by
+`TauCeti.E6DoubledMinuscule.frobenius_eq_pointsMap`; the commutation is the Frobenius instance of
+that naturality.
 
 The doubled carrier is the one on which this composite exists at all. The `E₆` diagram involution
 exchanges the minuscule representation `V(ϖ₁)` with its contragredient `V(ϖ₆)` rather than
@@ -46,11 +49,11 @@ The square relation has an arithmetic reading. Every point fixed by the twisted 
 `Frob_(q ^ 2)`, so its matrix entries lie in the subring of `A` fixed by the `q ^ 2`-power
 Frobenius. That subring is a field of `q ^ 2` elements only under hypotheses none of the statements
 below assume: `p` prime, `0 < k`, and `A` an algebraic closure of `ZMod p`. Under those hypotheses
-this is the field-of-definition containment required of the eventual graph-twisted Steinberg map.
+this is the field-of-definition containment asked of a graph-twisted Steinberg map of type `E₆`.
 At `k = 0` the exponent `q ^ 2` is `1` and the fixed subring is all of `A`. Only the containment is
-proved; no reverse containment is claimed, and nothing here identifies this carrier with the pinned
-simply connected Chevalley--Demazure group required by the CFSG roadmap's L0 milestone or attaches
-the composite to a classification index.
+proved; no reverse containment is claimed, and nothing here identifies this carrier with a pinned
+simply connected Chevalley--Demazure group of type `E₆`, nor asserts that either fixed group is
+finite, is perfect, or is simple.
 
 ## Main definitions
 
@@ -59,9 +62,6 @@ the composite to a classification index.
 
 ## Main results
 
-* `TauCeti.E6DoubledMinuscule.graphAutomorphismPoints_frobenius` and
-  `TauCeti.E6DoubledMinuscule.graphAutomorphismPoints_comp_frobenius`: the graph automorphism
-  commutes with Frobenius.
 * `TauCeti.E6DoubledMinuscule.twistedFrobenius_rootSubgroupPoints` and
   `TauCeti.E6DoubledMinuscule.twistedFrobenius_weightTorusPoints`: the equations on the pinned
   numbered root subgroups and split torus, which relabel by the `E₆` diagram involution and raise
@@ -69,8 +69,10 @@ the composite to a classification index.
 * `TauCeti.E6DoubledMinuscule.twistedFrobenius_twistedFrobenius` and
   `TauCeti.E6DoubledMinuscule.twistedFrobenius_comp_self`: the square of the twisted map is the
   `p ^ (2 * k)`-power Frobenius, pointwise and as an identity of endomorphisms.
-* `TauCeti.E6DoubledMinuscule.mem_frobeniusFixedSubring_of_twistedFrobenius_eq_self`: the matrix
-  entries of a point it fixes lie in the `p ^ (2 * k)`-power Frobenius-fixed subring.
+* `TauCeti.E6DoubledMinuscule.mem_frobeniusFixedSubring_of_twistedFrobenius_eq_self` and
+  `TauCeti.E6DoubledMinuscule.map_subtype_fixedSubgroup_twistedFrobenius_le`: the points it fixes
+  lie among the points over the `p ^ (2 * k)`-power Frobenius-fixed subring, entrywise and as
+  subgroups.
 
 ## References
 
@@ -96,34 +98,14 @@ noncomputable section
 
 variable (p k : ℕ) (A : Type v) [CommRing A] [ExpChar A p]
 
-/-! ## The graph automorphism commutes with Frobenius -/
-
-/-- **The graph automorphism of the doubled type-`E₆` carrier commutes with the Frobenius
-endomorphism of its points.** Both act on matrices: the former by conjugation by the signed
-monomial matrix `TauCeti.E6DoubledMinuscule.graphAutomorphismMatrix`, whose entries are integers
-and so are carried along by any ring map, the latter entrywise through a ring endomorphism of the
-coefficients. -/
-theorem graphAutomorphismPoints_frobenius (g : points A) :
-    graphAutomorphismPoints A (frobenius p k A g) =
-      frobenius p k A (graphAutomorphismPoints A g) := by
-  apply Subtype.ext
-  simp only [coe_graphAutomorphismPoints, coe_frobenius, map_mul, map_inv,
-    map_graphAutomorphismMatrix]
-
-/-- The graph automorphism commutes with Frobenius, as an identity of endomorphisms. -/
-theorem graphAutomorphismPoints_comp_frobenius :
-    (graphAutomorphismPoints A).toMonoidHom.comp (frobenius p k A) =
-      (frobenius p k A).comp (graphAutomorphismPoints A).toMonoidHom :=
-  MonoidHom.ext (graphAutomorphismPoints_frobenius p k A)
-
 /-! ## The twisted Frobenius -/
 
 /-- **The graph-twisted `p ^ k`-power Frobenius of the doubled type-`E₆` minuscule carrier**, the
 composite `γ₂ ∘ Frob_q` of the carrier's graph automorphism with its Frobenius endomorphism.
 
-For `p` prime, `0 < k`, and `A` an algebraic closure of `ZMod p`, this has the formula required of
-the Steinberg map of the graph-twisted family `²E₆(p ^ k)`. Identifying its carrier with the pinned
-group required by the CFSG roadmap is separate work and is not asserted here. -/
+For `p` prime, `0 < k`, and `A` an algebraic closure of `ZMod p`, this has the formula asked of the
+Steinberg map of the graph-twisted family `²E₆(p ^ k)`. No identification of this carrier with a
+pinned simply connected Chevalley--Demazure group of type `E₆` is asserted here. -/
 def twistedFrobenius : points A →* points A :=
   (graphAutomorphismPoints A).toMonoidHom.comp (frobenius p k A)
 
@@ -162,17 +144,22 @@ theorem twistedFrobenius_weightTorusPoints (s : Fin 6 → Aˣ) :
       weightTorusPoints A (fun i => s (graphPermE6 i) ^ p ^ k) := by
   rw [twistedFrobenius_apply, frobenius_weightTorusPoints,
     graphAutomorphismPoints_weightTorusPoints]
-  rfl
+  simp only [Pi.pow_apply]
 
 /-! ## The square relation -/
 
 /-- **Applying the twisted Frobenius twice raises every matrix entry to its `p ^ (2 * k)`-th
-power.** The graph factor is an involution and commutes with the Frobenius factor, so the two
-copies of it cancel and the two Frobenius exponents add. -/
+power.** The graph factor is an involution and commutes with the Frobenius factor, the latter
+because the graph automorphism is natural in the value ring, so the two copies of it cancel and the
+two Frobenius exponents add. -/
 @[simp]
 theorem twistedFrobenius_twistedFrobenius (g : points A) :
     twistedFrobenius p k A (twistedFrobenius p k A g) = frobenius p (2 * k) A g := by
-  rw [twistedFrobenius_apply, twistedFrobenius_apply, ← graphAutomorphismPoints_frobenius,
+  have hcomm : frobenius p k A (graphAutomorphismPoints A (frobenius p k A g)) =
+      graphAutomorphismPoints A (frobenius p k A (frobenius p k A g)) := by
+    rw [frobenius_eq_pointsMap]
+    exact DFunLike.congr_fun (pointsMap_comp_graphAutomorphismPoints (iterateFrobenius A p k)) _
+  rw [twistedFrobenius_apply, twistedFrobenius_apply, hcomm,
     graphAutomorphismPoints_graphAutomorphismPoints, two_mul, frobenius_add, MonoidHom.comp_apply]
 
 /-- The square of the twisted Frobenius is the `p ^ (2 * k)`-power Frobenius, as an identity of
@@ -186,18 +173,19 @@ reverse containment is claimed: the twisted fixed group is in general a proper s
 untwisted one over the quadratic extension. -/
 theorem fixedSubgroup_twistedFrobenius_le_fixedSubgroup_frobenius :
     fixedSubgroup (twistedFrobenius p k A) ≤ fixedSubgroup (frobenius p (2 * k) A) := by
-  have hsq : (show Monoid.End _ from twistedFrobenius p k A) ^ 2 = frobenius p (2 * k) A :=
-    (pow_two (show Monoid.End _ from twistedFrobenius p k A)).trans
-      (twistedFrobenius_comp_self p k A)
+  -- `Monoid.End` is definitionally a bundled `MonoidHom`; naming the twisted map at that type
+  -- picks the composition monoid structure, in which its square is its composite with itself.
+  let τ : Monoid.End (points A) := twistedFrobenius p k A
+  have hsq : τ ^ 2 = frobenius p (2 * k) A :=
+    (pow_two τ).trans (twistedFrobenius_comp_self p k A)
   rw [← hsq]
-  exact TauCeti.fixedSubgroup_le_fixedSubgroup_pow _ 2
+  exact TauCeti.fixedSubgroup_le_fixedSubgroup_pow τ 2
 
 /-- **Every matrix entry of a point fixed by the twisted Frobenius lies in the subring fixed by the
 `p ^ (2 * k)`-power Frobenius.** For `p` prime, `0 < k`, and `A` an algebraic closure of `ZMod p`
 that subring is the field of `p ^ (2 * k)` elements, so this is the statement that the graph-twisted
 type-`E₆` formula at Frobenius parameter `q = p ^ k` has entries in `𝔽_{q ^ 2}`. Without those
-hypotheses the subring need not be a finite field; at `k = 0` it is all of `A`. This statement does
-not identify the carrier or its fixed group with the corresponding classification objects. -/
+hypotheses the subring need not be a finite field; at `k = 0` it is all of `A`. -/
 theorem mem_frobeniusFixedSubring_of_twistedFrobenius_eq_self {g : points A}
     (hg : twistedFrobenius p k A g = g) (i j : Fin 54) :
     ((g : _root_.Matrix.GeneralLinearGroup (Fin 54) A) :
@@ -205,6 +193,17 @@ theorem mem_frobeniusFixedSubring_of_twistedFrobenius_eq_self {g : points A}
   refine (frobenius_eq_self_iff p (2 * k) A g).mp ?_ i j
   exact fixedSubgroup_twistedFrobenius_le_fixedSubgroup_frobenius p k A
     (mem_fixedSubgroup.mpr hg)
+
+/-- **The points fixed by the twisted Frobenius lie among the points of the same carrier over the
+`p ^ (2 * k)`-power Frobenius-fixed subring.** The corresponding statement for the Frobenius itself,
+`TauCeti.E6DoubledMinuscule.map_subtype_fixedSubgroup_frobenius_eq`, is an equality; here only the
+containment holds. -/
+theorem map_subtype_fixedSubgroup_twistedFrobenius_le :
+    (fixedSubgroup (twistedFrobenius p k A)).map (points A).subtype ≤
+      (points ↥(frobeniusFixedSubring A p (2 * k))).map
+        (_root_.Matrix.GeneralLinearGroup.map (frobeniusFixedSubring A p (2 * k)).subtype) := by
+  rw [← map_subtype_fixedSubgroup_frobenius_eq p (2 * k) A]
+  exact Subgroup.map_mono (fixedSubgroup_twistedFrobenius_le_fixedSubgroup_frobenius p k A)
 
 end
 

@@ -51,6 +51,8 @@ carrier's root datum, or any finiteness or simplicity statement.
 * `TauCeti.E6DoubledMinuscule.frobenius`: the `p ^ k`-power Frobenius on the carrier's points.
 * `TauCeti.E6DoubledMinuscule.coe_frobenius` and `coe_frobenius_apply`: its matrix and entrywise
   actions.
+* `TauCeti.E6DoubledMinuscule.frobenius_eq_pointsMap`: it is the functorial point map induced by
+  the iterated Frobenius endomorphism of the value ring.
 * `TauCeti.E6DoubledMinuscule.frobenius_rootSubgroupPoints`: its action on every numbered
   simple-root subgroup.
 * `TauCeti.E6DoubledMinuscule.frobenius_weightTorusPoints`: its action on the split weight torus.
@@ -119,6 +121,13 @@ theorem coe_frobenius (g : points A) :
     (frobenius p k A g : _root_.Matrix.GeneralLinearGroup (Fin 54) A) =
       _root_.Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) g := by
   rw [frobenius, coe_pointsMap]
+
+/-- **The carrier Frobenius is the functorial map on points** induced by the iterated Frobenius
+endomorphism of the value ring, so it is an instance of
+`TauCeti.E6DoubledMinuscule.pointsMap` rather than a separate endomorphism. -/
+theorem frobenius_eq_pointsMap :
+    frobenius p k A = pointsMap (iterateFrobenius A p k) :=
+  MonoidHom.ext fun g => Subtype.ext (by rw [coe_frobenius, coe_pointsMap])
 
 /-- Entrywise, the Frobenius endomorphism raises each matrix coefficient to its `p ^ k`-th
 power. -/
