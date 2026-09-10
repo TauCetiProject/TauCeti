@@ -148,18 +148,6 @@ private theorem coe_negativeRootLift
   rw [map_add, map_smul, mul_add, mul_smul_comm, ι_sq_scalar, hz,
     map_one, bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_line_W' z (P.dualVector b 0))]
 
-private theorem spinAction_positiveRoot_empty
-    [Invertible (2 : K)]
-    (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
-    (z : P.line) (hz : Q (z : V) = 1) (hcoord : P.lineCoordinate z = 1) :
-    spinAction Q P (bivector Q (b 0 : V) (z : V)) (b.ExteriorAlgebra ∅) =
-      b.ExteriorAlgebra {0} := by
-  have h := P.typeBSpinRep_simpleRootGenerator_last_exteriorBasis_empty b z hz hcoord
-  simp only [typeBSimpleRootGeneratorFamily_inl, typeBSimpleRootGenerator_last,
-    _root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι] at h
-  rw [P.typeBQuadraticEquiv_typeBShortRootGenerator b z hz (Fin.last 0)] at h
-  simpa only [Fin.last_zero] using h
-
 private theorem spinAction_positiveRoot_singleton
     [Invertible (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
@@ -179,19 +167,6 @@ private theorem spinAction_negativeRoot_empty
   rw [bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_line_W' z (P.dualVector b 0)), map_mul,
     Module.End.mul_apply, spinAction_ι_contract]
   simp [ExteriorAlgebra.basis_apply]
-
-private theorem spinAction_negativeRoot_singleton
-    [Invertible (2 : K)]
-    (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
-    (z : P.line) (hz : Q (z : V) = 1) (hcoord : P.lineCoordinate z = 1) :
-    spinAction Q P (bivector Q (z : V) (P.dualVector b 0 : V))
-        (b.ExteriorAlgebra {0}) = b.ExteriorAlgebra ∅ := by
-  have h := P.typeBSpinRep_simpleNegativeRootGenerator_last_exteriorBasis_singleton
-    b z hz hcoord
-  simp only [typeBSimpleRootGeneratorFamily_inr, typeBSimpleNegativeRootGenerator_last,
-    _root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι] at h
-  rw [P.typeBQuadraticEquiv_typeBShortNegativeRootGenerator b z hz (Fin.last 0)] at h
-  simpa only [Fin.last_zero] using h
 
 private noncomputable def vacuumIndex : Fin 2 := spinThreeIndexEquiv ∅
 
@@ -236,8 +211,12 @@ private theorem spinThreeEquivMatrix_positiveRoot
   rcases finTwo_eq_vacuum_or_occupied i with rfl | rfl
   · rw [TauCeti.toLinAlgEquiv_single_apply_basis]
     simp only [ite_eq_left, one_smul]
-    simpa [bas, spinThreeExteriorBasis, vacuumIndex, occupiedIndex, evenBivector] using
-      spinAction_positiveRoot_empty P b z hz hcoord
+    have h := P.typeBSpinRep_simpleRootGenerator_last_exteriorBasis_empty b z hz hcoord
+    simp only [typeBSimpleRootGeneratorFamily_inl, typeBSimpleRootGenerator_last,
+      _root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι] at h
+    rw [P.typeBQuadraticEquiv_typeBShortRootGenerator b z hz (Fin.last 0)] at h
+    simpa [bas, spinThreeExteriorBasis, vacuumIndex, occupiedIndex, evenBivector,
+      Fin.last_zero] using h
   · rw [TauCeti.toLinAlgEquiv_single_apply_basis]
     simp only [ite_eq_right vacuumIndex_ne_occupiedIndex, zero_smul]
     simpa [bas, spinThreeExteriorBasis, occupiedIndex, evenBivector] using
@@ -262,8 +241,13 @@ private theorem spinThreeEquivMatrix_negativeRoot
       spinAction_negativeRoot_empty P b z
   · rw [TauCeti.toLinAlgEquiv_single_apply_basis]
     simp only [ite_eq_left, one_smul]
-    simpa [bas, spinThreeExteriorBasis, vacuumIndex, occupiedIndex, evenBivector] using
-      spinAction_negativeRoot_singleton P b z hz hcoord
+    have h := P.typeBSpinRep_simpleNegativeRootGenerator_last_exteriorBasis_singleton
+      b z hz hcoord
+    simp only [typeBSimpleRootGeneratorFamily_inr, typeBSimpleNegativeRootGenerator_last,
+      _root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι] at h
+    rw [P.typeBQuadraticEquiv_typeBShortNegativeRootGenerator b z hz (Fin.last 0)] at h
+    simpa [bas, spinThreeExteriorBasis, vacuumIndex, occupiedIndex, evenBivector,
+      Fin.last_zero] using h
 
 private theorem spinThreeHom_intertwines
     [NeZero (2 : K)] [FiniteDimensional K V]
