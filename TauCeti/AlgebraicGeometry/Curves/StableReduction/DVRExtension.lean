@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.Dvr
-public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Localization.LocalizationLocalization
@@ -47,8 +46,6 @@ that of `R`.
   discrete valuation ring.
 * `TauCeti.FiniteDVRExtension.isFractionRing_localRing`: its fraction field is the extension field.
 * `TauCeti.FiniteDVRExtension.under_prime`: the chosen place lies over the closed point of `R`.
-* `TauCeti.FiniteDVRExtension.primesOver_finite`: only finitely many places lie over it, so the
-  choice is a choice among finitely many.
 * `TauCeti.FiniteDVRExtension.isLocalHom_algebraMap` and
   `TauCeti.FiniteDVRExtension.under_maximalIdeal_localRing`: the chosen local ring dominates `R`.
 * `TauCeti.FiniteDVRExtension.exists_extensionField_eq`: every finite separable extension of `K`
@@ -152,11 +149,6 @@ instance faithfulSMul_integralClosure : FaithfulSMul R E.integralClosure :=
 theorem under_prime : E.prime.under R = maximalIdeal R :=
   (Ideal.over_def E.prime _).symm
 
-/-- The chosen place is one of finitely many: the places of `K'` above the closed point of `R` are
-the maximal ideals of the Dedekind domain `C` lying over it, and there are finitely many. -/
-theorem primesOver_finite : ((maximalIdeal R).primesOver E.integralClosure).Finite :=
-  IsDedekindDomain.primesOver_finite _ _
-
 /-- The chosen place is a nonzero prime: it lies over the maximal ideal of `R`, which is nonzero
 because a discrete valuation ring is not a field. -/
 theorem prime_ne_bot : E.prime ≠ ⊥ :=
@@ -165,6 +157,7 @@ theorem prime_ne_bot : E.prime ≠ ⊥ :=
 instance isDomain_localRing : IsDomain E.localRing :=
   IsLocalization.isDomain_of_le_nonZeroDivisors _ E.prime.primeCompl_le_nonZeroDivisors
 
+/-- The extension field is the fraction field of the chosen localized ring. -/
 instance isFractionRing_localRing : IsFractionRing E.localRing E.extensionField :=
   IsFractionRing.isFractionRing_of_isDomain_of_isLocalization E.prime.primeCompl _ _
 
@@ -211,6 +204,16 @@ variable (R K)
 variable (L : Type u) [Field L] [Algebra K L] [FiniteDimensional K L] [Algebra.IsSeparable K L]
   [Algebra R L] [IsScalarTower R K L]
 
+/-- The canonical algebra structure from the localization at `P` to `L`, obtained by viewing both
+as localizations of the integral closure and using `P.primeCompl ≤ nonZeroDivisors`. -/
+noncomputable abbrev ofFractionAlgebra
+    (P : Ideal (_root_.integralClosure R L)) [P.IsPrime] :
+    Algebra (Localization.AtPrime P) L :=
+  letI : IsFractionRing (_root_.integralClosure R L) L :=
+    IsIntegralClosure.isFractionRing_of_finite_extension R K L _
+  IsLocalization.localizationAlgebraOfSubmonoidLe _ _ P.primeCompl
+    (nonZeroDivisors _) P.primeCompl_le_nonZeroDivisors
+
 /-- The finite extension of the discrete valuation ring `R` cut out by a maximal ideal `P` of the
 integral closure `C` of `R` in a finite separable extension `L` of `K`, provided `P` lies above the
 maximal ideal of `R`. Its local ring is `Localization.AtPrime P`.
@@ -219,29 +222,62 @@ The map from that local ring to `L` is Mathlib's canonical comparison
 `IsLocalization.localizationAlgebraOfSubmonoidLe` between the localizations of `C` at the two
 submonoids `P.primeCompl ≤ nonZeroDivisors C`, the second localization being `L` itself because
 `L` is the fraction field of `C`. -/
-@[expose]
-noncomputable def of (P : Ideal (_root_.integralClosure R L)) [P.IsMaximal]
+noncomputable def of (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] : FiniteDVRExtension R K :=
   haveI : IsFractionRing (_root_.integralClosure R L) L :=
     IsIntegralClosure.isFractionRing_of_finite_extension R K L _
+  letI : P.IsMaximal := .of_liesOver_isMaximal P (maximalIdeal R)
   { extensionField := L
     prime := P
     localRing := Localization.AtPrime P
-    fractionAlgebra := IsLocalization.localizationAlgebraOfSubmonoidLe _ _ P.primeCompl
-      (nonZeroDivisors _) P.primeCompl_le_nonZeroDivisors
+    fractionAlgebra := ofFractionAlgebra R K L P
     fractionTower := IsLocalization.localization_isScalarTower_of_submonoid_le _ _ _ _ _ }
 
 @[simp]
-theorem of_extensionField (P : Ideal (_root_.integralClosure R L)) [P.IsMaximal]
-    [P.LiesOver (maximalIdeal R)] : (of R K L P).extensionField = L := rfl
+theorem of_extensionField (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+    [P.LiesOver (maximalIdeal R)] : (of R K L P).extensionField = L := by
+  rw [of.eq_1]
 
 @[simp]
-theorem of_prime (P : Ideal (_root_.integralClosure R L)) [P.IsMaximal]
-    [P.LiesOver (maximalIdeal R)] : (of R K L P).prime = P := rfl
+theorem of_prime (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+    [P.LiesOver (maximalIdeal R)] : HEq (of R K L P).prime P := by
+  rw [of.eq_1]
 
 @[simp]
-theorem of_localRing (P : Ideal (_root_.integralClosure R L)) [P.IsMaximal]
-    [P.LiesOver (maximalIdeal R)] : (of R K L P).localRing = Localization.AtPrime P := rfl
+theorem of_localRing (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+    [P.LiesOver (maximalIdeal R)] : (of R K L P).localRing = Localization.AtPrime P := by
+  rw [of.eq_1]
+
+@[simp]
+theorem of_extensionAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+    [P.LiesOver (maximalIdeal R)] :
+    HEq (of R K L P).extensionAlgebra (inferInstance : Algebra K L) := by
+  rw [of.eq_1]
+
+@[simp]
+theorem of_extensionBaseAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+    [P.LiesOver (maximalIdeal R)] :
+    HEq (of R K L P).extensionBaseAlgebra (inferInstance : Algebra R L) := by
+  rw [of.eq_1]
+
+@[simp]
+theorem of_localRingClosureAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+    [P.LiesOver (maximalIdeal R)] :
+    HEq (of R K L P).localRingClosureAlgebra
+      (inferInstance : Algebra (_root_.integralClosure R L) (Localization.AtPrime P)) := by
+  rw [of.eq_1]
+
+@[simp]
+theorem of_localRingAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+    [P.LiesOver (maximalIdeal R)] :
+    HEq (of R K L P).localRingAlgebra (inferInstance : Algebra R (Localization.AtPrime P)) := by
+  rw [of.eq_1]
+
+@[simp]
+theorem of_fractionAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+    [P.LiesOver (maximalIdeal R)] :
+    HEq (of R K L P).fractionAlgebra (ofFractionAlgebra R K L P) := by
+  rw [of.eq_1]
 
 /-- Every finite separable extension `L` of `K` underlies a `FiniteDVRExtension R K`: the integral
 closure of `R` in `L` is integral over `R`, so going up produces a maximal ideal above the maximal
