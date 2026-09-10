@@ -7,11 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness
-public import TauCeti.RingTheory.Huber.Pair
 public import TauCeti.RingTheory.Huber.UnitGroup
 
 /-!
-# Proper ideals of a complete Huber pair are supports
+# Proper ideals of a complete Huber pair are contained in supports
 
 Over a complete Hausdorff Huber pair `(A, A⁺)` every proper ideal `J` of `A` is contained in the
 support of some point of `Spa (A, A⁺)`:
@@ -20,9 +19,11 @@ support of some point of `Spa (A, A⁺)`:
 J ≠ ⊤  ↔  ∃ v ∈ Spa (A, A⁺), J ⊆ supp v.
 ```
 
-This is Wedhorn's Proposition 7.51 in the form his §8 uses. Its two standard consequences are the
-unit criterion of Proposition 7.52(2) and Corollary 7.53, which characterizes when a finite set's
-standard rational family covers the spectrum.
+This is Wedhorn's Proposition 7.51 in the form his §8 uses; for a maximal ideal the containment is
+an equality. Its standard consequence proved here is the unit criterion of Proposition 7.52(2).
+Corollary 7.53, which characterizes when a finite set's standard rational family covers the
+spectrum, is read off from it in
+`TauCeti/AlgebraicGeometry/AdicSpace/Spa/RationalSubset/Cover.lean`.
 
 ## Comparison with the open-prime approach
 
@@ -56,14 +57,11 @@ Completeness replaces openness of the maximal ideals, and is exactly the hypothe
   the unit ideal exactly when no point of the spectrum kills all of it.
 * `TauCeti.ValuationSpectrum.isUnit_iff_forall_mem_spa_notMem_supp` : **Wedhorn Proposition
   7.52(2)**, as a criterion.
-* `TauCeti.ValuationSpectrum.span_eq_top_iff_spa_eq_biUnion_rationalSubset` : **Wedhorn Corollary
-  7.53** — the standard family `(R(T/t))_{t ∈ T}` covers the spectrum exactly when `T` generates
-  the unit ideal.
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Propositions 7.49, 7.51, 7.52
-  and Corollary 7.53.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Propositions 7.49, 7.51
+  and 7.52.
 
 ## Provenance
 
@@ -149,26 +147,6 @@ theorem isUnit_iff_forall_mem_spa_notMem_supp (Aplus : Subring A)
   rw [← Ideal.span_singleton_eq_top,
     span_eq_top_iff_forall_mem_spa_exists_notMem_supp Aplus hplus]
   simp
-
-/-- **The converse half of Wedhorn Corollary 7.53.** If the standard rational family
-`(R(T/t))_{t ∈ T}` covers `Spa (A, A⁺)` for a complete Hausdorff Huber pair, then `T` generates
-the unit ideal. -/
-theorem span_eq_top_of_spa_eq_biUnion_rationalSubset (Aplus : Subring A)
-    (hplus : IsRingOfIntegralElements Aplus) {T : Finset A}
-    (hcov : spa Aplus = ⋃ t ∈ T, rationalSubset Aplus T t) :
-    Ideal.span (T : Set A) = ⊤ := by
-  refine (span_eq_top_iff_forall_mem_spa_exists_notMem_supp Aplus hplus).mpr fun v hv ↦ ?_
-  obtain ⟨t, ht, hmem⟩ := Set.mem_iUnion₂.mp (hcov ▸ hv)
-  exact ⟨t, ht, fun hsupp ↦
-    ((mem_rationalSubset_iff Aplus T t v).mp hmem).2.2 ((mem_supp_iff v t).mp hsupp)⟩
-
-/-- **Wedhorn Corollary 7.53.** A finite set `T` in a complete Hausdorff Huber pair generates the
-unit ideal exactly when the standard family `(R(T/t))_{t ∈ T}` covers `Spa (A, A⁺)`. -/
-theorem span_eq_top_iff_spa_eq_biUnion_rationalSubset (Aplus : Subring A)
-    (hplus : IsRingOfIntegralElements Aplus) {T : Finset A} :
-    Ideal.span (T : Set A) = ⊤ ↔ spa Aplus = ⋃ t ∈ T, rationalSubset Aplus T t :=
-  ⟨spa_eq_biUnion_rationalSubset_of_span_eq_top Aplus,
-    span_eq_top_of_spa_eq_biUnion_rationalSubset Aplus hplus⟩
 
 end TauCeti.ValuationSpectrum
 
