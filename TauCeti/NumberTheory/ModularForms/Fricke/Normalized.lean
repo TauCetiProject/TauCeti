@@ -323,8 +323,7 @@ public theorem normalizedFrickeOperatorCusp_mem_cuspFormCharSpace (k : ℤ) (χ 
 `M_k(Γ₁(N), χ)` to `M_k(Γ₁(N), χ⁻¹)`. -/
 public noncomputable def normalizedFrickeCharRestrict (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) :
     modFormCharSpace k χ →ₗ[ℂ] modFormCharSpace k χ⁻¹ :=
-  (normalizedFrickeOperator k).restrict fun _ hf ↦
-    normalizedFrickeOperator_mem_modFormCharSpace k χ hf
+  frickeNormalizer N k • frickeCharRestrict k χ
 
 /-- On underlying modular forms, `normalizedFrickeCharRestrict` is
 `normalizedFrickeOperator`. -/
@@ -333,15 +332,14 @@ public theorem coe_normalizedFrickeCharRestrict_apply (k : ℤ) (χ : (ZMod N)ˣ
     (f : modFormCharSpace k χ) :
     ((normalizedFrickeCharRestrict k χ f : modFormCharSpace k χ⁻¹) :
         ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
-      normalizedFrickeOperator k (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :=
-  LinearMap.coe_restrict_apply _ _
+      normalizedFrickeOperator k (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
+  simp [normalizedFrickeCharRestrict, normalizedFrickeOperator_def]
 
 /-- **The normalized Fricke operator restricted to a cusp-form nebentypus space**, as a linear
 map from `S_k(Γ₁(N), χ)` to `S_k(Γ₁(N), χ⁻¹)`. -/
 public noncomputable def normalizedFrickeCharCuspRestrict (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) :
     cuspFormCharSpace k χ →ₗ[ℂ] cuspFormCharSpace k χ⁻¹ :=
-  (normalizedFrickeOperatorCusp k).restrict fun _ hf ↦
-    normalizedFrickeOperatorCusp_mem_cuspFormCharSpace k χ hf
+  frickeNormalizer N k • frickeCharCuspRestrict k χ
 
 /-- On underlying cusp forms, `normalizedFrickeCharCuspRestrict` is
 `normalizedFrickeOperatorCusp`. -/
@@ -350,8 +348,8 @@ public theorem coe_normalizedFrickeCharCuspRestrict_apply (k : ℤ) (χ : (ZMod 
     (f : cuspFormCharSpace k χ) :
     ((normalizedFrickeCharCuspRestrict k χ f : cuspFormCharSpace k χ⁻¹) :
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
-      normalizedFrickeOperatorCusp k (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
-  LinearMap.coe_restrict_apply _ _
+      normalizedFrickeOperatorCusp k (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
+  simp [normalizedFrickeCharCuspRestrict, normalizedFrickeOperatorCusp_def]
 
 /-- **The normalized Fricke automorphism carries the `χ`-space onto the `χ⁻¹`-space.** -/
 @[simp]
@@ -359,25 +357,19 @@ public theorem map_normalizedFrickeOperatorEquiv_modFormCharSpace (k : ℤ)
     (χ : (ZMod N)ˣ →* ℂˣ) :
     (modFormCharSpace k χ).map (normalizedFrickeOperatorEquiv (N := N) k : _ →ₗ[ℂ] _) =
       modFormCharSpace k χ⁻¹ := by
-  refine le_antisymm ?_ fun g hg ↦ ?_
-  · rintro _ ⟨f, hf, rfl⟩
-    simpa using normalizedFrickeOperator_mem_modFormCharSpace k χ hf
-  · refine ⟨(normalizedFrickeOperatorEquiv (N := N) k).symm g, ?_,
-      (normalizedFrickeOperatorEquiv (N := N) k).apply_symm_apply g⟩
-    rw [normalizedFrickeOperatorEquiv_symm_apply]
-    have h := normalizedFrickeOperator_mem_modFormCharSpace k χ⁻¹ hg
-    have hχ : χ⁻¹⁻¹ = χ := by
-      ext d
-      simp
-    rw [hχ] at h
-    exact Submodule.smul_mem _ _ h
+  have heq : (normalizedFrickeOperatorEquiv (N := N) k).toLinearMap =
+      frickeNormalizer N k • (frickeOperatorEquiv (N := N) k).toLinearMap := by
+    ext f
+    simp [normalizedFrickeOperatorEquiv_apply, normalizedFrickeOperator_def]
+  rw [heq, Submodule.map_smul _ _ _ (frickeNormalizer_ne_zero k),
+    map_frickeOperatorEquiv_modFormCharSpace]
 
 /-- **The normalized Fricke isomorphism between nebentypus spaces**
 `M_k(Γ₁(N), χ) ≃ₗ[ℂ] M_k(Γ₁(N), χ⁻¹)`. -/
 public noncomputable def normalizedFrickeCharEquiv (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) :
     modFormCharSpace k χ ≃ₗ[ℂ] modFormCharSpace k χ⁻¹ :=
-  (normalizedFrickeOperatorEquiv (N := N) k).ofSubmodules _ _
-    (map_normalizedFrickeOperatorEquiv_modFormCharSpace k χ)
+  (frickeCharEquiv k χ).trans <|
+    LinearEquiv.smulOfUnit (Units.mk0 (frickeNormalizer N k) (frickeNormalizer_ne_zero k))
 
 /-- On underlying modular forms, `normalizedFrickeCharEquiv` is
 `normalizedFrickeOperator`. -/
@@ -387,7 +379,8 @@ public theorem coe_normalizedFrickeCharEquiv_apply (k : ℤ) (χ : (ZMod N)ˣ �
     ((normalizedFrickeCharEquiv k χ f : modFormCharSpace k χ⁻¹) :
         ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
       normalizedFrickeOperator k (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
-  simp [normalizedFrickeCharEquiv]
+  simp [normalizedFrickeCharEquiv, normalizedFrickeOperator_def,
+    LinearEquiv.smulOfUnit, DistribMulAction.toLinearEquiv, Units.smul_def]
 
 /-- On underlying modular forms, the inverse of `normalizedFrickeCharEquiv` is
 `(-1) ^ k • normalizedFrickeOperator`. -/
@@ -398,7 +391,22 @@ public theorem coe_normalizedFrickeCharEquiv_symm_apply (k : ℤ) (χ : (ZMod N)
         ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
       ((-1 : ℂ) ^ k) •
         normalizedFrickeOperator k (g : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
-  simp [normalizedFrickeCharEquiv]
+  simp only [normalizedFrickeCharEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
+    coe_frickeCharEquiv_symm_apply, normalizedFrickeOperator_def, LinearMap.smul_apply]
+  rw [show
+    ↑((LinearEquiv.smulOfUnit
+      (Units.mk0 (frickeNormalizer N k) (frickeNormalizer_ne_zero k))).symm g) =
+        (frickeNormalizer N k)⁻¹ • (g : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) by rfl,
+    map_smul, ← mul_smul, ← mul_smul]
+  have hscalar : (frickeNormalizer N k)⁻¹ * (frickeScalar N k)⁻¹ =
+      (-1 : ℂ) ^ k * frickeNormalizer N k := by
+    have hn := frickeNormalizer_ne_zero (N := N) k
+    have hs := frickeScalar_ne_zero (N := N) k
+    field_simp
+    rw [frickeNormalizer_sq_mul_frickeScalar]
+    rw [← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, zpow_mul]
+    norm_num
+  rw [mul_comm (frickeScalar N k)⁻¹ (frickeNormalizer N k)⁻¹, hscalar]
 
 /-- **The normalized Fricke automorphism carries the `χ`-space of cusp forms onto the
 `χ⁻¹`-space.** -/
@@ -407,25 +415,19 @@ public theorem map_normalizedFrickeOperatorCuspEquiv_cuspFormCharSpace (k : ℤ)
     (χ : (ZMod N)ˣ →* ℂˣ) :
     (cuspFormCharSpace k χ).map (normalizedFrickeOperatorCuspEquiv (N := N) k : _ →ₗ[ℂ] _) =
       cuspFormCharSpace k χ⁻¹ := by
-  refine le_antisymm ?_ fun g hg ↦ ?_
-  · rintro _ ⟨f, hf, rfl⟩
-    simpa using normalizedFrickeOperatorCusp_mem_cuspFormCharSpace k χ hf
-  · refine ⟨(normalizedFrickeOperatorCuspEquiv (N := N) k).symm g, ?_,
-      (normalizedFrickeOperatorCuspEquiv (N := N) k).apply_symm_apply g⟩
-    rw [normalizedFrickeOperatorCuspEquiv_symm_apply]
-    have h := normalizedFrickeOperatorCusp_mem_cuspFormCharSpace k χ⁻¹ hg
-    have hχ : χ⁻¹⁻¹ = χ := by
-      ext d
-      simp
-    rw [hχ] at h
-    exact Submodule.smul_mem _ _ h
+  have heq : (normalizedFrickeOperatorCuspEquiv (N := N) k).toLinearMap =
+      frickeNormalizer N k • (frickeOperatorCuspEquiv (N := N) k).toLinearMap := by
+    ext f
+    simp [normalizedFrickeOperatorCuspEquiv_apply, normalizedFrickeOperatorCusp_def]
+  rw [heq, Submodule.map_smul _ _ _ (frickeNormalizer_ne_zero k),
+    map_frickeOperatorCuspEquiv_cuspFormCharSpace]
 
 /-- **The normalized Fricke isomorphism between cusp-form nebentypus spaces**
 `S_k(Γ₁(N), χ) ≃ₗ[ℂ] S_k(Γ₁(N), χ⁻¹)`. -/
 public noncomputable def normalizedFrickeCharCuspEquiv (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) :
     cuspFormCharSpace k χ ≃ₗ[ℂ] cuspFormCharSpace k χ⁻¹ :=
-  (normalizedFrickeOperatorCuspEquiv (N := N) k).ofSubmodules _ _
-    (map_normalizedFrickeOperatorCuspEquiv_cuspFormCharSpace k χ)
+  (frickeCharCuspEquiv k χ).trans <|
+    LinearEquiv.smulOfUnit (Units.mk0 (frickeNormalizer N k) (frickeNormalizer_ne_zero k))
 
 /-- On underlying cusp forms, `normalizedFrickeCharCuspEquiv` is
 `normalizedFrickeOperatorCusp`. -/
@@ -435,7 +437,8 @@ public theorem coe_normalizedFrickeCharCuspEquiv_apply (k : ℤ) (χ : (ZMod N)�
     ((normalizedFrickeCharCuspEquiv k χ f : cuspFormCharSpace k χ⁻¹) :
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
       normalizedFrickeOperatorCusp k (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
-  simp [normalizedFrickeCharCuspEquiv]
+  simp [normalizedFrickeCharCuspEquiv, normalizedFrickeOperatorCusp_def,
+    LinearEquiv.smulOfUnit, DistribMulAction.toLinearEquiv, Units.smul_def]
 
 /-- On underlying cusp forms, the inverse of `normalizedFrickeCharCuspEquiv` is
 `(-1) ^ k • normalizedFrickeOperatorCusp`. -/
@@ -446,7 +449,22 @@ public theorem coe_normalizedFrickeCharCuspEquiv_symm_apply (k : ℤ) (χ : (ZMo
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
       ((-1 : ℂ) ^ k) •
         normalizedFrickeOperatorCusp k (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
-  simp [normalizedFrickeCharCuspEquiv]
+  simp only [normalizedFrickeCharCuspEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
+    coe_frickeCharCuspEquiv_symm_apply, normalizedFrickeOperatorCusp_def, LinearMap.smul_apply]
+  rw [show
+    ↑((LinearEquiv.smulOfUnit
+      (Units.mk0 (frickeNormalizer N k) (frickeNormalizer_ne_zero k))).symm g) =
+        (frickeNormalizer N k)⁻¹ • (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) by rfl,
+    map_smul, ← mul_smul, ← mul_smul]
+  have hscalar : (frickeNormalizer N k)⁻¹ * (frickeScalar N k)⁻¹ =
+      (-1 : ℂ) ^ k * frickeNormalizer N k := by
+    have hn := frickeNormalizer_ne_zero (N := N) k
+    have hs := frickeScalar_ne_zero (N := N) k
+    field_simp
+    rw [frickeNormalizer_sq_mul_frickeScalar]
+    rw [← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, zpow_mul]
+    norm_num
+  rw [mul_comm (frickeScalar N k)⁻¹ (frickeNormalizer N k)⁻¹, hscalar]
 
 /-! ### The eigenspace splitting in even weight -/
 
@@ -458,12 +476,14 @@ is uniquely a sum of one of each. -/
 public theorem isCompl_eigenspace_normalizedFrickeOperator {k : ℤ} (hk : Even k) :
     IsCompl (Module.End.eigenspace (normalizedFrickeOperator (N := N) k) 1)
       (Module.End.eigenspace (normalizedFrickeOperator (N := N) k) (-1)) :=
-  isCompl_eigenspace_one_neg_one two_ne_zero (normalizedFrickeOperator_involutive hk)
+  isCompl_eigenspace_one_neg_one (isUnit_iff_ne_zero.mpr two_ne_zero)
+    (normalizedFrickeOperator_involutive hk)
 
 /-- **In even weight the `±1` eigenspaces of `𝒲_N` are complementary in `S_k(Γ₁(N))`.** -/
 public theorem isCompl_eigenspace_normalizedFrickeOperatorCusp {k : ℤ} (hk : Even k) :
     IsCompl (Module.End.eigenspace (normalizedFrickeOperatorCusp (N := N) k) 1)
       (Module.End.eigenspace (normalizedFrickeOperatorCusp (N := N) k) (-1)) :=
-  isCompl_eigenspace_one_neg_one two_ne_zero (normalizedFrickeOperatorCusp_involutive hk)
+  isCompl_eigenspace_one_neg_one (isUnit_iff_ne_zero.mpr two_ne_zero)
+    (normalizedFrickeOperatorCusp_involutive hk)
 
 end TauCeti
