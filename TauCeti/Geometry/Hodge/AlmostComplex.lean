@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Hodge.WeightOne
+public import TauCeti.Geometry.Hodge.WeilOperator
+public import TauCeti.Geometry.Symplectic.Complex.Complexification
 
 /-!
 # Weight-one Hodge structures from almost complex structures
@@ -21,8 +22,6 @@ linear-algebraic descriptions of weight-one Hodge structures.
 
 ## Main declarations
 
-* `TauCeti.Hodge.complexificationConjugation`: the canonical conjugation on the complexification
-  of a real vector space, bundled as a Hodge conjugation.
 * `TauCeti.AlmostComplexStructure.hodgeStructure`: the effective weight-one Hodge structure
   associated with an almost complex structure.
 * `TauCeti.AlmostComplexStructure.hodgeStructure_piece_one` and
@@ -43,88 +42,9 @@ open scoped TensorProduct
 
 universe u
 
-namespace Hodge
-
-variable (V : Type u) [AddCommGroup V] [Module ℝ V]
-
-/-- The canonical conjugation on the complexification of a real vector space, bundled as a
-conjugate-linear involution. -/
-noncomputable def complexificationConjugation : Conjugation (ℂ ⊗[ℝ] V) where
-  toEquiv := LinearEquiv.ofInvolutive (tmulConj V) (tmulConj_involutive V)
-  involutive := tmulConj_involutive V
-
-/-- Canonical conjugation on a complexification conjugates the complex coefficient of a pure
-tensor and fixes its real factor. -/
-@[simp]
-theorem complexificationConjugation_toEquiv_tmul (z : ℂ) (v : V) :
-    (complexificationConjugation V).toEquiv (z ⊗ₜ[ℝ] v) =
-      (starRingEnd ℂ) z ⊗ₜ[ℝ] v :=
-  tmulConj_tmul V z v
-
-end Hodge
-
 namespace AlmostComplexStructure
 
 variable {V : Type u} [AddCommGroup V] [Module ℝ V]
-
-/-- Applying the complexification of an almost complex structure twice gives the negative of the
-original vector. -/
-@[simp]
-theorem baseChange_apply_apply (J : AlmostComplexStructure V) (x : ℂ ⊗[ℝ] V) :
-    J.toLinearMap.baseChange ℂ (J.toLinearMap.baseChange ℂ x) = -x := by
-  have h := congrArg (LinearMap.baseChange ℂ) J.square_neg
-  rw [LinearMap.baseChange_comp, LinearMap.baseChange_neg, LinearMap.baseChange_id] at h
-  exact LinearMap.congr_fun h x
-
-/-- The `i`- and `-i`-eigenspaces of the complexification of an almost complex structure are
-complementary. -/
-theorem isCompl_eigenspace_baseChange_I_neg_I (J : AlmostComplexStructure V) :
-    IsCompl (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I)
-      (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I)) := by
-  constructor
-  · rw [disjoint_iff, Submodule.eq_bot_iff]
-    intro x hx
-    rw [Submodule.mem_inf, Module.End.mem_eigenspace_iff,
-      Module.End.mem_eigenspace_iff] at hx
-    have hscalar : Complex.I • x = -Complex.I • x := hx.1.symm.trans hx.2
-    have hzero : (2 * Complex.I) • x = 0 := by
-      calc
-        (2 * Complex.I) • x = Complex.I • x + Complex.I • x := by module
-        _ = Complex.I • x + (-Complex.I) • x := congrArg (Complex.I • x + ·) hscalar
-        _ = 0 := by rw [neg_smul, add_neg_cancel]
-    exact (smul_eq_zero.mp hzero).resolve_left (mul_ne_zero (by norm_num) Complex.I_ne_zero)
-  · rw [codisjoint_iff]
-    apply top_unique
-    intro x _
-    let xplus : ℂ ⊗[ℝ] V :=
-      (2 : ℂ)⁻¹ • (x - Complex.I • J.toLinearMap.baseChange ℂ x)
-    let xminus : ℂ ⊗[ℝ] V :=
-      (2 : ℂ)⁻¹ • (x + Complex.I • J.toLinearMap.baseChange ℂ x)
-    have hxplus : xplus ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I := by
-      rw [Module.End.mem_eigenspace_iff]
-      simp only [xplus, map_smul, map_sub, map_smul, baseChange_apply_apply, smul_neg,
-        smul_smul]
-      simp only [smul_sub, smul_neg, smul_smul]
-      have hscalar : Complex.I * (2 : ℂ)⁻¹ * Complex.I = -(2 : ℂ)⁻¹ := by
-        calc
-          Complex.I * (2 : ℂ)⁻¹ * Complex.I = (2 : ℂ)⁻¹ * (Complex.I * Complex.I) := by ring
-          _ = -(2 : ℂ)⁻¹ := by rw [Complex.I_mul_I]; ring
-      rw [hscalar]
-      module
-    have hxminus : xminus ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) := by
-      rw [Module.End.mem_eigenspace_iff]
-      simp only [xminus, map_smul, map_add, map_smul, baseChange_apply_apply, smul_neg,
-        smul_smul]
-      simp only [smul_add, smul_neg, smul_smul]
-      have hscalar : -Complex.I * (2 : ℂ)⁻¹ * Complex.I = (2 : ℂ)⁻¹ := by
-        calc
-          -Complex.I * (2 : ℂ)⁻¹ * Complex.I =
-              -(2 : ℂ)⁻¹ * (Complex.I * Complex.I) := by ring
-          _ = (2 : ℂ)⁻¹ := by rw [Complex.I_mul_I]; ring
-      rw [hscalar]
-      module
-    rw [show x = xplus + xminus by simp [xplus, xminus]; module]
-    exact Submodule.add_mem_sup hxplus hxminus
 
 /-- Canonical conjugation exchanges the two eigenspaces of a complexified almost complex
 structure. -/
@@ -137,8 +57,7 @@ theorem map_eigenspace_baseChange_I (J : AlmostComplexStructure V) :
   · rintro _ ⟨x, hx, rfl⟩
     apply Module.End.mem_eigenspace_iff.mpr
     have hx' := Module.End.mem_eigenspace_iff.mp hx
-    -- Unfold the Hodge bundle to use the characteristic theorem for tensor conjugation.
-    change J.toLinearMap.baseChange ℂ (tmulConj V x) = _
+    rw [LinearEquiv.coe_toLinearMap, Hodge.complexificationConjugation_toEquiv]
     calc
       J.toLinearMap.baseChange ℂ (tmulConj V x) =
           tmulConj V (J.toLinearMap.baseChange ℂ x) := (tmulConj_baseChange J.toLinearMap x).symm
@@ -148,13 +67,21 @@ theorem map_eigenspace_baseChange_I (J : AlmostComplexStructure V) :
     refine ⟨(Hodge.complexificationConjugation V).toEquiv x, ?_, by simp⟩
     apply Module.End.mem_eigenspace_iff.mpr
     have hx' := Module.End.mem_eigenspace_iff.mp hx
-    -- Unfold the Hodge bundle to use the characteristic theorem for tensor conjugation.
-    change J.toLinearMap.baseChange ℂ (tmulConj V x) = _
+    rw [Hodge.complexificationConjugation_toEquiv]
     calc
       J.toLinearMap.baseChange ℂ (tmulConj V x) =
           tmulConj V (J.toLinearMap.baseChange ℂ x) := (tmulConj_baseChange J.toLinearMap x).symm
       _ = tmulConj V (-Complex.I • x) := congrArg (tmulConj V) hx'
       _ = Complex.I • tmulConj V x := by simp
+
+/-- Canonical conjugation exchanges the `-i`-eigenspace of a complexified almost complex
+structure with its `i`-eigenspace. -/
+@[simp]
+theorem map_eigenspace_baseChange_neg_I (J : AlmostComplexStructure V) :
+    (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I)).map
+        (Hodge.complexificationConjugation V).toEquiv.toLinearMap =
+      Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I := by
+  rw [← J.map_eigenspace_baseChange_I, Hodge.Conjugation.map_map_eq_self]
 
 /-- The effective pure Hodge structure of weight one associated with a real almost complex
 structure. Its `F¹` is the `i`-eigenspace of the complexified endomorphism. -/
@@ -163,6 +90,8 @@ noncomputable def hodgeStructure (J : AlmostComplexStructure V) :
   F p := if p ≤ 0 then ⊤ else if p = 1 then
     Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I else ⊥
   F_antitone p q hpq := by
+    -- Expose the piecewise filtration stored in the structure field so its integer cases can be
+    -- reduced directly; no rewrite theorem exists until `hodgeStructure` has been defined.
     change (if q ≤ 0 then ⊤ else if q = 1 then
       Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I else ⊥) ≤
         if p ≤ 0 then ⊤ else if p = 1 then

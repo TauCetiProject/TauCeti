@@ -11,20 +11,24 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Map
 public import Mathlib.RingTheory.IsTensorProduct
+public import TauCeti.LinearAlgebra.Complex.Conjugation
 
 /-!
-# Conjugation and maps on complexifications of integral modules
+# Conjugation and maps on complexifications
 
 This file packages a conjugation on a complex vector space as a conjugate-linear involution and
-constructs the canonical conjugation on any abstract complexification of an integral module.
-The construction uses Mathlib's `IsBaseChange` interface: it transports coordinatewise conjugation
-on `ℂ ⊗[ℤ] V` to an arbitrary complex base-change model and is uniquely characterized by fixing the
-image of `V`. The same interface canonically complexifies integral linear maps between abstract
-complexification models.
+bundles the canonical conjugation on the tensor complexification of a real vector space. It also
+constructs the canonical conjugation on any abstract complexification of an integral module using
+Mathlib's `IsBaseChange` interface: it transports coordinatewise conjugation on `ℂ ⊗[ℤ] V` to an
+arbitrary complex base-change model and is uniquely characterized by fixing the image of `V`. The
+same interface canonically complexifies integral linear maps between abstract complexification
+models.
 
 ## Main declarations
 
 * `TauCeti.Hodge.Conjugation`: a conjugate-linear involution of a complex vector space.
+* `TauCeti.Hodge.complexificationConjugation`: the canonical conjugation on the complexification
+  of a real vector space, bundled as a Hodge conjugation.
 * `TauCeti.Hodge.Conjugation.tensorProduct`: the tensor product of two conjugations.
 * `TauCeti.Hodge.Conjugation.tensorProduct_toEquiv_tmul`: its action on pure tensors.
 * `TauCeti.Hodge.Conjugation.internalHom`: conjugation on the space of complex-linear maps,
@@ -69,6 +73,27 @@ structure Conjugation (W : Type u) [AddCommGroup W] [Module ℂ W] where
   toEquiv : W ≃ₛₗ[starRingEnd ℂ] W
   /-- Applying the conjugation twice is the identity. -/
   involutive : Function.Involutive toEquiv
+
+variable (V : Type u) [AddCommGroup V] [Module ℝ V]
+
+/-- The canonical conjugation on the complexification of a real vector space, bundled as a
+conjugate-linear involution. -/
+noncomputable def complexificationConjugation : Conjugation (ℂ ⊗[ℝ] V) where
+  toEquiv := LinearEquiv.ofInvolutive (tmulConj V) (tmulConj_involutive V)
+  involutive := tmulConj_involutive V
+
+/-- The bundled canonical conjugation agrees with tensor conjugation on every vector. -/
+@[simp]
+theorem complexificationConjugation_toEquiv (x : ℂ ⊗[ℝ] V) :
+    (complexificationConjugation V).toEquiv x = tmulConj V x :=
+  by simp [complexificationConjugation]
+
+/-- Canonical conjugation on a complexification conjugates the complex coefficient of a pure
+tensor and fixes its real factor. -/
+theorem complexificationConjugation_toEquiv_tmul (z : ℂ) (v : V) :
+    (complexificationConjugation V).toEquiv (z ⊗ₜ[ℝ] v) =
+      (starRingEnd ℂ) z ⊗ₜ[ℝ] v := by
+  rw [complexificationConjugation_toEquiv, tmulConj_tmul]
 
 namespace Conjugation
 
