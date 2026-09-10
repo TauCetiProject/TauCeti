@@ -21,6 +21,8 @@ a single operator once a decomposition separating the weights is available.
 
 * `TauCeti.biSup_inf_eigenspace_eq_self`: a summand whose scalar is attained only by itself is cut
   out by the corresponding eigenspace.
+* `TauCeti.isCompl_eigenspace_one_neg_one`: the `1`- and `-1`-eigenspaces of an involution are
+  complementary when `2` is nonzero in the scalar field.
 -/
 
 public section
@@ -33,6 +35,35 @@ universe u v w
 
 variable {K : Type u} {V : Type v} [CommRing K] [IsDomain K] [AddCommGroup V] [Module K V]
   [Module.IsTorsionFree K V]
+
+/-- The `±1` eigenspaces of an involutive endomorphism of a vector space over a field in which
+`2` is nonzero are complementary: `x` splits as
+`2⁻¹ • (x + T x) + 2⁻¹ • (x - T x)`, and a vector in both eigenspaces satisfies `x = -x`. -/
+theorem isCompl_eigenspace_one_neg_one {K V : Type*} [Field K] [AddCommGroup V]
+    [Module K V] (h2 : (2 : K) ≠ 0) {T : Module.End K V} (hT : Function.Involutive T) :
+    IsCompl (T.eigenspace 1) (T.eigenspace (-1)) := by
+  constructor
+  · rw [Submodule.disjoint_def]
+    intro x hx hx'
+    rw [Module.End.mem_eigenspace_iff, one_smul] at hx
+    rw [Module.End.mem_eigenspace_iff, neg_one_smul] at hx'
+    have hxx : x = -x := hx.symm.trans hx'
+    have h2x : (2 : K) • x = 0 := by
+      rw [two_smul]
+      calc x + x = x + -x := by rw [← hxx]
+        _ = 0 := add_neg_cancel x
+    exact (smul_eq_zero.mp h2x).resolve_left h2
+  · rw [codisjoint_iff, eq_top_iff]
+    intro x _
+    refine Submodule.mem_sup.mpr
+      ⟨(2 : K)⁻¹ • (x + T x), ?_, (2 : K)⁻¹ • (x - T x), ?_, ?_⟩
+    · rw [Module.End.mem_eigenspace_iff, one_smul, map_smul, map_add, hT x, add_comm (T x) x]
+    · rw [Module.End.mem_eigenspace_iff, map_smul, map_sub, hT x, neg_one_smul, ← smul_neg,
+        neg_sub]
+    · have hadd : x + T x + (x - T x) = (2 : K) • x := by
+        rw [two_smul]
+        abel
+      rw [← smul_add, hadd, smul_smul, inv_mul_cancel₀ h2, one_smul]
 
 /-- **Separated summands are cut out by their eigenspaces.** If every `W j`, for `j` in a set `s`,
 consists of eigenvectors of `A` of eigenvalue `g j`, and if the scalar `g k` of a distinguished
