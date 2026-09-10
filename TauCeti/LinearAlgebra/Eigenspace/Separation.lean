@@ -37,8 +37,7 @@ variable {K : Type u} {V : Type v} [CommRing K] [IsDomain K] [AddCommGroup V] [M
   [Module.IsTorsionFree K V]
 
 /-- The `±1` eigenspaces of an involutive endomorphism of a module over a commutative ring in
-which `2` is a unit are complementary: `x` splits into the inverse of `2` times `x + T x` and
-`x - T x`, and a vector in both eigenspaces satisfies `x = -x`. -/
+which `2` is a unit are complementary. -/
 theorem isCompl_eigenspace_one_neg_one {K V : Type*} [CommRing K] [AddCommGroup V]
     [Module K V] (h2 : IsUnit (2 : K)) {T : Module.End K V} (hT : Function.Involutive T) :
     IsCompl (T.eigenspace 1) (T.eigenspace (-1)) := by

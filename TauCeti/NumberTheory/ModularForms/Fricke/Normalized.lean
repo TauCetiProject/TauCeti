@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.LinearAlgebra.Eigenspace.Separation
 public import TauCeti.NumberTheory.ModularForms.Fricke.CharacterSpace
 
@@ -121,8 +122,7 @@ and lets the normalization be undone. -/
 public theorem frickeNormalizer_ne_zero (k : ℤ) : frickeNormalizer N k ≠ 0 :=
   zpow_ne_zero _ ofReal_sqrt_natCast_ne_zero
 
-/-- **The normalizer squares to `N ^ (2 - k)`.** This is the only place the square root is
-opened up. -/
+/-- **The normalizer squares to `N ^ (2 - k)`.** -/
 public theorem frickeNormalizer_sq (k : ℤ) :
     frickeNormalizer N k ^ 2 = (N : ℂ) ^ (2 - k) := by
   have hs : (N : ℂ) = ((Real.sqrt N : ℝ) : ℂ) ^ (2 : ℤ) := by
@@ -131,16 +131,24 @@ public theorem frickeNormalizer_sq (k : ℤ) :
   rw [frickeNormalizer_def, hs, ← zpow_mul, pow_two, ← zpow_add₀ ofReal_sqrt_natCast_ne_zero,
     two_mul]
 
-/-- **The normalization cancels the `N`-power of `frickeScalar`**, leaving the sign `(-1) ^ k`.
-
-This is the arithmetic heart of the file: `frickeScalar N k = (-1) ^ k * N ^ (k - 2)` by
-`frickeScalar_eq`, and `N ^ (2 - k) * N ^ (k - 2) = 1`. -/
+/-- **The normalization cancels the `N`-power of `frickeScalar`**, leaving the sign `(-1) ^ k`. -/
 public theorem frickeNormalizer_sq_mul_frickeScalar (k : ℤ) :
     frickeNormalizer N k ^ 2 * frickeScalar N k = (-1) ^ k := by
   have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
   rw [frickeNormalizer_sq, frickeScalar_eq, ← mul_assoc, mul_comm ((N : ℂ) ^ (2 - k)) ((-1) ^ k),
     mul_assoc, ← zpow_add₀ hN]
   simp
+
+/-- The inverse scalar needed to express the inverse of the normalized Fricke equivalences. -/
+private theorem frickeNormalizer_inv_mul_frickeScalar_inv (k : ℤ) :
+    (frickeNormalizer N k)⁻¹ * (frickeScalar N k)⁻¹ =
+      (-1 : ℂ) ^ k * frickeNormalizer N k := by
+  have hn := frickeNormalizer_ne_zero (N := N) k
+  have hs := frickeScalar_ne_zero (N := N) k
+  field_simp
+  rw [frickeNormalizer_sq_mul_frickeScalar]
+  rw [← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, zpow_mul]
+  norm_num
 
 /-! ### The operator -/
 
@@ -199,8 +207,7 @@ public theorem normalizedFrickeOperator_coe_cuspForm (k : ℤ)
 
 /-! ### The square law -/
 
-/-- **`𝒲_N ∘ 𝒲_N = (-1) ^ k • id` on `M_k(Γ₁(N))`.** The two normalizing factors multiply to
-`frickeNormalizer N k ^ 2`, which cancels the `N`-power in `frickeScalar N k`. -/
+/-- **`𝒲_N ∘ 𝒲_N = (-1) ^ k • id` on `M_k(Γ₁(N))`.** -/
 public theorem normalizedFrickeOperator_normalizedFrickeOperator (k : ℤ) :
     (normalizedFrickeOperator (N := N) k).comp (normalizedFrickeOperator (N := N) k) =
       ((-1 : ℂ) ^ k) • LinearMap.id := by
@@ -392,21 +399,12 @@ public theorem coe_normalizedFrickeCharEquiv_symm_apply (k : ℤ) (χ : (ZMod N)
       ((-1 : ℂ) ^ k) •
         normalizedFrickeOperator k (g : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
   simp only [normalizedFrickeCharEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
-    coe_frickeCharEquiv_symm_apply, normalizedFrickeOperator_def, LinearMap.smul_apply]
-  rw [show
-    ↑((LinearEquiv.smulOfUnit
-      (Units.mk0 (frickeNormalizer N k) (frickeNormalizer_ne_zero k))).symm g) =
-        (frickeNormalizer N k)⁻¹ • (g : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) by rfl,
-    map_smul, ← mul_smul, ← mul_smul]
-  have hscalar : (frickeNormalizer N k)⁻¹ * (frickeScalar N k)⁻¹ =
-      (-1 : ℂ) ^ k * frickeNormalizer N k := by
-    have hn := frickeNormalizer_ne_zero (N := N) k
-    have hs := frickeScalar_ne_zero (N := N) k
-    field_simp
-    rw [frickeNormalizer_sq_mul_frickeScalar]
-    rw [← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, zpow_mul]
-    norm_num
-  rw [mul_comm (frickeScalar N k)⁻¹ (frickeNormalizer N k)⁻¹, hscalar]
+    LinearEquiv.smulOfUnit_symm_apply, coe_frickeCharEquiv_symm_apply,
+    normalizedFrickeOperator_def, LinearMap.smul_apply, Submodule.coe_smul,
+    Units.val_inv_eq_inv_val, Units.val_mk0]
+  rw [map_smul, ← mul_smul, ← mul_smul,
+    mul_comm (frickeScalar N k)⁻¹ (frickeNormalizer N k)⁻¹,
+    frickeNormalizer_inv_mul_frickeScalar_inv]
 
 /-- **The normalized Fricke automorphism carries the `χ`-space of cusp forms onto the
 `χ⁻¹`-space.** -/
@@ -450,21 +448,12 @@ public theorem coe_normalizedFrickeCharCuspEquiv_symm_apply (k : ℤ) (χ : (ZMo
       ((-1 : ℂ) ^ k) •
         normalizedFrickeOperatorCusp k (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
   simp only [normalizedFrickeCharCuspEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
-    coe_frickeCharCuspEquiv_symm_apply, normalizedFrickeOperatorCusp_def, LinearMap.smul_apply]
-  rw [show
-    ↑((LinearEquiv.smulOfUnit
-      (Units.mk0 (frickeNormalizer N k) (frickeNormalizer_ne_zero k))).symm g) =
-        (frickeNormalizer N k)⁻¹ • (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) by rfl,
-    map_smul, ← mul_smul, ← mul_smul]
-  have hscalar : (frickeNormalizer N k)⁻¹ * (frickeScalar N k)⁻¹ =
-      (-1 : ℂ) ^ k * frickeNormalizer N k := by
-    have hn := frickeNormalizer_ne_zero (N := N) k
-    have hs := frickeScalar_ne_zero (N := N) k
-    field_simp
-    rw [frickeNormalizer_sq_mul_frickeScalar]
-    rw [← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, zpow_mul]
-    norm_num
-  rw [mul_comm (frickeScalar N k)⁻¹ (frickeNormalizer N k)⁻¹, hscalar]
+    LinearEquiv.smulOfUnit_symm_apply, coe_frickeCharCuspEquiv_symm_apply,
+    normalizedFrickeOperatorCusp_def, LinearMap.smul_apply, Submodule.coe_smul,
+    Units.val_inv_eq_inv_val, Units.val_mk0]
+  rw [map_smul, ← mul_smul, ← mul_smul,
+    mul_comm (frickeScalar N k)⁻¹ (frickeNormalizer N k)⁻¹,
+    frickeNormalizer_inv_mul_frickeScalar_inv]
 
 /-! ### The eigenspace splitting in even weight -/
 
