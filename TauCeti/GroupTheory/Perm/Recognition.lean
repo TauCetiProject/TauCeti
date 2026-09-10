@@ -74,11 +74,10 @@ theorem exists_isCycle_mem_of_isPretransitive_of_prime_card
   exact ⟨g, g.property, hcycle, hsupport⟩
 
 /-- A transitive subgroup of a symmetric group of prime degree that contains a transposition is
-the full symmetric group.
+the full symmetric group, the prime-degree form of Jordan's transposition recognition theorem.
 
-Prime degree promotes transitivity to primitivity, after which Jordan's transposition criterion
-applies. This is the prime-degree recognition step used to identify Galois groups from an
-irreducible polynomial and a factorization pattern exhibiting a transposition. -/
+This recognition result identifies Galois groups from an irreducible polynomial and a
+factorization pattern exhibiting a transposition. -/
 theorem subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem
     {β : Type*} [Finite β] [DecidableEq β] {G : Subgroup (Equiv.Perm β)}
     (hG : IsPretransitive G β)
