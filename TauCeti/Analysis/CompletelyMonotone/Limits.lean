@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.CompletelyMonotone.FiniteDifference.Laplace
 public import Mathlib.Analysis.Convex.Continuous
-public import Mathlib.Analysis.Convex.Deriv
 
 /-!
 # Pointwise limits of completely monotone functions
@@ -25,7 +24,8 @@ theorem of `TauCeti.Analysis.CompletelyMonotone.FiniteDifference.Laplace`.  That
 the limit to be right-continuous at the left endpoint of the half-line it is stated on, and this
 is where the convexity of a completely monotone function is used: a pointwise limit of convex
 functions is convex, hence continuous on the *open* half-line, so every positive translate of the
-limit is right-continuous at `0`.
+limit is right-continuous at `0`.  That convexity is
+`TauCeti.IsCompletelyMonotoneOnIoi.convexOn`.
 
 The open half-line is not a defect of the proof.  Complete monotonicity on the closed half-line is
 genuinely *not* closed under pointwise limits: the functions `t ↦ (1 + n t)⁻¹` are completely
@@ -36,8 +36,6 @@ too.
 
 ## Main declarations
 
-* `TauCeti.IsCompletelyMonotoneOnIoi.convexOn`: a completely monotone function on `(0, ∞)` is
-  convex there.
 * `TauCeti.isCompletelyMonotoneOnIoi_of_tendsto`: **complete monotonicity on `(0, ∞)` is closed
   under pointwise limits.**
 * `TauCeti.isContinuousCompletelyMonotoneOnIoi_of_tendsto`: the closed-half-line predicate is
@@ -59,21 +57,6 @@ open scoped ContDiff Topology
 namespace TauCeti
 
 variable {f : ℝ → ℝ}
-
-/-- A function completely monotone on `(0, ∞)` is convex there: its second derivative is the
-alternating derivative of order `2`, hence nonnegative. -/
-lemma IsCompletelyMonotoneOnIoi.convexOn (hf : IsCompletelyMonotoneOnIoi f) :
-    ConvexOn ℝ (Ioi 0) f := by
-  have hd : DifferentiableOn ℝ f (Ioi 0) := hf.contDiffOn.differentiableOn (by simp)
-  have hderiv : ContDiffOn ℝ ∞ (deriv f) (Ioi 0) :=
-    hf.contDiffOn.deriv_of_isOpen isOpen_Ioi (by simp)
-  have hd' : DifferentiableOn ℝ (deriv f) (Ioi 0) := hderiv.differentiableOn (by simp)
-  refine convexOn_of_deriv2_nonneg (convex_Ioi 0) hf.contDiffOn.continuousOn ?_ ?_ ?_
-  · rwa [interior_Ioi]
-  · rwa [interior_Ioi]
-  · rw [interior_Ioi]
-    intro x hx
-    simpa [iteratedDeriv_eq_iterate] using hf.neg_one_pow_mul_iteratedDeriv_nonneg 2 hx
 
 /-- **Complete monotonicity on `(0, ∞)` is closed under pointwise limits.**  A pointwise limit of
 functions completely monotone on `(0, ∞)` is completely monotone on `(0, ∞)`; in particular it is
