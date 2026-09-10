@@ -195,6 +195,7 @@ private lemma kernelSpecι_underlying (f : H ⟶ K) :
 
 /-- The map from the represented kernel to the trivial group scheme is the spectrum of its
 structural ring map after forgetting the group-scheme structure. -/
+@[simp]
 theorem kernelSpec_to_trivial_underlying (f : H ⟶ K) :
     (Over.forget (Spec (CommRingCat.of R))).map
         ((Grp.forget (Over (Spec (CommRingCat.of R)))).map

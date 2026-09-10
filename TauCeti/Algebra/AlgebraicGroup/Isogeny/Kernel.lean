@@ -53,15 +53,13 @@ namespace IsIsogeny
 
 variable {H K : _root_.CommHopfAlgCat.{v} R} {f : H ⟶ K}
 
-/-- The coordinate algebra of the kernel of an isogeny is finite as a module over the base.
-
-Under `quotientKernelHopfIdealAlgEquiv`, this is the base change of the finite `H`-module `K`
-along the counit `H → R`. -/
-theorem moduleFinite_quotient_kernelHopfIdeal (hf : IsIsogeny f) :
+/-- The coordinate algebra of the kernel is finite as a module over the base when the coordinate
+map is finite. -/
+theorem moduleFinite_quotient_kernelHopfIdeal (hf : f.hom.toAlgHom.Finite) :
     Module.Finite R (K ⧸ (kernelHopfIdeal f).toIdeal) := by
   let : Algebra ↥H ↥K := f.hom.toAlgHom.toAlgebra
   let : Algebra ↥H R := (Bialgebra.counitAlgHom R ↥H).toAlgebra
-  let _ : Module.Finite ↥H ↥K := hf.finite
+  let _ : Module.Finite ↥H ↥K := hf
   let _ : Module.Finite R (TensorProduct ↥H R ↥K) := inferInstance
   let _ : Module.Finite R (TensorProduct ↥H ↥K R) :=
     Module.Finite.equiv
@@ -69,17 +67,16 @@ theorem moduleFinite_quotient_kernelHopfIdeal (hf : IsIsogeny f) :
   exact Module.Finite.equiv
     ((quotientKernelHopfIdealAlgEquiv f).restrictScalars R).toLinearEquiv.symm
 
-/-- The coordinate algebra of the kernel of an isogeny is faithfully flat over the base.
-
-This is faithful-flat base change of `K` along the counit `H → R`, transported across the
-quotient--tensor comparison. -/
-theorem faithfullyFlat_quotient_kernelHopfIdeal (hf : IsIsogeny f) :
+/-- The coordinate algebra of the kernel is faithfully flat over the base when the coordinate
+map is faithfully flat. -/
+theorem faithfullyFlat_quotient_kernelHopfIdeal
+    (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat) :
     Module.FaithfullyFlat R (K ⧸ (kernelHopfIdeal f).toIdeal) := by
   let : Algebra ↥H ↥K := f.hom.toAlgHom.toAlgebra
   let : Algebra ↥H R := (Bialgebra.counitAlgHom R ↥H).toAlgebra
   let _ : Module.FaithfullyFlat ↥H ↥K := by
     rw [← RingHom.faithfullyFlat_algebraMap_iff]
-    exact hf.faithfullyFlat
+    exact hf
   let _ : Module.FaithfullyFlat R (TensorProduct ↥H R ↥K) := inferInstance
   let _ : Module.FaithfullyFlat R (TensorProduct ↥H ↥K R) :=
     Module.FaithfullyFlat.of_linearEquiv R _
@@ -104,7 +101,7 @@ theorem isIsogeny_kernelSpec_to_trivial (hf : IsIsogeny f) :
         (AlgebraicGeometry.Spec.map (CommRingCat.ofHom
           (algebraMap R (K ⧸ (kernelHopfIdeal f).toIdeal)))) :=
     (AlgebraicGeometry.IsFinite.SpecMap_iff _).2
-      (RingHom.finite_algebraMap.mpr hf.moduleFinite_quotient_kernelHopfIdeal)
+      (RingHom.finite_algebraMap.mpr (moduleFinite_quotient_kernelHopfIdeal hf.finite))
   have hflatSurjective :
       AlgebraicGeometry.Flat
           (AlgebraicGeometry.Spec.map (CommRingCat.ofHom
@@ -114,7 +111,7 @@ theorem isIsogeny_kernelSpec_to_trivial (hf : IsIsogeny f) :
             (algebraMap R (K ⧸ (kernelHopfIdeal f).toIdeal)))) :=
     (AlgebraicGeometry.flat_and_surjective_SpecMap_iff _).2
       (RingHom.faithfullyFlat_algebraMap_iff.mpr
-        hf.faithfullyFlat_quotient_kernelHopfIdeal)
+        (faithfullyFlat_quotient_kernelHopfIdeal hf.faithfullyFlat))
   simpa only [kernelSpec_to_trivial_underlying] using ⟨hfinite, hflatSurjective⟩
 
 end Scheme
@@ -134,7 +131,7 @@ noncomputable abbrev kernelFiniteLocallyFree (hf : IsCentralIsogeny f) :
     FiniteLocallyFreeBicommutativeHopfAlgCat.{u} k :=
   ⟨quotient K (kernelHopfIdeal f),
     (finiteLocallyFreeBicommutativeHopfAlgProperty_iff k _).2
-      ⟨hf.isIsogeny.moduleFinite_quotient_kernelHopfIdeal, inferInstance,
+      ⟨IsIsogeny.moduleFinite_quotient_kernelHopfIdeal hf.isIsogeny.finite, inferInstance,
         hf.isCocomm_quotient_kernelHopfIdeal⟩⟩
 
 end Field
