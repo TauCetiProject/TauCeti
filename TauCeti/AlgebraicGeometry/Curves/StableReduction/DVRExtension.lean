@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.DedekindDomain.Dvr
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 public import Mathlib.RingTheory.Ideal.GoingUp
-public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.Localization.LocalizationLocalization
 
 /-!
@@ -48,12 +47,29 @@ that of `R`.
   discrete valuation ring.
 * `TauCeti.FiniteDVRExtension.isFractionRing_localRing`: its fraction field is the extension field.
 * `TauCeti.FiniteDVRExtension.under_prime`: the chosen place lies over the closed point of `R`.
-* `TauCeti.FiniteDVRExtension.finite_primesOver`: only finitely many places lie over it, so the
+* `TauCeti.FiniteDVRExtension.primesOver_finite`: only finitely many places lie over it, so the
   choice is a choice among finitely many.
 * `TauCeti.FiniteDVRExtension.isLocalHom_algebraMap` and
   `TauCeti.FiniteDVRExtension.under_maximalIdeal_localRing`: the chosen local ring dominates `R`.
 * `TauCeti.FiniteDVRExtension.exists_extensionField_eq`: every finite separable extension of `K`
   underlies such a package, one for each place above the closed point of `R`.
+
+## References
+
+The design of this package is not original to this file: it adapts the interface proposed by the
+stable-reduction roadmap. `TauCetiRoadmap/StableReduction/README.md` states the convention "DVR
+extensions are local data" — choose a maximal ideal of the integral closure above the closed point
+and localize, never pretending the integral closure is itself a discrete valuation ring — and its
+Layer 0 asks for exactly this package; `TauCetiRoadmap/StableReduction/Suggested.lean` pins the
+suggested signature, whose carriers, algebra maps, scalar towers and `prime` field are followed
+here field for field. The two deliberate departures are that the local ring is pinned by
+`IsLocalization.AtPrime` instead of by an explicit `≃ₐ` to `Localization.AtPrime` together with a
+commuting square, and that the sketch's `localRingDomain`, `localRingDVR`, `localRingDominates`
+and `fractionIdentification` assumptions are theorems below rather than fields.
+
+The mathematics itself is standard and is not attributed to any one source; the roadmap's own
+References section collects the literature it works from, of which Q. Liu, *Algebraic Geometry and
+Arithmetic Curves* is the one covering reduction of curves over a discrete valuation ring.
 -/
 
 public section
@@ -118,9 +134,9 @@ instance isDedekindDomain_integralClosure : IsDedekindDomain E.integralClosure :
 instance isIntegral_integralClosure : Algebra.IsIntegral R E.integralClosure :=
   IsIntegralClosure.isIntegral_algebra R E.extensionField
 
-/-- The integral closure is a finite `R`-module, so it is semilocal: the places of `K'` above the
-closed point of `R` are the finitely many maximal ideals of `C`, and there is more than one as soon
-as the place of `R` does not extend uniquely. -/
+/-- The integral closure `C` of `R` in `K'` is a Noetherian `R`-module: it is a finite `R`-module,
+because `K'` is a finite separable extension of the fraction field of the Noetherian integrally
+closed domain `R`. -/
 instance isNoetherian_integralClosure : IsNoetherian R E.integralClosure :=
   IsIntegralClosure.isNoetherian R K E.extensionField _
 
@@ -134,12 +150,13 @@ instance faithfulSMul_integralClosure : FaithfulSMul R E.integralClosure :=
   FaithfulSMul.tower_bot R E.integralClosure E.extensionField
 
 /-- The chosen place lies above the closed point of `R`, spelled as a contraction of ideals. -/
+@[simp]
 theorem under_prime : E.prime.under R = maximalIdeal R :=
   (Ideal.over_def E.prime _).symm
 
 /-- The chosen place is one of finitely many: the places of `K'` above the closed point of `R` are
 the maximal ideals of the Dedekind domain `C` lying over it, and there are finitely many. -/
-theorem finite_primesOver : ((maximalIdeal R).primesOver E.integralClosure).Finite :=
+theorem primesOver_finite : ((maximalIdeal R).primesOver E.integralClosure).Finite :=
   IsDedekindDomain.primesOver_finite _ _
 
 /-- The chosen place is a nonzero prime: it lies over the maximal ideal of `R`, which is nonzero
@@ -172,6 +189,7 @@ instance faithfulSMul_localRing : FaithfulSMul R E.localRing := by
     (FaithfulSMul.algebraMap_injective R E.integralClosure)
 
 /-- The maximal ideal of the local ring of the chosen place contracts to the chosen place. -/
+@[simp]
 theorem under_maximalIdeal_integralClosure :
     (maximalIdeal E.localRing).under E.integralClosure = E.prime :=
   IsLocalization.AtPrime.under_maximalIdeal _ _
@@ -185,6 +203,7 @@ instance isLocalHom_algebraMap : IsLocalHom (algebraMap R E.localRing) := by
 
 /-- Domination spelled as a contraction of ideals: the closed point of `Spec R'` lies over the
 closed point of `Spec R`. -/
+@[simp]
 theorem under_maximalIdeal_localRing : (maximalIdeal E.localRing).under R = maximalIdeal R :=
   IsLocalRing.maximalIdeal_comap _
 
@@ -194,38 +213,25 @@ variable (R K)
 variable (L : Type u) [Field L] [Algebra K L] [FiniteDimensional K L] [Algebra.IsSeparable K L]
   [Algebra R L] [IsScalarTower R K L]
 
-/-- The algebra structure on `Localization.AtPrime P`, for `P` a prime of the integral closure `C`
-of `R` in `L`, given by mapping a fraction of integral elements to the corresponding element of
-`L`. This is legitimate because a prime of a domain misses `0`, so the denominators become units.
-
-This is a reducible non-instance in the sense of the note [reducible non-instances]: which algebra
-structure a localization should carry towards a further ring is context-dependent. It is the value
-taken by the `fractionAlgebra` field of `TauCeti.FiniteDVRExtension.of`. -/
-noncomputable abbrev localizationAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime] :
-    Algebra (Localization.AtPrime P) L :=
-  RingHom.toAlgebra <| IsLocalization.lift
-    (M := P.primeCompl) (g := algebraMap (_root_.integralClosure R L) L) fun y ↦
-      isUnit_iff_ne_zero.2 fun h ↦ y.2 <| by
-        rw [show (y : _root_.integralClosure R L) = 0 from
-          FaithfulSMul.algebraMap_injective (_root_.integralClosure R L) L (by simpa using h)]
-        exact P.zero_mem
-
-attribute [local instance] localizationAlgebra
-
-instance isScalarTower_localizationAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime] :
-    IsScalarTower (_root_.integralClosure R L) (Localization.AtPrime P) L :=
-  .of_algebraMap_eq fun x ↦ (IsLocalization.lift_eq _ x).symm
-
 /-- The finite extension of the discrete valuation ring `R` cut out by a maximal ideal `P` of the
-integral closure of `R` in a finite separable extension `L` of `K`, provided `P` lies above the
-maximal ideal of `R`. Its local ring is `Localization.AtPrime P`. -/
+integral closure `C` of `R` in a finite separable extension `L` of `K`, provided `P` lies above the
+maximal ideal of `R`. Its local ring is `Localization.AtPrime P`.
+
+The map from that local ring to `L` is Mathlib's canonical comparison
+`IsLocalization.localizationAlgebraOfSubmonoidLe` between the localizations of `C` at the two
+submonoids `P.primeCompl ≤ nonZeroDivisors C`, the second localization being `L` itself because
+`L` is the fraction field of `C`. -/
 @[expose]
 noncomputable def of (P : Ideal (_root_.integralClosure R L)) [P.IsMaximal]
-    [P.LiesOver (maximalIdeal R)] : FiniteDVRExtension R K where
-  extensionField := L
-  prime := P
-  localRing := Localization.AtPrime P
-  fractionAlgebra := localizationAlgebra R L P
+    [P.LiesOver (maximalIdeal R)] : FiniteDVRExtension R K :=
+  haveI : IsFractionRing (_root_.integralClosure R L) L :=
+    IsIntegralClosure.isFractionRing_of_finite_extension R K L _
+  { extensionField := L
+    prime := P
+    localRing := Localization.AtPrime P
+    fractionAlgebra := IsLocalization.localizationAlgebraOfSubmonoidLe _ _ P.primeCompl
+      (nonZeroDivisors _) P.primeCompl_le_nonZeroDivisors
+    fractionTower := IsLocalization.localization_isScalarTower_of_submonoid_le _ _ _ _ _ }
 
 @[simp]
 theorem of_extensionField (P : Ideal (_root_.integralClosure R L)) [P.IsMaximal]
