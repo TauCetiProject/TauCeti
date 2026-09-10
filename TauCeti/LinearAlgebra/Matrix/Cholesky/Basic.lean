@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.LDL
-public import TauCeti.LinearAlgebra.Matrix.Triangular
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef
 import Mathlib.Algebra.Order.Star.Real
+import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
 # Cholesky factors of positive-definite real matrices
@@ -20,17 +21,16 @@ triangular and positive on the diagonal.
 
 ## Main definitions
 
-* `TauCeti.PosDefMatrix` is the positive-definite cone in the space of real symmetric matrices.
 * `TauCeti.PosDiagLowerTriangular` is the space of lower-triangular real matrices with positive
   diagonal.
-* `TauCeti.cholesky` constructs the Cholesky factor of a positive-definite matrix.
+* `TauCeti.cholesky` constructs the Cholesky factor of a positive-definite matrix, and
+  `TauCeti.cholesky_coe` gives its closed form in terms of the LDL decomposition.
 * `TauCeti.cholesky_mul_transpose` proves the Cholesky reconstruction identity.
 
 ## References
 
 * R. A. Horn and C. R. Johnson, *Matrix Analysis*, second edition, Cambridge University Press,
   2013, Section 7.2.
-* `TauCetiRoadmap/StandardDistributions/README.md`, Layer 6, item 2, "Cholesky decomposition".
 -/
 
 public section
@@ -41,43 +41,40 @@ open scoped Matrix
 
 namespace TauCeti
 
-/-- The cone of positive-definite real symmetric matrices of size `p`. -/
-abbrev PosDefMatrix (p : ℕ) :=
-  {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) //
-    (A : Matrix (Fin p) (Fin p) ℝ).PosDef}
-
 /-- Lower-triangular real matrices of size `p` whose diagonal entries are positive. -/
 abbrev PosDiagLowerTriangular (p : ℕ) :=
   {L : Matrix (Fin p) (Fin p) ℝ // L.IsLowerTriangular ∧ ∀ i, 0 < L i i}
 
 namespace Matrix
 
-variable {p : ℕ} {S : Matrix (Fin p) (Fin p) ℝ} (hS : S.PosDef)
+section General
 
-/-- The diagonal entries in Mathlib's LDL decomposition of a positive-definite real matrix are
+open scoped ComplexOrder
+
+variable {𝕜 n : Type*} [RCLike 𝕜] [LinearOrder n] [WellFoundedLT n]
+  [LocallyFiniteOrderBot n] [Fintype n] {S : Matrix n n 𝕜} (hS : S.PosDef)
+
+/-- The diagonal entries in Mathlib's LDL decomposition of a positive-definite matrix are
 positive. -/
-theorem LDL.diagEntries_pos (i : Fin p) : 0 < LDL.diagEntries hS i := by
+theorem LDL.diagEntries_pos (i : n) : 0 < LDL.diagEntries hS i := by
   have hdiag : (LDL.diag hS).PosDef := by
     rw [LDL.diag_eq_lowerInv_conj]
     exact hS.mul_mul_conjTranspose_same
       (Matrix.vecMul_injective_of_invertible (LDL.lowerInv hS))
   simpa [LDL.diag] using hdiag.diag_pos (i := i)
 
-private theorem LDL.lowerInv_apply_diag (i : Fin p) : LDL.lowerInv hS i i = 1 := by
+/-- The lower factor in Mathlib's LDL decomposition is unitriangular: its inverse is the
+Gram-Schmidt matrix, which carries `1` on the diagonal. -/
+theorem LDL.lowerInv_apply_diag (i : n) : LDL.lowerInv hS i i = 1 := by
   let := Sᵀ.toNormedAddCommGroup hS.transpose
   let := Sᵀ.toInnerProductSpace hS.transpose.posSemidef
-  rw [LDL.lowerInv, InnerProductSpace.gramSchmidt_def]
-  simp only [Pi.basisFun_apply, Pi.sub_apply, Pi.single_eq_same]
-  rw [Finset.sum_apply]
-  rw [sub_eq_self]
-  apply Finset.sum_eq_zero
-  intro j hj
-  rw [Submodule.starProjection_singleton]
-  simp only [Pi.smul_apply, smul_eq_mul]
-  apply mul_eq_zero_of_right
+  rw [LDL.lowerInv]
   simpa only [Pi.basisFun_repr] using
-    InnerProductSpace.gramSchmidt_triangular (Finset.mem_Iio.mp hj)
-      (Pi.basisFun ℝ (Fin p))
+    TauCeti.InnerProductSpace.repr_gramSchmidt_self_eq_one (Pi.basisFun 𝕜 n) i
+
+end General
+
+variable {p : ℕ} {S : Matrix (Fin p) (Fin p) ℝ} (hS : S.PosDef)
 
 private theorem LDL.lower_apply_diag (i : Fin p) : LDL.lower hS i i = 1 := by
   have htri : (LDL.lowerInv hS)ᵀ.IsUpperTriangular :=
@@ -126,6 +123,13 @@ noncomputable def cholesky {p : ℕ} (A : PosDefMatrix p) : PosDiagLowerTriangul
   ⟨Matrix.choleskyFactor A.2,
     Matrix.choleskyFactor_isLowerTriangular A.2,
     Matrix.choleskyFactor_diag_pos A.2⟩
+
+/-- The Cholesky factor of `A` in closed form: Mathlib's LDL lower factor of `A`, with the
+square roots of the LDL diagonal entries absorbed into its columns. -/
+theorem cholesky_coe {p : ℕ} (A : PosDefMatrix p) :
+    (cholesky A).1 =
+      LDL.lower A.2 * Matrix.diagonal fun i ↦ Real.sqrt (LDL.diagEntries A.2 i) :=
+  (rfl)
 
 /-- A positive-definite matrix is the product of its Cholesky factor and its transpose. -/
 theorem cholesky_mul_transpose {p : ℕ} (A : PosDefMatrix p) :

@@ -19,8 +19,12 @@ positive quadratic form, `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos`.
 The Wishart densities are supported on this cone, so its measurability is part of the
 carrier API.
 
+The cone is also packaged as a subtype, `TauCeti.PosDefMatrix`, which is the carrier the
+Wishart and Cholesky APIs are stated on.
+
 ## Main declarations
 
+* `TauCeti.PosDefMatrix` — the positive-definite cone in the space of real symmetric matrices.
 * `TauCeti.isOpen_setOfPred_posDefMatrix` — the positive-definite cone is open in the symmetric
   subspace.
 * `TauCeti.measurableSet_posDefMatrix` — the positive-definite cone is measurable.
@@ -33,6 +37,11 @@ noncomputable section
 open scoped Matrix
 
 namespace TauCeti
+
+/-- The cone of positive-definite real symmetric matrices of size `p`. -/
+abbrev PosDefMatrix (p : ℕ) :=
+  {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) //
+    (A : Matrix (Fin p) (Fin p) ℝ).PosDef}
 
 /-- The positive-definite cone is open in the symmetric subspace. -/
 theorem isOpen_setOfPred_posDefMatrix (p : ℕ) :
