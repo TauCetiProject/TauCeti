@@ -16,11 +16,12 @@ the normalized quadratic elements
 `pᵢⱼ = 1/2 dᵢⱼ dⱼᵢ`.
 
 When `i ≠ j`, these are occupation projections for the hyperbolic plane spanned by `Eᵢⱼ` and
-`Eⱼᵢ`. The CAR relations give `pᵢⱼ + pⱼᵢ = 1`, their two orders are orthogonal, and hence each is
-idempotent. Projections associated to distinct unordered pairs commute. Finally, the diagonal
-normal-ordered lift is the sum `Fᵢᵢ = ∑ k, pᵢₖ`; for a linearly ordered index type this can be
-oriented using only the positive pairs. These formulas supply the commuting zero-one operators
-used to calculate weights in the left regular CAR module.
+`Eⱼᵢ`. Their two orders are orthogonal. When `2` is invertible, the CAR relations also give
+`pᵢⱼ + pⱼᵢ = 1`; in characteristic two the normalization vanishes instead, so the elements remain
+idempotent in every characteristic. Projections associated to distinct unordered pairs commute.
+Finally, the diagonal normal-ordered lift is the sum `Fᵢᵢ = ∑ k, pᵢₖ`; for a linearly ordered index
+type this can be oriented using only the positive pairs. These formulas supply the commuting
+zero-one operators used to calculate weights in the left regular CAR module.
 
 ## Main definitions
 
@@ -30,6 +31,7 @@ used to calculate weights in the left regular CAR module.
 
 * `TauCeti.carOccupationProjection_add_swap`: `pᵢⱼ + pⱼᵢ = 1`.
 * `TauCeti.isIdempotentElem_carOccupationProjection`: off-diagonal `pᵢⱼ` are idempotent.
+* `TauCeti.carOccupationProjection_mul_self`: the corresponding multiplication normal form.
 * `TauCeti.carOccupationProjection_comm_of_ne_of_ne_swap`: distinct unordered pairs commute.
 * `TauCeti.glCliffordHom_single_diagonal_eq_sum_occupation`: `Fᵢᵢ = ∑ k, pᵢₖ`.
 
@@ -37,6 +39,11 @@ used to calculate weights in the left regular CAR module.
 
 * D. Panyushev, *The exterior algebra and "spin" of an orthogonal g-module*,
   Transformation Groups 6 (2001), 371–396, Proposition 2.4 and Example 2.5(1).
+* D. Shlyakhtenko, *Failure of Strong Convergence of Matrices with Fermionic Entries*,
+  arXiv:2606.28648, §2.3.
+* D. Shlyakhtenko, [`car-matrices`](https://github.com/shlyakhtenko/car-matrices),
+  `MatrixNormShort/SpinExtraction.lean` at commit `659be0c6466c3ef9dbbe0e0a313f2cbb2c37d5f9`,
+  the related Lean formalization of pair projectors and their commutation and idempotence.
 * C. Chevalley, *The Algebraic Theory of Spinors*, Columbia University Press, 1954.
 -/
 
@@ -71,6 +78,7 @@ theorem carOccupationProjection_self (i : n) :
 theorem carOccupationProjection_mul_swap {i j : n} (hij : i ≠ j) :
     carOccupationProjection (K := K) i j * carOccupationProjection (K := K) j i = 0 := by
   rw [carOccupationProjection, carOccupationProjection, smul_mul_assoc, mul_smul_comm, smul_smul]
+  -- Expose the common scalar and reassociate so `simp` can see the nilpotent middle pair.
   change ((2 : K)⁻¹ * (2 : K)⁻¹) •
     ((carD (K := K) i j * carD j i) * (carD j i * carD i j)) = 0
   rw [mul_assoc (carD (K := K) i j) (carD j i) (carD j i * carD i j),
@@ -104,14 +112,25 @@ theorem carOccupationProjection_swap (i j : n) :
     carOccupationProjection (K := K) j i = 1 - carOccupationProjection (K := K) i j :=
   eq_sub_iff_add_eq.mpr (carOccupationProjection_add_swap (K := K) j i)
 
-/-- Every off-diagonal occupation element is an idempotent. -/
+end Half
+
+/-- Every off-diagonal occupation element is an idempotent. When the field has characteristic two,
+the normalization scalar is zero; otherwise this follows from orthogonality and complementarity. -/
 theorem isIdempotentElem_carOccupationProjection {i j : n} (hij : i ≠ j) :
     IsIdempotentElem (carOccupationProjection (K := K) i j) := by
-  exact (IsIdempotentElem.of_mul_add
-    (carOccupationProjection_mul_swap (K := K) hij)
-    (carOccupationProjection_add_swap (K := K) i j)).1
+  by_cases h2 : (2 : K) = 0
+  · simp [carOccupationProjection, h2, IsIdempotentElem]
+  · let _ : Invertible (2 : K) := invertibleOfNonzero h2
+    exact (IsIdempotentElem.of_mul_add
+      (carOccupationProjection_mul_swap (K := K) hij)
+      (carOccupationProjection_add_swap (K := K) i j)).1
 
-end Half
+/-- Multiplication by an off-diagonal occupation element twice is multiplication by it once. -/
+@[simp]
+theorem carOccupationProjection_mul_self {i j : n} (hij : i ≠ j) :
+    carOccupationProjection (K := K) i j * carOccupationProjection (K := K) i j =
+      carOccupationProjection (K := K) i j :=
+  (isIdempotentElem_carOccupationProjection (K := K) hij).eq
 
 /-- Occupation elements for different unordered matrix-unit pairs commute. The two inequalities
 exclude equality in either orientation, exactly the cases in which a cross-contraction can be
@@ -136,6 +155,7 @@ theorem carOccupationProjection_comm_of_ne_of_ne_swap {i j k l : n}
     traceQuadraticForm_ι_single_mul_ι_single_comm_of_not_paired j i l k 1 1 <| by
       intro h
       exact hneSwap (Prod.ext h.1 h.2.symm)
+  -- Expose the scalar-normalized products before cancelling their common scalar action.
   change ((2 : K)⁻¹ • (carD i j * carD j i)) * ((2 : K)⁻¹ • (carD k l * carD l k)) =
     ((2 : K)⁻¹ • (carD k l * carD l k)) * ((2 : K)⁻¹ • (carD i j * carD j i))
   have hsmul (x y : CliffordAlgebra (traceQuadraticForm K n)) :
