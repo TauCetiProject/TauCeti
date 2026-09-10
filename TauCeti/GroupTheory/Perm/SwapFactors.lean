@@ -11,19 +11,24 @@ import Mathlib.Dynamics.PeriodicPts.Lemmas
 /-!
 # Transpositions and the number of orbits
 
-Multiplying a permutation `σ` of a finite type by the transposition `Equiv.swap a b` either merges
-the orbit of `a` with the orbit of `b`, or splits the single orbit carrying both of them in two.
-The number of orbits therefore changes by exactly one, and which way is decided by
-`Equiv.Perm.SameCycle σ a b`:
+Multiplying a permutation `σ` of a finite type by the transposition `Equiv.swap a b` of two
+distinct points either merges the orbit of `a` with the orbit of `b`, or splits the single orbit
+carrying both of them in two. The number of orbits therefore changes by exactly one, and which way
+is decided by `Equiv.Perm.SameCycle σ a b`:
 
-* `TauCeti.orbitCount_swap_mul_add_one_of_not_sameCycle`, the merging step;
-* `TauCeti.orbitCount_swap_mul_of_sameCycle`, the splitting step.
+* `TauCeti.orbitCount_swap_mul_add_one_of_not_sameCycle`, the merging step; its hypothesis
+  `¬ Equiv.Perm.SameCycle σ a b` already forces `a ≠ b`, since a point shares its own orbit;
+* `TauCeti.orbitCount_swap_mul_of_sameCycle`, the splitting step, which asks for `a ≠ b`
+  explicitly.
+
+The degenerate case `a = b` falls outside that dichotomy: `Equiv.swap a a` is the identity, so the
+number of orbits is unchanged, and `Equiv.Perm.SameCycle σ a b`, which then holds, decides nothing.
 
 Iterating the two steps measures how many transpositions it takes to build `σ`: every
 factorization of `σ` into transpositions has at least `Nat.card α - TauCeti.orbitCount σ` factors
 (`TauCeti.card_le_orbitCount_add_length`), and one with exactly that many exists
-(`Equiv.Perm.exists_isSwap_list_prod_eq`), so that number is the reflection length of `σ`
-(`Equiv.Perm.isLeast_length_isSwap_list`).
+(`Equiv.Perm.exists_isSwap_list_prod_eq_and_orbitCount_add_length_eq_card`), so that number is
+the reflection length of `σ` (`Equiv.Perm.isLeast_length_isSwap_list`).
 
 Both steps rest on a description of the orbits of the product:
 `TauCeti.sameCycle_or_of_sameCycle_swap_mul` says that two points sharing an orbit of
@@ -42,10 +47,10 @@ asks for nothing beyond finitely many orbits.
 
 ## Source
 
-`Equiv.Perm.exists_isSwap_list_prod_eq` builds its list by the recursion of
-`Equiv.Perm.swapFactorsAux` in Mathlib's `Mathlib/GroupTheory/Perm/Sign.lean`: pick a point `x`
-with `σ x ≠ x`, recurse on `Equiv.swap x (σ x) * σ`, and prepend `Equiv.swap x (σ x)`. What is new
-here is the measure of that recursion. Mathlib's `Equiv.Perm.swapFactorsAux` and
+`Equiv.Perm.exists_isSwap_list_prod_eq_and_orbitCount_add_length_eq_card` builds its list by the
+recursion of `Equiv.Perm.swapFactorsAux` in Mathlib's `Mathlib/GroupTheory/Perm/Sign.lean`: pick a
+point `x` with `σ x ≠ x`, recurse on `Equiv.swap x (σ x) * σ`, and prepend `Equiv.swap x (σ x)`.
+What is new here is the measure of that recursion. Mathlib's `Equiv.Perm.swapFactorsAux` and
 `Equiv.Perm.swapFactors` record no length, and recurse on a list of candidate points; the version
 below recurses on the number of orbits still to be split, so the list it returns has exactly
 `Nat.card α - TauCeti.orbitCount σ` entries, which `TauCeti.card_le_orbitCount_add_length` then
@@ -231,6 +236,7 @@ theorem not_sameCycle_swap_mul_of_sameCycle [Finite α] (hab : a ≠ b) (h : σ.
 /-- **The transposition step lemma, merging.** If `a` and `b` lie in different orbits of `σ`, then
 `Equiv.swap a b * σ` has one orbit fewer than `σ`: its orbits are those of `σ`, with the orbit of
 `a` and the orbit of `b` merged. -/
+@[simp]
 theorem orbitCount_swap_mul_add_one_of_not_sameCycle [Finite α] (h : ¬ σ.SameCycle a b) :
     orbitCount (Equiv.swap a b * σ) + 1 = orbitCount σ :=
   have hab := sameCycle_swap_mul_of_not_sameCycle h
@@ -239,6 +245,7 @@ theorem orbitCount_swap_mul_add_one_of_not_sameCycle [Finite α] (h : ¬ σ.Same
 
 /-- **The transposition step lemma, splitting.** If `a ≠ b` lie in one orbit of `σ`, then
 `Equiv.swap a b * σ` has one orbit more than `σ`: that orbit has been cut in two. -/
+@[simp]
 theorem orbitCount_swap_mul_of_sameCycle [Finite α] (hab : a ≠ b) (h : σ.SameCycle a b) :
     orbitCount (Equiv.swap a b * σ) = orbitCount σ + 1 := by
   have h' := orbitCount_swap_mul_add_one_of_not_sameCycle
@@ -262,6 +269,7 @@ theorem _root_.Equiv.Perm.orbitCount_le_orbitCount_swap_mul_add_one [Finite α] 
 orbits of `σ`, then multiplying on the right merges those two orbits just as multiplying on the
 left does, so `σ * Equiv.swap a b` has one orbit fewer than `σ`:
 `orbitCount (σ * Equiv.swap a b) + 1 = orbitCount σ`. -/
+@[simp]
 theorem orbitCount_mul_swap_add_one_of_not_sameCycle [Finite α] (h : ¬ σ.SameCycle a b) :
     orbitCount (σ * Equiv.swap a b) + 1 = orbitCount σ := by
   rw [Equiv.mul_swap_eq_swap_mul]
@@ -272,6 +280,7 @@ theorem orbitCount_mul_swap_add_one_of_not_sameCycle [Finite α] (h : ¬ σ.Same
 `σ`, then multiplying on the right cuts that orbit in two just as multiplying on the left does, so
 `σ * Equiv.swap a b` has one orbit more than `σ`:
 `orbitCount (σ * Equiv.swap a b) = orbitCount σ + 1`. -/
+@[simp]
 theorem orbitCount_mul_swap_of_sameCycle [Finite α] (hab : a ≠ b) (h : σ.SameCycle a b) :
     orbitCount (σ * Equiv.swap a b) = orbitCount σ + 1 := by
   rw [Equiv.mul_swap_eq_swap_mul]
@@ -316,7 +325,8 @@ theorem card_le_orbitCount_add_length [Finite α] {L : List (Perm α)} (hL : ∀
 /-- **A factorization into transpositions of exactly the reflection length exists.** Splitting off
 the transposition `Equiv.swap x (σ x)` adds one orbit, so after `Nat.card α - orbitCount σ` such
 steps the identity is reached. -/
-theorem _root_.Equiv.Perm.exists_isSwap_list_prod_eq [Finite α] (σ : Perm α) :
+theorem _root_.Equiv.Perm.exists_isSwap_list_prod_eq_and_orbitCount_add_length_eq_card
+    [Finite α] (σ : Perm α) :
     ∃ L : List (Perm α), (∀ g ∈ L, g.IsSwap) ∧ L.prod = σ ∧
       orbitCount σ + L.length = Nat.card α := by
   suffices H : ∀ k (σ : Perm α), Nat.card α - orbitCount σ ≤ k →
@@ -358,7 +368,7 @@ whose product is `σ` is `Nat.card α - orbitCount σ`. -/
 theorem _root_.Equiv.Perm.isLeast_length_isSwap_list [Finite α] (σ : Perm α) :
     IsLeast {m : ℕ | ∃ L : List (Perm α), (∀ g ∈ L, g.IsSwap) ∧ L.prod = σ ∧ L.length = m}
       (Nat.card α - orbitCount σ) := by
-  obtain ⟨L, hL, hprod, hlen⟩ := σ.exists_isSwap_list_prod_eq
+  obtain ⟨L, hL, hprod, hlen⟩ := σ.exists_isSwap_list_prod_eq_and_orbitCount_add_length_eq_card
   refine ⟨⟨L, hL, hprod, by omega⟩, ?_⟩
   rintro m ⟨M, hM, hprod', rfl⟩
   have hbound := card_le_orbitCount_add_length hM

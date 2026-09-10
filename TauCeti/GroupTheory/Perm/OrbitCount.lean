@@ -44,7 +44,7 @@ move on braids, in `TauCeti/KnotTheory/Markov.lean`.
 ## Implementation notes
 
 `orbitCount` is `Nat.card` of a `Quotient`, so it is `0` when the permutation has infinitely many
-orbits or no orbits at all. The two orbit-addition and orbit-removal results assume only that the
+orbits or no orbits at all. The three orbit-addition and orbit-removal results assume only that the
 quotient of the relevant permutation by `Equiv.Perm.SameCycle` is finite; conjugation preserves
 the count without any finiteness assumption.
 
@@ -215,12 +215,7 @@ theorem _root_.Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount (σ : Equiv.Pe
     Equiv.Perm.sign σ = (-1 : ℤˣ) ^ (Fintype.card α - orbitCount σ) := by
   rw [Equiv.Perm.sign_of_parts_partition, ← orbitCount_eq_card_parts_partition]
   have hle : orbitCount σ ≤ Fintype.card α := by
-    rw [orbitCount_eq_card_parts_partition]
-    calc
-      σ.partition.parts.card = σ.partition.parts.card • 1 := by simp
-      _ ≤ σ.partition.parts.sum :=
-        Multiset.card_nsmul_le_sum fun n hn ↦ σ.partition.parts_pos hn
-      _ = Fintype.card α := σ.partition.parts_sum
+    simpa [Nat.card_eq_fintype_card] using σ.orbitCount_le_card
   have h : Fintype.card α + orbitCount σ =
       (Fintype.card α - orbitCount σ) + 2 * orbitCount σ := by
     omega
@@ -386,7 +381,8 @@ theorem orbitCount_mul_swap_add_one [DecidableEq β] {τ : Equiv.Perm β}
 orbit of `τ` merges more than those two, then `τ` has exactly one orbit fewer than `σ`. The last
 hypothesis is the honest content: without it nothing stops `τ` from gluing the orbits of `σ`
 wholesale. -/
-theorem orbitCount_add_one_of_merge [Finite α] {σ τ : Equiv.Perm α} {a b : α}
+theorem orbitCount_add_one_of_merge {σ τ : Equiv.Perm α}
+    [Finite (Quotient (SameCycle.setoid σ))] {a b : α}
     (hle : ∀ {u v : α}, SameCycle σ u v → SameCycle τ u v)
     (hmerge : ∀ {u v : α}, SameCycle τ u v → SameCycle σ u v ∨
       ((SameCycle σ u a ∨ SameCycle σ u b) ∧ (SameCycle σ v a ∨ SameCycle σ v b)))
