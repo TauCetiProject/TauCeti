@@ -128,25 +128,13 @@ private theorem orderedPair_eq_smul_exteriorBasis
   have herase : ({0, 1} : Finset (Fin 2)).erase 0 = {1} := by decide
   simpa [herase] using h
 
-private theorem toMatrixAlgEquiv_eq_single
-    {M : Type*} [AddCommGroup M] [Module K M] {n : Type*} [Fintype n] [DecidableEq n]
-    (bas : Basis n K M) (f : Module.End K M) (p q : n)
-    (h : ∀ c, f (bas c) = (if q = c then (1 : K) else 0) • bas p) :
-    LinearMap.toMatrixAlgEquiv bas f = Matrix.single p q 1 := by
-  apply (Matrix.toLinAlgEquiv bas).injective
-  rw [Matrix.toLinAlgEquiv_toMatrixAlgEquiv]
-  apply bas.ext
-  intro c
-  rw [toLinAlgEquiv_single_apply_basis]
-  exact h c
-
 private theorem toMatrix_spinAction_typeDSimpleRootBivector_fin_two_zero
     (P : SpinPolarizationData Q) (b : Basis (Fin 2) K P.W) :
     LinearMap.toMatrixAlgEquiv (spinFourExteriorBasis P b)
         (spinAction Q P (P.typeDSimpleRootBivector b (by omega) 0)) =
       Matrix.single {0} {1} 1 := by
   rw [P.typeDSimpleRootBivector_def, dite_eq_left (by decide)]
-  apply toMatrixAlgEquiv_eq_single
+  apply toMatrixAlgEquiv_eq_single_of_apply_basis
   intro s
   rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
   · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
@@ -163,7 +151,7 @@ private theorem toMatrix_spinAction_typeDSimpleRootBivector_fin_two_one
         (spinAction Q P (P.typeDSimpleRootBivector b (by omega) 1)) =
       Matrix.single {0, 1} ∅ 1 := by
   rw [P.typeDSimpleRootBivector_def, dite_eq_right (by decide)]
-  apply toMatrixAlgEquiv_eq_single
+  apply toMatrixAlgEquiv_eq_single_of_apply_basis
   intro s
   rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
   · simp [map_mul, Module.End.mul_apply]
@@ -186,7 +174,7 @@ private theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two_zero
         (spinAction Q P (P.typeDSimpleNegativeRootBivector b (by omega) 0)) =
       Matrix.single {1} {0} 1 := by
   rw [P.typeDSimpleNegativeRootBivector_def, dite_eq_left (by decide)]
-  apply toMatrixAlgEquiv_eq_single
+  apply toMatrixAlgEquiv_eq_single_of_apply_basis
   intro s
   rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
   · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
@@ -202,7 +190,7 @@ private theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two_one
         (spinAction Q P (P.typeDSimpleNegativeRootBivector b (by omega) 1)) =
       Matrix.single ∅ {0, 1} 1 := by
   rw [P.typeDSimpleNegativeRootBivector_def, dite_eq_right (by decide)]
-  apply toMatrixAlgEquiv_eq_single
+  apply toMatrixAlgEquiv_eq_single_of_apply_basis
   intro s
   rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
   · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
