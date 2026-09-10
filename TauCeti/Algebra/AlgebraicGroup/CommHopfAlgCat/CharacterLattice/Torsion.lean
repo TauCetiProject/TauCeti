@@ -75,7 +75,8 @@ theorem isMulTorsionFree_geometricCharacterGroup
     (hred : geometricallyReducedCommHopfAlgProperty k H)
     (hconn : geometricallyConnectedCommHopfAlgProperty k H) :
     IsMulTorsionFree (CommHopfAlgCat.geometricCharacterGroup H) := by
-  have _ := hred.isReduced_algebraicClosureBaseChange
+  have _ := (Algebra.isGeometricallyReduced_field_iff k (H : Type u)).mp
+    hred.isGeometricallyReduced
   have _ := hconn.connectedSpace_algebraicClosureBaseChange
   exact isMulTorsionFree_groupLike_of_isReduced_of_connectedSpace (AlgebraicClosure k)
     (AlgebraicClosure k ⊗[k] (H : Type u))

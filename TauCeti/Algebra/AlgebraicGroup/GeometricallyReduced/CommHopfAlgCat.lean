@@ -91,19 +91,6 @@ theorem geometricallyReducedCommHopfAlgProperty.isReduced
   let _ : Algebra.IsGeometricallyReduced k H := hH.isGeometricallyReduced
   exact Algebra.isReduced_of_isGeometricallyReduced k
 
-/-- The geometric fibre of a geometrically reduced commutative Hopf algebra is reduced, written
-with the algebraic closure on the left. This is the orientation used by the geometric character
-group. -/
-theorem geometricallyReducedCommHopfAlgProperty.isReduced_algebraicClosureBaseChange
-    {k : Type u} [Field k] {H : CommHopfAlgCat.{v} k}
-    (hH : geometricallyReducedCommHopfAlgProperty k H) :
-    IsReduced (AlgebraicClosure k ⊗[k] (H : Type v)) := by
-  let _ : IsReduced ((H : Type v) ⊗[k] ULift.{v} (AlgebraicClosure k)) :=
-    hH (ULift.{v} (AlgebraicClosure k))
-  let e := (Algebra.TensorProduct.comm k (AlgebraicClosure k) H).trans
-    (Algebra.TensorProduct.congr (AlgEquiv.refl : H ≃ₐ[k] H) ULift.algEquiv.symm)
-  exact isReduced_of_injective e.toRingHom e.injective
-
 /-- Geometric reducedness is invariant under isomorphisms of commutative Hopf algebras. -/
 instance (k : Type u) [Field k] :
     (geometricallyReducedCommHopfAlgProperty k :

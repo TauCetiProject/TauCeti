@@ -26,10 +26,10 @@ through the counit.
 
 * `TauCeti.isMulTorsionFree_groupLike_of_isReduced_of_connectedSpace`: group-like elements of a
   reduced Hopf algebra with connected spectrum form a torsion-free group.
-* `TauCeti.eq_one_of_isGroupLikeElem_of_pow_eq_one`: the elementwise form.
-* `TauCeti.monoidAlgebra_bialgHom_single_eq_one`: a bialgebra homomorphism kills torsion basis
+* `IsGroupLikeElem.eq_one_of_pow_eq_one`: the elementwise form.
+* `BialgHom.monoidAlgebra_single_eq_one`: a bialgebra homomorphism kills torsion basis
   elements.
-* `TauCeti.monoidAlgebra_bialgHom_eq_algebraMap_counit`: a bialgebra homomorphism from the group
+* `BialgHom.monoidAlgebra_eq_algebraMap_counit`: a bialgebra homomorphism from the group
   algebra of a torsion group factors through the counit.
 
 ## References
@@ -66,7 +66,7 @@ variable {k H}
 
 /-- A group-like element of finite order in a reduced Hopf algebra with connected spectrum is
 trivial. -/
-theorem eq_one_of_isGroupLikeElem_of_pow_eq_one
+theorem _root_.IsGroupLikeElem.eq_one_of_pow_eq_one
     [IsReduced H] [ConnectedSpace (PrimeSpectrum H)] {a : H} (ha : IsGroupLikeElem k a)
     {n : ℕ} (hn : n ≠ 0) (hpow : a ^ n = 1) : a = 1 := by
   have _ := isMulTorsionFree_groupLike_of_isReduced_of_connectedSpace k H
@@ -77,25 +77,25 @@ theorem eq_one_of_isGroupLikeElem_of_pow_eq_one
 
 /-- **A bialgebra homomorphism into a reduced Hopf algebra with connected spectrum kills every
 torsion basis element of a group algebra.** -/
-theorem monoidAlgebra_bialgHom_single_eq_one
+@[simp]
+theorem _root_.BialgHom.monoidAlgebra_single_eq_one
     [IsReduced H] [ConnectedSpace (PrimeSpectrum H)]
     {M : Type w} [CommGroup M] (f : MonoidAlgebra k M →ₐc[k] H) {m : M} (hm : IsOfFinOrder m) :
     f (MonoidAlgebra.single m 1) = 1 := by
-  refine eq_one_of_isGroupLikeElem_of_pow_eq_one
-    ((MonoidAlgebra.isGroupLikeElem_single_one m).map f)
+  refine ((MonoidAlgebra.isGroupLikeElem_single_one m).map f).eq_one_of_pow_eq_one
     (n := orderOf m) (orderOf_ne_zero_iff.mpr hm) ?_
   rw [← map_pow, MonoidAlgebra.single_pow, one_pow, pow_orderOf_eq_one,
     ← MonoidAlgebra.one_def, map_one]
 
 /-- **A bialgebra homomorphism from the group algebra of a torsion group into a reduced Hopf
 algebra with connected spectrum factors through the counit.** -/
-theorem monoidAlgebra_bialgHom_eq_algebraMap_counit
+theorem _root_.BialgHom.monoidAlgebra_eq_algebraMap_counit
     [IsReduced H] [ConnectedSpace (PrimeSpectrum H)]
-    {M : Type w} [CommGroup M] (hM : IsMulTorsion M) (f : MonoidAlgebra k M →ₐc[k] H) :
+    {M : Type w} [CommGroup M] (f : MonoidAlgebra k M →ₐc[k] H) (hM : IsMulTorsion M) :
     (f : MonoidAlgebra k M →ₐ[k] H) =
       (Algebra.ofId k H).comp (Bialgebra.counitAlgHom k (MonoidAlgebra k M)) := by
   refine MonoidAlgebra.algHom_ext (fun m ↦ ?_) (Subsingleton.elim _ _)
-  rw [AlgHom.comp_apply, BialgHom.coe_toAlgHom, monoidAlgebra_bialgHom_single_eq_one f (hM m)]
+  rw [AlgHom.comp_apply, BialgHom.coe_toAlgHom, f.monoidAlgebra_single_eq_one (hM m)]
   simp [Bialgebra.counitAlgHom, Algebra.ofId]
 
 end TauCeti

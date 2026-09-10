@@ -153,6 +153,7 @@ variable (k : Type*) [CommSemiring k] {M : Type*} [CommMonoid M] (p : ℕ) [ExpC
 
 /-- In a monoid algebra over a commutative semiring of exponential characteristic `p`, indexed by a
 commutative monoid killed by `p`, the `p`-th power map is the `p`-th power of the counit. -/
+@[simp]
 theorem pow_expChar_monoidAlgebra_eq_algebraMap (hM : ∀ m : M, m ^ p = 1) (x : k[M]) :
     x ^ p = algebraMap k k[M] (Coalgebra.counit (R := k) x ^ p) := by
   have hinj : Function.Injective (algebraMap k k[M]) :=
