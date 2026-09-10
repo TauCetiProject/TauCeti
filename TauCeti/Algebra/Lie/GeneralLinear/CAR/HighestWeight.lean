@@ -90,6 +90,14 @@ noncomputable def carPositiveRootPair (n : Type*) [Fintype n] [LinearOrder n]
   let _ := carPairLinearOrder n
   exact (carPositiveRootPairs n).orderEmbOfFin rfl r
 
+/-- The positive-root pair enumeration is the increasing enumeration of its defining finset. -/
+private theorem carPositiveRootPair_eq_orderEmbOfFin (n : Type*) [Fintype n] [LinearOrder n]
+    (r : Fin (carPositiveRootPairs n).card) :
+    carPositiveRootPair n r =
+      (@Finset.orderEmbOfFin (n × n) (carPairLinearOrder n) (carPositiveRootPairs n)
+        (carPositiveRootPairs n).card rfl) r := by
+  rw [carPositiveRootPair.eq_def]
+
 /-- The order embedding enumerates the same pair as `carPositiveRootPair`. -/
 @[simp]
 theorem carPositiveRootPairOrderEmbedding_apply (n : Type*) [Fintype n] [LinearOrder n]
@@ -113,9 +121,7 @@ theorem carPositiveRootPair_mem (n : Type*) [Fintype n] [LinearOrder n]
 theorem range_carPositiveRootPair (n : Type*) [Fintype n] [LinearOrder n] :
     Set.range (carPositiveRootPair n) = carPositiveRootPairs n := by
   let _ : LinearOrder (n × n) := carPairLinearOrder n
-  rw [show carPositiveRootPair n = (carPositiveRootPairs n).orderEmbOfFin rfl by
-    funext r
-    rw [carPositiveRootPair.eq_def], Finset.range_orderEmbOfFin]
+  rw [funext (carPositiveRootPair_eq_orderEmbOfFin n), Finset.range_orderEmbOfFin]
 
 /-- The positive matrix units in the lexicographic order on their index pairs. -/
 noncomputable def carPositiveMatrixUnitFamily (K : Type*) [CommRing K]
@@ -222,11 +228,15 @@ theorem carHighestWeightVector_ne_zero :
     carHighestWeightVector K n ≠ 0 := by
   let _ := carPairLinearOrder n
   have hpositive : LinearIndependent K (carPositiveMatrixUnitFamily K n) := by
-    convert
-      (Matrix.stdBasis K n n).linearIndependent.comp
-        ((carPositiveRootPairs n).orderEmbOfFin rfl)
-        ((carPositiveRootPairs n).orderEmbOfFin rfl).injective using 1
-    rfl
+    have hfamily : carPositiveMatrixUnitFamily K n =
+        (Matrix.stdBasis K n n) ∘ (carPositiveRootPairs n).orderEmbOfFin rfl := by
+      funext r
+      rw [Function.comp_apply, carPositiveMatrixUnitFamily_apply,
+        carPositiveRootPair_eq_orderEmbOfFin]
+    rw [hfamily]
+    exact (Matrix.stdBasis K n n).linearIndependent.comp
+      ((carPositiveRootPairs n).orderEmbOfFin rfl)
+      ((carPositiveRootPairs n).orderEmbOfFin rfl).injective
   simpa only [carHighestWeightVector_def, List.map_ofFn] using
     CliffordAlgebra.prod_map_ι_ofFn_ne_zero (traceQuadraticForm K n)
       (carPositiveMatrixUnitFamily K n) hpositive
