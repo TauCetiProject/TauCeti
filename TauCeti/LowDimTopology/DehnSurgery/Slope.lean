@@ -9,9 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Data.Rat.Lemmas
-public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.LinearAlgebra.Pi
-public import Mathlib.RingTheory.Int.Basic
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 public import Mathlib.Topology.Instances.AddCircle.Real
 public import TauCeti.Algebra.Module.Primitive
