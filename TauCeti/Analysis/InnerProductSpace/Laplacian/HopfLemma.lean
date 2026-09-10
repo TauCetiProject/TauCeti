@@ -25,8 +25,9 @@ complementary *local* statement at a point where such a bound is attained: **Hop
 boundary-point lemma**.
 
 Let `B = ball y R` be a ball, let `e` be a unit vector, and let `x₀ = y + R • e` be the point
-where the outward ray in direction `e` meets the sphere `∂B`.  If `u` is twice continuously
-differentiable on `closedBall y R`, is subharmonic on `B` (`0 ≤ Δ u`), and stays strictly below
+where the outward ray in direction `e` meets the sphere `∂B`.  If `u` is continuous on
+`closedBall y R`, twice continuously differentiable on `B`, and differentiable at `x₀`, is
+subharmonic on `B` (`0 ≤ Δ u`), and stays strictly below
 the value `u x₀` inside `B` while staying weakly below it on `∂B`, then `u` leaves `x₀` in the
 direction `e` at a strictly positive rate `0 < fderiv ℝ u x₀ e`.  The classical form of the
 lemma, in which `u x₀` is a strict maximum over the whole closed ball, follows as a corollary.
@@ -38,7 +39,7 @@ barrier `w x = ‖x - y‖ ^ p - R ^ p` with `p < 0`, which vanishes on the oute
 perturbation still respects the maximum bound there — and is bounded above on the inner sphere,
 where the strict inequality of the hypothesis leaves a margin.  The exponent is chosen so that
 `Δ w = p (p + dim E - 2) ‖x - y‖ ^ (p - 2)` is nonnegative on the annulus, so the weak maximum
-principle applies to the perturbation.  Letting the perturbation parameter tend to zero and
+principle applies to the perturbation.  Letting the inward ray parameter tend to zero and
 differentiating the resulting one-sided bound at `x₀` gives the claim.  Taking `p = -dim E`
 keeps the barrier inside the exponents for which the radial Laplacian formula
 `TauCeti.laplacian_norm_rpow_of_ne` gives that sign in every dimension at once.
@@ -46,11 +47,13 @@ keeps the barrier inside the exponents for which the radial Laplacian formula
 ## Main declarations
 
 * `TauCeti.fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere`: **Hopf's boundary-point
-  lemma.** A subharmonic `C²` function that stays strictly below its value at a boundary point of
-  a ball inside the ball, and weakly below it on the sphere, has strictly positive derivative
-  there in the outward normal direction.
+  lemma.** A subharmonic function continuous on the closed ball, `C²` in the ball, and
+  differentiable at the boundary point that stays strictly below its value there in the ball and
+  weakly below it on the sphere has strictly positive outward derivative.
 * `TauCeti.fderiv_pos_of_laplacian_nonneg_of_lt_closedBall`: the classical form of the lemma, in
   which the value at the boundary point is a strict maximum over the closed ball.
+* `TauCeti.fderiv_neg_of_laplacian_nonpos_of_gt_ball_of_ge_sphere`: the minimum form with a weak
+  inequality on the sphere.
 * `TauCeti.fderiv_neg_of_laplacian_nonpos_of_gt_closedBall`: the superharmonic mirror image, for
   a strict minimum.
 * `TauCeti.fderiv_pos_of_harmonicOnNhd_of_lt_closedBall`: the harmonic case of the lemma.
@@ -98,22 +101,9 @@ private theorem laplacian_hopfBarrier (y : E) (R p : ℝ) {x : E} (hx : x ≠ y)
   have htrans : Δ (fun z : E => ‖z - y‖ ^ p) x = Δ (fun z : E => ‖z‖ ^ p) (x - y) := by
     have h := congrFun (laplacian_comp_add_right (fun z : E => ‖z‖ ^ p) (-y)) x
     simpa only [Pi.sub_apply, add_neg_cancel_right, sub_eq_add_neg] using h
-  rw [show hopfBarrier y R p = (fun z : E => ‖z - y‖ ^ p) - fun _ : E => R ^ p from rfl]
+  change Δ ((fun z : E => ‖z - y‖ ^ p) - fun _ : E => R ^ p) x = _
   rw [hpow.laplacian_sub contDiffAt_const, laplacian_const, Pi.zero_apply, sub_zero, htrans,
     laplacian_norm_rpow_of_ne p hne]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- The barrier is continuous away from its pole, where the exponent law `x ^ p` is continuous. -/
-private theorem continuousAt_hopfBarrier {y : E} {R p : ℝ} {x : E} (hx : x ≠ y) :
-    ContinuousAt (hopfBarrier y R p) x := by
-  have hne : ‖x - y‖ ≠ 0 := by simpa only [norm_ne_zero_iff] using sub_ne_zero.mpr hx
-  have ha : ContinuousAt (fun z : E => z - y) x := by fun_prop
-  have hb : ContinuousAt norm (x - y) := continuous_norm.continuousAt
-  have h1 : ContinuousAt (fun z : E => ‖z - y‖) x := hb.tendsto.comp ha.tendsto
-  have h2 : ContinuousAt (fun t : ℝ => t ^ p) ‖x - y‖ :=
-    Real.continuousAt_rpow_const ‖x - y‖ p (Or.inl hne)
-  have h3 : ContinuousAt (fun z : E => ‖z - y‖ ^ p) x := h2.tendsto.comp h1.tendsto
-  exact h3.sub continuousAt_const
 
 omit [FiniteDimensional ℝ E] in
 /-- The barrier is twice continuously differentiable away from its pole. -/
@@ -127,18 +117,20 @@ private theorem contDiffAt_hopfBarrier {y : E} {R p : ℝ} {x : E} (hx : x ≠ y
 
 /-- **Hopf's boundary-point lemma.** Let `B = ball y R` be a ball in a finite-dimensional real
 inner product space, let `e` be a unit vector, and let `x₀ = y + R • e` be the point where the
-outward ray in direction `e` meets the sphere `∂B`. If `u` is twice continuously differentiable
-on `closedBall y R`, is subharmonic on `B` (`0 ≤ Δ u`), stays strictly below the value `u x₀`
+outward ray in direction `e` meets the sphere `∂B`. If `u` is continuous on `closedBall y R`, twice
+continuously differentiable on `B`, and differentiable at `x₀`, is subharmonic on `B` (`0 ≤ Δ u`),
+stays strictly below the value `u x₀`
 inside `B` and weakly below it on the sphere `∂B`, then `u` leaves `x₀` in the direction `e` at a
 strictly positive rate: `0 < fderiv ℝ u x₀ e`.
 
-The strict inequality is needed only inside the ball; that is the form in which the lemma is
-applied to `M - u` at a boundary point of a ball on which `u` attains a maximum `M`, where `M - u`
-vanishes at the boundary point alone.  The classical form, with a strict maximum over the whole
+The strict inequality is needed only inside the ball, so the theorem applies directly when the
+boundary sphere has merely a weak bound. The classical form, with a strict maximum over the whole
 closed ball, is `TauCeti.fderiv_pos_of_laplacian_nonneg_of_lt_closedBall`. -/
 theorem fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere {u : E → ℝ} {y : E} {R : ℝ}
     {e : E} (hR : 0 < R) (he : ‖e‖ = 1)
-    (hu : ∀ x ∈ closedBall y R, ContDiffAt ℝ 2 u x)
+    (hucont : ContinuousOn u (closedBall y R))
+    (huinterior : ∀ x ∈ ball y R, ContDiffAt ℝ 2 u x)
+    (hderiv : DifferentiableAt ℝ u (y + R • e))
     (hlap : ∀ x ∈ ball y R, 0 ≤ Δ u x)
     (hlt : ∀ x ∈ ball y R, u x < u (y + R • e))
     (hle : ∀ x ∈ sphere y R, u x ≤ u (y + R • e)) :
@@ -163,8 +155,6 @@ theorem fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere {u : E → ℝ} {
       rw [h1, hx₀y, ← sub_smul]
     rw [hsub, norm_smul, Real.norm_eq_abs, he, mul_one, abs_of_nonneg (by linarith)]
   -- The inner sphere carries a uniform positive margin below the maximum `u x₀`.
-  have hucont : ContinuousOn u (closedBall y R) :=
-    fun x hx => (hu x hx).continuousAt.continuousWithinAt
   obtain ⟨z, hzball, hzmax⟩ := (isCompact_closedBall y (R / 2)).exists_isMaxOn
     (nonempty_closedBall.mpr hhalfpos.le)
     (hucont.mono (closedBall_subset_closedBall (by linarith)))
@@ -197,7 +187,7 @@ theorem fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere {u : E → ℝ} {
       rw [hKdef, Set.mem_sdiff]
       exact ⟨ball_subset_closedBall hw.1, fun h => hw.2 (ball_subset_closedBall h)⟩)
       (isOpen_ball.inter isClosed_closedBall.isOpen_compl)
-  -- The perturbation parameter: small enough that the barrier dominates the margin.
+  -- The perturbation coefficient: small enough that the barrier dominates the margin.
   set ε : ℝ := δ / (2 * (R / 2) ^ p) with hεdef
   have hhalfpow : 0 < (R / 2) ^ p := Real.rpow_pos_of_pos hhalfpos p
   have hεpos : 0 < ε := by rw [hεdef]; exact div_pos hδpos (by positivity)
@@ -207,16 +197,17 @@ theorem fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere {u : E → ℝ} {
   set v : E → ℝ := fun w => u w + ε * hopfBarrier y R p w with hvdef
   have hvcont : ContinuousOn v K := by
     intro w hw
-    have hv : v = fun z : E => u z + ε * hopfBarrier y R p z := rfl
-    rw [hv]
-    exact ((hu w (hKsub hw)).continuousAt.continuousWithinAt).add
-      ((continuousAt_hopfBarrier (hKne w hw)).continuousWithinAt.const_mul ε)
+    simp only [hvdef]
+    exact (hucont w (hKsub hw)).mono hKsub |>.add
+      ((contDiffAt_hopfBarrier (hKne w hw)).continuousAt.continuousWithinAt.const_mul ε)
   have hvcd : ∀ w ∈ interior K, ContDiffAt ℝ 2 v w := by
     intro w hw
     have hwK : w ∈ K := interior_subset hw
-    have hv : v = fun z : E => u z + ε * hopfBarrier y R p z := rfl
-    rw [hv]
-    exact (hu w (hKsub hwK)).add ((contDiffAt_hopfBarrier (hKne w hwK)).const_smul ε)
+    simp only [hvdef]
+    have hwball : w ∈ ball y R := by
+      have h1 : w ∈ interior (closedBall y R) := interior_mono hKsub hw
+      rwa [interior_closedBall y hR.ne'] at h1
+    exact (huinterior w hwball).add ((contDiffAt_hopfBarrier (hKne w hwK)).const_smul ε)
   have hvlap : ∀ w ∈ interior K, 0 ≤ Δ v w := by
     intro w hw
     have hwK : w ∈ K := interior_subset hw
@@ -230,24 +221,24 @@ theorem fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere {u : E → ℝ} {
       (contDiffAt_hopfBarrier (y := y) (R := R) (p := p) hne).const_smul ε
     have h1 : Δ (fun z : E => u z + ε * hopfBarrier y R p z) w
         = Δ u w + Δ (fun z : E => ε * hopfBarrier y R p z) w :=
-      (hu w (ball_subset_closedBall hwball)).laplacian_add hcd
+      (huinterior w hwball).laplacian_add hcd
     have h2 : Δ (fun z : E => ε * hopfBarrier y R p z) w = ε * Δ (hopfBarrier y R p) w := by
       have hfun : (fun z : E => ε * hopfBarrier y R p z) = ε • hopfBarrier y R p := by
         funext z
         simp only [Pi.smul_apply, smul_eq_mul]
       rw [hfun, laplacian_smul ε (contDiffAt_hopfBarrier (y := y) (R := R) (p := p) hne),
         smul_eq_mul]
-    have hv : v = fun z : E => u z + ε * hopfBarrier y R p z := rfl
-    rw [hv, h1, h2, laplacian_hopfBarrier y R p hne]
+    simp only [hvdef]
+    rw [h1, h2, laplacian_hopfBarrier y R p hne]
     have := hlap w hwball
     nlinarith [this, hpos, hεpos.le]
   have hvbdry : ∀ w ∈ frontier K, v w ≤ u x₀ := by
     intro w hwfr
     have hwK : w ∈ K := hKcompact.isClosed.frontier_subset hwfr
     have hnrm := hKnorm w hwK
-    have hv : v w = u w + ε * hopfBarrier y R p w := rfl
     rcases eq_or_lt_of_le hnrm.2 with houter | hinner
-    · rw [hv, hopfBarrier_eq_zero_of_mem_sphere (mem_sphere_iff_norm.mpr houter), mul_zero,
+    · simp only [hvdef]
+      rw [hopfBarrier_eq_zero_of_mem_sphere (mem_sphere_iff_norm.mpr houter), mul_zero,
         add_zero]
       exact hle w (mem_sphere_iff_norm.mpr houter)
     · have hinner' : ‖w - y‖ = R / 2 := by
@@ -263,7 +254,7 @@ theorem fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere {u : E → ℝ} {
         linarith
       have h3 : ε * hopfBarrier y R p w ≤ ε * (R / 2) ^ p :=
         mul_le_mul_of_nonneg_left h2 hεpos.le
-      rw [hv]
+      simp only [hvdef]
       linarith [h1, h3, hεbound]
   -- The weak maximum principle bounds the perturbation on the whole annulus.
   have hKmax : ∀ w ∈ K, v w ≤ u x₀ :=
@@ -280,10 +271,8 @@ theorem fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere {u : E → ℝ} {
   have hFnonneg : ∀ h ∈ Set.Ioc (0 : ℝ) (R / 2), 0 ≤ F h := by
     intro h hh
     have h1 := hKmax _ (hmemK h hh)
-    have hv : v (x₀ - h • e) = u (x₀ - h • e) + ε * hopfBarrier y R p (x₀ - h • e) := rfl
-    have hF : F h = u x₀ - u (x₀ - h • e) - ε * hopfBarrier y R p (x₀ - h • e) := rfl
-    rw [hv] at h1
-    rw [hF]
+    simp only [hvdef] at h1
+    simp only [hFdef]
     linarith
   have hF0 : F 0 = 0 := by
     have hz : hopfBarrier y R p x₀ = 0 :=
@@ -293,13 +282,11 @@ theorem fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere {u : E → ℝ} {
   have hline : HasDerivAt (fun h : ℝ => x₀ - h • e) (-e) 0 := by
     have h := ((hasDerivAt_id (0 : ℝ)).smul_const e).const_sub x₀
     simpa using h
-  have hx₀mem : x₀ ∈ closedBall y R := by
-    rw [mem_closedBall, dist_eq_norm, ← hx₀norm]
-  have hu' : HasFDerivAt u (fderiv ℝ u x₀) x₀ :=
-    ((hu x₀ hx₀mem).differentiableAt (by norm_num)).hasFDerivAt
+  have hu' : HasFDerivAt u (fderiv ℝ u x₀) x₀ := hderiv.hasFDerivAt
   have h1 : HasDerivAt (fun h : ℝ => u (x₀ - h • e)) (-(fderiv ℝ u x₀ e)) 0 := by
     have h := hu'.comp_hasDerivAt_of_eq (f := fun h : ℝ => x₀ - h • e) (x := 0) hline (by simp)
-    rw [show (fderiv ℝ u x₀) (-e) = -(fderiv ℝ u x₀ e) from map_neg _ _] at h
+    have hmap : (fderiv ℝ u x₀) (-e) = -(fderiv ℝ u x₀ e) := map_neg _ _
+    rw [hmap] at h
     exact h
   -- The derivative of the barrier along the outward ray at `x₀`.
   have h2 : HasDerivAt (fun h : ℝ => hopfBarrier y R p (x₀ - h • e)) (-p * R ^ (p - 1)) 0 := by
@@ -310,17 +297,29 @@ theorem fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere {u : E → ℝ} {
       have hcomp := (Real.hasDerivAt_rpow_const (x := R) (p := p) (Or.inl hR.ne')).comp_of_eq
         (h := fun h : ℝ => R - h) (x := 0) hs (by simp)
       simpa only [Function.comp_apply] using hcomp.sub_const (R ^ p)
-    rw [show p * R ^ (p - 1) * (-1) = -p * R ^ (p - 1) from by ring] at hbase
+    have hbase' : HasDerivAt (fun h : ℝ => (R - h) ^ p - R ^ p)
+        (-p * R ^ (p - 1)) 0 := by
+      simpa only [mul_neg, mul_one, neg_mul] using hbase
     have hev : (fun h : ℝ => hopfBarrier y R p (x₀ - h • e)) =ᶠ[𝓝 0]
         (fun h : ℝ => (R - h) ^ p - R ^ p) := by
       filter_upwards [eventually_lt_nhds hR] with h hh
       rw [hopfBarrier, hnorm_sub hh]
-    exact hbase.congr_of_eventuallyEq hev
+    exact hbase'.congr_of_eventuallyEq hev
   have hFderiv : HasDerivAt F (fderiv ℝ u x₀ e - ε * (-p * R ^ (p - 1))) 0 := by
     have h := ((hasDerivAt_const (0 : ℝ) (u x₀)).sub h1).sub (h2.const_mul ε)
-    rw [show (0 - -(fderiv ℝ u x₀ e)) - ε * (-p * R ^ (p - 1))
-        = fderiv ℝ u x₀ e - ε * (-p * R ^ (p - 1)) from by ring] at h
-    exact h
+    rw [hFdef]
+    have h' : HasDerivAt
+        ((fun x : ℝ => u x₀) - (fun h : ℝ => u (x₀ - h • e)) -
+          (fun h : ℝ => ε * hopfBarrier y R p (x₀ - h • e)))
+        (fderiv ℝ u x₀ e - ε * (-p * R ^ (p - 1))) 0 := by
+      simpa only [sub_neg_eq_add, zero_add] using h
+    have hfun : (fun h : ℝ => u x₀ - u (x₀ - h • e) -
+        ε * hopfBarrier y R p (x₀ - h • e)) =
+        ((fun x : ℝ => u x₀) - fun h : ℝ => u (x₀ - h • e)) -
+          fun h : ℝ => ε * hopfBarrier y R p (x₀ - h • e) := by
+      funext h
+      simp only [Pi.sub_apply]
+    exact h'.congr_of_eventuallyEq (Filter.Eventually.of_forall (fun h => congrFun hfun h))
   -- Let the ray parameter tend to zero from above.
   have hslope : Tendsto (fun h : ℝ => h⁻¹ * F h) (𝓝[>] (0 : ℝ))
       (𝓝 (fderiv ℝ u x₀ e - ε * (-p * R ^ (p - 1)))) := by
@@ -340,11 +339,13 @@ stays strictly below `u x₀` at every other point of the closed ball.  It is th
 `TauCeti.fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere`. -/
 theorem fderiv_pos_of_laplacian_nonneg_of_lt_closedBall {u : E → ℝ} {y : E} {R : ℝ} {e : E}
     (hR : 0 < R) (he : ‖e‖ = 1)
-    (hu : ∀ x ∈ closedBall y R, ContDiffAt ℝ 2 u x)
+    (hucont : ContinuousOn u (closedBall y R))
+    (huinterior : ∀ x ∈ ball y R, ContDiffAt ℝ 2 u x)
+    (hderiv : DifferentiableAt ℝ u (y + R • e))
     (hlap : ∀ x ∈ ball y R, 0 ≤ Δ u x)
     (hmax : ∀ x ∈ closedBall y R, x ≠ y + R • e → u x < u (y + R • e)) :
     0 < fderiv ℝ u (y + R • e) e := by
-  refine fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere hR he hu hlap
+  refine fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere hR he hucont huinterior hderiv hlap
     (fun x hx => hmax x (ball_subset_closedBall hx) ?_) fun x hx => ?_
   · rintro rfl
     rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs, he, mul_one,
@@ -354,26 +355,49 @@ theorem fderiv_pos_of_laplacian_nonneg_of_lt_closedBall {u : E → ℝ} {y : E} 
     · rw [h]
     · exact (hmax x (sphere_subset_closedBall hx) h).le
 
+/-- **Hopf's boundary-point lemma, minimum form.** If `u` is continuous on `closedBall y R`,
+twice continuously differentiable on `ball y R`, and differentiable at `x₀`, satisfies
+`Δ u ≤ 0` on the ball, has a strict minimum at `x₀` in the ball, and has a weak minimum on the
+sphere, then its derivative in the outward normal direction is negative. -/
+theorem fderiv_neg_of_laplacian_nonpos_of_gt_ball_of_ge_sphere {u : E → ℝ} {y : E} {R : ℝ}
+    {e : E} (hR : 0 < R) (he : ‖e‖ = 1)
+    (hucont : ContinuousOn u (closedBall y R))
+    (huinterior : ∀ x ∈ ball y R, ContDiffAt ℝ 2 u x)
+    (hderiv : DifferentiableAt ℝ u (y + R • e))
+    (hlap : ∀ x ∈ ball y R, Δ u x ≤ 0)
+    (hgt : ∀ x ∈ ball y R, u (y + R • e) < u x)
+    (hge : ∀ x ∈ sphere y R, u (y + R • e) ≤ u x) :
+    fderiv ℝ u (y + R • e) e < 0 := by
+  have h := fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere (u := -u) hR he
+    hucont.neg (fun x hx => (huinterior x hx).neg) hderiv.neg
+    (fun x hx => by
+      rw [congrFun laplacian_neg x, Pi.neg_apply]
+      exact neg_nonneg.mpr (hlap x hx))
+    (fun x hx => neg_lt_neg (hgt x hx))
+    (fun x hx => neg_le_neg (hge x hx))
+  rw [fderiv_neg] at h
+  exact neg_pos.mp h
+
 /-- **Hopf's boundary-point lemma, minimum form.** The mirror image of
-`TauCeti.fderiv_pos_of_laplacian_nonneg_of_lt_closedBall` for superharmonic functions: if `u` is
-`C²` on `closedBall y R`, satisfies `Δ u ≤ 0` on `ball y R` and has a strict *minimum* at
-`x₀ = y + R • e`, then `u` grows into `x₀` from outside, so `fderiv ℝ u x₀ e < 0`. -/
+`TauCeti.fderiv_pos_of_laplacian_nonneg_of_lt_closedBall` for superharmonic functions, with a
+strict minimum at `x₀ = y + R • e` over the closed ball. -/
 theorem fderiv_neg_of_laplacian_nonpos_of_gt_closedBall {u : E → ℝ} {y : E} {R : ℝ} {e : E}
     (hR : 0 < R) (he : ‖e‖ = 1)
-    (hu : ∀ x ∈ closedBall y R, ContDiffAt ℝ 2 u x)
+    (hucont : ContinuousOn u (closedBall y R))
+    (huinterior : ∀ x ∈ ball y R, ContDiffAt ℝ 2 u x)
+    (hderiv : DifferentiableAt ℝ u (y + R • e))
     (hlap : ∀ x ∈ ball y R, Δ u x ≤ 0)
     (hmin : ∀ x ∈ closedBall y R, x ≠ y + R • e → u (y + R • e) < u x) :
     fderiv ℝ u (y + R • e) e < 0 := by
-  have h := fderiv_pos_of_laplacian_nonneg_of_lt_closedBall (u := -u) hR he
-    (fun x hx => (hu x hx).neg)
-    (fun x hx => by
-      have h1 : Δ (-u) x = -Δ u x := by
-        rw [congrFun laplacian_neg x, Pi.neg_apply]
-      rw [h1]
-      exact neg_nonneg.mpr (hlap x hx))
-    (fun x hx hne => neg_lt_neg (hmin x hx hne))
-  rw [fderiv_neg] at h
-  exact neg_pos.mp h
+  refine fderiv_neg_of_laplacian_nonpos_of_gt_ball_of_ge_sphere hR he hucont huinterior hderiv hlap
+    (fun x hx => hmin x (ball_subset_closedBall hx) ?_) (fun x hx => ?_)
+  · rintro rfl
+    rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs, he, mul_one,
+      abs_of_pos hR] at hx
+    exact absurd hx (lt_irrefl R)
+  · by_cases h : x = y + R • e
+    · rw [h]
+    · exact (hmin x (sphere_subset_closedBall hx) h).le
 
 /-- **Hopf's boundary-point lemma for harmonic functions.** A harmonic function on the ball whose
 value at the boundary point `x₀ = y + R • e` is a strict maximum over `closedBall y R` has
@@ -381,11 +405,13 @@ strictly positive outgoing derivative there. This is the form of the lemma used 
 strong maximum principle and boundary-point regularity. -/
 theorem fderiv_pos_of_harmonicOnNhd_of_lt_closedBall {u : E → ℝ} {y : E} {R : ℝ} {e : E}
     (hR : 0 < R) (he : ‖e‖ = 1)
-    (hu : ∀ x ∈ closedBall y R, ContDiffAt ℝ 2 u x)
+    (hucont : ContinuousOn u (closedBall y R))
+    (hderiv : DifferentiableAt ℝ u (y + R • e))
     (hharm : HarmonicOnNhd u (ball y R))
     (hmax : ∀ x ∈ closedBall y R, x ≠ y + R • e → u x < u (y + R • e)) :
     0 < fderiv ℝ u (y + R • e) e :=
-  fderiv_pos_of_laplacian_nonneg_of_lt_closedBall hR he hu
+  fderiv_pos_of_laplacian_nonneg_of_lt_closedBall hR he hucont
+    (fun x hx => (hharm x hx).1) hderiv
     (fun x hx => le_of_eq ((hharm x hx).2.eq_of_nhds).symm) hmax
 
 end TauCeti
