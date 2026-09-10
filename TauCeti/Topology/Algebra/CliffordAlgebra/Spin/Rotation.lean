@@ -66,9 +66,8 @@ theorem continuous_spinRotation (hx : Q x = 1) (hy : Q y = 1)
   refine ((IsModuleTopology.continuous_of_linearMap
     (LinearMap.mulLeft ℝ (ι Q x))).comp hvec).congr ?_
   intro t
-  simp only [Function.comp_apply, coe_spinRotation, map_add, map_smul]
+  simp only [Function.comp_apply, LinearMap.mulLeft_apply, coe_spinRotation, map_add, map_smul]
   rw [mul_add, mul_smul_comm, mul_smul_comm]
-  rfl
 
 /-- An orthonormal pair determines a path in the Spin group from `1` to the scalar `-1`. -/
 def spinRotationPath (hx : Q x = 1) (hy : Q y = 1)
