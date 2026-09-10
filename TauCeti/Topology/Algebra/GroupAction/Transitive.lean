@@ -11,8 +11,8 @@ public import TauCeti.GroupTheory.GroupAction.Transitive
 /-!
 # Topological orbit-stabilizer for transitive actions
 
-For a continuous transitive action on a Hausdorff space `X`, if the quotient by the stabilizer is
-compact, then the orbit-stabilizer equivalence is a homeomorphism
+For a transitive action on a Hausdorff space `X`, if the orbit map at `b` is continuous and the
+quotient by the stabilizer is compact, then the orbit-stabilizer equivalence is a homeomorphism
 
 `G ⧸ MulAction.stabilizer G b ≃ₜ X`.
 
@@ -25,6 +25,8 @@ is compact, so its continuous bijection with the Hausdorff space `X` has continu
   orbit-stabilizer equivalence.
 * `TauCeti.quotientStabilizerHomeomorph` is its canonical topological upgrade for compact quotient
   and Hausdorff `X`.
+* `TauCeti.quotientStabilizerHomeomorph_toEquiv` identifies the underlying equivalence with the
+  algebraic orbit-stabilizer equivalence.
 * `TauCeti.quotientStabilizerHomeomorph_mk` and
   `TauCeti.quotientStabilizerHomeomorph_smul` record its representative and equivariance laws.
 -/
@@ -36,39 +38,53 @@ open MulAction
 namespace TauCeti
 
 variable (G : Type*) {X : Type*} [Group G] [TopologicalSpace G] [TopologicalSpace X]
-  [MulAction G X] [ContinuousSMul G X] [IsPretransitive G X]
+  [MulAction G X] [IsPretransitive G X]
 
-/-- The canonical orbit-stabilizer equivalence is continuous for a continuous transitive group
-action. -/
+/-- The canonical orbit-stabilizer equivalence is continuous when its orbit map is continuous. -/
 @[fun_prop]
-theorem continuous_quotientStabilizerEquiv (b : X) :
+theorem continuous_quotientStabilizerEquiv (b : X) (hb : Continuous fun g : G => g • b) :
     Continuous (quotientStabilizerEquiv G b) := by
   apply (QuotientGroup.isQuotientMap_mk (stabilizer G b)).continuous_iff.mpr
-  convert continuous_id.smul (continuous_const : Continuous fun _ : G => b) using 1
+  convert hb using 1
   funext g
   exact quotientStabilizerEquiv_mk G b g
 
-/-- For a continuous transitive action on a Hausdorff space, a compact quotient by the stabilizer
-of a point is canonically homeomorphic to the space. -/
+/-- For a transitive action on a Hausdorff space, if the orbit map at a point is continuous and its
+stabilizer quotient is compact, then that quotient is canonically homeomorphic to the space. -/
 noncomputable def quotientStabilizerHomeomorph (b : X)
+    (hb : Continuous fun g : G => g • b)
     [CompactSpace (G ⧸ (stabilizer G b))] [T2Space X] :
     G ⧸ (stabilizer G b) ≃ₜ X :=
-  (continuous_quotientStabilizerEquiv G b).homeoOfEquivCompactToT2
+  (continuous_quotientStabilizerEquiv G b hb).homeoOfEquivCompactToT2
+
+/-- The underlying equivalence of the quotient-stabilizer homeomorphism is the algebraic
+orbit-stabilizer equivalence. -/
+@[simp]
+theorem quotientStabilizerHomeomorph_toEquiv (b : X)
+    (hb : Continuous fun g : G => g • b)
+    [CompactSpace (G ⧸ (stabilizer G b))] [T2Space X] :
+    (quotientStabilizerHomeomorph G b hb).toEquiv = quotientStabilizerEquiv G b :=
+  Continuous.toEquiv_homeoOfEquivCompactToT2 (continuous_quotientStabilizerEquiv G b hb)
 
 /-- The quotient-stabilizer homeomorphism sends the coset of `g` to `g • b`. -/
 @[simp]
 theorem quotientStabilizerHomeomorph_mk (b : X)
+    (hb : Continuous fun g : G => g • b)
     [CompactSpace (G ⧸ (stabilizer G b))] [T2Space X] (g : G) :
-    quotientStabilizerHomeomorph G b (QuotientGroup.mk g) = g • b :=
-  quotientStabilizerEquiv_mk G b g
+    quotientStabilizerHomeomorph G b hb (QuotientGroup.mk g) = g • b := by
+  change (quotientStabilizerHomeomorph G b hb).toEquiv (QuotientGroup.mk g) = g • b
+  rw [quotientStabilizerHomeomorph_toEquiv, quotientStabilizerEquiv_mk]
 
 /-- The quotient-stabilizer homeomorphism is equivariant for the canonical left actions. -/
 @[simp]
 theorem quotientStabilizerHomeomorph_smul (b : X)
+    (hb : Continuous fun g : G => g • b)
     [CompactSpace (G ⧸ (stabilizer G b))] [T2Space X]
     (g : G) (q : G ⧸ (stabilizer G b)) :
-    quotientStabilizerHomeomorph G b (g • q) =
-      g • quotientStabilizerHomeomorph G b q :=
-  quotientStabilizerEquiv_smul G b g q
+    quotientStabilizerHomeomorph G b hb (g • q) =
+      g • quotientStabilizerHomeomorph G b hb q := by
+  change (quotientStabilizerHomeomorph G b hb).toEquiv (g • q) =
+    g • (quotientStabilizerHomeomorph G b hb).toEquiv q
+  rw [quotientStabilizerHomeomorph_toEquiv, quotientStabilizerEquiv_smul]
 
 end TauCeti
