@@ -16,9 +16,9 @@ permutation wreath product is the semidirect product
 
 `(ι → D) ⋊ Q`,
 
-where `Q` permutes the coordinates of the base group. This file defines that coordinate action,
-the full wreath product with `Q = Equiv.Perm ι`, and the restricted wreath product attached to a
-subgroup `Q ≤ Equiv.Perm ι`.
+where `Q` permutes the coordinates of the base group. This file defines the full wreath product
+with `Q = Equiv.Perm ι` and the restricted wreath product attached to a subgroup
+`Q ≤ Equiv.Perm ι`.
 
 The semidirect-product API supplies the inclusions of the base and top groups and the projection
 to the top group. Two natural actions are defined here. If `D` acts on `Λ`, the imprimitive action
@@ -27,7 +27,6 @@ primitivity of the product action requires additional hypotheses and is not asse
 
 ## Main definitions
 
-* `TauCeti.coordinateAction`: a permutation group acts on `ι → D` by permuting coordinates.
 * `TauCeti.WreathProduct`: the full permutation wreath product `(ι → D) ⋊ Equiv.Perm ι`.
 * `TauCeti.RestrictedWreathProduct`: the wreath product whose top group is a subgroup of
   `Equiv.Perm ι`.
@@ -52,36 +51,15 @@ universe u v w
 
 variable (D : Type u) (ι : Type v) [Group D]
 
-/-- The action of permutations of `ι` on the group of `D`-valued functions, by permutation of
-coordinates. The inverse in `f (σ⁻¹ i)` makes this a left action. -/
-def coordinateAction : Equiv.Perm ι →* MulAut (ι → D) where
-  toFun σ :=
-    { toFun := fun f i ↦ f (σ⁻¹ i)
-      invFun := fun f i ↦ f (σ i)
-      left_inv := fun f ↦ by simp
-      right_inv := fun f ↦ by simp
-      map_mul' := fun _ _ ↦ rfl }
-  map_one' := by
-    ext f i
-    simp
-  map_mul' σ τ := by
-    ext f i
-    simp
-
-/-- Evaluate the coordinate-permutation action at one index. -/
-@[simp]
-theorem coordinateAction_apply (σ : Equiv.Perm ι) (f : ι → D) (i : ι) :
-    coordinateAction D ι σ f i = f (σ⁻¹ i) := by
-  simp [coordinateAction]
-
 /-- The full permutation wreath product of `D` by the symmetric group on `ι`. Its base group is
 `ι → D`, and its top group is `Equiv.Perm ι`. -/
-abbrev WreathProduct := (ι → D) ⋊[coordinateAction D ι] Equiv.Perm ι
+abbrev WreathProduct :=
+  (ι → D) ⋊[mulAutArrow (G := Equiv.Perm ι) (A := ι) (M := D)] Equiv.Perm ι
 
 /-- The permutation wreath product with top group restricted to
 `Q ≤ Equiv.Perm ι`. -/
 abbrev RestrictedWreathProduct (Q : Subgroup (Equiv.Perm ι)) :=
-  (ι → D) ⋊[(coordinateAction D ι).comp Q.subtype] Q
+  (ι → D) ⋊[(mulAutArrow (G := Equiv.Perm ι) (A := ι) (M := D)).comp Q.subtype] Q
 
 namespace WreathProduct
 
@@ -90,8 +68,10 @@ variable {D ι}
 /-- Multiplication in a permutation wreath product, written in coordinates. -/
 theorem mul_left (a b : WreathProduct D ι) (i : ι) :
     (a * b).left i = a.left i * b.left (a.right⁻¹ i) := by
-  simpa only [Pi.mul_apply, coordinateAction_apply] using
-    congrFun (SemidirectProduct.mul_left a b) i
+  have h := congrFun (SemidirectProduct.mul_left a b) i
+  rw [Pi.mul_apply] at h
+  rw [mulAutArrow_apply_apply] at h
+  exact h
 
 /-- The order of a finite full permutation wreath product. -/
 theorem natCard [Finite ι] :
@@ -138,7 +118,7 @@ products, acting pointwise on the base and identically on the top group. -/
 def map (f : D →* D') : WreathProduct D ι →* WreathProduct D' ι :=
   SemidirectProduct.map (MonoidHom.piMap fun _ ↦ f) (MonoidHom.id _) fun σ ↦ by
     ext b i
-    simp [coordinateAction]
+    rfl
 
 /-- Mapping the base group acts pointwise on the base coordinates. -/
 @[simp]
@@ -174,8 +154,7 @@ variable {κ : Type w}
 def congr (e : ι ≃ κ) : WreathProduct D ι ≃* WreathProduct D κ :=
   SemidirectProduct.congr (MulEquiv.arrowCongr e (MulEquiv.refl D)) e.permCongrHom fun σ ↦ by
     ext f i
-    simp only [MulEquiv.trans_apply, MulEquiv.arrowCongr_apply, MulEquiv.refl_apply,
-      coordinateAction_apply]
+    change f (σ⁻¹ (e.symm i)) = f (e.symm ((e.permCongrHom σ)⁻¹ i))
     rw [← map_inv e.permCongrHom σ]
     simp [Equiv.permCongrHom, Equiv.permCongr_apply]
 
@@ -226,7 +205,13 @@ instance : MulAction (WreathProduct D ι) (ι × Λ) where
     change ((w * z).right x.1, (w * z).left ((w * z).right x.1) • x.2) =
       (w.right (z.right x.1),
         w.left (w.right (z.right x.1)) • (z.left (z.right x.1) • x.2))
-    ext <;> simp [coordinateAction, Equiv.Perm.mul_apply, mul_smul]
+    ext
+    · simp [Equiv.Perm.mul_apply]
+    · simp only [SemidirectProduct.mul_right, Equiv.Perm.coe_mul, Function.comp_apply,
+        SemidirectProduct.mul_left, Pi.mul_apply, mulAutArrow_apply_apply]
+      change (w.left (w.right (z.right x.1)) *
+        z.left (w.right⁻¹ (w.right (z.right x.1)))) • x.2 = _
+      simp [mul_smul]
 
 @[simp]
 theorem imprimitive_smul (w : WreathProduct D ι) (x : ι × Λ) :
@@ -291,7 +276,11 @@ instance : MulAction (WreathProduct D ι) (ι → Λ) where
       fun i ↦ w.left i • (z.left (w.right⁻¹ i) •
         x (z.right⁻¹ (w.right⁻¹ i)))
     funext i
-    simp [coordinateAction, Equiv.Perm.mul_apply, mul_inv_rev, mul_smul]
+    simp only [SemidirectProduct.mul_left, Pi.mul_apply, mulAutArrow_apply_apply,
+      SemidirectProduct.mul_right, mul_inv_rev, Equiv.Perm.coe_mul, Equiv.Perm.coe_inv,
+      Function.comp_apply]
+    change (w.left i * z.left (w.right⁻¹ i)) • x (z.right⁻¹ (w.right⁻¹ i)) = _
+    simp [mul_smul]
 
 @[simp]
 theorem product_smul (w : WreathProduct D ι) (x : ι → Λ) (i : ι) :
