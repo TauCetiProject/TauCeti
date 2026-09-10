@@ -48,6 +48,8 @@ def atFinitePlaceBaseChange (Q : _root_.QuadraticForm K V)
       (Invertible.map (algebraMap K (v.adicCompletion K)) 2).copy 2 (map_ofNat _ _).symm
     (atFinitePlace (Q.baseChange L) w).IsometryEquiv
       ((atFinitePlace Q v).baseChange (w.adicCompletion L)) := by
+  letI : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   letI : Invertible (2 : v.adicCompletion K) :=
     (Invertible.map (algebraMap K (v.adicCompletion K)) 2).copy 2 (map_ofNat _ _).symm
   let e := (baseChangeBaseChange (A := L) (B := w.adicCompletion L) Q).symm.trans
@@ -55,7 +57,13 @@ def atFinitePlaceBaseChange (Q : _root_.QuadraticForm K V)
   exact
     { toLinearEquiv := e.toLinearEquiv
       map_app' := fun x ↦ by
-        rw [atFinitePlace_def, atFinitePlace_def]
+        have hQ : atFinitePlace (Q.baseChange L) w =
+            (Q.baseChange L).baseChange (w.adicCompletion L) := by
+          rw [atFinitePlace_def]
+          apply _root_.baseChange_ext
+          intro y
+          simp [Algebra.smul_def]
+        rw [hQ, atFinitePlace_def]
         exact e.map_app x }
 
 /-- The localization/base-change isometry is the composite of the two canonical tensor-product

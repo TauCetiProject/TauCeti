@@ -276,7 +276,7 @@ section ScalarTower
 variable {R : Type uR} {A : Type uA} {B : Type uN}
 variable [CommRing R] [CommRing A] [CommRing B]
 variable [Algebra R A] [Algebra A B] [Algebra R B] [IsScalarTower R A B]
-variable [Invertible (2 : R)] [Invertible (2 : A)]
+variable [Invertible (2 : R)]
 variable {M : Type uM} [AddCommGroup M] [Module R M]
 
 namespace QuadraticForm
@@ -286,19 +286,23 @@ namespace QuadraticForm
 The underlying linear equivalence is the inverse of Mathlib's canonical cancellation
 `B ⊗[A] (A ⊗[R] M) ≃ B ⊗[R] M`. -/
 def baseChangeBaseChange (Q : _root_.QuadraticForm R M) :
-    (Q.baseChange B).IsometryEquiv ((Q.baseChange A).baseChange B) where
-  toLinearEquiv :=
-    (TensorProduct.AlgebraTensorModule.cancelBaseChange R A B B M).symm
-  map_app' x := by
-    have h : ((Q.baseChange A).baseChange B).comp
-        (TensorProduct.AlgebraTensorModule.cancelBaseChange R A B B M).symm.toLinearMap =
-        Q.baseChange B := by
-      apply _root_.baseChange_ext
-      intro m
-      simp only [QuadraticMap.comp_apply, LinearEquiv.coe_coe,
-        TensorProduct.AlgebraTensorModule.cancelBaseChange_symm_tmul,
-        _root_.QuadraticForm.baseChange_tmul, mul_one, smul_assoc, one_smul]
-    exact DFunLike.congr_fun h x
+    letI : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    (Q.baseChange B).IsometryEquiv ((Q.baseChange A).baseChange B) :=
+  letI : Invertible (2 : A) :=
+    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+  { toLinearEquiv :=
+      (TensorProduct.AlgebraTensorModule.cancelBaseChange R A B B M).symm
+    map_app' x := by
+      have h : ((Q.baseChange A).baseChange B).comp
+          (TensorProduct.AlgebraTensorModule.cancelBaseChange R A B B M).symm.toLinearMap =
+          Q.baseChange B := by
+        apply _root_.baseChange_ext
+        intro m
+        simp only [QuadraticMap.comp_apply, LinearEquiv.coe_coe,
+          TensorProduct.AlgebraTensorModule.cancelBaseChange_symm_tmul,
+          _root_.QuadraticForm.baseChange_tmul, mul_one, smul_assoc, one_smul]
+      exact DFunLike.congr_fun h x }
 
 /-- The linear equivalence underlying repeated base change is Mathlib's canonical tensor-product
 cancellation, read in the direction from direct to successive base change. -/
