@@ -36,7 +36,8 @@ The inverse-free computation rule is `inv_smul_mk`.
 
 * The `MulAction`, `FaithfulSMul`, `ContinuousConstSMul`, and `IsCancelSMul` instances for
   `FundamentalGroup X x₀` acting on `UniversalCover x₀`.
-* `TauCeti.Path.prependUniversalCover`: continuous prepending of a path to universal-cover
+* `TauCeti.UniversalCover.prependUniversalCover`: continuous prepending of a path to
+  universal-cover
   representatives.
 * `TauCeti.UniversalCover.basepointLift`: the constant-path point over `x₀`, lying over `x₀`
   by `TauCeti.UniversalCover.proj_basepointLift`.
@@ -55,7 +56,7 @@ open scoped unitInterval
 
 variable {X : Type*} [TopologicalSpace X] {x₀ : X}
 
-namespace TauCeti.Path
+namespace TauCeti.UniversalCover
 
 variable {x₁ : X}
 
@@ -128,7 +129,7 @@ theorem prependUniversalCover_trans {x₂ : X} (gamma : Path x₂ x₁) (delta :
   rw [prependUniversalCover_mk, prependUniversalCover_mk, prependUniversalCover_mk,
     Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.trans_assoc]
 
-end TauCeti.Path
+end TauCeti.UniversalCover
 
 namespace TauCeti.UniversalCover
 
@@ -179,9 +180,9 @@ instance : ContinuousConstSMul (FundamentalGroup X x₀) (UniversalCover x₀) w
   continuous_const_smul g := by
     obtain ⟨γ, hγ⟩ := Quotient.exists_rep (g⁻¹.toPath : Path.Homotopic.Quotient x₀ x₀)
     have hγ' : Path.Homotopic.Quotient.mk γ = g⁻¹.toPath := hγ
-    apply (TauCeti.Path.continuous_prependUniversalCover γ).congr
+    apply (continuous_prependUniversalCover γ).congr
     rintro ⟨x, q⟩
-    rw [smul_mk, TauCeti.Path.prependUniversalCover_mk, hγ']
+    rw [smul_mk, prependUniversalCover_mk, hγ']
 
 /-- The action of the fundamental group on the universal cover is free. -/
 instance : IsCancelSMul (FundamentalGroup X x₀) (UniversalCover x₀) where

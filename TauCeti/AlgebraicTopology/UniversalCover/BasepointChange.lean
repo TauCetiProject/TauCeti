@@ -14,10 +14,10 @@ A path `γ : Path x₀ x₁` identifies the universal covers based at its endpoi
 based-path model, the identification removes the initial path `γ`: it sends the class of a path
 `α` starting at `x₀` to the class of `γ.symm.trans α`, now regarded as a path starting at `x₁`.
 
-The construction uses `TauCeti.Path.prependUniversalCover`, which prepends a fixed path to every
-representative and is continuous for the quotient topology on the universal cover. Prepending a
-path and its reverse gives inverse continuous maps, producing
-`TauCeti.Path.basepointChangeHomeomorph`.
+The construction uses `TauCeti.UniversalCover.prependUniversalCover`, which prepends a fixed path
+to every representative and is continuous for the quotient topology on the universal cover.
+Prepending a path and its reverse gives inverse continuous maps, producing
+`TauCeti.UniversalCover.basepointChangeHomeomorph`.
 
 The resulting homeomorphism lies over the identity of the base, sends the point represented by
 `γ` to the constant-path point over `x₁`, depends only on the endpoint-preserving homotopy class
@@ -26,9 +26,9 @@ basepoint-change coherence of the based-path universal-cover construction.
 
 ## Main declarations
 
-* `TauCeti.Path.basepointChangeHomeomorph`: the homeomorphism between universal covers
+* `TauCeti.UniversalCover.basepointChangeHomeomorph`: the homeomorphism between universal covers
   based at the endpoints of a path.
-* `TauCeti.Path.basepointChangeHomeomorph_trans`: basepoint change respects path
+* `TauCeti.UniversalCover.basepointChangeHomeomorph_trans`: basepoint change respects path
   concatenation.
 
 ## References
@@ -48,9 +48,7 @@ open scoped unitInterval
 
 variable {X : Type*} [TopologicalSpace X]
 
-namespace TauCeti.Path
-
-open UniversalCover
+namespace TauCeti.UniversalCover
 
 variable {x₀ x₁ x₂ : X}
 
@@ -58,22 +56,22 @@ variable {x₀ x₁ x₂ : X}
 the chosen initial path by prepending its reverse; the inverse map prepends the path itself. -/
 def basepointChangeHomeomorph (gamma : Path x₀ x₁) :
     UniversalCover x₀ ≃ₜ UniversalCover x₁ where
-  toFun := TauCeti.Path.prependUniversalCover gamma.symm
-  invFun := TauCeti.Path.prependUniversalCover gamma
+  toFun := prependUniversalCover gamma.symm
+  invFun := prependUniversalCover gamma
   left_inv p := by
     rcases p with ⟨x, q⟩
-    rw [TauCeti.Path.prependUniversalCover_mk, TauCeti.Path.prependUniversalCover_mk]
+    rw [prependUniversalCover_mk, prependUniversalCover_mk]
     congr 1
     rw [Path.Homotopic.Quotient.mk_symm, ← Path.Homotopic.Quotient.trans_assoc,
       Path.Homotopic.Quotient.trans_symm, Path.Homotopic.Quotient.refl_trans]
   right_inv p := by
     rcases p with ⟨x, q⟩
-    rw [TauCeti.Path.prependUniversalCover_mk, TauCeti.Path.prependUniversalCover_mk]
+    rw [prependUniversalCover_mk, prependUniversalCover_mk]
     congr 1
     rw [Path.Homotopic.Quotient.mk_symm, ← Path.Homotopic.Quotient.trans_assoc,
       Path.Homotopic.Quotient.symm_trans, Path.Homotopic.Quotient.refl_trans]
-  continuous_toFun := TauCeti.Path.continuous_prependUniversalCover gamma.symm
-  continuous_invFun := TauCeti.Path.continuous_prependUniversalCover gamma
+  continuous_toFun := continuous_prependUniversalCover gamma.symm
+  continuous_invFun := continuous_prependUniversalCover gamma
 
 /-- Basepoint change prepends the reverse path class to a representative. -/
 @[simp]
@@ -81,8 +79,8 @@ theorem basepointChangeHomeomorph_apply_mk (gamma : Path x₀ x₁) (x : X)
     (q : Path.Homotopic.Quotient x₀ x) :
     basepointChangeHomeomorph gamma (mk x q) =
       mk x ((Path.Homotopic.Quotient.mk gamma).symm.trans q) := by
-  change TauCeti.Path.prependUniversalCover gamma.symm (mk x q) = _
-  rw [TauCeti.Path.prependUniversalCover_mk, Path.Homotopic.Quotient.mk_symm]
+  change prependUniversalCover gamma.symm (mk x q) = _
+  rw [prependUniversalCover_mk, Path.Homotopic.Quotient.mk_symm]
 
 /-- The inverse basepoint change prepends the original path class to a representative. -/
 @[simp]
@@ -90,19 +88,19 @@ theorem basepointChangeHomeomorph_symm_apply_mk (gamma : Path x₀ x₁) (x : X)
     (q : Path.Homotopic.Quotient x₁ x) :
     (basepointChangeHomeomorph gamma).symm (mk x q) =
       mk x ((Path.Homotopic.Quotient.mk gamma).trans q) := by
-  exact TauCeti.Path.prependUniversalCover_mk gamma x q
+  exact prependUniversalCover_mk gamma x q
 
 /-- Basepoint change lies over the identity map of the base. -/
 @[simp]
 theorem proj_basepointChangeHomeomorph (gamma : Path x₀ x₁) (p : UniversalCover x₀) :
     proj (basepointChangeHomeomorph gamma p) = proj p := by
-  exact TauCeti.Path.proj_prependUniversalCover gamma.symm p
+  exact proj_prependUniversalCover gamma.symm p
 
 /-- The inverse basepoint change also lies over the identity map of the base. -/
 @[simp]
 theorem proj_basepointChangeHomeomorph_symm (gamma : Path x₀ x₁) (p : UniversalCover x₁) :
     proj ((basepointChangeHomeomorph gamma).symm p) = proj p := by
-  exact TauCeti.Path.proj_prependUniversalCover gamma p
+  exact proj_prependUniversalCover gamma p
 
 /-- On a based-path representative, basepoint change prepends the reverse of the changing path. -/
 @[simp]
@@ -110,7 +108,7 @@ theorem basepointChangeHomeomorph_apply_ofBasedPath (gamma : Path x₀ x₁)
     (beta : BasedPath x₀) :
     basepointChangeHomeomorph gamma (ofBasedPath x₀ beta) =
       ofBasedPath x₁ (BasedPath.ofPath (gamma.symm.trans beta.toPath)) :=
-  TauCeti.Path.prependUniversalCover_ofBasedPath gamma.symm beta
+  prependUniversalCover_ofBasedPath gamma.symm beta
 
 /-- On a based-path representative, inverse basepoint change prepends the changing path. -/
 @[simp]
@@ -118,7 +116,7 @@ theorem basepointChangeHomeomorph_symm_apply_ofBasedPath (gamma : Path x₀ x₁
     (beta : BasedPath x₁) :
     (basepointChangeHomeomorph gamma).symm (ofBasedPath x₁ beta) =
       ofBasedPath x₀ (BasedPath.ofPath (gamma.trans beta.toPath)) :=
-  TauCeti.Path.prependUniversalCover_ofBasedPath gamma beta
+  prependUniversalCover_ofBasedPath gamma beta
 
 private theorem mem_own_sheet {x : X} {U : Set X} (hxU : x ∈ U)
     (q : Path.Homotopic.Quotient x₀ x) : mk x q ∈ sheet U hxU q := by
@@ -197,7 +195,7 @@ theorem basepointChangeHomeomorph_refl (x : X) :
     basepointChangeHomeomorph (Path.refl x) = Homeomorph.refl (UniversalCover x) := by
   apply Homeomorph.ext
   intro p
-  exact TauCeti.Path.prependUniversalCover_refl p
+  exact prependUniversalCover_refl p
 
 /-- Reversing the changing path reverses the basepoint-change homeomorphism. -/
 @[simp]
@@ -231,4 +229,4 @@ theorem basepointChangeHomeomorph_trans (gamma : Path x₀ x₁) (delta : Path x
       Path.Homotopic.Quotient.mk_symm, Path.Homotopic.Quotient.mk_symm]
   rw [hsymm, Path.Homotopic.Quotient.trans_assoc]
 
-end TauCeti.Path
+end TauCeti.UniversalCover
