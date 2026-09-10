@@ -19,9 +19,9 @@ on the diagonal, so the lower factor of the decomposition is unitriangular.
 
 ## Main results
 
-* `TauCeti.Matrix.LDL.diagEntries_pos` — the diagonal entries of `D` are positive.
-* `TauCeti.Matrix.LDL.lowerInv_apply_diag` and `TauCeti.Matrix.LDL.lower_apply_diag` — the lower
-  factor of the LDL decomposition and its inverse are unitriangular.
+* `LDL.diagEntries_pos` — the diagonal entries of `D` are positive.
+* `LDL.lowerInv_apply_diag` and `LDL.lower_apply_diag` — the lower factor of the LDL
+  decomposition and its inverse are unitriangular.
 -/
 
 public section
@@ -30,14 +30,12 @@ open scoped ComplexOrder Matrix
 
 namespace TauCeti
 
-namespace Matrix
-
 variable {𝕜 n : Type*} [RCLike 𝕜] [LinearOrder n] [WellFoundedLT n]
   [LocallyFiniteOrderBot n] [Fintype n] {S : Matrix n n 𝕜} (hS : S.PosDef)
 
 /-- The diagonal entries in Mathlib's LDL decomposition of a positive-definite matrix are
 positive. -/
-theorem LDL.diagEntries_pos (i : n) : 0 < LDL.diagEntries hS i := by
+theorem _root_.LDL.diagEntries_pos (i : n) : 0 < LDL.diagEntries hS i := by
   have hdiag : (LDL.diag hS).PosDef := by
     rw [LDL.diag_eq_lowerInv_conj]
     exact hS.mul_mul_conjTranspose_same
@@ -47,7 +45,7 @@ theorem LDL.diagEntries_pos (i : n) : 0 < LDL.diagEntries hS i := by
 /-- The lower factor in Mathlib's LDL decomposition is unitriangular: its inverse is the
 Gram-Schmidt matrix, which carries `1` on the diagonal. -/
 @[simp]
-theorem LDL.lowerInv_apply_diag (i : n) : LDL.lowerInv hS i i = 1 := by
+theorem _root_.LDL.lowerInv_apply_diag (i : n) : LDL.lowerInv hS i i = 1 := by
   let := Sᵀ.toNormedAddCommGroup hS.transpose
   let := Sᵀ.toInnerProductSpace hS.transpose.posSemidef
   rw [LDL.lowerInv]
@@ -57,13 +55,11 @@ theorem LDL.lowerInv_apply_diag (i : n) : LDL.lowerInv hS i i = 1 := by
 /-- The lower factor in Mathlib's LDL decomposition carries `1` on the diagonal, being the
 inverse of a matrix that does. -/
 @[simp]
-theorem LDL.lower_apply_diag (i : n) : LDL.lower hS i i = 1 := by
+theorem _root_.LDL.lower_apply_diag (i : n) : LDL.lower hS i i = 1 := by
   have htri : (LDL.lowerInv hS)ᵀ.IsUpperTriangular :=
     (LDL.isLowerTriangular_lowerInv hS).transpose
   have hinv := Matrix.inv_apply_diag_of_isUpperTriangular htri
     (LDL.lowerInv_apply_diag hS i)
   simpa [LDL.lower, ← Matrix.transpose_nonsing_inv] using hinv
-
-end Matrix
 
 end TauCeti
