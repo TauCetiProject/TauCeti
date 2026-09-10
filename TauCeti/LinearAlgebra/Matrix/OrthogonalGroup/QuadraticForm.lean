@@ -30,8 +30,10 @@ universe u v
 
 variable {R : Type u} [CommRing R] {n : Type v} [Fintype n] [DecidableEq n]
 
-/-- The standard quadratic form is the square of the Euclidean norm. -/
-@[simp]
+/-- The quadratic form of the identity matrix sends a vector to its dot product with itself.
+
+This is not a `simp` lemma: `TauCeti.PDE.toQuadraticForm'_one` already normalises the same
+left-hand side to `‖ξ‖ ^ 2` on `EuclideanSpace ℝ n`, and the two cannot both be simp-normal. -/
 theorem toQuadraticForm'_one_apply (x : n → R) :
     Matrix.toQuadraticForm' (1 : Matrix n n R) x = x ⬝ᵥ x := by
   simp [Matrix.toQuadraticForm', Matrix.toLinearMap₂'_apply']
