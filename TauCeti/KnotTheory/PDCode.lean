@@ -61,6 +61,12 @@ namespace PDCode
 def crossingSlotEquiv (n : ℕ) : Fin n × Fin 4 ≃ Fin (4 * n) :=
   finProdFinEquiv.trans (finCongr (Nat.mul_comm n 4))
 
+/-- The standard equivalence enumerating the incoming and outgoing half-edges of `2 * n`
+visits. -/
+def visitHalfEdgeEquiv (n : ℕ) : Fin (2 * n) × Bool ≃ Fin (4 * n) :=
+  (Equiv.prodCongr (Equiv.refl _) finTwoEquiv.symm).trans <|
+    finProdFinEquiv.trans (finCongr (by omega))
+
 /-- The crossing-slot equivalence numbers slot `s` at crossing `i` by `s + 4 * i`. -/
 @[simp]
 theorem crossingSlotEquiv_apply (n : ℕ) (i : Fin n) (slot : Fin 4) :
@@ -732,6 +738,11 @@ def orientedPDCodeEmpty : OrientedPDCode 0 := orientedPDCodeUnlink 0
 /-- A crossing-free oriented unknot with the specified choice of orientation. -/
 def orientedPDCodeUnknot (orientation : Bool) : OrientedPDCode 0 :=
   orientedPDCodeUnlink {orientation}
+
+/-- The one-component unknot is the corresponding singleton unlink code. -/
+theorem orientedPDCodeUnknot_eq_unlink (orientation : Bool) :
+    orientedPDCodeUnknot orientation = orientedPDCodeUnlink {orientation} := by
+  simp only [orientedPDCodeUnknot]
 
 /-- A crossing-free oriented circle is distinct from the empty diagram. -/
 theorem orientedPDCodeUnknot_ne_empty (orientation : Bool) :
