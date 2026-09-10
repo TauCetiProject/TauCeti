@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Torsion
 public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterLattice.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
@@ -14,17 +13,18 @@ public import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 public import TauCeti.Algebra.Bialgebra.GroupLike.Torsion
 
 /-!
-# The characters of a connected affine group are torsion free
+# The characters of a geometrically connected affine group are torsion free
 
-A character of an affine group `Spec H` is a group-like element of its coordinate Hopf algebra
-`H`. This file proves that when `H` is reduced with connected prime spectrum, no character has
-finite order. It also gives the corresponding result for smooth geometrically connected affine
-groups.
+A geometric character of an affine group `Spec H` is a group-like element of the coordinate Hopf
+algebra of its base change to an algebraic closure. This file proves that when `H` is
+geometrically reduced and geometrically connected, no geometric character has finite order, and
+records the corollary for a smooth geometrically connected affine group.
 
-The argument is a reduction to the diagonalizable case. Group-like elements of a Hopf algebra over
-a field are linearly independent, so evaluation embeds the group algebra on them into `H`. A
-subring of a reduced ring is reduced, and connectedness of a prime spectrum descends along an
-injective ring homomorphism, so both hypotheses pass to that group algebra, where
+Over the algebraic closure the argument is a reduction to the diagonalizable case. Group-like
+elements of a Hopf algebra over a field are linearly independent, so evaluation embeds the group
+algebra on them into `H`. A subring of a reduced ring is reduced, and connectedness of a prime
+spectrum descends along an injective ring homomorphism, so both hypotheses pass to that group
+algebra, where
 `TauCeti.isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace` already rules out torsion.
 
 Neither hypothesis can be dropped. Connectedness alone fails in characteristic `p`, where the
@@ -34,15 +34,17 @@ root of unity: its coordinate algebra is reduced but disconnected, and it has ch
 order `n`.
 
 Contravariantly, a homomorphism from `Spec H` to the diagonalizable group `D(M)` is a morphism of
-coordinate bialgebras `k[M] ⟶ H`. Torsion-freeness therefore says that a smooth connected affine
-group admits no nontrivial homomorphism to a diagonalizable group on a torsion group, so in
-particular no nontrivial `μ_n`-quotient.
+coordinate bialgebras `k[M] ⟶ H`. Torsion-freeness therefore says that a smooth geometrically
+connected affine group admits no nontrivial homomorphism to a diagonalizable group on a torsion
+group, so in particular no nontrivial `μ_n`-quotient.
 
 ## Main declarations
 
-* `TauCeti.CommHopfAlgCat.isMulTorsionFree_geometricCharacterGroup` and
-  `TauCeti.CommHopfAlgCat.isMulTorsionFree_geometricCharacterGroup_of_smooth`: **the character
-  lattice of a smooth geometrically connected affine group is torsion free.**
+* `TauCeti.CommHopfAlgCat.isMulTorsionFree_geometricCharacterGroup`: **the geometric character
+  group of a geometrically reduced, geometrically connected commutative Hopf algebra is torsion
+  free.**
+* `TauCeti.CommHopfAlgCat.isMulTorsionFree_geometricCharacterGroup_of_smooth`: its corollary for a
+  smooth geometrically connected affine group, whose coordinate algebra is geometrically reduced.
 * `TauCeti.CommHopfAlgCat.isAddTorsionFree_additiveCharacterGroup` and
   `TauCeti.CommHopfAlgCat.isAddTorsionFree_additiveCharacterGroup_of_smooth`: their additive forms.
 
