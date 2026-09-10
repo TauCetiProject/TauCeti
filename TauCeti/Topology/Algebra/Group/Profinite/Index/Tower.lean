@@ -50,35 +50,32 @@ private lemma relIndex_map_quotient_eq_index_sup_comap (hHK : H ≤ K)
     (H.map (QuotientGroup.mk' N.toSubgroup)).relIndex
         (K.map (QuotientGroup.mk' N.toSubgroup)) =
       ((H.subgroupOf K) ⊔ N.toSubgroup.comap K.subtype).index := by
-  let q : G →* G ⧸ N.toSubgroup := QuotientGroup.mk' N.toSubgroup
-  let qK : K →* G ⧸ N.toSubgroup := q.comp K.subtype
-  have hHmap : (H.subgroupOf K).map qK = H.map q := by
-    change (H.subgroupOf K).map (q.comp K.subtype) = H.map q
+  have hHmap : (H.subgroupOf K).map ((QuotientGroup.mk' N.toSubgroup).comp K.subtype) =
+      H.map (QuotientGroup.mk' N.toSubgroup) := by
     rw [← Subgroup.map_map, Subgroup.map_subgroupOf_eq_of_le hHK]
-  have hKmap : (⊤ : Subgroup K).map qK = K.map q := by
-    change (⊤ : Subgroup K).map (q.comp K.subtype) = K.map q
+  have hKmap : (⊤ : Subgroup K).map ((QuotientGroup.mk' N.toSubgroup).comp K.subtype) =
+      K.map (QuotientGroup.mk' N.toSubgroup) := by
     rw [← Subgroup.map_map, ← MonoidHom.range_eq_map,
       Subgroup.range_subtype]
+  have hker : ((QuotientGroup.mk' N.toSubgroup).comp K.subtype).ker =
+      N.toSubgroup.comap K.subtype := by
+    rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk']
   rw [← hHmap, ← hKmap, Subgroup.relIndex_map_map, top_sup_eq,
-    Subgroup.relIndex_top_right]
-  congr 2
-  ext x
-  change ((x : G) : G ⧸ N.toSubgroup) = 1 ↔ (x : G) ∈ N.toSubgroup
-  rw [QuotientGroup.eq_one_iff (x : G)]
+    Subgroup.relIndex_top_right, hker]
 
 omit [CompactSpace G] [TotallyDisconnectedSpace G] in
 private lemma index_subgroupOf_sup_comap_ne_zero [CompactSpace K]
     (N : OpenNormalSubgroup G) :
     ((H.subgroupOf K) ⊔ N.toSubgroup.comap K.subtype).index ≠ 0 := by
-  have hcomap_ne : (N.toSubgroup.comap K.subtype).index ≠ 0 := by
-    let _ : Finite (K ⧸ N.toSubgroup.comap K.subtype) :=
-      Subgroup.quotient_finite_of_isOpen _
-        (N.toOpenSubgroup.isOpen.preimage continuous_subtype_val)
-    exact Subgroup.index_ne_zero_of_finite
-  exact ne_zero_of_dvd_ne_zero hcomap_ne (Subgroup.index_dvd_of_le le_sup_right)
+  have : Finite (K ⧸ N.toSubgroup.comap K.subtype) :=
+    Subgroup.quotient_finite_of_isOpen _
+      (N.toOpenSubgroup.isOpen.preimage continuous_subtype_val)
+  have : (N.toSubgroup.comap K.subtype).FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  exact (Subgroup.finiteIndex_of_le le_sup_right).index_ne_zero
 
-/-- The relative supernatural index in `K` is the supremum of the relative indices of the
-images of `H` and `K` in the finite quotients of `G`.
+/-- The exponent of `ell` in the relative supernatural index of `H` in `K` is the supremum of
+the `ell`-adic valuations of the relative indices of the images of `H` and `K` in the finite
+quotients of `G`.
 
 This is the relative-index counterpart of `Subgroup.profiniteOrder_apply_eq_iSup_image` and is
 the comparison that lets all three terms of the tower formula use the same ambient quotients. -/
@@ -101,9 +98,8 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex
         ((H.map (QuotientGroup.mk' N.toSubgroup)).relIndex
           (K.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞)) N)
     have hVne : ((H.subgroupOf K) ⊔ V.toSubgroup).index ≠ 0 := by
-      apply ne_zero_of_dvd_ne_zero
-        (Subgroup.index_ne_zero_of_finite : V.toSubgroup.index ≠ 0)
-      exact Subgroup.index_dvd_of_le le_sup_right
+      have : V.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+      exact (Subgroup.finiteIndex_of_le le_sup_right).index_ne_zero
     rw [Subgroup.index_map_mk'_eq_index_sup,
       relIndex_map_quotient_eq_index_sup_comap H K hHK N,
       padicValNat_eq_emultiplicity hVne,
@@ -111,12 +107,12 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex
     apply emultiplicity_le_emultiplicity_of_dvd_right
     exact Subgroup.index_dvd_of_le (sup_le_sup_left hNV (H.subgroupOf K))
   · refine iSup_le fun N ↦ ?_
-    let V := OpenNormalSubgroup.comap N K.subtype continuous_subtype_val
-    refine le_iSup_of_le V ?_
+    refine le_iSup_of_le (OpenNormalSubgroup.comap N K.subtype continuous_subtype_val) ?_
+    have hV : (OpenNormalSubgroup.comap N K.subtype continuous_subtype_val).toSubgroup =
+        N.toSubgroup.comap K.subtype :=
+      OpenNormalSubgroup.toSubgroup_comap N K.subtype continuous_subtype_val
     rw [relIndex_map_quotient_eq_index_sup_comap H K hHK N,
-      Subgroup.index_map_mk'_eq_index_sup]
-    rw [show V.toSubgroup = N.toSubgroup.comap K.subtype from
-      OpenNormalSubgroup.toSubgroup_comap N K.subtype continuous_subtype_val]
+      Subgroup.index_map_mk'_eq_index_sup, hV]
 
 /-- Primewise multiplicativity of profinite index through a closed intermediate subgroup. -/
 theorem _root_.Subgroup.profiniteIndex_subgroupOf_add_profiniteIndex
@@ -164,12 +160,12 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_add_profiniteIndex
       have hrelne :
           (H.map (QuotientGroup.mk' N.toSubgroup)).relIndex
               (K.map (QuotientGroup.mk' N.toSubgroup)) ≠ 0 := by
-        intro hzero
-        have htower :=
-          (H.map (QuotientGroup.mk' N.toSubgroup)).relIndex_mul_index
-            (Subgroup.map_mono hHK)
-        rw [hzero, zero_mul] at htower
-        exact Subgroup.index_ne_zero_of_finite htower.symm
+        have : (H.map (QuotientGroup.mk' N.toSubgroup)).FiniteIndex :=
+          Subgroup.finiteIndex_of_finite_quotient
+        have : (H.map (QuotientGroup.mk' N.toSubgroup)).IsFiniteRelIndex
+            (K.map (QuotientGroup.mk' N.toSubgroup)) :=
+          Subgroup.isFiniteRelIndex_of_finiteIndex
+        exact Subgroup.relIndex_ne_zero
       rw [← (H.map (QuotientGroup.mk' N.toSubgroup)).relIndex_mul_index
           (Subgroup.map_mono hHK),
         padicValNat.mul hrelne
