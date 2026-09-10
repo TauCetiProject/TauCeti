@@ -79,10 +79,10 @@ the full symmetric group, the prime-degree form of Jordan's transposition recogn
 This recognition result identifies Galois groups from an irreducible polynomial and a
 factorization pattern exhibiting a transposition. -/
 theorem subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem
-    {β : Type*} [Finite β] [DecidableEq β] {G : Subgroup (Equiv.Perm β)}
-    (hG : IsPretransitive G β)
+    {β : Type*} [DecidableEq β] {G : Subgroup (Equiv.Perm β)} (hG : IsPretransitive G β)
     (hp : Nat.Prime (Nat.card β)) (g : Equiv.Perm β) (hgSwap : g.IsSwap) (hg : g ∈ G) :
     G = ⊤ := by
+  have : Finite β := Nat.finite_of_card_ne_zero hp.ne_zero
   let _ : IsPretransitive G β := hG
   exact Equiv.Perm.subgroup_eq_top_of_isPreprimitive_of_isSwap_mem
     (IsPreprimitive.of_prime_card hp) g hgSwap hg
