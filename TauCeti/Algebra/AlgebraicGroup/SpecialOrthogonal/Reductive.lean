@@ -140,14 +140,6 @@ theorem reductiveCommHopfAlgProperty_iff_geometricallyConnected_of_three_le
     exact eq_augmentation_of_isNormal_of_smoothUnipotent_of_three_le
       (AlgebraicClosure k) n hn I hI hU
 
-/-- **`SOₙ` is reductive in dimension at least three**, over every field of characteristic
-different from two. -/
-theorem reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_of_three_le
-    (k : Type u) [Field k] [NeZero (2 : k)] (n : Nat) (hn : 3 ≤ n) :
-    reductiveCommHopfAlgProperty k (finiteTypeCoordinateHopfAlgebra k n) :=
-  (reductiveCommHopfAlgProperty_iff_geometricallyConnected_of_three_le k n hn).mpr
-    (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k n)
-
 /-- **Every standard special orthogonal group is reductive**, over every field of characteristic
 different from two.
 
@@ -162,8 +154,9 @@ theorem reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
   | 1 => reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_one k
   | 2 => reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_two k
   | (m + 3) =>
-    reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_of_three_le k (m + 3)
-      (by omega)
+    (reductiveCommHopfAlgProperty_iff_geometricallyConnected_of_three_le k (m + 3)
+        (by omega)).mpr
+      (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k (m + 3))
 
 end
 
