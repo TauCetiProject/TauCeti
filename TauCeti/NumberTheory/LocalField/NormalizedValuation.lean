@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
 public import Mathlib.Algebra.Order.AbsoluteValue.Basic
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 public import TauCeti.Data.Int.WithZero
-public import TauCeti.RingTheory.Valuation.Discrete.AbsoluteValue
+public import TauCeti.RingTheory.Valuation.AbsoluteValue
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 
 /-!
@@ -384,7 +384,7 @@ theorem normalizedAbsoluteValue_irreducible {π : 𝒪[K]} (hπ : Irreducible π
 /-- The normalized absolute value satisfies the strong triangle inequality. -/
 theorem isNonarchimedean_normalizedAbsoluteValue :
     IsNonarchimedean (normalizedAbsoluteValue K) := by
-  apply Valuation.toAbsoluteValue_isNonarchimedean
+  apply Valuation.isNonarchimedean_toAbsoluteValue
 
 /-- The normalized absolute value takes the value one exactly on the elements of valuation one,
 that is, on the units of the ring of integers. -/
@@ -416,7 +416,7 @@ theorem mem_integer_iff_normalizedAbsoluteValue_le_one (x : K) :
 
 /-- The normalized absolute value is one on every unit of the ring of integers. -/
 @[simp]
-theorem normalizedAbsoluteValue_integerRingUnit (u : 𝒪[K]ˣ) :
+theorem normalizedAbsoluteValue_coe_unit (u : 𝒪[K]ˣ) :
     normalizedAbsoluteValue K ((u : 𝒪[K]) : K) = 1 := by
   rw [normalizedAbsoluteValue_eq_one_iff]
   exact (Valuation.Integers.isUnit_iff_valuation_eq_one

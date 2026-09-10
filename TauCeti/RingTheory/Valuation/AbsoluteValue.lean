@@ -82,15 +82,16 @@ variable {K S Γ₀ : Type*} [DivisionRing K] [LinearOrderedCommMonoidWithZero �
 
 /-- An absolute value obtained from a valuation through a monotone realization is
 nonarchimedean. -/
-theorem toAbsoluteValue_isNonarchimedean (v : _root_.Valuation K Γ₀) (f : Γ₀ →*₀ S)
+theorem isNonarchimedean_toAbsoluteValue (v : _root_.Valuation K Γ₀) (f : Γ₀ →*₀ S)
     (hf : ∀ ⦃a b⦄, a ≤ b → f a ≤ f b) (hf_zero : ∀ a, f a = 0 ↔ a = 0) :
     IsNonarchimedean (v.toAbsoluteValue f hf hf_zero) := by
   intro x y
-  simp only [toAbsoluteValue_apply]
-  refine (hf (v.map_add x y)).trans ?_
   rcases le_total (v x) (v y) with h | h
-  · rw [max_eq_right h, max_eq_right (hf h)]
-  · rw [max_eq_left h, max_eq_left (hf h)]
+  · rw [max_eq_right (by simpa only [toAbsoluteValue_apply] using hf h)]
+    exact v.toAbsoluteValue_add_le_right f hf hf_zero h
+  · rw [max_eq_left (by simpa only [toAbsoluteValue_apply] using hf h)]
+    simpa only [add_comm] using
+      v.toAbsoluteValue_add_le_right f hf hf_zero (x := y) (y := x) h
 
 end IsNonarchimedean
 

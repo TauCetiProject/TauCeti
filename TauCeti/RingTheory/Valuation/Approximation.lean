@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
 public import Mathlib.Data.Int.WithZero
-public import TauCeti.RingTheory.Valuation.Discrete.AbsoluteValue
+public import TauCeti.RingTheory.Valuation.AbsoluteValue
 
 /-!
 # Weak approximation for discrete valuations
