@@ -64,11 +64,6 @@ variable (k : Type w) [CommRing k] {V : Type u} [DecidableEq V] {G : SimpleGraph
   (hG : (2 : k) = 0 ∨
     ∀ ⦃i j j' j'' : V⦄, G.Adj i j → G.Adj i j' → G.Adj i j'' → j = j' ∨ j' = j'' ∨ j'' = j)
 
-/-- When `2` is zero in the coefficient ring the sign distinguishing two incident edges
-collapses. -/
-private theorem neg_one_eq_one (h2 : (2 : k) = 0) : (-1 : kˣ) = 1 :=
-  Units.ext (by rw [Units.val_neg, Units.val_one]; linear_combination -h2)
-
 /-- The two signs comparing a pair of neighbours in either order cancel. -/
 private theorem exteriorSign_mul_exteriorSign (a b : V) :
     (if a = b then (1 : kˣ) else -1) * (if b = a then 1 else -1) = 1 := by
@@ -97,7 +92,10 @@ def exterior : SkewZigzagParameter k G where
   ratio_cocycle := by
     intro i j j' j'' h h' h''
     rcases hG with h2 | hdeg
-    · simp only [neg_one_eq_one k h2, ite_self, one_mul]
+    · -- When `2` is zero the sign distinguishing two incident edges collapses.
+      have hneg : (-1 : kˣ) = 1 :=
+        Units.ext (by rw [Units.val_neg, Units.val_one]; linear_combination -h2)
+      simp only [hneg, ite_self, one_mul]
     · rcases hdeg h h' h'' with rfl | rfl | rfl
       · rw [ite_eq_left rfl, one_mul, exteriorSign_mul_exteriorSign]
       · rw [ite_eq_left rfl, mul_one, exteriorSign_mul_exteriorSign]
@@ -124,7 +122,9 @@ theorem exterior_eq_one (h2 : (2 : k) = 0) : exterior k hG = 1 := by
   rcases eq_or_ne j j' with rfl | hne
   · rw [one_ratio]
     exact (exterior k hG).ratio_self h
-  · rw [exterior_ratio_of_ne hG h h' hne, one_ratio, neg_one_eq_one k h2]
+  · have hneg : (-1 : kˣ) = 1 :=
+      Units.ext (by rw [Units.val_neg, Units.val_one]; linear_combination -h2)
+    rw [exterior_ratio_of_ne hG h h' hne, one_ratio, hneg]
 
 end Exterior
 

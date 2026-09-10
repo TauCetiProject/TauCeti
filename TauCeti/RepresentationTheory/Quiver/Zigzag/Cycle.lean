@@ -122,18 +122,6 @@ private theorem backtrackScale_cycleLabelling (hm : 3 ≤ m) (v : Fin m)
   simp only [vertexEquiv_symm_vertex]
   rw [ite_eq_left trivial, ite_eq_right (add_one_add_one_ne_self hm v).symm, mul_one]
 
-private theorem neg_one_pow_val_add_one (hev : Even m) (v : Fin m) :
-    (-1 : kˣ) ^ ((v + 1 : Fin m) : ℕ) = -((-1 : kˣ) ^ (v : ℕ)) := by
-  have hval : ((v + 1 : Fin m) : ℕ) = (v.val + 1) % m := by
-    rw [Fin.val_add, Fin.val_one', Nat.add_mod_mod]
-  rw [hval]
-  rcases Nat.lt_or_ge (v.val + 1) m with h1 | h1
-  · rw [Nat.mod_eq_of_lt h1, pow_succ, mul_neg_one]
-  · have hv : v.val + 1 = m := by have := v.isLt; omega
-    have hev' : Even (v.val + 1) := by rw [hv]; exact hev
-    have hodd : Odd v.val := Nat.not_even_iff_odd.mp (Nat.even_add_one.mp hev')
-    rw [hv, Nat.mod_self, pow_zero, hodd.neg_one_pow, neg_neg]
-
 /-- **On an even cycle with at least three vertices the exterior parameter is gauge equivalent to
 the constant parameter**, and so presents the ordinary zigzag relations.  The gauge is the
 alternating sign on the edges of the cycle, which closes up exactly because the number of vertices
