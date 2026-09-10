@@ -20,7 +20,7 @@ on the first `m` labels and by the second on the last `n`.
 ## Main results
 
 * `TauCeti.PermutationTriple.disjointSum`: the construction, componentwise
-  `TauCeti.finSumPerm`.
+  `Equiv.Perm.finSumPerm`.
 * `TauCeti.PermutationTriple.cycleData_disjointSum`,
   `TauCeti.PermutationTriple.cycleCounts_disjointSum`: the cycle data of a disjoint sum is the
   concatenation of the cycle data of its summands, and the cycle counts add.
