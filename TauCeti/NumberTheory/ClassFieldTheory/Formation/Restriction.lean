@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.RepresentationTheory.Rep.Res
+public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Basic
 
 /-!
@@ -34,7 +35,21 @@ so injectively; the degrees multiply along the restriction
 subgroup, hence the same coefficient module `A^V` — the coefficient module of the smaller layer
 *is* the coefficient module of the bigger one, restricted along `galHom`
 (`LayerRestriction.repIso`). It is that last identification which lets a cohomology class of the
-layer be restricted to a subgroup of its Galois group at all.
+layer be restricted to a subgroup of its Galois group at all, and it is what
+`LayerRestriction.cohomologyRes` feeds to Mathlib's change-of-group map to obtain
+
+`H^n(U/V, A^V) ⟶ H^n(U'/V, A^V)`.
+
+In degree zero this map is the inclusion `A^U ⊆ A^{U'}` of ground levels
+(`LayerRestriction.groundLevelEquiv_cohomologyRes_zero`), which is what fixes its direction.
+
+Restrictions compose (`LayerRestriction.trans`), and along a tower `F ⊆ E ⊆ E' ⊆ K` the relative
+degree is multiplicative, the homomorphisms of Galois groups compose, and restriction of
+cohomology is functorial. Inside the finite quotient system the same tower structure is indexed by
+an inclusion `K ≤ H` of subgroups of `Γ`, and a subgroup of the Galois group of the layer of `H`
+gives back a layer of the system (`NormalLayer.subgroupLayer_subgroupLayer`), so a statement
+quantified over all subgroups of `Γ` can be applied inside the layer of any one of them — which is
+how Tate's theorem is used downstream.
 
 ## Main definitions
 
@@ -44,6 +59,11 @@ layer be restricted to a subgroup of its Galois group at all.
 * `TauCeti.ClassFieldTheory.LayerRestriction.galHom`: the induced homomorphism `U'/V → U/V`.
 * `TauCeti.ClassFieldTheory.LayerRestriction.repIso`: the coefficient module of the smaller layer
   is the coefficient module of the bigger layer, restricted along `galHom`.
+* `TauCeti.ClassFieldTheory.LayerRestriction.trans`: the composite of two restrictions.
+* `TauCeti.ClassFieldTheory.LayerRestriction.cohomologyRes`: restriction of the cohomology of a
+  layer along a restriction of layers.
+* `TauCeti.ClassFieldTheory.LayerRestriction.groundInclusion`: the inclusion `A^U ⊆ A^{U'}` of
+  ground levels, the degree-zero shadow of `cohomologyRes`.
 * `TauCeti.ClassFieldTheory.NormalLayer.subgroupGround`: the intermediate open subgroup attached
   to a subgroup of the Galois group.
 * `TauCeti.ClassFieldTheory.NormalLayer.subgroupLayer`: the layer of a subgroup of the Galois
@@ -65,6 +85,19 @@ layer be restricted to a subgroup of its Galois group at all.
   groups it induces is the inclusion of `H`.
 * `TauCeti.ClassFieldTheory.NormalLayer.subgroupLayer_top`: the layer of the whole Galois group is
   the layer itself.
+* `TauCeti.ClassFieldTheory.LayerRestriction.relativeDegree_trans` and
+  `TauCeti.ClassFieldTheory.LayerRestriction.galHom_trans`: the relative degree is multiplicative
+  and the homomorphisms of Galois groups compose along a tower of restrictions.
+* `TauCeti.ClassFieldTheory.LayerRestriction.cohomologyRes_trans`: restriction of cohomology is
+  functorial along a tower of restrictions.
+* `TauCeti.ClassFieldTheory.LayerRestriction.groundLevelEquiv_cohomologyRes_zero`: in degree zero,
+  restriction of cohomology is the ground-level inclusion.
+* `TauCeti.ClassFieldTheory.NormalLayer.relativeDegree_subgroupLayerRestriction`: the relative
+  degree of a tower `K ≤ H` inside the finite quotient system is the relative index of `K` in `H`.
+* `TauCeti.ClassFieldTheory.NormalLayer.subgroupLayer_subgroupLayer`: the layer of a subgroup of
+  the Galois group of the layer of `H` is again a layer of the system.
+* `TauCeti.ClassFieldTheory.NormalLayer.subgroupLayer_range_galHom`: conversely, every restriction
+  of `L` is the layer of a subgroup of its Galois group.
 
 ## Implementation notes
 
@@ -75,6 +108,10 @@ of restrictions compose without transporting a layer along an equality. Because 
 the relative degree cannot be read off the datum itself: `relativeDegree` is a function of the two
 layers, and takes the restriction proof to make that dependency explicit and support the notation
 `T.relativeDegree`.
+
+Corestriction is deliberately absent. Mathlib's change-of-group maps supply the map induced by a
+homomorphism of groups, which is restriction on cohomology; the transfer in the other direction is
+not yet available in any degree, and belongs to the generic cohomology supplier rather than here.
 
 `NormalLayer.subgroupGround` is the correspondence-theorem preimage of `H` — the subgroup
 `QuotientGroup.comapMk'OrderIso` attaches to `H` — pushed from `U` into the ambient group `G`, so
@@ -94,6 +131,8 @@ that it can be an `OpenSubgroup G` and be compared with the other subgroups of a
 -- of intermediate layers formalised here.
 
 public noncomputable section
+
+open CategoryTheory
 
 namespace TauCeti.ClassFieldTheory
 
@@ -228,6 +267,114 @@ theorem repIso_inv_apply_coe (T : LayerRestriction small big) (F : Formation G)
     (((T.repIso F).inv.hom x : F.level small.top) : F.toRep.V) = (x : F.toRep.V) :=
   LinearEquiv.coe_ofEq_apply (congrArg F.level T.same_top).symm x
 
+/-! ### Towers of restrictions -/
+
+/-- **Every layer is a restriction of itself.** -/
+theorem refl (L : NormalLayer G) : LayerRestriction L L :=
+  ⟨rfl, le_rfl⟩
+
+/-- The relative degree of the trivial restriction is `1`. -/
+theorem relativeDegree_self {L : NormalLayer G} (T : LayerRestriction L L) :
+    T.relativeDegree = 1 := by
+  rw [relativeDegree_def, Subgroup.relIndex_self]
+
+/-- The homomorphism of Galois groups attached to the trivial restriction is the identity. -/
+@[simp]
+theorem galHom_self {L : NormalLayer G} (T : LayerRestriction L L) :
+    T.galHom = MonoidHom.id L.Gal :=
+  MonoidHom.ext fun γ ↦ by
+    induction γ using QuotientGroup.induction_on with
+    | H w => rw [galHom_mk, MonoidHom.id_apply]; rfl
+
+variable {a b c : NormalLayer G}
+
+/-- **Restrictions compose:** raising the ground field twice is one restriction. In field notation
+this is the tower `F ⊆ E ⊆ E' ⊆ K`. -/
+theorem trans (T : LayerRestriction a b) (T' : LayerRestriction b c) : LayerRestriction a c :=
+  ⟨T.same_top.trans T'.same_top, T.ground_le.trans T'.ground_le⟩
+
+/-- **The relative degree is multiplicative along a tower of restrictions.** -/
+theorem relativeDegree_trans (T : LayerRestriction a b) (T' : LayerRestriction b c) :
+    (T.trans T').relativeDegree = T.relativeDegree * T'.relativeDegree :=
+  (Subgroup.relIndex_mul_relIndex _ _ _ T.ground_toSubgroup_le T'.ground_toSubgroup_le).symm
+
+/-- **The homomorphisms of Galois groups compose along a tower of restrictions.** -/
+theorem galHom_trans (T : LayerRestriction a b) (T' : LayerRestriction b c) :
+    (T.trans T').galHom = T'.galHom.comp T.galHom :=
+  MonoidHom.ext fun γ ↦ by
+    induction γ using QuotientGroup.induction_on with
+    | H w => rw [galHom_mk, MonoidHom.comp_apply, galHom_mk, galHom_mk]; rfl
+
+/-- **The identifications of coefficient modules compose along a tower of restrictions.** All
+three are the identity on the ambient module, so this is an equation between three inclusions of
+one and the same level. -/
+theorem repIso_inv_hom_trans (T : LayerRestriction a b) (T' : LayerRestriction b c)
+    (F : Formation G) (x : F.level c.top) :
+    ((T.trans T').repIso F).inv.hom x = (T.repIso F).inv.hom ((T'.repIso F).inv.hom x) :=
+  Subtype.ext <| ((T.trans T').repIso_inv_apply_coe F x).trans
+    (((T.repIso_inv_apply_coe F _).trans (T'.repIso_inv_apply_coe F x)).symm)
+
+/-! ### Restriction of layer cohomology -/
+
+/-- **Restriction of cohomology along a restriction of layers**, the map
+
+`H^n(U/V, A^V) ⟶ H^n(U'/V, A^V)`
+
+induced by the inclusion `U'/V ↪ U/V` of Galois groups and the identification of the two
+coefficient modules. Both layers have the same top subgroup, so no coefficient actually moves:
+the map is Mathlib's change-of-group map for the inclusion. -/
+def cohomologyRes (T : LayerRestriction small big) (F : Formation G) (n : ℕ) :
+    big.H F n ⟶ small.H F n :=
+  groupCohomology.map T.galHom (T.repIso F).inv n
+
+/-- **Restricting along the trivial restriction does nothing.** -/
+@[simp]
+theorem cohomologyRes_self {L : NormalLayer G} (T : LayerRestriction L L) (F : Formation G)
+    (n : ℕ) : T.cohomologyRes F n = 𝟙 (L.H F n) := by
+  have h : ((T.repIso F).inv).hom.toLinearMap =
+      (𝟙 (L.rep F) : L.rep F ⟶ L.rep F).hom.toLinearMap := by
+    ext x
+    exact T.repIso_inv_apply_coe F x
+  rw [cohomologyRes, groupCohomology.map_congr T.galHom_self h n, groupCohomology.map_id]
+
+/-- **Restriction of cohomology is functorial along a tower of restrictions.** Restricting from
+`K/F` to `K/E'` and then to `K/E` is restricting from `K/F` to `K/E`. -/
+theorem cohomologyRes_trans (T : LayerRestriction a b) (T' : LayerRestriction b c)
+    (F : Formation G) (n : ℕ) :
+    (T.trans T').cohomologyRes F n = T'.cohomologyRes F n ≫ T.cohomologyRes F n := by
+  rw [cohomologyRes, cohomologyRes, cohomologyRes,
+    ← groupCohomology.map_comp T'.galHom T.galHom (T'.repIso F).inv (T.repIso F).inv n]
+  exact groupCohomology.map_congr (galHom_trans T T')
+    (by ext x; exact congrArg Subtype.val (T.repIso_inv_hom_trans T' F x)) n
+
+/-- The **ground-level inclusion** of a restriction: raising the ground field from `F` to `E`
+enlarges the ground level, `A^U ⊆ A^{U'}`. It is the degree-zero shadow of `cohomologyRes`. -/
+def groundInclusion (T : LayerRestriction small big) (F : Formation G) :
+    F.level big.ground →ₗ[ℤ] F.level small.ground :=
+  Submodule.inclusion (F.level_antitone T.ground_le)
+
+@[simp]
+theorem groundInclusion_apply_coe (T : LayerRestriction small big) (F : Formation G)
+    (x : F.level big.ground) : ((T.groundInclusion F x : F.level small.ground) : F.toRep.V) =
+      (x : F.toRep.V) :=
+  Submodule.coe_inclusion _ x
+
+/-- **In degree zero, restriction of cohomology is the ground-level inclusion.** Read through the
+identification of `H⁰(U/V, A^V)` with the ground level `A^U`, restricting a class from the layer
+`K/F` to the layer `K/E` is the inclusion `A^U ⊆ A^{U'}`. This is what fixes the direction of
+`cohomologyRes`. -/
+theorem groundLevelEquiv_cohomologyRes_zero (T : LayerRestriction small big) (F : Formation G)
+    (x : big.H F 0) :
+    small.groundLevelEquiv F
+        ((groupCohomology.H0Iso (small.rep F)).hom.hom (T.cohomologyRes F 0 x)) =
+      T.groundInclusion F (big.groundLevelEquiv F
+        ((groupCohomology.H0Iso (big.rep F)).hom.hom x)) := by
+  refine Subtype.ext ?_
+  rw [NormalLayer.groundLevelEquiv_apply_coe, groundInclusion_apply_coe,
+    NormalLayer.groundLevelEquiv_apply_coe]
+  have h := groupCohomology.map_H0Iso_hom_f_apply T.galHom (T.repIso F).inv x
+  exact (congrArg Subtype.val h).trans (T.repIso_inv_apply_coe F _)
+
 end LayerRestriction
 
 /-! ### The finite quotient system -/
@@ -356,6 +503,113 @@ theorem subgroupLayer_top : L.subgroupLayer ⊤ = L :=
   NormalLayer.ext
     (OpenSubgroup.toSubgroup_injective (by rw [ground_subgroupLayer, subgroupGround_top]))
     (L.top_subgroupLayer ⊤)
+
+/-! ### Towers inside the finite quotient system -/
+
+/-- The intermediate subgroup attached to a subgroup of the Galois group grows with it. -/
+theorem subgroupGround_mono : Monotone L.subgroupGround := by
+  intro K K' hK g hg
+  obtain ⟨hgU, hmem⟩ := (L.mem_subgroupGround K).1 hg
+  exact (L.mem_subgroupGround K').2 ⟨hgU, hK hmem⟩
+
+variable {H} {K : Subgroup L.Gal}
+
+/-- **The layer of a smaller subgroup is a restriction of the layer of a bigger one.** Together
+with `NormalLayer.subgroupRestriction` this makes the finite quotient system a system of towers:
+`K ≤ H ≤ U/V` is the tower of ground fields `F ⊆ E ⊆ E' ⊆ K`. -/
+theorem subgroupLayerRestriction (h : K ≤ H) :
+    LayerRestriction (L.subgroupLayer K) (L.subgroupLayer H) :=
+  ⟨rfl, OpenSubgroup.toSubgroup_le.1 (L.subgroupGround_mono h)⟩
+
+/-- **The restriction to a subgroup factors through the restriction to any bigger subgroup**, at
+the level of Galois groups. -/
+theorem galHom_subgroupRestriction_comp (h : K ≤ H) :
+    (L.subgroupRestriction H).galHom.comp (L.subgroupLayerRestriction h).galHom =
+      (L.subgroupRestriction K).galHom :=
+  (LayerRestriction.galHom_trans _ _).symm
+
+/-- **The homomorphism of Galois groups of a tower inside the finite quotient system is the
+inclusion of subgroups**, read through `subgroupGalEquiv`. -/
+theorem subgroupGalEquiv_galHom_subgroupLayerRestriction (h : K ≤ H)
+    (γ : (L.subgroupLayer K).Gal) :
+    L.subgroupGalEquiv H ((L.subgroupLayerRestriction h).galHom γ) =
+      Subgroup.inclusion h (L.subgroupGalEquiv K γ) := by
+  refine Subtype.ext ?_
+  rw [subgroupGalEquiv_apply_coe, Subgroup.coe_inclusion, subgroupGalEquiv_apply_coe,
+    ← galHom_subgroupRestriction_comp L h, MonoidHom.comp_apply]
+
+/-- **The relative degree of a tower inside the finite quotient system is the relative index of
+the two subgroups.** -/
+theorem relativeDegree_subgroupLayerRestriction (h : K ≤ H) :
+    (L.subgroupLayerRestriction h).relativeDegree = K.relIndex H := by
+  have hd := (L.subgroupLayerRestriction h).degree_mul_relativeDegree
+  rw [degree_subgroupLayer, degree_subgroupLayer] at hd
+  have hcard : Nat.card (K.subgroupOf H) = Nat.card K :=
+    Nat.card_congr (Subgroup.subgroupOfEquivOfLe h).toEquiv
+  have hK : Nat.card K * K.relIndex H = Nat.card H := by
+    rw [← hcard]
+    exact Subgroup.card_mul_index (K.subgroupOf H)
+  exact Nat.eq_of_mul_eq_mul_left Nat.card_pos (hd.trans hK.symm)
+
+/-- **Restriction of cohomology is functorial along a tower inside the finite quotient system.**
+Restricting to `H` and then to `K` is restricting to `K`. -/
+theorem cohomologyRes_subgroupRestriction (h : K ≤ H) (F : Formation G) (n : ℕ) :
+    (L.subgroupRestriction K).cohomologyRes F n =
+      (L.subgroupRestriction H).cohomologyRes F n ≫
+        (L.subgroupLayerRestriction h).cohomologyRes F n :=
+  LayerRestriction.cohomologyRes_trans _ _ F n
+
+/-- **The finite quotient system is closed under passing to a sublayer.** The layer of a subgroup
+`H'` of the Galois group of the layer of `H` is the layer of the image of `H'` in `U/V`. This is
+what lets a statement quantified over all subgroups of `U/V` be applied inside the layer of one of
+them. -/
+theorem subgroupLayer_subgroupLayer (H' : Subgroup (L.subgroupLayer H).Gal) :
+    (L.subgroupLayer H).subgroupLayer H' =
+      L.subgroupLayer (H'.map (L.subgroupRestriction H).galHom) := by
+  refine NormalLayer.ext (OpenSubgroup.toSubgroup_injective ?_) (by simp)
+  rw [ground_subgroupLayer, ground_subgroupLayer]
+  ext g
+  simp only [mem_subgroupGround, Subgroup.mem_map]
+  constructor
+  · rintro ⟨hg, hmem⟩
+    refine ⟨L.subgroupGround_le_ground H hg, QuotientGroup.mk ⟨g, hg⟩, hmem, ?_⟩
+    rw [LayerRestriction.galHom_mk]
+    rfl
+  · rintro ⟨hg, δ, hδ, hδg⟩
+    induction δ using QuotientGroup.induction_on with
+    | H w =>
+      rw [LayerRestriction.galHom_mk, QuotientGroup.eq] at hδg
+      have hw : (w : G)⁻¹ * g ∈ L.top := Subgroup.mem_subgroupOf.1 hδg
+      have hgmem : g ∈ L.subgroupGround H := by
+        have hmul := mul_mem w.2 (L.top_le_subgroupGround H hw)
+        rwa [mul_inv_cancel_left] at hmul
+      refine ⟨hgmem, ?_⟩
+      have hEq : (QuotientGroup.mk w : (L.subgroupLayer H).Gal) =
+          QuotientGroup.mk ⟨g, hgmem⟩ :=
+        (QuotientGroup.eq (s := (L.subgroupLayer H).relativeTop)).2
+          (Subgroup.mem_subgroupOf.2 hw)
+      rwa [← hEq]
+
+/-- **Every restriction of a layer is the layer of a subgroup of its Galois group.** Together with
+`NormalLayer.subgroupRestriction` and `NormalLayer.range_galHom_subgroupRestriction` this is the
+correspondence between restrictions of `L` and subgroups of `U ⧸ V`. -/
+theorem subgroupLayer_range_galHom {small : NormalLayer G} (T : LayerRestriction small L) :
+    L.subgroupLayer T.galHom.range = small := by
+  refine NormalLayer.ext (OpenSubgroup.toSubgroup_injective ?_) T.same_top.symm
+  rw [ground_subgroupLayer]
+  ext g
+  simp only [mem_subgroupGround, MonoidHom.mem_range]
+  constructor
+  · rintro ⟨hg, δ, hδ⟩
+    induction δ using QuotientGroup.induction_on with
+    | H w =>
+      rw [LayerRestriction.galHom_mk, QuotientGroup.eq] at hδ
+      have hw : (w : G)⁻¹ * g ∈ L.top := Subgroup.mem_subgroupOf.1 hδ
+      have hmul := mul_mem w.2 (small.top_le_ground (T.same_top ▸ hw))
+      rwa [mul_inv_cancel_left] at hmul
+  · intro hg
+    exact ⟨T.ground_toSubgroup_le hg, QuotientGroup.mk ⟨g, hg⟩, by
+      rw [LayerRestriction.galHom_mk]; rfl⟩
 
 end NormalLayer
 
