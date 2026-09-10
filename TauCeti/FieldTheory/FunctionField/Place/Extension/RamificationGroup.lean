@@ -271,27 +271,6 @@ private theorem sub_mem_filtration_add_two {i : ℕ} (g : ramificationGroup F P 
   -- Normalize the coerced natural-number index to the integer index used by `filtration`.
   rwa [show (((i + 1 : ℕ) : ℤ) + 1) = (i : ℤ) + 2 by push_cast; ring] at h
 
-private theorem residue_eq_of_sub_mem_filtration_one {y z : P.integers}
-    (h : (y : F') - (z : F') ∈ P.filtration 1) :
-    IsLocalRing.residue P.integers y = IsLocalRing.residue P.integers z := by
-  -- Expose subtraction in the valuation subring as subtraction in its fraction field.
-  rw [← sub_eq_zero, ← map_sub, IsLocalRing.residue_eq_zero_iff,
-    mem_maximalIdeal_iff_valuation_lt_one, ← mem_filtration_one_iff,
-    show ((y - z : P.integers) : F') = (y : F') - (z : F') from rfl]
-  exact h
-
-private theorem pow_sub_one_mem_filtration_one {u : F'} (hu : u ∈ P.integers)
-    (h : u - 1 ∈ P.filtration 1) (n : ℕ) : u ^ n - 1 ∈ P.filtration 1 := by
-  induction n with
-  | zero =>
-    rw [pow_zero, sub_self]
-    exact Submodule.zero_mem (P.filtration 1)
-  | succ n ih =>
-    -- Split the successor power difference into the induction term and `u - 1`.
-    rw [show u ^ (n + 1) - 1 = u * (u ^ n - 1) + (u - 1) by ring]
-    refine Submodule.add_mem _ ?_ h
-    simpa using P.mul_mem_filtration (P.mem_filtration_zero_iff.mpr hu) ih
-
 /-- **The ramification residue** (Stichtenoth, Proposition 3.8.5): for a uniformizer `t` at `P`,
 the map sending an automorphism `σ` of `G_{i+1}(P)` to the function `z ↦ ((σ z - z)/t^{i+2})(P)`
 on `𝒪_P`.  It is a homomorphism into the *additive* group of functions `𝒪_P → F'_P`, which is
@@ -351,10 +330,10 @@ noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
         -- Separate the two error terms: `u^(i+2) - 1` and `σ c - c`.
         rw [hexp, show u ^ (i + 2) * σ c - c = (u ^ (i + 2) - 1) * σ c + (σ c - c) by ring]
         refine Submodule.add_mem _ ?_ hσc
-        simpa using P.mul_mem_filtration (pow_sub_one_mem_filtration_one P humem hu1 (i + 2))
+        simpa using P.mul_mem_filtration (P.pow_sub_one_mem_filtration humem hu1 (i + 2))
           (P.mem_filtration_zero_iff.mpr hσcmem)
       simp only [Pi.add_apply, filtrationResidue_apply, ← map_add]
-      refine residue_eq_of_sub_mem_filtration_one P ?_
+      refine (P.residue_eq_iff_sub_mem_filtration_one).mpr ?_
       convert hkey using 1
       -- Unfold the three residue numerators to the field identity supplied by `hkey`.
       change s * (σ (τ (x : F')) - (x : F')) -
