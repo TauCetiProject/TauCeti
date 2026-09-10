@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
-public import TauCeti.AlgebraicGeometry.AffineGroupScheme.ClosedImmersion
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Classification
 import TauCeti.CategoryTheory.Comma.Over
 
 /-!
@@ -64,6 +64,20 @@ theorem mem_diagonalTorusDefiningIdeal (x : coordinateHopfAlgebra R m) :
       (diagonalTorusCoordinateMap (R := R) (m := m)).hom x = 0 := by
   rw [diagonalTorusDefiningIdeal, HopfIdeal.comapOfSurjective_bot,
     HopfIdeal.mem_kerOfSurjective]
+
+/-- The closed-subgroup classification recovers the diagonal torus's defining Hopf ideal. -/
+@[simp↓]
+theorem hopfIdealOrderIsoClosedSubgroup_symm_apply_diagonalTorusClosedSubgroup :
+    (CommHopfAlgCat.hopfIdealOrderIsoClosedSubgroup (coordinateHopfAlgebra R m)).symm
+        (diagonalTorusClosedSubgroup R m) =
+      OrderDual.toDual (diagonalTorusDefiningIdeal R m) := by
+  rw [diagonalTorusDefiningIdeal, HopfIdeal.comapOfSurjective_bot]
+  apply CommHopfAlgCat.hopfIdealOrderIsoClosedSubgroup_symm_apply_eq_ker
+    (coordinateHopfAlgebra R m) _ (diagonalTorusClosedSubgroup R m)
+    ((eqToIso (DiagonalizableGroup.groupScheme_def R
+        (SplitTorus.characterGroup (ULift.{u} (Fin m))))).symm ≪≫
+      (ClosedSubgroupScheme.mkIso (diagonalTorus (R := R) (m := m))).symm)
+  simp [diagonalTorusClosedSubgroup, diagonalTorus_def]
 
 /-- The quotient by the diagonal-torus ideal is the rank-`m` split-torus coordinate algebra. -/
 noncomputable def diagonalTorusCoordinateIso :
