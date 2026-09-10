@@ -669,6 +669,24 @@ theorem evalNat_mem_blockDeg {s : ℕ} (f : MultilinearMap R (fun _ : Fin s ↦ 
     evalNat_def]
   exact hf.map_mem _ _ fun j ↦ hx j j.isLt
 
+omit [AddCommMonoid A] in
+/-- **The supplied degrees of a Stasheff term are the actual ones**, for an arbitrary inserted
+element.  If the inputs occurring in an arity-`n` word are homogeneous of degrees `d` and the
+element `e` replacing the block of length `s` at position `p` is homogeneous of degree
+`blockDeg d p s`, then `replaceDeg` records the degrees of the inputs of the outer operation.
+Only the inputs actually read, namely those below `n`, need be homogeneous. -/
+theorem replaceBlock_mem_replaceDeg_of_mem_blockDeg {n p s : ℕ} {d : ℕ → ℤ} {x : ℕ → A} {e : A}
+    (hx : ∀ i < n, x i ∈ 𝒜 (d i)) (he : e ∈ 𝒜 (blockDeg d p s)) (hps : p + s ≤ n)
+    {i : ℕ} (hi : i < p + 1 + (n - p - s)) :
+    replaceBlock x p s e i ∈ 𝒜 (replaceDeg d p s i) := by
+  rcases lt_trichotomy i p with h | rfl | h
+  · rw [replaceBlock_of_lt _ _ _ _ h, replaceDeg_of_lt _ _ _ h]
+    exact hx i (by omega)
+  · rw [replaceBlock_self, replaceDeg_self]
+    exact he
+  · rw [replaceBlock_of_gt _ _ _ _ h, replaceDeg_of_gt _ _ _ h]
+    exact hx _ (by omega)
+
 /-- **The supplied degrees of a Stasheff term are the actual ones.** If an arity-`s` operation is
 homogeneous of degree `2 - s` and the inputs are homogeneous of degrees `d`, then `replaceDeg`
 records the degrees of the inputs of the outer operation after inserting its value. -/
@@ -676,14 +694,9 @@ theorem replaceBlock_mem_replaceDeg {s : ℕ}
     (f : MultilinearMap R (fun _ : Fin s ↦ A) A) {d : ℕ → ℤ} {x : ℕ → A}
     (hf : MultilinearMap.IsHomogeneous f (fun _ ↦ 𝒜) 𝒜 (2 - s))
     (hx : ∀ i, x i ∈ 𝒜 (d i)) (p i : ℕ) :
-    replaceBlock x p s (evalNat f fun j ↦ x (p + j)) i ∈ 𝒜 (replaceDeg d p s i) := by
-  rcases lt_trichotomy i p with h | rfl | h
-  · rw [replaceBlock_of_lt _ _ _ _ h, replaceDeg_of_lt _ _ _ h]
-    exact hx i
-  · rw [replaceBlock_self, replaceDeg_self]
-    exact evalNat_mem_blockDeg 𝒜 f hf i (fun j _ ↦ hx (i + j))
-  · rw [replaceBlock_of_gt _ _ _ _ h, replaceDeg_of_gt _ _ _ h]
-    exact hx _
+    replaceBlock x p s (evalNat f fun j ↦ x (p + j)) i ∈ 𝒜 (replaceDeg d p s i) :=
+  replaceBlock_mem_replaceDeg_of_mem_blockDeg (n := p + s + i) 𝒜 (fun j _ ↦ hx j)
+    (evalNat_mem_blockDeg 𝒜 f hf p fun j _ ↦ hx (p + j)) (by omega) (by omega)
 
 end Comparison
 

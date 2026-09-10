@@ -32,8 +32,9 @@ ordinary associativity when the higher operations vanish, and arity four is then
   on homogeneous tensors.
 * `TauCeti.AInfinity.IsSuspension.taylorComponent_comp_self_apply`: the arity component of the
   coderivation square is the suspended Stasheff sum.
-* `TauCeti.AInfinity.IsSuspension.comp_self_eq_zero_iff_stasheff`: a degree-one bar coderivation
-  squares to zero exactly when all Stasheff identities hold on homogeneous inputs.
+* `TauCeti.AInfinity.IsSuspension.comp_self_eq_zero_iff_forall_stasheffSum_eq_zero`:
+  a degree-one bar coderivation squares to zero exactly when all Stasheff identities hold on
+  homogeneous inputs.
 * `TauCeti.AInfinity.IsSuspension.taylorComponent_comp_self_one_eq_zero_iff` through
   `taylorComponent_comp_self_four_eq_zero_iff`: the vanishing criteria for the first four
   components, with the Stasheff identities written out verbatim.
@@ -176,15 +177,8 @@ theorem IsSuspension.taylorComponent_comp_self_apply {G : InternalGrading R A}
         (evalNat_mem_blockDeg G.piece (m s) (hm s hspos (by omega)) p
           (fun j hj ↦ hx (p + j) (by omega)))
     have hreplace : ∀ i < p + 1 + (n - p - s),
-        replaceBlock x p s e i ∈ G.piece (replaceDeg d p s i) := by
-      intro i hi
-      rcases lt_trichotomy i p with hip | rfl | hip
-      · rw [replaceBlock_of_lt _ _ _ _ hip, replaceDeg_of_lt _ _ _ hip]
-        exact hx i (by omega)
-      · rw [replaceBlock_self, replaceDeg_self]
-        exact he
-      · rw [replaceBlock_of_gt _ _ _ _ hip, replaceDeg_of_gt _ _ _ hip]
-        exact hx _ (by omega)
+        replaceBlock x p s e i ∈ G.piece (replaceDeg d p s i) := fun _ hi ↦
+      replaceBlock_mem_replaceDeg_of_mem_blockDeg G.piece hx he hps hi
     -- Present the spliced word as the pure tensor to which the outer suspension relation applies.
     have hsplice : ReducedTensorWords.splice R (fun i : Fin n ↦ x i) 0 n p s e =
         ReducedTensorWords.of R A ⟨p + 1 + (n - p - s), by omega⟩
@@ -222,7 +216,7 @@ theorem IsSuspension.taylorComponent_comp_self_apply {G : InternalGrading R A}
 
 /-- The arity component of the bar-coderivation square is the unsuspended Stasheff sum multiplied
 by the single suspension sign of the whole input tuple. -/
-theorem IsSuspension.taylorComponent_comp_self_eq_smul_stasheff {G : InternalGrading R A}
+theorem IsSuspension.taylorComponent_comp_self_eq_smul_stasheffSum {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
@@ -342,7 +336,7 @@ theorem IsSuspension.taylorComponent_comp_self_four_eq_zero_iff {G : InternalGra
 every Stasheff identity on homogeneous inputs.  Since an internal grading decomposes every
 element into a finite sum of homogeneous elements, testing those inputs detects the whole linear
 map `b ∘ b`, not merely its restriction to homogeneous words. -/
-theorem IsSuspension.comp_self_eq_zero_iff_stasheff {G : InternalGrading R A}
+theorem IsSuspension.comp_self_eq_zero_iff_forall_stasheffSum_eq_zero {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
