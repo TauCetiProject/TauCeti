@@ -270,12 +270,6 @@ private lemma two_dvd_sum_sum_erase {α : Type*} [DecidableEq α] {f : α → α
     rw [Finset.sum_congr rfl fun i (_ : i ∈ s) ↦ hf i a, ← two_mul]
     exact dvd_mul_right 2 _
 
-/-- `m² ≡ m` modulo two. -/
-private lemma two_dvd_self_mul_sub (m : ℤ) : (2 : ℤ) ∣ m * m - m := by
-  rcases Int.even_or_odd m with ⟨k, hk⟩ | ⟨k, hk⟩ <;> subst hk
-  · exact ⟨2 * k * k - k, by ring⟩
-  · exact ⟨2 * k * k + k, by ring⟩
-
 /-- The multiplicity-weighted sum of the self-intersections of a numerical type is even.
 
 This is what makes the halving in the genus formula exact; the individual terms `mᵢ aᵢᵢ` need not
@@ -309,7 +303,8 @@ lemma even_sum_multiplicity_mul_diagonal :
   have hcorr : (2 : ℤ) ∣ ∑ i, ((T.multiplicity i : ℤ) * (T.multiplicity i : ℤ) *
       T.intersection i i - (T.multiplicity i : ℤ) * T.intersection i i) := by
     refine Finset.dvd_sum fun i _ ↦ ?_
-    obtain ⟨c, hc⟩ := two_dvd_self_mul_sub (T.multiplicity i : ℤ)
+    obtain ⟨c, hc⟩ := by
+      simpa [mul_sub] using (Int.even_mul_pred_self (T.multiplicity i : ℤ)).two_dvd
     exact ⟨c * T.intersection i i, by linear_combination T.intersection i i * hc⟩
   have key : ∑ i, (T.multiplicity i : ℤ) * T.intersection i i =
       (∑ i, (T.multiplicity i : ℤ) * (T.multiplicity i : ℤ) * T.intersection i i) -
