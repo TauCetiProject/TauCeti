@@ -52,31 +52,16 @@ noncomputable def LpToL1CLM (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
     { toFun := toFun
       map_add' := by
         intro f g
-        apply Lp.ext
         dsimp only [toFun]
-        filter_upwards [Lp.coeFn_add f g,
-          MemLp.coeFn_toLp ((Lp.memLp (f + g)).mono_exponent hp),
-          MemLp.coeFn_toLp ((Lp.memLp f).mono_exponent hp),
-          MemLp.coeFn_toLp ((Lp.memLp g).mono_exponent hp),
-          Lp.coeFn_add
-            ((Lp.memLp f).mono_exponent hp |>.toLp f)
-            ((Lp.memLp g).mono_exponent hp |>.toLp g)] with x hfg h₁ h₂ h₃ hadd
-        rw [h₁, hfg]
-        simp only [Pi.add_apply] at ⊢
-        rw [← h₂, ← h₃]
-        simpa only [Pi.add_apply] using hadd.symm
+        rw [← MemLp.toLp_add]
+        apply MemLp.toLp_congr
+        exact Lp.coeFn_add f g
       map_smul' := by
         intro c f
-        apply Lp.ext
         dsimp only [toFun]
-        filter_upwards [Lp.coeFn_smul c f,
-          MemLp.coeFn_toLp ((Lp.memLp (c • f)).mono_exponent hp),
-          MemLp.coeFn_toLp ((Lp.memLp f).mono_exponent hp),
-          Lp.coeFn_smul c ((Lp.memLp f).mono_exponent hp |>.toLp f)] with x hcf h₁ h₂ hsmul
-        rw [h₁, hcf]
-        simp only [Pi.smul_apply, RingHom.id_apply] at ⊢
-        rw [← h₂]
-        simpa only [Pi.smul_apply, RingHom.id_apply] using hsmul.symm }
+        rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
+        apply MemLp.toLp_congr
+        exact Lp.coeFn_smul c f }
   apply LinearMap.mkContinuous toLinearMap
     ((μ Set.univ).toReal ^ (1 - (1 / p.toReal)))
   intro f
