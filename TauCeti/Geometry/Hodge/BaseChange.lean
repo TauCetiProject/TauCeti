@@ -181,12 +181,6 @@ theorem isBaseChange_rationalToComplexMap (hℚ : IsBaseChange ℚ ιℚ)
   apply IsBaseChange.of_comp hℚ
   simpa only [rationalToComplexMap_restrictScalars_comp] using hℂ
 
-/-- The two abstract legs `Vℤ → Vℚ → Vℂ` compose to a base change from `ℤ` to `ℂ`. -/
-theorem isBaseChange_rationalToComplexMap_comp (hℚ : IsBaseChange ℚ ιℚ)
-    (hℂ : IsBaseChange ℂ ιℂ) :
-    IsBaseChange ℂ ((rationalToComplexMap hℚ ιℂ).restrictScalars ℤ ∘ₗ ιℚ) := by
-  simpa only [rationalToComplexMap_restrictScalars_comp] using hℂ
-
 /-- On a purely rational vector the tower equivalence agrees with the rational-to-complex
 structure map. -/
 theorem rationalToComplexLinearEquiv_one_tmul (hℚ : IsBaseChange ℚ ιℚ)
