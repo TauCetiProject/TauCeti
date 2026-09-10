@@ -30,6 +30,8 @@ separate topological fact is supplied by `QuotientGroup.instTotallyDisconnectedS
 * `isProP_iff_isPGroup`: for a discrete topology, pro-`p` agrees with `IsPGroup`.
 * `IsProP.of_surjective`: a continuous surjective image of a pro-`p` group is pro-`p`.
 * `IsProP.quotient`: a quotient of a pro-`p` group by a normal subgroup is pro-`p`.
+* `IsProP.isPGroup_map_mk'`: the image of a pro-`p` subgroup in the quotient by an open normal
+  subgroup is a `p`-group.
 * `isProP_congr`: the predicate is invariant under topological group isomorphism.
 
 ## References
@@ -112,6 +114,19 @@ theorem quotient (hG : IsProP p G) (N : Subgroup G) [N.Normal] : IsProP p (G ⧸
 /-- A topological group isomorphism carries the pro-`p` property to its target. -/
 theorem of_equiv (hG : IsProP p G) (e : G ≃ₜ* H) : IsProP p H :=
   hG.of_surjective e.toMulEquiv.toMonoidHom e.continuous e.surjective
+
+/-- The image of a pro-`p` subgroup in the quotient by an open normal subgroup is a
+`p`-group. -/
+theorem isPGroup_map_mk' [IsTopologicalGroup G] {P : Subgroup G} (hP : IsProP p P)
+    (U : OpenNormalSubgroup G) : IsPGroup p (P.map (QuotientGroup.mk' U.toSubgroup)) := by
+  let f : P →* G ⧸ U.toSubgroup :=
+    (QuotientGroup.mk' U.toSubgroup).domRestrict P
+  have hf : Continuous f := QuotientGroup.continuous_mk.comp continuous_subtype_val
+  have hrange : IsProP p f.range :=
+    hP.of_surjective f.rangeRestrict
+      (continuous_induced_rng.mpr hf) f.rangeRestrict_surjective
+  rw [← MonoidHom.domRestrict_range]
+  exact isProP_iff_isPGroup.mp hrange
 
 end IsProP
 

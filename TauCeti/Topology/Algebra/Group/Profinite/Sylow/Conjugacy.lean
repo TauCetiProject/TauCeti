@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Basic
-public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 
 /-!
 # Conjugacy of Sylow subgroups in profinite groups
@@ -74,15 +73,24 @@ namespace IsProPSylow
 
 /-- Any two Sylow pro-`p` subgroups of a profinite group are conjugate. -/
 theorem exists_map_conj_eq (hP : IsProPSylow p P) (hQ : IsProPSylow p Q) :
-    ∃ g : G, Q = P.map (MulAut.conj g).toMonoidHom := by
+    ∃ g : G, P.map (MulAut.conj g).toMonoidHom = Q := by
   let PSylow (U : OpenNormalSubgroup G) : Sylow p (G ⧸ U.toSubgroup) :=
-    (hP.isPGroup_map_mk' U).toSylow (hP.not_dvd_index U)
+    (hP.isProP.isPGroup_map_mk' U).toSylow (hP.not_dvd_index U)
   let QSylow (U : OpenNormalSubgroup G) : Sylow p (G ⧸ U.toSubgroup) :=
-    (hQ.isPGroup_map_mk' U).toSylow (hQ.not_dvd_index U)
+    (hQ.isProP.isPGroup_map_mk' U).toSylow (hQ.not_dvd_index U)
   let conjugators (U : OpenNormalSubgroup G) : Set (G ⧸ U.toSubgroup) :=
     {x | x • PSylow U = QSylow U}
   let t (U : OpenNormalSubgroup G) : Set G :=
     (QuotientGroup.mk' U.toSubgroup) ⁻¹' conjugators U
+  have mem_t {U : OpenNormalSubgroup G} {g : G} : g ∈ t U ↔
+      (P.map (QuotientGroup.mk' U.toSubgroup)).map
+          (MulAut.conj (g : G ⧸ U.toSubgroup)).toMonoidHom =
+        Q.map (QuotientGroup.mk' U.toSubgroup) := by
+    simp only [t, conjugators, PSylow, QSylow, Set.mem_preimage, Set.mem_ofPred_eq,
+      Sylow.ext_iff, Sylow.coe_subgroup_smul, IsPGroup.toSylow_coe]
+    -- Mathlib defines the pointwise `MulAut` action on subgroups as `Subgroup.map`
+    -- (`Subgroup.pointwise_smul_def` is `rfl`) and provides no rewrite lemma to `toMonoidHom`.
+    exact Iff.rfl
   have ht_nonempty (U : OpenNormalSubgroup G) : (t U).Nonempty := by
     obtain ⟨x, hx⟩ := MulAction.exists_smul_eq (G ⧸ U.toSubgroup) (PSylow U) (QSylow U)
     obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective U.toSubgroup x
@@ -91,25 +99,9 @@ theorem exists_map_conj_eq (hP : IsProPSylow p P) (hQ : IsProPSylow p Q) :
     (isClosed_discrete (conjugators U)).preimage QuotientGroup.continuous_mk
   have ht_mono {U V : OpenNormalSubgroup G} (hVU : V ≤ U) : t V ⊆ t U := by
     intro g hg
-    -- Unfold the two local set abbreviations to expose the finite-level conjugacy equation.
-    change (QuotientGroup.mk g : G ⧸ V.toSubgroup) • PSylow V = QSylow V at hg
-    change (QuotientGroup.mk g : G ⧸ U.toSubgroup) • PSylow U = QSylow U
-    apply Sylow.ext
-    have hsub := congrArg (fun S : Sylow p (G ⧸ V.toSubgroup) ↦
-      (S : Subgroup (G ⧸ V.toSubgroup))) hg
-    -- Coercing the bundled Sylow equality exposes the subgroup images defining `PSylow`.
-    change (((P.map (QuotientGroup.mk' V.toSubgroup)).map
-        (MulAut.conj (g : G ⧸ V.toSubgroup)).toMonoidHom) =
-      Q.map (QuotientGroup.mk' V.toSubgroup)) at hsub
     have hVU' : V.toSubgroup ≤ U.toSubgroup := fun _ hx ↦ hVU hx
-    have hmap := congrArg (fun S : Subgroup (G ⧸ V.toSubgroup) ↦
-      S.map (QuotientGroup.map V.toSubgroup U.toSubgroup (.id G) hVU')) hsub
-    -- `Sylow.ext` leaves an equality of underlying subgroups at level `U`.
-    change (P.map (QuotientGroup.mk' U.toSubgroup)).map
-        (MulAut.conj (g : G ⧸ U.toSubgroup)).toMonoidHom =
-      Q.map (QuotientGroup.mk' U.toSubgroup)
-    rw [map_conj_mk'_map_quotient hVU', map_mk'_map_quotient hVU'] at hmap
-    exact hmap
+    rw [mem_t] at hg ⊢
+    rw [← map_conj_mk'_map_quotient hVU', ← map_mk'_map_quotient hVU' Q, hg]
   have ht_directed : Directed (· ⊇ ·) t := by
     intro U V
     exact ⟨U ⊓ V, ht_mono inf_le_left, ht_mono inf_le_right⟩
@@ -118,41 +110,13 @@ theorem exists_map_conj_eq (hP : IsProPSylow p P) (hQ : IsProPSylow p Q) :
   obtain ⟨g, hg⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t
     ht_directed ht_nonempty (fun U ↦ (ht_closed U).isCompact) ht_closed
   refine ⟨g, ?_⟩
-  let R := P.map (MulAut.conj g).toMonoidHom
-  -- Name the conjugate subgroup so the closed-subgroup reconstruction theorem applies directly.
-  change Q = R
-  have hconj_apply : (MulAut.conj g : G → G) = fun x ↦ g * x * g⁻¹ := by
-    funext x
-    exact MulAut.conj_apply g x
-  have hconj : Continuous (MulAut.conj g : G → G) := by
-    rw [hconj_apply]
-    exact ((continuous_const : Continuous (fun _ : G ↦ g)).mul
-        (continuous_id : Continuous (fun x : G ↦ x))).mul
-      (continuous_const : Continuous (fun _ : G ↦ g⁻¹))
-  have hRclosed : IsClosed (R : Set G) := by
-    dsimp only [R]
-    rw [Subgroup.coe_map]
-    exact (hP.isClosed.isCompact.image hconj).isClosed
   rw [Subgroup.eq_iInf_sup_openNormalSubgroup Q hQ.isClosed,
-    Subgroup.eq_iInf_sup_openNormalSubgroup R hRclosed]
+    Subgroup.eq_iInf_sup_openNormalSubgroup _ (hP.map_conj g).isClosed]
   congr 1
   funext U
-  have hgU := Set.mem_iInter.mp hg U
-  -- Unfold the local conjugator sets at this quotient.
-  change (QuotientGroup.mk g : G ⧸ U.toSubgroup) • PSylow U = QSylow U at hgU
-  have hsub := congrArg (fun S : Sylow p (G ⧸ U.toSubgroup) ↦
-    (S : Subgroup (G ⧸ U.toSubgroup))) hgU
-  -- Coerce the bundled Sylow equality to its underlying subgroup equality.
-  change ((P.map (QuotientGroup.mk' U.toSubgroup)).map
-      (MulAut.conj (g : G ⧸ U.toSubgroup)).toMonoidHom) =
-    Q.map (QuotientGroup.mk' U.toSubgroup) at hsub
-  have himages : R.map (QuotientGroup.mk' U.toSubgroup) =
-      Q.map (QuotientGroup.mk' U.toSubgroup) := by
-    dsimp only [R]
-    rw [map_conj_map_mk']
-    exact hsub
+  have himages := (map_conj_map_mk' U.toSubgroup P g).trans (mem_t.mp (Set.mem_iInter.mp hg U))
   have hcomap := congrArg (Subgroup.comap (QuotientGroup.mk' U.toSubgroup)) himages
-  simpa only [Subgroup.comap_map_eq, QuotientGroup.ker_mk'] using hcomap.symm
+  simpa only [Subgroup.comap_map_eq, QuotientGroup.ker_mk'] using hcomap
 
 /-- A normal Sylow pro-`p` subgroup is the unique Sylow pro-`p` subgroup. -/
 theorem eq_of_normal (hP : IsProPSylow p P) (hQ : IsProPSylow p Q) (hn : P.Normal) :
