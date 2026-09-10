@@ -131,6 +131,12 @@ theorem finOneEquiv_symm_left (d : D) :
     (finOneEquiv.symm d).left = fun _ ↦ d := by
   simp [finOneEquiv]
 
+/-- The inverse singleton-index equivalence has trivial top permutation. -/
+@[simp]
+theorem finOneEquiv_symm_right (d : D) :
+    (finOneEquiv.symm d).right = 1 := by
+  simp [finOneEquiv]
+
 section Functoriality
 
 variable {D' : Type*} [Group D']
