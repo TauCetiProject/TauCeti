@@ -11,9 +11,9 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Basic
 /-!
 # Abelian layers of a formation
 
-An open normal subgroup `V` of a topological group cuts out an abelian finite layer precisely
-when it contains the closure of the commutator subgroup. This file packages that condition as
-`IsAbelianClassFieldLayer V` and identifies it with commutativity of the quotient `G ⧸ V`.
+An open normal subgroup `V` of a topological group has abelian quotient precisely when it contains
+the closure of the commutator subgroup. This file packages that condition as
+`IsAbelianClassFieldLayer V` and identifies it with commutativity of `G ⧸ V`.
 
 Every open normal subgroup also has a canonical **maximal abelian sublayer**. In subgroup
 language it is
@@ -22,15 +22,15 @@ language it is
 V ⊔ closure (commutator G),
 ```
 
-the least abelian-layer subgroup containing `V`. The corresponding fixed field is therefore the
-largest abelian subextension of the field cut out by `V`. This construction is the group-theoretic
-input to norm limitation: abstract reciprocity later shows that a layer and this maximal abelian
-sublayer have the same norm subgroup.
+the least abelian-layer subgroup containing `V`. When `G` is the relevant profinite Galois group,
+the corresponding fixed field is therefore the largest abelian subextension of the field cut out
+by `V`. This construction is the group-theoretic input to norm limitation: abstract reciprocity
+later shows that a layer and this maximal abelian sublayer have the same norm subgroup.
 
-For an abelian layer, the final part of the file removes the algebraic abelianization from the
-finite Galois group. It supplies the canonical equivalence
-`Abelianization (G ⧸ V) ≃* G ⧸ V` used to state local and global class-field correspondences
-directly in terms of their abelian Galois groups.
+Under the profinite hypotheses used for finite normal layers, the final part of the file removes
+the algebraic abelianization from the quotient group. It supplies the canonical equivalence
+`Abelianization (G ⧸ V) ≃* G ⧸ V` used, when `G` is a Galois group, to state local and global
+class-field correspondences directly in terms of their abelian Galois groups.
 
 ## Main definitions
 
@@ -63,10 +63,6 @@ public noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
--- Provenance: the signatures and mathematical roles of `IsAbelianClassFieldLayer`,
--- `maximalAbelianLayer`, and `abelianizationGalEquiv` follow the ClassFieldTheory blueprint in
--- `TauCetiRoadmap/ClassFieldTheory/README.md` and `Suggested.lean`.
-
 /-! ### Abelian layers -/
 
 /-- An open normal subgroup cuts out an **abelian class-field layer** when it contains the
@@ -77,8 +73,9 @@ def IsAbelianClassFieldLayer {G : Type} [Group G] [TopologicalSpace G] [IsTopolo
     (V : OpenNormalSubgroup G) : Prop :=
   (commutator G).topologicalClosure ≤ V.toSubgroup
 
-/-- The Galois-side carrier of class-field correspondences: open normal subgroups whose quotient
-is abelian. Its order is subgroup inclusion, which becomes reverse inclusion on fixed fields. -/
+/-- Open normal subgroups whose quotient is abelian. For a profinite Galois group, these form the
+Galois-side carrier of class-field correspondences; subgroup inclusion becomes reverse inclusion
+on fixed fields. -/
 abbrev AbelianLayer (G : Type) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] :=
   {V : OpenNormalSubgroup G // IsAbelianClassFieldLayer V}
 
@@ -97,9 +94,10 @@ theorem isAbelianClassFieldLayer_iff_isMulCommutative (V : OpenNormalSubgroup G)
 
 /-! ### The maximal abelian sublayer -/
 
-/-- The **maximal abelian sublayer** of the layer cut out by `V`, represented on subgroups by
-`V ⊔ closure (commutator G)`. It is the least abelian-layer subgroup containing `V`, hence cuts
-out the largest abelian subextension of the original fixed field. -/
+/-- The **maximal abelian sublayer** of `V`, represented on subgroups by
+`V ⊔ closure (commutator G)`. It is the least abelian-layer subgroup containing `V`. When `G`
+is the relevant profinite Galois group, it cuts out the largest abelian subextension of the
+original fixed field. -/
 def maximalAbelianLayer (V : OpenNormalSubgroup G) : OpenNormalSubgroup G :=
   ⟨⟨V.toSubgroup ⊔ (commutator G).topologicalClosure,
       Subgroup.isOpen_mono le_sup_left V.toOpenSubgroup.isOpen⟩,
@@ -186,7 +184,8 @@ theorem abelianizationGalEquiv_of {V : OpenNormalSubgroup G}
     (hV : IsAbelianClassFieldLayer V) (x : (NormalLayer.ofOpenNormal V).Gal) :
     abelianizationGalEquiv hV (Abelianization.of x) = x := by
   let := isMulCommutative_gal_ofOpenNormal hV
-  rfl
+  change Abelianization.equivOfComm.symm (Abelianization.equivOfComm x) = x
+  exact Abelianization.equivOfComm.symm_apply_apply x
 
 end AbelianLayer
 
