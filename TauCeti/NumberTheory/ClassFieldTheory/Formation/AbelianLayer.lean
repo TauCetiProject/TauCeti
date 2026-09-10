@@ -183,9 +183,7 @@ open scoped IsMulCommutative in
 theorem abelianizationGalEquiv_of {V : OpenNormalSubgroup G}
     (hV : IsAbelianClassFieldLayer V) (x : (NormalLayer.ofOpenNormal V).Gal) :
     abelianizationGalEquiv hV (Abelianization.of x) = x := by
-  let := isMulCommutative_gal_ofOpenNormal hV
-  change Abelianization.equivOfComm.symm (Abelianization.equivOfComm x) = x
-  exact Abelianization.equivOfComm.symm_apply_apply x
+  exact (abelianizationGalEquiv hV).apply_symm_apply x
 
 end AbelianLayer
 
