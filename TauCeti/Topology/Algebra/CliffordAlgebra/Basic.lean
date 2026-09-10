@@ -16,8 +16,9 @@ public import Mathlib.Topology.Algebra.Star
 
 This file gives a Clifford algebra its module topology, making it a topological additive group.
 Over a topological ring, multiplication is continuous when the Clifford algebra is a finite module.
-The topology is Hausdorff when the base is a Hausdorff topological ring and the Clifford algebra is
-free. Clifford reverse, involution, and star are continuous without these additional assumptions.
+The topology is Hausdorff when the base ring is Hausdorff with continuous addition and
+multiplication, and the Clifford algebra is free. Clifford reverse, involution, and star are
+continuous without these additional assumptions.
 
 The topology is intrinsic: it depends only on the module structure of the Clifford algebra
 together with the topology on the base ring, and does not use a basis, Pin or Spin groups, or their
@@ -111,10 +112,10 @@ instance instIsTopologicalAddGroupCliffordAlgebra (Q : QuadraticForm R V) :
     IsTopologicalAddGroup (CliffordAlgebra Q) :=
   IsModuleTopology.isTopologicalAddGroup R _
 
-variable [IsTopologicalRing R]
-
-/-- The module topology on a free Clifford algebra over a Hausdorff ring is Hausdorff. -/
-instance instT2SpaceCliffordAlgebra [T2Space R] (Q : QuadraticForm R V)
+/-- The module topology on a free Clifford algebra over a Hausdorff ring with continuous addition
+and multiplication is Hausdorff. -/
+instance instT2SpaceCliffordAlgebra [IsTopologicalSemiring R] [T2Space R]
+    (Q : QuadraticForm R V)
     [Module.Free R (CliffordAlgebra Q)] :
     T2Space (CliffordAlgebra Q) := by
   let b := Module.Free.chooseBasis R (CliffordAlgebra Q)
@@ -127,6 +128,8 @@ instance instT2SpaceCliffordAlgebra [T2Space R] (Q : QuadraticForm R V)
       ext i
       exact congrFun h i)
     (continuous_pi fun i => IsModuleTopology.continuous_of_linearMap (b.coord i))
+
+variable [IsTopologicalRing R]
 
 /-- A Clifford algebra that is finite as a module is a topological ring for its module topology. -/
 instance instIsTopologicalRingCliffordAlgebra (Q : QuadraticForm R V)
