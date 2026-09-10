@@ -33,6 +33,8 @@ are compared with.
   orbit more than `σ` — the extra orbit is the fixed point `p`.
 * `TauCeti.orbitCount_mul_swap_add_one`: multiplying a permutation by a transposition that moves
   one of its fixed points splices that fixed point into another orbit, so the count drops by one.
+* `TauCeti.orbitCount_add_one_of_merge`: if the orbits of `τ` are the orbits of `σ` with the orbit
+  of one point and the orbit of another merged, then `τ` has one orbit fewer.
 
 Composing the last two says that adjoining a point to a permutation and immediately splicing it
 into an existing orbit leaves the number of orbits unchanged. That composite is the reason this
@@ -76,6 +78,10 @@ theorem orbitCount_one : orbitCount (1 : Equiv.Perm α) = Nat.card α := by
   refine (Nat.card_congr (Equiv.ofBijective (Quotient.mk (SameCycle.setoid (1 : Perm α)))
     ⟨fun x y hxy ↦ ?_, Quotient.mk_surjective⟩)).symm
   exact sameCycle_one.mp (Quotient.eq.mp hxy)
+
+/-- A permutation of a finite type has at most as many orbits as there are points. -/
+theorem orbitCount_le_card [Finite α] (σ : Equiv.Perm α) : orbitCount σ ≤ Nat.card α :=
+  Nat.card_le_card_of_surjective (Quotient.mk (SameCycle.setoid σ)) Quotient.mk_surjective
 
 /-- Conjugate permutations have the same number of orbits: conjugation by `g` relabels the points
 by `g`, hence relabels the orbits. -/
@@ -373,5 +379,41 @@ theorem orbitCount_mul_swap_add_one [DecidableEq β] {τ : Equiv.Perm β}
         (F x)).trans ?_
       rw [id, hi]
     exact ((hFsame x).trans hxy).trans (hFsame y).symm
+
+/-- **Merging two orbits removes one orbit.** If every orbit of `σ` is contained in an orbit of
+`τ`, if two points `a` and `b` lying in different orbits of `σ` lie in one orbit of `τ`, and if no
+orbit of `τ` merges more than those two, then `τ` has exactly one orbit fewer than `σ`. The last
+hypothesis is the honest content: without it nothing stops `τ` from gluing the orbits of `σ`
+wholesale. -/
+theorem orbitCount_add_one_of_merge [Finite α] {σ τ : Equiv.Perm α} {a b : α}
+    (hle : ∀ {u v : α}, SameCycle σ u v → SameCycle τ u v)
+    (hmerge : ∀ {u v : α}, SameCycle τ u v → SameCycle σ u v ∨
+      ((SameCycle σ u a ∨ SameCycle σ u b) ∧ (SameCycle σ v a ∨ SameCycle σ v b)))
+    (hab : SameCycle τ a b) (hnab : ¬ SameCycle σ a b) :
+    orbitCount τ + 1 = orbitCount σ := by
+  classical
+  -- The orbits of `τ` are the orbits of `σ` other than the orbit of `b`, which has been absorbed
+  -- into the orbit of `a`.
+  have key : {c : Quotient (SameCycle.setoid σ) // c ≠ Quotient.mk _ b} ≃
+      Quotient (SameCycle.setoid τ) := by
+    refine Equiv.ofBijective (fun c ↦ Quotient.map id (fun _ _ h ↦ hle h) c.val) ⟨?_, ?_⟩
+    · rintro ⟨c, hc⟩ ⟨d, hd⟩ hcd
+      obtain ⟨u, rfl⟩ := Quotient.exists_rep c
+      obtain ⟨v, rfl⟩ := Quotient.exists_rep d
+      have hub : ¬ SameCycle σ u b := fun h ↦ hc (Quotient.sound h)
+      have hvb : ¬ SameCycle σ v b := fun h ↦ hd (Quotient.sound h)
+      refine Subtype.ext (Quotient.sound ?_)
+      rcases hmerge (Quotient.exact hcd) with huv | ⟨hu, hv⟩
+      · exact huv
+      · exact (hu.resolve_right hub).trans (hv.resolve_right hvb).symm
+    · intro c
+      obtain ⟨z, rfl⟩ := Quotient.exists_rep c
+      by_cases hzb : SameCycle σ z b
+      · exact ⟨⟨Quotient.mk _ a, fun h ↦ hnab (Quotient.exact h)⟩,
+          Quotient.sound (hab.trans (hle hzb).symm)⟩
+      · exact ⟨⟨Quotient.mk _ z, fun h ↦ hzb (Quotient.exact h)⟩, rfl⟩
+  unfold orbitCount
+  rw [← Nat.card_congr key, ← Finite.card_option]
+  exact Nat.card_congr (Equiv.optionSubtypeNe (Quotient.mk (SameCycle.setoid σ) b))
 
 end TauCeti
