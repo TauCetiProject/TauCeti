@@ -21,11 +21,9 @@ algebra. The surrounding Clifford algebra has its module topology from
 independently induced topology from `TauCeti.Topology.Algebra.QuadraticForm.SpecialOrthogonal`.
 
 For a quadratic form on a finite coordinate space, continuity of the Spin projection is proved
-from the explicit Clifford conjugation formula for `spinVectorAction`. This supplies a bundled
-continuous homomorphism over ℝ and ℂ. In particular, it gives the topological-group bridge for
-the compact real double cover at signature `(n, 0)`. It makes no smoothness, compactness,
-connectedness,
-simple-connectivity, fibration, or universal-cover claim.
+from the explicit Clifford conjugation formula for `spinVectorAction`. In particular, this gives the
+topological-group bridge for the compact real double cover at signature `(n, 0)`. It makes no
+smoothness, compactness, connectedness, simple-connectivity, fibration, or universal-cover claim.
 
 ## Continuity argument
 
@@ -56,8 +54,6 @@ topologized special orthogonal group.
 * `QuadraticForm.isClosed_spinVectorStabilizer` proves that every vector stabilizer is closed.
 * `CliffordAlgebra.continuous_spinToSpecialOrthogonal_pi` proves continuity of the Spin
   projection for every quadratic form on a finite coordinate space.
-* `CliffordAlgebra.spinToSpecialOrthogonalHom` bundles the projection as a continuous
-  monoid homomorphism.
 * `CliffordAlgebra.continuous_realCliffordSpinDoubleCoverZero_rightHom` specializes this result to
   the projection field of the packaged compact real double cover.
 * `CliffordAlgebra.continuous_realCliffordSpinInclusion` proves continuity of the lower-rank
@@ -205,20 +201,6 @@ theorem continuous_spinToSpecialOrthogonal_pi [IsTopologicalRing R] [Invertible 
       (continuous_apply i).comp
         (continuous_spinVectorAction_apply Q (Pi.single j 1))
   simpa only [MonoidHom.coe_comp] using h
-
-/-- The Spin projection to the special orthogonal group as a continuous monoid homomorphism. -/
-noncomputable def spinToSpecialOrthogonalHom [IsTopologicalRing R] [Invertible (2 : R)]
-    {n : Type v} [Fintype n] [DecidableEq n] (Q : QuadraticForm R (n → R)) :
-    ContinuousMonoidHom (spinGroup Q) (TauCeti.QuadraticMap.specialOrthogonalGroup Q) where
-  toMonoidHom := spinToSpecialOrthogonal Q
-  continuous_toFun := continuous_spinToSpecialOrthogonal_pi Q
-
-@[simp]
-theorem spinToSpecialOrthogonalHom_apply [IsTopologicalRing R] [Invertible (2 : R)]
-    {n : Type v} [Fintype n] [DecidableEq n] (Q : QuadraticForm R (n → R))
-    (x : spinGroup Q) :
-    spinToSpecialOrthogonalHom Q x = spinToSpecialOrthogonal Q x :=
-  (rfl)
 
 section Real
 

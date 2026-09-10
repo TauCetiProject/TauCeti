@@ -18,9 +18,9 @@ Over a topological ring, multiplication is continuous when the Clifford algebra 
 The topology is Hausdorff when the base ring is Hausdorff and the Clifford algebra is free. Clifford
 reverse, involution, and star are continuous without these additional assumptions.
 
-The topology is intrinsic: it depends only on the module structure of the Clifford algebra and does
-not use a basis, Pin or Spin groups, or their actions. A basis appears only in the proof that the
-topology is Hausdorff.
+The topology is intrinsic: it depends only on the module structure of the Clifford algebra
+together with the topology on the base ring, and does not use a basis, Pin or Spin groups, or their
+actions. A basis appears only in the proof that the topology is Hausdorff.
 
 ## Main results
 
