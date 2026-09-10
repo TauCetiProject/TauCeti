@@ -44,6 +44,7 @@ every affine chart of a fan contains the dense torus.
   support of its target.
 * `TauCeti.Toric.FanHom.exists_isLeast_cone`: the target cones containing the image of a given
   source cone have a least element, so a fan morphism has a well-defined cone-by-cone description.
+  `TauCeti.Toric.FanHom.leastCone` names that least target cone.
 
 ## Implementation notes
 
@@ -55,9 +56,9 @@ Only the left half `(σ ⊓ τ).IsFaceOf σ` of the intersection axiom is a fiel
 the same statement with the two cones exchanged, and `TauCeti.Toric.Fan.inf_isFaceOf_right`
 derives it.
 
-A `Fan` carries the proof that its ambient lattice map is an integral lattice. This is what makes
-the real-linear part of a fan morphism redundant data rather than a choice, and every later layer
-of the toric construction needs it; carrying it here spares each of them a separate hypothesis.
+A `Fan` carries the proof that its ambient lattice map is an integral lattice. This makes the
+real-linear extension of a map of integral vectors exist and be unique, so the real-linear part of
+a fan morphism is determined by its integral part rather than being an independent choice.
 
 ## References
 
@@ -140,6 +141,7 @@ theorem zero_mem_support (hσ : σ ∈ Φ.cones) : (0 : V) ∈ Φ.support :=
 def IsComplete : Prop := Φ.support = Set.univ
 
 /-- Completeness, spelled pointwise. -/
+@[simp]
 theorem isComplete_iff : Φ.IsComplete ↔ ∀ x : V, ∃ σ ∈ Φ.cones, x ∈ σ := by
   simp [IsComplete, Set.eq_univ_iff_forall]
 
@@ -356,6 +358,29 @@ theorem exists_isLeast_cone (f : FanHom Φ Ψ) (hσ : σ ∈ Φ.cones) :
   refine ⟨τ, hτT, fun υ hυ ↦ ?_⟩
   have hinf : τ ⊓ υ ∈ T := ⟨Ψ.inf_mem hτT.1 hυ.1, le_inf hτT.2 hυ.2⟩
   exact le_trans (hmin hinf inf_le_left) inf_le_right
+
+/-- The least cone of the target fan containing the image of a source cone. -/
+noncomputable def leastCone (f : FanHom Φ Ψ) (hσ : σ ∈ Φ.cones) : PointedCone ℝ V' :=
+  (f.exists_isLeast_cone hσ).choose
+
+/-- `FanHom.leastCone` is the least target cone containing the image of the source cone. -/
+theorem isLeast_leastCone (f : FanHom Φ Ψ) (hσ : σ ∈ Φ.cones) :
+    IsLeast {υ ∈ Ψ.cones | σ.map f.realMap ≤ υ} (f.leastCone hσ) :=
+  (f.exists_isLeast_cone hσ).choose_spec
+
+/-- The least target cone of a source cone is a cone of the target fan. -/
+theorem leastCone_mem (f : FanHom Φ Ψ) (hσ : σ ∈ Φ.cones) : f.leastCone hσ ∈ Ψ.cones :=
+  (f.isLeast_leastCone hσ).1.1
+
+/-- The least target cone of a source cone contains the image of that cone. -/
+theorem map_le_leastCone (f : FanHom Φ Ψ) (hσ : σ ∈ Φ.cones) :
+    σ.map f.realMap ≤ f.leastCone hσ :=
+  (f.isLeast_leastCone hσ).1.2
+
+/-- The least target cone of a source cone lies in every target cone containing its image. -/
+theorem leastCone_le (f : FanHom Φ Ψ) (hσ : σ ∈ Φ.cones) {υ : PointedCone ℝ V'}
+    (hυ : υ ∈ Ψ.cones) (h : σ.map f.realMap ≤ υ) : f.leastCone hσ ≤ υ :=
+  (f.isLeast_leastCone hσ).2 ⟨hυ, h⟩
 
 end FanHom
 
