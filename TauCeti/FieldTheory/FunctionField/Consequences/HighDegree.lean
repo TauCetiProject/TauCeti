@@ -151,10 +151,15 @@ private theorem two_mul_genus_sub_one_le_sub_one_mul_degree (hF : IsFunctionFiel
 /-- If the Riemann--Roch dimensions of `(n - 1)P` and `nP` differ, there is a nonzero function
 with order exactly `-n` at `P` that is regular at every other place. -/
 theorem exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt
-    (hF : IsFunctionField k F) (P : Place k F) {n : ℕ} (hnpos : 0 < n)
+    (hF : IsFunctionField k F) (P : Place k F) {n : ℕ}
     (hdimlt : Divisor.dim (((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) <
       Divisor.dim ((n : ℤ) • WeilDivisor.ofPoint P)) :
     ∃ x : F, x ≠ 0 ∧ P.ord x = -(n : ℤ) ∧ ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord x := by
+  -- The strict inequality already forces `n` to be positive: for `n = 0` the two divisors agree.
+  have hnpos : 0 < n := by
+    rcases Nat.eq_zero_or_pos n with rfl | h
+    · simp at hdimlt
+    · exact h
   let D : Divisor k F := (n : ℤ) • WeilDivisor.ofPoint P
   let E : Divisor k F := ((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P
   have hnsub : ((n - 1 : ℕ) : ℤ) = (n : ℤ) - 1 := by
@@ -236,7 +241,7 @@ theorem exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_two_mul_genus_sub_one_le_s
       simp only [D, E, Divisor.degree_zsmul, Divisor.degree_ofPoint, hnsub]
       ring
     omega
-  exact P.exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt hF hnpos (by
+  exact P.exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt hF (by
     simpa only [E, D] using hdimlt)
 
 /-- For every place `P` and natural number `n >= 2g`, there is a nonzero function with order `-n`
