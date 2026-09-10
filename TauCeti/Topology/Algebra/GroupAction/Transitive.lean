@@ -25,8 +25,6 @@ is compact, so its continuous bijection with the Hausdorff space `X` has continu
   orbit-stabilizer equivalence.
 * `TauCeti.quotientStabilizerHomeomorph` is its canonical topological upgrade for compact quotient
   and Hausdorff `X`.
-* `TauCeti.quotientStabilizerHomeomorph_toEquiv` identifies the underlying equivalence with the
-  algebraic orbit-stabilizer equivalence.
 * `TauCeti.quotientStabilizerHomeomorph_mk` and
   `TauCeti.quotientStabilizerHomeomorph_smul` record its representative and equivariance laws.
 -/
@@ -57,23 +55,14 @@ noncomputable def quotientStabilizerHomeomorph (b : X)
     G ⧸ (stabilizer G b) ≃ₜ X :=
   (continuous_quotientStabilizerEquiv G b hb).homeoOfEquivCompactToT2
 
-/-- The underlying equivalence of the quotient-stabilizer homeomorphism is the algebraic
-orbit-stabilizer equivalence. -/
-@[simp]
-theorem quotientStabilizerHomeomorph_toEquiv (b : X)
-    (hb : Continuous fun g : G => g • b)
-    [CompactSpace (G ⧸ (stabilizer G b))] [T2Space X] :
-    (quotientStabilizerHomeomorph G b hb).toEquiv = quotientStabilizerEquiv G b :=
-  Continuous.toEquiv_homeoOfEquivCompactToT2 (continuous_quotientStabilizerEquiv G b hb)
-
 /-- The quotient-stabilizer homeomorphism sends the coset of `g` to `g • b`. -/
 @[simp]
 theorem quotientStabilizerHomeomorph_mk (b : X)
     (hb : Continuous fun g : G => g • b)
     [CompactSpace (G ⧸ (stabilizer G b))] [T2Space X] (g : G) :
     quotientStabilizerHomeomorph G b hb (QuotientGroup.mk g) = g • b := by
-  change (quotientStabilizerHomeomorph G b hb).toEquiv (QuotientGroup.mk g) = g • b
-  rw [quotientStabilizerHomeomorph_toEquiv, quotientStabilizerEquiv_mk]
+  simp only [quotientStabilizerHomeomorph, ← Homeomorph.coe_toEquiv,
+    Continuous.toEquiv_homeoOfEquivCompactToT2, quotientStabilizerEquiv_mk]
 
 /-- The quotient-stabilizer homeomorphism is equivariant for the canonical left actions. -/
 @[simp]
@@ -83,8 +72,7 @@ theorem quotientStabilizerHomeomorph_smul (b : X)
     (g : G) (q : G ⧸ (stabilizer G b)) :
     quotientStabilizerHomeomorph G b hb (g • q) =
       g • quotientStabilizerHomeomorph G b hb q := by
-  change (quotientStabilizerHomeomorph G b hb).toEquiv (g • q) =
-    g • (quotientStabilizerHomeomorph G b hb).toEquiv q
-  rw [quotientStabilizerHomeomorph_toEquiv, quotientStabilizerEquiv_smul]
+  simp only [quotientStabilizerHomeomorph, ← Homeomorph.coe_toEquiv,
+    Continuous.toEquiv_homeoOfEquivCompactToT2, quotientStabilizerEquiv_smul]
 
 end TauCeti
