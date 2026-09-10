@@ -72,6 +72,19 @@ noncomputable abbrev weightLeviCoordinateHopfAlgebra (w : Fin N → ℤ) :
   CommHopfAlgCat.quotient (coordinateHopfAlgebra R N)
     (weightLeviDefiningHopfIdeal R w)
 
+/-- The weight-Levi coordinate Hopf algebra with its finite-type property. -/
+noncomputable def weightLeviFiniteTypeCoordinateHopfAlgebra (w : Fin N → ℤ) :
+    FiniteTypeCommHopfAlgCat R :=
+  ⟨weightLeviCoordinateHopfAlgebra R w,
+    inferInstanceAs (Algebra.FiniteType R (weightLeviCoordinateHopfAlgebra R w))⟩
+
+/-- The finite-type package has the weight-Levi coordinate Hopf algebra as its object. -/
+@[simp]
+theorem weightLeviFiniteTypeCoordinateHopfAlgebra_obj (w : Fin N → ℤ) :
+    (weightLeviFiniteTypeCoordinateHopfAlgebra R w).obj =
+      weightLeviCoordinateHopfAlgebra R w :=
+  (rfl)
+
 /-- The affine group scheme represented by the weight-Levi coordinate Hopf algebra. -/
 noncomputable abbrev weightLeviGroupScheme (w : Fin N → ℤ) :=
   CommHopfAlgCat.quotientSpec (coordinateHopfAlgebra R N)
