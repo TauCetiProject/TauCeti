@@ -259,7 +259,7 @@ theorem toOrientedPDCode_orientation_crossing (i : Fin n) (s : Fin 4) :
   fin_cases s <;> simp [slotOneDirection]
 
 /-- The crossing slot selected by a visit and a direction has that direction. -/
-theorem toOrientedPDCode_crossing (v : Fin (2 * n)) (outgoing : Bool) :
+theorem toOrientedPDCode_orientation_crossing_slotAtVisit (v : Fin (2 * n)) (outgoing : Bool) :
     let b := if D.sign (D.visit v) = 1 then D.over (D.visitAt (D.visit v) true)
       else !D.over (D.visitAt (D.visit v) true)
     let s : Fin 4 := if D.isSecondVisit v then
@@ -404,11 +404,6 @@ theorem toOrientedPDCode_empty :
     (empty : BasedOrientedGaussCode 0).toOrientedPDCode = orientedPDCodeUnknot true := by
   rw [orientedPDCode_eq_unlink (empty : BasedOrientedGaussCode 0).toOrientedPDCode,
     toOrientedPDCode_crossinglessComponents, orientedPDCodeUnknot_eq_unlink]
-  simp
-
-/-- The PD-code of the positive kink has writhe one. -/
-theorem writhe_toOrientedPDCode_positiveKink :
-    (positiveKink.toOrientedPDCode).writhe = 1 := by
   simp
 
 end BasedOrientedGaussCode
