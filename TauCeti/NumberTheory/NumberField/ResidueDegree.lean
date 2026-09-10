@@ -208,9 +208,8 @@ integer. -/
 theorem _root_.IsDedekindDomain.HeightOneSpectrum.intCast_mem_asIdeal_iff
     (𝔭 : HeightOneSpectrum (𝓞 K)) (n : ℤ) :
     (n : 𝓞 K) ∈ 𝔭.asIdeal ↔ (rationalPrimeBelow 𝔭 : ℤ) ∣ n := by
-  change algebraMap ℤ (𝓞 K) n ∈ 𝔭.asIdeal ↔ _
-  rw [← Ideal.mem_comap, ← Ideal.under_def, under_eq_span_rationalPrimeBelow,
-    Ideal.mem_span_singleton]
+  rw [← eq_intCast (algebraMap ℤ (𝓞 K)) n, ← Ideal.mem_comap, ← Ideal.under_def,
+    under_eq_span_rationalPrimeBelow, Ideal.mem_span_singleton]
 
 /-- **Only finitely many height-one primes have a rational prime below dividing a nonzero
 integer.** Such a prime divides the ideal that the integer generates, and a nonzero ideal has only
@@ -221,12 +220,11 @@ Private, and stated for the underlying `Set`, because its only role is to build
 `TauCeti.mem_primesDividing`. -/
 private theorem finite_primesDividing (K : Type*) [Field K] [NumberField K] {n : ℤ} (hn : n ≠ 0) :
     {𝔭 : HeightOneSpectrum (𝓞 K) | (rationalPrimeBelow 𝔭 : ℤ) ∣ n}.Finite := by
-  have hne : Ideal.span {(algebraMap ℤ (𝓞 K) n)} ≠ ⊥ := by
+  have hne : Ideal.span {(n : 𝓞 K)} ≠ ⊥ := by
     rw [Ne, Ideal.span_singleton_eq_bot]
-    exact fun h ↦ hn (FaithfulSMul.algebraMap_injective ℤ (𝓞 K) (h.trans (map_zero _).symm))
+    exact fun h ↦ hn (Int.cast_eq_zero.mp h)
   refine (Ideal.finite_factors hne).subset fun 𝔭 h𝔭 ↦ ?_
-  change 𝔭.asIdeal ∣ Ideal.span {algebraMap ℤ (𝓞 K) n}
-  rw [Ideal.dvd_span_singleton]
+  rw [Set.mem_ofPred_eq, Ideal.dvd_span_singleton]
   exact (𝔭.intCast_mem_asIdeal_iff n).mpr h𝔭
 
 /-- **The height-one primes of `𝓞 K` dividing a nonzero integer `n`**: those whose rational prime
