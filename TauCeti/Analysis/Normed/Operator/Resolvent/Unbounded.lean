@@ -293,36 +293,29 @@ theorem resolvent_comm (hl : lambda ∈ resolventSet A) (hm : mu ∈ resolventSe
 
 /-! ## Neumann perturbations and openness of the resolvent set -/
 
-section CompleteSpace
-
-variable [CompleteSpace X]
-
-/-- **The common Neumann perturbation witness.** If `lambda` lies in the resolvent set of `A`
-and `‖B R(lambda, A)‖ < 1`, then
+/-- **The common invertible perturbation witness.** If `lambda` lies in the resolvent set of `A`
+and `I - B R(lambda, A)` is invertible, then
 `R(lambda, A) (I - B R(lambda, A))⁻¹` inverts `lambda • I - (B + A)`.
 
 This is the lower-level construction shared by bounded perturbations and perturbations of the
 spectral parameter. -/
-theorem isResolventAt_vadd_of_norm_mul_resolvent_lt_one (B : X →L[𝕜] X)
-    (h : lambda ∈ resolventSet A) (hB : ‖B * resolvent A lambda‖ < 1) :
+theorem isResolventAt_vadd_of_isUnit_one_sub_mul_resolvent (B : X →L[𝕜] X)
+    (h : lambda ∈ resolventSet A) (hB : IsUnit (1 - B * resolvent A lambda)) :
     IsResolventAt ((B : X →ₗ[𝕜] X) +ᵥ A) lambda
       (resolvent A lambda * Ring.inverse (1 - B * resolvent A lambda)) := by
   set R := resolvent A lambda with hRdef
-  have hnorm : ‖B * R‖ < 1 := by simpa only [hRdef] using hB
-  obtain ⟨u, hu⟩ := isUnit_one_sub_of_norm_lt_one hnorm
-  have hinv : Ring.inverse (1 - B * R) = ((u⁻¹ : (X →L[𝕜] X)ˣ) : X →L[𝕜] X) := by
-    rw [← hu, Ring.inverse_unit]
-  rw [hinv, ContinuousLinearMap.mul_def]
-  set U : X →L[𝕜] X := ((u⁻¹ : (X →L[𝕜] X)ˣ) : X →L[𝕜] X) with hUdef
+  have hunit : IsUnit (1 - B * R) := by simpa only [hRdef] using hB
+  rw [ContinuousLinearMap.mul_def]
+  set U : X →L[𝕜] X := Ring.inverse (1 - B * R) with hUdef
   have hcancel : ∀ y : X, U y - B (R (U y)) = y := by
     intro y
-    have h1 : ((u : X →L[𝕜] X) * U) = 1 := u.mul_inv
-    rw [hu] at h1
+    have h1 : (1 - B * R) * U = 1 := by
+      rw [hUdef, Ring.mul_inverse_cancel _ hunit]
     simpa using congrArg (fun S : X →L[𝕜] X => S y) h1
   have hsolve : ∀ y : X, U (y - B (R y)) = y := by
     intro y
-    have h1 : (U * (u : X →L[𝕜] X)) = 1 := u.inv_mul
-    rw [hu] at h1
+    have h1 : U * (1 - B * R) = 1 := by
+      rw [hUdef, Ring.inverse_mul_cancel _ hunit]
     simpa using congrArg (fun S : X →L[𝕜] X => S y) h1
   refine ⟨fun y => resolvent_mem_domain h (U y), fun y => ?_, fun x => ?_⟩
   · have hstep : lambda • (R ∘L U) y -
@@ -340,6 +333,19 @@ theorem isResolventAt_vadd_of_norm_mul_resolvent_lt_one (B : X →L[𝕜] X)
       simp only [ContinuousLinearMap.coe_coe]
       abel
     rw [ContinuousLinearMap.comp_apply, hstep, hsolve, hx]
+
+section CompleteSpace
+
+variable [CompleteSpace X]
+
+/-- If `lambda` lies in the resolvent set of `A` and `‖B R(lambda, A)‖ < 1`, then
+`R(lambda, A) (I - B R(lambda, A))⁻¹` inverts `lambda • I - (B + A)`. -/
+theorem isResolventAt_vadd_of_norm_mul_resolvent_lt_one (B : X →L[𝕜] X)
+    (h : lambda ∈ resolventSet A) (hB : ‖B * resolvent A lambda‖ < 1) :
+    IsResolventAt ((B : X →ₗ[𝕜] X) +ᵥ A) lambda
+      (resolvent A lambda * Ring.inverse (1 - B * resolvent A lambda)) :=
+  isResolventAt_vadd_of_isUnit_one_sub_mul_resolvent B h
+    (isUnit_one_sub_of_norm_lt_one hB)
 
 private theorem isResolventAt_of_norm_mul_lt_one (h : lambda ∈ resolventSet A)
     (hmu : ‖mu - lambda‖ * ‖resolvent A lambda‖ < 1) :
