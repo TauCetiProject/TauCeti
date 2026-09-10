@@ -485,8 +485,8 @@ theorem artinHomAwayIntegral_candidateGenusField_surjective
     refine ⟨mem_nonZeroDivisors_iff_ne_zero.mp J.2, fun v hv hdvdJ ↦ ?_⟩
     have hdvdM : v.asIdeal ∣ Ideal.span {algebraMap ℤ (𝓞 (candidateGenusFieldBase hd))
         (2 * fundamentalDiscriminant d)} :=
-      (v.asIdeal_dvd_span_singleton_algebraMap_iff _).mpr
-        ((mem_genusFieldArtinExcludedPrimes hd v).mp hv)
+      Ideal.dvd_span_singleton.mpr <|
+        (v.intCast_mem_asIdeal_iff _).mpr ((mem_genusFieldArtinExcludedPrimes hd v).mp hv)
     refine v.isPrime.ne_top (top_le_iff.mp ?_)
     rw [← Ideal.isCoprime_iff_sup_eq.mp hcop]
     exact sup_le (Ideal.le_of_dvd hdvdJ) (Ideal.le_of_dvd hdvdM)
