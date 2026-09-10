@@ -8,7 +8,6 @@ module
 public import TauCeti.KnotTheory.GaussCode.Basic
 public import TauCeti.KnotTheory.PDCode
 import Mathlib.Algebra.Ring.Int.Units
-import Mathlib.Data.Fintype.Prod
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -305,7 +304,8 @@ theorem toOrientedPDCode_empty :
       orientedPDCode_eq_unlink _
     _ = orientedPDCodeUnlink {true} := by simp
     _ = orientedPDCodeUnknot true := by
-      simpa using (orientedPDCode_eq_unlink (orientedPDCodeUnknot true)).symm
+      simpa only [orientedPDCodeUnknot_crossinglessComponents] using
+        (orientedPDCode_eq_unlink (orientedPDCodeUnknot true)).symm
 
 private theorem toOrientedPDCode_edgePair_outgoing_aux (D : BasedOrientedGaussCode n)
     (i : Fin (2 * n)) :
@@ -368,15 +368,6 @@ theorem toOrientedPDCode_relabel (D : BasedOrientedGaussCode n) (e : Equiv.Perm 
     simp [toOrientedPDCode, visitHalfEdgeEquiv, OrientedPDCode.relabel_orientation]
   · simp [toOrientedPDCode]
 
-/-- The orientation at a crossing slot agrees with the incoming/outgoing direction extracted from
-the Gauss code. -/
-theorem toOrientedPDCode_orientation_crossing (D : BasedOrientedGaussCode n)
-    (c : Fin n) (slot : Fin 4) :
-    D.toOrientedPDCode.orientation
-        (D.toOrientedPDCode.halfEdge (PDCode.crossingSlotEquiv n (c, slot))) =
-      D.crossingOutgoing c slot := by
-  rw [D.toOrientedPDCode_crossing, D.toOrientedPDCode_orientation_halfEdge]
-
 /-- At a crossing of the converted PD-code, the over-strand is exactly the visit marked over by
 the Gauss code. -/
 @[simp]
@@ -394,14 +385,16 @@ theorem toOrientedPDCode_crossingSign (D : BasedOrientedGaussCode n) (c : Fin n)
   · rw [hsign]
     apply (OrientedPDCode.crossingSign_eq_one_iff _ _).2
     rw [OrientedPDCode.crossing_apply, OrientedPDCode.crossing_apply,
-      D.toOrientedPDCode_orientation_crossing, D.toOrientedPDCode_orientation_crossing,
+      D.toOrientedPDCode_crossing, D.toOrientedPDCode_orientation_halfEdge,
+      D.toOrientedPDCode_crossing, D.toOrientedPDCode_orientation_halfEdge,
       D.toOrientedPDCode_overPair]
     simp only [crossingOutgoing, hsign, ↓reduceIte]
     decide
   · rw [hsign]
     apply (OrientedPDCode.crossingSign_eq_neg_one_iff _ _).2
     rw [OrientedPDCode.crossing_apply, OrientedPDCode.crossing_apply,
-      D.toOrientedPDCode_orientation_crossing, D.toOrientedPDCode_orientation_crossing,
+      D.toOrientedPDCode_crossing, D.toOrientedPDCode_orientation_halfEdge,
+      D.toOrientedPDCode_crossing, D.toOrientedPDCode_orientation_halfEdge,
       D.toOrientedPDCode_overPair]
     have hne : D.sign c ≠ 1 := hsign ▸ (by decide)
     simp only [crossingOutgoing, hne, ↓reduceIte]
