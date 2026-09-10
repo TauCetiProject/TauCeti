@@ -42,14 +42,10 @@ open scoped ContDiff Manifold Topology
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
+  [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
 attribute [local instance] LieGroup.minSmoothnessThree
 attribute [local instance] ContMDiffMul.boundarylessManifold
-
-local instance finiteDimensionalLeftInvariantDerivationLocalSeparation :
-    FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
-  finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
 
 /-- Let `K` be a closed subgroup and `M` a linear subspace disjoint from its Lie algebra. In some
 positive-radius ball about zero, an element of `M` has exponential in `K` exactly when it is zero.
@@ -57,9 +53,16 @@ positive-radius ball about zero, an element of `M` has exponential in `K` exactl
 This needs only disjointness; in the closed-subgroup chart construction it applies in particular
 when `M` is chosen as a linear complement of `lieSubalgebraOfSubgroup K`. -/
 theorem exists_pos_forall_norm_lt_lieExp_mem_iff_eq_zero_of_disjoint {K : Subgroup G}
-    (hK : IsClosed (K : Set G)) (M : Submodule ℝ (LeftInvariantDerivation I G))
-    (hM : Disjoint M (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) :
-    ∃ ε > 0, ∀ X ∈ M, ‖X‖ < ε → (lieExp (I := I) X ∈ K ↔ X = 0) := by
+    (hK : IsClosed (K : Set G)) :
+    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    ∀ (M : Submodule ℝ (LeftInvariantDerivation I G)),
+      Disjoint M (lieSubalgebraOfSubgroup (I := I) K).toSubmodule →
+      ∃ ε > 0, ∀ X ∈ M, ‖X‖ < ε → (lieExp (I := I) X ∈ K ↔ X = 0) := by
+  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  dsimp only
+  intro M hM
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   suffices ∃ ε > 0, ∀ X ∈ M, ‖X‖ < ε → lieExp (I := I) X ∈ K → X = 0 by
     obtain ⟨ε, hε, h⟩ := this
     refine ⟨ε, hε, fun X hXM hXnorm ↦ ⟨h X hXM hXnorm, ?_⟩⟩
