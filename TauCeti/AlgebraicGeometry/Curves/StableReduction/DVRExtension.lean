@@ -49,22 +49,13 @@ that of `R`.
 * `TauCeti.FiniteDVRExtension.isLocalHom_algebraMap` and
   `TauCeti.FiniteDVRExtension.under_maximalIdeal_localRing`: the chosen local ring dominates `R`.
 * `TauCeti.FiniteDVRExtension.exists_extensionField_eq`: every finite separable extension of `K`
-  underlies such a package, one for each place above the closed point of `R`.
+  underlies such a package, for some place above the closed point of `R`; to fix a specified
+  place, use `TauCeti.FiniteDVRExtension.of`.
 
 ## References
 
-The interface here is not original to this file: it adapts the one proposed by the Tau Ceti
-[`StableReduction` roadmap][roadmap], whose `README.md` states the convention "DVR extensions are
-local data" — choose a maximal ideal of the integral closure above the closed point and localize,
-never treating the integral closure itself as a discrete valuation ring — and whose
-[`Suggested.lean`][suggested] writes down the signature followed below: the same carriers, algebra
-maps, scalar towers and chosen prime.
-
 The mathematics is standard; Q. Liu, *Algebraic Geometry and Arithmetic Curves*, covers reduction
 of curves over a discrete valuation ring.
-
-[roadmap]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/README.md
-[suggested]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/Suggested.lean
 -/
 
 public section
@@ -74,6 +65,10 @@ universe u
 namespace TauCeti
 
 open IsLocalRing
+
+-- Source: this structure adapts the `FiniteDVRExtension` signature (same carriers, algebra maps,
+-- scalar towers and chosen prime) of the Tau Ceti `StableReduction` roadmap's `Suggested.lean`,
+-- https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/Suggested.lean
 
 /-- A finite separable extension of the fraction field `K` of a discrete valuation ring `R`,
 together with a chosen place of that extension above the closed point of `R`.
