@@ -17,7 +17,7 @@ permutation wreath product is the semidirect product
 `(ι → D) ⋊ Q`,
 
 where `Q` permutes the coordinates of the base group. This file defines the full wreath product
-with `Q = Equiv.Perm ι` and the restricted wreath product attached to a subgroup
+with `Q = Equiv.Perm ι` and the wreath product attached to a permutation subgroup
 `Q ≤ Equiv.Perm ι`.
 
 The semidirect-product API supplies the inclusions of the base and top groups and the projection
@@ -28,7 +28,7 @@ primitivity of the product action requires additional hypotheses and is not asse
 ## Main definitions
 
 * `TauCeti.WreathProduct`: the full permutation wreath product `(ι → D) ⋊ Equiv.Perm ι`.
-* `TauCeti.RestrictedWreathProduct`: the wreath product whose top group is a subgroup of
+* `TauCeti.PermSubgroupWreathProduct`: the wreath product whose top group is a subgroup of
   `Equiv.Perm ι`.
 * `TauCeti.WreathProduct.imprimitiveToPerm`: the imprimitive permutation representation on
   `ι × Λ`.
@@ -58,7 +58,7 @@ abbrev WreathProduct :=
 
 /-- The permutation wreath product with top group restricted to
 `Q ≤ Equiv.Perm ι`. -/
-abbrev RestrictedWreathProduct (Q : Subgroup (Equiv.Perm ι)) :=
+abbrev PermSubgroupWreathProduct (Q : Subgroup (Equiv.Perm ι)) :=
   (ι → D) ⋊[(mulAutArrow (G := Equiv.Perm ι) (A := ι) (M := D)).comp Q.subtype] Q
 
 namespace WreathProduct
@@ -66,6 +66,7 @@ namespace WreathProduct
 variable {D ι}
 
 /-- Multiplication in a permutation wreath product, written in coordinates. -/
+@[simp]
 theorem mul_left (a b : WreathProduct D ι) (i : ι) :
     (a * b).left i = a.left i * b.left (a.right⁻¹ i) := by
   have h := congrFun (SemidirectProduct.mul_left a b) i
@@ -73,15 +74,15 @@ theorem mul_left (a b : WreathProduct D ι) (i : ι) :
   rw [mulAutArrow_apply_apply] at h
   exact h
 
-/-- The order of a finite full permutation wreath product. -/
+/-- The natural cardinality of a full permutation wreath product with finite index type. -/
 theorem natCard [Finite ι] :
     Nat.card (WreathProduct D ι) =
       Nat.card D ^ Nat.card ι * (Nat.card ι).factorial := by
   rw [SemidirectProduct.card, Nat.card_fun, Nat.card_perm]
 
-/-- The order of a finite restricted permutation wreath product. -/
-theorem natCard_restricted (Q : Subgroup (Equiv.Perm ι)) [Finite ι] :
-    Nat.card (RestrictedWreathProduct D ι Q) =
+/-- The natural cardinality of a permutation-subgroup wreath product with finite index type. -/
+theorem natCard_permSubgroup (Q : Subgroup (Equiv.Perm ι)) [Finite ι] :
+    Nat.card (PermSubgroupWreathProduct D ι Q) =
       Nat.card D ^ Nat.card ι * Nat.card Q := by
   rw [SemidirectProduct.card, Nat.card_fun]
 
@@ -154,6 +155,8 @@ variable {κ : Type w}
 def congr (e : ι ≃ κ) : WreathProduct D ι ≃* WreathProduct D κ :=
   SemidirectProduct.congr (MulEquiv.arrowCongr e (MulEquiv.refl D)) e.permCongrHom fun σ ↦ by
     ext f i
+    -- Unfold the arrow action, relabeling equivalence, and permutation-congruence coercions to
+    -- expose the equality of coordinate evaluations proved below.
     change f (σ⁻¹ (e.symm i)) = f (e.symm ((e.permCongrHom σ)⁻¹ i))
     rw [← map_inv e.permCongrHom σ]
     simp [Equiv.permCongrHom, Equiv.permCongr_apply]
@@ -313,6 +316,7 @@ instance [Nontrivial Λ] [FaithfulSMul D Λ] :
         apply smul_left_cancel (w.left i)
         simpa only [product_smul, hleft] using congrFun (h c) i
       have hne' : (Equiv.symm z.right) i ≠ (Equiv.symm w.right) i := by
+        -- Group inversion on `Equiv.Perm` is definitionally its inverse equivalence.
         change z.right⁻¹ i ≠ w.right⁻¹ i
         exact Ne.symm hne
       exact hxy (by simpa [c, hne'] using heval)
