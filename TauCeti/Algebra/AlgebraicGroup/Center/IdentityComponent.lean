@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Center.Reduced
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Comultiplication
-public import TauCeti.RingTheory.FiniteType.TensorProduct
+public import TauCeti.RingTheory.FiniteType.Tensor.Product
 
 /-!
 # The reduced center's identity component as an ambient closed subgroup
