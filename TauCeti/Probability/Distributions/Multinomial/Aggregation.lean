@@ -6,21 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Multinomial.Transforms
+public import Mathlib.LinearAlgebra.Finsupp.Pi
 
 /-!
 # Aggregation of multinomial cells
 
 Combining cells of a multinomial count vector again gives a multinomial distribution. For a map
 `f : ι → κ`, the count in a target cell `j` is the sum of all source counts over the fibre of
-`j`, while `Convexity.StdSimplex.map f` sums the corresponding cell probabilities.
+`j`, which is Mathlib's `FunOnFinite.map f`, while `Convexity.StdSimplex.map f` sums the
+corresponding cell probabilities.
 
 This aggregation law supports coarsening a multinomial model by merging categories while
 preserving its multinomial form.
 
-## Main definitions and results
+## Main results
 
-* `TauCeti.Probability.multinomialAggregate`: aggregate a count vector along a map of cells.
-* `TauCeti.Probability.map_multinomialAggregate_multinomialMeasure`: aggregation sends a
+* `TauCeti.Probability.map_funOnFinite_map_multinomialMeasure`: aggregation sends a
   multinomial law to the multinomial law with aggregated probabilities.
 
 ## References
@@ -39,44 +40,10 @@ namespace TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 
-open Classical in
-/-- Aggregate a count vector by summing the counts in every fibre of a map of cells. -/
-def multinomialAggregate (f : ι → κ) (k : ι → ℕ) (j : κ) : ℕ :=
-  ∑ i with f i = j, k i
-
-open Classical in
-omit [Fintype κ] in
-/-- The count in an aggregated cell is the sum of the counts in its fibre. -/
-@[simp]
-theorem multinomialAggregate_apply (f : ι → κ) (k : ι → ℕ) (j : κ) :
-    multinomialAggregate f k j = ∑ i with f i = j, k i := (rfl)
-
-omit [Fintype κ] in
-/-- Aggregating along the identity map leaves a count vector unchanged. -/
-@[simp]
-theorem multinomialAggregate_id (k : ι → ℕ) :
-    multinomialAggregate id k = k := by
-  classical
-  funext i
-  rw [multinomialAggregate_apply, Finset.sum_eq_single i]
-  · simp
-  · simp
-
-/-- Successive aggregations agree with aggregation along the composite map. -/
-@[simp]
-theorem multinomialAggregate_comp {υ : Type*} (f : ι → κ) (g : κ → υ) (k : ι → ℕ) :
-    multinomialAggregate g (multinomialAggregate f k) =
-      multinomialAggregate (g ∘ f) k := by
-  classical
-  funext j
-  simp only [multinomialAggregate_apply, Function.comp_apply]
-  simpa using
-    Finset.sum_fiberwise_eq_sum_filter Finset.univ {x | g x = j} f k
-
-omit [Fintype κ] in
+omit [Fintype ι] [Fintype κ] in
 /-- Aggregating count vectors is measurable for the discrete measurable structures. -/
-theorem measurable_multinomialAggregate (f : ι → κ) :
-    Measurable (multinomialAggregate f) :=
+theorem measurable_funOnFinite_map [Finite ι] [Finite κ] (f : ι → κ) :
+    Measurable (FunOnFinite.map (M := ℕ) f) :=
   measurable_of_countable _
 
 /-- Pull a Euclidean frequency vector back along a map of cells. -/
@@ -88,13 +55,13 @@ omit [Fintype ι] [Fintype κ] in
 private theorem pullbackFrequency_apply (f : ι → κ) (t : EuclideanSpace ℝ κ) (i : ι) :
     pullbackFrequency f t i = t (f i) := (rfl)
 
-private theorem inner_multinomialAggregate (f : ι → κ) (k : ι → ℕ)
+private theorem inner_multinomialToEuclidean_funOnFinite_map (f : ι → κ) (k : ι → ℕ)
     (t : EuclideanSpace ℝ κ) :
-    inner ℝ (multinomialToEuclidean (multinomialAggregate f k)) t =
+    inner ℝ (multinomialToEuclidean (FunOnFinite.map f k)) t =
       inner ℝ (multinomialToEuclidean k) (pullbackFrequency f t) := by
   classical
   simp only [EuclideanSpace.inner_eq_star_dotProduct, dotProduct, star_trivial,
-    multinomialToEuclidean_apply, multinomialAggregate_apply, pullbackFrequency_apply]
+    multinomialToEuclidean_apply, FunOnFinite.map_apply_apply, pullbackFrequency_apply]
   push_cast
   simp_rw [Finset.mul_sum]
   calc
@@ -133,27 +100,28 @@ private theorem sum_map_weights_mul_cexp (f : ι → κ) (p : StdSimplex NNReal 
 /-- **Aggregation law for the multinomial distribution.** Combining cells along `f` gives the
 multinomial law whose target-cell probabilities are the sums of the source probabilities over
 the fibres of `f`. -/
-theorem map_multinomialAggregate_multinomialMeasure (f : ι → κ) (n : ℕ)
+theorem map_funOnFinite_map_multinomialMeasure (f : ι → κ) (n : ℕ)
     (p : StdSimplex NNReal ι) :
-    (multinomialMeasure n p).map (multinomialAggregate f) = multinomialMeasure n (p.map f) := by
+    (multinomialMeasure n p).map (FunOnFinite.map (M := ℕ) f) =
+      multinomialMeasure n (p.map f) := by
   apply (measurableEmbedding_multinomialToEuclidean (ι := κ)).map_injective
   let _ := isProbabilityMeasure_multinomialMeasure n p
   let _ := isProbabilityMeasure_multinomialMeasure n (p.map f)
   apply Measure.ext_of_charFun
   funext t
   calc
-    charFun (((multinomialMeasure n p).map (multinomialAggregate f)).map
+    charFun (((multinomialMeasure n p).map (FunOnFinite.map (M := ℕ) f)).map
         multinomialToEuclidean) t =
         charFun ((multinomialMeasure n p).map multinomialToEuclidean)
           (pullbackFrequency f t) := by
       rw [charFun_apply, charFun_apply,
-        Measure.map_map measurable_multinomialToEuclidean (measurable_multinomialAggregate f),
+        Measure.map_map measurable_multinomialToEuclidean (measurable_funOnFinite_map f),
         integral_map (measurable_multinomialToEuclidean.comp
-          (measurable_multinomialAggregate f)).aemeasurable (by fun_prop),
+          (measurable_funOnFinite_map f)).aemeasurable (by fun_prop),
         integral_map measurable_multinomialToEuclidean.aemeasurable (by fun_prop)]
       apply integral_congr_ae
       filter_upwards [] with k
-      rw [Function.comp_apply, inner_multinomialAggregate]
+      rw [Function.comp_apply, inner_multinomialToEuclidean_funOnFinite_map]
     _ = (∑ i, (p.weights i : ℂ) *
           Complex.exp (Complex.I * (t (f i) : ℂ))) ^ n := by
       rw [charFun_map_multinomialToEuclidean_multinomialMeasure]
