@@ -72,13 +72,6 @@ happens whenever the total exponent at the point is greater than `-1`, by
 def schwarzChristoffelBoundary (a e : ι → ℝ) (z₀ : UpperHalfPlane) (x : ℝ) : ℂ :=
   extendFrom upperHalfPlaneSet (schwarzChristoffelPrimitive a e z₀) (x : ℂ)
 
-/-- The Schwarz--Christoffel boundary map is Mathlib's canonical extension-by-limits of the
-primitive from the upper half-plane, restricted to the real axis. -/
-theorem schwarzChristoffelBoundary_def (a e : ι → ℝ) (z₀ : UpperHalfPlane) (x : ℝ) :
-    schwarzChristoffelBoundary a e z₀ x =
-      extendFrom upperHalfPlaneSet (schwarzChristoffelPrimitive a e z₀) (x : ℂ) := by
-  rfl
-
 /-- A limit of the Schwarz--Christoffel primitive from the upper half-plane is its canonical
 boundary value. -/
 theorem schwarzChristoffelBoundary_eq_of_tendsto (a e : ι → ℝ) (z₀ : UpperHalfPlane)
