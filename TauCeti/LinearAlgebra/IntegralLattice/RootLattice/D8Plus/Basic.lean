@@ -207,7 +207,8 @@ theorem discriminant_d8PlusLattice : d8PlusLattice.discriminant = 1 := by
 /-- **`D₈⁺` is positive definite**: gluing takes place inside the ambient space of `D₈` and keeps
 its form. -/
 theorem isPosDef_d8PlusLattice : d8PlusLattice.IsPosDef :=
-  isEven_d8PlusCarrier.isIntegral.isPosDef_toIntegralLattice (isPosDef_checkerboardLattice 8)
+  isEven_d8PlusCarrier.isIntegral.isPosDef_toIntegralLattice_iff.mpr
+    (isPosDef_checkerboardLattice 8)
 
 /-- **The spinor glue enlargement `D₈⁺` is unimodular.** -/
 theorem isUnimodular_d8PlusLattice : d8PlusLattice.IsUnimodular := by

@@ -174,12 +174,11 @@ theorem IsEven.isEven_toIntegralLattice (hM : IsEven M) :
   obtain ⟨n, hn⟩ := isEven_def.mp hM (x : V) hx
   exact ⟨n, by rw [norm_apply, IsIntegral.toIntegralLattice_form, ← norm_apply]; exact hn⟩
 
-/-- An overlattice of a positive definite integral lattice is positive definite: it carries the
-same ambient form. -/
-theorem IsIntegral.isPosDef_toIntegralLattice (hM : IsIntegral M) (hL : L.IsPosDef) :
-    hM.toIntegralLattice.IsPosDef := by
-  rw [isPosDef_iff, hM.toIntegralLattice_form]
-  exact (isPosDef_iff L).mp hL
+/-- An integral overlattice is positive definite exactly when the lattice it lies over is: the
+two carry the same ambient form. -/
+theorem IsIntegral.isPosDef_toIntegralLattice_iff (hM : IsIntegral M) :
+    hM.toIntegralLattice.IsPosDef ↔ L.IsPosDef := by
+  rw [isPosDef_iff, isPosDef_iff, hM.toIntegralLattice_form]
 
 end IsLattice
 
