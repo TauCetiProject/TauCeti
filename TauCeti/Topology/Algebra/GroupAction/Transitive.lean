@@ -21,6 +21,8 @@ is compact, so its continuous bijection with the Hausdorff space `X` has continu
 
 ## Main results
 
+* `TauCeti.continuous_ofQuotientStabilizer` proves continuity of the orbit map descended to the
+  stabilizer quotient, without requiring transitivity.
 * `TauCeti.continuous_quotientStabilizerEquiv` proves continuity of the algebraic
   orbit-stabilizer equivalence.
 * `TauCeti.quotientStabilizerHomeomorph` is its canonical topological upgrade for compact quotient
@@ -36,16 +38,26 @@ open MulAction
 namespace TauCeti
 
 variable (G : Type*) {X : Type*} [Group G] [TopologicalSpace G] [TopologicalSpace X]
-  [MulAction G X] [IsPretransitive G X]
+  [MulAction G X]
+
+/-- The orbit map descended to the stabilizer quotient is continuous when the orbit map is. -/
+@[fun_prop]
+theorem continuous_ofQuotientStabilizer (b : X) (hb : Continuous fun g : G => g • b) :
+    Continuous (ofQuotientStabilizer G b) := by
+  apply (QuotientGroup.isQuotientMap_mk (stabilizer G b)).continuous_iff.mpr
+  convert hb using 1
+  funext g
+  exact ofQuotientStabilizer_mk G b g
+
+variable [IsPretransitive G X]
 
 /-- The canonical orbit-stabilizer equivalence is continuous when its orbit map is continuous. -/
 @[fun_prop]
 theorem continuous_quotientStabilizerEquiv (b : X) (hb : Continuous fun g : G => g • b) :
     Continuous (quotientStabilizerEquiv G b) := by
-  apply (QuotientGroup.isQuotientMap_mk (stabilizer G b)).continuous_iff.mpr
-  convert hb using 1
-  funext g
-  exact quotientStabilizerEquiv_mk G b g
+  refine (continuous_ofQuotientStabilizer G b hb).congr fun q => ?_
+  induction q using QuotientGroup.induction_on with
+  | _ g => rw [ofQuotientStabilizer_mk, quotientStabilizerEquiv_mk]
 
 /-- For a transitive action on a Hausdorff space, if the orbit map at a point is continuous and its
 stabilizer quotient is compact, then that quotient is canonically homeomorphic to the space. -/
