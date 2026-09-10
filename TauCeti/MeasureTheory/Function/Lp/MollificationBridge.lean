@@ -14,7 +14,7 @@ import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 
 This file connects the `Lᵖ`-valued average in
 `TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity` with the usual pointwise convolution
-formula when the input has a continuous compactly supported representative.  The representative
+formula when the input has a compactly supported `MemLp` representative.  The representative
 case is the bridge needed to pass between `Lᵖ`-valued mollification and classical convolution in
 subsequent density and localization arguments.
 
@@ -43,56 +43,50 @@ local instance : FiniteDimensional ℝ E := .of_locallyCompactSpace ℝ
 
 omit [CompleteSpace F] in
 private theorem setIntegral_normedConvolution (phi : ContDiffBump (0 : E)) {f : E → F}
-    (hf : Continuous f) (hfc : HasCompactSupport f) (s : Set E) :
+    (hf : Integrable f mu) (s : Set E) :
     (∫ t, phi.normed mu t • ∫ x in s, f (x - t) ∂mu ∂mu) =
       ∫ x in s, (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) x ∂mu := by
-  have hF_cont : Continuous (Function.uncurry fun t x : E => phi.normed mu t • f (x - t)) := by
-    exact (phi.continuous_normed.comp continuous_fst).smul
-      (hf.comp (continuous_snd.sub continuous_fst))
-  have hF_cpt : HasCompactSupport
-      (Function.uncurry fun t x : E => phi.normed mu t • f (x - t)) := by
-    apply HasCompactSupport.intro
-      ((phi.hasCompactSupport_normed (μ := mu)).isCompact.prod
-        (hfc.isCompact.add (phi.hasCompactSupport_normed (μ := mu)).isCompact))
-    intro x hx
-    -- Expose the pairwise integrand before using the support of either factor.
-    change phi.normed mu x.1 • f (x.2 - x.1) = 0
-    by_cases ht : x.1 ∈ tsupport (phi.normed mu)
-    · have hxsum : x.2 ∉ tsupport f + tsupport (phi.normed mu) := by
-        intro hxsum
-        exact hx ⟨ht, hxsum⟩
-      have hsub : x.2 - x.1 ∉ tsupport f := by
-        intro hsub
-        apply hxsum
-        exact Set.mem_add.mpr ⟨x.2 - x.1, hsub, x.1, ht, sub_add_cancel _ _⟩
-      rw [image_eq_zero_of_notMem_tsupport hsub, smul_zero]
-    · rw [image_eq_zero_of_notMem_tsupport ht, zero_smul]
+  have hbase : Integrable (Function.uncurry fun t x : E => phi.normed mu t • f x) (mu.prod mu) :=
+    (phi.continuous_normed.integrable_of_hasCompactSupport
+      (phi.hasCompactSupport_normed (μ := mu))).smul_prod hf
+  have hF_int : Integrable (Function.uncurry fun t x : E => phi.normed mu t • f (x - t))
+      (mu.prod mu) := by
+    have hshear := measurePreserving_prod_sub mu mu
+    have hcomp := hshear.integrable_comp hbase.aestronglyMeasurable |>.mpr hbase
+    convert hcomp using 1; rfl
   calc
     (∫ t, phi.normed mu t • ∫ x in s, f (x - t) ∂mu ∂mu) =
         ∫ t, ∫ x in s, phi.normed mu t • f (x - t) ∂mu ∂mu := by
       apply integral_congr_ae
       filter_upwards with t
       rw [integral_smul]
-    _ = ∫ x in s, ∫ t, phi.normed mu t • f (x - t) ∂mu ∂mu :=
-      integral_integral_swap_of_hasCompactSupport
-        (μ := mu) (ν := mu.restrict s) hF_cont hF_cpt
+    _ = ∫ x in s, ∫ t, phi.normed mu t • f (x - t) ∂mu ∂mu := by
+      apply integral_integral_swap
+      have hi := hF_int.integrableOn (s := univ ×ˢ s)
+      change Integrable _ ((mu.prod mu).restrict (univ ×ˢ s)) at hi
+      rw [← Measure.prod_restrict univ s] at hi
+      simpa only [Measure.restrict_univ] using hi
     _ = ∫ x in s, (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) x ∂mu := by
       apply integral_congr_ae
       filter_upwards with x
       rw [convolution_lsmul]
 
 /-- The `Lᵖ` approximate identity is represented almost everywhere by the usual pointwise
-convolution whenever the input is continuous and compactly supported. -/
+convolution for a compactly supported `MemLp` representative. -/
 theorem normedBumpLp_ae_eq_convolution (hp_ne_top : p ≠ ∞) (phi : ContDiffBump (0 : E))
-    {f : E → F} (hf : Continuous f) (hfc : HasCompactSupport f) :
+    {f : E → F} (hfLp : MemLp f p mu) (hfc : HasCompactSupport f) :
     (normedBumpLp hp_ne_top phi mu
-      (MemLp.toLp f (hf.memLp_of_hasCompactSupport hfc))) =ᵐ[mu]
+      (MemLp.toLp f hfLp)) =ᵐ[mu]
       (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) := by
-  let hfLp : MemLp f p mu := hf.memLp_of_hasCompactSupport hfc
+  have hf_int : Integrable f mu := by
+    apply (integrableOn_iff_integrable_of_support_subset (subset_tsupport f)).mp
+    change Integrable f (mu.restrict (tsupport f))
+    exact (integrableOn_Lp_of_measure_ne_top (hfLp.toLp f) Fact.out
+      hfc.measure_lt_top.ne).congr (ae_restrict_of_ae hfLp.coeFn_toLp)
   let conv : E → F := phi.normed mu ⋆[lsmul ℝ ℝ, mu] f
   have hconv_cont : Continuous conv := by
     exact phi.hasCompactSupport_normed.continuous_convolution_left
-      (lsmul ℝ ℝ) phi.continuous_normed hf.locallyIntegrable
+      (lsmul ℝ ℝ) phi.continuous_normed hf_int.locallyIntegrable
   have hconv_cpt : HasCompactSupport conv := by
     exact phi.hasCompactSupport_normed.convolution (lsmul ℝ ℝ) hfc
   let hconvLp : MemLp conv p mu := hconv_cont.memLp_of_hasCompactSupport hconv_cpt
@@ -127,7 +121,7 @@ theorem normedBumpLp_ae_eq_convolution (hp_ne_top : p ≠ ∞) (phi : ContDiffBu
         filter_upwards with t
         rw [map_smul, setIntegralLp_apply, setIntegral_translateLp_toLp s hfLp t]
       _ = ∫ x in s, conv x ∂mu := by
-        exact setIntegral_normedConvolution phi hf hfc s
+        exact setIntegral_normedConvolution phi hf_int s
       _ = ∫ x in s, (hconvLp.toLp conv) x ∂mu := by
         apply integral_congr_ae
         exact ae_restrict_of_ae hconvLp.coeFn_toLp.symm
