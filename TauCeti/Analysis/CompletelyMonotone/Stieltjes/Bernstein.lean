@@ -36,6 +36,8 @@ the normalization `μ {0} = 0` removes the only point where `t / (t + x)` does n
   continuous extension of `t * f(t)` written directly from Stieltjes representing data and its
   defining equation.
 * `TauCeti.stieltjesBernsteinTransform_zero`: the transform takes the value `a` at zero.
+* `TauCeti.stieltjesBernsteinIntegral_eq_mul_integral_inv_add`: the integral term is the
+  parameter times the corresponding Stieltjes integral.
 * `TauCeti.integrable_mul_zpow_neg_two_sub_add`: the derivative kernels of the integral term are
   integrable at positive parameters.
 * `TauCeti.iteratedDeriv_integral_div_add`: the iterated derivatives of the integral
@@ -86,7 +88,9 @@ theorem stieltjesBernsteinTransform_zero (μ : Measure ℝ≥0) (a b : ℝ≥0) 
     stieltjesBernsteinTransform μ a b 0 = a := by
   simp [stieltjesBernsteinTransform_apply]
 
-private lemma stieltjesBernsteinIntegral_eq_mul_integral_inv_add (μ : Measure ℝ≥0)
+/-- The integral term in the Stieltjes--Bernstein transform is the parameter times the
+corresponding Stieltjes integral. -/
+theorem stieltjesBernsteinIntegral_eq_mul_integral_inv_add (μ : Measure ℝ≥0)
     (t : ℝ) :
     (∫ x : ℝ≥0, t / (t + x) ∂μ) =
       t * ∫ x : ℝ≥0, (t + x)⁻¹ ∂μ := by
