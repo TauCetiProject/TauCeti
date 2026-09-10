@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Casimir
+public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Representation
 
 /-!
@@ -36,11 +37,6 @@ the basis-independent Killing contraction and root-space projection API.
   polar-dual and Killing-dual bases.
 * `CliffordAlgebra.adjointCliffordHom_eq_sum_bivector`: the adjoint lift as a `1 / 4`-scaled sum
   against a Killing-dual basis.
-
-## References
-
-* [Tau Ceti Roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), Representation Theory / Spin
-  Representations, Layer 9, "Kostant's isotypy corollary".
 -/
 
 public section
@@ -55,7 +51,7 @@ open TauCeti
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
-  [FiniteDimensional K V] [Invertible (2 : K)]
+  [Invertible (2 : K)]
 
 /-- The bilinear Clifford bivector obtained by applying `ad x` in the first slot.
 
@@ -82,58 +78,18 @@ theorem adjointBivector_apply {R : Type u} [CommRing R] [Invertible (2 : R)]
     adjointBivector Q x y z = bivector Q ⁅x, y⁆ z := by
   rfl
 
-omit [FiniteDimensional K V] in
-private theorem sum_polar_dual_smul_basis {ι : Type w} [Fintype ι] [DecidableEq ι]
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (b : Module.Basis ι K V) (x : V) :
-    ∑ i, Q.polarBilin (LinearMap.BilinForm.dualBasis Q.polarBilin
-        (QuadraticMap.nondegenerate_polar_iff.mpr hQ) b i) x • b i = x := by
-  let B := Q.polarBilin
-  let hB : B.Nondegenerate := QuadraticMap.nondegenerate_polar_iff.mpr hQ
-  let d := LinearMap.BilinForm.dualBasis B hB b
-  calc
-    _ = ∑ i, b.repr x i • b i := by
-      apply Finset.sum_congr rfl
-      intro i _
-      congr 1
-      calc
-        B (d i) x = B x (d i) := QuadraticMap.polar_comm Q (d i) x
-        _ = (LinearMap.BilinForm.dualBasis B hB d).repr x i :=
-          (LinearMap.BilinForm.dualBasis_repr_apply hB d x i).symm
-        _ = b.repr x i := by
-          rw [LinearMap.BilinForm.dualBasis_dualBasis hB
-            (LinearMap.BilinForm.isSymm_def.mpr fun y z ↦ QuadraticMap.polar_comm Q y z) b]
-    _ = x := b.sum_repr x
-
-omit [FiniteDimensional K V] in
-private theorem sum_polar_basis_smul_dual {ι : Type w} [Fintype ι] [DecidableEq ι]
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (b : Module.Basis ι K V) (x : V) :
-    ∑ i, Q.polarBilin (b i) x • LinearMap.BilinForm.dualBasis Q.polarBilin
-        (QuadraticMap.nondegenerate_polar_iff.mpr hQ) b i = x := by
-  let B := Q.polarBilin
-  let hB : B.Nondegenerate := QuadraticMap.nondegenerate_polar_iff.mpr hQ
-  let d := LinearMap.BilinForm.dualBasis B hB b
-  calc
-    _ = ∑ i, d.repr x i • d i := by
-      apply Finset.sum_congr rfl
-      intro i _
-      congr 1
-      rw [LinearMap.BilinForm.dualBasis_repr_apply]
-      exact QuadraticMap.polar_comm Q (b i) x
-    _ = x := d.sum_repr x
-
 /-- **The coordinate formula for the quadratic realization.** If `d` is the basis dual to `b`
 for the polar form of `Q`, then the quadratic element realizing a skew-adjoint endomorphism `f` is
-`1 / 2 • ∑ i, bivector Q (f (b i)) (d i)`.
-
-Indeed, commuting the unscaled sum with a Clifford generator gives two copies of `f x`: one by
-expanding `x` in `b`, and one by skew-adjointness followed by expansion in `d`. -/
+`1 / 2 • ∑ i, bivector Q (f (b i)) (d i)`. -/
 theorem soEquivQuadratic_eq_sum_bivector {ι : Type w} [Fintype ι] [DecidableEq ι]
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (b : Module.Basis ι K V)
     (f : skewAdjointLieSubalgebra Q.polarBilin) :
-    (soEquivQuadratic Q hQ f : CliffordAlgebra Q) =
+    (@soEquivQuadratic K _ V _ _ b.finiteDimensional_of_finite _ Q hQ f :
+        CliffordAlgebra Q) =
       (2 : K)⁻¹ • ∑ i, bivector Q ((f : Module.End K V) (b i))
         (LinearMap.BilinForm.dualBasis Q.polarBilin
           (QuadraticMap.nondegenerate_polar_iff.mpr hQ) b i) := by
+  let _ := b.finiteDimensional_of_finite
   let d := LinearMap.BilinForm.dualBasis Q.polarBilin
     (QuadraticMap.nondegenerate_polar_iff.mpr hQ) b
   let a : quadraticLieSubalgebra Q :=
@@ -159,7 +115,9 @@ theorem soEquivQuadratic_eq_sum_bivector {ι : Type w} [Fintype ι] [DecidableEq
           rw [map_sum]
           simp only [map_smul]
         _ = (f : Module.End K V) x := by
-          rw [sum_polar_dual_smul_basis Q hQ b x]
+          rw [sum_dualBasis_smul_basis Q.polarBilin
+            (QuadraticMap.nondegenerate_polar_iff.mpr hQ)
+            (LinearMap.BilinForm.isSymm_def.mpr fun y z ↦ QuadraticMap.polar_comm Q y z) b]
     have hskew (i : ι) :
         Q.polarBilin ((f : Module.End K V) (b i)) x =
           -Q.polarBilin (b i) ((f : Module.End K V) x) := by
@@ -175,7 +133,9 @@ theorem soEquivQuadratic_eq_sum_bivector {ι : Type w} [Fintype ι] [DecidableEq
         _ = -(∑ i, Q.polarBilin (b i) ((f : Module.End K V) x) • d i) := by
           rw [Finset.sum_neg_distrib]
         _ = -(f : Module.End K V) x := by
-          rw [sum_polar_basis_smul_dual Q hQ b]
+          rw [sum_basis_smul_dualBasis Q.polarBilin
+            (QuadraticMap.nondegenerate_polar_iff.mpr hQ)
+            (LinearMap.BilinForm.isSymm_def.mpr fun y z ↦ QuadraticMap.polar_comm Q y z) b]
     simp only [QuadraticMap.polarBilin_apply_apply] at hfirst hsecond
     rw [hfirst, hsecond, sub_neg_eq_add, ← two_smul K, ← mul_smul,
       inv_mul_cancel₀ (Invertible.ne_zero (2 : K)), one_smul]
@@ -211,6 +171,20 @@ theorem dualBasis_polarBilin_killingQuadraticForm {ι : Type w} [Fintype ι]
   · simp only [mul_one, inv_mul_cancel₀ (Invertible.ne_zero (2 : K))]
   · simp only [mul_zero]
 
+/-- The dual basis for twice the Killing form is half the Killing-dual basis. This is the
+simp-normal form of `dualBasis_polarBilin_killingQuadraticForm`. -/
+@[simp]
+theorem dualBasis_two_smul_killingForm {ι : Type w} [Fintype ι]
+    [DecidableEq ι] {L : Type v} [LieRing L] [LieAlgebra K L]
+    [_root_.LieAlgebra.IsKilling K L]
+    (b : Module.Basis ι K L) (i : ι) :
+    LinearMap.BilinForm.dualBasis ((2 : K) • _root_.killingForm K L)
+        ((BilinForm.nondegenerate_smul_iff (isUnit_of_invertible (2 : K)).isRegular).mpr
+          (_root_.LieAlgebra.IsKilling.killingForm_nondegenerate K L)) b i =
+      (2 : K)⁻¹ • killingDualBasis b i := by
+  simpa only [_root_.TauCeti.LieAlgebra.polarBilin_killingQuadraticForm] using
+    dualBasis_polarBilin_killingQuadraticForm b i
+
 /-- **The adjoint quadratic lift in Killing-dual coordinates.** For any basis `b` of a
 finite-dimensional Killing-semisimple Lie algebra,
 `adjointCliffordHom K L x` is one quarter of the sum of the bivectors of `[x, b i]` with the
@@ -220,12 +194,13 @@ The formula is independent of `b`: its sum is the contraction of `adjointBivecto
 the canonical tensor represented by a basis and its Killing dual. -/
 theorem adjointCliffordHom_eq_sum_bivector {ι : Type w} [Fintype ι]
     [DecidableEq ι] {L : Type v} [LieRing L] [LieAlgebra K L]
-    [FiniteDimensional K L] [_root_.LieAlgebra.IsKilling K L]
+    [_root_.LieAlgebra.IsKilling K L]
     (b : Module.Basis ι K L) (x : L) :
-    adjointCliffordHom K L x =
+    @adjointCliffordHom K L _ _ _ b.finiteDimensional_of_finite _ _ x =
       (4 : K)⁻¹ • ∑ i, adjointBivector
         (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L) x
         (b i) (killingDualBasis b i) := by
+  let _ := b.finiteDimensional_of_finite
   let Q := _root_.TauCeti.LieAlgebra.killingQuadraticForm K L
   rw [adjointCliffordHom_apply,
     soEquivQuadratic_eq_sum_bivector Q
