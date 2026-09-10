@@ -15,7 +15,9 @@ A complete Bernstein function has a representation
 `g(t) = a + b t + ∫ x, t / (t + x) ∂μ`,
 
 where `a, b ≥ 0`, the positive measure `μ` has no atom at zero, and
-`∫ (1 + x)⁻¹ ∂μ < ∞`.  The normalization at zero makes the constant coefficient canonical.
+`∫ (1 + x)⁻¹ ∂μ < ∞`.  The normalization `μ {0} = 0` stops an atom at zero from making the
+integral term jump — such an atom contributes `1` at every positive parameter and `0` at zero —
+so the integral term vanishes at zero and the representation is the intended continuous extension.
 This file packages that standard representation and proves the first fundamental correspondence:
 `f` is Stieltjes exactly when `t ↦ t f(t)` on `(0, ∞)` has a complete Bernstein extension to
 `[0, ∞)`.
@@ -51,7 +53,8 @@ namespace TauCeti
 
 /-- A measure `μ` and coefficients `a, b ≥ 0` represent a complete Bernstein function when
 `μ` satisfies the standard Stieltjes integrability condition and the function agrees on
-`[0, ∞)` with `a + b t + ∫ x, t / (t + x) ∂μ`.  Requiring `μ {0} = 0` makes `a` canonical. -/
+`[0, ∞)` with `a + b t + ∫ x, t / (t + x) ∂μ`.  Requiring `μ {0} = 0` stops an atom at zero from
+making the integral term jump between zero and the positive parameters. -/
 def RepresentsCompleteBernstein (μ : Measure ℝ≥0) (a b : ℝ≥0) (f : ℝ → ℝ) : Prop :=
   μ {0} = 0 ∧ Integrable stieltjesWeight μ ∧
     EqOn f (stieltjesBernsteinTransform μ a b) (Ici 0)
@@ -208,28 +211,6 @@ theorem isCompleteBernsteinFunction_stieltjesBernsteinTransform
     IsCompleteBernsteinFunction (stieltjesBernsteinTransform μ a b) :=
   ⟨a, b, μ, representsCompleteBernstein_stieltjesBernsteinTransform hzero hμ⟩
 
-namespace RepresentsStieltjes
-
-variable {μ : Measure ℝ≥0} {a b : ℝ≥0} {f : ℝ → ℝ}
-
-/-- The Stieltjes--Bernstein transform of Stieltjes representing data is represented as a
-complete Bernstein function by the same measure and coefficients. -/
-theorem representsCompleteBernstein_stieltjesBernsteinTransform
-    (h : RepresentsStieltjes μ a b f) :
-    RepresentsCompleteBernstein μ a b (stieltjesBernsteinTransform μ a b) :=
-  TauCeti.representsCompleteBernstein_stieltjesBernsteinTransform
-    h.measure_singleton_zero h.integrable_weight
-
-/-- The Stieltjes--Bernstein transform of Stieltjes representing data is a complete Bernstein
-function. -/
-theorem isCompleteBernsteinFunction_stieltjesBernsteinTransform
-    (h : RepresentsStieltjes μ a b f) :
-    IsCompleteBernsteinFunction (stieltjesBernsteinTransform μ a b) :=
-  TauCeti.isCompleteBernsteinFunction_stieltjesBernsteinTransform
-    h.measure_singleton_zero h.integrable_weight
-
-end RepresentsStieltjes
-
 /-- **Stieltjes--complete-Bernstein correspondence.** A function `f` is Stieltjes exactly when
 its product `t ↦ t * f t` on `(0, ∞)` extends to a complete Bernstein function on `[0, ∞)`.
 The extension's value at zero records the coefficient of the possible `t⁻¹` singularity. -/
@@ -243,7 +224,8 @@ theorem isStieltjesFunction_iff_exists_isCompleteBernsteinFunction_eqOn_mul
     rw [isStieltjesFunction_iff] at hf
     obtain ⟨a, b, μ, hμ⟩ := hf
     exact ⟨stieltjesBernsteinTransform μ a b,
-      hμ.isCompleteBernsteinFunction_stieltjesBernsteinTransform,
+      isCompleteBernsteinFunction_stieltjesBernsteinTransform hμ.measure_singleton_zero
+        hμ.integrable_weight,
       fun _ ht => hμ.stieltjesBernsteinTransform_eq_mul ht⟩
   · rintro ⟨g, ⟨a, b, μ, hμ⟩, hgf⟩
     rw [isStieltjesFunction_iff]
