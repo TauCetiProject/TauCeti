@@ -48,17 +48,9 @@ theorem isCompl_eigenspace_baseChange_I_neg_I (J : AlmostComplexStructure V) :
     IsCompl (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I)
       (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I)) := by
   constructor
-  · rw [disjoint_iff, Submodule.eq_bot_iff]
-    intro x hx
-    rw [Submodule.mem_inf, Module.End.mem_eigenspace_iff,
-      Module.End.mem_eigenspace_iff] at hx
-    have hscalar : Complex.I • x = -Complex.I • x := hx.1.symm.trans hx.2
-    have hzero : (2 * Complex.I) • x = 0 := by
-      calc
-        (2 * Complex.I) • x = Complex.I • x + Complex.I • x := by module
-        _ = Complex.I • x + (-Complex.I) • x := congrArg (Complex.I • x + ·) hscalar
-        _ = 0 := by rw [neg_smul, add_neg_cancel]
-    exact (smul_eq_zero.mp hzero).resolve_left (mul_ne_zero (by norm_num) Complex.I_ne_zero)
+  · simpa only [Module.End.eigenspace] using
+      Module.End.disjoint_genEigenspace (J.toLinearMap.baseChange ℂ)
+        (neg_ne_self.mpr Complex.I_ne_zero).symm 1 1
   · rw [codisjoint_iff]
     apply top_unique
     intro x _
