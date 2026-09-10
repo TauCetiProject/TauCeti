@@ -348,7 +348,7 @@ noncomputable def normalizedAbsoluteValue : AbsoluteValue K ℚ≥0 :=
     (WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero)
     (fun _ _ h ↦
       (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).monotone h)
-    (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).injective
+    (fun _ ↦ map_eq_zero _)
 
 /-- The normalized absolute value is the rational power `q ^ (-v_K(x))` at every nonzero
 element, where `q` is the cardinality of the residue field. -/

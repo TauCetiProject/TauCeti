@@ -61,11 +61,6 @@ private theorem withZeroMulIntToReal_monotone {m n : ℤᵐ⁰}
   exact_mod_cast
     WithZeroMulInt.toNNReal_strictMono (by norm_num : (1 : ℝ≥0) < 2) |>.monotone hmn
 
-private theorem withZeroMulIntToReal_injective : Function.Injective withZeroMulIntToReal := by
-  intro m n h
-  exact WithZeroMulInt.toNNReal_strictMono
-    (by norm_num : (1 : ℝ≥0) < 2) |>.injective (NNReal.coe_injective h)
-
 section DivisionRing
 
 variable {K : Type*} [DivisionRing K]
@@ -79,7 +74,7 @@ noncomputable def toRealAbsoluteValue (v : Valuation K ℤᵐ⁰) : AbsoluteValu
   @toAbsoluteValue K ℝ _ _ Real.partialOrder (by infer_instance) (by infer_instance) v
     withZeroMulIntToReal
     (fun {_ _} h ↦ withZeroMulIntToReal_monotone h)
-    withZeroMulIntToReal_injective
+    (fun _ ↦ map_eq_zero _)
 
 @[simp]
 theorem toRealAbsoluteValue_apply (v : Valuation K ℤᵐ⁰) (x : K) :
