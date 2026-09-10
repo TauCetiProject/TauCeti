@@ -41,7 +41,7 @@ namespace TauCeti.DynkinType
 private theorem posDef_cartanMatrix_B_of_le_one {n : ℕ} (hn : n ≤ 1) :
     ((CartanMatrix.B n).map (Int.cast : ℤ → ℚ)).PosDef := by
   interval_cases n
-  · exact TauCeti.Matrix.posDef_of_isEmpty _
+  · exact Matrix.posDef_of_isEmpty _
   · rw [CartanMatrix.B_one]
     exact posDef_cartanMatrix_A 1
 

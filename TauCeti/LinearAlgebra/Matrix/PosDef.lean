@@ -30,7 +30,7 @@ it as `Bᴴ * B` for an explicit `B`, and check that it is invertible.
 
 ## Main results
 
-* `TauCeti.Matrix.posDef_of_isEmpty`: a matrix on an empty index type is positive definite.
+* `Matrix.posDef_of_isEmpty`: a matrix on an empty index type is positive definite.
 * `TauCeti.Matrix.posDef_map_intCast`: an integer matrix that is positive definite over `ℤ` is
   positive definite over `ℚ`.
 * `TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit`: an invertible rational matrix of the
@@ -69,8 +69,8 @@ private theorem exists_intCast_eq_mul_of_ne_zero [Finite n] {x : n → ℚ} (hx 
 
 /-- **A matrix on an empty index type is positive definite**: it is Hermitian and there is no
 nonzero test vector. This is the rank-zero member of every family of Cartan matrices. -/
-theorem posDef_of_isEmpty {R : Type*} [CommRing R] [PartialOrder R] [StarRing R] [IsEmpty n]
-    (A : _root_.Matrix n n R) : A.PosDef :=
+theorem _root_.Matrix.posDef_of_isEmpty {R : Type*} [Ring R] [PartialOrder R] [StarRing R]
+    [IsEmpty n] (A : _root_.Matrix n n R) : A.PosDef :=
   ⟨_root_.Matrix.ext fun i _ ↦ isEmptyElim i,
     fun _ hx ↦ (hx (Finsupp.ext fun i ↦ isEmptyElim i)).elim⟩
 

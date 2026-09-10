@@ -372,7 +372,7 @@ Gram matrix of the simple coroots, which are independent. The ranks `0` and `1`,
 family degenerates to the empty matrix and to `A 1`, are read off Mathlib's identities rather than
 from the coordinate model, whose fork needs two coordinates. -/
 theorem posDef_cartanMatrix_D : ∀ n : ℕ, ((CartanMatrix.D n).map (Int.cast : ℤ → ℚ)).PosDef
-  | 0 => TauCeti.Matrix.posDef_of_isEmpty _
+  | 0 => Matrix.posDef_of_isEmpty _
   | 1 => by rw [CartanMatrix.D_one]; exact posDef_cartanMatrix_A 1
   | (k + 2) => by
       rw [← simpleCorootsD_mul_conjTranspose]
