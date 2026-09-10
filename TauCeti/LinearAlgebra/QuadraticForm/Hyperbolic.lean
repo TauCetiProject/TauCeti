@@ -12,13 +12,14 @@ public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
 # The hyperbolic plane
 
 The hyperbolic plane over a commutative ring is the diagonal quadratic form `⟨1, -1⟩`. When
-two is invertible, it is nondegenerate and represents every scalar. Over a field, every plane
-`⟨a, -a⟩` with `a ≠ 0` is isometric to it.
+two is invertible, it is nondegenerate and represents every scalar. Over a field in which two is
+invertible (that is, of characteristic not two), every plane `⟨a, -a⟩` with `a ≠ 0` is isometric
+to it.
 
-The main result is the hyperbolic splitting theorem: every finite-dimensional nondegenerate
-isotropic quadratic form splits as the orthogonal sum of a hyperbolic plane and another
-nondegenerate form. The proof uses an isotropic pair whose polar pairing is one, then takes its
-orthogonal complement.
+The main result is the hyperbolic splitting theorem: over a field of characteristic not two, every
+finite-dimensional nondegenerate isotropic quadratic form splits as the orthogonal sum of a
+hyperbolic plane and another nondegenerate form. It is the inductive step of Witt decomposition:
+iterating it splits off hyperbolic planes until the remaining part is anisotropic.
 
 ## Main definitions
 
@@ -26,11 +27,12 @@ orthogonal complement.
 
 ## Main results
 
-* `TauCeti.represents_hyperbolicPlane`: the hyperbolic plane represents every scalar.
-* `TauCeti.equivalent_weightedSumSquares_self_neg`: every `⟨a, -a⟩`, for `a ≠ 0`, is
-  hyperbolic.
-* `TauCeti.exists_hyperbolicPlane_prod_equivalent`: every finite-dimensional nondegenerate
-  isotropic form splits off a hyperbolic plane.
+* `TauCeti.represents_hyperbolicPlane`: when two is invertible, the hyperbolic plane represents
+  every scalar.
+* `TauCeti.equivalent_weightedSumSquares_self_neg`: in characteristic not two, every
+  `⟨a, -a⟩`, for `a ≠ 0`, is hyperbolic.
+* `TauCeti.exists_hyperbolicPlane_prod_equivalent`: in characteristic not two, every
+  finite-dimensional nondegenerate isotropic form splits off a hyperbolic plane.
 
 ## References
 
@@ -68,22 +70,22 @@ theorem nondegenerate_hyperbolicPlane [Invertible (2 : R)] :
   rw [QuadraticMap.mem_radical_iff'] at hx
   have hxQ := hx.1
   rw [hyperbolicPlane_apply] at hxQ
-  funext i
-  fin_cases i
-  · change x 0 = 0
+  have h0 : x 0 = 0 := by
     have h := hx.2 ![1, 0]
     simp only [hyperbolicPlane_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
       Pi.add_apply] at h
     apply (isUnit_of_invertible (2 : R)).mul_right_eq_zero.mp
     linear_combination h - hxQ
-  · change x 1 = 0
+  have h1 : x 1 = 0 := by
     have h := hx.2 ![0, 1]
     simp only [hyperbolicPlane_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
       Pi.add_apply] at h
     apply (isUnit_of_invertible (2 : R)).mul_right_eq_zero.mp
     linear_combination hxQ - h
+  ext i
+  fin_cases i <;> simp [h0, h1]
 
-/-- The hyperbolic plane represents every scalar. -/
+/-- When two is invertible, the hyperbolic plane represents every scalar. -/
 theorem represents_hyperbolicPlane [Invertible (2 : R)] (a : R) :
     (hyperbolicPlane R).Represents a := by
   rw [represents_iff, Set.mem_range]
@@ -99,7 +101,8 @@ end CommRing
 
 variable {K : Type u} [Field K]
 
-/-- Every diagonal plane `⟨a, -a⟩` with `a` a unit is isometric to the hyperbolic plane. -/
+/-- Over a field in which two is invertible, every diagonal plane `⟨a, -a⟩` with `a` a unit is
+isometric to the hyperbolic plane. -/
 theorem equivalent_weightedSumSquares_self_neg [Invertible (2 : K)] (a : Kˣ) :
     (weightedSumSquares K ![(a : K), -(a : K)]).Equivalent (hyperbolicPlane K) := by
   have hdisc : IsSquare (a * (-a) * ((1 : Kˣ) * (-1))) := by
@@ -115,37 +118,6 @@ theorem equivalent_weightedSumSquares_self_neg [Invertible (2 : K)] (a : Kˣ) :
     (a := a) (b := -a) (c := 1) (d := -1) (e := a) hdisc hsource htarget
 
 variable {V : Type v} [AddCommGroup V] [Module K V]
-
-/-- A nondegenerate isotropic quadratic form contains two isotropic vectors whose polar pairing
-is one. -/
-theorem _root_.QuadraticMap.Nondegenerate.exists_isotropic_pair
-    {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
-    ∃ x y : V, x ≠ 0 ∧ Q x = 0 ∧ Q y = 0 ∧ polar Q x y = 1 := by
-  obtain ⟨x, hx, hxQ⟩ := (not_anisotropic_iff_exists Q).mp hiso
-  obtain ⟨w, hw⟩ : ∃ w, polar Q x w ≠ 0 := by
-    by_contra h
-    push Not at h
-    apply hx
-    have hxrad : x ∈ Q.radical := by
-      rw [mem_radical_iff']
-      refine ⟨hxQ, fun z ↦ ?_⟩
-      rw [QuadraticMap.map_add Q, hxQ, h z, zero_add, add_zero]
-    rw [hQ.radical_eq_bot] at hxrad
-    exact hxrad
-  let z := w - (Q w / polar Q x w) • x
-  have hzQ : Q z = 0 := by
-    have hw' : polar Q w x ≠ 0 := by simpa only [polar_comm] using hw
-    dsimp [z]
-    simp only [sub_eq_add_neg, ← neg_smul, QuadraticMap.map_add, Q.map_smul, hxQ,
-      polar_smul_right, polar_comm, smul_eq_mul, mul_zero, add_zero]
-    field_simp [hw']
-    ring
-  have hxz : polar Q x z = polar Q x w := by
-    simp [z, polar_sub_right, polar_smul_right, polar_self, hxQ]
-  let y := (polar Q x w)⁻¹ • z
-  refine ⟨x, y, hx, hxQ, ?_, ?_⟩
-  · simp [y, Q.map_smul, hzQ]
-  · simp [y, polar_smul_right, hxz, hw]
 
 private def hyperbolicPairMap (x y : V) : K × K →ₗ[K] V where
   toFun p := (p.1 + p.2) • x + (p.1 - p.2) • y
@@ -193,8 +165,9 @@ private noncomputable def hyperbolicPairIsometryEquiv [Invertible (2 : K)]
       polar_smul_right, hxy, smul_eq_mul, mul_zero, add_zero, mul_one]
     ring
 
-/-- Every finite-dimensional nondegenerate isotropic quadratic form splits as the orthogonal sum
-of a hyperbolic plane and a nondegenerate diagonal form. -/
+/-- Over a field in which two is invertible, every finite-dimensional nondegenerate isotropic
+quadratic form splits as the orthogonal sum of a hyperbolic plane and a nondegenerate diagonal
+form. -/
 theorem exists_hyperbolicPlane_prod_equivalent [FiniteDimensional K V] [Invertible (2 : K)]
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
     ∃ p : RegularFormPresentation K,
@@ -226,13 +199,18 @@ theorem exists_hyperbolicPlane_prod_equivalent [FiniteDimensional K V] [Invertib
     rw [← QuadraticMap.nondegenerate_associated_iff]
     rw [QuadraticMap.associated_restrict]
     exact hBorth
+  have hBpolar : LinearMap.BilinForm.orthogonal B W =
+      LinearMap.BilinForm.orthogonal Q.polarBilin W := by
+    ext v
+    simp only [LinearMap.BilinForm.mem_orthogonal_iff, B, associated_isOrtho, isOrtho_polarBilin]
+  rw [hBpolar] at hcomp horth
   obtain ⟨p, hp⟩ := exists_presentedForm_equivalent
-    (Q.restrict (LinearMap.BilinForm.orthogonal B W)) horth
+    (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)) horth
   have hdecomp : Q.Equivalent
-      ((Q.restrict W).prod (Q.restrict (LinearMap.BilinForm.orthogonal B W))) :=
+      ((Q.restrict W).prod (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W))) :=
     ⟨(QuadraticMap.IsometryEquiv.prodRestrictOrthogonal Q W hcomp).symm⟩
   have hreplace :
-      ((Q.restrict W).prod (Q.restrict (LinearMap.BilinForm.orthogonal B W))).Equivalent
+      ((Q.restrict W).prod (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W))).Equivalent
         ((hyperbolicPlane K).prod (presentedForm p)) :=
     QuadraticMap.Equivalent.prod
       (⟨eH.symm⟩ : (Q.restrict W).Equivalent (hyperbolicPlane K)) hp
