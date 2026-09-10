@@ -94,6 +94,7 @@ private theorem sum_map_weights_mul_cexp (f : ι → κ) (p : StdSimplex NNReal 
 /-- **Aggregation law for the multinomial distribution.** Combining cells along `f` gives the
 multinomial law whose target-cell probabilities are the sums of the source probabilities over
 the fibres of `f`. -/
+@[simp]
 theorem map_funOnFinite_map_multinomialMeasure (f : ι → κ) (n : ℕ)
     (p : StdSimplex NNReal ι) :
     (multinomialMeasure n p).map (FunOnFinite.map (M := ℕ) f) =
