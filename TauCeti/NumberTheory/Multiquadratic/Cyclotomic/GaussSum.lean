@@ -87,7 +87,7 @@ theorem exists_mem_sq_eq_oddPrimeDiscriminant {p : ℕ} (hp : p.Prime) (hp2 : p 
       simp [hχ, MulChar.ringHomComp_apply]
     rw [hval]
     exact intCast_mem F _
-  · have hval : ψ a = ζ ^ a.val := rfl
+  · have hval : ψ a = ζ ^ a.val := by rw [hψdef, AddChar.zmodChar_apply]
     rw [hval]
     exact pow_mem hmem _
   · rw [gaussSum_sq hχ₁ hχ₂ hψ]

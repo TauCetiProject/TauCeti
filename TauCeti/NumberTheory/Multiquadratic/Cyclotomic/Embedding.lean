@@ -182,14 +182,6 @@ theorem adjoin_range_le_of_sq_eq_intCast {ι : Type*} (hN : 0 < N) (hζ : IsPrim
   rintro x ⟨i, rfl⟩
   exact mem_of_sq_eq_intCast hN hζ hmem (hdvd i) (hr i)
 
-/-- **A multiquadratic field with integer radicands lies in the cyclotomic field `ℚ(ζ_N)`.** The
-`F = ℚ(ζ)` case of `adjoin_range_le_of_sq_eq_intCast`. -/
-theorem adjoin_range_le_adjoin_of_sq_eq_intCast {ι : Type*} (hN : 0 < N)
-    (hζ : IsPrimitiveRoot ζ N) {d : ι → ℤ} {r : ι → L} (hr : ∀ i, r i ^ 2 = (d i : L))
-    (hdvd : ∀ i, 4 * (d i).natAbs ∣ N) :
-    adjoin ℚ (Set.range r) ≤ adjoin ℚ {ζ} :=
-  adjoin_range_le_of_sq_eq_intCast hN hζ (mem_adjoin_simple_self ℚ ζ) hr hdvd
-
 /-! ### Over `ℂ` no root of unity need be assumed -/
 
 /-- **A multiquadratic field lies in the explicitly named cyclotomic field.** For a finite family
