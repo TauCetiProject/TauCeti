@@ -164,6 +164,14 @@ theorem partner_rotateBasepoint (D : BasedOrientedGaussCode n) :
       PerfectMatching.congr (finRotate (2 * n)).symm D.partner := by
   rfl
 
+/-- Moving the base point backward transports the partner matching by the inverse cyclic
+relabelling of visits. -/
+@[simp]
+theorem partner_rotateBasepoint_symm (D : BasedOrientedGaussCode n) :
+    ((rotateBasepoint n).symm D).partner =
+      PerfectMatching.congr (finRotate (2 * n)) D.partner := by
+  rfl
+
 /-- Moving the base point preserves writhe. -/
 @[simp]
 theorem writhe_rotateBasepoint (D : BasedOrientedGaussCode n) :

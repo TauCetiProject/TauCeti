@@ -23,66 +23,61 @@ namespace Equiv.Perm.SameCycle
 
 variable {α : Type*} {β : Sort*} {σ : Equiv.Perm α} {x y : α} {f : α → β}
 
+/-- A function invariant under a permutation is invariant under every integral power of that
+permutation. -/
+theorem apply_zpow_eq_of_apply_eq (hf : ∀ z, f (σ z) = f z) (k : ℤ) (z : α) :
+    f ((σ ^ k) z) = f z := by
+  let f' : α → PLift β := fun z => ⟨f z⟩
+  have hcomp : f' ∘ σ = f' := by
+    funext z
+    exact congrArg PLift.up (hf z)
+  have hinv : ∀ z, f (σ⁻¹ z) = f z := fun z => by
+    simpa only [Equiv.Perm.coe_inv, Equiv.apply_symm_apply] using (hf (σ⁻¹ z)).symm
+  have hinvComp : f' ∘ (σ⁻¹ : Equiv.Perm α) = f' := by
+    funext z
+    exact congrArg PLift.up (hinv z)
+  cases k with
+  | ofNat m =>
+      change f ((σ ^ m) z) = f z
+      simpa only [Equiv.Perm.coe_pow, Function.comp_apply] using
+        congrArg PLift.down (congrFun (Function.iterate_invariant hcomp m) z)
+  | negSucc m =>
+      change f (((σ ^ (m + 1))⁻¹) z) = f z
+      rw [← inv_pow]
+      simpa only [Equiv.Perm.coe_pow, Function.comp_apply] using
+        congrArg PLift.down (congrFun (Function.iterate_invariant hinvComp (m + 1)) z)
+
 /-- A function invariant under one application of a permutation is constant on every orbit of
 that permutation. -/
 theorem apply_eq_of_apply_eq (hσ : σ.SameCycle x y) (hf : ∀ z, f (σ z) = f z) : f x = f y := by
   obtain ⟨k, rfl⟩ := hσ
-  have hinv : ∀ z, f (σ⁻¹ z) = f z := fun z => by
-    simpa only [Equiv.Perm.coe_inv, Equiv.apply_symm_apply] using (hf (σ⁻¹ z)).symm
-  have hpow : ∀ (m : ℕ) (z : α), f ((σ ^ m) z) = f z := by
-    intro m
-    induction m with
-    | zero => simp
-    | succ m ih =>
-      intro z
-      rw [pow_succ, Equiv.Perm.mul_apply, ih, hf]
-  have hinvPow : ∀ (m : ℕ) (z : α), f ((σ⁻¹ ^ m) z) = f z := by
-    intro m
-    induction m with
-    | zero => simp
-    | succ m ih =>
-      intro z
-      rw [pow_succ, Equiv.Perm.mul_apply, ih, hinv]
-  cases k with
-  | ofNat m => simpa using (hpow m x).symm
-  | negSucc m => simpa [zpow_negSucc] using (hinvPow (m + 1) x).symm
+  exact (apply_zpow_eq_of_apply_eq hf k x).symm
 
 variable {γ : Type*} {τ : Equiv.Perm γ} {g : α → γ}
+
+/-- A map intertwining two permutations also intertwines all their integral powers. -/
+theorem map_zpow_apply (hg : ∀ z, g (σ z) = τ (g z)) (k : ℤ) (z : α) :
+    g ((σ ^ k) z) = (τ ^ k) (g z) := by
+  have hinv : ∀ z, g (σ⁻¹ z) = τ⁻¹ (g z) := fun z => by
+    apply τ.injective
+    simpa only [Equiv.Perm.coe_inv, Equiv.apply_symm_apply] using (hg (σ⁻¹ z)).symm
+  cases k with
+  | ofNat m =>
+      change g ((σ ^ m) z) = (τ ^ m) (g z)
+      simpa only [Equiv.Perm.coe_pow] using
+        (Function.Semiconj.iterate_right hg m z)
+  | negSucc m =>
+      change g (((σ ^ (m + 1))⁻¹) z) = ((τ ^ (m + 1))⁻¹) (g z)
+      rw [← inv_pow, ← inv_pow]
+      simpa only [Equiv.Perm.coe_pow] using
+        (Function.Semiconj.iterate_right hinv (m + 1) z)
 
 /-- A map intertwining two permutations carries orbits of the first permutation into orbits of
 the second. -/
 theorem map (hσ : σ.SameCycle x y) (hg : ∀ z, g (σ z) = τ (g z)) :
     τ.SameCycle (g x) (g y) := by
   obtain ⟨k, rfl⟩ := hσ
-  have hinv : ∀ z, g (σ⁻¹ z) = τ⁻¹ (g z) := fun z => by
-    apply τ.injective
-    simpa only [Equiv.Perm.coe_inv, Equiv.apply_symm_apply] using (hg (σ⁻¹ z)).symm
-  have hpow : ∀ (m : ℕ) (z : α), g ((σ ^ m) z) = (τ ^ m) (g z) := by
-    intro m
-    induction m with
-    | zero => simp
-    | succ m ih =>
-      intro z
-      rw [pow_succ, Equiv.Perm.mul_apply]
-      calc
-        g ((σ ^ m) (σ z)) = (τ ^ m) (g (σ z)) := ih _
-        _ = (τ ^ m) (τ (g z)) := congrArg (τ ^ m) (hg z)
-        _ = (τ ^ (m + 1)) (g z) := by rw [pow_succ, Equiv.Perm.mul_apply]
-  have hinvPow : ∀ (m : ℕ) (z : α), g ((σ⁻¹ ^ m) z) = (τ⁻¹ ^ m) (g z) := by
-    intro m
-    induction m with
-    | zero => simp
-    | succ m ih =>
-      intro z
-      rw [pow_succ, Equiv.Perm.mul_apply]
-      calc
-        g ((σ⁻¹ ^ m) (σ⁻¹ z)) = (τ⁻¹ ^ m) (g (σ⁻¹ z)) := ih _
-        _ = (τ⁻¹ ^ m) (τ⁻¹ (g z)) := congrArg (τ⁻¹ ^ m) (hinv z)
-        _ = (τ⁻¹ ^ (m + 1)) (g z) := by rw [pow_succ, Equiv.Perm.mul_apply]
-  refine ⟨k, ?_⟩
-  cases k with
-  | ofNat m => simpa using (hpow m x).symm
-  | negSucc m => simpa [zpow_negSucc] using (hinvPow (m + 1) x).symm
+  exact ⟨k, (map_zpow_apply hg k x).symm⟩
 
 end Equiv.Perm.SameCycle
 
