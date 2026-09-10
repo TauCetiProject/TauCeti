@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Galois.Basic
+public import Mathlib.CategoryTheory.Galois.IsFundamentalgroup
+public import TauCeti.CategoryTheory.Galois.Connected
 
 /-!
 # Transporting the Galois-category axioms along an equivalence
@@ -36,6 +37,8 @@ preimage under `e.functor` of `e.counit.app Z ≫ u`; taking the preimage rather
   composes with an equivalence `C ≌ D` to a fibre functor on `C`.
 * `TauCeti.galoisCategory_of_equivalence`: a category equivalent to a Galois category is a
   Galois category.
+* `TauCeti.isFundamentalGroup_comp_of_equivalence`: a fundamental group of a fibre functor
+  remains one after the functor is transported along an equivalence.
 
 ## References
 
@@ -94,5 +97,56 @@ theorem galoisCategory_of_equivalence {D : Type u₂} [Category.{v₁} D] (e : C
     have := preGaloisCategory_of_equivalence e
     obtain ⟨F, hF⟩ := GaloisCategory.hasFiberFunctor D
     exact ⟨e.functor ⋙ F, fiberFunctor_comp_of_equivalence e F⟩
+
+variable (K : C ⥤ D) (F : D ⥤ FintypeCat.{w})
+  (G : Type*) [Group G] [∀ Y, MulAction G (F.obj Y)]
+
+/-- The action on a fibre functor, pulled back along a functor on its source category.
+
+The body is exposed so that later fundamental-group instances use definitionally the same action
+as the original fibre functor. -/
+@[expose, instance_reducible] def mulActionComp (X : C) : MulAction G ((K ⋙ F).obj X) := by
+  -- Functor composition does not reduce while typeclass inference searches for the source action.
+  change MulAction G (F.obj (K.obj X))
+  infer_instance
+
+attribute [local instance] mulActionComp
+
+/-- A natural action on a fibre functor remains natural after precomposition. -/
+theorem isNaturalSMul_comp [IsNaturalSMul F G] : IsNaturalSMul (K ⋙ F) G where
+  naturality g {X Y} f x := by
+    -- Reveal the composite map so that the original naturality field applies.
+    change F.map (K.map f) (g • x) = g • F.map (K.map f) x
+    exact IsNaturalSMul.naturality g (K.map f) x
+
+variable (e : C ≌ D)
+
+/-- **A fundamental group of a fibre functor remains a fundamental group after transport along
+an equivalence of its source category.**
+
+The action on each transported fibre is the original action on the corresponding object.
+Connectedness transports along the equivalence, while faithfulness is reflected using essential
+surjectivity and naturality along a chosen isomorphism. -/
+theorem isFundamentalGroup_comp_of_equivalence [GaloisCategory C] [GaloisCategory D]
+    [FiberFunctor F] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+    [IsFundamentalGroup F G] : IsFundamentalGroup (e.functor ⋙ F) G := by
+  refine
+    { toIsNaturalSMul := isNaturalSMul_comp e.functor F G
+      transitive_of_isGalois := fun X _ => ?_
+      continuous_smul := fun X =>
+        IsFundamentalGroup.continuous_smul (F := F) (G := G) (e.functor.obj X)
+      non_trivial' := fun g h => ?_ }
+  · let : IsConnected X := IsGalois.toIsConnected
+    let : IsConnected (e.functor.obj X) := isConnected_map e.functor X
+    change MulAction.IsPretransitive G (F.obj (e.functor.obj X))
+    exact inferInstance
+  · apply IsFundamentalGroup.non_trivial (F := F) g
+    intro Y y
+    let X := e.functor.objPreimage Y
+    let i := e.functor.objObjPreimageIso Y
+    have hg := h X (F.map i.inv y)
+    have hn := IsNaturalSMul.naturality g i.hom (F.map i.inv y)
+    rw [hg, ← F.map_comp_apply, i.inv_hom_id, F.map_id, FintypeCat.id_apply] at hn
+    exact hn.symm
 
 end TauCeti
