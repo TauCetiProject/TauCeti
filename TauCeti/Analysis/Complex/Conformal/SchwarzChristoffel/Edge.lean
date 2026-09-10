@@ -135,8 +135,8 @@ theorem schwarzChristoffelEdgeAngle_sub (a e : ι → ℝ) {c d : ℝ} (hcd : c 
 exponent strictly between them -- the Schwarz--Christoffel edge angle at `p` minus the edge angle
 at `q` is exactly `π` times the total exponent carried by `q`; equivalently, moving from left to
 right changes the edge angle by `-π` times that total.  For the classical choice
-`e i = α i / π - 1` attached to a polygon with interior angle `α i`, that left-to-right change is
-the exterior angle `π - α i` at the vertex. -/
+`e i = α i / π - 1`, each index at `q` contributes the exterior angle `π - α i` to that
+left-to-right change, so the total is the sum of those contributions. -/
 theorem schwarzChristoffelEdgeAngle_sub_eq_pi_mul_exponent_sum_of_adjacent (a e : ι → ℝ)
     {p q : ℝ} (hpq : p < q) (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) :
     schwarzChristoffelEdgeAngle a e p - schwarzChristoffelEdgeAngle a e q =
