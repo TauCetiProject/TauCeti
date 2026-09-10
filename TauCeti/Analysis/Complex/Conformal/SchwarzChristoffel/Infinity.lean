@@ -198,7 +198,7 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_vertical (a e : ι → �
     linarith
   have hmem : ∀ s ∈ Icc (0 : ℝ) β, z + (s : ℂ) * Complex.I ∈ upperHalfPlaneSet := by
     intro s hs
-    change 0 < (z + (s : ℂ) * Complex.I).im
+    simp only [upperHalfPlaneSet, Set.mem_ofPred_eq]
     rw [him s]
     linarith [hs.1]
   have hB : ∀ s ∈ Icc (0 : ℝ) β, ‖Complex.I‖ *
@@ -272,7 +272,7 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_horizontal (a e : ι →
     (him s).ge.trans ((le_abs_self _).trans (abs_im_le_norm (c + (s : ℂ) * v)))
   have hmem : ∀ s ∈ Icc (0 : ℝ) 1, c + (s : ℂ) * v ∈ upperHalfPlaneSet := by
     intro s _
-    change 0 < (c + (s : ℂ) * v).im
+    simp only [upperHalfPlaneSet, Set.mem_ofPred_eq]
     rw [him s]
     exact hT
   have hB : ∀ s ∈ Icc (0 : ℝ) 1,
@@ -300,19 +300,6 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_horizontal (a e : ι →
   ring
 
 /-! ### The limit at infinity -/
-
-/-- The upper half-plane is unbounded, so the filter along which it approaches infinity is
-nontrivial and limits taken along it are unique. -/
-instance neBot_cobounded_inf_principal_upperHalfPlaneSet :
-    (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet).NeBot := by
-  refine Filter.neBot_of_le (f := map (fun t : ℝ => (t : ℂ) * Complex.I) atTop) (le_inf ?_ ?_)
-  · change Tendsto (fun t : ℝ => (t : ℂ) * Complex.I) atTop (cobounded ℂ)
-    rw [← tendsto_norm_atTop_iff_cobounded]
-    simpa using tendsto_abs_atTop_atTop
-  · rw [le_principal_iff, mem_map]
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
-    change 0 < ((t : ℂ) * Complex.I).im
-    simpa using ht
 
 /-- **The Schwarz--Christoffel primitive converges at infinity** when the total turning exponent
 is less than `-1`.  The estimate runs from `z` up a vertical ray, across at the height
@@ -468,9 +455,8 @@ theorem tendsto_nhds_schwarzChristoffelVertexAtInfinity (a e : ι → ℝ) (z₀
   have hnorm : ∀ᶠ z in 𝓝[upperHalfPlaneSet] ((x : ℂ)), R ≤ ‖z‖ := by
     have hopen : {z : ℂ | R < ‖z‖} ∈ 𝓝 ((x : ℂ)) := by
       refine (isOpen_lt continuous_const continuous_norm).mem_nhds ?_
-      change R < ‖((x : ℝ) : ℂ)‖
-      have : ‖((x : ℝ) : ℂ)‖ = |x| := by simp
-      rw [this]
+      have hnx : ‖((x : ℝ) : ℂ)‖ = |x| := by simp
+      simp only [Set.mem_ofPred_eq, hnx]
       linarith
     filter_upwards [nhdsWithin_le_nhds hopen] with z hz using hz.le
   have hle : dist (L x) (schwarzChristoffelVertexAtInfinity a e z₀) ≤ ε / 2 := by
