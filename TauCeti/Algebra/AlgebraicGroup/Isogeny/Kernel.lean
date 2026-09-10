@@ -37,9 +37,6 @@ flatness, and surjectivity is inherited by the structural morphism of the kernel
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 4.
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.21.
-
-This supplies the finite-kernel consequence needed by the central-isogeny and simply-connected
-cover targets in Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -48,12 +45,13 @@ open CategoryTheory CategoryTheory.Limits
 
 namespace TauCeti.CommHopfAlgCat
 
-universe u
+universe u v
 
 variable {R : Type u} [CommRing R]
-variable {H K : _root_.CommHopfAlgCat.{u} R} {f : H ⟶ K}
 
 namespace IsIsogeny
+
+variable {H K : _root_.CommHopfAlgCat.{v} R} {f : H ⟶ K}
 
 /-- The coordinate algebra of the kernel of an isogeny is finite as a module over the base.
 
@@ -89,18 +87,9 @@ theorem faithfullyFlat_quotient_kernelHopfIdeal (hf : IsIsogeny f) :
   exact Module.FaithfullyFlat.of_linearEquiv R _
     ((quotientKernelHopfIdealAlgEquiv f).restrictScalars R).toLinearEquiv
 
-/-- The structural ring map of the kernel coordinate algebra of an isogeny is finite. -/
-theorem finite_algebraMap_quotient_kernelHopfIdeal (hf : IsIsogeny f) :
-    (algebraMap R (K ⧸ (kernelHopfIdeal f).toIdeal)).Finite := by
-  rw [RingHom.finite_algebraMap]
-  exact hf.moduleFinite_quotient_kernelHopfIdeal
+section Scheme
 
-/-- The structural ring map of the kernel coordinate algebra of an isogeny is faithfully
-flat. -/
-theorem faithfullyFlat_algebraMap_quotient_kernelHopfIdeal (hf : IsIsogeny f) :
-    (algebraMap R (K ⧸ (kernelHopfIdeal f).toIdeal)).FaithfullyFlat := by
-  rw [RingHom.faithfullyFlat_algebraMap_iff]
-  exact hf.faithfullyFlat_quotient_kernelHopfIdeal
+variable {H K : _root_.CommHopfAlgCat.{u} R} {f : H ⟶ K}
 
 /-- The structural morphism from the represented kernel of an isogeny to the trivial group
 scheme is itself an isogeny. Equivalently, the kernel is a finite faithfully flat group scheme
@@ -110,20 +99,25 @@ theorem isIsogeny_kernelSpec_to_trivial (hf : IsIsogeny f) :
       (0 : kernelSpec f ⟶ Grp.trivial
         (Over (AlgebraicGeometry.Spec (CommRingCat.of R)))) := by
   rw [GroupScheme.isIsogeny_iff]
-  change
-    AlgebraicGeometry.IsFinite
+  have hfinite :
+      AlgebraicGeometry.IsFinite
         (AlgebraicGeometry.Spec.map (CommRingCat.ofHom
-          (algebraMap R (K ⧸ (kernelHopfIdeal f).toIdeal)))) ∧
+          (algebraMap R (K ⧸ (kernelHopfIdeal f).toIdeal)))) :=
+    (AlgebraicGeometry.IsFinite.SpecMap_iff _).2
+      (RingHom.finite_algebraMap.mpr hf.moduleFinite_quotient_kernelHopfIdeal)
+  have hflatSurjective :
       AlgebraicGeometry.Flat
           (AlgebraicGeometry.Spec.map (CommRingCat.ofHom
             (algebraMap R (K ⧸ (kernelHopfIdeal f).toIdeal)))) ∧
         AlgebraicGeometry.Surjective
           (AlgebraicGeometry.Spec.map (CommRingCat.ofHom
-            (algebraMap R (K ⧸ (kernelHopfIdeal f).toIdeal))))
-  rw [AlgebraicGeometry.IsFinite.SpecMap_iff,
-    AlgebraicGeometry.flat_and_surjective_SpecMap_iff]
-  exact ⟨hf.finite_algebraMap_quotient_kernelHopfIdeal,
-    hf.faithfullyFlat_algebraMap_quotient_kernelHopfIdeal⟩
+            (algebraMap R (K ⧸ (kernelHopfIdeal f).toIdeal)))) :=
+    (AlgebraicGeometry.flat_and_surjective_SpecMap_iff _).2
+      (RingHom.faithfullyFlat_algebraMap_iff.mpr
+        hf.faithfullyFlat_quotient_kernelHopfIdeal)
+  simpa only [kernelSpec_to_trivial_underlying] using ⟨hfinite, hflatSurjective⟩
+
+end Scheme
 
 end IsIsogeny
 
@@ -134,21 +128,14 @@ section Field
 variable {k : Type u} [Field k]
 variable {H K : _root_.CommHopfAlgCat.{u} k} {f : H ⟶ K}
 
-/-- Over a field, the kernel coordinate algebra of a central isogeny is finite locally free and
-bicommutative. This is the object property on which affine Cartier duality is defined. -/
-theorem finiteLocallyFreeBicommutativeHopfAlgProperty_kernel (hf : IsCentralIsogeny f) :
-    finiteLocallyFreeBicommutativeHopfAlgProperty k
-      (quotient K (kernelHopfIdeal f)) := by
-  rw [finiteLocallyFreeBicommutativeHopfAlgProperty_iff]
-  exact ⟨hf.isIsogeny.moduleFinite_quotient_kernelHopfIdeal, inferInstance,
-    hf.isCocomm_quotient_kernelHopfIdeal⟩
-
 /-- Over a field, package the kernel of a central isogeny as a finite locally free
 bicommutative Hopf algebra, ready for Cartier duality. -/
-noncomputable def kernelFiniteLocallyFree (hf : IsCentralIsogeny f) :
+noncomputable abbrev kernelFiniteLocallyFree (hf : IsCentralIsogeny f) :
     FiniteLocallyFreeBicommutativeHopfAlgCat.{u} k :=
   ⟨quotient K (kernelHopfIdeal f),
-    hf.finiteLocallyFreeBicommutativeHopfAlgProperty_kernel⟩
+    (finiteLocallyFreeBicommutativeHopfAlgProperty_iff k _).2
+      ⟨hf.isIsogeny.moduleFinite_quotient_kernelHopfIdeal, inferInstance,
+        hf.isCocomm_quotient_kernelHopfIdeal⟩⟩
 
 end Field
 

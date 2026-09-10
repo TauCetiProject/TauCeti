@@ -32,6 +32,8 @@ The points-level kernel property is `TauCeti.CommHopfAlgCat.mapPointsFunctor_app
 * `TauCeti.CommHopfAlgCat.kernelSpec` and `TauCeti.CommHopfAlgCat.kernelSpecι`: the
   kernel closed subgroup scheme and its inclusion.
 * `TauCeti.CommHopfAlgCat.kernelSpecι_comp`: the scheme-level triangle.
+* `TauCeti.CommHopfAlgCat.kernelSpec_to_trivial_underlying`: the underlying structural
+  scheme morphism of the represented kernel.
 * `TauCeti.CommHopfAlgCat.isPullback_kernelSpec`: the kernel square against the identity
   section is a pullback of group schemes.
 
@@ -191,7 +193,9 @@ private lemma kernelSpecι_underlying (f : H ⟶ K) :
   rw [kernelSpecι_def, quotientSpecι_def]
   rfl
 
-private lemma kernelSpec_to_trivial_underlying (f : H ⟶ K) :
+/-- The map from the represented kernel to the trivial group scheme is the spectrum of its
+structural ring map after forgetting the group-scheme structure. -/
+theorem kernelSpec_to_trivial_underlying (f : H ⟶ K) :
     (Over.forget (Spec (CommRingCat.of R))).map
         ((Grp.forget (Over (Spec (CommRingCat.of R)))).map
           (0 : kernelSpec f ⟶ Grp.trivial (Over (Spec (CommRingCat.of R))))) =
