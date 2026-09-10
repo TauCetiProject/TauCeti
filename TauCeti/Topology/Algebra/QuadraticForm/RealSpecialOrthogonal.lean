@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm
-public import TauCeti.Topology.Algebra.Matrix.SpecialOrthogonalGroup
+public import TauCeti.Topology.Algebra.UnitaryGroup
 public import TauCeti.Topology.Algebra.QuadraticForm.SpecialOrthogonal
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
 
@@ -73,6 +73,7 @@ private theorem matrixSpecialOrthogonalToRealClifford_surjective (n : ℕ) :
   apply Subtype.ext
   apply LinearEquiv.ext
   intro x
+  -- Unfold the coordinate equivalence just enough to use the matrix/linear-map round trip.
   change Matrix.toLin' (A : Matrix (Fin n) (Fin n) ℝ) x =
     (g : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)) x
   dsimp only [A]
@@ -94,6 +95,7 @@ private theorem continuous_matrixSpecialOrthogonalToRealClifford (n : ℕ) :
     Continuous (matrixSpecialOrthogonalToRealClifford n) := by
   rw [(isEmbedding_specialOrthogonalToGeneralLinear
     (realCliffordForm n 0)).continuous_iff]
+  -- Identify the composite pointwise with the coordinate inclusion into the matrix units.
   rw [show specialOrthogonalToGeneralLinear (realCliffordForm n 0) ∘
       matrixSpecialOrthogonalToRealClifford n =
         fun (A : Matrix.specialOrthogonalGroup (Fin n) ℝ) =>
