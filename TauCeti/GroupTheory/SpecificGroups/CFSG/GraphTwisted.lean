@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Index
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Index
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeE7.Index
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
 
@@ -39,7 +40,8 @@ pinned group; and its order is the superscript in the printed family name, recor
   the Steinberg map of a graph-twisted index composes with the field Frobenius.
 * `TauCeti.GraphTwistedIndex.twistOrder`: the order of that permutation, which is the superscript
   in the family name.
-* `TauCeti.TypeALieIndex.toGraphTwistedIndex`, `TauCeti.TypeB2LieIndex.toGraphTwistedIndex`,
+* `TauCeti.TypeALieIndex.toGraphTwistedIndex`, `TauCeti.TypeBLieIndex.toGraphTwistedIndex`,
+  `TauCeti.TypeB2LieIndex.toGraphTwistedIndex`,
   `TauCeti.TypeCLieIndex.toGraphTwistedIndex`,
   `TauCeti.TypeE6LieIndex.toGraphTwistedIndex`,
   `TauCeti.TypeTwistedE6LieIndex.toGraphTwistedIndex`,
@@ -58,6 +60,7 @@ pinned group; and its order is the superscript in the printed family name, recor
   `TauCeti.GraphTwistedIndex.orderOf_diagramPerm` and
   `TauCeti.GraphTwistedIndex.twistOrder_pos`: the twist order annihilates the permutation, is
   exactly its order, and is positive.
+* `TauCeti.TypeBLieIndex.diagramPerm_eq_one`: the untwisted family `Bₙ(q)` twists by nothing.
 * `TauCeti.TypeB2LieIndex.diagramPerm_toGraphTwistedIndex`: the untwisted family on the `B₂`
   diagram takes the identity, the `B₂` diagram having no symmetry to twist by.
 * `TauCeti.TypeE6LieIndex.diagramPerm_toGraphTwistedIndex` and
@@ -382,6 +385,28 @@ theorem diagramPerm_toGraphTwistedIndex (d : TypeB2LieIndex) :
   exact GraphTwistedIndex.diagramPerm_B hvalid
 
 end TypeB2LieIndex
+
+/-! ### The untwisted type-`B` family as graph-twisted indices -/
+
+namespace TypeBLieIndex
+
+open LieTypeIndex (not_usesHalfFrobenius_of_isTypeB)
+
+/-- A validated type-`B` index, regarded as an ordinary-or-graph-twisted index. The untwisted
+family `Bₙ(q)` does not use a half-Frobenius, unlike the Suzuki family it shares the rank-two
+diagram with. -/
+abbrev toGraphTwistedIndex (d : TypeBLieIndex) : GraphTwistedIndex :=
+  ⟨d.1, not_usesHalfFrobenius_of_isTypeB d.2⟩
+
+/-- **The diagram permutation of the untwisted family `Bₙ(q)` is the identity**, so its Steinberg
+map composes with no twist and is the `q`-power Frobenius outright. The `Bₙ` diagram has no
+symmetry to twist by in any case: it is a chain whose two ends carry different root lengths. -/
+@[simp]
+theorem diagramPerm_eq_one (d : TypeBLieIndex) : d.toGraphTwistedIndex.diagramPerm = 1 := by
+  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_ofB
+  simpa only [toGraphTwistedIndex] using GraphTwistedIndex.diagramPerm_B hvalid
+
+end TypeBLieIndex
 
 /-! ### The type-C family as graph-twisted indices -/
 
