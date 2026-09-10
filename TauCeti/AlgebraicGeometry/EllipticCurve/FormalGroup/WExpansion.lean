@@ -277,6 +277,7 @@ theorem wEquationRHS_def {A : Type*} [CommSemiring A] [Algebra R A] (W : Weierst
 the unknown being carried along. This is the element-level companion of `map_wEquationRHS`, which
 transports series along a ring homomorphism; here the coefficients stay put and only the two
 arguments move up the tower. -/
+@[simp]
 theorem algebraMap_wEquationRHS {A B : Type*} [CommSemiring A] [CommSemiring B] [Algebra R A]
     [Algebra R B] [Algebra A B] [IsScalarTower R A B] (q v : A) :
     algebraMap A B (wEquationRHS W q v) =

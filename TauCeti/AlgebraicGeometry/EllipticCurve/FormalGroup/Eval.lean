@@ -346,18 +346,19 @@ theorem formalWEval_wEquation {t : O} (ht : PowerSeries.HasEval t) :
     PowerSeries.eval₂_X] using h
 
 /-- **Uniqueness of the solution of the `w`-equation at a parameter.** For a parameter `t` of an
-adic ideal `I`, the value `w(t)` is the only element of `I` solving the `w`-equation at `t`.
+adic ideal `I`, the value `w(t)` is the only element of `I` solving the `w`-equation at `t`. Both
+membership hypotheses are used: `t ∈ I` is what makes `w` converge at `t`, and `s ∈ I` is what
+confines the competing solution.
 
-This is the evaluated counterpart of `WExpansion.lean`'s `eq_of_wEquation`, and it is proved
-differently: that one compares coefficients, and a value has none. Here the difference `s - w(t)`
-of two solutions factors as `c * (s - w(t))` with `c` a combination of the coefficients and of the
-two solutions that lies in `I`, so `1 - c` is a unit by Wedhorn 5.38 and the difference vanishes.
-Membership in `I` is what both hypotheses are for: it is what makes `c` topologically nilpotent.
-
-This is the step that recognises a point of the curve as a parametrised one: the coordinates of
-such a point supply *some* solution of the `w`-equation, and only this identifies it as `w(t)`. -/
+This is the evaluated counterpart of `WExpansion.lean`'s `eq_of_wEquation`. It is what recognises
+a point of the curve as a parametrised one: the coordinates of such a point supply *some* solution
+of the `w`-equation, and this is what identifies that solution as `w(t)`. -/
 theorem eq_formalWEval_of_wEquation {I : Ideal O} (hI : IsAdic I) {t s : O} (ht : t ∈ I)
     (hs : s ∈ I) (h : s = wEquationRHS W t s) : s = W.formalWEval t := by
+  -- `eq_of_wEquation` compares coefficients, and a value has none. Instead the difference of the
+  -- two sides of the equation factors as `(1 - c) * (s - w(t))` with `c` a combination of the
+  -- coefficients and of the two solutions lying in `I`; membership in `I` makes `c` topologically
+  -- nilpotent, so `1 - c` is a unit by Wedhorn 5.38 and the difference vanishes.
   have : NonarchimedeanRing O := hI ▸ I.nonarchimedean
   have hE : PowerSeries.HasEval t := hI.isTopologicallyNilpotent_of_mem ht
   set w := W.formalWEval t with hw_def
