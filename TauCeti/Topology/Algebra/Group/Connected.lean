@@ -6,18 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Group.Quotient
-public import Mathlib.Topology.Connected.Clopen
 
 /-!
 # Connectedness of topological groups
 
-This file derives connectedness of a group from connectedness of a subgroup and its coset
+This file derives connectedness of a group from preconnectedness of a subgroup and its coset
 quotient.
 
 ## Main result
 
 * `Subgroup.connectedSpace_of_quotient`: a group with continuous left translations is
-  connected when a subgroup and the corresponding coset quotient are connected.
+  connected when a subgroup and the corresponding coset quotient are preconnected.
 -/
 
 public section
@@ -29,9 +28,9 @@ namespace TauCeti
 variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G G]
 
 /-- A group with continuous left translations is connected when a subgroup and its coset quotient
-are connected. -/
-theorem _root_.Subgroup.connectedSpace_of_quotient (H : Subgroup G) [ConnectedSpace H]
-    [ConnectedSpace (G ⧸ H)] : ConnectedSpace G := by
+are preconnected. -/
+theorem _root_.Subgroup.connectedSpace_of_quotient (H : Subgroup G) [PreconnectedSpace H]
+    [PreconnectedSpace (G ⧸ H)] : ConnectedSpace G := by
   rw [connectedSpace_iff_univ]
   -- Each fiber of the quotient projection is a left translate of `H`.
   have hfiber : ∀ q : G ⧸ H, IsConnected (QuotientGroup.mk ⁻¹' {q}) := by
@@ -39,7 +38,8 @@ theorem _root_.Subgroup.connectedSpace_of_quotient (H : Subgroup G) [ConnectedSp
     refine QuotientGroup.induction_on q ?_
     intro g
     have hrange : IsConnected (Set.range fun h : H => g * (h : G)) :=
-      isConnected_range ((continuous_const_smul g).comp continuous_subtype_val)
+      ⟨Set.range_nonempty _,
+        isPreconnected_range ((continuous_const_smul g).comp continuous_subtype_val)⟩
     convert hrange using 1
     ext x
     simp only [mem_preimage, mem_singleton_iff, mem_range]
@@ -53,8 +53,10 @@ theorem _root_.Subgroup.connectedSpace_of_quotient (H : Subgroup G) [ConnectedSp
       convert H.inv_mem h.property using 1
       simp
   -- Pull connectedness of the whole quotient back through the quotient projection.
+  have hquot : IsConnected (Set.univ : Set (G ⧸ H)) :=
+    ⟨Set.univ_nonempty, isPreconnected_univ⟩
   have huniv := (QuotientGroup.isQuotientMap_mk H).isCoinducing.isConnected_preimage_of_isClosed
-    hfiber isClosed_univ (isConnected_univ : IsConnected (Set.univ : Set (G ⧸ H)))
+    hfiber isClosed_univ hquot
   simpa using huniv
 
 end TauCeti
