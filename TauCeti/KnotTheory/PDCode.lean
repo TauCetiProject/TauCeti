@@ -756,9 +756,12 @@ def orientedPDCodeEmpty : OrientedPDCode 0 := orientedPDCodeUnlink 0
 def orientedPDCodeUnknot (orientation : Bool) : OrientedPDCode 0 :=
   orientedPDCodeUnlink {orientation}
 
-/-- The crossing-free oriented unknot is the unlink on a single component. -/
-theorem orientedPDCodeUnknot_eq_unlink (orientation : Bool) :
-    orientedPDCodeUnknot orientation = orientedPDCodeUnlink {orientation} := (rfl)
+/-- The crossing-free oriented unknot has exactly one component, carrying the chosen
+orientation. -/
+@[simp]
+theorem orientedPDCodeUnknot_crossinglessComponents (orientation : Bool) :
+    (orientedPDCodeUnknot orientation).crossinglessComponents = {orientation} := by
+  simp [orientedPDCodeUnknot]
 
 /-- A crossing-free oriented circle is distinct from the empty diagram. -/
 theorem orientedPDCodeUnknot_ne_empty (orientation : Bool) :

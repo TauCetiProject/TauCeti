@@ -215,14 +215,14 @@ theorem visitEquiv_visitAt (D : BasedOrientedGaussCode n) (i : Fin n) (s : Bool)
   rwa [visitEquiv_apply] at h
 
 /-- The two visits to a crossing are partners in the matching. -/
-theorem partner_visitAt (D : BasedOrientedGaussCode n) (i : Fin n) (s : Bool) :
+@[simp] theorem partner_visitAt (D : BasedOrientedGaussCode n) (i : Fin n) (s : Bool) :
     D.partner.val (D.visitAt i s) = D.visitAt i (!s) := by
   have h := D.visitAt_visit (D.partner.val (D.visitAt i s))
   rw [visit_partner, visit_visitAt, isSecondVisit_partner, isSecondVisit_visitAt] at h
   exact h.symm
 
 /-- The two visits to a crossing carry opposite over/under data. -/
-theorem over_visitAt_not (D : BasedOrientedGaussCode n) (i : Fin n) (s : Bool) :
+@[simp] theorem over_visitAt_not (D : BasedOrientedGaussCode n) (i : Fin n) (s : Bool) :
     D.over (D.visitAt i (!s)) = !D.over (D.visitAt i s) := by
   rw [← partner_visitAt, over_partner]
 

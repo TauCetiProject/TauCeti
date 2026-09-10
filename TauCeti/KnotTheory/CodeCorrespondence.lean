@@ -125,16 +125,21 @@ private theorem visitArcMap_involutive (m : ℕ) : Function.Involutive (visitArc
 
 /-- The arcs of a based traversal of `m` visits, as a perfect matching of the half-edges. -/
 private def visitArcMatching (m : ℕ) : PerfectMatching (Fin m × Bool) :=
-  ⟨Function.Involutive.toPerm _ (visitArcMap_involutive m),
-    isPerfectMatching_iff.mpr ⟨visitArcMap_involutive m, by
-      intro p hp
+  PerfectMatching.mk (Function.Involutive.toPerm _ (visitArcMap_involutive m))
+    (visitArcMap_involutive m) fun p hp => by
       have h2 : (visitArcMap m p).2 = p.2 := congrArg Prod.snd hp
       rw [visitArcMap_snd] at h2
-      exact Bool.not_ne_self _ h2⟩⟩
+      exact Bool.not_ne_self _ h2
 
 /-- The matching of arcs is given by following an arc. -/
 @[simp] private theorem visitArcMatching_val (m : ℕ) (p : Fin m × Bool) :
-    (visitArcMatching m).val p = visitArcMap m p := (rfl)
+    (visitArcMatching m).val p = visitArcMap m p := by
+  -- `PerfectMatching.mk` is opaque downstream, so go through its `val` equation.
+  have hval : (visitArcMatching m).val =
+      Function.Involutive.toPerm _ (visitArcMap_involutive m) :=
+    PerfectMatching.val_mk _ _ _
+  rw [hval]
+  exact (rfl)
 
 variable {n : ℕ} (D : BasedOrientedGaussCode n)
 
@@ -143,13 +148,6 @@ second visit exactly when the crossing is positive. This is the choice that make
 derived from the PD-code equal the sign recorded by the Gauss code. -/
 private noncomputable def slotOneDirection (i : Fin n) : Bool :=
   if D.sign i = 1 then D.over (D.visitAt i true) else !D.over (D.visitAt i true)
-
-/-- The direction of slot `1` agrees with the over/under datum of the second visit exactly at a
-positive crossing. -/
-private theorem slotOneDirection_eq_over_iff (i : Fin n) :
-    D.slotOneDirection i = D.over (D.visitAt i true) ↔ D.sign i = 1 := by
-  unfold slotOneDirection
-  split <;> simp_all
 
 /-- The half-edge in slot `s` of crossing `i`, as a visit together with a direction. -/
 private noncomputable def slotEquiv : Fin n × Fin 4 ≃ Fin (2 * n) × Bool :=
@@ -202,6 +200,11 @@ code records that visit as over. -/
 single circle its traversal walks. -/
 @[simp] theorem toOrientedPDCode_crossinglessComponents :
     D.toOrientedPDCode.crossinglessComponents = if n = 0 then {true} else 0 := (rfl)
+
+/-- A crossing-free code has exactly one crossing-free component, the circle its traversal
+walks, and a code with a crossing has none. -/
+@[simp] theorem toOrientedPDCode_crossinglessComponentCount :
+    D.toOrientedPDCode.crossinglessComponentCount = if n = 0 then 1 else 0 := (rfl)
 
 /-- The half-edges of the PD-code are the ones the slot assignment names. -/
 private theorem toOrientedPDCode_halfEdge (i : Fin n) (s : Fin 4) :
@@ -348,9 +351,6 @@ theorem toOrientedPDCode_injective :
     cases s
     · simpa using congrArg Prod.fst (hslot i 0)
     · simpa using congrArg Prod.fst (hslot i 1)
-  have hdir : ∀ i : Fin n, D.slotOneDirection i = E.slotOneDirection i := by
-    intro i
-    simpa using congrArg Prod.snd (hslot i 1)
   have hequiv : D.visitEquiv = E.visitEquiv := by
     have : D.visitEquiv.symm = E.visitEquiv.symm := by
       apply Equiv.ext
@@ -386,24 +386,16 @@ theorem toOrientedPDCode_injective :
     exact hva
   have hsign : D.sign = E.sign := by
     funext i
-    have hiff : D.sign i = 1 ↔ E.sign i = 1 := by
-      rw [← D.slotOneDirection_eq_over_iff i, ← E.slotOneDirection_eq_over_iff i, hdir i,
-        hvisitAt i true, hover]
-    rcases Int.units_eq_one_or (D.sign i) with h₁ | h₁ <;>
-      rcases Int.units_eq_one_or (E.sign i) with h₂ | h₂
-    · rw [h₁, h₂]
-    · rw [h₂] at hiff
-      exact absurd (hiff.mp h₁) (by simp [Units.ext_iff])
-    · rw [h₁] at hiff
-      exact absurd (hiff.mpr h₂) (by simp [Units.ext_iff])
-    · rw [h₁, h₂]
+    have hcrossingSign := congrArg (fun C => C.crossingSign i) h
+    simp only [toOrientedPDCode_crossingSign] at hcrossingSign
+    exact Units.ext hcrossingSign
   exact ext hvisit hover hsign
 
 /-- The crossing-free Gauss code is the crossing-free unknot diagram. -/
 theorem toOrientedPDCode_empty :
     (empty : BasedOrientedGaussCode 0).toOrientedPDCode = orientedPDCodeUnknot true := by
   rw [orientedPDCode_eq_unlink (empty : BasedOrientedGaussCode 0).toOrientedPDCode,
-    toOrientedPDCode_crossinglessComponents, orientedPDCodeUnknot_eq_unlink]
+    orientedPDCode_eq_unlink (orientedPDCodeUnknot true)]
   simp
 
 end BasedOrientedGaussCode
