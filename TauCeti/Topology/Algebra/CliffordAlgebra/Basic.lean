@@ -8,18 +8,16 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
-public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Algebra.Star
 
 /-!
 # Topology on Clifford algebras
 
-This file gives a Clifford algebra its module topology. Over a topological ring this makes the
-Clifford algebra a topological additive group, and multiplication is continuous when the Clifford
-algebra is a finite module. The topology is Hausdorff when the base ring is Hausdorff and the
-Clifford algebra is free. Clifford reverse, involution, and star are continuous without these
-additional assumptions.
+This file gives a Clifford algebra its module topology, making it a topological additive group.
+Over a topological ring, multiplication is continuous when the Clifford algebra is a finite module.
+The topology is Hausdorff when the base ring is Hausdorff and the Clifford algebra is free. Clifford
+reverse, involution, and star are continuous without these additional assumptions.
 
 The topology is intrinsic: it depends only on the module structure of the Clifford algebra and does
 not use a basis, Pin or Spin groups, or their actions. A basis appears only in the proof that the
@@ -90,12 +88,12 @@ instance instContinuousStarCliffordAlgebra (Q : QuadraticForm R V) :
     funext x
     exact star_def x
 
-variable [IsTopologicalRing R]
-
 /-- A Clifford algebra is a topological additive group for its module topology. -/
 instance instIsTopologicalAddGroupCliffordAlgebra (Q : QuadraticForm R V) :
     IsTopologicalAddGroup (CliffordAlgebra Q) :=
   IsModuleTopology.isTopologicalAddGroup R _
+
+variable [IsTopologicalRing R]
 
 /-- The module topology on a free Clifford algebra over a Hausdorff ring is Hausdorff. -/
 instance instT2SpaceCliffordAlgebra [T2Space R] (Q : QuadraticForm R V)

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Stabilizer
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Basic
 public import TauCeti.Topology.Algebra.QuadraticForm.SpecialOrthogonal
+public import Mathlib.Topology.Algebra.Ring.Real
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -27,14 +28,13 @@ simple-connectivity, fibration, or universal-cover claim.
 
 ## Continuity argument
 
-For `x : spinGroup Q` and a fixed vector `v`, the public action equation gives
+For `x : spinGroup Q` and a vector `v`, the public action equation gives
 
 `ι Q (spinVectorAction Q x v) = x * ι Q v * star x`.
 
 On the Spin group, `star x` is the inverse of `x`. The subtype coercion and Clifford star are
-continuous, so the right-hand side is continuous in `x`. The continuous vector-part map `ιInv Q`
-is a left inverse to `ι Q`; applying it proves continuity of
-`x ↦ spinVectorAction Q x v`.
+continuous, so the right-hand side is jointly continuous in `x` and `v`. The continuous vector-part
+map `ιInv Q` is a left inverse to `ι Q`; applying it proves continuity of the Spin action.
 
 A map into matrices is continuous exactly when each matrix entry is continuous. The `(i, j)` entry
 of the standard matrix of the Spin action is the `i`th coordinate of the action on
@@ -49,12 +49,13 @@ topologized special orthogonal group.
   map to the corresponding Spin groups.
 * `CliffordAlgebra.instIsTopologicalGroupSpinGroup` equips `spinGroup Q` with a topological
   group structure for its canonical subtype topology.
+* `CliffordAlgebra.continuous_spinVectorAction` proves joint continuity of the Spin action.
 * `CliffordAlgebra.continuous_spinVectorAction_apply` proves fixed-vector continuity of the Spin
   action.
 * `QuadraticForm.isClosed_spinVectorStabilizer` proves that every vector stabilizer is closed.
 * `CliffordAlgebra.continuous_spinToSpecialOrthogonal_pi` proves continuity of the Spin
   projection for every quadratic form on a finite coordinate space.
-* `CliffordAlgebra.spinToSpecialOrthogonalContinuous` bundles the projection as a continuous
+* `CliffordAlgebra.spinToSpecialOrthogonalHom` bundles the projection as a continuous
   monoid homomorphism.
 * `CliffordAlgebra.continuous_realCliffordSpinDoubleCoverZero_rightHom` specializes this result to
   the projection field of the packaged compact real double cover.
@@ -70,9 +71,7 @@ topologized special orthogonal group.
 
 ## References
 
-This supplies the topological-group bridge in Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`. See H. B. Lawson and
-M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
+H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
 -/
 
 public section
@@ -143,6 +142,28 @@ instance instIsTopologicalGroupSpinGroup (Q : QuadraticForm R V)
   continuous_mul := continuous_mul
   continuous_inv := continuous_induced_rng.mpr continuous_subtype_val.star
 
+/-- The Spin action is jointly continuous in the Spin element and the vector. -/
+@[fun_prop]
+theorem continuous_spinVectorAction [Invertible (2 : R)]
+    [TopologicalSpace V] [IsModuleTopology R V] (Q : QuadraticForm R V)
+    [ContinuousMul (CliffordAlgebra Q)] :
+    Continuous (fun p : spinGroup Q × V => spinVectorAction Q p.1 p.2) := by
+  let _ : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup R V
+  have hval : Continuous (fun p : spinGroup Q × V => (p.1 : CliffordAlgebra Q)) :=
+    continuous_subtype_val.comp continuous_fst
+  have hι : Continuous (fun p : spinGroup Q × V => ι Q p.2) :=
+    (IsModuleTopology.continuous_of_linearMap (ι Q)).comp continuous_snd
+  have hstar : Continuous (fun p : spinGroup Q × V => star (p.1 : CliffordAlgebra Q)) :=
+    (continuous_subtype_val.comp continuous_fst).star
+  have hprod : Continuous (fun p : spinGroup Q × V =>
+      (p.1 : CliffordAlgebra Q) * ι Q p.2 * star (p.1 : CliffordAlgebra Q)) :=
+    (hval.mul hι).mul hstar
+  have hvector := (IsModuleTopology.continuous_of_linearMap (ιInv Q)).comp hprod
+  convert hvector using 1
+  funext p
+  rw [← ιInv_ι Q (spinVectorAction Q p.1 p.2), ι_spinVectorAction_apply]
+  rfl
+
 /-- For a fixed vector, its image under the Spin action depends continuously on the Spin
 element. -/
 @[fun_prop]
@@ -150,18 +171,8 @@ theorem continuous_spinVectorAction_apply [Invertible (2 : R)]
     [TopologicalSpace V] [IsModuleTopology R V] (Q : QuadraticForm R V)
     [ContinuousMul (CliffordAlgebra Q)] (v : V) :
     Continuous (fun x : spinGroup Q => spinVectorAction Q x v) := by
-  let _ : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup R V
-  have hval : Continuous (fun x : spinGroup Q => (x : CliffordAlgebra Q)) :=
-    continuous_subtype_val
-  have hstar : Continuous (fun x : spinGroup Q => star (x : CliffordAlgebra Q)) :=
-    continuous_subtype_val.star
-  have hprod : Continuous (fun x : spinGroup Q =>
-      (x : CliffordAlgebra Q) * ι Q v * star (x : CliffordAlgebra Q)) :=
-    (hval.mul continuous_const).mul hstar
-  have hvector := (IsModuleTopology.continuous_of_linearMap (ιInv Q)).comp hprod
-  convert hvector using 1
-  funext x
-  rw [← ιInv_ι Q (spinVectorAction Q x v), ι_spinVectorAction_apply]
+  have hpair : Continuous (fun x : spinGroup Q => (x, v)) := by fun_prop
+  convert (continuous_spinVectorAction Q).comp hpair using 1
   rfl
 
 /-- The subgroup of a Spin group fixing a vector is closed when the vector space is T1. -/
@@ -194,7 +205,7 @@ theorem continuous_spinToSpecialOrthogonal_pi [IsTopologicalRing R] [Invertible 
   simpa only [MonoidHom.coe_comp] using h
 
 /-- The Spin projection to the special orthogonal group as a continuous monoid homomorphism. -/
-noncomputable def spinToSpecialOrthogonalContinuous [IsTopologicalRing R] [Invertible (2 : R)]
+noncomputable def spinToSpecialOrthogonalHom [IsTopologicalRing R] [Invertible (2 : R)]
     {n : Type v} [Fintype n] [DecidableEq n] (Q : QuadraticForm R (n → R))
     [ContinuousMul (CliffordAlgebra Q)] :
     ContinuousMonoidHom (spinGroup Q) (TauCeti.QuadraticMap.specialOrthogonalGroup Q) where
@@ -202,10 +213,10 @@ noncomputable def spinToSpecialOrthogonalContinuous [IsTopologicalRing R] [Inver
   continuous_toFun := continuous_spinToSpecialOrthogonal_pi Q
 
 @[simp]
-theorem spinToSpecialOrthogonalContinuous_apply [IsTopologicalRing R] [Invertible (2 : R)]
+theorem spinToSpecialOrthogonalHom_apply [IsTopologicalRing R] [Invertible (2 : R)]
     {n : Type v} [Fintype n] [DecidableEq n] (Q : QuadraticForm R (n → R))
     [ContinuousMul (CliffordAlgebra Q)] (x : spinGroup Q) :
-    spinToSpecialOrthogonalContinuous Q x = spinToSpecialOrthogonal Q x :=
+    spinToSpecialOrthogonalHom Q x = spinToSpecialOrthogonal Q x :=
   (rfl)
 
 section Real
