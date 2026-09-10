@@ -489,13 +489,6 @@ theorem IsRecut.mem_unblockedRectangles_second {G : GridDiagram n}
     {D E : GridRectangleDecomposition x z} (h : D.IsRecut G E) :
     E.second ∈ G.unblockedRectangles E.middle z := h.2.2.2.1
 
-/-- A nondiagonal decomposition whose two rectangles have a common side column has exactly one
-common side column. -/
-theorem hasOneCommonSide_of_mem_commonSideColumns (D : GridRectangleDecomposition x z)
-    {c : Fin n} (hc : c ∈ D.commonSideColumns) (hzx : z ≠ x) : D.HasOneCommonSide :=
-  (D.hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left fun hdisjoint =>
-    Finset.eq_empty_iff_forall_notMem.mp (D.commonSideColumns_eq_empty_iff.mpr hdisjoint) c hc
-
 /-- A nondiagonal decomposition admitting a recut has exactly one common side column: the side
 data of that recut records which of the four orientations the decomposition's own common column
 has. -/
