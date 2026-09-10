@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Casimir
-public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Representation
 
 /-!
@@ -115,9 +114,25 @@ theorem soEquivQuadratic_eq_sum_bivector {ι : Type w} [Fintype ι] [DecidableEq
           rw [map_sum]
           simp only [map_smul]
         _ = (f : Module.End K V) x := by
-          rw [sum_dualBasis_smul_basis Q.polarBilin
-            (QuadraticMap.nondegenerate_polar_iff.mpr hQ)
-            (LinearMap.BilinForm.isSymm_def.mpr fun y z ↦ QuadraticMap.polar_comm Q y z) b]
+          congr 1
+          calc
+            _ = ∑ i, b.repr x i • b i := by
+              apply Finset.sum_congr rfl
+              intro i _
+              congr 1
+              calc
+                Q.polarBilin (d i) x = Q.polarBilin x (d i) :=
+                  QuadraticMap.polar_comm Q (d i) x
+                _ = (LinearMap.BilinForm.dualBasis Q.polarBilin
+                    (QuadraticMap.nondegenerate_polar_iff.mpr hQ) d).repr x i :=
+                  (LinearMap.BilinForm.dualBasis_repr_apply
+                    (QuadraticMap.nondegenerate_polar_iff.mpr hQ) d x i).symm
+                _ = b.repr x i := by
+                  rw [LinearMap.BilinForm.dualBasis_dualBasis
+                    (QuadraticMap.nondegenerate_polar_iff.mpr hQ)
+                    (LinearMap.BilinForm.isSymm_def.mpr fun y z ↦
+                      QuadraticMap.polar_comm Q y z) b]
+            _ = x := b.sum_repr x
     have hskew (i : ι) :
         Q.polarBilin ((f : Module.End K V) (b i)) x =
           -Q.polarBilin (b i) ((f : Module.End K V) x) := by
@@ -133,9 +148,15 @@ theorem soEquivQuadratic_eq_sum_bivector {ι : Type w} [Fintype ι] [DecidableEq
         _ = -(∑ i, Q.polarBilin (b i) ((f : Module.End K V) x) • d i) := by
           rw [Finset.sum_neg_distrib]
         _ = -(f : Module.End K V) x := by
-          rw [sum_basis_smul_dualBasis Q.polarBilin
-            (QuadraticMap.nondegenerate_polar_iff.mpr hQ)
-            (LinearMap.BilinForm.isSymm_def.mpr fun y z ↦ QuadraticMap.polar_comm Q y z) b]
+          congr 1
+          calc
+            _ = ∑ i, d.repr ((f : Module.End K V) x) i • d i := by
+              apply Finset.sum_congr rfl
+              intro i _
+              congr 1
+              rw [LinearMap.BilinForm.dualBasis_repr_apply]
+              exact QuadraticMap.polar_comm Q (b i) ((f : Module.End K V) x)
+            _ = (f : Module.End K V) x := d.sum_repr ((f : Module.End K V) x)
     simp only [QuadraticMap.polarBilin_apply_apply] at hfirst hsecond
     rw [hfirst, hsecond, sub_neg_eq_add, ← two_smul K, ← mul_smul,
       inv_mul_cancel₀ (Invertible.ne_zero (2 : K)), one_smul]
@@ -170,20 +191,6 @@ theorem dualBasis_polarBilin_killingQuadraticForm {ι : Type w} [Fintype ι]
   split_ifs
   · simp only [mul_one, inv_mul_cancel₀ (Invertible.ne_zero (2 : K))]
   · simp only [mul_zero]
-
-/-- The dual basis for twice the Killing form is half the Killing-dual basis. This is the
-simp-normal form of `dualBasis_polarBilin_killingQuadraticForm`. -/
-@[simp]
-theorem dualBasis_two_smul_killingForm {ι : Type w} [Fintype ι]
-    [DecidableEq ι] {L : Type v} [LieRing L] [LieAlgebra K L]
-    [_root_.LieAlgebra.IsKilling K L]
-    (b : Module.Basis ι K L) (i : ι) :
-    LinearMap.BilinForm.dualBasis ((2 : K) • _root_.killingForm K L)
-        ((BilinForm.nondegenerate_smul_iff (isUnit_of_invertible (2 : K)).isRegular).mpr
-          (_root_.LieAlgebra.IsKilling.killingForm_nondegenerate K L)) b i =
-      (2 : K)⁻¹ • killingDualBasis b i := by
-  simpa only [_root_.TauCeti.LieAlgebra.polarBilin_killingQuadraticForm] using
-    dualBasis_polarBilin_killingQuadraticForm b i
 
 /-- **The adjoint quadratic lift in Killing-dual coordinates.** For any basis `b` of a
 finite-dimensional Killing-semisimple Lie algebra,

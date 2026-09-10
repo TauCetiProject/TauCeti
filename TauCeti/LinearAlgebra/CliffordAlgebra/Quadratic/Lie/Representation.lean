@@ -156,6 +156,7 @@ noncomputable def adjointCliffordHom (K : Type u) (L : Type v) [Field K]
 
 /-- The adjoint Clifford homomorphism is the quadratic realization of the Killing adjoint
 action. -/
+@[grind =]
 theorem adjointCliffordHom_apply (K : Type u) (L : Type v) [Field K]
     [LieRing L] [LieAlgebra K L] [FiniteDimensional K L] [Invertible (2 : K)]
     [_root_.LieAlgebra.IsKilling K L] (x : L) :

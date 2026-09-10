@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Tactic.LinearCombination
 
 /-!
-# Basic facts about bilinear forms
+# A form that is both symmetric and alternating
 
 Away from characteristic two a bilinear form cannot be both symmetric and alternating without
 being zero: symmetry and alternation give `B x y = B y x` and `B x y = -B y x`, so `2 * B x y = 0`,
@@ -19,9 +19,6 @@ That cancellation is all the hypothesis on the ring there is: `2` has to be regu
 is asked of any other element, so the statement covers rings with zero divisors elsewhere.  Over a
 field, or over any domain, `IsRegular.of_ne_zero` supplies the hypothesis from `(2 : R) ≠ 0`.
 
-For a nondegenerate symmetric bilinear form over a field, this file also records the two
-reconstruction formulas associated to a finite basis and its dual basis.
-
 ## Main results
 
 * `TauCeti.BilinForm.eq_zero_of_isSymm_of_isAlt`: a symmetric alternating form over a ring in which
@@ -29,8 +26,6 @@ reconstruction formulas associated to a finite basis and its dual basis.
 * `TauCeti.BilinForm.nondegenerate_smul_iff`: scalar multiplication by a regular element
   preserves nondegeneracy.
 * `TauCeti.BilinForm.nondegenerate_neg_iff`: negating a bilinear form preserves nondegeneracy.
-* `TauCeti.sum_dualBasis_smul_basis`: reconstruction from a basis and its dual.
-* `TauCeti.sum_basis_smul_dualBasis`: reconstruction in the dual basis.
 -/
 
 public section
@@ -83,41 +78,5 @@ theorem nondegenerate_neg_iff {R M : Type*} [CommRing R] [AddCommGroup M]
   exact nondegenerate_smul_iff (isUnit_neg_one : IsUnit (-1 : R)).isRegular
 
 end BilinForm
-
-/-- A vector is reconstructed in a basis by pairing it with the dual basis of a nondegenerate
-symmetric bilinear form. -/
-theorem sum_dualBasis_smul_basis {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V]
-    [Fintype ι] [DecidableEq ι] (B : BilinForm K V) (hB : B.Nondegenerate)
-    (hBsymm : B.IsSymm) (b : Module.Basis ι K V) (x : V) :
-    ∑ i, B (B.dualBasis hB b i) x • b i = x := by
-  let d := B.dualBasis hB b
-  calc
-    _ = ∑ i, b.repr x i • b i := by
-      apply Finset.sum_congr rfl
-      intro i _
-      congr 1
-      calc
-        B (d i) x = B x (d i) := hBsymm.eq (d i) x
-        _ = (B.dualBasis hB d).repr x i :=
-          (LinearMap.BilinForm.dualBasis_repr_apply hB d x i).symm
-        _ = b.repr x i := by
-          rw [LinearMap.BilinForm.dualBasis_dualBasis hB hBsymm b]
-    _ = x := b.sum_repr x
-
-/-- A vector is reconstructed in the dual basis by pairing it with the original basis of a
-nondegenerate symmetric bilinear form. -/
-theorem sum_basis_smul_dualBasis {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V]
-    [Fintype ι] [DecidableEq ι] (B : BilinForm K V) (hB : B.Nondegenerate)
-    (hBsymm : B.IsSymm) (b : Module.Basis ι K V) (x : V) :
-    ∑ i, B (b i) x • B.dualBasis hB b i = x := by
-  let d := B.dualBasis hB b
-  calc
-    _ = ∑ i, d.repr x i • d i := by
-      apply Finset.sum_congr rfl
-      intro i _
-      congr 1
-      rw [LinearMap.BilinForm.dualBasis_repr_apply]
-      exact hBsymm.eq (b i) x
-    _ = x := d.sum_repr x
 
 end TauCeti
