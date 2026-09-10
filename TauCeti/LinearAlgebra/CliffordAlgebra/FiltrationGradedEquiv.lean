@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ExteriorFiltration
+import Mathlib.LinearAlgebra.ExteriorPower.Basis
 
 /-!
 # The degree quotients of a Clifford filtration
@@ -38,6 +39,8 @@ construct the total associated-graded algebra or prove multiplication compatibil
   equivalence inverts `Filtration.lean`'s leading-term map, so the two independent routes to the
   degree quotient are the same map, with
   `CliffordAlgebra.filtrationLeadingTerm_eq_filtrationGradedEquiv_symm` the map-level form.
+* `CliffordAlgebra.prod_map_ι_ofFn_ne_zero`: a linearly independent finite family has a nonzero
+  ordered product of Clifford generators.
 
 ## References
 
@@ -193,5 +196,46 @@ theorem filtrationLeadingTerm_eq_filtrationGradedEquiv_symm (k : ℕ) :
   rw [← LinearMap.comp_id (filtrationGradedEquiv Q k).symm.toLinearMap]
   exact (LinearEquiv.eq_toLinearMap_symm_comp _ _).2
     (filtrationGradedEquiv_comp_filtrationLeadingTerm Q k)
+
+/-- An ordered product of Clifford generators from a linearly independent finite family is
+nonzero. This is the multiplicative form of the PBW leading-term calculation: its symbol is the
+corresponding nonzero exterior product. -/
+theorem prod_map_ι_ofFn_ne_zero {K : Type u} [Field K] [Module K M]
+    [Invertible (2 : K)] (Q : QuadraticForm K M) {n : ℕ} (v : Fin n → M)
+    (hv : LinearIndependent K v) :
+    (List.ofFn ((ι Q) ∘ v)).prod ≠ 0 := by
+  cases n with
+  | zero => simp
+  | succ k =>
+      have hx : exteriorPower.ιMulti K (k + 1) v ≠ 0 := by
+        have hfamily := exteriorPower.ιMulti_family_linearIndependent_field (K := K)
+          (k + 1) hv
+        have hne := hfamily.ne_zero
+          (⟨Finset.univ, by simp⟩ : Set.powersetCard (Fin (k + 1)) (k + 1))
+        have hemb : Set.powersetCard.ofFinEmbEquiv.symm
+            (⟨Finset.univ, by simp⟩ : Set.powersetCard (Fin (k + 1)) (k + 1)) =
+            OrderEmbedding.id (Fin (k + 1)) := by
+          symm
+          exact Finset.orderEmbOfFin_unique' (by simp) (fun _ => by simp)
+        simpa [exteriorPower.ιMulti_family, hemb] using hne
+      intro hzero
+      have hlead := filtrationLeadingTerm_apply_ιMulti Q k v
+      have hmem : (List.ofFn ((ι Q) ∘ v)).prod ∈ filtration Q (k + 1) := by
+        rw [← List.map_ofFn]
+        exact prod_map_ι_mem_filtration Q (k := k + 1)
+          (l := List.ofFn v) (by simp)
+      have hsub : (⟨(List.ofFn ((ι Q) ∘ v)).prod, hmem⟩ : filtration Q (k + 1)) = 0 :=
+        Subtype.ext hzero
+      have hquot := congrArg
+        (fun x : filtration Q (k + 1) =>
+          (Submodule.Quotient.mk x : TauCeti.Algebra.wordFiltration.GradedPiece
+            (ι Q) (k + 1))) hsub
+      have himage : filtrationLeadingTerm Q k (exteriorPower.ιMulti K (k + 1) v) = 0 :=
+        hlead.trans (by simpa using hquot)
+      rw [filtrationLeadingTerm_eq_filtrationGradedEquiv_symm] at himage
+      apply hx
+      apply (filtrationGradedEquiv Q k).symm.injective
+      rw [map_zero]
+      exact himage
 
 end CliffordAlgebra
