@@ -218,17 +218,15 @@ section Prefix
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] {μ : Measure Ω} {X : ℕ → Ω → α}
 
-/-- A finite path event of the process is a prefix-law singleton. -/
-private theorem measure_setOf_eqOn [Countable α] [MeasurableSingletonClass α]
+/-- A finite path event of the process is a prefix-law singleton: the bounded-`ℕ` reading of
+`TauCeti.Probability.prefixLaw_singleton_eq_measure`. -/
+private theorem measure_setOf_eqOn [MeasurableSingletonClass α]
     (hX : ∀ i, AEMeasurable (X i) μ) (w : ℕ → α) (m : ℕ) :
     μ {ω | ∀ i ≤ m, X i ω = w i} = prefixLaw μ X (m + 1) {fun i : Fin (m + 1) => w i.val} := by
-  rw [prefixLaw_def, blockLaw_apply_of_measurable _ _ _ (fun i : Fin (m + 1) => hX i.val)
-    MeasurableSet.of_discrete]
-  congr 1
-  ext ω
-  simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff, funext_iff]
-  exact ⟨fun hω i => hω i.val (Nat.lt_succ_iff.1 i.isLt),
-    fun hω i hi => hω ⟨i, Nat.lt_succ_of_le hi⟩⟩
+  rw [prefixLaw_singleton_eq_measure hX]
+  exact congrArg μ (Set.ext fun ω =>
+    ⟨fun hω i => hω i.val (Nat.lt_succ_iff.1 i.isLt),
+      fun hω i hi => hω ⟨i, Nat.lt_succ_of_le hi⟩⟩)
 
 /-- **A finite path and its last-exit reconstruction are equally likely under a Markov
 exchangeable process.** Rebuilding a prefix from row-permuted successor entries preserves the
