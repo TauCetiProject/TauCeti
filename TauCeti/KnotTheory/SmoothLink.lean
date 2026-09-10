@@ -98,14 +98,6 @@ theorem range_component_subset_range (L : SmoothLinkEmbedding I M n) (i : Fin n)
     Set.range (L i) ⊆ L.range :=
   Set.subset_iUnion (fun j ↦ Set.range (L j)) i
 
-/-- A point of a link lies on a unique labeled component. -/
-theorem existsUnique_component_of_mem_range (L : SmoothLinkEmbedding I M n) {x : M}
-    (hx : x ∈ L.range) : ∃! i, x ∈ Set.range (L i) := by
-  obtain ⟨i, y, hy⟩ := (L.mem_range_iff x).mp hx
-  refine ⟨i, ⟨y, hy⟩, ?_⟩
-  intro j hj
-  exact L.pairwiseDisjoint_range.eq (not_disjoint_iff.2 ⟨x, hj, ⟨y, hy⟩⟩)
-
 /-! ### Empty and one-component links -/
 
 /-- The smooth link with no components. -/
