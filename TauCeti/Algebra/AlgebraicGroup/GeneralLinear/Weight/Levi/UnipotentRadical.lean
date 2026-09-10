@@ -17,19 +17,11 @@ The statements allow repeated weights, arbitrary characteristic, and rank zero. 
 the normal-subgroup input for reductivity of block-diagonal Levi subgroups and for identifying
 the unipotent radical of their parabolics.
 
-The standard representation is faithful and completely reducible: each weight block is simple,
-and invariant subspaces are sums of blocks. The general normal-invariants criterion therefore
-forces a normal smooth unipotent subgroup to act trivially. Faithfulness identifies its defining
-Hopf ideal with the augmentation ideal.
-
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Chapters 13 and 19.
 * T. A. Springer, *Linear Algebraic Groups*, §§2.2 and 2.4.
-
-The assembly follows `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Reductive` and uses
-`HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful_of_iso` for the
-normal-invariants argument and transport to the finite-type coordinate package.
+* Formal source: `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Reductive`.
 -/
 
 public section
@@ -46,11 +38,14 @@ variable (k : Type u) [Field k] [IsAlgClosed k] {N : ℕ} (w : Fin N → ℤ)
 
 /-- Every normal smooth unipotent closed subgroup of a weight Levi over an algebraically
 closed field is trivial, including when distinct coordinates have the same weight. -/
-theorem eq_augmentation_of_isNormal_of_smoothUnipotent_weightLevi
+theorem eq_augmentation_weightLevi_of_isNormal_of_smoothUnipotent
     (I : HopfIdeal k (weightLeviFiniteTypeCoordinateHopfAlgebra k w)) (hI : I.IsNormal)
     (hU : smoothUnipotentCommHopfAlgProperty k
       (FiniteTypeCommHopfAlgCat.quotient (weightLeviFiniteTypeCoordinateHopfAlgebra k w) I)) :
     I = HopfIdeal.augmentation k (weightLeviFiniteTypeCoordinateHopfAlgebra k w) := by
+  -- The named finite-type package has an unexposed body. This local presentation has
+  -- the coordinate algebra as its carrier, so its reducedness and comodule instances
+  -- are those of that algebra. The object lemma below supplies the explicit transport.
   let H : FiniteTypeCommHopfAlgCat k :=
     ⟨weightLeviCoordinateHopfAlgebra k w,
       inferInstanceAs (Algebra.FiniteType k (weightLeviCoordinateHopfAlgebra k w))⟩
@@ -73,7 +68,7 @@ theorem unipotentRadicalDefiningIdeal_weightLeviFiniteTypeCoordinateHopfAlgebra 
       HopfIdeal.augmentation k (weightLeviFiniteTypeCoordinateHopfAlgebra k w) := by
   rw [FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_augmentation_iff]
   intro I hI
-  exact eq_augmentation_of_isNormal_of_smoothUnipotent_weightLevi k w I
+  exact eq_augmentation_weightLevi_of_isNormal_of_smoothUnipotent k w I
     hI.isNormal hI.smoothUnipotent
 
 end
