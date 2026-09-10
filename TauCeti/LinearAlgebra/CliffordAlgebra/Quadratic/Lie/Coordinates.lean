@@ -182,7 +182,7 @@ theorem adjointCliffordHom_eq_sum_bivector {ι : Type w} [Fintype ι]
         (b i) (killingDualBasis b i) := by
   let _ := b.finiteDimensional_of_finite
   let Q := _root_.TauCeti.LieAlgebra.killingQuadraticForm K L
-  rw [adjointCliffordHom, quadraticLift_apply,
+  rw [adjointCliffordHom_apply,
     soEquivQuadratic_eq_sum_bivector Q
       (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L) b]
   simp only [_root_.TauCeti.LieAlgebra.coe_killingAdjointSO, _root_.LieAlgebra.ad_apply]
