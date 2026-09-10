@@ -49,6 +49,8 @@ prevertex `a i` rotates the edge direction by `-π · e i`, which for the classi
 
 ## Main results
 
+* `TauCeti.schwarzChristoffelEdgeAngle_sub_eq_pi_mul_exponent_sum_of_adjacent` -- crossing an
+  adjacent prevertex changes the edge angle by `π` times its total turning exponent.
 * `TauCeti.schwarzChristoffelIntegrand_eq_exp_mul_continued` -- on the upper half-plane the
   integrand is the continued integrand times the unimodular edge-direction constant.
 * `TauCeti.schwarzChristoffelContinuedIntegrand_ofReal` -- on a prevertex-free real interval the
@@ -126,6 +128,28 @@ theorem schwarzChristoffelEdgeAngle_sub (a e : ι → ℝ) {c d : ℝ} (hcd : c 
   · rcases le_or_gt (a i) d with h₂ | h₂
     · simp [h₁, not_lt.mpr h₂, Set.mem_Ioc, h₂]
     · simp [h₁, h₂, Set.mem_Ioc, not_le.mpr h₂]
+
+/-- Across two adjacent real reference points -- that is, with no prevertex of nonzero exponent
+strictly between them -- the change in Schwarz--Christoffel edge angle is exactly `π` times the
+total exponent carried by the right endpoint.  For the classical choice `e i = α i / π - 1`
+attached to a polygon with interior angle `α i`, moving from left to right therefore turns the
+edge direction by the exterior angle which is the negative of that quantity. -/
+theorem schwarzChristoffelEdgeAngle_sub_eq_pi_mul_exponent_sum_of_adjacent (a e : ι → ℝ)
+    {p q : ℝ} (hpq : p < q) (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) :
+    schwarzChristoffelEdgeAngle a e p - schwarzChristoffelEdgeAngle a e q =
+      Real.pi * ∑ i with a i = q, e i := by
+  rw [schwarzChristoffelEdgeAngle_sub a e hpq.le]
+  congr 1
+  symm
+  apply Finset.sum_subset
+  · intro i hi
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢
+    rw [hi]
+    exact ⟨hpq, le_rfl⟩
+  · intro i hi hiq
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi hiq
+    by_contra hei
+    exact ha i hei ⟨hi.1, hi.2.lt_of_ne hiq⟩
 
 /-- On the upper half-plane the Schwarz--Christoffel integrand is its continuation across any real
 reference point, times the unimodular constant with argument the edge angle there. -/

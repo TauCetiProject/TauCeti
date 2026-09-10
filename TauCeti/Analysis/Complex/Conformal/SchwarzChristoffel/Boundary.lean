@@ -17,9 +17,10 @@ the prevertices it continues holomorphically across a neighbourhood, while at a 
 has a finite limit when the total exponent there is greater than `-1`.  This file packages both
 cases in a single boundary map.
 
-The canonical value `schwarzChristoffelBoundary a e z₀ x` is the limit of the primitive from the
-upper half-plane.  Its defining limit exists whenever the total exponent at `x` is greater than
-`-1`; this includes every point which is not a prevertex.  On a prevertex it agrees with
+The canonical value `schwarzChristoffelBoundary a e z₀ x` is Mathlib's `extendFrom` extension of
+the primitive from the upper half-plane.  That extension is a genuine limit of the primitive
+wherever such a limit exists, which is the case whenever the total exponent at `x` is greater
+than `-1`; this includes every point which is not a prevertex.  On a prevertex it agrees with
 `schwarzChristoffelVertex`, and on an interval free of nonzero prevertices it is continuous,
 injective, and has the explicit straight-edge increment formula from the boundary continuation.
 Thus the boundary map is the common object in which the vertices and the open edges of the
@@ -36,14 +37,14 @@ eventual polygon meet.
   value wherever the total exponent is greater than `-1`.
 * `TauCeti.schwarzChristoffelBoundary_apply_prevertex` -- the boundary value at a prevertex is
   the previously constructed Schwarz--Christoffel vertex.
-* `TauCeti.schwarzChristoffelBoundary_sub_eq` -- an open edge has the expected fixed direction
-  and positive real parametrization.
+* `TauCeti.schwarzChristoffelBoundary_change_base` -- changing the normalization point of the
+  primitive subtracts a constant from the boundary map.
+* `TauCeti.schwarzChristoffelBoundary_sub_eq` -- an increment of the boundary map along an open
+  edge is a real integral times the fixed edge direction.
 * `TauCeti.schwarzChristoffelBoundary_injOn` and
   `TauCeti.collinear_schwarzChristoffelBoundary_image` -- an open edge is embedded in a line.
 * `TauCeti.schwarzChristoffelBoundary_image_Icc_eq_closure_image_Ioo` -- the closed boundary arc
   is the closure of its open edge.
-* `TauCeti.schwarzChristoffelEdgeAngle_sub_eq_exponent_sum_of_adjacent` -- crossing an adjacent
-  prevertex changes the edge angle by its total turning exponent.
 
 ## References
 
@@ -61,9 +62,11 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
-/-- The **boundary value of the Schwarz--Christoffel map** at a real point, defined as the limit
-of its normalized primitive from the upper half-plane.  The limit exists when the total exponent
-at the point is greater than `-1`; see `tendsto_schwarzChristoffelPrimitive_boundary`. -/
+/-- The **boundary value of the Schwarz--Christoffel map** at a real point: the value at that
+point of Mathlib's `extendFrom` extension of the normalized primitive from the upper half-plane.
+The extension is total, so this is a limit of the primitive only where such a limit exists; that
+happens whenever the total exponent at the point is greater than `-1`, by
+`tendsto_schwarzChristoffelPrimitive_boundary`, and the value is unspecified elsewhere. -/
 def schwarzChristoffelBoundary (a e : ι → ℝ) (z₀ : UpperHalfPlane) (x : ℝ) : ℂ :=
   extendFrom upperHalfPlaneSet (schwarzChristoffelPrimitive a e z₀) (x : ℂ)
 
@@ -126,6 +129,19 @@ theorem tendsto_schwarzChristoffelPrimitive_boundary (a e : ι → ℝ)
   rw [schwarzChristoffelBoundary]
   exact tendsto_extendFrom (exists_tendsto_schwarzChristoffelPrimitive_boundary a e z₀ x he)
 
+/-- Changing the base point of the normalized primitive subtracts, from the canonical
+Schwarz--Christoffel boundary map, the value of the primitive at the old base point.  This is the
+boundary counterpart of `schwarzChristoffelPrimitive_change_base`, and holds wherever the total
+exponent is greater than `-1`. -/
+theorem schwarzChristoffelBoundary_change_base (a e : ι → ℝ) (b c : UpperHalfPlane) (x : ℝ)
+    (he : -1 < ∑ i with a i = x, e i) :
+    schwarzChristoffelBoundary a e b x =
+      schwarzChristoffelBoundary a e c x - schwarzChristoffelPrimitive a e c b := by
+  refine schwarzChristoffelBoundary_eq_of_tendsto a e b x (Tendsto.congr' ?_
+    ((tendsto_schwarzChristoffelPrimitive_boundary a e c x he).sub tendsto_const_nhds))
+  filter_upwards [self_mem_nhdsWithin] with z hz
+  exact (schwarzChristoffelPrimitive_change_base a e b c hz).symm
+
 /-- The canonical Schwarz--Christoffel boundary map is continuous on any set of real points at
 which the total exponent is greater than `-1`.  This simultaneously gives continuity along open
 edges and attachment of those edges to every integrable prevertex. -/
@@ -154,9 +170,9 @@ theorem continuousOn_schwarzChristoffelBoundary (a e : ι → ℝ) (z₀ : Upper
   exact schwarzChristoffelBoundary_eq_of_tendsto a e z₀ x (hL x hx)
 
 /-- Along a real interval free of prevertices with nonzero exponent, the increment of the
-canonical Schwarz--Christoffel boundary map is a real integral times the fixed edge direction.
-In particular, all its increments have argument
-`schwarzChristoffelEdgeAngle a e p` up to reversal. -/
+canonical Schwarz--Christoffel boundary map between two points is the real integral of
+`∏ i, |t - a i| ^ e i` between them, times the fixed unimodular direction with argument
+`schwarzChristoffelEdgeAngle a e p`. -/
 theorem schwarzChristoffelBoundary_sub_eq (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     {p q : ℝ} (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) {x y : ℝ}
     (hx : x ∈ Ioo p q) (hy : y ∈ Ioo p q) :
@@ -196,12 +212,12 @@ theorem collinear_schwarzChristoffelBoundary_image (a e : ι → ℝ)
   · rintro ⟨x, hx, rfl⟩
     exact ⟨x, hx, schwarzChristoffelBoundary_eq_of_tendsto a e z₀ x (hL x hx)⟩
 
-/-- Between adjacent real prevertices with integrable endpoint exponents, the canonical
-Schwarz--Christoffel boundary map is continuous on the closed interval.  Hence the open straight
-edge supplied by `schwarzChristoffelBoundary_sub_eq` attaches continuously to its two vertices. -/
+/-- Between real prevertices with integrable endpoint exponents and no prevertex of nonzero
+exponent strictly between them, the canonical Schwarz--Christoffel boundary map is continuous on
+the closed interval.  Hence the open straight edge supplied by
+`schwarzChristoffelBoundary_sub_eq` attaches continuously to its two vertices. -/
 theorem continuousOn_schwarzChristoffelBoundary_Icc (a e : ι → ℝ)
-    (z₀ : UpperHalfPlane) {p q : ℝ} (hpq : p < q)
-    (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q)
+    (z₀ : UpperHalfPlane) {p q : ℝ} (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q)
     (hp : -1 < ∑ i with a i = p, e i) (hq : -1 < ∑ i with a i = q, e i) :
     ContinuousOn (schwarzChristoffelBoundary a e z₀) (Icc p q) := by
   classical
@@ -229,14 +245,10 @@ theorem schwarzChristoffelBoundary_image_Icc_eq_closure_image_Ioo (a e : ι → 
     (hp : -1 < ∑ i with a i = p, e i) (hq : -1 < ∑ i with a i = q, e i) :
     schwarzChristoffelBoundary a e z₀ '' Icc p q =
       closure (schwarzChristoffelBoundary a e z₀ '' Ioo p q) := by
-  apply Subset.antisymm
-  · have hcont : ContinuousOn (schwarzChristoffelBoundary a e z₀) (closure (Ioo p q)) := by
-      simpa only [closure_Ioo hpq.ne] using
-        continuousOn_schwarzChristoffelBoundary_Icc a e z₀ hpq ha hp hq
-    simpa only [closure_Ioo hpq.ne] using hcont.image_closure
-  · apply closure_minimal (image_mono Ioo_subset_Icc_self)
-    exact (isCompact_Icc.image_of_continuousOn
-      (continuousOn_schwarzChristoffelBoundary_Icc a e z₀ hpq ha hp hq)).isClosed
+  rw [← closure_Ioo hpq.ne]
+  refine image_closure_of_isCompact ?_ ?_ <;> rw [closure_Ioo hpq.ne]
+  · exact isCompact_Icc
+  · exact continuousOn_schwarzChristoffelBoundary_Icc a e z₀ ha hp hq
 
 /-- The two Schwarz--Christoffel vertices belonging to adjacent prevertices lie in the closure of
 the open straight edge between them.  This is the endpoint form of the local polygon gluing: the
@@ -255,25 +267,5 @@ theorem schwarzChristoffelVertices_mem_closure_boundary_image_Ioo (a e : ι → 
       schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj⟩
   · exact ⟨a k, right_mem_Icc.mpr hjk.le,
       schwarzChristoffelBoundary_apply_prevertex a e z₀ k hk⟩
-
-/-- Across two adjacent real boundary points, the change in Schwarz--Christoffel edge angle is
-exactly `π` times the total exponent at the right endpoint.  Equivalently, moving from left to
-right turns the edge direction by the exterior angle given by the negative of this quantity. -/
-theorem schwarzChristoffelEdgeAngle_sub_eq_exponent_sum_of_adjacent (a e : ι → ℝ)
-    {p q : ℝ} (hpq : p < q) (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) :
-    schwarzChristoffelEdgeAngle a e p - schwarzChristoffelEdgeAngle a e q =
-      Real.pi * ∑ i with a i = q, e i := by
-  rw [schwarzChristoffelEdgeAngle_sub a e hpq.le]
-  congr 1
-  symm
-  apply Finset.sum_subset
-  · intro i hi
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢
-    rw [hi]
-    exact ⟨hpq, le_rfl⟩
-  · intro i hi hiq
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi hiq
-    by_contra hei
-    exact ha i hei ⟨hi.1, hi.2.lt_of_ne hiq⟩
 
 end TauCeti
