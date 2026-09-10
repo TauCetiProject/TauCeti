@@ -16,11 +16,6 @@ Let `K` be a closed subgroup of a finite-dimensional Lie group, and let `M` be a
 of its Lie algebra which is disjoint from `lieSubalgebraOfSubgroup K`. Then the only sufficiently
 small `X ∈ M` whose exponential lies in `K` is `0`.
 
-The proof is the compactness step in the closed-subgroup theorem. If there were arbitrarily small
-nonzero counterexamples, normalize them to the unit sphere and take a convergent subsequence. The
-closed-subgroup limit criterion puts its limit in `lieSubalgebraOfSubgroup K`, while closedness of
-`M` puts the same unit vector in `M`, contradicting disjointness.
-
 This is the local-separation input for the subgroup chart: when `M` is a complement of
 `lieSubalgebraOfSubgroup K`, it forces the transverse coordinate of nearby points of `K` to vanish.
 
@@ -92,9 +87,7 @@ theorem exists_norm_lt_lieExp_mem_iff_eq_zero_of_disjoint {K : Subgroup G}
       simpa only [Function.comp_apply] using (hXnorm (φ n)).le
     · exact hφ
     · filter_upwards with n
-      change lieExp (I := I) (‖X (φ n)‖ • NormedSpace.normalize (X (φ n))) ∈ K
-      rw [NormedSpace.norm_smul_normalize]
-      exact hXexp (φ n)
+      simpa only [Function.comp_apply, Y, NormedSpace.norm_smul_normalize] using hXexp (φ n)
   have hZzero : Z = 0 := Submodule.disjoint_def.mp hM Z hZM hZlie
   have : ‖Z‖ = 1 := by simpa [Metric.mem_sphere, dist_eq_norm] using hZsphere
   simp [hZzero] at this
