@@ -115,11 +115,6 @@ private noncomputable def intValuation : Valuation K ℤᵐ⁰ :=
   (valuation K).map (valueGroupWithZeroIsoInt K).toMonoidWithZeroHom
     (valueGroupWithZeroIsoInt K).toOrderIso.monotone
 
-@[simp]
-private theorem intValuation_apply (x : K) :
-    intValuation (K := K) x = valueGroupWithZeroIsoInt K (valuation K x) := by
-  rfl
-
 private theorem intValuation_surjective : Function.Surjective (intValuation (K := K)) := by
   intro z
   obtain ⟨x, hx⟩ := ValuativeRel.valuation_surjective ((valueGroupWithZeroIsoInt K).symm z)
@@ -416,7 +411,7 @@ theorem normalizedAbsoluteValue_eq_one_iff (x : K) :
     normalizedAbsoluteValue K x = 1 ↔ valuation K x = 1 := by
   rw [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply,
     WithZeroMulInt.toNNRat_eq_one_iff]
-  · rw [intValuation_apply]
+  · simp only [intValuation]
     have hone : valueGroupWithZeroIsoInt K (1 : ValueGroupWithZero K) = 1 := map_one _
     rw [← hone]
     exact (valueGroupWithZeroIsoInt K).injective.eq_iff
@@ -429,7 +424,9 @@ theorem mem_integer_iff_normalizedAbsoluteValue_le_one (x : K) :
     x ∈ 𝒪[K] ↔ normalizedAbsoluteValue K x ≤ 1 := by
   rw [Valuation.mem_integer_iff, normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply,
     WithZeroMulInt.toNNRat_le_one_iff]
-  · rw [intValuation_apply]
+  · -- `Valuation.map_apply` encounters the two propositionally equal preorder instances on
+    -- `ℤᵐ⁰` under `≤`; expose the mapped value before transporting the comparison.
+    change valuation K x ≤ 1 ↔ valueGroupWithZeroIsoInt K (valuation K x) ≤ 1
     simpa only [map_one] using
       (OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
         (a := valuation K x) (b := 1)).symm
