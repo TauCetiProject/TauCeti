@@ -756,8 +756,7 @@ def orientedPDCodeEmpty : OrientedPDCode 0 := orientedPDCodeUnlink 0
 def orientedPDCodeUnknot (orientation : Bool) : OrientedPDCode 0 :=
   orientedPDCodeUnlink {orientation}
 
-/-- The crossing-free oriented unknot has exactly one component, carrying the chosen
-orientation. -/
+/-- The oriented unknot retains its specified component orientation. -/
 @[simp]
 theorem orientedPDCodeUnknot_crossinglessComponents (orientation : Bool) :
     (orientedPDCodeUnknot orientation).crossinglessComponents = {orientation} := by

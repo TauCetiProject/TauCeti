@@ -105,6 +105,15 @@ theorem absNorm_primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
     Ideal.absNorm (primeIdealPow P e : Ideal (𝓞 K)) = Ideal.absNorm P.asIdeal ^ e := by
   rw [coe_primeIdealPow, map_pow]
 
+omit [NumberField K] in
+/-- Distinct primes give distinct first powers, so a family indexed by the primes is a subfamily
+of one indexed by the nonzero ideals. -/
+theorem primeIdealPow_one_injective :
+    Function.Injective fun P : HeightOneSpectrum (𝓞 K) ↦ primeIdealPow P 1 := fun P Q h ↦
+  HeightOneSpectrum.asIdeal_injective
+    (by simpa only [coe_primeIdealPow, pow_one] using
+      congrArg (Subtype.val : (Ideal (𝓞 K))⁰ → Ideal (𝓞 K)) h)
+
 /-- Distinct exponents give distinct prime powers. -/
 theorem primeIdealPow_injective (P : HeightOneSpectrum (𝓞 K)) :
     Function.Injective (primeIdealPow P) := fun m n h ↦

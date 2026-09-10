@@ -8,15 +8,19 @@ module
 public import TauCeti.Probability.Distributions.Multinomial.Basic
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
+public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 
 /-!
-# Directional exponential transforms of the multinomial distribution
+# Transforms of the multinomial distribution
 
 For the pushforward of `multinomialMeasure n p` into `EuclideanSpace ℝ ι` along
 `multinomialToEuclidean` and a direction `θ`, the directional moment generating function is
 finite everywhere and equals
 `(∑ i, p i * exp (t * θ i)) ^ n`: the multinomial theorem, with the cell weights tilted by
 `exp (t * θ i)`. The cumulant generating function is its real logarithm.
+
+The characteristic function of the Euclidean cast is the corresponding complex multinomial
+polynomial, `(∑ i, p i * exp (I * t i)) ^ n`.
 
 A probability vector on `ι` forces `ι` to be nonempty, so the statements need no separate
 hypothesis for it beyond the parameter `p`. Every statement holds for `n = 0`
@@ -30,6 +34,8 @@ cells, which contribute nothing to the tilted sum.
   for every direction of the Euclidean pushforward;
 * `TauCeti.Probability.mgf_inner_multinomial` — the directional moment generating function;
 * `TauCeti.Probability.cgf_inner_multinomial` — the directional cumulant generating function.
+* `TauCeti.Probability.charFun_map_multinomialToEuclidean_multinomialMeasure` — the
+  characteristic function of the Euclidean cast.
 
 ## References
 
@@ -114,6 +120,32 @@ theorem cgf_inner_multinomial (n : ℕ) (p : StdSimplex NNReal ι)
     cgf (fun x => inner ℝ θ x) ((multinomialMeasure n p).map multinomialToEuclidean) t =
       Real.log ((∑ i, (p.weights i : ℝ) * exp (t * θ i)) ^ n) := by
   rw [cgf, mgf_inner_multinomial]
+
+/-- **Characteristic function of the multinomial law**: for a frequency vector `t`, it is the
+`n`th power of the probability-weighted sum of the coordinate characters. -/
+theorem charFun_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
+    (p : StdSimplex NNReal ι) (t : EuclideanSpace ℝ ι) :
+    charFun ((multinomialMeasure n p).map multinomialToEuclidean) t =
+      (∑ i, (p.weights i : ℂ) * Complex.exp (Complex.I * (t i : ℂ))) ^ n := by
+  classical
+  rw [charFun_apply, integral_map measurable_multinomialToEuclidean.aemeasurable
+    (by fun_prop : AEStronglyMeasurable
+      (fun x : EuclideanSpace ℝ ι => Complex.exp ((inner ℝ x t : ℂ) * Complex.I)) _),
+    integral_multinomialMeasure]
+  simp only [EuclideanSpace.inner_eq_star_dotProduct, dotProduct, star_trivial,
+    multinomialToEuclidean_apply, Complex.real_smul]
+  simp_rw [multinomialWeightReal_def]
+  push_cast
+  rw [Finset.sum_pow_eq_sum_piAntidiag]
+  apply Finset.sum_congr rfl
+  intro k hk
+  rw [Finset.sum_mul, Complex.exp_sum, mul_assoc, ← Finset.prod_mul_distrib]
+  congr 1
+  apply Finset.prod_congr rfl
+  intro i hi
+  rw [mul_pow, ← Complex.exp_nat_mul]
+  congr 1
+  ring_nf
 
 end Probability
 

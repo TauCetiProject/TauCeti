@@ -18,6 +18,12 @@ to the matrix models of the classical groups.
 
 The criteria apply to any finite index type, including the empty type, and to rings such as
 `ℤ` where two is regular but not invertible.
+
+## Main results
+
+* `TauCeti.toMatrix_mem_orthogonalGroup_iff`: the coordinate criterion for the orthogonal group.
+* `TauCeti.toMatrix_mem_specialOrthogonalGroup_iff`: the coordinate criterion for the special
+  orthogonal group.
 -/
 
 public section

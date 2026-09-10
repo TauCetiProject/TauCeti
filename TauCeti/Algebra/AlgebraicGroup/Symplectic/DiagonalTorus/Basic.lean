@@ -24,8 +24,9 @@ ring. The construction is made simultaneously in the functor-of-points, coordina
 and affine-group-scheme models. On algebra-valued points it is injective, natural in the value
 algebra, and conjugates each symplectic root subgroup through its standard root character.
 
-This is the torus and pinning-equation part of the standard type-`C` pinning. It does not claim that
-the morphism is a closed immersion or that its image is maximal.
+This is the torus and pinning-equation part of the standard type-`C` pinning. The coordinate
+morphism is surjective; its closed-subgroup interpretation is developed in
+`TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.ClosedImmersion`.
 
 ## Main definitions
 
@@ -236,9 +237,11 @@ theorem mapPointsFunctor_diagonalTorusCoordinateMap_app
         (diagonalTorusCoordinateMap (R := R) (m := m)).hom t.ofConv) p
   rw [← htp, ← hnat, hp, mapValue_diagonalTorusPoints]
 
+/-- The Laurent coordinate ring in which the generic diagonal symplectic matrix is evaluated. -/
 private abbrev diagonalTorusCoordinateRing :=
   MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ))
 
+/-- The diagonal symplectic matrix evaluated at the universal point of the split torus. -/
 private noncomputable def diagonalTorusGenericMatrix :
     Matrix (Fin (m + m)) (Fin (m + m)) (diagonalTorusCoordinateRing (R := R) (m := m)) :=
   ((GLSymplecticFin.diagonal
@@ -349,6 +352,23 @@ private theorem coordinateMap_comp_diagonalTorusCoordinateMap :
       simp [pairedWeight, ← Fin.natAdd_eq_addNat, finSumFinEquiv_symm_apply_natAdd]
   · rw [coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne _ _ hij]
     simp [hij]
+
+/-- The coordinate restriction from `Sp₂ₘ` to its diagonal torus is surjective over every
+commutative base ring. -/
+theorem diagonalTorusCoordinateMap_surjective :
+    Function.Surjective (diagonalTorusCoordinateMap (R := R) (m := m)).hom := by
+  have hspan : Submodule.span ℤ (Set.range (pairedWeight (m := m))) = ⊤ := by
+    apply top_unique
+    rw [← (Pi.basisFun ℤ (ULift.{u} (Fin m))).span_eq]
+    apply Submodule.span_mono
+    rintro _ ⟨i, rfl⟩
+    refine ⟨Fin.castAdd m i.down, ?_⟩
+    simp [pairedWeight, Pi.basisFun_apply]
+  have hsurj := GeneralLinear.weightTorusCoordinateMap_surjective
+    (R := R) (pairedWeight (m := m)) hspan
+  rw [← coordinateMap_comp_diagonalTorusCoordinateMap] at hsurj
+  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at hsurj
+  exact hsurj.of_comp
 
 /-- **The symplectic diagonal-torus coordinate morphism commutes with base change.** -/
 theorem diagonalTorusCoordinateMap_baseChange

@@ -9,7 +9,6 @@ public import TauCeti.Combinatorics.Enumerative.PerfectMatching
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import TauCeti.GroupTheory.Perm.Basic
 import Mathlib.Data.Fin.Rev
-import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Data.Fintype.Prod
 import Mathlib.Tactic.FinCases
 
@@ -146,85 +145,42 @@ theorem over_partner_ne {D : BasedOrientedGaussCode n} (i : Fin (2 * n)) :
   rw [D.over_partner]
   exact Bool.not_ne_self _
 
-/-- Whether a visit is the later of the two visits to its crossing. -/
-def isSecondVisit (D : BasedOrientedGaussCode n) (v : Fin (2 * n)) : Bool :=
-  decide (D.partner.val v < v)
+/-!
+### Visits and crossing data
+-/
 
-/-- Exactly one of the two visits to a crossing is the later one. -/
-@[simp] theorem isSecondVisit_partner (D : BasedOrientedGaussCode n) (v : Fin (2 * n)) :
-    D.isSecondVisit (D.partner.val v) = !D.isSecondVisit v := by
-  have hne : D.partner.val v ≠ v := D.partner.apply_ne v
-  simp only [isSecondVisit, PerfectMatching.apply_apply]
-  rcases lt_or_gt_of_ne hne with h | h
-  · simp [h, asymm h]
-  · simp [h, asymm h]
+/-- A visit, read as its crossing label together with whether it is the over visit. -/
+def visitData (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) : Fin n × Bool :=
+  (D.visit i, D.over i)
 
-/-- A visit is determined by its crossing together with whether it is the later of the two
-visits to that crossing. -/
-theorem visit_isSecondVisit_injective (D : BasedOrientedGaussCode n) :
-    Function.Injective fun v : Fin (2 * n) => (D.visit v, D.isSecondVisit v) := by
-  intro v w h
-  simp only [Prod.mk.injEq] at h
-  rcases (D.visit_eq_iff v w).mp h.1 with rfl | rfl
-  · rfl
-  · rw [isSecondVisit_partner] at h
-    exact absurd h.2.symm (Bool.not_ne_self _)
+/-- The two components of the data attached to a visit are its crossing label and over/under
+status. -/
+@[simp]
+theorem visitData_apply (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
+    D.visitData i = (D.visit i, D.over i) := (rfl)
 
-/-- The visits of the traversal, indexed by the crossing visited together with whether the visit
-is the later of the two to that crossing. -/
-noncomputable def visitEquiv (D : BasedOrientedGaussCode n) : Fin (2 * n) ≃ Fin n × Bool :=
-  Equiv.ofBijective (fun v => (D.visit v, D.isSecondVisit v))
-    ((Fintype.bijective_iff_injective_and_card _).mpr
-      ⟨D.visit_isSecondVisit_injective, by
-        simp [Fintype.card_prod, Nat.mul_comm]⟩)
+/-- The crossing label and over/under status determine a unique visit. -/
+theorem visitData_bijective (D : BasedOrientedGaussCode n) : Function.Bijective D.visitData := by
+  apply (Fintype.bijective_iff_injective_and_card _).2
+  constructor
+  · intro i j hij
+    have hvis : D.visit i = D.visit j := congrArg Prod.fst hij
+    have hover : D.over i = D.over j := congrArg Prod.snd hij
+    rcases (D.visit_eq_iff i j).mp hvis with rfl | hj
+    · rfl
+    · subst j
+      exact (D.over_partner_ne i hover.symm).elim
+  · simp [Nat.mul_comm]
 
-/-- The index of a visit is its crossing together with its position in the pair. -/
-@[simp] theorem visitEquiv_apply (D : BasedOrientedGaussCode n) (v : Fin (2 * n)) :
-    D.visitEquiv v = (D.visit v, D.isSecondVisit v) := by
-  simp [visitEquiv]
+/-- Visits are equivalent to pairs consisting of a crossing and an over/under choice. -/
+noncomputable def visitDataEquiv (D : BasedOrientedGaussCode n) : Fin (2 * n) ≃ Fin n × Bool :=
+  Equiv.ofBijective D.visitData D.visitData_bijective
 
-/-- The visit to crossing `i` that is the first (`second = false`) or the second
-(`second = true`) of the two along the traversal. -/
-noncomputable def visitAt (D : BasedOrientedGaussCode n) (i : Fin n)
-    (second : Bool) : Fin (2 * n) :=
-  D.visitEquiv.symm (i, second)
-
-/-- The visit at a crossing and index is a visit to that crossing with that index. -/
-theorem visitEquiv_visitAt (D : BasedOrientedGaussCode n) (i : Fin n) (s : Bool) :
-    D.visitEquiv (D.visitAt i s) = (i, s) :=
-  D.visitEquiv.apply_symm_apply (i, s)
-
-/-- The visit selected at a crossing is a visit to that crossing. -/
-@[simp] theorem visit_visitAt (D : BasedOrientedGaussCode n) (i : Fin n) (s : Bool) :
-    D.visit (D.visitAt i s) = i := by
-  have h := D.visitEquiv_visitAt i s
-  rw [visitEquiv_apply] at h
-  exact congrArg Prod.fst h
-
-/-- The visit selected at a crossing has the requested position in the pair. -/
-@[simp] theorem isSecondVisit_visitAt (D : BasedOrientedGaussCode n) (i : Fin n) (s : Bool) :
-    D.isSecondVisit (D.visitAt i s) = s := by
-  have h := D.visitEquiv_visitAt i s
-  rw [visitEquiv_apply] at h
-  exact congrArg Prod.snd h
-
-/-- Selecting the visit at a visit's own crossing and position recovers it. -/
-@[simp] theorem visitAt_visit (D : BasedOrientedGaussCode n) (v : Fin (2 * n)) :
-    D.visitAt (D.visit v) (D.isSecondVisit v) = v := by
-  have h := D.visitEquiv.symm_apply_apply v
-  rwa [visitEquiv_apply] at h
-
-/-- The two visits to a crossing are partners in the matching. -/
-@[simp] theorem partner_visitAt (D : BasedOrientedGaussCode n) (i : Fin n) (s : Bool) :
-    D.partner.val (D.visitAt i s) = D.visitAt i (!s) := by
-  have h := D.visitAt_visit (D.partner.val (D.visitAt i s))
-  rw [visit_partner, visit_visitAt, isSecondVisit_partner, isSecondVisit_visitAt] at h
-  exact h.symm
-
-/-- The two visits to a crossing carry opposite over/under data. -/
-@[simp] theorem over_visitAt_not (D : BasedOrientedGaussCode n) (i : Fin n) (s : Bool) :
-    D.over (D.visitAt i (!s)) = !D.over (D.visitAt i s) := by
-  rw [← partner_visitAt, over_partner]
+/-- The visit equivalence sends a visit to its crossing label and over/under status. -/
+@[simp]
+theorem visitDataEquiv_apply (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
+    D.visitDataEquiv i = (D.visit i, D.over i) := by
+  rw [visitDataEquiv, Equiv.ofBijective_apply, D.visitData_apply]
 
 /-- The writhe is the sum of the signs of all crossings. -/
 def writhe (D : BasedOrientedGaussCode n) : ℤ :=
