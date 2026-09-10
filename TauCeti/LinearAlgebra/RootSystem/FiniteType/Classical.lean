@@ -57,11 +57,14 @@ again.
   matrix of each classical family is of finite type, at every rank. No rank restriction is imposed:
   the low-rank coincidences `B 1 = C 1 = A 1`, `C 2 = B 2` and `D 3 = A 3` are finite-type matrices
   too, and it is `TauCeti.DynkinType.Valid`, not this file, that discards them.
-* `TauCeti.posDef_cartanMatrix_A`, `TauCeti.posDef_cartanMatrix_D`: those two families being
-  simply laced, the constant-one vector is a symmetriser for them, and its symmetrisation is the
-  Cartan matrix itself read over `ℚ`; so the Gram models give positive definiteness of the Cartan
-  matrix with no symmetriser in the way, and the finite-type statements for `A` and `D` are read
-  off these. Types `B` and `C` have no such statement: their Cartan matrices are not symmetric.
+* `TauCeti.posDef_map_intCast_cartanMatrix_A`, `TauCeti.posDef_map_intCast_cartanMatrix_D`:
+  those two families being simply laced, the constant-one vector is a symmetriser for them, and
+  its symmetrisation is the Cartan matrix itself read over `ℚ`; so the Gram models give positive
+  definiteness of the Cartan matrix with no symmetriser in the way, and the finite-type statements
+  for `A` and `D` are read off these. Types `B` and `C` have no such statement at rank `2` and
+  above, where their Cartan matrices are not symmetric; the degenerate ranks `0` and `1`, at which
+  they coincide with `A 0` and `A 1`, are handled in
+  `TauCeti.LinearAlgebra.RootSystem.FiniteType.SimplyLaced`.
 
 Since `TauCeti.DynkinType.cartanMatrix` is Mathlib's matrix on each of these four constructors, a
 consumer that needs the standard Cartan matrix of a classical Dynkin type to be nonsingular reaches
@@ -189,17 +192,18 @@ private lemma simpleCorootsA_vecMul_injective (n : ℕ) :
 
 /-- **The Cartan matrix of type `Aₙ` is positive definite** over `ℚ`, at every rank: it is the
 Gram matrix of the simple coroots, which are independent. -/
-theorem posDef_cartanMatrix_A (n : ℕ) :
+theorem posDef_map_intCast_cartanMatrix_A (n : ℕ) :
     ((CartanMatrix.A n).map (Int.cast : ℤ → ℚ)).PosDef := by
   rw [← simpleCorootsA_mul_conjTranspose]
   exact Matrix.PosDef.mul_conjTranspose_self _ (simpleCorootsA_vecMul_injective n)
 
 /-- **The Cartan matrix of type `Aₙ` is of finite type**, at every rank. The family is simply
-laced, so the constant-one vector is a symmetriser and `TauCeti.posDef_cartanMatrix_A` is the
-positive definiteness of its symmetrisation. -/
+laced, so the constant-one vector is a symmetriser and `TauCeti.posDef_map_intCast_cartanMatrix_A`
+is the positive definiteness of its symmetrisation. -/
 theorem isFiniteType_cartanMatrix_A (n : ℕ) : IsFiniteType (CartanMatrix.A n) :=
-  isFiniteType_of_posDef_map (fun i ↦ by simp [CartanMatrix.A])
-    (fun i j hij ↦ CartanMatrix.A_apply_le_zero_of_ne n i j hij) (posDef_cartanMatrix_A n)
+  isFiniteType_of_posDef_map_intCast (fun i ↦ by simp [CartanMatrix.A])
+    (fun i j hij ↦ CartanMatrix.A_apply_le_zero_of_ne n i j hij)
+    (posDef_map_intCast_cartanMatrix_A n)
 
 /-! ### Type `Bₙ` -/
 
@@ -368,21 +372,23 @@ private lemma simpleCorootsD_vecMul_injective (k : ℕ) :
   · exact congrFun hzero j
 
 /-- **The Cartan matrix of type `Dₙ` is positive definite** over `ℚ`, at every rank: it is the
-Gram matrix of the simple coroots, which are independent. The ranks `0` and `1`, at which the
-family degenerates to the empty matrix and to `A 1`, are read off Mathlib's identities rather than
-from the coordinate model, whose fork needs two coordinates. -/
-theorem posDef_cartanMatrix_D : ∀ n : ℕ, ((CartanMatrix.D n).map (Int.cast : ℤ → ℚ)).PosDef
+Gram matrix of the simple coroots, which are independent. The coordinate model needs two
+coordinates for its fork, so the ranks `0` and `1` are handled apart: at rank `0` the matrix is
+empty and positive definiteness is vacuous, and at rank `1` Mathlib's `CartanMatrix.D_one`
+identifies the matrix with `A 1`. -/
+theorem posDef_map_intCast_cartanMatrix_D :
+    ∀ n : ℕ, ((CartanMatrix.D n).map (Int.cast : ℤ → ℚ)).PosDef
   | 0 => Matrix.posDef_of_isEmpty _
-  | 1 => by rw [CartanMatrix.D_one]; exact posDef_cartanMatrix_A 1
+  | 1 => by rw [CartanMatrix.D_one]; exact posDef_map_intCast_cartanMatrix_A 1
   | (k + 2) => by
       rw [← simpleCorootsD_mul_conjTranspose]
       exact Matrix.PosDef.mul_conjTranspose_self _ (simpleCorootsD_vecMul_injective k)
 
 /-- **The Cartan matrix of type `Dₙ` is of finite type**, at every rank. The family is simply
-laced, so the constant-one vector is a symmetriser and `TauCeti.posDef_cartanMatrix_D` is the
-positive definiteness of its symmetrisation. -/
+laced, so the constant-one vector is a symmetriser and `TauCeti.posDef_map_intCast_cartanMatrix_D`
+is the positive definiteness of its symmetrisation. -/
 theorem isFiniteType_cartanMatrix_D (n : ℕ) : IsFiniteType (CartanMatrix.D n) :=
-  isFiniteType_of_posDef_map (fun i ↦ CartanMatrix.D_diag n i)
-    (fun i j hij ↦ CartanMatrix.D_off_diag_nonpos n i j hij) (posDef_cartanMatrix_D n)
+  isFiniteType_of_posDef_map_intCast (fun i ↦ CartanMatrix.D_diag n i)
+    (fun i j hij ↦ CartanMatrix.D_off_diag_nonpos n i j hij) (posDef_map_intCast_cartanMatrix_D n)
 
 end TauCeti

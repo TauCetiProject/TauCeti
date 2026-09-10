@@ -26,7 +26,10 @@ denominator, which is positive. The index type need not be finite: a test vector
 the principal submatrix on the support of the vector.
 
 The file also records the standard way of certifying a rational matrix as positive definite: write
-it as `Bᴴ * B` for an explicit `B`, and check that it is invertible.
+it as `Bᴴ * B` for an explicit `B`, and check that it is invertible. One general fact about
+`Matrix.PosDef` over any ring is recorded alongside, since Mathlib does not state it: a matrix on
+an empty index type is positive definite, which is what the rank-zero members of the classical
+Cartan families need.
 
 ## Main results
 
@@ -67,8 +70,8 @@ private theorem exists_intCast_eq_mul_of_ne_zero [Finite n] {x : n → ℚ} (hx 
     simpa [hc0] using hi.symm
   exact ⟨(c : ℤ), z, nonZeroDivisors.coe_ne_zero c, hzne, hz⟩
 
-/-- **A matrix on an empty index type is positive definite**: it is Hermitian and there is no
-nonzero test vector. This is the rank-zero member of every family of Cartan matrices. -/
+/-- **A matrix on an empty index type is vacuously positive definite.** This is what the
+rank-zero members of the classical Cartan families `A 0`, `B 0`, `C 0` and `D 0` need. -/
 theorem _root_.Matrix.posDef_of_isEmpty {R : Type*} [Ring R] [PartialOrder R] [StarRing R]
     [IsEmpty n] (A : _root_.Matrix n n R) : A.PosDef :=
   ⟨_root_.Matrix.ext fun i _ ↦ isEmptyElim i,

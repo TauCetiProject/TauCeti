@@ -23,14 +23,14 @@ The hypothesis is placed on the matrix rather than on the type.  By
 `TauCeti.DynkinType.isSimplyLaced_cartanMatrix_iff` that is the weaker of the two: besides the
 simply-laced types `A`, `D`, `E₆`, `E₇` and `E₈` it admits `B 0`, `B 1`, `C 0` and `C 1`, whose
 matrices are the empty matrix and `A 1`.  The statement for a simply-laced type is the corollary
-`TauCeti.DynkinType.IsSimplyLaced.posDef_cartanMatrix`.
+`TauCeti.DynkinType.IsSimplyLaced.posDef_map_intCast_cartanMatrix`.
 
 ## Main results
 
-* `TauCeti.DynkinType.posDef_cartanMatrix_of_isSimplyLaced`: a simply-laced standard Cartan matrix
-  is positive definite over `ℚ`.
-* `TauCeti.DynkinType.IsSimplyLaced.posDef_cartanMatrix`: the Cartan matrix of a simply-laced
-  Dynkin type is positive definite over `ℚ`.
+* `TauCeti.DynkinType.posDef_map_intCast_cartanMatrix_of_isSimplyLaced`: a simply-laced standard
+  Cartan matrix is positive definite over `ℚ`.
+* `TauCeti.DynkinType.IsSimplyLaced.posDef_map_intCast_cartanMatrix`: the Cartan matrix of a
+  simply-laced Dynkin type is positive definite over `ℚ`.
 -/
 
 public section
@@ -38,31 +38,31 @@ public section
 namespace TauCeti.DynkinType
 
 /-- The degenerate types `B 0` and `B 1`, whose Cartan matrices are the empty matrix and `A 1`. -/
-private theorem posDef_cartanMatrix_B_of_le_one {n : ℕ} (hn : n ≤ 1) :
+private theorem posDef_map_intCast_cartanMatrix_B_of_le_one {n : ℕ} (hn : n ≤ 1) :
     ((CartanMatrix.B n).map (Int.cast : ℤ → ℚ)).PosDef := by
   interval_cases n
   · exact Matrix.posDef_of_isEmpty _
   · rw [CartanMatrix.B_one]
-    exact posDef_cartanMatrix_A 1
+    exact posDef_map_intCast_cartanMatrix_A 1
 
 /-- **A simply-laced standard Cartan matrix is positive definite** over `ℚ`.  The types whose
 matrix is simply laced are `A`, `D`, `E₆`, `E₇`, `E₈` and the degenerate `B 0`, `B 1`, `C 0`,
 `C 1` (`TauCeti.DynkinType.isSimplyLaced_cartanMatrix_iff`); the last four have the empty matrix or
 `A 1` as their Cartan matrix. -/
-theorem posDef_cartanMatrix_of_isSimplyLaced (t : DynkinType) (ht : t.cartanMatrix.IsSimplyLaced) :
-    (t.cartanMatrix.map (Int.cast : ℤ → ℚ)).PosDef := by
+theorem posDef_map_intCast_cartanMatrix_of_isSimplyLaced (t : DynkinType)
+    (ht : t.cartanMatrix.IsSimplyLaced) : (t.cartanMatrix.map (Int.cast : ℤ → ℚ)).PosDef := by
   rw [isSimplyLaced_cartanMatrix_iff] at ht
   cases t with
-  | A n => rw [cartanMatrix_A]; exact posDef_cartanMatrix_A n
-  | D n => rw [cartanMatrix_D]; exact posDef_cartanMatrix_D n
-  | E6 => rw [cartanMatrix_E6]; exact posDef_cartanMatrix_E6
-  | E7 => rw [cartanMatrix_E7]; exact posDef_cartanMatrix_E7
-  | E8 => rw [cartanMatrix_E8]; exact posDef_cartanMatrix_E8
+  | A n => rw [cartanMatrix_A]; exact posDef_map_intCast_cartanMatrix_A n
+  | D n => rw [cartanMatrix_D]; exact posDef_map_intCast_cartanMatrix_D n
+  | E6 => rw [cartanMatrix_E6]; exact posDef_map_intCast_cartanMatrix_E6
+  | E7 => rw [cartanMatrix_E7]; exact posDef_map_intCast_cartanMatrix_E7
+  | E8 => rw [cartanMatrix_E8]; exact posDef_map_intCast_cartanMatrix_E8
   | B n =>
     rw [cartanMatrix_B]
-    exact posDef_cartanMatrix_B_of_le_one (by simpa using ht)
+    exact posDef_map_intCast_cartanMatrix_B_of_le_one (by simpa using ht)
   | C n =>
-    have h := (posDef_cartanMatrix_B_of_le_one (n := n) (by simpa using ht)).transpose
+    have h := (posDef_map_intCast_cartanMatrix_B_of_le_one (n := n) (by simpa using ht)).transpose
     rw [← Matrix.transpose_map, CartanMatrix.B_transpose] at h
     rw [cartanMatrix_C]
     exact h
@@ -71,8 +71,9 @@ theorem posDef_cartanMatrix_of_isSimplyLaced (t : DynkinType) (ht : t.cartanMatr
 
 /-- **The Cartan matrix of a simply-laced Dynkin type is positive definite** over `ℚ`.  The
 simply-laced types are exactly `A`, `D`, `E₆`, `E₇` and `E₈`. -/
-theorem IsSimplyLaced.posDef_cartanMatrix {t : DynkinType} (ht : t.IsSimplyLaced) :
+theorem IsSimplyLaced.posDef_map_intCast_cartanMatrix {t : DynkinType} (ht : t.IsSimplyLaced) :
     (t.cartanMatrix.map (Int.cast : ℤ → ℚ)).PosDef :=
-  posDef_cartanMatrix_of_isSimplyLaced t ((isSimplyLaced_cartanMatrix_iff t).mpr (Or.inl ht))
+  posDef_map_intCast_cartanMatrix_of_isSimplyLaced t
+    ((isSimplyLaced_cartanMatrix_iff t).mpr (Or.inl ht))
 
 end TauCeti.DynkinType
