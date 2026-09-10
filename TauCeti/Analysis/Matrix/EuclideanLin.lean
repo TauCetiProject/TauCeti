@@ -49,12 +49,9 @@ theorem inner_toEuclideanLin_toEuclideanLin (A : Matrix κ ι 𝕜) (B : Matrix 
 
 section Invertible
 
-/-- **The continuous linear equivalence of an invertible matrix** on Euclidean space.
-
-This specialises `ContinuousLinearMap.toContinuousLinearEquivOfDetNeZero` to a matrix: the
-hypothesis becomes invertibility of `A.det`, and `Matrix.toEuclideanCLE_symm_apply` identifies the
-inverse with the map of `A⁻¹` rather than with the abstract `LinearMap.inverse`, so a change of
-variables along it substitutes `A⁻¹` with no further work. -/
+/-- **The continuous linear equivalence of an invertible matrix** on Euclidean space, defined
+when `A.det` is a unit. It acts as `A` does, and its inverse is the map of `A⁻¹`, so a change of
+variables along it substitutes `A⁻¹`. -/
 noncomputable def toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : IsUnit A.det) :
     EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι :=
   (toEuclideanCLM (𝕜 := 𝕜) A).toContinuousLinearEquivOfDetNeZero <| by

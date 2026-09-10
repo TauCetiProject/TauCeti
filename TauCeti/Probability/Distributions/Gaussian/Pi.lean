@@ -44,8 +44,8 @@ variable (ι : Type*) [Fintype ι]
 theorem prod_gaussianPDFReal_pos (x : ι → ℝ) : 0 < ∏ i, gaussianPDFReal 0 1 (x i) :=
   Finset.prod_pos fun i _ => gaussianPDFReal_pos 0 1 (x i) one_ne_zero
 
-/-- **The joint standard Gaussian density on `ℝ^ι` in closed form.** Each factor contributes one
-power of `(2π)^(-1/2)`, and the exponents add up to minus half the sum of the squared
+/-- **The joint standard Gaussian density on `ℝ^ι` in closed form**: the normalisation
+`(2π)^(-d/2)` in the dimension `d`, times the exponential of minus half the sum of the squared
 coordinates. -/
 theorem prod_gaussianPDFReal_zero_one (x : ι → ℝ) :
     ∏ i, gaussianPDFReal 0 1 (x i)

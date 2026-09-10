@@ -34,11 +34,8 @@ namespace MeasurableEquiv
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
 
 /-- **A weight travels with the measure it weights.** Pushing `μ.withDensity f` forward along a
-measurable equivalence `e` gives the pushforward of `μ` weighted by `f ∘ e.symm`.
-
-No measurability of `f` is needed: on a measurable set both sides unfold to the lower integral of
-`f` over the preimage, and `MeasureTheory.lintegral_map_equiv` transports that integral along `e`
-with no hypothesis on the integrand. -/
+measurable equivalence `e` gives the pushforward of `μ` weighted by `f ∘ e.symm`. The weight `f`
+is arbitrary; no measurability of it is required. -/
 theorem map_withDensity (e : α ≃ᵐ β) (μ : Measure α) (f : α → ℝ≥0∞) :
     (μ.withDensity f).map e = (μ.map e).withDensity fun y => f (e.symm y) := by
   ext s hs
