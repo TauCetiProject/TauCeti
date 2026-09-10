@@ -80,11 +80,32 @@ theorem card [Finite ι] :
       Nat.card D ^ Nat.card ι * (Nat.card ι).factorial := by
   rw [SemidirectProduct.card, Nat.card_fun, Nat.card_perm]
 
+end WreathProduct
+
+namespace PermSubgroupWreathProduct
+
+variable {D ι}
+
+/-- Multiplication in a permutation-subgroup wreath product, written in coordinates. -/
+@[simp]
+theorem mul_left (Q : Subgroup (Equiv.Perm ι)) (a b : PermSubgroupWreathProduct D ι Q) (i : ι) :
+    (a * b).left i = a.left i * b.left ((a.right : Equiv.Perm ι)⁻¹ i) := by
+  have h := congrFun (SemidirectProduct.mul_left a b) i
+  rw [Pi.mul_apply] at h
+  rw [MonoidHom.comp_apply, mulAutArrow_apply_apply] at h
+  exact h
+
 /-- The natural cardinality of a permutation-subgroup wreath product with finite index type. -/
-theorem card_permSubgroup (Q : Subgroup (Equiv.Perm ι)) [Finite ι] :
+theorem card (Q : Subgroup (Equiv.Perm ι)) [Finite ι] :
     Nat.card (PermSubgroupWreathProduct D ι Q) =
       Nat.card D ^ Nat.card ι * Nat.card Q := by
   rw [SemidirectProduct.card, Nat.card_fun]
+
+end PermSubgroupWreathProduct
+
+namespace WreathProduct
+
+variable {D ι}
 
 /-- A wreath product over a singleton index type is canonically isomorphic to its base group. -/
 def finOneEquiv : WreathProduct D (Fin 1) ≃* D where
@@ -106,7 +127,7 @@ theorem finOneEquiv_apply (w : WreathProduct D (Fin 1)) : finOneEquiv w = w.left
   simp [finOneEquiv]
 
 @[simp]
-theorem finOneEquiv_symm_apply (d : D) :
+theorem finOneEquiv_symm_left (d : D) :
     (finOneEquiv.symm d).left = fun _ ↦ d := by
   simp [finOneEquiv]
 
