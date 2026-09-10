@@ -100,6 +100,7 @@ theorem cholesky_coe {p : ℕ} (A : PosDefMatrix p) :
   (rfl)
 
 /-- A positive-definite matrix is the product of its Cholesky factor and its transpose. -/
+@[simp]
 theorem cholesky_mul_transpose {p : ℕ} (A : PosDefMatrix p) :
     (cholesky A).1 * ((cholesky A).1)ᵀ =
       (A.1 : Matrix (Fin p) (Fin p) ℝ) :=

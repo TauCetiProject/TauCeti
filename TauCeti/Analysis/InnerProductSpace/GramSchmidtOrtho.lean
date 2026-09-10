@@ -36,6 +36,7 @@ variable {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι] [WellFoundedLT
 /-- The Gram-Schmidt process does not change the coefficient of a basis vector along itself:
 `gramSchmidt 𝕜 b i` differs from `b i` by a combination of the strictly earlier `gramSchmidt`
 vectors, each of which has no component along `b i`. -/
+@[simp]
 theorem repr_gramSchmidt_self_eq_one (b : Basis ι 𝕜 E) (i : ι) :
     b.repr (gramSchmidt 𝕜 b i) i = 1 := by
   have h := congrArg (fun x ↦ b.repr x i) (gramSchmidt_def'' 𝕜 (b : ι → E) i)
