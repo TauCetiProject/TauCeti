@@ -94,7 +94,7 @@ theorem mem_range_iff (L : SmoothLinkEmbedding I M n) (x : M) :
   simp only [range, Set.mem_iUnion, Set.mem_range]
 
 /-- The range of a component is contained in the range of the whole link. -/
-theorem component_range_subset (L : SmoothLinkEmbedding I M n) (i : Fin n) :
+theorem range_component_subset_range (L : SmoothLinkEmbedding I M n) (i : Fin n) :
     Set.range (L i) ⊆ L.range :=
   Set.subset_iUnion (fun j ↦ Set.range (L j)) i
 
@@ -112,6 +112,14 @@ theorem existsUnique_component_of_mem_range (L : SmoothLinkEmbedding I M n) {x :
 def empty : SmoothLinkEmbedding I M 0 where
   component := Fin.elim0
   pairwiseDisjoint_range := Subsingleton.pairwise
+
+/-- The empty smooth link is the unique smooth link with no components. -/
+instance instUniqueZero : Unique (SmoothLinkEmbedding I M 0) where
+  default := empty
+  uniq L := by
+    apply SmoothLinkEmbedding.ext
+    intro i
+    exact Fin.elim0 i
 
 /-- The empty smooth link occupies the empty subset. -/
 @[simp]
@@ -195,6 +203,20 @@ theorem range_relabel (L : SmoothLinkEmbedding I M n) (e : Equiv.Perm (Fin n)) :
   simpa only [range, relabel_apply] using
     e.symm.surjective.iUnion_comp (fun i ↦ Set.range (L i))
 
+/-- Relabeling the empty link leaves it empty. -/
+@[simp]
+theorem relabel_empty (e : Equiv.Perm (Fin 0)) :
+    (empty (I := I) (M := M)).relabel e = empty :=
+  Subsingleton.elim _ _
+
+/-- Relabeling a singleton link leaves its sole component unchanged. -/
+@[simp]
+theorem relabel_singleton (f : SmoothCircleEmbedding I M) (e : Equiv.Perm (Fin 1)) :
+    (singleton f).relabel e = singleton f := by
+  apply SmoothLinkEmbedding.ext
+  intro i
+  simp
+
 /-- Component permutations act on smooth links by relabeling. -/
 instance instMulActionPerm : MulAction (Equiv.Perm (Fin n)) (SmoothLinkEmbedding I M n) where
   smul e L := L.relabel e
@@ -233,6 +255,19 @@ theorem reverse_reverse (L : SmoothLinkEmbedding I M n) : L.reverse.reverse = L 
 @[simp]
 theorem range_reverse (L : SmoothLinkEmbedding I M n) : L.reverse.range = L.range := by
   simp only [range, reverse_apply, SmoothCircleEmbedding.range_reverse]
+
+/-- Reversing the empty link leaves it empty. -/
+@[simp]
+theorem reverse_empty : (empty (I := I) (M := M)).reverse = empty :=
+  Subsingleton.elim _ _
+
+/-- Reversing a singleton link reverses its sole component. -/
+@[simp]
+theorem reverse_singleton (f : SmoothCircleEmbedding I M) :
+    (singleton f).reverse = singleton f.reverse := by
+  apply SmoothLinkEmbedding.ext
+  intro i
+  simp
 
 /-- Relabeling commutes with reversing every component orientation. -/
 @[simp]
@@ -305,6 +340,20 @@ theorem reverse_transDiffeomorph (L : SmoothLinkEmbedding I M n) (e : M ≃ₘ�
   intro i
   simpa only [reverse_apply, transDiffeomorph_apply] using
     (L i).reverse_transDiffeomorph e
+
+/-- Transporting the empty link leaves it empty. -/
+@[simp]
+theorem transDiffeomorph_empty (e : M ≃ₘ⟮I, I⟯ P) :
+    (empty (I := I) (M := M)).transDiffeomorph e = empty :=
+  Subsingleton.elim _ _
+
+/-- Transporting a singleton link transports its sole component. -/
+@[simp]
+theorem transDiffeomorph_singleton (f : SmoothCircleEmbedding I M) (e : M ≃ₘ⟮I, I⟯ P) :
+    (singleton f).transDiffeomorph e = singleton (f.transDiffeomorph e) := by
+  apply SmoothLinkEmbedding.ext
+  intro i
+  simp
 
 end Ambient
 
