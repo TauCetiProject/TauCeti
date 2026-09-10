@@ -14,9 +14,9 @@ public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
 Mathlib knows that a `C^n` local diffeomorphism has invertible differentials
 (`IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv`) and lists the converse as a TODO in
-`Mathlib/Geometry/Manifold/LocalDiffeomorph.lean`. This file proves that converse for boundaryless
-Banach manifolds: a map which is `C^n` on an open set, with `1 ≤ n`, and whose `mfderiv` at a point
-of that set is a continuous linear equivalence, is a `C^n` local diffeomorphism at that point.
+`Mathlib/Geometry/Manifold/LocalDiffeomorph.lean`. This file proves that converse at interior
+points of Banach manifolds: a map which is `C^n` on an open set, with `1 ≤ n`, and whose `mfderiv`
+at a point of that set is a continuous linear equivalence, is a `C^n` local diffeomorphism there.
 
 The proof reads `f` in the extended charts at `x` and at `f x`, restricts their targets to their
 interiors, applies the normed-space inverse function theorem of
@@ -26,8 +26,8 @@ in these restrictions, even when the ambient models themselves have boundary.
 
 ## Main results
 
-* `TauCeti.extChartPartialDiffeomorph`: an extended chart of a boundaryless manifold, as a partial
-  diffeomorphism onto its open image in the model space.
+* `TauCeti.extChartPartialDiffeomorph`: an extended chart restricted to the interior of its target,
+  as a partial diffeomorphism onto an open subset of the model space.
 * `TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph`: an open partial homeomorphism between
   model spaces which is `C^n` in both directions, as a partial diffeomorphism.
 * `TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq`: the inverse function theorem for manifolds.
@@ -71,10 +71,14 @@ def extChartPartialDiffeomorph (x : M) : PartialDiffeomorph I 𝓘(𝕂, E) M E 
   have hsource : IsOpen (chart.source ∩ chart ⁻¹' V) :=
     (continuousOn_extChartAt (I := I) x).isOpen_inter_preimage
       (isOpen_extChartAt_source (I := I) x) isOpen_interior
-  let ce := (PartialEquiv.IsImage.of_preimage_eq
-    (e := chart) (s := chart ⁻¹' V) (t := V) rfl).restr
+  let himage := PartialEquiv.IsImage.of_preimage_eq
+    (e := chart) (s := chart ⁻¹' V) (t := V) rfl
+  let ce := himage.restr
   have htarget : ce.target = V := by
-    change chart.target ∩ V = V
+    -- `ce` is exactly the restriction supplied by `himage`; expose it to use the named target
+    -- equation instead of unfolding the `PartialEquiv` constructor.
+    change himage.restr.target = V
+    rw [PartialEquiv.IsImage.restr_target]
     exact inter_eq_right.2 interior_subset
   exact {
     toPartialEquiv := ce
@@ -96,8 +100,32 @@ theorem extChartPartialDiffeomorph_toPartialEquiv (x : M) :
         (s := (extChartAt I x) ⁻¹' interior (extChartAt I x).target)
         (t := interior (extChartAt I x).target) rfl).restr := (rfl)
 
+theorem extChartPartialDiffeomorph_source (x : M) :
+    (extChartPartialDiffeomorph I n x).source =
+      (extChartAt I x).source ∩
+        (extChartAt I x) ⁻¹' interior (extChartAt I x).target := by
+  rw [extChartPartialDiffeomorph_toPartialEquiv,
+    PartialEquiv.IsImage.restr_source]
+
+theorem extChartPartialDiffeomorph_target (x : M) :
+    (extChartPartialDiffeomorph I n x).target = interior (extChartAt I x).target := by
+  rw [extChartPartialDiffeomorph_toPartialEquiv,
+    PartialEquiv.IsImage.restr_target,
+    inter_eq_right.2 interior_subset]
+
 theorem coe_extChartPartialDiffeomorph (x : M) :
-    ⇑(extChartPartialDiffeomorph I n x) = extChartAt I x := (rfl)
+    ⇑(extChartPartialDiffeomorph I n x) = extChartAt I x := by
+  rw [extChartPartialDiffeomorph_toPartialEquiv,
+    PartialEquiv.IsImage.restr_apply]
+
+theorem coe_extChartPartialDiffeomorph_symm (x : M) :
+    ⇑(extChartPartialDiffeomorph I n x).symm = (extChartAt I x).symm := by
+  -- Symmetry commutes definitionally with the underlying partial equivalence; expose that
+  -- projection so the named restriction equation can identify the inverse function.
+  change ⇑(extChartPartialDiffeomorph I n x).toPartialEquiv.symm =
+    ⇑(extChartAt I x).symm
+  rw [extChartPartialDiffeomorph_toPartialEquiv,
+    PartialEquiv.IsImage.restr_symm_apply]
 
 end Charts
 
@@ -150,15 +178,15 @@ section InverseFunctionTheorem
 variable [CompleteSpace E] {I : ModelWithCorners 𝕂 E H}
   {J : ModelWithCorners 𝕂 F G} {n : WithTop ℕ∞}
   [IsManifold I n M] [IsManifold J n N] {f : M → N} {s : Set M} {x : M}
-  [BoundarylessManifold I M] [BoundarylessManifold J N]
 
 /-- **The inverse function theorem for manifolds.** If `f` is `C^n` on an open set `s` with
-`1 ≤ n`, and its differential at `x ∈ s` is a continuous linear equivalence, then `f` is a `C^n`
-local diffeomorphism at `x`.
+`1 ≤ n`, both `x ∈ s` and `f x` are interior points, and the differential at `x` is a continuous
+linear equivalence, then `f` is a `C^n` local diffeomorphism at `x`.
 
 Mathlib's `Mathlib/Geometry/Manifold/LocalDiffeomorph.lean` lists this implication as a TODO. -/
 theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : IsOpen s)
-    (hx : x ∈ s) (hn : 1 ≤ n) {e : TangentSpace I x ≃L[𝕂] TangentSpace J (f x)}
+    (hx : x ∈ s) (hIx : I.IsInteriorPoint x) (hJfx : J.IsInteriorPoint (f x))
+    (hn : 1 ≤ n) {e : TangentSpace I x ≃L[𝕂] TangentSpace J (f x)}
     (he : (e : TangentSpace I x →L[𝕂] TangentSpace J (f x)) = mfderiv I J f x) :
     IsLocalDiffeomorphAt I J n f x := by
   have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
@@ -174,17 +202,16 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
       isOpen_interior hu
   have hxt : φ x ∈ t := by
     refine ⟨?_, ?_⟩
-    · simpa only [hφ] using
-        (ModelWithCorners.isInteriorPoint_iff (I := I)).mp
-          (BoundarylessManifold.isInteriorPoint : I.IsInteriorPoint x)
+    · simpa only [hφ] using (ModelWithCorners.isInteriorPoint_iff (I := I)).mp hIx
     simp only [hφ, hψ, mem_preimage, extChartAt_to_inv]
     exact ⟨hx, mem_extChartAt_source (f x)⟩
   -- `g` on `t` is exactly the chart representative of `f` appearing in `contMDiffOn_iff`.
   have hgt : ContDiffOn 𝕂 n g t := by
     have hfull := (contMDiffOn_iff.1 hf).2 x (f x)
-    apply (show ContDiffOn 𝕂 n g
-      (φ.target ∩ φ.symm ⁻¹' (s ∩ f ⁻¹' ψ.source)) by
-        simpa only [hg, hφ, hψ] using hfull).mono
+    have hcoord : ContDiffOn 𝕂 n g
+        (φ.target ∩ φ.symm ⁻¹' (s ∩ f ⁻¹' ψ.source)) := by
+      simpa only [hg, hφ, hψ] using hfull
+    apply hcoord.mono
     intro y hy
     rw [ht] at hy
     exact ⟨interior_subset hy.1, hy.2⟩
@@ -197,10 +224,9 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
     rw [he, hmdiff.mfderiv]
     rw [fderivWithin_of_mem_nhds]
     · exact hwritten
-    · simpa only [hφ] using
-        (mem_interior_iff_mem_nhds.mp
-          (show extChartAt I x x ∈ interior (range I) from
-            BoundarylessManifold.isInteriorPoint))
+    · -- `IsInteriorPoint` is defined by membership in the interior of the model range, the
+      -- domain used by the extended-coordinate derivative.
+      simpa only [hφ] using mem_interior_iff_mem_nhds.mp hIx
   obtain ⟨Θ, hΘcoe, hΘmem, hΘsub, hΘsymm⟩ :=
     ContDiffOn.exists_openPartialHomeomorph hgt htopen hxt hn hfd
   have hΘsmooth : ContDiffOn 𝕂 n Θ Θ.source := hΘcoe ▸ hgt.mono hΘsub
@@ -212,10 +238,11 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
   -- The source of each composite comes from `OpenPartialHomeomorph.trans_source`.
   have hΨsource : Ψ.source = Θ.source ∩ Θ ⁻¹' interior ψ.target := by
     rw [hΨ, PartialDiffeomorph.trans_toPartialEquiv, OpenPartialHomeomorph.trans_source]
-    congr 2
-    change (extChartAt J (f x)).target ∩ interior (extChartAt J (f x)).target =
-      interior ψ.target
-    rw [inter_eq_right.2 interior_subset, hψ]
+    -- Both constructors retain the source and forward function of their underlying partial
+    -- equivalences. Expose those projections, then use the chart's semantic target equation.
+    change Θ.source ∩ Θ ⁻¹' (extChartPartialDiffeomorph J n (f x)).target =
+      Θ.source ∩ Θ ⁻¹' interior ψ.target
+    rw [extChartPartialDiffeomorph_target, hψ]
   have hsource : Φ.source =
       (φ.source ∩ φ ⁻¹' interior φ.target) ∩
         φ ⁻¹' (Θ.source ∩ Θ ⁻¹' interior ψ.target) := by
@@ -226,19 +253,13 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
   have hinvx : φ.symm (φ x) = x := by rw [hφ]; exact extChartAt_to_inv x
   have hgx : Θ (φ x) = ψ (f x) := by rw [hΘcoe]; simp only [hg, Function.comp_apply, hinvx]
   have hxφ : φ x ∈ interior φ.target := by
-    simpa only [hφ] using
-      (ModelWithCorners.isInteriorPoint_iff (I := I)).mp
-        (BoundarylessManifold.isInteriorPoint : I.IsInteriorPoint x)
+    simpa only [hφ] using (ModelWithCorners.isInteriorPoint_iff (I := I)).mp hIx
   have hxψ : ψ (f x) ∈ interior ψ.target := by
-    simpa only [hψ] using
-      (ModelWithCorners.isInteriorPoint_iff (I := J)).mp
-        (BoundarylessManifold.isInteriorPoint : J.IsInteriorPoint (f x))
+    simpa only [hψ] using (ModelWithCorners.isInteriorPoint_iff (I := J)).mp hJfx
   have hxΦ : x ∈ Φ.source := by
     rw [hsource]
     refine ⟨⟨mem_extChartAt_source x, hxφ⟩, hΘmem, ?_⟩
-    change Θ (φ x) ∈ interior ψ.target
-    rw [hgx]
-    exact hxψ
+    simpa only [mem_preimage, hgx] using hxψ
   refine isLocalDiffeomorphAt_of_eqOn hxΦ fun y hy => ?_
   rw [hsource] at hy
   obtain ⟨⟨hy₁, -⟩, hy₂, -⟩ := hy
@@ -249,17 +270,19 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
   have hgy : Θ (φ y) = ψ (f y) := by rw [hΘcoe]; simp only [hg, Function.comp_apply, hyinv]
   rw [hcoe y, hgy, ψ.left_inv hyN]
 
-/-- For a map which is `C^n` on an open set, with `1 ≤ n`, being a `C^n` local diffeomorphism at a
-point of that set is exactly invertibility of the differential there. -/
+/-- For a map which is `C^n` on an open set, with `1 ≤ n`, being a `C^n` local diffeomorphism at an
+interior point whose image is interior is exactly invertibility of the differential there. -/
 theorem isLocalDiffeomorphAt_iff_exists_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : IsOpen s)
-    (hx : x ∈ s) (hn : 1 ≤ n) :
+    (hx : x ∈ s) (hIx : I.IsInteriorPoint x) (hJfx : J.IsInteriorPoint (f x)) (hn : 1 ≤ n) :
     IsLocalDiffeomorphAt I J n f x ↔
       ∃ e : TangentSpace I x ≃L[𝕂] TangentSpace J (f x),
         (e : TangentSpace I x →L[𝕂] TangentSpace J (f x)) = mfderiv I J f x := by
   have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
   refine ⟨fun h => ⟨h.mfderivToContinuousLinearEquiv hn0, rfl⟩, ?_⟩
   rintro ⟨e, he⟩
-  exact isLocalDiffeomorphAt_of_mfderiv_eq hf hs hx hn he
+  exact isLocalDiffeomorphAt_of_mfderiv_eq hf hs hx hIx hJfx hn he
+
+variable [BoundarylessManifold I M] [BoundarylessManifold J N]
 
 /-- **The inverse function theorem for manifolds**, global form: a `C^n` map (`1 ≤ n`) all of whose
 differentials are continuous linear equivalences is a `C^n` local diffeomorphism. -/
@@ -268,8 +291,8 @@ theorem isLocalDiffeomorph_of_mfderiv_eq (hf : ContMDiff I J n f) (hn : 1 ≤ n)
       (e : TangentSpace I y →L[𝕂] TangentSpace J (f y)) = mfderiv I J f y) :
     IsLocalDiffeomorph I J n f := fun y => by
   obtain ⟨e, hey⟩ := he y
-  exact isLocalDiffeomorphAt_of_mfderiv_eq (s := univ) hf.contMDiffOn isOpen_univ (mem_univ y) hn
-    hey
+  exact isLocalDiffeomorphAt_of_mfderiv_eq (s := univ) hf.contMDiffOn isOpen_univ (mem_univ y)
+    BoundarylessManifold.isInteriorPoint BoundarylessManifold.isInteriorPoint hn hey
 
 end InverseFunctionTheorem
 

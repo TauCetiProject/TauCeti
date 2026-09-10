@@ -564,37 +564,29 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
   -- the chart to that interior gives the canonical smooth partial diffeomorphism.
   let c : PartialDiffeomorph I 𝓘(ℝ, E) G E ∞ :=
     TauCeti.extChartPartialDiffeomorph I ∞ (1 : G)
-  have hc : c.toPartialEquiv =
-      (PartialEquiv.IsImage.of_preimage_eq
-        (e := extChartAt I (1 : G))
-        (s := (extChartAt I (1 : G)) ⁻¹' V) (t := V) rfl).restr := by
-    simpa only [c, V, chart] using
-      TauCeti.extChartPartialDiffeomorph_toPartialEquiv I ∞ (1 : G)
   have hctarget : c.target = V := by
-    rw [hc]
-    exact Set.inter_eq_right.2 interior_subset
+    simpa only [c, V, chart] using
+      TauCeti.extChartPartialDiffeomorph_target I ∞ (1 : G)
   have hcsymm : ⇑c.symm = chart.symm := by
-    funext y
-    change c.toPartialEquiv.symm y = chart.symm y
-    rw [hc]
-    rfl
+    simpa only [c, chart] using
+      TauCeti.coe_extChartPartialDiffeomorph_symm I ∞ (1 : G)
   -- Transport the charted local diffeomorphism `d : E ↔ E` back through the restricted identity
   -- chart. The resulting `q : E ↔ G` has the desired source, target, and smooth inverse.
   let q := d.trans c.symm
+  have hqsource : q.source = d.source ∩ d ⁻¹' c.symm.source := rfl
+  have hcsymmsource : c.symm.source = c.target :=
+    OpenPartialHomeomorph.symm_source c.toOpenPartialHomeomorph
   have hzeroq : (0 : E) ∈ q.source := by
-    change 0 ∈ d.source ∩ d ⁻¹' c.symm.source
+    rw [hqsource]
     refine ⟨hzero, ?_⟩
-    change d 0 ∈ c.target
+    rw [Set.mem_preimage, hcsymmsource]
     rw [hctarget]
     rw [← hd, mulInvariantExpChart_zero]
     exact honeV
   have hq (x : E) (hx : x ∈ q.source) : f x = q x := by
-    change x ∈ d.source ∩ d ⁻¹' c.symm.source at hx
-    change f x = c.symm (d x)
-    rw [hcsymm]
-    rw [← hd]
-    change f x = (extChartAt I (1 : G)).symm
-      (extChartAt I (1 : G) (f x))
+    rw [hqsource] at hx
+    have hqapply : q x = c.symm (d x) := rfl
+    rw [hqapply, hcsymm, ← hd]
     exact ((extChartAt I (1 : G)).left_inv (hdsource hx.1)).symm
   -- Although `q` agrees with `f` on its source, its total forward function retains the composed
   -- chart implementation. Re-wrap its partial equivalence using literally `f` so the final local
@@ -629,8 +621,7 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
         (contMDiff_mulInvariantExp (I := I) (G := G)).contMDiffOn
     contMDiffOn_invFun := q.contMDiffOn_invFun
   }
-  change IsLocalDiffeomorphAt 𝓘(ℝ, E) I ∞ f 0
-  exact p.isLocalDiffeomorphAt 𝓘(ℝ, E) I ∞ hzeroq
+  simpa only [f] using p.isLocalDiffeomorphAt 𝓘(ℝ, E) I ∞ hzeroq
 
 /-- The canonical Lie-group exponential is a smooth local diffeomorphism at zero. -/
 theorem isLocalDiffeomorphAt_lieExp_zero [FiniteDimensional ℝ E]
