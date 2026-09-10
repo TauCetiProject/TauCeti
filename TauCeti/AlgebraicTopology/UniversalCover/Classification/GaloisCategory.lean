@@ -243,10 +243,9 @@ theorem fiberActionFintypeCatEquivalence_functor :
     rw [Equivalence.trans_functor, finiteFiberActionEquivalence_functor,
       FiniteAction.equivalenceActionFintypeCat_functor]
 
-/-- The fibre of a finite covering space over `x₀`, as a functor to finite sets.
-
-The body is exposed so that actions transported through the classification equivalence act
-definitionally on the values of this functor. -/
+/-- The fibre of a finite covering space over `x₀`, as a functor to finite sets. -/
+-- Expose the body so actions transported through the classification equivalence act
+-- definitionally on the values of this functor.
 @[expose] def fiberFunctor : FiniteCoveringSpace X ⥤ FintypeCat.{u} :=
   (fiberActionFintypeCatEquivalence x₀).functor ⋙ Action.forget FintypeCat _
 

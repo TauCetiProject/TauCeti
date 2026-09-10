@@ -29,6 +29,8 @@ space.
   completion of `π₁(X, x₀)` is a fundamental group of the finite-cover fibre functor.
 * `TauCeti.FiniteCoveringSpace.profiniteCompletionAutFiberFunctorMulEquiv`: the resulting
   multiplicative equivalence with the automorphism group of the fibre functor.
+* `TauCeti.FiniteCoveringSpace.existsUnique_profiniteCompletion_smul_eq`: every automorphism is
+  induced on every fibre by a unique element of the profinite completion.
 * `TauCeti.FiniteCoveringSpace.profiniteCompletion_etaFn_smul`: the extended action restricts
   along `π₁(X, x₀) → π̂₁(X, x₀)` to the classified monodromy action.
 * `TauCeti.FiniteCoveringSpace.profiniteCompletionAutFiberFunctorMulEquiv_isHomeomorph`: this
@@ -36,8 +38,7 @@ space.
   automorphisms.
 
 The profinite-completion action is constructed in
-`TauCeti.CategoryTheory.Action.ProfiniteCompletion` from Mathlib's universal property. No
-external formalization is copied here.
+`TauCeti.CategoryTheory.Action.ProfiniteCompletion` from Mathlib's universal property.
 -/
 
 public section
@@ -59,7 +60,7 @@ This is the continuous extension of the monodromy action. -/
     MulAction
       (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of (FundamentalGroup X x₀)))
       ((fiberFunctor x₀).obj p) :=
-  TauCeti.mulActionComp (fiberActionFintypeCatEquivalence x₀).functor
+  CategoryTheory.Functor.mulActionComp (fiberActionFintypeCatEquivalence x₀).functor
     (Action.forget FintypeCat (FundamentalGroup X x₀))
     (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of (FundamentalGroup X x₀))) p
 
@@ -68,10 +69,10 @@ functor.** -/
 instance instProfiniteCompletionIsFundamentalGroup :
     PreGaloisCategory.IsFundamentalGroup (fiberFunctor x₀)
       (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of (FundamentalGroup X x₀))) := by
-  exact TauCeti.isFundamentalGroup_comp_of_equivalence
+  exact CategoryTheory.Functor.isFundamentalGroup_comp
+    (fiberActionFintypeCatEquivalence x₀).functor
     (F := Action.forget FintypeCat (FundamentalGroup X x₀))
     (G := ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of (FundamentalGroup X x₀)))
-    (fiberActionFintypeCatEquivalence x₀)
 
 variable {x₀}
 
@@ -108,6 +109,42 @@ theorem profiniteCompletionAutFiberFunctorMulEquiv_hom_app_apply
   PreGaloisCategory.toAut_hom_app_apply
     (F := fiberFunctor x₀)
     (G := ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of (FundamentalGroup X x₀))) g e
+
+/-- The inverse of the automorphism attached to an element of the profinite completion acts by
+the inverse element on every finite fibre. -/
+@[simp]
+theorem profiniteCompletionAutFiberFunctorMulEquiv_inv_app_apply
+    (g : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of (FundamentalGroup X x₀)))
+    (p : FiniteCoveringSpace X) (e : (fiberFunctor x₀).obj p) :
+    (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).inv.app p e = g⁻¹ • e := by
+  let η : fiberFunctor x₀ ≅ fiberFunctor x₀ :=
+    profiniteCompletionAutFiberFunctorMulEquiv x₀ g
+  have hg : η.hom.app p (η.inv.app p e) = g • η.inv.app p e := by
+    simpa only [η] using profiniteCompletionAutFiberFunctorMulEquiv_hom_app_apply
+      (x₀ := x₀) g p (η.inv.app p e)
+  have hi : η.hom.app p (η.inv.app p e) = e :=
+    FintypeCat.inv_hom_id_apply (η.app p) e
+  change η.inv.app p e = g⁻¹ • e
+  calc
+    _ = g⁻¹ • (g • η.inv.app p e) := by simp
+    _ = g⁻¹ • η.hom.app p (η.inv.app p e) := congrArg (g⁻¹ • ·) hg.symm
+    _ = g⁻¹ • e := congrArg (g⁻¹ • ·) hi
+
+/-- Every natural automorphism of the finite-cover fibre functor is induced on every fibre by a
+unique element of the profinite completion of `π₁(X, x₀)`. -/
+theorem existsUnique_profiniteCompletion_smul_eq (η : Aut (fiberFunctor x₀)) :
+    ∃! g : ProfiniteGrp.ProfiniteCompletion.completion
+        (GrpCat.of (FundamentalGroup X x₀)),
+      ∀ (p : FiniteCoveringSpace X) (e : (fiberFunctor x₀).obj p),
+        g • e = η.hom.app p e := by
+  refine ⟨(profiniteCompletionAutFiberFunctorMulEquiv x₀).symm η, fun p e => ?_, fun g hg => ?_⟩
+  · rw [← profiniteCompletionAutFiberFunctorMulEquiv_hom_app_apply, MulEquiv.apply_symm_apply]
+  · refine (profiniteCompletionAutFiberFunctorMulEquiv x₀).injective
+      (Aut.ext (NatTrans.ext (funext fun p => ?_)))
+    ext e
+    rw [MulEquiv.apply_symm_apply]
+    exact (profiniteCompletionAutFiberFunctorMulEquiv_hom_app_apply
+      (x₀ := x₀) g p e).trans (hg p e)
 
 variable (x₀)
 
