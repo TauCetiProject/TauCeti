@@ -49,6 +49,10 @@ theorem IsPrimitive.ne_zero {v : M} (h : IsPrimitive v) : v ≠ 0 := by
   obtain ⟨f, hf⟩ := h
   simp at hf
 
+/-- The zero vector is not primitive. -/
+@[simp]
+theorem not_isPrimitive_zero : ¬ IsPrimitive (0 : M) := fun h ↦ h.ne_zero rfl
+
 /-- Primitivity is unchanged by the sign action `v ↦ -v`. -/
 theorem IsPrimitive.neg {v : M} (h : IsPrimitive v) : IsPrimitive (-v) := by
   obtain ⟨f, hf⟩ := h
@@ -66,6 +70,7 @@ namespace LinearEquiv
 variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Module ℤ M] [Module ℤ N]
 
 /-- Primitivity transports along an integer-linear equivalence. -/
+@[simp]
 theorem isPrimitive_iff (φ : M ≃ₗ[ℤ] N) {v : M} :
     TauCeti.IsPrimitive (φ v) ↔ TauCeti.IsPrimitive v := by
   constructor
@@ -99,8 +104,7 @@ theorem exists_eq_zsmul_isPrimitive [Module.Free ℤ M] {v : M}
   have hd0 : d ≠ 0 := by
     simpa only [d, Finset.gcd_ne_zero_iff] using ⟨j, hj, hcj⟩
   have hd_nonneg : 0 ≤ d := by
-    apply Int.nonneg_of_normalize_eq_self
-    exact Finset.normalize_gcd
+    simpa only [d] using (Finset.Int.finsetGcd_nonneg : 0 ≤ s.gcd c)
   have hd : 0 < d := lt_of_le_of_ne hd_nonneg (Ne.symm hd0)
   let q : ι → ℤ := fun k ↦ c k / d
   have hq : (Function.support q).Finite := by
