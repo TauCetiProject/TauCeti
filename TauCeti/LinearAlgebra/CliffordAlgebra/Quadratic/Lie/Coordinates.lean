@@ -32,7 +32,7 @@ the basis-independent Killing contraction and root-space projection API.
 * `CliffordAlgebra.adjointBivector`: the bilinear map `(y, z) ↦ bivector Q [x, y] z`.
 * `CliffordAlgebra.soEquivQuadratic_eq_sum_bivector`: the coordinate formula for an arbitrary
   skew-adjoint endomorphism.
-* `Module.Basis.dualBasis_polarBilin_killingQuadraticForm`: the comparison between the
+* `Module.Basis.dualBasis_polarBilin_killingQuadraticForm_apply`: the comparison between the
   polar-dual and Killing-dual bases.
 * `CliffordAlgebra.adjointCliffordHom_eq_sum_bivector`: the adjoint lift as a `1 / 4`-scaled sum
   against a Killing-dual basis.
@@ -176,7 +176,7 @@ variable {K : Type u} [Field K] [Invertible (2 : K)]
 
 /-- The basis dual to `b` for the polar form of the Killing quadratic form is half the
 Killing-dual basis. The factor records that this polar form is `2 • killingForm K L`. -/
-theorem dualBasis_polarBilin_killingQuadraticForm {ι : Type w} [Fintype ι]
+theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Fintype ι]
     [DecidableEq ι] {L : Type v} [LieRing L] [LieAlgebra K L]
     [_root_.LieAlgebra.IsKilling K L]
     (b : Module.Basis ι K L) (i : ι) :
@@ -236,7 +236,7 @@ theorem adjointCliffordHom_eq_sum_bivector {ι : Type w} [Fintype ι]
           (QuadraticMap.nondegenerate_polar_iff.mpr
             (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)) b i =
         (2 : K)⁻¹ • killingDualBasis b i :=
-    b.dualBasis_polarBilin_killingQuadraticForm i
+    b.dualBasis_polarBilin_killingQuadraticForm_apply i
   simp_rw [hdual]
   have hbiv (y z : L) : bivector Q y ((2 : K)⁻¹ • z) =
       (2 : K)⁻¹ • bivector Q y z := by
