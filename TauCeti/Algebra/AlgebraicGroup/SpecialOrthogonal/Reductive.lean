@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
-public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Connected
+import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Connected
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Irreducible
-public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.LowRank
-public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Torus
+import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.LowRank
+import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Torus
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Faithful
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Smooth

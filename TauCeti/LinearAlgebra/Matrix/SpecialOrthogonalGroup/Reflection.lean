@@ -7,10 +7,10 @@ module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.Algebra.Polynomial.Laurent
-public import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
+import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Basic
-public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Generation
+import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Generation
 
 /-!
 # Reflection matrices for the standard symmetric form
@@ -91,6 +91,7 @@ theorem reflectionMatrix_eq_one_sub_vecMulVec (v : n → R) (c : R) :
   rw [reflectionMatrix, smul_vecMulVec]
 
 /-- A reflection matrix is an involution. -/
+@[simp]
 theorem reflectionMatrix_mul_self [Fintype n] {v : n → R} {c : R} (hc : c * (v ⬝ᵥ v) = 2) :
     reflectionMatrix v c * reflectionMatrix v c = 1 := by
   rw [reflectionMatrix_eq_one_sub_vecMulVec,
@@ -105,6 +106,7 @@ theorem reflectionMatrix_mem_orthogonalGroup [Fintype n] {v : n → R} {c : R}
   exact reflectionMatrix_mul_self hc
 
 /-- **A reflection matrix has determinant `-1`.** -/
+@[simp]
 theorem det_reflectionMatrix [Fintype n] {v : n → R} {c : R} (hc : c * (v ⬝ᵥ v) = 2) :
     (reflectionMatrix v c).det = -1 := by
   rw [reflectionMatrix_eq_one_sub_vecMulVec, det_one_sub_vecMulVec, dotProduct_smul,
@@ -148,8 +150,9 @@ theorem reflectionMatrix_mul_mem_specialOrthogonalGroup {v w : n → R} {c d : R
         (reflectionMatrix_mem_orthogonalGroup hd),
       by rw [Matrix.det_mul, det_reflectionMatrix hc, det_reflectionMatrix hd]; ring⟩
 
-/-- **The product of the reflections in two vectors of invertible norm**, as an element of the
-matrix special orthogonal group of the standard symmetric form. -/
+/-- **The product of the reflections in two vectors with supplied normalizing scalars**, as an
+element of the matrix special orthogonal group of the standard symmetric form. The scalars satisfy
+the displayed equations with the respective norms. -/
 def reflectionPair (v w : n → R) (c d : R) (hc : c * (v ⬝ᵥ v) = 2) (hd : d * (w ⬝ᵥ w) = 2) :
     Matrix.specialOrthogonalGroup n R :=
   ⟨reflectionMatrix v c * reflectionMatrix w d,
