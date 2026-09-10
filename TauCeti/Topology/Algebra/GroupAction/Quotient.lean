@@ -32,9 +32,7 @@ variable (G : Type*) {X : Type*} [Group G] [TopologicalSpace G] [TopologicalSpac
 @[fun_prop]
 theorem continuous_ofQuotientStabilizer (b : X) (hb : Continuous fun g : G => g • b) :
     Continuous (ofQuotientStabilizer G b) := by
-  apply (QuotientGroup.isQuotientMap_mk (stabilizer G b)).continuous_iff.mpr
-  convert hb using 1
-  funext g
-  exact ofQuotientStabilizer_mk G b g
+  unfold ofQuotientStabilizer
+  exact hb.quotient_liftOn' _
 
 end TauCeti
