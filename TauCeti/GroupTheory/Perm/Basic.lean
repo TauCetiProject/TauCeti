@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Dynamics.PeriodicPts.Lemmas
+public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.GroupTheory.Perm.ViaEmbedding
 
@@ -44,27 +44,25 @@ theorem sameCycle_toPerm_iff {α : Type*} (f : α → α) (hf : Function.Involut
       simpa using this
 
 /-- If a periodic point `a` of `σ` shares its orbit with `b`, some positive natural power of `σ`
-carries `a` to `b`. Adding a period to an integer exponent witnessing `σ.SameCycle a b` preserves
-its action on `a` and gives a positive representative. -/
-theorem _root_.Equiv.Perm.exists_pos_pow_apply_eq_of_mem_periodicPts {α : Type*}
-    (σ : Equiv.Perm α) {a b : α} (ha : a ∈ Function.periodicPts (σ : α → α))
-    (h : σ.SameCycle a b) : ∃ j : ℕ, 0 < j ∧ (σ ^ j) a = b := by
-  obtain ⟨m, hmpos, hm⟩ := Function.mem_periodicPts.mp ha
-  have hma : (σ ^ m) a = a := hm
+carries `a` to `b`. An integer exponent witnessing `σ.SameCycle a b` is reduced modulo
+`MulAction.period σ a` and then shifted by one further period to make it positive. -/
+theorem _root_.Equiv.Perm.SameCycle.exists_pos_pow_eq_of_mem_periodicPts {α : Type*}
+    {σ : Equiv.Perm α} {a b : α} (h : σ.SameCycle a b)
+    (ha : a ∈ Function.periodicPts (σ : α → α)) : ∃ j : ℕ, 0 < j ∧ (σ ^ j) a = b := by
   obtain ⟨k, hk⟩ := h
-  have hz : ∀ q : ℤ, (σ ^ ((m : ℤ) * q)) a = a := by
-    intro q
-    rw [zpow_mul, zpow_natCast]
-    exact Equiv.Perm.zpow_apply_eq_self_of_apply_eq_self hma q
-  have hr : (σ ^ (k % (m : ℤ))) a = b := by
-    have heq : ((σ ^ (k % (m : ℤ))) * (σ ^ ((m : ℤ) * (k / m)))) a = b := by
-      rw [← zpow_add, Int.emod_add_mul_ediv]
-      exact hk
-    rwa [Equiv.Perm.mul_apply, hz (k / m)] at heq
-  have hnonneg : 0 ≤ k % (m : ℤ) := Int.emod_nonneg k (by exact_mod_cast hmpos.ne')
-  refine ⟨(k % (m : ℤ)).toNat + m, by omega, ?_⟩
-  rw [pow_add, Equiv.Perm.mul_apply, hma, ← zpow_natCast, Int.toNat_of_nonneg hnonneg]
-  exact hr
+  have hperiod : MulAction.period σ a = Function.minimalPeriod (σ : α → α) a :=
+    MulAction.period_eq_minimalPeriod
+  have hpos : 0 < MulAction.period σ a :=
+    hperiod ▸ Function.minimalPeriod_pos_of_mem_periodicPts ha
+  have hnonneg : 0 ≤ k % (MulAction.period σ a : ℤ) :=
+    Int.emod_nonneg k (by exact_mod_cast hpos.ne')
+  refine ⟨(k % (MulAction.period σ a : ℤ)).toNat + MulAction.period σ a, by omega, ?_⟩
+  have hred : σ ^ (k % (MulAction.period σ a : ℤ) + (MulAction.period σ a : ℤ)) • a = b := by
+    rw [MulAction.zpow_add_period_smul, MulAction.zpow_mod_period_smul]
+    exact hk
+  rw [Equiv.Perm.smul_def] at hred
+  rw [← zpow_natCast, Nat.cast_add, Int.toNat_of_nonneg hnonneg]
+  exact hred
 
 variable {α : Type*} [Fintype α] [DecidableEq α]
 

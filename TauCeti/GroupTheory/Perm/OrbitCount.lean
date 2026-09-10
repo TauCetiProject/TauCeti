@@ -17,9 +17,10 @@ This file counts them: `TauCeti.orbitCount σ` is the cardinality of that quotie
 `Equiv.Perm.cycleType`, which records only the cycles of length at least two, every fixed point
 of `σ` contributes an orbit of its own here.
 
-The file then proves the two ways of changing a permutation that leave the count alone or move it
-by one, both stated so that they apply to a permutation of a *different* type than the one they
-are compared with.
+The file then proves how the count responds to three ways of changing a permutation: adjoining a
+point, splicing a fixed point into another orbit, and merging two orbits. The first two compare a
+permutation with one of a *different* type and are stated to allow that; the third compares two
+permutations of the same type.
 
 * `TauCeti.orbitCount_conj`: conjugation does not change the number of orbits.
 * `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints`: on a finite type, the orbits are the
@@ -36,10 +37,11 @@ are compared with.
 * `TauCeti.orbitCount_add_one_of_merge`: if the orbits of `τ` are the orbits of `σ` with the orbit
   of one point and the orbit of another merged, then `τ` has one orbit fewer.
 
-Composing the last two says that adjoining a point to a permutation and immediately splicing it
-into an existing orbit leaves the number of orbits unchanged. That composite is the reason this
-file exists: it is the invariance of the number of components of a link under the stabilization
-move on braids, in `TauCeti/KnotTheory/Markov.lean`.
+Composing `TauCeti.orbitCount_add_one_eq_of_semiconj` with `TauCeti.orbitCount_mul_swap_add_one`
+says that adjoining a point to a permutation and immediately splicing it into an existing orbit
+leaves the number of orbits unchanged. That composite is the reason this file exists: it is the
+invariance of the number of components of a link under the stabilization move on braids, in
+`TauCeti/KnotTheory/Markov.lean`.
 
 ## Implementation notes
 
@@ -48,12 +50,15 @@ orbits or no orbits at all. The three orbit-addition and orbit-removal results a
 quotient of the relevant permutation by `Equiv.Perm.SameCycle` is finite; conjugation preserves
 the count without any finiteness assumption.
 
-Both counting results are deduced from one private lemma, `orbitCount_add_one_eq_aux`, whose input
-is a map `F : α → β` carrying the orbits of `σ` bijectively onto the orbits of `τ` other than a
-fixed point `p` of `τ`. Its `SameCycle` hypothesis comes from Mathlib's
-`Equiv.Perm.sameCycle_extendDomain` for adjoining a point. For splicing a point into an orbit, a
-one-step statement is propagated over all integer powers by the private lemma
-`sameCycle_zpow_of_forall_sameCycle_apply`.
+The two cross-type results, `TauCeti.orbitCount_add_one_eq_of_semiconj` and
+`TauCeti.orbitCount_mul_swap_add_one`, are deduced from one private lemma,
+`orbitCount_add_one_eq_aux`, whose input is a map `F : α → β` carrying the orbits of `σ`
+bijectively onto the orbits of `τ` other than a fixed point `p` of `τ`. Its `SameCycle` hypothesis
+comes from Mathlib's `Equiv.Perm.sameCycle_extendDomain` for adjoining a point. For splicing a
+point into an orbit, a one-step statement is propagated over all integer powers by the private
+lemma `sameCycle_zpow_of_forall_sameCycle_apply`. `TauCeti.orbitCount_add_one_of_merge` does not
+go through that lemma: it exhibits the orbits of `τ` as the orbits of `σ` with one class removed
+and finishes through `Equiv.optionSubtypeNe`.
 -/
 
 public section
