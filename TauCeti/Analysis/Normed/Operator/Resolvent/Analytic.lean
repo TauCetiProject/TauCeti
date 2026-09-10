@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.Resolvent.Unbounded
 public import Mathlib.Analysis.Analytic.Basic
 import Mathlib.Analysis.Analytic.Constructions
+import Mathlib.Analysis.Normed.Group.Lemmas
 
 /-!
 # Analyticity of an unbounded operator's resolvent
@@ -55,9 +56,8 @@ variable {A : X →ₗ.[𝕜] X} {lambda : 𝕜}
 omit [CompleteSpace X] in
 private theorem eventually_norm_sub_mul_norm_resolvent_lt_one :
     ∀ᶠ mu in 𝓝 lambda, ‖mu - lambda‖ * ‖resolvent A lambda‖ < 1 := by
-  filter_upwards [Metric.ball_mem_nhds lambda
-    (ε := 1 / (‖resolvent A lambda‖ + 1)) (by positivity)] with mu hmu
-  rw [Metric.mem_ball, dist_eq_norm] at hmu
+  filter_upwards [eventually_norm_sub_lt lambda
+    (show 0 < 1 / (‖resolvent A lambda‖ + 1) by positivity)] with mu hmu
   have hprod : ‖mu - lambda‖ * (‖resolvent A lambda‖ + 1) < 1 :=
     (lt_div_iff₀ (by positivity)).mp (by simpa using hmu)
   exact lt_of_le_of_lt
