@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Multinomial.Transforms
-public import Mathlib.LinearAlgebra.Finsupp.Pi
+public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
 
 /-!
 # Aggregation of multinomial cells
@@ -39,12 +39,6 @@ open Convexity MeasureTheory
 namespace TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
-
-omit [Fintype ι] [Fintype κ] in
-/-- Aggregating count vectors is measurable for the discrete measurable structures. -/
-theorem measurable_funOnFinite_map [Finite ι] [Finite κ] (f : ι → κ) :
-    Measurable (FunOnFinite.map (M := ℕ) f) :=
-  measurable_of_countable _
 
 /-- Pull a Euclidean frequency vector back along a map of cells. -/
 private def pullbackFrequency (f : ι → κ) (t : EuclideanSpace ℝ κ) : EuclideanSpace ℝ ι :=
@@ -105,6 +99,8 @@ theorem map_funOnFinite_map_multinomialMeasure (f : ι → κ) (n : ℕ)
     (multinomialMeasure n p).map (FunOnFinite.map (M := ℕ) f) =
       multinomialMeasure n (p.map f) := by
   apply (measurableEmbedding_multinomialToEuclidean (ι := κ)).map_injective
+  have hmap : Measurable (FunOnFinite.map (M := ℕ) f) :=
+    (FunOnFinite.continuous_map ℕ f).measurable
   let _ := isProbabilityMeasure_multinomialMeasure n p
   let _ := isProbabilityMeasure_multinomialMeasure n (p.map f)
   apply Measure.ext_of_charFun
@@ -115,9 +111,8 @@ theorem map_funOnFinite_map_multinomialMeasure (f : ι → κ) (n : ℕ)
         charFun ((multinomialMeasure n p).map multinomialToEuclidean)
           (pullbackFrequency f t) := by
       rw [charFun_apply, charFun_apply,
-        Measure.map_map measurable_multinomialToEuclidean (measurable_funOnFinite_map f),
-        integral_map (measurable_multinomialToEuclidean.comp
-          (measurable_funOnFinite_map f)).aemeasurable (by fun_prop),
+        Measure.map_map measurable_multinomialToEuclidean hmap,
+        integral_map (measurable_multinomialToEuclidean.comp hmap).aemeasurable (by fun_prop),
         integral_map measurable_multinomialToEuclidean.aemeasurable (by fun_prop)]
       apply integral_congr_ae
       filter_upwards [] with k
