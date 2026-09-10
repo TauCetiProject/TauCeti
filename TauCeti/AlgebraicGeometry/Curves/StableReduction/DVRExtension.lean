@@ -57,14 +57,17 @@ that of `R`.
 ## References
 
 The interface here is not original to this file: it adapts the one proposed by the Tau Ceti
-`StableReduction` roadmap, whose `README.md` states the convention "DVR extensions are local
-data" — choose a maximal ideal of the integral closure above the closed point and localize, never
-treating the integral closure itself as a discrete valuation ring — and whose `Suggested.lean`
-writes down the signature followed below: the same carriers, algebra maps, scalar towers and
-chosen prime.
+[`StableReduction` roadmap][roadmap], whose `README.md` states the convention "DVR extensions are
+local data" — choose a maximal ideal of the integral closure above the closed point and localize,
+never treating the integral closure itself as a discrete valuation ring — and whose
+[`Suggested.lean`][suggested] writes down the signature followed below: the same carriers, algebra
+maps, scalar towers and chosen prime.
 
 The mathematics is standard; Q. Liu, *Algebraic Geometry and Arithmetic Curves*, covers reduction
 of curves over a discrete valuation ring.
+
+[roadmap]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/README.md
+[suggested]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/Suggested.lean
 -/
 
 public section
