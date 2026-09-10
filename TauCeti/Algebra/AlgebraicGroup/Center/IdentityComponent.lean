@@ -24,6 +24,11 @@ triviality of the identity component inside the reduced center. These are the co
 identifications needed to apply the central-subgroup criterion for semisimplicity and then the
 finite-center criterion.
 
+The tensor-product import supplies `TauCeti.instIsReducedTensorProductOfIsAlgClosed`, which
+makes the reduced-center construction available under the finite-type hypotheses here.
+Open `TauCeti` to use the declarations with dot notation, such as
+`H.reducedCenterIdentityComponentDefiningIdeal`.
+
 ## Main declarations
 
 * `reducedCenterIdentityComponentDefiningIdeal`: the ambient defining ideal.
