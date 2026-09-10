@@ -14,16 +14,31 @@ import Mathlib.CategoryTheory.PathCategory.MorphismProperty
 This file constructs the source-side Bernstein--Gelfand--Ponomarev reflection functor. For a
 source `i`, the linear map
 
-`Mᵢ → ⨁_{a : i ⟶ b} M_b`
+`Mᵢ → ∏_{a : i ⟶ b} M_b`
 
 collects the actions of all arrows leaving `i`. The reflected representation agrees with `M` away
 from `i`, replaces `Mᵢ` by the cokernel of this map, and lets a reversed arrow act by inserting
 its coordinate and passing to the quotient. The construction is functorial because a morphism of
 representations gives a commuting square of outgoing maps.
 
+The target is the product over the arrows leaving `i`, not a direct sum, and that is the only
+choice available: a linear map into a direct sum must produce finitely supported families, which
+fails as soon as infinitely many arrows leave `i`, whereas the arrow actions always assemble into
+a map to the product. Over a finite quiver, the BGP setting of the roadmap target below, the two
+agree by `DirectSum.linearEquivFunOnFintype`, so `TauCeti.outgoingMap` is then the direct sum map
+`Mᵢ → ⨁_{a : i ⟶ b} M_b` of the BGP construction. Accordingly the finiteness instances
+`[Fintype Q]` and `[∀ a b : Q, Fintype (a ⟶ b)]` are imposed exactly on the statements whose
+content needs them, the arrow-count and dimension-vector results; on the construction itself
+they would be unused hypotheses.
+
 When the outgoing map is injective, the quotient dimension is the simple reflection of the old
 dimension vector. This is the dual of the surjectivity condition on `TauCeti.incomingSum` in the
-sink-side construction.
+sink-side construction, and it is likewise the general hypothesis the construction supports: on
+the sink side the semantic form of that hypothesis, that `M` is indecomposable and is not the
+vertex simple `Sᵢ`, is discharged downstream by
+`TauCeti.incomingSum_surjective_of_indecomposable`, which runs on the idempotent machinery of
+`TauCeti.RepresentationTheory.Quiver.Reflection.Indecomposable`. The source-side dual of that
+discharge belongs with its dual machinery, not here.
 
 ## Main definitions
 
@@ -67,21 +82,23 @@ variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
 
 section OutgoingMap
 
-variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
-
 /-- **The map collecting the arrows out of a vertex.** Its coordinate at `e : i ⟶ b` is the
-action of `e`. Its range is quotiented out in `TauCeti.sourceReflectRep`. -/
+action of `e`, so this is the product of the arrow actions over the arrows leaving `i`; for a
+finite quiver that product is the direct sum of the BGP construction. No hypothesis on `i` is
+imposed: the map is defined at every vertex, and it is the reflection that needs `i` to be a
+source. Its range is quotiented out in `TauCeti.sourceReflectRep`. -/
 noncomputable def outgoingMap (M : QuiverRep.{u, v, w, max v w x} k Q) (i : Q) :
     M.obj i →ₗ[k] ((e : Σ b : Q, (i ⟶ b)) → M.obj e.1) :=
   LinearMap.pi fun e ↦ (M.map e.2.toPath).hom
 
-omit [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)] in
 /-- The coordinate of `TauCeti.outgoingMap` at an arrow is the action of that arrow. -/
 @[simp]
 theorem outgoingMap_apply (M : QuiverRep.{u, v, w, max v w x} k Q) (i : Q) (y : M.obj i)
     (e : Σ b : Q, (i ⟶ b)) :
     outgoingMap M i y e = (M.map e.2.toPath).hom y := by
   simp [outgoingMap]
+
+variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
 
 /-- The target of `TauCeti.outgoingMap` has dimension
 `∑_b #(i ⟶ b) · dim M_b`. -/
