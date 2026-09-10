@@ -71,7 +71,7 @@ theorem transpose_reflectionMatrix (v : n → R) (c : R) :
 
 /-- Reflection matrices are natural in the coefficient ring. -/
 @[simp]
-theorem reflectionMatrix_map (f : R →+* S) (v : n → R) (c : R) :
+theorem map_reflectionMatrix (f : R →+* S) (v : n → R) (c : R) :
     (reflectionMatrix v c).map f = reflectionMatrix (f ∘ v) (f c) := by
   ext i j
   simp [reflectionMatrix_apply, apply_ite f]
@@ -257,7 +257,7 @@ private theorem map_reflectionMatrix_mul [Fintype n] (φ : K[T;T⁻¹] →ₐ[K]
         reflectionMatrix (pathVector v w X Y) E).map (φ : K[T;T⁻¹] →+* K) =
       reflectionMatrix v c *
         reflectionMatrix ((φ : K[T;T⁻¹] →+* K) ∘ pathVector v w X Y) (φ E) := by
-  rw [Matrix.map_mul, reflectionMatrix_map, reflectionMatrix_map]
+  rw [Matrix.map_mul, map_reflectionMatrix, map_reflectionMatrix]
   congr 1
   have h : (φ : K[T;T⁻¹] →+* K) ∘ constVector v = v := by
     funext i
