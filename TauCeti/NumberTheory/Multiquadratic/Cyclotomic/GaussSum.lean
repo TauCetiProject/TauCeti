@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Basic
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
-public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.GaussSum
 
 /-!
