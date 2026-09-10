@@ -37,8 +37,8 @@ Diagram Codes*, Definitions 2--3, and the oriented crossing convention of W. B. 
 
 * `TauCeti.BasedOrientedGaussCode.visitDataEquiv` identifies a visit with its crossing label and
   over/under status.
-* `TauCeti.BasedOrientedGaussCode.halfEdgeEquiv` splits visits into incoming and outgoing
-  half-edges.
+* `TauCeti.BasedOrientedGaussCode.halfEdge` labels the incoming and outgoing half-edges of each
+  visit.
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode` converts a based oriented Gauss code to an
   oriented PD-code.
 
@@ -87,9 +87,12 @@ theorem visitData_bijective (D : BasedOrientedGaussCode n) : Function.Bijective 
   · rintro ⟨c, over⟩
     obtain ⟨i, hi⟩ := D.visit_surjective c
     by_cases hover : D.over i = over
-    · exact ⟨i, Prod.ext hi hover⟩
-    · refine ⟨D.partner.val i, Prod.ext (D.visit_partner i |>.trans hi) ?_⟩
-      change D.over (D.partner.val i) = over
+    · refine ⟨i, ?_⟩
+      rw [D.visitData_apply]
+      exact Prod.ext hi hover
+    · refine ⟨D.partner.val i, ?_⟩
+      rw [D.visitData_apply]
+      apply Prod.ext (D.visit_partner i |>.trans hi)
       rw [D.over_partner]
       cases hiOver : D.over i <;> cases over <;> simp_all
 
@@ -192,6 +195,28 @@ theorem over_crossingVisit (D : BasedOrientedGaussCode n) (c : Fin n) (slot : Fi
   rw [D.visitDataEquiv_apply] at h
   exact congrArg Prod.snd h
 
+/-- Relabelling a crossing transports the visit occupying each of its slots. -/
+@[simp]
+theorem crossingVisit_relabel (D : BasedOrientedGaussCode n) (e : Equiv.Perm (Fin n))
+    (c : Fin n) (slot : Fin 4) :
+    (D.relabel e).crossingVisit c slot = D.crossingVisit (e.symm c) slot := by
+  apply (D.relabel e).visitDataEquiv.injective
+  apply Prod.ext
+  · simp only [visitDataEquiv_apply, visit_relabel]
+    calc
+      e (D.visit ((D.relabel e).crossingVisit c slot)) = c := by
+        simpa only [visit_relabel] using (D.relabel e).visit_crossingVisit c slot
+      _ = e (D.visit (D.crossingVisit (e.symm c) slot)) := by simp
+  · simp only [visitDataEquiv_apply]
+    simp
+
+/-- Relabelling a crossing transports the incoming/outgoing data at each of its slots. -/
+@[simp]
+theorem crossingOutgoing_relabel (D : BasedOrientedGaussCode n) (e : Equiv.Perm (Fin n))
+    (c : Fin n) (slot : Fin 4) :
+    (D.relabel e).crossingOutgoing c slot = D.crossingOutgoing (e.symm c) slot := by
+  simp [crossingOutgoing]
+
 /-- At each crossing, the four slots are equivalent to an over/under visit and an
 incoming/outgoing end of that visit. -/
 private def crossingSlotDataEquiv (D : BasedOrientedGaussCode n) :
@@ -207,19 +232,26 @@ private def crossingSlotDataEquiv (D : BasedOrientedGaussCode n) :
 
 /-- Split each visit into its incoming (`false`) and outgoing (`true`) half-edge and enumerate the
 resulting `4 * n` half-edges. -/
-def halfEdgeEquiv (n : ℕ) : Fin (2 * n) × Bool ≃ Fin (4 * n) :=
+private def halfEdgeEquiv (n : ℕ) : Fin (2 * n) × Bool ≃ Fin (4 * n) :=
   (Equiv.prodCongr (Equiv.refl _) finTwoEquiv.symm).trans <|
     finProdFinEquiv.trans (finCongr (by omega))
 
 /-- The labelled half-edge belonging to one end of a visit. -/
-def halfEdge (i : Fin (2 * n)) (outgoing : Bool) : Fin (4 * n) :=
+def halfEdge (_D : BasedOrientedGaussCode n) (i : Fin (2 * n)) (outgoing : Bool) : Fin (4 * n) :=
   halfEdgeEquiv n (i, outgoing)
 
-/-- Decoding a labelled visit end recovers that visit and its incoming/outgoing choice. -/
+/- Decoding a labelled visit end recovers that visit and its incoming/outgoing choice. -/
 @[simp]
-theorem halfEdgeEquiv_symm_halfEdge (i : Fin (2 * n)) (outgoing : Bool) :
-    (halfEdgeEquiv n).symm (halfEdge i outgoing) = (i, outgoing) := by
+private theorem halfEdgeEquiv_symm_halfEdge (D : BasedOrientedGaussCode n)
+    (i : Fin (2 * n)) (outgoing : Bool) :
+    (halfEdgeEquiv n).symm (D.halfEdge i outgoing) = (i, outgoing) := by
   simp [halfEdge]
+
+/-- Relabelling crossings does not change the label assigned to either end of a visit. -/
+@[simp]
+theorem halfEdge_relabel (D : BasedOrientedGaussCode n) (e : Equiv.Perm (Fin n))
+    (i : Fin (2 * n)) (outgoing : Bool) :
+    (D.relabel e).halfEdge i outgoing = D.halfEdge i outgoing := (rfl)
 
 /-- On visit ends, arc pairing joins an outgoing half-edge to the incoming half-edge of the next
 visit, and conversely joins an incoming half-edge to the outgoing half-edge of the previous visit.
@@ -254,7 +286,7 @@ private noncomputable def crossingHalfEdgeEquiv (D : BasedOrientedGaussCode n) :
 private theorem crossingHalfEdgeEquiv_apply (D : BasedOrientedGaussCode n)
     (c : Fin n) (slot : Fin 4) :
     crossingHalfEdgeEquiv D (c, slot) =
-      halfEdge (D.crossingVisit c slot) (D.crossingOutgoing c slot) := by
+      D.halfEdge (D.crossingVisit c slot) (D.crossingOutgoing c slot) := by
   simp [crossingHalfEdgeEquiv, crossingSlotDataEquiv, crossingVisit, halfEdge,
     slotEquiv_fst, slotEquiv_snd]
 
@@ -318,7 +350,8 @@ theorem toOrientedPDCode_empty :
 @[simp]
 theorem toOrientedPDCode_edgePair_outgoing (D : BasedOrientedGaussCode n)
     (i : Fin (2 * n)) :
-    D.toOrientedPDCode.edgePair.val (halfEdge i true) = halfEdge (finRotate _ i) false := by
+    D.toOrientedPDCode.edgePair.val (D.halfEdge i true) =
+      D.halfEdge (finRotate _ i) false := by
   simp [toOrientedPDCode, halfEdge, traversalEdgePair, traversalEdgePerm]
 
 /-- The incoming half-edge at a visit is paired with the outgoing half-edge at the previous
@@ -326,15 +359,15 @@ visit. -/
 @[simp]
 theorem toOrientedPDCode_edgePair_incoming (D : BasedOrientedGaussCode n)
     (i : Fin (2 * n)) :
-    D.toOrientedPDCode.edgePair.val (halfEdge i false) =
-      halfEdge ((finRotate _).symm i) true := by
+    D.toOrientedPDCode.edgePair.val (D.halfEdge i false) =
+      D.halfEdge ((finRotate _).symm i) true := by
   simp [toOrientedPDCode, halfEdge, traversalEdgePair, traversalEdgePerm]
 
 /-- The direction decoration remembers which half-edge of a visit is outgoing. -/
 @[simp]
 theorem toOrientedPDCode_orientation_halfEdge (D : BasedOrientedGaussCode n)
     (i : Fin (2 * n)) (outgoing : Bool) :
-    D.toOrientedPDCode.orientation (halfEdge i outgoing) = outgoing := by
+    D.toOrientedPDCode.orientation (D.halfEdge i outgoing) = outgoing := by
   simp [toOrientedPDCode]
 
 /-- The half-edge in a crossing slot is the corresponding end of the Gauss visit occupying that
@@ -342,9 +375,33 @@ slot. -/
 @[simp]
 theorem toOrientedPDCode_crossing (D : BasedOrientedGaussCode n) (c : Fin n) (slot : Fin 4) :
     D.toOrientedPDCode.halfEdge (PDCode.crossingSlotEquiv n (c, slot)) =
-      halfEdge (D.crossingVisit c slot) (D.crossingOutgoing c slot) := by
+      D.halfEdge (D.crossingVisit c slot) (D.crossingOutgoing c slot) := by
   rw [toOrientedPDCode, Equiv.trans_apply, Equiv.symm_apply_apply,
     crossingHalfEdgeEquiv_apply]
+
+/-- Converting a relabelled Gauss code relabels the crossing blocks of the resulting PD-code
+while leaving its traversal-based half-edge labels fixed. -/
+theorem toOrientedPDCode_relabel (D : BasedOrientedGaussCode n) (e : Equiv.Perm (Fin n)) :
+    (D.relabel e).toOrientedPDCode =
+      D.toOrientedPDCode.relabel (Equiv.refl (Fin (4 * n))) e := by
+  apply OrientedPDCode.ext
+  · apply PDCode.ext
+    · apply Equiv.ext
+      intro h
+      rw [← (PDCode.crossingSlotEquiv n).apply_symm_apply h]
+      rcases (PDCode.crossingSlotEquiv n).symm h with ⟨c, slot⟩
+      rw [toOrientedPDCode_crossing, OrientedPDCode.relabel_halfEdge]
+      simp only [Equiv.equivCongr_apply_apply, Equiv.refl_apply,
+        PDCode.crossingBlockPerm_symm_apply_crossingSlotEquiv, toOrientedPDCode_crossing,
+        crossingVisit_relabel, crossingOutgoing_relabel, halfEdge_relabel]
+    · rw [OrientedPDCode.relabel_edgePair]
+      simp [toOrientedPDCode]
+    · simp [toOrientedPDCode]
+    · funext c
+      simp [toOrientedPDCode]
+  · funext h
+    simp [toOrientedPDCode, OrientedPDCode.relabel_orientation]
+  · simp [toOrientedPDCode]
 
 /-- The orientation at a crossing slot agrees with the incoming/outgoing direction extracted from
 the Gauss code. -/
