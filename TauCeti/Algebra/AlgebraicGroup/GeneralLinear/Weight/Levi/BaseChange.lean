@@ -68,8 +68,11 @@ theorem map_baseChangeHopfIdeal_weightLeviDefiningHopfIdeal :
             (coordinateRingMap R N (MvPolynomial.X (i, j)))) =
         coordinateHopfAlgebraAlgEquiv K N
           (coordinateRingMap K N (MvPolynomial.X (i, j))) := by
-    simpa only [MvPolynomial.map_X, one_smul] using
-      coordinateHopfAlgebraBaseChangeIso_hom_apply.{u, v} R K N 1 (MvPolynomial.X (i, j))
+    simpa only [Matrix.map_apply, genericMatrix_apply, AlgHom.comp_apply,
+      AlgHom.coe_restrictScalars', BialgHom.coe_toAlgHom,
+      Algebra.TensorProduct.includeRight_apply] using
+      congrArg (fun M ↦ M i j)
+        (coordinateHopfAlgebraBaseChangeIso_hom_genericMatrix.{u, v} R K N)
   have hrel (a : Fin N → ℤ) :
       (fun x : coordinateHopfAlgebra R N ↦
         (coordinateHopfAlgebraBaseChangeIso R K N).hom.hom (1 ⊗ₜ[R] x)) ''
