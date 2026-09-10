@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Killing
 public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Algebra.Lie.Killing.DualBasis
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
+
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
 # Skew-adjoint Lie algebras
@@ -362,23 +363,15 @@ theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Fintype �
           exact QuadraticMap.nondegenerate_polar_iff.mpr
             (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)) b i =
       (2 : K)⁻¹ • killingDualBasis b i := by
-  let B := (2 : K) • killingForm K L
-  let hB : LinearMap.BilinForm.Nondegenerate B := by
-    dsimp only [B]
-    rw [← _root_.TauCeti.LieAlgebra.polarBilin_killingQuadraticForm]
-    exact QuadraticMap.nondegenerate_polar_iff.mpr
-      (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)
-  let d := LinearMap.BilinForm.dualBasis B hB b
-  apply LinearMap.ker_eq_bot.mp hB.ker_eq_bot
-  apply b.ext
-  intro j
-  simp only [map_smul]
-  rw [LinearMap.BilinForm.apply_dualBasis_left]
-  simp only [B, LinearMap.smul_apply, smul_eq_mul]
-  rw [LieModule.traceForm_comm K L L (killingDualBasis b i) (b j),
-    killingForm_killingDualBasis]
-  split_ifs
-  · simp only [mul_one, inv_mul_cancel₀ (Invertible.ne_zero (2 : K))]
-  · simp only [mul_zero]
+  let hκ := _root_.LieAlgebra.IsKilling.killingForm_nondegenerate K L
+  have hdual (j : ι) :
+      LinearMap.BilinForm.dualBasis (killingForm K L) hκ b j = killingDualBasis b j := by
+    apply LinearMap.ker_eq_bot.mp hκ.ker_eq_bot
+    apply b.ext
+    intro k
+    rw [LinearMap.BilinForm.apply_dualBasis_left, killingForm_killingDualBasis_left]
+    simp only [eq_comm]
+  rw [b.dualBasis_smul_apply (killingForm K L) hκ (2 : K)
+    (Invertible.ne_zero (2 : K)), hdual]
 
 end Module.Basis

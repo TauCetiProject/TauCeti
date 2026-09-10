@@ -29,8 +29,6 @@ Clifford action makes the target Clifford module a module for the original Lie a
 * `CliffordAlgebra.cliffordDerivationRep_apply`: its defining commutator equation.
 * `CliffordAlgebra.adjointCliffordHom`: the quadratic lift of the adjoint representation
   for a Killing-semisimple Lie algebra.
-* `CliffordAlgebra.adjointCliffordHom_apply`: the lift as the quadratic realization of the
-  Killing adjoint action.
 * `CliffordAlgebra.adjointCliffordHom_lie_ι`: the lift acts on Clifford generators by the
   original adjoint action.
 * `CliffordAlgebra.adjointCliffordHom_injective`: the lift is injective, since the adjoint action
@@ -141,26 +139,13 @@ theorem cliffordDerivationRep_apply {K : Type u} [Field K]
 
 /-- The quadratic lift of the adjoint representation of a Killing-semisimple Lie algebra into the
 Clifford algebra of its Killing quadratic form. -/
-noncomputable def adjointCliffordHom (K : Type u) (L : Type v) [Field K]
+@[expose] noncomputable def adjointCliffordHom (K : Type u) (L : Type v) [Field K]
     [LieRing L] [LieAlgebra K L] [FiniteDimensional K L] [Invertible (2 : K)]
     [_root_.LieAlgebra.IsKilling K L] :
     L →ₗ⁅K⁆ CliffordAlgebra (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L) :=
   quadraticLift (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L)
     (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)
     (_root_.TauCeti.LieAlgebra.killingAdjointSO K L)
-
-/-- The adjoint Clifford homomorphism is the quadratic realization of the Killing adjoint
-action. -/
-@[grind =]
-theorem adjointCliffordHom_apply (K : Type u) (L : Type v) [Field K]
-    [LieRing L] [LieAlgebra K L] [FiniteDimensional K L] [Invertible (2 : K)]
-    [_root_.LieAlgebra.IsKilling K L] (x : L) :
-    adjointCliffordHom K L x =
-      (soEquivQuadratic (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L)
-        (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)
-        (_root_.TauCeti.LieAlgebra.killingAdjointSO K L x) :
-          CliffordAlgebra (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L)) := by
-  rfl
 
 /-- The adjoint quadratic lift acts on Clifford generators by the original adjoint action. -/
 @[simp, grind =]

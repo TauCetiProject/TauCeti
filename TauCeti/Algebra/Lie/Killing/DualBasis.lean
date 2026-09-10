@@ -65,6 +65,13 @@ theorem killingForm_killingDualBasis (b : Module.Basis ι K L) (i j : ι) :
     killingForm K L (b i) (killingDualBasis b j) = if i = j then 1 else 0 :=
   LinearMap.BilinForm.apply_dualBasis_right _ killingForm_isSymm b i j
 
+/-- The symmetric orientation of the defining biorthogonality of the Killing-dual basis. -/
+@[simp]
+theorem killingForm_killingDualBasis_left (b : Module.Basis ι K L) (i j : ι) :
+    killingForm K L (killingDualBasis b i) (b j) = if i = j then 1 else 0 := by
+  rw [LieModule.traceForm_comm, killingForm_killingDualBasis]
+  simp only [eq_comm]
+
 /-- Coordinates in the Killing-dual basis are Killing pairings against `b`. -/
 @[simp]
 theorem killingDualBasis_repr (b : Module.Basis ι K L) (v : L) (i : ι) :
