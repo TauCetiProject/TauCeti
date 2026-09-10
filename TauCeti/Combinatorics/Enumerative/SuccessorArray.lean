@@ -343,6 +343,18 @@ theorem visitCount_visitTime_of_lt_visitCount (h : k < visitCount x a n) :
     visitCount x a (visitTime x a k) = k := by
   simpa only [visitCount_eq_count, visitTime_def] using Nat.count_nth (lt_card_of_lt_visitCount h)
 
+/-- **A consumed successor entry is read off any sequence agreeing with the original over the
+horizon that consumes it.** Below the visit count at time `m`, the entry `successorArray x a k`
+is realised at a visit before `m`, so it only sees the values of `x` up to `m`. -/
+theorem successorArray_congr {m : ℕ} (hxy : ∀ i ≤ m, x i = y i) (hk : k < visitCount x a m) :
+    successorArray x a k = successorArray y a k := by
+  have ht : visitTime x a k < m := visitTime_lt_of_lt_visitCount hk
+  have hy : visitTime y a k = visitTime x a k :=
+    visitTime_eq_of_eqOn (fun i hi => (hxy i (hi.trans ht.le)).symm)
+      (apply_visitTime_of_lt_visitCount hk) (visitCount_visitTime_of_lt_visitCount hk)
+  rw [successorArray_def, successorArray_def, hy]
+  exact hxy _ (by omega)
+
 -- A witness for the `m`-th visit turns the `k ≤ m` hypothesis form into the `k < visitCount` one.
 private theorem lt_visitCount_succ_of_le (hn : x n = a) (hcount : visitCount x a n = m)
     (hk : k ≤ m) : k < visitCount x a (n + 1) := by
