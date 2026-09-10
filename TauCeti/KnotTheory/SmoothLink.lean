@@ -37,6 +37,7 @@ Framings are not part of this presentation: a smooth framing is separate normal-
 ## References
 
 * W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Chapter 1.
+* `TauCetiRoadmap/GeometricTopology/README.md`, Layer 4.
 -/
 
 public section
@@ -211,10 +212,10 @@ theorem perm_smul_def (e : Equiv.Perm (Fin n)) (L : SmoothLinkEmbedding I M n) :
 
 /-- Reverse the orientation of every component of a smooth link. -/
 def reverse (L : SmoothLinkEmbedding I M n) : SmoothLinkEmbedding I M n where
-  component i := (L i).reverse
+  component i := (L.component i).reverse
   pairwiseDisjoint_range i j hij := by
-    change Disjoint (Set.range (L.component i).reverse) (Set.range (L.component j).reverse)
-    simpa only [SmoothCircleEmbedding.range_reverse] using L.pairwiseDisjoint_range hij
+    simpa only [Function.onFun, SmoothCircleEmbedding.range_reverse] using
+      L.pairwiseDisjoint_range hij
 
 /-- Reversing a smooth link reverses each of its components. -/
 @[simp]
@@ -303,22 +304,8 @@ theorem reverse_transDiffeomorph (L : SmoothLinkEmbedding I M n) (e : M ≃ₘ�
     (L.transDiffeomorph e).reverse = L.reverse.transDiffeomorph e := by
   apply SmoothLinkEmbedding.ext
   intro i
-  rw [reverse_apply, transDiffeomorph_apply, transDiffeomorph_apply, reverse_apply]
-  calc
-    SmoothCircleEmbedding.reverse (SmoothEmbedding.transDiffeomorph (L i) e) =
-        (SmoothEmbedding.transDiffeomorph (L i) e).compDiffeomorph circleReflection := by
-      apply SmoothEmbedding.ext
-      intro x
-      rw [SmoothCircleEmbedding.reverse_apply, SmoothEmbedding.compDiffeomorph_apply,
-        circleReflection_apply]
-    _ = (SmoothEmbedding.compDiffeomorph (L i) circleReflection).transDiffeomorph e :=
-      (SmoothEmbedding.transDiffeomorph_compDiffeomorph (L i) circleReflection e).symm
-    _ = SmoothEmbedding.transDiffeomorph (L i).reverse e := by
-      congr 1
-      apply SmoothEmbedding.ext
-      intro x
-      rw [SmoothEmbedding.compDiffeomorph_apply, circleReflection_apply,
-        SmoothCircleEmbedding.reverse_apply]
+  simpa only [reverse_apply, transDiffeomorph_apply] using
+    (L i).reverse_transDiffeomorph e
 
 end Ambient
 
