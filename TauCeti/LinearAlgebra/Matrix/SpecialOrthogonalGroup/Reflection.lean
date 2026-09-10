@@ -28,12 +28,31 @@ supplied by `TauCeti.closure_reflection_mul_eq_matrixSpecialOrthogonalGroup`. Th
 here as `TauCeti.reflectionPair`, and the generation theorem is restated as a criterion for a
 subgroup of `Matrix.specialOrthogonalGroup n K` to be the whole group.
 
+The last and largest section of the file, occupying everything after that criterion, builds
+one-parameter families joining such a product to the identity. Over an algebraically closed
+field of characteristic different from two, `exists_laurentPath_reflectionMatrix_mul` produces
+for every product of two reflections a single special orthogonal matrix over the Laurent
+polynomials `K[T;T⁻¹]` together with two units `a` and `b` of `K`, such that specializing the
+parameter `T` to `a` gives the identity and specializing it to `b` gives the given product; a
+specialization is any `K`-algebra map `K[T;T⁻¹] →ₐ[K] K`, so the units are exactly the
+admissible parameter values. The family reflects first in `v` and then in a vector moving
+through the plane spanned by `v` and `w`, chosen so that the moving vector has invertible norm
+throughout, and the two parameters are those at which the moving vector becomes proportional to
+`v`, respectively to `w`. Consuming these families is what proves the special orthogonal group
+geometrically connected: an idempotent regular function on the group is constant once right
+translation by every rational point fixes it, a point joined to the identity by such a family
+fixes every idempotent, and the generation criterion above reduces the rational points to be
+handled to the products of two reflections.
+
 ## Main declarations
 
 * `TauCeti.reflectionMatrix`: the matrix of a reflection, with its normalizing scalar as data.
 * `TauCeti.reflectionPair`: the product of two reflections, as a special orthogonal matrix.
 * `TauCeti.eq_top_of_forall_reflectionPair_mem`: a subgroup of the matrix special orthogonal
   group containing every product of two reflections is the whole group.
+* `TauCeti.exists_laurentPath_reflectionMatrix_mul`: over an algebraically closed field of
+  characteristic different from two, every product of two reflections is joined to the identity
+  by a one-parameter family of special orthogonal matrices over the Laurent polynomials.
 
 ## References
 
