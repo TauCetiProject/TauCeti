@@ -16,10 +16,6 @@ by products of two reflections. Consequently, a subgroup of the Spin group is th
 soon as it contains the kernel generator `-1` and one lift of every reflection pair. This file
 records that reduction and its concrete formulation when the Spin action is surjective.
 
-The proof maps the candidate subgroup into the special orthogonal group, applies the
-Cartan--Dieudonne generation theorem there, and then recovers the original subgroup from its image
-and the two-element kernel of the Spin action.
-
 ## Main results
 
 * `CliffordAlgebra.subgroup_eq_top_of_negOne_mem_of_reflection_pair_lift_mem` reduces generation of
