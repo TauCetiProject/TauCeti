@@ -38,9 +38,6 @@ too.
 
 * `TauCeti.IsCompletelyMonotoneOnIoi.convexOn`: a completely monotone function on `(0, ∞)` is
   convex there.
-* `TauCeti.isCompletelyMonotoneOnIoi_of_forall_comp_add_const`: complete monotonicity on `(0, ∞)`
-  can be checked on positive translates, the converse of
-  `TauCeti.IsCompletelyMonotoneOnIoi.isCompletelyMonotone_comp_add_const`.
 * `TauCeti.isCompletelyMonotoneOnIoi_of_tendsto`: **complete monotonicity on `(0, ∞)` is closed
   under pointwise limits.**
 * `TauCeti.isContinuousCompletelyMonotoneOnIoi_of_tendsto`: the closed-half-line predicate is
@@ -77,27 +74,6 @@ lemma IsCompletelyMonotoneOnIoi.convexOn (hf : IsCompletelyMonotoneOnIoi f) :
   · rw [interior_Ioi]
     intro x hx
     simpa [iteratedDeriv_eq_iterate] using hf.neg_one_pow_mul_iteratedDeriv_nonneg 2 hx
-
-/-- Complete monotonicity on `(0, ∞)` is detected by the positive translates of a function: if
-`t ↦ f (t + a)` is completely monotone on `(0, ∞)` for every `a > 0`, then so is `f`.  This is the
-converse of `TauCeti.IsCompletelyMonotoneOnIoi.isCompletelyMonotone_comp_add_const`, and it is how
-a statement proved after moving the boundary into the open half-line is transported back. -/
-theorem isCompletelyMonotoneOnIoi_of_forall_comp_add_const
-    (h : ∀ a : ℝ, 0 < a → IsCompletelyMonotoneOnIoi fun s => f (s + a)) :
-    IsCompletelyMonotoneOnIoi f := by
-  have hsmooth : ContDiffOn ℝ ∞ f (Ioi 0) := by
-    intro u hu
-    have ha : (0 : ℝ) < u / 2 := by linarith [mem_Ioi.mp hu]
-    have hshift : ContDiffAt ℝ ∞ (fun s : ℝ => f (s + u / 2)) ((fun s : ℝ => s - u / 2) u) := by
-      have := ((h (u / 2) ha).contDiffOn).contDiffAt (isOpen_Ioi.mem_nhds (mem_Ioi.mpr ha))
-      simpa [show u - u / 2 = u / 2 by ring] using this
-    have hcomp := hshift.comp u (by fun_prop : ContDiffAt ℝ ∞ (fun s : ℝ => s - u / 2) u)
-    exact (by simpa [Function.comp_def] using hcomp : ContDiffAt ℝ ∞ f u).contDiffWithinAt
-  refine ⟨hsmooth, fun n u hu => ?_⟩
-  have ha : (0 : ℝ) < u / 2 := by linarith
-  have hsign := (h (u / 2) ha).neg_one_pow_mul_iteratedDeriv_nonneg n ha
-  rw [iteratedDeriv_comp_add_const] at hsign
-  simpa [show u / 2 + u / 2 = u by ring] using hsign
 
 /-- **Complete monotonicity on `(0, ∞)` is closed under pointwise limits.**  A pointwise limit of
 functions completely monotone on `(0, ∞)` is completely monotone on `(0, ∞)`; in particular it is

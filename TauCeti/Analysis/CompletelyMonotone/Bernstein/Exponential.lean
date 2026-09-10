@@ -7,22 +7,23 @@ module
 
 public import TauCeti.Analysis.CompletelyMonotone.Composition
 public import TauCeti.Analysis.CompletelyMonotone.Limits
-public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+public import TauCeti.Analysis.SpecialFunctions.ExpRecovery
 
 /-!
 # Bernstein functions are the exponents of completely monotone semigroups
 
 `TauCeti.IsBernsteinFunction.isContinuousCompletelyMonotoneOnIoi_exp_neg_mul` produces, from a
 Bernstein function `f`, the completely monotone functions `t ↦ e^{-x f(t)}` for every `x ≥ 0` —
-the Laplace transforms of the convolution semigroup subordinate to `f`.  This file proves the
-converse, so that the two classes determine each other:
+the Laplace transforms of the subprobability convolution semigroup subordinate to `f`.  This
+file proves the converse, so that the two classes determine each other:
 
 **`f` is a Bernstein function if and only if `f` is nonnegative on `[0, ∞)` and, for every
 `x > 0`, `e^{-x f}` is continuous on `[0, ∞)` and completely monotone on `(0, ∞)`.**
 
 This is the standard correspondence between the two classes, and the form in which Bernstein
 functions enter probability theory: `e^{-x f}` completely monotone for all `x > 0` says exactly
-that `f` is the Laplace exponent of a subordinator.
+that `f` is the Laplace exponent of a possibly killed subordinator, the killing rate being
+`f 0`, which this library allows to be positive.
 
 Quantifying over *all* `x > 0` is essential, and the proof shows why: differentiating
 `t ↦ e^{-x f(t)}` gives the exact identity
@@ -36,10 +37,11 @@ the right-hand side converge pointwise to `f'`.  Complete monotonicity survives 
 less, since it constrains only one member of the family.
 
 The remaining hypotheses of `TauCeti.IsBernsteinFunction` are recovered from the exponentials
-rather than assumed: `f = -x⁻¹ log (e^{-x f})` inherits smoothness on `(0, ∞)` from `e^{-x f}`,
-and continuity on `[0, ∞)` as soon as one exponential is continuous there.  Nonnegativity of `f`
-is genuinely independent — the constant `-1` has `e^{x}` for its exponentials, and constants are
-completely monotone.
+rather than assumed, through `TauCeti.contDiffOn_of_contDiffOn_exp_const_mul`: smoothness of `f`
+on `(0, ∞)` comes from that of `e^{-x f}`, and only right-continuity of `f` at `0` is left to
+hypothesize, the rest of its continuity on `[0, ∞)` following from the smoothness.
+Nonnegativity of `f` is genuinely independent — the constant `-1` has `e^{x}` for its
+exponentials, and constants are completely monotone.
 
 ## Main declarations
 
@@ -65,26 +67,6 @@ namespace TauCeti
 
 variable {f : ℝ → ℝ}
 
-/-- Smoothness of `f` on `(0, ∞)` is inherited from a single exponential `e^{-x f}`: the
-exponential is positive, so composing with the logarithm stays inside the domain of smoothness of
-`Real.log`, and `Real.log_exp` recovers `f` from `e^{-x f}` on the nose. -/
-lemma contDiffOn_of_contDiffOn_exp_neg_mul {x : ℝ} (hx : x ≠ 0) {s : Set ℝ}
-    (h : ContDiffOn ℝ ∞ (fun t => Real.exp (-x * f t)) s) : ContDiffOn ℝ ∞ f s := by
-  have hlog : ContDiffOn ℝ ∞ (fun t => -x⁻¹ * Real.log (Real.exp (-x * f t))) s :=
-    (h.log fun t _ => (Real.exp_pos _).ne').const_smul (-x⁻¹)
-  refine hlog.congr fun t _ => ?_
-  simp only [Real.log_exp]
-  field_simp
-
-/-- Continuity of `f` on a set is inherited from a single exponential `e^{-x f}`. -/
-lemma continuousOn_of_continuousOn_exp_neg_mul {x : ℝ} (hx : x ≠ 0) {s : Set ℝ}
-    (h : ContinuousOn (fun t => Real.exp (-x * f t)) s) : ContinuousOn f s := by
-  have hlog : ContinuousOn (fun t => -x⁻¹ * Real.log (Real.exp (-x * f t))) s :=
-    continuousOn_const.mul (h.log fun t _ => (Real.exp_pos _).ne')
-  refine hlog.congr fun t _ => ?_
-  simp only [Real.log_exp]
-  field_simp
-
 /-- The derivative of `f` weighted by an exponential.  If `e^{-x f}` is completely monotone on
 `(0, ∞)` for some `x > 0`, then so is `t ↦ f'(t) · e^{-x f(t)}`, because that function is
 `-x⁻¹` times the derivative of `e^{-x f}`. -/
@@ -92,7 +74,7 @@ theorem isCompletelyMonotoneOnIoi_deriv_mul_exp_neg_mul {x : ℝ} (hx : 0 < x)
     (h : IsCompletelyMonotoneOnIoi fun t => Real.exp (-x * f t)) :
     IsCompletelyMonotoneOnIoi fun t => deriv f t * Real.exp (-x * f t) := by
   have hsmooth : ContDiffOn ℝ ∞ f (Ioi 0) :=
-    contDiffOn_of_contDiffOn_exp_neg_mul hx.ne' h.contDiffOn
+    contDiffOn_of_contDiffOn_exp_const_mul (neg_ne_zero.mpr hx.ne') h.contDiffOn
   refine (h.neg_deriv.smul (c := x⁻¹) (by positivity)).congr fun t ht => ?_
   have hdf : HasDerivAt f (deriv f t) t :=
     (hsmooth.differentiableOn (by simp)).differentiableAt (isOpen_Ioi.mem_nhds ht) |>.hasDerivAt
@@ -102,18 +84,25 @@ theorem isCompletelyMonotoneOnIoi_deriv_mul_exp_neg_mul {x : ℝ} (hx : 0 < x)
   field_simp
 
 /-- **The exponentials of a Bernstein function determine it.**  If `f` is nonnegative on `[0, ∞)`,
-continuous there, and `e^{-x f}` is completely monotone on `(0, ∞)` for every `x > 0`, then `f` is
-a Bernstein function.
+right-continuous at `0`, and `e^{-x f}` is completely monotone on `(0, ∞)` for every `x > 0`,
+then `f` is a Bernstein function.
 
 This is the converse of
 `TauCeti.IsBernsteinFunction.isContinuousCompletelyMonotoneOnIoi_exp_neg_mul`; smoothness of `f`
-on `(0, ∞)` is not assumed, but deduced from the exponential at `x = 1`. -/
+on `(0, ∞)` is not assumed, but deduced from the exponential at `x = 1`, and with it continuity
+of `f` away from the endpoint. -/
 theorem isBernsteinFunction_of_forall_isCompletelyMonotoneOnIoi_exp_neg_mul
-    (hcont : ContinuousOn f (Ici 0)) (hnonneg : ∀ t : ℝ, 0 ≤ t → 0 ≤ f t)
+    (hzero : ContinuousWithinAt f (Ici 0) 0) (hnonneg : ∀ t : ℝ, 0 ≤ t → 0 ≤ f t)
     (h : ∀ x : ℝ, 0 < x → IsCompletelyMonotoneOnIoi fun t => Real.exp (-x * f t)) :
     IsBernsteinFunction f := by
   have hsmooth : ContDiffOn ℝ ∞ f (Ioi 0) :=
-    contDiffOn_of_contDiffOn_exp_neg_mul one_ne_zero (h 1 one_pos).contDiffOn
+    contDiffOn_of_contDiffOn_exp_const_mul (neg_ne_zero.mpr one_ne_zero) (h 1 one_pos).contDiffOn
+  have hcont : ContinuousOn f (Ici 0) := by
+    intro u hu
+    rcases (mem_Ici.mp hu).lt_or_eq with hupos | hu0
+    · exact (hsmooth.continuousOn.continuousAt
+        (isOpen_Ioi.mem_nhds (mem_Ioi.mpr hupos))).continuousWithinAt
+    · exact hu0 ▸ hzero
   refine isBernsteinFunction_iff.mpr ⟨hcont, hsmooth, hnonneg, ?_⟩
   refine isCompletelyMonotoneOnIoi_of_tendsto (L := atTop)
     (F := fun n : ℕ => fun t => deriv f t * Real.exp (-(1 / ((n : ℝ) + 1)) * f t))
@@ -136,6 +125,7 @@ theorem isBernsteinFunction_iff_nonneg_and_forall_isContinuousCompletelyMonotone
     hf.isContinuousCompletelyMonotoneOnIoi_exp_neg_mul hx.le⟩, fun ⟨hnonneg, h⟩ => ?_⟩
   refine isBernsteinFunction_of_forall_isCompletelyMonotoneOnIoi_exp_neg_mul ?_ hnonneg
     fun x hx => (h x hx).isCompletelyMonotoneOnIoi
-  exact continuousOn_of_continuousOn_exp_neg_mul one_ne_zero (h 1 one_pos).continuousOn
+  exact continuousOn_of_continuousOn_exp_const_mul (neg_ne_zero.mpr one_ne_zero)
+    (h 1 one_pos).continuousOn 0 (mem_Ici.mpr le_rfl)
 
 end TauCeti
