@@ -33,7 +33,7 @@ Cartan families need.
 
 ## Main results
 
-* `Matrix.posDef_of_isEmpty`: a matrix on an empty index type is positive definite.
+* `Matrix.PosDef.of_isEmpty`: a matrix on an empty index type is positive definite.
 * `TauCeti.Matrix.posDef_map_intCast`: an integer matrix that is positive definite over `ℤ` is
   positive definite over `ℚ`.
 * `TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit`: an invertible rational matrix of the
@@ -72,7 +72,7 @@ private theorem exists_intCast_eq_mul_of_ne_zero [Finite n] {x : n → ℚ} (hx 
 
 /-- **A matrix on an empty index type is vacuously positive definite.** This is what the
 rank-zero members of the classical Cartan families `A 0`, `B 0`, `C 0` and `D 0` need. -/
-theorem _root_.Matrix.posDef_of_isEmpty {R : Type*} [Ring R] [PartialOrder R] [StarRing R]
+theorem _root_.Matrix.PosDef.of_isEmpty {R : Type*} [Ring R] [PartialOrder R] [StarRing R]
     [IsEmpty n] (A : _root_.Matrix n n R) : A.PosDef :=
   ⟨_root_.Matrix.ext fun i _ ↦ isEmptyElim i,
     fun _ hx ↦ (hx (Finsupp.ext fun i ↦ isEmptyElim i)).elim⟩

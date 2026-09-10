@@ -378,7 +378,7 @@ empty and positive definiteness is vacuous, and at rank `1` Mathlib's `CartanMat
 identifies the matrix with `A 1`. -/
 theorem posDef_map_intCast_cartanMatrix_D :
     ∀ n : ℕ, ((CartanMatrix.D n).map (Int.cast : ℤ → ℚ)).PosDef
-  | 0 => Matrix.posDef_of_isEmpty _
+  | 0 => Matrix.PosDef.of_isEmpty _
   | 1 => by rw [CartanMatrix.D_one]; exact posDef_map_intCast_cartanMatrix_A 1
   | (k + 2) => by
       rw [← simpleCorootsD_mul_conjTranspose]
