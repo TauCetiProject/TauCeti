@@ -276,7 +276,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_not_
   have : v.asIdeal.LiesOver (Ideal.span {(TauCeti.rationalPrimeBelow v : ℤ)}) :=
     ⟨(TauCeti.under_eq_span_rationalPrimeBelow v).symm⟩
   -- The residue degree of `v` over `ℚ` is one or two.
-  have hdvd := TauCeti.absNorm_dvd_rationalPrimeBelow_pow_finrank v
+  have hdvd := v.absNorm_dvd_rationalPrimeBelow_pow_finrank
   rw [finrank_candidateGenusFieldBase hd hnsq] at hdvd
   obtain ⟨i, hi, hnorm⟩ := (Nat.dvd_prime_pow hqprime).mp hdvd
   interval_cases i
@@ -483,7 +483,7 @@ theorem artinHomAway_candidateGenusField_surjective
     refine ⟨mem_nonZeroDivisors_iff_ne_zero.mp J.2, fun v hv hdvdJ ↦ ?_⟩
     have hdvdM : v.asIdeal ∣ Ideal.span {algebraMap ℤ (𝓞 (candidateGenusFieldBase hd))
         (2 * fundamentalDiscriminant d)} :=
-      (TauCeti.asIdeal_dvd_span_singleton_algebraMap_iff v _).mpr
+      (v.asIdeal_dvd_span_singleton_algebraMap_iff _).mpr
         ((mem_genusFieldArtinExcludedPrimes hd v).mp hv)
     refine v.isPrime.ne_top (top_le_iff.mp ?_)
     rw [← Ideal.isCoprime_iff_sup_eq.mp hcop]
