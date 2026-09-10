@@ -59,6 +59,9 @@ class-field correspondences directly in terms of their abelian Galois groups.
 * J. Neukirch, *Class Field Theory*, Chapter III, §1.
 -/
 
+-- The declaration design follows `TauCetiRoadmap/ClassFieldTheory/README.md`
+-- and `TauCetiRoadmap/ClassFieldTheory/Suggested.lean`.
+
 public noncomputable section
 
 namespace TauCeti.ClassFieldTheory
