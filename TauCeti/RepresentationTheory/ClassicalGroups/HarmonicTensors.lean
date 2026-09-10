@@ -37,9 +37,7 @@ is essentially one contraction, the cap itself, so the harmonic tensors are exac
 so as soon as `n` is nonzero in `k` the tensor square has non-harmonic vectors.
 
 Everything except the last section is stated over a commutative semiring, as the cap is; the
-orthogonal group needs a commutative ring, and the invariance statements are collected there.  The
-Schur-Weyl roadmap pins `harmonicTensors` over `ℂ`; nothing in the contraction needs a field, so it
-is built here at the generality of the cap it contracts against.
+orthogonal group needs a commutative ring, and the invariance statements are collected there.
 
 ## Main definitions
 
@@ -77,8 +75,6 @@ is built here at the generality of the cap it contracts against.
 * R. Goodman and N. R. Wallach, *Symmetry, Representations, and Invariants*, Springer GTM 255
   (2009), Chapter 10.
 * H. Weyl, *The Classical Groups: Their Invariants and Representations*, Princeton (1939).
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9, "Harmonic tensors and the trace maps".
 -/
 
 public section
@@ -119,18 +115,13 @@ theorem orthogonalContract_slots_ne (σ : Fin d ≃ Fin m ⊕ Fin 2) :
     σ.symm (Sum.inr 0) ≠ σ.symm (Sum.inr 1) := fun h => by
   simpa using σ.symm.injective h
 
-/-- A contraction exists only when there are two slots to spare.  This is an implementation
-detail of `TauCeti.harmonicTensors_eq_top_of_lt_two` and `TauCeti.harmonicTensors_two`, which are
-the two readings of it that the file uses. -/
-private theorem eq_add_two_of_equiv_sum_two (σ : Fin d ≃ Fin m ⊕ Fin 2) : d = m + 2 := by
-  simpa using Fintype.card_congr σ
-
 /-- **The harmonic (traceless) tensors**: the tensors killed by every contraction of a pair of
 slots against the coordinate dot product. -/
 noncomputable def harmonicTensors (d : ℕ) : Submodule k (⨂[k]^d (Fin n → k)) :=
   ⨅ m : ℕ, ⨅ σ : Fin d ≃ Fin m ⊕ Fin 2, LinearMap.ker (orthogonalContract k n σ)
 
 /-- A tensor is harmonic exactly when every contraction kills it. -/
+@[simp]
 theorem mem_harmonicTensors_iff {x : ⨂[k]^d (Fin n → k)} :
     x ∈ harmonicTensors k n d ↔
       ∀ (m : ℕ) (σ : Fin d ≃ Fin m ⊕ Fin 2), orthogonalContract k n σ x = 0 := by
@@ -139,7 +130,8 @@ theorem mem_harmonicTensors_iff {x : ⨂[k]^d (Fin n → k)} :
 /-- **Below two slots every tensor is harmonic**: there is no pair of slots to contract. -/
 theorem harmonicTensors_eq_top_of_lt_two (h : d < 2) : harmonicTensors k n d = ⊤ := by
   refine eq_top_iff.mpr fun x _ => (mem_harmonicTensors_iff k n).mpr fun m σ => ?_
-  exact absurd (eq_add_two_of_equiv_sum_two σ) (by omega)
+  have hd : d = m + 2 := by simpa using Fintype.card_congr σ
+  exact absurd hd (by omega)
 
 /-- Scalars are harmonic. -/
 @[simp]
@@ -180,7 +172,9 @@ theorem harmonicTensors_two :
       (isEmptyEquiv_comp_orthogonalContract k n (Equiv.emptySum (Fin 0) (Fin 2)).symm) x]
     simp [hx]
   · intro hx m σ
-    obtain rfl : m = 0 := by have := eq_add_two_of_equiv_sum_two σ; omega
+    obtain rfl : m = 0 := by
+      have hd : 2 = m + 2 := by simpa using Fintype.card_congr σ
+      omega
     have h := LinearMap.congr_fun (isEmptyEquiv_comp_orthogonalContract k n σ) x
     simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe] at h
     rw [hx] at h
@@ -198,9 +192,8 @@ theorem orthogonalCup_notMem_harmonicTensors (hn : (n : k) ≠ 0) :
 theorem harmonicTensors_two_ne_top (hn : (n : k) ≠ 0) : harmonicTensors k n 2 ≠ ⊤ := fun h =>
   orthogonalCup_notMem_harmonicTensors k n hn (h ▸ Submodule.mem_top)
 
-/-- **A pure tensor of distinct standard basis vectors is harmonic.**  Together with
-`TauCeti.orthogonalCup_notMem_harmonicTensors` this places the harmonic tensors strictly between
-`⊥` and `⊤` on the tensor square as soon as there are two distinct coordinates. -/
+/-- **A pure tensor of distinct standard basis vectors is harmonic.**  The single contraction on
+the tensor square dots the two slots against each other, and `eᵢ ⬝ᵥ eⱼ` vanishes for `i ≠ j`. -/
 theorem tprod_single_mem_harmonicTensors {i j : Fin n} (hij : i ≠ j) :
     PiTensorProduct.tprod k ![Pi.single i (1 : k), Pi.single j (1 : k)] ∈
       harmonicTensors k n 2 := by
@@ -316,6 +309,7 @@ theorem toSubmodule_harmonicSubrep :
     (harmonicSubrep k n d).toSubmodule = harmonicTensors k n d := (rfl)
 
 /-- Membership in the harmonic subrepresentation is membership in the harmonic tensors. -/
+@[simp]
 theorem mem_harmonicSubrep {x : ⨂[k]^d (Fin n → k)} :
     x ∈ harmonicSubrep k n d ↔ x ∈ harmonicTensors k n d := Iff.rfl
 
