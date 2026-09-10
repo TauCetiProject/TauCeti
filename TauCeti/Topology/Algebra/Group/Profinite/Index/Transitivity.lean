@@ -47,13 +47,14 @@ private theorem index_at_level_mul_index_at_level {H K : Subgroup G} (hHK : H �
   have himage : H.map q ≤ K.map q := Subgroup.map_mono hHK
   rw [← (H.map q).relIndex_mul_index himage]
   congr 1
+  have hq (g : G) : q g = 1 ↔ g ∈ N.toSubgroup := by
+    exact QuotientGroup.eq_one_iff g
   have hker : f.ker = N'.toSubgroup := by
     ext x
     simp only [MonoidHom.mem_ker]
-    rw [show f x = q (x : G) by exact MonoidHom.comp_apply q K.subtype x]
-    rw [show q (x : G) = 1 ↔ (x : G) ∈ N.toSubgroup by
-      exact QuotientGroup.eq_one_iff (x : G)]
-    rw [hN', Subgroup.mem_comap]
+    rw [MonoidHom.comp_apply]
+    simp only [Subgroup.coe_subtype]
+    rw [hq, hN', Subgroup.mem_comap]
     simp only [Subgroup.coe_subtype]
   have hmapH : (H.comap K.subtype).map f = H.map q := by
     ext y
