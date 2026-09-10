@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.CofilteredSystem
-public import Mathlib.Topology.Algebra.Category.ProfiniteGrp.Limits
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Basic
 
 /-!
@@ -45,39 +45,21 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Com
 
 namespace ProfiniteSylow
 
-/-- The underlying homomorphism of Mathlib's finite-quotient functor at an inclusion `V ≤ U`.
--/
-private def quotientMap {U V : OpenNormalSubgroup G} (hVU : V ≤ U) :
-    G ⧸ V.toSubgroup →* G ⧸ U.toSubgroup :=
-  ((ProfiniteGrp.of G).toFiniteQuotientFunctor.map (homOfLE hVU)).hom.hom
-
-@[simp]
-private theorem quotientMap_mk {U V : OpenNormalSubgroup G} (hVU : V ≤ U) (g : G) :
-    quotientMap hVU (g : G ⧸ V.toSubgroup) = (g : G ⧸ U.toSubgroup) :=
-  rfl
-
-private theorem quotientMap_surjective {U V : OpenNormalSubgroup G} (hVU : V ≤ U) :
-    Function.Surjective (quotientMap hVU) :=
-  QuotientGroup.map_surjective_of_surjective V.toSubgroup U.toSubgroup (.id G)
-    (QuotientGroup.mk'_surjective U.toSubgroup) (fun _ hx ↦ hVU hx)
-
-@[simp]
-private theorem quotientMap_refl (U : OpenNormalSubgroup G) :
-    quotientMap (le_refl U) = MonoidHom.id (G ⧸ U.toSubgroup) :=
-  congrArg (fun f ↦ f.hom.hom) ((ProfiniteGrp.of G).toFiniteQuotientFunctor.map_id U)
-
-@[simp]
-private theorem quotientMap_comp {U V W : OpenNormalSubgroup G} (hVU : V ≤ U)
-    (hWV : W ≤ V) :
-    (quotientMap hVU).comp (quotientMap hWV) = quotientMap (hWV.trans hVU) :=
-  congrArg (fun f ↦ f.hom.hom)
-    ((ProfiniteGrp.of G).toFiniteQuotientFunctor.map_comp (homOfLE hWV) (homOfLE hVU)).symm
+omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  [TotallyDisconnectedSpace G] in
+/-- The transition map of the finite-quotient system is surjective: every class modulo the
+larger subgroup is already the image of a class modulo the smaller one. -/
+private theorem finiteQuotientMap_surjective {U V : Subgroup G} [U.Normal] [V.Normal]
+    (hVU : V ≤ U) : Function.Surjective (finiteQuotientMap hVU) := by
+  intro x
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective U x
+  exact ⟨(g : G ⧸ V), finiteQuotientMap_mk hVU g⟩
 
 /-- The cofiltered system of Sylow `p`-subgroups of the finite quotients of `G`. -/
 private noncomputable def system : OpenNormalSubgroup G ⥤ Type u where
   obj U := Sylow p (G ⧸ U.toSubgroup)
   map {U V} f := ↾fun P ↦
-    P.mapSurjective (quotientMap_surjective (leOfHom f))
+    P.mapSurjective (finiteQuotientMap_surjective (leOfHom f))
   map_id U := by
     apply ConcreteCategory.hom_ext
     intro P
@@ -88,8 +70,7 @@ private noncomputable def system : OpenNormalSubgroup G ⥤ Type u where
     intro P
     apply Sylow.ext
     dsimp
-    rw [Subgroup.map_map]
-    rw [quotientMap_comp]
+    rw [Subgroup.map_map, finiteQuotientMap_comp]
 
 private instance system_obj_finite (U : OpenNormalSubgroup G) :
     Finite ((system (p := p) (G := G)).obj U) := by
@@ -112,13 +93,13 @@ theorem exists_isProPSylow (p : ℕ) [Fact p.Prime] (G : Type u) [Group G]
   let S : ∀ U : OpenNormalSubgroup G, Sylow p (G ⧸ U.toSubgroup) := s
   -- Regard the section equation as compatibility of the underlying Sylow subgroups.
   have hcompat {U V : OpenNormalSubgroup G} (hUV : U ≤ V) :
-      (S U : Subgroup (G ⧸ U.toSubgroup)).map (ProfiniteSylow.quotientMap hUV) =
+      (S U : Subgroup (G ⧸ U.toSubgroup)).map (finiteQuotientMap hUV) =
         (S V : Subgroup (G ⧸ V.toSubgroup)) := by
     have h := hs (homOfLE hUV)
-    have h' : (S U).mapSurjective (ProfiniteSylow.quotientMap_surjective hUV) = S V := by
+    have h' : (S U).mapSurjective (ProfiniteSylow.finiteQuotientMap_surjective hUV) = S V := by
       -- A morphism in `Type` is a bundled function, so expose its application before using
       -- the section equation.
-      change (S U).mapSurjective (ProfiniteSylow.quotientMap_surjective hUV) = S V at h
+      change (S U).mapSurjective (ProfiniteSylow.finiteQuotientMap_surjective hUV) = S V at h
       exact h
     exact congrArg (fun Q : Sylow p (G ⧸ V.toSubgroup) ↦ Q.1) h'
   -- Pull the compatible family back to `G` and intersect all its members.
@@ -138,16 +119,16 @@ theorem exists_isProPSylow (p : ℕ) [Fact p.Prime] (G : Type u) [Group G]
       have ht_nonempty (V : OpenNormalSubgroup G) : (t V).Nonempty := by
         let W := U ⊓ V
         have hyW : y ∈ (S W : Subgroup (G ⧸ W.toSubgroup)).map
-            (ProfiniteSylow.quotientMap (show W ≤ U from inf_le_left)) := by
+            (finiteQuotientMap (show W ≤ U from inf_le_left)) := by
           rwa [hcompat inf_le_left]
         obtain ⟨z, hz, hzy⟩ := hyW
         obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective W.toSubgroup z
         refine ⟨g, ?_, ?_⟩
-        · exact hzy
+        · simpa using hzy
         · have hzV : (QuotientGroup.mk g : G ⧸ V.toSubgroup) ∈
               (S W : Subgroup (G ⧸ W.toSubgroup)).map
-                (ProfiniteSylow.quotientMap (show W ≤ V from inf_le_right)) :=
-            ⟨QuotientGroup.mk g, hz, rfl⟩
+                (finiteQuotientMap (show W ≤ V from inf_le_right)) :=
+            ⟨QuotientGroup.mk g, hz, finiteQuotientMap_mk _ g⟩
           rwa [hcompat inf_le_right] at hzV
       have ht_closed (V : OpenNormalSubgroup G) : IsClosed (t V) :=
         (isClosed_singleton.preimage QuotientGroup.continuous_mk).inter
@@ -159,15 +140,15 @@ theorem exists_isProPSylow (p : ℕ) [Fact p.Prime] (G : Type u) [Group G]
           refine ⟨hgy, ?_⟩
           have : (QuotientGroup.mk g : G ⧸ V.toSubgroup) ∈
               (S (V ⊓ W) : Subgroup (G ⧸ (V ⊓ W).toSubgroup)).map
-                (ProfiniteSylow.quotientMap inf_le_left) :=
-            ⟨QuotientGroup.mk g, hg, rfl⟩
+                (finiteQuotientMap inf_le_left) :=
+            ⟨QuotientGroup.mk g, hg, finiteQuotientMap_mk _ g⟩
           rwa [hcompat inf_le_left] at this
         · rintro g ⟨hgy, hg⟩
           refine ⟨hgy, ?_⟩
           have : (QuotientGroup.mk g : G ⧸ W.toSubgroup) ∈
               (S (V ⊓ W) : Subgroup (G ⧸ (V ⊓ W).toSubgroup)).map
-                (ProfiniteSylow.quotientMap inf_le_right) :=
-            ⟨QuotientGroup.mk g, hg, rfl⟩
+                (finiteQuotientMap inf_le_right) :=
+            ⟨QuotientGroup.mk g, hg, finiteQuotientMap_mk _ g⟩
           rwa [hcompat inf_le_right] at this
       let _ : Nonempty (OpenNormalSubgroup G) :=
         ⟨{ toOpenSubgroup := ⊤, isNormal' := Subgroup.normal_top }⟩
