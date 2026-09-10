@@ -22,7 +22,7 @@ independently induced topology from `TauCeti.Topology.Algebra.QuadraticForm.Spec
 
 When `2` is invertible, the vector space has its module topology, and Clifford multiplication is
 continuous, the Spin action is jointly continuous by the explicit Clifford conjugation formula for
-`spinVectorAction`. Over a topological ring, this proves continuity of the Spin projection for a
+`spinVectorAction`. Under the same hypotheses, this proves continuity of the Spin projection for a
 quadratic form on a finite coordinate space. In particular, this gives the topological-group bridge
 for the compact real double cover at signature `(n, 0)`. It makes no smoothness, compactness,
 connectedness, simple-connectivity, fibration, or universal-cover claim.
@@ -58,8 +58,8 @@ topologized special orthogonal group.
 * `QuadraticForm.isClosed_spinVectorStabilizer` proves that every vector stabilizer is closed when
   the vector space is T1, under the same hypotheses.
 * `CliffordAlgebra.continuous_spinToSpecialOrthogonal_pi` proves continuity of the Spin projection
-  for every quadratic form on a finite coordinate space over a topological ring with `2`
-  invertible.
+  for every quadratic form on a finite coordinate space with its module topology, continuous
+  Clifford multiplication, and `2` invertible.
 * `CliffordAlgebra.continuous_realCliffordSpinDoubleCoverZero_rightHom` specializes this result to
   the projection field of the packaged compact real double cover.
 * `CliffordAlgebra.continuous_realCliffordSpinInclusion` proves continuity of the lower-rank
@@ -190,8 +190,9 @@ theorem _root_.QuadraticForm.isClosed_spinVectorStabilizer
 /-- The Spin action of a quadratic form on a finite coordinate space is continuous as a map to
 the special orthogonal group with its standard coordinate topology. -/
 @[fun_prop]
-theorem continuous_spinToSpecialOrthogonal_pi [IsTopologicalRing R] [Invertible (2 : R)]
-    {n : Type v} [Fintype n] [DecidableEq n] (Q : QuadraticForm R (n → R)) :
+theorem continuous_spinToSpecialOrthogonal_pi [Invertible (2 : R)]
+    {n : Type v} [Fintype n] [DecidableEq n] (Q : QuadraticForm R (n → R))
+    [IsModuleTopology R (n → R)] [ContinuousMul (CliffordAlgebra Q)] :
     Continuous (spinToSpecialOrthogonal Q) := by
   apply (TauCeti.QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear
     Q).isInducing.continuous_iff.mpr
