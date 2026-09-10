@@ -12,7 +12,7 @@ public import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Pairing
 public import TauCeti.KnotTheory.Grid.SimplyBlocked
 
 /-!
-# The unblocked and simply blocked grid differentials square to zero
+# The grid differentials square to zero
 
 The square of the unblocked grid differential `∂⁻` of `Unblocked.lean` is a sum over pairs of
 composable rectangles which are empty and cover no `X`-marking. This file completes the
@@ -28,9 +28,12 @@ sharing one side column bound an L-shaped hexagon which is cut the other way. Ea
 the intermediate grid state and preserves the covered-square domain, hence the monomial weight, so
 in characteristic two the two terms of a pair cancel.
 
-Specializing at `V_i = 0` carries the theorem to the simply blocked map, so the simply blocked
-complex is a chain complex too. The fully blocked complex is not treated here: its rectangles must
-avoid the `O`-markings as well, so it needs a recut of its own.
+Specializing carries the theorem to the two blocked theories, so their complexes are chain
+complexes too. Setting one `V_i` to zero gives the simply blocked map, and specialization
+intertwines the two differentials. Setting every `V_i` to zero — that is, taking constant terms —
+gives the fully blocked differential of `Complex.lean`, whose rectangles must avoid the
+`O`-markings as well: `GridDiagram.fullyBlockedRectangleCount_eq_constantCoeff` identifies its
+matrix coefficients with the constant terms of `∂⁻` over `ZMod 2`.
 
 ## Main results
 
@@ -39,6 +42,9 @@ avoid the `O`-markings as well, so it needs a recut of its own.
 * `TauCeti.GridDiagram.unblockedDifferential_comp_self_eq_zero`: `∂⁻ ∘ ∂⁻ = 0`.
 * `TauCeti.GridDiagram.simplyBlockedDifferential_comp_self_eq_zero`: the same for the
   specialization at `V_i = 0`.
+* `TauCeti.GridDiagram.fullyBlockedDecompositionCount_eq_zero`,
+  `TauCeti.GridDiagram.fullyBlockedDifferential_comp_self_eq_zero`: the same for the fully blocked
+  differential, the specialization at every `V_i = 0`.
 
 ## References
 
@@ -144,6 +150,30 @@ theorem simplyBlockedDifferential_comp_self_eq_zero (i : Fin n) :
   rw [hsingle, ← G.simplyBlockedSpecialization_unblockedDifferential R i,
     ← G.simplyBlockedSpecialization_unblockedDifferential R i]
   rw [G.unblockedDifferential_sq_single_eq_zero R x, map_zero]
+
+/-- Every fully blocked two-step decomposition count is even.
+
+The fully blocked matrix coefficients are the constant terms of the unblocked ones over `ZMod 2`,
+and taking constant terms is a ring homomorphism, so this entry of the fully blocked square is the
+constant term of the corresponding entry of `∂⁻ ∘ ∂⁻`. -/
+theorem fullyBlockedDecompositionCount_eq_zero (x z : GridState n) :
+    G.fullyBlockedDecompositionCount x z = 0 := by
+  have hterm : ∀ y : GridState n,
+      G.fullyBlockedRectangleCount x y * G.fullyBlockedRectangleCount y z =
+        MvPolynomial.constantCoeff
+          (G.unblockedCoefficient (ZMod 2) x y * G.unblockedCoefficient (ZMod 2) y z) :=
+    fun y => by
+      rw [map_mul, G.fullyBlockedRectangleCount_eq_constantCoeff x y,
+        G.fullyBlockedRectangleCount_eq_constantCoeff y z]
+  rw [G.fullyBlockedDecompositionCount_eq_sum x z, Finset.sum_congr rfl fun y _ => hterm y,
+    ← map_sum, G.sum_unblockedCoefficient_mul_unblockedCoefficient_eq_zero (ZMod 2) x z, map_zero]
+
+/-- The fully blocked grid differential squares to zero, so the fully blocked grid complex of
+`Complex.lean` is a chain complex. -/
+theorem fullyBlockedDifferential_comp_self_eq_zero :
+    G.fullyBlockedDifferential.comp G.fullyBlockedDifferential = 0 :=
+  G.fullyBlockedDifferential_comp_self_eq_zero_iff_decompositionCount.mpr
+    G.fullyBlockedDecompositionCount_eq_zero
 
 end GridDiagram
 

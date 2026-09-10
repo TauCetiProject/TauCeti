@@ -28,9 +28,8 @@ The convention that markings sit at the centres of their squares is the one the 
 Alexander gradings already use (`JFunction/Center.lean`); this file supplies the matching
 rectangle domain, which `Grading/MarkingCount.lean` then uses to turn the Maslov and Alexander
 grading changes across a rectangle move into marking counts. The Lane G.3 differential predicate
-`GridRectangle.AvoidsMarkings` still tests the grid-line interior and is left untouched here;
-aligning it with the square-centred convention is a separate correction to that predicate and to
-everything it feeds.
+`GridRectangle.AvoidsMarkings` tests the same square-centred region under its other name
+`GridRectangle.squares`; `GridRectangle.squares_eq_coveredSquares` identifies the two.
 
 ## Main definitions
 
@@ -46,6 +45,8 @@ everything it feeds.
   exactly when their covered columns or their covered rows are disjoint.
 * `TauCeti.GridRectangle.card_coveredSquares`: the number of covered squares is the product of the
   two arc lengths.
+* `TauCeti.GridRectangle.squares_eq_coveredSquares`: the covered squares are the region
+  `GridRectangle.squares` that the marking-avoidance predicate tests.
 
 ## References
 
@@ -151,6 +152,12 @@ theorem disjoint_coveredSquares_iff (R S : GridRectangle n) :
 theorem interior_subset_coveredSquares : R.interior ⊆ R.coveredSquares :=
   Finset.product_subset_product R.columnInterior_subset_coveredColumns
     R.rowInterior_subset_coveredRows
+
+/-- The squares a rectangle covers are the region the marking-avoidance predicate tests: both
+`GridRectangle.squares` and `coveredSquares` are the product of the two half-open arcs. -/
+theorem squares_eq_coveredSquares : R.squares = R.coveredSquares := by
+  ext p
+  simp [mem_coveredSquares]
 
 /-- The number of covered squares is the product of the numbers of covered columns and covered
 rows. -/
