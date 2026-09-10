@@ -157,8 +157,7 @@ instance instNorm : Norm (HolderSpace α X Y) where
   norm f := holderNorm α f.toBoundedContinuousFunction
 
 /-- The Hölder-space norm is the supremum-plus-Hölder norm of the underlying bounded continuous
-function.  This is the single unfolding of `instNorm`; every other norm computation rewrites with
-it instead of reducing through the wrapper again. -/
+function. -/
 theorem norm_eq_holderNorm (f : HolderSpace α X Y) :
     ‖f‖ = holderNorm α f.toBoundedContinuousFunction := (rfl)
 
@@ -169,6 +168,8 @@ theorem norm_def (f : HolderSpace α X Y) :
       nnHolderNorm α (f.toBoundedContinuousFunction : X → Y) := by
   rw [norm_eq_holderNorm, holderNorm_def]
 
+/-- The supremum-plus-Hölder norm makes `HolderSpace α X Y` a normed additive commutative
+group. -/
 noncomputable instance instNormedAddCommGroup : NormedAddCommGroup (HolderSpace α X Y) :=
   let core : NormedSpace.Core ℝ (HolderSpace α X Y) :=
     { norm_nonneg := fun f ↦ by
@@ -198,6 +199,7 @@ noncomputable instance instNormedAddCommGroup : NormedAddCommGroup (HolderSpace 
           exact holderNorm_zero α }
   NormedAddCommGroup.ofCore core
 
+/-- The supremum-plus-Hölder norm makes `HolderSpace α X Y` a normed space over `ℝ`. -/
 noncomputable instance instNormedSpace : NormedSpace ℝ (HolderSpace α X Y) :=
   { toModule := inferInstance
     norm_smul_le := fun c f ↦ by
