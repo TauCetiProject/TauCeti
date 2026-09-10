@@ -56,6 +56,9 @@ built from `closure` in the forthcoming valuation-spectrum development of `Spv (
 * `TauCeti.ConvexSubgroup.mulArchimedean_iff_forall_eq_bot_or_eq_top` : A linearly ordered
   commutative group is `MulArchimedean` exactly when its only convex subgroups are `⊥`
   and `⊤`.
+* `TauCeti.ConvexSubgroup.nontrivial_quotient_maxAvoid` and
+  `TauCeti.ConvexSubgroup.mulArchimedean_quotient_maxAvoid` : quotienting by the largest convex
+  subgroup avoiding a convex-generating element gives a nontrivial archimedean group.
 * `TauCeti.ConvexSubgroup.quotientBotOrderIso` : The quotient by `⊥` is the group itself, as an
   order isomorphism, so order-theoretic properties transfer across it.
 
@@ -651,6 +654,69 @@ theorem quotientMk_lt_one_of_notMem {a : Γ} (ha : a ≤ 1) (haH : a ∉ H) :
     simpa using H.quotientMk_monotone ha
   refine hle.lt_of_ne fun heq ↦ haH ?_
   exact (QuotientGroup.eq_one_iff a).mp (by simpa using heq)
+
+/-! ### A height-one quotient -/
+
+/-- The quotient by the largest convex subgroup avoiding `γ ≠ 1` is nontrivial: the class
+of `γ` is different from `1`.
+
+Together with `mulArchimedean_quotient_maxAvoid`, this is the elementary ordered-group input to
+the fact that a valuation with a nonzero cofinal value is microbial. -/
+theorem nontrivial_quotient_maxAvoid {γ : Γ} (hγ : γ ≠ 1) :
+    Nontrivial (Γ ⧸ (maxAvoid hγ).toSubgroup) := by
+  refine ⟨⟨(γ : Γ ⧸ (maxAvoid hγ).toSubgroup), 1, ?_⟩⟩
+  intro h
+  exact not_mem_maxAvoid hγ ((QuotientGroup.eq_one_iff γ).mp h)
+
+/-- If `γ` generates the whole group as a convex subgroup, the quotient by the largest convex
+subgroup avoiding `γ` is archimedean. Equivalently, it has height at most one.
+
+Indeed, the inverse image of a nontrivial convex subgroup of the quotient strictly contains
+`maxAvoid hγ`, hence contains `γ`; the generation hypothesis then makes that inverse image the
+whole group. -/
+theorem mulArchimedean_quotient_maxAvoid {γ : Γ} (hγ : γ ≠ 1)
+    (hclosure : closure ({γ} : Set Γ) = ⊤) :
+    MulArchimedean (Γ ⧸ (maxAvoid hγ).toSubgroup) := by
+  let q : Γ →*o Γ ⧸ (maxAvoid hγ).toSubgroup :=
+    OrderMonoidHom.mk (QuotientGroup.mk' (maxAvoid hγ).toSubgroup)
+      (maxAvoid hγ).quotientMk_monotone
+  rw [mulArchimedean_iff_forall_eq_bot_or_eq_top]
+  intro K
+  by_cases hK : K = ⊥
+  · exact Or.inl hK
+  · right
+    let L : ConvexSubgroup Γ := comap q K
+    have hHL : maxAvoid hγ ≤ L := by
+      intro x hx
+      change q x ∈ K
+      have hxq : q x = 1 := (QuotientGroup.eq_one_iff x).mpr hx
+      rw [hxq]
+      exact one_mem K
+    have hlt : maxAvoid hγ < L := by
+      refine hHL.lt_of_ne fun hEq ↦ hK ?_
+      apply bot_unique
+      intro z hz
+      obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective (maxAvoid hγ).toSubgroup z
+      rw [mem_bot]
+      apply (QuotientGroup.eq_one_iff x).mpr
+      have hxL : x ∈ L := by
+        change q x ∈ K
+        exact hz
+      rw [ConvexSubgroup.mem_toSubgroup, hEq]
+      exact hxL
+    have hγL : γ ∈ L := by
+      by_contra hγL
+      exact (not_le_of_gt hlt) (le_maxAvoid.mpr hγL)
+    have hL : L = ⊤ := by
+      apply top_unique
+      rw [← hclosure, closure_le]
+      simpa using hγL
+    apply top_unique
+    intro z _
+    obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective (maxAvoid hγ).toSubgroup z
+    have hxL : x ∈ L := hL ▸ mem_top
+    change q x ∈ K at hxL
+    exact hxL
 
 /-- **The quotient by `⊥` is the group itself.** `QuotientGroup.quotientBot` identifies the two
 groups once `bot_toSubgroup` has rewritten which subgroup is being quotiented by.
