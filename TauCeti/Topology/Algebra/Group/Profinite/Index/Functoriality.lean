@@ -134,10 +134,8 @@ theorem _root_.Subgroup.profiniteIndex_comap_of_surjective (L : Subgroup H) (f :
     (hf : Continuous f) (hsurj : Surjective f) :
     (L.comap f).profiniteIndex = L.profiniteIndex := by
   calc
-    (L.comap f).profiniteIndex = (L.comap f ⊔ f.ker).profiniteIndex :=
-      congrArg Subgroup.profiniteIndex (sup_eq_left.mpr (f.ker_le_comap L)).symm
-    _ = ((L.comap f).map f).profiniteIndex :=
-      (Subgroup.profiniteIndex_map_of_surjective _ f hf hsurj).symm
+    (L.comap f).profiniteIndex = ((L.comap f).map f).profiniteIndex :=
+      (Subgroup.profiniteIndex_map_eq (L.comap f) f hf hsurj (f.ker_le_comap L)).symm
     _ = L.profiniteIndex := congrArg Subgroup.profiniteIndex
       (Subgroup.map_comap_eq_self_of_surjective hsurj L)
 
@@ -156,7 +154,8 @@ theorem _root_.Subgroup.profiniteIndex_map_mk'_eq_profiniteIndex_sup
 theorem _root_.Subgroup.profiniteIndex_map_equiv (K : Subgroup G) (e : G ≃ₜ* H) :
     (K.map ((e : G ≃* H) : G →* H)).profiniteIndex = K.profiniteIndex := by
   have hcont : Continuous ((e : G ≃* H) : G →* H) := map_continuous e
-  rw [Subgroup.profiniteIndex_map_of_surjective K _ hcont (EquivLike.surjective (e : G ≃* H)),
-    MonoidHom.ker_eq_bot _ (EquivLike.injective (e : G ≃* H)), sup_bot_eq]
+  apply Subgroup.profiniteIndex_map_eq K _ hcont (EquivLike.surjective (e : G ≃* H))
+  rw [MonoidHom.ker_eq_bot _ (EquivLike.injective (e : G ≃* H))]
+  exact bot_le
 
 end TauCeti
