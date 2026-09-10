@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Carrier
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Multiplicity
+public import TauCeti.Algebra.Lie.Isotypic
+public import TauCeti.Algebra.Lie.Multiplicity
 -- Non-public: these declarations appear only inside proofs.
 import TauCeti.Algebra.Lie.GeneralLinear.Existence
+import TauCeti.Algebra.Lie.UniversalEnveloping.Multiplicity
 
 /-!
 # The single-weight isotypy criterion for `gl_n`
