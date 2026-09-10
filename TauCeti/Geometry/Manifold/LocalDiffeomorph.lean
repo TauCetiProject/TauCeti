@@ -61,21 +61,40 @@ variable {𝕂 : Type*} [RCLike 𝕂]
 
 section Charts
 
-variable (I : ModelWithCorners 𝕂 E H) [I.Boundaryless] (n : WithTop ℕ∞) [IsManifold I n M]
+variable (I : ModelWithCorners 𝕂 E H) (n : WithTop ℕ∞) [IsManifold I n M]
 
-/-- The extended chart at `x`, as a partial diffeomorphism from `M` to the model space `E`. Its
-target is open because `I` is boundaryless. -/
-def extChartPartialDiffeomorph (x : M) : PartialDiffeomorph I 𝓘(𝕂, E) M E n where
-  toPartialEquiv := extChartAt I x
-  open_source := isOpen_extChartAt_source x
-  open_target := isOpen_extChartAt_target x
-  contMDiffOn_toFun := by
-    simpa only [extChartAt_source] using contMDiffOn_extChartAt (I := I) (n := n) (x := x)
-  contMDiffOn_invFun := contMDiffOn_extChartAt_symm x
+/-- The extended chart at `x`, restricted to the interior of its target and regarded as a partial
+diffeomorphism from `M` to the model space `E`. -/
+def extChartPartialDiffeomorph (x : M) : PartialDiffeomorph I 𝓘(𝕂, E) M E n := by
+  let chart := extChartAt I x
+  let V := interior chart.target
+  have hsource : IsOpen (chart.source ∩ chart ⁻¹' V) :=
+    (continuousOn_extChartAt (I := I) x).isOpen_inter_preimage
+      (isOpen_extChartAt_source (I := I) x) isOpen_interior
+  let ce := (PartialEquiv.IsImage.of_preimage_eq
+    (e := chart) (s := chart ⁻¹' V) (t := V) rfl).restr
+  have htarget : ce.target = V := by
+    change chart.target ∩ V = V
+    exact inter_eq_right.2 interior_subset
+  exact {
+    toPartialEquiv := ce
+    open_source := hsource
+    open_target := htarget ▸ isOpen_interior
+    contMDiffOn_toFun := by
+      apply (contMDiffOn_extChartAt (I := I) (n := n) (x := x)).mono
+      intro y hy
+      simpa only [chart, extChartAt_source] using hy.1
+    contMDiffOn_invFun :=
+      (contMDiffOn_extChartAt_symm (I := I) x).mono fun _ hy => interior_subset hy.2
+  }
 
 @[simp]
 theorem extChartPartialDiffeomorph_toPartialEquiv (x : M) :
-    (extChartPartialDiffeomorph I n x).toPartialEquiv = extChartAt I x := (rfl)
+    (extChartPartialDiffeomorph I n x).toPartialEquiv =
+      (PartialEquiv.IsImage.of_preimage_eq
+        (e := extChartAt I x)
+        (s := (extChartAt I x) ⁻¹' interior (extChartAt I x).target)
+        (t := interior (extChartAt I x).target) rfl).restr := (rfl)
 
 theorem coe_extChartPartialDiffeomorph (x : M) :
     ⇑(extChartPartialDiffeomorph I n x) = extChartAt I x := (rfl)
@@ -133,41 +152,6 @@ variable [CompleteSpace E] {I : ModelWithCorners 𝕂 E H}
   [IsManifold I n M] [IsManifold J n N] {f : M → N} {s : Set M} {x : M}
   [BoundarylessManifold I M] [BoundarylessManifold J N]
 
-private def extChartInteriorPartialDiffeomorph
-    (I : ModelWithCorners 𝕂 E H) (n : WithTop ℕ∞) [IsManifold I n M] (x : M) :
-    PartialDiffeomorph I 𝓘(𝕂, E) M E n := by
-  let chart := extChartAt I x
-  let V := interior chart.target
-  let ce : PartialEquiv M E := {
-    toFun := chart
-    invFun := chart.symm
-    source := chart.source ∩ chart ⁻¹' V
-    target := V
-    map_source' := fun _ hy => hy.2
-    map_target' := by
-      intro y hy
-      refine ⟨chart.map_target (interior_subset hy), ?_⟩
-      -- The restricted target condition reduces to the chart inverse law on the interior.
-      change chart (chart.symm y) ∈ V
-      rw [chart.right_inv (interior_subset hy)]
-      exact hy
-    left_inv' := fun _ hy => chart.left_inv hy.1
-    right_inv' := fun _ hy => chart.right_inv (interior_subset hy) }
-  exact {
-    toPartialEquiv := ce
-    open_source :=
-      (continuousOn_extChartAt (I := I) x).isOpen_inter_preimage
-        (isOpen_extChartAt_source (I := I) x) isOpen_interior
-    open_target := isOpen_interior
-    contMDiffOn_toFun := by
-      apply (contMDiffOn_extChartAt (I := I) (n := n) (x := x)).mono
-      intro y hy
-      -- Forget the extra target-interior restriction to use smoothness of the full chart.
-      change y ∈ chart.source ∩ chart ⁻¹' V at hy
-      simpa only [chart, extChartAt_source] using hy.1
-    contMDiffOn_invFun :=
-      (contMDiffOn_extChartAt_symm (I := I) x).mono interior_subset }
-
 /-- **The inverse function theorem for manifolds.** If `f` is `C^n` on an open set `s` with
 `1 ≤ n`, and its differential at `x ∈ s` is a continuous linear equivalence, then `f` is a `C^n`
 local diffeomorphism at `x`.
@@ -222,13 +206,16 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
   have hΘsmooth : ContDiffOn 𝕂 n Θ Θ.source := hΘcoe ▸ hgt.mono hΘsub
   set Ψ : PartialDiffeomorph 𝓘(𝕂, E) J E N n :=
     (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).trans
-      (extChartInteriorPartialDiffeomorph J n (f x)).symm with hΨ
+      (extChartPartialDiffeomorph J n (f x)).symm with hΨ
   set Φ : PartialDiffeomorph I J M N n :=
-    (extChartInteriorPartialDiffeomorph I n x).trans Ψ with hΦ
+    (extChartPartialDiffeomorph I n x).trans Ψ with hΦ
   -- The source of each composite comes from `OpenPartialHomeomorph.trans_source`.
   have hΨsource : Ψ.source = Θ.source ∩ Θ ⁻¹' interior ψ.target := by
-    rw [hΨ, PartialDiffeomorph.trans_toPartialEquiv]
-    exact OpenPartialHomeomorph.trans_source _ _
+    rw [hΨ, PartialDiffeomorph.trans_toPartialEquiv, OpenPartialHomeomorph.trans_source]
+    congr 2
+    change (extChartAt J (f x)).target ∩ interior (extChartAt J (f x)).target =
+      interior ψ.target
+    rw [inter_eq_right.2 interior_subset, hψ]
   have hsource : Φ.source =
       (φ.source ∩ φ ⁻¹' interior φ.target) ∩
         φ ⁻¹' (Θ.source ∩ Θ ⁻¹' interior ψ.target) := by
