@@ -178,11 +178,21 @@ noncomputable def abelianizationGalEquiv {V : OpenNormalSubgroup G}
   Abelianization.equivOfComm.symm
 
 open scoped IsMulCommutative in
+/-- The inverse of `abelianizationGalEquiv` is the canonical abelianization map. -/
+@[simp]
+theorem abelianizationGalEquiv_symm_apply {V : OpenNormalSubgroup G}
+    (hV : IsAbelianClassFieldLayer V) (x : (NormalLayer.ofOpenNormal V).Gal) :
+    (abelianizationGalEquiv hV).symm x = Abelianization.of x := by
+  let := isMulCommutative_gal_ofOpenNormal hV
+  rfl
+
+open scoped IsMulCommutative in
 /-- The abelianization equivalence sends the canonical class of an element back to that element. -/
 @[simp]
 theorem abelianizationGalEquiv_of {V : OpenNormalSubgroup G}
     (hV : IsAbelianClassFieldLayer V) (x : (NormalLayer.ofOpenNormal V).Gal) :
     abelianizationGalEquiv hV (Abelianization.of x) = x := by
+  rw [← abelianizationGalEquiv_symm_apply hV x]
   exact (abelianizationGalEquiv hV).apply_symm_apply x
 
 end AbelianLayer
