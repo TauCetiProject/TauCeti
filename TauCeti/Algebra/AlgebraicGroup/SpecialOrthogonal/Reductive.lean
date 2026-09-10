@@ -6,13 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
+public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Connected
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Irreducible
+public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.LowRank
+public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Torus
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Faithful
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Smooth
 
 /-!
-# The unipotent radical obstruction for higher-dimensional special orthogonal groups
+# Reductivity of the special orthogonal groups
 
 Let `SOₙ` be the special orthogonal group of the standard symmetric form over a field of
 characteristic different from two. In dimension at least three, every normal smooth unipotent
@@ -23,10 +26,10 @@ simple in dimension at least three, hence completely reducible. The general norm
 theorem then forces a normal smooth unipotent subgroup to act trivially, and faithfulness
 identifies its defining Hopf ideal with the augmentation ideal.
 
-Smoothness is already known away from characteristic two. Consequently reductivity of `SOₙ`
-in dimension at least three is equivalent to the one remaining geometric condition,
-connectedness. This isolates exactly what is still needed for the dimension-at-least-three
-standard special-orthogonal groups.
+Smoothness is already known away from characteristic two, and so is geometric connectedness, so
+reductivity follows in dimension at least three. Together with the rank-zero and rank-one cases,
+where the group is special linear, and the rank-two case, where it is a torus, this makes every
+standard special orthogonal group reductive away from characteristic two.
 
 ## Main declarations
 
@@ -37,6 +40,8 @@ standard special-orthogonal groups.
 * `TauCeti.SpecialOrthogonal.reductiveCommHopfAlgProperty_iff_geometricallyConnected_of_three_le`:
   in these dimensions and characteristics, `SOₙ` is reductive exactly when it is geometrically
   connected.
+* `TauCeti.SpecialOrthogonal.reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra`: `SOₙ`
+  is reductive in every rank, over every field of characteristic different from two.
 
 ## References
 
@@ -134,6 +139,31 @@ theorem reductiveCommHopfAlgProperty_iff_geometricallyConnected_of_three_le
     intro I hI hU
     exact eq_augmentation_of_isNormal_of_smoothUnipotent_of_three_le
       (AlgebraicClosure k) n hn I hI hU
+
+/-- **`SOₙ` is reductive in dimension at least three**, over every field of characteristic
+different from two. -/
+theorem reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_of_three_le
+    (k : Type u) [Field k] [NeZero (2 : k)] (n : Nat) (hn : 3 ≤ n) :
+    reductiveCommHopfAlgProperty k (finiteTypeCoordinateHopfAlgebra k n) :=
+  (reductiveCommHopfAlgProperty_iff_geometricallyConnected_of_three_le k n hn).mpr
+    (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k n)
+
+/-- **Every standard special orthogonal group is reductive**, over every field of characteristic
+different from two.
+
+The rank-zero and rank-one groups are special linear, the rank-two group is a torus, and from
+rank three on the standard representation is simple, which is what makes the unipotent radical
+trivial. -/
+theorem reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
+    (k : Type u) [Field k] [NeZero (2 : k)] (n : Nat) :
+    reductiveCommHopfAlgProperty k (finiteTypeCoordinateHopfAlgebra k n) :=
+  match n with
+  | 0 => reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_zero k
+  | 1 => reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_one k
+  | 2 => reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_two k
+  | (m + 3) =>
+    reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_of_three_le k (m + 3)
+      (by omega)
 
 end
 

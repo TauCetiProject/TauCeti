@@ -7,35 +7,49 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
 import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.FinTwo
 
 /-!
-# Geometric connectedness of the two-dimensional special orthogonal group
+# Geometric connectedness of the special orthogonal groups
 
-The coordinate Hopf algebra of the standard group `SO₂` is geometrically connected over every
-field. Away from characteristic two, after extending to an algebraically closed field, choose a
-square root `i` of `-1`. The explicit equivalence `SO₂(K) ≃* Kˣ` writes every rational point on a
-Laurent-polynomial path from the identity. In characteristic two, every rational point lies on an
-affine-line path of matrices `!![1 + tb, tb; -tb, 1 + tb]`. An idempotent regular function is
-constant on either kind of path, so all right translations fix it; the standard Hopf-algebra
-criterion then proves connectedness.
+The coordinate Hopf algebra of the standard group `SOₙ` is geometrically connected in every rank
+away from characteristic two, and in rank two over every field. Connectedness is tested by
+idempotents: over an algebraically closed extension an idempotent regular function is constant
+once right translation by every rational point fixes it, and a rational point which is joined to
+the identity by a path (a point over a domain specializing to it at one parameter and to the
+identity at another) translates every idempotent to itself.
 
-The argument away from characteristic two uses Laurent rather than ordinary polynomial paths
-because the parameter is a unit. It treats the standard symmetric form used by
-`TauCeti.SpecialOrthogonal`; in characteristic two this determinant-one model is nonreduced but
-has connected underlying space.
+In every rank, away from characteristic two, the paths come from reflections. Cartan-Dieudonné
+writes a special orthogonal matrix as a product of pairs of reflections, and the points fixing a
+given idempotent form a subgroup, so it is enough to join each product of two reflections to the
+identity. Reflecting in a fixed anisotropic vector `v` and then in a vector moving along a
+Laurent-polynomial family through the plane spanned by `v` and `w` does exactly that, by
+`TauCeti.exists_laurentPath_reflectionMatrix_mul`.
 
-## Main declaration
+Rank two is treated separately because that argument needs an invertible two, while the
+determinant-one model of `SO₂` is geometrically connected over every field. Away from
+characteristic two, after extending to an algebraically closed field, the explicit equivalence
+`SO₂(K) ≃* Kˣ` writes every rational point on a Laurent-polynomial path from the identity; in
+characteristic two, every rational point lies on the affine-line path of matrices
+`!![1 + tb, tb; -tb, 1 + tb]`. That model is nonreduced in characteristic two, but its underlying
+space is still connected.
+
+## Main declarations
 
 * `TauCeti.SpecialOrthogonal.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra_two`:
   `SO₂` is geometrically connected over every field.
+* `TauCeti.SpecialOrthogonal.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra`:
+  `SOₙ` is geometrically connected in every rank over a field of characteristic different from
+  two.
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), §§2.3 and 18.c.
+* J. S. Milne, *Algebraic Groups* (2017), §§2.3, 2.a and 18.c.
+* T. A. Springer, *Linear Algebraic Groups*, §2.2.
 -/
 
 public section
@@ -54,33 +68,33 @@ variable {k K : Type u} [Field k] [Field K] [Algebra k K]
 local instance : IsScalarTower k K (LaurentPolynomial K) :=
   IsScalarTower.of_algebraMap_eq (by simp)
 
-/-- Base-changed `SO₂` points identified with special orthogonal matrices. -/
-private def baseChangePointsMulEquiv
+/-- Base-changed `SOₙ` points identified with special orthogonal matrices. -/
+private def baseChangePointsMulEquiv (n : ℕ)
     (A : Type u) [CommRing A] [Algebra k A] [Algebra K A] [IsScalarTower k K A] :
-    WithConv (K ⊗[k] coordinateHopfAlgebra k 2 →ₐ[K] A) ≃*
-      Matrix.specialOrthogonalGroup (Fin 2) A :=
+    WithConv (K ⊗[k] coordinateHopfAlgebra k n →ₐ[K] A) ≃*
+      Matrix.specialOrthogonalGroup (Fin n) A :=
   (AlgHom.baseChangePointsMulEquiv (k := k) (K := K)
-    (A := coordinateHopfAlgebra k 2) (R := A)).symm.trans
-      (pointsMulEquiv k 2 (A := A))
+    (A := coordinateHopfAlgebra k n) (R := A)).symm.trans
+      (pointsMulEquiv k n (A := A))
 
-private theorem baseChangePointsMulEquiv_mapValue
+private theorem baseChangePointsMulEquiv_mapValue (n : ℕ)
     {A B : Type u} [CommRing A] [CommRing B]
     [Algebra k A] [Algebra K A] [IsScalarTower k K A]
     [Algebra k B] [Algebra K B] [IsScalarTower k K B]
-    (phi : A →ₐ[K] B) (f : WithConv (K ⊗[k] coordinateHopfAlgebra k 2 →ₐ[K] A)) :
-    baseChangePointsMulEquiv (k := k) (K := K) B
-        (AlgHom.mapValue (H := K ⊗[k] coordinateHopfAlgebra k 2) phi f) =
+    (phi : A →ₐ[K] B) (f : WithConv (K ⊗[k] coordinateHopfAlgebra k n →ₐ[K] A)) :
+    baseChangePointsMulEquiv (k := k) (K := K) n B
+        (AlgHom.mapValue (H := K ⊗[k] coordinateHopfAlgebra k n) phi f) =
       Matrix.SpecialOrthogonalGroup.map phi.toRingHom
-        (baseChangePointsMulEquiv (k := k) (K := K) A f) := by
+        (baseChangePointsMulEquiv (k := k) (K := K) n A f) := by
   rw [baseChangePointsMulEquiv, MulEquiv.trans_apply,
     AlgHom.baseChangePointsMulEquiv_symm_mapValue,
     baseChangePointsMulEquiv, MulEquiv.trans_apply]
-  exact pointsMulEquiv_mapValue (R := k) (n := 2) (phi.restrictScalars k) _
+  exact pointsMulEquiv_mapValue (R := k) (n := n) (phi.restrictScalars k) _
 
 /-- The Laurent-polynomial path in `SO₂` attached to the generic unit. -/
 private def laurentPath (i half : K) (hi : i ^ 2 = -1) (hhalf : 2 * half = 1) :
     WithConv (K ⊗[k] coordinateHopfAlgebra k 2 →ₐ[K] LaurentPolynomial K) :=
-  (baseChangePointsMulEquiv (k := k) (K := K) (LaurentPolynomial K)).symm
+  (baseChangePointsMulEquiv (k := k) (K := K) 2 (LaurentPolynomial K)).symm
     (Matrix.SpecialOrthogonalGroup.finTwoOfUnit
       (LaurentPolynomial.C i) (LaurentPolynomial.C half)
       (by simpa only [map_pow, map_neg, map_one] using
@@ -93,9 +107,9 @@ private theorem mapValue_laurentPath
     (i half : K) (hi : i ^ 2 = -1) (hhalf : 2 * half = 1) (u : Kˣ) :
     AlgHom.mapValue (H := K ⊗[k] coordinateHopfAlgebra k 2)
         (MultiplicativeGroup.point u) (laurentPath (k := k) i half hi hhalf) =
-      (baseChangePointsMulEquiv (k := k) (K := K) K).symm
+      (baseChangePointsMulEquiv (k := k) (K := K) 2 K).symm
         (Matrix.SpecialOrthogonalGroup.finTwoOfUnit i half hi hhalf u) := by
-  apply (baseChangePointsMulEquiv (k := k) (K := K) K).injective
+  apply (baseChangePointsMulEquiv (k := k) (K := K) 2 K).injective
   rw [baseChangePointsMulEquiv_mapValue]
   simp only [laurentPath, MulEquiv.apply_symm_apply]
   rw [Matrix.SpecialOrthogonalGroup.map_finTwoOfUnit]
@@ -136,11 +150,11 @@ private theorem rightTranslationAlgHom_eq_self_of_char_two
     (g : WithConv (K ⊗[k] coordinateHopfAlgebra k 2 →ₐ[K] K)) :
     HopfAlgebra.rightTranslationAlgHom g e = e := by
   let _ : CharP K 2 := CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero h2
-  let E := baseChangePointsMulEquiv (k := k) (K := K) K
+  let E := baseChangePointsMulEquiv (k := k) (K := K) 2 K
   let M := E g
   let b : K := M.val 0 1
   let xX : WithConv (K ⊗[k] coordinateHopfAlgebra k 2 →ₐ[K] Polynomial K) :=
-    (baseChangePointsMulEquiv (k := k) (K := K) (Polynomial K)).symm
+    (baseChangePointsMulEquiv (k := k) (K := K) 2 (Polynomial K)).symm
       (charTwoMatrixPath b h2)
   let eval (c : K) : Polynomial K →ₐ[K] K :=
     Polynomial.aevalTower (AlgHom.id K K) c
@@ -192,7 +206,7 @@ private theorem rightTranslationAlgHom_eq_self_of_two_ne_zero
   let half : K := (2 : K)⁻¹
   have hhalf : 2 * half = 1 := by
     exact mul_inv_cancel₀ h2
-  let E := baseChangePointsMulEquiv (k := k) (K := K) K
+  let E := baseChangePointsMulEquiv (k := k) (K := K) 2 K
   let u : Kˣ := Matrix.SpecialOrthogonalGroup.finTwoToUnit i hi (E g)
   let eval (v : Kˣ) : LaurentPolynomial K →ₐ[K] K := MultiplicativeGroup.point v
   apply HopfAlgebra.rightTranslationAlgHom_eq_self_of_path e he g
@@ -234,6 +248,101 @@ theorem geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra_two
   let equiv : (H : Type u) ⊗[k] K ≃+* K ⊗[k] H :=
     (Algebra.TensorProduct.comm k H K).toRingEquiv
   exact (PrimeSpectrum.homeomorphOfRingEquiv equiv).connectedSpace_iff.mpr hconnected
+
+/-! ### Every rank, away from characteristic two -/
+
+section CharNeTwo
+
+variable (n : ℕ)
+
+/-- **Right translation by a product of two reflections fixes every idempotent.** The
+Laurent-polynomial family joining that point to the identity is a path in the sense of
+`TauCeti.HopfAlgebra.rightTranslationAlgHom_eq_self_of_path`, evaluated at the two units the
+family singles out. -/
+private theorem rightTranslationAlgHom_eq_self_of_reflectionPair
+    [Invertible (2 : K)] [IsAlgClosed K]
+    (e : K ⊗[k] coordinateHopfAlgebra k n) (he : IsIdempotentElem e)
+    {v w : Fin n → K} {c d : K} (hc : c * (v ⬝ᵥ v) = 2) (hd : d * (w ⬝ᵥ w) = 2) :
+    HopfAlgebra.rightTranslationAlgHom
+        ((baseChangePointsMulEquiv (k := k) (K := K) n K).symm
+          (reflectionPair v w c d hc hd)) e = e := by
+  obtain ⟨M, a, b, hM⟩ := exists_laurentPath_reflectionMatrix_mul (n := Fin n) hc hd
+  apply HopfAlgebra.rightTranslationAlgHom_eq_self_of_path e he _
+    ((baseChangePointsMulEquiv (k := k) (K := K) n (LaurentPolynomial K)).symm M)
+    (MultiplicativeGroup.point b) (MultiplicativeGroup.point a)
+  · apply (baseChangePointsMulEquiv (k := k) (K := K) n K).injective
+    rw [baseChangePointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
+    refine Subtype.ext ?_
+    rw [Matrix.SpecialOrthogonalGroup.coe_map, coe_reflectionPair]
+    exact (hM (MultiplicativeGroup.point b)).2 (by simp)
+  · apply (baseChangePointsMulEquiv (k := k) (K := K) n K).injective
+    rw [baseChangePointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, map_one]
+    refine Subtype.ext ?_
+    rw [Matrix.SpecialOrthogonalGroup.coe_map, Submonoid.coe_one]
+    exact (hM (MultiplicativeGroup.point a)).1 (by simp)
+
+/-- Right translation by any rational point of `SOₙ` fixes every idempotent: the points fixing a
+given idempotent form a subgroup, and products of two reflections generate. -/
+private theorem rightTranslationAlgHom_eq_self_of_invertibleTwo
+    [Invertible (2 : K)] [IsAlgClosed K]
+    (e : K ⊗[k] coordinateHopfAlgebra k n) (he : IsIdempotentElem e)
+    (g : WithConv (K ⊗[k] coordinateHopfAlgebra k n →ₐ[K] K)) :
+    HopfAlgebra.rightTranslationAlgHom g e = e := by
+  let E := baseChangePointsMulEquiv (k := k) (K := K) n K
+  let fixes (x : Matrix.specialOrthogonalGroup (Fin n) K) : Prop :=
+    HopfAlgebra.rightTranslationAlgHom (E.symm x) e = e
+  have fixes_one : fixes 1 := by
+    dsimp only [fixes]
+    rw [map_one, HopfAlgebra.rightTranslationAlgHom_one, AlgHom.id_apply]
+  have fixes_mul {x y : Matrix.specialOrthogonalGroup (Fin n) K} (hx : fixes x) (hy : fixes y) :
+      fixes (x * y) := by
+    dsimp only [fixes] at hx hy ⊢
+    rw [map_mul, HopfAlgebra.rightTranslationAlgHom_mul, AlgHom.comp_apply, hy, hx]
+  have fixes_inv {x : Matrix.specialOrthogonalGroup (Fin n) K} (hx : fixes x) : fixes x⁻¹ := by
+    dsimp only [fixes] at hx ⊢
+    have h := DFunLike.congr_fun
+      (HopfAlgebra.rightTranslationAlgHom_mul (E.symm x⁻¹) (E.symm x)) e
+    rw [← map_mul E.symm, inv_mul_cancel x, map_one,
+      HopfAlgebra.rightTranslationAlgHom_one, AlgHom.id_apply, AlgHom.comp_apply, hx] at h
+    exact h.symm
+  let P : Subgroup (Matrix.specialOrthogonalGroup (Fin n) K) :=
+    { carrier := fixes
+      one_mem' := fixes_one
+      mul_mem' := fixes_mul
+      inv_mem' := fixes_inv }
+  have mem_P (x : Matrix.specialOrthogonalGroup (Fin n) K) : x ∈ P ↔ fixes x := Iff.rfl
+  have hP : P = ⊤ := by
+    apply eq_top_of_forall_reflectionPair_mem P
+    intro v w c d hc hd
+    exact (mem_P _).mpr (rightTranslationAlgHom_eq_self_of_reflectionPair n e he hc hd)
+  have hg : E g ∈ P := by
+    rw [hP]
+    exact Subgroup.mem_top _
+  simpa only [fixes, MulEquiv.symm_apply_apply] using (mem_P _).mp hg
+
+/-- **The coordinate Hopf algebra of `SOₙ` is geometrically connected over every field of
+characteristic different from two**, in every rank. -/
+theorem geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra
+    (k : Type u) [Field k] [NeZero (2 : k)] (n : ℕ) :
+    geometricallyConnectedCommHopfAlgProperty k (coordinateHopfAlgebra k n) := by
+  rw [geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_of_isAlgClosed]
+  intro K _ _ _
+  have h2 : (2 : K) ≠ 0 := by
+    simpa only [map_ofNat] using (map_ne_zero (algebraMap k K)).2 (NeZero.ne (2 : k))
+  let _ : Invertible (2 : K) := invertibleOfNonzero h2
+  let H := coordinateHopfAlgebra k n
+  let _ : Nontrivial H := Bialgebra.nontrivial (A := H) k
+  let _ : Nontrivial (K ⊗[k] H) :=
+    Algebra.TensorProduct.nontrivial_of_algebraMap_injective_of_flat_left k K H
+      (RingHom.injective (algebraMap k H))
+  have hconnected : ConnectedSpace (PrimeSpectrum (K ⊗[k] H)) :=
+    HopfAlgebra.connectedSpace_primeSpectrum_of_forall_rightTranslationAlgHom_eq_self
+      fun e he g ↦ rightTranslationAlgHom_eq_self_of_invertibleTwo (k := k) (K := K) n e he g
+  let equiv : (H : Type u) ⊗[k] K ≃+* K ⊗[k] H :=
+    (Algebra.TensorProduct.comm k H K).toRingEquiv
+  exact (PrimeSpectrum.homeomorphOfRingEquiv equiv).connectedSpace_iff.mpr hconnected
+
+end CharNeTwo
 
 end
 
