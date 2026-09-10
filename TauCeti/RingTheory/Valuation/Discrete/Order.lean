@@ -51,6 +51,7 @@ noncomputable def toAbsoluteValue (v : _root_.Valuation K ℤᵐ⁰) (f : ℤᵐ
   AbsoluteValue.mk (f.comp v.toMonoidWithZeroHom)
     (fun x ↦ by rw [← map_zero f]; exact hf bot_le)
     (fun x ↦ by
+      -- `AbsoluteValue.mk` has no evaluation lemma available while constructing the value.
       change f (v x) = 0 ↔ x = 0
       rw [← map_zero f]
       rw [hf_injective.eq_iff]
@@ -64,6 +65,7 @@ zero-preserving monoid homomorphism. -/
 theorem toAbsoluteValue_apply (v : _root_.Valuation K ℤᵐ⁰) (f : ℤᵐ⁰ →*₀ S)
     (hf : ∀ ⦃a b⦄, a ≤ b → f a ≤ f b) (hf_injective : Function.Injective f) (x : K) :
     v.toAbsoluteValue f hf hf_injective x = f (v x) := by
+  -- Unfold the constructor once to establish the public evaluation lemma used below.
   change (f.comp v.toMonoidWithZeroHom) x = f (v x)
   rfl
 
@@ -74,18 +76,8 @@ theorem toAbsoluteValue_add_le_right (v : _root_.Valuation K ℤᵐ⁰) (f : ℤ
     (hf : ∀ ⦃a b⦄, a ≤ b → f a ≤ f b) (hf_injective : Function.Injective f)
     {x y : K} (h : v x ≤ v y) :
     v.toAbsoluteValue f hf hf_injective (x + y) ≤ v.toAbsoluteValue f hf hf_injective y := by
-  change f (v (x + y)) ≤ f (v y)
+  rw [toAbsoluteValue_apply, toAbsoluteValue_apply]
   exact hf ((v.map_add x y).trans_eq (max_eq_right h))
-
-include addLeftMono addRightMono in
-/-- If one input has no smaller valuation than another, their sum has absolute value at most that
-of the former. -/
-theorem toAbsoluteValue_add_le_left (v : _root_.Valuation K ℤᵐ⁰) (f : ℤᵐ⁰ →*₀ S)
-    (hf : ∀ ⦃a b⦄, a ≤ b → f a ≤ f b) (hf_injective : Function.Injective f)
-    {x y : K} (h : v y ≤ v x) :
-    v.toAbsoluteValue f hf hf_injective (x + y) ≤ v.toAbsoluteValue f hf hf_injective x := by
-  change f (v (x + y)) ≤ f (v x)
-  exact hf ((v.map_add x y).trans_eq (max_eq_left h))
 
 end AbsoluteValue
 

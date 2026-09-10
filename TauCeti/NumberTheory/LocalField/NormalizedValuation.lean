@@ -115,6 +115,11 @@ private noncomputable def intValuation : Valuation K ℤᵐ⁰ :=
   (valuation K).map (valueGroupWithZeroIsoInt K).toMonoidWithZeroHom
     (valueGroupWithZeroIsoInt K).toOrderIso.monotone
 
+@[simp]
+private theorem intValuation_apply (x : K) :
+    intValuation (K := K) x = valueGroupWithZeroIsoInt K (valuation K x) := by
+  rfl
+
 private theorem intValuation_surjective : Function.Surjective (intValuation (K := K)) := by
   intro z
   obtain ⟨x, hx⟩ := ValuativeRel.valuation_surjective ((valueGroupWithZeroIsoInt K).symm z)
@@ -398,8 +403,8 @@ theorem isNonarchimedean_normalizedAbsoluteValue :
       simp only [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply]
       exact (WithZeroMulInt.toNNRat_strictMono
         (one_lt_residueFieldCard (K := K))).monotone h
-    rw [max_eq_left hyx]
-    apply Valuation.toAbsoluteValue_add_le_left
+    rw [max_eq_left hyx, add_comm]
+    apply Valuation.toAbsoluteValue_add_le_right
       (v := intValuation (K := K))
       (f := WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero)
     exact h
@@ -411,7 +416,7 @@ theorem normalizedAbsoluteValue_eq_one_iff (x : K) :
     normalizedAbsoluteValue K x = 1 ↔ valuation K x = 1 := by
   rw [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply,
     WithZeroMulInt.toNNRat_eq_one_iff]
-  · change valueGroupWithZeroIsoInt K (valuation K x) = 1 ↔ valuation K x = 1
+  · rw [intValuation_apply]
     have hone : valueGroupWithZeroIsoInt K (1 : ValueGroupWithZero K) = 1 := map_one _
     rw [← hone]
     exact (valueGroupWithZeroIsoInt K).injective.eq_iff
@@ -419,11 +424,12 @@ theorem normalizedAbsoluteValue_eq_one_iff (x : K) :
 
 /-- An element belongs to the ring of integers exactly when its normalized absolute value is at
 most one. -/
+@[simp]
 theorem mem_integer_iff_normalizedAbsoluteValue_le_one (x : K) :
     x ∈ 𝒪[K] ↔ normalizedAbsoluteValue K x ≤ 1 := by
   rw [Valuation.mem_integer_iff, normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply,
     WithZeroMulInt.toNNRat_le_one_iff]
-  · change valuation K x ≤ 1 ↔ valueGroupWithZeroIsoInt K (valuation K x) ≤ 1
+  · rw [intValuation_apply]
     simpa only [map_one] using
       (OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
         (a := valuation K x) (b := 1)).symm
