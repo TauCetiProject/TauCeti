@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Fock
 public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
-import TauCeti.LinearAlgebra.CliffordAlgebra.FiltrationGradedEquiv
+import TauCeti.LinearAlgebra.CliffordAlgebra.PBW
 
 /-!
 # A highest-weight vector in the CAR algebra
@@ -17,8 +17,8 @@ constructs the ordered-product candidate
 
 `∏_{i < j} dᵢⱼ`,
 
-where `dᵢⱼ = ι(Eᵢⱼ)`, for any finite linearly ordered index type. Over a field in which
-the candidate is nonzero. When `2` is invertible, it is a highest-weight vector of weight
+where `dᵢⱼ = ι(Eᵢⱼ)`, for any finite linearly ordered index type. Over any field, the candidate
+is nonzero. When `2` is invertible, it is a highest-weight vector of weight
 `i ↦ 1/2 * (1 + 2 * #{j | i < j})`. For `n = Fin N` in characteristic zero, this is the
 staircase `(N - 1/2, N - 3/2, …, 1/2)` required by the later CAR simple-submodule and isotypy
 results.

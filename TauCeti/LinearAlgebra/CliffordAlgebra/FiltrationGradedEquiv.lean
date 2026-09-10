@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ExteriorFiltration
-import Mathlib.LinearAlgebra.Basis.VectorSpace
-import Mathlib.LinearAlgebra.QuadraticForm.Basis
 
 /-!
 # The degree quotients of a Clifford filtration
@@ -40,9 +38,6 @@ construct the total associated-graded algebra or prove multiplication compatibil
   equivalence inverts `Filtration.lean`'s leading-term map, so the two independent routes to the
   degree quotient are the same map, with
   `CliffordAlgebra.filtrationLeadingTerm_eq_filtrationGradedEquiv_symm` the map-level form.
-* `CliffordAlgebra.prod_map_ι_ofFn_ne_zero`: a linearly independent finite family has a nonzero
-  ordered product of Clifford generators.
-
 ## References
 
 * [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
@@ -197,74 +192,5 @@ theorem filtrationLeadingTerm_eq_filtrationGradedEquiv_symm (k : ℕ) :
   rw [← LinearMap.comp_id (filtrationGradedEquiv Q k).symm.toLinearMap]
   exact (LinearEquiv.eq_toLinearMap_symm_comp _ _).2
     (filtrationGradedEquiv_comp_filtrationLeadingTerm Q k)
-
-/-- An ordered product of Clifford generators from a linearly independent finite family is
-nonzero, in every characteristic. This is the multiplicative PBW independence statement; the
-proof successively contracts against coordinate functionals. -/
-theorem prod_map_ι_ofFn_ne_zero {K : Type u} [Field K] [Module K M]
-    (Q : QuadraticForm K M) {n : ℕ} (v : Fin n → M) (hv : LinearIndependent K v) :
-    (List.ofFn ((ι Q) ∘ v)).prod ≠ 0 := by
-  classical
-  have hone : (1 : CliffordAlgebra Q) ≠ 0 := by
-    obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (-Q)
-    have hB' : B.toQuadraticMap = 0 - Q := by simpa using hB
-    let _ : Nontrivial (CliffordAlgebra Q) :=
-      (changeFormEquiv hB').symm.injective.nontrivial
-    exact one_ne_zero
-  induction n with
-  | zero => simpa using hone
-  | succ k ih =>
-      let w : Fin k → M := fun i => v i.succ
-      have hw : LinearIndependent K w := hv.comp Fin.succ (Fin.succ_injective k)
-      have hv0 : v 0 ∉ Submodule.span K (Set.range w) := by
-        have h := hv.notMem_span_image (s := Set.range (Fin.succ : Fin k → Fin (k + 1)))
-          (x := 0) (by simp)
-        have hrange : v '' Set.range (Fin.succ : Fin k → Fin (k + 1)) = Set.range w := by
-          ext x
-          constructor
-          · rintro ⟨_, ⟨i, rfl⟩, rfl⟩
-            exact ⟨i, rfl⟩
-          · rintro ⟨i, rfl⟩
-            exact ⟨i.succ, ⟨i, rfl⟩, rfl⟩
-        rw [hrange] at h
-        exact h
-      obtain ⟨d, hd, hd_zero⟩ :=
-        LinearMap.exists_extend_of_notMem
-          (0 : Submodule.span K (Set.range w) →ₗ[K] K) hv0 1
-      have hd_succ (i : Fin k) : d (w i) = 0 := by
-        have h := LinearMap.congr_fun hd
-          (⟨w i, Submodule.subset_span (Set.mem_range_self i)⟩ :
-            Submodule.span K (Set.range w))
-        rw [LinearMap.comp_apply, LinearMap.zero_apply] at h
-        -- Remove the span-subtype coercion from the extension equation.
-        change d (w i) = 0 at h
-        exact h
-      have hcontract (l : List M) (hl : ∀ x ∈ l, d x = 0) :
-          contractLeft d (l.map (ι Q)).prod = 0 := by
-        induction l with
-        | nil => simp
-        | cons x l ih =>
-            rw [List.map_cons, List.prod_cons, contractLeft_ι_mul, hl x List.mem_cons_self,
-              zero_smul, zero_sub]
-            simp only [ih (fun y hy => hl y (List.mem_cons_of_mem x hy)), mul_zero, neg_zero]
-      intro hzero
-      rw [List.ofFn_succ, List.prod_cons] at hzero
-      simp only [Function.comp_apply] at hzero
-      have hzero' := congrArg (contractLeft d) hzero
-      rw [map_zero, contractLeft_ι_mul, hd_zero, one_smul] at hzero'
-      have htail : contractLeft d (List.ofFn ((ι Q) ∘ w)).prod = 0 := by
-        rw [← List.map_ofFn]
-        apply hcontract
-        intro x hx
-        rw [List.mem_ofFn] at hx
-        obtain ⟨i, rfl⟩ := hx
-        exact hd_succ i
-      -- Normalize the local tail abbreviation to the `List.ofFn` shape produced above.
-      change contractLeft d (List.ofFn fun i => ι Q (v i.succ)).prod = 0 at htail
-      rw [htail, mul_zero, sub_zero] at hzero'
-      apply ih w hw
-      -- Normalize the induction hypothesis's composed family to the same tail expression.
-      change (List.ofFn fun i => ι Q (v i.succ)).prod = 0
-      exact hzero'
 
 end CliffordAlgebra
