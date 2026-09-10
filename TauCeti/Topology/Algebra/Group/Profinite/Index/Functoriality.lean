@@ -141,7 +141,7 @@ theorem _root_.Subgroup.profiniteIndex_comap_of_surjective (L : Subgroup H) (f :
 
 /-- The supernatural index of the image of `K` in the quotient by a closed normal subgroup
 `N` is the index of `K ⊔ N` in the original group. -/
-theorem _root_.Subgroup.profiniteIndex_map_quotient [TotallyDisconnectedSpace G]
+theorem _root_.Subgroup.profiniteIndex_map_quotient
     (K N : Subgroup G) [N.Normal] (hN : IsClosed (N : Set G)) :
     (K.map (QuotientGroup.mk' N)).profiniteIndex = (K ⊔ N).profiniteIndex := by
   let _ : IsClosed (N : Set G) := hN
@@ -151,8 +151,9 @@ theorem _root_.Subgroup.profiniteIndex_map_quotient [TotallyDisconnectedSpace G]
 /-- A topological group isomorphism preserves the supernatural index of every subgroup. -/
 @[simp]
 theorem _root_.Subgroup.profiniteIndex_map_equiv (K : Subgroup G) (e : G ≃ₜ* H) :
-    (K.map e.toMonoidHom).profiniteIndex = K.profiniteIndex := by
-  rw [Subgroup.profiniteIndex_map_of_surjective K e.toMonoidHom e.continuous e.surjective,
-    e.toMonoidHom.ker_eq_bot e.injective, sup_bot_eq]
+    (K.map ((e : G ≃* H) : G →* H)).profiniteIndex = K.profiniteIndex := by
+  have hcont : Continuous ((e : G ≃* H) : G →* H) := map_continuous e
+  rw [Subgroup.profiniteIndex_map_of_surjective K _ hcont (EquivLike.surjective (e : G ≃* H)),
+    MonoidHom.ker_eq_bot _ (EquivLike.injective (e : G ≃* H)), sup_bot_eq]
 
 end TauCeti
