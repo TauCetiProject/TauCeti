@@ -155,9 +155,8 @@ variable (k : Type*) [CommSemiring k] {M : Type*} [CommMonoid M] (p : ℕ) [ExpC
 commutative monoid killed by `p`, the `p`-th power map is the `p`-th power of the counit. -/
 theorem pow_expChar_monoidAlgebra_eq_algebraMap (hM : ∀ m : M, m ^ p = 1) (x : k[M]) :
     x ^ p = algebraMap k k[M] (Coalgebra.counit (R := k) x ^ p) := by
-  have hinj : Function.Injective (algebraMap k k[M]) := by
-    change Function.Injective (MonoidAlgebra.single (R := k) (1 : M))
-    exact MonoidAlgebra.single_right_injective
+  have hinj : Function.Injective (algebraMap k k[M]) :=
+    Bialgebra.algebraMap_injective k[M]
   have _ : ExpChar k[M] p :=
     expChar_of_injective_algebraMap hinj p
   induction x using MonoidAlgebra.induction_linear with
@@ -181,10 +180,8 @@ counit by a `p`-nilpotent element, so the only idempotents are the two trivial o
 theorem connectedSpace_primeSpectrum_monoidAlgebra_of_pow_eq_one (hM : ∀ m : M, m ^ p = 1) :
     ConnectedSpace (PrimeSpectrum k[M]) := by
   let : Nontrivial k := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
-  have hp : p ≠ 0 := (expChar_pos k p).ne'
-  have hinj : Function.Injective (algebraMap k k[M]) := by
-    change Function.Injective (MonoidAlgebra.single (R := k) (1 : M))
-    exact MonoidAlgebra.single_right_injective
+  have hinj : Function.Injective (algebraMap k k[M]) :=
+    Bialgebra.algebraMap_injective k[M]
   have _ : ExpChar k[M] p :=
     expChar_of_injective_algebraMap hinj p
   -- Every element differs from the image of its counit by an element killed by the `p`-th power.
@@ -192,19 +189,13 @@ theorem connectedSpace_primeSpectrum_monoidAlgebra_of_pow_eq_one (hM : ∀ m : M
     intro x
     rw [sub_pow_expChar, ← map_pow (algebraMap k k[M]),
       pow_expChar_monoidAlgebra_eq_algebraMap k p hM x, sub_self]
-  -- An idempotent killed by the `p`-th power vanishes.
-  have hkill : ∀ x : k[M], IsIdempotentElem x → x ^ p = 0 → x = 0 := by
-    intro x hx hxp
-    obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hp
-    rwa [hx.pow_succ_eq] at hxp
   rw [connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one]
   intro e he
-  have hcounit : IsIdempotentElem (Coalgebra.counit (R := k) e) := by
-    have h := congrArg (Bialgebra.counitAlgHom k k[M]) he
-    simpa [IsIdempotentElem] using h
+  have hcounit : IsIdempotentElem (Coalgebra.counit (R := k) e) :=
+    he.map (Bialgebra.counitAlgHom k k[M])
   rcases eq_zero_or_eq_one_of_isIdempotentElem hcounit with hc | hc
-  · exact Or.inl (hkill e he (by simpa [hc] using hnil e))
-  · refine Or.inr (sub_eq_zero.mp (hkill (1 - e) he.one_sub ?_)).symm
+  · exact Or.inl (he.eq_zero_of_isNilpotent ⟨p, by simpa [hc] using hnil e⟩)
+  · refine Or.inr (sub_eq_zero.mp (he.one_sub.eq_zero_of_isNilpotent ⟨p, ?_⟩)).symm
     have h := hnil e
     rw [hc, map_one] at h
     rw [← neg_sub e 1, neg_pow, h, mul_zero]
