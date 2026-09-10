@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.CofilteredSystem
 public import TauCeti.GroupTheory.QuotientGroup.Map
+public import TauCeti.Topology.Algebra.Group.Profinite.Limit
 public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Basic
 
 /-!
@@ -142,8 +143,8 @@ theorem exists_isProPSylow (p : ℕ) [Fact p.Prime] (G : Type u) [Group G]
           rwa [hcompat inf_le_right] at this
       let _ : Nonempty (OpenNormalSubgroup G) :=
         ⟨{ toOpenSubgroup := ⊤, isNormal' := Subgroup.normal_top }⟩
-      obtain ⟨g, hg⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t
-        ht_directed ht_nonempty (fun V ↦ (ht_closed V).isCompact) ht_closed
+      obtain ⟨g, hg⟩ := nonempty_iInter_of_directed_nonempty_isClosed t ht_directed
+        ht_nonempty ht_closed
       refine ⟨g, ?_, ?_⟩
       · refine Subgroup.mem_iInf.mpr fun V ↦ ?_
         exact (Set.mem_iInter.mp hg V).2

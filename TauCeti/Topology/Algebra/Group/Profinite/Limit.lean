@@ -20,13 +20,24 @@ The unbundled workhorse of profinite group theory, phrased for the type-class st
   element of `G` (`existsUnique_forall_mk_eq`; Ribes and Zalesskii, *Profinite Groups*,
   Proposition 1.1.4). This is the unbundled counterpart of `ProfiniteGrp.toLimit_surjective`
   and `ProfiniteGrp.toLimit_injective`, which describe the same identification for the
-  `ProfiniteGrp` category. The compactness input is Mathlib's
-  `IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed`.
+  `ProfiniteGrp` category.
+* `nonempty_iInter_of_directed_nonempty_isClosed` is the compactness input in the form used by
+  profinite inverse-limit arguments: a directed family of nonempty closed sets has nonempty
+  intersection.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- A directed family of nonempty closed subsets of a compact space has nonempty intersection
+(Ribes and Zalesskii, *Profinite Groups*, Proposition 1.1.4). -/
+theorem nonempty_iInter_of_directed_nonempty_isClosed {X : Type*} [TopologicalSpace X]
+    [CompactSpace X] {ι : Type*} [Nonempty ι] (s : ι → Set X) (hdir : Directed (· ⊇ ·) s)
+    (hne : ∀ i, (s i).Nonempty) (hclosed : ∀ i, IsClosed (s i)) :
+    (⋂ i, s i).Nonempty :=
+  IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed s hdir hne
+    (fun i ↦ (hclosed i).isCompact) hclosed
 
 section LimitDescription
 
@@ -59,10 +70,8 @@ theorem existsUnique_forall_mk_eq (x : ∀ U : OpenNormalSubgroup G, G ⧸ (U : 
       exact hcompat (U ⊓ V) U inf_le_left g hgU
     · rw [Set.mem_preimage, Set.mem_singleton_iff] at hgV ⊢
       exact hcompat (U ⊓ V) V inf_le_right g hgV
-  obtain ⟨g, hg⟩ :=
-    IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed
-      (fun U : OpenNormalSubgroup G => (QuotientGroup.mk' (U : Subgroup G)) ⁻¹' {x U}) hdir hne
-      (fun U => (hcl U).isCompact) hcl
+  obtain ⟨g, hg⟩ := nonempty_iInter_of_directed_nonempty_isClosed
+    (fun U : OpenNormalSubgroup G => (QuotientGroup.mk' (U : Subgroup G)) ⁻¹' {x U}) hdir hne hcl
   refine ⟨g, fun U => Set.mem_iInter.mp hg U, fun g' hg' => ?_⟩
   have hgg : ∀ U : OpenNormalSubgroup G, QuotientGroup.mk' (U : Subgroup G) g = x U :=
     fun U => Set.mem_iInter.mp hg U
