@@ -36,8 +36,6 @@ into pole orders, but no order or valuation hypothesis is assumed here.
 ## Main results
 
 * `WeierstrassCurve.equation_formalPoint`: the parametrized pair lies on the curve.
-* `WeierstrassCurve.wEquation_of_equation`: the converse reading of the same identity — the
-  `w`-equation is the Weierstrass equation in the coordinates `z = -x / y`, `w = -1 / y`.
 * `WeierstrassCurve.formalPoint_eq_some`: a point both of whose ratios `-x / y` and `-1 / y` come
   from the ideal is the parametrised point of the first, the surjectivity companion of
   `WeierstrassCurve.formalPoint_injective`.
@@ -91,26 +89,6 @@ public section
 open PowerSeries
 
 namespace WeierstrassCurve
-
-section Equation
-
-variable {O : Type*} [CommRing O] {K : Type*} [Field K] [Algebra O K] (W : WeierstrassCurve O)
-
-/-- **The `w`-equation is the Weierstrass equation read in the coordinates `z = -x / y`,
-`w = -1 / y`.** Clearing the denominators of `y ^ 2 + a₁ x y + a₃ y = x ^ 3 + a₂ x ^ 2 + a₄ x + a₆`
-at `x = z / w`, `y = -1 / w` is what produces that equation in the first place; this is the
-converse reading, from a point of the curve to a solution of the equation.
-
-The hypothesis is `Equation`, not `Nonsingular`: nothing here needs the point to be smooth. -/
-theorem wEquation_of_equation {x y : K} (hxy : (W.baseChange K).toAffine.Equation x y)
-    (hy : y ≠ 0) : -y⁻¹ = wEquationRHS W (-(x / y)) (-y⁻¹) := by
-  rw [WeierstrassCurve.Affine.equation_iff] at hxy
-  simp only [baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at hxy
-  rw [wEquationRHS_def]
-  field_simp
-  linear_combination -hxy
-
-end Equation
 
 variable {O : Type*} [CommRing O] [UniformSpace O] [IsUniformAddGroup O] [CompleteSpace O]
   [T2Space O] [IsTopologicalRing O] [IsLinearTopology O O]
