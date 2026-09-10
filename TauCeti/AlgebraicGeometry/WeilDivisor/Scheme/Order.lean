@@ -21,14 +21,17 @@ This is the local algebraic input for the scheme-theoretic principal-divisor map
 that map also requires the separate global theorem that a nonzero rational function has nonzero
 order at only finitely many codimension-one points; no finiteness assumption is hidden here.
 
-An elementary fact about `Scheme.ord` itself is recorded first: a function regular on `U` has
-nonnegative order at every point of `U` (`Scheme.ord_germToFunctionField_nonneg`), that is, it has
-no poles where it is defined.
+Elementary facts about `Scheme.ord` itself are recorded first: the order of one vanishes
+(`Scheme.ord_one`), the order of an inverse is the negative of the order (`Scheme.ord_inv`), and a
+function regular on `U` has nonnegative order at every point of `U`
+(`Scheme.ord_germToFunctionField_nonneg`), that is, it has no poles where it is defined.
 
-The construction advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, the
-"principal divisors" part of "Divisors on a curve". It reuses Mathlib's
-`AlgebraicGeometry.Scheme.ord`, `ordHom`, and `ord_eq_unzero_ordHom`; no external
-formalization is vendored.
+Where the local ring at a codimension-one point is a discrete valuation ring, `orderAt` is
+surjective onto `ℤ` (`SchemeWeilDivisor.exists_orderAt_eq`): the powers of a uniformizer supply
+a rational function of each prescribed order.
+
+The construction reuses Mathlib's `AlgebraicGeometry.Scheme.ord`, `ordHom`, and
+`ord_eq_unzero_ordHom`; no external formalization is vendored.
 -/
 
 public section
@@ -47,6 +50,24 @@ noncomputable section
 
 namespace Scheme
 
+/-- The constant function one has order zero at every point: it is a global regular unit. -/
+@[simp]
+lemma ord_one {x : X} : X.ord (1 : X.functionField) x = 0 := by
+  let _ : Nonempty (⊤ : X.Opens) := ⟨⟨x, trivial⟩⟩
+  -- Naming this proof fixes the open set before elaborating `ord_of_isUnit`.
+  have hx_top : x ∈ (⊤ : X.Opens) := by simp
+  simpa using X.ord_of_isUnit (U := ⊤) isUnit_one hx_top
+
+/-- The order of an inverse is the negative of the order. Both sides vanish at the zero function,
+whose inverse is again zero. -/
+@[simp]
+lemma ord_inv (f : X.functionField) {x : X} : X.ord f⁻¹ x = -X.ord f x := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  · have h := X.ord_mul (x := x) hf (inv_ne_zero hf)
+    rw [mul_inv_cancel₀ hf, ord_one] at h
+    omega
+
 /-- A regular function on `U` has nonnegative order at every point of `U`: it has no poles where
 it is defined. -/
 lemma ord_germToFunctionField_nonneg {U : X.Opens} [Nonempty U] (a : Γ(X, U)) {x : X}
@@ -54,12 +75,7 @@ lemma ord_germToFunctionField_nonneg {U : X.Opens} [Nonempty U] (a : Γ(X, U)) {
   rcases eq_or_ne a 0 with rfl | ha
   · simp
   · have h := Scheme.ord_le_smul hx ha (1 : X.functionField)
-    let _ : Nonempty (⊤ : X.Opens) := ⟨⟨x, trivial⟩⟩
-    -- Naming this proof fixes the open set before elaborating `ord_of_isUnit`.
-    have hx_top : x ∈ (⊤ : X.Opens) := by simp
-    have h_one : X.ord (1 : X.functionField) x = 0 := by
-      simpa using X.ord_of_isUnit (U := ⊤) isUnit_one hx_top
-    rwa [Algebra.smul_def, mul_one, RingHom.algebraMap_toAlgebra, h_one] at h
+    rwa [Algebra.smul_def, mul_one, RingHom.algebraMap_toAlgebra, ord_one] at h
 
 end Scheme
 
@@ -82,6 +98,24 @@ lemma orderAt_apply (x : CodimensionOnePoint X) (f : Additive X.functionFieldˣ)
   simp only [orderAt, MonoidHom.toAdditiveLeft_apply_apply, MonoidHom.coe_comp,
     MulEquiv.coe_toMonoidHom, Function.comp_apply, WithZero.unitsWithZeroEquiv_apply]
   congr 1
+
+/-- **Every integer is an order of vanishing.** At a codimension-one point whose local ring is a
+discrete valuation ring, a uniformizer has order one, so its integer powers realize every integer
+as the order of a nonzero rational function. -/
+theorem exists_orderAt_eq (x : CodimensionOnePoint X)
+    [IsDiscreteValuationRing (X.presheaf.stalk (x : X))] (n : ℤ) :
+    ∃ g : Additive X.functionFieldˣ, orderAt x g = n := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (X.presheaf.stalk (x : X))
+  have hinj := IsFractionRing.injective (X.presheaf.stalk (x : X)) X.functionField
+  have hne : algebraMap (X.presheaf.stalk (x : X)) X.functionField ϖ ≠ 0 := fun h ↦
+    hϖ.ne_zero (hinj (h.trans (map_zero _).symm))
+  have hord : X.ord (algebraMap (X.presheaf.stalk (x : X)) X.functionField ϖ) (x : X) = 1 := by
+    rw [X.ord_eq_iff x.property hne]
+    simp only [_root_.AlgebraicGeometry.Scheme.ordHom]
+    rw [Ring.ordFrac_irreducible hϖ, WithZero.exp_eq_coe_ofAdd]
+  refine ⟨n • Additive.ofMul (Units.mk0 _ hne), ?_⟩
+  rw [map_zsmul, orderAt_apply]
+  simp [hord]
 
 end SchemeWeilDivisor
 

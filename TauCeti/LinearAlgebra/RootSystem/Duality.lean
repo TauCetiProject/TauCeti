@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Flip
 
 Interchanging the roots and the coroots of a root pairing (`RootPairing.flip`) transposes every
 pairing `⟨αᵢ, αⱼ^∨⟩`, hence transposes the Cartan matrix of a base
-(`TauCeti.RootPairing.Base.cartanMatrix_flip`, proved in `TauCeti.LinearAlgebra.RootSystem.Flip`).
+(`RootPairing.Base.cartanMatrix_flip`, proved in `TauCeti.LinearAlgebra.RootSystem.Flip`).
 On the classification side that operation permutes the Dynkin types, and this file pins the
 permutation: `TauCeti.DynkinType.dual` exchanges `Bₙ` with `Cₙ` and fixes every other type.
 Duality is what makes the orientation carried by `TauCeti.HasCartanType` meaningful, since `Bₙ` and
@@ -241,7 +241,7 @@ variable {ι R M N : Type*} [CommRing R] [CharZero R] [AddCommGroup M] [Module R
   [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [P.IsCrystallographic]
 
 /-- **The Cartan type of a flipped base is the dual type.** Flipping transposes the Cartan matrix
-(`TauCeti.RootPairing.Base.cartanMatrix_flip`), and transposing a standard Cartan matrix is passing
+(`RootPairing.Base.cartanMatrix_flip`), and transposing a standard Cartan matrix is passing
 to the dual type up to the node relabelling `TauCeti.DynkinType.dualNodeEquiv`. -/
 theorem HasCartanType.flip {b : P.Base} {t : DynkinType} (h : HasCartanType P b t) :
     HasCartanType P.flip b.flip t.dual := by

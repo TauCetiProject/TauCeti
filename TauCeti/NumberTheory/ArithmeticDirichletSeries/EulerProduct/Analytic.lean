@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.Tannery
 public import Mathlib.NumberTheory.LSeries.Convolution
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Data
+import Mathlib.Analysis.SpecialFunctions.Log.Summable
 
 /-!
 # The analytic Euler product of an ideal arithmetic function
@@ -35,12 +36,16 @@ product of the Dedekind zeta function.
   ideal-indexed Dirichlet series converges absolutely at `s`.
 * `TauCeti.MultiplicativeIdealWeight.hasProd_eulerFactor`: the same product, with the local factors
   in the closed geometric form available for a completely multiplicative weight.
+* `TauCeti.MultiplicativeIdealWeight.LSeries_ne_zero_of_summable_idealTerm`: the `L`-series is
+  **nonzero** wherever the ideal-indexed series converges absolutely.
 * `TauCeti.dedekindZeta_eulerProduct_hasProd`: the **Euler product of the Dedekind zeta
   function**, valid on `Re s > 1`.
+* `TauCeti.dedekindZeta_ne_zero_of_one_lt_re`: the Dedekind zeta function is **nonzero** on
+  `Re s > 1`.
 
-No nonvanishing statement is made here. An unconditionally convergent product of nonzero factors
-may still vanish, so nonvanishing requires additional hypotheses such as convergence of the
-reciprocal product.
+The nonvanishing is pointwise, at each `s` where the ideal-indexed series converges absolutely, and
+nothing is claimed off that region. It is not a formality: an unconditionally convergent product of
+nonzero factors may still vanish.
 
 ## References
 
@@ -145,6 +150,14 @@ theorem coe_normCoeff_supportedPart_empty (hf : f 1 = 1) :
   rw [supportedPart_empty hf, normCoeff_delta]
   funext n
   simp [ArithmeticFunction.one_apply, LSeries.delta]
+
+/-- **The prime terms are a subseries of the ideal terms.** Each height-one prime contributes its
+own ideal as the `e = 1` member of its power series, and distinct primes give distinct ideals, so
+absolute convergence over ideals restricts to the primes. Multiplicativity plays no part. -/
+theorem summable_idealTerm_primeIdealPow_one (hs : Summable (idealTerm K f s)) :
+    Summable fun P : HeightOneSpectrum (𝓞 K) ↦ idealTerm K f s (P.primeIdealPow 1) :=
+  hs.comp_injective fun P Q h ↦ HeightOneSpectrum.asIdeal_injective
+    (by simpa only [HeightOneSpectrum.coe_primeIdealPow, pow_one] using congrArg Subtype.val h)
 
 end IdealArithmeticFunction
 
@@ -287,6 +300,26 @@ theorem norm_div_lt_one_of_summable_idealTerm
   exact (hs.comp_injective P.primeIdealPow_injective).congr fun e ↦
     idealTerm_toIdealArithmeticFunction_primeIdealPow χ P e s
 
+/-- **The local ratios are summable over the primes.** The multiplicative specialisation of
+`IdealArithmeticFunction.summable_idealTerm_primeIdealPow_one`: at a prime the ideal term *is* the
+ratio `χ(P) N(P)⁻ˢ`. -/
+theorem summable_div_of_summable_idealTerm
+    (hs : Summable (idealTerm K χ.toIdealArithmeticFunction s)) :
+    Summable fun P : HeightOneSpectrum (𝓞 K) ↦
+      χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s :=
+  (IdealArithmeticFunction.summable_idealTerm_primeIdealPow_one hs).congr fun P ↦ by
+    simp [idealTerm_toIdealArithmeticFunction_primeIdealPow χ P 1 s]
+
+/-- Absolute convergence puts every local ratio `χ(P) N(P)⁻ˢ` strictly inside the unit disc, so no
+local Euler factor has a vanishing denominator. -/
+theorem one_sub_div_ne_zero_of_summable_idealTerm
+    (hs : Summable (idealTerm K χ.toIdealArithmeticFunction s)) (P : HeightOneSpectrum (𝓞 K)) :
+    1 - χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s ≠ 0 := fun h ↦ by
+  have hlt := norm_div_lt_one_of_summable_idealTerm χ hs P
+  rw [sub_eq_zero] at h
+  rw [← h] at hlt
+  simp at hlt
+
 /-- The local Euler factor of a completely multiplicative weight is the geometric closed form
 `(1 - χ(P) N(P)⁻ˢ)⁻¹`. -/
 theorem eulerFactor_ofMultiplicativeIdealWeight
@@ -315,9 +348,34 @@ theorem hasProd_eulerFactor (hs : Summable (idealTerm K χ.toIdealArithmeticFunc
       simpa only [EulerProductData.toIdealArithmeticFunction_ofMultiplicativeIdealWeight] using hs)
   simpa only [EulerProductData.toIdealArithmeticFunction_ofMultiplicativeIdealWeight] using hprod
 
+/-- **The Euler product does not vanish.** Where the ideal-indexed Dirichlet series converges
+absolutely, the `L`-series of the norm coefficients is nonzero.
+
+This is pointwise nonvanishing at such an `s` and no more: it says nothing where the series does not
+converge absolutely, and does not by itself furnish a holomorphic logarithm on a region. -/
+theorem LSeries_ne_zero_of_summable_idealTerm
+    (hs : Summable (idealTerm K χ.toIdealArithmeticFunction s)) :
+    LSeries (normCoeff K χ.toIdealArithmeticFunction) s ≠ 0 := by
+  have hsum : Summable fun P : HeightOneSpectrum (𝓞 K) ↦
+      ‖χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s‖ :=
+    summable_norm_iff.2 (summable_div_of_summable_idealTerm χ hs)
+  have h0 : ∏' P : HeightOneSpectrum (𝓞 K),
+      (1 - χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s) ≠ 0 := by
+    refine tprod_one_add_ne_zero_of_summable (f := fun P : HeightOneSpectrum (𝓞 K) ↦
+      -(χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s)) (fun P ↦ ?_) (by simpa using hsum)
+    simpa [sub_eq_add_neg] using one_sub_div_ne_zero_of_summable_idealTerm χ hs P
+  rw [(hasProd_eulerFactor χ hs).unique ((multipliable_one_sub_of_summable hsum).hasProd.inv₀ h0)]
+  exact inv_ne_zero h0
+
 end MultiplicativeIdealWeight
 
 /-! ### The Dedekind zeta function -/
+
+/-- The trivial weight's ideal-indexed series converges absolutely on `Re s > 1`. -/
+private theorem summable_idealTerm_one_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :
+    Summable (idealTerm K (1 : MultiplicativeIdealWeight K).toIdealArithmeticFunction s) := by
+  rw [MultiplicativeIdealWeight.toIdealArithmeticFunction_one]
+  exact summable_idealTerm_one_iff.mpr hs
 
 /-- **The Euler product of the Dedekind zeta function.** For `Re s > 1` the Dedekind zeta function
 of `K` is the unrestricted product over the height-one primes of `𝓞 K` of the local factors
@@ -329,11 +387,8 @@ whose count above a rational prime is the splitting behaviour of `K`. -/
 theorem dedekindZeta_eulerProduct_hasProd {s : ℂ} (hs : 1 < s.re) :
     HasProd (fun P : HeightOneSpectrum (𝓞 K) ↦ (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-s))⁻¹)
       (NumberField.dedekindZeta K s) := by
-  have hsum : Summable (idealTerm K
-      (1 : MultiplicativeIdealWeight K).toIdealArithmeticFunction s) := by
-    rw [MultiplicativeIdealWeight.toIdealArithmeticFunction_one]
-    exact summable_idealTerm_one_iff.mpr hs
-  have hprod := MultiplicativeIdealWeight.hasProd_eulerFactor (1 : MultiplicativeIdealWeight K) hsum
+  have hprod := MultiplicativeIdealWeight.hasProd_eulerFactor (1 : MultiplicativeIdealWeight K)
+    (summable_idealTerm_one_of_one_lt_re hs)
   rw [MultiplicativeIdealWeight.toIdealArithmeticFunction_one,
     ← dedekindZeta_eq_LSeries_normCoeff_one K s] at hprod
   have hfun : (fun P : HeightOneSpectrum (𝓞 K) ↦
@@ -345,5 +400,17 @@ theorem dedekindZeta_eulerProduct_hasProd {s : ℂ} (hs : 1 < s.re) :
     rw [MultiplicativeIdealWeight.one_apply, ite_eq_right P.ne_bot, Complex.cpow_neg, one_div]
   rw [hfun]
   exact hprod
+
+/-- **The Dedekind zeta function does not vanish on `Re s > 1`.** For every `s` with `1 < s.re`,
+`NumberField.dedekindZeta K s ≠ 0`.
+
+Nothing is claimed on `Re s ≤ 1`; in particular this says nothing about the line
+`Re s = 1`. -/
+theorem dedekindZeta_ne_zero_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :
+    NumberField.dedekindZeta K s ≠ 0 := by
+  have h := MultiplicativeIdealWeight.LSeries_ne_zero_of_summable_idealTerm
+    (1 : MultiplicativeIdealWeight K) (summable_idealTerm_one_of_one_lt_re hs)
+  rwa [MultiplicativeIdealWeight.toIdealArithmeticFunction_one,
+    ← dedekindZeta_eq_LSeries_normCoeff_one K s] at h
 
 end TauCeti

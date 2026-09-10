@@ -130,10 +130,10 @@ variable {R G V}
 @[simp]
 theorem tensorCoeffEquiv_apply (t : V ⊗[R] MonoidAlgebra R G) (g : G) :
     tensorCoeffEquiv R G V t g =
-      tensorComponent (R := R) (M := V) (monoidCoeff R G g) t := by
+      _root_.LinearMap.tensorComponent (R := R) (M := V) (monoidCoeff R G g) t := by
   classical
   have h : (Finsupp.lapply g).comp (tensorCoeffEquiv R G V).toLinearMap =
-      tensorComponent (R := R) (M := V) (monoidCoeff R G g) :=
+      _root_.LinearMap.tensorComponent (R := R) (M := V) (monoidCoeff R G g) :=
     TensorProduct.ext' fun v x => by simp [tensorCoeffEquiv, monoidCoeff]
   exact congr($h t)
 
@@ -173,7 +173,7 @@ This is deliberately not a `simp` lemma: `weightProj_weightProj_self` and
 they could never fire if `simp` first unfolded every `weightProj` to a coefficient of a coaction. -/
 theorem weightProj_apply (g : G) (v : V) :
     weightProj R G V g v =
-      tensorComponent (R := R) (M := V) (monoidCoeff R G g)
+      _root_.LinearMap.tensorComponent (R := R) (M := V) (monoidCoeff R G g)
         (coact (R := R) (C := MonoidAlgebra R G) v) :=
   by rw [weightProj, coactComponent_apply]
 
@@ -293,7 +293,7 @@ theorem weightProj_weightProj_of_ne {h g : G} (hne : h ≠ g) (v : V) :
   have h0 := tensorPairComponent_comp_lTensor_comul (M := V)
     (pairCoeff_comp_comul_of_ne (R := R) (G := G) hne)
   have := congr($h0 (coact (R := R) (C := MonoidAlgebra R G) v))
-  simpa only [LinearMap.coe_comp, Function.comp_apply, tensorComponent_zero,
+  simpa only [LinearMap.coe_comp, Function.comp_apply, _root_.LinearMap.tensorComponent_zero,
     LinearMap.zero_apply] using this
 
 end Coassoc
@@ -477,24 +477,23 @@ theorem ofMapWeightSpace_toLinearMap (f : V →ₗ[R] W)
     (ofMapWeightSpace f hf).toLinearMap = f :=
   (rfl)
 
-omit [Comodule R (MonoidAlgebra R G) V] [Comodule R (MonoidAlgebra R G) W] in
-private theorem tensorComponent_map (f : V →ₗ[R] W) (g : G)
-    (t : V ⊗[R] MonoidAlgebra R G) :
-    f (tensorComponent (R := R) (M := V) (monoidCoeff R G g) t) =
-      tensorComponent (R := R) (M := W) (monoidCoeff R G g)
-        (TensorProduct.map f LinearMap.id t) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy]
-  | tmul v x => simp [tensorComponent_tmul]
-
 /-- A comodule morphism over a monoid algebra commutes with every weight projection. -/
 @[simp]
 theorem map_weightProj (f : Hom R (MonoidAlgebra R G) V W) (g : G) (v : V) :
     f (weightProj R G V g v) = weightProj R G W g (f v) := by
   rw [weightProj_apply, weightProj_apply]
-  exact (tensorComponent_map f.toLinearMap g _).trans <|
-    congrArg (tensorComponent (R := R) (M := W) (monoidCoeff R G g))
+  calc
+    f (_root_.LinearMap.tensorComponent (monoidCoeff R G g)
+        (coact (R := R) (C := MonoidAlgebra R G) v)) =
+      _root_.LinearMap.tensorComponent (monoidCoeff R G g)
+        (TensorProduct.map f.toLinearMap LinearMap.id
+          (coact (R := R) (C := MonoidAlgebra R G) v)) := by
+            rw [← Hom.coe_toLinearMap f]
+            simpa only [LinearMap.comp_id] using
+              (_root_.LinearMap.tensorComponent_map (monoidCoeff R G g) f.toLinearMap
+                LinearMap.id (coact (R := R) (C := MonoidAlgebra R G) v)).symm
+    _ = _ := congrArg
+      (_root_.LinearMap.tensorComponent (R := R) (M := W) (monoidCoeff R G g))
       (f.map_coact_apply v)
 
 /-- A morphism of comodules over `R[G]` sends the `g`-weight submodule into the `g`-weight

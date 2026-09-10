@@ -22,7 +22,7 @@ remaining zero block records precisely the finite-dimensional kernel and cokerne
 
 * `TauCeti.isFredholm_zero_iff`: the zero operator is Fredholm exactly when its domain and
   codomain are finite dimensional.
-* `TauCeti.ContinuousLinearMap.index_zero`: the index of the zero operator is the difference of
+* `ContinuousLinearMap.index_zero`: the index of the zero operator is the difference of
   the dimensions of its domain and codomain.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix
@@ -82,17 +82,15 @@ lemma isFredholm_zero_iff :
           rw [ContinuousLinearMap.toLinearMap_zero, LinearMap.ker_zero]
           exact Submodule.closedComplemented_top }
 
-namespace ContinuousLinearMap
 
 /-- The index of the zero continuous linear map is the dimension of its domain minus the
 dimension of its codomain. -/
 @[simp]
-lemma index_zero :
-    index (0 : E →L[𝕜] F) = (finrank 𝕜 E : ℤ) - finrank 𝕜 F := by
-  simpa only [index_def, ContinuousLinearMap.toLinearMap_zero] using
+lemma _root_.ContinuousLinearMap.index_zero :
+    ContinuousLinearMap.index (0 : E →L[𝕜] F) = (finrank 𝕜 E : ℤ) - finrank 𝕜 F := by
+  simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_zero] using
     (LinearMap.index_zero (R := 𝕜) (M := E) (N := F))
 
-end ContinuousLinearMap
 
 end TauCeti
 

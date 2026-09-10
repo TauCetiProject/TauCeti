@@ -152,7 +152,7 @@ theorem mixedMarkovChainWith_of_rowExchangeable_successorProcess [Countable α]
       have hmem : ω ∈ {ω | X 0 ω = w' 0} := by simp [hω, hw0, hstart]
       exact ⟨fun h => h.2, fun h => ⟨hmem, h⟩⟩
     rw [hsplit, measure_congr hae,
-      hrow.measure_setOf_forall_mem_eq_lintegral_prod hSA hlam
+      hrow.measure_setOf_forall_mem_eq_lintegral_prod hlam
         (c := fun t : Fin n => visitCell w' t.val)
         (fun s t hst => Fin.val_injective ((visitCell_injective w') hst))
         (B := fun t : Fin n => ({w' (t.val + 1)} : Set α))

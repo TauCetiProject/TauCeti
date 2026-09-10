@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.Cone
+public import TauCeti.Geometry.Toric.Algebraic.Lattice
 public import Mathlib.Geometry.Convex.Cone.Dual
 public import Mathlib.NumberTheory.Real.Irrational
 
@@ -22,6 +23,9 @@ containing no nonzero image of a lattice vector.
 Salience is a genuinely independent condition: the full line of the rank-one lattice `ℤ ⊆ ℝ` is a
 finitely generated, lattice-rational pointed cone that is not toric.
 
+The same map `ℤ⁴ →+ ℝ³` also shows that `TauCeti.Toric.IsIntegralLattice` is strictly stronger
+than injectivity together with a full real span.
+
 ## Main declarations
 
 * `TauCeti.Toric.not_isLatticeRational_sqrtTwoCone_inf`: two toric cones whose intersection is not
@@ -29,6 +33,8 @@ finitely generated, lattice-rational pointed cone that is not toric.
   toricity.
 * `TauCeti.Toric.not_isToricCone_top_intCast`: a finitely generated, lattice-rational pointed cone
   that is not toric, because it is a line.
+* `TauCeti.Toric.not_isIntegralLattice_sqrtTwoMap`: the same map `ℤ⁴ →+ ℝ³` is injective with
+  full real span, by `TauCeti.Toric.span_range_sqrtTwoMap`, but is not an integral lattice.
 
 ## References
 
@@ -274,5 +280,33 @@ salience. A cone of an affine toric variety is never a line. -/
 theorem not_isToricCone_top_intCast :
     ¬ IsToricCone (Int.castAddHom ℝ) (⊤ : PointedCone ℝ ℝ) := fun h ↦
   h.salient 1 trivial one_ne_zero trivial
+
+/-! ### Injectivity and a full real span do not make an integral lattice -/
+
+/-- The image of `sqrtTwoMap` spans `ℝ³` over `ℝ`: the three standard basis vectors are already
+images of lattice vectors. -/
+theorem span_range_sqrtTwoMap : Submodule.span ℝ (Set.range sqrtTwoMap) = ⊤ := by
+  refine top_unique fun x _ ↦ ?_
+  have h₁ : ((1, 0, 0) : ℝ × ℝ × ℝ) ∈ Submodule.span ℝ (Set.range sqrtTwoMap) :=
+    Submodule.subset_span ⟨(1, 0, 0, 0), by simp⟩
+  have h₂ : ((0, 1, 0) : ℝ × ℝ × ℝ) ∈ Submodule.span ℝ (Set.range sqrtTwoMap) :=
+    Submodule.subset_span ⟨(0, 1, 0, 0), by simp⟩
+  have h₃ : ((0, 0, 1) : ℝ × ℝ × ℝ) ∈ Submodule.span ℝ (Set.range sqrtTwoMap) :=
+    Submodule.subset_span ⟨(0, 0, 1, 0), by simp⟩
+  have hx : x = x.1 • ((1, 0, 0) : ℝ × ℝ × ℝ) + x.2.1 • ((0, 1, 0) : ℝ × ℝ × ℝ) +
+      x.2.2 • ((0, 0, 1) : ℝ × ℝ × ℝ) := by
+    simp
+  rw [hx]
+  exact Submodule.add_mem _ (Submodule.add_mem _ (Submodule.smul_mem _ _ h₁)
+    (Submodule.smul_mem _ _ h₂)) (Submodule.smul_mem _ _ h₃)
+
+/-- Although `sqrtTwoMap` is injective and its image spans `ℝ³`, it is not an integral lattice:
+its source has integral rank `4` while its target has real dimension `3`. This is why the failure
+of `TauCeti.Toric.IsToricCone` under intersections above is not in conflict with the
+`IsIntegralLattice` hypothesis that the fan-level results carry. -/
+theorem not_isIntegralLattice_sqrtTwoMap : ¬ IsIntegralLattice sqrtTwoMap := by
+  intro h
+  have hrank := h.finrank_eq
+  simp [Module.finrank_prod] at hrank
 
 end TauCeti.Toric
