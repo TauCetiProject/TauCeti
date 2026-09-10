@@ -38,7 +38,8 @@ is totally positive (there are no real places), `Cl⁺(K)` and `Cl(K)` coincide.
   positivity, with `toClassGroup_surjective`.
 * `NumberField.NarrowClassGroup.mkPrincipal` and `toClassGroup_ker`: the principal-class map
   `Kˣ → Cl⁺(K)` and exactness at `Cl⁺(K)` of `Kˣ → Cl⁺(K) → Cl(K) → 1`
-  (`ker toClassGroup = mkPrincipal.range`).
+  (`ker toClassGroup = mkPrincipal.range`), with the triviality criterion
+  `mkPrincipal_eq_one_iff`.
 * `NumberField.NarrowClassGroup.mkPrincipal_sq` and `sq_eq_one_of_mem_ker_toClassGroup`:
   `mkPrincipal` is `2`-torsion, so `ker(Cl⁺ → Cl)` is an elementary abelian `2`-group.
 * `NumberField.NarrowClassGroup.mk0`: the narrow class of a nonzero integral ideal, with
@@ -163,6 +164,27 @@ noncomputable def mkPrincipal : Kˣ →* NarrowClassGroup K :=
 theorem mkPrincipal_apply (x : Kˣ) :
     mkPrincipal x = mk (toPrincipalIdeal (𝓞 K) K x) := by
   simp only [mkPrincipal, MonoidHom.comp_apply]
+
+/-- **The narrow principal class of `x` is trivial exactly when a unit of `𝓞 K` scales `x` to a
+totally positive element.** Two elements of `Kˣ` generate the same fractional ideal precisely when
+they differ by a unit of `𝓞 K`, so the narrow class of `(x)` is trivial iff one of the generators
+`w · x` of that ideal is totally positive. -/
+theorem mkPrincipal_eq_one_iff {x : Kˣ} :
+    mkPrincipal x = 1 ↔ ∃ w : (𝓞 K)ˣ, IsTotallyPositive (w • (x : K)) := by
+  rw [mkPrincipal_apply, mk_eq_one_iff, mem_narrowPrincipalSubgroup]
+  constructor
+  · rintro ⟨y, hy, hyx⟩
+    have hspan : spanSingleton (𝓞 K)⁰ (y : K) = spanSingleton (𝓞 K)⁰ (x : K) := by
+      rw [← coe_toPrincipalIdeal y, ← coe_toPrincipalIdeal x, hyx]
+    obtain ⟨z, hz⟩ := spanSingleton_eq_spanSingleton.mp hspan
+    exact ⟨z⁻¹, by rw [← hz, inv_smul_smul]; exact hy⟩
+  · rintro ⟨w, hw⟩
+    refine ⟨Units.map (algebraMap (𝓞 K) K : (𝓞 K) →* K) w * x, ?_, ?_⟩
+    · simpa only [Units.val_mul, Units.coe_map, MonoidHom.coe_coe, Units.smul_def,
+        Algebra.smul_def] using hw
+    · rw [← Units.val_inj, coe_toPrincipalIdeal, coe_toPrincipalIdeal]
+      refine spanSingleton_eq_spanSingleton.mpr ⟨w⁻¹, ?_⟩
+      simp [Units.smul_def, Algebra.smul_def]
 
 /-- The composition `Cl⁺(K) → Cl(K)` after `mkPrincipal` is trivial: forgetting positivity kills the
 class of a principal ideal. This is the "composition is one" half of exactness at `Cl⁺(K)`. -/
