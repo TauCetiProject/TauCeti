@@ -24,7 +24,7 @@ rational ray is initially described by arbitrary nonzero lattice vectors.
 ## Main declarations
 
 * `TauCeti.IsPrimitive`: some integer-valued linear functional takes the value one on the vector.
-* `TauCeti.IsPrimitive.eq_one_of_eq_nsmul`: a positive natural multiplier of a primitive vector
+* `TauCeti.IsPrimitive.eq_one_of_eq_nsmul`: a natural multiplier of a primitive vector
   is one.
 * `LinearEquiv.isPrimitive_iff`: primitivity is invariant under integer-linear equivalences.
 * `TauCeti.exists_eq_zsmul_isPrimitive`: a nonzero vector in a free integer module is a
@@ -51,8 +51,8 @@ theorem IsPrimitive.ne_zero {v : M} (h : IsPrimitive v) : v ≠ 0 := by
   obtain ⟨f, hf⟩ := h
   simp at hf
 
-/-- A primitive vector cannot be a nontrivial positive natural multiple of another vector. -/
-theorem IsPrimitive.eq_one_of_eq_nsmul {v w : M} (hv : IsPrimitive v) {m : ℕ} (hm : 0 < m)
+/-- A primitive vector cannot be a nontrivial natural multiple of another vector. -/
+theorem IsPrimitive.eq_one_of_eq_nsmul {v w : M} (hv : IsPrimitive v) {m : ℕ}
     (hvw : v = m • w) : m = 1 := by
   obtain ⟨f, hf⟩ := hv
   rw [hvw, map_nsmul, nsmul_eq_mul] at hf
