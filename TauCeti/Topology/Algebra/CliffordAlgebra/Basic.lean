@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Algebra.Star
@@ -15,8 +16,8 @@ public import Mathlib.Topology.Algebra.Star
 
 This file gives a Clifford algebra its module topology, making it a topological additive group.
 Over a topological ring, multiplication is continuous when the Clifford algebra is a finite module.
-The topology is Hausdorff when the base ring is Hausdorff and the Clifford algebra is free. Clifford
-reverse, involution, and star are continuous without these additional assumptions.
+The topology is Hausdorff when the base is a Hausdorff topological ring and the Clifford algebra is
+free. Clifford reverse, involution, and star are continuous without these additional assumptions.
 
 The topology is intrinsic: it depends only on the module structure of the Clifford algebra
 together with the topology on the base ring, and does not use a basis, Pin or Spin groups, or their
@@ -26,6 +27,10 @@ actions. A basis appears only in the proof that the topology is Hausdorff.
 
 * `CliffordAlgebra.instTopologicalSpaceCliffordAlgebra` installs the module topology.
 * `CliffordAlgebra.instIsTopologicalAddGroupCliffordAlgebra` makes addition continuous.
+* `CliffordAlgebra.continuous_ι` proves continuity of the canonical generator when the vector
+  module has its module topology.
+* `CliffordAlgebra.continuous_ιInv` proves continuity of the vector-part map under the same
+  topology assumption when `2` is invertible.
 * `QuadraticMap.Isometry.continuous_cliffordAlgebraMap` proves continuity of maps induced by
   quadratic isometries.
 * `CliffordAlgebra.instIsTopologicalRingCliffordAlgebra` makes multiplication continuous.
@@ -54,6 +59,20 @@ variable {R : Type u} [CommRing R] [TopologicalSpace R]
 instance instTopologicalSpaceCliffordAlgebra (Q : QuadraticForm R V) :
     TopologicalSpace (CliffordAlgebra Q) :=
   moduleTopology R _
+
+/-- The canonical generator into a Clifford algebra is continuous for the module topologies. -/
+@[fun_prop]
+theorem continuous_ι [TopologicalSpace V] [IsModuleTopology R V] (Q : QuadraticForm R V) :
+    Continuous (ι Q) := by
+  let _ : ContinuousAdd (CliffordAlgebra Q) := IsModuleTopology.toContinuousAdd R _
+  exact IsModuleTopology.continuous_of_linearMap (ι Q)
+
+/-- The vector-part projection from a Clifford algebra is continuous for the module topologies. -/
+@[fun_prop]
+theorem continuous_ιInv [Invertible (2 : R)] [TopologicalSpace V] [IsModuleTopology R V]
+    (Q : QuadraticForm R V) : Continuous (ιInv Q) := by
+  let _ : ContinuousAdd V := IsModuleTopology.toContinuousAdd R V
+  exact IsModuleTopology.continuous_of_linearMap (ιInv Q)
 
 /-- The Clifford-algebra map induced by an isometry of quadratic spaces is continuous for the
 canonical module topologies. -/

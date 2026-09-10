@@ -20,10 +20,12 @@ algebra. The surrounding Clifford algebra has its module topology from
 `TauCeti.Topology.Algebra.CliffordAlgebra.Basic`. A special orthogonal group in coordinates has the
 independently induced topology from `TauCeti.Topology.Algebra.QuadraticForm.SpecialOrthogonal`.
 
-For a quadratic form on a finite coordinate space, continuity of the Spin projection is proved
-from the explicit Clifford conjugation formula for `spinVectorAction`. In particular, this gives the
-topological-group bridge for the compact real double cover at signature `(n, 0)`. It makes no
-smoothness, compactness, connectedness, simple-connectivity, fibration, or universal-cover claim.
+When `2` is invertible, the vector space has its module topology, and Clifford multiplication is
+continuous, the Spin action is jointly continuous by the explicit Clifford conjugation formula for
+`spinVectorAction`. Over a topological ring, this proves continuity of the Spin projection for a
+quadratic form on a finite coordinate space. In particular, this gives the topological-group bridge
+for the compact real double cover at signature `(n, 0)`. It makes no smoothness, compactness,
+connectedness, simple-connectivity, fibration, or universal-cover claim.
 
 ## Continuity argument
 
@@ -48,12 +50,16 @@ topologized special orthogonal group.
   map to the corresponding Spin groups.
 * `CliffordAlgebra.instIsTopologicalGroupSpinGroup` equips `spinGroup Q` with a topological
   group structure for its canonical subtype topology.
-* `CliffordAlgebra.continuous_spinVectorAction` proves joint continuity of the Spin action.
-* `CliffordAlgebra.continuous_spinVectorAction_apply` proves fixed-vector continuity of the Spin
-  action.
-* `QuadraticForm.isClosed_spinVectorStabilizer` proves that every vector stabilizer is closed.
-* `CliffordAlgebra.continuous_spinToSpecialOrthogonal_pi` proves continuity of the Spin
-  projection for every quadratic form on a finite coordinate space.
+* `CliffordAlgebra.continuous_spinVectorAction` proves joint continuity of the Spin action when
+  `2` is invertible, the vector space has its module topology, and Clifford multiplication is
+  continuous.
+* `CliffordAlgebra.continuous_spinVectorAction_apply` proves fixed-vector continuity under the same
+  hypotheses.
+* `QuadraticForm.isClosed_spinVectorStabilizer` proves that every vector stabilizer is closed when
+  the vector space is T1, under the same hypotheses.
+* `CliffordAlgebra.continuous_spinToSpecialOrthogonal_pi` proves continuity of the Spin projection
+  for every quadratic form on a finite coordinate space over a topological ring with `2`
+  invertible.
 * `CliffordAlgebra.continuous_realCliffordSpinDoubleCoverZero_rightHom` specializes this result to
   the projection field of the packaged compact real double cover.
 * `CliffordAlgebra.continuous_realCliffordSpinInclusion` proves continuity of the lower-rank
@@ -151,13 +157,13 @@ theorem continuous_spinVectorAction [Invertible (2 : R)]
   have hval : Continuous (fun p : spinGroup Q × V => (p.1 : CliffordAlgebra Q)) :=
     continuous_subtype_val.comp continuous_fst
   have hι : Continuous (fun p : spinGroup Q × V => ι Q p.2) :=
-    (IsModuleTopology.continuous_of_linearMap (ι Q)).comp continuous_snd
+    (continuous_ι Q).comp continuous_snd
   have hstar : Continuous (fun p : spinGroup Q × V => star (p.1 : CliffordAlgebra Q)) :=
     (continuous_subtype_val.comp continuous_fst).star
   have hprod : Continuous (fun p : spinGroup Q × V =>
       (p.1 : CliffordAlgebra Q) * ι Q p.2 * star (p.1 : CliffordAlgebra Q)) :=
     (hval.mul hι).mul hstar
-  have hvector := (IsModuleTopology.continuous_of_linearMap (ιInv Q)).comp hprod
+  have hvector := (continuous_ιInv Q).comp hprod
   convert hvector using 1
   funext p
   rw [← ιInv_ι Q (spinVectorAction Q p.1 p.2), ι_spinVectorAction_apply]
