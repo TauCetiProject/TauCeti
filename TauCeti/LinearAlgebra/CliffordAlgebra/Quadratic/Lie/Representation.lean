@@ -35,11 +35,6 @@ Clifford action makes the target Clifford module a module for the original Lie a
   original adjoint action.
 * `CliffordAlgebra.adjointCliffordHom_injective`: the lift is injective, since the adjoint action
   it encodes is faithful.
-
-## References
-
-* [Tau Ceti Roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), Representation Theory / Spin
-  Representations, Layer 9, "Every Clifford module is a `𝔤`-module".
 -/
 
 public section
