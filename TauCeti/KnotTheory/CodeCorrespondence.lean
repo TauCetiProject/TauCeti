@@ -392,6 +392,7 @@ theorem toOrientedPDCode_injective :
   exact ext hvisit hover hsign
 
 /-- The crossing-free Gauss code is the crossing-free unknot diagram. -/
+@[simp]
 theorem toOrientedPDCode_empty :
     (empty : BasedOrientedGaussCode 0).toOrientedPDCode = orientedPDCodeUnknot true := by
   rw [orientedPDCode_eq_unlink (empty : BasedOrientedGaussCode 0).toOrientedPDCode,
