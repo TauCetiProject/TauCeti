@@ -175,14 +175,29 @@ lemma exists_mem_notMem_adj (s : Set T.Component) (hne : s.Nonempty) (hs : s ≠
     ∃ i ∈ s, ∃ j ∉ s, T.Adj i j :=
   (forall_reflTransGen_iff T.Adj).1 T.reflTransGen_adj s hne hs
 
-/-- The connectedness axiom of a numerical type, for a symmetric matrix `A` of intersection
-numbers, is equivalent to the absence of a disconnecting cut; the right-hand side is the form in
-which [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z) states the condition, so this
-is what supplies the `connected` field when a numerical type is constructed. -/
-lemma reflTransGen_adj_iff {C : Type*} (A : Matrix C C ℤ) :
+/-- For a matrix `A` of intersection numbers whose off-diagonal entries are nonnegative, the
+connectedness axiom of a numerical type is equivalent to the absence of a disconnecting cut: no
+nonempty proper set of indices `s` has all its cross-intersections zero. The right-hand side is
+the form in which [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z) states the
+condition, so this is what supplies the `connected` field when a numerical type is constructed.
+
+The nonnegativity hypothesis is what turns a nonzero cross-intersection into a positive one, and
+so cannot be dropped. -/
+lemma reflTransGen_adj_iff {C : Type*} (A : Matrix C C ℤ) (hA : ∀ i j, i ≠ j → 0 ≤ A i j) :
     (∀ i j, Relation.ReflTransGen (fun i j ↦ i ≠ j ∧ 0 < A i j) i j) ↔
-      ∀ s : Set C, s.Nonempty → s ≠ Set.univ → ∃ i ∈ s, ∃ j ∉ s, i ≠ j ∧ 0 < A i j :=
-  forall_reflTransGen_iff _
+      ∀ s : Set C, s.Nonempty → s ≠ Set.univ → ¬ ∀ i ∈ s, ∀ j ∉ s, A i j = 0 := by
+  rw [forall_reflTransGen_iff]
+  refine forall_congr' fun s ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
+  constructor
+  · rintro ⟨i, hi, j, hj, -, hpos⟩ hcut
+    exact hpos.ne' (hcut i hi j hj)
+  · intro hcut
+    by_contra hcon
+    refine hcut fun i hi j hj ↦ ?_
+    have hij : i ≠ j := fun h ↦ hj (h ▸ hi)
+    refine le_antisymm ?_ (hA i j hij)
+    by_contra hle
+    exact hcon ⟨i, hi, j, hj, hij, not_le.1 hle⟩
 
 /-! ### Self-intersections -/
 
