@@ -83,11 +83,6 @@ instance instFunLike : FunLike (SmoothLinkEmbedding I M n) (Fin n) (SmoothCircle
 theorem ext (h : ∀ i, L i = K i) : L = K :=
   DFunLike.ext L K h
 
-/-- The images of two differently labeled components of a smooth link are disjoint. -/
-theorem disjoint_range (L : SmoothLinkEmbedding I M n) {i j : Fin n} (hij : i ≠ j) :
-    Disjoint (Set.range (L i)) (Set.range (L j)) :=
-  L.pairwiseDisjoint_range hij
-
 /-- The subset of the ambient manifold occupied by a smooth link. -/
 def range (L : SmoothLinkEmbedding I M n) : Set M :=
   ⋃ i, Set.range (L i)
@@ -109,15 +104,14 @@ theorem existsUnique_component_of_mem_range (L : SmoothLinkEmbedding I M n) {x :
   obtain ⟨i, y, hy⟩ := (L.mem_range_iff x).mp hx
   refine ⟨i, ⟨y, hy⟩, ?_⟩
   intro j hj
-  by_contra hji
-  exact Set.disjoint_left.1 (L.disjoint_range hji) hj ⟨y, hy⟩
+  exact L.pairwiseDisjoint_range.eq (not_disjoint_iff.2 ⟨x, hj, ⟨y, hy⟩⟩)
 
 /-! ### Empty and one-component links -/
 
 /-- The smooth link with no components. -/
 def empty : SmoothLinkEmbedding I M 0 where
   component := Fin.elim0
-  pairwiseDisjoint_range i := Fin.elim0 i
+  pairwiseDisjoint_range := Subsingleton.pairwise
 
 /-- The empty smooth link occupies the empty subset. -/
 @[simp]
@@ -127,7 +121,7 @@ theorem range_empty : (empty (I := I) (M := M)).range = ∅ := by
 /-- Regard a smooth circle embedding as a one-component smooth link. -/
 def singleton (f : SmoothCircleEmbedding I M) : SmoothLinkEmbedding I M 1 where
   component := fun _ ↦ f
-  pairwiseDisjoint_range i j hij := (hij (Subsingleton.elim i j)).elim
+  pairwiseDisjoint_range := Subsingleton.pairwise
 
 /-- The only component of a singleton link is the original circle embedding. -/
 @[simp]
@@ -171,8 +165,7 @@ new label, then the component at the new label `i` is the old component at `e.sy
 def relabel (L : SmoothLinkEmbedding I M n) (e : Equiv.Perm (Fin n)) :
     SmoothLinkEmbedding I M n where
   component i := L (e.symm i)
-  pairwiseDisjoint_range _ _ hij :=
-    L.disjoint_range fun h ↦ hij (e.symm.injective h)
+  pairwiseDisjoint_range := L.pairwiseDisjoint_range.comp_of_injective e.symm.injective
 
 /-- Relabeling reads the component at the inverse old label. -/
 @[simp]
@@ -216,18 +209,12 @@ theorem perm_smul_def (e : Equiv.Perm (Fin n)) (L : SmoothLinkEmbedding I M n) :
 
 /-! ### Orientation reversal -/
 
-private theorem reverse_eq_compDiffeomorph (f : SmoothCircleEmbedding I M) :
-    f.reverse = f.compDiffeomorph circleReflection := by
-  apply SmoothEmbedding.ext
-  intro x
-  rw [SmoothCircleEmbedding.reverse_apply, SmoothEmbedding.compDiffeomorph_apply,
-    circleReflection_apply]
-
 /-- Reverse the orientation of every component of a smooth link. -/
 def reverse (L : SmoothLinkEmbedding I M n) : SmoothLinkEmbedding I M n where
   component i := (L i).reverse
   pairwiseDisjoint_range i j hij := by
-    simpa only [SmoothCircleEmbedding.range_reverse] using L.disjoint_range hij
+    change Disjoint (Set.range (L.component i).reverse) (Set.range (L.component j).reverse)
+    simpa only [SmoothCircleEmbedding.range_reverse] using L.pairwiseDisjoint_range hij
 
 /-- Reversing a smooth link reverses each of its components. -/
 @[simp]
@@ -267,7 +254,7 @@ def transDiffeomorph (L : SmoothLinkEmbedding I M n) (e : M ≃ₘ⟮I, I⟯ P) 
   component i := SmoothEmbedding.transDiffeomorph (L i) e
   pairwiseDisjoint_range i j hij := by
     simp only [Function.onFun, SmoothEmbedding.range_transDiffeomorph]
-    exact Set.disjoint_image_of_injective e.injective (L.disjoint_range hij)
+    exact Set.disjoint_image_of_injective e.injective (L.pairwiseDisjoint_range hij)
 
 /-- Ambient transport acts on every component by the same diffeomorphism. -/
 @[simp]
@@ -317,8 +304,21 @@ theorem reverse_transDiffeomorph (L : SmoothLinkEmbedding I M n) (e : M ≃ₘ�
   apply SmoothLinkEmbedding.ext
   intro i
   rw [reverse_apply, transDiffeomorph_apply, transDiffeomorph_apply, reverse_apply]
-  rw [reverse_eq_compDiffeomorph, reverse_eq_compDiffeomorph]
-  exact (SmoothEmbedding.transDiffeomorph_compDiffeomorph (L i) circleReflection e).symm
+  calc
+    SmoothCircleEmbedding.reverse (SmoothEmbedding.transDiffeomorph (L i) e) =
+        (SmoothEmbedding.transDiffeomorph (L i) e).compDiffeomorph circleReflection := by
+      apply SmoothEmbedding.ext
+      intro x
+      rw [SmoothCircleEmbedding.reverse_apply, SmoothEmbedding.compDiffeomorph_apply,
+        circleReflection_apply]
+    _ = (SmoothEmbedding.compDiffeomorph (L i) circleReflection).transDiffeomorph e :=
+      (SmoothEmbedding.transDiffeomorph_compDiffeomorph (L i) circleReflection e).symm
+    _ = SmoothEmbedding.transDiffeomorph (L i).reverse e := by
+      congr 1
+      apply SmoothEmbedding.ext
+      intro x
+      rw [SmoothEmbedding.compDiffeomorph_apply, circleReflection_apply,
+        SmoothCircleEmbedding.reverse_apply]
 
 end Ambient
 
