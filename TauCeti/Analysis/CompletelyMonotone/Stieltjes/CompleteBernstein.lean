@@ -65,7 +65,7 @@ theorem representsCompleteBernstein_iff {μ : Measure ℝ≥0} {a b : ℝ≥0} {
 
 namespace RepresentsCompleteBernstein
 
-variable {μ : Measure ℝ≥0} {a b : ℝ≥0} {f g : ℝ → ℝ}
+variable {μ ν : Measure ℝ≥0} {a b c d : ℝ≥0} {f g : ℝ → ℝ}
 
 /-- A complete-Bernstein representing measure has no atom at zero. -/
 lemma measure_singleton_zero (h : RepresentsCompleteBernstein μ a b f) : μ {0} = 0 :=
@@ -86,6 +86,44 @@ lemma eq_stieltjesBernsteinTransform (h : RepresentsCompleteBernstein μ a b f)
 lemma congr (h : RepresentsCompleteBernstein μ a b f) (hgf : EqOn g f (Ici 0)) :
     RepresentsCompleteBernstein μ a b g :=
   ⟨h.measure_singleton_zero, h.integrable_weight, hgf.trans h.2.2⟩
+
+private lemma integrable_div_add (hμ : Integrable stieltjesWeight μ) {t : ℝ} (ht : 0 ≤ t) :
+    Integrable (fun x : ℝ≥0 => t / (t + x)) μ := by
+  rcases ht.eq_or_lt with rfl | ht
+  · have hz : Integrable (fun _ : ℝ≥0 => (0 : ℝ)) μ := integrable_zero ℝ≥0 ℝ μ
+    simpa only [zero_div] using hz
+  · simpa only [div_eq_mul_inv] using (integrable_inv_add hμ ht).const_mul t
+
+/-- The sum of two complete-Bernstein representations is represented by the sum of their
+coefficients and measures. -/
+lemma add (hf : RepresentsCompleteBernstein μ a b f)
+    (hg : RepresentsCompleteBernstein ν c d g) :
+    RepresentsCompleteBernstein (μ + ν) (a + c) (b + d) (f + g) := by
+  refine ⟨by simp [hf.measure_singleton_zero, hg.measure_singleton_zero],
+    hf.integrable_weight.add_measure hg.integrable_weight, fun t ht => ?_⟩
+  rw [Pi.add_apply, hf.eq_stieltjesBernsteinTransform ht,
+    hg.eq_stieltjesBernsteinTransform ht]
+  simp only [stieltjesBernsteinTransform_apply]
+  rw [integral_add_measure
+      (integrable_div_add hf.integrable_weight ht)
+      (integrable_div_add hg.integrable_weight ht)]
+  push_cast
+  ring
+
+/-- A nonnegative scalar multiple of a complete-Bernstein representation is represented by
+scaling its coefficients and measure. -/
+lemma smul (h : RepresentsCompleteBernstein μ a b f) {r : ℝ} (hr : 0 ≤ r) :
+    RepresentsCompleteBernstein ((ENNReal.ofReal r) • μ)
+      (r.toNNReal * a) (r.toNNReal * b) (r • f) := by
+  refine ⟨by simp [h.measure_singleton_zero],
+    h.integrable_weight.smul_measure ENNReal.ofReal_ne_top, fun t ht => ?_⟩
+  rw [Pi.smul_apply, smul_eq_mul, h.eq_stieltjesBernsteinTransform ht]
+  simp only [stieltjesBernsteinTransform_apply]
+  rw [integral_smul_measure]
+  · simp only [ENNReal.toReal_ofReal hr, smul_eq_mul]
+    push_cast
+    rw [Real.coe_toNNReal r hr]
+    ring
 
 /-- A function with a complete-Bernstein representation is a Bernstein function. -/
 theorem isBernsteinFunction (h : RepresentsCompleteBernstein μ a b f) :
@@ -121,6 +159,7 @@ namespace IsCompleteBernsteinFunction
 variable {f g : ℝ → ℝ}
 
 /-- Every complete Bernstein function is a Bernstein function. -/
+@[grind =>]
 theorem isBernsteinFunction (hf : IsCompleteBernsteinFunction f) : IsBernsteinFunction f := by
   obtain ⟨a, b, μ, hμ⟩ := hf
   exact hμ.isBernsteinFunction
@@ -131,6 +170,19 @@ theorem congr (hf : IsCompleteBernsteinFunction f) (hgf : EqOn g f (Ici 0)) :
   obtain ⟨a, b, μ, hμ⟩ := hf
   exact ⟨a, b, μ, hμ.congr hgf⟩
 
+/-- Complete Bernstein functions are closed under addition. -/
+lemma add (hf : IsCompleteBernsteinFunction f) (hg : IsCompleteBernsteinFunction g) :
+    IsCompleteBernsteinFunction (f + g) := by
+  obtain ⟨a, b, μ, hμ⟩ := hf
+  obtain ⟨c, d, ν, hν⟩ := hg
+  exact ⟨a + c, b + d, μ + ν, hμ.add hν⟩
+
+/-- Complete Bernstein functions are closed under multiplication by a nonnegative scalar. -/
+lemma smul (hf : IsCompleteBernsteinFunction f) {r : ℝ} (hr : 0 ≤ r) :
+    IsCompleteBernsteinFunction (r • f) := by
+  obtain ⟨a, b, μ, hμ⟩ := hf
+  exact ⟨r.toNNReal * a, r.toNNReal * b, ENNReal.ofReal r • μ, hμ.smul hr⟩
+
 /-- Dividing a complete Bernstein function by its parameter gives a Stieltjes function. -/
 theorem isStieltjesFunction_div (hf : IsCompleteBernsteinFunction f) :
     IsStieltjesFunction (fun t => f t / t) := by
@@ -139,6 +191,22 @@ theorem isStieltjesFunction_div (hf : IsCompleteBernsteinFunction f) :
   exact ⟨a, b, μ, hμ.representsStieltjes_div⟩
 
 end IsCompleteBernsteinFunction
+
+/-- The Stieltjes--Bernstein transform of normalized, integrable measure data has a complete
+Bernstein representation with the given measure and coefficients. -/
+theorem representsCompleteBernstein_stieltjesBernsteinTransform
+    {μ : Measure ℝ≥0} {a b : ℝ≥0} (hzero : μ {0} = 0)
+    (hμ : Integrable stieltjesWeight μ) :
+    RepresentsCompleteBernstein μ a b (stieltjesBernsteinTransform μ a b) :=
+  ⟨hzero, hμ, fun _ _ => rfl⟩
+
+/-- The Stieltjes--Bernstein transform of normalized, integrable measure data is a complete
+Bernstein function. -/
+theorem isCompleteBernsteinFunction_stieltjesBernsteinTransform
+    {μ : Measure ℝ≥0} {a b : ℝ≥0} (hzero : μ {0} = 0)
+    (hμ : Integrable stieltjesWeight μ) :
+    IsCompleteBernsteinFunction (stieltjesBernsteinTransform μ a b) :=
+  ⟨a, b, μ, representsCompleteBernstein_stieltjesBernsteinTransform hzero hμ⟩
 
 namespace RepresentsStieltjes
 
@@ -149,14 +217,16 @@ complete Bernstein function by the same measure and coefficients. -/
 theorem representsCompleteBernstein_stieltjesBernsteinTransform
     (h : RepresentsStieltjes μ a b f) :
     RepresentsCompleteBernstein μ a b (stieltjesBernsteinTransform μ a b) :=
-  ⟨h.measure_singleton_zero, h.integrable_weight, fun _ _ => rfl⟩
+  TauCeti.representsCompleteBernstein_stieltjesBernsteinTransform
+    h.measure_singleton_zero h.integrable_weight
 
 /-- The Stieltjes--Bernstein transform of Stieltjes representing data is a complete Bernstein
 function. -/
 theorem isCompleteBernsteinFunction_stieltjesBernsteinTransform
     (h : RepresentsStieltjes μ a b f) :
     IsCompleteBernsteinFunction (stieltjesBernsteinTransform μ a b) :=
-  ⟨a, b, μ, h.representsCompleteBernstein_stieltjesBernsteinTransform⟩
+  TauCeti.isCompleteBernsteinFunction_stieltjesBernsteinTransform
+    h.measure_singleton_zero h.integrable_weight
 
 end RepresentsStieltjes
 
