@@ -19,8 +19,10 @@ Mathlib's one-dimensional `enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc`, obta
 composing with the affine parametrization `t ↦ x + t • h` of the segment.
 
 The hypotheses of the first estimate are local to the segment: differentiability at each of its
-points and continuity of the directional derivative along it. The real-valued estimate uses the
-same local hypotheses on the normalized segment.
+points and continuity of the directional derivative along it. The normalized real-valued estimate
+instead assumes continuity of the function along the parameterized segment, differentiability at
+interior parameters, and interval integrability of the operator-norm bound; these hypotheses are
+needed only when the segment has positive length.
 
 ## Main declarations
 
@@ -77,8 +79,9 @@ theorem enorm_sub_le_lintegral_enorm_fderiv_apply (x h : E)
       setLIntegral_congr_fun measurableSet_Icc fun t ht => by rw [hderiv t ht]
 
 /-- The oscillation of a function along a segment is bounded by the integrated norm of its
-Fréchet derivative along that segment. The hypotheses are differentiability on the segment and
-continuity of the derivative there; the zero-length segment is included.
+Fréchet derivative along that segment. For distinct endpoints, the function is continuous along
+the closed parameter interval, differentiable at its interior parameters, and the operator-norm
+bound is interval-integrable. The zero-length segment requires no analytic hypotheses.
 
 This is adapted from Scott Armstrong and Julia Kempe's Apache-2.0
 `scottnarmstrong/DeGiorgi/DeGiorgi/Poincare.lean`, commit
@@ -87,15 +90,19 @@ theorem norm_sub_le_integral_norm_fderiv_along_segment
     {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup F] [NormedSpace ℝ F]
     {u : E → F} (x y : E)
-    (hd : ∀ t ∈ Icc (0 : ℝ) ‖x - y‖,
-      DifferentiableAt ℝ u (x + t • (‖x - y‖⁻¹ • (y - x))))
-    (hc : ContinuousOn
-      (fun t => fderiv ℝ u (x + t • (‖x - y‖⁻¹ • (y - x))))
-      (Icc 0 ‖x - y‖)) :
+    (h : x = y ∨
+      (x ≠ y ∧
+        (∀ t ∈ Ioo (0 : ℝ) ‖x - y‖,
+          DifferentiableAt ℝ u (x + t • (‖x - y‖⁻¹ • (y - x)))) ∧
+        ContinuousOn (fun t : ℝ => u (x + t • (‖x - y‖⁻¹ • (y - x))))
+          (Icc 0 ‖x - y‖) ∧
+        IntervalIntegrable
+          (fun t : ℝ => ‖fderiv ℝ u (x + t • (‖x - y‖⁻¹ • (y - x)))‖)
+          volume 0 ‖x - y‖)) :
     ‖u x - u y‖ ≤ ∫ t in (0 : ℝ)..‖x - y‖,
       ‖fderiv ℝ u (x + t • (‖x - y‖⁻¹ • (y - x)))‖ := by
-  by_cases hxy : x = y
-  · simp [hxy]
+  rcases h with rfl | ⟨hxy, hd, hc, hBi⟩
+  · simp
   let L : ℝ := ‖x - y‖
   let ω : E := L⁻¹ • (y - x)
   let γ : ℝ → E := fun t => x + t • ω
@@ -106,29 +113,23 @@ theorem norm_sub_le_integral_norm_fderiv_along_segment
     dsimp [ω]
     rw [norm_smul, norm_inv, norm_norm, norm_sub_rev y x,
       inv_mul_cancel₀ (norm_ne_zero_iff.mpr (sub_ne_zero.mpr hxy))]
-  have hγ_cont : Continuous γ := by fun_prop
   have hfc : ContinuousOn (fun t : ℝ => u (γ t)) (Icc 0 L) := by
-    intro t ht
-    have hcomp := (hd t ht).continuousAt.comp (x := t) hγ_cont.continuousAt
-    simpa only [Function.comp_def] using hcomp.continuousWithinAt
+    simpa [L, γ, ω] using hc
   have hfd : DifferentiableOn ℝ (fun t : ℝ => u (γ t)) (Ioo 0 L) := by
     intro t ht
-    exact ((hd t (Ioo_subset_Icc_self ht)).comp t
+    exact ((hd t ht).comp t
       (by fun_prop : DifferentiableAt ℝ γ t)).differentiableWithinAt
   have hfB : ∀ᵐ t : ℝ, t ∈ Ioo 0 L →
       ‖deriv (fun s : ℝ => u (γ s)) t‖ ≤ ‖fderiv ℝ u (γ t)‖ :=
     .of_forall fun t ht => by
-      have ht' := Ioo_subset_Icc_self ht
       have hdu : DifferentiableAt ℝ u (x + t • ω) := by
-        simpa [ω, L] using hd t ht'
+        simpa [ω, L] using hd t ht
       have hderiv : deriv (fun s : ℝ => u (γ s)) t =
           fderiv ℝ u (γ t) ω := by
         simpa only [γ] using hdu.deriv_comp_add_smul
       rw [hderiv]
       simpa only [hω_norm, mul_one] using
         (ContinuousLinearMap.le_opNorm (fderiv ℝ u (γ t)) ω)
-  have hBi : IntervalIntegrable (fun t : ℝ => ‖fderiv ℝ u (γ t)‖) volume 0 L :=
-    hc.norm.intervalIntegrable_of_Icc hL.le
   have hkey := norm_sub_le_integral_of_norm_deriv_le_of_le hL.le hfc hfd hfB hBi
   have hγL : γ L = y := by
     dsimp [γ]
