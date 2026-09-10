@@ -29,11 +29,6 @@ is compact, so its continuous bijection with the Hausdorff space `X` has continu
   algebraic orbit-stabilizer equivalence.
 * `TauCeti.quotientStabilizerHomeomorph_mk` and
   `TauCeti.quotientStabilizerHomeomorph_smul` record its representative and equivariance laws.
-
-## References
-
-* [Spin-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 7, "Connectivity of the compact spin group".
 -/
 
 public section
