@@ -184,11 +184,8 @@ theorem tendsto_weakWhitney_iff {X : Type*} {l : Filter X}
       ∀ (m : ℕ) (hm : m ≤ n), Tendsto
         (fun x ↦ iteratedFDerivContinuousMap (f x) m hm) l
         (nhds (iteratedFDerivContinuousMap g m hm)) := by
-  simp only [nhds_induced, Filter.tendsto_comap_iff, tendsto_pi_nhds,
-    weakWhitneyJet_apply, Subtype.forall]
-  constructor <;> intro h m hm
-  · simpa only [Function.comp_def, weakWhitneyJet_apply] using h m hm
-  · simpa only [Function.comp_def, weakWhitneyJet_apply] using h m hm
+  rw [isInducing_weakWhitneyJet.tendsto_nhds_iff]
+  simp only [tendsto_pi_nhds, Function.comp_apply, weakWhitneyJet_apply, Subtype.forall]
 
 /-- The weak Whitney convergence criterion written using compact-open subbasic sets: for every
 derivative order, compact set, and open target containing the limiting derivative on that compact,
