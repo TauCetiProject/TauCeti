@@ -25,8 +25,8 @@ same local hypotheses on the normalized segment.
 ## Main declarations
 
 * `TauCeti.enorm_sub_le_lintegral_enorm_fderiv_apply`: the segment increment estimate.
-* `TauCeti.norm_sub_le_integral_fderiv_along_segment`: the corresponding normalized real-integral
-  estimate.
+* `TauCeti.norm_sub_le_integral_norm_fderiv_along_segment`: the corresponding normalized
+  real-integral estimate.
 
 ## References
 
@@ -83,7 +83,7 @@ continuity of the derivative there; the zero-length segment is included.
 This is adapted from Scott Armstrong and Julia Kempe's Apache-2.0
 `scottnarmstrong/DeGiorgi/DeGiorgi/Poincare.lean`, commit
 `4c1b3077d3782b24065184df4ba59501b2e56fc7`, lines 382--431. -/
-theorem norm_sub_le_integral_fderiv_along_segment
+theorem norm_sub_le_integral_norm_fderiv_along_segment
     {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup F] [NormedSpace ℝ F]
     {u : E → F} (x y : E)
@@ -99,49 +99,88 @@ theorem norm_sub_le_integral_fderiv_along_segment
   let L : ℝ := ‖x - y‖
   let ω : E := L⁻¹ • (y - x)
   let γ : ℝ → E := fun t => x + t • ω
-  have hγ : ∀ t, HasDerivAt γ ω t := by
-    intro t
-    have hline : HasDerivAt (fun t => t • ω) ω t := by
-      simpa using (hasDerivAt_id' (𝕜 := ℝ) t).smul_const ω
-    exact hline.const_add x
-  have hγ0 : γ 0 = x := by simp [γ]
-  have hγ1 : γ L = y := by
-    simp only [γ, ω, smul_smul]
-    rw [mul_inv_cancel₀ (norm_ne_zero_iff.mpr (sub_ne_zero.mpr hxy)), one_smul]
-    abel
+  have hL : 0 < L := by simp [L, norm_pos_iff.mpr (sub_ne_zero.mpr hxy)]
+  have hω : L • ω = y - x := by
+    simp [ω, hL.ne', smul_smul]
   have hω_norm : ‖ω‖ = 1 := by
     dsimp [ω]
     rw [norm_smul, norm_inv, norm_norm, norm_sub_rev y x,
       inv_mul_cancel₀ (norm_ne_zero_iff.mpr (sub_ne_zero.mpr hxy))]
-  have hd' : ∀ t ∈ Icc (0 : ℝ) L, DifferentiableAt ℝ u (γ t) := by
-    intro t ht
-    apply hd t
-    simpa [L, γ, ω] using ht
   have hc' : ContinuousOn (fun t => fderiv ℝ u (γ t)) (Icc 0 L) := by
     simpa [L, γ, ω] using hc
-  have hγ_cont : Continuous γ := by fun_prop
-  have hmain :
-      ‖(u ∘ γ) L - (u ∘ γ) 0‖ ≤
+  have hscale : ContinuousOn (fun s : ℝ => s * L) (Icc 0 1) :=
+    (continuous_id.mul continuous_const).continuousOn
+  have hscale_maps : MapsTo (fun s : ℝ => s * L) (Icc 0 1) (Icc 0 L) := by
+    intro s hs
+    exact ⟨mul_nonneg hs.1 hL.le,
+      (mul_le_mul_of_nonneg_right hs.2 hL.le).trans_eq (one_mul L)⟩
+  have hpath (s : ℝ) : x + s • (y - x) = γ (s * L) := by
+    simp only [γ]
+    congr 1
+    rw [← hω, smul_smul]
+  have hc_unit : ContinuousOn
+      (fun s : ℝ => fderiv ℝ u (x + s • (y - x)) (y - x)) (Icc 0 1) := by
+    have hcomp := (hc'.comp hscale hscale_maps).clm_apply
+      (continuousOn_const : ContinuousOn (fun _ : ℝ => y - x) (Icc 0 1))
+    simpa only [Function.comp_apply, hpath] using hcomp
+  have hd_unit : ∀ s ∈ Icc (0 : ℝ) 1,
+      DifferentiableAt ℝ u (x + s • (y - x)) := by
+    intro s hs
+    have hsL : s * L ∈ Icc (0 : ℝ) L := hscale_maps hs
+    rw [hpath]
+    exact hd (s * L) hsL
+  have hseg := enorm_sub_le_lintegral_enorm_fderiv_apply x (y - x) hd_unit hc_unit
+  have hdir : ContinuousOn
+      (fun s : ℝ => fderiv ℝ u (x + s • (y - x)) (y - x)) (Icc 0 1) := hc_unit
+  have hdir_int : IntegrableOn
+      (fun s : ℝ => fderiv ℝ u (x + s • (y - x)) (y - x)) (Icc 0 1) :=
+    hdir.integrableOn_Icc
+  have hnorm :
+      (∫ s in (0 : ℝ)..1, ‖fderiv ℝ u (x + s • (y - x)) (y - x)‖) =
+        (∫⁻ s in Icc (0 : ℝ) 1,
+          ‖fderiv ℝ u (x + s • (y - x)) (y - x)‖ₑ).toReal := by
+    rw [intervalIntegral.integral_of_le zero_le_one]
+    rw [← MeasureTheory.integral_norm_eq_lintegral_enorm]
+    · rw [MeasureTheory.setIntegral_congr_set Ioc_ae_eq_Icc]
+    · exact hdir_int.aestronglyMeasurable
+  have hdir_int' : Integrable
+      (fun s : ℝ => fderiv ℝ u (x + s • (y - x)) (y - x))
+      (volume.restrict (Icc 0 1)) := hdir_int
+  have hreal := ENNReal.toReal_mono
+    ((hasFiniteIntegral_iff_enorm.mp hdir_int'.hasFiniteIntegral).ne) hseg
+  rw [← hnorm] at hreal
+  have hf : ContinuousOn (fun t : ℝ => ‖fderiv ℝ u (γ t)‖) (Icc 0 L) := hc'.norm
+  have hfs : ContinuousOn (fun s : ℝ => ‖fderiv ℝ u (γ (s * L))‖) (Icc 0 1) := by
+    simpa [Function.comp_def] using hf.comp hscale hscale_maps
+  have hchange :
+      (∫ s in (0 : ℝ)..1, ‖fderiv ℝ u (x + s • (y - x)) (y - x)‖) ≤
         ∫ t in (0 : ℝ)..L, ‖fderiv ℝ u (γ t)‖ := by
-    apply norm_sub_le_integral_of_norm_deriv_le_of_le (f := u ∘ γ)
-      (B := fun t => ‖fderiv ℝ u (γ t)‖) (a := 0) (b := L)
-    · exact norm_nonneg _
-    · intro t ht
-      exact ((hd' t ht).continuousAt.comp (hγ_cont.continuousAt)).continuousWithinAt
-    · intro t ht
-      exact (hd' t (⟨le_of_lt ht.1, le_of_lt ht.2⟩)).comp t
-        (hγ t).differentiableAt |>.differentiableWithinAt
-    · filter_upwards with t ht
-      have hderiv : deriv (u ∘ γ) t = (fderiv ℝ u (γ t)) ω :=
-        ((hd' t (by exact ⟨le_of_lt ht.1, le_of_lt ht.2⟩)).hasFDerivAt.comp_hasDerivAt t
-          (hγ t)).deriv
-      rw [hderiv]
-      calc
-        ‖(fderiv ℝ u (γ t)) ω‖ ≤ ‖fderiv ℝ u (γ t)‖ * ‖ω‖ :=
-          ContinuousLinearMap.le_opNorm _ _
-        _ = ‖fderiv ℝ u (γ t)‖ := by rw [hω_norm, mul_one]
-    · exact hc'.norm.intervalIntegrable_of_Icc (by simp [L])
+    calc
+      _ ≤ ∫ s in (0 : ℝ)..1, L * ‖fderiv ℝ u (γ (s * L))‖ := by
+        apply intervalIntegral.integral_mono_ae_restrict zero_le_one
+        · exact hdir.norm.intervalIntegrable_of_Icc zero_le_one
+        · exact (hfs.const_mul L).intervalIntegrable_of_Icc zero_le_one
+        · refine Filter.Eventually.of_forall ?_
+          intro s
+          change ‖fderiv ℝ u (x + s • (y - x)) (y - x)‖ ≤
+            L * ‖fderiv ℝ u (γ (s * L))‖
+          rw [hpath]
+          calc
+            ‖fderiv ℝ u (γ (s * L)) (y - x)‖ =
+                L * ‖fderiv ℝ u (γ (s * L)) ω‖ := by
+              rw [← hω, map_smul, norm_smul, Real.norm_eq_abs, abs_of_pos hL]
+            _ ≤ L * (‖fderiv ℝ u (γ (s * L))‖ * ‖ω‖) :=
+              mul_le_mul_of_nonneg_left (ContinuousLinearMap.le_opNorm _ _) hL.le
+            _ = L * ‖fderiv ℝ u (γ (s * L))‖ := by rw [hω_norm, mul_one]
+      _ = L * ∫ s in (0 : ℝ)..1, ‖fderiv ℝ u (γ (s * L))‖ := by
+        rw [intervalIntegral.integral_const_mul]
+      _ = ∫ t in (0 : ℝ)..L, ‖fderiv ℝ u (γ t)‖ := by
+        simpa only [smul_eq_mul, zero_mul, one_mul] using
+          (intervalIntegral.smul_integral_comp_mul_right
+            (a := 0) (b := 1) (fun t => ‖fderiv ℝ u (γ t)‖) L)
   rw [norm_sub_rev]
-  simpa only [Function.comp_apply, hγ0, hγ1] using hmain
+  simpa only [L, γ, ω, add_sub_cancel, ← ofReal_norm,
+    ENNReal.toReal_ofReal (norm_nonneg _)] using
+    hreal.trans hchange
 
 end TauCeti
