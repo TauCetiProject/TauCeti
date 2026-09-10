@@ -152,9 +152,11 @@ instance : Module ℝ (HolderSpace α X Y) :=
        map_add' := toBoundedContinuousFunction_add } : HolderSpace α X Y →+ (X →ᵇ Y))
     toBoundedContinuousFunction_injective toBoundedContinuousFunction_smul
 
+/-- The supremum-plus-Hölder norm, combining uniform size with the global Hölder seminorm. -/
 instance instNorm : Norm (HolderSpace α X Y) where
   norm f := holderNorm α f.toBoundedContinuousFunction
 
+/-- The Hölder-space norm is the sum of the supremum norm and the global Hölder seminorm. -/
 @[simp]
 theorem norm_def (f : HolderSpace α X Y) :
     ‖f‖ = ‖f.toBoundedContinuousFunction‖ +
@@ -163,46 +165,40 @@ theorem norm_def (f : HolderSpace α X Y) :
   change holderNorm α f.toBoundedContinuousFunction = _
   rw [holderNorm_def]
 
-private theorem norm_nonneg' (f : HolderSpace α X Y) : 0 ≤ ‖f‖ :=
-  holderNorm_nonneg f.toBoundedContinuousFunction
-
-private theorem norm_smul' (c : ℝ) (f : HolderSpace α X Y) :
-    ‖c • f‖ = ‖c‖ * ‖f‖ :=
-  holderNorm_smul c f.toBoundedContinuousFunction f.memHolder
-
-private theorem norm_triangle' (f g : HolderSpace α X Y) :
-    ‖f + g‖ ≤ ‖f‖ + ‖g‖ :=
-  holderNorm_add_le f.toBoundedContinuousFunction g.toBoundedContinuousFunction
-    f.memHolder g.memHolder
-
-private theorem holderNorm_eq_zero_iff (f : HolderSpace α X Y) : ‖f‖ = 0 ↔ f = 0 := by
-  constructor
-  · intro hf
-    apply ext
-    intro x
-    apply norm_eq_zero.mp
-    exact le_antisymm
-      ((f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
-        ((norm_le_holderNorm f.toBoundedContinuousFunction).trans_eq hf))
-      (norm_nonneg (f x))
-  · rintro rfl
-    -- The custom norm unfolds to `holderNorm`, while the group zero unfolds to the wrapped zero
-    -- bounded function; expose precisely those two wrappers to apply the characteristic lemma.
-    change holderNorm α (0 : X →ᵇ Y) = 0
-    exact holderNorm_zero α
-
-/-- The norm axioms used to construct the Hölder-space normed structures. -/
-theorem normedSpaceCore : NormedSpace.Core ℝ (HolderSpace α X Y) where
-  norm_nonneg := norm_nonneg'
-  norm_smul := norm_smul'
-  norm_triangle := norm_triangle'
-  norm_eq_zero_iff := holderNorm_eq_zero_iff
-
 noncomputable instance instNormedAddCommGroup : NormedAddCommGroup (HolderSpace α X Y) :=
-  NormedAddCommGroup.ofCore normedSpaceCore
+  let core : NormedSpace.Core ℝ (HolderSpace α X Y) :=
+    { norm_nonneg := fun f ↦ by
+        exact holderNorm_nonneg f.toBoundedContinuousFunction
+      norm_smul := fun c f ↦ by
+        change holderNorm α (c • f.toBoundedContinuousFunction) =
+          ‖c‖ * holderNorm α f.toBoundedContinuousFunction
+        exact holderNorm_smul c f.toBoundedContinuousFunction f.memHolder
+      norm_triangle := fun f g ↦ by
+        change holderNorm α (f.toBoundedContinuousFunction + g.toBoundedContinuousFunction) ≤
+          holderNorm α f.toBoundedContinuousFunction + holderNorm α g.toBoundedContinuousFunction
+        exact holderNorm_add_le f.toBoundedContinuousFunction g.toBoundedContinuousFunction
+          f.memHolder g.memHolder
+      norm_eq_zero_iff := fun f ↦ by
+        constructor
+        · intro hf
+          apply ext
+          intro x
+          apply norm_eq_zero.mp
+          exact le_antisymm
+            ((f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
+              ((norm_le_holderNorm f.toBoundedContinuousFunction).trans_eq hf))
+            (norm_nonneg (f x))
+        · rintro rfl
+          change holderNorm α (0 : X →ᵇ Y) = 0
+          exact holderNorm_zero α }
+  NormedAddCommGroup.ofCore core
 
 noncomputable instance instNormedSpace : NormedSpace ℝ (HolderSpace α X Y) :=
-  NormedSpace.ofCore normedSpaceCore
+  { toModule := inferInstance
+    norm_smul_le := fun c f ↦ by
+      change holderNorm α (c • f.toBoundedContinuousFunction) ≤
+        ‖c‖ * holderNorm α f.toBoundedContinuousFunction
+      exact (holderNorm_smul c f.toBoundedContinuousFunction f.memHolder).le }
 
 /-- The supremum norm is controlled by the Hölder-space norm. -/
 theorem norm_toBoundedContinuousFunction_le (f : HolderSpace α X Y) :
@@ -210,7 +206,7 @@ theorem norm_toBoundedContinuousFunction_le (f : HolderSpace α X Y) :
   norm_le_holderNorm f.toBoundedContinuousFunction
 
 /-- Forgetting the Hölder bound is a continuous linear map to bounded continuous functions. -/
-def toBoundedContinuousFunctionL : HolderSpace α X Y →L[ℝ] (X →ᵇ Y) :=
+def toBoundedContinuousFunctionCLM : HolderSpace α X Y →L[ℝ] (X →ᵇ Y) :=
   LinearMap.mkContinuous
     { toFun := toBoundedContinuousFunction
       map_add' := toBoundedContinuousFunction_add
@@ -219,12 +215,12 @@ def toBoundedContinuousFunctionL : HolderSpace α X Y →L[ℝ] (X →ᵇ Y) :=
         exact norm_toBoundedContinuousFunction_le f
 
 @[simp]
-theorem toBoundedContinuousFunctionL_apply (f : HolderSpace α X Y) :
-    toBoundedContinuousFunctionL f = f.toBoundedContinuousFunction := (rfl)
+theorem toBoundedContinuousFunctionCLM_apply (f : HolderSpace α X Y) :
+    toBoundedContinuousFunctionCLM f = f.toBoundedContinuousFunction := (rfl)
 
 /-- Forgetting the Hölder bound has operator norm at most one. -/
-theorem norm_toBoundedContinuousFunctionL_le_one :
-    ‖toBoundedContinuousFunctionL (α := α) (X := X) (Y := Y)‖ ≤ 1 :=
+theorem norm_toBoundedContinuousFunctionCLM_le_one :
+    ‖toBoundedContinuousFunctionCLM (α := α) (X := X) (Y := Y)‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
 private theorem holderWith_sub_of_tendsto_of_norm_sub_le {u : ℕ → HolderSpace α X Y}
@@ -264,7 +260,8 @@ private theorem norm_sub_limit_toBoundedContinuousFunction_le
 noncomputable instance instCompleteSpace [CompleteSpace Y] : CompleteSpace (HolderSpace α X Y) :=
   Metric.complete_of_cauchySeq_tendsto fun u hu ↦ by
     have hu' : CauchySeq (fun n ↦ (u n).toBoundedContinuousFunction) :=
-      (toBoundedContinuousFunctionL (α := α) (X := X) (Y := Y)).uniformContinuous.comp_cauchySeq hu
+      (toBoundedContinuousFunctionCLM (α := α) (X := X) (Y := Y)).uniformContinuous.comp_cauchySeq
+        hu
     obtain ⟨F, hF⟩ := cauchySeq_tendsto_of_complete hu'
     rcases Metric.cauchySeq_iff.mp hu 1 zero_lt_one with ⟨N₀, hN₀⟩
     have hbound₀ : ∀ n ≥ N₀, ‖u n - u N₀‖ ≤ (1 : ℝ) := by
@@ -294,7 +291,8 @@ noncomputable instance instCompleteSpace [CompleteSpace Y] : CompleteSpace (Hold
     have hsup : ‖F - (u N).toBoundedContinuousFunction‖ ≤ C := by
       exact_mod_cast norm_sub_limit_toBoundedContinuousFunction_le hF N C hbound
     refine ⟨N, fun n hn ↦ ?_⟩
-    have hfF : f.toBoundedContinuousFunction = F := by rfl
+    have hfF : f.toBoundedContinuousFunction = F :=
+      toBoundedContinuousFunction_ofBoundedContinuousFunction F hholderF
     have hseminorm :
         nnHolderNorm α ((f - u N).toBoundedContinuousFunction : X → Y) ≤ C := by
       rw [toBoundedContinuousFunction_sub, hfF]
