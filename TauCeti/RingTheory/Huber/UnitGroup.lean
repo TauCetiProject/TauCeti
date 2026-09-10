@@ -10,19 +10,22 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.GeometricSeries
 public import TauCeti.Topology.Algebra.Ring.MaximalIdeals
 
 /-!
-# The unit group of a complete Huber ring is open, and maximal ideals are closed
+# The unit group of a complete Huber ring is open, and proper ideals stay proper
 
 This is the first half of Wedhorn's Proposition 7.51, whose statement is "*then `𝔪` is closed
 and there exists `v ∈ Spa A` with `supp v = 𝔪`*". Only the closedness conjunct is proved here;
-the existence conjunct needs nonemptiness of the adic spectrum (Wedhorn Proposition 7.49), which
-is a separate development.
+the existence conjunct needs nonemptiness of the adic spectrum (Wedhorn Proposition 7.49) and is
+carried out in `TauCeti/AlgebraicGeometry/AdicSpace/Spa/Support.lean`, which consumes the density
+statements below.
 
 The argument is Wedhorn's. The topologically nilpotent elements of a Huber ring form an open set
 (`TauCeti.Huber.isOpen_setOf_isTopologicallyNilpotent`), and completeness makes `1 + A°°` consist
 of units (`IsTopologicallyNilpotent.isUnit_one_add`). Around a unit `u` the set of `x` with
 `u⁻¹x - 1` topologically nilpotent is then an open neighbourhood of `u` made of units, so the unit
 group is open. Closedness of maximal ideals is then immediate from
-`Ideal.isClosed_of_isMaximal_of_isOpen_isUnit`, which holds over any topological ring.
+`Ideal.isClosed_of_isMaximal_of_isOpen_isUnit`, which holds over any topological ring, and so is
+the fact that a proper ideal is never dense — a statement that survives the passage to `A ⧸ J`,
+where it says that the separated quotient of `A ⧸ J` is nonzero.
 
 ## Why this does not assume a linear topology
 
@@ -43,6 +46,9 @@ form of Proposition 7.51 that survives the Tate case.
 * `TauCeti.Huber.isOpen_setOf_isUnit` : the unit group of a complete Huber ring is open.
 * `TauCeti.Huber.isClosed_of_isMaximal` : **Wedhorn Proposition 7.51, closedness half** — every
   maximal ideal of a complete Huber ring is closed.
+* `TauCeti.Huber.one_notMem_closure_of_ne_top` : no proper ideal of a complete Huber ring is
+  dense, and `TauCeti.Huber.one_notMem_closure_zero_quotient_of_ne_top` says the same downstairs:
+  the separated quotient of `A ⧸ J` is nonzero for every proper `J`.
 
 ## Provenance
 
@@ -105,6 +111,32 @@ is closed. Wedhorn states it for a complete affinoid ring; the affinoid `A⁺` p
 argument, so the plus subring is absent here. -/
 theorem isClosed_of_isMaximal (𝔪 : Ideal A) [𝔪.IsMaximal] : IsClosed (𝔪 : Set A) :=
   Ideal.isClosed_of_isMaximal_of_isOpen_isUnit isOpen_setOf_isUnit 𝔪
+
+/-- **No proper ideal of a complete Huber ring is dense.** The unit group is open and a proper
+ideal misses it, so the closure of the ideal misses it too, and in particular misses `1`. -/
+theorem one_notMem_closure_of_ne_top {J : Ideal A} (hJ : J ≠ ⊤) :
+    (1 : A) ∉ closure (J : Set A) := by
+  have h := Ideal.closure_ne_top_of_isOpen_isUnit (A := A) isOpen_setOf_isUnit hJ
+  rwa [Ideal.ne_top_iff_one, ← SetLike.mem_coe, Ideal.coe_closure] at h
+
+/-- **The separated quotient of `A ⧸ J` is nonzero for every proper ideal `J` of a complete Huber
+ring.** The quotient map is open, so the closure of `{0}` in `A ⧸ J` pulls back to the closure of
+`J` in `A`, which misses `1` by `one_notMem_closure_of_ne_top`.
+
+Together with Wedhorn's Proposition 7.49(1) this is what makes the adic spectrum of the quotient
+Huber pair nonempty. -/
+theorem one_notMem_closure_zero_quotient_of_ne_top {J : Ideal A} (hJ : J ≠ ⊤) :
+    (1 : A ⧸ J) ∉ closure ({0} : Set (A ⧸ J)) := by
+  intro hmem
+  refine one_notMem_closure_of_ne_top hJ ?_
+  have hpre : (Ideal.Quotient.mk J) ⁻¹' ({0} : Set (A ⧸ J)) = (J : Set A) := by
+    ext a
+    simp [Ideal.Quotient.eq_zero_iff_mem]
+  have hopen := (QuotientRing.isOpenMap_coe J).preimage_closure_eq_closure_preimage
+    continuous_quotient_mk' ({0} : Set (A ⧸ J))
+  rw [hpre] at hopen
+  rw [← hopen]
+  simpa using hmem
 
 end TauCeti.Huber
 
