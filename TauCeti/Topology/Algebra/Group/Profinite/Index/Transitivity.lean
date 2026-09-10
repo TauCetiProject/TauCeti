@@ -47,37 +47,18 @@ private theorem index_at_level_mul_index_at_level {H K : Subgroup G} (hHK : H �
   have himage : H.map q ≤ K.map q := Subgroup.map_mono hHK
   rw [← (H.map q).relIndex_mul_index himage]
   congr 1
-  have hq (g : G) : q g = 1 ↔ g ∈ N.toSubgroup := by
-    exact QuotientGroup.eq_one_iff g
   have hker : f.ker = N'.toSubgroup := by
-    ext x
-    simp only [MonoidHom.mem_ker]
-    rw [MonoidHom.comp_apply]
-    simp only [Subgroup.coe_subtype]
-    rw [hq, hN', Subgroup.mem_comap]
-    simp only [Subgroup.coe_subtype]
+    change (q.comp K.subtype).ker = N'.toSubgroup
+    rw [← MonoidHom.comap_ker]
+    change (QuotientGroup.mk' N.toSubgroup).ker.comap K.subtype = N'.toSubgroup
+    rw [QuotientGroup.ker_mk', ← hN']
   have hmapH : (H.comap K.subtype).map f = H.map q := by
-    ext y
-    constructor
-    · intro hy
-      obtain ⟨x, hx, hxy⟩ := Subgroup.mem_map.mp hy
-      exact Subgroup.mem_map.mpr ⟨x, Subgroup.mem_comap.mp hx, by
-        simpa only [f, MonoidHom.comp_apply, Subgroup.coe_subtype] using hxy⟩
-    · intro hy
-      obtain ⟨x, hx, hxy⟩ := Subgroup.mem_map.mp hy
-      exact Subgroup.mem_map.mpr ⟨⟨x, hHK hx⟩, Subgroup.mem_comap.mpr hx, by
-        simpa only [f, MonoidHom.comp_apply, Subgroup.coe_subtype] using hxy⟩
+    change (H.comap K.subtype).map (q.comp K.subtype) = H.map q
+    rw [Subgroup.comap_subtype, ← Subgroup.map_map,
+      Subgroup.map_subgroupOf_eq_of_le hHK]
   have hmapK : (⊤ : Subgroup K).map f = K.map q := by
-    ext y
-    constructor
-    · intro hy
-      obtain ⟨x, _, hxy⟩ := Subgroup.mem_map.mp hy
-      exact Subgroup.mem_map.mpr ⟨x, x.property, by
-        simpa only [f, MonoidHom.comp_apply, Subgroup.coe_subtype] using hxy⟩
-    · intro hy
-      obtain ⟨x, hx, hxy⟩ := Subgroup.mem_map.mp hy
-      exact Subgroup.mem_map.mpr ⟨⟨x, hx⟩, Subgroup.mem_top _, by
-        simpa only [f, MonoidHom.comp_apply, Subgroup.coe_subtype] using hxy⟩
+    change (⊤ : Subgroup K).map (q.comp K.subtype) = K.map q
+    rw [← Subgroup.map_map, ← MonoidHom.range_eq_map, Subgroup.range_subtype]
   calc
     ((H.comap K.subtype).map (QuotientGroup.mk' N'.toSubgroup)).index =
         (H.comap K.subtype ⊔ N'.toSubgroup).index :=
