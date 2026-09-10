@@ -11,16 +11,10 @@ public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 # A limit criterion for the Lie algebra of a closed subgroup
 
 Let `K` be a closed subgroup of a finite-dimensional Lie group. Its Lie algebra consists exactly
-of the limits `X` for which there are positive real numbers `tₙ → 0` and derivations `Xₙ → X`
-such that
+of the limits `X` for which there are eventually positive real numbers `tₙ → 0` and derivations
+`Xₙ → X` such that, eventually,
 
 `lieExp (tₙ • Xₙ) ∈ K`.
-
-The reverse implication is the substantive one. For a fixed positive parameter `s`, the integers
-`mₙ = ⌊s / tₙ⌋₊` satisfy `mₙ tₙ → s`. Since `K` contains
-`lieExp (tₙ • Xₙ)`, it also contains its `mₙ`-th power, which is
-`lieExp ((mₙ tₙ) • Xₙ)`. Closedness of `K` and continuity of `lieExp` then give
-`lieExp (s • X) ∈ K`. Negative parameters follow by inversion.
 
 This is the limit criterion used in the local-separation step of the closed-subgroup theorem. In
 that application, a hypothetical sequence of nonzero transverse coordinates `Yₙ → 0` is written
@@ -33,10 +27,10 @@ forcing its limit into the subgroup Lie algebra and contradicting transversality
 
 ## Main results
 
-* `TauCeti.Lie.mem_lieSubalgebraOfSubgroup_of_tendsto`: a convergent family of rescaled
+* `TauCeti.Lie.mem_lieSubalgebraOfSubgroup_of_seq`: a convergent sequence of rescaled
   infinitesimal elements whose exponentials lie in a closed subgroup has its limit in the
   subgroup Lie algebra.
-* `TauCeti.Lie.mem_lieSubalgebraOfSubgroup_iff_exists_tendsto`: the resulting sequential
+* `TauCeti.Lie.mem_lieSubalgebraOfSubgroup_iff_exists_seq`: the resulting sequential
   characterization.
 
 ## References
@@ -63,11 +57,8 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- A limit criterion for the Lie algebra of a closed subgroup. Suppose eventually positive scales
 `tₙ` tend to zero, derivations `Xₙ` tend to `X`, and eventually `lieExp (tₙ • Xₙ)` lies in
-`K`. Then `X` belongs to the Lie algebra of `K`.
-
-The positivity assumption makes natural-number powers sufficient to recover all positive
-parameters. The full one-parameter subgroup is then obtained using inverses. -/
-theorem mem_lieSubalgebraOfSubgroup_of_tendsto {K : Subgroup G}
+`K`. Then `X` belongs to the Lie algebra of `K`. -/
+theorem mem_lieSubalgebraOfSubgroup_of_seq {K : Subgroup G}
     (hK : IsClosed (K : Set G)) {X : LeftInvariantDerivation I G} {t : ℕ → ℝ}
     (ht_pos : ∀ᶠ n in atTop, 0 < t n) (ht : Tendsto t atTop (𝓝 0))
     {Xn : ℕ → LeftInvariantDerivation I G} (hXn : Tendsto Xn atTop (𝓝 X))
@@ -111,7 +102,7 @@ theorem mem_lieSubalgebraOfSubgroup_of_tendsto {K : Subgroup G}
 /-- Membership in the Lie algebra of a closed subgroup is equivalent to being a limit of
 derivations whose exponentials at eventually positive scales tending to zero eventually lie in the
 subgroup. -/
-theorem mem_lieSubalgebraOfSubgroup_iff_exists_tendsto {K : Subgroup G}
+theorem mem_lieSubalgebraOfSubgroup_iff_exists_seq {K : Subgroup G}
     (hK : IsClosed (K : Set G)) {X : LeftInvariantDerivation I G} :
     X ∈ lieSubalgebraOfSubgroup (I := I) K ↔
       ∃ (t : ℕ → ℝ) (Xn : ℕ → LeftInvariantDerivation I G),
@@ -126,6 +117,6 @@ theorem mem_lieSubalgebraOfSubgroup_iff_exists_tendsto {K : Subgroup G}
     · filter_upwards with n
       exact lieExp_smul_mem_of_mem_lieSubalgebraOfSubgroup hK hX _
   · rintro ⟨t, Xn, ht_pos, ht, hXn, hmem⟩
-    exact mem_lieSubalgebraOfSubgroup_of_tendsto hK ht_pos ht hXn hmem
+    exact mem_lieSubalgebraOfSubgroup_of_seq hK ht_pos ht hXn hmem
 
 end TauCeti.Lie
