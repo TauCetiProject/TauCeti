@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import Mathlib.LinearAlgebra.TensorProduct.Prod
-import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.Flat.Basic
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 
 /-!
@@ -267,7 +267,37 @@ theorem baseChange_smul (r : R) (Q : _root_.QuadraticForm R M) :
   apply _root_.baseChange_ext
   simp [Algebra.smul_def, mul_comm]
 
+-- Provenance: TauCetiRoadmap/GlobalQuadraticForms/README.md, Layers 0.1 and 0.2.
+
+/-- Isotropy is preserved by a faithful scalar extension when the underlying module is flat. -/
+theorem not_anisotropic_baseChange [FaithfulSMul R A] [Module.Flat R M]
+    {Q : _root_.QuadraticForm R M} (hQ : ¬ Q.Anisotropic) :
+    ¬ (Q.baseChange A).Anisotropic := by
+  rw [QuadraticMap.not_anisotropic_iff_exists] at hQ ⊢
+  obtain ⟨x, hx, hQx⟩ := hQ
+  refine ⟨1 ⊗ₜ x, ?_, by simp [hQx]⟩
+  intro hzero
+  apply hx
+  apply Module.Flat.tensorProduct_mk_injective R M A
+  simpa using hzero
+
 end QuadraticForm
+
+/-- Representation of one quadratic form by another is preserved by flat base change. -/
+theorem QuadraticMap.IsRepresentedBy.baseChange [Module.Flat R A]
+    {Q : _root_.QuadraticForm R M} {Q' : _root_.QuadraticForm R N}
+    (h : Q.IsRepresentedBy Q') :
+    (Q.baseChange A).IsRepresentedBy (Q'.baseChange A) := by
+  rw [QuadraticMap.isRepresentedBy_iff] at h ⊢
+  obtain ⟨f, hf, hQ⟩ := h
+  let g : Q →qᵢ Q' := ⟨f, hQ⟩
+  refine ⟨(g.baseChange A).toLinearMap, ?_, g.baseChange A |>.map_app⟩
+  have hinjective : Function.Injective (f.lTensor A) :=
+    Module.Flat.lTensor_preserves_injective_linearMap f hf
+  intro x y hxy
+  apply hinjective
+  simpa only [QuadraticMap.Isometry.baseChange_toLinearMap,
+    LinearMap.baseChange_eq_ltensor] using hxy
 
 end CommRing
 
@@ -277,20 +307,6 @@ variable {K : Type uR} {L : Type uA} [Field K] [Field L] [Algebra K L]
 variable {V : Type uM} [AddCommGroup V] [Module K V]
 
 namespace QuadraticForm
-
--- Provenance: TauCetiRoadmap/GlobalQuadraticForms/README.md, Layers 0.1 and 0.2.
-
-/-- Isotropy is preserved by extension of the base field. -/
-theorem not_anisotropic_baseChange [Invertible (2 : K)]
-    {Q : _root_.QuadraticForm K V} (hQ : ¬ Q.Anisotropic) :
-    ¬ (Q.baseChange L).Anisotropic := by
-  rw [QuadraticMap.not_anisotropic_iff_exists] at hQ ⊢
-  obtain ⟨x, hx, hQx⟩ := hQ
-  refine ⟨1 ⊗ₜ x, ?_, by simp [hQx]⟩
-  intro hzero
-  apply hx
-  apply Module.Flat.tensorProduct_mk_injective K V L
-  simpa using hzero
 
 /-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after extending its
 base field. -/
@@ -306,23 +322,5 @@ theorem Nondegenerate.baseChange [Invertible (2 : K)]
     (QuadraticMap.nondegenerate_associated_iff.mpr hQ)
 
 end QuadraticForm
-
-/-- Representation of one quadratic form by another is preserved by extension of the base
-field. -/
-theorem QuadraticMap.IsRepresentedBy.baseChange [Invertible (2 : K)]
-    {W : Type uN} [AddCommGroup W] [Module K W]
-    {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
-    (h : Q.IsRepresentedBy R) :
-    (Q.baseChange L).IsRepresentedBy (R.baseChange L) := by
-  rw [QuadraticMap.isRepresentedBy_iff] at h ⊢
-  obtain ⟨f, hf⟩ := h
-  refine ⟨f.baseChange L, ?_⟩
-  have hinjective : Function.Injective (f.toLinearMap.lTensor L) :=
-    Module.Flat.lTensor_preserves_injective_linearMap f.toLinearMap hf
-  intro x y hxy
-  apply hinjective
-  have hxy' : (f.baseChange L).toLinearMap x = (f.baseChange L).toLinearMap y := hxy
-  rw [QuadraticMap.Isometry.baseChange_toLinearMap] at hxy'
-  simpa only [LinearMap.baseChange_eq_ltensor] using hxy'
 
 end Field

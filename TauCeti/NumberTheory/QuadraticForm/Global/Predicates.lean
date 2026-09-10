@@ -42,13 +42,6 @@ def IsLocallyIsotropic (Q : _root_.QuadraticForm K V) : Prop :=
   (∀ v : HeightOneSpectrum (𝓞 K), ¬ (Q.atFinitePlace v).Anisotropic) ∧
     ∀ w : {w : InfinitePlace K // w.IsReal}, ¬ (Q.atRealPlace w).Anisotropic
 
-/-- Local isotropy consists of its finite-place and real-place clauses. -/
-theorem isLocallyIsotropic_iff (Q : _root_.QuadraticForm K V) :
-    Q.IsLocallyIsotropic ↔
-      (∀ v : HeightOneSpectrum (𝓞 K), ¬ (Q.atFinitePlace v).Anisotropic) ∧
-        ∀ w : {w : InfinitePlace K // w.IsReal}, ¬ (Q.atRealPlace w).Anisotropic :=
-  Iff.rfl
-
 /-- A quadratic form `Q` is locally represented by `R` if every finite and real localization of
 `Q` admits an injective isometry into the corresponding localization of `R`. -/
 def LocallyRepresents (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K W) : Prop :=
@@ -56,15 +49,6 @@ def LocallyRepresents (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K
       (Q.atFinitePlace v).IsRepresentedBy (R.atFinitePlace v)) ∧
     ∀ w : {w : InfinitePlace K // w.IsReal},
       (Q.atRealPlace w).IsRepresentedBy (R.atRealPlace w)
-
-/-- Local representation consists of its finite-place and real-place clauses. -/
-theorem locallyRepresents_iff (Q : _root_.QuadraticForm K V)
-    (R : _root_.QuadraticForm K W) : Q.LocallyRepresents R ↔
-    (∀ v : HeightOneSpectrum (𝓞 K),
-      (Q.atFinitePlace v).IsRepresentedBy (R.atFinitePlace v)) ∧
-      ∀ w : {w : InfinitePlace K // w.IsReal},
-        (Q.atRealPlace w).IsRepresentedBy (R.atRealPlace w) :=
-  Iff.rfl
 
 /-- A quadratic form locally represents a scalar if each finite and real localization represents
 the image of that scalar. -/
@@ -75,16 +59,6 @@ def LocallyRepresentsScalar (Q : _root_.QuadraticForm K V) (a : K) : Prop :=
     ∀ w : {w : InfinitePlace K // w.IsReal},
       QuadraticMap.Represents (Q.atRealPlace w) (embedding_of_isReal w.2 a)
 
-/-- Local scalar representation consists of its finite-place and real-place clauses. -/
-theorem locallyRepresentsScalar_iff (Q : _root_.QuadraticForm K V) (a : K) :
-    Q.LocallyRepresentsScalar a ↔
-      (∀ v : HeightOneSpectrum (𝓞 K),
-        QuadraticMap.Represents (Q.atFinitePlace v)
-          (algebraMap K (v.adicCompletion K) a)) ∧
-        ∀ w : {w : InfinitePlace K // w.IsReal},
-          QuadraticMap.Represents (Q.atRealPlace w) (embedding_of_isReal w.2 a) :=
-  Iff.rfl
-
 /-- Two quadratic forms over a number field are locally equivalent if their localizations are
 equivalent at every finite and real place. -/
 def LocallyEquivalent (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K W) : Prop :=
@@ -93,26 +67,17 @@ def LocallyEquivalent (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K
     ∀ w : {w : InfinitePlace K // w.IsReal},
       (Q.atRealPlace w).Equivalent (R.atRealPlace w)
 
-/-- Local equivalence consists of its finite-place and real-place clauses. -/
-theorem locallyEquivalent_iff (Q : _root_.QuadraticForm K V)
-    (R : _root_.QuadraticForm K W) : Q.LocallyEquivalent R ↔
-    (∀ v : HeightOneSpectrum (𝓞 K),
-      (Q.atFinitePlace v).Equivalent (R.atFinitePlace v)) ∧
-      ∀ w : {w : InfinitePlace K // w.IsReal},
-        (Q.atRealPlace w).Equivalent (R.atRealPlace w) :=
-  Iff.rfl
-
 /-- A globally isotropic quadratic form is locally isotropic. -/
 theorem isLocallyIsotropic_of_not_anisotropic (Q : _root_.QuadraticForm K V)
     (hQ : ¬ Q.Anisotropic) : Q.IsLocallyIsotropic := by
   constructor
   · intro v
     rw [QuadraticForm.atFinitePlace_def]
-    exact QuadraticForm.not_anisotropic_baseChange (L := v.adicCompletion K) hQ
+    exact QuadraticForm.not_anisotropic_baseChange (A := v.adicCompletion K) hQ
   · intro w
     let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
     rw [QuadraticForm.atRealPlace_def]
-    exact QuadraticForm.not_anisotropic_baseChange (L := ℝ) hQ
+    exact QuadraticForm.not_anisotropic_baseChange (A := ℝ) hQ
 
 /-- A global representation of one quadratic form by another induces a representation at every
 finite and real place. -/
@@ -121,11 +86,11 @@ theorem LocallyRepresents.of_isRepresentedBy {Q : _root_.QuadraticForm K V}
   constructor
   · intro v
     rw [QuadraticForm.atFinitePlace_def, QuadraticForm.atFinitePlace_def]
-    exact h.baseChange (L := v.adicCompletion K)
+    exact h.baseChange (A := v.adicCompletion K)
   · intro w
     let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
     rw [QuadraticForm.atRealPlace_def, QuadraticForm.atRealPlace_def]
-    exact h.baseChange (L := ℝ)
+    exact h.baseChange (A := ℝ)
 
 /-- A globally represented scalar is represented at every finite and real place. -/
 theorem LocallyRepresentsScalar.of_represents {Q : _root_.QuadraticForm K V} {a : K}
@@ -153,7 +118,7 @@ theorem LocallyEquivalent.of_equivalent {Q : _root_.QuadraticForm K V}
 
 /-- Local equivalence is reflexive. -/
 @[refl]
-theorem locallyEquivalent_refl (Q : _root_.QuadraticForm K V) : Q.LocallyEquivalent Q := by
+theorem LocallyEquivalent.refl (Q : _root_.QuadraticForm K V) : Q.LocallyEquivalent Q := by
   constructor <;> intro place <;> exact QuadraticMap.Equivalent.refl _
 
 /-- Local equivalence is symmetric. -/
@@ -173,8 +138,8 @@ theorem LocallyEquivalent.trans {X : Type*} [AddCommGroup X] [Module K X]
 
 /-- Local representation is reflexive. -/
 @[refl]
-theorem locallyRepresents_refl (Q : _root_.QuadraticForm K V) : Q.LocallyRepresents Q := by
-  constructor <;> intro place <;> exact QuadraticMap.isRepresentedBy_refl _
+theorem LocallyRepresents.refl (Q : _root_.QuadraticForm K V) : Q.LocallyRepresents Q := by
+  constructor <;> intro place <;> exact QuadraticMap.IsRepresentedBy.refl _
 
 /-- Local representation is transitive. -/
 @[trans]

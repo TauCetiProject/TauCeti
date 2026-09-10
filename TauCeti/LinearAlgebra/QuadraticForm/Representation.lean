@@ -43,15 +43,21 @@ def _root_.QuadraticMap.IsRepresentedBy {M' : Type*} [AddCommMonoid M'] [Module 
     (Q : QuadraticMap R M N) (Q' : QuadraticMap R M' N) : Prop :=
   ∃ f : Q →qᵢ Q', Function.Injective f
 
-/-- Representation by a quadratic map is witnessed by an injective isometry. -/
+/-- Representation by a quadratic map is witnessed by an injective linear map preserving the
+quadratic map. -/
 theorem _root_.QuadraticMap.isRepresentedBy_iff {M' : Type*}
     [AddCommMonoid M'] [Module R M'] (Q : QuadraticMap R M N) (Q' : QuadraticMap R M' N) :
-    Q.IsRepresentedBy Q' ↔ ∃ f : Q →qᵢ Q', Function.Injective f :=
-  Iff.rfl
+    Q.IsRepresentedBy Q' ↔
+      ∃ f : M →ₗ[R] M', Function.Injective f ∧ ∀ x, Q' (f x) = Q x := by
+  constructor
+  · rintro ⟨f, hf⟩
+    exact ⟨f.toLinearMap, hf, f.map_app⟩
+  · rintro ⟨f, hf, hQ⟩
+    exact ⟨⟨f, hQ⟩, hf⟩
 
 /-- Every quadratic map is represented by itself. -/
 @[refl]
-theorem _root_.QuadraticMap.isRepresentedBy_refl (Q : QuadraticMap R M N) :
+theorem _root_.QuadraticMap.IsRepresentedBy.refl (Q : QuadraticMap R M N) :
     Q.IsRepresentedBy Q :=
   ⟨QuadraticMap.Isometry.id Q, Function.injective_id⟩
 
