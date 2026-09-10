@@ -12,11 +12,6 @@ public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Probability.Distributions.Gaussian.Pi
 
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-
--- Source of the derivation used here: `TauCetiRoadmap/StandardDistributions/README.md` prescribes
--- obtaining the nondegenerate case from `TauCeti.pi_gaussianReal_eq_withDensity` by an affine
--- change of variables rather than rebuilding the product-density calculation.
 
 /-!
 # The density of a multivariate Gaussian measure
@@ -170,20 +165,15 @@ theorem stdGaussian_eq_withDensity :
 /-- **A nondegenerate multivariate Gaussian law is Lebesgue measure with the Gaussian density.** -/
 theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :
     multivariateGaussian m S = volume.withDensity (multivariateGaussianPDF m S) := by
-  -- The proof has four stages. First, facts about the square root `√S`: it is positive
-  -- semidefinite, squares to `S`, and has determinant `√(det S)`, hence is invertible and induces
-  -- a continuous linear equivalence `R` of `EuclideanSpace ℝ ι` (`hR` to `hAfun`). Second, the
-  -- inverse square root pulls the isotropic quadratic form back to the one of `S⁻¹` (`hconj`,
-  -- `hnorm`), and the two ways of writing the normalising constant agree (`hrpow`). Third, the
-  -- affine substitution `x ↦ m + R x` transports any density along the map (`hmapR`, `hmap`).
-  -- Finally, rewriting `multivariateGaussian` by the standard density and that transport reduces
-  -- the goal to a pointwise identity between the two closed forms.
+  -- The square root of `S` gives the affine substitution `x ↦ m + √S x` carrying the standard
+  -- Gaussian to this one; `Measure.map_affine_withDensity` transports the density along it, and
+  -- the inverse square root turns the isotropic quadratic form into the one of `S⁻¹`.
   have hR : (CFC.sqrt S).PosSemidef := Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)
   have hRR : CFC.sqrt S * CFC.sqrt S = S := CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg
   have hdetS : 0 < S.det := hS.det_pos
   have hdetR : (CFC.sqrt S).det = √S.det := by simpa using hS.posSemidef.det_sqrt
   have hdetRpos : 0 < (CFC.sqrt S).det := by rw [hdetR]; positivity
-  have hRunit : IsUnit (CFC.sqrt S).det := hdetRpos.ne'.isUnit
+  have hRunit : (CFC.sqrt S).det ≠ 0 := hdetRpos.ne'
   have hCLM : ∀ (X : Matrix ι ι ℝ) (z : EuclideanSpace ℝ ι),
       Matrix.toEuclideanCLM (𝕜 := ℝ) X z = X.toEuclideanLin z := fun X z => by
     rw [← Matrix.coe_toEuclideanCLM_eq_toEuclideanLin X, ContinuousLinearMap.coe_coe]
@@ -204,41 +194,7 @@ theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace 
     rw [Real.sqrt_eq_rpow, ← Real.rpow_neg hdetS.le]
     congr 1
     ring
-  -- Stage three. The linear part rescales `volume` by the constant Jacobian `|det R|⁻¹` and
-  -- substitutes `R⁻¹` in the weight; the translation leaves `volume` alone and substitutes
-  -- `· - m`. The statement is left general in the weight `g` because the two stages compose
-  -- along `MeasurableEquiv.map_withDensity`, which is itself general in the weight.
-  set R : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι := Matrix.toEuclideanCLE (CFC.sqrt S) hRunit
-    with hRdef
-  set r : ℝ≥0∞ := ENNReal.ofReal
-    |(LinearMap.det (R : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι))⁻¹| with hr
-  have hdetne : LinearMap.det (R : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι) ≠ 0 :=
-    ((R : EuclideanSpace ℝ ι ≃ₗ[ℝ] EuclideanSpace ℝ ι).isUnit_det').ne_zero
-  have hmapR : (volume : Measure (EuclideanSpace ℝ ι)).map R = r • volume := by
-    rw [hr]
-    simpa using Measure.map_linearMap_addHaar_eq_smul_addHaar volume hdetne
-  have hmap : ∀ g : EuclideanSpace ℝ ι → ℝ≥0∞,
-      ((volume : Measure (EuclideanSpace ℝ ι)).withDensity g).map (fun x => m + R x)
-        = volume.withDensity fun y => r * g (R.symm (y - m)) := fun g => by
-    have hlin : ((volume : Measure (EuclideanSpace ℝ ι)).withDensity g).map R
-        = volume.withDensity fun y => r * g (R.symm y) := by
-      rw [← R.coe_toHomeomorph, ← Homeomorph.toMeasurableEquiv_coe, MeasurableEquiv.map_withDensity]
-      simp only [Homeomorph.toMeasurableEquiv_coe, Homeomorph.toMeasurableEquiv_symm_coe,
-        ContinuousLinearEquiv.coe_toHomeomorph, ContinuousLinearEquiv.coe_symm_toHomeomorph]
-      rw [hmapR, withDensity_smul_measure, ← withDensity_smul' _ _ ENNReal.ofReal_ne_top]
-      exact congrArg volume.withDensity
-        (funext fun y => by simp only [Pi.smul_apply, smul_eq_mul, hr])
-    calc ((volume : Measure (EuclideanSpace ℝ ι)).withDensity g).map (fun x => m + R x)
-        = (((volume : Measure (EuclideanSpace ℝ ι)).withDensity g).map R).map
-            (fun y : EuclideanSpace ℝ ι => m + y) :=
-          (Measure.map_map (by fun_prop) (by fun_prop)).symm
-      _ = (volume.withDensity fun y => r * g (R.symm y)).map
-            (fun y : EuclideanSpace ℝ ι => m + y) := by rw [hlin]
-      _ = volume.withDensity fun y => r * g (R.symm (y - m)) := by
-          rw [← MeasurableEquiv.coe_addLeft m, MeasurableEquiv.map_withDensity]
-          simp only [MeasurableEquiv.coe_addLeft, MeasurableEquiv.symm_addLeft,
-            map_add_left_eq_self, neg_add_eq_sub]
-  rw [multivariateGaussian, stdGaussian_eq_withDensity, hAfun, hmap, hr, hRdef,
+  rw [multivariateGaussian, stdGaussian_eq_withDensity, hAfun, Measure.map_affine_withDensity,
     Matrix.det_toEuclideanCLE]
   refine withDensity_congr_ae (.of_forall fun y => ?_)
   simp only [multivariateGaussianPDF, multivariateGaussianPDFReal,

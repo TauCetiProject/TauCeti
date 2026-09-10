@@ -52,30 +52,31 @@ section Invertible
 /-- **The continuous linear equivalence of an invertible matrix** on Euclidean space, defined
 when `A.det` is a unit. It acts as `A` does, and its inverse is the map of `A⁻¹`, so a change of
 variables along it substitutes `A⁻¹`. -/
-noncomputable def toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : IsUnit A.det) :
+noncomputable def toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) :
     EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι :=
   (toEuclideanCLM (𝕜 := 𝕜) A).toContinuousLinearEquivOfDetNeZero <| by
     rw [ContinuousLinearMap.det, coe_toEuclideanCLM_eq_toEuclideanLin, LinearMap.det_toLpLin]
-    exact hA.ne_zero
+    exact hA
 
 /-- The equivalence acts as the matrix does. -/
 @[simp]
-theorem toEuclideanCLE_apply (A : Matrix ι ι 𝕜) (hA : IsUnit A.det) (x : EuclideanSpace 𝕜 ι) :
+theorem toEuclideanCLE_apply (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) (x : EuclideanSpace 𝕜 ι) :
     A.toEuclideanCLE hA x = A.toEuclideanLin x := by
   rw [toEuclideanCLE, ContinuousLinearMap.toContinuousLinearEquivOfDetNeZero_apply,
     ← coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe]
 
 /-- The inverse of the equivalence is the map of the inverse matrix. -/
 @[simp]
-theorem toEuclideanCLE_symm_apply (A : Matrix ι ι 𝕜) (hA : IsUnit A.det)
+theorem toEuclideanCLE_symm_apply (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0)
     (y : EuclideanSpace 𝕜 ι) : (A.toEuclideanCLE hA).symm y = A⁻¹.toEuclideanLin y := by
   rw [ContinuousLinearEquiv.symm_apply_eq, toEuclideanCLE_apply]
   simp only [← coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe]
-  rw [← mul_apply_eq_comp, ← map_mul, mul_nonsing_inv _ hA, map_one, one_apply_eq_self]
+  rw [← mul_apply_eq_comp, ← map_mul, mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr hA), map_one,
+    one_apply_eq_self]
 
 /-- The determinant of the equivalence is the determinant of the matrix. -/
 @[simp]
-theorem det_toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : IsUnit A.det) :
+theorem det_toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) :
     LinearMap.det (A.toEuclideanCLE hA : EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι) = A.det := by
   have hcoe : (A.toEuclideanCLE hA : EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι)
       = A.toEuclideanLin := LinearMap.ext fun x => A.toEuclideanCLE_apply hA x
