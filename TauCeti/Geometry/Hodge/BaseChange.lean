@@ -133,14 +133,20 @@ noncomputable def rationalToComplexMap (hℚ : IsBaseChange ℚ ιℚ) (ιℂ : 
   hℚ.lift ιℂ
 
 /-- The rational-to-complex structure map carries an integral vector to the corresponding vector
-in the complexification. -/
+in the complexification.
+
+This is the elementwise characterization of `rationalToComplexMap`, whose body is not exposed, so
+Mathlib's `IsBaseChange.lift_eq` does not apply to such a goal outside this module. -/
 @[simp]
 theorem rationalToComplexMap_apply_ι (hℚ : IsBaseChange ℚ ιℚ) (ιℂ : Vℤ →ₗ[ℤ] Vℂ) (x : Vℤ) :
-    rationalToComplexMap hℚ ιℂ (ιℚ x) = ιℂ x := by
-  exact LinearMap.congr_fun (hℚ.lift_comp ιℂ) x
+    rationalToComplexMap hℚ ιℂ (ιℚ x) = ιℂ x :=
+  hℚ.lift_eq ιℂ x
 
 /-- Composing the rational-to-complex structure map with rationalification recovers the given
-integral-to-complex structure map. -/
+integral-to-complex structure map.
+
+This is the composite characterization of `rationalToComplexMap`, whose body is not exposed, so
+Mathlib's `IsBaseChange.lift_comp` does not apply to such a goal outside this module. -/
 @[simp]
 theorem rationalToComplexMap_restrictScalars_comp (hℚ : IsBaseChange ℚ ιℚ)
     (ιℂ : Vℤ →ₗ[ℤ] Vℂ) :
