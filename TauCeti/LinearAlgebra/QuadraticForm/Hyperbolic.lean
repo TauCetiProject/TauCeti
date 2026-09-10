@@ -104,7 +104,7 @@ variable {V : Type v} [AddCommGroup V] [Module K V]
 
 /-- A nondegenerate isotropic quadratic form contains two isotropic vectors whose polar pairing
 is one. -/
-theorem _root_.QuadraticMap.Nondegenerate.exists_isotropic_pair [Invertible (2 : K)]
+theorem _root_.QuadraticMap.Nondegenerate.exists_isotropic_pair
     {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
     ∃ x y : V, x ≠ 0 ∧ Q x = 0 ∧ Q y = 0 ∧ polar Q x y = 1 := by
   obtain ⟨x, hx, hxQ⟩ := (not_anisotropic_iff_exists Q).mp hiso
