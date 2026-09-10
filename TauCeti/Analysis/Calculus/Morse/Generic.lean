@@ -146,17 +146,18 @@ theorem hasNondegenerateCriticalPointsOn_sub_iff (hU : IsOpen U) (hf : ContDiffO
   have hd : DifferentiableOn ℝ f U := hf.differentiableOn (by norm_num)
   constructor
   · rintro hM ⟨y, ⟨hyU, hyc⟩, rfl⟩
+    have hderiv : fderiv ℝ (fun z ↦ f z - (fderiv ℝ f y) z) y =
+        fderiv ℝ f y - fderiv ℝ f y := by
+      simpa using fderiv_fun_sub (hd.differentiableAt (hU.mem_nhds hyU))
+        (fderiv ℝ f y).differentiableAt
     have hcrit : fderiv ℝ (fun z ↦ f z - (fderiv ℝ f y) z) y = 0 := by
-      rw [show fderiv ℝ (fun z ↦ f z - (fderiv ℝ f y) z) y =
-          fderiv ℝ f y - fderiv ℝ f y by
-        simpa using fderiv_fun_sub (hd.differentiableAt (hU.mem_nhds hyU))
-          (fderiv ℝ f y).differentiableAt, sub_self]
+      rw [hderiv, sub_self]
     exact hyc (((isNondegenerateCriticalPoint_sub_iff (hf.contDiffAt (hU.mem_nhds hyU)) _).1
       (hasNondegenerateCriticalPointsOn_iff.1 hM hyU hcrit)).2.surjective)
   · refine fun ha ↦ hasNondegenerateCriticalPointsOn_iff.2 fun y hyU hy0 ↦ ?_
-    rw [show fderiv ℝ (fun z ↦ f z - a z) y = fderiv ℝ f y - a by
-      simpa using fderiv_fun_sub (hd.differentiableAt (hU.mem_nhds hyU)) a.differentiableAt,
-      sub_eq_zero] at hy0
+    have hderiv : fderiv ℝ (fun z ↦ f z - a z) y = fderiv ℝ f y - a := by
+      simpa using fderiv_fun_sub (hd.differentiableAt (hU.mem_nhds hyU)) a.differentiableAt
+    rw [hderiv, sub_eq_zero] at hy0
     refine (isNondegenerateCriticalPoint_sub_iff (hf.contDiffAt (hU.mem_nhds hyU)) a).2
       ⟨hy0, ContinuousLinearMap.isInvertible_of_surjective ?_⟩
     by_contra hs
