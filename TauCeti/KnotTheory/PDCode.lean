@@ -61,20 +61,6 @@ namespace PDCode
 def crossingSlotEquiv (n : ℕ) : Fin n × Fin 4 ≃ Fin (4 * n) :=
   finProdFinEquiv.trans (finCongr (Nat.mul_comm n 4))
 
-/-- The standard equivalence enumerating the incoming and outgoing half-edges of `2 * n`
-visits. -/
-def visitHalfEdgeEquiv (n : ℕ) : Fin (2 * n) × Bool ≃ Fin (4 * n) :=
-  (Equiv.prodCongr (Equiv.refl _) finTwoEquiv.symm).trans <|
-    finProdFinEquiv.trans (finCongr (by omega))
-
-/-- The visit-half-edge equivalence numbers the incoming end of visit `i` by `2 * i` and its
-outgoing end by `2 * i + 1`. -/
-@[simp]
-theorem visitHalfEdgeEquiv_apply (n : ℕ) (i : Fin (2 * n)) (outgoing : Bool) :
-    (visitHalfEdgeEquiv n (i, outgoing)).val = 2 * i.val + outgoing.toNat := by
-  cases outgoing <;>
-    simp [visitHalfEdgeEquiv, finTwoEquiv, finProdFinEquiv, Nat.add_comm]
-
 /-- The crossing-slot equivalence numbers slot `s` at crossing `i` by `s + 4 * i`. -/
 @[simp]
 theorem crossingSlotEquiv_apply (n : ℕ) (i : Fin n) (slot : Fin 4) :
