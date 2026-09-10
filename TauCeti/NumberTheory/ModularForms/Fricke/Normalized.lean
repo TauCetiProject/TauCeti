@@ -266,8 +266,9 @@ public noncomputable def normalizedFrickeOperatorEquiv (k : ℤ) :
 public theorem normalizedFrickeOperatorEquiv_apply (k : ℤ)
     (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
     normalizedFrickeOperatorEquiv (N := N) k f = normalizedFrickeOperator k f := by
-  simp [normalizedFrickeOperatorEquiv, normalizedFrickeOperator_def,
-    LinearEquiv.smulOfUnit, DistribMulAction.toLinearEquiv, Units.smul_def]
+  simp only [normalizedFrickeOperatorEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.smulOfUnit_apply, Units.val_mk0, frickeOperatorEquiv_apply,
+    normalizedFrickeOperator_def, LinearMap.smul_apply]
 
 /-- The inverse of the bundled normalized Fricke automorphism is `(-1) ^ k • 𝒲_N`. -/
 @[simp]
@@ -293,8 +294,9 @@ public noncomputable def normalizedFrickeOperatorCuspEquiv (k : ℤ) :
 public theorem normalizedFrickeOperatorCuspEquiv_apply (k : ℤ)
     (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
     normalizedFrickeOperatorCuspEquiv (N := N) k f = normalizedFrickeOperatorCusp k f := by
-  simp [normalizedFrickeOperatorCuspEquiv, normalizedFrickeOperatorCusp_def,
-    LinearEquiv.smulOfUnit, DistribMulAction.toLinearEquiv, Units.smul_def]
+  simp only [normalizedFrickeOperatorCuspEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.smulOfUnit_apply, Units.val_mk0, frickeOperatorCuspEquiv_apply,
+    normalizedFrickeOperatorCusp_def, LinearMap.smul_apply]
 
 /-- The inverse of the bundled normalized Fricke automorphism on cusp forms. -/
 @[simp]
@@ -386,8 +388,9 @@ public theorem coe_normalizedFrickeCharEquiv_apply (k : ℤ) (χ : (ZMod N)ˣ �
     ((normalizedFrickeCharEquiv k χ f : modFormCharSpace k χ⁻¹) :
         ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
       normalizedFrickeOperator k (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
-  simp [normalizedFrickeCharEquiv, normalizedFrickeOperator_def,
-    LinearEquiv.smulOfUnit, DistribMulAction.toLinearEquiv, Units.smul_def]
+  simp only [normalizedFrickeCharEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.smulOfUnit_apply, Units.val_mk0, Submodule.coe_smul,
+    coe_frickeCharEquiv_apply, normalizedFrickeOperator_def, LinearMap.smul_apply]
 
 /-- On underlying modular forms, the inverse of `normalizedFrickeCharEquiv` is
 `(-1) ^ k • normalizedFrickeOperator`. -/
@@ -435,8 +438,9 @@ public theorem coe_normalizedFrickeCharCuspEquiv_apply (k : ℤ) (χ : (ZMod N)�
     ((normalizedFrickeCharCuspEquiv k χ f : cuspFormCharSpace k χ⁻¹) :
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
       normalizedFrickeOperatorCusp k (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
-  simp [normalizedFrickeCharCuspEquiv, normalizedFrickeOperatorCusp_def,
-    LinearEquiv.smulOfUnit, DistribMulAction.toLinearEquiv, Units.smul_def]
+  simp only [normalizedFrickeCharCuspEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.smulOfUnit_apply, Units.val_mk0, Submodule.coe_smul,
+    coe_frickeCharCuspEquiv_apply, normalizedFrickeOperatorCusp_def, LinearMap.smul_apply]
 
 /-- On underlying cusp forms, the inverse of `normalizedFrickeCharCuspEquiv` is
 `(-1) ^ k • normalizedFrickeOperatorCusp`. -/
