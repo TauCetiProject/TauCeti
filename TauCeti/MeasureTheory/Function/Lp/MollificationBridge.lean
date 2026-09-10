@@ -16,8 +16,7 @@ This file connects the `Lᵖ`-valued average in
 `TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity` with the usual pointwise convolution
 formula when the input has a continuous compactly supported representative.  The representative
 case is the bridge needed to pass between `Lᵖ`-valued mollification and classical convolution in
-subsequent density and localization arguments.  Its proof tests the identity on finite-measure
-sets by integrating both representatives.
+subsequent density and localization arguments.
 
 ## Attribution
 
