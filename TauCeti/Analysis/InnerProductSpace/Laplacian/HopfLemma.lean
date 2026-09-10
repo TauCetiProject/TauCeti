@@ -11,10 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Normed.Module.RCLike.Real
-import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
-import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Topology.MetricSpace.Bounded
-import Mathlib.Topology.MetricSpace.ProperSpace
 
 /-!
 # Hopf's boundary-point lemma
@@ -57,6 +54,7 @@ keeps the barrier inside the exponents for which the radial Laplacian formula
 * `TauCeti.fderiv_neg_of_laplacian_nonpos_of_gt_closedBall`: the superharmonic mirror image, for
   a strict minimum.
 * `TauCeti.fderiv_pos_of_harmonicOnNhd_of_lt_closedBall`: the harmonic case of the lemma.
+* `TauCeti.fderiv_neg_of_harmonicOnNhd_of_gt_closedBall`: the harmonic minimum form.
 
 ## References
 
@@ -101,7 +99,8 @@ private theorem laplacian_hopfBarrier (y : E) (R p : ℝ) {x : E} (hx : x ≠ y)
   have htrans : Δ (fun z : E => ‖z - y‖ ^ p) x = Δ (fun z : E => ‖z‖ ^ p) (x - y) := by
     have h := congrFun (laplacian_comp_add_right (fun z : E => ‖z‖ ^ p) (-y)) x
     simpa only [Pi.sub_apply, add_neg_cancel_right, sub_eq_add_neg] using h
-  change Δ ((fun z : E => ‖z - y‖ ^ p) - fun _ : E => R ^ p) x = _
+  have hBarrier : hopfBarrier y R p = (fun z : E => ‖z - y‖ ^ p) - fun _ : E => R ^ p := rfl
+  rw [hBarrier]
   rw [hpow.laplacian_sub contDiffAt_const, laplacian_const, Pi.zero_apply, sub_zero, htrans,
     laplacian_norm_rpow_of_ne p hne]
 
@@ -334,9 +333,9 @@ theorem fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere {u : E → ℝ} {
   linarith
 
 /-- **Hopf's boundary-point lemma, classical form.** The statement usually quoted, in which `u`
-stays strictly below `u x₀` at every other point of the closed ball.  It is the case
-`hlt x hx := hmax x (ball_subset_closedBall hx) …`, `hle x hx := …` of
-`TauCeti.fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere`. -/
+stays strictly below `u x₀` at every other point of the closed ball.  It is the specialization of
+the ball-and-sphere form in which the strict inequality on the ball follows from the strict
+closed-ball maximum and the sphere has the corresponding weak inequality. -/
 theorem fderiv_pos_of_laplacian_nonneg_of_lt_closedBall {u : E → ℝ} {y : E} {R : ℝ} {e : E}
     (hR : 0 < R) (he : ‖e‖ = 1)
     (hucont : ContinuousOn u (closedBall y R))
@@ -413,6 +412,20 @@ theorem fderiv_pos_of_harmonicOnNhd_of_lt_closedBall {u : E → ℝ} {y : E} {R 
   fderiv_pos_of_laplacian_nonneg_of_lt_closedBall hR he hucont
     (fun x hx => (hharm x hx).1) hderiv
     (fun x hx => le_of_eq ((hharm x hx).2.eq_of_nhds).symm) hmax
+
+/-- **Hopf's boundary-point lemma for harmonic functions, minimum form.** A harmonic function on
+the ball whose value at the boundary point `x₀ = y + R • e` is a strict minimum on `closedBall y R`
+has a strictly negative outgoing derivative there. -/
+theorem fderiv_neg_of_harmonicOnNhd_of_gt_closedBall {u : E → ℝ} {y : E} {R : ℝ} {e : E}
+    (hR : 0 < R) (he : ‖e‖ = 1)
+    (hucont : ContinuousOn u (closedBall y R))
+    (hderiv : DifferentiableAt ℝ u (y + R • e))
+    (hharm : HarmonicOnNhd u (ball y R))
+    (hmin : ∀ x ∈ closedBall y R, x ≠ y + R • e → u (y + R • e) < u x) :
+    fderiv ℝ u (y + R • e) e < 0 :=
+  fderiv_neg_of_laplacian_nonpos_of_gt_closedBall hR he hucont
+    (fun x hx => (hharm x hx).1) hderiv
+    (fun x hx => le_of_eq (hharm x hx).2.eq_of_nhds) hmin
 
 end TauCeti
 
