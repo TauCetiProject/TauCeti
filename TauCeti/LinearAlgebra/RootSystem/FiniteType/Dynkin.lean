@@ -81,7 +81,7 @@ private def rootsE8 : _root_.Matrix (Fin 8) (Fin 8) ℚ :=
 /-- The Gram matrix of the coordinate model of `E₈` is the `E₈` Cartan matrix read over `ℚ`: the
 family is simply laced, so no symmetrizer is needed. -/
 private theorem rootsE8_conjTranspose_mul_self :
-    (CartanMatrix.E 8).map (Int.cast : ℤ → ℚ) = rootsE8ᴴ * rootsE8 := by
+    rootsE8ᴴ * rootsE8 = (CartanMatrix.E 8).map (Int.cast : ℤ → ℚ) := by
     ext i j
     -- The `(i, j)` entry of the Gram matrix of the doubled rows is four times the Cartan entry.
     have hrowQ : ∑ k, (e8DoubledSimpleRoot i k : ℚ) * (e8DoubledSimpleRoot j k : ℚ)
@@ -102,9 +102,9 @@ private theorem rootsE8_conjTranspose_mul_self :
 coordinate model, and it is nonsingular. -/
 theorem _root_.TauCeti.posDef_map_intCast_cartanMatrix_E8 :
     ((CartanMatrix.E 8).map (Int.cast : ℤ → ℚ)).PosDef := by
-  rw [rootsE8_conjTranspose_mul_self]
+  rw [← rootsE8_conjTranspose_mul_self]
   refine TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit _ ?_
-  rw [← rootsE8_conjTranspose_mul_self, _root_.Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero,
+  rw [rootsE8_conjTranspose_mul_self, _root_.Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero,
     ← Int.cast_det, CartanMatrix.E₈_det]
   norm_num
 
