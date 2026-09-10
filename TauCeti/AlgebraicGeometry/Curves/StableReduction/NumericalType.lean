@@ -81,7 +81,7 @@ namespace TauCeti
 
 open Finset
 
-universe u v
+universe u v w
 
 /-- A numerical type, in the sense of
 [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z).
@@ -333,6 +333,30 @@ def reindex {C : Type v} (e : T.Component ≃ C) : NumericalType.{v} :=
     weight_dvd _ _ := T.weight_dvd _ _
     genus c := T.genus (e.symm c) }
 
+/-- Numerical types are determined by their multiplicity, weight, intersection and genus data:
+an equivalence of component sets matching all four identifies the two types. As the component set
+is a field rather than a parameter, this is the extensionality principle for numerical types; the
+instance fields are subsingletons and the remaining fields are proofs. -/
+lemma reindex_eq {T' : NumericalType.{v}} (e : T.Component ≃ T'.Component)
+    (hm : ∀ i, T'.multiplicity (e i) = T.multiplicity i)
+    (hw : ∀ i, T'.weight (e i) = T.weight i)
+    (hA : ∀ i j, T'.intersection (e i) (e j) = T.intersection i j)
+    (hg : ∀ i, T'.genus (e i) = T.genus i) :
+    T.reindex e = T' := by
+  cases T' with
+  | mk C' m' w' A' hs ho hc hf hd g' =>
+    unfold reindex
+    -- `congr 1` leaves the four data fields, the transported `Fintype` and `DecidableEq`
+    -- instances, which are subsingletons, and the proof fields, which are irrelevant
+    congr 1 <;>
+      first
+        | exact Subsingleton.elim _ _
+        | exact proof_irrel_heq _ _
+        | (funext c; simpa using (hm (e.symm c)).symm)
+        | (funext c; simpa using (hw (e.symm c)).symm)
+        | (funext c; simpa using (hg (e.symm c)).symm)
+        | (funext c d; simpa using (hA (e.symm c) (e.symm d)).symm)
+
 variable {C : Type v} (e : T.Component ≃ C)
 
 /-- Multiplicities of a reindexed numerical type. -/
@@ -352,6 +376,21 @@ lemma reindex_genus (c : C) : (T.reindex e).genus c = T.genus (e.symm c) := rfl
 @[simp]
 lemma reindex_intersection (c d : C) :
     (T.reindex e).intersection c d = T.intersection (e.symm c) (e.symm d) := rfl
+
+/-- Reindexing along the identity equivalence changes nothing. -/
+@[simp]
+lemma reindex_refl : T.reindex (Equiv.refl T.Component) = T :=
+  T.reindex_eq _ (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ _ ↦ rfl) fun _ ↦ rfl
+
+/-- Reindexing twice is reindexing along the composite equivalence. -/
+@[simp]
+lemma reindex_reindex {D : Type w} (f : C ≃ D) :
+    (T.reindex e).reindex f = T.reindex (e.trans f) := by
+  -- `reindex_eq` does not apply directly, since `f` has the type it asks for only after
+  -- unfolding `reindex`; both sides are the same data on the same component set anyway
+  cases T
+  unfold reindex
+  congr 1 <;> first | exact Subsingleton.elim _ _ | exact proof_irrel_heq _ _
 
 /-- The signed genus does not depend on the chosen indexing of the components. -/
 @[simp]
