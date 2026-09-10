@@ -20,19 +20,23 @@ component of an arbitrary Lie module by `chi_lam`.
 
 ## The argument
 
-Fix a central `u` and let `c = chi_lam u`. The locus on which `u` acts by `c` is a *Lie* submodule
-precisely because `u` is central, which is
-`TauCeti.UniversalEnvelopingAlgebra.centralEigenLieSubmodule`. The isotypic component is the
-supremum of the Lie submodules equivalent to `L(lam)`
-(`TauCeti.LieModule.isotypicComponent_def`), so it lies below that locus as soon as each such
-submodule does, and a submodule equivalent to `L(lam)` does because a Lie-module equivalence
-intertwines the two enveloping-algebra actions
-(`TauCeti.UniversalEnvelopingAlgebra.map_representation`).
+Fix a central `u` and let `c = chi_lam u`. Everything below is the highest-weight reading of two
+generic facts about a central element of `U(L)`, proved for an arbitrary isotypic type in
+`TauCeti/Algebra/Lie/UniversalEnveloping/Isotypic.lean`: a central element acting by a scalar on
+`S` acts by that scalar on the whole `S`-isotypic component
+(`LieModule.representation_eq_smul_of_mem_isotypicComponent`), and components on which one central
+element acts by different scalars are disjoint
+(`LieModule.isotypicComponent_inf_isotypicComponent_eq_bot_of_smul_ne`). The input at `S = L(lam)`
+is the central character, by
+`TauCeti.IsHighestWeightVector.representation_eq_vermaCentralCharacter_smul_of_lieSpan_eq_top`.
 
-Nothing here needs finite dimensionality, algebraic closedness, or complete reducibility: the
-statement is about the isotypic component as it stands, not about a decomposition of the ambient
-module. Those hypotheses enter only where the isotypic component is known to exhaust the module,
-which is `TauCeti/Algebra/Lie/HighestWeight/Isotypic.lean`.
+The ambient module `M` is arbitrary: it is not assumed finite-dimensional or completely reducible,
+because the statements are about the isotypic component as it stands, not about a decomposition of
+`M`. Those hypotheses enter only where the isotypic component is known to exhaust the module, which
+is `TauCeti/Algebra/Lie/HighestWeight/Isotypic.lean`. The Lie algebra `L` does carry the standing
+hypotheses under which the central character exists: `K` is a field of characteristic zero and `L`
+is finite-dimensional with non-degenerate Killing form, with a splitting Cartan subalgebra `H` and
+a base `b` of its root system.
 
 ## What the scalar needs, and what is not assumed
 
@@ -79,17 +83,12 @@ All the declarations listed here live in the `TauCeti` namespace.
   weights with different central characters are disjoint**, and the Casimir form of that
   separation.
 
-## References
+## Roadmap
 
-This advances the milestone "the centre acts on the `λ`-isotypic component by `χ_λ`" of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signature
-`center_smul_isotypicComponent` is pinned in the accompanying `Suggested.lean`, and whose text
-fixes the purpose the separation results below serve: distinguishing the isotypic components of a
-finite-dimensional module by a single central element. The pinned signature spells the scalar with
-a *total* `centralCharacter lam`, which is a separate, unbuilt target of the same layer: it reads
-the action of the centre off the top weight line of `M(lam)`, so it waits on the same
-Poincaré--Birkhoff--Witt nonvanishing, and the statements below are the part of the milestone
-available before it.
+This is the "the centre acts on the `λ`-isotypic component by `χ_λ`" milestone of Layer 7 of
+`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
+
+## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §23.2.
 * J. E. Humphreys, *Representations of Semisimple Lie Algebras in the BGG Category `O`*, §1.7.
@@ -125,24 +124,9 @@ theorem IsHighestWeightVector.representation_eq_vermaCentralCharacter_smul_of_me
     (u : Subalgebra.center K U) {m : M} (hm : m ∈ isotypicComponent K L M N) :
     UniversalEnvelopingAlgebra.representation K L M (u : U) m =
       vermaCentralCharacter b lam
-        (vermaGenerator_ne_zero_of_isHighestWeightVector b lam hw) u • m := by
-  set c := vermaCentralCharacter b lam
-    (vermaGenerator_ne_zero_of_isHighestWeightVector b lam hw) u
-  have hN : ∀ n : N, UniversalEnvelopingAlgebra.representation K L N (u : U) n = c • n :=
-    fun n => hw.representation_eq_vermaCentralCharacter_smul_of_lieSpan_eq_top hgen u n
-  have key : isotypicComponent K L M N ≤
-      UniversalEnvelopingAlgebra.centralEigenLieSubmodule K L M u c := by
-    rw [isotypicComponent_le_iff]
-    intro P he
-    -- `N` maps onto `P` by a homomorphism of Lie modules, which intertwines the two actions
-    obtain ⟨e⟩ := he
-    set f : N →ₗ⁅K,L⁆ M :=
-      (P.incl : (P : Type _) →ₗ⁅K,L⁆ M).comp (e.symm : N →ₗ⁅K,L⁆ (P : Type _)) with hf
-    intro p hp
-    obtain ⟨n, rfl⟩ : ∃ n : N, f n = p := ⟨e ⟨p, hp⟩, by simp [hf]⟩
-    rw [UniversalEnvelopingAlgebra.mem_centralEigenLieSubmodule_iff K L M,
-      ← UniversalEnvelopingAlgebra.map_representation K L N M f (u : U) n, hN n, map_smul]
-  exact (UniversalEnvelopingAlgebra.mem_centralEigenLieSubmodule_iff K L M).mp (key hm)
+        (vermaGenerator_ne_zero_of_isHighestWeightVector b lam hw) u • m :=
+  representation_eq_smul_of_mem_isotypicComponent
+    (fun n => hw.representation_eq_vermaCentralCharacter_smul_of_lieSpan_eq_top hgen u n) hm
 
 omit [LieModule K L M] in
 /-- **A nonzero `L(lam)`-isotypic component witnesses `M(lam) ≠ 0`.** At a weight where the Verma
@@ -203,12 +187,9 @@ theorem isotypicComponent_inf_isotypicComponent_eq_bot_of_vermaCentralCharacter_
       vermaCentralCharacter b mu (vermaGenerator_ne_zero_of_isHighestWeightVector b mu hw')) :
     isotypicComponent K L M N ⊓ isotypicComponent K L M N' = ⊥ := by
   obtain ⟨u, hu⟩ := DFunLike.exists_ne h
-  rw [eq_bot_iff]
-  intro m hm
-  have h₁ := hw.representation_eq_vermaCentralCharacter_smul_of_mem_isotypicComponent hgen u hm.1
-  have h₂ := hw'.representation_eq_vermaCentralCharacter_smul_of_mem_isotypicComponent hgen' u hm.2
-  refine (smul_eq_zero.mp ?_).resolve_left (sub_ne_zero_of_ne hu)
-  rw [sub_smul, ← h₁, ← h₂, sub_self]
+  exact isotypicComponent_inf_isotypicComponent_eq_bot_of_smul_ne hu
+    (fun n => hw.representation_eq_vermaCentralCharacter_smul_of_lieSpan_eq_top hgen u n)
+    (fun n => hw'.representation_eq_vermaCentralCharacter_smul_of_lieSpan_eq_top hgen' u n)
 
 /-- **Different Casimir scalars separate isotypic components.** The Casimir form of the previous
 theorem: the Casimir element is a single central element, so its eigenvalue already distinguishes
@@ -217,11 +198,13 @@ theorem isotypicComponent_inf_isotypicComponent_eq_bot_of_casimirScalar_ne
     (h : casimirScalar b lam ≠ casimirScalar b mu) :
     isotypicComponent K L M (irreducibleQuotient b lam) ⊓
         isotypicComponent K L M (irreducibleQuotient b mu) = ⊥ := by
-  rw [eq_bot_iff]
-  intro m hm
-  have h₁ := representation_casimirElement_eq_casimirScalar_smul_of_mem_isotypicComponent hm.1
-  have h₂ := representation_casimirElement_eq_casimirScalar_smul_of_mem_isotypicComponent hm.2
-  refine (smul_eq_zero.mp ?_).resolve_left (sub_ne_zero_of_ne h)
-  rw [sub_smul, ← h₁, ← h₂, sub_self]
+  rw [← disjoint_iff, ← LieSubmodule.disjoint_toSubmodule]
+  refine (Module.End.disjoint_genEigenspace
+    (UniversalEnvelopingAlgebra.representation K L M (casimirElement K L)) h 1 1).mono
+    (fun m hm => ?_) (fun m hm => ?_)
+  · exact Module.End.mem_eigenspace_iff.mpr
+      (representation_casimirElement_eq_casimirScalar_smul_of_mem_isotypicComponent hm)
+  · exact Module.End.mem_eigenspace_iff.mpr
+      (representation_casimirElement_eq_casimirScalar_smul_of_mem_isotypicComponent hm)
 
 end TauCeti
