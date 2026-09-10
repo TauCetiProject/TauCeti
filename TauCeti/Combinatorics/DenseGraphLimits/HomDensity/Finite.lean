@@ -9,6 +9,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Copy
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Basic.Real.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Counting
+import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
 # Homomorphism densities in a finite graph
@@ -63,6 +64,8 @@ lemmas downstream modules should use.
 
 * `card_injective_hom_eq_labelledCopyCount`, `injHomDensity_eq_labelledCopyCount_div` — the bridge
   to Mathlib's counting primitive, at the level of the count and of the density;
+* `SimpleGraph.card_injective_hom_eq_sum_map_le` — injective homomorphisms are vertex embeddings
+  whose mapped graph lies below the host graph;
 * `card_hom_eq_card_adjPreservingMaps` — homomorphisms are counted by the
   adjacency-preserving vertex maps;
 * `homDensityFin_nonneg`, `homDensityFin_le_one`, `injHomDensity_nonneg`, `injHomDensity_le_one` —
@@ -84,6 +87,32 @@ lemmas downstream modules should use.
 -/
 
 public section
+
+namespace SimpleGraph
+
+open Classical in
+/-- Injective graph homomorphisms are embeddings whose mapped graph lies below the host graph. -/
+theorem card_injective_hom_eq_sum_map_le {V W : Type*} [Fintype V] [Fintype W]
+    (F : SimpleGraph V) (G : SimpleGraph W) :
+    (Nat.card {φ : F →g G // Function.Injective φ} : ℝ) =
+      ∑ f : V ↪ W, if F.map f ≤ G then 1 else 0 := by
+  let e : {φ : F →g G // Function.Injective φ} ≃ {f : V ↪ W // F.map f ≤ G} :=
+    { toFun := fun φ =>
+        ⟨⟨φ.1, φ.2⟩, (map_le_iff_le_comap _ _ _).2 fun {_ _} hab => φ.1.map_rel hab⟩
+      invFun := fun f =>
+        ⟨⟨f.1, fun {_ _} hab => (map_le_iff_le_comap _ _ _).1 f.2 hab⟩, f.1.injective⟩
+      left_inv := by
+        intro φ
+        apply Subtype.ext
+        exact RelHom.ext fun _ => rfl
+      right_inv := by
+        intro f
+        apply Subtype.ext
+        exact DFunLike.ext _ _ fun _ => rfl }
+  rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_subtype,
+    ← Finset.sum_boole (fun f : V ↪ W => F.map f ≤ G) Finset.univ]
+
+end SimpleGraph
 
 namespace TauCeti
 

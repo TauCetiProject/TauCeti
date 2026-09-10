@@ -46,10 +46,6 @@ components.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 (`homDensity` and its basic theory,
-  "multiplicativity over disjoint unions"); isomorphism invariance, normalization, and
-  multiplicativity are the hypotheses `IsIsoInvariant`, `IsNormalized` and `IsMultiplicative`
-  that Layer 8 imposes on a graph parameter. Embedding invariance is used by graphon sampling.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §7.2 and
   §5.2.
 -/
@@ -132,8 +128,9 @@ theorem homDensity_eq_of_iso (φ : F₁ ≃g F₂) (W : Graphon Ω μ) :
 /-- Mapping a finite graph along an embedding preserves its homomorphism density. Vertices outside
 the embedding's range are isolated in the mapped graph, so integrating their independent
 coordinates contributes a factor of one. -/
-theorem homDensity_map_embedding [DecidableEq V₂] (F : SimpleGraph V₁) [DecidableRel F.Adj]
-    (f : V₁ ↪ V₂) (W : Graphon Ω μ) :
+@[simp]
+theorem homDensity_map_embedding [DecidableEq V₂] (W : Graphon Ω μ)
+    (F : SimpleGraph V₁) [DecidableRel F.Adj] (f : V₁ ↪ V₂) :
     homDensity (F.map f) W = homDensity F W := by
   classical
   have hmp : MeasurePreserving (fun x : V₂ → Ω => fun i => x (f i))

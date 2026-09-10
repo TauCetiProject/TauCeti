@@ -20,9 +20,9 @@ unbiased estimator of the graphon's homomorphism density. The proof first establ
 upper-event identity: the total sampling mass of all supergraphs of `F` is `t(F, W)`. It then
 averages that identity over every embedding of the pattern's vertices into the sampled vertex set.
 
-The hypothesis that the sample contains at least as many vertices as the pattern makes the falling
-factorial denominator nonzero. This is precisely why `injHomDensity` is normalized by the number of
-ordered embeddings rather than by a binomial coefficient.
+The falling factorial counts ordered vertex embeddings and therefore matches the injective maps in
+the numerator of `injHomDensity`. The hypothesis that the sample contains at least as many vertices
+as the pattern makes this denominator nonzero.
 
 ## Main results
 
@@ -54,19 +54,6 @@ namespace DenseGraphLimits
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
 
 open Classical in
-/-- The edge finset of a graph rebuilt from a loop-free finite edge set is the original set. -/
-private theorem edgeFinset_fromEdgeSet_eq_of_subset_top {n : ℕ}
-    (S : Finset (Sym2 (Fin n)))
-    (hS : S ⊆ (⊤ : SimpleGraph (Fin n)).edgeFinset) :
-    (SimpleGraph.fromEdgeSet (↑S : Set (Sym2 (Fin n)))).edgeFinset = S := by
-  ext e
-  simp only [SimpleGraph.mem_edgeFinset, SimpleGraph.edgeSet_fromEdgeSet,
-    Set.mem_sdiff, Finset.mem_coe, Sym2.mem_diagSet]
-  exact ⟨fun h => h.1, fun h => ⟨h, fun hdiag =>
-    (⊤ : SimpleGraph (Fin n)).not_isDiag_of_mem_edgeSet
-      (SimpleGraph.mem_edgeFinset.mp (hS h)) hdiag⟩⟩
-
-open Classical in
 /-- Reindex the supergraph sum by the optional edges outside the fixed graph. -/
 private theorem sum_sampleIntegrand_supergraph_bij {n : ℕ} (W : Graphon Ω μ)
     (F : SimpleGraph (Fin n)) [DecidableRel F.Adj] (x : Fin n → Ω) :
@@ -94,14 +81,14 @@ private theorem sum_sampleIntegrand_supergraph_bij {n : ℕ} (W : Graphon Ω μ)
     rw [Finset.mem_filter]
     refine ⟨Finset.mem_univ _, ?_⟩
     rw [← SimpleGraph.edgeFinset_subset_edgeFinset,
-      edgeFinset_fromEdgeSet_eq_of_subset_top]
+      SimpleGraph.edgeFinset_fromEdgeSet_eq_of_subset_top]
     · exact Finset.subset_union_left
     · exact Finset.union_subset hFtop
         ((Finset.mem_powerset.mp hS).trans Finset.sdiff_subset)
   · intro G hG
     rw [Finset.mem_filter] at hG
     apply SimpleGraph.edgeFinset_inj.mp
-    rw [edgeFinset_fromEdgeSet_eq_of_subset_top]
+    rw [SimpleGraph.edgeFinset_fromEdgeSet_eq_of_subset_top]
     · exact Finset.union_sdiff_of_subset (SimpleGraph.edgeFinset_mono hG.2)
     · exact Finset.union_subset hFtop
         (Finset.sdiff_subset.trans (SimpleGraph.edgeFinset_mono le_top))
@@ -188,42 +175,18 @@ theorem sum_sampleMass_supergraph_eq_homDensity {n : ℕ} (W : Graphon Ω μ)
             exact h
     _ = homDensity F W := (homDensity_def F W).symm
 
-open Classical in
-/-- Injective graph homomorphisms are embeddings whose mapped graph lies below the host graph. -/
-private theorem card_injective_hom_eq_sum_map_le {V U : Type*} [Fintype V] [Fintype U]
-    (F : SimpleGraph V) (G : SimpleGraph U) :
-    (Nat.card {φ : F →g G // Function.Injective φ} : ℝ) =
-      ∑ f : V ↪ U, if F.map f ≤ G then 1 else 0 := by
-  let e : {φ : F →g G // Function.Injective φ} ≃ {f : V ↪ U // F.map f ≤ G} :=
-    { toFun := fun φ =>
-        ⟨⟨φ.1, φ.2⟩, (SimpleGraph.map_le_iff_le_comap _ _ _).2 fun {_ _} hab =>
-          φ.1.map_rel hab⟩
-      invFun := fun f =>
-        ⟨⟨f.1, fun {_ _} hab => (SimpleGraph.map_le_iff_le_comap _ _ _).1 f.2 hab⟩,
-          f.1.injective⟩
-      left_inv := by
-        intro φ
-        apply Subtype.ext
-        exact RelHom.ext fun _ => rfl
-      right_inv := by
-        intro f
-        apply Subtype.ext
-        exact DFunLike.ext _ _ fun _ => rfl }
-  rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_subtype,
-    ← Finset.sum_boole (fun f : V ↪ U => F.map f ≤ G) Finset.univ]
-
 /-- The injective homomorphism density of a graphon sample is an unbiased estimator of the
 graphon's homomorphism density, provided the sample has at least as many vertices as the pattern.
 The size condition is exactly the nonvanishing condition for the falling-factorial denominator. -/
-theorem injHomDensity_integral_sampleGraph {V : Type*} [Fintype V]
-    (F : SimpleGraph V) [DecidableRel F.Adj] (W : Graphon Ω μ) {m : ℕ}
+theorem injHomDensity_integral_sampleGraph (W : Graphon Ω μ) {V : Type*} [Fintype V]
+    (F : SimpleGraph V) [DecidableRel F.Adj] {m : ℕ}
     (hkm : Fintype.card V ≤ m) :
     ∫ G, injHomDensity F G ∂sampleGraph W m = homDensity F W := by
   classical
   rw [integral_fintype Integrable.of_finite]
   simp_rw [Measure.real_def, sampleGraph_singleton,
     ENNReal.toReal_ofReal (sampleMass_nonneg W _), smul_eq_mul]
-  simp_rw [injHomDensity_def, card_injective_hom_eq_sum_map_le]
+  simp_rw [injHomDensity_def, SimpleGraph.card_injective_hom_eq_sum_map_le]
   simp only [Fintype.card_fin]
   have hd : (m.descFactorial (Fintype.card V) : ℝ) ≠ 0 := by
     exact_mod_cast (Nat.descFactorial_pos.mpr hkm).ne'
@@ -247,7 +210,7 @@ theorem injHomDensity_integral_sampleGraph {V : Type*} [Fintype V]
               refine Finset.sum_congr rfl fun f _ => ?_
               rw [← Finset.sum_filter]
               exact (sum_sampleMass_supergraph_eq_homDensity W (F.map f)).trans
-                (homDensity_map_embedding F f W)
+                (homDensity_map_embedding W F f)
     _ = homDensity F W := by
       rw [Finset.sum_const, nsmul_eq_mul, Finset.card_univ, Fintype.card_embedding_eq,
         Fintype.card_fin]

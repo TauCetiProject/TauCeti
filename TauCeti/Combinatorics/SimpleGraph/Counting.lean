@@ -12,14 +12,16 @@ import Mathlib.Data.Fintype.CardEmbedding
 /-!
 # Counting graph homomorphisms
 
-Cardinality bounds for homomorphisms and injective homomorphisms between finite simple graphs.
-These compare graph homomorphism counts with all vertex maps and embeddings, enabling the
-normalization and estimates used for finite homomorphism densities.
+Finite combinatorial facts about simple graphs, including cardinality bounds for homomorphisms and
+injective homomorphisms. These compare graph homomorphism counts with all vertex maps and
+embeddings, enabling the normalization and estimates used for finite homomorphism densities.
 
 ## Main results
 
 * `SimpleGraph.card_hom_le` bounds homomorphisms by all vertex maps.
 * `SimpleGraph.card_injective_hom_le` bounds injective homomorphisms by vertex embeddings.
+* `SimpleGraph.edgeFinset_fromEdgeSet_eq_of_subset_top` reconstructs a graph from a finite set of
+  loop-free edges.
 -/
 
 public section
@@ -27,6 +29,16 @@ public section
 namespace SimpleGraph
 
 variable {V W : Type*} [Fintype V] [Fintype W]
+
+/-- The edge finset of a graph rebuilt from a loop-free finite edge set is the original set. -/
+theorem edgeFinset_fromEdgeSet_eq_of_subset_top [DecidableEq V]
+    (S : Finset (Sym2 V)) (hS : S ⊆ (⊤ : SimpleGraph V).edgeFinset) :
+    (fromEdgeSet (↑S : Set (Sym2 V))).edgeFinset = S := by
+  ext e
+  simp only [mem_edgeFinset, edgeSet_fromEdgeSet, Set.mem_sdiff, Finset.mem_coe,
+    Sym2.mem_diagSet]
+  exact ⟨fun h => h.1, fun h => ⟨h, fun hdiag =>
+    (⊤ : SimpleGraph V).not_isDiag_of_mem_edgeSet (mem_edgeFinset.mp (hS h)) hdiag⟩⟩
 
 /-- The number of homomorphisms from `F` to `G` is bounded by the number of vertex maps. -/
 theorem card_hom_le (F : SimpleGraph V) (G : SimpleGraph W) :
