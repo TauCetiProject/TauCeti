@@ -6,7 +6,6 @@ Authors: Claude
 module
 
 public import Mathlib.RepresentationTheory.Rep.Res
-public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Basic
 
 /-!
@@ -269,9 +268,9 @@ theorem repIso_inv_apply_coe (T : LayerRestriction small big) (F : Formation G)
 theorem refl (L : NormalLayer G) : LayerRestriction L L :=
   ⟨rfl, le_rfl⟩
 
-/-- The relative degree of the trivial restriction is `1`. `simp` proves this on its own, from
-the `@[simp]` lemmas `relativeDegree_def` and `Subgroup.relIndex_self`, so the statement carries
-no `@[simp]` attribute of its own: tagging it is a `simpNF` error. -/
+-- No `@[simp]` here: `simp` already proves this from the `@[simp]` lemmas `relativeDegree_def`
+-- and `Subgroup.relIndex_self`, so tagging the statement is a `simpNF` error.
+/-- The relative degree of the trivial restriction is `1`. -/
 theorem relativeDegree_self {L : NormalLayer G} (T : LayerRestriction L L) :
     T.relativeDegree = 1 := by
   rw [relativeDegree_def, Subgroup.relIndex_self]
@@ -306,7 +305,7 @@ theorem galHom_trans (T : LayerRestriction a b) (T' : LayerRestriction b c) :
 /-- **The identifications of coefficient modules compose along a tower of restrictions.** All
 three are the identity on the ambient module, so this is an equation between three inclusions of
 one and the same level. -/
-theorem repIso_inv_hom_trans (T : LayerRestriction a b) (T' : LayerRestriction b c)
+theorem repIso_inv_hom_trans_apply (T : LayerRestriction a b) (T' : LayerRestriction b c)
     (F : Formation G) (x : F.level c.top) :
     ((T.trans T').repIso F).inv.hom x = (T.repIso F).inv.hom ((T'.repIso F).inv.hom x) :=
   Subtype.ext <| ((T.trans T').repIso_inv_apply_coe F x).trans
@@ -343,7 +342,7 @@ theorem cohomologyRes_trans (T : LayerRestriction a b) (T' : LayerRestriction b 
   rw [cohomologyRes, cohomologyRes, cohomologyRes,
     ← groupCohomology.map_comp T'.galHom T.galHom (T'.repIso F).inv (T.repIso F).inv n]
   exact groupCohomology.map_congr (galHom_trans T T')
-    (by ext x; exact congrArg Subtype.val (T.repIso_inv_hom_trans T' F x)) n
+    (by ext x; exact congrArg Subtype.val (T.repIso_inv_hom_trans_apply T' F x)) n
 
 /-- The **ground-level inclusion** of a restriction: raising the ground field from `F` to `E`
 enlarges the ground level, `A^U ⊆ A^{U'}`. It is the degree-zero shadow of `cohomologyRes`. -/
@@ -396,6 +395,20 @@ theorem mem_subgroupGround {g : G} :
     exact ⟨hu, hmem⟩
   · rintro ⟨hg, hmem⟩
     exact ⟨⟨g, hg⟩, hmem, rfl⟩
+
+/-- The intermediate subgroup of `H`, written without the correspondence theorem: it is the
+preimage of `H` under the quotient map `U → U ⧸ V`, pushed into `G`. This is the form in which
+relative indices transport along `subgroupGround`. -/
+theorem subgroupGround_eq_map_comap :
+    L.subgroupGround H =
+      (Subgroup.comap (QuotientGroup.mk' L.relativeTop) H).map L.ground.toSubgroup.subtype := by
+  ext g
+  rw [mem_subgroupGround, Subgroup.mem_map]
+  constructor
+  · rintro ⟨hg, hmem⟩
+    exact ⟨⟨g, hg⟩, Subgroup.mem_comap.2 hmem, rfl⟩
+  · rintro ⟨⟨u, hu⟩, hmem, rfl⟩
+    exact ⟨hu, Subgroup.mem_comap.1 hmem⟩
 
 /-- The intermediate subgroup lies in the ground subgroup. -/
 theorem subgroupGround_le_ground : L.subgroupGround H ≤ L.ground.toSubgroup :=
@@ -532,10 +545,8 @@ theorem subgroupGalEquiv_galHom_subgroupLayerRestriction (h : K ≤ H)
 the two subgroups.** -/
 theorem relativeDegree_subgroupLayerRestriction (h : K ≤ H) :
     (L.subgroupLayerRestriction h).relativeDegree = K.relIndex H := by
-  have hcoe (X : Subgroup L.Gal) : ((QuotientGroup.comapMk'OrderIso L.relativeTop X).1 :
-      Subgroup L.ground) = Subgroup.comap (QuotientGroup.mk' L.relativeTop) X := rfl
   rw [LayerRestriction.relativeDegree_def, ground_subgroupLayer, ground_subgroupLayer,
-    subgroupGround, subgroupGround, hcoe, hcoe,
+    subgroupGround_eq_map_comap, subgroupGround_eq_map_comap,
     Subgroup.relIndex_map_map_of_injective _ _ (Subgroup.subtype_injective _),
     Subgroup.relIndex_comap,
     Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective L.relativeTop)]
