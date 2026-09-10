@@ -210,44 +210,25 @@ matrix units rather than a noncanonical internal choice. -/
 theorem glCliffordHom_single [decEq : DecidableEq n] (i j : n) :
     glCliffordHom (K := K) (n := n) (Matrix.single i j (1 : K)) =
       (2⁻¹ : K) • ∑ k : n,
-        ι (traceQuadraticForm K n) (Matrix.single i k 1) *
-          ι (traceQuadraticForm K n) (Matrix.single k j 1) := by
-  let _ : DecidableEq n := Classical.decEq n
-  have hclassical :
-      glCliffordHom (K := K) (n := n) (Matrix.single i j (1 : K)) =
-        (2⁻¹ : K) • ∑ k : n,
           ι (traceQuadraticForm K n) (Matrix.single i k 1) *
-            ι (traceQuadraticForm K n) (Matrix.single k j 1) := by
-    rw [glCliffordHom_normalOrdering]
-    simp_rw [matrixUnit_ι_mul_eq_bivector_add]
-    by_cases h : i = j
-    · subst j
-      simp only [↓reduceIte, map_one]
-      have hcentral :
-          (2⁻¹ : K) • ∑ _ : n, (1 : CliffordAlgebra (traceQuadraticForm K n)) =
-            algebraMap K _ ((Fintype.card n : K) / 2) := by
-        rw [Finset.sum_const, ← Nat.cast_smul_eq_nsmul K, smul_smul,
-          Algebra.algebraMap_eq_smul_one]
-        rw [Finset.card_univ]
-        congr 1
-        ring_nf
-      rw [← hcentral]
-      rw [Finset.sum_add_distrib, smul_add]
-    · simp [h, Finset.smul_sum]
-  convert hclassical using 1
-  · apply congrArg (glCliffordHom (K := K) (n := n))
-    ext a b
-    simp [Matrix.single]
-  · apply congrArg ((2 : K)⁻¹ • ·)
-    apply Finset.sum_congr rfl
-    intro k _
-    apply congrArg₂ (· * ·)
-    · apply congrArg (ι (traceQuadraticForm K n))
-      ext a b
-      simp [Matrix.single]
-    · apply congrArg (ι (traceQuadraticForm K n))
-      ext a b
-      simp [Matrix.single]
+          ι (traceQuadraticForm K n) (Matrix.single k j 1) := by
+  cases Subsingleton.elim decEq (Classical.decEq n)
+  rw [glCliffordHom_normalOrdering]
+  simp_rw [matrixUnit_ι_mul_eq_bivector_add]
+  by_cases h : i = j
+  · subst j
+    simp only [↓reduceIte, map_one]
+    have hcentral :
+        (2⁻¹ : K) • ∑ _ : n, (1 : CliffordAlgebra (traceQuadraticForm K n)) =
+          algebraMap K _ ((Fintype.card n : K) / 2) := by
+      rw [Finset.sum_const, ← Nat.cast_smul_eq_nsmul K, smul_smul,
+        Algebra.algebraMap_eq_smul_one]
+      rw [Finset.card_univ]
+      congr 1
+      ring_nf
+    rw [← hcentral]
+    rw [Finset.sum_add_distrib, smul_add]
+  · simp [h, Finset.smul_sum]
 
 /-! ### Injectivity -/
 

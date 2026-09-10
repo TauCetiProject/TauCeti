@@ -18,7 +18,7 @@ constructs the ordered-product candidate
 `∏_{i < j} dᵢⱼ`,
 
 where `dᵢⱼ = ι(Eᵢⱼ)`, for any finite linearly ordered index type. Over a field in which
-`2` is invertible, the candidate is nonzero and is a highest-weight vector of weight
+the candidate is nonzero. When `2` is invertible, it is a highest-weight vector of weight
 `i ↦ 1/2 * (1 + 2 * #{j | i < j})`. For `n = Fin N` in characteristic zero, this is the
 staircase `(N - 1/2, N - 3/2, …, 1/2)` required by the later CAR simple-submodule and isotypy
 results.
@@ -30,8 +30,7 @@ results.
 
 ## Main results
 
-* `TauCeti.carHighestWeightVector_ne_zero`: the candidate is nonzero over a field when `2` is
-  invertible.
+* `TauCeti.carHighestWeightVector_ne_zero`: the candidate is nonzero over any field.
 * `TauCeti.carHighestWeightVector_eq_one_of_subsingleton`: in ranks zero and one the empty
   ordered product is `1`.
 * `TauCeti.isGlHighestWeightVector_carHighestWeightVector`: its direct highest-weight equation.
@@ -175,12 +174,9 @@ theorem carHighestWeightVector_eq_one_of_subsingleton (K : Type*) [CommRing K]
   rw [hroots]
   simp
 
-section Field
-
-variable {K n : Type*} [Field K] [Fintype n] [LinearOrder n]
-
 /-- Every positive matrix unit occurs in the canonical family. -/
-theorem carPositiveMatrixUnitFamily_mem {i j : n} (hij : i < j) :
+theorem carPositiveMatrixUnitFamily_mem {K n : Type*} [CommRing K] [Fintype n] [LinearOrder n]
+    {i j : n} (hij : i < j) :
     Matrix.single i j (1 : K) ∈ List.ofFn (carPositiveMatrixUnitFamily K n) := by
   let _ := carPairLinearOrder n
   rw [List.mem_ofFn]
@@ -192,6 +188,10 @@ theorem carPositiveMatrixUnitFamily_mem {i j : n} (hij : i < j) :
   refine ⟨r, ?_⟩
   rw [carPositiveMatrixUnitFamily_apply, carPositiveRootPair.eq_def, hr,
     Matrix.stdBasis_eq_single]
+
+section Field
+
+variable {K n : Type*} [Field K] [Fintype n] [LinearOrder n]
 
 private theorem carPositiveUnits_ortho {i j k l : n}
     (hij : i < j) (hkl : k < l) :
@@ -228,8 +228,8 @@ private theorem iota_mul_prod_eq_zero_of_mem
         rw [← mul_assoc, CliffordAlgebra.ι_mul_ι_comm_of_isOrtho hab, neg_mul,
           mul_assoc, ih ha hol, mul_zero, neg_zero]
 
-/-- The ordered positive-root product is nonzero over a field when `2` is invertible. -/
-theorem carHighestWeightVector_ne_zero [Invertible (2 : K)] :
+/-- The ordered positive-root product is nonzero over any field. -/
+theorem carHighestWeightVector_ne_zero :
     carHighestWeightVector K n ≠ 0 := by
   let _ := carPairLinearOrder n
   have hpositive : LinearIndependent K (carPositiveMatrixUnitFamily K n) := by
