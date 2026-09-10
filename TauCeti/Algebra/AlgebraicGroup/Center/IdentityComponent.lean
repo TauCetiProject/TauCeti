@@ -44,7 +44,7 @@ Open `TauCeti` to use the declarations with dot notation, such as
 
 public section
 
-open CategoryTheory
+open CategoryTheory TauCeti
 
 namespace TauCeti.CommHopfAlgCat
 
@@ -53,35 +53,23 @@ universe u v
 variable {k : Type u} [Field k] [IsAlgClosed k]
 variable (H : _root_.CommHopfAlgCat.{v} k) [Algebra.FiniteType k H]
 
-local instance : IsReduced ((centerCoordinateHopfAlgebra H) ⧸
-    nilradical (centerCoordinateHopfAlgebra H)) :=
-  (Ideal.isRadical_iff_quotient_reduced _).mp (Ideal.radical_isRadical ⊥)
-
 /-- The ambient Hopf ideal cutting out the identity component of the reduced center. -/
 noncomputable def reducedCenterIdentityComponentDefiningIdeal : HopfIdeal k H :=
   (HopfAlgebra.identityComponentHopfIdeal
     (k := k) (H := reducedCenterCoordinateHopfAlgebra H)).comapOfSurjective
-      (reducedCenterCoordinateMap H).hom (reducedCenterCoordinateMap_surjective H)
-
-/-- The ambient identity-component ideal is the inverse image of the identity-component ideal
-under the reduced-center coordinate map. -/
-theorem reducedCenterIdentityComponentDefiningIdeal_def :
-    reducedCenterIdentityComponentDefiningIdeal H =
-      (HopfAlgebra.identityComponentHopfIdeal
-        (k := k) (H := reducedCenterCoordinateHopfAlgebra H)).comapOfSurjective
-          (reducedCenterCoordinateMap H).hom (reducedCenterCoordinateMap_surjective H) :=
-  (rfl)
+      H.reducedCenterCoordinateMap.hom (reducedCenterCoordinateMap_surjective H)
 
 /-- Membership in the ambient defining ideal is membership in the identity-component ideal
 after restriction to the reduced center. -/
 @[simp]
 theorem mem_reducedCenterIdentityComponentDefiningIdeal {x : H} :
-    x ∈ reducedCenterIdentityComponentDefiningIdeal H ↔
+    x ∈ H.reducedCenterIdentityComponentDefiningIdeal ↔
       (reducedCenterCoordinateMap H).hom x ∈ HopfAlgebra.identityComponentHopfIdeal
         (k := k) (H := reducedCenterCoordinateHopfAlgebra H) := by
-  rw [reducedCenterIdentityComponentDefiningIdeal_def, HopfIdeal.mem_comapOfSurjective]
+  rw [reducedCenterIdentityComponentDefiningIdeal, HopfIdeal.mem_comapOfSurjective]
 
-/-- The identity component of the reduced center is contained in the reduced center. -/
+/-- The reduced-center ideal is contained in the identity-component ideal. Contravariantly,
+the identity component is a closed subgroup of the reduced center. -/
 theorem reducedCenterDefiningIdeal_le_reducedCenterIdentityComponentDefiningIdeal :
     reducedCenterDefiningIdeal H ≤ reducedCenterIdentityComponentDefiningIdeal H := by
   intro x hx
@@ -125,7 +113,7 @@ theorem reducedCenterIdentityComponentDefiningIdeal_eq_augmentation_iff :
       HopfAlgebra.identityComponentHopfIdeal
           (k := k) (H := reducedCenterCoordinateHopfAlgebra H) =
         HopfIdeal.augmentation k (reducedCenterCoordinateHopfAlgebra H) := by
-  rw [reducedCenterIdentityComponentDefiningIdeal_def,
+  rw [reducedCenterIdentityComponentDefiningIdeal,
     ← HopfIdeal.comapOfSurjective_augmentation (reducedCenterCoordinateMap H).hom
       (reducedCenterCoordinateMap_surjective H),
     HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff]
