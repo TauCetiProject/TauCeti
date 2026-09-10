@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
 public import Mathlib.Algebra.Order.AbsoluteValue.Basic
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 public import TauCeti.Data.Int.WithZero
+public import TauCeti.RingTheory.Valuation.Discrete.AbsoluteValue
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 
 /-!
@@ -383,26 +384,7 @@ theorem normalizedAbsoluteValue_irreducible {π : 𝒪[K]} (hπ : Irreducible π
 /-- The normalized absolute value satisfies the strong triangle inequality. -/
 theorem isNonarchimedean_normalizedAbsoluteValue :
     IsNonarchimedean (normalizedAbsoluteValue K) := by
-  intro x y
-  rcases le_total (intValuation (K := K) x) (intValuation (K := K) y) with h | h
-  · have hxy : normalizedAbsoluteValue K x ≤ normalizedAbsoluteValue K y := by
-      simp only [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply]
-      exact (WithZeroMulInt.toNNRat_strictMono
-        (one_lt_residueFieldCard (K := K))).monotone h
-    rw [max_eq_right hxy]
-    apply Valuation.toAbsoluteValue_add_le_right
-      (v := intValuation (K := K))
-      (f := WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero)
-    exact h
-  · have hyx : normalizedAbsoluteValue K y ≤ normalizedAbsoluteValue K x := by
-      simp only [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply]
-      exact (WithZeroMulInt.toNNRat_strictMono
-        (one_lt_residueFieldCard (K := K))).monotone h
-    rw [max_eq_left hyx, add_comm]
-    apply Valuation.toAbsoluteValue_add_le_right
-      (v := intValuation (K := K))
-      (f := WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero)
-    exact h
+  apply Valuation.toAbsoluteValue_isNonarchimedean
 
 /-- The normalized absolute value takes the value one exactly on the elements of valuation one,
 that is, on the units of the ring of integers. -/

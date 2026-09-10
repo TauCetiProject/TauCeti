@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.AbsoluteValue.Basic
 public import Mathlib.RingTheory.Valuation.Discrete.Basic
 
 /-!
@@ -16,8 +15,6 @@ facts that do not depend on a choice of constant field.  The convention is
 `ord_v f = -log (v f)`, so a uniformizer has order one.  As `WithZero.log 0 = 0`, the order
 has the junk value `ord_v 0 = 0`; hypotheses excluding zero are included where necessary.
 
-It also constructs an absolute value by composing a `ℤᵐ⁰`-valued valuation with a monotone,
-zero-reflecting monoid-with-zero homomorphism.
 -/
 
 public section
@@ -27,58 +24,6 @@ open scoped WithZero
 open MonoidWithZeroHom
 
 namespace Valuation
-
-section AbsoluteValue
-
-variable {K S : Type*} [DivisionRing K] [Semiring S] [PartialOrder S]
-  [addLeftMono : AddLeftMono S] [addRightMono : AddRightMono S]
-
-private theorem comp_apply_add_le_add_of_monotone (v : _root_.Valuation K ℤᵐ⁰)
-    (f : ℤᵐ⁰ →*₀ S) (hf : ∀ ⦃a b⦄, a ≤ b → f a ≤ f b) (x y : K) :
-    f (v (x + y)) ≤ f (v x) + f (v y) := by
-  refine (hf (v.map_add x y)).trans ?_
-  rcases le_total (v x) (v y) with h | h
-  · rw [max_eq_right h]
-    exact le_add_of_nonneg_left <| by rw [← map_zero f]; exact hf bot_le
-  · rw [max_eq_left h]
-    exact le_add_of_nonneg_right <| by rw [← map_zero f]; exact hf bot_le
-
-/-- Compose a `ℤᵐ⁰`-valued valuation with a monotone, zero-reflecting monoid-with-zero homomorphism
-to obtain an absolute value. -/
-noncomputable def toAbsoluteValue (v : _root_.Valuation K ℤᵐ⁰) (f : ℤᵐ⁰ →*₀ S)
-    (hf : ∀ ⦃a b⦄, a ≤ b → f a ≤ f b) (hf_zero : ∀ a, f a = 0 ↔ a = 0) :
-    AbsoluteValue K S :=
-  AbsoluteValue.mk (f.comp v.toMonoidWithZeroHom)
-    (fun x ↦ by rw [← map_zero f]; exact hf bot_le)
-    (fun x ↦ by
-      -- `AbsoluteValue.mk` has no evaluation lemma available while constructing the value.
-      change f (v x) = 0 ↔ x = 0
-      rw [hf_zero]
-      simp)
-    (comp_apply_add_le_add_of_monotone v f hf)
-
-include addLeftMono addRightMono in
-/-- Evaluation of the absolute value obtained by composing a valuation with a monotone,
-zero-reflecting monoid-with-zero homomorphism. -/
-@[simp]
-theorem toAbsoluteValue_apply (v : _root_.Valuation K ℤᵐ⁰) (f : ℤᵐ⁰ →*₀ S)
-    (hf : ∀ ⦃a b⦄, a ≤ b → f a ≤ f b) (hf_zero : ∀ a, f a = 0 ↔ a = 0) (x : K) :
-    v.toAbsoluteValue f hf hf_zero x = f (v x) := by
-  -- Unfold the constructor once to establish the public evaluation lemma used below.
-  change (f.comp v.toMonoidWithZeroHom) x = f (v x)
-  rfl
-
-include addLeftMono addRightMono in
-/-- If one input has no larger valuation than another, their sum has absolute value at most that
-of the latter. -/
-theorem toAbsoluteValue_add_le_right (v : _root_.Valuation K ℤᵐ⁰) (f : ℤᵐ⁰ →*₀ S)
-    (hf : ∀ ⦃a b⦄, a ≤ b → f a ≤ f b) (hf_zero : ∀ a, f a = 0 ↔ a = 0)
-    {x y : K} (h : v x ≤ v y) :
-    v.toAbsoluteValue f hf hf_zero (x + y) ≤ v.toAbsoluteValue f hf hf_zero y := by
-  rw [toAbsoluteValue_apply, toAbsoluteValue_apply]
-  exact hf ((v.map_add x y).trans_eq (max_eq_right h))
-
-end AbsoluteValue
 
 variable {F : Type*} [Field F]
 
