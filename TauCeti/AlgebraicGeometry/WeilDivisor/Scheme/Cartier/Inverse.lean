@@ -55,6 +55,8 @@ lemma orderAt_regularUnitToFunctionField (U : X.Opens) [Nonempty U]
     (hx : (x : X) ∈ U) :
     orderAt x (Additive.ofMul (Scheme.regularUnitToFunctionField X U r)) = 0 := by
   rw [orderAt_apply, toMul_ofMul, Scheme.regularUnitToFunctionField_apply, Units.coe_map]
+  -- The units map exposes the underlying bundled hom application, while `ord_of_isUnit`
+  -- is stated using the definitionally equal `germToFunctionField` application.
   change X.ord (X.germToFunctionField U (r : Γ(X, U))) (x : X) = 0
   exact X.ord_of_isUnit r.isUnit hx
 
