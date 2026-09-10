@@ -106,16 +106,39 @@ theorem spinFourExteriorBasis_pair
   have h := TauCeti.ExteriorAlgebra.basis_singleton_mul_basis_erase b 0 {0, 1} (by simp)
   rw [Units.smul_def, ← Int.cast_smul_eq_zsmul K] at h
   rw [Units.smul_def, Units.coe_map]
-  change ((TauCeti.ExteriorAlgebra.basisEraseSign (0 : Fin 2) {0, 1} : ℤ) : K) •
-      b.ExteriorAlgebra {0, 1} = _
-  rw [← h]
-  have herase : ({0, 1} : Finset (Fin 2)).erase 0 = {1} := by decide
-  rw [herase, TauCeti.ExteriorAlgebra.basis_singleton,
-    TauCeti.ExteriorAlgebra.basis_singleton]
+  calc
+    _ = b.ExteriorAlgebra {0} * b.ExteriorAlgebra (({0, 1} : Finset (Fin 2)).erase 0) :=
+      h.symm
+    _ = _ := by
+      have herase : ({0, 1} : Finset (Fin 2)).erase 0 = {1} := by decide
+      rw [herase, TauCeti.ExteriorAlgebra.basis_singleton,
+        TauCeti.ExteriorAlgebra.basis_singleton]
 
 private theorem finsetFinTwo_cases (s : Finset (Fin 2)) :
     s = ∅ ∨ s = {0} ∨ s = {1} ∨ s = {0, 1} := by
   fin_cases s <;> decide
+
+private theorem orderedPair_eq_smul_exteriorBasis
+    (P : SpinPolarizationData Q) (b : Basis (Fin 2) K P.W) :
+    ExteriorAlgebra.ι K (b 0) * ExteriorAlgebra.ι K (b 1) =
+      ((TauCeti.ExteriorAlgebra.basisEraseSign (0 : Fin 2) {0, 1} : ℤ) : K) •
+        b.ExteriorAlgebra {0, 1} := by
+  have h := TauCeti.ExteriorAlgebra.basis_singleton_mul_basis_erase b 0 {0, 1} (by simp)
+  rw [Units.smul_def, ← Int.cast_smul_eq_zsmul K] at h
+  have herase : ({0, 1} : Finset (Fin 2)).erase 0 = {1} := by decide
+  simpa [herase] using h
+
+private theorem toMatrixAlgEquiv_eq_single
+    {M : Type*} [AddCommGroup M] [Module K M] {n : Type*} [Fintype n] [DecidableEq n]
+    (bas : Basis n K M) (f : Module.End K M) (p q : n)
+    (h : ∀ c, f (bas c) = (if q = c then (1 : K) else 0) • bas p) :
+    LinearMap.toMatrixAlgEquiv bas f = Matrix.single p q 1 := by
+  apply (Matrix.toLinAlgEquiv bas).injective
+  rw [Matrix.toLinAlgEquiv_toMatrixAlgEquiv]
+  apply bas.ext
+  intro c
+  rw [toLinAlgEquiv_single_apply_basis]
+  exact h c
 
 private theorem toMatrix_spinAction_typeDSimpleRootBivector_fin_two_zero
     (P : SpinPolarizationData Q) (b : Basis (Fin 2) K P.W) :
@@ -123,14 +146,16 @@ private theorem toMatrix_spinAction_typeDSimpleRootBivector_fin_two_zero
         (spinAction Q P (P.typeDSimpleRootBivector b (by omega) 0)) =
       Matrix.single {0} {1} 1 := by
   rw [P.typeDSimpleRootBivector_def, dite_eq_left (by decide)]
-  apply (Matrix.toLinAlgEquiv (spinFourExteriorBasis P b)).injective
-  rw [Matrix.toLinAlgEquiv_toMatrixAlgEquiv]
-  apply (spinFourExteriorBasis P b).ext
+  apply toMatrixAlgEquiv_eq_single
   intro s
-  rw [toLinAlgEquiv_single_apply_basis]
-  rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl <;>
+  rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
+  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
+  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
+  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector]
+  · rw [spinFourExteriorBasis_pair, orderedPair_eq_smul_exteriorBasis P b]
     simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector,
-      CliffordAlgebra.contractLeft_ι_mul, CliffordAlgebra.contractLeft_ι, Finset.ext_iff]
+      TauCeti.ExteriorAlgebra.ι_mul_basis,
+      TauCeti.ExteriorAlgebra.contractLeft_coord_basis, Finset.ext_iff]
 
 private theorem toMatrix_spinAction_typeDSimpleRootBivector_fin_two_one
     (P : SpinPolarizationData Q) (b : Basis (Fin 2) K P.W) :
@@ -138,25 +163,22 @@ private theorem toMatrix_spinAction_typeDSimpleRootBivector_fin_two_one
         (spinAction Q P (P.typeDSimpleRootBivector b (by omega) 1)) =
       Matrix.single {0, 1} ∅ 1 := by
   rw [P.typeDSimpleRootBivector_def, dite_eq_right (by decide)]
-  apply (Matrix.toLinAlgEquiv (spinFourExteriorBasis P b)).injective
-  rw [Matrix.toLinAlgEquiv_toMatrixAlgEquiv]
-  apply (spinFourExteriorBasis P b).ext
+  apply toMatrixAlgEquiv_eq_single
   intro s
-  rw [toLinAlgEquiv_single_apply_basis]
-  have hswap : ExteriorAlgebra.ι K (b 1) * ExteriorAlgebra.ι K (b 0) =
-      -(ExteriorAlgebra.ι K (b 0) * ExteriorAlgebra.ι K (b 1)) :=
-    eq_neg_of_add_eq_zero_left
-      (ExteriorAlgebra.ι_add_mul_swap (R := K) (b 1) (b 0))
-  have hleft : ExteriorAlgebra.ι K (b 0) *
-      (ExteriorAlgebra.ι K (b 0) * ExteriorAlgebra.ι K (b 1)) = 0 := by
-    rw [← mul_assoc, ExteriorAlgebra.ι_sq_zero, zero_mul]
-  have hpair : ExteriorAlgebra.ι K (b 0) *
-      (ExteriorAlgebra.ι K (b 1) *
-        (ExteriorAlgebra.ι K (b 0) * ExteriorAlgebra.ι K (b 1))) = 0 := by
-    rw [← mul_assoc (ExteriorAlgebra.ι K (b 1)), hswap]
-    simp only [neg_mul, mul_neg, ← mul_assoc, ExteriorAlgebra.ι_sq_zero, zero_mul, neg_zero]
-  rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl <;>
-    simp [map_mul, Module.End.mul_apply, Finset.ext_iff, hswap, hleft, hpair]
+  rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
+  · simp [map_mul, Module.End.mul_apply]
+  · rw [spinFourExteriorBasis_zero, ← TauCeti.ExteriorAlgebra.basis_singleton]
+    rw [map_mul, Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_wedge,
+      TauCeti.ExteriorAlgebra.ι_mul_basis, ite_eq_right (by simp), mul_smul_comm,
+      TauCeti.ExteriorAlgebra.ι_mul_basis, ite_eq_left (by simp), smul_zero]
+    simp
+  · rw [spinFourExteriorBasis_one, ← TauCeti.ExteriorAlgebra.basis_singleton]
+    rw [map_mul, Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_wedge,
+      TauCeti.ExteriorAlgebra.ι_mul_basis, ite_eq_left (by simp), mul_zero]
+    simp
+  · rw [spinFourExteriorBasis_pair, orderedPair_eq_smul_exteriorBasis P b]
+    simp [map_mul, Module.End.mul_apply,
+      TauCeti.ExteriorAlgebra.ι_mul_basis, Finset.ext_iff]
 
 private theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two_zero
     (P : SpinPolarizationData Q) (b : Basis (Fin 2) K P.W) :
@@ -164,14 +186,15 @@ private theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two_zero
         (spinAction Q P (P.typeDSimpleNegativeRootBivector b (by omega) 0)) =
       Matrix.single {1} {0} 1 := by
   rw [P.typeDSimpleNegativeRootBivector_def, dite_eq_left (by decide)]
-  apply (Matrix.toLinAlgEquiv (spinFourExteriorBasis P b)).injective
-  rw [Matrix.toLinAlgEquiv_toMatrixAlgEquiv]
-  apply (spinFourExteriorBasis P b).ext
+  apply toMatrixAlgEquiv_eq_single
   intro s
-  rw [toLinAlgEquiv_single_apply_basis]
-  rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl <;>
+  rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
+  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
+  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector]
+  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector]
+  · rw [spinFourExteriorBasis_pair, orderedPair_eq_smul_exteriorBasis P b]
     simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector,
-      CliffordAlgebra.contractLeft_ι_mul, CliffordAlgebra.contractLeft_ι, Finset.ext_iff]
+      TauCeti.ExteriorAlgebra.contractLeft_coord_basis, Finset.ext_iff]
 
 private theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two_one
     (P : SpinPolarizationData Q) (b : Basis (Fin 2) K P.W) :
@@ -179,17 +202,30 @@ private theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two_one
         (spinAction Q P (P.typeDSimpleNegativeRootBivector b (by omega) 1)) =
       Matrix.single ∅ {0, 1} 1 := by
   rw [P.typeDSimpleNegativeRootBivector_def, dite_eq_right (by decide)]
-  apply (Matrix.toLinAlgEquiv (spinFourExteriorBasis P b)).injective
-  rw [Matrix.toLinAlgEquiv_toMatrixAlgEquiv]
-  apply (spinFourExteriorBasis P b).ext
+  apply toMatrixAlgEquiv_eq_single
   intro s
-  rw [toLinAlgEquiv_single_apply_basis]
-  rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl <;>
-    simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector,
-      CliffordAlgebra.contractLeft_ι_mul, CliffordAlgebra.contractLeft_ι, Finset.ext_iff]
+  rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
+  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
+  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
+  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
+  · rw [spinFourExteriorBasis_pair, orderedPair_eq_smul_exteriorBasis P b]
+    simp only [Nat.add_one_sub_one, Fin.mk_one, Fin.isValue, tsub_self, Fin.zero_eta,
+      map_mul, spinAction_ι, SpinPolarizationData.cliffordOperator_coe_W', map_smul,
+      Module.End.mul_apply, SpinPolarizationData.contract_apply,
+      SpinPolarizationData.pairingEquiv_dualVector,
+      TauCeti.ExteriorAlgebra.contractLeft_coord_basis, Finset.mem_insert,
+      Finset.mem_singleton, zero_ne_one, or_false, ↓reduceIte, Finset.erase_insert_eq_erase,
+      not_false_eq_true, Finset.erase_eq_of_notMem, TauCeti.ExteriorAlgebra.basis_singleton,
+      map_zsmul_unit, CliffordAlgebra.contractLeft_ι, Basis.coord_apply, Basis.repr_self,
+      Finsupp.single_eq_same, map_one, spinFourExteriorBasis_empty, one_smul]
+    obtain h | h := Int.units_eq_one_or
+      (TauCeti.ExteriorAlgebra.basisEraseSign (0 : Fin 2) {0, 1})
+    · simp [h]
+    · simp [h]
 
 /-- In the oriented rank-two exterior basis, the two positive type-`D` root bivectors are the
 elementary matrices on the odd and even half-spin blocks, respectively. -/
+@[simp]
 theorem toMatrix_spinAction_typeDSimpleRootBivector_fin_two
     (P : SpinPolarizationData Q)
     (b : Basis (Fin 2) K P.W) (i : Fin 2) :
@@ -202,6 +238,7 @@ theorem toMatrix_spinAction_typeDSimpleRootBivector_fin_two
 
 /-- In the oriented rank-two exterior basis, the two negative type-`D` root bivectors are the
 reverse elementary matrices on the odd and even half-spin blocks, respectively. -/
+@[simp]
 theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two
     (P : SpinPolarizationData Q)
     (b : Basis (Fin 2) K P.W) (i : Fin 2) :
