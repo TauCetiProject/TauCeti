@@ -20,7 +20,7 @@ period exactly when the original function is invariant under the corresponding t
 ## Main declarations
 
 * `Real.nhdsWithin_upperHalfPlaneSet_neBot`.
-* `TauCeti.neBot_cobounded_inf_principal_upperHalfPlaneSet`.
+* `TauCeti.cobounded_inf_principal_upperHalfPlaneSet_neBot`.
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 
 ## References
@@ -48,7 +48,7 @@ namespace TauCeti
 
 /-- The upper half-plane is unbounded, so the filter along which it approaches infinity is
 nontrivial and limits taken along it are unique. -/
-instance neBot_cobounded_inf_principal_upperHalfPlaneSet :
+instance cobounded_inf_principal_upperHalfPlaneSet_neBot :
     (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet).NeBot := by
   -- The imaginary axis runs off to infinity inside the half-plane, so the filter it pushes
   -- forward from `atTop` is below both factors.
