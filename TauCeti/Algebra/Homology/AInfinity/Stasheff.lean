@@ -43,13 +43,14 @@ inputs, `(-1) ^ ((2 - s) * (d 0 + ⋯ + d (r - 1)))` before suspension and
 `MultilinearMap.koszulSign`. As in
 `TauCeti/LinearAlgebra/Graded/Insertion.lean`, the degrees of the inputs are supplied as an
 explicit parameter rather than read off a direct-sum decomposition; on the intended component the
-sign is a scalar, and `TauCeti.AInfinity.replaceBlock_mem_replaceDeg` proves that the supplied
-degrees are the actual ones once every operation is homogeneous of degree `2 - k`.
+sign is a scalar, and `TauCeti.AInfinity.replaceBlock_mem_replaceDeg_of_mem_blockDeg` proves that
+the supplied degrees are the actual ones once the inputs and the inserted value are homogeneous of
+the recorded degrees.
 
 The arities one to four are written out on the nose using the supplied degree family `d`; these
 formulas themselves make no homogeneity assumption. Homogeneity enters only in
-`evalNat_mem_blockDeg` and `replaceBlock_mem_replaceDeg`. The degeneration to a differential
-graded algebra is also checked.
+`evalNat_mem_blockDeg` and `replaceBlock_mem_replaceDeg_of_mem_blockDeg`.
+The degeneration to a differential graded algebra is also checked.
 
 Inputs are indexed by `ℕ` rather than by `Fin n` throughout; only the first `n` entries of an input
 family are read, and this keeps the reindexing of the Stasheff sums free of transports between
@@ -686,17 +687,6 @@ theorem replaceBlock_mem_replaceDeg_of_mem_blockDeg {n p s : ℕ} {d : ℕ → �
     exact he
   · rw [replaceBlock_of_gt _ _ _ _ h, replaceDeg_of_gt _ _ _ h]
     exact hx _ (by omega)
-
-/-- **The supplied degrees of a Stasheff term are the actual ones.** If an arity-`s` operation is
-homogeneous of degree `2 - s` and the inputs are homogeneous of degrees `d`, then `replaceDeg`
-records the degrees of the inputs of the outer operation after inserting its value. -/
-theorem replaceBlock_mem_replaceDeg {s : ℕ}
-    (f : MultilinearMap R (fun _ : Fin s ↦ A) A) {d : ℕ → ℤ} {x : ℕ → A}
-    (hf : MultilinearMap.IsHomogeneous f (fun _ ↦ 𝒜) 𝒜 (2 - s))
-    (hx : ∀ i, x i ∈ 𝒜 (d i)) (p i : ℕ) :
-    replaceBlock x p s (evalNat f fun j ↦ x (p + j)) i ∈ 𝒜 (replaceDeg d p s i) :=
-  replaceBlock_mem_replaceDeg_of_mem_blockDeg (n := p + s + i) 𝒜 (fun j _ ↦ hx j)
-    (evalNat_mem_blockDeg 𝒜 f hf p fun j _ ↦ hx (p + j)) (by omega) (by omega)
 
 end Comparison
 
