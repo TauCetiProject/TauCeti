@@ -30,7 +30,7 @@ finite-set disjointness conditions used for empty rectangles and marking-avoidin
 
 `AvoidsMarkings` tests `squares`, so a marking counts as covered exactly when its square lies
 under the rectangle: marking indices are the southwest corners of square-centred markings, the
-convention the Lane G.2 gradings use. `GridRectangle.squares_eq_coveredSquares` in
+convention the Maslov and Alexander gradings use. `GridRectangle.squares_eq_coveredSquares` in
 `Rectangle/Squares.lean` identifies `squares` with the grading side's name for that region.
 
 ## Main definitions

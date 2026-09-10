@@ -27,9 +27,10 @@ without a nondegeneracy hypothesis.
 The convention that markings sit at the centres of their squares is the one the Maslov and
 Alexander gradings already use (`JFunction/Center.lean`); this file supplies the matching
 rectangle domain, which `Grading/MarkingCount.lean` then uses to turn the Maslov and Alexander
-grading changes across a rectangle move into marking counts. The Lane G.3 differential predicate
-`GridRectangle.AvoidsMarkings` tests the same square-centred region under its other name
-`GridRectangle.squares`; `GridRectangle.squares_eq_coveredSquares` identifies the two.
+grading changes across a rectangle move into marking counts. The marking-avoidance predicate of
+the grid differential, `GridRectangle.AvoidsMarkings`, tests that same square-centred region under
+its other name `GridRectangle.squares`; `GridRectangle.squares_eq_coveredSquares` identifies the
+two.
 
 ## Main definitions
 

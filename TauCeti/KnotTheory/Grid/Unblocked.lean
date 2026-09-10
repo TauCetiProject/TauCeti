@@ -35,9 +35,10 @@ Two conventions are fixed here.
 carries the markings of the squares it covers, `GridRectangle.coveredSquares`, not those of the
 grid points in its open interior. That is the region the Maslov and Alexander grading changes are
 computed against in `Grading/MarkingCount.lean`, and it is the region used throughout this file.
-It is also the region the Lane G.3 predicate `GridRectangle.AvoidsMarkings` tests, under its other
-name `GridRectangle.squares`; `GridRectangle.squares_eq_coveredSquares` identifies the two, which
-is what makes the fully blocked count a specialization of a matrix coefficient here.
+It is also the region the marking-avoidance predicate `GridRectangle.AvoidsMarkings` of the grid
+differential tests, under its other name `GridRectangle.squares`;
+`GridRectangle.squares_eq_coveredSquares` identifies the two, which is what makes the fully blocked
+count a specialization of a matrix coefficient here.
 
 *Which grading the variables carry.* Giving `V_c` bidegree `(-2, -1)` makes the differential
 homogeneous of bidegree `(-1, 0)`: `maslovO_sub_two_mul_card_OColumns_eq_maslovO_sub_one` and
