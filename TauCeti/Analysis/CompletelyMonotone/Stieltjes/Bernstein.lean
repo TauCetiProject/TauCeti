@@ -36,8 +36,8 @@ the normalization `μ {0} = 0` removes the only point where `t / (t + x)` does n
   continuous extension of `t * f(t)` written directly from Stieltjes representing data and its
   defining equation.
 * `TauCeti.stieltjesBernsteinTransform_zero`: the transform takes the value `a` at zero.
-* `TauCeti.stieltjesBernsteinIntegral_eq_mul_integral_inv_add`: the integral term is the
-  parameter times the corresponding Stieltjes integral.
+* `TauCeti.integral_div_add_eq_mul_integral_inv_add`: the integral term is the parameter times
+  the corresponding Stieltjes integral.
 * `TauCeti.integrable_mul_zpow_neg_two_sub_add`: the derivative kernels of the integral term are
   integrable at positive parameters.
 * `TauCeti.iteratedDeriv_integral_div_add`: the iterated derivatives of the integral
@@ -51,8 +51,6 @@ the normalization `μ {0} = 0` removes the only point where `t / (t + x)` does n
   transform of a Stieltjes representation of `f` is `t * f(t)`.
 * `TauCeti.RepresentsStieltjes.isBernsteinFunction_stieltjesBernsteinTransform`: the transform of
   a Stieltjes representation is Bernstein.
-* `TauCeti.IsStieltjesFunction.exists_isBernsteinFunction_eqOn_mul`: every Stieltjes function has
-  a Bernstein extension of its product with the parameter on `(0, ∞)`.
 
 ## References
 
@@ -90,7 +88,7 @@ theorem stieltjesBernsteinTransform_zero (μ : Measure ℝ≥0) (a b : ℝ≥0) 
 
 /-- The integral term in the Stieltjes--Bernstein transform is the parameter times the
 corresponding Stieltjes integral. -/
-theorem stieltjesBernsteinIntegral_eq_mul_integral_inv_add (μ : Measure ℝ≥0)
+theorem integral_div_add_eq_mul_integral_inv_add (μ : Measure ℝ≥0)
     (t : ℝ) :
     (∫ x : ℝ≥0, t / (t + x) ∂μ) =
       t * ∫ x : ℝ≥0, (t + x)⁻¹ ∂μ := by
@@ -135,7 +133,7 @@ private lemma contDiffOn_stieltjesBernsteinIntegral {μ : Measure ℝ≥0}
     ContDiffOn ℝ ∞ (fun t : ℝ => ∫ x : ℝ≥0, t / (t + x) ∂μ) (Ioi 0) := by
   refine (contDiffOn_id.mul
     (isCompletelyMonotoneOnIoi_integral_inv_add hμ).contDiffOn).congr fun t _ => ?_
-  simpa only [id_eq] using stieltjesBernsteinIntegral_eq_mul_integral_inv_add μ t
+  simpa only [id_eq] using integral_div_add_eq_mul_integral_inv_add μ t
 
 /-- The Leibniz expansion of `t * F t` collapses to two terms, because every derivative of the
 identity beyond the first vanishes. -/
@@ -175,7 +173,7 @@ theorem iteratedDeriv_integral_div_add {μ : Measure ℝ≥0}
   have hjumpEq : (fun u : ℝ => ∫ x : ℝ≥0, u / (u + x) ∂μ) =
       fun u => u * F u := by
     funext u
-    exact stieltjesBernsteinIntegral_eq_mul_integral_inv_add μ u
+    exact integral_div_add_eq_mul_integral_inv_add μ u
   rw [hjumpEq, iteratedDeriv_succ_id_mul hFdiff]
   have hn := iteratedDeriv_integral_inv_add hμ n ht
   have hn1 := iteratedDeriv_integral_inv_add hμ (n + 1) ht
@@ -301,7 +299,7 @@ transform on the open half-line. -/
 theorem stieltjesBernsteinTransform_eq_mul (h : RepresentsStieltjes μ a b f) {t : ℝ}
     (ht : 0 < t) : stieltjesBernsteinTransform μ a b t = t * f t := by
   rw [h.eq_div_add_add_integral_inv_add ht, stieltjesBernsteinTransform_apply]
-  rw [stieltjesBernsteinIntegral_eq_mul_integral_inv_add]
+  rw [integral_div_add_eq_mul_integral_inv_add]
   field_simp [ht.ne']
 
 /-- The transform attached to a Stieltjes representation is a Bernstein function.  Its agreement
@@ -313,22 +311,6 @@ theorem isBernsteinFunction_stieltjesBernsteinTransform (h : RepresentsStieltjes
     h.measure_singleton_zero h.integrable_weight
 
 end RepresentsStieltjes
-
-namespace IsStieltjesFunction
-
-variable {f : ℝ → ℝ}
-
-/-- Every Stieltjes function has a Bernstein extension of its product with the parameter on the
-open positive half-line. -/
-theorem exists_isBernsteinFunction_eqOn_mul (h : IsStieltjesFunction f) :
-    ∃ g : ℝ → ℝ, IsBernsteinFunction g ∧ EqOn g (fun t => t * f t) (Ioi 0) := by
-  rw [isStieltjesFunction_iff] at h
-  obtain ⟨a, b, μ, hrep⟩ := h
-  exact ⟨stieltjesBernsteinTransform μ a b,
-    hrep.isBernsteinFunction_stieltjesBernsteinTransform,
-    fun _ ht => hrep.stieltjesBernsteinTransform_eq_mul ht⟩
-
-end IsStieltjesFunction
 
 end TauCeti
 
