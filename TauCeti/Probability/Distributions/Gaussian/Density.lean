@@ -12,6 +12,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Probability.Distributions.Gaussian.Pi
 
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # The density of a multivariate Gaussian measure
@@ -194,7 +195,40 @@ theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace 
     rw [Real.sqrt_eq_rpow, ← Real.rpow_neg hdetS.le]
     congr 1
     ring
-  rw [multivariateGaussian, stdGaussian_eq_withDensity, hAfun, Measure.map_affine_withDensity,
+  -- the affine substitution `x ↦ m + √S x` transports the standard density: the linear part
+  -- rescales `volume` by the Jacobian and substitutes `(√S)⁻¹`, and the translation leaves
+  -- `volume` alone
+  set R : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι := Matrix.toEuclideanCLE (CFC.sqrt S) hRunit
+    with hRdef
+  set r : ℝ≥0∞ := ENNReal.ofReal
+    |(LinearMap.det (R : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι))⁻¹| with hr
+  have hdetne : LinearMap.det (R : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι) ≠ 0 :=
+    ((R : EuclideanSpace ℝ ι ≃ₗ[ℝ] EuclideanSpace ℝ ι).isUnit_det').ne_zero
+  have hmapR : (volume : Measure (EuclideanSpace ℝ ι)).map R = r • volume := by
+    rw [hr]
+    simpa using Measure.map_linearMap_addHaar_eq_smul_addHaar volume hdetne
+  have hmap : ∀ g : EuclideanSpace ℝ ι → ℝ≥0∞,
+      ((volume : Measure (EuclideanSpace ℝ ι)).withDensity g).map (fun x => m + R x)
+        = volume.withDensity fun y => r * g (R.symm (y - m)) := fun g => by
+    have hlin : ((volume : Measure (EuclideanSpace ℝ ι)).withDensity g).map R
+        = volume.withDensity fun y => r * g (R.symm y) := by
+      rw [← R.coe_toHomeomorph, ← Homeomorph.toMeasurableEquiv_coe, MeasurableEquiv.map_withDensity]
+      simp only [Homeomorph.toMeasurableEquiv_coe, Homeomorph.toMeasurableEquiv_symm_coe,
+        ContinuousLinearEquiv.coe_toHomeomorph, ContinuousLinearEquiv.coe_symm_toHomeomorph]
+      rw [hmapR, withDensity_smul_measure, ← withDensity_smul' _ _ ENNReal.ofReal_ne_top]
+      exact congrArg volume.withDensity
+        (funext fun y => by simp only [Pi.smul_apply, smul_eq_mul, hr])
+    calc ((volume : Measure (EuclideanSpace ℝ ι)).withDensity g).map (fun x => m + R x)
+        = (((volume : Measure (EuclideanSpace ℝ ι)).withDensity g).map R).map
+            (fun y : EuclideanSpace ℝ ι => m + y) :=
+          (Measure.map_map (by fun_prop) (by fun_prop)).symm
+      _ = (volume.withDensity fun y => r * g (R.symm y)).map
+            (fun y : EuclideanSpace ℝ ι => m + y) := by rw [hlin]
+      _ = volume.withDensity fun y => r * g (R.symm (y - m)) := by
+          rw [← MeasurableEquiv.coe_addLeft m, MeasurableEquiv.map_withDensity]
+          simp only [MeasurableEquiv.coe_addLeft, MeasurableEquiv.symm_addLeft,
+            map_add_left_eq_self, neg_add_eq_sub]
+  rw [multivariateGaussian, stdGaussian_eq_withDensity, hAfun, hmap, hr, hRdef,
     Matrix.det_toEuclideanCLE]
   refine withDensity_congr_ae (.of_forall fun y => ?_)
   simp only [multivariateGaussianPDF, multivariateGaussianPDFReal,
