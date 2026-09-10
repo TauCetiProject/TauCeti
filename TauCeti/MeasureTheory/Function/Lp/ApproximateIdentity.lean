@@ -39,7 +39,7 @@ by the same smooth kernel.
 * `TauCeti.norm_normedBumpLp_le_one`: this averaging operator is an `Lᵖ` contraction.
 * `TauCeti.tendsto_normedBumpLp`: normalized bumps whose radii shrink to zero converge strongly
   to the identity on `Lᵖ`.
-* `TauCeti.setIntegral_normedConvolution`: a finite-set integral formula for normalized-bump
+* `ContDiffBump.setIntegral_normedConvolution`: a finite-set integral formula for normalized-bump
   convolution.
 
 ## References
@@ -52,7 +52,7 @@ public section
 
 noncomputable section
 
-namespace TauCeti
+namespace ContDiffBump
 
 open ContinuousLinearMap Filter MeasureTheory Metric Set
 open scoped Convolution ENNReal Pointwise
@@ -101,6 +101,17 @@ theorem setIntegral_normedConvolution (phi : ContDiffBump (0 : E)) {f : E → F}
       apply integral_congr_ae
       filter_upwards with x
       rw [convolution_lsmul]
+
+end ContDiffBump
+
+namespace TauCeti
+
+open ContinuousLinearMap Filter MeasureTheory Metric Set
+open scoped Convolution ENNReal Pointwise
+
+variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [BorelSpace E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
 
 /-- The average of an `Lᵖ` class against the normalized form of a smooth bump centred at zero,
 before it is bundled as a continuous linear map by `TauCeti.normedBumpLp`. -/

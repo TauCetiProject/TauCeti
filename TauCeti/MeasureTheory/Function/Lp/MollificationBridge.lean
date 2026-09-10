@@ -90,7 +90,7 @@ theorem normedBumpLp_ae_eq_convolution (hp_ne_top : p ≠ ∞) (phi : ContDiffBu
         filter_upwards with t
         rw [map_smul, setIntegralLp_apply, setIntegral_translateLp_toLp s hfLp t]
       _ = ∫ x in s, conv x ∂mu := by
-        exact setIntegral_normedConvolution phi hf hfc s
+        exact ContDiffBump.setIntegral_normedConvolution phi hf hfc s
       _ = ∫ x in s, (hconvLp.toLp conv) x ∂mu := by
         apply integral_congr_ae
         exact ae_restrict_of_ae hconvLp.coeFn_toLp.symm

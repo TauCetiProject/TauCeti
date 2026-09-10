@@ -17,6 +17,10 @@ useful whenever an `Lᵖ` identity is tested against integrals on finite-measure
 
 ## Main declarations
 
+* `MeasureTheory.Measure.lpToLpOneCLM`: the continuous inclusion from `Lᵖ` to `L¹` on
+  a finite-measure space.
+* `MeasureTheory.Measure.lpToLpOneCLM_coeFn`: the inclusion has the original representative almost
+  everywhere.
 * `TauCeti.lpToL1Restrict`: restriction from `Lᵖ` to `L¹` on a finite-measure set.
 * `TauCeti.lpToL1Restrict_coeFn`: the restricted class has the original representative almost
   everywhere.
@@ -29,7 +33,7 @@ public section
 
 noncomputable section
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 open ContinuousLinearMap Filter MeasureTheory Set
 open scoped ENNReal
@@ -120,11 +124,22 @@ theorem lpToLpOneCLM_coeFn (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
   change (Lp.memLp f).mono_exponent Fact.out |>.toLp f =ᵐ[μ] f
   exact MemLp.coeFn_toLp _
 
+end MeasureTheory.Measure
+
+namespace TauCeti
+
+open ContinuousLinearMap Filter MeasureTheory Set
+open scoped ENNReal
+
+variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  {mu : Measure E} {p : ENNReal} [Fact (1 ≤ p)]
+
 /-- Restrict an `Lᵖ` class to a finite-measure set and view it as an `L¹` class. -/
 noncomputable def lpToL1Restrict (s : Set E) (hμs : mu s < ∞) :
     Lp F p mu →L[ℝ] Lp F 1 (mu.restrict s) := by
   letI : IsFiniteMeasure (mu.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
-  exact (lpToLpOneCLM (μ := mu.restrict s) p).comp
+  exact (Measure.lpToLpOneCLM (μ := mu.restrict s) p).comp
     (LpToLpRestrictCLM E F ℝ mu p s)
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace F] in
@@ -134,9 +149,9 @@ theorem lpToL1Restrict_coeFn (s : Set E) (hμs : mu s < ∞)
     lpToL1Restrict s hμs f =ᵐ[mu.restrict s] f := by
   let _ : IsFiniteMeasure (mu.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
   -- Unfold the composition so the public inclusion and restriction representative lemmas apply.
-  change lpToLpOneCLM (mu.restrict s) p
+  change Measure.lpToLpOneCLM (mu.restrict s) p
       (LpToLpRestrictCLM E F ℝ mu p s f) =ᵐ[mu.restrict s] f
-  exact (lpToLpOneCLM_coeFn (mu.restrict s) p _).trans
+  exact (Measure.lpToLpOneCLM_coeFn (mu.restrict s) p _).trans
     (LpToLpRestrictCLM_coeFn ℝ s f)
 
 /-- Integrate an `Lᵖ` class over a finite-measure set as a continuous linear map. -/
