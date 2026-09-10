@@ -76,7 +76,7 @@ theorem exists_pos_forall_norm_lt_lieExp_mem_iff_eq_zero_of_disjoint {K : Subgro
   have hZM : Z ∈ M := by
     apply M.closed_of_finiteDimensional.mem_of_tendsto hφ
     filter_upwards with n
-    change ‖X (φ n)‖⁻¹ • X (φ n) ∈ M
+    simp only [Function.comp_apply, Y, NormedSpace.normalize]
     exact M.smul_mem ‖X (φ n)‖⁻¹ (hXM (φ n))
   have hZlie : Z ∈ lieSubalgebraOfSubgroup (I := I) K := by
     apply mem_lieSubalgebraOfSubgroup_of_seq hK
