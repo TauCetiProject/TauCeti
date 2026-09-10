@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Group.End
+public import Mathlib.Algebra.Ring.Parity
 
+import Mathlib.Algebra.Group.Fin.Basic
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -28,6 +30,9 @@ range, so the value is a `dite` rather than a plain application.
   transposition.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
+* `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`.
+* `TauCeti.neg_one_pow_val_add_one`: for `n` even, adding one in `Fin n` flips the sign `(-1) ^ ·`
+  read off the value.
 * `TauCeti.sum_ite_val_add`: a sum against the indicator of `b = k + j` picks out the summand at
   `b - j`, or vanishes when there is no such index.
 -/
@@ -46,6 +51,30 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
 end Fin
 
 namespace TauCeti
+
+/-- **Adding one twice in `Fin n` never returns to the same element** when `3 ≤ n`. -/
+theorem add_one_add_one_ne_self {n : ℕ} [NeZero n] (hn : 3 ≤ n) (i : Fin n) :
+    i + 1 + 1 ≠ i := by
+  intro h
+  have htwo : (1 + 1 : Fin n) = 0 := by
+    apply add_left_cancel (a := i)
+    simpa [add_assoc] using h
+  have hval := congrArg Fin.val htwo
+  simp [Fin.val_add, Nat.mod_eq_of_lt (by omega : 2 < n)] at hval
+
+/-- **Adding one in `Fin n` flips the sign `(-1) ^ ·` read off the value** when `n` is even.  The
+wraparound at the last index respects the sign exactly because `n` is even. -/
+theorem neg_one_pow_val_add_one {M : Type*} [Monoid M] [HasDistribNeg M] {n : ℕ} [NeZero n]
+    (hn : Even n) (i : Fin n) : (-1 : M) ^ ((i + 1 : Fin n) : ℕ) = -(-1 : M) ^ (i : ℕ) := by
+  have hval : ((i + 1 : Fin n) : ℕ) = (i.val + 1) % n := by
+    rw [Fin.val_add, Fin.val_one', Nat.add_mod_mod]
+  rw [hval]
+  rcases Nat.lt_or_ge (i.val + 1) n with h1 | h1
+  · rw [Nat.mod_eq_of_lt h1, pow_succ, mul_neg_one]
+  · have hi : i.val + 1 = n := by have := i.isLt; omega
+    have hn' : Even (i.val + 1) := by rw [hi]; exact hn
+    have hodd : Odd i.val := Nat.not_even_iff_odd.mp (Nat.even_add_one.mp hn')
+    rw [hi, Nat.mod_self, pow_zero, hodd.neg_one_pow, neg_neg]
 
 /-- A permutation of `Fin 2` is either the identity or the transposition. -/
 theorem perm_fin_two_eq_one_or_swap (e : Equiv.Perm (Fin 2)) :
