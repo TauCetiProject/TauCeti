@@ -109,10 +109,6 @@ the relative degree cannot be read off the datum itself: `relativeDegree` is a f
 layers, and takes the restriction proof to make that dependency explicit and support the notation
 `T.relativeDegree`.
 
-Corestriction is deliberately absent. Mathlib's change-of-group maps supply the map induced by a
-homomorphism of groups, which is restriction on cohomology; the transfer in the other direction is
-not yet available in any degree, and belongs to the generic cohomology supplier rather than here.
-
 `NormalLayer.subgroupGround` is the correspondence-theorem preimage of `H` — the subgroup
 `QuotientGroup.comapMk'OrderIso` attaches to `H` — pushed from `U` into the ambient group `G`, so
 that it can be an `OpenSubgroup G` and be compared with the other subgroups of a formation.
@@ -273,7 +269,9 @@ theorem repIso_inv_apply_coe (T : LayerRestriction small big) (F : Formation G)
 theorem refl (L : NormalLayer G) : LayerRestriction L L :=
   ⟨rfl, le_rfl⟩
 
-/-- The relative degree of the trivial restriction is `1`. -/
+/-- The relative degree of the trivial restriction is `1`. `simp` proves this on its own, from
+the `@[simp]` lemmas `relativeDegree_def` and `Subgroup.relIndex_self`, so the statement carries
+no `@[simp]` attribute of its own: tagging it is a `simpNF` error. -/
 theorem relativeDegree_self {L : NormalLayer G} (T : LayerRestriction L L) :
     T.relativeDegree = 1 := by
   rw [relativeDegree_def, Subgroup.relIndex_self]
@@ -338,7 +336,7 @@ theorem cohomologyRes_self {L : NormalLayer G} (T : LayerRestriction L L) (F : F
   rw [cohomologyRes, groupCohomology.map_congr T.galHom_self h n, groupCohomology.map_id]
 
 /-- **Restriction of cohomology is functorial along a tower of restrictions.** Restricting from
-`K/F` to `K/E'` and then to `K/E` is restricting from `K/F` to `K/E`. -/
+`K/F` to `K/E` and then to `K/E'` is restricting from `K/F` to `K/E'`. -/
 theorem cohomologyRes_trans (T : LayerRestriction a b) (T' : LayerRestriction b c)
     (F : Formation G) (n : ℕ) :
     (T.trans T').cohomologyRes F n = T'.cohomologyRes F n ≫ T.cohomologyRes F n := by
@@ -507,10 +505,8 @@ theorem subgroupLayer_top : L.subgroupLayer ⊤ = L :=
 /-! ### Towers inside the finite quotient system -/
 
 /-- The intermediate subgroup attached to a subgroup of the Galois group grows with it. -/
-theorem subgroupGround_mono : Monotone L.subgroupGround := by
-  intro K K' hK g hg
-  obtain ⟨hgU, hmem⟩ := (L.mem_subgroupGround K).1 hg
-  exact (L.mem_subgroupGround K').2 ⟨hgU, hK hmem⟩
+theorem subgroupGround_mono : Monotone L.subgroupGround := fun _ _ hK ↦
+  Subgroup.map_mono ((QuotientGroup.comapMk'OrderIso L.relativeTop).monotone hK)
 
 variable {H} {K : Subgroup L.Gal}
 
@@ -521,13 +517,6 @@ theorem subgroupLayerRestriction (h : K ≤ H) :
     LayerRestriction (L.subgroupLayer K) (L.subgroupLayer H) :=
   ⟨rfl, OpenSubgroup.toSubgroup_le.1 (L.subgroupGround_mono h)⟩
 
-/-- **The restriction to a subgroup factors through the restriction to any bigger subgroup**, at
-the level of Galois groups. -/
-theorem galHom_subgroupRestriction_comp (h : K ≤ H) :
-    (L.subgroupRestriction H).galHom.comp (L.subgroupLayerRestriction h).galHom =
-      (L.subgroupRestriction K).galHom :=
-  (LayerRestriction.galHom_trans _ _).symm
-
 /-- **The homomorphism of Galois groups of a tower inside the finite quotient system is the
 inclusion of subgroups**, read through `subgroupGalEquiv`. -/
 theorem subgroupGalEquiv_galHom_subgroupLayerRestriction (h : K ≤ H)
@@ -536,28 +525,20 @@ theorem subgroupGalEquiv_galHom_subgroupLayerRestriction (h : K ≤ H)
       Subgroup.inclusion h (L.subgroupGalEquiv K γ) := by
   refine Subtype.ext ?_
   rw [subgroupGalEquiv_apply_coe, Subgroup.coe_inclusion, subgroupGalEquiv_apply_coe,
-    ← galHom_subgroupRestriction_comp L h, MonoidHom.comp_apply]
+    ← MonoidHom.comp_apply, ← LayerRestriction.galHom_trans (L.subgroupLayerRestriction h)
+      (L.subgroupRestriction H)]
 
 /-- **The relative degree of a tower inside the finite quotient system is the relative index of
 the two subgroups.** -/
 theorem relativeDegree_subgroupLayerRestriction (h : K ≤ H) :
     (L.subgroupLayerRestriction h).relativeDegree = K.relIndex H := by
-  have hd := (L.subgroupLayerRestriction h).degree_mul_relativeDegree
-  rw [degree_subgroupLayer, degree_subgroupLayer] at hd
-  have hcard : Nat.card (K.subgroupOf H) = Nat.card K :=
-    Nat.card_congr (Subgroup.subgroupOfEquivOfLe h).toEquiv
-  have hK : Nat.card K * K.relIndex H = Nat.card H := by
-    rw [← hcard]
-    exact Subgroup.card_mul_index (K.subgroupOf H)
-  exact Nat.eq_of_mul_eq_mul_left Nat.card_pos (hd.trans hK.symm)
-
-/-- **Restriction of cohomology is functorial along a tower inside the finite quotient system.**
-Restricting to `H` and then to `K` is restricting to `K`. -/
-theorem cohomologyRes_subgroupRestriction (h : K ≤ H) (F : Formation G) (n : ℕ) :
-    (L.subgroupRestriction K).cohomologyRes F n =
-      (L.subgroupRestriction H).cohomologyRes F n ≫
-        (L.subgroupLayerRestriction h).cohomologyRes F n :=
-  LayerRestriction.cohomologyRes_trans _ _ F n
+  have hcoe (X : Subgroup L.Gal) : ((QuotientGroup.comapMk'OrderIso L.relativeTop X).1 :
+      Subgroup L.ground) = Subgroup.comap (QuotientGroup.mk' L.relativeTop) X := rfl
+  rw [LayerRestriction.relativeDegree_def, ground_subgroupLayer, ground_subgroupLayer,
+    subgroupGround, subgroupGround, hcoe, hcoe,
+    Subgroup.relIndex_map_map_of_injective _ _ (Subgroup.subtype_injective _),
+    Subgroup.relIndex_comap,
+    Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective L.relativeTop)]
 
 /-- **The finite quotient system is closed under passing to a sublayer.** The layer of a subgroup
 `H'` of the Galois group of the layer of `H` is the layer of the image of `H'` in `U/V`. This is
