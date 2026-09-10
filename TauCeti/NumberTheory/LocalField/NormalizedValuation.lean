@@ -115,6 +115,10 @@ private noncomputable def intValuation : Valuation K ℤᵐ⁰ :=
   (valuation K).map (valueGroupWithZeroIsoInt K).toMonoidWithZeroHom
     (valueGroupWithZeroIsoInt K).toOrderIso.monotone
 
+private theorem intValuation_apply (x : K) :
+    intValuation (K := K) x = valueGroupWithZeroIsoInt K (valuation K x) :=
+  rfl
+
 private theorem intValuation_surjective : Function.Surjective (intValuation (K := K)) := by
   intro z
   obtain ⟨x, hx⟩ := ValuativeRel.valuation_surjective ((valueGroupWithZeroIsoInt K).symm z)
@@ -385,14 +389,24 @@ theorem normalizedAbsoluteValue_apply_ne_zero (x : K) (hx : x ≠ 0) :
     WithZeroMulInt.toNNRat_apply_of_ne_zero]
   · rw [toAdd_normalizedValuation_eq_ord, Valuation.ord_def, neg_neg,
       WithZero.toAdd_unzero_eq_log]
-    rfl
-  · simp [intValuation, hx]
+    simp only [intValuation_apply, Units.val_mk0]
+  · simp [intValuation_apply, hx]
 
 /-- The normalized absolute value on `Kˣ` is the rational power `q ^ (-v_K(x))`. -/
 theorem normalizedAbsoluteValue_coe (x : Kˣ) :
     normalizedAbsoluteValue K (x : K) =
       (Nat.card 𝓀[K] : ℚ≥0) ^ (-(normalizedValuation K x).toAdd) := by
   simpa using normalizedAbsoluteValue_apply_ne_zero (x : K) x.ne_zero
+
+/-- The normalized absolute value of an irreducible element of `𝒪[K]`, that is of a uniformizer
+of `K`, is the inverse of the residue-field cardinality. -/
+@[simp]
+theorem normalizedAbsoluteValue_irreducible {π : 𝒪[K]} (hπ : Irreducible π) :
+    normalizedAbsoluteValue K (π : K) = (Nat.card 𝓀[K] : ℚ≥0)⁻¹ := by
+  rw [show (π : K) =
+      ((Units.mk0 (π : K) (fun h => hπ.ne_zero (Subtype.ext h)) : Kˣ) : K) from rfl,
+    normalizedAbsoluteValue_coe, normalizedValuation_irreducible hπ]
+  simp
 
 /-- The normalized absolute value satisfies the strong triangle inequality. -/
 theorem isNonarchimedean_normalizedAbsoluteValue :
@@ -406,8 +420,10 @@ theorem normalizedAbsoluteValue_eq_one_iff (x : K) :
     normalizedAbsoluteValue K x = 1 ↔ valuation K x = 1 := by
   rw [normalizedAbsoluteValue_apply, normalizedAbsoluteValueHom_apply,
     WithZeroMulInt.toNNRat_eq_one_iff]
-  · change valueGroupWithZeroIsoInt K (valuation K x) = 1 ↔ valuation K x = 1
-    simp
+  · rw [intValuation_apply]
+    have hone : valueGroupWithZeroIsoInt K (1 : ValueGroupWithZero K) = 1 := map_one _
+    rw [← hone]
+    exact (valueGroupWithZeroIsoInt K).injective.eq_iff
   · exact (one_lt_residueFieldCard (K := K)).ne'
 
 /-- An element belongs to the ring of integers exactly when its normalized absolute value is at
@@ -416,7 +432,7 @@ theorem mem_integer_iff_normalizedAbsoluteValue_le_one (x : K) :
     x ∈ 𝒪[K] ↔ normalizedAbsoluteValue K x ≤ 1 := by
   rw [Valuation.mem_integer_iff, normalizedAbsoluteValue_apply, normalizedAbsoluteValueHom_apply,
     WithZeroMulInt.toNNRat_le_one_iff]
-  · change valuation K x ≤ 1 ↔ valueGroupWithZeroIsoInt K (valuation K x) ≤ 1
+  · rw [intValuation_apply]
     simpa only [map_one] using
       (OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
         (a := valuation K x) (b := 1)).symm

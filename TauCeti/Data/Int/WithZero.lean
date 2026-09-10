@@ -86,6 +86,12 @@ theorem toNNRat_eq_one_iff {e : ℚ≥0} (x : ℤᵐ⁰) (he0 : e ≠ 0) (he1 : 
     rw [toNNRat_apply_of_ne_zero he0 hx, zpow_eq_one_iff_right₀ bot_le he1, toAdd_eq_zero] at h
     rw [← WithZero.coe_unzero hx, h, coe_one]
 
+/-- For a base greater than one, strict comparison with one in `ℚ≥0` is strict comparison with
+one in `ℤᵐ⁰`. -/
+theorem toNNRat_lt_one_iff {e : ℚ≥0} {x : ℤᵐ⁰} (he : 1 < e) :
+    toNNRat he.ne_zero x < 1 ↔ x < 1 := by
+  rw [← (toNNRat_strictMono he).lt_iff_lt, map_one]
+
 /-- For a base greater than one, comparison with one in `ℚ≥0` is comparison with one in
 `ℤᵐ⁰`. -/
 theorem toNNRat_le_one_iff {e : ℚ≥0} {x : ℤᵐ⁰} (he : 1 < e) :
