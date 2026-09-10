@@ -27,7 +27,6 @@ required polarization.
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Lecture 20.
-* [Tau Ceti's Spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md).
 -/
 
 public section
