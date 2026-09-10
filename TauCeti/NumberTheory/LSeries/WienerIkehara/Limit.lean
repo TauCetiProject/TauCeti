@@ -176,9 +176,10 @@ theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary (hx : 0 < x)
     exact (key sigma hsigma).symm
 
 /-- The boundary Fourier identity for a smooth, compactly supported test function. Its regularity
-supplies both its own integrability and the integrability of its Fourier transform, removing only
-the explicit Fourier-integrability hypothesis from
-`tsum_term_mul_fourier_sub_pole_eq_integral_boundary`. -/
+supplies both its own integrability and the integrability of its Fourier transform, discharging
+both explicit integrability hypotheses from
+`tsum_term_mul_fourier_sub_pole_eq_integral_boundary`; summability of the Fourier-weighted series
+is still required. -/
 theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff (hx : 0 < x)
     (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
     (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))

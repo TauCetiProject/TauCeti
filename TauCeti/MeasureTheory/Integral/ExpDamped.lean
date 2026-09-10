@@ -12,9 +12,9 @@ public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 # Vanishing exponential damping of a half-line integral
 
 Damping an integrand on the half-line `u ≥ -log x` by `exp (-u (sigma - 1))` and normalizing by
-`x ^ (1 - sigma)`, the value of the damping at the left endpoint, leaves the integral of an
-integrable function unchanged in the limit `sigma → 1⁺`: the damping factor is bounded on the
-half-line uniformly in `sigma ∈ (1, 2]`, so dominated convergence applies.
+`x ^ (1 - sigma)`, the reciprocal of the damping at the left endpoint, leaves the integral of
+an integrable function unchanged in the limit `sigma → 1⁺`: the damping factor is bounded on
+the half-line uniformly in `sigma ∈ (1, 2]`, so dominated convergence applies.
 
 This is the Abelian step of a Tauberian argument, where a Dirichlet series is tested on a vertical
 line `Re s = sigma` inside its half-plane of convergence and the line is pushed to the boundary;
