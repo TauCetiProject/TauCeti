@@ -184,7 +184,7 @@ theorem abelianizationGalEquiv_symm_apply {V : OpenNormalSubgroup G}
     (hV : IsAbelianClassFieldLayer V) (x : (NormalLayer.ofOpenNormal V).Gal) :
     (abelianizationGalEquiv hV).symm x = Abelianization.of x := by
   let := isMulCommutative_gal_ofOpenNormal hV
-  rfl
+  simp [abelianizationGalEquiv]
 
 open scoped IsMulCommutative in
 /-- The abelianization equivalence sends the canonical class of an element back to that element. -/
