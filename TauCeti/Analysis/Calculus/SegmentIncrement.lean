@@ -21,8 +21,9 @@ composing with the affine parametrization `t ↦ x + t • h` of the segment.
 The hypotheses of the first estimate are local to the segment: differentiability at each of its
 points and continuity of the directional derivative along it. The normalized real-valued estimate
 instead assumes continuity of the function along the parameterized segment, differentiability at
-interior parameters, and interval integrability of the operator-norm bound; these hypotheses are
-needed only when the segment has positive length.
+interior parameters, and interval integrability of the norm of the full Fréchet derivative rather
+than continuity merely of its fixed directional evaluation; these hypotheses are needed only when
+the segment has positive length.
 
 ## Main declarations
 
