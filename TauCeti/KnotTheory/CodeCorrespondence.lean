@@ -249,7 +249,7 @@ private theorem toOrientedPDCode_orientation_crossing_raw (i : Fin n) (s : Fin 4
 
 /-- The directions in the four crossing slots are the ones determined by the traversal and the
 recorded crossing sign. -/
-@[simp] theorem toOrientedPDCode_orientation_crossing (i : Fin n) (s : Fin 4) :
+theorem toOrientedPDCode_orientation_crossing (i : Fin n) (s : Fin 4) :
     D.toOrientedPDCode.orientation (D.toOrientedPDCode.crossing i s) =
       ![false,
         if D.sign i = 1 then D.over (D.visitAt i true) else !D.over (D.visitAt i true),
@@ -259,7 +259,7 @@ recorded crossing sign. -/
   fin_cases s <;> simp [slotOneDirection]
 
 /-- The crossing slot selected by a visit and a direction has that direction. -/
-@[simp] theorem toOrientedPDCode_crossing (v : Fin (2 * n)) (outgoing : Bool) :
+theorem toOrientedPDCode_crossing (v : Fin (2 * n)) (outgoing : Bool) :
     let b := if D.sign (D.visit v) = 1 then D.over (D.visitAt (D.visit v) true)
       else !D.over (D.visitAt (D.visit v) true)
     let s : Fin 4 := if D.isSecondVisit v then
@@ -274,7 +274,7 @@ recorded crossing sign. -/
 
 /-- The arcs of the diagram join the half-edge leaving a visit to the half-edge entering the
 next visit along the traversal. -/
-@[simp] theorem toOrientedPDCode_edgePair (v : Fin (2 * n)) :
+theorem toOrientedPDCode_edgePair (v : Fin (2 * n)) :
     let slotAt := fun (w : Fin (2 * n)) (outgoing : Bool) =>
       let b := if D.sign (D.visit w) = 1 then D.over (D.visitAt (D.visit w) true)
         else !D.over (D.visitAt (D.visit w) true)
@@ -295,13 +295,13 @@ next visit along the traversal. -/
 
 /-- The over strand of a crossing of the PD-code is the strand of the visit the Gauss code
 records as over. -/
-@[simp] theorem toOrientedPDCode_isOver_one (i : Fin n) :
+theorem toOrientedPDCode_isOver_one (i : Fin n) :
     D.toOrientedPDCode.toPDCode.isOver i 1 = D.over (D.visitAt i true) := by
   simp
 
 /-- The under strand of a crossing of the PD-code is the strand of the visit the Gauss code
 records as under. -/
-@[simp] theorem toOrientedPDCode_isOver_zero (i : Fin n) :
+theorem toOrientedPDCode_isOver_zero (i : Fin n) :
     D.toOrientedPDCode.toPDCode.isOver i 0 = D.over (D.visitAt i false) := by
   have h := D.over_visitAt_not i true
   simp only [Bool.not_true] at h
