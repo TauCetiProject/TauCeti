@@ -27,9 +27,9 @@ theorem then forces a normal smooth unipotent subgroup to act trivially, and fai
 identifies its defining Hopf ideal with the augmentation ideal.
 
 Smoothness is already known away from characteristic two, and so is geometric connectedness, so
-reductivity follows in dimension at least three. Together with the rank-zero and rank-one cases,
-where the group is special linear, and the rank-two case, where it is a torus, this makes every
-standard special orthogonal group reductive away from characteristic two.
+reductivity follows in dimension at least three. Together with the dimension-zero and
+dimension-one cases, where the group is special linear, and the dimension-two case, where it is a
+torus, this makes every standard special orthogonal group reductive away from characteristic two.
 
 ## Main declarations
 
@@ -41,7 +41,7 @@ standard special orthogonal group reductive away from characteristic two.
   in these dimensions and characteristics, `SOₙ` is reductive exactly when it is geometrically
   connected.
 * `TauCeti.SpecialOrthogonal.reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra`: `SOₙ`
-  is reductive in every rank, over every field of characteristic different from two.
+  is reductive in every dimension, over every field of characteristic different from two.
 
 ## References
 
@@ -151,9 +151,9 @@ theorem reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_of_three_le
 /-- **Every standard special orthogonal group is reductive**, over every field of characteristic
 different from two.
 
-The rank-zero and rank-one groups are special linear, the rank-two group is a torus, and from
-rank three on the standard representation is simple, which is what makes the unipotent radical
-trivial. -/
+The dimension-zero and dimension-one groups are special linear, the dimension-two group is a
+torus, and from dimension three on the standard representation is simple, which makes the
+unipotent radical trivial. -/
 theorem reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
     (k : Type u) [Field k] [NeZero (2 : k)] (n : Nat) :
     reductiveCommHopfAlgProperty k (finiteTypeCoordinateHopfAlgebra k n) :=

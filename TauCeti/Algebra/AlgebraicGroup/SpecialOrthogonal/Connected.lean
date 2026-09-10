@@ -16,14 +16,15 @@ import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.FinTwo
 /-!
 # Geometric connectedness of the special orthogonal groups
 
-The coordinate Hopf algebra of the standard group `SOₙ` is geometrically connected in every rank
-away from characteristic two, and in rank two over every field. Connectedness is tested by
+The coordinate Hopf algebra of the standard group `SOₙ` is geometrically connected in every
+dimension away from characteristic two, and in dimension two over every field. Connectedness is
+tested by
 idempotents: over an algebraically closed extension an idempotent regular function is constant
 once right translation by every rational point fixes it, and a rational point which is joined to
 the identity by a path (a point over a domain specializing to it at one parameter and to the
 identity at another) translates every idempotent to itself.
 
-In every rank, away from characteristic two, the paths come from reflections. Cartan-Dieudonné
+In every dimension, away from characteristic two, the paths come from reflections. Cartan-Dieudonné
 writes a special orthogonal matrix as a product of pairs of reflections, and the points fixing a
 given idempotent form a subgroup, so it is enough to join each product of two reflections to the
 identity. Reflecting in a fixed anisotropic vector `v` and then in a vector moving along a
@@ -43,8 +44,8 @@ space is still connected.
 * `TauCeti.SpecialOrthogonal.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra_two`:
   `SO₂` is geometrically connected over every field.
 * `TauCeti.SpecialOrthogonal.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra`:
-  `SOₙ` is geometrically connected in every rank over a field of characteristic different from
-  two.
+  `SOₙ` is geometrically connected in every dimension over a field of characteristic different
+  from two.
 
 ## References
 
@@ -249,7 +250,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra_two
     (Algebra.TensorProduct.comm k H K).toRingEquiv
   exact (PrimeSpectrum.homeomorphOfRingEquiv equiv).connectedSpace_iff.mpr hconnected
 
-/-! ### Every rank, away from characteristic two -/
+/-! ### Every dimension, away from characteristic two -/
 
 section CharNeTwo
 
@@ -321,7 +322,7 @@ private theorem rightTranslationAlgHom_eq_self_of_invertibleTwo
   simpa only [fixes, MulEquiv.symm_apply_apply] using (mem_P _).mp hg
 
 /-- **The coordinate Hopf algebra of `SOₙ` is geometrically connected over every field of
-characteristic different from two**, in every rank. -/
+characteristic different from two**, in every dimension. -/
 theorem geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra
     (k : Type u) [Field k] [NeZero (2 : k)] (n : ℕ) :
     geometricallyConnectedCommHopfAlgProperty k (coordinateHopfAlgebra k n) := by

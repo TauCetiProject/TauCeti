@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import TauCeti.Algebra.Polynomial.Laurent
 public import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
+public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Generation
 
@@ -19,7 +20,8 @@ The reflection of `Rⁿ` in the hyperplane orthogonal to a vector `v` has the ma
 as data rather than as `2 * ⅟(v ⬝ᵥ v)` makes the construction available over any commutative
 ring in which the norm of `v` happens to be invertible, makes it visibly natural in the
 coefficient ring, and makes the invariance of a reflection under rescaling its vector a
-one-line computation: rescaling `v` by `μ` rescales `c` by `μ⁻²`.
+one-line computation: putting `μ²c` on the unscaled-vector side gives the same matrix as
+putting `c` on the side whose vector is scaled by `μ`.
 
 Products of two such matrices are exactly the generators of the special orthogonal group
 supplied by `TauCeti.closure_reflection_mul_eq_matrixSpecialOrthogonalGroup`. They are packaged
@@ -57,6 +59,7 @@ playing the role of `2 / (v ⬝ᵥ v)`. It is a reflection precisely when `c * (
 is not part of the definition. -/
 def reflectionMatrix (v : n → R) (c : R) : Matrix n n R := 1 - c • vecMulVec v v
 
+@[simp]
 theorem reflectionMatrix_apply (v : n → R) (c : R) (i j : n) :
     reflectionMatrix v c i j = (if i = j then 1 else 0) - c * (v i * v j) := by
   simp [reflectionMatrix, Matrix.one_apply, vecMulVec_apply]
@@ -67,12 +70,14 @@ theorem transpose_reflectionMatrix (v : n → R) (c : R) :
   simp [reflectionMatrix, Matrix.transpose_sub, Matrix.transpose_smul, transpose_vecMulVec]
 
 /-- Reflection matrices are natural in the coefficient ring. -/
+@[simp]
 theorem reflectionMatrix_map (f : R →+* S) (v : n → R) (c : R) :
     (reflectionMatrix v c).map f = reflectionMatrix (f ∘ v) (f c) := by
   ext i j
   simp [reflectionMatrix_apply, apply_ite f]
 
-/-- Rescaling the vector of a reflection by `μ` rescales its normalizing scalar by `μ⁻²`. -/
+/-- Scaling the vector by `μ` with scalar `c` gives the same matrix as keeping the vector
+unchanged and using scalar `μ²c`. -/
 theorem reflectionMatrix_smul (v : n → R) (c μ : R) :
     reflectionMatrix (fun i => μ * v i) c = reflectionMatrix v (μ * μ * c) := by
   ext i j
@@ -85,16 +90,11 @@ theorem reflectionMatrix_eq_one_sub_vecMulVec (v : n → R) (c : R) :
     reflectionMatrix v c = 1 - vecMulVec (c • v) v := by
   rw [reflectionMatrix, smul_vecMulVec]
 
-omit [DecidableEq n] in
-private theorem dotProduct_smul_self [Fintype n] {v : n → R} {c : R} (hc : c * (v ⬝ᵥ v) = 2) :
-    v ⬝ᵥ (c • v) = 2 := by
-  rw [dotProduct_smul, smul_eq_mul, ← hc, mul_comm]
-
 /-- A reflection matrix is an involution. -/
 theorem reflectionMatrix_mul_self [Fintype n] {v : n → R} {c : R} (hc : c * (v ⬝ᵥ v) = 2) :
     reflectionMatrix v c * reflectionMatrix v c = 1 := by
   rw [reflectionMatrix_eq_one_sub_vecMulVec,
-    one_sub_vecMulVec_mul_self 1 (by rw [dotProduct_smul_self hc]; norm_num)]
+    one_sub_vecMulVec_mul_self 1 (by rw [dotProduct_smul, smul_eq_mul, hc]; norm_num)]
   module
 
 /-- A reflection matrix is orthogonal. -/
@@ -107,7 +107,8 @@ theorem reflectionMatrix_mem_orthogonalGroup [Fintype n] {v : n → R} {c : R}
 /-- **A reflection matrix has determinant `-1`.** -/
 theorem det_reflectionMatrix [Fintype n] {v : n → R} {c : R} (hc : c * (v ⬝ᵥ v) = 2) :
     (reflectionMatrix v c).det = -1 := by
-  rw [reflectionMatrix_eq_one_sub_vecMulVec, det_one_sub_vecMulVec, dotProduct_smul_self hc]
+  rw [reflectionMatrix_eq_one_sub_vecMulVec, det_one_sub_vecMulVec, dotProduct_smul,
+    smul_eq_mul, hc]
   norm_num
 
 /-! ### Comparison with the reflection of the standard quadratic form -/
@@ -115,17 +116,6 @@ theorem det_reflectionMatrix [Fintype n] {v : n → R} {c : R} (hc : c * (v ⬝�
 section QuadraticForm
 
 variable [Fintype n]
-
-/-- The standard quadratic form is the square of the euclidean norm. -/
-theorem toQuadraticForm'_one_apply (x : n → R) :
-    Matrix.toQuadraticForm' (1 : Matrix n n R) x = x ⬝ᵥ x := by
-  simp [Matrix.toQuadraticForm', Matrix.toLinearMap₂'_apply']
-
-/-- The polar form of the standard quadratic form is twice the dot product. -/
-theorem polar_toQuadraticForm'_one (x y : n → R) :
-    QuadraticMap.polar (Matrix.toQuadraticForm' (1 : Matrix n n R)) x y = 2 * (x ⬝ᵥ y) := by
-  simp only [Matrix.toQuadraticForm', LinearMap.BilinMap.polar_toQuadraticMap,
-    Matrix.toLinearMap₂'_apply', Matrix.one_mulVec, two_mul, dotProduct_comm y x]
 
 /-- The reflection of the standard quadratic form in a vector of invertible norm has
 `reflectionMatrix` as its coordinate matrix. -/
@@ -205,6 +195,7 @@ theorem eq_top_of_forall_reflectionPair_mem {K : Type u} [Field K] [Fintype n]
     have hcw : 2 * ⅟(Matrix.toQuadraticForm' (1 : Matrix n n K) w) * (w ⬝ᵥ w) = 2 := by
       rw [← toQuadraticForm'_one_apply w, mul_assoc, invOf_mul_self, mul_one]
     refine ⟨reflectionPair v w _ _ hcv hcw, hP _ _ _ _ hcv hcw, ?_⟩
+    -- The mapped subgroup witness coerces definitionally to its underlying matrix equality.
     change (reflectionPair v w _ _ hcv hcw : Matrix n n K) = _
     rw [coe_reflectionPair, toMatrix'_reflection, toMatrix'_reflection]
   obtain ⟨y, hy, hyx⟩ := hle (hclosure.ge x.2)
@@ -230,42 +221,29 @@ private noncomputable def pathVector (v w : n → K) (X Y : K[T;T⁻¹]) : n →
   fun i => X * C (v i) + Y * C (w i)
 
 omit [DecidableEq n] in
-private theorem sum_C_mul_C [Fintype n] (u₁ u₂ : n → K) :
-    ∑ i, (C (u₁ i) : K[T;T⁻¹]) * C (u₂ i) = C (u₁ ⬝ᵥ u₂) := by
-  rw [dotProduct, map_sum]
-  exact Finset.sum_congr rfl fun i _ => (map_mul C _ _).symm
-
-omit [DecidableEq n] in
 private theorem constVector_dotProduct [Fintype n] (v w : n → K) :
-    constVector v ⬝ᵥ constVector w = C (v ⬝ᵥ w) :=
-  sum_C_mul_C v w
+    constVector v ⬝ᵥ constVector w = C (v ⬝ᵥ w) := by
+  simp only [constVector, dotProduct]
+  rw [map_sum]
+  exact Finset.sum_congr rfl fun i _ => (map_mul C _ _).symm
 
 omit [DecidableEq n] in
 private theorem pathVector_dotProduct [Fintype n] (v w : n → K) (X Y X' Y' : K[T;T⁻¹]) :
     pathVector v w X Y ⬝ᵥ pathVector v w X' Y' =
       X * X' * C (v ⬝ᵥ v) + (X * Y' + Y * X') * C (v ⬝ᵥ w) + Y * Y' * C (w ⬝ᵥ w) := by
+  have hC (u₁ u₂ : n → K) :
+      ∑ i, (C (u₁ i) : K[T;T⁻¹]) * C (u₂ i) = C (u₁ ⬝ᵥ u₂) := by
+    simpa only [constVector, dotProduct] using constVector_dotProduct u₁ u₂
   rw [dotProduct]
+  -- `Finset.sum_congr` asks for the pointwise product obtained by unfolding `pathVector`.
   rw [Finset.sum_congr rfl fun i _ =>
     show pathVector v w X Y i * pathVector v w X' Y' i =
         X * X' * (C (v i) * C (v i)) + X * Y' * (C (v i) * C (w i)) +
           Y * X' * (C (w i) * C (v i)) + Y * Y' * (C (w i) * C (w i)) by
       simp only [pathVector]; ring]
-  simp only [Finset.sum_add_distrib, ← Finset.mul_sum, sum_C_mul_C]
+  simp only [Finset.sum_add_distrib, ← Finset.mul_sum, hC]
   rw [dotProduct_comm w v]
   ring
-
-omit [DecidableEq n] in
-private theorem algHom_C (φ : K[T;T⁻¹] →ₐ[K] K) (x : K) : φ (C x) = x := by
-  rw [C_eq_algebraMap, AlgHom.commutes]
-  simp
-
-omit [DecidableEq n] in
-private theorem algHom_T_neg_one (φ : K[T;T⁻¹] →ₐ[K] K) {a : Kˣ} (ha : φ (T 1) = (a : K)) :
-    φ (T (-1)) = ((a⁻¹ : Kˣ) : K) := by
-  have h : (a : K) * φ (T (-1)) = 1 := by
-    rw [← ha, ← map_mul, ← T_add]
-    norm_num
-  rw [Units.val_inv_eq_inv_val, ← inv_eq_of_mul_eq_one_right h]
 
 /-- Away from the endpoints only the coefficients of the path vector move, so a coefficient-field
 point of the family is the product of the reflection in `v` and the reflection in the
@@ -280,8 +258,11 @@ private theorem map_reflectionMatrix_mul [Fintype n] (φ : K[T;T⁻¹] →ₐ[K]
   congr 1
   have h : (φ : K[T;T⁻¹] →+* K) ∘ constVector v = v := by
     funext i
-    exact algHom_C φ (v i)
-  have hc : (φ : K[T;T⁻¹] →+* K) (C c) = c := algHom_C φ c
+    simp only [Function.comp_apply, RingHom.coe_coe, constVector, C_eq_algebraMap,
+      AlgHom.commutes, Algebra.algebraMap_self_apply]
+  have hc : (φ : K[T;T⁻¹] →+* K) (C c) = c := by
+    simp only [RingHom.coe_coe, C_eq_algebraMap, AlgHom.commutes,
+      Algebra.algebraMap_self_apply]
   rw [h, hc]
 
 private theorem reflectionMatrix_comp_pathVector_left (φ : K[T;T⁻¹] →ₐ[K] K) {v w : n → K}
@@ -290,8 +271,8 @@ private theorem reflectionMatrix_comp_pathVector_left (φ : K[T;T⁻¹] →ₐ[K
       reflectionMatrix v c := by
   have h : (φ : K[T;T⁻¹] →+* K) ∘ pathVector v w X Y = fun i => φ X * v i := by
     funext i
-    simp only [Function.comp_apply, RingHom.coe_coe, pathVector, map_add, map_mul, algHom_C, hY,
-      zero_mul, add_zero]
+    simp only [Function.comp_apply, RingHom.coe_coe, pathVector, map_add, map_mul,
+      C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hY, zero_mul, add_zero]
   rw [h, reflectionMatrix_smul, hc]
 
 private theorem reflectionMatrix_comp_pathVector_right (φ : K[T;T⁻¹] →ₐ[K] K) {v w : n → K}
@@ -300,8 +281,8 @@ private theorem reflectionMatrix_comp_pathVector_right (φ : K[T;T⁻¹] →ₐ[
       reflectionMatrix w d := by
   have h : (φ : K[T;T⁻¹] →+* K) ∘ pathVector v w X Y = fun i => φ Y * w i := by
     funext i
-    simp only [Function.comp_apply, RingHom.coe_coe, pathVector, map_add, map_mul, algHom_C, hX,
-      zero_mul, zero_add]
+    simp only [Function.comp_apply, RingHom.coe_coe, pathVector, map_add, map_mul,
+      C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hX, zero_mul, zero_add]
   rw [h, reflectionMatrix_smul, hd]
 
 /-- Assembling a one-parameter family from path data: a coefficient pair `(X, Y)` for the
@@ -323,12 +304,14 @@ private theorem exists_laurentPath_of_pathData [Fintype n] {v w : n → K}
     reflectionMatrix_mul_mem_specialOrthogonalGroup hCc hE⟩, a, b, fun φ => ⟨?_, ?_⟩⟩
   · intro hφ
     obtain ⟨hY, hX⟩ := ha φ hφ
+    -- Coercing the inline subtype defining `M` exposes its underlying matrix definitionally.
     change (reflectionMatrix (constVector v) (C c) *
       reflectionMatrix (pathVector v w X Y) E).map (φ : K[T;T⁻¹] →+* K) = 1
     rw [map_reflectionMatrix_mul, reflectionMatrix_comp_pathVector_left φ hY hX,
       reflectionMatrix_mul_self hc]
   · intro hφ
     obtain ⟨hX, hY⟩ := hb φ hφ
+    -- Coercing the inline subtype defining `M` exposes its underlying matrix definitionally.
     change (reflectionMatrix (constVector v) (C c) *
       reflectionMatrix (pathVector v w X Y) E).map (φ : K[T;T⁻¹] →+* K) = _
     rw [map_reflectionMatrix_mul, reflectionMatrix_comp_pathVector_right φ hX hY]
@@ -343,14 +326,15 @@ field, a basis of two isotropic vectors `e` and `f`, and `e + t • f` runs thro
 anisotropic line of the plane as `t` runs through the units. Reflecting first in `v` and then in
 the moving vector gives the family, and its two endpoints are the parameters at which the moving
 vector is proportional to `v`, respectively to `w`. -/
-theorem exists_laurentPath_reflectionMatrix_mul [Fintype n] [Invertible (2 : K)] [IsAlgClosed K]
+theorem exists_laurentPath_reflectionMatrix_mul [Fintype n] [NeZero (2 : K)] [IsAlgClosed K]
     {v w : n → K} {c d : K} (hc : c * (v ⬝ᵥ v) = 2) (hd : d * (w ⬝ᵥ w) = 2) :
     ∃ (M : Matrix.specialOrthogonalGroup n K[T;T⁻¹]) (a b : Kˣ),
       ∀ φ : K[T;T⁻¹] →ₐ[K] K,
         (φ (T 1) = (a : K) → (M : Matrix n n K[T;T⁻¹]).map (φ : K[T;T⁻¹] →+* K) = 1) ∧
         (φ (T 1) = (b : K) → (M : Matrix n n K[T;T⁻¹]).map (φ : K[T;T⁻¹] →+* K) =
           reflectionMatrix v c * reflectionMatrix w d) := by
-  have h2 : (2 : K) ≠ 0 := Invertible.ne_zero 2
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne _)
+  have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
   have hqv : v ⬝ᵥ v ≠ 0 := fun h => h2 (by rw [← hc, h, mul_zero])
   have hqw : w ⬝ᵥ w ≠ 0 := fun h => h2 (by rw [← hd, h, mul_zero])
   have hcv : c = 2 / (v ⬝ᵥ v) := (eq_div_iff hqv).mpr hc
@@ -377,23 +361,26 @@ theorem exists_laurentPath_reflectionMatrix_mul [Fintype n] [Invertible (2 : K)]
     · intro φ hφ
       have hφ1 : φ (T 1) = 1 := by rw [hφ, Units.val_one]
       have hX : φ ((2 - T 1) * C (v ⬝ᵥ w)) = v ⬝ᵥ w := by
-        rw [map_mul, map_sub, map_ofNat, hφ1, algHom_C]
+        rw [map_mul, map_sub, map_ofNat, hφ1, C_eq_algebraMap, AlgHom.commutes,
+          Algebra.algebraMap_self_apply]
         ring
       have hY : φ ((T 1 - 1) * C (v ⬝ᵥ v)) = 0 := by
-        rw [map_mul, map_sub, map_one, hφ1, algHom_C]
+        rw [map_mul, map_sub, map_one, hφ1, C_eq_algebraMap, AlgHom.commutes,
+          Algebra.algebraMap_self_apply]
         ring
       refine ⟨hY, ?_⟩
-      rw [hX, algHom_C, hbb, hcv]
+      rw [hX, C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hbb, hcv]
       field_simp
     · intro φ hφ
       have hφ2 : φ (T 1) = 2 := by rw [hφ, val_unitOfInvertible]
       have hX : φ ((2 - T 1) * C (v ⬝ᵥ w)) = 0 := by
         rw [map_mul, map_sub, map_ofNat, hφ2, sub_self, zero_mul]
       have hY : φ ((T 1 - 1) * C (v ⬝ᵥ v)) = v ⬝ᵥ v := by
-        rw [map_mul, map_sub, map_one, hφ2, algHom_C]
+        rw [map_mul, map_sub, map_one, hφ2, C_eq_algebraMap, AlgHom.commutes,
+          Algebra.algebraMap_self_apply]
         ring
       refine ⟨hX, ?_⟩
-      rw [hY, algHom_C, hdw]
+      rw [hY, C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hdw]
       field_simp
   · -- The plane spanned by `v` and `w` is nondegenerate: it has an isotropic basis `e`, `f`,
     -- and `e + t • f` sweeps out its anisotropic lines as `t` runs through the units.
@@ -431,6 +418,7 @@ theorem exists_laurentPath_reflectionMatrix_mul [Fintype n] [Invertible (2 : K)]
         _ = C (-(2 * (v ⬝ᵥ v) * (s * s))⁻¹ * -(4 * (v ⬝ᵥ v) * (s * s))) := by
               rw [hT, mul_one, ← map_mul]
         _ = 2 := by
+              -- Isolate the coefficient-field identity so `rw` can rewrite beneath `C`.
               rw [show -(2 * (v ⬝ᵥ v) * (s * s))⁻¹ * -(4 * (v ⬝ᵥ v) * (s * s)) = 2 by
                 field_simp
                 ring]
@@ -438,16 +426,19 @@ theorem exists_laurentPath_reflectionMatrix_mul [Fintype n] [Invertible (2 : K)]
     · intro φ hφ
       have hφ1 : φ (T 1) = -1 := by rw [hφ, Units.val_neg, Units.val_one]
       have hφ2 : φ (T (-1)) = -1 := by
-        rw [algHom_T_neg_one φ hφ, Units.val_inv_eq_inv_val, Units.val_neg, Units.val_one]
+        rw [laurentEval_unique _ φ hφ, laurentEval_T, zpow_neg, zpow_one,
+          Units.val_inv_eq_inv_val, Units.val_neg, Units.val_one]
         norm_num
       have hX : φ (-C (v ⬝ᵥ w) + C s + T 1 * (-C (v ⬝ᵥ w) - C s)) = 2 * s := by
-        rw [map_add, map_add, map_neg, map_mul, map_sub, map_neg, algHom_C, algHom_C, hφ1]
+        simp only [map_add, map_neg, map_mul, map_sub, C_eq_algebraMap, AlgHom.commutes,
+          Algebra.algebraMap_self_apply, hφ1]
         ring
       have hY : φ (C (v ⬝ᵥ v) + T 1 * C (v ⬝ᵥ v)) = 0 := by
-        rw [map_add, map_mul, algHom_C, hφ1]
+        simp only [map_add, map_mul, C_eq_algebraMap, AlgHom.commutes,
+          Algebra.algebraMap_self_apply, hφ1]
         ring
       have hEv : φ (C (-(2 * (v ⬝ᵥ v) * (s * s))⁻¹) * T (-1)) = (2 * (v ⬝ᵥ v) * (s * s))⁻¹ := by
-        rw [map_mul, algHom_C, hφ2]
+        rw [map_mul, C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hφ2]
         ring
       refine ⟨hY, ?_⟩
       rw [hX, hEv, hcv]
@@ -455,19 +446,22 @@ theorem exists_laurentPath_reflectionMatrix_mul [Fintype n] [Invertible (2 : K)]
     · intro φ hφ
       have hφ1 : φ (T 1) = -(((v ⬝ᵥ w) - s) / ((v ⬝ᵥ w) + s)) := by rw [hφ, Units.val_mk0]
       have hφ2 : φ (T (-1)) = -(((v ⬝ᵥ w) + s) / ((v ⬝ᵥ w) - s)) := by
-        rw [algHom_T_neg_one φ hφ, Units.val_inv_eq_inv_val, Units.val_mk0, ← neg_inv, inv_div]
+        rw [laurentEval_unique _ φ hφ, laurentEval_T, zpow_neg, zpow_one,
+          Units.val_inv_eq_inv_val, Units.val_mk0, ← neg_inv, inv_div]
       have hX : φ (-C (v ⬝ᵥ w) + C s + T 1 * (-C (v ⬝ᵥ w) - C s)) = 0 := by
-        rw [map_add, map_add, map_neg, map_mul, map_sub, map_neg, algHom_C, algHom_C, hφ1]
+        simp only [map_add, map_neg, map_mul, map_sub, C_eq_algebraMap, AlgHom.commutes,
+          Algebra.algebraMap_self_apply, hφ1]
         field_simp
         ring
       have hY : φ (C (v ⬝ᵥ v) + T 1 * C (v ⬝ᵥ v)) =
           (v ⬝ᵥ v) * (2 * s) / ((v ⬝ᵥ w) + s) := by
-        rw [map_add, map_mul, algHom_C, hφ1]
+        simp only [map_add, map_mul, C_eq_algebraMap, AlgHom.commutes,
+          Algebra.algebraMap_self_apply, hφ1]
         field_simp
         ring
       have hEv : φ (C (-(2 * (v ⬝ᵥ v) * (s * s))⁻¹) * T (-1)) =
           ((v ⬝ᵥ w) + s) / (((v ⬝ᵥ w) - s) * (2 * (v ⬝ᵥ v) * (s * s))) := by
-        rw [map_mul, algHom_C, hφ2]
+        rw [map_mul, C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hφ2]
         field_simp
       have hms : (v ⬝ᵥ w) - s = (v ⬝ᵥ v) * (w ⬝ᵥ w) / ((v ⬝ᵥ w) + s) := by
         field_simp

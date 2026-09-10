@@ -28,6 +28,21 @@ open Matrix
 
 universe u v
 
+variable {R : Type u} [CommRing R] {n : Type v} [Fintype n] [DecidableEq n]
+
+/-- The standard quadratic form is the square of the Euclidean norm. -/
+@[simp]
+theorem toQuadraticForm'_one_apply (x : n → R) :
+    Matrix.toQuadraticForm' (1 : Matrix n n R) x = x ⬝ᵥ x := by
+  simp [Matrix.toQuadraticForm', Matrix.toLinearMap₂'_apply']
+
+/-- The polar form of the standard quadratic form is twice the dot product. -/
+@[simp]
+theorem polar_toQuadraticForm'_one (x y : n → R) :
+    QuadraticMap.polar (Matrix.toQuadraticForm' (1 : Matrix n n R)) x y = 2 * (x ⬝ᵥ y) := by
+  simp only [Matrix.toQuadraticForm', LinearMap.BilinMap.polar_toQuadraticMap,
+    Matrix.toLinearMap₂'_apply', Matrix.one_mulVec, two_mul, dotProduct_comm y x]
+
 /-- The coordinate matrix of a linear automorphism is orthogonal exactly when the
 automorphism preserves the standard quadratic form. -/
 @[simp]
