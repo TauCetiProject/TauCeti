@@ -20,12 +20,11 @@ support of some point of `Spa (A, A⁺)`:
 J ≠ ⊤  ↔  ∃ v ∈ Spa (A, A⁺), J ⊆ supp v.
 ```
 
-This is Wedhorn's Proposition 7.51 in the form his §8 uses. Its two standard consequences follow
-at once: an element on which no point vanishes is a unit (Proposition 7.52(2)), and a finite set
-whose standard rational family covers the spectrum generates the unit ideal (the half of Corollary
-7.53 that the covering direction does not supply).
+This is Wedhorn's Proposition 7.51 in the form his §8 uses. Its two standard consequences are the
+unit criterion of Proposition 7.52(2) and Corollary 7.53, which characterizes when a finite set's
+standard rational family covers the spectrum.
 
-## Why this is not the statement already on `main`
+## Comparison with the open-prime approach
 
 `TauCeti.ValuationSpectrum.exists_mem_spa_supp_eq` produces a point with prescribed support from an
 *open* prime ideal, using the trivial valuation there, and the derived
@@ -33,7 +32,7 @@ whose standard rational family covers the spectrum generates the unit ideal (the
 openness hypothesis on the maximal ideals of `A`. That hypothesis is **unsatisfiable over a nonzero
 Tate ring**, where an ideal is open exactly when it is `⊤`
 (`TauCeti.Huber.IsTateRing.isOpen_iff_eq_top`), so those statements are vacuous on the affinoid
-rings Wedhorn's §8 is about. The route taken here never mentions an open ideal:
+rings Wedhorn's §8 is about. The quotient-spectrum approach instead uses the following facts:
 
 * the quotient Huber pair `(A/J, (A/J)⁺)` is again a Huber pair (`TauCeti.Huber.Pair.quotient`),
   and its spectrum is empty exactly when `1` lies in the closure of zero
@@ -56,13 +55,10 @@ Completeness replaces openness of the maximal ideals, and is exactly the hypothe
 * `TauCeti.ValuationSpectrum.span_eq_top_iff_forall_mem_spa_exists_notMem_supp` : a set generates
   the unit ideal exactly when no point of the spectrum kills all of it.
 * `TauCeti.ValuationSpectrum.isUnit_iff_forall_mem_spa_notMem_supp` : **Wedhorn Proposition
-  7.52(2)**, as a criterion, together with the packaging
-  `TauCeti.ValuationSpectrum.iUnion_supp_eq_nonunits`.
-* `TauCeti.ValuationSpectrum.span_eq_top_of_spa_eq_biUnion_rationalSubset` : **the converse half of
-  Wedhorn Corollary 7.53** — if the standard family `(R(T/t))_{t ∈ T}` covers the spectrum then `T`
-  generates the unit ideal. The other half is
-  `TauCeti.ValuationSpectrum.spa_eq_biUnion_rationalSubset_of_span_eq_top`, which asks nothing of
-  `A`, so the two together are Corollary 7.53 with no hypothesis on maximal ideals.
+  7.52(2)**, as a criterion.
+* `TauCeti.ValuationSpectrum.span_eq_top_iff_spa_eq_biUnion_rationalSubset` : **Wedhorn Corollary
+  7.53** — the standard family `(R(T/t))_{t ∈ T}` covers the spectrum exactly when `T` generates
+  the unit ideal.
 
 ## References
 
@@ -86,12 +82,8 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [T2Space A] [CompleteSpace A]
   [IsTopologicalRing A] [IsUniformAddGroup A] [IsHuberRing A]
 
 /-- **Wedhorn Proposition 7.51.** Every proper ideal of a complete Hausdorff Huber pair is
-contained in the support of a point of `Spa (A, A⁺)`.
-
-Wedhorn states it for a maximal ideal, where the containment is an equality; that form is
-`exists_mem_spa_supp_eq_of_isMaximal`. The proof runs through the quotient Huber pair: the
-spectrum of `(A/J, (A/J)⁺)` is nonempty because `1` avoids the closure of zero there, and a point
-of it is a point of `Spa (A, A⁺)` whose support contains `J`. -/
+contained in the support of a point of `Spa (A, A⁺)`. Wedhorn states the maximal-ideal case, where
+the containment is an equality. -/
 theorem exists_mem_spa_le_supp_of_ne_top (Aplus : Subring A)
     (hplus : IsRingOfIntegralElements Aplus) {J : Ideal A} (hJ : J ≠ ⊤) :
     ∃ v ∈ spa Aplus, J ≤ supp v := by
@@ -110,8 +102,8 @@ theorem exists_mem_spa_le_supp_of_ne_top (Aplus : Subring A)
     range_spaComap_quotientMk J Aplus ▸ Set.mem_range_self (⟨w, hw⟩ : spa _)
   exact ⟨v.1, v.2, hsupp⟩
 
-/-- A proper ideal of a complete Hausdorff Huber pair is exactly one that some point of
-`Spa (A, A⁺)` kills. The reverse implication needs nothing: a support is prime, hence proper. -/
+/-- A proper ideal of a complete Hausdorff Huber pair is exactly one contained in the support of
+some point of `Spa (A, A⁺)`. -/
 theorem ne_top_iff_exists_mem_spa_le_supp (Aplus : Subring A)
     (hplus : IsRingOfIntegralElements Aplus) (J : Ideal A) :
     J ≠ ⊤ ↔ ∃ v ∈ spa Aplus, J ≤ supp v := by
@@ -120,8 +112,7 @@ theorem ne_top_iff_exists_mem_spa_le_supp (Aplus : Subring A)
   exact (Ideal.IsPrime.ne_top inferInstance) (top_le_iff.mp hle)
 
 /-- **Wedhorn Proposition 7.51, for a maximal ideal.** A maximal ideal of a complete Hausdorff
-Huber pair is the support of a point of `Spa (A, A⁺)`: it is contained in one by
-`exists_mem_spa_le_supp_of_ne_top`, and that support is proper because it is prime. -/
+Huber pair is the support of a point of `Spa (A, A⁺)`. -/
 theorem exists_mem_spa_supp_eq_of_isMaximal (Aplus : Subring A)
     (hplus : IsRingOfIntegralElements Aplus) (𝔪 : Ideal A) [𝔪.IsMaximal] :
     ∃ v ∈ spa Aplus, supp v = 𝔪 := by
@@ -131,8 +122,7 @@ theorem exists_mem_spa_supp_eq_of_isMaximal (Aplus : Subring A)
     (Ideal.IsPrime.ne_top inferInstance) hle).symm⟩
 
 /-- A subset of a complete Hausdorff Huber pair generates the unit ideal exactly when no point of
-`Spa (A, A⁺)` kills all of it. The forward implication holds over any commutative ring, since a
-support is a proper ideal; the converse is `exists_mem_spa_le_supp_of_ne_top`. -/
+`Spa (A, A⁺)` kills all of it. -/
 theorem span_eq_top_iff_forall_mem_spa_exists_notMem_supp (Aplus : Subring A)
     (hplus : IsRingOfIntegralElements Aplus) {T : Set A} :
     Ideal.span T = ⊤ ↔ ∀ v ∈ spa Aplus, ∃ t ∈ T, t ∉ supp v := by
@@ -151,11 +141,8 @@ theorem span_eq_top_iff_forall_mem_spa_exists_notMem_supp (Aplus : Subring A)
     obtain ⟨t, ht, hts⟩ := h v hv
     exact hts (hle (Ideal.subset_span ht))
 
-/-- **Wedhorn Proposition 7.52(2)**, as a criterion: an element of a complete Hausdorff Huber pair
-is a unit exactly when no point of `Spa (A, A⁺)` vanishes on it.
-
-Unlike `isUnit_of_forall_not_vle_zero`, this asks nothing of the maximal ideals of `A`, so it is
-available over a Tate ring, where that hypothesis cannot be met. -/
+/-- **Wedhorn Proposition 7.52(2).** An element of a complete Hausdorff Huber pair is a unit
+exactly when no point of `Spa (A, A⁺)` vanishes on it. -/
 theorem isUnit_iff_forall_mem_spa_notMem_supp (Aplus : Subring A)
     (hplus : IsRingOfIntegralElements Aplus) (f : A) :
     IsUnit f ↔ ∀ v ∈ spa Aplus, f ∉ supp v := by
@@ -163,23 +150,9 @@ theorem isUnit_iff_forall_mem_spa_notMem_supp (Aplus : Subring A)
     span_eq_top_iff_forall_mem_spa_exists_notMem_supp Aplus hplus]
   simp
 
-/-- The supports of the points of `Spa (A, A⁺)` sweep out exactly the nonunits of a complete
-Hausdorff Huber ring. This is `isUnit_iff_forall_mem_spa_notMem_supp` read as a set equality. -/
-theorem iUnion_supp_eq_nonunits (Aplus : Subring A)
-    (hplus : IsRingOfIntegralElements Aplus) :
-    ⋃ v ∈ spa Aplus, (supp v : Set A) = nonunits A := by
-  ext f
-  rw [Set.mem_iUnion₂, mem_nonunits_iff, isUnit_iff_forall_mem_spa_notMem_supp Aplus hplus f]
-  push Not
-  simp only [SetLike.mem_coe, exists_prop]
-
 /-- **The converse half of Wedhorn Corollary 7.53.** If the standard rational family
 `(R(T/t))_{t ∈ T}` covers `Spa (A, A⁺)` for a complete Hausdorff Huber pair, then `T` generates
-the unit ideal.
-
-The other half, `spa_eq_biUnion_rationalSubset_of_span_eq_top`, holds over an arbitrary
-commutative ring, so the two together are Corollary 7.53 with completeness as the only hypothesis
-— in particular with none on the maximal ideals of `A`, which a nonzero Tate ring cannot supply. -/
+the unit ideal. -/
 theorem span_eq_top_of_spa_eq_biUnion_rationalSubset (Aplus : Subring A)
     (hplus : IsRingOfIntegralElements Aplus) {T : Finset A}
     (hcov : spa Aplus = ⋃ t ∈ T, rationalSubset Aplus T t) :
@@ -188,6 +161,14 @@ theorem span_eq_top_of_spa_eq_biUnion_rationalSubset (Aplus : Subring A)
   obtain ⟨t, ht, hmem⟩ := Set.mem_iUnion₂.mp (hcov ▸ hv)
   exact ⟨t, ht, fun hsupp ↦
     ((mem_rationalSubset_iff Aplus T t v).mp hmem).2.2 ((mem_supp_iff v t).mp hsupp)⟩
+
+/-- **Wedhorn Corollary 7.53.** A finite set `T` in a complete Hausdorff Huber pair generates the
+unit ideal exactly when the standard family `(R(T/t))_{t ∈ T}` covers `Spa (A, A⁺)`. -/
+theorem span_eq_top_iff_spa_eq_biUnion_rationalSubset (Aplus : Subring A)
+    (hplus : IsRingOfIntegralElements Aplus) {T : Finset A} :
+    Ideal.span (T : Set A) = ⊤ ↔ spa Aplus = ⋃ t ∈ T, rationalSubset Aplus T t :=
+  ⟨spa_eq_biUnion_rationalSubset_of_span_eq_top Aplus,
+    span_eq_top_of_spa_eq_biUnion_rationalSubset Aplus hplus⟩
 
 end TauCeti.ValuationSpectrum
 

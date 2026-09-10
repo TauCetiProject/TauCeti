@@ -50,8 +50,7 @@ is separated out as `Ideal.closure_ne_top_of_isOpen_isUnit`.
 public section
 
 /-- **The closure of a proper ideal of a topological ring is proper once the unit group is
-open.** A proper ideal contains no unit, so it lies in the complement of the unit group; that
-complement is closed, hence contains the closure too, which therefore misses `1`. -/
+open.** -/
 theorem Ideal.closure_ne_top_of_isOpen_isUnit {A : Type*} [Ring A] [TopologicalSpace A]
     [IsTopologicalRing A] (hU : IsOpen {a : A | IsUnit a}) {J : Ideal A} (hJ : J ≠ ⊤) :
     J.closure ≠ ⊤ := by
@@ -59,9 +58,7 @@ theorem Ideal.closure_ne_top_of_isOpen_isUnit {A : Type*} [Ring A] [TopologicalS
   exact fun h1 ↦ (closure_minimal (fun x hx ↦ mt (Ideal.eq_top_of_isUnit_mem J hx) hJ)
     hU.isClosed_compl h1) isUnit_one
 
-/-- **A maximal ideal of a topological ring is closed once the unit group is open.** The closure
-of `𝔪` is an ideal containing `𝔪`, and `Ideal.closure_ne_top_of_isOpen_isUnit` makes it proper, so
-maximality forces it to be `𝔪` itself. -/
+/-- **A maximal ideal of a topological ring is closed once the unit group is open.** -/
 theorem Ideal.isClosed_of_isMaximal_of_isOpen_isUnit {A : Type*} [Ring A] [TopologicalSpace A]
     [IsTopologicalRing A] (hU : IsOpen {a : A | IsUnit a}) (𝔪 : Ideal A) [𝔪.IsMaximal] :
     IsClosed (𝔪 : Set A) := by
