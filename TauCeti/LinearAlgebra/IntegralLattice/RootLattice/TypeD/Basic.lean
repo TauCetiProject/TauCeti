@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.KleinFour
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
+public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 
 /-!
 # The checkerboard lattice and the type `Dₙ` discriminant form
@@ -82,6 +83,7 @@ representative.  The identification of this coordinate model with the *root* lat
 ## Main results
 
 * `TauCeti.IntegralLattice.isEven_checkerboardLattice`: the checkerboard lattice is even.
+* `TauCeti.IntegralLattice.isPosDef_checkerboardLattice`: it is positive definite.
 * `TauCeti.IntegralLattice.mem_checkerboardLattice_dualCarrier_iff`: the dual lattice.
 * `checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_cospinorClass`:
   the four classes exhaust the discriminant group.
@@ -249,6 +251,14 @@ theorem checkerboardLattice_form : (checkerboardLattice n).form = Matrix.toBilin
 theorem checkerboardLattice_form_apply (x y : Fin n → ℚ) :
     (checkerboardLattice n).form x y = ∑ i, x i * y i := by
   rw [checkerboardLattice_form, checkerboardAmbientForm_apply]
+
+/-- **The checkerboard lattice `Dₙ` is positive definite**: its form is the standard dot product
+of `ℚⁿ`. -/
+theorem isPosDef_checkerboardLattice : (checkerboardLattice n).IsPosDef := by
+  rw [isPosDef_iff]
+  intro x hx
+  rw [checkerboardLattice_form_apply]
+  simpa [dotProduct] using Matrix.dotProduct_star_self_pos_iff.mpr hx
 
 variable {n} in
 /-- Membership in the checkerboard lattice: every coordinate is an integer and their sum is
