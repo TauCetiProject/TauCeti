@@ -20,20 +20,8 @@ reduction `E₁(K_v)`.
 
 The image is described by the valuation of the `x`-coordinate, which is the condition that cuts
 out that kernel: a point of `E(K_v)` reduces to the point at infinity exactly when its
-`x`-coordinate has a pole. Neither reduction nor `E₁` is named below, and no reduction map on
-points enters the statements or the proofs.
-
-## The two inclusions
-
-Both directions run through the same closed form of the coordinates. A parameter `t ≠ 0` has
-`x = 1 / (t ^ 2 u(t))` with `u(t)` integral, so `v x` exceeds `1`: that is the easy inclusion.
-
-The converse is the substantial one, and it is where the `w`-equation is inverted. If `1 < v x`
-then `v x < v y` — the pole of `y` strictly dominates, by
-`Affine.valuation_x_lt_valuation_y` — so `-x / y` and `-1 / y` both lie in the maximal ideal, and
-`wEquation_of_equation` says the second solves the `w`-equation at the first. The `w`-equation
-has only one solution there (`eq_formalWEval_of_wEquation`), which forces `-1 / y = w(-x / y)`,
-and the point is then read off as the parametrised point of `-x / y` by `formalPoint_eq_some`.
+`x`-coordinate has a pole. Neither reduction nor `E₁` is named below, no reduction map on points
+entering the statements.
 
 ## Main results
 
@@ -52,11 +40,8 @@ and the point is then read off as the parametrised point of `-x / y` by `formalP
 
 ## Provenance
 
-Not a port. The parametrisation and its injectivity come from the Stoll development pinned in
-`Point/Basic.lean`'s provenance; the range computation below is written against this
-repository's own `w`-equation API — `eq_formalWEval_of_wEquation`, whose evaluated uniqueness
-argument goes through the geometric-series unit lemma rather than through coefficients — and
-its valuation input is `Affine/ValuationIntegrality.lean`.
+The parametrisation whose image is computed here, and its injectivity, come from the Stoll
+development pinned in `Point/Basic.lean`'s provenance.
 -/
 
 public section
