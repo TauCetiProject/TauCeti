@@ -54,27 +54,22 @@ variable {ι : Type*} [Fintype ι]
 Factors whose prevertex equals `p` are omitted; every remaining factor has positive real base at
 `p`, after reflecting the factors whose prevertices lie to its right. -/
 private def schwarzChristoffelRegularFactor (a e : ι → ℝ) (p : ℝ) (z : ℂ) : ℂ :=
-  ∏ i with a i ≠ p,
-    (if a i ≤ p then z - (a i : ℂ) else (a i : ℂ) - z) ^ (e i : ℂ)
+  schwarzChristoffelContinuedIntegrand
+    (fun i : {i // a i ≠ p} ↦ a i) (fun i ↦ e i) p z
 
 /-- The regular part of the continued Schwarz--Christoffel integrand is continuous at its
 reference point. -/
 private theorem continuousAt_schwarzChristoffelRegularFactor (a e : ι → ℝ) (p : ℝ) :
     ContinuousAt (schwarzChristoffelRegularFactor a e p) (p : ℂ) := by
-  classical
-  refine tendsto_finsetProd _ fun i hi => ?_
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi
+  apply (differentiableAt_schwarzChristoffelContinuedIntegrand _ _ ?_).continuousAt
+  intro i _
   by_cases hip : a i ≤ p
-  · have hpos : 0 < p - a i := sub_pos.mpr (lt_of_le_of_ne hip hi)
-    simp only [ite_eq_left hip]
-    refine (continuousAt_cpow_const ?_).comp
-      (continuousAt_id.sub continuousAt_const)
+  · have hpos : 0 < p - a i := sub_pos.mpr (lt_of_le_of_ne hip i.property)
+    rw [ite_eq_left hip]
     rw [← Complex.ofReal_sub]
     exact Complex.ofReal_mem_slitPlane.mpr hpos
   · have hpos : 0 < a i - p := sub_pos.mpr (lt_of_not_ge hip)
-    simp only [ite_eq_right hip]
-    refine (continuousAt_cpow_const ?_).comp
-      (continuousAt_const.sub continuousAt_id)
+    rw [ite_eq_right hip]
     rw [← Complex.ofReal_sub]
     exact Complex.ofReal_mem_slitPlane.mpr hpos
 
@@ -84,17 +79,12 @@ private theorem schwarzChristoffelRegularFactor_ofReal (a e : ι → ℝ) (p : �
     schwarzChristoffelRegularFactor a e p (p : ℂ) =
       ((∏ i with a i ≠ p, |p - a i| ^ e i : ℝ) : ℂ) := by
   classical
-  rw [schwarzChristoffelRegularFactor, Complex.ofReal_prod]
-  refine Finset.prod_congr rfl fun i hi => ?_
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi
-  by_cases hip : a i ≤ p
-  · have hpos : 0 < p - a i := sub_pos.mpr (lt_of_le_of_ne hip hi)
-    have hcast : (p : ℂ) - (a i : ℂ) = ((p - a i : ℝ) : ℂ) := by push_cast; ring
-    rw [ite_eq_left hip, hcast, ← Complex.ofReal_cpow hpos.le, abs_of_pos hpos]
-  · have hpos : 0 < a i - p := sub_pos.mpr (lt_of_not_ge hip)
-    have hcast : (a i : ℂ) - (p : ℂ) = ((a i - p : ℝ) : ℂ) := by push_cast; ring
-    rw [ite_eq_right hip, hcast, ← Complex.ofReal_cpow hpos.le, abs_sub_comm,
-      abs_of_pos hpos]
+  rw [schwarzChristoffelRegularFactor,
+    schwarzChristoffelContinuedIntegrand_ofReal _ _
+      (fun i _ hip ↦ lt_of_le_of_ne hip i.property)
+      (fun _ _ hip ↦ hip)]
+  exact congrArg Complex.ofReal (Finset.prod_subtype (p := fun i ↦ a i ≠ p)
+    (Finset.univ.filter fun i ↦ a i ≠ p) (by simp) (fun i ↦ |p - a i| ^ e i)).symm
 
 /-- The real product defining the size of the leading coefficient is positive. -/
 private theorem prod_rpow_dist_prevertex_pos (a e : ι → ℝ) (p : ℝ) :
@@ -124,7 +114,7 @@ theorem schwarzChristoffelPrevertexCoefficient_def (a e : ι → ℝ) (p : ℝ) 
 
 /-- The norm of the leading coefficient is the positive real product of the powered distances
 from `p` to the other prevertices. -/
-theorem norm_schwarzChristoffelPrevertexCoefficient (a e : ι → ℝ) (p : ℝ) :
+@[simp] theorem norm_schwarzChristoffelPrevertexCoefficient (a e : ι → ℝ) (p : ℝ) :
     ‖schwarzChristoffelPrevertexCoefficient a e p‖ =
       ∏ i with a i ≠ p, |p - a i| ^ e i := by
   have hpos := prod_rpow_dist_prevertex_pos a e p
@@ -133,7 +123,7 @@ theorem norm_schwarzChristoffelPrevertexCoefficient (a e : ι → ℝ) (p : ℝ)
     Real.exp_zero, one_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hpos]
 
 /-- The leading coefficient of the Schwarz--Christoffel integrand at a real point is nonzero. -/
-theorem schwarzChristoffelPrevertexCoefficient_ne_zero (a e : ι → ℝ) (p : ℝ) :
+@[simp] theorem schwarzChristoffelPrevertexCoefficient_ne_zero (a e : ι → ℝ) (p : ℝ) :
     schwarzChristoffelPrevertexCoefficient a e p ≠ 0 := by
   rw [← norm_ne_zero_iff, norm_schwarzChristoffelPrevertexCoefficient]
   exact ne_of_gt (prod_rpow_dist_prevertex_pos a e p)
@@ -146,23 +136,27 @@ private theorem schwarzChristoffelContinuedIntegrand_eq_cpow_mul_regularFactor
       (z - (p : ℂ)) ^ ((∑ i with a i = p, e i : ℝ) : ℂ) *
         schwarzChristoffelRegularFactor a e p z := by
   classical
-  rw [schwarzChristoffelContinuedIntegrand_def, schwarzChristoffelRegularFactor,
+  rw [schwarzChristoffelContinuedIntegrand_def,
     ← Finset.prod_filter_mul_prod_filter_not Finset.univ (fun i => a i = p)]
   congr 1
-  calc
-    (∏ i with a i = p,
-        (if a i ≤ p then z - (a i : ℂ) else (a i : ℂ) - z) ^ (e i : ℂ)) =
-        ∏ i with a i = p, (z - (p : ℂ)) ^ (e i : ℂ) := by
-          refine Finset.prod_congr rfl fun i hi => ?_
-          have haip : a i = p := (Finset.mem_filter.mp hi).2
-          rw [haip, ite_eq_left le_rfl]
-    _ = (z - (p : ℂ)) ^ ((∑ i with a i = p, e i : ℝ) : ℂ) := by
-      rw [Complex.ofReal_sum]
-      induction Finset.univ.filter (fun i => a i = p) using Finset.induction_on with
-      | empty => simp
-      | @insert i s hi ih =>
-          rw [Finset.prod_insert hi, Finset.sum_insert hi, ih,
-            ← Complex.cpow_add _ _ (sub_ne_zero.mpr hz)]
+  · calc
+      (∏ i with a i = p,
+          (if a i ≤ p then z - (a i : ℂ) else (a i : ℂ) - z) ^ (e i : ℂ)) =
+          ∏ i with a i = p, (z - (p : ℂ)) ^ (e i : ℂ) := by
+            refine Finset.prod_congr rfl fun i hi => ?_
+            have haip : a i = p := (Finset.mem_filter.mp hi).2
+            rw [haip, ite_eq_left le_rfl]
+      _ = (z - (p : ℂ)) ^ ((∑ i with a i = p, e i : ℝ) : ℂ) := by
+        rw [Complex.ofReal_sum]
+        induction Finset.univ.filter (fun i => a i = p) using Finset.induction_on with
+        | empty => simp
+        | @insert i s hi ih =>
+            rw [Finset.prod_insert hi, Finset.sum_insert hi, ih,
+              ← Complex.cpow_add _ _ (sub_ne_zero.mpr hz)]
+  · rw [schwarzChristoffelRegularFactor, schwarzChristoffelContinuedIntegrand_def]
+    exact (Finset.prod_subtype (p := fun i ↦ a i ≠ p)
+      (Finset.univ.filter fun i ↦ a i ≠ p) (by simp)
+        (fun i ↦ (if a i ≤ p then z - (a i : ℂ) else (a i : ℂ) - z) ^ (e i : ℂ)))
 
 /-- **Leading asymptotic of the Schwarz--Christoffel integrand at a prevertex.**  Dividing the
 integrand by `(z - p)` raised to the total exponent carried by `p` leaves a function tending to the
