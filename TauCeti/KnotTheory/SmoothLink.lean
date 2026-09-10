@@ -37,7 +37,6 @@ Framings are not part of this presentation: a smooth framing is separate normal-
 ## References
 
 * W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Chapter 1.
-* `TauCetiRoadmap/GeometricTopology/README.md`, Layer 4.
 -/
 
 public section
