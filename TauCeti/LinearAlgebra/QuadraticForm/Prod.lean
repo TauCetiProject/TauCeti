@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
 
 /-!
@@ -17,6 +19,9 @@ file adds the two remaining structural ones: the associator, and the deletion of
 module is trivial. Together with `QuadraticMap.IsometryEquiv.prodComm` they are what makes
 orthogonal sum a commutative monoid operation on isometry classes of quadratic forms.
 
+For a quadratic form over a field of characteristic different from two, it also records the
+isometry associated to an orthogonal direct-sum decomposition of the underlying space.
+
 It also combines special orthogonal transformations of two finite free quadratic maps with a
 common codomain into a special orthogonal transformation of their product.
 
@@ -24,6 +29,8 @@ common codomain into a special orthogonal transformation of their product.
 
 * `QuadraticMap.IsometryEquiv.prodAssoc`: `LinearEquiv.prodAssoc` is isometric.
 * `QuadraticMap.IsometryEquiv.uniqueProd`: `LinearEquiv.uniqueProd` is isometric.
+* `QuadraticMap.IsometryEquiv.prodRestrictOrthogonal`: an orthogonal direct sum is isometric to
+  the original form.
 * `QuadraticMap.specialOrthogonalGroupProd`: combine two special orthogonal transformations.
 -/
 
@@ -83,6 +90,39 @@ theorem IsometryEquiv.uniqueProd_symm_apply [Unique M₁] (Q₁ : QuadraticMap R
   -- Expose the underlying linear equivalence so its public inverse application lemma applies.
   change (LinearEquiv.uniqueProd (R := R) (M := M₂) (M₂ := M₁)).symm m = _
   exact LinearEquiv.uniqueProd_symm_apply m
+
+section OrthogonalDecomposition
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [Invertible (2 : K)]
+
+/-- An orthogonal direct-sum decomposition of a quadratic space gives an isometry from the
+product of the two restricted forms to the original form. -/
+noncomputable def IsometryEquiv.prodRestrictOrthogonal (Q : QuadraticForm K V)
+    (W : Submodule K V)
+    (hW : IsCompl W (LinearMap.BilinForm.orthogonal (QuadraticMap.associated Q) W)) :
+    ((Q.restrict W).prod
+      (Q.restrict (LinearMap.BilinForm.orthogonal (QuadraticMap.associated Q) W))).IsometryEquiv Q
+    where
+  toLinearEquiv := W.prodEquivOfIsCompl
+    (LinearMap.BilinForm.orthogonal (QuadraticMap.associated Q) W) hW
+  map_app' x := by
+    -- Expose the complementary-subspace equivalence as addition of the two components.
+    change Q ((x.1 : V) + x.2) = Q x.1 + Q x.2
+    rw [QuadraticMap.map_add Q]
+    have horth : Q.IsOrtho (x.1 : V) (x.2 : V) := by
+      exact QuadraticMap.associated_isOrtho.mp (x.2.2 x.1 x.1.2)
+    rw [horth.polar_eq_zero, add_zero]
+
+/-- The orthogonal-decomposition isometry sends a pair to the sum of its components. -/
+@[simp]
+theorem IsometryEquiv.prodRestrictOrthogonal_apply (Q : QuadraticForm K V)
+    (W : Submodule K V)
+    (hW : IsCompl W (LinearMap.BilinForm.orthogonal (QuadraticMap.associated Q) W))
+    (x : W × LinearMap.BilinForm.orthogonal (QuadraticMap.associated Q) W) :
+    IsometryEquiv.prodRestrictOrthogonal Q W hW x = (x.1 : V) + x.2 := by
+  exact Submodule.coe_prodEquivOfIsCompl' W _ hW x
+
+end OrthogonalDecomposition
 
 end QuadraticMap
 
