@@ -52,6 +52,28 @@ theorem multinomialAggregate_apply (f : ι → κ) (k : ι → ℕ) (j : κ) :
     multinomialAggregate f k j = ∑ i with f i = j, k i := (rfl)
 
 omit [Fintype κ] in
+/-- Aggregating along the identity map leaves a count vector unchanged. -/
+@[simp]
+theorem multinomialAggregate_id (k : ι → ℕ) :
+    multinomialAggregate id k = k := by
+  classical
+  funext i
+  rw [multinomialAggregate_apply, Finset.sum_eq_single i]
+  · simp
+  · simp
+
+/-- Successive aggregations agree with aggregation along the composite map. -/
+@[simp]
+theorem multinomialAggregate_comp {υ : Type*} (f : ι → κ) (g : κ → υ) (k : ι → ℕ) :
+    multinomialAggregate g (multinomialAggregate f k) =
+      multinomialAggregate (g ∘ f) k := by
+  classical
+  funext j
+  simp only [multinomialAggregate_apply, Function.comp_apply]
+  simpa using
+    Finset.sum_fiberwise_eq_sum_filter Finset.univ {x | g x = j} f k
+
+omit [Fintype κ] in
 /-- Aggregating count vectors is measurable for the discrete measurable structures. -/
 theorem measurable_multinomialAggregate (f : ι → κ) :
     Measurable (multinomialAggregate f) :=
