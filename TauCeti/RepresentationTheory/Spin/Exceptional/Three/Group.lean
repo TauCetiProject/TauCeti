@@ -10,9 +10,8 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import TauCeti.RepresentationTheory.Spin.Representation
 public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Spin.OddStructure
-import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.KostantLattice
+import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 
 /-!
 # The three-dimensional Spin group
@@ -62,13 +61,8 @@ private noncomputable def evenBivector [Invertible (2 : K)] (x y : V) :
     rw [← Subalgebra.mem_toSubmodule, CliffordAlgebra.even_toSubmodule]
     exact bivector_mem_evenOdd_zero Q x y⟩
 
-private theorem lineCoordinate_surjective [FiniteDimensional K V]
-    (P : SpinPolarizationData Q)
-    (hV : finrank K V = 3) : Function.Surjective P.lineCoordinate := by
-  apply (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).mp
-    P.lineCoordinate_injective
-  rw [P.finrank_line_eq_one_of_finrank_eq_two_mul_add_one (l := 1) (by omega)]
-  simp
+private theorem coe_evenBivector [Invertible (2 : K)] (x y : V) :
+    (evenBivector (Q := Q) x y : CliffordAlgebra Q) = bivector Q x y := rfl
 
 private theorem add_smul_W_line_norm (P : SpinPolarizationData Q) (x : P.W)
     (z : P.line) (hz : Q (z : V) = 1) (c : K) :
@@ -172,6 +166,16 @@ private noncomputable def vacuumIndex : Fin 2 := spinThreeIndexEquiv ∅
 
 private noncomputable def occupiedIndex : Fin 2 := spinThreeIndexEquiv {0}
 
+private theorem spinThreeExteriorBasis_vacuum
+    (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W) :
+    spinThreeExteriorBasis P b vacuumIndex = b.ExteriorAlgebra ∅ := by
+  simp [spinThreeExteriorBasis, vacuumIndex, spinThreeIndexEquiv]
+
+private theorem spinThreeExteriorBasis_occupied
+    (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W) :
+    spinThreeExteriorBasis P b occupiedIndex = b.ExteriorAlgebra {0} := by
+  simp [spinThreeExteriorBasis, occupiedIndex, spinThreeIndexEquiv]
+
 private theorem vacuumIndex_ne_occupiedIndex : vacuumIndex ≠ occupiedIndex := by
   intro h
   have := spinThreeIndexEquiv.injective h
@@ -215,11 +219,13 @@ private theorem spinThreeEquivMatrix_positiveRoot
     simp only [typeBSimpleRootGeneratorFamily_inl, typeBSimpleRootGenerator_last,
       _root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι] at h
     rw [P.typeBQuadraticEquiv_typeBShortRootGenerator b z hz (Fin.last 0)] at h
-    simpa [bas, spinThreeExteriorBasis, vacuumIndex, occupiedIndex, evenBivector,
-      Fin.last_zero] using h
+    simpa only [Matrix.toLinAlgEquiv_toMatrixAlgEquiv, bas,
+      spinThreeExteriorBasis_vacuum, spinThreeExteriorBasis_occupied,
+      coe_evenBivector, Fin.last_zero] using h
   · rw [TauCeti.toLinAlgEquiv_single_apply_basis]
     simp only [ite_eq_right vacuumIndex_ne_occupiedIndex, zero_smul]
-    simpa [bas, spinThreeExteriorBasis, occupiedIndex, evenBivector] using
+    simpa only [Matrix.toLinAlgEquiv_toMatrixAlgEquiv, bas,
+      spinThreeExteriorBasis_occupied, coe_evenBivector] using
       spinAction_positiveRoot_singleton P b z hcoord
 
 private theorem spinThreeEquivMatrix_negativeRoot
@@ -237,7 +243,8 @@ private theorem spinThreeEquivMatrix_negativeRoot
   rcases finTwo_eq_vacuum_or_occupied i with rfl | rfl
   · rw [TauCeti.toLinAlgEquiv_single_apply_basis]
     simp only [ite_eq_right vacuumIndex_ne_occupiedIndex.symm, zero_smul]
-    simpa [bas, spinThreeExteriorBasis, vacuumIndex, occupiedIndex, evenBivector] using
+    simpa only [Matrix.toLinAlgEquiv_toMatrixAlgEquiv, bas,
+      spinThreeExteriorBasis_vacuum, coe_evenBivector] using
       spinAction_negativeRoot_empty P b z
   · rw [TauCeti.toLinAlgEquiv_single_apply_basis]
     simp only [ite_eq_left, one_smul]
@@ -246,8 +253,9 @@ private theorem spinThreeEquivMatrix_negativeRoot
     simp only [typeBSimpleRootGeneratorFamily_inr, typeBSimpleNegativeRootGenerator_last,
       _root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι] at h
     rw [P.typeBQuadraticEquiv_typeBShortNegativeRootGenerator b z hz (Fin.last 0)] at h
-    simpa [bas, spinThreeExteriorBasis, vacuumIndex, occupiedIndex, evenBivector,
-      Fin.last_zero] using h
+    simpa only [Matrix.toLinAlgEquiv_toMatrixAlgEquiv, bas,
+      spinThreeExteriorBasis_vacuum, spinThreeExteriorBasis_occupied,
+      coe_evenBivector, Fin.last_zero] using h
 
 private theorem spinThreeHom_intertwines
     [NeZero (2 : K)] [FiniteDimensional K V]
@@ -290,7 +298,8 @@ theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_
   have hW : finrank K P.W = 1 :=
     P.finrank_W_of_finrank_eq_two_mul_add_one (l := 1) (by omega)
   let b := Module.finBasisOfFinrankEq K P.W hW
-  obtain ⟨z, hzcoord⟩ := lineCoordinate_surjective P hV (1 : K)
+  obtain ⟨z, hzcoord⟩ :=
+    P.lineCoordinate_surjective_of_finrank_eq_two_mul_add_one (l := 1) (by omega) (1 : K)
   have hz : Q (z : V) = 1 := by rw [← P.lineCoordinate_sq, hzcoord, one_mul]
   let e := spinThreeEquivMatrix P b hV
   let f := spinThreeHom hV e
@@ -335,32 +344,23 @@ theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_
   -- The two lifted root directions contain every elementary transvection and hence all of `SL₂`.
   have hf_surj : Function.Surjective f := by
     intro g
-    let H := f.range
-    have htrans : Set.range (Matrix.TransvectionStruct.toSpecialLinearGroup :
-        Matrix.TransvectionStruct (Fin 2) K → Matrix.SpecialLinearGroup (Fin 2) K) ⊆ H := by
-      rintro _ ⟨⟨i, j, hij, c⟩, rfl⟩
+    apply Matrix.SL2.transvection_induction (fun x ↦ x ∈ f.range) ?_ ?_ g
+    · intro i j hij c
       rcases finTwo_eq_vacuum_or_occupied i with rfl | rfl <;>
         rcases finTwo_eq_vacuum_or_occupied j with rfl | rfl
       · exact (hij rfl).elim
       · exact ⟨negativeRootLift P b z hz c, hnegative c⟩
       · exact ⟨positiveRootLift P b z hz c, hpositive c⟩
       · exact (hij rfl).elim
-    have hclosure : Subgroup.closure
-        (Set.range (Matrix.TransvectionStruct.toSpecialLinearGroup :
-          Matrix.TransvectionStruct (Fin 2) K → Matrix.SpecialLinearGroup (Fin 2) K)) ≤ H :=
-      (Subgroup.closure_le H).mpr htrans
-    have hg : g ∈ H := by
-      apply hclosure
-      rw [Matrix.SpecialLinearGroup.closure_range_toSpecialLinearGroup_eq_top_of_field]
-      exact Subgroup.mem_top g
-    exact MonoidHom.mem_range.mp hg
+    · rintro _ _ ⟨x, rfl⟩ ⟨y, rfl⟩
+      exact ⟨x * y, map_mul f x y⟩
   let φ := MulEquiv.ofBijective f ⟨hf_inj, hf_surj⟩
   refine ⟨φ, ⟨Representation.Equiv.mk (spinThreeExteriorBasis P b).equivFun ?_⟩⟩
   intro g
-  have hφ : φ g = f g := rfl
-  have hφ' : φ.toMonoidHom g = f g := hφ
+  have hφ : φ.toMonoidHom g = f g := by
+    exact MulEquiv.ofBijective_apply f ⟨hf_inj, hf_surj⟩ g
   simp only [MonoidHom.comp_apply]
-  rw [hφ']
+  rw [hφ]
   simpa only [f, e] using spinThreeHom_intertwines P b hV g
 
 /-- A nondegenerate three-dimensional quadratic space over a separably closed field of
