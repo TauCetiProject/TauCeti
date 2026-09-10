@@ -268,13 +268,6 @@ theorem repIso_inv_apply_coe (T : LayerRestriction small big) (F : Formation G)
 theorem refl (L : NormalLayer G) : LayerRestriction L L :=
   ⟨rfl, le_rfl⟩
 
--- No `@[simp]` here: `simp` already proves this from the `@[simp]` lemmas `relativeDegree_def`
--- and `Subgroup.relIndex_self`, so tagging the statement is a `simpNF` error.
-/-- The relative degree of the trivial restriction is `1`. -/
-theorem relativeDegree_self {L : NormalLayer G} (T : LayerRestriction L L) :
-    T.relativeDegree = 1 := by
-  rw [relativeDegree_def, Subgroup.relIndex_self]
-
 /-- The homomorphism of Galois groups attached to the trivial restriction is the identity. -/
 @[simp]
 theorem galHom_self {L : NormalLayer G} (T : LayerRestriction L L) :
