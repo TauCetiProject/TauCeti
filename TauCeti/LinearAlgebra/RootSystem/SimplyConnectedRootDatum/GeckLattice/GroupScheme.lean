@@ -82,8 +82,6 @@ statement is asserted.
 * `TauCeti.DynkinType.geckPoints_def`: the points are the matrices cut out by the defining ideal.
 * `TauCeti.DynkinType.geckPoints_mk_geckTorusMatrix`: the weight-torus matrix and the diagonal
   matrix of the weight characters are the same point.
-* `TauCeti.DynkinType.geckPoints_mk_geckRootSubgroupMatrix`: the root-subgroup matrix and the value
-  of the root-subgroup homomorphism are the same point.
 
 ## References
 
@@ -509,18 +507,6 @@ theorem coe_geckRootSubgroupPoints (i : Fin t.rank ⊕ Fin t.rank)
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
     (t.isNilpotent_geckRepresentation_rootGenerator ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) i A u
-
-/-- **The two representations of a root-subgroup point of the carrier agree**: the point built
-directly from `TauCeti.DynkinType.geckRootSubgroupMatrix` and the value of
-`TauCeti.DynkinType.geckRootSubgroupPoints` at the same parameter are the same element of
-`TauCeti.DynkinType.geckPoints`. This permits the graph-automorphism and Frobenius equations to be
-expressed in the same representation. -/
-theorem geckPoints_mk_geckRootSubgroupMatrix (i : Fin t.rank ⊕ Fin t.rank)
-    (A : Type v) [CommRing A] (u : Multiplicative A) :
-    (⟨t.geckRootSubgroupMatrix ht i ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u),
-        t.geckRootSubgroupMatrix_mem_geckPoints ht A i _⟩ : t.geckPoints ht A) =
-      t.geckRootSubgroupPoints ht i A u :=
-  Subtype.ext (t.coe_geckRootSubgroupPoints ht i A u).symm
 
 /-- **The represented weight torus inside the Geck carrier points.** -/
 noncomputable def geckWeightTorusPoints (A : Type v) [CommRing A] :

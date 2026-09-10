@@ -73,12 +73,10 @@ reductivity, maximality of the weight torus, or any finiteness or simplicity sta
   normalizes the points of the carrier.
 * `TauCeti.DynkinType.schemePointsMulEquiv_geckGraphAut_comp_geckGroupSchemeι`: the automorphism on
   points is the map the carrier automorphism induces.
-* `TauCeti.DynkinType.geckGraphAutPoints_geckRootSubgroupMatrix` and
-  `TauCeti.DynkinType.geckGraphAutPoints_geckTorusMatrix`: the two pinning equations on points.
 * `TauCeti.DynkinType.geckGraphAutPoints_geckRootSubgroupPoints` and
-  `TauCeti.DynkinType.geckGraphAutPoints_geckWeightTorusPoints`: those two equations read on the
-  represented root subgroup and weight torus, which is the form a consumer of those homomorphisms
-  uses.
+  `TauCeti.DynkinType.geckGraphAutPoints_geckTorusMatrix`: the two pinning equations on points.
+* `TauCeti.DynkinType.geckGraphAutPoints_geckWeightTorusPoints`: the second of those equations
+  read on the represented weight torus, which is the form a consumer of that homomorphism uses.
 * `TauCeti.DynkinType.geckPointsMap_comp_geckGraphAutPoints`: the automorphism on points is natural
   in the value ring.
 * `TauCeti.DynkinType.geckGraphAutPoints_pow_eq_one` and
@@ -405,19 +403,16 @@ theorem schemePointsMulEquiv_geckGraphAut_comp_geckGroupSchemeι
 
 /-- **The graph automorphism renumbers the pinned root subgroups on points**, without changing
 their additive parameter. This is the equation which pins the graph automorphism, read on the
-points of the carrier. -/
+points of the carrier, on `TauCeti.DynkinType.geckRootSubgroupPoints`, the homomorphism through
+which a root subgroup enters the point group, as in
+`TauCeti.DynkinType.geckFrobenius_geckRootSubgroupPoints`. -/
 @[simp]
-theorem geckGraphAutPoints_geckRootSubgroupMatrix (hsigma : sigma ∈ t.diagramSymmetry)
+theorem geckGraphAutPoints_geckRootSubgroupPoints (hsigma : sigma ∈ t.diagramSymmetry)
     (A : Type v) [CommRing A] (i : Fin t.rank ⊕ Fin t.rank) (u : Multiplicative A) :
-    t.geckGraphAutPoints ht hsigma A
-        ⟨t.geckRootSubgroupMatrix ht i
-            ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u),
-          t.geckRootSubgroupMatrix_mem_geckPoints ht A i _⟩ =
-      ⟨t.geckRootSubgroupMatrix ht (diagramRootGeneratorPerm sigma i)
-          ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u),
-        t.geckRootSubgroupMatrix_mem_geckPoints ht A _ _⟩ :=
+    t.geckGraphAutPoints ht hsigma A (t.geckRootSubgroupPoints ht i A u) =
+      t.geckRootSubgroupPoints ht (diagramRootGeneratorPerm sigma i) A u :=
   Subtype.ext (by
-    rw [coe_geckGraphAutPoints]
+    rw [coe_geckGraphAutPoints, coe_geckRootSubgroupPoints, coe_geckRootSubgroupPoints]
     exact UniversalEnvelopingAlgebra.kostantNumberedSymmetryMatrix_conj_kostantRootSubgroupMatrix
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
       (t.geckCoordinateLattice ht).toAddSubgroup
@@ -428,21 +423,6 @@ theorem geckGraphAutPoints_geckRootSubgroupMatrix (hsigma : sigma ∈ t.diagramS
       (t.geckDiagramModuleEquiv_mem_geckCoordinateLattice_iff ht hsigma)
       (geckDiagramModuleEquiv_ι_geckRepresentation_rootGenerator ht hsigma)
       A i _)
-
-/-- **The graph automorphism renumbers a numbered root subgroup of the point group** by the diagram
-symmetry, without changing its additive parameter.
-
-This is `TauCeti.DynkinType.geckGraphAutPoints_geckRootSubgroupMatrix` stated on
-`TauCeti.DynkinType.geckRootSubgroupPoints`, the homomorphism through which a root subgroup enters
-the point group, so that both sides are values of that homomorphism, as in
-`TauCeti.DynkinType.geckFrobenius_geckRootSubgroupPoints`. -/
-@[simp]
-theorem geckGraphAutPoints_geckRootSubgroupPoints (hsigma : sigma ∈ t.diagramSymmetry)
-    (A : Type v) [CommRing A] (i : Fin t.rank ⊕ Fin t.rank) (u : Multiplicative A) :
-    t.geckGraphAutPoints ht hsigma A (t.geckRootSubgroupPoints ht i A u) =
-      t.geckRootSubgroupPoints ht (diagramRootGeneratorPerm sigma i) A u := by
-  rw [← geckPoints_mk_geckRootSubgroupMatrix, geckGraphAutPoints_geckRootSubgroupMatrix,
-    geckPoints_mk_geckRootSubgroupMatrix]
 
 /-- **The graph automorphism relabels the coordinates of a pinned weight-torus point** by the
 inverse of the diagram symmetry. -/
