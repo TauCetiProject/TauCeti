@@ -75,13 +75,13 @@ theorem mul_left (a b : WreathProduct D ι) (i : ι) :
   exact h
 
 /-- The natural cardinality of a full permutation wreath product with finite index type. -/
-theorem natCard [Finite ι] :
+theorem card [Finite ι] :
     Nat.card (WreathProduct D ι) =
       Nat.card D ^ Nat.card ι * (Nat.card ι).factorial := by
   rw [SemidirectProduct.card, Nat.card_fun, Nat.card_perm]
 
 /-- The natural cardinality of a permutation-subgroup wreath product with finite index type. -/
-theorem natCard_permSubgroup (Q : Subgroup (Equiv.Perm ι)) [Finite ι] :
+theorem card_permSubgroup (Q : Subgroup (Equiv.Perm ι)) [Finite ι] :
     Nat.card (PermSubgroupWreathProduct D ι Q) =
       Nat.card D ^ Nat.card ι * Nat.card Q := by
   rw [SemidirectProduct.card, Nat.card_fun]
@@ -225,6 +225,12 @@ theorem imprimitive_smul (w : WreathProduct D ι) (x : ι × Λ) :
 def imprimitiveToPerm : WreathProduct D ι →* Equiv.Perm (ι × Λ) :=
   MulAction.toPermHom (WreathProduct D ι) (ι × Λ)
 
+/-- The imprimitive permutation representation evaluates via the imprimitive action. -/
+@[simp]
+theorem imprimitiveToPerm_apply (w : WreathProduct D ι) (x : ι × Λ) :
+    imprimitiveToPerm D ι Λ w x = (w.right x.1, w.left (w.right x.1) • x.2) :=
+  imprimitive_smul D ι Λ w x
+
 /-- If the action of `D` on a nonempty `Λ` is faithful, then the imprimitive wreath-product
 action is faithful. -/
 instance [Nonempty Λ] [FaithfulSMul D Λ] :
@@ -294,6 +300,12 @@ theorem product_smul (w : WreathProduct D ι) (x : ι → Λ) (i : ι) :
 def productToPerm : WreathProduct D ι →* Equiv.Perm (ι → Λ) :=
   MulAction.toPermHom (WreathProduct D ι) (ι → Λ)
 
+/-- The product permutation representation evaluates via the product action. -/
+@[simp]
+theorem productToPerm_apply (w : WreathProduct D ι) (x : ι → Λ) (i : ι) :
+    productToPerm D ι Λ w x i = w.left i • x (w.right⁻¹ i) :=
+  product_smul D ι Λ w x i
+
 /-- If `D` acts faithfully on a type with at least two elements, then the product wreath-product
 action is faithful. -/
 instance [Nontrivial Λ] [FaithfulSMul D Λ] :
@@ -316,9 +328,7 @@ instance [Nontrivial Λ] [FaithfulSMul D Λ] :
         apply smul_left_cancel (w.left i)
         simpa only [product_smul, hleft] using congrFun (h c) i
       have hne' : (Equiv.symm z.right) i ≠ (Equiv.symm w.right) i := by
-        -- Group inversion on `Equiv.Perm` is definitionally its inverse equivalence.
-        change z.right⁻¹ i ≠ w.right⁻¹ i
-        exact Ne.symm hne
+        simpa only [Equiv.Perm.coe_inv] using Ne.symm hne
       exact hxy (by simpa [c, hne'] using heval)
     apply SemidirectProduct.ext hleft
     exact inv_injective hinv
