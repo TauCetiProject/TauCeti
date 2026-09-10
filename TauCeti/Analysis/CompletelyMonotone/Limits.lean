@@ -107,20 +107,21 @@ Nothing is assumed about the limit, and no uniformity is assumed about the conve
 closed half-line version is false, see the module docstring, and
 `TauCeti.isContinuousCompletelyMonotoneOnIoi_of_tendsto` for what replaces it. -/
 theorem isCompletelyMonotoneOnIoi_of_tendsto {ι : Type*} {L : Filter ι} [L.NeBot]
-    {F : ι → ℝ → ℝ} (hF : ∀ i, IsCompletelyMonotoneOnIoi (F i))
+    {F : ι → ℝ → ℝ} (hF : ∀ᶠ i in L, IsCompletelyMonotoneOnIoi (F i))
     (hlim : ∀ u : ℝ, 0 < u → Tendsto (fun i => F i u) L (𝓝 (f u))) :
     IsCompletelyMonotoneOnIoi f := by
   have hconv : ConvexOn ℝ (Ioi 0) f := by
     refine ⟨convex_Ioi 0, fun x hx y hy a b ha hb hab => ?_⟩
     have hmem : a • x + b • y ∈ Ioi (0 : ℝ) := convex_Ioi 0 hx hy ha hb hab
-    refine le_of_tendsto_of_tendsto' (hlim _ hmem)
-      (((hlim x hx).const_smul a).add ((hlim y hy).const_smul b)) fun i => ?_
-    exact (hF i).convexOn.2 hx hy ha hb hab
+    refine le_of_tendsto_of_tendsto (hlim _ hmem)
+      (((hlim x hx).const_smul a).add ((hlim y hy).const_smul b)) (hF.mono fun i hi => ?_)
+    exact hi.convexOn.2 hx hy ha hb hab
   have hcont : ContinuousOn f (Ioi 0) := hconv.continuousOn isOpen_Ioi
   refine isCompletelyMonotoneOnIoi_of_forall_comp_add_const fun a ha => ?_
   have hdiff : IsDifferenceCompletelyMonotone fun s => f (s + a) :=
     isDifferenceCompletelyMonotone_of_tendsto
-      (fun i => ((hF i).isCompletelyMonotone_comp_add_const ha).isDifferenceCompletelyMonotone)
+      (hF.mono fun i hi =>
+        (hi.isCompletelyMonotone_comp_add_const ha).isDifferenceCompletelyMonotone)
       fun u hu => hlim (u + a) (by linarith)
   have hzero : ContinuousWithinAt (fun s => f (s + a)) (Ici 0) 0 := by
     have hfa : ContinuousAt f a := hcont.continuousAt (isOpen_Ioi.mem_nhds (mem_Ioi.mpr ha))
@@ -134,7 +135,7 @@ theorem isCompletelyMonotoneOnIoi_of_tendsto {ι : Type*} {L : Filter ι} [L.NeB
 the limit is known to be right-continuous at the endpoint.  That extra hypothesis cannot be
 dropped: see the module docstring. -/
 theorem isContinuousCompletelyMonotoneOnIoi_of_tendsto {ι : Type*} {L : Filter ι} [L.NeBot]
-    {F : ι → ℝ → ℝ} (hF : ∀ i, IsCompletelyMonotoneOnIoi (F i))
+    {F : ι → ℝ → ℝ} (hF : ∀ᶠ i in L, IsCompletelyMonotoneOnIoi (F i))
     (hlim : ∀ u : ℝ, 0 < u → Tendsto (fun i => F i u) L (𝓝 (f u)))
     (hzero : ContinuousWithinAt f (Ici 0) 0) :
     IsContinuousCompletelyMonotoneOnIoi f := by
