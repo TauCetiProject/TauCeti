@@ -12,8 +12,8 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Index.Basic
 # Transitivity of profinite index
 
 This file proves that supernatural index is multiplicative in a subgroup tower whose
-intermediate subgroup is closed. The proof compares all three indices in a common finite
-quotient and applies the ordinary finite-index tower formula there.
+intermediate subgroup is closed, allowing profinite indices to be decomposed through a closed
+intermediate subgroup.
 
 ## Main results
 
@@ -49,25 +49,34 @@ private theorem index_at_level_mul_index_at_level {H K : Subgroup G} (hHK : H �
   congr 1
   have hker : f.ker = N'.toSubgroup := by
     ext x
-    simp only [MonoidHom.mem_ker, OpenSubgroup.mem_toSubgroup]
-    calc
-      f x = 1 ↔ q (x : G) = 1 := Iff.rfl
-      _ ↔ (x : G) ∈ N.toSubgroup := QuotientGroup.eq_one_iff _
-      _ ↔ x ∈ N'.toSubgroup := by
-        rw [hN', Subgroup.mem_comap]
-        rfl
+    simp only [MonoidHom.mem_ker]
+    rw [show f x = q (x : G) by exact MonoidHom.comp_apply q K.subtype x]
+    rw [show q (x : G) = 1 ↔ (x : G) ∈ N.toSubgroup by
+      exact QuotientGroup.eq_one_iff (x : G)]
+    rw [hN', Subgroup.mem_comap]
+    simp only [Subgroup.coe_subtype]
   have hmapH : (H.comap K.subtype).map f = H.map q := by
-    apply le_antisymm
-    · rintro _ ⟨x, hx, rfl⟩
-      exact ⟨x, hx, rfl⟩
-    · rintro _ ⟨x, hx, rfl⟩
-      exact ⟨⟨x, hHK hx⟩, hx, rfl⟩
+    ext y
+    constructor
+    · intro hy
+      obtain ⟨x, hx, hxy⟩ := Subgroup.mem_map.mp hy
+      exact Subgroup.mem_map.mpr ⟨x, Subgroup.mem_comap.mp hx, by
+        simpa only [f, MonoidHom.comp_apply, Subgroup.coe_subtype] using hxy⟩
+    · intro hy
+      obtain ⟨x, hx, hxy⟩ := Subgroup.mem_map.mp hy
+      exact Subgroup.mem_map.mpr ⟨⟨x, hHK hx⟩, Subgroup.mem_comap.mpr hx, by
+        simpa only [f, MonoidHom.comp_apply, Subgroup.coe_subtype] using hxy⟩
   have hmapK : (⊤ : Subgroup K).map f = K.map q := by
-    apply le_antisymm
-    · rintro _ ⟨x, _, rfl⟩
-      exact ⟨x, x.property, rfl⟩
-    · rintro _ ⟨x, hx, rfl⟩
-      exact ⟨⟨x, hx⟩, Subgroup.mem_top _, rfl⟩
+    ext y
+    constructor
+    · intro hy
+      obtain ⟨x, _, hxy⟩ := Subgroup.mem_map.mp hy
+      exact Subgroup.mem_map.mpr ⟨x, x.property, by
+        simpa only [f, MonoidHom.comp_apply, Subgroup.coe_subtype] using hxy⟩
+    · intro hy
+      obtain ⟨x, hx, hxy⟩ := Subgroup.mem_map.mp hy
+      exact Subgroup.mem_map.mpr ⟨⟨x, hx⟩, Subgroup.mem_top _, by
+        simpa only [f, MonoidHom.comp_apply, Subgroup.coe_subtype] using hxy⟩
   calc
     ((H.comap K.subtype).map (QuotientGroup.mk' N'.toSubgroup)).index =
         (H.comap K.subtype ⊔ N'.toSubgroup).index :=
