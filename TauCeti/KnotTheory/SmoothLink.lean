@@ -106,21 +106,11 @@ theorem component_range_subset (L : SmoothLinkEmbedding I M n) (i : Fin n) :
 /-- A point of a link lies on a unique labeled component. -/
 theorem existsUnique_component_of_mem_range (L : SmoothLinkEmbedding I M n) {x : M}
     (hx : x ∈ L.range) : ∃! i, x ∈ Set.range (L i) := by
-  let x' : ⋃ i, Set.range (L i) := ⟨x, hx⟩
-  let p := Set.unionEqSigmaOfDisjoint L.pairwiseDisjoint_range x'
-  have hp : (p.2 : M) = x :=
-    Set.coe_snd_unionEqSigmaOfDisjoint L.pairwiseDisjoint_range x'
-  refine ⟨p.1, ?_, ?_⟩
-  · obtain ⟨y, hy⟩ := p.2.2
-    refine ⟨y, ?_⟩
-    have hi : L p.1 = L.component p.1 := rfl
-    rw [hi, hy, hp]
+  obtain ⟨i, y, hy⟩ := (L.mem_range_iff x).mp hx
+  refine ⟨i, ⟨y, hy⟩, ?_⟩
   intro j hj
-  have hpair : (⟨j, ⟨x, hj⟩⟩ : Σ i, Set.range (L i)) = p := by
-    apply (Set.sigmaToiUnion_bijective _ L.pairwiseDisjoint_range).1
-    apply Subtype.ext
-    exact hp.symm
-  exact congrArg Sigma.fst hpair
+  by_contra hji
+  exact Set.disjoint_left.1 (L.disjoint_range hji) hj ⟨y, hy⟩
 
 /-! ### Empty and one-component links -/
 
@@ -142,9 +132,8 @@ def singleton (f : SmoothCircleEmbedding I M) : SmoothLinkEmbedding I M 1 where
 /-- The only component of a singleton link is the original circle embedding. -/
 @[simp]
 theorem singleton_apply (f : SmoothCircleEmbedding I M) (i : Fin 1) :
-    singleton f i = f := by
-  rw [singleton.eq_def]
-  rfl
+    singleton f i = f :=
+  (rfl)
 
 /-- A singleton link occupies precisely the image of its circle embedding. -/
 @[simp]
@@ -163,6 +152,18 @@ def singletonEquiv : SmoothCircleEmbedding I M ≃ SmoothLinkEmbedding I M 1 whe
     intro i
     exact congrArg L (Subsingleton.elim 0 i)
 
+/-- The forward map of the one-component equivalence constructs the singleton link. -/
+@[simp]
+theorem singletonEquiv_apply (f : SmoothCircleEmbedding I M) :
+    singletonEquiv f = singleton f :=
+  (rfl)
+
+/-- The inverse of the one-component equivalence extracts its unique component. -/
+@[simp]
+theorem singletonEquiv_symm_apply (L : SmoothLinkEmbedding I M 1) :
+    singletonEquiv.symm L = L 0 :=
+  (rfl)
+
 /-! ### Component relabeling -/
 
 /-- Relabel the components of a smooth link along a permutation.  If `e` sends an old label to a
@@ -176,9 +177,8 @@ def relabel (L : SmoothLinkEmbedding I M n) (e : Equiv.Perm (Fin n)) :
 /-- Relabeling reads the component at the inverse old label. -/
 @[simp]
 theorem relabel_apply (L : SmoothLinkEmbedding I M n) (e : Equiv.Perm (Fin n)) (i : Fin n) :
-    L.relabel e i = L (e.symm i) := by
-  rw [relabel.eq_def]
-  rfl
+    L.relabel e i = L (e.symm i) :=
+  (rfl)
 
 /-- Relabeling by the identity permutation changes nothing. -/
 @[simp]
@@ -216,6 +216,13 @@ theorem perm_smul_def (e : Equiv.Perm (Fin n)) (L : SmoothLinkEmbedding I M n) :
 
 /-! ### Orientation reversal -/
 
+private theorem reverse_eq_compDiffeomorph (f : SmoothCircleEmbedding I M) :
+    f.reverse = f.compDiffeomorph circleReflection := by
+  apply SmoothEmbedding.ext
+  intro x
+  rw [SmoothCircleEmbedding.reverse_apply, SmoothEmbedding.compDiffeomorph_apply,
+    circleReflection_apply]
+
 /-- Reverse the orientation of every component of a smooth link. -/
 def reverse (L : SmoothLinkEmbedding I M n) : SmoothLinkEmbedding I M n where
   component i := (L i).reverse
@@ -225,9 +232,8 @@ def reverse (L : SmoothLinkEmbedding I M n) : SmoothLinkEmbedding I M n where
 /-- Reversing a smooth link reverses each of its components. -/
 @[simp]
 theorem reverse_apply (L : SmoothLinkEmbedding I M n) (i : Fin n) :
-    L.reverse i = (L i).reverse := by
-  rw [reverse.eq_def]
-  rfl
+    L.reverse i = (L i).reverse :=
+  (rfl)
 
 /-- Reversing every component twice gives the original smooth link. -/
 @[simp]
@@ -266,9 +272,8 @@ def transDiffeomorph (L : SmoothLinkEmbedding I M n) (e : M ≃ₘ⟮I, I⟯ P) 
 /-- Ambient transport acts on every component by the same diffeomorphism. -/
 @[simp]
 theorem transDiffeomorph_apply (L : SmoothLinkEmbedding I M n) (e : M ≃ₘ⟮I, I⟯ P) (i : Fin n) :
-    L.transDiffeomorph e i = SmoothEmbedding.transDiffeomorph (L i) e := by
-  rw [transDiffeomorph.eq_def]
-  rfl
+    L.transDiffeomorph e i = SmoothEmbedding.transDiffeomorph (L i) e :=
+  (rfl)
 
 /-- Transporting by the identity ambient diffeomorphism changes nothing. -/
 @[simp]
@@ -312,9 +317,8 @@ theorem reverse_transDiffeomorph (L : SmoothLinkEmbedding I M n) (e : M ≃ₘ�
   apply SmoothLinkEmbedding.ext
   intro i
   rw [reverse_apply, transDiffeomorph_apply, transDiffeomorph_apply, reverse_apply]
-  apply SmoothEmbedding.ext
-  intro x
-  simp
+  rw [reverse_eq_compDiffeomorph, reverse_eq_compDiffeomorph]
+  exact (SmoothEmbedding.transDiffeomorph_compDiffeomorph (L i) circleReflection e).symm
 
 end Ambient
 
