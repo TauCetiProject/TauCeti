@@ -169,6 +169,14 @@ theorem stdGaussian_eq_withDensity :
 /-- **A nondegenerate multivariate Gaussian law is Lebesgue measure with the Gaussian density.** -/
 theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :
     multivariateGaussian m S = volume.withDensity (multivariateGaussianPDF m S) := by
+  -- The proof has four stages. First, facts about the square root `√S`: it is positive
+  -- semidefinite, squares to `S`, and has determinant `√(det S)`, hence is invertible and induces
+  -- a continuous linear equivalence `R` of `EuclideanSpace ℝ ι` (`hR` to `hAfun`). Second, the
+  -- inverse square root pulls the isotropic quadratic form back to the one of `S⁻¹` (`hconj`,
+  -- `hnorm`), and the two ways of writing the normalising constant agree (`hrpow`). Third, the
+  -- affine substitution `x ↦ m + R x` transports any density along the map (`hmapR`, `hmap`).
+  -- Finally, rewriting `multivariateGaussian` by the standard density and that transport reduces
+  -- the goal to a pointwise identity between the two closed forms.
   have hR : (CFC.sqrt S).PosSemidef := Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)
   have hRR : CFC.sqrt S * CFC.sqrt S = S := CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg
   have hdetS : 0 < S.det := hS.det_pos
@@ -195,9 +203,10 @@ theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace 
     rw [Real.sqrt_eq_rpow, ← Real.rpow_neg hdetS.le]
     congr 1
     ring
-  -- the affine substitution `x ↦ m + √S x` transports the standard density: the linear part
-  -- rescales `volume` by the Jacobian and substitutes `(√S)⁻¹`, and the translation leaves
-  -- `volume` alone
+  -- Stage three. The linear part rescales `volume` by the constant Jacobian `|det R|⁻¹` and
+  -- substitutes `R⁻¹` in the weight; the translation leaves `volume` alone and substitutes
+  -- `· - m`. The statement is left general in the weight `g` because the two stages compose
+  -- along `MeasurableEquiv.map_withDensity`, which is itself general in the weight.
   set R : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι := Matrix.toEuclideanCLE (CFC.sqrt S) hRunit
     with hRdef
   set r : ℝ≥0∞ := ENNReal.ofReal
