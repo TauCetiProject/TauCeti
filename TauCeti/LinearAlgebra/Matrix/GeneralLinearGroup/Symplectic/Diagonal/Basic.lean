@@ -32,6 +32,8 @@ equation.
 
 * `TauCeti.GLSymplecticFin.diagonal`: the diagonal split-torus homomorphism into the symplectic
   matrix group.
+* `TauCeti.GLSymplecticFin.diagonalTorus`: the subgroup of paired diagonal matrices, with
+  membership characterized by `TauCeti.GLSymplecticFin.mem_diagonalTorus_iff`.
 * `TauCeti.GLSymplecticFin.RootSubgroupIndex.character`: the character of the diagonal torus
   belonging to a root.
 * `TauCeti.GLSymplecticFin.diagonal_mul_rootSubgroup_mul_inv`: conjugation scales a root parameter
@@ -130,17 +132,33 @@ theorem coe_diagonal (t : Fin m → Rˣ) :
 theorem diagonal_injective : Function.Injective (diagonal (m := m) (R := R)) := by
   exact leviHom_injective.comp diagGL_injective
 
+/-- The paired diagonal torus in the symplectic group: the image of the diagonal homomorphism. -/
+noncomputable def diagonalTorus (R : Type u) [CommRing R] (m : ℕ) :
+    Subgroup (GLSymplecticFin m R) :=
+  (diagonal (m := m) (R := R)).range
+
+/-- A symplectic matrix belongs to the diagonal torus exactly when it is a paired diagonal
+matrix for some family of units. -/
+theorem mem_diagonalTorus_iff_exists_diagonal {g : GLSymplecticFin m R} :
+    g ∈ diagonalTorus R m ↔ ∃ t : Fin m → Rˣ, diagonal t = g :=
+  MonoidHom.mem_range
+
+/-- The paired diagonal torus is commutative, as the image of the coordinatewise units. -/
+instance instIsMulCommutativeDiagonalTorus : IsMulCommutative (diagonalTorus R m) :=
+  inferInstanceAs (IsMulCommutative (diagonal (m := m) (R := R)).range)
+
 /-- A symplectic matrix belongs to the paired diagonal torus exactly when it is diagonal. -/
 @[simp]
-theorem exists_diagonal_eq_iff {g : GLSymplecticFin m R} :
-    (∃ t : Fin m → Rˣ, diagonal t = g) ↔
+theorem mem_diagonalTorus_iff {g : GLSymplecticFin m R} :
+    g ∈ diagonalTorus R m ↔
       ((g : GL (Fin (m + m)) R) : Matrix (Fin (m + m)) (Fin (m + m)) R).IsDiag := by
   constructor
   · rintro ⟨t, rfl⟩
     rw [coe_diagonal, diagGL_coe]
     exact Matrix.isDiag_diagonal _
   · intro hg
-    obtain ⟨t, ht⟩ := mem_diagonalTorus_iff_exists_diagGL.mp (mem_diagonalTorus_iff.mpr hg)
+    obtain ⟨t, ht⟩ := mem_diagonalTorus_iff_exists_diagGL.mp
+      (TauCeti.mem_diagonalTorus_iff.mpr hg)
     have hform := mem_iff.mp g.property
     rw [← ht, diagGL_coe, Matrix.diagonal_transpose] at hform
     have hpair (i : Fin m) : t (i.addNat m) = (t (Fin.castAdd m i))⁻¹ := by

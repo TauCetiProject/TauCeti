@@ -61,19 +61,27 @@ variable [CommRing R] [IsCancelMulZero R]
 
 /-- The paired diagonal torus is its own centralizer whenever the domain has a unit different
 from its inverse. -/
-theorem centralizer_range_diagonal (u : Rˣ) (hu : u ≠ u⁻¹) :
-    Subgroup.centralizer ((diagonal (m := m) (R := R)).range : Set (GLSymplecticFin m R)) =
-      (diagonal (m := m) (R := R)).range := by
-  refine le_antisymm (fun g hg => MonoidHom.mem_range.mpr <|
-    exists_diagonal_eq_iff.mpr fun i j hij => ?_)
+theorem centralizer_diagonalTorus (u : Rˣ) (hu : u ≠ u⁻¹) :
+    Subgroup.centralizer (diagonalTorus R m : Set (GLSymplecticFin m R)) =
+      diagonalTorus R m := by
+  refine le_antisymm (fun g hg => mem_diagonalTorus_iff.mpr fun i j hij => ?_)
     (Subgroup.le_centralizer _)
   obtain ⟨t, ht⟩ := exists_diagonalCoordinates_ne u hu hij
-  have hcomm := Subgroup.mem_centralizer_iff.mp hg (diagonal t) ⟨t, rfl⟩
+  have hcomm := Subgroup.mem_centralizer_iff.mp hg (diagonal t)
+    (mem_diagonalTorus_iff_exists_diagonal.mpr ⟨t, rfl⟩)
   have hmatrix := congrArg
     (fun g : GLSymplecticFin m R =>
       ((g : GL (Fin (m + m)) R) : Matrix (Fin (m + m)) (Fin (m + m)) R)) hcomm
   simp only [Subgroup.coe_mul, Units.val_mul, coe_diagonal, diagGL_coe] at hmatrix
   exact apply_eq_zero_of_commute_diagonal hmatrix (fun h => ht (Units.ext h))
+
+/-- If the domain has a unit different from its inverse, every commutative subgroup containing
+the paired diagonal torus is that torus. -/
+theorem eq_diagonalTorus_of_le_of_isMulCommutative (u : Rˣ) (hu : u ≠ u⁻¹)
+    (H : Subgroup (GLSymplecticFin m R)) [IsMulCommutative H]
+    (hH : diagonalTorus R m ≤ H) : H = diagonalTorus R m :=
+  Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative
+    (centralizer_diagonalTorus u hu) hH
 
 end Domain
 
@@ -83,13 +91,13 @@ variable [Field R] [Infinite R]
 
 /-- Over an infinite field, the paired diagonal torus in the symplectic group is its own
 centralizer. -/
-theorem centralizer_range_diagonal_of_infinite :
-    Subgroup.centralizer ((diagonal (m := m) (R := R)).range : Set (GLSymplecticFin m R)) =
-      (diagonal (m := m) (R := R)).range := by
+theorem centralizer_diagonalTorus_of_infinite :
+    Subgroup.centralizer (diagonalTorus R m : Set (GLSymplecticFin m R)) =
+      diagonalTorus R m := by
   classical
   obtain ⟨a, ha⟩ := Infinite.exists_notMem_finset ({0, 1, -1} : Finset R)
   simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at ha
-  apply centralizer_range_diagonal (Units.mk0 a ha.1)
+  apply centralizer_diagonalTorus (Units.mk0 a ha.1)
   intro h
   have heq : a = a⁻¹ := congrArg Units.val h
   have hsq : a ^ 2 = 1 := by
@@ -100,12 +108,11 @@ theorem centralizer_range_diagonal_of_infinite :
 
 /-- Over an infinite field, every commutative subgroup containing the paired diagonal torus
 is that torus. -/
-theorem eq_range_diagonal_of_le_of_isMulCommutative
+theorem eq_diagonalTorus_of_le_of_isMulCommutative_of_infinite
     (H : Subgroup (GLSymplecticFin m R)) [IsMulCommutative H]
-    (hH : (diagonal (m := m) (R := R)).range ≤ H) :
-    H = (diagonal (m := m) (R := R)).range :=
+    (hH : diagonalTorus R m ≤ H) : H = diagonalTorus R m :=
   Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative
-    centralizer_range_diagonal_of_infinite hH
+    centralizer_diagonalTorus_of_infinite hH
 
 end InfiniteField
 
