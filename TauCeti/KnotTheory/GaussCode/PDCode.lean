@@ -193,11 +193,9 @@ theorem crossingOutgoing_relabel (D : BasedOrientedGaussCode n) (e : Equiv.Perm 
 /-- At each crossing, the four slots are equivalent to an over/under visit and an
 incoming/outgoing end of that visit. -/
 private def crossingSlotDataEquiv (D : BasedOrientedGaussCode n) :
-    Fin n × Fin 4 ≃ (Fin n × Bool) × Bool where
-  toFun p := ((p.1, (slotEquiv (D.sign p.1) p.2).1), (slotEquiv (D.sign p.1) p.2).2)
-  invFun p := (p.1.1, (slotEquiv (D.sign p.1.1)).symm (p.1.2, p.2))
-  left_inv p := by simp
-  right_inv p := by simp
+    Fin n × Fin 4 ≃ (Fin n × Bool) × Bool :=
+  (Equiv.prodCongrRight fun c : Fin n => slotEquiv (D.sign c)).trans
+    (Equiv.prodAssoc (Fin n) Bool Bool).symm
 
 /-!
 ### Half-edges and traversal
@@ -287,8 +285,13 @@ unknot, not to the empty link. -/
 @[simp]
 theorem toOrientedPDCode_empty :
     (empty : BasedOrientedGaussCode 0).toOrientedPDCode = orientedPDCodeUnknot true := by
-  simpa only [orientedPDCodeUnknot, toOrientedPDCode_crossinglessComponents, ↓reduceIte] using
-    (orientedPDCode_eq_unlink (empty : BasedOrientedGaussCode 0).toOrientedPDCode)
+  calc
+    _ = orientedPDCodeUnlink
+        (empty : BasedOrientedGaussCode 0).toOrientedPDCode.crossinglessComponents :=
+      orientedPDCode_eq_unlink _
+    _ = orientedPDCodeUnlink {true} := by simp
+    _ = orientedPDCodeUnknot true := by
+      simpa using (orientedPDCode_eq_unlink (orientedPDCodeUnknot true)).symm
 
 private theorem toOrientedPDCode_edgePair_outgoing_aux (D : BasedOrientedGaussCode n)
     (i : Fin (2 * n)) :
