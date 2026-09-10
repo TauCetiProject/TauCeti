@@ -47,10 +47,10 @@ pinned group; and its order is the superscript in the printed family name, recor
   `TauCeti.TypeTwistedE6LieIndex.toGraphTwistedIndex`,
   `TauCeti.TypeE7LieIndex.toGraphTwistedIndex` and
   `TauCeti.TypeDDiagramLieIndex.toGraphTwistedIndex`: the two type-A families, `Aₙ(q)` and
-  `²Aₙ(q)`, the untwisted rank-two family `B₂(q)`, the untwisted type-C family, the two families on
-  the `E₆` diagram, the untwisted family `E₇(q)`, and the three families on a type-`D` diagram, as
-  indices of that subtype, so that the permutations above are attached to
-  them.
+  `²Aₙ(q)`, the untwisted type-B family and its rank-two specialization `B₂(q)`, the untwisted
+  type-C family, the two families on the `E₆` diagram, the untwisted family `E₇(q)`, and the
+  three families on a type-`D` diagram, as indices of that subtype, so that the permutations above
+  are attached to them.
 
 ## Main results
 
@@ -364,49 +364,44 @@ abbrev toGraphTwistedIndex (d : TypeALieIndex) : GraphTwistedIndex :=
 
 end TypeALieIndex
 
-/-! ### The untwisted family `B₂(q)` as a graph-twisted index -/
-
-namespace TypeB2LieIndex
-
-/-- The untwisted rank-two family `B₂(q)`, regarded as an ordinary-or-graph-twisted index. Of the
-two classification-list families on the `B₂` diagram it is the one that uses no half-Frobenius,
-which is exactly the membership condition of `TauCeti.GraphTwistedIndex`; the other, the Suzuki
-family, is excluded by that same condition. -/
-abbrev toGraphTwistedIndex (d : TypeB2LieIndex) : GraphTwistedIndex :=
-  ⟨d.1.1, d.2⟩
-
-/-- **The diagram permutation of the untwisted family `B₂(q)` is the identity**, so its Steinberg
-map composes with no twist and is the `q`-power Frobenius outright. The `B₂` diagram has no
-symmetry to twist by in any case: its two nodes have different root lengths. -/
-@[simp]
-theorem diagramPerm_toGraphTwistedIndex (d : TypeB2LieIndex) :
-    d.toGraphTwistedIndex.diagramPerm = 1 := by
-  obtain ⟨q, hvalid, rfl⟩ := d.exists_eq_of
-  exact GraphTwistedIndex.diagramPerm_B hvalid
-
-end TypeB2LieIndex
-
 /-! ### The untwisted type-`B` family as graph-twisted indices -/
 
 namespace TypeBLieIndex
 
 open LieTypeIndex (not_usesHalfFrobenius_of_isTypeB)
 
-/-- A validated type-`B` index, regarded as an ordinary-or-graph-twisted index. The untwisted
-family `Bₙ(q)` does not use a half-Frobenius, unlike the Suzuki family it shares the rank-two
+/-- Regard a validated type-`B` index as an index of the non-half-Frobenius subtype. The
+untwisted family `Bₙ(q)` lies in this subtype, unlike the Suzuki family it shares the rank-two
 diagram with. -/
 abbrev toGraphTwistedIndex (d : TypeBLieIndex) : GraphTwistedIndex :=
   ⟨d.1, not_usesHalfFrobenius_of_isTypeB d.2⟩
 
-/-- **The diagram permutation of the untwisted family `Bₙ(q)` is the identity**, so its Steinberg
-map composes with no twist and is the `q`-power Frobenius outright. The `Bₙ` diagram has no
-symmetry to twist by in any case: it is a chain whose two ends carry different root lengths. -/
+/-- **The diagram permutation assigned to the untwisted family `Bₙ(q)` is the identity.** This is
+the index-level convention; no Steinberg map is constructed here. -/
 @[simp]
 theorem diagramPerm_eq_one (d : TypeBLieIndex) : d.toGraphTwistedIndex.diagramPerm = 1 := by
   obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_ofB
   simpa only [toGraphTwistedIndex] using GraphTwistedIndex.diagramPerm_B hvalid
 
 end TypeBLieIndex
+
+/-! ### The untwisted family `B₂(q)` as a graph-twisted index -/
+
+namespace TypeB2LieIndex
+
+/-- The untwisted rank-two family `B₂(q)`, regarded as an ordinary-or-graph-twisted index through
+its specialization to the general type-`B` family. -/
+abbrev toGraphTwistedIndex (d : TypeB2LieIndex) : GraphTwistedIndex :=
+  d.toTypeBLieIndex.toGraphTwistedIndex
+
+/-- **The diagram permutation of the untwisted family `B₂(q)` is the identity**, as the rank-two
+specialization of the general type-`B` convention. -/
+@[simp]
+theorem diagramPerm_toGraphTwistedIndex (d : TypeB2LieIndex) :
+    d.toGraphTwistedIndex.diagramPerm = 1 :=
+  TypeBLieIndex.diagramPerm_eq_one d.toTypeBLieIndex
+
+end TypeB2LieIndex
 
 /-! ### The type-C family as graph-twisted indices -/
 

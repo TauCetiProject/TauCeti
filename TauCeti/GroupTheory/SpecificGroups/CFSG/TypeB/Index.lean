@@ -32,8 +32,8 @@ also served, beside the Suzuki family, in
   family and the subtype of validated indices it cuts out.
 * `TauCeti.TypeBLieIndex.ofB` and `TauCeti.TypeBLieIndex.exists_eq_ofB`: the introduction form and
   the induction principle it supplies.
-* `TauCeti.LieTypeIndex.not_usesHalfFrobenius_of_isTypeB`: an index of the family takes an
-  ordinary Steinberg map, so it is one of `TauCeti.GraphTwistedIndex`.
+* `TauCeti.LieTypeIndex.not_usesHalfFrobenius_of_isTypeB`: the family lies in the non-half-Frobenius
+  subtype `TauCeti.GraphTwistedIndex`.
 * `TauCeti.TypeBLieIndex.dynkinType_cartanMatrix_apply` and `TauCeti.TypeBLieIndex.two_le_rank`:
   the Cartan matrix of the diagram such an index names, and the rank bound that the double edge
   naming the family imposes.
@@ -119,5 +119,15 @@ theorem two_le_rank (d : TypeBLieIndex) : 2 ≤ d.1.rank := by
       ((inStandardRange_iff _).mp ((valid_iff _).mp hvalid).1).1
 
 end TypeBLieIndex
+
+namespace TypeB2LieIndex
+
+/-- Regard an untwisted rank-two type-`B` index as an index of the general type-`B` family. -/
+abbrev toTypeBLieIndex (d : TypeB2LieIndex) : TypeBLieIndex :=
+  ⟨d.1.1, by
+    obtain ⟨q, hvalid, rfl⟩ := d.exists_eq_of
+    trivial⟩
+
+end TypeB2LieIndex
 
 end TauCeti
