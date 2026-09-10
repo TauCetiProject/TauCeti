@@ -22,6 +22,9 @@ forms a Hopf ideal; this sufficient commutative-algebra hypothesis is kept expli
 `TauCeti.HopfIdeal.reduction`. The construction records both the nested quotient and the single
 ambient defining ideal, together with their canonical identification.
 
+Open `TauCeti` to use this API with dot notation, such as `H.reducedCenterCoordinateMap`,
+alongside `H.reducedCenterDefiningIdeal` and `H.quotientReducedCenterIso`.
+
 This is the reduced-center input for proving that the center of a semisimple affine group is
 finite. Semisimplicity trivializes the smooth connected identity component of this reduction;
 the finite component-group theorem then makes the reduction finite, after which nilpotence of the
