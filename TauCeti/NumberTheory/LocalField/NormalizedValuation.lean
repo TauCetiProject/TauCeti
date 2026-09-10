@@ -7,6 +7,9 @@ module
 
 public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
+public import Mathlib.Algebra.Order.AbsoluteValue.Basic
+public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+public import TauCeti.Data.Int.WithZero
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 
 /-!
@@ -22,13 +25,19 @@ homomorphism
 
 whose value at a uniformizer is `Multiplicative.ofAdd 1`, and its zero-preserving extension
 `normalizedValuationWithZero K : K →*₀ ℤᵐ⁰`. An integer is recovered from a nonzero value by
-decoding with `Multiplicative.toAdd`.
+decoding with `Multiplicative.toAdd`. The associated rational-valued absolute value is
+
+`normalizedAbsoluteValue K : AbsoluteValue K ℚ≥0`.
+
+Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of the residue field.
 
 ## Main definitions
 
 * `TauCeti.normalizedValuation`: the normalized valuation `v_K^×` of a nonarchimedean local
   field, as a homomorphism from the unit group to `Multiplicative ℤ`.
 * `TauCeti.normalizedValuationWithZero`: its zero-preserving extension to all of the field.
+* `TauCeti.normalizedAbsoluteValue`: the normalized `ℚ≥0`-valued absolute value associated to
+  `normalizedValuation`.
 
 ## Main results
 
@@ -42,6 +51,9 @@ decoding with `Multiplicative.toAdd`.
   API for it comes from.
 * `TauCeti.normalizedValuation_eq_one_of_isOfFinOrder`: the normalized valuation vanishes on the
   roots of unity of `K`.
+* `TauCeti.normalizedAbsoluteValue_apply_ne_zero`: the formula `|x|_K = q ^ (-v_K(x))`.
+* `TauCeti.isNonarchimedean_normalizedAbsoluteValue`: the normalized absolute value satisfies the
+  strong triangle inequality.
 * `TauCeti.eq_normalizedValuation`: the kernel condition together with the uniformizer equation
   characterizes the normalized valuation among homomorphisms `Kˣ →* Multiplicative ℤ`.
 * `TauCeti.isUnit_iff_normalizedValuationWithZero_eq_one`,
@@ -318,5 +330,105 @@ theorem exists_eq_valuation_zpow_of_irreducible {π : 𝒪[K]} (hπ : Irreducibl
   obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp hγ
   refine ⟨n, ?_⟩
   simpa using congrArg Units.val hn.symm
+
+section NormalizedAbsoluteValue
+
+open scoped NNRat
+
+private theorem one_lt_residueFieldCard :
+    (1 : ℚ≥0) < Nat.card 𝓀[K] := by
+  exact_mod_cast (Finite.one_lt_card : 1 < Nat.card 𝓀[K])
+
+private noncomputable def normalizedAbsoluteValueHom : K →*₀ ℚ≥0 :=
+  (WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero).comp
+    (intValuation (K := K)).toMonoidWithZeroHom
+
+private theorem normalizedAbsoluteValueHom_apply (x : K) :
+    normalizedAbsoluteValueHom (K := K) x =
+      WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero
+        (intValuation (K := K) x) :=
+  rfl
+
+private theorem isNonarchimedean_normalizedAbsoluteValueHom :
+    IsNonarchimedean (normalizedAbsoluteValueHom (K := K)) := by
+  intro x y
+  rw [normalizedAbsoluteValueHom_apply, normalizedAbsoluteValueHom_apply,
+    normalizedAbsoluteValueHom_apply,
+    ← (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).monotone.map_max]
+  exact (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).monotone
+    ((intValuation (K := K)).map_add x y)
+
+variable (K) in
+/-- The normalized absolute value of a nonarchimedean local field, with values in `ℚ≥0`.
+For a nonzero element `x`, its value is `q ^ (-v_K(x))`, where
+`q = Nat.card 𝓀[K]` is the cardinality of the residue field. -/
+noncomputable def normalizedAbsoluteValue : AbsoluteValue K ℚ≥0 where
+  toFun := normalizedAbsoluteValueHom (K := K)
+  map_mul' := map_mul (normalizedAbsoluteValueHom (K := K))
+  nonneg' _ := bot_le
+  eq_zero' x := by
+    simp [normalizedAbsoluteValueHom, intValuation]
+  add_le' x y := IsNonarchimedean.add_le (fun _ ↦ bot_le)
+    isNonarchimedean_normalizedAbsoluteValueHom
+
+private theorem normalizedAbsoluteValue_apply (x : K) :
+    normalizedAbsoluteValue K x = normalizedAbsoluteValueHom (K := K) x :=
+  rfl
+
+/-- The normalized absolute value is the rational power `q ^ (-v_K(x))` at every nonzero
+element, where `q` is the cardinality of the residue field. -/
+theorem normalizedAbsoluteValue_apply_ne_zero (x : K) (hx : x ≠ 0) :
+    normalizedAbsoluteValue K x =
+      (Nat.card 𝓀[K] : ℚ≥0) ^
+        (-(normalizedValuation K (Units.mk0 x hx)).toAdd) := by
+  rw [normalizedAbsoluteValue_apply, normalizedAbsoluteValueHom_apply,
+    WithZeroMulInt.toNNRat_apply_of_ne_zero]
+  · rw [toAdd_normalizedValuation_eq_ord, Valuation.ord_def, neg_neg,
+      WithZero.toAdd_unzero_eq_log]
+    rfl
+  · simp [intValuation, hx]
+
+/-- The normalized absolute value on `Kˣ` is the rational power `q ^ (-v_K(x))`. -/
+theorem normalizedAbsoluteValue_coe (x : Kˣ) :
+    normalizedAbsoluteValue K (x : K) =
+      (Nat.card 𝓀[K] : ℚ≥0) ^ (-(normalizedValuation K x).toAdd) := by
+  simpa using normalizedAbsoluteValue_apply_ne_zero (x : K) x.ne_zero
+
+/-- The normalized absolute value satisfies the strong triangle inequality. -/
+theorem isNonarchimedean_normalizedAbsoluteValue :
+    IsNonarchimedean (normalizedAbsoluteValue K) :=
+  isNonarchimedean_normalizedAbsoluteValueHom
+
+/-- The normalized absolute value takes the value one exactly on the elements of valuation one,
+that is, on the units of the ring of integers. -/
+@[simp]
+theorem normalizedAbsoluteValue_eq_one_iff (x : K) :
+    normalizedAbsoluteValue K x = 1 ↔ valuation K x = 1 := by
+  rw [normalizedAbsoluteValue_apply, normalizedAbsoluteValueHom_apply,
+    WithZeroMulInt.toNNRat_eq_one_iff]
+  · change valueGroupWithZeroIsoInt K (valuation K x) = 1 ↔ valuation K x = 1
+    simp
+  · exact (one_lt_residueFieldCard (K := K)).ne'
+
+/-- An element belongs to the ring of integers exactly when its normalized absolute value is at
+most one. -/
+theorem mem_integer_iff_normalizedAbsoluteValue_le_one (x : K) :
+    x ∈ 𝒪[K] ↔ normalizedAbsoluteValue K x ≤ 1 := by
+  rw [Valuation.mem_integer_iff, normalizedAbsoluteValue_apply, normalizedAbsoluteValueHom_apply,
+    WithZeroMulInt.toNNRat_le_one_iff]
+  · change valuation K x ≤ 1 ↔ valueGroupWithZeroIsoInt K (valuation K x) ≤ 1
+    simpa only [map_one] using
+      (OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
+        (a := valuation K x) (b := 1)).symm
+  · exact one_lt_residueFieldCard (K := K)
+
+/-- The normalized absolute value is one on every root of unity. -/
+theorem normalizedAbsoluteValue_eq_one_of_isOfFinOrder {x : Kˣ} (hx : IsOfFinOrder x) :
+    normalizedAbsoluteValue K (x : K) = 1 := by
+  rw [normalizedAbsoluteValue_eq_one_iff]
+  exact (normalizedValuation_eq_one_iff x).1
+    (normalizedValuation_eq_one_of_isOfFinOrder hx)
+
+end NormalizedAbsoluteValue
 
 end TauCeti
