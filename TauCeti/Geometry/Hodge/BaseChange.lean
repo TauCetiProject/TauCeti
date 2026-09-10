@@ -373,6 +373,19 @@ theorem rationalMapToComplex_rationalToComplexLinearEquiv_tmul
       rationalToComplexLinearEquiv h'ℚ h'ℂ (z ⊗ₜ[ℚ] f x) := by
   simp [rationalMapToComplex]
 
+/-- Complexification of a rational map is natural for the rational-to-complex structure maps:
+it carries the image of a rational vector to the image of its value under the map. -/
+@[simp]
+theorem rationalMapToComplex_rationalToComplexMap
+    (hℚ : IsBaseChange ℚ ιℚ) (hℂ : IsBaseChange ℂ ιℂ)
+    (h'ℚ : IsBaseChange ℚ ι'ℚ) (h'ℂ : IsBaseChange ℂ ι'ℂ)
+    (f : Vℚ →ₗ[ℚ] V'ℚ) (x : Vℚ) :
+    rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f (rationalToComplexMap hℚ ιℂ x) =
+      rationalToComplexMap h'ℚ ι'ℂ (f x) := by
+  rw [← rationalToComplexLinearEquiv_one_tmul hℚ hℂ,
+    ← rationalToComplexLinearEquiv_one_tmul h'ℚ h'ℂ,
+    rationalMapToComplex_rationalToComplexLinearEquiv_tmul]
+
 /-- Complexification sends the identity rational map to the identity complex map. -/
 @[simp]
 theorem rationalMapToComplex_id (hℚ : IsBaseChange ℚ ιℚ)
