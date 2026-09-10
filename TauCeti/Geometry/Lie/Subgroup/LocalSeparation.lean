@@ -21,8 +21,9 @@ This is the local-separation input for the subgroup chart: when `M` is a complem
 
 ## Main result
 
-* `TauCeti.Lie.exists_norm_lt_lieExp_mem_iff_eq_zero_of_disjoint`: exponential membership near
-  zero characterizes the zero vector on any subspace disjoint from the subgroup Lie algebra.
+* `TauCeti.Lie.exists_pos_forall_norm_lt_lieExp_mem_iff_eq_zero_of_disjoint`: exponential
+  membership near zero characterizes the zero vector on any subspace disjoint from the subgroup
+  Lie algebra.
 
 ## References
 
@@ -55,7 +56,7 @@ positive-radius ball about zero, an element of `M` has exponential in `K` exactl
 
 This needs only disjointness; in the closed-subgroup chart construction it applies in particular
 when `M` is chosen as a linear complement of `lieSubalgebraOfSubgroup K`. -/
-theorem exists_norm_lt_lieExp_mem_iff_eq_zero_of_disjoint {K : Subgroup G}
+theorem exists_pos_forall_norm_lt_lieExp_mem_iff_eq_zero_of_disjoint {K : Subgroup G}
     (hK : IsClosed (K : Set G)) (M : Submodule ℝ (LeftInvariantDerivation I G))
     (hM : Disjoint M (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) :
     ∃ ε > 0, ∀ X ∈ M, ‖X‖ < ε → (lieExp (I := I) X ∈ K ↔ X = 0) := by
@@ -75,7 +76,8 @@ theorem exists_norm_lt_lieExp_mem_iff_eq_zero_of_disjoint {K : Subgroup G}
   have hZM : Z ∈ M := by
     apply M.closed_of_finiteDimensional.mem_of_tendsto hφ
     filter_upwards with n
-    exact M.smul_mem _ (hXM (φ n))
+    change ‖X (φ n)‖⁻¹ • X (φ n) ∈ M
+    exact M.smul_mem ‖X (φ n)‖⁻¹ (hXM (φ n))
   have hZlie : Z ∈ lieSubalgebraOfSubgroup (I := I) K := by
     apply mem_lieSubalgebraOfSubgroup_of_seq hK
       (t := fun n => ‖X (φ n)‖) (Xn := Y ∘ φ)
