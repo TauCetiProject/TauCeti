@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.Cyclotomic.GaussSum
+public import TauCeti.NumberTheory.Multiquadratic.Galois.Kummer
 public import Mathlib.RingTheory.RootsOfUnity.Complex
+import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
 # A multiquadratic field lies in a cyclotomic field
@@ -32,6 +34,11 @@ Taking `L = ℂ` makes the statement unconditional: with `N = 4 ∏ᵢ |num dᵢ
 `ℚ(ζ_N)` is the `N`-th cyclotomic field: `IsPrimitiveRoot.adjoin_isCyclotomicExtension` identifies
 it as a cyclotomic extension of `ℚ`.
 
+No presentation by radicals need be assumed of the input field: exponent-two Kummer theory
+(`TauCeti.Multiquadratic.exists_root_adjoin_range_eq_top`) writes any finite Galois extension of
+`ℚ` whose Galois group has exponent dividing two as `ℚ(√d₁, …, √dₙ)` for rational `dᵢ`, so such a
+field admits a `ℚ`-algebra embedding into a cyclotomic field.
+
 This is the multiquadratic case of the Kronecker–Weber theorem, which it makes explicit: the
 cyclotomic field is named, not merely asserted to exist. The general theorem, for every abelian
 extension of `ℚ`, is not proved here. For the classical account see K. Ireland and M. Rosen, *A
@@ -48,6 +55,9 @@ Classical Introduction to Modern Number Theory*, Chapter 6.
   root of unity `ζ_N = exp (2 π i / N)` and the order `N = 4 ∏ᵢ |num dᵢ · den dᵢ|`.
 * `TauCeti.Multiquadratic.exists_isCyclotomicExtension_adjoin_range_le`: every multiquadratic field
   with rational radicands lies in a cyclotomic field.
+* `TauCeti.Multiquadratic.exists_isCyclotomicExtension_nonempty_algHom`: the abstract form — a
+  finite Galois extension of `ℚ` whose Galois group has exponent dividing two admits a
+  `ℚ`-algebra embedding into a cyclotomic extension of `ℚ`.
 -/
 
 public section
@@ -232,6 +242,30 @@ theorem exists_isCyclotomicExtension_adjoin_range_le {ι : Type*} [Finite ι] {d
   have : NeZero N := ⟨hpos.ne'⟩
   exact ⟨N, hpos, _, (IntermediateField.isCyclotomicExtension_singleton_iff_eq_adjoin
     (F := adjoin ℚ {Complex.exp (2 * Real.pi * Complex.I / (N : ℂ))}) (hζ := hζ)).mpr rfl, hle⟩
+
+/-- **Every multiquadratic field embeds in a cyclotomic field.** Let `E / ℚ` be a finite Galois
+extension whose Galois group has exponent dividing two. Then there is a cyclotomic extension `G`
+of `ℚ` inside `ℂ` and a `ℚ`-algebra embedding of `E` into `G`.
+
+This is the abstract form of the containment above: nothing is assumed about how `E` is presented,
+only about the shape of its Galois group. Exponent-two Kummer theory
+(`exists_root_adjoin_range_eq_top`) supplies rational radicands and square roots generating `E`,
+a complex embedding carries them into `ℂ`, and
+`exists_isCyclotomicExtension_adjoin_range_le` places the image in a cyclotomic field. -/
+theorem exists_isCyclotomicExtension_nonempty_algHom (E : Type*) [Field E] [Algebra ℚ E]
+    [FiniteDimensional ℚ E] [IsGalois ℚ E] (hexp : Monoid.exponent (E ≃ₐ[ℚ] E) ∣ 2) :
+    ∃ N : ℕ, 0 < N ∧ ∃ G : IntermediateField ℚ ℂ,
+      IsCyclotomicExtension {N} ℚ G ∧ Nonempty (E →ₐ[ℚ] G) := by
+  obtain ⟨n, d, root, hroot, -, hadjoin, -⟩ :=
+    exists_root_adjoin_range_eq_top (K := ℚ) (L := E) hexp
+  let φ : E →ₐ[ℚ] ℂ := IsAlgClosed.lift
+  obtain ⟨N, hN, G, hG, hle⟩ := exists_isCyclotomicExtension_adjoin_range_le (d := d)
+    (r := fun i => φ (root i)) fun i => by rw [← map_pow, hroot i, AlgHom.commutes, eq_ratCast]
+  refine ⟨N, hN, G, hG, ⟨(IntermediateField.inclusion ?_).comp φ.equivFieldRange.toAlgHom⟩⟩
+  rintro _ ⟨x, rfl⟩
+  have hx : φ x ∈ (adjoin ℚ (Set.range root)).map φ := ⟨x, hadjoin ▸ mem_top, rfl⟩
+  rw [adjoin_map, ← Set.range_comp] at hx
+  exact hle hx
 
 /-- **Worked example: `ℚ(√2, √3) ⊆ ℚ(ζ₂₄)`.** A biquadratic field lies in the `24`-th cyclotomic
 field, for either choice of the two square roots. The order `24` is what the construction uses:
