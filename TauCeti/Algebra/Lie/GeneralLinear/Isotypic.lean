@@ -6,12 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Carrier
-public import TauCeti.Algebra.Lie.Isotypic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Multiplicity
 -- Non-public: these declarations appear only inside proofs.
 import TauCeti.Algebra.Lie.GeneralLinear.Existence
-import TauCeti.Algebra.Lie.GeneralLinear.Uniqueness
-import Mathlib.Algebra.Lie.Semisimple.Basic
 
 /-!
 # The single-weight isotypy criterion for `gl_n`
@@ -27,17 +24,15 @@ algebra unless its centre acts semisimply.
 
 ## Main results
 
-* `gl_isotypic_of_forall_irreducible_exists_isGlHighestWeightVector`: a criterion using a supplied
+* `isIsotypic_of_forall_irreducible_exists_isGlHighestWeightVector`: a criterion using a supplied
   highest-weight vector in every irreducible submodule.
-* `gl_isotypic_of_forall_isGlHighestWeightVector`: the finite-dimensional criterion over an
+* `isIsotypic_of_forall_isGlHighestWeightVector`: the finite-dimensional criterion over an
   algebraically closed field.
+* `isIsotypicOfType_of_forall_isGlHighestWeightVector`: the criterion identifying an arbitrary
+  irreducible type from one highest-weight vector.
+* `isIsotypicOfType_glIrreducible_of_forall_isGlHighestWeightVector`: the fixed-carrier criterion.
 * `nonempty_lieModuleEquiv_directSum_glIrreducible_of_forall_isGlHighestWeightVector`: the counted
   direct-sum criterion for a completely reducible nonzero module.
-
-## Roadmap
-
-This is the single-weight criterion in Layer 9 of the Lie highest-weight roadmap. It supplies the
-isotypy step for the CAR module in Layer 9 of the spin-representation roadmap.
 
 ## References
 
@@ -54,13 +49,16 @@ open scoped DirectSum
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-universe u v
+universe u v w
 
 variable {K : Type u} [Field K] [CharZero K]
 variable {N : ℕ}
 variable {M : Type v} [AddCommGroup M] [Module K M]
   [LieRingModule (Matrix (Fin N) (Fin N) K) M]
   [LieModule K (Matrix (Fin N) (Fin N) K) M]
+variable {S : Type w} [AddCommGroup S] [Module K S]
+  [LieRingModule (Matrix (Fin N) (Fin N) K) S]
+  [LieModule K (Matrix (Fin N) (Fin N) K) S]
 variable {mu : Fin N → K}
 
 /-- If every irreducible submodule of a `gl_N`-module carries a highest-weight vector of weight
@@ -68,7 +66,7 @@ variable {mu : Fin N → K}
 
 This form does not require finite-dimensionality or an algebraically closed field: those
 hypotheses are only needed to produce the highest-weight vectors, which are supplied here. -/
-theorem gl_isotypic_of_forall_irreducible_exists_isGlHighestWeightVector
+theorem isIsotypic_of_forall_irreducible_exists_isGlHighestWeightVector
     (h : ∀ (P : LieSubmodule K (Matrix (Fin N) (Fin N) K) M)
       [_root_.LieModule.IsIrreducible K (Matrix (Fin N) (Fin N) K) P],
       ∃ v : P, IsGlHighestWeightVector mu v) :
@@ -84,10 +82,10 @@ theorem gl_isotypic_of_forall_irreducible_exists_isGlHighestWeightVector
 /-- **The single-weight isotypy criterion for `gl_N`.** If every highest-weight vector in a
 finite-dimensional `gl_N`-module over an algebraically closed field has weight `mu`, then every
 pair of irreducible submodules is equivalent. -/
-theorem gl_isotypic_of_forall_isGlHighestWeightVector [IsAlgClosed K] [FiniteDimensional K M]
+theorem isIsotypic_of_forall_isGlHighestWeightVector [IsAlgClosed K] [FiniteDimensional K M]
     (h : ∀ (nu : Fin N → K) (v : M), IsGlHighestWeightVector nu v → nu = mu) :
     _root_.LieModule.IsIsotypic K (Matrix (Fin N) (Fin N) K) M := by
-  apply gl_isotypic_of_forall_irreducible_exists_isGlHighestWeightVector (mu := mu)
+  apply isIsotypic_of_forall_irreducible_exists_isGlHighestWeightVector (mu := mu)
   intro P _
   let _ : Nontrivial P :=
     _root_.LieModule.nontrivial_of_isIrreducible
@@ -96,6 +94,40 @@ theorem gl_isotypic_of_forall_isGlHighestWeightVector [IsAlgClosed K] [FiniteDim
   have hnu : nu = mu := h nu (v : M) (isGlHighestWeightVector_coe_iff.mpr hv)
   subst nu
   exact ⟨v, hv⟩
+
+/-- If an irreducible `gl_N`-module `S` carries a highest-weight vector of weight `mu`, then a
+finite-dimensional module whose highest-weight vectors all have weight `mu` is isotypic of type
+`S`. -/
+theorem isIsotypicOfType_of_forall_isGlHighestWeightVector
+    [IsAlgClosed K] [FiniteDimensional K M]
+    [_root_.LieModule.IsIrreducible K (Matrix (Fin N) (Fin N) K) S]
+    {w : S} (hw : IsGlHighestWeightVector mu w)
+    (h : ∀ (nu : Fin N → K) (v : M), IsGlHighestWeightVector nu v → nu = mu) :
+    _root_.LieModule.IsIsotypicOfType K (Matrix (Fin N) (Fin N) K) M S := by
+  rw [_root_.LieModule.isIsotypicOfType_iff]
+  intro P _
+  let _ : Nontrivial P :=
+    _root_.LieModule.nontrivial_of_isIrreducible
+      (R := K) (L := Matrix (Fin N) (Fin N) K) (M := P)
+  obtain ⟨nu, v, hv⟩ := exists_isGlHighestWeightVector (K := K) (N := N) (M := P)
+  have hnu : nu = mu := h nu (v : M) (isGlHighestWeightVector_coe_iff.mpr hv)
+  subst nu
+  exact nonempty_lieModuleEquiv_of_isGlHighestWeightVector hv hw
+
+/-- **The single-weight fixed-carrier criterion for `gl_N`.** A nonzero finite-dimensional module
+whose highest-weight vectors all have weight `mu` is isotypic of type `glIrreducible N mu`. -/
+theorem isIsotypicOfType_glIrreducible_of_forall_isGlHighestWeightVector
+    [IsAlgClosed K] [FiniteDimensional K M] [Nontrivial M]
+    (h : ∀ (nu : Fin N → K) (v : M), IsGlHighestWeightVector nu v → nu = mu) :
+    _root_.LieModule.IsIsotypicOfType K (Matrix (Fin N) (Fin N) K) M
+      (glIrreducible N mu) := by
+  obtain ⟨nu, v, hv⟩ := exists_isGlHighestWeightVector (K := K) (N := N) (M := M)
+  have hnu : nu = mu := h nu v hv
+  subst nu
+  have hmu := hv.isGlDominantIntegral
+  let _ := isIrreducible_glIrreducible (K := K) hmu
+  exact isIsotypicOfType_of_forall_isGlHighestWeightVector
+    (isGlHighestWeightVector_glIrreducibleGenerator hmu) h
 
 /-- **The single-weight direct-sum criterion for `gl_N`.** A nonzero finite-dimensional completely
 reducible `gl_N`-module whose highest-weight vectors all have weight `mu` is the direct sum of
@@ -115,15 +147,7 @@ theorem nonempty_lieModuleEquiv_directSum_glIrreducible_of_forall_isGlHighestWei
   subst nu
   have hmu := hv.isGlDominantIntegral
   let _ := isIrreducible_glIrreducible (K := K) hmu
-  apply _root_.LieModule.nonempty_lieModuleEquiv_of_isIsotypicOfType
-  rw [_root_.LieModule.isIsotypicOfType_iff]
-  intro P _
-  let _ : Nontrivial P :=
-    _root_.LieModule.nontrivial_of_isIrreducible
-      (R := K) (L := Matrix (Fin N) (Fin N) K) (M := P)
-  obtain ⟨nu, w, hw⟩ := exists_isGlHighestWeightVector (K := K) (N := N) (M := P)
-  have hnu : nu = mu := h nu (w : M) (isGlHighestWeightVector_coe_iff.mpr hw)
-  subst nu
-  exact nonempty_lieModuleEquiv_glIrreducible hmu hw
+  exact _root_.LieModule.nonempty_lieModuleEquiv_of_isIsotypicOfType _
+    (isIsotypicOfType_glIrreducible_of_forall_isGlHighestWeightVector h)
 
 end TauCeti
