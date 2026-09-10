@@ -15,7 +15,7 @@ import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.BaseChange
 
 The kernel of an isogeny of affine group schemes is finite and faithfully flat over the base.
 In Hopf coordinates, if `f : H ⟶ K` is finite and faithfully flat, the kernel coordinate
-ring is the quotient `K ⨸ K·f(H⁺)`. The quotient--tensor comparison identifies this algebra with
+ring is the quotient `K ⧸ K·f(H⁺)`. The quotient--tensor comparison identifies this algebra with
 `K ⊗[H] R`; finiteness and faithful flatness then follow by base change.
 
 The same result is also recorded intrinsically for the represented affine group schemes. The
