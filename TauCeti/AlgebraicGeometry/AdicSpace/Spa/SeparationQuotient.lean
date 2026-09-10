@@ -54,6 +54,7 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
 /-- Under pullback from an ideal quotient, the preimage of the analytic locus is the analytic locus
 of the quotient. -/
+@[simp]
 theorem spaComap_preimage_spaAnalytic_quotientMk (J : Ideal A) (Aplus : Subring A) :
     spaComap (Ideal.Quotient.mk J) continuous_quotient_mk' Aplus
         (Aplus.map (Ideal.Quotient.mk J))
@@ -115,8 +116,24 @@ theorem spaSeparationQuotientHomeomorph_apply (Aplus : Subring A)
           (f := Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))).mpr ⟨a, ha, rfl⟩) v := by
   exact Topology.IsEmbedding.toHomeomorphOfSurjective_apply _ _ v
 
+/-- The inverse separated-quotient homeomorphism is the canonical lift through the quotient. -/
+@[simp]
+theorem spaSeparationQuotientHomeomorph_symm_apply_val (Aplus : Subring A) (v : spa Aplus) :
+    ((spaSeparationQuotientHomeomorph Aplus).symm v).1 =
+      quotientLift (Ideal.closure (⊥ : Ideal A))
+        (closure_zero_le_supp_of_isContinuous ((mem_spa_iff Aplus v).mp v.property).1) := by
+  apply (isEmbedding_comap_quotientMk (Ideal.closure (⊥ : Ideal A))).injective
+  rw [comap_quotientLift]
+  rw [← spaComap_val (Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))
+    continuous_quotient_mk' Aplus (separationQuotientPlus Aplus)
+    (fun a ha ↦ (Subring.mem_map
+      (f := Ideal.Quotient.mk (Ideal.closure (⊥ : Ideal A)))).mpr ⟨a, ha, rfl⟩)]
+  exact congrArg Subtype.val
+    ((spaSeparationQuotientHomeomorph Aplus).apply_symm_apply v)
+
 /-- **Wedhorn Proposition 7.49(2)(iii), locus form.** The homeomorphism induced by passage to the
 separated quotient identifies the analytic loci. -/
+@[simp]
 theorem spaSeparationQuotientHomeomorph_preimage_spaAnalytic (Aplus : Subring A) :
     spaSeparationQuotientHomeomorph Aplus ⁻¹' (Subtype.val ⁻¹' spaAnalytic Aplus) =
       Subtype.val ⁻¹' spaAnalytic (separationQuotientPlus Aplus) := by
