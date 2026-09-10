@@ -242,18 +242,6 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinElement
 
 /-! ### The Frobenius at an arbitrary unramified prime -/
 
-/-- Every automorphism of the candidate genus field over `ℚ` is an involution: the Galois group is
-the elementary abelian group of sign patterns on the prime discriminants. -/
-private theorem aut_candidateGenusField_pow_two_eq_one (hd : Squarefree d)
-    (ρ : candidateGenusField hd ≃ₐ[ℚ] candidateGenusField hd) : ρ ^ 2 = 1 := by
-  apply (galoisGroupEquivCandidateGenusField hd).injective
-  rw [map_pow, map_one, galoisGroupEquivCandidateGenusField_apply, ← ofAdd_nsmul]
-  have hzero : (2 : ℕ) • candidateGenusFieldSignPattern hd ρ = 0 := by
-    funext P
-    have : ∀ a : ZMod 2, (2 : ℕ) • a = 0 := by decide
-    simpa using this (candidateGenusFieldSignPattern hd ρ P)
-  rw [hzero, ofAdd_zero]
-
 /-- **The genus-field isomorphism sends every Frobenius to the class of the prime below it.**
 Let `v` be a height-one prime of the embedded quadratic base `K = ℚ(√d)` whose rational prime `q`
 does not divide twice the discriminant of `K` — equivalently, `q` is odd and unramified in `K` —
@@ -310,8 +298,13 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_not_
         Q.under (𝓞 (candidateGenusFieldBase hd))) = TauCeti.rationalPrimeBelow v ^ 2 := by
       have hunder : Q.under (𝓞 (candidateGenusFieldBase hd)) = v.asIdeal := Ideal.LiesOver.over.symm
       rw [hunder, ← Submodule.cardQuot_apply, ← Ideal.absNorm_apply, hnorm]
-    have hσone : σ = 1 := NumberField.isArithFrobAt_eq_one_of_pow_eq_one hρ
-      (aut_candidateGenusField_pow_two_eq_one hd ρ) hcard hσ
+    -- Every automorphism of the candidate genus field over `ℚ` is an involution: transport
+    -- `aut_mul_self_eq_one` along the presentation of `candidateGenusField` as an `adjoin`.
+    have hρ2 : ρ ^ 2 = 1 := by
+      apply (AlgEquiv.autCongr (candidateGenusFieldEquivAdjoin hd)).injective
+      rw [map_pow, map_one, pow_two]
+      exact aut_mul_self_eq_one (genusFieldRoot_sq_algebraMap hd) _
+    have hσone : σ = 1 := NumberField.isArithFrobAt_eq_one_of_pow_eq_one hρ hρ2 hcard hσ
     have hspan : v.asIdeal =
         Ideal.span {((TauCeti.rationalPrimeBelow v : ℕ) : 𝓞 (candidateGenusFieldBase hd))} :=
       TauCeti.asIdeal_eq_span_singleton_of_absNorm_eq_pow_finrank
@@ -370,6 +363,12 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway
         (NarrowClassGroup.mk (J : (FractionalIdeal (𝓞 (candidateGenusFieldBase hd))⁰
           (candidateGenusFieldBase hd))ˣ)))) fun J J' ↦ by
       rw [Subgroup.coe_mul, map_mul, TauCeti.elementaryTwoQuotientMk_mul, ofAdd_add]
+  -- `MonoidHom.mk'` stores the underlying function, so this is the computation rule for `cls`.
+  have hcls : ∀ J : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S,
+      cls J = Multiplicative.ofAdd
+        (TauCeti.elementaryTwoQuotientMk
+          (NarrowClassGroup.mk (J : (FractionalIdeal (𝓞 (candidateGenusFieldBase hd))⁰
+            (candidateGenusFieldBase hd))ˣ))) := fun _ ↦ rfl
   have key : ((autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd
       hnsq).symm.toMonoidHom).comp cls =
       NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm S
@@ -385,14 +384,13 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway
         FractionalIdeal.mk0 (candidateGenusFieldBase hd)
           ⟨v.asIdeal, mem_nonZeroDivisors_iff_ne_zero.mpr v.ne_bot⟩ :=
       Units.ext (by rw [hJ, FractionalIdeal.coe_mk0])
-    change Multiplicative.ofAdd (TauCeti.elementaryTwoQuotientMk (NarrowClassGroup.mk _)) = _
-    rw [hunit, NarrowClassGroup.mk_mk0]
+    rw [hcls, hunit, NarrowClassGroup.mk_mk0]
     exact (autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_not_dvd hd hnsq v
       (fun hdvd ↦ hv (hS v hdvd)) Q σ hσ).symm
   have hI := DFunLike.congr_fun key I
   rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom] at hI
   rw [← hI, MulEquiv.apply_symm_apply]
-  rfl
+  exact hcls I
 
 /-- **The genus-field Artin map is trivial exactly on the narrow classes that are squares.** An
 invertible fractional ideal prime to `S` has trivial Artin automorphism in `Gal(K_gen/K)` precisely

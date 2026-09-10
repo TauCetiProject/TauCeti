@@ -59,8 +59,6 @@ group of `Q` embeds into the automorphism group of the residue extension, so an 
   of the relative Frobenius is `σ` itself, with no power.
 * `NumberField.isArithFrobAt_int_of_absNorm_eq`: a relative Frobenius above an ideal of absolute
   norm `p` is also a Frobenius over the ideal `(p)` of `ℤ`.
-* `NumberField.mk_pow_smul_isArithFrobAt_int`: a power of an absolute Frobenius acts on the
-  residue field by the matching power of `p`.
 * `NumberField.isArithFrobAt_one_of_pow_eq_one` and
   `NumberField.isArithFrobAt_eq_one_of_pow_eq_one`: when an absolute Frobenius at `Q` has order
   dividing `n` and the residue field of `Q ∩ 𝓞 M` has `p ^ n` elements, the relative Frobenius
@@ -242,26 +240,10 @@ theorem restrictScalars_eq_of_inertiaDeg_eq_one [Algebra.IsUnramifiedAt (𝓞 K)
 
 /-! ### Trivial relative Frobenius elements
 
-A prime that is already inert enough over `ℚ` carries no relative Frobenius: if the absolute
+A prime that is already inert enough over `ℚ` has trivial relative Frobenius: if the absolute
 Frobenius `ρ` at `Q` has `ρ ^ n = 1` and the residue field of `Q ∩ 𝓞 M` has `p ^ n` elements, then
 the residue action of the relative Frobenius, raising to the power `p ^ n`, is the identity.
 -/
-
-omit [Q.IsPrime] in
-/-- **A power of the absolute Frobenius raises to that power of `p` on the residue field.** For a
-number field `L` and a prime `Q` of `𝓞 L` above the rational prime `p`, an arithmetic Frobenius
-`ρ ∈ Gal(L/ℚ)` at `Q` over `ℤ` satisfies `ρ ^ n • x ≡ x ^ p ^ n (mod Q)`. -/
-theorem mk_pow_smul_isArithFrobAt_int {p : ℕ} {ρ : L ≃ₐ[ℚ] L}
-    [Q.LiesOver (Ideal.span {(p : ℤ)})] (hρ : IsArithFrobAt ℤ ρ Q) (n : ℕ) (x : 𝓞 L) :
-    Ideal.Quotient.mk Q ((ρ ^ n) • x) = Ideal.Quotient.mk Q x ^ p ^ n := by
-  have hunder : Q.under ℤ = Ideal.span {(p : ℤ)} := Ideal.LiesOver.over.symm
-  induction n generalizing x with
-  | zero => simp
-  | succ n ih =>
-    have hstep : Ideal.Quotient.mk Q (ρ • x) = Ideal.Quotient.mk Q x ^ p := by
-      have h := hρ.mk_apply x
-      rwa [hunder, Int.card_ideal_quot] at h
-    rw [pow_succ, mul_smul, ih, hstep, ← pow_mul, ← pow_succ']
 
 omit [NumberField M] [Q.IsPrime] in
 /-- **The identity is a relative Frobenius at a prime whose base residue field absorbs the
@@ -274,8 +256,9 @@ theorem isArithFrobAt_one_of_pow_eq_one {p n : ℕ} {ρ : L ≃ₐ[ℚ] L}
     (hcard : Nat.card (𝓞 M ⧸ Q.under (𝓞 M)) = p ^ n) :
     IsArithFrobAt (𝓞 M) (1 : L ≃ₐ[M] L) Q := by
   intro x
-  have h := mk_pow_smul_isArithFrobAt_int (p := p) hρ n x
-  rw [hρn, one_smul] at h
+  have hunder : Q.under ℤ = Ideal.span {(p : ℤ)} := Ideal.LiesOver.over.symm
+  have h := hρ.mk_pow_smul n x
+  rw [hunder, Int.card_ideal_quot, hρn, one_smul] at h
   rw [← Ideal.Quotient.eq, map_pow, hcard]
   simpa using h
 
