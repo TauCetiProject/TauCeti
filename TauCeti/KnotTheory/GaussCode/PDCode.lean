@@ -44,8 +44,8 @@ Diagram Codes*, Definitions 2--3, and the oriented crossing convention of W. B. 
 
 ## Main results
 
-* `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_edgePair_outgoing` says that the output follows
-  the traversal order.
+* `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_edgePair_visitHalfEdge` says that the output
+  follows the traversal order.
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_isOver_crossing` identifies the PD over-strand
   with the over visit of the Gauss code.
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_crossingSign` proves preservation of crossing
@@ -59,43 +59,6 @@ namespace TauCeti
 namespace BasedOrientedGaussCode
 
 variable {n : ℕ}
-
-/-!
-### Visits and crossing data
--/
-
-/-- A visit, read as its crossing label together with whether it is the over visit. -/
-def visitData (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) : Fin n × Bool :=
-  (D.visit i, D.over i)
-
-/-- The two components of the data attached to a visit are its crossing label and over/under
-status. -/
-@[simp]
-theorem visitData_apply (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
-    D.visitData i = (D.visit i, D.over i) := (rfl)
-
-/-- The crossing label and over/under status determine a unique visit. -/
-theorem visitData_bijective (D : BasedOrientedGaussCode n) : Function.Bijective D.visitData := by
-  apply (Fintype.bijective_iff_injective_and_card _).2
-  constructor
-  · intro i j hij
-    have hvis : D.visit i = D.visit j := congrArg Prod.fst hij
-    have hover : D.over i = D.over j := congrArg Prod.snd hij
-    rcases (D.visit_eq_iff i j).mp hvis with rfl | hj
-    · rfl
-    · subst j
-      exact (D.over_partner_ne i hover.symm).elim
-  · simp [Nat.mul_comm]
-
-/-- Visits are equivalent to pairs consisting of a crossing and an over/under choice. -/
-noncomputable def visitDataEquiv (D : BasedOrientedGaussCode n) : Fin (2 * n) ≃ Fin n × Bool :=
-  Equiv.ofBijective D.visitData D.visitData_bijective
-
-/-- The visit equivalence sends a visit to its crossing label and over/under status. -/
-@[simp]
-theorem visitDataEquiv_apply (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
-    D.visitDataEquiv i = (D.visit i, D.over i) := by
-  rw [visitDataEquiv, Equiv.ofBijective_apply, D.visitData_apply]
 
 /-!
 ### The four slots of an oriented crossing
@@ -324,8 +287,7 @@ unknot, not to the empty link. -/
 @[simp]
 theorem toOrientedPDCode_empty :
     (empty : BasedOrientedGaussCode 0).toOrientedPDCode = orientedPDCodeUnknot true := by
-  rw [orientedPDCodeUnknot_eq_unlink]
-  simpa only [toOrientedPDCode_crossinglessComponents, ↓reduceIte] using
+  simpa only [orientedPDCodeUnknot, toOrientedPDCode_crossinglessComponents, ↓reduceIte] using
     (orientedPDCode_eq_unlink (empty : BasedOrientedGaussCode 0).toOrientedPDCode)
 
 private theorem toOrientedPDCode_edgePair_outgoing_aux (D : BasedOrientedGaussCode n)
@@ -347,21 +309,6 @@ theorem toOrientedPDCode_edgePair_visitHalfEdge (D : BasedOrientedGaussCode n)
     have h := D.toOrientedPDCode_edgePair_outgoing_aux ((finRotate _).symm i)
     rwa [(finRotate _).apply_symm_apply] at h
   · exact D.toOrientedPDCode_edgePair_outgoing_aux i
-
-/-- The outgoing half-edge at a visit is paired with the incoming half-edge at the next visit. -/
-theorem toOrientedPDCode_edgePair_outgoing (D : BasedOrientedGaussCode n)
-    (i : Fin (2 * n)) :
-    D.toOrientedPDCode.edgePair.val (PDCode.visitHalfEdgeEquiv n (i, true)) =
-      PDCode.visitHalfEdgeEquiv n (finRotate _ i, false) := by
-  exact D.toOrientedPDCode_edgePair_visitHalfEdge i true
-
-/-- The incoming half-edge at a visit is paired with the outgoing half-edge at the previous
-visit. -/
-theorem toOrientedPDCode_edgePair_incoming (D : BasedOrientedGaussCode n)
-    (i : Fin (2 * n)) :
-    D.toOrientedPDCode.edgePair.val (PDCode.visitHalfEdgeEquiv n (i, false)) =
-      PDCode.visitHalfEdgeEquiv n ((finRotate _).symm i, true) := by
-  exact D.toOrientedPDCode_edgePair_visitHalfEdge i false
 
 /-- The direction decoration remembers which half-edge of a visit is outgoing. -/
 @[simp]

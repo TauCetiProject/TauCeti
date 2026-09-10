@@ -67,6 +67,14 @@ def visitHalfEdgeEquiv (n : ℕ) : Fin (2 * n) × Bool ≃ Fin (4 * n) :=
   (Equiv.prodCongr (Equiv.refl _) finTwoEquiv.symm).trans <|
     finProdFinEquiv.trans (finCongr (by omega))
 
+/-- The visit-half-edge equivalence numbers the incoming end of visit `i` by `2 * i` and its
+outgoing end by `2 * i + 1`. -/
+@[simp]
+theorem visitHalfEdgeEquiv_apply (n : ℕ) (i : Fin (2 * n)) (outgoing : Bool) :
+    (visitHalfEdgeEquiv n (i, outgoing)).val = 2 * i.val + outgoing.toNat := by
+  cases outgoing <;>
+    simp [visitHalfEdgeEquiv, finTwoEquiv, finProdFinEquiv, Nat.add_comm]
+
 /-- The crossing-slot equivalence numbers slot `s` at crossing `i` by `s + 4 * i`. -/
 @[simp]
 theorem crossingSlotEquiv_apply (n : ℕ) (i : Fin n) (slot : Fin 4) :
@@ -736,13 +744,8 @@ def orientedPDCodeUnlinkEquiv : Multiset Bool ≃ OrientedPDCode 0 where
 def orientedPDCodeEmpty : OrientedPDCode 0 := orientedPDCodeUnlink 0
 
 /-- A crossing-free oriented unknot with the specified choice of orientation. -/
-def orientedPDCodeUnknot (orientation : Bool) : OrientedPDCode 0 :=
+abbrev orientedPDCodeUnknot (orientation : Bool) : OrientedPDCode 0 :=
   orientedPDCodeUnlink {orientation}
-
-/-- The one-component unknot is the corresponding singleton unlink code. -/
-theorem orientedPDCodeUnknot_eq_unlink (orientation : Bool) :
-    orientedPDCodeUnknot orientation = orientedPDCodeUnlink {orientation} := by
-  simp only [orientedPDCodeUnknot]
 
 /-- A crossing-free oriented circle is distinct from the empty diagram. -/
 theorem orientedPDCodeUnknot_ne_empty (orientation : Bool) :
