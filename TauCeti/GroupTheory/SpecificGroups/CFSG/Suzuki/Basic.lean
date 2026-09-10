@@ -73,6 +73,13 @@ or simple, and Mathlib's separate `suzukiGroup` is not mentioned, so no comparis
 claimed. The fixed points of an odd half-Frobenius power are not the `ℱ_q` points of the carrier,
 which is why this family is not an instance of the Frobenius machinery the untwisted ones use.
 
+The carrier is not identified with the pinned simply connected group scheme of type `B₂` either:
+no pinning datum is constructed for it here or in the files it imports, so what is formed below is
+an endomorphism of that explicit carrier, and it is not claimed to be the endomorphism of the
+pinned group. The identification with the `B₂` diagram that is available is the one on numbered
+root characters, `TauCeti.RankTwoBLieIndex.rootGeneratorWeight_carrierNode_eq_root_simpleIndex`,
+and the pinning equations below are stated against it.
+
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §13.
