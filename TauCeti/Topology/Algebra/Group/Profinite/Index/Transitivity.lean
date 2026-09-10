@@ -48,16 +48,16 @@ private theorem index_at_level_mul_index_at_level {H K : Subgroup G} (hHK : H �
   rw [← (H.map q).relIndex_mul_index himage]
   congr 1
   have hker : f.ker = N'.toSubgroup := by
-    change (q.comp K.subtype).ker = N'.toSubgroup
+    dsimp only [f]
     rw [← MonoidHom.comap_ker]
-    change (QuotientGroup.mk' N.toSubgroup).ker.comap K.subtype = N'.toSubgroup
+    dsimp only [q]
     rw [QuotientGroup.ker_mk', ← hN']
   have hmapH : (H.comap K.subtype).map f = H.map q := by
-    change (H.comap K.subtype).map (q.comp K.subtype) = H.map q
+    dsimp only [f]
     rw [Subgroup.comap_subtype, ← Subgroup.map_map,
       Subgroup.map_subgroupOf_eq_of_le hHK]
   have hmapK : (⊤ : Subgroup K).map f = K.map q := by
-    change (⊤ : Subgroup K).map (q.comp K.subtype) = K.map q
+    dsimp only [f]
     rw [← Subgroup.map_map, ← MonoidHom.range_eq_map, Subgroup.range_subtype]
   calc
     ((H.comap K.subtype).map (QuotientGroup.mk' N'.toSubgroup)).index =
