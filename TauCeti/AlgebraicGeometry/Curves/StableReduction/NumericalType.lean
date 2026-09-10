@@ -55,7 +55,7 @@ even by symmetry, so `∑ᵢ mᵢ² aᵢᵢ` is even; and `mᵢ² ≡ mᵢ` modu
 * `TauCeti.NumericalType.intersection_self_nonpos` and
   `TauCeti.NumericalType.intersection_self_neg`: self-intersections are nonpositive, and are
   negative as soon as there is more than one component.
-* `TauCeti.NumericalType.reflTransGen_adj_iff` and
+* `Matrix.forall_reflTransGen_ne_and_pos_iff` and
   `TauCeti.NumericalType.exists_mem_notMem_adj`: connectedness of the intersection graph is the
   same as the absence of a disconnecting cut, the form in which
   [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z) states the condition.
@@ -70,12 +70,46 @@ the halving be distributed over the sum: `oddDiagonalExample` has odd diagonal e
 
 Symmetry of the intersection matrix is recorded through Mathlib's `Matrix.IsSymm` rather than as
 a bare pointwise equation, so that a reindexed matrix inherits it from `Matrix.IsSymm.submatrix`.
+
+The no-disconnected-cut criterion is stated for a bare matrix, in the `Matrix` namespace, because
+it has to be available before a numerical type exists: it is what discharges the `connected` field
+when one is built.
 -/
 
 -- The `NumericalType` structure, the signed genus and the two worked examples follow the
 -- signatures written down in `StableReduction/Suggested.lean` of the Tau Ceti roadmap.
 
 public section
+
+namespace Matrix
+
+/-- For a matrix `A` whose off-diagonal entries are nonnegative, connectedness of the graph
+joining distinct indices `i`, `j` with `0 < A i j` is equivalent to the absence of a disconnecting
+cut: no nonempty proper set of indices `s` has all its cross-entries zero. The right-hand side is
+the form in which [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z) states the
+connectedness condition on a numerical type, so this is what supplies the `connected` field of
+`TauCeti.NumericalType` when one is constructed.
+
+The nonnegativity hypothesis is what turns a nonzero cross-entry into a positive one, and so
+cannot be dropped. -/
+lemma forall_reflTransGen_ne_and_pos_iff {C : Type*} (A : Matrix C C ℤ)
+    (hA : ∀ i j, i ≠ j → 0 ≤ A i j) :
+    (∀ i j, Relation.ReflTransGen (fun i j ↦ i ≠ j ∧ 0 < A i j) i j) ↔
+      ∀ s : Set C, s.Nonempty → s ≠ Set.univ → ¬ ∀ i ∈ s, ∀ j ∉ s, A i j = 0 := by
+  rw [TauCeti.forall_reflTransGen_iff]
+  refine forall_congr' fun s ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
+  constructor
+  · rintro ⟨i, hi, j, hj, -, hpos⟩ hcut
+    exact hpos.ne' (hcut i hi j hj)
+  · intro hcut
+    by_contra hcon
+    refine hcut fun i hi j hj ↦ ?_
+    have hij : i ≠ j := fun h ↦ hj (h ▸ hi)
+    refine le_antisymm ?_ (hA i j hij)
+    by_contra hle
+    exact hcon ⟨i, hi, j, hj, hij, not_le.1 hle⟩
+
+end Matrix
 
 namespace TauCeti
 
@@ -149,30 +183,6 @@ no-disconnected-cut form of the connectedness axiom. -/
 lemma exists_mem_notMem_adj (s : Set T.Component) (hne : s.Nonempty) (hs : s ≠ Set.univ) :
     ∃ i ∈ s, ∃ j ∉ s, T.Adj i j :=
   (TauCeti.forall_reflTransGen_iff T.Adj).1 T.reflTransGen_adj s hne hs
-
-/-- For a matrix `A` of intersection numbers whose off-diagonal entries are nonnegative, the
-connectedness axiom of a numerical type is equivalent to the absence of a disconnecting cut: no
-nonempty proper set of indices `s` has all its cross-intersections zero. The right-hand side is
-the form in which [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z) states the
-condition, so this is what supplies the `connected` field when a numerical type is constructed.
-
-The nonnegativity hypothesis is what turns a nonzero cross-intersection into a positive one, and
-so cannot be dropped. -/
-lemma reflTransGen_adj_iff {C : Type*} (A : Matrix C C ℤ) (hA : ∀ i j, i ≠ j → 0 ≤ A i j) :
-    (∀ i j, Relation.ReflTransGen (fun i j ↦ i ≠ j ∧ 0 < A i j) i j) ↔
-      ∀ s : Set C, s.Nonempty → s ≠ Set.univ → ¬ ∀ i ∈ s, ∀ j ∉ s, A i j = 0 := by
-  rw [TauCeti.forall_reflTransGen_iff]
-  refine forall_congr' fun s ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
-  constructor
-  · rintro ⟨i, hi, j, hj, -, hpos⟩ hcut
-    exact hpos.ne' (hcut i hi j hj)
-  · intro hcut
-    by_contra hcon
-    refine hcut fun i hi j hj ↦ ?_
-    have hij : i ≠ j := fun h ↦ hj (h ▸ hi)
-    refine le_antisymm ?_ (hA i j hij)
-    by_contra hle
-    exact hcon ⟨i, hi, j, hj, hij, not_le.1 hle⟩
 
 /-! ### Self-intersections -/
 
