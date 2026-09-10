@@ -35,7 +35,9 @@ produced by expanding `(στ) z - z` disappear on reduction.
 
 Consequently every quotient `G_{i+1}(P) / G_{i+2}(P)` embeds in the additive group of functions
 from `𝒪_P` to the residue field: it is abelian, and in characteristic `p` it is killed by `p`, while
-in characteristic zero it is trivial and hence — the groups meeting in `1` — `G_1(P)` is trivial.
+in characteristic zero it is torsion-free.  When the decomposition group of `P` is finite the last
+statement forces `G_{i+1}(P) = G_{i+2}(P)` for every `i`, and hence — the groups meeting in `1` —
+`G_1(P)` is trivial.
 
 This is Stichtenoth, Definition 3.8.4 and Proposition 3.8.5.  Nothing here consumes perfectness of
 the residue fields; the complementary statement that `G_0(P) / G_1(P)` is cyclic of order prime to
@@ -56,7 +58,8 @@ the characteristic does, and is not proved here.
   ramification groups decrease and are normal in the decomposition group.
 * `TauCeti.Place.iInf_ramificationGroup_eq_bot` and
   `TauCeti.Place.exists_forall_ramificationGroup_eq_bot`: the ramification groups meet in the
-  trivial group, and are trivial from some index on.
+  trivial group, and, when the decomposition group of `P` is finite, are trivial from some index
+  on.
 * `TauCeti.Place.ker_ramificationResidueHom`: **the kernel of the ramification residue is the next
   ramification group**, so `G_{i+1}(P) / G_{i+2}(P)` embeds in an additive group of functions to
   the residue field.
@@ -64,7 +67,7 @@ the characteristic does, and is not proved here.
   `TauCeti.Place.pow_mem_ramificationGroup_of_charP`: the quotient `G_{i+1}(P) / G_{i+2}(P)` is
   abelian, and elementary abelian of exponent `p` in characteristic `p`.
 * `TauCeti.Place.ramificationGroup_one_eq_bot`: **in characteristic zero the first ramification
-  group is trivial**.
+  group of a place with finite decomposition group is trivial**.
 
 ## References
 
@@ -91,6 +94,7 @@ section Transport
 variable (F) (P : Place k F') (g : P.integers.decompositionSubgroup F)
 
 /-- An automorphism fixing `P` leaves the valuation at `P` unchanged. -/
+@[simp]
 theorem valuation_decompositionSubgroup_apply (x : F') :
     P.valuation ((g : F' ≃ₐ[F] F') x) = P.valuation x := by
   have h : (g : F' ≃ₐ[F] F') • P = P := by
@@ -223,8 +227,8 @@ theorem iInf_ramificationGroup_eq_bot : ⨅ i, ramificationGroup F P i = ⊥ := 
       rw [map_inv₀] at h
       exact inv_injective h
 
-/-- **The ramification groups are trivial from some index on**
-(Stichtenoth, Proposition 3.8.5). -/
+/-- **The ramification groups of a place whose decomposition group is finite are trivial from some
+index on** (Stichtenoth, Proposition 3.8.5). -/
 theorem exists_forall_ramificationGroup_eq_bot [Finite (P.integers.decompositionSubgroup F)] :
     ∃ N : ℕ, ∀ i, N ≤ i → ramificationGroup F P i = ⊥ := by
   classical
@@ -443,8 +447,9 @@ theorem pow_mem_ramificationGroup_of_charP (p : ℕ) [CharP P.ResidueField p] (i
   rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
   simpa using hmem
 
-/-- **In characteristic zero the first ramification group is trivial**
-(Stichtenoth, Proposition 3.8.5). -/
+/-- **In characteristic zero the first ramification group of a place whose decomposition group is
+finite is trivial** (Stichtenoth, Proposition 3.8.5): each successive quotient embeds in a
+torsion-free additive group, so the filtration is constant from `1` on and meets in `1`. -/
 theorem ramificationGroup_one_eq_bot [Finite (P.integers.decompositionSubgroup F)]
     [CharZero P.ResidueField] :
     ramificationGroup F P 1 = ⊥ := by
