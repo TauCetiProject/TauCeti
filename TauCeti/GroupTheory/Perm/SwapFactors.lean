@@ -28,16 +28,18 @@ Iterating the two steps measures how many transpositions it takes to build `σ`:
 factorization of `σ` into transpositions has at least `Nat.card α - TauCeti.orbitCount σ` factors
 (`TauCeti.card_le_orbitCount_add_length`), and one with exactly that many exists
 (`Equiv.Perm.exists_isSwap_list_prod_eq_and_orbitCount_add_length_eq_card`), so that number is
-the reflection length of `σ` (`Equiv.Perm.isLeast_length_isSwap_list`).
+the reflection length of `σ` (`Equiv.Perm.isLeast_card_sub_orbitCount`).
 
 Both steps rest on a description of the orbits of the product:
 `TauCeti.sameCycle_or_of_sameCycle_swap_mul` says that two points sharing an orbit of
 `Equiv.swap a b * σ` either shared an orbit of `σ` already, or were attached one to `a` and the
-other to `b`. That containment needs no finiteness; what does need it is the merging statement
-`TauCeti.sameCycle_swap_mul_of_not_sameCycle`, proved by walking right round the finite `σ`-orbit
-of `b` to the single step that `Equiv.swap a b` diverts to `a`.
+other to `b`. That containment needs no hypothesis at all; what the two orbit-relation statements
+`TauCeti.sameCycle_swap_mul_of_not_sameCycle` and `TauCeti.not_sameCycle_swap_mul_of_sameCycle`
+do need is that the orbit being walked round comes back to its starting point, that is, that the
+relevant point is periodic for `σ`. Every point of a finite type is periodic
+(`Function.Injective.mem_periodicPts`), which is how the orbit-count steps below supply that.
 
-⚠ Finiteness is essential there rather than a convenience. For the shift on two disjoint copies of
+⚠ That periodicity is essential rather than a convenience. For the shift on two disjoint copies of
 `ℤ`, with `a` and `b` the two origins, the product `Equiv.swap a b * σ` cuts both lines and
 reconnects them into two lines again, so the two orbits do not merge.
 
@@ -176,14 +178,15 @@ private theorem pow_swap_mul_apply_eq {c : α} {j : ℕ} (hj : 0 < j)
     Equiv.Perm.mul_apply, hstep, Equiv.swap_apply_right]
 
 /-- **Multiplying by a transposition merges the orbits of its two points.** If `a` and `b` lie in
-different orbits of `σ`, they lie in one orbit of `Equiv.swap a b * σ`: following the finite
-`σ`-orbit of `b` right round, the product diverts its closing step to `a`. -/
-theorem sameCycle_swap_mul_of_not_sameCycle [Finite α] (h : ¬ σ.SameCycle a b) :
-    (Equiv.swap a b * σ).SameCycle a b := by
+different orbits of `σ`, and `b` is a periodic point of `σ`, they lie in one orbit of
+`Equiv.swap a b * σ`: following the orbit of `b` right round, the product diverts its closing step
+to `a`. -/
+theorem sameCycle_swap_mul_of_not_sameCycle (hb : b ∈ Function.periodicPts (σ : α → α))
+    (h : ¬ σ.SameCycle a b) : (Equiv.swap a b * σ).SameCycle a b := by
   obtain ⟨m, hmpos, hmb, hmin⟩ : ∃ m : ℕ, 0 < m ∧ (σ ^ m) b = b ∧
       ∀ i, 0 < i → i < m → (σ ^ i) b ≠ b :=
     ⟨Function.minimalPeriod (⇑σ) b,
-      Function.minimalPeriod_pos_of_mem_periodicPts (σ.injective.mem_periodicPts b),
+      Function.minimalPeriod_pos_of_mem_periodicPts hb,
       Function.isPeriodicPt_minimalPeriod (⇑σ) b,
       fun i hi him => Function.not_isPeriodicPt_of_pos_of_lt_minimalPeriod hi.ne' him⟩
   have hna : ∀ i : ℕ, (σ ^ i) b ≠ a := fun i hcon =>
@@ -191,17 +194,39 @@ theorem sameCycle_swap_mul_of_not_sameCycle [Finite α] (h : ¬ σ.SameCycle a b
   refine SameCycle.symm (⟨(m : ℤ), ?_⟩ : (Equiv.swap a b * σ).SameCycle b a)
   simpa using pow_swap_mul_apply_eq hmpos (fun i hi him => ⟨hna i, hmin i hi him⟩) hmb
 
+omit [DecidableEq α] in
+/-- If a periodic point `a` of `σ` shares its orbit with `b`, some *positive* power of `σ` carries
+`a` to `b`: adding a period to an exponent that carries `a` to `b` keeps it doing so, and makes it
+positive. -/
+private theorem exists_pos_pow_apply_eq (ha : a ∈ Function.periodicPts (σ : α → α))
+    (h : σ.SameCycle a b) : ∃ j : ℕ, 0 < j ∧ (σ ^ j) a = b := by
+  obtain ⟨m, hmpos, hm⟩ := Function.mem_periodicPts.mp ha
+  have hma : (σ ^ m) a = a := hm
+  obtain ⟨k, hk⟩ := h
+  have hz : ∀ q : ℤ, (σ ^ ((m : ℤ) * q)) a = a := by
+    intro q
+    rw [zpow_mul, zpow_natCast]
+    exact Equiv.Perm.zpow_apply_eq_self_of_apply_eq_self hma q
+  have hr : (σ ^ (k % (m : ℤ))) a = b := by
+    have e1 : ((σ ^ (k % (m : ℤ))) * (σ ^ ((m : ℤ) * (k / m)))) a = b := by
+      rw [← zpow_add, Int.emod_add_mul_ediv]
+      exact hk
+    rwa [Equiv.Perm.mul_apply, hz (k / m)] at e1
+  have h0 : 0 ≤ k % (m : ℤ) := Int.emod_nonneg k (by exact_mod_cast hmpos.ne')
+  refine ⟨(k % (m : ℤ)).toNat + m, by omega, ?_⟩
+  rw [pow_add, Equiv.Perm.mul_apply, hma, ← zpow_natCast, Int.toNat_of_nonneg h0]
+  exact hr
+
 /-- **Multiplying by a transposition splits the orbit of its two points.** If `a ≠ b` lie in one
-orbit of `σ`, they lie in different orbits of `Equiv.swap a b * σ`: the product closes the arc from
-`a` to `b` into an orbit of its own, which `b` is not on. -/
-theorem not_sameCycle_swap_mul_of_sameCycle [Finite α] (hab : a ≠ b) (h : σ.SameCycle a b) :
-    ¬ (Equiv.swap a b * σ).SameCycle a b := by
+orbit of `σ`, and `a` is a periodic point of `σ`, they lie in different orbits of
+`Equiv.swap a b * σ`: the product closes the arc from `a` to `b` into an orbit of its own, which
+`b` is not on. -/
+theorem not_sameCycle_swap_mul_of_sameCycle (ha : a ∈ Function.periodicPts (σ : α → α))
+    (hab : a ≠ b) (h : σ.SameCycle a b) : ¬ (Equiv.swap a b * σ).SameCycle a b := by
   classical
   obtain ⟨j, hjpos, hja, hjmin⟩ : ∃ j : ℕ, 0 < j ∧ (σ ^ j) a = b ∧
       ∀ i, 0 < i → i < j → (σ ^ i) a ≠ b := by
-    have hex : ∃ j, 0 < j ∧ (σ ^ j) a = b := by
-      obtain ⟨i, hipos, -, hi⟩ := h.exists_pow_eq''
-      exact ⟨i, hipos, hi⟩
+    have hex : ∃ j, 0 < j ∧ (σ ^ j) a = b := exists_pos_pow_apply_eq ha h
     exact ⟨Nat.find hex, (Nat.find_spec hex).1, (Nat.find_spec hex).2,
       fun i hi hij hcon => Nat.find_min hex hij ⟨hi, hcon⟩⟩
   -- Before reaching `b`, the powers of `σ` cannot return to `a` either.
@@ -240,7 +265,7 @@ theorem not_sameCycle_swap_mul_of_sameCycle [Finite α] (hab : a ≠ b) (h : σ.
 @[simp]
 theorem orbitCount_swap_mul_add_one_of_not_sameCycle [Finite α] (h : ¬ σ.SameCycle a b) :
     orbitCount (Equiv.swap a b * σ) + 1 = orbitCount σ :=
-  have hab := sameCycle_swap_mul_of_not_sameCycle h
+  have hab := sameCycle_swap_mul_of_not_sameCycle (σ.injective.mem_periodicPts b) h
   orbitCount_add_one_of_merge (fun huv => sameCycle_swap_mul_of_sameCycle hab huv)
     (fun huv => sameCycle_or_of_sameCycle_swap_mul huv) hab h
 
@@ -250,7 +275,7 @@ theorem orbitCount_swap_mul_add_one_of_not_sameCycle [Finite α] (h : ¬ σ.Same
 theorem orbitCount_swap_mul_of_sameCycle [Finite α] (hab : a ≠ b) (h : σ.SameCycle a b) :
     orbitCount (Equiv.swap a b * σ) = orbitCount σ + 1 := by
   have h' := orbitCount_swap_mul_add_one_of_not_sameCycle
-    (not_sameCycle_swap_mul_of_sameCycle hab h)
+    (not_sameCycle_swap_mul_of_sameCycle (σ.injective.mem_periodicPts a) hab h)
   rw [Equiv.swap_mul_self_mul] at h'
   exact h'.symm
 
@@ -366,7 +391,7 @@ theorem _root_.Equiv.Perm.exists_isSwap_list_prod_eq_and_orbitCount_add_length_e
 
 /-- **The reflection length of a permutation of a finite type.** The least number of transpositions
 whose product is `σ` is `Nat.card α - orbitCount σ`. -/
-theorem _root_.Equiv.Perm.isLeast_length_isSwap_list [Finite α] (σ : Perm α) :
+theorem _root_.Equiv.Perm.isLeast_card_sub_orbitCount [Finite α] (σ : Perm α) :
     IsLeast {m : ℕ | ∃ L : List (Perm α), (∀ g ∈ L, g.IsSwap) ∧ L.prod = σ ∧ L.length = m}
       (Nat.card α - orbitCount σ) := by
   obtain ⟨L, hL, hprod, hlen⟩ := σ.exists_isSwap_list_prod_eq_and_orbitCount_add_length_eq_card
