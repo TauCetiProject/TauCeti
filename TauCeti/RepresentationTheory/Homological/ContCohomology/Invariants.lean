@@ -158,8 +158,8 @@ theorem fixedPointsInclusion_continuousFiniteQuotientMap_smul (hVU : V ≤ U)
       QuotientGroup.map V.toSubgroup U.toSubgroup (MonoidHom.id G)
         (hsubgroup.trans_eq
           (Subgroup.comap_id U.toSubgroup).symm) q := by
-    -- `finiteQuotientMap` is sealed in `FiniteQuotient.Basic`, so compare the two maps through
-    -- its public formula on quotient representatives.
+    -- `finiteQuotientMap` is sealed in `GroupTheory.QuotientGroup.Map`, so compare the two maps
+    -- through its public formula on quotient representatives.
     induction q using QuotientGroup.induction_on with
     | H g =>
       simp only [continuousFiniteQuotientMap_mk, QuotientGroup.map_mk, MonoidHom.id_apply]

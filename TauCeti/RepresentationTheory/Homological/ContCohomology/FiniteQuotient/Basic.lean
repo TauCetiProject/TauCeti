@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import Mathlib.Topology.Algebra.Category.ProfiniteGrp.Limits
+public import TauCeti.GroupTheory.QuotientGroup.Map
 
 /-!
 # The finite-quotient system of a group cohomology tower
@@ -31,9 +32,9 @@ describe; the references below state the colimit theorem this system is the sour
 
 ## Main definitions
 
-* `TauCeti.finiteQuotientMap hVU`: the quotient homomorphism `G ⧸ V →* G ⧸ U` for `V ≤ U`.
-* `TauCeti.ContCohomology.continuousFiniteQuotientMap G hVU`: the same quotient homomorphism,
-  bundled as a continuous homomorphism when `U` and `V` are open normal subgroups.
+* `TauCeti.ContCohomology.continuousFiniteQuotientMap G hVU`: the quotient homomorphism
+  `TauCeti.finiteQuotientMap`, bundled as a continuous homomorphism when `U` and `V` are open
+  normal subgroups.
 * `TauCeti.invariantsInclusion A hVU`: the inclusion `A^U ↪ A^V` for `V ≤ U`.
 * `TauCeti.transitionPair A hVU`: the compatible pair assembled from the two.
 * `TauCeti.finiteLevelTransition A hVU n`: the induced map `Hⁿ(G ⧸ U, A^U) ⟶ Hⁿ(G ⧸ V, A^V)`.
@@ -50,8 +51,6 @@ describe; the references below state the colimit theorem this system is the sour
   tower of Mathlib's `ProfiniteGrp.toFiniteQuotientFunctor`.
 * `TauCeti.invariantsInclusion_equivariant`: the coefficient inclusion is equivariant after
   restriction along `finiteQuotientMap`, which is what makes `transitionPair` a compatible pair.
-* `TauCeti.finiteQuotientMap_surjective`: the quotient homomorphism `G ⧸ V →* G ⧸ U` is
-  surjective.
 * `TauCeti.finiteLevelTransition_refl` and `TauCeti.finiteLevelTransition_comp`: the two functor
   laws, which are what make the transition maps a system on the opposite poset.
 * `TauCeti.transitionPair_naturality` and `TauCeti.finiteLevelTransition_naturality`: a morphism
@@ -69,18 +68,18 @@ hypothesis of no construction and of no transition law here. What the later coli
 over this same index poset, is profiniteness of `G` as an unbundled hypothesis together with
 discreteness of the coefficients, in order to identify the colimit with continuous cohomology.
 
-`finiteQuotientMap` is Mathlib's `QuotientGroup.map` at the identity of `G`, the same map
-`ProfiniteGrp.toFiniteQuotientFunctor` uses. It is named here because `QuotientGroup.map` asks for
-`V ≤ Subgroup.comap (MonoidHom.id G) U` rather than `V ≤ U`, and the two are equal only up to
-unfolding; naming the specialization keeps the compatible pairs below rewritable.
+The group half of the transition pairs is `TauCeti.finiteQuotientMap`, which is generic
+quotient-group infrastructure and lives in `TauCeti.GroupTheory.QuotientGroup.Map`: it is the
+transition map of every system indexed by the normal subgroups of `G`, not of this one only, and
+this file consumes it together with its `_mk`, `_refl` and `_comp` lemmas.
 
-`finiteQuotientMap`, `invariantsInclusion`, `transitionPair` and `finiteLevelTransition` keep
-their bodies sealed: each is characterized by its `_mk`, `_apply_coe`, `_hom_toLinearMap` and
-functor-law lemmas, and those lemmas are proved as `(rfl)`, so no consumer unfolds a body. The
-three functors are `@[expose]` instead, because the *statement* of a functor's `map` lemma does
-not elaborate with the body sealed: the left-hand side lives in `F.obj A ⟶ F.obj B` and the
-right-hand side in the type the `obj` field reduces to, so without the body the characteristic
-lemma cannot even be written down.
+`invariantsInclusion`, `transitionPair` and `finiteLevelTransition` keep their bodies sealed:
+each is characterized by its `_apply_coe`, `_hom_toLinearMap` and functor-law lemmas, and those
+lemmas are proved as `(rfl)`, so no consumer unfolds a body. The three functors are `@[expose]`
+instead, because the *statement* of a functor's `map` lemma does not elaborate with the body
+sealed: the left-hand side lives in `F.obj A ⟶ F.obj B` and the right-hand side in the type the
+`obj` field reduces to, so without the body the characteristic lemma cannot even be written
+down.
 
 This implements the six milestones of the "The system" bullet of Layer 4 of the human-authored
 roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`, together with the functoriality of the
@@ -110,32 +109,6 @@ variable {k G : Type u} [CommRing k] [Group G] (A : Rep k G)
 section Pair
 
 variable {U V W : Subgroup G}
-
-/-- The group half of a transition pair of the finite-quotient system: the quotient homomorphism
-`G ⧸ V →* G ⧸ U` for normal subgroups `V ≤ U`. This is Mathlib's `QuotientGroup.map` at the
-identity of `G`, the map `ProfiniteGrp.toFiniteQuotientFunctor` sends `V ≤ U` to. -/
-def finiteQuotientMap [U.Normal] [V.Normal] (hVU : V ≤ U) : G ⧸ V →* G ⧸ U :=
-  QuotientGroup.map V U (.id G) fun _ hv => hVU hv
-
-@[simp]
-theorem finiteQuotientMap_mk [U.Normal] [V.Normal] (hVU : V ≤ U) (g : G) :
-    finiteQuotientMap hVU (g : G ⧸ V) = (g : G ⧸ U) :=
-  (rfl)
-
-@[simp]
-theorem finiteQuotientMap_refl [U.Normal] :
-    finiteQuotientMap (le_refl U) = MonoidHom.id (G ⧸ U) :=
-  QuotientGroup.map_id U _
-
-@[simp]
-theorem finiteQuotientMap_comp [U.Normal] [V.Normal] [W.Normal] (hWV : W ≤ V) (hVU : V ≤ U) :
-    (finiteQuotientMap hVU).comp (finiteQuotientMap hWV) = finiteQuotientMap (hWV.trans hVU) :=
-  QuotientGroup.map_comp_map W V U (.id G) (.id G) _ _ _
-
-/-- The quotient homomorphism `G ⧸ V →* G ⧸ U` is surjective. -/
-theorem finiteQuotientMap_surjective [U.Normal] [V.Normal] (hVU : V ≤ U) :
-    Function.Surjective (finiteQuotientMap hVU) :=
-  QuotientGroup.map_surjective_of_surjective V U (.id G) QuotientGroup.mk_surjective _
 
 /-- Invariants grow as the subgroup shrinks: a vector fixed by `U` is fixed by every `V ≤ U`. -/
 theorem invariants_le (hVU : V ≤ U) :
@@ -329,8 +302,11 @@ variable [TopologicalSpace G]
 one, which is why the cohomological system below is indexed by the opposite category. -/
 theorem toFiniteQuotientFunctor_map_hom_hom (P : ProfiniteGrp.{u})
     {U V : OpenNormalSubgroup P} (f : V ⟶ U) :
-    (P.toFiniteQuotientFunctor.map f).hom.hom = finiteQuotientMap (leOfHom f) :=
-  (rfl)
+    (P.toFiniteQuotientFunctor.map f).hom.hom = finiteQuotientMap (leOfHom f) := by
+  -- Both sides send a class to its class, which is all that `finiteQuotientMap` exposes.
+  refine MonoidHom.ext fun q => ?_
+  induction q using QuotientGroup.induction_on with
+  | _ g => exact (finiteQuotientMap_mk (leOfHom f) g).symm
 
 /-- The finite-quotient system of a `G`-representation `A`: the functor sending an open normal
 subgroup `U` of `G` to `Hⁿ(G ⧸ U, A^U)`, with `TauCeti.finiteLevelTransition` for its arrows.
