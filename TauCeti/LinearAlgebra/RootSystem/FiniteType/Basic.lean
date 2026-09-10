@@ -37,9 +37,9 @@ denominators. The symmetrization itself is not redone here: Mathlib packages it 
 
 * `TauCeti.isFiniteType_of`: a constructor that does not ask for the symmetric vanishing pattern,
   which the symmetrizer already forces.
-* `TauCeti.of_one_mul_intCast_eq_map`: with the constant-one symmetrizer, the symmetrization of
-  `A` is `A` itself read over `ℚ`. This is the symmetrizer of every simply-laced Cartan matrix, and
-  it is how positive definiteness of such a matrix and its being of finite type are exchanged.
+* `TauCeti.isFiniteType_of_posDef_map`: the constructor for a generalized Cartan matrix whose
+  rational cast is itself positive definite, with the constant-one symmetrizer. The simply-laced
+  Cartan matrices are of this kind.
 * `TauCeti.isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero`: the constructor used for a
   matrix presented by its entries. Positive definiteness of the symmetrization is certified by an
   explicit Gram model `Cᴴ * C` together with nonsingularity, both of which are finite
@@ -122,15 +122,6 @@ def IsFiniteType [Fintype B] (A : Matrix B B ℤ) : Prop :=
   (∀ i, A i i = 2) ∧ (∀ i j, i ≠ j → A i j ≤ 0) ∧ (∀ i j, A i j = 0 → A j i = 0) ∧
     ∃ d : B → ℚ, (∀ i, 0 < d i) ∧ (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef
 
-/-- **The constant-one symmetrizer.** The symmetrization of `A` by the vector `fun _ ↦ 1` is `A`
-itself, read over `ℚ`. Whenever `A` is symmetric this is a valid choice of symmetrizer, so
-positive definiteness of `A.map Int.cast` and finite type are then the same condition
-(`TauCeti.isFiniteType_of`). -/
-theorem of_one_mul_intCast_eq_map (A : Matrix B B ℤ) :
-    (Matrix.of fun i j ↦ (1 : ℚ) * ((A i j : ℤ) : ℚ)) = A.map (Int.cast : ℤ → ℚ) := by
-  ext i j
-  simp
-
 variable [Fintype B]
 
 /-- **Building a finite-type matrix.** The symmetric vanishing pattern demanded by
@@ -147,6 +138,19 @@ theorem isFiniteType_of (h2 : ∀ i, A i i = 2) (hle : ∀ i j, i ≠ j → A i 
   rw [hij] at hsymm
   have : ((A j i : ℤ) : ℚ) = 0 := by simpa [(hd j).ne'] using hsymm
   exact_mod_cast this
+
+/-- **A generalized Cartan matrix that is positive definite over `ℚ` is of finite type.** The
+symmetrizer is the constant-one vector, whose symmetrization of `A` is `A` itself read over `ℚ`;
+so the diagonal and sign conditions of `TauCeti.isFiniteType_of` are still required, and only
+the symmetrizer is fixed. This is the constructor for the simply-laced Cartan matrices, which are
+symmetric and are the Gram matrices of their own simple roots. -/
+theorem isFiniteType_of_posDef_map (h2 : ∀ i, A i i = 2) (hle : ∀ i j, i ≠ j → A i j ≤ 0)
+    (hpd : (A.map (Int.cast : ℤ → ℚ)).PosDef) : IsFiniteType A := by
+  refine isFiniteType_of h2 hle (d := fun _ ↦ 1) (fun _ ↦ one_pos) ?_
+  have h1 : (Matrix.of fun i j ↦ (1 : ℚ) * ((A i j : ℤ) : ℚ)) = A.map (Int.cast : ℤ → ℚ) :=
+    Matrix.ext fun i j ↦ by simp
+  rw [h1]
+  exact hpd
 
 /-- **A nonsingular generalized Cartan matrix with a rational Gram model is of finite type.** This
 is the working form of `TauCeti.isFiniteType_of` for a matrix given by an explicit list of entries:

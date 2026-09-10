@@ -170,11 +170,11 @@ private lemma simpleCorootsA_apply (n : ℕ) (i : Fin n) (j : Fin (n + 1)) :
 /-- The Gram matrix of the simple coroots of type `Aₙ` is the Cartan matrix itself: the family is
 simply laced, so it is its own symmetrisation. -/
 private lemma simpleCorootsA_mul_conjTranspose (n : ℕ) :
-    simpleCorootsA n * (simpleCorootsA n)ᴴ =
-      Matrix.of fun i j ↦ (1 : ℚ) * ((CartanMatrix.A n i j : ℤ) : ℚ) := by
+    simpleCorootsA n * (simpleCorootsA n)ᴴ = (CartanMatrix.A n).map (Int.cast : ℤ → ℚ) := by
   ext i j
   rw [simpleCorootsA, twoTermRows_mul_conjTranspose_apply]
-  simp only [Matrix.of_apply, CartanMatrix.A, Fin.ext_iff, Fin.val_castSucc, Fin.val_succ]
+  simp only [Matrix.map_apply, Matrix.of_apply, CartanMatrix.A, Fin.ext_iff, Fin.val_castSucc,
+    Fin.val_succ]
   split_ifs <;> first | (exfalso; omega) | norm_num
 
 /-- The simple coroots of type `Aₙ` are independent: dropping the last coordinate leaves the
@@ -191,18 +191,15 @@ private lemma simpleCorootsA_vecMul_injective (n : ℕ) :
 Gram matrix of the simple coroots, which are independent. -/
 theorem posDef_cartanMatrix_A (n : ℕ) :
     ((CartanMatrix.A n).map (Int.cast : ℤ → ℚ)).PosDef := by
-  rw [← of_one_mul_intCast_eq_map, ← simpleCorootsA_mul_conjTranspose]
+  rw [← simpleCorootsA_mul_conjTranspose]
   exact Matrix.PosDef.mul_conjTranspose_self _ (simpleCorootsA_vecMul_injective n)
 
 /-- **The Cartan matrix of type `Aₙ` is of finite type**, at every rank. The family is simply
 laced, so the constant-one vector is a symmetriser and `TauCeti.posDef_cartanMatrix_A` is the
 positive definiteness of its symmetrisation. -/
-theorem isFiniteType_cartanMatrix_A (n : ℕ) : IsFiniteType (CartanMatrix.A n) := by
-  refine isFiniteType_of (fun i ↦ by simp [CartanMatrix.A])
-    (fun i j hij ↦ CartanMatrix.A_apply_le_zero_of_ne n i j hij) (d := fun _ ↦ 1)
-    (fun _ ↦ one_pos) ?_
-  rw [of_one_mul_intCast_eq_map]
-  exact posDef_cartanMatrix_A n
+theorem isFiniteType_cartanMatrix_A (n : ℕ) : IsFiniteType (CartanMatrix.A n) :=
+  isFiniteType_of_posDef_map (fun i ↦ by simp [CartanMatrix.A])
+    (fun i j hij ↦ CartanMatrix.A_apply_le_zero_of_ne n i j hij) (posDef_cartanMatrix_A n)
 
 /-! ### Type `Bₙ` -/
 
@@ -278,21 +275,20 @@ private lemma simpleCorootsD_apply (k : ℕ) (i j : Fin (k + 2)) :
 /-- The Gram matrix of the simple coroots of type `Dₙ` is the Cartan matrix itself: the family is
 simply laced, so it is its own symmetrisation. -/
 private lemma simpleCorootsD_mul_conjTranspose (k : ℕ) :
-    simpleCorootsD k * (simpleCorootsD k)ᴴ =
-      Matrix.of fun i j ↦ (1 : ℚ) * ((CartanMatrix.D (k + 2) i j : ℤ) : ℚ) := by
+    simpleCorootsD k * (simpleCorootsD k)ᴴ = (CartanMatrix.D (k + 2)).map (Int.cast : ℤ → ℚ) := by
   ext i j
   have hi := i.isLt
   have hj := j.isLt
   rw [simpleCorootsD, twoTermRows_mul_conjTranspose_apply]
   rcases Nat.eq_zero_or_pos k with rfl | hk
   · have hk2 : 0 + 2 ≤ 2 := by omega
-    simp only [Matrix.of_apply, CartanMatrix.D, Fin.ext_iff, forkIndex_val, orderSucc_val,
-      ite_eq_left hk2]
+    simp only [Matrix.map_apply, Matrix.of_apply, CartanMatrix.D, Fin.ext_iff, forkIndex_val,
+      orderSucc_val, ite_eq_left hk2]
     split_ifs <;> first | (exfalso; omega) | norm_num
   · have hk2 : ¬(k + 2 ≤ 2) := by omega
     by_cases hin : i.val + 1 < k + 2 <;> by_cases hjn : j.val + 1 < k + 2 <;>
-        simp only [Matrix.of_apply, CartanMatrix.D, hin, hjn, ite_true, ite_false, Fin.ext_iff,
-          forkIndex_val, orderSucc_val, ite_eq_right hk2] <;>
+        simp only [Matrix.map_apply, Matrix.of_apply, CartanMatrix.D, hin, hjn, ite_true,
+          ite_false, Fin.ext_iff, forkIndex_val, orderSucc_val, ite_eq_right hk2] <;>
         split_ifs <;> first | (exfalso; omega) | norm_num
 
 /-- **The simple coroots of type `Dₙ` are independent.** No coordinate makes the matrix
@@ -376,25 +372,17 @@ Gram matrix of the simple coroots, which are independent. The ranks `0` and `1`,
 family degenerates to the empty matrix and to `A 1`, are read off Mathlib's identities rather than
 from the coordinate model, whose fork needs two coordinates. -/
 theorem posDef_cartanMatrix_D : ∀ n : ℕ, ((CartanMatrix.D n).map (Int.cast : ℤ → ℚ)).PosDef
-  | 0 => by
-      have hD0 : CartanMatrix.D 0 = CartanMatrix.A 0 := by
-        ext i
-        exact i.elim0
-      rw [hD0]
-      exact posDef_cartanMatrix_A 0
+  | 0 => TauCeti.Matrix.posDef_of_isEmpty _
   | 1 => by rw [CartanMatrix.D_one]; exact posDef_cartanMatrix_A 1
   | (k + 2) => by
-      rw [← of_one_mul_intCast_eq_map, ← simpleCorootsD_mul_conjTranspose]
+      rw [← simpleCorootsD_mul_conjTranspose]
       exact Matrix.PosDef.mul_conjTranspose_self _ (simpleCorootsD_vecMul_injective k)
 
 /-- **The Cartan matrix of type `Dₙ` is of finite type**, at every rank. The family is simply
 laced, so the constant-one vector is a symmetriser and `TauCeti.posDef_cartanMatrix_D` is the
 positive definiteness of its symmetrisation. -/
-theorem isFiniteType_cartanMatrix_D (n : ℕ) : IsFiniteType (CartanMatrix.D n) := by
-  refine isFiniteType_of (fun i ↦ CartanMatrix.D_diag n i)
-    (fun i j hij ↦ CartanMatrix.D_off_diag_nonpos n i j hij) (d := fun _ ↦ 1)
-    (fun _ ↦ one_pos) ?_
-  rw [of_one_mul_intCast_eq_map]
-  exact posDef_cartanMatrix_D n
+theorem isFiniteType_cartanMatrix_D (n : ℕ) : IsFiniteType (CartanMatrix.D n) :=
+  isFiniteType_of_posDef_map (fun i ↦ CartanMatrix.D_diag n i)
+    (fun i j hij ↦ CartanMatrix.D_off_diag_nonpos n i j hij) (posDef_cartanMatrix_D n)
 
 end TauCeti

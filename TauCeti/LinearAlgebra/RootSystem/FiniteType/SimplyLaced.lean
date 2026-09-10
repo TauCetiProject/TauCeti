@@ -37,6 +37,14 @@ public section
 
 namespace TauCeti.DynkinType
 
+/-- The degenerate types `B 0` and `B 1`, whose Cartan matrices are the empty matrix and `A 1`. -/
+private theorem posDef_cartanMatrix_B_of_le_one {n : ℕ} (hn : n ≤ 1) :
+    ((CartanMatrix.B n).map (Int.cast : ℤ → ℚ)).PosDef := by
+  interval_cases n
+  · exact TauCeti.Matrix.posDef_of_isEmpty _
+  · rw [CartanMatrix.B_one]
+    exact posDef_cartanMatrix_A 1
+
 /-- **A simply-laced standard Cartan matrix is positive definite** over `ℚ`.  The types whose
 matrix is simply laced are `A`, `D`, `E₆`, `E₇`, `E₈` and the degenerate `B 0`, `B 1`, `C 0`,
 `C 1` (`TauCeti.DynkinType.isSimplyLaced_cartanMatrix_iff`); the last four have the empty matrix or
@@ -51,27 +59,13 @@ theorem posDef_cartanMatrix_of_isSimplyLaced (t : DynkinType) (ht : t.cartanMatr
   | E7 => rw [cartanMatrix_E7]; exact posDef_cartanMatrix_E7
   | E8 => rw [cartanMatrix_E8]; exact posDef_cartanMatrix_E8
   | B n =>
-    have hn : n ≤ 1 := by simpa using ht
     rw [cartanMatrix_B]
-    interval_cases n
-    · have hB0 : CartanMatrix.B 0 = CartanMatrix.A 0 := by
-        ext i
-        exact i.elim0
-      rw [hB0]
-      exact posDef_cartanMatrix_A 0
-    · rw [CartanMatrix.B_one]
-      exact posDef_cartanMatrix_A 1
+    exact posDef_cartanMatrix_B_of_le_one (by simpa using ht)
   | C n =>
-    have hn : n ≤ 1 := by simpa using ht
+    have h := (posDef_cartanMatrix_B_of_le_one (n := n) (by simpa using ht)).transpose
+    rw [← Matrix.transpose_map, CartanMatrix.B_transpose] at h
     rw [cartanMatrix_C]
-    interval_cases n
-    · have hC0 : CartanMatrix.C 0 = CartanMatrix.A 0 := by
-        ext i
-        exact i.elim0
-      rw [hC0]
-      exact posDef_cartanMatrix_A 0
-    · rw [CartanMatrix.C_one]
-      exact posDef_cartanMatrix_A 1
+    exact h
   | F4 => simp at ht
   | G2 => simp at ht
 
