@@ -34,8 +34,9 @@ ordinary associativity when the higher operations vanish, and arity four is then
   coderivation square is the suspended Stasheff sum.
 * `TauCeti.AInfinity.IsSuspension.comp_self_eq_zero_iff_stasheff`: a degree-one bar coderivation
   squares to zero exactly when all Stasheff identities hold on homogeneous inputs.
-* `TauCeti.AInfinity.IsSuspension.taylorComponent_comp_self_one` through
-  `taylorComponent_comp_self_four`: the first four component formulas verbatim.
+* `TauCeti.AInfinity.IsSuspension.taylorComponent_comp_self_one_eq_zero_iff` through
+  `taylorComponent_comp_self_four_eq_zero_iff`: the vanishing criteria for the first four
+  components, with the Stasheff identities written out verbatim.
 
 ## References
 
@@ -72,7 +73,9 @@ def IsSuspension (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R]
           (PiTensorProduct.tprod R fun i : Fin n ↦ x i)) =
         evalNat (MultilinearMap.suspend d (m n)) x
 
-/-- The defining condition for a Taylor map to be the suspension of a family of operations. -/
+/-- The defining condition for a Taylor map to be the suspension of a family of operations, as
+a reusable `Iff`: this exposes the body of the predicate to consumers in other modules, for which
+the definition's body is not exposed. -/
 theorem isSuspension_def (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
     (m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A) :
     IsSuspension G F m ↔
@@ -82,17 +85,6 @@ theorem isSuspension_def (G : InternalGrading R A) (F : ReducedTensorWords R A �
               (PiTensorProduct.tprod R fun i : Fin n ↦ x i)) =
             evalNat (MultilinearMap.suspend d (m n)) x :=
   Iff.rfl
-
-/-- Evaluate a suspended Taylor map on a homogeneous pure tensor. -/
-theorem IsSuspension.apply {G : InternalGrading R A}
-    {F : ReducedTensorWords R A →ₗ[R] A}
-    {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
-    (hFm : IsSuspension G F m) (n : ℕ) (hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A)
-    (hx : ∀ i < n, x i ∈ G.piece (d i)) :
-    F (ReducedTensorWords.of R A ⟨n, hn⟩
-        (PiTensorProduct.tprod R fun i : Fin n ↦ x i)) =
-      evalNat (MultilinearMap.suspend d (m n)) x :=
-  (isSuspension_def G F m).1 hFm n hn d x hx
 
 /-- A Taylor map related by suspension to operations of degree `2 - n` has degree one from tensor
 words in the suspended grading to suspended letters.  This is the homogeneity input that makes the
@@ -119,7 +111,7 @@ theorem IsSuspension.isHomogeneous {G : InternalGrading R A}
       funext i
       simp only [y, i.isLt, dite_true]
     rw [← hyx]
-    rw [hFm.apply n hn d y hy, evalNat_suspend]
+    rw [(isSuspension_def _ _ _).1 hFm n hn d y hy, evalNat_suspend]
     apply Submodule.smul_mem
     have hop := (hm n hn).map_mem (fun i : Fin n ↦ d i) (fun i : Fin n ↦ y i)
       (fun i ↦ hy i i.isLt)
@@ -147,8 +139,10 @@ theorem IsSuspension.taylorComponent_comp_self_apply {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
-    {n : ℕ} (hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A)
+    {n : ℕ}
+    (hm : ∀ s, 0 < s → s ≤ n →
+      MultilinearMap.IsHomogeneous (m s) (fun _ ↦ G.piece) G.piece (2 - s))
+    (hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A)
     (hx : ∀ i < n, x i ∈ G.piece (d i)) :
     ((ReducedTensorWords.gradedCoderiv (G.shift 1) F 1) ∘ₗ
         ReducedTensorWords.gradedCoderiv (G.shift 1) F 1).taylorComponent ⟨n, hn⟩
@@ -172,14 +166,15 @@ theorem IsSuspension.taylorComponent_comp_self_apply {G : InternalGrading R A}
         evalNat (MultilinearMap.suspend (fun j ↦ d (p + j)) (m s))
           (fun j ↦ x (p + j)) := by
       rw [ReducedTensorWords.subword_eq_of_tprod R _ hspos hps]
-      exact hFm.apply s hspos (fun j ↦ d (p + j)) (fun j ↦ x (p + j))
+      exact (isSuspension_def _ _ _).1 hFm s hspos (fun j ↦ d (p + j)) (fun j ↦ x (p + j))
         (fun i hi ↦ hx (p + i) (by omega))
     let e := evalNat (MultilinearMap.suspend (fun j ↦ d (p + j)) (m s))
       (fun j ↦ x (p + j))
     have he : e ∈ G.piece (blockDeg d p s) := by
       simp only [e, evalNat_suspend]
       exact Submodule.smul_mem _ _
-        (evalNat_mem_blockDeg G.piece (m s) (hm s hspos) p (fun j hj ↦ hx (p + j) (by omega)))
+        (evalNat_mem_blockDeg G.piece (m s) (hm s hspos (by omega)) p
+          (fun j hj ↦ hx (p + j) (by omega)))
     have hreplace : ∀ i < p + 1 + (n - p - s),
         replaceBlock x p s e i ∈ G.piece (replaceDeg d p s i) := by
       intro i hi
@@ -208,18 +203,18 @@ theorem IsSuspension.taylorComponent_comp_self_apply {G : InternalGrading R A}
     -- exposing the implementation of tensor words.
     change _ • F (ReducedTensorWords.splice R (fun i : Fin n ↦ x i) 0 n p s e) = _
     rw [suspendedStasheffTerm_def, hsplice]
-    rw [hFm.apply (p + 1 + (n - p - s)) (by omega) (replaceDeg d p s)
+    rw [(isSuspension_def _ _ _).1 hFm (p + 1 + (n - p - s)) (by omega) (replaceDeg d p s)
       (replaceBlock x p s e) hreplace]
     simp only [e]
-    congr 1
-    rw [negOnePowCast_eq_intCast]
-    congr 2
-    simp only [one_mul]
-    congr 1
-    apply Finset.sum_congr rfl
-    intro j hj
-    have hjn : j < n := (Finset.mem_range.mp hj).trans hp
-    simp only [hjn, dite_true]
+    -- The two prefix signs agree: every index below `p` lies below `n`, so the guarded degrees
+    -- are the shifted degrees `d i - 1`.
+    have hexp : (1 : ℤ) * ∑ j ∈ Finset.range p, (if h : j < n then d j - 1 else 0) =
+        ∑ i ∈ Finset.range p, (d i - 1) := by
+      rw [one_mul]
+      refine Finset.sum_congr rfl fun j hj ↦ ?_
+      have hjn : j < n := (Finset.mem_range.mp hj).trans hp
+      simp only [hjn, dite_true]
+    rw [← negOnePowCast_eq_intCast, hexp]
   · intro i
     have hi := hx i i.isLt
     rw [InternalGrading.shift_piece]
@@ -231,8 +226,10 @@ theorem IsSuspension.taylorComponent_comp_self_eq_smul_stasheff {G : InternalGra
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
-    {n : ℕ} (hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A)
+    {n : ℕ}
+    (hm : ∀ s, 0 < s → s ≤ n →
+      MultilinearMap.IsHomogeneous (m s) (fun _ ↦ G.piece) G.piece (2 - s))
+    (hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A)
     (hx : ∀ i < n, x i ∈ G.piece (d i)) :
     ((ReducedTensorWords.gradedCoderiv (G.shift 1) F 1) ∘ₗ
         ReducedTensorWords.gradedCoderiv (G.shift 1) F 1).taylorComponent ⟨n, hn⟩
@@ -247,8 +244,10 @@ theorem IsSuspension.taylorComponent_comp_self_eq_zero_iff {G : InternalGrading 
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
-    {n : ℕ} (hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A)
+    {n : ℕ}
+    (hm : ∀ s, 0 < s → s ≤ n →
+      MultilinearMap.IsHomogeneous (m s) (fun _ ↦ G.piece) G.piece (2 - s))
+    (hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A)
     (hx : ∀ i < n, x i ∈ G.piece (d i)) :
     ((ReducedTensorWords.gradedCoderiv (G.shift 1) F 1) ∘ₗ
         ReducedTensorWords.gradedCoderiv (G.shift 1) F 1).taylorComponent ⟨n, hn⟩
@@ -260,11 +259,12 @@ theorem IsSuspension.taylorComponent_comp_self_eq_zero_iff {G : InternalGrading 
 /-! ### The first four components -/
 
 /-- The arity-one component of `b ∘ b` vanishes exactly when `m₁ m₁ = 0`. -/
-theorem IsSuspension.taylorComponent_comp_self_one {G : InternalGrading R A}
+theorem IsSuspension.taylorComponent_comp_self_one_eq_zero_iff {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
+    (hm : ∀ s, 0 < s → s ≤ 1 →
+      MultilinearMap.IsHomogeneous (m s) (fun _ ↦ G.piece) G.piece (2 - s))
     (d : ℕ → ℤ) (x : ℕ → A) (hx : x 0 ∈ G.piece (d 0)) :
     ((ReducedTensorWords.gradedCoderiv (G.shift 1) F 1) ∘ₗ
         ReducedTensorWords.gradedCoderiv (G.shift 1) F 1).taylorComponent ⟨1, by omega⟩
@@ -279,11 +279,12 @@ theorem IsSuspension.taylorComponent_comp_self_one {G : InternalGrading R A}
 
 /-- The arity-two component of `b ∘ b` is zero exactly when `m₁` obeys the graded Leibniz
 rule for `m₂`, with sign `(-1)^(d 0)` on the second differentiated input. -/
-theorem IsSuspension.taylorComponent_comp_self_two {G : InternalGrading R A}
+theorem IsSuspension.taylorComponent_comp_self_two_eq_zero_iff {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
+    (hm : ∀ s, 0 < s → s ≤ 2 →
+      MultilinearMap.IsHomogeneous (m s) (fun _ ↦ G.piece) G.piece (2 - s))
     (d : ℕ → ℤ) (x : ℕ → A) (hx : ∀ i < 2, x i ∈ G.piece (d i)) :
     ((ReducedTensorWords.gradedCoderiv (G.shift 1) F 1) ∘ₗ
         ReducedTensorWords.gradedCoderiv (G.shift 1) F 1).taylorComponent ⟨2, by omega⟩
@@ -295,11 +296,12 @@ theorem IsSuspension.taylorComponent_comp_self_two {G : InternalGrading R A}
 
 /-- The arity-three component of `b ∘ b` is zero exactly when the displayed arity-three
 Stasheff expression vanishes, including the two degree-dependent Koszul factors. -/
-theorem IsSuspension.taylorComponent_comp_self_three {G : InternalGrading R A}
+theorem IsSuspension.taylorComponent_comp_self_three_eq_zero_iff {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
+    (hm : ∀ s, 0 < s → s ≤ 3 →
+      MultilinearMap.IsHomogeneous (m s) (fun _ ↦ G.piece) G.piece (2 - s))
     (d : ℕ → ℤ) (x : ℕ → A) (hx : ∀ i < 3, x i ∈ G.piece (d i)) :
     ((ReducedTensorWords.gradedCoderiv (G.shift 1) F 1) ∘ₗ
         ReducedTensorWords.gradedCoderiv (G.shift 1) F 1).taylorComponent ⟨3, by omega⟩
@@ -314,11 +316,12 @@ theorem IsSuspension.taylorComponent_comp_self_three {G : InternalGrading R A}
 
 /-- The arity-four component of `b ∘ b` is zero exactly when the displayed arity-four
 Stasheff expression vanishes, with all four unary-insertion signs explicit. -/
-theorem IsSuspension.taylorComponent_comp_self_four {G : InternalGrading R A}
+theorem IsSuspension.taylorComponent_comp_self_four_eq_zero_iff {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
-    (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
+    (hm : ∀ s, 0 < s → s ≤ 4 →
+      MultilinearMap.IsHomogeneous (m s) (fun _ ↦ G.piece) G.piece (2 - s))
     (d : ℕ → ℤ) (x : ℕ → A) (hx : ∀ i < 4, x i ∈ G.piece (d i)) :
     ((ReducedTensorWords.gradedCoderiv (G.shift 1) F 1) ∘ₗ
         ReducedTensorWords.gradedCoderiv (G.shift 1) F 1).taylorComponent ⟨4, by omega⟩
@@ -359,7 +362,7 @@ theorem IsSuspension.comp_self_eq_zero_iff_stasheff {G : InternalGrading R A}
     hb.isCoderivation_comp_self_of_isHomogeneous_one hbHom
   constructor
   · intro hzero n hn d x hx
-    have hcomponent := hFm.taylorComponent_comp_self_apply hm hn d x hx
+    have hcomponent := hFm.taylorComponent_comp_self_apply (fun s hs _ ↦ hm s hs) hn d x hx
     -- Unfold only the local abbreviation, leaving the coderivation implementation opaque.
     change b ∘ₗ b = 0 at hzero
     rw [hzero] at hcomponent
@@ -385,7 +388,7 @@ theorem IsSuspension.comp_self_eq_zero_iff_stasheff {G : InternalGrading R A}
         intro i hi
         simp only [x, d, hi, dite_true]
         exact (q ⟨i, hi⟩).2.property
-      have hcomponent := hFm.taylorComponent_comp_self_apply hm n.2 d x hx
+      have hcomponent := hFm.taylorComponent_comp_self_apply (fun s hs _ ↦ hm s hs) n.2 d x hx
       have hsuspended : suspendedStasheffSum m d x n.1 = 0 :=
         (suspendedStasheffSum_eq_zero_iff m d x n.1).2
           (hstasheff n.1 n.2 d x hx)
