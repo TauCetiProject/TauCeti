@@ -12,12 +12,79 @@ import Mathlib.GroupTheory.Perm.ViaEmbedding
 # Elementary facts about permutations
 
 This file records general-purpose facts about permutations: an identity between transpositions,
-a characterization of permutations with a unique fixed point, the orbit relation of an involution,
-a permutation transported along an injection, and the combination of two permutations transported
-along injections with disjoint ranges.
+a characterization of permutations with a unique fixed point, functions constant on a permutation
+orbit, the orbit relation of an involution, a permutation transported along an injection, and the
+combination of two permutations transported along injections with disjoint ranges.
 -/
 
 public section
+
+namespace Equiv.Perm.SameCycle
+
+variable {α : Type*} {β : Sort*} {σ : Equiv.Perm α} {x y : α} {f : α → β}
+
+/-- A function invariant under one application of a permutation is constant on every orbit of
+that permutation. -/
+theorem apply_eq_of_apply_eq (hσ : σ.SameCycle x y) (hf : ∀ z, f (σ z) = f z) : f x = f y := by
+  obtain ⟨k, rfl⟩ := hσ
+  have hinv : ∀ z, f (σ⁻¹ z) = f z := fun z => by
+    simpa only [Equiv.Perm.coe_inv, Equiv.apply_symm_apply] using (hf (σ⁻¹ z)).symm
+  have hpow : ∀ (m : ℕ) (z : α), f ((σ ^ m) z) = f z := by
+    intro m
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      intro z
+      rw [pow_succ, Equiv.Perm.mul_apply, ih, hf]
+  have hinvPow : ∀ (m : ℕ) (z : α), f ((σ⁻¹ ^ m) z) = f z := by
+    intro m
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      intro z
+      rw [pow_succ, Equiv.Perm.mul_apply, ih, hinv]
+  cases k with
+  | ofNat m => simpa using (hpow m x).symm
+  | negSucc m => simpa [zpow_negSucc] using (hinvPow (m + 1) x).symm
+
+variable {γ : Type*} {τ : Equiv.Perm γ} {g : α → γ}
+
+/-- A map intertwining two permutations carries orbits of the first permutation into orbits of
+the second. -/
+theorem map (hσ : σ.SameCycle x y) (hg : ∀ z, g (σ z) = τ (g z)) :
+    τ.SameCycle (g x) (g y) := by
+  obtain ⟨k, rfl⟩ := hσ
+  have hinv : ∀ z, g (σ⁻¹ z) = τ⁻¹ (g z) := fun z => by
+    apply τ.injective
+    simpa only [Equiv.Perm.coe_inv, Equiv.apply_symm_apply] using (hg (σ⁻¹ z)).symm
+  have hpow : ∀ (m : ℕ) (z : α), g ((σ ^ m) z) = (τ ^ m) (g z) := by
+    intro m
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      intro z
+      rw [pow_succ, Equiv.Perm.mul_apply]
+      calc
+        g ((σ ^ m) (σ z)) = (τ ^ m) (g (σ z)) := ih _
+        _ = (τ ^ m) (τ (g z)) := congrArg (τ ^ m) (hg z)
+        _ = (τ ^ (m + 1)) (g z) := by rw [pow_succ, Equiv.Perm.mul_apply]
+  have hinvPow : ∀ (m : ℕ) (z : α), g ((σ⁻¹ ^ m) z) = (τ⁻¹ ^ m) (g z) := by
+    intro m
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      intro z
+      rw [pow_succ, Equiv.Perm.mul_apply]
+      calc
+        g ((σ⁻¹ ^ m) (σ⁻¹ z)) = (τ⁻¹ ^ m) (g (σ⁻¹ z)) := ih _
+        _ = (τ⁻¹ ^ m) (τ⁻¹ (g z)) := congrArg (τ⁻¹ ^ m) (hinv z)
+        _ = (τ⁻¹ ^ (m + 1)) (g z) := by rw [pow_succ, Equiv.Perm.mul_apply]
+  refine ⟨k, ?_⟩
+  cases k with
+  | ofNat m => simpa using (hpow m x).symm
+  | negSucc m => simpa [zpow_negSucc] using (hinvPow (m + 1) x).symm
+
+end Equiv.Perm.SameCycle
 
 namespace TauCeti
 
