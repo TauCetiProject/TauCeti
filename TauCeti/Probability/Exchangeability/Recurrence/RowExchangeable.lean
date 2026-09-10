@@ -61,10 +61,6 @@ recurrent chain on its own state space.
   8 (1980), 115--130.
 * S. Fortini, L. Ladelli, G. Petris, and E. Regazzini, "On mixtures of distributions of Markov
   chains", *Stochastic Processes and their Applications* 100 (2002), 147--165, Lemma 1(b).
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, "Markov exchangeability".
-
-No material is adapted from `cameronfreer/exchangeability`, which treats exchangeable rather than
-Markov exchangeable sequences.
 -/
 
 public section
@@ -83,16 +79,16 @@ variable {α : Type*} {m : ℕ}
 
 /-- A finite path word read as a sequence, by repeating its last letter forever. -/
 private def wordSeq (u : Fin (m + 1) → α) : ℕ → α :=
-  fun j => u ⟨min j m, Nat.lt_succ_of_le (Nat.min_le_right j m)⟩
+  fun j => u (Fin.clamp j m)
 
 private theorem wordSeq_apply (u : Fin (m + 1) → α) (j : ℕ) :
-    wordSeq u j = u ⟨min j m, Nat.lt_succ_of_le (Nat.min_le_right j m)⟩ :=
+    wordSeq u j = u (Fin.clamp j m) :=
   rfl
 
 private theorem wordSeq_of_le (u : Fin (m + 1) → α) {i : ℕ} (hi : i ≤ m) :
     wordSeq u i = u ⟨i, Nat.lt_succ_of_le hi⟩ := by
   rw [wordSeq_apply]
-  exact congrArg u (Fin.ext (Nat.min_eq_left hi))
+  exact congrArg u (Fin.ext ((Fin.coe_clamp i m).trans (Nat.min_eq_left hi)))
 
 private theorem wordSeq_val (u : Fin (m + 1) → α) (i : Fin (m + 1)) : wordSeq u i.val = u i := by
   rw [wordSeq_of_le u (Nat.lt_succ_iff.1 i.isLt)]
@@ -220,11 +216,11 @@ end Words
 
 section Prefix
 
-variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [Countable α]
-  [MeasurableSingletonClass α] {μ : Measure Ω} {X : ℕ → Ω → α}
+variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] {μ : Measure Ω} {X : ℕ → Ω → α}
 
 /-- A finite path event of the process is a prefix-law singleton. -/
-private theorem measure_setOf_eqOn (hX : ∀ i, AEMeasurable (X i) μ) (w : ℕ → α) (m : ℕ) :
+private theorem measure_setOf_eqOn [Countable α] [MeasurableSingletonClass α]
+    (hX : ∀ i, AEMeasurable (X i) μ) (w : ℕ → α) (m : ℕ) :
     μ {ω | ∀ i ≤ m, X i ω = w i} = prefixLaw μ X (m + 1) {fun i : Fin (m + 1) => w i.val} := by
   rw [prefixLaw_def, blockLaw_apply_of_measurable _ _ _ (fun i : Fin (m + 1) => hX i.val)
     MeasurableSet.of_discrete]
@@ -244,6 +240,8 @@ theorem MarkovExchangeable.measure_setOf_eqOn_pathOfReindexedSuccessors
     (h : MarkovExchangeable μ X) {π : α → Equiv.Perm ℕ} {w : ℕ → α} {m : ℕ}
     (hadm : LastExitAdmissible π w m) :
     μ {ω | ∀ i ≤ m, X i ω = pathOfReindexedSuccessors π w i} = μ {ω | ∀ i ≤ m, X i ω = w i} := by
+  have := h.countable
+  have := h.measurableSingletonClass
   set u : Fin (m + 1) → α := fun i : Fin (m + 1) => w i.val
   have hws : ∀ i ≤ m, w i = wordSeq u i := fun i hi => (wordSeq_of_le u hi).symm
   have hadm' : LastExitAdmissible π (wordSeq u) m := hadm.congr hws
@@ -335,8 +333,7 @@ end Horizon
 
 section Representation
 
-variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [Countable α]
-  [MeasurableSingletonClass α] {μ : Measure Ω} {X : ℕ → Ω → α}
+variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] {μ : Measure Ω} {X : ℕ → Ω → α}
 
 /-- Over its horizon, the array event at the cells of `F` is a prefix event, and the last-exit
 reconstruction pairs the reindexed prefixes with the original ones. -/
@@ -344,6 +341,8 @@ private theorem measure_horizon_inter_cellEvent (h : MarkovExchangeable μ X)
     (π : α → Equiv.Perm ℕ) (F : Finset (α × ℕ)) (m : ℕ) (g : F → α) :
     μ (Horizon X π F m ∩ CellEvent X (fun a k => π a k) F g)
       = μ (Horizon X π F m ∩ CellEvent X (fun _ k => k) F g) := by
+  have := h.countable
+  have := h.measurableSingletonClass
   have hpre : ∀ S : Set (Fin (m + 1) → α),
       μ ((fun ω (i : Fin (m + 1)) => X i.val ω) ⁻¹' S) = prefixLaw μ X (m + 1) S := fun S => by
     rw [prefixLaw_def, blockLaw_apply_of_measurable _ _ _
@@ -354,19 +353,24 @@ private theorem measure_horizon_inter_cellEvent (h : MarkovExchangeable μ X)
     (fun w => reindexWord_zero π w.1)
     (fun w => transitionCount_reindexWord (lastExitAdmissible_of_mem_horizonWords w.2.1))
 
-/-- **The successor array of a Markov exchangeable process that attains every state is row
-exchangeable.** Its law is unchanged when the entries of each row are permuted, with a permutation
-chosen separately for each row.
+/-- **The successor array of a recurrent Markov exchangeable process that almost surely attains
+every state is row exchangeable.** Its law is unchanged when the entries of each row are permuted,
+with a permutation chosen separately for each row.
 
 Together with `TauCeti.Probability.mixedMarkovChain_of_rowExchangeable_successorProcess` this is
 the Diaconis--Freedman representation. The hypothesis that every state is almost surely attained
 is not decorative: `TauCeti.Probability.spareStateProcess_not_rowExchangeable_successorProcess`
 is a recurrent Markov exchangeable process without it whose successor array is not row
 exchangeable. -/
+-- The `haveI` in the statement supplies the `Countable α` that `RowExchangeable` takes as an
+-- instance from `h` itself, so that a caller holding `h` needs no ambient discrete-state instance.
 theorem MarkovExchangeable.rowExchangeable_successorProcess [IsFiniteMeasure μ]
     (h : MarkovExchangeable μ X) (hrec : Recurrent μ X)
     (hvis : ∀ᵐ ω ∂μ, ∀ a : α, ∃ n, X n ω = a) :
+    haveI := h.countable
     RowExchangeable μ (successorProcess X) := by
+  have := h.countable
+  have := h.measurableSingletonClass
   have hSA : ∀ p, AEMeasurable (successorProcess X p) μ :=
     aemeasurable_successorProcess h.aemeasurable
   have hio : ∀ᵐ ω ∂μ, ∀ a : α, {n | X n ω = a}.Infinite := by
@@ -421,8 +425,10 @@ of Markov chains. -/
 theorem MarkovExchangeable.mixedMarkovChain [IsProbabilityMeasure μ] {a₀ : α}
     (h : MarkovExchangeable μ X) (hrec : Recurrent μ X)
     (hvis : ∀ᵐ ω ∂μ, ∀ a : α, ∃ n, X n ω = a) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
-    MixedMarkovChain μ X :=
-  mixedMarkovChain_of_rowExchangeable_successorProcess h.aemeasurable h0
+    MixedMarkovChain μ X := by
+  have := h.countable
+  have := h.measurableSingletonClass
+  exact mixedMarkovChain_of_rowExchangeable_successorProcess h.aemeasurable h0
     (h.rowExchangeable_successorProcess hrec hvis)
 
 end Representation
