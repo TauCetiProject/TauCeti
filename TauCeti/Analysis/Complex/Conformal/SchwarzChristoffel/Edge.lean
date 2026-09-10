@@ -49,8 +49,10 @@ prevertex `a i` rotates the edge direction by `-π · e i`, which for the classi
 
 ## Main results
 
-* `TauCeti.schwarzChristoffelEdgeAngle_sub_eq_pi_mul_exponent_sum_of_adjacent` -- crossing an
-  adjacent prevertex changes the edge angle by `π` times its total turning exponent.
+* `TauCeti.schwarzChristoffelEdgeAngle_sub_eq_pi_mul_exponent_sum_of_adjacent` -- across
+  adjacent reference points `p < q`, the edge angle at `p` minus the edge angle at `q` is `π`
+  times the total exponent carried by `q`; moving from left to right therefore changes the edge
+  angle by `-π` times that total.
 * `TauCeti.schwarzChristoffelIntegrand_eq_exp_mul_continued` -- on the upper half-plane the
   integrand is the continued integrand times the unimodular edge-direction constant.
 * `TauCeti.schwarzChristoffelContinuedIntegrand_ofReal` -- on a prevertex-free real interval the
@@ -129,11 +131,12 @@ theorem schwarzChristoffelEdgeAngle_sub (a e : ι → ℝ) {c d : ℝ} (hcd : c 
     · simp [h₁, not_lt.mpr h₂, Set.mem_Ioc, h₂]
     · simp [h₁, h₂, Set.mem_Ioc, not_le.mpr h₂]
 
-/-- Across two adjacent real reference points -- that is, with no prevertex of nonzero exponent
-strictly between them -- the change in Schwarz--Christoffel edge angle is exactly `π` times the
-total exponent carried by the right endpoint.  For the classical choice `e i = α i / π - 1`
-attached to a polygon with interior angle `α i`, moving from left to right therefore turns the
-edge direction by the exterior angle which is the negative of that quantity. -/
+/-- Across two adjacent real reference points `p < q` -- that is, with no prevertex of nonzero
+exponent strictly between them -- the Schwarz--Christoffel edge angle at `p` minus the edge angle
+at `q` is exactly `π` times the total exponent carried by `q`; equivalently, moving from left to
+right changes the edge angle by `-π` times that total.  For the classical choice
+`e i = α i / π - 1` attached to a polygon with interior angle `α i`, that left-to-right change is
+the exterior angle `π - α i` at the vertex. -/
 theorem schwarzChristoffelEdgeAngle_sub_eq_pi_mul_exponent_sum_of_adjacent (a e : ι → ℝ)
     {p q : ℝ} (hpq : p < q) (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) :
     schwarzChristoffelEdgeAngle a e p - schwarzChristoffelEdgeAngle a e q =

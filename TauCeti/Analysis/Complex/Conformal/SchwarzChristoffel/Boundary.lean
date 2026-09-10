@@ -20,8 +20,9 @@ cases in a single boundary map.
 The canonical value `schwarzChristoffelBoundary a e z₀ x` is Mathlib's `extendFrom` extension of
 the primitive from the upper half-plane.  That extension is a genuine limit of the primitive
 wherever such a limit exists, which is the case whenever the total exponent at `x` is greater
-than `-1`; this includes every point which is not a prevertex.  On a prevertex it agrees with
-`schwarzChristoffelVertex`, and on an interval free of nonzero prevertices it is continuous,
+than `-1`; this includes every point which is not a prevertex.  On a prevertex whose total
+exponent is greater than `-1` it agrees with `schwarzChristoffelVertex`, and on an interval free
+of nonzero prevertices it is continuous,
 injective, and has the explicit straight-edge increment formula from the boundary continuation.
 Thus the boundary map is the common object in which the vertices and the open edges of the
 eventual polygon meet.
@@ -35,8 +36,9 @@ eventual polygon meet.
 
 * `TauCeti.tendsto_schwarzChristoffelPrimitive_boundary` -- the primitive tends to the boundary
   value wherever the total exponent is greater than `-1`.
-* `TauCeti.schwarzChristoffelBoundary_apply_prevertex` -- the boundary value at a prevertex is
-  the previously constructed Schwarz--Christoffel vertex.
+* `TauCeti.schwarzChristoffelBoundary_apply_prevertex` -- at a prevertex whose total exponent is
+  greater than `-1`, the boundary value is the previously constructed Schwarz--Christoffel
+  vertex.
 * `TauCeti.schwarzChristoffelBoundary_change_base` -- changing the normalization point of the
   primitive subtracts a constant from the boundary map.
 * `TauCeti.schwarzChristoffelBoundary_sub_eq` -- an increment of the boundary map along an open
@@ -86,8 +88,8 @@ theorem schwarzChristoffelBoundary_eq_of_tendsto (a e : ι → ℝ) (z₀ : Uppe
   rw [schwarzChristoffelBoundary]
   exact extendFrom_eq (by rw [Complex.closure_setOfPred_lt_im]; simp) h
 
-/-- At a prevertex, the canonical Schwarz--Christoffel boundary value is the
-Schwarz--Christoffel vertex. -/
+/-- At a prevertex whose total exponent is greater than `-1`, the canonical
+Schwarz--Christoffel boundary value is the Schwarz--Christoffel vertex. -/
 @[simp]
 theorem schwarzChristoffelBoundary_apply_prevertex (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (j : ι) (he : -1 < ∑ i with a i = a j, e i) :
@@ -212,10 +214,11 @@ theorem collinear_schwarzChristoffelBoundary_image (a e : ι → ℝ)
   · rintro ⟨x, hx, rfl⟩
     exact ⟨x, hx, schwarzChristoffelBoundary_eq_of_tendsto a e z₀ x (hL x hx)⟩
 
-/-- Between real prevertices with integrable endpoint exponents and no prevertex of nonzero
-exponent strictly between them, the canonical Schwarz--Christoffel boundary map is continuous on
-the closed interval.  Hence the open straight edge supplied by
-`schwarzChristoffelBoundary_sub_eq` attaches continuously to its two vertices. -/
+/-- Between two real endpoints whose total exponents are greater than `-1`, with no prevertex of
+nonzero exponent strictly between them, the canonical Schwarz--Christoffel boundary map is
+continuous on the closed interval.  When the endpoints are prevertices, this says that the open
+straight edge supplied by `schwarzChristoffelBoundary_sub_eq` attaches continuously to its two
+vertices. -/
 theorem continuousOn_schwarzChristoffelBoundary_Icc (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) {p q : ℝ} (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q)
     (hp : -1 < ∑ i with a i = p, e i) (hq : -1 < ∑ i with a i = q, e i) :
@@ -236,9 +239,11 @@ theorem continuousOn_schwarzChristoffelBoundary_Icc (a e : ι → ℝ)
   rw [hzero]
   norm_num
 
-/-- The closed boundary arc between adjacent integrable prevertices is exactly the closure of its
-open straight edge.  In particular, both endpoint vertices belong to the closure of that edge,
-which is the local gluing statement needed to assemble the Schwarz--Christoffel polygon. -/
+/-- The closed boundary arc between two real endpoints whose total exponents are greater than
+`-1`, with no prevertex of nonzero exponent strictly between them, is exactly the closure of its
+open straight edge.  When the endpoints are prevertices, this places both endpoint vertices --
+rewriting with `schwarzChristoffelBoundary_apply_prevertex` -- in the closure of that edge, which
+is the local gluing statement needed to assemble the Schwarz--Christoffel polygon. -/
 theorem schwarzChristoffelBoundary_image_Icc_eq_closure_image_Ioo (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) {p q : ℝ} (hpq : p < q)
     (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q)
@@ -249,23 +254,5 @@ theorem schwarzChristoffelBoundary_image_Icc_eq_closure_image_Ioo (a e : ι → 
   refine image_closure_of_isCompact ?_ ?_ <;> rw [closure_Ioo hpq.ne]
   · exact isCompact_Icc
   · exact continuousOn_schwarzChristoffelBoundary_Icc a e z₀ ha hp hq
-
-/-- The two Schwarz--Christoffel vertices belonging to adjacent prevertices lie in the closure of
-the open straight edge between them.  This is the endpoint form of the local polygon gluing: the
-closed boundary arc is not merely collinear but attaches to the previously defined vertex values. -/
-theorem schwarzChristoffelVertices_mem_closure_boundary_image_Ioo (a e : ι → ℝ)
-    (z₀ : UpperHalfPlane) {j k : ι} (hjk : a j < a k)
-    (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo (a j) (a k))
-    (hj : -1 < ∑ i with a i = a j, e i) (hk : -1 < ∑ i with a i = a k, e i) :
-    schwarzChristoffelVertex a e z₀ j ∈
-        closure (schwarzChristoffelBoundary a e z₀ '' Ioo (a j) (a k)) ∧
-      schwarzChristoffelVertex a e z₀ k ∈
-        closure (schwarzChristoffelBoundary a e z₀ '' Ioo (a j) (a k)) := by
-  rw [← schwarzChristoffelBoundary_image_Icc_eq_closure_image_Ioo a e z₀ hjk ha hj hk]
-  constructor
-  · exact ⟨a j, left_mem_Icc.mpr hjk.le,
-      schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj⟩
-  · exact ⟨a k, right_mem_Icc.mpr hjk.le,
-      schwarzChristoffelBoundary_apply_prevertex a e z₀ k hk⟩
 
 end TauCeti
