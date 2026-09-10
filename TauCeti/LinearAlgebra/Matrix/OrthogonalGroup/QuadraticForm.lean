@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
 public import Mathlib.LinearAlgebra.UnitaryGroup
-import TauCeti.LinearAlgebra.QuadraticForm.Standard
 
 /-!
 # Quadratic and matrix orthogonal groups
@@ -22,8 +21,6 @@ The criteria apply to any finite index type, including the empty type, and to ri
 
 ## Main results
 
-* `TauCeti.weightedSumSquares_one_eq_toQuadraticForm_one`: the unit-weight specialization is the
-  quadratic form of the identity matrix.
 * `TauCeti.toMatrix_mem_orthogonalGroup_iff`: the coordinate criterion for the orthogonal group.
 * `TauCeti.toMatrix_mem_specialOrthogonalGroup_iff`: the coordinate criterion for the special
   orthogonal group.
@@ -36,15 +33,6 @@ namespace TauCeti
 open Matrix
 
 universe u v
-
-/-- The standard weighted sum-of-squares quadratic form is the quadratic form associated to the
-identity matrix. -/
-theorem weightedSumSquares_one_eq_toQuadraticForm_one (R : Type u) [CommRing R]
-    (n : Type v) [Fintype n] [DecidableEq n] :
-    QuadraticMap.weightedSumSquares R (1 : n → R) =
-      Matrix.toQuadraticForm' (1 : Matrix n n R) := by
-  rw [weightedSumSquares_eq_toQuadraticForm_diagonal]
-  exact congrArg Matrix.toQuadraticForm' (Matrix.diagonal_one (n := n) (α := R))
 
 /-- The coordinate matrix of a linear automorphism is orthogonal exactly when the
 automorphism preserves the standard quadratic form. -/

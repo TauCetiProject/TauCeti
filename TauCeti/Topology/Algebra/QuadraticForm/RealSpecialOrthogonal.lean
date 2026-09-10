@@ -10,6 +10,7 @@ public import Mathlib.Topology.UniformSpace.Real
 import TauCeti.Topology.Algebra.UnitaryGroup
 public import TauCeti.Topology.Algebra.QuadraticForm.SpecialOrthogonal
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
+import TauCeti.LinearAlgebra.QuadraticForm.Standard
 
 /-!
 # Compactness of positive-definite real special orthogonal groups
@@ -54,7 +55,7 @@ private def matrixSpecialOrthogonalToWeightedSumSquares
   let U : Matrix.orthogonalGroup ι ℝ := ⟨A, A.prop.1⟩
   let e := Matrix.UnitaryGroup.toLinearEquiv U
   refine ⟨e, ?_⟩
-  rw [weightedSumSquares_one_eq_toQuadraticForm_one ℝ ι]
+  rw [weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.diagonal_one']
   apply (TauCeti.toMatrix_mem_specialOrthogonalGroup_iff ℝ ι
     ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) e).mp
   simpa only [e, Matrix.UnitaryGroup.toLinearEquiv,
@@ -77,7 +78,8 @@ private theorem matrixSpecialOrthogonalToWeightedSumSquares_surjective
     ⟨LinearMap.toMatrix' (g : (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)).toLinearMap, by
       apply (TauCeti.toMatrix_mem_specialOrthogonalGroup_iff ℝ ι
         ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) _).mpr
-      simpa only [← weightedSumSquares_one_eq_toQuadraticForm_one ℝ ι] using g.prop⟩
+      simpa only [weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.diagonal_one'] using
+        g.prop⟩
   refine ⟨A, ?_⟩
   apply Subtype.ext
   apply LinearEquiv.ext
