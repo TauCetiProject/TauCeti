@@ -25,7 +25,7 @@ results.
 
 ## Main definitions
 
-* `TauCeti.carPositiveRootFamily`: the canonically ordered positive matrix units.
+* `TauCeti.carPositiveMatrixUnitFamily`: the canonically ordered positive matrix units.
 * `TauCeti.carHighestWeightVector`: their ordered Clifford product candidate.
 
 ## Main results
@@ -35,7 +35,7 @@ results.
 * `TauCeti.carHighestWeightVector_eq_one_of_subsingleton`: in ranks zero and one the empty
   ordered product is `1`.
 * `TauCeti.isGlHighestWeightVector_carHighestWeightVector`: its direct highest-weight equation.
-* `TauCeti.isGlHighestWeightVector_carHighestWeightVector_fin`: the `Fin N` staircase form.
+* `TauCeti.isGlHighestWeightVector_glStaircase_carHighestWeightVector`: the `Fin N` staircase form.
 
 ## References
 
@@ -57,8 +57,15 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 /-! ### The ordered positive-root product -/
 
 /-- The positive roots of `gl_n`, represented by strictly upper-triangular index pairs. -/
-@[expose] def carPositiveRootPairs (n : Type*) [Fintype n] [LinearOrder n] : Finset (n × n) :=
+def carPositiveRootPairs (n : Type*) [Fintype n] [LinearOrder n] : Finset (n × n) :=
   Finset.univ.filter fun ij => ij.1 < ij.2
+
+/-- Membership in `carPositiveRootPairs` means that the first index is strictly below the second. -/
+@[simp]
+theorem mem_carPositiveRootPairs {n : Type*} [Fintype n] [LinearOrder n] {i j : n} :
+    (i, j) ∈ carPositiveRootPairs n ↔ i < j := by
+  rw [carPositiveRootPairs.eq_def]
+  simp
 
 /-- The lexicographic linear order used to enumerate pairs of ordered indices. -/
 @[instance_reducible] private noncomputable def carPairLinearOrder
@@ -66,29 +73,50 @@ attribute [local instance 100] LieRing.ofAssociativeRing
   let _ : LinearOrder (n ×ₗ n) := Prod.Lex.instLinearOrder n n
   exact LinearOrder.lift' toLex (Equiv.injective toLex)
 
+/-- The positive-root pair at a given place in the canonical lexicographic enumeration. -/
+noncomputable def carPositiveRootPair (n : Type*) [Fintype n] [LinearOrder n]
+    (r : Fin (carPositiveRootPairs n).card) : n × n := by
+  let _ := carPairLinearOrder n
+  exact (carPositiveRootPairs n).orderEmbOfFin rfl r
+
+/-- Every pair in the canonical enumeration is a positive-root pair. -/
+@[simp]
+theorem carPositiveRootPair_mem (n : Type*) [Fintype n] [LinearOrder n]
+    (r : Fin (carPositiveRootPairs n).card) :
+    carPositiveRootPair n r ∈ carPositiveRootPairs n := by
+  let _ := carPairLinearOrder n
+  rw [carPositiveRootPair.eq_def]
+  exact Finset.orderEmbOfFin_mem (carPositiveRootPairs n) rfl r
+
 /-- The positive matrix units in the lexicographic order on their index pairs. -/
-@[expose] noncomputable def carPositiveRootFamily (K : Type*) [CommRing K]
+noncomputable def carPositiveMatrixUnitFamily (K : Type*) [CommRing K]
     (n : Type*) [Fintype n] [LinearOrder n] :
     Fin (carPositiveRootPairs n).card → Matrix n n K := by
-  let _ : LinearOrder (n ×ₗ n) := Prod.Lex.instLinearOrder n n
-  let _ : LinearOrder (n × n) := LinearOrder.lift' toLex (Equiv.injective toLex)
-  exact fun r => Matrix.stdBasis K n n ((carPositiveRootPairs n).orderEmbOfFin rfl r)
+  exact fun r => Matrix.stdBasis K n n (carPositiveRootPair n r)
+
+/-- The positive matrix-unit family is obtained by applying `Matrix.stdBasis` to the canonical
+positive-root enumeration. -/
+@[simp]
+theorem carPositiveMatrixUnitFamily_apply (K : Type*) [CommRing K]
+    (n : Type*) [Fintype n] [LinearOrder n] (r : Fin (carPositiveRootPairs n).card) :
+    carPositiveMatrixUnitFamily K n r = Matrix.stdBasis K n n (carPositiveRootPair n r) :=
+  carPositiveMatrixUnitFamily.eq_def K n r
 
 /-- The ordered product candidate formed from all positive matrix-unit Clifford generators. It is
 proved below to be a highest-weight vector over a field when `2` is invertible. -/
-@[expose] noncomputable def carHighestWeightVector (K : Type*) [CommRing K]
+noncomputable def carHighestWeightVector (K : Type*) [CommRing K]
     (n : Type*) [Fintype n] [LinearOrder n] :
     CliffordAlgebra (traceQuadraticForm K n) :=
-  ((List.ofFn (carPositiveRootFamily K n)).map
+  ((List.ofFn (carPositiveMatrixUnitFamily K n)).map
     (CliffordAlgebra.ι (traceQuadraticForm K n))).prod
 
 /-- The defining ordered-product equation for `carHighestWeightVector`. -/
 theorem carHighestWeightVector_def (K : Type*) [CommRing K]
     (n : Type*) [Fintype n] [LinearOrder n] :
     carHighestWeightVector K n =
-      ((List.ofFn (carPositiveRootFamily K n)).map
+      ((List.ofFn (carPositiveMatrixUnitFamily K n)).map
         (CliffordAlgebra.ι (traceQuadraticForm K n))).prod :=
-  rfl
+  carHighestWeightVector.eq_def K n
 
 /-- If the index type has at most one element, there are no positive roots and the ordered-product
 candidate is `1`. This includes both the rank-zero and rank-one boundary cases. -/
@@ -102,7 +130,7 @@ theorem carHighestWeightVector_eq_one_of_subsingleton (K : Type*) [CommRing K]
       Finset.notMem_empty, iff_false]
     exact fun hij => (lt_irrefl j) (Subsingleton.elim i j ▸ hij)
   rw [carHighestWeightVector_def]
-  have hroots : List.ofFn (carPositiveRootFamily K n) = [] := by
+  have hroots : List.ofFn (carPositiveMatrixUnitFamily K n) = [] := by
     apply List.eq_nil_of_length_eq_zero
     simp only [List.length_ofFn, hpairs, Finset.card_empty]
   rw [hroots]
@@ -112,17 +140,19 @@ section Field
 
 variable {K n : Type*} [Field K] [Fintype n] [LinearOrder n]
 
-private theorem carPositiveRootFamily_mem {i j : n} (hij : i < j) :
-    Matrix.single i j (1 : K) ∈ List.ofFn (carPositiveRootFamily K n) := by
+/-- Every positive matrix unit occurs in the canonical family. -/
+theorem carPositiveMatrixUnitFamily_mem {i j : n} (hij : i < j) :
+    Matrix.single i j (1 : K) ∈ List.ofFn (carPositiveMatrixUnitFamily K n) := by
   let _ := carPairLinearOrder n
   rw [List.mem_ofFn]
   have hp : (i, j) ∈ carPositiveRootPairs n := by
-    simpa only [carPositiveRootPairs, Finset.mem_filter, Finset.mem_univ, true_and] using hij
+    exact mem_carPositiveRootPairs.mpr hij
   have hp' : (i, j) ∈ (carPositiveRootPairs n : Set (n × n)) := hp
   rw [← Finset.range_orderEmbOfFin (carPositiveRootPairs n) rfl] at hp'
   obtain ⟨r, hr⟩ := hp'
   refine ⟨r, ?_⟩
-  simp [carPositiveRootFamily, hr, Matrix.stdBasis_eq_single]
+  rw [carPositiveMatrixUnitFamily_apply, carPositiveRootPair.eq_def, hr,
+    Matrix.stdBasis_eq_single]
 
 private theorem carPositiveUnits_ortho {i j k l : n}
     (hij : i < j) (hkl : k < l) :
@@ -163,30 +193,30 @@ private theorem iota_mul_prod_eq_zero_of_mem
 theorem carHighestWeightVector_ne_zero [Invertible (2 : K)] :
     carHighestWeightVector K n ≠ 0 := by
   let _ := carPairLinearOrder n
-  have hpositive : LinearIndependent K (carPositiveRootFamily K n) := by
+  have hpositive : LinearIndependent K (carPositiveMatrixUnitFamily K n) := by
     convert
       (Matrix.stdBasis K n n).linearIndependent.comp
         ((carPositiveRootPairs n).orderEmbOfFin rfl)
         ((carPositiveRootPairs n).orderEmbOfFin rfl).injective using 1
     rfl
-  simpa only [carHighestWeightVector, List.map_ofFn] using
+  simpa only [carHighestWeightVector_def, List.map_ofFn] using
     CliffordAlgebra.prod_map_ι_ofFn_ne_zero (traceQuadraticForm K n)
-      (carPositiveRootFamily K n) hpositive
+      (carPositiveMatrixUnitFamily K n) hpositive
 
 private theorem positive_iota_mul_carHighestWeightVector_eq_zero
     {i j : n} (hij : i < j) :
     CliffordAlgebra.ι (traceQuadraticForm K n) (Matrix.single i j 1)
         * carHighestWeightVector K n = 0 := by
-  apply iota_mul_prod_eq_zero_of_mem (carPositiveRootFamily_mem hij)
+  apply iota_mul_prod_eq_zero_of_mem (carPositiveMatrixUnitFamily_mem hij)
   · rw [traceQuadraticForm_apply, Matrix.trace_single_mul, Matrix.single_apply]
     simp [ne_of_lt hij]
   · intro b hb
     let _ := carPairLinearOrder n
     rw [List.mem_ofFn] at hb
     obtain ⟨r, rfl⟩ := hb
-    have hr := Finset.orderEmbOfFin_mem (carPositiveRootPairs n) rfl r
-    simp only [carPositiveRootFamily]
-    generalize hp : (carPositiveRootPairs n).orderEmbOfFin rfl r = p at hr ⊢
+    have hr := carPositiveRootPair_mem n r
+    simp only [carPositiveMatrixUnitFamily_apply]
+    generalize hp : carPositiveRootPair n r = p at hr ⊢
     rcases p with ⟨k, l⟩
     rw [Matrix.stdBasis_eq_single]
     apply carPositiveUnits_ortho hij
@@ -327,7 +357,7 @@ private theorem half_diagonalScalarSum {N : ℕ} (i : Fin N) :
 
 /-- For `Fin N` in characteristic zero, the direct cardinality weight is the scalar extension of
 the rational staircase `TauCeti.glStaircase N`. -/
-theorem isGlHighestWeightVector_carHighestWeightVector_fin (N : ℕ) :
+theorem isGlHighestWeightVector_glStaircase_carHighestWeightVector (N : ℕ) :
     IsGlHighestWeightVector (fun i => algebraMap ℚ K (glStaircase N i))
       (carHighestWeightVector K (Fin N)) := by
   have h := isGlHighestWeightVector_carHighestWeightVector (K := K) (n := Fin N)
