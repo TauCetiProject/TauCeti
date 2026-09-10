@@ -121,9 +121,10 @@ theorem nonempty_homotopyGroupPiMulEquiv {n : ℕ} (hn : 1 ≤ n) (k : ℕ)
   obtain ⟨e⟩ := nonempty_homotopyGroupMulEquiv (N := Fin (k + 2)) (x := x) (y := x')
   exact ⟨e.trans (homotopyGroupPiMulEquivMk n k x')⟩
 
-/-- **Real projective space is aspherical exactly when its covering sphere is weakly
-contractible.** For `2 ≤ n` neither side is decided here: `π_n(Sⁿ)` is not computed in this
-library, and it is the only obstruction. -/
+/-- **Real projective space is aspherical exactly when every homotopy group of its covering
+sphere in dimension at least two vanishes.** At `n = 1` that is strictly weaker than weak
+contractibility of the sphere, since `π₁(S¹)` is infinite cyclic. For `2 ≤ n` neither side is
+decided here: `π_n(Sⁿ)` is not computed in this library, and it is the only obstruction. -/
 theorem isAspherical_iff_sphere {n : ℕ} (hn : 1 ≤ n)
     (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (y : RealProjectiveSpace n) :
     IsAspherical (RealProjectiveSpace n) y ↔

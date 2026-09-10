@@ -5,17 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.UniversalCover.Circle.EilenbergMacLane
 public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Basic
-public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Line
 public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Zero
 public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.HigherHomotopy
 
 /-!
 # Asphericity of real projective space
 
-Real projective space `RPⁿ` is aspherical exactly when its covering sphere `Sⁿ` is weakly
-contractible, because the antipodal projection is a covering map and so an isomorphism on all
-homotopy groups in dimensions at least two.
+Real projective space `RPⁿ` is aspherical exactly when every homotopy group of its covering
+sphere `Sⁿ` in dimension at least two vanishes, because the antipodal projection is a covering
+map and so an isomorphism on all homotopy groups in dimensions at least two.
 
 Two dimensions are settled outright. `RP⁰` is a point, hence a `K(1, 1)`; `RP¹` is a circle,
 hence a `K(ℤ, 1)`, joining the circles and tori already recorded as Eilenberg--Mac Lane spaces.
@@ -41,7 +41,7 @@ and `TauCeti.AlgebraicTopology.EilenbergMacLane.Covering`.
 public section
 
 open Metric
-open scoped Topology Topology.Homotopy
+open scoped Topology Topology.Homotopy Real
 
 namespace TauCeti
 
@@ -62,21 +62,27 @@ end Zero
 
 namespace Line
 
-/-- The real projective line is aspherical: it is homeomorphic to a circle. -/
+/-- The real projective line is aspherical, transported from the additive circle `ℝ ⧸ 2πℤ`
+along `TauCeti.RealProjectiveSpace.Line.homeomorphAddCircle`. -/
 theorem isAspherical (x : RealProjectiveSpace 1) : IsAspherical (RealProjectiveSpace 1) x :=
-  IsAspherical.mk inferInstance fun _ ↦ inferInstance
+  (AddCircle.isAspherical (2 * π) (homeomorphAddCircle x)).of_homeomorph
+    homeomorphAddCircle.symm (homeomorphAddCircle.symm_apply_apply x)
 
-/-- **`RP¹` is an Eilenberg--Mac Lane space `K(ℤ, 1)`.** -/
+/-- **`RP¹` is an Eilenberg--Mac Lane space `K(ℤ, 1)`**, transported from the additive circle
+`ℝ ⧸ 2πℤ` along `TauCeti.RealProjectiveSpace.Line.homeomorphAddCircle`. -/
 theorem isEilenbergMacLaneSpaceOne (x : RealProjectiveSpace 1) :
     IsEilenbergMacLaneSpaceOne (Multiplicative ℤ) (RealProjectiveSpace 1) x :=
-  IsEilenbergMacLaneSpaceOne.mk (isAspherical x) ⟨fundamentalGroupMulEquiv x⟩
+  (AddCircle.isEilenbergMacLaneSpaceOne (2 * π) Real.two_pi_pos.ne'
+    (homeomorphAddCircle x)).of_homeomorph homeomorphAddCircle.symm
+    (homeomorphAddCircle.symm_apply_apply x)
 
 end Line
 
-/-- **For `2 ≤ n`, real projective space is a `K(ℤ/2, 1)` exactly when its covering sphere is
-weakly contractible.** The fundamental group is `ℤˣ` in this range, so the only remaining
-condition is asphericity, and that transfers along the antipodal cover. Neither side is decided
-here: it amounts to knowing `π_n(Sⁿ)`, which this library does not compute. -/
+/-- **For `2 ≤ n`, real projective space is a `K(ℤ/2, 1)` exactly when every homotopy group of
+its covering sphere in dimension at least two vanishes.** The fundamental group is `ℤˣ` in
+this range, so the only remaining condition is asphericity, and that transfers along the
+antipodal cover. Neither side is decided here: it amounts to knowing `π_n(Sⁿ)`, which this
+library does not compute. -/
 theorem isEilenbergMacLaneSpaceOne_iff_sphere {n : ℕ} (hn : 2 ≤ n)
     (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (y : RealProjectiveSpace n) :
     IsEilenbergMacLaneSpaceOne ℤˣ (RealProjectiveSpace n) y ↔
