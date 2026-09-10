@@ -292,15 +292,13 @@ theorem measurable_multinomialToEuclidean [Finite ι] :
 omit [Fintype ι] in
 /-- Casting count vectors into Euclidean space is a measurable embedding. -/
 theorem measurableEmbedding_multinomialToEuclidean [Finite ι] :
-    MeasurableEmbedding (multinomialToEuclidean (ι := ι)) where
-  injective k l h := by
-    ext i
-    exact Nat.cast_injective (by
-      simpa only [multinomialToEuclidean_apply] using
-        congr_arg (fun x : EuclideanSpace ℝ ι ↦ x i) h : (k i : ℝ) = l i)
-  measurable := measurable_multinomialToEuclidean
-  measurableSet_image' s _ :=
-    ((Set.to_countable s).image (multinomialToEuclidean (ι := ι))).measurableSet
+    MeasurableEmbedding (multinomialToEuclidean (ι := ι)) := by
+  apply measurable_multinomialToEuclidean.measurableEmbedding
+  intro k l h
+  ext i
+  exact Nat.cast_injective (by
+    simpa only [multinomialToEuclidean_apply] using
+      congr_arg (fun x : EuclideanSpace ℝ ι ↦ x i) h : (k i : ℝ) = l i)
 
 end Probability
 

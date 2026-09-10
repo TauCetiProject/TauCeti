@@ -14,8 +14,8 @@ Combining cells of a multinomial count vector again gives a multinomial distribu
 `f : ι → κ`, the count in a target cell `j` is the sum of all source counts over the fibre of
 `j`, while `Convexity.StdSimplex.map f` sums the corresponding cell probabilities.
 
-The proof identifies the Euclidean casts by their characteristic functions. The multinomial
-formula reduces the result to grouping a finite sum by the fibres of `f`.
+This aggregation law supports coarsening a multinomial model by merging categories while
+preserving its multinomial form.
 
 ## Main definitions and results
 
@@ -91,28 +91,22 @@ private theorem sum_map_weights_mul_cexp (f : ι → κ) (p : StdSimplex NNReal 
     ∑ j, (((p.map f).weights j : NNReal) : ℂ) * Complex.exp (Complex.I * (t j : ℂ)) =
       ∑ i, (p.weights i : ℂ) * Complex.exp (Complex.I * (t (f i) : ℂ)) := by
   classical
-  have hweights (j : κ) : (p.map f).weights j = ∑ i with f i = j, p.weights i := by
-    rw [StdSimplex.weights_map, Finsupp.mapDomain_fintype, Finsupp.coe_finsetSum,
-      Finset.sum_apply,
-      ← Finset.sum_eq_of_subset (s₁ := {i | f i = j}) (by simp) _
-        (fun i _ hi ↦ Finsupp.single_eq_of_ne' (by simpa using hi))]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    obtain rfl : f i = j := by simpa using hi
-    simp
-  simp_rw [hweights]
-  push_cast
-  simp_rw [Finset.sum_mul]
+  rw [StdSimplex.weights_map]
   calc
-    _ = ∑ j, ∑ i with f i = j,
-        (p.weights i : ℂ) * Complex.exp (Complex.I * (t (f i) : ℂ)) := by
-      apply Finset.sum_congr rfl
-      intro j hj
-      apply Finset.sum_congr rfl
-      intro i hi
-      rw [(Finset.mem_filter.mp hi).2]
+    _ = (p.weights.mapDomain f).sum fun j x ↦
+        (x : ℂ) * Complex.exp (Complex.I * (t j : ℂ)) := by
+      rw [Finsupp.sum_fintype]
+      simp
+    _ = p.weights.sum fun i x ↦
+        (x : ℂ) * Complex.exp (Complex.I * (t (f i) : ℂ)) := by
+      apply Finsupp.sum_mapDomain_index
+      · simp
+      · intro j x y
+        push_cast
+        ring
     _ = _ := by
-      simpa using Finset.sum_fiberwise Finset.univ f
-        (fun i ↦ (p.weights i : ℂ) * Complex.exp (Complex.I * (t (f i) : ℂ)))
+      rw [Finsupp.sum_fintype]
+      simp
 
 /-- **Aggregation law for the multinomial distribution.** Combining cells along `f` gives the
 multinomial law whose target-cell probabilities are the sums of the source probabilities over
@@ -140,12 +134,12 @@ theorem map_multinomialAggregate_multinomialMeasure (f : ι → κ) (n : ℕ)
       rw [Function.comp_apply, inner_multinomialAggregate]
     _ = (∑ i, (p.weights i : ℂ) *
           Complex.exp (Complex.I * (t (f i) : ℂ))) ^ n := by
-      rw [charFun_multinomial]
+      rw [charFun_map_multinomialToEuclidean_multinomialMeasure]
       simp only [pullbackFrequency_apply]
     _ = (∑ j, ((p.map f).weights j : ℂ) *
           Complex.exp (Complex.I * (t j : ℂ))) ^ n := by
       rw [sum_map_weights_mul_cexp]
     _ = charFun ((multinomialMeasure n (p.map f)).map multinomialToEuclidean) t :=
-      (charFun_multinomial n (p.map f) t).symm
+      (charFun_map_multinomialToEuclidean_multinomialMeasure n (p.map f) t).symm
 
 end TauCeti.Probability

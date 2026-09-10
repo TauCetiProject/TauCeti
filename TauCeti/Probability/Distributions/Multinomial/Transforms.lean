@@ -34,7 +34,8 @@ cells, which contribute nothing to the tilted sum.
   for every direction of the Euclidean pushforward;
 * `TauCeti.Probability.mgf_inner_multinomial` — the directional moment generating function;
 * `TauCeti.Probability.cgf_inner_multinomial` — the directional cumulant generating function.
-* `TauCeti.Probability.charFun_multinomial` — the characteristic function of the Euclidean cast.
+* `TauCeti.Probability.charFun_map_multinomialToEuclidean_multinomialMeasure` — the
+  characteristic function of the Euclidean cast.
 
 ## References
 
@@ -122,7 +123,8 @@ theorem cgf_inner_multinomial (n : ℕ) (p : StdSimplex NNReal ι)
 
 /-- **Characteristic function of the multinomial law**: for a frequency vector `t`, it is the
 `n`th power of the probability-weighted sum of the coordinate characters. -/
-theorem charFun_multinomial (n : ℕ) (p : StdSimplex NNReal ι) (t : EuclideanSpace ℝ ι) :
+theorem charFun_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
+    (p : StdSimplex NNReal ι) (t : EuclideanSpace ℝ ι) :
     charFun ((multinomialMeasure n p).map multinomialToEuclidean) t =
       (∑ i, (p.weights i : ℂ) * Complex.exp (Complex.I * (t i : ℂ))) ^ n := by
   classical
