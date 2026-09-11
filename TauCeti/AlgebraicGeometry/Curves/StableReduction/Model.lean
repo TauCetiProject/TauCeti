@@ -100,6 +100,15 @@ lemma baseChangeHom_genericFiberι (M : Model R K C toK) {N : Model R K C toK}
       genericFiberι R K M.toBase ≫ f := by
   exact pullback.lift_fst _ _ _
 
+/-- The induced generic-fibre morphism commutes with the structure maps to `Spec K`. -/
+@[reassoc (attr := simp)]
+lemma baseChangeHom_toSpec (M : Model R K C toK) {N : Model R K C toK}
+    (f : M.total ⟶ N.total) (overBase : f ≫ N.toBase = M.toBase) :
+    M.baseChangeHom f overBase ≫
+        pullback.snd N.toBase (Spec.map (CommRingCat.ofHom (algebraMap R K))) =
+      pullback.snd M.toBase (Spec.map (CommRingCat.ofHom (algebraMap R K))) := by
+  exact pullback.lift_snd _ _ _
+
 /-- A morphism of models is a morphism over the DVR that respects the chosen identification of
 the generic fibre. -/
 structure Hom (M N : Model R K C toK) where
