@@ -44,6 +44,8 @@ root weights.
 
 * N. Bourbaki, *Groupes et algèbres de Lie*, Chapters 4--6, Plate IV.
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.
+* The proof interface follows the matrix-action pattern in
+  `TauCeti.RepresentationTheory.Spin.Polarization.TypeB.RootGenerators`.
 -/
 
 public section
@@ -73,47 +75,23 @@ private theorem typeDQuadraticEquiv_eq_bivector (hline : P.line = ⊥)
     (P.nondegenerate_of_line_eq_bot hline) _ _
     (P.typeDQuadraticEquiv_lie_ι b hline A) (P.typeDBasis b hline) x y h
 
+omit [Invertible (2 : K)] in
+private theorem polar_dualVector_left (i j : Fin n) :
+    polar Q (P.dualVector b i : V) (b j : V) = if j = i then 1 else 0 := by
+  rw [polar_comm, P.polar_dualVector]
+
 private theorem typeDQuadraticEquiv_rootGenerator_inl_of_add_one_lt
     (hn : 4 ≤ n) (hline : P.line = ⊥) {i : Fin n} (hi : (i : ℕ) + 1 < n) :
     P.typeDQuadraticEquiv b hline (TypeDStd.rootGenerator n hn (.inl i)) =
-      ⟨bivector Q (b i : V) (P.dualVector b ⟨(i : ℕ) + 1, hi⟩ : V),
+      ⟨bivector Q (b i : V) (P.dualVector b (TypeDStd.chainNext n i hi) : V),
         bivector_mem_quadraticLieSubalgebra Q _ _⟩ := by
   apply P.typeDQuadraticEquiv_eq_bivector b hline
   rintro (j | j)
-  · rw [Matrix.toLinAlgEquiv_self]
-    simp only [TypeDStd.val_rootGenerator_inl, TypeDStd.raisingMatrix_of_chain n hn hi,
-      Fintype.sum_sum_type, Matrix.fromBlocks_apply₁₁, Matrix.fromBlocks_apply₂₁,
-      Matrix.single_apply, Matrix.zero_apply, zero_smul, Finset.sum_const_zero,
-      add_zero, P.typeDBasis_inl, P.polar_W_eq_zero, sub_zero]
-    rw [Finset.sum_eq_single i]
-    · rw [polar_comm, P.polar_dualVector]
-      simp [Fin.ext_iff, eq_comm]
-    · intro a _ hai
-      simp only [ite_smul, zero_smul]
-      split
-      · rename_i h
-        exact (hai h.1.symm).elim
-      · rfl
-    · simp
-  · rw [Matrix.toLinAlgEquiv_self]
-    simp only [TypeDStd.val_rootGenerator_inl, TypeDStd.raisingMatrix_of_chain n hn hi,
-      Fintype.sum_sum_type, Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₂,
-      Matrix.neg_apply, Matrix.transpose_apply, Matrix.single_apply, Matrix.zero_apply,
-      neg_smul, zero_smul, Finset.sum_const_zero, zero_add,
-      P.typeDBasis_inr, P.polar_W'_eq_zero, zero_sub]
-    rw [Finset.sum_eq_single ⟨(i : ℕ) + 1, hi⟩]
-    · rw [P.polar_dualVector]
-      simp [Fin.ext_iff]
-    · intro a _ hai
-      simp only [ite_smul, zero_smul]
-      split
-      · rename_i h
-        have ha : a = ⟨(i : ℕ) + 1, hi⟩ := by
-          apply Fin.ext
-          simpa using congrArg Fin.val h.2.symm
-        exact (hai ha).elim
-      · simp
-    · simp
+  all_goals rw [TypeDStd.val_rootGenerator_inl,
+    TypeDStd.toLinAlgEquiv_raisingMatrix_apply_basis_of_chain n hn
+      (P.typeDBasis b hline) hi]
+  · simp [P.typeDBasis_inl, P.polar_W_eq_zero, P.polar_dualVector_left, eq_comm]
+  · simp [P.typeDBasis_inr, P.polar_W'_eq_zero, P.polar_dualVector, eq_comm]
 
 private theorem typeDQuadraticEquiv_rootGenerator_inl_of_not_add_one_lt
     (hn : 4 ≤ n) (hline : P.line = ⊥) {i : Fin n} (hi : ¬(i : ℕ) + 1 < n) :
@@ -123,75 +101,24 @@ private theorem typeDQuadraticEquiv_rootGenerator_inl_of_not_add_one_lt
         bivector_mem_quadraticLieSubalgebra Q _ _⟩ := by
   apply P.typeDQuadraticEquiv_eq_bivector b hline
   rintro (j | j)
-  · rw [Matrix.toLinAlgEquiv_self]
-    simp [TypeDStd.val_rootGenerator_inl, TypeDStd.raisingMatrix_of_fork n hn hi,
-      Fintype.sum_sum_type, P.typeDBasis_inl, P.polar_W_eq_zero]
-  · rw [Matrix.toLinAlgEquiv_self]
-    simp only [TypeDStd.val_rootGenerator_inl, TypeDStd.raisingMatrix_of_fork n hn hi,
-      Fintype.sum_sum_type, Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₂,
-      Matrix.sub_apply, Matrix.single_apply, Matrix.zero_apply, zero_smul,
-      Finset.sum_const_zero, add_zero, P.typeDBasis_inl, P.typeDBasis_inr,
-      zero_smul, sub_smul]
-    rw [Finset.sum_sub_distrib, Finset.sum_eq_single (TypeDStd.forkLeft n hn),
-      Finset.sum_eq_single (TypeDStd.forkRight n hn)]
-    · rw [P.polar_dualVector, P.polar_dualVector]
-      simp [eq_comm]
-    · intro a _ ha
-      simp only [ite_smul, zero_smul]
-      split
-      · rename_i h
-        exact (ha h.1.symm).elim
-      · rfl
-    · simp
-    · intro a _ ha
-      simp only [ite_smul, zero_smul]
-      split
-      · rename_i h
-        exact (ha h.1.symm).elim
-      · rfl
-    · simp
+  all_goals rw [TypeDStd.val_rootGenerator_inl,
+    TypeDStd.toLinAlgEquiv_raisingMatrix_apply_basis_of_fork n hn
+      (P.typeDBasis b hline) hi]
+  · simp [P.typeDBasis_inl, P.polar_W_eq_zero, eq_comm]
+  · simp [P.typeDBasis_inr, P.polar_dualVector, eq_comm]
 
 private theorem typeDQuadraticEquiv_rootGenerator_inr_of_add_one_lt
     (hn : 4 ≤ n) (hline : P.line = ⊥) {i : Fin n} (hi : (i : ℕ) + 1 < n) :
     P.typeDQuadraticEquiv b hline (TypeDStd.rootGenerator n hn (.inr i)) =
-      ⟨bivector Q (b ⟨(i : ℕ) + 1, hi⟩ : V) (P.dualVector b i : V),
+      ⟨bivector Q (b (TypeDStd.chainNext n i hi) : V) (P.dualVector b i : V),
         bivector_mem_quadraticLieSubalgebra Q _ _⟩ := by
   apply P.typeDQuadraticEquiv_eq_bivector b hline
   rintro (j | j)
-  · rw [Matrix.toLinAlgEquiv_self]
-    simp only [TypeDStd.val_rootGenerator_inr, TypeDStd.loweringMatrix_of_chain n hn hi,
-      Fintype.sum_sum_type, Matrix.fromBlocks_apply₁₁, Matrix.fromBlocks_apply₂₁,
-      Matrix.transpose_apply, Matrix.single_apply, Matrix.zero_apply, zero_smul,
-      Finset.sum_const_zero, add_zero, P.typeDBasis_inl, P.polar_W_eq_zero, sub_zero]
-    rw [Finset.sum_eq_single ⟨(i : ℕ) + 1, hi⟩]
-    · rw [polar_comm, P.polar_dualVector]
-      simp [Fin.ext_iff, eq_comm]
-    · intro a _ hai
-      simp only [ite_smul, zero_smul]
-      split
-      · rename_i h
-        have ha : a = ⟨(i : ℕ) + 1, hi⟩ := by
-          apply Fin.ext
-          simpa using congrArg Fin.val h.2.symm
-        exact (hai ha).elim
-      · rfl
-    · simp
-  · rw [Matrix.toLinAlgEquiv_self]
-    simp only [TypeDStd.val_rootGenerator_inr, TypeDStd.loweringMatrix_of_chain n hn hi,
-      Fintype.sum_sum_type, Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₂,
-      Matrix.neg_apply, Matrix.single_apply, Matrix.zero_apply, zero_smul,
-      Finset.sum_const_zero, zero_add, P.typeDBasis_inr, P.polar_W'_eq_zero,
-      neg_smul, zero_sub]
-    rw [Finset.sum_eq_single i]
-    · rw [P.polar_dualVector]
-      simp [Fin.ext_iff]
-    · intro a _ hai
-      simp only [ite_smul, zero_smul]
-      split
-      · rename_i h
-        exact (hai h.1.symm).elim
-      · simp
-    · simp
+  all_goals rw [TypeDStd.val_rootGenerator_inr,
+    TypeDStd.toLinAlgEquiv_loweringMatrix_apply_basis_of_chain n hn
+      (P.typeDBasis b hline) hi]
+  · simp [P.typeDBasis_inl, P.polar_W_eq_zero, P.polar_dualVector_left, eq_comm]
+  · simp [P.typeDBasis_inr, P.polar_W'_eq_zero, P.polar_dualVector, eq_comm]
 
 private theorem typeDQuadraticEquiv_rootGenerator_inr_of_not_add_one_lt
     (hn : 4 ≤ n) (hline : P.line = ⊥) {i : Fin n} (hi : ¬(i : ℕ) + 1 < n) :
@@ -201,33 +128,11 @@ private theorem typeDQuadraticEquiv_rootGenerator_inr_of_not_add_one_lt
         bivector_mem_quadraticLieSubalgebra Q _ _⟩ := by
   apply P.typeDQuadraticEquiv_eq_bivector b hline
   rintro (j | j)
-  · rw [Matrix.toLinAlgEquiv_self]
-    simp only [TypeDStd.val_rootGenerator_inr, TypeDStd.loweringMatrix_of_fork n hn hi,
-      Fintype.sum_sum_type, Matrix.fromBlocks_apply₁₁, Matrix.fromBlocks_apply₂₁,
-      Matrix.neg_apply, Matrix.sub_apply, Matrix.single_apply, Matrix.zero_apply,
-      zero_smul, Finset.sum_const_zero, zero_add, P.typeDBasis_inl, neg_smul, sub_smul]
-    simp only [neg_sub]
-    rw [Finset.sum_sub_distrib, Finset.sum_eq_single (TypeDStd.forkRight n hn),
-      Finset.sum_eq_single (TypeDStd.forkLeft n hn)]
-    · rw [polar_comm, P.polar_dualVector, polar_comm, P.polar_dualVector]
-      simp [eq_comm]
-    · intro a _ ha
-      simp only [ite_smul, zero_smul]
-      split
-      · rename_i h
-        exact (ha h.1.symm).elim
-      · rfl
-    · simp
-    · intro a _ ha
-      simp only [ite_smul, zero_smul]
-      split
-      · rename_i h
-        exact (ha h.1.symm).elim
-      · rfl
-    · simp
-  · rw [Matrix.toLinAlgEquiv_self]
-    simp [TypeDStd.val_rootGenerator_inr, TypeDStd.loweringMatrix_of_fork n hn hi,
-      Fintype.sum_sum_type, P.typeDBasis_inr, P.polar_W'_eq_zero]
+  all_goals rw [TypeDStd.val_rootGenerator_inr,
+    TypeDStd.toLinAlgEquiv_loweringMatrix_apply_basis_of_fork n hn
+      (P.typeDBasis b hline) hi]
+  · simp [P.typeDBasis_inl, P.polar_dualVector_left, eq_comm]
+  · simp [P.typeDBasis_inr, P.polar_W'_eq_zero, eq_comm]
 
 /-- **The numbered type-`D` matrix root generators are the corresponding positive and negative
 Clifford root representatives.** This fixes all four chain/fork and sign cases at once. -/
@@ -242,9 +147,13 @@ theorem typeDQuadraticEquiv_rootGenerator (hn : 4 ≤ n) (hline : P.line = ⊥)
   | inl i =>
       simp only
       by_cases hi : (i : ℕ) + 1 < n
-      · exact (congrArg Subtype.val
+      · have hnext : TypeDStd.chainNext n i hi = ⟨(i : ℕ) + 1, hi⟩ := by
+          apply Fin.ext
+          simp
+        exact (congrArg Subtype.val
           (P.typeDQuadraticEquiv_rootGenerator_inl_of_add_one_lt b hn hline hi)).trans
-            (P.typeDSimpleRootBivector_of_add_one_lt b (by omega) hi).symm
+            ((congrArg (fun j => bivector Q (b i : V) (P.dualVector b j : V)) hnext).trans
+              (P.typeDSimpleRootBivector_of_add_one_lt b (by omega) hi).symm)
       · have hfork :
             bivector Q (b (TypeDStd.forkLeft n hn) : V)
                 (b (TypeDStd.forkRight n hn) : V) =
@@ -264,9 +173,13 @@ theorem typeDQuadraticEquiv_rootGenerator (hn : 4 ≤ n) (hline : P.line = ⊥)
   | inr i =>
       simp only
       by_cases hi : (i : ℕ) + 1 < n
-      · exact (congrArg Subtype.val
+      · have hnext : TypeDStd.chainNext n i hi = ⟨(i : ℕ) + 1, hi⟩ := by
+          apply Fin.ext
+          simp
+        exact (congrArg Subtype.val
           (P.typeDQuadraticEquiv_rootGenerator_inr_of_add_one_lt b hn hline hi)).trans
-            (P.typeDSimpleNegativeRootBivector_of_add_one_lt b (by omega) hi).symm
+            ((congrArg (fun j => bivector Q (b j : V) (P.dualVector b i : V)) hnext).trans
+              (P.typeDSimpleNegativeRootBivector_of_add_one_lt b (by omega) hi).symm)
       · have hfork :
             bivector Q (P.dualVector b (TypeDStd.forkRight n hn) : V)
                 (P.dualVector b (TypeDStd.forkLeft n hn) : V) =
@@ -297,14 +210,26 @@ theorem typeDQuadraticEquiv_cartanGenerator (hn : 4 ≤ n) (hline : P.line = ⊥
           TypeDStd.rootGenerator (K := K) n hn (.inr i)⁆ =
         TypeDStd.cartanGenerator (K := K) n hn i := by
     rw [TypeDStd.lie_rootGenerator_inl_inr (K := K), ite_eq_left rfl]
-  rw [← hroot, (P.typeDQuadraticEquiv b hline).map_lie,
-    LieSubalgebra.coe_bracket]
-  change ⁅(P.typeDQuadraticEquiv b hline
-      (TypeDStd.rootGenerator n hn (.inl i)) : CliffordAlgebra Q),
+  have hmap :
+      P.typeDQuadraticEquiv b hline (TypeDStd.cartanGenerator n hn i) =
+        ⁅P.typeDQuadraticEquiv b hline (TypeDStd.rootGenerator n hn (.inl i)),
+          P.typeDQuadraticEquiv b hline (TypeDStd.rootGenerator n hn (.inr i))⁆ := by
+    rw [← hroot, (P.typeDQuadraticEquiv b hline).map_lie]
+  calc
     (P.typeDQuadraticEquiv b hline
-      (TypeDStd.rootGenerator n hn (.inr i)) : CliffordAlgebra Q)⁆ = _
-  rw [P.typeDQuadraticEquiv_rootGenerator b hn hline (.inl i),
-    P.typeDQuadraticEquiv_rootGenerator b hn hline (.inr i)]
-  exact P.lie_typeDSimpleRootBivector_typeDSimpleNegativeRootBivector (K := K) b (by omega) i
+          (TypeDStd.cartanGenerator n hn i) : CliffordAlgebra Q) =
+        (⁅P.typeDQuadraticEquiv b hline (TypeDStd.rootGenerator n hn (.inl i)),
+            P.typeDQuadraticEquiv b hline (TypeDStd.rootGenerator n hn (.inr i))⁆ :
+          quadraticLieSubalgebra Q) := congrArg Subtype.val hmap
+    _ = ⁅(P.typeDQuadraticEquiv b hline
+          (TypeDStd.rootGenerator n hn (.inl i)) : CliffordAlgebra Q),
+        (P.typeDQuadraticEquiv b hline
+          (TypeDStd.rootGenerator n hn (.inr i)) : CliffordAlgebra Q)⁆ := by
+      rw [LieSubalgebra.coe_bracket]
+    _ = P.typeDSimpleCorootBivector b (by omega) i := by
+      rw [P.typeDQuadraticEquiv_rootGenerator b hn hline (.inl i),
+        P.typeDQuadraticEquiv_rootGenerator b hn hline (.inr i)]
+      exact P.lie_typeDSimpleRootBivector_typeDSimpleNegativeRootBivector
+        (K := K) b (by omega) i
 
 end TauCeti.SpinPolarizationData
