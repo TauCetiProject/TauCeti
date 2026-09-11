@@ -8,6 +8,7 @@ module
 public import Mathlib.Basic.Complex.Basic
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
+public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
 import TauCeti.RingTheory.DedekindDomain.Ideal
 
 /-!
@@ -325,33 +326,6 @@ section Transport
 
 variable {L M : Type*} [Field L] [Field M]
 
-private theorem mapRingEquiv_refl_apply (x : 𝓞 K) :
-    RingOfIntegers.mapRingEquiv (RingEquiv.refl K) x = x :=
-  RingOfIntegers.ext rfl
-
-private theorem mapRingEquiv_trans_apply (e : K ≃+* L) (e' : L ≃+* M) (x : 𝓞 K) :
-    RingOfIntegers.mapRingEquiv e' (RingOfIntegers.mapRingEquiv e x) =
-      RingOfIntegers.mapRingEquiv (e.trans e') x :=
-  RingOfIntegers.ext rfl
-
-private theorem comap_mapRingEquiv_refl (I : Ideal (𝓞 K)) :
-    Ideal.comap (RingOfIntegers.mapRingEquiv (RingEquiv.refl K)) I = I := by
-  ext x
-  rw [Ideal.mem_comap, mapRingEquiv_refl_apply]
-
-private theorem comap_mapRingEquiv_trans (e : K ≃+* L) (e' : L ≃+* M) (I : Ideal (𝓞 M)) :
-    Ideal.comap (RingOfIntegers.mapRingEquiv e)
-        (Ideal.comap (RingOfIntegers.mapRingEquiv e') I) =
-      Ideal.comap (RingOfIntegers.mapRingEquiv (e.trans e')) I :=
-  (Ideal.comap_comap (RingOfIntegers.mapRingEquiv e : 𝓞 K →+* 𝓞 L)
-    (RingOfIntegers.mapRingEquiv e' : 𝓞 L →+* 𝓞 M)).trans
-    (congrArg (Ideal.comap · I) (RingHom.ext (mapRingEquiv_trans_apply e e')))
-
-private theorem comap_mapRingEquiv_eq_bot_iff (e : K ≃+* L) {I : Ideal (𝓞 L)} :
-    Ideal.comap (RingOfIntegers.mapRingEquiv e) I = ⊥ ↔ I = ⊥ := by
-  rw [← Ideal.map_symm]
-  exact Ideal.map_eq_bot_iff_of_injective (RingOfIntegers.mapRingEquiv e).symm.injective
-
 /-- **Transport along an isomorphism of fields.** An isomorphism `e : K ≃+* L` carries an ideal
 arithmetic function for `K` to one for `L`: the value at a nonzero ideal of `𝓞 L` is the value
 of `f` at its preimage in `𝓞 K` under `NumberField.RingOfIntegers.mapRingEquiv e`. -/
@@ -382,14 +356,14 @@ theorem zeroExtend_map (e : K ≃+* L) (f : IdealArithmeticFunction K) (I : Idea
 @[simp]
 theorem map_id (f : IdealArithmeticFunction K) : map (RingEquiv.refl K) f = f :=
   zeroExtend_injective <| funext fun I ↦ by
-    rw [zeroExtend_map, comap_mapRingEquiv_refl]
+    rw [zeroExtend_map, Ideal.comap_mapRingEquiv_refl]
 
 /-- **Transport is functorial**: transporting along `e` and then along `e'` is the same as
 transporting along `e.trans e'`. -/
 theorem map_map (e : K ≃+* L) (e' : L ≃+* M) (f : IdealArithmeticFunction K) :
     map e' (map e f) = map (e.trans e') f :=
   zeroExtend_injective <| funext fun I ↦ by
-    rw [zeroExtend_map, zeroExtend_map, zeroExtend_map, comap_mapRingEquiv_trans]
+    rw [zeroExtend_map, zeroExtend_map, zeroExtend_map, Ideal.comap_mapRingEquiv_trans]
 
 /-- **Transport along an isomorphism of fields, as an equivalence** of the two carriers, with
 inverse the transport along `e.symm`. -/
@@ -423,7 +397,7 @@ theorem map_zero (e : K ≃+* L) : map e (0 : IdealArithmeticFunction K) = 0 := 
 theorem map_one (e : K ≃+* L) : map e (1 : IdealArithmeticFunction K) = 1 := by
   ext J
   have hJ : Ideal.comap (RingOfIntegers.mapRingEquiv e) (J : Ideal (𝓞 L)) ≠ ⊥ := fun h ↦
-    mem_nonZeroDivisors_iff_ne_zero.mp J.2 ((comap_mapRingEquiv_eq_bot_iff e).mp h)
+    mem_nonZeroDivisors_iff_ne_zero.mp J.2 ((Ideal.comap_mapRingEquiv_eq_bot_iff _ e).mp h)
   simp [hJ]
 
 /-- Transport preserves pointwise addition. -/

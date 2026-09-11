@@ -45,6 +45,8 @@ the letterwise tuple operation that applies it on a half-open index interval.
 * `TauCeti.InternalGrading.koszulTwist_apply_of_mem`: the twist acts by the Koszul scalar on
   each homogeneous piece.
 * `TauCeti.InternalGrading.koszulTwist_comp`: twists compose by adding the twist parameters.
+* `TauCeti.LinearMap.IsHomogeneous.koszulTwist_comp`: a homogeneous linear map commutes with
+  Koszul twists up to the sign determined by its degree.
 
 This is the first graded-module target in Layer 0 of the `DGAInfinity` roadmap.  Later files use
 Mathlib's decomposition API to define maps of nonzero degree, shifts, tensor-product gradings, and
@@ -357,6 +359,33 @@ theorem InternalGrading.koszulTwist_comp_self (G : InternalGrading R M) (q : ℤ
     rw [koszulTwist_apply_of_mem G hx (2 * q), mul_assoc, Int.negOnePow_two_mul]
     simp
   simpa [LinearMap.comp_apply] using this
+
+namespace LinearMap.IsHomogeneous
+
+variable {N : Type w} [AddCommMonoid N] [Module R N]
+
+/-- A homogeneous linear map of degree `r` commutes with the Koszul twist of parameter `q` up to
+the scalar `(-1)^(q * r)`. This is the operator form of the sign acquired by moving a degree-`r`
+map past a homogeneous input. -/
+theorem koszulTwist_comp {G : InternalGrading R M} {H : InternalGrading R N}
+    {f : M →ₗ[R] N} {r : ℤ} (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (q : ℤ) :
+    H.koszulTwist q ∘ₗ f =
+      ((((q * r).negOnePow : ℤ) : R) • (f ∘ₗ G.koszulTwist q)) := by
+  refine DirectSum.decompose_lhom_ext (ℳ := G.piece) fun p ↦ ?_
+  ext x
+  have hx : (x : M) ∈ G.piece p := Submodule.coe_mem x
+  have hfx : f (x : M) ∈ H.piece (p + r) := hf.map_mem hx
+  have hcalc : H.koszulTwist q (f (x : M)) =
+      (((q * r).negOnePow : ℤ) : R) • f (G.koszulTwist q (x : M)) := by
+    rw [H.koszulTwist_apply_of_mem hfx q, G.koszulTwist_apply_of_mem hx q, map_smul,
+      smul_smul]
+    congr 1
+    rw [← Int.cast_mul, ← Units.val_mul, ← Int.negOnePow_add]
+    congr 2
+    ring_nf
+  simpa only [LinearMap.comp_apply, LinearMap.smul_apply, Submodule.coe_subtype] using hcalc
+
+end LinearMap.IsHomogeneous
 
 /-- Evaluation of `twistedTuple` on an index inside the twisted interval `[a, a + p)`. -/
 @[simp]

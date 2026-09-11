@@ -296,7 +296,7 @@ end TauCeti
 
 namespace WeierstrassCurve.Affine
 
-open TauCeti TauCeti.WeierstrassCurve.Affine
+open TauCeti WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] (W : _root_.WeierstrassCurve.Affine F) [W.IsElliptic]
 

@@ -49,6 +49,11 @@ docstring says where its conclusion comes from.
 ## Main results
 
 * `WeierstrassCurve.formalWEval_eq_pow_mul_formalUEval` : the factorisation `w(t) = t ^ 3 * u(t)`.
+* `WeierstrassCurve.algebraMap_formalInverseEval_div_algebraMap_formalWEval_formalInverseEval` and
+  `WeierstrassCurve.neg_one_div_algebraMap_formalWEval_formalInverseEval` : the two division
+  identities the inverse law rests on, over a field and with no nonvanishing hypothesis. Where
+  `w(t) ≠ 0` they say `ι` fixes the `x`-coordinate `t / w(t)` and sends `-1 / w(t)` to the curve's
+  `negY` of it, `y ↦ -y - a₁x - a₃`.
 * `WeierstrassCurve.formalWEval_zero` : `w(0) = 0`, an immediate consequence of that
   factorisation and the reason the zero parameter carries no affine coordinates.
 * `WeierstrassCurve.formalWEval_mem`, `WeierstrassCurve.formalInverseEval_mem` : a parameter in
@@ -400,6 +405,59 @@ theorem formalWEval_formalInverseEval {t : O} (hE : PowerSeries.HasEval t)
   rw [W.subst_formalInverse_formalW, map_neg, map_mul,
     congrFun (PowerSeries.coe_aeval hV') W.formalW, hsub] at h
   simpa [hcoe, formalWEval, formalInverseEval, formalInverseDenomInvEval] using h.symm
+
+/-- **The formal inverse fixes the `x`-coordinate.** `ι(t) = -(t · d(t)⁻¹)` and
+`w(ι t) = -(w(t) · d(t)⁻¹)` share the unit `d(t)⁻¹ = formalInverseDenomInvEval t`, so the sign and
+that unit cancel in the ratio. No nonvanishing is needed: if `w(t) = 0` then `w(ι t) = 0` too and
+both sides are zero. -/
+theorem algebraMap_formalInverseEval_div_algebraMap_formalWEval_formalInverseEval
+    {K : Type*} [Field K] [Algebra O K] {t : O} (hE : PowerSeries.HasEval t)
+    (hEV : PowerSeries.HasEval (W.formalInverseEval t)) :
+    algebraMap O K (W.formalInverseEval t) /
+        algebraMap O K (W.formalWEval (W.formalInverseEval t)) =
+      algebraMap O K t / algebraMap O K (W.formalWEval t) := by
+  have hiota := congrArg (algebraMap O K) (W.formalInverseEval_eq hE)
+  have hwiota := congrArg (algebraMap O K) (W.formalWEval_formalInverseEval hE hEV)
+  simp only [map_neg, map_mul] at hiota hwiota
+  by_cases hWt : algebraMap O K (W.formalWEval t) = 0
+  · simp [hwiota, hWt]
+  have hU0 : algebraMap O K (W.formalInverseDenomInvEval t) ≠ 0 :=
+    ((W.isUnit_formalInverseDenomInvEval hE).map (algebraMap O K)).ne_zero
+  rw [hiota, hwiota]
+  field_simp
+
+/-- **The formal inverse's `y`-value in closed form**: `d(t)⁻¹` inverts `d(t) = 1 - a₁t - a₃w(t)`,
+which is what turns `-1 / w(ι t)` into the displayed ratio. The identity holds with no nonvanishing
+hypothesis, both sides being zero when `w(t) = 0`.
+
+**When `w(t) ≠ 0` the right-hand side is the curve's `negY`** at the coordinates `t / w(t)` and
+`-1 / w(t)`, so the formal inverse applies `y ↦ -y - a₁x - a₃` rather than plain negation. That
+reading needs the hypothesis: at `w(t) = 0` both ratios are zero by field division, while
+`negY 0 0 = -a₃`. -/
+theorem neg_one_div_algebraMap_formalWEval_formalInverseEval {K : Type*} [Field K] [Algebra O K]
+    {t : O} (hE : PowerSeries.HasEval t)
+    (hEV : PowerSeries.HasEval (W.formalInverseEval t)) :
+    -1 / algebraMap O K (W.formalWEval (W.formalInverseEval t)) =
+      (1 - (W.baseChange K).a₁ * algebraMap O K t -
+          (W.baseChange K).a₃ * algebraMap O K (W.formalWEval t)) /
+        algebraMap O K (W.formalWEval t) := by
+  have hwiota := congrArg (algebraMap O K) (W.formalWEval_formalInverseEval hE hEV)
+  simp only [map_neg, map_mul] at hwiota
+  by_cases hWt : algebraMap O K (W.formalWEval t) = 0
+  · simp [hwiota, hWt]
+  have hU0 : algebraMap O K (W.formalInverseDenomInvEval t) ≠ 0 :=
+    ((W.isUnit_formalInverseDenomInvEval hE).map (algebraMap O K)).ne_zero
+  have hDU := congrArg (algebraMap O K) (W.formalInverseDenomEval_mul_inv hE)
+  have hD := congrArg (algebraMap O K) (W.formalInverseDenomEval_eq hE)
+  simp only [map_mul, map_sub, map_one] at hDU hD
+  -- `d(t)⁻¹` inverts the closed form of `d(t)`; cross-multiplying leaves exactly that
+  have hUD : algebraMap O K (W.formalInverseDenomInvEval t) *
+      (1 - algebraMap O K W.a₁ * algebraMap O K t -
+        algebraMap O K W.a₃ * algebraMap O K (W.formalWEval t)) = 1 := by
+    rw [← hD, mul_comm]; exact hDU
+  simp only [baseChange, map_a₁, map_a₃]
+  rw [hwiota, div_neg, neg_div, neg_neg, div_eq_div_iff (mul_ne_zero hWt hU0) hWt]
+  linear_combination -algebraMap O K (W.formalWEval t) * hUD
 
 /-- **The formal inverse is an involution at a parameter**: `ι(ι(t)) = t`. This is `-(-P) = P` for
 the group law near the origin, evaluated at `t`. -/

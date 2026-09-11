@@ -57,7 +57,7 @@ theorem IsSemisimple.tensorProduct {g : GeneralLinearGroup K V}
     IsSemisimple (tensorProduct g h) := by
   rw [isSemisimple_def] at hg hh ⊢
   rw [coe_tensorProduct]
-  exact TauCeti.Module.End.IsSemisimple.tensorProduct hg hh
+  exact Module.End.IsSemisimple.tensorProduct hg hh
 
 end Semisimple
 

@@ -97,7 +97,7 @@ element — but only the second is syntactically an instance of the general `(q�
 rewriting with this is what lets the specializations below be `exact` applications. -/
 private theorem invPair_eq :
     (Sum.elim X (fun _ ↦ formalInverse W) : Unit ⊕ Unit → MvPowerSeries Unit O) =
-      Sum.elim (fun _ ↦ (X () : MvPowerSeries Unit O)) (fun _ ↦ formalInverse W) :=
+      pairSubstitution (X () : MvPowerSeries Unit O) (formalInverse W) :=
   funext fun j ↦ by rcases j with j | j <;> rfl
 
 /-- The third root at the pair `(z, ι(z))` vanishes at the origin, so it may itself be

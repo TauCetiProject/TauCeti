@@ -112,8 +112,8 @@ theorem root_opposition (i : ι) :
 /-- **The opposition involution negates the coroot functional along the longest element.** This is
 the coroot-side companion of `TauCeti.root_opposition`: dominance is a condition on the values of
 the simple coroot functionals, so this is the form in which the involution is applied to weights.
-Like its siblings `TauCeti.RootPairing.coroot'_smul` and
-`TauCeti.RootPairing.coroot'_weylGroupToPerm_smul` it is stated pointwise and tagged `@[grind =]`
+Like its siblings `RootPairing.coroot'_smul` and
+`RootPairing.coroot'_weylGroupToPerm_smul` it is stated pointwise and tagged `@[grind =]`
 rather than `@[simp]`, since `P.coroot' j x` is not in simp-normal form: `simp` rewrites it to
 `P.toLinearMap x (P.coroot j)` by `LinearMap.flip_apply`. -/
 @[grind =]

@@ -92,39 +92,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {p : ENNReal} [Fact (1 ≤ p)]
 
-/-- Translation of an `Lᵖ` class on the whole space, as a linear isometry.  It is used only to
-see the translation increment as a *continuous* function of the class, which is what makes the
-translation estimate a closed condition. -/
-private def translateLp (mu : Measure E) [mu.IsAddHaarMeasure] (p : ENNReal) [Fact (1 ≤ p)]
-    (h : E) :
-    Lp ℝ p (mu.restrict ((⊤ : Opens E) : Set E)) →ₗᵢ[ℝ]
-      Lp ℝ p (mu.restrict ((⊤ : Opens E) : Set E)) :=
-  Lp.compMeasurePreservingₗᵢ ℝ (· + h) <| by
-    rw [Opens.coe_top, Measure.restrict_univ]
-    exact measurePreserving_add_right mu h
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- The `Lᵖ` seminorm of a translation increment, computed on the ambient measure. -/
-private theorem enorm_translateLp_sub (h : E)
-    (f : Lp ℝ p (mu.restrict ((⊤ : Opens E) : Set E))) :
-    ‖translateLp mu p h f - f‖ₑ = eLpNorm (fun x => f (x + h) - f x) p mu := by
-  have htop : mu.restrict ((⊤ : Opens E) : Set E) = mu := by
-    rw [Opens.coe_top, Measure.restrict_univ]
-  have hmp : MeasurePreserving (· + h) (mu.restrict ((⊤ : Opens E) : Set E))
-      (mu.restrict ((⊤ : Opens E) : Set E)) := by
-    rw [htop]
-    exact measurePreserving_add_right mu h
-  have htr : ⇑(translateLp mu p h f) =ᵐ[mu.restrict ((⊤ : Opens E) : Set E)]
-      ⇑f ∘ (· + h) :=
-    Lp.coeFn_compMeasurePreserving f hmp
-  have hae : ⇑(translateLp mu p h f - f) =ᵐ[mu.restrict ((⊤ : Opens E) : Set E)]
-      fun x => f (x + h) - f x := by
-    filter_upwards [Lp.coeFn_sub (translateLp mu p h f) f, htr] with x hx hy
-    rw [hx, Pi.sub_apply, hy]
-    rfl
-  rw [Lp.enorm_def, eLpNorm_congr_ae hae]
-  exact congrArg (fun nu : Measure E => eLpNorm (fun x => f (x + h) - f x) p nu) htop
-
 /-- The translation estimate for a single test function, in the shape the jets of `W^{1,p}(ℝⁿ)`
 present it. -/
 private theorem eLpNorm_testFunctionLp_comp_add_sub_testFunctionLp_le (hp : p ≠ ∞) (h : E)
@@ -164,16 +131,25 @@ theorem W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient (hp : p ≠ �
     (hu : u ∈ w1p0Submodule mu ⊤ p) :
     eLpNorm (fun x => W1p.value u (x + h) - W1p.value u x) p mu
       ≤ ‖h‖ₑ * ‖W1p.gradient u‖ₑ := by
+  have htop : mu.restrict ((⊤ : Opens E) : Set E) = mu := by
+    rw [Opens.coe_top, Measure.restrict_univ]
+  let _ : (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
+    simpa only [Opens.coe_top, Measure.restrict_univ] using
+      (inferInstance : mu.IsAddHaarMeasure)
   have hrw : ∀ v : W1p mu (⊤ : Opens E) p,
       eLpNorm (fun x => W1p.value v (x + h) - W1p.value v x) p mu
-        = ‖translateLp mu p h (W1p.valueL v) - W1p.valueL v‖ₑ := fun v => by
-    rw [enorm_translateLp_sub, W1p.valueL_apply]
+        = ‖(mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h (W1p.valueL v) -
+          W1p.valueL v‖ₑ := fun v => by
+    rw [Measure.enorm_translateLp_sub, W1p.valueL_apply]
+    exact (congrArg (fun nu : Measure E =>
+      eLpNorm (fun x => W1p.value v (x + h) - W1p.value v x) p nu) htop).symm
   have hclosed : IsClosed {v : W1p mu ⊤ p |
       eLpNorm (fun x => W1p.value v (x + h) - W1p.value v x) p mu
         ≤ ‖h‖ₑ * ‖W1p.gradient v‖ₑ} := by
     simp only [hrw, ← W1p.gradientL_apply]
     exact isClosed_le
-      ((((translateLp mu p h).toContinuousLinearMap.comp W1p.valueL) -
+      (((((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h).toLinearIsometry
+        |>.toContinuousLinearMap.comp W1p.valueL) -
         W1p.valueL).continuous.enorm)
       ((ENNReal.continuous_const_mul (by finiteness)).comp
         W1p.gradientL.continuous.enorm)

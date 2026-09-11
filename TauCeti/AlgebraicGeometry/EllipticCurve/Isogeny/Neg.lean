@@ -53,7 +53,7 @@ algebraic form of "negation fixes the point at infinity".
 
 public section
 
-open TauCeti.WeierstrassCurve.Affine.CoordinateRing
+open WeierstrassCurve.Affine.CoordinateRing
 
 namespace TauCeti
 

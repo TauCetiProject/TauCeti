@@ -39,7 +39,7 @@ application `V = H¹₀(Ω)`, `H = L²(Ω)`, and `J` is the compact Rellich incl
 
 The construction consumes Mathlib's `IsCompactOperator.hasEigenvalue_or_mem_resolventSet` and
 the Riesz--Schauder kernel theorem
-`TauCeti.IsCompactOperator.finiteDimensional_ker_one_sub`.
+`IsCompactOperator.finiteDimensional_ker_one_sub`.
 
 ## References
 
@@ -123,7 +123,7 @@ theorem finiteDimensional_ker_one_sub_smul_formPerturbationOperator (hB : IsCoer
     FiniteDimensional ℝ
       (LinearMap.ker
         ((1 - kappa • hB.formPerturbationOperator J : V →L[ℝ] V) : V →ₗ[ℝ] V)) := by
-  exact TauCeti.IsCompactOperator.finiteDimensional_ker_one_sub
+  exact IsCompactOperator.finiteDimensional_ker_one_sub
     ((hB.isCompactOperator_formPerturbationOperator hJ).smul kappa)
 
 /-- **The variational Fredholm alternative.**  For a compact continuous linear map `J`, either the

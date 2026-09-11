@@ -318,15 +318,11 @@ theorem spechtCharValue_ones (n : ℕ) (ν : n.Partition) :
     spechtCharValue (Nat.Partition.ones n) ν = (-1) ^ (n + Multiset.card ν.parts) := by
   obtain ⟨σ, hσ⟩ := ConjClasses.mk_surjective (partitionEquivConjClasses n ν)
   have hparts : Multiset.card σ.partition.parts = Multiset.card ν.parts := by
-    have hcast : ∀ {m : ℕ} (e : n = m) (p : n.Partition),
-        (Equiv.cast (congrArg Nat.Partition e) p).parts = p.parts := by
-      rintro m rfl p
-      rfl
     have hσpart : σ.partition =
         Equiv.cast (congrArg Nat.Partition (Fintype.card_fin n).symm) ν := by
       rw [← permConjClassPartition_mk, hσ, permConjClassPartition_partitionEquivConjClasses]
     rw [hσpart]
-    exact congrArg Multiset.card (hcast (Fintype.card_fin n).symm ν)
+    exact congrArg Multiset.card (parts_equivCast (Fintype.card_fin n).symm ν)
   rw [spechtCharValue_eq_spechtChar _ _ hσ, spechtChar_ones,
     Equiv.Perm.sign_of_parts_partition, hparts, Fintype.card_fin]
   simp

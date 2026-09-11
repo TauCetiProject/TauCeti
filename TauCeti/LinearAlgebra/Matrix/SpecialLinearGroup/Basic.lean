@@ -15,8 +15,12 @@ import TauCeti.Data.ZMod.Units
 # Special linear groups: reduction, centers, and coordinate descriptions
 
 The natural reduction map `SL₂(ℤ) → SL₂(ℤ/dℤ)` is surjective (strong approximation for
-`SL₂`; Shimura §1.6, Serre Ch. VII), and the base-change map `SL(n, R) → GL(n, S)` sends
-`-I` to `-I`. Basic coordinate descriptions for `SL₂` and its image under `mapGL` are also
+`SL₂`; Shimura §1.6, Serre Ch. VII) — jointly so at two coprime moduli, by the Chinese
+remainder theorem — and the base-change map `SL(n, R) → GL(n, S)` sends
+`-I` to `-I`. Base change is functorial: `SL(n, -)` carries a composite of ring homs to the
+composite of the induced group homs, and the identity to the identity, which is what lets a
+congruence on a whole matrix be reduced along a further ring map in one step rather than entry
+by entry. Basic coordinate descriptions for `SL₂` and its image under `mapGL` are also
 recorded here for downstream matrix computations, together with what the determinant says about
 a matrix with a prescribed bottom row `(N, p)`: it is the Bézout relation `m p - n N = 1`.
 
@@ -33,9 +37,20 @@ The surjectivity is ported from the AINTLIB `LeanModularForms` project
 diamond operators of the ModularForms roadmap (Layer 0), where it realizes every unit of
 `ZMod N` as the lower-right entry of a matrix in `Γ₀(N)`.
 
+The two-modulus form generalizes an ad-hoc instance from the same project at commit
+`2baa76f742bdb4fb8ee323fabba41203bd390e08` (Apache-2.0):
+`LeanModularForms/StrongMultiplicityOne/DescentCosets.lean` proves `descendExtraGamma_exists`
+for the single coprime pair `(p, N / p)`. The statement here is the general coprime pair, and the
+proof is independent of the source's.
+
 ## Main results
 
-* `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`: strong approximation for `SL₂`.
+* `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`: strong approximation for `SL₂`,
+  with `Matrix.SpecialLinearGroup.map_intCast_zmod_prod_surjective` its two-modulus form:
+  reductions prescribed at coprime `d` and `d'` are realized by one integral matrix.
+* `Matrix.SpecialLinearGroup.map_comp` and `Matrix.SpecialLinearGroup.map_id`: the two functor
+  laws for base change, which support whole-matrix reduction arguments such as the level
+  antitonicity of the principal congruence subgroups.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates.
@@ -73,6 +88,20 @@ open scoped MatrixGroups
 variable {d : ℕ}
 
 namespace Matrix.SpecialLinearGroup
+
+/-- **Functoriality of the induced map on special linear groups, identity law.** Base change
+along the identity ring hom is the identity. -/
+@[simp]
+theorem map_id {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n] :
+    map (n := n) (RingHom.id R) = MonoidHom.id (SpecialLinearGroup n R) := rfl
+
+/-- **Functoriality of the induced map on special linear groups, composition law.** Base change
+along `f` and then along `g` is base change along `g ∘ f`, so a composite of induced maps is
+again a single induced map. -/
+@[simp]
+theorem map_comp {R S T : Type*} [CommRing R] [CommRing S] [CommRing T] {n : Type*} [Fintype n]
+    [DecidableEq n] (f : R →+* S) (g : S →+* T) :
+    (map (n := n) g).comp (map f) = map (g.comp f) := rfl
 
 /-- The determinant-one identity for an element of `SL₂(R)`, written in coordinates. -/
 lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :
@@ -404,5 +433,63 @@ theorem map_intCast_zmod_surjective :
   obtain ⟨τ, hτ⟩ := exists_map_eq_of_col_eq (M⁻¹ * g)
     (inv_mul_zero_zero_eq_one M g hcol0 hcol1) (inv_mul_one_zero_eq_zero M g hcol0 hcol1)
   exact ⟨σ * τ, by rw [map_mul, ← hMdef, hτ, mul_inv_cancel_left]⟩
+
+
+/-- **Strong approximation for `SL₂` at two coprime moduli**: for coprime `d` and `d'`, the joint
+reduction `SL₂(ℤ) → SL₂(ℤ/dℤ) × SL₂(ℤ/d'ℤ)` is surjective. So a prescribed reduction modulo `d`
+and a prescribed reduction modulo `d'` are realized simultaneously by a single integral matrix. -/
+theorem map_intCast_zmod_prod_surjective {d d' : ℕ} (hcop : d.Coprime d') :
+    Function.Surjective
+      ((map (Int.castRingHom (ZMod d))).prod (map (Int.castRingHom (ZMod d'))) :
+        SL(2, ℤ) →* SL(2, ZMod d) × SL(2, ZMod d')) := by
+  -- `map_intCast_zmod_surjective` is the one-modulus statement, applied here at `d * d'`: the
+  -- Chinese remainder theorem glues the pair of targets into one matrix over `ZMod (d * d')`,
+  -- whose determinant is `1` because it is `1` in each factor separately.
+  rintro ⟨A, B⟩
+  set e := ZMod.chineseRemainder hcop with hE
+  -- The two targets, glued entrywise into a single matrix over `ZMod (d * d')`.
+  set C : Matrix (Fin 2) (Fin 2) (ZMod (d * d')) :=
+    .of fun i j => e.symm (A i j, B i j) with hC
+  -- `e` carries `C.det` to the determinant of the glued matrix, and each coordinate ring hom
+  -- carries that to the determinant of the corresponding target, which is `1`.
+  have hfst : (RingHom.fst (ZMod d) (ZMod d')).mapMatrix (e.mapMatrix C) =
+      (A : Matrix (Fin 2) (Fin 2) (ZMod d)) := by ext i j; simp [hC]
+  have hsnd : (RingHom.snd (ZMod d) (ZMod d')).mapMatrix (e.mapMatrix C) =
+      (B : Matrix (Fin 2) (Fin 2) (ZMod d')) := by ext i j; simp [hC]
+  have hdet : C.det = 1 := by
+    refine e.injective ?_
+    rw [map_one, e.map_det]
+    -- each coordinate projection is a ring hom (`RingHom.coe_fst`/`coe_snd` name the identity
+    -- with `Prod.fst`/`Prod.snd`), so `RingHom.map_det` applies to it
+    have hp1 : ∀ x : ZMod d × ZMod d', x.1 = RingHom.fst (ZMod d) (ZMod d') x :=
+      fun x => congrFun RingHom.coe_fst.symm x
+    have hp2 : ∀ x : ZMod d × ZMod d', x.2 = RingHom.snd (ZMod d) (ZMod d') x :=
+      fun x => congrFun RingHom.coe_snd.symm x
+    have h1 : ((e.mapMatrix C).det).1 = 1 := by
+      rw [hp1, RingHom.map_det, hfst, A.det_coe]
+    have h2 : ((e.mapMatrix C).det).2 = 1 := by
+      rw [hp2, RingHom.map_det, hsnd, B.det_coe]
+    exact Prod.ext h1 h2
+  obtain ⟨γ, hγ⟩ := map_intCast_zmod_surjective (d := d * d') ⟨C, hdet⟩
+  -- Reading the glued matrix back off in each factor is applying a ring hom to an integer cast.
+  have hentry : ∀ i j, ((γ i j : ℤ) : ZMod (d * d')) = e.symm (A i j, B i j) := fun i j => by
+    have := congrArg (fun M : SL(2, ZMod (d * d')) => M i j) hγ
+    simpa only [map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply, hC, Matrix.of_apply,
+      Int.coe_castRingHom] using this
+  -- the two prescribed reductions, read off together: `e` is a ring hom, so `map_intCast`
+  -- carries the class of an integer modulo `d * d'` to the pair of its classes, and cancelling
+  -- `e` against `e.symm` in `hentry` then gives both components at once
+  have hpair : ∀ i j, ((((γ i j : ℤ) : ZMod d)), (((γ i j : ℤ) : ZMod d'))) = (A i j, B i j) :=
+    fun i j => by
+      rw [show ((((γ i j : ℤ) : ZMod d)), (((γ i j : ℤ) : ZMod d'))) =
+          e (((γ i j : ℤ) : ZMod (d * d'))) from by rw [hE, map_intCast]; rfl,
+        hentry i j, RingEquiv.apply_symm_apply]
+  refine ⟨γ, Prod.ext ?_ ?_⟩
+  · ext i j
+    simpa only [MonoidHom.prod_apply, map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+      Int.coe_castRingHom] using congrArg Prod.fst (hpair i j)
+  · ext i j
+    simpa only [MonoidHom.prod_apply, map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+      Int.coe_castRingHom] using congrArg Prod.snd (hpair i j)
 
 end Matrix.SpecialLinearGroup

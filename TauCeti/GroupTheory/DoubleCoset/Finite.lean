@@ -46,6 +46,6 @@ the finite set `G ⧸ K` under `gK ↦ HgK`. -/
 instance finite_doubleCosetQuotient (H K : Subgroup G) [K.FiniteIndex] :
     Finite (DoubleCoset.Quotient (H : Set G) (K : Set G)) :=
   Finite.of_surjective (fun t : G ⧸ K => DoubleCoset.mk H K t.out) fun d =>
-    ⟨QuotientGroup.mk d.out, (doubleCosetMk_out_mk H K d.out).trans (DoubleCoset.out_eq' H K d)⟩
+    ⟨QuotientGroup.mk d.out, (doubleCosetMk_out_mk H K d.out).trans (DoubleCoset.out_eq' d)⟩
 
 end TauCeti

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Algebra.Group.Subgroup.Centralizer
 import TauCeti.LinearAlgebra.Matrix.AdjugateFinTwo
 public import TauCeti.LinearAlgebra.UnitaryGroup
 public import TauCeti.Topology.Algebra.UnitaryGroup
@@ -349,11 +350,8 @@ theorem centralizer_torus : Subgroup.centralizer (torus : Set SU2) = torus := by
 /-- The maximal torus is a maximal abelian subgroup of `SU(2)`: a commutative subgroup containing
 it is equal to it. -/
 theorem eq_torus_of_isMulCommutative {H : Subgroup SU2} [IsMulCommutative H] (hH : torus ≤ H) :
-    H = torus := by
-  refine le_antisymm (fun g hg => ?_) hH
-  rw [← centralizer_torus, Subgroup.mem_centralizer_iff]
-  intro h hh
-  exact setLike_mul_comm (hH hh) hg
+    H = torus :=
+  Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative centralizer_torus hH
 
 /-! ### Conjugating a torus element back into the torus -/
 

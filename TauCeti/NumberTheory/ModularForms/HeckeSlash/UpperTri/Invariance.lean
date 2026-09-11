@@ -54,7 +54,13 @@ alone is *not* invariant.
 
 * `HeckeRing.GL2.upperTriShift_bijective`: it is a bijection of `Fin p`.
 * `HeckeRing.GL2.exists_mem_Gamma0_upperTriRep_mul`: the factorisation
-  `!![1, j; 0, p] · γ = γ' · !![1, j'; 0, p]` with `γ' ∈ Γ₀(N)` of the same `Gamma0Map` value.
+  `!![1, j; 0, p] · γ = γ' · !![1, j'; 0, p]` with `γ' ∈ Γ₀(N)`, from the two facts the argument
+  consumes — `γ ∈ Γ₀(p)` and `N ∣ p c`. A `γ ∈ Γ₀(N / p)` gives the second only in the presence
+  of `p ∣ N`, and gives the first only when `p² ∣ N`; that is the level-descent case, not the
+  hypothesis.
+* `HeckeRing.GL2.exists_mem_Gamma0_upperTriRep_mul_of_mem_Gamma0`: its specialisation to
+  `p ∣ N` and `γ ∈ Γ₀(N)`, whose conclusion is the modulo-`N` congruence of the lower-right
+  entry.
 * `HeckeRing.GL2.heckeSlashUpperTri_slash_mapGL_of_mem_Gamma0`: the equivariance, stated with an
   arbitrary scalar so that both corollaries below are instances of it.
 * `HeckeRing.GL2.heckeSlashUpperTri_slash_mapGL_of_mem_Gamma1`: the sum of a `Γ₁(N)`-invariant
@@ -135,18 +141,27 @@ private lemma upperTriRep_mul_mapGL_eq {p : ℕ} (j j' : Fin p) (γ γ' : SL(2, 
     [linear_combination -c00; linear_combination -c01 - ((j' : ℕ) : ℚ) * c00;
       linear_combination -c10; linear_combination -((j' : ℕ) : ℚ) * c10 - (p : ℚ) * c11]
 
-/-- **The coset factorisation.** For `p ∣ N` and `γ ∈ Γ₀(N)`, the product
-`!![1, j; 0, p] · γ` factors as `γ' · !![1, j'; 0, p]` with `γ' ∈ Γ₀(N)` and `j'` the shifted
-offset. The new lower-right entry is congruent to the old one modulo `N`, so `γ'` has the same
-`Gamma0Map` value as `γ`: this is what makes the equivariance below carry a fixed character. -/
-theorem exists_mem_Gamma0_upperTriRep_mul [NeZero p] (hpN : p ∣ N) {γ : SL(2, ℤ)}
-    (hγ : γ ∈ Gamma0 N) (j : Fin p) :
-    ∃ γ' : SL(2, ℤ), γ' ∈ Gamma0 N ∧ ((γ' 1 1 : ℤ) : ZMod N) = ((γ 1 1 : ℤ) : ZMod N) ∧
+/-- **The coset factorisation.** The product `!![1, j; 0, p] · γ` factors as
+`γ' · !![1, j'; 0, p]` with `γ' ∈ Γ₀(N)` and `j'` the shifted offset, and the new lower-right
+entry is `d - c j'`.
+
+The two hypotheses are exactly what the factorisation consumes, and neither mentions how `p` and
+`N` are related: `γ ∈ Γ₀(p)` makes `d` a unit modulo `p`, which is what makes the offset map —
+defined for every `γ` — a bijection, and `N ∣ p c` is what puts the lower-left entry `p c` of `γ'`
+back in `Γ₀(N)`. Both hold for `γ ∈ Γ₀(N)` when `p ∣ N`, and both hold for `γ ∈ Γ₀(N / p)` when
+`p² ∣ N` — the level-descent case, where `γ` ranges over the *larger* group at the lowered level.
+Neither `p ∣ N` nor either membership at a level built from `N` is assumed, so `p ∤ N` is not
+excluded.
+
+The lower-right entry is given as an equation rather than as a congruence because the modulus
+at which it is useful varies with the caller; the equivariance below reads off the congruence
+modulo `N` it needs from that equation and `Γ₀(N)`-membership. -/
+theorem exists_mem_Gamma0_upperTriRep_mul [NeZero p] {γ : SL(2, ℤ)} (hγp : γ ∈ Gamma0 p)
+    (hpc : (((p : ℤ) * γ 1 0 : ℤ) : ZMod N) = 0) (j : Fin p) : ∃ γ' : SL(2, ℤ), γ' ∈ Gamma0 N ∧
+      (γ' 1 1 : ℤ) = γ 1 1 - γ 1 0 * ((upperTriShift p γ j : ℕ) : ℤ) ∧
       upperTriRep p j * mapGL ℚ γ = mapGL ℚ γ' * upperTriRep p (upperTriShift p γ j) := by
   have hdet : γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 = 1 :=
     Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
-  have hcN : ((γ 1 0 : ℤ) : ZMod N) = 0 := Gamma0_mem.mp hγ
-  have hγp : γ ∈ Gamma0 p := Gamma0_le_Gamma0_of_dvd hpN hγ
   have had := intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hγp
   -- the entry `b'` is an integer: the congruence `a j' ≡ b + j d (mod p)` is exactly `p ∣ …`
   have hdvd : (p : ℤ) ∣ γ 0 1 + (j : ℕ) * γ 1 1
@@ -158,19 +173,38 @@ theorem exists_mem_Gamma0_upperTriRep_mul [NeZero p] (hpN : p ∣ N) {γ : SL(2,
     linear_combination (-((γ 0 1 : ℤ) : ZMod p)
       - ((j : ℕ) : ZMod p) * ((γ 1 1 : ℤ) : ZMod p)) * had
   obtain ⟨b', hb'⟩ := hdvd
+  set j' := upperTriShift p γ j with hj'
   have hdet' : (!![γ 0 0 + (j : ℕ) * γ 1 0, b';
-      (p : ℤ) * γ 1 0, γ 1 1 - γ 1 0 * ((upperTriShift p γ j : ℕ) : ℤ)]).det = 1 := by
+      (p : ℤ) * γ 1 0, γ 1 1 - γ 1 0 * ((j' : ℕ) : ℤ)]).det = 1 := by
     rw [Matrix.det_fin_two_of]
     linear_combination hdet + (γ 1 0 : ℤ) * hb'
-  refine ⟨⟨_, hdet'⟩, Gamma0_mem.mpr ?_, ?_,
-    upperTriRep_mul_mapGL_eq _ _ _ _ rfl hb'.symm rfl rfl⟩
-  -- Unfold the two relevant projections of the explicitly displayed `SL(2, ℤ)` witness.
-  · change (((p : ℤ) * γ 1 0 : ℤ) : ZMod N) = 0
-    rw [Int.cast_mul, hcN, mul_zero]
-  · change (((γ 1 1 - γ 1 0 * ((upperTriShift p γ j : ℕ) : ℤ) : ℤ)) : ZMod N) = _
-    push_cast
-    rw [hcN]
-    ring
+  -- the witness, with its four entries read off once, so that nothing below depends on how the
+  -- `SL(2, ℤ)` subtype and the matrix literal reduce
+  set γ' : SL(2, ℤ) := ⟨_, hdet'⟩ with hγ'
+  have e00 : γ' 0 0 = γ 0 0 + (j : ℕ) * γ 1 0 := by simp [hγ']
+  have e01 : γ' 0 1 = b' := by simp [hγ']
+  have e10 : γ' 1 0 = (p : ℤ) * γ 1 0 := by simp [hγ']
+  have e11 : γ' 1 1 = γ 1 1 - γ 1 0 * ((j' : ℕ) : ℤ) := by simp [hγ']
+  refine ⟨γ', Gamma0_mem.mpr ?_, e11, upperTriRep_mul_mapGL_eq _ _ _ _ e00 ?_ e10 e11⟩
+  · rw [e10]; exact hpc
+  · rw [e01]; exact hb'.symm
+
+/-- **The coset factorisation at `γ ∈ Γ₀(N)`.** The specialisation of
+`exists_mem_Gamma0_upperTriRep_mul` that `p ∣ N` and `γ ∈ Γ₀(N)` afford: both hypotheses of the
+general statement follow, and the lower-right entry `d - c j'` becomes a congruence modulo `N`,
+so `γ'` has the same `Gamma0Map` value as `γ`. That congruence is what lets the equivariance
+below carry a fixed character, and it is the form every `Γ₀(N)` caller wants. -/
+theorem exists_mem_Gamma0_upperTriRep_mul_of_mem_Gamma0 [NeZero p] (hpN : p ∣ N) {γ : SL(2, ℤ)}
+    (hγ : γ ∈ Gamma0 N) (j : Fin p) :
+    ∃ γ' : SL(2, ℤ), γ' ∈ Gamma0 N ∧ ((γ' 1 1 : ℤ) : ZMod N) = ((γ 1 1 : ℤ) : ZMod N) ∧
+      upperTriRep p j * mapGL ℚ γ = mapGL ℚ γ' * upperTriRep p (upperTriShift p γ j) := by
+  obtain ⟨γ', hγ', hdd, hmul⟩ := exists_mem_Gamma0_upperTriRep_mul
+    (Gamma0_le_Gamma0_of_dvd hpN hγ) (by rw [Int.cast_mul, Gamma0_mem.mp hγ, mul_zero]) j
+  refine ⟨γ', hγ', ?_, hmul⟩
+  rw [hdd]
+  push_cast
+  rw [Gamma0_mem.mp hγ]
+  ring
 
 /-- **The upper-triangular sum is `Γ₀(N)`-equivariant at `p ∣ N`.** The hypothesis is imposed
 only at matrices of `Γ₀(N)` with the same lower-right entry modulo `N` as `γ`, which is all the
@@ -186,7 +220,7 @@ theorem heckeSlashUpperTri_slash_mapGL_of_mem_Gamma0 (k : ℤ) [NeZero p] (hpN :
   have key : ∀ j : Fin p,
       (f ∣[k] (upperTriRep p j : GL (Fin 2) ℚ)) ∣[k] (mapGL ℚ γ : GL (Fin 2) ℚ)
         = u • (f ∣[k] (upperTriRep p (upperTriShift p γ j) : GL (Fin 2) ℚ)) := fun j ↦ by
-    obtain ⟨γ', hγ', hdd, hmul⟩ := exists_mem_Gamma0_upperTriRep_mul hpN hγ j
+    obtain ⟨γ', hγ', hdd, hmul⟩ := exists_mem_Gamma0_upperTriRep_mul_of_mem_Gamma0 hpN hγ j
     rw [← SlashAction.slash_mul, hmul, SlashAction.slash_mul, hf γ' hγ' hdd,
       ModularForm.rat_smul_slash_of_det_pos k (det_upperTriRep_pos p _) f u]
   rw [Finset.sum_congr rfl fun j _ ↦ key j]

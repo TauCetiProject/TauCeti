@@ -48,7 +48,7 @@ namespace TauCeti
 
 namespace Comodule
 
-open _root_.Coalgebra WithConv TensorProduct
+open _root_.Coalgebra WithConv _root_.TensorProduct
 
 variable {R H V A : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
   [AddCommMonoid V] [Module R V] [Comodule R H V]

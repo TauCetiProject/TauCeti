@@ -152,7 +152,7 @@ private theorem tendsto_smul_resolventFun_comp (hb : S.HasGrowthBound omega M) {
     filter_upwards [eventually_ge_atTop (2 * |omega| + 1)] with lambda hlambda
     exact S.norm_smul_resolventFun_le hb hlambda
   simpa only [smul_apply] using
-    (TauCeti.ContinuousLinearMap.tendsto_apply_of_eventually_norm_le hbound
+    (ContinuousLinearMap.tendsto_apply_of_eventually_norm_le hbound
       (S.tendsto_smul_resolventFun_apply hb x) hf)
 
 /-- **The iterated scaled resolvents converge strongly to the identity**:
