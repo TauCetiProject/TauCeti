@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Basic
 public import Mathlib.Probability.Combinatorics.BinomialRandomGraph.Defs
 public import Mathlib.Probability.ProbabilityMassFunction.Constructions
-import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # Finite sampling from a graphon
