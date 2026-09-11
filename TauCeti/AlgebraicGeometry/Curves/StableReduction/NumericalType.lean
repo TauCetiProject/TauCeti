@@ -92,7 +92,7 @@ namespace TauCeti
 
 open Finset
 
-universe u v w
+universe u v w x
 
 /-- A numerical type, in the sense of
 [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z).
@@ -377,6 +377,7 @@ lemma arithmeticGenus_reindex : (T.reindex e).arithmeticGenus = T.arithmeticGenu
 [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z): a bijection of component sets
 matching multiplicities, weights, intersection numbers and genera. Two numerical types are
 equivalent when `Nonempty (T.Equiv T')`. -/
+@[ext]
 structure Equiv (T' : NumericalType.{v}) where
   /-- The underlying bijection of component sets. -/
   toEquiv : T.Component ≃ T'.Component
@@ -394,7 +395,7 @@ attribute [simp] Equiv.multiplicity_apply Equiv.weight_apply Equiv.intersection_
 
 namespace Equiv
 
-variable {T} {T' : NumericalType.{v}} {T'' : NumericalType.{w}}
+variable {T} {T' : NumericalType.{v}} {T'' : NumericalType.{w}} {T''' : NumericalType.{x}}
 
 /-- The identity equivalence of a numerical type. -/
 def refl : T.Equiv T where
@@ -433,6 +434,35 @@ def trans (f : T.Equiv T') (g : T'.Equiv T'') : T.Equiv T'' where
 @[simp]
 lemma trans_toEquiv (f : T.Equiv T') (g : T'.Equiv T'') :
     (f.trans g).toEquiv = f.toEquiv.trans g.toEquiv := (rfl)
+
+/-- The inverse of the identity equivalence is the identity. -/
+@[simp]
+lemma refl_symm : (refl : T.Equiv T).symm = refl := by ext i; simp
+
+/-- Inverting an equivalence of numerical types twice returns it. -/
+@[simp]
+lemma symm_symm (f : T.Equiv T') : f.symm.symm = f := by ext i; simp
+
+/-- The identity equivalence is a left unit for composition. -/
+@[simp]
+lemma refl_trans (f : T.Equiv T') : (refl : T.Equiv T).trans f = f := by ext i; simp
+
+/-- The identity equivalence is a right unit for composition. -/
+@[simp]
+lemma trans_refl (f : T.Equiv T') : f.trans (refl : T'.Equiv T') = f := by ext i; simp
+
+/-- An equivalence of numerical types composed with its inverse is the identity. -/
+@[simp]
+lemma self_trans_symm (f : T.Equiv T') : f.trans f.symm = refl := by ext i; simp
+
+/-- The inverse of an equivalence of numerical types composed with it is the identity. -/
+@[simp]
+lemma symm_trans_self (f : T.Equiv T') : f.symm.trans f = refl := by ext i; simp
+
+/-- Composition of equivalences of numerical types is associative. -/
+@[simp]
+lemma trans_assoc (f : T.Equiv T') (g : T'.Equiv T'') (h : T''.Equiv T''') :
+    (f.trans g).trans h = f.trans (g.trans h) := by ext i; simp
 
 /-- An equivalence of numerical types identifies the target with the reindexed source. -/
 lemma reindex_eq (f : T.Equiv T') : T.reindex f.toEquiv = T' :=

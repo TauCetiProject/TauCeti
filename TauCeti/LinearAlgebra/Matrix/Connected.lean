@@ -9,31 +9,37 @@ public import Mathlib.LinearAlgebra.Matrix.Defs
 public import TauCeti.Logic.Relation
 
 /-!
-# Connectedness of the graph of a matrix
+# Strong connectivity of the directed graph of a matrix
 
-A square matrix `A` with entries in a partially ordered type determines a graph on its index set,
-joining distinct indices `i`, `j` with `0 < A i j`. When the off-diagonal entries are
-nonnegative, connectedness of this graph is the same as the absence of a disconnecting cut: no
-nonempty proper set of indices has all its cross-entries zero. This is the form in which
+A square matrix `A` with entries in a partially ordered type determines a directed graph on its
+index set, with an edge from `i` to a distinct `j` when `0 < A i j`. When the off-diagonal
+entries are nonnegative, strong connectivity of this directed graph is the same as the absence of
+a disconnecting cut: no nonempty proper set of indices has all of its outgoing entries zero.
+
+For a symmetric `A` the directed graph is an ordinary graph and strong connectivity is ordinary
+connectedness; the cut condition is then the form in which
 [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z) states the connectedness condition
 on the intersection matrix of a numerical type.
 
 ## Main results
 
 * `Matrix.forall_reflTransGen_ne_and_pos_iff`: for a matrix with nonnegative off-diagonal
-  entries, connectedness of its graph is the absence of a disconnecting cut.
+  entries, strong connectivity of its directed graph is the absence of a disconnecting cut.
 -/
 
 public section
 
 namespace Matrix
 
-/-- For a matrix `A` whose off-diagonal entries are nonnegative, connectedness of the graph
-joining distinct indices `i`, `j` with `0 < A i j` is equivalent to the absence of a disconnecting
-cut: no nonempty proper set of indices `s` has all its cross-entries zero. The right-hand side is
-the form in which [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z) states the
-connectedness condition on a numerical type, so this is what supplies the `connected` field of
-`TauCeti.NumericalType` when one is constructed.
+/-- For a matrix `A` whose off-diagonal entries are nonnegative, strong connectivity of the
+directed graph with an edge from `i` to a distinct `j` when `0 < A i j` is equivalent to the
+absence of a disconnecting cut: no nonempty proper set of indices `s` has all of its outgoing
+entries `A i j`, for `i ∈ s` and `j ∉ s`, zero. No symmetry of `A` is assumed, so the left-hand
+side is connectedness of an ordinary graph only when `A` is symmetric, as the intersection matrix
+of a numerical type is. The right-hand side is then the form in which
+[Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z) states the connectedness condition
+on a numerical type, so this is what supplies the `connected` field of `TauCeti.NumericalType`
+when one is constructed.
 
 The nonnegativity hypothesis is what turns a nonzero cross-entry into a positive one, and so
 cannot be dropped. -/
