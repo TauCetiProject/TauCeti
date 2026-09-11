@@ -14,7 +14,7 @@ public import Mathlib.Analysis.MeanInequalitiesPow
 Mathlib bounds each factor of `WithLp p (α × β)` by the whole (`WithLp.norm_fst_le` and
 `WithLp.norm_snd_le`) and computes the norm exactly for `p = 1` and `p = 2`.  This file records
 the opposite bound, valid for every exponent `1 ≤ p ≤ ∞`: the `ℓ^p` norm of a pair is at most the
-sum of the norms of its two components, with equality exactly at `p = 1`.
+sum of the norms of its two components.  For `p = 1` the bound is an identity for every pair.
 
 ## Main statements
 
