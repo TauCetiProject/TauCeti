@@ -179,8 +179,9 @@ theorem exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top (hK : finrank ℚ K = 2) 
     have hrat := minpoly.isIntegrallyClosed_eq_field_fractions ℚ K hθ
     have hpos := minpoly.natDegree_pos (hint.tower_top (A := ℚ))
     have hne : (minpoly ℚ z).natDegree ≠ 1 := fun h => hzQ (minpoly.natDegree_eq_one_iff.mp h)
-    rw [natDegree_X_pow_sub_C, ← (minpoly.monic hθ).natDegree_map (algebraMap ℤ ℚ), ← hrat]
-    change 2 ≤ (minpoly ℚ z).natDegree
+    -- `θ` is the bundled `⟨z, hint⟩`, so its image in `K` is `z` by `RingOfIntegers.map_mk`.
+    have hθz : algebraMap (𝓞 K) K θ = z := RingOfIntegers.map_mk z hint
+    rw [natDegree_X_pow_sub_C, ← (minpoly.monic hθ).natDegree_map (algebraMap ℤ ℚ), ← hrat, hθz]
     omega
   · rw [eq_top_iff]
     intro w _
