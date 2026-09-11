@@ -20,17 +20,13 @@ This gives a continuous, non-atomic example of Bernstein's theorem: at unit rate
 `t ↦ 1 / (1 + t)` is represented by the measure with density `e⁻ˣ` on `[0, ∞)`.  Unlike the
 Dirac examples, this exercises a genuinely continuous representing measure.
 
-The measure is defined by pushing Mathlib's `ProbabilityTheory.expMeasure` forward along
-`Real.toNNReal`.  A positive-rate exponential random variable is nonnegative almost surely, so
-this transport retains the law and turns its moment-generating-function formula into the required
-Laplace-transform formula.
+The measure is defined in `TauCeti.Probability.Distributions.Exponential` by pushing Mathlib's
+`ProbabilityTheory.expMeasure` forward along `Real.toNNReal`.  A positive-rate exponential random
+variable is nonnegative almost surely, so this transport retains the law and turns its
+moment-generating-function formula into the required Laplace-transform formula.
 
 ## Main declarations
 
-* `TauCeti.nnrealExpMeasure`: the exponential measure on `ℝ≥0`.
-* `TauCeti.nnrealExpMeasure_one_eq_map_withDensity`: at unit rate, this is the pushforward of
-  the measure with density `e⁻ˣ` on the nonnegative real half-line.
-* `TauCeti.isProbabilityMeasure_nnrealExpMeasure`: it is a probability measure at positive rate.
 * `TauCeti.laplaceTransform_nnrealExpMeasure`: its Laplace transform is `r / (r + t)`.
 * `TauCeti.representsLaplace_nnrealExpMeasure`: the resulting Bernstein representation.
 * `TauCeti.bernsteinMeasure_one_div_one_add`: the canonical Bernstein measure of
@@ -50,40 +46,6 @@ open MeasureTheory ProbabilityTheory Set Real
 open scoped ENNReal NNReal
 
 namespace TauCeti
-
-/-- The exponential measure of rate `r` on `ℝ≥0`, obtained by transporting the usual exponential
-law on `ℝ` along `Real.toNNReal`.
-
-For `r > 0` this transport loses no information because the exponential law is supported on the
-nonnegative half-line. -/
-noncomputable def nnrealExpMeasure (r : ℝ) : Measure ℝ≥0 :=
-  (expMeasure r).map Real.toNNReal
-
-/-- The exponential measure on `ℝ≥0` is the pushforward of Mathlib's exponential measure along
-`Real.toNNReal`. -/
-theorem nnrealExpMeasure_def (r : ℝ) :
-    nnrealExpMeasure r = (expMeasure r).map Real.toNNReal := (rfl)
-
-/-- At unit rate, `nnrealExpMeasure` is the measure with density `e⁻ˣ` on the nonnegative real
-half-line, transported to `ℝ≥0`.  The displayed `if` makes the zero density on negative reals
-explicit before the transport. -/
-theorem nnrealExpMeasure_one_eq_map_withDensity :
-    nnrealExpMeasure 1 =
-      (volume.withDensity fun x : ℝ =>
-        ENNReal.ofReal (if 0 ≤ x then Real.exp (-x) else 0)).map Real.toNNReal := by
-  rw [nnrealExpMeasure_def, Probability.expMeasure_eq_withDensity]
-  apply congrArg (Measure.map Real.toNNReal)
-  apply congrArg volume.withDensity
-  funext x
-  rw [exponentialPDF_eq]
-  by_cases hx : 0 ≤ x <;> simp [hx]
-
-/-- The positive-rate exponential measure on `ℝ≥0` is a probability measure. -/
-theorem isProbabilityMeasure_nnrealExpMeasure {r : ℝ} (hr : 0 < r) :
-    IsProbabilityMeasure (nnrealExpMeasure r) := by
-  let _ := isProbabilityMeasure_expMeasure hr
-  rw [nnrealExpMeasure_def]
-  infer_instance
 
 /-- The Laplace transform of the exponential measure of rate `r > 0` is `r / (r + t)` throughout
 its maximal finiteness domain `-r < t`. -/
