@@ -454,10 +454,13 @@ theorem labelTabloid_bijective (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (t 
     rw [labelTabloid_def, tabloid_eq_iff_secondRowLabel_eq h1 h2]
     simp
 
-/-- Naming a tabloid by the label of its short row is equivariant. -/
+/-- Naming a tabloid by the label of its short row is equivariant.  The left-hand side is stated
+with `σ k` rather than the `σ • k` of the equivariance interfaces, since `Equiv.Perm.smul_def`
+is `simp`; the two are definitionally equal. -/
+@[simp]
 theorem labelTabloid_smul (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (t : YoungTableau μ)
     (σ : Equiv.Perm (Fin μ.card)) (k : Fin μ.card) :
-    labelTabloid h1 t (σ • k) = σ • labelTabloid h1 t k := by
+    labelTabloid h1 t (σ k) = σ • labelTabloid h1 t k := by
   rw [labelTabloid_def, labelTabloid_def, ← tabloid_relabel,
     tabloid_eq_iff_secondRowLabel_eq h1 h2]
   simp
@@ -592,18 +595,6 @@ theorem finrank_spechtSubrepresentation_of_rowLen (h1 : μ.rowLen 1 = 1) (h2 : �
     finrank_augmentationSubrepresentation, Fintype.card_fin]
 
 /-! ## The shape `(n+1, 1)` -/
-
-/-- The second row of the diagram of `(n+1, 1)` is a single cell. -/
-theorem rowLen_diagramOf_singletonSecondRow_one (n : ℕ) :
-    (diagramOf (Nat.Partition.singletonSecondRow n)).rowLen 1 = 1 := by
-  rw [rowLen_diagramOf, Nat.Partition.sort_parts_singletonSecondRow]
-  rfl
-
-/-- The diagram of `(n+1, 1)` has no third row. -/
-theorem rowLen_diagramOf_singletonSecondRow_two (n : ℕ) :
-    (diagramOf (Nat.Partition.singletonSecondRow n)).rowLen 2 = 0 := by
-  rw [rowLen_diagramOf, Nat.Partition.sort_parts_singletonSecondRow]
-  rfl
 
 /-- **`S^{(n+1,1)}` has dimension `n + 1`**: the Specht module of the shape `(n+1, 1)` of `n + 2`
 is the `(n+1)`-dimensional standard representation of `S_{n+2}`. -/
