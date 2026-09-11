@@ -14,6 +14,8 @@ public import TauCeti.LinearAlgebra.Complex.Eigenspace
 
 An almost complex structure on a real vector space extends complex-linearly to its
 complexification. Its square remains `-1`, and its `i`- and `-i`-eigenspaces are complementary.
+These complementary eigenspaces supply the two pieces used to construct a weight-one Hodge
+structure from the real almost complex structure.
 
 ## Main declarations
 

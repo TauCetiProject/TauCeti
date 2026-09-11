@@ -12,7 +12,8 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 # Eigenspaces of complex structures
 
 This file records the eigenspace decomposition of a complex-linear endomorphism whose square is
-negative one.
+negative one. The decomposition produces the two complementary pieces used in complex-structure
+and Hodge decompositions.
 
 ## Main declarations
 
