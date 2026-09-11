@@ -118,30 +118,28 @@ theorem isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp
 /-- An analytic point supplies an element of an ideal of definition which is outside its
 support. Unlike an arbitrary element of the extended ideal, this witness is topologically
 nilpotent because it comes from the ring of definition itself. -/
-private theorem IsAnalyticPoint.exists_mem_idealOfDefinition_notMem_supp
+theorem IsAnalyticPoint.exists_mem_idealOfDefinition_notMem_supp
     (P : PairOfDefinition A) {v : Spv A} (hv : IsAnalyticPoint v) :
     ∃ b : P.ringOfDefinition, b ∈ P.idealOfDefinition ∧ (b : A) ∉ v.supp := by
   obtain ⟨a, haI, ha⟩ :=
     (isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp P v).mp hv
   by_contra! h
   apply ha
-  apply (show P.extendedIdealOfDefinition ≤ v.supp from ?_) haI
-  rw [P.extendedIdealOfDefinition_def, Ideal.map_le_iff_le_comap]
-  exact fun b hb ↦ h b hb
+  have hsupp : P.extendedIdealOfDefinition ≤ v.supp := by
+    rw [P.extendedIdealOfDefinition_def, Ideal.map_le_iff_le_comap]
+    exact fun b hb ↦ h b hb
+  exact hsupp haI
 
-/-- **Wedhorn Remark 7.40(5).** Every continuous analytic point of a Huber ring is microbial.
-
-An ideal-of-definition witness outside the support has nonzero value strictly below `1` by
-continuity. Its cofinality makes the quotient by the largest convex subgroup avoiding that value
-nontrivial and archimedean. -/
+/-- **Wedhorn Remark 7.40(5).** Every continuous analytic point of a Huber ring is microbial. -/
 theorem IsAnalyticPoint.isMicrobial [IsHuberRing A] {v : Spv A} (hana : IsAnalyticPoint v)
     (hcont : v.IsContinuous) : v.valuation.IsMicrobial := by
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
   obtain ⟨b, hbI, hbSupp⟩ := hana.exists_mem_idealOfDefinition_notMem_supp P
-  have hb0 : v.valuation.restrict (b : A) ≠ 0 := by
+  have hb0 : (MonoidWithZeroHom.ofClass v.valuation) (b : A) ≠ 0 := by
     intro hb0
-    exact hbSupp (v.supp_eq_valuation_supp ▸ (v.valuation.mem_supp_iff _).mpr
-      (v.valuation.restrict_eq_zero_iff.mp hb0))
+    exact hbSupp (v.supp_eq_valuation_supp ▸ (v.valuation.mem_supp_iff _).mpr hb0)
+  have hb0' : v.valuation.restrict (b : A) ≠ 0 :=
+    fun h ↦ hb0 (v.valuation.restrict_eq_zero_iff.mp h)
   have hblt : v.valuation.restrict (b : A) < 1 := by
     rw [← MonoidWithZeroHom.ValueGroup₀.embedding_strictMono.lt_iff_lt,
       Valuation.embedding_restrict, map_one]
@@ -149,9 +147,8 @@ theorem IsAnalyticPoint.isMicrobial [IsHuberRing A] {v : Spv A} (hana : IsAnalyt
       (P.isTopologicallyNilpotent_of_mem_idealOfDefinition hbI)
   have hcof := ((isContinuous_def v).mp hcont).cofinalValue_of_isTopologicallyNilpotent
     (P.isTopologicallyNilpotent_of_mem_idealOfDefinition hbI)
-  have hcof' := Valuation.cofinalValue_iff.mp hcof
   let u : (MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ :=
-    Units.mk0 (v.valuation.restrict (b : A)) hb0
+    Units.mk0 (v.valuation.restrict (b : A)) hb0'
   have hu : u ≠ 1 := by
     intro hu
     have : v.valuation.restrict (b : A) = 1 := by
@@ -160,28 +157,35 @@ theorem IsAnalyticPoint.isMicrobial [IsHuberRing A] {v : Spv A} (hana : IsAnalyt
   have hult : u < 1 := by
     rw [← Units.val_lt_val]
     simpa [u] using hblt
+  have hcofFor : Valuation.CofinalValueFor v.valuation ⊤ (b : A) :=
+    Valuation.cofinalValueFor_top_iff.mpr hcof
+  have huImage : OrderMonoidIso.unitsWithZero u =
+      MonoidWithZeroHom.valueGroup.mk (.ofClass v.valuation) 1 (b : A) (by simp) hb0 := by
+    apply WithZero.coe_injective
+    calc
+      ((OrderMonoidIso.unitsWithZero u :
+          MonoidWithZeroHom.valueGroup (.ofClass v.valuation)) :
+          MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation)) =
+          ((u : (MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ) :
+            MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation)) :=
+        WithZero.coe_unitsWithZeroEquiv_eq_units_val _
+      _ = v.valuation.restrict (b : A) := by rfl
+      _ = _ := v.valuation.restrict_eq_mk hb0
+  have huCofImage : TauCeti.IsCofinalElement ⊤ (OrderMonoidIso.unitsWithZero u) := by
+    rw [huImage]
+    exact (Valuation.cofinalValueFor_iff_isCofinalElement hb0).mp hcofFor
+  have huCof : TauCeti.IsCofinalElement ⊤ u := by
+    rw [TauCeti.isCofinalElement_def]
+    intro x _
+    obtain ⟨n, hn⟩ := TauCeti.isCofinalElement_def.mp huCofImage
+      (OrderMonoidIso.unitsWithZero x) (by simp)
+    have hmap : OrderMonoidIso.unitsWithZero (u ^ n) <
+        OrderMonoidIso.unitsWithZero x := by
+      simpa only [map_pow] using hn
+    exact ⟨n, (OrderIso.lt_iff_lt OrderMonoidIso.unitsWithZero.toOrderIso).mp hmap⟩
   have hclosure : TauCeti.ConvexSubgroup.closure ({u} : Set _) = ⊤ := by
     apply top_unique
-    intro x _
-    rw [TauCeti.ConvexSubgroup.mem_closure_singleton]
-    obtain ⟨n, hn⟩ := hcof' (x : MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))
-      (by simp)
-    obtain ⟨m, hm⟩ := hcof'
-      ((x⁻¹ : (MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ) :
-        MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation)) (by simp)
-    have hn' : u ^ n < x := by
-      rw [← Units.val_lt_val]
-      simpa [u] using hn
-    have hm' : u ^ m < x⁻¹ := by
-      rw [← Units.val_lt_val]
-      simpa [u] using hm
-    refine ⟨max n m, ?_⟩
-    rw [mabs_eq_inv_self.mpr hult.le]
-    refine mabs_le.mpr ⟨?_, ?_⟩
-    · rw [inv_pow, inv_inv]
-      exact (pow_le_pow_right_of_le_one' hult.le (le_max_left n m)).trans hn'.le
-    · exact (inv_lt_inv' hm').le.trans
-        (inv_le_inv' (pow_le_pow_right_of_le_one' hult.le (le_max_right n m)))
+    exact (TauCeti.isCofinalElement_iff_subset_closure hult).mp huCof
   exact Valuation.isMicrobial_iff.mpr
     ⟨TauCeti.ConvexSubgroup.maxAvoid hu,
       TauCeti.ConvexSubgroup.nontrivial_quotient_maxAvoid hu,
@@ -189,11 +193,7 @@ theorem IsAnalyticPoint.isMicrobial [IsHuberRing A] {v : Spv A} (hana : IsAnalyt
 
 /-- **Wedhorn Remark 7.42(2).** A continuous analytic point has a height-one vertical
 generization in `Spa(A, A⁺)` whenever `A⁺` consists of power-bounded elements; in particular,
-this applies to every ring of integral elements.
-
-The witness is the canonical coarsening by a convex subgroup supplied by microbiality. It is
-continuous by Remark 7.11(2), has the same support (so remains analytic), and Proposition 7.41
-bounds it by `1` on all power-bounded elements, hence on `A⁺`. -/
+this applies to every ring of integral elements. -/
 theorem IsAnalyticPoint.exists_coarsenByUnits_mem_spaAnalytic [IsHuberRing A]
     (Aplus : Subring A) (hAplus : Aplus ≤ powerBoundedSubring A) {v : Spv A}
     (hana : IsAnalyticPoint v) (hcont : v.IsContinuous) :

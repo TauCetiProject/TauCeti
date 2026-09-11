@@ -669,11 +669,7 @@ theorem nontrivial_quotient_maxAvoid {γ : Γ} (hγ : γ ≠ 1) :
   exact not_mem_maxAvoid hγ ((QuotientGroup.eq_one_iff γ).mp h)
 
 /-- If `γ` generates the whole group as a convex subgroup, the quotient by the largest convex
-subgroup avoiding `γ` is archimedean. Equivalently, it has height at most one.
-
-Indeed, the inverse image of a nontrivial convex subgroup of the quotient strictly contains
-`maxAvoid hγ`, hence contains `γ`; the generation hypothesis then makes that inverse image the
-whole group. -/
+subgroup avoiding `γ` is archimedean. Equivalently, it has height at most one. -/
 theorem mulArchimedean_quotient_maxAvoid {γ : Γ} (hγ : γ ≠ 1)
     (hclosure : closure ({γ} : Set Γ) = ⊤) :
     MulArchimedean (Γ ⧸ (maxAvoid hγ).toSubgroup) := by
@@ -688,7 +684,7 @@ theorem mulArchimedean_quotient_maxAvoid {γ : Γ} (hγ : γ ≠ 1)
     let L : ConvexSubgroup Γ := comap q K
     have hHL : maxAvoid hγ ≤ L := by
       intro x hx
-      change q x ∈ K
+      rw [show L = comap q K from rfl, mem_comap]
       have hxq : q x = 1 := (QuotientGroup.eq_one_iff x).mpr hx
       rw [hxq]
       exact one_mem K
@@ -700,7 +696,7 @@ theorem mulArchimedean_quotient_maxAvoid {γ : Γ} (hγ : γ ≠ 1)
       rw [mem_bot]
       apply (QuotientGroup.eq_one_iff x).mpr
       have hxL : x ∈ L := by
-        change q x ∈ K
+        rw [show L = comap q K from rfl, mem_comap]
         exact hz
       rw [ConvexSubgroup.mem_toSubgroup, hEq]
       exact hxL
@@ -715,7 +711,7 @@ theorem mulArchimedean_quotient_maxAvoid {γ : Γ} (hγ : γ ≠ 1)
     intro z _
     obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective (maxAvoid hγ).toSubgroup z
     have hxL : x ∈ L := hL ▸ mem_top
-    change q x ∈ K at hxL
+    rw [show L = comap q K from rfl, mem_comap] at hxL
     exact hxL
 
 /-- **The quotient by `⊥` is the group itself.** `QuotientGroup.quotientBot` identifies the two
