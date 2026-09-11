@@ -83,16 +83,17 @@ free bicommutative Hopf algebra, ready for Cartier duality. The kernel coordinat
 finite and faithfully flat over the base, hence finite projective. -/
 noncomputable abbrev kernelFiniteLocallyFree (hf : IsCentralIsogeny f) :
     FiniteLocallyFreeBicommutativeHopfAlgCat.{u} R :=
-  ⟨quotient K (kernelHopfIdeal f), by
-    have : Module.Finite R (quotient K (kernelHopfIdeal f)) :=
-      moduleFinite_quotient_kernelHopfIdeal hf.isIsogeny.finite
-    have : Module.FaithfullyFlat R (quotient K (kernelHopfIdeal f)) :=
-      moduleFaithfullyFlat_quotient_kernelHopfIdeal hf.isIsogeny.faithfullyFlat
-    have : Module.FinitePresentation R (quotient K (kernelHopfIdeal f)) :=
-      Module.finitePresentation_of_finite R _
-    exact (finiteLocallyFreeBicommutativeHopfAlgProperty_iff R _).2
-      ⟨inferInstance, Module.Flat.projective_of_finitePresentation,
-        hf.isCocomm_quotient_kernelHopfIdeal⟩⟩
+  haveI : Module.Finite R (K ⧸ (kernelHopfIdeal f).toIdeal) :=
+    moduleFinite_quotient_kernelHopfIdeal hf.isIsogeny.finite
+  haveI : Module.FaithfullyFlat R (K ⧸ (kernelHopfIdeal f).toIdeal) :=
+    moduleFaithfullyFlat_quotient_kernelHopfIdeal hf.isIsogeny.faithfullyFlat
+  haveI : Module.FinitePresentation R (K ⧸ (kernelHopfIdeal f).toIdeal) :=
+    Module.finitePresentation_of_finite R _
+  haveI : Module.Projective R (K ⧸ (kernelHopfIdeal f).toIdeal) :=
+    Module.Flat.projective_of_finitePresentation
+  haveI : Coalgebra.IsCocomm R (K ⧸ (kernelHopfIdeal f).toIdeal) :=
+    hf.isCocomm_quotient_kernelHopfIdeal
+  FiniteLocallyFreeBicommutativeHopfAlgCat.of R (K ⧸ (kernelHopfIdeal f).toIdeal)
 
 end Noetherian
 
