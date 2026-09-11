@@ -5,21 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.QuadraticForm.Dual
 public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
 
 /-!
 # The hyperbolic plane
 
-The hyperbolic plane over a commutative ring is the diagonal quadratic form `⟨1, -1⟩`. When
-two is invertible, it is nondegenerate and represents every scalar. Over a field in which two is
-invertible (that is, of characteristic not two), every plane `⟨a, -a⟩` with `a ≠ 0` is isometric
-to it.
+The hyperbolic plane over a commutative ring is the diagonal quadratic form `⟨1, -1⟩`. When two
+is invertible, it is nondegenerate, represents every scalar, and is isometric to the `xy`-form
+`QuadraticForm.dualProd`. Over a field in which two is invertible (that is, of characteristic not
+two), every plane `⟨a, -a⟩` with `a ≠ 0` is isometric to it.
 
 The main result is the hyperbolic splitting theorem: over a field of characteristic not two, every
 finite-dimensional nondegenerate isotropic quadratic form splits as the orthogonal sum of a
 hyperbolic plane and another nondegenerate form. It is the inductive step of Witt decomposition:
-iterating it splits off hyperbolic planes until the remaining part is anisotropic.
+iterating it splits off hyperbolic planes until the remaining part is anisotropic. The companion
+statement that such a form is universal is
+`QuadraticMap.represents_of_nondegenerate_of_not_anisotropic`, which needs no finiteness
+hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Representation.lean`.
 
 ## Main definitions
 
@@ -29,6 +33,8 @@ iterating it splits off hyperbolic planes until the remaining part is anisotropi
 
 * `TauCeti.represents_hyperbolicPlane`: when two is invertible, the hyperbolic plane represents
   every scalar.
+* `TauCeti.equivalent_hyperbolicPlane_dualProd`: when two is invertible, the hyperbolic plane is
+  isometric to the `xy`-form `QuadraticForm.dualProd`.
 * `TauCeti.equivalent_weightedSumSquares_self_neg`: in characteristic not two, every
   `⟨a, -a⟩`, for `a ≠ 0`, is hyperbolic.
 * `TauCeti.exists_hyperbolicPlane_prod_equivalent`: in characteristic not two, every
@@ -96,6 +102,42 @@ theorem represents_hyperbolicPlane [Invertible (2 : R)] (a : R) :
     ((a + 1) * ⅟(2 : R)) ^ 2 - ((a - 1) * ⅟(2 : R)) ^ 2 =
         a * ((2 : R) * ⅟(2 : R)) ^ 2 := by ring
     _ = a := by rw [mul_invOf_self, one_pow, mul_one]
+
+/-- When two is invertible, the hyperbolic plane is isometric to the `xy`-form
+`QuadraticForm.dualProd R R`, whose value at `(f, z)` is `f z`. -/
+theorem equivalent_hyperbolicPlane_dualProd [Invertible (2 : R)] :
+    (hyperbolicPlane R).Equivalent (QuadraticForm.dualProd R R) := by
+  have key : ∀ f : Module.Dual R R, f 1 • (LinearMap.id : R →ₗ[R] R) = f := fun f ↦ by
+    ext
+    simp
+  have h2 : (2 : R) * ⅟(2 : R) = 1 := mul_invOf_self 2
+  let e : (R × R) ≃ₗ[R] Module.Dual R R × R :=
+    { toFun := fun p ↦ ((p.1 + p.2) • (LinearMap.id : R →ₗ[R] R), p.1 - p.2)
+      invFun := fun q ↦ ((q.1 1 + q.2) * ⅟(2 : R), (q.1 1 - q.2) * ⅟(2 : R))
+      map_add' := fun p q ↦ Prod.ext
+        (by simp only [Prod.fst_add, Prod.snd_add, ← add_smul]; congr 1; ring)
+        (by simp only [Prod.fst_add, Prod.snd_add]; ring)
+      map_smul' := fun a p ↦ Prod.ext
+        (by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, RingHom.id_apply, ← mul_smul]
+            congr 1
+            ring)
+        (by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, RingHom.id_apply]; ring)
+      left_inv := fun p ↦ by
+        dsimp only
+        refine Prod.ext ?_ ?_ <;>
+          simp only [LinearMap.smul_apply, LinearMap.id_coe, id_eq, smul_eq_mul, mul_one]
+        · linear_combination p.1 * h2
+        · linear_combination p.2 * h2
+      right_inv := fun q ↦ by
+        dsimp only
+        refine Prod.ext ?_ ?_
+        · rw [show (q.1 1 + q.2) * ⅟(2 : R) + (q.1 1 - q.2) * ⅟(2 : R) = q.1 1 from by
+            linear_combination q.1 1 * h2]
+          exact key q.1
+        · linear_combination q.2 * h2 }
+  refine ⟨⟨(LinearEquiv.finTwoArrow R R).trans e, fun x ↦ ?_⟩⟩
+  simp [e]
+  ring
 
 end CommRing
 
