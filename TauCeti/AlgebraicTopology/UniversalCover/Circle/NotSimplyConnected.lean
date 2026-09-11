@@ -41,9 +41,8 @@ The same consequences for Mathlib's complex unit circle `Circle` follow from
 * `AddCircle.not_simplyConnectedSpace`: `AddCircle p` is not simply connected.
 * `AddCircle.not_contractibleSpace`: `AddCircle p` is not contractible.
 * `AddCircle.isEmpty_homeomorph_of_simplyConnectedSpace`,
-  `AddCircle.isEmpty_homeomorph_realTopologicalVectorSpace`,
   `AddCircle.isEmpty_homeomorph_real`: `AddCircle p` is not homeomorphic to a simply
-  connected space, to a real topological vector space, or to `ℝ`.
+  connected space, nor to `ℝ`.
 * `UnitAddCircle.*`: the specialisations to the unit circle `S¹ = ℝ ⧸ ℤ`.
 * `Circle.nontrivial_fundamentalGroup`, `Circle.infinite_fundamentalGroup`: the complex unit
   circle's fundamental group is nontrivial and infinite.
@@ -100,14 +99,6 @@ theorem isEmpty_homeomorph_of_simplyConnectedSpace (hp : p ≠ 0)
     (Y : Type*) [TopologicalSpace Y] [SimplyConnectedSpace Y] :
     IsEmpty (AddCircle p ≃ₜ Y) :=
   TauCeti.isEmpty_homeomorph_of_not_simplyConnectedSpace (not_simplyConnectedSpace p hp) Y
-
-/-- The circle `AddCircle p` (`p ≠ 0`) is not homeomorphic to any real topological vector space
-(in particular, to any real normed space), since such a space is contractible, hence simply
-connected. -/
-theorem isEmpty_homeomorph_realTopologicalVectorSpace (hp : p ≠ 0) (E : Type*)
-    [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul ℝ E] :
-    IsEmpty (AddCircle p ≃ₜ E) :=
-  isEmpty_homeomorph_of_simplyConnectedSpace p hp E
 
 /-- The circle `AddCircle p` (`p ≠ 0`) is not homeomorphic to the real line: the circle is not
 simply connected but `ℝ` is contractible. -/
@@ -169,13 +160,6 @@ equivalences, which the circle does not enjoy. -/
 theorem isEmpty_homeomorph_of_simplyConnectedSpace (Y : Type*) [TopologicalSpace Y]
     [SimplyConnectedSpace Y] : IsEmpty (Circle ≃ₜ Y) :=
   TauCeti.isEmpty_homeomorph_of_not_simplyConnectedSpace not_simplyConnectedSpace Y
-
-/-- The complex unit circle `Circle` is not homeomorphic to any real topological vector space
-(in particular, to any real normed space), since such a space is contractible, hence simply
-connected. -/
-theorem isEmpty_homeomorph_realTopologicalVectorSpace (E : Type*) [AddCommGroup E] [Module ℝ E]
-    [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul ℝ E] : IsEmpty (Circle ≃ₜ E) :=
-  isEmpty_homeomorph_of_simplyConnectedSpace E
 
 /-- The complex unit circle `Circle` is not homeomorphic to the real line: the circle is not
 simply connected but `ℝ` is contractible. -/
