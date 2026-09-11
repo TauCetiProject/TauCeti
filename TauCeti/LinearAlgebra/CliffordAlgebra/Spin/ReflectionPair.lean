@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
 Two vectors of quadratic norm one determine a canonical element of the Spin group: the product of
 their Clifford generators. Its orthogonal action is the ordered product of the two corresponding
 reflections. This gives a concrete choice of lift for reflection products over positive-definite
-real quadratic spaces, where anisotropic vectors can be normalized to unit norm.
+real quadratic spaces, where nonzero vectors have nonzero norm and can be normalized to unit norm.
 
 ## Main results
 
