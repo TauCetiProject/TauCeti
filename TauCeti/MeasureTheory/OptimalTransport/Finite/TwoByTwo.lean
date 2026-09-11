@@ -19,13 +19,6 @@ writes every real-valued transport cost as an affine function of the interval pa
 of the cost cross-difference therefore selects an endpoint that minimizes the cost.
 -/
 
-/-
-The source for this construction is the two-by-two discrete-problem acceptance check in Layer 1
-of the [OptimalTransport roadmap][roadmap].
-
-[roadmap]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/OptimalTransport/README.md
--/
-
 public section
 
 noncomputable section
@@ -50,10 +43,6 @@ namespace TransportMatrix
 
 variable {μ ν : PMF (Fin 2)}
 
-private theorem pmf_sum_two (μ : PMF (Fin 2)) :
-    (μ 0).toReal + (μ 1).toReal = 1 := by
-  simpa only [Fin.sum_univ_two] using PMF.sum_toReal_eq_one μ
-
 /-- The upper-left entry of a two-by-two transport matrix, as a point of its feasible interval. -/
 def twoByTwoParameter (A : TransportMatrix μ ν) : TwoByTwoParameter μ ν := by
   refine ⟨(A 0 0).toReal, ?_, ?_⟩
@@ -62,8 +51,8 @@ def twoByTwoParameter (A : TransportMatrix μ ν) : TwoByTwoParameter μ ν := b
     have hrow1 := A.sum_toRealFun_row 1
     have hcol := A.sum_toRealFun_col 0
     have h11 := A.toRealFun_nonneg (1, 1)
-    have hμ := pmf_sum_two μ
-    have hν := pmf_sum_two ν
+    have hμ := PMF.toReal_apply_zero_add_toReal_apply_one μ
+    have hν := PMF.toReal_apply_zero_add_toReal_apply_one ν
     simp only [Fin.sum_univ_two, toRealFun_apply] at hrow hrow1 hcol h11
     linarith
   · apply le_min
@@ -79,18 +68,21 @@ theorem twoByTwoParameter_val (A : TransportMatrix μ ν) :
     (twoByTwoParameter A).1 = (A 0 0).toReal :=
   (rfl)
 
+private theorem twoByTwoParameter_bounds (x : TwoByTwoParameter μ ν) :
+    0 ≤ x.1 ∧ x.1 ≤ (μ 0).toReal ∧ x.1 ≤ (ν 0).toReal ∧
+      0 ≤ 1 - (μ 0).toReal - (ν 0).toReal + x.1 := by
+  refine ⟨(le_max_left 0 _).trans x.2.1,
+    x.2.2.trans (min_le_left _ _), x.2.2.trans (min_le_right _ _), ?_⟩
+  have := (le_max_right 0 _).trans x.2.1
+  linarith
+
 /-- Construct a two-by-two transport matrix from a point of its feasible interval. -/
 def ofTwoByTwoParameter (x : TwoByTwoParameter μ ν) : TransportMatrix μ ν where
   matrix := !![ENNReal.ofReal x.1, ENNReal.ofReal ((μ 0).toReal - x.1);
-    ENNReal.ofReal ((ν 0).toReal - x.1),
+      ENNReal.ofReal ((ν 0).toReal - x.1),
       ENNReal.ofReal (1 - (μ 0).toReal - (ν 0).toReal + x.1)]
   row_sum i := by
-    have hx0 : 0 ≤ x.1 := (le_max_left 0 _).trans x.2.1
-    have hxμ : x.1 ≤ (μ 0).toReal := x.2.2.trans (min_le_left _ _)
-    have hxν : x.1 ≤ (ν 0).toReal := x.2.2.trans (min_le_right _ _)
-    have hx11 : 0 ≤ 1 - (μ 0).toReal - (ν 0).toReal + x.1 := by
-      have := (le_max_right 0 _).trans x.2.1
-      linarith
+    obtain ⟨hx0, hxμ, hxν, hx11⟩ := twoByTwoParameter_bounds x
     fin_cases i
     · rw [Fin.sum_univ_two]
       norm_num
@@ -101,15 +93,10 @@ def ofTwoByTwoParameter (x : TwoByTwoParameter μ ν) : TransportMatrix μ ν wh
       rw [← ENNReal.ofReal_add (sub_nonneg.2 hxν) hx11,
         ← ENNReal.ofReal_toReal (μ.apply_ne_top 1)]
       congr 1
-      have hμ := pmf_sum_two μ
+      have hμ := PMF.toReal_apply_zero_add_toReal_apply_one μ
       linarith
   col_sum j := by
-    have hx0 : 0 ≤ x.1 := (le_max_left 0 _).trans x.2.1
-    have hxμ : x.1 ≤ (μ 0).toReal := x.2.2.trans (min_le_left _ _)
-    have hxν : x.1 ≤ (ν 0).toReal := x.2.2.trans (min_le_right _ _)
-    have hx11 : 0 ≤ 1 - (μ 0).toReal - (ν 0).toReal + x.1 := by
-      have := (le_max_right 0 _).trans x.2.1
-      linarith
+    obtain ⟨hx0, hxμ, hxν, hx11⟩ := twoByTwoParameter_bounds x
     fin_cases j
     · rw [Fin.sum_univ_two]
       norm_num
@@ -120,7 +107,7 @@ def ofTwoByTwoParameter (x : TwoByTwoParameter μ ν) : TransportMatrix μ ν wh
       rw [← ENNReal.ofReal_add (sub_nonneg.2 hxμ) hx11,
         ← ENNReal.ofReal_toReal (ν.apply_ne_top 1)]
       congr 1
-      have hν := pmf_sum_two ν
+      have hν := PMF.toReal_apply_zero_add_toReal_apply_one ν
       linarith
 
 /-- The upper-left entry of the transport matrix constructed from a parameter is that parameter. -/
@@ -134,12 +121,7 @@ theorem ofTwoByTwoParameter_toReal_apply (x : TwoByTwoParameter μ ν) (i j : Fi
     (ofTwoByTwoParameter x i j).toReal =
       !![x.1, (μ 0).toReal - x.1; (ν 0).toReal - x.1,
         1 - (μ 0).toReal - (ν 0).toReal + x.1] i j := by
-  have hx0 : 0 ≤ x.1 := (le_max_left 0 _).trans x.2.1
-  have hxμ : x.1 ≤ (μ 0).toReal := x.2.2.trans (min_le_left _ _)
-  have hxν : x.1 ≤ (ν 0).toReal := x.2.2.trans (min_le_right _ _)
-  have hx11 : 0 ≤ 1 - (μ 0).toReal - (ν 0).toReal + x.1 := by
-    have := (le_max_right 0 _).trans x.2.1
-    linarith
+  obtain ⟨hx0, hxμ, hxν, hx11⟩ := twoByTwoParameter_bounds x
   fin_cases i <;> fin_cases j <;>
     simp [ofTwoByTwoParameter, ENNReal.toReal_ofReal, hx0, sub_nonneg.2 hxμ,
       sub_nonneg.2 hxν, hx11]
@@ -153,7 +135,7 @@ theorem toReal_apply_eq_of_fin_two (A : TransportMatrix μ ν) (i j : Fin 2) :
   have hrow0 := A.sum_toRealFun_row 0
   have hrow1 := A.sum_toRealFun_row 1
   have hcol0 := A.sum_toRealFun_col 0
-  have hμ := pmf_sum_two μ
+  have hμ := PMF.toReal_apply_zero_add_toReal_apply_one μ
   simp only [Fin.sum_univ_two, toRealFun_apply] at hrow0 hrow1 hcol0
   fin_cases i <;> fin_cases j <;> norm_num <;> linarith
 
