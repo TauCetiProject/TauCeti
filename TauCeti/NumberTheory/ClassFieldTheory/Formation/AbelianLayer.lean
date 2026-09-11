@@ -34,23 +34,23 @@ class-field correspondences directly in terms of their abelian Galois groups.
 
 ## Main definitions
 
-* `TauCeti.ClassFieldTheory.IsAbelianClassFieldLayer`: the closed-commutator condition on an open
+* `OpenNormalSubgroup.IsAbelianClassFieldLayer`: the closed-commutator condition on an open
   normal subgroup.
 * `TauCeti.ClassFieldTheory.AbelianLayer`: the subtype of open normal subgroups satisfying that
   condition.
-* `TauCeti.ClassFieldTheory.maximalAbelianLayer`: the least abelian-layer subgroup above a given
+* `OpenNormalSubgroup.maximalAbelianLayer`: the least abelian-layer subgroup above a given
   open normal subgroup.
 * `TauCeti.ClassFieldTheory.abelianizationGalEquiv`: the canonical equivalence from the
   abelianization of an abelian layer's Galois group to that Galois group.
 
 ## Main statements
 
-* `TauCeti.ClassFieldTheory.isAbelianClassFieldLayer_iff_isMulCommutative`: the closed-commutator
+* `OpenNormalSubgroup.isAbelianClassFieldLayer_iff_isMulCommutative`: the closed-commutator
   condition is equivalent to commutativity of `G ⧸ V`.
-* `TauCeti.ClassFieldTheory.le_maximalAbelianLayer` and
-  `TauCeti.ClassFieldTheory.maximalAbelianLayer_le`: the universal property of the maximal
+* `OpenNormalSubgroup.le_maximalAbelianLayer` and
+  `OpenNormalSubgroup.maximalAbelianLayer_le`: the universal property of the maximal
   abelian sublayer.
-* `TauCeti.ClassFieldTheory.maximalAbelianLayer_eq_self_iff`: the construction fixes exactly the
+* `OpenNormalSubgroup.maximalAbelianLayer_eq_self_iff`: the construction fixes exactly the
   abelian layers.
 
 ## References
@@ -61,11 +61,11 @@ class-field correspondences directly in terms of their abelian Galois groups.
 
 public noncomputable section
 
-namespace TauCeti.ClassFieldTheory
-
 -- Formalization source: `TauCetiRoadmap/ClassFieldTheory/Suggested.lean`.
 
 /-! ### Abelian layers -/
+
+namespace OpenNormalSubgroup
 
 /-- An open normal subgroup cuts out an **abelian class-field layer** when it contains the
 topological closure of the commutator subgroup. The closure is essential: it is the kernel used
@@ -75,11 +75,19 @@ def IsAbelianClassFieldLayer {G : Type} [Group G] [TopologicalSpace G] [IsTopolo
     (V : OpenNormalSubgroup G) : Prop :=
   (commutator G).topologicalClosure ≤ V.toSubgroup
 
+end OpenNormalSubgroup
+
+namespace TauCeti.ClassFieldTheory
+
 /-- Open normal subgroups whose quotient is abelian. For a profinite Galois group, these form the
 Galois-side carrier of class-field correspondences; subgroup inclusion becomes reverse inclusion
 on fixed fields. -/
 abbrev AbelianLayer (G : Type) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] :=
-  {V : OpenNormalSubgroup G // IsAbelianClassFieldLayer V}
+  {V : OpenNormalSubgroup G // V.IsAbelianClassFieldLayer}
+
+end TauCeti.ClassFieldTheory
+
+namespace OpenNormalSubgroup
 
 section AbelianLayer
 
@@ -155,25 +163,34 @@ theorem maximalAbelianLayer_eq_self_iff (V : OpenNormalSubgroup G) :
     exact isAbelianClassFieldLayer_maximalAbelianLayer V
   · exact fun h ↦ le_antisymm (maximalAbelianLayer_le le_rfl h) (le_maximalAbelianLayer V)
 
-/-! ### Finite Galois groups of abelian layers -/
+end AbelianLayer
 
-variable [CompactSpace G] [TotallyDisconnectedSpace G]
+end OpenNormalSubgroup
+
+namespace TauCeti.ClassFieldTheory
+
+section AbelianLayer
+
+variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-! ### Finite Galois groups of abelian layers -/
 
 /-- The finite Galois group of an abelian open normal layer is commutative. -/
 theorem isMulCommutative_gal_ofOpenNormal {V : OpenNormalSubgroup G}
-    (hV : IsAbelianClassFieldLayer V) :
+    (hV : V.IsAbelianClassFieldLayer) :
     IsMulCommutative (NormalLayer.ofOpenNormal V).Gal := by
   apply Function.Surjective.isMulCommutative
     (f := (NormalLayer.galOfOpenNormalEquiv V).symm)
     (NormalLayer.galOfOpenNormalEquiv V).symm.surjective
-  exact (isAbelianClassFieldLayer_iff_isMulCommutative V).1 hV
+  exact V.isAbelianClassFieldLayer_iff_isMulCommutative.1 hV
 
 open scoped IsMulCommutative in
 /-- For an abelian layer, the canonical quotient map to its algebraic abelianization is an
 isomorphism. This equivalence removes the redundant abelianization from the target of the Artin
 equivalence. -/
 noncomputable def abelianizationGalEquiv {V : OpenNormalSubgroup G}
-    (hV : IsAbelianClassFieldLayer V) :
+    (hV : V.IsAbelianClassFieldLayer) :
     Abelianization (NormalLayer.ofOpenNormal V).Gal ≃*
       (NormalLayer.ofOpenNormal V).Gal :=
   letI := isMulCommutative_gal_ofOpenNormal hV
@@ -183,7 +200,7 @@ open scoped IsMulCommutative in
 /-- The inverse of `abelianizationGalEquiv` is the canonical abelianization map. -/
 @[simp]
 theorem abelianizationGalEquiv_symm_apply {V : OpenNormalSubgroup G}
-    (hV : IsAbelianClassFieldLayer V) (x : (NormalLayer.ofOpenNormal V).Gal) :
+    (hV : V.IsAbelianClassFieldLayer) (x : (NormalLayer.ofOpenNormal V).Gal) :
     (abelianizationGalEquiv hV).symm x = Abelianization.of x := by
   let := isMulCommutative_gal_ofOpenNormal hV
   simp only [abelianizationGalEquiv, MulEquiv.symm_symm,
@@ -193,7 +210,7 @@ open scoped IsMulCommutative in
 /-- The abelianization equivalence sends the canonical class of an element back to that element. -/
 @[simp]
 theorem abelianizationGalEquiv_of {V : OpenNormalSubgroup G}
-    (hV : IsAbelianClassFieldLayer V) (x : (NormalLayer.ofOpenNormal V).Gal) :
+    (hV : V.IsAbelianClassFieldLayer) (x : (NormalLayer.ofOpenNormal V).Gal) :
     abelianizationGalEquiv hV (Abelianization.of x) = x := by
   rw [← abelianizationGalEquiv_symm_apply hV x]
   exact (abelianizationGalEquiv hV).apply_symm_apply x
