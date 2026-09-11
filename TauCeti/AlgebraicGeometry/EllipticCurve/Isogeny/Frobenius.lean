@@ -37,6 +37,7 @@ on it. The instance Mathlib's map needs is installed locally where it is require
 * `TauCeti.Isogeny.isPurelyInseparable_frobeniusIsogeny`: the induced function-field extension
   is purely inseparable.
 * `TauCeti.Isogeny.degree_frobeniusIsogeny`: the Frobenius isogeny has degree `q`.
+* `TauCeti.Isogeny.frobeniusIsogeny_ne_id`: the Frobenius isogeny is not the identity.
 * `TauCeti.Isogeny.separableDegree_frobeniusIsogeny` and
   `TauCeti.Isogeny.inseparableDegree_frobeniusIsogeny`: its separable and inseparable degrees
   are `1` and `q`, respectively.
@@ -145,6 +146,13 @@ theorem degree_frobeniusIsogeny : (frobeniusIsogeny W).degree = Nat.card F := by
   let _ := Fintype.ofFinite F
   rw [degree_def, fieldPullback_frobeniusIsogeny W]
   exact WeierstrassCurve.Affine.finrank_fieldRange_frobeniusAlgHom W
+
+/-- **Frobenius is not the identity**: its degree is the size of the field, not one. -/
+@[simp]
+theorem frobeniusIsogeny_ne_id : frobeniusIsogeny W ≠ id W := fun h ↦ by
+  have hdeg := congrArg degree h
+  rw [degree_frobeniusIsogeny, degree_id] at hdeg
+  exact (Finite.one_lt_card (α := F)).ne' hdeg
 
 /-- **The Frobenius isogeny has separable degree one**, as pure inseparability in Silverman
 II.2.11(b) requires. -/

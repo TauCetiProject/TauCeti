@@ -26,6 +26,8 @@ are compared with.
   nontrivial cycle factors of the permutation together with its fixed points.
 * `Equiv.Perm.orbitCount_eq_card_parts_partition`: on a finite type, the orbit count is the number
   of parts in Mathlib's full, fixed-point-aware permutation partition.
+* `Equiv.Perm.orbitCount_le_card`: on a finite type, a permutation has at most as many orbits as
+  the type has points, the orbits being the classes of a partition of it.
 * `Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
   the number of points minus the number of orbits.
 * `TauCeti.orbitCount_add_one_eq_of_semiconj`: if `σ : Equiv.Perm α` is carried by an injection
@@ -202,18 +204,24 @@ theorem _root_.Equiv.Perm.orbitCount_eq_card_parts_partition (σ : Equiv.Perm α
   rw [hfixed, Equiv.Perm.card_parts_partition, Equiv.Perm.cycleType_def]
   simp
 
+end Finite
+
+/-- The number of orbits of a permutation of a finite type is at most the number of elements of
+the type: every orbit contains a point. -/
+theorem _root_.Equiv.Perm.orbitCount_le_card [Finite α] (σ : Equiv.Perm α) :
+    orbitCount σ ≤ Nat.card α :=
+  Nat.card_le_card_of_surjective _ Quotient.mk''_surjective
+
+section Finite
+
+variable [Fintype α] [DecidableEq α]
+
 /-- The sign of a finite permutation is the parity of the number of points minus the number of
 orbits. Fixed points contribute once to both numbers and hence do not affect the sign. -/
 theorem _root_.Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount (σ : Equiv.Perm α) :
     Equiv.Perm.sign σ = (-1 : ℤˣ) ^ (Fintype.card α - orbitCount σ) := by
   rw [Equiv.Perm.sign_of_parts_partition, ← orbitCount_eq_card_parts_partition]
-  have hle : orbitCount σ ≤ Fintype.card α := by
-    rw [orbitCount_eq_card_parts_partition]
-    calc
-      σ.partition.parts.card = σ.partition.parts.card • 1 := by simp
-      _ ≤ σ.partition.parts.sum :=
-        Multiset.card_nsmul_le_sum fun n hn ↦ σ.partition.parts_pos hn
-      _ = Fintype.card α := σ.partition.parts_sum
+  have hle := σ.orbitCount_le_card.trans_eq Nat.card_eq_fintype_card
   have h : Fintype.card α + orbitCount σ =
       (Fintype.card α - orbitCount σ) + 2 * orbitCount σ := by
     omega

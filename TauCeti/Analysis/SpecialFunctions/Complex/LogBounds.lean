@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
+public import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # The Taylor series of `-log (1 - ·)` summed over a family
@@ -17,7 +18,9 @@ prime-power-style sum over pairs equals the sum of local logarithms.
 
 Both hypotheses are needed.  `∀ i, ‖r i‖ < 1` alone does not suffice: the fibre at `i` sums to
 `‖r i‖ / (1 - ‖r i‖)`, which is dominated by `‖r i‖` only when `‖r i‖` is bounded away from `1`,
-and summability of `r` is what supplies that uniformity.
+and summability of `r` is what supplies that uniformity.  That fibrewise argument is not carried out
+here: it is `TauCeti.summable_mul_norm_pow_succ`, stated for a seminormed additive group and an
+arbitrary real weight, and this file uses it at weight `1`.
 
 ## Main results
 
@@ -39,20 +42,15 @@ Both hypotheses are needed, and neither is arithmetic: see the module docstring 
 theorem summable_taylorSeries_neg_log {ι : Type*} {r : ι → ℂ} (hr : Summable r)
     (h1 : ∀ i, ‖r i‖ < 1) :
     Summable fun ie : ι × ℕ ↦ r ie.1 ^ (ie.2 + 1) / ((ie.2 : ℂ) + 1) := by
+  -- The majorant is the weighted geometric bound at weight `1`; summability of `r` supplies its
+  -- eventual bound with `ε = 1 / 2`.
   have hhalf : ∀ᶠ i in Filter.cofinite, ‖r i‖ ≤ 1 / 2 :=
     hr.tendsto_cofinite_zero.norm.eventually_le_const (by norm_num)
+  have hbd : ∃ ε > 0, ∀ᶠ i in Filter.cofinite, (1 : ℝ) ≠ 0 → ‖r i‖ ≤ 1 - ε :=
+    ⟨1 / 2, by norm_num, by filter_upwards [hhalf] with i hi _; linarith⟩
   have hmaj : Summable fun ie : ι × ℕ ↦ ‖r ie.1‖ ^ (ie.2 + 1) := by
-    have hfib : ∀ i, Summable fun e : ℕ ↦ ‖r i‖ ^ (e + 1) := fun i ↦
-      ((summable_geometric_of_lt_one (norm_nonneg _) (h1 i)).mul_left ‖r i‖).congr fun e ↦ by ring
-    have hval : ∀ i, ∑' e : ℕ, ‖r i‖ ^ (e + 1) = ‖r i‖ / (1 - ‖r i‖) := fun i ↦ by
-      rw [tsum_congr fun e ↦ pow_succ' ‖r i‖ e, tsum_mul_left,
-        tsum_geometric_of_lt_one (norm_nonneg _) (h1 i), div_eq_mul_inv]
-    have houter : Summable fun i ↦ ∑' e : ℕ, ‖r i‖ ^ (e + 1) := by
-      refine Summable.of_norm_bounded_eventually (g := fun i ↦ 2 * ‖r i‖) (hr.norm.mul_left 2) ?_
-      filter_upwards [hhalf] with i hi
-      rw [Real.norm_of_nonneg (by positivity), hval i, div_le_iff₀ (by linarith [h1 i])]
-      nlinarith [norm_nonneg (r i)]
-    exact (summable_prod_of_nonneg fun ie ↦ pow_nonneg (norm_nonneg _) _).mpr ⟨hfib, houter⟩
+    simpa using TauCeti.summable_mul_norm_pow_succ (w := fun _ ↦ (1 : ℝ)) hbd
+      (by simpa using hr.norm) (fun i _ ↦ h1 i)
   refine hmaj.of_norm_bounded ?_
   rintro ⟨i, e⟩
   rw [norm_div, norm_pow]

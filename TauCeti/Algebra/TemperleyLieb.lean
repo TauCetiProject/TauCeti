@@ -357,7 +357,7 @@ theorem crossing_mul_crossing_swap_eq_one_of_polynomial (hαβ : α * β = 1)
   match_scalars
   · simpa only [mul_one] using hαβ
   · calc
-      α * α * 1 + β * β * 1 + β * α * δ * 1 = α ^ 2 + α * β * δ + β ^ 2 := by
+      α * α + β * β + β * α * δ = α ^ 2 + α * β * δ + β ^ 2 := by
         ring
       _ = 0 := hpoly
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.UniversalEnveloping
 public import TauCeti.RepresentationTheory.Spin.Polarization.CliffordAction
-public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Basic
+public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.RootGenerators
 
 /-!
 # The type-B spin representation of an odd polarization
@@ -19,10 +19,10 @@ an odd polarization, and those act on the spinor module `ExteriorAlgebra K P.W` 
 the type-`B` matrix algebra, which this file assembles and extends to the universal enveloping
 algebra.
 
-Only the composition is done here: what the numbered root and coroot generators do in this
-representation is read off from their Clifford realizations in
-`TauCeti/RepresentationTheory/Spin/Polarization/TypeB/RootGenerators.lean`, and the integrality
-of that action is the subject of
+The numbered root and coroot generators are read through their Clifford realizations in
+`TauCeti/RepresentationTheory/Spin/Polarization/TypeB/RootGenerators.lean`; this file also records
+the field-generic terminal-root actions on the exterior basis. The integrality of that action is
+the subject of
 `TauCeti/RepresentationTheory/Spin/Polarization/TypeB/KostantLattice.lean`. Nothing here is
 specific to `ℚ`: any field in which `2` is invertible carries the same representation.
 
@@ -40,6 +40,9 @@ type-`B` carrier in Layer 9, "The Chevalley--Demazure construction", of
 * `TauCeti.SpinPolarizationData.typeBSpinLieRep_apply`: its value on a matrix.
 * `TauCeti.SpinPolarizationData.typeBSpinRep`: its extension to the universal enveloping algebra.
 * `TauCeti.SpinPolarizationData.typeBSpinRep_ι`: the extension evaluated on a Lie generator.
+* `typeBSpinRep_simpleRootGenerator_last_exteriorBasis_empty` and
+  `typeBSpinRep_simpleNegativeRootGenerator_last_exteriorBasis_singleton`:
+  the terminal root actions on the exterior vacuum and final singleton.
 
 ## References
 
@@ -96,6 +99,69 @@ theorem typeBSpinRep_ι (x : LieAlgebra.Orthogonal.typeB ι K) :
       spinAction Q P (P.typeBQuadraticEquiv b z hz x : CliffordAlgebra Q) := by
   rw [typeBSpinRep, _root_.UniversalEnvelopingAlgebra.lift_ι_apply',
     P.typeBSpinLieRep_apply b z hz]
+
+section TerminalRoot
+
+variable {n : ℕ} (b : Module.Basis (Fin (n + 1)) K P.W)
+  (z : P.line) (hz : Q (z : V) = 1)
+
+private theorem typeBSpinRep_shortRootGenerator_apply (i : Fin (n + 1))
+    (x : ExteriorAlgebra K P.W) :
+    P.typeBSpinRep b z hz
+        (_root_.UniversalEnvelopingAlgebra.ι K (typeBShortRootGenerator i)) x =
+      ExteriorAlgebra.ι K (b i) *
+        (P.lineCoordinate z • CliffordAlgebra.involute x) := by
+  rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz,
+    P.typeBQuadraticEquiv_typeBShortRootGenerator b z hz,
+    bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_W_line _ z), map_mul,
+    Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_lineOperator]
+
+private theorem typeBSpinRep_shortNegativeRootGenerator_apply (i : Fin (n + 1))
+    (x : ExteriorAlgebra K P.W) :
+    P.typeBSpinRep b z hz
+        (_root_.UniversalEnvelopingAlgebra.ι K (typeBShortNegativeRootGenerator i)) x =
+      P.lineCoordinate z • CliffordAlgebra.involute
+        (CliffordAlgebra.contractLeft (b.coord i) x) := by
+  rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz,
+    P.typeBQuadraticEquiv_typeBShortNegativeRootGenerator b z hz,
+    bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_line_W' z _), map_mul,
+    Module.End.mul_apply, spinAction_ι_contract, P.pairingEquiv_dualVector,
+    spinAction_ι_lineOperator]
+
+/-- The terminal positive short-root operator creates the final exterior coordinate from the
+vacuum when the distinguished remainder vector has coordinate one. -/
+theorem typeBSpinRep_simpleRootGenerator_last_exteriorBasis_empty
+    (hcoord : P.lineCoordinate z = 1) :
+    P.typeBSpinRep b z hz
+        (_root_.UniversalEnvelopingAlgebra.ι K
+          (typeBSimpleRootGeneratorFamily (.inl (Fin.last n))))
+        (b.ExteriorAlgebra ∅) =
+      b.ExteriorAlgebra {Fin.last n} := by
+  rw [typeBSimpleRootGeneratorFamily_inl, typeBSimpleRootGenerator_last,
+    P.typeBSpinRep_shortRootGenerator_apply b z hz, hcoord,
+    TauCeti.ExteriorAlgebra.involute_basis]
+  have hEmpty : b.ExteriorAlgebra (∅ : Finset (Fin (n + 1))) = 1 := by
+    rw [ExteriorAlgebra.basis_apply]
+    simp
+  simp only [Finset.card_empty, pow_zero, one_smul]
+  rw [hEmpty, mul_one, TauCeti.ExteriorAlgebra.basis_singleton]
+
+/-- The terminal negative short-root operator annihilates the final exterior coordinate to the
+vacuum when the distinguished remainder vector has coordinate one. -/
+theorem typeBSpinRep_simpleNegativeRootGenerator_last_exteriorBasis_singleton
+    (hcoord : P.lineCoordinate z = 1) :
+    P.typeBSpinRep b z hz
+        (_root_.UniversalEnvelopingAlgebra.ι K
+          (typeBSimpleRootGeneratorFamily (.inr (Fin.last n))))
+        (b.ExteriorAlgebra {Fin.last n}) =
+      b.ExteriorAlgebra ∅ := by
+  rw [typeBSimpleRootGeneratorFamily_inr, typeBSimpleNegativeRootGenerator_last,
+    P.typeBSpinRep_shortNegativeRootGenerator_apply b z hz,
+    TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.contractLeft_ι,
+    hcoord]
+  simp [ExteriorAlgebra.basis_apply]
+
+end TerminalRoot
 
 end SpinPolarizationData
 

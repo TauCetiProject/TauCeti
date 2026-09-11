@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.TautologicalPoint
 
 /-!

@@ -19,8 +19,9 @@ stages and packages the resulting masses as a probability measure on finite simp
 
 The mass of a graph `G` is the integral of a finite product. Its edges contribute factors `W`,
 while its nonedges contribute factors `1 - W`. At fixed vertex positions, summing this product
-over every graph expands as `∏ₑ (Wₑ + (1 - Wₑ)) = 1`; this gives normalization without imposing
-any extra regularity on the graphon's carrier.
+over the graphs whose edges include a fixed set expands as `∏ₑ (Wₑ + (1 - Wₑ)) = 1` over the
+remaining optional edges, leaving the factors of the fixed set. Taking that set empty gives
+normalization without imposing any extra regularity on the graphon's carrier.
 
 ## Main definitions
 
@@ -31,6 +32,8 @@ any extra regularity on the graphon's carrier.
 
 ## Main results
 
+* `sum_sampleIntegrand_superset_eq_prod_edgeFactor` computes the conditional mass of the graphs
+  containing a fixed set of edges;
 * `sampleMass_nonneg` and `sum_sampleMass_eq_one` show that the masses form a probability law;
 * `sampleGraph_singleton` computes the probability of an individual graph;
 * `sampleGraph_const` identifies sampling a constant graphon with Mathlib's binomial random graph.
@@ -42,8 +45,9 @@ any extra regularity on the graphon's carrier.
 * C. Freer, `cameronfreer/graphon` at commit
   `6eccca5bbe5c9df46d7129bf59575b8b9b1d6699`, Apache-2.0,
   `Graphon/Sampling.lean`, `Graphon/SamplingLaw.lean`, and `Graphon/SamplingExamples.lean`.
-  The definitions and normalization argument are adapted to Tau Ceti's strict graphon carrier;
-  the constant-law proof reuses the same reduction to Mathlib's singleton-mass formula.
+  The definitions and the Boolean-cube normalization argument, here generalized to a fixed set of
+  required edges, are adapted to Tau Ceti's strict graphon carrier; the constant-law proof reuses
+  the same reduction to Mathlib's singleton-mass formula.
 -/
 
 public section
@@ -149,37 +153,101 @@ theorem sampleMass_le_one : sampleMass W G ≤ 1 := by
   simpa using h
 
 open Classical in
+/-- At fixed vertex positions, summing the conditional masses over every graph whose edges
+include a fixed loop-free set `T` collapses to the product of the edge factors of `T`: the
+optional edges outside `T` contribute `∏ₑ (Wₑ + (1 - Wₑ)) = 1`. Loop-freeness of `T` is expressed
+as containment in the edges of the complete graph. -/
+theorem sum_sampleIntegrand_superset_eq_prod_edgeFactor (T : Finset (Sym2 (Fin n)))
+    (hT : T ⊆ (⊤ : SimpleGraph (Fin n)).edgeFinset) (x : Fin n → Ω) :
+    ∑ H ∈ Finset.univ.filter (fun H => (T : Set (Sym2 (Fin n))) ⊆ H.edgeSet),
+        sampleIntegrand W H x =
+      ∏ e ∈ T, edgeFactor W x e := by
+  have hTdiag : ∀ e ∈ T, ¬ e.IsDiag := fun e he =>
+    (⊤ : SimpleGraph (Fin n)).not_isDiag_of_mem_edgeSet (SimpleGraph.mem_edgeFinset.mp (hT he))
+  have hsum : ∑ H ∈ Finset.univ.filter (fun H => (T : Set (Sym2 (Fin n))) ⊆ H.edgeSet),
+        sampleIntegrand W H x =
+      ∑ S ∈ ((⊤ : SimpleGraph (Fin n)).edgeFinset \ T).powerset,
+        (∏ e ∈ T, edgeFactor W x e) *
+          ((∏ e ∈ S, edgeFactor W x e) *
+            ∏ e ∈ ((⊤ : SimpleGraph (Fin n)).edgeFinset \ T) \ S, (1 - edgeFactor W x e)) := by
+    -- A graph containing `T` is the same data as the set `S` of edges it adds to `T`, so the two
+    -- maps below are mutually inverse bijections between those graphs and the subsets of the
+    -- optional edges `E(⊤) \ T`.
+    refine Finset.sum_nbij'
+      (fun H => H.edgeFinset \ T)
+      (fun S => SimpleGraph.fromEdgeSet (↑(T ∪ S) : Set (Sym2 (Fin n))))
+      ?_ ?_ ?_ ?_ ?_
+    -- The edges a graph adds to `T` are optional edges.
+    · intro H hH
+      rw [Finset.mem_powerset]
+      intro e he
+      rw [Finset.mem_sdiff] at he ⊢
+      exact ⟨SimpleGraph.edgeFinset_mono le_top he.1, he.2⟩
+    -- Adding a set of optional edges to `T` produces a graph containing `T`.
+    · intro S hS
+      rw [Finset.mem_filter]
+      refine ⟨Finset.mem_univ _, fun e he => ?_⟩
+      rw [SimpleGraph.edgeSet_fromEdgeSet]
+      exact ⟨Finset.mem_coe.mpr (Finset.mem_union_left _ (Finset.mem_coe.mp he)),
+        hTdiag e (Finset.mem_coe.mp he)⟩
+    -- Adding back the edges a graph adds to `T` recovers that graph.
+    · intro H hH
+      rw [Finset.mem_filter] at hH
+      have hcoe : (↑(T ∪ (H.edgeFinset \ T)) : Set (Sym2 (Fin n))) = H.edgeSet := by
+        rw [Finset.coe_union, Finset.coe_sdiff, SimpleGraph.coe_edgeFinset]
+        exact Set.union_sdiff_cancel hH.2
+      rw [hcoe, SimpleGraph.fromEdgeSet_edgeSet]
+    -- The edges that `T ∪ S` adds to `T` are exactly `S`, since `S` avoids `T`.
+    · intro S hS
+      have hSsub := Finset.mem_powerset.mp hS
+      apply Finset.coe_injective
+      rw [Finset.coe_sdiff, SimpleGraph.coe_edgeFinset, SimpleGraph.edgeSet_fromEdgeSet,
+        Finset.coe_union]
+      ext e
+      simp only [Set.mem_sdiff, Set.mem_union, Finset.mem_coe, Sym2.mem_diagSet]
+      constructor
+      · rintro ⟨⟨heT | heS, _⟩, hnT⟩
+        · exact (hnT heT).elim
+        · exact heS
+      · intro heS
+        have heSdiff := hSsub heS
+        refine ⟨⟨Or.inr heS, (⊤ : SimpleGraph (Fin n)).not_isDiag_of_mem_edgeSet
+          (SimpleGraph.mem_edgeFinset.mp (Finset.sdiff_subset heSdiff))⟩, ?_⟩
+        exact (Finset.mem_sdiff.mp heSdiff).2
+    -- The summands agree: the edges of `H` split as `T` together with the added edges, and the
+    -- optional edges missing from `H` are the optional edges outside the added ones.
+    · intro H hH
+      rw [Finset.mem_filter] at hH
+      have hsub : T ⊆ H.edgeFinset := fun e he =>
+        SimpleGraph.mem_edgeFinset.mpr (hH.2 (Finset.mem_coe.mpr he))
+      have hunion : T ∪ (H.edgeFinset \ T) = H.edgeFinset := Finset.union_sdiff_of_subset hsub
+      have hdiff :
+          (⊤ : SimpleGraph (Fin n)).edgeFinset \ H.edgeFinset =
+            ((⊤ : SimpleGraph (Fin n)).edgeFinset \ T) \ (H.edgeFinset \ T) := by
+        ext e
+        simp only [Finset.mem_sdiff]
+        tauto
+      have hprod :
+          (∏ e ∈ H.edgeFinset, edgeFactor W x e) =
+            (∏ e ∈ T, edgeFactor W x e) *
+              ∏ e ∈ H.edgeFinset \ T, edgeFactor W x e := by
+        calc
+          (∏ e ∈ H.edgeFinset, edgeFactor W x e) =
+              ∏ e ∈ T ∪ (H.edgeFinset \ T), edgeFactor W x e := by
+                exact congrArg
+                  (fun s : Finset (Sym2 (Fin n)) => ∏ e ∈ s, edgeFactor W x e) hunion.symm
+          _ = _ := Finset.prod_union Finset.disjoint_sdiff
+      rw [sampleIntegrand_def, hprod, hdiff]
+      ring
+  rw [hsum, ← Finset.mul_sum, ← Finset.prod_add]
+  simp
+
+open Classical in
 /-- At fixed vertex positions, the conditional masses sum to `1` over all simple graphs. -/
 theorem sum_sampleIntegrand_eq_one (x : Fin n → Ω) :
     ∑ H : SimpleGraph (Fin n), sampleIntegrand W H x = 1 := by
-  let w : Sym2 (Fin n) → ℝ := fun e => edgeFactor W x e
-  have hsum : ∑ H : SimpleGraph (Fin n), sampleIntegrand W H x =
-      ∑ S ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset.powerset,
-        (∏ e ∈ S, w e) *
-          ∏ e ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset \ S, (1 - w e) := by
-    refine Finset.sum_nbij' (fun H => H.edgeFinset)
-      (fun S => SimpleGraph.fromEdgeSet (↑S : Set (Sym2 (Fin n)))) ?_ ?_ ?_ ?_ ?_
-    · exact fun H _ => Finset.mem_powerset.mpr (SimpleGraph.edgeFinset_mono le_top)
-    · exact fun S _ => Finset.mem_univ _
-    · intro H _
-      rw [SimpleGraph.coe_edgeFinset, SimpleGraph.fromEdgeSet_edgeSet]
-    · intro S hS
-      ext e
-      simp only [SimpleGraph.mem_edgeFinset, SimpleGraph.edgeSet_fromEdgeSet, Set.mem_sdiff,
-        Finset.mem_coe, Sym2.mem_diagSet]
-      constructor
-      · exact fun h => h.1
-      · intro he
-        refine ⟨he, ?_⟩
-        exact (⊤ : SimpleGraph (Fin n)).not_isDiag_of_mem_edgeSet
-          (SimpleGraph.mem_edgeFinset.mp ((Finset.mem_powerset.mp hS) he))
-    · exact fun H _ => rfl
-  rw [hsum, ← Finset.prod_add]
-  calc
-    ∏ e ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset, (w e + (1 - w e)) =
-        ∏ _e ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset, (1 : ℝ) := by
-          exact Finset.prod_congr rfl fun _ _ => by ring
-    _ = 1 := Finset.prod_const_one
+  have h := sum_sampleIntegrand_superset_eq_prod_edgeFactor W ∅ (Finset.empty_subset _) x
+  simpa using h
 
 open Classical in
 /-- The sampled-graph masses sum to `1`. -/

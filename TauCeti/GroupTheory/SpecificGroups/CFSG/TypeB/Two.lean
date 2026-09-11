@@ -35,8 +35,9 @@ index type of the index's own Dynkin type, rather than by a node of the carrier.
 
 The two families differ exactly in the endomorphism whose fixed points are taken. On the untwisted
 branch that endomorphism is the `q`-power Frobenius outright, in keeping with the trivial diagram
-permutation that `TauCeti.TypeB2LieIndex.diagramPerm_toGraphTwistedIndex` computes: the `B₂`
-diagram has no symmetry to twist by, its two nodes carrying different root lengths. On the Suzuki
+permutation that `TauCeti.TypeBLieIndex.diagramPerm_eq_one` computes after the canonical inclusion
+into the general type-`B` family: the `B₂` diagram has no symmetry to twist by, its two nodes
+carrying different root lengths. On the Suzuki
 branch it is instead `τ ^ (2m+1)` for the special isogeny `τ` of the pinned `B₂` group scheme in
 characteristic two, which is not constructed here. That `τ` is identified by the relation
 `τ ^ 2 = Frob_p` in the prime characteristic, and `Frob_p` is not the map supplied here: validity

@@ -35,6 +35,8 @@ universal property in `LocalizationTopology.UniversalProperty`, the completion `
 
 ## Main results
 
+* `locSubring_eq_of_coe_eq_image_mul_left`: rescaling numerators and denominator by one common
+  factor leaves `D` unchanged — the first step of a change of presentation.
 * `hasBasis_nhds_zero_locTopology`, `isTopologicalRing_locTopology` and
   `nonarchimedeanRing_locTopology`: the contract of `locTopology`, to be used in place of
   unfolding the construction.
@@ -184,6 +186,29 @@ theorem locSubring_le_iff (P : PairOfDefinition A) (T : Finset A) (s : A)
   rintro ⟨h₁, h₂⟩ x (⟨a, ha, rfl⟩ | ⟨⟨t, ht⟩, rfl⟩)
   · exact h₁ a ha
   · exact h₂ t ht
+
+/-- **Rescaling a presentation leaves `D` alone**: if the numerators `T'` are exactly the
+`u`-multiples of `T`, in the sense that `(T' : Set A) = (u * ·) '' T`, and the denominator is
+rescaled by the same `u`, then `(T', u * s)` and `(T, s)` generate the same `D` inside `S`. Both
+away-localisation structures are assumed: `S` is a localisation away from `s` and away from `u * s`
+at once, which for a unit `u` comes free from `IsLocalization.Away.iff_of_associated`.
+
+No unit hypothesis on `u` is needed, and the rescaled numerators are taken as a `Finset` with a
+set-level equation rather than as `T.image (u * ·)`, which would need `DecidableEq A`. -/
+theorem locSubring_eq_of_coe_eq_image_mul_left (P : PairOfDefinition A) (T T' : Finset A) (u s : A)
+    (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    [IsLocalization.Away (u * s) S] (hT' : (T' : Set A) = (u * ·) '' (T : Set A)) :
+    locSubring P T' (u * s) S = locSubring P T s S := by
+  refine le_antisymm ((locSubring_le_iff P T' (u * s) S).mpr
+    ⟨fun a ha ↦ algebraMap_mem_locSubring P T s S ha, fun t' ht' ↦ ?_⟩)
+    ((locSubring_le_iff P T s S).mpr
+      ⟨fun a ha ↦ algebraMap_mem_locSubring P T' (u * s) S ha, fun t ht ↦ ?_⟩)
+  · obtain ⟨t, ht, rfl⟩ := hT' ▸ Finset.mem_coe.mpr ht'
+    rw [divBy_mul_mul_left]
+    exact divBy_mem_locSubring P T s S ht
+  · rw [← divBy_mul_mul_left (u := u) t s]
+    exact divBy_mem_locSubring P T' (u * s) S
+      (Finset.mem_coe.mp (hT' ▸ Set.mem_image_of_mem _ (Finset.mem_coe.mpr ht)))
 
 /-- With no fractions adjoined, `D` is just the image of `A₀`. -/
 @[simp]

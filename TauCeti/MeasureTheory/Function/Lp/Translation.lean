@@ -282,3 +282,27 @@ theorem tendsto_eLpNorm_comp_add_sub (hu : ContDiff ℝ 1 u) {p : ℝ≥0∞} (h
 end Translation
 
 end TauCeti
+
+namespace Set
+
+open MeasureTheory
+
+variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
+
+omit [NormedSpace ℝ E] [CompleteSpace F] in
+/-- The set integral of a translated `Lᵖ` class is the integral of its translated representative. -/
+@[simp]
+theorem setIntegral_translateLp_toLp
+    (s : Set E) {f : E → F} (hfLp : MemLp f p mu) (t : E) :
+    (∫ x in s, (mu.translateLp p (-t) (hfLp.toLp f)) x ∂mu) =
+      ∫ x in s, f (x - t) ∂mu := by
+  apply integral_congr_ae
+  filter_upwards [ae_restrict_of_ae
+      ((Measure.coeFn_translateLp (mu := mu) (-t) (hfLp.toLp f)).trans
+        ((measurePreserving_add_right mu (-t)).quasiMeasurePreserving.ae_eq_comp
+          hfLp.coeFn_toLp))] with x hx
+  simpa only [Function.comp_apply, sub_eq_add_neg] using hx
+
+end Set

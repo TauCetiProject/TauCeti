@@ -12,12 +12,47 @@ import Mathlib.GroupTheory.Perm.ViaEmbedding
 # Elementary facts about permutations
 
 This file records general-purpose facts about permutations: an identity between transpositions,
-a characterization of permutations with a unique fixed point, the orbit relation of an involution,
-a permutation transported along an injection, and the combination of two permutations transported
-along injections with disjoint ranges.
+a characterization of permutations with a unique fixed point, functions constant on a permutation
+orbit, the orbit relation of an involution, a permutation transported along an injection, and the
+combination of two permutations transported along injections with disjoint ranges.
 -/
 
 public section
+
+namespace Equiv.Perm.SameCycle
+
+variable {α : Type*} {β : Sort*} {σ : Equiv.Perm α} {x y : α} {f : α → β}
+
+variable {γ : Type*} {τ : Equiv.Perm γ} {g : α → γ}
+
+private theorem map_zpow_apply (hg : ∀ z, g (σ z) = τ (g z)) (k : ℤ) (z : α) :
+    g ((σ ^ k) z) = (τ ^ k) (g z) := by
+  have hinv : Function.Semiconj g (σ⁻¹ : Equiv.Perm α) (τ⁻¹ : Equiv.Perm γ) :=
+    Function.Semiconj.inverses_right hg σ.right_inv τ.left_inv
+  cases k with
+  | ofNat m =>
+      simpa only [Int.ofNat_eq_natCast, zpow_natCast, Equiv.Perm.coe_pow] using
+        (Function.Semiconj.iterate_right hg m z)
+  | negSucc m =>
+      simpa only [zpow_negSucc, ← inv_pow, Equiv.Perm.coe_pow] using
+        (Function.Semiconj.iterate_right hinv (m + 1) z)
+
+/-- A function invariant under one application of a permutation is constant on every orbit of
+that permutation. -/
+theorem apply_eq_of_apply_eq (hσ : σ.SameCycle x y) (hf : ∀ z, f (σ z) = f z) : f x = f y := by
+  obtain ⟨k, rfl⟩ := hσ
+  have hmap := map_zpow_apply (τ := 1) (g := fun z => PLift.up (f z))
+    (fun z => congrArg PLift.up (hf z)) k x
+  exact congrArg PLift.down (by simpa only [one_zpow, Equiv.Perm.one_apply] using hmap.symm)
+
+/-- A map intertwining two permutations carries orbits of the first permutation into orbits of
+the second. -/
+theorem map (hσ : σ.SameCycle x y) (hg : ∀ z, g (σ z) = τ (g z)) :
+    τ.SameCycle (g x) (g y) := by
+  obtain ⟨k, rfl⟩ := hσ
+  exact ⟨k, (map_zpow_apply hg k x).symm⟩
+
+end Equiv.Perm.SameCycle
 
 namespace TauCeti
 

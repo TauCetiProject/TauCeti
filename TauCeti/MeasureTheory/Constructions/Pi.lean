@@ -9,9 +9,15 @@ public import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.Probability.Independence.Basic
 
 /-!
-# Two distinct coordinates of a finite product measure
+# Coordinate projections of finite product measures
 
-Two lemmas about a *pair of distinct* coordinates of a finite product measure `Measure.pi μ`.
+This file records measure-preserving coordinate projections and refreshes for finite product
+measures.
+
+**Projecting along an embedding.** If `e : ι ↪ κ`, restriction of a product-distributed
+assignment on `κ` to the coordinates in the image of `e` has the corresponding product law on
+`ι`. This is the finite-family form of the fact that a subfamily of independent coordinates is
+still independent.
 
 **Reading off a pair of coordinates.** The evaluation map `x ↦ (x a, x b)` at two distinct indices
 pushes `Measure.pi μ` forward to `μ a ⊗ μ b`: distinct coordinates of a product measure are
@@ -34,6 +40,8 @@ construction.
 
 ## Main statements
 
+* `TauCeti.measurePreserving_pi_comp_embedding` — restricting a product assignment along an
+  embedding is measure preserving;
 * `TauCeti.measurePreserving_eval_pair` — reading off two distinct coordinates is measure
   preserving;
 * `TauCeti.measurePreserving_update_update` — the two-coordinate refresh is measure
@@ -58,6 +66,23 @@ open Function MeasureTheory ProbabilityTheory Set
 open scoped ENNReal
 
 namespace TauCeti
+
+open ProbabilityTheory
+
+/-- Restricting a finite product-distributed assignment along an embedding of index types is
+measure preserving. The target product uses exactly the marginals selected by the embedding. -/
+theorem measurePreserving_pi_comp_embedding {ι κ : Type*} [Fintype ι] [Fintype κ]
+    {α : κ → Type*} [∀ j, MeasurableSpace (α j)] (μ : ∀ j, Measure (α j))
+    [∀ j, IsProbabilityMeasure (μ j)] (e : ι ↪ κ) :
+    MeasurePreserving (fun x : ∀ j, α j => fun i => x (e i))
+      (Measure.pi μ) (Measure.pi fun i => μ (e i)) := by
+  refine ⟨measurable_pi_iff.mpr fun i => measurable_pi_apply (e i), ?_⟩
+  have hindep : iIndepFun (fun i (x : ∀ j, α j) => x (e i)) (Measure.pi μ) :=
+    (iIndepFun_pi (μ := μ) fun _ => aemeasurable_id).precomp e.injective
+  rw [hindep.map_fun_eq_pi_map fun i => (measurable_pi_apply (e i)).aemeasurable]
+  congr 1
+  funext i
+  exact (measurePreserving_eval μ (e i)).map_eq
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*}
   [∀ i, MeasurableSpace (α i)]

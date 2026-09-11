@@ -19,8 +19,10 @@ reflexivity, transitivity, and equivalence-invariance API.
 For scalar values, it defines the represented-unit value set, proves its elementary square-class
 invariance, and gives the criterion that, for a form with trivial radical, representing a unit is
 equivalent to isotropy after adjoining the one-dimensional form with that unit as its negative
-coefficient. A nondegenerate form has trivial radical by Mathlib's `radical_eq_bot` theorem. These
-results provide the basic bridge from value questions to isotropy questions, following Lam,
+coefficient. A nondegenerate form has trivial radical by Mathlib's `radical_eq_bot` theorem. A
+nondegenerate isotropic form over a field also contains an isotropic pair: two isotropic vectors
+whose polar pairing is one. These results provide the basic bridge from value questions to
+isotropy questions, following Lam,
 *Introduction to Quadratic Forms over Fields*, I.2.3 and I.3.5.
 -/
 
@@ -234,6 +236,37 @@ theorem _root_.QuadraticMap.represents_of_nondegenerate_of_not_anisotropic
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) (a : K) :
     Represents Q a :=
   represents_of_radical_eq_bot_of_not_anisotropic Q hQ.radical_eq_bot hiso a
+
+/-- A nondegenerate isotropic quadratic form contains two isotropic vectors whose polar pairing
+is one. -/
+theorem _root_.QuadraticMap.Nondegenerate.exists_isotropic_pair
+    {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
+    ∃ x y : V, x ≠ 0 ∧ Q x = 0 ∧ Q y = 0 ∧ polar Q x y = 1 := by
+  obtain ⟨x, hx, hxQ⟩ := (not_anisotropic_iff_exists Q).mp hiso
+  obtain ⟨w, hw⟩ : ∃ w, polar Q x w ≠ 0 := by
+    by_contra h
+    push Not at h
+    apply hx
+    have hxrad : x ∈ Q.radical := by
+      rw [mem_radical_iff']
+      refine ⟨hxQ, fun z ↦ ?_⟩
+      rw [QuadraticMap.map_add Q, hxQ, h z, zero_add, add_zero]
+    rw [hQ.radical_eq_bot] at hxrad
+    exact hxrad
+  let z := w - (Q w / polar Q x w) • x
+  have hzQ : Q z = 0 := by
+    have hw' : polar Q w x ≠ 0 := by simpa only [polar_comm] using hw
+    dsimp [z]
+    simp only [sub_eq_add_neg, ← neg_smul, QuadraticMap.map_add, Q.map_smul, hxQ,
+      polar_smul_right, polar_comm, smul_eq_mul, mul_zero, add_zero]
+    field_simp [hw']
+    ring
+  have hxz : polar Q x z = polar Q x w := by
+    simp [z, polar_sub_right, polar_smul_right, polar_self, hxQ]
+  let y := (polar Q x w)⁻¹ • z
+  refine ⟨x, y, hx, hxQ, ?_, ?_⟩
+  · simp [y, Q.map_smul, hzQ]
+  · simp [y, polar_smul_right, hxz, hw]
 
 /-- Multiplying a represented scalar by the square of a unit preserves representation. -/
 @[simp] theorem _root_.QuadraticMap.represents_mul_sq_iff (Q : QuadraticMap R M R) (a : R)
