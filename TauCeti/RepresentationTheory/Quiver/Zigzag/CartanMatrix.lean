@@ -28,9 +28,10 @@ at `(i, i)`.  Everything else vanishes, so
 C_G(q) = (1 + q²) I + q A_G,
 ```
 
-with `A_G` the adjacency matrix of the graph.  At `q = 1` this is the ungraded Cartan matrix
-`2I + A_G`, whose column sums are the dimensions of the vertex projectives; at `q = -1` it is the
-generalized Cartan matrix `2I - A_G` of the graph.
+with `A_G` the adjacency matrix of the graph.  At `q = 0` it is the identity, so its polynomial
+determinant is nonzero.  At `q = 1` it is the ungraded Cartan matrix `2I + A_G`, whose column sums
+are the dimensions of the vertex projectives; at `q = -1` it is the generalized Cartan matrix
+`2I - A_G` of the graph.
 
 ## Main definitions
 
@@ -50,6 +51,9 @@ generalized Cartan matrix `2I - A_G` of the graph.
 * `TauCeti.zigzagGradedCartanMatrix_apply`: **the entrywise graded Cartan formula.**
 * `TauCeti.zigzagGradedCartanMatrix_eq`: the same formula in matrix notation,
   `C_G(q) = (1 + q²) I + q A_G`.
+* `TauCeti.zigzagGradedCartanMatrix_map_eval_zero` and
+  `TauCeti.det_zigzagGradedCartanMatrix_ne_zero`: the specialization at `q = 0` is the identity,
+  so the determinant is a nonzero polynomial.
 * `TauCeti.zigzagGradedCartanMatrix_map_eval_one` and
   `TauCeti.zigzagGradedCartanMatrix_map_eval_neg_one`: the two specializations `2I + A_G` and
   `2I - A_G`.
@@ -450,6 +454,43 @@ theorem isSymm_zigzagGradedCartanMatrix : (zigzagGradedCartanMatrix k G).IsSymm 
     · rw [zigzagGradedCartanMatrix_apply_of_ne_of_not_adj k G (Ne.symm hne)
         fun hji => h hji.symm,
         zigzagGradedCartanMatrix_apply_of_ne_of_not_adj k G hne h]
+
+section EvaluationAtZero
+
+variable [DecidableEq V]
+
+/-- **At `q = 0` the graded Cartan matrix is the identity matrix.** Only the degree-zero vertex
+idempotents survive this specialization. -/
+theorem zigzagGradedCartanMatrix_map_eval_zero :
+    (zigzagGradedCartanMatrix k G).map (eval 0) = 1 := by
+  ext i j
+  rw [Matrix.map_apply, zigzagGradedCartanMatrix_apply_eq_sum, Matrix.one_apply]
+  rcases eq_or_ne i j with rfl | hij
+  · rw [finrank_zigzagGradedCorner_zero_self]
+    simp
+  · rw [finrank_zigzagGradedCorner_zero_of_ne k G hij]
+    simp [hij]
+
+variable [Fintype V]
+
+/-- **The determinant of a finite zigzag graded Cartan matrix is a nonzero polynomial.** Its
+value at `q = 0` is the determinant of the identity matrix, hence `1`. -/
+theorem det_zigzagGradedCartanMatrix_ne_zero :
+    (zigzagGradedCartanMatrix k G).det ≠ 0 := by
+  intro hzero
+  have heval : eval 0 (zigzagGradedCartanMatrix k G).det = 0 := by
+    simp [hzero]
+  have hone : eval 0 (zigzagGradedCartanMatrix k G).det = 1 := by
+    -- `RingHom.map_det` uses the bundled evaluation homomorphism; this only replaces its
+    -- underlying function `eval 0` by that bundle.
+    change evalRingHom 0 (zigzagGradedCartanMatrix k G).det = 1
+    rw [RingHom.map_det]
+    -- `RingHom.mapMatrix` and `Matrix.map` have the same entries but expose different wrappers.
+    change ((zigzagGradedCartanMatrix k G).map (eval 0)).det = 1
+    rw [zigzagGradedCartanMatrix_map_eval_zero, Matrix.det_one]
+  exact one_ne_zero (hone.symm.trans heval)
+
+end EvaluationAtZero
 
 section Nonisolated
 
