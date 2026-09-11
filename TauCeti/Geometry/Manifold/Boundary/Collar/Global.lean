@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Maps.Basic
-public import Mathlib.Topology.Instances.AddCircle.Real
-import Mathlib.Tactic
+public import Mathlib.Topology.Instances.RealVectorSpace
+import Mathlib.Tactic.NormNum
 
 /-!
 # Global collar data
@@ -21,6 +21,9 @@ The parameter is the half-open interval `[0,1)`.  Thus a collar is an open embed
 `N × Ico 0 1` whose zero slice is the given embedding.  The small API below is the part consumed by
 gluing: restriction along an open subset of the boundary, and the injectivity and zero-slice
 consequences.
+
+The collar-neighborhood formulation follows J. Lee, *Introduction to Smooth Manifolds*, 2nd ed.,
+Theorem 9.25; this declaration is its topological abstraction.
 -/
 
 public section
@@ -41,8 +44,6 @@ structure IsGlobalCollar (f : N → M) (c : N × Ico (0 : ℝ) 1 → M) : Prop w
 /-- A map admits a global collar. -/
 def GloballyCollared (f : N → M) : Prop := ∃ c, IsGlobalCollar f c
 
-theorem isGlobalCollar_iff : GloballyCollared f ↔ ∃ c, IsGlobalCollar f c := Iff.rfl
-
 /-- The product collar is a canonical example of global collar data. -/
 theorem globallyCollared_prodMk_zero :
     GloballyCollared
@@ -56,6 +57,7 @@ namespace IsGlobalCollar
 variable (h : IsGlobalCollar f c)
 include h
 
+/-- The boundary map of a global collar is an embedding. -/
 theorem isEmbedding : IsEmbedding f := by
   have heq : f = c ∘ fun x : N => (x, ⟨0, by norm_num⟩) := by
     funext x
@@ -63,13 +65,27 @@ theorem isEmbedding : IsEmbedding f := by
   rw [heq]
   exact h.isOpenEmbedding.isEmbedding.comp (isEmbedding_prodMkLeft _)
 
+/-- The boundary map of a global collar is injective. -/
 theorem injective : Function.Injective f := h.isEmbedding.injective
 
+/-- The boundary map of a global collar is continuous. -/
 theorem continuous : Continuous f := h.isEmbedding.continuous
 
-theorem range_subset : range f ⊆ range c := by
+/-- The boundary image lies in the image of the collar. -/
+theorem range_subset_range : range f ⊆ range c := by
   rintro _ ⟨x, rfl⟩
   exact ⟨(x, ⟨0, by norm_num⟩), h.apply_zero x⟩
+
+/-- The zero slice of a collar has exactly the boundary image as its range. -/
+theorem image_prod_univ_singleton_zero :
+    c '' (univ ×ˢ ({⟨0, by norm_num⟩} : Set (Ico (0 : ℝ) 1))) = range f := by
+  ext y
+  constructor
+  · rintro ⟨⟨x, t⟩, ⟨_, ht⟩, rfl⟩
+    rw [mem_singleton_iff] at ht
+    exact ⟨x, (h.apply_zero x).symm.trans (congrArg c (congrArg (fun z => (x, z)) ht.symm))⟩
+  · rintro ⟨x, rfl⟩
+    exact ⟨(x, ⟨0, by norm_num⟩), ⟨mem_univ _, mem_singleton _⟩, h.apply_zero x⟩
 
 /-- Restricting a collar along an open subset of its base preserves collar data. -/
 theorem restrict {U : Set N} (hU : IsOpen U) :
