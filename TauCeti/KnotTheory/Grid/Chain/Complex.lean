@@ -43,9 +43,6 @@ ring on the columns other than the selected blocked column.
 
 The three grid complexes and their coefficient conventions follow Ozsváth--Stipsicz--Szabó,
 *Grid Homology for Knots and Links*, Chapters 3--4.
-
-The opaque-safe object and differential equations follow the formal pattern used in
-`TauCeti.LowDimTopology.Plumbing.ChainComplex`.
 -/
 
 public section
@@ -86,8 +83,7 @@ variable {n : ℕ} (G : GridDiagram n)
 /-- The fully blocked grid chain module and differential as a one-object homological complex over
 `ZMod 2`.
 
-The unique differential counts empty rectangles avoiding every marking. Its square is zero by the
-rectangle-juxtaposition pairing. -/
+The unique differential counts empty rectangles avoiding every marking and squares to zero. -/
 noncomputable def fullyBlockedComplex :
     HomologicalComplex (ModuleCat (ZMod 2)) (ComplexShape.refl Unit) :=
   endomorphismComplex
