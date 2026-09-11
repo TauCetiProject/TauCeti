@@ -37,20 +37,20 @@ variable [AddCommGroup W] [Module k W]
 variable [FiniteDimensional k L] [IsGalois k L]
 
 /-- An injective map into invariant vectors of a semilinear Galois representation remains
-injective after scalar extension. No dimension restriction is imposed on either module. -/
+injective after scalar extension. Semilinearity is only required on scalar multiples of the
+image of the map. No dimension restriction is imposed on either module. -/
 theorem liftBaseChange_injective_of_invariant
     {ρ : Representation k (L ≃ₐ[k] L) V}
-    (hsemi : ∀ (σ : L ≃ₐ[k] L) (a : L) (v : V),
-      ρ σ (a • v) = σ a • ρ σ v)
     (f : W →ₗ[k] V) (hf : Function.Injective f)
-    (hfix : ∀ (σ : L ≃ₐ[k] L) (w : W), ρ σ (f w) = f w) :
+    (hsemi : ∀ (σ : L ≃ₐ[k] L) (a : L) (w : W),
+      ρ σ (a • f w) = σ a • f w) :
     Function.Injective (f.liftBaseChange L) := by
   classical
   let b := Module.finBasis k L
   -- The trace-dual basis extracts each coefficient of a tensor by an orbit sum.
   have hnorm (a : L) (w : W) :
       ρ.norm (a • f w) = Algebra.trace k L a • f w := by
-    simp only [Representation.norm, LinearMap.sum_apply, hsemi, hfix]
+    simp only [Representation.norm, LinearMap.sum_apply, hsemi]
     rw [← Finset.sum_smul, ← trace_eq_sum_automorphisms,
       IsScalarTower.algebraMap_smul]
   let p : V →ₗ[k] L ⊗[k] V := ∑ i,

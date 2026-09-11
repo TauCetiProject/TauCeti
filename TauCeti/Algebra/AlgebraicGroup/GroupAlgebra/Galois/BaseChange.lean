@@ -80,8 +80,11 @@ theorem liftEquiv_groupAlgebraInvariants_injective
       map_mul' := by intros; ext x; simp }
   let f := (groupAlgebraInvariants rho).val
   have h := liftBaseChange_injective_of_invariant (ρ := ρ)
-    (groupAlgebraAction_smul rho) f.toLinearMap Subtype.val_injective
-    (fun σ x ↦ (mem_groupAlgebraInvariants_iff rho x).mp x.property σ)
+    f.toLinearMap Subtype.val_injective (fun σ a x ↦ by
+      -- Expand the local representation and inclusion to apply the action's scalar law.
+      change groupAlgebraAction rho σ (a • x.val) = σ a • x.val
+      rw [groupAlgebraAction_smul,
+        (mem_groupAlgebraInvariants_iff rho x).mp x.property σ])
   have heq : (AlgHom.liftEquiv k L _ _ f).toLinearMap =
       f.toLinearMap.liftBaseChange L := by
     apply TensorProduct.AlgebraTensorModule.ext
@@ -112,7 +115,7 @@ theorem groupAlgebraInvariantsBaseChangeEquiv_tmul
 
 /-- The inverse descent equivalence sends an invariant element to its tensor with one. -/
 @[simp]
-theorem groupAlgebraInvariantsBaseChangeEquiv_symm_apply_coe
+theorem groupAlgebraInvariantsBaseChangeEquiv_symm_apply
     (rho : Representation ℤ (L ≃ₐ[k] L) M)
     (x : groupAlgebraInvariants rho) :
     (groupAlgebraInvariantsBaseChangeEquiv rho).symm
