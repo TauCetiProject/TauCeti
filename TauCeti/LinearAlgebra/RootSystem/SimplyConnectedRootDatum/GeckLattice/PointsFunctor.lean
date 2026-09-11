@@ -114,7 +114,7 @@ theorem coe_geckPointsMap (f : A →+* B) (g : t.geckPoints ht A) :
   rw [geckPointsMap]
   simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.subgroupCongr_symm_apply,
     GeneralLinear.coe_mapHopfIdealPointsSubgroup, MulEquiv.subgroupCongr_apply,
-    AlgHom.toRingHom_eq_coe, RingHom.toIntAlgHom_toRingHom]
+    RingHom.toIntAlgHom_toRingHom]
 
 /-- Entrywise, the induced map on the points of the pinned Geck carrier applies the homomorphism
 of value rings to each matrix entry. -/
@@ -205,7 +205,7 @@ map, transported along the object identification above. -/
 theorem geckPointsFunctor_map {A B : CommAlgCat.{v} ℤ} (f : A ⟶ B) :
     (t.geckPointsFunctor ht).map f =
       eqToHom (t.geckPointsFunctor_obj ht A) ≫
-        GrpCat.ofHom (t.geckPointsMap ht f.hom.toRingHom) ≫
+        GrpCat.ofHom (t.geckPointsMap ht f.hom) ≫
         eqToHom (t.geckPointsFunctor_obj ht B).symm :=
   (rfl)
 
@@ -288,7 +288,7 @@ theorem geckPointsMulEquiv_mapPoints {A B : CommAlgCat.{v} ℤ} (f : A ⟶ B)
           (H := CommHopfAlgCat.quotient
             (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)) (t.geckDefiningIdeal ht))
           f q) =
-      t.geckPointsMap ht f.hom.toRingHom (t.geckPointsMulEquiv ht A q) := by
+      t.geckPointsMap ht f.hom (t.geckPointsMulEquiv ht A q) := by
   apply Subtype.ext
   rw [coe_geckPointsMap]
   simp only [geckPointsMulEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_symm_apply]

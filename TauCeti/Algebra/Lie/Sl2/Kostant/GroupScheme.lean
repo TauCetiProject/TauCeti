@@ -418,7 +418,7 @@ theorem coe_rankOneCarrierPointsMap
   rw [rankOneCarrierPointsMap]
   simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     MulEquiv.subgroupCongr_symm_apply, GeneralLinear.coe_mapHopfIdealPointsSubgroup,
-    MulEquiv.subgroupCongr_apply, AlgHom.toRingHom_eq_coe, RingHom.toIntAlgHom_toRingHom]
+    MulEquiv.subgroupCongr_apply, RingHom.toIntAlgHom_toRingHom]
 
 /-- Entrywise, the induced map applies the value-ring homomorphism to each matrix entry. -/
 theorem coe_rankOneCarrierPointsMap_apply

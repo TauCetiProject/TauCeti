@@ -306,7 +306,7 @@ theorem coe_upperTriangularPointsMap {A : Type v} {B : Type v'} [CommRing A] [Co
   rw [upperTriangularPointsMap]
   simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.subgroupCongr_symm_apply,
     GeneralLinear.coe_mapHopfIdealPointsSubgroup, MulEquiv.subgroupCongr_apply,
-    AlgHom.toRingHom_eq_coe, RingHom.toIntAlgHom_toRingHom]
+    RingHom.toIntAlgHom_toRingHom]
 
 /-- The identity homomorphism of value rings induces the identity on upper-triangular carrier
 points. -/
@@ -357,7 +357,7 @@ theorem upperTriangularPointsMulEquiv_mapPoints {A B : CommAlgCat.{v} ℤ} (f : 
           (H := CommHopfAlgCat.quotient
             (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) (upperTriangularDefiningIdeal r))
           f q) =
-      upperTriangularPointsMap r f.hom.toRingHom (upperTriangularPointsMulEquiv r A q) := by
+      upperTriangularPointsMap r f.hom (upperTriangularPointsMulEquiv r A q) := by
   apply Subtype.ext
   rw [coe_upperTriangularPointsMap]
   simp only [upperTriangularPointsMulEquiv, MulEquiv.trans_apply,

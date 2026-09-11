@@ -111,7 +111,7 @@ private theorem mapRingHom_mem_hopfIdealPointsSubgroup (φ : A →+* B)
     {g : Matrix.GeneralLinearGroup (Fin n) A} (hg : g ∈ hopfIdealPointsSubgroup n I A) :
     Matrix.GeneralLinearGroup.map φ g ∈ hopfIdealPointsSubgroup n I B := by
   have h := map_mem_hopfIdealPointsSubgroup n I φ.toIntAlgHom hg
-  rwa [AlgHom.toRingHom_eq_coe, RingHom.toIntAlgHom_toRingHom] at h
+  rwa [RingHom.toIntAlgHom_toRingHom] at h
 
 /-- The map of matrix points induced by a ring homomorphism of value rings applies it entrywise.
 Private, for the same reason as `mapRingHom_mem_hopfIdealPointsSubgroup`. -/
@@ -119,8 +119,7 @@ private theorem coe_mapRingHomHopfIdealPointsSubgroup (φ : A →+* B)
     (g : hopfIdealPointsSubgroup n I A) :
     (mapHopfIdealPointsSubgroup n I φ.toIntAlgHom g : Matrix.GeneralLinearGroup (Fin n) B) =
       Matrix.GeneralLinearGroup.map φ g := by
-  rw [coe_mapHopfIdealPointsSubgroup, AlgHom.toRingHom_eq_coe,
-    RingHom.toIntAlgHom_toRingHom]
+  rw [coe_mapHopfIdealPointsSubgroup, RingHom.toIntAlgHom_toRingHom]
 
 end RingHomTransport
 
@@ -141,8 +140,7 @@ theorem pointToGeneralLinear_iterateFrobeniusPoints
   have hmapValue : Bialgebra.iterateFrobeniusPoints p k f =
       AlgHom.mapValue (H := coordinateHopfAlgebra ℤ n) (iterateFrobenius A p k).toIntAlgHom f := by
     rw [Bialgebra.iterateFrobeniusPoints_apply, AlgHom.mapValue_apply]
-  rw [hmapValue, pointToGeneralLinear_mapValue, AlgHom.toRingHom_eq_coe,
-    RingHom.toIntAlgHom_toRingHom]
+  rw [hmapValue, pointToGeneralLinear_mapValue, RingHom.toIntAlgHom_toRingHom]
 
 /-- The `p ^ k`-power Frobenius on the points of the general linear coordinate Hopf algebra is the
 entrywise `p ^ k`-power map on invertible matrices.
@@ -308,8 +306,7 @@ theorem map_hopfIdealPointsSubgroup_frobeniusFixedSubring :
       exact Subtype.ext h0
     · have h := pointsMulEquiv_mapValue (R := ℤ) n
         (frobeniusFixedSubring A p k).subtype.toIntAlgHom f
-      rw [AlgHom.toRingHom_eq_coe, RingHom.toIntAlgHom_toRingHom, hfmap,
-        MulEquiv.apply_symm_apply] at h
+      rw [RingHom.toIntAlgHom_toRingHom, hfmap, MulEquiv.apply_symm_apply] at h
       exact h.symm
 
 variable (A) in

@@ -96,7 +96,7 @@ theorem rankOneCarrierPointsMap_weylPoint
   have hmap := congrArg Subtype.val
     (map_kostantToralWeylPoint e h ρ M hM hnil b rankOneWeight φ 0 1)
   simpa only [GeneralLinear.coe_mapHopfIdealPointsSubgroup, MulEquiv.subgroupCongr_apply,
-    AlgHom.toRingHom_eq_coe, RingHom.toIntAlgHom_toRingHom] using hmap
+    RingHom.toIntAlgHom_toRingHom] using hmap
 
 /-- The integral rank-one Weyl automorphism sends a standard lattice basis vector to the reversed
 basis vector with the usual sign. -/

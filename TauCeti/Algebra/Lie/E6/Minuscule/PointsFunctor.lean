@@ -78,7 +78,7 @@ theorem coe_pointsMap (f : A →+* B) (g : points A) :
   rw [pointsMap]
   simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     MulEquiv.subgroupCongr_symm_apply, GeneralLinear.coe_mapHopfIdealPointsSubgroup,
-    MulEquiv.subgroupCongr_apply, AlgHom.toRingHom_eq_coe, RingHom.toIntAlgHom_toRingHom]
+    MulEquiv.subgroupCongr_apply, RingHom.toIntAlgHom_toRingHom]
 
 /-- Entrywise, the induced map applies the homomorphism of value rings to each matrix entry. -/
 theorem coe_pointsMap_apply (f : A →+* B) (g : points A) (i j : Fin 27) :
@@ -159,7 +159,7 @@ theorem pointsFunctor_obj (A : CommAlgCat.{v} ℤ) :
 @[simp]
 theorem pointsFunctor_map {A B : CommAlgCat.{v} ℤ} (f : A ⟶ B) :
     pointsFunctor.map f =
-      eqToHom (pointsFunctor_obj A) ≫ GrpCat.ofHom (pointsMap f.hom.toRingHom) ≫
+      eqToHom (pointsFunctor_obj A) ≫ GrpCat.ofHom (pointsMap f.hom) ≫
         eqToHom (pointsFunctor_obj B).symm :=
   (rfl)
 
@@ -218,7 +218,7 @@ theorem pointsMulEquiv_mapPoints {A B : CommAlgCat.{v} ℤ} (f : A ⟶ B)
         (HopfAlgebra.mapPoints
           (H := CommHopfAlgCat.quotient
             (GeneralLinear.coordinateHopfAlgebra ℤ 27) definingIdeal) f q) =
-      pointsMap f.hom.toRingHom (pointsMulEquiv A q) := by
+      pointsMap f.hom (pointsMulEquiv A q) := by
   apply Subtype.ext
   rw [coe_pointsMap]
   simp only [pointsMulEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_symm_apply]

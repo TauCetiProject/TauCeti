@@ -133,8 +133,7 @@ theorem map_kostantToralWeylPoint {A : Type v} {B : Type v'} [CommRing A] [CommR
   apply Subtype.ext
   simp only [GeneralLinear.coe_mapHopfIdealPointsSubgroup, kostantToralWeylPoint,
     MulEquiv.subgroupCongr_apply, Subgroup.coe_mul, map_mul,
-    coe_kostantToralRootSubgroupPoints, AlgHom.toRingHom_eq_coe,
-    RingHom.toIntAlgHom_toRingHom]
+    coe_kostantToralRootSubgroupPoints, RingHom.toIntAlgHom_toRingHom]
   rw [map_kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b φ,
     map_kostantRootSubgroupMatrix e h ρ M hM j (hnil j) b φ,
     AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply,
