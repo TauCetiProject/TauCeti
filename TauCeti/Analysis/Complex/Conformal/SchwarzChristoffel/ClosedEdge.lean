@@ -20,35 +20,35 @@ prevertices, the two boundary values are the Schwarz--Christoffel vertices, so e
 interval is carried homeomorphically onto the straight polygon side joining two consecutive
 vertices, and that side is nondegenerate.
 
-The mechanism is an arclength parameter.  Write `B` for the boundary map,
-`u = exp (i · schwarzChristoffelEdgeAngle a e p)` for the fixed unimodular edge direction, and
-`d x = ‖B x - B p‖`.  On the *open* interval, `B x - B y` is the integral of the positive real
-density `∏ i, |t - a i| ^ e i` between `y` and `x` times `u`, hence a *nonnegative* real multiple of
-`u` whenever `y ≤ x`.  The set of nonnegative real multiples of `u` is closed --- it is cut out by
-`(u* · z).im = 0` and `0 ≤ (u* · z).re` --- so continuity of `B` on the closed interval propagates
-that statement to the endpoints.  Comparing norms turns it into `B x - B y = ‖B x - B y‖ · u`, from
-which lengths add along the interval and `d` is a continuous strictly monotone reparametrisation
-with `B x = B p + d x · u`.  Strictness comes from squeezing two interior points between `y` and `x`
-and quoting the already known injectivity on the open interval.  The image statements are then the
-intermediate value theorem applied to `d`.
+All the results below share the same hypotheses on the interval `[p, q]`: no prevertex of nonzero
+exponent lies in `Ioo p q`, and each of `p` and `q` carries total exponent greater than `-1`, which
+is what makes the boundary map continuous up to that endpoint.  Under those hypotheses every
+increment of the boundary map in the increasing direction is a nonnegative real multiple of the one
+unimodular direction `exp (i * schwarzChristoffelEdgeAngle a e p)`, so the distance from the left
+endpoint is an arclength parameter on the arc:
+`TauCeti.schwarzChristoffelBoundary_sub_eq_norm_mul` records the direction and
+`TauCeti.norm_schwarzChristoffelBoundary_sub_add` records that the distances add.  That is the form
+in which the length of an edge and the direction in which it leaves a vertex are read off.
 
 Together with `TauCeti.tendsto_schwarzChristoffelBoundaryValue_atInfinity`, which closes the two
-unbounded boundary intervals up at a single point, this is the edgewise half of the identification
-of the Schwarz--Christoffel image with a polygon; the global statement --- that the map is injective
-on the upper half-plane and onto the region the edge chain bounds --- is left to later work.
+unbounded boundary intervals up at a single point, these results describe the boundary of the
+Schwarz--Christoffel image edge by edge: the boundary values run over a chain of straight sides
+joining consecutive vertices.
 
 ## Main results
 
 * `TauCeti.schwarzChristoffelBoundary_sub_eq_norm_mul` -- along a closed prevertex-free interval an
   increment of the boundary map is its own length times the unimodular edge direction.
-* `TauCeti.norm_schwarzChristoffelBoundary_sub_add` -- consequently those lengths add.
+* `TauCeti.norm_schwarzChristoffelBoundary_sub_add` -- those lengths add.
 * `TauCeti.schwarzChristoffelBoundary_injOn_Icc` -- the boundary map is injective on the closed
   interval, endpoints included.
 * `TauCeti.schwarzChristoffelBoundary_image_Icc` and
   `TauCeti.schwarzChristoffelBoundary_image_Ioo` -- the closed and the open boundary arcs are the
   segment and the open segment joining the two endpoint values.
-* `TauCeti.schwarzChristoffelBoundary_image_Icc_prevertex` -- between two prevertices the closed
-  boundary arc is the straight side joining the corresponding Schwarz--Christoffel vertices.
+* `TauCeti.schwarzChristoffelBoundary_image_Icc_prevertex` and
+  `TauCeti.schwarzChristoffelBoundary_image_Ioo_prevertex` -- between two prevertices the closed
+  and open boundary arcs are the straight side joining the corresponding Schwarz--Christoffel
+  vertices and its interior.
 * `TauCeti.schwarzChristoffelVertex_ne` -- that side is nondegenerate.
 
 ## References
@@ -69,22 +69,21 @@ variable {ι : Type*} [Fintype ι]
 
 /-- On a real interval free of prevertices with nonzero exponent, an increment of the
 Schwarz--Christoffel boundary map in the increasing direction is a nonnegative real multiple of the
-unimodular edge direction: the density `∏ i, |t - a i| ^ e i` integrated against it is
-nonnegative. -/
+unimodular edge direction with argument `schwarzChristoffelEdgeAngle a e p`. -/
 private theorem exists_nonneg_schwarzChristoffelBoundary_sub_eq_Ioo (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) {p q : ℝ} (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q)
     {x y : ℝ} (hx : x ∈ Ioo p q) (hy : y ∈ Ioo p q) (hyx : y ≤ x) :
     ∃ c : ℝ, 0 ≤ c ∧
       schwarzChristoffelBoundary a e z₀ x - schwarzChristoffelBoundary a e z₀ y =
         (c : ℂ) * Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) :=
+  -- the multiple is the integral of the density `∏ i, |t - a i| ^ e i`, which is nonnegative
   ⟨∫ t in y..x, ∏ i, |t - a i| ^ e i,
     intervalIntegral.integral_nonneg_of_forall hyx fun _ =>
       Finset.prod_nonneg fun _ _ => Real.rpow_nonneg (abs_nonneg _) _,
     schwarzChristoffelBoundary_sub_eq a e z₀ ha hx hy⟩
 
-/-- The same statement on the *closed* interval.  The nonnegative real multiples of a unimodular
-`u` form a closed set, so the property propagates from the open interval to its endpoints along the
-continuous boundary map. -/
+/-- The same statement on the *closed* interval, both of whose endpoints are assumed to carry total
+exponent greater than `-1`. -/
 private theorem exists_nonneg_schwarzChristoffelBoundary_sub_eq (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) {p q : ℝ} (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q)
     (hp : -1 < ∑ i with a i = p, e i) (hq : -1 < ∑ i with a i = q, e i)
@@ -92,6 +91,9 @@ private theorem exists_nonneg_schwarzChristoffelBoundary_sub_eq (a e : ι → �
     ∃ c : ℝ, 0 ≤ c ∧
       schwarzChristoffelBoundary a e z₀ x - schwarzChristoffelBoundary a e z₀ y =
         (c : ℂ) * Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) := by
+  -- the nonnegative real multiples of a unimodular `u` are cut out by `((starRingEnd ℂ) u * z).im
+  -- = 0` and `0 ≤ ((starRingEnd ℂ) u * z).re`, hence form a closed set, so the statement
+  -- propagates from the open interval to its endpoints along the continuous boundary map
   set u : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) with hu
   have huc : (starRingEnd ℂ) u * u = 1 := by
     rw [hu, ← Complex.exp_conj, ← Complex.exp_add]
@@ -183,9 +185,10 @@ theorem schwarzChristoffelBoundary_sub_eq_norm_mul (a e : ι → ℝ) (z₀ : Up
   rw [hnorm]
   exact hc
 
-/-- **Lengths add along a closed Schwarz--Christoffel edge.**  Since all increments point in one
-and the same direction, the distance travelled between the ends of a prevertex-free closed interval
-is the sum of the distances travelled over the two halves cut out by any intermediate point. -/
+/-- **Lengths add along a closed Schwarz--Christoffel edge.**  For three points in increasing order
+in a closed interval free of prevertices with nonzero exponent, and with both endpoints carrying
+total exponent greater than `-1`, the distance between the two outer boundary values is the sum of
+the two distances cut out by the middle one. -/
 theorem norm_schwarzChristoffelBoundary_sub_add (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     {p q : ℝ} (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q)
     (hp : -1 < ∑ i with a i = p, e i) (hq : -1 < ∑ i with a i = q, e i)
@@ -207,14 +210,15 @@ theorem norm_schwarzChristoffelBoundary_sub_add (a e : ι → ℝ) (z₀ : Upper
     linear_combination -h₃ + h₁ + h₂
   exact_mod_cast mul_right_cancel₀ (Complex.exp_ne_zero _) key
 
-/-- Distinct points of a closed prevertex-free interval have distinct boundary values: squeezing
-two interior points between them and adding lengths, the total is at least the length of the
-interior step, which is positive by injectivity on the open interval. -/
+/-- Distinct points of a closed interval free of prevertices with nonzero exponent, both of whose
+endpoints carry total exponent greater than `-1`, have distinct boundary values. -/
 private theorem schwarzChristoffelBoundary_ne_of_lt (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     {p q : ℝ} (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q)
     (hp : -1 < ∑ i with a i = p, e i) (hq : -1 < ∑ i with a i = q, e i)
     {x y : ℝ} (hx : x ∈ Icc p q) (hy : y ∈ Icc p q) (hyx : y < x) :
     schwarzChristoffelBoundary a e z₀ x ≠ schwarzChristoffelBoundary a e z₀ y := by
+  -- squeeze two interior points between `y` and `x` and add lengths: the total is at least the
+  -- length of the interior step, which is positive by injectivity on the open interval
   obtain ⟨m₁, hym₁, hm₁x⟩ := exists_between hyx
   obtain ⟨m₂, hm₁m₂, hm₂x⟩ := exists_between hm₁x
   have hm₁I : m₁ ∈ Icc p q := ⟨hy.1.trans hym₁.le, hm₁x.le.trans hx.2⟩
@@ -237,7 +241,9 @@ private theorem schwarzChristoffelBoundary_ne_of_lt (a e : ι → ℝ) (z₀ : U
   linarith
 
 /-- **The Schwarz--Christoffel boundary map is injective on a closed prevertex-free interval.**
-This extends `TauCeti.schwarzChristoffelBoundary_injOn` to the two endpoints, so a closed boundary
+On a real interval free of prevertices with nonzero exponent, both of whose endpoints carry total
+exponent greater than `-1`, distinct points have distinct boundary values; this is
+`TauCeti.schwarzChristoffelBoundary_injOn` with the two endpoints included, so a closed boundary
 arc between two prevertices is an embedded straight side. -/
 theorem schwarzChristoffelBoundary_injOn_Icc (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     {p q : ℝ} (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q)
@@ -249,18 +255,20 @@ theorem schwarzChristoffelBoundary_injOn_Icc (a e : ι → ℝ) (z₀ : UpperHal
   · exact h
   · exact absurd hxy (schwarzChristoffelBoundary_ne_of_lt a e z₀ ha hp hq hx hy h)
 
-/-- The arclength reparametrisation of a closed Schwarz--Christoffel edge: the distance from the
-left endpoint is continuous and strictly increasing, and it linearizes the boundary map along the
-fixed edge direction. -/
+/-- The arclength reparametrisation of a closed Schwarz--Christoffel edge: the distance `d` from
+the left endpoint is continuous and strictly increasing on the interval, vanishes at the left
+endpoint, and presents the boundary map as the affine parametrisation of the edge by `d`, at unit
+speed along the unimodular edge direction. -/
 private theorem exists_strictMonoOn_schwarzChristoffelBoundary_eq (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) {p q : ℝ} (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q)
     (hp : -1 < ∑ i with a i = p, e i) (hq : -1 < ∑ i with a i = q, e i) :
-    ∃ d : ℝ → ℝ, d p = 0 ∧ (∀ x ∈ Icc p q, 0 ≤ d x) ∧ StrictMonoOn d (Icc p q) ∧
-      ContinuousOn d (Icc p q) ∧ ∀ x ∈ Icc p q, schwarzChristoffelBoundary a e z₀ x =
-        schwarzChristoffelBoundary a e z₀ p + (d x : ℂ) *
-          Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) := by
+    ∃ d : ℝ → ℝ, d p = 0 ∧ StrictMonoOn d (Icc p q) ∧ ContinuousOn d (Icc p q) ∧
+      EqOn (schwarzChristoffelBoundary a e z₀)
+        (⇑(AffineMap.lineMap (schwarzChristoffelBoundary a e z₀ p)
+          (schwarzChristoffelBoundary a e z₀ p +
+            Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I))) ∘ d) (Icc p q) := by
   refine ⟨fun x => ‖schwarzChristoffelBoundary a e z₀ x - schwarzChristoffelBoundary a e z₀ p‖,
-    by simp, fun _ _ => norm_nonneg _, ?_, ?_, ?_⟩
+    by simp, ?_, ?_, ?_⟩
   · intro x hx y hy hxy
     have hpI : p ∈ Icc p q := ⟨le_rfl, hx.1.trans hx.2⟩
     have hadd := norm_schwarzChristoffelBoundary_sub_add a e z₀ ha hp hq hpI hx hy hx.1 hxy.le
@@ -273,8 +281,10 @@ private theorem exists_strictMonoOn_schwarzChristoffelBoundary_eq (a e : ι → 
       continuousOn_const).norm
   · intro x hx
     have hpI : p ∈ Icc p q := ⟨le_rfl, hx.1.trans hx.2⟩
-    have := schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ ha hp hq hx hpI hx.1
-    linear_combination this
+    have hstep := schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ ha hp hq hx hpI hx.1
+    simp only [Function.comp_apply, AffineMap.lineMap_apply_module, Complex.real_smul]
+    push_cast
+    linear_combination hstep
 
 /-- **A closed Schwarz--Christoffel boundary arc is a segment.**  Over a real interval free of
 prevertices with nonzero exponent, both of whose endpoints carry total exponent greater than `-1`,
@@ -284,37 +294,17 @@ theorem schwarzChristoffelBoundary_image_Icc (a e : ι → ℝ) (z₀ : UpperHal
     (hp : -1 < ∑ i with a i = p, e i) (hq : -1 < ∑ i with a i = q, e i) :
     schwarzChristoffelBoundary a e z₀ '' Icc p q =
       segment ℝ (schwarzChristoffelBoundary a e z₀ p) (schwarzChristoffelBoundary a e z₀ q) := by
-  obtain ⟨d, hd0, hdnn, hdmono, hdcont, hrep⟩ :=
+  obtain ⟨d, hd0, hdmono, hdcont, hrep⟩ :=
     exists_strictMonoOn_schwarzChristoffelBoundary_eq a e z₀ ha hp hq
   have hpI : p ∈ Icc p q := ⟨le_rfl, hpq⟩
   have hqI : q ∈ Icc p q := ⟨hpq, le_rfl⟩
-  have hdq : 0 ≤ d q := hdnn q hqI
-  apply Set.Subset.antisymm
-  · rintro - ⟨x, hx, rfl⟩
-    rw [segment_eq_image']
-    rcases eq_or_lt_of_le hdq with h0 | h0
-    · refine ⟨0, ⟨le_rfl, zero_le_one⟩, ?_⟩
-      have hdx : d x = 0 :=
-        le_antisymm (h0 ▸ hdmono.monotoneOn hx hqI hx.2) (hdnn x hx)
-      simp only [hrep x hx, hdx]
-      simp
-    · refine ⟨d x / d q, ⟨div_nonneg (hdnn x hx) h0.le,
-        (div_le_one h0).mpr (hdmono.monotoneOn hx hqI hx.2)⟩, ?_⟩
-      have hq0 : (d q : ℂ) ≠ 0 := by exact_mod_cast h0.ne'
-      simp only [hrep x hx, hrep q hqI, Complex.real_smul]
-      push_cast
-      field_simp
-      ring
-  · rw [segment_eq_image']
-    rintro - ⟨t, ht, rfl⟩
-    have hmem : t * d q ∈ Icc (d p) (d q) := by
-      rw [hd0]
-      exact ⟨mul_nonneg ht.1 hdq, mul_le_of_le_one_left hdq ht.2⟩
-    obtain ⟨x, hx, hdx⟩ := intermediate_value_Icc hpq hdcont hmem
-    refine ⟨x, hx, ?_⟩
-    simp only [hrep x hx, hrep q hqI, Complex.real_smul, hdx]
-    push_cast
-    ring
+  have hdq : 0 ≤ d q := by rw [← hd0]; exact hdmono.monotoneOn hpI hqI hpq
+  have hBq : schwarzChristoffelBoundary a e z₀ q =
+      AffineMap.lineMap (schwarzChristoffelBoundary a e z₀ p)
+        (schwarzChristoffelBoundary a e z₀ p +
+          Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)) (d q) := hrep hqI
+  rw [hrep.image_eq, image_comp, hdcont.image_Icc_of_monotoneOn hpq hdmono.monotoneOn, hd0,
+    ← segment_eq_Icc hdq, image_segment, AffineMap.lineMap_apply_zero, hBq]
 
 /-- **An open Schwarz--Christoffel boundary arc is an open segment.**  The companion of
 `TauCeti.schwarzChristoffelBoundary_image_Icc` that omits the two endpoint values. -/
@@ -324,43 +314,18 @@ theorem schwarzChristoffelBoundary_image_Ioo (a e : ι → ℝ) (z₀ : UpperHal
     schwarzChristoffelBoundary a e z₀ '' Ioo p q =
       openSegment ℝ (schwarzChristoffelBoundary a e z₀ p)
         (schwarzChristoffelBoundary a e z₀ q) := by
-  obtain ⟨d, hd0, hdnn, hdmono, hdcont, hrep⟩ :=
+  obtain ⟨d, hd0, hdmono, hdcont, hrep⟩ :=
     exists_strictMonoOn_schwarzChristoffelBoundary_eq a e z₀ ha hp hq
   have hpI : p ∈ Icc p q := ⟨le_rfl, hpq.le⟩
   have hqI : q ∈ Icc p q := ⟨hpq.le, le_rfl⟩
-  have hdq : 0 < d q := hd0 ▸ hdmono hpI hqI hpq
-  have hq0 : (d q : ℂ) ≠ 0 := by exact_mod_cast hdq.ne'
-  apply Set.Subset.antisymm
-  · rintro - ⟨x, hx, rfl⟩
-    rw [openSegment_eq_image']
-    have hxI : x ∈ Icc p q := Ioo_subset_Icc_self hx
-    have h₁ : 0 < d x := hd0 ▸ hdmono hpI hxI hx.1
-    have h₂ : d x < d q := hdmono hxI hqI hx.2
-    refine ⟨d x / d q, ⟨div_pos h₁ hdq, (div_lt_one hdq).mpr h₂⟩, ?_⟩
-    simp only [hrep x hxI, hrep q hqI, Complex.real_smul]
-    push_cast
-    field_simp
-    ring
-  · rw [openSegment_eq_image']
-    rintro - ⟨t, ht, rfl⟩
-    have hmem : t * d q ∈ Icc (d p) (d q) := by
-      rw [hd0]
-      exact ⟨mul_nonneg ht.1.le hdq.le, mul_le_of_le_one_left hdq.le ht.2.le⟩
-    obtain ⟨x, hxI, hdx⟩ := intermediate_value_Icc hpq.le hdcont hmem
-    have hx : x ∈ Ioo p q := by
-      refine ⟨?_, ?_⟩
-      · rcases eq_or_lt_of_le hxI.1 with h | h
-        · rw [← h, hd0] at hdx
-          exact absurd hdx.symm (mul_pos ht.1 hdq).ne'
-        · exact h
-      · rcases eq_or_lt_of_le hxI.2 with h | h
-        · rw [h] at hdx
-          nlinarith [ht.2, hdq]
-        · exact h
-    refine ⟨x, hx, ?_⟩
-    simp only [hrep x hxI, hrep q hqI, Complex.real_smul, hdx]
-    push_cast
-    ring
+  have hdq : 0 < d q := by rw [← hd0]; exact hdmono hpI hqI hpq
+  have hBq : schwarzChristoffelBoundary a e z₀ q =
+      AffineMap.lineMap (schwarzChristoffelBoundary a e z₀ p)
+        (schwarzChristoffelBoundary a e z₀ p +
+          Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)) (d q) := hrep hqI
+  rw [(hrep.mono Ioo_subset_Icc_self).image_eq, image_comp,
+    hdcont.image_Ioo_of_strictMonoOn hpq.le hdmono, hd0, ← openSegment_eq_Ioo hdq,
+    image_openSegment, AffineMap.lineMap_apply_zero, hBq]
 
 /-- **The straight sides of the Schwarz--Christoffel polygon.**  Between two prevertices with no
 prevertex of nonzero exponent strictly between them, and with both total exponents greater than
@@ -372,6 +337,19 @@ theorem schwarzChristoffelBoundary_image_Icc_prevertex (a e : ι → ℝ) (z₀ 
     schwarzChristoffelBoundary a e z₀ '' Icc (a j) (a k) =
       segment ℝ (schwarzChristoffelVertex a e z₀ j) (schwarzChristoffelVertex a e z₀ k) := by
   rw [schwarzChristoffelBoundary_image_Icc a e z₀ hjk ha hj hk,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ k hk]
+
+/-- **The interiors of the straight sides of the Schwarz--Christoffel polygon.**  Between two
+prevertices with no prevertex of nonzero exponent strictly between them, and with both total
+exponents greater than `-1`, the open boundary arc is exactly the open segment joining the two
+Schwarz--Christoffel vertices. -/
+theorem schwarzChristoffelBoundary_image_Ioo_prevertex (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    {j k : ι} (hjk : a j < a k) (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo (a j) (a k))
+    (hj : -1 < ∑ i with a i = a j, e i) (hk : -1 < ∑ i with a i = a k, e i) :
+    schwarzChristoffelBoundary a e z₀ '' Ioo (a j) (a k) =
+      openSegment ℝ (schwarzChristoffelVertex a e z₀ j) (schwarzChristoffelVertex a e z₀ k) := by
+  rw [schwarzChristoffelBoundary_image_Ioo a e z₀ hjk ha hj hk,
     schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj,
     schwarzChristoffelBoundary_apply_prevertex a e z₀ k hk]
 
