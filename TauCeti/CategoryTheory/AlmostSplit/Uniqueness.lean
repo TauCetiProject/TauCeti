@@ -11,13 +11,19 @@ public import TauCeti.CategoryTheory.AlmostSplit.Sequence
 /-!
 # Uniqueness of the almost-split sequence at a given end
 
-An almost-split sequence `0 ⟶ A ⟶ B ⟶ C ⟶ 0` is determined by its right-hand end `C`: two
-almost-split sequences with isomorphic right-hand ends are isomorphic as short complexes, so in
-particular their left-hand ends and their middle terms are isomorphic.  This file proves that,
-the uniqueness half of the Auslander-Reiten theorem, and proves it in the sharper form that
-*every* morphism of almost-split sequences invertible at the right-hand end is invertible.
+An almost-split sequence `0 ⟶ A ⟶ B ⟶ C ⟶ 0` whose left-hand end has **local** endomorphism ring
+is determined by its right-hand end `C`: two such almost-split sequences with isomorphic
+right-hand ends are isomorphic as short complexes, so in particular their left-hand ends and their
+middle terms are isomorphic.  This file proves that, the uniqueness half of the Auslander-Reiten
+theorem, and proves it in the sharper form that *every* morphism between two such almost-split
+sequences that is invertible at the right-hand end is invertible.  Concretely, every uniqueness
+statement below carries `[IsLocalRing (End S.X₁)]` together with `[IsLocalRing (End S'.X₁)]` for
+the second sequence, in a preadditive and balanced ambient category; none of these conclusions is
+claimed for an arbitrary almost-split sequence in an arbitrary preadditive category.  Only the
+comparison morphism `CategoryTheory.ShortComplex.IsAlmostSplit.exists_hom_τ₃_eq`, which produces a
+morphism and asserts nothing about its invertibility, is free of the locality hypotheses.
 
-Two inputs beyond the definition are needed, and both are hypotheses rather than ambient
+Two inputs beyond the definition are therefore needed, and both are hypotheses rather than ambient
 assumptions.  The category is asked to be preadditive and balanced, which is what makes the
 left-hand end of a short exact sequence a kernel of its second map (`ShortComplex.Exact.lift'`
 is stated only for a balanced category) and lets a morphism that is both monic and epic be
@@ -52,11 +58,13 @@ whose five-lemma step needs the second map to be an epimorphism, asks for full s
   component of a morphism of short complexes;
   `CategoryTheory.ShortComplex.IsAlmostSplit.exists_hom_τ₃_eq` is the case of an isomorphism
   between the right-hand ends of two almost-split sequences.
-* `CategoryTheory.ShortComplex.IsAlmostSplit.isIso_of_isIso_τ₃`: **a morphism of almost-split
-  sequences invertible at the right-hand end is invertible**, the sharp form of uniqueness.
+* `CategoryTheory.ShortComplex.IsAlmostSplit.isIso_of_isIso_τ₃`: **a morphism between two
+  almost-split sequences with local left-hand endomorphism rings that is invertible at the
+  right-hand end is invertible**, the sharp form of uniqueness.
 * `CategoryTheory.ShortComplex.IsAlmostSplit.exists_iso_τ₃_eq`: **uniqueness.** An isomorphism
-  between the right-hand ends of two almost-split sequences is realized by an isomorphism of the
-  sequences, so the sequence is unique *under* its right-hand end; the plainer statement is
+  between the right-hand ends of two almost-split sequences with local left-hand endomorphism rings
+  is realized by an isomorphism of the sequences, so such a sequence is unique *under* its
+  right-hand end; the plainer statement is
   `CategoryTheory.ShortComplex.IsAlmostSplit.nonempty_iso`, with
   `CategoryTheory.ShortComplex.IsAlmostSplit.nonempty_iso_X₁` and `.nonempty_iso_X₂` the
   statements about the left-hand ends and the middle terms that the Auslander-Reiten theorem is
