@@ -238,74 +238,22 @@ private def carCasimirWeight (N : ℕ) (i : Fin N) : K :=
   (2 : K)⁻¹ * (1 + 2 * ((Finset.univ.filter fun k : Fin N => i < k).card : K))
 
 private theorem carCasimirWeight_eq (i : Fin N) :
-    carCasimirWeight (K := K) N i = (N : K) - 1 / 2 - (i : K) := by
+    carCasimirWeight (K := K) N i = glHalfStaircase K N i := by
   rw [carCasimirWeight, Finset.filter_lt_eq_Ioi, Fin.card_Ioi]
   have hi : (i : ℕ) + 1 ≤ N := by omega
   have hsub : N - 1 - (i : ℕ) = N - ((i : ℕ) + 1) := by omega
   rw [hsub, Nat.cast_sub hi]
+  rw [glHalfStaircase_apply]
   push_cast
   field_simp
   ring
-
-private theorem sum_carCasimirWeight (N : ℕ) :
-    (∑ i : Fin N, carCasimirWeight (K := K) N i) = (N : K) ^ 2 / 2 := by
-  simp_rw [carCasimirWeight_eq]
-  obtain _ | N := N
-  · simp
-  have hsum : (∑ i ∈ Finset.range (N + 1), (i : K)) * 2 =
-      ((N + 1 : ℕ) : K) * (N : K) := by
-    have h := congrArg (fun m : ℕ => (m : K)) (Finset.sum_range_id_mul_two (N + 1))
-    simpa only [Nat.cast_mul, Nat.cast_ofNat, Nat.cast_sum, Nat.add_sub_cancel] using h
-  have hsum' : (∑ i ∈ Finset.range (N + 1), (i : K)) =
-      ((N + 1 : ℕ) : K) * (N : K) / 2 := by
-    exact (eq_div_iff (Invertible.ne_zero (2 : K))).2 hsum
-  calc
-    (∑ i : Fin (N + 1), (((N + 1 : ℕ) : K) - 1 / 2 - (i : K))) =
-        ∑ i ∈ Finset.range (N + 1), (((N + 1 : ℕ) : K) - 1 / 2 - (i : K)) :=
-      Fin.sum_univ_eq_sum_range
-        (fun i : ℕ => ((N + 1 : ℕ) : K) - 1 / 2 - (i : K)) (N + 1)
-    _ = ((N + 1 : ℕ) : K) ^ 2 / 2 := by
-      rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib]
-      simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
-      rw [hsum']
-      push_cast
-      field_simp [Invertible.ne_zero (2 : K)]
-      ring
 
 private theorem carCasimir_eigenvalue (N : ℕ) :
     (∑ i : Fin N, carCasimirWeight (K := K) N i *
       (carCasimirWeight (K := K) N i + (N : K) - 1 - 2 * (i : K))) =
         (N : K) * (2 * (N : K) ^ 2 - 1) / 4 := by
-  induction N with
-  | zero => simp
-  | succ N ih =>
-      have hsucc (i : Fin N) :
-          carCasimirWeight (K := K) (N + 1) i.succ =
-            carCasimirWeight (K := K) N i := by
-        rw [carCasimirWeight_eq, carCasimirWeight_eq]
-        norm_num [Fin.val_succ]
-        ring
-      have htail (i : Fin N) :
-          carCasimirWeight (K := K) (N + 1) i.succ *
-              (carCasimirWeight (K := K) (N + 1) i.succ + (N + 1 : K) - 1 -
-                2 * (i.succ : K)) =
-            carCasimirWeight (K := K) N i *
-                (carCasimirWeight (K := K) N i + (N : K) - 1 - 2 * (i : K)) -
-              carCasimirWeight (K := K) N i := by
-        rw [hsucc]
-        norm_num [Fin.val_succ]
-        ring
-      rw [Fin.sum_univ_succ]
-      push_cast
-      simp_rw [htail]
-      rw [Finset.sum_sub_distrib, ih, sum_carCasimirWeight, carCasimirWeight_eq]
-      push_cast
-      norm_num
-      have h4 : (4 : K) ≠ 0 := by
-        rw [show (4 : K) = 2 * 2 by norm_num]
-        exact mul_ne_zero (Invertible.ne_zero (2 : K)) (Invertible.ne_zero (2 : K))
-      field_simp [h4]
-      ring
+  simpa only [carCasimirWeight_eq] using
+    glCasimir_eigenvalue_glHalfStaircase (F := K) N
 
 private theorem carCasimirElement_eq_scalar :
     carCasimirElement (K := K) (N := N) =

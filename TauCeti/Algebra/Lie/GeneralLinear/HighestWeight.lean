@@ -44,6 +44,7 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
 * `TauCeti.IsGlDominantIntegral μ`: the consecutive differences of `μ : Fin n → R` are natural
   numbers, for `R` of characteristic zero.
 * `TauCeti.glStaircase N`: the staircase tuple `(N - 1/2, N - 3/2, …, 1/2) : Fin N → ℚ`.
+* `TauCeti.glHalfStaircase F N`: the same half-shifted staircase over any field.
 * `TauCeti.IsGlHighestWeightVector μ v`: `v` is nonzero, the diagonal matrix unit `Eᵢᵢ` acts on it
   by `μ i`, and every raising matrix unit `Eᵢⱼ` with `i < j` annihilates it.
 
@@ -61,6 +62,8 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
   dominant and no entry of it is an integer, so dominance genuinely does not force integrality.
 * `TauCeti.sum_glStaircase`: the sum of the staircase entries after mapping to a
   characteristic-zero field.
+* `TauCeti.sum_glHalfStaircase`: the corresponding sum over any field in which two is
+  invertible.
 * `TauCeti.IsGlHighestWeightVector.lie_eq_glWeightEquiv_smul` and
   `TauCeti.IsGlHighestWeightVector.lie_eq_zero_of_mem_strictUpperTriangular`: the whole diagonal
   Cartan subalgebra acts by the weight, and the whole positive nilpotent subalgebra `𝔫⁺`
@@ -264,10 +267,20 @@ def glStaircase (N : ℕ) : Fin N → ℚ := fun i => (N : ℚ) - 1 / 2 - (i : �
 theorem glStaircase_apply (N : ℕ) (i : Fin N) :
     glStaircase N i = (N : ℚ) - 1 / 2 - (i : ℕ) := (rfl)
 
-/-- The entries of the staircase weight sum to `N² / 2` after mapping from `ℚ` to any
-characteristic-zero field. -/
-theorem sum_glStaircase {F : Type*} [Field F] [CharZero F] (N : ℕ) :
-    (∑ i : Fin N, algebraMap ℚ F (glStaircase N i)) = (N : F) ^ 2 / 2 := by
+/-- The half-shifted staircase weight `(N - 1/2, N - 3/2, …, 1/2)` over a field. Unlike
+`TauCeti.glStaircase`, this definition does not require a map from the rationals, so it remains
+available in positive characteristic whenever two is invertible. -/
+def glHalfStaircase (F : Type*) [Field F] (N : ℕ) : Fin N → F :=
+  fun i => (N : F) - 1 / 2 - (i : ℕ)
+
+@[simp]
+theorem glHalfStaircase_apply {F : Type*} [Field F] (N : ℕ) (i : Fin N) :
+    glHalfStaircase F N i = (N : F) - 1 / 2 - (i : ℕ) := (rfl)
+
+/-- The entries of the half-shifted staircase over a field in which two is invertible sum to
+`N² / 2`. -/
+theorem sum_glHalfStaircase {F : Type*} [Field F] [Invertible (2 : F)] (N : ℕ) :
+    (∑ i : Fin N, glHalfStaircase F N i) = (N : F) ^ 2 / 2 := by
   obtain _ | N := N
   · simp
   have hsum : (∑ i ∈ Finset.range (N + 1), (i : F)) * 2 =
@@ -276,15 +289,11 @@ theorem sum_glStaircase {F : Type*} [Field F] [CharZero F] (N : ℕ) :
     simpa only [Nat.cast_mul, Nat.cast_ofNat, Nat.cast_sum, Nat.add_sub_cancel] using h
   have hsum' : (∑ i ∈ Finset.range (N + 1), (i : F)) =
       ((N + 1 : ℕ) : F) * (N : F) / 2 := by
-    exact (eq_div_iff (by norm_num)).2 hsum
+    exact (eq_div_iff (Invertible.ne_zero (2 : F))).2 hsum
   calc
-    (∑ i : Fin (N + 1), algebraMap ℚ F (glStaircase (N + 1) i)) =
+    (∑ i : Fin (N + 1), glHalfStaircase F (N + 1) i) =
         ∑ i : Fin (N + 1), (((N + 1 : ℕ) : F) - 1 / 2 - (i : F)) := by
-      apply Finset.sum_congr rfl
-      intro i _
-      rw [glStaircase_apply]
-      push_cast
-      norm_num
+      rfl
     _ = ∑ i ∈ Finset.range (N + 1), (((N + 1 : ℕ) : F) - 1 / 2 - (i : F)) :=
       Fin.sum_univ_eq_sum_range
         (fun i : ℕ => ((N + 1 : ℕ) : F) - 1 / 2 - (i : F)) (N + 1)
@@ -293,7 +302,20 @@ theorem sum_glStaircase {F : Type*} [Field F] [CharZero F] (N : ℕ) :
       simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
       rw [hsum']
       push_cast
+      field_simp [Invertible.ne_zero (2 : F)]
       ring
+
+/-- The entries of the staircase weight sum to `N² / 2` after mapping from `ℚ` to any
+characteristic-zero field. -/
+theorem sum_glStaircase {F : Type*} [Field F] [CharZero F] (N : ℕ) :
+    (∑ i : Fin N, algebraMap ℚ F (glStaircase N i)) = (N : F) ^ 2 / 2 := by
+  let _ : Invertible (2 : F) := invertibleOfNonzero (by norm_num)
+  rw [← sum_glHalfStaircase (F := F) N]
+  apply Finset.sum_congr rfl
+  intro i _
+  rw [glStaircase_apply, glHalfStaircase_apply]
+  push_cast
+  norm_num
 
 /-- The staircase weight is dominant: its consecutive differences are all `1`. -/
 theorem isGlDominantIntegral_glStaircase (N : ℕ) : IsGlDominantIntegral (glStaircase N) := by
