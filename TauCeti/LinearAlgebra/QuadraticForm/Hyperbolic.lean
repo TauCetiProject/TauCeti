@@ -35,7 +35,7 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
 * `TauCeti.represents_hyperbolicPlane`: the hyperbolic plane represents every scalar.
 * `TauCeti.equivalent_hyperbolicPlane_dualProd`: the hyperbolic plane is isometric to the
   `xy`-form `QuadraticForm.dualProd`.
-* `TauCeti.equivalent_weightedSumSquares_self_neg`: in characteristic not two, every
+* `TauCeti.equivalent_weightedSumSquares_self_neg_hyperbolicPlane`: in characteristic not two, every
   `⟨a, -a⟩`, for `a ≠ 0`, is hyperbolic.
 * `TauCeti.exists_hyperbolicPlane_prod_equivalent`: in characteristic not two, every
   finite-dimensional nondegenerate isotropic form splits off a hyperbolic plane.
@@ -115,8 +115,6 @@ theorem equivalent_hyperbolicPlane_dualProd [Invertible (2 : R)] :
   -- The isometry is Mathlib's `QuadraticForm.toDualProd` for the square form `QuadraticMap.sq`,
   -- which is bijective in this rank-one case.
   have h2 : (2 : R) * ⅟(2 : R) = 1 := mul_invOf_self 2
-  have hdual (f : Module.Dual R R) (y : R) : f y = y * f 1 := by
-    rw [← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
   -- `toDualProd` sends `(a, b)` to the dual vector `(a + b) * ·` paired with `a - b`.
   have happ (p : R × R) :
       QuadraticForm.toDualProd (QuadraticMap.sq : QuadraticForm R R) p =
@@ -137,7 +135,7 @@ theorem equivalent_hyperbolicPlane_dualProd [Invertible (2 : R)] :
     · refine ⟨((q.1 1 + q.2) * ⅟(2 : R), (q.1 1 - q.2) * ⅟(2 : R)), ?_⟩
       rw [happ]
       refine Prod.ext (LinearMap.ext fun y ↦ ?_) (by linear_combination q.2 * h2)
-      rw [LinearMap.mul_apply_apply, hdual q.1 y]
+      rw [LinearMap.mul_apply_apply, ← Dual.apply_one_mul_eq q.1 y]
       linear_combination (y * q.1 1) * h2
   have hprod : (hyperbolicPlane R).Equivalent
       ((QuadraticMap.sq : QuadraticForm R R).prod (-QuadraticMap.sq)) :=
@@ -154,7 +152,7 @@ variable {K : Type u} [Field K]
 
 /-- Over a field in which two is invertible, every diagonal plane `⟨a, -a⟩` with `a` a unit is
 isometric to the hyperbolic plane. -/
-theorem equivalent_weightedSumSquares_self_neg [Invertible (2 : K)] (a : Kˣ) :
+theorem equivalent_weightedSumSquares_self_neg_hyperbolicPlane [Invertible (2 : K)] (a : Kˣ) :
     (weightedSumSquares K ![(a : K), -(a : K)]).Equivalent (hyperbolicPlane K) := by
   have hdisc : IsSquare (a * (-a) * ((1 : Kˣ) * (-1))) := by
     refine ⟨a, ?_⟩
@@ -233,8 +231,9 @@ theorem exists_hyperbolicPlane_prod_equivalent [FiniteDimensional K V] [Invertib
     exact hr.symm
   let B := QuadraticMap.associated Q
   have hBW : (LinearMap.BilinForm.restrict B W).Nondegenerate := by
-    rw [← QuadraticMap.associated_restrict]
-    exact QuadraticMap.nondegenerate_associated_iff.mpr hWQ
+    have h : (QuadraticMap.associated (Q.comp W.subtype)).Nondegenerate :=
+      QuadraticMap.nondegenerate_associated_iff.mpr hWQ
+    rwa [QuadraticMap.associated_comp] at h
   have hcomp : IsCompl W (LinearMap.BilinForm.orthogonal B W) :=
     LinearMap.BilinForm.isCompl_orthogonal_of_restrict_nondegenerate
       (LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)).isRefl hBW
@@ -247,9 +246,11 @@ theorem exists_hyperbolicPlane_prod_equivalent [FiniteDimensional K V] [Invertib
       rw [LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal hBsymm,
         LinearMap.BilinForm.orthogonal_orthogonal hB hBsymm]
       exact hcomp.symm
-    rw [← QuadraticMap.nondegenerate_associated_iff]
-    rw [QuadraticMap.associated_restrict]
-    exact hBorth
+    have h : (QuadraticMap.associated
+        (Q.comp (LinearMap.BilinForm.orthogonal B W).subtype)).Nondegenerate := by
+      rw [QuadraticMap.associated_comp]
+      exact hBorth
+    exact QuadraticMap.nondegenerate_associated_iff.mp h
   have hBpolar : LinearMap.BilinForm.orthogonal B W =
       LinearMap.BilinForm.orthogonal Q.polarBilin W := by
     ext v
