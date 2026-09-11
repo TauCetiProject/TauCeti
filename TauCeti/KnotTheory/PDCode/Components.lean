@@ -53,7 +53,8 @@ def componentPerm (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
 
 /-- Crossing turns take a crossing slot to its opposite slot. -/
 @[simp] theorem crossingTurn_crossing (D : PDCode n) (i : Fin n) (slot : Fin 4) :
-    D.crossingTurn (D.crossing i slot) = D.crossing i (oppositeCrossingSlot slot) := by
+    D.crossingTurn (D.halfEdge (PDCode.crossingSlotEquiv n (i, slot))) =
+      D.crossing i (oppositeCrossingSlot slot) := by
   simp [crossingTurn]
 
 /-- Mirroring preserves the opposite-slot permutation. -/
@@ -100,21 +101,21 @@ namespace OrientedPDCode
 
 /-- The component traversal preserves the orientation of a half-edge. -/
 @[simp] theorem orientation_componentPerm (D : OrientedPDCode n) (h : Fin (4 * n)) :
-    D.orientation (D.toPDCode.componentPerm h) = D.orientation h := by
-  rw [PDCode.componentPerm_apply]
+    D.orientation (D.crossingTurn (D.toPDCode.edgePair.val h)) = D.orientation h := by
   rw [orientation_crossingTurn, D.orientation_edgePair, Bool.not_not]
 
 /-- The component traversal permutation restricted to half-edges pointing away from crossings. -/
 noncomputable def componentPermOutgoing (D : OrientedPDCode n) :
     Equiv.Perm {h : Fin (4 * n) // D.orientation h = true} :=
   D.toPDCode.componentPerm.subtypePerm (fun h => by
-    simp only [orientation_componentPerm])
+    simp only [PDCode.componentPerm_apply, orientation_componentPerm])
 
 /-- Outgoing traversal has the same half-edge value as unrestricted traversal. -/
 @[simp] theorem componentPermOutgoing_apply (D : OrientedPDCode n)
     (h : {h : Fin (4 * n) // D.orientation h = true}) :
     D.componentPermOutgoing h = ⟨D.toPDCode.componentPerm h, by
-      exact (orientation_componentPerm D h).trans h.property⟩ := by
+      simpa only [PDCode.componentPerm_apply] using
+        (orientation_componentPerm D h).trans h.property⟩ := by
   simp only [componentPermOutgoing, Equiv.Perm.subtypePerm_apply]
 
 end OrientedPDCode
