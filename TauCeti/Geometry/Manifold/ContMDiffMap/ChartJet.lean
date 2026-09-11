@@ -46,9 +46,11 @@ continuous map on the extended chart target. Derivatives are taken within that t
 noncomputable def chartIteratedFDeriv
     (f : C^n⟮I, M; modelWithCornersSelf 𝕜 F, F⟯) (x : M) (m : ℕ) (hm : m ≤ n) :
     C((extChartAt I x).target, E [×m]→L[𝕜] F) := by
-  refine ⟨fun y ↦ iteratedFDerivWithin 𝕜 m (f ∘ (extChartAt I x).symm)
+  refine ⟨fun y ↦ iteratedFDerivWithin 𝕜 m
+    (writtenInExtChartAt I (modelWithCornersSelf 𝕜 F) x f)
     (extChartAt I x).target y, ?_⟩
-  have hf : ContDiffOn 𝕜 n (f ∘ (extChartAt I x).symm) (extChartAt I x).target :=
+  have hf : ContDiffOn 𝕜 n (writtenInExtChartAt I (modelWithCornersSelf 𝕜 F) x f)
+      (extChartAt I x).target :=
     (f.contMDiff.comp_contMDiffOn (contMDiffOn_extChartAt_symm x)).contDiffOn
   exact (hf.continuousOn_iteratedFDerivWithin hm
     (uniqueDiffOn_extChartAt_target x)).domRestrict
@@ -60,7 +62,8 @@ theorem chartIteratedFDeriv_apply
     (y : (extChartAt I x).target) :
     DFunLike.coe (F := C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×m]→L[𝕜] F))
       (chartIteratedFDeriv f x m hm) y = iteratedFDerivWithin 𝕜 m
-      (f ∘ (extChartAt I x).symm) (extChartAt I x).target y := (rfl)
+      (writtenInExtChartAt I (modelWithCornersSelf 𝕜 F) x f) (extChartAt I x).target y := by
+  rfl
 
 /-- Order zero of the chart jet recovers the map in source coordinates. -/
 @[simp]
@@ -70,7 +73,10 @@ theorem chartIteratedFDeriv_zero_apply
     DFunLike.coe (F := C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×0]→L[𝕜] F))
       (chartIteratedFDeriv f x 0 (by simp)) y v =
         f ((extChartAt I x).symm y) := by
-  simp only [chartIteratedFDeriv_apply, iteratedFDerivWithin_zero_apply, Function.comp_apply]
+  simp only [chartIteratedFDeriv_apply, iteratedFDerivWithin_zero_apply]
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id,
+    PartialEquiv.refl_coe]
+  rfl
 
 /-- All source-chart derivatives, with a compact-open topology on each derivative space. -/
 noncomputable def chartWeakWhitneyJet
@@ -179,12 +185,14 @@ theorem chartIteratedFDeriv_self_apply
     DFunLike.coe (F := C(↥(Set.univ ∩ (chartAt E x).target), E [×m]→L[𝕜] F))
       (chartIteratedFDeriv f x m hm) y =
         f.iteratedFDerivContinuousMap m hm y := by
-  change iteratedFDerivWithin 𝕜 m (f ∘ (extChartAt (modelWithCornersSelf 𝕜 E) x).symm)
-    (extChartAt (modelWithCornersSelf 𝕜 E) x).target y = _
+  refine (chartIteratedFDeriv_apply f x m hm y).trans ?_
   simp only [extChartAt_model_space_eq_id,
-    PartialEquiv.refl_target, PartialEquiv.refl_symm, PartialEquiv.refl_coe,
-    Function.comp_id, iteratedFDerivWithin_univ,
+    PartialEquiv.refl_target, iteratedFDerivWithin_univ,
     ContMDiffMap.iteratedFDerivContinuousMap_apply]
+  have hw : writtenInExtChartAt (modelWithCornersSelf 𝕜 E) (modelWithCornersSelf 𝕜 F) x f = f := by
+    funext z
+    simp [writtenInExtChartAt, chartAt_self_eq, Function.comp_apply]
+  rw [hw]
 
 /-- On a normed space, source-chart weak Whitney topology agrees with the existing topology
 defined using global iterated derivatives. Thus adding chart domains does not change the
@@ -229,6 +237,7 @@ global-chart construction. -/
     funext f
     apply ContinuousMap.ext
     intro y
+    simp only [ContinuousMap.restrict_apply, Function.comp_apply]
     exact chartIteratedFDeriv_self_apply f x m m.property y
 
 end NormedSpace
