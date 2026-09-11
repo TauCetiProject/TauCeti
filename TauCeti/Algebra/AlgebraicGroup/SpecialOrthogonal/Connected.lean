@@ -291,28 +291,10 @@ private theorem rightTranslationAlgHom_eq_self_of_invertibleTwo
     (g : WithConv (K ⊗[k] coordinateHopfAlgebra k n →ₐ[K] K)) :
     HopfAlgebra.rightTranslationAlgHom g e = e := by
   let E := baseChangePointsMulEquiv (k := k) (K := K) n K
-  let fixes (x : Matrix.specialOrthogonalGroup (Fin n) K) : Prop :=
-    HopfAlgebra.rightTranslationAlgHom (E.symm x) e = e
-  have fixes_one : fixes 1 := by
-    dsimp only [fixes]
-    rw [map_one, HopfAlgebra.rightTranslationAlgHom_one, AlgHom.id_apply]
-  have fixes_mul {x y : Matrix.specialOrthogonalGroup (Fin n) K} (hx : fixes x) (hy : fixes y) :
-      fixes (x * y) := by
-    dsimp only [fixes] at hx hy ⊢
-    rw [map_mul, HopfAlgebra.rightTranslationAlgHom_mul, AlgHom.comp_apply, hy, hx]
-  have fixes_inv {x : Matrix.specialOrthogonalGroup (Fin n) K} (hx : fixes x) : fixes x⁻¹ := by
-    dsimp only [fixes] at hx ⊢
-    have h := DFunLike.congr_fun
-      (HopfAlgebra.rightTranslationAlgHom_mul (E.symm x⁻¹) (E.symm x)) e
-    rw [← map_mul E.symm, inv_mul_cancel x, map_one,
-      HopfAlgebra.rightTranslationAlgHom_one, AlgHom.id_apply, AlgHom.comp_apply, hx] at h
-    exact h.symm
-  let P : Subgroup (Matrix.specialOrthogonalGroup (Fin n) K) :=
-    { carrier := fixes
-      one_mem' := fixes_one
-      mul_mem' := fixes_mul
-      inv_mem' := fixes_inv }
-  have mem_P (x : Matrix.specialOrthogonalGroup (Fin n) K) : x ∈ P ↔ fixes x := Iff.rfl
+  let P := (HopfAlgebra.rightTranslationStabilizer e).comap E.symm.toMonoidHom
+  have mem_P (x : Matrix.specialOrthogonalGroup (Fin n) K) :
+      x ∈ P ↔ HopfAlgebra.rightTranslationAlgHom (E.symm x) e = e :=
+    Subgroup.mem_comap.trans HopfAlgebra.mem_rightTranslationStabilizer
   -- By Cartan-Dieudonné, the special orthogonal matrices form the monoid closure of the products
   -- of two reflections, and every such product lies in `P`.
   let Q := Matrix.toQuadraticForm' (1 : Matrix (Fin n) (Fin n) K)
@@ -340,7 +322,7 @@ private theorem rightTranslationAlgHom_eq_self_of_invertibleTwo
   have hg : E g ∈ P := by
     rw [hP]
     exact Subgroup.mem_top _
-  simpa only [fixes, MulEquiv.symm_apply_apply] using (mem_P _).mp hg
+  simpa only [MulEquiv.symm_apply_apply] using (mem_P _).mp hg
 
 /-- **The coordinate Hopf algebra of `SOₙ` is geometrically connected over every field of
 characteristic different from two**, in every dimension. -/
