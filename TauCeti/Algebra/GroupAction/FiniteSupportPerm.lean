@@ -12,9 +12,9 @@ public import Mathlib.Data.Set.Countable
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Order.Interval.Finset.Nat
 public import Mathlib.Logic.Equiv.Fintype
-public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Logic.Embedding.Set
 import Mathlib.Algebra.Group.Pointwise.Set.Finite
+import Mathlib.Logic.Equiv.Fin.Basic
 -- Non-public: `Finset.countable`, the index of the covering used for countability of `finitary`.
 import Mathlib.Logic.Equiv.List
 
@@ -80,13 +80,23 @@ def blockSwap (N : ℕ) : Equiv.Perm ℕ :=
   Equiv.Perm.viaFintypeEmbedding (finAddFlip (m := N) (n := N)) ⟨Fin.val, Fin.val_injective⟩
 
 /-- On `[0, N)`, `blockSwap N` shifts by `N`. -/
+@[simp]
 theorem blockSwap_apply_of_lt {N i : ℕ} (hi : i < N) : blockSwap N i = N + i := by
   have h : (⟨Fin.val, Fin.val_injective⟩ : Fin (N + N) ↪ ℕ)
       (Fin.castAdd N ⟨i, hi⟩) = i := rfl
   rw [blockSwap, ← h, Equiv.Perm.viaFintypeEmbedding_apply_image, finAddFlip_apply_castAdd]
   rfl
 
+/-- On `[N, 2N)`, `blockSwap N` shifts back by `N`. -/
+@[simp]
+theorem blockSwap_apply_add_of_lt {N i : ℕ} (hi : i < N) : blockSwap N (N + i) = i := by
+  have h : (⟨Fin.val, Fin.val_injective⟩ : Fin (N + N) ↪ ℕ)
+      (Fin.natAdd N ⟨i, hi⟩) = N + i := rfl
+  rw [blockSwap, ← h, Equiv.Perm.viaFintypeEmbedding_apply_image, finAddFlip_apply_natAdd]
+  rfl
+
 /-- From `2 * N` on, `blockSwap N` is the identity. -/
+@[simp]
 theorem blockSwap_apply_of_le {N n : ℕ} (hn : N + N ≤ n) : blockSwap N n = n := by
   refine Equiv.Perm.viaFintypeEmbedding_apply_notMem_range _ _ ?_
   rintro ⟨j, rfl⟩
@@ -105,7 +115,7 @@ theorem disjoint_map_blockSwap {N : ℕ} {F : Finset ℕ} (hF : F ⊆ Finset.ran
   omega
 
 /-- `blockSwap N` is finitely supported. -/
-theorem blockSwap_finite_support (N : ℕ) :
+theorem finite_compl_fixedBy_blockSwap (N : ℕ) :
     (MulAction.fixedBy ℕ (blockSwap N))ᶜ.Finite :=
   finite_compl_fixedBy_of_eventually_eq_self ⟨N + N, fun _ hn => blockSwap_apply_of_le hn⟩
 

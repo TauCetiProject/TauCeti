@@ -202,7 +202,7 @@ theorem measure_eq_zero_or_one_of_exchangeableSigma {ρ : Measure (ℕ → α)} 
   have ht'_cyl : t' = cylinder (α := fun _ : ℕ => α) (F.map (Equiv.toEmbedding π))
       (pullMoved π F α ⁻¹' S) := preimage_permReindex_cylinder π F S
   have hs_inv : permReindex (α := α) π ⁻¹' s = s :=
-    MeasurableSet.preimage_permReindex_eq_of_exchangeableSigma hs (blockSwap_finite_support N)
+    MeasurableSet.preimage_permReindex_eq_of_exchangeableSigma hs (finite_compl_fixedBy_blockSwap N)
   have ht'_symm : ρ (symmDiff t' s) = ρ (symmDiff t s) :=
     measure_symmDiff_preimage_permReindex hexch π ht_null hs_null hs_inv
   have h1 : ρ.real (symmDiff t s) < ε := ENNReal.toReal_lt_of_lt_ofReal hFS
