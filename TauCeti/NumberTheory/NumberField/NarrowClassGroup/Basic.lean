@@ -169,7 +169,7 @@ theorem mkPrincipal_apply (x : Kˣ) :
 totally positive element.** Two elements of `Kˣ` generate the same fractional ideal precisely when
 they differ by a unit of `𝓞 K`, so the narrow class of `(x)` is trivial iff one of the generators
 `w · x` of that ideal is totally positive. -/
-theorem mkPrincipal_eq_one_iff {x : Kˣ} :
+@[simp] theorem mkPrincipal_eq_one_iff {x : Kˣ} :
     mkPrincipal x = 1 ↔ ∃ w : (𝓞 K)ˣ, IsTotallyPositive (w • (x : K)) := by
   rw [mkPrincipal_apply, mk_eq_one_iff, mem_narrowPrincipalSubgroup]
   constructor
