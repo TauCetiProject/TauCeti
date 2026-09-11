@@ -18,10 +18,11 @@ Mathlib knows that a `C^n` local diffeomorphism has invertible differentials
 points of Banach manifolds: a map which is `C^n` on an open set, with `1 ≤ n`, and whose `mfderiv`
 at a point of that set is a continuous linear equivalence, is a `C^n` local diffeomorphism there.
 
-The interior-point form applies to maps between manifolds with boundary whenever the point and its
-image lie away from the boundary. For boundaryless manifolds those conditions are automatic, even
-when the ambient models themselves have boundary, yielding the usual global criterion from
-invertibility of every differential.
+The interior-point form applies to maps between manifolds with boundary whenever the source point
+lies away from the boundary; invertibility of the differential then forces its image to be an
+interior point as well. On a boundaryless source manifold the source condition is automatic, even
+when either ambient model has boundary, yielding the usual global criterion from invertibility of
+every differential.
 
 ## Main results
 
@@ -31,8 +32,7 @@ invertibility of every differential.
   model spaces which is `C^n` in both directions, as a partial diffeomorphism.
 * `TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq`: the inverse function theorem for manifolds.
 * `TauCeti.isLocalDiffeomorphAt_iff_exists_mfderiv_eq`: the resulting characterisation of
-  `IsLocalDiffeomorphAt` at an interior point whose image is interior, for a map which is `C^n`
-  on an open set.
+  `IsLocalDiffeomorphAt` at an interior point, for a map which is `C^n` on an open set.
 * `TauCeti.isLocalDiffeomorphAt_of_eqOn`: a map agreeing with a partial diffeomorphism on its
   source is a local diffeomorphism there.
 * `TauCeti.isLocalDiffeomorph_of_mfderiv_eq`: the global version.
@@ -95,13 +95,19 @@ private theorem extChartPartialDiffeomorph_toPartialEquiv (x : M) :
         (s := (extChartAt I x) ⁻¹' interior (extChartAt I x).target)
         (t := interior (extChartAt I x).target) rfl).restr := (rfl)
 
-@[simp]
 theorem extChartPartialDiffeomorph_source (x : M) :
     (extChartPartialDiffeomorph I n x).source =
       (extChartAt I x).source ∩
         (extChartAt I x) ⁻¹' interior (extChartAt I x).target := by
   rw [extChartPartialDiffeomorph_toPartialEquiv,
     PartialEquiv.IsImage.restr_source]
+
+@[simp]
+theorem mem_extChartPartialDiffeomorph_source (x : M) :
+    x ∈ (extChartPartialDiffeomorph I n x).source ↔ I.IsInteriorPoint x := by
+  rw [extChartPartialDiffeomorph_source, mem_inter_iff, mem_preimage]
+  simp only [mem_extChartAt_source, true_and]
+  exact (ModelWithCorners.isInteriorPoint_iff (I := I)).symm
 
 @[simp]
 theorem extChartPartialDiffeomorph_target (x : M) :
@@ -175,13 +181,13 @@ variable [CompleteSpace E] {I : ModelWithCorners 𝕂 E H}
   [IsManifold I n M] [IsManifold J n N] {f : M → N} {s : Set M} {x : M}
 
 /-- **The inverse function theorem for manifolds.** If `f` is `C^n` on an open set `s` with
-`1 ≤ n`, both `x ∈ s` and `f x` are interior points, and the differential at `x` is a continuous
-linear equivalence, then `f` is a `C^n` local diffeomorphism at `x`.
+`1 ≤ n`, `x` belongs to `s` and is an interior point, and the differential at `x` is a
+continuous linear equivalence, then `f` is a `C^n` local diffeomorphism at `x`.
 
 Mathlib's `Mathlib/Geometry/Manifold/LocalDiffeomorph.lean` lists this implication as a TODO. -/
 theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : IsOpen s)
-    (hx : x ∈ s) (hIx : I.IsInteriorPoint x) (hJfx : J.IsInteriorPoint (f x))
-    (hn : 1 ≤ n) {e : TangentSpace I x ≃L[𝕂] TangentSpace J (f x)}
+    (hx : x ∈ s) (hIx : I.IsInteriorPoint x) (hn : 1 ≤ n)
+    {e : TangentSpace I x ≃L[𝕂] TangentSpace J (f x)}
     (he : (e : TangentSpace I x →L[𝕂] TangentSpace J (f x)) = mfderiv I J f x) :
     IsLocalDiffeomorphAt I J n f x := by
   have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
@@ -213,6 +219,11 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
   -- Its derivative at `φ x` is the given equivalence: `g` is `f` written in the extended charts,
   -- and `TangentSpace I x` and `TangentSpace J (f x)` are the model spaces `E` and `F`.
   have hmdiff : MDifferentiableAt I J f x := (hf.contMDiffAt (hs.mem_nhds hx)).mdifferentiableAt hn0
+  have hsurj : Function.Surjective (mfderiv I J f x) := by
+    rw [← he]
+    exact e.surjective
+  have hJfx : J.IsInteriorPoint (f x) :=
+    hmdiff.isInteriorPoint_of_surjective_mfderiv hsurj hIx
   have hwritten : fderiv 𝕂 (writtenInExtChartAt I J x f) (φ x) = fderiv 𝕂 g (φ x) := by
     simp only [hg, hφ, hψ, writtenInExtChartAt]
   have hfd : (e : TangentSpace I x →L[𝕂] TangentSpace J (f x)) = fderiv 𝕂 g (φ x) := by
@@ -289,39 +300,29 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
   rw [hcoe y, hgy, ψ.left_inv hyN]
 
 /-- For a map which is `C^n` on an open set, with `1 ≤ n`, being a `C^n` local diffeomorphism at an
-interior point whose image is interior is exactly invertibility of the differential there. -/
+interior point is exactly invertibility of the differential there. -/
 theorem isLocalDiffeomorphAt_iff_exists_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : IsOpen s)
-    (hx : x ∈ s) (hIx : I.IsInteriorPoint x) (hJfx : J.IsInteriorPoint (f x)) (hn : 1 ≤ n) :
+    (hx : x ∈ s) (hIx : I.IsInteriorPoint x) (hn : 1 ≤ n) :
     IsLocalDiffeomorphAt I J n f x ↔
       ∃ e : TangentSpace I x ≃L[𝕂] TangentSpace J (f x),
         (e : TangentSpace I x →L[𝕂] TangentSpace J (f x)) = mfderiv I J f x := by
   have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
   refine ⟨fun h => ⟨h.mfderivToContinuousLinearEquiv hn0, rfl⟩, ?_⟩
   rintro ⟨e, he⟩
-  exact isLocalDiffeomorphAt_of_mfderiv_eq hf hs hx hIx hJfx hn he
+  exact isLocalDiffeomorphAt_of_mfderiv_eq hf hs hx hIx hn he
 
 variable [BoundarylessManifold I M]
 
-/-- **The inverse function theorem for manifolds**, global form: a `C^n` map (`1 ≤ n`) whose
-image consists of interior points and all of whose differentials are continuous linear
-equivalences is a `C^n` local diffeomorphism. -/
-theorem isLocalDiffeomorph_of_mfderiv_eq (hf : ContMDiff I J n f)
-    (hJ : ∀ y, J.IsInteriorPoint (f y)) (hn : 1 ≤ n)
+/-- **The inverse function theorem for manifolds**, global form: a `C^n` map (`1 ≤ n`) from a
+boundaryless source manifold, all of whose differentials are continuous linear equivalences, is a
+`C^n` local diffeomorphism. -/
+theorem isLocalDiffeomorph_of_mfderiv_eq (hf : ContMDiff I J n f) (hn : 1 ≤ n)
     (he : ∀ y : M, ∃ e : TangentSpace I y ≃L[𝕂] TangentSpace J (f y),
       (e : TangentSpace I y →L[𝕂] TangentSpace J (f y)) = mfderiv I J f y) :
     IsLocalDiffeomorph I J n f := fun y => by
   obtain ⟨e, hey⟩ := he y
   exact isLocalDiffeomorphAt_of_mfderiv_eq (s := univ) hf.contMDiffOn isOpen_univ (mem_univ y)
-    BoundarylessManifold.isInteriorPoint (hJ y) hn hey
-
-/-- A globally invertible differential gives a local diffeomorphism when both manifolds are
-boundaryless. -/
-theorem isLocalDiffeomorph_of_mfderiv_eq_of_boundaryless [BoundarylessManifold J N]
-    (hf : ContMDiff I J n f) (hn : 1 ≤ n)
-    (he : ∀ y : M, ∃ e : TangentSpace I y ≃L[𝕂] TangentSpace J (f y),
-      (e : TangentSpace I y →L[𝕂] TangentSpace J (f y)) = mfderiv I J f y) :
-    IsLocalDiffeomorph I J n f :=
-  isLocalDiffeomorph_of_mfderiv_eq hf (fun _ => BoundarylessManifold.isInteriorPoint) hn he
+    BoundarylessManifold.isInteriorPoint hn hey
 
 end InverseFunctionTheorem
 
