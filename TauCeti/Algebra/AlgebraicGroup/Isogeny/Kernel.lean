@@ -19,15 +19,16 @@ The kernel square is a pullback of the isogeny along the identity section, so ea
 finiteness, flatness, and surjectivity is inherited by the structural morphism of the kernel:
 the represented kernel is itself an isogeny over the base.
 
-Over a field, the kernel of a central isogeny is therefore a finite locally free bicommutative
-Hopf algebra, the shape required by Cartier duality.
+Over a Noetherian base ring, the kernel of a central isogeny is therefore a finite locally free
+bicommutative Hopf algebra, the shape required by Cartier duality: the kernel coordinate ring is
+finite and faithfully flat, hence finitely presented and projective.
 
 ## Main declarations
 
 * `TauCeti.CommHopfAlgCat.IsIsogeny.isIsogeny_kernelSpec_to_trivial`: the structural
   morphism from the represented kernel to the trivial group scheme is an isogeny.
-* `TauCeti.CommHopfAlgCat.IsCentralIsogeny.kernelFiniteLocallyFree`: over a field, the
-  kernel of a central isogeny as a finite locally free bicommutative Hopf algebra.
+* `TauCeti.CommHopfAlgCat.IsCentralIsogeny.kernelFiniteLocallyFree`: over a Noetherian base
+  ring, the kernel of a central isogeny as a finite locally free bicommutative Hopf algebra.
 
 ## References
 
@@ -72,21 +73,29 @@ end IsIsogeny
 
 namespace IsCentralIsogeny
 
-section Field
+section Noetherian
 
-variable {k : Type u} [Field k]
-variable {H K : _root_.CommHopfAlgCat.{u} k} {f : H ⟶ K}
+variable [IsNoetherianRing R]
+variable {H K : _root_.CommHopfAlgCat.{u} R} {f : H ⟶ K}
 
-/-- Over a field, package the kernel of a central isogeny as a finite locally free
-bicommutative Hopf algebra, ready for Cartier duality. -/
+/-- Over a Noetherian base ring, package the kernel of a central isogeny as a finite locally
+free bicommutative Hopf algebra, ready for Cartier duality. Finiteness of the kernel
+coordinate ring makes it finitely presented, and faithful flatness then makes it
+projective. -/
 noncomputable abbrev kernelFiniteLocallyFree (hf : IsCentralIsogeny f) :
-    FiniteLocallyFreeBicommutativeHopfAlgCat.{u} k :=
-  ⟨quotient K (kernelHopfIdeal f),
-    (finiteLocallyFreeBicommutativeHopfAlgProperty_iff k _).2
-      ⟨moduleFinite_quotient_kernelHopfIdeal hf.isIsogeny.finite, inferInstance,
+    FiniteLocallyFreeBicommutativeHopfAlgCat.{u} R :=
+  ⟨quotient K (kernelHopfIdeal f), by
+    have : Module.Finite R (quotient K (kernelHopfIdeal f)) :=
+      moduleFinite_quotient_kernelHopfIdeal hf.isIsogeny.finite
+    have : Module.FaithfullyFlat R (quotient K (kernelHopfIdeal f)) :=
+      moduleFaithfullyFlat_quotient_kernelHopfIdeal hf.isIsogeny.faithfullyFlat
+    have : Module.FinitePresentation R (quotient K (kernelHopfIdeal f)) :=
+      Module.finitePresentation_of_finite R _
+    exact (finiteLocallyFreeBicommutativeHopfAlgProperty_iff R _).2
+      ⟨inferInstance, Module.Flat.projective_of_finitePresentation,
         hf.isCocomm_quotient_kernelHopfIdeal⟩⟩
 
-end Field
+end Noetherian
 
 end IsCentralIsogeny
 

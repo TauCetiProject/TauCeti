@@ -37,7 +37,7 @@ base-change stability results transported across the identification.
   from the kernel coordinate ring to `K ⊗[H] R`.
 * `TauCeti.CommHopfAlgCat.moduleFinite_quotient_kernelHopfIdeal`: the kernel coordinate
   ring is finite over the base.
-* `TauCeti.CommHopfAlgCat.faithfullyFlat_quotient_kernelHopfIdeal`: the kernel coordinate
+* `TauCeti.CommHopfAlgCat.moduleFaithfullyFlat_quotient_kernelHopfIdeal`: the kernel coordinate
   ring is faithfully flat over the base.
 -/
 
@@ -144,7 +144,7 @@ theorem moduleFinite_quotient_kernelHopfIdeal {f : H ⟶ K} (hf : f.hom.toAlgHom
 
 /-- The coordinate ring of the kernel is faithfully flat over the base when the coordinate
 map is faithfully flat. -/
-theorem faithfullyFlat_quotient_kernelHopfIdeal {f : H ⟶ K}
+theorem moduleFaithfullyFlat_quotient_kernelHopfIdeal {f : H ⟶ K}
     (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat) :
     Module.FaithfullyFlat R (K ⧸ (kernelHopfIdeal f).toIdeal) := by
   let : Algebra ↥H ↥K := f.hom.toAlgHom.toAlgebra
