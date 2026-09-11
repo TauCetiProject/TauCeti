@@ -152,14 +152,18 @@ theorem zigzagGradedCartanMatrix_map_eval_neg_one_affineE8_eq_cartanMatrix
     (k : Type*) [Field k] :
     (zigzagGradedCartanMatrix k zigzagAffineE8Graph).map (eval (-1)) =
       AffineDynkinType.E8.cartanMatrix := by
-  rw [zigzagGradedCartanMatrix_map_eval_neg_one_affineE8]
+  rw [zigzagGradedCartanMatrix_map_eval_neg_one_affineE8,
+    AffineDynkinType.cartanMatrix_eq_graphCartanMatrix
+      AffineDynkinType.isGraphical_E8]
   ext i j
   rw [graphCartanMatrix_apply]
+  -- The named graph has index `Fin 9`, while the affine API spells this definitionally equal
+  -- type as `Fin E8.nodes`; expose the casts so its entry lemma can rewrite the right side.
   change (if i = j then 2 else if zigzagAffineE8Graph.Adj i j then -1 else 0) =
-    AffineDynkinType.E8.cartanMatrix
+    graphCartanMatrix AffineDynkinType.E8.graph ℤ
       (Fin.cast AffineDynkinType.nodes_E8.symm i)
       (Fin.cast AffineDynkinType.nodes_E8.symm j)
-  rw [AffineDynkinType.cartanMatrix_apply AffineDynkinType.isGraphical_E8]
+  rw [graphCartanMatrix_apply]
   simp only [Fin.cast_inj, Fin.val_cast, zigzagAffineE8Graph_adj,
     AffineDynkinType.graph_E8_adj]
 
@@ -174,15 +178,13 @@ theorem eval_neg_one_det_zigzagGradedCartanMatrix_affineE8 (k : Type*) [Field k]
   rw [RingHom.map_det]
   -- `RingHom.mapMatrix` and `Matrix.map` have the same entries but expose different wrappers.
   change ((zigzagGradedCartanMatrix k zigzagAffineE8Graph).map (eval (-1))).det = 0
-  rw [zigzagGradedCartanMatrix_map_eval_neg_one_affineE8]
-  let δ : Fin 9 → ℤ := ![6, 3, 4, 2, 5, 4, 3, 2, 1]
-  apply Matrix.det_eq_zero_of_mulVec_eq_zero_of_mem_nonZeroDivisors (v := δ) (i := 8)
-  · funext i
-    fin_cases i <;>
-      norm_num [graphCartanMatrix_mulVec_apply, SimpleGraph.neighborFinset_eq_filter,
-        zigzagAffineE8Graph_adj, δ] <;> decide
-  · norm_num [δ]
-    decide
+  rw [zigzagGradedCartanMatrix_map_eval_neg_one_affineE8_eq_cartanMatrix]
+  apply Matrix.det_eq_zero_of_mulVec_eq_zero_of_mem_nonZeroDivisors
+    (v := AffineDynkinType.E8.marks) (i := AffineDynkinType.E8.affineNode)
+  · exact AffineDynkinType.cartanMatrix_mulVec_marks_eq_zero
+      AffineDynkinType.valid_E8
+  · rw [AffineDynkinType.marks_affineNode]
+    exact one_mem _
 
 /-- **The affine `E₈` graded Cartan determinant is a nonzero polynomial**, despite vanishing
 at `q = -1`. At `q = 0` the graded Cartan matrix is the identity. -/
