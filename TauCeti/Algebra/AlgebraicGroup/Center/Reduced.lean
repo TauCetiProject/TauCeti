@@ -150,6 +150,13 @@ noncomputable def reducedCenterCoordinateMap : H ⟶ reducedCenterCoordinateHopf
     mkQuotient (centerCoordinateHopfAlgebra H)
       (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H))
 
+/-- The reduced-center coordinate morphism first restricts to the center and then quotients
+by its nilradical. -/
+theorem reducedCenterCoordinateMap_def :
+    reducedCenterCoordinateMap H = mkQuotient H (centerDefiningIdeal H) ≫
+      mkQuotient (centerCoordinateHopfAlgebra H)
+        (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H)) := (rfl)
+
 /-- The canonical reduced-center isomorphism commutes with the ambient and iterated quotient
 morphisms. -/
 @[simp]
