@@ -55,10 +55,10 @@ models.
 * `TauCeti.Hodge.integralMapToComplex`: complexification of an integral linear map between abstract
   complexification models.
 
-The base-change design follows the Hodge structures roadmap and the discussion by Johan Commelin,
-Andrew Yang, Kevin Buzzard, and Joël Riou in the `#mathlib4` Zulip thread *Complexifications with a
-view towards Hodge theory*. The opposed-filtration formulation that consumes this conjugation is
-Deligne's, *Théorie de Hodge II*, §1.2.1.
+The base-change design follows the discussion by Johan Commelin, Andrew Yang, Kevin Buzzard, and
+Joël Riou in the `#mathlib4` Zulip thread *Complexifications with a view towards Hodge theory*. The
+opposed-filtration formulation that consumes this conjugation is Deligne's, *Théorie de Hodge II*,
+§1.2.1.
 -/
 
 public section

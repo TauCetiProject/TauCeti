@@ -43,9 +43,8 @@ original complex vector space. The almost-complex structure reuses
 * `TauCeti.AlmostComplexStructure.hodgeStructure_weilOperator`: its Weil operator is the
   complexification of the original almost complex structure.
 
-This is the effective weight-one instance bridge in Layer L0 of the Hodge structures roadmap. The
-construction and conventions follow Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §6,
-and Peters--Steenbrink, *Mixed Hodge Structures*, §2.
+The construction and conventions follow Voisin, *Hodge Theory and Complex Algebraic Geometry I*,
+§6, and Peters--Steenbrink, *Mixed Hodge Structures*, §2.
 -/
 
 public section

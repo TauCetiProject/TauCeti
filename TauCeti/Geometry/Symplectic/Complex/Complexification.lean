@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.Module
-public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.LinearAlgebra.Complex.Eigenspace
 
 /-!
 # Complexification of almost complex structures
@@ -47,44 +47,9 @@ complementary. -/
 theorem isCompl_eigenspace_baseChange_I_neg_I (J : AlmostComplexStructure V) :
     IsCompl (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I)
       (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I)) := by
-  constructor
-  · simpa only [Module.End.eigenspace] using
-      Module.End.disjoint_genEigenspace (J.toLinearMap.baseChange ℂ)
-        (neg_ne_self.mpr Complex.I_ne_zero).symm 1 1
-  · rw [codisjoint_iff]
-    apply top_unique
-    intro x _
-    let xplus : ℂ ⊗[ℝ] V :=
-      (2 : ℂ)⁻¹ • (x - Complex.I • J.toLinearMap.baseChange ℂ x)
-    let xminus : ℂ ⊗[ℝ] V :=
-      (2 : ℂ)⁻¹ • (x + Complex.I • J.toLinearMap.baseChange ℂ x)
-    have hxplus : xplus ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I := by
-      rw [Module.End.mem_eigenspace_iff]
-      simp only [xplus, map_smul, map_sub, map_smul, baseChange_apply_apply, smul_neg,
-        smul_smul]
-      simp only [smul_sub, smul_neg, smul_smul]
-      have hscalar : Complex.I * (2 : ℂ)⁻¹ * Complex.I = -(2 : ℂ)⁻¹ := by
-        calc
-          Complex.I * (2 : ℂ)⁻¹ * Complex.I = (2 : ℂ)⁻¹ * (Complex.I * Complex.I) := by ring
-          _ = -(2 : ℂ)⁻¹ := by rw [Complex.I_mul_I]; ring
-      rw [hscalar]
-      module
-    have hxminus : xminus ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) := by
-      rw [Module.End.mem_eigenspace_iff]
-      simp only [xminus, map_smul, map_add, map_smul, baseChange_apply_apply, smul_neg,
-        smul_smul]
-      simp only [smul_add, smul_neg, smul_smul]
-      have hscalar : -Complex.I * (2 : ℂ)⁻¹ * Complex.I = (2 : ℂ)⁻¹ := by
-        calc
-          -Complex.I * (2 : ℂ)⁻¹ * Complex.I =
-              -(2 : ℂ)⁻¹ * (Complex.I * Complex.I) := by ring
-          _ = (2 : ℂ)⁻¹ := by rw [Complex.I_mul_I]; ring
-      rw [hscalar]
-      module
-    have hdecomp : x = xplus + xminus := by
-      simp [xplus, xminus]
-      module
-    rw [hdecomp]
-    exact Submodule.add_mem_sup hxplus hxminus
+  apply Module.End.isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id
+  have h := congrArg (LinearMap.baseChange ℂ) J.square_neg
+  simpa only [LinearMap.baseChange_comp, LinearMap.baseChange_neg,
+    LinearMap.baseChange_id] using h
 
 end TauCeti.AlmostComplexStructure
