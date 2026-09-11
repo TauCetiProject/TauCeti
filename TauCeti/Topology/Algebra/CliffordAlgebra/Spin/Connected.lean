@@ -71,8 +71,8 @@ theorem pathConnectedSpace_realCliffordSpinGroupZero_add_two (n : ℕ) :
   have hH : H = ⊤ := by
     apply subgroup_eq_top_of_negOne_mem_of_reflection_pair_lift_mem Q
       (posDef_realCliffordForm_zero (n + 2)).anisotropic.nondegenerate H
-    · change Joined 1 (spinGroup.negOne Q _)
-      exact joined_one_negOne_realCliffordSpinGroupZero_add_two n
+    · exact mem_pathComponent_iff.mpr
+        (joined_one_negOne_realCliffordSpinGroupZero_add_two n)
     · intro v w _ _
       let a := (Real.sqrt (Q v))⁻¹
       let b := (Real.sqrt (Q w))⁻¹
@@ -88,9 +88,9 @@ theorem pathConnectedSpace_realCliffordSpinGroupZero_add_two (n : ℕ) :
       let _ : Invertible (Q (b • w)) := hw.symm ▸ invertibleOne
       let x := spinReflectionPair Q (a • v) (b • w) hv hw
       refine ⟨x, ?_, ?_⟩
-      · change Joined 1 x
-        exact joined_one_spinReflectionPair_realCliffordForm_zero
-          (by omega) (a • v) (b • w) hv hw
+      · exact mem_pathComponent_iff.mpr
+          (joined_one_spinReflectionPair_realCliffordForm_zero
+            (by omega) (a • v) (b • w) hv hw)
       · rw [coe_spinToSpecialOrthogonal_spinReflectionPair]
         simp only [Subgroup.coe_mul, QuadraticMap.coe_reflectionOrthogonal]
         have hvref : QuadraticMap.reflection Q (a • v) =
@@ -106,8 +106,7 @@ theorem pathConnectedSpace_realCliffordSpinGroupZero_add_two (n : ℕ) :
         rw [hvref, hwref]
   apply pathConnectedSpace_iff_eq.mpr
   refine ⟨1, ?_⟩
-  change (H : Set (spinGroup Q)) = Set.univ
-  rw [hH]
-  rfl
+  simpa only [H, Subgroup.coe_pathComponentOne] using
+    (Subgroup.coe_eq_univ.mpr hH)
 
 end CliffordAlgebra
