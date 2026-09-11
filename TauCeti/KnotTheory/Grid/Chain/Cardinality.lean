@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Fintype
-public import TauCeti.KnotTheory.Grid.Complex
+public import TauCeti.KnotTheory.Grid.Chain.Basic
 public import TauCeti.KnotTheory.Grid.StateCardinality
 
 /-!

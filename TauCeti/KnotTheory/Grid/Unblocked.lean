@@ -7,7 +7,7 @@ module
 
 import Mathlib.Tactic.Linarith
 public import Mathlib.Algebra.MvPolynomial.Degrees
-public import TauCeti.KnotTheory.Grid.Complex
+public import TauCeti.KnotTheory.Grid.Chain.Basic
 public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
 import TauCeti.KnotTheory.Grid.Rectangle.Count
 import TauCeti.KnotTheory.Grid.Rectangle.Swap
