@@ -148,6 +148,7 @@ theorem zigzagGradedCartanMatrix_map_eval_neg_one_affineE8 (k : Type*) [Field k]
 
 /-- **At `q = -1`, the affine `E₈` graded Cartan matrix is the canonical affine generalized
 Cartan matrix.** -/
+@[simp]
 theorem zigzagGradedCartanMatrix_map_eval_neg_one_affineE8_eq_cartanMatrix
     (k : Type*) [Field k] :
     (zigzagGradedCartanMatrix k zigzagAffineE8Graph).map (eval (-1)) =
@@ -170,6 +171,7 @@ theorem zigzagGradedCartanMatrix_map_eval_neg_one_affineE8_eq_cartanMatrix
 /-- **The affine `E₈` specialization at `q = -1` is singular.** Its determinant vanishes
 because the explicit affine mark vector `(6,3,4,2,5,4,3,2,1)` is a null vector with final
 coordinate `1`. -/
+@[simp]
 theorem eval_neg_one_det_zigzagGradedCartanMatrix_affineE8 (k : Type*) [Field k] :
     eval (-1) (zigzagGradedCartanMatrix k zigzagAffineE8Graph).det = 0 := by
   -- `RingHom.map_det` uses the bundled evaluation homomorphism; this only replaces its
