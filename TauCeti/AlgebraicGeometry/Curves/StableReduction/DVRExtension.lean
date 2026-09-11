@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.Dvr
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
-public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Localization.LocalizationLocalization
 
 /-!
@@ -233,6 +232,18 @@ theorem of_prime (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
 @[simp]
 theorem of_localRing (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] : (of R K L P).localRing = Localization.AtPrime P := by
+  rw [of]
+
+@[simp]
+theorem of_extensionFieldInst (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+    [P.LiesOver (maximalIdeal R)] :
+    HEq (of R K L P).extensionFieldInst (inferInstance : Field L) := by
+  rw [of]
+
+@[simp]
+theorem of_localRingInst (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+    [P.LiesOver (maximalIdeal R)] :
+    HEq (of R K L P).localRingInst (inferInstance : CommRing (Localization.AtPrime P)) := by
   rw [of]
 
 @[simp]
