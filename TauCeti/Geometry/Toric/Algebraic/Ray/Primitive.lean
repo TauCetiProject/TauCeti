@@ -13,11 +13,9 @@ public import TauCeti.Geometry.Toric.Algebraic.Ray.Basic
 /-!
 # Primitive generators of toric rays
 
-A rational ray in an integral lattice contains a unique first lattice point. This file calls it
-the primitive generator of the ray. Existence is obtained by dividing the coordinates of any
-nonzero lattice point on the ray by their gcd. Uniqueness uses Bezout's identity: if a second
-lattice point lies on the same half-line, its real scaling factor is an integer, and primitivity
-forces that integer to be one.
+A rational salient ray in an integral lattice contains a unique primitive lattice vector pointing
+along it. This file characterizes that vector as the primitive generator and provides a canonical
+choice for each ray of a toric cone.
 
 Primitive generators give canonical integral vectors for the rays of a toric cone. They are the
 vectors which enter the definition of a regular cone and, later, its affine monomial coordinates.
@@ -67,21 +65,16 @@ theorem isPrimitive (h : IsPrimitiveGenerator i ρ v) : IsPrimitive v := h.2
 /-- A primitive generator is nonzero. -/
 theorem ne_zero (h : IsPrimitiveGenerator i ρ v) : v ≠ 0 := h.isPrimitive.ne_zero
 
-/-- A primitive generator cannot be a nontrivial natural multiple. -/
-theorem eq_one_of_eq_nsmul (h : IsPrimitiveGenerator i ρ v) {m : ℕ}
-    (w : N) (hw : v = m • w) : m = 1 := h.isPrimitive.eq_one_of_eq_nsmul hw
-
 end IsPrimitiveGenerator
 
 namespace IsToricCone
 
-/-- Every ray of a toric cone in an integral lattice has a unique primitive generator. -/
-theorem existsUnique_primitiveGenerator (hσ : IsToricCone i σ) (hi : IsIntegralLattice i)
-    (ρ : ToricRay σ) :
+/-- Every toric ray in an integral lattice has a unique primitive generator. -/
+theorem existsUnique_primitiveGenerator {ρ : ToricRay σ}
+    (hρ : IsToricCone i ρ.toPointedCone) (hi : IsIntegralLattice i) :
     ∃! v : N, IsPrimitiveGenerator i ρ v := by
   let _ := hi.free
-  have hρtoric := hσ.of_isFaceOf ρ.1.isFaceOf
-  obtain ⟨n, hnρ, hn0⟩ := hρtoric.rational.exists_mem_ne_zero ρ.toPointedCone_ne_bot
+  obtain ⟨n, hnρ, hn0⟩ := hρ.rational.exists_mem_ne_zero ρ.toPointedCone_ne_bot
   have hn : n ≠ 0 := fun h ↦ hn0 (by simp [h])
   obtain ⟨d, v, hd, hv, hnv⟩ := exists_eq_zsmul_isPrimitive hn
   have hdℝ : (0 : ℝ) < d := by exact_mod_cast hd
@@ -92,10 +85,8 @@ theorem existsUnique_primitiveGenerator (hσ : IsToricCone i σ) (hi : IsIntegra
     exact hscaled
   have hvgen : IsPrimitiveGenerator i ρ v := ⟨hvρ, hv⟩
   refine ⟨v, hvgen, fun u hu ↦ ?_⟩
-  have hρsalient : (ρ.toPointedCone : ConvexCone ℝ V).Salient :=
-    hσ.salient.anti fun _ hx ↦ ρ.1.isFaceOf.le hx
   have hρeq : ρ.toPointedCone = PointedCone.hull ℝ {i v} :=
-    ρ.eq_hull_singleton hρsalient hvρ (by simpa using hi.injective.ne hv.ne_zero)
+    ρ.eq_hull_singleton hρ.salient hvρ (by simpa using hi.injective.ne hv.ne_zero)
   have huρ : i u ∈ ρ.toPointedCone := hu.mem
   rw [hρeq] at huρ
   obtain ⟨a, ha, hau⟩ := PointedCone.mem_hull_singleton.mp huρ
@@ -121,25 +112,32 @@ theorem existsUnique_primitiveGenerator (hσ : IsToricCone i σ) (hi : IsIntegra
   have huv : u = m • v := by
     apply hi.injective
     rw [map_nsmul, ← Nat.cast_smul_eq_nsmul ℝ, ← ham, hau]
-  exact huv.trans (by rw [hu.eq_one_of_eq_nsmul v huv, one_nsmul])
+  exact huv.trans (by rw [hu.isPrimitive.eq_one_of_eq_nsmul huv, one_nsmul])
 
 end IsToricCone
 
 /-- The canonical primitive lattice generator of a ray of a toric cone. -/
 noncomputable def primitiveGenerator (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
     (ρ : ToricRay σ) : N :=
-  (hσ.existsUnique_primitiveGenerator hi ρ).choose
+  ((hσ.face ρ.1).existsUnique_primitiveGenerator hi).choose
 
 /-- The canonical primitive generator satisfies the defining primitive-generator property. -/
 theorem isPrimitiveGenerator_primitiveGenerator (hi : IsIntegralLattice i)
     (hσ : IsToricCone i σ) (ρ : ToricRay σ) :
     IsPrimitiveGenerator i ρ (primitiveGenerator hi hσ ρ) :=
-  (hσ.existsUnique_primitiveGenerator hi ρ).choose_spec.1
+  ((hσ.face ρ.1).existsUnique_primitiveGenerator hi).choose_spec.1
 
 /-- The image of the primitive generator lies on its ray. -/
+@[simp]
 theorem primitiveGenerator_mem (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
     (ρ : ToricRay σ) : i (primitiveGenerator hi hσ ρ) ∈ ρ :=
   (isPrimitiveGenerator_primitiveGenerator hi hσ ρ).mem
+
+/-- The primitive generator is primitive. -/
+@[simp]
+theorem primitiveGenerator_isPrimitive (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
+    (ρ : ToricRay σ) : IsPrimitive (primitiveGenerator hi hσ ρ) :=
+  (isPrimitiveGenerator_primitiveGenerator hi hσ ρ).isPrimitive
 
 /-- The primitive generator is nonzero. -/
 @[simp]
@@ -151,7 +149,7 @@ theorem primitiveGenerator_ne_zero (hi : IsIntegralLattice i) (hσ : IsToricCone
 theorem IsPrimitiveGenerator.eq_primitiveGenerator {v : N} (hv : IsPrimitiveGenerator i ρ v)
     (hi : IsIntegralLattice i) (hσ : IsToricCone i σ) :
     v = primitiveGenerator hi hσ ρ :=
-  (hσ.existsUnique_primitiveGenerator hi ρ).choose_spec.2 v hv
+  ((hσ.face ρ.1).existsUnique_primitiveGenerator hi).choose_spec.2 v hv
 
 /-- A lattice vector is a primitive generator of a ray exactly when it is the canonical one. -/
 @[simp]
