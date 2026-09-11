@@ -44,8 +44,6 @@ root weights.
 
 * N. Bourbaki, *Groupes et algèbres de Lie*, Chapters 4--6, Plate IV.
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.
-* The proof interface follows the matrix-action pattern in
-  `TauCeti.RepresentationTheory.Spin.Polarization.TypeB.RootGenerators`.
 -/
 
 public section
