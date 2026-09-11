@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Preorder.Finite
+public import TauCeti.Geometry.Convex.Cone.Face.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Cone
 public import TauCeti.Geometry.Toric.Algebraic.Lattice
 
@@ -118,7 +119,7 @@ theorem inf_mem (hσ : σ ∈ Φ.cones) (hτ : τ ∈ Φ.cones) :
 /-- A nonempty fan contains the zero cone. Its affine chart is the dense torus, which is therefore
 an open subset of every chart of the fan. -/
 theorem bot_mem (hσ : σ ∈ Φ.cones) : (⊥ : PointedCone ℝ V) ∈ Φ.cones :=
-  Φ.mem_of_isFaceOf hσ (PointedCone.bot_isFaceOf (Φ.isToricCone hσ).salient)
+  Φ.mem_of_isFaceOf hσ (Φ.isToricCone hσ).salient.bot_isFaceOf
 
 /-! ### Support and completeness -/
 
