@@ -41,7 +41,7 @@ lemma forall_reflTransGen_ne_and_pos_iff {C R : Type*} [PartialOrder R] [Zero R]
     (A : Matrix C C R) (hA : ∀ i j, i ≠ j → 0 ≤ A i j) :
     (∀ i j, Relation.ReflTransGen (fun i j ↦ i ≠ j ∧ 0 < A i j) i j) ↔
       ∀ s : Set C, s.Nonempty → s ≠ Set.univ → ¬ ∀ i ∈ s, ∀ j ∉ s, A i j = 0 := by
-  rw [TauCeti.forall_reflTransGen_iff]
+  rw [Relation.forall_reflTransGen_iff]
   refine forall_congr' fun s ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
   constructor
   · rintro ⟨i, hi, j, hj, -, hpos⟩ hcut

@@ -41,7 +41,7 @@ theorem IsSymm.even_sum_mul_diag_iff_even_dotProduct_mulVec {ι : Type*} [Fintyp
     Even (∑ i, m i * A i i) ↔ Even (m ⬝ᵥ A *ᵥ m) := by
   classical
   have hoff : Even (∑ i, ∑ j ∈ univ.erase i, m i * m j * A i j) :=
-    TauCeti.even_sum_sum_erase univ fun i _ j _ ↦ by rw [hA.apply i j]; ring
+    univ.even_sum_sum_erase fun i _ j _ ↦ by rw [hA.apply i j]; ring
   have hcorr : Even (∑ i, (m i * m i * A i i - m i * A i i)) := by
     rw [even_iff_two_dvd]
     refine Finset.dvd_sum fun i _ ↦ ?_

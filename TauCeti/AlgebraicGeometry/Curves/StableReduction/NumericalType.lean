@@ -155,7 +155,7 @@ lemma Adj.symm {i j : T.Component} (h : T.Adj i j) : T.Adj j i :=
 no-disconnected-cut form of the connectedness axiom. -/
 lemma exists_mem_notMem_adj (s : Set T.Component) (hne : s.Nonempty) (hs : s ≠ Set.univ) :
     ∃ i ∈ s, ∃ j ∉ s, T.Adj i j :=
-  (TauCeti.forall_reflTransGen_iff T.Adj).1 T.reflTransGen_adj s hne hs
+  (Relation.forall_reflTransGen_iff T.Adj).1 T.reflTransGen_adj s hne hs
 
 /-! ### Self-intersections -/
 

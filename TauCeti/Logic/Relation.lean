@@ -14,18 +14,18 @@ public import Mathlib.Logic.Relation
 Read `r : α → α → Prop` as the edge relation of a directed graph. Saying that
 `Relation.ReflTransGen r` relates every pair of points is the "any two points are joined by a
 chain" form of connectedness; saying that every nonempty proper subset of `α` has an edge leaving
-it is the "no disconnecting cut" form. `TauCeti.forall_reflTransGen_iff` is the translation
+it is the "no disconnecting cut" form. `Relation.forall_reflTransGen_iff` is the translation
 between the two, for an arbitrary relation on an arbitrary type.
 
 ## Main results
 
-* `TauCeti.forall_reflTransGen_iff`: totality of `Relation.ReflTransGen r` is exactly the absence
+* `Relation.forall_reflTransGen_iff`: totality of `Relation.ReflTransGen r` is exactly the absence
   of a nonempty proper subset with no outgoing edge.
 -/
 
 public section
 
-namespace TauCeti
+namespace Relation
 
 /-- **Totality of a reflexive transitive closure is the absence of a disconnecting cut.** Every
 pair of points is joined by an `r`-chain exactly when every nonempty proper subset `s` carries an
@@ -59,4 +59,4 @@ theorem forall_reflTransGen_iff {α : Type*} (r : α → α → Prop) :
     obtain ⟨a, ha, b, hb, hab⟩ := h _ ⟨i, Relation.ReflTransGen.refl⟩ hs
     exact hb (Relation.ReflTransGen.tail ha hab)
 
-end TauCeti
+end Relation

@@ -14,17 +14,17 @@ public import Mathlib.Algebra.Group.Even
 The off-diagonal sum of `f : α → α → M` over a finite set `s` is
 `∑ i ∈ s, ∑ j ∈ s.erase i, f i j`: every ordered pair of distinct elements of `s` contributes
 once. When `f` is symmetric the two members of each unordered pair contribute equal terms, so the
-whole sum is even; this is `TauCeti.even_sum_sum_erase`, proved by induction on `s`.
+whole sum is even; this is `Finset.even_sum_sum_erase`, proved by induction on `s`.
 
 ## Main results
 
-* `TauCeti.even_sum_sum_erase`: the off-diagonal sum of a symmetric function over a finite set is
+* `Finset.even_sum_sum_erase`: the off-diagonal sum of a symmetric function over a finite set is
   even.
 -/
 
 public section
 
-namespace TauCeti
+namespace Finset
 
 /-- **The off-diagonal sum of a symmetric function is even.** The ordered pairs of distinct
 elements of `s` come in transposed couples contributing equal terms, so `f` need only be
@@ -48,4 +48,4 @@ theorem even_sum_sum_erase {α M : Type*} [DecidableEq α] [AddCommMonoid M] {f 
       hf i (Finset.mem_insert_of_mem hi) a (Finset.mem_insert_self a s)]
     exact ⟨_, rfl⟩
 
-end TauCeti
+end Finset
