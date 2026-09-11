@@ -59,6 +59,8 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
   every dominant weight is an antitone tuple of natural numbers translated along that direction.
 * `TauCeti.isGlDominantIntegral_glStaircase` and `TauCeti.glStaircase_ne_intCast`: the staircase is
   dominant and no entry of it is an integer, so dominance genuinely does not force integrality.
+* `TauCeti.sum_glStaircase`: the sum of the staircase entries after mapping to a
+  characteristic-zero field.
 * `TauCeti.IsGlHighestWeightVector.lie_eq_glWeightEquiv_smul` and
   `TauCeti.IsGlHighestWeightVector.lie_eq_zero_of_mem_strictUpperTriangular`: the whole diagonal
   Cartan subalgebra acts by the weight, and the whole positive nilpotent subalgebra `𝔫⁺`
@@ -261,6 +263,37 @@ def glStaircase (N : ℕ) : Fin N → ℚ := fun i => (N : ℚ) - 1 / 2 - (i : �
 @[simp]
 theorem glStaircase_apply (N : ℕ) (i : Fin N) :
     glStaircase N i = (N : ℚ) - 1 / 2 - (i : ℕ) := (rfl)
+
+/-- The entries of the staircase weight sum to `N² / 2` after mapping from `ℚ` to any
+characteristic-zero field. -/
+theorem sum_glStaircase {F : Type*} [Field F] [CharZero F] (N : ℕ) :
+    (∑ i : Fin N, algebraMap ℚ F (glStaircase N i)) = (N : F) ^ 2 / 2 := by
+  obtain _ | N := N
+  · simp
+  have hsum : (∑ i ∈ Finset.range (N + 1), (i : F)) * 2 =
+      ((N + 1 : ℕ) : F) * (N : F) := by
+    have h := congrArg (fun m : ℕ => (m : F)) (Finset.sum_range_id_mul_two (N + 1))
+    simpa only [Nat.cast_mul, Nat.cast_ofNat, Nat.cast_sum, Nat.add_sub_cancel] using h
+  have hsum' : (∑ i ∈ Finset.range (N + 1), (i : F)) =
+      ((N + 1 : ℕ) : F) * (N : F) / 2 := by
+    exact (eq_div_iff (by norm_num)).2 hsum
+  calc
+    (∑ i : Fin (N + 1), algebraMap ℚ F (glStaircase (N + 1) i)) =
+        ∑ i : Fin (N + 1), (((N + 1 : ℕ) : F) - 1 / 2 - (i : F)) := by
+      apply Finset.sum_congr rfl
+      intro i _
+      rw [glStaircase_apply]
+      push_cast
+      norm_num
+    _ = ∑ i ∈ Finset.range (N + 1), (((N + 1 : ℕ) : F) - 1 / 2 - (i : F)) :=
+      Fin.sum_univ_eq_sum_range
+        (fun i : ℕ => ((N + 1 : ℕ) : F) - 1 / 2 - (i : F)) (N + 1)
+    _ = ((N + 1 : ℕ) : F) ^ 2 / 2 := by
+      rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib]
+      simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+      rw [hsum']
+      push_cast
+      ring
 
 /-- The staircase weight is dominant: its consecutive differences are all `1`. -/
 theorem isGlDominantIntegral_glStaircase (N : ℕ) : IsGlDominantIntegral (glStaircase N) := by

@@ -256,24 +256,6 @@ section Staircase
 
 variable {F : Type*} [Field F] [CharZero F]
 
-private theorem sum_glStaircase (N : ℕ) :
-    (∑ i : Fin N, algebraMap ℚ F (glStaircase N i)) = (N : F) ^ 2 / 2 := by
-  induction N with
-  | zero => simp
-  | succ N ih =>
-      have hsucc (i : Fin N) : glStaircase (N + 1) i.succ = glStaircase N i := by
-        rw [glStaircase_apply, glStaircase_apply]
-        push_cast
-        norm_num [Fin.val_succ]
-        ring
-      rw [Fin.sum_univ_succ]
-      simp_rw [hsucc]
-      rw [ih, glStaircase_apply]
-      push_cast
-      norm_num
-      field_simp
-      ring
-
 /-- The trace-form `gl_N` Casimir polynomial at the rational staircase weight is
 `N (2 N² - 1) / 4`. -/
 theorem glCasimir_eigenvalue_glStaircase (N : ℕ) :

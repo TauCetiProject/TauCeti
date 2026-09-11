@@ -21,10 +21,9 @@ multiplication with `∑ i, j, Fᵢⱼ Fⱼᵢ`. This file proves that this Clif
 
 `N (2 N² - 1) / 4`.
 
-The proof first shows that the quadratic sum commutes with every Clifford generator. It is even,
-so nondegeneracy of the trace form forces it to be a scalar. Evaluating that scalar on the
-explicit nonzero CAR highest-weight vector identifies it with the value of the usual `gl_N`
-Casimir polynomial at the staircase weight.
+This scalar is the Casimir invariant used with the CAR occupation spectrum to constrain the
+highest weights of irreducible constituents. It is therefore an input to the constituent-weight
+comparison and the resulting isotypic decomposition of the left-regular CAR module.
 
 ## Main results
 
@@ -52,7 +51,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 universe u
 
-variable {K : Type u} [Field K] [CharZero K] [Invertible (2 : K)]
+variable {K : Type u} [Field K] [Invertible (2 : K)]
 variable {N : ℕ}
 
 section CliffordCalculation
@@ -72,7 +71,7 @@ private noncomputable def carCasimirElement :
   ∑ i : Fin N, ∑ j : Fin N,
     carF (K := K) i j * carF j i
 
-omit [CharZero K] [Invertible (2 : K)] in
+omit [Invertible (2 : K)] in
 private theorem sum_carD_cycle (a b : Fin N) :
     (∑ i : Fin N, ∑ k : Fin N, carD (K := K) k i * carD i b * carD a k) =
       ∑ i : Fin N, ∑ k : Fin N, carD (K := K) i b * carD a k * carD k i := by
@@ -106,7 +105,6 @@ private theorem sum_carD_cycle (a b : Fin N) :
   simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib]
   simp
 
-omit [CharZero K] in
 private theorem commute_carCasimirElement_carD (a b : Fin N) :
     Commute (carCasimirElement (K := K) (N := N)) (carD (K := K) a b) := by
   rw [commute_iff_lie_eq, carCasimirElement, sum_lie]
@@ -170,7 +168,6 @@ private theorem commute_carCasimirElement_carD (a b : Fin N) :
       rw [hAD, hBC]
       abel
 
-omit [CharZero K] in
 private theorem carCasimirElement_mem_even :
     carCasimirElement (K := K) (N := N) ∈ even (traceQuadraticForm K (Fin N)) := by
   have hF_even (i j : Fin N) :
@@ -188,7 +185,6 @@ private theorem carCasimirElement_mem_even :
   simpa only [zero_add] using
     SetLike.mul_mem_graded (hF_even i j) (hF_even j i)
 
-omit [CharZero K] in
 private theorem carCasimirElement_eq_algebraMap :
     ∃ r : K, carCasimirElement (K := K) (N := N) =
       algebraMap K (CliffordAlgebra (traceQuadraticForm K (Fin N))) r := by
@@ -210,7 +206,6 @@ private theorem carCasimirElement_eq_algebraMap :
 
 end CliffordCalculation
 
-omit [CharZero K] in
 private theorem representation_glCasimir_eq_carCasimirElement_mul
     (c : CliffordAlgebra (traceQuadraticForm K (Fin N))) :
     UniversalEnvelopingAlgebra.representation K (Matrix (Fin N) (Fin N) K)
@@ -239,19 +234,92 @@ private theorem representation_glCasimir_eq_carCasimirElement_mul
       rw [carCasimirElement, Finset.sum_mul]
       simp_rw [Finset.sum_mul, mul_assoc]
 
+private def carCasimirWeight (N : ℕ) (i : Fin N) : K :=
+  (2 : K)⁻¹ * (1 + 2 * ((Finset.univ.filter fun k : Fin N => i < k).card : K))
+
+private theorem carCasimirWeight_eq (i : Fin N) :
+    carCasimirWeight (K := K) N i = (N : K) - 1 / 2 - (i : K) := by
+  rw [carCasimirWeight, Finset.filter_lt_eq_Ioi, Fin.card_Ioi]
+  have hi : (i : ℕ) + 1 ≤ N := by omega
+  have hsub : N - 1 - (i : ℕ) = N - ((i : ℕ) + 1) := by omega
+  rw [hsub, Nat.cast_sub hi]
+  push_cast
+  field_simp
+  ring
+
+private theorem sum_carCasimirWeight (N : ℕ) :
+    (∑ i : Fin N, carCasimirWeight (K := K) N i) = (N : K) ^ 2 / 2 := by
+  simp_rw [carCasimirWeight_eq]
+  obtain _ | N := N
+  · simp
+  have hsum : (∑ i ∈ Finset.range (N + 1), (i : K)) * 2 =
+      ((N + 1 : ℕ) : K) * (N : K) := by
+    have h := congrArg (fun m : ℕ => (m : K)) (Finset.sum_range_id_mul_two (N + 1))
+    simpa only [Nat.cast_mul, Nat.cast_ofNat, Nat.cast_sum, Nat.add_sub_cancel] using h
+  have hsum' : (∑ i ∈ Finset.range (N + 1), (i : K)) =
+      ((N + 1 : ℕ) : K) * (N : K) / 2 := by
+    exact (eq_div_iff (Invertible.ne_zero (2 : K))).2 hsum
+  calc
+    (∑ i : Fin (N + 1), (((N + 1 : ℕ) : K) - 1 / 2 - (i : K))) =
+        ∑ i ∈ Finset.range (N + 1), (((N + 1 : ℕ) : K) - 1 / 2 - (i : K)) :=
+      Fin.sum_univ_eq_sum_range
+        (fun i : ℕ => ((N + 1 : ℕ) : K) - 1 / 2 - (i : K)) (N + 1)
+    _ = ((N + 1 : ℕ) : K) ^ 2 / 2 := by
+      rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib]
+      simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+      rw [hsum']
+      push_cast
+      field_simp [Invertible.ne_zero (2 : K)]
+      ring
+
+private theorem carCasimir_eigenvalue (N : ℕ) :
+    (∑ i : Fin N, carCasimirWeight (K := K) N i *
+      (carCasimirWeight (K := K) N i + (N : K) - 1 - 2 * (i : K))) =
+        (N : K) * (2 * (N : K) ^ 2 - 1) / 4 := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+      have hsucc (i : Fin N) :
+          carCasimirWeight (K := K) (N + 1) i.succ =
+            carCasimirWeight (K := K) N i := by
+        rw [carCasimirWeight_eq, carCasimirWeight_eq]
+        norm_num [Fin.val_succ]
+        ring
+      have htail (i : Fin N) :
+          carCasimirWeight (K := K) (N + 1) i.succ *
+              (carCasimirWeight (K := K) (N + 1) i.succ + (N + 1 : K) - 1 -
+                2 * (i.succ : K)) =
+            carCasimirWeight (K := K) N i *
+                (carCasimirWeight (K := K) N i + (N : K) - 1 - 2 * (i : K)) -
+              carCasimirWeight (K := K) N i := by
+        rw [hsucc]
+        norm_num [Fin.val_succ]
+        ring
+      rw [Fin.sum_univ_succ]
+      push_cast
+      simp_rw [htail]
+      rw [Finset.sum_sub_distrib, ih, sum_carCasimirWeight, carCasimirWeight_eq]
+      push_cast
+      norm_num
+      have h4 : (4 : K) ≠ 0 := by
+        rw [show (4 : K) = 2 * 2 by norm_num]
+        exact mul_ne_zero (Invertible.ne_zero (2 : K)) (Invertible.ne_zero (2 : K))
+      field_simp [h4]
+      ring
+
 private theorem carCasimirElement_eq_scalar :
     carCasimirElement (K := K) (N := N) =
       algebraMap K (CliffordAlgebra (traceQuadraticForm K (Fin N)))
         ((N : K) * (2 * (N : K) ^ 2 - 1) / 4) := by
   obtain ⟨r, hr⟩ := carCasimirElement_eq_algebraMap (K := K) (N := N)
   have hhighest :
-      IsGlHighestWeightVector (fun i => algebraMap ℚ K (glStaircase N i))
+      IsGlHighestWeightVector (carCasimirWeight (K := K) N)
         (carHighestWeightVector K (Fin N)) :=
-    isGlHighestWeightVector_glStaircase_carHighestWeightVector (K := K) N
+    isGlHighestWeightVector_carHighestWeightVector (K := K) (n := Fin N)
   have hcasimir := glCasimir_smul_of_isGlHighestWeightVector (K := K)
     hhighest
   rw [representation_glCasimir_eq_carCasimirElement_mul, hr,
-    glCasimir_eigenvalue_glStaircase] at hcasimir
+    carCasimir_eigenvalue] at hcasimir
   have hscalar : r • carHighestWeightVector K (Fin N) =
       ((N : K) * (2 * (N : K) ^ 2 - 1) / 4) • carHighestWeightVector K (Fin N) := by
     simpa only [Algebra.smul_def] using hcasimir
@@ -262,12 +330,11 @@ private theorem carCasimirElement_eq_scalar :
 /-- The trace-form Casimir acts on the left-regular CAR module by the scalar
 `N (2 N² - 1) / 4`. -/
 @[simp]
-theorem representation_glCasimir_car_apply (K : Type u) [Field K] [CharZero K]
-    [Invertible (2 : K)] (N : ℕ)
-    (c : CliffordAlgebra (traceQuadraticForm K (Fin N))) :
-    UniversalEnvelopingAlgebra.representation K (Matrix (Fin N) (Fin N) K)
-        (CliffordAlgebra (traceQuadraticForm K (Fin N))) (glCasimir K (Fin N)) c =
-      ((N : K) * (2 * (N : K) ^ 2 - 1) / 4) • c := by
+theorem representation_glCasimir_car_apply (F : Type u) [Field F] [Invertible (2 : F)] (N : ℕ)
+    (c : CliffordAlgebra (traceQuadraticForm F (Fin N))) :
+    UniversalEnvelopingAlgebra.representation F (Matrix (Fin N) (Fin N) F)
+        (CliffordAlgebra (traceQuadraticForm F (Fin N))) (glCasimir F (Fin N)) c =
+      ((N : F) * (2 * (N : F) ^ 2 - 1) / 4) • c := by
   rw [representation_glCasimir_eq_carCasimirElement_mul, carCasimirElement_eq_scalar,
     Algebra.smul_def]
 
