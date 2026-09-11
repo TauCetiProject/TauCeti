@@ -80,10 +80,9 @@ tensors as a subrepresentation of it — are the ones collected in the last sect
   two capped slots post-compose the contraction with a permutation, so its kernel depends only on
   the unordered pair of capped slots.
 * `TauCeti.orthogonalContract_comp_piTensorProductMap`: a matrix preserving the dot product
-  commutes with every contraction, and `TauCeti.orthogonalContract_comp_tensorPower` reads that
-  off for the orthogonal group.
-* `TauCeti.tensorPower_mem_harmonicTensors`: the harmonic tensors are stable under the orthogonal
-  group.
+  commutes with every contraction, so it keeps a harmonic tensor harmonic
+  (`TauCeti.piTensorProductMap_mem_harmonicTensors`); `TauCeti.orthogonalContract_comp_tensorPower`
+  and `TauCeti.tensorPower_mem_harmonicTensors` read the two off for the orthogonal group.
 
 ## References
 
@@ -321,6 +320,18 @@ theorem orthogonalContract_comp_piTensorProductMap {A : Matrix (Fin n) (Fin n) k
     PiTensorProduct.map_tprod, orthogonalContract_tprod, map_smul, Matrix.mulVecLin_apply]
   rw [hv]
 
+/-- **The harmonic tensors are stable under an isometry.**  A matrix `A` with `Aᵀ * A = 1` commutes
+with every contraction, so its diagonal action on the tensor power preserves their common
+kernel. -/
+theorem piTensorProductMap_mem_harmonicTensors {A : Matrix (Fin n) (Fin n) k} (hA : Aᵀ * A = 1)
+    {d : ℕ} {x : ⨂[k]^d (Fin n → k)} (hx : x ∈ harmonicTensors k n d) :
+    PiTensorProduct.map (fun _ : Fin d => Matrix.mulVecLin A) x ∈ harmonicTensors k n d := by
+  rw [mem_harmonicTensors_iff] at hx ⊢
+  intro m σ
+  have h := LinearMap.congr_fun (orthogonalContract_comp_piTensorProductMap hA σ) x
+  simp only [LinearMap.coe_comp, Function.comp_apply] at h
+  rw [h, hx m σ, map_zero]
+
 end Invariance
 
 end CommSemiring
@@ -343,11 +354,9 @@ theorem orthogonalContract_comp_tensorPower (g : Matrix.orthogonalGroup (Fin n) 
 theorem tensorPower_mem_harmonicTensors (g : Matrix.orthogonalGroup (Fin n) k)
     {x : ⨂[k]^d (Fin n → k)} (hx : x ∈ harmonicTensors k n d) :
     (stdOrthogonalRep k n).tensorPower d g x ∈ harmonicTensors k n d := by
-  rw [mem_harmonicTensors_iff] at hx ⊢
-  intro m σ
-  have h := LinearMap.congr_fun (orthogonalContract_comp_tensorPower k n g σ) x
-  simp only [LinearMap.coe_comp, Function.comp_apply] at h
-  rw [h, hx m σ, map_zero]
+  rw [Representation.tensorPower_apply]
+  simpa only [stdOrthogonalRep_apply] using piTensorProductMap_mem_harmonicTensors
+    ((Matrix.mem_orthogonalGroup_iff' (Fin n) k).mp g.prop) hx
 
 /-- **The harmonic tensors as a subrepresentation** of the `d`-fold tensor power of the standard
 representation of the orthogonal group. -/
