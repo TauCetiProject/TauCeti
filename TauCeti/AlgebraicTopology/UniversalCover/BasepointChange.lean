@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 public import TauCeti.AlgebraicTopology.UniversalCover.Action
 
 /-!
@@ -21,8 +22,9 @@ Prepending a path and its reverse gives inverse continuous maps, producing
 
 The resulting homeomorphism lies over the identity of the base, sends the point represented by
 `γ` to the constant-path point over `x₁`, depends only on the endpoint-preserving homotopy class
-of `γ`, and respects reflexivity, reversal, and concatenation. These properties make explicit the
-basepoint-change coherence of the based-path universal-cover construction.
+of `γ`, intertwines the fundamental-group actions at its endpoints, and respects reflexivity,
+reversal, and concatenation. These properties make explicit the basepoint-change coherence of the
+based-path universal-cover construction.
 
 ## Main declarations
 
@@ -120,12 +122,45 @@ theorem basepointChangeHomeomorph_symm_apply_ofBasedPath (gamma : Path x₀ x₁
       ofBasedPath x₀ (BasedPath.ofPath (gamma.trans beta.toPath)) :=
   prependUniversalCover_ofBasedPath gamma beta
 
-/-- Basepoint change sends the point represented by the changing path to the constant-path point
-over its target.
+/-- Basepoint change intertwines the fundamental-group actions under the corresponding
+basepoint-change isomorphism of fundamental groups. -/
+@[simp]
+theorem basepointChangeHomeomorph_smul (gamma : Path x₀ x₁)
+    (g : FundamentalGroup X x₀) (p : UniversalCover x₀) :
+    basepointChangeHomeomorph gamma (g • p) =
+      FundamentalGroup.fundamentalGroupMulEquivOfPath gamma g •
+        basepointChangeHomeomorph gamma p := by
+  rcases p with ⟨x, q⟩
+  simp only [smul_mk, basepointChangeHomeomorph_apply_mk]
+  congr 1
+  let f := FundamentalGroup.fundamentalGroupMulEquivOfPath gamma
+  have h := FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply gamma (f g⁻¹)
+  rw [MulEquiv.symm_apply_apply, map_inv] at h
+  -- `FundamentalGroup.toPath` is an abbreviation; expose the path-quotient identity supplied
+  -- by the fundamental-group basepoint-change formula.
+  change g⁻¹.toPath = (Path.Homotopic.Quotient.mk gamma).trans
+    ((f g)⁻¹.toPath.trans (Path.Homotopic.Quotient.mk gamma).symm) at h
+  have hprefix : (Path.Homotopic.Quotient.mk gamma).symm.trans g⁻¹.toPath =
+      (f g)⁻¹.toPath.trans (Path.Homotopic.Quotient.mk gamma).symm := by
+    rw [h, ← Path.Homotopic.Quotient.trans_assoc,
+      Path.Homotopic.Quotient.symm_trans, Path.Homotopic.Quotient.refl_trans]
+  rw [← Path.Homotopic.Quotient.trans_assoc, hprefix,
+    Path.Homotopic.Quotient.trans_assoc]
 
-This remains an explicit rewrite theorem: `ofBasedPath_ofPath` and the general
-representative rule already let `simp` prove it, so the `simpNF` linter rejects a redundant
-`@[simp]` annotation. -/
+/-- Inverse basepoint change intertwines the target action with transport back to the source
+fundamental group. -/
+@[simp]
+theorem basepointChangeHomeomorph_symm_smul (gamma : Path x₀ x₁)
+    (g : FundamentalGroup X x₁) (p : UniversalCover x₁) :
+    (basepointChangeHomeomorph gamma).symm (g • p) =
+      (FundamentalGroup.fundamentalGroupMulEquivOfPath gamma).symm g •
+        (basepointChangeHomeomorph gamma).symm p := by
+  apply (basepointChangeHomeomorph gamma).injective
+  rw [Homeomorph.apply_symm_apply, basepointChangeHomeomorph_smul,
+    MulEquiv.apply_symm_apply, Homeomorph.apply_symm_apply]
+
+/-- Basepoint change sends the point represented by the changing path to the constant-path point
+over its target. -/
 theorem basepointChangeHomeomorph_apply_self (gamma : Path x₀ x₁) :
     basepointChangeHomeomorph gamma (ofBasedPath x₀ (BasedPath.ofPath gamma)) =
       basepointLift x₁ := by
