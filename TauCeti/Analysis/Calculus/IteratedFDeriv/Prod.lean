@@ -18,7 +18,7 @@ joint derivative continuity needed for smooth families in function spaces.
 
 public section
 
-namespace TauCeti
+namespace _root_.ContDiff
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
@@ -48,4 +48,5 @@ theorem continuous_iteratedFDeriv_prod_right (hf : ContDiff 𝕜 n f) (m : ℕ) 
     (fun _ : Fin m ↦ ContinuousLinearMap.inr 𝕜 P E)).continuous.comp
       (hf.continuous_iteratedFDeriv hm)
 
-end TauCeti
+end ContDiff
+end _root_

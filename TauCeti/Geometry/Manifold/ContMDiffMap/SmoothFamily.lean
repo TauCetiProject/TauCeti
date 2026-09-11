@@ -27,7 +27,7 @@ public section
 open Topology
 open scoped Manifold
 
-namespace TauCeti
+namespace _root_.ContDiff
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -36,14 +36,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A jointly `C^n` family gives a continuous map into the weak Whitney `C^n` map space.
 This requires neither finite dimensionality nor local compactness of the normed spaces. -/
-theorem continuous_weakWhitney_of_contDiff
+theorem continuous_weakWhitney
     {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
     {f : P → C^n⟮𝓘(𝕜, E), E; 𝓘(𝕜, F), F⟯}
     (hf : ContDiff 𝕜 n (fun z : P × E ↦ f z.1 z.2)) : Continuous f :=
-  continuous_weakWhitney_of_continuous_iteratedFDeriv
+  ContMDiffMap.continuous_weakWhitney_of_continuous_iteratedFDeriv
     (fun m hm ↦ continuous_iteratedFDeriv_prod_right hf m hm)
 
-end TauCeti
+end ContDiff
+end _root_
 
 namespace _root_.ContMDiffMap
 
@@ -60,7 +61,7 @@ noncomputable def weakWhitneyCurry
     C(P, C^n⟮𝓘(𝕜, E), E; 𝓘(𝕜, F), F⟯) where
   toFun p := ⟨fun x ↦ f (p, x),
     (f.contMDiff.contDiff.comp (contDiff_const.prodMk contDiff_id)).contMDiff⟩
-  continuous_toFun := TauCeti.continuous_weakWhitney_of_contDiff f.contMDiff.contDiff
+  continuous_toFun := ContDiff.continuous_weakWhitney f.contMDiff.contDiff
 
 @[simp]
 theorem weakWhitneyCurry_apply
@@ -69,4 +70,5 @@ theorem weakWhitneyCurry_apply
     weakWhitneyCurry f p x = f (p, x) :=
   (rfl)
 
-end _root_.ContMDiffMap
+end ContMDiffMap
+end _root_

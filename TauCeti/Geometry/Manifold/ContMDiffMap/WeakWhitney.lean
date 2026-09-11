@@ -207,7 +207,7 @@ theorem tendsto_weakWhitney_iff_eventually_mapsTo {X : Type*} {l : Filter X}
 
 end ContMDiffMap
 
-namespace TauCeti
+namespace _root_.ContMDiffMap
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -252,4 +252,4 @@ theorem continuous_weakWhitney_iff_continuous_iteratedFDeriv [LocallyCompactSpac
         ⟨_, (continuous_weakWhitney_iff.mp hf) m hm⟩
   · exact continuous_weakWhitney_of_continuous_iteratedFDeriv
 
-end TauCeti
+end _root_.ContMDiffMap
