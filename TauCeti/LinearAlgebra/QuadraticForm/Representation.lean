@@ -36,8 +36,6 @@ variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 /-- A value `a : N` is represented by a quadratic map if it is the value of the map at a vector. -/
 def _root_.QuadraticMap.Represents (Q : QuadraticMap R M N) (a : N) : Prop := ∃ v, Q v = a
 
--- Provenance: TauCetiRoadmap/GlobalQuadraticForms/README.md, conventions and Layer 0.2.
-
 /-- A quadratic map is represented by another if it admits an injective isometry into it. -/
 def _root_.QuadraticMap.IsRepresentedBy {M' : Type*} [AddCommMonoid M'] [Module R M']
     (Q : QuadraticMap R M N) (Q' : QuadraticMap R M' N) : Prop :=

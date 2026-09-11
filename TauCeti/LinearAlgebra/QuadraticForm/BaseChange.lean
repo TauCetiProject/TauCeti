@@ -267,8 +267,6 @@ theorem baseChange_smul (r : R) (Q : _root_.QuadraticForm R M) :
   apply _root_.baseChange_ext
   simp [Algebra.smul_def, mul_comm]
 
--- Provenance: TauCetiRoadmap/GlobalQuadraticForms/README.md, Layers 0.1 and 0.2.
-
 /-- Isotropy is preserved by a faithful scalar extension when the underlying module is flat. -/
 theorem not_anisotropic_baseChange [FaithfulSMul R A] [Module.Flat R M]
     {Q : _root_.QuadraticForm R M} (hQ : ¬ Q.Anisotropic) :
