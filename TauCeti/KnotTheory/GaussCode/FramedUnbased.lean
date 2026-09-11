@@ -98,6 +98,16 @@ def relabel (D : FramedOrientedGaussCode n) (e : Fin n ≃ Fin n) : FramedOrient
     (D.relabel e).relabel f = D.relabel (e.trans f) := by
   ext <;> simp
 
+/-- Reflection commutes with crossing relabelling. -/
+@[simp] theorem mirror_relabel (D : FramedOrientedGaussCode n) (e : Fin n ≃ Fin n) :
+    (D.relabel e).mirror = D.mirror.relabel e := by
+  ext <;> simp
+
+/-- Orientation reversal commutes with crossing relabelling. -/
+@[simp] theorem reverse_relabel (D : FramedOrientedGaussCode n) (e : Fin n ≃ Fin n) :
+    (D.relabel e).reverse = D.reverse.relabel e := by
+  ext <;> simp
+
 end FramedOrientedGaussCode
 
 namespace FramedBasedOrientedGaussCode
@@ -118,7 +128,7 @@ def forgetBasepoint (D : FramedBasedOrientedGaussCode n) : FramedOrientedGaussCo
 
 /-- Two framed based codes have the same unbased presentation exactly when their underlying
 codes differ by cyclic rotation and their framing coefficients agree. -/
-theorem forgetBasepoint_eq_iff {D E : FramedBasedOrientedGaussCode n} :
+@[simp] theorem forgetBasepoint_eq_iff {D E : FramedBasedOrientedGaussCode n} :
     D.forgetBasepoint = E.forgetBasepoint ↔
       (∃ k : ℤ,
         (BasedOrientedGaussCode.rotateBasepoint n ^ k) D.forgetFraming = E.forgetFraming) ∧
