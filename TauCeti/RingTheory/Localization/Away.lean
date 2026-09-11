@@ -35,6 +35,9 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   numerator.
 * `TauCeti.Localization.divBy_mul_cancel_left` and
   `TauCeti.Localization.divBy_mul_cancel_right`: `(s · t)/s = t` and `(t · s)/s = t`.
+* `TauCeti.Localization.divBy_mul_mul_left` and
+  `TauCeti.Localization.divBy_mul_mul_right`: `(u · t)/(u · s) = t/s` and `(t · u)/(s · u) = t/s`,
+  given that `S` is a localisation away from the rescaled denominator as well.
 * `TauCeti.Localization.divBy_self`: `s/s = 1`.
 * `TauCeti.Localization.adjoin_invSelf_eq_top`: `S` is generated over `A` by `1/s`.
 * `TauCeti.Localization.adjoin_divBy_eq_top`: as soon as the numerators `T` together with the
@@ -135,6 +138,29 @@ theorem divBy_mul_algebraMap :
     divBy t s * algebraMap A S s = algebraMap A S t := by
   rw [divBy_def]
   exact IsLocalization.mk'_spec S t (⟨s, Submonoid.mem_powers s⟩ : Submonoid.powers s)
+
+/-- **Scaling numerator and denominator by the same element leaves the fraction alone**:
+`(u · t)/(u · s) = t/s`, whenever `S` is also a localisation away from `u · s`.
+
+That extra instance is what the hypothesis really is: for a unit `u` it comes for free, since
+`u * s` and `s` are then associated and `IsLocalization.Away.of_associated` transports the
+localisation. Rescaling a denominator *alone* need not preserve the fraction; rescaling numerator
+and denominator together always does, which is what a construction indexed by a presentation
+needs. -/
+@[simp]
+theorem divBy_mul_mul_left {u : A} [IsLocalization.Away (u * s) S] :
+    (divBy (u * t) (u * s) : S) = divBy t s := by
+  rw [divBy_def (u * t) (u * s)]
+  refine (IsLocalization.eq_mk'_iff_mul_eq.mpr ?_).symm
+  rw [map_mul, ← mul_assoc, mul_right_comm, divBy_mul_algebraMap, ← map_mul, mul_comm t u]
+
+/-- The same on the other side: `(t · u)/(s · u) = t/s`. -/
+@[simp]
+theorem divBy_mul_mul_right {u : A} [IsLocalization.Away (s * u) S] :
+    (divBy (t * u) (s * u) : S) = divBy t s := by
+  rw [divBy_def (t * u) (s * u)]
+  refine (IsLocalization.eq_mk'_iff_mul_eq.mpr ?_).symm
+  rw [map_mul, ← mul_assoc, divBy_mul_algebraMap, ← map_mul]
 
 /-- The mirror of `invSelf_mul_algebraMap`, for the same reason. -/
 @[simp]

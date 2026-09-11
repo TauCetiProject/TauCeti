@@ -51,7 +51,7 @@ Existence of local equations is the first half of the local comparison of Weil a
 divisors: near each point a divisor is the divisor of a nonzero rational function. The matching
 uniqueness half — that such a function is determined up to a regular unit, so that its class in
 `𝒦_X^× / 𝒪_X^×` is well defined — is in
-`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Cartier.lean`.
+`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Cartier/Basic.lean`.
 
 In higher dimension the same conclusion needs the local rings of `X` to be unique factorization
 domains rather than merely one-dimensional; without such a hypothesis a Weil divisor need not be

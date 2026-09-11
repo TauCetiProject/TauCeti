@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Basic
+public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 
 /-!
 # Integral and even overlattices via isotropic subgroups
@@ -33,7 +34,9 @@ carriers of an even lattice correspond to quadratic-isotropic subgroups.
   carrier.
 * `TauCeti.IntegralLattice.IntermediateCarrier.IsEven`: evenness of an intermediate carrier.
 * `TauCeti.IntegralLattice.IntermediateCarrier.IsIntegral.toIntegralLattice`: an integral
-  intermediate carrier, as an integral lattice for the same ambient form.
+  intermediate carrier, as an integral lattice for the same ambient form. It inherits
+  nondegeneracy and positive definiteness from the lattice it lies over; evenness is not
+  inherited, and is instead supplied by `IsEven` of the carrier itself.
 * `TauCeti.IntegralLattice.IntermediateCarrier.isIntegral_iff_forall_discriminantPairing_eq_zero`:
   integral carriers are cut out by vanishing of the discriminant pairing.
 * `TauCeti.IntegralLattice.IntermediateCarrier.isEven_iff_forall_discriminantQuadraticMap_eq_zero`:
@@ -171,6 +174,12 @@ theorem IsEven.isEven_toIntegralLattice (hM : IsEven M) :
     exact x.2
   obtain ⟨n, hn⟩ := isEven_def.mp hM (x : V) hx
   exact ⟨n, by rw [norm_apply, IsIntegral.toIntegralLattice_form, ← norm_apply]; exact hn⟩
+
+/-- An integral overlattice is positive definite exactly when the lattice it lies over is: the
+two carry the same ambient form. -/
+theorem IsIntegral.isPosDef_toIntegralLattice_iff (hM : IsIntegral M) :
+    hM.toIntegralLattice.IsPosDef ↔ L.IsPosDef := by
+  rw [isPosDef_iff, isPosDef_iff, hM.toIntegralLattice_form]
 
 end IsLattice
 

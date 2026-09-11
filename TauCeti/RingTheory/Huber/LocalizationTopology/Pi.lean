@@ -19,12 +19,11 @@ arbitrary finite `T`.
 The family `(R(T/t))_{t ∈ T}` is a cover of `Spa(A,A⁺)` — a *standard rational cover* — **when**
 `T` generates the unit ideal, by
 `TauCeti.ValuationSpectrum.spa_eq_biUnion_rationalSubset_of_span_eq_top`, which needs nothing of
-`A`. The converse holds as well, but only once every maximal ideal of `A` is open
-(`TauCeti.ValuationSpectrum.span_eq_top_iff_spa_eq_biUnion_rationalSubset`, Corollary 7.53), and
-that hypothesis is not carried here. Under the spanning hypothesis
-this map is the comparison whose faithful flatness and injectivity Wedhorn's Corollary 8.32
-asserts. Neither the hypothesis nor those conclusions appear below; this is the map they are
-about.
+`A`. For a complete Hausdorff Huber pair the converse holds as well
+(`TauCeti.ValuationSpectrum.span_eq_top_iff_spa_eq_biUnion_rationalSubset`, Corollary 7.53).
+Under the spanning hypothesis this map is the comparison whose faithful flatness and injectivity
+Wedhorn's Corollary 8.32 asserts. Neither the hypothesis nor those conclusions appear below; this
+is the map they are about.
 
 ## Implementation notes
 

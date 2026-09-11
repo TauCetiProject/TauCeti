@@ -13,13 +13,67 @@ import Mathlib.GroupTheory.Perm.ViaEmbedding
 # Elementary facts about permutations
 
 This file records general-purpose facts about permutations: an identity between transpositions,
-a characterization of permutations with a unique fixed point, the orbit relation of an involution,
-a positive-power representative of a relation inside a periodic orbit, a permutation transported
-along an injection, and the combination of two permutations transported along injections with
-disjoint ranges.
+a characterization of permutations with a unique fixed point, functions constant on a permutation
+orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
+periodic orbit, a permutation transported along an injection, and the combination of two
+permutations transported along injections with disjoint ranges.
 -/
 
 public section
+
+namespace Equiv.Perm.SameCycle
+
+variable {α : Type*} {β : Sort*} {σ : Equiv.Perm α} {x y : α} {f : α → β}
+
+variable {γ : Type*} {τ : Equiv.Perm γ} {g : α → γ}
+
+private theorem map_zpow_apply (hg : ∀ z, g (σ z) = τ (g z)) (k : ℤ) (z : α) :
+    g ((σ ^ k) z) = (τ ^ k) (g z) := by
+  have hinv : Function.Semiconj g (σ⁻¹ : Equiv.Perm α) (τ⁻¹ : Equiv.Perm γ) :=
+    Function.Semiconj.inverses_right hg σ.right_inv τ.left_inv
+  cases k with
+  | ofNat m =>
+      simpa only [Int.ofNat_eq_natCast, zpow_natCast, Equiv.Perm.coe_pow] using
+        (Function.Semiconj.iterate_right hg m z)
+  | negSucc m =>
+      simpa only [zpow_negSucc, ← inv_pow, Equiv.Perm.coe_pow] using
+        (Function.Semiconj.iterate_right hinv (m + 1) z)
+
+/-- A function invariant under one application of a permutation is constant on every orbit of
+that permutation. -/
+theorem apply_eq_of_apply_eq (hσ : σ.SameCycle x y) (hf : ∀ z, f (σ z) = f z) : f x = f y := by
+  obtain ⟨k, rfl⟩ := hσ
+  have hmap := map_zpow_apply (τ := 1) (g := fun z => PLift.up (f z))
+    (fun z => congrArg PLift.up (hf z)) k x
+  exact congrArg PLift.down (by simpa only [one_zpow, Equiv.Perm.one_apply] using hmap.symm)
+
+/-- A map intertwining two permutations carries orbits of the first permutation into orbits of
+the second. -/
+theorem map (hσ : σ.SameCycle x y) (hg : ∀ z, g (σ z) = τ (g z)) :
+    τ.SameCycle (g x) (g y) := by
+  obtain ⟨k, rfl⟩ := hσ
+  exact ⟨k, (map_zpow_apply hg k x).symm⟩
+
+/-- If a periodic point `x` of `σ` shares its orbit with `y`, some positive natural power of `σ`
+carries `x` to `y`. -/
+theorem exists_pos_pow_eq_of_mem_periodicPts (h : σ.SameCycle x y)
+    (hx : x ∈ Function.periodicPts (σ : α → α)) : ∃ j : ℕ, 0 < j ∧ (σ ^ j) x = y := by
+  obtain ⟨k, hk⟩ := h
+  have hperiod : MulAction.period σ x = Function.minimalPeriod (σ : α → α) x :=
+    MulAction.period_eq_minimalPeriod
+  have hpos : 0 < MulAction.period σ x :=
+    hperiod ▸ Function.minimalPeriod_pos_of_mem_periodicPts hx
+  have hnonneg : 0 ≤ k % (MulAction.period σ x : ℤ) :=
+    Int.emod_nonneg k (by exact_mod_cast hpos.ne')
+  refine ⟨(k % (MulAction.period σ x : ℤ)).toNat + MulAction.period σ x, by omega, ?_⟩
+  have hred : σ ^ (k % (MulAction.period σ x : ℤ) + (MulAction.period σ x : ℤ)) • x = y := by
+    rw [MulAction.zpow_add_period_smul, MulAction.zpow_mod_period_smul]
+    exact hk
+  rw [Equiv.Perm.smul_def] at hred
+  rw [← zpow_natCast, Nat.cast_add, Int.toNat_of_nonneg hnonneg]
+  exact hred
+
+end Equiv.Perm.SameCycle
 
 namespace TauCeti
 
@@ -42,26 +96,6 @@ theorem sameCycle_toPerm_iff {α : Type*} (f : α → α) (hf : Function.Involut
           f a = f (f b) := congrArg f h
           _ = b := hf b
       simpa using this
-
-/-- If a periodic point `a` of `σ` shares its orbit with `b`, some positive natural power of `σ`
-carries `a` to `b`. -/
-theorem _root_.Equiv.Perm.SameCycle.exists_pos_pow_eq_of_mem_periodicPts {α : Type*}
-    {σ : Equiv.Perm α} {a b : α} (h : σ.SameCycle a b)
-    (ha : a ∈ Function.periodicPts (σ : α → α)) : ∃ j : ℕ, 0 < j ∧ (σ ^ j) a = b := by
-  obtain ⟨k, hk⟩ := h
-  have hperiod : MulAction.period σ a = Function.minimalPeriod (σ : α → α) a :=
-    MulAction.period_eq_minimalPeriod
-  have hpos : 0 < MulAction.period σ a :=
-    hperiod ▸ Function.minimalPeriod_pos_of_mem_periodicPts ha
-  have hnonneg : 0 ≤ k % (MulAction.period σ a : ℤ) :=
-    Int.emod_nonneg k (by exact_mod_cast hpos.ne')
-  refine ⟨(k % (MulAction.period σ a : ℤ)).toNat + MulAction.period σ a, by omega, ?_⟩
-  have hred : σ ^ (k % (MulAction.period σ a : ℤ) + (MulAction.period σ a : ℤ)) • a = b := by
-    rw [MulAction.zpow_add_period_smul, MulAction.zpow_mod_period_smul]
-    exact hk
-  rw [Equiv.Perm.smul_def] at hred
-  rw [← zpow_natCast, Nat.cast_add, Int.toNat_of_nonneg hnonneg]
-  exact hred
 
 variable {α : Type*} [Fintype α] [DecidableEq α]
 

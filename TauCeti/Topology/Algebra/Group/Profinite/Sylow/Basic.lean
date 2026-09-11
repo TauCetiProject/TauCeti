@@ -26,6 +26,8 @@ a separate compatible inverse-limit argument.
 ## Main definitions and results
 
 * `IsProPSylow`: the predicate for a Sylow pro-`p` subgroup.
+* `IsProPSylow.map_continuousMulEquiv`, `IsProPSylow.map_conj`: the predicate is preserved by
+  isomorphisms of topological groups, in particular by conjugation.
 * `isProPSylow_iff_isClosed_and_isProP_and_not_dvd_profiniteIndex`: its
   supernatural-index formulation.
 * `isProPSylow_iff_isPGroup_and_not_dvd_index`: its specialization to a discrete group.
@@ -42,7 +44,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v
 
 /-- A subgroup `P` of a topological group is a **Sylow pro-`p` subgroup** when it is closed,
 is itself pro-`p`, and its image in every quotient by an open normal subgroup has index not
@@ -80,6 +82,41 @@ index prime to `p`. -/
 theorem not_dvd_index (hP : IsProPSylow p P) (U : OpenNormalSubgroup G) :
     ¬ p ∣ (P.map (QuotientGroup.mk' U.toSubgroup)).index :=
   (isProPSylow_iff.mp hP).2.2 U
+
+/-- The image of a Sylow pro-`p` subgroup under an isomorphism of topological groups is a Sylow
+pro-`p` subgroup. -/
+theorem map_continuousMulEquiv {H : Type v} [Group H] [TopologicalSpace H]
+    (hP : IsProPSylow p P) (e : G ≃ₜ* H) : IsProPSylow p (P.map (e : G →* H)) := by
+  refine isProPSylow_iff.mpr ⟨?_, ?_, fun U ↦ ?_⟩
+  · rw [Subgroup.coe_map]
+    exact e.toHomeomorph.isClosedMap _ hP.isClosed
+  · exact hP.isProP.of_surjective ((e : G →* H).subgroupMap P)
+      (continuous_induced_rng.mpr (e.continuous.comp continuous_subtype_val))
+      ((e : G →* H).subgroupMap_surjective P)
+  · -- The image of `P.map e` in `H ⧸ U` has the same index as the image of `P` in
+    -- `G ⧸ U.comap e`, since both indices are those of `P ⊔ U.comap e` transported along `e`.
+    let V := OpenNormalSubgroup.comap U (e : G →* H) e.continuous
+    have hV : (P.map (QuotientGroup.mk' V.toSubgroup)).index =
+        ((P.map (e : G →* H)).map (QuotientGroup.mk' U.toSubgroup)).index := by
+      have hU : V.toSubgroup.map (e : G →* H) = U.toSubgroup :=
+        (congrArg _ (OpenNormalSubgroup.toSubgroup_comap U _ e.continuous)).trans
+          (Subgroup.map_comap_eq_self_of_surjective e.surjective U.toSubgroup)
+      calc (P.map (QuotientGroup.mk' V.toSubgroup)).index
+          = (P ⊔ V.toSubgroup).index := P.index_map_mk'_eq_index_sup V.toSubgroup
+        _ = ((P ⊔ V.toSubgroup).map (e : G →* H)).index :=
+          (Subgroup.index_map_equiv _ e.toMulEquiv).symm
+        _ = (P.map (e : G →* H) ⊔ U.toSubgroup).index := by rw [Subgroup.map_sup, hU]
+        _ = _ := ((P.map (e : G →* H)).index_map_mk'_eq_index_sup U.toSubgroup).symm
+    exact hV ▸ hP.not_dvd_index V
+
+/-- A conjugate of a Sylow pro-`p` subgroup is a Sylow pro-`p` subgroup. -/
+theorem map_conj [IsTopologicalGroup G] (hP : IsProPSylow p P) (g : G) :
+    IsProPSylow p (P.map (MulAut.conj g).toMonoidHom) :=
+  hP.map_continuousMulEquiv
+    { MulAut.conj g with
+      continuous_toFun := IsTopologicalGroup.continuous_conj g
+      continuous_invFun := (IsTopologicalGroup.continuous_conj g⁻¹).congr fun x ↦ by
+        rw [inv_inv]; exact (MulAut.conj_symm_apply g x).symm }
 
 end IsProPSylow
 

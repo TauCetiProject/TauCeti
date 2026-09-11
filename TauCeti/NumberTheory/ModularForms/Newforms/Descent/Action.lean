@@ -39,7 +39,8 @@ representative, `descendExtraGamma`, and the argument is different; that case is
 * `TauCeti.cast_descendShift`: transported to `Fin p`, it is `upperTriShift`.
 * `TauCeti.descendShift_bijective`: it is a bijection of the index set.
 * `TauCeti.exists_mem_Gamma0_descendMatrix_mul`:
-  `descendMatrix p N v * γ = α * descendMatrix p N (shift v)` for some `α ∈ Γ₀(N)`.
+  `descendMatrix p N v * γ = α * descendMatrix p N (shift v)` for some `α ∈ Γ₀(N)` whose
+  lower-right entry is `γ 1 1 - γ 1 0 * shift v`.
 
 ## Scope
 
@@ -103,11 +104,18 @@ product `descendMatrix p N v * γ` is an element of `Γ₀(N)` times the member 
 `descendShift p N hpsq γ v` — and that map is a bijection, by `descendShift_bijective`.
 
 The target index is named rather than existentially quantified, because reindexing the descent's
-slash sum needs the permutation itself, not merely that some member of the family appears. -/
+slash sum needs the permutation itself, not merely that some member of the family appears.
+
+The lower-right entry of `α` is given as an equation, as `exists_mem_Gamma0_upperTriRep_mul`
+gives it, rather than as a congruence: the modulus at which it is useful varies with the caller.
+Transporting a nebentypus through the descent reads off from it that `α` and `γ` agree modulo
+`N / p`, since `N / p ∣ γ 1 0`. -/
 theorem exists_mem_Gamma0_descendMatrix_mul (p N : ℕ) [NeZero p] (hpsq : p ^ 2 ∣ N)
     {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 (N / p)) (v : Fin (descendMatrixCount p N)) :
-    ∃ α : SL(2, ℤ), α ∈ Gamma0 N ∧ descendMatrix p N v * mapGL ℝ γ =
-      mapGL ℝ α * descendMatrix p N (descendShift p N hpsq γ v) := by
+    ∃ α : SL(2, ℤ), α ∈ Gamma0 N ∧
+      (α 1 1 : ℤ) = γ 1 1 - γ 1 0 * ((descendShift p N hpsq γ v : ℕ) : ℤ) ∧
+      descendMatrix p N v * mapGL ℝ γ =
+        mapGL ℝ α * descendMatrix p N (descendShift p N hpsq γ v) := by
   have hpN : p ∣ N := dvd_trans (dvd_pow_self p two_ne_zero) hpsq
   have hcount : descendMatrixCount p N = p := descendMatrixCount_of_sq_dvd hpsq
   have hv : v.val < p := lt_of_lt_of_le v.isLt hcount.le
@@ -118,7 +126,7 @@ theorem exists_mem_Gamma0_descendMatrix_mul (p N : ℕ) [NeZero p] (hpsq : p ^ 2
       exact_mod_cast (Nat.mul_div_cancel' hpN).symm
     rw [hpNp]
     exact mul_dvd_mul_left _ ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp hγ))
-  obtain ⟨α, hα, _, hmul⟩ :=
+  obtain ⟨α, hα, hd, hmul⟩ :=
     exists_mem_Gamma0_upperTriRep_mul
       (Gamma0_le_Gamma0_of_dvd (Nat.dvd_div_of_mul_dvd (by rwa [← pow_two])) hγ) hpc ⟨v.val, hv⟩
   have hv' : ((descendShift p N hpsq γ v : Fin (descendMatrixCount p N)) : ℕ) < p :=
@@ -126,9 +134,11 @@ theorem exists_mem_Gamma0_descendMatrix_mul (p N : ℕ) [NeZero p] (hpsq : p ^ 2
   -- the target index, named rather than left to definitional reduction through `finCongr`
   have htgt : (⟨(descendShift p N hpsq γ v : ℕ), hv'⟩ : Fin p) = upperTriShift p γ ⟨v.val, hv⟩ :=
     Fin.ext (descendShift_val hpsq γ v)
-  refine ⟨α, hα, ?_⟩
+  refine ⟨α, hα, ?_, ?_⟩
+  · rw [hd]
+    exact congrArg (fun n : ℕ ↦ (γ 1 1 : ℤ) - γ 1 0 * (n : ℤ)) (congrArg Fin.val htgt).symm
   -- the real identity is the image of the rational one under `GL₂(ℚ) → GL₂(ℝ)`
-  simpa only [descendMatrix_of_lt hv, descendMatrix_of_lt hv', htgt, map_mul, map_mapGL]
-    using congrArg (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)) hmul
+  · simpa only [descendMatrix_of_lt hv, descendMatrix_of_lt hv', htgt, map_mul, map_mapGL]
+      using congrArg (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)) hmul
 
 end TauCeti
