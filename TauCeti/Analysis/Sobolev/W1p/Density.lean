@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Mollification
 public import TauCeti.Analysis.Sobolev.W1p.Multiplication
 public import TauCeti.MeasureTheory.Function.Lp.MollificationBridge
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
 # Test functions are dense in `W^{1,p}(ℝⁿ)`
@@ -212,38 +213,6 @@ private theorem truncate_ae_eq_zero {C : ℝ} (hC : 0 ≤ C)
     rw [← hg, truncate, hgT, hpsi.eq_of_nhds, hpsi.gradient_eq.trans (gradient_fun_const _ _),
       zero_smul, smul_zero, add_zero]
   exact (WithLp.ext_iff _).2 (Prod.ext hfst hsnd)
-
-omit [MeasurableSpace E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- Dominated convergence in `Lᵖ`, in the form used for truncation: if `f n` agrees with `g`
-eventually at almost every point and `‖f n - g‖` is dominated by a fixed multiple of `‖g‖`, then
-`f n → g` in `Lᵖ`. -/
-private theorem tendsto_eLpNorm_sub_of_eventually_eq {α F : Type*} [MeasurableSpace α]
-    {m : Measure α} [NormedAddCommGroup F] {q : ℝ≥0∞} (hq0 : q ≠ 0) (hq : q ≠ ∞)
-    {f : ℕ → α → F} {g : α → F} (hf : ∀ n, AEStronglyMeasurable (f n) m) (hg : MemLp g q m)
-    {C : ℝ} (hC : 0 ≤ C) (hbound : ∀ n, ∀ᵐ x ∂m, ‖f n x - g x‖ ≤ C * ‖g x‖)
-    (hlim : ∀ᵐ x ∂m, ∀ᶠ n in atTop, f n x = g x) :
-    Tendsto (fun n => eLpNorm (f n - g) q m) atTop (𝓝 0) := by
-  have hr : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
-  simp_rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq]
-  have hlint : Tendsto (fun n => ∫⁻ x, ‖(f n - g) x‖ₑ ^ q.toReal ∂m) atTop (𝓝 0) := by
-    have hdom := tendsto_lintegral_filter_of_dominated_convergence' (μ := m)
-      (F := fun n x => ‖(f n - g) x‖ₑ ^ q.toReal) (f := fun _ => 0)
-      (fun x => (ENNReal.ofReal C * ‖g x‖ₑ) ^ q.toReal)
-      (Eventually.of_forall fun n => ((hf n).sub hg.1).enorm.pow_const _)
-      (Eventually.of_forall fun n => (hbound n).mono fun x hx => by
-        refine ENNReal.rpow_le_rpow ?_ hr.le
-        rw [Pi.sub_apply, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul hC]
-        exact ENNReal.ofReal_le_ofReal hx)
-      (by
-        simp_rw [ENNReal.mul_rpow_of_nonneg _ _ hr.le]
-        rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hr.le ENNReal.ofReal_ne_top)]
-        exact ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg hr.le ENNReal.ofReal_ne_top)
-          (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hq0 hq hg.2).ne)
-      (hlim.mono fun x hx => tendsto_const_nhds.congr' (hx.mono fun n hn => by
-        simp [hn, ENNReal.zero_rpow_of_pos hr]))
-    simpa only [lintegral_zero] using hdom
-  have h0 : (0 : ℝ≥0∞) ^ (1 / q.toReal) = 0 := ENNReal.zero_rpow_of_pos (one_div_pos.2 hr)
-  simpa only [h0] using hlint.ennrpow_const (1 / q.toReal)
 
 /-- **The truncations converge.**  The truncated jet agrees with the jet of `u` on the ball of
 radius `n + 1`, and differs from it by at most `(2 + C)` times its norm. -/
