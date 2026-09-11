@@ -48,9 +48,9 @@ that of `R`.
 * `TauCeti.FiniteDVRExtension.under_prime`: the chosen place lies over the closed point of `R`.
 * `TauCeti.FiniteDVRExtension.isLocalHom_algebraMap` and
   `TauCeti.FiniteDVRExtension.under_maximalIdeal_localRing`: the chosen local ring dominates `R`.
-* `TauCeti.FiniteDVRExtension.exists_extensionField_eq`: every finite separable extension of `K`
-  underlies such a package, for some place above the closed point of `R`; to fix a specified
-  place, use `TauCeti.FiniteDVRExtension.of`.
+* `TauCeti.FiniteDVRExtension.exists_algEquiv_extensionField`: every finite separable extension of
+  `K` is, as a `K`-algebra, the extension field of such a package, for some place above the closed
+  point of `R`; to fix a specified place, use `TauCeti.FiniteDVRExtension.of`.
 
 ## References
 
@@ -76,7 +76,8 @@ together with a chosen place of that extension above the closed point of `R`.
 The place is recorded as a maximal ideal `prime` of the integral closure of `R` in the extension
 field, lying over the maximal ideal of `R`, together with a ring `localRing` presented as the
 localization there. See `TauCeti.FiniteDVRExtension.of` for the construction from such an ideal and
-`TauCeti.FiniteDVRExtension.exists_extensionField_eq` for the fact that one always exists. -/
+`TauCeti.FiniteDVRExtension.exists_algEquiv_extensionField` for the fact that one always
+exists. -/
 structure FiniteDVRExtension (R K : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
     [Field K] [Algebra R K] [IsFractionRing R K] where
   /-- The extension field `K'` of `K`. -/
@@ -199,16 +200,6 @@ variable (R K)
 variable (L : Type u) [Field L] [Algebra K L] [FiniteDimensional K L] [Algebra.IsSeparable K L]
   [Algebra R L] [IsScalarTower R K L]
 
-/-- The canonical algebra structure from the localization at `P` to `L`, obtained by viewing both
-as localizations of the integral closure and using `P.primeCompl ≤ nonZeroDivisors`. -/
-noncomputable abbrev ofFractionAlgebra
-    (P : Ideal (_root_.integralClosure R L)) [P.IsPrime] :
-    Algebra (Localization.AtPrime P) L :=
-  letI : IsFractionRing (_root_.integralClosure R L) L :=
-    IsIntegralClosure.isFractionRing_of_finite_extension R K L _
-  IsLocalization.localizationAlgebraOfSubmonoidLe _ _ P.primeCompl
-    (nonZeroDivisors _) P.primeCompl_le_nonZeroDivisors
-
 /-- The finite extension of the discrete valuation ring `R` cut out by a maximal ideal `P` of the
 integral closure `C` of `R` in a finite separable extension `L` of `K`, provided `P` lies above the
 maximal ideal of `R`. Its local ring is `Localization.AtPrime P`.
@@ -225,59 +216,79 @@ noncomputable def of (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
   { extensionField := L
     prime := P
     localRing := Localization.AtPrime P
-    fractionAlgebra := ofFractionAlgebra R K L P
+    fractionAlgebra := IsLocalization.localizationAlgebraOfSubmonoidLe _ _ P.primeCompl
+      (nonZeroDivisors _) P.primeCompl_le_nonZeroDivisors
     fractionTower := IsLocalization.localization_isScalarTower_of_submonoid_le _ _ _ _ _ }
+
+/-- The unfolding equation for `of`, stated once: the characteristic lemmas below are all proved
+from it, so that no public lemma depends on the elaborator-generated equation of `of`. -/
+private theorem of_def (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+    [P.LiesOver (maximalIdeal R)] :
+    of R K L P =
+      haveI : IsFractionRing (_root_.integralClosure R L) L :=
+        IsIntegralClosure.isFractionRing_of_finite_extension R K L _
+      letI : P.IsMaximal := .of_liesOver_isMaximal P (maximalIdeal R)
+      { extensionField := L
+        prime := P
+        localRing := Localization.AtPrime P
+        fractionAlgebra := IsLocalization.localizationAlgebraOfSubmonoidLe _ _ P.primeCompl
+          (nonZeroDivisors _) P.primeCompl_le_nonZeroDivisors
+        fractionTower := IsLocalization.localization_isScalarTower_of_submonoid_le _ _ _ _ _ } := by
+  rw [of]
 
 @[simp]
 theorem of_extensionField (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] : (of R K L P).extensionField = L := by
-  rw [of.eq_1]
+  rw [of_def]
 
 @[simp]
 theorem of_prime (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] : HEq (of R K L P).prime P := by
-  rw [of.eq_1]
+  rw [of_def]
 
 @[simp]
 theorem of_localRing (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] : (of R K L P).localRing = Localization.AtPrime P := by
-  rw [of.eq_1]
+  rw [of_def]
 
 @[simp]
 theorem of_extensionAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] :
     HEq (of R K L P).extensionAlgebra (inferInstance : Algebra K L) := by
-  rw [of.eq_1]
+  rw [of_def]
 
 @[simp]
 theorem of_extensionBaseAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] :
     HEq (of R K L P).extensionBaseAlgebra (inferInstance : Algebra R L) := by
-  rw [of.eq_1]
+  rw [of_def]
 
 @[simp]
 theorem of_localRingClosureAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] :
     HEq (of R K L P).localRingClosureAlgebra
       (inferInstance : Algebra (_root_.integralClosure R L) (Localization.AtPrime P)) := by
-  rw [of.eq_1]
+  rw [of_def]
 
 @[simp]
 theorem of_localRingAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] :
     HEq (of R K L P).localRingAlgebra (inferInstance : Algebra R (Localization.AtPrime P)) := by
-  rw [of.eq_1]
+  rw [of_def]
 
-@[simp]
-theorem of_fractionAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
-    [P.LiesOver (maximalIdeal R)] :
-    HEq (of R K L P).fractionAlgebra (ofFractionAlgebra R K L P) := by
-  rw [of.eq_1]
+/-- The algebra-level refinement of `TauCeti.FiniteDVRExtension.of_extensionField`: the extension
+field of the package cut out by `P` is `L` itself as a `K`-algebra, not merely as a type. -/
+theorem of_extensionField_algEquiv (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+    [P.LiesOver (maximalIdeal R)] : Nonempty ((of R K L P).extensionField ≃ₐ[K] L) := by
+  rw [of_def]
+  exact ⟨AlgEquiv.refl⟩
 
 /-- Every finite separable extension `L` of `K` underlies a `FiniteDVRExtension R K`: the integral
 closure of `R` in `L` is integral over `R`, so going up produces a maximal ideal above the maximal
-ideal of `R`, and any such ideal cuts out a package with extension field `L`. -/
-theorem exists_extensionField_eq : ∃ E : FiniteDVRExtension R K, E.extensionField = L := by
+ideal of `R`, and any such ideal cuts out a package whose extension field is `L` as a
+`K`-algebra. -/
+theorem exists_algEquiv_extensionField :
+    ∃ E : FiniteDVRExtension R K, Nonempty (E.extensionField ≃ₐ[K] L) := by
   have : FaithfulSMul K L :=
     (faithfulSMul_iff_algebraMap_injective K L).2 (algebraMap K L).injective
   have : FaithfulSMul R L := FaithfulSMul.trans R K L
@@ -286,14 +297,14 @@ theorem exists_extensionField_eq : ∃ E : FiniteDVRExtension R K, E.extensionFi
   obtain ⟨P, _, _⟩ :=
     Ideal.exists_maximal_ideal_liesOver_of_isIntegral (R := R) (S := _root_.integralClosure R L)
       (maximalIdeal R)
-  exact ⟨of R K L P, rfl⟩
+  exact ⟨of R K L P, of_extensionField_algEquiv R K L P⟩
 
 end Construction
 
 /-- The trivial extension exists: `K` itself is a finite separable extension of `K`, and `R` is
 already local, so `FiniteDVRExtension R K` is never empty. -/
 instance : Nonempty (FiniteDVRExtension R K) :=
-  ⟨(exists_extensionField_eq R K K).choose⟩
+  ⟨(exists_algEquiv_extensionField R K K).choose⟩
 
 end FiniteDVRExtension
 
