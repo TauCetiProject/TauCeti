@@ -12,13 +12,12 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
 # The closed edges of the Schwarz--Christoffel map are segments
 
 The boundary values of the Schwarz--Christoffel map along a real interval free of prevertices with
-nonzero exponent are collinear and injective, and the closed boundary arc over such an interval is
-the closure of the open one.  This file pins that closure down: the image of a closed
-prevertex-free interval is exactly the *segment* joining the two boundary values at its endpoints,
-and the image of the open interval is the corresponding open segment.  When the endpoints are
-prevertices, the two boundary values are the Schwarz--Christoffel vertices, so each closed boundary
-interval is carried homeomorphically onto the straight polygon side joining two consecutive
-vertices, and that side is nondegenerate.
+nonzero exponent are collinear and injective on the open interval.  This file pins down the whole
+closed arc: the image of a closed prevertex-free interval is exactly the *segment* joining the two
+boundary values at its endpoints, and the image of the open interval is the corresponding open
+segment.  When the endpoints are prevertices, the two boundary values are the Schwarz--Christoffel
+vertices, so each closed boundary interval is carried homeomorphically onto the straight polygon
+side joining two consecutive vertices, and that side is nondegenerate.
 
 All the results below share the same hypotheses on the interval `[p, q]`: no prevertex of nonzero
 exponent lies in `Ioo p q`, and each of `p` and `q` carries total exponent greater than `-1`, which
@@ -30,10 +29,12 @@ endpoint is an arclength parameter on the arc:
 `TauCeti.norm_schwarzChristoffelBoundary_sub_add` records that the distances add.  That is the form
 in which the length of an edge and the direction in which it leaves a vertex are read off.
 
-Together with `TauCeti.tendsto_schwarzChristoffelBoundaryValue_atInfinity`, which closes the two
-unbounded boundary intervals up at a single point, these results describe the boundary of the
-Schwarz--Christoffel image edge by edge: the boundary values run over a chain of straight sides
-joining consecutive vertices.
+These results describe the bounded part of the boundary of the Schwarz--Christoffel image edge by
+edge: over the prevertices ordered along the real line the boundary values run through a chain of
+straight sides joining consecutive vertices.  The two unbounded boundary intervals are not covered
+here.  About those, `TauCeti.tendsto_schwarzChristoffelBoundaryValue_atInfinity` says only that the
+boundary values converge to a common vertex at infinity in both directions; identifying the image
+of either unbounded interval as a segment or a ray remains open.
 
 ## Main results
 
@@ -299,12 +300,19 @@ theorem schwarzChristoffelBoundary_image_Icc (a e : ι → ℝ) (z₀ : UpperHal
   have hpI : p ∈ Icc p q := ⟨le_rfl, hpq⟩
   have hqI : q ∈ Icc p q := ⟨hpq, le_rfl⟩
   have hdq : 0 ≤ d q := by rw [← hd0]; exact hdmono.monotoneOn hpI hqI hpq
-  have hBq : schwarzChristoffelBoundary a e z₀ q =
-      AffineMap.lineMap (schwarzChristoffelBoundary a e z₀ p)
-        (schwarzChristoffelBoundary a e z₀ p +
-          Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)) (d q) := hrep hqI
-  rw [hrep.image_eq, image_comp, hdcont.image_Icc_of_monotoneOn hpq hdmono.monotoneOn, hd0,
-    ← segment_eq_Icc hdq, image_segment, AffineMap.lineMap_apply_zero, hBq]
+  set L : ℝ →ᵃ[ℝ] ℂ := AffineMap.lineMap (schwarzChristoffelBoundary a e z₀ p)
+    (schwarzChristoffelBoundary a e z₀ p +
+      Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)) with hL
+  -- the arclength parameter is continuous and monotone, so it sweeps out `Icc (d p) (d q)`
+  have hd : d '' Icc p q = segment ℝ 0 (d q) := by
+    rw [hdcont.image_Icc_of_monotoneOn hpq hdmono.monotoneOn, hd0, segment_eq_Icc hdq]
+  have hBq : L (d q) = schwarzChristoffelBoundary a e z₀ q := (hrep hqI).symm
+  calc schwarzChristoffelBoundary a e z₀ '' Icc p q
+      = ⇑L '' (d '' Icc p q) := by rw [hrep.image_eq, image_comp]
+    _ = ⇑L '' segment ℝ 0 (d q) := by rw [hd]
+    _ = segment ℝ (L 0) (L (d q)) := by rw [image_segment]
+    _ = segment ℝ (schwarzChristoffelBoundary a e z₀ p) (schwarzChristoffelBoundary a e z₀ q) := by
+        rw [hBq, hL, AffineMap.lineMap_apply_zero]
 
 /-- **An open Schwarz--Christoffel boundary arc is an open segment.**  The companion of
 `TauCeti.schwarzChristoffelBoundary_image_Icc` that omits the two endpoint values. -/
@@ -319,13 +327,20 @@ theorem schwarzChristoffelBoundary_image_Ioo (a e : ι → ℝ) (z₀ : UpperHal
   have hpI : p ∈ Icc p q := ⟨le_rfl, hpq.le⟩
   have hqI : q ∈ Icc p q := ⟨hpq.le, le_rfl⟩
   have hdq : 0 < d q := by rw [← hd0]; exact hdmono hpI hqI hpq
-  have hBq : schwarzChristoffelBoundary a e z₀ q =
-      AffineMap.lineMap (schwarzChristoffelBoundary a e z₀ p)
-        (schwarzChristoffelBoundary a e z₀ p +
-          Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)) (d q) := hrep hqI
-  rw [(hrep.mono Ioo_subset_Icc_self).image_eq, image_comp,
-    hdcont.image_Ioo_of_strictMonoOn hpq.le hdmono, hd0, ← openSegment_eq_Ioo hdq,
-    image_openSegment, AffineMap.lineMap_apply_zero, hBq]
+  set L : ℝ →ᵃ[ℝ] ℂ := AffineMap.lineMap (schwarzChristoffelBoundary a e z₀ p)
+    (schwarzChristoffelBoundary a e z₀ p +
+      Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)) with hL
+  -- the arclength parameter is continuous and strictly monotone, so it sweeps out `Ioo (d p) (d q)`
+  have hd : d '' Ioo p q = openSegment ℝ 0 (d q) := by
+    rw [hdcont.image_Ioo_of_strictMonoOn hpq.le hdmono, hd0, openSegment_eq_Ioo hdq]
+  have hBq : L (d q) = schwarzChristoffelBoundary a e z₀ q := (hrep hqI).symm
+  calc schwarzChristoffelBoundary a e z₀ '' Ioo p q
+      = ⇑L '' (d '' Ioo p q) := by rw [(hrep.mono Ioo_subset_Icc_self).image_eq, image_comp]
+    _ = ⇑L '' openSegment ℝ 0 (d q) := by rw [hd]
+    _ = openSegment ℝ (L 0) (L (d q)) := by rw [image_openSegment]
+    _ = openSegment ℝ (schwarzChristoffelBoundary a e z₀ p)
+          (schwarzChristoffelBoundary a e z₀ q) := by
+        rw [hBq, hL, AffineMap.lineMap_apply_zero]
 
 /-- **The straight sides of the Schwarz--Christoffel polygon.**  Between two prevertices with no
 prevertex of nonzero exponent strictly between them, and with both total exponents greater than
