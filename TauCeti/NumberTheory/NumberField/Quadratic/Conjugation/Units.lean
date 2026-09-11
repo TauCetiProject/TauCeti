@@ -38,9 +38,9 @@ namespace NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 
-/-- **A unit of norm one is `±` a totally positive unit.** The condition `u σu = 1` says that `u`
-has norm `1` (`norm_eq_intCast_iff_mul_ringOfIntegersQuadraticConj_eq_intCast`), in particular
-positive norm, so `isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos` applies. -/
+/-- **A unit of norm one is `±` a totally positive unit.** The case `N(u) = 1` of
+`isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos`, with the norm hypothesis written in the
+conjugation form `u σu = 1` in which the descent arguments of this area produce it. -/
 theorem isTotallyPositive_or_neg_of_mul_ringOfIntegersQuadraticConj_eq_one
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {u : 𝓞 K}
     (hnorm : u * ringOfIntegersQuadraticConj hmin hgen u = 1) :
@@ -51,14 +51,14 @@ theorem isTotallyPositive_or_neg_of_mul_ringOfIntegersQuadraticConj_eq_one
   norm_num
 
 /-- **A nonzero element of norm minus one makes `θ` times it `±` totally positive.** The `-1`
-companion of `isTotallyPositive_or_neg_of_mul_ringOfIntegersQuadraticConj_eq_one`: when `u σu = -1`
-the field is real (`radicand_pos_of_norm_eq_neg_one`) and `N(θu) = (-d) · (-1) = d` is positive, so
-`isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos` applies to `θu`. The extra factor `θ` is
-what absorbs the sign that the `+1` case does not have to. -/
+companion of `isTotallyPositive_or_neg_of_mul_ringOfIntegersQuadraticConj_eq_one`: an element of
+norm `-1` need not be `±` totally positive, but `θ` has norm `-d`, so the extra factor `θ` restores
+the positive norm and with it the sign that the `+1` case has for free. -/
 theorem isTotallyPositive_or_neg_of_mul_ringOfIntegersQuadraticConj_eq_neg_one
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {u : 𝓞 K}
     (hnorm : u * ringOfIntegersQuadraticConj hmin hgen u = -1) :
     IsTotallyPositive ((θ * u : 𝓞 K) : K) ∨ IsTotallyPositive (-((θ * u : 𝓞 K) : K)) := by
+  -- The hypothesis says `N(u) = -1`, which forces `0 < d`; then `N(θu) = (-d) · (-1) = d > 0`.
   have hu : Algebra.norm ℚ (u : K) = -1 := by
     have := (norm_eq_intCast_iff_mul_ringOfIntegersQuadraticConj_eq_intCast (n := -1)
       hmin hgen).mpr (by simpa using hnorm)

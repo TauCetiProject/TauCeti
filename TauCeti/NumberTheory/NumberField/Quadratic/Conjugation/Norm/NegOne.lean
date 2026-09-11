@@ -75,14 +75,15 @@ namespace NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 
-/-- **A unit of norm `-1` makes some unit multiple of `θ` totally positive.** Writing the
-hypothesis in the conjugation form `u σu = -1`, the companion sign lemma
-`isTotallyPositive_or_neg_of_mul_ringOfIntegersQuadraticConj_eq_neg_one` puts `θu` or `-θu` on the
-totally positive side, and both are `v • θ` for a unit `v`. -/
+/-- **A unit of norm `-1` makes some unit multiple of `θ` totally positive.** This is the
+archimedean content of the criterion below: a unit of norm `-1` trivializes the narrow class of
+the principal ideal `(θ)`, the one class that obstructs `Cl⁺(K) → Cl(K)` being injective. -/
 theorem exists_unit_isTotallyPositive_smul_gen_of_norm_eq_neg_one
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {u : (𝓞 K)ˣ}
     (hu : Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1) :
     ∃ v : (𝓞 K)ˣ, IsTotallyPositive (v • (θ : K)) := by
+  -- Read the hypothesis in the conjugation form `u σu = -1`; the companion sign lemma then puts
+  -- `θu` or `-θu` on the totally positive side, and both are `v • θ` for a unit `v`.
   have hconj : (u : 𝓞 K) * ringOfIntegersQuadraticConj hmin hgen (u : 𝓞 K) = -1 := by
     have := (norm_eq_intCast_iff_mul_ringOfIntegersQuadraticConj_eq_intCast
       (n := -1) hmin hgen (x := (u : 𝓞 K))).mp (by rw [hu]; norm_num)
@@ -92,12 +93,14 @@ theorem exists_unit_isTotallyPositive_smul_gen_of_norm_eq_neg_one
   · exact ⟨u, by simpa [Units.smul_def, Algebra.smul_def, mul_comm] using h⟩
   · exact ⟨-u, by simpa [Units.smul_def, Algebra.smul_def, mul_comm] using h⟩
 
-/-- **A totally positive unit multiple of `θ` produces a unit of norm `-1`.** Its norm
-`N(v) · N(θ) = N(v) · (-d)` is positive, so `N(v)` is negative; and the norm of a unit is `±1`. -/
+/-- **A totally positive unit multiple of `θ` produces a unit of norm `-1`.** The converse of
+`exists_unit_isTotallyPositive_smul_gen_of_norm_eq_neg_one` for a real quadratic field: the
+scaling unit itself is the unit of norm `-1`. -/
 theorem norm_eq_neg_one_of_isTotallyPositive_smul_gen (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hd : 0 < d) {v : (𝓞 K)ˣ}
     (hv : IsTotallyPositive (v • (θ : K))) :
     Algebra.norm ℚ (((v : 𝓞 K) : K)) = -1 := by
+  -- `N(v • θ) = N(v) · (-d)` is positive and `0 < d`, so `N(v)` is negative; a unit has norm `±1`.
   have hvalue : (v : (𝓞 K)ˣ) • (θ : K) = ((v : 𝓞 K) : K) * (θ : K) := by
     simp [Units.smul_def, Algebra.smul_def]
   have hne : (v : (𝓞 K)ˣ) • (θ : K) ≠ 0 := by
@@ -115,26 +118,19 @@ theorem norm_eq_neg_one_of_isTotallyPositive_smul_gen (hmin : minpoly ℤ θ = X
   · exact (norm_eq_intCast_iff_mul_ringOfIntegersQuadraticConj_eq_intCast (n := -1) hmin hgen).mpr
       (by simpa using h)
 
-/-- An element of positive norm has a totally positive multiple by `±1`. -/
-private theorem exists_unit_isTotallyPositive_smul (hmin : minpoly ℤ θ = X ^ 2 - C d)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {y : K} (hnorm : 0 < Algebra.norm ℚ y) :
-    ∃ ε : (𝓞 K)ˣ, IsTotallyPositive (ε • y) := by
-  rcases isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos hmin hgen hnorm with h | h
-  · exact ⟨1, by simpa using h⟩
-  · exact ⟨-1, by simpa [Units.smul_def, Algebra.smul_def] using h⟩
-
 namespace NarrowClassGroup
 
-/-- **A unit of norm `-1` makes the narrow class group the ordinary one.** Given `x : Kˣ`, its norm
-`N(x)` is positive or negative. If positive, `x` or `-x` is already totally positive. If negative,
-then `N(θx) = -d · N(x)` is positive, so some `ε · θx` is totally positive; multiplying it by the
-totally positive `v · θ` supplied by the hypothesis gives `d · (εv) · x` totally positive, and `d`
-is a positive rational. Either way a unit of `𝓞 K` scales `x` to a totally positive element, so
-every principal narrow class is trivial and the kernel of `Cl⁺(K) → Cl(K)` vanishes. -/
+/-- **A unit of norm `-1` makes the narrow class group the ordinary one.** If some unit of `𝓞 K`
+has norm `-1` then every principal narrow class is trivial, so forgetting positivity
+`Cl⁺(K) → Cl(K)` is injective and the two class groups agree. This is the substantial direction of
+the classical criterion `h⁺ = h ↔ N(ε) = -1`; the field is automatically real. -/
 theorem toClassGroup_injective_of_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {u : (𝓞 K)ˣ}
     (hu : Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1) :
     Function.Injective (toClassGroup (K := K)) := by
+  -- For `x : Kˣ` of positive norm, `x` or `-x` is already totally positive. For `x` of negative
+  -- norm, `N(θx) = -d · N(x)` is positive, and multiplying a totally positive `ε · θx` by the
+  -- totally positive `v · θ` of the hypothesis gives `d · (εv) · x`, with `d` a positive rational.
   have hd : 0 < d := radicand_pos_of_norm_eq_neg_one hmin hgen hu
   have hdq : (0 : ℚ) < ((d : ℤ) : ℚ) := by exact_mod_cast hd
   have hsq : (θ : K) ^ 2 = ((((d : ℤ) : ℚ)) : K) := by
@@ -151,7 +147,7 @@ theorem toClassGroup_injective_of_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2
     have hypos : 0 < Algebra.norm ℚ ((θ : K) * (x : K)) := by
       rw [map_mul, norm_gen_eq_neg_radicand hmin hgen]
       nlinarith
-    obtain ⟨ε, hε⟩ := exists_unit_isTotallyPositive_smul hmin hgen hypos
+    obtain ⟨ε, hε⟩ := exists_unit_isTotallyPositive_smul_of_norm_pos hmin hgen hypos
     refine ⟨v * ε, ?_⟩
     -- The product of the two totally positive elements is `d` times `(vε) • x`.
     have hmul : (v • (θ : K)) * (ε • ((θ : K) * (x : K)))
@@ -163,12 +159,12 @@ theorem toClassGroup_injective_of_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2
       hmul ▸ hv.mul hε
     have hfinal := (isTotallyPositive_ratCast (K := K) hdq).inv.mul hpos
     rwa [← mul_assoc, inv_mul_cancel₀ (Rat.cast_ne_zero.mpr hdq.ne'), one_mul] at hfinal
-  · exact exists_unit_isTotallyPositive_smul hmin hgen hgt
+  · exact exists_unit_isTotallyPositive_smul_of_norm_pos hmin hgen hgt
 
 /-- **The narrow and ordinary class groups of a real quadratic field agree exactly when some unit
-has norm `-1`.** One direction is `toClassGroup_injective_of_norm_eq_neg_one`. For the other,
-injectivity makes the narrow class of the principal ideal `(θ)` trivial, so a unit multiple of `θ`
-is totally positive and `norm_eq_neg_one_of_isTotallyPositive_smul_gen` applies. -/
+has norm `-1`.** For `K = ℚ(√d)` with `0 < d`, forgetting positivity `Cl⁺(K) → Cl(K)` is injective
+if and only if some unit of `𝓞 K` has norm `-1`. The positivity hypothesis is needed only for the
+direction producing such a unit. -/
 theorem toClassGroup_injective_iff_exists_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hd : 0 < d) :
     Function.Injective (toClassGroup (K := K)) ↔
@@ -180,15 +176,16 @@ theorem toClassGroup_injective_iff_exists_norm_eq_neg_one (hmin : minpoly ℤ θ
   obtain ⟨v, hv⟩ := mkPrincipal_eq_one_iff.mp hker
   exact ⟨v, norm_eq_neg_one_of_isTotallyPositive_smul_gen hmin hgen hd (by simpa using hv)⟩
 
-/-- **The narrow class number equals the class number exactly when some unit has norm `-1`.**
-Forgetting positivity is surjective (`toClassGroup_surjective`) and `Cl⁺(K)` is finite, so equal
-cardinalities are equivalent to bijectivity (`Nat.bijective_iff_surjective_and_card`) and hence to
-injectivity. This is the classical criterion `h⁺ = h ↔ N(ε) = -1`. -/
+/-- **The narrow class number equals the class number exactly when some unit has norm `-1`.** The
+class-number form of `toClassGroup_injective_iff_exists_norm_eq_neg_one`, which is how the
+classical criterion `h⁺ = h ↔ N(ε) = -1` is usually stated. -/
 theorem card_eq_card_classGroup_iff_exists_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hd : 0 < d) :
     Nat.card (NarrowClassGroup K) = Nat.card (ClassGroup (𝓞 K)) ↔
       ∃ u : (𝓞 K)ˣ, Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1 := by
   rw [← toClassGroup_injective_iff_exists_norm_eq_neg_one hmin hgen hd]
+  -- Forgetting positivity is surjective and `Cl⁺(K)` is finite, so equal cardinalities and
+  -- injectivity are each equivalent to bijectivity.
   constructor
   · exact fun h =>
       ((Nat.bijective_iff_surjective_and_card _).mpr ⟨toClassGroup_surjective, h⟩).injective
