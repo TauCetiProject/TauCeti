@@ -20,8 +20,8 @@ finiteness, flatness, and surjectivity is inherited by the structural morphism o
 the represented kernel is itself an isogeny over the base.
 
 Over a Noetherian base ring, the kernel of a central isogeny is therefore a finite locally free
-bicommutative Hopf algebra, the shape required by Cartier duality: the kernel coordinate ring is
-finite and faithfully flat, hence finitely presented and projective.
+bicommutative Hopf algebra, the shape required by Cartier duality: its coordinate ring is finite
+and faithfully flat over the base, hence finite projective.
 
 ## Main declarations
 
@@ -79,9 +79,8 @@ variable [IsNoetherianRing R]
 variable {H K : _root_.CommHopfAlgCat.{u} R} {f : H ⟶ K}
 
 /-- Over a Noetherian base ring, package the kernel of a central isogeny as a finite locally
-free bicommutative Hopf algebra, ready for Cartier duality. Finiteness of the kernel
-coordinate ring makes it finitely presented, and faithful flatness then makes it
-projective. -/
+free bicommutative Hopf algebra, ready for Cartier duality. The kernel coordinate ring is
+finite and faithfully flat over the base, hence finite projective. -/
 noncomputable abbrev kernelFiniteLocallyFree (hf : IsCentralIsogeny f) :
     FiniteLocallyFreeBicommutativeHopfAlgCat.{u} R :=
   ⟨quotient K (kernelHopfIdeal f), by
