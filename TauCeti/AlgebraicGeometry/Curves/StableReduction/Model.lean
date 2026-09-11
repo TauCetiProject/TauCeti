@@ -42,7 +42,7 @@ When `K` is a fraction field of `R`, this is the generic fibre. -/
 noncomputable abbrev genericFiber (R K : Type u) [CommRing R] [Field K] [Algebra R K]
     {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) :
     Over (Spec (.of K)) :=
-  Over.mk (pullback.snd toBase (Spec.map (CommRingCat.ofHom (algebraMap R K))))
+  (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).obj (Over.mk toBase)
 
 /-- The canonical morphism from the scalar-extended fibre to the original total space. -/
 noncomputable abbrev genericFiberι (R K : Type u) [CommRing R] [Field K] [Algebra R K]
@@ -90,24 +90,8 @@ abbrev IsProper (M : Model R K C toK) : Prop :=
 def baseChangeHom {M N : Model R K C toK} (f : M.total ⟶ N.total)
     (overBase : f ≫ N.toBase = M.toBase) :
     (genericFiber R K M.toBase).left ⟶ (genericFiber R K N.toBase).left :=
-  pullback.lift (genericFiberι R K M.toBase ≫ f) (genericFiber R K M.toBase).hom (by
-    rw [Category.assoc, overBase]
-    exact pullback.condition)
-
-@[reassoc (attr := simp)]
-lemma baseChangeHom_genericFiberι {M N : Model R K C toK} (f : M.total ⟶ N.total)
-    (overBase : f ≫ N.toBase = M.toBase) :
-    baseChangeHom f overBase ≫ genericFiberι R K N.toBase =
-      genericFiberι R K M.toBase ≫ f :=
-  pullback.lift_fst _ _ _
-
-@[reassoc (attr := simp)]
-lemma baseChangeHom_snd {M N : Model R K C toK} (f : M.total ⟶ N.total)
-    (overBase : f ≫ N.toBase = M.toBase) :
-    baseChangeHom f overBase ≫
-        pullback.snd N.toBase (Spec.map (CommRingCat.ofHom (algebraMap R K))) =
-      pullback.snd M.toBase (Spec.map (CommRingCat.ofHom (algebraMap R K))) :=
-  pullback.lift_snd _ _ _
+  ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).map
+    (Over.homMk f overBase)).left
 
 /-- A morphism of models is a morphism over the DVR that respects the chosen identification of
 the generic fibre. -/
@@ -127,37 +111,38 @@ lemma Hom.ext {M N : Model R K C toK} {f g : Hom M N} (h : f.hom = g.hom) : f = 
   cases h
   rfl
 
-@[simp]
-lemma baseChangeHom_id (M : Model R K C toK) :
-    baseChangeHom (M := M) (N := M) (𝟙 M.total) (by simp) = 𝟙 _ := by
-  apply pullback.hom_ext
-  · simp [baseChangeHom]
-  · simp [baseChangeHom]
-
-@[simp]
-lemma baseChangeHom_comp {M N P : Model R K C toK} (f : Hom M N) (g : Hom N P) :
-    baseChangeHom (f.hom ≫ g.hom) (by rw [Category.assoc, g.overBase, f.overBase]) =
-      baseChangeHom f.hom f.overBase ≫ baseChangeHom g.hom g.overBase := by
-  apply pullback.hom_ext
-  · simp only [baseChangeHom, pullback.lift_fst, pullback.lift_fst_assoc, Category.assoc]
-  · simp only [baseChangeHom, pullback.lift_snd, Category.assoc]
-    exact (baseChangeHom_snd f.hom f.overBase).symm
-
 /-- Models of a fixed scheme over the fraction field form a category. -/
 instance : Category (Model R K C toK) where
   Hom := Hom
   id M :=
-    { hom := 𝟙 M.total
-      overBase := by simp
+    let overHom := 𝟙 (Over.mk M.toBase)
+    { hom := overHom.left
+      overBase := Over.w overHom
       genericFiber := by
-        dsimp only [genericFiber]
-        rw [baseChangeHom_id, Category.id_comp] }
-  comp f g :=
-    { hom := f.hom ≫ g.hom
-      overBase := by rw [Category.assoc, g.overBase, f.overBase]
+        dsimp only [overHom, baseChangeHom]
+        rw [Over.homMk_eta,
+          congrArg Over.Hom.left
+            ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).map_id
+              (Over.mk M.toBase)),
+          Over.id_left, Category.id_comp] }
+  comp {M N P} f g :=
+    let overHom :=
+      (Over.homMk f.hom f.overBase : Over.mk M.toBase ⟶ Over.mk N.toBase) ≫
+        (Over.homMk g.hom g.overBase : Over.mk N.toBase ⟶ Over.mk P.toBase)
+    { hom := overHom.left
+      overBase := Over.w overHom
       genericFiber := by
-        dsimp only [genericFiber] at f g ⊢
-        rw [baseChangeHom_comp, Category.assoc, g.genericFiber, f.genericFiber] }
+        have hf := f.genericFiber
+        have hg := g.genericFiber
+        dsimp only [baseChangeHom] at hf hg
+        dsimp only [overHom, baseChangeHom]
+        rw [Over.homMk_eta,
+          congrArg Over.Hom.left
+            ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).map_comp
+              (Over.homMk f.hom f.overBase : Over.mk M.toBase ⟶ Over.mk N.toBase)
+              (Over.homMk g.hom g.overBase : Over.mk N.toBase ⟶ Over.mk P.toBase)),
+          Over.comp_left, Category.assoc,
+          hg, hf] }
   id_comp f := by ext; simp
   comp_id f := by ext; simp
   assoc f g h := by ext; simp
