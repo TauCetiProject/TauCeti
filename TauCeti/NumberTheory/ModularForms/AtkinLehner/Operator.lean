@@ -45,6 +45,8 @@ alone, with no matrix to supply — is the interface to use.
   `GL (Fin 2) ℝ`. This is what makes the operator well defined.
 * `TauCeti.atkinLehnerOperator_congr`, `TauCeti.atkinLehnerOperatorCusp_congr`: independence of
   the chosen Atkin–Lehner matrix.
+* `TauCeti.atkinLehnerOperator_coe_cuspForm`: the two operators agree under the coercion
+  `S_k(Γ₀(N)) → M_k(Γ₀(N))`.
 * `TauCeti.atkinLehnerOperator_atkinLehnerOperator`,
   `TauCeti.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp` and their
   `TauCeti.Nat.IsExactDivisor` counterparts: the square is `Q ^ (k - 2)`.
@@ -188,6 +190,18 @@ theorem coe_atkinLehnerOperatorCusp (hQ : 0 < Q) (hQN : Q ∣ N) (h : IsAtkinLeh
     (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
     (⇑(atkinLehnerOperatorCusp hQ hQN h k f) : ℍ → ℂ) = ⇑f ∣[k] atkinLehnerGL hQ h := (rfl)
 
+/-- **The two Atkin–Lehner slash operators agree under the coercion** `S_k(Γ₀(N)) → M_k(Γ₀(N))`:
+both slash by `W`, which does not see whether a form vanishes at the cusps. This is the
+counterpart of `frickeOperator_coe_cuspForm` for the Fricke operator. -/
+@[simp]
+theorem atkinLehnerOperator_coe_cuspForm (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    atkinLehnerOperator hQ hQN h k (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) =
+      (atkinLehnerOperatorCusp hQ hQN h k f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :=
+  DFunLike.coe_injective <| by
+    rw [coe_atkinLehnerOperator, ModularFormClass.coe_modularForm, ModularFormClass.coe_modularForm,
+      coe_atkinLehnerOperatorCusp]
+
 /-- **The operator does not depend on the chosen Atkin–Lehner matrix.** Two of them differ by an
 element of `Γ₀(N)` on the left, which a form of level `Γ₀(N)` absorbs. -/
 theorem atkinLehnerOperator_congr (hQ : 0 < Q) (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M)
@@ -203,20 +217,18 @@ theorem atkinLehnerOperator_congr (hQ : 0 < Q) (hQN : Q ∣ N) (h : IsAtkinLehne
   rw [coe_atkinLehnerOperator, coe_atkinLehnerOperator, hGL, SlashAction.slash_mul,
     SlashInvariantForm.slash_action_eqn f _ (Subgroup.mem_map_of_mem _ hγ)]
 
-/-- **The cusp-form operator does not depend on the chosen Atkin–Lehner matrix.** -/
+/-- **The cusp-form operator does not depend on the chosen Atkin–Lehner matrix.** This is
+`atkinLehnerOperator_congr` read on the image of the coercion `S_k(Γ₀(N)) → M_k(Γ₀(N))`; no
+second representative-and-slash argument is needed. -/
 theorem atkinLehnerOperatorCusp_congr (hQ : 0 < Q) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) (h' : IsAtkinLehnerMatrix N Q M')
     (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
     atkinLehnerOperatorCusp hQ hQN h k f = atkinLehnerOperatorCusp hQ hQN h' k f := by
-  obtain ⟨γ, hγ, hM⟩ := h'.exists_mem_Gamma0_eq_mul_left hQ.ne' hQN h
-  have hGL : atkinLehnerGL hQ h = mapGL ℝ γ * atkinLehnerGL hQ h' := by
-    refine Units.ext ?_
-    simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
-      Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
-      Int.coe_castRingHom, ← Matrix.map_mul_intCast, hM]
+  have hcongr := atkinLehnerOperator_congr hQ hQN h h'
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k)
+  rw [atkinLehnerOperator_coe_cuspForm, atkinLehnerOperator_coe_cuspForm] at hcongr
   refine DFunLike.coe_injective ?_
-  rw [coe_atkinLehnerOperatorCusp, coe_atkinLehnerOperatorCusp, hGL, SlashAction.slash_mul,
-    SlashInvariantForm.slash_action_eqn f _ (Subgroup.mem_map_of_mem _ hγ)]
+  simpa only [ModularFormClass.coe_modularForm] using congrArg DFunLike.coe hcongr
 
 /-- **Slashing twice by `W` multiplies by `Q ^ (k - 2)`.** The square `W ^ 2` is `Q` times an
 element of `Γ₀(N)`; the scalar matrix contributes `Q ^ (k - 2)` and the `Γ₀(N)` factor is
