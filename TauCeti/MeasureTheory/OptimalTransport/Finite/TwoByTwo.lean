@@ -19,6 +19,13 @@ writes every real-valued transport cost as an affine function of the interval pa
 of the cost cross-difference therefore selects an endpoint that minimizes the cost.
 -/
 
+/-
+The source for this construction is the two-by-two discrete-problem acceptance check in Layer 1
+of the [OptimalTransport roadmap][roadmap].
+
+[roadmap]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/OptimalTransport/README.md
+-/
+
 public section
 
 noncomputable section
@@ -38,25 +45,6 @@ def twoByTwoUpper (μ ν : PMF (Fin 2)) : ℝ :=
 /-- The feasible interval for the upper-left entry of a two-by-two transport matrix. -/
 def TwoByTwoParameter (μ ν : PMF (Fin 2)) :=
   Set.Icc (twoByTwoLower μ ν) (twoByTwoUpper μ ν)
-
-namespace TwoByTwoParameter
-
-/-- A feasible two-by-two parameter is at least the lower endpoint. -/
-theorem lower_le {μ ν : PMF (Fin 2)} (x : TwoByTwoParameter μ ν) :
-    twoByTwoLower μ ν ≤ x.1 :=
-  x.2.1
-
-/-- A feasible two-by-two parameter is at most the upper endpoint. -/
-theorem le_upper {μ ν : PMF (Fin 2)} (x : TwoByTwoParameter μ ν) :
-    x.1 ≤ twoByTwoUpper μ ν :=
-  x.2.2
-
-/-- Feasible two-by-two parameters are equal when their real values are equal. -/
-@[ext]
-theorem ext {μ ν : PMF (Fin 2)} {x y : TwoByTwoParameter μ ν} (h : x.1 = y.1) : x = y :=
-  Subtype.ext h
-
-end TwoByTwoParameter
 
 namespace TransportMatrix
 
@@ -185,12 +173,40 @@ def twoByTwoEquiv (μ ν : PMF (Fin 2)) :
     apply Subtype.ext
     exact ofTwoByTwoParameter_apply_zero_zero x
 
+/-- The matrix equivalence sends a matrix to its feasible upper-left parameter. -/
+@[simp]
+theorem twoByTwoEquiv_apply (A : TransportMatrix μ ν) :
+    twoByTwoEquiv μ ν A = twoByTwoParameter A :=
+  (rfl)
+
+/-- The inverse matrix equivalence reconstructs the matrix from its parameter. -/
+@[simp]
+theorem twoByTwoEquiv_symm_apply (x : TwoByTwoParameter μ ν) :
+    (twoByTwoEquiv μ ν).symm x = ofTwoByTwoParameter x :=
+  (rfl)
+
 /-- Finite couplings of two two-point laws are equivalent to the feasible interval for their
 upper-left mass. -/
 def twoByTwoCouplingEquiv (μ ν : PMF (Fin 2)) :
     {π : PMF (Fin 2 × Fin 2) // π.map Prod.fst = μ ∧ π.map Prod.snd = ν} ≃
       TwoByTwoParameter μ ν :=
   (transportMatrixEquiv μ ν).trans (twoByTwoEquiv μ ν)
+
+/-- The coupling equivalence records the real mass of the upper-left pair. -/
+@[simp]
+theorem twoByTwoCouplingEquiv_apply_val
+    (π : {π : PMF (Fin 2 × Fin 2) // π.map Prod.fst = μ ∧ π.map Prod.snd = ν}) :
+    (twoByTwoCouplingEquiv μ ν π).1 = (π.1 (0, 0)).toReal := by
+  simp only [twoByTwoCouplingEquiv, Equiv.trans_apply, twoByTwoEquiv_apply,
+    twoByTwoParameter_val, transportMatrixEquiv_apply]
+
+/-- The inverse coupling equivalence has the entries of the reconstructed transport matrix. -/
+@[simp]
+theorem twoByTwoCouplingEquiv_symm_apply (x : TwoByTwoParameter μ ν)
+    (p : Fin 2 × Fin 2) :
+    ((twoByTwoCouplingEquiv μ ν).symm x).1 p = ofTwoByTwoParameter x p.1 p.2 := by
+  simp only [twoByTwoCouplingEquiv, Equiv.symm_trans_apply, twoByTwoEquiv_symm_apply,
+    transportMatrixEquiv_symm_apply]
 
 /-- The cross-difference controlling which endpoint minimizes a two-by-two transport cost. -/
 def twoByTwoCrossDiff (c : Fin 2 × Fin 2 → ℝ) : ℝ :=
@@ -228,6 +244,21 @@ noncomputable def optimalTwoByTwo (c : Fin 2 × Fin 2 → ℝ) (μ ν : PMF (Fin
     TransportMatrix μ ν :=
   ofTwoByTwoParameter (optimalTwoByTwoParameter c μ ν)
 
+/-- The minimizing parameter is the lower or upper endpoint according to the cross-difference. -/
+@[simp]
+theorem optimalTwoByTwoParameter_val (c : Fin 2 × Fin 2 → ℝ) (μ ν : PMF (Fin 2)) :
+    (optimalTwoByTwoParameter c μ ν).1 =
+      if 0 ≤ twoByTwoCrossDiff c then twoByTwoLower μ ν else twoByTwoUpper μ ν := by
+  unfold optimalTwoByTwoParameter
+  split <;> rfl
+
+/-- The upper-left entry of the optimizer is the endpoint selected by the cross-difference. -/
+@[simp]
+theorem optimalTwoByTwo_apply_zero_zero (c : Fin 2 × Fin 2 → ℝ) (μ ν : PMF (Fin 2)) :
+    (optimalTwoByTwo c μ ν 0 0).toReal =
+      if 0 ≤ twoByTwoCrossDiff c then twoByTwoLower μ ν else twoByTwoUpper μ ν := by
+  simp only [optimalTwoByTwo, ofTwoByTwoParameter_apply_zero_zero, optimalTwoByTwoParameter_val]
+
 /-- The exact cost of the chosen minimizing endpoint of the two-by-two feasible interval. -/
 theorem optimalTwoByTwo_cost_eq (c : Fin 2 × Fin 2 → ℝ) (μ ν : PMF (Fin 2)) :
     (optimalTwoByTwo c μ ν).cost c =
@@ -235,43 +266,19 @@ theorem optimalTwoByTwo_cost_eq (c : Fin 2 × Fin 2 → ℝ) (μ ν : PMF (Fin 2
         c (1, 1) * (1 - (μ 0).toReal - (ν 0).toReal) +
           twoByTwoCrossDiff c *
             if 0 ≤ twoByTwoCrossDiff c then twoByTwoLower μ ν else twoByTwoUpper μ ν := by
-  rw [cost_eq_const_add_crossDiff_mul]
-  by_cases h : 0 ≤ twoByTwoCrossDiff c
-  · have hopt : (optimalTwoByTwo c μ ν 0 0).toReal = twoByTwoLower μ ν := by
-      change (ofTwoByTwoParameter (optimalTwoByTwoParameter c μ ν) 0 0).toReal = _
-      rw [ofTwoByTwoParameter_apply_zero_zero]
-      simp [optimalTwoByTwoParameter, h]
-    rw [hopt]
-    simp [h]
-  · have hopt : (optimalTwoByTwo c μ ν 0 0).toReal = twoByTwoUpper μ ν := by
-      change (ofTwoByTwoParameter (optimalTwoByTwoParameter c μ ν) 0 0).toReal = _
-      rw [ofTwoByTwoParameter_apply_zero_zero]
-      simp [optimalTwoByTwoParameter, h]
-    rw [hopt]
-    simp [h]
+  rw [cost_eq_const_add_crossDiff_mul, optimalTwoByTwo_apply_zero_zero]
 
 /-- The chosen two-by-two transport matrix has cost no larger than any feasible matrix. -/
 theorem optimalTwoByTwo_cost_le (c : Fin 2 × Fin 2 → ℝ) (A : TransportMatrix μ ν) :
     (optimalTwoByTwo c μ ν).cost c ≤ A.cost c := by
-  rw [cost_eq_const_add_crossDiff_mul, cost_eq_const_add_crossDiff_mul]
-  by_cases h : 0 ≤ twoByTwoCrossDiff c
-  · have hA := (twoByTwoParameter A).2.1
-    change twoByTwoLower μ ν ≤ (A 0 0).toReal at hA
-    have hopt : (optimalTwoByTwo c μ ν 0 0).toReal = twoByTwoLower μ ν := by
-      change (ofTwoByTwoParameter (optimalTwoByTwoParameter c μ ν) 0 0).toReal = _
-      rw [ofTwoByTwoParameter_apply_zero_zero]
-      simp [optimalTwoByTwoParameter, h]
-    rw [hopt]
-    nlinarith
-  · have hA := (twoByTwoParameter A).2.2
-    change (A 0 0).toReal ≤ twoByTwoUpper μ ν at hA
-    have hcross : twoByTwoCrossDiff c ≤ 0 := le_of_not_ge h
-    have hopt : (optimalTwoByTwo c μ ν 0 0).toReal = twoByTwoUpper μ ν := by
-      change (ofTwoByTwoParameter (optimalTwoByTwoParameter c μ ν) 0 0).toReal = _
-      rw [ofTwoByTwoParameter_apply_zero_zero]
-      simp [optimalTwoByTwoParameter, h]
-    rw [hopt]
-    nlinarith
+  rw [cost_eq_const_add_crossDiff_mul, cost_eq_const_add_crossDiff_mul,
+    optimalTwoByTwo_apply_zero_zero]
+  rw [add_le_add_iff_left]
+  split_ifs with h
+  · apply mul_le_mul_of_nonneg_left _ h
+    simpa only [twoByTwoParameter_val] using (twoByTwoParameter A).2.1
+  · apply mul_le_mul_of_nonpos_left _ (le_of_not_ge h)
+    simpa only [twoByTwoParameter_val] using (twoByTwoParameter A).2.2
 
 end TransportMatrix
 
