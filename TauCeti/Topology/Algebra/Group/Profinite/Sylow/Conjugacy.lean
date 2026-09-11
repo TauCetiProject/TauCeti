@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Basic
+import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # Conjugacy of Sylow subgroups in profinite groups
@@ -36,38 +37,6 @@ variable {p : ℕ} [Fact p.Prime]
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
 variable {P Q : Subgroup G}
-
-omit [Fact p.Prime] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [TotallyDisconnectedSpace G] in
-private theorem map_mk'_map_quotient {U V : Subgroup G} [U.Normal] [V.Normal]
-    (hVU : V ≤ U) (R : Subgroup G) :
-    (R.map (QuotientGroup.mk' V)).map
-        (QuotientGroup.map V U (.id G) (by simpa using hVU)) =
-      R.map (QuotientGroup.mk' U) := by
-  rw [Subgroup.map_map]
-  congr 1
-
-omit [Fact p.Prime] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [TotallyDisconnectedSpace G] in
-private theorem map_conj_mk'_map_quotient {U V : Subgroup G} [U.Normal] [V.Normal]
-    (hVU : V ≤ U) (R : Subgroup G) (g : G) :
-    ((R.map (QuotientGroup.mk' V)).map
-        (MulAut.conj (g : G ⧸ V)).toMonoidHom).map
-          (QuotientGroup.map V U (.id G) (by simpa using hVU)) =
-      (R.map (QuotientGroup.mk' U)).map
-        (MulAut.conj (g : G ⧸ U)).toMonoidHom := by
-  simp only [Subgroup.map_map]
-  congr 1
-
-omit [Fact p.Prime] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [TotallyDisconnectedSpace G] in
-private theorem map_conj_map_mk' (U : Subgroup G) [U.Normal]
-    (R : Subgroup G) (g : G) :
-    (R.map (MulAut.conj g).toMonoidHom).map (QuotientGroup.mk' U) =
-      (R.map (QuotientGroup.mk' U)).map
-        (MulAut.conj (g : G ⧸ U)).toMonoidHom := by
-  simp only [Subgroup.map_map]
-  congr 1
 
 namespace IsProPSylow
 
@@ -100,8 +69,12 @@ theorem exists_map_conj_eq (hP : IsProPSylow p P) (hQ : IsProPSylow p Q) :
   have ht_mono {U V : OpenNormalSubgroup G} (hVU : V ≤ U) : t V ⊆ t U := by
     intro g hg
     have hVU' : V.toSubgroup ≤ U.toSubgroup := fun _ hx ↦ hVU hx
+    have hmap (R : Subgroup G) : (R.map (QuotientGroup.mk' V.toSubgroup)).map
+        (QuotientGroup.map V.toSubgroup U.toSubgroup (.id G) (by simpa using hVU')) =
+          R.map (QuotientGroup.mk' U.toSubgroup) := by
+      rw [Subgroup.map_mk'_map_quotientGroupMap, Subgroup.map_id]
     rw [mem_t] at hg ⊢
-    rw [← map_conj_mk'_map_quotient hVU', ← map_mk'_map_quotient hVU' Q, hg]
+    rw [← hmap Q, ← hg, Subgroup.map_conj_map, hmap P, QuotientGroup.map_mk, MonoidHom.id_apply]
   have ht_directed : Directed (· ⊇ ·) t := by
     intro U V
     exact ⟨U ⊓ V, ht_mono inf_le_left, ht_mono inf_le_right⟩
@@ -114,7 +87,10 @@ theorem exists_map_conj_eq (hP : IsProPSylow p P) (hQ : IsProPSylow p Q) :
     Subgroup.eq_iInf_sup_openNormalSubgroup _ (hP.map_conj g).isClosed]
   congr 1
   funext U
-  have himages := (map_conj_map_mk' U.toSubgroup P g).trans (mem_t.mp (Set.mem_iInter.mp hg U))
+  have himages : (P.map (MulAut.conj g).toMonoidHom).map (QuotientGroup.mk' U.toSubgroup) =
+      Q.map (QuotientGroup.mk' U.toSubgroup) := by
+    rw [Subgroup.map_conj_map, QuotientGroup.mk'_apply]
+    exact mem_t.mp (Set.mem_iInter.mp hg U)
   have hcomap := congrArg (Subgroup.comap (QuotientGroup.mk' U.toSubgroup)) himages
   simpa only [Subgroup.comap_map_eq, QuotientGroup.ker_mk'] using hcomap
 

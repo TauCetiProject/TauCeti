@@ -98,14 +98,15 @@ theorem map_continuousMulEquiv {H : Type v} [Group H] [TopologicalSpace H]
     let V := OpenNormalSubgroup.comap U (e : G →* H) e.continuous
     have hV : (P.map (QuotientGroup.mk' V.toSubgroup)).index =
         ((P.map (e : G →* H)).map (QuotientGroup.mk' U.toSubgroup)).index := by
-      rw [Subgroup.index_map, Subgroup.index_map, QuotientGroup.ker_mk', QuotientGroup.ker_mk',
-        MonoidHom.range_eq_top_of_surjective _ (QuotientGroup.mk'_surjective _),
-        MonoidHom.range_eq_top_of_surjective _ (QuotientGroup.mk'_surjective _),
-        Subgroup.index_top, Subgroup.index_top, mul_one, mul_one,
-        ← Subgroup.index_map_equiv (P ⊔ V.toSubgroup) e.toMulEquiv, Subgroup.map_sup]
-      congr 2
-      exact (congrArg _ (OpenNormalSubgroup.toSubgroup_comap U _ e.continuous)).trans
-        (Subgroup.map_comap_eq_self_of_surjective e.surjective U.toSubgroup)
+      have hU : V.toSubgroup.map (e : G →* H) = U.toSubgroup :=
+        (congrArg _ (OpenNormalSubgroup.toSubgroup_comap U _ e.continuous)).trans
+          (Subgroup.map_comap_eq_self_of_surjective e.surjective U.toSubgroup)
+      calc (P.map (QuotientGroup.mk' V.toSubgroup)).index
+          = (P ⊔ V.toSubgroup).index := P.index_map_mk'_eq_index_sup V.toSubgroup
+        _ = ((P ⊔ V.toSubgroup).map (e : G →* H)).index :=
+          (Subgroup.index_map_equiv _ e.toMulEquiv).symm
+        _ = (P.map (e : G →* H) ⊔ U.toSubgroup).index := by rw [Subgroup.map_sup, hU]
+        _ = _ := ((P.map (e : G →* H)).index_map_mk'_eq_index_sup U.toSubgroup).symm
     exact hV ▸ hP.not_dvd_index V
 
 /-- A conjugate of a Sylow pro-`p` subgroup is a Sylow pro-`p` subgroup. -/
