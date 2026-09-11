@@ -31,8 +31,11 @@ namespace TauCeti
 /-- **Riemann--Lebesgue on a vertical line**: the integral of `f` against the oscillating factor
 `x ^ (i t)` tends to `0` as `x → ∞`.
 
-No hypothesis is needed on `f`. The integrand is integrable exactly when `f` is, so when `f` is
-not integrable both the left-hand side and the limit are `0`. -/
+No hypothesis is needed on `f`. A limit along `atTop` only sees `x > 0`, and there the factor
+`x ^ (i t)` has modulus `1`, so the integrand is integrable exactly when `f` is; when `f` is not
+integrable both the left-hand side and the limit are `0`. (For `x ≤ 0` the equivalence fails —
+at `x = 0` the integrand vanishes almost everywhere, and for `x < 0` the branch of the complex
+power contributes a factor of modulus `exp (-π t)` — but those scales are irrelevant here.) -/
 theorem tendsto_integral_mul_cpow_mul_I_atTop (f : ℝ → ℂ) :
     Tendsto (fun x : ℝ ↦ ∫ t : ℝ, f t * (x : ℂ) ^ (t * I)) atTop (𝓝 0) := by
   have hfreq : Tendsto (fun x : ℝ ↦ -(Real.log x / (2 * π))) atTop (cocompact ℝ) :=
@@ -41,7 +44,7 @@ theorem tendsto_integral_mul_cpow_mul_I_atTop (f : ℝ → ℂ) :
   refine Tendsto.congr' ?_ ((Real.tendsto_integral_exp_smul_cocompact f).comp hfreq)
   filter_upwards [eventually_gt_atTop 0] with x hx
   have hx0 : (x : ℂ) ≠ 0 := by exact_mod_cast hx.ne'
-  change (∫ t : ℝ, 𝐞 (-(t * -(Real.log x / (2 * π)))) • f t) = ∫ t : ℝ, f t * (x : ℂ) ^ (t * I)
+  simp only [Function.comp_apply]
   refine integral_congr_ae (.of_forall fun t ↦ ?_)
   simp only [Circle.smul_def, smul_eq_mul, Real.fourierChar_apply]
   rw [Complex.cpow_def_of_ne_zero hx0, ← Complex.ofReal_log hx.le, mul_comm]
