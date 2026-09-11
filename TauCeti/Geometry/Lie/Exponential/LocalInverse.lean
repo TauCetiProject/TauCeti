@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
-public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph
 /-!
 # Local inverse of the Lie-group exponential
@@ -567,17 +566,20 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
   have hctarget : c.target = V := by
     simpa only [c, V, chart] using
       TauCeti.extChartPartialDiffeomorph_target I ∞ (1 : G)
-  have hcsymm : ⇑c.toPartialEquiv.symm = chart.symm := by
+  have hcsymm (y : E) : c.toPartialEquiv.symm y = chart.symm y := by
     simpa only [c, chart] using
-      TauCeti.coe_extChartPartialDiffeomorph_symm I ∞ (1 : G)
+      TauCeti.extChartPartialDiffeomorph_symm_apply I ∞ (1 : G) y
   -- Transport the charted local diffeomorphism `d : E ↔ E` back through the restricted identity
   -- chart. The resulting `q : E ↔ G` has the desired source, target, and smooth inverse.
   set q := d.trans c.symm with hqdef
   have hqsource : q.source = d.source ∩ d ⁻¹' c.symm.source := by
-    rw [hqdef, PartialDiffeomorph.trans_toPartialEquiv]
-    exact OpenPartialHomeomorph.trans_source _ _
-  have hcsymmsource : c.symm.source = c.target :=
-    OpenPartialHomeomorph.symm_source c.toOpenPartialHomeomorph
+    rw [hqdef]
+    simp only [PartialDiffeomorph.trans_toPartialEquiv,
+      OpenPartialHomeomorph.trans_toPartialEquiv,
+      PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+      PartialEquiv.trans_source]
+  have hcsymmsource : c.symm.source = c.target := by
+    rw [PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_source]
   have hzeroq : (0 : E) ∈ q.source := by
     rw [hqsource]
     refine ⟨hzero, ?_⟩
@@ -587,50 +589,19 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
     exact honeV
   have hq (x : E) (hx : x ∈ q.source) : f x = q x := by
     rw [hqsource] at hx
-    have hqapply : q x = c.symm (d x) := by
+    have hqapply : q x = c.toPartialEquiv.symm (d x) := by
       rw [hqdef]
-      exact OpenPartialHomeomorph.trans_apply
-        (e := d.toOpenPartialHomeomorph) (e' := c.symm.toOpenPartialHomeomorph)
-    rw [hqapply]
-    -- As above, the inverse coercion elaborates through `toPartialEquiv`; expose it so the
-    -- semantic inverse-chart equality rewrites without unfolding the chart construction.
-    change f x = c.toPartialEquiv.symm (d x)
-    rw [hcsymm, ← hd]
-    exact ((extChartAt I (1 : G)).left_inv (hdsource hx.1)).symm
-  -- Although `q` agrees with `f` on its source, its total forward function retains the composed
-  -- chart implementation. Re-wrap its partial equivalence using literally `f` so the final local
-  -- diffeomorphism theorem has the canonical exponential as its function.
-  let e : PartialEquiv E G := {
-    toFun := f
-    invFun := q.symm
-    source := q.source
-    target := q.target
-    map_source' := by
-      intro x hx
-      rw [hq x hx]
-      exact q.map_source hx
-    map_target' := by
-      intro y hy
-      exact q.map_target hy
-    left_inv' := by
-      intro x hx
-      rw [hq x hx]
-      exact q.left_inv hx
-    right_inv' := by
-      intro y hy
-      rw [hq (q.symm y) (q.map_target hy)]
-      exact q.right_inv hy
-  }
-  let p : PartialDiffeomorph 𝓘(ℝ, E) I E G ∞ := {
-    toPartialEquiv := e
-    open_source := q.open_source
-    open_target := q.open_target
-    contMDiffOn_toFun := by
-      simpa only [f] using
-        (contMDiff_mulInvariantExp (I := I) (G := G)).contMDiffOn
-    contMDiffOn_invFun := q.contMDiffOn_invFun
-  }
-  simpa only [f] using p.isLocalDiffeomorphAt 𝓘(ℝ, E) I ∞ hzeroq
+      simp only [PartialDiffeomorph.trans_toPartialEquiv,
+        OpenPartialHomeomorph.trans_toPartialEquiv,
+        PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+        PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.coe_trans, Function.comp_apply]
+    calc
+      f x = chart.symm (d x) := by
+        rw [← hd]
+        exact ((extChartAt I (1 : G)).left_inv (hdsource hx.1)).symm
+      _ = c.toPartialEquiv.symm (d x) := (hcsymm (d x)).symm
+      _ = q x := hqapply.symm
+  simpa only [f] using TauCeti.isLocalDiffeomorphAt_of_eqOn hzeroq hq
 
 /-- The canonical Lie-group exponential is a smooth local diffeomorphism at zero. -/
 theorem isLocalDiffeomorphAt_lieExp_zero [FiniteDimensional ℝ E]
