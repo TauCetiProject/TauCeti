@@ -171,6 +171,7 @@ theorem _root_.Equiv.Perm.finSumPerm_inv (σ : Perm (Fin m)) (τ : Perm (Fin n))
     (finSumPerm σ τ)⁻¹ = finSumPerm σ⁻¹ τ⁻¹ :=
   (map_inv (finSumPermHom m n) (σ, τ)).symm
 
+@[simp]
 theorem _root_.Equiv.Perm.finSumPerm_mul (σ σ' : Perm (Fin m)) (τ τ' : Perm (Fin n)) :
     finSumPerm σ τ * finSumPerm σ' τ' = finSumPerm (σ * σ') (τ * τ') :=
   (map_mul (finSumPermHom m n) (σ, τ) (σ', τ')).symm

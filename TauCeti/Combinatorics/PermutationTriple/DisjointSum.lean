@@ -73,9 +73,10 @@ variable (s : PermutationTriple m) (t : PermutationTriple n)
   ext_of_two (by simp) (by simp)
 
 /-- Relabeling the two summands separately relabels their disjoint sum. -/
+@[simp]
 theorem disjointSum_smul (τ : Perm (Fin m)) (υ : Perm (Fin n)) :
     (τ • s).disjointSum (υ • t) = finSumPerm τ υ • s.disjointSum t :=
-  ext_of_two (by simp [finSumPerm_mul]) (by simp [finSumPerm_mul])
+  ext_of_two (by simp) (by simp)
 
 /-! ### Cycle data -/
 
