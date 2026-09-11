@@ -30,7 +30,7 @@ models.
 * `TauCeti.Hodge.Conjugation`: a conjugate-linear involution of a complex vector space.
 * `TauCeti.Hodge.complexificationConjugation`: the canonical conjugation on the complexification
   of a real vector space, bundled as a Hodge conjugation.
-* `TauCeti.LinearMap.map_eigenspace_baseChange`: canonical conjugation carries each eigenspace of a
+* `LinearMap.map_eigenspace_baseChange`: canonical conjugation carries each eigenspace of a
   complexified real-linear endomorphism to the eigenspace of the conjugate eigenvalue.
 * `TauCeti.Hodge.Conjugation.tensorProduct`: the tensor product of two conjugations.
 * `TauCeti.Hodge.Conjugation.tensorProduct_toEquiv_tmul`: its action on pure tensors.
@@ -100,8 +100,9 @@ theorem complexificationConjugation_toEquiv_tmul (z : ℂ) (v : V) :
 
 end TauCeti.Hodge
 
-namespace TauCeti.LinearMap
+namespace LinearMap
 
+open TauCeti
 open scoped TensorProduct
 
 universe u
@@ -136,7 +137,7 @@ theorem map_eigenspace_baseChange (f : V →ₗ[ℝ] V) (z : ℂ) :
       _ = tmulConj V ((starRingEnd ℂ) z • x) := congrArg (tmulConj V) hx'
       _ = z • tmulConj V x := by simp
 
-end TauCeti.LinearMap
+end LinearMap
 
 namespace TauCeti.Hodge
 
