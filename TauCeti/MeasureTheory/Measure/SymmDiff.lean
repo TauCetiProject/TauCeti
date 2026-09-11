@@ -42,7 +42,7 @@ theorem abs_measureReal_inter_sub_le_of_measureReal_symmDiff {Ω : Type*} [Measu
       ≤ μ.real (symmDiff (A ∩ B) s) :=
         abs_measureReal_sub_le_measureReal_symmDiff (hA.inter hB) hs
     _ ≤ μ.real (symmDiff A s ∪ symmDiff B s) :=
-        measureReal_mono TauCeti.Set.inter_symmDiff_subset (by finiteness)
+        measureReal_mono Set.inter_symmDiff_subset (by finiteness)
     _ ≤ μ.real (symmDiff A s) + μ.real (symmDiff B s) := measureReal_union_le _ _
 
 end MeasureTheory

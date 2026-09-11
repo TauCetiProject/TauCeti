@@ -17,8 +17,6 @@ from the union member by complementation.
 
 public section
 
-namespace TauCeti
-
 namespace Set
 
 open scoped symmDiff
@@ -27,9 +25,7 @@ variable {α : Type*} {s t u : Set α}
 
 /-- `(s ∩ t) ∆ u ⊆ s ∆ u ∪ t ∆ u`. -/
 theorem inter_symmDiff_subset : (s ∩ t) ∆ u ⊆ s ∆ u ∪ t ∆ u := by
-  simpa only [← _root_.Set.compl_inter, compl_symmDiff_compl] using
-    (_root_.Set.union_symmDiff_subset (s := sᶜ) (t := tᶜ) (u := uᶜ))
+  simpa only [← compl_inter, compl_symmDiff_compl] using
+    (union_symmDiff_subset (s := sᶜ) (t := tᶜ) (u := uᶜ))
 
 end Set
-
-end TauCeti
