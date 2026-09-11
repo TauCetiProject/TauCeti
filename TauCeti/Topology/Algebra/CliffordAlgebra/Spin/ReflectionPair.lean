@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.ReflectionPair
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Module.Connected
 
