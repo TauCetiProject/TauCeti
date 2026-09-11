@@ -21,31 +21,61 @@ bigraded decompositions of the fully blocked and unblocked chain modules.
 The one-object form retains exactly the algebra needed for cycles, boundaries, chain maps, and
 homology while applying to every grid diagram. In particular it does not require the odd-component
 hypothesis used to make the Alexander grading integral. Later graded constructions can refine these
-complexes by restricting the differential to their homogeneous pieces.
+complexes by restricting the differential to their homogeneous pieces. Here
+`simplyBlockedComplex` denotes the algebraic specialization obtained by setting one selected
+`O`-variable to zero. This has the standard simply blocked interpretation for knot grids; for a
+multi-component link, that interpretation instead requires one blocked `O`-marking on each
+component.
 
-The fully blocked complex is over `ZMod 2`. The unblocked and simply blocked complexes are defined
-over an arbitrary commutative coefficient ring of characteristic two. Their coefficient rings are,
-respectively, the polynomial ring on all columns and the polynomial ring on the columns other than
-the selected blocked column.
+The fully blocked complex is over `ZMod 2`. The unblocked complex and the one-variable
+specialization are defined over an arbitrary commutative coefficient ring of characteristic two.
+Their coefficient rings are, respectively, the polynomial ring on all columns and the polynomial
+ring on the columns other than the selected blocked column.
 
 ## Main definitions
 
 * `TauCeti.GridDiagram.fullyBlockedComplex`: the fully blocked grid complex.
 * `TauCeti.GridDiagram.unblockedComplex`: the unblocked grid complex `GC⁻`.
-* `TauCeti.GridDiagram.simplyBlockedComplex`: the complex obtained by setting one selected
-  `O`-variable to zero.
+* `TauCeti.GridDiagram.simplyBlockedComplex`: the one-variable specialization obtained by setting
+  one selected `O`-variable to zero.
 
 ## References
 
 The three grid complexes and their coefficient conventions follow Ozsváth--Stipsicz--Szabó,
 *Grid Homology for Knots and Links*, Chapters 3--4.
+
+The opaque-safe object and differential equations follow the formal pattern used in
+`TauCeti.LowDimTopology.Plumbing.ChainComplex`.
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory CategoryTheory.Limits
 
 namespace TauCeti
+
+universe u v
+
+private noncomputable def endomorphismComplex {C : Type u} [Category.{v} C]
+    [HasZeroMorphisms C]
+    (X : C) (d : X ⟶ X) (hd : d ≫ d = 0) :
+    HomologicalComplex C (ComplexShape.refl Unit) where
+  X _ := X
+  d _ _ := d
+  d_comp_d' _ _ _ _ _ := hd
+
+private theorem endomorphismComplex_X {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+    (X : C) (d : X ⟶ X) (hd : d ≫ d = 0) (i : Unit) :
+    (endomorphismComplex X d hd).X i = X :=
+  rfl
+
+private theorem endomorphismComplex_d {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+    (X : C) (d : X ⟶ X) (hd : d ≫ d = 0)
+    (hX : (endomorphismComplex X d hd).X () = X) :
+    (endomorphismComplex X d hd).d () () =
+      eqToHom hX ≫ d ≫ eqToHom hX.symm := by
+  change d = 𝟙 X ≫ d ≫ 𝟙 X
+  simp only [Category.id_comp, Category.comp_id]
 
 namespace GridDiagram
 
@@ -59,22 +89,18 @@ variable {n : ℕ} (G : GridDiagram n)
 The unique differential counts empty rectangles avoiding every marking. Its square is zero by the
 rectangle-juxtaposition pairing. -/
 noncomputable def fullyBlockedComplex :
-    HomologicalComplex (ModuleCat (ZMod 2)) (ComplexShape.refl Unit) where
-  X _ := ModuleCat.of (ZMod 2) (GridChain (ZMod 2) n)
-  d _ _ := ModuleCat.ofHom G.fullyBlockedDifferential
-  d_comp_d' _ _ _ _ _ := by
-    rw [← ModuleCat.ofHom_comp, G.fullyBlockedDifferential_comp_self_eq_zero,
-      ModuleCat.ofHom_zero]
+    HomologicalComplex (ModuleCat (ZMod 2)) (ComplexShape.refl Unit) :=
+  endomorphismComplex
+    (ModuleCat.of (ZMod 2) (GridChain (ZMod 2) n))
+    (ModuleCat.ofHom G.fullyBlockedDifferential) <| by
+      rw [← ModuleCat.ofHom_comp, G.fullyBlockedDifferential_comp_self_eq_zero,
+        ModuleCat.ofHom_zero]
 
 /-- The unique object of the fully blocked complex is the fully blocked grid chain module. -/
 @[simp]
 theorem fullyBlockedComplex_X (i : Unit) :
     G.fullyBlockedComplex.X i = ModuleCat.of (ZMod 2) (GridChain (ZMod 2) n) :=
-  (rfl)
-
-private theorem fullyBlockedComplex_X_proof_eq_rfl (i : Unit) :
-    G.fullyBlockedComplex_X i = rfl :=
-  Subsingleton.elim _ _
+  endomorphismComplex_X _ _ _ i
 
 /-- The unique differential of the fully blocked complex is the fully blocked grid differential. -/
 @[simp]
@@ -83,9 +109,8 @@ theorem fullyBlockedComplex_d :
       eqToHom (G.fullyBlockedComplex_X ()) ≫
         ModuleCat.ofHom G.fullyBlockedDifferential ≫
           eqToHom (G.fullyBlockedComplex_X ()).symm := by
-  rw [G.fullyBlockedComplex_X_proof_eq_rfl ()]
   unfold fullyBlockedComplex
-  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
+  exact endomorphismComplex_d _ _ _ (G.fullyBlockedComplex_X ())
 
 /-! ### Unblocked complex -/
 
@@ -97,23 +122,19 @@ over the polynomial ring `R[V₀, ..., V_{n-1}]`.
 The unique differential counts empty rectangles avoiding the `X`-markings and weights each
 rectangle by the monomial of the `O`-markings it covers. -/
 noncomputable def unblockedComplex :
-    HomologicalComplex (ModuleCat (MvPolynomial (Fin n) R)) (ComplexShape.refl Unit) where
-  X _ := ModuleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n)
-  d _ _ := ModuleCat.ofHom (G.unblockedDifferential R)
-  d_comp_d' _ _ _ _ _ := by
-    rw [← ModuleCat.ofHom_comp, G.unblockedDifferential_comp_self_eq_zero R,
-      ModuleCat.ofHom_zero]
+    HomologicalComplex (ModuleCat (MvPolynomial (Fin n) R)) (ComplexShape.refl Unit) :=
+  endomorphismComplex
+    (ModuleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n))
+    (ModuleCat.ofHom (G.unblockedDifferential R)) <| by
+      rw [← ModuleCat.ofHom_comp, G.unblockedDifferential_comp_self_eq_zero R,
+        ModuleCat.ofHom_zero]
 
 /-- The unique object of the unblocked complex is the unblocked grid chain module. -/
 @[simp]
 theorem unblockedComplex_X (i : Unit) :
     (G.unblockedComplex R).X i =
       ModuleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n) :=
-  (rfl)
-
-private theorem unblockedComplex_X_proof_eq_rfl (i : Unit) :
-    G.unblockedComplex_X R i = rfl :=
-  Subsingleton.elim _ _
+  endomorphismComplex_X _ _ _ i
 
 /-- The unique differential of the unblocked complex is the unblocked grid differential. -/
 @[simp]
@@ -122,38 +143,34 @@ theorem unblockedComplex_d :
       eqToHom (G.unblockedComplex_X R ()) ≫
         ModuleCat.ofHom (G.unblockedDifferential R) ≫
           eqToHom (G.unblockedComplex_X R ()).symm := by
-  rw [G.unblockedComplex_X_proof_eq_rfl R ()]
   unfold unblockedComplex
-  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
+  exact endomorphismComplex_d _ _ _ (G.unblockedComplex_X R ())
 
-/-! ### Simply blocked complex -/
+/-! ### One-variable specialization -/
 
-/-- The simply blocked grid chain module and differential as a one-object homological complex over
-the polynomial ring on the columns other than `i`.
+/-- The one-variable specialization of the grid chain module and differential as a one-object
+homological complex over the polynomial ring on the columns other than `i`.
 
 The unique differential is obtained from the unblocked differential by setting the selected
-variable `V_i` to zero. -/
+variable `V_i` to zero. For a knot grid this is the standard simply blocked complex; for a link,
+the standard simply blocked theory sets one variable on each component to zero. -/
 noncomputable def simplyBlockedComplex (i : Fin n) :
     HomologicalComplex (ModuleCat (MvPolynomial {c : Fin n // c ≠ i} R))
-      (ComplexShape.refl Unit) where
-  X _ := ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i)
-  d _ _ := ModuleCat.ofHom (G.simplyBlockedDifferential R i)
-  d_comp_d' _ _ _ _ _ := by
-    rw [← ModuleCat.ofHom_comp, G.simplyBlockedDifferential_comp_self_eq_zero R i,
-      ModuleCat.ofHom_zero]
+      (ComplexShape.refl Unit) :=
+  endomorphismComplex
+    (ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i))
+    (ModuleCat.ofHom (G.simplyBlockedDifferential R i)) <| by
+      rw [← ModuleCat.ofHom_comp, G.simplyBlockedDifferential_comp_self_eq_zero R i,
+        ModuleCat.ofHom_zero]
 
-/-- The unique object of the simply blocked complex is the simply blocked grid chain module. -/
+/-- The unique object of the one-variable specialization is its specialized grid chain module. -/
 @[simp]
 theorem simplyBlockedComplex_X (i : Fin n) (j : Unit) :
     (G.simplyBlockedComplex R i).X j =
       ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i) :=
-  (rfl)
+  endomorphismComplex_X _ _ _ j
 
-private theorem simplyBlockedComplex_X_proof_eq_rfl (i : Fin n) (j : Unit) :
-    G.simplyBlockedComplex_X R i j = rfl :=
-  Subsingleton.elim _ _
-
-/-- The unique differential of the simply blocked complex is the simply blocked grid
+/-- The unique differential of the one-variable specialization is its specialized grid
 differential. -/
 @[simp]
 theorem simplyBlockedComplex_d (i : Fin n) :
@@ -161,9 +178,8 @@ theorem simplyBlockedComplex_d (i : Fin n) :
       eqToHom (G.simplyBlockedComplex_X R i ()) ≫
         ModuleCat.ofHom (G.simplyBlockedDifferential R i) ≫
           eqToHom (G.simplyBlockedComplex_X R i ()).symm := by
-  rw [G.simplyBlockedComplex_X_proof_eq_rfl R i ()]
   unfold simplyBlockedComplex
-  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
+  exact endomorphismComplex_d _ _ _ (G.simplyBlockedComplex_X R i ())
 
 end GridDiagram
 
