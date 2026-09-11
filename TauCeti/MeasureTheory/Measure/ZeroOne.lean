@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Typeclasses.ZeroOne
 import TauCeti.Algebra.Order.Ring.Abs
-import Mathlib.MeasureTheory.Measure.Real
+import Mathlib.Algebra.GroupWithZero.Idempotent
 import TauCeti.MeasureTheory.Measure.SymmDiff
 
 /-!
@@ -33,6 +33,17 @@ countable power of `ℝ≥0∞`.
 * `TauCeti.MeasureTheory.IsZeroOneMeasure.exists_ae_eq_const`: under a zero-one measure, an
   almost-everywhere measurable map into a standard Borel space agrees almost everywhere with a
   single value.
+
+## References
+
+* Edwin Hewitt and Leonard J. Savage, *Symmetric measures on Cartesian products*, Transactions of
+  the American Mathematical Society **80** (1955), 470–501, <https://doi.org/10.2307/1992999>.
+* Olav Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005, Chapter 1.
+
+The approximation criterion is the final step of the Hewitt–Savage zero-one law, extracted from
+`Probability/Exchangeability/PathSpace/HewittSavage.lean`, which now consumes it: there an
+exchangeable event is approximated by a cylinder and its block-swapped copy, and the criterion
+turns the factorization of their intersection into triviality of the event.
 -/
 
 public section
@@ -105,11 +116,8 @@ theorem measure_eq_zero_or_one_of_forall_approx_factorization {Ω : Type*} [Meas
         _ = d / 2 := by field_simp
     linarith
   have hfin : μ s ≠ ∞ := measure_ne_top μ s
-  have h01 : μ.real s = 0 ∨ μ.real s = 1 := by
-    have hz : μ.real s * (1 - μ.real s) = 0 := by nlinarith [hsq]
-    rcases mul_eq_zero.mp hz with h | h
-    · exact Or.inl h
-    · exact Or.inr (by linarith)
+  have h01 : μ.real s = 0 ∨ μ.real s = 1 :=
+    IsIdempotentElem.iff_eq_zero_or_one.mp hsq.symm
   rw [measureReal_def] at h01
   rcases h01 with h0 | h1
   · exact Or.inl (((ENNReal.toReal_eq_zero_iff (μ s)).mp h0).resolve_right hfin)
