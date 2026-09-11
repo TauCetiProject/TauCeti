@@ -35,7 +35,7 @@ def crossingTurn (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
 
 /-- Computes `crossingTurn` by converting a half-edge to its crossing slot,
     taking the opposite slot, and converting back. -/
-@[simp] theorem crossingTurn_apply (D : PDCode n) (h : Fin (4 * n)) :
+theorem crossingTurn_apply (D : PDCode n) (h : Fin (4 * n)) :
     D.crossingTurn h = D.halfEdge
       ((PDCode.crossingSlotEquiv n).permCongr
         (Equiv.prodCongr (Equiv.refl (Fin n)) PDCode.oppositeCrossingSlot)
@@ -46,7 +46,7 @@ def crossingTurn (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
 def componentPerm (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
   D.crossingTurn * D.edgePair.val
 
-@[simp] theorem componentPerm_apply (D : PDCode n) (h : Fin (4 * n)) :
+theorem componentPerm_apply (D : PDCode n) (h : Fin (4 * n)) :
     D.componentPerm h = D.crossingTurn (D.edgePair.val h) := by
   simp [componentPerm, Equiv.Perm.mul_def]
 
