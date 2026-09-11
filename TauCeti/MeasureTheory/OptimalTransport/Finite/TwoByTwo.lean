@@ -46,6 +46,12 @@ def twoByTwoUpper (μ ν : PMF (Fin 2)) : ℝ :=
 def TwoByTwoParameter (μ ν : PMF (Fin 2)) :=
   Set.Icc (twoByTwoLower μ ν) (twoByTwoUpper μ ν)
 
+/-- A real number is a feasible parameter exactly when it lies between the two endpoints. -/
+@[simp]
+theorem mem_twoByTwoParameter {μ ν : PMF (Fin 2)} {x : ℝ} :
+    x ∈ TwoByTwoParameter μ ν ↔ twoByTwoLower μ ν ≤ x ∧ x ≤ twoByTwoUpper μ ν :=
+  (Iff.rfl)
+
 namespace TransportMatrix
 
 variable {μ ν : PMF (Fin 2)}
@@ -226,7 +232,8 @@ theorem cost_eq_const_add_crossDiff_mul (c : Fin 2 × Fin 2 → ℝ)
   simp only [twoByTwoCrossDiff]
   ring
 
-private theorem twoByTwoLower_le_upper (μ ν : PMF (Fin 2)) :
+/-- The feasible interval for a two-by-two transport matrix has ordered endpoints. -/
+theorem twoByTwoLower_le_upper (μ ν : PMF (Fin 2)) :
     twoByTwoLower μ ν ≤ twoByTwoUpper μ ν :=
   (twoByTwoParameter (independent μ ν)).2.1.trans
     (twoByTwoParameter (independent μ ν)).2.2
@@ -235,9 +242,9 @@ private theorem twoByTwoLower_le_upper (μ ν : PMF (Fin 2)) :
 noncomputable def optimalTwoByTwoParameter (c : Fin 2 × Fin 2 → ℝ) (μ ν : PMF (Fin 2)) :
     TwoByTwoParameter μ ν :=
   if 0 ≤ twoByTwoCrossDiff c then
-    ⟨twoByTwoLower μ ν, le_rfl, twoByTwoLower_le_upper μ ν⟩
+    ⟨twoByTwoLower μ ν, mem_twoByTwoParameter.mpr ⟨le_rfl, twoByTwoLower_le_upper μ ν⟩⟩
   else
-    ⟨twoByTwoUpper μ ν, twoByTwoLower_le_upper μ ν, le_rfl⟩
+    ⟨twoByTwoUpper μ ν, mem_twoByTwoParameter.mpr ⟨twoByTwoLower_le_upper μ ν, le_rfl⟩⟩
 
 /-- A cost-minimizing two-by-two transport matrix. -/
 noncomputable def optimalTwoByTwo (c : Fin 2 × Fin 2 → ℝ) (μ ν : PMF (Fin 2)) :
