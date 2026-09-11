@@ -54,6 +54,8 @@ Diagram Codes*, Definitions 2--3, and the oriented crossing convention of W. B. 
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_writhe` proves agreement of the two writhes.
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_injective` proves that the conversion loses no
   Gauss-code data.
+* `TauCeti.FramedBasedOrientedGaussCode.toFramedOrientedPDCode_injective` proves the same for the
+  framed conversion.
 -/
 
 public section
@@ -468,6 +470,19 @@ a code with crossings has no crossing-free components. -/
     (D : FramedBasedOrientedGaussCode n) :
     D.toFramedOrientedPDCode.crossinglessFramings =
       if n = 0 then {(true, D.framing)} else 0 := (rfl)
+
+/-- The framed conversion is injective: the underlying PD-code recovers the Gauss code, and the
+framing is recovered from a crossing visit, or from the crossing-free component when `n = 0`. -/
+theorem toFramedOrientedPDCode_injective :
+    Function.Injective (toFramedOrientedPDCode (n := n)) := by
+  rintro ⟨D, a⟩ ⟨E, b⟩ h
+  obtain rfl : D = E := BasedOrientedGaussCode.toOrientedPDCode_injective
+    (congrArg FramedOrientedPDCode.toOrientedPDCode h)
+  obtain rfl : a = b := by
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simpa using congrArg FramedOrientedPDCode.crossinglessFramings h
+    · simpa using congrArg (fun C : FramedOrientedPDCode n => C.framing ⟨0, by omega⟩) h
+  rfl
 
 end FramedBasedOrientedGaussCode
 
