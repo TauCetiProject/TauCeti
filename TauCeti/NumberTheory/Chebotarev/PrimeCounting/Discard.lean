@@ -11,15 +11,16 @@ public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.VonMangoldt
 /-!
 # Negligible terms in Frobenius prime counting
 
-Passing from a Frobenius prime-power sum to a prime sum of residue degree one discards three
-terms: higher prime powers in the chosen Frobenius class, primes of absolute residue degree above
-one, and prime powers over a finite exceptional set. Each term is `o(x)` for a different reason.
-This file records that their sum is `o(x)`, in the form needed by weighted crossing arguments.
+Weighted crossing arguments bound the error incurred when passing from a Frobenius prime-power sum
+to a prime sum of residue degree one by three functions. These account for higher prime powers in
+the chosen Frobenius class and use unrestricted sums to majorize the contributions from primes of
+absolute residue degree above one and from a finite exceptional set. Each majorant is `o(x)` for a
+different reason. This file records that their sum is `o(x)`.
 
 ## Main result
 
-* `NumberField.Chebotarev.frobeniusDiscard_isLittleO`: the total discarded contribution is
-  negligible compared with `x`.
+* `NumberField.Chebotarev.frobeniusDiscard_isLittleO`: the sum of three majorants for the discard
+  error is negligible compared with `x`.
 -/
 
 public section
@@ -33,11 +34,12 @@ open IsDedekindDomain (HeightOneSpectrum)
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
-/-- The total contribution discarded when a Frobenius prime-power sum is restricted to
-residue-degree-one primes outside a finite exceptional set is `o(x)`.
+/-- The sum of three majorants for the error incurred when a Frobenius prime-power sum is restricted
+to residue-degree-one primes outside a finite exceptional set is `o(x)`.
 
-The three summands respectively remove higher prime powers in the Frobenius fibre, primes whose
-absolute residue degree is greater than one, and all prime powers based at an exceptional prime.
+The first summand is the higher-prime-power contribution in the Frobenius fibre. The other two are
+unrestricted weighted sums over all primes of absolute residue degree greater than one and all
+prime powers based at an exceptional prime.
 -/
 -- Source: `TauCetiRoadmap/Chebotarev/Suggested.lean` and README §11.3(4).
 theorem frobeniusDiscard_isLittleO (C : ConjClasses (L ≃ₐ[K] L))
