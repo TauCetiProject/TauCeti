@@ -39,6 +39,7 @@ residue-degree-one primes outside a finite exceptional set is `o(x)`.
 The three summands respectively remove higher prime powers in the Frobenius fibre, primes whose
 absolute residue degree is greater than one, and all prime powers based at an exceptional prime.
 -/
+-- Source: `TauCetiRoadmap/Chebotarev/Suggested.lean` and README §11.3(4).
 theorem frobeniusDiscard_isLittleO (C : ConjClasses (L ≃ₐ[K] L))
     (T : Finset (HeightOneSpectrum (𝓞 K))) :
     (fun x : ℝ ↦ frobeniusPsi K L C x - frobeniusTheta K L C x +
