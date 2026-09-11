@@ -90,9 +90,6 @@ tensors as a subrepresentation of it — are the ones collected in the last sect
 * R. Goodman and N. R. Wallach, *Symmetry, Representations, and Invariants*, Springer GTM 255
   (2009), Chapter 10.
 * H. Weyl, *The Classical Groups: Their Invariants and Representations*, Princeton (1939).
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9, "Harmonic tensors and the trace maps", whose `harmonicTensors` build item this file
-  discharges.
 -/
 
 public section
