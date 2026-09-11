@@ -54,11 +54,12 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
 /-- Conjugating forward rotation of a finite ordinal by reversal gives backward rotation. -/
 @[simp]
 theorem rev_finRotate_rev {n : ℕ} (i : Fin n) :
-    Fin.rev (finRotate n (Fin.rev i)) = (finRotate n).symm i := by
+    haveI := i.neZero
+    Fin.rev (Fin.rev i + 1) = (finRotate n).symm i := by
   cases n with
   | zero => exact Fin.elim0 i
   | succ n =>
-    rw [finRotate_apply, finRotate_symm_apply, ← Fin.last_sub, ← Fin.last_sub]
+    rw [finRotate_symm_apply, ← Fin.last_sub, ← Fin.last_sub]
     have hlast : Fin.last n = (-1 : Fin (n + 1)) := by
       apply Fin.ext
       simp
@@ -67,10 +68,11 @@ theorem rev_finRotate_rev {n : ℕ} (i : Fin n) :
 /-- Reversal carries backward rotation of a finite ordinal to forward rotation. -/
 @[simp]
 theorem rev_finRotate_symm {n : ℕ} (i : Fin n) :
-    Fin.rev ((finRotate n).symm i) = finRotate n (Fin.rev i) := by
+    haveI := i.neZero
+    Fin.rev (i - 1) = finRotate n (Fin.rev i) := by
   apply Fin.rev_injective
   simp only [Fin.rev_rev]
-  exact (rev_finRotate_rev i).symm
+  simpa only [finRotate_apply, finRotate_symm_apply] using (rev_finRotate_rev i).symm
 
 end Fin
 

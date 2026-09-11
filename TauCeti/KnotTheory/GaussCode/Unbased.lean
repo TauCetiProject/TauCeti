@@ -187,10 +187,10 @@ theorem reverse_rotateBasepoint (D : BasedOrientedGaussCode n) :
   apply ext
   · funext i
     rw [visit_reverse, visit_rotateBasepoint, visit_rotateBasepoint_symm, visit_reverse]
-    exact congrArg D.visit (Fin.rev_finRotate_symm i).symm
+    simpa only [finRotate_symm_apply] using congrArg D.visit (Fin.rev_finRotate_symm i).symm
   · funext i
     rw [over_reverse, over_rotateBasepoint, over_rotateBasepoint_symm, over_reverse]
-    exact congrArg D.over (Fin.rev_finRotate_symm i).symm
+    simpa only [finRotate_symm_apply] using congrArg D.over (Fin.rev_finRotate_symm i).symm
   · rw [sign_reverse, sign_rotateBasepoint, sign_rotateBasepoint_symm, sign_reverse]
 
 /-- Reversing orientation turns a backward basepoint rotation into a forward one. -/
