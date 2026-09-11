@@ -46,7 +46,8 @@ the `[Fintype N]` that the cube radius uses.
 * `HomotopyGroup.map_bijective_of_homotopyEquiv`: a homotopy equivalence induces a bijection on
   homotopy groups.
 * `HomotopyGroup.equivOfHomotopyEquiv`, `HomotopyGroup.mulEquivOfHomotopyEquiv`: that bijection,
-  as an equivalence and, in positive dimensions, as a group isomorphism.
+  as an equivalence and, in positive dimensions, as a group isomorphism, with their identity and
+  composition laws.
 
 ## References
 
@@ -182,6 +183,36 @@ theorem mulEquivOfHomotopyEquiv_apply [Nonempty N] [DecidableEq N] (e : X ≃ₕ
     (a : HomotopyGroup N X x) :
     mulEquivOfHomotopyEquiv e x a = map e.toFun rfl a :=
   (rfl)
+
+/-- The identity homotopy equivalence induces the identity on homotopy groups. -/
+@[simp]
+theorem equivOfHomotopyEquiv_refl (x : X) :
+    equivOfHomotopyEquiv (N := N) (ContinuousMap.HomotopyEquiv.refl X) x = Equiv.refl _ :=
+  Equiv.ext map_id_apply
+
+/-- The bijection induced by a composite of homotopy equivalences is the composite of the
+induced bijections. -/
+@[simp]
+theorem equivOfHomotopyEquiv_trans {Z : Type*} [TopologicalSpace Z] (e : X ≃ₕ Y) (e' : Y ≃ₕ Z)
+    (x : X) :
+    equivOfHomotopyEquiv (N := N) (e.trans e') x =
+      (equivOfHomotopyEquiv e x).trans (equivOfHomotopyEquiv e' (e.toFun x)) :=
+  Equiv.ext fun a => (map_comp_apply _ rfl _ rfl a).symm
+
+/-- The identity homotopy equivalence induces the identity isomorphism on homotopy groups. -/
+@[simp]
+theorem mulEquivOfHomotopyEquiv_refl [Nonempty N] [DecidableEq N] (x : X) :
+    mulEquivOfHomotopyEquiv (N := N) (ContinuousMap.HomotopyEquiv.refl X) x = MulEquiv.refl _ :=
+  MulEquiv.ext map_id_apply
+
+/-- The isomorphism induced by a composite of homotopy equivalences is the composite of the
+induced isomorphisms. -/
+@[simp]
+theorem mulEquivOfHomotopyEquiv_trans [Nonempty N] [DecidableEq N] {Z : Type*}
+    [TopologicalSpace Z] (e : X ≃ₕ Y) (e' : Y ≃ₕ Z) (x : X) :
+    mulEquivOfHomotopyEquiv (N := N) (e.trans e') x =
+      (mulEquivOfHomotopyEquiv e x).trans (mulEquivOfHomotopyEquiv e' (e.toFun x)) :=
+  MulEquiv.ext fun a => (map_comp_apply _ rfl _ rfl a).symm
 
 end Finite
 

@@ -17,11 +17,8 @@ aspherical space is path connected, so base-point change identifies its homotopy
 points. With that, homotopy invariance follows from the invariance of the homotopy groups
 themselves, since a homotopy equivalence carries no base point with it.
 
-This is the homotopy-invariant form of the stability statements in
-`TauCeti.AlgebraicTopology.EilenbergMacLane.Basic`, which record stability under a *pointed
-homeomorphism*. Those remain the tool for a homeomorphism: they depend only on the homotopy
-groups of homeomorphic spaces, not on base-point change, and they place the conclusion at the
-prescribed image base point.
+These are the canonical invariance statements for both properties. In particular they cover a
+homeomorphism `e : X ≃ₜ Y`, through `e.toHomotopyEquiv`, at any base point of `Y`.
 
 ## Main declarations
 
@@ -63,7 +60,7 @@ variable {G : Type*} [Group G]
 theorem of_homotopyEquiv (h : IsEilenbergMacLaneSpaceOne G X x) (e : X ≃ₕ Y) (y : Y) :
     IsEilenbergMacLaneSpaceOne G Y y := by
   let : PathConnectedSpace X := h.isAspherical.pathConnectedSpace
-  obtain ⟨φ⟩ := FundamentalGroup.nonempty_homotopyEquivMulEquiv e x y
+  obtain ⟨φ⟩ := FundamentalGroup.nonempty_fundamentalGroupMulEquiv_of_homotopyEquiv e x y
   exact IsEilenbergMacLaneSpaceOne.mk (h.isAspherical.of_homotopyEquiv e y)
     (h.nonempty_fundamentalGroupMulEquiv.map fun f => φ.symm.trans f)
 
