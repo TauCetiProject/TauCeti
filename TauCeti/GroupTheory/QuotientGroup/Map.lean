@@ -11,65 +11,76 @@ public import Mathlib.GroupTheory.QuotientGroup.Defs
 # The quotient homomorphism between two quotients of a group
 
 For normal subgroups `V ≤ U` of a group `G`, the class of `g` modulo `V` determines its class
-modulo `U`, so there is a homomorphism `G ⧸ V →* G ⧸ U`. It is Mathlib's `QuotientGroup.map` at
-the identity of `G`, the map `ProfiniteGrp.toFiniteQuotientFunctor` sends `V ≤ U` to, and it is
-the transition map of every system indexed by the normal subgroups of `G` ordered by inclusion.
+modulo `U`, so there is a homomorphism `G ⧸ V →* G ⧸ U`: the homomorphism underlying Mathlib's
+`Subgroup.quotientMapOfLE`. It is Mathlib's `QuotientGroup.map` at the identity of `G`, the map
+`ProfiniteGrp.toFiniteQuotientFunctor` sends `V ≤ U` to, and it is the transition map of every
+system indexed by the normal subgroups of `G` ordered by inclusion.
 
 `QuotientGroup.map` asks for `V ≤ Subgroup.comap (MonoidHom.id G) U` rather than `V ≤ U`, and the
 two are equal only up to unfolding; naming the specialization keeps the systems built on it
-rewritable. The name records the systems it serves, whose quotients are the finite ones, by open
-normal subgroups; nothing here assumes either subgroup has finite index.
+rewritable.
 
 ## Main definitions
 
-* `TauCeti.finiteQuotientMap hVU`: the quotient homomorphism `G ⧸ V →* G ⧸ U` for `V ≤ U`.
+* `TauCeti.QuotientGroup.mapOfLE hVU`: the quotient homomorphism `G ⧸ V →* G ⧸ U` for `V ≤ U`.
 
 ## Main statements
 
-* `TauCeti.finiteQuotientMap_mk`: the map sends the class of `g` to the class of `g`, which is
-  what characterizes it.
-* `TauCeti.finiteQuotientMap_refl` and `TauCeti.finiteQuotientMap_comp`: the two functor laws.
-* `TauCeti.finiteQuotientMap_surjective`: the map is surjective.
+* `TauCeti.QuotientGroup.mapOfLE_mk`: the map sends the class of `g` to the class of `g`, which
+  is what characterizes it.
+* `TauCeti.QuotientGroup.mapOfLE_refl` and `TauCeti.QuotientGroup.mapOfLE_comp`: the two functor
+  laws.
+* `TauCeti.QuotientGroup.mapOfLE_surjective`: the map is surjective.
 
-## Implementation notes
+## Usage
 
-`finiteQuotientMap` keeps its body sealed: it is characterized by the lemmas above, and those are
-proved as `(rfl)`, so no consumer unfolds a body. Surjectivity is stated here, beside the
-definition, for the same reason: it is Mathlib's
-`QuotientGroup.map_surjective_of_surjective` read across the sealed body, and this is the one
-module in which the two maps are still definitionally equal.
+Work with `mapOfLE` through the four lemmas above: `mapOfLE_mk` evaluates it on classes,
+`mapOfLE_refl` and `mapOfLE_comp` simplify identities and composites, and `mapOfLE_surjective`
+feeds constructions that need a surjection, such as `Sylow.mapSurjective`. To identify
+`mapOfLE hVU` with another homomorphism out of `G ⧸ V`, compare the two on classes with
+`QuotientGroup.induction_on` and `mapOfLE_mk`.
 -/
 
 public section
 
 namespace TauCeti
 
+namespace QuotientGroup
+
 variable {G : Type*} [Group G] {U V W : Subgroup G}
 
 /-- The quotient homomorphism `G ⧸ V →* G ⧸ U` for normal subgroups `V ≤ U`. This is Mathlib's
 `QuotientGroup.map` at the identity of `G`, the map `ProfiniteGrp.toFiniteQuotientFunctor` sends
 `V ≤ U` to. -/
-def finiteQuotientMap [U.Normal] [V.Normal] (hVU : V ≤ U) : G ⧸ V →* G ⧸ U :=
-  QuotientGroup.map V U (.id G) fun _ hv => hVU hv
+def mapOfLE [U.Normal] [V.Normal] (hVU : V ≤ U) : G ⧸ V →* G ⧸ U :=
+  _root_.QuotientGroup.map V U (.id G) fun _ hv => hVU hv
 
+/-- The quotient homomorphism sends the class of `g` modulo `V` to the class of `g` modulo
+`U`. -/
 @[simp]
-theorem finiteQuotientMap_mk [U.Normal] [V.Normal] (hVU : V ≤ U) (g : G) :
-    finiteQuotientMap hVU (g : G ⧸ V) = (g : G ⧸ U) :=
+theorem mapOfLE_mk [U.Normal] [V.Normal] (hVU : V ≤ U) (g : G) :
+    mapOfLE hVU (g : G ⧸ V) = (g : G ⧸ U) :=
   (rfl)
 
+/-- The quotient homomorphism for `U ≤ U` is the identity of `G ⧸ U`. -/
 @[simp]
-theorem finiteQuotientMap_refl [U.Normal] :
-    finiteQuotientMap (le_refl U) = MonoidHom.id (G ⧸ U) :=
-  QuotientGroup.map_id U _
+theorem mapOfLE_refl [U.Normal] :
+    mapOfLE (le_refl U) = MonoidHom.id (G ⧸ U) :=
+  _root_.QuotientGroup.map_id U _
 
+/-- The quotient homomorphisms compose: `G ⧸ W → G ⧸ V → G ⧸ U` is the quotient homomorphism
+for `W ≤ U`. -/
 @[simp]
-theorem finiteQuotientMap_comp [U.Normal] [V.Normal] [W.Normal] (hWV : W ≤ V) (hVU : V ≤ U) :
-    (finiteQuotientMap hVU).comp (finiteQuotientMap hWV) = finiteQuotientMap (hWV.trans hVU) :=
-  QuotientGroup.map_comp_map W V U (.id G) (.id G) _ _ _
+theorem mapOfLE_comp [U.Normal] [V.Normal] [W.Normal] (hWV : W ≤ V) (hVU : V ≤ U) :
+    (mapOfLE hVU).comp (mapOfLE hWV) = mapOfLE (hWV.trans hVU) :=
+  _root_.QuotientGroup.map_comp_map W V U (.id G) (.id G) _ _ _
 
 /-- The quotient homomorphism `G ⧸ V →* G ⧸ U` is surjective. -/
-theorem finiteQuotientMap_surjective [U.Normal] [V.Normal] (hVU : V ≤ U) :
-    Function.Surjective (finiteQuotientMap hVU) :=
-  QuotientGroup.map_surjective_of_surjective V U (.id G) QuotientGroup.mk_surjective _
+theorem mapOfLE_surjective [U.Normal] [V.Normal] (hVU : V ≤ U) :
+    Function.Surjective (mapOfLE hVU) :=
+  _root_.QuotientGroup.map_surjective_of_surjective V U (.id G)
+    _root_.QuotientGroup.mk_surjective _
+
+end QuotientGroup
 
 end TauCeti

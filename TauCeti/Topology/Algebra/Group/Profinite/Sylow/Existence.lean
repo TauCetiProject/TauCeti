@@ -19,12 +19,15 @@ map sends a Sylow subgroup to its image under the quotient map; Mathlib's finite
 says that these transition maps are surjective. Compactness, in the form of nonemptiness of a
 cofiltered limit of nonempty finite types, then supplies a compatible family.
 
-The subgroup upstairs is the intersection of the inverse images of that family. Compatibility
-shows that its image in every finite quotient is exactly the chosen Sylow subgroup, which gives
-both the pro-`p` property and the prime-to-`p` index condition.
+The subgroup upstairs is `limitSubgroup` of that family, the intersection of its inverse images.
+Compatibility shows that its image in every finite quotient is exactly the chosen Sylow subgroup
+(`map_mk'_limitSubgroup`), which gives both the pro-`p` property and the prime-to-`p` index
+condition.
 
 ## Main results
 
+* `isProPSylow_limitSubgroup`: a compatible family of Sylow `p`-subgroups of the finite
+  quotients cuts out a Sylow pro-`p` subgroup.
 * `exists_isProPSylow`: every profinite group has a Sylow pro-`p` subgroup.
 
 ## References
@@ -44,117 +47,16 @@ variable {p : ℕ} [Fact p.Prime]
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   [TotallyDisconnectedSpace G]
 
-namespace ProfiniteSylow
-
-/-- The cofiltered system of Sylow `p`-subgroups of the finite quotients of `G`. -/
-private noncomputable def system : OpenNormalSubgroup G ⥤ Type u where
-  obj U := Sylow p (G ⧸ U.toSubgroup)
-  map {U V} f := ↾fun P ↦
-    P.mapSurjective (finiteQuotientMap_surjective (leOfHom f))
-  map_id U := by
-    apply ConcreteCategory.hom_ext
-    intro P
-    apply Sylow.ext
-    simp
-  map_comp f g := by
-    apply ConcreteCategory.hom_ext
-    intro P
-    apply Sylow.ext
-    dsimp
-    rw [Subgroup.map_map, finiteQuotientMap_comp]
-
-private instance system_obj_finite (U : OpenNormalSubgroup G) :
-    Finite ((system (p := p) (G := G)).obj U) := by
-  dsimp [system]
-  infer_instance
-
-private instance system_obj_nonempty (U : OpenNormalSubgroup G) :
-    Nonempty ((system (p := p) (G := G)).obj U) := by
-  dsimp [system]
-  infer_instance
-
-end ProfiniteSylow
-
-/-- Every profinite group has a Sylow pro-`p` subgroup. -/
-theorem exists_isProPSylow (p : ℕ) [Fact p.Prime] (G : Type u) [Group G]
-    [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-    [TotallyDisconnectedSpace G] : ∃ P : Subgroup G, IsProPSylow p P := by
-  obtain ⟨s, hs⟩ := nonempty_sections_of_finite_cofiltered_system
-    (ProfiniteSylow.system (p := p) (G := G))
-  let S : ∀ U : OpenNormalSubgroup G, Sylow p (G ⧸ U.toSubgroup) := s
-  -- Regard the section equation as compatibility of the underlying Sylow subgroups.
-  have hcompat {U V : OpenNormalSubgroup G} (hUV : U ≤ V) :
-      (S U : Subgroup (G ⧸ U.toSubgroup)).map (finiteQuotientMap hUV) =
-        (S V : Subgroup (G ⧸ V.toSubgroup)) := by
-    have h := hs (homOfLE hUV)
-    have h' : (S U).mapSurjective (finiteQuotientMap_surjective hUV) = S V := by
-      -- A morphism in `Type` is a bundled function, so expose its application before using
-      -- the section equation.
-      change (S U).mapSurjective (finiteQuotientMap_surjective hUV) = S V at h
-      exact h
-    exact congrArg (fun Q : Sylow p (G ⧸ V.toSubgroup) ↦ Q.1) h'
-  -- Pull the compatible family back to `G` and intersect all its members.
-  let P : Subgroup G :=
-    ⨅ U : OpenNormalSubgroup G,
-      (S U : Subgroup (G ⧸ U.toSubgroup)).comap (QuotientGroup.mk' U.toSubgroup)
-  -- Compactness upgrades the evident inclusion to equality in every finite quotient.
-  have hPmap (U : OpenNormalSubgroup G) :
-      P.map (QuotientGroup.mk' U.toSubgroup) = (S U : Subgroup (G ⧸ U.toSubgroup)) := by
-    apply le_antisymm
-    · rw [Subgroup.map_le_iff_le_comap]
-      exact iInf_le _ U
-    · intro y hy
-      let t : OpenNormalSubgroup G → Set G := fun V ↦
-        (QuotientGroup.mk' U.toSubgroup) ⁻¹' {y} ∩
-          (QuotientGroup.mk' V.toSubgroup) ⁻¹' (S V : Set (G ⧸ V.toSubgroup))
-      have ht_nonempty (V : OpenNormalSubgroup G) : (t V).Nonempty := by
-        let W := U ⊓ V
-        have hyW : y ∈ (S W : Subgroup (G ⧸ W.toSubgroup)).map
-            (finiteQuotientMap (show W ≤ U from inf_le_left)) := by
-          rwa [hcompat inf_le_left]
-        obtain ⟨z, hz, hzy⟩ := hyW
-        obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective W.toSubgroup z
-        refine ⟨g, ?_, ?_⟩
-        · simpa using hzy
-        · have hzV : (QuotientGroup.mk g : G ⧸ V.toSubgroup) ∈
-              (S W : Subgroup (G ⧸ W.toSubgroup)).map
-                (finiteQuotientMap (show W ≤ V from inf_le_right)) :=
-            ⟨QuotientGroup.mk g, hz, finiteQuotientMap_mk _ g⟩
-          rwa [hcompat inf_le_right] at hzV
-      have ht_closed (V : OpenNormalSubgroup G) : IsClosed (t V) :=
-        (isClosed_singleton.preimage QuotientGroup.continuous_mk).inter
-          ((isClosed_discrete _).preimage QuotientGroup.continuous_mk)
-      have ht_directed : Directed (· ⊇ ·) t := by
-        intro V W
-        refine ⟨V ⊓ W, ?_, ?_⟩
-        · rintro g ⟨hgy, hg⟩
-          refine ⟨hgy, ?_⟩
-          have : (QuotientGroup.mk g : G ⧸ V.toSubgroup) ∈
-              (S (V ⊓ W) : Subgroup (G ⧸ (V ⊓ W).toSubgroup)).map
-                (finiteQuotientMap inf_le_left) :=
-            ⟨QuotientGroup.mk g, hg, finiteQuotientMap_mk _ g⟩
-          rwa [hcompat inf_le_left] at this
-        · rintro g ⟨hgy, hg⟩
-          refine ⟨hgy, ?_⟩
-          have : (QuotientGroup.mk g : G ⧸ W.toSubgroup) ∈
-              (S (V ⊓ W) : Subgroup (G ⧸ (V ⊓ W).toSubgroup)).map
-                (finiteQuotientMap inf_le_right) :=
-            ⟨QuotientGroup.mk g, hg, finiteQuotientMap_mk _ g⟩
-          rwa [hcompat inf_le_right] at this
-      let _ : Nonempty (OpenNormalSubgroup G) :=
-        ⟨{ toOpenSubgroup := ⊤, isNormal' := Subgroup.normal_top }⟩
-      obtain ⟨g, hg⟩ := nonempty_iInter_of_directed_nonempty_isClosed t ht_directed
-        ht_nonempty ht_closed
-      refine ⟨g, ?_, ?_⟩
-      · refine Subgroup.mem_iInf.mpr fun V ↦ ?_
-        exact (Set.mem_iInter.mp hg V).2
-      · exact (Set.mem_iInter.mp hg U).1
-  -- The construction is an intersection of closed inverse images.
-  have hPclosed : IsClosed (P : Set G) := by
-    dsimp [P]
-    rw [Subgroup.coe_iInf]
-    exact isClosed_iInter fun U ↦
-      (isClosed_discrete _).preimage QuotientGroup.continuous_mk
+/-- **Sylow subgroups from a compatible family.** A family `S` of Sylow `p`-subgroups of the
+finite continuous quotients of a profinite group, compatible along the quotient maps, cuts out a
+Sylow pro-`p` subgroup, whose image in each `G ⧸ U` is `S U` (`map_mk'_limitSubgroup`). -/
+theorem isProPSylow_limitSubgroup (S : ∀ U : OpenNormalSubgroup G, Sylow p (G ⧸ U.toSubgroup))
+    (hS : ∀ ⦃U V : OpenNormalSubgroup G⦄ (hUV : U ≤ V),
+      (S U : Subgroup (G ⧸ U.toSubgroup)).map (QuotientGroup.mapOfLE hUV) = S V) :
+    IsProPSylow p (limitSubgroup fun U ↦ (S U : Subgroup (G ⧸ U.toSubgroup))) := by
+  have hPmap := map_mk'_limitSubgroup hS
+  have hPclosed := isClosed_limitSubgroup fun U ↦ (S U : Subgroup (G ⧸ U.toSubgroup))
+  generalize limitSubgroup (fun U ↦ (S U : Subgroup (G ⧸ U.toSubgroup))) = P at hPmap hPclosed ⊢
   -- Every finite quotient of `P` factors through one of its Sylow finite images.
   have hPpro : IsProP p P := by
     rw [isProP_iff]
@@ -181,8 +83,56 @@ theorem exists_isProPSylow (p : ℕ) [Fact p.Prime] (G : Type u) [Group G]
     intro z
     obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective V.toSubgroup z
     exact ⟨f.rangeRestrict x, by simp [q', q]⟩
-  refine ⟨P, isProPSylow_iff.mpr ⟨hPclosed, hPpro, fun U ↦ ?_⟩⟩
+  refine isProPSylow_iff.mpr ⟨hPclosed, hPpro, fun U ↦ ?_⟩
   rw [hPmap U]
   exact (S U).not_dvd_index
+
+namespace ProfiniteSylow
+
+/-- The cofiltered system of Sylow `p`-subgroups of the finite quotients of `G`. -/
+private noncomputable def system : OpenNormalSubgroup G ⥤ Type u where
+  obj U := Sylow p (G ⧸ U.toSubgroup)
+  map {U V} f := ↾fun P ↦
+    P.mapSurjective (QuotientGroup.mapOfLE_surjective (leOfHom f))
+  map_id U := by
+    apply ConcreteCategory.hom_ext
+    intro P
+    apply Sylow.ext
+    simp
+  map_comp f g := by
+    apply ConcreteCategory.hom_ext
+    intro P
+    apply Sylow.ext
+    dsimp
+    rw [Subgroup.map_map, QuotientGroup.mapOfLE_comp]
+
+private instance system_obj_finite (U : OpenNormalSubgroup G) :
+    Finite ((system (p := p) (G := G)).obj U) := by
+  dsimp [system]
+  infer_instance
+
+private instance system_obj_nonempty (U : OpenNormalSubgroup G) :
+    Nonempty ((system (p := p) (G := G)).obj U) := by
+  dsimp [system]
+  infer_instance
+
+end ProfiniteSylow
+
+/-- Every profinite group has a Sylow pro-`p` subgroup. -/
+theorem exists_isProPSylow (p : ℕ) [Fact p.Prime] (G : Type u) [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+    [TotallyDisconnectedSpace G] : ∃ P : Subgroup G, IsProPSylow p P := by
+  obtain ⟨s, hs⟩ := nonempty_sections_of_finite_cofiltered_system
+    (ProfiniteSylow.system (p := p) (G := G))
+  let S : ∀ U : OpenNormalSubgroup G, Sylow p (G ⧸ U.toSubgroup) := s
+  refine ⟨_, isProPSylow_limitSubgroup S fun U V hUV ↦ ?_⟩
+  -- Regard the section equation as compatibility of the underlying Sylow subgroups.
+  have h := hs (homOfLE hUV)
+  have h' : (S U).mapSurjective (QuotientGroup.mapOfLE_surjective hUV) = S V := by
+    -- A morphism in `Type` is a bundled function, so expose its application before using
+    -- the section equation.
+    change (S U).mapSurjective (QuotientGroup.mapOfLE_surjective hUV) = S V at h
+    exact h
+  exact congrArg (fun Q : Sylow p (G ⧸ V.toSubgroup) ↦ Q.1) h'
 
 end TauCeti

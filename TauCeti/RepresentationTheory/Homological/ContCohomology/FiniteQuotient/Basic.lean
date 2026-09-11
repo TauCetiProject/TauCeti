@@ -33,7 +33,7 @@ describe; the references below state the colimit theorem this system is the sour
 ## Main definitions
 
 * `TauCeti.ContCohomology.continuousFiniteQuotientMap G hVU`: the quotient homomorphism
-  `TauCeti.finiteQuotientMap`, bundled as a continuous homomorphism when `U` and `V` are open
+  `TauCeti.QuotientGroup.mapOfLE`, bundled as a continuous homomorphism when `U` and `V` are open
   normal subgroups.
 * `TauCeti.invariantsInclusion A hVU`: the inclusion `A^U ↪ A^V` for `V ≤ U`.
 * `TauCeti.transitionPair A hVU`: the compatible pair assembled from the two.
@@ -50,7 +50,7 @@ describe; the references below state the colimit theorem this system is the sour
 * `TauCeti.toFiniteQuotientFunctor_map_hom_hom`: the group half of the system is exactly the
   tower of Mathlib's `ProfiniteGrp.toFiniteQuotientFunctor`.
 * `TauCeti.invariantsInclusion_equivariant`: the coefficient inclusion is equivariant after
-  restriction along `finiteQuotientMap`, which is what makes `transitionPair` a compatible pair.
+  restriction along `QuotientGroup.mapOfLE`, which is what makes `transitionPair` a compatible pair.
 * `TauCeti.finiteLevelTransition_refl` and `TauCeti.finiteLevelTransition_comp`: the two functor
   laws, which are what make the transition maps a system on the opposite poset.
 * `TauCeti.transitionPair_naturality` and `TauCeti.finiteLevelTransition_naturality`: a morphism
@@ -68,7 +68,7 @@ hypothesis of no construction and of no transition law here. What the later coli
 over this same index poset, is profiniteness of `G` as an unbundled hypothesis together with
 discreteness of the coefficients, in order to identify the colimit with continuous cohomology.
 
-The group half of the transition pairs is `TauCeti.finiteQuotientMap`, which is generic
+The group half of the transition pairs is `TauCeti.QuotientGroup.mapOfLE`, which is generic
 quotient-group infrastructure and lives in `TauCeti.GroupTheory.QuotientGroup.Map`: it is the
 transition map of every system indexed by the normal subgroups of `G`, not of this one only, and
 this file consumes it together with its `_mk`, `_refl` and `_comp` lemmas.
@@ -147,26 +147,26 @@ variable {U V W : OpenNormalSubgroup G}
 normal subgroups. -/
 def continuousFiniteQuotientMap (hVU : V ≤ U) :
     G ⧸ V.toSubgroup →ₜ* G ⧸ U.toSubgroup where
-  toMonoidHom := finiteQuotientMap hVU
+  toMonoidHom := QuotientGroup.mapOfLE hVU
   continuous_toFun := continuous_of_discreteTopology
 
 @[simp]
 theorem continuousFiniteQuotientMap_mk (hVU : V ≤ U) (g : G) :
     continuousFiniteQuotientMap G hVU (g : G ⧸ V.toSubgroup) = (g : G ⧸ U.toSubgroup) :=
-  finiteQuotientMap_mk hVU g
+  QuotientGroup.mapOfLE_mk hVU g
 
 @[simp]
 theorem continuousFiniteQuotientMap_refl (U : OpenNormalSubgroup G) :
     continuousFiniteQuotientMap G (le_refl U) = ContinuousMonoidHom.id _ := by
   ext q
-  exact DFunLike.congr_fun finiteQuotientMap_refl q
+  exact DFunLike.congr_fun QuotientGroup.mapOfLE_refl q
 
 @[simp]
 theorem continuousFiniteQuotientMap_comp (hWV : W ≤ V) (hVU : V ≤ U) :
     (continuousFiniteQuotientMap G hVU).comp (continuousFiniteQuotientMap G hWV) =
       continuousFiniteQuotientMap G (hWV.trans hVU) := by
   ext q
-  exact DFunLike.congr_fun (finiteQuotientMap_comp hWV hVU) q
+  exact DFunLike.congr_fun (QuotientGroup.mapOfLE_comp hWV hVU) q
 
 end ContCohomology
 
@@ -176,22 +176,22 @@ section Transition
 
 variable {U V W : Subgroup G} [U.Normal] [V.Normal] [W.Normal]
 
-/-- Equivariance of the coefficient inclusion after restriction along `finiteQuotientMap`: the
+/-- Equivariance of the coefficient inclusion after restriction along `QuotientGroup.mapOfLE`: the
 `G ⧸ U`-action on `A^U`, pulled back along `G ⧸ V →* G ⧸ U`, agrees with the `G ⧸ V`-action on
 `A^V`. This holds because the action of `g` on `A^U` depends only on the class of `g` modulo any
 subgroup of `U`, and it is what makes `TauCeti.transitionPair` well typed. -/
 theorem invariantsInclusion_equivariant (hVU : V ≤ U) (x : G ⧸ V)
     (m : invariants (A.ρ.comp U.subtype)) :
     invariantsInclusion A hVU
-        ((A.quotientToInvariants U).ρ (finiteQuotientMap hVU x) m) =
+        ((A.quotientToInvariants U).ρ (QuotientGroup.mapOfLE hVU x) m) =
       (A.quotientToInvariants V).ρ x (invariantsInclusion A hVU m) := by
   induction x using QuotientGroup.induction_on with
   | _ g => ext; simp
 
-/-- A transition pair of the finite-quotient system, assembled from `TauCeti.finiteQuotientMap`
+/-- A transition pair of the finite-quotient system, assembled from `TauCeti.QuotientGroup.mapOfLE`
 and `TauCeti.invariantsInclusion`. -/
 noncomputable def transitionPair (hVU : V ≤ U) :
-    Rep.res (finiteQuotientMap hVU) (A.quotientToInvariants U) ⟶ A.quotientToInvariants V :=
+    Rep.res (QuotientGroup.mapOfLE hVU) (A.quotientToInvariants U) ⟶ A.quotientToInvariants V :=
   Rep.ofHom ⟨invariantsInclusion A hVU,
     fun x ↦ LinearMap.ext (invariantsInclusion_equivariant A hVU x)⟩
 
@@ -205,14 +205,14 @@ normal subgroups `V ≤ U`, induced by `TauCeti.transitionPair`. -/
 noncomputable def finiteLevelTransition (hVU : V ≤ U) (n : ℕ) :
     groupCohomology (A.quotientToInvariants U) n ⟶
       groupCohomology (A.quotientToInvariants V) n :=
-  groupCohomology.map (finiteQuotientMap hVU) (transitionPair A hVU) n
+  groupCohomology.map (QuotientGroup.mapOfLE hVU) (transitionPair A hVU) n
 
 /-- The first functor law: the transition map from a level to itself is the identity. -/
 @[simp]
 theorem finiteLevelTransition_refl (U : Subgroup G) [U.Normal] (n : ℕ) :
     finiteLevelTransition A (le_refl U) n = 𝟙 _ := by
   rw [finiteLevelTransition, ← groupCohomology.map_id (B := A.quotientToInvariants U) (n := n)]
-  exact groupCohomology.map_congr finiteQuotientMap_refl rfl n
+  exact groupCohomology.map_congr QuotientGroup.mapOfLE_refl rfl n
 
 /-- The second functor law: for `W ≤ V ≤ U` the transition from the `U`-level to the `W`-level is
 the composite through the `V`-level. With `TauCeti.finiteLevelTransition_refl` this says the
@@ -223,7 +223,7 @@ theorem finiteLevelTransition_comp (hWV : W ≤ V) (hVU : V ≤ U) (n : ℕ) :
       finiteLevelTransition A hVU n ≫ finiteLevelTransition A hWV n := by
   rw [finiteLevelTransition, finiteLevelTransition, finiteLevelTransition,
     ← groupCohomology.map_comp]
-  exact groupCohomology.map_congr (finiteQuotientMap_comp hWV hVU).symm rfl n
+  exact groupCohomology.map_congr (QuotientGroup.mapOfLE_comp hWV hVU).symm rfl n
 
 end Transition
 
@@ -264,7 +264,8 @@ to `f m`. It is stated on the underlying linear maps because that is the form in
 theorem transitionPair_naturality (f : A ⟶ B) (hVU : V ≤ U) :
     ((Rep.resFunctor (MonoidHom.id (G ⧸ V))).map (transitionPair A hVU) ≫
           (Rep.quotientToInvariantsFunctor k V).map f).hom.toLinearMap =
-      ((Rep.resFunctor (finiteQuotientMap hVU)).map ((Rep.quotientToInvariantsFunctor k U).map f) ≫
+      ((Rep.resFunctor (QuotientGroup.mapOfLE hVU)).map
+          ((Rep.quotientToInvariantsFunctor k U).map f) ≫
           transitionPair B hVU).hom.toLinearMap := by
   simp only [Rep.res_obj_ρ, Rep.quotientToInvariantsFunctor, Rep.invariantsFunctor_map_hom,
     Rep.resMap_hom_toLinearMap, Rep.hom_comp, ConcreteCategory.hom_ofHom,
@@ -279,14 +280,14 @@ theorem finiteLevelTransition_naturality (f : A ⟶ B) (hVU : V ≤ U) (n : ℕ)
     finiteLevelTransition A hVU n ≫ (finiteLevelFunctor k V n).map f =
       (finiteLevelFunctor k U n).map f ≫ finiteLevelTransition B hVU n := by
   rw [finiteLevelFunctor_map, finiteLevelFunctor_map, finiteLevelTransition, finiteLevelTransition]
-  refine Eq.trans (groupCohomology.map_comp (finiteQuotientMap hVU) (MonoidHom.id (G ⧸ V))
+  refine Eq.trans (groupCohomology.map_comp (QuotientGroup.mapOfLE hVU) (MonoidHom.id (G ⧸ V))
       (transitionPair A hVU) _ n).symm ?_
-  refine Eq.trans ?_ (groupCohomology.map_comp (MonoidHom.id (G ⧸ U)) (finiteQuotientMap hVU) _
+  refine Eq.trans ?_ (groupCohomology.map_comp (MonoidHom.id (G ⧸ U)) (QuotientGroup.mapOfLE hVU) _
       (transitionPair B hVU) n)
   -- The two compatible pairs have the same group half, and the same coefficient half by the
   -- square above.
   exact groupCohomology.map_congr
-    (((finiteQuotientMap hVU).comp_id).trans ((finiteQuotientMap hVU).id_comp).symm)
+    (((QuotientGroup.mapOfLE hVU).comp_id).trans ((QuotientGroup.mapOfLE hVU).id_comp).symm)
     (transitionPair_naturality f hVU) n
 
 end Coefficients
@@ -302,11 +303,11 @@ variable [TopologicalSpace G]
 one, which is why the cohomological system below is indexed by the opposite category. -/
 theorem toFiniteQuotientFunctor_map_hom_hom (P : ProfiniteGrp.{u})
     {U V : OpenNormalSubgroup P} (f : V ⟶ U) :
-    (P.toFiniteQuotientFunctor.map f).hom.hom = finiteQuotientMap (leOfHom f) := by
-  -- Both sides send a class to its class, which is all that `finiteQuotientMap` exposes.
+    (P.toFiniteQuotientFunctor.map f).hom.hom = QuotientGroup.mapOfLE (leOfHom f) := by
+  -- Both sides send a class to its class, which is all that `QuotientGroup.mapOfLE` exposes.
   refine MonoidHom.ext fun q => ?_
   induction q using QuotientGroup.induction_on with
-  | _ g => exact (finiteQuotientMap_mk (leOfHom f) g).symm
+  | _ g => exact (QuotientGroup.mapOfLE_mk (leOfHom f) g).symm
 
 /-- The finite-quotient system of a `G`-representation `A`: the functor sending an open normal
 subgroup `U` of `G` to `Hⁿ(G ⧸ U, A^U)`, with `TauCeti.finiteLevelTransition` for its arrows.
