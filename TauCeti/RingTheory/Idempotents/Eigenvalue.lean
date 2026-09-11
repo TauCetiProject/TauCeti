@@ -13,12 +13,9 @@ public import Mathlib.Algebra.Ring.Idempotent
 # Eigenvalues of sums of commuting idempotents
 
 A finite family of pairwise commuting idempotents has a particularly rigid spectrum. If its sum
-scales a nonzero vector in a torsion-free module over an integral domain, then the scalar is the
-image of a natural number no larger than the size of the family.
-
-The proof removes one idempotent at a time. On a given eigenvector, that idempotent either vanishes,
-leaving the eigenvalue unchanged, or produces a nonzero eigenvector for the remaining sum with the
-eigenvalue reduced by one.
+scales a nonzero vector in a torsion-free module over a cancellation ring, then the scalar is the
+image of a natural number no larger than the size of the family. This bounds the possible
+eigenvalues without requiring finite-dimensionality or a simultaneous eigenspace decomposition.
 
 ## Main results
 
@@ -32,7 +29,7 @@ namespace TauCeti
 
 open scoped BigOperators
 
-variable {K A M ι : Type*} [CommRing K] [IsDomain K] [Ring A]
+variable {K A M ι : Type*} [Ring K] [IsCancelMulZero K] [Ring A]
   [AddCommGroup M] [Module K M] [Module A M] [SMulCommClass A K M]
   [Module.IsTorsionFree K M]
 
