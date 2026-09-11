@@ -39,8 +39,8 @@ This is the standard change-of-basepoint map in the based-path construction of t
 cover; compare Hatcher, *Algebraic Topology*, Section 1.3. The quotient model used here is adapted
 from Kim Morrison's [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292)
 and is credited in `TauCeti.AlgebraicTopology.UniversalCover.Basic`. The continuity argument
-generalizes the fixed-loop argument in `TauCeti.AlgebraicTopology.UniversalCover.Action`, also
-adapted from that pull request.
+generalizes the fixed-loop argument from that pull request;
+`TauCeti.AlgebraicTopology.UniversalCover.Action` now reuses the generalized theorem.
 -/
 
 public section
