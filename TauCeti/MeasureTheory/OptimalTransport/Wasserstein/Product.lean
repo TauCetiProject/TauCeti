@@ -142,6 +142,7 @@ theorem wassersteinEDist_map_toLp_prod_right (hp : p ≠ ∞)
 
 /-- A product law has finite `p`-moment for the `ℓ^p` product distance exactly when both of its
 factors do. -/
+@[simp]
 theorem hasFiniteMoment_map_toLp_prod_iff (hp : p ≠ ∞)
     (hdX : Measurable fun z : X × X ↦ edist z.1 z.2)
     (hdY : Measurable fun z : Y × Y ↦ edist z.1 z.2) :

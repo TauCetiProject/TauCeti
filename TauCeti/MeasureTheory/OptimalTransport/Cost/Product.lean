@@ -24,8 +24,9 @@ soon as one of the two coordinate values is.
 
 The four marginals are probability measures. That normalisation is what makes the coordinate
 pushforwards of a plan of `μ₁ ⊗ μ₂` and `ν₁ ⊗ ν₂` land on `μᵢ` and `νᵢ` rather than on a rescaling
-of them. The rearrangement of a product of plans that the proofs use is
-`TauCeti.IsCoupling.prodProdProdComm`, which needs no such hypothesis.
+of them. By contrast, `TauCeti.IsCoupling.prodProdProdComm` — rearranging the product of a
+coupling of `μ₁` and `ν₁` with a coupling of `μ₂` and `ν₂` gives a coupling of `μ₁ ⊗ μ₂` and
+`ν₁ ⊗ ν₂` — holds for arbitrary marginals.
 
 ## Main statements
 
