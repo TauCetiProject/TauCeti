@@ -251,7 +251,7 @@ private theorem carCasimirElement_eq_scalar :
   have hcasimir := glCasimir_smul_of_isGlHighestWeightVector (K := K)
     hhighest
   rw [representation_glCasimir_eq_carCasimirElement_mul, hr,
-    glCasimirEigenvalue_glStaircase] at hcasimir
+    glCasimir_eigenvalue_glStaircase] at hcasimir
   have hscalar : r • carHighestWeightVector K (Fin N) =
       ((N : K) * (2 * (N : K) ^ 2 - 1) / 4) • carHighestWeightVector K (Fin N) := by
     simpa only [Algebra.smul_def] using hcasimir
