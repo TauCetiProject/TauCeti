@@ -218,10 +218,8 @@ private noncomputable def pathVector (v w : n → K) (X Y : K[T;T⁻¹]) : n →
 
 omit [DecidableEq n] in
 private theorem constVector_dotProduct [Fintype n] (v w : n → K) :
-    constVector v ⬝ᵥ constVector w = C (v ⬝ᵥ w) := by
-  simp only [constVector, dotProduct]
-  rw [map_sum]
-  exact Finset.sum_congr rfl fun i _ => (map_mul C _ _).symm
+    constVector v ⬝ᵥ constVector w = C (v ⬝ᵥ w) :=
+  (RingHom.map_dotProduct C v w).symm
 
 omit [DecidableEq n] in
 private theorem pathVector_dotProduct [Fintype n] (v w : n → K) (X Y X' Y' : K[T;T⁻¹]) :
