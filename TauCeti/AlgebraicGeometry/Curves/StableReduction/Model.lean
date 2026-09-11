@@ -189,30 +189,31 @@ lemma comp_hom {M N P : Model R K C toK} (f : M ⟶ N) (g : N ⟶ P) :
     Hom.hom (f ≫ g) = f.hom ≫ g.hom :=
   rfl
 
-/-- Isomorphisms of models are categorical isomorphisms, hence automatically preserve the
-chosen generic-fibre identification in both directions. -/
-abbrev Iso (M N : Model R K C toK) := M ≅ N
-
 /-- The faithful functor sending a model to its total space. -/
-@[expose]
 def forget : Model R K C toK ⥤ Scheme.{u} where
   obj M := M.total
   map f := f.hom
   map_id M := id_hom M
   map_comp f g := comp_hom f g
 
-instance : (forget (R := R) (K := K) (C := C) (toK := toK)).Faithful where
-  map_injective {_ _} _ _ h := Hom.ext h
-
 @[simp]
 lemma forget_obj (M : Model R K C toK) :
     (forget (R := R) (K := K) (C := C) (toK := toK)).obj M = M.total :=
-  rfl
+  (rfl)
 
+/-- The map of the total-space functor is the underlying scheme morphism, transported along the
+object-map equalities. -/
 @[simp]
 lemma forget_map {M N : Model R K C toK} (f : M ⟶ N) :
-    (forget (R := R) (K := K) (C := C) (toK := toK)).map f = f.hom :=
-  rfl
+    (forget (R := R) (K := K) (C := C) (toK := toK)).map f =
+      eqToHom (forget_obj M) ≫ f.hom ≫ eqToHom (forget_obj N).symm :=
+  (rfl)
+
+instance : (forget (R := R) (K := K) (C := C) (toK := toK)).Faithful where
+  map_injective {M N} _ _ h := Hom.ext (by
+    rw [← cancel_epi (eqToHom (forget_obj M)),
+      ← cancel_mono (eqToHom (forget_obj N).symm)]
+    simpa only [Category.assoc, forget_map] using h)
 
 end Model
 
