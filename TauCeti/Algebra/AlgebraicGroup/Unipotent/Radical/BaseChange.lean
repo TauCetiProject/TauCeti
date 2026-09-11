@@ -31,6 +31,9 @@ Normality and geometric connectedness survive base change directly. The quotient
 base-changed ideal is identified with the base change of the original quotient, where smooth
 geometric unipotence follows from the universal coefficient-matrix argument.
 
+Triviality of the radical after a field extension descends to the ground field by faithful-flat
+reflection of equality of Hopf ideals.
+
 Equality requires descent of an arbitrary radical candidate over `K` and is not asserted here.
 
 ## Main declarations
@@ -39,6 +42,9 @@ Equality requires descent of an arbitrary radical candidate over `K` and is not 
   unipotent-radical candidates.
 * `TauCeti.FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_baseChange_le`: the
   base-changed unipotent radical is contained in the radical after base change.
+* `TauCeti.FiniteTypeCommHopfAlgCat.
+    unipotentRadicalDefiningIdeal_eq_augmentation_of_baseChange_eq_augmentation`:
+  triviality of the unipotent radical after a field extension descends to the ground field.
 
 ## References
 
@@ -96,6 +102,24 @@ theorem unipotentRadicalDefiningIdeal_baseChange_le
   unipotentRadicalDefiningIdeal_le _ _
     (HopfIdeal.IsUnipotentRadicalCandidate.baseChange
       (isUnipotentRadicalCandidate_unipotentRadicalDefiningIdeal H))
+
+/-- Triviality of the unipotent radical after base change to a field extension descends to the
+ground field. -/
+theorem unipotentRadicalDefiningIdeal_eq_augmentation_of_baseChange_eq_augmentation
+    {H : FiniteTypeCommHopfAlgCat.{u, u} k}
+    (hgeometric :
+      FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
+          (FiniteTypeCommHopfAlgCat.baseChange (K := K) H) =
+        HopfIdeal.augmentation K
+          (FiniteTypeCommHopfAlgCat.baseChange (K := K) H)) :
+    FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal H =
+      HopfIdeal.augmentation k H := by
+  apply CommHopfAlgCat.baseChangeHopfIdeal_injective (K := K)
+  rw [CommHopfAlgCat.baseChangeHopfIdeal_augmentation]
+  apply le_antisymm
+  · exact HopfIdeal.le_augmentation K _ _
+  · rw [← hgeometric]
+    exact FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_baseChange_le H
 
 end FiniteTypeCommHopfAlgCat
 

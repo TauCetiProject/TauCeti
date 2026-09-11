@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Finiteness.Prod
+public import TauCeti.Algebra.Subalgebra.Center
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Multiplication
 
 /-!
@@ -52,6 +55,12 @@ becomes the standard basis of `Option V → k`.
   classes span the centre and are independent.
 * `TauCeti.finrank_center_nonisolatedZigzagQuotient`: the centre of the zigzag algebra of a
   connected graph with at least two vertices has dimension `|V| + 1`.
+* `TauCeti.finrank_center_zigzagComponentAlgebra`: the centre of one component factor of the
+  public componentwise zigzag algebra has dimension `|C| + 1`.
+* `TauCeti.finrank_center_zigzagAlgebra`: the centre of the public componentwise zigzag algebra of
+  an arbitrary finite graph has dimension `|V|` plus the number of connected components.
+* `TauCeti.finrank_center_zigzagAlgebra_of_connected`: the same dimension formula for a connected
+  graph, where it reads `|V| + 1`.
 
 ## References
 
@@ -484,5 +493,122 @@ theorem finrank_center_nonisolatedZigzagQuotient [Nontrivial k] [Fintype V] [Non
     Module.finrank k (Subalgebra.center k (nonisolatedZigzagQuotient k G))
       = Fintype.card V + 1 := by
   rw [Module.finrank_eq_card_basis (zigzagCenterBasis k G hconn), Fintype.card_option]
+
+/-! ### The centre of the public algebra -/
+
+-- The carrier of `zigzagAlgebra k G` is the dependent product of its component algebras, but that
+-- product is opaque across the public import, so the equivalence with the product is rebuilt from
+-- the public component projections and the reconstruction map.
+private noncomputable def zigzagAlgebraPiAlgEquiv :
+    zigzagAlgebra k G ≃ₐ[k] ∀ C : G.ConnectedComponent, zigzagComponentAlgebra k G C where
+  toFun x C := zigzagComponentProjection k G C x
+  invFun := zigzagAlgebraMk k G
+  left_inv := zigzagAlgebra.mk_projections k G
+  right_inv _ := funext fun _ => zigzagComponentProjection_zigzagAlgebraMk k G _ _
+  map_mul' x y := funext fun C => map_mul (zigzagComponentProjection k G C) x y
+  map_add' x y := funext fun C => map_add (zigzagComponentProjection k G C) x y
+  commutes' r := funext fun C => (zigzagComponentProjection k G C).commutes r
+
+-- The centre of a singleton component factor is the whole factor, since the dual numbers are
+-- commutative, and Mathlib exposes `DualNumber k` as `TrivSqZeroExt k k`, whose carrier is `k × k`
+-- and whose module structure is `inferInstanceAs <| Module k (k × k)`, both of them public and
+-- `@[expose]`d.  There is no `Module.Free`/`Module.Finite` instance, basis or linear equivalence
+-- for `TrivSqZeroExt` in Mathlib, so that definitional identification is the only route to the
+-- dual-number dimension; stating the equivalence directly for the component factor confines the
+-- dependence on Mathlib's representation of `TrivSqZeroExt` to this one declaration.
+private noncomputable def centerZigzagComponentAlgebraSubsingletonLinearEquiv
+    (C : G.ConnectedComponent) [Subsingleton C] :
+    Subalgebra.center k (zigzagComponentAlgebra k G C) ≃ₗ[k] ULift.{u} (k × k) :=
+  ((centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).trans
+    ((Subalgebra.equivOfEq _ _
+      (Subalgebra.center_eq_top (R := k) (ULift.{u} (DualNumber k)))).trans
+        Subalgebra.topEquiv)).toLinearEquiv
+
+/-- The centre of a component factor of the zigzag algebra is free over the coefficient ring. -/
+instance instFreeCenterZigzagComponentAlgebra (C : G.ConnectedComponent) :
+    Module.Free k (Subalgebra.center k (zigzagComponentAlgebra k G C)) := by
+  classical
+  by_cases hC : Nontrivial C
+  · let _ : Nontrivial C := hC
+    let _ : Fintype C := Fintype.ofFinite C
+    have : Module.Free k (Subalgebra.center k (nonisolatedZigzagQuotient k C.toSimpleGraph)) :=
+      Module.Free.of_basis
+        (zigzagCenterBasis k C.toSimpleGraph C.connected_toSimpleGraph.preconnected)
+    exact Module.Free.of_equiv
+      (centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).symm.toLinearEquiv
+  · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
+    exact Module.Free.of_equiv
+      (centerZigzagComponentAlgebraSubsingletonLinearEquiv k G C).symm
+
+/-- The centre of a component factor of the zigzag algebra is finite over the coefficient ring. -/
+instance instFiniteCenterZigzagComponentAlgebra (C : G.ConnectedComponent) :
+    Module.Finite k (Subalgebra.center k (zigzagComponentAlgebra k G C)) := by
+  classical
+  by_cases hC : Nontrivial C
+  · let _ : Nontrivial C := hC
+    let _ : Fintype C := Fintype.ofFinite C
+    have : Module.Finite k (Subalgebra.center k (nonisolatedZigzagQuotient k C.toSimpleGraph)) :=
+      Module.Finite.of_basis
+        (zigzagCenterBasis k C.toSimpleGraph C.connected_toSimpleGraph.preconnected)
+    exact Module.Finite.equiv
+      (centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).symm.toLinearEquiv
+  · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
+    have : Module.Finite k (ULift.{u} (k × k)) :=
+      Module.Finite.equiv (ULift.moduleEquiv (R := k) (M := k × k)).symm
+    exact Module.Finite.equiv
+      (centerZigzagComponentAlgebraSubsingletonLinearEquiv k G C).symm
+
+/-- **The dimension of the centre of a component factor.** A component with an edge has the unit
+and one volume class at each of its vertices as a basis of its centre, while a singleton component
+carries the commutative dual numbers, whose centre is all two dimensions of it. -/
+@[simp]
+theorem finrank_center_zigzagComponentAlgebra [Nontrivial k] (C : G.ConnectedComponent) :
+    Module.finrank k (Subalgebra.center k (zigzagComponentAlgebra k G C)) = Nat.card C + 1 := by
+  classical
+  by_cases hC : Nontrivial C
+  · let _ : Nontrivial C := hC
+    let _ : Fintype C := Fintype.ofFinite C
+    rw [(centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).toLinearEquiv.finrank_eq,
+      finrank_center_nonisolatedZigzagQuotient k C.toSimpleGraph
+        C.connected_toSimpleGraph.preconnected, Nat.card_eq_fintype_card]
+  · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
+    let c : C := ⟨C.nonempty_supp.some, C.nonempty_supp.some_mem⟩
+    let _ : Inhabited C := ⟨c⟩
+    let _ : Unique C := Unique.mk' C
+    rw [(centerZigzagComponentAlgebraSubsingletonLinearEquiv k G C).finrank_eq, finrank_ulift,
+      Module.finrank_prod, Module.finrank_self, Nat.card_unique]
+
+/-- **The dimension of the centre of the public zigzag algebra.** For every finite simple graph the
+centre has dimension `|V|` plus the number of connected components: each component contributes its
+own unit together with one volume class at each of its vertices. -/
+@[simp]
+theorem finrank_center_zigzagAlgebra [Nontrivial k] :
+    Module.finrank k (Subalgebra.center k (zigzagAlgebra k G)) =
+      Nat.card V + Nat.card G.ConnectedComponent := by
+  classical
+  let _ : Fintype V := Fintype.ofFinite V
+  let _ : Fintype G.ConnectedComponent := Fintype.ofFinite _
+  have hvertex : ∑ C : G.ConnectedComponent, Nat.card C = Nat.card V := by
+    rw [← Nat.card_sigma]
+    exact Nat.card_congr (Equiv.sigmaFiberEquiv G.connectedComponentMk)
+  let e : Subalgebra.center k (∀ C : G.ConnectedComponent, (zigzagComponentAlgebra k G C).carrier)
+      ≃ₐ[k] ∀ C : G.ConnectedComponent,
+        Subalgebra.center k (zigzagComponentAlgebra k G C).carrier := centerPiAlgEquiv
+  rw [(centerCongr (zigzagAlgebraPiAlgEquiv k G)).toLinearEquiv.finrank_eq,
+    e.toLinearEquiv.finrank_eq, Module.finrank_pi_fintype]
+  simp_rw [finrank_center_zigzagComponentAlgebra k G]
+  rw [Finset.sum_add_distrib, hvertex]
+  simp [Nat.card_eq_fintype_card]
+
+/-- **The centre of the public zigzag algebra of a connected graph has dimension `|V| + 1`.**
+This includes the one-vertex case, where the public algebra is the dual numbers. -/
+theorem finrank_center_zigzagAlgebra_of_connected [Nontrivial k]
+    (hconn : G.Connected) :
+    Module.finrank k (Subalgebra.center k (zigzagAlgebra k G)) = Nat.card V + 1 := by
+  obtain ⟨v⟩ := hconn.nonempty
+  let _ : Nonempty G.ConnectedComponent := ⟨G.connectedComponentMk v⟩
+  let _ : Subsingleton G.ConnectedComponent := hconn.preconnected.subsingleton_connectedComponent
+  rw [finrank_center_zigzagAlgebra k G,
+    Nat.card_unique (α := G.ConnectedComponent)]
 
 end TauCeti

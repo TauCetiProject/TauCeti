@@ -18,19 +18,19 @@ the points of the curve `W.map f` over `S`, with no fields and no tower involved
 
 ## Main definitions and results
 
-* `TauCeti.WeierstrassCurve.Affine.Point.mapAlong`: the map `W.Point → (W.map f).Point`, over
+* `WeierstrassCurve.Affine.Point.mapAlong`: the map `W.Point → (W.map f).Point`, over
   arbitrary commutative rings.
-* `TauCeti.WeierstrassCurve.Affine.Point.mapAlong_neg`, `mapAlong_id`,
+* `WeierstrassCurve.Affine.Point.mapAlong_neg`, `mapAlong_id`,
   `mapAlong_mapAlong` and `mapAlong_injective`: the functorial API, over arbitrary
   commutative rings, mirroring Mathlib's
   `Affine.Point.map_id`, `map_map` and `map_injective` for the `AlgHom` version. Both curve
   equalities — `W.map (RingHom.id R) = W` and `(W.map f).map g = W.map (g.comp f)` — hold by
   definition, so the identity and composition laws are stated with no transport.
-* `TauCeti.WeierstrassCurve.Affine.Point.mapAlong_eq_map`: over a field, when `K` is an
+* `WeierstrassCurve.Affine.Point.mapAlong_eq_map`: over a field, when `K` is an
   `F`-algebra, the transport along `algebraMap F K` *is* Mathlib's `Affine.Point.map`. A user
   holding only a ring homomorphism `f : F →+* K` writes `letI := f.toAlgebra` and gets the same
   statement for `f`.
-* `TauCeti.WeierstrassCurve.Affine.Point.mapAlong_iterateFrobenius_some`: iterated Frobenius
+* `WeierstrassCurve.Affine.Point.mapAlong_iterateFrobenius_some`: iterated Frobenius
   sends `(x, y)` to `(x ^ (p ^ n), y ^ (p ^ n))`.
 
 `Affine.Point.map` is already an `AddMonoidHom`, so rewriting with `mapAlong_eq_map` gives
@@ -73,7 +73,7 @@ open WeierstrassCurve
 
 namespace TauCeti
 
-namespace WeierstrassCurve.Affine.Point
+section
 
 variable {R S : Type*} [CommRing R] [CommRing S] {W : _root_.WeierstrassCurve R} (f : R →+* S)
   (hf : Function.Injective f)
@@ -81,49 +81,58 @@ variable {R S : Type*} [CommRing R] [CommRing S] {W : _root_.WeierstrassCurve R}
 /-- **The points of `W` map to the points of `W.map f` along an injective ring homomorphism.**
 Nonsingularity transports by Mathlib's `Affine.map_nonsingular`, which is what injectivity is
 for. -/
-noncomputable def mapAlong : W.toAffine.Point → (W.map f).toAffine.Point
+noncomputable def _root_.WeierstrassCurve.Affine.Point.mapAlong
+    : W.toAffine.Point → (W.map f).toAffine.Point
   | .zero => .zero
   | .some x y h => .some (f x) (f y) ((Affine.map_nonsingular W.toAffine hf x y).mpr h)
 
 /-- The point map sends the point at infinity to the point at infinity. -/
 @[simp]
-lemma mapAlong_zero : mapAlong f hf (0 : W.toAffine.Point) = 0 := by
+lemma _root_.WeierstrassCurve.Affine.Point.mapAlong_zero
+    : WeierstrassCurve.Affine.Point.mapAlong f hf (0 : W.toAffine.Point) = 0 := by
   rfl
 
 /-- The point map sends an affine point to the point with image coordinates. -/
 @[simp]
-lemma mapAlong_some {x y : R} (h : W.toAffine.Nonsingular x y) :
-    mapAlong f hf (.some x y h)
+lemma _root_.WeierstrassCurve.Affine.Point.mapAlong_some
+    {x y : R} (h : W.toAffine.Nonsingular x y) :
+    WeierstrassCurve.Affine.Point.mapAlong f hf (.some x y h)
       = .some (f x) (f y) ((Affine.map_nonsingular W.toAffine hf x y).mpr h) := by
-  simp [mapAlong]
+  simp [WeierstrassCurve.Affine.Point.mapAlong]
 
 /-- **The point map preserves negation**, over any commutative ring. -/
 @[simp]
-lemma mapAlong_neg (P : W.toAffine.Point) :
-    mapAlong f hf (-P) = -mapAlong f hf P := by
+lemma _root_.WeierstrassCurve.Affine.Point.mapAlong_neg (P : W.toAffine.Point) :
+    WeierstrassCurve.Affine.Point.mapAlong f hf (-P) = -WeierstrassCurve.Affine.Point.mapAlong f hf
+        P := by
   rcases P with _ | ⟨x, y, h⟩
   · rfl
-  · rw [Affine.Point.neg_some, mapAlong_some, mapAlong_some, Affine.Point.neg_some]
+  · rw [Affine.Point.neg_some, WeierstrassCurve.Affine.Point.mapAlong_some,
+      WeierstrassCurve.Affine.Point.mapAlong_some, Affine.Point.neg_some]
     simp only [Affine.map_negY]
 
 /-- **The point map along the identity is the identity.** `W.map (RingHom.id R)` is `W` by
 definition, so no transport is needed. -/
 @[simp]
-lemma mapAlong_id (P : W.toAffine.Point) :
-    mapAlong (RingHom.id R) (fun _ _ h => h) P = P := by
-  rcases P with _ | ⟨x, y, h⟩ <;> simp [mapAlong]
+lemma _root_.WeierstrassCurve.Affine.Point.mapAlong_id (P : W.toAffine.Point) :
+    WeierstrassCurve.Affine.Point.mapAlong (RingHom.id R) (fun _ _ h => h) P = P := by
+  rcases P with _ | ⟨x, y, h⟩ <;> simp [WeierstrassCurve.Affine.Point.mapAlong]
 
 /-- **The point map is functorial in the ring homomorphism.** `(W.map f).map g` is
 `W.map (g.comp f)` by definition, so no transport is needed. -/
 @[simp]
-lemma mapAlong_mapAlong {T : Type*} [CommRing T] (g : S →+* T) (hg : Function.Injective g)
+lemma _root_.WeierstrassCurve.Affine.Point.mapAlong_mapAlong
+    {T : Type*} [CommRing T] (g : S →+* T) (hg : Function.Injective g)
     (P : W.toAffine.Point) :
-    mapAlong g hg (mapAlong f hf P) = mapAlong (g.comp f) (hg.comp hf) P := by
+    WeierstrassCurve.Affine.Point.mapAlong g hg (WeierstrassCurve.Affine.Point.mapAlong f hf P) =
+        WeierstrassCurve.Affine.Point.mapAlong (g.comp f) (hg.comp hf) P := by
   rcases P with _ | ⟨x, y, h⟩ <;> rfl
 
 /-- **The point map is injective.** -/
-lemma mapAlong_injective : Function.Injective (mapAlong f hf (W := W)) := by
-  rintro (_ | ⟨x₁, y₁, h₁⟩) (_ | ⟨x₂, y₂, h₂⟩) hP <;> simp only [mapAlong] at hP
+lemma _root_.WeierstrassCurve.Affine.Point.mapAlong_injective
+    : Function.Injective (WeierstrassCurve.Affine.Point.mapAlong f hf (W := W)) := by
+  rintro (_ | ⟨x₁, y₁, h₁⟩) (_ | ⟨x₂, y₂, h₂⟩) hP <;> simp only
+      [WeierstrassCurve.Affine.Point.mapAlong] at hP
   · rfl
   · exact absurd hP (by simp)
   · exact absurd hP (by simp)
@@ -139,8 +148,8 @@ variable {F K : Type*} [Field F] [Field K] [DecidableEq F] [DecidableEq K] [Alge
 `f : F →+* K` that is not an ambient `algebraMap`, apply this under `letI := f.toAlgebra`, where
 `algebraMap F K` is `f` by definition. -/
 @[simp]
-lemma mapAlong_eq_map (P : W.toAffine.Point) :
-    mapAlong (algebraMap F K) (algebraMap F K).injective P
+lemma _root_.WeierstrassCurve.Affine.Point.mapAlong_eq_map (P : W.toAffine.Point) :
+    WeierstrassCurve.Affine.Point.mapAlong (algebraMap F K) (algebraMap F K).injective P
       = Affine.Point.map (W' := W) (Algebra.ofId F K) P := by
   -- The statement typechecks on two curve identifications: `W⁄F` is `W`, since `algebraMap F F`
   -- is `RingHom.id F`, and `W⁄K` is `W.map (algebraMap F K)`, which is `baseChange` unfolded.
@@ -148,7 +157,7 @@ lemma mapAlong_eq_map (P : W.toAffine.Point) :
   -- identifications are solved by `whnf` and exceed the elaboration budget.
   rcases P with _ | ⟨x, y, h⟩
   · exact (Affine.Point.map_zero (Algebra.ofId F K)).symm
-  · rw [mapAlong_some]
+  · rw [WeierstrassCurve.Affine.Point.mapAlong_some]
     exact (Affine.Point.map_some (W' := W) (F := F) (K := K) (Algebra.ofId F K) h).symm
 
 end Field
@@ -162,17 +171,17 @@ variable (p : ℕ) [ExpChar R p]
 
 Not a `simp` lemma: `mapAlong_some` already rewrites the left-hand side to coordinates expressed
 using `iterateFrobenius`; this theorem records their `p ^ n`-power form. -/
-theorem mapAlong_iterateFrobenius_some (n : ℕ)
+theorem _root_.WeierstrassCurve.Affine.Point.mapAlong_iterateFrobenius_some (n : ℕ)
     (hinj : Function.Injective (iterateFrobenius R p n)) {x y : R}
     (h : W.toAffine.Nonsingular x y) :
-    mapAlong (iterateFrobenius R p n) hinj (.some x y h) =
+    WeierstrassCurve.Affine.Point.mapAlong (iterateFrobenius R p n) hinj (.some x y h) =
       .some (x ^ p ^ n) (y ^ p ^ n)
         ((Affine.map_nonsingular W.toAffine hinj x y).mpr h) := by
   simp [iterateFrobenius_def]
 
 end IterateFrobenius
 
-end WeierstrassCurve.Affine.Point
+end
 
 end TauCeti
 

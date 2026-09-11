@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.BaseChange
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GeneralLinearBaseChange
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.GroupScheme
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.PointsFunctor
@@ -259,7 +258,7 @@ theorem geckBaseChangePointsMulEquiv_mapPoints {B C : CommAlgCat.{w} A} (χ : B 
           (H := CommHopfAlgCat.quotient
             (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
             (t.geckBaseChangeDefiningIdeal ht A)) χ q) =
-      t.geckPointsMap ht χ.hom.toRingHom
+      t.geckPointsMap ht χ.hom
         (t.geckBaseChangePointsMulEquiv ht A B q) := by
   simp only [geckBaseChangePointsMulEquiv, MulEquiv.trans_apply]
   rw [CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPoints,

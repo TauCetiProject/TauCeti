@@ -43,7 +43,9 @@ milestone in Layer 6 of the ReductiveGroups roadmap.
 * `TauCeti.Comodule.IsCompletelyReducible.of_exists_isCompl` and
   `TauCeti.Comodule.IsCompletelyReducible.exists_isCompl`: construct and use complete
   reducibility through complementary subcomodules.
-* `TauCeti.Comodule.isCompletelyReducible_of_subsingleton` and
+* `TauCeti.Comodule.isCompletelyReducible_of_forall_eq_bot_or_eq_top`: a comodule with no
+  subcomodules other than `⊥` and `⊤` is completely reducible, whence
+  `TauCeti.Comodule.isCompletelyReducible_of_subsingleton` and
   `TauCeti.Comodule.isCompletelyReducible_of_isSimpleOrder`: subsingleton and simple comodules
   are completely reducible.
 * `TauCeti.Comodule.fixedSubcomodule_eq_top_of_isCompletelyReducible_of_forall_exists_fixed` and
@@ -114,12 +116,24 @@ theorem IsCompletelyReducible.exists_isCompl (h : IsCompletelyReducible k C V)
     ∃ Q : Subcomodule k C V, IsCompl W.toSubmodule Q.toSubmodule :=
   h W
 
+/-- **A comodule with no subcomodules except `⊥` and `⊤` is completely reducible**: each of the
+two is complemented by the other.
+
+This is the common content of the two criteria below. Note that it is weaker than
+`IsSimpleOrder (Subcomodule k C V)`, which additionally requires `⊥ ≠ ⊤`, and so covers the
+subsingleton case as well. -/
+theorem isCompletelyReducible_of_forall_eq_bot_or_eq_top
+    (h : ∀ W : Subcomodule k C V, W = ⊥ ∨ W = ⊤) : IsCompletelyReducible k C V :=
+  IsCompletelyReducible.of_exists_isCompl fun W ↦ (h W).elim
+    (fun hW ↦ ⟨⊤, by
+      simpa [hW] using (isCompl_bot_top : IsCompl (⊥ : Submodule k V) ⊤)⟩)
+    (fun hW ↦ ⟨⊥, by
+      simpa [hW] using (isCompl_top_bot : IsCompl (⊤ : Submodule k V) ⊥)⟩)
+
 /-- A comodule on a subsingleton module is completely reducible. -/
 theorem isCompletelyReducible_of_subsingleton [Subsingleton V] :
-    IsCompletelyReducible k C V := by
-  apply IsCompletelyReducible.of_exists_isCompl
-  intro W
-  have hW : W = ⊥ := by
+    IsCompletelyReducible k C V :=
+  isCompletelyReducible_of_forall_eq_bot_or_eq_top fun W ↦ Or.inl <| by
     ext m
     constructor
     · intro _
@@ -127,19 +141,11 @@ theorem isCompletelyReducible_of_subsingleton [Subsingleton V] :
       exact Subsingleton.elim _ _
     · intro hm
       exact (Subcomodule.mem_bot.mp hm) ▸ zero_mem W
-  refine ⟨⊤, ?_⟩
-  simpa [hW] using (isCompl_bot_top : IsCompl (⊥ : Submodule k V) ⊤)
 
-/-- A comodule with no subcomodules except `⊥` and `⊤` is completely reducible. -/
+/-- A comodule whose subcomodule lattice is simple is completely reducible. -/
 theorem isCompletelyReducible_of_isSimpleOrder
-    [IsSimpleOrder (Subcomodule k C V)] : IsCompletelyReducible k C V := by
-  apply IsCompletelyReducible.of_exists_isCompl
-  intro W
-  exact (eq_bot_or_eq_top W).elim
-    (fun h ↦ ⟨⊤, by
-      simpa [h] using (isCompl_bot_top : IsCompl (⊥ : Submodule k V) ⊤)⟩)
-    (fun h ↦ ⟨⊥, by
-      simpa [h] using (isCompl_top_bot : IsCompl (⊤ : Submodule k V) ⊥)⟩)
+    [IsSimpleOrder (Subcomodule k C V)] : IsCompletelyReducible k C V :=
+  isCompletelyReducible_of_forall_eq_bot_or_eq_top eq_bot_or_eq_top
 
 /-- If `V` is completely reducible and every nonzero subcomodule of `V` contains a nonzero fixed
 vector, then the fixed subcomodule is everything.

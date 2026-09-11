@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 
+import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.PrincipalIdealDomain
@@ -40,6 +41,10 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
 * `Polynomial.Factors.isCoprime`: distinct factors are coprime.
 * `Polynomial.Factors.span_eq_iInf_span`: for `f` nonzero and squarefree,
   `(f) = ⨅ p, (p)`.
+* `Polynomial.sum_natDegree_normalizedFactors`: the degrees of the normalized irreducible
+  factors, counted with multiplicity, sum to the degree.
+* `Polynomial.map_natDegree_normalizedFactors_eq_singleton_iff`: those degrees form a singleton
+  exactly when the polynomial is irreducible.
 
 ## Roadmap
 
@@ -184,7 +189,60 @@ lemma span_eq_iInf_span (hf : f ≠ 0) (hsq : Squarefree f) :
   rw [Ideal.iInf_span_singleton fun _ _ hpq ↦ isCoprime hpq]
   exact (Ideal.span_singleton_eq_span_singleton.mpr (associated_prod hf hsq)).symm
 
+/-- A prime factor of the image of `f` under a field embedding divides the image of one of the
+monic irreducible factors of `f`.
+
+This is what lets a local computation be indexed by the factors of `f` over the base field: every
+prime of the extension divides the image of at least one of them. -/
+lemma exists_dvd_map {L : Type*} [Field L] (σ : K →+* L) (hf : f ≠ 0) {q : L[X]} (hq : Prime q)
+    (hdvd : q ∣ f.map σ) : ∃ p : f.Factors, q ∣ (p : K[X]).map σ := by
+  classical
+  have h1 : Associated ((normalizedFactors f).map (Polynomial.map σ)).prod (f.map σ) := by
+    have h2 := (prod_normalizedFactors hf).map (mapRingHom σ)
+    rwa [map_multiset_prod, coe_mapRingHom] at h2
+  obtain ⟨g, hgmem, hgdvd⟩ := hq.exists_mem_multiset_dvd (hdvd.trans h1.symm.dvd)
+  obtain ⟨p₀, hp₀, rfl⟩ := Multiset.mem_map.mp hgmem
+  exact ⟨⟨p₀, (Polynomial.mem_normalizedFactors_iff hf).mp hp₀⟩, hgdvd⟩
+
 end Factors
+
+/-! ### Degrees of the normalized irreducible factors
+
+`Polynomial.Factors` keeps `DecidableEq K` out of its statements by working with a subtype, at
+the cost of forgetting multiplicities. The lemmas below are the counterparts for
+`normalizedFactors`, which does record them.
+-/
+
+variable [DecidableEq K]
+
+/-- The degrees of the normalized irreducible factors of a polynomial over a field, counted with
+multiplicity, sum to its degree. -/
+lemma sum_natDegree_normalizedFactors (g : K[X]) :
+    ((normalizedFactors g).map natDegree).sum = g.natDegree := by
+  by_cases hg : g = 0
+  · simp [hg]
+  · rw [← natDegree_multiset_prod _ (zero_notMem_normalizedFactors g)]
+    exact natDegree_eq_of_degree_eq (degree_eq_degree_of_associated (prod_normalizedFactors hg))
+
+/-- A polynomial over a field with exactly one normalized irreducible factor, counted with
+multiplicity, is irreducible. -/
+lemma irreducible_of_card_normalizedFactors_eq_one {g : K[X]}
+    (h : (normalizedFactors g).card = 1) : Irreducible g := by
+  obtain ⟨q, hq⟩ := Multiset.card_eq_one.mp h
+  have hg : g ≠ 0 := by rintro rfl; simp at h
+  have hprod := prod_normalizedFactors hg
+  rw [hq, Multiset.prod_singleton] at hprod
+  exact hprod.irreducible
+    (irreducible_of_normalized_factor q (hq ▸ Multiset.mem_singleton_self q))
+
+/-- The degrees of the normalized irreducible factors of a polynomial over a field form the
+singleton `{g.natDegree}` exactly when the polynomial is irreducible. -/
+@[simp]
+lemma map_natDegree_normalizedFactors_eq_singleton_iff {g : K[X]} :
+    (normalizedFactors g).map natDegree = {g.natDegree} ↔ Irreducible g := by
+  refine ⟨fun h ↦ irreducible_of_card_normalizedFactors_eq_one ?_, fun h ↦ ?_⟩
+  · simpa using congrArg Multiset.card h
+  · rw [normalizedFactors_irreducible h, Multiset.map_singleton, natDegree_normalize]
 
 end Polynomial
 

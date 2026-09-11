@@ -8,11 +8,13 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.Basic
 -- Proof-only: Mathlib's evaluation of a valuation of `F(x)` with `v X > 1` is used inside
 -- `val_algebraMap_eq_zpow_intDegree`; no statement here mentions Ostrowski's theorem.
--- Proof-only: `CoordinateRing.mk_C_eq_algebraMap`, used in one rewrite below. NOT `public` — a
--- public import would re-export `TauCeti.WeierstrassCurve.Affine` to downstream files, and any of
--- them that `open WeierstrassCurve.Affine` inside `namespace TauCeti` would then resolve the open
--- ambiguously and silently lose `_root_.WeierstrassCurve.Affine`.
+-- Proof-only: `CoordinateRing.mk_C_eq_algebraMap`, used in one rewrite below. NOT `public` — the
+-- import is needed for a proof, not for anything this file states, so it stays out of the
+-- public surface.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing
+-- Proof-only: the generic point's equation, and the general two-to-three pole ratio it feeds.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.ValuationIntegrality
 import Mathlib.NumberTheory.RatFunc.Ostrowski
 
 /-!
@@ -187,8 +189,8 @@ theorem mk_Y_mul_add_eq :
       + algebraMap F[X] W.CoordinateRing (Polynomial.C W.a₁ * Polynomial.X + Polynomial.C W.a₃))
       = algebraMap F[X] W.CoordinateRing (Polynomial.X ^ 3 + Polynomial.C W.a₂ * Polynomial.X ^ 2
           + Polynomial.C W.a₄ * Polynomial.X + Polynomial.C W.a₆) := by
-    rw [← TauCeti.WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
-      ← TauCeti.WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap, ← map_add, ← map_mul]
+    rw [← WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
+      ← WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap, ← map_add, ← map_mul]
     exact AdjoinRoot.mk_eq_mk.mpr ⟨1, by rw [polynomial]; ring1⟩
   rw [IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField,
     IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField, ← map_add, ← map_mul, hY]
@@ -234,52 +236,22 @@ variable [v.IsTrivialOn F]
 
 include hx
 
-/-- The Weierstrass equation, valued: the left-hand product has value `(v x) ^ 3`. -/
-private theorem val_mul_val_add :
-    v (algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W Y)) *
-        v (algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W Y)
-          + algebraMap F[X] W.FunctionField (Polynomial.C W.a₁ * Polynomial.X + Polynomial.C W.a₃))
-      = v (algebraMap F[X] W.FunctionField Polynomial.X) ^ 3 := by
-  have hP : (Polynomial.X ^ 3 + Polynomial.C W.a₂ * Polynomial.X ^ 2
-      + Polynomial.C W.a₄ * Polynomial.X + Polynomial.C W.a₆ : F[X]).natDegree = 3 := by
-    compute_degree!
-  rw [← map_mul, mk_Y_mul_add_eq, val_algebraMap_eq_pow_natDegree v hx (p := _) (by
-    intro h; rw [h, Polynomial.natDegree_zero] at hP; omega), hP]
-
-/-- The linear coefficient `a₁X + a₃` has value at most `v x`. -/
-private theorem val_add_le :
-    v (algebraMap F[X] W.FunctionField (Polynomial.C W.a₁ * Polynomial.X + Polynomial.C W.a₃))
-      ≤ v (algebraMap F[X] W.FunctionField Polynomial.X) := by
-  have : (Polynomial.C W.a₁ * Polynomial.X + Polynomial.C W.a₃ : F[X]).natDegree ≤ 1 := by
-    compute_degree
-  simpa using val_algebraMap_le_pow v hx this
-
-/-- **`y` has a higher pole than `x`.** If `v y ≤ v x` then the left-hand side of the Weierstrass
-equation has value at most `(v x) ^ 2`, while its right-hand side has value `(v x) ^ 3`. -/
+/-- **`y` has a higher pole than `x`.** -/
 theorem val_X_lt_val_mk_Y :
     v (algebraMap F[X] W.FunctionField Polynomial.X)
       < v (algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W Y)) := by
-  by_contra hle
-  rw [not_lt] at hle
-  have h1 := (v.map_add (algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W Y))
-    (algebraMap F[X] W.FunctionField
-      (Polynomial.C W.a₁ * Polynomial.X + Polynomial.C W.a₃))).trans
-    (max_le hle (val_add_le v hx))
-  have h2 := val_mul_val_add v hx
-  have h3 : v (algebraMap F[X] W.FunctionField Polynomial.X) ^ 3
-      ≤ v (algebraMap F[X] W.FunctionField Polynomial.X) ^ 2 := by
-    rw [← h2, sq]
-    exact mul_le_mul' hle h1
-  exact absurd h3 (not_le.mpr (pow_lt_pow_right₀ hx (by norm_num)))
+  have h := valuation_x_lt_valuation_y (W := (W⁄W.FunctionField).toAffine) v
+    (equation_genericX_genericY W) (by rwa [genericX_eq_algebraMap])
+  rwa [genericX_eq_algebraMap, genericY_def] at h
 
 /-- **The pole orders of `x` and `y` are in the ratio `2 : 3`**: `(v y) ^ 2 = (v x) ^ 3`. Once
 `v x < v y` is known, the second factor of the Weierstrass equation has value `v y`. -/
 theorem val_mk_Y_sq :
     v (algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W Y)) ^ 2
       = v (algebraMap F[X] W.FunctionField Polynomial.X) ^ 3 := by
-  rw [sq, ← val_mul_val_add v hx]
-  congr 1
-  exact (v.map_add_eq_of_lt_left ((val_add_le v hx).trans_lt (val_X_lt_val_mk_Y v hx))).symm
+  have h := valuation_y_sq_eq_valuation_x_cube (W := (W⁄W.FunctionField).toAffine) v
+    (equation_genericX_genericY W) (by rwa [genericX_eq_algebraMap])
+  rwa [genericX_eq_algebraMap, genericY_def] at h
 
 omit [v.IsTrivialOn F] in
 /-- `v x` is a unit of the value group, being larger than `1`. -/

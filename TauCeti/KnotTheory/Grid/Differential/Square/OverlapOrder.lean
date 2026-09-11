@@ -55,26 +55,6 @@ namespace GridRectangleDecomposition
 
 variable {n : ℕ} {x z : GridState n}
 
-private theorem mem_cIoo_cyclic_left {a b c : Fin n} (h : b ∈ Grid.cIoo a c) :
-    c ∈ Grid.cIoo b a := by
-  rw [Grid.mem_cIoo] at h ⊢
-  constructor
-  · intro hba
-    subst b
-    split_ifs at h <;> omega
-  · split_ifs at h ⊢ <;> omega
-
-private theorem mem_cIoo_cyclic_right {a b c : Fin n} (h : b ∈ Grid.cIoo a c) :
-    a ∈ Grid.cIoo c b := by
-  exact mem_cIoo_cyclic_left (mem_cIoo_cyclic_left h)
-
-private theorem mem_cIoo_swap_of_not_mem {a b c : Fin n} (hab : a ≠ b)
-    (hca : c ≠ a) (hcb : c ≠ b) (h : c ∉ Grid.cIoo a b) : c ∈ Grid.cIoo b a := by
-  rcases (Grid.not_mem_cIoo_iff hab).mp h with hca' | hcb' | hswap
-  · exact (hca hca').elim
-  · exact (hcb hcb').elim
-  · exact hswap
-
 /-- Suppose the two empty rectangles in a decomposition share their initial side column and no
 other side. Then their two terminal sides occur in one of the two possible cyclic orders around
 the common side, while the row of the common corner lies strictly between the other two corner
@@ -122,13 +102,13 @@ theorem cyclicOrder_of_isEmpty_of_left_eq_left (D : GridRectangleDecomposition x
           · simpa only [GridRectangle.mem_rowInterior,
               GridRectangleBetween.toGridRectangle_bottom,
               GridRectangleBetween.toGridRectangle_top, hbottom] using hrow)
-    have hrow := mem_cIoo_swap_of_not_mem D.second.bottom_ne_top
+    have hrow := Grid.mem_cIoo_swap_of_notMem D.second.bottom_ne_top
       (by simpa only [hbottom] using D.first.bottom_ne_top)
       (by simpa only [hbottom] using htop_ne_firstBottom.symm) (by simpa only [hbottom] using hnot)
     exact ⟨Or.inl hfirstRight, by
-      simpa only [hbottom] using mem_cIoo_cyclic_left hrow⟩
+      simpa only [hbottom] using Grid.mem_cIoo_cyclic_left hrow⟩
   · have hsecondRight : D.second.right ∈ Grid.cIoo D.first.left D.first.right :=
-      mem_cIoo_cyclic_right hfirstRight
+      Grid.mem_cIoo_cyclic_right hfirstRight
     have hnot : D.second.top ∉ Grid.cIoo D.first.bottom D.first.top := by
       intro hrow
       exact D.first.not_mem_interior_target_of_isEmpty hfirst
@@ -142,9 +122,9 @@ theorem cyclicOrder_of_isEmpty_of_left_eq_left (D : GridRectangleDecomposition x
           · simpa only [GridRectangle.mem_rowInterior,
               GridRectangleBetween.toGridRectangle_bottom,
               GridRectangleBetween.toGridRectangle_top] using hrow)
-    have hrow := mem_cIoo_swap_of_not_mem D.first.bottom_ne_top
+    have hrow := Grid.mem_cIoo_swap_of_notMem D.first.bottom_ne_top
       htop_ne_firstBottom htop_ne_firstTop hnot
-    exact ⟨Or.inr hsecondRight, mem_cIoo_cyclic_right hrow⟩
+    exact ⟨Or.inr hsecondRight, Grid.mem_cIoo_cyclic_right hrow⟩
 
 /-- Suppose the two empty rectangles share their terminal side column and no other side. Then
 their two initial sides occur in one of the two possible cyclic orders around the common side,
@@ -188,13 +168,13 @@ theorem cyclicOrder_of_isEmpty_of_right_eq_right (D : GridRectangleDecomposition
           · simpa only [GridRectangle.mem_rowInterior,
               GridRectangleBetween.toGridRectangle_bottom,
               GridRectangleBetween.toGridRectangle_top, htop] using hrow)
-    have hrow := mem_cIoo_swap_of_not_mem D.second.bottom_ne_top
+    have hrow := Grid.mem_cIoo_swap_of_notMem D.second.bottom_ne_top
       hbottom_ne_firstTop.symm (by simpa only [htop] using D.first.bottom_ne_top.symm)
       (by simpa only [htop] using hnot)
     exact ⟨Or.inl hfirstLeft,
-      mem_cIoo_cyclic_right (by simpa only [htop] using hrow)⟩
+      Grid.mem_cIoo_cyclic_right (by simpa only [htop] using hrow)⟩
   · have hsecondLeft : D.second.left ∈ Grid.cIoo D.first.left D.first.right :=
-      mem_cIoo_cyclic_left hfirstLeft
+      Grid.mem_cIoo_cyclic_left hfirstLeft
     have hnot : D.second.bottom ∉ Grid.cIoo D.first.bottom D.first.top := by
       intro hrow
       exact D.first.not_mem_interior_target_of_isEmpty hfirst
@@ -208,9 +188,9 @@ theorem cyclicOrder_of_isEmpty_of_right_eq_right (D : GridRectangleDecomposition
           · simpa only [GridRectangle.mem_rowInterior,
               GridRectangleBetween.toGridRectangle_bottom,
               GridRectangleBetween.toGridRectangle_top] using hrow)
-    have hrow := mem_cIoo_swap_of_not_mem D.first.bottom_ne_top
+    have hrow := Grid.mem_cIoo_swap_of_notMem D.first.bottom_ne_top
       hbottom_ne_firstBottom hbottom_ne_firstTop hnot
-    exact ⟨Or.inr hsecondLeft, mem_cIoo_cyclic_left hrow⟩
+    exact ⟨Or.inr hsecondLeft, Grid.mem_cIoo_cyclic_left hrow⟩
 
 /-- Suppose the first empty rectangle's initial side is the second one's terminal side, with no
 other common side. The other side columns have a fixed cyclic order, while the three corner rows
@@ -234,7 +214,7 @@ theorem cyclicOrder_of_isEmpty_of_left_eq_right (D : GridRectangleDecomposition 
   have h := D.transpose.cyclicOrder_of_isEmpty_of_right_eq_right htransRight htransLeft
     (D.isEmpty_transpose_first.mpr hfirst) (D.isEmpty_transpose_second.mpr hsecond)
   rcases h with ⟨hrows, hcolumns⟩
-  exact ⟨mem_cIoo_cyclic_left (by
+  exact ⟨Grid.mem_cIoo_cyclic_left (by
       simpa only [transpose_first_bottom, transpose_second_bottom, transpose_first_top] using
         hcolumns), by
     simpa only [transpose_first_left, transpose_second_left, transpose_first_right] using hrows⟩

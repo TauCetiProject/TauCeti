@@ -23,6 +23,8 @@ are the orthogonal Lie algebra. It does not choose a basis for an abstract quadr
 
 ## Main results
 
+* `TauCeti.weightedSumSquares_eq_toQuadraticForm_diagonal`: a weighted sum of squares is the
+  quadratic form of the diagonal weight matrix.
 * `TauCeti.QuadraticForm.polarBilin_weightedSumSquares`: the polar form of a weighted sum of
   squares is twice its diagonal-matrix form.
 * `TauCeti.QuadraticForm.standardSkewAdjointLieEquiv`: the Lie equivalence from the skew-adjoint
@@ -40,6 +42,20 @@ open scoped Matrix
 
 universe u
 
+namespace TauCeti
+
+/-- A weighted sum-of-squares quadratic form is the quadratic form associated to the diagonal
+matrix of its weights. -/
+theorem weightedSumSquares_eq_toQuadraticForm_diagonal (R : Type u) [CommRing R]
+    (n : Type*) [Fintype n] [DecidableEq n] (w : n → R) :
+    QuadraticMap.weightedSumSquares R w = Matrix.toQuadraticForm' (Matrix.diagonal w) := by
+  ext x
+  simp [QuadraticMap.weightedSumSquares_apply, Matrix.toQuadraticForm',
+    LinearMap.BilinMap.toQuadraticMap_apply, Matrix.toLinearMap₂'_apply', Matrix.mulVec,
+    Matrix.diagonal, dotProduct, smul_eq_mul, mul_comm, mul_left_comm]
+
+end TauCeti
+
 namespace TauCeti.QuadraticForm
 
 attribute [local instance 100] LieRing.ofAssociativeRing
@@ -50,12 +66,8 @@ variable (R : Type u) (n : Type*) [CommRing R] [Fintype n] [DecidableEq n]
 theorem polarBilin_weightedSumSquares (w : n → R) :
     QuadraticMap.polarBilin (QuadraticMap.weightedSumSquares R w) =
       2 • Matrix.toLinearMap₂' R (Matrix.diagonal w) := by
-  have h : QuadraticMap.weightedSumSquares R w =
-      Matrix.toQuadraticForm' (Matrix.diagonal w) := by
-    ext x
-    simp [Matrix.toQuadraticForm', Matrix.toLinearMap₂'_apply, Matrix.diagonal,
-      QuadraticMap.weightedSumSquares_apply, mul_comm, mul_left_comm]
-  rw [h, Matrix.toQuadraticForm', LinearMap.BilinMap.polarBilin_toQuadraticMap]
+  rw [TauCeti.weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.toQuadraticForm',
+    LinearMap.BilinMap.polarBilin_toQuadraticMap]
   ext x y
   simp [Matrix.toLinearMap₂'_apply, Matrix.diagonal, mul_comm, mul_left_comm, mul_assoc, two_mul]
 

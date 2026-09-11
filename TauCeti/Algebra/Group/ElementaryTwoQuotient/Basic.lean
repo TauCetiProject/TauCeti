@@ -12,6 +12,7 @@ public import Mathlib.FieldTheory.Finiteness
 public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.FreeModule.ModN
 public import TauCeti.Algebra.Group.PowMonoidHom
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # The maximal elementary-2 quotient `G / G²` of a commutative group
@@ -21,7 +22,7 @@ of order dividing `2`, so it is a vector space over `𝔽₂ = ZMod 2`. When `G`
 is the **2-rank** of `G`. This file develops that construction at the level of an arbitrary
 commutative group; the genus-theory specialization to a class group lives in
 `TauCeti.NumberTheory.ClassGroup.ElementaryTwoQuotient`, and the square-class group `Kˣ ⧸ (Kˣ)²` of
-`TauCeti.FieldTheory.SquareClassGroup` is the same construction for `G = Kˣ`.
+`TauCeti.FieldTheory.SquareClassGroup.Basic` is the same construction for `G = Kˣ`.
 
 ⚠ This quotient is the **maximal elementary-2 quotient** of `G`, *not* its 2-torsion subgroup
 `{g | g² = 1}`. The two are different objects — a quotient and a subgroup — but for a finite group
@@ -46,7 +47,8 @@ names around it. The cardinality identity is still expressed through the squarin
 * `TauCeti.elementaryTwoQuotientMk_surjective` and `TauCeti.elementaryTwoQuotientMk_eq_iff`: the
   class map is surjective, and two elements have the same class iff they differ by a square.
 * `TauCeti.elementaryTwoQuotientLiftEquiv` and `TauCeti.elementaryTwoQuotientLinearLiftEquiv`: the
-  universal property for maps out of `G/G²`, inherited from `ModN.liftEquiv`.
+  universal property for maps out of `G/G²`, inherited from `ModN.liftEquiv`, with
+  `TauCeti.elementaryTwoQuotientLinearLiftEquiv_symm_mk` as its computation rule.
 * `TauCeti.elementaryTwoQuotientMap` and `TauCeti.elementaryTwoQuotientCongr`: transport along
   homomorphisms and equivalences of commutative groups.
 * `TauCeti.elementaryTwoQuotientMap_apply_eq_self_of_isSquare_div`,
@@ -70,6 +72,9 @@ names around it. The cardinality identity is still expressed through the squarin
   `TauCeti.two_pow_twoRank_dvd_card`: the quotient cardinality and its rank form divide `|G|`.
 * `TauCeti.twoRank_eq_of_mulEquiv` and `TauCeti.twoRank_le_twoRank_of_surjective`: the 2-rank is
   invariant under isomorphisms and monotonic under surjections.
+* `MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow`: a surjection with a kernel of order at
+  most `2 ^ n` drops the 2-rank by at most `n`, via
+  `MonoidHom.card_ker_elementaryTwoQuotientMap_le_card_ker`.
 -/
 
 public section
@@ -143,6 +148,14 @@ additive homomorphisms from `Additive G` whose values are killed by `2`. -/
 protected def elementaryTwoQuotientLinearLiftEquiv [AddCommGroup H] [Module (ZMod 2) H] :
     (ElementaryTwoQuotient G →ₗ[ZMod 2] H) ≃ {φ : Additive G →+ H // ∀ g, 2 • φ g = 0} :=
   ModN.liftEquiv'
+
+/-- The linear map obtained from the universal property of `G/G²` evaluates on the class of `g`
+as the original additive homomorphism evaluates on `Additive.ofMul g`. -/
+@[simp] theorem elementaryTwoQuotientLinearLiftEquiv_symm_mk [AddCommGroup H]
+    [Module (ZMod 2) H] (φ : Additive G →+ H) (hφ : ∀ g, 2 • φ g = 0) (g : G) :
+    (TauCeti.elementaryTwoQuotientLinearLiftEquiv.symm ⟨φ, hφ⟩)
+        (elementaryTwoQuotientMk g) = φ (Additive.ofMul g) := by
+  rfl
 
 /-- The class map to `G / G²` sends a product to the sum of the classes. -/
 @[simp] theorem elementaryTwoQuotientMk_mul (g h : G) :
@@ -323,8 +336,15 @@ private theorem range_lsmul_two_toAddSubgroup_eq_square_toAddSubgroup :
 additive form of the square subgroup. -/
 noncomputable def elementaryTwoQuotientEquivSquareQuotient :
     ElementaryTwoQuotient G ≃+ Additive G ⧸ (Subgroup.square G).toAddSubgroup :=
-  QuotientAddGroup.congr _ _ (AddEquiv.refl (Additive G)) <| by
-    simpa using range_lsmul_two_toAddSubgroup_eq_square_toAddSubgroup G
+  QuotientAddGroup.quotientAddEquivOfEq
+    (range_lsmul_two_toAddSubgroup_eq_square_toAddSubgroup G)
+
+/-- The comparison with the direct quotient by squares sends the `ModN` class of an element to
+its direct quotient class. -/
+@[simp] theorem elementaryTwoQuotientEquivSquareQuotient_mk (g : G) :
+    elementaryTwoQuotientEquivSquareQuotient G (elementaryTwoQuotientMk g) =
+      QuotientAddGroup.mk (Additive.ofMul g) :=
+  QuotientAddGroup.quotientAddEquivOfEq_mk _ (Additive.ofMul g)
 
 /-- The cardinality of `G/G²` is the index of the subgroup of squares. -/
 theorem card_elementaryTwoQuotient_eq_index_square :
@@ -458,5 +478,58 @@ theorem twoRank_eq_of_mulEquiv (e : G ≃* H) : twoRank G = twoRank H :=
 theorem twoRank_le_twoRank_of_surjective [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)]
     (f : G →* H) (hf : Function.Surjective f) : twoRank H ≤ twoRank G :=
   LinearMap.finrank_le_finrank_of_surjective (elementaryTwoQuotientMap_surjective f hf)
+
+/-- **The kernel of the induced map is the image of the kernel.** If `f` is surjective and the
+class of `g` in `G / G²` dies in `H / H²`, then `g` may be corrected by a square so as to lie in
+`ker f` without changing its class: `f g` is a square `f y * f y`, and `g * (y ^ 2)⁻¹` is a
+representative of the same class lying in `ker f`. -/
+theorem _root_.MonoidHom.exists_mem_ker_elementaryTwoQuotientMk_eq (f : G →* H)
+    (hf : Function.Surjective f)
+    {x : ElementaryTwoQuotient G} (hx : elementaryTwoQuotientMap f x = 0) :
+    ∃ g ∈ MonoidHom.ker f, elementaryTwoQuotientMk g = x := by
+  obtain ⟨g, rfl⟩ := elementaryTwoQuotientMk_surjective x
+  rw [elementaryTwoQuotientMap_mk, elementaryTwoQuotientMk_eq_zero_iff] at hx
+  obtain ⟨h, hh⟩ := hx
+  obtain ⟨y, rfl⟩ := hf h
+  have hy : elementaryTwoQuotientMk (y * y) = (0 : ElementaryTwoQuotient G) :=
+    (elementaryTwoQuotientMk_eq_zero_iff _).2 ⟨y, rfl⟩
+  refine ⟨g * (y * y)⁻¹, ?_, ?_⟩
+  · rw [MonoidHom.mem_ker, map_mul, map_inv, map_mul, hh, mul_inv_cancel]
+  · rw [elementaryTwoQuotientMk_mul, elementaryTwoQuotientMk_inv, hy, neg_zero, add_zero]
+
+/-- **The defect of the induced map is bounded by the kernel.** For a surjective `f : G →* H` the
+kernel of `G / G² → H / H²` is the image of `ker f`, so it has at most `|ker f|` elements. -/
+theorem _root_.MonoidHom.card_ker_elementaryTwoQuotientMap_le_card_ker (f : G →* H)
+    [Finite (MonoidHom.ker f)] (hf : Function.Surjective f) :
+    Nat.card (LinearMap.ker (elementaryTwoQuotientMap f)) ≤ Nat.card (MonoidHom.ker f) :=
+  Nat.card_le_card_of_surjective
+    (fun g => ⟨elementaryTwoQuotientMk (g : G), by
+      have hg : f (g : G) = 1 := g.2
+      rw [LinearMap.mem_ker, elementaryTwoQuotientMap_mk, hg, elementaryTwoQuotientMk_one]⟩)
+    fun x => by
+      obtain ⟨g, hg, hgx⟩ := f.exists_mem_ker_elementaryTwoQuotientMk_eq hf x.2
+      exact ⟨⟨g, hg⟩, Subtype.ext hgx⟩
+
+/-- **A surjection with a small kernel barely drops the 2-rank.** If `f : G →* H` is surjective
+with `|ker f| ≤ 2 ^ n`, then `twoRank G ≤ twoRank H + n`. Together with
+`TauCeti.twoRank_le_twoRank_of_surjective` this pins the 2-rank of the quotient to within `n` of
+the 2-rank of `G`. The rank-nullity theorem for the induced map `G / G² → H / H²` turns the bound
+on the kernel of `f` into a bound on the dimension of the kernel of that map. -/
+theorem _root_.MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow
+    [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] {n : ℕ} (f : G →* H)
+    [Finite (MonoidHom.ker f)] (hf : Function.Surjective f)
+    (hn : Nat.card (MonoidHom.ker f) ≤ 2 ^ n) :
+    twoRank G ≤ twoRank H + n := by
+  -- The dimension of the kernel of `G / G² → H / H²` is at most `n`.
+  have hker : Module.finrank (ZMod 2) (LinearMap.ker (elementaryTwoQuotientMap f)) ≤ n := by
+    have hcard : Nat.card (LinearMap.ker (elementaryTwoQuotientMap f)) ≤ 2 ^ n :=
+      (f.card_ker_elementaryTwoQuotientMap_le_card_ker hf).trans hn
+    rw [Module.natCard_eq_pow_finrank (K := ZMod 2), Nat.card_zmod] at hcard
+    exact (Nat.pow_le_pow_iff_right one_lt_two).mp hcard
+  -- Rank-nullity for the induced map, whose range is everything.
+  have hrn := LinearMap.finrank_range_add_finrank_ker (elementaryTwoQuotientMap f)
+  rw [LinearMap.range_eq_top.mpr (elementaryTwoQuotientMap_surjective f hf), finrank_top] at hrn
+  rw [twoRank_def, twoRank_def, ← hrn]
+  omega
 
 end TauCeti

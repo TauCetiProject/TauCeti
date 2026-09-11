@@ -6,7 +6,6 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
-public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
 /-!
 # Pullbacks and quotient embeddings of sub-unit valuation loci
@@ -39,7 +38,8 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
   `rationalSubset_image_eq_spa`: elementwise criteria for rational subsets under pullback.
 * `TauCeti.ValuationSpectrum.isEmbedding_spaComap`: an embedding of valuation spectra restricts
   to an embedding of sub-unit loci.
-* `TauCeti.ValuationSpectrum.isEmbedding_spaComap_quotientMk`,
+* `TauCeti.ValuationSpectrum.isOpen_supp_comap_quotientMk_iff`,
+  `isEmbedding_spaComap_quotientMk`,
   `range_spaComap_quotientMk`, `isClosedEmbedding_spaComap_quotientMk`: the quotient map for the
   image plus ring is a closed embedding with support locus as its range.
 
@@ -195,6 +195,19 @@ theorem isEmbedding_spaComap (φ : A →+* B) (hφ : Continuous φ) (Aplus : Sub
   exact hemb.comp Topology.IsEmbedding.subtypeVal
 
 section Quotient
+
+/-- Pullback along a quotient map preserves and reflects whether the support of a valuation is
+open. -/
+@[simp]
+theorem isOpen_supp_comap_quotientMk_iff (J : Ideal A) (v : Spv (A ⧸ J)) :
+    IsOpen ((comap (Ideal.Quotient.mk J) v).supp : Set A) ↔
+      IsOpen (v.supp : Set (A ⧸ J)) := by
+  have hsupp : Ideal.Quotient.mk J ⁻¹' (v.supp : Set (A ⧸ J)) =
+      ((comap (Ideal.Quotient.mk J) v).supp : Set A) := by
+    ext a
+    simp only [Set.mem_preimage, SetLike.mem_coe, mem_supp_iff, comap_vle, map_zero]
+  rw [← hsupp]
+  exact isOpen_coinduced.symm
 
 /-- The map on sub-unit valuation loci for a quotient homomorphism and the image plus ring is a
 topological embedding. -/

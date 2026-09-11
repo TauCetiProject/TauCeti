@@ -41,8 +41,10 @@ genus-field milestone of `TauCetiRoadmap/Multiquadratic/README.md`.
   2-rank is at most the narrow class-group 2-rank.
 * `NumberField.NarrowClassGroup.toClassGroupElementaryTwoQuotientEquiv`: for a totally
   complex field, the linear equivalence with the ordinary class-group quotient.
-* `NumberField.NarrowClassGroup.twoRank_eq_classGroupTwoRank`: for a totally complex
-  field, the narrow and ordinary class-group 2-ranks agree.
+* `NumberField.NarrowClassGroup.twoRank_eq_classGroupTwoRank_of_injective` and
+  `NumberField.NarrowClassGroup.twoRank_eq_classGroupTwoRank`: the narrow and ordinary
+  class-group 2-ranks agree whenever forgetting positivity is injective, in particular for a
+  totally complex field.
 
 ## References
 
@@ -121,10 +123,20 @@ by forgetting positivity. -/
   dsimp only [toClassGroupElementaryTwoQuotientEquiv]
   rw [TauCeti.elementaryTwoQuotientCongr_mk, toClassGroupEquiv_apply]
 
-/-- **For a totally complex field, the narrow and ordinary class-group 2-ranks agree.** -/
-theorem twoRank_eq_classGroupTwoRank [IsTotallyComplex K] :
+/-- **An injective forgetful map makes the narrow and ordinary class-group 2-ranks agree.** Since
+forgetting positivity is always surjective, injectivity makes it an isomorphism `Cl⁺(K) ≃ Cl(K)`,
+and isomorphic groups have the same 2-rank. -/
+theorem twoRank_eq_classGroupTwoRank_of_injective
+    (h : Function.Injective (toClassGroup (K := K))) :
     twoRank K = TauCeti.ClassGroup.twoRank (𝓞 K) := by
   rw [TauCeti.ClassGroup.twoRank_def, ← TauCeti.twoRank_def]
-  exact TauCeti.twoRank_eq_of_mulEquiv (toClassGroupEquiv (K := K))
+  exact TauCeti.twoRank_eq_of_mulEquiv
+    (MulEquiv.ofBijective (toClassGroup (K := K)) ⟨h, toClassGroup_surjective⟩)
+
+/-- **For a totally complex field, the narrow and ordinary class-group 2-ranks agree.** The
+totally complex case of `twoRank_eq_classGroupTwoRank_of_injective`, where positivity is vacuous. -/
+theorem twoRank_eq_classGroupTwoRank [IsTotallyComplex K] :
+    twoRank K = TauCeti.ClassGroup.twoRank (𝓞 K) :=
+  twoRank_eq_classGroupTwoRank_of_injective K toClassGroup_injective
 
 end NumberField.NarrowClassGroup

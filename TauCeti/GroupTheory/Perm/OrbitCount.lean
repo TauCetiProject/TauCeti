@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.SetTheory.Cardinal.NatCard
+public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
 
 /-!
@@ -17,35 +17,50 @@ This file counts them: `TauCeti.orbitCount σ` is the cardinality of that quotie
 `Equiv.Perm.cycleType`, which records only the cycles of length at least two, every fixed point
 of `σ` contributes an orbit of its own here.
 
-The file then proves the two ways of changing a permutation that leave the count alone or move it
-by one, both stated so that they apply to a permutation of a *different* type than the one they
-are compared with.
+The file then proves how the count responds to three ways of changing a permutation: adjoining a
+point, splicing a fixed point into another orbit, and merging two orbits. The first two compare a
+permutation with one of a *different* type and are stated to allow that; the third compares two
+permutations of the same type.
 
 * `TauCeti.orbitCount_conj`: conjugation does not change the number of orbits.
+* `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints`: on a finite type, the orbits are the
+  nontrivial cycle factors of the permutation together with its fixed points.
+* `Equiv.Perm.orbitCount_eq_card_parts_partition`: on a finite type, the orbit count is the number
+  of parts in Mathlib's full, fixed-point-aware permutation partition.
+* `Equiv.Perm.orbitCount_le_card`: on a finite type, a permutation has at most as many orbits as
+  the type has points, the orbits being the classes of a partition of it.
+* `Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
+  the number of points minus the number of orbits.
 * `TauCeti.orbitCount_add_one_eq_of_semiconj`: if `σ : Equiv.Perm α` is carried by an injection
   `f : α → β` to `τ : Equiv.Perm β`, and `f` misses exactly one point `p` of `β`, then `τ` has one
   orbit more than `σ` — the extra orbit is the fixed point `p`.
 * `TauCeti.orbitCount_mul_swap_add_one`: multiplying a permutation by a transposition that moves
   one of its fixed points splices that fixed point into another orbit, so the count drops by one.
+* `TauCeti.orbitCount_add_one_of_merge`: if the orbits of `τ` are the orbits of `σ` with the orbit
+  of one point and the orbit of another merged, then `τ` has one orbit fewer.
 
-Composing the last two says that adjoining a point to a permutation and immediately splicing it
-into an existing orbit leaves the number of orbits unchanged. That composite is the reason this
-file exists: it is the invariance of the number of components of a link under the stabilization
-move on braids, in `TauCeti/KnotTheory/Markov.lean`.
+Composing `TauCeti.orbitCount_add_one_eq_of_semiconj` with `TauCeti.orbitCount_mul_swap_add_one`
+says that adjoining a point to a permutation and immediately splicing it into an existing orbit
+leaves the number of orbits unchanged. That composite is the reason this file exists: it is the
+invariance of the number of components of a link under the stabilization move on braids, in
+`TauCeti/KnotTheory/Markov.lean`.
 
 ## Implementation notes
 
 `orbitCount` is `Nat.card` of a `Quotient`, so it is `0` when the permutation has infinitely many
-orbits or no orbits at all. The two orbit-addition and orbit-removal results assume only that the
+orbits or no orbits at all. The three orbit-addition and orbit-removal results assume only that the
 quotient of the relevant permutation by `Equiv.Perm.SameCycle` is finite; conjugation preserves
 the count without any finiteness assumption.
 
-Both counting results are deduced from one private lemma, `orbitCount_add_one_eq_aux`, whose input
-is a map `F : α → β` carrying the orbits of `σ` bijectively onto the orbits of `τ` other than a
-fixed point `p` of `τ`. Its `SameCycle` hypothesis comes from Mathlib's
-`Equiv.Perm.sameCycle_extendDomain` for adjoining a point. For splicing a point into an orbit, a
-one-step statement is propagated over all integer powers by the private lemma
-`sameCycle_zpow_of_forall_sameCycle_apply`.
+The two cross-type results, `TauCeti.orbitCount_add_one_eq_of_semiconj` and
+`TauCeti.orbitCount_mul_swap_add_one`, are deduced from one private lemma,
+`orbitCount_add_one_eq_aux`, whose input is a map `F : α → β` carrying the orbits of `σ`
+bijectively onto the orbits of `τ` other than a fixed point `p` of `τ`. Its `SameCycle` hypothesis
+comes from Mathlib's `Equiv.Perm.sameCycle_extendDomain` for adjoining a point. For splicing a
+point into an orbit, a one-step statement is propagated over all integer powers by the private
+lemma `sameCycle_zpow_of_forall_sameCycle_apply`. `TauCeti.orbitCount_add_one_of_merge` does not
+go through that lemma: it exhibits the orbits of `τ` as the orbits of `σ` with one class removed
+and finishes through `Equiv.optionSubtypeNe`.
 -/
 
 public section
@@ -71,6 +86,11 @@ theorem orbitCount_one : orbitCount (1 : Equiv.Perm α) = Nat.card α := by
     ⟨fun x y hxy ↦ ?_, Quotient.mk_surjective⟩)).symm
   exact sameCycle_one.mp (Quotient.eq.mp hxy)
 
+/-- A permutation of a finite type has at most as many orbits as there are points. -/
+theorem _root_.Equiv.Perm.orbitCount_le_card [Finite α] (σ : Equiv.Perm α) :
+    orbitCount σ ≤ Nat.card α :=
+  Nat.card_le_card_of_surjective (Quotient.mk (SameCycle.setoid σ)) Quotient.mk_surjective
+
 /-- Conjugate permutations have the same number of orbits: conjugation by `g` relabels the points
 by `g`, hence relabels the orbits. -/
 @[simp]
@@ -81,6 +101,134 @@ theorem orbitCount_conj (g σ : Equiv.Perm α) : orbitCount (g * σ * g⁻¹) = 
     rw [sameCycle_conj]
     simp
   exact h.symm
+
+/-- Inverting a permutation does not change its number of orbits. -/
+@[simp]
+theorem _root_.Equiv.Perm.orbitCount_inv (σ : Equiv.Perm α) : orbitCount σ⁻¹ = orbitCount σ := by
+  exact Nat.card_congr (Quotient.congr (ra := SameCycle.setoid σ⁻¹)
+    (rb := SameCycle.setoid σ) (Equiv.refl α) fun _ _ ↦ sameCycle_inv)
+
+/-- Transporting a permutation along an equivalence of its underlying type does not change its
+number of orbits. -/
+@[simp]
+theorem _root_.Equiv.orbitCount_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
+    orbitCount (e.permCongr σ) = orbitCount σ := by
+  refine (Nat.card_congr (Quotient.congr (ra := SameCycle.setoid σ)
+    (rb := SameCycle.setoid (e.permCongr σ)) e fun x y ↦ ?_)).symm
+  constructor
+  · rintro ⟨i, hi⟩
+    refine ⟨i, ?_⟩
+    have hz : e.permCongr (σ ^ i) = (e.permCongr σ) ^ i := by
+      simpa only [Equiv.permCongrHom_coe] using map_zpow e.permCongrHom σ i
+    rw [← hz, Equiv.permCongr_apply, Equiv.symm_apply_apply, hi]
+  · rintro ⟨i, hi⟩
+    refine ⟨i, e.injective ?_⟩
+    have hz : e.permCongr (σ ^ i) = (e.permCongr σ) ^ i := by
+      simpa only [Equiv.permCongrHom_coe] using map_zpow e.permCongrHom σ i
+    rw [← hz, Equiv.permCongr_apply, Equiv.symm_apply_apply] at hi
+    exact hi
+
+section Finite
+
+variable [Fintype α] [DecidableEq α]
+
+/-- The orbits of a permutation are its nontrivial cycle factors together with its fixed points.
+This is the set-level decomposition underlying the full cycle partition: a nontrivial orbit is
+sent to the unique member of `cycleFactorsFinset`, while a singleton orbit is sent to its fixed
+point. -/
+noncomputable def _root_.Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints
+    (σ : Equiv.Perm α) :
+    Quotient (Equiv.Perm.SameCycle.setoid σ) ≃
+      σ.cycleFactorsFinset ⊕ {x : α // σ x = x} := by
+  classical
+  let toCycleOrFixed (x : α) : σ.cycleFactorsFinset ⊕ {x : α // σ x = x} :=
+    if hx : σ x = x then Sum.inr ⟨x, hx⟩
+    else Sum.inl ⟨σ.cycleOf x, Equiv.Perm.cycleOf_mem_cycleFactorsFinset_iff.mpr
+      (Equiv.Perm.mem_support.mpr hx)⟩
+  let forward : Quotient (Equiv.Perm.SameCycle.setoid σ) →
+      σ.cycleFactorsFinset ⊕ {x : α // σ x = x} :=
+    Quotient.lift toCycleOrFixed fun x y hxy ↦ by
+      have hfixed : σ x = x ↔ σ y = y :=
+        Equiv.Perm.SameCycle.apply_eq_self_iff hxy
+      by_cases hx : σ x = x
+      · have hy : σ y = y := hfixed.mp hx
+        simp only [toCycleOrFixed, hx, hy, ↓reduceDIte]
+        exact congrArg Sum.inr (Subtype.ext (hxy.eq_of_left hx))
+      · have hy : σ y ≠ y := mt hfixed.mpr hx
+        simp only [toCycleOrFixed, hx, hy, ↓reduceDIte]
+        exact congrArg Sum.inl (Subtype.ext hxy.cycleOf_eq)
+  let backward : σ.cycleFactorsFinset ⊕ {x : α // σ x = x} →
+      Quotient (Equiv.Perm.SameCycle.setoid σ)
+    | Sum.inl c => Quotient.mk _ (Classical.choose
+        (Equiv.Perm.IsCycle.nonempty_support
+          (Equiv.Perm.mem_cycleFactorsFinset_iff.mp c.property).1))
+    | Sum.inr x => Quotient.mk _ x.1
+  refine
+    { toFun := forward
+      invFun := backward
+      left_inv := ?_
+      right_inv := ?_ }
+  · intro q
+    induction q using Quotient.ind with
+    | _ x =>
+      simp only [forward, Quotient.lift_mk, backward, toCycleOrFixed]
+      split_ifs with hx
+      · rfl
+      · apply Quotient.sound
+        exact ((Equiv.Perm.mem_support_cycleOf_iff' hx).mp
+          (Classical.choose_spec (Equiv.Perm.IsCycle.nonempty_support
+            (Equiv.Perm.mem_cycleFactorsFinset_iff.mp
+              (Equiv.Perm.cycleOf_mem_cycleFactorsFinset_iff.mpr
+                (Equiv.Perm.mem_support.mpr hx))).1))).symm
+  · rintro (c | x)
+    · simp only [backward, forward, Quotient.lift_mk, toCycleOrFixed]
+      have hc := Classical.choose_spec (Equiv.Perm.IsCycle.nonempty_support
+        (Equiv.Perm.mem_cycleFactorsFinset_iff.mp c.property).1)
+      have hne : σ (Classical.choose (Equiv.Perm.IsCycle.nonempty_support
+          (Equiv.Perm.mem_cycleFactorsFinset_iff.mp c.property).1)) ≠
+          Classical.choose (Equiv.Perm.IsCycle.nonempty_support
+            (Equiv.Perm.mem_cycleFactorsFinset_iff.mp c.property).1) :=
+        Equiv.Perm.mem_support.mp
+          (Equiv.Perm.mem_cycleFactorsFinset_support_le c.property hc)
+      simp only [hne, ↓reduceDIte]
+      exact congrArg Sum.inl (Subtype.ext
+        (Equiv.Perm.cycle_is_cycleOf hc c.property).symm)
+    · simp only [backward, forward, Quotient.lift_mk, toCycleOrFixed]
+      simp only [x.property, ↓reduceDIte]
+
+/-- The number of permutation orbits is the number of parts in its full cycle partition. This
+identifies `orbitCount`, defined from `SameCycle`, with Mathlib's fixed-point-aware cycle data. -/
+theorem _root_.Equiv.Perm.orbitCount_eq_card_parts_partition (σ : Equiv.Perm α) :
+    orbitCount σ = σ.partition.parts.card := by
+  classical
+  rw [orbitCount, Nat.card_eq_fintype_card,
+    Fintype.card_congr σ.orbitQuotientEquivCycleFactorsSumFixedPoints, Fintype.card_sum,
+    Fintype.card_coe]
+  have hfixed : Fintype.card {x : α // σ x = x} = Fintype.card α - σ.support.card := by
+    have hp : (fun x : α ↦ σ x = x) = (fun x ↦ x ∈ σ.supportᶜ) := by
+      funext x
+      simp [Equiv.Perm.mem_support]
+    calc
+      _ = Fintype.card {x : α // x ∈ σ.supportᶜ} :=
+        Fintype.card_congr (Equiv.subtypeEquivProp hp)
+      _ = σ.supportᶜ.card := Fintype.card_coe _
+      _ = Fintype.card α - σ.support.card := Finset.card_compl (s := σ.support)
+  rw [hfixed, Equiv.Perm.card_parts_partition, Equiv.Perm.cycleType_def]
+  simp
+
+/-- The sign of a finite permutation is the parity of the number of points minus the number of
+orbits. Fixed points contribute once to both numbers and hence do not affect the sign. -/
+theorem _root_.Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount (σ : Equiv.Perm α) :
+    Equiv.Perm.sign σ = (-1 : ℤˣ) ^ (Fintype.card α - orbitCount σ) := by
+  rw [Equiv.Perm.sign_of_parts_partition, ← orbitCount_eq_card_parts_partition]
+  have hle := σ.orbitCount_le_card.trans_eq Nat.card_eq_fintype_card
+  have h : Fintype.card α + orbitCount σ =
+      (Fintype.card α - orbitCount σ) + 2 * orbitCount σ := by
+    omega
+  rw [h, pow_add, pow_mul]
+  simp
+
+end Finite
 
 /-- Propagate a one-step comparison over all integer powers: if every point `x` of `β` lies in the
 same `π`-cycle as its image `g x` does after one step of `σ`, then it lies in the same `π`-cycle
@@ -233,5 +381,42 @@ theorem orbitCount_mul_swap_add_one [DecidableEq β] {τ : Equiv.Perm β}
         (F x)).trans ?_
       rw [id, hi]
     exact ((hFsame x).trans hxy).trans (hFsame y).symm
+
+/-- **Merging two orbits removes one orbit.** If every orbit of `σ` is contained in an orbit of
+`τ`, if two points `a` and `b` lying in different orbits of `σ` lie in one orbit of `τ`, and if no
+orbit of `τ` merges more than those two, then `τ` has exactly one orbit fewer than `σ`. The last
+hypothesis is the honest content: without it nothing stops `τ` from gluing the orbits of `σ`
+wholesale. -/
+theorem orbitCount_add_one_of_merge {σ τ : Equiv.Perm α}
+    [Finite (Quotient (SameCycle.setoid σ))] {a b : α}
+    (hle : ∀ {u v : α}, SameCycle σ u v → SameCycle τ u v)
+    (hmerge : ∀ {u v : α}, SameCycle τ u v → SameCycle σ u v ∨
+      ((SameCycle σ u a ∨ SameCycle σ u b) ∧ (SameCycle σ v a ∨ SameCycle σ v b)))
+    (hab : SameCycle τ a b) (hnab : ¬ SameCycle σ a b) :
+    orbitCount τ + 1 = orbitCount σ := by
+  classical
+  -- The orbits of `τ` are the orbits of `σ` other than the orbit of `b`, which has been absorbed
+  -- into the orbit of `a`.
+  have key : {c : Quotient (SameCycle.setoid σ) // c ≠ Quotient.mk _ b} ≃
+      Quotient (SameCycle.setoid τ) := by
+    refine Equiv.ofBijective (fun c ↦ Quotient.map id (fun _ _ h ↦ hle h) c.val) ⟨?_, ?_⟩
+    · rintro ⟨c, hc⟩ ⟨d, hd⟩ hcd
+      obtain ⟨u, rfl⟩ := Quotient.exists_rep c
+      obtain ⟨v, rfl⟩ := Quotient.exists_rep d
+      have hub : ¬ SameCycle σ u b := fun h ↦ hc (Quotient.sound h)
+      have hvb : ¬ SameCycle σ v b := fun h ↦ hd (Quotient.sound h)
+      refine Subtype.ext (Quotient.sound ?_)
+      rcases hmerge (Quotient.exact hcd) with huv | ⟨hu, hv⟩
+      · exact huv
+      · exact (hu.resolve_right hub).trans (hv.resolve_right hvb).symm
+    · intro c
+      obtain ⟨z, rfl⟩ := Quotient.exists_rep c
+      by_cases hzb : SameCycle σ z b
+      · exact ⟨⟨Quotient.mk _ a, fun h ↦ hnab (Quotient.exact h)⟩,
+          Quotient.sound (hab.trans (hle hzb).symm)⟩
+      · exact ⟨⟨Quotient.mk _ z, fun h ↦ hzb (Quotient.exact h)⟩, rfl⟩
+  unfold orbitCount
+  rw [← Nat.card_congr key, ← Finite.card_option]
+  exact Nat.card_congr (Equiv.optionSubtypeNe (Quotient.mk (SameCycle.setoid σ) b))
 
 end TauCeti

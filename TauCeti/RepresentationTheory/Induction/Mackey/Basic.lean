@@ -140,7 +140,7 @@ noncomputable def mackeyQuotientEquiv (H K : Subgroup G) :
       simp only [mackeyCoset_out, QuotientGroup.eq] at hp
       -- The two representatives lie in one double coset, so the double cosets agree.
       have hD : D = D' := by
-        have hmk := (DoubleCoset.eq K H D.out D'.out).mpr
+        have hmk := (DoubleCoset.eq (H := K) (K := H) (a := D.out) (b := D'.out)).mpr
           ⟨(v.out : G)⁻¹ * (u.out : G),
             K.mul_mem (K.inv_mem (SetLike.coe_mem v.out)) (SetLike.coe_mem u.out), _, hp, by
               group⟩
@@ -161,8 +161,7 @@ noncomputable def mackeyQuotientEquiv (H K : Subgroup G) :
       rw [huv]
     · intro t
       obtain ⟨a, ha, b, hb, hab⟩ :=
-        (DoubleCoset.eq K H (DoubleCoset.mk K H t.out).out t.out).mp
-          (DoubleCoset.out_eq' K H (DoubleCoset.mk K H t.out))
+        DoubleCoset.eq.mp (DoubleCoset.out_eq' (DoubleCoset.mk K H t.out))
       refine ⟨⟨DoubleCoset.mk K H t.out, QuotientGroup.mk ⟨a, ha⟩⟩, ?_⟩
       simp only [mackeyCoset_mk]
       conv_rhs => rw [← QuotientGroup.out_eq' t]

@@ -33,10 +33,14 @@ carry the hypothesis, while the clopen-image statement is valid for an arbitrary
 
 * `Subgroup.eq_iInf_sup_openNormalSubgroup`: a closed subgroup is the infimum of the
   subgroups `N ⊔ U` with `U` open normal.
+* `Subgroup.exists_openNormalSubgroup_comap_le`: open normal subgroups of a subgroup are
+  refined by pullbacks of ambient open normal subgroups.
 * `QuotientGroup.connectedComponent_one`, `QuotientGroup.instTotallyDisconnectedSpace`:
   the quotient of a profinite group by a closed normal subgroup is totally disconnected.
 * `Subgroup.iInf_openNormalSubgroup_eq_bot`: the infimum of the open normal subgroups of a
   profinite group is trivial.
+* `Subgroup.isOpen_of_index_sup_openNormalSubgroup_le`: a closed subgroup whose joins with
+  the open normal subgroups have uniformly bounded index is open.
 
 ## References
 
@@ -49,6 +53,23 @@ namespace TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   [TotallyDisconnectedSpace G]
+
+omit [CompactSpace G] [TotallyDisconnectedSpace G] in
+/-- Taking the topological closure of a subgroup does not change its image in the quotient by
+an open normal subgroup: that quotient is discrete, so the image is already closed. -/
+@[simp]
+theorem _root_.Subgroup.map_topologicalClosure_quotient_eq (H : Subgroup G)
+    (N : OpenNormalSubgroup G) :
+    H.topologicalClosure.map (QuotientGroup.mk' N.toSubgroup) =
+      H.map (QuotientGroup.mk' N.toSubgroup) := by
+  apply le_antisymm
+  · rw [Subgroup.map_le_iff_le_comap]
+    apply H.topologicalClosure_minimal
+      (Subgroup.le_comap_map (QuotientGroup.mk' N.toSubgroup) H)
+    exact (isClosed_discrete
+      (H.map (QuotientGroup.mk' N.toSubgroup) : Set (G ⧸ N.toSubgroup))).preimage
+        (QuotientGroup.continuous_mk (N := N.toSubgroup))
+  · exact Subgroup.map_mono H.le_topologicalClosure
 
 /-- A closed subgroup of a profinite group is the infimum of the subgroups `N ⊔ U`, over the
 open normal subgroups `U` of `G`: the open normal subgroups are cofinal among the open
@@ -75,6 +96,21 @@ theorem _root_.Subgroup.eq_iInf_sup_openNormalSubgroup (N : Subgroup G)
     ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hKopen (Subgroup.one_mem K)
   exact hxK ((sup_le hKN fun y hy => hU₀ hy) (Subgroup.mem_iInf.mp hx U₀))
 
+/-- Every open normal subgroup of a subgroup of a profinite group contains the pullback of
+an ambient open normal subgroup. -/
+theorem _root_.Subgroup.exists_openNormalSubgroup_comap_le (H : Subgroup G)
+    (V : OpenNormalSubgroup H) :
+    ∃ N : OpenNormalSubgroup G, N.toSubgroup.comap H.subtype ≤ V.toSubgroup := by
+  obtain ⟨s, hs, hpre⟩ := isOpen_induced_iff.mp V.toOpenSubgroup.isOpen
+  have h_one : (1 : G) ∈ s := by
+    have : (1 : H) ∈ V := V.toSubgroup.one_mem
+    exact hpre.symm.subset this
+  obtain ⟨N, hN⟩ :=
+    ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hs h_one
+  refine ⟨N, fun x hx ↦ ?_⟩
+  have : (x : G) ∈ s := hN hx
+  exact hpre.subset this
+
 /-- In a profinite group, an element that lies in every open normal subgroup is `1`. -/
 theorem _root_.Subgroup.eq_one_of_mem_iInf_openNormalSubgroup {x : G}
     (hx : ∀ U : OpenNormalSubgroup G, x ∈ U.toSubgroup) : x = 1 := by
@@ -91,6 +127,57 @@ theorem _root_.Subgroup.iInf_openNormalSubgroup_eq_bot :
     (⨅ U : OpenNormalSubgroup G, U.toSubgroup) = ⊥ := by
   simpa using (Subgroup.eq_iInf_sup_openNormalSubgroup (⊥ : Subgroup G)
     isClosed_singleton).symm
+
+/-- A closed subgroup `H` of a profinite group whose joins `H ⊔ N` with the open normal
+subgroups `N` have uniformly bounded index is open.
+
+This is the criterion that turns a bound on the indices of the open subgroups above `H` into
+openness of `H` itself, as in the characterization of the open subgroups as the closed
+subgroups of natural index. -/
+theorem _root_.Subgroup.isOpen_of_index_sup_openNormalSubgroup_le {H : Subgroup G} {m : ℕ}
+    (hH : IsClosed (H : Set G))
+    (hbound : ∀ N : OpenNormalSubgroup G, (H ⊔ N.toSubgroup).index ≤ m) :
+    IsOpen (H : Set G) := by
+  -- The bounded range has a largest attained index; fix a subgroup `N₀` attaining it.
+  let f : OpenNormalSubgroup G → ℕ := fun N ↦ (H ⊔ N.toSubgroup).index
+  have hfinite : (f '' (Set.univ : Set (OpenNormalSubgroup G))).Finite := by
+    refine (Set.finite_Iic m).subset ?_
+    rintro k ⟨N, -, rfl⟩
+    exact hbound N
+  have hnonempty : (Set.univ : Set (OpenNormalSubgroup G)).Nonempty :=
+    ⟨{ toOpenSubgroup := ⊤, isNormal' := Subgroup.normal_top }, Set.mem_univ _⟩
+  obtain ⟨N₀, -, hmax⟩ :=
+    Set.Finite.exists_maximalFor' f Set.univ hfinite hnonempty
+  have hmax_le (N : OpenNormalSubgroup G) : f N ≤ f N₀ := by
+    rcases le_total (f N) (f N₀) with hle | hle
+    · exact hle
+    · exact hmax (Set.mem_univ N) hle
+  -- Intersecting `N₀` with any `N` cannot strictly increase its maximal index, so the
+  -- corresponding join is unchanged and `H ⊔ N₀` lies in every join of the family.
+  have hsup_le (N : OpenNormalSubgroup G) : H ⊔ N₀.toSubgroup ≤ H ⊔ N.toSubgroup := by
+    let M : OpenNormalSubgroup G := N₀ ⊓ N
+    have hMsub : H ⊔ M.toSubgroup ≤ H ⊔ N₀.toSubgroup := sup_le_sup_left inf_le_left H
+    have hMeq : H ⊔ M.toSubgroup = H ⊔ N₀.toSubgroup := by
+      apply le_antisymm hMsub
+      by_contra hnot
+      have hlt : H ⊔ M.toSubgroup < H ⊔ N₀.toSubgroup :=
+        lt_of_le_of_ne hMsub fun heq ↦ hnot heq.ge
+      have hMopen : IsOpen ((H ⊔ M.toSubgroup : Subgroup G) : Set G) :=
+        Subgroup.isOpen_mono le_sup_right M.toOpenSubgroup.isOpen
+      have : Finite (G ⧸ (H ⊔ M.toSubgroup)) :=
+        Subgroup.quotient_finite_of_isOpen _ hMopen
+      let _ : (H ⊔ M.toSubgroup).FiniteIndex :=
+        Subgroup.finiteIndex_of_finite_quotient
+      exact absurd (Subgroup.index_strictAnti hlt) (not_lt_of_ge (hmax_le M))
+    rw [← hMeq]
+    exact sup_le_sup_left inf_le_right H
+  -- Closedness identifies the infimum of those joins with `H`; hence `H` is the open join
+  -- with `N₀`.
+  have hHeq : H = H ⊔ N₀.toSubgroup :=
+    (Subgroup.eq_iInf_sup_openNormalSubgroup H hH).trans
+      (le_antisymm (iInf_le _ N₀) (le_iInf hsup_le))
+  rw [hHeq]
+  exact Subgroup.isOpen_mono le_sup_right N₀.toOpenSubgroup.isOpen
 
 namespace QuotientGroup
 

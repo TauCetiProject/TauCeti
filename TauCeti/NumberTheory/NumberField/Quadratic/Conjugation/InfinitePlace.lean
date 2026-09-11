@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Basic
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
+import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Norm.Basic
 
 /-!
 # Quadratic conjugation and the real places
@@ -33,6 +34,10 @@ group for real quadratic fields, where the ordinary descent fails.
   either agree or differ by quadratic conjugation.
 * `NumberField.isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quadraticConj`:
   if `z / σ z` is totally positive then `z` or `-z` is totally positive.
+* `NumberField.isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos`: an element of positive
+  norm is, up to sign, totally positive.
+* `NumberField.exists_unit_isTotallyPositive_smul_of_norm_pos`: the same statement with the sign
+  read as a unit of `𝓞 K` scaling the element to a totally positive one.
 -/
 
 public section
@@ -102,5 +107,40 @@ theorem isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quad
       nlinarith [hall w hw]
     · exact Or.inl (isTotallyPositive_iff.mpr fun w hw => by nlinarith [hall w hw])
   · exact Or.inl (isTotallyPositive_iff.mpr fun w hw => absurd ⟨w, hw⟩ hsome)
+
+/-- **Positive norm forces a sign.** In a quadratic field the norm of `x` is the product of the
+two values `φ x` and `φ (σ x)` that the real embeddings give `x`, so a positive norm says those
+values have the same sign and hence that `x` or `-x` is totally positive. Over a totally complex
+field both alternatives hold vacuously. -/
+theorem isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {x : K}
+    (hnorm : 0 < Algebra.norm ℚ x) :
+    IsTotallyPositive x ∨ IsTotallyPositive (-x) := by
+  -- A positive norm forces `x ≠ 0`, and then `x / σ x = x² / N(x)` is a product of totally
+  -- positive elements, which is the hypothesis of the previous theorem.
+  have hx : x ≠ 0 := (Algebra.norm_ne_zero_iff_of_basis (Module.finBasis ℚ K)).mp hnorm.ne'
+  refine isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quadraticConj
+    hmin hgen ?_
+  have hprod : x * quadraticConj hmin hgen x = ((Algebra.norm ℚ x : ℚ) : K) := by
+    rw [← eq_ratCast (algebraMap ℚ K)]
+    exact (algebraMap_norm_eq_mul_quadraticConj hmin hgen x).symm
+  have hconj : quadraticConj hmin hgen x ≠ 0 := by
+    simpa using hx
+  have hdiv : x / quadraticConj hmin hgen x = x ^ 2 * (((Algebra.norm ℚ x : ℚ) : K))⁻¹ := by
+    rw [← hprod]
+    field_simp
+  rw [hdiv]
+  exact (isTotallyPositive_sq hx).mul (isTotallyPositive_ratCast hnorm).inv
+
+/-- **An element of positive norm has a totally positive unit multiple.** The unit-scaling form of
+`isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos`: since `-1` is a unit of `𝓞 K`, the two
+alternatives of that sign statement are a single existential over the units. This is the shape in
+which a narrow principal class is shown to be trivial. -/
+theorem exists_unit_isTotallyPositive_smul_of_norm_pos (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {y : K} (hnorm : 0 < Algebra.norm ℚ y) :
+    ∃ ε : (𝓞 K)ˣ, IsTotallyPositive (ε • y) := by
+  rcases isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos hmin hgen hnorm with h | h
+  · exact ⟨1, by simpa using h⟩
+  · exact ⟨-1, by simpa [Units.smul_def, Algebra.smul_def] using h⟩
 
 end NumberField

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.Algebra.Module.Defs
 
@@ -17,11 +18,17 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 ## Main definitions
 
 * `TauCeti.negOnePowCast`: the scalar `(-1) ^ e` in a ground ring.
+
+## Main results
+
+* `TauCeti.negOnePowCast_sum`: the sign of a finite sum is the product of the signs of its terms.
+* `TauCeti.negOnePow_smul_eq_negOnePowCast_smul`: the unit-valued sign and its ground-ring cast
+  induce the same scalar action on a module.
 -/
 
 public section
 
-universe uR uA
+universe uR uA uI
 
 namespace TauCeti
 
@@ -61,6 +68,17 @@ theorem negOnePowCast_even {e : ℤ} (he : Even e) : negOnePowCast R e = 1 := by
 theorem negOnePowCast_odd {e : ℤ} (he : Odd e) : negOnePowCast R e = -1 := by
   simp [negOnePowCast, Int.negOnePow_odd _ he]
 
+section
+
+variable {A : Type uA} [AddCommGroup A] [Module R A]
+
+/-- A sign `(-1) ^ e`, acting through the units of `ℤ`, acts as its cast to the ground ring. -/
+theorem negOnePow_smul_eq_negOnePowCast_smul (e : ℤ) (a : A) :
+    e.negOnePow • a = negOnePowCast R e • a := by
+  rw [negOnePowCast, Units.smul_def, ← Int.cast_smul_eq_zsmul R]
+
+end
+
 variable {A : Type uA} [AddCommMonoid A] [Module R A]
 
 /-- The scalar `(-1) ^ e` acts as an involution. -/
@@ -76,5 +94,20 @@ theorem negOnePowCast_smul_eq_zero_iff (e : ℤ) (a : A) :
   rw [← negOnePowCast_smul_negOnePowCast_smul (R := R) e a, h, smul_zero]
 
 end NegOnePowCast
+
+section CommRing
+
+variable {R : Type uR} [CommRing R]
+
+/-- The sign of a finite sum is the product of the signs of its terms: the sign character turns
+addition into multiplication, so it distributes over `Finset.sum`. -/
+theorem negOnePowCast_sum {ι : Type uI} (s : Finset ι) (f : ι → ℤ) :
+    negOnePowCast R (∑ i ∈ s, f i) = ∏ i ∈ s, negOnePowCast R (f i) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih =>
+      rw [Finset.sum_cons, Finset.prod_cons, negOnePowCast_add, ih]
+
+end CommRing
 
 end TauCeti

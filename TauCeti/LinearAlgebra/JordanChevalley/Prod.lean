@@ -47,7 +47,7 @@ theorem IsSemisimple.prodMap {g : GeneralLinearGroup K V} {h : GeneralLinearGrou
     (hg : IsSemisimple g) (hh : IsSemisimple h) : IsSemisimple (prodMap g h) := by
   rw [isSemisimple_def] at hg hh ⊢
   rw [coe_prodMap]
-  exact TauCeti.Module.End.IsSemisimple.prodMap hg hh
+  exact Module.End.IsSemisimple.prodMap hg hh
 
 /-- The product map of two unipotent automorphisms is unipotent. -/
 theorem IsUnipotent.prodMap {g : GeneralLinearGroup K V} {h : GeneralLinearGroup K W}

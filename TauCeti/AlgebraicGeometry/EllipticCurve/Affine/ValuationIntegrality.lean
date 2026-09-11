@@ -41,6 +41,10 @@ the `IsDedekindDomain.HeightOneSpectrum.valuation` of a varying prime, which can
 
 * `WeierstrassCurve.Affine.valuation_a₁_le_one` and its `a₂`, `a₃`, `a₄`, `a₆` companions: the
   coefficients of a curve with an integral model are integral, over any value group.
+* `WeierstrassCurve.Affine.valuation_x_lt_valuation_y`: at a pole of `x`, the `y`-coordinate
+  strictly dominates.
+* `WeierstrassCurve.Affine.valuation_y_sq_eq_valuation_x_cube`: at a pole of `x`, the two
+  coordinates have poles in ratio two to three, over any value group.
 * `WeierstrassCurve.Affine.valuation_x_le_one_and_valuation_y_le_one_of_valuation_x_lt_exp_two`:
   an affine point whose `x`-coordinate has a pole of order less than two has both coordinates
   integral.
@@ -52,7 +56,7 @@ model itself is `WeierstrassCurve.integralModel O W`; the coefficient bounds are
 `WeierstrassCurve.integralModel_aᵢ_eq` composed with membership in `O`.
 
 The `y`-half of the dichotomy is not reproved by a valuation computation. Once `x` is known to be
-integral, `TauCeti.WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x` gives that `y` is
+integral, `WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x` gives that `y` is
 integral over `O` from the curve equation alone, over any algebra and with no valuation in sight;
 `O` is a valuation subring, hence integrally closed in `F`, so integrality over it is membership.
 That is how the main theorem discharges its `y`-half. Only the `x`-half — the parity argument that
@@ -123,6 +127,30 @@ needs `Γ₀ = ℤᵐ⁰`.
 
 `Field F` cannot be weakened here: `Valuation.valuationSubring` is defined only for a field
 (`Mathlib/RingTheory/Valuation/ValuationSubring.lean:33`). -/
+
+section TrivialBase
+
+variable {K Γ₀ : Type*} [Field K] [LinearOrderedCommGroupWithZero Γ₀] [Algebra F K]
+  (v : Valuation K Γ₀) [v.IsTrivialOn F]
+
+/-- **A curve over a trivially valued base has an integral model.** Every coefficient of `W⁄K` is
+the image of one of `W`'s, and a valuation trivial on `F` puts all of those in its valuation
+subring. -/
+instance isIntegral_baseChange (W : _root_.WeierstrassCurve F) :
+    _root_.WeierstrassCurve.IsIntegral v.valuationSubring (W⁄K) where
+  integral :=
+    ⟨{ a₁ := ⟨algebraMap F K W.a₁,
+         Valuation.IsTrivialOn.valuation_algebraMap_le_one (A := F) v W.a₁⟩
+       a₂ := ⟨algebraMap F K W.a₂,
+         Valuation.IsTrivialOn.valuation_algebraMap_le_one (A := F) v W.a₂⟩
+       a₃ := ⟨algebraMap F K W.a₃,
+         Valuation.IsTrivialOn.valuation_algebraMap_le_one (A := F) v W.a₃⟩
+       a₄ := ⟨algebraMap F K W.a₄,
+         Valuation.IsTrivialOn.valuation_algebraMap_le_one (A := F) v W.a₄⟩
+       a₆ := ⟨algebraMap F K W.a₆,
+         Valuation.IsTrivialOn.valuation_algebraMap_le_one (A := F) v W.a₆⟩ }, rfl⟩
+
+end TrivialBase
 
 section Coefficients
 
@@ -201,6 +229,27 @@ private lemma valuation_lhs_le {x y : F} {C : Γ₀} (hxC : v x ≤ C) (hyC : v 
     calc v W.a₃ * v y ≤ 1 * C := mul_le_mul' (valuation_a₃_le_one v) hyC
       _ = C := one_mul C
       _ ≤ C ^ 2 := le_self_pow h1C (by lia)
+
+/-- **At a pole of `x`, the `y`-coordinate strictly dominates.** -/
+theorem valuation_x_lt_valuation_y {x y : F} (hxy : W.Equation x y) (hx : 1 < v x) :
+    v x < v y := by
+  by_contra hle
+  rw [not_lt] at hle
+  -- `v x` then bounds both coordinates, so the left-hand side is at most `v x ^ 2` while the
+  -- right-hand side is exactly `v x ^ 3`.
+  have hbound := valuation_lhs_le (W := W) v le_rfl hle hx.le
+  rw [valuation_lhs_eq_rhs v hxy, valuation_rhs_eq (W := W) v hx] at hbound
+  exact absurd hbound (not_le.2 (pow_lt_pow_right₀ hx (by lia)))
+
+/-- **A pole of `x` forces one of `y`, of three halves the order.** On a point of the curve whose
+`x`-coordinate is not integral, `v(y)² = v(x)³`: writing the valuations additively, `x` has a pole
+of order `2e` and `y` one of order `3e`. Neither coordinate can dominate the other by any other
+ratio, because the two sides of the Weierstrass equation must agree. -/
+theorem valuation_y_sq_eq_valuation_x_cube {x y : F} (hxy : W.Equation x y) (hx : 1 < v x) :
+    v y ^ 2 = v x ^ 3 := by
+  have hlt := valuation_x_lt_valuation_y v hxy hx
+  rw [← valuation_lhs_eq (W := W) v hlt (hx.trans hlt), valuation_lhs_eq_rhs v hxy,
+    valuation_rhs_eq (W := W) v hx]
 
 end Integral
 
@@ -281,7 +330,7 @@ theorem valuation_x_le_one_and_valuation_y_le_one_of_valuation_x_lt_exp_two {x y
   have hxy' : ((integralModel v.valuationSubring W).baseChange F).toAffine.Equation x y := by
     rw [baseChange_integralModel_eq]; exact hxy
   have hy : _root_.IsIntegral v.valuationSubring y :=
-    _root_.TauCeti.WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x _ hxy'
+    _root_.WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x _ hxy'
       (isIntegral_algebraMap
         (x := (⟨x, (Valuation.mem_valuationSubring_iff v x).mpr hA1⟩ : v.valuationSubring)))
   exact (Valuation.valuationSubring.integers v).isIntegral_iff_v_le_one.mp hy

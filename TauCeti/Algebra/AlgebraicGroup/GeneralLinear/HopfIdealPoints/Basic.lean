@@ -108,7 +108,7 @@ theorem map_mem_hopfIdealPointsSubgroup
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) (φ : A →ₐ[R] B)
     {g : Matrix.GeneralLinearGroup (Fin n) A}
     (hg : g ∈ hopfIdealPointsSubgroup n I A) :
-    Matrix.GeneralLinearGroup.map φ.toRingHom g ∈ hopfIdealPointsSubgroup n I B := by
+    Matrix.GeneralLinearGroup.map (φ : A →+* B) g ∈ hopfIdealPointsSubgroup n I B := by
   obtain ⟨q, hq, rfl⟩ := hg
   refine ⟨AlgHom.mapValue φ q,
     CommHopfAlgCat.mapValue_mem_quotientPointsSubgroup
@@ -120,7 +120,7 @@ homomorphism of value algebras. -/
 noncomputable def mapHopfIdealPointsSubgroup
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) (φ : A →ₐ[R] B) :
     hopfIdealPointsSubgroup n I A →* hopfIdealPointsSubgroup n I B :=
-  (((Matrix.GeneralLinearGroup.map φ.toRingHom).domRestrict
+  (((Matrix.GeneralLinearGroup.map (φ : A →+* B)).domRestrict
     (hopfIdealPointsSubgroup n I A)).codRestrict
       (hopfIdealPointsSubgroup n I B)
       fun g => map_mem_hopfIdealPointsSubgroup n I φ g.property)
@@ -132,7 +132,7 @@ theorem coe_mapHopfIdealPointsSubgroup
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) (φ : A →ₐ[R] B)
     (g : hopfIdealPointsSubgroup n I A) :
     (mapHopfIdealPointsSubgroup n I φ g : Matrix.GeneralLinearGroup (Fin n) B) =
-      Matrix.GeneralLinearGroup.map φ.toRingHom g := by
+      Matrix.GeneralLinearGroup.map (φ : A →+* B) g := by
   rfl
 
 /-- The identity value-algebra homomorphism induces the identity on a general-linear Hopf-ideal
@@ -146,8 +146,7 @@ theorem mapHopfIdealPointsSubgroup_id
   apply MonoidHom.ext
   intro g
   apply Subtype.ext
-  have h_id : (AlgHom.id R A).toRingHom = RingHom.id A := AlgHom.id_toRingHom R A
-  rw [coe_mapHopfIdealPointsSubgroup, MonoidHom.id_apply, h_id,
+  rw [coe_mapHopfIdealPointsSubgroup, MonoidHom.id_apply, AlgHom.id_toRingHom,
     Matrix.GeneralLinearGroup.map_id, MonoidHom.id_apply]
 
 /-- Maps between general-linear Hopf-ideal point subgroups preserve composition of value-algebra
@@ -163,11 +162,9 @@ theorem mapHopfIdealPointsSubgroup_comp
   apply MonoidHom.ext
   intro g
   apply Subtype.ext
-  have h_comp : (ψ.comp φ).toRingHom = ψ.toRingHom.comp φ.toRingHom :=
-    AlgHom.comp_toRingHom ψ φ
   rw [coe_mapHopfIdealPointsSubgroup, MonoidHom.comp_apply,
     coe_mapHopfIdealPointsSubgroup, coe_mapHopfIdealPointsSubgroup,
-    h_comp, Matrix.GeneralLinearGroup.map_comp, MonoidHom.comp_apply]
+    AlgHom.comp_toRingHom, Matrix.GeneralLinearGroup.map_comp, MonoidHom.comp_apply]
 
 /-- An injective homomorphism of value algebras induces an injective map of general-linear
 Hopf-ideal point subgroups: reading a matrix point over a subalgebra as a point over the ambient
@@ -175,7 +172,7 @@ algebra loses no information. -/
 theorem mapHopfIdealPointsSubgroup_injective
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) {φ : A →ₐ[R] B} (hφ : Function.Injective φ) :
     Function.Injective (mapHopfIdealPointsSubgroup n I φ) := by
-  have hmap : Function.Injective (Matrix.GeneralLinearGroup.map (n := Fin n) φ.toRingHom) :=
+  have hmap : Function.Injective (Matrix.GeneralLinearGroup.map (n := Fin n) (φ : A →+* B)) :=
     Units.map_injective (Matrix.map_injective hφ)
   intro g g' h
   refine Subtype.ext (hmap ?_)

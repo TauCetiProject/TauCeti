@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.LinearAlgebra.Determinant
 public import TauCeti.LinearAlgebra.Matrix.PosDef
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
 
@@ -36,11 +37,13 @@ denominators. The symmetrization itself is not redone here: Mathlib packages it 
 
 * `TauCeti.isFiniteType_of`: a constructor that does not ask for the symmetric vanishing pattern,
   which the symmetrizer already forces.
+* `TauCeti.isFiniteType_of_posDef_map_intCast`: the constructor for a generalized Cartan matrix
+  whose rational cast is itself positive definite, with the constant-one symmetrizer. The
+  simply-laced Cartan matrices are of this kind.
 * `TauCeti.isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero`: the constructor used for a
   matrix presented by its entries. Positive definiteness of the symmetrization is certified by an
   explicit Gram model `Cᴴ * C` together with nonsingularity, both of which are finite
-  computations. `TauCeti.Matrix.det_mul_intCast` is the determinant of the symmetrization that
-  such a computation meets.
+  computations.
 * `TauCeti.IsFiniteType.submatrix`: principal submatrices of a finite-type matrix are of finite
   type. This is what lets a forbidden subdiagram rule out a diagram containing it.
 * `TauCeti.IsFiniteType.transpose`: finite type is invariant under matrix transposition.
@@ -106,24 +109,6 @@ open scoped Matrix
 
 namespace TauCeti
 
-namespace Matrix
-
-/-- **The determinant of a symmetrization.** Scaling the rows of an integer matrix `M` by a
-rational vector `d` multiplies the determinant by `∏ i, d i`. This is `Matrix.det_mul_column`, which
-does the row scaling, composed with `Int.cast_det`, which turns the determinant of the cast matrix
-into the cast of the integral determinant; the composite is the shape in which the symmetrization
-of `TauCeti.IsFiniteType` is met. -/
-theorem det_mul_intCast {n : Type*} [Fintype n] [DecidableEq n]
-    (d : n → ℚ) (M : _root_.Matrix n n ℤ) :
-    (_root_.Matrix.of fun i j ↦ d i * (M i j : ℚ)).det = (∏ i, d i) * (M.det : ℚ) := by
-  have hmap : (_root_.Matrix.of fun i j ↦ d i * (M i j : ℚ))
-      = _root_.Matrix.of fun i j ↦ d i * M.map (fun x : ℤ ↦ (x : ℚ)) i j := by
-    ext i j
-    simp
-  rw [hmap, _root_.Matrix.det_mul_column, ← Int.cast_det]
-
-end Matrix
-
 variable {B : Type*} {A : Matrix B B ℤ}
 
 /-- A finite square integer matrix is **of finite type** when it is a generalized Cartan matrix -
@@ -154,6 +139,19 @@ theorem isFiniteType_of (h2 : ∀ i, A i i = 2) (hle : ∀ i j, i ≠ j → A i 
   have : ((A j i : ℤ) : ℚ) = 0 := by simpa [(hd j).ne'] using hsymm
   exact_mod_cast this
 
+/-- **A generalized Cartan matrix that is positive definite over `ℚ` is of finite type.** The
+symmetrizer is the constant-one vector, whose symmetrization of `A` is `A` itself read over `ℚ`;
+so the diagonal and sign conditions of `TauCeti.isFiniteType_of` are still required, and only
+the symmetrizer is fixed. This is the constructor for the simply-laced Cartan matrices, which are
+symmetric and are the Gram matrices of their own simple roots. -/
+theorem isFiniteType_of_posDef_map_intCast (h2 : ∀ i, A i i = 2) (hle : ∀ i j, i ≠ j → A i j ≤ 0)
+    (hpd : (A.map (Int.cast : ℤ → ℚ)).PosDef) : IsFiniteType A := by
+  refine isFiniteType_of h2 hle (d := fun _ ↦ 1) (fun _ ↦ one_pos) ?_
+  have h1 : (Matrix.of fun i j ↦ (1 : ℚ) * ((A i j : ℤ) : ℚ)) = A.map (Int.cast : ℤ → ℚ) :=
+    Matrix.ext fun i j ↦ by simp
+  rw [h1]
+  exact hpd
+
 /-- **A nonsingular generalized Cartan matrix with a rational Gram model is of finite type.** This
 is the working form of `TauCeti.isFiniteType_of` for a matrix given by an explicit list of entries:
 positive definiteness of the symmetrization is certified by exhibiting it as `Cᴴ * C` for a matrix
@@ -167,7 +165,7 @@ theorem isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero [DecidableEq B] {m
     IsFiniteType A := by
   refine isFiniteType_of h2 hle hd ?_
   have hunit : IsUnit (Matrix.of fun i j ↦ d i * (A i j : ℚ)) := by
-    rw [Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero, Matrix.det_mul_intCast]
+    rw [Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero, Matrix.det_mul_column_intCast]
     exact mul_ne_zero (Finset.prod_ne_zero_iff.mpr fun i _ ↦ (hd i).ne')
       (Int.cast_ne_zero.mpr hdet)
   rw [hgram] at hunit ⊢
@@ -660,7 +658,7 @@ theorem det_ne_zero [DecidableEq B] (h : IsFiniteType A) : A.det ≠ 0 := by
   -- symmetrizer contributes only a nonzero diagonal factor.
   obtain ⟨d, -, hpd⟩ := h.exists_symmetrizer
   have hu := hpd.isUnit
-  rw [Matrix.isUnit_iff_isUnit_det, Matrix.det_mul_intCast] at hu
+  rw [Matrix.isUnit_iff_isUnit_det, Matrix.det_mul_column_intCast] at hu
   intro hdet
   rw [hdet] at hu
   simp at hu

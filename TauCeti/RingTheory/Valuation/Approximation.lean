@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
 public import Mathlib.Data.Int.WithZero
-public import Mathlib.RingTheory.Valuation.Basic
+public import TauCeti.RingTheory.Valuation.AbsoluteValue
 
 /-!
 # Weak approximation for discrete valuations
@@ -40,12 +40,26 @@ open scoped NNReal WithZero
 
 namespace Valuation
 
+private noncomputable def withZeroMulIntToReal : ℤᵐ⁰ →*₀ ℝ :=
+  NNReal.toRealHom.toMonoidWithZeroHom.comp
+    (WithZeroMulInt.toNNReal (by norm_num : (2 : ℝ≥0) ≠ 0))
+
 private theorem withZeroMulIntToReal_strictMono :
-    StrictMono (fun n : ℤᵐ⁰ ↦
-      (WithZeroMulInt.toNNReal (by norm_num : (2 : ℝ≥0) ≠ 0) n : ℝ)) := by
+    StrictMono withZeroMulIntToReal := by
   intro m n hmn
   exact_mod_cast
     WithZeroMulInt.toNNReal_strictMono (by norm_num : (1 : ℝ≥0) < 2) hmn
+
+-- `AbsoluteValue K ℝ` uses `Real.partialOrder`, while the bundled strict-monotonicity theorem
+-- infers `Real.instPreorder`; spell out the propositionally identical comparison needed by the
+-- generic constructor to avoid an order-instance diamond.
+private theorem withZeroMulIntToReal_monotone {m n : ℤᵐ⁰}
+    (hmn : @LE.le ℤᵐ⁰ (@Preorder.toLE ℤᵐ⁰
+      (@WithZero.instPreorder (Multiplicative ℤ)
+        (@Multiplicative.preorder ℤ Int.instPreorder))) m n) :
+    @LE.le ℝ Real.partialOrder.toLE (withZeroMulIntToReal m) (withZeroMulIntToReal n) := by
+  exact_mod_cast
+    WithZeroMulInt.toNNReal_strictMono (by norm_num : (1 : ℝ≥0) < 2) |>.monotone hmn
 
 section DivisionRing
 
@@ -57,32 +71,16 @@ its value group. This changes neither comparisons nor equivalence of valuations.
 A division ring is needed already here: an `AbsoluteValue` vanishes only at `0`, whereas a
 valuation on a general ring may have nontrivial support. -/
 noncomputable def toRealAbsoluteValue (v : Valuation K ℤᵐ⁰) : AbsoluteValue K ℝ :=
-  AbsoluteValue.mk
-    (NNReal.toRealHom.toMonoidWithZeroHom.comp
-      ((WithZeroMulInt.toNNReal (by norm_num : (2 : ℝ≥0) ≠ 0)).comp
-        v.toMonoidWithZeroHom))
-    (fun _ ↦ NNReal.coe_nonneg _)
-    (fun x ↦ by simp)
-    fun x y ↦ calc
-      (WithZeroMulInt.toNNReal (by norm_num : (2 : ℝ≥0) ≠ 0) (v (x + y)) : ℝ)
-          ≤ (WithZeroMulInt.toNNReal (by norm_num : (2 : ℝ≥0) ≠ 0)
-            (max (v x) (v y)) : ℝ) :=
-        withZeroMulIntToReal_strictMono.monotone (v.map_add x y)
-      _ = max
-          (WithZeroMulInt.toNNReal (by norm_num : (2 : ℝ≥0) ≠ 0) (v x) : ℝ)
-          (WithZeroMulInt.toNNReal (by norm_num : (2 : ℝ≥0) ≠ 0) (v y) : ℝ) :=
-        withZeroMulIntToReal_strictMono.monotone.map_max
-      _ ≤ (WithZeroMulInt.toNNReal (by norm_num : (2 : ℝ≥0) ≠ 0) (v x) : ℝ) +
-          (WithZeroMulInt.toNNReal (by norm_num : (2 : ℝ≥0) ≠ 0) (v y) : ℝ) :=
-        max_le_add_of_nonneg (NNReal.coe_nonneg _) (NNReal.coe_nonneg _)
+  @toAbsoluteValue K ℝ ℤᵐ⁰ _ _ _ _ Real.partialOrder (by infer_instance) (by infer_instance) v
+    withZeroMulIntToReal
+    (fun {_ _} h ↦ withZeroMulIntToReal_monotone h)
+    (fun _ ↦ map_eq_zero _)
 
 @[simp]
 theorem toRealAbsoluteValue_apply (v : Valuation K ℤᵐ⁰) (x : K) :
     v.toRealAbsoluteValue x =
       (WithZeroMulInt.toNNReal (by norm_num : (2 : ℝ≥0) ≠ 0) (v x) : ℝ) :=
-  -- The parentheses keep the module system's `rfl`-theorem check from demanding that
-  -- `toRealAbsoluteValue` be `@[expose]`d; the two sides are definitionally equal.
-  (rfl)
+  by simp [toRealAbsoluteValue, withZeroMulIntToReal]
 
 /-- Passing a discrete valuation to its real absolute value preserves and reflects inequalities. -/
 theorem toRealAbsoluteValue_le_iff (v : Valuation K ℤᵐ⁰) {x y : K} :
@@ -108,7 +106,7 @@ theorem toRealAbsoluteValue_isNontrivial_iff (v : Valuation K ℤᵐ⁰) :
     refine ⟨x, v.ne_zero_iff.mp hx0, fun hx ↦ hx1 ?_⟩
     rw [toRealAbsoluteValue_apply] at hx
     refine withZeroMulIntToReal_strictMono.injective ?_
-    simpa using hx
+    simpa [withZeroMulIntToReal] using hx
 
 end DivisionRing
 

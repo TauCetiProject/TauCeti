@@ -26,8 +26,8 @@ runs over the empty rectangles `r` from `x` to `y` carrying no `X`-marking, each
 monomial `V^{O(r)} = ∏ V_c` over the columns whose `O`-marking the rectangle covers. This is the
 theory that survives (de)stabilization and whose homology is a module over `R[U]`. The simply
 blocked theory is obtained by setting one selected variable, conventionally `V₀`, to zero; setting
-every variable to zero gives the square-centred fully blocked count once the canonical
-`GridRectangle.AvoidsMarkings` predicate uses that same marking region.
+every variable to zero gives the fully blocked count of `BlockedRectangle.lean`, which is
+`fullyBlockedRectangleCount_eq_constantCoeff`.
 
 Two conventions are fixed here.
 
@@ -35,9 +35,10 @@ Two conventions are fixed here.
 carries the markings of the squares it covers, `GridRectangle.coveredSquares`, not those of the
 grid points in its open interior. That is the region the Maslov and Alexander grading changes are
 computed against in `Grading/MarkingCount.lean`, and it is the region used throughout this file.
-The Lane G.3 predicate `GridRectangle.AvoidsMarkings` still tests the open interior; aligning it
-with the square-centred convention is a separate correction to that predicate, so no result here
-is phrased in terms of it.
+It is also the region the marking-avoidance predicate `GridRectangle.AvoidsMarkings` of the grid
+differential tests, under its other name `GridRectangle.squares`;
+`GridRectangle.squares_eq_coveredSquares` identifies the two, which is what makes the fully blocked
+count a specialization of a matrix coefficient here.
 
 *Which grading the variables carry.* Giving `V_c` bidegree `(-2, -1)` makes the differential
 homogeneous of bidegree `(-1, 0)`: `maslovO_sub_two_mul_card_OColumns_eq_maslovO_sub_one` and
@@ -69,11 +70,16 @@ assignment, a later stage of the roadmap.
   over the squares it covers.
 * `TauCeti.GridDiagram.unblockedDifferentialOnGenerator_support_subset`: the differential of a
   generator is supported on the column transpositions of that generator.
+* `TauCeti.GridDiagram.unblockedDifferential_sq_single_apply`: the matrix of `∂⁻ ∘ ∂⁻` is a
+  sum over intermediate states of products of matrix coefficients.
 * `TauCeti.GridDiagram.maslovO_sub_two_mul_card_OColumns_eq_maslovO_sub_one`,
   `TauCeti.GridDiagram.alexander_sub_card_OColumns_eq_alexander`: the differential is homogeneous
   of bidegree `(-1, 0)` once `V_c` is given bidegree `(-2, -1)`.
 * `TauCeti.GridDiagram.constantCoeff_unblockedCoefficient`: the constant term of a matrix
   coefficient counts the contributing rectangles that carry no `O`-marking either.
+* `TauCeti.GridDiagram.fullyBlockedRectangles_eq_filter`,
+  `TauCeti.GridDiagram.fullyBlockedRectangleCount_eq_constantCoeff`: those rectangles are the
+  fully blocked ones, so the fully blocked matrix coefficient is the constant term of `∂⁻`.
 * `TauCeti.GridDiagram.exists_mem_unblockedRectangles_of_mem_support_unblockedCoefficient`: every
   monomial of a matrix coefficient is the weight of a contributing rectangle.
 
@@ -267,9 +273,9 @@ theorem unblockedCoefficient_self (x : GridState n) : G.unblockedCoefficient R x
 /-- The constant term of a matrix coefficient of the unblocked differential counts those
 contributing rectangles that carry no `O`-marking either.
 
-This is the square-centred count obtained by setting every variable to zero. It is not identified
-here with the current canonical fully blocked coefficient, whose `GridRectangle.AvoidsMarkings`
-predicate still uses the smaller open interior. -/
+This is the count obtained by setting every variable to zero;
+`fullyBlockedRectangles_eq_filter` identifies the rectangles it counts with the fully blocked
+ones. -/
 theorem constantCoeff_unblockedCoefficient (x y : GridState n) :
     constantCoeff (G.unblockedCoefficient R x y) =
       (((G.unblockedRectangles x y).filter fun r =>
@@ -289,6 +295,34 @@ theorem constantCoeff_unblockedCoefficient (x y : GridState n) :
     exact Finset.prod_eq_zero hc (by simp)
   rw [Finset.sum_congr rfl h₁, Finset.sum_congr rfl h₂, Finset.sum_const, Finset.sum_const_zero,
     nsmul_eq_mul, mul_one, add_zero]
+
+/-- The rectangles the unblocked differential counts with trivial weight are exactly the fully
+blocked ones: both sets consist of the empty rectangles covering no `X`-marking, and covering no
+`O`-marking is the remaining fully blocked condition. -/
+theorem fullyBlockedRectangles_eq_filter (x y : GridState n) :
+    G.fullyBlockedRectangles x y =
+      (G.unblockedRectangles x y).filter fun r => G.OColumns r.toGridRectangle = ∅ := by
+  classical
+  ext r
+  simp only [Finset.mem_filter, mem_fullyBlockedRectangles, mem_unblockedRectangles,
+    GridRectangleBetween.avoidsMarkings_iff, GridRectangle.squares_eq_coveredSquares,
+    G.OColumns_eq_empty_iff]
+  tauto
+
+/-- The constant term of a matrix coefficient of the unblocked differential is the number of
+fully blocked rectangles it counts. -/
+theorem constantCoeff_unblockedCoefficient_eq_card_fullyBlockedRectangles (x y : GridState n) :
+    constantCoeff (G.unblockedCoefficient R x y) =
+      ((G.fullyBlockedRectangles x y).card : R) := by
+  rw [G.constantCoeff_unblockedCoefficient R x y, G.fullyBlockedRectangles_eq_filter x y]
+
+/-- The fully blocked matrix coefficient is the constant term of the unblocked one: blocking every
+`O`-marking is setting every variable to zero. -/
+theorem fullyBlockedRectangleCount_eq_constantCoeff (x y : GridState n) :
+    G.fullyBlockedRectangleCount x y =
+      constantCoeff (G.unblockedCoefficient (ZMod 2) x y) := by
+  rw [G.constantCoeff_unblockedCoefficient_eq_card_fullyBlockedRectangles (ZMod 2) x y,
+    fullyBlockedRectangleCount_def]
 
 /-- Every monomial occurring in a matrix coefficient of the unblocked differential is the weight of
 one of the rectangles that coefficient counts. -/
@@ -375,6 +409,16 @@ theorem unblockedDifferential_apply_apply (c : GridChainMinus R n) (y : GridStat
     G.unblockedDifferential R c y = c.sum fun x a => a * G.unblockedCoefficient R x y := by
   rw [unblockedDifferential_apply]
   simp [Finsupp.sum_apply]
+
+/-- The matrix of the square of the unblocked differential: its `(x, z)` entry is the sum over
+intermediate grid states of the products of the two matrix coefficients. -/
+theorem unblockedDifferential_sq_single_apply (x z : GridState n) :
+    G.unblockedDifferential R (G.unblockedDifferential R (Finsupp.single x 1)) z =
+      ∑ y : GridState n, G.unblockedCoefficient R x y * G.unblockedCoefficient R y z := by
+  rw [unblockedDifferential_single, unblockedDifferential_apply_apply,
+    Finsupp.sum_fintype _ _ fun _ => zero_mul _]
+  exact Finset.sum_congr rfl fun y _ => by
+    rw [unblockedDifferentialOnGenerator_apply]
 
 /-! ### The bidegree of the unblocked differential -/
 

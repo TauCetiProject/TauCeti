@@ -19,10 +19,11 @@ entrywise, because `∑ k, A i k * B k i` has a single surviving term — and co
 that, such as the diagonal of an inverse. It also defines upper-unitriangular matrices and proves
 that strictly upper-triangular matrices are nilpotent.
 
-The result previously lived in `TauCeti.Algebra.Lie.GeneralLinear.Borel`, phrased through
-membership in the Borel subalgebra. It is a statement about matrices with no Lie theory in it,
-so it is stated here for `Matrix.IsUpperTriangular` and consumed there; that also lets modules
-which have no business importing Lie-algebra theory use it.
+The diagonal results are stated for `Matrix.IsUpperTriangular` rather than through membership in
+the Borel subalgebra, since there is no Lie theory in them. It is
+`Matrix.mul_apply_diag_of_isUpperTriangular` that `TauCeti.Algebra.Lie.GeneralLinear.Borel`
+consumes in that form, and all of them are available to modules with no business importing
+Lie-algebra theory.
 
 ## Main results
 

@@ -69,7 +69,9 @@ classes.
   on one side.
 * `TauCeti.isBrauerTrivial_matrix`, `TauCeti.isBrauerTrivial_end` and
   `TauCeti.isBrauerTrivial_tensorOp`: the three Brauer-trivial algebras named above.
-* `TauCeti.subsingleton_brauerGroup_of_isAlgClosed` and
+* `TauCeti.subsingleton_brauerGroup_of_forall_isSplittingField`: **a field splitting every
+  central simple algebra over it has trivial Brauer group**, from which
+  `TauCeti.subsingleton_brauerGroup_of_isAlgClosed` and
   `TauCeti.subsingleton_brauerGroup_of_finite`: **the Brauer group of an algebraically closed
   field, and of a finite field, is trivial.**
 
@@ -217,24 +219,34 @@ end Opposite
 
 /-! ### Fields with trivial Brauer group -/
 
+/-- **A field that splits every central simple algebra over it has trivial Brauer group.**
+
+Any two such algebras are Brauer equivalent by
+`TauCeti.isBrauerEquivalent_of_isSplittingField`, so there is only one Brauer class. This is the
+common content of the two triviality criteria below; each supplies the splitting hypothesis from
+a different property of `K`. -/
+theorem subsingleton_brauerGroup_of_forall_isSplittingField
+    (h : ∀ A : CSA.{u, v} K, Algebra.IsSplittingField K A K) :
+    Subsingleton (BrauerGroup.{u, v} K) :=
+  ⟨fun x y ↦ Quotient.inductionOn₂ x y fun A B ↦ Quotient.sound <|
+    isBrauerEquivalent_of_isSplittingField K (h A) (h B)⟩
+
 /-- **The Brauer group of an algebraically closed field is trivial.** Every finite-dimensional
 central simple algebra over an algebraically closed field is a matrix algebra over it
 (`TauCeti.Algebra.isSplittingField_of_isSepClosed`, with the extension taken to be the base field
 itself), so there is only one Brauer class. -/
 theorem subsingleton_brauerGroup_of_isAlgClosed [IsAlgClosed K] :
     Subsingleton (BrauerGroup.{u, v} K) :=
-  ⟨fun x y ↦ Quotient.inductionOn₂ x y fun A B ↦ Quotient.sound <|
-    isBrauerEquivalent_of_isSplittingField K (Algebra.isSplittingField_of_isSepClosed K A K)
-      (Algebra.isSplittingField_of_isSepClosed K B K)⟩
+  subsingleton_brauerGroup_of_forall_isSplittingField K fun A ↦
+    Algebra.isSplittingField_of_isSepClosed K A K
 
 /-- **The Brauer group of a finite field is trivial.** A finite division ring is a field (little
 Wedderburn), so the Wedderburn presentation of a central simple algebra over a finite field is
 already a matrix algebra over that field (`TauCeti.Algebra.isSplittingField_self_of_finite`); again
 there is only one Brauer class. -/
 theorem subsingleton_brauerGroup_of_finite [Finite K] : Subsingleton (BrauerGroup.{u, v} K) :=
-  ⟨fun x y ↦ Quotient.inductionOn₂ x y fun A B ↦ Quotient.sound <|
-    isBrauerEquivalent_of_isSplittingField K (Algebra.isSplittingField_self_of_finite K A)
-      (Algebra.isSplittingField_self_of_finite K B)⟩
+  subsingleton_brauerGroup_of_forall_isSplittingField K fun A ↦
+    Algebra.isSplittingField_self_of_finite K A
 
 /-! ### Worked example -/
 

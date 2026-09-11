@@ -197,4 +197,15 @@
     "modules": [
       "Mathlib.RingTheory.Valuation.ValuativeRel.Comap"
     ]
-  }]
+  },
+  {
+    "note": "Ported from Mathlib: the proof is adapted from the private lemma `AlgebraicGeometry.smooth_of_grpObj_of_isAlgClosed` underlying `AlgebraicGeometry.smooth_of_grpObj`, added by Christian Merten (`chrisflav`) in mathlib4#37988 (https://github.com/leanprover-community/mathlib4/pull/37988, 2026-05-08). The upstream counterpart with this statement is `private`, so it cannot be imported; the public `smooth_of_grpObj` is strictly more general but is stated over `GeometricallyReduced f`, and neither library has the bridge \"reduced over a perfect field is geometrically reduced\" at scheme level. Supplying that bridge upstream retires this source; until then there is no deterministic migration, hence the landing sentinel.",
+    "landing_sentinel": true,
+    "sources": [
+      "TauCeti/AlgebraicGeometry/Group/Smooth.lean"
+    ],
+    "modules": [
+      "Mathlib.AlgebraicGeometry.Group.Smooth"
+    ]
+  }
+]

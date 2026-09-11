@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Principle
 public import TauCeti.Analysis.Complex.Conformal.Biholomorph
-import TauCeti.Analysis.Complex.Conformal.InverseFunction
+import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 
 /-!
@@ -48,8 +48,8 @@ the real axis, where the two branches meet.
 The reflection hypotheses here are exactly those of the reflection principle, plus the two extra
 ones (`hupper` and `hinj`); the holomorphy of the extension is quoted from
 `differentiableOn_schwarzReflection_of_symmetric`, its pointwise conformality from
-`TauCeti.DifferentiableOn.conformalAt_of_isOpen_of_injOn`, and the holomorphy of the inverse from
-`TauCeti.DifferentiableOn.invFunOn`.
+`DifferentiableOn.conformalAt_of_isOpen_of_injOn`, and the holomorphy of the inverse from
+`DifferentiableOn.invFunOn`.
 
 ## Main results
 
@@ -72,7 +72,7 @@ Layer L4 (reflection) and layer L5 (boundary correspondence) are absent from the
 Mathlib Riemann-mapping draft
 [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505),
 so this is new Lean formalization rather than a shim; the shared L0--L3 infrastructure it consumes
-(`Conformal/Biholomorph.lean`, `Conformal/InverseFunction.lean`) carries its own shim notice.
+(`Conformal/Biholomorph.lean`, `Conformal/Inverse/Function.lean`) carries its own shim notice.
 
 ## References
 
@@ -218,7 +218,7 @@ theorem conformalAt_schwarzReflection_of_symmetric
     (hupper : Set.MapsTo f (Ω ∩ {z : ℂ | 0 < z.im}) {z : ℂ | 0 < z.im})
     (hinj : Set.InjOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
     {z : ℂ} (hz : z ∈ Ω) : ConformalAt (schwarzReflection f) z :=
-  TauCeti.DifferentiableOn.conformalAt_of_isOpen_of_injOn
+  DifferentiableOn.conformalAt_of_isOpen_of_injOn
     (differentiableOn_schwarzReflection_of_symmetric hΩopen hΩ hcont hholo hreal) hΩopen
     (injOn_schwarzReflection_of_symmetric hΩ hupper (fun w hw h => (hreal w hw h).ge) hinj) hz
 
@@ -233,7 +233,7 @@ theorem differentiableOn_invFunOn_schwarzReflection_of_symmetric
     (hupper : Set.MapsTo f (Ω ∩ {z : ℂ | 0 < z.im}) {z : ℂ | 0 < z.im})
     (hinj : Set.InjOn f (Ω ∩ {z : ℂ | 0 ≤ z.im})) :
     DifferentiableOn ℂ (Function.invFunOn (schwarzReflection f) Ω) (schwarzReflection f '' Ω) :=
-  TauCeti.DifferentiableOn.invFunOn
+  DifferentiableOn.invFunOn
     (differentiableOn_schwarzReflection_of_symmetric hΩopen hΩ hcont hholo hreal) hΩopen
     (injOn_schwarzReflection_of_symmetric hΩ hupper (fun w hw h => (hreal w hw h).ge) hinj)
 
