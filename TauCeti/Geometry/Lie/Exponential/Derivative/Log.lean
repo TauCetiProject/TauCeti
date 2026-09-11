@@ -46,7 +46,7 @@ theorem hasDerivAt_mulInvariantLog_mulInvariantExp_smul_mul_mulInvariantExp_smul
   let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
   have hlog := hasFDerivAt_mulInvariantLogChart_one (I := I) (G := G)
   have hcurve :=
-    hasFDerivAt_extChartAt_mulInvariantExp_smul_mul_mulInvariantExp_smul
+    hasFDerivAt_extChartAt_mulInvariantExp_smul_mul_mulInvariantExp_smul_zero
       (I := I) (G := G) X Y
   have hlog' : HasFDerivAt (mulInvariantLogChart (I := I) (G := G))
       (ContinuousLinearMap.id ℝ E)
