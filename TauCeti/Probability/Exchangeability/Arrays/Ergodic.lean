@@ -21,19 +21,11 @@ relabels both array coordinates.  For a jointly exchangeable array law, this act
 exactly when the coordinate array is jointly dissociated.  By the corner-tail theorem in
 `Arrays.ZeroOne`, these are also equivalent to triviality of the corner-tail σ-algebra.
 
-The substantive implication, dissociation to ergodicity, is representation-free.  Approximate an
-invariant event by a cylinder on a finite square, swap that square with the following disjoint
-square, and use dissociation to factor the two cylinder events.  The standard `4ε` estimate then
-forces the invariant event's probability to equal its square.  Countability of the finitary
-permutation group passes from exactly invariant events to the almost-invariant formulation in
-Mathlib's `ErgodicSMul`.
-
-The reverse implication is shorter: every corner-tail event is fixed by every finitely supported
-diagonal relabeling, so ergodicity makes the corner tail trivial, and the converse direction of
-the corner-tail theorem gives dissociation.
-
-These results advance the exchangeable-arrays milestone of
-`TauCetiRoadmap/Exchangeability/README.md`, Layer 8.
+Together with the corner-tail theorem this closes a representation-free triangle for jointly
+exchangeable arrays: joint dissociation, triviality of the corner tail, and ergodicity of the
+diagonal relabelling action are the same condition. It is the condition singling out the ergodic
+form of the Aldous--Hoover representation, in which the array is coded without a global
+coordinate, and it is stated on the law alone, with no representation in hand.
 
 ## Main declarations
 
@@ -161,7 +153,7 @@ theorem JointlyExchangeable.smulInvariantMeasure {ρ : Measure (ℕ × ℕ → �
     SMulInvariantMeasure JointArrayPerm (ℕ × ℕ → α) ρ := by
   constructor
   intro g s hs
-  change ρ (pairReindex (JointArrayPerm.toPerm g)⁻¹ (JointArrayPerm.toPerm g)⁻¹ ⁻¹' s) = ρ s
+  simp only [jointArrayPerm_smul_def]
   rw [← Measure.map_apply (measurable_pairReindex _ _) hs]
   rw [show pairReindex (JointArrayPerm.toPerm g)⁻¹ (JointArrayPerm.toPerm g)⁻¹ =
       (fun x p => x ((JointArrayPerm.toPerm g)⁻¹ p.1,
@@ -170,6 +162,7 @@ theorem JointlyExchangeable.smulInvariantMeasure {ρ : Measure (ℕ × ℕ → �
     rw [pairReindex_apply]]
   have hmap := congrArg (fun m : Measure (ℕ × ℕ → α) => m s)
     (jointlyExchangeable_iff.mp hρ (JointArrayPerm.toPerm g)⁻¹)
+  -- the identity reindexing is `id` by unfolding, which no propositional lemma states
   rw [show (fun (x : ℕ × ℕ → α) p => x p) = id by rfl, Measure.map_id] at hmap
   exact hmap
 
@@ -210,7 +203,7 @@ private theorem preimage_jointArrayPerm_smul_eq_of_measurable_arrayTail
   obtain ⟨N, hN⟩ := finite_compl_fixedBy_eventually_eq_self
     (JointArrayPerm.finite_compl_fixedBy_toPerm g⁻¹)
   rw [JointArrayPerm.toPerm_inv] at hN
-  change pairReindex (JointArrayPerm.toPerm g)⁻¹ (JointArrayPerm.toPerm g)⁻¹ ⁻¹' s = s
+  simp only [jointArrayPerm_smul_def]
   exact preimage_pairReindex_eq_of_measurable_arrayTailFamily
     ((measurableSet_arrayTail_iff.mp hs) N) hN
 
@@ -282,9 +275,13 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
     (hinv : ∀ g : JointArrayPerm, (fun x : ℕ × ℕ → α => g • x) ⁻¹' s = s) :
     ρ s = 0 ∨ ρ s = 1 := by
   classical
+  -- Strategy: for each `ε`, produce a cylinder `t` within `ε` of `s` and its block-swapped copy
+  -- `t'`, also within `ε` of `s` by invariance, whose intersection factors by dissociation; the
+  -- shared zero-one criterion then forces `ρ s ∈ {0, 1}`.
   refine TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_exists_symmDiff_lt_inter_eq_mul
     hs.nullMeasurableSet ?_
   intro ε hε
+  -- Step 1: the approximating cylinder `t` on a finite square `I × I` inside `[0, N)²`.
   obtain ⟨F, S, hS, hFS⟩ := exists_arrayCylinder_measure_symmDiff_lt (ρ := ρ) hs
     (ε := ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)
   let I : Finset ℕ := F.image Prod.fst ∪ F.image Prod.snd
@@ -293,6 +290,7 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
     exact ⟨Finset.mem_union_left _ (Finset.mem_image_of_mem _ hp),
       Finset.mem_union_right _ (Finset.mem_image_of_mem _ hp)⟩
   obtain ⟨N, hIN⟩ := Finset.exists_nat_subset_range I
+  -- Step 2: the block swap moves `I` onto a disjoint copy `J`; `t'` is `t` read through it.
   let π : Equiv.Perm ℕ := blockSwap N
   let J : Finset ℕ := I.map (Equiv.toEmbedding π)
   set t : Set (ℕ × ℕ → α) := cylinder F S with ht
@@ -321,6 +319,7 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
           (Z := fun p (x : ℕ × ℕ → α) => x p)
           (show (π p.1.1, π p.1.2) ∈ (J : Set ℕ) ×ˢ (J : Set ℕ) from ⟨hp1, hp2⟩))
     exact hread hS
+  -- Step 3: `s` is invariant under the swap, so `t'` is as close to `s` as `t` is.
   have hIJ : Disjoint I J := disjoint_map_blockSwap hIN
   have hIJset : Disjoint (I : Set ℕ) (J : Set ℕ) := by
     rw [Set.disjoint_left]
@@ -335,10 +334,7 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
     simpa only [π, MulAction.fixedBy_inv ℕ] using blockSwap_finite_support N
   have hs_inv : pairReindex π π ⁻¹' s = s := by
     have hg := hinv (JointArrayPerm.ofPerm π⁻¹ hπinv)
-    change pairReindex
-      (JointArrayPerm.toPerm (JointArrayPerm.ofPerm π⁻¹ hπinv))⁻¹
-      (JointArrayPerm.toPerm (JointArrayPerm.ofPerm π⁻¹ hπinv))⁻¹ ⁻¹' s = s at hg
-    simpa only [JointArrayPerm.toPerm_ofPerm, inv_inv] using hg
+    simpa only [jointArrayPerm_smul_def, JointArrayPerm.toPerm_ofPerm, inv_inv] using hg
   have hmap : ρ.map (pairReindex π π) = ρ := by
     calc
       ρ.map (pairReindex π π) = ρ.map (fun x p => x (π p.1, π p.2)) := by
@@ -347,6 +343,7 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
         rw [pairReindex_apply]
       _ = ρ.map (fun x p => x p) := jointlyExchangeable_iff.mp hexch π
       _ = ρ := by
+        -- the identity reindexing is `id` by unfolding, which no propositional lemma states
         rw [show (fun (x : ℕ × ℕ → α) p => x p) = id by rfl, Measure.map_id]
   have ht'_symm : ρ (symmDiff t' s) = ρ (symmDiff t s) := by
     have hpre : symmDiff t' s = pairReindex π π ⁻¹' symmDiff t s := by
@@ -358,18 +355,20 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
     exact ENNReal.toReal_lt_of_lt_ofReal hFS
   have h2 : ρ.real (symmDiff t' s) < ε :=
     ENNReal.toReal_lt_of_lt_ofReal (ht'_symm ▸ (ht ▸ hFS))
+  -- Step 4: `t` and `t'` read disjoint blocks, so dissociation factors their intersection.
   have hfactor_real : ρ.real (t ∩ t') = ρ.real t * ρ.real t' := by
-    change (ρ (t ∩ t')).toReal = (ρ t).toReal * (ρ t').toReal
-    rw [hfactor, ENNReal.toReal_mul]
+    rw [measureReal_def, measureReal_def, measureReal_def, hfactor, ENNReal.toReal_mul]
   exact ⟨t, t', ht_meas.nullMeasurableSet, ht'_meas.nullMeasurableSet, h1, h2, hfactor_real⟩
 
 /-- Joint dissociation makes the diagonal finitary-permutation action ergodic. -/
-theorem ergodicSMul_of_jointlyDissociated {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
+theorem ergodicSMul_of_jointlyDissociated {ρ : Measure (ℕ × ℕ → α)} [IsZeroOrProbabilityMeasure ρ]
     (hdiss : JointlyDissociated ρ fun p x => x p)
     (hexch : JointlyExchangeable ρ fun p x => x p) :
     ErgodicSMul JointArrayPerm (ℕ × ℕ → α) ρ := by
   let _ := hexch.smulInvariantMeasure
   refine TauCeti.MeasureTheory.ergodicSMul_of_forall_smul_invariant fun s hs hinv => ?_
+  rcases eq_zero_or_isProbabilityMeasure ρ with rfl | _
+  · exact eventuallyConst_set'.mpr (Or.inl (by rw [ae_zero]; exact Filter.eventually_bot))
   refine eventuallyConst_set'.mpr ?_
   rcases measure_eq_zero_or_one_of_jointlyDissociated hdiss hexch hs hinv with h | h
   · exact Or.inl (ae_eq_empty.mpr h)
@@ -377,13 +376,15 @@ theorem ergodicSMul_of_jointlyDissociated {ρ : Measure (ℕ × ℕ → α)} [Is
 
 /-- Ergodicity of the diagonal finitary-permutation action makes a jointly exchangeable array law
 jointly dissociated. -/
-theorem jointlyDissociated_of_ergodicSMul {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
+theorem jointlyDissociated_of_ergodicSMul {ρ : Measure (ℕ × ℕ → α)} [IsZeroOrProbabilityMeasure ρ]
     [ErgodicSMul JointArrayPerm (ℕ × ℕ → α) ρ]
     (hexch : JointlyExchangeable ρ fun p x => x p) :
     JointlyDissociated ρ fun p x => x p := by
   apply (jointlyDissociated_iff_forall_arrayTail_measure_eq_zero_or_one
     (X := fun p (x : ℕ × ℕ → α) => x p) (fun p => measurable_pi_apply p) hexch).mpr
   intro s hs
+  rcases eq_zero_or_isProbabilityMeasure ρ with rfl | _
+  · exact Or.inl rfl
   have hconst : EventuallyConst s (ae ρ) :=
     MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq JointArrayPerm
       ((arrayTail_le_ambient (X := fun p (x : ℕ × ℕ → α) => x p) 0
@@ -395,7 +396,7 @@ theorem jointlyDissociated_of_ergodicSMul {ρ : Measure (ℕ × ℕ → α)} [Is
 
 /-- **Joint dissociation is ergodicity** for a jointly exchangeable array law.  The acting group
 simultaneously applies one finitely supported permutation to both coordinates. -/
-theorem jointlyDissociated_iff_ergodicSMul {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
+theorem jointlyDissociated_iff_ergodicSMul {ρ : Measure (ℕ × ℕ → α)} [IsZeroOrProbabilityMeasure ρ]
     (hexch : JointlyExchangeable ρ fun p x => x p) :
     JointlyDissociated ρ (fun p x => x p) ↔ ErgodicSMul JointArrayPerm (ℕ × ℕ → α) ρ :=
   ⟨fun h => ergodicSMul_of_jointlyDissociated h hexch,
