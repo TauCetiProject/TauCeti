@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import Mathlib.NumberTheory.Padics.LocalField
-public import Mathlib.NumberTheory.Padics.RingHoms
 
 /-!
 # Normalization of the p-adic absolute value
@@ -17,10 +16,10 @@ concrete p-adic norm and valuation APIs.
 
 ## Main results
 
-* `toAdd_normalizedValuation_eq_valuation` identifies the additive normalized valuation with
+* `Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized valuation with
   `Padic.valuation`.
-* `natCard_residueField_padic` computes the residue-field cardinality of `ℚ_[p]`.
-* `normalizedAbsoluteValue_eq_norm` identifies the normalized absolute value with the norm on
+* `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
+* `Padic.normalizedAbsoluteValue_eq_norm` identifies the normalized absolute value with the norm on
   `ℚ_[p]`.
 
 The Padic and residue-field constructions used here are part of Mathlib's upstream
@@ -49,6 +48,8 @@ private theorem valueGroupWithZeroIsoInt_padic (x : ℚ_[p]) :
     ((Valuation.isEquiv_map_self_of_strictMono e.toMonoidWithZeroHom e.strictMono).trans
       (ValuativeRel.isEquiv _ _))) x
 
+namespace Padic
+
 /-- The additive normalized valuation on `ℚ_[p]` is Mathlib's p-adic valuation. -/
 @[simp]
 theorem toAdd_normalizedValuation_eq_valuation (x : ℚ_[p]ˣ) :
@@ -58,12 +59,7 @@ theorem toAdd_normalizedValuation_eq_valuation (x : ℚ_[p]ˣ) :
 
 /-- The residue field of `ℚ_[p]` has cardinality `p`. -/
 @[simp]
-theorem natCard_residueField_padic :
-    letI := Fintype.ofFinite 𝓀[ℚ_[p]]
-    Fintype.card 𝓀[ℚ_[p]] = p := by
-  let fintype := Fintype.ofFinite 𝓀[ℚ_[p]]
-  change @Fintype.card 𝓀[ℚ_[p]] fintype = p
-  rw [← @Nat.card_eq_fintype_card 𝓀[ℚ_[p]] fintype]
+theorem natCard_residueField : Nat.card 𝓀[ℚ_[p]] = p := by
   have h : 𝒪[ℚ_[p]] = PadicInt.subring p := by
     ext x
     rw [Valuation.mem_integer_iff, PadicInt.mem_subring_iff]
@@ -72,18 +68,20 @@ theorem natCard_residueField_padic :
       (x := (1 : ℚ_[p])) (y := x))).symm
   let e : 𝒪[ℚ_[p]] ≃+* ℤ_[p] := RingEquiv.subringCongr h
   rw [Nat.card_congr ((IsLocalRing.ResidueField.mapEquiv e).trans
-    PadicInt.residueField).toEquiv, Nat.card_eq_fintype_card, ZMod.card]
+    PadicInt.residueField).toEquiv, Nat.card_zmod]
 
 /-- The normalized absolute value on `ℚ_[p]` agrees with Mathlib's norm. -/
 @[simp]
 theorem normalizedAbsoluteValue_eq_norm (x : ℚ_[p]) :
-    (normalizedAbsoluteValue ℚ_[p] x : ℝ) = ‖x‖ := by
+    normalizedAbsoluteValue ℚ_[p] x = ‖x‖₊ := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp
-  let fintype := Fintype.ofFinite 𝓀[ℚ_[p]]
-  rw [normalizedAbsoluteValue_apply_ne_zero x hx,
-    @Nat.card_eq_fintype_card 𝓀[ℚ_[p]] fintype, natCard_residueField_padic,
-    toAdd_normalizedValuation_eq_valuation, Padic.norm_eq_zpow_neg_valuation hx]
-  simp
+  apply NNReal.eq
+  rw [normalizedAbsoluteValue_apply_ne_zero x hx, natCard_residueField,
+    toAdd_normalizedValuation_eq_valuation]
+  simp only [coe_nnnorm]
+  simpa using (Padic.norm_eq_zpow_neg_valuation hx).symm
+
+end Padic
 
 end TauCeti
