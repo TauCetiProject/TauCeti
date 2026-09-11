@@ -92,7 +92,8 @@ def limitSubgroup (H : ∀ U : OpenNormalSubgroup G, Subgroup (G ⧸ U.toSubgrou
 
 /-- An element lies in `limitSubgroup H` exactly when its class modulo every `U` lies in
 `H U`. -/
-theorem mem_limitSubgroup {g : G} :
+@[simp]
+theorem mem_limitSubgroup_iff {g : G} :
     g ∈ limitSubgroup H ↔ ∀ U : OpenNormalSubgroup G, (g : G ⧸ U.toSubgroup) ∈ H U :=
   Subgroup.mem_iInf
 
@@ -114,7 +115,7 @@ theorem map_mk'_limitSubgroup [CompactSpace G]
     (limitSubgroup H).map (QuotientGroup.mk' U.toSubgroup) = H U := by
   apply le_antisymm
   · rw [Subgroup.map_le_iff_le_comap]
-    exact fun g hg ↦ mem_limitSubgroup.mp hg U
+    exact fun g hg ↦ mem_limitSubgroup_iff.mp hg U
   · intro y hy
     -- Find a preimage of `y` that lies in the inverse image of every `H V`, by compactness.
     let t : OpenNormalSubgroup G → Set G := fun V ↦
@@ -153,7 +154,7 @@ theorem map_mk'_limitSubgroup [CompactSpace G]
       ⟨{ toOpenSubgroup := ⊤, isNormal' := Subgroup.normal_top }⟩
     obtain ⟨g, hg⟩ := nonempty_iInter_of_directed_nonempty_isClosed t ht_directed
       ht_nonempty ht_closed
-    exact ⟨g, mem_limitSubgroup.mpr fun V ↦ (Set.mem_iInter.mp hg V).2,
+    exact ⟨g, mem_limitSubgroup_iff.mpr fun V ↦ (Set.mem_iInter.mp hg V).2,
       (Set.mem_iInter.mp hg U).1⟩
 
 end LimitSubgroup
