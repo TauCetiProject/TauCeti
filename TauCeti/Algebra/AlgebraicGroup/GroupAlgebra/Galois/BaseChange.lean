@@ -38,7 +38,7 @@ variable {k L M : Type*} [Field k] [Field L] [Algebra k L] [AddCommGroup M]
 /-- Scalar extension of the invariant group-algebra inclusion is surjective. In particular,
 this holds over every finite Galois extension, without a characteristic restriction or a
 finite-generation hypothesis on the exponent group. -/
-theorem groupAlgebraInvariantsBaseChange_surjective
+theorem liftEquiv_groupAlgebraInvariants_surjective
     [Finite (L ≃ₐ[k] L)] (rho : Representation ℤ (L ≃ₐ[k] L) M) :
     Function.Surjective
       (AlgHom.liftEquiv k L (groupAlgebraInvariants rho)

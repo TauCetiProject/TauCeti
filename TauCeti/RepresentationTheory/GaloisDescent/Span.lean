@@ -17,9 +17,8 @@ representation is spanned over `L` by its invariant vectors. No finite-dimension
 vector space is required. This is the surjectivity step in Galois descent, applied in particular
 to the coordinate algebra of a split torus with a Galois action on its character lattice.
 
-The proof uses Dedekind's independence of field automorphisms: a linear functional vanishing
-on every invariant orbit sum must vanish on every vector. It does not divide by the order of
-the automorphism group, so the result applies in positive characteristic as well.
+The result has no characteristic restriction and does not require the order of the
+automorphism group to be invertible in `L`.
 
 ## References
 
