@@ -86,7 +86,9 @@ theorem spinRotationPath_apply (hx : Q x = 1) (hy : Q y = 1)
     (hxy : Q.IsOrtho x y) (t : unitInterval) :
     spinRotationPath Q x y hx hy hxy t =
       spinRotation Q x y hx hy hxy (Real.pi * (t : ℝ)) := by
-  simp [spinRotationPath, Path.segment, AffineMap.lineMap_apply_module, mul_comm]
+  simp only [spinRotationPath, Path.cast_coe, Path.map_coe, Function.comp_apply,
+    Path.segment_apply, AffineMap.lineMap_apply_module, smul_eq_mul, zero_mul,
+    zero_add, mul_comm]
 
 private theorem spinTwoBasis_norm (i : Fin 2) :
     realCliffordForm 2 0 (Pi.basisFun ℝ (Fin 2) i) = 1 := by

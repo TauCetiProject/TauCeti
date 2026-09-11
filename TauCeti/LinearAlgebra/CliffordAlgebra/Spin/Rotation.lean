@@ -46,11 +46,11 @@ def spinRotation (hx : Q x = 1) (hy : Q y = 1)
   ⟨ι Q x * ι Q (Real.cos t • x + Real.sin t • y),
     ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one x
       (Real.cos t • x + Real.sin t • y) <| by
-      rw [hx, QuadraticMap.map_add Q, Q.map_smul, Q.map_smul,
-        QuadraticMap.polar_smul_left, QuadraticMap.polar_smul_right, hx, hy,
-        hxy.polar_eq_zero]
-      simp only [smul_eq_mul, mul_one, mul_zero, add_zero, one_mul]
-      simpa only [pow_two] using Real.cos_sq_add_sin_sq t⟩
+      have hscaled : Q.IsOrtho (Real.cos t • x) (Real.sin t • y) := by
+        rw [← QuadraticMap.isOrtho_polarBilin]
+        simp [hxy.polar_eq_zero]
+      rw [hscaled]
+      simpa [Q.map_smul, hx, hy, pow_two] using Real.cos_sq_add_sin_sq t⟩
 
 private theorem coe_spinRotation_internal (hx : Q x = 1) (hy : Q y = 1)
     (hxy : Q.IsOrtho x y) (t : ℝ) :
