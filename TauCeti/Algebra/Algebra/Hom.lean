@@ -100,7 +100,9 @@ theorem RingHom.toIntAlgHom_comp (f : S →+* T) (g : R →+* S) :
     (f.comp g).toIntAlgHom = f.toIntAlgHom.comp g.toIntAlgHom :=
   AlgHom.ext fun _ ↦ rfl
 
-/-- `RingHom.toIntAlgHom` is a right inverse of `AlgHom.toRingHom`.
+/-- Reading a ring homomorphism as a `ℤ`-algebra homomorphism and back recovers it: composing
+`AlgHom.toRingHom` after `RingHom.toIntAlgHom` is the identity, so `RingHom.toIntAlgHom` is a
+right inverse of `AlgHom.toRingHom`.
 
 Stated through the coercion rather than `.toRingHom`, because Mathlib's `AlgHom.toRingHom_eq_coe`
 is a `simp` lemma making the coercion the simp-normal form; a `.toRingHom` left-hand side would
@@ -109,7 +111,10 @@ be rewritten before this could fire. -/
 theorem RingHom.toIntAlgHom_toRingHom (f : R →+* S) : (f.toIntAlgHom : R →+* S) = f :=
   RingHom.ext fun _ ↦ rfl
 
-/-- `RingHom.toIntAlgHom` is a left inverse of `AlgHom.toRingHom` on `ℤ`-algebra homomorphisms.
+/-- Reading a `ℤ`-algebra homomorphism as a ring homomorphism and back recovers it: composing
+`RingHom.toIntAlgHom` after `AlgHom.toRingHom` is the identity, so `RingHom.toIntAlgHom` is a
+left inverse of `AlgHom.toRingHom`.
+
 Stated through the coercion, for the reason given above. -/
 @[simp]
 theorem AlgHom.toRingHom_toIntAlgHom (φ : R →ₐ[ℤ] S) : ((φ : R →+* S)).toIntAlgHom = φ :=
