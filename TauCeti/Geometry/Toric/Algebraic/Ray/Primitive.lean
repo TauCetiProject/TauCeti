@@ -24,8 +24,7 @@ vectors which enter the definition of a regular cone and, later, its affine mono
 
 ## Main declarations
 
-* `TauCeti.Toric.IsPrimitiveGenerator`: a nonzero lattice vector on a ray which is not a proper
-  positive natural multiple of another lattice vector.
+* `TauCeti.Toric.IsPrimitiveGenerator`: a primitive lattice vector on a ray.
 * `TauCeti.Toric.IsToricCone.existsUnique_primitiveGenerator`: every ray of a toric cone in an
   integral lattice has a unique primitive generator.
 * `TauCeti.Toric.primitiveGenerator`: the resulting canonical lattice vector, with membership,
@@ -44,18 +43,15 @@ namespace TauCeti.Toric
 variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} {σ : PointedCone ℝ V}
 
-/-- A primitive lattice generator of a ray is a nonzero lattice vector pointing along the ray
-which is not a proper positive natural multiple of another lattice vector. -/
+/-- A primitive lattice generator of a ray is a primitive lattice vector pointing along the ray. -/
 -- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 def IsPrimitiveGenerator (i : N →+ V) {σ : PointedCone ℝ V}
     (ρ : ToricRay σ) (v : N) : Prop :=
-  i v ∈ ρ ∧ v ≠ 0 ∧
-    ∀ (m : ℕ), 0 < m → ∀ w : N, v = m • w → m = 1
+  i v ∈ ρ ∧ IsPrimitive v
 
 /-- The characteristic property of a primitive generator. -/
 theorem isPrimitiveGenerator_iff {ρ : ToricRay σ} {v : N} :
-    IsPrimitiveGenerator i ρ v ↔
-      i v ∈ ρ ∧ v ≠ 0 ∧ ∀ (m : ℕ), 0 < m → ∀ w : N, v = m • w → m = 1 :=
+    IsPrimitiveGenerator i ρ v ↔ i v ∈ ρ ∧ IsPrimitive v :=
   Iff.rfl
 
 namespace IsPrimitiveGenerator
@@ -66,11 +62,11 @@ variable {ρ : ToricRay σ} {v : N}
 theorem mem (h : IsPrimitiveGenerator i ρ v) : i v ∈ ρ := h.1
 
 /-- A primitive generator is nonzero. -/
-theorem ne_zero (h : IsPrimitiveGenerator i ρ v) : v ≠ 0 := h.2.1
+theorem ne_zero (h : IsPrimitiveGenerator i ρ v) : v ≠ 0 := h.2.ne_zero
 
-/-- A primitive generator cannot be a proper positive natural multiple. -/
-theorem eq_one_of_eq_nsmul (h : IsPrimitiveGenerator i ρ v) {m : ℕ} (hm : 0 < m)
-    (w : N) (hw : v = m • w) : m = 1 := h.2.2 m hm w hw
+/-- A primitive generator cannot be a nontrivial natural multiple. -/
+theorem eq_one_of_eq_nsmul (h : IsPrimitiveGenerator i ρ v) {m : ℕ}
+    (w : N) (hw : v = m • w) : m = 1 := h.2.eq_one_of_eq_nsmul hw
 
 end IsPrimitiveGenerator
 
@@ -91,8 +87,7 @@ theorem existsUnique_primitiveGenerator (hσ : IsToricCone i σ) (hi : IsIntegra
     rw [hnv, map_zsmul, ← Int.cast_smul_eq_zsmul ℝ,
       inv_smul_smul₀ hdℝ.ne'] at hscaled
     exact hscaled
-  have hvgen : IsPrimitiveGenerator i ρ v :=
-    ⟨hvρ, hv.ne_zero, fun _ _ _ hvw ↦ hv.eq_one_of_eq_nsmul hvw⟩
+  have hvgen : IsPrimitiveGenerator i ρ v := ⟨hvρ, hv⟩
   refine ⟨v, hvgen, fun u hu ↦ ?_⟩
   have hρsalient : (ρ.toPointedCone : ConvexCone ℝ V).Salient :=
     hσ.salient.anti fun _ hx ↦ ρ.1.isFaceOf.le hx
@@ -104,8 +99,10 @@ theorem existsUnique_primitiveGenerator (hσ : IsToricCone i σ) (hi : IsIntegra
   obtain ⟨f, hfv⟩ := isPrimitive_def.mp hv
   let g : V →ₗ[ℝ] ℝ := hi.extend (Int.castAddHom ℝ) f.toAddMonoidHom
   have hg (x : N) : g (i x) = (f x : ℝ) := by
-    change g (i x) = (Int.castAddHom ℝ) (f x)
-    exact hi.extend_apply (Int.castAddHom ℝ) f.toAddMonoidHom x
+    have hcast (z : ℤ) : (Int.castAddHom ℝ) z = (z : ℝ) := rfl
+    have hcoe : f.toAddMonoidHom x = f x := rfl
+    simpa only [g, hcast, hcoe] using
+      hi.extend_apply (Int.castAddHom ℝ) f.toAddMonoidHom x
   have haInt : a = (f u : ℝ) := by
     have h := congrArg g hau
     rw [map_smul, hg, hg, hfv, Int.cast_one, smul_eq_mul, mul_one] at h
@@ -121,11 +118,7 @@ theorem existsUnique_primitiveGenerator (hσ : IsToricCone i σ) (hi : IsIntegra
   have huv : u = m • v := by
     apply hi.injective
     rw [map_nsmul, ← Nat.cast_smul_eq_nsmul ℝ, ← ham, hau]
-  have hm0 : 0 < m := by
-    by_contra hm
-    have hm' : m = 0 := Nat.eq_zero_of_not_pos hm
-    exact hu.ne_zero (by simpa [hm'] using huv)
-  exact huv.trans (by rw [hu.eq_one_of_eq_nsmul hm0 v huv, one_nsmul])
+  exact huv.trans (by rw [hu.eq_one_of_eq_nsmul v huv, one_nsmul])
 
 end IsToricCone
 
@@ -146,6 +139,7 @@ theorem primitiveGenerator_mem (hi : IsIntegralLattice i) (hσ : IsToricCone i �
   (isPrimitiveGenerator_primitiveGenerator hi hσ ρ).mem
 
 /-- The primitive generator is nonzero. -/
+@[simp]
 theorem primitiveGenerator_ne_zero (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
     (ρ : ToricRay σ) : primitiveGenerator hi hσ ρ ≠ 0 :=
   (isPrimitiveGenerator_primitiveGenerator hi hσ ρ).ne_zero
