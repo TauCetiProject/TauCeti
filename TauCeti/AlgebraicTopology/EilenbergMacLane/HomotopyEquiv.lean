@@ -11,10 +11,11 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 /-!
 # Asphericity and the `K(G, 1)` property are homotopy invariants
 
-Both properties are stated at a base point, but neither depends on it: an aspherical space is
-path connected, so base-point change identifies its homotopy groups at any two points. With that,
-homotopy invariance follows from the invariance of the homotopy groups themselves, since a
-homotopy equivalence carries no base point with it.
+Both properties are stated at a base point, but neither depends on it
+(`TauCeti.IsAspherical.of_basepoint`, `TauCeti.IsEilenbergMacLaneSpaceOne.of_basepoint`): an
+aspherical space is path connected, so base-point change identifies its homotopy groups at any two
+points. With that, homotopy invariance follows from the invariance of the homotopy groups
+themselves, since a homotopy equivalence carries no base point with it.
 
 This is the homotopy-invariant form of the stability statements in
 `TauCeti.AlgebraicTopology.EilenbergMacLane.Basic`, which record stability under a *pointed
@@ -24,18 +25,13 @@ prescribed image base point.
 
 ## Main declarations
 
-* `TauCeti.IsAspherical.of_basepoint`, `TauCeti.IsEilenbergMacLaneSpaceOne.of_basepoint`:
-  neither property depends on the base point.
 * `TauCeti.IsAspherical.of_homotopyEquiv`: **asphericity is a homotopy invariant.**
 * `TauCeti.IsEilenbergMacLaneSpaceOne.of_homotopyEquiv`: **being a `K(G, 1)` space is a homotopy
   invariant.**
 
 ## References
 
-These generalise the stability under a homeomorphism that
-`TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 14, "recognition of `K(G, 1)` spaces",
-asks for, and which is on `main` as `TauCeti.IsAspherical.of_homeomorph` and
-`TauCeti.IsEilenbergMacLaneSpaceOne.of_homeomorph`; compare Section 1.B of [hatcher02].
+Compare Section 1.B of [hatcher02].
 -/
 
 public section
@@ -47,15 +43,6 @@ open scoped Topology Topology.Homotopy ContinuousMap
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x : X}
 
 namespace IsAspherical
-
-/-- **Asphericity does not depend on the base point.** An aspherical space is path connected, so
-its homotopy groups at any two points are isomorphic. -/
-theorem of_basepoint (h : IsAspherical X x) (y : X) : IsAspherical X y := by
-  let : PathConnectedSpace X := h.pathConnectedSpace
-  refine IsAspherical.mk h.pathConnectedSpace fun n => ?_
-  let : Subsingleton (π_ (n + 2) X x) := h.subsingleton_homotopyGroup n
-  obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv (N := Fin (n + 2)) (x := x) (y := y)
-  exact φ.toEquiv.subsingleton_congr.mp inferInstance
 
 /-- **Asphericity is a homotopy invariant.** A space homotopy equivalent to an aspherical space
 is aspherical, at every base point. -/
@@ -71,14 +58,6 @@ end IsAspherical
 namespace IsEilenbergMacLaneSpaceOne
 
 variable {G : Type*} [Group G]
-
-/-- **The `K(G, 1)` property does not depend on the base point.** -/
-theorem of_basepoint (h : IsEilenbergMacLaneSpaceOne G X x) (y : X) :
-    IsEilenbergMacLaneSpaceOne G X y := by
-  let : PathConnectedSpace X := h.isAspherical.pathConnectedSpace
-  exact IsEilenbergMacLaneSpaceOne.mk (h.isAspherical.of_basepoint y)
-    (h.nonempty_fundamentalGroupMulEquiv.map fun f =>
-      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPathConnected y x).trans f)
 
 /-- **Being an Eilenberg--Mac Lane space of type `K(G, 1)` is a homotopy invariant.** -/
 theorem of_homotopyEquiv (h : IsEilenbergMacLaneSpaceOne G X x) (e : X ≃ₕ Y) (y : Y) :

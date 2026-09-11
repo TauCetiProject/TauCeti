@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Product
+public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Product
 
@@ -19,8 +20,9 @@ aspherical space whose fundamental group is isomorphic to `G`.
 
 The definitions are properties rather than structures carrying chosen isomorphisms. Thus they
 are invariant under changing an exhibited fundamental-group isomorphism, and do not retain
-noncanonical data. This file records invariance under homeomorphism and under isomorphism of
-the target group, as well as closure under binary and indexed products.
+noncanonical data. This file records independence of the base point, invariance under
+homeomorphism and under isomorphism of the target group, as well as closure under binary and
+indexed products.
 
 The product results reuse the existing product isomorphisms for fundamental and higher
 homotopy groups.
@@ -36,6 +38,8 @@ item 13, "`K(G, 1)` spaces". Concrete circle and torus examples are respectively
   dimensions at least two.
 * `TauCeti.IsEilenbergMacLaneSpaceOne`: the property of being an Eilenberg--Mac Lane space
   of type `K(G, 1)`.
+* `TauCeti.IsAspherical.of_basepoint`, `TauCeti.IsEilenbergMacLaneSpaceOne.of_basepoint`:
+  neither property depends on the base point.
 * `TauCeti.IsAspherical.of_homeomorph`,
   `TauCeti.IsEilenbergMacLaneSpaceOne.of_homeomorph`:
   invariance under pointed homeomorphisms.
@@ -84,6 +88,15 @@ protected theorem pathConnectedSpace (h : IsAspherical X x) : PathConnectedSpace
 protected theorem subsingleton_homotopyGroup (h : IsAspherical X x) (n : ℕ) :
     Subsingleton (π_ (n + 2) X x) :=
   h.2 n
+
+/-- **Asphericity does not depend on the base point.** An aspherical space is path connected, so
+its homotopy groups at any two points are isomorphic. -/
+theorem of_basepoint (h : IsAspherical X x) (x' : X) : IsAspherical X x' := by
+  let : PathConnectedSpace X := h.pathConnectedSpace
+  refine IsAspherical.mk h.pathConnectedSpace fun n ↦ ?_
+  let : Subsingleton (π_ (n + 2) X x) := h.subsingleton_homotopyGroup n
+  obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv (N := Fin (n + 2)) (x := x) (y := x')
+  exact φ.toEquiv.subsingleton_congr.mp inferInstance
 
 /-- Asphericity is preserved by a pointed homeomorphism. -/
 theorem of_homeomorph (hX : IsAspherical X x) (e : X ≃ₜ Y) (he : e x = y) :
@@ -153,6 +166,14 @@ protected theorem isAspherical (h : IsEilenbergMacLaneSpaceOne G X x) :
 protected theorem nonempty_fundamentalGroupMulEquiv (h : IsEilenbergMacLaneSpaceOne G X x) :
     Nonempty (FundamentalGroup X x ≃* G) :=
   h.2
+
+/-- **The `K(G, 1)` property does not depend on the base point.** -/
+theorem of_basepoint (h : IsEilenbergMacLaneSpaceOne G X x) (x' : X) :
+    IsEilenbergMacLaneSpaceOne G X x' := by
+  let : PathConnectedSpace X := h.isAspherical.pathConnectedSpace
+  exact IsEilenbergMacLaneSpaceOne.mk (h.isAspherical.of_basepoint x')
+    (h.nonempty_fundamentalGroupMulEquiv.map fun f ↦
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x' x).trans f)
 
 /-- Transporting the target group along an isomorphism preserves the `K(G, 1)` property. -/
 theorem of_mulEquiv (h : IsEilenbergMacLaneSpaceOne G X x) (e : G ≃* H) :
