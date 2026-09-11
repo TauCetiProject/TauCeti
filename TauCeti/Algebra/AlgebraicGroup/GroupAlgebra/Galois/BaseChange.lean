@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.Invariants
 import TauCeti.RepresentationTheory.GaloisDescent.Span
+import TauCeti.RepresentationTheory.GaloisDescent.Injective
 
 /-!
 # Scalar extension of an invariant group algebra
@@ -17,10 +18,10 @@ exponents, with the latter specified by an integral representation on the abelia
 The scalar-extension map is Mathlib's `AlgHom.liftEquiv` applied to the invariant-subalgebra
 inclusion; it sends `a ⊗ x` to `a • x`.
 
-This supplies the surjectivity part of the coordinate descent for groups of multiplicative
-type, including non-split tori. Identifying the scalar extension with the split coordinate
-algebra additionally requires injectivity; transporting the Hopf structure requires the analogous
-identification on tensor squares.
+For a finite Galois extension this map is an algebra equivalence. This identifies the scalar
+extension of the descended coordinate algebra with the split group algebra, as needed for
+groups of multiplicative type and non-split tori. Transporting the Hopf structure additionally
+requires the analogous identification on tensor squares.
 
 ## References
 
@@ -63,5 +64,60 @@ theorem liftEquiv_groupAlgebraInvariants_surjective
   intro x hx
   exact ⟨1 ⊗ₜ[k] (⟨x, hx⟩ : groupAlgebraInvariants rho), by
     simp [f]⟩
+
+variable [FiniteDimensional k L] [IsGalois k L]
+
+/-- Over a finite Galois extension, scalar extension of the invariant group-algebra inclusion
+is injective. The exponent group need not be finitely generated. -/
+theorem liftEquiv_groupAlgebraInvariants_injective
+    (rho : Representation ℤ (L ≃ₐ[k] L) M) :
+    Function.Injective
+      (AlgHom.liftEquiv k L (groupAlgebraInvariants rho)
+        (MonoidAlgebra L (Multiplicative M)) (groupAlgebraInvariants rho).val) := by
+  let ρ : Representation k (L ≃ₐ[k] L) (MonoidAlgebra L (Multiplicative M)) :=
+    { toFun := fun σ ↦ (groupAlgebraAction rho σ).toLinearMap
+      map_one' := by ext x; simp
+      map_mul' := by intros; ext x; simp }
+  let f := (groupAlgebraInvariants rho).val
+  have h := liftBaseChange_injective_of_invariant (ρ := ρ)
+    (groupAlgebraAction_smul rho) f.toLinearMap Subtype.val_injective
+    (fun σ x ↦ (mem_groupAlgebraInvariants_iff rho x).mp x.property σ)
+  have heq : (AlgHom.liftEquiv k L _ _ f).toLinearMap =
+      f.toLinearMap.liftBaseChange L := by
+    apply TensorProduct.AlgebraTensorModule.ext
+    intro a x
+    simp
+  rw [← heq] at h
+  exact h
+
+/-- The invariant group algebra descends the split coordinate algebra along a finite Galois
+extension: extending its scalars recovers the original group algebra. -/
+noncomputable def groupAlgebraInvariantsBaseChangeEquiv
+    (rho : Representation ℤ (L ≃ₐ[k] L) M) :
+    L ⊗[k] groupAlgebraInvariants rho ≃ₐ[L] MonoidAlgebra L (Multiplicative M) :=
+  AlgEquiv.ofBijective
+    (AlgHom.liftEquiv k L (groupAlgebraInvariants rho)
+      (MonoidAlgebra L (Multiplicative M)) (groupAlgebraInvariants rho).val)
+    ⟨liftEquiv_groupAlgebraInvariants_injective rho,
+      liftEquiv_groupAlgebraInvariants_surjective rho⟩
+
+/-- The descent equivalence is scalar multiplication on pure tensors. -/
+@[simp]
+theorem groupAlgebraInvariantsBaseChangeEquiv_tmul
+    (rho : Representation ℤ (L ≃ₐ[k] L) M)
+    (a : L) (x : groupAlgebraInvariants rho) :
+    groupAlgebraInvariantsBaseChangeEquiv rho (a ⊗ₜ[k] x) =
+      a • (x : MonoidAlgebra L (Multiplicative M)) := by
+  exact (AlgEquiv.ofBijective_apply _ _ _).trans (AlgHom.liftEquiv_tmul _ a x)
+
+/-- The inverse descent equivalence sends an invariant element to its tensor with one. -/
+@[simp]
+theorem groupAlgebraInvariantsBaseChangeEquiv_symm_apply_coe
+    (rho : Representation ℤ (L ≃ₐ[k] L) M)
+    (x : groupAlgebraInvariants rho) :
+    (groupAlgebraInvariantsBaseChangeEquiv rho).symm
+      (x : MonoidAlgebra L (Multiplicative M)) = 1 ⊗ₜ[k] x := by
+  apply (groupAlgebraInvariantsBaseChangeEquiv rho).injective
+  simp
 
 end TauCeti.GaloisDescent
