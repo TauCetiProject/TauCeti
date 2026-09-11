@@ -62,6 +62,7 @@ theorem toAdd_normalizedValuation_eq_valuation (x : ℚ_[p]ˣ) :
   simp [Padic.mulValuation, x.ne_zero]
 
 /-- The residue field of `ℚ_[p]` has cardinality `p`. -/
+@[simp]
 theorem natCard_residueField :
     Nat.card 𝓀[ℚ_[p]] = p := by
   have h : 𝒪[ℚ_[p]] = PadicInt.subring p := by
