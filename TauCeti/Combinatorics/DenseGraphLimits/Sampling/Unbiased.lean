@@ -9,7 +9,6 @@ public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Finite
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Structural
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
-import TauCeti.Combinatorics.SimpleGraph.Finite
 import Mathlib.Data.Fintype.CardEmbedding
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 
@@ -58,112 +57,6 @@ namespace DenseGraphLimits
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
 
 open Classical in
-/-- Reindex the supergraph sum by the optional edges outside the fixed graph. -/
-private theorem sum_sampleIntegrand_supergraph_bij {n : ℕ} (W : Graphon Ω μ)
-    (F : SimpleGraph (Fin n)) [DecidableRel F.Adj] (x : Fin n → Ω) :
-    ∑ G ∈ Finset.univ.filter (F ≤ ·), sampleIntegrand W G x =
-      ∑ S ∈ ((⊤ : SimpleGraph (Fin n)).edgeFinset \ F.edgeFinset).powerset,
-        (∏ e ∈ F.edgeFinset, edgeFactor W x e) *
-          ((∏ e ∈ S, edgeFactor W x e) *
-            ∏ e ∈ ((⊤ : SimpleGraph (Fin n)).edgeFinset \ F.edgeFinset) \ S,
-              (1 - edgeFactor W x e)) := by
-  let decF := ‹DecidableRel F.Adj›
-  let _ : DecidableRel F.Adj := decF
-  have hFtop : F.edgeFinset ⊆ (⊤ : SimpleGraph (Fin n)).edgeFinset :=
-    SimpleGraph.edgeFinset_mono le_top
-  -- A supergraph of `F` is the same data as the set `S` of edges it adds to `F`, so the two maps
-  -- below are mutually inverse bijections between the supergraphs of `F` and the subsets of the
-  -- optional edges `E(⊤) \ E(F)`.
-  refine Finset.sum_nbij'
-    (fun G => G.edgeFinset \ F.edgeFinset)
-    (fun S => SimpleGraph.fromEdgeSet (↑(F.edgeFinset ∪ S) : Set (Sym2 (Fin n))))
-    ?_ ?_ ?_ ?_ ?_
-  -- The added edges of a supergraph are optional edges.
-  · intro G hG
-    rw [Finset.mem_filter] at hG
-    rw [Finset.mem_powerset]
-    intro e he
-    rw [Finset.mem_sdiff] at he ⊢
-    exact ⟨SimpleGraph.edgeFinset_mono le_top he.1, he.2⟩
-  -- Adding a set of optional edges to `F` produces a supergraph of `F`.
-  · intro S hS
-    rw [Finset.mem_filter]
-    refine ⟨Finset.mem_univ _, ?_⟩
-    rw [← SimpleGraph.edgeFinset_subset_edgeFinset,
-      SimpleGraph.edgeFinset_fromEdgeSet_eq_of_subset_top]
-    · exact Finset.subset_union_left
-    · exact Finset.union_subset hFtop
-        ((Finset.mem_powerset.mp hS).trans Finset.sdiff_subset)
-  -- Adding back the edges a supergraph adds to `F` recovers that supergraph.
-  · intro G hG
-    rw [Finset.mem_filter] at hG
-    apply SimpleGraph.edgeFinset_inj.mp
-    rw [SimpleGraph.edgeFinset_fromEdgeSet_eq_of_subset_top]
-    · exact Finset.union_sdiff_of_subset (SimpleGraph.edgeFinset_mono hG.2)
-    · exact Finset.union_subset hFtop
-        (Finset.sdiff_subset.trans (SimpleGraph.edgeFinset_mono le_top))
-  -- The edges that `F ∪ S` adds to `F` are exactly `S`, since `S` avoids `E(F)`.
-  · intro S hS
-    ext e
-    simp only [Finset.mem_sdiff, SimpleGraph.mem_edgeFinset,
-      SimpleGraph.edgeSet_fromEdgeSet, Set.mem_sdiff, Finset.mem_coe,
-      Finset.mem_union, Sym2.mem_diagSet]
-    have hSsub := Finset.mem_powerset.mp hS
-    constructor
-    · rintro ⟨⟨heF | heS, _⟩, hnF⟩
-      · exact (hnF heF).elim
-      · exact heS
-    · intro heS
-      have heSDiff := hSsub heS
-      refine ⟨⟨Or.inr heS,
-        (⊤ : SimpleGraph (Fin n)).not_isDiag_of_mem_edgeSet
-          (SimpleGraph.mem_edgeFinset.mp (Finset.sdiff_subset heSDiff))⟩, ?_⟩
-      intro heFset
-      exact (Finset.mem_sdiff.mp heSDiff).2
-        (SimpleGraph.mem_edgeFinset.mpr heFset)
-  -- The summands agree: the edges of `G` split as `E(F)` together with the added edges, and the
-  -- optional edges missing from `G` are the optional edges outside the added ones.
-  · intro G hG
-    rw [Finset.mem_filter] at hG
-    have hFG : F.edgeFinset ⊆ G.edgeFinset := SimpleGraph.edgeFinset_mono hG.2
-    have hunion : F.edgeFinset ∪ (G.edgeFinset \ F.edgeFinset) = G.edgeFinset :=
-      Finset.union_sdiff_of_subset hFG
-    have hdisj : Disjoint F.edgeFinset (G.edgeFinset \ F.edgeFinset) :=
-      Finset.disjoint_sdiff
-    have hdiff :
-        (⊤ : SimpleGraph (Fin n)).edgeFinset \ G.edgeFinset =
-          ((⊤ : SimpleGraph (Fin n)).edgeFinset \ F.edgeFinset) \
-            (G.edgeFinset \ F.edgeFinset) := by
-      ext e
-      simp only [Finset.mem_sdiff]
-      tauto
-    have hprod :
-        (∏ e ∈ G.edgeFinset, edgeFactor W x e) =
-          (∏ e ∈ F.edgeFinset, edgeFactor W x e) *
-            ∏ e ∈ G.edgeFinset \ F.edgeFinset, edgeFactor W x e := by
-      calc
-        (∏ e ∈ G.edgeFinset, edgeFactor W x e) =
-            ∏ e ∈ F.edgeFinset ∪ (G.edgeFinset \ F.edgeFinset), edgeFactor W x e := by
-              exact congrArg
-                (fun s : Finset (Sym2 (Fin n)) => ∏ e ∈ s, edgeFactor W x e) hunion.symm
-        _ = _ := Finset.prod_union hdisj
-    rw [sampleIntegrand_def, hprod, hdiff]
-    ring
-
-open Classical in
-/-- At fixed vertex positions, summing the sampling integrand over all supergraphs of `F`
-collapses to the homomorphism-density integrand of `F`. -/
-private theorem sum_sampleIntegrand_supergraph {n : ℕ} (W : Graphon Ω μ)
-    (F : SimpleGraph (Fin n)) [DecidableRel F.Adj] (x : Fin n → Ω) :
-    ∑ G : SimpleGraph (Fin n), (if F ≤ G then sampleIntegrand W G x else 0) =
-      ∏ e ∈ F.edgeFinset, edgeFactor W x e := by
-  let decF := ‹DecidableRel F.Adj›
-  let _ : DecidableRel F.Adj := decF
-  rw [← Finset.sum_filter, sum_sampleIntegrand_supergraph_bij, ← Finset.mul_sum,
-    ← Finset.prod_add]
-  simp
-
-open Classical in
 /-- The total mass of all sampled graphs containing a fixed graph `F` is its graphon
 homomorphism density. Equivalently, the probability that every edge of `F` appears in the sample
 is `t(F, W)`. -/
@@ -172,6 +65,11 @@ theorem sum_sampleMass_supergraph_eq_homDensity {n : ℕ} (W : Graphon Ω μ)
     ∑ G ∈ Finset.univ.filter (F ≤ ·), sampleMass W G = homDensity F W := by
   let decF := ‹DecidableRel F.Adj›
   let _ : DecidableRel F.Adj := decF
+  have hfilter : Finset.univ.filter (F ≤ ·) =
+      Finset.univ.filter
+        (fun G : SimpleGraph (Fin n) => (F.edgeFinset : Set (Sym2 (Fin n))) ⊆ G.edgeSet) :=
+    Finset.filter_congr fun G _ => by
+      rw [SimpleGraph.coe_edgeFinset, SimpleGraph.edgeSet_subset_edgeSet]
   calc
     (∑ G ∈ Finset.univ.filter (F ≤ ·), sampleMass W G) =
         ∫ x : Fin n → Ω,
@@ -183,9 +81,10 @@ theorem sum_sampleMass_supergraph_eq_homDensity {n : ℕ} (W : Graphon Ω μ)
           ∂Measure.pi fun _ => μ := by
             refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
             simp only
-            have h := sum_sampleIntegrand_supergraph W F x
-            rw [← Finset.sum_filter] at h
-            exact h
+            -- The supergraphs of `F` are exactly the graphs whose edges include those of `F`.
+            rw [hfilter]
+            exact sum_sampleIntegrand_superset_eq_prod_edgeFactor W F.edgeFinset
+              (SimpleGraph.edgeFinset_mono le_top) x
     _ = homDensity F W := (homDensity_def F W).symm
 
 /-- The injective homomorphism density of a graphon sample is an unbiased estimator of the
