@@ -42,6 +42,9 @@ is totally positive (there are no real places), `Cl⁺(K)` and `Cl(K)` coincide.
   `mkPrincipal_eq_one_iff`.
 * `NumberField.NarrowClassGroup.mkPrincipal_sq` and `sq_eq_one_of_mem_ker_toClassGroup`:
   `mkPrincipal` is `2`-torsion, so `ker(Cl⁺ → Cl)` is an elementary abelian `2`-group.
+* `NumberField.NarrowClassGroup.mkPrincipal_eq_one_of_isTotallyPositive` and
+  `NumberField.NarrowClassGroup.mkPrincipal_neg`: the principal class is trivial on totally
+  positive generators and blind to the sign of its generator.
 * `NumberField.NarrowClassGroup.mk0`: the narrow class of a nonzero integral ideal, with
   `toClassGroup_mk0`, `mk0_surjective`, the triviality criterion `mk0_eq_one_iff`,
   the `2`-torsion of principal classes
@@ -221,6 +224,21 @@ positive and so `(x ^ 2)` is a principal ideal with a totally positive generator
 @[simp] theorem mkPrincipal_sq (x : Kˣ) : mkPrincipal x ^ 2 = 1 := by
   rw [← map_pow, mkPrincipal_apply, mk_eq_one_iff, mem_narrowPrincipalSubgroup]
   exact ⟨x ^ 2, mem_totallyPositiveUnits.mp (sq_mem_totallyPositiveUnits x), rfl⟩
+
+/-- **A totally positive generator makes the principal class trivial.** -/
+theorem mkPrincipal_eq_one_of_isTotallyPositive {x : Kˣ} (hx : IsTotallyPositive (x : K)) :
+    mkPrincipal x = 1 := by
+  rw [mkPrincipal_apply, mk_eq_one_iff, mem_narrowPrincipalSubgroup]
+  exact ⟨x, hx, rfl⟩
+
+/-- **The principal class is insensitive to the sign of its generator**, because `-1` is a unit of
+`𝓞 K`, so `(x)` and `(-x)` are the same fractional ideal. This is what makes the image of
+`mkPrincipal` a quotient of the group of sign patterns *modulo the global sign*. -/
+@[simp] theorem mkPrincipal_neg (x : Kˣ) : mkPrincipal (-x) = mkPrincipal (K := K) x := by
+  rw [mkPrincipal_apply, mkPrincipal_apply]
+  refine congrArg mk (Units.ext ?_)
+  rw [coe_toPrincipalIdeal, coe_toPrincipalIdeal, Units.val_neg]
+  exact spanSingleton_eq_spanSingleton.mpr ⟨-1, by simp⟩
 
 /-- The kernel of the forgetful map `Cl⁺(K) → Cl(K)` is killed by `2`: by exactness it is the image
 of `mkPrincipal`, which is `2`-torsion. So the narrow-vs-ordinary defect is an elementary abelian

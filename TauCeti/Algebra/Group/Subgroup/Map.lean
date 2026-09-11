@@ -39,6 +39,9 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   centreless group.
 * `TauCeti.Subgroup.map_commutator_eq_commutator`: a surjective homomorphism carries the derived
   subgroup onto the derived subgroup.
+* `Subgroup.map_conj_map`: the image of a conjugate subgroup is the conjugate of the image.
+* `Subgroup.map_mk'_map_quotientGroupMap`: taking images in quotients commutes with the maps
+  induced on quotients.
 -/
 
 public section
@@ -160,5 +163,25 @@ theorem commutatorCongr_trans (e : G ≃* H) (f : H ≃* K) :
 theorem commutatorCongr_symm (e : G ≃* H) :
     (commutatorCongr e).symm = commutatorCongr e.symm :=
   Subgroup.congrOfMapEq_symm e _
+
+/-- The image of a conjugate subgroup `gRg⁻¹` under a homomorphism `f` is the conjugate of `f(R)`
+by `f g`. -/
+theorem _root_.Subgroup.map_conj_map (R : Subgroup G) (f : G →* H) (g : G) :
+    (R.map (MulAut.conj g).toMonoidHom).map f = (R.map f).map (MulAut.conj (f g)).toMonoidHom := by
+  have hf : f.comp (MulAut.conj g).toMonoidHom = (MulAut.conj (f g)).toMonoidHom.comp f :=
+    MonoidHom.ext fun x ↦ by simp
+  rw [Subgroup.map_map, Subgroup.map_map, hf]
+
+/-- The image of a subgroup in `G ⧸ N`, pushed forward along the map `G ⧸ N →* H ⧸ M` induced by
+`f`, is the image in `H ⧸ M` of the image of the subgroup under `f`. -/
+@[simp]
+theorem _root_.Subgroup.map_mk'_map_quotientGroupMap (R : Subgroup G) {N : Subgroup G}
+    {M : Subgroup H} [N.Normal] [M.Normal] (f : G →* H) (h : N ≤ M.comap f) :
+    (R.map (QuotientGroup.mk' N)).map (QuotientGroup.map N M f h) =
+      (R.map f).map (QuotientGroup.mk' M) := by
+  have hf : (QuotientGroup.map N M f h).comp (QuotientGroup.mk' N) =
+      (QuotientGroup.mk' M).comp f :=
+    MonoidHom.ext fun x ↦ QuotientGroup.map_mk' N M f h x
+  rw [Subgroup.map_map, Subgroup.map_map, hf]
 
 end TauCeti

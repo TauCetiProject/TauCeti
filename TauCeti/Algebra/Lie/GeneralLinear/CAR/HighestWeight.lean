@@ -46,7 +46,7 @@ results.
 
 public section
 
-open scoped BigOperators
+open scoped BigOperators TauCeti
 
 namespace TauCeti
 
@@ -332,16 +332,6 @@ private theorem diagonalSum_mul_carHighestWeightVector (i : n) :
 section Action
 
 variable [h2 : Invertible (2 : K)]
-
-/-- The CAR Lie-ring module instance using the fixed invertibility witness. -/
-local instance :
-    LieRingModule (Matrix n n K) (CliffordAlgebra (traceQuadraticForm K n)) :=
-  @carLieRingModule K n inferInstance inferInstance h2
-
-/-- The CAR Lie-module instance using the fixed invertibility witness. -/
-local instance :
-    LieModule K (Matrix n n K) (CliffordAlgebra (traceQuadraticForm K n)) :=
-  @carLieModule K n inferInstance inferInstance h2
 
 private theorem glCliffordHom_single_mul_carHighestWeightVector_eq_zero
     {i j : n} (hij : i < j) :

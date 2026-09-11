@@ -7,7 +7,8 @@ module
 
 import Mathlib.GroupTheory.FiniteAbelian.Basic
 import Mathlib.GroupTheory.OrderOfElement
-public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.NotReduced
+public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
+public import TauCeti.Algebra.MonoidAlgebra.NotReduced
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 
@@ -23,12 +24,24 @@ Consequently, if the group algebra of a commutative group is reduced and has con
 spectrum, then the group is torsion-free. This is the algebraic input that distinguishes tori
 from general groups of multiplicative type.
 
+Both hypotheses are needed. In exponential characteristic `p` the `p`-th power map of a monoid
+algebra indexed by a `p`-torsion monoid is the `p`-th power of its counit, so every element differs
+from a scalar by a `p`-nilpotent, and over a coefficient ring with connected prime spectrum the
+monoid algebra again has connected prime spectrum, however much `p`-torsion the monoid carries.
+The coordinate Hopf algebra of `μ_p` in characteristic `p` is the standard instance: connected,
+not reduced, and with a character of order `p`.
+
 ## Main declarations
 
 * `TauCeti.groupAlgebraSubgroupAverage`: the normalized sum of a finite subgroup.
 * `TauCeti.isIdempotentElem_groupAlgebraSubgroupAverage`: the subgroup average is idempotent.
 * `TauCeti.isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace`: reducedness and
   connectedness of a group algebra force its indexing group to be torsion-free.
+* `TauCeti.pow_expChar_monoidAlgebra_eq_algebraMap`: in exponential characteristic `p`, the
+  `p`-th power map of a `p`-torsion monoid algebra is the `p`-th power of its counit.
+* `TauCeti.connectedSpace_primeSpectrum_monoidAlgebra_of_pow_eq_one`: over a coefficient ring with
+  connected prime spectrum, a `p`-torsion monoid algebra in exponential characteristic `p` again
+  has connected prime spectrum.
 
 ## References
 
@@ -126,5 +139,73 @@ theorem isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace
     · exact groupAlgebraSubgroupAverage_ne_zero k P
         (by simpa only [hcard] using hchar) hzero
     · exact groupAlgebraSubgroupAverage_ne_one k P ⟨y, Subgroup.mem_zpowers y⟩ hy_ne_one hone
+
+/-! ### Connectedness of a `p`-torsion group algebra in characteristic `p`
+
+The two hypotheses of `isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace` are
+independent. Connectedness alone does not suffice: over a field of characteristic `p`, the group
+algebra of a group killed by `p` is connected, while `not_isReduced_monoidAlgebra` shows it is not
+reduced as soon as the group is nontrivial. The coordinate Hopf algebra of `μ_p` is the standard
+instance. -/
+
+section ExpChar
+
+section Power
+
+variable (k : Type*) [CommSemiring k] {M : Type*} [CommMonoid M] (p : ℕ) [ExpChar k p]
+
+/-- In a monoid algebra over a commutative semiring of exponential characteristic `p`, indexed by a
+commutative monoid killed by `p`, the `p`-th power map is the `p`-th power of the counit. -/
+@[simp]
+theorem pow_expChar_monoidAlgebra_eq_algebraMap (hM : ∀ m : M, m ^ p = 1) (x : k[M]) :
+    x ^ p = algebraMap k k[M] (Coalgebra.counit (R := k) x ^ p) := by
+  have hinj : Function.Injective (algebraMap k k[M]) :=
+    Bialgebra.algebraMap_injective k[M]
+  have _ : ExpChar k[M] p :=
+    expChar_of_injective_algebraMap hinj p
+  induction x using MonoidAlgebra.induction_linear with
+  | zero => simp [(expChar_pos k p).ne']
+  | add x y hx hy =>
+      rw [add_pow_expChar, hx, hy, map_add, add_pow_expChar, map_add]
+  | single m a =>
+      rw [MonoidAlgebra.single_pow, hM m, MonoidAlgebra.counit_single]
+      simp [MonoidAlgebra.coe_algebraMap]
+
+end Power
+
+section Connected
+
+variable (k : Type*) [CommRing k] [ConnectedSpace (PrimeSpectrum k)]
+  {M : Type*} [CommMonoid M] (p : ℕ) [ExpChar k p]
+
+/-- Over a connected commutative ring of exponential characteristic `p`, the monoid algebra of a
+commutative monoid killed by `p` has connected prime spectrum: every element differs from its
+counit by a `p`-nilpotent element, so the only idempotents are the two trivial ones. -/
+theorem connectedSpace_primeSpectrum_monoidAlgebra_of_pow_eq_one (hM : ∀ m : M, m ^ p = 1) :
+    ConnectedSpace (PrimeSpectrum k[M]) := by
+  let : Nontrivial k := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
+  have hinj : Function.Injective (algebraMap k k[M]) :=
+    Bialgebra.algebraMap_injective k[M]
+  have _ : ExpChar k[M] p :=
+    expChar_of_injective_algebraMap hinj p
+  -- Every element differs from the image of its counit by an element killed by the `p`-th power.
+  have hnil : ∀ x : k[M], (x - algebraMap k k[M] (Coalgebra.counit (R := k) x)) ^ p = 0 := by
+    intro x
+    rw [sub_pow_expChar, ← map_pow (algebraMap k k[M]),
+      pow_expChar_monoidAlgebra_eq_algebraMap k p hM x, sub_self]
+  rw [connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one]
+  intro e he
+  have hcounit : IsIdempotentElem (Coalgebra.counit (R := k) e) :=
+    he.map (Bialgebra.counitAlgHom k k[M])
+  rcases eq_zero_or_eq_one_of_isIdempotentElem hcounit with hc | hc
+  · exact Or.inl (he.eq_zero_of_isNilpotent ⟨p, by simpa [hc] using hnil e⟩)
+  · refine Or.inr (sub_eq_zero.mp (he.one_sub.eq_zero_of_isNilpotent ⟨p, ?_⟩)).symm
+    have h := hnil e
+    rw [hc, map_one] at h
+    rw [← neg_sub e 1, neg_pow, h, mul_zero]
+
+end Connected
+
+end ExpChar
 
 end TauCeti

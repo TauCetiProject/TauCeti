@@ -92,6 +92,8 @@ infrastructure independent of the diamond operators.
   prime `p` and `k ≥ 1`.
 * `CongruenceSubgroup.Gamma_gcd_eq_sup`: `Γ(gcd a b) = Γ(a) ⊔ Γ(b)` — Shimura's Lemma 3.28,
   the Chinese remainder theorem for `SL₂`.
+* `CongruenceSubgroup.Gamma_lcm_eq_inf`: `Γ(lcm a b) = Γ(a) ⊓ Γ(b)`, with the coprime case
+  `CongruenceSubgroup.Gamma_mul_eq_inf_of_coprime`.
 
 ## References
 
@@ -741,5 +743,26 @@ theorem exists_mem_Gamma_map_intCast_zmod_eq {d d' : ℕ} (hcop : Nat.Coprime d 
   obtain ⟨γ, hγ⟩ := Matrix.SpecialLinearGroup.map_intCast_zmod_prod_surjective hcop (A, 1)
   rw [MonoidHom.prod_apply, Prod.mk.injEq] at hγ
   exact ⟨γ, Gamma_mem'.mpr hγ.2, hγ.1⟩
+
+/-- **`Γ(lcm a b) = Γ(a) ⊓ Γ(b)`**: a matrix is congruent to the identity modulo two levels
+exactly when it is modulo their least common multiple. -/
+theorem Gamma_lcm_eq_inf (a b : ℕ) : Gamma (Nat.lcm a b) = Gamma a ⊓ Gamma b := by
+  refine le_antisymm (le_inf (Gamma_le_Gamma_of_dvd (Nat.dvd_lcm_left a b))
+    (Gamma_le_Gamma_of_dvd (Nat.dvd_lcm_right a b))) fun γ hγ ↦ ?_
+  obtain ⟨ha, hb⟩ := Subgroup.mem_inf.mp hγ
+  rw [Gamma_mem] at ha hb ⊢
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simpa using ZMod.intCast_lcm_eq_of_eq_of_eq (y := 1) (by simpa using ha.1) (by simpa using hb.1)
+  · simpa using ZMod.intCast_lcm_eq_of_eq_of_eq (y := 0) (by simpa using ha.2.1)
+      (by simpa using hb.2.1)
+  · simpa using ZMod.intCast_lcm_eq_of_eq_of_eq (y := 0) (by simpa using ha.2.2.1)
+      (by simpa using hb.2.2.1)
+  · simpa using ZMod.intCast_lcm_eq_of_eq_of_eq (y := 1) (by simpa using ha.2.2.2)
+      (by simpa using hb.2.2.2)
+
+/-- **`Γ(a b) = Γ(a) ⊓ Γ(b)` for coprime `a` and `b`**: `Gamma_lcm_eq_inf` at coprime levels. -/
+theorem Gamma_mul_eq_inf_of_coprime {a b : ℕ} (hab : Nat.Coprime a b) :
+    Gamma (a * b) = Gamma a ⊓ Gamma b := by
+  rw [← hab.lcm_eq_mul, Gamma_lcm_eq_inf]
 
 end CongruenceSubgroup

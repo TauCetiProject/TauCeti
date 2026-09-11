@@ -191,9 +191,10 @@ theorem _root_.QuadraticForm.isClosed_spinVectorStabilizer
 the special orthogonal group with its standard coordinate topology. -/
 @[fun_prop]
 theorem continuous_spinToSpecialOrthogonal_pi [Invertible (2 : R)]
-    {n : Type v} [Fintype n] [DecidableEq n] (Q : QuadraticForm R (n → R))
+    {n : Type v} [Fintype n] (Q : QuadraticForm R (n → R))
     [IsModuleTopology R (n → R)] [ContinuousMul (CliffordAlgebra Q)] :
     Continuous (spinToSpecialOrthogonal Q) := by
+  classical
   apply (TauCeti.QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear
     Q).isInducing.continuous_iff.mpr
   have h : Continuous

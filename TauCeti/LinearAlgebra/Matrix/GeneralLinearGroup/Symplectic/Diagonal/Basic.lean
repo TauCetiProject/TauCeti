@@ -19,7 +19,8 @@ diag(t₀, …, tₘ₋₁, t₀⁻¹, …, tₘ₋₁⁻¹)
 
 preserves the standard alternating form. This file packages these matrices as the homomorphism
 `TauCeti.GLSymplecticFin.diagonal` into `Sp₂ₘ(R)` and computes conjugation on every standard
-symplectic root subgroup.
+symplectic root subgroup. A symplectic matrix belongs to this image exactly when its underlying
+matrix is diagonal.
 
 The five root characters are `tᵢ²`, `tᵢ⁻²`, `tᵢtⱼ⁻¹`, `tᵢtⱼ`, and
 `(tᵢtⱼ)⁻¹` for the roots `2eᵢ`, `-2eᵢ`, `eᵢ-eⱼ`, `eᵢ+eⱼ`, and
@@ -31,6 +32,8 @@ equation.
 
 * `TauCeti.GLSymplecticFin.diagonal`: the diagonal split-torus homomorphism into the symplectic
   matrix group.
+* `TauCeti.GLSymplecticFin.diagonalTorus`: the subgroup of paired diagonal matrices, with
+  membership characterized by `TauCeti.GLSymplecticFin.mem_diagonalTorus_iff`.
 * `TauCeti.GLSymplecticFin.RootSubgroupIndex.character`: the character of the diagonal torus
   belonging to a root.
 * `TauCeti.GLSymplecticFin.diagonal_mul_rootSubgroup_mul_inv`: conjugation scales a root parameter
@@ -128,6 +131,77 @@ theorem coe_diagonal (t : Fin m → Rˣ) :
 /-- The symplectic diagonal homomorphism is injective. -/
 theorem diagonal_injective : Function.Injective (diagonal (m := m) (R := R)) := by
   exact leviHom_injective.comp diagGL_injective
+
+/-- The paired diagonal torus in the symplectic group: the image of the diagonal homomorphism. -/
+noncomputable def diagonalTorus (R : Type u) [CommRing R] (m : ℕ) :
+    Subgroup (GLSymplecticFin m R) :=
+  (diagonal (m := m) (R := R)).range
+
+/-- A symplectic matrix belongs to the diagonal torus exactly when it is a paired diagonal
+matrix for some family of units. -/
+theorem mem_diagonalTorus_iff_exists_diagonal {g : GLSymplecticFin m R} :
+    g ∈ diagonalTorus R m ↔ ∃ t : Fin m → Rˣ, diagonal t = g :=
+  MonoidHom.mem_range
+
+/-- The paired diagonal torus is commutative, as the image of the coordinatewise units. -/
+instance instIsMulCommutativeDiagonalTorus : IsMulCommutative (diagonalTorus R m) :=
+  inferInstanceAs (IsMulCommutative (diagonal (m := m) (R := R)).range)
+
+/-- The paired diagonal torus is the group of coordinatewise units. -/
+noncomputable def diagonalTorusEquiv (R : Type u) [CommRing R] (m : ℕ) :
+    (Fin m → Rˣ) ≃* diagonalTorus R m :=
+  MonoidHom.ofInjective diagonal_injective
+
+/-- The torus element attached to a family of units is its paired diagonal matrix. -/
+@[simp]
+theorem coe_diagonalTorusEquiv_apply (t : Fin m → Rˣ) :
+    ((diagonalTorusEquiv R m t : diagonalTorus R m) : GLSymplecticFin m R) = diagonal t :=
+  MonoidHom.ofInjective_apply diagonal_injective
+
+/-- The `i`-th coordinate of a torus element is its `i`-th diagonal entry in the first block. -/
+@[simp]
+theorem coe_diagonalTorusEquiv_symm_apply (g : diagonalTorus R m) (i : Fin m) :
+    (((diagonalTorusEquiv R m).symm g i : Rˣ) : R) =
+      (((g : GLSymplecticFin m R) : GL (Fin (m + m)) R) :
+        Matrix (Fin (m + m)) (Fin (m + m)) R) (Fin.castAdd m i) (Fin.castAdd m i) := by
+  have h : diagonal ((diagonalTorusEquiv R m).symm g) = (g : GLSymplecticFin m R) :=
+    MonoidHom.apply_ofInjective_symm diagonal_injective g
+  conv_rhs => rw [← h, coe_diagonal, diagGL_coe]
+  simp
+
+/-- A symplectic matrix belongs to the paired diagonal torus exactly when it is diagonal. -/
+@[simp]
+theorem mem_diagonalTorus_iff {g : GLSymplecticFin m R} :
+    g ∈ diagonalTorus R m ↔
+      ((g : GL (Fin (m + m)) R) : Matrix (Fin (m + m)) (Fin (m + m)) R).IsDiag := by
+  constructor
+  · rintro ⟨t, rfl⟩
+    rw [coe_diagonal, diagGL_coe]
+    exact Matrix.isDiag_diagonal _
+  · intro hg
+    obtain ⟨t, ht⟩ := mem_diagonalTorus_iff_exists_diagGL.mp
+      (TauCeti.mem_diagonalTorus_iff.mpr hg)
+    have hform := mem_iff.mp g.property
+    rw [← ht, diagGL_coe, Matrix.diagonal_transpose] at hform
+    have hpair (i : Fin m) : t (i.addNat m) = (t (Fin.castAdd m i))⁻¹ := by
+      have hentry := congrArg (fun M => M (Fin.castAdd m i) (i.addNat m)) hform
+      simp only [Matrix.mul_diagonal, Matrix.diagonal_mul] at hentry
+      have hJ : JFin m R (Fin.castAdd m i) (i.addNat m) = -1 := by
+        have h := congrArg (fun M => M (Sum.inl i) (Sum.inr i))
+          (JFin_submatrix m (R := R))
+        simpa [Matrix.submatrix_apply, Fin.natAdd_eq_addNat, Matrix.J] using h
+      rw [hJ, mul_neg_one, neg_mul, neg_inj] at hentry
+      apply eq_inv_iff_mul_eq_one.mpr
+      apply Units.ext
+      simpa [mul_comm] using hentry
+    refine ⟨fun i => t (Fin.castAdd m i), ?_⟩
+    apply Subtype.ext
+    rw [coe_diagonal, ← ht]
+    congr 1
+    funext i
+    obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective i
+    · simp
+    · simpa [Fin.natAdd_eq_addNat] using (hpair i).symm
 
 /-- The diagonal symplectic matrix commutes with change of coefficient ring. -/
 @[simp]

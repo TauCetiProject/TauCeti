@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Enumerative.PerfectMatching
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NormNum
@@ -40,6 +41,7 @@ especially Proposition 4.5.8.
 * `TauCeti.PDCode.mirror` and `TauCeti.PDCode.relabel`: reflection and relabelling.
 * `TauCeti.OrientedPDCode.reverse`: reversal of every component orientation.
 * `TauCeti.OrientedPDCode.crossingSign`: the sign derived from the local oriented crossing data.
+* `TauCeti.OrientedPDCode.writhe`: the sum of the crossing signs.
 
 ## Main results
 
@@ -400,6 +402,13 @@ theorem crossingSign_eq_one_or_neg_one (D : OrientedPDCode n) (i : Fin n) :
   simp only [crossingSign]
   split <;> simp_all
 
+/-- The writhe of an oriented code is the sum of its crossing signs. -/
+def writhe (D : OrientedPDCode n) : ℤ :=
+  ∑ i : Fin n, D.crossingSign i
+
+/-- Expand the writhe as the sum of the crossing signs. -/
+theorem writhe_def (D : OrientedPDCode n) : D.writhe = ∑ i : Fin n, D.crossingSign i := (rfl)
+
 /-- Reverse every component orientation while preserving the underlying unoriented code. -/
 def reverse (D : OrientedPDCode n) : OrientedPDCode n where
   toPDCode := D.toPDCode
@@ -554,6 +563,20 @@ theorem relabel_relabel (D : OrientedPDCode n)
     simp
     rfl
   · simp
+
+/-- Reflection negates the writhe. -/
+@[simp] theorem writhe_mirror (D : OrientedPDCode n) : D.mirror.writhe = -D.writhe := by
+  simp [writhe_def, Finset.sum_neg_distrib]
+
+/-- Reversing every component orientation preserves the writhe. -/
+@[simp] theorem writhe_reverse (D : OrientedPDCode n) : D.reverse.writhe = D.writhe := by
+  simp [writhe_def]
+
+/-- Relabelling permutes the crossings, so it preserves the writhe. -/
+@[simp] theorem writhe_relabel (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
+    (cross : Equiv.Perm (Fin n)) : (D.relabel half cross).writhe = D.writhe := by
+  simp only [writhe_def, relabel_crossingSign]
+  exact Equiv.sum_comp cross.symm D.crossingSign
 
 end OrientedPDCode
 
@@ -732,6 +755,12 @@ def orientedPDCodeEmpty : OrientedPDCode 0 := orientedPDCodeUnlink 0
 /-- A crossing-free oriented unknot with the specified choice of orientation. -/
 def orientedPDCodeUnknot (orientation : Bool) : OrientedPDCode 0 :=
   orientedPDCodeUnlink {orientation}
+
+/-- The oriented unknot retains its specified component orientation. -/
+@[simp]
+theorem orientedPDCodeUnknot_crossinglessComponents (orientation : Bool) :
+    (orientedPDCodeUnknot orientation).crossinglessComponents = {orientation} := by
+  simp [orientedPDCodeUnknot]
 
 /-- A crossing-free oriented circle is distinct from the empty diagram. -/
 theorem orientedPDCodeUnknot_ne_empty (orientation : Bool) :
