@@ -200,8 +200,8 @@ theorem geckTwistedFrobenius_geckRootSubgroupMatrix (i : Fin t.rank ⊕ Fin t.ra
         t.geckRootSubgroupPoints ht j A v := by
     apply Subtype.ext
     exact (t.coe_geckRootSubgroupPoints ht j A v).symm
-  rw [geckTwistedFrobenius_apply, hroot, geckFrobenius_geckRootSubgroupPoints, ← hroot,
-    geckGraphAutPoints_geckRootSubgroupMatrix]
+  rw [geckTwistedFrobenius_apply, hroot, geckFrobenius_geckRootSubgroupPoints,
+    geckGraphAutPoints_geckRootSubgroupPoints, ← hroot]
 
 /-- **The twisted Frobenius raises a point of the represented Geck weight torus to its `p ^ k`-th
 power and relabels its coordinates** by the inverse of the diagram symmetry. -/

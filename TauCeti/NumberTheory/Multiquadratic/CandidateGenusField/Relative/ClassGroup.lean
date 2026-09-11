@@ -21,14 +21,16 @@ relative Galois group `Gal(K_gen/K)` has the same order as the maximal elementar
 `Cl⁺(K) / Cl⁺(K)²` of the narrow class group, and, for imaginary `K`, as `Cl(K) / Cl(K)²`: all equal
 `2 ^ (t - 1)`, where `t` is the number of rational primes ramifying in `K`.
 
-This is the numerical content of the expected genus-field isomorphisms
+This is the numerical content of the genus-field isomorphisms
 `Gal(K_gen/K) ≅ Cl⁺(K) / Cl⁺(K)²` and, for imaginary `K`, `Gal(K_gen/K) ≅ Cl(K) / Cl(K)²` — the two
 sides have equal cardinality — established **without class field theory**, by combining the
 field-theoretic relative degree `[K_gen : K] = 2 ^ (t - 1)`
 (`card_aut_candidateGenusField_over_base`) with the `2`-rank theorems `2-rank Cl⁺(K) = t - 1`
 (`narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one`) and `2-rank Cl(K) = t - 1` for `d < 0`
-(`twoRank_eq_ncard_ramifiedPrimes_sub_one`). The isomorphisms themselves need the Artin
-reciprocity map and are not proved here.
+(`twoRank_eq_ncard_ramifiedPrimes_sub_one`). The isomorphisms themselves are proved, by matching
+genus characters with sign patterns, in
+`TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.GenusCharacter`; the counting
+argument recorded here is independent of them.
 
 See D. A. Cox, *Primes of the Form x² + ny²*, §6.A, and F. Lemmermeyer, *Reciprocity Laws: From
 Euler to Eisenstein*, §2.2.
@@ -55,8 +57,9 @@ variable {d : ℤ}
 quadratic field `K = ℚ(√d)` of either signature (`d` squarefree, not a rational square),
 `|Gal(K_gen/K)|`
 equals `|Cl⁺(K)/Cl⁺(K)²|` — both are `2 ^ (t - 1)`, where `t` is the number of rational primes
-ramifying in `K`. This is the cardinality shadow of the expected genus-field isomorphism
-`Gal(K_gen/K) ≅ Cl⁺(K)/Cl⁺(K)²`, established without class field theory. -/
+ramifying in `K`. This is the cardinality shadow of the genus-field isomorphism
+`Gal(K_gen/K) ≅ Cl⁺(K)/Cl⁺(K)²`
+(`autCandidateGenusFieldEquivNarrowElementaryTwoQuotient`), counted here directly. -/
 theorem card_aut_candidateGenusField_over_base_eq_card_narrowElementaryTwoQuotient
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) :
     Nat.card (candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) =
@@ -74,8 +77,8 @@ theorem card_aut_candidateGenusField_over_base_eq_card_narrowElementaryTwoQuotie
 /-- **The relative candidate-genus-field Galois group and `Cl(K)/Cl(K)²` have equal order.** For an
 imaginary quadratic field `K = ℚ(√d)` (`d < 0` squarefree), `|Gal(K_gen/K)|` equals `|Cl(K)/Cl(K)²|`
 — both are `2 ^ (t - 1)`, where `t` is the number of rational primes ramifying in `K`. This is the
-cardinality shadow of the expected genus-field isomorphism `Gal(K_gen/K) ≅ Cl(K)/Cl(K)²`,
-established without class field theory. -/
+cardinality shadow of the genus-field isomorphism `Gal(K_gen/K) ≅ Cl(K)/Cl(K)²`
+(`autCandidateGenusFieldEquivElementaryTwoQuotient`), counted here directly. -/
 theorem card_aut_candidateGenusField_over_base_eq_card_elementaryTwoQuotient
     (hd : Squarefree d) (hneg : d < 0) :
     Nat.card (candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) =

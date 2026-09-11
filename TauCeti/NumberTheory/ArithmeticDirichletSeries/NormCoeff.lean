@@ -8,9 +8,11 @@ module
 public import Mathlib.Algebra.CharZero.Infinite
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Basic
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Analysis.Complex.Order
 public import Mathlib.NumberTheory.ArithmeticFunction.Defs
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # Regrouping ideal arithmetic functions by absolute norm
@@ -24,7 +26,9 @@ is available from `ArithmeticFunction.map_zero`.
 The construction is bundled as a complex-linear map.  The basic API exposes the finite norm fibre
 `TauCeti.normFiber` and its finiteness, records the value at one, proves compatibility with
 complex conjugation, and records in `TauCeti.norm_normCoeff_eq_sum_norm_of_nonneg` that no
-cancellation occurs inside a fibre when the values of `f` are nonnegative.
+cancellation occurs inside a fibre when the values of `f` are nonnegative.  Regrouping is
+compatible with transporting along an isomorphism of number fields: `TauCeti.normCoeff_map` says
+that an isomorphism `e : K ≃+* L` leaves every norm coefficient unchanged.
 
 Regrouping loses information as soon as a norm fibre has more than one element:
 `TauCeti.exists_forall_normCoeff_nonneg_not_forall_nonneg` produces a nonzero ideal arithmetic
@@ -142,6 +146,52 @@ theorem normCoeff_star_apply (f : IdealArithmeticFunction K) (n : ℕ) :
     normCoeff K (fun I ↦ (starRingEnd ℂ) (f I)) n = star (normCoeff K f n) := by
   simp only [normCoeff_apply]
   exact ((starAddEquiv : ℂ ≃+ ℂ).map_finsum_mem f (finite_normFiber K n)).symm
+
+/-- **A factor depending on the ideal only through its norm pulls out of the regrouping.** The
+fibre summed over is exactly the ideals of absolute norm `n`, so such a factor is constant on it. -/
+@[simp]
+theorem normCoeff_fun_mul_comp_absNorm (f : IdealArithmeticFunction K) (g : ℕ → ℂ) (n : ℕ) :
+    normCoeff K (fun I ↦ f I * g (Ideal.absNorm (I : Ideal (𝓞 K)))) n = normCoeff K f n * g n := by
+  rw [normCoeff_eq_sum_normFiber, normCoeff_eq_sum_normFiber, Finset.sum_mul]
+  exact Finset.sum_congr rfl fun I hI ↦ by rw [(mem_normFiber K).1 hI]
+
+/-- **Regrouping absorbs a norm twist.** Twisting an ideal arithmetic function by `N(I) ^ (-z)`
+twists its `n`-th norm coefficient by `n ^ (-z)`. This is the compatibility of `normCoeff` with the
+norm twists of a weight, general and purely imaginary alike, since the unitary twist is the
+multiplicative one. -/
+@[simp]
+theorem normCoeff_mul_absNorm_cpow (f : IdealArithmeticFunction K) (z : ℂ) (n : ℕ) :
+    normCoeff K (fun I ↦ f I * (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-z)) n =
+      normCoeff K f n * (n : ℂ) ^ (-z) :=
+  normCoeff_fun_mul_comp_absNorm K f (fun m ↦ (m : ℂ) ^ (-z)) n
+
+open NumberField in
+/-- **Regrouping is transported by an isomorphism of fields.** An isomorphism `e : K ≃+* L` matches
+the nonzero ideals of `𝓞 L` with those of `𝓞 K` preserving absolute norms, so it matches the norm
+fibres and leaves every norm coefficient unchanged. -/
+@[simp]
+theorem normCoeff_map {L : Type*} [Field L] [NumberField L] (e : K ≃+* L)
+    (f : IdealArithmeticFunction K) (n : ℕ) :
+    normCoeff L (IdealArithmeticFunction.map e f) n = normCoeff K f n := by
+  classical
+  rw [normCoeff_eq_sum_normFiber, normCoeff_eq_sum_normFiber]
+  refine Finset.sum_nbij'
+    (fun J ↦ ⟨Ideal.comap (RingOfIntegers.mapRingEquiv e) (J : Ideal (𝓞 L)),
+      mem_nonZeroDivisors_of_ne_zero (by
+        simpa [Ideal.comap_mapRingEquiv_eq_bot_iff] using nonZeroDivisors.coe_ne_zero J)⟩)
+    (fun I ↦ ⟨Ideal.comap (RingOfIntegers.mapRingEquiv e.symm) (I : Ideal (𝓞 K)),
+      mem_nonZeroDivisors_of_ne_zero (by
+        simpa [Ideal.comap_mapRingEquiv_eq_bot_iff] using nonZeroDivisors.coe_ne_zero I)⟩)
+    ?_ ?_ ?_ ?_ ?_ <;> intro a ha
+  · simpa [mem_normFiber, Ideal.absNorm_comap_of_ringEquiv] using (mem_normFiber L).1 ha
+  · simpa [mem_normFiber, Ideal.absNorm_comap_of_ringEquiv] using (mem_normFiber K).1 ha
+  · ext
+    simp [Ideal.comap_mapRingEquiv_trans, RingEquiv.symm_trans_self,
+      Ideal.comap_mapRingEquiv_refl]
+  · ext
+    simp [Ideal.comap_mapRingEquiv_trans, RingEquiv.self_trans_symm,
+      Ideal.comap_mapRingEquiv_refl]
+  · rw [IdealArithmeticFunction.map_apply, ← IdealArithmeticFunction.zeroExtend_coe f]
 
 /-- **Absence of cancellation inside norm fibres**, for a nonnegative ideal arithmetic function:
 the absolute value of a norm coefficient is the sum of the absolute values over the fibre. -/

@@ -253,11 +253,11 @@ theorem simple_indFDRep_iff (A : FDRep k H) :
   -- identity one.
   refine and_congr_right fun _ => ⟨fun h s hs => ?_, fun h D hD => ?_⟩
   · obtain ⟨a, ha, b, hb, hab⟩ :=
-      (DoubleCoset.eq H H (DoubleCoset.mk H H s).out s).mp (DoubleCoset.out_eq' H H _)
+      DoubleCoset.eq.mp (DoubleCoset.out_eq' (DoubleCoset.mk H H s))
     exact hab ▸ (mackeyDisjoint_mul_left_mul_right_iff A ha hb _).mpr
       (h _ fun hc => hs ((doubleCosetMk_eq_mk_one_iff_mem H s).mp hc))
   · exact h D.out fun hmem =>
-      hD ((DoubleCoset.out_eq' H H D).symm.trans
+      hD ((DoubleCoset.out_eq' D).symm.trans
         ((doubleCosetMk_eq_mk_one_iff_mem H D.out).mpr hmem))
 
 /-- **The Mackey irreducibility criterion for a normal subgroup.**  If `H ◁ G`, then the

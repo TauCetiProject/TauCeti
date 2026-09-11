@@ -52,6 +52,8 @@ Twisted conjugation is the one that extends to the odd part.
   forced by Mathlib's conventions: `star` is the reversal composed with the grade involution, so
   `star (ι Q v) = -ι Q v` and the unitarity condition defining `pinGroup Q` reads `-Q v = 1` on a
   vector.
+* `CliffordAlgebra.ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one`: two vectors whose norms
+  multiply to one define an element of the Spin group.
 * `CliffordAlgebra.pinToOrthogonal_spinToPin`: on the spin group, twisted conjugation is
   plain conjugation.
 
@@ -382,5 +384,63 @@ theorem pinToOrthogonal_spinToPin (x : spinGroup Q) :
   refine Subtype.ext (LinearEquiv.ext fun m => ι_injective Q ?_)
   rw [ι_pinToOrthogonal_apply, coe_spinToPin_apply, spinGroup.involute_eq x.2,
     coe_spinToOrthogonal_apply, ι_spinVectorAction_apply]
+
+/-- A Spin element represented by the product of two Clifford generators acts by the product of
+the corresponding orthogonal reflections. -/
+theorem spinToOrthogonal_eq_reflection_mul_reflection_of_coe_eq
+    (x : spinGroup Q) (v w : M) [Invertible (Q v)] [Invertible (Q w)]
+    (hx : (x : CliffordAlgebra Q) = ι Q v * ι Q w) :
+    spinToOrthogonal Q x =
+      QuadraticMap.reflectionOrthogonal Q v * QuadraticMap.reflectionOrthogonal Q w := by
+  let a : lipschitzGroup Q :=
+    ⟨unitι Q v * unitι Q w,
+      mul_mem (unitι_mem_lipschitzGroup v) (unitι_mem_lipschitzGroup w)⟩
+  have hpin : pinToLipschitz Q (spinToPin Q x) = a := by
+    apply Subtype.ext
+    apply Units.ext
+    simp only [coe_pinToLipschitz_apply, coe_spinToPin_apply, hx, a, Units.val_mul, coe_unitι]
+  have hmul : a =
+      (⟨unitι Q v, unitι_mem_lipschitzGroup v⟩ : lipschitzGroup Q) *
+        ⟨unitι Q w, unitι_mem_lipschitzGroup w⟩ := by
+    apply Subtype.ext
+    simp only [a, Subgroup.coe_mul]
+  have ha : lipschitzToOrthogonal Q a =
+      QuadraticMap.reflectionOrthogonal Q v * QuadraticMap.reflectionOrthogonal Q w := by
+    rw [hmul, map_mul, lipschitzToOrthogonal_unitι, lipschitzToOrthogonal_unitι]
+  apply Subtype.ext
+  apply LinearEquiv.ext
+  intro m
+  rw [← pinToOrthogonal_spinToPin, coe_pinToOrthogonal_apply, hpin]
+  exact (coe_lipschitzToOrthogonal_apply Q a m).symm.trans
+    (congrArg (fun y : QuadraticMap.orthogonalGroup Q => (y : M ≃ₗ[R] M) m) ha)
+
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+  {Q : QuadraticForm R M}
+
+/-- The product of two Clifford generators belongs to the Spin group when the product of their
+norms is one. -/
+theorem ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one (x y : M)
+    (hxy : Q x * Q y = 1) :
+    ι Q x * ι Q y ∈ spinGroup Q := by
+  let _ : Invertible (Q x) := (IsUnit.of_mul_eq_one (Q y) hxy).invertible
+  let _ : Invertible (Q y) :=
+    (IsUnit.of_mul_eq_one (Q x) (by simpa only [mul_comm] using hxy)).invertible
+  let a := unitι Q x * unitι Q y
+  have ha : (a : CliffordAlgebra Q) = ι Q x * ι Q y := by simp [a]
+  apply spinGroup.mem_iff.mpr
+  refine ⟨?_, ?_⟩
+  · refine ⟨⟨a, mul_mem (unitι_mem_lipschitzGroup x) (unitι_mem_lipschitzGroup y), ha⟩,
+      (ha ▸ a.isUnit).mem_unitary_of_star_mul_self ?_⟩
+    rw [star_mul, star_ι, star_ι, neg_mul_neg]
+    calc
+      (ι Q y * ι Q x) * (ι Q x * ι Q y) =
+          ι Q y * (ι Q x * ι Q x) * ι Q y := by noncomm_ring
+      _ = ι Q y * algebraMap R _ (Q x) * ι Q y := by rw [ι_sq_scalar]
+      _ = algebraMap R _ (Q x) * (ι Q y * ι Q y) := by
+        rw [← Algebra.commutes (Q x) (ι Q y), mul_assoc]
+      _ = algebraMap R _ (Q x) * algebraMap R _ (Q y) := by rw [ι_sq_scalar]
+      _ = 1 := by rw [← map_mul, hxy, map_one]
+  · rw [← Subalgebra.mem_toSubmodule, CliffordAlgebra.even_toSubmodule]
+    exact ι_mul_ι_mem_evenOdd_zero Q x y
 
 end CliffordAlgebra

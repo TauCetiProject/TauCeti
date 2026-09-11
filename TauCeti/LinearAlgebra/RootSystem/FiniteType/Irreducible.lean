@@ -27,9 +27,9 @@ every edge of the Dynkin diagram, so the simple roots span the whole space insid
 
 ## Main results
 
-* `TauCeti.RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix`: a connected base
+* `RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix`: a connected base
   diagram makes a root system irreducible.
-* `TauCeti.RootPairing.eq_bot_of_forall_root_not_mem`: a submodule invariant under the simple
+* `RootPairing.eq_bot_of_forall_root_not_mem`: a submodule invariant under the simple
   reflections and containing no simple root is trivial.
 * `TauCeti.DynkinType.connected_diagramGraph_cartanMatrix`: every valid standard Dynkin diagram is
   connected.
@@ -214,7 +214,7 @@ theorem connected_diagramGraph_cartanMatrix {t : DynkinType} (ht : t.Valid) :
 
 end DynkinType
 
-namespace RootPairing
+section
 
 variable {K M N ι : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
   [AddCommGroup N] [Module K N] {P : RootPairing ι K M N} [P.IsCrystallographic]
@@ -225,7 +225,8 @@ trivial.** If `q` is invariant under the reflection at each element of the base'
 misses the root there, then `q = ⊥`.
 
 Invariance is asked at the support only, not under every reflection of `P`. -/
-theorem eq_bot_of_forall_root_not_mem [P.IsRootSystem] {b : P.Base} {q : Submodule K M}
+theorem _root_.RootPairing.eq_bot_of_forall_root_not_mem
+    [P.IsRootSystem] {b : P.Base} {q : Submodule K M}
     (hinv : ∀ i : b.support, q ∈ Module.End.invtSubmodule (P.reflection i))
     (h : ∀ i : b.support, P.root i ∉ q) : q = ⊥ := by
   -- Missing every simple root puts `q` inside all the simple coroot kernels; the coweight basis
@@ -251,7 +252,8 @@ theorem eq_bot_of_forall_root_not_mem [P.IsRootSystem] {b : P.Base} {q : Submodu
 Characteristic zero ensures that a nonzero integral Cartan entry stays nonzero in the field when
 membership propagates across an edge. It also supplies the standard `2 ≠ 0` hypothesis in
 Mathlib's invariant-submodule criterion for a reflection. -/
-theorem isIrreducible_of_connected_diagramGraph_cartanMatrix [P.IsRootSystem] (b : P.Base)
+theorem _root_.RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix
+    [P.IsRootSystem] (b : P.Base)
     (hconn : (diagramGraph b.cartanMatrix).Connected) : P.IsIrreducible := by
   let _ : Nontrivial M :=
     ⟨⟨P.root hconn.nonempty.some, 0, P.ne_zero hconn.nonempty.some⟩⟩
@@ -259,12 +261,12 @@ theorem isIrreducible_of_connected_diagramGraph_cartanMatrix [P.IsRootSystem] (b
   intro q hinv hq
   have hsimple : ∃ i : b.support, P.root i ∈ q := by
     by_contra! h
-    exact hq (eq_bot_of_forall_root_not_mem (b := b) (fun i ↦ hinv i) h)
+    exact hq (RootPairing.eq_bot_of_forall_root_not_mem (b := b) (fun i ↦ hinv i) h)
   obtain ⟨i, hi⟩ := hsimple
   -- adjacency in the diagram is exactly nonvanishing of the Cartan entry, hence of the pairing
   have propagate {u v : b.support} (hadj : (diagramGraph b.cartanMatrix).Adj u v)
       (hu : P.root u ∈ q) : P.root v ∈ q :=
-    root_mem_of_pairing_ne_zero (hinv v)
+    RootPairing.root_mem_of_pairing_ne_zero (hinv v)
       (fun hp ↦ (diagramGraph_adj.mp hadj).2.1
         (b.cartanMatrix_apply_eq_zero_iff_pairing.mpr hp)) hu
   have hall : ∀ j : b.support, P.root j ∈ q := by
@@ -282,7 +284,7 @@ theorem isIrreducible_of_connected_diagramGraph_cartanMatrix [P.IsRootSystem] (b
   rw [b.toWeightBasis_apply]
   exact hall j
 
-end RootPairing
+end
 
 namespace HasCartanType
 
@@ -303,7 +305,7 @@ theorem isIrreducible [P.IsRootSystem] {b : P.Base} {t : DynkinType}
       exact ⟨fun h ↦ hij (congrArg e h), h₁, h₂⟩
     · rintro ⟨hij, h₁, h₂⟩
       exact ⟨fun h ↦ hij (e.injective h), h₁, h₂⟩
-  exact TauCeti.RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix (P := P) b
+  exact RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix (P := P) b
     (graphIso.connected_iff.mpr (DynkinType.connected_diagramGraph_cartanMatrix ht))
 
 end HasCartanType

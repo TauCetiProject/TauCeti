@@ -119,7 +119,7 @@ finite-difference predicate passes to their pointwise limit. -/
 theorem IsContinuousCompletelyMonotoneOnIoi.isDifferenceCompletelyMonotone
     (hf : IsContinuousCompletelyMonotoneOnIoi f) : IsDifferenceCompletelyMonotone f := by
   refine isDifferenceCompletelyMonotone_of_tendsto (L := atTop)
-    (F := fun (n : ℕ) t => f (t + 1 / ((n : ℝ) + 1))) (fun n => ?_) ?_
+    (F := fun (n : ℕ) t => f (t + 1 / ((n : ℝ) + 1))) (.of_forall fun n => ?_) ?_
   · have hshift : 0 < 1 / ((n : ℝ) + 1) := by positivity
     exact IsCompletelyMonotone.isDifferenceCompletelyMonotone
       (hf.isCompletelyMonotoneOnIoi.isCompletelyMonotone_comp_add_const hshift)

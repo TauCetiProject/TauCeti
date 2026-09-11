@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Norm.Transitivity
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
+public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 
 /-!
 # The Galois action on the places lying over a place
@@ -42,6 +43,8 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
 
 ## Main results
 
+* `TauCeti.Place.restrictScalars_smul`: the automorphisms of `F'` over an intermediate field of
+  `F' / F` act on the places of `F' / k` through the action of the automorphisms over `F`.
 * `TauCeti.Place.restrict_smul`, `TauCeti.Place.ramificationIdx_smul` and
   `TauCeti.Place.relativeDegree_smul`: the action preserves the fibres of
   `TauCeti.Place.restrict` and the two invariants attached to a place of a fibre.
@@ -54,7 +57,9 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
   `TauCeti.Place.ncard_mul_ramificationIdx_mul_relativeDegree_eq_finrank`, the product form
   `r · e · f = [F' : F]` of the fundamental identity (Stichtenoth, Corollary 3.7.2).
 * `TauCeti.Place.stabilizer_eq_decompositionSubgroup`: the stabilizer of a place is the
-  decomposition group of its valuation ring.
+  decomposition group of its valuation ring, and
+  `TauCeti.Place.ncard_mul_card_stabilizer_eq_finrank` is the orbit--stabilizer count of a
+  fibre.
 
 ## References
 
@@ -129,6 +134,12 @@ theorem integers_smul : (σ • P).integers = σ • P.integers := by
   rw [mem_integers_smul_iff, ValuationSubring.mem_pointwise_smul_iff_inv_smul_mem]
   rfl
 
+/-- **The two actions on places agree**: restricting the scalars of an automorphism of `F'` over
+an intermediate field `E` down to `F` does not change the place it produces. -/
+@[simp]
+theorem restrictScalars_smul (E : IntermediateField F F') (τ : F' ≃ₐ[E] F') (Q : Place k F') :
+    τ.restrictScalars F • Q = τ • Q := rfl
+
 /-- **The stabilizer of a place is the decomposition group** of its valuation ring
 (Stichtenoth, Definition 3.8.1). -/
 theorem stabilizer_eq_decompositionSubgroup :
@@ -136,6 +147,30 @@ theorem stabilizer_eq_decompositionSubgroup :
   ext σ
   rw [MulAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff, ← integers_smul]
   exact ⟨fun h ↦ by rw [h], fun h ↦ integers_injective h⟩
+
+section Transport
+
+variable (F) (g : P.integers.decompositionSubgroup F)
+
+/-- An automorphism fixing `P` leaves the valuation at `P` unchanged. -/
+@[simp]
+theorem valuation_decompositionSubgroup_apply (x : F') :
+    P.valuation ((g : F' ≃ₐ[F] F') x) = P.valuation x := by
+  have h : (g : F' ≃ₐ[F] F') • P = P := by
+    have hg : (g : F' ≃ₐ[F] F') ∈ MulAction.stabilizer (F' ≃ₐ[F] F') P := by
+      rw [stabilizer_eq_decompositionSubgroup]
+      exact g.2
+    exact hg
+  calc P.valuation ((g : F' ≃ₐ[F] F') x)
+      = ((g : F' ≃ₐ[F] F') • P).valuation ((g : F' ≃ₐ[F] F') x) := by rw [h]
+    _ = P.valuation x := valuation_smul_apply _ _ _
+
+/-- An automorphism fixing `P` preserves the valuation ring of `P`. -/
+theorem mem_integers_decompositionSubgroup_apply {x : F'} :
+    (g : F' ≃ₐ[F] F') x ∈ P.integers ↔ x ∈ P.integers := by
+  simp only [mem_integers_iff, valuation_decompositionSubgroup_apply]
+
+end Transport
 
 /-- Two equal places have the same valuation ring; the isomorphism between the two carriers is
 the identity on representatives. -/
@@ -266,6 +301,14 @@ theorem setOf_restrict_eq_eq_orbit (P : Place k F') :
   refine ⟨fun hQ ↦ restrict_eq_iff_exists_smul_eq.mp hQ.symm, ?_⟩
   rintro ⟨σ, rfl⟩
   exact restrict_smul σ P
+
+/-- **Orbit--stabilizer for the places over a place**: the number of places of `F' / k` lying
+over the place below `P`, times the order of the stabilizer of `P`, is `[F' : F]`. -/
+theorem ncard_mul_card_stabilizer_eq_finrank (P : Place k F') :
+    {Q : Place k F' | Q.restrict k F = P.restrict k F}.ncard *
+      Nat.card (MulAction.stabilizer (F' ≃ₐ[F] F') P) = Module.finrank F F' := by
+  rw [← Nat.card_coe_set_eq, setOf_restrict_eq_eq_orbit P, ← Nat.card_prod,
+    Nat.card_congr (MulAction.orbitProdStabilizerEquivGroup _ P), IsGalois.card_aut_eq_finrank]
 
 /-- **The ramification index is constant on a fibre** (Stichtenoth, Corollary 3.7.2). -/
 theorem ramificationIdx_eq_of_restrict_eq {P Q : Place k F'}

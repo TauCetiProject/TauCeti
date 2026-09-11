@@ -155,6 +155,18 @@ section HasSubstPair
 
 variable {O : Type*} [CommRing O] {q₁ q₂ : MvPowerSeries σ O}
 
+/-- The substitution family determined by an ordered pair, for the two variables indexed by
+`Unit ⊕ Unit`: the left variable goes to `q₁` and the right to `q₂`.
+
+Substituting a pair of series into a two-variable one is `subst (pairSubstitution q₁ q₂) f`.
+It is a reducible abbreviation, so `Sum.elim_inl` and `Sum.elim_inr` evaluate it at the two
+variables; `hasSubst_pair` says it is substitutable as soon as both series vanish at the origin. -/
+-- This names the substitution *family* rather than the substitution, so that a substituted term
+-- still has `subst` at its head and Mathlib's generic `subst_add`, `subst_mul`, … remain
+-- reachable by `rw`, which selects candidate subterms by head symbol before it tries unfolding.
+abbrev pairSubstitution (q₁ q₂ : MvPowerSeries σ O) : Unit ⊕ Unit → MvPowerSeries σ O :=
+  Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂)
+
 /-- A pair of series with vanishing constant coefficient is a legitimate substitution family for
 the two variables indexed by `Unit ⊕ Unit`.
 
@@ -162,7 +174,7 @@ This packages the `rintro`-and-`simpa` discharge of `hasSubst_of_constantCoeff_z
 for the two-variable case, which is otherwise repeated at every substitution into a two-variable
 series. -/
 theorem hasSubst_pair (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0) :
-    HasSubst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O) :=
+    HasSubst (pairSubstitution q₁ q₂) :=
   hasSubst_of_constantCoeff_zero (by rintro (j | j) <;> simpa)
 
 end HasSubstPair

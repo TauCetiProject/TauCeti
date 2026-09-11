@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Basic
-public import Mathlib.AlgebraicGeometry.OrderOfVanishing
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 
 /-!
@@ -27,10 +26,15 @@ of a regular function on `U`.
   with no proper generization the local ring is already the whole function field;
 * `TauCeti.AlgebraicGeometry.Scheme.exists_germToFunctionField_eq_of_ord_nonneg`: a rational
   function with nonnegative order at every codimension-one point of `U` is the germ at the generic
-  point of a section of `𝒪_X` over `U`.
+  point of a section of `𝒪_X` over `U`;
+* `TauCeti.AlgebraicGeometry.Scheme.exists_unit_germToFunctionField_eq_of_ord_eq_zero`: a nonzero
+  rational function with *zero* order at every codimension-one point of `U` is the germ of a unit
+  of `Γ(X, U)`.
 
-The last statement is the one-dimensional case of algebraic Hartogs' principle, and it is the
-input that identifies the sheaf `𝒪_X(0)` of the zero divisor with the structure sheaf.
+The third statement is the one-dimensional case of algebraic Hartogs' principle, and it is the
+input that identifies the sheaf `𝒪_X(0)` of the zero divisor with the structure sheaf. The last
+one applies it to a function and to its inverse; it is the local comparison used to glue the
+local equations of a locally principal Weil divisor into a Cartier divisor.
 
 The argument follows Hartshorne, *Algebraic Geometry*, II.6.3A and Proposition II.6.11, in the
 dimension-one case where the intersection of the local rings can be taken over the points of `U`
@@ -144,6 +148,29 @@ theorem exists_germToFunctionField_eq_of_ord_nonneg
   have hres : X.presheaf.map (homOfLE (hVU y)).op a = s y := ha y
   rw [← hs y, ← hres,
     X.presheaf.germ_res_apply (homOfLE (hVU y)) (genericPoint X) (hgen _ (hne y)) a]
+
+/-- **A rational function without zeros or poles is a regular unit.** On a locally Noetherian
+integral scheme, let `U` be a nonempty open subset of dimension at most one whose codimension-one
+local rings are discrete valuation rings. A nonzero rational function whose order vanishes at
+every codimension-one point of `U` is the germ of a unit of `Γ(X, U)`.
+
+Simultaneous regularity of the function and its inverse makes the resulting section a unit. -/
+theorem exists_unit_germToFunctionField_eq_of_ord_eq_zero
+    {U : X.Opens} [Nonempty U]
+    (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
+      IsDiscreteValuationRing (X.presheaf.stalk (y : X)))
+    (hU : ∀ y ∈ U, coheight y ≤ 1) {f : X.functionFieldˣ}
+    (hf : ∀ (y : CodimensionOnePoint X), (y : X) ∈ U → X.ord (f : X.functionField) y = 0) :
+    ∃ a : Γ(X, U)ˣ, X.germToFunctionField U (a : Γ(X, U)) = (f : X.functionField) := by
+  obtain ⟨a, ha⟩ := exists_germToFunctionField_eq_of_ord_nonneg hDVR hU
+    (f := (f : X.functionField)) fun y hy ↦ (hf y hy).ge
+  obtain ⟨b, hb⟩ := exists_germToFunctionField_eq_of_ord_nonneg hDVR hU
+    (f := ((f⁻¹ : X.functionFieldˣ) : X.functionField)) fun y hy ↦ by
+      rw [Units.val_inv_eq_inv_val, ord_inv, hf y hy, neg_zero]
+  have hab : a * b = 1 := by
+    refine X.germToFunctionField_injective U ?_
+    rw [map_mul, ha, hb, map_one, Units.mul_inv]
+  exact ⟨⟨a, b, hab, (mul_comm b a).trans hab⟩, ha⟩
 
 end Scheme
 

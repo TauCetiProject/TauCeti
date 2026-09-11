@@ -43,7 +43,7 @@ inside `G` is `G.labelledCopyCount F`.
 
 This settles the *numerator*. Mathlib has no hom-density primitive, so nothing here pins the
 `descFactorial` denominator; that convention is chosen here and is pinned later by the unbiasedness
-anchor `injHomDensity_integral_sampleGraph`.
+anchor `integral_injHomDensity_sampleGraph`.
 
 ## Counting with `Nat.card`
 

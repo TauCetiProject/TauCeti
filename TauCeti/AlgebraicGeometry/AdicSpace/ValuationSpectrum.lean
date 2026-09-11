@@ -28,6 +28,10 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
 * `TauCeti.ValuationSpectrum.supp v` : The support ideal `{a ∈ A | v(a) = 0}`.
 * `TauCeti.ValuationSpectrum.basicOpenFinset_inter` : **Wedhorn's step (i)** in the proof of
   Lemma 7.5, that the rational opens are stable under finite intersection.
+* `TauCeti.ValuationSpectrum.basicOpenFinset_image_mul_right` : scaling every numerator and the
+  denominator by a unit gives the same rational open.
+* `TauCeti.ValuationSpectrum.comap_preimage_basicOpenFinset` : a rational open pulls back to the
+  rational open presented by the images of its numerators and denominator.
 * `TauCeti.ValuationSpectrum.isClosed_setOfPred_forall_vlt_one` : the sub-unit locus of a set
   of ring elements is closed — the closedness behind Wedhorn's Corollary 7.12.
 * `TauCeti.ValuationSpectrum.quotientLift 𝔞 h` : Lift the implicitly inferred point `v` with
@@ -642,6 +646,46 @@ lemma basicOpenFinset_insert_self (T : Finset A) (s : A) :
   simp only [mem_basicOpenFinset_iff, Finset.mem_insert]
   exact ⟨fun ⟨h, hs⟩ ↦ ⟨fun t ht ↦ h t (Or.inr ht), hs⟩,
     fun ⟨h, hs⟩ ↦ ⟨fun t ht ↦ ht.elim (fun e ↦ e ▸ v.toValuativeRel.vle_refl s) (h t), hs⟩⟩
+
+open scoped Classical in
+/-- **Multiplying a presentation by a unit changes nothing.** If `u` is a unit, then multiplying
+every numerator and the denominator of `Spv(A)(T/s)` by `u` gives the same rational open.
+
+No injectivity of `t ↦ t * u` is needed. -/
+@[simp]
+lemma basicOpenFinset_image_mul_right (T : Finset A) (s u : A) (hu : IsUnit u) :
+    basicOpenFinset (T.image fun t ↦ t * u) (s * u) = basicOpenFinset T s := by
+  have hu0 (v : Spv A) : ¬ v.toValuativeRel.vle u 0 :=
+    @TauCeti.ValuativeRel.not_vle_zero_of_isUnit A _ v.toValuativeRel u hu
+  have hmul (v : Spv A) (x y : A) :
+      v.toValuativeRel.vle (x * u) (y * u) ↔ v.toValuativeRel.vle x y :=
+    v.toValuativeRel.mul_vle_mul_iff_left (hu0 v)
+  have hzero (v : Spv A) (x : A) :
+      v.toValuativeRel.vle (x * u) 0 ↔ v.toValuativeRel.vle x 0 := by
+    simpa only [zero_mul] using hmul v x 0
+  ext v
+  simp only [mem_basicOpenFinset_iff]
+  constructor
+  · rintro ⟨hT, hs⟩
+    exact ⟨fun t ht ↦ (hmul v t s).mp (hT (t * u) (Finset.mem_image_of_mem (fun x ↦ x * u) ht)),
+      fun h ↦ hs ((hzero v s).mpr h)⟩
+  · rintro ⟨hT, hs⟩
+    refine ⟨?_, fun h ↦ hs ((hzero v s).mp h)⟩
+    intro t ht
+    obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp ht
+    exact (hmul v x s).mpr (hT x hx)
+
+open scoped Classical in
+/-- The preimage of `Spv(A)(T/s)` under `comap φ` is `Spv(B)(φ(T)/φ(s))`, the finite-numerator
+form of `comap_preimage_basicOpen`. -/
+lemma comap_preimage_basicOpenFinset {B : Type*} [CommRing B] (φ : A →+* B) (T : Finset A)
+    (s : A) :
+    comap φ ⁻¹' basicOpenFinset T s = basicOpenFinset (T.image φ) (φ s) := by
+  ext v
+  simp only [Set.mem_preimage, mem_basicOpenFinset_iff, comap_vle, map_zero, Finset.mem_image,
+    forall_exists_index, and_imp]
+  exact ⟨fun h ↦ ⟨fun _ t ht hte ↦ hte ▸ h.1 t ht, h.2⟩,
+    fun h ↦ ⟨fun t ht ↦ h.1 (φ t) t ht rfl, h.2⟩⟩
 
 open scoped Classical Pointwise in
 /-- **Wedhorn's step (i) in the proof of Lemma 7.5**: the rational opens are stable under finite

@@ -33,11 +33,6 @@ Clifford action makes the target Clifford module a module for the original Lie a
   original adjoint action.
 * `CliffordAlgebra.adjointCliffordHom_injective`: the lift is injective, since the adjoint action
   it encodes is faithful.
-
-## References
-
-* [Tau Ceti Roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), Representation Theory / Spin
-  Representations, Layer 9, "Every Clifford module is a `𝔤`-module".
 -/
 
 public section
@@ -152,8 +147,21 @@ noncomputable def adjointCliffordHom (K : Type u) (L : Type v) [Field K]
     (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)
     (_root_.TauCeti.LieAlgebra.killingAdjointSO K L)
 
-/-- The adjoint quadratic lift acts on Clifford generators by the original adjoint action. -/
+/-- The adjoint Clifford homomorphism is the quadratic realization of the Killing adjoint
+action. -/
 @[simp, grind =]
+theorem adjointCliffordHom_apply (K : Type u) (L : Type v) [Field K]
+    [LieRing L] [LieAlgebra K L] [FiniteDimensional K L] [Invertible (2 : K)]
+    [_root_.LieAlgebra.IsKilling K L] (x : L) :
+    adjointCliffordHom K L x =
+      (soEquivQuadratic (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L)
+        (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)
+        (_root_.TauCeti.LieAlgebra.killingAdjointSO K L x) :
+          CliffordAlgebra (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L)) := by
+  rfl
+
+/-- The adjoint quadratic lift acts on Clifford generators by the original adjoint action. -/
+@[grind =]
 theorem adjointCliffordHom_lie_ι (K : Type u) (L : Type v) [Field K]
     [LieRing L] [LieAlgebra K L] [FiniteDimensional K L] [Invertible (2 : K)]
     [_root_.LieAlgebra.IsKilling K L] (x y : L) :

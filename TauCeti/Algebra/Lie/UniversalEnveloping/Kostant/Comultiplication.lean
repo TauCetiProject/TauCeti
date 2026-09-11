@@ -26,7 +26,7 @@ kostantForm e h ⊗[ℤ] kostantForm e h → U(L) ⊗[ℚ] U(L)
 
 sends a pure tensor to the pure tensor of its two underlying elements. It is injective because a
 subring of a rational algebra is torsion-free, hence flat over `ℤ`; this is the general theorem
-`TauCeti.Subring.tensorSquareMap_injective`. Its range is `kostantTensorForm e h`, so it gives the
+`Subring.tensorSquareMap_injective`. Its range is `kostantTensorForm e h`, so it gives the
 equivalence `kostantTensorEquiv` between the integral tensor square and that range.
 
 The coefficient-one coproduct formulas for divided powers and generalized binomial coefficients
@@ -91,7 +91,7 @@ the ambient universal enveloping algebra over `ℚ`.
 On pure tensors this is `x ⊗ y ↦ (x : U(L)) ⊗ (y : U(L))`. -/
 noncomputable def kostantTensorMap (e : ι → L) (h : κ → L) :
     kostantForm e h ⊗[ℤ] kostantForm e h →ₐ[ℤ] U ⊗[ℚ] U :=
-  TauCeti.Subring.tensorSquareMap ℚ (kostantForm e h)
+  Subring.tensorSquareMap ℚ (kostantForm e h)
 
 /-- The canonical integral tensor map sends a pure tensor to the pure tensor of the underlying
 elements in the rational tensor square. -/
@@ -106,7 +106,7 @@ from `kostantForm e h ⊗[ℤ] kostantForm e h`.
 This range is the codomain of the rational restriction; `kostantTensorEquiv` below identifies it
 with the integral tensor square. -/
 noncomputable def kostantTensorForm (e : ι → L) (h : κ → L) : Subring (U ⊗[ℚ] U) :=
-  TauCeti.Subring.tensorSquareRange ℚ (kostantForm e h)
+  Subring.tensorSquareRange ℚ (kostantForm e h)
 
 /-- Membership in the integral tensor form is equivalent to having an integral tensor
 representative under the canonical tensor map. -/
@@ -115,7 +115,7 @@ theorem mem_kostantTensorForm_iff (e : ι → L) (h : κ → L) (z : U ⊗[ℚ] 
     z ∈ kostantTensorForm e h ↔
       ∃ t : kostantForm e h ⊗[ℤ] kostantForm e h, kostantTensorMap e h t = z := by
   simpa only [kostantTensorForm, kostantTensorMap] using
-    TauCeti.Subring.mem_tensorSquareRange_iff ℚ (kostantForm e h) z
+    Subring.mem_tensorSquareRange_iff ℚ (kostantForm e h) z
 
 /-- A pure rational tensor whose two factors lie in the Kostant form belongs to the integral
 tensor form. -/
@@ -123,7 +123,7 @@ theorem tmul_mem_kostantTensorForm (e : ι → L) (h : κ → L) {x y : U}
     (hx : x ∈ kostantForm e h) (hy : y ∈ kostantForm e h) :
     x ⊗ₜ[ℚ] y ∈ kostantTensorForm e h := by
   simpa only [kostantTensorForm] using
-    TauCeti.Subring.tmul_mem_tensorSquareRange ℚ (kostantForm e h) hx hy
+    Subring.tmul_mem_tensorSquareRange ℚ (kostantForm e h) hx hy
 
 /-! ## Stability under comultiplication -/
 
@@ -177,20 +177,20 @@ square of its enveloping algebra is injective. -/
 theorem kostantTensorMap_injective (e : ι → L) (h : κ → L) :
     Function.Injective (kostantTensorMap e h) := by
   simpa only [kostantTensorMap] using
-    TauCeti.Subring.tensorSquareMap_injective (kostantForm e h)
+    Subring.tensorSquareMap_injective (kostantForm e h)
 
 /-- The canonical equivalence from the integral tensor square of a Kostant form onto its image in
 the rational tensor square. -/
 noncomputable def kostantTensorEquiv (e : ι → L) (h : κ → L) :
     kostantForm e h ⊗[ℤ] kostantForm e h ≃ₐ[ℤ] kostantTensorForm e h :=
-  TauCeti.Subring.tensorSquareEquivRange (kostantForm e h)
+  Subring.tensorSquareEquivRange (kostantForm e h)
 
 /-- The tensor equivalence acts by the canonical map into the rational tensor square. -/
 @[simp]
 theorem coe_kostantTensorEquiv_apply (e : ι → L) (h : κ → L)
     (t : kostantForm e h ⊗[ℤ] kostantForm e h) :
     (kostantTensorEquiv e h t : U ⊗[ℚ] U) = kostantTensorMap e h t := by
-  exact TauCeti.Subring.coe_tensorSquareEquivRange_apply (kostantForm e h) t
+  exact Subring.coe_tensorSquareEquivRange_apply (kostantForm e h) t
 
 /-- The integral comultiplication of a Kostant form. It is the unique algebra homomorphism whose
 composition with `kostantTensorMap` is the rational enveloping-algebra comultiplication. -/

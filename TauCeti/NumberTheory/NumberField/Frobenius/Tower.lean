@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
+import Mathlib.RingTheory.Ideal.Int
 
 /-!
 # Raising the base field: the tower formula for arithmetic Frobenius elements
@@ -56,6 +57,12 @@ group of `Q` embeds into the automorphism group of the residue extension, so an 
   pointwise.
 * `NumberField.restrictScalars_eq_of_inertiaDeg_eq_one`: at residue degree one the restriction
   of the relative Frobenius is `σ` itself, with no power.
+* `NumberField.isArithFrobAt_int_of_absNorm_eq`: a relative Frobenius above an ideal of absolute
+  norm `p` is also a Frobenius over the ideal `(p)` of `ℤ`.
+* `NumberField.isArithFrobAt_one_of_pow_eq_one` and
+  `NumberField.isArithFrobAt_eq_one_of_pow_eq_one`: when an absolute Frobenius at `Q` has order
+  dividing `n` and the residue field of `Q ∩ 𝓞 M` has `p ^ n` elements, the relative Frobenius
+  of `Gal(L/M)` at `Q` is the identity.
 
 ## References
 
@@ -73,6 +80,33 @@ namespace NumberField
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L] {M : Type*} [Field M] [NumberField M] [Algebra K M] [Algebra M L]
   [IsScalarTower K M L] {Q : Ideal (𝓞 L)} [Q.IsPrime]
+
+omit [IsGalois K L] [Field M] [NumberField M] [Algebra K M] [Algebra M L]
+  [IsScalarTower K M L] [Q.IsPrime] in
+/-- **A relative Frobenius above an ideal of norm `p` is a Frobenius over `(p)`.**
+Let `P` be an ideal of a number field `K` above `(p)` with absolute norm `p`. If `Q` lies above
+`P`, then a Frobenius at `Q` relative to `K` is also a Frobenius relative to `ℤ` after
+restricting its automorphism from `K`-linearity to `ℚ`-linearity.
+
+The norm equality makes the two residue cardinalities in the definitions equal; no primality
+hypothesis on `p`, `P`, or `Q` is required. -/
+theorem isArithFrobAt_int_of_absNorm_eq {p : ℕ}
+    (P : Ideal (𝓞 K)) [P.LiesOver (Ideal.span {(p : ℤ)})]
+    (hnorm : Ideal.absNorm P = p) (Q : Ideal (𝓞 L)) [Q.LiesOver P]
+    {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
+    IsArithFrobAt ℤ (σ.restrictScalars ℚ) Q := by
+  intro x
+  have hx := hσ x
+  have hunderK : Q.under (𝓞 K) = P := Ideal.LiesOver.over
+  rw [hunderK, ← Submodule.cardQuot_apply, ← Ideal.absNorm_apply, hnorm] at hx
+  let _ : Q.LiesOver (Ideal.span {(p : ℤ)}) :=
+    Ideal.LiesOver.trans Q P (Ideal.span {(p : ℤ)})
+  -- Restricting scalars preserves the action on the top ring; expose that action so only the
+  -- two residue-cardinality expressions remain to compare.
+  change σ • x - x ^ Nat.card (ℤ ⧸ Q.under ℤ) ∈ Q
+  have hunder : Q.under ℤ = Ideal.span {(p : ℤ)} := Ideal.LiesOver.over.symm
+  rw [hunder, Int.card_ideal_quot]
+  exact hx
 
 /-- **Raising the base field raises the Frobenius to the residue degree.** For number fields
 `K ⊆ M ⊆ L` with `L / K` and `L / M` Galois and `Q` a prime of `𝓞 L` unramified over `𝓞 K`, the
@@ -203,5 +237,41 @@ theorem restrictScalars_eq_of_inertiaDeg_eq_one [Algebra.IsUnramifiedAt (𝓞 K)
     (hf : (Q.under (𝓞 M)).inertiaDeg (𝓞 K) = 1) :
     AlgEquiv.restrictScalars K τ = σ := by
   rw [restrictScalars_eq_pow_inertiaDeg hσ hτ, hf, pow_one]
+
+/-! ### Trivial relative Frobenius elements
+
+A prime that is already inert enough over `ℚ` has trivial relative Frobenius: if the absolute
+Frobenius `ρ` at `Q` has `ρ ^ n = 1` and the residue field of `Q ∩ 𝓞 M` has `p ^ n` elements, then
+the residue action of the relative Frobenius, raising to the power `p ^ n`, is the identity.
+-/
+
+omit [NumberField M] [Q.IsPrime] in
+/-- **The identity is a relative Frobenius at a prime whose base residue field absorbs the
+absolute one.** With `M ⊆ L` number fields, `Q` a prime of `𝓞 L` above the rational prime `p`, and
+`ρ ∈ Gal(L/ℚ)` an arithmetic Frobenius at `Q` over `ℤ` with `ρ ^ n = 1`, the residue field of
+`Q ∩ 𝓞 M` having `p ^ n` elements forces the relative residue action `x ↦ x ^ p ^ n` to be the
+identity. -/
+theorem isArithFrobAt_one_of_pow_eq_one {p n : ℕ} {ρ : L ≃ₐ[ℚ] L}
+    [Q.LiesOver (Ideal.span {(p : ℤ)})] (hρ : IsArithFrobAt ℤ ρ Q) (hρn : ρ ^ n = 1)
+    (hcard : Nat.card (𝓞 M ⧸ Q.under (𝓞 M)) = p ^ n) :
+    IsArithFrobAt (𝓞 M) (1 : L ≃ₐ[M] L) Q := by
+  intro x
+  have hunder : Q.under ℤ = Ideal.span {(p : ℤ)} := Ideal.LiesOver.over.symm
+  have h := hρ.mk_pow_smul n x
+  rw [hunder, Int.card_ideal_quot, hρn, one_smul] at h
+  rw [← Ideal.Quotient.eq, map_pow, hcard]
+  simpa using h
+
+/-- **The relative Frobenius is trivial at such a prime.** Under the hypotheses of
+`NumberField.isArithFrobAt_one_of_pow_eq_one`, and with `L / M` unramified at `Q`, every
+arithmetic Frobenius of `Gal(L/M)` at `Q` is the identity: it agrees with the identity on the
+residue field, and Frobenius elements at an unramified prime are unique. -/
+theorem isArithFrobAt_eq_one_of_pow_eq_one [IsGalois M L] [Algebra.IsUnramifiedAt (𝓞 M) Q]
+    {p n : ℕ} {ρ : L ≃ₐ[ℚ] L} [Q.LiesOver (Ideal.span {(p : ℤ)})] (hρ : IsArithFrobAt ℤ ρ Q)
+    (hρn : ρ ^ n = 1) (hcard : Nat.card (𝓞 M ⧸ Q.under (𝓞 M)) = p ^ n)
+    {σ : L ≃ₐ[M] L} (hσ : IsArithFrobAt (𝓞 M) σ Q) :
+    σ = 1 :=
+  isArithFrobAt_eq_of_isUnramifiedAt hσ
+    (isArithFrobAt_one_of_pow_eq_one (p := p) (n := n) hρ hρn hcard)
 
 end NumberField

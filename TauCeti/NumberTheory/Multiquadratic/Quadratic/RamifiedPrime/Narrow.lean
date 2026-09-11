@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Ambiguous.N
 import TauCeti.Algebra.Group.Subgroup.TwoTorsionClosure
 import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Ambiguous.Structure
 import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Hilbert90
-import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Norm
+import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Norm.Basic
 import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Units
 
 /-!

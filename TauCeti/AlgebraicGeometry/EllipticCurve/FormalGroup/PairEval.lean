@@ -8,6 +8,9 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Unit
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Eval
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
+-- Proof-only: supplies `MvPowerSeries.aeval_rename`, the transport of an evaluation along a
+-- renaming, named in no statement here.
+import TauCeti.RingTheory.MvPowerSeries.Rename
 -- Proof-only: supplies the shared `constantCoeff_subst_pair_formalAdd`. Not redundant with the
 -- `Add.Inverse` and `Add.Assoc` imports below: both import `Add.PairSubst` non-`public`, so
 -- nothing it declares is re-exported through them.
@@ -58,6 +61,7 @@ variables, so `MvPowerSeries.hasEval_of_finite_of_isTopologicallyNilpotent` appl
 * `WeierstrassCurve.formalAddEval_formalInverseEval` : `F(t, ι(t)) = 0`, the inverse law.
 * `WeierstrassCurve.formalAddEval_zero_right` and
   `WeierstrassCurve.formalAddEval_zero_left` : the unit laws `F(t, 0) = t` and `F(0, t) = t`.
+* `WeierstrassCurve.formalAddEval_comm` : commutativity `F(t₁, t₂) = F(t₂, t₁)`.
 * `WeierstrassCurve.formalAddEval_assoc` : `F(F(t₁, t₂), t₃) = F(t₁, F(t₂, t₃))`, the group
   law's associativity read at parameters.
 * `WeierstrassCurve.hasEval_formalAddEval` : `F(t₁, t₂)` admits evaluation as soon as `t₁` and
@@ -330,6 +334,16 @@ theorem hasEval_formalThirdRootEval {t₁ t₂ : O} (h₁ : PowerSeries.HasEval 
     (MvPowerSeries.continuous_aeval (hasEval_pair h₁ h₂)) hnil
   simpa [formalThirdRootEval, MvPowerSeries.coe_aeval, Algebra.algebraMap_self] using h
 
+/-- **The third-root series can be substituted into at a pair of parameters**: it evaluates to
+`formalThirdRootEval`, which is itself substitutable. -/
+private theorem hasEval_aeval_formalThirdRoot {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
+    (h₂ : PowerSeries.HasEval t₂) :
+    PowerSeries.HasEval (MvPowerSeries.aeval (hasEval_pair h₁ h₂) W.formalThirdRoot) := by
+  -- the coercion lands on `eval₂ (algebraMap O O)` while `formalThirdRootEval` is defined with
+  -- `eval₂ (RingHom.id O)`; `Algebra.algebraMap_self` is what identifies the two
+  simpa [formalThirdRootEval, MvPowerSeries.coe_aeval, Algebra.algebraMap_self] using
+    W.hasEval_formalThirdRootEval h₁ h₂
+
 /-- **The evaluated on-line identity**: `w(t₃(t₁, t₂)) = λ(t₁, t₂) * t₃(t₁, t₂) + ν(t₁, t₂)`, so
 the `w`-expansion read at the third root agrees with the chord line read there. Over a field, where
 the parameters carry the coordinates `x = t / w` and `y = -1 / w`, this is what says the third root
@@ -338,14 +352,9 @@ theorem formalWEval_formalThirdRootEval {t₁ t₂ : O} (h₁ : PowerSeries.HasE
     (h₂ : PowerSeries.HasEval t₂) :
     W.formalWEval (W.formalThirdRootEval t₁ t₂) =
       W.formalSlopeEval t₁ t₂ * W.formalThirdRootEval t₁ t₂ + W.formalInterceptEval t₁ t₂ := by
-  have hae : MvPowerSeries.aeval (hasEval_pair h₁ h₂) W.formalThirdRoot =
-      W.formalThirdRootEval t₁ t₂ :=
-    congrFun (MvPowerSeries.coe_aeval (hasEval_pair h₁ h₂)) W.formalThirdRoot
-  have hT' : PowerSeries.HasEval (MvPowerSeries.aeval (hasEval_pair h₁ h₂) W.formalThirdRoot) := by
-    rw [hae]; exact W.hasEval_formalThirdRootEval h₁ h₂
   have h := MvPowerSeries.aeval_subst W.hasSubst_formalThirdRoot
     (MvPowerSeries.continuous_aeval (hasEval_pair h₁ h₂))
-    (PowerSeries.hasEval hT') W.formalW
+    (PowerSeries.hasEval (W.hasEval_aeval_formalThirdRoot h₁ h₂)) W.formalW
   -- distribute while the evaluation is still an algebra map: after `coe_aeval` rewrites it to
   -- `eval₂`, `map_add` and `map_mul` no longer apply.
   rw [W.subst_formalThirdRoot_formalW, map_add, map_mul] at h
@@ -382,14 +391,9 @@ chord through them. -/
 theorem formalAddEval_eq {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
     (h₂ : PowerSeries.HasEval t₂) :
     W.formalAddEval t₁ t₂ = W.formalInverseEval (W.formalThirdRootEval t₁ t₂) := by
-  have hae : MvPowerSeries.aeval (hasEval_pair h₁ h₂) W.formalThirdRoot =
-      W.formalThirdRootEval t₁ t₂ :=
-    congrFun (MvPowerSeries.coe_aeval (hasEval_pair h₁ h₂)) W.formalThirdRoot
-  have hT' : PowerSeries.HasEval (MvPowerSeries.aeval (hasEval_pair h₁ h₂) W.formalThirdRoot) := by
-    rw [hae]; exact W.hasEval_formalThirdRootEval h₁ h₂
   have h := MvPowerSeries.aeval_subst W.hasSubst_formalThirdRoot
     (MvPowerSeries.continuous_aeval (hasEval_pair h₁ h₂))
-    (PowerSeries.hasEval hT') W.formalInverse
+    (PowerSeries.hasEval (W.hasEval_aeval_formalThirdRoot h₁ h₂)) W.formalInverse
   rw [← W.formalAdd_def] at h
   simpa [formalAddEval, W.formalInverseEval_def, MvPowerSeries.coe_aeval, PowerSeries.eval₂,
     ← W.formalThirdRootEval_def] using h
@@ -446,6 +450,16 @@ theorem formalAddEval_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t₁ t₂ : O
   have := Ideal.add_mem _ (hle (W.formalAddEval_sub_add_mem hI hk₁ hk₂))
     (Ideal.add_mem _ hk₁ hk₂)
   simpa using this
+
+/-- **Commutativity of the group law at parameters**: `F(t₁, t₂) = F(t₂, t₁)`. -/
+theorem formalAddEval_comm {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
+    (h₂ : PowerSeries.HasEval t₂) : W.formalAddEval t₁ t₂ = W.formalAddEval t₂ t₁ := by
+  have h := congrArg (MvPowerSeries.aeval (hasEval_pair h₁ h₂)) (rename_swap_formalAdd W)
+  rw [MvPowerSeries.aeval_rename Sum.swap
+    (b := Sum.elim (fun _ ↦ t₂) (fun _ ↦ t₁)) (hasEval_pair h₁ h₂)
+    (by rintro (_ | _) <;> rfl)] at h
+  simpa [formalAddEval, MvPowerSeries.coe_aeval, Algebra.algebraMap_self] using h.symm
+
 /-- **Associativity of the group law at parameters**: `F(F(t₁, t₂), t₃) = F(t₁, F(t₂, t₃))`. -/
 theorem formalAddEval_assoc {t₁ t₂ t₃ : O} (h₁ : PowerSeries.HasEval t₁)
     (h₂ : PowerSeries.HasEval t₂) (h₃ : PowerSeries.HasEval t₃) :
@@ -467,18 +481,15 @@ theorem formalAddEval_assoc {t₁ t₂ t₃ : O} (h₁ : PowerSeries.HasEval t�
       (hv : MvPowerSeries.eval₂ (RingHom.id O) T q₂ = v)
       (hu' : PowerSeries.HasEval u) (hv' : PowerSeries.HasEval v) :
       MvPowerSeries.eval₂ (RingHom.id O) T (MvPowerSeries.subst
-        (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-          Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) O) W.formalAdd) =
+        (pairSubstitution q₁ q₂) W.formalAdd) =
         W.formalAddEval u v := by
     have hfam : (fun s : Unit ⊕ Unit ↦ MvPowerSeries.eval₂ (RingHom.id O) T
-          ((Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-            Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) O) s)) =
+          ((pairSubstitution q₁ q₂) s)) =
         Sum.elim (fun _ ↦ u) fun _ ↦ v := by
       funext s
       rcases s with _ | _ <;> simp [hu, hv]
     have hev : MvPowerSeries.HasEval fun s : Unit ⊕ Unit ↦ MvPowerSeries.aeval ht
-        ((Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-          Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) O) s) := by
+        ((pairSubstitution q₁ q₂) s) := by
       simp only [MvPowerSeries.coe_aeval, Algebra.algebraMap_self, hfam]
       exact hasEval_pair hu' hv'
     have h := MvPowerSeries.aeval_subst (MvPowerSeries.hasSubst_pair hq₁ hq₂)

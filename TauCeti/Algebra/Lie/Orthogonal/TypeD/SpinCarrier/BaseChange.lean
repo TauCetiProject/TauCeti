@@ -245,14 +245,14 @@ theorem baseChangePointsMulEquiv_mapPoints {B C : CommAlgCat.{w} A} (f : B ⟶ C
           (H := CommHopfAlgCat.quotient
             (GeneralLinear.coordinateHopfAlgebra A (dimension n))
             (baseChangeDefiningIdeal n hn A)) f q) =
-      pointsMap n hn f.hom.toRingHom (baseChangePointsMulEquiv n hn A B q) := by
+      pointsMap n hn f.hom (baseChangePointsMulEquiv n hn A B q) := by
   simp only [baseChangePointsMulEquiv, MulEquiv.trans_apply]
   rw [CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPoints,
     pointsMulEquiv_mapPoints n hn
       ((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map f)]
   have hring :
-      ((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map f).hom.toRingHom =
-        f.hom.toRingHom := by
+      ((((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map f).hom : ↑B →+* ↑C)) =
+        (f.hom : ↑B →+* ↑C) := by
     rw [TauCeti.CommAlgCat.restrictScalars_map,
       TauCeti.CommAlgCat.restrictScalarsMap_hom]
     exact RingHom.ext fun x ↦ AlgHom.restrictScalars_apply ℤ f.hom x

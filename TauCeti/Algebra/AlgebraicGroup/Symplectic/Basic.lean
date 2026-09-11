@@ -63,7 +63,8 @@ proved for an arbitrary constant form in `TauCeti.ConstantForm`.
 
 public section
 
-open CategoryTheory Matrix WithConv
+open AlgebraicGeometry CategoryTheory Matrix WithConv
+open scoped CategoryTheory.MonObj
 
 namespace TauCeti.Symplectic
 
@@ -261,7 +262,7 @@ theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
       (CommAlgCat.of R A)) :
     pointsMulEquiv (R := R) (A := B) m
         (AlgHom.mapValue (H := coordinateHopfAlgebra R m) phi f) =
-      GLSymplecticFin.map m A phi.toRingHom
+      GLSymplecticFin.map m A (phi : A →+* B)
         (pointsMulEquiv (R := R) (A := A) m f) := by
   apply Subtype.ext
   have hcoe_lhs := pointsMulEquiv_coe (R := R) (A := B) m

@@ -14,9 +14,9 @@ This file records sequential consequences of compactness for bounded sequences i
 
 ## Main declarations
 
-* `TauCeti.IsCompactOperator.exists_subseq_tendsto`: a compact operator sends a bounded sequence
+* `IsCompactOperator.exists_subseq_tendsto`: a compact operator sends a bounded sequence
   to a sequence with a convergent subsequence.
-* `TauCeti.IsCompactOperator.exists_dist_lt_of_norm_le`: a compact operator cannot keep the
+* `IsCompactOperator.exists_dist_lt_of_norm_le`: a compact operator cannot keep the
   images of a bounded sequence pairwise separated.
 -/
 
@@ -32,14 +32,15 @@ variable [NormedAddCommGroup X] [NormedSpace 𝕜 X]
 variable [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
 variable {K : X →L[𝕜] Y}
 
-namespace IsCompactOperator
+section
 
 section Separation
 
 variable {R : ℝ} {u : ℕ → X}
 
 /-- A compact operator sends a bounded sequence to a sequence with a convergent subsequence. -/
-theorem exists_subseq_tendsto (hK : IsCompactOperator K) (hu : ∀ n, ‖u n‖ ≤ R) :
+theorem _root_.IsCompactOperator.exists_subseq_tendsto (hK : IsCompactOperator K) (hu : ∀ n,
+    ‖u n‖ ≤ R) :
     ∃ (y : Y) (ψ : ℕ → ℕ), StrictMono ψ ∧ Tendsto (fun k => K (u (ψ k))) atTop (𝓝 y) := by
   obtain ⟨S, hS, hSsub⟩ := hK.image_closedBall_subset_compact R
   obtain ⟨y, -, ψ, hψ, hψy⟩ :=
@@ -48,9 +49,10 @@ theorem exists_subseq_tendsto (hK : IsCompactOperator K) (hu : ∀ n, ‖u n‖ 
 
 /-- A compact operator cannot keep the images of a bounded sequence pairwise separated: two
 distinct indices always have images within any prescribed positive distance. -/
-theorem exists_dist_lt_of_norm_le (hK : IsCompactOperator K) (hu : ∀ n, ‖u n‖ ≤ R) {ε : ℝ}
+theorem _root_.IsCompactOperator.exists_dist_lt_of_norm_le (hK : IsCompactOperator K) (hu : ∀ n,
+    ‖u n‖ ≤ R) {ε : ℝ}
     (hε : 0 < ε) : ∃ m n, m ≠ n ∧ dist (K (u m)) (K (u n)) < ε := by
-  obtain ⟨y, ψ, hψ, hψy⟩ := exists_subseq_tendsto hK hu
+  obtain ⟨y, ψ, hψ, hψy⟩ := IsCompactOperator.exists_subseq_tendsto hK hu
   have hcauchy := hψy.cauchySeq
   rw [Metric.cauchySeq_iff'] at hcauchy
   obtain ⟨N, hN⟩ := hcauchy ε hε
@@ -58,7 +60,7 @@ theorem exists_dist_lt_of_norm_le (hK : IsCompactOperator K) (hu : ∀ n, ‖u n
 
 end Separation
 
-end IsCompactOperator
+end
 
 end TauCeti
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.TautologicalPoint
 
 /-!
@@ -53,7 +53,7 @@ algebraic form of "negation fixes the point at infinity".
 
 public section
 
-open TauCeti.WeierstrassCurve.Affine.CoordinateRing
+open WeierstrassCurve.Affine.CoordinateRing
 
 namespace TauCeti
 
@@ -126,7 +126,7 @@ variable {W₁ W₂ W₃ : WeierstrassCurve.Affine F}
 
 /-- **Negation on the hom carrier**, by postcomposition with the negation isogeny. This is the
 `Neg` structure of the carrier's additive group; the addition is not built here. -/
-noncomputable instance : Neg (Hom W₁ W₂) :=
+noncomputable instance instNeg : Neg (Hom W₁ W₂) :=
   ⟨fun f => (ofIsogeny (negIsogeny W₂)).comp f⟩
 
 -- Deliberately not `@[simp]`: unfolding `-f` to a composition would make `-` vanish from every

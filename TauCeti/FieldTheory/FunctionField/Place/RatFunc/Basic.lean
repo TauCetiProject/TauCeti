@@ -50,6 +50,8 @@ becomes the bijection `TauCeti.Place.ratFuncEquiv`.
   `TauCeti.Place.isUniformizer_adicOfIrreducible` exhibits `q` as a prime element there.
 * `TauCeti.Place.eq_infty_or_exists_eq_adic` and `TauCeti.Place.ratFuncEquiv`: these are all the
   places of `k(x)`, and they are pairwise distinct (Stichtenoth, Theorem 1.2.2).
+* `TauCeti.Place.exists_algebraMap_notMem_integers_iff_eq_infty`: the place at infinity is the
+  only place of `k(x)` at which a polynomial has a pole.
 * `TauCeti.Place.eq_infty_or_exists_eq_adicOfIrreducible_X_sub_C` and
   `TauCeti.Place.ratFuncDegreeOneEquiv`: the degree-one places are `ℙ¹(k) = k ∪ {∞}`
   (Stichtenoth, Corollary 1.2.3).
@@ -294,6 +296,30 @@ theorem eq_infty_or_exists_eq_adic (P : Place k (RatFunc k)) :
   rcases (RatFunc.valuation_isEquiv_infty_or_adic (v := P.valuation)).or with h | ⟨p, hp, -⟩
   · exact Or.inl (eq_of_isEquiv (by rwa [valuation_infty]))
   · exact Or.inr ⟨p, eq_of_isEquiv (by rwa [valuation_adic])⟩
+
+/-- **The place at infinity is the only place of `k(x)` infinite on the polynomial model**: at
+every other place `x` is regular, hence so is every polynomial, while `ord_∞ x = -1`.  This
+identifies the places at infinity of the affine model `k[X] ⊆ k(x)`, in the form
+`TauCeti.Place.compl_range_ofPrime` takes. -/
+theorem exists_algebraMap_notMem_integers_iff_eq_infty {P : Place k (RatFunc k)} :
+    (∃ f : k[X], algebraMap (k[X]) (RatFunc k) f ∉ P.integers) ↔ P = infty k := by
+  refine ⟨fun ⟨f, hf⟩ ↦ ?_, ?_⟩
+  · rcases eq_infty_or_exists_eq_adic P with h | ⟨p, rfl⟩
+    · exact h
+    · exact absurd (algebraMap_mem_integers_adic k (RatFunc k) p f) hf
+  · rintro rfl
+    refine ⟨Polynomial.X, ?_⟩
+    rw [mem_integers_iff_ord_nonneg, RatFunc.algebraMap_X, ord_infty, RatFunc.intDegree_X]
+    omega
+
+/-- A place of `k(x)` has valuation greater than one on a polynomial exactly when it is the
+place at infinity. This is the simp-normal form of
+`exists_algebraMap_notMem_integers_iff_eq_infty`. -/
+@[simp]
+theorem exists_one_lt_valuation_algebraMap_iff_eq_infty {P : Place k (RatFunc k)} :
+    (∃ f : k[X], 1 < P.valuation (algebraMap (k[X]) (RatFunc k) f)) ↔ P = infty k := by
+  simpa only [mem_integers_iff, not_le] using
+    exists_algebraMap_notMem_integers_iff_eq_infty (k := k) (P := P)
 
 variable (k)
 

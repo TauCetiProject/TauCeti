@@ -48,6 +48,10 @@ away from a finite set of primes.
 
 * `TauCeti.GlobalNumberFields.Modulus.mem_support_iff`: membership in the support is divisibility
   of the finite part.  `Modulus.support_one` and `Modulus.support_mono` are consequences.
+* `TauCeti.GlobalNumberFields.Modulus.pow_exponent_dvd_finitePart` and
+  `TauCeti.GlobalNumberFields.Modulus.mem_finitePart_of_forall_mem_pow_exponent`: the prime power
+  prescribed by the exponent divides the finite part, and membership in the finite part is
+  detected by those prime powers.
 * `TauCeti.GlobalNumberFields.congruenceSubgroup_le_primeToSubgroup`: an element congruent to one
   is a unit at every prime dividing the finite part.  This is what makes the ray a subgroup of the
   prime-to ideals.
@@ -144,6 +148,35 @@ theorem mem_support_iff_exponent_ne_zero (𝔪 : Modulus K) (v : HeightOneSpectr
 theorem exponent_pos_of_mem_support {𝔪 : Modulus K} {v : HeightOneSpectrum (𝓞 K)}
     (hv : v ∈ 𝔪.support) : 0 < 𝔪.exponent v :=
   Nat.pos_of_ne_zero ((mem_support_iff_exponent_ne_zero 𝔪 v).mp hv)
+
+/-- **The prescribed prime power divides the finite part.**  This is what turns membership in the
+finite part into the valuation bound recorded by `IsCongrOne`. -/
+theorem pow_exponent_dvd_finitePart (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) :
+    v.asIdeal ^ 𝔪.exponent v ∣ 𝔪.finitePart := by
+  have h : Associates.mk v.asIdeal ^ 𝔪.exponent v ≤ Associates.mk 𝔪.finitePart :=
+    (Associates.prime_pow_dvd_iff_le (Associates.mk_ne_zero.mpr 𝔪.finitePart_ne_zero)
+      (Associates.irreducible_mk.mpr v.irreducible)).mpr le_rfl
+  rwa [← Associates.mk_pow, Associates.mk_le_mk_iff_dvd] at h
+
+/-- **Membership in the finite part is a local condition.**  An algebraic integer lying in the
+prime power prescribed by the exponent at every prime dividing the finite part lies in the finite
+part itself.  This is the converse direction to `Modulus.pow_exponent_dvd_finitePart`. -/
+theorem mem_finitePart_of_forall_mem_pow_exponent (𝔪 : Modulus K) {y : 𝓞 K}
+    (h : ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
+      y ∈ v.asIdeal ^ 𝔪.exponent v) :
+    y ∈ 𝔪.finitePart := by
+  rw [← Ideal.iInf_maxPowDividing_eq 𝔪.finitePart_ne_zero, Submodule.mem_iInf]
+  intro v
+  -- `maxPowDividing` is, by definition, the prime power recorded by `exponent`.
+  have hmax : v.maxPowDividing 𝔪.finitePart = v.asIdeal ^ 𝔪.exponent v := rfl
+  rw [hmax]
+  by_cases hv : v.asIdeal ∣ 𝔪.finitePart
+  · exact h v hv
+  · have hzero : 𝔪.exponent v = 0 := by
+      by_contra hne
+      exact hv ((mem_support_iff 𝔪 v).mp ((mem_support_iff_exponent_ne_zero 𝔪 v).mpr hne))
+    rw [hzero, pow_zero, Ideal.one_eq_top]
+    exact Submodule.mem_top
 
 /-- Exponents grow with the modulus. -/
 theorem exponent_mono {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (v : HeightOneSpectrum (𝓞 K)) :

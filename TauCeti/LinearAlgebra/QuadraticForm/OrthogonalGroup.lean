@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
+import Mathlib.LinearAlgebra.SpecialLinearGroup
+import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # The orthogonal group of a quadratic form
@@ -64,9 +66,13 @@ negating it and is a transvection rather than a reflection in `v ^ ⊥`.
 * `TauCeti.QuadraticMap.orthogonalGroupCongr`: isometric quadratic maps have isomorphic orthogonal
   groups. Over an algebraically closed field this is what makes `O(Q)` depend only on the rank of
   `Q`.
+* `QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr`: isometric quadratic maps have isomorphic
+  special orthogonal groups as well.
 * `TauCeti.QuadraticMap.reflection_mem_orthogonalGroup`: the reflection in a vector of invertible
   norm is orthogonal; `TauCeti.QuadraticMap.reflection_mul_self` says it is an involution, and
-  `TauCeti.QuadraticMap.reflection_apply_of_isOrtho` that it fixes the orthogonal hyperplane, while
+  `TauCeti.QuadraticMap.reflection_apply_of_isOrtho` that it fixes the orthogonal hyperplane,
+  `TauCeti.QuadraticMap.reflection_smul_eq` that rescaling by an invertible scalar does not change
+  it, and
   `TauCeti.QuadraticMap.det_reflection` computes its determinant on a finite free module. These are
   the elements a Cartan-Dieudonné theorem would write an orthogonal automorphism as a product of,
   under hypotheses (a field of characteristic not two, a nondegenerate form, finite dimension)
@@ -296,6 +302,73 @@ instance specialOrthogonalGroup_normal (Q : QuadraticMap R M N) :
   rw [specialOrthogonalGroup, Subgroup.inf_subgroupOf_left]
   infer_instance
 
+section SpecialCongr
+
+variable {M₁ : Type*} {M₂ : Type*} [AddCommGroup M₁] [Module R M₁]
+  [AddCommGroup M₂] [Module R M₂]
+  {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+
+/-- Conjugation by an isometric equivalence carries `SO(Q₁)` onto `SO(Q₂)`. -/
+private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
+    (specialOrthogonalGroup Q₁).map (LinearEquiv.congrAut e.toLinearEquiv : _ →* _) =
+      specialOrthogonalGroup Q₂ := by
+  ext g
+  simp only [Subgroup.mem_map, MonoidHom.coe_coe, mem_specialOrthogonalGroup_iff]
+  constructor
+  · rintro ⟨f, hf, rfl⟩
+    constructor
+    · exact (orthogonalGroupCongr e ⟨f, hf.1⟩).2
+    · -- Restate `congrAut` through Mathlib's special-linear congruence.
+      rw [show (LinearEquiv.congrAut e.toLinearEquiv) f =
+          (e.toLinearEquiv.symm.trans f).trans e.toLinearEquiv by
+        ext m
+        exact LinearEquiv.congrAut_apply e.toLinearEquiv f m]
+      exact (SpecialLinearGroup.congr_linearEquiv e.toLinearEquiv ⟨f, hf.2⟩).prop
+  · intro hg
+    refine ⟨(LinearEquiv.congrAut e.toLinearEquiv).symm g, ?_,
+      (LinearEquiv.congrAut e.toLinearEquiv).apply_symm_apply g⟩
+    constructor
+    · exact ((orthogonalGroupCongr e).symm ⟨g, hg.1⟩).2
+    · -- Restate inverse `congrAut` through Mathlib's special-linear congruence.
+      rw [show (LinearEquiv.congrAut e.toLinearEquiv).symm g =
+          (e.toLinearEquiv.trans g).trans e.toLinearEquiv.symm by
+        ext m
+        exact LinearEquiv.congrAut_symm_apply e.toLinearEquiv g m]
+      exact (SpecialLinearGroup.congr_linearEquiv e.toLinearEquiv.symm ⟨g, hg.2⟩).prop
+
+/-- Isometric quadratic maps have isomorphic special orthogonal groups: conjugation by an
+isometric equivalence `e : Q₁ ≃qᵢ Q₂` carries `SO(Q₁)` onto `SO(Q₂)`. -/
+noncomputable def _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr
+    (e : Q₁.IsometryEquiv Q₂) :
+    specialOrthogonalGroup Q₁ ≃* specialOrthogonalGroup Q₂ :=
+  Subgroup.congrOfMapEq (LinearEquiv.congrAut e.toLinearEquiv)
+    (map_specialOrthogonalGroup e)
+
+/-- Evaluating special-orthogonal transport is conjugation by the isometry `e`. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.coe_specialOrthogonalGroupCongr_apply
+    (e : Q₁.IsometryEquiv Q₂) (f : specialOrthogonalGroup Q₁) (m : M₂) :
+    (e.specialOrthogonalGroupCongr f : M₂ ≃ₗ[R] M₂) m =
+      e ((f : M₁ ≃ₗ[R] M₁) (e.symm m)) := by
+  simp only [QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr,
+    Subgroup.coe_congrOfMapEq_apply,
+    LinearEquiv.congrAut_apply]
+  rfl
+
+/-- Evaluating inverse special-orthogonal transport is conjugation by the inverse isometry
+`e.symm`. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.coe_specialOrthogonalGroupCongr_symm_apply
+    (e : Q₁.IsometryEquiv Q₂) (g : specialOrthogonalGroup Q₂) (m : M₁) :
+    (e.specialOrthogonalGroupCongr.symm g : M₁ ≃ₗ[R] M₁) m =
+      e.symm ((g : M₂ ≃ₗ[R] M₂) (e m)) := by
+  simp only [QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr,
+    Subgroup.coe_congrOfMapEq_symm_apply,
+    LinearEquiv.congrAut_symm_apply]
+  rfl
+
+end SpecialCongr
+
 end Det
 
 section Coordinate
@@ -357,6 +430,38 @@ noncomputable def reflection : M ≃ₗ[R] M :=
 theorem reflection_apply (y : M) :
     reflection Q v y = y - (⅟(Q v) * polar Q v y) • v := by
   rw [reflection, Module.reflection_apply, reflectionDual_apply]
+
+/-- Rescaling a vector of invertible norm by an invertible scalar does not change its quadratic
+reflection. -/
+@[simp]
+theorem reflection_smul_eq (a : R) [Invertible a] :
+    let _ : Invertible (Q (a • v)) := by
+      rw [QuadraticMap.map_smul]
+      let _ : Invertible (a * a) := invertibleMul a a
+      exact invertibleMul (a * a) (Q v)
+    reflection Q (a • v) = reflection Q v := by
+  dsimp only
+  let _ : Invertible (Q (a • v)) := by
+    rw [QuadraticMap.map_smul]
+    let _ : Invertible (a * a) := invertibleMul a a
+    exact invertibleMul (a * a) (Q v)
+  have hcoeff : ⅟(Q (a • v)) * a * a = ⅟(Q v) := by
+    rw [← mul_right_inj_of_invertible (c := Q v)]
+    calc
+      Q v * (⅟(Q (a • v)) * a * a) = ⅟(Q (a • v)) * (a * a * Q v) := by ring
+      _ = ⅟(Q (a • v)) * Q (a • v) := by
+        congr 1
+        exact (QuadraticMap.map_smul Q a v).symm
+      _ = 1 := invOf_mul_self _
+      _ = Q v * ⅟(Q v) := (mul_invOf_self _).symm
+  ext m
+  rw [reflection_apply, reflection_apply, polar_smul_left]
+  simp only [smul_eq_mul, smul_smul]
+  congr 2
+  calc
+    ⅟(Q (a • v)) * (a * polar Q v m) * a =
+        (⅟(Q (a • v)) * a * a) * polar Q v m := by ring
+    _ = ⅟(Q v) * polar Q v m := by rw [hcoeff]
 
 @[simp]
 theorem reflection_apply_self : reflection Q v v = -v :=
@@ -423,6 +528,24 @@ noncomputable def reflectionOrthogonal : orthogonalGroup Q :=
 theorem coe_reflectionOrthogonal :
     (reflectionOrthogonal Q v : M ≃ₗ[R] M) = reflection Q v := by
   simp only [reflectionOrthogonal]
+
+/-- Rescaling the defining vector by an invertible scalar does not change the bundled orthogonal
+reflection. -/
+@[simp]
+theorem reflectionOrthogonal_smul_eq (a : R) [Invertible a] :
+    let _ : Invertible (Q (a • v)) := by
+      rw [QuadraticMap.map_smul]
+      let _ : Invertible (a * a) := invertibleMul a a
+      exact invertibleMul (a * a) (Q v)
+    reflectionOrthogonal Q (a • v) = reflectionOrthogonal Q v := by
+  dsimp only
+  let _ : Invertible (Q (a • v)) := by
+    rw [QuadraticMap.map_smul]
+    let _ : Invertible (a * a) := invertibleMul a a
+    exact invertibleMul (a * a) (Q v)
+  apply Subtype.ext
+  simp only [coe_reflectionOrthogonal]
+  exact reflection_smul_eq Q v a
 
 /-- The bundled reflection is an involution, so it has order dividing two in the orthogonal
 group. -/
