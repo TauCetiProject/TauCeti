@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Geometry.Hodge.WeilOperator
 public import TauCeti.Geometry.Symplectic.Complex.Complexification
 
