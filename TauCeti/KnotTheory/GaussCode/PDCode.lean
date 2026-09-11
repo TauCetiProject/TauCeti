@@ -52,6 +52,8 @@ Diagram Codes*, Definitions 2--3, and the oriented crossing convention of W. B. 
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_crossingSign` proves preservation of crossing
   signs.
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_writhe` proves agreement of the two writhes.
+* `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_injective` proves that the conversion loses no
+  Gauss-code data.
 -/
 
 public section
@@ -407,6 +409,31 @@ theorem toOrientedPDCode_crossingSign (D : BasedOrientedGaussCode n) (c : Fin n)
 theorem toOrientedPDCode_writhe (D : BasedOrientedGaussCode n) :
     D.toOrientedPDCode.writhe = D.writhe := by
   simp [OrientedPDCode.writhe_def, writhe_def]
+
+/-- The conversion to oriented PD-codes is injective: the crossing-incidence data remembers the
+visit sequence, the over/under data, and the crossing signs of the Gauss code. -/
+theorem toOrientedPDCode_injective : Function.Injective (toOrientedPDCode (n := n)) := by
+  intro D E h
+  have hvisit (c : Fin n) (slot : Fin 4) : D.crossingVisit c slot = E.crossingVisit c slot := by
+    have hhalf := congrArg
+      (fun C : OrientedPDCode n => C.halfEdge (PDCode.crossingSlotEquiv n (c, slot))) h
+    simp only [toOrientedPDCode_crossing] at hhalf
+    exact congrArg Prod.fst ((visitHalfEdgeEquiv n).injective hhalf)
+  have hsymm : D.visitDataEquiv.symm = E.visitDataEquiv.symm := by
+    refine Equiv.ext fun ⟨c, over⟩ => ?_
+    cases over
+    · simpa [crossingVisit] using hvisit c 1
+    · simpa [crossingVisit] using hvisit c 0
+  have hequiv : D.visitDataEquiv = E.visitDataEquiv := by
+    simpa using congrArg Equiv.symm hsymm
+  apply BasedOrientedGaussCode.ext
+  · funext i
+    simpa using congrArg (fun e => (e i).1) hequiv
+  · funext i
+    simpa using congrArg (fun e => (e i).2) hequiv
+  · funext c
+    apply Units.ext
+    simpa using congrArg (fun C : OrientedPDCode n => C.crossingSign c) h
 
 end BasedOrientedGaussCode
 
