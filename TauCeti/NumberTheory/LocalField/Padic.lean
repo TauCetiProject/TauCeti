@@ -60,7 +60,9 @@ theorem toAdd_normalizedValuation_padic (x : ℚ_[p]ˣ) :
 
 /-- The residue field of `ℚ_[p]` has cardinality `p`. -/
 @[simp]
-theorem natCard_residueField_padic : Nat.card 𝓀[ℚ_[p]] = p := by
+theorem natCard_residueField_padic :
+    @Fintype.card 𝓀[ℚ_[p]] (Fintype.ofFinite 𝓀[ℚ_[p]]) = p := by
+  rw [← @Nat.card_eq_fintype_card 𝓀[ℚ_[p]] (Fintype.ofFinite 𝓀[ℚ_[p]])]
   have h : 𝒪[ℚ_[p]] = PadicInt.subring p := by
     ext x
     rw [Valuation.mem_integer_iff, PadicInt.mem_subring_iff]
@@ -77,7 +79,9 @@ theorem normalizedAbsoluteValue_padic (x : ℚ_[p]) :
     (normalizedAbsoluteValue ℚ_[p] x : ℝ) = ‖x‖ := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp
-  rw [normalizedAbsoluteValue_apply_ne_zero x hx, natCard_residueField_padic,
+  rw [normalizedAbsoluteValue_apply_ne_zero x hx,
+    @Nat.card_eq_fintype_card 𝓀[ℚ_[p]] (Fintype.ofFinite 𝓀[ℚ_[p]]),
+    natCard_residueField_padic,
     toAdd_normalizedValuation_padic, Padic.norm_eq_zpow_neg_valuation hx]
   simp
 
