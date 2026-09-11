@@ -27,6 +27,10 @@ vectors which enter the definition of a regular cone and, later, its affine mono
   integral lattice has a unique primitive generator.
 * `TauCeti.Toric.primitiveGenerator`: the resulting canonical lattice vector, with membership,
   nonvanishing, and primitivity lemmas.
+* `TauCeti.Toric.IsPrimitiveGenerator.unique`: two primitive generators of the same ray of a toric
+  cone in an integral lattice are equal.
+* `TauCeti.Toric.isPrimitiveGenerator_faceEmbedding`: being a primitive generator of a ray does not
+  depend on which cone the ray is viewed as a face of.
 
 ## References
 
@@ -66,6 +70,14 @@ theorem isPrimitive (h : IsPrimitiveGenerator i ρ v) : IsPrimitive v := h.2
 theorem ne_zero (h : IsPrimitiveGenerator i ρ v) : v ≠ 0 := h.isPrimitive.ne_zero
 
 end IsPrimitiveGenerator
+
+/-- Being a primitive generator of a ray mentions only the cone underlying the ray, so it is
+unaffected by viewing a ray of a face as a ray of the ambient cone. -/
+@[simp]
+theorem isPrimitiveGenerator_faceEmbedding {τ : PointedCone ℝ V} (hτ : τ.IsFaceOf σ)
+    (ρ : ToricRay τ) {v : N} :
+    IsPrimitiveGenerator i (ToricRay.faceEmbedding hτ ρ) v ↔ IsPrimitiveGenerator i ρ v := by
+  simp [isPrimitiveGenerator_iff]
 
 namespace IsToricCone
 
@@ -150,6 +162,12 @@ theorem IsPrimitiveGenerator.eq_primitiveGenerator {v : N} (hv : IsPrimitiveGene
     (hi : IsIntegralLattice i) (hσ : IsToricCone i σ) :
     v = primitiveGenerator hi hσ ρ :=
   ((hσ.face ρ.1).existsUnique_primitiveGenerator hi).choose_spec.2 v hv
+
+/-- A ray of a toric cone in an integral lattice has at most one primitive generator. -/
+theorem IsPrimitiveGenerator.unique {ρ : ToricRay σ} {v w : N} (hi : IsIntegralLattice i)
+    (hσ : IsToricCone i σ)
+    (hv : IsPrimitiveGenerator i ρ v) (hw : IsPrimitiveGenerator i ρ w) : v = w :=
+  (hv.eq_primitiveGenerator hi hσ).trans (hw.eq_primitiveGenerator hi hσ).symm
 
 /-- A lattice vector is a primitive generator of a ray exactly when it is the canonical one. -/
 @[simp]

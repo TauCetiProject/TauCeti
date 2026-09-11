@@ -6,16 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Convex.Cone.Face.Basic
+public import Mathlib.LinearAlgebra.Prod
 
 /-!
-# The zero face of a salient cone
+# The zero face of a salient cone, and faces of a product
 
 Mathlib's `ConvexCone.Salient` records that a convex cone contains no line. This file records the
-consequence of salience for the face lattice of a pointed cone: the zero cone is a face.
+consequence of salience for the face lattice of a pointed cone: the zero cone is a face. It also
+records that a face of a product of two cones is the product of its two projections.
 
 ## Main declarations
 
 * `ConvexCone.Salient.bot_isFaceOf`: the zero cone is a face of a salient pointed cone.
+* `PointedCone.IsFaceOf.eq_prod_map`: a face of a product of two pointed cones is the product of
+  its images under the two coordinate projections.
+
+## Implementation notes
+
+Mathlib's `PointedCone.Face.fst_prod_snd` is the same statement for the bundled face lattice, but
+the definitions `PointedCone.Face.prod`, `PointedCone.Face.fst` and `PointedCone.Face.snd` are not
+exposed, so that equation of faces cannot be read off as an equation of the underlying cones.
+`PointedCone.IsFaceOf.eq_prod_map` states it on the cones instead; the proof follows Mathlib's.
 -/
 
 public section
@@ -38,3 +49,35 @@ theorem bot_isFaceOf (hC : (C : ConvexCone R V).Salient) :
   exact (eq_zero_or_eq_zero_of_smul_eq_zero hzero).resolve_left ha.ne'
 
 end ConvexCone.Salient
+
+namespace PointedCone.IsFaceOf
+
+variable {R M M' : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R] [AddCommGroup M]
+  [Module R M] [AddCommGroup M'] [Module R M'] {C : PointedCone R M} {C' : PointedCone R M'}
+  {F : PointedCone R (M × M')}
+
+/-- A face of a product of two pointed cones is the product of its images under the two coordinate
+projections: a point of the product of the images already lies on the face, because it is a
+summand of a point of the face. -/
+theorem eq_prod_map (hF : F.IsFaceOf (C.prod C')) :
+    F = (F.map (LinearMap.fst R M M')).prod (F.map (LinearMap.snd R M M')) := by
+  refine le_antisymm (fun x hx ↦ Submodule.mem_prod.2
+    ⟨Submodule.mem_map.2 ⟨x, hx, rfl⟩, Submodule.mem_map.2 ⟨x, hx, rfl⟩⟩) fun x hx ↦ ?_
+  obtain ⟨h1, h2⟩ := Submodule.mem_prod.1 hx
+  obtain ⟨a, ha, ha1⟩ := Submodule.mem_map.1 h1
+  obtain ⟨c, hc, hc2⟩ := Submodule.mem_map.1 h2
+  -- The face contains `(x.1, a.2)` and `(c.1, x.2)`, whose sum is `x + (c.1, a.2)`.
+  have hy : (x.1, a.2) ∈ F := by rw [show (x.1, a.2) = a from Prod.ext ha1.symm rfl]; exact ha
+  have hz : (c.1, x.2) ∈ F := by rw [show (c.1, x.2) = c from Prod.ext rfl hc2.symm]; exact hc
+  have hsum : (x.1, x.2) + (c.1, a.2) ∈ F := by
+    have hadd := Submodule.add_mem _ hy hz
+    rw [show ((x.1, a.2) + (c.1, x.2) : M × M') = (x.1, x.2) + (c.1, a.2) by
+      simp [Prod.ext_iff, add_comm]] at hadd
+    exact hadd
+  refine hF.mem_of_add_mem_left ?_ ?_ hsum
+  · exact Submodule.mem_prod.2 ⟨(Submodule.mem_prod.1 (hF.le hy)).1,
+      (Submodule.mem_prod.1 (hF.le hz)).2⟩
+  · exact Submodule.mem_prod.2 ⟨(Submodule.mem_prod.1 (hF.le hz)).1,
+      (Submodule.mem_prod.1 (hF.le hy)).2⟩
+
+end PointedCone.IsFaceOf
