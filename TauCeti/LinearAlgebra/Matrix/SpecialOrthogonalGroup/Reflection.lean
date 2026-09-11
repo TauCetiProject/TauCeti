@@ -217,17 +217,12 @@ private noncomputable def pathVector (v w : n → K) (X Y : K[T;T⁻¹]) : n →
   fun i => X * C (v i) + Y * C (w i)
 
 omit [DecidableEq n] in
-private theorem constVector_dotProduct [Fintype n] (v w : n → K) :
-    constVector v ⬝ᵥ constVector w = C (v ⬝ᵥ w) :=
-  (RingHom.map_dotProduct C v w).symm
-
-omit [DecidableEq n] in
 private theorem pathVector_dotProduct [Fintype n] (v w : n → K) (X Y X' Y' : K[T;T⁻¹]) :
     pathVector v w X Y ⬝ᵥ pathVector v w X' Y' =
       X * X' * C (v ⬝ᵥ v) + (X * Y' + Y * X') * C (v ⬝ᵥ w) + Y * Y' * C (w ⬝ᵥ w) := by
   have hC (u₁ u₂ : n → K) :
       ∑ i, (C (u₁ i) : K[T;T⁻¹]) * C (u₂ i) = C (u₁ ⬝ᵥ u₂) := by
-    simpa only [constVector, dotProduct] using constVector_dotProduct u₁ u₂
+    simpa only [dotProduct, Function.comp_apply] using (RingHom.map_dotProduct C u₁ u₂).symm
   rw [dotProduct]
   -- `Finset.sum_congr` asks for the pointwise product obtained by unfolding `pathVector`.
   rw [Finset.sum_congr rfl fun i _ =>
@@ -293,7 +288,9 @@ private theorem exists_laurentPath_of_pathData [Fintype n] {v w : n → K}
         (φ (T 1) = (b : K) → (M : Matrix n n K[T;T⁻¹]).map (φ : K[T;T⁻¹] →+* K) =
           reflectionMatrix v c * reflectionMatrix w d) := by
   have hCc : (C c : K[T;T⁻¹]) * (constVector v ⬝ᵥ constVector v) = 2 := by
-    rw [constVector_dotProduct, ← map_mul, hc, map_ofNat]
+    -- `constVector v` is `C ∘ v` by definition, the form `RingHom.map_dotProduct` rewrites.
+    change (C c : K[T;T⁻¹]) * ((C ∘ v) ⬝ᵥ (C ∘ v)) = 2
+    rw [← RingHom.map_dotProduct, ← map_mul, hc, map_ofNat]
   refine ⟨⟨reflectionMatrix (constVector v) (C c) * reflectionMatrix (pathVector v w X Y) E,
     reflectionMatrix_mul_mem_specialOrthogonalGroup hCc hE⟩, a, b, fun φ => ⟨?_, ?_⟩⟩
   · intro hφ
