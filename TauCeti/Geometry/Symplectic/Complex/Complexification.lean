@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
-public import TauCeti.LinearAlgebra.Complex.Conjugation
 
 /-!
 # Complexification of almost complex structures
