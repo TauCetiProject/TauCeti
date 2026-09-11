@@ -43,6 +43,14 @@ def GloballyCollared (f : N → M) : Prop := ∃ c, IsGlobalCollar f c
 
 theorem isGlobalCollar_iff : GloballyCollared f ↔ ∃ c, IsGlobalCollar f c := Iff.rfl
 
+/-- The product collar is a canonical example of global collar data. -/
+theorem globallyCollared_prodMk_zero :
+    GloballyCollared
+      ((fun x : N => (x, ⟨0, by norm_num⟩)) : N → N × Ico (0 : ℝ) 1) := by
+  refine ⟨(id : N × Ico (0 : ℝ) 1 → N × Ico (0 : ℝ) 1), ⟨IsOpenEmbedding.id, ?_⟩⟩
+  intro x
+  rfl
+
 namespace IsGlobalCollar
 
 variable (h : IsGlobalCollar f c)
