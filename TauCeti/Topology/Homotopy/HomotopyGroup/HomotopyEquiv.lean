@@ -30,6 +30,16 @@ The statements about the induced map alone need no finiteness of the index type 
 `[Finite N]`; only the transport formula, which mentions the collar construction, asks for the
 `[Fintype N]` that the cube radius uses.
 
+This is the free-homotopy layer of the higher-homotopy-group API asked for in Stage 3, item 9 of
+`TauCetiRoadmap/UniversalCovers/README.md` ("functoriality ... and basepoint-change
+isomorphisms"): it is exactly those two pieces of the API, from
+`TauCeti.Topology.Homotopy.HomotopyGroup.Map` and
+`TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange`, combined. It generalises two
+statements of that same API: the pointed-homotopy invariance
+`HomotopyGroup.map_eq_of_homotopicRel` of `TauCeti.Topology.Homotopy.HomotopyGroup.Homotopy`,
+whose homotopy is required to fix the base point, and the homeomorphism invariance
+`HomotopyGroup.homeomorphMulEquiv` of `TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph`.
+
 ## Main declarations
 
 * `TauCeti.GenLoop.homotopyAlongMap`: dragging a generalized loop through a homotopy is a

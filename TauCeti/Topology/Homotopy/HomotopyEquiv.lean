@@ -17,6 +17,10 @@ homotopy `e.toFun ∘ e.invFun ≃ id`: evaluated at a point `y`, it is a path f
 `e.toFun (e.invFun y)` to `y`. Two points of `Y` are therefore joined to points in the image of
 `e.toFun`, which are joined to each other because `X` is path connected.
 
+This is the prerequisite for the base-point-free homotopy-group statements in
+`TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv`, which need the target space to be path
+connected before base-point change is available there.
+
 ## Main declarations
 
 * `ContinuousMap.HomotopyEquiv.joined_toFun_invFun`: the trace path of the homotopy

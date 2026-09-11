@@ -32,8 +32,10 @@ prescribed image base point.
 
 ## References
 
-This is the homotopy-invariance half of `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4,
-item 14, "recognition of `K(G, 1)` spaces"; compare Section 1.B of [hatcher02].
+These generalise the stability under a homeomorphism that
+`TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 14, "recognition of `K(G, 1)` spaces",
+asks for, and which is on `main` as `TauCeti.IsAspherical.of_homeomorph` and
+`TauCeti.IsEilenbergMacLaneSpaceOne.of_homeomorph`; compare Section 1.B of [hatcher02].
 -/
 
 public section
