@@ -12,27 +12,31 @@ public import TauCeti.NumberTheory.ModularForms.Basic
 # The Atkin–Lehner slash operator
 
 An Atkin–Lehner matrix `W` for a divisor `Q` of `N` normalizes `Γ₀(N)`
-(`TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_comm`), so the weight-`k` slash by `W` sends
+(`TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul`), so the weight-`k` slash by `W` sends
 a modular form for `Γ₀(N)` to another one. That is the operator built here, on `M_k(Γ₀(N))` and
 on `S_k(Γ₀(N))`.
 
 The operator carries **no** normalizing scalar, so it is not an involution: `W ^ 2` is `Q` times
 an element of `Γ₀(N)`, and a scalar matrix slashes by a power of its scalar, so the operator
-squares to `Q ^ (k - 2)` (`atkinLehnerOperator_atkinLehnerOperator`). Dividing that away is what
-the normalized `𝒲_Q = (√Q) ^ (2 - k) • (· ∣[k] W)` of the roadmap's Layer 6 does; the Fricke
-member `Q = N` of the family is already normalized separately in
+squares to `Q ^ (k - 2)` (`atkinLehnerOperator_atkinLehnerOperator`). Dividing that away is the
+job of the normalized operator `𝒲_Q = (√Q) ^ (2 - k) • (· ∣[k] W)`; the Fricke member `Q = N` of
+the family is already normalized separately in
 `TauCeti/NumberTheory/ModularForms/Fricke/`.
 
 The operator does not depend on which Atkin–Lehner matrix for `Q` is used: two of them differ by
-an element of `Γ₀(N)`, which a form for `Γ₀(N)` absorbs (`atkinLehnerOperator_congr`). So the
-arbitrary Bézout choice in `TauCeti.atkinLehnerMatrix` is invisible downstream, and there is no
-need for a canonical representative.
+an element of `Γ₀(N)`, which a form for `Γ₀(N)` absorbs (`atkinLehnerOperator_congr`). The
+arbitrary Bézout choice in `TauCeti.atkinLehnerMatrix` is therefore invisible, and
+`TauCeti.Nat.IsExactDivisor.atkinLehnerOperator` — the operator `W_Q` indexed by the exact divisor
+alone, with no matrix to supply — is the interface to use.
 
 ## Main definitions
 
 * `TauCeti.atkinLehnerGL`: an Atkin–Lehner matrix as an element of `GL (Fin 2) ℝ`.
-* `TauCeti.atkinLehnerOperator`, `TauCeti.atkinLehnerOperatorCusp`: the slash operator on
-  `M_k(Γ₀(N))` and on `S_k(Γ₀(N))`.
+* `TauCeti.atkinLehnerOperator`, `TauCeti.atkinLehnerOperatorCusp`: the slash operator by a
+  given Atkin–Lehner matrix, on `M_k(Γ₀(N))` and on `S_k(Γ₀(N))`.
+* `TauCeti.Nat.IsExactDivisor.atkinLehnerOperator`,
+  `TauCeti.Nat.IsExactDivisor.atkinLehnerOperatorCusp`: the operator `W_Q` of an exact divisor `Q`,
+  with the matrix taken to be `TauCeti.atkinLehnerMatrix N Q`.
 
 ## Main results
 
@@ -41,7 +45,11 @@ need for a canonical representative.
 * `TauCeti.atkinLehnerOperator_congr`, `TauCeti.atkinLehnerOperatorCusp_congr`: independence of
   the chosen Atkin–Lehner matrix.
 * `TauCeti.atkinLehnerOperator_atkinLehnerOperator`,
-  `TauCeti.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp`: the square is `Q ^ (k - 2)`.
+  `TauCeti.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp` and their
+  `TauCeti.Nat.IsExactDivisor` counterparts: the square is `Q ^ (k - 2)`.
+* `TauCeti.Nat.IsExactDivisor.atkinLehnerOperator_eq`,
+  `TauCeti.Nat.IsExactDivisor.atkinLehnerOperatorCusp_eq`: `W_Q` is the slash by *any* Atkin–Lehner
+  matrix for `Q`.
 
 ## References
 
@@ -52,7 +60,7 @@ public section
 
 open Matrix Matrix.SpecialLinearGroup CongruenceSubgroup UpperHalfPlane
 
-open scoped MatrixGroups ModularForm Pointwise
+open scoped MatrixGroups ModularForm Pointwise TauCeti.ExactDivisor
 
 namespace TauCeti
 
@@ -83,29 +91,17 @@ theorem val_det_atkinLehnerGL_pos (hQ : 0 < Q) (h : IsAtkinLehnerMatrix N Q M) :
   rw [← Matrix.GeneralLinearGroup.val_det_apply, val_det_atkinLehnerGL hQ h]
   exact_mod_cast hQ
 
-/-- Casting a matrix product to `ℝ` entrywise is a product; the ring-hom shape
-`Matrix.map_mul` needs, spelled for the plain integer cast used throughout this file. -/
-private theorem map_intCast_mul (A B : Matrix (Fin 2) (Fin 2) ℤ) :
-    (A * B).map ((↑) : ℤ → ℝ) = A.map ((↑) : ℤ → ℝ) * B.map ((↑) : ℤ → ℝ) :=
-  Matrix.map_mul (f := (Int.castRingHom ℝ))
-
-/-- The real matrix underlying `mapGL ℝ γ` is the entrywise cast of the integral one. -/
-private theorem coe_mapGL_intCast (γ : SL(2, ℤ)) :
-    ((mapGL ℝ γ : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ)
-      = (γ : Matrix (Fin 2) (Fin 2) ℤ).map ((↑) : ℤ → ℝ) := by
-  ext i j
-  simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
-
 /-- **Moving `W` past `Γ₀(N)`**, the `GL (Fin 2) ℝ` reading of
-`IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_comm`. -/
+`IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul`. -/
 theorem exists_mem_Gamma0_atkinLehnerGL_mul_mapGL (hQ : 0 < Q) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
       atkinLehnerGL hQ h * mapGL ℝ γ = mapGL ℝ δ * atkinLehnerGL hQ h := by
-  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_comm hQ.ne' hQN hγ
+  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul hQ.ne' hQN hγ
   refine ⟨δ, hδ, Units.ext ?_⟩
-  rw [Matrix.GeneralLinearGroup.coe_mul, Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL,
-    coe_mapGL_intCast, coe_mapGL_intCast, ← map_intCast_mul, ← map_intCast_mul, hmul]
+  simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
+    Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
+    Int.coe_castRingHom, ← Matrix.map_mul_intCast, hmul]
 
 /-- **Moving `Γ₀(N)` past `W`**, the mirror of
 `exists_mem_Gamma0_atkinLehnerGL_mul_mapGL`. -/
@@ -113,10 +109,11 @@ theorem exists_mem_Gamma0_mapGL_mul_atkinLehnerGL (hQ : 0 < Q) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
       mapGL ℝ γ * atkinLehnerGL hQ h = atkinLehnerGL hQ h * mapGL ℝ δ := by
-  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_comm' hQ.ne' hQN hγ
+  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul' hQ.ne' hQN hγ
   refine ⟨δ, hδ, Units.ext ?_⟩
-  rw [Matrix.GeneralLinearGroup.coe_mul, Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL,
-    coe_mapGL_intCast, coe_mapGL_intCast, ← map_intCast_mul, ← map_intCast_mul, hmul]
+  simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
+    Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
+    Int.coe_castRingHom, ← Matrix.map_mul_intCast, hmul]
 
 /-- **`W` normalizes `Γ₀(N)` in `GL (Fin 2) ℝ`.** Conjugating the image of `Γ₀(N)` by an
 Atkin–Lehner matrix returns that same subgroup, which is what makes the slash by `W` an operator
@@ -189,11 +186,12 @@ element of `Γ₀(N)` on the left, which a form of level `Γ₀(N)` absorbs. -/
 theorem atkinLehnerOperator_congr (hQ : 0 < Q) (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M)
     (h' : IsAtkinLehnerMatrix N Q M') (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
     atkinLehnerOperator hQ hQN h k f = atkinLehnerOperator hQ hQN h' k f := by
-  obtain ⟨γ, hγ, hM⟩ := h'.exists_mem_Gamma0_mul_eq hQ.ne' hQN h
+  obtain ⟨γ, hγ, hM⟩ := h'.exists_mem_Gamma0_eq_mul_left hQ.ne' hQN h
   have hGL : atkinLehnerGL hQ h = mapGL ℝ γ * atkinLehnerGL hQ h' := by
     refine Units.ext ?_
-    rw [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, coe_atkinLehnerGL,
-      coe_mapGL_intCast, ← map_intCast_mul, hM]
+    simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
+      Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
+      Int.coe_castRingHom, ← Matrix.map_mul_intCast, hM]
   refine DFunLike.coe_injective ?_
   rw [coe_atkinLehnerOperator, coe_atkinLehnerOperator, hGL, SlashAction.slash_mul,
     SlashInvariantForm.slash_action_eqn f _ (Subgroup.mem_map_of_mem _ hγ)]
@@ -203,19 +201,20 @@ theorem atkinLehnerOperatorCusp_congr (hQ : 0 < Q) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) (h' : IsAtkinLehnerMatrix N Q M')
     (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
     atkinLehnerOperatorCusp hQ hQN h k f = atkinLehnerOperatorCusp hQ hQN h' k f := by
-  obtain ⟨γ, hγ, hM⟩ := h'.exists_mem_Gamma0_mul_eq hQ.ne' hQN h
+  obtain ⟨γ, hγ, hM⟩ := h'.exists_mem_Gamma0_eq_mul_left hQ.ne' hQN h
   have hGL : atkinLehnerGL hQ h = mapGL ℝ γ * atkinLehnerGL hQ h' := by
     refine Units.ext ?_
-    rw [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, coe_atkinLehnerGL,
-      coe_mapGL_intCast, ← map_intCast_mul, hM]
+    simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
+      Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
+      Int.coe_castRingHom, ← Matrix.map_mul_intCast, hM]
   refine DFunLike.coe_injective ?_
   rw [coe_atkinLehnerOperatorCusp, coe_atkinLehnerOperatorCusp, hGL, SlashAction.slash_mul,
     SlashInvariantForm.slash_action_eqn f _ (Subgroup.mem_map_of_mem _ hγ)]
 
 /-- **Slashing twice by `W` multiplies by `Q ^ (k - 2)`.** The square `W ^ 2` is `Q` times an
 element of `Γ₀(N)`; the scalar matrix contributes `Q ^ (k - 2)` and the `Γ₀(N)` factor is
-absorbed. This is the identity the normalization `(√Q) ^ (2 - k)` of Layer 6 is designed to turn
-into an involution in even weight. -/
+absorbed. This is the identity the normalization `(√Q) ^ (2 - k)` turns into an involution in
+even weight. -/
 theorem slash_atkinLehnerGL_slash_atkinLehnerGL (hQ : 0 < Q) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) (f : ℍ → ℂ)
     (hf : ∀ γ ∈ (Gamma0 N).map (mapGL ℝ), f ∣[k] γ = f) :
@@ -232,12 +231,13 @@ theorem slash_atkinLehnerGL_slash_atkinLehnerGL (hQ : 0 < Q) (hQN : Q ∣ N)
       split_ifs <;> simp
     refine Units.ext ?_
     rw [Matrix.GeneralLinearGroup.coe_mul, Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL,
-      coe_mapGL_intCast, ← map_intCast_mul, hsq, hscal, Matrix.smul_mul, Matrix.one_mul]
+      mapGL_coe_matrix, Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+      algebraMap_int_eq, Int.coe_castRingHom, ← Matrix.map_mul_intCast, hsq, hscal,
+      Matrix.smul_mul, Matrix.one_mul]
     ext i j
     simp only [Matrix.map_apply, Matrix.smul_apply, smul_eq_mul, Int.cast_mul, Int.cast_natCast]
-  have hdet : (0 : ℝ) < ((mapGL ℝ γ : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ).det := by
-    rw [coe_mapGL_intCast, ← Int.cast_det, γ.property]
-    norm_num
+  have hdet : (0 : ℝ) < ((mapGL ℝ γ : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ).det :=
+    det_pos_of_mem_slGL ⟨γ, rfl⟩
   rw [← SlashAction.slash_mul, hGL, SlashAction.slash_mul, ModularForm.slash_scalar,
     ModularForm.smul_slash_of_det_pos k hdet, hf _ (Subgroup.mem_map_of_mem _ hγ)]
   simp
@@ -262,5 +262,66 @@ theorem atkinLehnerOperatorCusp_atkinLehnerOperatorCusp (hQ : 0 < Q) (hQN : Q �
       slash_atkinLehnerGL_slash_atkinLehnerGL hQ hQN h ⇑f fun γ hγ ↦
         SlashInvariantForm.slash_action_eqn f γ hγ]
     rfl
+
+/-!
+## The operator of an exact divisor
+
+Taking the Bézout witness `atkinLehnerMatrix N Q` as the representative leaves one operator `W_Q`
+per exact divisor `Q` of `N`, with no matrix for the user to supply. By
+`atkinLehnerOperator_congr` it is the slash by any Atkin–Lehner matrix for `Q` whatsoever.
+-/
+
+/-- **The Atkin–Lehner operator `W_Q`** on `M_k(Γ₀(N))`, for an exact divisor `Q` of `N`: the
+slash by `atkinLehnerMatrix N Q`. Any other Atkin–Lehner matrix for `Q` gives the same operator
+(`Nat.IsExactDivisor.atkinLehnerOperator_eq`). -/
+noncomputable def Nat.IsExactDivisor.atkinLehnerOperator (h : Q ∥ N) (k : ℤ) :
+    ModularForm ((Gamma0 N).map (mapGL ℝ)) k →ₗ[ℂ]
+      ModularForm ((Gamma0 N).map (mapGL ℝ)) k :=
+  _root_.TauCeti.atkinLehnerOperator h.pos h.dvd (isAtkinLehnerMatrix_atkinLehnerMatrix h) k
+
+/-- **The Atkin–Lehner operator `W_Q` on cusp forms** `S_k(Γ₀(N))`. -/
+noncomputable def Nat.IsExactDivisor.atkinLehnerOperatorCusp (h : Q ∥ N) (k : ℤ) :
+    CuspForm ((Gamma0 N).map (mapGL ℝ)) k →ₗ[ℂ] CuspForm ((Gamma0 N).map (mapGL ℝ)) k :=
+  _root_.TauCeti.atkinLehnerOperatorCusp h.pos h.dvd (isAtkinLehnerMatrix_atkinLehnerMatrix h) k
+
+/-- On underlying functions `W_Q` is the slash by `atkinLehnerMatrix N Q`, read in
+`GL (Fin 2) ℝ`. -/
+@[simp]
+theorem Nat.IsExactDivisor.coe_atkinLehnerOperator (h : Q ∥ N)
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    (⇑(h.atkinLehnerOperator k f) : ℍ → ℂ) =
+      ⇑f ∣[k] atkinLehnerGL h.pos (isAtkinLehnerMatrix_atkinLehnerMatrix h) := (rfl)
+
+/-- On underlying functions the cusp-form `W_Q` is the slash by `atkinLehnerMatrix N Q`, read in
+`GL (Fin 2) ℝ`. -/
+@[simp]
+theorem Nat.IsExactDivisor.coe_atkinLehnerOperatorCusp (h : Q ∥ N)
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    (⇑(h.atkinLehnerOperatorCusp k f) : ℍ → ℂ) =
+      ⇑f ∣[k] atkinLehnerGL h.pos (isAtkinLehnerMatrix_atkinLehnerMatrix h) := (rfl)
+
+/-- **`W_Q` is the slash by any Atkin–Lehner matrix for `Q`.** -/
+theorem Nat.IsExactDivisor.atkinLehnerOperator_eq (h : Q ∥ N) (h' : IsAtkinLehnerMatrix N Q M)
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    h.atkinLehnerOperator k f = _root_.TauCeti.atkinLehnerOperator h.pos h.dvd h' k f :=
+  atkinLehnerOperator_congr h.pos h.dvd _ h' f
+
+/-- **The cusp-form `W_Q` is the slash by any Atkin–Lehner matrix for `Q`.** -/
+theorem Nat.IsExactDivisor.atkinLehnerOperatorCusp_eq (h : Q ∥ N) (h' : IsAtkinLehnerMatrix N Q M)
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    h.atkinLehnerOperatorCusp k f = _root_.TauCeti.atkinLehnerOperatorCusp h.pos h.dvd h' k f :=
+  atkinLehnerOperatorCusp_congr h.pos h.dvd _ h' f
+
+/-- **`W_Q` squares to `Q ^ (k - 2)`** on `M_k(Γ₀(N))`. -/
+theorem Nat.IsExactDivisor.atkinLehnerOperator_atkinLehnerOperator (h : Q ∥ N)
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    h.atkinLehnerOperator k (h.atkinLehnerOperator k f) = (Q : ℂ) ^ (k - 2) • f :=
+  _root_.TauCeti.atkinLehnerOperator_atkinLehnerOperator h.pos h.dvd _ f
+
+/-- **The cusp-form `W_Q` squares to `Q ^ (k - 2)`.** -/
+theorem Nat.IsExactDivisor.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp (h : Q ∥ N)
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    h.atkinLehnerOperatorCusp k (h.atkinLehnerOperatorCusp k f) = (Q : ℂ) ^ (k - 2) • f :=
+  _root_.TauCeti.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp h.pos h.dvd _ f
 
 end TauCeti
