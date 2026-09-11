@@ -88,7 +88,9 @@ private theorem isUnit_sqrtOfIsSquare (v w : V) [Invertible (Q v)] [Invertible (
   rw [← isUnit_mul_self_iff, sqrtOfIsSquare_mul_self h]
   exact (isUnit_of_invertible (⅟(Q v))).mul (isUnit_of_invertible (⅟(Q w)))
 
-private theorem reflection_smul_eq (a : K) (v : V) [Invertible (Q v)]
+/-- Rescaling an anisotropic vector does not change its quadratic reflection, provided the
+rescaled vector is still anisotropic. -/
+theorem reflection_smul_eq (a : K) (v : V) [Invertible (Q v)]
     [Invertible (Q (a • v))] :
     QuadraticMap.reflection Q (a • v) = QuadraticMap.reflection Q v := by
   have hcoeff : ⅟(Q (a • v)) * a * a = ⅟(Q v) := by
