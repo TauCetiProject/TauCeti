@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.RamifiedPrime.Independence
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.RamifiedPrime.Narrow
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.ElementaryTwoQuotient
-public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.NarrowClassGroup
+import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.NarrowClassGroup
 import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 import Mathlib.NumberTheory.NumberField.ClassNumber
 import TauCeti.Data.ZMod.IntUnitsPower
