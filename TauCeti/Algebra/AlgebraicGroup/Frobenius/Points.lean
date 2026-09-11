@@ -19,10 +19,10 @@ a monoid endomorphism of the points represented by `H`. When `H` is a Hopf algeb
 convolution points form a group. If `H` is also commutative, they are the points of the affine
 group scheme `Spec H`.
 
-This is the field-endomorphism part of the pinned Chevalley--Demazure interface in Layer 9 of the
-ReductiveGroups roadmap. Once a pinned group's integral coordinate Hopf algebra is constructed,
-`iterateFrobeniusPoints p n` supplies the `p ^ n`-power endomorphism on its points over an
-algebraic closure. The construction itself needs neither algebraic closedness nor finite type.
+This is the field-endomorphism part of the pinned Chevalley--Demazure interface: once a pinned
+group's integral coordinate Hopf algebra is constructed, `iterateFrobeniusPoints p n` supplies the
+`p ^ n`-power endomorphism on its points over an algebraic closure. The construction itself
+needs neither algebraic closedness nor finite type.
 
 ## Main definitions and results
 
@@ -40,9 +40,7 @@ The construction post-composes with Mathlib's `iterateFrobenius`, whose laws sup
 here, and reuses Tau Ceti's convolution-valued functor of points. Those laws are equalities of
 ring homomorphisms, while `AlgHom.mapValue` consumes `ℤ`-algebra homomorphisms; the functoriality
 of `RingHom.toIntAlgHom` that transports the one into the other lives in
-`TauCeti/Algebra/Algebra/Hom.lean`. This file advances the “points over an algebraically closed
-field” target in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`; that target explicitly
-requests the `q`-power Frobenius as its first field-endomorphism case.
+`TauCeti/Algebra/Algebra/Hom.lean`.
 -/
 
 public section
