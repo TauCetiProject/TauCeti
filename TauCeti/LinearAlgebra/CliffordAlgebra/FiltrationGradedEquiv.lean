@@ -38,7 +38,6 @@ construct the total associated-graded algebra or prove multiplication compatibil
   equivalence inverts `Filtration.lean`'s leading-term map, so the two independent routes to the
   degree quotient are the same map, with
   `CliffordAlgebra.filtrationLeadingTerm_eq_filtrationGradedEquiv_symm` the map-level form.
-
 ## References
 
 * [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),

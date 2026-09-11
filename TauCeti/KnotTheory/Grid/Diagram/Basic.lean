@@ -357,6 +357,20 @@ theorem swapColumns_comm (a b : Fin n) (x : GridState n) :
   ext c
   simp [swapColumns_apply, Equiv.swap_comm]
 
+/-- Swapping two columns of a grid state is the same as swapping the two rows they occupy: the
+state is a bijection between columns and rows, and either operation exchanges exactly the two
+grid points in those columns. -/
+theorem swapColumns_eq_swapRows (a b : Fin n) (x : GridState n) :
+    x.swapColumns a b = x.swapRows (x a) (x b) := by
+  ext c
+  rw [swapColumns_apply, swapRows_apply]
+  rcases eq_or_ne c a with rfl | hca
+  · simp
+  rcases eq_or_ne c b with rfl | hcb
+  · simp
+  rw [Equiv.swap_apply_of_ne_of_ne hca hcb,
+    Equiv.swap_apply_of_ne_of_ne (x.toPerm.injective.ne hca) (x.toPerm.injective.ne hcb)]
+
 /-- Swapping the same pair of columns twice is the identity on grid states. -/
 @[simp]
 theorem swapColumns_swapColumns (a b : Fin n) (x : GridState n) :

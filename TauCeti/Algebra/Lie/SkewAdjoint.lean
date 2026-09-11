@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Killing
 public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import TauCeti.Algebra.Lie.Killing.DualBasis
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
+
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
 # Skew-adjoint Lie algebras
@@ -73,6 +75,8 @@ composite is not built here.
   form is `2 • killingForm`.
 * `TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate`: over a ring in which `2` is invertible,
   the Killing quadratic form of a Killing-semisimple Lie algebra is nondegenerate.
+* `Module.Basis.dualBasis_polarBilin_killingQuadraticForm_apply`: the basis dual for the polar form
+  is half the Killing-dual basis.
 
 ## Implementation notes
 
@@ -338,3 +342,36 @@ theorem killingAdjointSO_injective_iff :
 end Killing
 
 end TauCeti.LieAlgebra
+
+open TauCeti
+
+namespace Module.Basis
+
+variable {K : Type u} [Field K] [Invertible (2 : K)]
+
+/-- The basis dual to `b` for the polar form of the Killing quadratic form is half the
+Killing-dual basis. The factor records that this polar form is `2 • killingForm K L`. -/
+@[simp]
+theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Fintype ι]
+    [DecidableEq ι] {L : Type v} [LieRing L] [LieAlgebra K L]
+    [_root_.LieAlgebra.IsKilling K L]
+    (b : Module.Basis ι K L) (i : ι) :
+    LinearMap.BilinForm.dualBasis
+        ((2 : K) • killingForm K L)
+        (by
+          rw [← _root_.TauCeti.LieAlgebra.polarBilin_killingQuadraticForm]
+          exact QuadraticMap.nondegenerate_polar_iff.mpr
+            (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)) b i =
+      (2 : K)⁻¹ • killingDualBasis b i := by
+  let hκ := _root_.LieAlgebra.IsKilling.killingForm_nondegenerate K L
+  have hdual (j : ι) :
+      LinearMap.BilinForm.dualBasis (killingForm K L) hκ b j = killingDualBasis b j := by
+    apply LinearMap.ker_eq_bot.mp hκ.ker_eq_bot
+    apply b.ext
+    intro k
+    rw [LinearMap.BilinForm.apply_dualBasis_left, killingForm_killingDualBasis_left]
+    simp only [eq_comm]
+  rw [b.dualBasis_smul_apply (killingForm K L) hκ (2 : K)
+    (Invertible.ne_zero (2 : K)), hdual]
+
+end Module.Basis

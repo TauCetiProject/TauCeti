@@ -46,6 +46,8 @@ identity rather than merely lower-triangular.
 * `TauCeti.descendMatrix_of_lt` and `TauCeti.descendMatrix_of_le`: the two branches of the
   family, as equations in `GL₂(ℝ)`.
 * `TauCeti.descendMatrix_det`: every member of the family has determinant `p`.
+* `TauCeti.descendMatrix_det_pos`: that determinant is positive, which is what the slash action
+  needs to pull a scalar through a member of the family.
 
 ## Scope
 
@@ -222,5 +224,11 @@ theorem descendMatrix_det (p N : ℕ) [NeZero p]
   · simp [Matrix.det_fin_two]
   · rw [Matrix.GeneralLinearGroup.coe_mul, Matrix.det_mul, hγ, mul_one]
     simp [Matrix.det_fin_two]
+
+/-- Every member of the descent family has positive determinant, namely `p`. -/
+theorem descendMatrix_det_pos (p N : ℕ) [NeZero p] (v : Fin (descendMatrixCount p N)) :
+    0 < (descendMatrix p N v : Matrix (Fin 2) (Fin 2) ℝ).det := by
+  rw [descendMatrix_det]
+  exact_mod_cast NeZero.pos p
 
 end TauCeti

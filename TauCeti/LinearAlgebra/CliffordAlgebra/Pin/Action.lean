@@ -52,6 +52,8 @@ Twisted conjugation is the one that extends to the odd part.
   forced by Mathlib's conventions: `star` is the reversal composed with the grade involution, so
   `star (ι Q v) = -ι Q v` and the unitarity condition defining `pinGroup Q` reads `-Q v = 1` on a
   vector.
+* `CliffordAlgebra.ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one`: two vectors whose norms
+  multiply to one define an element of the Spin group.
 * `CliffordAlgebra.pinToOrthogonal_spinToPin`: on the spin group, twisted conjugation is
   plain conjugation.
 
@@ -382,5 +384,34 @@ theorem pinToOrthogonal_spinToPin (x : spinGroup Q) :
   refine Subtype.ext (LinearEquiv.ext fun m => ι_injective Q ?_)
   rw [ι_pinToOrthogonal_apply, coe_spinToPin_apply, spinGroup.involute_eq x.2,
     coe_spinToOrthogonal_apply, ι_spinVectorAction_apply]
+
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+  {Q : QuadraticForm R M}
+
+/-- The product of two Clifford generators belongs to the Spin group when the product of their
+norms is one. -/
+theorem ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one (x y : M)
+    (hxy : Q x * Q y = 1) :
+    ι Q x * ι Q y ∈ spinGroup Q := by
+  let _ : Invertible (Q x) := (IsUnit.of_mul_eq_one (Q y) hxy).invertible
+  let _ : Invertible (Q y) :=
+    (IsUnit.of_mul_eq_one (Q x) (by simpa only [mul_comm] using hxy)).invertible
+  let a := unitι Q x * unitι Q y
+  have ha : (a : CliffordAlgebra Q) = ι Q x * ι Q y := by simp [a]
+  apply spinGroup.mem_iff.mpr
+  refine ⟨?_, ?_⟩
+  · refine ⟨⟨a, mul_mem (unitι_mem_lipschitzGroup x) (unitι_mem_lipschitzGroup y), ha⟩,
+      (ha ▸ a.isUnit).mem_unitary_of_star_mul_self ?_⟩
+    rw [star_mul, star_ι, star_ι, neg_mul_neg]
+    calc
+      (ι Q y * ι Q x) * (ι Q x * ι Q y) =
+          ι Q y * (ι Q x * ι Q x) * ι Q y := by noncomm_ring
+      _ = ι Q y * algebraMap R _ (Q x) * ι Q y := by rw [ι_sq_scalar]
+      _ = algebraMap R _ (Q x) * (ι Q y * ι Q y) := by
+        rw [← Algebra.commutes (Q x) (ι Q y), mul_assoc]
+      _ = algebraMap R _ (Q x) * algebraMap R _ (Q y) := by rw [ι_sq_scalar]
+      _ = 1 := by rw [← map_mul, hxy, map_one]
+  · rw [← Subalgebra.mem_toSubmodule, CliffordAlgebra.even_toSubmodule]
+    exact ι_mul_ι_mem_evenOdd_zero Q x y
 
 end CliffordAlgebra

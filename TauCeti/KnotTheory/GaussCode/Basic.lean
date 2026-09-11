@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Enumerative.PerfectMatching
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import TauCeti.GroupTheory.Perm.Basic
 import Mathlib.Data.Fin.Rev
+import Mathlib.Data.Fintype.Prod
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -143,6 +144,43 @@ theorem over_partner_ne {D : BasedOrientedGaussCode n} (i : Fin (2 * n)) :
     D.over (D.partner.val i) ≠ D.over i := by
   rw [D.over_partner]
   exact Bool.not_ne_self _
+
+/-!
+### Visits and crossing data
+-/
+
+/-- A visit, read as its crossing label together with whether it is the over visit. -/
+def visitData (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) : Fin n × Bool :=
+  (D.visit i, D.over i)
+
+/-- The two components of the data attached to a visit are its crossing label and over/under
+status. -/
+@[simp]
+theorem visitData_apply (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
+    D.visitData i = (D.visit i, D.over i) := (rfl)
+
+/-- The crossing label and over/under status determine a unique visit. -/
+theorem visitData_bijective (D : BasedOrientedGaussCode n) : Function.Bijective D.visitData := by
+  apply (Fintype.bijective_iff_injective_and_card _).2
+  constructor
+  · intro i j hij
+    have hvis : D.visit i = D.visit j := congrArg Prod.fst hij
+    have hover : D.over i = D.over j := congrArg Prod.snd hij
+    rcases (D.visit_eq_iff i j).mp hvis with rfl | hj
+    · rfl
+    · subst j
+      exact (D.over_partner_ne i hover.symm).elim
+  · simp [Nat.mul_comm]
+
+/-- Visits are equivalent to pairs consisting of a crossing and an over/under choice. -/
+noncomputable def visitDataEquiv (D : BasedOrientedGaussCode n) : Fin (2 * n) ≃ Fin n × Bool :=
+  Equiv.ofBijective D.visitData D.visitData_bijective
+
+/-- The visit equivalence sends a visit to its crossing label and over/under status. -/
+@[simp]
+theorem visitDataEquiv_apply (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
+    D.visitDataEquiv i = (D.visit i, D.over i) := by
+  rw [visitDataEquiv, Equiv.ofBijective_apply, D.visitData_apply]
 
 /-- The writhe is the sum of the signs of all crossings. -/
 def writhe (D : BasedOrientedGaussCode n) : ℤ :=
