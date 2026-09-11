@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Algebra.Hom
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.FixedPoints
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Frobenius
@@ -94,14 +95,6 @@ namespace TauCeti.GeneralLinear
 
 universe w
 
-/-- `RingHom.toIntAlgHom` is a section of `AlgHom.toRingHom`. Kept private: it is a wrapper
-identity, used only because the value-algebra interface of the general-linear points consumes
-`ℤ`-algebra homomorphisms while Mathlib's Frobenius and the inclusion of a subring are ring
-homomorphisms. -/
-private lemma toRingHom_toIntAlgHom {R S : Type*} [Ring R] [Ring S] (φ : R →+* S) :
-    φ.toIntAlgHom.toRingHom = φ :=
-  RingHom.ext fun _ => rfl
-
 variable (n p k : ℕ)
 
 section RingHomTransport
@@ -111,14 +104,14 @@ variable {A B : Type w} [CommRing A] [CommRing B]
 
 /-- Applying a ring homomorphism entrywise preserves the matrix points cut out by a Hopf ideal
 over `ℤ`. Private: it is `TauCeti.GeneralLinear.map_mem_hopfIdealPointsSubgroup` read through
-`toRingHom_toIntAlgHom`, since the points consume `ℤ`-algebra homomorphisms while the two maps this
-file applies to them — the Frobenius and the inclusion of the Frobenius-fixed subring — are ring
-homomorphisms. -/
+`RingHom.toIntAlgHom_toRingHom`, since the points consume `ℤ`-algebra homomorphisms while the
+two maps this file applies to them — the Frobenius and the inclusion of the Frobenius-fixed
+subring — are ring homomorphisms. -/
 private theorem mapRingHom_mem_hopfIdealPointsSubgroup (φ : A →+* B)
     {g : Matrix.GeneralLinearGroup (Fin n) A} (hg : g ∈ hopfIdealPointsSubgroup n I A) :
     Matrix.GeneralLinearGroup.map φ g ∈ hopfIdealPointsSubgroup n I B := by
   have h := map_mem_hopfIdealPointsSubgroup n I φ.toIntAlgHom hg
-  rwa [toRingHom_toIntAlgHom] at h
+  rwa [AlgHom.toRingHom_eq_coe, RingHom.toIntAlgHom_toRingHom] at h
 
 /-- The map of matrix points induced by a ring homomorphism of value rings applies it entrywise.
 Private, for the same reason as `mapRingHom_mem_hopfIdealPointsSubgroup`. -/
@@ -126,7 +119,8 @@ private theorem coe_mapRingHomHopfIdealPointsSubgroup (φ : A →+* B)
     (g : hopfIdealPointsSubgroup n I A) :
     (mapHopfIdealPointsSubgroup n I φ.toIntAlgHom g : Matrix.GeneralLinearGroup (Fin n) B) =
       Matrix.GeneralLinearGroup.map φ g := by
-  rw [coe_mapHopfIdealPointsSubgroup, toRingHom_toIntAlgHom]
+  rw [coe_mapHopfIdealPointsSubgroup, AlgHom.toRingHom_eq_coe,
+    RingHom.toIntAlgHom_toRingHom]
 
 end RingHomTransport
 
@@ -147,7 +141,8 @@ theorem pointToGeneralLinear_iterateFrobeniusPoints
   have hmapValue : Bialgebra.iterateFrobeniusPoints p k f =
       AlgHom.mapValue (H := coordinateHopfAlgebra ℤ n) (iterateFrobenius A p k).toIntAlgHom f := by
     rw [Bialgebra.iterateFrobeniusPoints_apply, AlgHom.mapValue_apply]
-  rw [hmapValue, pointToGeneralLinear_mapValue, toRingHom_toIntAlgHom]
+  rw [hmapValue, pointToGeneralLinear_mapValue, AlgHom.toRingHom_eq_coe,
+    RingHom.toIntAlgHom_toRingHom]
 
 /-- The `p ^ k`-power Frobenius on the points of the general linear coordinate Hopf algebra is the
 entrywise `p ^ k`-power map on invertible matrices.
@@ -233,22 +228,17 @@ theorem iterateFrobeniusHopfIdealPoints_eq_self_iff (x : hopfIdealPointsSubgroup
 @[simp]
 theorem iterateFrobeniusHopfIdealPoints_zero :
     iterateFrobeniusHopfIdealPoints n p 0 I A = MonoidHom.id _ := by
-  have h : (iterateFrobenius A p 0).toIntAlgHom = AlgHom.id ℤ A := by
-    rw [iterateFrobenius_zero]
-    exact AlgHom.ext fun _ => rfl
-  rw [iterateFrobeniusHopfIdealPoints, h, mapHopfIdealPointsSubgroup_id]
+  rw [iterateFrobeniusHopfIdealPoints, iterateFrobenius_zero, RingHom.toIntAlgHom_id,
+    mapHopfIdealPointsSubgroup_id]
 
 /-- Frobenius iterates add under composition on the matrix points cut out by a Hopf ideal. -/
 theorem iterateFrobeniusHopfIdealPoints_add (m : ℕ) :
     iterateFrobeniusHopfIdealPoints n p (k + m) I A =
       (iterateFrobeniusHopfIdealPoints n p k I A).comp
         (iterateFrobeniusHopfIdealPoints n p m I A) := by
-  have h : (iterateFrobenius A p (k + m)).toIntAlgHom =
-      (iterateFrobenius A p k).toIntAlgHom.comp (iterateFrobenius A p m).toIntAlgHom := by
-    rw [iterateFrobenius_add]
-    exact AlgHom.ext fun _ => rfl
   rw [iterateFrobeniusHopfIdealPoints, iterateFrobeniusHopfIdealPoints,
-    iterateFrobeniusHopfIdealPoints, h, mapHopfIdealPointsSubgroup_comp]
+    iterateFrobeniusHopfIdealPoints, iterateFrobenius_add, RingHom.toIntAlgHom_comp,
+    mapHopfIdealPointsSubgroup_comp]
 
 /-- The points of a closed subgroup scheme fixed by the Frobenius, read as a subgroup of `GLₙ(A)`,
 are the points of that subgroup scheme that the entrywise Frobenius fixes. -/
@@ -318,7 +308,8 @@ theorem map_hopfIdealPointsSubgroup_frobeniusFixedSubring :
       exact Subtype.ext h0
     · have h := pointsMulEquiv_mapValue (R := ℤ) n
         (frobeniusFixedSubring A p k).subtype.toIntAlgHom f
-      rw [toRingHom_toIntAlgHom, hfmap, MulEquiv.apply_symm_apply] at h
+      rw [AlgHom.toRingHom_eq_coe, RingHom.toIntAlgHom_toRingHom, hfmap,
+        MulEquiv.apply_symm_apply] at h
       exact h.symm
 
 variable (A) in

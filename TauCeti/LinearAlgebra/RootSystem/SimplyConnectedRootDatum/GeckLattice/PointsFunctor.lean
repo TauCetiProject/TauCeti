@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Functor
+import TauCeti.Algebra.Algebra.Hom
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.GroupScheme
 
 /-!
@@ -110,10 +111,10 @@ theorem coe_geckPointsMap (f : A →+* B) (g : t.geckPoints ht A) :
       Matrix.GeneralLinearGroup.map f g := by
   -- `mapHopfIdealPointsSubgroup` is stated for the `ℤ`-algebra map that `f` induces, whose
   -- underlying ring homomorphism is `f` again.
-  have hring : f.toIntAlgHom.toRingHom = f := RingHom.ext (RingHom.toIntAlgHom_apply f)
   rw [geckPointsMap]
   simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.subgroupCongr_symm_apply,
-    GeneralLinear.coe_mapHopfIdealPointsSubgroup, MulEquiv.subgroupCongr_apply, hring]
+    GeneralLinear.coe_mapHopfIdealPointsSubgroup, MulEquiv.subgroupCongr_apply,
+    AlgHom.toRingHom_eq_coe, RingHom.toIntAlgHom_toRingHom]
 
 /-- Entrywise, the induced map on the points of the pinned Geck carrier applies the homomorphism
 of value rings to each matrix entry. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
+import TauCeti.Algebra.Algebra.Hom
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Order
 public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.DeterminantOne
 public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.PointsFunctor
@@ -302,18 +303,17 @@ theorem coe_upperTriangularPointsMap {A : Type v} {B : Type v'} [CommRing A] [Co
       Matrix.GeneralLinearGroup.map f g := by
   -- `mapHopfIdealPointsSubgroup` is stated for the `ℤ`-algebra map induced by `f`, whose
   -- underlying ring homomorphism is `f` again.
-  have hring : f.toIntAlgHom.toRingHom = f := RingHom.ext (RingHom.toIntAlgHom_apply f)
   rw [upperTriangularPointsMap]
   simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.subgroupCongr_symm_apply,
-    GeneralLinear.coe_mapHopfIdealPointsSubgroup, MulEquiv.subgroupCongr_apply, hring]
+    GeneralLinear.coe_mapHopfIdealPointsSubgroup, MulEquiv.subgroupCongr_apply,
+    AlgHom.toRingHom_eq_coe, RingHom.toIntAlgHom_toRingHom]
 
 /-- The identity homomorphism of value rings induces the identity on upper-triangular carrier
 points. -/
 @[simp]
 theorem upperTriangularPointsMap_id (A : Type v) [CommRing A] :
     upperTriangularPointsMap r (RingHom.id A) = MonoidHom.id (upperTriangularPoints r A) := by
-  have hid : (RingHom.id A).toIntAlgHom = AlgHom.id ℤ A := AlgHom.ext fun _ ↦ rfl
-  rw [upperTriangularPointsMap, hid, GeneralLinear.mapHopfIdealPointsSubgroup_id]
+  rw [upperTriangularPointsMap, RingHom.toIntAlgHom_id, GeneralLinear.mapHopfIdealPointsSubgroup_id]
   apply MonoidHom.ext
   intro g
   exact (MulEquiv.subgroupCongr (upperTriangularPoints_def r A)).symm_apply_apply g
@@ -324,11 +324,10 @@ theorem upperTriangularPointsMap_comp {A : Type v} {B : Type v'} {C : Type*}
     [CommRing A] [CommRing B] [CommRing C] (f : A →+* B) (g : B →+* C) :
     upperTriangularPointsMap r (g.comp f) =
       (upperTriangularPointsMap r g).comp (upperTriangularPointsMap r f) := by
-  have hcomp : (g.comp f).toIntAlgHom = g.toIntAlgHom.comp f.toIntAlgHom :=
-    AlgHom.ext fun _ ↦ rfl
   apply MonoidHom.ext
   intro x
-  simp only [upperTriangularPointsMap, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hcomp,
+  simp only [upperTriangularPointsMap, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    RingHom.toIntAlgHom_comp,
     GeneralLinear.mapHopfIdealPointsSubgroup_comp, MulEquiv.apply_symm_apply]
 
 /-- The group-valued functor of matrix points of the upper-triangular subgroup scheme of the

@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+import TauCeti.Algebra.Algebra.Hom
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Torus
 
@@ -130,10 +131,10 @@ theorem map_kostantToralWeylPoint {A : Type v} {B : Type v'} [CommRing A] [CommR
         (kostantToralPointsSubgroup_def e h ρ M hM hnil b wt B)
         (kostantToralWeylPoint e h ρ M hM hnil b wt i j B) := by
   apply Subtype.ext
-  have hring : φ.toIntAlgHom.toRingHom = φ := RingHom.ext (RingHom.toIntAlgHom_apply φ)
   simp only [GeneralLinear.coe_mapHopfIdealPointsSubgroup, kostantToralWeylPoint,
     MulEquiv.subgroupCongr_apply, Subgroup.coe_mul, map_mul,
-    coe_kostantToralRootSubgroupPoints, hring]
+    coe_kostantToralRootSubgroupPoints, AlgHom.toRingHom_eq_coe,
+    RingHom.toIntAlgHom_toRingHom]
   rw [map_kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b φ,
     map_kostantRootSubgroupMatrix e h ρ M hM j (hnil j) b φ,
     AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply,
