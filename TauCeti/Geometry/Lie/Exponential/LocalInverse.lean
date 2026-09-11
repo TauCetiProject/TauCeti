@@ -592,6 +592,8 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
       exact OpenPartialHomeomorph.trans_apply
         (e := d.toOpenPartialHomeomorph) (e' := c.symm.toOpenPartialHomeomorph)
     rw [hqapply]
+    -- As above, the inverse coercion elaborates through `toPartialEquiv`; expose it so the
+    -- semantic inverse-chart equality rewrites without unfolding the chart construction.
     change f x = c.toPartialEquiv.symm (d x)
     rw [hcsymm, ← hd]
     exact ((extChartAt I (1 : G)).left_inv (hdsource hx.1)).symm

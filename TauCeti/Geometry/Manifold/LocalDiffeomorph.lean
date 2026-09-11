@@ -262,6 +262,8 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
       _ = ψ.symm (Θ (φ y)) := by
         rw [coe_extChartPartialDiffeomorph,
           PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv]
+        -- The inverse coercion of a partial diffeomorphism elaborates through its inherited
+        -- partial equivalence; expose that canonical form before applying the semantic chart rule.
         change (extChartPartialDiffeomorph J n (f x)).toPartialEquiv.symm
             (Θ (extChartAt I x y)) = ψ.invFun (Θ (φ y))
         rw [coe_extChartPartialDiffeomorph_symm, hφ, hψ,
