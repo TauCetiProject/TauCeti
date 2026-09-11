@@ -88,30 +88,6 @@ private theorem isUnit_sqrtOfIsSquare (v w : V) [Invertible (Q v)] [Invertible (
   rw [← isUnit_mul_self_iff, sqrtOfIsSquare_mul_self h]
   exact (isUnit_of_invertible (⅟(Q v))).mul (isUnit_of_invertible (⅟(Q w)))
 
-/-- Rescaling an anisotropic vector does not change its quadratic reflection, provided the
-rescaled vector is still anisotropic. -/
-theorem reflection_smul_eq (a : K) (v : V) [Invertible (Q v)]
-    [Invertible (Q (a • v))] :
-    QuadraticMap.reflection Q (a • v) = QuadraticMap.reflection Q v := by
-  have hcoeff : ⅟(Q (a • v)) * a * a = ⅟(Q v) := by
-    rw [← mul_right_inj_of_invertible (c := Q v)]
-    calc
-      Q v * (⅟(Q (a • v)) * a * a) = ⅟(Q (a • v)) * (a * a * Q v) := by ring
-      _ = ⅟(Q (a • v)) * Q (a • v) := by
-        congr 1
-        exact (QuadraticMap.map_smul Q a v).symm
-      _ = 1 := invOf_mul_self _
-      _ = Q v * ⅟(Q v) := (mul_invOf_self _).symm
-  ext m
-  rw [QuadraticMap.reflection_apply, QuadraticMap.reflection_apply,
-    QuadraticMap.polar_smul_left]
-  simp only [smul_eq_mul, smul_smul]
-  congr 2
-  calc
-    ⅟(Q (a • v)) * (a * polar Q v m) * a =
-        (⅟(Q (a • v)) * a * a) * polar Q v m := by ring
-    _ = ⅟(Q v) * polar Q v m := by rw [hcoeff]
-
 private noncomputable def spinReflectionPairLift (v w : V) [Invertible (Q v)]
     [Invertible (Q w)] (h : IsSquare (⅟(Q v) * ⅟(Q w))) : spinGroup Q := by
   have : Invertible (sqrtOfIsSquare h) :=
@@ -183,7 +159,7 @@ theorem reflection_mul_reflection_mem_range_spinToOrthogonal_of_isSquare
     apply Subtype.ext
     simp only [Subgroup.coe_mul, QuadraticMap.coe_reflectionOrthogonal]
     exact congrArg (fun x : V ≃ₗ[K] V => x * QuadraticMap.reflection Q w)
-      (reflection_smul_eq Q (sqrtOfIsSquare h) v)
+      (QuadraticMap.reflection_smul_eq Q v (sqrtOfIsSquare h))
   apply Subtype.ext
   apply LinearEquiv.ext
   intro m

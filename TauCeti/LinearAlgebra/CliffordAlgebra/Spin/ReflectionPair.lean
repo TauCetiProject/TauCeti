@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.ReflectionLift
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
 
 /-!
 # Normalized reflection-pair lifts in Spin groups
@@ -62,10 +62,16 @@ variable [Invertible (2 : R)]
 
 /-- The orthogonal action of a normalized reflection-pair lift is the ordered product of the two
 reflections. -/
+@[simp]
 theorem spinToOrthogonal_spinReflectionPair (Q : QuadraticForm R M) (v w : M)
-    (hv : Q v = 1) (hw : Q w = 1) [Invertible (Q v)] [Invertible (Q w)] :
+    (hv : Q v = 1) (hw : Q w = 1) :
+    let _ : Invertible (Q v) := hv.symm ▸ invertibleOne
+    let _ : Invertible (Q w) := hw.symm ▸ invertibleOne
     spinToOrthogonal Q (spinReflectionPair Q v w hv hw) =
       QuadraticMap.reflectionOrthogonal Q v * QuadraticMap.reflectionOrthogonal Q w := by
+  dsimp only
+  let _ : Invertible (Q v) := hv.symm ▸ invertibleOne
+  let _ : Invertible (Q w) := hw.symm ▸ invertibleOne
   let a : lipschitzGroup Q :=
     ⟨unitι Q v * unitι Q w,
       mul_mem (unitι_mem_lipschitzGroup v) (unitι_mem_lipschitzGroup w)⟩

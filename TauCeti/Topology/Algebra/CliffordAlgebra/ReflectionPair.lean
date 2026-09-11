@@ -46,8 +46,7 @@ private theorem euclidean_norm_eq_one_of_realCliffordForm_zero_eq_one {n : ℕ}
   simp_rw [hweight, one_mul] at hv
   have hsquare : ‖(EuclideanSpace.equiv (Fin n) ℝ).symm v‖ ^ 2 = 1 := by
     rw [EuclideanSpace.real_norm_sq_eq]
-    change ∑ i, v i ^ 2 = 1
-    simpa only [Nat.add_zero, pow_two] using hv
+    simpa only [PiLp.continuousLinearEquiv_symm_apply, Nat.add_zero, pow_two] using hv
   nlinarith [norm_nonneg ((EuclideanSpace.equiv (Fin n) ℝ).symm v)]
 
 private theorem realCliffordForm_zero_euclidean_eq_one {n : ℕ}
