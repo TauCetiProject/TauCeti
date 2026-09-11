@@ -30,7 +30,7 @@ models.
 * `TauCeti.Hodge.Conjugation`: a conjugate-linear involution of a complex vector space.
 * `TauCeti.Hodge.complexificationConjugation`: the canonical conjugation on the complexification
   of a real vector space, bundled as a Hodge conjugation.
-* `TauCeti.Hodge.map_eigenspace_baseChange`: canonical conjugation carries each eigenspace of a
+* `TauCeti.LinearMap.map_eigenspace_baseChange`: canonical conjugation carries each eigenspace of a
   complexified real-linear endomorphism to the eigenspace of the conjugate eigenvalue.
 * `TauCeti.Hodge.Conjugation.tensorProduct`: the tensor product of two conjugations.
 * `TauCeti.Hodge.Conjugation.tensorProduct_toEquiv_tmul`: its action on pure tensors.
@@ -87,7 +87,7 @@ noncomputable def complexificationConjugation : Conjugation (ℂ ⊗[ℝ] V) whe
 
 /-- The bundled canonical conjugation agrees with tensor conjugation on every vector. -/
 @[simp]
-theorem complexificationConjugation_toEquiv (x : ℂ ⊗[ℝ] V) :
+theorem complexificationConjugation_toEquiv_apply (x : ℂ ⊗[ℝ] V) :
     (complexificationConjugation V).toEquiv x = tmulConj V x :=
   by simp [complexificationConjugation]
 
@@ -96,35 +96,51 @@ tensor and fixes its real factor. -/
 theorem complexificationConjugation_toEquiv_tmul (z : ℂ) (v : V) :
     (complexificationConjugation V).toEquiv (z ⊗ₜ[ℝ] v) =
       (starRingEnd ℂ) z ⊗ₜ[ℝ] v := by
-  rw [complexificationConjugation_toEquiv, tmulConj_tmul]
+  rw [complexificationConjugation_toEquiv_apply, tmulConj_tmul]
+
+end TauCeti.Hodge
+
+namespace TauCeti.LinearMap
+
+open scoped TensorProduct
+
+universe u
+
+variable {V : Type u} [AddCommGroup V] [Module ℝ V]
 
 /-- Canonical conjugation carries the `z`-eigenspace of a complexified real-linear endomorphism
 to its conjugate-eigenvalue eigenspace. -/
 @[simp]
 theorem map_eigenspace_baseChange (f : V →ₗ[ℝ] V) (z : ℂ) :
     (Module.End.eigenspace (f.baseChange ℂ) z).map
-        (complexificationConjugation V).toEquiv.toLinearMap =
+        (Hodge.complexificationConjugation V).toEquiv.toLinearMap =
       Module.End.eigenspace (f.baseChange ℂ) ((starRingEnd ℂ) z) := by
   apply le_antisymm
   · rintro _ ⟨x, hx, rfl⟩
     apply Module.End.mem_eigenspace_iff.mpr
     have hx' := Module.End.mem_eigenspace_iff.mp hx
-    rw [LinearEquiv.coe_toLinearMap, complexificationConjugation_toEquiv]
+    rw [LinearEquiv.coe_toLinearMap, Hodge.complexificationConjugation_toEquiv_apply]
     calc
       f.baseChange ℂ (tmulConj V x) =
           tmulConj V (f.baseChange ℂ x) := (tmulConj_baseChange f x).symm
       _ = tmulConj V (z • x) := congrArg (tmulConj V) hx'
       _ = (starRingEnd ℂ) z • tmulConj V x := by simp
   · intro x hx
-    refine ⟨(complexificationConjugation V).toEquiv x, ?_, by simp⟩
+    refine ⟨(Hodge.complexificationConjugation V).toEquiv x, ?_, by simp⟩
     apply Module.End.mem_eigenspace_iff.mpr
     have hx' := Module.End.mem_eigenspace_iff.mp hx
-    rw [complexificationConjugation_toEquiv]
+    rw [Hodge.complexificationConjugation_toEquiv_apply]
     calc
       f.baseChange ℂ (tmulConj V x) =
           tmulConj V (f.baseChange ℂ x) := (tmulConj_baseChange f x).symm
       _ = tmulConj V ((starRingEnd ℂ) z • x) := congrArg (tmulConj V) hx'
       _ = z • tmulConj V x := by simp
+
+end TauCeti.LinearMap
+
+namespace TauCeti.Hodge
+
+open scoped TensorProduct
 
 namespace Conjugation
 
