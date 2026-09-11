@@ -40,9 +40,10 @@ the failure being exactly that its structure map is not surjective.
   `finrank K A = n ^ 2 * finrank K D`.
 * `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_forall_nonempty_algEquiv`: over a field whose
   finite-dimensional central division algebras are all the field itself, every
-  finite-dimensional central simple algebra is a full matrix algebra over that field. This is
-  the criterion behind the two matrix presentations below, over a finite and over a separably
-  closed base field.
+  finite-dimensional central simple algebra is a full matrix algebra over that field. It is the
+  criterion behind `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_finite` below and
+  `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_isSepClosed` in
+  `TauCeti/Algebra/CentralSimple/SeparablyClosed.lean`.
 * `TauCeti.baseFieldAlgEquivOfFinite`: a finite central division algebra over a field is the base
   field.
 * `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_finite`: a central simple algebra over a
@@ -107,12 +108,10 @@ theorem exists_algEquiv_matrix_centralDivisionRing [Algebra.IsCentral K A] [IsSi
 /-- **A field whose central division algebras are all itself splits every central simple
 algebra.** Given the Wedderburn presentation `A ≃ₐ Mₙ(D)`, the hypothesis collapses `D` to `K`.
 
-This is the common content of `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_finite` and
-`TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_isSepClosed`; each supplies the hypothesis from a
-different property of `K`. It takes a universally quantified hypothesis rather than a class
-because the class one wants -- triviality of the Brauer group -- is only definable further
-downstream, where this statement reappears as
-`TauCeti.Algebra.isSplittingField_self_of_isBrauerTrivial`. -/
+The hypothesis says that `K` admits no finite-dimensional central division algebra other than
+itself, equivalently that its Brauer group is trivial. It holds over a finite field, by little
+Wedderburn, and over a separably closed field, where Jacobson--Noether would otherwise produce a
+separable element outside the base field. -/
 theorem exists_algEquiv_matrix_of_forall_nonempty_algEquiv [Algebra.IsCentral K A]
     [IsSimpleRing A] [FiniteDimensional K A]
     (h : ∀ (D : Type u) [DivisionRing D] [Algebra K D] [Algebra.IsCentral K D]
