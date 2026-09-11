@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Generation
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Generation
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.ReflectionPair
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Rotation
 
