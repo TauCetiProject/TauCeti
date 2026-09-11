@@ -148,7 +148,7 @@ theorem isAtkinLehnerMatrix_atkinLehnerMatrix (h : Q ∥ N) :
   have hbez : (1 : ℤ) = Q * Nat.gcdA Q (N / Q) + (N / Q : ℕ) * Nat.gcdB Q (N / Q) := by
     have := Nat.gcd_eq_gcd_ab Q (N / Q)
     rwa [h.coprime, Nat.cast_one] at this
-  have hm : N = Q * (N / Q) := (h.mul_div_cancel').symm
+  have hm : N = Q * (N / Q) := (Nat.mul_div_cancel' h.dvd).symm
   have key := isAtkinLehnerMatrix_of_entries hm (Nat.gcdA Q (N / Q)) (-Nat.gcdB Q (N / Q)) 1 1
     (by linear_combination -hbez)
   have : atkinLehnerMatrix N Q =

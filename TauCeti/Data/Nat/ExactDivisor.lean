@@ -32,6 +32,8 @@ vertical line `‖`; it is scoped, so it never competes with the `∥` of `Affin
 
 ## Main results
 
+* `TauCeti.Nat.isExactDivisor_iff`: the predicate unfolded to its two conditions.
+* `TauCeti.Nat.IsExactDivisor.div`: for `N ≠ 0` the complementary divisor `N / Q` is exact too.
 * `TauCeti.Nat.IsExactDivisor.ne_zero`: an exact divisor is nonzero. There is no exact divisor
   `0`, because `Nat.Coprime 0 0` is false.
 * `TauCeti.Nat.isExactDivisor_one`, `TauCeti.Nat.isExactDivisor_self`: `1` and (for `N ≠ 0`) `N`
@@ -70,9 +72,16 @@ theorem IsExactDivisor.ne_zero (h : IsExactDivisor Q N) : Q ≠ 0 := by
 theorem IsExactDivisor.pos (h : IsExactDivisor Q N) : 0 < Q :=
   Nat.pos_of_ne_zero h.ne_zero
 
-/-- The complementary divisor of an exact divisor recovers `N`. -/
-theorem IsExactDivisor.mul_div_cancel' (h : IsExactDivisor Q N) : Q * (N / Q) = N :=
-  Nat.mul_div_cancel' h.dvd
+/-- The defining conditions of an exact divisor, as a rewrite rule. -/
+@[simp]
+theorem isExactDivisor_iff : IsExactDivisor Q N ↔ Q ∣ N ∧ Nat.Coprime Q (N / Q) :=
+  ⟨fun h ↦ ⟨h.dvd, h.coprime⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
+/-- **The complementary divisor is exact.** For `N ≠ 0`, `N / Q` is again an exact divisor of `N`,
+whose own complement is `Q` again (`Nat.div_div_self`). At `N = 0` this fails: `1` is an exact
+divisor of `0`, but `0 / 1 = 0` is not. -/
+theorem IsExactDivisor.div (h : IsExactDivisor Q N) (hN : N ≠ 0) : IsExactDivisor (N / Q) N :=
+  ⟨Nat.div_dvd_of_dvd h.dvd, by rw [Nat.div_div_self h.dvd hN]; exact h.coprime.symm⟩
 
 /-- `1` is an exact divisor of every `N`. -/
 theorem isExactDivisor_one : IsExactDivisor 1 N :=

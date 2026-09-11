@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Matrix
 public import TauCeti.NumberTheory.ModularForms.Basic
+public import TauCeti.NumberTheory.ModularForms.Fricke.Matrix
 
 /-!
 # The Atkin–Lehner slash operator
@@ -50,6 +51,12 @@ alone, with no matrix to supply — is the interface to use.
 * `TauCeti.Nat.IsExactDivisor.atkinLehnerOperator_eq`,
   `TauCeti.Nat.IsExactDivisor.atkinLehnerOperatorCusp_eq`: `W_Q` is the slash by *any* Atkin–Lehner
   matrix for `Q`.
+* `TauCeti.Nat.IsExactDivisor.atkinLehnerOperator_one`,
+  `TauCeti.Nat.IsExactDivisor.atkinLehnerOperatorCusp_one`: `W_1` is the identity.
+* `TauCeti.Nat.IsExactDivisor.coe_atkinLehnerOperator_self`,
+  `TauCeti.Nat.IsExactDivisor.coe_atkinLehnerOperatorCusp_self`: `W_N` is the slash by the Fricke
+  matrix `TauCeti.frickeGL ℝ N`, the slash that `TauCeti.frickeOperator` performs at level
+  `Γ₁(N)`.
 
 ## References
 
@@ -323,5 +330,65 @@ theorem Nat.IsExactDivisor.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp (h : 
     (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
     h.atkinLehnerOperatorCusp k (h.atkinLehnerOperatorCusp k f) = (Q : ℂ) ^ (k - 2) • f :=
   _root_.TauCeti.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp h.pos h.dvd _ f
+
+/-!
+## The endpoints `Q = 1` and `Q = N`
+-/
+
+/-- At `Q = 1` the matrix `atkinLehnerMatrix N 1` has determinant `1`, so it is an element of
+`Γ₀(N)` (`isAtkinLehnerMatrix_one_iff_mem_Gamma0`), and a function invariant under `Γ₀(N)` is
+unchanged by the slash. -/
+theorem Nat.IsExactDivisor.slash_atkinLehnerGL_one (h : 1 ∥ N) (f : ℍ → ℂ)
+    (hf : ∀ γ ∈ (Gamma0 N).map (mapGL ℝ), f ∣[k] γ = f) :
+    f ∣[k] atkinLehnerGL h.pos (isAtkinLehnerMatrix_atkinLehnerMatrix h) = f := by
+  have hM := isAtkinLehnerMatrix_atkinLehnerMatrix h
+  obtain ⟨γ, hγM⟩ : ∃ γ : SL(2, ℤ), (γ : Matrix (Fin 2) (Fin 2) ℤ) = atkinLehnerMatrix N 1 :=
+    ⟨⟨atkinLehnerMatrix N 1, by rw [hM.det_eq, Nat.cast_one]⟩, rfl⟩
+  have hγ : γ ∈ Gamma0 N := (isAtkinLehnerMatrix_one_iff_mem_Gamma0 γ).mp (hγM ▸ hM)
+  have hGL : atkinLehnerGL h.pos hM = mapGL ℝ γ := by
+    refine Units.ext ?_
+    simp only [coe_atkinLehnerGL, mapGL_coe_matrix, Matrix.SpecialLinearGroup.map_apply_coe,
+      RingHom.mapMatrix_apply, algebraMap_int_eq, Int.coe_castRingHom, hγM]
+  rw [hGL]
+  exact hf _ (Subgroup.mem_map_of_mem _ hγ)
+
+/-- **`W_1` is the identity** on `M_k(Γ₀(N))`. -/
+@[simp]
+theorem Nat.IsExactDivisor.atkinLehnerOperator_one (h : 1 ∥ N)
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) : h.atkinLehnerOperator k f = f :=
+  DFunLike.coe_injective <| h.slash_atkinLehnerGL_one ⇑f fun γ hγ ↦
+    SlashInvariantForm.slash_action_eqn f γ hγ
+
+/-- **The cusp-form `W_1` is the identity** on `S_k(Γ₀(N))`. -/
+@[simp]
+theorem Nat.IsExactDivisor.atkinLehnerOperatorCusp_one (h : 1 ∥ N)
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) : h.atkinLehnerOperatorCusp k f = f :=
+  DFunLike.coe_injective <| h.slash_atkinLehnerGL_one ⇑f fun γ hγ ↦
+    SlashInvariantForm.slash_action_eqn f γ hγ
+
+/-- The Fricke matrix read as an Atkin–Lehner matrix for `Q = N` is `frickeGL ℝ N`. -/
+theorem atkinLehnerGL_fricke [NeZero N] (hN : 0 < N) :
+    atkinLehnerGL hN (isAtkinLehnerMatrix_fricke (N := N)) = frickeGL ℝ N := by
+  refine Units.ext ?_
+  rw [coe_atkinLehnerGL, coe_frickeGL]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
+/-- **`W_N` is the Fricke slash** on `M_k(Γ₀(N))`: on underlying functions it is
+`⇑f ∣[k] frickeGL ℝ N`, the slash that `frickeOperator` performs at level `Γ₁(N)`
+(`coe_frickeOperator`). -/
+theorem Nat.IsExactDivisor.coe_atkinLehnerOperator_self [NeZero N] (h : N ∥ N)
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    (⇑(h.atkinLehnerOperator k f) : ℍ → ℂ) = ⇑f ∣[k] frickeGL ℝ N := by
+  rw [h.atkinLehnerOperator_eq isAtkinLehnerMatrix_fricke,
+    _root_.TauCeti.coe_atkinLehnerOperator, atkinLehnerGL_fricke]
+
+/-- **The cusp-form `W_N` is the Fricke slash** on `S_k(Γ₀(N))`, the slash that
+`frickeOperatorCusp` performs at level `Γ₁(N)` (`coe_frickeOperatorCusp`). -/
+theorem Nat.IsExactDivisor.coe_atkinLehnerOperatorCusp_self [NeZero N] (h : N ∥ N)
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    (⇑(h.atkinLehnerOperatorCusp k f) : ℍ → ℂ) = ⇑f ∣[k] frickeGL ℝ N := by
+  rw [h.atkinLehnerOperatorCusp_eq isAtkinLehnerMatrix_fricke,
+    _root_.TauCeti.coe_atkinLehnerOperatorCusp, atkinLehnerGL_fricke]
 
 end TauCeti
