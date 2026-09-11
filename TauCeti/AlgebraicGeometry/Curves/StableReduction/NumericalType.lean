@@ -92,8 +92,8 @@ connectedness condition on a numerical type, so this is what supplies the `conne
 
 The nonnegativity hypothesis is what turns a nonzero cross-entry into a positive one, and so
 cannot be dropped. -/
-lemma forall_reflTransGen_ne_and_pos_iff {C : Type*} (A : Matrix C C ℤ)
-    (hA : ∀ i j, i ≠ j → 0 ≤ A i j) :
+lemma forall_reflTransGen_ne_and_pos_iff {C R : Type*} [PartialOrder R] [Zero R]
+    (A : Matrix C C R) (hA : ∀ i j, i ≠ j → 0 ≤ A i j) :
     (∀ i j, Relation.ReflTransGen (fun i j ↦ i ≠ j ∧ 0 < A i j) i j) ↔
       ∀ s : Set C, s.Nonempty → s ≠ Set.univ → ¬ ∀ i ∈ s, ∀ j ∉ s, A i j = 0 := by
   rw [TauCeti.forall_reflTransGen_iff]
@@ -105,9 +105,8 @@ lemma forall_reflTransGen_ne_and_pos_iff {C : Type*} (A : Matrix C C ℤ)
     by_contra hcon
     refine hcut fun i hi j hj ↦ ?_
     have hij : i ≠ j := fun h ↦ hj (h ▸ hi)
-    refine le_antisymm ?_ (hA i j hij)
-    by_contra hle
-    exact hcon ⟨i, hi, j, hj, hij, not_le.1 hle⟩
+    by_contra hne
+    exact hcon ⟨i, hi, j, hj, hij, lt_of_le_of_ne (hA i j hij) (Ne.symm hne)⟩
 
 end Matrix
 
