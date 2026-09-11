@@ -170,11 +170,9 @@ instance isScalarTower_localRing : IsScalarTower R E.localRing E.extensionField 
       ← IsScalarTower.algebraMap_apply E.integralClosure E.localRing E.extensionField,
       ← IsScalarTower.algebraMap_apply R E.integralClosure E.extensionField]
 
-instance faithfulSMul_localRing : FaithfulSMul R E.localRing := by
-  rw [faithfulSMul_iff_algebraMap_injective,
-    IsScalarTower.algebraMap_eq R E.integralClosure E.localRing]
-  exact (IsLocalization.injective E.localRing E.prime.primeCompl_le_nonZeroDivisors).comp
-    (FaithfulSMul.algebraMap_injective R E.integralClosure)
+instance faithfulSMul_localRing : FaithfulSMul R E.localRing :=
+  have := IsLocalization.AtPrime.faithfulSMul E.localRing E.integralClosure E.prime
+  FaithfulSMul.trans R E.integralClosure E.localRing
 
 /-- The maximal ideal of the local ring of the chosen place contracts to the chosen place. -/
 @[simp]
