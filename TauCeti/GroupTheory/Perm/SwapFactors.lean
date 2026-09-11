@@ -58,8 +58,9 @@ Mathlib's `Equiv.Perm.swapFactors` builds by the recursion of `Equiv.Perm.swapFa
 `Mathlib/GroupTheory/Perm/Sign.lean`, and measures it: that list `L` satisfies
 `TauCeti.orbitCount σ + L.length = Nat.card α`. With the lower bound
 `TauCeti.card_le_orbitCount_add_length` this makes `Nat.card α - TauCeti.orbitCount σ` the
-reflection length of `σ`, which is the quantity the Euler-characteristic induction of the
-`BelyiMaps` roadmap walks along.
+reflection length of `σ`, so that an induction along a minimal factorization, as in
+Euler-characteristic bounds for products of permutations, changes the number of orbits by exactly
+one at each step.
 -/
 
 public section

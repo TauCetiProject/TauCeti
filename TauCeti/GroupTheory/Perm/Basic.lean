@@ -44,8 +44,7 @@ theorem sameCycle_toPerm_iff {α : Type*} (f : α → α) (hf : Function.Involut
       simpa using this
 
 /-- If a periodic point `a` of `σ` shares its orbit with `b`, some positive natural power of `σ`
-carries `a` to `b`. An integer exponent witnessing `σ.SameCycle a b` is reduced modulo
-`MulAction.period σ a` and then shifted by one further period to make it positive. -/
+carries `a` to `b`. -/
 theorem _root_.Equiv.Perm.SameCycle.exists_pos_pow_eq_of_mem_periodicPts {α : Type*}
     {σ : Equiv.Perm α} {a b : α} (h : σ.SameCycle a b)
     (ha : a ∈ Function.periodicPts (σ : α → α)) : ∃ j : ℕ, 0 < j ∧ (σ ^ j) a = b := by
