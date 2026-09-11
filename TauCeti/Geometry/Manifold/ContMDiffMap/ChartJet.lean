@@ -32,14 +32,14 @@ public section
 open Set Filter Topology
 open scoped Manifold
 
+namespace TauCeti
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : WithTop ℕ∞} [IsManifold I n M]
-
-namespace ContMDiffMap
 
 /-- The derivative of order `m` of a vector-valued map in the source chart at `x`, as a
 continuous map on the extended chart target. Derivatives are taken within that target. -/
@@ -83,12 +83,6 @@ noncomputable def chartWeakWhitneyJet
 theorem chartWeakWhitneyJet_apply
     (f : C^n⟮I, M; modelWithCornersSelf 𝕜 F, F⟯) (x : M) (m : {m : ℕ // m ≤ n}) :
     chartWeakWhitneyJet f x m = chartIteratedFDeriv f x m m.property := (rfl)
-
-end ContMDiffMap
-
-namespace TauCeti
-
-open ContMDiffMap
 
 /-- The weak Whitney topology on vector-valued `C^n` maps from a manifold: the initial topology
 for all derivatives on all preferred extended chart targets. -/
@@ -178,7 +172,7 @@ omit [IsManifold I n M]
 /-- For the identity chart of a normed space, the chart derivative is the ordinary iterated
 derivative, evaluated on the subtype representing the whole chart target. -/
 @[simp]
- theorem chartIteratedFDeriv_self_apply
+theorem chartIteratedFDeriv_self_apply
     (f : C^n⟮modelWithCornersSelf 𝕜 E, E; modelWithCornersSelf 𝕜 F, F⟯)
     (x : E) (m : ℕ) (hm : m ≤ n)
     (y : (extChartAt (modelWithCornersSelf 𝕜 E) x).target) :
