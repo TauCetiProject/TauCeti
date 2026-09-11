@@ -13,7 +13,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 public import TauCeti.Algebra.Bialgebra.GroupLike.Torsion
 
 /-!
-# The characters of a geometrically connected affine group are torsion free
+# The characters of a geometrically reduced, geometrically connected affine group are torsion free
 
 A geometric character of an affine group `Spec H` is a group-like element of the coordinate Hopf
 algebra of its base change to an algebraic closure. This file proves that when `H` is

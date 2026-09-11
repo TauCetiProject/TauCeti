@@ -24,11 +24,12 @@ Consequently, if the group algebra of a commutative group is reduced and has con
 spectrum, then the group is torsion-free. This is the algebraic input that distinguishes tori
 from general groups of multiplicative type.
 
-Both hypotheses are needed. In exponential characteristic `p` the `p`-th power map of a group
-algebra indexed by a `p`-torsion group is the `p`-th power of its counit, so every element differs
-from a scalar by a `p`-nilpotent, and the prime spectrum is connected however much `p`-torsion the
-group carries. The coordinate Hopf algebra of `μ_p` in characteristic `p` is the standard
-instance: connected, not reduced, and with a character of order `p`.
+Both hypotheses are needed. In exponential characteristic `p` the `p`-th power map of a monoid
+algebra indexed by a `p`-torsion monoid is the `p`-th power of its counit, so every element differs
+from a scalar by a `p`-nilpotent, and over a coefficient ring with connected prime spectrum the
+monoid algebra again has connected prime spectrum, however much `p`-torsion the monoid carries.
+The coordinate Hopf algebra of `μ_p` in characteristic `p` is the standard instance: connected,
+not reduced, and with a character of order `p`.
 
 ## Main declarations
 
@@ -37,9 +38,10 @@ instance: connected, not reduced, and with a character of order `p`.
 * `TauCeti.isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace`: reducedness and
   connectedness of a group algebra force its indexing group to be torsion-free.
 * `TauCeti.pow_expChar_monoidAlgebra_eq_algebraMap`: in exponential characteristic `p`, the
-  `p`-th power map of a `p`-torsion group algebra is the `p`-th power of its counit.
-* `TauCeti.connectedSpace_primeSpectrum_monoidAlgebra_of_pow_eq_one`: a `p`-torsion group algebra
-  in exponential characteristic `p` has connected prime spectrum.
+  `p`-th power map of a `p`-torsion monoid algebra is the `p`-th power of its counit.
+* `TauCeti.connectedSpace_primeSpectrum_monoidAlgebra_of_pow_eq_one`: over a coefficient ring with
+  connected prime spectrum, a `p`-torsion monoid algebra in exponential characteristic `p` again
+  has connected prime spectrum.
 
 ## References
 
