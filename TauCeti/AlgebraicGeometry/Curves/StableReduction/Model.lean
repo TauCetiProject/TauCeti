@@ -34,8 +34,7 @@ namespace TauCeti
 universe u
 
 -- The categorical packaging below adapts the target signature in
--- `TauCetiRoadmap/StableReduction/Suggested.lean`.  We additionally record
--- quasi-separatedness, the third constituent of finite presentation in Mathlib.
+-- `TauCetiRoadmap/StableReduction/Suggested.lean`.
 
 /-- The scalar extension of a scheme over `R` to a field `K`, regarded as a scheme over `K`.
 When `K` is a fraction field of `R`, this is the generic fibre. -/
@@ -51,10 +50,7 @@ noncomputable abbrev genericFiberι (R K : Type u) [CommRing R] [Field K] [Algeb
   pullback.fst toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))
 
 /-- A flat finitely presented model over a discrete valuation ring, together with an explicit
-identification of its generic fibre with a fixed scheme over the fraction field.
-
-Finite presentation is recorded by Mathlib's three constituent properties:
-`LocallyOfFinitePresentation`, `QuasiCompact`, and `QuasiSeparated`. -/
+identification of its generic fibre with a fixed scheme over the fraction field. -/
 structure Model (R K : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
     [Field K] [Algebra R K] [IsFractionRing R K]
     (C : Scheme.{u}) (toK : C ⟶ Spec (.of K)) where
@@ -68,8 +64,6 @@ structure Model (R K : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRin
   locallyOfFinitePresentation : LocallyOfFinitePresentation toBase
   /-- The structure morphism is quasi-compact. -/
   quasiCompact : QuasiCompact toBase
-  /-- The structure morphism is quasi-separated. -/
-  quasiSeparated : QuasiSeparated toBase
   /-- The chosen identification of the generic fibre with the prescribed scheme over `K`. -/
   genericFiberIso : genericFiber R K toBase ≅ Over.mk toK
 
@@ -80,7 +74,6 @@ variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
 
 attribute [instance] Model.flat Model.locallyOfFinitePresentation Model.quasiCompact
-  Model.quasiSeparated
 
 /-- Properness of the structure morphism is an additional property of a model. -/
 abbrev IsProper (M : Model R K C toK) : Prop :=
@@ -104,6 +97,7 @@ structure Hom (M N : Model R K C toK) where
   genericFiber :
     baseChangeHom hom overBase ≫ N.genericFiberIso.hom.left = M.genericFiberIso.hom.left
 
+/-- Model morphisms are determined by their maps on total spaces. -/
 @[ext]
 lemma Hom.ext {M N : Model R K C toK} {f g : Hom M N} (h : f.hom = g.hom) : f = g := by
   cases f
@@ -111,38 +105,54 @@ lemma Hom.ext {M N : Model R K C toK} {f g : Hom M N} (h : f.hom = g.hom) : f = 
   cases h
   rfl
 
+/-- Base change carries the identity of a model's total space to the identity. -/
+@[simp]
+lemma baseChangeHom_id (M : Model R K C toK) :
+    baseChangeHom (𝟙 M.total) (by simp) = 𝟙 _ := by
+  dsimp only [baseChangeHom]
+  have h : (Over.homMk (𝟙 M.total) (by simp) : Over.mk M.toBase ⟶ Over.mk M.toBase) = 𝟙 _ := by
+    ext
+    simp
+  rw [h,
+    congrArg Over.Hom.left
+      ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).map_id
+        (Over.mk M.toBase)),
+    Over.id_left]
+
+/-- Base change carries a composite of model morphisms to the composite of their base changes. -/
+@[simp]
+lemma baseChangeHom_comp {M N P : Model R K C toK} (f : Hom M N) (g : Hom N P) :
+    baseChangeHom (f.hom ≫ g.hom) (by rw [Category.assoc, g.overBase, f.overBase]) =
+      baseChangeHom f.hom f.overBase ≫ baseChangeHom g.hom g.overBase := by
+  dsimp only [baseChangeHom]
+  have hcomp : (f.hom ≫ g.hom) ≫ P.toBase = M.toBase := by
+    rw [Category.assoc, g.overBase, f.overBase]
+  have h :
+      (Over.homMk (f.hom ≫ g.hom) hcomp :
+          Over.mk M.toBase ⟶ Over.mk P.toBase) =
+        (Over.homMk f.hom f.overBase : Over.mk M.toBase ⟶ Over.mk N.toBase) ≫
+          (Over.homMk g.hom g.overBase : Over.mk N.toBase ⟶ Over.mk P.toBase) := by
+    ext
+    rfl
+  rw [h,
+    congrArg Over.Hom.left
+      ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).map_comp
+        (Over.homMk f.hom f.overBase : Over.mk M.toBase ⟶ Over.mk N.toBase)
+        (Over.homMk g.hom g.overBase : Over.mk N.toBase ⟶ Over.mk P.toBase)),
+    Over.comp_left]
+
 /-- Models of a fixed scheme over the fraction field form a category. -/
 instance : Category (Model R K C toK) where
   Hom := Hom
   id M :=
-    let overHom := 𝟙 (Over.mk M.toBase)
-    { hom := overHom.left
-      overBase := Over.w overHom
+    { hom := 𝟙 M.total
+      overBase := by simp
+      genericFiber := by rw [baseChangeHom_id, Category.id_comp] }
+  comp f g :=
+    { hom := f.hom ≫ g.hom
+      overBase := by rw [Category.assoc, g.overBase, f.overBase]
       genericFiber := by
-        dsimp only [overHom, baseChangeHom]
-        rw [Over.homMk_eta,
-          congrArg Over.Hom.left
-            ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).map_id
-              (Over.mk M.toBase)),
-          Over.id_left, Category.id_comp] }
-  comp {M N P} f g :=
-    let overHom :=
-      (Over.homMk f.hom f.overBase : Over.mk M.toBase ⟶ Over.mk N.toBase) ≫
-        (Over.homMk g.hom g.overBase : Over.mk N.toBase ⟶ Over.mk P.toBase)
-    { hom := overHom.left
-      overBase := Over.w overHom
-      genericFiber := by
-        have hf := f.genericFiber
-        have hg := g.genericFiber
-        dsimp only [baseChangeHom] at hf hg
-        dsimp only [overHom, baseChangeHom]
-        rw [Over.homMk_eta,
-          congrArg Over.Hom.left
-            ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).map_comp
-              (Over.homMk f.hom f.overBase : Over.mk M.toBase ⟶ Over.mk N.toBase)
-              (Over.homMk g.hom g.overBase : Over.mk N.toBase ⟶ Over.mk P.toBase)),
-          Over.comp_left, Category.assoc,
-          hg, hf] }
+        rw [baseChangeHom_comp, Category.assoc, g.genericFiber, f.genericFiber] }
   id_comp f := by ext; simp
   comp_id f := by ext; simp
   assoc f g h := by ext; simp
