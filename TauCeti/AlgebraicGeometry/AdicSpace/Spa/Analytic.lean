@@ -146,8 +146,8 @@ theorem IsAnalyticPoint.isMicrobial [IsHuberRing A] {v : Spv A} (hana : IsAnalyt
 generization in `Spa(A, A⁺)` whenever `A⁺` consists of power-bounded elements; in particular,
 this applies to every ring of integral elements. -/
 theorem IsAnalyticPoint.exists_coarsenByUnits_mem_spaAnalytic [IsHuberRing A]
-    (Aplus : Subring A) (hAplus : Aplus ≤ powerBoundedSubring A) {v : Spv A}
-    (hana : IsAnalyticPoint v) (hcont : v.IsContinuous) :
+    {v : Spv A} (hana : IsAnalyticPoint v) (Aplus : Subring A)
+    (hAplus : Aplus ≤ powerBoundedSubring A) (hcont : v.IsContinuous) :
     ∃ H : TauCeti.ConvexSubgroup
         (MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ,
       Nontrivial

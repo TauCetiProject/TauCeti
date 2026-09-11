@@ -92,7 +92,7 @@ variable {Γ' : Type*} [Group Γ] [Preorder Γ] [Group Γ'] [Preorder Γ']
 
 /-- Cofinality transports backwards through an ordered monoid isomorphism, with the subgroup
 pulled back along the same isomorphism. -/
-theorem IsCofinalElement.comap {H : Subgroup Γ'} {γ : Γ} (e : Γ ≃*o Γ')
+theorem IsCofinalElement.comap {H : Subgroup Γ'} {γ : Γ} {e : Γ ≃*o Γ'}
     (hγ : IsCofinalElement H (e γ)) : IsCofinalElement (H.comap e.toMonoidHom) γ := by
   rw [isCofinalElement_def] at hγ ⊢
   intro x hx

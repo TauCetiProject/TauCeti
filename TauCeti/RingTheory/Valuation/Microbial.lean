@@ -130,7 +130,7 @@ theorem isMicrobial_of_cofinalValue {v : Valuation R Γ₀} {b : R} (hb0 : v b �
     exact (cofinalValueFor_iff_isCofinalElement hb0c).mp (cofinalValueFor_top_iff.mpr hcof)
   have huCof : TauCeti.IsCofinalElement ⊤ u := by
     simpa only [Subgroup.comap_top] using
-      huCofImage.comap (OrderMonoidIso.unitsWithZero (α := valueGroup (.ofClass v)))
+      huCofImage.comap (e := OrderMonoidIso.unitsWithZero (α := valueGroup (.ofClass v)))
   have hult : u < 1 := huCof.lt_one
   have hu : u ≠ 1 := ne_of_lt hult
   have hclosure : TauCeti.ConvexSubgroup.closure ({u} : Set _) = ⊤ := by
