@@ -95,8 +95,24 @@ def forkLeft : Fin n := ⟨n - 2, by omega⟩
 /-- The terminal coordinate in the standard type-`Dₙ` realization. -/
 def forkRight : Fin n := ⟨n - 1, by omega⟩
 
+/-- The underlying index of `forkLeft`. -/
+@[simp]
+theorem forkLeft_val : (forkLeft n hn : ℕ) = n - 2 := by
+  simp [forkLeft]
+
+/-- The underlying index of `forkRight`. -/
+@[simp]
+theorem forkRight_val : (forkRight n hn : ℕ) = n - 1 := by
+  simp [forkRight]
+
 /-- The successor of a nonterminal simple-root index. -/
 def chainNext (i : Fin n) (hi : (i : ℕ) + 1 < n) : Fin n := ⟨(i : ℕ) + 1, hi⟩
+
+/-- The underlying index of `chainNext`. -/
+@[simp]
+theorem chainNext_val (i : Fin n) (hi : (i : ℕ) + 1 < n) :
+    (chainNext n i hi : ℕ) = (i : ℕ) + 1 := by
+  simp [chainNext]
 
 /-- A chain node and its successor are distinct. -/
 theorem ne_chainNext (i : Fin n) (hi : (i : ℕ) + 1 < n) : i ≠ chainNext n i hi := by
