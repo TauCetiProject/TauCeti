@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Enumerative.Partition.Basic
 public import TauCeti.RepresentationTheory.Rep.OfMulAction
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Module
 public import TauCeti.RepresentationTheory.Symmetric.Standard
