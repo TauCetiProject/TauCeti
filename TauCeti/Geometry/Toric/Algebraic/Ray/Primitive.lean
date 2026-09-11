@@ -61,12 +61,15 @@ variable {ρ : ToricRay σ} {v : N}
 /-- A primitive generator points along its ray. -/
 theorem mem (h : IsPrimitiveGenerator i ρ v) : i v ∈ ρ := h.1
 
+/-- A primitive generator is primitive. -/
+theorem isPrimitive (h : IsPrimitiveGenerator i ρ v) : IsPrimitive v := h.2
+
 /-- A primitive generator is nonzero. -/
-theorem ne_zero (h : IsPrimitiveGenerator i ρ v) : v ≠ 0 := h.2.ne_zero
+theorem ne_zero (h : IsPrimitiveGenerator i ρ v) : v ≠ 0 := h.isPrimitive.ne_zero
 
 /-- A primitive generator cannot be a nontrivial natural multiple. -/
 theorem eq_one_of_eq_nsmul (h : IsPrimitiveGenerator i ρ v) {m : ℕ}
-    (w : N) (hw : v = m • w) : m = 1 := h.2.eq_one_of_eq_nsmul hw
+    (w : N) (hw : v = m • w) : m = 1 := h.isPrimitive.eq_one_of_eq_nsmul hw
 
 end IsPrimitiveGenerator
 
