@@ -1,0 +1,460 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Sobolev.W1p.Multiplication
+public import TauCeti.MeasureTheory.Function.Lp.MollificationBridge
+
+/-!
+# Test functions are dense in `W^{1,p}(ℝⁿ)`
+
+For `1 ≤ p < ∞`, every function in the whole-space Sobolev space `W^{1,p}(ℝⁿ)` is a
+`W^{1,p}`-limit of test functions:
+
+`W^{1,p}_0(ℝⁿ) = W^{1,p}(ℝⁿ)`.
+
+The ambient space is any finite-dimensional real inner product space `E` with an additive Haar
+measure; `ℝⁿ` stands for the whole-space case `Ω = ⊤` below.  For a bounded domain the two spaces
+differ, so the statement is genuinely about the whole space.
+
+## Mollification on `W^{1,p}(ℝⁿ)`
+
+The smooth approximate identity `TauCeti.normedBumpLp` averages the translates of an `Lᵖ` class
+against a normalized bump.  Applied to value-gradient jets it preserves `W^{1,p}(ℝⁿ)`: translation
+preserves the weak-derivative identities on the whole space
+(`TauCeti.Sobolev1JetLp.translateLp_mem_w1pSubmodule`), and the average is a Bochner integral of
+translates, which stays in the closed subspace `W^{1,p}(ℝⁿ)`.  This gives the mollification
+operator `TauCeti.W1p.normedBumpL` on `W^{1,p}(ℝⁿ)`, and the strong convergence of the
+approximate identity on jets is exactly its convergence to the identity in the Sobolev norm
+(`TauCeti.W1p.tendsto_normedBumpL`).  No commutation of derivatives with convolution is needed:
+the weak gradient is mollified together with the value because both are components of one jet.
+
+## Density of test functions
+
+If the jet of `u` vanishes outside a compact set, its mollification has a smooth compactly
+supported representative by `TauCeti.normedBumpLp_ae_eq_convolution`, so it is a test function.
+A general `u` is first truncated by the rescaled bumps `ψ(x / R)`: the Leibniz rule of
+`TauCeti.W1p.contDiffSMul` computes the truncated jet, which agrees with the jet of `u` on the
+ball of radius `R` and is dominated by a fixed multiple of it, so the truncations converge to `u`
+by dominated convergence.  Closedness of `W^{1,p}_0(ℝⁿ)` then gives the theorem.
+
+## Main declarations
+
+* `TauCeti.Sobolev1JetLp.translateLp_mem_w1pSubmodule`: translation preserves `W^{1,p}(ℝⁿ)`.
+* `TauCeti.W1p.normedBumpL`: mollification by a normalized smooth bump, as a continuous linear
+  operator on `W^{1,p}(ℝⁿ)`.
+* `TauCeti.W1p.tendsto_normedBumpL`: mollifications with shrinking bumps converge in `W^{1,p}`.
+* `TauCeti.w1p0Submodule_top_eq_top`: `W^{1,p}_0(ℝⁿ) = W^{1,p}(ℝⁿ)` for `p < ∞`.
+* `TauCeti.W1p.denseRange_ofTestFunctionₗ_top`: test functions are dense in `W^{1,p}(ℝⁿ)`.
+
+## References
+
+L. C. Evans, *Partial Differential Equations*, §5.3.1; H. Brezis, *Functional Analysis, Sobolev
+Spaces and Partial Differential Equations*, Theorem 9.2.
+-/
+
+public section
+
+noncomputable section
+
+open Filter MeasureTheory Metric Set TopologicalSpace
+open scoped Convolution Distributions ENNReal Gradient InnerProductSpace Topology
+
+namespace TauCeti
+
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+  {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- The whole-space restriction of an additive Haar measure is the measure itself. -/
+local instance : (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
+  rw [Opens.coe_top, Measure.restrict_univ]
+  infer_instance
+
+/-! ### Translation on `W^{1,p}(ℝⁿ)` -/
+
+/-- The translate `y ↦ φ (y + h)` of a whole-space test function. -/
+private def translateTestFunction (phi : 𝓓((⊤ : Opens E), ℝ)) (h : E) :
+    𝓓((⊤ : Opens E), ℝ) :=
+  ⟨fun y => phi (y + h), phi.contDiff.comp (contDiff_id.add contDiff_const),
+    phi.hasCompactSupport.comp_homeomorph (Homeomorph.addRight h), subset_univ _⟩
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private theorem translateTestFunction_apply (phi : 𝓓((⊤ : Opens E), ℝ)) (h y : E) :
+    translateTestFunction phi h y = phi (y + h) :=
+  rfl
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private theorem lineDeriv_translateTestFunction (phi : 𝓓((⊤ : Opens E), ℝ)) (h y v : E) :
+    lineDeriv ℝ (translateTestFunction phi h : E → ℝ) y v =
+      lineDeriv ℝ (phi : E → ℝ) (y + h) v := by
+  simp only [lineDeriv, translateTestFunction_apply, add_right_comm y _ h]
+
+omit [FiniteDimensional ℝ E] in
+/-- **Translation preserves `W^{1,p}(ℝⁿ)`.**  On the whole space the weak-derivative identities
+are invariant under translation: testing the translated jet against `φ` is testing the original
+jet against the translate of `φ`. -/
+theorem Sobolev1JetLp.translateLp_mem_w1pSubmodule (h : E) {J : Sobolev1JetLp mu ⊤ p}
+    (hJ : J ∈ w1pSubmodule mu ⊤ p) :
+    (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h J ∈ w1pSubmodule mu ⊤ p := by
+  set nu := mu.restrict ((⊤ : Opens E) : Set E)
+  rw [mem_w1pSubmodule_iff] at hJ ⊢
+  intro phi v
+  let f : E → ℝ := fun y =>
+    lineDeriv ℝ (translateTestFunction phi (-h) : E → ℝ) y v * Sobolev1JetLp.value J y +
+      translateTestFunction phi (-h) y * Sobolev1JetLp.candidateWeakFDeriv J y v
+  have hq : Tendsto (· + h) (ae nu) (ae nu) :=
+    (measurePreserving_add_right nu h).quasiMeasurePreserving.tendsto_ae
+  calc
+    ∫ x in (⊤ : Opens E), (lineDeriv ℝ (phi : E → ℝ) x v *
+        Sobolev1JetLp.value (nu.translateLp p h J) x +
+        phi x * Sobolev1JetLp.candidateWeakFDeriv (nu.translateLp p h J) x v) ∂mu
+        = ∫ x in (⊤ : Opens E), f (x + h) ∂mu := by
+      apply integral_congr_ae
+      filter_upwards [Sobolev1JetLp.value_apply_ae (nu.translateLp p h J),
+        Sobolev1JetLp.gradient_apply_ae (nu.translateLp p h J),
+        Measure.coeFn_translateLp (mu := nu) h J,
+        hq.eventually (Sobolev1JetLp.value_apply_ae J),
+        hq.eventually (Sobolev1JetLp.gradient_apply_ae J)] with x hvK hgK hK hvJ hgJ
+      simp only [f, Sobolev1JetLp.candidateWeakFDeriv_apply, lineDeriv_translateTestFunction,
+        translateTestFunction_apply, add_neg_cancel_right, hvK, hgK, hK, Function.comp_apply,
+        hvJ, hgJ]
+    _ = ∫ x in (⊤ : Opens E), f x ∂mu := integral_add_right_eq_self f h
+    _ = 0 := hJ (translateTestFunction phi (-h)) v
+
+/-! ### Mollification on `W^{1,p}(ℝⁿ)` -/
+
+/-- **Mollification preserves `W^{1,p}(ℝⁿ)`.**  The mollified jet is a Bochner integral of
+translates of the jet, each of which lies in the closed subspace `W^{1,p}(ℝⁿ)`. -/
+theorem Sobolev1JetLp.normedBumpLp_mem_w1pSubmodule (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
+    {J : Sobolev1JetLp mu ⊤ p} (hJ : J ∈ w1pSubmodule mu ⊤ p) :
+    normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) J ∈ w1pSubmodule mu ⊤ p := by
+  set nu := mu.restrict ((⊤ : Opens E) : Set E)
+  let S := (w1pSubmodule mu ⊤ p).toSubmodule
+  let g : E → S := fun t =>
+    ⟨phi.normed nu t • nu.translateLp p (-t) J,
+      S.smul_mem _ (Sobolev1JetLp.translateLp_mem_w1pSubmodule (-t) hJ)⟩
+  have hint : normedBumpLp hp phi nu J = S.subtypeₗᵢ (∫ t, g t ∂nu) := by
+    rw [← LinearIsometry.integral_comp_comm, normedBumpLp_apply]
+    rfl
+  rw [hint]
+  exact (∫ t, g t ∂nu).2
+
+/-- **Mollification on `W^{1,p}(ℝⁿ)`**: averaging the translates of a Sobolev function against
+the normalized form of a smooth bump, as a continuous linear operator.  The value and the weak
+gradient are mollified together, as the two components of one `Lᵖ` jet. -/
+def W1p.normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
+    W1p mu ⊤ p →L[ℝ] W1p mu ⊤ p :=
+  ContinuousLinearMap.codRestrict
+    ((normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E))).comp
+      (w1pSubmodule mu ⊤ p).toSubmodule.subtypeL)
+    (w1pSubmodule mu ⊤ p).toSubmodule
+    fun u => Sobolev1JetLp.normedBumpLp_mem_w1pSubmodule hp phi u.2
+
+/-- The jet of the mollification is the mollification of the jet. -/
+theorem W1p.coe_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (u : W1p mu ⊤ p) :
+    ((W1p.normedBumpL hp phi u : W1p mu ⊤ p) : Sobolev1JetLp mu ⊤ p) =
+      normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) (u : Sobolev1JetLp mu ⊤ p) :=
+  (rfl)
+
+/-- **Mollification converges in `W^{1,p}(ℝⁿ)`.**  For `1 ≤ p < ∞`, mollifying a Sobolev
+function with normalized smooth bumps whose radii shrink to zero converges to it in the Sobolev
+norm. -/
+theorem W1p.tendsto_normedBumpL (hp : p ≠ ∞) {I : Type*} {l : Filter I}
+    {phi : I → ContDiffBump (0 : E)} (hphi : Tendsto (fun i => (phi i).rOut) l (𝓝 0))
+    (u : W1p mu ⊤ p) :
+    Tendsto (fun i => W1p.normedBumpL hp (phi i) u) l (𝓝 u) := by
+  rw [tendsto_subtype_rng]
+  exact tendsto_normedBumpLp hp hphi (u : Sobolev1JetLp mu ⊤ p)
+
+/-! ### Compactly supported Sobolev functions -/
+
+omit [MeasurableSpace E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- A jet with vanishing value and gradient components vanishes. -/
+private theorem sobolev1Jet_eq_zero {y : Sobolev1Jet E} (hfst : y.fst = 0) (hsnd : y.snd = 0) :
+    y = 0 := by
+  have hsq := WithLp.prod_norm_sq_eq_of_L2 y
+  rw [hfst, hsnd, norm_zero, norm_zero] at hsq
+  exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 (by simpa using hsq))
+
+omit [MeasurableSpace E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- The Euclidean jet norm is at most the sum of the norms of its two components. -/
+private theorem norm_sobolev1Jet_le (y : Sobolev1Jet E) : ‖y‖ ≤ ‖y.fst‖ + ‖y.snd‖ := by
+  refine (sq_le_sq₀ (norm_nonneg y) (by positivity)).1 ?_
+  rw [WithLp.prod_norm_sq_eq_of_L2]
+  nlinarith [norm_nonneg y.fst, norm_nonneg y.snd]
+
+/-- The mollification of a Sobolev function whose jet vanishes outside a compact set is a test
+function. -/
+private theorem normedBumpL_mem_range_of_ae_eq_zero (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
+    {u : W1p mu ⊤ p} {K : Set E} (hK : IsCompact K)
+    (hu : ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)), x ∉ K →
+      (u : Sobolev1JetLp mu ⊤ p) x = 0) :
+    W1p.normedBumpL hp phi u ∈ LinearMap.range (W1p.ofTestFunctionₗ mu ⊤ p) := by
+  set nu := mu.restrict ((⊤ : Opens E) : Set E)
+  set J : Sobolev1JetLp mu ⊤ p := u.1
+  let Jt : E → Sobolev1Jet E := K.indicator J
+  have hJt_mem : MemLp Jt p nu := (Lp.memLp J).indicator hK.measurableSet
+  have hJt_cpt : HasCompactSupport Jt :=
+    HasCompactSupport.intro hK fun x hx => indicator_of_notMem hx _
+  have hJ_eq : hJt_mem.toLp Jt = J := by
+    apply Lp.ext
+    filter_upwards [hJt_mem.coeFn_toLp, hu] with x hx hux
+    rw [hx]
+    by_cases hxK : x ∈ K
+    · exact indicator_of_mem hxK _
+    · change K.indicator J x = J x
+      rw [indicator_of_notMem hxK, hux hxK]
+  let conv : E → Sobolev1Jet E := phi.normed nu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, nu] Jt
+  have hbridge : ((W1p.normedBumpL hp phi u : W1p mu ⊤ p) : Sobolev1JetLp mu ⊤ p) =ᵐ[nu] conv := by
+    rw [W1p.coe_normedBumpL]
+    change ⇑(normedBumpLp hp phi nu J) =ᵐ[nu] conv
+    rw [← hJ_eq]
+    exact normedBumpLp_ae_eq_convolution hp phi hJt_mem hJt_cpt
+  have hconv_smooth : ContDiff ℝ (⊤ : ℕ∞) conv :=
+    phi.hasCompactSupport_normed.contDiff_convolution_left (ContinuousLinearMap.lsmul ℝ ℝ)
+      phi.contDiff_normed (hJt_mem.locallyIntegrable Fact.out)
+  have hconv_cpt : HasCompactSupport conv :=
+    phi.hasCompactSupport_normed.convolution (ContinuousLinearMap.lsmul ℝ ℝ) hJt_cpt
+  let Phi : 𝓓((⊤ : Opens E), ℝ) :=
+    ⟨fun x => WithLp.fstL 2 ℝ ℝ E (conv x), (WithLp.fstL 2 ℝ ℝ E).contDiff.comp hconv_smooth,
+      hconv_cpt.comp_left (map_zero _), subset_univ _⟩
+  refine ⟨Phi, W1p.ext_value (Lp.ext ?_)⟩
+  rw [W1p.value_ofTestFunctionₗ]
+  filter_upwards [testFunctionLp_apply_ae (mu := mu) p Phi,
+    W1p.value_apply_ae (W1p.normedBumpL hp phi u), hbridge] with x hPhi hvalue hconv
+  rw [hPhi, hvalue, hconv]
+  rfl
+
+/-! ### Truncation -/
+
+/-- The smooth bump equal to one on the unit ball and supported in the ball of radius two. -/
+private def unitBump : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
+
+omit [MeasurableSpace E] [BorelSpace E] in
+private theorem exists_norm_fderiv_unitBump_le :
+    ∃ C, 0 ≤ C ∧ ∀ x, ‖fderiv ℝ (unitBump (E := E)) x‖ ≤ C := by
+  obtain ⟨C, hC⟩ := (((unitBump (E := E)).contDiff (n := 1)).continuous_fderiv
+    one_ne_zero).norm.bddAbove_range_of_hasCompactSupport
+      ((unitBump (E := E)).hasCompactSupport.fderiv ℝ).norm
+  exact ⟨C, (norm_nonneg _).trans (hC ⟨0, rfl⟩), fun x => hC ⟨x, rfl⟩⟩
+
+/-- The truncating cutoff `x ↦ ψ (x / (n + 1))`, equal to one on the ball of radius `n + 1`. -/
+private def truncCutoff (n : ℕ) : E → ℝ :=
+  fun x => unitBump (E := E) (((n : ℝ) + 1)⁻¹ • x)
+
+omit [MeasurableSpace E] [BorelSpace E] in
+private theorem contDiff_truncCutoff (n : ℕ) : ContDiff ℝ (⊤ : ℕ∞) (truncCutoff (E := E) n) :=
+  (unitBump (E := E)).contDiff.comp (contDiff_const_smul _)
+
+omit [MeasurableSpace E] [BorelSpace E] in
+private theorem truncCutoff_nonneg (n : ℕ) (x : E) : 0 ≤ truncCutoff n x :=
+  (unitBump (E := E)).nonneg
+
+omit [MeasurableSpace E] [BorelSpace E] in
+private theorem truncCutoff_le_one (n : ℕ) (x : E) : truncCutoff n x ≤ 1 :=
+  (unitBump (E := E)).le_one
+
+omit [MeasurableSpace E] [BorelSpace E] in
+private theorem norm_gradient_truncCutoff_le {C : ℝ}
+    (hbound : ∀ x, ‖fderiv ℝ (unitBump (E := E)) x‖ ≤ C) (n : ℕ) (x : E) :
+    ‖∇ (truncCutoff n) x‖ ≤ C := by
+  have hn : (0 : ℝ) < (n : ℝ) + 1 := by positivity
+  rw [gradient, LinearIsometryEquiv.norm_map]
+  change ‖fderiv ℝ (fun y => unitBump (E := E) (((n : ℝ) + 1)⁻¹ • y)) x‖ ≤ C
+  rw [fderiv_comp_smul, norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hn)]
+  calc ((n : ℝ) + 1)⁻¹ * ‖fderiv ℝ (unitBump (E := E)) (((n : ℝ) + 1)⁻¹ • x)‖
+      ≤ 1 * C := mul_le_mul (inv_le_one_of_one_le₀ (by linarith)) (hbound _)
+        (norm_nonneg _) zero_le_one
+    _ = C := one_mul C
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- Near a point of norm less than `n + 1`, the cutoff is identically one. -/
+private theorem truncCutoff_eventuallyEq_one {n : ℕ} {x : E} (hx : ‖x‖ < (n : ℝ) + 1) :
+    truncCutoff n =ᶠ[𝓝 x] fun _ => 1 := by
+  have hn : (0 : ℝ) < (n : ℝ) + 1 := by positivity
+  filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hx)] with y hy
+  apply (unitBump (E := E)).one_of_mem_closedBall
+  rw [mem_closedBall_zero_iff, norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hn)]
+  change ((n : ℝ) + 1)⁻¹ * ‖y‖ ≤ 1
+  rw [inv_mul_le_iff₀ hn, mul_one]
+  exact (mem_ball_zero_iff.1 hy).le
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- Near a point of norm greater than `2 (n + 1)`, the cutoff is identically zero. -/
+private theorem truncCutoff_eventuallyEq_zero {n : ℕ} {x : E}
+    (hx : 2 * ((n : ℝ) + 1) < ‖x‖) :
+    truncCutoff n =ᶠ[𝓝 x] fun _ => 0 := by
+  have hn : (0 : ℝ) < (n : ℝ) + 1 := by positivity
+  filter_upwards [isOpen_lt continuous_const continuous_norm |>.mem_nhds hx] with y hy
+  apply (unitBump (E := E)).zero_of_le_dist
+  rw [dist_zero_right, norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hn)]
+  change 2 ≤ ((n : ℝ) + 1)⁻¹ * ‖y‖
+  rw [le_inv_mul_iff₀ hn]
+  linarith
+
+omit [MeasurableSpace E] [BorelSpace E] in
+private theorem gradient_eq_zero_of_eventuallyEq {f : E → ℝ} {x : E} {c : ℝ}
+    (hf : f =ᶠ[𝓝 x] fun _ => c) : ∇ f x = 0 := by
+  rw [gradient, hf.fderiv_eq, fderiv_const_apply, map_zero]
+
+/-- The truncation `ψ(x / (n + 1)) u` of a Sobolev function, with `C` bounding the gradients of
+all the cutoffs. -/
+private def truncate {C : ℝ} (hC : 0 ≤ C) (hbound : ∀ n (x : E), ‖∇ (truncCutoff n) x‖ ≤ C)
+    (n : ℕ) (u : W1p mu ⊤ p) : W1p mu ⊤ p :=
+  W1p.contDiffSMul (truncCutoff n) (contDiff_truncCutoff n) (M := 1 + C) (by linarith)
+    (fun x _ => by
+      rw [abs_of_nonneg (truncCutoff_nonneg n x)]
+      linarith [truncCutoff_le_one n x])
+    (fun x _ => by linarith [hbound n x]) u
+
+/-- The truncation `ψ(x / (n + 1)) u` vanishes outside the ball of radius `2 (n + 1)`. -/
+private theorem truncate_ae_eq_zero {C : ℝ} (hC : 0 ≤ C)
+    (hbound : ∀ n (x : E), ‖∇ (truncCutoff n) x‖ ≤ C) (n : ℕ) (u : W1p mu ⊤ p) :
+    ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)), x ∉ closedBall (0 : E) (2 * ((n : ℝ) + 1)) →
+      (truncate hC hbound n u : Sobolev1JetLp mu ⊤ p) x = 0 := by
+  filter_upwards [W1p.value_apply_ae (truncate hC hbound n u),
+    W1p.gradient_apply_ae (truncate hC hbound n u),
+    W1p.value_contDiffSMul_ae (p := p) _ _ _ _ u,
+    W1p.gradient_contDiffSMul_ae (p := p) _ _ _ _ u] with x hv hg hvT hgT hx
+  have hx' : 2 * ((n : ℝ) + 1) < ‖x‖ := by
+    simpa only [mem_closedBall_zero_iff, not_le] using hx
+  have hpsi := truncCutoff_eventuallyEq_zero hx'
+  apply sobolev1Jet_eq_zero
+  · rw [← hv, truncate, hvT, hpsi.eq_of_nhds, zero_smul]
+  · rw [← hg, truncate, hgT, hpsi.eq_of_nhds, gradient_eq_zero_of_eventuallyEq hpsi, zero_smul,
+      smul_zero, add_zero]
+
+omit [MeasurableSpace E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- Dominated convergence in `Lᵖ`, in the form used for truncation: if `f n` agrees with `g`
+eventually at almost every point and `‖f n - g‖` is dominated by a fixed multiple of `‖g‖`, then
+`f n → g` in `Lᵖ`. -/
+private theorem tendsto_eLpNorm_sub_of_eventually_eq {α F : Type*} [MeasurableSpace α]
+    {m : Measure α} [NormedAddCommGroup F] {q : ℝ≥0∞} (hq0 : q ≠ 0) (hq : q ≠ ∞)
+    {f : ℕ → α → F} {g : α → F} (hf : ∀ n, AEStronglyMeasurable (f n) m) (hg : MemLp g q m)
+    {C : ℝ} (hC : 0 ≤ C) (hbound : ∀ n, ∀ᵐ x ∂m, ‖f n x - g x‖ ≤ C * ‖g x‖)
+    (hlim : ∀ᵐ x ∂m, ∀ᶠ n in atTop, f n x = g x) :
+    Tendsto (fun n => eLpNorm (f n - g) q m) atTop (𝓝 0) := by
+  have hr : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
+  simp_rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq]
+  have hlint : Tendsto (fun n => ∫⁻ x, ‖(f n - g) x‖ₑ ^ q.toReal ∂m) atTop (𝓝 0) := by
+    have hdom := tendsto_lintegral_filter_of_dominated_convergence' (μ := m)
+      (F := fun n x => ‖(f n - g) x‖ₑ ^ q.toReal) (f := fun _ => 0)
+      (fun x => (ENNReal.ofReal C * ‖g x‖ₑ) ^ q.toReal)
+      (Eventually.of_forall fun n => ((hf n).sub hg.1).enorm.pow_const _)
+      (Eventually.of_forall fun n => (hbound n).mono fun x hx => by
+        refine ENNReal.rpow_le_rpow ?_ hr.le
+        rw [Pi.sub_apply, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul hC]
+        exact ENNReal.ofReal_le_ofReal hx)
+      (by
+        simp_rw [ENNReal.mul_rpow_of_nonneg _ _ hr.le]
+        rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hr.le ENNReal.ofReal_ne_top)]
+        exact ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg hr.le ENNReal.ofReal_ne_top)
+          (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hq0 hq hg.2).ne)
+      (hlim.mono fun x hx => tendsto_const_nhds.congr' (hx.mono fun n hn => by
+        simp [hn, ENNReal.zero_rpow_of_pos hr]))
+    simpa only [lintegral_zero] using hdom
+  have h0 : (0 : ℝ≥0∞) ^ (1 / q.toReal) = 0 := ENNReal.zero_rpow_of_pos (one_div_pos.2 hr)
+  simpa only [h0] using hlint.ennrpow_const (1 / q.toReal)
+
+/-- **The truncations converge.**  The truncated jet agrees with the jet of `u` on the ball of
+radius `n + 1`, and differs from it by at most `(2 + C)` times its norm. -/
+private theorem tendsto_truncate (hp : p ≠ ∞) {C : ℝ} (hC : 0 ≤ C)
+    (hbound : ∀ n (x : E), ‖∇ (truncCutoff n) x‖ ≤ C) (u : W1p mu ⊤ p) :
+    Tendsto (fun n => truncate hC hbound n u) atTop (𝓝 u) := by
+  rw [tendsto_subtype_rng, Lp.tendsto_Lp_iff_tendsto_eLpNorm']
+  have hv (n : ℕ) := W1p.value_contDiffSMul_ae (p := p) (mu := mu) (Omega := ⊤)
+    (contDiff_truncCutoff n) (M := 1 + C) (by linarith)
+    (fun x _ => by
+      rw [abs_of_nonneg (truncCutoff_nonneg n x)]
+      linarith [truncCutoff_le_one n x])
+    (fun x _ => by linarith [hbound n x]) u
+  have hg (n : ℕ) := W1p.gradient_contDiffSMul_ae (p := p) (mu := mu) (Omega := ⊤)
+    (contDiff_truncCutoff n) (M := 1 + C) (by linarith)
+    (fun x _ => by
+      rw [abs_of_nonneg (truncCutoff_nonneg n x)]
+      linarith [truncCutoff_le_one n x])
+    (fun x _ => by linarith [hbound n x]) u
+  refine tendsto_eLpNorm_sub_of_eventually_eq (zero_lt_one.trans_le Fact.out).ne' hp
+    (fun n => Lp.aestronglyMeasurable _) (Lp.memLp _) (by linarith : (0 : ℝ) ≤ 2 + C)
+    (fun n => ?_) ?_
+  · filter_upwards [W1p.value_apply_ae (truncate hC hbound n u),
+      W1p.gradient_apply_ae (truncate hC hbound n u), W1p.value_apply_ae u,
+      W1p.gradient_apply_ae u, hv n, hg n] with x hvT hgT hvu hgu hvn hgn
+    set a := W1p.value u x
+    set G := W1p.gradient u x
+    set s := truncCutoff n x
+    have hs0 : 0 ≤ s := truncCutoff_nonneg n x
+    have hs1 : s ≤ 1 := truncCutoff_le_one n x
+    have hs : |s - 1| ≤ 1 := abs_le.2 ⟨by linarith, by linarith⟩
+    have ha : ‖a‖ ≤ ‖(u : Sobolev1JetLp mu ⊤ p) x‖ :=
+      hvu ▸ WithLp.norm_fst_le (x := (u : Sobolev1JetLp mu ⊤ p) x)
+    have hG : ‖G‖ ≤ ‖(u : Sobolev1JetLp mu ⊤ p) x‖ :=
+      hgu ▸ WithLp.norm_snd_le (x := (u : Sobolev1JetLp mu ⊤ p) x)
+    have hfst : ((truncate hC hbound n u : Sobolev1JetLp mu ⊤ p) x -
+        (u : Sobolev1JetLp mu ⊤ p) x).fst = (s - 1) • a := by
+      rw [WithLp.sub_fst, ← hvT, ← hvu, truncate, hvn, sub_smul, one_smul]
+    have hsnd : ((truncate hC hbound n u : Sobolev1JetLp mu ⊤ p) x -
+        (u : Sobolev1JetLp mu ⊤ p) x).snd = (s - 1) • G + a • ∇ (truncCutoff n) x := by
+      rw [WithLp.sub_snd, ← hgT, ← hgu, truncate, hgn, sub_smul, one_smul]
+      abel
+    refine (norm_sobolev1Jet_le _).trans ?_
+    rw [hfst, hsnd]
+    have h1 : ‖(s - 1) • a‖ ≤ ‖a‖ := by
+      rw [norm_smul, Real.norm_eq_abs]
+      exact mul_le_of_le_one_left (norm_nonneg _) hs
+    have h2 : ‖(s - 1) • G + a • ∇ (truncCutoff n) x‖ ≤ ‖G‖ + ‖a‖ * C := by
+      refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+      · rw [norm_smul, Real.norm_eq_abs]
+        exact mul_le_of_le_one_left (norm_nonneg _) hs
+      · rw [norm_smul]
+        exact mul_le_mul_of_nonneg_left (hbound n x) (norm_nonneg _)
+    nlinarith [norm_nonneg a, norm_nonneg G]
+  · filter_upwards [ae_all_iff.2 fun n => W1p.value_apply_ae (truncate hC hbound n u),
+      ae_all_iff.2 fun n => W1p.gradient_apply_ae (truncate hC hbound n u),
+      W1p.value_apply_ae u, W1p.gradient_apply_ae u, ae_all_iff.2 hv, ae_all_iff.2 hg]
+      with x hvT hgT hvu hgu hvn hgn
+    filter_upwards [tendsto_natCast_atTop_atTop.eventually_gt_atTop ‖x‖] with n hn
+    have hpsi := truncCutoff_eventuallyEq_one (E := E) (n := n) (x := x) (by linarith)
+    refine sub_eq_zero.1 (sobolev1Jet_eq_zero ?_ ?_)
+    · rw [WithLp.sub_fst, ← hvT n, ← hvu, truncate, hvn n, hpsi.eq_of_nhds, one_smul, sub_self]
+    · rw [WithLp.sub_snd, ← hgT n, ← hgu, truncate, hgn n, hpsi.eq_of_nhds,
+        gradient_eq_zero_of_eventuallyEq hpsi, one_smul, smul_zero, add_zero, sub_self]
+
+/-! ### Density -/
+
+/-- **Every function in `W^{1,p}(ℝⁿ)` is a limit of test functions**, for `1 ≤ p < ∞`.  Truncate
+by rescaled cutoffs, then mollify the compactly supported truncations. -/
+theorem W1p.mem_w1p0Submodule_top (hp : p ≠ ∞) (u : W1p mu ⊤ p) :
+    u ∈ w1p0Submodule mu ⊤ p := by
+  obtain ⟨C, hC, hbound⟩ := exists_norm_fderiv_unitBump_le (E := E)
+  have hgrad := norm_gradient_truncCutoff_le hbound
+  let phi : ℕ → ContDiffBump (0 : E) := fun k =>
+    ⟨1 / ((k : ℝ) + 1) / 2, 1 / ((k : ℝ) + 1), by positivity, half_lt_self (by positivity)⟩
+  have hphi : Tendsto (fun k => (phi k).rOut) atTop (𝓝 0) :=
+    tendsto_one_div_add_atTop_nhds_zero_nat
+  have hclosed := (w1p0Submodule mu ⊤ p).isClosed
+  have htrunc (n : ℕ) : truncate hC hgrad n u ∈ w1p0Submodule mu ⊤ p :=
+    hclosed.mem_of_tendsto (W1p.tendsto_normedBumpL hp hphi _) (Eventually.of_forall fun k => by
+      obtain ⟨Phi, hPhi⟩ := normedBumpL_mem_range_of_ae_eq_zero hp (phi k)
+        (isCompact_closedBall (0 : E) (2 * ((n : ℝ) + 1))) (truncate_ae_eq_zero hC hgrad n u)
+      rw [← hPhi]
+      exact W1p.ofTestFunctionₗ_mem_w1p0Submodule Phi)
+  exact hclosed.mem_of_tendsto (tendsto_truncate hp hC hgrad u) (Eventually.of_forall htrunc)
+
+/-- **`W^{1,p}_0(ℝⁿ) = W^{1,p}(ℝⁿ)`** for `1 ≤ p < ∞`: on the whole space the zero-boundary
+condition is no condition at all.  This fails for a bounded domain, and it fails for `p = ∞`,
+where test functions are not dense. -/
+theorem w1p0Submodule_top_eq_top (hp : p ≠ ∞) : w1p0Submodule mu ⊤ p = ⊤ :=
+  eq_top_iff.2 fun u _ => W1p.mem_w1p0Submodule_top hp u
+
+/-- **Test functions are dense in `W^{1,p}(ℝⁿ)`** for `1 ≤ p < ∞`. -/
+theorem W1p.denseRange_ofTestFunctionₗ_top (hp : p ≠ ∞) :
+    DenseRange (W1p.ofTestFunctionₗ mu ⊤ p) := fun u => by
+  rw [← coe_w1p0Submodule]
+  exact W1p.mem_w1p0Submodule_top hp u
+
+end TauCeti
