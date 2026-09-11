@@ -45,6 +45,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `Subgroup.map_conj_map`: the image of a conjugate subgroup is the conjugate of the image.
 * `Subgroup.map_mk'_map_quotientGroupMap`: taking images in quotients commutes with the maps
   induced on quotients.
+* `MonoidHom.subgroupCongr_injective`, `MonoidHom.subgroupCongr_surjective`: transport along
+  equalities of the domain and codomain preserves injectivity and surjectivity.
 -/
 
 public section
@@ -172,6 +174,13 @@ theorem _root_.MonoidHom.subgroupCongr_injective {A A' : Subgroup G} {B B' : Sub
     Function.Injective (f.subgroupCongr hA hB) :=
   (MulEquiv.subgroupCongr hB).symm.injective.comp
     (hf.comp (MulEquiv.subgroupCongr hA).injective)
+
+/-- Transport preserves surjectivity: it composes the original homomorphism with two bijections. -/
+theorem _root_.MonoidHom.subgroupCongr_surjective {A A' : Subgroup G} {B B' : Subgroup H}
+    (hA : A' = A) (hB : B' = B) {f : A →* B} (hf : Function.Surjective f) :
+    Function.Surjective (f.subgroupCongr hA hB) :=
+  (MulEquiv.subgroupCongr hB).symm.surjective.comp
+    (hf.comp (MulEquiv.subgroupCongr hA).surjective)
 
 /-! ## Transporting the derived subgroup -/
 
