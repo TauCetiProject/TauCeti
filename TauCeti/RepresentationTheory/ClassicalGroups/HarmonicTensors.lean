@@ -126,11 +126,6 @@ theorem orthogonalContract_tprod (σ : Fin d ≃ Fin m ⊕ Fin 2) (v : Fin d →
         PiTensorProduct.tprod k fun i : Fin m => v (σ.symm (Sum.inl i)) := by
   simp [orthogonalContract]
 
-/-- The two capped slots are distinct, so a contraction really does cap a *pair* of slots. -/
-theorem orthogonalContract_slots_ne (σ : Fin d ≃ Fin m ⊕ Fin 2) :
-    σ.symm (Sum.inr 0) ≠ σ.symm (Sum.inr 1) := fun h => by
-  simpa using σ.symm.injective h
-
 /-- **The harmonic (traceless) tensors**: the tensors killed by every contraction of a pair of
 slots against the coordinate dot product. -/
 noncomputable def harmonicTensors (d : ℕ) : Submodule k (⨂[k]^d (Fin n → k)) :=
@@ -170,7 +165,7 @@ theorem isEmptyEquiv_comp_orthogonalContract (σ : Fin 2 ≃ Fin 0 ⊕ Fin 2) :
     LinearEquiv.coe_coe, orthogonalContract_tprod, map_smul, smul_eq_mul,
     PiTensorProduct.isEmptyEquiv_apply_tprod, mul_one, orthogonalCap_tprod]
   -- The two capped slots are the two slots of the square, in one order or the other.
-  have hne := orthogonalContract_slots_ne σ
+  have hne : σ.symm (Sum.inr 0) ≠ σ.symm (Sum.inr 1) := fun h => by simpa using σ.symm.injective h
   revert hne
   generalize σ.symm (Sum.inr 0) = a
   generalize σ.symm (Sum.inr 1) = b
