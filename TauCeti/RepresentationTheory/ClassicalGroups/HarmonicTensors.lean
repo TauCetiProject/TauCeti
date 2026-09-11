@@ -39,8 +39,11 @@ is essentially one contraction, the cap itself, so the harmonic tensors are exac
 (`TauCeti.harmonicTensors_two`).  The latter is not vacuous: the cup `∑ⱼ eⱼ ⊗ eⱼ` has trace `n`,
 so as soon as `n` is nonzero in `k` the tensor square has non-harmonic vectors.
 
-Everything except the last section is stated over a commutative semiring, as the cap is; the
-orthogonal group needs a commutative ring, and the invariance statements are collected there.
+Everything except the last section is stated over a commutative semiring, as the cap is: that
+includes both invariance statements, under a permutation of the tensor factors and under a matrix
+preserving the dot product.  Only the orthogonal group itself needs a commutative ring, so the
+statements that mention it — the invariance of the contractions under `O(n)`, and the harmonic
+tensors as a subrepresentation of it — are the ones collected in the last section.
 
 ## Main definitions
 
@@ -48,6 +51,8 @@ orthogonal group needs a commutative ring, and the invariance statements are col
   coordinate dot product.
 * `TauCeti.harmonicTensors`: the harmonic (traceless) tensors, the common kernel of the
   contractions.
+* `TauCeti.harmonicPermSubrep`: the harmonic tensors as a subrepresentation of the symmetric-group
+  action on the tensor power.
 * `TauCeti.harmonicSubrep`: the harmonic tensors as a subrepresentation of the tensor power of the
   standard representation of the orthogonal group.
 
@@ -63,7 +68,9 @@ orthogonal group needs a commutative ring, and the invariance statements are col
   pure tensor of two distinct basis vectors is.
 * `TauCeti.orthogonalContract_comp_permTensorAction` and
   `TauCeti.permTensorAction_mem_harmonicTensors`: permuting the tensor factors renames the capped
-  slots, so the harmonic tensors are stable under the symmetric group.
+  slots, so the harmonic tensors are stable under the symmetric group, and
+  `TauCeti.permTensorActionAlgHom_mem_harmonicTensors` extends that to its group algebra, so a
+  Young symmetrizer keeps a harmonic tensor harmonic.
 * `TauCeti.orthogonalContract_trans_sumCongr` and
   `TauCeti.ker_orthogonalContract_trans_sumCongr`: reordering the surviving slots post-composes the
   contraction with a permutation, so its kernel depends only on the capped pair.
@@ -246,6 +253,36 @@ theorem permTensorAction_mem_harmonicTensors (τ : Equiv.Perm (Fin d))
   have h := LinearMap.congr_fun (orthogonalContract_comp_permTensorAction k n τ σ) x
   simp only [LinearMap.coe_comp, Function.comp_apply] at h
   rw [h, hx m (τ.trans σ)]
+
+/-- **The harmonic tensors as a subrepresentation** of the symmetric-group action on the tensor
+power: the bundled form of `TauCeti.permTensorAction_mem_harmonicTensors`. -/
+noncomputable def harmonicPermSubrep (d : ℕ) : Subrepresentation (permTensorAction k n d) where
+  toSubmodule := harmonicTensors k n d
+  apply_mem_toSubmodule τ _ hx := permTensorAction_mem_harmonicTensors k n τ hx
+
+/-- The symmetric-group subrepresentation of harmonic tensors carries the submodule of harmonic
+tensors. -/
+@[simp]
+theorem toSubmodule_harmonicPermSubrep :
+    (harmonicPermSubrep k n d).toSubmodule = harmonicTensors k n d := (rfl)
+
+/-- Membership in the symmetric-group subrepresentation of harmonic tensors is membership in the
+harmonic tensors. -/
+@[simp]
+theorem mem_harmonicPermSubrep {x : ⨂[k]^d (Fin n → k)} :
+    x ∈ harmonicPermSubrep k n d ↔ x ∈ harmonicTensors k n d := Iff.rfl
+
+/-- **The harmonic tensors are stable under the whole group algebra of the symmetric group**, not
+just under single permutations: applying a Young symmetrizer to a harmonic tensor leaves it
+harmonic. -/
+theorem permTensorActionAlgHom_mem_harmonicTensors (a : MonoidAlgebra k (Equiv.Perm (Fin d)))
+    {x : ⨂[k]^d (Fin n → k)} (hx : x ∈ harmonicTensors k n d) :
+    permTensorActionAlgHom k n d a x ∈ harmonicTensors k n d := by
+  induction a using MonoidAlgebra.induction_on with
+  | of τ =>
+    simpa only [permTensorActionAlgHom_of] using permTensorAction_mem_harmonicTensors k n τ hx
+  | add a b ha hb => simpa only [map_add, LinearMap.add_apply] using Submodule.add_mem _ ha hb
+  | smul r a ha => simpa only [map_smul, LinearMap.smul_apply] using Submodule.smul_mem _ r ha
 
 section Invariance
 
