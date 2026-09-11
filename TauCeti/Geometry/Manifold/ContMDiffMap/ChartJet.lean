@@ -53,11 +53,13 @@ noncomputable def chartIteratedFDeriv
   exact (hf.continuousOn_iteratedFDerivWithin hm
     (uniqueDiffOn_extChartAt_target x)).domRestrict
 
+-- Spell out the chart target in the coercion type so these simp lemmas are in normal form.
 @[simp]
 theorem chartIteratedFDeriv_apply
     (f : C^n⟮I, M; modelWithCornersSelf 𝕜 F, F⟯) (x : M) (m : ℕ) (hm : m ≤ n)
     (y : (extChartAt I x).target) :
-    chartIteratedFDeriv f x m hm y = iteratedFDerivWithin 𝕜 m
+    DFunLike.coe (F := C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×m]→L[𝕜] F))
+      (chartIteratedFDeriv f x m hm) y = iteratedFDerivWithin 𝕜 m
       (f ∘ (extChartAt I x).symm) (extChartAt I x).target y := (rfl)
 
 /-- Order zero of the chart jet recovers the map in source coordinates. -/
@@ -65,7 +67,9 @@ theorem chartIteratedFDeriv_apply
 theorem chartIteratedFDeriv_zero_apply
     (f : C^n⟮I, M; modelWithCornersSelf 𝕜 F, F⟯) (x : M)
     (y : (extChartAt I x).target) (v : Fin 0 → E) :
-    chartIteratedFDeriv f x 0 (by simp) y v = f ((extChartAt I x).symm y) := by
+    DFunLike.coe (F := C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×0]→L[𝕜] F))
+      (chartIteratedFDeriv f x 0 (by simp)) y v =
+        f ((extChartAt I x).symm y) := by
   simp only [chartIteratedFDeriv_apply, iteratedFDerivWithin_zero_apply, Function.comp_apply]
 
 /-- All source-chart derivatives, with a compact-open topology on each derivative space. -/
@@ -130,8 +134,9 @@ theorem chartWeakWhitneyJet_injective :
   have hx := DFunLike.congr_fun (congrFun (congrFun h x) ⟨0, by simp⟩)
     ⟨extChartAt I x x, mem_extChartAt_target x⟩
   have hvalue := congrArg (fun A : E [×0]→L[𝕜] F ↦ A 0) hx
-  simpa only [chartWeakWhitneyJet_apply, chartIteratedFDeriv_zero_apply,
-    extChartAt_to_inv] using hvalue
+  simpa only [extChartAt_to_inv] using
+    (chartIteratedFDeriv_zero_apply f x _ 0).symm.trans
+      (hvalue.trans (chartIteratedFDeriv_zero_apply g x _ 0))
 
 /-- The chart jet embeds the weak Whitney map space into the product of its derivative spaces. -/
 theorem isEmbedding_chartWeakWhitneyJet :
@@ -149,8 +154,14 @@ theorem continuous_eval_chartWeakWhitney (x : M) :
   have h := (continuousMultilinearCurryFin0 𝕜 E F).continuous.comp
     ((continuous_eval_const ⟨extChartAt I x x, mem_extChartAt_target x⟩).comp
       (continuous_chartIteratedFDeriv (I := I) (F := F) (n := n) x 0 (by simp)))
-  simpa only [Function.comp_def, continuousMultilinearCurryFin0_apply,
-    chartIteratedFDeriv_zero_apply, extChartAt_to_inv] using h
+  convert h using 1
+  funext f
+  have hvalue := chartIteratedFDeriv_zero_apply f x
+    ⟨extChartAt I x x, mem_extChartAt_target x⟩ 0
+  simp only [extChartAt_to_inv] at hvalue
+  simp only [Function.comp_def, continuousMultilinearCurryFin0_apply]
+  convert hvalue.symm using 1
+  rfl
 
 end ChartTopology
 
@@ -165,8 +176,12 @@ theorem chartIteratedFDeriv_self_apply
     (f : C^n⟮modelWithCornersSelf 𝕜 E, E; modelWithCornersSelf 𝕜 F, F⟯)
     (x : E) (m : ℕ) (hm : m ≤ n)
     (y : (extChartAt (modelWithCornersSelf 𝕜 E) x).target) :
-    chartIteratedFDeriv f x m hm y = f.iteratedFDerivContinuousMap m hm y := by
-  simp only [chartIteratedFDeriv_apply, extChartAt_model_space_eq_id,
+    DFunLike.coe (F := C(↥(Set.univ ∩ (chartAt E x).target), E [×m]→L[𝕜] F))
+      (chartIteratedFDeriv f x m hm) y =
+        f.iteratedFDerivContinuousMap m hm y := by
+  change iteratedFDerivWithin 𝕜 m (f ∘ (extChartAt (modelWithCornersSelf 𝕜 E) x).symm)
+    (extChartAt (modelWithCornersSelf 𝕜 E) x).target y = _
+  simp only [extChartAt_model_space_eq_id,
     PartialEquiv.refl_target, PartialEquiv.refl_symm, PartialEquiv.refl_coe,
     Function.comp_id, iteratedFDerivWithin_univ,
     ContMDiffMap.iteratedFDerivContinuousMap_apply]
@@ -198,9 +213,8 @@ theorem chartWeakWhitneyTopology_self :
     funext f
     apply ContinuousMap.ext
     intro y
-    simp only [Function.comp_apply, ContMDiffMap.weakWhitneyJet_apply,
-      ContinuousMap.comp_apply, chartIteratedFDeriv_self_apply]
-    rfl
+    simp only [ContMDiffMap.weakWhitneyJet_apply, Function.comp_apply, ContinuousMap.comp_apply]
+    convert (chartIteratedFDeriv_self_apply f 0 m m.property (toTarget y)).symm using 1 <;> rfl
   · rw [chartWeakWhitneyTopology]
     apply continuous_iff_le_induced.mp
     apply continuous_pi
@@ -216,9 +230,7 @@ theorem chartWeakWhitneyTopology_self :
     funext f
     apply ContinuousMap.ext
     intro y
-    simp only [Function.comp_apply, chartWeakWhitneyJet_apply,
-      chartIteratedFDeriv_self_apply, ContinuousMap.comp_apply]
-    rfl
+    exact chartIteratedFDeriv_self_apply f x m m.property y
 
 end NormedSpace
 
