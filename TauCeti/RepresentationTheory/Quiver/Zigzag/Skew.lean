@@ -168,6 +168,30 @@ theorem skewZigzagMk_apply (x : pathAlgebra k (DoubledQuiver G)) :
     skewZigzagMk k G c x = Ideal.Quotient.mk (skewZigzagIdeal k G c).asIdeal x :=
   by rw [skewZigzagMk, Ideal.Quotient.mkₐ_eq_mk]
 
+/-- The skew-zigzag quotient map is surjective. -/
+theorem skewZigzagMk_surjective : Function.Surjective (skewZigzagMk k G c) :=
+  Ideal.Quotient.mk_surjective
+
+/-- Two ring homomorphisms out of a skew-zigzag quotient are equal if they agree on coefficients
+and on the classes of all doubled paths. -/
+theorem skewZigzagQuotient_ringHom_ext {B : Type*} [Semiring B]
+    {g h : skewZigzagQuotient k G c →+* B}
+    (hscalar : ∀ r : k,
+      g (algebraMap k (skewZigzagQuotient k G c) r) =
+        h (algebraMap k (skewZigzagQuotient k G c) r))
+    (hpath : ∀ x : Quiver.TotalPath (DoubledQuiver G),
+      g (skewZigzagMk k G c (ofPath x)) = h (skewZigzagMk k G c (ofPath x))) :
+    g = h := by
+  apply RingHom.ext
+  intro y
+  obtain ⟨x, rfl⟩ := skewZigzagMk_surjective k G c y
+  induction x using PathAlgebra.induction_linear with
+  | zero => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | single x a =>
+      rw [single_eq_smul_ofPath, map_smul]
+      simp only [Algebra.smul_def, map_mul, hscalar, hpath]
+
 /-- The kernel of the skew-zigzag quotient map is its relation ideal. -/
 @[simp]
 theorem skewZigzagMk_eq_zero_iff {x : pathAlgebra k (DoubledQuiver G)} :
