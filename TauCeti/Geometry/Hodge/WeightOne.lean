@@ -275,6 +275,7 @@ theorem hodgeStructure_piece_eq_bot (J : AlmostComplexStructure V) {p : ℤ}
 /-- The Weil operator of the Hodge structure associated with `J` is the complex-linear scalar
 extension of `J`. Thus the construction recovers the original almost complex structure after
 complexification. -/
+@[simp]
 theorem hodgeStructure_weilOperator (J : AlmostComplexStructure V) :
     J.hodgeStructure.weilOperator = J.toLinearMap.baseChange ℂ := by
   symm

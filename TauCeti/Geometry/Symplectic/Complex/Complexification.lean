@@ -19,8 +19,6 @@ structure from the real almost complex structure.
 
 ## Main declarations
 
-* `TauCeti.AlmostComplexStructure.baseChange_apply_apply`: the complexified endomorphism squares
-  to `-1`.
 * `TauCeti.AlmostComplexStructure.isCompl_eigenspace_baseChange_I_neg_I`: its `i`- and
   `-i`-eigenspaces are complementary.
 -/
@@ -34,15 +32,6 @@ open scoped TensorProduct
 universe u
 
 variable {V : Type u} [AddCommGroup V] [Module ℝ V]
-
-/-- Applying the complexification of an almost complex structure twice gives the negative of the
-original vector. -/
-@[simp]
-theorem baseChange_apply_apply (J : AlmostComplexStructure V) (x : ℂ ⊗[ℝ] V) :
-    J.toLinearMap.baseChange ℂ (J.toLinearMap.baseChange ℂ x) = -x := by
-  have h := congrArg (LinearMap.baseChange ℂ) J.square_neg
-  rw [LinearMap.baseChange_comp, LinearMap.baseChange_neg, LinearMap.baseChange_id] at h
-  exact LinearMap.congr_fun h x
 
 /-- The `i`- and `-i`-eigenspaces of the complexification of an almost complex structure are
 complementary. -/
