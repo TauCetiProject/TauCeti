@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.WeakWhitney
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 
 /-!
 # Weak Whitney jets on manifold chart domains
@@ -32,7 +33,7 @@ public section
 open Set Filter Topology
 open scoped Manifold
 
-namespace TauCeti
+namespace ContMDiffMap
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -189,10 +190,7 @@ theorem chartIteratedFDeriv_self_apply
   simp only [extChartAt_model_space_eq_id,
     PartialEquiv.refl_target, iteratedFDerivWithin_univ,
     ContMDiffMap.iteratedFDerivContinuousMap_apply]
-  have hw : writtenInExtChartAt (modelWithCornersSelf 𝕜 E) (modelWithCornersSelf 𝕜 F) x f = f := by
-    funext z
-    simp [writtenInExtChartAt, chartAt_self_eq, Function.comp_apply]
-  rw [hw]
+  rw [writtenInExtChartAt_model_space]
 
 /-- On a normed space, source-chart weak Whitney topology agrees with the existing topology
 defined using global iterated derivatives. Thus adding chart domains does not change the
@@ -242,4 +240,4 @@ global-chart construction. -/
 
 end NormedSpace
 
-end TauCeti
+end ContMDiffMap
