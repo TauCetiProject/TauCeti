@@ -255,7 +255,7 @@ theorem narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one
     rw [NumberField.NarrowClassGroup.twoRank_eq_classGroupTwoRank,
       twoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf hneg]
 
-/-! ### The ordinary `2`-rank of a real quadratic field -/
+/-! ### The ordinary `2`-rank of a quadratic field -/
 
 /-- **The ordinary `2`-rank of a quadratic field falls at most one short of `t - 1`.** For
 `K = ℚ(√d)` with `d` squarefree, `t - 2 ≤ 2-rank Cl(𝓞 K)`, where `t` is the number of rational
@@ -279,7 +279,8 @@ theorem ncard_ramifiedPrimes_sub_two_le_twoRank
     MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow (n := 1)
       (NumberField.NarrowClassGroup.toClassGroup (K := K))
       NumberField.NarrowClassGroup.toClassGroup_surjective
-      (by simpa using NumberField.card_ker_toClassGroup_le_two hmin hgen)
+      (by simpa using
+        NumberField.card_ker_toClassGroup_le_two (NumberField.finrank_rat_eq_two hmin hgen))
   rw [TauCeti.ClassGroup.twoRank_def, ← TauCeti.twoRank_def]
   omega
 

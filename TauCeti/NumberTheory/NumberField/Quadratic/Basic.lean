@@ -32,6 +32,8 @@ computation (`Quadratic/Norm.lean`).
 * `NumberField.coe_gen_ne_zero`: the generator is nonzero.
 * `NumberField.exists_eq_add_mul_gen`: every element of `K` is `b + aθ`.
 * `NumberField.not_isSquare_radicand`: the radicand is not a rational square.
+* `NumberField.exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top`: every number field of degree `2`
+  over `ℚ` has such a presentation.
 * `NumberField.trace_gen_eq_zero`: the trace of the generator is `0`.
 * `NumberField.discr_one_gen`: the discriminant of `{1, θ}` over `ℚ` is `4d`.
 * `NumberField.discr_one_halfGen`: the discriminant of `{1, (1+θ)/2}` over `ℚ` is `d`.
@@ -128,6 +130,64 @@ theorem not_isSquare_radicand (hmin : minpoly ℤ θ = X ^ 2 - C d) :
   rcases mul_eq_zero.mp hfac with h | h
   · exact gen_notMem_range hmin ⟨q, by linear_combination -h⟩
   · exact gen_notMem_range hmin ⟨-q, by rw [map_neg]; linear_combination -h⟩
+
+/-- **Every quadratic number field has a quadratic presentation.** If `[K : ℚ] = 2` there is an
+algebraic integer `θ : 𝓞 K` generating `K` over `ℚ` whose minimal polynomial over `ℤ` is `X² - d`
+for some integer `d`. So any statement proved under the hypotheses `minpoly ℤ θ = X ^ 2 - C d`
+and `Algebra.adjoin ℚ {(θ : K)} = ⊤` whose conclusion does not mention `θ` or `d` holds for every
+quadratic field.
+
+Take any irrational `x ∈ K` and write `x² = b + ax`; completing the square, `2x - a` squares to the
+rational `e = a² + 4b`, and scaling by the denominator of `e` makes the square an integer. -/
+theorem exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top (hK : finrank ℚ K = 2) :
+    ∃ (θ : 𝓞 K) (d : ℤ), minpoly ℤ θ = X ^ 2 - C d ∧ Algebra.adjoin ℚ {(θ : K)} = ⊤ := by
+  have : Algebra.IsQuadraticExtension ℚ K := ⟨hK⟩
+  obtain ⟨x, hx⟩ := Algebra.IsQuadraticExtension.exists_notMem_range_algebraMap ℚ K
+  obtain ⟨a, b, hab⟩ :=
+    Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul ℚ K hx (x ^ 2)
+  set e : ℚ := a ^ 2 + 4 * b with he
+  have hden : (e.den : K) ≠ 0 := Nat.cast_ne_zero.mpr e.den_nz
+  set z : K := (e.den : K) * (2 * x - algebraMap ℚ K a) with hz
+  -- `z² = e.num * e.den`, an integer.
+  have hz2 : z ^ 2 = ((e.num * e.den : ℤ) : K) := by
+    have hsq : (2 * x - algebraMap ℚ K a) ^ 2 = algebraMap ℚ K e := by
+      rw [he, map_add, map_pow, map_mul, map_ofNat]
+      linear_combination 4 * hab
+    rw [hz, mul_pow, hsq, eq_ratCast, Rat.cast_def]
+    push_cast
+    field_simp
+  -- `z` is irrational, since `x = (z / e.den + a) / 2` is.
+  have hzQ : z ∉ Set.range (algebraMap ℚ K) := by
+    rintro ⟨q, hq⟩
+    refine hx ⟨(q / e.den + a) / 2, ?_⟩
+    rw [map_div₀, map_add, map_div₀, hq, hz, map_natCast, map_ofNat]
+    field_simp
+    ring
+  have hpz : aeval z (X ^ 2 - C (e.num * e.den)) = 0 := by
+    rw [map_sub, map_pow, aeval_X, aeval_C, hz2, algebraMap_int_eq, eq_intCast, sub_self]
+  have hint : IsIntegral ℤ z := ⟨_, monic_X_pow_sub_C _ two_ne_zero, hpz⟩
+  refine ⟨⟨z, hint⟩, e.num * e.den, ?_, ?_⟩
+  · set θ : 𝓞 K := ⟨z, hint⟩
+    have hθ : IsIntegral ℤ θ := RingOfIntegers.isIntegral θ
+    have hpθ : aeval θ (X ^ 2 - C (e.num * e.den)) = 0 :=
+      FaithfulSMul.algebraMap_injective (𝓞 K) K <| by
+        rw [← aeval_algebraMap_apply, map_zero]
+        exact hpz
+    refine (eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hθ)
+      (monic_X_pow_sub_C _ two_ne_zero) (minpoly.isIntegrallyClosed_dvd hθ hpθ) ?_).symm
+    -- The minimal polynomial of the irrational `θ` has degree at least `2`.
+    have hrat := minpoly.isIntegrallyClosed_eq_field_fractions ℚ K hθ
+    have hpos := minpoly.natDegree_pos (hint.tower_top (A := ℚ))
+    have hne : (minpoly ℚ z).natDegree ≠ 1 := fun h => hzQ (minpoly.natDegree_eq_one_iff.mp h)
+    rw [natDegree_X_pow_sub_C, ← (minpoly.monic hθ).natDegree_map (algebraMap ℤ ℚ), ← hrat]
+    change 2 ≤ (minpoly ℚ z).natDegree
+    omega
+  · rw [eq_top_iff]
+    intro w _
+    obtain ⟨p, q, rfl⟩ :=
+      Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul ℚ K hzQ w
+    exact add_mem (Subalgebra.algebraMap_mem _ q)
+      (mul_mem (Subalgebra.algebraMap_mem _ p) (Algebra.self_mem_adjoin_singleton ℚ z))
 
 /-- The trace of the generator vanishes: `Tr(θ) = 0`. -/
 theorem trace_gen_eq_zero (hmin : minpoly ℤ θ = X ^ 2 - C d) :
