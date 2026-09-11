@@ -572,8 +572,10 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
       TauCeti.coe_extChartPartialDiffeomorph_symm I ∞ (1 : G)
   -- Transport the charted local diffeomorphism `d : E ↔ E` back through the restricted identity
   -- chart. The resulting `q : E ↔ G` has the desired source, target, and smooth inverse.
-  let q := d.trans c.symm
-  have hqsource : q.source = d.source ∩ d ⁻¹' c.symm.source := rfl
+  set q := d.trans c.symm with hqdef
+  have hqsource : q.source = d.source ∩ d ⁻¹' c.symm.source := by
+    rw [hqdef, PartialDiffeomorph.trans_toPartialEquiv]
+    exact OpenPartialHomeomorph.trans_source _ _
   have hcsymmsource : c.symm.source = c.target :=
     OpenPartialHomeomorph.symm_source c.toOpenPartialHomeomorph
   have hzeroq : (0 : E) ∈ q.source := by
@@ -585,7 +587,10 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
     exact honeV
   have hq (x : E) (hx : x ∈ q.source) : f x = q x := by
     rw [hqsource] at hx
-    have hqapply : q x = c.symm (d x) := rfl
+    have hqapply : q x = c.symm (d x) := by
+      rw [hqdef]
+      exact OpenPartialHomeomorph.trans_apply
+        (e := d.toOpenPartialHomeomorph) (e' := c.symm.toOpenPartialHomeomorph)
     rw [hqapply, hcsymm, ← hd]
     exact ((extChartAt I (1 : G)).left_inv (hdsource hx.1)).symm
   -- Although `q` agrees with `f` on its source, its total forward function retains the composed

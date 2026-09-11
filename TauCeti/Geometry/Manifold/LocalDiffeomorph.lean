@@ -32,7 +32,8 @@ in these restrictions, even when the ambient models themselves have boundary.
   model spaces which is `C^n` in both directions, as a partial diffeomorphism.
 * `TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq`: the inverse function theorem for manifolds.
 * `TauCeti.isLocalDiffeomorphAt_iff_exists_mfderiv_eq`: the resulting characterisation of
-  `IsLocalDiffeomorphAt` for a map which is `C^n` on an open set.
+  `IsLocalDiffeomorphAt` at an interior point whose image is interior, for a map which is `C^n`
+  on an open set.
 * `TauCeti.isLocalDiffeomorphAt_of_eqOn`: a map agreeing with a partial diffeomorphism on its
   source is a local diffeomorphism there.
 * `TauCeti.isLocalDiffeomorph_of_mfderiv_eq`: the global version.
@@ -92,7 +93,6 @@ def extChartPartialDiffeomorph (x : M) : PartialDiffeomorph I 𝓘(𝕂, E) M E 
       (contMDiffOn_extChartAt_symm (I := I) x).mono fun _ hy => interior_subset hy.2
   }
 
-@[simp]
 theorem extChartPartialDiffeomorph_toPartialEquiv (x : M) :
     (extChartPartialDiffeomorph I n x).toPartialEquiv =
       (PartialEquiv.IsImage.of_preimage_eq
@@ -100,6 +100,7 @@ theorem extChartPartialDiffeomorph_toPartialEquiv (x : M) :
         (s := (extChartAt I x) ⁻¹' interior (extChartAt I x).target)
         (t := interior (extChartAt I x).target) rfl).restr := (rfl)
 
+@[simp]
 theorem extChartPartialDiffeomorph_source (x : M) :
     (extChartPartialDiffeomorph I n x).source =
       (extChartAt I x).source ∩
@@ -107,25 +108,32 @@ theorem extChartPartialDiffeomorph_source (x : M) :
   rw [extChartPartialDiffeomorph_toPartialEquiv,
     PartialEquiv.IsImage.restr_source]
 
+@[simp]
 theorem extChartPartialDiffeomorph_target (x : M) :
     (extChartPartialDiffeomorph I n x).target = interior (extChartAt I x).target := by
   rw [extChartPartialDiffeomorph_toPartialEquiv,
     PartialEquiv.IsImage.restr_target,
     inter_eq_right.2 interior_subset]
 
+@[simp]
 theorem coe_extChartPartialDiffeomorph (x : M) :
     ⇑(extChartPartialDiffeomorph I n x) = extChartAt I x := by
   rw [extChartPartialDiffeomorph_toPartialEquiv,
     PartialEquiv.IsImage.restr_apply]
 
 theorem coe_extChartPartialDiffeomorph_symm (x : M) :
-    ⇑(extChartPartialDiffeomorph I n x).symm = (extChartAt I x).symm := by
+    ((extChartPartialDiffeomorph I n x).symm : E → M) = (extChartAt I x).symm := by
   -- Symmetry commutes definitionally with the underlying partial equivalence; expose that
   -- projection so the named restriction equation can identify the inverse function.
   change ⇑(extChartPartialDiffeomorph I n x).toPartialEquiv.symm =
     ⇑(extChartAt I x).symm
   rw [extChartPartialDiffeomorph_toPartialEquiv,
     PartialEquiv.IsImage.restr_symm_apply]
+
+@[simp]
+theorem extChartPartialDiffeomorph_invFun_apply (x : M) (y : E) :
+    (extChartPartialDiffeomorph I n x).invFun y = (extChartAt I x).invFun y := by
+  exact congrFun (coe_extChartPartialDiffeomorph_symm I n x) y
 
 end Charts
 
@@ -282,17 +290,28 @@ theorem isLocalDiffeomorphAt_iff_exists_mfderiv_eq (hf : ContMDiffOn I J n f s) 
   rintro ⟨e, he⟩
   exact isLocalDiffeomorphAt_of_mfderiv_eq hf hs hx hIx hJfx hn he
 
-variable [BoundarylessManifold I M] [BoundarylessManifold J N]
+variable [BoundarylessManifold I M]
 
-/-- **The inverse function theorem for manifolds**, global form: a `C^n` map (`1 ≤ n`) all of whose
-differentials are continuous linear equivalences is a `C^n` local diffeomorphism. -/
-theorem isLocalDiffeomorph_of_mfderiv_eq (hf : ContMDiff I J n f) (hn : 1 ≤ n)
+/-- **The inverse function theorem for manifolds**, global form: a `C^n` map (`1 ≤ n`) whose
+image consists of interior points and all of whose differentials are continuous linear
+equivalences is a `C^n` local diffeomorphism. -/
+theorem isLocalDiffeomorph_of_mfderiv_eq (hf : ContMDiff I J n f)
+    (hJ : ∀ y, J.IsInteriorPoint (f y)) (hn : 1 ≤ n)
     (he : ∀ y : M, ∃ e : TangentSpace I y ≃L[𝕂] TangentSpace J (f y),
       (e : TangentSpace I y →L[𝕂] TangentSpace J (f y)) = mfderiv I J f y) :
     IsLocalDiffeomorph I J n f := fun y => by
   obtain ⟨e, hey⟩ := he y
   exact isLocalDiffeomorphAt_of_mfderiv_eq (s := univ) hf.contMDiffOn isOpen_univ (mem_univ y)
-    BoundarylessManifold.isInteriorPoint BoundarylessManifold.isInteriorPoint hn hey
+    BoundarylessManifold.isInteriorPoint (hJ y) hn hey
+
+/-- A globally invertible differential gives a local diffeomorphism when both manifolds are
+boundaryless. -/
+theorem isLocalDiffeomorph_of_mfderiv_eq_of_boundaryless [BoundarylessManifold J N]
+    (hf : ContMDiff I J n f) (hn : 1 ≤ n)
+    (he : ∀ y : M, ∃ e : TangentSpace I y ≃L[𝕂] TangentSpace J (f y),
+      (e : TangentSpace I y →L[𝕂] TangentSpace J (f y)) = mfderiv I J f y) :
+    IsLocalDiffeomorph I J n f :=
+  isLocalDiffeomorph_of_mfderiv_eq hf (fun _ => BoundarylessManifold.isInteriorPoint) hn he
 
 end InverseFunctionTheorem
 
