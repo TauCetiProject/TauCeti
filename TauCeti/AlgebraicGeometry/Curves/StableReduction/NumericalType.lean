@@ -7,12 +7,12 @@ module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+-- the no-disconnected-cut criterion that discharges the `connected` field of a numerical type
+public import TauCeti.LinearAlgebra.Matrix.Connected
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Ring
-import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
+import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.Logic.Relation
 
 /-!
@@ -33,8 +33,9 @@ an equivalence of component sets, and its signed genus
 The arithmetic subtlety in the genus formula is that the individual half-diagonals `aᵢᵢ / 2` need
 not be integers, so the halving may only be performed once, on the whole sum. That this is
 legitimate is `TauCeti.NumericalType.even_sum_multiplicity_mul_diagonal`: pairing the fibre
-relation against the multiplicity vector gives `∑ᵢⱼ mᵢ mⱼ aᵢⱼ = 0`, whose off-diagonal part is
-even by symmetry, so `∑ᵢ mᵢ² aᵢᵢ` is even; and `mᵢ² ≡ mᵢ` modulo two.
+relation against the multiplicity vector gives `∑ᵢⱼ mᵢ mⱼ aᵢⱼ = 0`, and for a symmetric integer
+matrix that forces `∑ᵢ mᵢ aᵢᵢ` to be even
+(`Matrix.IsSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero`).
 
 ## Main definitions
 
@@ -55,10 +56,10 @@ even by symmetry, so `∑ᵢ mᵢ² aᵢᵢ` is even; and `mᵢ² ≡ mᵢ` modu
 * `TauCeti.NumericalType.intersection_self_nonpos` and
   `TauCeti.NumericalType.intersection_self_neg`: self-intersections are nonpositive, and are
   negative as soon as there is more than one component.
-* `Matrix.forall_reflTransGen_ne_and_pos_iff` and
-  `TauCeti.NumericalType.exists_mem_notMem_adj`: connectedness of the intersection graph is the
-  same as the absence of a disconnecting cut, the form in which
-  [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z) states the condition.
+* `TauCeti.NumericalType.exists_mem_notMem_adj`: every nonempty proper set of components meets
+  its complement, the no-disconnected-cut form in which
+  [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z) states the connectedness
+  condition.
 * `TauCeti.NumericalType.arithmeticGenus_reindex`: the signed genus does not depend on the chosen
   indexing of the components.
 
@@ -71,44 +72,17 @@ the halving be distributed over the sum: `oddDiagonalExample` has odd diagonal e
 Symmetry of the intersection matrix is recorded through Mathlib's `Matrix.IsSymm` rather than as
 a bare pointwise equation, so that a reindexed matrix inherits it from `Matrix.IsSymm.submatrix`.
 
-The no-disconnected-cut criterion is stated for a bare matrix, in the `Matrix` namespace, because
-it has to be available before a numerical type exists: it is what discharges the `connected` field
-when one is built.
+The no-disconnected-cut criterion in the other direction, which is what discharges the `connected`
+field when a numerical type is built, has to be available before the type exists, so it is stated
+for a bare matrix:
+`Matrix.forall_reflTransGen_ne_and_pos_iff` in `TauCeti.LinearAlgebra.Matrix.Connected`, which
+this file re-exports.
 -/
 
 -- The `NumericalType` structure, the signed genus and the two worked examples follow the
 -- signatures written down in `StableReduction/Suggested.lean` of the Tau Ceti roadmap.
 
 public section
-
-namespace Matrix
-
-/-- For a matrix `A` whose off-diagonal entries are nonnegative, connectedness of the graph
-joining distinct indices `i`, `j` with `0 < A i j` is equivalent to the absence of a disconnecting
-cut: no nonempty proper set of indices `s` has all its cross-entries zero. The right-hand side is
-the form in which [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z) states the
-connectedness condition on a numerical type, so this is what supplies the `connected` field of
-`TauCeti.NumericalType` when one is constructed.
-
-The nonnegativity hypothesis is what turns a nonzero cross-entry into a positive one, and so
-cannot be dropped. -/
-lemma forall_reflTransGen_ne_and_pos_iff {C R : Type*} [PartialOrder R] [Zero R]
-    (A : Matrix C C R) (hA : ∀ i j, i ≠ j → 0 ≤ A i j) :
-    (∀ i j, Relation.ReflTransGen (fun i j ↦ i ≠ j ∧ 0 < A i j) i j) ↔
-      ∀ s : Set C, s.Nonempty → s ≠ Set.univ → ¬ ∀ i ∈ s, ∀ j ∉ s, A i j = 0 := by
-  rw [TauCeti.forall_reflTransGen_iff]
-  refine forall_congr' fun s ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
-  constructor
-  · rintro ⟨i, hi, j, hj, -, hpos⟩ hcut
-    exact hpos.ne' (hcut i hi j hj)
-  · intro hcut
-    by_contra hcon
-    refine hcut fun i hi j hj ↦ ?_
-    have hij : i ≠ j := fun h ↦ hj (h ▸ hi)
-    by_contra hne
-    exact hcon ⟨i, hi, j, hj, hij, lt_of_le_of_ne (hA i j hij) (Ne.symm hne)⟩
-
-end Matrix
 
 namespace TauCeti
 
@@ -239,47 +213,15 @@ lemma intersection_self_neg (h : 1 < Fintype.card T.Component) (i : T.Component)
 /-- The multiplicity-weighted sum of the self-intersections of a numerical type is even.
 
 This is what makes the halving in the genus formula exact; the individual terms `mᵢ aᵢᵢ` need not
-be even, as `oddDiagonalExample` shows. -/
+be even, as `oddDiagonalExample` shows. The fibre relation says that the intersection matrix kills
+the multiplicity vector, so this is an instance of
+`Matrix.IsSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero`. -/
 lemma even_sum_multiplicity_mul_diagonal :
     Even (∑ i, (T.multiplicity i : ℤ) * T.intersection i i) := by
-  have hoff : Even (∑ i, ∑ j ∈ univ.erase i,
-      (T.multiplicity i : ℤ) * (T.multiplicity j : ℤ) * T.intersection i j) :=
-    TauCeti.even_sum_sum_erase (s := univ)
-      (f := fun i j ↦ (T.multiplicity i : ℤ) * (T.multiplicity j : ℤ) * T.intersection i j)
-      (fun i _ j _ ↦ by rw [T.intersection_comm i j]; ring)
-  have htotal : ∑ i, ∑ j,
-      (T.multiplicity i : ℤ) * (T.multiplicity j : ℤ) * T.intersection i j = 0 := by
-    refine Finset.sum_eq_zero fun i _ ↦ ?_
-    have hrow : ∑ j, (T.multiplicity i : ℤ) * (T.multiplicity j : ℤ) * T.intersection i j
-        = (T.multiplicity i : ℤ) * ∑ j, (T.multiplicity j : ℤ) * T.intersection i j := by
-      rw [Finset.mul_sum]
-      exact Finset.sum_congr rfl fun j _ ↦ by ring
-    rw [hrow, T.fiber_relation i, mul_zero]
-  have hdiag : (2 : ℤ) ∣
-      ∑ i, (T.multiplicity i : ℤ) * (T.multiplicity i : ℤ) * T.intersection i i := by
-    have hsplit : ∑ i, (T.multiplicity i : ℤ) * (T.multiplicity i : ℤ) * T.intersection i i
-        = -∑ i, ∑ j ∈ univ.erase i,
-            (T.multiplicity i : ℤ) * (T.multiplicity j : ℤ) * T.intersection i j := by
-      rw [eq_neg_iff_add_eq_zero, ← Finset.sum_add_distrib, ← htotal]
-      exact Finset.sum_congr rfl fun i _ ↦ Finset.add_sum_erase univ
-        (fun j ↦ (T.multiplicity i : ℤ) * (T.multiplicity j : ℤ) * T.intersection i j)
-        (mem_univ i)
-    rw [hsplit]
-    exact dvd_neg.2 hoff.two_dvd
-  have hcorr : (2 : ℤ) ∣ ∑ i, ((T.multiplicity i : ℤ) * (T.multiplicity i : ℤ) *
-      T.intersection i i - (T.multiplicity i : ℤ) * T.intersection i i) := by
-    refine Finset.dvd_sum fun i _ ↦ ?_
-    obtain ⟨c, hc⟩ := by
-      simpa [mul_sub] using (Int.even_mul_pred_self (T.multiplicity i : ℤ)).two_dvd
-    exact ⟨c * T.intersection i i, by linear_combination T.intersection i i * hc⟩
-  have key : ∑ i, (T.multiplicity i : ℤ) * T.intersection i i =
-      (∑ i, (T.multiplicity i : ℤ) * (T.multiplicity i : ℤ) * T.intersection i i) -
-        ∑ i, ((T.multiplicity i : ℤ) * (T.multiplicity i : ℤ) * T.intersection i i -
-          (T.multiplicity i : ℤ) * T.intersection i i) := by
-    rw [Finset.sum_sub_distrib]
-    ring
-  rw [even_iff_two_dvd, key]
-  exact dvd_sub hdiag hcorr
+  have hker : T.intersection.mulVec (fun j ↦ (T.multiplicity j : ℤ)) = 0 := funext fun i ↦ by
+    simpa [Matrix.mulVec, dotProduct, mul_comm] using T.fiber_relation i
+  exact T.intersection_isSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero
+    (by rw [hker, dotProduct_zero])
 
 /-! ### The signed genus -/
 
@@ -294,6 +236,14 @@ number. -/
 def arithmeticGenus : ℤ :=
   1 + (∑ i, (T.multiplicity i : ℤ) * (T.weight i : ℤ) * ((T.genus i : ℤ) - 1)) -
     (∑ i, (T.multiplicity i : ℤ) * T.intersection i i) / 2
+
+/-- The defining formula of the signed genus, with the halving performed once on the whole sum
+`∑ᵢ mᵢ aᵢᵢ`. -/
+lemma arithmeticGenus_def :
+    T.arithmeticGenus =
+      1 + (∑ i, (T.multiplicity i : ℤ) * (T.weight i : ℤ) * ((T.genus i : ℤ) - 1)) -
+        (∑ i, (T.multiplicity i : ℤ) * T.intersection i i) / 2 := by
+  rw [arithmeticGenus]
 
 /-- The genus formula with the halving cleared, which is the shape in which it is used. -/
 lemma two_mul_arithmeticGenus :
