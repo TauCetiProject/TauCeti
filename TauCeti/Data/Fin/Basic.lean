@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Ring.Parity
+public import Mathlib.Logic.Equiv.Fin.Rotate
 
 import Mathlib.Algebra.Group.Fin.Basic
 import Mathlib.Tactic.FinCases
@@ -28,6 +29,7 @@ range, so the value is a `dite` rather than a plain application.
 
 * `TauCeti.perm_fin_two_eq_one_or_swap`: every permutation of `Fin 2` is the identity or the
   transposition.
+* `TauCeti.rev_finRotate_rev`: conjugating forward rotation by reversal gives backward rotation.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`.
@@ -51,6 +53,25 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
 end Fin
 
 namespace TauCeti
+
+/-- Conjugating forward rotation of a finite ordinal by reversal gives backward rotation. -/
+theorem rev_finRotate_rev {n : ℕ} (i : Fin n) :
+    Fin.rev (finRotate n (Fin.rev i)) = (finRotate n).symm i := by
+  cases n with
+  | zero => exact Fin.elim0 i
+  | succ n =>
+    rw [finRotate_apply, finRotate_symm_apply, ← Fin.last_sub, ← Fin.last_sub]
+    have hlast : Fin.last n = (-1 : Fin (n + 1)) := by
+      apply Fin.ext
+      simp
+    simp [sub_eq_add_neg, hlast, add_comm, add_left_comm]
+
+/-- Reversal carries backward rotation of a finite ordinal to forward rotation. -/
+theorem rev_finRotate_symm {n : ℕ} (i : Fin n) :
+    Fin.rev ((finRotate n).symm i) = finRotate n (Fin.rev i) := by
+  apply Fin.rev_injective
+  simp only [Fin.rev_rev]
+  exact (rev_finRotate_rev i).symm
 
 /-- **Adding one twice in `Fin n` never returns to the same element** when `3 ≤ n`. -/
 theorem add_one_add_one_ne_self {n : ℕ} [NeZero n] (hn : 3 ≤ n) (i : Fin n) :

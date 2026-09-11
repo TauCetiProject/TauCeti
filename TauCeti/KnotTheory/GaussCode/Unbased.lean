@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Logic.Equiv.Fin.Rotate
+public import TauCeti.Data.Fin.Basic
 public import TauCeti.KnotTheory.GaussCode.Basic
 import TauCeti.GroupTheory.Perm.Basic
 
@@ -87,24 +87,6 @@ private theorem reindexVisits_refl (D : BasedOrientedGaussCode n) :
     D.reindexVisits (Equiv.refl (Fin (2 * n))) = D := by
   apply ext <;> funext i <;> simp [reindexVisits]
 
-private theorem rev_finRotate_rev (i : Fin (2 * n)) :
-    Fin.rev (finRotate (2 * n) (Fin.rev i)) = (finRotate (2 * n)).symm i := by
-  generalize 2 * n = m at i ⊢
-  cases m with
-  | zero => exact Fin.elim0 i
-  | succ m =>
-    rw [finRotate_apply, finRotate_symm_apply, ← Fin.last_sub, ← Fin.last_sub]
-    have hlast : Fin.last m = (-1 : Fin (m + 1)) := by
-      apply Fin.ext
-      simp
-    simp [sub_eq_add_neg, hlast, add_comm, add_left_comm]
-
-private theorem rev_finRotate_symm (i : Fin (2 * n)) :
-    Fin.rev ((finRotate (2 * n)).symm i) = finRotate (2 * n) (Fin.rev i) := by
-  apply Fin.rev_injective
-  simp only [Fin.rev_rev]
-  exact (rev_finRotate_rev i).symm
-
 /-- Move the base point of a based oriented Gauss code forward by one visit in the oriented
 traversal. This cyclically shifts the visit and over/under sequences and transports the partner
 matching; crossing labels and signs are unchanged. -/
@@ -185,6 +167,7 @@ theorem mirror_rotateBasepoint (D : BasedOrientedGaussCode n) :
   apply ext <;> funext i <;> simp
 
 /-- Reversing orientation turns a forward basepoint rotation into a backward one. -/
+@[simp]
 theorem reverse_rotateBasepoint (D : BasedOrientedGaussCode n) :
     (rotateBasepoint n D).reverse = (rotateBasepoint n).symm D.reverse := by
   apply ext
@@ -286,9 +269,8 @@ def mirror (D : OrientedGaussCode n) : OrientedGaussCode n :=
 @[simp]
 theorem mirror_forgetBasepoint (D : BasedOrientedGaussCode n) :
     mirror D.forgetBasepoint = D.mirror.forgetBasepoint := by
-  simp only [mirror, BasedOrientedGaussCode.forgetBasepoint]
-  apply Quotient.sound
-  exact (BasedOrientedGaussCode.unbasedSetoid n).refl _
+  unfold mirror BasedOrientedGaussCode.forgetBasepoint
+  apply Quotient.map'_mk''
 
 /-- Mirroring twice recovers the original unbased oriented Gauss code. -/
 @[simp]
@@ -315,9 +297,8 @@ def reverse (D : OrientedGaussCode n) : OrientedGaussCode n :=
 @[simp]
 theorem reverse_forgetBasepoint (D : BasedOrientedGaussCode n) :
     reverse D.forgetBasepoint = D.reverse.forgetBasepoint := by
-  simp only [reverse, BasedOrientedGaussCode.forgetBasepoint]
-  apply Quotient.sound
-  exact (BasedOrientedGaussCode.unbasedSetoid n).refl _
+  unfold reverse BasedOrientedGaussCode.forgetBasepoint
+  apply Quotient.map'_mk''
 
 /-- Reversing orientation twice recovers the original unbased oriented Gauss code. -/
 @[simp]
@@ -342,9 +323,8 @@ def relabel (D : OrientedGaussCode n) (e : Fin n ≃ Fin n) : OrientedGaussCode 
 @[simp]
 theorem relabel_forgetBasepoint (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) :
     relabel D.forgetBasepoint e = (D.relabel e).forgetBasepoint := by
-  simp only [relabel, BasedOrientedGaussCode.forgetBasepoint]
-  apply Quotient.sound
-  exact (BasedOrientedGaussCode.unbasedSetoid n).refl _
+  unfold relabel BasedOrientedGaussCode.forgetBasepoint
+  apply Quotient.map'_mk''
 
 /-- Relabelling by the identity equivalence has no effect. -/
 @[simp]
