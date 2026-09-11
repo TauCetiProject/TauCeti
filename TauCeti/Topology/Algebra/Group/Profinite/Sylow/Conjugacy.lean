@@ -95,8 +95,9 @@ theorem exists_map_conj_eq (hP : IsProPSylow p P) (hQ : IsProPSylow p Q) :
   simpa only [Subgroup.comap_map_eq, QuotientGroup.ker_mk'] using hcomap
 
 /-- A normal Sylow pro-`p` subgroup is the unique Sylow pro-`p` subgroup. -/
-theorem eq_of_normal (hP : IsProPSylow p P) (hQ : IsProPSylow p Q) (hn : P.Normal) :
-    P = Q := by
+theorem eq_of_normal (p : ℕ) [Fact p.Prime] (G : Type u) [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G] (P Q : Subgroup G)
+    (hP : IsProPSylow p P) (hQ : IsProPSylow p Q) (hn : P.Normal) : P = Q := by
   obtain ⟨g, rfl⟩ := hP.exists_map_conj_eq hQ
   exact (@Subgroup.Normal.map_conj_eq G _ P hn g).symm
 
