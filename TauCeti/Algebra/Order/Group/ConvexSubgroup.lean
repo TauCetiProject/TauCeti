@@ -664,9 +664,11 @@ Together with `mulArchimedean_quotient_maxAvoid`, this is the elementary ordered
 the fact that a valuation with a nonzero cofinal value is microbial. -/
 theorem nontrivial_quotient_maxAvoid {γ : Γ} (hγ : γ ≠ 1) :
     Nontrivial (Γ ⧸ (maxAvoid hγ).toSubgroup) := by
-  refine ⟨⟨(γ : Γ ⧸ (maxAvoid hγ).toSubgroup), 1, ?_⟩⟩
-  intro h
-  exact not_mem_maxAvoid hγ ((QuotientGroup.eq_one_iff γ).mp h)
+  apply QuotientGroup.nontrivial_iff.mpr
+  intro htop
+  apply not_mem_maxAvoid hγ
+  rw [← mem_toSubgroup, htop]
+  exact Subgroup.mem_top γ
 
 /-- If `γ` generates the whole group as a convex subgroup, the quotient by the largest convex
 subgroup avoiding `γ` is archimedean. Equivalently, it has height at most one. -/
@@ -684,7 +686,7 @@ theorem mulArchimedean_quotient_maxAvoid {γ : Γ} (hγ : γ ≠ 1)
     let L : ConvexSubgroup Γ := comap q K
     have hHL : maxAvoid hγ ≤ L := by
       intro x hx
-      rw [show L = comap q K from rfl, mem_comap]
+      simp only [L, mem_comap]
       have hxq : q x = 1 := (QuotientGroup.eq_one_iff x).mpr hx
       rw [hxq]
       exact one_mem K
@@ -696,7 +698,7 @@ theorem mulArchimedean_quotient_maxAvoid {γ : Γ} (hγ : γ ≠ 1)
       rw [mem_bot]
       apply (QuotientGroup.eq_one_iff x).mpr
       have hxL : x ∈ L := by
-        rw [show L = comap q K from rfl, mem_comap]
+        simp only [L, mem_comap]
         exact hz
       rw [ConvexSubgroup.mem_toSubgroup, hEq]
       exact hxL
@@ -711,7 +713,7 @@ theorem mulArchimedean_quotient_maxAvoid {γ : Γ} (hγ : γ ≠ 1)
     intro z _
     obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective (maxAvoid hγ).toSubgroup z
     have hxL : x ∈ L := hL ▸ mem_top
-    rw [show L = comap q K from rfl, mem_comap] at hxL
+    simp only [L, mem_comap] at hxL
     exact hxL
 
 /-- **The quotient by `⊥` is the group itself.** `QuotientGroup.quotientBot` identifies the two

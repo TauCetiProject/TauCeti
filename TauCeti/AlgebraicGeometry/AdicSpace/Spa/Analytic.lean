@@ -17,8 +17,8 @@ public import TauCeti.RingTheory.Valuation.Microbial
 /-!
 # Analytic points and the analytic locus of `Spa(A, A⁺)`
 
-**Wedhorn, *Adic Spaces* (arXiv:1910.05934v1), Definition 7.39, Remark 7.40(2), (3), and
-Proposition 7.49.**
+**Wedhorn, *Adic Spaces* (arXiv:1910.05934v1), Definition 7.39, Remark 7.40(2), (3), (5),
+Remark 7.42(2), and Proposition 7.49.**
 
 This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
 
@@ -51,8 +51,8 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
 
 ## References
 
-* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 7.39, Remark 7.40(2), (3), and
-  Proposition 7.49.
+* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 7.39, Remark 7.40(2), (3), (5),
+  Remark 7.42(2), and Proposition 7.49.
 -/
 
 public section
@@ -169,7 +169,7 @@ theorem IsAnalyticPoint.isMicrobial [IsHuberRing A] {v : Spv A} (hana : IsAnalyt
           ((u : (MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ) :
             MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation)) :=
         WithZero.coe_unitsWithZeroEquiv_eq_units_val _
-      _ = v.valuation.restrict (b : A) := by rfl
+      _ = v.valuation.restrict (b : A) := by simp only [u, Units.val_mk0]
       _ = _ := v.valuation.restrict_eq_mk hb0
   have huCofImage : TauCeti.IsCofinalElement ⊤ (OrderMonoidIso.unitsWithZero u) := by
     rw [huImage]
@@ -207,10 +207,10 @@ theorem IsAnalyticPoint.exists_coarsenByUnits_mem_spaAnalytic [IsHuberRing A]
         (ofValuation (v.valuation.restrict.coarsenByUnits H)).supp = v.supp := by
   obtain ⟨H, hHnontrivial, hHarch⟩ := Valuation.isMicrobial_iff.mp (hana.isMicrobial hcont)
   have hH : H ≠ ⊤ := by
-    intro h
-    subst H
-    exact (not_nontrivial_iff_subsingleton.mpr QuotientGroup.subsingleton_quotient_top)
-      hHnontrivial
+    intro htop
+    apply QuotientGroup.nontrivial_iff.mp hHnontrivial
+    simpa only [TauCeti.ConvexSubgroup.top_toSubgroup] using
+      TauCeti.ConvexSubgroup.toSubgroup_inj.mpr htop
   let w := v.valuation.restrict.coarsenByUnits H
   have hwcont : w.IsContinuous :=
     ((isContinuous_def v).mp hcont).coarsenByUnits_restrict hH
