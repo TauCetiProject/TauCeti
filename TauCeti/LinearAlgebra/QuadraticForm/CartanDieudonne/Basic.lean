@@ -79,6 +79,7 @@ private theorem exists_reflection_list_prod_mul_eq_one_of_codim
         apply Subtype.ext
         apply LinearEquiv.ext
         intro y
+        -- Expose the underlying linear equivalence so the pointwise fixed-space hypothesis applies.
         change (g : V ≃ₗ[K] V) y = y
         exact hfix y (by simp [htop])
       · let B : LinearMap.BilinForm K V := QuadraticMap.associated Q

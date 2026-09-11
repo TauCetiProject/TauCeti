@@ -688,15 +688,18 @@ theorem exists_reflection_list_prod_mul_eqOn_sup_span_singleton
       subst s
       exact ⟨_, inferInstance, rfl⟩
     · simpa only [List.prod_cons, List.prod_nil, mul_one] using
+        -- Normalize the singleton word product to the correcting group element.
         (show ∀ y ∈ W ⊔ Submodule.span K {x},
           ((((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)) y) = y by
             apply linearEquiv_eqOn_sup_span_singleton _ W x
             · intro w hw
+              -- Expose the reflection underlying the orthogonal-group product.
               change QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - x)
                 ((g : V ≃ₗ[K] V) w) = w
               rw [hfix w hw]
               exact QuadraticMap.reflection_apply_of_isOrtho Q _ (hsub w hw)
-            · change QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - x)
+            · -- Expose the reflection at the new fixed generator.
+              change QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - x)
                 ((g : V ≃ₗ[K] V) x) = x
               exact QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ x hmap)
   · have : Invertible (Q ((g : V ≃ₗ[K] V) x - -x)) := by
@@ -714,17 +717,20 @@ theorem exists_reflection_list_prod_mul_eqOn_sup_span_singleton
       · exact ⟨x, inferInstance, rfl⟩
       · exact ⟨_, inferInstance, rfl⟩
     · simpa only [List.prod_cons, List.prod_nil, mul_one] using
+        -- Normalize the two-element word product to the correcting group elements.
         (show ∀ y ∈ W ⊔ Submodule.span K {x},
           (((((r₁ * r₂) * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)) y) = y by
             apply linearEquiv_eqOn_sup_span_singleton _ W x
             · intro w hw
+              -- Expose the two reflections underlying the orthogonal-group product.
               change QuadraticMap.reflection Q x
                 (QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - -x)
                   ((g : V ≃ₗ[K] V) w)) = w
               rw [hfix w hw]
               rw [QuadraticMap.reflection_apply_of_isOrtho Q _ (hadd' w hw)]
               exact QuadraticMap.reflection_apply_of_isOrtho Q _ (hx w hw)
-            · change QuadraticMap.reflection Q x
+            · -- Expose the two reflections at the new fixed generator.
+              change QuadraticMap.reflection Q x
                 (QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - -x)
                   ((g : V ≃ₗ[K] V) x)) = x
               rw [QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ (-x)
