@@ -13,8 +13,9 @@ public import Mathlib.GroupTheory.QuotientGroup.Defs
 For normal subgroups `V ≤ U` of a group `G`, the class of `g` modulo `V` determines its class
 modulo `U`, so there is a homomorphism `G ⧸ V →* G ⧸ U`: the homomorphism underlying Mathlib's
 `Subgroup.quotientMapOfLE`. It is Mathlib's `QuotientGroup.map` at the identity of `G`, the map
-`ProfiniteGrp.toFiniteQuotientFunctor` sends `V ≤ U` to, and it is the transition map of every
-system indexed by the normal subgroups of `G` ordered by inclusion.
+`ProfiniteGrp.toFiniteQuotientFunctor` sends `V ≤ U` to, and it is the canonical transition map
+of the system of quotient groups of `G` indexed by its normal subgroups ordered by inclusion, and
+of the systems built from those quotients.
 
 `QuotientGroup.map` asks for `V ≤ Subgroup.comap (MonoidHom.id G) U` rather than `V ≤ U`, and the
 two are equal only up to unfolding; naming the specialization keeps the systems built on it

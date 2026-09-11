@@ -70,8 +70,9 @@ discreteness of the coefficients, in order to identify the colimit with continuo
 
 The group half of the transition pairs is `TauCeti.QuotientGroup.mapOfLE`, which is generic
 quotient-group infrastructure and lives in `TauCeti.GroupTheory.QuotientGroup.Map`: it is the
-transition map of every system indexed by the normal subgroups of `G`, not of this one only, and
-this file consumes it together with its `_mk`, `_refl` and `_comp` lemmas.
+canonical transition map of the system of quotient groups of `G`, and of the systems built from
+those quotients, not of this one only, and this file consumes it together with its `_mk`, `_refl`
+and `_comp` lemmas.
 
 `invariantsInclusion`, `transitionPair` and `finiteLevelTransition` keep their bodies sealed:
 each is characterized by its `_apply_coe`, `_hom_toLinearMap` and functor-law lemmas, and those
