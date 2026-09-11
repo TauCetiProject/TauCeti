@@ -84,8 +84,6 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
 * `TauCeti.QuadraticMap.exists_reflection_list_prod_mul_eqOn_sup_span_singleton`: at most two
   anisotropic reflections supply the one-step fixed-subspace correction used by
   Cartan--Dieudonne induction.
-* `TauCeti.QuadraticMap.exists_mem_subgroup_mul_eqOn_sup_span_singleton_of_reflection_mem`: the
-  corresponding subgroup-valued correction.
 * `TauCeti.QuadraticMap.specialOrthogonalGroup_normal`: `SO(Q)` is normal in `O(Q)`, being the
   kernel of the determinant restricted there.
 
@@ -736,27 +734,6 @@ theorem exists_reflection_list_prod_mul_eqOn_sup_span_singleton
               rw [QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ (-x)
                 (hmap.trans (Q.map_neg x).symm), map_neg,
                 QuadraticMap.reflection_apply_self, neg_neg])
-
-/-- Let `H` be a subgroup of the orthogonal group containing every reflection in a vector of
-invertible norm. If `g` fixes a subspace `W` pointwise and `x` is anisotropic and orthogonal to
-`W`, an element of `H` can be multiplied into `g` so that the product fixes
-`W ⊔ K ∙ x` pointwise. -/
-theorem exists_mem_subgroup_mul_eqOn_sup_span_singleton_of_reflection_mem
-    (H : Subgroup (QuadraticMap.orthogonalGroup Q))
-    (hreflection : ∀ (v : V) [Invertible (Q v)],
-      QuadraticMap.reflectionOrthogonal Q v ∈ H)
-    (g : QuadraticMap.orthogonalGroup Q) (W : Submodule K V)
-    (hfix : ∀ w ∈ W, ((g : V ≃ₗ[K] V) w) = w)
-    (x : V) [Invertible (Q x)]
-    (hx : ∀ w ∈ W, Q.IsOrtho x w) :
-    ∃ r : QuadraticMap.orthogonalGroup Q, r ∈ H ∧
-      ∀ y ∈ W ⊔ Submodule.span K {x},
-        (((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) = y := by
-  obtain ⟨l, hl, _, hfix'⟩ :=
-    exists_reflection_list_prod_mul_eqOn_sup_span_singleton Q g W hfix x hx
-  refine ⟨l.prod, H.list_prod_mem fun r hr => ?_, hfix'⟩
-  obtain ⟨v, _, rfl⟩ := hl r hr
-  exact hreflection v
 
 end FixedSubspace
 

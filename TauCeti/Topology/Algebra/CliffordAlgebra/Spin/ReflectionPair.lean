@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.ReflectionPair
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
-public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Topology.Algebra.CliffordAlgebra.RealForm
 public import Mathlib.Analysis.Normed.Module.Connected
 
 /-!
@@ -25,8 +25,6 @@ place reflection-pair lifts in the identity path component of the compact real S
 
 * `CliffordAlgebra.joined_one_spinReflectionPair_of_joined` maps a path in a unit quadric to a
   path from the identity to its reflection-pair lift.
-* `CliffordAlgebra.realCliffordForm_zero_euclidean_norm_sq` identifies the positive-definite real
-  Clifford form with the squared Euclidean norm in Euclidean coordinates.
 * `CliffordAlgebra.joined_one_spinReflectionPair_realCliffordForm_zero` joins every normalized
   reflection-pair lift to the identity in the positive-definite real form of dimension at least two.
 
@@ -62,36 +60,6 @@ theorem joined_one_spinReflectionPair_of_joined (v w : M) (hv : Q v = 1) (hw : Q
     funext u
     exact coe_spinReflectionPair _ _ _ _ _
   simpa only [f, spinReflectionPair_self] using h.map hf
-
-/-- The positive-definite real Clifford form is the squared Euclidean norm in Euclidean
-coordinates. -/
-theorem realCliffordForm_zero_euclidean_norm_sq {n : ℕ}
-    (u : EuclideanSpace ℝ (Fin n)) :
-    realCliffordForm n 0 (EuclideanSpace.equiv (Fin n) ℝ u) = ‖u‖ ^ 2 := by
-  rw [realCliffordForm_zero_eq_weightedSumSquares_one,
-    QuadraticMap.weightedSumSquares_apply]
-  simp only [Pi.one_apply, one_smul, PiLp.continuousLinearEquiv_apply]
-  simpa only [pow_two] using (EuclideanSpace.real_norm_sq_eq u).symm
-
-/-- A vector on the unit quadric of the positive-definite real Clifford form has Euclidean norm
-one in Euclidean coordinates. -/
-theorem euclidean_norm_eq_one_of_realCliffordForm_zero_eq_one {n : ℕ}
-    {v : Fin n → ℝ} (hv : realCliffordForm n 0 v = 1) :
-    ‖(EuclideanSpace.equiv (Fin n) ℝ).symm v‖ = 1 := by
-  have hsquare : ‖(EuclideanSpace.equiv (Fin n) ℝ).symm v‖ ^ 2 = 1 := by
-    rw [← realCliffordForm_zero_euclidean_norm_sq]
-    simpa only [ContinuousLinearEquiv.apply_symm_apply] using hv
-  nlinarith [norm_nonneg ((EuclideanSpace.equiv (Fin n) ℝ).symm v)]
-
-/-- Every Euclidean unit vector lies on the unit quadric of the positive-definite real Clifford
-form after passing to Euclidean coordinates. -/
-theorem realCliffordForm_zero_euclidean_eq_one {n : ℕ}
-    (u : sphere (0 : EuclideanSpace ℝ (Fin n)) 1) :
-    realCliffordForm n 0 (EuclideanSpace.equiv (Fin n) ℝ u) = 1 := by
-  rw [realCliffordForm_zero_euclidean_norm_sq]
-  have hu : ‖(u : EuclideanSpace ℝ (Fin n))‖ = 1 := by
-    simpa only [mem_sphere, dist_zero_right] using u.2
-  rw [hu, one_pow]
 
 /-- In dimension at least two, every normalized reflection-pair lift for the positive-definite real
 Clifford form is joined to the identity in the Spin group. -/

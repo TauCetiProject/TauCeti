@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.ReflectionPair
 import TauCeti.Data.List.Pair
+import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
+import TauCeti.Topology.Algebra.CliffordAlgebra.RealForm
 
 /-!
 # Compactness of compact real Spin groups
@@ -233,7 +235,7 @@ private theorem exists_sphere_pair_list_prod_eq (n : ℕ) [NeZero n]
   let g := spinToSpecialOrthogonal Q x
   obtain ⟨l, hlrefl, hllen, hleven, hlprod⟩ :=
     QuadraticMap.exists_even_reflection_list_prod_eq Q
-      (nondegenerate_realCliffordForm n 0) g
+      (posDef_realCliffordForm_zero n).anisotropic g
   obtain ⟨u, hulen, huprod⟩ := exists_unitSphere_reflection_list n l hlrefl
   let p := List.pairAdjacent u
   let z : realCliffordSpinGroupZero n := (p.map (realCliffordSpinSpherePair n)).prod
@@ -264,8 +266,8 @@ private theorem exists_sphere_pair_list_prod_eq (n : ℕ) [NeZero n]
     have hpair : 2 * p.length ≤ l.length := by
       simp only [p, List.length_pairAdjacent, hulen]
       omega
-    simpa using
-      (Nat.le_of_mul_le_mul_left (hpair.trans hllen) (by decide : 0 < 2))
+    have hllen' : l.length ≤ n := by simpa using hllen
+    omega
   rcases eq_or_eq_negOne_mul_of_spinToSpecialOrthogonal_eq Q
       (nondegenerate_realCliffordForm n 0) x z (by simpa only [g] using hzproj.symm) with hx | hx
   · exact ⟨p, hplen.trans (by omega), hx.symm⟩
