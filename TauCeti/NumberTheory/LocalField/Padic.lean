@@ -31,9 +31,9 @@ public section
 open ValuativeRel IsNonarchimedeanLocalField
 open scoped WithZero
 
-namespace TauCeti
-
 variable (p : ℕ) [Fact p.Prime]
+
+namespace TauCeti
 
 private theorem valueGroupWithZeroIsoInt_padic (x : ℚ_[p]) :
     valueGroupWithZeroIsoInt ℚ_[p] (valuation ℚ_[p] x) = Padic.mulValuation x := by
@@ -48,28 +48,32 @@ private theorem valueGroupWithZeroIsoInt_padic (x : ℚ_[p]) :
     ((Valuation.isEquiv_map_self_of_strictMono e.toMonoidWithZeroHom e.strictMono).trans
       (ValuativeRel.isEquiv _ _))) x
 
+end TauCeti
+
 namespace Padic
+
+open TauCeti
 
 /-- The additive normalized valuation on `ℚ_[p]` is Mathlib's p-adic valuation. -/
 @[simp]
 theorem toAdd_normalizedValuation_eq_valuation (x : ℚ_[p]ˣ) :
     (normalizedValuation ℚ_[p] x).toAdd = (x : ℚ_[p]).valuation := by
-  rw [toAdd_normalizedValuation_eq_neg_log, valueGroupWithZeroIsoInt_padic]
+  rw [toAdd_normalizedValuation_eq_neg_log, TauCeti.valueGroupWithZeroIsoInt_padic]
   simp [Padic.mulValuation, x.ne_zero]
 
 /-- The residue field of `ℚ_[p]` has cardinality `p`. -/
 @[simp]
 theorem natCard_residueField :
-    @Fintype.card 𝓀[ℚ_[p]] (Fintype.ofFinite 𝓀[ℚ_[p]]) = p := by
+    Nat.card 𝓀[ℚ_[p]] = p := by
   have h : 𝒪[ℚ_[p]] = PadicInt.subring p := by
     ext x
     rw [Valuation.mem_integer_iff, PadicInt.mem_subring_iff]
-    rw [(ValuativeRel.isEquiv (valuation ℚ_[p]) Padic.mulValuation).le_one_iff_le_one]
+    rw [(ValuativeRel.isEquiv (ValuativeRel.valuation ℚ_[p]) Padic.mulValuation).le_one_iff_le_one]
     simpa using (not_congr (Padic.norm_lt_norm_iff_mulValuation_lt
       (x := (1 : ℚ_[p])) (y := x))).symm
   let e : 𝒪[ℚ_[p]] ≃+* ℤ_[p] := RingEquiv.subringCongr h
-  rw [@Fintype.card_congr _ _ (Fintype.ofFinite 𝓀[ℚ_[p]]) inferInstance
-    ((IsLocalRing.ResidueField.mapEquiv e).trans PadicInt.residueField).toEquiv, ZMod.card]
+  rw [Nat.card_congr ((IsLocalRing.ResidueField.mapEquiv e).trans
+    PadicInt.residueField).toEquiv, Nat.card_zmod]
 
 /-- The normalized absolute value on `ℚ_[p]` agrees with Mathlib's norm. -/
 @[simp]
@@ -78,14 +82,9 @@ theorem normalizedAbsoluteValue_eq_norm (x : ℚ_[p]) :
   rcases eq_or_ne x 0 with rfl | hx
   · simp
   apply NNReal.eq
-  have hcard : Nat.card 𝓀[ℚ_[p]] = p := by
-    rw [@Nat.card_eq_fintype_card _ (Fintype.ofFinite 𝓀[ℚ_[p]])]
-    exact natCard_residueField p
-  rw [normalizedAbsoluteValue_apply_ne_zero x hx, hcard,
+  rw [normalizedAbsoluteValue_apply_ne_zero x hx, natCard_residueField,
     toAdd_normalizedValuation_eq_valuation]
   simp only [coe_nnnorm]
   simpa using (Padic.norm_eq_zpow_neg_valuation hx).symm
 
 end Padic
-
-end TauCeti
