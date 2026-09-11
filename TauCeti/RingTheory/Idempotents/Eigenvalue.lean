@@ -19,17 +19,17 @@ eigenvalues without requiring finite-dimensionality or a simultaneous eigenspace
 
 ## Main results
 
-* `TauCeti.exists_eq_natCast_of_sum_smul_eq_smul`: an eigenvalue of a finite sum of commuting
-  idempotents is a bounded natural-number cast.
+* `Finset.exists_eq_natCast_of_sum_smul_eq_smul`: an eigenvalue of a finite sum of
+  commuting idempotents is a bounded natural-number cast.
 -/
 
 public section
 
-namespace TauCeti
-
 open scoped BigOperators
 
-variable {K A M ι : Type*} [Ring K] [IsCancelMulZero K] [Ring A]
+namespace Finset
+
+variable {K A M ι : Type*} [Ring K] [IsCancelMulZero K] [Semiring A]
   [AddCommGroup M] [Module K M] [Module A M] [SMulCommClass A K M]
   [Module.IsTorsionFree K M]
 
@@ -82,4 +82,4 @@ theorem exists_eq_natCast_of_sum_smul_eq_smul
         · rw [Nat.cast_add, Nat.cast_one]
           exact eq_add_of_sub_eq hμ
 
-end TauCeti
+end Finset
