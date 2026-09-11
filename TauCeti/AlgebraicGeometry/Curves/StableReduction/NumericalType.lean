@@ -389,12 +389,14 @@ structure Equiv (T' : NumericalType.{v}) where
   /-- The bijection preserves the genera of the components. -/
   genus_apply : ∀ i, T'.genus (toEquiv i) = T.genus i
 
+attribute [simp] Equiv.multiplicity_apply Equiv.weight_apply Equiv.intersection_apply
+  Equiv.genus_apply
+
 namespace Equiv
 
 variable {T} {T' : NumericalType.{v}} {T'' : NumericalType.{w}}
 
 /-- The identity equivalence of a numerical type. -/
-@[expose, simps toEquiv]
 def refl : T.Equiv T where
   toEquiv := _root_.Equiv.refl T.Component
   multiplicity_apply _ := rfl
@@ -402,8 +404,11 @@ def refl : T.Equiv T where
   intersection_apply _ _ := rfl
   genus_apply _ := rfl
 
+/-- The bijection underlying `TauCeti.NumericalType.Equiv.refl` is the identity. -/
+@[simp]
+lemma refl_toEquiv : (refl : T.Equiv T).toEquiv = _root_.Equiv.refl T.Component := (rfl)
+
 /-- The inverse of an equivalence of numerical types. -/
-@[expose, simps toEquiv]
 def symm (f : T.Equiv T') : T'.Equiv T where
   toEquiv := f.toEquiv.symm
   multiplicity_apply j := by simpa using (f.multiplicity_apply (f.toEquiv.symm j)).symm
@@ -412,14 +417,22 @@ def symm (f : T.Equiv T') : T'.Equiv T where
     simpa using (f.intersection_apply (f.toEquiv.symm j) (f.toEquiv.symm k)).symm
   genus_apply j := by simpa using (f.genus_apply (f.toEquiv.symm j)).symm
 
+/-- The bijection underlying the inverse is the inverse bijection. -/
+@[simp]
+lemma symm_toEquiv (f : T.Equiv T') : f.symm.toEquiv = f.toEquiv.symm := (rfl)
+
 /-- The composite of two equivalences of numerical types. -/
-@[expose, simps toEquiv]
 def trans (f : T.Equiv T') (g : T'.Equiv T'') : T.Equiv T'' where
   toEquiv := f.toEquiv.trans g.toEquiv
   multiplicity_apply i := (g.multiplicity_apply _).trans (f.multiplicity_apply i)
   weight_apply i := (g.weight_apply _).trans (f.weight_apply i)
   intersection_apply i j := (g.intersection_apply _ _).trans (f.intersection_apply i j)
   genus_apply i := (g.genus_apply _).trans (f.genus_apply i)
+
+/-- The bijection underlying a composite is the composite bijection. -/
+@[simp]
+lemma trans_toEquiv (f : T.Equiv T') (g : T'.Equiv T'') :
+    (f.trans g).toEquiv = f.toEquiv.trans g.toEquiv := (rfl)
 
 /-- An equivalence of numerical types identifies the target with the reindexed source. -/
 lemma reindex_eq (f : T.Equiv T') : T.reindex f.toEquiv = T' :=
@@ -433,7 +446,6 @@ end Equiv
 
 /-- A numerical type is equivalent to each of its reindexings, along the reindexing
 equivalence. -/
-@[expose]
 def equivReindex : T.Equiv (T.reindex e) where
   toEquiv := e
   multiplicity_apply i := congrArg T.multiplicity (e.symm_apply_apply i)
@@ -443,7 +455,7 @@ def equivReindex : T.Equiv (T.reindex e) where
 
 /-- The bijection underlying `TauCeti.NumericalType.equivReindex` is the reindexing equivalence. -/
 @[simp]
-lemma equivReindex_toEquiv : (T.equivReindex e).toEquiv = e := rfl
+lemma equivReindex_toEquiv : (T.equivReindex e).toEquiv = e := (rfl)
 
 /-- Two numerical types are equivalent exactly when one is a reindexing of the other. -/
 lemma nonempty_equiv_iff {T' : NumericalType.{v}} :
