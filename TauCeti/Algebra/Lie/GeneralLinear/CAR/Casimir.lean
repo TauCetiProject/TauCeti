@@ -234,40 +234,19 @@ private theorem representation_glCasimir_eq_carCasimirElement_mul
       rw [carCasimirElement, Finset.sum_mul]
       simp_rw [Finset.sum_mul, mul_assoc]
 
-private def carCasimirWeight (N : ℕ) (i : Fin N) : K :=
-  (2 : K)⁻¹ * (1 + 2 * ((Finset.univ.filter fun k : Fin N => i < k).card : K))
-
-private theorem carCasimirWeight_eq (i : Fin N) :
-    carCasimirWeight (K := K) N i = glHalfStaircase K N i := by
-  rw [carCasimirWeight, Finset.filter_lt_eq_Ioi, Fin.card_Ioi]
-  have hi : (i : ℕ) + 1 ≤ N := by omega
-  have hsub : N - 1 - (i : ℕ) = N - ((i : ℕ) + 1) := by omega
-  rw [hsub, Nat.cast_sub hi]
-  rw [glHalfStaircase_apply]
-  push_cast
-  field_simp
-  ring
-
-private theorem carCasimir_eigenvalue (N : ℕ) :
-    (∑ i : Fin N, carCasimirWeight (K := K) N i *
-      (carCasimirWeight (K := K) N i + (N : K) - 1 - 2 * (i : K))) =
-        (N : K) * (2 * (N : K) ^ 2 - 1) / 4 := by
-  simpa only [carCasimirWeight_eq] using
-    glCasimir_eigenvalue_glHalfStaircase (F := K) N
-
 private theorem carCasimirElement_eq_scalar :
     carCasimirElement (K := K) (N := N) =
       algebraMap K (CliffordAlgebra (traceQuadraticForm K (Fin N)))
         ((N : K) * (2 * (N : K) ^ 2 - 1) / 4) := by
   obtain ⟨r, hr⟩ := carCasimirElement_eq_algebraMap (K := K) (N := N)
   have hhighest :
-      IsGlHighestWeightVector (carCasimirWeight (K := K) N)
+      IsGlHighestWeightVector (glHalfStaircase K N)
         (carHighestWeightVector K (Fin N)) :=
-    isGlHighestWeightVector_carHighestWeightVector (K := K) (n := Fin N)
+    isGlHighestWeightVector_glHalfStaircase_carHighestWeightVector (K := K) N
   have hcasimir := glCasimir_smul_of_isGlHighestWeightVector (K := K)
     hhighest
   rw [representation_glCasimir_eq_carCasimirElement_mul, hr,
-    carCasimir_eigenvalue] at hcasimir
+    glCasimir_eigenvalue_glHalfStaircase] at hcasimir
   have hscalar : r • carHighestWeightVector K (Fin N) =
       ((N : K) * (2 * (N : K) ^ 2 - 1) / 4) • carHighestWeightVector K (Fin N) := by
     simpa only [Algebra.smul_def] using hcasimir
