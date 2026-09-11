@@ -120,6 +120,8 @@ structure Hom (M N : Model R K C toK) where
   genericFiber :
     M.baseChangeHom hom overBase ≫ N.genericFiberIso.hom.left = M.genericFiberIso.hom.left
 
+attribute [reassoc (attr := simp)] Hom.overBase Hom.genericFiber
+
 /-- Model morphisms are determined by their maps on total spaces. -/
 @[ext]
 lemma Hom.ext {M N : Model R K C toK} {f g : Hom M N} (h : f.hom = g.hom) : f = g := by
