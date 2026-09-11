@@ -63,6 +63,8 @@ public noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
+-- Formalization source: `TauCetiRoadmap/ClassFieldTheory/Suggested.lean`.
+
 /-! ### Abelian layers -/
 
 /-- An open normal subgroup cuts out an **abelian class-field layer** when it contains the
