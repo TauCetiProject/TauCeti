@@ -100,7 +100,7 @@ namespace OrientedPDCode
   simp [PDCode.crossingTurn_apply, Prod.map, D.orientation_oppositeCrossingSlot]
 
 /-- The component traversal preserves the orientation of a half-edge. -/
-@[simp] theorem orientation_componentPerm (D : OrientedPDCode n) (h : Fin (4 * n)) :
+theorem orientation_componentPerm (D : OrientedPDCode n) (h : Fin (4 * n)) :
     D.orientation (D.crossingTurn (D.toPDCode.edgePair.val h)) = D.orientation h := by
   rw [orientation_crossingTurn, D.orientation_edgePair, Bool.not_not]
 
