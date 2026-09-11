@@ -24,12 +24,12 @@ one-line computation: putting `μ²c` on the unscaled-vector side gives the same
 putting `c` on the side whose vector is scaled by `μ`.
 
 Products of two such matrices are exactly the generators of the special orthogonal group
-supplied by `TauCeti.closure_reflection_mul_eq_matrixSpecialOrthogonalGroup`. They are packaged
-here as `TauCeti.reflectionPair`, and the generation theorem is restated as a criterion for a
-subgroup of `Matrix.specialOrthogonalGroup n K` to be the whole group.
+supplied by `TauCeti.closure_reflection_mul_eq_matrixSpecialOrthogonalGroup`, once
+`toMatrix'_reflection` identifies the coordinate matrix of the reflection of the standard
+quadratic form with `reflectionMatrix`. They are packaged here as `TauCeti.reflectionPair`.
 
-The last and largest section of the file, occupying everything after that criterion, builds
-one-parameter families joining such a product to the identity. Over an algebraically closed
+The last and largest section of the file builds one-parameter families joining such a product to
+the identity. Over an algebraically closed
 field of characteristic different from two, `exists_laurentPath_reflectionMatrix_mul` produces
 for every product of two reflections a single special orthogonal matrix over the Laurent
 polynomials `K[T;T⁻¹]` together with two units `a` and `b` of `K`, such that specializing the
@@ -41,15 +41,15 @@ throughout, and the two parameters are those at which the moving vector becomes 
 `v`, respectively to `w`. Consuming these families is what proves the special orthogonal group
 geometrically connected: an idempotent regular function on the group is constant once right
 translation by every rational point fixes it, a point joined to the identity by such a family
-fixes every idempotent, and the generation criterion above reduces the rational points to be
-handled to the products of two reflections.
+fixes every idempotent, and the generation theorem reduces the rational points to be handled to
+the products of two reflections.
 
 ## Main declarations
 
 * `TauCeti.reflectionMatrix`: the matrix of a reflection, with its normalizing scalar as data.
 * `TauCeti.reflectionPair`: the product of two reflections, as a special orthogonal matrix.
-* `TauCeti.eq_top_of_forall_reflectionPair_mem`: a subgroup of the matrix special orthogonal
-  group containing every product of two reflections is the whole group.
+* `TauCeti.toMatrix'_reflection`: `reflectionMatrix` is the coordinate matrix of the reflection
+  of the standard quadratic form.
 * `TauCeti.exists_laurentPath_reflectionMatrix_mul`: over an algebraically closed field of
   characteristic different from two, every product of two reflections is joined to the identity
   by a one-parameter family of special orthogonal matrices over the Laurent polynomials.
@@ -184,63 +184,19 @@ theorem coe_reflectionPair {v w : n → R} {c d : R} (hc : c * (v ⬝ᵥ v) = 2)
       reflectionMatrix v c * reflectionMatrix w d :=
   (rfl)
 
-omit [DecidableEq n] in
-/-- A ring homomorphism carries the normalizing equation of a reflection to the normalizing
-equation of the reflection in the mapped vector with the mapped scalar. -/
-theorem map_mul_dotProduct_eq_two (f : R →+* S) {v : n → R} {c : R} (hc : c * (v ⬝ᵥ v) = 2) :
-    f c * ((f ∘ v) ⬝ᵥ (f ∘ v)) = 2 := by
-  rw [← RingHom.map_dotProduct, ← map_mul, hc, map_ofNat]
-
 /-- Products of two reflections are natural in the coefficient ring. -/
 @[simp]
 theorem map_reflectionPair (f : R →+* S) {v w : n → R} {c d : R} (hc : c * (v ⬝ᵥ v) = 2)
     (hd : d * (w ⬝ᵥ w) = 2) :
     Matrix.SpecialOrthogonalGroup.map f (reflectionPair v w c d hc hd) =
-      reflectionPair (f ∘ v) (f ∘ w) (f c) (f d) (map_mul_dotProduct_eq_two f hc)
-        (map_mul_dotProduct_eq_two f hd) :=
+      reflectionPair (f ∘ v) (f ∘ w) (f c) (f d)
+        (by rw [← RingHom.map_dotProduct, ← map_mul, hc, map_ofNat])
+        (by rw [← RingHom.map_dotProduct, ← map_mul, hd, map_ofNat]) :=
   Subtype.ext <| by
     rw [Matrix.SpecialOrthogonalGroup.coe_map, coe_reflectionPair, coe_reflectionPair,
       Matrix.map_mul, map_reflectionMatrix, map_reflectionMatrix]
 
 end Pair
-
-/-! ### Generation of the special orthogonal group -/
-
-/-- **A subgroup of the matrix special orthogonal group which contains every product of two
-reflections is the whole group.**
-
-This is the Cartan-Dieudonné generation theorem
-`TauCeti.closure_reflection_mul_eq_matrixSpecialOrthogonalGroup`, restated for the reflection
-matrices of this file. -/
-theorem eq_top_of_forall_reflectionPair_mem {K : Type u} [Field K] [Fintype n]
-    [NeZero (2 : K)] (P : Subgroup (Matrix.specialOrthogonalGroup n K))
-    (hP : ∀ (v w : n → K) (c d : K) (hc : c * (v ⬝ᵥ v) = 2) (hd : d * (w ⬝ᵥ w) = 2),
-      reflectionPair v w c d hc hd ∈ P) :
-    P = ⊤ := by
-  refine eq_top_iff.mpr fun x _ => ?_
-  have hclosure := closure_reflection_mul_eq_matrixSpecialOrthogonalGroup (n := n) (K := K)
-  have hle : Submonoid.closure {A : Matrix n n K |
-      ∃ (v w : n → K) (_ : Invertible (Matrix.toQuadraticForm' (1 : Matrix n n K) v))
-        (_ : Invertible (Matrix.toQuadraticForm' (1 : Matrix n n K) w)),
-        LinearMap.toMatrix'
-            (QuadraticMap.reflection (Matrix.toQuadraticForm' (1 : Matrix n n K)) v).toLinearMap *
-          LinearMap.toMatrix'
-            (QuadraticMap.reflection
-              (Matrix.toQuadraticForm' (1 : Matrix n n K)) w).toLinearMap = A} ≤
-      P.toSubmonoid.map (Matrix.specialOrthogonalGroup n K).subtype := by
-    refine Submonoid.closure_le.mpr ?_
-    rintro _ ⟨v, w, hv, hw, rfl⟩
-    have hcv : 2 * ⅟(Matrix.toQuadraticForm' (1 : Matrix n n K) v) * (v ⬝ᵥ v) = 2 := by
-      rw [← toQuadraticForm'_one_apply v, mul_assoc, invOf_mul_self, mul_one]
-    have hcw : 2 * ⅟(Matrix.toQuadraticForm' (1 : Matrix n n K) w) * (w ⬝ᵥ w) = 2 := by
-      rw [← toQuadraticForm'_one_apply w, mul_assoc, invOf_mul_self, mul_one]
-    refine ⟨reflectionPair v w _ _ hcv hcw, hP _ _ _ _ hcv hcw, ?_⟩
-    -- The mapped subgroup witness coerces definitionally to its underlying matrix equality.
-    change (reflectionPair v w _ _ hcv hcw : Matrix n n K) = _
-    rw [coe_reflectionPair, toMatrix'_reflection, toMatrix'_reflection]
-  obtain ⟨y, hy, hyx⟩ := hle (hclosure.ge x.2)
-  have hxy : y = x := Subtype.ext hyx
-  exact hxy ▸ hy
 
 /-! ### One-parameter families through a product of two reflections -/
 

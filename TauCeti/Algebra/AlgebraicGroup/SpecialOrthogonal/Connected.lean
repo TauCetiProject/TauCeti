@@ -12,6 +12,7 @@ import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.FinTwo
+import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Generation
 
 /-!
 # Geometric connectedness of the special orthogonal groups
@@ -312,10 +313,30 @@ private theorem rightTranslationAlgHom_eq_self_of_invertibleTwo
       mul_mem' := fixes_mul
       inv_mem' := fixes_inv }
   have mem_P (x : Matrix.specialOrthogonalGroup (Fin n) K) : x ∈ P ↔ fixes x := Iff.rfl
+  -- By Cartan-Dieudonné, the special orthogonal matrices form the monoid closure of the products
+  -- of two reflections, and every such product lies in `P`.
+  let Q := Matrix.toQuadraticForm' (1 : Matrix (Fin n) (Fin n) K)
+  have hle : Submonoid.closure {A : Matrix (Fin n) (Fin n) K |
+      ∃ (v w : Fin n → K) (_ : Invertible (Q v)) (_ : Invertible (Q w)),
+        LinearMap.toMatrix' (QuadraticMap.reflection Q v).toLinearMap *
+          LinearMap.toMatrix' (QuadraticMap.reflection Q w).toLinearMap = A} ≤
+      P.toSubmonoid.map (Matrix.specialOrthogonalGroup (Fin n) K).subtype := by
+    refine Submonoid.closure_le.mpr ?_
+    rintro _ ⟨v, w, hv, hw, rfl⟩
+    have hcv : 2 * ⅟(Q v) * (v ⬝ᵥ v) = 2 := by
+      rw [← toQuadraticForm'_one_apply v, mul_assoc, invOf_mul_self, mul_one]
+    have hcw : 2 * ⅟(Q w) * (w ⬝ᵥ w) = 2 := by
+      rw [← toQuadraticForm'_one_apply w, mul_assoc, invOf_mul_self, mul_one]
+    refine ⟨reflectionPair v w _ _ hcv hcw,
+      (mem_P _).mpr (rightTranslationAlgHom_eq_self_of_reflectionPair n e he hcv hcw), ?_⟩
+    -- The mapped subgroup witness coerces definitionally to its underlying matrix equality.
+    change (reflectionPair v w _ _ hcv hcw : Matrix (Fin n) (Fin n) K) = _
+    rw [coe_reflectionPair, toMatrix'_reflection, toMatrix'_reflection]
   have hP : P = ⊤ := by
-    apply eq_top_of_forall_reflectionPair_mem P
-    intro v w c d hc hd
-    exact (mem_P _).mpr (rightTranslationAlgHom_eq_self_of_reflectionPair n e he hc hd)
+    refine eq_top_iff.mpr fun x _ => ?_
+    obtain ⟨y, hy, hyx⟩ :=
+      hle ((closure_reflection_mul_eq_matrixSpecialOrthogonalGroup (n := Fin n) (K := K)).ge x.2)
+    exact Subtype.ext hyx ▸ hy
   have hg : E g ∈ P := by
     rw [hP]
     exact Subgroup.mem_top _
