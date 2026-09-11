@@ -8,20 +8,25 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Sum
 public import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Constructions.Pi
 
 /-!
 # The structural laws of a homomorphism density
 
 Read as a function of its first argument, `t(·, W)` is a real-valued parameter of finite simple
-graphs. This file proves the three laws that make it one:
+graphs. This file proves the three laws that make it one, together with invariance under embedding
+the graph into a larger vertex type:
 
 * **isomorphism invariance** — `t(F, W)` depends on `F` only up to `≃g`;
+* **embedding invariance** — adding vertices outside an embedded copy of `F` does not change its
+  density;
 * **normalization** — `t(F, W) = 1` when `F` has no edges, in particular on a one-vertex graph;
 * **multiplicativity** — `t(F₁ ⊕g F₂, W) = t(F₁, W) · t(F₂, W)` over a disjoint sum.
 
-Each is a change of variables in the defining integral, made along a measure-preserving map that
-Mathlib already supplies: relabelling the vertices is `MeasureTheory.measurePreserving_arrowCongr'`,
-and splitting the assignments on a disjoint sum of vertex sets into a pair is
+Each result is a change of variables in the defining integral, made along a measure-preserving map.
+Relabelling the vertices is `MeasureTheory.measurePreserving_arrowCongr'`, restricting coordinates
+along an embedding is `TauCeti.measurePreserving_pi_comp_embedding`, and splitting the assignments
+on a disjoint sum of vertex sets into a pair is
 `MeasureTheory.measurePreserving_sumPiEquivProdPi_symm`, after which the two halves separate by
 Fubini (`MeasureTheory.integral_prod_mul`). What each change of variables has to be matched with is
 the corresponding reindexing of the edges, supplied by Mathlib's
@@ -34,14 +39,13 @@ components.
 ## Main results
 
 * `TauCeti.DenseGraphLimits.homDensity_eq_of_iso` — `t(·, W)` is a graph isomorphism invariant;
+* `TauCeti.DenseGraphLimits.homDensity_map_embedding` — mapping into a larger vertex type preserves
+  density;
 * `TauCeti.DenseGraphLimits.homDensity_bot` — `t(⊥, W) = 1`;
 * `TauCeti.DenseGraphLimits.homDensity_sum` — `t(F₁ ⊕g F₂, W) = t(F₁, W) · t(F₂, W)`.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 (`homDensity` and its basic theory,
-  "multiplicativity over disjoint unions"); the three laws are the hypotheses `IsIsoInvariant`,
-  `IsNormalized` and `IsMultiplicative` that Layer 8 imposes on a graph parameter.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §7.2 and
   §5.2.
 -/
@@ -120,6 +124,33 @@ theorem homDensity_eq_of_iso (φ : F₁ ≃g F₂) (W : Graphon Ω μ) :
     funext v
     exact congrArg x (φ.toEquiv.symm_apply_apply v)
   exact Finset.prod_congr rfl fun c _ => by rw [edgeFactor_map, hcomp]
+
+/-- Mapping a finite graph along an embedding preserves its homomorphism density. Vertices outside
+the embedding's range are isolated in the mapped graph, so integrating their independent
+coordinates contributes a factor of one. -/
+@[simp]
+theorem homDensity_map_embedding [DecidableEq V₂] (W : Graphon Ω μ)
+    (F : SimpleGraph V₁) [DecidableRel F.Adj] (f : V₁ ↪ V₂) :
+    homDensity (F.map f) W = homDensity F W := by
+  classical
+  have hmp : MeasurePreserving (fun x : V₂ → Ω => fun i => x (f i))
+      (Measure.pi fun _ : V₂ => μ) (Measure.pi fun _ : V₁ => μ) :=
+    measurePreserving_pi_comp_embedding (fun _ : V₂ => μ) f
+  rw [homDensity_def, homDensity_def, SimpleGraph.edgeFinset_map]
+  simp_rw [Finset.prod_map]
+  calc
+    (∫ x : V₂ → Ω, ∏ e ∈ F.edgeFinset, edgeFactor W x (Sym2.map f e)
+        ∂Measure.pi fun _ : V₂ => μ) =
+        ∫ x : V₂ → Ω, (fun y : V₁ → Ω =>
+          ∏ e ∈ F.edgeFinset, edgeFactor W y e) (fun i => x (f i))
+          ∂Measure.pi fun _ : V₂ => μ := by
+            refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+            exact Finset.prod_congr rfl fun e _ => edgeFactor_map W f x e
+    _ = ∫ y : V₁ → Ω, ∏ e ∈ F.edgeFinset, edgeFactor W y e
+          ∂Measure.pi fun _ : V₁ => μ := by
+            rw [← hmp.map_eq, integral_map hmp.aemeasurable]
+            rw [hmp.map_eq]
+            exact (measurable_prod_edgeFactor F.edgeFinset fun _ => W).aestronglyMeasurable
 
 /-- **Edge factors split over a disjoint union.** The edges of `F₁ ⊕g F₂` are those of the two
 summands tagged by `Sum.inl` and `Sum.inr`, so the product of the edge factors of an assignment
