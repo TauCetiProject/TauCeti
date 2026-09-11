@@ -260,6 +260,16 @@ theorem of_localRingAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     HEq (of R K L P).localRingAlgebra (inferInstance : Algebra R (Localization.AtPrime P)) := by
   rw [of]
 
+@[simp]
+theorem of_fractionAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+    [P.LiesOver (maximalIdeal R)] :
+    haveI : IsFractionRing (_root_.integralClosure R L) L :=
+      IsIntegralClosure.isFractionRing_of_finite_extension R K L _
+    HEq (of R K L P).fractionAlgebra
+      (IsLocalization.localizationAlgebraOfSubmonoidLe (Localization.AtPrime P) L P.primeCompl
+        (nonZeroDivisors _) P.primeCompl_le_nonZeroDivisors) := by
+  rw [of]
+
 /-- The algebra-level refinement of `TauCeti.FiniteDVRExtension.of_extensionField`: the extension
 field of the package cut out by `P` is `L` itself as a `K`-algebra, not merely as a type. -/
 theorem nonempty_algEquiv_of_extensionField (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
