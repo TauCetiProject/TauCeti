@@ -8,6 +8,8 @@ module
 public import Mathlib.GroupTheory.ArchimedeanDensely
 public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.Algebra.Order.Group.ConvexSubgroup
+public import TauCeti.RingTheory.Valuation.CharacteristicGroup
+import TauCeti.RingTheory.Valuation.CofinalIdeal.Basic
 
 /-!
 # Microbial valuations
@@ -36,6 +38,7 @@ condition, and no rank or height development is needed.
 
 * `Valuation.isMicrobial_iff` : the characteristic lemma, restating the predicate as its defining
   existential so that consumers need not unfold it.
+* `Valuation.isMicrobial_of_cofinalValue` : a valuation with a nonzero cofinal value is microbial.
 * `Valuation.isMicrobial_of_mulArchimedean` and `Valuation.not_isMicrobial_of_subsingleton` : the
   predicate holds of every rank-one valuation and fails of every trivial one.
 
@@ -105,6 +108,38 @@ theorem isMicrobial_iff {v : Valuation R Γ₀} :
     v.IsMicrobial ↔ ∃ H : ConvexSubgroup (ValueGroup₀ (.ofClass v))ˣ,
       Nontrivial ((ValueGroup₀ (.ofClass v))ˣ ⧸ H.toSubgroup) ∧
         MulArchimedean ((ValueGroup₀ (.ofClass v))ˣ ⧸ H.toSubgroup) := isMicrobial_iff_aux
+
+/-- A valuation with a nonzero cofinal value is microbial: the largest convex subgroup avoiding
+the corresponding value-group unit has nontrivial archimedean quotient. -/
+theorem isMicrobial_of_cofinalValue {v : Valuation R Γ₀} {b : R} (hb0 : v b ≠ 0)
+    (hcof : CofinalValue v b) : v.IsMicrobial := by
+  have hb0c : (MonoidWithZeroHom.ofClass v) b ≠ 0 := by simpa using hb0
+  have hb0' : v.restrict b ≠ 0 := fun h ↦ hb0 (v.restrict_eq_zero_iff.mp h)
+  let u : (ValueGroup₀ (.ofClass v))ˣ := Units.mk0 (v.restrict b) hb0'
+  have huImage : OrderMonoidIso.unitsWithZero u =
+      valueGroup.mk (.ofClass v) 1 b (by simp) hb0c := by
+    apply WithZero.coe_injective
+    calc
+      ((OrderMonoidIso.unitsWithZero u : valueGroup (.ofClass v)) :
+          ValueGroup₀ (.ofClass v)) = ((u : (ValueGroup₀ (.ofClass v))ˣ) :
+            ValueGroup₀ (.ofClass v)) := WithZero.coe_unitsWithZeroEquiv_eq_units_val _
+      _ = v.restrict b := by simp only [u, Units.val_mk0]
+      _ = _ := v.restrict_eq_mk hb0c
+  have huCofImage : TauCeti.IsCofinalElement ⊤ (OrderMonoidIso.unitsWithZero u) := by
+    rw [huImage]
+    exact (cofinalValueFor_iff_isCofinalElement hb0c).mp (cofinalValueFor_top_iff.mpr hcof)
+  have huCof : TauCeti.IsCofinalElement ⊤ u := by
+    simpa only [Subgroup.comap_top] using
+      huCofImage.comap (OrderMonoidIso.unitsWithZero (α := valueGroup (.ofClass v)))
+  have hult : u < 1 := huCof.lt_one
+  have hu : u ≠ 1 := ne_of_lt hult
+  have hclosure : TauCeti.ConvexSubgroup.closure ({u} : Set _) = ⊤ := by
+    apply top_unique
+    exact (TauCeti.isCofinalElement_iff_subset_closure hult).mp huCof
+  exact isMicrobial_iff.mpr
+    ⟨TauCeti.ConvexSubgroup.maxAvoid hu,
+      TauCeti.ConvexSubgroup.nontrivial_quotient_maxAvoid hu,
+      TauCeti.ConvexSubgroup.mulArchimedean_quotient_maxAvoid hu hclosure⟩
 
 /-- **A valuation whose value group is trivial is not microbial.** The definition is therefore not
 vacuously satisfied: it genuinely constrains `v`.
