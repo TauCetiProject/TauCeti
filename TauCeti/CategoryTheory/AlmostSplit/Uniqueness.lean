@@ -22,10 +22,17 @@ assumptions.  The category is asked to be preadditive and balanced, which is wha
 left-hand end of a short exact sequence a kernel of its second map (`ShortComplex.Exact.lift'`
 is stated only for a balanced category) and lets a morphism that is both monic and epic be
 inverted.  And the endomorphism ring of each left-hand end is asked to be **local**, the
-Krull-Schmidt input: an almost-split sequence has an indecomposable left-hand end
-(`TauCeti.IsLeftAlmostSplit.indecomposable`), and over a finite-dimensional algebra an
-indecomposable module has a local endomorphism ring, but indecomposability by itself is the weaker
-statement that the ring has no idempotents other than `0` and `1`, which does not suffice.
+Krull-Schmidt input.  An almost-split sequence does have an indecomposable left-hand end
+(`TauCeti.IsLeftAlmostSplit.indecomposable`), but indecomposability in a general preadditive
+category does not give locality.  What it gives, once idempotents split — over an
+idempotent-complete category with binary biproducts, for instance any abelian one — is that the
+object is nonzero and has no idempotent endomorphism other than `0` and the identity
+(`TauCeti.indecomposable_iff_idempotent_eq_zero_or_id`), and that is strictly weaker: a ring whose
+only idempotents are `0` and `1` need not be local.  Indecomposability becomes *equivalent* to
+locality of the endomorphism ring for a module of **finite length** — in particular for a
+finite-dimensional module over a finite-dimensional algebra — which is Fitting's lemma, available
+here for objects of `ModuleCat A` as `TauCeti.indecomposable_iff_isLocalRing_end`; that is how a use
+site over such an algebra discharges the hypothesis.
 
 The three lemmas the argument runs on need only one half of the almost-split condition —
 exactness, monicity of the first map, and `TauCeti.IsLeftAlmostSplit` or
