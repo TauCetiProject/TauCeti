@@ -126,9 +126,6 @@ instance isFractionRing_integralClosure : IsFractionRing E.integralClosure E.ext
 instance isDedekindDomain_integralClosure : IsDedekindDomain E.integralClosure :=
   _root_.integralClosure.isDedekindDomain R K E.extensionField
 
-instance isIntegral_integralClosure : Algebra.IsIntegral R E.integralClosure :=
-  IsIntegralClosure.isIntegral_algebra R E.extensionField
-
 /-- The integral closure `C` of `R` in `K'` is a Noetherian `R`-module: it is a finite `R`-module,
 because `K'` is a finite separable extension of the fraction field of the Noetherian integrally
 closed domain `R`. -/
