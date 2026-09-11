@@ -23,17 +23,15 @@ homeomorphism is what is available.
 
 ## Main declarations
 
-* `TauCeti.FundamentalGroup.homotopyEquivMulEquiv`: `π₁(X, x) ≃* π₁(Y, e x)` for a homotopy
-  equivalence `e : X ≃ₕ Y`, with `TauCeti.FundamentalGroup.homotopyEquivMulEquiv_apply` and
-  `TauCeti.FundamentalGroup.homotopyEquivMulEquiv_symm_apply`.
-* `TauCeti.FundamentalGroup.nonempty_homotopyEquivMulEquiv`: over a path connected space, the
+* `FundamentalGroup.homotopyEquivMulEquiv`: `π₁(X, x) ≃* π₁(Y, e x)` for a homotopy
+  equivalence `e : X ≃ₕ Y`, with `FundamentalGroup.homotopyEquivMulEquiv_apply` and
+  `FundamentalGroup.homotopyEquivMulEquiv_symm_apply`.
+* `FundamentalGroup.nonempty_homotopyEquivMulEquiv`: over a path connected space, the
   fundamental groups at *any* pair of base points are isomorphic.
 -/
 
 public section
 noncomputable section
-
-namespace TauCeti
 
 namespace FundamentalGroup
 
@@ -84,5 +82,3 @@ theorem nonempty_homotopyEquivMulEquiv [PathConnectedSpace X] (e : X ≃ₕ Y) (
     (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPathConnected (e.toFun x) y)⟩
 
 end FundamentalGroup
-
-end TauCeti
