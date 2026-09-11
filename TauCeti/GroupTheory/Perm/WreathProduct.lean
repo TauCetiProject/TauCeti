@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.SemidirectProduct
+public import Mathlib.Algebra.Group.PUnit
 public import Mathlib.Data.Finite.Perm
+public import Mathlib.GroupTheory.SemidirectProduct
 
 /-!
 # Permutation wreath products
@@ -107,6 +108,36 @@ namespace WreathProduct
 
 variable {D ι}
 
+/-- A wreath product over the empty index type is the trivial group. -/
+def emptyEquiv : WreathProduct D Empty ≃* PUnit where
+  toFun _ := PUnit.unit
+  invFun _ := 1
+  left_inv w := by
+    apply SemidirectProduct.ext
+    · funext i
+      exact i.elim
+    · apply Equiv.ext
+      intro i
+      exact i.elim
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+
+@[simp]
+theorem emptyEquiv_apply (w : WreathProduct D Empty) : emptyEquiv w = PUnit.unit := by
+  simp [emptyEquiv]
+
+/-- The inverse empty-index equivalence has trivial base component. -/
+@[simp]
+theorem emptyEquiv_symm_left (x : PUnit) :
+    (emptyEquiv.symm x : WreathProduct D Empty).left = 1 := by
+  simp [emptyEquiv]
+
+/-- The inverse empty-index equivalence has trivial top permutation. -/
+@[simp]
+theorem emptyEquiv_symm_right (x : PUnit) :
+    (emptyEquiv.symm x : WreathProduct D Empty).right = 1 := by
+  simp [emptyEquiv]
+
 /-- A wreath product over a singleton index type is canonically isomorphic to its base group. -/
 def finOneEquiv : WreathProduct D (Fin 1) ≃* D where
   toFun w := w.left 0
@@ -136,6 +167,33 @@ theorem finOneEquiv_symm_left (d : D) :
 theorem finOneEquiv_symm_right (d : D) :
     (finOneEquiv.symm d).right = 1 := by
   simp [finOneEquiv]
+
+/-- A wreath product with a trivial base group is canonically isomorphic to its top symmetric
+group. -/
+def subsingletonBaseEquiv [Subsingleton D] : WreathProduct D ι ≃* Equiv.Perm ι :=
+  MonoidHom.toMulEquiv SemidirectProduct.rightHom SemidirectProduct.inr
+    (by
+      ext w
+      · exact Subsingleton.elim _ _
+      · simp)
+    (by ext; simp)
+
+@[simp]
+theorem subsingletonBaseEquiv_apply [Subsingleton D] (w : WreathProduct D ι) :
+    subsingletonBaseEquiv w = w.right := by
+  simp [subsingletonBaseEquiv]
+
+/-- The inverse trivial-base equivalence has trivial base component. -/
+@[simp]
+theorem subsingletonBaseEquiv_symm_left [Subsingleton D] (σ : Equiv.Perm ι) :
+    (subsingletonBaseEquiv.symm σ : WreathProduct D ι).left = 1 := by
+  simp [subsingletonBaseEquiv]
+
+/-- The inverse trivial-base equivalence preserves the top permutation. -/
+@[simp]
+theorem subsingletonBaseEquiv_symm_right [Subsingleton D] (σ : Equiv.Perm ι) :
+    (subsingletonBaseEquiv.symm σ : WreathProduct D ι).right = σ := by
+  simp [subsingletonBaseEquiv]
 
 section Functoriality
 
@@ -239,10 +297,13 @@ instance : MulAction (WreathProduct D ι) (ι × Λ) where
     · simp [Equiv.Perm.mul_apply]
     · simp only [SemidirectProduct.mul_right, Equiv.Perm.coe_mul, Function.comp_apply,
         SemidirectProduct.mul_left, Pi.mul_apply, mulAutArrow_apply_apply]
+      -- `simp only` leaves the coordinate action as `(w.right • z.left) _`; this `change`
+      -- unfolds it to evaluation of `z.left` at the inverse-permuted coordinate.
       change (w.left (w.right (z.right x.1)) *
         z.left (w.right⁻¹ (w.right (z.right x.1)))) • x.2 = _
       simp [mul_smul]
 
+/-- Evaluation formula for the imprimitive wreath-product action on `ι × Λ`. -/
 @[simp]
 theorem imprimitive_smul (w : WreathProduct D ι) (x : ι × Λ) :
     w • x = (w.right x.1, w.left (w.right x.1) • x.2) :=
@@ -315,9 +376,12 @@ instance : MulAction (WreathProduct D ι) (ι → Λ) where
     simp only [SemidirectProduct.mul_left, Pi.mul_apply, mulAutArrow_apply_apply,
       SemidirectProduct.mul_right, mul_inv_rev, Equiv.Perm.coe_mul, Equiv.Perm.coe_inv,
       Function.comp_apply]
+    -- `simp only` leaves `(w.right • z.left) i` and writes inverse permutations as `Equiv.symm`;
+    -- this `change` unfolds the coordinate action and restores group-inverse notation.
     change (w.left i * z.left (w.right⁻¹ i)) • x (z.right⁻¹ (w.right⁻¹ i)) = _
     simp [mul_smul]
 
+/-- Evaluation formula for the product wreath-product action on `ι → Λ`. -/
 @[simp]
 theorem product_smul (w : WreathProduct D ι) (x : ι → Λ) (i : ι) :
     (w • x) i = w.left i • x (w.right⁻¹ i) :=
