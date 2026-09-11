@@ -29,7 +29,8 @@ range, so the value is a `dite` rather than a plain application.
 
 * `TauCeti.perm_fin_two_eq_one_or_swap`: every permutation of `Fin 2` is the identity or the
   transposition.
-* `TauCeti.rev_finRotate_rev`: conjugating forward rotation by reversal gives backward rotation.
+* `Fin.rev_finRotate_rev` and `Fin.rev_finRotate_symm`: reversal carries forward rotation to
+  backward rotation and conversely.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`.
@@ -50,11 +51,8 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
   rw [Fin.partialProd, Fin.val_last]
   rw [(List.take_eq_self_iff _).mpr (by simp), Fin.prod_ofFn]
 
-end Fin
-
-namespace TauCeti
-
 /-- Conjugating forward rotation of a finite ordinal by reversal gives backward rotation. -/
+@[simp]
 theorem rev_finRotate_rev {n : ℕ} (i : Fin n) :
     Fin.rev (finRotate n (Fin.rev i)) = (finRotate n).symm i := by
   cases n with
@@ -67,11 +65,16 @@ theorem rev_finRotate_rev {n : ℕ} (i : Fin n) :
     simp [sub_eq_add_neg, hlast, add_comm, add_left_comm]
 
 /-- Reversal carries backward rotation of a finite ordinal to forward rotation. -/
+@[simp]
 theorem rev_finRotate_symm {n : ℕ} (i : Fin n) :
     Fin.rev ((finRotate n).symm i) = finRotate n (Fin.rev i) := by
   apply Fin.rev_injective
   simp only [Fin.rev_rev]
   exact (rev_finRotate_rev i).symm
+
+end Fin
+
+namespace TauCeti
 
 /-- **Adding one twice in `Fin n` never returns to the same element** when `3 ≤ n`. -/
 theorem add_one_add_one_ne_self {n : ℕ} [NeZero n] (hn : 3 ≤ n) (i : Fin n) :

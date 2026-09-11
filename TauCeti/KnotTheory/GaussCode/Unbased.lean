@@ -160,11 +160,25 @@ theorem writhe_rotateBasepoint (D : BasedOrientedGaussCode n) :
     (rotateBasepoint n D).writhe = D.writhe := by
   simp [writhe_def]
 
+/-- Moving the base point backward preserves writhe. -/
+@[simp]
+theorem writhe_rotateBasepoint_symm (D : BasedOrientedGaussCode n) :
+    ((rotateBasepoint n).symm D).writhe = D.writhe := by
+  simpa using (writhe_rotateBasepoint ((rotateBasepoint n).symm D)).symm
+
 /-- Mirroring a based code commutes with moving its base point. -/
 @[simp]
 theorem mirror_rotateBasepoint (D : BasedOrientedGaussCode n) :
     (rotateBasepoint n D).mirror = rotateBasepoint n D.mirror := by
   apply ext <;> funext i <;> simp
+
+/-- Mirroring a based code commutes with moving its base point backward. -/
+@[simp]
+theorem mirror_rotateBasepoint_symm (D : BasedOrientedGaussCode n) :
+    ((rotateBasepoint n).symm D).mirror = (rotateBasepoint n).symm D.mirror := by
+  apply (rotateBasepoint n).injective
+  rw [← mirror_rotateBasepoint]
+  simp
 
 /-- Reversing orientation turns a forward basepoint rotation into a backward one. -/
 @[simp]
@@ -173,17 +187,33 @@ theorem reverse_rotateBasepoint (D : BasedOrientedGaussCode n) :
   apply ext
   · funext i
     rw [visit_reverse, visit_rotateBasepoint, visit_rotateBasepoint_symm, visit_reverse]
-    exact congrArg D.visit (rev_finRotate_symm i).symm
+    exact congrArg D.visit (Fin.rev_finRotate_symm i).symm
   · funext i
     rw [over_reverse, over_rotateBasepoint, over_rotateBasepoint_symm, over_reverse]
-    exact congrArg D.over (rev_finRotate_symm i).symm
+    exact congrArg D.over (Fin.rev_finRotate_symm i).symm
   · rw [sign_reverse, sign_rotateBasepoint, sign_rotateBasepoint_symm, sign_reverse]
+
+/-- Reversing orientation turns a backward basepoint rotation into a forward one. -/
+@[simp]
+theorem reverse_rotateBasepoint_symm (D : BasedOrientedGaussCode n) :
+    ((rotateBasepoint n).symm D).reverse = rotateBasepoint n D.reverse := by
+  apply (rotateBasepoint n).symm.injective
+  rw [← reverse_rotateBasepoint]
+  simp
 
 /-- Relabelling crossings commutes with moving the base point. -/
 @[simp]
 theorem relabel_rotateBasepoint (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) :
     (rotateBasepoint n D).relabel e = rotateBasepoint n (D.relabel e) := by
   apply ext <;> funext i <;> simp
+
+/-- Relabelling crossings commutes with moving the base point backward. -/
+@[simp]
+theorem relabel_rotateBasepoint_symm (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) :
+    ((rotateBasepoint n).symm D).relabel e = (rotateBasepoint n).symm (D.relabel e) := by
+  apply (rotateBasepoint n).injective
+  rw [← relabel_rotateBasepoint]
+  simp
 
 private def unbasedSetoid (n : ℕ) : Setoid (BasedOrientedGaussCode n) :=
   Equiv.Perm.SameCycle.setoid (rotateBasepoint n)
@@ -218,6 +248,13 @@ theorem forgetBasepoint_rotateBasepoint (D : BasedOrientedGaussCode n) :
     (rotateBasepoint n D).forgetBasepoint = D.forgetBasepoint := by
   rw [forgetBasepoint_eq_iff]
   exact ⟨-1, by simp⟩
+
+/-- Moving the base point backward does not change the unbased oriented Gauss code. -/
+@[simp]
+theorem forgetBasepoint_rotateBasepoint_symm (D : BasedOrientedGaussCode n) :
+    ((rotateBasepoint n).symm D).forgetBasepoint = D.forgetBasepoint := by
+  rw [forgetBasepoint_eq_iff]
+  exact ⟨1, by simp⟩
 
 end BasedOrientedGaussCode
 
