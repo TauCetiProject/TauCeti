@@ -16,12 +16,13 @@ public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 
 Real projective space `RPⁿ` is the antipodal quotient of the unit sphere `Sⁿ`, and that
 quotient map is a covering map. Since a covering map induces an isomorphism on homotopy groups
-in every dimension at least two, the higher homotopy of `RPⁿ` is exactly the higher homotopy
-of `Sⁿ`.
+in every dimension at least two — `TauCeti.IsCoveringMap.homotopyGroupMulEquiv`, applied here to
+`TauCeti.RealProjectiveSpace.isCoveringMap_mk` — the higher homotopy of `RPⁿ` is exactly the
+higher homotopy of `Sⁿ`.
 
-This file records that identification, at a matched pair of basepoints and — using
-path-connectedness of the sphere and of `RPⁿ` — at arbitrary basepoints, and draws the two
-consequences that the identification settles outright:
+This file moves that identification off its matched pair of basepoints, using
+path-connectedness of the sphere and of `RPⁿ`, and draws the two consequences that it settles
+outright:
 
 * `RP⁰` is a point, so all of its homotopy groups are trivial;
 * `RP¹` is homeomorphic to a circle, so all of its homotopy groups in dimensions at least two
@@ -35,13 +36,8 @@ decided for `2 ≤ n`.
 
 ## Main declarations
 
-* `TauCeti.RealProjectiveSpace.homotopyGroupMulEquivMk`: `π_N(Sⁿ, x) ≃* π_N(RPⁿ, ⟦x⟧)` for a
-  nontrivial index type `N`, and `TauCeti.RealProjectiveSpace.homotopyGroupPiMulEquivMk` in
-  the `π_(k + 2)` form.
-* `TauCeti.RealProjectiveSpace.subsingleton_homotopyGroupPi_mk_iff`: a higher homotopy group of
-  `RPⁿ` vanishes exactly when the corresponding one of `Sⁿ` does.
-* `TauCeti.RealProjectiveSpace.nonempty_homotopyGroupPiMulEquiv`: the same isomorphism between
-  arbitrary basepoints of `Sⁿ` and of `RPⁿ`, for `1 ≤ n`.
+* `TauCeti.RealProjectiveSpace.nonempty_homotopyGroupPiMulEquiv`: the isomorphism
+  `π_(k + 2)(Sⁿ) ≃* π_(k + 2)(RPⁿ)` between arbitrary basepoints, for `1 ≤ n`.
 * `TauCeti.RealProjectiveSpace.isAspherical_iff_sphere`: `RPⁿ` is aspherical exactly when every
   homotopy group of `Sⁿ` in dimension at least two is trivial.
 * `TauCeti.RealProjectiveSpace.Line.homeomorphAddCircle`: `RP¹ ≃ₜ ℝ ⧸ 2πℤ`.
@@ -65,52 +61,10 @@ namespace TauCeti
 
 namespace RealProjectiveSpace
 
-section General
-
-variable {N : Type*} [Nontrivial N] [DecidableEq N]
-
-/-- **The higher homotopy groups of real projective space are those of the covering sphere.**
-The antipodal projection `Sⁿ → RPⁿ` is a covering map, and postcomposition with a covering map
-is an isomorphism on homotopy groups in every dimension at least two, which is what
-nontriviality of the index type `N` expresses. -/
-noncomputable def homotopyGroupMulEquivMk (n : ℕ)
-    (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-    HomotopyGroup N (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) x ≃*
-      HomotopyGroup N (RealProjectiveSpace n) (mk n x) :=
-  IsCoveringMap.homotopyGroupMulEquiv (isCoveringMap_mk n) x
-
-/-- The isomorphism of `homotopyGroupMulEquivMk` is postcomposition with the antipodal
-projection. -/
-@[simp]
-theorem homotopyGroupMulEquivMk_apply (n : ℕ)
-    (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
-    (a : HomotopyGroup N (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) x) :
-    homotopyGroupMulEquivMk n x a =
-      HomotopyGroup.map (⟨mk n, (isCoveringMap_mk n).continuous⟩ :
-        C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, RealProjectiveSpace n)) rfl a :=
-  IsCoveringMap.homotopyGroupMulEquiv_apply (isCoveringMap_mk n) x a
-
-end General
-
-/-- The `π_(k + 2)` form of `TauCeti.RealProjectiveSpace.homotopyGroupMulEquivMk`. -/
-noncomputable def homotopyGroupPiMulEquivMk (n k : ℕ)
-    (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-    π_ (k + 2) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) x ≃*
-      π_ (k + 2) (RealProjectiveSpace n) (mk n x) :=
-  homotopyGroupMulEquivMk n x
-
-/-- A higher homotopy group of `RPⁿ` is trivial exactly when the corresponding homotopy group
-of the covering sphere is. -/
-theorem subsingleton_homotopyGroupPi_mk_iff (n k : ℕ)
-    (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-    Subsingleton (π_ (k + 2) (RealProjectiveSpace n) (mk n x)) ↔
-      Subsingleton (π_ (k + 2) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) x) :=
-  (_root_.IsCoveringMap.subsingleton_homotopyGroup_iff (isCoveringMap_mk n) rfl k).symm
-
 /-- **The higher homotopy groups of `RPⁿ` and of `Sⁿ` agree at arbitrary basepoints**, for
 `1 ≤ n`. Both spaces are path-connected in that range, so the matched-basepoint isomorphism
-`TauCeti.RealProjectiveSpace.homotopyGroupPiMulEquivMk` can be moved to any pair of
-basepoints; the isomorphism itself depends on the connecting path, so only its existence is
+`TauCeti.IsCoveringMap.homotopyGroupPiMulEquiv` of the antipodal cover can be moved to any pair
+of basepoints; the isomorphism itself depends on the connecting path, so only its existence is
 asserted. -/
 theorem nonempty_homotopyGroupPiMulEquiv {n : ℕ} (hn : 1 ≤ n) (k : ℕ)
     (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (y : RealProjectiveSpace n) :
@@ -119,7 +73,7 @@ theorem nonempty_homotopyGroupPiMulEquiv {n : ℕ} (hn : 1 ≤ n) (k : ℕ)
   obtain ⟨x', rfl⟩ := mk_surjective n y
   have := pathConnectedSpace_sphere n hn
   obtain ⟨e⟩ := nonempty_homotopyGroupMulEquiv (N := Fin (k + 2)) (x := x) (y := x')
-  exact ⟨e.trans (homotopyGroupPiMulEquivMk n k x')⟩
+  exact ⟨e.trans (IsCoveringMap.homotopyGroupPiMulEquiv (isCoveringMap_mk n) x' k)⟩
 
 /-- **Real projective space is aspherical exactly when every homotopy group of its covering
 sphere in dimension at least two vanishes.** At `n = 1` that is strictly weaker than weak
@@ -171,7 +125,8 @@ instance subsingleton_homotopyGroup_sphere
     (x : sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) :
     Subsingleton (HomotopyGroup N (sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) x) := by
   classical
-  exact (homotopyGroupMulEquivMk 1 x).toEquiv.subsingleton_congr.mpr inferInstance
+  have e := IsCoveringMap.homotopyGroupMulEquiv (N := N) (isCoveringMap_mk 1) x
+  exact e.toEquiv.subsingleton_congr.mpr inferInstance
 
 /-- Every element of `π_(k + 2)(S¹)` for the unit circle `S¹ ⊆ ℝ²` is the identity. -/
 theorem homotopyGroupPi_sphere_eq_one (k : ℕ) (x : sphere (0 : EuclideanSpace ℝ (Fin 2)) 1)
@@ -193,8 +148,7 @@ instance subsingleton_genLoop (x : RealProjectiveSpace 0) :
 point. -/
 instance subsingleton_homotopyGroup (x : RealProjectiveSpace 0) :
     Subsingleton (HomotopyGroup N (RealProjectiveSpace 0) x) :=
-  ⟨fun a b ↦ Quotient.inductionOn₂ a b fun _ _ ↦
-    congrArg (Quotient.mk _) (Subsingleton.elim _ _)⟩
+  inferInstanceAs (Subsingleton (Quotient _))
 
 /-- Every homotopy class of `RP⁰` in a positive dimension is the identity. -/
 theorem homotopyGroup_eq_one [Nonempty N] [DecidableEq N] (x : RealProjectiveSpace 0)
