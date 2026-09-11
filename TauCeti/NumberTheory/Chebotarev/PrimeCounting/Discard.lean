@@ -15,8 +15,6 @@ Passing from a Frobenius prime-power sum to a prime sum of residue degree one di
 terms: higher prime powers in the chosen Frobenius class, primes of absolute residue degree above
 one, and prime powers over a finite exceptional set. Each term is `o(x)` for a different reason.
 This file records that their sum is `o(x)`, in the form needed by weighted crossing arguments.
-The statement follows `TauCetiRoadmap/Chebotarev/Suggested.lean` and
-`TauCetiRoadmap/Chebotarev/README.md` §11.3(4).
 
 ## Main result
 
