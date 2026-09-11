@@ -40,7 +40,7 @@ layer be restricted to a subgroup of its Galois group at all, and it is what
 `H^n(U/V, A^V) ⟶ H^n(U'/V, A^V)`.
 
 In degree zero this map is the inclusion `A^U ⊆ A^{U'}` of ground levels
-(`LayerRestriction.groundLevelEquiv_cohomologyRes_zero`), which is what fixes its direction.
+(`LayerRestriction.groundLevelEquiv_cohomologyRes_zero_apply`), which is what fixes its direction.
 
 Restrictions compose (`LayerRestriction.trans`), and along a tower `F ⊆ E ⊆ E' ⊆ K` the relative
 degree is multiplicative, the homomorphisms of Galois groups compose, and restriction of
@@ -89,8 +89,8 @@ how Tate's theorem is used downstream.
   and the homomorphisms of Galois groups compose along a tower of restrictions.
 * `TauCeti.ClassFieldTheory.LayerRestriction.cohomologyRes_trans`: restriction of cohomology is
   functorial along a tower of restrictions.
-* `TauCeti.ClassFieldTheory.LayerRestriction.groundLevelEquiv_cohomologyRes_zero`: in degree zero,
-  restriction of cohomology is the ground-level inclusion.
+* `TauCeti.ClassFieldTheory.LayerRestriction.groundLevelEquiv_cohomologyRes_zero_apply`: in degree
+  zero, restriction of cohomology is the ground-level inclusion.
 * `TauCeti.ClassFieldTheory.NormalLayer.relativeDegree_subgroupLayerRestriction`: the relative
   degree of a tower `K ≤ H` inside the finite quotient system is the relative index of `K` in `H`.
 * `TauCeti.ClassFieldTheory.NormalLayer.subgroupLayer_subgroupLayer`: the layer of a subgroup of
@@ -274,7 +274,9 @@ theorem galHom_self {L : NormalLayer G} (T : LayerRestriction L L) :
     T.galHom = MonoidHom.id L.Gal :=
   MonoidHom.ext fun γ ↦ by
     induction γ using QuotientGroup.induction_on with
-    | H w => rw [galHom_mk, MonoidHom.id_apply]; rfl
+    | H w =>
+      rw [galHom_mk, MonoidHom.id_apply]
+      exact congrArg QuotientGroup.mk (Subtype.ext (Subgroup.coe_inclusion _ w))
 
 variable {a b c : NormalLayer G}
 
@@ -293,7 +295,9 @@ theorem galHom_trans (T : LayerRestriction a b) (T' : LayerRestriction b c) :
     (T.trans T').galHom = T'.galHom.comp T.galHom :=
   MonoidHom.ext fun γ ↦ by
     induction γ using QuotientGroup.induction_on with
-    | H w => rw [galHom_mk, MonoidHom.comp_apply, galHom_mk, galHom_mk]; rfl
+    | H w =>
+      rw [galHom_mk, MonoidHom.comp_apply, galHom_mk, galHom_mk]
+      exact congrArg QuotientGroup.mk (Subtype.ext (by simp only [Subgroup.coe_inclusion]))
 
 /-- **The identifications of coefficient modules compose along a tower of restrictions.** All
 three are the identity on the ambient module, so this is an equation between three inclusions of
@@ -353,8 +357,8 @@ theorem groundInclusion_apply_coe (T : LayerRestriction small big) (F : Formatio
 identification of `H⁰(U/V, A^V)` with the ground level `A^U`, restricting a class from the layer
 `K/F` to the layer `K/E` is the inclusion `A^U ⊆ A^{U'}`. This is what fixes the direction of
 `cohomologyRes`. -/
-theorem groundLevelEquiv_cohomologyRes_zero (T : LayerRestriction small big) (F : Formation G)
-    (x : big.H F 0) :
+theorem groundLevelEquiv_cohomologyRes_zero_apply (T : LayerRestriction small big)
+    (F : Formation G) (x : big.H F 0) :
     small.groundLevelEquiv F
         ((groupCohomology.H0Iso (small.rep F)).hom.hom (T.cohomologyRes F 0 x)) =
       T.groundInclusion F (big.groundLevelEquiv F
@@ -525,7 +529,7 @@ theorem subgroupLayerRestriction (h : K ≤ H) :
 
 /-- **The homomorphism of Galois groups of a tower inside the finite quotient system is the
 inclusion of subgroups**, read through `subgroupGalEquiv`. -/
-theorem subgroupGalEquiv_galHom_subgroupLayerRestriction (h : K ≤ H)
+theorem subgroupGalEquiv_galHom_subgroupLayerRestriction_apply (h : K ≤ H)
     (γ : (L.subgroupLayer K).Gal) :
     L.subgroupGalEquiv H ((L.subgroupLayerRestriction h).galHom γ) =
       Subgroup.inclusion h (L.subgroupGalEquiv K γ) := by
@@ -559,7 +563,7 @@ theorem subgroupLayer_subgroupLayer (H' : Subgroup (L.subgroupLayer H).Gal) :
   · rintro ⟨hg, hmem⟩
     refine ⟨L.subgroupGround_le_ground H hg, QuotientGroup.mk ⟨g, hg⟩, hmem, ?_⟩
     rw [LayerRestriction.galHom_mk]
-    rfl
+    exact congrArg QuotientGroup.mk (Subtype.ext (Subgroup.coe_inclusion _ _))
   · rintro ⟨hg, δ, hδ, hδg⟩
     induction δ using QuotientGroup.induction_on with
     | H w =>
@@ -594,7 +598,8 @@ theorem subgroupLayer_range_galHom {small : NormalLayer G} (T : LayerRestriction
       rwa [mul_inv_cancel_left] at hmul
   · intro hg
     exact ⟨T.ground_toSubgroup_le hg, QuotientGroup.mk ⟨g, hg⟩, by
-      rw [LayerRestriction.galHom_mk]; rfl⟩
+      rw [LayerRestriction.galHom_mk]
+      exact congrArg QuotientGroup.mk (Subtype.ext (Subgroup.coe_inclusion _ _))⟩
 
 end NormalLayer
 
