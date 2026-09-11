@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Subrepresentation
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal
+import Mathlib.RepresentationTheory.Submodule
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -28,16 +29,18 @@ A pair of slots is presented here not as a pair of indices but as an equivalence
 `Sum.inr 1`, and the surviving slots are relabelled by `Fin m` in the order `σ` chooses.  This
 carries the arithmetic `d = m + 2` in the existence of `σ` rather than in a truncated subtraction,
 and it makes the contraction a composite of maps already in Mathlib: reindex along `σ`, split the
-tensor power along the sum (`PiTensorProduct.tmulEquiv`), cap the second factor.  Reordering the
-surviving slots changes the contraction by a permutation of the tensor factors and so does not
-change its kernel (`TauCeti.ker_orthogonalContract_trans_sumCongr`), which is why quantifying over
-all such `σ` — rather than over the pairs of slots — defines the same submodule.
+tensor power along the sum (`PiTensorProduct.tmulEquiv`), cap the second factor.  Relabelling the
+surviving slots and swapping the two capped slots change the contraction by a permutation of the
+tensor factors and so do not change its kernel
+(`TauCeti.ker_orthogonalContract_trans_sumCongr`), which is why quantifying over all such `σ` —
+rather than over the unordered pairs of slots — defines the same submodule.
 
 Two degenerate readings pin the definition.  Below two slots there is nothing to contract, so
 every tensor is harmonic (`TauCeti.harmonicTensors_eq_top_of_lt_two`); on the tensor square there
 is essentially one contraction, the cap itself, so the harmonic tensors are exactly its kernel
-(`TauCeti.harmonicTensors_two`).  The latter is not vacuous: the cup `∑ⱼ eⱼ ⊗ eⱼ` has trace `n`,
-so as soon as `n` is nonzero in `k` the tensor square has non-harmonic vectors.
+(`TauCeti.harmonicTensors_two`).  The latter is not vacuous: `eᵢ ⊗ eᵢ` has trace `1`, so over a
+nontrivial ring the tensor square has non-harmonic vectors in every positive dimension, and the
+cup `∑ⱼ eⱼ ⊗ eⱼ` has trace `n`.
 
 Everything except the last section is stated over a commutative semiring, as the cap is: that
 includes both invariance statements, under a permutation of the tensor factors and under a matrix
@@ -63,17 +66,19 @@ tensors as a subrepresentation of it — are the ones collected in the last sect
 * `TauCeti.mem_harmonicTensors_iff`: membership is the vanishing of every contraction.
 * `TauCeti.harmonicTensors_eq_top_of_lt_two`, `TauCeti.harmonicTensors_two`: the two degenerate
   cases, everything below two slots and the kernel of the cap on two slots.
-* `TauCeti.orthogonalCup_notMem_harmonicTensors` and `TauCeti.harmonicTensors_two_ne_top`: the cup
-  is not harmonic when `n` is nonzero in `k`, and `TauCeti.tprod_single_mem_harmonicTensors`: a
-  pure tensor of two distinct basis vectors is.
+* `TauCeti.harmonicTensors_two_ne_top`: in every positive dimension the harmonic tensors are a
+  proper submodule of the tensor square, `TauCeti.orthogonalCup_notMem_harmonicTensors`: the cup is
+  not harmonic when `n` is nonzero in `k`, and `TauCeti.tprod_single_mem_harmonicTensors`: a pure
+  tensor of two distinct basis vectors is harmonic.
 * `TauCeti.orthogonalContract_comp_permTensorAction` and
   `TauCeti.permTensorAction_mem_harmonicTensors`: permuting the tensor factors renames the capped
   slots, so the harmonic tensors are stable under the symmetric group, and
   `TauCeti.permTensorActionAlgHom_mem_harmonicTensors` extends that to its group algebra, so a
   Young symmetrizer keeps a harmonic tensor harmonic.
 * `TauCeti.orthogonalContract_trans_sumCongr` and
-  `TauCeti.ker_orthogonalContract_trans_sumCongr`: reordering the surviving slots post-composes the
-  contraction with a permutation, so its kernel depends only on the capped pair.
+  `TauCeti.ker_orthogonalContract_trans_sumCongr`: relabelling the surviving slots and swapping the
+  two capped slots post-compose the contraction with a permutation, so its kernel depends only on
+  the unordered pair of capped slots.
 * `TauCeti.orthogonalContract_comp_piTensorProductMap`: a matrix preserving the dot product
   commutes with every contraction, and `TauCeti.orthogonalContract_comp_tensorPower` reads that
   off for the orthogonal group.
@@ -85,6 +90,9 @@ tensors as a subrepresentation of it — are the ones collected in the last sect
 * R. Goodman and N. R. Wallach, *Symmetry, Representations, and Invariants*, Springer GTM 255
   (2009), Chapter 10.
 * H. Weyl, *The Classical Groups: Their Invariants and Representations*, Princeton (1939).
+* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
+  Layer 9, "Harmonic tensors and the trace maps", whose `harmonicTensors` build item this file
+  discharges.
 -/
 
 public section
@@ -201,9 +209,17 @@ theorem orthogonalCup_notMem_harmonicTensors (hn : (n : k) ≠ 0) :
   rw [harmonicTensors_two, LinearMap.mem_ker, orthogonalCap_comp_orthogonalCup_apply, mul_one]
   exact hn
 
-/-- The harmonic tensors are a proper submodule of the tensor square when `n` is nonzero in `k`. -/
-theorem harmonicTensors_two_ne_top (hn : (n : k) ≠ 0) : harmonicTensors k n 2 ≠ ⊤ := fun h =>
-  orthogonalCup_notMem_harmonicTensors k n hn (h ▸ Submodule.mem_top)
+/-- **The harmonic tensors are a proper submodule of the tensor square** in every positive
+dimension: the diagonal tensor `eᵢ ⊗ eᵢ` has trace `1`, which is nonzero over a nontrivial ring.
+This needs no assumption on the characteristic, unlike the cup of
+`TauCeti.orthogonalCup_notMem_harmonicTensors`. -/
+theorem harmonicTensors_two_ne_top [Nontrivial k] (hn : 0 < n) : harmonicTensors k n 2 ≠ ⊤ := by
+  intro h
+  have hmem : PiTensorProduct.tprod k
+      ![Pi.single (⟨0, hn⟩ : Fin n) (1 : k), Pi.single (⟨0, hn⟩ : Fin n) (1 : k)] ∈
+      harmonicTensors k n 2 := h ▸ Submodule.mem_top
+  rw [harmonicTensors_two, LinearMap.mem_ker, orthogonalCap_tprod] at hmem
+  simp at hmem
 
 /-- **A pure tensor of distinct standard basis vectors is harmonic.**  The single contraction on
 the tensor square dots the two slots against each other, and `eᵢ ⬝ᵥ eⱼ` vanishes for `i ≠ j`. -/
@@ -223,21 +239,32 @@ theorem orthogonalContract_comp_permTensorAction (τ : Equiv.Perm (Fin d))
   ext v
   simp
 
-/-- **Reordering the surviving slots** post-composes the contraction with a permutation of the
-tensor factors of the target: which pair of slots is capped is all that a contraction records. -/
-theorem orthogonalContract_trans_sumCongr (σ : Fin d ≃ Fin m ⊕ Fin 2) (τ : Equiv.Perm (Fin m)) :
-    orthogonalContract k n (σ.trans (Equiv.sumCongr τ (Equiv.refl (Fin 2)))) =
+/-- **Relabelling the surviving slots and swapping the two capped slots** post-composes the
+contraction with a permutation of the tensor factors of the target: the *unordered* pair of capped
+slots is all that a contraction records. -/
+theorem orthogonalContract_trans_sumCongr (σ : Fin d ≃ Fin m ⊕ Fin 2) (τ : Equiv.Perm (Fin m))
+    (υ : Equiv.Perm (Fin 2)) :
+    orthogonalContract k n (σ.trans (Equiv.sumCongr τ υ)) =
       permTensorAction k n m τ ∘ₗ orthogonalContract k n σ := by
   refine PiTensorProduct.ext ?_
   ext v
-  simp
+  -- `υ` only swaps the two capped slots, and the dot product is symmetric.
+  have hdot : v (σ.symm (Sum.inr (υ.symm 0))) ⬝ᵥ v (σ.symm (Sum.inr (υ.symm 1))) =
+      v (σ.symm (Sum.inr 0)) ⬝ᵥ v (σ.symm (Sum.inr 1)) := by
+    have hne : υ.symm 0 ≠ υ.symm 1 := by simp
+    revert hne
+    generalize υ.symm 0 = a
+    generalize υ.symm 1 = b
+    intro hne
+    fin_cases a <;> fin_cases b <;> simp_all [dotProduct_comm]
+  simp [hdot]
 
-/-- Reordering the surviving slots does not change the kernel of a contraction, which is why the
-harmonic tensors may be defined by quantifying over all the equivalences `σ` rather than over the
-pairs of slots. -/
+/-- Relabelling the surviving slots and swapping the two capped slots do not change the kernel of
+a contraction, which is why the harmonic tensors may be defined by quantifying over all the
+equivalences `σ` rather than over the unordered pairs of slots. -/
 theorem ker_orthogonalContract_trans_sumCongr (σ : Fin d ≃ Fin m ⊕ Fin 2)
-    (τ : Equiv.Perm (Fin m)) :
-    LinearMap.ker (orthogonalContract k n (σ.trans (Equiv.sumCongr τ (Equiv.refl (Fin 2))))) =
+    (τ : Equiv.Perm (Fin m)) (υ : Equiv.Perm (Fin 2)) :
+    LinearMap.ker (orthogonalContract k n (σ.trans (Equiv.sumCongr τ υ))) =
       LinearMap.ker (orthogonalContract k n σ) := by
   ext x
   rw [LinearMap.mem_ker, LinearMap.mem_ker, orthogonalContract_trans_sumCongr]
@@ -278,11 +305,9 @@ harmonic. -/
 theorem permTensorActionAlgHom_mem_harmonicTensors (a : MonoidAlgebra k (Equiv.Perm (Fin d)))
     {x : ⨂[k]^d (Fin n → k)} (hx : x ∈ harmonicTensors k n d) :
     permTensorActionAlgHom k n d a x ∈ harmonicTensors k n d := by
-  induction a using MonoidAlgebra.induction_on with
-  | of τ =>
-    simpa only [permTensorActionAlgHom_of] using permTensorAction_mem_harmonicTensors k n τ hx
-  | add a b ha hb => simpa only [map_add, LinearMap.add_apply] using Submodule.add_mem _ ha hb
-  | smul r a ha => simpa only [map_smul, LinearMap.smul_apply] using Submodule.smul_mem _ r ha
+  rw [permTensorActionAlgHom_def]
+  exact (permTensorAction k n d).asAlgebraHom_mem_of_forall_mem _
+    (fun τ _ h => permTensorAction_mem_harmonicTensors k n τ h) x hx a
 
 section Invariance
 
