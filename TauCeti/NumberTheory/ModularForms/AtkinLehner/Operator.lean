@@ -13,16 +13,16 @@ public import TauCeti.NumberTheory.ModularForms.Fricke.Matrix
 # The Atkin–Lehner slash operator
 
 An Atkin–Lehner matrix `W` for a divisor `Q` of `N` normalizes `Γ₀(N)`
-(`TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul`), so the weight-`k` slash by `W` sends
-a modular form for `Γ₀(N)` to another one. That is the operator built here, on `M_k(Γ₀(N))` and
-on `S_k(Γ₀(N))`.
+(`TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_left`), so the weight-`k` slash by `W`
+sends a modular form for `Γ₀(N)` to another one. That is the operator built here, on `M_k(Γ₀(N))`
+and on `S_k(Γ₀(N))`.
 
 The operator carries **no** normalizing scalar, so it is not an involution: `W ^ 2` is `Q` times
 an element of `Γ₀(N)`, and a scalar matrix slashes by a power of its scalar, so the operator
 squares to `Q ^ (k - 2)` (`atkinLehnerOperator_atkinLehnerOperator`). Dividing that away is the
-job of the normalized operator `𝒲_Q = (√Q) ^ (2 - k) • (· ∣[k] W)`; the Fricke member `Q = N` of
-the family is already normalized separately in
-`TauCeti/NumberTheory/ModularForms/Fricke/`.
+job of the normalized operator `𝒲_Q = (√Q) ^ (2 - k) • (· ∣[k] W)`, which does not exist yet. The
+Fricke member `Q = N` of the family is studied separately in
+`TauCeti/NumberTheory/ModularForms/Fricke/`, on the `Γ₁(N)` carrier and likewise un-normalized.
 
 The operator does not depend on which Atkin–Lehner matrix for `Q` is used: two of them differ by
 an element of `Γ₀(N)`, which a form for `Γ₀(N)` absorbs (`atkinLehnerOperator_congr`). The
@@ -101,12 +101,12 @@ theorem val_det_atkinLehnerGL_pos (hQ : 0 < Q) (h : IsAtkinLehnerMatrix N Q M) :
   exact_mod_cast hQ
 
 /-- **Moving `W` past `Γ₀(N)`**, the `GL (Fin 2) ℝ` reading of
-`IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul`. -/
+`IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_left`. -/
 theorem exists_mem_Gamma0_atkinLehnerGL_mul_mapGL (hQ : 0 < Q) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
       atkinLehnerGL hQ h * mapGL ℝ γ = mapGL ℝ δ * atkinLehnerGL hQ h := by
-  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul hQ.ne' hQN hγ
+  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQ.ne' hQN hγ
   refine ⟨δ, hδ, Units.ext ?_⟩
   simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
     Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
@@ -118,7 +118,7 @@ theorem exists_mem_Gamma0_mapGL_mul_atkinLehnerGL (hQ : 0 < Q) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
       mapGL ℝ γ * atkinLehnerGL hQ h = atkinLehnerGL hQ h * mapGL ℝ δ := by
-  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul' hQ.ne' hQN hγ
+  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQ.ne' hQN hγ
   refine ⟨δ, hδ, Units.ext ?_⟩
   simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
     Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
@@ -378,9 +378,12 @@ theorem Nat.IsExactDivisor.atkinLehnerOperatorCusp_one (h : 1 ∥ N)
   DFunLike.coe_injective <| h.slash_atkinLehnerGL_one ⇑f fun γ hγ ↦
     SlashInvariantForm.slash_action_eqn f γ hγ
 
-/-- The Fricke matrix read as an Atkin–Lehner matrix for `Q = N` is `frickeGL ℝ N`. -/
-theorem atkinLehnerGL_fricke [NeZero N] (hN : 0 < N) :
+/-- The Fricke matrix read as an Atkin–Lehner matrix for `Q = N` is `frickeGL ℝ N`. The `NeZero`
+instance that `frickeGL` asks for is supplied by the positivity hypothesis. -/
+theorem atkinLehnerGL_fricke (hN : 0 < N) :
+    haveI : NeZero N := ⟨hN.ne'⟩
     atkinLehnerGL hN (isAtkinLehnerMatrix_fricke (N := N)) = frickeGL ℝ N := by
+  have : NeZero N := ⟨hN.ne'⟩
   refine Units.ext ?_
   rw [coe_atkinLehnerGL, coe_frickeGL]
   ext i j
@@ -389,17 +392,21 @@ theorem atkinLehnerGL_fricke [NeZero N] (hN : 0 < N) :
 /-- **`W_N` is the Fricke slash** on `M_k(Γ₀(N))`: on underlying functions it is
 `⇑f ∣[k] frickeGL ℝ N`, the slash that `frickeOperator` performs at level `Γ₁(N)`
 (`coe_frickeOperator`). -/
-theorem Nat.IsExactDivisor.coe_atkinLehnerOperator_self [NeZero N] (h : N ∥ N)
+theorem Nat.IsExactDivisor.coe_atkinLehnerOperator_self (h : N ∥ N)
     (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    haveI : NeZero N := ⟨h.ne_zero⟩
     (⇑(h.atkinLehnerOperator k f) : ℍ → ℂ) = ⇑f ∣[k] frickeGL ℝ N := by
+  have : NeZero N := ⟨h.ne_zero⟩
   rw [h.atkinLehnerOperator_eq isAtkinLehnerMatrix_fricke,
     _root_.TauCeti.coe_atkinLehnerOperator, atkinLehnerGL_fricke]
 
 /-- **The cusp-form `W_N` is the Fricke slash** on `S_k(Γ₀(N))`, the slash that
 `frickeOperatorCusp` performs at level `Γ₁(N)` (`coe_frickeOperatorCusp`). -/
-theorem Nat.IsExactDivisor.coe_atkinLehnerOperatorCusp_self [NeZero N] (h : N ∥ N)
+theorem Nat.IsExactDivisor.coe_atkinLehnerOperatorCusp_self (h : N ∥ N)
     (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    haveI : NeZero N := ⟨h.ne_zero⟩
     (⇑(h.atkinLehnerOperatorCusp k f) : ℍ → ℂ) = ⇑f ∣[k] frickeGL ℝ N := by
+  have : NeZero N := ⟨h.ne_zero⟩
   rw [h.atkinLehnerOperatorCusp_eq isAtkinLehnerMatrix_fricke,
     _root_.TauCeti.coe_atkinLehnerOperatorCusp, atkinLehnerGL_fricke]
 

@@ -59,7 +59,9 @@ weight.
 * `TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_eq_mul_left`,
   `TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_eq_mul_right`: any two members for the same `Q`
   differ by an element of `Γ₀(N)`, on the left and on the right respectively.
-* `TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul`: `W` normalizes `Γ₀(N)`.
+* `TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_left`,
+  `TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_right`: `W` normalizes `Γ₀(N)`, with
+  the new element of `Γ₀(N)` produced on the left and on the right respectively.
 * `TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_self`: `W ^ 2 = Q • γ` with `γ ∈ Γ₀(N)`.
 * `TauCeti.IsAtkinLehnerMatrix.mul`: the multiplicativity of the family in the divisor.
 
@@ -274,7 +276,7 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_eq_mul_right (hQ : Q ≠ 0) (hQN :
 
 /-- **An Atkin–Lehner matrix normalizes `Γ₀(N)`**: `W γ = δ W` with `δ ∈ Γ₀(N)`. This is the fact
 that turns the weight-`k` slash by `W` into an operator on `M_k(Γ₀(N))`. -/
-theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul (hQ : Q ≠ 0) (hQN : Q ∣ N)
+theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_left (hQ : Q ≠ 0) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
       M * (γ : Matrix (Fin 2) (Fin 2) ℤ) = (δ : Matrix (Fin 2) (Fin 2) ℤ) * M :=
@@ -282,7 +284,7 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul (hQ : Q ≠ 0) (hQN : Q
 
 /-- **An Atkin–Lehner matrix normalizes `Γ₀(N)`, read the other way**: `γ W = W δ` with
 `δ ∈ Γ₀(N)`. -/
-theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul' (hQ : Q ≠ 0) (hQN : Q ∣ N)
+theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_right (hQ : Q ≠ 0) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
       (γ : Matrix (Fin 2) (Fin 2) ℤ) * M = M * (δ : Matrix (Fin 2) (Fin 2) ℤ) :=
