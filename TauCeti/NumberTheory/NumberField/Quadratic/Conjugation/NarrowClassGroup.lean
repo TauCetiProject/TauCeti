@@ -123,7 +123,7 @@ Choosing a presentation `θ` of `K` (`exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq
 narrow class of `(θ)`, which is `2`-torsion. -/
 theorem card_ker_toClassGroup_le_two (hK : Module.finrank ℚ K = 2) :
     Nat.card (MonoidHom.ker (NarrowClassGroup.toClassGroup (K := K))) ≤ 2 := by
-  obtain ⟨θ, d, hmin, hgen⟩ := exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
+  obtain ⟨θ, d, hmin, hgen, -⟩ := exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
   set c := NarrowClassGroup.mkPrincipal (Units.mk0 (θ : K) (coe_gen_ne_zero hmin)) with hc
   have hle : MonoidHom.ker (NarrowClassGroup.toClassGroup (K := K)) ≤ Subgroup.zpowers c := by
     rw [NarrowClassGroup.toClassGroup_ker]
