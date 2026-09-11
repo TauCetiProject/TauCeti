@@ -19,11 +19,10 @@ This pointwise centralizer calculation supplies the matrix comparison used to pr
 of the diagonal torus as a closed subgroup scheme. The unit hypothesis distinguishes the two
 weights on each symplectic plane; it cannot simply be omitted over small finite fields.
 
-The proof uses `TauCeti.apply_eq_zero_of_commute_diagonal` and follows the centralizer argument
-for general linear groups in `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic`.
-
 ## References
 
+* The general-linear centralizer formalization in
+  `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic`.
 * J. E. Humphreys, *Linear Algebraic Groups*, §16.1 and §26.3.
 -/
 

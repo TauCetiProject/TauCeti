@@ -147,6 +147,28 @@ theorem mem_diagonalTorus_iff_exists_diagonal {g : GLSymplecticFin m R} :
 instance instIsMulCommutativeDiagonalTorus : IsMulCommutative (diagonalTorus R m) :=
   inferInstanceAs (IsMulCommutative (diagonal (m := m) (R := R)).range)
 
+/-- The paired diagonal torus is the group of coordinatewise units. -/
+noncomputable def diagonalTorusEquiv (R : Type u) [CommRing R] (m : ℕ) :
+    (Fin m → Rˣ) ≃* diagonalTorus R m :=
+  MonoidHom.ofInjective diagonal_injective
+
+/-- The torus element attached to a family of units is its paired diagonal matrix. -/
+@[simp]
+theorem coe_diagonalTorusEquiv_apply (t : Fin m → Rˣ) :
+    ((diagonalTorusEquiv R m t : diagonalTorus R m) : GLSymplecticFin m R) = diagonal t :=
+  MonoidHom.ofInjective_apply diagonal_injective
+
+/-- The `i`-th coordinate of a torus element is its `i`-th diagonal entry in the first block. -/
+@[simp]
+theorem coe_diagonalTorusEquiv_symm_apply (g : diagonalTorus R m) (i : Fin m) :
+    (((diagonalTorusEquiv R m).symm g i : Rˣ) : R) =
+      (((g : GLSymplecticFin m R) : GL (Fin (m + m)) R) :
+        Matrix (Fin (m + m)) (Fin (m + m)) R) (Fin.castAdd m i) (Fin.castAdd m i) := by
+  have h : diagonal ((diagonalTorusEquiv R m).symm g) = (g : GLSymplecticFin m R) :=
+    MonoidHom.apply_ofInjective_symm diagonal_injective g
+  conv_rhs => rw [← h, coe_diagonal, diagGL_coe]
+  simp
+
 /-- A symplectic matrix belongs to the paired diagonal torus exactly when it is diagonal. -/
 @[simp]
 theorem mem_diagonalTorus_iff {g : GLSymplecticFin m R} :
