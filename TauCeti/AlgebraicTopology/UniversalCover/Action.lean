@@ -36,9 +36,6 @@ The inverse-free computation rule is `inv_smul_mk`.
 
 * The `MulAction`, `FaithfulSMul`, `ContinuousConstSMul`, and `IsCancelSMul` instances for
   `FundamentalGroup X x₀` acting on `UniversalCover x₀`.
-* `TauCeti.UniversalCover.prependUniversalCover`: continuous prepending of a path to
-  universal-cover
-  representatives.
 * `TauCeti.UniversalCover.basepointLift`: the constant-path point over `x₀`, lying over `x₀`
   by `TauCeti.UniversalCover.proj_basepointLift`.
 * `TauCeti.UniversalCover.monodromy_basepointLift`: monodromy at that point is the
@@ -55,81 +52,6 @@ noncomputable section
 open scoped unitInterval
 
 variable {X : Type*} [TopologicalSpace X] {x₀ : X}
-
-namespace TauCeti.UniversalCover
-
-variable {x₁ : X}
-
-/-- Prepend a path from `x₁` to `x₀` to the path class represented by a point of the
-universal cover based at `x₀`. -/
-def prependUniversalCover (gamma : Path x₁ x₀)
-    (p : UniversalCover x₀) : UniversalCover x₁ :=
-  UniversalCover.mk p.proj ((Path.Homotopic.Quotient.mk gamma).trans p.path)
-
-/-- Prepending to an endpoint-and-path-class pair prepends the corresponding homotopy class. -/
-@[simp]
-theorem prependUniversalCover_mk (gamma : Path x₁ x₀) (x : X)
-    (q : Path.Homotopic.Quotient x₀ x) :
-    prependUniversalCover gamma (UniversalCover.mk x q) =
-      UniversalCover.mk x ((Path.Homotopic.Quotient.mk gamma).trans q) :=
-  (rfl)
-
-/-- Prepending a path does not change the endpoint projection. -/
-@[simp]
-theorem proj_prependUniversalCover (gamma : Path x₁ x₀) (p : UniversalCover x₀) :
-    (prependUniversalCover gamma p).proj = p.proj :=
-  (rfl)
-
-/-- On the quotient constructor, prepending is represented by concatenating paths. -/
-@[simp]
-theorem prependUniversalCover_ofBasedPath (gamma : Path x₁ x₀) (beta : BasedPath x₀) :
-    prependUniversalCover gamma (UniversalCover.ofBasedPath x₀ beta) =
-      UniversalCover.ofBasedPath x₁ (BasedPath.ofPath (gamma.trans beta.toPath)) := by
-  rw [UniversalCover.ofBasedPath_ofPath, prependUniversalCover_mk,
-    UniversalCover.ofBasedPath_def, Path.Homotopic.Quotient.mk_trans]
-
-/-- Prepending a fixed path is continuous for the quotient topologies on the two universal
-covers. -/
-@[fun_prop]
-theorem continuous_prependUniversalCover (gamma : Path x₁ x₀) :
-    Continuous (prependUniversalCover gamma : UniversalCover x₀ → UniversalCover x₁) := by
-  rw [(UniversalCover.isQuotientMap_ofBasedPath x₀).continuous_iff]
-  suffices hcont : Continuous (fun beta : BasedPath x₀ =>
-      UniversalCover.ofBasedPath x₁ (BasedPath.ofPath (gamma.trans beta.toPath))) by
-    apply hcont.congr
-    intro beta
-    simpa only [Function.comp_apply] using (prependUniversalCover_ofBasedPath gamma beta).symm
-  refine (UniversalCover.continuous_ofBasedPath x₁).comp (Continuous.subtype_mk ?_ _)
-  refine ContinuousMap.continuous_of_continuous_uncurry _ ?_
-  have heval : Continuous fun p : BasedPath x₀ × unitInterval => p.1.1 p.2 :=
-    continuous_eval.comp (continuous_subtype_val.prodMap continuous_id)
-  -- Unfolding the path wrappers identifies the uncurried goal with concatenation.
-  change Continuous fun p : BasedPath x₀ × unitInterval => gamma.trans p.1.toPath p.2
-  exact Path.trans_continuous_family (a := fun _ : BasedPath x₀ => x₁)
-    (b := fun _ : BasedPath x₀ => x₀)
-    (c := fun beta : BasedPath x₀ => BasedPath.endpoint beta)
-    (fun _ => gamma) (Path.continuous_uncurry_iff.mpr continuous_const)
-    (fun beta => beta.toPath) heval
-
-/-- Prepending a constant path is the identity. -/
-@[simp]
-theorem prependUniversalCover_refl (p : UniversalCover x₀) :
-    prependUniversalCover (Path.refl x₀) p = p := by
-  rcases p with ⟨x, q⟩
-  rw [prependUniversalCover_mk, Path.Homotopic.Quotient.mk_refl,
-    Path.Homotopic.Quotient.refl_trans]
-
-/-- Successive prepending combines by path concatenation. -/
-@[simp]
-theorem prependUniversalCover_trans {x₂ : X} (gamma : Path x₂ x₁) (delta : Path x₁ x₀)
-    (p : UniversalCover x₀) :
-    prependUniversalCover (gamma.trans delta) p =
-      prependUniversalCover gamma (prependUniversalCover delta p) := by
-  rcases p with ⟨x, q⟩
-  rw [prependUniversalCover_mk, prependUniversalCover_mk, prependUniversalCover_mk,
-    Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.trans_assoc]
-
-end TauCeti.UniversalCover
 
 namespace TauCeti.UniversalCover
 

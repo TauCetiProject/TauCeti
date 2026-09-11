@@ -41,6 +41,37 @@ namespace TauCeti.UniversalCover
 
 variable {x₀ x : X}
 
+/-- The universal-cover projection is locally injective under the local hypotheses. -/
+theorem isLocallyInjective_proj [LocallyPathConnectedSpace X]
+    [SemilocallySimplyConnectedSpace X] (x₀ : X) :
+    IsLocallyInjective (proj : UniversalCover x₀ → X) := by
+  rintro ⟨x, q⟩
+  obtain ⟨U, hU_open, hxU, _hU_pathConn, hU_slsc⟩ :=
+    exists_isOpen_mem_isPathConnected_isPathHomotopyTrivial x
+  exact ⟨sheet U hxU q, isOpen_sheet U hU_open hxU q, mk_mem_sheet hxU q,
+    proj_injOn_sheet hU_slsc hxU q⟩
+
+/-- The universal-cover projection is a separated map under the local hypotheses. -/
+theorem isSeparatedMap_proj [LocallyPathConnectedSpace X]
+    [SemilocallySimplyConnectedSpace X] (x₀ : X) :
+    IsSeparatedMap (proj : UniversalCover x₀ → X) := by
+  rintro ⟨x, q₁⟩ ⟨y, q₂⟩ hxy hne
+  -- After pattern matching the two cover points, their projected equality is definitionally
+  -- the equality of the displayed endpoints; no separate `proj_mk` lemma is generated.
+  change x = y at hxy
+  subst y
+  obtain ⟨U, hU_open, hxU, _hU_pathConn, hU_slsc⟩ :=
+    exists_isOpen_mem_isPathConnected_isPathHomotopyTrivial x
+  have hq : q₁ ≠ q₂ := by
+    intro h
+    apply hne
+    subst h
+    rfl
+  exact ⟨sheet U hxU q₁, sheet U hxU q₂,
+    isOpen_sheet U hU_open hxU q₁, isOpen_sheet U hU_open hxU q₂,
+    mk_mem_sheet hxU q₁, mk_mem_sheet hxU q₂,
+    pairwise_disjoint_sheet hU_slsc hxU hq⟩
+
 /-- The endpoint projection `proj` is a covering map, assuming `X` is semilocally simply
 connected, locally path-connected, and path-connected. -/
 theorem isCoveringMap [LocallyPathConnectedSpace X] [PathConnectedSpace X]

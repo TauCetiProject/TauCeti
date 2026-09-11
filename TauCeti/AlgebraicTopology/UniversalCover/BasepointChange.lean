@@ -79,6 +79,8 @@ theorem basepointChangeHomeomorph_apply_mk (gamma : Path x₀ x₁) (x : X)
     (q : Path.Homotopic.Quotient x₀ x) :
     basepointChangeHomeomorph gamma (mk x q) =
       mk x ((Path.Homotopic.Quotient.mk gamma).symm.trans q) := by
+  -- Applying the bundled homeomorphism exposes its `toFun`, which is definitionally the
+  -- prepending map; there is no separate projection lemma for this structure wrapper.
   change prependUniversalCover gamma.symm (mk x q) = _
   rw [prependUniversalCover_mk, Path.Homotopic.Quotient.mk_symm]
 
@@ -118,41 +120,17 @@ theorem basepointChangeHomeomorph_symm_apply_ofBasedPath (gamma : Path x₀ x₁
       ofBasedPath x₀ (BasedPath.ofPath (gamma.trans beta.toPath)) :=
   prependUniversalCover_ofBasedPath gamma beta
 
-private theorem mem_own_sheet {x : X} {U : Set X} (hxU : x ∈ U)
-    (q : Path.Homotopic.Quotient x₀ x) : mk x q ∈ sheet U hxU q := by
-  induction q using Quotient.inductionOn with
-  | h gamma =>
-      change mk x (Path.Homotopic.Quotient.mk gamma) ∈
-        sheet U hxU (Path.Homotopic.Quotient.mk gamma)
-      rw [← ofBasedPath_ofPath gamma]
-      exact mem_sheet_self hxU gamma
+/-- Basepoint change sends the point represented by the changing path to the constant-path point
+over its target.
 
-private theorem isLocallyInjective_proj [LocallyPathConnectedSpace X]
-    [SemilocallySimplyConnectedSpace X] (x₀ : X) :
-    IsLocallyInjective (proj : UniversalCover x₀ → X) := by
-  rintro ⟨x, q⟩
-  obtain ⟨U, hU_open, hxU, _hU_pathConn, hU_slsc⟩ :=
-    exists_isOpen_mem_isPathConnected_isPathHomotopyTrivial x
-  exact ⟨sheet U hxU q, isOpen_sheet U hU_open hxU q, mem_own_sheet hxU q,
-    proj_injOn_sheet hU_slsc hxU q⟩
-
-private theorem isSeparatedMap_proj [LocallyPathConnectedSpace X]
-    [SemilocallySimplyConnectedSpace X] (x₀ : X) :
-    IsSeparatedMap (proj : UniversalCover x₀ → X) := by
-  rintro ⟨x, q₁⟩ ⟨y, q₂⟩ hxy hne
-  change x = y at hxy
-  subst y
-  obtain ⟨U, hU_open, hxU, _hU_pathConn, hU_slsc⟩ :=
-    exists_isOpen_mem_isPathConnected_isPathHomotopyTrivial x
-  have hq : q₁ ≠ q₂ := by
-    intro h
-    apply hne
-    subst h
-    rfl
-  exact ⟨sheet U hxU q₁, sheet U hxU q₂,
-    isOpen_sheet U hU_open hxU q₁, isOpen_sheet U hU_open hxU q₂,
-    mem_own_sheet hxU q₁, mem_own_sheet hxU q₂,
-    pairwise_disjoint_sheet hU_slsc hxU hq⟩
+This remains an explicit rewrite theorem: `ofBasedPath_ofPath` and the general
+representative rule already let `simp` prove it, so the `simpNF` linter rejects a redundant
+`@[simp]` annotation. -/
+theorem basepointChangeHomeomorph_apply_self (gamma : Path x₀ x₁) :
+    basepointChangeHomeomorph gamma (ofBasedPath x₀ (BasedPath.ofPath gamma)) =
+      basepointLift x₁ := by
+  rw [ofBasedPath_ofPath, basepointChangeHomeomorph_apply_mk, basepointLift_coe,
+    Path.Homotopic.Quotient.symm_trans]
 
 /-- The basepoint-change homeomorphism is the unique continuous map over `X` that sends the point
 represented by the changing path to the constant-path point. -/
@@ -162,11 +140,6 @@ theorem eq_basepointChangeHomeomorph (gamma : Path x₀ x₁)
     (hgamma : f (ofBasedPath x₀ (BasedPath.ofPath gamma)) = basepointLift x₁)
     (hproj : proj ∘ f = proj) :
     f = (basepointChangeHomeomorph gamma : C(UniversalCover x₀, UniversalCover x₁)) := by
-  have hbase :
-      basepointChangeHomeomorph gamma (ofBasedPath x₀ (BasedPath.ofPath gamma)) =
-        basepointLift x₁ := by
-    rw [ofBasedPath_ofPath, basepointChangeHomeomorph_apply_mk, basepointLift_coe,
-      Path.Homotopic.Quotient.symm_trans]
   have hproj' : proj ∘ f = proj ∘ (basepointChangeHomeomorph gamma :
       UniversalCover x₀ → UniversalCover x₁) := by
     rw [hproj]
@@ -176,7 +149,8 @@ theorem eq_basepointChangeHomeomorph (gamma : Path x₀ x₁)
   exact congrFun ((isSeparatedMap_proj x₁).eq_of_comp_eq (isLocallyInjective_proj x₁)
     f.continuous
     (basepointChangeHomeomorph gamma).continuous hproj'
-    (ofBasedPath x₀ (BasedPath.ofPath gamma)) (hgamma.trans hbase.symm))
+    (ofBasedPath x₀ (BasedPath.ofPath gamma))
+    (hgamma.trans (basepointChangeHomeomorph_apply_self gamma).symm))
 
 /-- Homotopic basepoint-change paths induce the same homeomorphism. -/
 theorem basepointChangeHomeomorph_eq_of_homotopic {gamma delta : Path x₀ x₁}
