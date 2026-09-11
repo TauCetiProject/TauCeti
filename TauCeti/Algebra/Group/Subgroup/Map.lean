@@ -140,13 +140,15 @@ def _root_.MonoidHom.subgroupCongr {A A' : Subgroup G} {B B' : Subgroup H}
   ((MulEquiv.subgroupCongr hB).symm.toMonoidHom).comp
     (f.comp (MulEquiv.subgroupCongr hA).toMonoidHom)
 
-/-- The transported homomorphism has the same underlying values as the original: it reads its
-argument through `hA` and returns the same element of the ambient group. -/
+/-- The transported homomorphism takes the same value in the ambient group as the original does
+at the corresponding element. -/
 @[simp]
 theorem _root_.MonoidHom.coe_subgroupCongr_apply {A A' : Subgroup G} {B B' : Subgroup H}
     (hA : A' = A) (hB : B' = B) (f : A →* B) (x : A') :
-    (f.subgroupCongr hA hB x : H) = f ⟨x, hA ▸ x.2⟩ :=
-  (rfl)
+    (f.subgroupCongr hA hB x : H) = f ⟨x, hA ▸ x.2⟩ := by
+  simp only [MonoidHom.subgroupCongr, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    MulEquiv.subgroupCongr_symm_apply]
+  exact congrArg (fun y => (f y : H)) (Subtype.ext (MulEquiv.subgroupCongr_apply hA x))
 
 /-- Transporting the identity homomorphism along one equality of subgroups, on both sides, gives
 the identity. -/
@@ -168,14 +170,14 @@ theorem _root_.MonoidHom.subgroupCongr_comp {A A' : Subgroup G} {B B' : Subgroup
     simp only [MonoidHom.subgroupCongr, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
       MulEquiv.apply_symm_apply]
 
-/-- Transport preserves injectivity: it composes the original homomorphism with two bijections. -/
+/-- Transport along equalities of the domain and codomain preserves injectivity. -/
 theorem _root_.MonoidHom.subgroupCongr_injective {A A' : Subgroup G} {B B' : Subgroup H}
     (hA : A' = A) (hB : B' = B) {f : A →* B} (hf : Function.Injective f) :
     Function.Injective (f.subgroupCongr hA hB) :=
   (MulEquiv.subgroupCongr hB).symm.injective.comp
     (hf.comp (MulEquiv.subgroupCongr hA).injective)
 
-/-- Transport preserves surjectivity: it composes the original homomorphism with two bijections. -/
+/-- Transport along equalities of the domain and codomain preserves surjectivity. -/
 theorem _root_.MonoidHom.subgroupCongr_surjective {A A' : Subgroup G} {B B' : Subgroup H}
     (hA : A' = A) (hB : B' = B) {f : A →* B} (hf : Function.Surjective f) :
     Function.Surjective (f.subgroupCongr hA hB) :=
