@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.Finite
 public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Units
 public import TauCeti.NumberTheory.NumberField.Quadratic.Norm
+import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.InfinitePlace
 import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Norm.Basic
 
 /-!
@@ -49,11 +50,10 @@ group of a real quadratic field, where that rank can otherwise drop.
 
 ## Main results
 
-* `NumberField.isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos`: an element of positive
-  norm is, up to sign, totally positive.
-* `NumberField.radicand_pos_of_norm_eq_neg_one`: a unit of norm `-1` forces `0 < d`.
-* `NumberField.exists_norm_eq_neg_one_of_sq_sub_mul_sq_eq_neg_one`: a solution of the negative
-  Pell equation `b² - d a² = -1` supplies such a unit.
+* `NumberField.exists_unit_isTotallyPositive_smul_gen_of_norm_eq_neg_one`: a unit of norm `-1`
+  makes some unit multiple of `θ` totally positive.
+* `NumberField.norm_eq_neg_one_of_isTotallyPositive_smul_gen`: conversely, for `0 < d`, a totally
+  positive unit multiple of `θ` exhibits a unit of norm `-1`.
 * `NumberField.NarrowClassGroup.toClassGroup_injective_of_norm_eq_neg_one`: a unit of norm `-1`
   makes `Cl⁺(K) → Cl(K)` injective.
 * `NumberField.NarrowClassGroup.toClassGroup_injective_iff_exists_norm_eq_neg_one`: for `0 < d`
@@ -74,67 +74,6 @@ open Polynomial NumberField
 namespace NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
-
-/-- **Positive norm forces a sign.** In a quadratic field the norm of `x` is the product of the
-two values `φ x` and `φ (σ x)` that the real embeddings give `x`, so a positive norm says those
-values have the same sign and hence that `x` or `-x` is totally positive. A positive norm also
-forces `x ≠ 0`. The proof feeds `x / σ x = x² / N(x)`, a product of totally positive elements, to
-`isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quadraticConj`. Over a
-totally complex field both alternatives hold vacuously. -/
-theorem isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos
-    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {x : K}
-    (hnorm : 0 < Algebra.norm ℚ x) :
-    IsTotallyPositive x ∨ IsTotallyPositive (-x) := by
-  have hx : x ≠ 0 := (Algebra.norm_ne_zero_iff_of_basis (Module.finBasis ℚ K)).mp hnorm.ne'
-  refine isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quadraticConj
-    hmin hgen ?_
-  have hprod : x * quadraticConj hmin hgen x = ((Algebra.norm ℚ x : ℚ) : K) := by
-    rw [← eq_ratCast (algebraMap ℚ K)]
-    exact (algebraMap_norm_eq_mul_quadraticConj hmin hgen x).symm
-  have hconj : quadraticConj hmin hgen x ≠ 0 := by
-    simpa using hx
-  have hdiv : x / quadraticConj hmin hgen x = x ^ 2 * (((Algebra.norm ℚ x : ℚ) : K))⁻¹ := by
-    rw [← hprod]
-    field_simp
-  rw [hdiv]
-  exact (isTotallyPositive_sq hx).mul (isTotallyPositive_ratCast hnorm).inv
-
-/-- **A unit of norm `-1` only exists in the real case.** For `d < 0` the norm is positive on every
-nonzero element (`norm_pos_of_radicand_neg`), and `d = 0` is excluded because the radicand is not a
-square; so a unit of norm `-1` forces `0 < d`. -/
-theorem radicand_pos_of_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {u : (𝓞 K)ˣ}
-    (hu : Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1) : 0 < d := by
-  have hune : ((u : 𝓞 K) : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr u.ne_zero
-  rcases lt_trichotomy d 0 with hd | hd | hd
-  · have := norm_pos_of_radicand_neg hmin hgen hd hune
-    rw [hu] at this
-    norm_num at this
-  · -- `d = 0` makes the radicand the square `0 * 0`.
-    subst hd
-    exact absurd ⟨0, by norm_num⟩ (not_isSquare_radicand hmin)
-  · exact hd
-
-/-- **A solution of the negative Pell equation gives a unit of norm `-1`.** If `b² - d a² = -1`
-then `b + aθ` has norm `-1`, hence is a unit of `𝓞 K` (an algebraic integer is a unit exactly when
-its norm is `±1`). This is the concrete source of the hypothesis below: for `d = 2`, `a = b = 1`
-gives the unit `1 + √2`. -/
-theorem exists_norm_eq_neg_one_of_sq_sub_mul_sq_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {a b : ℤ} (hab : b ^ 2 - d * a ^ 2 = -1) :
-    ∃ u : (𝓞 K)ˣ, Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1 := by
-  set x : 𝓞 K := (b : 𝓞 K) + (a : 𝓞 K) * θ with hxdef
-  have habq : ((b : ℤ) : ℚ) ^ 2 - ((d : ℤ) : ℚ) * ((a : ℤ) : ℚ) ^ 2 = -1 := by exact_mod_cast hab
-  have hnorm : Algebra.norm ℚ ((x : K)) = -1 := by
-    have hval : ((x : 𝓞 K) : K)
-        = (((b : ℤ) : ℚ) : K) + (((a : ℤ) : ℚ) : K) * (θ : K) := by
-      rw [hxdef]
-      simp only [RingOfIntegers.coe_eq_algebraMap, map_add, map_mul, map_intCast,
-        Rat.cast_intCast]
-    rw [hval, norm_add_mul_gen hmin hgen, habq]
-  have hunit : IsUnit x := by
-    rw [NumberField.isUnit_iff_norm, RingOfIntegers.coe_norm, hnorm]
-    norm_num
-  exact ⟨hunit.unit, by rwa [IsUnit.unit_spec]⟩
 
 /-- **A unit of norm `-1` makes some unit multiple of `θ` totally positive.** Writing the
 hypothesis in the conjugation form `u σu = -1`, the companion sign lemma

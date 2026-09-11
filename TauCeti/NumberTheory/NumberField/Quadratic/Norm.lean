@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Quadratic.Basic
+import Mathlib.NumberTheory.NumberField.Units.Basic
 import TauCeti.RingTheory.Norm.Quadratic
 
 /-!
@@ -18,7 +19,10 @@ For a quadratic number field `K = ℚ(√d)` presented by an algebraic integer `
 * `norm_gen_eq_neg_radicand`: the norm of the generator, `N(θ) = -d` (negative of the radicand);
 * `norm_add_mul_gen`: in the coordinates `x = b + aθ` the norm is `N(b + aθ) = b² - d·a²`;
 * `norm_pos_of_radicand_neg`: when `d < 0` — the imaginary quadratic case, where `K` is totally
-  complex — the norm is strictly positive on every nonzero element.
+  complex — the norm is strictly positive on every nonzero element;
+* `radicand_pos_of_norm_eq_neg_one`: consequently a unit of norm `-1` forces `0 < d`;
+* `exists_norm_eq_neg_one_of_sq_sub_mul_sq_eq_neg_one`: a solution of the negative Pell equation
+  `b² - d a² = -1` supplies a unit of norm `-1`.
 
 The positivity is a descent input for the genus theory of the multiquadratic roadmap: for a
 norm-`±1` element `α` it upgrades `N(α) = ±1` to `N(α) = 1`, the hypothesis of Hilbert's
@@ -80,5 +84,42 @@ theorem norm_pos_of_radicand_neg (hmin : minpoly ℤ θ = X ^ 2 - C d)
   rcases hab with ha | hb
   · nlinarith [mul_self_pos.mpr ha, sq_nonneg b, sq_nonneg a]
   · nlinarith [mul_self_pos.mpr hb, sq_nonneg a, sq_nonneg b]
+
+/-- **A unit of norm `-1` only exists in the real case.** For `d < 0` the norm is positive on every
+nonzero element (`norm_pos_of_radicand_neg`), and `d = 0` is excluded because the radicand is not a
+square; so a unit of norm `-1` forces `0 < d`. -/
+theorem radicand_pos_of_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {u : (𝓞 K)ˣ}
+    (hu : Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1) : 0 < d := by
+  have hune : ((u : 𝓞 K) : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr u.ne_zero
+  rcases lt_trichotomy d 0 with hd | hd | hd
+  · have := norm_pos_of_radicand_neg hmin hgen hd hune
+    rw [hu] at this
+    norm_num at this
+  · -- `d = 0` makes the radicand the square `0 * 0`.
+    subst hd
+    exact absurd ⟨0, by norm_num⟩ (not_isSquare_radicand hmin)
+  · exact hd
+
+/-- **A solution of the negative Pell equation gives a unit of norm `-1`.** If `b² - d a² = -1`
+then `b + aθ` has norm `-1`, hence is a unit of `𝓞 K` (an algebraic integer is a unit exactly when
+its norm is `±1`). This is a concrete source of units of norm `-1`: for `d = 2`, `a = b = 1`
+gives the unit `1 + √2`. -/
+theorem exists_norm_eq_neg_one_of_sq_sub_mul_sq_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {a b : ℤ} (hab : b ^ 2 - d * a ^ 2 = -1) :
+    ∃ u : (𝓞 K)ˣ, Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1 := by
+  set x : 𝓞 K := (b : 𝓞 K) + (a : 𝓞 K) * θ with hxdef
+  have habq : ((b : ℤ) : ℚ) ^ 2 - ((d : ℤ) : ℚ) * ((a : ℤ) : ℚ) ^ 2 = -1 := by exact_mod_cast hab
+  have hnorm : Algebra.norm ℚ ((x : K)) = -1 := by
+    have hval : ((x : 𝓞 K) : K)
+        = (((b : ℤ) : ℚ) : K) + (((a : ℤ) : ℚ) : K) * (θ : K) := by
+      rw [hxdef]
+      simp only [RingOfIntegers.coe_eq_algebraMap, map_add, map_mul, map_intCast,
+        Rat.cast_intCast]
+    rw [hval, norm_add_mul_gen hmin hgen, habq]
+  have hunit : IsUnit x := by
+    rw [NumberField.isUnit_iff_norm, RingOfIntegers.coe_norm, hnorm]
+    norm_num
+  exact ⟨hunit.unit, by rwa [IsUnit.unit_spec]⟩
 
 end NumberField
