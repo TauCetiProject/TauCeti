@@ -266,9 +266,7 @@ theorem ker_orthogonalContract_trans_sumCongr (σ : Fin d ≃ Fin m ⊕ Fin 2)
     (τ : Equiv.Perm (Fin m)) (υ : Equiv.Perm (Fin 2)) :
     LinearMap.ker (orthogonalContract k n (σ.trans (Equiv.sumCongr τ υ))) =
       LinearMap.ker (orthogonalContract k n σ) := by
-  ext x
-  rw [LinearMap.mem_ker, LinearMap.mem_ker, orthogonalContract_trans_sumCongr]
-  simp
+  rw [orthogonalContract_trans_sumCongr, permTensorAction_apply, LinearEquiv.ker_comp]
 
 /-- **The harmonic tensors are stable under permuting the tensor factors**, so the action of the
 symmetric group on the tensor power restricts to them. -/
