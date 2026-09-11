@@ -567,7 +567,7 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
   have hctarget : c.target = V := by
     simpa only [c, V, chart] using
       TauCeti.extChartPartialDiffeomorph_target I ∞ (1 : G)
-  have hcsymm : ⇑c.symm = chart.symm := by
+  have hcsymm : ⇑c.toPartialEquiv.symm = chart.symm := by
     simpa only [c, chart] using
       TauCeti.coe_extChartPartialDiffeomorph_symm I ∞ (1 : G)
   -- Transport the charted local diffeomorphism `d : E ↔ E` back through the restricted identity
@@ -591,7 +591,9 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
       rw [hqdef]
       exact OpenPartialHomeomorph.trans_apply
         (e := d.toOpenPartialHomeomorph) (e' := c.symm.toOpenPartialHomeomorph)
-    rw [hqapply, hcsymm, ← hd]
+    rw [hqapply]
+    change f x = c.toPartialEquiv.symm (d x)
+    rw [hcsymm, ← hd]
     exact ((extChartAt I (1 : G)).left_inv (hdsource hx.1)).symm
   -- Although `q` agrees with `f` on its source, its total forward function retains the composed
   -- chart implementation. Re-wrap its partial equivalence using literally `f` so the final local

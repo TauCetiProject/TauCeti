@@ -18,11 +18,10 @@ Mathlib knows that a `C^n` local diffeomorphism has invertible differentials
 points of Banach manifolds: a map which is `C^n` on an open set, with `1 ≤ n`, and whose `mfderiv`
 at a point of that set is a continuous linear equivalence, is a `C^n` local diffeomorphism there.
 
-The proof reads `f` in the extended charts at `x` and at `f x`, restricts their targets to their
-interiors, applies the normed-space inverse function theorem of
-`TauCeti.ContDiffOn.exists_openPartialHomeomorph`, and conjugates the resulting
-`OpenPartialHomeomorph` back by the restricted charts. On a boundaryless manifold every point lies
-in these restrictions, even when the ambient models themselves have boundary.
+The interior-point form applies to maps between manifolds with boundary whenever the point and its
+image lie away from the boundary. For boundaryless manifolds those conditions are automatic, even
+when the ambient models themselves have boundary, yielding the usual global criterion from
+invertibility of every differential.
 
 ## Main results
 
@@ -38,10 +37,6 @@ in these restrictions, even when the ambient models themselves have boundary.
   source is a local diffeomorphism there.
 * `TauCeti.isLocalDiffeomorph_of_mfderiv_eq`: the global version.
 
-## References
-
-* [The Hopf--Rinow roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "The manifold inverse-function theorem".
 -/
 
 public section
@@ -93,7 +88,7 @@ def extChartPartialDiffeomorph (x : M) : PartialDiffeomorph I 𝓘(𝕂, E) M E 
       (contMDiffOn_extChartAt_symm (I := I) x).mono fun _ hy => interior_subset hy.2
   }
 
-theorem extChartPartialDiffeomorph_toPartialEquiv (x : M) :
+private theorem extChartPartialDiffeomorph_toPartialEquiv (x : M) :
     (extChartPartialDiffeomorph I n x).toPartialEquiv =
       (PartialEquiv.IsImage.of_preimage_eq
         (e := extChartAt I x)
@@ -121,19 +116,11 @@ theorem coe_extChartPartialDiffeomorph (x : M) :
   rw [extChartPartialDiffeomorph_toPartialEquiv,
     PartialEquiv.IsImage.restr_apply]
 
+@[simp]
 theorem coe_extChartPartialDiffeomorph_symm (x : M) :
-    ((extChartPartialDiffeomorph I n x).symm : E → M) = (extChartAt I x).symm := by
-  -- Symmetry commutes definitionally with the underlying partial equivalence; expose that
-  -- projection so the named restriction equation can identify the inverse function.
-  change ⇑(extChartPartialDiffeomorph I n x).toPartialEquiv.symm =
-    ⇑(extChartAt I x).symm
+    ⇑(extChartPartialDiffeomorph I n x).toPartialEquiv.symm = (extChartAt I x).symm := by
   rw [extChartPartialDiffeomorph_toPartialEquiv,
     PartialEquiv.IsImage.restr_symm_apply]
-
-@[simp]
-theorem extChartPartialDiffeomorph_invFun_apply (x : M) (y : E) :
-    (extChartPartialDiffeomorph I n x).invFun y = (extChartAt I x).invFun y := by
-  exact congrFun (coe_extChartPartialDiffeomorph_symm I n x) y
 
 end Charts
 
@@ -257,7 +244,28 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
     rw [hΦ, PartialDiffeomorph.trans_toPartialEquiv, ← hΨsource]
     exact OpenPartialHomeomorph.trans_source _ _
   -- By construction the composite acts as `ψ.symm ∘ Θ ∘ φ`.
-  have hcoe : ∀ y, Φ y = ψ.symm (Θ (φ y)) := fun _ => rfl
+  have hcoe (y : M) : Φ y = ψ.symm (Θ (φ y)) := by
+    calc
+      Φ y = Ψ ((extChartPartialDiffeomorph I n x) y) := by
+        rw [hΦ]
+        exact OpenPartialHomeomorph.trans_apply
+          (e := (extChartPartialDiffeomorph I n x).toOpenPartialHomeomorph)
+          (e' := Ψ.toOpenPartialHomeomorph)
+      _ = (extChartPartialDiffeomorph J n (f x)).symm
+          ((PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm)
+            ((extChartPartialDiffeomorph I n x) y)) := by
+        rw [hΨ]
+        exact OpenPartialHomeomorph.trans_apply
+          (e := (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm)
+            |>.toOpenPartialHomeomorph)
+          (e' := (extChartPartialDiffeomorph J n (f x)).symm.toOpenPartialHomeomorph)
+      _ = ψ.symm (Θ (φ y)) := by
+        rw [coe_extChartPartialDiffeomorph,
+          PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv]
+        change (extChartPartialDiffeomorph J n (f x)).toPartialEquiv.symm
+            (Θ (extChartAt I x y)) = ψ.invFun (Θ (φ y))
+        rw [coe_extChartPartialDiffeomorph_symm, hφ, hψ,
+          PartialEquiv.invFun_as_coe]
   have hinvx : φ.symm (φ x) = x := by rw [hφ]; exact extChartAt_to_inv x
   have hgx : Θ (φ x) = ψ (f x) := by rw [hΘcoe]; simp only [hg, Function.comp_apply, hinvx]
   have hxφ : φ x ∈ interior φ.target := by
