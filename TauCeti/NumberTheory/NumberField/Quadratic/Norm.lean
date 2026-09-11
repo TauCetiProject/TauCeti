@@ -20,7 +20,7 @@ For a quadratic number field `K = ℚ(√d)` presented by an algebraic integer `
 * `norm_add_mul_gen`: in the coordinates `x = b + aθ` the norm is `N(b + aθ) = b² - d·a²`;
 * `norm_pos_of_radicand_neg`: when `d < 0` — the imaginary quadratic case, where `K` is totally
   complex — the norm is strictly positive on every nonzero element;
-* `radicand_pos_of_norm_eq_neg_one`: consequently a unit of norm `-1` forces `0 < d`;
+* `radicand_pos_of_norm_eq_neg_one`: consequently an element of norm `-1` forces `0 < d`;
 * `exists_norm_eq_neg_one_of_sq_sub_mul_sq_eq_neg_one`: a solution of the negative Pell equation
   `b² - d a² = -1` supplies a unit of norm `-1`.
 
@@ -85,16 +85,16 @@ theorem norm_pos_of_radicand_neg (hmin : minpoly ℤ θ = X ^ 2 - C d)
   · nlinarith [mul_self_pos.mpr ha, sq_nonneg b, sq_nonneg a]
   · nlinarith [mul_self_pos.mpr hb, sq_nonneg a, sq_nonneg b]
 
-/-- **A unit of norm `-1` only exists in the real case.** For `d < 0` the norm is positive on every
-nonzero element (`norm_pos_of_radicand_neg`), and `d = 0` is excluded because the radicand is not a
-square; so a unit of norm `-1` forces `0 < d`. -/
+/-- **An element of norm `-1` only exists in the real case.** For `d < 0` the norm is positive on
+every nonzero element (`norm_pos_of_radicand_neg`), and `d = 0` is excluded because the radicand is
+not a square; so an element of norm `-1` forces `0 < d`. -/
 theorem radicand_pos_of_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {u : (𝓞 K)ˣ}
-    (hu : Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1) : 0 < d := by
-  have hune : ((u : 𝓞 K) : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr u.ne_zero
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {x : K} (hx : Algebra.norm ℚ x = -1) : 0 < d := by
+  have hxne : x ≠ 0 :=
+    (Algebra.norm_ne_zero_iff_of_basis (Module.finBasis ℚ K)).mp (by rw [hx]; norm_num)
   rcases lt_trichotomy d 0 with hd | hd | hd
-  · have := norm_pos_of_radicand_neg hmin hgen hd hune
-    rw [hu] at this
+  · have := norm_pos_of_radicand_neg hmin hgen hd hxne
+    rw [hx] at this
     norm_num at this
   · -- `d = 0` makes the radicand the square `0 * 0`.
     subst hd

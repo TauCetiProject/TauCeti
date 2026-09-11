@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.InfinitePlace
 public import TauCeti.NumberTheory.NumberField.Units.ElementaryTwoQuotient
 import Mathlib.GroupTheory.CosetCover
+import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Norm.Basic
+import TauCeti.NumberTheory.NumberField.Quadratic.Norm
 
 /-!
 # Units and quadratic conjugation
@@ -36,58 +38,37 @@ namespace NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 
-/-- **A unit of norm one is `±` a totally positive unit.** If `u σu = 1` then `u / σu = u²` is
-totally positive, so `u` and `σu` have the same sign at every real place; since every real
-embedding of a quadratic field is one fixed embedding, or that embedding composed with `σ`, all
-real embeddings give `u` the same sign. -/
+/-- **A unit of norm one is `±` a totally positive unit.** The condition `u σu = 1` says that `u`
+has norm `1` (`norm_eq_intCast_iff_mul_ringOfIntegersQuadraticConj_eq_intCast`), in particular
+positive norm, so `isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos` applies. -/
 theorem isTotallyPositive_or_neg_of_mul_ringOfIntegersQuadraticConj_eq_one
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {u : 𝓞 K}
     (hnorm : u * ringOfIntegersQuadraticConj hmin hgen u = 1) :
     IsTotallyPositive (u : K) ∨ IsTotallyPositive (-(u : K)) := by
-  -- `u = 0` would make the norm `0`, not `1`.
-  have hu : u ≠ 0 := by rintro rfl; simp at hnorm
-  have huK : (u : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr hu
-  have hσ : (u : K) * quadraticConj hmin hgen (u : K) = 1 := by
-    simpa [coe_ringOfIntegersQuadraticConj] using congrArg (fun x : 𝓞 K => (x : K)) hnorm
-  have hσne : quadraticConj hmin hgen (u : K) ≠ 0 := fun h0 => by
-    rw [h0, mul_zero] at hσ; exact zero_ne_one hσ
-  refine isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quadraticConj
-    hmin hgen (z := (u : K)) ?_
-  have hdiv : (u : K) / quadraticConj hmin hgen (u : K) = (u : K) ^ 2 := by
-    rw [div_eq_iff hσne]
-    linear_combination (-(u : K)) * hσ
-  rw [hdiv]
-  exact isTotallyPositive_sq huK
+  refine isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos hmin hgen ?_
+  rw [(norm_eq_intCast_iff_mul_ringOfIntegersQuadraticConj_eq_intCast (n := 1) hmin hgen).mpr
+    (by simpa using hnorm)]
+  norm_num
 
 /-- **A nonzero element of norm minus one makes `θ` times it `±` totally positive.** The `-1`
-companion of `isTotallyPositive_or_neg_of_mul_ringOfIntegersQuadraticConj_eq_one`: when
-`u σu = -1` the ratio `θu / σ(θu)` is the square `u ^ 2`, so `θu` and its conjugate have the same
-sign at every real place. The extra factor `θ` is what absorbs the sign that the `+1` case does
-not have to. -/
+companion of `isTotallyPositive_or_neg_of_mul_ringOfIntegersQuadraticConj_eq_one`: when `u σu = -1`
+the field is real (`radicand_pos_of_norm_eq_neg_one`) and `N(θu) = (-d) · (-1) = d` is positive, so
+`isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos` applies to `θu`. The extra factor `θ` is
+what absorbs the sign that the `+1` case does not have to. -/
 theorem isTotallyPositive_or_neg_of_mul_ringOfIntegersQuadraticConj_eq_neg_one
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {u : 𝓞 K}
     (hnorm : u * ringOfIntegersQuadraticConj hmin hgen u = -1) :
     IsTotallyPositive ((θ * u : 𝓞 K) : K) ∨ IsTotallyPositive (-((θ * u : 𝓞 K) : K)) := by
-  -- `u = 0` would make the norm `0`, not `-1`.
-  have hu : u ≠ 0 := by rintro rfl; simp at hnorm
-  have hθK : ((θ : 𝓞 K) : K) ≠ 0 := coe_gen_ne_zero hmin
-  have huK : (u : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr hu
-  have hu' : (u : K) * quadraticConj hmin hgen (u : K) = -1 := by
-    simpa [coe_ringOfIntegersQuadraticConj] using congrArg (fun x : 𝓞 K => (x : K)) hnorm
-  have hcjK : quadraticConj hmin hgen ((θ * u : 𝓞 K) : K) =
-      -(θ : K) * quadraticConj hmin hgen (u : K) := by
-    push_cast
-    rw [map_mul, quadraticConj_gen hmin hgen]
-  have hcjne : quadraticConj hmin hgen (u : K) ≠ 0 := fun h0 => by
-    rw [h0, mul_zero] at hu'
-    exact zero_ne_one (neg_eq_zero.mp hu'.symm).symm
-  have hdiv : ((θ * u : 𝓞 K) : K) /
-      quadraticConj hmin hgen ((θ * u : 𝓞 K) : K) = (u : K) ^ 2 := by
-    rw [hcjK, div_eq_iff (by simp [hθK, hcjne])]
-    push_cast
-    linear_combination ((θ : K) * (u : K)) * hu'
-  exact isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quadraticConj
-    hmin hgen (by rw [hdiv]; exact isTotallyPositive_sq huK)
+  have hu : Algebra.norm ℚ (u : K) = -1 := by
+    have := (norm_eq_intCast_iff_mul_ringOfIntegersQuadraticConj_eq_intCast (n := -1)
+      hmin hgen).mpr (by simpa using hnorm)
+    simpa using this
+  have hd : (0 : ℚ) < (d : ℚ) := by
+    exact_mod_cast radicand_pos_of_norm_eq_neg_one hmin hgen hu
+  refine isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos hmin hgen ?_
+  have hcoe : ((θ * u : 𝓞 K) : K) = (θ : K) * (u : K) := by push_cast; ring
+  rw [hcoe, map_mul, norm_gen_eq_neg_radicand hmin hgen, hu]
+  linarith
 
 open scoped Pointwise in
 /-- **A real quadratic field with no unit of norm `-1` has a totally positive unit that is not a
