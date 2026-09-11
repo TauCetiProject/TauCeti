@@ -260,8 +260,10 @@ private theorem tendsto_truncate (hp : p ≠ ∞) {C : ℝ} (hC : 0 ≤ C)
     Tendsto (fun n => truncate hC hbound n u) atTop (𝓝 u) := by
   rw [tendsto_subtype_rng, Lp.tendsto_Lp_iff_tendsto_eLpNorm']
   exact tendsto_eLpNorm_sub_of_eventually_eq (zero_lt_one.trans_le Fact.out).ne' hp
-    (fun n => Lp.aestronglyMeasurable _) (Lp.memLp _) (by linarith : (0 : ℝ) ≤ 2 + C)
-    (fun n => norm_coe_truncate_sub_le hC hbound n u) (eventually_coe_truncate_eq hC hbound u)
+    (Eventually.of_forall fun n => Lp.aestronglyMeasurable _) (Lp.memLp _)
+    (by linarith : (0 : ℝ) ≤ 2 + C)
+    (Eventually.of_forall fun n => norm_coe_truncate_sub_le hC hbound n u)
+    (eventually_coe_truncate_eq hC hbound u)
 
 /-! ### Density -/
 

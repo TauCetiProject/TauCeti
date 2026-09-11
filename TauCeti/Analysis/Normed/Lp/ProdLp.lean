@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.ProdLp
-public import Mathlib.Analysis.MeanInequalitiesPow
 
 /-!
 # The triangle bound for the `ℓ^p` product norm
@@ -33,10 +32,14 @@ variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {α β : Type*} [SeminormedAddCommGro
 /-- The `ℓ^p` norm of a pair is at most the sum of the norms of its two components. -/
 theorem _root_.WithLp.prod_norm_le_norm_fst_add_norm_snd (x : WithLp p (α × β)) :
     ‖x‖ ≤ ‖x.fst‖ + ‖x.snd‖ := by
-  rcases p.dichotomy with rfl | hp
-  · rw [WithLp.prod_norm_eq_sup]
-    exact sup_le (le_add_of_nonneg_right (norm_nonneg _)) (le_add_of_nonneg_left (norm_nonneg _))
-  · rw [WithLp.prod_norm_eq_add (zero_lt_one.trans_le hp)]
-    exact Real.rpow_add_rpow_le_add (norm_nonneg _) (norm_nonneg _) hp
+  have hx : WithLp.idemFst x + WithLp.idemSnd x = x := by
+    rw [WithLp.idemFst_apply, WithLp.idemSnd_apply, ← WithLp.toLp_add, Prod.mk_add_mk, add_zero,
+      zero_add]
+    rfl
+  calc ‖x‖ = ‖WithLp.idemFst x + WithLp.idemSnd x‖ := by rw [hx]
+    _ ≤ ‖WithLp.idemFst x‖ + ‖WithLp.idemSnd x‖ := norm_add_le _ _
+    _ = ‖x.fst‖ + ‖x.snd‖ := by
+        rw [WithLp.idemFst_apply, WithLp.idemSnd_apply, WithLp.norm_toLp_fst,
+          WithLp.norm_toLp_snd]
 
 end TauCeti
