@@ -50,7 +50,10 @@ noncomputable abbrev genericFiberι (R K : Type u) [CommRing R] [Field K] [Algeb
   pullback.fst toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))
 
 /-- A flat finitely presented model over a discrete valuation ring, together with an explicit
-identification of its generic fibre with a fixed scheme over the fraction field. -/
+identification of its generic fibre with a fixed scheme over the fraction field.
+
+Finite presentation is recorded by Mathlib's three constituent properties:
+`LocallyOfFinitePresentation`, `QuasiCompact`, and `QuasiSeparated`. -/
 structure Model (R K : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
     [Field K] [Algebra R K] [IsFractionRing R K]
     (C : Scheme.{u}) (toK : C ⟶ Spec (.of K)) where
@@ -64,6 +67,8 @@ structure Model (R K : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRin
   locallyOfFinitePresentation : LocallyOfFinitePresentation toBase
   /-- The structure morphism is quasi-compact. -/
   quasiCompact : QuasiCompact toBase
+  /-- The structure morphism is quasi-separated. -/
+  quasiSeparated : QuasiSeparated toBase
   /-- The chosen identification of the generic fibre with the prescribed scheme over `K`. -/
   genericFiberIso : genericFiber R K toBase ≅ Over.mk toK
 
@@ -74,17 +79,26 @@ variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
 
 attribute [instance] Model.flat Model.locallyOfFinitePresentation Model.quasiCompact
+  Model.quasiSeparated
 
 /-- Properness of the structure morphism is an additional property of a model. -/
 abbrev IsProper (M : Model R K C toK) : Prop :=
   AlgebraicGeometry.IsProper M.toBase
 
 /-- The morphism on generic fibres induced by a morphism over the base. -/
-def baseChangeHom {M N : Model R K C toK} (f : M.total ⟶ N.total)
+def baseChangeHom (M : Model R K C toK) {N : Model R K C toK} (f : M.total ⟶ N.total)
     (overBase : f ≫ N.toBase = M.toBase) :
     (genericFiber R K M.toBase).left ⟶ (genericFiber R K N.toBase).left :=
   ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).map
     (Over.homMk f overBase)).left
+
+/-- The induced generic-fibre morphism commutes with the projections to the total spaces. -/
+@[reassoc (attr := simp)]
+lemma baseChangeHom_genericFiberι (M : Model R K C toK) {N : Model R K C toK}
+    (f : M.total ⟶ N.total) (overBase : f ≫ N.toBase = M.toBase) :
+    M.baseChangeHom f overBase ≫ genericFiberι R K N.toBase =
+      genericFiberι R K M.toBase ≫ f := by
+  exact pullback.lift_fst _ _ _
 
 /-- A morphism of models is a morphism over the DVR that respects the chosen identification of
 the generic fibre. -/
@@ -95,7 +109,7 @@ structure Hom (M N : Model R K C toK) where
   overBase : hom ≫ N.toBase = M.toBase
   /-- On generic fibres, the morphism respects the chosen identifications with `C`. -/
   genericFiber :
-    baseChangeHom hom overBase ≫ N.genericFiberIso.hom.left = M.genericFiberIso.hom.left
+    M.baseChangeHom hom overBase ≫ N.genericFiberIso.hom.left = M.genericFiberIso.hom.left
 
 /-- Model morphisms are determined by their maps on total spaces. -/
 @[ext]
@@ -108,7 +122,7 @@ lemma Hom.ext {M N : Model R K C toK} {f g : Hom M N} (h : f.hom = g.hom) : f = 
 /-- Base change carries the identity of a model's total space to the identity. -/
 @[simp]
 lemma baseChangeHom_id (M : Model R K C toK) :
-    baseChangeHom (𝟙 M.total) (by simp) = 𝟙 _ := by
+    M.baseChangeHom (𝟙 M.total) (by simp) = 𝟙 _ := by
   dsimp only [baseChangeHom]
   have h : (Over.homMk (𝟙 M.total) (by simp) : Over.mk M.toBase ⟶ Over.mk M.toBase) = 𝟙 _ := by
     ext
@@ -122,8 +136,8 @@ lemma baseChangeHom_id (M : Model R K C toK) :
 /-- Base change carries a composite of model morphisms to the composite of their base changes. -/
 @[simp]
 lemma baseChangeHom_comp {M N P : Model R K C toK} (f : Hom M N) (g : Hom N P) :
-    baseChangeHom (f.hom ≫ g.hom) (by rw [Category.assoc, g.overBase, f.overBase]) =
-      baseChangeHom f.hom f.overBase ≫ baseChangeHom g.hom g.overBase := by
+    M.baseChangeHom (f.hom ≫ g.hom) (by rw [Category.assoc, g.overBase, f.overBase]) =
+      M.baseChangeHom f.hom f.overBase ≫ N.baseChangeHom g.hom g.overBase := by
   dsimp only [baseChangeHom]
   have hcomp : (f.hom ≫ g.hom) ≫ P.toBase = M.toBase := by
     rw [Category.assoc, g.overBase, f.overBase]
