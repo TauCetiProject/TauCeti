@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 public import Mathlib.RingTheory.Discriminant
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import TauCeti.FieldTheory.Trace
+import TauCeti.Algebra.Squarefree
 import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
 
 /-!
@@ -32,6 +33,8 @@ computation (`Quadratic/Norm.lean`).
 * `NumberField.coe_gen_ne_zero`: the generator is nonzero.
 * `NumberField.exists_eq_add_mul_gen`: every element of `K` is `b + aθ`.
 * `NumberField.not_isSquare_radicand`: the radicand is not a rational square.
+* `NumberField.exists_gen_of_sq_eq_intCast`: an irrational square root of an integer presents a
+  quadratic field.
 * `NumberField.exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top`: every number field of degree `2`
   over `ℚ` has such a presentation, with squarefree radicand.
 * `NumberField.trace_gen_eq_zero`: the trace of the generator is `0`.
@@ -134,7 +137,7 @@ theorem not_isSquare_radicand (hmin : minpoly ℤ θ = X ^ 2 - C d) :
 /-- An irrational square root of an integer presents a quadratic field: if `z : K` is irrational
 and `z² = n` for an integer `n`, then `z` is an algebraic integer with minimal polynomial `X² - n`
 generating `K` over `ℚ`. -/
-private theorem exists_gen_of_sq_eq_intCast [Algebra.IsQuadraticExtension ℚ K] {z : K} {n : ℤ}
+theorem exists_gen_of_sq_eq_intCast [Algebra.IsQuadraticExtension ℚ K] {z : K} {n : ℤ}
     (hz2 : z ^ 2 = (n : K)) (hzQ : z ∉ Set.range (algebraMap ℚ K)) :
     ∃ θ : 𝓞 K, minpoly ℤ θ = X ^ 2 - C n ∧ Algebra.adjoin ℚ {(θ : K)} = ⊤ := by
   have hpz : aeval z (X ^ 2 - C n) = 0 := by
@@ -170,9 +173,10 @@ polynomial over `ℤ` is `X² - d` for a squarefree integer `d`. So any statemen
 hypotheses `minpoly ℤ θ = X ^ 2 - C d`, `Algebra.adjoin ℚ {(θ : K)} = ⊤` and `Squarefree d` whose
 conclusion does not mention `θ` or `d` holds for every quadratic field.
 
-Take any irrational `x ∈ K` and write `x² = b + ax`; completing the square, `2x - a` squares to the
-rational `e = a² + 4b`, and scaling by the denominator of `e` makes the square an integer `n`.
-Writing `n = m²d` with `d` squarefree, the irrational `z / m` squares to `d`. -/
+Take any irrational `x ∈ K` and write `x² = b + ax`; completing the square, `y = 2x - a` squares to
+the rational `e = a² + 4b`, which is nonzero because `y` is irrational. Representing the square
+class of `e` by a squarefree integer, `e = d · c²` with `c : ℚ` nonzero
+(`Rat.exists_squarefree_int_mul_sq`), the irrational `y / c` squares to `d`. -/
 theorem exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top (hK : finrank ℚ K = 2) :
     ∃ (θ : 𝓞 K) (d : ℤ), minpoly ℤ θ = X ^ 2 - C d ∧ Algebra.adjoin ℚ {(θ : K)} = ⊤ ∧
       Squarefree d := by
@@ -181,39 +185,33 @@ theorem exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top (hK : finrank ℚ K = 2) 
   obtain ⟨a, b, hab⟩ :=
     Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul ℚ K hx (x ^ 2)
   set e : ℚ := a ^ 2 + 4 * b with he
-  have hden : (e.den : K) ≠ 0 := Nat.cast_ne_zero.mpr e.den_nz
-  set z : K := (e.den : K) * (2 * x - algebraMap ℚ K a) with hz
-  -- `z² = e.num * e.den`, an integer.
-  have hz2 : z ^ 2 = ((e.num * e.den : ℤ) : K) := by
-    have hsq : (2 * x - algebraMap ℚ K a) ^ 2 = algebraMap ℚ K e := by
-      rw [he, map_add, map_pow, map_mul, map_ofNat]
-      linear_combination 4 * hab
-    rw [hz, mul_pow, hsq, eq_ratCast, Rat.cast_def]
-    push_cast
-    field_simp
-  -- `z` is irrational, since `x = (z / e.den + a) / 2` is.
-  have hzQ : z ∉ Set.range (algebraMap ℚ K) := by
+  -- Completing the square: `y = 2x - a` squares to the rational `e`.
+  set y : K := 2 * x - algebraMap ℚ K a with hy
+  have hy2 : y ^ 2 = algebraMap ℚ K e := by
+    rw [hy, he, map_add, map_pow, map_mul, map_ofNat]
+    linear_combination 4 * hab
+  -- `y` is irrational, since `x = (y + a) / 2` is.
+  have hyQ : y ∉ Set.range (algebraMap ℚ K) := by
     rintro ⟨q, hq⟩
-    refine hx ⟨(q / e.den + a) / 2, ?_⟩
-    rw [map_div₀, map_add, map_div₀, hq, hz, map_natCast, map_ofNat]
-    field_simp
+    refine hx ⟨(q + a) / 2, ?_⟩
+    rw [map_div₀, map_add, hq, hy, map_ofNat]
     ring
-  -- The radicand is nonzero, since `z` is irrational.
-  have hn0 : (e.num * e.den : ℤ) ≠ 0 := fun h0 =>
-    hzQ ⟨0, by rw [map_zero]; exact ((pow_eq_zero_iff two_ne_zero).mp (by rw [hz2, h0]; simp)).symm⟩
-  -- Split off the square part `m²` of the radicand; the square root shrinks by `m`.
-  obtain ⟨m, n, hmn, hsf⟩ := exists_sq_mul_squarefree (e.num * e.den)
-  have hm0 : (m : K) ≠ 0 := Int.cast_ne_zero.mpr fun h0 => hn0 (by simpa [h0] using hmn.symm)
-  have hw2 : (z / (m : K)) ^ 2 = (n : K) := by
-    have hcast : ((e.num * e.den : ℤ) : K) = (m : K) ^ 2 * (n : K) := by
-      rw [← hmn]; push_cast; ring
-    rw [div_pow, hz2, hcast, mul_comm, mul_div_assoc, div_self (pow_ne_zero 2 hm0), mul_one]
-  have hwQ : z / (m : K) ∉ Set.range (algebraMap ℚ K) := by
+  -- Hence `e ≠ 0`, since `0` has a rational square root.
+  have he0 : e ≠ 0 := fun h0 =>
+    hyQ ⟨0, by
+      rw [map_zero]
+      exact ((pow_eq_zero_iff two_ne_zero).mp (by rw [hy2, h0, map_zero])).symm⟩
+  -- Represent the square class of `e` by a squarefree integer `d`; the square root shrinks by `c`.
+  obtain ⟨d, c, hd, hc0, hdc⟩ := Rat.exists_squarefree_int_mul_sq he0
+  have hcK : algebraMap ℚ K c ≠ 0 := fun h0 => hc0 ((map_eq_zero _).mp h0)
+  have hw2 : (y / algebraMap ℚ K c) ^ 2 = (d : K) := by
+    rw [div_pow, hy2, hdc, map_mul, map_pow, mul_div_assoc,
+      div_self (pow_ne_zero 2 hcK), mul_one, map_intCast]
+  have hwQ : y / algebraMap ℚ K c ∉ Set.range (algebraMap ℚ K) := by
     rintro ⟨q, hq⟩
-    exact hzQ ⟨q * (m : ℚ), by
-      rw [map_mul, hq, map_intCast, div_mul_cancel₀ _ hm0]⟩
+    exact hyQ ⟨q * c, by rw [map_mul, hq, div_mul_cancel₀ _ hcK]⟩
   obtain ⟨θ, hmin, hgen⟩ := exists_gen_of_sq_eq_intCast hw2 hwQ
-  exact ⟨θ, n, hmin, hgen, hsf⟩
+  exact ⟨θ, d, hmin, hgen, hd⟩
 
 /-- The trace of the generator vanishes: `Tr(θ) = 0`. -/
 theorem trace_gen_eq_zero (hmin : minpoly ℤ θ = X ^ 2 - C d) :
