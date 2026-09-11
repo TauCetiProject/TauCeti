@@ -40,6 +40,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   continue to generate its extension to `A`.
 * `TauCeti.Huber.PairOfDefinition.hasBasis_nhds_zero`: the images of `Iⁿ` are a neighbourhood
   basis of zero.
+* `TauCeti.Huber.PairOfDefinition.isOpen_closure_zero_of_eventually_constant_powers`: if the
+  powers of `I` eventually stabilize, the closure of zero in the Huber ring is open.
 * `TauCeti.Huber.PairOfDefinition.exists_pow_idealOfDefinition_mul_mem`: some `Iⁿ`
   multiplies a given element into a given open subring.
 * `TauCeti.Huber.IsAdic.comap`: an adic topology transports along a ring equivalence that is an
@@ -348,6 +350,37 @@ theorem hasBasis_nhds_zero (P : PairOfDefinition A) :
     P.isOpen_ringOfDefinition.isOpenEmbedding_subtypeVal.map_nhds_eq 0
   rw [← hmap]
   exact P.isAdic_idealOfDefinition.hasBasis_nhds_zero.map _
+
+/-- If the powers of an ideal of definition eventually stabilize, then the closure of zero in
+the ambient Huber ring is open. The stable image of a power is both a basic open neighbourhood
+and the intersection of all basic neighbourhoods. -/
+theorem isOpen_closure_zero_of_eventually_constant_powers [IsTopologicalRing A]
+    (P : PairOfDefinition A)
+    (hstable : ∃ n : ℕ, ∀ k, n ≤ k →
+      P.idealOfDefinition ^ k = P.idealOfDefinition ^ n) :
+    IsOpen (Ideal.closure (⊥ : Ideal A) : Set A) := by
+  obtain ⟨n, hn⟩ := hstable
+  have hclosed : IsClosed (P.idealImage n : Set A) :=
+    AddSubgroup.isClosed_of_isOpen _ (P.isOpen_idealImage n)
+  have hclosure_le : (Ideal.closure (⊥ : Ideal A) : Set A) ⊆ P.idealImage n := by
+    rw [Ideal.coe_closure, Submodule.bot_coe]
+    exact closure_minimal (by simp) hclosed
+  have himage_le : (P.idealImage n : Set A) ⊆ Ideal.closure (⊥ : Ideal A) := by
+    intro x hx
+    rw [Ideal.coe_closure, Submodule.bot_coe]
+    refine mem_closure_iff_nhds.mpr fun U hU ↦ ?_
+    rw [← map_add_left_nhds_zero x, Filter.mem_map] at hU
+    obtain ⟨k, -, hk⟩ := P.hasBasis_nhds_zero.mem_iff.mp hU
+    have hx' : x ∈ P.idealImage (n + k) := by
+      obtain ⟨a, ha, rfl⟩ := (P.mem_idealImage n).mp hx
+      exact (P.mem_idealImage (n + k)).mpr
+        ⟨a, by rw [hn (n + k) (Nat.le_add_right n k)]; exact ha, rfl⟩
+    have hneg : -x ∈ P.idealImage k :=
+      (P.idealImage_anti (Nat.le_add_left k n)) ((P.idealImage (n + k)).neg_mem hx')
+    refine ⟨0, ?_, Set.mem_singleton 0⟩
+    simpa using hk hneg
+  rw [Set.Subset.antisymm hclosure_le himage_le]
+  exact P.isOpen_idealImage n
 
 /-- **A power of the ideal of definition multiplies any element into any open subring.**
 Multiplication by `x` is continuous, so the preimage of `B` is a neighbourhood of `0`, and the
