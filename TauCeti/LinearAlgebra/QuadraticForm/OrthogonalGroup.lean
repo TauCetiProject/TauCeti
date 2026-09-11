@@ -71,7 +71,8 @@ negating it and is a transvection rather than a reflection in `v ^ ⊥`.
 * `TauCeti.QuadraticMap.reflection_mem_orthogonalGroup`: the reflection in a vector of invertible
   norm is orthogonal; `TauCeti.QuadraticMap.reflection_mul_self` says it is an involution, and
   `TauCeti.QuadraticMap.reflection_apply_of_isOrtho` that it fixes the orthogonal hyperplane,
-  `TauCeti.QuadraticMap.reflection_smul_eq` that anisotropic rescaling does not change it, and
+  `TauCeti.QuadraticMap.reflection_smul_eq` that rescaling between vectors of invertible norm does
+  not change it, and
   `TauCeti.QuadraticMap.det_reflection` computes its determinant on a finite free module. These are
   the elements a Cartan-Dieudonné theorem would write an orthogonal automorphism as a product of,
   under hypotheses (a field of characteristic not two, a nondegenerate form, finite dimension)
@@ -430,8 +431,8 @@ theorem reflection_apply (y : M) :
     reflection Q v y = y - (⅟(Q v) * polar Q v y) • v := by
   rw [reflection, Module.reflection_apply, reflectionDual_apply]
 
-/-- Rescaling an anisotropic vector does not change its quadratic reflection, provided the
-rescaled vector is still anisotropic. -/
+/-- Rescaling a vector of invertible norm does not change its quadratic reflection, provided the
+rescaled vector also has invertible norm. -/
 theorem reflection_smul_eq (a : R) [Invertible (Q (a • v))] :
     reflection Q (a • v) = reflection Q v := by
   have hcoeff : ⅟(Q (a • v)) * a * a = ⅟(Q v) := by
