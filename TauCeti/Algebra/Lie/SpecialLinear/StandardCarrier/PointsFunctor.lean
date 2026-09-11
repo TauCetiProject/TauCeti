@@ -89,21 +89,15 @@ value rings.** It is `TauCeti.GeneralLinear.mapHopfIdealPointsSubgroup` read at 
 defining Hopf ideal, transported along `TauCeti.SlStd.points_def` so that it is stated in the named
 type-`A` API rather than in the presentation that API is defined by. -/
 def pointsMap (f : A →+* B) : points r A →* points r B :=
-  ((MulEquiv.subgroupCongr (points_def r B)).symm.toMonoidHom).comp
-    ((GeneralLinear.mapHopfIdealPointsSubgroup (r + 1) (definingIdeal r) f.toIntAlgHom).comp
-      (MulEquiv.subgroupCongr (points_def r A)).toMonoidHom)
+  GeneralLinear.mapHopfIdealPointsSubgroupCongr (r + 1) (definingIdeal r)
+    (points_def r A) (points_def r B) f.toIntAlgHom
 
 /-- The induced map on type-`A_r` carrier points is the entrywise map. -/
 @[simp]
 theorem coe_pointsMap (f : A →+* B) (g : points r A) :
     (pointsMap r f g : Matrix.GeneralLinearGroup (Fin (r + 1)) B) =
       Matrix.GeneralLinearGroup.map f g := by
-  -- `mapHopfIdealPointsSubgroup` is stated for the `ℤ`-algebra map induced by `f`, whose
-  -- underlying ring homomorphism is `f` again.
-  rw [pointsMap]
-  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.subgroupCongr_symm_apply,
-    GeneralLinear.coe_mapHopfIdealPointsSubgroup, MulEquiv.subgroupCongr_apply,
-    AlgHom.toRingHom_eq_coe, RingHom.toIntAlgHom_toRingHom]
+  simp [pointsMap]
 
 /-- Entrywise, the induced map applies the homomorphism of value rings to each matrix entry. -/
 theorem coe_pointsMap_apply (f : A →+* B) (g : points r A) (i j : Fin (r + 1)) :
@@ -116,28 +110,22 @@ theorem coe_pointsMap_apply (f : A →+* B) (g : points r A) (i j : Fin (r + 1))
 /-- The identity homomorphism of value rings induces the identity on type-`A_r` carrier points. -/
 @[simp]
 theorem pointsMap_id : pointsMap r (RingHom.id A) = MonoidHom.id _ := by
-  rw [pointsMap, RingHom.toIntAlgHom_id, GeneralLinear.mapHopfIdealPointsSubgroup_id]
-  apply MonoidHom.ext
-  intro g
-  exact (MulEquiv.subgroupCongr (points_def r A)).symm_apply_apply g
+  simp [pointsMap]
 
 /-- The induced maps on type-`A_r` carrier points compose. -/
 @[simp]
 theorem pointsMap_comp {C : Type*} [CommRing C] (f : A →+* B) (g : B →+* C) :
     pointsMap r (g.comp f) = (pointsMap r g).comp (pointsMap r f) := by
-  apply MonoidHom.ext
-  intro x
-  simp only [pointsMap, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, RingHom.toIntAlgHom_comp,
-    GeneralLinear.mapHopfIdealPointsSubgroup_comp, MulEquiv.apply_symm_apply]
+  simp only [pointsMap, RingHom.toIntAlgHom_comp]
+  exact GeneralLinear.mapHopfIdealPointsSubgroupCongr_comp (r + 1) (definingIdeal r)
+    (points_def r A) (points_def r B) (points_def r C) f.toIntAlgHom g.toIntAlgHom
 
 /-- An injective homomorphism of value rings induces an injective map on type-`A_r` carrier
 points. -/
 theorem pointsMap_injective {f : A →+* B} (hf : Function.Injective f) :
-    Function.Injective (pointsMap r f) := by
-  rw [pointsMap]
-  exact (MulEquiv.subgroupCongr (points_def r B)).symm.injective.comp
-    ((GeneralLinear.mapHopfIdealPointsSubgroup_injective (r + 1) (definingIdeal r) hf).comp
-      (MulEquiv.subgroupCongr (points_def r A)).injective)
+    Function.Injective (pointsMap r f) :=
+  GeneralLinear.mapHopfIdealPointsSubgroupCongr_injective (r + 1) (definingIdeal r)
+    (points_def r A) (points_def r B) (φ := f.toIntAlgHom) hf
 
 /-- The induced map carries a numbered root-subgroup parameter along the homomorphism of value
 rings. -/
@@ -185,7 +173,7 @@ theorem pointsFunctor_obj (A : CommAlgCat.{v} ℤ) :
 theorem pointsFunctor_map {A B : CommAlgCat.{v} ℤ} (f : A ⟶ B) :
     (pointsFunctor r).map f =
       eqToHom (pointsFunctor_obj r A) ≫
-        GrpCat.ofHom (pointsMap r f.hom.toRingHom) ≫
+        GrpCat.ofHom (pointsMap r f.hom) ≫
         eqToHom (pointsFunctor_obj r B).symm :=
   (rfl)
 
@@ -244,7 +232,7 @@ theorem pointsMulEquiv_mapPoints {A B : CommAlgCat.{v} ℤ} (f : A ⟶ B)
         (HopfAlgebra.mapPoints
           (H := CommHopfAlgCat.quotient
             (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) (definingIdeal r)) f q) =
-      pointsMap r f.hom.toRingHom (pointsMulEquiv r A q) := by
+      pointsMap r f.hom (pointsMulEquiv r A q) := by
   apply Subtype.ext
   rw [coe_pointsMap]
   simp only [pointsMulEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_symm_apply]

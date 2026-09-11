@@ -22,7 +22,8 @@ Along the way it records the elementwise norm identities
 `algebraMap_norm_eq_mul_quadraticConj` (`N(y) = y · σy` for `y : K`) and
 `algebraMap_norm_eq_mul_ringOfIntegersQuadraticConj` (its form for `y : 𝓞 K`), and their
 consequence `mul_ringOfIntegersQuadraticConj_unit_eq_one_or_neg_one` for a unit of `𝓞 K`, whose
-norm is a unit of `ℤ`.
+norm is a unit of `ℤ`.  The dictionary between the two ways of writing a norm condition is
+`norm_eq_intCast_iff_mul_ringOfIntegersQuadraticConj_eq_intCast`: `N(x) = n` iff `x σx = n`.
 
 The proof runs through the relative ideal norm: `I · σI` has the same relative norm as
 `(Ideal.relNorm ℤ I).map (algebraMap ℤ (𝓞 K))` and contains it, hence equals it, and that
@@ -86,6 +87,24 @@ theorem mul_ringOfIntegersQuadraticConj_unit_eq_one_or_neg_one
   rcases Int.isUnit_iff.mp hunit with h | h
   · exact Or.inl (by rw [← algebraMap_intNorm_eq hmin hgen, h, map_one])
   · exact Or.inr (by rw [← algebraMap_intNorm_eq hmin hgen, h, map_neg, map_one])
+
+/-- **The rational norm reads off the conjugation product.** For `x : 𝓞 K` and an integer `n`, the
+field norm `N(x)` is `n` exactly when `x σx = n`: both sides are the image of the other under an
+injective ring homomorphism, by `algebraMap_norm_eq_mul_ringOfIntegersQuadraticConj`. It is the
+translation between the two ways this file and its neighbours state a norm condition. -/
+theorem norm_eq_intCast_iff_mul_ringOfIntegersQuadraticConj_eq_intCast
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {x : 𝓞 K} {n : ℤ} :
+    Algebra.norm ℚ (x : K) = (n : ℚ) ↔
+      x * ringOfIntegersQuadraticConj hmin hgen x = (n : 𝓞 K) := by
+  rw [RingOfIntegers.coe_eq_algebraMap]
+  have key := algebraMap_norm_eq_mul_ringOfIntegersQuadraticConj hmin hgen x
+  have hcast : algebraMap (𝓞 K) K ((n : ℤ) : 𝓞 K) = algebraMap ℚ K ((n : ℤ) : ℚ) := by
+    simp
+  constructor
+  · intro h
+    exact RingOfIntegers.coe_injective (by rw [← key, h, ← hcast])
+  · intro h
+    exact (algebraMap ℚ K).injective (by rw [key, h, hcast])
 
 /-- The degree of `𝓞 K` over `ℤ` is `2`, matching `finrank ℚ K`. -/
 private theorem finrank_int_eq_two (hmin : minpoly ℤ θ = X ^ 2 - C d)

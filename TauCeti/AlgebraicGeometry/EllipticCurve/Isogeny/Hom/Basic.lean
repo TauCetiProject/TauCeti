@@ -53,8 +53,8 @@ needs the rational addition formulas rather than anything in this file.
   map included — which is what the value `degree 0 = 0` is chosen for.
 * `TauCeti.Isogeny.Hom.comp_eq_zero_iff`: a composite vanishes exactly when a factor does, so the
   endomorphism monoid has no zero divisors.
-* `TauCeti.Isogeny.Hom.instNontrivial`: the carrier has more than one element, which is what
-  lets Mathlib's theory of nontrivial monoids with zero apply to it.
+* `TauCeti.Isogeny.Hom.instNontrivialEnd`: the endomorphism carrier has more than one element,
+  which is what lets Mathlib's theory of nontrivial monoids with zero apply to it.
 
 ## Implementation notes
 
@@ -347,7 +347,7 @@ theorem one_def : (1 : Hom W₁ W₁) = id W₁ := (rfl)
 /-- **The carrier has more than one element**: the zero map has degree `0` and the identity
 degree `1`. Supplying this makes Mathlib's generic theory of nontrivial monoids with zero apply,
 `not_isUnit_zero` among it. -/
-instance : Nontrivial (Hom W₁ W₁) :=
+instance instNontrivialEnd : Nontrivial (Hom W₁ W₁) :=
   ⟨⟨0, id W₁, fun h => zero_ne_one (α := ℕ) (by rw [← degree_zero (W₁ := W₁) (W₂ := W₁), h,
     degree_id])⟩⟩
 

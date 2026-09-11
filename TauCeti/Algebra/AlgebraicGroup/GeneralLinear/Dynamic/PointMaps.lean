@@ -33,7 +33,8 @@ theorem pointsMulEquiv_ofPolyPoint
     (F : WithConv (coordinateHopfAlgebra R N →ₐ[R] Polynomial A)) :
     pointsMulEquiv N (Cocharacter.ofPolyPoint A F) =
       Matrix.GeneralLinearGroup.map
-        (Polynomial.toLaurentAlg.restrictScalars R).toRingHom (pointsMulEquiv N F) := by
+        (Polynomial.toLaurentAlg.restrictScalars R :
+          Polynomial A →ₐ[R] LaurentPolynomial A) (pointsMulEquiv N F) := by
   rw [Cocharacter.ofPolyPoint_apply, ← AlgHom.mapValue_apply, pointsMulEquiv_mapValue]
 
 /-- Evaluating a polynomial-valued general-linear point at zero evaluates every matrix entry
@@ -42,7 +43,8 @@ theorem pointsMulEquiv_evalZeroPoint
     (F : WithConv (coordinateHopfAlgebra R N →ₐ[R] Polynomial A)) :
     pointsMulEquiv N (Cocharacter.evalZeroPoint A F) =
       Matrix.GeneralLinearGroup.map
-        ((Polynomial.aeval (0 : A)).restrictScalars R).toRingHom (pointsMulEquiv N F) := by
+        ((Polynomial.aeval (0 : A)).restrictScalars R : Polynomial A →ₐ[R] A)
+        (pointsMulEquiv N F) := by
   rw [Cocharacter.evalZeroPoint_apply, ← AlgHom.mapValue_apply, pointsMulEquiv_mapValue]
 
 end TauCeti.GeneralLinear.Dynamic

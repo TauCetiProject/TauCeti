@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.UpperTriFactorization
+public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.UpperUnit
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.CoprimeCosets
 
 -- Only a proof needs the field structure on `ZMod p` (to read `p ∤ a` as invertibility).
@@ -39,6 +40,9 @@ coset of `σ · diag(p, 1)` because `σ ∈ Γ₀(N)`.
   of `diagCosetGamma0 N ![1, p]` through `HeckeCoset.toSet_eq_doubleCoset_rep` and
   `diagCosetGamma0_toSet`, these are the shapes the twisted slash-sum machinery of
   `HeckeSlash/Nebentypus/Independence.lean` consumes.
+* `HeckeRing.GL2.Delta0UpperUnit_upperTriRep`, `HeckeRing.GL2.Delta0UpperUnit_mapGL_mul_scaleRep`:
+  the upper-left unit of either kind of representative is `1`, so the twisting character of
+  `HeckeSlash/Nebentypus/*` is trivial on both.
 
 ## Provenance
 
@@ -160,5 +164,45 @@ theorem doubleCoset_natDiagGL_Gamma0_eq_iUnion_rightCosets_of_dvd (hp : p.Prime)
     exact ⟨mapGL ℚ (ModularGroup.T ^ (j : ℤ)),
       Subgroup.mem_map_of_mem _ (Gamma1_in_Gamma0 N (T_zpow_mem_Gamma1 N _)),
       natDiagGL_mul_mapGL_T_zpow hp.pos j⟩
+
+/-! ### The upper-left units of the representatives -/
+
+/-- **The upper-left unit of an upper-triangular representative is `1`.** -/
+@[simp] theorem Delta0UpperUnit_upperTriRep (j : Fin p)
+    (hmem : upperTriRep p j ∈ Delta0 N) : Delta0UpperUnit N ⟨upperTriRep p j, hmem⟩ = 1 := by
+  have h : (Delta0UpperUnit N ⟨upperTriRep p j, hmem⟩ : ZMod N)
+      = ((!![1, (j : ℕ); 0, (p : ℕ)] : Matrix (Fin 2) (Fin 2) ℤ) 0 0 : ZMod N) := by
+    refine Delta0UpperUnit_apply_val N ?_
+    -- The witness equation is stated for the `GL₂(ℚ)` matrix underlying the `Δ₀(N)` element;
+    -- that element is the subtype `⟨upperTriRep p j, hmem⟩`, whose coercion to `GL₂(ℚ)` is
+    -- `upperTriRep p j` by definition, which is what `change` exposes.
+    change ((upperTriRep p j : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) = _
+    rw [coe_upperTriRep]
+    ext i l
+    fin_cases i <;> fin_cases l <;> simp
+  exact Units.ext (by simpa using h)
+
+/-- **The upper-left unit of the twisted representative `σ · diag(p, 1)` is `1`**: its upper-left
+entry is `σ₀₀ p ≡ 1 (mod N)`, by the determinant of `σ`. -/
+@[simp] theorem Delta0UpperUnit_mapGL_mul_scaleRep (hp : 0 < p) (hσ10 : σ 1 0 = (N : ℤ))
+    (hσ11 : σ 1 1 = (p : ℤ)) (hmem : mapGL ℚ σ * scaleRep p ∈ Delta0 N) :
+    Delta0UpperUnit N ⟨mapGL ℚ σ * scaleRep p, hmem⟩ = 1 := by
+  have h : (Delta0UpperUnit N ⟨mapGL ℚ σ * scaleRep p, hmem⟩ : ZMod N)
+      = ((!![σ 0 0 * (p : ℤ), σ 0 1; σ 1 0 * (p : ℤ), σ 1 1] : Matrix (Fin 2) (Fin 2) ℤ) 0 0
+          : ZMod N) := by
+    refine Delta0UpperUnit_apply_val N ?_
+    -- As above: the `Δ₀(N)` element is the subtype `⟨mapGL ℚ σ * scaleRep p, hmem⟩`, and its
+    -- underlying `GL₂(ℚ)` matrix is the product, which `change` exposes.
+    change ((mapGL ℚ σ * scaleRep p : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) = _
+    rw [Units.val_mul, coe_mapGL_int_rat_fin_two, coe_scaleRep p hp]
+    ext i l
+    fin_cases i <;> fin_cases l <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+  have h1 : ((σ 0 0 * (p : ℤ) : ℤ) : ZMod N) = 1 := by
+    have : σ 0 0 * (p : ℤ) = 1 + σ 0 1 * (N : ℤ) := by
+      linear_combination mul_sub_mul_eq_one_of_lowerRow hσ10 hσ11
+    rw [this]
+    push_cast
+    simp
+  exact Units.ext (by simpa [h1] using h)
 
 end HeckeRing.GL2

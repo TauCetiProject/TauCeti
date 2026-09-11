@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.Finite
 public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.InfinitePlace
+import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Norm.NegOne
 
 /-!
 # The narrow-versus-ordinary defect of a quadratic field
@@ -30,6 +31,19 @@ This bounds by one the amount by which the ordinary `2`-rank of a quadratic fiel
 of the narrow `2`-rank `t - 1` computed by genus theory: for a real field the drop does happen,
 as `ℚ(√3)` shows.
 
+Whether the defect is trivial is decided by the units. A unit of norm `-1` scales every nonzero
+element to a totally positive one
+(`NumberField.exists_unit_isTotallyPositive_smul_of_norm_eq_neg_one`), so every principal narrow
+class is trivial and `Cl⁺(K) → Cl(K)` is injective; the field is then
+automatically real. Conversely, for a real field (`0 < d`), injectivity makes the narrow class of
+`(θ)` trivial, so some `v · θ` is totally positive and has positive norm `N(v) · (-d)`, forcing
+`N(v) = -1`. This is the classical criterion `h⁺ = h ↔ N(ε) = -1` for the fundamental unit `ε`. A
+solution of the negative Pell equation `b² - d a² = -1` supplies such a unit
+(`NumberField.exists_norm_eq_neg_one_of_sq_sub_mul_sq_eq_neg_one`): for `d = 2`, `a = b = 1` gives
+`1 + √2`. For an imaginary field there is no unit of norm `-1`, and the two class groups agree for
+the unrelated reason that positivity is vacuous
+(`NumberField.NarrowClassGroup.toClassGroup_injective`).
+
 ## Main results
 
 * `NumberField.mkPrincipal_eq_one_or_eq_mkPrincipal_gen`: a principal narrow class of a quadratic
@@ -37,6 +51,12 @@ as `ℚ(√3)` shows.
 * `NumberField.card_ker_toClassGroup_le_two`: the kernel of `Cl⁺(K) → Cl(K)` has at most two
   elements.
 * `NumberField.card_narrowClassGroup_le_two_mul_card_classGroup`: `h⁺(K) ≤ 2 h(K)`.
+* `NumberField.NarrowClassGroup.toClassGroup_injective_of_norm_eq_neg_one`: a unit of norm `-1`
+  makes `Cl⁺(K) → Cl(K)` injective.
+* `NumberField.NarrowClassGroup.toClassGroup_injective_iff_exists_norm_eq_neg_one`: for `0 < d`
+  the converse holds too.
+* `NumberField.NarrowClassGroup.card_eq_card_classGroup_iff_exists_norm_eq_neg_one`: for `0 < d`
+  the narrow class number equals the class number exactly when some unit has norm `-1`.
 
 ## References
 
@@ -143,5 +163,54 @@ theorem card_narrowClassGroup_le_two_mul_card_classGroup (hK : Module.finrank �
     Nat.card (NarrowClassGroup K) ≤ 2 * Nat.card (ClassGroup (𝓞 K)) := by
   rw [NarrowClassGroup.card_eq_card_classGroup_mul_card_ker, mul_comm]
   exact Nat.mul_le_mul_right _ (card_ker_toClassGroup_le_two hK)
+
+namespace NarrowClassGroup
+
+/-- **A unit of norm `-1` makes the narrow class group the ordinary one.** If some unit of `𝓞 K`
+has norm `-1` then every principal narrow class is trivial, so forgetting positivity
+`Cl⁺(K) → Cl(K)` is injective and the two class groups agree. This is the substantial direction of
+the classical criterion `h⁺ = h ↔ N(ε) = -1`; the field is automatically real. -/
+theorem toClassGroup_injective_of_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {u : (𝓞 K)ˣ}
+    (hu : Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1) :
+    Function.Injective (toClassGroup (K := K)) := by
+  -- By exactness the kernel consists of the principal narrow classes, each of which is trivial.
+  rw [← MonoidHom.ker_eq_bot_iff, toClassGroup_ker, Subgroup.eq_bot_iff_forall]
+  rintro _ ⟨x, rfl⟩
+  exact mkPrincipal_eq_one_iff.mpr
+    (exists_unit_isTotallyPositive_smul_of_norm_eq_neg_one hmin hgen hu x.ne_zero)
+
+/-- **The narrow and ordinary class groups of a real quadratic field agree exactly when some unit
+has norm `-1`.** For `K = ℚ(√d)` with `0 < d`, forgetting positivity `Cl⁺(K) → Cl(K)` is injective
+if and only if some unit of `𝓞 K` has norm `-1`. The positivity hypothesis is needed only for the
+direction producing such a unit. -/
+theorem toClassGroup_injective_iff_exists_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hd : 0 < d) :
+    Function.Injective (toClassGroup (K := K)) ↔
+      ∃ u : (𝓞 K)ˣ, Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1 := by
+  refine ⟨fun h => ?_, fun ⟨u, hu⟩ => toClassGroup_injective_of_norm_eq_neg_one hmin hgen hu⟩
+  -- The narrow class of the principal ideal `(θ)` lies in the kernel, hence is trivial.
+  have hker : mkPrincipal (Units.mk0 ((θ : K)) (coe_gen_ne_zero hmin)) = 1 :=
+    h (by rw [toClassGroup_mkPrincipal, map_one])
+  obtain ⟨v, hv⟩ := mkPrincipal_eq_one_iff.mp hker
+  exact ⟨v, norm_eq_neg_one_of_isTotallyPositive_smul_gen hmin hgen hd (by simpa using hv)⟩
+
+/-- **The narrow class number equals the class number exactly when some unit has norm `-1`.** The
+class-number form of `toClassGroup_injective_iff_exists_norm_eq_neg_one`, which is how the
+classical criterion `h⁺ = h ↔ N(ε) = -1` is usually stated. -/
+theorem card_eq_card_classGroup_iff_exists_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hd : 0 < d) :
+    Nat.card (NarrowClassGroup K) = Nat.card (ClassGroup (𝓞 K)) ↔
+      ∃ u : (𝓞 K)ˣ, Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1 := by
+  rw [← toClassGroup_injective_iff_exists_norm_eq_neg_one hmin hgen hd]
+  -- Forgetting positivity is surjective and `Cl⁺(K)` is finite, so equal cardinalities and
+  -- injectivity are each equivalent to bijectivity.
+  constructor
+  · exact fun h =>
+      ((Nat.bijective_iff_surjective_and_card _).mpr ⟨toClassGroup_surjective, h⟩).injective
+  · exact fun h =>
+      ((Nat.bijective_iff_surjective_and_card _).mp ⟨h, toClassGroup_surjective⟩).2
+
+end NarrowClassGroup
 
 end NumberField

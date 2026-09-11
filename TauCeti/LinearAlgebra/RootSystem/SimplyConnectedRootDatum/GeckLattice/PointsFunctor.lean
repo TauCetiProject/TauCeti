@@ -99,22 +99,15 @@ rings.** It is `TauCeti.GeneralLinear.mapHopfIdealPointsSubgroup` read at the ca
 Hopf ideal, transported along `TauCeti.DynkinType.geckPoints_def` so that it is stated in the
 named Geck API a consumer works in rather than in the presentation that API is defined by. -/
 def geckPointsMap (f : A →+* B) : t.geckPoints ht A →* t.geckPoints ht B :=
-  ((MulEquiv.subgroupCongr (t.geckPoints_def ht B)).symm.toMonoidHom).comp
-    ((GeneralLinear.mapHopfIdealPointsSubgroup (t.geckDim ht) (t.geckDefiningIdeal ht)
-          f.toIntAlgHom).comp
-      (MulEquiv.subgroupCongr (t.geckPoints_def ht A)).toMonoidHom)
+  GeneralLinear.mapHopfIdealPointsSubgroupCongr (t.geckDim ht) (t.geckDefiningIdeal ht)
+    (t.geckPoints_def ht A) (t.geckPoints_def ht B) f.toIntAlgHom
 
 /-- The induced map on the points of the pinned Geck carrier is the entrywise one. -/
 @[simp]
 theorem coe_geckPointsMap (f : A →+* B) (g : t.geckPoints ht A) :
     (t.geckPointsMap ht f g : Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) B) =
       Matrix.GeneralLinearGroup.map f g := by
-  -- `mapHopfIdealPointsSubgroup` is stated for the `ℤ`-algebra map that `f` induces, whose
-  -- underlying ring homomorphism is `f` again.
-  rw [geckPointsMap]
-  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.subgroupCongr_symm_apply,
-    GeneralLinear.coe_mapHopfIdealPointsSubgroup, MulEquiv.subgroupCongr_apply,
-    AlgHom.toRingHom_eq_coe, RingHom.toIntAlgHom_toRingHom]
+  simp [geckPointsMap]
 
 /-- Entrywise, the induced map on the points of the pinned Geck carrier applies the homomorphism
 of value rings to each matrix entry. -/
@@ -130,25 +123,24 @@ theorem coe_geckPointsMap_apply (f : A →+* B) (g : t.geckPoints ht A)
 Geck carrier. -/
 @[simp]
 theorem geckPointsMap_id : t.geckPointsMap ht (RingHom.id A) = MonoidHom.id _ := by
-  refine MonoidHom.ext fun g => Subtype.ext (Matrix.GeneralLinearGroup.ext fun r c => ?_)
-  rw [coe_geckPointsMap_apply, MonoidHom.id_apply, RingHom.id_apply]
+  simp [geckPointsMap]
 
 /-- The induced maps on the points of the pinned Geck carrier compose. -/
 @[simp]
 theorem geckPointsMap_comp {C : Type*} [CommRing C] (f : A →+* B) (g : B →+* C) :
     t.geckPointsMap ht (g.comp f) =
       (t.geckPointsMap ht g).comp (t.geckPointsMap ht f) := by
-  refine MonoidHom.ext fun x => Subtype.ext (Matrix.GeneralLinearGroup.ext fun r c => ?_)
-  rw [coe_geckPointsMap_apply, MonoidHom.comp_apply, coe_geckPointsMap_apply,
-    coe_geckPointsMap_apply, RingHom.comp_apply]
+  simp only [geckPointsMap, RingHom.toIntAlgHom_comp]
+  exact GeneralLinear.mapHopfIdealPointsSubgroupCongr_comp (t.geckDim ht) (t.geckDefiningIdeal ht)
+    (t.geckPoints_def ht A) (t.geckPoints_def ht B)
+    (t.geckPoints_def ht C) f.toIntAlgHom g.toIntAlgHom
 
 /-- An injective homomorphism of value rings induces an injective map on the points of the pinned
 Geck carrier. -/
 theorem geckPointsMap_injective {f : A →+* B} (hf : Function.Injective f) :
-    Function.Injective (t.geckPointsMap ht f) := by
-  intro x y hxy
-  refine Subtype.ext (Matrix.GeneralLinearGroup.ext fun r c => hf ?_)
-  rw [← coe_geckPointsMap_apply, ← coe_geckPointsMap_apply, hxy]
+    Function.Injective (t.geckPointsMap ht f) :=
+  GeneralLinear.mapHopfIdealPointsSubgroupCongr_injective (t.geckDim ht) (t.geckDefiningIdeal ht)
+    (t.geckPoints_def ht A) (t.geckPoints_def ht B) (φ := f.toIntAlgHom) hf
 
 /-- **The induced map carries a numbered root-subgroup point along the homomorphism of value
 rings.** -/
@@ -205,7 +197,7 @@ map, transported along the object identification above. -/
 theorem geckPointsFunctor_map {A B : CommAlgCat.{v} ℤ} (f : A ⟶ B) :
     (t.geckPointsFunctor ht).map f =
       eqToHom (t.geckPointsFunctor_obj ht A) ≫
-        GrpCat.ofHom (t.geckPointsMap ht f.hom.toRingHom) ≫
+        GrpCat.ofHom (t.geckPointsMap ht f.hom) ≫
         eqToHom (t.geckPointsFunctor_obj ht B).symm :=
   (rfl)
 
@@ -288,7 +280,7 @@ theorem geckPointsMulEquiv_mapPoints {A B : CommAlgCat.{v} ℤ} (f : A ⟶ B)
           (H := CommHopfAlgCat.quotient
             (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)) (t.geckDefiningIdeal ht))
           f q) =
-      t.geckPointsMap ht f.hom.toRingHom (t.geckPointsMulEquiv ht A q) := by
+      t.geckPointsMap ht f.hom (t.geckPointsMulEquiv ht A q) := by
   apply Subtype.ext
   rw [coe_geckPointsMap]
   simp only [geckPointsMulEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_symm_apply]

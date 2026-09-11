@@ -74,6 +74,8 @@ form-theoretic genus theory it descends from.
   narrow `2`-rank of a quadratic field of either signature.
 * `TauCeti.Multiquadratic.narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one`: the narrow `2`-rank of a
   quadratic field of either signature is exactly `t - 1`.
+* `TauCeti.Multiquadratic.twoRank_eq_ncard_ramifiedPrimes_sub_one_of_exists_norm_eq_neg_one`: the
+  ordinary `2`-rank is also exactly `t - 1` when some unit of `𝓞 K` has norm `-1`.
 * `TauCeti.Multiquadratic.ncard_ramifiedPrimes_sub_two_le_twoRank` and
   `TauCeti.Multiquadratic.twoRank_eq_ncard_ramifiedPrimes_sub_one_or_sub_two`: the ordinary
   `2`-rank of any field of degree `2` over `ℚ` is `t - 1` or `t - 2`.
@@ -254,6 +256,22 @@ theorem narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one
       NumberField.isTotallyComplex_of_minpoly_eq_X_sq_sub_C_of_neg hmin hneg
     rw [NumberField.NarrowClassGroup.twoRank_eq_classGroupTwoRank,
       twoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf hneg]
+
+/-- **The `2`-rank formula for a real quadratic field with a unit of norm `-1`.** For `K = ℚ(√d)`
+with `d` squarefree, if some unit of `𝓞 K` has norm `-1` then the narrow and ordinary class groups
+coincide (`NumberField.NarrowClassGroup.toClassGroup_injective_of_norm_eq_neg_one`), so the
+ordinary `2`-rank inherits the narrow value `t - 1`, with `t` the number of rational primes
+ramifying in `K`. A unit of norm `-1` suffices to keep the real case from dropping; without one
+the ordinary rank can be smaller, as for `ℚ(√3)`, which has `t = 2` and class number `1`. -/
+theorem twoRank_eq_ncard_ramifiedPrimes_sub_one_of_exists_norm_eq_neg_one
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    (hsf : Squarefree d)
+    (hu : ∃ u : (𝓞 K)ˣ, Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1) :
+    TauCeti.ClassGroup.twoRank (𝓞 K) = (ramifiedPrimes K).ncard - 1 := by
+  obtain ⟨u, hu⟩ := hu
+  rw [← NumberField.NarrowClassGroup.twoRank_eq_classGroupTwoRank_of_injective K
+    (NumberField.NarrowClassGroup.toClassGroup_injective_of_norm_eq_neg_one hmin hgen hu)]
+  exact narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf
 
 /-! ### The ordinary `2`-rank of a quadratic field -/
 

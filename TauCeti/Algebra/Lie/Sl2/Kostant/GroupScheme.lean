@@ -403,10 +403,10 @@ private theorem rankOneCarrierPoints_eq_hopfIdealPoints
 noncomputable def rankOneCarrierPointsMap
     {A : Type u} {B : Type v} [CommRing A] [CommRing B]
     (f : A →+* B) : rankOneCarrierPoints A →* rankOneCarrierPoints B :=
-  ((MulEquiv.subgroupCongr (rankOneCarrierPoints_eq_hopfIdealPoints B)).symm.toMonoidHom).comp
-    ((GeneralLinear.mapHopfIdealPointsSubgroup 2
-      (kostantToralDefiningIdeal e h ρ M hM hnil b rankOneWeight) f.toIntAlgHom).comp
-      (MulEquiv.subgroupCongr (rankOneCarrierPoints_eq_hopfIdealPoints A)).toMonoidHom)
+  GeneralLinear.mapHopfIdealPointsSubgroupCongr 2
+    (kostantToralDefiningIdeal e h ρ M hM hnil b rankOneWeight)
+    (rankOneCarrierPoints_eq_hopfIdealPoints A)
+    (rankOneCarrierPoints_eq_hopfIdealPoints B) f.toIntAlgHom
 
 /-- The induced map on rank-one carrier points is the entrywise map. -/
 @[simp]
@@ -415,10 +415,7 @@ theorem coe_rankOneCarrierPointsMap
     (f : A →+* B) (g : rankOneCarrierPoints A) :
     (rankOneCarrierPointsMap f g : Matrix.GeneralLinearGroup (Fin 2) B) =
       Matrix.GeneralLinearGroup.map f g := by
-  rw [rankOneCarrierPointsMap]
-  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulEquiv.subgroupCongr_symm_apply, GeneralLinear.coe_mapHopfIdealPointsSubgroup,
-    MulEquiv.subgroupCongr_apply, AlgHom.toRingHom_eq_coe, RingHom.toIntAlgHom_toRingHom]
+  simp [rankOneCarrierPointsMap]
 
 /-- Entrywise, the induced map applies the value-ring homomorphism to each matrix entry. -/
 theorem coe_rankOneCarrierPointsMap_apply
@@ -433,11 +430,7 @@ theorem coe_rankOneCarrierPointsMap_apply
 @[simp]
 theorem rankOneCarrierPointsMap_id {A : Type u} [CommRing A] :
     rankOneCarrierPointsMap (RingHom.id A) = MonoidHom.id _ := by
-  rw [rankOneCarrierPointsMap, RingHom.toIntAlgHom_id, GeneralLinear.mapHopfIdealPointsSubgroup_id]
-  apply MonoidHom.ext
-  intro g
-  exact (MulEquiv.subgroupCongr
-    (rankOneCarrierPoints_eq_hopfIdealPoints A)).symm_apply_apply g
+  simp [rankOneCarrierPointsMap]
 
 /-- The induced maps on rank-one carrier points compose. -/
 @[simp]
@@ -446,23 +439,22 @@ theorem rankOneCarrierPointsMap_comp
     (f : A →+* B) (g : B →+* C) :
     rankOneCarrierPointsMap (g.comp f) =
       (rankOneCarrierPointsMap g).comp (rankOneCarrierPointsMap f) := by
-  apply MonoidHom.ext
-  intro x
-  simp only [rankOneCarrierPointsMap, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    RingHom.toIntAlgHom_comp,
-    GeneralLinear.mapHopfIdealPointsSubgroup_comp, MulEquiv.apply_symm_apply]
+  simp only [rankOneCarrierPointsMap, RingHom.toIntAlgHom_comp]
+  exact GeneralLinear.mapHopfIdealPointsSubgroupCongr_comp 2
+    (kostantToralDefiningIdeal e h ρ M hM hnil b rankOneWeight)
+    (rankOneCarrierPoints_eq_hopfIdealPoints A)
+    (rankOneCarrierPoints_eq_hopfIdealPoints B)
+    (rankOneCarrierPoints_eq_hopfIdealPoints C) f.toIntAlgHom g.toIntAlgHom
 
 /-- An injective value-ring homomorphism induces an injective map on rank-one carrier points. -/
 theorem rankOneCarrierPointsMap_injective
     {A : Type u} {B : Type v} [CommRing A] [CommRing B]
     {f : A →+* B} (hf : Function.Injective f) :
-    Function.Injective (rankOneCarrierPointsMap f) := by
-  rw [rankOneCarrierPointsMap]
-  exact (MulEquiv.subgroupCongr
-    (rankOneCarrierPoints_eq_hopfIdealPoints B)).symm.injective.comp
-    ((GeneralLinear.mapHopfIdealPointsSubgroup_injective 2
-      (kostantToralDefiningIdeal e h ρ M hM hnil b rankOneWeight) hf).comp
-      (MulEquiv.subgroupCongr (rankOneCarrierPoints_eq_hopfIdealPoints A)).injective)
+    Function.Injective (rankOneCarrierPointsMap f) :=
+  GeneralLinear.mapHopfIdealPointsSubgroupCongr_injective 2
+    (kostantToralDefiningIdeal e h ρ M hM hnil b rankOneWeight)
+    (rankOneCarrierPoints_eq_hopfIdealPoints A) (rankOneCarrierPoints_eq_hopfIdealPoints B)
+    (φ := f.toIntAlgHom) hf
 
 /-- The induced map carries rank-one root-subgroup parameters along the value-ring map. -/
 @[simp]

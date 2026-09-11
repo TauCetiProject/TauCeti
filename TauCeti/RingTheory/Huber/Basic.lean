@@ -361,6 +361,21 @@ theorem exists_pow_idealOfDefinition_mul_mem [IsTopologicalRing A] (P : PairOfDe
     P.hasBasis_nhds_zero.mem_iff.mp ((hB.preimage (continuous_const_mul x)).mem_nhds h0)
   exact ⟨n, fun a ha ↦ hn ((P.mem_idealImage n).mpr ⟨a, ha, rfl⟩)⟩
 
+/-- **A unit multiple of one level of the filtration contains a deeper level**: for a unit `u` of
+`A` and any `N`, some `Iᴺ'` lands inside `u · Iᴺ`.
+
+This is what lets a denominator be rescaled by a unit: the standing hypotheses of a presentation
+are stated at some level of the filtration, and rescaling moves that level by a unit. -/
+theorem exists_idealImage_subset_image_mul_left [IsTopologicalRing A] (P : PairOfDefinition A)
+    {u : A} (hu : IsUnit u) (N : ℕ) :
+    ∃ N' : ℕ, (P.idealImage N' : Set A) ⊆ (u * ·) '' (P.idealImage N : Set A) := by
+  have hmem : (u * ·) '' (P.idealImage N : Set A) ∈ 𝓝 (0 : A) := by
+    have h := smul_mem_nhds_smul (α := A) hu.unit
+      ((P.isOpen_idealImage N).mem_nhds (P.idealImage N).zero_mem)
+    simpa [← Set.image_smul, Units.smul_def] using h
+  obtain ⟨N', -, hN'⟩ := P.hasBasis_nhds_zero.mem_iff.mp hmem
+  exact ⟨N', hN'⟩
+
 /-- **An element of the ideal of definition is topologically nilpotent.** Its powers lie in the
 successive `Iⁿ`, whose images are a neighbourhood basis of zero
 (`TauCeti.Huber.PairOfDefinition.hasBasis_nhds_zero`), so they converge to `0` in `A`.
