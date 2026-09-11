@@ -220,67 +220,51 @@ noncomputable def of (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
       (nonZeroDivisors _) P.primeCompl_le_nonZeroDivisors
     fractionTower := IsLocalization.localization_isScalarTower_of_submonoid_le _ _ _ _ _ }
 
-/-- The unfolding equation for `of`, stated once: the characteristic lemmas below are all proved
-from it, so that no public lemma depends on the elaborator-generated equation of `of`. -/
-private theorem of_def (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
-    [P.LiesOver (maximalIdeal R)] :
-    of R K L P =
-      haveI : IsFractionRing (_root_.integralClosure R L) L :=
-        IsIntegralClosure.isFractionRing_of_finite_extension R K L _
-      letI : P.IsMaximal := .of_liesOver_isMaximal P (maximalIdeal R)
-      { extensionField := L
-        prime := P
-        localRing := Localization.AtPrime P
-        fractionAlgebra := IsLocalization.localizationAlgebraOfSubmonoidLe _ _ P.primeCompl
-          (nonZeroDivisors _) P.primeCompl_le_nonZeroDivisors
-        fractionTower := IsLocalization.localization_isScalarTower_of_submonoid_le _ _ _ _ _ } := by
-  rw [of]
-
 @[simp]
 theorem of_extensionField (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] : (of R K L P).extensionField = L := by
-  rw [of_def]
+  rw [of]
 
 @[simp]
 theorem of_prime (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] : HEq (of R K L P).prime P := by
-  rw [of_def]
+  rw [of]
 
 @[simp]
 theorem of_localRing (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] : (of R K L P).localRing = Localization.AtPrime P := by
-  rw [of_def]
+  rw [of]
 
 @[simp]
 theorem of_extensionAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] :
     HEq (of R K L P).extensionAlgebra (inferInstance : Algebra K L) := by
-  rw [of_def]
+  rw [of]
 
 @[simp]
 theorem of_extensionBaseAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] :
     HEq (of R K L P).extensionBaseAlgebra (inferInstance : Algebra R L) := by
-  rw [of_def]
+  rw [of]
 
 @[simp]
 theorem of_localRingClosureAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] :
     HEq (of R K L P).localRingClosureAlgebra
       (inferInstance : Algebra (_root_.integralClosure R L) (Localization.AtPrime P)) := by
-  rw [of_def]
+  rw [of]
 
 @[simp]
 theorem of_localRingAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] :
     HEq (of R K L P).localRingAlgebra (inferInstance : Algebra R (Localization.AtPrime P)) := by
-  rw [of_def]
+  rw [of]
 
 /-- The algebra-level refinement of `TauCeti.FiniteDVRExtension.of_extensionField`: the extension
 field of the package cut out by `P` is `L` itself as a `K`-algebra, not merely as a type. -/
-theorem of_extensionField_algEquiv (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+theorem nonempty_algEquiv_of_extensionField (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
     [P.LiesOver (maximalIdeal R)] : Nonempty ((of R K L P).extensionField ≃ₐ[K] L) := by
-  rw [of_def]
+  rw [of]
   exact ⟨AlgEquiv.refl⟩
 
 /-- Every finite separable extension `L` of `K` underlies a `FiniteDVRExtension R K`: the integral
@@ -297,7 +281,7 @@ theorem exists_algEquiv_extensionField :
   obtain ⟨P, _, _⟩ :=
     Ideal.exists_maximal_ideal_liesOver_of_isIntegral (R := R) (S := _root_.integralClosure R L)
       (maximalIdeal R)
-  exact ⟨of R K L P, of_extensionField_algEquiv R K L P⟩
+  exact ⟨of R K L P, nonempty_algEquiv_of_extensionField R K L P⟩
 
 end Construction
 
