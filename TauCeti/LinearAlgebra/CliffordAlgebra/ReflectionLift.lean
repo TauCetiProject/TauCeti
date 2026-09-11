@@ -132,40 +132,25 @@ theorem reflection_mul_reflection_mem_range_spinToOrthogonal_of_isSquare
         (spinToOrthogonal Q).range := by
   have : Invertible (sqrtOfIsSquare h) :=
     (isUnit_sqrtOfIsSquare Q v w h).invertible
-  have hnorm := sqrtOfIsSquare_smul_norm_eq_invOf Q v w h
-  have : Invertible (Q (sqrtOfIsSquare h • v)) := by rw [hnorm]; infer_instance
+  let _ : Invertible (Q (sqrtOfIsSquare h • v)) := by
+    rw [QuadraticMap.map_smul]
+    let _ : Invertible (sqrtOfIsSquare h * sqrtOfIsSquare h) :=
+      invertibleMul (sqrtOfIsSquare h) (sqrtOfIsSquare h)
+    exact invertibleMul (sqrtOfIsSquare h * sqrtOfIsSquare h) (Q v)
   rw [MonoidHom.mem_range]
   refine ⟨spinReflectionPairLift Q v w h, ?_⟩
-  have hpin : pinToLipschitz Q (spinToPin Q (spinReflectionPairLift Q v w h)) =
-      ⟨unitι Q (sqrtOfIsSquare h • v) * unitι Q w,
-        mul_mem (unitι_mem_lipschitzGroup _) (unitι_mem_lipschitzGroup _)⟩ := by
-    apply Subtype.ext
-    apply Units.ext
-    simp only [coe_pinToLipschitz_apply, coe_spinToPin_apply, spinReflectionPairLift,
-      Units.val_mul, coe_unitι]
-  have hlipschitz : lipschitzToOrthogonal Q
-      ⟨unitι Q (sqrtOfIsSquare h • v) * unitι Q w,
-        mul_mem (unitι_mem_lipschitzGroup _) (unitι_mem_lipschitzGroup _)⟩ =
-      QuadraticMap.reflectionOrthogonal Q v * QuadraticMap.reflectionOrthogonal Q w := by
-    have hmul :
-        (⟨unitι Q (sqrtOfIsSquare h • v) * unitι Q w,
-          mul_mem (unitι_mem_lipschitzGroup _) (unitι_mem_lipschitzGroup _)⟩ : lipschitzGroup Q) =
-          (⟨unitι Q (sqrtOfIsSquare h • v),
-            unitι_mem_lipschitzGroup _⟩ : lipschitzGroup Q) *
-            ⟨unitι Q w, unitι_mem_lipschitzGroup _⟩ := by
-      apply Subtype.ext
-      simp only [Subgroup.coe_mul]
-    rw [hmul, map_mul, lipschitzToOrthogonal_unitι, lipschitzToOrthogonal_unitι]
-    apply Subtype.ext
-    simp only [Subgroup.coe_mul, QuadraticMap.coe_reflectionOrthogonal]
-    exact congrArg (fun x : V ≃ₗ[K] V => x * QuadraticMap.reflection Q w)
-      (QuadraticMap.reflection_smul_eq Q v (sqrtOfIsSquare h))
-  apply Subtype.ext
-  apply LinearEquiv.ext
-  intro m
-  rw [← pinToOrthogonal_spinToPin, coe_pinToOrthogonal_apply, hpin]
-  exact (coe_lipschitzToOrthogonal_apply Q _ m).symm.trans
-    (congrArg (fun y : QuadraticMap.orthogonalGroup Q => (y : V ≃ₗ[K] V) m) hlipschitz)
+  calc
+    spinToOrthogonal Q (spinReflectionPairLift Q v w h) =
+        QuadraticMap.reflectionOrthogonal Q (sqrtOfIsSquare h • v) *
+          QuadraticMap.reflectionOrthogonal Q w :=
+      spinToOrthogonal_eq_reflection_mul_reflection_of_coe_eq (Q := Q) _ _ _ (by
+        simp only [spinReflectionPairLift])
+    _ = QuadraticMap.reflectionOrthogonal Q v * QuadraticMap.reflectionOrthogonal Q w := by
+      have hrescale :
+          QuadraticMap.reflectionOrthogonal Q (sqrtOfIsSquare h • v) =
+            QuadraticMap.reflectionOrthogonal Q v := by
+        exact QuadraticMap.reflectionOrthogonal_smul_eq Q v (sqrtOfIsSquare h)
+      rw [hrescale]
 
 end Square
 

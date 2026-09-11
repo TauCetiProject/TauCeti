@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
 
 /-!
 # Normalized reflection-pair lifts in Spin groups
@@ -22,6 +22,8 @@ real quadratic spaces, where anisotropic vectors can be normalized to unit norm.
 * `CliffordAlgebra.spinReflectionPair_self` identifies a repeated pair with the identity.
 * `CliffordAlgebra.spinToOrthogonal_spinReflectionPair` computes the orthogonal action of a
   normalized reflection pair.
+* `CliffordAlgebra.coe_spinToSpecialOrthogonal_spinReflectionPair` gives the same computation for
+  the special-orthogonal projection.
 
 ## References
 
@@ -72,26 +74,27 @@ theorem spinToOrthogonal_spinReflectionPair (Q : QuadraticForm R M) (v w : M)
   dsimp only
   let _ : Invertible (Q v) := hv.symm ▸ invertibleOne
   let _ : Invertible (Q w) := hw.symm ▸ invertibleOne
-  let a : lipschitzGroup Q :=
-    ⟨unitι Q v * unitι Q w,
-      mul_mem (unitι_mem_lipschitzGroup v) (unitι_mem_lipschitzGroup w)⟩
-  have hpin : pinToLipschitz Q (spinToPin Q (spinReflectionPair Q v w hv hw)) = a := by
-    apply Subtype.ext
-    apply Units.ext
-    simp [a, spinReflectionPair]
-  have hmul : a =
-      (⟨unitι Q v, unitι_mem_lipschitzGroup v⟩ : lipschitzGroup Q) *
-        ⟨unitι Q w, unitι_mem_lipschitzGroup w⟩ := by
-    apply Subtype.ext
-    simp [a]
-  have ha : lipschitzToOrthogonal Q a =
-      QuadraticMap.reflectionOrthogonal Q v * QuadraticMap.reflectionOrthogonal Q w := by
-    rw [hmul, map_mul, lipschitzToOrthogonal_unitι, lipschitzToOrthogonal_unitι]
-  apply Subtype.ext
+  exact spinToOrthogonal_eq_reflection_mul_reflection_of_coe_eq (Q := Q) _ v w
+    (coe_spinReflectionPair Q v w hv hw)
+
+/-- The special-orthogonal projection of a normalized reflection-pair lift has underlying action
+the ordered product of the two orthogonal reflections. -/
+@[simp]
+theorem coe_spinToSpecialOrthogonal_spinReflectionPair (Q : QuadraticForm R M) (v w : M)
+    (hv : Q v = 1) (hw : Q w = 1) :
+    let _ : Invertible (Q v) := hv.symm ▸ invertibleOne
+    let _ : Invertible (Q w) := hw.symm ▸ invertibleOne
+    ((spinToSpecialOrthogonal Q (spinReflectionPair Q v w hv hw) :
+        QuadraticMap.specialOrthogonalGroup Q) : M ≃ₗ[R] M) =
+      ((QuadraticMap.reflectionOrthogonal Q v * QuadraticMap.reflectionOrthogonal Q w :
+        QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M) := by
+  dsimp only
+  let _ : Invertible (Q v) := hv.symm ▸ invertibleOne
+  let _ : Invertible (Q w) := hw.symm ▸ invertibleOne
   apply LinearEquiv.ext
   intro m
-  rw [← pinToOrthogonal_spinToPin, coe_pinToOrthogonal_apply, hpin]
-  exact (coe_lipschitzToOrthogonal_apply Q a m).symm.trans
-    (congrArg (fun y : QuadraticMap.orthogonalGroup Q => (y : M ≃ₗ[R] M) m) ha)
+  simpa only [coe_spinToSpecialOrthogonal_apply, coe_spinToOrthogonal_apply] using
+    congrArg (fun y : QuadraticMap.orthogonalGroup Q => (y : M ≃ₗ[R] M) m)
+      (spinToOrthogonal_spinReflectionPair Q v w hv hw)
 
 end CliffordAlgebra

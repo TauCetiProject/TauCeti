@@ -71,8 +71,8 @@ negating it and is a transvection rather than a reflection in `v ^ ⊥`.
 * `TauCeti.QuadraticMap.reflection_mem_orthogonalGroup`: the reflection in a vector of invertible
   norm is orthogonal; `TauCeti.QuadraticMap.reflection_mul_self` says it is an involution, and
   `TauCeti.QuadraticMap.reflection_apply_of_isOrtho` that it fixes the orthogonal hyperplane,
-  `TauCeti.QuadraticMap.reflection_smul_eq` that rescaling between vectors of invertible norm does
-  not change it, and
+  `TauCeti.QuadraticMap.reflection_smul_eq` that rescaling by an invertible scalar does not change
+  it, and
   `TauCeti.QuadraticMap.det_reflection` computes its determinant on a finite free module. These are
   the elements a Cartan-Dieudonné theorem would write an orthogonal automorphism as a product of,
   under hypotheses (a field of characteristic not two, a nondegenerate form, finite dimension)
@@ -431,10 +431,20 @@ theorem reflection_apply (y : M) :
     reflection Q v y = y - (⅟(Q v) * polar Q v y) • v := by
   rw [reflection, Module.reflection_apply, reflectionDual_apply]
 
-/-- Rescaling a vector of invertible norm does not change its quadratic reflection, provided the
-rescaled vector also has invertible norm. -/
-theorem reflection_smul_eq (a : R) [Invertible (Q (a • v))] :
+/-- Rescaling a vector of invertible norm by an invertible scalar does not change its quadratic
+reflection. -/
+@[simp]
+theorem reflection_smul_eq (a : R) [Invertible a] :
+    let _ : Invertible (Q (a • v)) := by
+      rw [QuadraticMap.map_smul]
+      let _ : Invertible (a * a) := invertibleMul a a
+      exact invertibleMul (a * a) (Q v)
     reflection Q (a • v) = reflection Q v := by
+  dsimp only
+  let _ : Invertible (Q (a • v)) := by
+    rw [QuadraticMap.map_smul]
+    let _ : Invertible (a * a) := invertibleMul a a
+    exact invertibleMul (a * a) (Q v)
   have hcoeff : ⅟(Q (a • v)) * a * a = ⅟(Q v) := by
     rw [← mul_right_inj_of_invertible (c := Q v)]
     calc
@@ -518,6 +528,24 @@ noncomputable def reflectionOrthogonal : orthogonalGroup Q :=
 theorem coe_reflectionOrthogonal :
     (reflectionOrthogonal Q v : M ≃ₗ[R] M) = reflection Q v := by
   simp only [reflectionOrthogonal]
+
+/-- Rescaling the defining vector by an invertible scalar does not change the bundled orthogonal
+reflection. -/
+@[simp]
+theorem reflectionOrthogonal_smul_eq (a : R) [Invertible a] :
+    let _ : Invertible (Q (a • v)) := by
+      rw [QuadraticMap.map_smul]
+      let _ : Invertible (a * a) := invertibleMul a a
+      exact invertibleMul (a * a) (Q v)
+    reflectionOrthogonal Q (a • v) = reflectionOrthogonal Q v := by
+  dsimp only
+  let _ : Invertible (Q (a • v)) := by
+    rw [QuadraticMap.map_smul]
+    let _ : Invertible (a * a) := invertibleMul a a
+    exact invertibleMul (a * a) (Q v)
+  apply Subtype.ext
+  simp only [coe_reflectionOrthogonal]
+  exact reflection_smul_eq Q v a
 
 /-- The bundled reflection is an involution, so it has order dividing two in the orthogonal
 group. -/
