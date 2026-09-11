@@ -7,8 +7,8 @@ module
 
 public import Mathlib.GroupTheory.Torsion
 public import Mathlib.RingTheory.HopfAlgebra.GroupLike
-public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Torsion
 public import TauCeti.Algebra.Bialgebra.GroupLike.Evaluation
+public import TauCeti.Algebra.MonoidAlgebra.Torsion
 
 /-!
 # Torsion in groups of group-like elements

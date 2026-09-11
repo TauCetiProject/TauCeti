@@ -7,7 +7,8 @@ module
 
 import Mathlib.GroupTheory.FiniteAbelian.Basic
 import Mathlib.GroupTheory.OrderOfElement
-public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.NotReduced
+public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
+public import TauCeti.Algebra.MonoidAlgebra.NotReduced
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 
