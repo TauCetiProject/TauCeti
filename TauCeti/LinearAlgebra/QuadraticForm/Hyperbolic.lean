@@ -12,8 +12,8 @@ public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
 /-!
 # The hyperbolic plane
 
-The hyperbolic plane over a commutative ring is the diagonal quadratic form `⟨1, -1⟩`. When two
-is invertible, it is nondegenerate, represents every scalar, and is isometric to the `xy`-form
+The hyperbolic plane over a commutative ring in which two is invertible is the diagonal quadratic
+form `⟨1, -1⟩`. It is nondegenerate, represents every scalar, and is isometric to the `xy`-form
 `QuadraticForm.dualProd`. Over a field in which two is invertible (that is, of characteristic not
 two), every plane `⟨a, -a⟩` with `a ≠ 0` is isometric to it.
 
@@ -27,14 +27,14 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
 
 ## Main definitions
 
-* `TauCeti.hyperbolicPlane`: the diagonal form `⟨1, -1⟩`.
+* `TauCeti.hyperbolicPlane`: the diagonal form `⟨1, -1⟩`, over a commutative ring in which two is
+  invertible.
 
 ## Main results
 
-* `TauCeti.represents_hyperbolicPlane`: when two is invertible, the hyperbolic plane represents
-  every scalar.
-* `TauCeti.equivalent_hyperbolicPlane_dualProd`: when two is invertible, the hyperbolic plane is
-  isometric to the `xy`-form `QuadraticForm.dualProd`.
+* `TauCeti.represents_hyperbolicPlane`: the hyperbolic plane represents every scalar.
+* `TauCeti.equivalent_hyperbolicPlane_dualProd`: the hyperbolic plane is isometric to the
+  `xy`-form `QuadraticForm.dualProd`.
 * `TauCeti.equivalent_weightedSumSquares_self_neg`: in characteristic not two, every
   `⟨a, -a⟩`, for `a ≠ 0`, is hyperbolic.
 * `TauCeti.exists_hyperbolicPlane_prod_equivalent`: in characteristic not two, every
@@ -57,13 +57,18 @@ section CommRing
 
 variable {R : Type u} [CommRing R]
 
-/-- The hyperbolic plane `⟨1, -1⟩`. -/
-def hyperbolicPlane (R : Type u) [CommRing R] : QuadraticForm R (Fin 2 → R) :=
+/-- The hyperbolic plane `⟨1, -1⟩` over a commutative ring in which two is invertible.
+
+The invertibility hypothesis is not used by the formula; it confines the definition to the
+setting where the diagonal form `⟨1, -1⟩` is the hyperbolic plane. In characteristic two it is
+`⟨1, 1⟩`, whose polar form vanishes identically. -/
+def hyperbolicPlane (R : Type u) [CommRing R] [_i2 : Invertible (2 : R)] :
+    QuadraticForm R (Fin 2 → R) :=
   weightedSumSquares R ![(1 : R), -1]
 
 /-- Evaluation of the hyperbolic plane in its diagonal coordinates. -/
 @[simp]
-theorem hyperbolicPlane_apply (x : Fin 2 → R) :
+theorem hyperbolicPlane_apply [Invertible (2 : R)] (x : Fin 2 → R) :
     hyperbolicPlane R x = x 0 ^ 2 - x 1 ^ 2 := by
   simp [hyperbolicPlane, weightedSumSquares_apply, Fin.sum_univ_two, pow_two]
   ring
@@ -107,37 +112,41 @@ theorem represents_hyperbolicPlane [Invertible (2 : R)] (a : R) :
 `QuadraticForm.dualProd R R`, whose value at `(f, z)` is `f z`. -/
 theorem equivalent_hyperbolicPlane_dualProd [Invertible (2 : R)] :
     (hyperbolicPlane R).Equivalent (QuadraticForm.dualProd R R) := by
-  have key : ∀ f : Module.Dual R R, f 1 • (LinearMap.id : R →ₗ[R] R) = f := fun f ↦ by
-    ext
-    simp
+  -- The isometry is Mathlib's `QuadraticForm.toDualProd` for the square form `QuadraticMap.sq`,
+  -- which is bijective in this rank-one case.
   have h2 : (2 : R) * ⅟(2 : R) = 1 := mul_invOf_self 2
-  let e : (R × R) ≃ₗ[R] Module.Dual R R × R :=
-    { toFun := fun p ↦ ((p.1 + p.2) • (LinearMap.id : R →ₗ[R] R), p.1 - p.2)
-      invFun := fun q ↦ ((q.1 1 + q.2) * ⅟(2 : R), (q.1 1 - q.2) * ⅟(2 : R))
-      map_add' := fun p q ↦ Prod.ext
-        (by simp only [Prod.fst_add, Prod.snd_add, ← add_smul]; congr 1; ring)
-        (by simp only [Prod.fst_add, Prod.snd_add]; ring)
-      map_smul' := fun a p ↦ Prod.ext
-        (by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, RingHom.id_apply, ← mul_smul]
-            congr 1
-            ring)
-        (by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, RingHom.id_apply]; ring)
-      left_inv := fun p ↦ by
-        dsimp only
-        refine Prod.ext ?_ ?_ <;>
-          simp only [LinearMap.smul_apply, LinearMap.id_coe, id_eq, smul_eq_mul, mul_one]
-        · linear_combination p.1 * h2
-        · linear_combination p.2 * h2
-      right_inv := fun q ↦ by
-        dsimp only
-        refine Prod.ext ?_ ?_
-        · rw [show (q.1 1 + q.2) * ⅟(2 : R) + (q.1 1 - q.2) * ⅟(2 : R) = q.1 1 from by
-            linear_combination q.1 1 * h2]
-          exact key q.1
-        · linear_combination q.2 * h2 }
-  refine ⟨⟨(LinearEquiv.finTwoArrow R R).trans e, fun x ↦ ?_⟩⟩
-  simp [e]
-  ring
+  have hdual (f : Module.Dual R R) (y : R) : f y = y * f 1 := by
+    rw [← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
+  -- `toDualProd` sends `(a, b)` to the dual vector `(a + b) * ·` paired with `a - b`.
+  have happ (p : R × R) :
+      QuadraticForm.toDualProd (QuadraticMap.sq : QuadraticForm R R) p =
+        (LinearMap.mul R R (p.1 + p.2), p.1 - p.2) := by
+    refine Prod.ext (LinearMap.ext fun y ↦ ?_) rfl
+    simp only [QuadraticForm.toDualProd_apply, associated_sq, map_add, LinearMap.add_apply,
+      LinearMap.mul_apply_apply]
+  have hbij : Function.Bijective
+      (QuadraticForm.toDualProd (QuadraticMap.sq : QuadraticForm R R)) := by
+    refine ⟨fun p q hpq ↦ ?_, fun q ↦ ?_⟩
+    · rw [happ, happ, Prod.mk.injEq] at hpq
+      have hadd : p.1 + p.2 = q.1 + q.2 := by
+        have h := congrArg (fun f : Module.Dual R R ↦ f 1) hpq.1
+        simpa using h
+      refine Prod.ext ?_ ?_
+      · linear_combination ⅟(2 : R) * hadd + ⅟(2 : R) * hpq.2 - (p.1 - q.1) * h2
+      · linear_combination ⅟(2 : R) * hadd - ⅟(2 : R) * hpq.2 - (p.2 - q.2) * h2
+    · refine ⟨((q.1 1 + q.2) * ⅟(2 : R), (q.1 1 - q.2) * ⅟(2 : R)), ?_⟩
+      rw [happ]
+      refine Prod.ext (LinearMap.ext fun y ↦ ?_) (by linear_combination q.2 * h2)
+      rw [LinearMap.mul_apply_apply, hdual q.1 y]
+      linear_combination (y * q.1 1) * h2
+  have hprod : (hyperbolicPlane R).Equivalent
+      ((QuadraticMap.sq : QuadraticForm R R).prod (-QuadraticMap.sq)) :=
+    ⟨{ toLinearEquiv := LinearEquiv.finTwoArrow R R
+       map_app' x := by
+         simp [hyperbolicPlane_apply, pow_two, sub_eq_add_neg] }⟩
+  exact hprod.trans
+    ⟨{ toLinearEquiv := LinearEquiv.ofBijective _ hbij
+       map_app' p := (QuadraticForm.toDualProd (QuadraticMap.sq : QuadraticForm R R)).map_app p }⟩
 
 end CommRing
 
