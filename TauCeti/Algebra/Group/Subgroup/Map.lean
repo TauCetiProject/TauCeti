@@ -28,6 +28,9 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `TauCeti.Subgroup.congrOfMapEq`: the isomorphism of subgroups restricted from an isomorphism of
   groups carrying the one onto the other.
 * `TauCeti.commutatorCongr`: its instance for the derived subgroup.
+* `MonoidHom.subgroupCongr`: a homomorphism of subgroups transported along equalities of its
+  domain and codomain, for reading a construction through two presentations of the subgroups it
+  connects.
 
 ## Main results
 
@@ -42,6 +45,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `Subgroup.map_conj_map`: the image of a conjugate subgroup is the conjugate of the image.
 * `Subgroup.map_mk'_map_quotientGroupMap`: taking images in quotients commutes with the maps
   induced on quotients.
+* `MonoidHom.subgroupCongr_injective`, `MonoidHom.subgroupCongr_surjective`: transport along
+  equalities of the domain and codomain preserves injectivity and surjectivity.
 -/
 
 public section
@@ -127,6 +132,57 @@ theorem Subgroup.congrOfMapEq_symm (e : G ≃* H) {A : Subgroup G} {B : Subgroup
     (Subgroup.congrOfMapEq e h).symm =
       Subgroup.congrOfMapEq e.symm ((_root_.Subgroup.map_symm_eq_iff_map_eq A).mpr h) :=
   MulEquiv.ext fun _ => Subtype.ext (by simp)
+
+/-- The homomorphism of subgroups obtained from a homomorphism between two other subgroups by
+transporting along equalities of the domain and of the codomain. -/
+def _root_.MonoidHom.subgroupCongr {A A' : Subgroup G} {B B' : Subgroup H}
+    (hA : A' = A) (hB : B' = B) (f : A →* B) : A' →* B' :=
+  ((MulEquiv.subgroupCongr hB).symm.toMonoidHom).comp
+    (f.comp (MulEquiv.subgroupCongr hA).toMonoidHom)
+
+/-- The transported homomorphism takes the same value in the ambient group as the original does
+at the corresponding element. -/
+@[simp]
+theorem _root_.MonoidHom.coe_subgroupCongr_apply {A A' : Subgroup G} {B B' : Subgroup H}
+    (hA : A' = A) (hB : B' = B) (f : A →* B) (x : A') :
+    (f.subgroupCongr hA hB x : H) = f ⟨x, hA ▸ x.2⟩ := by
+  simp only [MonoidHom.subgroupCongr, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    MulEquiv.subgroupCongr_symm_apply]
+  exact congrArg (fun y => (f y : H)) (Subtype.ext (MulEquiv.subgroupCongr_apply hA x))
+
+/-- Transporting the identity homomorphism along one equality of subgroups, on both sides, gives
+the identity. -/
+@[simp]
+theorem _root_.MonoidHom.subgroupCongr_id {A A' : Subgroup G} (hA : A' = A) :
+    (MonoidHom.id A).subgroupCongr hA hA = MonoidHom.id A' :=
+  MonoidHom.ext fun x => (MulEquiv.subgroupCongr hA).symm_apply_apply x
+
+/-- Transport commutes with composition: transporting `g.comp f` along the outer two equalities
+agrees with transporting `f` and `g` separately through a common middle subgroup.
+
+Not a `simp` lemma: the middle subgroup `B'` and its presentation `hB` occur only on the
+right-hand side, so `simp` would have to invent them and would rewrite into an unrelated
+instantiation. -/
+theorem _root_.MonoidHom.subgroupCongr_comp {A A' : Subgroup G} {B B' : Subgroup H}
+    {C C' : Subgroup K} (hA : A' = A) (hB : B' = B) (hC : C' = C) (f : A →* B) (g : B →* C) :
+    (g.comp f).subgroupCongr hA hC = (g.subgroupCongr hB hC).comp (f.subgroupCongr hA hB) :=
+  MonoidHom.ext fun x => by
+    simp only [MonoidHom.subgroupCongr, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+      MulEquiv.apply_symm_apply]
+
+/-- Transport along equalities of the domain and codomain preserves injectivity. -/
+theorem _root_.MonoidHom.subgroupCongr_injective {A A' : Subgroup G} {B B' : Subgroup H}
+    (hA : A' = A) (hB : B' = B) {f : A →* B} (hf : Function.Injective f) :
+    Function.Injective (f.subgroupCongr hA hB) :=
+  (MulEquiv.subgroupCongr hB).symm.injective.comp
+    (hf.comp (MulEquiv.subgroupCongr hA).injective)
+
+/-- Transport along equalities of the domain and codomain preserves surjectivity. -/
+theorem _root_.MonoidHom.subgroupCongr_surjective {A A' : Subgroup G} {B B' : Subgroup H}
+    (hA : A' = A) (hB : B' = B) {f : A →* B} (hf : Function.Surjective f) :
+    Function.Surjective (f.subgroupCongr hA hB) :=
+  (MulEquiv.subgroupCongr hB).symm.surjective.comp
+    (hf.comp (MulEquiv.subgroupCongr hA).surjective)
 
 /-! ## Transporting the derived subgroup -/
 

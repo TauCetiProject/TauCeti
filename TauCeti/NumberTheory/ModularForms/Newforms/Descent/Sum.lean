@@ -58,7 +58,7 @@ public section
 
 open CongruenceSubgroup HeckeRing.GL2 Matrix Matrix.SpecialLinearGroup UpperHalfPlane
 
-open scoped MatrixGroups ModularForm
+open scoped Manifold MatrixGroups ModularForm
 
 namespace TauCeti
 
@@ -78,6 +78,12 @@ lemma descendSlash_apply (k : ℤ) (p N : ℕ) [NeZero p] (f : ℍ → ℂ) (τ 
     descendSlash k p N f τ
       = ∑ v : Fin (descendMatrixCount p N), (f ∣[k] descendMatrix p N v) τ := by
   rw [descendSlash_def, Finset.sum_apply]
+
+/-- The descent slash sum of a holomorphic function is holomorphic: each slash is. -/
+theorem mdifferentiable_descendSlash (k : ℤ) (p N : ℕ) [NeZero p] {f : ℍ → ℂ}
+    (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (descendSlash k p N f) := by
+  rw [descendSlash_def]
+  exact MDifferentiable.sum fun v _ ↦ hf.slash k _
 
 /-- The descent slash sum sends the zero function to zero. -/
 @[simp] lemma descendSlash_zero (k : ℤ) (p N : ℕ) [NeZero p] : descendSlash k p N 0 = 0 := by

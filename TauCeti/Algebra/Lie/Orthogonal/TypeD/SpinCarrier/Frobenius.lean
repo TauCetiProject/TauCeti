@@ -122,13 +122,12 @@ For `p` prime, `0 < k`, and `A` an algebraic closure of `ZMod p`, this is the Fr
 intended for a future construction of the `Dₙ(p ^ k)`, `²Dₙ(p ^ k)` and `³D₄(p ^ k)` Steinberg
 maps. -/
 def frobenius : points n hn A →* points n hn A :=
-  (pointsEquivKostantToralPoints n hn A).symm.toMonoidHom.comp
-    ((kostantToralFrobenius
-        (TauCeti.serreRootGenerator (CartanMatrix.D n))
-        (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
-        (rep_kostantForm_mem_lattice n hn)
-        (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) (basisWeight n) p k A).comp
-      (pointsEquivKostantToralPoints n hn A).toMonoidHom)
+  (kostantToralFrobenius
+      (TauCeti.serreRootGenerator (CartanMatrix.D n))
+      (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+      (rep_kostantForm_mem_lattice n hn)
+      (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) (basisWeight n) p k A).subgroupCongr
+    (points_eq_kostantToralPointsSubgroup n hn A) (points_eq_kostantToralPointsSubgroup n hn A)
 
 /-- Along the presentation as generic toral-closure points, the carrier Frobenius is the generic
 Kostant toral Frobenius. Private: it is the transport equation through which the public equations
@@ -141,7 +140,8 @@ private theorem pointsEquivKostantToralPoints_frobenius (g : points n hn A) :
         (rep_kostantForm_mem_lattice n hn)
         (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) (basisWeight n) p k A
         (pointsEquivKostantToralPoints n hn A g) := by
-  simp only [frobenius, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply]
+  apply Subtype.ext
+  simp [frobenius]
 
 /-- The Frobenius endomorphism of the type-`Dₙ` spin carrier acts by entrywise Frobenius.
 
