@@ -19,7 +19,7 @@ difference of the intersection with `s` lies in the union of the two symmetric d
 
 ## Main results
 
-* `TauCeti.MeasureTheory.abs_measureReal_inter_sub_le_of_measureReal_symmDiff`
+* `TauCeti.MeasureTheory.abs_measureReal_inter_sub_le_measureReal_symmDiff_add`
 -/
 
 public section
@@ -34,7 +34,7 @@ namespace MeasureTheory
 
 /-- The mass of `A ∩ B` is within the sum of the symmetric-difference masses of `A` and `B`
 against `s` of the mass of `s`. -/
-theorem abs_measureReal_inter_sub_le_of_measureReal_symmDiff {Ω : Type*} [MeasurableSpace Ω]
+theorem abs_measureReal_inter_sub_le_measureReal_symmDiff_add {Ω : Type*} [MeasurableSpace Ω]
     {μ : Measure Ω} [IsFiniteMeasure μ] {A B s : Set Ω}
     (hA : NullMeasurableSet A μ) (hB : NullMeasurableSet B μ) (hs : NullMeasurableSet s μ) :
     |μ.real (A ∩ B) - μ.real s| ≤ μ.real (symmDiff A s) + μ.real (symmDiff B s) :=

@@ -27,7 +27,7 @@ countable power of `ℝ≥0∞`.
 
 ## Main results
 
-* `TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_exists_measureReal_inter_eq_mul`:
+* `TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_exists_symmDiff_lt_inter_eq_mul`:
   under a finite measure, a null-measurable event admitting arbitrarily close pairs whose
   intersection mass factors has mass `0` or `1`;
 * `TauCeti.MeasureTheory.IsZeroOneMeasure.exists_ae_eq_const`: under a zero-one measure, an
@@ -73,9 +73,9 @@ private theorem abs_measureReal_sub_mul_self_le_of_symmDiff_lt
     (abs_measureReal_sub_le_measureReal_symmDiff ht' hs).trans h2
   have he0 : 0 ≤ e := (abs_nonneg _).trans hbt
   have hbi : |μ.real (t ∩ t') - μ.real s| ≤ 2 * e :=
-    (abs_measureReal_inter_sub_le_of_measureReal_symmDiff ht ht' hs).trans (by linarith)
+    (abs_measureReal_inter_sub_le_measureReal_symmDiff_add ht ht' hs).trans (by linarith)
   have hprod : |μ.real t * μ.real t' - μ.real s * μ.real s| ≤ e * (2 * μ.real s + e) :=
-    TauCeti.abs_mul_sub_mul_self_le hbt hbt' measureReal_nonneg measureReal_nonneg
+    TauCeti.abs_mul_sub_mul_self_le hbt hbt' measureReal_nonneg
   rw [hinter] at hbi
   have hsplit : μ.real s - μ.real s * μ.real s =
       (μ.real s - μ.real t * μ.real t') + (μ.real t * μ.real t' - μ.real s * μ.real s) := by ring
@@ -91,7 +91,7 @@ whose intersection mass factors. Then `s` has measure `0` or `1`; the measure ne
 
 The two approximants need not have the same measure and need not themselves be independent as
 random objects; only the displayed factorization of their intersection is used. -/
-theorem measure_eq_zero_or_one_of_forall_exists_measureReal_inter_eq_mul {Ω : Type*}
+theorem measure_eq_zero_or_one_of_forall_exists_symmDiff_lt_inter_eq_mul {Ω : Type*}
     [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ] {s : Set Ω} (hs : NullMeasurableSet s μ)
     (happrox : ∀ ε : ℝ, 0 < ε →
       ∃ t t' : Set Ω, NullMeasurableSet t μ ∧ NullMeasurableSet t' μ ∧

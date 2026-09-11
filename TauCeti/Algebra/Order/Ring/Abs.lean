@@ -13,7 +13,7 @@ import Mathlib.Tactic.Ring
 /-!
 # Products of nearby reals
 
-If `x` and a nonnegative `y` are each within `e` of a nonnegative `q`, their product is within
+If `x` and `y` are each within `e` of a nonnegative `q`, their product is within
 `e (2q + e)` of `q²`: the quantitative form of continuity of multiplication used when a measure is
 compared with its own square. Stated for any linearly ordered commutative ring.
 -/
@@ -24,19 +24,15 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 
-/-- `|x y - q²| ≤ e (2q + e)` when `x` is within `e` of `q` and so is `y`, with `y` and `q`
-nonnegative; `x` may have either sign. -/
+/-- `|x y - q²| ≤ e (2q + e)` when `x` and `y` are each within `e` of `q ≥ 0`; neither `x` nor
+`y` need be nonnegative. -/
 theorem abs_mul_sub_mul_self_le {x y q e : R} (hx : |x - q| ≤ e) (hy : |y - q| ≤ e)
-    (hy0 : 0 ≤ y) (hq0 : 0 ≤ q) :
+    (hq0 : 0 ≤ q) :
     |x * y - q * q| ≤ e * (2 * q + e) := by
   have he : 0 ≤ e := (abs_nonneg _).trans hx
-  have heq : x * y - q * q = (x - q) * y + q * (y - q) := by ring
-  have hyq : y ≤ q + e := by linarith [(abs_le.1 hy).2]
-  calc |x * y - q * q| ≤ |(x - q) * y| + |q * (y - q)| := by
-        rw [heq]; exact abs_add_le _ _
-    _ = |x - q| * y + q * |y - q| := by
-        rw [abs_mul, abs_mul, abs_of_nonneg hy0, abs_of_nonneg hq0]
-    _ ≤ e * (q + e) + q * e := by gcongr
-    _ = e * (2 * q + e) := by ring
+  have hx' := abs_le.1 hx
+  have hy' := abs_le.1 hy
+  rw [abs_le]
+  constructor <;> nlinarith [mul_nonneg he he, mul_nonneg he hq0, hx'.1, hx'.2, hy'.1, hy'.2]
 
 end TauCeti
