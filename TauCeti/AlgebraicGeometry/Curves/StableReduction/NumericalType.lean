@@ -13,7 +13,6 @@ import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import TauCeti.LinearAlgebra.Matrix.Symmetric
-import TauCeti.Logic.Relation
 
 /-!
 # Numerical types and their signed genus
@@ -26,7 +25,7 @@ residue field) and genera `gᵢ`, together with a symmetric matrix of intersecti
 which is killed by the multiplicity vector, and whose `i`-th row is divisible by `wᵢ`.
 
 This file introduces that structure, its positivity and connectedness API, its reindexing along
-an equivalence of component sets, and its signed genus
+an equivalence of component sets, equivalences of numerical types, and its signed genus
 
 `g(T) = 1 + ∑ᵢ mᵢ (wᵢ (gᵢ - 1) - aᵢᵢ / 2)`.
 
@@ -45,6 +44,8 @@ matrix that forces `∑ᵢ mᵢ aᵢᵢ` to be even
   transitive closure the connectedness axiom requires to be total.
 * `TauCeti.NumericalType.reindex`: the numerical type obtained by transporting the component set
   along an equivalence.
+* `TauCeti.NumericalType.Equiv`: an equivalence of numerical types, a bijection of component sets
+  matching all of their data, with its identity, inverse and composite.
 * `TauCeti.NumericalType.arithmeticGenus`: the signed genus, valued in `ℤ`.
 
 ## Main results
@@ -62,6 +63,9 @@ matrix that forces `∑ᵢ mᵢ aᵢᵢ` to be even
   condition.
 * `TauCeti.NumericalType.arithmeticGenus_reindex`: the signed genus does not depend on the chosen
   indexing of the components.
+* `TauCeti.NumericalType.nonempty_equiv_iff`: two numerical types are equivalent exactly when
+  one is a reindexing of the other, and `TauCeti.NumericalType.Equiv.arithmeticGenus_eq`:
+  equivalent numerical types have the same signed genus.
 
 ## Implementation notes
 
@@ -366,6 +370,85 @@ lemma arithmeticGenus_reindex : (T.reindex e).arithmeticGenus = T.arithmeticGenu
       = ∑ k, (T.multiplicity k : ℤ) * T.intersection k k :=
     Fintype.sum_equiv e.symm _ _ fun _ ↦ rfl
   rw [(T.reindex e).two_mul_arithmeticGenus, T.two_mul_arithmeticGenus, h1, h2]
+
+/-! ### Equivalence of numerical types -/
+
+/-- An equivalence of numerical types, in the sense of
+[Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z): a bijection of component sets
+matching multiplicities, weights, intersection numbers and genera. Two numerical types are
+equivalent when `Nonempty (T.Equiv T')`. -/
+structure Equiv (T' : NumericalType.{v}) where
+  /-- The underlying bijection of component sets. -/
+  toEquiv : T.Component ≃ T'.Component
+  /-- The bijection preserves multiplicities. -/
+  multiplicity_apply : ∀ i, T'.multiplicity (toEquiv i) = T.multiplicity i
+  /-- The bijection preserves weights. -/
+  weight_apply : ∀ i, T'.weight (toEquiv i) = T.weight i
+  /-- The bijection preserves intersection numbers. -/
+  intersection_apply : ∀ i j, T'.intersection (toEquiv i) (toEquiv j) = T.intersection i j
+  /-- The bijection preserves the genera of the components. -/
+  genus_apply : ∀ i, T'.genus (toEquiv i) = T.genus i
+
+namespace Equiv
+
+variable {T} {T' : NumericalType.{v}} {T'' : NumericalType.{w}}
+
+/-- The identity equivalence of a numerical type. -/
+@[expose, simps toEquiv]
+def refl : T.Equiv T where
+  toEquiv := _root_.Equiv.refl T.Component
+  multiplicity_apply _ := rfl
+  weight_apply _ := rfl
+  intersection_apply _ _ := rfl
+  genus_apply _ := rfl
+
+/-- The inverse of an equivalence of numerical types. -/
+@[expose, simps toEquiv]
+def symm (f : T.Equiv T') : T'.Equiv T where
+  toEquiv := f.toEquiv.symm
+  multiplicity_apply j := by simpa using (f.multiplicity_apply (f.toEquiv.symm j)).symm
+  weight_apply j := by simpa using (f.weight_apply (f.toEquiv.symm j)).symm
+  intersection_apply j k := by
+    simpa using (f.intersection_apply (f.toEquiv.symm j) (f.toEquiv.symm k)).symm
+  genus_apply j := by simpa using (f.genus_apply (f.toEquiv.symm j)).symm
+
+/-- The composite of two equivalences of numerical types. -/
+@[expose, simps toEquiv]
+def trans (f : T.Equiv T') (g : T'.Equiv T'') : T.Equiv T'' where
+  toEquiv := f.toEquiv.trans g.toEquiv
+  multiplicity_apply i := (g.multiplicity_apply _).trans (f.multiplicity_apply i)
+  weight_apply i := (g.weight_apply _).trans (f.weight_apply i)
+  intersection_apply i j := (g.intersection_apply _ _).trans (f.intersection_apply i j)
+  genus_apply i := (g.genus_apply _).trans (f.genus_apply i)
+
+/-- An equivalence of numerical types identifies the target with the reindexed source. -/
+lemma reindex_eq (f : T.Equiv T') : T.reindex f.toEquiv = T' :=
+  T.reindex_eq f.toEquiv f.multiplicity_apply f.weight_apply f.intersection_apply f.genus_apply
+
+/-- Equivalent numerical types have the same signed genus. -/
+lemma arithmeticGenus_eq (f : T.Equiv T') : T'.arithmeticGenus = T.arithmeticGenus := by
+  rw [← f.reindex_eq, arithmeticGenus_reindex]
+
+end Equiv
+
+/-- A numerical type is equivalent to each of its reindexings, along the reindexing
+equivalence. -/
+@[expose]
+def equivReindex : T.Equiv (T.reindex e) where
+  toEquiv := e
+  multiplicity_apply i := congrArg T.multiplicity (e.symm_apply_apply i)
+  weight_apply i := congrArg T.weight (e.symm_apply_apply i)
+  intersection_apply i j := congrArg₂ T.intersection (e.symm_apply_apply i) (e.symm_apply_apply j)
+  genus_apply i := congrArg T.genus (e.symm_apply_apply i)
+
+/-- The bijection underlying `TauCeti.NumericalType.equivReindex` is the reindexing equivalence. -/
+@[simp]
+lemma equivReindex_toEquiv : (T.equivReindex e).toEquiv = e := rfl
+
+/-- Two numerical types are equivalent exactly when one is a reindexing of the other. -/
+lemma nonempty_equiv_iff {T' : NumericalType.{v}} :
+    Nonempty (T.Equiv T') ↔ ∃ e : T.Component ≃ T'.Component, T.reindex e = T' :=
+  ⟨fun ⟨f⟩ ↦ ⟨f.toEquiv, f.reindex_eq⟩, fun ⟨e, he⟩ ↦ he ▸ ⟨T.equivReindex e⟩⟩
 
 /-! ### Worked examples -/
 
