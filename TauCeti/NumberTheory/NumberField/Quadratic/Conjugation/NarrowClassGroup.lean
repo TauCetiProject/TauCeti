@@ -27,8 +27,8 @@ makes `x` or `-x` totally positive, so `(x)` is narrowly trivial. In the second 
 positive and `[x]⁺ = [θ]⁺`. Hence every principal narrow class is `1` or `[θ]⁺`.
 
 This bounds by one the amount by which the ordinary `2`-rank of a quadratic field can fall short
-of the narrow `2`-rank `t - 1` computed by genus theory (Layer 3 of the multiquadratic roadmap):
-for a real field the drop does happen, as `ℚ(√3)` shows.
+of the narrow `2`-rank `t - 1` computed by genus theory: for a real field the drop does happen,
+as `ℚ(√3)` shows.
 
 ## Main results
 
@@ -37,6 +37,13 @@ for a real field the drop does happen, as `ℚ(√3)` shows.
 * `NumberField.card_ker_toClassGroup_le_two`: the kernel of `Cl⁺(K) → Cl(K)` has at most two
   elements.
 * `NumberField.card_narrowClassGroup_le_two_mul_card_classGroup`: `h⁺(K) ≤ 2 h(K)`.
+
+## References
+
+* D. A. Cox, *Primes of the Form x² + ny²*, §6.A, and F. Lemmermeyer, *Reciprocity Laws: From
+  Euler to Eisenstein*, §2.2, for the narrow class group of a quadratic field and its comparison
+  with the ordinary class group, `h⁺(K) ∈ {h(K), 2 h(K)}`, which is the bound
+  `card_narrowClassGroup_le_two_mul_card_classGroup` proved here.
 -/
 
 public section

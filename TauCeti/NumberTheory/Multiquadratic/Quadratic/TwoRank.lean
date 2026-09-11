@@ -264,7 +264,7 @@ primes ramifying in `K`.
 The narrow `2`-rank is exactly `t - 1` (`narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one`) and
 forgetting positivity is a surjection `Cl⁺(K) → Cl(K)` whose kernel has at most two elements
 (`NumberField.card_ker_toClassGroup_le_two`), so the ordinary `2`-rank drops by at most one
-(`TauCeti.twoRank_le_twoRank_add_of_card_ker_le_two_pow`). For an imaginary field the kernel is
+(`MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow`). For an imaginary field the kernel is
 trivial and no drop occurs; for a real field it can, as `ℚ(√3)` shows. -/
 theorem ncard_ramifiedPrimes_sub_two_le_twoRank
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
@@ -276,7 +276,7 @@ theorem ncard_ramifiedPrimes_sub_two_le_twoRank
     exact narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf
   have hdrop : TauCeti.twoRank (NumberField.NarrowClassGroup K) ≤
       TauCeti.twoRank (ClassGroup (𝓞 K)) + 1 :=
-    TauCeti.twoRank_le_twoRank_add_of_card_ker_le_two_pow (n := 1)
+    MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow (n := 1)
       (NumberField.NarrowClassGroup.toClassGroup (K := K))
       NumberField.NarrowClassGroup.toClassGroup_surjective
       (by simpa using NumberField.card_ker_toClassGroup_le_two hmin hgen)
@@ -287,7 +287,7 @@ theorem ncard_ramifiedPrimes_sub_two_le_twoRank
 squarefree, the `2`-rank of `Cl(𝓞 K)` is one of the two values allowed by the narrow formula
 `2-rank Cl⁺(K) = t - 1`, with `t` the number of ramified rational primes. Both values occur among
 real quadratic fields: `ℚ(√3)` has `t = 2` and class number `1`, so its `2`-rank is `0 = t - 2`,
-while `ℚ(√5)` has `t = 1` and class number `1`, so its `2`-rank is `0 = t - 1`. For an imaginary
+while `ℚ(√10)` has `t = 2` and class number `2`, so its `2`-rank is `1 = t - 1`. For an imaginary
 field the value is always `t - 1` (`twoRank_eq_ncard_ramifiedPrimes_sub_one`). -/
 theorem twoRank_eq_ncard_ramifiedPrimes_sub_one_or_sub_two
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)

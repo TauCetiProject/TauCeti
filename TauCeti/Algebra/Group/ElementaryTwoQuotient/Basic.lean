@@ -10,9 +10,9 @@ public import Mathlib.Algebra.Group.Subgroup.Even
 public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.FieldTheory.Finiteness
 public import Mathlib.GroupTheory.Index
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.FreeModule.ModN
 public import TauCeti.Algebra.Group.PowMonoidHom
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # The maximal elementary-2 quotient `G / G²` of a commutative group
@@ -72,9 +72,9 @@ names around it. The cardinality identity is still expressed through the squarin
   `TauCeti.two_pow_twoRank_dvd_card`: the quotient cardinality and its rank form divide `|G|`.
 * `TauCeti.twoRank_eq_of_mulEquiv` and `TauCeti.twoRank_le_twoRank_of_surjective`: the 2-rank is
   invariant under isomorphisms and monotonic under surjections.
-* `TauCeti.twoRank_le_twoRank_add_of_card_ker_le_two_pow`: a surjection with a kernel of order at
+* `MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow`: a surjection with a kernel of order at
   most `2 ^ n` drops the 2-rank by at most `n`, via
-  `TauCeti.card_ker_elementaryTwoQuotientMap_le_card_ker`.
+  `MonoidHom.card_ker_elementaryTwoQuotientMap_le_card_ker`.
 -/
 
 public section
@@ -483,7 +483,8 @@ theorem twoRank_le_twoRank_of_surjective [Module.Finite (ZMod 2) (ElementaryTwoQ
 class of `g` in `G / G²` dies in `H / H²`, then `g` may be corrected by a square so as to lie in
 `ker f` without changing its class: `f g` is a square `f y * f y`, and `g * (y ^ 2)⁻¹` is a
 representative of the same class lying in `ker f`. -/
-theorem exists_mem_ker_elementaryTwoQuotientMk_eq (f : G →* H) (hf : Function.Surjective f)
+theorem _root_.MonoidHom.exists_mem_ker_elementaryTwoQuotientMk_eq (f : G →* H)
+    (hf : Function.Surjective f)
     {x : ElementaryTwoQuotient G} (hx : elementaryTwoQuotientMap f x = 0) :
     ∃ g ∈ MonoidHom.ker f, elementaryTwoQuotientMk g = x := by
   obtain ⟨g, rfl⟩ := elementaryTwoQuotientMk_surjective x
@@ -498,30 +499,31 @@ theorem exists_mem_ker_elementaryTwoQuotientMk_eq (f : G →* H) (hf : Function.
 
 /-- **The defect of the induced map is bounded by the kernel.** For a surjective `f : G →* H` the
 kernel of `G / G² → H / H²` is the image of `ker f`, so it has at most `|ker f|` elements. -/
-theorem card_ker_elementaryTwoQuotientMap_le_card_ker [Finite G] (f : G →* H)
-    (hf : Function.Surjective f) :
+theorem _root_.MonoidHom.card_ker_elementaryTwoQuotientMap_le_card_ker (f : G →* H)
+    [Finite (MonoidHom.ker f)] (hf : Function.Surjective f) :
     Nat.card (LinearMap.ker (elementaryTwoQuotientMap f)) ≤ Nat.card (MonoidHom.ker f) :=
   Nat.card_le_card_of_surjective
     (fun g => ⟨elementaryTwoQuotientMk (g : G), by
       have hg : f (g : G) = 1 := g.2
       rw [LinearMap.mem_ker, elementaryTwoQuotientMap_mk, hg, elementaryTwoQuotientMk_one]⟩)
     fun x => by
-      obtain ⟨g, hg, hgx⟩ := exists_mem_ker_elementaryTwoQuotientMk_eq f hf x.2
+      obtain ⟨g, hg, hgx⟩ := f.exists_mem_ker_elementaryTwoQuotientMk_eq hf x.2
       exact ⟨⟨g, hg⟩, Subtype.ext hgx⟩
 
 /-- **A surjection with a small kernel barely drops the 2-rank.** If `f : G →* H` is surjective
 with `|ker f| ≤ 2 ^ n`, then `twoRank G ≤ twoRank H + n`. Together with
-`twoRank_le_twoRank_of_surjective` this pins the 2-rank of the quotient to within `n` of the
-2-rank of `G`. The rank-nullity theorem for the induced map `G / G² → H / H²` turns the bound on
-the kernel of `f` into a bound on the dimension of the kernel of that map. -/
-theorem twoRank_le_twoRank_add_of_card_ker_le_two_pow [Finite G] {n : ℕ} (f : G →* H)
-    (hf : Function.Surjective f) (hn : Nat.card (MonoidHom.ker f) ≤ 2 ^ n) :
+`TauCeti.twoRank_le_twoRank_of_surjective` this pins the 2-rank of the quotient to within `n` of
+the 2-rank of `G`. The rank-nullity theorem for the induced map `G / G² → H / H²` turns the bound
+on the kernel of `f` into a bound on the dimension of the kernel of that map. -/
+theorem _root_.MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow
+    [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] {n : ℕ} (f : G →* H)
+    [Finite (MonoidHom.ker f)] (hf : Function.Surjective f)
+    (hn : Nat.card (MonoidHom.ker f) ≤ 2 ^ n) :
     twoRank G ≤ twoRank H + n := by
-  have : Finite H := Finite.of_surjective f hf
   -- The dimension of the kernel of `G / G² → H / H²` is at most `n`.
   have hker : Module.finrank (ZMod 2) (LinearMap.ker (elementaryTwoQuotientMap f)) ≤ n := by
     have hcard : Nat.card (LinearMap.ker (elementaryTwoQuotientMap f)) ≤ 2 ^ n :=
-      (card_ker_elementaryTwoQuotientMap_le_card_ker f hf).trans hn
+      (f.card_ker_elementaryTwoQuotientMap_le_card_ker hf).trans hn
     rw [Module.natCard_eq_pow_finrank (K := ZMod 2), Nat.card_zmod] at hcard
     exact (Nat.pow_le_pow_iff_right one_lt_two).mp hcard
   -- Rank-nullity for the induced map, whose range is everything.
