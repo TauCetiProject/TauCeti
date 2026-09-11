@@ -27,21 +27,24 @@ Krull-Schmidt input: an almost-split sequence has an indecomposable left-hand en
 indecomposable module has a local endomorphism ring, but indecomposability by itself is the weaker
 statement that the ring has no idempotents other than `0` and `1`, which does not suffice.
 
-The three lemmas the argument runs on need only one half of the almost-split condition — short
-exactness together with `TauCeti.IsLeftAlmostSplit` or `TauCeti.IsRightAlmostSplit` — so they are
-stated in those namespaces; the results about an almost-split sequence are their corollaries.
+The three lemmas the argument runs on need only one half of the almost-split condition —
+exactness, monicity of the first map, and `TauCeti.IsLeftAlmostSplit` or
+`TauCeti.IsRightAlmostSplit` — so they are stated in those namespaces; the results about an
+almost-split sequence are their corollaries.  Only `TauCeti.IsLeftAlmostSplit.isIso_of_τ₃_eq_id`,
+whose five-lemma step needs the second map to be an epimorphism, asks for full short exactness.
 
 ## Main results
 
-* `TauCeti.IsLeftAlmostSplit.isIso_τ₁_of_τ₃_eq_id`: **an endomorphism of a short exact sequence
-  with left almost split first map that is the identity on the right-hand end is an isomorphism on
-  the left-hand end**, and `TauCeti.IsLeftAlmostSplit.isIso_of_τ₃_eq_id`: it is then an
-  isomorphism of short complexes.  This is the engine of the file.
+* `TauCeti.IsLeftAlmostSplit.isIso_τ₁_of_τ₃_eq_id`: **an endomorphism of an exact short complex
+  with monic, left almost split first map that is the identity on the right-hand end is an
+  isomorphism on the left-hand end**, and `TauCeti.IsLeftAlmostSplit.isIso_of_τ₃_eq_id`: it is then
+  an isomorphism of short complexes.  This is the engine of the file.
 * `TauCeti.IsRightAlmostSplit.exists_hom_τ₃_eq_of_not_isSplitEpi`: **the comparison morphism.** A
-  map into the right-hand end of a short exact sequence with right almost split second map, whose
-  composite with the first sequence's `g` is not a split epimorphism, is the third component of a
-  morphism of short complexes; `CategoryTheory.ShortComplex.IsAlmostSplit.exists_hom_τ₃_eq` is the
-  case of an isomorphism between the right-hand ends of two almost-split sequences.
+  map into the right-hand end of an exact short complex with monic first map and right almost split
+  second map, whose composite with the first sequence's `g` is not a split epimorphism, is the third
+  component of a morphism of short complexes;
+  `CategoryTheory.ShortComplex.IsAlmostSplit.exists_hom_τ₃_eq` is the case of an isomorphism
+  between the right-hand ends of two almost-split sequences.
 * `CategoryTheory.ShortComplex.IsAlmostSplit.isIso_of_isIso_τ₃`: **a morphism of almost-split
   sequences invertible at the right-hand end is invertible**, the sharp form of uniqueness.
 * `CategoryTheory.ShortComplex.IsAlmostSplit.exists_iso_τ₃_eq`: **uniqueness.** An isomorphism
@@ -71,16 +74,15 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C] {S S' : Shor
 
 /-! ### Endomorphisms fixing the right-hand end -/
 
-/-- **An endomorphism of a short exact sequence with left almost split first map acting as the
-identity on the right-hand end is an isomorphism on the left-hand end.**  This is the engine of
+/-- **An endomorphism of an exact short complex with monic, left almost split first map acting as
+the identity on the right-hand end is an isomorphism on the left-hand end.**  This is the engine of
 the uniqueness statements below. -/
-theorem IsLeftAlmostSplit.isIso_τ₁_of_τ₃_eq_id (hf : IsLeftAlmostSplit S.f) (hS : S.ShortExact)
-    [IsLocalRing (End S.X₁)] (φ : S ⟶ S) (hφ : φ.τ₃ = 𝟙 S.X₃) : IsIso φ.τ₁ := by
-  have hmono := hS.mono_f
+theorem IsLeftAlmostSplit.isIso_τ₁_of_τ₃_eq_id (hf : IsLeftAlmostSplit S.f) (hS : S.Exact)
+    [Mono S.f] [IsLocalRing (End S.X₁)] (φ : S ⟶ S) (hφ : φ.τ₃ = 𝟙 S.X₃) : IsIso φ.τ₁ := by
   -- `𝟙 - φ.τ₂` is killed by `S.g`, because `φ` is the identity on `S.X₃`.
   have hker : (𝟙 S.X₂ - φ.τ₂) ≫ S.g = 0 := by
     rw [sub_comp, Category.id_comp, φ.comm₂₃, hφ, Category.comp_id, sub_self]
-  obtain ⟨γ, hγ⟩ := hS.exact.lift' (𝟙 S.X₂ - φ.τ₂) hker
+  obtain ⟨γ, hγ⟩ := hS.lift' (𝟙 S.X₂ - φ.τ₂) hker
   -- Composing with the monomorphism `S.f` identifies `S.f ≫ γ` with `𝟙 - φ.τ₁`.
   have hfγ : S.f ≫ γ = 𝟙 S.X₁ - φ.τ₁ := by
     refine (cancel_mono S.f).mp ?_
@@ -98,26 +100,27 @@ theorem IsLeftAlmostSplit.isIso_τ₁_of_τ₃_eq_id (hf : IsLeftAlmostSplit S.f
 identity on the right-hand end is an isomorphism.** -/
 theorem IsLeftAlmostSplit.isIso_of_τ₃_eq_id (hf : IsLeftAlmostSplit S.f) (hS : S.ShortExact)
     [IsLocalRing (End S.X₁)] (φ : S ⟶ S) (hφ : φ.τ₃ = 𝟙 S.X₃) : IsIso φ := by
-  have : IsIso φ.τ₁ := hf.isIso_τ₁_of_τ₃_eq_id hS φ hφ
+  have hmono := hS.mono_f
+  have : IsIso φ.τ₁ := hf.isIso_τ₁_of_τ₃_eq_id hS.exact φ hφ
   have : IsIso φ.τ₃ := hφ ▸ inferInstanceAs (IsIso (𝟙 S.X₃))
   have : IsIso φ.τ₂ := ShortComplex.isIso₂_of_shortExact_of_isIso₁₃ φ hS hS
   exact ShortComplex.isIso_of_isIso φ
 
 /-! ### The comparison morphism -/
 
-/-- **A map `e` into the right-hand end of a short exact sequence `S'` whose second map is right
-almost split extends to a morphism of short complexes `S ⟶ S'`, as soon as `S.g ≫ e` is not a
-split epimorphism.**  No hypothesis on `S` beyond its being a short complex is needed. -/
+/-- **A map `e` into the right-hand end of an exact short complex `S'` with monic first map and
+right almost split second map extends to a morphism of short complexes `S ⟶ S'`, as soon as
+`S.g ≫ e` is not a split epimorphism.**  No hypothesis on `S` beyond its being a short complex is
+needed. -/
 theorem IsRightAlmostSplit.exists_hom_τ₃_eq_of_not_isSplitEpi (hg : IsRightAlmostSplit S'.g)
-    (hS' : S'.ShortExact) (e : S.X₃ ⟶ S'.X₃) (he : ¬ IsSplitEpi (S.g ≫ e)) :
+    (hS' : S'.Exact) [Mono S'.f] (e : S.X₃ ⟶ S'.X₃) (he : ¬ IsSplitEpi (S.g ≫ e)) :
     ∃ φ : S ⟶ S', φ.τ₃ = e := by
-  have hmono := hS'.mono_f
   -- `S.g ≫ e` factors through the right almost split map `S'.g`.
   obtain ⟨β, hβ⟩ := hg.factors S.X₂ (S.g ≫ e) he
   -- The resulting map of middle terms carries `S.f` into the kernel of `S'.g`, which is `S'.f`.
   have hzero : (S.f ≫ β) ≫ S'.g = 0 := by
     rw [Category.assoc, hβ, ← Category.assoc, S.zero, zero_comp]
-  obtain ⟨α, hα⟩ := hS'.exact.lift' (S.f ≫ β) hzero
+  obtain ⟨α, hα⟩ := hS'.lift' (S.f ≫ β) hzero
   exact ⟨⟨α, β, e, hα, hβ⟩, rfl⟩
 
 end TauCeti
@@ -133,8 +136,9 @@ namespace IsAlmostSplit
 /-- **An isomorphism between the right-hand ends of two almost-split sequences is the third
 component of a morphism of short complexes between them.** -/
 theorem exists_hom_τ₃_eq (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit) (e : S.X₃ ≅ S'.X₃) :
-    ∃ φ : S ⟶ S', φ.τ₃ = e.hom :=
-  hS'.isRightAlmostSplit_g.exists_hom_τ₃_eq_of_not_isSplitEpi hS'.shortExact e.hom
+    ∃ φ : S ⟶ S', φ.τ₃ = e.hom := by
+  have hmono := hS'.shortExact.mono_f
+  exact hS'.isRightAlmostSplit_g.exists_hom_τ₃_eq_of_not_isSplitEpi hS'.shortExact.exact e.hom
     (hS.isRightAlmostSplit_g.comp_iso e).not_isSplitEpi
 
 /-- **A morphism of almost-split sequences that is invertible at the right-hand end is
@@ -144,10 +148,12 @@ theorem isIso_of_isIso_τ₃ (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit)
   -- Compose `φ` with a comparison morphism running the other way; both composites are the
   -- identity on the right-hand end, hence isomorphisms on the left-hand ends.
   obtain ⟨ψ, hψ⟩ := hS'.exists_hom_τ₃_eq hS (asIso φ.τ₃).symm
+  have hmono := hS.shortExact.mono_f
+  have hmono' := hS'.shortExact.mono_f
   have hcomp : IsIso ((φ ≫ ψ).τ₁) :=
-    hS.isLeftAlmostSplit_f.isIso_τ₁_of_τ₃_eq_id hS.shortExact (φ ≫ ψ) (by simp [hψ])
+    hS.isLeftAlmostSplit_f.isIso_τ₁_of_τ₃_eq_id hS.shortExact.exact (φ ≫ ψ) (by simp [hψ])
   have hcomp' : IsIso ((ψ ≫ φ).τ₁) :=
-    hS'.isLeftAlmostSplit_f.isIso_τ₁_of_τ₃_eq_id hS'.shortExact (ψ ≫ φ) (by simp [hψ])
+    hS'.isLeftAlmostSplit_f.isIso_τ₁_of_τ₃_eq_id hS'.shortExact.exact (ψ ≫ φ) (by simp [hψ])
   rw [comp_τ₁] at hcomp hcomp'
   -- So `φ.τ₁` has a left and a right inverse, hence is monic and epic, hence invertible.
   have hmf : φ.τ₁ ≫ ψ.τ₁ ≫ inv (φ.τ₁ ≫ ψ.τ₁) = 𝟙 S.X₁ := by
