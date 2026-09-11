@@ -461,6 +461,7 @@ variable [DecidableEq V]
 
 /-- **At `q = 0` the graded Cartan matrix is the identity matrix.** Only the degree-zero vertex
 idempotents survive this specialization. -/
+@[simp]
 theorem zigzagGradedCartanMatrix_map_eval_zero :
     (zigzagGradedCartanMatrix k G).map (eval 0) = 1 := by
   ext i j

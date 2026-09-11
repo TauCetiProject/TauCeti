@@ -53,21 +53,6 @@ namespace TauCeti
 
 open Polynomial
 
-private theorem exists_adj_zigzagD4Graph (i : Fin 4) :
-    ∃ j, zigzagD4Graph.Adj i j :=
-  SimpleGraph.exists_adj_iff_not_isIsolated.mpr
-    (connected_zigzagD4Graph.preconnected.not_isIsolated i)
-
-private theorem exists_adj_zigzagE8Graph (i : Fin 8) :
-    ∃ j, zigzagE8Graph.Adj i j :=
-  SimpleGraph.exists_adj_iff_not_isIsolated.mpr
-    (connected_zigzagE8Graph.preconnected.not_isIsolated i)
-
-private theorem exists_adj_zigzagAffineE8Graph (i : Fin 9) :
-    ∃ j, zigzagAffineE8Graph.Adj i j :=
-  SimpleGraph.exists_adj_iff_not_isIsolated.mpr
-    (connected_zigzagAffineE8Graph.preconnected.not_isIsolated i)
-
 /-! ### Matrix and entrywise formulas -/
 
 /-- **The graded Cartan matrix of the `D₄` zigzag algebra** is `(1 + q²)I + qA`. -/
@@ -75,46 +60,54 @@ theorem zigzagGradedCartanMatrix_D4_eq (k : Type*) [Field k] :
     zigzagGradedCartanMatrix k zigzagD4Graph =
       (1 + X ^ 2 : ℤ[X]) • (1 : Matrix (Fin 4) (Fin 4) ℤ[X]) +
         (X : ℤ[X]) • zigzagD4Graph.adjMatrix ℤ[X] :=
-  zigzagGradedCartanMatrix_eq k zigzagD4Graph exists_adj_zigzagD4Graph
+  zigzagGradedCartanMatrix_eq k zigzagD4Graph
+    connected_zigzagD4Graph.preconnected.exists_adj_of_nontrivial
 
 /-- **The graded Cartan matrix of the `E₈` zigzag algebra** is `(1 + q²)I + qA`. -/
 theorem zigzagGradedCartanMatrix_E8_eq (k : Type*) [Field k] :
     zigzagGradedCartanMatrix k zigzagE8Graph =
       (1 + X ^ 2 : ℤ[X]) • (1 : Matrix (Fin 8) (Fin 8) ℤ[X]) +
         (X : ℤ[X]) • zigzagE8Graph.adjMatrix ℤ[X] :=
-  zigzagGradedCartanMatrix_eq k zigzagE8Graph exists_adj_zigzagE8Graph
+  zigzagGradedCartanMatrix_eq k zigzagE8Graph
+    connected_zigzagE8Graph.preconnected.exists_adj_of_nontrivial
 
 /-- **The graded Cartan matrix of the affine `E₈` zigzag algebra** is `(1 + q²)I + qA`. -/
 theorem zigzagGradedCartanMatrix_affineE8_eq (k : Type*) [Field k] :
     zigzagGradedCartanMatrix k zigzagAffineE8Graph =
       (1 + X ^ 2 : ℤ[X]) • (1 : Matrix (Fin 9) (Fin 9) ℤ[X]) +
         (X : ℤ[X]) • zigzagAffineE8Graph.adjMatrix ℤ[X] :=
-  zigzagGradedCartanMatrix_eq k zigzagAffineE8Graph exists_adj_zigzagAffineE8Graph
+  zigzagGradedCartanMatrix_eq k zigzagAffineE8Graph
+    connected_zigzagAffineE8Graph.preconnected.exists_adj_of_nontrivial
 
 /-- **The entries of the Bourbaki-labelled `D₄` graded Cartan matrix.** The three listed pairs
 are precisely its off-diagonal entries equal to `q`; its diagonal entries are `1 + q²`. -/
+@[simp]
 theorem zigzagGradedCartanMatrix_D4_apply (k : Type*) [Field k] (i j : Fin 4) :
     zigzagGradedCartanMatrix k zigzagD4Graph i j =
       (if i = j then 1 + X ^ 2 else 0) +
         if (min (i : ℕ) (j : ℕ), max (i : ℕ) (j : ℕ)) ∈
           [((0 : ℕ), (1 : ℕ)), (1, 2), (1, 3)] then X else 0 := by
-  rw [zigzagGradedCartanMatrix_apply k zigzagD4Graph exists_adj_zigzagD4Graph]
+  rw [zigzagGradedCartanMatrix_apply k zigzagD4Graph
+    connected_zigzagD4Graph.preconnected.exists_adj_of_nontrivial]
   simp only [zigzagD4Graph_adj]
 
 /-- **The entries of the Bourbaki-labelled `E₈` graded Cartan matrix.** The seven listed pairs
 are precisely its off-diagonal entries equal to `q`; its diagonal entries are `1 + q²`. -/
+@[simp]
 theorem zigzagGradedCartanMatrix_E8_apply (k : Type*) [Field k] (i j : Fin 8) :
     zigzagGradedCartanMatrix k zigzagE8Graph i j =
       (if i = j then 1 + X ^ 2 else 0) +
         if (min (i : ℕ) (j : ℕ), max (i : ℕ) (j : ℕ)) ∈
             [((0 : ℕ), (2 : ℕ)), (1, 3), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7)]
           then X else 0 := by
-  rw [zigzagGradedCartanMatrix_apply k zigzagE8Graph exists_adj_zigzagE8Graph]
+  rw [zigzagGradedCartanMatrix_apply k zigzagE8Graph
+    connected_zigzagE8Graph.preconnected.exists_adj_of_nontrivial]
   simp only [zigzagE8Graph_adj]
 
 /-- **The entries of the arm-labelled affine `E₈ = T_{2,3,6}` graded Cartan matrix.** The
 eight listed pairs are precisely its off-diagonal entries equal to `q`; its diagonal entries are
 `1 + q²`. -/
+@[simp]
 theorem zigzagGradedCartanMatrix_affineE8_apply (k : Type*) [Field k] (i j : Fin 9) :
     zigzagGradedCartanMatrix k zigzagAffineE8Graph i j =
       (if i = j then 1 + X ^ 2 else 0) +
@@ -122,7 +115,7 @@ theorem zigzagGradedCartanMatrix_affineE8_apply (k : Type*) [Field k] (i j : Fin
             [((0 : ℕ), (1 : ℕ)), (0, 2), (2, 3), (0, 4), (4, 5), (5, 6), (6, 7),
               (7, 8)] then X else 0 := by
   rw [zigzagGradedCartanMatrix_apply k zigzagAffineE8Graph
-    exists_adj_zigzagAffineE8Graph]
+    connected_zigzagAffineE8Graph.preconnected.exists_adj_of_nontrivial]
   simp only [zigzagAffineE8Graph_adj]
 
 /-! ### Symmetry and the affine specialization -/
@@ -150,8 +143,25 @@ theorem zigzagGradedCartanMatrix_map_eval_neg_one_affineE8 (k : Type*) [Field k]
     (zigzagGradedCartanMatrix k zigzagAffineE8Graph).map (eval (-1)) =
       graphCartanMatrix zigzagAffineE8Graph ℤ := by
   rw [zigzagGradedCartanMatrix_map_eval_neg_one k zigzagAffineE8Graph
-    exists_adj_zigzagAffineE8Graph]
+    connected_zigzagAffineE8Graph.preconnected.exists_adj_of_nontrivial]
   exact (graphCartanMatrix_eq_two_smul_one_sub_adjMatrix zigzagAffineE8Graph).symm
+
+/-- **At `q = -1`, the affine `E₈` graded Cartan matrix is the canonical affine generalized
+Cartan matrix.** -/
+theorem zigzagGradedCartanMatrix_map_eval_neg_one_affineE8_eq_cartanMatrix
+    (k : Type*) [Field k] :
+    (zigzagGradedCartanMatrix k zigzagAffineE8Graph).map (eval (-1)) =
+      AffineDynkinType.E8.cartanMatrix := by
+  rw [zigzagGradedCartanMatrix_map_eval_neg_one_affineE8]
+  ext i j
+  rw [graphCartanMatrix_apply]
+  change (if i = j then 2 else if zigzagAffineE8Graph.Adj i j then -1 else 0) =
+    AffineDynkinType.E8.cartanMatrix
+      (Fin.cast AffineDynkinType.nodes_E8.symm i)
+      (Fin.cast AffineDynkinType.nodes_E8.symm j)
+  rw [AffineDynkinType.cartanMatrix_apply AffineDynkinType.isGraphical_E8]
+  simp only [Fin.cast_inj, Fin.val_cast, zigzagAffineE8Graph_adj,
+    AffineDynkinType.graph_E8_adj]
 
 /-- **The affine `E₈` specialization at `q = -1` is singular.** Its determinant vanishes
 because the explicit affine mark vector `(6,3,4,2,5,4,3,2,1)` is a null vector with final
@@ -171,8 +181,8 @@ theorem eval_neg_one_det_zigzagGradedCartanMatrix_affineE8 (k : Type*) [Field k]
     fin_cases i <;>
       norm_num [graphCartanMatrix_mulVec_apply, SimpleGraph.neighborFinset_eq_filter,
         zigzagAffineE8Graph_adj, δ] <;> decide
-  · change (1 : ℤ) ∈ nonZeroDivisors ℤ
-    exact one_mem _
+  · norm_num [δ]
+    decide
 
 /-- **The affine `E₈` graded Cartan determinant is a nonzero polynomial**, despite vanishing
 at `q = -1`. At `q = 0` the graded Cartan matrix is the identity. -/
