@@ -41,8 +41,6 @@ namespace TauCeti
 
 noncomputable section
 
-attribute [local instance] Classical.decEq
-
 variable {K n : Type*} [Field K] [Fintype n] [LinearOrder n]
 
 /-- The occupation projection attached to `k ≠ i`, oriented by the order on the index type. -/
@@ -77,9 +75,16 @@ private theorem commute_orientedCarOccupationElement (i k l : n) :
     | exact ((Commute.one_left _).sub_left
         ((Commute.one_right _).sub_right commute_carOccupationElement))
 
+/-- Expanding the oriented family recovers the positive-occupation diagonal sum. -/
+private theorem sum_orientedCarOccupationElement (i : n) :
+    (∑ k, orientedCarOccupationElement (K := K) i k) =
+      ∑ k, if k < i then 1 - carOccupationElement (K := K) k i
+        else carOccupationElement (K := K) i k := by
+  rfl
+
 namespace IsGlHighestWeightVector
 
-variable [h2 : Invertible (2 : K)]
+variable [h2 : Invertible (2 : K)] [decEq : DecidableEq n]
 
 /-- Every coordinate of a highest weight in the left regular CAR module is a natural number less
 than the matrix size, shifted by `1/2`.
@@ -90,16 +95,17 @@ theorem exists_carWeight_eq_natCast_add_inv_two {μ : n → K}
     {v : CliffordAlgebra (traceQuadraticForm K n)}
     (hv : IsGlHighestWeightVector μ v) (i : n) :
     ∃ m : ℕ, m < Fintype.card n ∧ μ i = (m : K) + (2 : K)⁻¹ := by
+  cases Subsingleton.elim decEq (Classical.decEq n)
+  let _ : DecidableEq n := Classical.decEq n
   let s := Finset.univ.erase i
   have hsum : (∑ k ∈ s, orientedCarOccupationElement (K := K) i k) • v =
       (μ i - (2 : K)⁻¹) • v := by
-    change (∑ k ∈ s, orientedCarOccupationElement (K := K) i k) * v =
-      (μ i - (2 : K)⁻¹) • v
+    rw [smul_eq_mul]
     have hdiag := hv.lie_single_self_eq_smul i
     rw [car_lie_def,
       @glCliffordHom_single_self_eq_sum_positive_occupation K n inferInstance inferInstance h2
         inferInstance i] at hdiag
-    change (∑ k, orientedCarOccupationElement (K := K) i k) * v = μ i • v at hdiag
+    rw [← sum_orientedCarOccupationElement] at hdiag
     rw [← Finset.sum_erase_add _ _ (Finset.mem_univ i), add_mul,
       orientedCarOccupationElement_self, smul_mul_assoc, one_mul] at hdiag
     rw [sub_smul]
