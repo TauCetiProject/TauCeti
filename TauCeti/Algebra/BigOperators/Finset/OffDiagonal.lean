@@ -27,9 +27,10 @@ public section
 namespace TauCeti
 
 /-- **The off-diagonal sum of a symmetric function is even.** The ordered pairs of distinct
-elements of `s` come in transposed couples contributing equal terms. -/
+elements of `s` come in transposed couples contributing equal terms, so `f` need only be
+symmetric on `s`. -/
 theorem even_sum_sum_erase {α M : Type*} [DecidableEq α] [AddCommMonoid M] {f : α → α → M}
-    (hf : ∀ i j, f i j = f j i) (s : Finset α) :
+    (s : Finset α) (hf : ∀ i ∈ s, ∀ j ∈ s, f i j = f j i) :
     Even (∑ i ∈ s, ∑ j ∈ s.erase i, f i j) := by
   induction s using Finset.induction with
   | empty => simp
@@ -41,8 +42,10 @@ theorem even_sum_sum_erase {α M : Type*} [DecidableEq α] [AddCommMonoid M] {f 
         Finset.sum_insert (fun h ↦ ha (Finset.mem_of_mem_erase h))]
     rw [Finset.sum_insert ha, Finset.erase_insert ha, Finset.sum_congr rfl hstep,
       Finset.sum_add_distrib, ← add_assoc]
-    refine Even.add ?_ ih
-    rw [Finset.sum_congr rfl fun i (_ : i ∈ s) ↦ hf i a]
+    refine Even.add ?_ (ih fun i hi j hj ↦
+      hf i (Finset.mem_insert_of_mem hi) j (Finset.mem_insert_of_mem hj))
+    rw [Finset.sum_congr rfl fun i hi ↦
+      hf i (Finset.mem_insert_of_mem hi) a (Finset.mem_insert_self a s)]
     exact ⟨_, rfl⟩
 
 end TauCeti

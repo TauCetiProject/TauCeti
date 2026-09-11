@@ -247,7 +247,7 @@ lemma even_sum_multiplicity_mul_diagonal :
       (T.multiplicity i : ℤ) * (T.multiplicity j : ℤ) * T.intersection i j) :=
     TauCeti.even_sum_sum_erase (s := univ)
       (f := fun i j ↦ (T.multiplicity i : ℤ) * (T.multiplicity j : ℤ) * T.intersection i j)
-      (fun i j ↦ by rw [T.intersection_comm i j]; ring)
+      (fun i _ j _ ↦ by rw [T.intersection_comm i j]; ring)
   have htotal : ∑ i, ∑ j,
       (T.multiplicity i : ℤ) * (T.multiplicity j : ℤ) * T.intersection i j = 0 := by
     refine Finset.sum_eq_zero fun i _ ↦ ?_
