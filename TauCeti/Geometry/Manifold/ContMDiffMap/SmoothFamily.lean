@@ -43,6 +43,15 @@ theorem continuous_weakWhitney_of_contDiff
   continuous_weakWhitney_of_continuous_iteratedFDeriv
     (fun m hm ↦ continuous_iteratedFDeriv_prod_right hf m hm)
 
+end TauCeti
+
+namespace _root_.ContMDiffMap
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {n : WithTop ℕ∞}
+
 /-- Curry a jointly `C^n` map into a continuous family of `C^n` maps, where the inner map
 space carries the weak Whitney topology. -/
 noncomputable def weakWhitneyCurry
@@ -51,7 +60,7 @@ noncomputable def weakWhitneyCurry
     C(P, C^n⟮𝓘(𝕜, E), E; 𝓘(𝕜, F), F⟯) where
   toFun p := ⟨fun x ↦ f (p, x),
     (f.contMDiff.contDiff.comp (contDiff_const.prodMk contDiff_id)).contMDiff⟩
-  continuous_toFun := continuous_weakWhitney_of_contDiff f.contMDiff.contDiff
+  continuous_toFun := TauCeti.continuous_weakWhitney_of_contDiff f.contMDiff.contDiff
 
 @[simp]
 theorem weakWhitneyCurry_apply
@@ -60,4 +69,4 @@ theorem weakWhitneyCurry_apply
     weakWhitneyCurry f p x = f (p, x) :=
   (rfl)
 
-end TauCeti
+end _root_.ContMDiffMap
