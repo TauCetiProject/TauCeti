@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import TauCeti.KnotTheory.Grid.Differential.Square.Zero
 
 /-!
@@ -78,6 +78,12 @@ theorem fullyBlockedComplex_X (i : Unit) :
     unfold fullyBlockedComplex
     rfl
 
+-- Proof irrelevance normalizes the object equation so the transports in the differential formula
+-- can be rewritten explicitly.
+private theorem fullyBlockedComplex_X_proof_eq_rfl :
+    G.fullyBlockedComplex_X () = rfl :=
+  Subsingleton.elim _ _
+
 /-- The unique differential of the fully blocked complex is the fully blocked grid differential. -/
 @[simp]
 theorem fullyBlockedComplex_d :
@@ -85,11 +91,9 @@ theorem fullyBlockedComplex_d :
       eqToHom (G.fullyBlockedComplex_X ()) ≫
         ModuleCat.ofHom G.fullyBlockedDifferential ≫
           eqToHom (G.fullyBlockedComplex_X ()).symm := by
+  rw [G.fullyBlockedComplex_X_proof_eq_rfl]
   unfold fullyBlockedComplex
-  -- The displayed object equations unfold to reflexivity, so both transports are identities.
-  change ModuleCat.ofHom G.fullyBlockedDifferential =
-    𝟙 _ ≫ ModuleCat.ofHom G.fullyBlockedDifferential ≫ 𝟙 _
-  simp only [Category.id_comp, Category.comp_id]
+  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
 
 /-! ### Unblocked complex -/
 
@@ -117,6 +121,12 @@ theorem unblockedComplex_X (i : Unit) :
     unfold unblockedComplex
     rfl
 
+-- Proof irrelevance normalizes the object equation so the transports in the differential formula
+-- can be rewritten explicitly.
+private theorem unblockedComplex_X_proof_eq_rfl :
+    G.unblockedComplex_X R () = rfl :=
+  Subsingleton.elim _ _
+
 /-- The unique differential of the unblocked complex is the unblocked grid differential. -/
 @[simp]
 theorem unblockedComplex_d :
@@ -124,11 +134,9 @@ theorem unblockedComplex_d :
       eqToHom (G.unblockedComplex_X R ()) ≫
         SemimoduleCat.ofHom (G.unblockedDifferential R) ≫
           eqToHom (G.unblockedComplex_X R ()).symm := by
+  rw [G.unblockedComplex_X_proof_eq_rfl R]
   unfold unblockedComplex
-  -- The displayed object equations unfold to reflexivity, so both transports are identities.
-  change SemimoduleCat.ofHom (G.unblockedDifferential R) =
-    𝟙 _ ≫ SemimoduleCat.ofHom (G.unblockedDifferential R) ≫ 𝟙 _
-  simp only [Category.id_comp, Category.comp_id]
+  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
 
 /-! ### One-variable specialization -/
 
@@ -156,6 +164,12 @@ theorem simplyBlockedComplex_X (i : Fin n) (j : Unit) :
     unfold simplyBlockedComplex
     rfl
 
+-- Proof irrelevance normalizes the object equation so the transports in the differential formula
+-- can be rewritten explicitly.
+private theorem simplyBlockedComplex_X_proof_eq_rfl (i : Fin n) :
+    G.simplyBlockedComplex_X R i () = rfl :=
+  Subsingleton.elim _ _
+
 /-- The unique differential of the one-variable specialization is its specialized grid
 differential. -/
 @[simp]
@@ -164,11 +178,9 @@ theorem simplyBlockedComplex_d (i : Fin n) :
       eqToHom (G.simplyBlockedComplex_X R i ()) ≫
         SemimoduleCat.ofHom (G.simplyBlockedDifferential R i) ≫
           eqToHom (G.simplyBlockedComplex_X R i ()).symm := by
+  rw [G.simplyBlockedComplex_X_proof_eq_rfl R i]
   unfold simplyBlockedComplex
-  -- The displayed object equations unfold to reflexivity, so both transports are identities.
-  change SemimoduleCat.ofHom (G.simplyBlockedDifferential R i) =
-    𝟙 _ ≫ SemimoduleCat.ofHom (G.simplyBlockedDifferential R i) ≫ 𝟙 _
-  simp only [Category.id_comp, Category.comp_id]
+  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
 
 end GridDiagram
 
