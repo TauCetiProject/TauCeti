@@ -54,7 +54,7 @@ Everything else in this file is `private` proof infrastructure: the block permut
 reindexed-cylinder change of variables, the cylinder approximation, and the disjoint-block product
 formula. The final approximation squeeze — arbitrarily close factoring approximants force measure
 `0` or `1` — is delegated to the shared zero-one criterion
-`TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_approx_factorization`.
+`TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_exists_measureReal_inter_eq_mul`.
 
 ## The argument
 
@@ -234,7 +234,7 @@ theorem measure_eq_zero_or_one_of_exchangeableSigma {ρ : Measure (ℕ → α)} 
     {s : Set (ℕ → α)} (hs : MeasurableSet[exchangeableSigma α] s) :
     ρ s = 0 ∨ ρ s = 1 := by
   have hs_meas : MeasurableSet s := exchangeableSigma_le s hs
-  refine TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_approx_factorization
+  refine TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_exists_measureReal_inter_eq_mul
     hs_meas.nullMeasurableSet ?_
   intro ε hε
   obtain ⟨F, S, hS, hFS⟩ := exists_cylinder_measure_symmDiff_lt (ρ := ρ) hs_meas

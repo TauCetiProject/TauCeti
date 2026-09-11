@@ -27,9 +27,9 @@ countable power of `ℝ≥0∞`.
 
 ## Main results
 
-* `TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_approx_factorization`: under a finite
-  measure, a null-measurable event admitting arbitrarily close pairs whose intersection mass
-  factors has mass `0` or `1`;
+* `TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_exists_measureReal_inter_eq_mul`:
+  under a finite measure, a null-measurable event admitting arbitrarily close pairs whose
+  intersection mass factors has mass `0` or `1`;
 * `TauCeti.MeasureTheory.IsZeroOneMeasure.exists_ae_eq_const`: under a zero-one measure, an
   almost-everywhere measurable map into a standard Borel space agrees almost everywhere with a
   single value.
@@ -63,17 +63,17 @@ namespace MeasureTheory
 private theorem abs_measureReal_sub_mul_self_le_of_symmDiff_lt
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
     {t t' s : Set Ω} (ht : NullMeasurableSet t μ) (ht' : NullMeasurableSet t' μ)
-    (hs : NullMeasurableSet s μ) {e : ℝ} (he : e ≤ 1) (h1 : μ.real (symmDiff t s) < e)
-    (h2 : μ.real (symmDiff t' s) < e)
+    (hs : NullMeasurableSet s μ) {e : ℝ} (he : e ≤ 1) (h1 : μ.real (symmDiff t s) ≤ e)
+    (h2 : μ.real (symmDiff t' s) ≤ e)
     (hinter : μ.real (t ∩ t') = μ.real t * μ.real t') :
     |μ.real s - μ.real s * μ.real s| ≤ e * (2 * μ.real s + 3) := by
   have hbt : |μ.real t - μ.real s| ≤ e :=
-    (abs_measureReal_sub_le_measureReal_symmDiff ht hs).trans h1.le
+    (abs_measureReal_sub_le_measureReal_symmDiff ht hs).trans h1
   have hbt' : |μ.real t' - μ.real s| ≤ e :=
-    (abs_measureReal_sub_le_measureReal_symmDiff ht' hs).trans h2.le
+    (abs_measureReal_sub_le_measureReal_symmDiff ht' hs).trans h2
   have he0 : 0 ≤ e := (abs_nonneg _).trans hbt
-  have hbi : |μ.real (t ∩ t') - μ.real s| < 2 * e :=
-    abs_measureReal_inter_sub_lt ht ht' hs h1 h2
+  have hbi : |μ.real (t ∩ t') - μ.real s| ≤ 2 * e :=
+    (abs_measureReal_inter_sub_le_of_measureReal_symmDiff ht ht' hs).trans (by linarith)
   have hprod : |μ.real t * μ.real t' - μ.real s * μ.real s| ≤ e * (2 * μ.real s + e) :=
     TauCeti.abs_mul_sub_mul_self_le hbt hbt' measureReal_nonneg measureReal_nonneg
   rw [hinter] at hbi
@@ -91,8 +91,8 @@ whose intersection mass factors. Then `s` has measure `0` or `1`; the measure ne
 
 The two approximants need not have the same measure and need not themselves be independent as
 random objects; only the displayed factorization of their intersection is used. -/
-theorem measure_eq_zero_or_one_of_forall_approx_factorization {Ω : Type*} [MeasurableSpace Ω]
-    {μ : Measure Ω} [IsFiniteMeasure μ] {s : Set Ω} (hs : NullMeasurableSet s μ)
+theorem measure_eq_zero_or_one_of_forall_exists_measureReal_inter_eq_mul {Ω : Type*}
+    [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ] {s : Set Ω} (hs : NullMeasurableSet s μ)
     (happrox : ∀ ε : ℝ, 0 < ε →
       ∃ t t' : Set Ω, NullMeasurableSet t μ ∧ NullMeasurableSet t' μ ∧
         μ.real (symmDiff t s) < ε ∧ μ.real (symmDiff t' s) < ε ∧
@@ -108,7 +108,7 @@ theorem measure_eq_zero_or_one_of_forall_approx_factorization {Ω : Type*} [Meas
     have he0 : 0 < e := lt_min one_pos (by positivity)
     obtain ⟨t, t', ht, ht', h1, h2, hinter⟩ := happrox e he0
     have hfinal := abs_measureReal_sub_mul_self_le_of_symmDiff_lt ht ht' hs (min_le_left _ _)
-      h1 h2 hinter
+      h1.le h2.le hinter
     rw [← hd] at hfinal
     have hle : e * (2 * μ.real s + 3) ≤ d / 2 := by
       calc e * (2 * μ.real s + 3) ≤ d / (2 * (2 * μ.real s + 3)) * (2 * μ.real s + 3) := by
