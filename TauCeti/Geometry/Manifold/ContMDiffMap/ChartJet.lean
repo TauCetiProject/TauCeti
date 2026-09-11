@@ -32,14 +32,14 @@ public section
 open Set Filter Topology
 open scoped Manifold
 
-namespace TauCeti
-
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : WithTop ℕ∞} [IsManifold I n M]
+
+namespace ContMDiffMap
 
 /-- The derivative of order `m` of a vector-valued map in the source chart at `x`, as a
 continuous map on the extended chart target. Derivatives are taken within that target. -/
@@ -83,6 +83,12 @@ noncomputable def chartWeakWhitneyJet
 theorem chartWeakWhitneyJet_apply
     (f : C^n⟮I, M; modelWithCornersSelf 𝕜 F, F⟯) (x : M) (m : {m : ℕ // m ≤ n}) :
     chartWeakWhitneyJet f x m = chartIteratedFDeriv f x m m.property := (rfl)
+
+end ContMDiffMap
+
+namespace TauCeti
+
+open ContMDiffMap
 
 /-- The weak Whitney topology on vector-valued `C^n` maps from a manifold: the initial topology
 for all derivatives on all preferred extended chart targets. -/
@@ -172,7 +178,7 @@ omit [IsManifold I n M]
 /-- For the identity chart of a normed space, the chart derivative is the ordinary iterated
 derivative, evaluated on the subtype representing the whole chart target. -/
 @[simp]
-theorem chartIteratedFDeriv_self_apply
+ theorem chartIteratedFDeriv_self_apply
     (f : C^n⟮modelWithCornersSelf 𝕜 E, E; modelWithCornersSelf 𝕜 F, F⟯)
     (x : E) (m : ℕ) (hm : m ≤ n)
     (y : (extChartAt (modelWithCornersSelf 𝕜 E) x).target) :
@@ -189,7 +195,7 @@ theorem chartIteratedFDeriv_self_apply
 /-- On a normed space, source-chart weak Whitney topology agrees with the existing topology
 defined using global iterated derivatives. Thus adding chart domains does not change the
 global-chart construction. -/
-theorem chartWeakWhitneyTopology_self :
+@[simp] theorem chartWeakWhitneyTopology_self :
     chartWeakWhitneyTopology (I := modelWithCornersSelf 𝕜 E) (M := E) (F := F) (n := n) =
       ContMDiffMap.weakWhitneyTopology := by
   have hglobal : ContMDiffMap.weakWhitneyTopology (k := 𝕜) (E := E) (F := F) (n := n) =
@@ -221,9 +227,8 @@ theorem chartWeakWhitneyTopology_self :
     intro x
     apply continuous_pi
     intro m
-    let fromTarget : C((extChartAt (modelWithCornersSelf 𝕜 E) x).target, E) :=
-      ⟨Subtype.val, continuous_subtype_val⟩
-    have h := (ContinuousMap.continuous_precomp fromTarget).comp
+    have h := (ContinuousMap.continuous_restrict
+      (extChartAt (modelWithCornersSelf 𝕜 E) x).target).comp
       (ContMDiffMap.continuous_iteratedFDerivContinuousMap (k := 𝕜)
         (E := E) (F := F) (n := n) m m.property)
     convert h using 1 <;> try rfl
