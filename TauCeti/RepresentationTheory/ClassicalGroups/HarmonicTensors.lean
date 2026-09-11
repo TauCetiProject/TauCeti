@@ -147,11 +147,6 @@ theorem harmonicTensors_zero : harmonicTensors k n 0 = ⊤ :=
 theorem harmonicTensors_one : harmonicTensors k n 1 = ⊤ :=
   harmonicTensors_eq_top_of_lt_two k n (by norm_num)
 
-/-- The dot product of two distinct entries of a pair does not depend on their order. -/
-private theorem dotProduct_of_ne {a b : Fin 2} (hab : a ≠ b) (v : Fin 2 → (Fin n → k)) :
-    v a ⬝ᵥ v b = v 0 ⬝ᵥ v 1 := by
-  fin_cases a <;> fin_cases b <;> simp_all [dotProduct_comm]
-
 /-- On the tensor square every contraction is the cap, read through the canonical identification
 of the empty tensor power with the scalars. -/
 theorem isEmptyEquiv_comp_orthogonalContract (σ : Fin 2 ≃ Fin 0 ⊕ Fin 2) :
@@ -162,7 +157,13 @@ theorem isEmptyEquiv_comp_orthogonalContract (σ : Fin 2 ≃ Fin 0 ⊕ Fin 2) :
   simp only [LinearMap.compMultilinearMap_apply, LinearMap.coe_comp, Function.comp_apply,
     LinearEquiv.coe_coe, orthogonalContract_tprod, map_smul, smul_eq_mul,
     PiTensorProduct.isEmptyEquiv_apply_tprod, mul_one, orthogonalCap_tprod]
-  exact dotProduct_of_ne k n (orthogonalContract_slots_ne σ) v
+  -- The two capped slots are the two slots of the square, in one order or the other.
+  have hne := orthogonalContract_slots_ne σ
+  revert hne
+  generalize σ.symm (Sum.inr 0) = a
+  generalize σ.symm (Sum.inr 1) = b
+  intro hne
+  fin_cases a <;> fin_cases b <;> simp_all [dotProduct_comm]
 
 /-- **On the tensor square the harmonic tensors are the kernel of the cap.** -/
 @[simp]
@@ -250,15 +251,6 @@ section Invariance
 
 variable {k n}
 
-/-- A matrix with `Aᵀ * A = 1` preserves the coordinate dot product.  This is
-`TauCeti.orthogonalCap_comp_piTensorProductMap`, the invariance of the cap, read on a pure
-tensor. -/
-private theorem dotProduct_mulVec_mulVec {A : Matrix (Fin n) (Fin n) k} (hA : Aᵀ * A = 1)
-    (x y : Fin n → k) : (A *ᵥ x) ⬝ᵥ (A *ᵥ y) = x ⬝ᵥ y := by
-  have h := LinearMap.congr_fun (orthogonalCap_comp_piTensorProductMap hA)
-    (PiTensorProduct.tprod k ![x, y])
-  simpa using h
-
 /-- **Contractions commute with an isometry.**  A matrix `A` with `Aᵀ * A = 1` acts diagonally on
 every tensor power, and contracting a pair of slots is unaffected: the cap it contracts against is
 exactly what `A` preserves. -/
@@ -268,9 +260,14 @@ theorem orthogonalContract_comp_piTensorProductMap {A : Matrix (Fin n) (Fin n) k
       PiTensorProduct.map (fun _ : Fin m => Matrix.mulVecLin A) ∘ₗ orthogonalContract k n σ := by
   refine PiTensorProduct.ext ?_
   ext v
+  -- The invariance of the cap, read on the pure tensor of the two capped slots.
+  have hv : (A *ᵥ v (σ.symm (Sum.inr 0))) ⬝ᵥ (A *ᵥ v (σ.symm (Sum.inr 1))) =
+      v (σ.symm (Sum.inr 0)) ⬝ᵥ v (σ.symm (Sum.inr 1)) := by
+    simpa using LinearMap.congr_fun (orthogonalCap_comp_piTensorProductMap hA)
+      (PiTensorProduct.tprod k ![v (σ.symm (Sum.inr 0)), v (σ.symm (Sum.inr 1))])
   simp only [LinearMap.compMultilinearMap_apply, LinearMap.coe_comp, Function.comp_apply,
     PiTensorProduct.map_tprod, orthogonalContract_tprod, map_smul, Matrix.mulVecLin_apply]
-  rw [dotProduct_mulVec_mulVec hA]
+  rw [hv]
 
 end Invariance
 
