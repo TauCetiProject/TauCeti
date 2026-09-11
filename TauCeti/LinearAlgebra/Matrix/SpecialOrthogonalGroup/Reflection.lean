@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Polynomial.Laurent
 import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Basic
-import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Generation
 
 /-!
 # Reflection matrices for the standard symmetric form
