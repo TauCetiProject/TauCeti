@@ -11,12 +11,15 @@ public import TauCeti.RepresentationTheory.Symmetric.Specht.Module
 public import TauCeti.RepresentationTheory.Symmetric.Standard
 
 /-!
-# The Specht module of the shape `(n-1, 1)` is the standard representation
+# The Specht module of the shape `(N-1, 1)` is the standard representation
 
-The third of the named small irreducible representations of `Sₙ`, beside the trivial
-representation `S^{(n)}` and the sign representation `S^{(1ⁿ)}` of
-`TauCeti.RepresentationTheory.Symmetric.Specht.Extremes`, is the `(n-1)`-dimensional **standard
-representation** `S^{(n-1,1)}`.  Unlike those two it is not a line, and identifying it needs the
+Throughout, `N` is the degree of the symmetric group, and `n` the parameter the declarations for
+the concrete partition carry, so that `N = n + 2`.
+
+The third of the named small irreducible representations of `S_N`, beside the trivial
+representation `S^{(N)}` and the sign representation `S^{(1^N)}` of
+`TauCeti.RepresentationTheory.Symmetric.Specht.Extremes`, is the `(N-1)`-dimensional **standard
+representation** `S^{(N-1,1)}`.  Unlike those two it is not a line, and identifying it needs the
 tabloid combinatorics of a shape with two rows.  This file supplies that combinatorics and proves
 the identification.
 
@@ -54,7 +57,7 @@ that naming carries the standard representation of `Fin μ.card` onto the Specht
 follows.  Relabelling the labels of the diagram along `TauCeti.card_diagramOf` states both for the
 partition `(n+1, 1)` itself.
 
-The parallel statement one level up, `M^{(n-1,1)} = triv ⊕ standard`, is proved for the partition
+The parallel statement one level up, `M^{(N-1,1)} = triv ⊕ standard`, is proved for the partition
 `(n+1, 1)` itself in
 `TauCeti.RepresentationTheory.Symmetric.PermutationModule.SingletonSecondRow`; that file names the
 tabloids by the labels through the Young subgroup, which is the stabilizer of a point, whereas the
@@ -68,7 +71,7 @@ polytabloids are indexed by.
 * `TauCeti.labelTabloid` and `TauCeti.labelTabloidEquiv`: the tabloids of a shape `(m, 1)` are the
   labels, `TauCeti.labelTabloidRepresentationEquiv` being the induced identification of `M^μ` with
   the permutation module on the labels.
-* `TauCeti.standardRepresentationEquivSpechtSubrepresentation`: **`S^{(n-1,1)}` is the standard
+* `TauCeti.standardRepresentationEquivSpechtSubrepresentation`: **`S^{(N-1,1)}` is the standard
   representation**, and `TauCeti.standardRepresentationEquivSpechtModuleSingletonSecondRow` the
   same identification for the partition-indexed `TauCeti.spechtModule`.
 
@@ -89,11 +92,8 @@ polytabloids are indexed by.
 ## References
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapter 5, where
-  `S^{(n-1,1)}` is identified with the standard representation.
+  `S^{(N-1,1)}` is identified with the standard representation.
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 7.2.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 4, "the named small irreducibles", which asks for `S^{(n-1,1)}` to be the
-  `(n-1)`-dimensional standard representation.
 -/
 
 public section
@@ -410,7 +410,7 @@ polytabloids of such a shape are exactly the differences of two tabloid basis ve
 span the subrepresentation on which the coefficients sum to zero.
 
 Since `TauCeti.standardRepresentation` is by definition the action carried by the augmentation
-subrepresentation of a permutation module, this is the identification `S^{(n-1,1)} = standard`,
+subrepresentation of a permutation module, this is the identification `S^μ = standard`,
 read on the tabloids; `TauCeti.labelTabloidEquiv` names the tabloids by the labels. -/
 theorem spechtSubrepresentation_eq_augmentationSubrepresentation (h1 : μ.rowLen 1 = 1)
     (h2 : μ.rowLen 2 = 0) :
@@ -584,7 +584,8 @@ private theorem coe_standardRepresentationEquivSpechtSubrepresentationOfCard_app
   exact coe_standardRepresentationEquivSpechtSubrepresentation_apply h1 h2 t v
 
 /-- **The Specht module of a shape `(m, 1)` has dimension one less than the number of labels**:
-the standard representation of `Sₙ` has dimension `n - 1`. -/
+the standard representation of the symmetric group on `μ.card` labels has dimension
+`μ.card - 1`. -/
 theorem finrank_spechtSubrepresentation_of_rowLen (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) :
     Module.finrank ℚ (spechtSubrepresentation μ).toSubmodule = μ.card - 1 := by
   obtain ⟨t⟩ := YoungTableau.nonempty μ
@@ -605,7 +606,7 @@ theorem rowLen_diagramOf_singletonSecondRow_two (n : ℕ) :
   rw [rowLen_diagramOf, Nat.Partition.sort_parts_singletonSecondRow]
   rfl
 
-/-- **`S^{(n-1,1)}` has dimension `n - 1`**: the Specht module of the shape `(n+1, 1)` of `n + 2`
+/-- **`S^{(n+1,1)}` has dimension `n + 1`**: the Specht module of the shape `(n+1, 1)` of `n + 2`
 is the `(n+1)`-dimensional standard representation of `S_{n+2}`. -/
 @[simp]
 theorem finrank_spechtModule_singletonSecondRow (n : ℕ) :
@@ -614,7 +615,7 @@ theorem finrank_spechtModule_singletonSecondRow (n : ℕ) :
     (rowLen_diagramOf_singletonSecondRow_one n)
     (rowLen_diagramOf_singletonSecondRow_two n)).trans (by rw [card_diagramOf]; omega)
 
-/-- **`S^{(n-1,1)}` is the standard representation**, for the partition-indexed Specht module
+/-- **`S^{(n+1,1)}` is the standard representation**, for the partition-indexed Specht module
 `TauCeti.spechtModule` the classification of the irreducibles is stated in.  This is
 `TauCeti.standardRepresentationEquivSpechtSubrepresentation` for the shape `(n+1, 1)`, with the
 symmetric group on the labels of the diagram identified with `S_{n+2}` along
@@ -627,7 +628,7 @@ noncomputable def standardRepresentationEquivSpechtModuleSingletonSecondRow (n :
     (rowLen_diagramOf_singletonSecondRow_one n) (rowLen_diagramOf_singletonSecondRow_two n) t
     (card_diagramOf _)
 
-/-- The identification of `S^{(n-1,1)}` with the standard representation is the transport of the
+/-- The identification of `S^{(n+1,1)}` with the standard representation is the transport of the
 tabloids, read on the labels of the diagram along `TauCeti.card_diagramOf`. -/
 @[simp]
 theorem coe_standardRepresentationEquivSpechtModuleSingletonSecondRow_apply (n : ℕ)
