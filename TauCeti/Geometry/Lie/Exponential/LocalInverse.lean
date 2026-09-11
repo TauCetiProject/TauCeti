@@ -574,9 +574,9 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
   set q := d.trans c.symm with hqdef
   have hqsource : q.source = d.source ∩ d ⁻¹' c.symm.source := by
     rw [hqdef]
-    exact TauCeti.partialDiffeomorph_trans_source _ _
+    exact PartialEquiv.trans_source d.toPartialEquiv c.symm.toPartialEquiv
   have hcsymmsource : c.symm.source = c.target := by
-    exact TauCeti.partialDiffeomorph_symm_source _
+    exact PartialEquiv.symm_source c.toPartialEquiv
   have hzeroq : (0 : E) ∈ q.source := by
     rw [hqsource]
     refine ⟨hzero, ?_⟩
@@ -588,8 +588,12 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
     rw [hqsource] at hx
     have hqapply : q x = c.toPartialEquiv.symm (d x) := by
       rw [hqdef]
-      rw [TauCeti.partialDiffeomorph_trans_apply,
-        TauCeti.partialDiffeomorph_symm_apply]
+      -- Expose the generated projections of composition and symmetry, then use Mathlib's
+      -- underlying partial-equivalence composition equation.
+      change (d.toPartialEquiv.trans c.symm.toPartialEquiv) x =
+        c.toPartialEquiv.symm (d.toPartialEquiv x)
+      rw [PartialEquiv.trans_apply]
+      rfl
     calc
       f x = chart.symm (d x) := by
         rw [← hd]

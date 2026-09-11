@@ -56,38 +56,6 @@ variable {𝕂 : Type*} [NontriviallyNormedField 𝕂]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
 
-section PartialDiffeomorph
-
-variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕂 F']
-  {G' : Type*} [TopologicalSpace G']
-  {P : Type*} [TopologicalSpace P] [ChartedSpace G' P]
-  {I : ModelWithCorners 𝕂 E H} {J : ModelWithCorners 𝕂 F G}
-  {K : ModelWithCorners 𝕂 F' G'} {n : WithTop ℕ∞}
-
-/-- The source of a composition of partial diffeomorphisms. -/
-theorem partialDiffeomorph_trans_source (Φ : PartialDiffeomorph I J M N n)
-    (Ψ : PartialDiffeomorph J K N P n) :
-    (Φ.trans Ψ).source = Φ.source ∩ Φ ⁻¹' Ψ.source :=
-  PartialEquiv.trans_source Φ.toPartialEquiv Ψ.toPartialEquiv
-
-/-- The source of the inverse of a partial diffeomorphism is its target. -/
-theorem partialDiffeomorph_symm_source (Φ : PartialDiffeomorph I J M N n) :
-    Φ.symm.source = Φ.target :=
-  PartialEquiv.symm_source Φ.toPartialEquiv
-
-/-- Applying a composition of partial diffeomorphisms applies its factors successively. -/
-@[simp]
-theorem partialDiffeomorph_trans_apply (Φ : PartialDiffeomorph I J M N n)
-    (Ψ : PartialDiffeomorph J K N P n) (x : M) :
-    Φ.trans Ψ x = Ψ (Φ x) := rfl
-
-/-- The inverse of a partial diffeomorphism applies its underlying partial equivalence inverse. -/
-@[simp]
-theorem partialDiffeomorph_symm_apply (Φ : PartialDiffeomorph I J M N n) (x : N) :
-    Φ.symm x = Φ.toPartialEquiv.symm x := rfl
-
-end PartialDiffeomorph
-
 section Charts
 
 variable (I : ModelWithCorners 𝕂 E H) (n : WithTop ℕ∞) [IsManifold I n M]
@@ -128,6 +96,8 @@ private theorem extChartPartialDiffeomorph_toPartialEquiv (x : M) :
         (s := (extChartAt I x) ⁻¹' interior (extChartAt I x).target)
         (t := interior (extChartAt I x).target) rfl).restr := (rfl)
 
+/-- The source of the restricted extended chart consists of points in the original chart source
+whose chart coordinates lie in the interior of the chart target. -/
 theorem extChartPartialDiffeomorph_source (x : M) :
     (extChartPartialDiffeomorph I n x).source =
       (extChartAt I x).source ∩
@@ -135,6 +105,8 @@ theorem extChartPartialDiffeomorph_source (x : M) :
   rw [extChartPartialDiffeomorph_toPartialEquiv,
     PartialEquiv.IsImage.restr_source]
 
+/-- The center of the restricted extended chart belongs to its source exactly when it is an
+interior point of the manifold. -/
 @[simp]
 theorem mem_extChartPartialDiffeomorph_source (x : M) :
     x ∈ (extChartPartialDiffeomorph I n x).source ↔ I.IsInteriorPoint x := by
@@ -142,6 +114,7 @@ theorem mem_extChartPartialDiffeomorph_source (x : M) :
   simp only [mem_extChartAt_source, true_and]
   exact (ModelWithCorners.isInteriorPoint_iff (I := I)).symm
 
+/-- The target of the restricted extended chart is the interior of the original chart target. -/
 @[simp]
 theorem extChartPartialDiffeomorph_target (x : M) :
     (extChartPartialDiffeomorph I n x).target = interior (extChartAt I x).target := by
@@ -149,6 +122,8 @@ theorem extChartPartialDiffeomorph_target (x : M) :
     PartialEquiv.IsImage.restr_target,
     inter_eq_right.2 interior_subset]
 
+/-- The forward function of the restricted extended chart agrees with the original extended
+chart. -/
 @[simp]
 theorem coe_extChartPartialDiffeomorph (x : M) :
     ⇑(extChartPartialDiffeomorph I n x) = extChartAt I x := by
@@ -286,33 +261,56 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
     (extChartPartialDiffeomorph I n x).trans Ψ with hΦ
   -- Compute both composite sources through the semantic partial-diffeomorphism API.
   have hΨsource : Ψ.source = Θ.source ∩ Θ ⁻¹' interior ψ.target := by
-    rw [hΨ]
-    simp only [partialDiffeomorph_trans_source, partialDiffeomorph_symm_source,
-      extChartPartialDiffeomorph_target, hψ,
+    have htransSource :
+        ((PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).trans
+          (extChartPartialDiffeomorph J n (f x)).symm).source =
+            (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).source ∩
+              (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm) ⁻¹'
+                (extChartPartialDiffeomorph J n (f x)).symm.source :=
+      PartialEquiv.trans_source _ _
+    have hchartSymmSource :
+        (extChartPartialDiffeomorph J n (f x)).symm.source =
+          (extChartPartialDiffeomorph J n (f x)).target :=
+      PartialEquiv.symm_source (extChartPartialDiffeomorph J n (f x)).toPartialEquiv
+    rw [hΨ, htransSource, hchartSymmSource]
+    simp only [extChartPartialDiffeomorph_target, hψ,
       PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv,
       PartialHomeomorph.toFun_eq_coe, OpenPartialHomeomorph.coe_toPartialHomeomorph]
   have hsource : Φ.source =
       (φ.source ∩ φ ⁻¹' interior φ.target) ∩
         φ ⁻¹' (Θ.source ∩ Θ ⁻¹' interior ψ.target) := by
-    rw [hΦ]
-    simp only [partialDiffeomorph_trans_source, hΨsource,
-      extChartPartialDiffeomorph_source, hφ,
+    have htransSource :
+        ((extChartPartialDiffeomorph I n x).trans Ψ).source =
+          (extChartPartialDiffeomorph I n x).source ∩
+          (extChartPartialDiffeomorph I n x) ⁻¹' Ψ.source := by
+      exact PartialEquiv.trans_source _ _
+    rw [hΦ, htransSource]
+    simp only [hΨsource, extChartPartialDiffeomorph_source, hφ,
       coe_extChartPartialDiffeomorph]
   -- By construction the composite acts as `ψ.symm ∘ Θ ∘ φ`.
   have hcoe (y : M) : Φ y = ψ.symm (Θ (φ y)) := by
     calc
       Φ y = Ψ ((extChartPartialDiffeomorph I n x) y) := by
         rw [hΦ]
-        exact partialDiffeomorph_trans_apply _ _ _
+        change ((extChartPartialDiffeomorph I n x).toPartialEquiv.trans Ψ.toPartialEquiv) y =
+          Ψ.toPartialEquiv ((extChartPartialDiffeomorph I n x).toPartialEquiv y)
+        exact PartialEquiv.trans_apply _ _
       _ = (extChartPartialDiffeomorph J n (f x)).symm
           ((PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm)
             ((extChartPartialDiffeomorph I n x) y)) := by
         rw [hΨ]
-        exact partialDiffeomorph_trans_apply _ _ _
+        change ((PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).toPartialEquiv.trans
+            (extChartPartialDiffeomorph J n (f x)).symm.toPartialEquiv)
+            ((extChartPartialDiffeomorph I n x).toPartialEquiv y) = _
+        exact PartialEquiv.trans_apply _ _
       _ = ψ.symm (Θ (φ y)) := by
+        -- Expose the generated projections of `PartialDiffeomorph.symm` before applying the
+        -- chart-specific semantic equations below.
+        change (extChartPartialDiffeomorph J n (f x)).toPartialEquiv.symm
+            ((PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).toPartialEquiv
+              ((extChartPartialDiffeomorph I n x).toPartialEquiv y)) = ψ.symm (Θ (φ y))
         simp only [coe_extChartPartialDiffeomorph,
           PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv,
-          partialDiffeomorph_symm_apply,
           PartialHomeomorph.toFun_eq_coe, OpenPartialHomeomorph.coe_toPartialHomeomorph,
           hφ, hψ]
         exact extChartPartialDiffeomorph_symm_apply J n (f x) _
