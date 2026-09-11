@@ -574,12 +574,9 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
   set q := d.trans c.symm with hqdef
   have hqsource : q.source = d.source ∩ d ⁻¹' c.symm.source := by
     rw [hqdef]
-    simp only [PartialDiffeomorph.trans_toPartialEquiv,
-      OpenPartialHomeomorph.trans_toPartialEquiv,
-      PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
-      PartialEquiv.trans_source]
+    exact TauCeti.partialDiffeomorph_trans_source _ _
   have hcsymmsource : c.symm.source = c.target := by
-    rw [PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_source]
+    exact TauCeti.partialDiffeomorph_symm_source _
   have hzeroq : (0 : E) ∈ q.source := by
     rw [hqsource]
     refine ⟨hzero, ?_⟩
@@ -591,10 +588,8 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
     rw [hqsource] at hx
     have hqapply : q x = c.toPartialEquiv.symm (d x) := by
       rw [hqdef]
-      simp only [PartialDiffeomorph.trans_toPartialEquiv,
-        OpenPartialHomeomorph.trans_toPartialEquiv,
-        PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
-        PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.coe_trans, Function.comp_apply]
+      rw [TauCeti.partialDiffeomorph_trans_apply,
+        TauCeti.partialDiffeomorph_symm_apply]
     calc
       f x = chart.symm (d x) := by
         rw [← hd]
