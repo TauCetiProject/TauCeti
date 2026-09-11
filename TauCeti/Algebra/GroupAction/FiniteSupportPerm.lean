@@ -12,6 +12,7 @@ public import Mathlib.Data.Set.Countable
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Order.Interval.Finset.Nat
 public import Mathlib.Logic.Equiv.Fintype
+public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Logic.Embedding.Set
 import Mathlib.Algebra.Group.Pointwise.Set.Finite
 -- Non-public: `Finset.countable`, the index of the covering used for countability of `finitary`.
@@ -30,7 +31,9 @@ intersections (Mathlib's `CountableInterFilter`), such as the a.e. filter of a m
 
 The file also supplies `Equiv.Perm.exists_prodCongrRight_mem_finitary_apply_eq_on_finset`:
 finitely many values of an arbitrary family of permutations can be matched by a family whose
-induced permutation of the product moves only finitely many indexed points altogether.
+induced permutation of the product moves only finitely many indexed points altogether; and the
+**block swap** `blockSwap N`, the finitely supported permutation of `ℕ` exchanging `[0, N)` with
+`[N, 2N)`, which carries any finite index set inside `[0, N)` onto a disjoint copy.
 -/
 
 public section
@@ -67,6 +70,45 @@ theorem finite_compl_fixedBy_iff_eventually_eq_self {π : Equiv.Perm ℕ} :
 theorem finite_compl_fixedBy_conj {G α : Type*} [Group G] [MulAction G α] {g h : G}
     (hh : (MulAction.fixedBy α h)ᶜ.Finite) : (MulAction.fixedBy α (g⁻¹ * h * g))ᶜ.Finite := by
   simpa [Set.smul_set_compl, MulAction.smul_fixedBy] using hh.smul_set (a := g⁻¹)
+
+/-! ## The block swap -/
+
+/-- The finitely supported permutation of `ℕ` that swaps the block `[0, N)` with `[N, 2N)`
+pointwise and fixes everything from `2 * N` on: Mathlib's half-swap `finAddFlip` on `Fin (N + N)`,
+transported to `ℕ` along the value embedding. -/
+def blockSwap (N : ℕ) : Equiv.Perm ℕ :=
+  Equiv.Perm.viaFintypeEmbedding (finAddFlip (m := N) (n := N)) ⟨Fin.val, Fin.val_injective⟩
+
+/-- On `[0, N)`, `blockSwap N` shifts by `N`. -/
+theorem blockSwap_apply_of_lt {N i : ℕ} (hi : i < N) : blockSwap N i = N + i := by
+  have h : (⟨Fin.val, Fin.val_injective⟩ : Fin (N + N) ↪ ℕ)
+      (Fin.castAdd N ⟨i, hi⟩) = i := rfl
+  rw [blockSwap, ← h, Equiv.Perm.viaFintypeEmbedding_apply_image, finAddFlip_apply_castAdd]
+  rfl
+
+/-- From `2 * N` on, `blockSwap N` is the identity. -/
+theorem blockSwap_apply_of_le {N n : ℕ} (hn : N + N ≤ n) : blockSwap N n = n := by
+  refine Equiv.Perm.viaFintypeEmbedding_apply_notMem_range _ _ ?_
+  rintro ⟨j, rfl⟩
+  exact absurd j.isLt (not_lt.mpr hn)
+
+/-- `blockSwap N` carries any index set inside `[0, N)` off itself: the moved copy lands in
+`[N, 2N)`. -/
+theorem disjoint_map_blockSwap {N : ℕ} {F : Finset ℕ} (hF : F ⊆ Finset.range N) :
+    Disjoint F (F.map (Equiv.toEmbedding (blockSwap N))) := by
+  rw [Finset.disjoint_left]
+  intro a haF hamem
+  obtain ⟨b, hbF, hb⟩ := Finset.mem_map.mp hamem
+  have hbN : b < N := Finset.mem_range.mp (hF hbF)
+  have haN : a < N := Finset.mem_range.mp (hF haF)
+  rw [Equiv.coe_toEmbedding, blockSwap_apply_of_lt hbN] at hb
+  omega
+
+/-- `blockSwap N` is finitely supported. -/
+theorem blockSwap_finite_support (N : ℕ) :
+    (MulAction.fixedBy ℕ (blockSwap N))ᶜ.Finite :=
+  finite_compl_fixedBy_of_eventually_eq_self ⟨N + N, fun _ hn => blockSwap_apply_of_le hn⟩
+
 
 /-- The self-maps of a countable type that move only finitely many points form a countable set:
 such a map is determined by the finite set it moves together with its values there. -/
