@@ -18,9 +18,7 @@ obtained from the tensor descent equivalence, its counit takes values in `k`, an
 antipode is the restriction of the split antipode. These are the coordinate Hopf algebras
 used to construct groups of multiplicative type, and non-split tori when `M` is a lattice.
 
-The coalgebra and antipode identities are checked in the split group algebra. Injectivity
-of the comparison on triple tensor products allows coassociativity to descend. No finite
-generation of `M` or restriction on the characteristic is needed.
+No finite generation of `M` or restriction on the characteristic is needed.
 
 ## References
 
@@ -206,15 +204,14 @@ theorem groupAlgebraInvariantsTensorEquiv_comul (x : B) :
 theorem counit_groupAlgebraInvariants (x : B) :
     Coalgebra.counit (R := k) x = groupAlgebraInvariantsCounit rho x := rfl
 
-private theorem tensorInclusion_comul (x : B) :
-    tensorInclusion rho (Coalgebra.comul (R := k) x) =
-      Coalgebra.comul (R := L) (x : A) := by
-  simp [tensorInclusion]
-
 private theorem descendedAntipode_left :
     LinearMap.mul' k B ∘ₗ
         (groupAlgebraInvariantsAntipode rho).toLinearMap.rTensor B ∘ₗ
           Coalgebra.comul = Algebra.linearMap k B ∘ₗ Coalgebra.counit := by
+  -- Expose the instance's comultiplication so the existing descent lemma applies.
+  change LinearMap.mul' k B ∘ₗ
+    (groupAlgebraInvariantsAntipode rho).toLinearMap.rTensor B ∘ₗ
+      (descendedComul rho).toLinearMap = Algebra.linearMap k B ∘ₗ Coalgebra.counit
   have h (t : B ⊗[k] B) :
       (LinearMap.mul' k B
         ((groupAlgebraInvariantsAntipode rho).toLinearMap.rTensor B t) : A) =
@@ -227,7 +224,7 @@ private theorem descendedAntipode_left :
   apply LinearMap.ext
   intro x
   apply Subtype.val_injective
-  simp only [LinearMap.comp_apply, h, tensorInclusion_comul,
+  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, h, tensorInclusion_descendedComul,
     HopfAlgebra.mul_antipode_rTensor_comul_apply, Algebra.linearMap_apply,
     counit_groupAlgebraInvariants]
   rw [← algebraMap_groupAlgebraInvariantsCounit rho]
@@ -237,6 +234,10 @@ private theorem descendedAntipode_right :
     LinearMap.mul' k B ∘ₗ
         (groupAlgebraInvariantsAntipode rho).toLinearMap.lTensor B ∘ₗ
           Coalgebra.comul = Algebra.linearMap k B ∘ₗ Coalgebra.counit := by
+  -- Expose the instance's comultiplication so the existing descent lemma applies.
+  change LinearMap.mul' k B ∘ₗ
+    (groupAlgebraInvariantsAntipode rho).toLinearMap.lTensor B ∘ₗ
+      (descendedComul rho).toLinearMap = Algebra.linearMap k B ∘ₗ Coalgebra.counit
   have h (t : B ⊗[k] B) :
       (LinearMap.mul' k B
         ((groupAlgebraInvariantsAntipode rho).toLinearMap.lTensor B t) : A) =
@@ -249,7 +250,7 @@ private theorem descendedAntipode_right :
   apply LinearMap.ext
   intro x
   apply Subtype.val_injective
-  simp only [LinearMap.comp_apply, h, tensorInclusion_comul,
+  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, h, tensorInclusion_descendedComul,
     HopfAlgebra.mul_antipode_lTensor_comul_apply, Algebra.linearMap_apply,
     counit_groupAlgebraInvariants]
   rw [← algebraMap_groupAlgebraInvariantsCounit rho]
