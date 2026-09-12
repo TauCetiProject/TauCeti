@@ -32,7 +32,7 @@ the quotient topology coming from the compact-open based-path space.
 ## Main results
 
 * `UniversalCover.isOpenMap_proj`: the endpoint projection is an open map.
-* `UniversalCover.prependUniversalCover`: continuous prepending of a path to universal-cover
+* `TauCeti.Path.prependUniversalCover`: continuous prepending of a path to universal-cover
   representatives.
 * `UniversalCover.toPath_homotopic_of_ofBasedPath_eq` and
   `UniversalCover.ofBasedPath_eq_of_homotopic_toPath`: equality in the universal cover is
@@ -162,15 +162,23 @@ theorem ofBasedPath_eq_of_homotopic_toPath {α β : BasedPath x₀}
 
 variable {x₁ : X}
 
+end UniversalCover
+
+namespace Path
+
+open UniversalCover
+
+variable {x₀ x₁ : X}
+
 /-- Prepend a path from `x₁` to `x₀` to the path class represented by a point of the
 universal cover based at `x₀`. -/
-def prependUniversalCover (gamma : Path x₁ x₀)
+def prependUniversalCover (gamma : _root_.Path x₁ x₀)
     (p : UniversalCover x₀) : UniversalCover x₁ :=
   UniversalCover.mk p.proj ((Path.Homotopic.Quotient.mk gamma).trans p.path)
 
 /-- Prepending to an endpoint-and-path-class pair prepends the corresponding homotopy class. -/
 @[simp]
-theorem prependUniversalCover_mk (gamma : Path x₁ x₀) (x : X)
+theorem prependUniversalCover_mk (gamma : _root_.Path x₁ x₀) (x : X)
     (q : Path.Homotopic.Quotient x₀ x) :
     prependUniversalCover gamma (UniversalCover.mk x q) =
       UniversalCover.mk x ((Path.Homotopic.Quotient.mk gamma).trans q) :=
@@ -178,13 +186,14 @@ theorem prependUniversalCover_mk (gamma : Path x₁ x₀) (x : X)
 
 /-- Prepending a path does not change the endpoint projection. -/
 @[simp]
-theorem proj_prependUniversalCover (gamma : Path x₁ x₀) (p : UniversalCover x₀) :
+theorem proj_prependUniversalCover (gamma : _root_.Path x₁ x₀) (p : UniversalCover x₀) :
     (prependUniversalCover gamma p).proj = p.proj :=
   (rfl)
 
 /-- On the quotient constructor, prepending is represented by concatenating paths. -/
 @[simp]
-theorem prependUniversalCover_ofBasedPath (gamma : Path x₁ x₀) (beta : BasedPath x₀) :
+theorem prependUniversalCover_ofBasedPath (gamma : _root_.Path x₁ x₀)
+    (beta : BasedPath x₀) :
     prependUniversalCover gamma (UniversalCover.ofBasedPath x₀ beta) =
       UniversalCover.ofBasedPath x₁ (BasedPath.ofPath (gamma.trans beta.toPath)) := by
   rw [UniversalCover.ofBasedPath_ofPath, prependUniversalCover_mk,
@@ -193,7 +202,7 @@ theorem prependUniversalCover_ofBasedPath (gamma : Path x₁ x₀) (beta : Based
 /-- Prepending a fixed path is continuous for the quotient topologies on the two universal
 covers. -/
 @[fun_prop]
-theorem continuous_prependUniversalCover (gamma : Path x₁ x₀) :
+theorem continuous_prependUniversalCover (gamma : _root_.Path x₁ x₀) :
     Continuous (prependUniversalCover gamma : UniversalCover x₀ → UniversalCover x₁) := by
   rw [(UniversalCover.isQuotientMap_ofBasedPath x₀).continuous_iff]
   suffices hcont : Continuous (fun beta : BasedPath x₀ =>
@@ -213,23 +222,44 @@ theorem continuous_prependUniversalCover (gamma : Path x₁ x₀) :
     (fun _ => gamma) (Path.continuous_uncurry_iff.mpr continuous_const)
     (fun beta => beta.toPath) heval
 
+end Path
+
+namespace UniversalCover
+
+variable {x₀ : X}
+
 /-- Prepending a constant path is the identity. -/
 @[simp]
 theorem prependUniversalCover_refl (p : UniversalCover x₀) :
-    prependUniversalCover (Path.refl x₀) p = p := by
+    TauCeti.Path.prependUniversalCover (Path.refl x₀) p = p := by
   rcases p with ⟨x, q⟩
-  rw [prependUniversalCover_mk, Path.Homotopic.Quotient.mk_refl,
+  rw [Path.prependUniversalCover_mk, Path.Homotopic.Quotient.mk_refl,
     Path.Homotopic.Quotient.refl_trans]
+
+end UniversalCover
+
+namespace Path
+
+open UniversalCover
+
+variable {x₀ x₁ : X}
 
 /-- Successive prepending combines by path concatenation. -/
 @[simp]
-theorem prependUniversalCover_trans {x₂ : X} (gamma : Path x₂ x₁) (delta : Path x₁ x₀)
+theorem prependUniversalCover_trans {x₂ : X} (gamma : _root_.Path x₂ x₁)
+    (delta : _root_.Path x₁ x₀)
     (p : UniversalCover x₀) :
     prependUniversalCover (gamma.trans delta) p =
       prependUniversalCover gamma (prependUniversalCover delta p) := by
   rcases p with ⟨x, q⟩
   rw [prependUniversalCover_mk, prependUniversalCover_mk, prependUniversalCover_mk,
     Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.trans_assoc]
+
+end Path
+
+namespace UniversalCover
+
+variable {x₀ x : X}
 
 /-- The endpoint projection `UniversalCover x₀ → X` is an open map when `X` is locally
 path-connected. -/

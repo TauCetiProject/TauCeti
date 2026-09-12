@@ -102,9 +102,9 @@ instance : ContinuousConstSMul (FundamentalGroup X x₀) (UniversalCover x₀) w
   continuous_const_smul g := by
     obtain ⟨γ, hγ⟩ := Quotient.exists_rep (g⁻¹.toPath : Path.Homotopic.Quotient x₀ x₀)
     have hγ' : Path.Homotopic.Quotient.mk γ = g⁻¹.toPath := hγ
-    apply (continuous_prependUniversalCover γ).congr
+    apply (TauCeti.Path.continuous_prependUniversalCover γ).congr
     rintro ⟨x, q⟩
-    rw [smul_mk, prependUniversalCover_mk, hγ']
+    rw [smul_mk, TauCeti.Path.prependUniversalCover_mk, hγ']
 
 /-- The action of the fundamental group on the universal cover is free. -/
 instance : IsCancelSMul (FundamentalGroup X x₀) (UniversalCover x₀) where
