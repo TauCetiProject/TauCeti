@@ -40,7 +40,7 @@ uniform local constancy on a product.
 ## Main statements
 
 * `explicitFiniteQuotientTransition0_bijective`: every degree-zero transition is bijective.
-* `explicitFiniteQuotientCocone0_isColimit`: the comparison cocone is a colimit cocone.
+* `explicitFiniteQuotientCocone0IsColimit`: the comparison cocone is a colimit cocone.
 
 The construction follows Neukirch, Schmidt and Wingberg, *Cohomology of Number Fields*, (1.2.5),
 and Ribes and Zalesskii, *Profinite Groups*, Corollary 6.5.6(a). It uses Mathlib's
@@ -270,7 +270,7 @@ private theorem explicitFiniteQuotientSystem0_isEventuallyConstantFrom :
     (explicitFiniteQuotientTransition0_bijective G M (leOfHom f.unop))
 
 /-- The degree-zero comparison cocone is colimiting. -/
-noncomputable def explicitFiniteQuotientCocone0_isColimit :
+noncomputable def explicitFiniteQuotientCocone0IsColimit :
     IsColimit (explicitFiniteQuotientCocone0 G M) := by
   letI : Nonempty (OpenNormalSubgroup G) := ⟨topOpenNormalSubgroup G⟩
   let h := explicitFiniteQuotientSystem0_isEventuallyConstantFrom G M
