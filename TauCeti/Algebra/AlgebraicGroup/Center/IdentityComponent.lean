@@ -59,6 +59,14 @@ noncomputable def reducedCenterIdentityComponentDefiningIdeal : HopfIdeal k H :=
     (k := k) (H := reducedCenterCoordinateHopfAlgebra H)).comapOfSurjective
       H.reducedCenterCoordinateMap.hom (reducedCenterCoordinateMap_surjective H)
 
+/-- The ambient defining ideal is the pullback of the reduced center's identity-component ideal
+along its coordinate morphism. -/
+theorem reducedCenterIdentityComponentDefiningIdeal_def :
+    reducedCenterIdentityComponentDefiningIdeal H =
+      (HopfAlgebra.identityComponentHopfIdeal
+        (k := k) (H := reducedCenterCoordinateHopfAlgebra H)).comapOfSurjective
+          H.reducedCenterCoordinateMap.hom (reducedCenterCoordinateMap_surjective H) := (rfl)
+
 /-- Membership in the ambient defining ideal is membership in the identity-component ideal
 after restriction to the reduced center. -/
 @[simp]
@@ -101,8 +109,10 @@ theorem mkQuotient_comp_quotientReducedCenterIdentityComponentIso_hom :
       reducedCenterCoordinateMap H ≫
         mkQuotient (reducedCenterCoordinateHopfAlgebra H)
           (HopfAlgebra.identityComponentHopfIdeal
-            (k := k) (H := reducedCenterCoordinateHopfAlgebra H)) :=
-  mkQuotient_comp_quotientIsoOfSurjective_hom (reducedCenterCoordinateMap H)
+            (k := k) (H := reducedCenterCoordinateHopfAlgebra H)) := by
+  dsimp only [quotientReducedCenterIdentityComponentIso,
+    reducedCenterIdentityComponentDefiningIdeal]
+  exact mkQuotient_comp_quotientIsoOfSurjective_hom (reducedCenterCoordinateMap H)
     (reducedCenterCoordinateMap_surjective H) _
 
 /-- The reduced center's identity component is trivial as an ambient closed subgroup exactly

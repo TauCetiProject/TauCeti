@@ -163,6 +163,7 @@ morphisms. -/
 theorem mkQuotient_comp_quotientReducedCenterIso_hom :
     mkQuotient H (reducedCenterDefiningIdeal H) ≫ (quotientReducedCenterIso H).hom =
       reducedCenterCoordinateMap H := by
+  rw [quotientReducedCenterIso, reducedCenterCoordinateMap_def]
   exact mkQuotient_comp_quotientIsoOfSurjective_hom
     (mkQuotient H (centerDefiningIdeal H))
       (mkQuotient_surjective H (centerDefiningIdeal H))
