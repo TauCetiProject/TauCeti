@@ -15,8 +15,9 @@ import TauCeti.CategoryTheory.Comma.Over
 
 Over every commutative ring, the diagonal map from the rank-`m` split torus to `Sp₂ₘ` is a
 closed immersion. Its defining Hopf ideal is the kernel of restriction to diagonal coordinates,
-and the quotient is isomorphic to the split-torus coordinate Hopf algebra. These constructions
-make the diagonal torus available as a closed subgroup when studying maximal tori and pinnings.
+the quotient is isomorphic to the split-torus coordinate Hopf algebra, and the ideal is
+compatible with scalar extension. These constructions make the diagonal torus available as a
+closed subgroup when studying maximal tori and pinnings.
 -/
 
 public section
@@ -120,6 +121,44 @@ theorem splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :
 
 grind_pattern splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal =>
   diagonalTorusDefiningIdeal R m
+
+private theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom_commHopfAlgCat :
+    CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R m) (diagonalTorusDefiningIdeal R m) ≫
+        ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} R)
+          (_root_.CommHopfAlgCat.{u} R)).mapIso (diagonalTorusCoordinateIso R m)).hom =
+      diagonalTorusCoordinateMap (R := R) (m := m) := by
+  have h := congrArg
+    (fun f ↦ (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} R)
+      (_root_.CommHopfAlgCat.{u} R)).map f)
+    (mkQuotient_comp_diagonalTorusCoordinateIso_hom R m)
+  rw [Functor.map_comp] at h
+  -- A morphism in an `ObjectProperty.FullSubcategory` is definitionally its underlying
+  -- morphism, so applying the forgetful functor changes only the wrapper. There is no
+  -- propositional rewrite lemma for this reducible coercion.
+  change CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R m)
+      (diagonalTorusDefiningIdeal R m) ≫
+        ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} R)
+          (_root_.CommHopfAlgCat.{u} R)).mapIso (diagonalTorusCoordinateIso R m)).hom =
+      diagonalTorusCoordinateMap (R := R) (m := m) at h
+  exact h
+
+/-- The base-change isomorphism of symplectic coordinate Hopf algebras carries the base-changed
+diagonal-torus ideal onto the diagonal-torus ideal over the extended base. -/
+theorem map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal
+    (K : Type u) [CommRing K] [Algebra R K] :
+    (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (diagonalTorusDefiningIdeal R m)).map
+        (coordinateHopfAlgebraBaseChangeIso R K m).hom.hom =
+      diagonalTorusDefiningIdeal K m :=
+  CommHopfAlgCat.map_baseChangeHopfIdeal_of_quotientIso
+    (diagonalTorusDefiningIdeal R m) (diagonalTorusDefiningIdeal K m)
+    (coordinateHopfAlgebraBaseChangeIso R K m)
+    (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso R K
+      (SplitTorus.characterGroup (ULift.{u} (Fin m))))
+    ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} R)
+      (_root_.CommHopfAlgCat.{u} R)).mapIso (diagonalTorusCoordinateIso R m))
+    (mkQuotient_comp_diagonalTorusCoordinateIso_hom_commHopfAlgCat R m)
+    (diagonalTorusCoordinateMap_baseChange (m := m) R K)
+    (fun x ↦ mem_diagonalTorusDefiningIdeal K m x)
 
 /-- Over a field, the coordinate quotient defining the symplectic diagonal torus is a torus. -/
 theorem torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal

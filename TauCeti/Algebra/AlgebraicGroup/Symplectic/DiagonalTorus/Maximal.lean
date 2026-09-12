@@ -38,9 +38,7 @@ diagonal torus in `TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Close
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), §16.1 and §26.3.
 * The Hopf-ideal organization and the point-subgroup comparison follow the formal template in
   `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal`, with which this module
-  shares the base-change transport lemma
-  `TauCeti.CommHopfAlgCat.map_baseChangeHopfIdeal_of_quotientIso` and the maximality descent
-  lemma `TauCeti.HopfIdeal.isMaximalTorus_of_baseChange`.
+  shares the maximality descent lemma `TauCeti.HopfIdeal.isMaximalTorus_of_baseChange`.
 * The matrix centralizer input is
   `TauCeti.GLSymplecticFin.centralizer_diagonalTorus`.
 -/
@@ -59,6 +57,8 @@ section CommRing
 
 variable (R : Type u) [CommRing R] (m : ℕ)
 
+-- The body of `diagonalTorusDefiningIdeal` is not exposed outside its defining module, so the
+-- kernel presentation it is given there is recovered here from the public membership lemma.
 private theorem diagonalTorusDefiningIdeal_eq_ker :
     diagonalTorusDefiningIdeal R m =
       HopfIdeal.kerOfSurjective (diagonalTorusCoordinateMap (R := R) (m := m)).hom
@@ -84,44 +84,6 @@ theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} R)
 end CommRing
 
 variable (k : Type u) [Field k] (m : ℕ)
-
-private theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom_commHopfAlgCat :
-    CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra k m) (diagonalTorusDefiningIdeal k m) ≫
-        ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} k)
-          (_root_.CommHopfAlgCat.{u} k)).mapIso (diagonalTorusCoordinateIso k m)).hom =
-      diagonalTorusCoordinateMap (R := k) (m := m) := by
-  have h := congrArg
-    (fun f ↦ (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} k)
-      (_root_.CommHopfAlgCat.{u} k)).map f)
-    (mkQuotient_comp_diagonalTorusCoordinateIso_hom k m)
-  rw [Functor.map_comp] at h
-  -- A morphism in an `ObjectProperty.FullSubcategory` is definitionally its underlying
-  -- morphism, so applying the forgetful functor changes only the wrapper. There is no
-  -- propositional rewrite lemma for this reducible coercion.
-  change CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra k m)
-      (diagonalTorusDefiningIdeal k m) ≫
-        ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} k)
-          (_root_.CommHopfAlgCat.{u} k)).mapIso (diagonalTorusCoordinateIso k m)).hom =
-      diagonalTorusCoordinateMap (R := k) (m := m) at h
-  exact h
-
-/-- The base-change isomorphism of symplectic coordinate Hopf algebras carries the base-changed
-diagonal-torus ideal onto the diagonal-torus ideal over the extended base. -/
-private theorem map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal
-    (K : Type u) [Field K] [Algebra k K] :
-    (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (diagonalTorusDefiningIdeal k m)).map
-        (coordinateHopfAlgebraBaseChangeIso k K m).hom.hom =
-      diagonalTorusDefiningIdeal K m :=
-  CommHopfAlgCat.map_baseChangeHopfIdeal_of_quotientIso
-    (diagonalTorusDefiningIdeal k m) (diagonalTorusDefiningIdeal K m)
-    (coordinateHopfAlgebraBaseChangeIso k K m)
-    (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso k K
-      (SplitTorus.characterGroup (ULift.{u} (Fin m))))
-    ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} k)
-      (_root_.CommHopfAlgCat.{u} k)).mapIso (diagonalTorusCoordinateIso k m))
-    (mkQuotient_comp_diagonalTorusCoordinateIso_hom_commHopfAlgCat k m)
-    (diagonalTorusCoordinateMap_baseChange (m := m) k K)
-    (fun x ↦ mem_diagonalTorusDefiningIdeal K m x)
 
 private theorem isReduced_quotient_diagonalTorusDefiningIdeal :
     IsReduced (CommHopfAlgCat.quotient (coordinateHopfAlgebra k m)
