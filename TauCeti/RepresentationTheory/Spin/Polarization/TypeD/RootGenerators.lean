@@ -78,17 +78,14 @@ private theorem polar_dualVector_left (i j : Fin n) :
     polar Q (P.dualVector b i : V) (b j : V) = if j = i then 1 else 0 := by
   rw [polar_comm, P.polar_dualVector]
 
-@[simp]
 private theorem chainNext_eq_mk {i : Fin n} (hi : (i : ℕ) + 1 < n) :
     TypeDStd.chainNext n i hi = ⟨(i : ℕ) + 1, hi⟩ :=
   Fin.ext (TypeDStd.chainNext_val n i hi)
 
-@[simp]
 private theorem forkLeft_eq_mk (hn : 4 ≤ n) :
     TypeDStd.forkLeft n hn = ⟨n - 2, by omega⟩ :=
   Fin.ext (TypeDStd.forkLeft_val n hn)
 
-@[simp]
 private theorem forkRight_eq_mk (hn : 4 ≤ n) :
     TypeDStd.forkRight n hn = ⟨n - 1, by omega⟩ :=
   Fin.ext (TypeDStd.forkRight_val n hn)
@@ -105,8 +102,10 @@ private theorem typeDQuadraticEquiv_rootGenerator_inl_of_add_one_lt
         all_goals rw [TypeDStd.val_rootGenerator_inl,
           TypeDStd.toLinAlgEquiv_raisingMatrix_apply_basis_of_chain n hn
             (P.typeDBasis b hline) hi]
-        · simp [P.typeDBasis_inl, P.polar_W_eq_zero, P.polar_dualVector_left, eq_comm]
-        · simp [P.typeDBasis_inr, P.polar_W'_eq_zero, P.polar_dualVector]))
+        · simp [chainNext_eq_mk, P.typeDBasis_inl, P.polar_W_eq_zero,
+            P.polar_dualVector_left, eq_comm]
+        · simp [chainNext_eq_mk, P.typeDBasis_inr, P.polar_W'_eq_zero,
+            P.polar_dualVector]))
     _ = _ := by
       exact (P.typeDSimpleRootBivector_of_add_one_lt b (by omega) hi).symm
 
@@ -122,8 +121,10 @@ private theorem typeDQuadraticEquiv_rootGenerator_inl_of_not_add_one_lt
         all_goals rw [TypeDStd.val_rootGenerator_inl,
           TypeDStd.toLinAlgEquiv_raisingMatrix_apply_basis_of_fork n hn
             (P.typeDBasis b hline) hi]
-        · simp [P.typeDBasis_inl, P.polar_W_eq_zero, eq_comm]
-        · simp [P.typeDBasis_inr, P.polar_dualVector, eq_comm]))
+        · simp [forkLeft_eq_mk, forkRight_eq_mk, P.typeDBasis_inl,
+            P.polar_W_eq_zero, eq_comm]
+        · simp [forkLeft_eq_mk, forkRight_eq_mk, P.typeDBasis_inr,
+            P.polar_dualVector, eq_comm]))
     _ = _ := by
       exact (P.typeDSimpleRootBivector_of_not_add_one_lt b (by omega) hi).symm
 
@@ -139,8 +140,10 @@ private theorem typeDQuadraticEquiv_rootGenerator_inr_of_add_one_lt
         all_goals rw [TypeDStd.val_rootGenerator_inr,
           TypeDStd.toLinAlgEquiv_loweringMatrix_apply_basis_of_chain n hn
             (P.typeDBasis b hline) hi]
-        · simp [P.typeDBasis_inl, P.polar_W_eq_zero, P.polar_dualVector_left, eq_comm]
-        · simp [P.typeDBasis_inr, P.polar_W'_eq_zero, P.polar_dualVector, eq_comm]))
+        · simp [chainNext_eq_mk, P.typeDBasis_inl, P.polar_W_eq_zero,
+            P.polar_dualVector_left, eq_comm]
+        · simp [chainNext_eq_mk, P.typeDBasis_inr, P.polar_W'_eq_zero,
+            P.polar_dualVector, eq_comm]))
     _ = _ := by
       exact (P.typeDSimpleNegativeRootBivector_of_add_one_lt b (by omega) hi).symm
 
@@ -157,8 +160,10 @@ private theorem typeDQuadraticEquiv_rootGenerator_inr_of_not_add_one_lt
         all_goals rw [TypeDStd.val_rootGenerator_inr,
           TypeDStd.toLinAlgEquiv_loweringMatrix_apply_basis_of_fork n hn
             (P.typeDBasis b hline) hi]
-        · simp [P.typeDBasis_inl, P.polar_dualVector_left, eq_comm]
-        · simp [P.typeDBasis_inr, P.polar_W'_eq_zero, eq_comm]))
+        · simp [forkLeft_eq_mk, forkRight_eq_mk, P.typeDBasis_inl,
+            P.polar_dualVector_left, eq_comm]
+        · simp [forkLeft_eq_mk, forkRight_eq_mk, P.typeDBasis_inr,
+            P.polar_W'_eq_zero, eq_comm]))
     _ = _ := by
       exact (P.typeDSimpleNegativeRootBivector_of_not_add_one_lt b (by omega) hi).symm
 
