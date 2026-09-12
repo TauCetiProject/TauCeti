@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
 public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.PointsFunctor
-public import
-  TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Frobenius
 
 /-!
 # Frobenius on the full-weight type-D spin carrier
@@ -62,16 +61,6 @@ any fixed-point group is finite or simple.
 
 The organization follows the sibling carrier specialization
 `TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Frobenius`.
-
-This advances the "points over an algebraically closed field" target in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, whose first named case is the `q`-power Frobenius, for
-the type-`D` carrier that Layer 9's Chevalley--Demazure construction assembles. Its consumer is
-milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md`, whose table prescribes `Frob_q` as the
-Steinberg map of the untwisted family `Dₙ(q)` and `γ ∘ Frob_q` for the twisted families `²Dₙ(q)`
-and `³D₄(q)`, all three built on this diagram. The type-`A`, type-`C` and type-`E₆` counterparts
-are `TauCeti/Algebra/Lie/SpecialLinear/StandardCarrier/Frobenius.lean`,
-`TauCeti/Algebra/Lie/Symplectic/StandardCarrier/Frobenius.lean` and
-`TauCeti/Algebra/Lie/E6/Minuscule/Frobenius.lean`, and this file follows their formal template.
 -/
 
 public section
