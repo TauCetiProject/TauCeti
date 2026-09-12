@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import Mathlib.Topology.Instances.AddCircle.Defs
 
-import TauCeti.GroupTheory.Torsion
+import TauCeti.Algebra.Module.Torsion.Basic
 
 /-!
 # Integrality and torsion in the circle group
@@ -96,6 +96,16 @@ theorem zsmul_coe_eq_zero {k c : ℤ} {x : ℚ} (h : (k : ℚ) * x = c) :
   rw [zsmul_eq_mul, h]
   exact eq_intCast (algebraMap ℤ ℚ) c
 
+section Finiteness
+
+variable {𝕜 : Type*} [AddCommGroup 𝕜] [LinearOrder 𝕜] [IsOrderedAddMonoid 𝕜] (p : 𝕜) {n : ℕ}
+
+/-- The `n`-torsion of `AddCircle p` is finite for positive `n`. -/
+theorem finite_torsionBy (hn : 0 < n) : Finite ((AddCircle p)[(n : ℤ)]) :=
+  ((finite_torsion p hn).subset fun _ hu ↦ torsionBy.nsmul_iff.mp hu).to_subtype
+
+end Finiteness
+
 section Torsion
 
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] (p : 𝕜) [hp : Fact (0 < p)]
@@ -127,11 +137,6 @@ theorem exists_zsmul_eq_of_mem_torsionBy (hn : 0 < n) {u : AddCircle p}
 /-- The `n`-torsion of `AddCircle p` has exactly `n` elements. -/
 theorem natCard_torsionBy (hn : 0 < n) : Nat.card ((AddCircle p)[(n : ℤ)]) = n := by
   rw [torsionBy_eq_zmultiples p hn, Nat.card_zmultiples, addOrderOf_period_div hn]
-
-omit hp in
-/-- The `n`-torsion of `AddCircle p` is finite for positive `n`. -/
-theorem finite_torsionBy (hn : 0 < n) : Finite ((AddCircle p)[(n : ℤ)]) :=
-  ((finite_torsion p hn).subset fun _ hu ↦ torsionBy.nsmul_iff.mp hu).to_subtype
 
 /-- The `n`-torsion of `AddCircle p` is cyclic; by `AddCircle.natCard_torsionBy` it is cyclic of
 order exactly `n`. -/
@@ -168,12 +173,18 @@ theorem torsionBy_inj (hm : 0 < m) (hn : 0 < n) :
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
   rw [← natCard_torsionBy p hm, ← natCard_torsionBy p hn, h]
 
-omit hp in
+end Torsion
+
+section PeriodDiv
+
+variable {𝕜 : Type*} [Field 𝕜] [CharZero 𝕜] (p : 𝕜) {n : ℕ}
+
 /-- Scaling the canonical generator of the `n`-torsion by a divisor `d` of `n` gives the
 canonical generator of the `n / d`-torsion.
 
 For `p = 1` over `ℚ` this reads `d • (1 / n) = 1 / (n / d)`, the arithmetic behind the way
 restriction rescales a class-field-theoretic invariant. -/
+@[simp]
 theorem nsmul_coe_period_div {d : ℕ} (hn : 0 < n) (hd : d ∣ n) :
     d • ((p / n : 𝕜) : AddCircle p) = ((p / (n / d : ℕ) : 𝕜) : AddCircle p) := by
   have hd0 : d ≠ 0 := by rintro rfl; simp only [Nat.zero_dvd] at hd; omega
@@ -184,7 +195,7 @@ theorem nsmul_coe_period_div {d : ℕ} (hn : 0 < n) (hd : d ∣ n) :
     field_simp
   rw [← coe_nsmul, nsmul_eq_mul, key]
 
-end Torsion
+end PeriodDiv
 
 section InvariantMap
 
