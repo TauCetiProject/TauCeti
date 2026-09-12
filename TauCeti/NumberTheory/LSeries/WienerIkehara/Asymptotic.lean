@@ -36,6 +36,12 @@ Nothing is assumed about `LSeries a` there, where it is a total function with ju
 * `TauCeti.LSeries.tendsto_tsum_term_mul_fourier_atTop`: the Fourier-weighted Dirichlet series
   itself tends to `2π * A * psi 0`.
 
+Both are stated for an integrable, compactly supported test function, with the analytic
+hypotheses that the two limit arguments actually consume: half-line integrability of `𝓕 psi` for
+the first, and integrability of `𝓕 psi` together with continuity of `psi` at `0` for the Fourier
+inversion in the second. The suffixed `..._of_contDiff` forms specialize both to a smooth test
+function, for which all of those are automatic.
+
 ## Provenance
 
 The statement obtained by letting `x → ∞` in the boundary Fourier identity follows `limiting_cor`
@@ -63,13 +69,17 @@ variable {a : ℕ → ℂ} {psi : ℝ → ℂ} {G : ℂ → ℂ} {A : ℂ}
 `Re s = 1` and the contribution of the pole term `A / (s - 1)` at `s = 1` differ by `o(1)`.
 
 This is the Riemann--Lebesgue lemma applied to the boundary identity
-`tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff`, whose right-hand side is an
-integral against the oscillating factor `x ^ (it)`. -/
+`tsum_term_mul_fourier_sub_pole_eq_integral_boundary`, whose right-hand side is an integral
+against the oscillating factor `x ^ (it)`. The test function is only required to be integrable
+and compactly supported, with its Fourier transform integrable on each half-line `Ici (-log x)`,
+exactly as that identity asks at each scale. -/
 theorem tendsto_tsum_term_mul_fourier_sub_pole_atTop
     (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
     (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
     (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma)
-    (hpsi : ContDiff ℝ ∞ psi) (hsupp : HasCompactSupport psi)
+    (hpsi : Integrable psi) (hsupp : HasCompactSupport psi)
+    (hFint : ∀ x : ℝ, 0 < x →
+      IntegrableOn (fun u : ℝ ↦ 𝓕 psi (u / (2 * π))) (Ici (-Real.log x)))
     (hFsum : ∀ x : ℝ, 0 < x → LSeriesSummable
       (fun n : ℕ ↦ a n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) 1) :
     Tendsto (fun x : ℝ ↦
@@ -78,8 +88,26 @@ theorem tendsto_tsum_term_mul_fourier_sub_pole_atTop
   refine Tendsto.congr' ?_
     (tendsto_integral_mul_cpow_mul_I_atTop fun t : ℝ ↦ G (1 + t * I) * psi t)
   filter_upwards [eventually_gt_atTop 0] with x hx
-  exact (tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff hx hG hG' hsum hpsi hsupp
-    (hFsum x hx)).symm
+  exact (tsum_term_mul_fourier_sub_pole_eq_integral_boundary hx hG hG' hsum hpsi hsupp
+    (hFint x hx) (hFsum x hx)).symm
+
+/-- The `o(1)` estimate of `tendsto_tsum_term_mul_fourier_sub_pole_atTop` for a smooth, compactly
+supported test function, whose regularity supplies both its own integrability and the half-line
+integrability of its Fourier transform. -/
+theorem tendsto_tsum_term_mul_fourier_sub_pole_atTop_of_contDiff
+    (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
+    (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
+    (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma)
+    (hpsi : ContDiff ℝ ∞ psi) (hsupp : HasCompactSupport psi)
+    (hFsum : ∀ x : ℝ, 0 < x → LSeriesSummable
+      (fun n : ℕ ↦ a n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) 1) :
+    Tendsto (fun x : ℝ ↦
+        (∑' n : ℕ, _root_.LSeries.term a 1 n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) -
+          A * ∫ u in Ici (-Real.log x), 𝓕 psi (u / (2 * π))) atTop (𝓝 0) :=
+  tendsto_tsum_term_mul_fourier_sub_pole_atTop hG hG' hsum
+    (hpsi.continuous.integrable_of_hasCompactSupport hsupp) hsupp
+    (fun _ _ ↦ ((integrable_fourier_of_contDiff_of_hasCompactSupport hpsi hsupp).comp_div
+      (by positivity)).integrableOn) hFsum
 
 /-- **The smoothed Wiener--Ikehara asymptotic.** The Fourier-weighted Dirichlet series on the line
 `Re s = 1` tends to `2π * A * psi 0`, where `A` is the coefficient of the pole term `A / (s - 1)`
@@ -88,28 +116,26 @@ case no pole is asserted and the limit is `0`.
 
 The factor `2π` is the Jacobian of the scaling `u ↦ u / 2π` that the parameterization
 `s = 1 + it` forces on the Fourier variable; by Fourier inversion the limiting pole contribution
-is `A * ∫ u : ℝ, 𝓕 psi (u / 2π) = 2π * A * psi 0`. -/
+is `A * ∫ u : ℝ, 𝓕 psi (u / 2π) = 2π * A * psi 0`. The inversion step is what asks for the
+integrability of `𝓕 psi` and the continuity of `psi` at the single point `0`. -/
 theorem tendsto_tsum_term_mul_fourier_atTop
     (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
     (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
     (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma)
-    (hpsi : ContDiff ℝ ∞ psi) (hsupp : HasCompactSupport psi)
+    (hpsi : Integrable psi) (hsupp : HasCompactSupport psi) (hF : Integrable (𝓕 psi))
+    (hpsi0 : ContinuousAt psi 0)
     (hFsum : ∀ x : ℝ, 0 < x → LSeriesSummable
       (fun n : ℕ ↦ a n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) 1) :
     Tendsto (fun x : ℝ ↦
         ∑' n : ℕ, _root_.LSeries.term a 1 n * 𝓕 psi (1 / (2 * π) * Real.log (n / x)))
       atTop (𝓝 (2 * (π : ℂ) * A * psi 0)) := by
-  have hint : Integrable fun u : ℝ ↦ 𝓕 psi (u / (2 * π)) :=
-    (integrable_fourier_of_contDiff_of_hasCompactSupport hpsi hsupp).comp_div (by positivity)
+  have hint : Integrable fun u : ℝ ↦ 𝓕 psi (u / (2 * π)) := hF.comp_div (by positivity)
   have hIci : Tendsto (fun x : ℝ ↦ ∫ u in Ici (-Real.log x), 𝓕 psi (u / (2 * π))) atTop
       (𝓝 (∫ u : ℝ, 𝓕 psi (u / (2 * π)))) :=
     AECover.integral_tendsto_of_countably_generated
       (aecover_Ici (tendsto_neg_atTop_atBot.comp Real.tendsto_log_atTop)) hint
   have htotal : (∫ v : ℝ, 𝓕 psi v) = psi 0 := by
-    have hinv : 𝓕⁻ (𝓕 psi) 0 = psi 0 :=
-      (hpsi.continuous.integrable_of_hasCompactSupport hsupp).fourierInv_fourier_eq
-        (integrable_fourier_of_contDiff_of_hasCompactSupport hpsi hsupp)
-        hpsi.continuous.continuousAt
+    have hinv : 𝓕⁻ (𝓕 psi) 0 = psi 0 := hpsi.fourierInv_fourier_eq hF hpsi0
     rw [Real.fourierInv_eq] at hinv
     simpa using hinv
   have hvalue : (∫ u : ℝ, 𝓕 psi (u / (2 * π))) = 2 * (π : ℂ) * psi 0 := by
@@ -124,7 +150,25 @@ theorem tendsto_tsum_term_mul_fourier_atTop
       (𝓝 (2 * (π : ℂ) * A * psi 0)) := by
     rw [hconst]
     exact hIci.const_mul A
-  simpa using
-    (tendsto_tsum_term_mul_fourier_sub_pole_atTop hG hG' hsum hpsi hsupp hFsum).add hpole
+  simpa using (tendsto_tsum_term_mul_fourier_sub_pole_atTop hG hG' hsum hpsi hsupp
+    (fun _ _ ↦ hint.integrableOn) hFsum).add hpole
+
+/-- The smoothed Wiener--Ikehara asymptotic for a smooth, compactly supported test function,
+whose regularity supplies its integrability, the integrability of its Fourier transform and its
+continuity at `0`. -/
+theorem tendsto_tsum_term_mul_fourier_atTop_of_contDiff
+    (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
+    (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
+    (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma)
+    (hpsi : ContDiff ℝ ∞ psi) (hsupp : HasCompactSupport psi)
+    (hFsum : ∀ x : ℝ, 0 < x → LSeriesSummable
+      (fun n : ℕ ↦ a n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) 1) :
+    Tendsto (fun x : ℝ ↦
+        ∑' n : ℕ, _root_.LSeries.term a 1 n * 𝓕 psi (1 / (2 * π) * Real.log (n / x)))
+      atTop (𝓝 (2 * (π : ℂ) * A * psi 0)) :=
+  tendsto_tsum_term_mul_fourier_atTop hG hG' hsum
+    (hpsi.continuous.integrable_of_hasCompactSupport hsupp) hsupp
+    (integrable_fourier_of_contDiff_of_hasCompactSupport hpsi hsupp)
+    hpsi.continuous.continuousAt hFsum
 
 end TauCeti.LSeries
