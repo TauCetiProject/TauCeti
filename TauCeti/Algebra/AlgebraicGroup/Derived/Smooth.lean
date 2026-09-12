@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Comap
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Reduction
 import TauCeti.RingTheory.FiniteType.Tensor.Product
 
@@ -67,16 +68,16 @@ theorem isReduced_quotient_derivedDefiningIdeal :
         ((HopfAlgebra.commutatorAlgHom (R := k) (H := H)).toRingHom x) :=
       ⟨n, by simpa only [map_pow] using hzero⟩
     exact hnil.eq_zero
-  constructor
-  intro x hx
-  obtain ⟨y, rfl⟩ := mkQuotient_surjective H I x
-  apply (mkQuotient_eq_zero_iff H I y).mpr
-  apply hJI
-  exact HopfIdeal.mem_comap.mpr ((HopfIdeal.mem_reduction k D).mpr hx)
+  have hred : HopfIdeal.reduction k D = ⊥ :=
+    eq_bot_of_comapOfSurjective_le _ (by
+      simpa only [HopfIdeal.comapOfSurjective_eq_comap] using hJI)
+  exact nilradical_eq_bot_iff.mp (by
+    simpa only [HopfIdeal.reduction_toIdeal, HopfIdeal.bot_toIdeal] using
+      congrArg HopfIdeal.toIdeal hred)
 
 /-- The derived closed subgroup of a reduced finite-type affine group over an algebraically
 closed field is smooth. -/
-theorem smooth_quotient_derivedDefiningIdeal :
+theorem smoothCommHopfAlgProperty_quotient_derivedDefiningIdeal :
     smoothCommHopfAlgProperty k (quotient H (derivedDefiningIdeal H)) := by
   let _ := isReduced_quotient_derivedDefiningIdeal H
   exact smoothCommHopfAlgProperty_of_isAlgClosed_of_isReduced k _
