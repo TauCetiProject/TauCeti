@@ -56,7 +56,7 @@ namespace TauCeti
 
 open PathAlgebra DoubledQuiver
 
-universe u w
+universe u w z
 
 /-- A skew-zigzag parameter assigns a unit-valued, hence invertible, scalar ratio to every ordered
 pair of adjacencies with a common source.  The units make invertibility part of the type, and the
@@ -114,6 +114,61 @@ theorem one_ratio {i j j' : V} (h : G.Adj i j) (h' : G.Adj i j') :
     (1 : SkewZigzagParameter k G).ratio h h' = 1 := (rfl)
 
 end One
+
+section Map
+
+variable {k : Type w} {l : Type z} [Monoid k] [Monoid l]
+  {V : Type u} {G : SimpleGraph V}
+
+/-- Apply a monoid homomorphism to every ratio of a skew-zigzag parameter. -/
+def map (f : k →* l) (c : SkewZigzagParameter k G) : SkewZigzagParameter l G where
+  ratio _ _ _ h h' := Units.map f (c.ratio h h')
+  ratio_self := by intro i j h; simp
+  ratio_inv := by
+    intro i j j' h h'
+    rw [← map_mul, c.ratio_inv]
+    exact map_one (Units.map f)
+  ratio_cocycle := by
+    intro i j j' j'' h h' h''
+    rw [← map_mul, ← map_mul, c.ratio_cocycle]
+    exact map_one (Units.map f)
+
+/-- Scalar extension applies the coefficient homomorphism to a parameter ratio. -/
+@[simp]
+theorem map_ratio (f : k →* l) (c : SkewZigzagParameter k G)
+    {i j j' : V} (h : G.Adj i j) (h' : G.Adj i j') :
+    (c.map f).ratio h h' = Units.map f (c.ratio h h') := (rfl)
+
+/-- The constant parameter remains constant after scalar extension. -/
+@[simp]
+theorem map_one (f : k →* l) :
+    map f (1 : SkewZigzagParameter k G) = 1 := by
+  ext i j j' h h'
+  simp
+
+/-- Mapping a parameter along the identity homomorphism changes nothing. -/
+@[simp]
+theorem map_id (c : SkewZigzagParameter k G) : c.map (MonoidHom.id k) = c := by
+  ext i j j' h h'
+  simp
+
+/-- Mapping a parameter along a composite is successive scalar extension. -/
+@[simp]
+theorem map_comp {m : Type*} [Monoid m] (f : k →* l) (g : l →* m)
+    (c : SkewZigzagParameter k G) :
+    c.map (g.comp f) = (c.map f).map g := by
+  ext i j j' h h'
+  simp [Units.map_comp]
+
+/-- Injectivity on units induces an injective map on skew-zigzag parameters. -/
+theorem map_injective (f : k →* l) (hf : Function.Injective (Units.map f)) :
+    Function.Injective (map (G := G) f) := by
+  intro c c' h
+  apply SkewZigzagParameter.ext
+  funext i j j' hi hj
+  exact hf (congrArg (fun d : SkewZigzagParameter l G => d.ratio hi hj) h)
+
+end Map
 
 variable {k : Type w} [MonoidWithZero k] [Nontrivial k] {V : Type u} {G : SimpleGraph V}
 

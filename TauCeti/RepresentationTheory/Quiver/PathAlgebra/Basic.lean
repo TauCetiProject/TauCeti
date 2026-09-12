@@ -842,6 +842,31 @@ theorem algEquiv_ext ⦃f g : pathAlgebra k Q ≃ₐ[k] B⦄
 
 end Lift
 
+section Ext
+
+variable {k : Type w} {Q : Type u} {A B : Type*}
+  [CommSemiring k] [Quiver.{v} Q] [Finite Q]
+  [Semiring A] [Algebra k A] [Semiring B]
+
+/-- Two ring homomorphisms out of a quotient of a path algebra are equal if they agree on
+coefficients and on the images of all paths. -/
+theorem ringHom_ext_of_surjective (q : pathAlgebra k Q →ₐ[k] A) (hq : Function.Surjective q)
+    {g h : A →+* B}
+    (hscalar : ∀ r : k, g (algebraMap k A r) = h (algebraMap k A r))
+    (hpath : ∀ x : Quiver.TotalPath Q, g (q (ofPath x)) = h (q (ofPath x))) :
+    g = h := by
+  apply RingHom.ext
+  intro y
+  obtain ⟨x, rfl⟩ := hq y
+  induction x using induction_linear with
+  | zero => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | single x a =>
+      rw [single_eq_smul_ofPath, map_smul]
+      simp only [Algebra.smul_def, map_mul, hscalar, hpath]
+
+end Ext
+
 end PathAlgebra
 
 section DivisionRing

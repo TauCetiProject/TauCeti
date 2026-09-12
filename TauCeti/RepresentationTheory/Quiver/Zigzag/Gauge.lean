@@ -69,7 +69,7 @@ namespace TauCeti
 
 open PathAlgebra DoubledQuiver
 
-universe u w
+universe u w z
 
 namespace DoubledQuiver
 
@@ -262,6 +262,34 @@ theorem IsGaugeEquivalent.trans {c c' c'' : SkewZigzagParameter k G}
 theorem IsGaugeEquivalent.equivalence :
     Equivalence (IsGaugeEquivalent (k := k) (G := G)) :=
   ⟨IsGaugeEquivalent.refl, IsGaugeEquivalent.symm, IsGaugeEquivalent.trans⟩
+
+section Map
+
+variable {l : Type z} [CommMonoid l]
+
+/-- Scalar extension commutes with a gauge transform when the arrow labels are extended by the
+same coefficient homomorphism. -/
+theorem map_gauge (f : k →* l) (c : SkewZigzagParameter k G)
+    (a : ∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → kˣ) :
+    (c.gauge a).map f =
+      (c.map f).gauge (fun _ _ b ↦ Units.map f (a b)) := by
+  have hscale {i j : V} (h : G.Adj i j) :
+      backtrackScale G (fun _ _ b ↦ Units.map f (a b)) h =
+        Units.map f (backtrackScale G a h) := by
+    rw [backtrackScale_apply, backtrackScale_apply, map_mul]
+  ext i j j' h h'
+  rw [map_ratio, gauge_ratio, gauge_ratio, hscale, hscale, map_mul, map_div]
+  rw [map_ratio]
+
+/-- Gauge-equivalent skew-zigzag parameters remain gauge equivalent after scalar extension. -/
+theorem IsGaugeEquivalent.map {c c' : SkewZigzagParameter k G}
+    (h : c.IsGaugeEquivalent c') (f : k →* l) :
+    (c.map f).IsGaugeEquivalent (c'.map f) := by
+  obtain ⟨a, rfl⟩ := isGaugeEquivalent_iff.mp h
+  rw [map_gauge]
+  exact isGaugeEquivalent_iff.mpr ⟨_, rfl⟩
+
+end Map
 
 end SkewZigzagParameter
 

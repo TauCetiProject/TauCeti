@@ -16,11 +16,7 @@ algebra while leaving its paths fixed.  More generally, if an `l`-algebra homomo
 `kQ`, where the target is regarded as a `k`-algebra through `f`.
 
 The construction packages the common path-algebra step in base-change maps for relation
-quotients.  A companion extensionality theorem says that ring homomorphisms out of any quotient
-of a path algebra are determined by scalars and path classes.
-
-This is the path-algebra scaffolding used by the scalar-extension clauses of Layers 1 and 4 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`.
+quotients.
 -/
 
 public section
@@ -115,30 +111,5 @@ theorem smul_def_baseChange (f : k →+* l) (a : k) (x : B) :
   rw [RingHom.comp_apply]
 
 end BaseChange
-
-section Ext
-
-variable {k : Type w} {Q : Type u} {A B : Type*}
-  [CommSemiring k] [Quiver.{v} Q] [Finite Q]
-  [Semiring A] [Algebra k A] [Semiring B]
-
-/-- Two ring homomorphisms out of a quotient of a path algebra are equal if they agree on
-coefficients and on the images of all paths. -/
-theorem ringHom_ext_of_surjective (q : pathAlgebra k Q →ₐ[k] A) (hq : Function.Surjective q)
-    {g h : A →+* B}
-    (hscalar : ∀ r : k, g (algebraMap k A r) = h (algebraMap k A r))
-    (hpath : ∀ x : Quiver.TotalPath Q, g (q (ofPath x)) = h (q (ofPath x))) :
-    g = h := by
-  apply RingHom.ext
-  intro y
-  obtain ⟨x, rfl⟩ := hq y
-  induction x using induction_linear with
-  | zero => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | single x a =>
-      rw [single_eq_smul_ofPath, map_smul]
-      simp only [Algebra.smul_def, map_mul, hscalar, hpath]
-
-end Ext
 
 end TauCeti.PathAlgebra
