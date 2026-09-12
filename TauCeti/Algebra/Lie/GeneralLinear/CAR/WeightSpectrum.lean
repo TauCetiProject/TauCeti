@@ -34,9 +34,9 @@ and fixes the total sum.
   a CAR highest weight has the form `m + 1/2` with `m < n`.
 * `TauCeti.exists_occupationCutCount_of_lie_single_self_eq_smul`: occupation counts on a subset
   have the form `choose |s| 2 + m`, with `m` bounded by the size of the cut.
-* `TauCeti.exists_sum_eq_natCast_add_card_sq_div_two_of_lie_single_self_eq_smul`: without any
-  characteristic assumption, the sum of the diagonal eigenvalues is a bounded natural cast plus
-  `|s|² / 2`.
+* `TauCeti.exists_sum_eq_natCast_add_card_sq_div_two_of_lie_single_self_eq_smul`: without a
+  `CharZero` assumption, but with two invertible, the sum of the diagonal eigenvalues is a bounded
+  natural cast plus `|s|² / 2`.
 * `TauCeti.IsGlHighestWeightVector.sum_occupationCounts_le`: every subset of the occupation counts
   of a CAR highest-weight vector satisfies the cut bound.
 * `TauCeti.IsGlHighestWeightVector.sum_occupationCounts_univ_eq_choose_two`: the total occupation
@@ -101,7 +101,7 @@ theorem exists_eq_natCast_add_inv_two_of_lie_single_self_eq_smul {μ : K}
 number of ordered pairs crossing from `s` to its complement.
 
 The natural number is the eigenvalue of the sum of the commuting cut occupation projections. No
-characteristic, finite-dimensionality, or splitting hypothesis is needed. -/
+`CharZero`, finite-dimensionality, or splitting hypothesis is needed, but two must be invertible. -/
 theorem exists_sum_eq_natCast_add_card_sq_div_two_of_lie_single_self_eq_smul
     {μ : n → K} {v : CliffordAlgebra (traceQuadraticForm K n)} (s : Finset n) (hv : v ≠ 0)
     (hdiag : ∀ i ∈ s, ⁅Matrix.single i i (1 : K), v⁆ = μ i • v) :
