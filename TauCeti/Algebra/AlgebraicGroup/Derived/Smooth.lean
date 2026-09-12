@@ -87,6 +87,8 @@ closed field has reduced coordinate ring. -/
 theorem isReduced_quotient_derivedDefiningIdeal :
     IsReduced (quotient H (derivedDefiningIdeal H)) := by
   let D := quotient H (derivedDefiningIdeal H)
+  -- Establish reducedness before inferring it for the tensor square: the Hopf reduction
+  -- quotient theorem already requires that tensor square to be reduced.
   let _ : IsReduced (D ⧸ nilradical D) :=
     (Ideal.isRadical_iff_quotient_reduced _).mp (Ideal.radical_isRadical ⊥)
   exact isReduced_quotient_derivedDefiningIdeal_of_isReduced_tensorProduct H
