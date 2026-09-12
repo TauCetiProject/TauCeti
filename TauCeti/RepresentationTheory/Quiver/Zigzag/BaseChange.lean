@@ -200,9 +200,12 @@ theorem skewZigzagIdeal_map_comp {m : Type*} [CommRing m]
     (f : k →+* l) (g : l →+* m) (c : SkewZigzagParameter k G) :
     (skewZigzagIdeal m G (c.map (g.comp f : k →* m))).asIdeal =
       (skewZigzagIdeal m G ((c.map (f : k →* l)).map (g : l →* m))).asIdeal :=
-  congrArg (fun d : SkewZigzagParameter m G => (skewZigzagIdeal m G d).asIdeal) (by
-    ext i j j' h h'
-    simp)
+  congrArg (fun d : SkewZigzagParameter m G => (skewZigzagIdeal m G d).asIdeal)
+    (by
+      rw [show (g.comp f : k →* m) = (g : l →* m).comp (f : k →* l) by
+        ext x
+        rfl]
+      exact SkewZigzagParameter.map_comp (f : k →* l) (g : l →* m) c)
 
 /-- Scalar extension along the identity coefficient homomorphism is the identity map. -/
 @[simp]

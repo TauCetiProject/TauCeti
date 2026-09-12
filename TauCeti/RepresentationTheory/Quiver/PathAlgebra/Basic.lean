@@ -848,8 +848,8 @@ variable {k : Type w} {Q : Type u} {A B : Type*}
   [CommSemiring k] [Quiver.{v} Q] [Finite Q]
   [Semiring A] [Algebra k A] [Semiring B]
 
-/-- Two ring homomorphisms out of a quotient of a path algebra are equal if they agree on
-coefficients and on the images of all paths. -/
+/-- Two ring homomorphisms out of an algebra admitting a surjective map from a path algebra are
+equal if they agree on coefficients and on the images of all paths. -/
 theorem ringHom_ext_of_surjective (q : pathAlgebra k Q →ₐ[k] A) (hq : Function.Surjective q)
     {g h : A →+* B}
     (hscalar : ∀ r : k, g (algebraMap k A r) = h (algebraMap k A r))
