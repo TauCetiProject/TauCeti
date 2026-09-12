@@ -74,6 +74,33 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 
 attribute [simp] AInfinityAlgebra.m_zero
 
+private theorem piece_induction_on (G : InternalGrading R A) {motive : A → Prop} (x : A)
+    (mem : ∀ p, ∀ y ∈ G.piece p, motive y) (zero : motive 0)
+    (add : ∀ y z, motive y → motive z → motive (y + z)) : motive x := by
+  have hx : x ∈ ⨆ p, G.piece p := by
+    rw [G.isInternal.submodule_iSup_eq_top]
+    exact Submodule.mem_top
+  exact Submodule.iSup_induction (motive := motive) G.piece hx mem zero add
+
+private theorem map_add_one (f : MultilinearMap R (fun _ : Fin 1 ↦ A) A) (x y : A) :
+    f ![x + y] = f ![x] + f ![y] := by
+  change (f.curryLeft (x + y)) ![] = (f.curryLeft x) ![] + (f.curryLeft y) ![]
+  rw [map_add]
+  rfl
+
+private theorem map_add_two_left (f : MultilinearMap R (fun _ : Fin 2 ↦ A) A) (x y z : A) :
+    f ![x + y, z] = f ![x, z] + f ![y, z] := by
+  change (f.curryLeft (x + y)) ![z] = (f.curryLeft x) ![z] + (f.curryLeft y) ![z]
+  rw [map_add]
+  rfl
+
+private theorem map_add_two_right (f : MultilinearMap R (fun _ : Fin 2 ↦ A) A) (x y z : A) :
+    f ![x, y + z] = f ![x, y] + f ![x, z] := by
+  change ((f.curryLeft x).curryLeft (y + z)) ![] =
+    ((f.curryLeft x).curryLeft y) ![] + ((f.curryLeft x).curryLeft z) ![]
+  rw [map_add]
+  rfl
+
 /-- The degree-one coderivation of the reduced bar construction. -/
 noncomputable def barDifferential (𝒜 : AInfinityAlgebra R A) :
     ReducedTensorWords R A →ₗ[R] ReducedTensorWords R A :=
@@ -182,31 +209,92 @@ theorem ext {𝒜 𝒜' : AInfinityAlgebra R A} (hG : 𝒜.grading = 𝒜'.gradi
 /-! ### Low-arity identities -/
 
 /-- The arity-one identity is `m₁ m₁ = 0`. -/
-theorem stasheff_one (𝒜 : AInfinityAlgebra R A) (d : ℕ → ℤ) (x : ℕ → A)
-    (hx : x 0 ∈ 𝒜.grading.piece (d 0)) : 𝒜.m 1 ![𝒜.m 1 ![x 0]] = 0 := by
-  have h := 𝒜.stasheff 1 (by omega) d x (fun i hi ↦ by
-    have hi0 : i = 0 := by omega
-    subst i
-    exact hx)
-  rwa [AInfinity.stasheffSum_one] at h
+theorem stasheff_one (𝒜 : AInfinityAlgebra R A) (x : A) : 𝒜.m 1 ![𝒜.m 1 ![x]] = 0 := by
+  have hhom : ∀ (p : ℤ) (y : A), y ∈ 𝒜.grading.piece p →
+      𝒜.m 1 ![𝒜.m 1 ![y]] = 0 := by
+    intro p y hy
+    have h := 𝒜.stasheff 1 (by omega) (fun _ ↦ p) (fun _ ↦ y) (fun _ _ ↦ hy)
+    rwa [AInfinity.stasheffSum_one] at h
+  refine piece_induction_on 𝒜.grading x hhom (hhom 0 0 (Submodule.zero_mem _)) ?_
+  intro y z hy hz
+  rw [map_add_one, map_add_one, hy, hz, add_zero]
 
 /-- The arity-two identity is the graded Leibniz rule, with sign `(-1)^(d 0)` on the second
 differentiated input. -/
-theorem stasheff_two (𝒜 : AInfinityAlgebra R A) (d : ℕ → ℤ) (x : ℕ → A)
-    (hx : ∀ i < 2, x i ∈ 𝒜.grading.piece (d i)) :
-    𝒜.m 1 ![𝒜.m 2 ![x 0, x 1]] =
-      𝒜.m 2 ![𝒜.m 1 ![x 0], x 1] +
-        negOnePowCast R (d 0) • 𝒜.m 2 ![x 0, 𝒜.m 1 ![x 1]] := by
-  exact (AInfinity.stasheffSum_two_eq_zero_iff 𝒜.m d x).mp
-    (𝒜.stasheff 2 (by omega) d x hx)
+theorem stasheff_two (𝒜 : AInfinityAlgebra R A) (x y : A) (p : ℤ)
+    (hx : x ∈ 𝒜.grading.piece p) :
+    𝒜.m 1 ![𝒜.m 2 ![x, y]] =
+      𝒜.m 2 ![𝒜.m 1 ![x], y] +
+        negOnePowCast R p • 𝒜.m 2 ![x, 𝒜.m 1 ![y]] := by
+  have hhom : ∀ (q : ℤ) (z : A), z ∈ 𝒜.grading.piece q →
+      𝒜.m 1 ![𝒜.m 2 ![x, z]] =
+        𝒜.m 2 ![𝒜.m 1 ![x], z] +
+          negOnePowCast R p • 𝒜.m 2 ![x, 𝒜.m 1 ![z]] := by
+    intro q z hz
+    let d : ℕ → ℤ := fun i ↦ if i = 0 then p else q
+    let a : ℕ → A := fun i ↦ if i = 0 then x else z
+    have ha : ∀ i < 2, a i ∈ 𝒜.grading.piece (d i) := by
+      intro i hi
+      have hi' : i = 0 ∨ i = 1 := by omega
+      rcases hi' with rfl | rfl
+      · simpa [a, d] using hx
+      · simpa [a, d] using hz
+    have h := (AInfinity.stasheffSum_two_eq_zero_iff 𝒜.m d a).mp
+      (𝒜.stasheff 2 (by omega) d a ha)
+    simpa [a, d] using h
+  refine piece_induction_on 𝒜.grading y hhom (hhom 0 0 (Submodule.zero_mem _)) ?_
+  intro y z hy hz
+  rw [map_add_two_right (𝒜.m 2) x y z,
+    map_add_one (𝒜.m 1) (𝒜.m 2 ![x, y]) (𝒜.m 2 ![x, z]),
+    map_add_two_right (𝒜.m 2) (𝒜.m 1 ![x]) y z,
+    map_add_one (𝒜.m 1) y z,
+    map_add_two_right (𝒜.m 2) x (𝒜.m 1 ![y]) (𝒜.m 1 ![z]), smul_add, hy, hz]
+  abel
 
-/-- If the ternary operation vanishes, the arity-three identity says that `m₂` is associative
-on homogeneous inputs. -/
+/-- If the ternary operation vanishes, the arity-three identity says that `m₂` is associative. -/
 theorem m_two_assoc_of_m_three_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : 𝒜.m 3 = 0)
-    (d : ℕ → ℤ) (x : ℕ → A) (hx : ∀ i < 3, x i ∈ 𝒜.grading.piece (d i)) :
-    𝒜.m 2 ![𝒜.m 2 ![x 0, x 1], x 2] = 𝒜.m 2 ![x 0, 𝒜.m 2 ![x 1, x 2]] := by
-  exact (AInfinity.stasheffSum_three_eq_zero_iff_of_m_three_eq_zero 𝒜.m d x h₃).mp
-    (𝒜.stasheff 3 (by omega) d x hx)
+    (x y z : A) :
+    𝒜.m 2 ![𝒜.m 2 ![x, y], z] = 𝒜.m 2 ![x, 𝒜.m 2 ![y, z]] := by
+  have hhom : ∀ (p q r : ℤ) (a b c : A),
+      a ∈ 𝒜.grading.piece p → b ∈ 𝒜.grading.piece q → c ∈ 𝒜.grading.piece r →
+        𝒜.m 2 ![𝒜.m 2 ![a, b], c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
+    intro p q r a b c ha hb hc
+    let d : ℕ → ℤ := fun i ↦ if i = 0 then p else if i = 1 then q else r
+    let w : ℕ → A := fun i ↦ if i = 0 then a else if i = 1 then b else c
+    have hw : ∀ i < 3, w i ∈ 𝒜.grading.piece (d i) := by
+      intro i hi
+      have hi' : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+      rcases hi' with rfl | rfl | rfl
+      · simpa [w, d] using ha
+      · simpa [w, d] using hb
+      · simpa [w, d] using hc
+    have h := (AInfinity.stasheffSum_three_eq_zero_iff_of_m_three_eq_zero 𝒜.m d w h₃).mp
+      (𝒜.stasheff 3 (by omega) d w hw)
+    simpa [w] using h
+  have hz (p q : ℤ) (a b : A) (ha : a ∈ 𝒜.grading.piece p)
+      (hb : b ∈ 𝒜.grading.piece q) (c : A) :
+      𝒜.m 2 ![𝒜.m 2 ![a, b], c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
+    refine piece_induction_on 𝒜.grading c (fun r c hc ↦ hhom p q r a b c ha hb hc)
+      (hhom p q 0 a b 0 ha hb (Submodule.zero_mem _)) ?_
+    intro c₁ c₂ hc₁ hc₂
+    rw [map_add_two_right (𝒜.m 2) (𝒜.m 2 ![a, b]) c₁ c₂,
+      map_add_two_right (𝒜.m 2) b c₁ c₂,
+      map_add_two_right (𝒜.m 2) a (𝒜.m 2 ![b, c₁]) (𝒜.m 2 ![b, c₂]), hc₁, hc₂]
+  have hy (p : ℤ) (a : A) (ha : a ∈ 𝒜.grading.piece p) (b c : A) :
+      𝒜.m 2 ![𝒜.m 2 ![a, b], c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
+    refine piece_induction_on 𝒜.grading b (fun q b hb ↦ hz p q a b ha hb c)
+      (hz p 0 a 0 ha (Submodule.zero_mem _) c) ?_
+    intro b₁ b₂ hb₁ hb₂
+    rw [map_add_two_right (𝒜.m 2) a b₁ b₂,
+      map_add_two_left (𝒜.m 2) (𝒜.m 2 ![a, b₁]) (𝒜.m 2 ![a, b₂]) c,
+      map_add_two_left (𝒜.m 2) b₁ b₂ c,
+      map_add_two_right (𝒜.m 2) a (𝒜.m 2 ![b₁, c]) (𝒜.m 2 ![b₂, c]), hb₁, hb₂]
+  refine piece_induction_on 𝒜.grading x (fun p a ha ↦ hy p a ha y z)
+    (hy 0 0 (Submodule.zero_mem _) y z) ?_
+  intro a₁ a₂ ha₁ ha₂
+  rw [map_add_two_left (𝒜.m 2) a₁ a₂ y,
+    map_add_two_left (𝒜.m 2) (𝒜.m 2 ![a₁, y]) (𝒜.m 2 ![a₂, y]) z,
+    map_add_two_left (𝒜.m 2) a₁ a₂ (𝒜.m 2 ![y, z]), ha₁, ha₂]
 
 end AInfinityAlgebra
 
