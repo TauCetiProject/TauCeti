@@ -87,20 +87,11 @@ theorem isBaseChange_latticeToComplex : IsBaseChange ℂ latticeToComplex :=
 theorem isBaseChange_rationalToComplex : IsBaseChange ℂ rationalToComplex :=
   IsBaseChange.prodMap _ _ (IsBaseChange.linearMap ℚ ℂ) (IsBaseChange.linearMap ℚ ℂ)
 
-/-- The standard complex structure `J(x, y) = (-y, x)` on the complexified rank-two lattice. -/
-def complexStructure : ComplexSpace →ₗ[ℂ] ComplexSpace where
-  toFun z := (-z.2, z.1)
-  map_add' z w := by ext <;> simp [add_comm]
-  map_smul' c z := by ext <;> simp
-
-@[simp]
-theorem complexStructure_apply (z : ComplexSpace) :
-    complexStructure z = (-z.2, z.1) := by
-  simp [complexStructure]
-
 /-- The standard complex structure squares to minus the identity. -/
 theorem complexStructure_sq :
-    complexStructure.comp complexStructure = -(LinearMap.id : ComplexSpace →ₗ[ℂ] ComplexSpace) := by
+    (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap.comp
+        (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap =
+      -(LinearMap.id : ComplexSpace →ₗ[ℂ] ComplexSpace) := by
   apply LinearMap.ext
   rintro ⟨z, w⟩
   ext <;> simp
@@ -123,23 +114,26 @@ theorem latticeConj_apply (z : ComplexSpace) :
     ext <;> simp [coordinateConjugation]
 
 private theorem map_eigenspace_I :
-    (Module.End.eigenspace complexStructure Complex.I).map
+    (Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I).map
         (latticeConjugation isBaseChange_latticeToComplex).toEquiv.toLinearMap =
-      Module.End.eigenspace complexStructure (-Complex.I) := by
+      Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap (-Complex.I) := by
   ext z
   constructor
   · rintro ⟨w, hw, rfl⟩
-    have hw' : w ∈ Module.End.eigenspace complexStructure Complex.I := hw
+    have hw' : w ∈ Module.End.eigenspace
+        (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I := hw
     rw [Module.End.mem_eigenspace_iff] at hw'
     rw [Module.End.mem_eigenspace_iff]
-    rw [LinearEquiv.coe_coe, latticeConjugation_toEquiv_apply, latticeConj_apply]
+    simp only [LinearEquiv.coe_toLinearMap, latticeConjugation_toEquiv_apply, latticeConj_apply]
     have hfst := congrArg Prod.fst hw'
     have hsnd := congrArg Prod.snd hw'
     apply Prod.ext
-    · simpa only [complexStructure_apply, Prod.smul_fst, Prod.smul_snd,
+    · simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply,
+        Prod.smul_fst, Prod.smul_snd,
         smul_eq_mul, map_neg, map_mul, Complex.conj_I, neg_mul, mul_neg, neg_neg] using
         congrArg (starRingEnd ℂ) hfst
-    · simpa only [complexStructure_apply, Prod.smul_fst, Prod.smul_snd,
+    · simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply,
+        Prod.smul_fst, Prod.smul_snd,
         smul_eq_mul, map_neg, map_mul, Complex.conj_I, neg_mul, mul_neg, neg_neg] using
         congrArg (starRingEnd ℂ) hsnd
   · intro hz
@@ -148,27 +142,30 @@ private theorem map_eigenspace_I :
     have hsnd := congrArg Prod.snd hz
     refine ⟨(starRingEnd ℂ z.1, starRingEnd ℂ z.2), ?_, ?_⟩
     · have hw : (starRingEnd ℂ z.1, starRingEnd ℂ z.2) ∈
-          Module.End.eigenspace complexStructure Complex.I := by
+          Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I := by
         rw [Module.End.mem_eigenspace_iff]
         apply Prod.ext
-        · simpa only [complexStructure_apply, Prod.smul_fst, Prod.smul_snd,
+        · simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply,
+            Prod.smul_fst, Prod.smul_snd,
             smul_eq_mul, map_neg, map_mul, Complex.conj_I, neg_mul, mul_neg, neg_neg] using
             congrArg (starRingEnd ℂ) hfst
-        · simpa only [complexStructure_apply, Prod.smul_fst, Prod.smul_snd,
+        · simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply,
+            Prod.smul_fst, Prod.smul_snd,
             smul_eq_mul, map_neg, map_mul, Complex.conj_I, neg_mul, mul_neg, neg_neg] using
             congrArg (starRingEnd ℂ) hsnd
       exact hw
-    · rw [LinearEquiv.coe_coe, latticeConjugation_toEquiv_apply, latticeConj_apply]
+    · simp only [LinearEquiv.coe_toLinearMap, latticeConjugation_toEquiv_apply, latticeConj_apply]
       simp
 
 private theorem isCompl_eigenspaces :
-    IsCompl (Module.End.eigenspace complexStructure Complex.I)
-      (Module.End.eigenspace complexStructure (-Complex.I)) :=
-  Module.End.isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id complexStructure complexStructure_sq
+    IsCompl (Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I)
+      (Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap (-Complex.I)) :=
+  Module.End.isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id
+    (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap complexStructure_sq
 
 private def filtration (p : ℤ) : Submodule ℂ ComplexSpace :=
   if p ≤ 0 then ⊤ else if p = 1 then
-    Module.End.eigenspace complexStructure Complex.I else ⊥
+    Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I else ⊥
 
 private theorem filtration_antitone : Antitone filtration := by
   intro p q hpq
@@ -220,7 +217,7 @@ above degree one. -/
 @[simp]
 theorem hodgeStructure_F (p : ℤ) :
     hodgeStructure.F p = if p ≤ 0 then ⊤ else if p = 1 then
-      Module.End.eigenspace complexStructure Complex.I else ⊥ :=
+      Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I else ⊥ :=
   by
     -- Expose the private filtration definition while keeping its implementation private.
     change filtration p = _
@@ -233,14 +230,16 @@ theorem isEffective_hodgeStructure : hodgeStructure.IsEffective := by
 /-- The `H^{1,0}` piece is the `i`-eigenspace of the standard complex structure. -/
 @[simp]
 theorem hodgeStructure_piece_one :
-    hodgeStructure.piece 1 = Module.End.eigenspace complexStructure Complex.I := by
+    hodgeStructure.piece 1 =
+      Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I := by
   rw [HodgeStructureOn.piece_def, HodgeStructureOn.conjF_def]
   norm_num [hodgeStructure_F]
 
 /-- The `H^{0,1}` piece is the `-i`-eigenspace of the standard complex structure. -/
 @[simp]
 theorem hodgeStructure_piece_zero :
-    hodgeStructure.piece 0 = Module.End.eigenspace complexStructure (-Complex.I) := by
+    hodgeStructure.piece 0 =
+      Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap (-Complex.I) := by
   rw [HodgeStructureOn.piece_def, HodgeStructureOn.conjF_def]
   norm_num [hodgeStructure_F, map_eigenspace_I]
 
@@ -255,7 +254,7 @@ theorem hodgeStructure_piece_eq_bot {p : ℤ} (hpzero : p ≠ 0) (hpone : p ≠ 
 -/
 @[simp]
 theorem hodgeStructure_weilOperator :
-    hodgeStructure.weilOperator = complexStructure := by
+    hodgeStructure.weilOperator = (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap := by
   symm
   apply hodgeStructure.weilOperator_unique
   intro p x hx
@@ -263,12 +262,12 @@ theorem hodgeStructure_weilOperator :
   · subst p
     rw [hodgeStructure_piece_one, Module.End.mem_eigenspace_iff] at hx
     norm_num
-    simpa only [complexStructure_apply] using hx
+    simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply] using hx
   by_cases hpzero : p = 0
   · subst p
     rw [hodgeStructure_piece_zero, Module.End.mem_eigenspace_iff] at hx
     norm_num
-    simpa only [complexStructure_apply, neg_smul] using hx
+    simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply, neg_smul] using hx
   rw [hodgeStructure_piece_eq_bot hpzero hpone, Submodule.mem_bot] at hx
   subst x
   simp
@@ -328,23 +327,29 @@ theorem integralFormBaseChange_riemannForm_apply (x y : ComplexSpace) :
   simp [complexRiemannForm]
 
 private theorem snd_eq_neg_I_mul_fst_of_mem_I {x : ComplexSpace}
-    (hx : x ∈ Module.End.eigenspace complexStructure Complex.I) :
+    (hx : x ∈ Module.End.eigenspace
+        (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I) :
     x.2 = -Complex.I * x.1 := by
   rw [Module.End.mem_eigenspace_iff] at hx
   have h := congrArg Prod.fst hx
   calc
     x.2 = -(-x.2) := by simp
-    _ = -(Complex.I * x.1) := congrArg Neg.neg (by simpa using h)
+    _ = -(Complex.I * x.1) := congrArg Neg.neg (by
+      simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply,
+        Prod.fst, Prod.smul_fst, smul_eq_mul] using h)
     _ = -Complex.I * x.1 := by ring
 
 private theorem snd_eq_I_mul_fst_of_mem_neg_I {x : ComplexSpace}
-    (hx : x ∈ Module.End.eigenspace complexStructure (-Complex.I)) :
+    (hx : x ∈ Module.End.eigenspace
+        (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap (-Complex.I)) :
     x.2 = Complex.I * x.1 := by
   rw [Module.End.mem_eigenspace_iff] at hx
   have h := congrArg Prod.fst hx
   calc
     x.2 = -(-x.2) := by simp
-    _ = -((-Complex.I) * x.1) := congrArg Neg.neg (by simpa using h)
+    _ = -((-Complex.I) * x.1) := congrArg Neg.neg (by
+      simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply,
+        Prod.fst, Prod.smul_fst, smul_eq_mul] using h)
     _ = Complex.I * x.1 := by ring
 
 private theorem positive_coordinate_I (z : ℂ) (hz : z ≠ 0) :
@@ -399,9 +404,11 @@ theorem isPolarization_riemannForm :
       simp
     · by_cases hpone : p = 1
       · subst p
-        have hxI : x ∈ Module.End.eigenspace complexStructure Complex.I := by
+        have hxI : x ∈ Module.End.eigenspace
+            (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I := by
           simpa [hodgeStructure_F] using hx
-        have hyI : y ∈ Module.End.eigenspace complexStructure Complex.I := by
+        have hyI : y ∈ Module.End.eigenspace
+            (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I := by
           simpa [hodgeStructure_F] using hy
         rw [integralFormBaseChange_riemannForm_apply,
           snd_eq_neg_I_mul_fst_of_mem_I hxI, snd_eq_neg_I_mul_fst_of_mem_I hyI]
