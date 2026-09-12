@@ -30,7 +30,7 @@ The intended reading is the cover of `X` attached to a set acted on by the deck 
 regular cover. For `E` the universal cover of `X` and `G` its fundamental group, this is the
 covering space attached to an arbitrary `π₁(X, x₀)`-set; no transitivity, and hence no
 connectedness of the resulting cover, is assumed. The transitive case `A = G ⧸ H`, where the
-balanced product is `E / H`, is `TauCeti.IsQuotientCoveringMap.isCoveringMap_of_comp`, proved
+balanced product is `E / H`, is `IsQuotientCoveringMap.isCoveringMap_of_comp`, proved
 there for an abstract presentation of `E / H` rather than for a fixed model.
 
 ## Main declarations

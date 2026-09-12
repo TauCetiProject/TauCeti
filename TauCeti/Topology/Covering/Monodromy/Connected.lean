@@ -142,7 +142,7 @@ theorem monodromy_isFiberwisePretransitive [LocallyPathConnectedSpace X]
 /-- The fundamental group at `x₀` acts pretransitively on the fibre of a connected covering space
 over `x₀`; the fibre may be empty, when the base is disconnected.
 
-This is `TauCeti.IsCoveringMap.monodromy_isPretransitive` applied to the total space, which is
+This is `IsCoveringMap.monodromy_isPretransitive` applied to the total space, which is
 path connected because a connected cover of a locally path-connected base is connected and
 locally path connected. -/
 theorem isPretransitive_fiberAction [LocallyPathConnectedSpace X] (p : ConnectedCoveringSpace X)

@@ -46,9 +46,9 @@ cover".
   lifts to a generalized loop in the total space based at a prescribed point of the fibre.
 * `HomotopyGroup.map_injective`, `HomotopyGroup.map_surjective`: the induced
   map on homotopy classes.
-* `TauCeti.IsCoveringMap.homotopyGroupMulEquiv`: the isomorphism
+* `IsCoveringMap.homotopyGroupMulEquiv`: the isomorphism
   `HomotopyGroup N E e ≃* HomotopyGroup N X (p e)` for `[Nontrivial N]`.
-* `TauCeti.IsCoveringMap.homotopyGroupPiMulEquiv`: its `π_(n + 2)` form.
+* `IsCoveringMap.homotopyGroupPiMulEquiv`: its `π_(n + 2)` form.
 
 ## References
 
@@ -157,7 +157,7 @@ namespace TauCeti
 Postcomposition with `p` is a group isomorphism `π_N(E, e) ≃* π_N(X, p e)` whenever the index
 type `N` has at least two elements. No connectivity hypothesis on `E` or `X` is needed: both
 halves are statements about lifting cubes. -/
-noncomputable def IsCoveringMap.homotopyGroupMulEquiv [DecidableEq N] [Nontrivial N]
+noncomputable def _root_.IsCoveringMap.homotopyGroupMulEquiv [DecidableEq N] [Nontrivial N]
     (hp : _root_.IsCoveringMap p) (e : E) :
     HomotopyGroup N E e ≃* HomotopyGroup N X (p e) := by
   classical
@@ -165,20 +165,20 @@ noncomputable def IsCoveringMap.homotopyGroupMulEquiv [DecidableEq N] [Nontrivia
     ⟨HomotopyGroup.map_injective hp, HomotopyGroup.map_surjective hp⟩
 
 @[simp]
-theorem IsCoveringMap.homotopyGroupMulEquiv_apply [DecidableEq N] [Nontrivial N]
+theorem _root_.IsCoveringMap.homotopyGroupMulEquiv_apply [DecidableEq N] [Nontrivial N]
     (hp : _root_.IsCoveringMap p) (e : E) (a : HomotopyGroup N E e) :
     IsCoveringMap.homotopyGroupMulEquiv hp e a =
       HomotopyGroup.map (⟨p, hp.continuous⟩ : C(E, X)) rfl a :=
   (rfl)
 
-/-- The `π_(n + 2)` form of `TauCeti.IsCoveringMap.homotopyGroupMulEquiv`: a covering map
+/-- The `π_(n + 2)` form of `IsCoveringMap.homotopyGroupMulEquiv`: a covering map
 `p : E → X` induces `π_(n + 2)(E, e) ≃* π_(n + 2)(X, p e)` for every `n : ℕ`. -/
-noncomputable def IsCoveringMap.homotopyGroupPiMulEquiv (hp : _root_.IsCoveringMap p)
+noncomputable def _root_.IsCoveringMap.homotopyGroupPiMulEquiv (hp : _root_.IsCoveringMap p)
     (e : E) (n : ℕ) : π_ (n + 2) E e ≃* π_ (n + 2) X (p e) :=
   IsCoveringMap.homotopyGroupMulEquiv hp e
 
 @[simp]
-theorem IsCoveringMap.homotopyGroupPiMulEquiv_apply (hp : _root_.IsCoveringMap p) (e : E)
+theorem _root_.IsCoveringMap.homotopyGroupPiMulEquiv_apply (hp : _root_.IsCoveringMap p) (e : E)
     (n : ℕ) (a : π_ (n + 2) E e) :
     IsCoveringMap.homotopyGroupPiMulEquiv hp e n a =
       HomotopyGroup.map (⟨p, hp.continuous⟩ : C(E, X)) rfl a :=

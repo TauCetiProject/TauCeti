@@ -152,10 +152,10 @@ regular cover agrees with the monodromy equivalence from `π₁` to the same fib
 lemma deckEquivFiber_eq_fundamentalGroupEquivFiber [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (φ : Deck p) :
     deckEquivFiber hp hreg e φ =
-      TauCeti.IsCoveringMap.fundamentalGroupEquivFiber hp e
+      IsCoveringMap.fundamentalGroupEquivFiber hp e
         ((hreg.deckFundamentalGroupEquiv hp e φ).unop) := by
   ext
-  rw [deckEquivFiber_apply_coe, TauCeti.IsCoveringMap.fundamentalGroupEquivFiber_apply_coe,
+  rw [deckEquivFiber_apply_coe, IsCoveringMap.fundamentalGroupEquivFiber_apply_coe,
     deckFundamentalGroupEquiv_unop_monodromy]
   exact (smul_eq_apply φ (e : E)).symm
 

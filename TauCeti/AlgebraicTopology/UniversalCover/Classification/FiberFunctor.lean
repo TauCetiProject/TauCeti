@@ -84,7 +84,7 @@ theorem fiberFunctor_obj (p : CoveringSpace X) :
 @[simp]
 theorem fiberFunctor_map {p q : CoveringSpace X} (f : p ⟶ q) :
     (fiberFunctor x₀).map f =
-      ↾(IsCoveringMap.fiberMap f.hom.left.hom (proj_hom_comp_hom_left_hom f) x₀) :=
+      ↾(Function.fiberMap f.hom.left.hom (proj_hom_comp_hom_left_hom f) x₀) :=
   fiberActionFunctor_map_hom x₀ f
 
 section Classification

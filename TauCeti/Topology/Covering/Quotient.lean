@@ -27,10 +27,15 @@ intermediate covering. That is the shape of the subgroup-to-cover half of the cl
 covering spaces, where `E` is the universal cover of `X` and `G` is its fundamental group; that
 application is `TauCeti.UniversalCover.isCoveringMap_subgroupQuotientProj`.
 
+The file also records that a surjective covering map is an open quotient map: the companion,
+for a covering map with no group acting, of Mathlib's `IsQuotientCoveringMap.isOpenQuotientMap`
+that the rest of the file consumes.
+
 ## Main results
 
-* `TauCeti.IsQuotientCoveringMap.isCoveringMap_of_comp`: the map from the quotient by a subgroup
-  down to the quotient by the whole group is a covering map.
+* `IsCoveringMap.isOpenQuotientMap`: a surjective covering map is an open quotient map.
+* `IsQuotientCoveringMap.isCoveringMap_of_comp`: the map from the quotient by a subgroup down to
+  the quotient by the whole group is a covering map.
 
 ## Implementation notes
 
@@ -63,6 +68,11 @@ open Pointwise Topology
 variable {E X Y : Type*} [TopologicalSpace E] [TopologicalSpace X] [TopologicalSpace Y]
   {G : Type*} [Group G] [MulAction G E] {H : Subgroup G}
   {q : E → X} {qH : E → Y} {r : Y → X}
+
+/-- A surjective covering map is an open quotient map. -/
+theorem _root_.IsCoveringMap.isOpenQuotientMap {p : E → X} (hp : IsCoveringMap p)
+    (hsurj : Function.Surjective p) : IsOpenQuotientMap p :=
+  .of_isOpenMap_isQuotientMap hp.isOpenMap (hp.isQuotientMap hsurj)
 
 namespace IsQuotientCoveringMap
 
@@ -172,7 +182,7 @@ private theorem isEvenlyCovered_of_smul_disjoint (hq : IsQuotientCoveringMap q G
 If `q : E → X` presents `X` as the quotient of `E` by a group `G` in the sense of
 `IsQuotientCoveringMap`, and `qH : E → Y` presents `Y` as the quotient of `E` by a subgroup `H`
 of `G`, then the map `r : Y → X` through which `q` factors is a covering map. -/
-theorem isCoveringMap_of_comp (hq : IsQuotientCoveringMap q G)
+theorem _root_.IsQuotientCoveringMap.isCoveringMap_of_comp (hq : IsQuotientCoveringMap q G)
     (hqH : IsQuotientCoveringMap qH H) (hr : r ∘ qH = q) : IsCoveringMap r := by
   intro x
   obtain ⟨e, rfl⟩ := hq.surjective x
