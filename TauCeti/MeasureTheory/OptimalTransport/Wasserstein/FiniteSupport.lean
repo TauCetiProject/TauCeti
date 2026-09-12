@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
+import TauCeti.Data.ENNReal.Weights
 
 /-!
 # Approximation of a finite-moment law by a finitely supported one
@@ -28,8 +29,9 @@ tail set of points whose least index is at least `n`, and those tail sets decrea
 set, so the finite `p`-moment about `u 0` makes their contribution vanish by dominated
 convergence.
 
-This file also provides the finite-support transport estimate and common-denominator weight
-rounding used to approximate a finitely supported law by one with rational weights, together with
+This file also provides the finite-support transport estimate and the approximation of a finitely
+supported law by one whose weights have a common natural denominator, the rounding of the weights
+themselves being `TauCeti.exists_nat_weights_of_sum_eq_one`, together with
 the companion quantization onto the terms of a prescribed dense sequence, which sends a point to
 the first term of the sequence within the prescribed accuracy of it.
 
@@ -218,49 +220,9 @@ theorem exists_nat_weights_wassersteinEDist_le
   have hCM : C ≤ M * ε ^ p.toReal := by
     rw [← ENNReal.div_le_iff hεt (by simp [hεtop])]
     exact hM.le
-  -- the rounded multiplicities
-  set m : X → ℕ := fun x ↦
-    if x = x₀ then M - ∑ y ∈ s.erase x₀, ⌊(M : ℝ) * (a y).toReal⌋₊
-    else ⌊(M : ℝ) * (a x).toReal⌋₊ with hm_def
-  have hfloor_le : ∀ y : X, ((⌊(M : ℝ) * (a y).toReal⌋₊ : ℕ) : ℝ≥0∞) ≤ M * a y := by
-    intro y
-    calc ((⌊(M : ℝ) * (a y).toReal⌋₊ : ℕ) : ℝ≥0∞)
-        = ENNReal.ofReal (⌊(M : ℝ) * (a y).toReal⌋₊ : ℝ) := by
-          rw [ENNReal.ofReal_natCast]
-      _ ≤ ENNReal.ofReal ((M : ℝ) * (a y).toReal) :=
-          ENNReal.ofReal_le_ofReal (Nat.floor_le (by positivity))
-      _ = M * a y := by
-          rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast,
-            ENNReal.ofReal_toReal (ha_fin y)]
-  have hlt_floor : ∀ y : X, (M : ℝ≥0∞) * a y ≤ (⌊(M : ℝ) * (a y).toReal⌋₊ : ℕ) + 1 := by
-    intro y
-    calc (M : ℝ≥0∞) * a y = ENNReal.ofReal ((M : ℝ) * (a y).toReal) := by
-          rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast,
-            ENNReal.ofReal_toReal (ha_fin y)]
-      _ ≤ ENNReal.ofReal ((⌊(M : ℝ) * (a y).toReal⌋₊ : ℝ) + 1) :=
-          ENNReal.ofReal_le_ofReal (Nat.lt_floor_add_one _).le
-      _ = (⌊(M : ℝ) * (a y).toReal⌋₊ : ℕ) + 1 := by
-          rw [ENNReal.ofReal_add (by positivity) zero_le_one, ENNReal.ofReal_natCast,
-            ENNReal.ofReal_one]
-  have herase : ∑ y ∈ s.erase x₀, ⌊(M : ℝ) * (a y).toReal⌋₊ ≤ M := by
-    have hcast : ((∑ y ∈ s.erase x₀, ⌊(M : ℝ) * (a y).toReal⌋₊ : ℕ) : ℝ≥0∞) ≤ (M : ℝ≥0∞) := by
-      push_cast
-      calc ∑ y ∈ s.erase x₀, ((⌊(M : ℝ) * (a y).toReal⌋₊ : ℕ) : ℝ≥0∞)
-          ≤ ∑ y ∈ s.erase x₀, (M : ℝ≥0∞) * a y := Finset.sum_le_sum fun y _ ↦ hfloor_le y
-        _ = (M : ℝ≥0∞) * ∑ y ∈ s.erase x₀, a y := by rw [Finset.mul_sum]
-        _ ≤ (M : ℝ≥0∞) * 1 := by
-            gcongr
-            rw [← ha_sum]
-            exact Finset.sum_le_sum_of_subset (Finset.erase_subset _ _)
-        _ = M := mul_one _
-    exact_mod_cast hcast
-  have hm_sum : ∑ x ∈ s, m x = M := by
-    rw [← Finset.add_sum_erase _ m hx₀]
-    have h₁ : m x₀ = M - ∑ y ∈ s.erase x₀, ⌊(M : ℝ) * (a y).toReal⌋₊ := by simp [hm_def]
-    have h₂ : ∑ y ∈ s.erase x₀, m y = ∑ y ∈ s.erase x₀, ⌊(M : ℝ) * (a y).toReal⌋₊ :=
-      Finset.sum_congr rfl fun y hy ↦ by simp [hm_def, Finset.ne_of_mem_erase hy]
-    rw [h₁, h₂]
-    omega
+  -- the rounded multiplicities, and their comparison with the original weights
+  obtain ⟨m, hm_sum, hfloor_le, hlt_floor⟩ :=
+    exists_nat_weights_of_sum_eq_one hx₀ ha_sum ha_fin hMpos
   refine ⟨m, by rw [hm_sum]; exact hMpos, ?_⟩
   -- the rounded weights, and the comparison with the original ones
   set b : X → ℝ≥0∞ := fun x ↦ (M : ℝ≥0∞)⁻¹ * m x with hb_def
@@ -268,18 +230,15 @@ theorem exists_nat_weights_wassersteinEDist_le
     have hcast : ∑ x ∈ s, ((m x : ℕ) : ℝ≥0∞) = (M : ℝ≥0∞) := by rw [← Nat.cast_sum, hm_sum]
     rw [hb_def, ← Finset.mul_sum, hcast, ENNReal.inv_mul_cancel hM0 hMtop]
   have hab : ∀ y ∈ s, y ≠ x₀ → b y ≤ a y := by
-    intro y _ hy
-    have hmy : ((m y : ℕ) : ℝ≥0∞) ≤ (M : ℝ≥0∞) * a y := by
-      simpa [hm_def, hy] using hfloor_le y
+    intro y hys hy
+    have hmy := hfloor_le y hys hy
     calc b y = (M : ℝ≥0∞)⁻¹ * m y := rfl
       _ ≤ (M : ℝ≥0∞)⁻¹ * ((M : ℝ≥0∞) * a y) := by gcongr
       _ = a y := by rw [← mul_assoc, ENNReal.inv_mul_cancel hM0 hMtop, one_mul]
   have hexc : ∀ y ∈ s, y ≠ x₀ → a y - b y ≤ (M : ℝ≥0∞)⁻¹ := by
-    intro y _ hy
+    intro y hys hy
     rw [tsub_le_iff_left]
-    have hmy : ((m y : ℕ) : ℝ≥0∞) = (⌊(M : ℝ) * (a y).toReal⌋₊ : ℕ) := by simp [hm_def, hy]
-    have h := hlt_floor y
-    rw [← hmy] at h
+    have h := hlt_floor y hys hy
     calc a y = (M : ℝ≥0∞)⁻¹ * ((M : ℝ≥0∞) * a y) := by
           rw [← mul_assoc, ENNReal.inv_mul_cancel hM0 hMtop, one_mul]
       _ ≤ (M : ℝ≥0∞)⁻¹ * ((m y : ℕ) + 1) := by gcongr

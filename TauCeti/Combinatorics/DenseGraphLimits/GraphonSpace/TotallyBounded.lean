@@ -5,8 +5,9 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.OfMatrixGrid
+public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.UnitIntervalModel
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Density
-import TauCeti.MeasureTheory.Measure.UnitIntervalMap
 
 /-!
 # Graphon space is totally bounded
@@ -19,8 +20,8 @@ whose size depends only on `ε`, and both of its weightings can be pushed onto a
 cost: the block values by rounding down (`exists_gridValue_cutDist_le`) and the vertex weights by
 rounding all but one of them down and letting the remaining vertex absorb the slack
 (`exists_gridWeightMeasure_cutDist_le`).  Finitely many grid weightings of a fixed finite vertex set
-remain, each read onto `(I, volume)` along a measure-preserving map out of the unit interval
-(Janson, Theorem A.9).
+remain, each read onto `(I, volume)` by `unitIntervalModel`, along a measure-preserving map out of
+the unit interval (Janson, Theorem A.9).
 
 Total boundedness is one of the two halves of the Lovász--Szegedy compactness theorem, the other
 being completeness.
@@ -51,19 +52,6 @@ namespace DenseGraphLimits
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
 
 section Net
-
-/-- The canonical `(I, volume)` representative of a graphon on a standard Borel probability
-carrier: its pullback along a measure-preserving map out of the unit interval (Janson A.9). -/
-private def unitIntervalModel {α : Type*} [MeasurableSpace α] [StandardBorelSpace α]
-    (ν : Measure α) [IsProbabilityMeasure ν] (V : Graphon α ν) :
-    Graphon I (volume : Measure I) :=
-  V.comap (Measure.exists_measurePreserving_from_unitInterval ν).choose
-    (Measure.exists_measurePreserving_from_unitInterval ν).choose_spec.measurable volume
-
-private theorem cutDist_unitIntervalModel {α : Type*} [MeasurableSpace α] [StandardBorelSpace α]
-    (ν : Measure α) [IsProbabilityMeasure ν] (U : Graphon Ω μ) (V : Graphon α ν) :
-    cutDist U (unitIntervalModel ν V) = cutDist U V :=
-  cutDist_comap_right U V (Measure.exists_measurePreserving_from_unitInterval ν).choose_spec
 
 /-- A point of the finite net: the finite weighted graph on `Fin n` whose vertex weights are the
 multiples `w i / N` of `1 / N` and whose block values are the multiples of `1 / (N + 1)` named by
