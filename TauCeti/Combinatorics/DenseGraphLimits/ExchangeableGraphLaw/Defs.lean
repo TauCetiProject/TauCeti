@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
+import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
 /-!
 # Exchangeable graph laws
@@ -21,7 +22,10 @@ finite-dimensional distributions of one random graph.
 The observable through which a graph parameter reads off such a law is the **upper mass** of a
 finite pattern `F`: the probability `P(F ≤ ·)` that the level-`k` sample contains `F`. Upper
 masses take values in `[0, 1]`, take the value `1` at the edgeless pattern, and are unchanged by
-relabelling a pattern along an injection — the consistency hypothesis seen on upper events.
+relabelling a pattern along an injection — the consistency hypothesis seen on upper events. They
+are a complete observable: an upper mass is the total probability of the graphs above the pattern,
+so downward induction along the finite lattice of graphs recovers the probability of an individual
+graph, and hence the whole law, from the upper masses.
 
 The label set is always a finite `Fin k`, so its graphs form a finite measurable space and every
 set of them is measurable; no measurability side conditions appear below.
@@ -37,11 +41,15 @@ set of them is measurable; no measurability side conditions appear below.
 
 * `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_map` — upper masses are unchanged by
   relabelling the pattern along an injection;
-* `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_anti` — a stronger pattern has a
+* `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_antitone` — a stronger pattern has a
   smaller upper mass;
 * `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_bot`,
   `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_nonneg` and
-  `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_le_one` — the range of an upper mass.
+  `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_le_one` — the range of an upper mass;
+* `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_eq_sum` — an upper mass is the total
+  probability of the graphs containing the pattern;
+* `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.ext_upperMass` — the upper masses determine the
+  law.
 
 ## References
 
@@ -74,6 +82,9 @@ structure ExchangeableGraphLaw where
   /-- Consistency under restriction along every injection of labels. -/
   consistent : ∀ {k l : ℕ} (f : Fin k ↪ Fin l),
     (law l).map (SimpleGraph.comap ⇑f) = law k
+
+-- Restricting a marginal along an injection of labels is the canonical reduction step.
+attribute [simp] ExchangeableGraphLaw.consistent
 
 namespace ExchangeableGraphLaw
 
@@ -109,7 +120,7 @@ theorem upperMass_le_one (F : SimpleGraph (Fin k)) : L.upperMass F ≤ 1 := by
   exact ENNReal.toReal_mono ENNReal.one_ne_top prob_le_one
 
 /-- Strengthening a pattern shrinks its upper event, so upper masses are antitone. -/
-theorem upperMass_anti : Antitone (L.upperMass (k := k)) := fun _ _ h =>
+theorem upperMass_antitone : Antitone (L.upperMass (k := k)) := fun _ _ h =>
   ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono fun _ hG => h.trans hG)
 
 /-- Every graph contains the edgeless pattern, so its upper mass is `1`. -/
@@ -130,6 +141,50 @@ theorem upperMass_map (F : SimpleGraph (Fin k)) (f : Fin k ↪ Fin l) :
   rw [upperMass_def, upperMass_def, hset,
     ← Measure.map_apply (SimpleGraph.measurable_comap ⇑f) MeasurableSet.of_discrete,
     L.consistent f]
+
+open Classical in
+/-- An upper mass is the total probability of the individual graphs containing the pattern: the
+label set is finite, so the upper event is a finite union of singletons. -/
+theorem upperMass_eq_sum (F : SimpleGraph (Fin k)) :
+    L.upperMass F = ∑ G ∈ Finset.univ.filter (F ≤ ·), (L.law k {G}).toReal := by
+  have hset : {G : SimpleGraph (Fin k) | F ≤ G} = ↑(Finset.univ.filter (F ≤ ·)) := by
+    ext G
+    simp
+  rw [upperMass_def, hset, ← sum_measure_singleton,
+    ENNReal.toReal_sum fun G _ => measure_ne_top _ _]
+
+open Classical in
+/-- **The upper masses determine the law.** The upper mass of a pattern is the probability of the
+pattern itself plus the upper masses contributed by the strictly larger patterns, so downward
+induction along the finite lattice of graphs recovers every marginal from the upper masses. -/
+theorem ext_upperMass {L L' : ExchangeableGraphLaw}
+    (h : ∀ (k : ℕ) (F : SimpleGraph (Fin k)), L.upperMass F = L'.upperMass F) : L = L' := by
+  have key : ∀ (k : ℕ) (G : SimpleGraph (Fin k)),
+      (L.law k {G}).toReal = (L'.law k {G}).toReal := by
+    intro k G
+    induction G using WellFoundedGT.induction with
+    | ind G ih =>
+      -- The graphs containing `G` are `G` itself together with the ones strictly above it.
+      have hins : Finset.univ.filter (G ≤ ·) =
+          insert G (Finset.univ.filter (fun H : SimpleGraph (Fin k) => G < H)) := by
+        ext H
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert]
+        exact ⟨fun hle => hle.lt_or_eq.symm.imp Eq.symm id, fun h => h.elim ge_of_eq le_of_lt⟩
+      have hG : G ∉ Finset.univ.filter (fun H : SimpleGraph (Fin k) => G < H) := by simp
+      have hsplit : ∀ M : ExchangeableGraphLaw, M.upperMass G = (M.law k {G}).toReal +
+          ∑ H ∈ Finset.univ.filter (fun H : SimpleGraph (Fin k) => G < H),
+            (M.law k {H}).toReal := fun M => by
+        rw [M.upperMass_eq_sum G, hins, Finset.sum_insert hG]
+      -- The strictly larger patterns contribute the same to both laws, so the rest does too.
+      have htail : ∑ H ∈ Finset.univ.filter (fun H : SimpleGraph (Fin k) => G < H),
+            (L.law k {H}).toReal =
+          ∑ H ∈ Finset.univ.filter (fun H : SimpleGraph (Fin k) => G < H),
+            (L'.law k {H}).toReal :=
+        Finset.sum_congr rfl fun H hH => ih H (Finset.mem_filter.1 hH).2
+      have hadd := ((hsplit L).symm.trans (h k G)).trans (hsplit L')
+      rwa [htail, add_right_cancel_iff] at hadd
+  exact ext fun k => Measure.ext_of_singleton fun G =>
+    (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)).1 (key k G)
 
 end ExchangeableGraphLaw
 
