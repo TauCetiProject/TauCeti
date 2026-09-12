@@ -47,10 +47,9 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
 
 ## Implementation notes
 
-The definition `fullCycleType σ` below is the roadmap's canonical name for this multiset.
-`Equiv.Perm.partition` already carries it with the same `[Fintype α] [DecidableEq α]` arguments,
-so the definition is a wrapper around its defining expression. The positivity of the parts
-(`Nat.Partition.parts_pos`) and the filter lemma
+The definition `fullCycleType σ` below uses the same `[Fintype α] [DecidableEq α]` arguments as
+`Equiv.Perm.partition`, so the invariant is a wrapper around its defining expression. The
+positivity of the parts (`Nat.Partition.parts_pos`) and the filter lemma
 (`Equiv.Perm.filter_parts_partition_eq_cycleType`) and the completeness of the conjugacy invariant
 (`Equiv.Perm.partition_eq_of_isConj`) would each be restated once more. Downstream statements use
 `(Equiv.Perm.partition σ).parts`, which is a bare `Multiset ℕ` and so can be compared with a
@@ -60,14 +59,9 @@ is indexed by the ambient cardinality, that cannot.
 Since `Equiv.Perm.partition` takes the `DecidableEq α` of its carrier as an instance argument and
 is not `noncomputable`, the multiset below is written at the carrier's own instance rather than at
 `Classical.propDecidable`, which is what the downstream comparison with a factorization type is
-stated with.
-
-The partition-specific declarations are stated in the `Equiv.Perm` namespace, as upstream candidates
-and so that they are found by `simp` and by dot notation alongside Mathlib's own partition lemmas.
-The canonical `fullCycleType` declarations remain in the `TauCeti` namespace.
-
-This supplies a Layer 0 milestone of `TauCetiRoadmap/PolynomialGaloisGroups/README.md`,
-"`fullCycleType`, with its basic API".
+stated with. The invariant and its API are in the `Equiv.Perm` namespace, so permutation
+expressions can use dot notation and the statements sit alongside the partition lemmas they
+refine.
 -/
 
 public section
@@ -82,7 +76,7 @@ variable {α β : Type*} [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq
 
 Unlike `Equiv.Perm.cycleType`, this is a partition of the cardinality of the whole carrier. It
 is the permutation-side cycle invariant used to compare a Galois action with factor degrees. -/
-def fullCycleType (σ : Equiv.Perm α) : Multiset ℕ :=
+def _root_.Equiv.Perm.fullCycleType (σ : Equiv.Perm α) : Multiset ℕ :=
   σ.cycleType + Multiset.replicate (Fintype.card α - σ.support.card) 1
 
 /-! ### The two halves of the multiset -/
@@ -266,70 +260,71 @@ theorem _root_.Equiv.Perm.parts_partition_permCongr (e : α ≃ β) (σ : Equiv.
 /-! ### The canonical full cycle type API -/
 
 /-- `fullCycleType` is the unbundled parts of Mathlib's permutation partition. -/
-theorem fullCycleType_eq_parts_partition (σ : Equiv.Perm α) :
+theorem _root_.Equiv.Perm.fullCycleType_eq_parts_partition (σ : Equiv.Perm α) :
     fullCycleType σ = σ.partition.parts := by
   rw [fullCycleType, Equiv.Perm.parts_partition]
 
 /-- The full cycle lengths of a permutation sum to the cardinality of its carrier. -/
-theorem fullCycleType_sum (σ : Equiv.Perm α) :
+theorem _root_.Equiv.Perm.fullCycleType_sum (σ : Equiv.Perm α) :
     (fullCycleType σ).sum = Fintype.card α := by
   rw [fullCycleType_eq_parts_partition]
   exact σ.partition.parts_sum
 
 /-- The identity has one full cycle-type part for every point of the carrier. -/
 @[simp]
-theorem fullCycleType_one :
+theorem _root_.Equiv.Perm.fullCycleType_one :
     fullCycleType (1 : Equiv.Perm α) = Multiset.replicate (Fintype.card α) 1 := by
   rw [fullCycleType_eq_parts_partition, Equiv.Perm.parts_partition_one]
 
 /-- On an empty finite carrier, the full cycle type is empty. -/
 @[simp]
-theorem fullCycleType_of_isEmpty [IsEmpty α] (σ : Equiv.Perm α) :
+theorem _root_.Equiv.Perm.fullCycleType_of_isEmpty [IsEmpty α] (σ : Equiv.Perm α) :
     fullCycleType σ = 0 := by
   rw [fullCycleType_eq_parts_partition, Equiv.Perm.parts_partition_of_isEmpty]
 
 /-- The full cycle type is empty exactly when the carrier is empty. -/
 @[simp]
-theorem fullCycleType_eq_zero_iff {σ : Equiv.Perm α} :
+theorem _root_.Equiv.Perm.fullCycleType_eq_zero_iff {σ : Equiv.Perm α} :
     fullCycleType σ = 0 ↔ Fintype.card α = 0 := by
   simpa only [fullCycleType_eq_parts_partition] using
     (Equiv.Perm.parts_partition_eq_zero_iff (σ := σ))
 
 /-- The full cycle type agrees with the cycle type exactly when there are no fixed points. -/
-theorem fullCycleType_eq_cycleType_iff {σ : Equiv.Perm α} :
+theorem _root_.Equiv.Perm.fullCycleType_eq_cycleType_iff {σ : Equiv.Perm α} :
     fullCycleType σ = σ.cycleType ↔ σ.support = Finset.univ := by
   simpa only [fullCycleType_eq_parts_partition] using
     (Equiv.Perm.parts_partition_eq_cycleType_iff (σ := σ))
 
 /-- A fixed-point-free permutation has no one-parts in its full cycle type. -/
-theorem fullCycleType_eq_cycleType {σ : Equiv.Perm α} (hσ : σ.support = Finset.univ) :
+theorem _root_.Equiv.Perm.fullCycleType_eq_cycleType {σ : Equiv.Perm α}
+    (hσ : σ.support = Finset.univ) :
     fullCycleType σ = σ.cycleType :=
   fullCycleType_eq_cycleType_iff.2 hσ
 
 /-- Conjugating a permutation does not change its full cycle type. -/
 @[simp]
-theorem fullCycleType_conj (g σ : Equiv.Perm α) :
+theorem _root_.Equiv.Perm.fullCycleType_conj (g σ : Equiv.Perm α) :
     fullCycleType (g * σ * g⁻¹) = fullCycleType σ := by
   rw [fullCycleType_eq_parts_partition, fullCycleType_eq_parts_partition,
     Equiv.Perm.parts_partition_conj]
 
 /-- Inverting a permutation does not change its full cycle type. -/
 @[simp]
-theorem fullCycleType_inv (σ : Equiv.Perm α) :
+theorem _root_.Equiv.Perm.fullCycleType_inv (σ : Equiv.Perm α) :
     fullCycleType σ⁻¹ = fullCycleType σ := by
   rw [fullCycleType_eq_parts_partition, fullCycleType_eq_parts_partition,
     Equiv.Perm.parts_partition_inv]
 
 /-- Relabelling the carrier does not change a permutation's full cycle type. -/
 @[simp]
-theorem fullCycleType_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
+theorem _root_.Equiv.Perm.fullCycleType_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
     fullCycleType (e.permCongr σ) = fullCycleType σ := by
   rw [fullCycleType_eq_parts_partition, fullCycleType_eq_parts_partition,
     Equiv.Perm.parts_partition_permCongr]
 
 /-- The parts equal to one in the full cycle type are precisely the fixed points. -/
 @[simp]
-theorem count_one_fullCycleType (σ : Equiv.Perm α) :
+theorem _root_.Equiv.Perm.count_one_fullCycleType (σ : Equiv.Perm α) :
     (fullCycleType σ).count 1 = Fintype.card α - σ.support.card := by
   rw [fullCycleType_eq_parts_partition]
   exact Equiv.Perm.count_one_parts_partition σ
@@ -338,10 +333,10 @@ theorem count_one_fullCycleType (σ : Equiv.Perm α) :
 
 The three shapes that the degree-four recognition theorems read off a factorization type. -/
 
-example : fullCycleType (1 : Equiv.Perm (Fin 4)) = {1, 1, 1, 1} := by decide
+example : Equiv.Perm.fullCycleType (1 : Equiv.Perm (Fin 4)) = {1, 1, 1, 1} := by decide
 
-example : fullCycleType (swap 0 1 : Equiv.Perm (Fin 4)) = {2, 1, 1} := by decide
+example : Equiv.Perm.fullCycleType (swap 0 1 : Equiv.Perm (Fin 4)) = {2, 1, 1} := by decide
 
-example : fullCycleType (finRotate 4) = {4} := by decide
+example : Equiv.Perm.fullCycleType (finRotate 4) = {4} := by decide
 
 end TauCeti
