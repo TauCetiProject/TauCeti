@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 
+-- Private in `RayClass.Basic`; needed below for the principal-ideal class criteria.
 import TauCeti.RingTheory.ClassGroup.Basic
 
 /-!
