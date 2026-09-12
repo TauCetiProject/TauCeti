@@ -76,7 +76,8 @@ noncomputable def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G)
       | H g =>
         apply Subtype.ext
         simp only [QuotientGroup.mapOfLE_mk]
-        change g • (m : M) = g • (m : M)
+        simp only [coe_quotient_smul_fixedPoints_addSubgroup,
+          coe_smul_fixedPoints_addSubgroup]
         rfl)
 
 /-- Coercion of a degree-zero transition to the coefficient group. -/
@@ -122,7 +123,8 @@ theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
     | H g =>
       apply Subtype.ext
       simp only [QuotientGroup.mapOfLE_mk]
-      change g • (m : M) = g • (m : M)
+      simp only [coe_quotient_smul_fixedPoints_addSubgroup,
+        coe_smul_fixedPoints_addSubgroup]
       rfl
   have hWV' : ∀ (q : G ⧸ W.toSubgroup)
       (m : FixedPoints.addSubgroup V.toSubgroup M), iWV (QuotientGroup.mapOfLE hWV q • m) =
@@ -132,7 +134,8 @@ theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
     | H g =>
       apply Subtype.ext
       simp only [QuotientGroup.mapOfLE_mk]
-      change g • (m : M) = g • (m : M)
+      simp only [coe_quotient_smul_fixedPoints_addSubgroup,
+        coe_smul_fixedPoints_addSubgroup]
       rfl
   unfold explicitFiniteQuotientTransition0
   convert explicitMap0_comp (G := G ⧸ U.toSubgroup)
@@ -233,10 +236,7 @@ noncomputable def explicitFiniteQuotientComparison0 :
     intro x
     let x' : H0 (G ⧸ U.unop.toSubgroup)
         (FixedPoints.addSubgroup U.unop.toSubgroup M) := x
-    -- Expose the underlying additive maps before using the coefficient-level formulas.
-    change explicitInfl0 G M V.unop.toSubgroup
-        (explicitFiniteQuotientTransition0 G M U.unop V.unop (leOfHom f.unop) x') =
-      explicitInfl0 G M U.unop.toSubgroup x'
+    dsimp [explicitFiniteQuotientSystem0, Functor.const_obj_map]
     exact explicitFiniteQuotientTransition0_inflation G M (leOfHom f.unop) x'
 
 /-- The named comparison cocone for degree zero, with apex `H⁰(G, M)`. -/
@@ -277,8 +277,7 @@ noncomputable def explicitFiniteQuotientColimit0 :
       (Opposite.op (⊤ : OpenNormalSubgroup G))) := by
     dsimp [explicitFiniteQuotientCocone0]
     apply (ConcreteCategory.isIso_iff_bijective _).2
-    change Function.Bijective
-      (explicitInfl0 G M (⊤ : OpenNormalSubgroup G).toSubgroup)
+    dsimp [explicitFiniteQuotientSystem0, explicitFiniteQuotientComparison0]
     exact explicitInfl0_bijective G M (⊤ : OpenNormalSubgroup G).toSubgroup
   exact h.isColimitOfIsIso (explicitFiniteQuotientCocone0 G M)
 
