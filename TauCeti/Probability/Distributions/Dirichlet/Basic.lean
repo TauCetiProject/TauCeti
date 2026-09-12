@@ -106,26 +106,26 @@ open Classical in
 
 For a positive concentration vector, this is the image of independent unit-rate Gamma laws under
 coordinate normalization.  For every other concentration vector, it is the zero measure. -/
-def dirichletMeasure (a : ι → ℝ) : Measure (EuclideanSpace ℝ ι) :=
+def dirichletMeasure [Nonempty ι] (a : ι → ℝ) : Measure (EuclideanSpace ℝ ι) :=
   if ∀ i, 0 < a i then
     (Measure.pi fun i ↦ gammaMeasure (a i) 1).map dirichletNormalize
   else 0
 
 /-- At a positive concentration vector, the Dirichlet measure is its defining Gamma
 pushforward. -/
-theorem dirichletMeasure_of_pos {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+theorem dirichletMeasure_of_pos [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
     dirichletMeasure a =
       (Measure.pi fun i ↦ gammaMeasure (a i) 1).map dirichletNormalize := by
   rw [dirichletMeasure, ite_eq_left ha]
 
 /-- An invalid concentration vector gives the zero Dirichlet measure. -/
 @[simp]
-theorem dirichletMeasure_of_not_pos {a : ι → ℝ} (ha : ¬∀ i, 0 < a i) :
+theorem dirichletMeasure_of_not_pos [Nonempty ι] {a : ι → ℝ} (ha : ¬∀ i, 0 < a i) :
     dirichletMeasure a = 0 := by
   rw [dirichletMeasure, ite_eq_right ha]
 
 /-- A Dirichlet measure with positive concentration parameters is a probability measure. -/
-theorem isProbabilityMeasure_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+theorem isProbabilityMeasure_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
     IsProbabilityMeasure (dirichletMeasure a) := by
   rw [dirichletMeasure_of_pos ha]
   let _ (i : ι) : IsProbabilityMeasure (gammaMeasure (a i) 1) :=
@@ -135,7 +135,7 @@ theorem isProbabilityMeasure_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < 
 /-- The totalized Dirichlet measure is a probability measure exactly for positive concentration
 parameters. -/
 @[simp]
-theorem isProbabilityMeasure_dirichletMeasure_iff {a : ι → ℝ} :
+theorem isProbabilityMeasure_dirichletMeasure_iff [Nonempty ι] {a : ι → ℝ} :
     IsProbabilityMeasure (dirichletMeasure a) ↔ ∀ i, 0 < a i := by
   constructor
   · intro h
