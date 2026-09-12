@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
-public import TauCeti.Probability.Distributions.Uniform
-public import Mathlib.Probability.ProductMeasure
+import TauCeti.Probability.Distributions.Uniform
+import Mathlib.Probability.ProductMeasure
 import TauCeti.MeasureTheory.Measure.ProductKernel
 
 /-!
@@ -273,6 +273,7 @@ private theorem infinitePi_uniformMeasure_setOf_restrictFin_eq (W : Graphon Ω �
 /-- **The finite marginals of the joint sampling law.** The window of the infinite `W`-random
 graph spanned by the first `n` labels has the law of the `W`-random graph on `Fin n`: every finite
 sampling law is a restriction of this one random object. -/
+@[simp]
 theorem infiniteSampleLaw_map_restrictFin (W : Graphon Ω μ) (n : ℕ) :
     (infiniteSampleLaw W).map (fun G => SimpleGraph.restrictFin G n) = sampleGraph W n := by
   refine Measure.ext_of_singleton fun H => ?_
