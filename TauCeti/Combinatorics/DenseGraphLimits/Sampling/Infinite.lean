@@ -14,8 +14,9 @@ import TauCeti.MeasureTheory.Measure.ProductKernel
 # The joint sampling law of a graphon
 
 The finite sampling laws `sampleGraph W n` are one probability measure for each `n`, on a
-different space each time, so a statement comparing the samples across `n` cannot even be
-expressed for that family. This file builds the single random object they are all windows of: an
+different space each time, and nothing in that family couples them: the separate laws relate only
+through pushforwards, and do not themselves supply the common random object a samplewise or
+almost-sure statement about the samples as `n` grows needs. This file builds that object: an
 infinite `W`-random graph on the label set `ℕ`, sampled once, from which every finite sample is
 read off by restriction.
 
@@ -48,6 +49,16 @@ positions is `sampleMass W H`.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §10.1.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), §7.
+* C. Freer, `cameronfreer/graphon` at commit
+  `6eccca5bbe5c9df46d7129bf59575b8b9b1d6699`, Apache-2.0, `Graphon/InfiniteSampler.lean`. The same
+  one-space sampler — i.i.d. positions and one independent uniform coin per unordered pair, both
+  carried by `Measure.infinitePi`, with a pair joined when its coin falls below the graphon value —
+  and its finite-marginal identification are formalized there. The construction is adapted to Tau
+  Ceti's strict graphon carrier, whose values are everywhere in the unit interval, so no clamped
+  representative is needed, and it lands on Mathlib's `SimpleGraph ℕ` with its adjacency
+  sigma-algebra rather than on a Boolean cube of edge coordinates; the marginal proof here
+  evaluates the mass of a single pattern as a box of coin intervals instead of going through upper
+  events.
 -/
 
 public section

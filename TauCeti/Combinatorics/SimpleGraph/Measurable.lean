@@ -62,8 +62,8 @@ theorem measurable_comap (f : V → W) :
 @[fun_prop]
 theorem measurable_restrictFin (n : ℕ) :
     Measurable fun G : SimpleGraph ℕ => G.restrictFin n :=
-  -- `restrictFin` does not unfold outside the module that defines it, so `measurable_comap` is
-  -- not applicable directly; `restrictFin_adj` supplies the same adjacency equation.
+  -- The adjacency equation `restrictFin_adj` is used rather than unfolding `restrictFin` to the
+  -- pullback it is defined as.
   measurable_iff_adj.2 fun u v => by
     simp only [restrictFin_adj]
     exact measurable_iff_adj.1 measurable_id (u : ℕ) v
