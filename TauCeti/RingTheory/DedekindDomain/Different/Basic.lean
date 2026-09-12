@@ -70,7 +70,7 @@ theorem traceDual_one_fractionRing_self :
       (FractionRing A) (FractionRing A) (FractionRing A) (FractionRing A)
       _ _ _ _ (Algebra.id (FractionRing A))
       (FractionRing.liftAlgebra A (FractionRing A)) (RingEquiv.refl _) (RingEquiv.refl _) ?_ x
-    · simpa using htrace'.symm
+    · simpa [Algebra.trace_self_apply] using htrace'.symm
     · ext y
       -- The compatibility goal is definitionally the identity algebra map after
       -- reducing the two identity equivalences and the lifted algebra wrapper.

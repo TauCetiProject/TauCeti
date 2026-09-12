@@ -17,9 +17,6 @@ introduces that carrier, together with the two defining identities that are vali
 separability assumption. The later arithmetic theory uses `relDiscr` rather than expanding this
 relative norm of the different at each use site.
 
-The definition and the Layer 4.1 identities follow the human-authored
-`TauCetiRoadmap/NumberFieldArithmetic/README.md` roadmap (with its prototype in `Suggested.lean`).
-
 -/
 
 public section
