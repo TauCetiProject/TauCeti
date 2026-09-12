@@ -49,7 +49,7 @@ halves of that statement are proved below.
 ## Main results
 
 * `TauCeti.NumericalType.picToCoker_injective`: the comparison map is injective, which is the
-  assertion of [Stacks, Tag 0C7H](https://stacks.math.columbia.edu/tag/0C7H).
+  assertion of [Stacks, Tag 0CE7](https://stacks.math.columbia.edu/tag/0CE7).
 * `TauCeti.NumericalType.picToCoker_surjective_iff`: it is surjective exactly when every weight is
   one, so `Pic(T)` is a strictly finer invariant than `Coker(A)`.
 * `TauCeti.NumericalType.smul_ne_zero_of_degree_ne_zero`: a class of nonzero total degree has
@@ -102,6 +102,7 @@ def weightedIntersection : Matrix T.Component T.Component ℤ :=
   .of fun i j ↦ T.intersection i j / (T.weight j : ℤ)
 
 /-- The entries of the weighted intersection matrix. -/
+@[simp]
 lemma weightedIntersection_apply (i j : T.Component) :
     T.weightedIntersection i j = T.intersection i j / (T.weight j : ℤ) := (rfl)
 
@@ -199,7 +200,7 @@ abbrev Pic := (T.Component → ℤ) ⧸ T.principalDivisors
 abbrev Coker := (T.Component → ℤ) ⧸ T.intersectionRelations
 
 /-- The comparison map `Pic(T) → Coker(A)` induced by `eⱼ ↦ wⱼeⱼ`, from
-[Stacks, Tag 0C7H](https://stacks.math.columbia.edu/tag/0C7H). -/
+[Stacks, Tag 0CE7](https://stacks.math.columbia.edu/tag/0CE7). -/
 def picToCoker : T.Pic →ₗ[ℤ] T.Coker :=
   Submodule.mapQ _ _ T.weightScaling T.principalDivisors_le_comap_intersectionRelations
 
@@ -208,7 +209,7 @@ def picToCoker : T.Pic →ₗ[ℤ] T.Coker :=
 lemma picToCoker_mk (d : T.Component → ℤ) :
     T.picToCoker (Submodule.Quotient.mk d) = Submodule.Quotient.mk (T.weightScaling d) := (rfl)
 
-/-- The comparison map of [Stacks, Tag 0C7H](https://stacks.math.columbia.edu/tag/0C7H) is
+/-- The comparison map of [Stacks, Tag 0CE7](https://stacks.math.columbia.edu/tag/0CE7) is
 injective: a multidegree whose weight rescaling is a combination of the rows of `A` is itself the
 same combination of the rows of `A'`. -/
 theorem picToCoker_injective : Function.Injective T.picToCoker := by
@@ -368,27 +369,29 @@ lemma picCongr_mk (f : T.Equiv T') (d : T.Component → ℤ) :
 
 /-- The identity equivalence induces the identity of Picard groups. -/
 @[simp]
-lemma picCongr_refl : (refl : T.Equiv T).picCongr = LinearEquiv.refl ℤ T.Pic :=
-  LinearEquiv.ext fun x ↦ by
-    induction x using Submodule.Quotient.induction_on with
-    | H d => simp
+lemma picCongr_refl : (refl : T.Equiv T).picCongr = LinearEquiv.refl ℤ T.Pic := by
+  unfold picCongr
+  simp only [refl_toEquiv, _root_.Equiv.refl_symm, LinearEquiv.funCongrLeft_id]
+  rw [Submodule.Quotient.equiv_refl]
+  apply LinearEquiv.ext
+  intro x
+  induction x using Submodule.Quotient.induction_on with
+  | H d => rfl
 
 /-- A composite of equivalences induces the composite isomorphism of Picard groups. -/
 @[simp]
 lemma picCongr_trans (f : T.Equiv T') (g : T'.Equiv T'') :
-    (f.trans g).picCongr = f.picCongr.trans g.picCongr :=
-  LinearEquiv.ext fun x ↦ by
-    induction x using Submodule.Quotient.induction_on with
-    | H d => simp
+    (f.trans g).picCongr = f.picCongr.trans g.picCongr := by
+  unfold picCongr
+  simp only [trans_toEquiv, _root_.Equiv.symm_trans, LinearEquiv.funCongrLeft_comp]
+  rw [Submodule.Quotient.equiv_trans]
 
 /-- The inverse of an equivalence induces the inverse isomorphism of Picard groups. -/
 @[simp]
-lemma picCongr_symm (f : T.Equiv T') : f.picCongr.symm = f.symm.picCongr :=
-  LinearEquiv.ext fun x ↦ by
-    induction x using Submodule.Quotient.induction_on with
-    | H d =>
-      rw [LinearEquiv.symm_apply_eq]
-      simp
+lemma picCongr_symm (f : T.Equiv T') : f.picCongr.symm = f.symm.picCongr := by
+  unfold picCongr
+  rw [Submodule.Quotient.equiv_symm]
+  simp only [symm_toEquiv, LinearEquiv.funCongrLeft_symm, _root_.Equiv.symm_symm]
 
 /-- The total degree of a divisor class on a numerical type is an invariant of its equivalence
 class. -/
