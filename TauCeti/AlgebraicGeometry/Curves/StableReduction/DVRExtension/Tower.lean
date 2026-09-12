@@ -60,11 +60,6 @@ attribute [instance] Hom.local_isLocal
 
 namespace Hom
 
-/-- A field component of a map of chosen extensions is injective. -/
-lemma field_injective {E F : FiniteDVRExtension R K} (f : Hom E F) :
-    Function.Injective f.field :=
-  f.field.injective
-
 @[ext (iff := false)]
 lemma ext {E F : FiniteDVRExtension R K} {f g : Hom E F}
     (hfield : f.field = g.field) (hlocal : f.localMap = g.localMap) : f = g := by
