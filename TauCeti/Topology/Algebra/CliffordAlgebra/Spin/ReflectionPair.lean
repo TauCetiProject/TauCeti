@@ -72,11 +72,11 @@ theorem joined_one_spinReflectionPair_realCliffordForm_zero {n : ℕ} (hn : 2 �
   let uv : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 :=
     ⟨e.symm v, by
       rw [mem_sphere, dist_zero_right]
-      exact euclidean_norm_eq_one_of_realCliffordForm_zero_eq_one hv⟩
+      exact norm_euclideanSpaceEquiv_symm_eq_one_of_realCliffordForm_zero_eq_one hv⟩
   let uw : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 :=
     ⟨e.symm w, by
       rw [mem_sphere, dist_zero_right]
-      exact euclidean_norm_eq_one_of_realCliffordForm_zero_eq_one hw⟩
+      exact norm_euclideanSpaceEquiv_symm_eq_one_of_realCliffordForm_zero_eq_one hw⟩
   have hrank : 1 < Module.rank ℝ (EuclideanSpace ℝ (Fin n)) := by
     rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin, Nat.one_lt_cast]
     omega
@@ -85,7 +85,7 @@ theorem joined_one_spinReflectionPair_realCliffordForm_zero {n : ℕ} (hn : 2 �
       uv.1 uv.2 uw.1 uw.2).joined_subtype
   let g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 →
       {u : Fin n → ℝ // realCliffordForm n 0 u = 1} :=
-    fun u => ⟨e u, realCliffordForm_zero_euclidean_eq_one u⟩
+    fun u => ⟨e u, realCliffordForm_zero_euclideanSpaceEquiv_eq_one u⟩
   have hg : Continuous g :=
     continuous_induced_rng.mpr (e.continuous.comp continuous_subtype_val)
   have hcoordinates :

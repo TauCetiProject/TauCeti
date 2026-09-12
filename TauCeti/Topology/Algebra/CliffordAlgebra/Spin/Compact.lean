@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.ReflectionPair
 import TauCeti.Data.List.Pair
 import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
-import TauCeti.Topology.Algebra.CliffordAlgebra.RealForm
+import Mathlib.Analysis.Normed.Module.Normalize
 
 /-!
 # Compactness of compact real Spin groups
@@ -16,7 +16,7 @@ import TauCeti.Topology.Algebra.CliffordAlgebra.RealForm
 Every element of a positive-dimensional compact real Spin group is a product of uniformly many
 normalized reflection-pair lifts. The normalized vectors range over a Euclidean unit sphere, so a
 fixed finite product of pairs of spheres maps continuously and surjectively onto the Spin group.
-Compactness follows.
+In dimension zero the group is trivial, and therefore compact.
 
 The uniform bound comes from the bounded Cartan--Dieudonne factorization. Its reflection word has
 even length over the special orthogonal group, hence can be grouped into pairs. One additional pair
@@ -26,7 +26,7 @@ pad the product without changing it.
 ## Main result
 
 * `CliffordAlgebra.instCompactSpaceRealCliffordSpinGroupZero` proves that `Spin(n)` is compact in
-  every positive dimension.
+  every dimension.
 
 ## References
 
@@ -47,30 +47,16 @@ noncomputable section
 private abbrev realCliffordUnitSphere (n : ℕ) :=
   sphere (0 : EuclideanSpace ℝ (Fin n)) 1
 
-private theorem normalizedVector_norm_one {n : ℕ} (v : Fin n → ℝ)
-    (hv : realCliffordForm n 0 v ≠ 0) :
-    realCliffordForm n 0 ((Real.sqrt (realCliffordForm n 0 v))⁻¹ • v) = 1 := by
-  have hv0 : v ≠ 0 := fun h => hv (by simp [h])
-  have hpos : 0 < realCliffordForm n 0 v :=
-    posDef_realCliffordForm_zero n v hv0
-  rw [QuadraticMap.map_smul, smul_eq_mul]
-  calc
-    (Real.sqrt (realCliffordForm n 0 v))⁻¹ *
-          (Real.sqrt (realCliffordForm n 0 v))⁻¹ * realCliffordForm n 0 v =
-        (Real.sqrt (realCliffordForm n 0 v) *
-          Real.sqrt (realCliffordForm n 0 v))⁻¹ * realCliffordForm n 0 v := by
-      rw [mul_inv_rev]
-    _ = (realCliffordForm n 0 v)⁻¹ * realCliffordForm n 0 v := by
-      rw [Real.mul_self_sqrt hpos.le]
-    _ = 1 := inv_mul_cancel₀ hpos.ne'
-
 private def normalizedVectorSphere {n : ℕ} (v : Fin n → ℝ)
     (hv : realCliffordForm n 0 v ≠ 0) : realCliffordUnitSphere n :=
-  ⟨(EuclideanSpace.equiv (Fin n) ℝ).symm
-      ((Real.sqrt (realCliffordForm n 0 v))⁻¹ • v), by
+  ⟨NormedSpace.normalize ((EuclideanSpace.equiv (Fin n) ℝ).symm v), by
     rw [mem_sphere, dist_zero_right]
-    exact euclidean_norm_eq_one_of_realCliffordForm_zero_eq_one
-      (normalizedVector_norm_one v hv)⟩
+    apply NormedSpace.norm_normalize
+    intro h
+    apply hv
+    have hvzero : v = 0 :=
+      (EuclideanSpace.equiv (Fin n) ℝ).symm.map_eq_zero_iff.mp h
+    simp only [hvzero, map_zero]⟩
 
 private theorem reflectionOrthogonal_eq_of_vector_eq {n : ℕ} (v w : Fin n → ℝ)
     [Invertible (realCliffordForm n 0 v)] [Invertible (realCliffordForm n 0 w)]
@@ -86,31 +72,34 @@ private theorem reflectionOrthogonal_normalizedVectorSphere {n : ℕ}
     let u := normalizedVectorSphere v (isUnit_of_invertible _).ne_zero
     let _ : Invertible (realCliffordForm n 0
         (EuclideanSpace.equiv (Fin n) ℝ u)) :=
-      (realCliffordForm_zero_euclidean_eq_one u).symm ▸ invertibleOne
+      (realCliffordForm_zero_euclideanSpaceEquiv_eq_one u).symm ▸ invertibleOne
     QuadraticMap.reflectionOrthogonal (realCliffordForm n 0)
         (EuclideanSpace.equiv (Fin n) ℝ u) =
       QuadraticMap.reflectionOrthogonal (realCliffordForm n 0) v := by
   dsimp only
   have hv0 : v ≠ 0 := fun h => (isUnit_of_invertible (realCliffordForm n 0 v)).ne_zero (by
     simp [h])
-  have hpos : 0 < realCliffordForm n 0 v := posDef_realCliffordForm_zero n v hv0
-  let _ : Invertible (Real.sqrt (realCliffordForm n 0 v))⁻¹ :=
-    invertibleOfNonzero (inv_ne_zero (Real.sqrt_pos.2 hpos).ne')
+  have hcoord : (EuclideanSpace.equiv (Fin n) ℝ).symm v ≠ 0 := by
+    intro h
+    exact hv0 ((EuclideanSpace.equiv (Fin n) ℝ).symm.map_eq_zero_iff.mp h)
+  let _ : Invertible ‖(EuclideanSpace.equiv (Fin n) ℝ).symm v‖⁻¹ :=
+    invertibleOfNonzero (inv_ne_zero (norm_ne_zero_iff.mpr hcoord))
   let _ : Invertible (realCliffordForm n 0
       (EuclideanSpace.equiv (Fin n) ℝ
         (normalizedVectorSphere v (isUnit_of_invertible _).ne_zero))) :=
-    (realCliffordForm_zero_euclidean_eq_one
+    (realCliffordForm_zero_euclideanSpaceEquiv_eq_one
       (normalizedVectorSphere v (isUnit_of_invertible _).ne_zero)).symm ▸ invertibleOne
   let _ : Invertible (realCliffordForm n 0
-      ((Real.sqrt (realCliffordForm n 0 v))⁻¹ • v)) := by
+      (‖(EuclideanSpace.equiv (Fin n) ℝ).symm v‖⁻¹ • v)) := by
     rw [QuadraticMap.map_smul]
-    let _ : Invertible ((Real.sqrt (realCliffordForm n 0 v))⁻¹ *
-        (Real.sqrt (realCliffordForm n 0 v))⁻¹) := invertibleMul _ _
+    let _ : Invertible (‖(EuclideanSpace.equiv (Fin n) ℝ).symm v‖⁻¹ *
+        ‖(EuclideanSpace.equiv (Fin n) ℝ).symm v‖⁻¹) := invertibleMul _ _
     exact invertibleMul _ _
   have hvec : EuclideanSpace.equiv (Fin n) ℝ
       (normalizedVectorSphere v (isUnit_of_invertible _).ne_zero) =
-      (Real.sqrt (realCliffordForm n 0 v))⁻¹ • v := by
-    simp only [normalizedVectorSphere, ContinuousLinearEquiv.apply_symm_apply]
+      ‖(EuclideanSpace.equiv (Fin n) ℝ).symm v‖⁻¹ • v := by
+    simp only [normalizedVectorSphere, NormedSpace.normalize,
+      ContinuousLinearEquiv.map_smul, ContinuousLinearEquiv.apply_symm_apply]
   exact (reflectionOrthogonal_eq_of_vector_eq _ _ hvec).trans
     (QuadraticMap.reflectionOrthogonal_smul_eq (realCliffordForm n 0) v _)
 
@@ -118,7 +107,7 @@ private def unitSphereReflection (n : ℕ) (u : realCliffordUnitSphere n) :
     QuadraticMap.orthogonalGroup (realCliffordForm n 0) :=
   let _ : Invertible (realCliffordForm n 0
       (EuclideanSpace.equiv (Fin n) ℝ u)) :=
-    (realCliffordForm_zero_euclidean_eq_one u).symm ▸ invertibleOne
+    (realCliffordForm_zero_euclideanSpaceEquiv_eq_one u).symm ▸ invertibleOne
   QuadraticMap.reflectionOrthogonal (realCliffordForm n 0)
     (EuclideanSpace.equiv (Fin n) ℝ u)
 
@@ -152,8 +141,8 @@ private def realCliffordSpinSpherePair (n : ℕ)
   spinReflectionPair (realCliffordForm n 0)
     (EuclideanSpace.equiv (Fin n) ℝ p.1)
     (EuclideanSpace.equiv (Fin n) ℝ p.2)
-    (realCliffordForm_zero_euclidean_eq_one p.1)
-    (realCliffordForm_zero_euclidean_eq_one p.2)
+    (realCliffordForm_zero_euclideanSpaceEquiv_eq_one p.1)
+    (realCliffordForm_zero_euclideanSpaceEquiv_eq_one p.2)
 
 private theorem continuous_realCliffordSpinSpherePair (n : ℕ) :
     Continuous (realCliffordSpinSpherePair n) := by
@@ -171,12 +160,6 @@ private theorem continuous_realCliffordSpinSpherePair (n : ℕ) :
     ((continuous_ι (realCliffordForm n 0)).comp
       ((EuclideanSpace.equiv (Fin n) ℝ).continuous.comp
         (continuous_subtype_val.comp continuous_snd)))
-
-private theorem spinToOrthogonal_realCliffordSpinSpherePair (n : ℕ)
-    (p : realCliffordUnitSphere n × realCliffordUnitSphere n) :
-    spinToOrthogonal (realCliffordForm n 0) (realCliffordSpinSpherePair n p) =
-      unitSphereReflection n p.1 * unitSphereReflection n p.2 := by
-  exact spinToOrthogonal_spinReflectionPair _ _ _ _ _
 
 private def realCliffordSpinCompactParam (n : ℕ) :
     (Fin (n + 1) → realCliffordUnitSphere n × realCliffordUnitSphere n) →
@@ -197,10 +180,6 @@ private def negUnitSphere {n : ℕ} (u : realCliffordUnitSphere n) :
     realCliffordUnitSphere n :=
   ⟨-u, by simpa only [mem_sphere, dist_zero_right, norm_neg] using u.2⟩
 
-private theorem realCliffordSpinSpherePair_self (n : ℕ) (u : realCliffordUnitSphere n) :
-    realCliffordSpinSpherePair n (u, u) = 1 :=
-  spinReflectionPair_self _ _ _
-
 private theorem realCliffordSpinSpherePair_neg (n : ℕ) [NeZero n]
     (u : realCliffordUnitSphere n) :
     realCliffordSpinSpherePair n (u, negUnitSphere u) =
@@ -208,24 +187,11 @@ private theorem realCliffordSpinSpherePair_neg (n : ℕ) [NeZero n]
   apply Subtype.ext
   simp only [realCliffordSpinSpherePair, coe_spinReflectionPair, negUnitSphere,
     ContinuousLinearEquiv.map_neg, spinGroup.coe_negOne]
-  rw [map_neg, mul_neg, ι_sq_scalar, realCliffordForm_zero_euclidean_eq_one]
+  rw [map_neg, mul_neg, ι_sq_scalar, realCliffordForm_zero_euclideanSpaceEquiv_eq_one]
   simp
 
-private def firstUnitSphere (n : ℕ) [NeZero n] : realCliffordUnitSphere n := by
-  let i : Fin n := ⟨0, Nat.pos_of_ne_zero (NeZero.ne n)⟩
-  let v : Fin n → ℝ := Pi.single i 1
-  have hv : realCliffordForm n 0 v = 1 := by
-    rw [realCliffordForm_zero_eq_weightedSumSquares_one,
-      QuadraticMap.weightedSumSquares_apply]
-    classical
-    rw [Finset.sum_eq_single i]
-    · simp [v]
-    · intro b _ hbi
-      simp [v, hbi]
-    · simp
-  exact ⟨(EuclideanSpace.equiv (Fin n) ℝ).symm v, by
-    rw [mem_sphere, dist_zero_right]
-    exact euclidean_norm_eq_one_of_realCliffordForm_zero_eq_one hv⟩
+private noncomputable def firstUnitSphere (n : ℕ) [NeZero n] : realCliffordUnitSphere n :=
+  Classical.choice (NormedSpace.sphere_nonempty.mpr zero_le_one).to_subtype
 
 private theorem exists_sphere_pair_list_prod_eq (n : ℕ) [NeZero n]
     (x : realCliffordSpinGroupZero n) :
@@ -234,7 +200,7 @@ private theorem exists_sphere_pair_list_prod_eq (n : ℕ) [NeZero n]
   let Q := realCliffordForm n 0
   let g := spinToSpecialOrthogonal Q x
   obtain ⟨l, hlrefl, hllen, hleven, hlprod⟩ :=
-    QuadraticMap.exists_even_reflection_list_prod_eq Q
+    QuadraticMap.exists_even_reflectionOrthogonal_list_prod_eq Q
       (posDef_realCliffordForm_zero n).anisotropic g
   obtain ⟨u, hulen, huprod⟩ := exists_unitSphere_reflection_list n l hlrefl
   let p := List.pairAdjacent u
@@ -251,7 +217,7 @@ private theorem exists_sphere_pair_list_prod_eq (n : ℕ) [NeZero n]
     congr 1
     apply List.map_congr_left
     intro q _
-    exact spinToOrthogonal_realCliffordSpinSpherePair n q
+    exact spinToOrthogonal_spinReflectionPair _ _ _ _ _
   have hzorthg : spinToOrthogonal Q z =
       ⟨g, (QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.2).1⟩ :=
     hzorth.trans hlprod
@@ -300,16 +266,56 @@ private theorem surjective_realCliffordSpinCompactParam (n : ℕ) [NeZero n] :
     exact h'.trans hvlist
   rw [hv]
   have hfiller : realCliffordSpinSpherePair n filler = 1 := by
-    exact realCliffordSpinSpherePair_self n e
+    exact spinReflectionPair_self _ _ _
   simp only [padded, List.map_append, List.prod_append, List.map_replicate,
     List.prod_replicate, hpprod]
   rw [hfiller, one_pow, mul_one]
 
-/-- The compact real Spin group is compact in every positive dimension. -/
-instance instCompactSpaceRealCliffordSpinGroupZero (n : ℕ) [NeZero n] :
+private theorem subsingleton_realCliffordSpinGroupZero_zero :
+    Subsingleton (realCliffordSpinGroupZero 0) := by
+  let Q := realCliffordForm 0 0
+  have hsource : ((↑) ⁻¹' Set.range (ι Q) : Set (CliffordAlgebra Q)ˣ) = ∅ := by
+    ext u
+    constructor
+    · rintro ⟨v, hv⟩
+      have hvzero : v = 0 := by
+        ext i
+        exact Fin.elim0 i
+      subst v
+      exact (Units.ne_zero u (by simpa using hv.symm)).elim
+    · intro hu
+      exact hu.elim
+  have hlipschitz : lipschitzGroup Q = ⊥ := by
+    rw [lipschitzGroup, hsource, Subgroup.closure_empty]
+  constructor
+  intro x y
+  apply Subtype.ext
+  have hx := pinGroup.mem_lipschitzGroup (spinGroup.mem_pin x.2)
+  have hy := pinGroup.mem_lipschitzGroup (spinGroup.mem_pin y.2)
+  rw [hlipschitz] at hx hy
+  obtain ⟨ux, huxmem, hux⟩ := hx
+  obtain ⟨uy, huymem, huy⟩ := hy
+  change ux ∈ (⊥ : Subgroup (CliffordAlgebra Q)ˣ) at huxmem
+  change uy ∈ (⊥ : Subgroup (CliffordAlgebra Q)ˣ) at huymem
+  have huxone : ux = 1 := huxmem
+  have huyone : uy = 1 := huymem
+  calc
+    (x : CliffordAlgebra Q) = ux := hux.symm
+    _ = 1 := by simp only [huxone, Units.val_one]
+    _ = uy := by simp only [huyone, Units.val_one]
+    _ = (y : CliffordAlgebra Q) := huy
+
+/-- The compact real Spin group is compact in every dimension. -/
+instance instCompactSpaceRealCliffordSpinGroupZero (n : ℕ) :
     CompactSpace (realCliffordSpinGroupZero n) := by
-  exact (surjective_realCliffordSpinCompactParam n).compactSpace
-    (continuous_realCliffordSpinCompactParam n)
+  cases n with
+  | zero =>
+      let _ := subsingleton_realCliffordSpinGroupZero_zero
+      infer_instance
+  | succ n =>
+      let _ : NeZero (n + 1) := ⟨Nat.succ_ne_zero n⟩
+      exact (surjective_realCliffordSpinCompactParam (n + 1)).compactSpace
+        (continuous_realCliffordSpinCompactParam (n + 1))
 
 end
 

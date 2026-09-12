@@ -85,7 +85,7 @@ theorem exists_mem_range_pinToOrthogonal_mul_eqOn_sup_span_singleton
       ∀ y ∈ W ⊔ Submodule.span K {x},
         (((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) = y := by
   obtain ⟨l, hl, _, hfix'⟩ :=
-    QuadraticMap.exists_reflection_list_prod_mul_eqOn_sup_span_singleton Q g W hfix x hx
+    QuadraticMap.exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton Q g W hfix x hx
   refine ⟨l.prod, (pinToOrthogonal Q).range.list_prod_mem (fun r hr => ?_), hfix'⟩
   obtain ⟨v, _, rfl⟩ := hl r hr
   exact reflection_mem_range_pinToOrthogonal Q v
