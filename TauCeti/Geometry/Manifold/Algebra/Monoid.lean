@@ -101,7 +101,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
   {G : Type*} [Group G] [TopologicalSpace G] [ChartedSpace H G]
-  {G' : Type*} [Monoid G'] [TopologicalSpace G'] [ChartedSpace H' G']
+  {G' : Type*} [MulOneClass G'] [TopologicalSpace G'] [ChartedSpace H' G']
   {F : Type*} [FunLike F G G'] [MonoidHomClass F G G']
   {n : ℕ∞ω} [ContMDiffMul I n G] [ContMDiffMul I' n G']
 
@@ -114,12 +114,10 @@ inversion operation itself need not be smooth. -/
 theorem contMDiff_of_contMDiffAt_one (f : F)
     (hf : ContMDiffAt I I' n f 1) : ContMDiff I I' n f := by
   intro x
-  have htranslate : ContMDiffAt I I n (fun y : G ↦ x⁻¹ * y) x :=
-    contMDiffAt_const.mul contMDiffAt_id
   have hcomp : ContMDiffAt I I' n (fun y : G ↦ f (x⁻¹ * y)) x := by
     -- `comp_of_eq` exposes its composition explicitly, unlike the displayed translated germ.
     change ContMDiffAt I I' n (f ∘ fun y : G ↦ x⁻¹ * y) x
-    exact hf.comp_of_eq htranslate (by simp)
+    exact hf.comp_of_eq contMDiffAt_mul_left (by simp)
   have hmul : ContMDiffAt I I' n (fun y : G ↦ f x * f (x⁻¹ * y)) x :=
     contMDiffAt_const.mul hcomp
   convert hmul using 1
