@@ -28,7 +28,9 @@ cycles and the cycles of `A` carry the boundaries of `M` into themselves.
 The grading is stored internally, as a family `ℳ : ℤ → Submodule R M` with Mathlib's
 `DirectSum.Decomposition ℳ` and `SetLike.GradedSMul 𝒜 ℳ`.  This matches the presentation of
 `TauCeti.IsDGAlgebra`, so the action is the given `A`-action on `M` and no signed totalization
-intervenes.
+intervenes.  The ground ring acts through the algebra, `IsScalarTower R A M`: the `R`-module
+structure which carries the grading and the linearity of `dM` is the restriction of the `A`-action
+along `algebraMap R A`, so there is only one action of `R` in play.
 
 ## Handedness
 
@@ -82,14 +84,14 @@ open DirectSum
 namespace TauCeti
 
 variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A]
-  [AddCommGroup M] [Module R M] [Module A M]
+  [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
 
 /-- A **differential graded left module** over the differential graded algebra `(𝒜, d)`: an
 internally `ℤ`-graded `A`-module `ℳ` on a carrier `M`, whose action adds degrees, with an `R`-linear
 map `dM` which raises degree by one, squares to zero, and satisfies the graded Leibniz rule on a
 homogeneous scalar.  The sign `(-1) ^ p` is `Int.negOnePow p`, acting through the units of `ℤ`. -/
-structure IsDGLeftModule (h : IsDGAlgebra 𝒜 d) (ℳ : ℤ → Submodule R M)
+structure IsDGLeftModule [IsScalarTower R A M] (h : IsDGAlgebra 𝒜 d) (ℳ : ℤ → Submodule R M)
     [SetLike.GradedSMul 𝒜 ℳ] [DirectSum.Decomposition ℳ] (dM : M →ₗ[R] M) : Prop where
   /-- The differential raises the degree by one. -/
   map_mem : ∀ {p : ℤ} {x : M}, x ∈ ℳ p → dM x ∈ ℳ (p + 1)

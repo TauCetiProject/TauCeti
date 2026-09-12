@@ -73,7 +73,7 @@ open DirectSum
 namespace TauCeti
 
 variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A]
-  [AddCommGroup M] [Module R M] [Module A M]
+  [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
   {h : IsDGAlgebra 𝒜 d} {ℳ : ℤ → Submodule R M}
   [SetLike.GradedSMul 𝒜 ℳ] [DirectSum.Decomposition ℳ] {dM : M →ₗ[R] M}
@@ -152,8 +152,6 @@ theorem quotientMk_smul (hM : IsDGLeftModule h ℳ dM) (z : h.cycles) (x : hM.Co
   hM.isTorsionBySet_boundaries.mk_smul z x
 
 section Grading
-
-variable [IsScalarTower R A M]
 
 /-- The degree-`p` homogeneous cycles, as a submodule of the module of cycles. -/
 def cyclesDeg (hM : IsDGLeftModule h ℳ dM) (p : ℤ) : Submodule R hM.cycles :=
