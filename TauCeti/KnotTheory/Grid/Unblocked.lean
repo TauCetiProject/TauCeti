@@ -15,7 +15,8 @@ import TauCeti.KnotTheory.Grid.Rectangle.Swap
 /-!
 # The unblocked grid complex `GC⁻`
 
-The fully blocked complex of `Complex.lean` counts only rectangles that avoid every marking,
+The fully blocked differential `TauCeti.GridDiagram.fullyBlockedDifferential` counts only
+rectangles that avoid every marking,
 so it forgets the `O`-markings entirely. The *unblocked* complex `GC⁻` remembers them:
 it is the free module on grid states over the polynomial ring `R[V₀, …, V_{n-1}]`, one variable
 `V_c` for the `O`-marking of column `c`, and its differential

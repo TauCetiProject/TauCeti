@@ -31,7 +31,8 @@ in characteristic two the two terms of a pair cancel.
 Specializing carries the square-zero identity to the two blocked theories as well. Setting one
 `V_i` to zero gives the simply blocked map, and specialization intertwines the two differentials.
 Setting every `V_i` to zero — that is, taking constant terms — gives the fully blocked
-differential of `Complex.lean`, whose rectangles must avoid the `O`-markings as well:
+differential `TauCeti.GridDiagram.fullyBlockedDifferential`, whose rectangles must avoid the
+`O`-markings as well:
 `GridDiagram.fullyBlockedRectangleCount_eq_constantCoeff` identifies its matrix coefficients with
 the constant terms of `∂⁻` over `ZMod 2`.
 
