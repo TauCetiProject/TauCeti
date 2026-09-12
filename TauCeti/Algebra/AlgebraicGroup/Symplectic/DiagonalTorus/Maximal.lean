@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.ClosedImmersion
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Diagonal.Centralizer
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
 import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Diagonal.Centralizer
 
 /-!
 # Maximality of the diagonal torus in the symplectic group
@@ -20,15 +20,6 @@ Over any field, the paired diagonal torus of `Sp₂ₘ` is a maximal torus. Over
 closed field it is more: no reduced commutative closed subgroup scheme properly contains it. That
 is stronger than maximality among tori, because a competing subgroup here need not be a torus, or
 even connected.
-
-The proof compares points over an algebraic closure. A reduced commutative closed subgroup
-containing the diagonal torus gives a commutative subgroup of `Sp₂ₘ(k)` containing every paired
-diagonal matrix, and the matrix centralizer calculation of
-`TauCeti.GLSymplecticFin.centralizer_diagonalTorus` says that such a subgroup is the diagonal
-torus itself. Point separation for reduced finite-type Hopf algebras then upgrades the equality of
-point subgroups to an equality of defining Hopf ideals. Over a general field, maximality is
-checked after base change to an algebraic closure and descended along the faithfully flat
-extension.
 
 The defining Hopf ideal and its split-torus quotient are the ones already attached to the
 diagonal torus in `TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.ClosedImmersion`.
@@ -49,11 +40,8 @@ diagonal torus in `TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Close
 * The Hopf-ideal organization, the point-subgroup comparison and the base-change descent of
   maximality follow the formal template in
   `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal`.
-
-This supplies the maximal torus of the `Sp₂ₘ` worked example asked for by Layer 7, "Borel
-subgroups, maximal tori", of the ReductiveGroups roadmap: together with reductivity of `Sp₂ₘ`, it
-makes the diagonal torus the split maximal torus of a split reductive pair. The root datum of
-type `Cₘ` attached to that pair, and conjugacy of maximal tori, remain separate milestones.
+* The matrix centralizer input is
+  `TauCeti.GLSymplecticFin.centralizer_diagonalTorus`.
 -/
 
 public section
@@ -66,14 +54,35 @@ universe u
 
 noncomputable section
 
-variable (k : Type u) [Field k] (m : ℕ)
+section CommRing
+
+variable (R : Type u) [CommRing R] (m : ℕ)
 
 private theorem diagonalTorusDefiningIdeal_eq_ker :
-    diagonalTorusDefiningIdeal k m =
-      HopfIdeal.kerOfSurjective (diagonalTorusCoordinateMap (R := k) (m := m)).hom
-        (diagonalTorusCoordinateMap_surjective (R := k) (m := m)) := by
+    diagonalTorusDefiningIdeal R m =
+      HopfIdeal.kerOfSurjective (diagonalTorusCoordinateMap (R := R) (m := m)).hom
+        (diagonalTorusCoordinateMap_surjective (R := R) (m := m)) := by
   ext x
   rw [mem_diagonalTorusDefiningIdeal, HopfIdeal.mem_kerOfSurjective]
+
+/-- The points cut out by `diagonalTorusDefiningIdeal` are exactly the diagonal-torus points. -/
+theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} R) :
+    CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R m)
+        (diagonalTorusDefiningIdeal R m) A =
+      ((CommHopfAlgCat.mapPointsFunctor
+        (diagonalTorusCoordinateMap (R := R) (m := m))).app A).hom.range := by
+  rw [diagonalTorusDefiningIdeal_eq_ker,
+    HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range]
+  apply congrArg MonoidHom.range
+  apply MonoidHom.ext
+  intro q
+  rw [AlgHom.mapDomain_apply]
+  exact (CommHopfAlgCat.mapPointsFunctor_app_apply
+    (diagonalTorusCoordinateMap (R := R) (m := m)) A q).symm
+
+end CommRing
+
+variable (k : Type u) [Field k] (m : ℕ)
 
 private theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom_commHopfAlgCat :
     CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra k m) (diagonalTorusDefiningIdeal k m) ≫
@@ -156,21 +165,6 @@ private theorem map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal
     rw [CommHopfAlgCat.mem_baseChangeHopfIdeal_iff]
     apply (hzero _).mpr
     rwa [_root_.CommHopfAlgCat.hom_inv_apply]
-
-/-- The points cut out by `diagonalTorusDefiningIdeal` are exactly the diagonal-torus points. -/
-theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} k) :
-    CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k m)
-        (diagonalTorusDefiningIdeal k m) A =
-      ((CommHopfAlgCat.mapPointsFunctor
-        (diagonalTorusCoordinateMap (R := k) (m := m))).app A).hom.range := by
-  rw [diagonalTorusDefiningIdeal_eq_ker,
-    HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range]
-  apply congrArg MonoidHom.range
-  apply MonoidHom.ext
-  intro q
-  rw [AlgHom.mapDomain_apply]
-  exact (CommHopfAlgCat.mapPointsFunctor_app_apply
-    (diagonalTorusCoordinateMap (R := k) (m := m)) A q).symm
 
 private theorem isReduced_quotient_diagonalTorusDefiningIdeal :
     IsReduced (CommHopfAlgCat.quotient (coordinateHopfAlgebra k m)
@@ -263,8 +257,7 @@ theorem eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm
     isReduced_quotient_diagonalTorusDefiningIdeal k m
   exact HopfIdeal.eq_of_quotientPointsSubgroup_eq hpoints
 
-/-- The diagonal torus of `Sp₂ₘ` is a maximal torus over an algebraically closed field. This
-packages the stronger statement above into the general Hopf-ideal maximal-torus predicate. -/
+/-- The diagonal torus of `Sp₂ₘ` is a maximal torus over an algebraically closed field. -/
 private theorem isMaximalTorus_diagonalTorusDefiningIdeal_of_isAlgClosed :
     HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k m)
       (diagonalTorusDefiningIdeal k m) := by
@@ -280,13 +273,13 @@ private theorem isMaximalTorus_diagonalTorusDefiningIdeal_of_isAlgClosed :
   exact le_rfl
 
 omit [IsAlgClosed k] in
-/-- **The diagonal torus of `Sp₂ₘ` is a maximal torus over every field.** Maximality is checked
-after base change to an algebraic closure, where the stronger pointwise maximality theorem
-applies, and then descended using faithful flatness. -/
+/-- **The diagonal torus of `Sp₂ₘ` is a maximal torus over every field.** -/
 @[grind =>]
 theorem isMaximalTorus_diagonalTorusDefiningIdeal :
     HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k m)
       (diagonalTorusDefiningIdeal k m) := by
+  -- Maximality is checked after base change to an algebraic closure, where the stronger
+  -- pointwise maximality theorem applies, and descended along the faithfully flat extension.
   rw [HopfIdeal.isMaximalTorus_iff]
   refine ⟨torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal k m, ?_⟩
   intro I hI hID
