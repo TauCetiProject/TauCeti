@@ -211,10 +211,23 @@ theorem IsRegularCone.prod {τ' : PointedCone ℝ V'} (hσ : IsRegularCone i σ)
       have h := B.isPrimitive (finSumFinEquiv (Sum.inl (r ρ)))
       rwa [hBinl] at h
     rw [hidx, hBinl]
-    refine isPrimitiveGenerator_iff.2 ⟨G.1.isFaceOf.eq_prod_map.ge
-      (Submodule.mem_prod.2 ⟨?_, ?_⟩), hprim⟩
-    · simpa [hρ] using (isPrimitiveGenerator_iff.1 (hb.isPrimitiveGenerator_apply ρ)).1
-    · simp
+    refine isPrimitiveGenerator_iff.2 ⟨?_, hprim⟩
+    have hmem : i (b (r ρ)) ∈ PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone := by
+      simpa [hρ] using (isPrimitiveGenerator_iff.1 (hb.isPrimitiveGenerator_apply ρ)).1
+    obtain ⟨x, hx, hx1⟩ := Submodule.mem_map.1 hmem
+    have hx2 : x.2 = 0 := by
+      have : x.2 ∈ PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone :=
+        Submodule.mem_map.2 ⟨x, hx, rfl⟩
+      rw [hG] at this
+      simpa using this
+    have hxeq : x = (i (b (r ρ)), 0) := by
+      apply Prod.ext
+      · simpa using hx1
+      · exact hx2
+    change (i (b (r ρ)), i' 0) ∈ G
+    rw [map_zero]
+    rw [← hxeq]
+    exact hx
   · set ρ := ToricRay.prodRaySnd hστ G hG with hρ
     have hidx : ((ToricRay.prodSplit hσ.salient hτ'.salient).toEmbedding.trans
         ((r.sumMap r').trans finSumFinEquiv.toEmbedding)) G
@@ -224,10 +237,23 @@ theorem IsRegularCone.prod {τ' : PointedCone ℝ V'} (hσ : IsRegularCone i σ)
       have h := B.isPrimitive (finSumFinEquiv (Sum.inr (r' ρ)))
       rwa [hBinr] at h
     rw [hidx, hBinr]
-    refine isPrimitiveGenerator_iff.2 ⟨G.1.isFaceOf.eq_prod_map.ge
-      (Submodule.mem_prod.2 ⟨?_, ?_⟩), hprim⟩
-    · simp
-    · simpa [hρ] using (isPrimitiveGenerator_iff.1 (hb'.isPrimitiveGenerator_apply ρ)).1
+    refine isPrimitiveGenerator_iff.2 ⟨?_, hprim⟩
+    have hmem : i' (b' (r' ρ)) ∈ PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone := by
+      simpa [hρ] using (isPrimitiveGenerator_iff.1 (hb'.isPrimitiveGenerator_apply ρ)).1
+    obtain ⟨x, hx, hx2⟩ := Submodule.mem_map.1 hmem
+    have hx1 : x.1 = 0 := by
+      have : x.1 ∈ PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone :=
+        Submodule.mem_map.2 ⟨x, hx, rfl⟩
+      rw [ToricRay.map_fst_eq_bot_of_map_snd_ne_bot hστ G hG] at this
+      simpa using this
+    have hxeq : x = (0, i' (b' (r' ρ))) := by
+      apply Prod.ext
+      · exact hx1
+      · simpa using hx2
+    change (i 0, i' (b' (r' ρ))) ∈ G
+    rw [map_zero]
+    rw [← hxeq]
+    exact hx
 
 /-! ### Two extending bases -/
 

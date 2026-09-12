@@ -204,13 +204,12 @@ theorem map_fst_eq_bot_of_map_snd_ne_bot
   have hp2 : p.2 ≠ 0 := fun hp2 ↦ h (by rw [hsnd, hp2]; simp)
   have hpG : p ∈ G.toPointedCone := by
     rw [hGeq]; exact PointedCone.subset_hull (Set.mem_singleton p)
-  have hprod : ((PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone).prod
-      (PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone) : PointedCone ℝ (V × V'))
-      = PointedCone.hull ℝ {p} := by
-    rw [← hGeq]; exact G.1.isFaceOf.eq_prod_map.symm
   have hmem : (p.1, (0 : V')) ∈ PointedCone.hull ℝ {p} := by
-    rw [← hprod]
-    exact Submodule.mem_prod.2 ⟨Submodule.mem_map.2 ⟨p, hpG, rfl⟩, Submodule.zero_mem _⟩
+    rw [← hGeq]
+    have hp := Submodule.mem_prod.1 (G.1.isFaceOf.le hpG)
+    exact G.1.isFaceOf.mem_of_add_mem_left (x := (p.1, 0)) (y := (0, p.2))
+      (Submodule.mem_prod.2 ⟨hp.1, Submodule.zero_mem _⟩)
+      (Submodule.mem_prod.2 ⟨Submodule.zero_mem _, hp.2⟩) (by simpa using hpG)
   obtain ⟨c, -, hcp⟩ := PointedCone.mem_hull_singleton.1 hmem
   have hc : c = 0 := by
     have h2 : c • p.2 = 0 := by simpa using congrArg Prod.snd hcp
@@ -302,9 +301,37 @@ theorem prod_ext {G H : ToricRay (σ.prod τ)}
     (h₁ : PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone
       = PointedCone.map (LinearMap.fst ℝ V V') H.toPointedCone)
     (h₂ : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone
-      = PointedCone.map (LinearMap.snd ℝ V V') H.toPointedCone) : G = H :=
-  toPointedCone_injective
-    (G.1.isFaceOf.eq_prod_map.trans (by rw [h₁, h₂]; exact H.1.isFaceOf.eq_prod_map.symm))
+      = PointedCone.map (LinearMap.snd ℝ V V') H.toPointedCone) : G = H := by
+  apply toPointedCone_injective
+  have key {A B : ToricRay (σ.prod τ)}
+      (hfst : PointedCone.map (LinearMap.fst ℝ V V') A.toPointedCone ≤
+        PointedCone.map (LinearMap.fst ℝ V V') B.toPointedCone)
+      (hsnd : PointedCone.map (LinearMap.snd ℝ V V') A.toPointedCone ≤
+        PointedCone.map (LinearMap.snd ℝ V V') B.toPointedCone) :
+      A.toPointedCone ≤ B.toPointedCone := by
+    intro x hx
+    obtain ⟨a, ha, ha1⟩ := Submodule.mem_map.1
+      (hfst (Submodule.mem_map.2 ⟨x, hx, rfl⟩))
+    obtain ⟨c, hc, hc2⟩ := Submodule.mem_map.1
+      (hsnd (Submodule.mem_map.2 ⟨x, hx, rfl⟩))
+    have hxa : (x.1, a.2) = a := Prod.ext ha1.symm rfl
+    have hcx : (c.1, x.2) = c := Prod.ext rfl hc2.symm
+    have hsum : x + (c.1, a.2) ∈ B.toPointedCone := by
+      rw [← show (x.1, a.2) + (c.1, x.2) = x + (c.1, a.2) by
+        simp [Prod.ext_iff, add_comm], hxa, hcx]
+      exact Submodule.add_mem _ ha hc
+    exact B.1.isFaceOf.mem_of_add_mem_left (x := x) (y := (c.1, a.2))
+      (Submodule.mem_prod.2 ⟨by
+          have h := B.1.isFaceOf.le ha
+          rw [← hxa] at h
+          exact (Submodule.mem_prod.1 h).1,
+        by
+          have h := B.1.isFaceOf.le hc
+          rw [← hcx] at h
+          exact (Submodule.mem_prod.1 h).2⟩)
+      (Submodule.mem_prod.2 ⟨(Submodule.mem_prod.1 (B.1.isFaceOf.le hc)).1,
+        (Submodule.mem_prod.1 (B.1.isFaceOf.le ha)).2⟩) hsum
+  exact le_antisymm (key h₁.le h₂.le) (key h₁.ge h₂.ge)
 
 /-- A ray of the first factor, read as a ray of a product of cones: its product with the zero
 cone. This is a face of the product because the zero cone is a face of the salient second
