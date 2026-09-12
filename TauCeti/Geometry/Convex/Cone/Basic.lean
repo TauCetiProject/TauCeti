@@ -70,8 +70,8 @@ theorem finrank_span_coe_hull_singleton {x : V} (hx : x ≠ 0) :
     Module.finrank R (Submodule.span R ((hull R {x} : PointedCone R V) : Set V)) = 1 := by
   rw [Submodule.span_span_of_tower (Nonneg R) R, finrank_span_singleton hx]
 
-/-- Multiplying a pointed cone by the zero cone leaves the dimension of its span unchanged: the
-product is the image of the cone under the inclusion of the first factor. -/
+/-- Multiplying a pointed cone by the zero cone in the second factor leaves the dimension of its
+span unchanged. In particular, a ray of the first factor remains one-dimensional in the product. -/
 theorem finrank_span_coe_prod_bot (p : PointedCone R V) :
     Module.finrank R (Submodule.span R
         ((p.prod (⊥ : PointedCone R V') : PointedCone R (V × V')) : Set (V × V')))
@@ -81,8 +81,8 @@ theorem finrank_span_coe_prod_bot (p : PointedCone R V) :
   exact (Submodule.equivMapOfInjective _ LinearMap.inl_injective
     (Submodule.span R (p : Set V))).finrank_eq.symm
 
-/-- Multiplying a pointed cone by the zero cone leaves the dimension of its span unchanged: the
-product is the image of the cone under the inclusion of the second factor. -/
+/-- Multiplying a pointed cone by the zero cone in the first factor leaves the dimension of its
+span unchanged. In particular, a ray of the second factor remains one-dimensional in the product. -/
 theorem finrank_span_coe_bot_prod (q : PointedCone R V') :
     Module.finrank R (Submodule.span R
         (((⊥ : PointedCone R V).prod q : PointedCone R (V × V')) : Set (V × V')))

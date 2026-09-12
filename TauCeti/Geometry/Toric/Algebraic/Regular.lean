@@ -273,12 +273,9 @@ theorem toMatrix_apply_eq_zero (hi : IsIntegralLattice i) (hσ : (σ : ConvexCon
   simp [hb.toMatrix_apply hi hσ hb' ρ, hj]
 
 /-- The complementary block of the transition matrix between two extending bases is unimodular.
-Split the index set of each basis into the rays of the cone and a complement `ι`, compatibly with
-the two ray indexings. The ray columns of the matrix are then the standard columns of the matching
-rays, by `TauCeti.Toric.IsExtendingBasis.toMatrix_apply`, so the matrix reads `[[1, B], [0, D]]`
-and its determinant is the determinant of the complementary square block `D`. That determinant is
-a unit because the transition matrix between two bases is invertible. This is the unimodularity
-hypothesis that the analytic change of chart carries. -/
+For compatible splittings of both index sets into the rays of the cone and a common complement
+`ι`, the transition matrix has the block form `[[1, B], [0, D]]`, with `D` unimodular. This is
+the unimodularity hypothesis used by the analytic change of chart. -/
 theorem isUnit_det_toMatrix_compl {ι : Type*} [Fintype ι] [DecidableEq ι]
     (hi : IsIntegralLattice i) (hσ : (σ : ConvexCone ℝ V).Salient)
     (hb : IsExtendingBasis i b r) (hb' : IsExtendingBasis i b' r')

@@ -196,10 +196,8 @@ private lemma exists_eq_hull_and_map_eq_hull
   · rw [hGeq, hmapfst, Set.image_singleton]; rfl
   · rw [hGeq, hmapsnd, Set.image_singleton]; rfl
 
-/-- A ray of a product of salient cones does not meet both factors: if its projection to the second
-factor is not the zero cone, then its projection to the first factor is. A spanning point of the ray
-cannot have both coordinates nonzero, because the ray then also contains the point with its second
-coordinate replaced by zero, which is not a nonnegative multiple of the spanning point. -/
+/-- A ray of a product of salient cones cannot project nontrivially to both factors: if its
+projection to the second factor is nonzero, then its projection to the first factor is zero. -/
 theorem map_fst_eq_bot_of_map_snd_ne_bot
     (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
     (G : ToricRay (σ.prod τ))
@@ -339,9 +337,8 @@ theorem prod_ext {G H : ToricRay (σ.prod τ)}
         (Submodule.mem_prod.1 (B.1.isFaceOf.le ha)).2⟩) hsum
   exact le_antisymm (key h₁.le h₂.le) (key h₁.ge h₂.ge)
 
-/-- A ray of the first factor, read as a ray of a product of cones: its product with the zero
-cone. This is a face of the product because the zero cone is a face of the salient second
-factor, and its span has the dimension of the span of the ray. -/
+/-- A ray of the first factor included as a ray of the product by taking its product with the zero
+cone in the second factor. -/
 def prodInl (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : ToricRay σ) : ToricRay (σ.prod τ) :=
   ⟨⟨ρ.toPointedCone.prod ⊥, ρ.1.isFaceOf.prod hτ.bot_isFaceOf⟩,
     (PointedCone.finrank_span_coe_prod_bot ρ.toPointedCone).trans ρ.2⟩
@@ -355,9 +352,8 @@ theorem toPointedCone_prodInl (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : Tor
 theorem mem_prodInl (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : ToricRay σ) {x : V × V'} :
     x ∈ prodInl hτ ρ ↔ x.1 ∈ ρ ∧ x.2 = 0 := (Iff.rfl)
 
-/-- A ray of the second factor, read as a ray of a product of cones: its product with the zero
-cone. This is a face of the product because the zero cone is a face of the salient first factor,
-and its span has the dimension of the span of the ray. -/
+/-- A ray of the second factor included as a ray of the product by taking the product of the zero
+cone in the first factor with that ray. -/
 def prodInr (hσ : (σ : ConvexCone ℝ V).Salient) (ρ : ToricRay τ) : ToricRay (σ.prod τ) :=
   ⟨⟨(⊥ : PointedCone ℝ V).prod ρ.toPointedCone, hσ.bot_isFaceOf.prod ρ.1.isFaceOf⟩,
     (PointedCone.finrank_span_coe_bot_prod ρ.toPointedCone).trans ρ.2⟩
