@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.GeneralLinear.CAR.HighestWeight
 import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 import TauCeti.Algebra.Lie.GeneralLinear.CAR.Occupation
+import TauCeti.Data.Nat.Choose
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.Dimension.FixedSubmodule
 import TauCeti.RingTheory.Idempotents.Eigenvalue
@@ -197,19 +198,6 @@ private theorem pow_card_mul_finrank_carOccupationFixed
     rw [carOccupationElement_swap]
     simp [sub_mul, hx]
 
-private theorem choose_two_add_upperTriangle (N : ℕ) :
-    N.choose 2 + N * (N + 1) / 2 = N * N := by
-  rw [Nat.choose_two_right]
-  apply Nat.mul_right_cancel (by norm_num : 0 < 2)
-  rw [Nat.add_mul, Nat.div_mul_cancel (Nat.even_mul_pred_self N).two_dvd,
-    Nat.div_mul_cancel (Nat.even_mul_succ_self N).two_dvd]
-  by_cases hN : N = 0
-  · simp [hN]
-  · rw [← Nat.mul_add]
-    have hsum : N - 1 + (N + 1) = 2 * N := by omega
-    rw [hsum]
-    ring
-
 private theorem finrank_carOccupationFixed
     {K : Type*} [Field K] [Invertible (2 : K)] (N : ℕ) :
     finrank K ((⨅ a ∈ Finset.univ,
@@ -230,11 +218,11 @@ private theorem finrank_carOccupationFixed
   have htotal : finrank K (carAlgebra K N) = 2 ^ (N * N) := by
     simpa using finrank_cliffordAlgebra_traceQuadraticForm K (Fin N)
   have hdim := pow_card_mul_finrank_carOccupationFixed (K := K) N
-  rw [hpairs, htotal, ← choose_two_add_upperTriangle N, pow_add] at hdim
+  rw [hpairs, htotal, ← Nat.choose_two_add_mul_succ_div_two N, pow_add] at hdim
   exact Nat.eq_of_mul_eq_mul_left (by positivity) hdim
 
 private theorem sum_positive_diagonal_scalar
-    {K : Type*} [Field K] [CharZero K] {N : ℕ} (i : Fin N) :
+    {K : Type*} [Field K] [Invertible (2 : K)] {N : ℕ} (i : Fin N) :
     (∑ k : Fin N, if k < i then (0 : K)
       else if k = i then (2 : K)⁻¹ else 1) = glHalfStaircase K N i := by
   have hcount : (Finset.univ.filter fun k : Fin N => i < k).card = Fin.rev i := by
@@ -257,8 +245,8 @@ private theorem sum_positive_diagonal_scalar
       simp
     _ = ((Fin.rev i : ℕ) : K) + (2 : K)⁻¹ := by rw [hcount]
     _ = glHalfStaircase K N i := by
-      rw [show (2 : K)⁻¹ = 1 / 2 by norm_num]
-      exact Fin.natCast_rev_add_one_div_two_eq_glHalfStaircase i
+      simpa only [one_div] using
+        Fin.natCast_rev_add_one_div_two_eq_glHalfStaircase (F := K) i
 
 private theorem carOccupationElement_mul_eq_self_of_mem_commonFixed
     {K : Type*} [Field K] {N : ℕ} {x : carAlgebra K N}
@@ -281,7 +269,7 @@ private theorem matrix_single_self_eq_classical
   simp [Matrix.single_apply]
 
 private theorem diagonal_lie_eq_glHalfStaircase_smul_of_occupation_fixed
-    {K : Type*} [Field K] [CharZero K] [Invertible (2 : K)] {N : ℕ}
+    {K : Type*} [Field K] [Invertible (2 : K)] {N : ℕ}
     (x : carAlgebra K N)
     (hfixed : ∀ {a b : Fin N}, a < b →
       carOccupationElement (K := K) a b * x = x) (i : Fin N) :
@@ -354,7 +342,7 @@ private theorem sum_upper_occupation_smul_eq_card_smul
   simpa [smul_eq_mul] using hdiag
 
 private theorem commonFixed_le_glHalfStaircase_weightSpace
-    {K : Type*} [Field K] [CharZero K] [Invertible (2 : K)] (N : ℕ) :
+    {K : Type*} [Field K] [Invertible (2 : K)] (N : ℕ) :
     (⨅ a ∈ Finset.univ,
       (carOccupationEnd (K := K) (N := N) a).fixedSubmodule) ≤
       LieModule.weightSpace (carAlgebra K N)
