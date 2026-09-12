@@ -52,10 +52,11 @@ halves of that statement are proved below.
   assertion of [Stacks, Tag 0C7H](https://stacks.math.columbia.edu/tag/0C7H).
 * `TauCeti.NumericalType.picToCoker_surjective_iff`: it is surjective exactly when every weight is
   one, so `Pic(T)` is a strictly finer invariant than `Coker(A)`.
-* `TauCeti.NumericalType.smul_mk_single_ne_zero`: no nonzero multiple of the class of a single
-  component vanishes, because its total degree is `mᵢwᵢ ≠ 0`. With the finite generation that
-  `Pic(T)` inherits from `ℤ^Component` this is half of the assertion that `Pic(T)` is finitely
-  generated of rank one.
+* `TauCeti.NumericalType.smul_ne_zero_of_degree_ne_zero`: a class of nonzero total degree has
+  infinite order, and `TauCeti.NumericalType.smul_mk_single_ne_zero`, its special case for the
+  class of the unit multidegree supported at a component, whose total degree is `mᵢwᵢ ≠ 0`. With
+  the finite generation that `Pic(T)` inherits from `ℤ^Component` this is half of the assertion
+  that `Pic(T)` is finitely generated of rank one.
 * `TauCeti.NumericalType.Equiv.picCongr` and `TauCeti.NumericalType.Equiv.degree_picCongr`: the
   Picard group and the total degree do not depend on the chosen indexing of the components.
 
@@ -77,7 +78,7 @@ open Finset Matrix
 
 namespace NumericalType
 
-universe u v
+universe u v w
 
 variable (T : NumericalType.{u})
 
@@ -97,13 +98,12 @@ over the constant field `κⱼ` of the `j`-th component, of the restriction of t
 
 The division is exact by `TauCeti.NumericalType.weight_dvd_intersection`; see
 `TauCeti.NumericalType.weightedIntersection_mul_weight`. -/
-@[expose]
 def weightedIntersection : Matrix T.Component T.Component ℤ :=
   .of fun i j ↦ T.intersection i j / (T.weight j : ℤ)
 
 /-- The entries of the weighted intersection matrix. -/
 lemma weightedIntersection_apply (i j : T.Component) :
-    T.weightedIntersection i j = T.intersection i j / (T.weight j : ℤ) := rfl
+    T.weightedIntersection i j = T.intersection i j / (T.weight j : ℤ) := (rfl)
 
 /-- The division defining the weighted intersection matrix is exact. -/
 @[simp]
@@ -200,14 +200,13 @@ abbrev Coker := (T.Component → ℤ) ⧸ T.intersectionRelations
 
 /-- The comparison map `Pic(T) → Coker(A)` induced by `eⱼ ↦ wⱼeⱼ`, from
 [Stacks, Tag 0C7H](https://stacks.math.columbia.edu/tag/0C7H). -/
-@[expose]
 def picToCoker : T.Pic →ₗ[ℤ] T.Coker :=
   Submodule.mapQ _ _ T.weightScaling T.principalDivisors_le_comap_intersectionRelations
 
 /-- The comparison map on the class of a multidegree. -/
 @[simp]
 lemma picToCoker_mk (d : T.Component → ℤ) :
-    T.picToCoker (Submodule.Quotient.mk d) = Submodule.Quotient.mk (T.weightScaling d) := rfl
+    T.picToCoker (Submodule.Quotient.mk d) = Submodule.Quotient.mk (T.weightScaling d) := (rfl)
 
 /-- The comparison map of [Stacks, Tag 0C7H](https://stacks.math.columbia.edu/tag/0C7H) is
 injective: a multidegree whose weight rescaling is a combination of the rows of `A` is itself the
@@ -221,8 +220,7 @@ theorem picToCoker_injective : Function.Injective T.picToCoker := by
     obtain ⟨v, hv⟩ := hx
     refine (Submodule.Quotient.mk_eq_zero _).2 (T.mem_principalDivisors_iff.2 ⟨v, ?_⟩)
     refine T.weightScaling_injective ?_
-    rw [show T.weightScaling (v ᵥ* T.weightedIntersection)
-      = (T.weightScaling ∘ₗ T.weightedIntersection.vecMulLinear) v from rfl,
+    rw [← Matrix.vecMulLinear_apply, ← LinearMap.comp_apply,
       weightScaling_comp_weightedIntersection, Matrix.vecMulLinear_apply, hv]
 
 /-- The image of the comparison map consists of the classes of the weight-rescaled
@@ -250,12 +248,6 @@ theorem picToCoker_surjective_iff :
   · rw [LinearMap.range_eq_top]
     exact fun y ↦ ⟨y, funext fun j ↦ by simp [h j]⟩
 
-/-- The comparison map is an isomorphism exactly when every component has weight one. -/
-theorem picToCoker_bijective_iff :
-    Function.Bijective T.picToCoker ↔ ∀ i, T.weight i = 1 :=
-  ⟨fun h ↦ T.picToCoker_surjective_iff.mp h.2,
-    fun h ↦ ⟨T.picToCoker_injective, T.picToCoker_surjective_iff.mpr h⟩⟩
-
 /-! ### The total degree -/
 
 /-- The total degree `∑ⱼ mⱼwⱼdⱼ` of a multidegree `d`, before passing to the Picard group.
@@ -282,14 +274,12 @@ lemma totalDegree_comp_weightedIntersection :
   refine Finset.sum_eq_zero fun i _ ↦ ?_
   have key : ∀ j, v i * T.weightedIntersection i j * ((T.multiplicity j : ℤ) * (T.weight j : ℤ))
       = v i * ((T.multiplicity j : ℤ) * T.intersection i j) := fun j ↦ by
-    rw [show T.intersection i j = T.weightedIntersection i j * (T.weight j : ℤ) from
-      (T.weightedIntersection_mul_weight i j).symm]
+    rw [← T.weightedIntersection_mul_weight i j]
     ring
   rw [Finset.sum_congr rfl fun j _ ↦ key j, ← Finset.mul_sum, T.fiber_relation i, mul_zero]
 
 /-- The total degree of a divisor class on a numerical type: the degree over the residue field of
 the corresponding line bundle on the whole special fibre. -/
-@[expose]
 def degree : T.Pic →ₗ[ℤ] ℤ :=
   Submodule.liftQ _ T.totalDegree <| by
     rw [principalDivisors, LinearMap.range_le_ker_iff]
@@ -298,31 +288,36 @@ def degree : T.Pic →ₗ[ℤ] ℤ :=
 /-- The degree of the class of a multidegree is its total degree. -/
 @[simp]
 lemma degree_mk (d : T.Component → ℤ) :
-    T.degree (Submodule.Quotient.mk d) = T.totalDegree d := rfl
+    T.degree (Submodule.Quotient.mk d) = T.totalDegree d := (rfl)
 
-/-- No nonzero multiple of the class of the `i`-th component vanishes in `Pic(T)`, because its
-total degree is `mᵢwᵢ ≠ 0`.
+/-- A divisor class of nonzero total degree has infinite order in `Pic(T)`: no nonzero multiple of
+it vanishes. -/
+theorem smul_ne_zero_of_degree_ne_zero {x : T.Pic} (hx : T.degree x ≠ 0) {n : ℤ} (hn : n ≠ 0) :
+    n • x ≠ 0 := by
+  intro h
+  have hdeg : n * T.degree x = 0 := by
+    have := congrArg T.degree h
+    rwa [map_smul, map_zero, smul_eq_mul] at this
+  exact (mul_eq_zero.mp hdeg).elim hn hx
+
+/-- No nonzero multiple of the class of the unit multidegree supported at the `i`-th component
+vanishes in `Pic(T)`, because its total degree is `mᵢwᵢ ≠ 0`. This class is not the class of the
+`i`-th component itself: that is the `i`-th row of the weighted intersection matrix, hence
+principal and zero in `Pic(T)`.
 
 Together with the finite generation that `Pic(T)` inherits from `ℤ^Component`, this is half of the
 assertion that `Pic(T)` is a finitely generated abelian group of rank one. -/
 theorem smul_mk_single_ne_zero (i : T.Component) {n : ℤ} (hn : n ≠ 0) :
     n • (Submodule.Quotient.mk (Pi.single i 1) : T.Pic) ≠ 0 := by
-  intro h
-  have hdeg : n * ((T.multiplicity i : ℤ) * (T.weight i : ℤ)) = 0 := by
-    have := congrArg T.degree h
-    rwa [map_smul, map_zero, degree_mk, totalDegree, Fintype.linearCombination_apply_single,
-      smul_eq_mul, smul_eq_mul, one_mul] at this
-  rcases mul_eq_zero.mp hdeg with h' | h'
-  · exact hn h'
-  · rcases mul_eq_zero.mp h' with h'' | h''
-    · exact absurd h'' (Int.natCast_pos.mpr (T.multiplicity i).pos).ne'
-    · exact absurd h'' (T.weight_ne_zero i)
+  refine T.smul_ne_zero_of_degree_ne_zero ?_ hn
+  rw [degree_mk, totalDegree, Fintype.linearCombination_apply_single, smul_eq_mul, one_mul]
+  exact mul_ne_zero (Int.natCast_pos.mpr (T.multiplicity i).pos).ne' (T.weight_ne_zero i)
 
 /-! ### Invariance under equivalences of numerical types -/
 
 namespace Equiv
 
-variable {T} {T' : NumericalType.{v}}
+variable {T} {T' : NumericalType.{v}} {T'' : NumericalType.{w}}
 
 /-- An equivalence of numerical types matches the weighted intersection matrices. -/
 lemma weightedIntersection_eq (f : T.Equiv T') :
@@ -361,7 +356,6 @@ lemma map_principalDivisors (f : T.Equiv T') :
     principalDivisors]
 
 /-- Equivalent numerical types have isomorphic Picard groups. -/
-@[expose]
 def picCongr (f : T.Equiv T') : T.Pic ≃ₗ[ℤ] T'.Pic :=
   Submodule.Quotient.equiv _ _ (LinearEquiv.funCongrLeft ℤ ℤ f.toEquiv.symm) f.map_principalDivisors
 
@@ -370,7 +364,31 @@ multidegree. -/
 @[simp]
 lemma picCongr_mk (f : T.Equiv T') (d : T.Component → ℤ) :
     f.picCongr (Submodule.Quotient.mk d) =
-      Submodule.Quotient.mk (fun b ↦ d (f.toEquiv.symm b)) := rfl
+      Submodule.Quotient.mk (fun b ↦ d (f.toEquiv.symm b)) := (rfl)
+
+/-- The identity equivalence induces the identity of Picard groups. -/
+@[simp]
+lemma picCongr_refl : (refl : T.Equiv T).picCongr = LinearEquiv.refl ℤ T.Pic :=
+  LinearEquiv.ext fun x ↦ by
+    induction x using Submodule.Quotient.induction_on with
+    | H d => simp
+
+/-- A composite of equivalences induces the composite isomorphism of Picard groups. -/
+@[simp]
+lemma picCongr_trans (f : T.Equiv T') (g : T'.Equiv T'') :
+    (f.trans g).picCongr = f.picCongr.trans g.picCongr :=
+  LinearEquiv.ext fun x ↦ by
+    induction x using Submodule.Quotient.induction_on with
+    | H d => simp
+
+/-- The inverse of an equivalence induces the inverse isomorphism of Picard groups. -/
+@[simp]
+lemma picCongr_symm (f : T.Equiv T') : f.picCongr.symm = f.symm.picCongr :=
+  LinearEquiv.ext fun x ↦ by
+    induction x using Submodule.Quotient.induction_on with
+    | H d =>
+      rw [LinearEquiv.symm_apply_eq]
+      simp
 
 /-- The total degree of a divisor class on a numerical type is an invariant of its equivalence
 class. -/
