@@ -135,6 +135,42 @@ noncomputable def componentPermOutgoing (D : OrientedPDCode n) :
       exact (orientation_componentPerm D h).trans h.property⟩ := by
   simp only [componentPermOutgoing, Equiv.Perm.subtypePerm_apply]
 
+/-- Counting outgoing traversal orbits gives the crossing-bearing component count. -/
+theorem orbitCount_componentPermOutgoing (D : OrientedPDCode n) :
+    orbitCount D.componentPermOutgoing = D.toPDCode.crossingComponentCount := by
+  classical
+  let p := fun h => D.orientation h = true
+  let incoming := D.toPDCode.componentPerm.subtypePerm (p := fun h => ¬p h)
+    (fun h => by simp only [p, orientation_componentPerm])
+  let e : {h // p h} ≃ {h // ¬p h} :=
+    D.edgePair.val.subtypeEquiv (fun h => by simp [p])
+  have hturn (h : Fin (4 * n)) : D.crossingTurn (D.crossingTurn h) = h := by
+    obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
+    obtain ⟨⟨i, slot⟩, rfl⟩ := (PDCode.crossingSlotEquiv n).surjective x
+    simp [PDCode.crossingTurn]
+  -- Arc pairing exchanges outgoing and incoming traversal, reversing its direction.
+  have he : e.permCongr D.componentPermOutgoing = incoming⁻¹ := by
+    apply Equiv.ext
+    intro h
+    obtain ⟨h, rfl⟩ := e.surjective h
+    rw [Equiv.permCongr_apply, Equiv.symm_apply_apply]
+    apply incoming.injective
+    apply Subtype.ext
+    simp [e, incoming, Equiv.subtypeEquiv, componentPermOutgoing,
+      PDCode.componentPerm_apply, hturn]
+  -- Splitting by orientation accounts for every unrestricted orbit, including fixed points.
+  have hsplit : D.toPDCode.componentPerm =
+      (Equiv.sumCompl p).permCongr (Equiv.Perm.sumCongr D.componentPermOutgoing incoming) := by
+    ext h
+    by_cases hh : p h <;>
+      simp [Equiv.permCongr_apply, Equiv.sumCompl_symm_apply_of_pos,
+        Equiv.sumCompl_symm_apply_of_neg, hh, incoming, componentPermOutgoing]
+  have hcount : orbitCount incoming = orbitCount D.componentPermOutgoing := by
+    simpa using (congrArg orbitCount he).symm
+  rw [PDCode.crossingComponentCount_def, hsplit, Equiv.orbitCount_permCongr,
+    Equiv.Perm.orbitCount_sumCongr, hcount]
+  omega
+
 /-- Relabelling restricts to an equivalence of outgoing half-edges. -/
 def relabelOutgoingEquiv (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (cross : Equiv.Perm (Fin n)) :
