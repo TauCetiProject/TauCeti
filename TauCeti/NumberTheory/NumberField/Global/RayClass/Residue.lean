@@ -265,6 +265,8 @@ noncomputable def finiteUnitsMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
     ((𝓞 K) ⧸ 𝔫.finitePart)ˣ →* ((𝓞 K) ⧸ 𝔪.finitePart)ˣ :=
   Units.map (Ideal.Quotient.factor (Ideal.le_of_dvd (Modulus.dvd_iff.mp h).1)).toMonoidHom
 
+/-- The value of the transition map is the image under the canonical quotient map of the
+underlying residue-unit value. -/
 @[simp]
 theorem coe_finiteUnitsMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
     (x : ((𝓞 K) ⧸ 𝔫.finitePart)ˣ) :
@@ -273,12 +275,14 @@ theorem coe_finiteUnitsMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
         (x : (𝓞 K) ⧸ 𝔫.finitePart) := by
   rfl
 
+/-- Changing the modulus along divisibility by reflexivity gives the identity map. -/
 @[simp]
 theorem finiteUnitsMap_refl (𝔪 : Modulus K) :
     finiteUnitsMap (Modulus.dvd_refl 𝔪) = MonoidHom.id _ := by
   ext x
   simp [finiteUnitsMap]
 
+/-- Transition maps compose along a chain of divisibility of moduli. -/
 @[simp]
 theorem finiteUnitsMap_comp_finiteUnitsMap {𝔪 𝔫 𝔭 : Modulus K} (h₁ : 𝔪 ∣ 𝔫) (h₂ : 𝔫 ∣ 𝔭) :
     (finiteUnitsMap h₁).comp (finiteUnitsMap h₂) =
@@ -291,20 +295,20 @@ theorem finiteUnitsMap_comp_finiteUnitsMap {𝔪 𝔫 𝔭 : Modulus K} (h₁ : 
 theorem finiteUnitsMap_residueHom {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
     (x : primeToSubgroup 𝔫) :
     finiteUnitsMap h (residueHom 𝔫 x) =
-      residueHom 𝔪 (Subgroup.inclusion (primeToSubgroup_antitone h) x) := by
+      residueHom 𝔪 (Subgroup.inclusion (primeToSubgroup_le_of_dvd h) x) := by
   obtain ⟨a, b, hb, hab⟩ := exists_algebraMap_eq_mul_of_mem_primeToSubgroup x.2
   have hbm : b - 1 ∈ 𝔪.finitePart :=
     (Ideal.le_of_dvd (Modulus.dvd_iff.mp h).1) hb
   have habm : algebraMap (𝓞 K) K a = algebraMap (𝓞 K) K b *
-      (((Subgroup.inclusion (primeToSubgroup_antitone h) x : primeToSubgroup 𝔪) : Kˣ) : K) := by
+      (((Subgroup.inclusion (primeToSubgroup_le_of_dvd h) x : primeToSubgroup 𝔪) : Kˣ) : K) := by
     simpa only [Subgroup.coe_inclusion] using hab
   apply Units.ext
   -- Expose the underlying quotient values so `residue_eq` can be applied on both sides.
   change Ideal.Quotient.factor (Ideal.le_of_dvd (Modulus.dvd_iff.mp h).1) (residue 𝔫 x) =
-    residue 𝔪 (Subgroup.inclusion (primeToSubgroup_antitone h) x)
+    residue 𝔪 (Subgroup.inclusion (primeToSubgroup_le_of_dvd h) x)
   rw [residue_eq (x := x) (a := a) (b := b) hb hab,
     Ideal.Quotient.factor_mk,
-    residue_eq (x := Subgroup.inclusion (primeToSubgroup_antitone h) x)
+    residue_eq (x := Subgroup.inclusion (primeToSubgroup_le_of_dvd h) x)
       (a := a) (b := b) hbm habm]
 
 end TauCeti.GlobalNumberFields

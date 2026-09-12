@@ -344,7 +344,7 @@ def primeToSubgroup (𝔪 : Modulus K) : Subgroup Kˣ where
 
 /-- A larger modulus has a smaller prime-to subgroup.  This is the carrier map used when changing
 the modulus in a reduction statement. -/
-theorem primeToSubgroup_antitone {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
+theorem primeToSubgroup_le_of_dvd {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
     primeToSubgroup 𝔫 ≤ primeToSubgroup 𝔪 := by
   intro x hx
   rw [mem_primeToSubgroup] at hx
