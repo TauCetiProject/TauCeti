@@ -134,16 +134,22 @@ theorem complexMap_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V}
 
 /-- The identity compatible pair induces the identity of Tate complexes. -/
 @[simp] theorem complexMap_id :
-    complexMap (e := MulEquiv.refl G) (φ := LinearMap.id) (isIntertwiningMap_id M) =
+    complexMap (e := MulEquiv.refl G) (φ := LinearMap.id) (Rep.isIntertwiningMap_id M) =
       𝟙 (tateComplex M) :=
   (tateComplexFunctor R G).map_id M
 
 /-- **The construction is functorial in the compatible pair.** -/
+-- The underlying monoid homomorphism of `e₁.trans e₂` is only extensionally equal to the
+-- `MonoidHom.comp` in `IsIntertwiningMap.trans`, so the right-hand side transports across that
+-- equality.
 @[reassoc]
 theorem complexMap_comp {e₁ : G ≃* H} {e₂ : H ≃* K} {φ : M.V →ₗ[R] N.V}
     (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e₁ : G →* H)) φ) {ψ : N.V →ₗ[R] P.V}
     (hψ : N.ρ.IsIntertwiningMap (P.ρ.comp (e₂ : H →* K)) ψ) :
-    complexMap hφ ≫ complexMap hψ = complexMap (IsIntertwiningMap.trans hφ hψ) := by
+    complexMap hφ ≫ complexMap hψ = complexMap (e := e₁.trans e₂) (φ := ψ ∘ₗ φ) (by
+      convert IsIntertwiningMap.trans hφ hψ using 1
+      ext x
+      rfl) := by
   refine (CochainComplex.ConnectData.map_comp_map ..).trans ?_
   congr 1
   exact (groupHomology.chainsMap_comp _ _ _ _).symm
@@ -224,17 +230,22 @@ theorem map_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V}
 
 /-- The identity compatible pair induces the identity in every degree. -/
 @[simp] theorem map_id (n : ℤ) :
-    map (e := MulEquiv.refl G) (φ := LinearMap.id) (isIntertwiningMap_id M) n =
+    map (e := MulEquiv.refl G) (φ := LinearMap.id) (Rep.isIntertwiningMap_id M) n =
       𝟙 (tateCohomology M n) := by
   rw [map_def, complexMap_id]
   exact HomologicalComplex.homologyMap_id _ _
 
 /-- **Tate cohomology is functorial in the compatible pair**, in every degree. -/
+-- As in `complexMap_comp`, the right-hand side transports the generalized composition theorem
+-- across the extensional equality of the two underlying monoid homomorphisms.
 @[reassoc]
 theorem map_comp {e₁ : G ≃* H} {e₂ : H ≃* K} {φ : M.V →ₗ[R] N.V}
     (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e₁ : G →* H)) φ) {ψ : N.V →ₗ[R] P.V}
     (hψ : N.ρ.IsIntertwiningMap (P.ρ.comp (e₂ : H →* K)) ψ) (n : ℤ) :
-    map hφ n ≫ map hψ n = map (IsIntertwiningMap.trans hφ hψ) n := by
+    map hφ n ≫ map hψ n = map (e := e₁.trans e₂) (φ := ψ ∘ₗ φ) (by
+      convert IsIntertwiningMap.trans hφ hψ using 1
+      ext x
+      rfl) n := by
   rw [map_def, map_def, map_def, ← complexMap_comp hφ hψ,
     HomologicalComplex.homologyMap_comp]
   rfl
@@ -288,7 +299,7 @@ cohomology**, naturally in the coefficients. -/
 def resIso (e : G ≃* H) (n : ℤ) :
     Rep.resFunctor (e : G →* H) ⋙ tateCohomologyFunctor (R := R) (G := G) n ≅
       tateCohomologyFunctor n :=
-  NatIso.ofComponents (fun N ↦ mapIso (isIntertwiningMap_res (e : G →* H) N) n)
+  NatIso.ofComponents (fun N ↦ mapIso (Rep.isIntertwiningMap_res N (e : G →* H)) n)
     fun {N N'} ψ ↦ by
       have hψ : N.ρ.IsIntertwiningMap
           (N'.ρ.comp ((MulEquiv.refl H : H ≃* H) : H →* H)) ψ.hom.toLinearMap :=
@@ -299,21 +310,23 @@ def resIso (e : G ≃* H) (n : ℤ) :
           (ψ.hom.toLinearMap :
             (Rep.res (e : G →* H) N).V →ₗ[R] (Rep.res (e : G →* H) N').V) :=
         ⟨fun g v ↦ congr($(ψ.hom.isIntertwining' (e g)) v)⟩
-      have key : map (e := MulEquiv.refl G) hres n ≫ map (isIntertwiningMap_res (e : G →* H) N') n =
-          map (isIntertwiningMap_res (e : G →* H) N) n ≫ map (e := MulEquiv.refl H) hψ n := by
+      have key : map (e := MulEquiv.refl G) hres n ≫
+          map (Rep.isIntertwiningMap_res N' (e : G →* H)) n =
+          map (Rep.isIntertwiningMap_res N (e : G →* H)) n ≫
+            map (e := MulEquiv.refl H) hψ n := by
         rw [map_comp, map_comp]
         exact map_congr (by ext x; rfl) (by ext x; rfl) n
       exact key
 
 @[simp] theorem resIso_hom_app (e : G ≃* H) (n : ℤ) (N : Rep R H) :
-    (resIso e n).hom.app N = (mapIso (isIntertwiningMap_res (e : G →* H) N) n).hom := by
+    (resIso e n).hom.app N = (mapIso (Rep.isIntertwiningMap_res N (e : G →* H)) n).hom := by
   rw [resIso]
   -- `NatIso.ofComponents_hom_app` is not usable as a rewrite here: its motive is ill-typed at
   -- `implicit` transparency, because `tateCohomologyFunctor` is a semireducible `def`.
   rfl
 
 @[simp] theorem resIso_inv_app (e : G ≃* H) (n : ℤ) (N : Rep R H) :
-    (resIso e n).inv.app N = (mapIso (isIntertwiningMap_res (e : G →* H) N) n).inv := by
+    (resIso e n).inv.app N = (mapIso (Rep.isIntertwiningMap_res N (e : G →* H)) n).inv := by
   rw [resIso]
   -- As above for `NatIso.ofComponents_inv_app`.
   rfl
