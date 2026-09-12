@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.AddChar
 public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import TauCeti.Algebra.Group.FreeAbelianCharacter
 
 /-!
@@ -47,20 +48,27 @@ namespace TauCeti.Toric
 
 open Multiplicative
 
-variable {N N' N'' : Type*} [AddCommGroup N] [AddCommGroup N'] [AddCommGroup N'']
+variable {N N' N'' : Type*}
+  [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N]
+  [AddCommGroup N'] [Module.Free ℤ N'] [Module.Finite ℤ N']
+  [AddCommGroup N''] [Module.Free ℤ N''] [Module.Finite ℤ N'']
 
-/-- The lattice of integral characters of an additive group `N`. -/
-abbrev IntegralCharacter (N : Type*) [AddCommGroup N] := N →+ ℤ
+/-- The lattice of integral characters of a finite free `ℤ`-module `N`. -/
+abbrev IntegralCharacter (N : Type*) [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N] :=
+  N →+ ℤ
 
-/-- The coordinate-free complex torus with character lattice `N →+ ℤ`.
+/-- The coordinate-free complex torus with character lattice `N →+ ℤ`, for a finite free `ℤ`-
+module `N`.
 
 `AddChar` is the additive-domain form of the equivalent Mathlib carrier
 `Multiplicative (N →+ ℤ) →* ℂˣ`; using it makes evaluation and pullback of characters direct. -/
-abbrev ComplexTorus (N : Type*) [AddCommGroup N] := AddChar (IntegralCharacter N) ℂˣ
+abbrev ComplexTorus (N : Type*) [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N] :=
+  AddChar (IntegralCharacter N) ℂˣ
 
 /-- The standard multiplicative-character presentation of `ComplexTorus`. -/
 @[expose]
-def complexTorusMonoidHomEquiv (N : Type*) [AddCommGroup N] :
+def complexTorusMonoidHomEquiv (N : Type*) [AddCommGroup N] [Module.Free ℤ N]
+    [Module.Finite ℤ N] :
     ComplexTorus N ≃* (Multiplicative (IntegralCharacter N) →* ℂˣ) :=
   AddChar.toMonoidHomMulEquiv
 
