@@ -53,9 +53,8 @@ variable {n : ℕ} (μ : n.Partition)
 irreducible rational representation `S^μ` of `Sₙ`, times the product of the hook lengths of the
 shape `μ`, is `n !`.
 
-This is `TauCeti.standardCount_mul_prod_hookLength` read through
-`TauCeti.finrank_spechtModule`, the standard polytabloids being a basis of `S^μ`. It carries no
-division obligation; the quotient form is
+Equivalently, the degree of `S^μ` is the number of standard Young tableaux of shape `μ`. The
+quotient form `dim_ℚ S^μ = n ! / ∏ hooks` is
 `TauCeti.finrank_spechtModule_eq_factorial_div_prod_hookLength`. -/
 theorem finrank_spechtModule_mul_prod_hookLength :
     finrank ℚ (spechtModule μ) * ∏ c ∈ (diagramOf μ).cells, (diagramOf μ).hookLength c = n ! := by

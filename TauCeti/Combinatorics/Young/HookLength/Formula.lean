@@ -295,9 +295,8 @@ theorem standardCount_mul_prod_hookLength (μ : YoungDiagram) :
 /-- **The hook-length formula in quotient form**: the number of standard Young tableaux of shape
 `μ` is `μ.card !` divided by the product of the hook lengths.
 
-The division is exact, by `YoungDiagram.prod_hookLength_dvd_factorial`; the multiplicative form
-`TauCeti.standardCount_mul_prod_hookLength` is the primary statement, and this one is read off it
-together with the positivity `YoungDiagram.prod_hookLength_pos`. -/
+The division is exact: the product of the hook lengths divides `μ.card !`, by
+`YoungDiagram.prod_hookLength_dvd_factorial`. -/
 theorem standardCount_eq_factorial_div_prod_hookLength (μ : YoungDiagram) :
     standardCount μ = μ.card ! / ∏ c ∈ μ.cells, YoungDiagram.hookLength μ c :=
   (Nat.div_eq_of_eq_mul_left μ.prod_hookLength_pos
