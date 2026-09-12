@@ -104,7 +104,7 @@ theorem typeDSpinRep_serreE_exteriorBasis_univ_erase_last (hn : 4 ≤ n) (i : Fi
 
 /-- The all-coordinate exterior-basis vector has the terminal fork fundamental weight for the
 type-`D` Serre Cartan action. -/
-theorem isCartanWeightVector_typeDSpinRep_exteriorBasis_univ (hn : 4 ≤ n) :
+@[simp 1100] theorem isCartanWeightVector_typeDSpinRep_exteriorBasis_univ (hn : 4 ≤ n) :
     TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector
       (TauCeti.serreH ℚ (CartanMatrix.D n)) (P.typeDSpinRep b hn)
       (Pi.single (⟨n - 1, by omega⟩ : Fin n) 1)
@@ -115,7 +115,7 @@ theorem isCartanWeightVector_typeDSpinRep_exteriorBasis_univ (hn : 4 ≤ n) :
 
 /-- The exterior-basis vector obtained by erasing the final coordinate has the penultimate fork
 fundamental weight for the type-`D` Serre Cartan action. -/
-theorem isCartanWeightVector_typeDSpinRep_exteriorBasis_univ_erase_last (hn : 4 ≤ n) :
+@[simp 1100] theorem isCartanWeightVector_typeDSpinRep_exteriorBasis_univ_erase_last (hn : 4 ≤ n) :
     TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector
       (TauCeti.serreH ℚ (CartanMatrix.D n)) (P.typeDSpinRep b hn)
       (Pi.single (⟨n - 2, by omega⟩ : Fin n) 1)

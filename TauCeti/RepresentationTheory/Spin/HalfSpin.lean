@@ -11,8 +11,8 @@ public import TauCeti.RepresentationTheory.Spin.Representation
 -- Private: `CliffordAlgebra.contractLeft_mem_evenOdd` is used only inside a proof, and
 -- `CliffordAction` imports this module privately too, so it is not available transitively.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
--- Private: `CliffordAlgebra.exists_algebraMap_of_mem_range_ι_pow_zero` and
--- `CliffordAlgebra.exists_ι_of_mem_range_ι_pow_one` are used only inside a proof.
+-- Private: the grading base cases and `Module.Basis.exteriorAlgebra_mem_evenOdd_card` are used
+-- only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 -- Private: `Subrepresentation.mem_toSubmodule`, `Subrepresentation.toSubmodule_bot` and
 -- `Subrepresentation.toSubmodule_top` are used only inside a proof.
@@ -150,24 +150,13 @@ theorem mem_spinMinus {s : ExteriorAlgebra K P.W} :
 
 /-! ### Coordinate-basis parity -/
 
-private theorem exteriorBasis_mem_evenOdd_card {n : ℕ}
-    (b : Module.Basis (Fin n) K P.W) (s : Finset (Fin n)) :
-    b.ExteriorAlgebra s ∈
-      evenOdd (0 : QuadraticForm K P.W) (s.card : ZMod 2) := by
-  rw [CliffordAlgebra.evenOdd]
-  refine Submodule.mem_iSup_of_mem ⟨s.card, rfl⟩ ?_
-  have h := (b.exteriorPower s.card
-    (⟨s, rfl⟩ : Set.powersetCard (Fin n) s.card)).2
-  rw [← ExteriorAlgebra.basis_eq_coe_basis] at h
-  exact h
-
 /-- The all-coordinate exterior-basis vector belongs to the even half-spin summand in even
 rank. -/
 theorem exteriorBasis_univ_mem_spinPlus_of_even {n : ℕ}
     (b : Module.Basis (Fin n) K P.W) (hn : Even n) :
     b.ExteriorAlgebra (Finset.univ : Finset (Fin n)) ∈ spinPlus Q P := by
   rw [spinPlus_def]
-  have h := exteriorBasis_mem_evenOdd_card P b (Finset.univ : Finset (Fin n))
+  have h := b.exteriorAlgebra_mem_evenOdd_card (Finset.univ : Finset (Fin n))
   rw [Finset.card_univ, Fintype.card_fin, hn.natCast_zmod_two] at h
   exact h
 
@@ -177,7 +166,7 @@ theorem exteriorBasis_univ_mem_spinMinus_of_odd {n : ℕ}
     (b : Module.Basis (Fin n) K P.W) (hn : Odd n) :
     b.ExteriorAlgebra (Finset.univ : Finset (Fin n)) ∈ spinMinus Q P := by
   rw [spinMinus_def]
-  have h := exteriorBasis_mem_evenOdd_card P b (Finset.univ : Finset (Fin n))
+  have h := b.exteriorAlgebra_mem_evenOdd_card (Finset.univ : Finset (Fin n))
   rw [Finset.card_univ, Fintype.card_fin] at h
   have hcast : (n : ZMod 2) = 1 := ZMod.natCast_eq_one_iff_odd.mpr hn
   rwa [hcast] at h
@@ -191,7 +180,7 @@ theorem exteriorBasis_univ_erase_last_mem_spinPlus_of_odd {n : ℕ}
           (⟨n - 1, by have := hn.pos; omega⟩ : Fin n)) ∈
       spinPlus Q P := by
   rw [spinPlus_def]
-  have h := exteriorBasis_mem_evenOdd_card P b
+  have h := b.exteriorAlgebra_mem_evenOdd_card
     ((Finset.univ : Finset (Fin n)).erase
       (⟨n - 1, by have := hn.pos; omega⟩ : Fin n))
   rw [Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ, Fintype.card_fin] at h
@@ -209,7 +198,7 @@ theorem exteriorBasis_univ_erase_last_mem_spinMinus_of_even {n : ℕ}
         ((Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n)) ∈
       spinMinus Q P := by
   rw [spinMinus_def]
-  have h := exteriorBasis_mem_evenOdd_card P b
+  have h := b.exteriorAlgebra_mem_evenOdd_card
     ((Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n))
   rw [Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ, Fintype.card_fin] at h
   have hpar : Odd (n - 1) := by

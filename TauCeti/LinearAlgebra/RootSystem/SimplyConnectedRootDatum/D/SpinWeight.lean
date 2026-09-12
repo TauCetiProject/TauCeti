@@ -41,7 +41,8 @@ index-four root lattice.
 * `TauCeti.DynkinType.typeDSpinWeight`: a spin weight in fundamental-weight coordinates.
 * `TauCeti.DynkinType.algebraMap_typeDSpinWeight_apply`: comparison with the half-integer
   orthonormal coordinates of `TauCeti.spinWeight`.
-* `TauCeti.DynkinType.typeDSpinWeight_univ` and
+* `TauCeti.DynkinType.typeDSpinWeight_univ_apply`,
+  `TauCeti.DynkinType.typeDSpinWeight_univ`, and
   `TauCeti.DynkinType.typeDSpinWeight_univ_erase_last`: the terminal and penultimate fork
   fundamental weights.
 * `TauCeti.DynkinType.span_range_typeDSpinWeight_eq_top`: the spin weights generate the full
@@ -373,8 +374,9 @@ private theorem mem_typeDSpinCut_iff {n : ℕ} (i j : Fin n) :
     j ∈ typeDSpinCut i ↔ j ≤ i := by
   simp [typeDSpinCut]
 
-/-- The all-positive sign weight has only its terminal fundamental-weight coordinate nonzero. -/
-private theorem typeDSpinWeight_univ_apply {n : ℕ} (i : Fin n) :
+/-- The all-positive type-`D` spin weight, evaluated at an arbitrary fundamental-weight
+coordinate. -/
+@[simp 1100] theorem typeDSpinWeight_univ_apply {n : ℕ} (i : Fin n) :
     typeDSpinWeight (Finset.univ : Finset (Fin n)) i =
       if (i : ℕ) + 1 = n then 1 else 0 := by
   rw [typeDSpinWeight_apply]
