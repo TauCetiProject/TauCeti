@@ -33,15 +33,6 @@ def crossingTurn (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
     ((PDCode.crossingSlotEquiv n).permCongr
       (Equiv.prodCongr (Equiv.refl (Fin n)) PDCode.oppositeCrossingSlot))
 
-/-- Computes `crossingTurn` by converting a half-edge to its crossing slot,
-    taking the opposite slot, and converting back. -/
-theorem crossingTurn_apply (D : PDCode n) (h : Fin (4 * n)) :
-    D.crossingTurn h = D.halfEdge
-      ((PDCode.crossingSlotEquiv n).permCongr
-        (Equiv.prodCongr (Equiv.refl (Fin n)) PDCode.oppositeCrossingSlot)
-        (D.halfEdge⁻¹ h)) := by
-  simp [crossingTurn, Equiv.Perm.mul_def]
-
 /-- The component traversal moves across an arc and then through a crossing. -/
 def componentPerm (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
   D.crossingTurn * D.edgePair.val
@@ -66,9 +57,30 @@ def componentPerm (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
     D.mirror.componentPerm = D.componentPerm := by
   simp [componentPerm]
 
+/-- Relabelling conjugates the opposite-slot permutation by the half-edge relabelling. -/
+@[simp] theorem crossingTurn_relabel (D : PDCode n) (half : Equiv.Perm (Fin (4 * n)))
+    (cross : Equiv.Perm (Fin n)) :
+    (D.relabel half cross).crossingTurn = half.permCongr D.crossingTurn := by
+  ext h
+  obtain ⟨x, rfl⟩ := half.surjective h
+  obtain ⟨x, rfl⟩ := D.halfEdge.surjective x
+  obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective x
+  have he : half (D.halfEdge (crossingSlotEquiv n (i, slot))) =
+      (D.relabel half cross).halfEdge (crossingSlotEquiv n (cross i, slot)) := by
+    rw [← D.crossing_apply, ← (D.relabel half cross).crossing_apply]
+    simpa only [Equiv.symm_apply_apply] using (D.relabel_crossing half cross (cross i) slot).symm
+  rw [he, crossingTurn_crossing, relabel_crossing]
+  simp
+
+/-- Relabelling conjugates component traversal by the half-edge relabelling. -/
+@[simp] theorem componentPerm_relabel (D : PDCode n) (half : Equiv.Perm (Fin (4 * n)))
+    (cross : Equiv.Perm (Fin n)) :
+    (D.relabel half cross).componentPerm = half.permCongr D.componentPerm := by
+  simp [componentPerm]
+
 /-- The number of crossing-bearing components, each represented by two directed traversal orbits.
-For an oriented code, `OrientedPDCode.orbitCount_componentPermOutgoing` identifies this with
-its outgoing orbit count. -/
+The outgoing restriction records the directed traversal on the positively oriented
+half-edges. -/
 noncomputable def crossingComponentCount (D : PDCode n) : ℕ :=
   orbitCount D.componentPerm / 2
 
@@ -88,6 +100,12 @@ theorem crossingComponentCount_def (D : PDCode n) :
     D.mirror.crossingComponentCount = D.crossingComponentCount := by
   simp [crossingComponentCount]
 
+/-- Relabelling preserves the number of crossing-bearing components. -/
+@[simp] theorem crossingComponentCount_relabel (D : PDCode n)
+    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
+    (D.relabel half cross).crossingComponentCount = D.crossingComponentCount := by
+  simp [crossingComponentCount]
+
 end PDCode
 
 namespace OrientedPDCode
@@ -97,26 +115,47 @@ namespace OrientedPDCode
     D.orientation (D.crossingTurn h) = !D.orientation h := by
   obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
   obtain ⟨i, slot, rfl⟩ := (PDCode.crossingSlotEquiv n).surjective x
-  simp [PDCode.crossingTurn_apply, Prod.map, D.orientation_oppositeCrossingSlot]
+  simp [PDCode.crossingTurn, Prod.map, D.orientation_oppositeCrossingSlot]
 
 /-- The component traversal preserves the orientation of a half-edge. -/
 theorem orientation_componentPerm (D : OrientedPDCode n) (h : Fin (4 * n)) :
-    D.orientation (D.crossingTurn (D.toPDCode.edgePair.val h)) = D.orientation h := by
-  rw [orientation_crossingTurn, D.orientation_edgePair, Bool.not_not]
+    D.orientation (D.toPDCode.componentPerm h) = D.orientation h := by
+  rw [PDCode.componentPerm_apply, orientation_crossingTurn, D.orientation_edgePair, Bool.not_not]
 
 /-- The component traversal permutation restricted to half-edges pointing away from crossings. -/
 noncomputable def componentPermOutgoing (D : OrientedPDCode n) :
     Equiv.Perm {h : Fin (4 * n) // D.orientation h = true} :=
   D.toPDCode.componentPerm.subtypePerm (fun h => by
-    simp only [PDCode.componentPerm_apply, orientation_componentPerm])
+    simp only [orientation_componentPerm])
 
 /-- Outgoing traversal has the same half-edge value as unrestricted traversal. -/
 @[simp] theorem componentPermOutgoing_apply (D : OrientedPDCode n)
     (h : {h : Fin (4 * n) // D.orientation h = true}) :
     D.componentPermOutgoing h = ⟨D.toPDCode.componentPerm h, by
-      simpa only [PDCode.componentPerm_apply] using
-        (orientation_componentPerm D h).trans h.property⟩ := by
+      exact (orientation_componentPerm D h).trans h.property⟩ := by
   simp only [componentPermOutgoing, Equiv.Perm.subtypePerm_apply]
+
+/-- Relabelling restricts to an equivalence of outgoing half-edges. -/
+def relabelOutgoingEquiv (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
+    (cross : Equiv.Perm (Fin n)) :
+    {h : Fin (4 * n) // D.orientation h = true} ≃
+      {h : Fin (4 * n) // (D.relabel half cross).orientation h = true} :=
+  half.subtypeEquiv (fun h => by simp)
+
+/-- The outgoing relabelling equivalence acts by the original half-edge permutation. -/
+@[simp] theorem relabelOutgoingEquiv_apply (D : OrientedPDCode n)
+    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n))
+    (h : {h : Fin (4 * n) // D.orientation h = true}) :
+    (D.relabelOutgoingEquiv half cross h).val = half h := by
+  simp [relabelOutgoingEquiv, Equiv.subtypeEquiv]
+
+/-- Relabelling transports outgoing traversal along the outgoing half-edge equivalence. -/
+@[simp] theorem componentPermOutgoing_relabel (D : OrientedPDCode n)
+    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
+    (D.relabel half cross).componentPermOutgoing =
+      (D.relabelOutgoingEquiv half cross).permCongr D.componentPermOutgoing := by
+  ext h
+  simp [relabelOutgoingEquiv, Equiv.subtypeEquiv, PDCode.componentPerm_relabel]
 
 end OrientedPDCode
 end TauCeti
