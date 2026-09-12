@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.Young.StandardTableau.Order
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Garnir
 import TauCeti.Algebra.BigOperators.Finset.Swap
-import TauCeti.Algebra.Order.BigOperators.SumLtSum
+import TauCeti.Algebra.Order.BigOperators.Sum.LtSum
 
 /-!
 # The Garnir element and the straightening algorithm

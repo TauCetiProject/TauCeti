@@ -27,7 +27,8 @@ that the descent consumes: if `f` transforms under `Γ₀(N)` by a scalar, the s
 
 ## Main results
 
-* `TauCeti.descendSlash_zero`, `TauCeti.descendSlash_add`, `TauCeti.descendSlash_smul`:
+* `TauCeti.descendSlash_zero`, `TauCeti.descendSlash_add`, `TauCeti.descendSlash_smul`,
+  `TauCeti.descendSlash_finsetSum`:
   `f ↦ descendSlash k p N f` is linear.
 * `TauCeti.descendSlash_slash_mapGL_of_mem_Gamma0`: for `p² ∣ N` and `γ ∈ Γ₀(N / p)`, if
   `f ∣[k] δ = u • f` for every `δ ∈ Γ₀(N)` with the lower-right entry of `γ` modulo `N / p`, then
@@ -106,6 +107,16 @@ positive determinant (`descendMatrix_det_pos`). -/
   rw [descendSlash_def, descendSlash_def, Finset.smul_sum]
   exact Finset.sum_congr rfl fun v _ ↦
     ModularForm.smul_slash_of_det_pos k (descendMatrix_det_pos p N v) f c
+
+/-- **The descent slash sum commutes with a finite sum**, the `Finset.sum` form of
+`descendSlash_add` and `descendSlash_zero`. -/
+@[simp] lemma descendSlash_finsetSum (k : ℤ) (p N : ℕ) [NeZero p] {ι : Type*} (s : Finset ι)
+    (f : ι → ℍ → ℂ) :
+    descendSlash k p N (∑ i ∈ s, f i) = ∑ i ∈ s, descendSlash k p N (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp only [Finset.sum_empty, descendSlash_zero]
+  | insert a s ha ih => rw [Finset.sum_insert ha, Finset.sum_insert ha, descendSlash_add, ih]
 
 /-- **The descent slash sum is `Γ₀(N / p)`-equivariant at `p² ∣ N`.** If `f ∣[k] δ = u • f` for
 every `δ ∈ Γ₀(N)` with the same lower-right entry modulo `N / p` as `γ ∈ Γ₀(N / p)`, then
