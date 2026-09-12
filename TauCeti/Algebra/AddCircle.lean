@@ -48,8 +48,9 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   torsion subgroup.
 * `AddCircle.torsionBy_le_torsionBy_iff` and `AddCircle.torsionBy_inj`: the torsion subgroups
   are ordered by divisibility, and pairwise distinct.
-* `AddCircle.nsmul_coe_period_div`: multiplying the generator of the `n`-torsion by a divisor
-  `d` of `n` produces the generator of the `n / d`-torsion.
+* `AddCircle.nsmul_coe_period_div`: scaling the class of `p / n` by a divisor `d` of `n` gives
+  the class of `p / (n / d)`; for positive `n` these are the canonical generators of the `n`- and
+  the `n / d`-torsion.
 * `AddCircle.natCard_eq_of_injective_of_range_eq_torsionBy`,
   `AddCircle.existsUnique_apply_eq_coe_period_div`,
   `AddCircle.exists_zsmul_eq_of_apply_eq_coe_period_div`,
@@ -179,8 +180,9 @@ section PeriodDiv
 
 variable {𝕜 : Type*} [Field 𝕜] [CharZero 𝕜] (p : 𝕜) {n : ℕ}
 
-/-- Scaling the canonical generator of the `n`-torsion by a divisor `d` of `n` gives the
-canonical generator of the `n / d`-torsion.
+/-- Scaling the class of `p / n` by a divisor `d` of `n` gives the class of `p / (n / d)`. For
+positive `n` these two classes are the canonical generators of the `n`-torsion and of the
+`n / d`-torsion; for `n = 0` both sides are `0`.
 
 For `p = 1` over `ℚ` this reads `d • (1 / n) = 1 / (n / d)`, the arithmetic behind the way
 restriction rescales a class-field-theoretic invariant. -/

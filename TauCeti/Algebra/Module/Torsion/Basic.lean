@@ -11,20 +11,24 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 # Torsion in a subgroup of finite order
 
 A subgroup of an additive commutative group consists of torsion points as soon as it is finite:
-the order of the subgroup annihilates each of its elements, so a subgroup with `n` elements is
-contained in the `n`-torsion subgroup `A[n]`.
+its cardinality annihilates each of its elements, so a subgroup `H` with `Nat.card H = n` is
+contained in the `n`-torsion subgroup `A[n]`. For finite `H` this says that a subgroup with `n`
+elements is `n`-torsion; for infinite `H` one has `Nat.card H = 0` and the statement is the
+trivial `H ≤ A[0]`.
 
 ## Main results
 
-* `AddSubgroup.le_torsionBy_of_natCard_eq`: a subgroup with `n` elements is contained in the
-  `n`-torsion subgroup.
+* `AddSubgroup.le_torsionBy_of_natCard_eq`: a subgroup `H` with `Nat.card H = n` is contained in
+  the `n`-torsion subgroup.
 -/
 
 public section
 
 namespace AddSubgroup
 
-/-- A subgroup with `n` elements consists of `n`-torsion points. -/
+/-- A subgroup `H` with `Nat.card H = n` consists of `n`-torsion points; for finite `H` this is
+the statement that a subgroup with `n` elements is `n`-torsion, and for infinite `H` it is the
+trivial `H ≤ A[0]`. -/
 theorem le_torsionBy_of_natCard_eq {A : Type*} [AddCommGroup A] {n : ℕ} {H : AddSubgroup A}
     (hH : Nat.card H = n) : H ≤ A[(n : ℤ)] := fun x hx ↦
   torsionBy.nsmul_iff.mpr <| by
