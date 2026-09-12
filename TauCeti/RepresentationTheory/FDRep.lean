@@ -53,6 +53,7 @@ subgroup.
   unbundled counterpart of `FDRep.char_biprod`.
 * `FDRep.moduleFinite_forget₂_obj`: the forgotten carrier is module-finite.
 * `FDRep.finrank_forget₂_obj`: forgetting does not change finrank.
+* `FDRep.character_ρ`: the character of an object is the character of the representation it carries.
 * `FDRep.character_forget₂_obj`: forgetting does not change the character.
 * `FDRep.of_ρ_eq_self`: rebundling the representation carried by an object returns that object.
 * `FDRep.ofShrinkEquiv`: `FDRep.ofShrink ρ` carries a representation equivalent to `ρ`, whence
@@ -97,6 +98,13 @@ end Representation
 namespace FDRep
 
 open CategoryTheory
+
+/-- **The character of an object of `FDRep k G` is the character of the representation it
+carries.**  The two are the same trace of the same map on the same module; naming that
+identification is what lets a result proved on the module spine, in the `Representation` namespace,
+be read against the `FDRep`-level character. -/
+theorem character_ρ {k : Type u} {G : Type v} [Field k] [Monoid G] (A : FDRep k G) (g : G) :
+    Representation.character A.ρ g = A.character g := (rfl)
 
 /-- **The character of the trivial one-dimensional representation is constantly `1`**, that
 dimension being `1`. This is the form in which the trivial character enters a pairing or a
