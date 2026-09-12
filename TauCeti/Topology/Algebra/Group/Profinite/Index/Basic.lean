@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.QuotientGroup.Index
 public import TauCeti.NumberTheory.Supernatural
-public import TauCeti.Topology.Algebra.Group.Profinite.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.Generation
 import Mathlib.NumberTheory.Padics.PadicVal.Basic
 
 /-!

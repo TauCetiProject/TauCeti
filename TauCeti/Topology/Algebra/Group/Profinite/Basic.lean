@@ -33,8 +33,6 @@ carry the hypothesis, while the clopen-image statement is valid for an arbitrary
 
 * `Subgroup.eq_iInf_sup_openNormalSubgroup`: a closed subgroup is the infimum of the
   subgroups `N ⊔ U` with `U` open normal.
-* `Subgroup.topologicalClosure_eq_top_iff_forall_map_mk'`: a subgroup is dense exactly when its
-  image in every quotient by an open normal subgroup is everything.
 * `Subgroup.exists_openNormalSubgroup_comap_le`: open normal subgroups of a subgroup are
   refined by pullbacks of ambient open normal subgroups.
 * `QuotientGroup.connectedComponent_one`, `QuotientGroup.instTotallyDisconnectedSpace`:
@@ -97,23 +95,6 @@ theorem _root_.Subgroup.eq_iInf_sup_openNormalSubgroup (N : Subgroup G)
   obtain ⟨U₀, hU₀⟩ :=
     ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hKopen (Subgroup.one_mem K)
   exact hxK ((sup_le hKN fun y hy => hU₀ hy) (Subgroup.mem_iInf.mp hx U₀))
-
-/-- A subgroup of a profinite group is dense exactly when it surjects onto every quotient by an
-open normal subgroup. Density is `topologicalClosure = ⊤`; the open normal subgroups are cofinal
-among the open subgroups, so nothing finer than the finite quotients can be seen. -/
-theorem _root_.Subgroup.topologicalClosure_eq_top_iff_forall_map_mk' (H : Subgroup G) :
-    H.topologicalClosure = ⊤ ↔
-      ∀ U : OpenNormalSubgroup G, H.map (QuotientGroup.mk' U.toSubgroup) = ⊤ := by
-  refine ⟨fun h U ↦ ?_, fun h ↦ ?_⟩
-  · rw [← Subgroup.map_topologicalClosure_quotient_eq, h]
-    exact Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective _)
-  · -- The joins `H ⊔ U` are all of `G`, and a closed subgroup is the infimum of those joins.
-    have hsup : ∀ U : OpenNormalSubgroup G, H ⊔ U.toSubgroup = ⊤ := fun U ↦ by
-      have hcomap := congrArg (Subgroup.comap (QuotientGroup.mk' U.toSubgroup)) (h U)
-      rwa [Subgroup.comap_map_eq, QuotientGroup.ker_mk', Subgroup.comap_top] at hcomap
-    refine (Subgroup.eq_iInf_sup_openNormalSubgroup _ H.isClosed_topologicalClosure).trans
-      (eq_top_iff.mpr (le_iInf fun U ↦ ?_))
-    exact (hsup U).ge.trans (sup_le_sup_right H.le_topologicalClosure _)
 
 /-- Every open normal subgroup of a subgroup of a profinite group contains the pullback of
 an ambient open normal subgroup. -/
