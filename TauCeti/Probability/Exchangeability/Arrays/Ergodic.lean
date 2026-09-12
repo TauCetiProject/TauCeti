@@ -29,7 +29,7 @@ the array is coded without a global coordinate.
 
 ## Main declarations
 
-* `TauCeti.Probability.JointArrayPerm` — the finitary symmetric group acting diagonally on array
+* `TauCeti.Probability.FinitaryPerm` — the finitary symmetric group acting diagonally on array
   path space;
 * `TauCeti.Probability.jointlyDissociated_iff_ergodicSMul` — joint dissociation is ergodicity of
   that action for a jointly exchangeable array law.
@@ -59,109 +59,47 @@ variable {α : Type*}
 
 /-! ## The diagonal finitary-permutation action -/
 
-/-- The finitary permutations of the common vertex index of a jointly exchangeable array.
-
-This type synonym prevents the diagonal domain action below from competing with value-wise
-instances inherited through `Pi.instSMul`.  Its interface is `JointArrayPerm.equivFinitary`,
-`JointArrayPerm.toPerm`, `JointArrayPerm.ofPerm`, and `JointArrayPerm.ext`. -/
-@[expose]
-def JointArrayPerm : Type := Equiv.Perm.finitary ℕ
-
-namespace JointArrayPerm
-
-instance instGroup : Group JointArrayPerm := inferInstanceAs (Group (Equiv.Perm.finitary ℕ))
-
-instance instCountable : Countable JointArrayPerm :=
-  inferInstanceAs (Countable (Equiv.Perm.finitary ℕ))
-
-/-- Identify `JointArrayPerm` with Mathlib's finitary symmetric group on `ℕ`. -/
-@[expose]
-def equivFinitary : JointArrayPerm ≃ Equiv.Perm.finitary ℕ := Equiv.refl _
-
-/-- The permutation of `ℕ` underlying a diagonal finitary array permutation. -/
-@[expose]
-def toPerm (g : JointArrayPerm) : Equiv.Perm ℕ := (equivFinitary g).val
-
-/-- The permutation underlying an element of `JointArrayPerm` has finite support. -/
-theorem finite_compl_fixedBy_toPerm (g : JointArrayPerm) :
-    (MulAction.fixedBy ℕ (toPerm g))ᶜ.Finite :=
-  Equiv.Perm.mem_finitary.mp (equivFinitary g).2
-
-/-- An element of `JointArrayPerm` is determined by its underlying permutation. -/
-theorem toPerm_injective : Function.Injective toPerm := fun _ _ h =>
-  equivFinitary.injective (Subtype.ext h)
-
-/-- Extensionality for diagonal finitary array permutations. -/
-@[ext]
-theorem ext {g h : JointArrayPerm} (hgh : toPerm g = toPerm h) : g = h :=
-  toPerm_injective hgh
-
-/-- Package a finitely supported permutation of `ℕ` as a `JointArrayPerm`. -/
-@[expose]
-def ofPerm (π : Equiv.Perm ℕ) (hπ : (MulAction.fixedBy ℕ π)ᶜ.Finite) : JointArrayPerm :=
-  equivFinitary.symm ⟨π, Equiv.Perm.mem_finitary.mpr hπ⟩
-
-/-- Unpack a permutation just packaged by `ofPerm`. -/
-@[simp]
-theorem toPerm_ofPerm (π : Equiv.Perm ℕ) (hπ : (MulAction.fixedBy ℕ π)ᶜ.Finite) :
-    toPerm (ofPerm π hπ) = π :=
-  rfl
-
-/-- The identity of `JointArrayPerm` has the identity underlying permutation. -/
-@[simp]
-theorem toPerm_one : toPerm 1 = 1 := rfl
-
-/-- Taking underlying permutations preserves multiplication. -/
-@[simp]
-theorem toPerm_mul (g h : JointArrayPerm) : toPerm (g * h) = toPerm g * toPerm h := rfl
-
-/-- Taking underlying permutations preserves inversion. -/
-@[simp]
-theorem toPerm_inv (g : JointArrayPerm) : toPerm g⁻¹ = (toPerm g)⁻¹ := rfl
-
-end JointArrayPerm
-
 /-- Finitely supported vertex permutations act diagonally on array path space, by the inverse
 permutation so that reindexing is a left action. -/
-instance instSMulJointArrayPerm : SMul JointArrayPerm (ℕ × ℕ → α) :=
-  ⟨fun g x => pairReindex (JointArrayPerm.toPerm g)⁻¹ (JointArrayPerm.toPerm g)⁻¹ x⟩
+instance instSMulFinitaryPermArray : SMul FinitaryPerm (ℕ × ℕ → α) :=
+  ⟨fun g x => pairReindex (FinitaryPerm.toPerm g)⁻¹ (FinitaryPerm.toPerm g)⁻¹ x⟩
 
 /-- The diagonal array action written as an explicit pair reindexing. -/
-theorem jointArrayPerm_smul_def (g : JointArrayPerm) (x : ℕ × ℕ → α) :
-    g • x = pairReindex (JointArrayPerm.toPerm g)⁻¹ (JointArrayPerm.toPerm g)⁻¹ x :=
+theorem jointArrayPerm_smul_def (g : FinitaryPerm) (x : ℕ × ℕ → α) :
+    g • x = pairReindex (FinitaryPerm.toPerm g)⁻¹ (FinitaryPerm.toPerm g)⁻¹ x :=
   rfl
 
 /-- The diagonal array action relabels both coordinates by the inverse permutation. -/
 @[simp]
-theorem jointArrayPerm_smul_apply (g : JointArrayPerm) (x : ℕ × ℕ → α) (p : ℕ × ℕ) :
-    (g • x) p = x ((JointArrayPerm.toPerm g)⁻¹ p.1, (JointArrayPerm.toPerm g)⁻¹ p.2) :=
+theorem jointArrayPerm_smul_apply (g : FinitaryPerm) (x : ℕ × ℕ → α) (p : ℕ × ℕ) :
+    (g • x) p = x ((FinitaryPerm.toPerm g)⁻¹ p.1, (FinitaryPerm.toPerm g)⁻¹ p.2) :=
   by rw [jointArrayPerm_smul_def, pairReindex_apply]
 
-instance instMulActionJointArrayPerm : MulAction JointArrayPerm (ℕ × ℕ → α) where
+instance instMulActionFinitaryPermArray : MulAction FinitaryPerm (ℕ × ℕ → α) where
   one_smul x := by ext p; simp
   mul_smul g h x := by ext p; simp [mul_inv_rev]
 
 variable [MeasurableSpace α]
 
-instance instMeasurableConstSMulJointArrayPerm :
-    MeasurableConstSMul JointArrayPerm (ℕ × ℕ → α) :=
+instance instMeasurableConstSMulFinitaryPermArray :
+    MeasurableConstSMul FinitaryPerm (ℕ × ℕ → α) :=
   ⟨fun _ => measurable_pairReindex (α := α) _ _⟩
 
 /-- A jointly exchangeable array law is invariant under diagonal finitary relabeling. -/
 theorem JointlyExchangeable.smulInvariantMeasure {ρ : Measure (ℕ × ℕ → α)}
     (hρ : JointlyExchangeable ρ fun p x => x p) :
-    SMulInvariantMeasure JointArrayPerm (ℕ × ℕ → α) ρ := by
+    SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ := by
   constructor
   intro g s hs
   simp only [jointArrayPerm_smul_def]
   rw [← Measure.map_apply (measurable_pairReindex _ _) hs]
-  have hfun : pairReindex (JointArrayPerm.toPerm g)⁻¹ (JointArrayPerm.toPerm g)⁻¹ =
+  have hfun : pairReindex (FinitaryPerm.toPerm g)⁻¹ (FinitaryPerm.toPerm g)⁻¹ =
       fun (x : ℕ × ℕ → α) p =>
-        x ((JointArrayPerm.toPerm g)⁻¹ p.1, (JointArrayPerm.toPerm g)⁻¹ p.2) :=
+        x ((FinitaryPerm.toPerm g)⁻¹ p.1, (FinitaryPerm.toPerm g)⁻¹ p.2) :=
     funext fun x => funext fun p => pairReindex_apply _ _ x p
   rw [hfun]
   have hmap := congrArg (fun m : Measure (ℕ × ℕ → α) => m s)
-    (jointlyExchangeable_iff.mp hρ (JointArrayPerm.toPerm g)⁻¹)
+    (jointlyExchangeable_iff.mp hρ (FinitaryPerm.toPerm g)⁻¹)
   -- the identity reindexing is `id` by unfolding, which no propositional lemma states
   rw [show (fun (x : ℕ × ℕ → α) p => x p) = id by rfl, Measure.map_id] at hmap
   exact hmap
@@ -199,10 +137,10 @@ private theorem preimage_pairReindex_eq_of_measurable_arrayTailFamily
 private theorem preimage_jointArrayPerm_smul_eq_of_measurable_arrayTail
     {s : Set (ℕ × ℕ → α)}
     (hs : MeasurableSet[arrayTail (fun p (x : ℕ × ℕ → α) => x p)] s)
-    (g : JointArrayPerm) : (fun x : ℕ × ℕ → α => g • x) ⁻¹' s = s := by
+    (g : FinitaryPerm) : (fun x : ℕ × ℕ → α => g • x) ⁻¹' s = s := by
   obtain ⟨N, hN⟩ := finite_compl_fixedBy_eventually_eq_self
-    (JointArrayPerm.finite_compl_fixedBy_toPerm g⁻¹)
-  rw [JointArrayPerm.toPerm_inv] at hN
+    (FinitaryPerm.finite_compl_fixedBy_toPerm g⁻¹)
+  rw [FinitaryPerm.toPerm_inv] at hN
   simp only [jointArrayPerm_smul_def]
   exact preimage_pairReindex_eq_of_measurable_arrayTailFamily
     ((measurableSet_arrayTail_iff.mp hs) N) hN
@@ -222,10 +160,10 @@ private theorem measurableSet_cylinder_blockSigma {F : Finset (ℕ × ℕ)} {I :
 
 private theorem measure_eq_zero_or_one_of_jointlyDissociated
     {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
-    [SMulInvariantMeasure JointArrayPerm (ℕ × ℕ → α) ρ]
+    [SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ]
     (hdiss : JointlyDissociated ρ fun p x => x p)
     {s : Set (ℕ × ℕ → α)} (hs : MeasurableSet s)
-    (hinv : ∀ g : JointArrayPerm, (fun x : ℕ × ℕ → α => g • x) ⁻¹' s = s) :
+    (hinv : ∀ g : FinitaryPerm, (fun x : ℕ × ℕ → α => g • x) ⁻¹' s = s) :
     ρ s = 0 ∨ ρ s = 1 := by
   classical
   -- Strategy: for each `ε`, produce a cylinder `t` within `ε` of `s` and its block-swapped copy
@@ -290,16 +228,16 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
   have hπinv : (MulAction.fixedBy ℕ π⁻¹)ᶜ.Finite := by
     simpa only [π, MulAction.fixedBy_inv ℕ] using Nat.finite_compl_fixedBy_blockSwap N
   have hs_inv : pairReindex π π ⁻¹' s = s := by
-    have hg := hinv (JointArrayPerm.ofPerm π⁻¹ hπinv)
-    simpa only [jointArrayPerm_smul_def, JointArrayPerm.toPerm_ofPerm, inv_inv] using hg
+    have hg := hinv (FinitaryPerm.ofPerm π⁻¹ hπinv)
+    simpa only [jointArrayPerm_smul_def, FinitaryPerm.toPerm_ofPerm, inv_inv] using hg
   -- the swap acts by `pairReindex π π`, so invariance of `ρ` under the action is invariance
   -- under this reindexing
   have hmap : ρ.map (pairReindex π π) = ρ := by
     ext u hu
     rw [Measure.map_apply (measurable_pairReindex _ _) hu]
-    have h := SMulInvariantMeasure.measure_preimage_smul (JointArrayPerm.ofPerm π⁻¹ hπinv) hu
+    have h := SMulInvariantMeasure.measure_preimage_smul (FinitaryPerm.ofPerm π⁻¹ hπinv) hu
       (μ := ρ)
-    simpa only [jointArrayPerm_smul_def, JointArrayPerm.toPerm_ofPerm, inv_inv] using h
+    simpa only [jointArrayPerm_smul_def, FinitaryPerm.toPerm_ofPerm, inv_inv] using h
   have ht'_symm : ρ (symmDiff t' s) = ρ (symmDiff t s) := by
     have hpre : symmDiff t' s = pairReindex π π ⁻¹' symmDiff t s := by
       rw [Set.preimage_symmDiff, hs_inv, ht']
@@ -319,9 +257,9 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
 invariant under that action; joint exchangeability supplies the invariance
 (`JointlyExchangeable.smulInvariantMeasure`). -/
 theorem ergodicSMul_of_jointlyDissociated {ρ : Measure (ℕ × ℕ → α)} [IsZeroOrProbabilityMeasure ρ]
-    [SMulInvariantMeasure JointArrayPerm (ℕ × ℕ → α) ρ]
+    [SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ]
     (hdiss : JointlyDissociated ρ fun p x => x p) :
-    ErgodicSMul JointArrayPerm (ℕ × ℕ → α) ρ := by
+    ErgodicSMul FinitaryPerm (ℕ × ℕ → α) ρ := by
   refine TauCeti.MeasureTheory.ergodicSMul_of_forall_smul_invariant fun s hs hinv => ?_
   rcases eq_zero_or_isProbabilityMeasure ρ with rfl | _
   · exact eventuallyConst_set'.mpr (Or.inl (by rw [ae_zero]; exact Filter.eventually_bot))
@@ -333,7 +271,7 @@ theorem ergodicSMul_of_jointlyDissociated {ρ : Measure (ℕ × ℕ → α)} [Is
 /-- Ergodicity of the diagonal finitary-permutation action makes a jointly exchangeable array law
 jointly dissociated. -/
 theorem jointlyDissociated_of_ergodicSMul {ρ : Measure (ℕ × ℕ → α)} [IsZeroOrProbabilityMeasure ρ]
-    [ErgodicSMul JointArrayPerm (ℕ × ℕ → α) ρ]
+    [ErgodicSMul FinitaryPerm (ℕ × ℕ → α) ρ]
     (hexch : JointlyExchangeable ρ fun p x => x p) :
     JointlyDissociated ρ fun p x => x p := by
   apply (jointlyDissociated_iff_forall_arrayTail_measure_eq_zero_or_one
@@ -342,7 +280,7 @@ theorem jointlyDissociated_of_ergodicSMul {ρ : Measure (ℕ × ℕ → α)} [Is
   rcases eq_zero_or_isProbabilityMeasure ρ with rfl | _
   · exact Or.inl rfl
   have hconst : EventuallyConst s (ae ρ) :=
-    MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq JointArrayPerm
+    MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq FinitaryPerm
       ((arrayTail_le_ambient (X := fun p (x : ℕ × ℕ → α) => x p) 0
         fun p _ _ => measurable_pi_apply p) s hs).nullMeasurableSet
       fun g => EventuallyEq.of_eq (preimage_jointArrayPerm_smul_eq_of_measurable_arrayTail hs g)
@@ -354,7 +292,7 @@ theorem jointlyDissociated_of_ergodicSMul {ρ : Measure (ℕ × ℕ → α)} [Is
 simultaneously applies one finitely supported permutation to both coordinates. -/
 theorem jointlyDissociated_iff_ergodicSMul {ρ : Measure (ℕ × ℕ → α)} [IsZeroOrProbabilityMeasure ρ]
     (hexch : JointlyExchangeable ρ fun p x => x p) :
-    JointlyDissociated ρ (fun p x => x p) ↔ ErgodicSMul JointArrayPerm (ℕ × ℕ → α) ρ :=
+    JointlyDissociated ρ (fun p x => x p) ↔ ErgodicSMul FinitaryPerm (ℕ × ℕ → α) ρ :=
   ⟨fun h => haveI := hexch.smulInvariantMeasure; ergodicSMul_of_jointlyDissociated h,
     fun _ => jointlyDissociated_of_ergodicSMul hexch⟩
 

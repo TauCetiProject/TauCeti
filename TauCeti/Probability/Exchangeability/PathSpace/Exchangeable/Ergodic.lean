@@ -16,7 +16,8 @@ time index.  This file records the resulting **group action** on path space and 
 ergodicity of that action with triviality of the exchangeable σ-algebra:
 
 ```text
-(∀ s, MeasurableSet[exchangeableSigma α] s → ρ s = 0 ∨ ρ s = 1)  ↔  ErgodicSMul TimePerm (ℕ → α) ρ
+(∀ s, MeasurableSet[exchangeableSigma α] s → ρ s = 0 ∨ ρ s = 1)
+  ↔  ErgodicSMul FinitaryPerm (ℕ → α) ρ
 ```
 
 (`exchangeableSigma_trivial_iff_ergodicSMul`).
@@ -35,7 +36,7 @@ the shift form and `ergodicSMul_infinitePi_const` below is the permutation form.
 
 ## Main definitions
 
-* `TimePerm` — the finitary symmetric group of the time index `ℕ`, acting on `ℕ → α` by
+* `FinitaryPerm` — the finitary symmetric group of the time index `ℕ`, acting on `ℕ → α` by
   `(g • x) n = x (g⁻¹ n)`.
 
 ## Main results
@@ -64,106 +65,41 @@ namespace Probability
 
 variable {α : Type*}
 
-/-- The **finitary symmetric group of the time index**, the group of finitely supported
-permutations of `ℕ` acting on one-sided path space by reindexing.
-
-This is a type synonym for `↥(Equiv.Perm.finitary ℕ)`.  The synonym is deliberate: reindexing is
-an action on the *domain* of a path `x : ℕ → α`, whereas `Pi.instSMul` would make a subgroup of
-`Equiv.Perm ℕ` act on the *values* of a path whenever the state space `α` carries an action of it
-— which it does for `α = ℕ`.  Wrapping the group keeps the two actions from ever competing.
-
-The interface is `equivFinitary`, `toPerm`, `ofPerm` and `TimePerm.ext`; no proof outside this
-section unfolds the synonym. -/
--- The group structure, and with it `toPerm_one`, `toPerm_mul` and `toPerm_inv`, is transported
--- along the synonym, so those lemmas hold definitionally and by nothing else; the module system
--- therefore requires this definition and `equivFinitary`, `toPerm`, `ofPerm` below to be
--- `@[expose]`d.
-@[expose]
-def TimePerm : Type := Equiv.Perm.finitary ℕ
-
-namespace TimePerm
-
-instance instGroup : Group TimePerm := inferInstanceAs (Group (Equiv.Perm.finitary ℕ))
-
-instance instCountable : Countable TimePerm := inferInstanceAs (Countable (Equiv.Perm.finitary ℕ))
-
-/-- The identification of `TimePerm` with the finitary symmetric group `Equiv.Perm.finitary ℕ`
-that it abbreviates. -/
-@[expose]
-def equivFinitary : TimePerm ≃ Equiv.Perm.finitary ℕ := Equiv.refl _
-
-/-- The finitely supported permutation of `ℕ` underlying an element of `TimePerm`. -/
-@[expose]
-def toPerm (g : TimePerm) : Equiv.Perm ℕ := (equivFinitary g).val
-
-/-- The permutation underlying an element of `TimePerm` is finitely supported. -/
-theorem finite_compl_fixedBy_toPerm (g : TimePerm) :
-    (MulAction.fixedBy ℕ (toPerm g))ᶜ.Finite :=
-  Equiv.Perm.mem_finitary.mp (equivFinitary g).2
-
-/-- An element of `TimePerm` is determined by the permutation underlying it. -/
-theorem toPerm_injective : Function.Injective toPerm := fun _ _ h =>
-  equivFinitary.injective (Subtype.ext h)
-
-@[ext]
-theorem ext {g h : TimePerm} (hgh : toPerm g = toPerm h) : g = h := toPerm_injective hgh
-
-/-- Package a finitely supported permutation of `ℕ` as an element of `TimePerm`. -/
-@[expose]
-def ofPerm (π : Equiv.Perm ℕ) (hπ : (MulAction.fixedBy ℕ π)ᶜ.Finite) : TimePerm :=
-  equivFinitary.symm ⟨π, Equiv.Perm.mem_finitary.mpr hπ⟩
-
-@[simp]
-theorem toPerm_ofPerm (π : Equiv.Perm ℕ) (hπ : (MulAction.fixedBy ℕ π)ᶜ.Finite) :
-    toPerm (ofPerm π hπ) = π :=
-  rfl
-
-@[simp]
-theorem toPerm_one : toPerm 1 = 1 := rfl
-
-@[simp]
-theorem toPerm_mul (g h : TimePerm) : toPerm (g * h) = toPerm g * toPerm h := rfl
-
-@[simp]
-theorem toPerm_inv (g : TimePerm) : toPerm g⁻¹ = (toPerm g)⁻¹ := rfl
-
-end TimePerm
-
 /-- The finitely supported time permutations act on path space by reindexing along the inverse,
 `(g • x) n = x (g⁻¹ n)`.  The inverse is what makes reindexing a *left* action. -/
-instance instSMulTimePerm : SMul TimePerm (ℕ → α) :=
-  ⟨fun g x => permReindex (TimePerm.toPerm g)⁻¹ x⟩
+instance instSMulFinitaryPermPath : SMul FinitaryPerm (ℕ → α) :=
+  ⟨fun g x => permReindex (FinitaryPerm.toPerm g)⁻¹ x⟩
 
-theorem timePerm_smul_def (g : TimePerm) (x : ℕ → α) :
-    g • x = permReindex (TimePerm.toPerm g)⁻¹ x :=
+theorem timePerm_smul_def (g : FinitaryPerm) (x : ℕ → α) :
+    g • x = permReindex (FinitaryPerm.toPerm g)⁻¹ x :=
   rfl
 
 @[simp]
-theorem timePerm_smul_apply (g : TimePerm) (x : ℕ → α) (n : ℕ) :
-    (g • x) n = x ((TimePerm.toPerm g)⁻¹ n) :=
+theorem timePerm_smul_apply (g : FinitaryPerm) (x : ℕ → α) (n : ℕ) :
+    (g • x) n = x ((FinitaryPerm.toPerm g)⁻¹ n) :=
   rfl
 
-instance instMulActionTimePerm : MulAction TimePerm (ℕ → α) where
+instance instMulActionFinitaryPermPath : MulAction FinitaryPerm (ℕ → α) where
   one_smul x := by ext n; simp
   mul_smul g h x := by ext n; simp [mul_inv_rev]
 
-/-- Reindexing along a permutation is the same map whether it is read as an action of `TimePerm`
+/-- Reindexing along a permutation is the same map whether it is read as an action of `FinitaryPerm`
 or written out with `permReindex`.  This is the form in which the exchangeable σ-algebra, which is
 stated with `permReindex`, meets the action. -/
-theorem preimage_timePerm_smul (g : TimePerm) (s : Set (ℕ → α)) :
-    (fun x : ℕ → α => g • x) ⁻¹' s = permReindex (TimePerm.toPerm g)⁻¹ ⁻¹' s :=
+theorem preimage_timePerm_smul (g : FinitaryPerm) (s : Set (ℕ → α)) :
+    (fun x : ℕ → α => g • x) ⁻¹' s = permReindex (FinitaryPerm.toPerm g)⁻¹ ⁻¹' s :=
   rfl
 
 variable [MeasurableSpace α]
 
-instance instMeasurableConstSMulTimePerm : MeasurableConstSMul TimePerm (ℕ → α) :=
-  ⟨fun g => measurable_reindex (α := α) ⇑(TimePerm.toPerm g)⁻¹⟩
+instance instMeasurableConstSMulFinitaryPermPath : MeasurableConstSMul FinitaryPerm (ℕ → α) :=
+  ⟨fun g => measurable_reindex (α := α) ⇑(FinitaryPerm.toPerm g)⁻¹⟩
 
 /-- An exchangeable path law is invariant under the finitely supported permutation action. -/
 theorem ExchangeableLaw.smulInvariantMeasure {ρ : Measure (ℕ → α)} (hρ : ExchangeableLaw ρ) :
-    SMulInvariantMeasure TimePerm (ℕ → α) ρ :=
+    SMulInvariantMeasure FinitaryPerm (ℕ → α) ρ :=
   ⟨fun g _ hs =>
-    (hρ.measurePreserving_permReindex (TimePerm.toPerm g)⁻¹).measure_preimage
+    (hρ.measurePreserving_permReindex (FinitaryPerm.toPerm g)⁻¹).measure_preimage
       hs.nullMeasurableSet⟩
 
 /-- **An almost invariant path event agrees almost everywhere with an exchangeable event.**
@@ -178,28 +114,28 @@ theorem exists_measurableSet_exchangeableSigma_ae_eq {ρ : Measure (ℕ → α)}
       permReindex (α := α) π ⁻¹' s =ᵐ[ρ] s) :
     ∃ t, MeasurableSet[exchangeableSigma α] t ∧ t =ᵐ[ρ] s := by
   obtain ⟨t, ht_meas, ht_inv, hts⟩ :=
-    TauCeti.MeasureTheory.exists_smul_invariant_ae_eq (G := TimePerm) (μ := ρ) hs fun g =>
-      hinv (TimePerm.toPerm g)⁻¹ <| by
-        simpa only [MulAction.fixedBy_inv ℕ] using TimePerm.finite_compl_fixedBy_toPerm g
+    TauCeti.MeasureTheory.exists_smul_invariant_ae_eq (G := FinitaryPerm) (μ := ρ) hs fun g =>
+      hinv (FinitaryPerm.toPerm g)⁻¹ <| by
+        simpa only [MulAction.fixedBy_inv ℕ] using FinitaryPerm.finite_compl_fixedBy_toPerm g
   refine ⟨t, measurableSet_exchangeableSigma_of_forall_permReindex ht_meas fun π hπ => ?_, hts⟩
-  have hg := ht_inv (TimePerm.ofPerm π⁻¹ (by simpa only [MulAction.fixedBy_inv ℕ] using hπ))
-  rwa [preimage_timePerm_smul, TimePerm.toPerm_ofPerm, inv_inv] at hg
+  have hg := ht_inv (FinitaryPerm.ofPerm π⁻¹ (by simpa only [MulAction.fixedBy_inv ℕ] using hπ))
+  rwa [preimage_timePerm_smul, FinitaryPerm.toPerm_ofPerm, inv_inv] at hg
 
 /-- **Ergodicity of the permutation action makes every exchangeable event trivial.**
 
 This is the easy direction: an `exchangeableSigma`-measurable event is exactly invariant, hence
 almost invariant. -/
 theorem measure_eq_zero_or_one_of_ergodicSMul {ρ : Measure (ℕ → α)} [IsProbabilityMeasure ρ]
-    [ErgodicSMul TimePerm (ℕ → α) ρ] {s : Set (ℕ → α)}
+    [ErgodicSMul FinitaryPerm (ℕ → α) ρ] {s : Set (ℕ → α)}
     (hs : MeasurableSet[exchangeableSigma α] s) :
     ρ s = 0 ∨ ρ s = 1 := by
   have hs_meas : MeasurableSet s := exchangeableSigma_le s hs
   have hconst : EventuallyConst s (ae ρ) :=
-    MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq TimePerm hs_meas.nullMeasurableSet
+    MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq FinitaryPerm hs_meas.nullMeasurableSet
       fun g => by
         have hfix := MeasurableSet.preimage_permReindex_eq_of_exchangeableSigma hs
-          (π := (TimePerm.toPerm g)⁻¹)
-          (by simpa only [MulAction.fixedBy_inv ℕ] using TimePerm.finite_compl_fixedBy_toPerm g)
+          (π := (FinitaryPerm.toPerm g)⁻¹)
+          (by simpa only [MulAction.fixedBy_inv ℕ] using FinitaryPerm.finite_compl_fixedBy_toPerm g)
         rw [preimage_timePerm_smul, hfix]
   rcases eventuallyConst_set'.mp hconst with h | h
   · exact Or.inl (by simpa using measure_congr h)
@@ -213,13 +149,13 @@ the acting group is used. -/
 theorem ergodicSMul_of_exchangeableSigma_trivial {ρ : Measure (ℕ → α)} [IsProbabilityMeasure ρ]
     (hρ : ExchangeableLaw ρ)
     (htrivial : ∀ s, MeasurableSet[exchangeableSigma α] s → ρ s = 0 ∨ ρ s = 1) :
-    ErgodicSMul TimePerm (ℕ → α) ρ := by
+    ErgodicSMul FinitaryPerm (ℕ → α) ρ := by
   have := hρ.smulInvariantMeasure
   refine TauCeti.MeasureTheory.ergodicSMul_of_forall_smul_invariant fun t ht ht_inv => ?_
   have ht_exch : MeasurableSet[exchangeableSigma α] t :=
     measurableSet_exchangeableSigma_of_forall_permReindex ht fun π hπ => by
-      have hg := ht_inv (TimePerm.ofPerm π⁻¹ (by simpa only [MulAction.fixedBy_inv ℕ] using hπ))
-      rwa [preimage_timePerm_smul, TimePerm.toPerm_ofPerm, inv_inv] at hg
+      have hg := ht_inv (FinitaryPerm.ofPerm π⁻¹ (by simpa only [MulAction.fixedBy_inv ℕ] using hπ))
+      rwa [preimage_timePerm_smul, FinitaryPerm.toPerm_ofPerm, inv_inv] at hg
   refine eventuallyConst_set'.mpr ?_
   rcases htrivial t ht_exch with h | h
   · exact Or.inl (ae_eq_empty.mpr h)
@@ -238,7 +174,7 @@ not interchangeable. -/
 theorem exchangeableSigma_trivial_iff_ergodicSMul {ρ : Measure (ℕ → α)} [IsProbabilityMeasure ρ]
     (hρ : ExchangeableLaw ρ) :
     (∀ s, MeasurableSet[exchangeableSigma α] s → ρ s = 0 ∨ ρ s = 1) ↔
-      ErgodicSMul TimePerm (ℕ → α) ρ :=
+      ErgodicSMul FinitaryPerm (ℕ → α) ρ :=
   ⟨ergodicSMul_of_exchangeableSigma_trivial hρ,
     fun _ _ hs => measure_eq_zero_or_one_of_ergodicSMul hs⟩
 
@@ -249,7 +185,7 @@ This is the zero-one law `exchangeableSigma_trivial_of_infinitePi` read through
 `exchangeableSigma_trivial_iff_ergodicSMul`.  It is the permutation-action counterpart of the
 shift ergodicity recorded by `ergodic_shift_infinitePi_const`. -/
 theorem ergodicSMul_infinitePi_const (P : ProbabilityMeasure α) :
-    ErgodicSMul TimePerm (ℕ → α) (Measure.infinitePi fun _ : ℕ => (P : Measure α)) :=
+    ErgodicSMul FinitaryPerm (ℕ → α) (Measure.infinitePi fun _ : ℕ => (P : Measure α)) :=
   (exchangeableSigma_trivial_iff_ergodicSMul (exchangeableLaw_infinitePi_const P)).mp
     fun _ hs => exchangeableSigma_trivial_of_infinitePi P hs
 
