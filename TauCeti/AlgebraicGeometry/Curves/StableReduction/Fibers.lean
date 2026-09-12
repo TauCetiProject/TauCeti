@@ -43,6 +43,19 @@ lemma genericι_toBase (M : Model R K C toK) :
   rw [genericι, Category.assoc, genericFiberι_toBase, ← Category.assoc, Over.w]
   rfl
 
+/-- The square defining a model's chosen generic fibre is a pullback. -/
+lemma isPullback_genericι (M : Model R K C toK) :
+    IsPullback M.genericι toK M.toBase
+      (Spec.map (CommRingCat.ofHom (algebraMap R K))) := by
+  refine (isPullback_genericFiber R K M.toBase).of_iso (Comma.leftIso M.genericFiberIso)
+    (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_
+  · change genericFiberι R K M.toBase =
+      M.genericFiberIso.hom.left ≫ M.genericFiberIso.inv.left ≫ genericFiberι R K M.toBase
+    rw [← Category.assoc, Over.hom_left_inv_left, Category.id_comp]
+  · exact M.genericFiberIso.hom.w.symm
+  · simp
+  · simp
+
 /-- A model's chosen generic fibre is an open subscheme of its total space. -/
 lemma isOpenImmersion_genericι (M : Model R K C toK) : IsOpenImmersion M.genericι := by
   let : IsOpenImmersion (genericFiberι R K M.toBase) :=

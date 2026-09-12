@@ -35,12 +35,7 @@ lemma isLocalizationAway_fractionRing {R K : Type*} [CommRing R] [IsDomain R]
       exact pow_mem (mem_nonZeroDivisors_iff_ne_zero.mpr hϖ.ne_zero) n) (by
       rintro x hx
       rw [mem_nonZeroDivisors_iff_ne_zero] at hx
-      let hR : HasUnitMulPowIrreducibleFactorization R :=
-        .of_ufd_of_unique_irreducible (exists_irreducible R)
-          (fun _ _ ha hb ↦ associated_of_irreducible R ha hb)
-      obtain ⟨π, hπ, H⟩ := hR
-      obtain ⟨n, hn⟩ := H hx
-      have hπϖ : Associated π ϖ := associated_of_irreducible R hπ hϖ
-      exact ⟨ϖ ^ n, ⟨n, rfl⟩, hn.symm.dvd.trans hπϖ.pow_pow.dvd⟩)).mpr inferInstance
+      obtain ⟨n, hn⟩ := associated_pow_irreducible hx hϖ
+      exact ⟨ϖ ^ n, ⟨n, rfl⟩, hn.dvd⟩)).mpr inferInstance
 
 end TauCeti
