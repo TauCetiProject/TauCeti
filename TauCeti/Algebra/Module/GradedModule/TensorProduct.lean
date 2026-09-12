@@ -38,6 +38,8 @@ roadmap and supplies the grading used by tensor products of DG objects.
 * `TauCeti.InternalGrading.tmul_mem_tensorProduct`: degrees add on pure tensors.
 * `TauCeti.InternalGrading.piTensorProduct_ext`: linear maps from a finite tensor product agree
   when they agree on pure tensors of homogeneous elements.
+* `TauCeti.InternalGrading.multilinearMap_ext`: multilinear maps agree when they agree on tuples
+  of homogeneous elements.
 * `TauCeti.LinearMap.IsHomogeneous.tensorProduct`: tensoring homogeneous maps adds their degrees.
 
 The proof reuses Tau Ceti's two-factor internal decomposition theorem
@@ -76,6 +78,18 @@ theorem piTensorProduct_ext (G : InternalGrading R M) {n : ℕ}
     intro a ha
     exact Submodule.subset_span ⟨⟨d, ⟨a, ha⟩⟩, rfl⟩
   · exact h
+
+/-- Two multilinear maps on an internally graded module agree if they agree on tuples of
+homogeneous elements. -/
+theorem multilinearMap_ext (G : InternalGrading R M) {n : ℕ}
+    {f g : MultilinearMap R (fun _ : Fin n ↦ M) N}
+    (h : ∀ (d : Fin n → ℤ) (x : Fin n → M), (∀ i, x i ∈ G.piece (d i)) → f x = g x) :
+    f = g := by
+  apply PiTensorProduct.lift.injective
+  apply G.piTensorProduct_ext
+  intro q
+  simpa only [PiTensorProduct.lift.tprod] using
+    h (fun i ↦ (q i).1) (fun i ↦ (q i).2) (fun i ↦ (q i).2.property)
 
 end PiTensorProduct
 

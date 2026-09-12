@@ -182,26 +182,36 @@ theorem ext {𝒜 𝒜' : AInfinityAlgebra R A} (hG : 𝒜.grading = 𝒜'.gradi
 
 /-! ### Low-arity identities -/
 
+private theorem linearMap_ext_of_homogeneous (G : InternalGrading R A)
+    {f g : A →ₗ[R] A} (h : ∀ (p : ℤ) (x : A), x ∈ G.piece p → f x = g x) : f = g := by
+  let F : MultilinearMap R (fun _ : Fin 1 ↦ A) A :=
+    { toFun := fun x ↦ f (x 0)
+      map_update_add' := by intro _ x i; simp [Fin.eq_zero i]
+      map_update_smul' := by intro _ x i; simp [Fin.eq_zero i] }
+  let H : MultilinearMap R (fun _ : Fin 1 ↦ A) A :=
+    { toFun := fun x ↦ g (x 0)
+      map_update_add' := by intro _ x i; simp [Fin.eq_zero i]
+      map_update_smul' := by intro _ x i; simp [Fin.eq_zero i] }
+  have hFH : F = H := by
+    apply G.multilinearMap_ext
+    intro d x hx
+    exact h (d 0) (x 0) (hx 0)
+  ext x
+  have hx := MultilinearMap.congr_fun hFH (fun _ ↦ x)
+  change f x = g x at hx
+  exact hx
+
 /-- The arity-one identity is `m₁ m₁ = 0`. -/
 theorem stasheff_one (𝒜 : AInfinityAlgebra R A) (x : A) : 𝒜.m 1 ![𝒜.m 1 ![x]] = 0 := by
-  have hhom : ∀ (p : ℤ) (y : A), y ∈ 𝒜.grading.piece p →
-      𝒜.m 1 ![𝒜.m 1 ![y]] = 0 := by
+  let E : A →ₗ[R] A :=
+    ((𝒜.m 1).curryRight ![]).comp ((𝒜.m 1).curryRight ![])
+  suffices E x = 0 by simpa [E] using this
+  have hE : E = 0 := by
+    apply linearMap_ext_of_homogeneous 𝒜.grading
     intro p y hy
     have h := 𝒜.stasheff 1 (by omega) (fun _ ↦ p) (fun _ ↦ y) (fun _ _ ↦ hy)
-    rwa [AInfinity.stasheffSum_one] at h
-  induction x using DirectSum.Decomposition.inductionOn 𝒜.grading.piece with
-  | zero => exact hhom 0 0 (Submodule.zero_mem _)
-  | @homogeneous p y => exact hhom p y y.property
-  | add y z hy hz =>
-      have hinner : 𝒜.m 1 ![y + z] = 𝒜.m 1 ![y] + 𝒜.m 1 ![z] := by
-        simpa only [Matrix.vecCons, Fin.update_cons_zero] using
-          (𝒜.m 1).map_update_add (Fin.cons y ![]) 0 y z
-      have houter : 𝒜.m 1 ![𝒜.m 1 ![y] + 𝒜.m 1 ![z]] =
-          𝒜.m 1 ![𝒜.m 1 ![y]] + 𝒜.m 1 ![𝒜.m 1 ![z]] := by
-        simpa only [Matrix.vecCons, Fin.update_cons_zero] using
-          (𝒜.m 1).map_update_add (Fin.cons (𝒜.m 1 ![y]) ![]) 0
-            (𝒜.m 1 ![y]) (𝒜.m 1 ![z])
-      rw [hinner, houter, hy, hz, add_zero]
+    simpa [E, AInfinity.stasheffSum_one] using h
+  rw [hE, LinearMap.zero_apply]
 
 /-- The arity-two identity is the graded Leibniz rule, with sign `(-1)^(d 0)` on the second
 differentiated input. -/
@@ -210,10 +220,14 @@ theorem stasheff_two (𝒜 : AInfinityAlgebra R A) (x y : A) (p : ℤ)
     𝒜.m 1 ![𝒜.m 2 ![x, y]] =
       𝒜.m 2 ![𝒜.m 1 ![x], y] +
         negOnePowCast R p • 𝒜.m 2 ![x, 𝒜.m 1 ![y]] := by
-  have hhom : ∀ (q : ℤ) (z : A), z ∈ 𝒜.grading.piece q →
-      𝒜.m 1 ![𝒜.m 2 ![x, z]] =
-        𝒜.m 2 ![𝒜.m 1 ![x], z] +
-          negOnePowCast R p • 𝒜.m 2 ![x, 𝒜.m 1 ![z]] := by
+  let L : A →ₗ[R] A :=
+    ((𝒜.m 1).curryRight ![]).comp ((𝒜.m 2).curryRight ![x])
+  let Q : A →ₗ[R] A :=
+    (𝒜.m 2).curryRight ![𝒜.m 1 ![x]] +
+      negOnePowCast R p • ((𝒜.m 2).curryRight ![x]).comp ((𝒜.m 1).curryRight ![])
+  suffices L y = Q y by simpa [L, Q] using this
+  have hLQ : L = Q := by
+    apply linearMap_ext_of_homogeneous 𝒜.grading
     intro q z hz
     let d : ℕ → ℤ := fun i ↦ if i = 0 then p else q
     let a : ℕ → A := fun i ↦ if i = 0 then x else z
@@ -225,36 +239,8 @@ theorem stasheff_two (𝒜 : AInfinityAlgebra R A) (x y : A) (p : ℤ)
       · simpa [a, d] using hz
     have h := (AInfinity.stasheffSum_two_eq_zero_iff 𝒜.m d a).mp
       (𝒜.stasheff 2 (by omega) d a ha)
-    simpa [a, d] using h
-  induction y using DirectSum.Decomposition.inductionOn 𝒜.grading.piece with
-  | zero => exact hhom 0 0 (Submodule.zero_mem _)
-  | @homogeneous q z => exact hhom q z z.property
-  | add y z hy hz =>
-      have hxy : 𝒜.m 2 ![x, y + z] = 𝒜.m 2 ![x, y] + 𝒜.m 2 ![x, z] := by
-        have h := (𝒜.m 2).map_update_add (Fin.snoc ![x] y) (Fin.last 1) y z
-        rw [Fin.update_snoc_last, Fin.update_snoc_last, Fin.update_snoc_last] at h
-        simpa using h
-      have houter : 𝒜.m 1 ![𝒜.m 2 ![x, y] + 𝒜.m 2 ![x, z]] =
-          𝒜.m 1 ![𝒜.m 2 ![x, y]] + 𝒜.m 1 ![𝒜.m 2 ![x, z]] := by
-        simpa only [Matrix.vecCons, Fin.update_cons_zero] using
-          (𝒜.m 1).map_update_add (Fin.cons (𝒜.m 2 ![x, y]) ![]) 0
-            (𝒜.m 2 ![x, y]) (𝒜.m 2 ![x, z])
-      have hleft : 𝒜.m 2 ![𝒜.m 1 ![x], y + z] =
-          𝒜.m 2 ![𝒜.m 1 ![x], y] + 𝒜.m 2 ![𝒜.m 1 ![x], z] := by
-        have h := (𝒜.m 2).map_update_add (Fin.snoc ![𝒜.m 1 ![x]] y) (Fin.last 1) y z
-        rw [Fin.update_snoc_last, Fin.update_snoc_last, Fin.update_snoc_last] at h
-        simpa using h
-      have hmone : 𝒜.m 1 ![y + z] = 𝒜.m 1 ![y] + 𝒜.m 1 ![z] := by
-        simpa only [Matrix.vecCons, Fin.update_cons_zero] using
-          (𝒜.m 1).map_update_add (Fin.cons y ![]) 0 y z
-      have hright : 𝒜.m 2 ![x, 𝒜.m 1 ![y] + 𝒜.m 1 ![z]] =
-          𝒜.m 2 ![x, 𝒜.m 1 ![y]] + 𝒜.m 2 ![x, 𝒜.m 1 ![z]] := by
-        have h := (𝒜.m 2).map_update_add (Fin.snoc ![x] (𝒜.m 1 ![y]))
-          (Fin.last 1) (𝒜.m 1 ![y]) (𝒜.m 1 ![z])
-        rw [Fin.update_snoc_last, Fin.update_snoc_last, Fin.update_snoc_last] at h
-        simpa using h
-      rw [hxy, houter, hleft, hmone, hright, smul_add, hy, hz]
-      abel
+    simpa [L, Q, a, d] using h
+  exact LinearMap.congr_fun hLQ y
 
 /-- The arity-three Stasheff identity, with the Koszul signs determined by the degrees of its
 first two inputs. -/
@@ -274,7 +260,8 @@ theorem stasheff_three (𝒜 : AInfinityAlgebra R A) (a b c : A) (p q : ℤ)
       + negOnePowCast R (p + q) •
         ((𝒜.m 3).curryRight ![a, b]).comp ((𝒜.m 1).curryRight ![])
   suffices E c = 0 by simpa [E] using this
-  have hhom : ∀ (r : ℤ) (z : A), z ∈ 𝒜.grading.piece r → E z = 0 := by
+  have hE : E = 0 := by
+    apply linearMap_ext_of_homogeneous 𝒜.grading
     intro r z hz
     let d : ℕ → ℤ := fun i ↦ if i = 0 then p else if i = 1 then q else r
     let x : ℕ → A := fun i ↦ if i = 0 then a else if i = 1 then b else z
@@ -288,11 +275,7 @@ theorem stasheff_three (𝒜 : AInfinityAlgebra R A) (a b c : A) (p q : ℤ)
     have h := 𝒜.stasheff 3 (by omega) d x hx
     rw [AInfinity.stasheffSum_three] at h
     simpa [E, x, d] using h
-  induction c using DirectSum.Decomposition.inductionOn 𝒜.grading.piece with
-  | zero => exact hhom 0 0 (Submodule.zero_mem _)
-  | @homogeneous r c => exact hhom r c c.property
-  | add c₁ c₂ hc₁ hc₂ =>
-      rw [map_add, hc₁, hc₂, add_zero]
+  rw [hE, LinearMap.zero_apply]
 
 /-- The arity-four Stasheff identity, with the Koszul signs determined by the degrees of its
 first three inputs. -/
@@ -320,7 +303,8 @@ theorem stasheff_four (𝒜 : AInfinityAlgebra R A) (a b c d : A) (p q r : ℤ)
       - negOnePowCast R (p + q + r) •
         ((𝒜.m 4).curryRight ![a, b, c]).comp ((𝒜.m 1).curryRight ![])
   suffices E d = 0 by simpa [E] using this
-  have hhom : ∀ (s : ℤ) (z : A), z ∈ 𝒜.grading.piece s → E z = 0 := by
+  have hE : E = 0 := by
+    apply linearMap_ext_of_homogeneous 𝒜.grading
     intro s z hz
     let e : ℕ → ℤ := fun i ↦
       if i = 0 then p else if i = 1 then q else if i = 2 then r else s
@@ -337,98 +321,56 @@ theorem stasheff_four (𝒜 : AInfinityAlgebra R A) (a b c d : A) (p q r : ℤ)
     have h := 𝒜.stasheff 4 (by omega) e x hx
     rw [AInfinity.stasheffSum_four] at h
     simpa [E, x, e] using h
-  induction d using DirectSum.Decomposition.inductionOn 𝒜.grading.piece with
-  | zero => exact hhom 0 0 (Submodule.zero_mem _)
-  | @homogeneous s d => exact hhom s d d.property
-  | add d₁ d₂ hd₁ hd₂ =>
-      rw [map_add, hd₁, hd₂, add_zero]
+  rw [hE, LinearMap.zero_apply]
 
 /-- If the ternary operation vanishes, the arity-three identity says that `m₂` is associative. -/
 theorem m_two_assoc_of_m_three_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : 𝒜.m 3 = 0)
     (x y z : A) :
     𝒜.m 2 ![𝒜.m 2 ![x, y], z] = 𝒜.m 2 ![x, 𝒜.m 2 ![y, z]] := by
-  have hhom : ∀ (p q r : ℤ) (a b c : A),
-      a ∈ 𝒜.grading.piece p → b ∈ 𝒜.grading.piece q → c ∈ 𝒜.grading.piece r →
-        𝒜.m 2 ![𝒜.m 2 ![a, b], c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
-    intro p q r a b c ha hb hc
-    let d : ℕ → ℤ := fun i ↦ if i = 0 then p else if i = 1 then q else r
-    let w : ℕ → A := fun i ↦ if i = 0 then a else if i = 1 then b else c
-    have hw : ∀ i < 3, w i ∈ 𝒜.grading.piece (d i) := by
-      intro i hi
-      have hi' : i = 0 ∨ i = 1 ∨ i = 2 := by omega
-      rcases hi' with rfl | rfl | rfl
-      · simpa [w, d] using ha
-      · simpa [w, d] using hb
-      · simpa [w, d] using hc
-    have h := (AInfinity.stasheffSum_three_eq_zero_iff_of_m_three_eq_zero 𝒜.m d w h₃).mp
-      (𝒜.stasheff 3 (by omega) d w hw)
-    simpa [w] using h
-  have hz (p q : ℤ) (a b : A) (ha : a ∈ 𝒜.grading.piece p)
-      (hb : b ∈ 𝒜.grading.piece q) (c : A) :
-      𝒜.m 2 ![𝒜.m 2 ![a, b], c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
-    induction c using DirectSum.Decomposition.inductionOn 𝒜.grading.piece with
-    | zero => exact hhom p q 0 a b 0 ha hb (Submodule.zero_mem _)
-    | @homogeneous r c => exact hhom p q r a b c ha hb c.property
-    | add c₁ c₂ hc₁ hc₂ =>
-        have hleft : 𝒜.m 2 ![𝒜.m 2 ![a, b], c₁ + c₂] =
-            𝒜.m 2 ![𝒜.m 2 ![a, b], c₁] + 𝒜.m 2 ![𝒜.m 2 ![a, b], c₂] := by
-          have h := (𝒜.m 2).map_update_add (Fin.snoc ![𝒜.m 2 ![a, b]] c₁)
-            (Fin.last 1) c₁ c₂
-          rw [Fin.update_snoc_last, Fin.update_snoc_last, Fin.update_snoc_last] at h
-          simpa using h
-        have hinner : 𝒜.m 2 ![b, c₁ + c₂] = 𝒜.m 2 ![b, c₁] + 𝒜.m 2 ![b, c₂] := by
-          have h := (𝒜.m 2).map_update_add (Fin.snoc ![b] c₁) (Fin.last 1) c₁ c₂
-          rw [Fin.update_snoc_last, Fin.update_snoc_last, Fin.update_snoc_last] at h
-          simpa using h
-        have hright : 𝒜.m 2 ![a, 𝒜.m 2 ![b, c₁] + 𝒜.m 2 ![b, c₂]] =
-            𝒜.m 2 ![a, 𝒜.m 2 ![b, c₁]] + 𝒜.m 2 ![a, 𝒜.m 2 ![b, c₂]] := by
-          have h := (𝒜.m 2).map_update_add (Fin.snoc ![a] (𝒜.m 2 ![b, c₁]))
-            (Fin.last 1) (𝒜.m 2 ![b, c₁]) (𝒜.m 2 ![b, c₂])
-          rw [Fin.update_snoc_last, Fin.update_snoc_last, Fin.update_snoc_last] at h
-          simpa using h
-        rw [hleft, hinner, hright, hc₁, hc₂]
-  have hy (p : ℤ) (a : A) (ha : a ∈ 𝒜.grading.piece p) (b c : A) :
-      𝒜.m 2 ![𝒜.m 2 ![a, b], c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
-    induction b using DirectSum.Decomposition.inductionOn 𝒜.grading.piece with
-    | zero => exact hz p 0 a 0 ha (Submodule.zero_mem _) c
-    | @homogeneous q b => exact hz p q a b ha b.property c
-    | add b₁ b₂ hb₁ hb₂ =>
-        have hinnerLeft : 𝒜.m 2 ![a, b₁ + b₂] = 𝒜.m 2 ![a, b₁] + 𝒜.m 2 ![a, b₂] := by
-          have h := (𝒜.m 2).map_update_add (Fin.snoc ![a] b₁) (Fin.last 1) b₁ b₂
-          rw [Fin.update_snoc_last, Fin.update_snoc_last, Fin.update_snoc_last] at h
-          simpa using h
-        have hleft : 𝒜.m 2 ![𝒜.m 2 ![a, b₁] + 𝒜.m 2 ![a, b₂], c] =
-            𝒜.m 2 ![𝒜.m 2 ![a, b₁], c] + 𝒜.m 2 ![𝒜.m 2 ![a, b₂], c] := by
-          simpa only [Matrix.vecCons, Fin.update_cons_zero] using
-            (𝒜.m 2).map_update_add (Fin.cons (𝒜.m 2 ![a, b₁]) ![c]) 0
-              (𝒜.m 2 ![a, b₁]) (𝒜.m 2 ![a, b₂])
-        have hinnerRight : 𝒜.m 2 ![b₁ + b₂, c] = 𝒜.m 2 ![b₁, c] + 𝒜.m 2 ![b₂, c] := by
-          simpa only [Matrix.vecCons, Fin.update_cons_zero] using
-            (𝒜.m 2).map_update_add (Fin.cons b₁ ![c]) 0 b₁ b₂
-        have hright : 𝒜.m 2 ![a, 𝒜.m 2 ![b₁, c] + 𝒜.m 2 ![b₂, c]] =
-            𝒜.m 2 ![a, 𝒜.m 2 ![b₁, c]] + 𝒜.m 2 ![a, 𝒜.m 2 ![b₂, c]] := by
-          have h := (𝒜.m 2).map_update_add (Fin.snoc ![a] (𝒜.m 2 ![b₁, c]))
-            (Fin.last 1) (𝒜.m 2 ![b₁, c]) (𝒜.m 2 ![b₂, c])
-          rw [Fin.update_snoc_last, Fin.update_snoc_last, Fin.update_snoc_last] at h
-          simpa using h
-        rw [hinnerLeft, hleft, hinnerRight, hright, hb₁, hb₂]
-  induction x using DirectSum.Decomposition.inductionOn 𝒜.grading.piece with
-  | zero => exact hy 0 0 (Submodule.zero_mem _) y z
-  | @homogeneous p a => exact hy p a a.property y z
-  | add a₁ a₂ ha₁ ha₂ =>
-      have hinner : 𝒜.m 2 ![a₁ + a₂, y] = 𝒜.m 2 ![a₁, y] + 𝒜.m 2 ![a₂, y] := by
-        simpa only [Matrix.vecCons, Fin.update_cons_zero] using
-          (𝒜.m 2).map_update_add (Fin.cons a₁ ![y]) 0 a₁ a₂
-      have hleft : 𝒜.m 2 ![𝒜.m 2 ![a₁, y] + 𝒜.m 2 ![a₂, y], z] =
-          𝒜.m 2 ![𝒜.m 2 ![a₁, y], z] + 𝒜.m 2 ![𝒜.m 2 ![a₂, y], z] := by
-        simpa only [Matrix.vecCons, Fin.update_cons_zero] using
-          (𝒜.m 2).map_update_add (Fin.cons (𝒜.m 2 ![a₁, y]) ![z]) 0
-            (𝒜.m 2 ![a₁, y]) (𝒜.m 2 ![a₂, y])
-      have hright : 𝒜.m 2 ![a₁ + a₂, 𝒜.m 2 ![y, z]] =
-          𝒜.m 2 ![a₁, 𝒜.m 2 ![y, z]] + 𝒜.m 2 ![a₂, 𝒜.m 2 ![y, z]] := by
-        simpa only [Matrix.vecCons, Fin.update_cons_zero] using
-          (𝒜.m 2).map_update_add (Fin.cons a₁ ![𝒜.m 2 ![y, z]]) 0 a₁ a₂
-      rw [hinner, hleft, hright, ha₁, ha₂]
+  have m_add_left (a b c : A) : 𝒜.m 2 ![a + b, c] = 𝒜.m 2 ![a, c] + 𝒜.m 2 ![b, c] := by
+    simpa only [Matrix.vecCons, Fin.update_cons_zero] using
+      (𝒜.m 2).map_update_add (Fin.cons a ![c]) 0 a b
+  have m_add_right (a b c : A) : 𝒜.m 2 ![a, b + c] = 𝒜.m 2 ![a, b] + 𝒜.m 2 ![a, c] := by
+    have h := (𝒜.m 2).map_update_add (Fin.snoc ![a] b) (Fin.last 1) b c
+    rw [Fin.update_snoc_last, Fin.update_snoc_last, Fin.update_snoc_last] at h
+    simpa using h
+  have m_smul_left (r : R) (a b : A) : 𝒜.m 2 ![r • a, b] = r • 𝒜.m 2 ![a, b] := by
+    simpa only [Matrix.vecCons, Fin.update_cons_zero] using
+      (𝒜.m 2).map_update_smul (Fin.cons a ![b]) 0 r a
+  have m_smul_right (r : R) (a b : A) : 𝒜.m 2 ![a, r • b] = r • 𝒜.m 2 ![a, b] := by
+    have h := (𝒜.m 2).map_update_smul (Fin.snoc ![a] b) (Fin.last 1) r b
+    rw [Fin.update_snoc_last, Fin.update_snoc_last] at h
+    simpa using h
+  let L : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    MultilinearMap.mk' (fun a ↦ 𝒜.m 2 ![𝒜.m 2 ![a 0, a 1], a 2])
+      (by intro a i u v; fin_cases i <;> simp [m_add_left, m_add_right])
+      (by intro a i r u; fin_cases i <;> simp [m_smul_left, m_smul_right])
+  let Q : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    MultilinearMap.mk' (fun a ↦ 𝒜.m 2 ![a 0, 𝒜.m 2 ![a 1, a 2]])
+      (by intro a i u v; fin_cases i <;> simp [m_add_left, m_add_right])
+      (by intro a i r u; fin_cases i <;> simp [m_smul_left, m_smul_right])
+  have L_apply (a b c : A) : L ![a, b, c] = 𝒜.m 2 ![𝒜.m 2 ![a, b], c] := rfl
+  have Q_apply (a b c : A) : Q ![a, b, c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := rfl
+  have hcurry : L.curryRight = Q.curryRight := by
+    apply 𝒜.grading.multilinearMap_ext
+    intro d a ha
+    ext c
+    have h := 𝒜.stasheff_three (a 0) (a 1) c (d 0) (d 1) (ha 0) (ha 1)
+    rw [h₃] at h
+    have hz : 𝒜.m 1 ![(0 : A)] = 0 := (𝒜.m 1).map_coord_zero 0 rfl
+    simp only [MultilinearMap.curryRight_apply]
+    have hac : Fin.snoc a c = ![a 0, a 1, c] := by
+      funext i
+      fin_cases i <;> rfl
+    rw [hac]
+    rw [L_apply, Q_apply]
+    apply sub_eq_zero.mp
+    simpa only [_root_.zero_apply, hz, smul_zero, add_zero, zero_add] using h
+  have hLQ : L = Q := by
+    rw [← MultilinearMap.uncurry_curryRight L, ← MultilinearMap.uncurry_curryRight Q,
+      hcurry]
+  rw [← L_apply, ← Q_apply]
+  exact MultilinearMap.congr_fun hLQ ![x, y, z]
 
 end AInfinityAlgebra
 
