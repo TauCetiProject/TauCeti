@@ -22,8 +22,8 @@ number of standard Young tableaux. This file proves the **multiplicative hook-le
 (`TauCeti.standardCount_mul_prod_hookLength`), the milestone of Layer 5 of the Schur--Weyl
 roadmap. It carries no division obligation. The familiar quotient form `f^μ = n ! / ∏ hooks` is
 derived from it at the end of the file, over `ℕ` in
-`TauCeti.standardCount_eq_factorial_div_prod_hookLength` and over a field of characteristic zero
-in `TauCeti.cast_standardCount_eq_factorial_div_prod_hookLength`; the `ℕ`-division is exact
+`TauCeti.standardCount_eq_factorial_div_prod_hookLength` and over a semifield of characteristic
+zero in `TauCeti.cast_standardCount_eq_factorial_div_prod_hookLength`; the `ℕ`-division is exact
 because the product of the hook lengths divides `n !`
 (`YoungDiagram.prod_hookLength_dvd_factorial`), with `f^μ` as cofactor.
 
@@ -68,7 +68,7 @@ lengths sum to `n` and the shifts `r - 1 - i` are a reflection of `0, 1, …, r 
 * `YoungDiagram.prod_hookLength_dvd_factorial`: the product of the hook lengths divides `n !`.
 * `TauCeti.standardCount_eq_factorial_div_prod_hookLength` and
   `TauCeti.cast_standardCount_eq_factorial_div_prod_hookLength`: **the hook-length formula in
-  quotient form**, over `ℕ` and over a field of characteristic zero.
+  quotient form**, over `ℕ` and over a semifield of characteristic zero.
 
 ## References
 
@@ -303,14 +303,9 @@ theorem standardCount_eq_factorial_div_prod_hookLength (μ : YoungDiagram) :
   (Nat.div_eq_of_eq_mul_left μ.prod_hookLength_pos
     (standardCount_mul_prod_hookLength μ).symm).symm
 
-/-- The number of standard Young tableaux of a shape divides the factorial of its number of
-cells, the cofactor being the product of the hook lengths. -/
-theorem standardCount_dvd_factorial (μ : YoungDiagram) : standardCount μ ∣ μ.card ! :=
-  ⟨∏ c ∈ μ.cells, YoungDiagram.hookLength μ c, (standardCount_mul_prod_hookLength μ).symm⟩
-
-/-- **The hook-length formula over a field of characteristic zero**, in the familiar quotient form
-`f^μ = n ! / ∏ hooks`.  The denominator is nonzero because every hook length is positive. -/
-theorem cast_standardCount_eq_factorial_div_prod_hookLength {K : Type*} [Field K] [CharZero K]
+/-- **The hook-length formula over a semifield of characteristic zero**, in the familiar quotient
+form `f^μ = n ! / ∏ hooks`.  The denominator is nonzero because every hook length is positive. -/
+theorem cast_standardCount_eq_factorial_div_prod_hookLength {K : Type*} [Semifield K] [CharZero K]
     (μ : YoungDiagram) :
     (standardCount μ : K) = (μ.card ! : K) / ∏ c ∈ μ.cells, (YoungDiagram.hookLength μ c : K) := by
   have hp : (∏ c ∈ μ.cells, (YoungDiagram.hookLength μ c : K)) ≠ 0 := by
