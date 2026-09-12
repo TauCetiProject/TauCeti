@@ -84,8 +84,8 @@ theorem rationalToComplex_apply (x : RationalSpace) :
       simp
   | smul q x hx =>
       rw [LinearMap.map_smul rationalToComplex, hx]
-      -- Expose the restricted-scalar action on the product so that its coordinates can be
-      -- simplified explicitly; the generic product simp lemmas do not unfold this action.
+      -- No application lemma exposes the restricted-scalar action on the product, so expose it
+      -- explicitly; the generic product simp lemmas do not unfold this action.
       change (((q : ℂ) • (x.1 : ℂ)), ((q : ℂ) • (x.2 : ℂ))) = _
       ext <;> simp [Algebra.smul_def]
   | add x y hx hy =>
