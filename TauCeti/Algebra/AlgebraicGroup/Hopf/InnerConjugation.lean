@@ -51,20 +51,6 @@ noncomputable def innerConjugationPointIso
       (HopfAlgebra.pointsFunctor (R := R) (H := H)).obj A :=
   MulEquiv.toGrpIso (MulAut.conj (extendPoint H A g))
 
--- Isolate the definitional reduction through `MulEquiv.toGrpIso`; the public application
--- theorems below depend only on these bridges and the named `MulAut.conj` equations.
-private theorem innerConjugationPointIso_hom_apply_def
-    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
-    (A : CommAlgCat.{v} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
-    (innerConjugationPointIso H g A).hom x = MulAut.conj (extendPoint H A g) x :=
-  (rfl)
-
-private theorem innerConjugationPointIso_inv_apply_def
-    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
-    (A : CommAlgCat.{v} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
-    (innerConjugationPointIso H g A).inv x = (MulAut.conj (extendPoint H A g)).symm x :=
-  (rfl)
-
 /-- Inner conjugation acts by `x ↦ g * x * g⁻¹` after extending `g` to the value algebra. -/
 @[simp]
 theorem innerConjugationPointIso_hom_apply
@@ -72,7 +58,9 @@ theorem innerConjugationPointIso_hom_apply
     (A : CommAlgCat.{v} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
     (innerConjugationPointIso H g A).hom x =
       extendPoint H A g * x * (extendPoint H A g)⁻¹ := by
-  rw [innerConjugationPointIso_hom_apply_def, MulAut.conj_apply]
+  -- Expose the group isomorphism's forward map to use Mathlib's conjugation equation.
+  dsimp only [innerConjugationPointIso, MulEquiv.toGrpIso]
+  exact MulAut.conj_apply (extendPoint H A g) x
 
 /-- The inverse inner-conjugation map is conjugation by the inverse of the extended point. -/
 @[simp]
@@ -81,7 +69,9 @@ theorem innerConjugationPointIso_inv_apply
     (A : CommAlgCat.{v} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
     (innerConjugationPointIso H g A).inv x =
       (extendPoint H A g)⁻¹ * x * extendPoint H A g := by
-  rw [innerConjugationPointIso_inv_apply_def, MulAut.conj_symm_apply]
+  -- Expose the group isomorphism's inverse map to use Mathlib's conjugation equation.
+  dsimp only [innerConjugationPointIso, MulEquiv.toGrpIso]
+  exact MulAut.conj_symm_apply (extendPoint H A g) x
 
 /-- Conjugation by an `R`-valued point, naturally on the full functor of points. -/
 noncomputable def innerConjugationPointNatIso
