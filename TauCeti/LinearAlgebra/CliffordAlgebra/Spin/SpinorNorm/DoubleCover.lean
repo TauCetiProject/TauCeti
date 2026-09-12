@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DoubleCover
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 
 /-!
 # The Spin cover of the spinor-norm kernel
@@ -17,17 +17,16 @@ that kernel and packages the resulting short exact sequence as a group extension
 
 ## Main definitions and results
 
-* `CliffordAlgebra.spinToSpinorNormKernel` is the Spin action with codomain restricted to the
-  spinor-norm kernel.
-* `CliffordAlgebra.spinToSpinorNormKernel_surjective` proves that this restricted action is
-  surjective.
 * `CliffordAlgebra.spinDoubleCoverSpinorNormKernel` packages the short exact sequence with kernel
   `Multiplicative (ZMod 2)`.
+* `CliffordAlgebra.spinDoubleCoverSpinorNormKernel_inl_ofAdd_one` and
+  `CliffordAlgebra.spinDoubleCoverSpinorNormKernel_rightHom` identify its two maps.
 
 ## References
 
-See H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2. The extension API
-and proof structure are adapted from `TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DoubleCover`.
+See H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2. This is the
+spinor-norm-kernel analogue of the Spin extension in
+`TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DoubleCover`.
 -/
 
 public section
@@ -43,34 +42,6 @@ universe u v
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] [Invertible (2 : K)]
 
-/-- The Spin action with codomain restricted to the kernel of the spinor norm. -/
-noncomputable def spinToSpinorNormKernel
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
-    spinGroup Q →* MonoidHom.ker (spinorNorm Q hQ) :=
-  (spinToSpecialOrthogonal Q).codRestrict _ fun x ↦
-    MonoidHom.mem_ker.mpr (spinorNorm_spinToSpecialOrthogonal Q hQ x)
-
-/-- After inclusion into the special orthogonal group, `spinToSpinorNormKernel` is the usual Spin
-action. -/
-@[simp]
-theorem coe_spinToSpinorNormKernel_apply
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (x : spinGroup Q) :
-    ((spinToSpinorNormKernel Q hQ x : MonoidHom.ker (spinorNorm Q hQ)) :
-      QuadraticMap.specialOrthogonalGroup Q) = spinToSpecialOrthogonal Q x :=
-  by rw [spinToSpinorNormKernel, MonoidHom.codRestrict_apply]
-
-/-- The Spin action is surjective onto the kernel of the spinor norm. -/
-theorem spinToSpinorNormKernel_surjective
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
-    Function.Surjective (spinToSpinorNormKernel Q hQ) := by
-  intro g
-  have hg : (g : QuadraticMap.specialOrthogonalGroup Q) ∈
-      MonoidHom.range (spinToSpecialOrthogonal Q) := by
-    rw [range_spinToSpecialOrthogonal_eq_ker_spinorNorm Q hQ]
-    exact g.2
-  obtain ⟨x, hx⟩ := hg
-  exact ⟨x, Subtype.ext hx⟩
-
 /-- For a positive-dimensional finite nondegenerate quadratic space over a field in which `2` is
 invertible, the Spin group is an extension of the spinor-norm kernel by `ZMod 2`. -/
 noncomputable def spinDoubleCoverSpinorNormKernel [Nontrivial V]
@@ -80,11 +51,7 @@ noncomputable def spinDoubleCoverSpinorNormKernel [Nontrivial V]
   GroupExtension.ofMulEquivKer
     (spinToSpinorNormKernel_surjective Q hQ)
     ((zmodTwoMulEquivKerSpinToSpecialOrthogonal Q hQ).trans <|
-      MulEquiv.subgroupCongr
-        (MonoidHom.ker_codRestrict (spinToSpecialOrthogonal Q)
-          (MonoidHom.ker (spinorNorm Q hQ))
-          (fun x ↦ MonoidHom.mem_ker.mpr
-            (spinorNorm_spinToSpecialOrthogonal Q hQ x))).symm)
+      MulEquiv.subgroupCongr (ker_spinToSpinorNormKernel Q hQ).symm)
 
 /-- The inclusion in the Spin cover of the spinor-norm kernel sends the generator to the scalar
 `-1`. -/
@@ -95,6 +62,11 @@ theorem spinDoubleCoverSpinorNormKernel_inl_ofAdd_one [Nontrivial V]
       spinGroup.negOne Q hQ.ne_zero := by
   rw [spinDoubleCoverSpinorNormKernel, GroupExtension.ofMulEquivKer_inl,
     MonoidHom.comp_apply]
+  change ((((zmodTwoMulEquivKerSpinToSpecialOrthogonal Q hQ).trans <|
+    MulEquiv.subgroupCongr (ker_spinToSpinorNormKernel Q hQ).symm)
+      (Multiplicative.ofAdd 1) : MonoidHom.ker (spinToSpinorNormKernel Q hQ)) :
+        spinGroup Q) = spinGroup.negOne Q hQ.ne_zero
+  rw [MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply]
   exact congrArg Subtype.val
     (zmodTwoMulEquivKerSpinToSpecialOrthogonal_apply_ofAdd_one Q hQ)
 

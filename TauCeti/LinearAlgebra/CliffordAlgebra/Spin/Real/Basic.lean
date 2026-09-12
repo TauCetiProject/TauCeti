@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DoubleCover
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 import Mathlib.Analysis.Real.Sqrt
 
 /-!
