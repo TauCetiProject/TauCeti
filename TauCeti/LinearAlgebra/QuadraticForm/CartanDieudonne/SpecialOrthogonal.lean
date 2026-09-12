@@ -40,14 +40,14 @@ variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] [NeZero (2 : K)]
 
 /-- Every special orthogonal transformation of a nondegenerate quadratic space is a product of an
-even number of reflections, with length at most twice the dimension. -/
+even number of reflections, with length at most the dimension. -/
 theorem exists_even_reflectionOrthogonal_list_prod_eq
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (g : QuadraticMap.specialOrthogonalGroup Q) :
     ∃ l : List (QuadraticMap.orthogonalGroup Q),
       (∀ r ∈ l, ∃ (v : V) (_ : Invertible (Q v)),
         QuadraticMap.reflectionOrthogonal Q v = r) ∧
-      l.length ≤ 2 * Module.finrank K V ∧ Even l.length ∧
+      l.length ≤ Module.finrank K V ∧ Even l.length ∧
       l.prod = ⟨g, (QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.2).1⟩ := by
   have hg := QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.2
   obtain ⟨l, hlrefl, hllen, hprod⟩ := exists_reflectionOrthogonal_list_prod_eq Q hQ
