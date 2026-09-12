@@ -35,8 +35,6 @@ invariants of its conjugate through the resulting map in degree two.
 
 ## Main definitions
 
-* `TauCeti.TateCohomology.IsCompatible`: the compatibility relation between a group isomorphism
-  and a map of coefficient modules.
 * `TauCeti.TateCohomology.IsCompatible.complexMap`: the induced map of Tate complexes.
 * `TauCeti.TateCohomology.map`: the induced map in a single integer degree.
 * `TauCeti.TateCohomology.mapIso`: the induced isomorphism, for `φ` a linear equivalence.
@@ -56,6 +54,7 @@ invariants of its conjugate through the resulting map in degree two.
 
 ## References
 
+* `TauCetiRoadmap/ClassFieldTheory/README.md`, §4, Layers 0–1.
 * E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §4.
 * J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, Chapter I, §5.
 -/
@@ -71,62 +70,68 @@ namespace TauCeti.TateCohomology
 variable {R G H K : Type u} [CommRing R] [Group G] [Group H] [Group K]
   {M : Rep R G} {N : Rep R H} {P : Rep R K}
 
-/-- A group isomorphism `e : G ≃* H` and a linear map `φ` between the coefficient modules of
-`M : Rep R G` and `N : Rep R H` are **compatible** when `φ ∘ ρ g = σ (e g) ∘ φ` for every `g`.
-Such a pair is what carries the Tate cohomology of `M` to that of `N`.
-
-Use `TauCeti.TateCohomology.isCompatible_iff` to build or to destructure such a pair. -/
-def IsCompatible (e : G ≃* H) (φ : M.V →ₗ[R] N.V) : Prop :=
-  ∀ g, φ ∘ₗ M.ρ g = N.ρ (e g) ∘ₗ φ
-
-/-- The defining intertwining condition of a compatible pair. -/
-theorem isCompatible_iff {e : G ≃* H} {φ : M.V →ₗ[R] N.V} :
-    IsCompatible e φ ↔ ∀ g, φ ∘ₗ M.ρ g = N.ρ (e g) ∘ₗ φ := Iff.rfl
-
 namespace IsCompatible
 
 variable {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
 
 /-- A compatible pair read as a morphism `M ⟶ Res(e)(N)` of `G`-representations. This is the
 datum that `groupHomology.chainsMap` consumes. -/
-def toRes (hφ : IsCompatible e φ) : M ⟶ Rep.res (e : G →* H) N := Rep.ofHom ⟨φ, hφ⟩
+def toRes (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    M ⟶ Rep.res (e : G →* H) N :=
+  Rep.ofHom ⟨φ, fun g ↦ by ext v; exact hφ.isIntertwining g v⟩
 
 /-- A compatible pair read as a morphism `Res(e⁻¹)(M) ⟶ N` of `H`-representations. This is the
 datum that `groupCohomology.cochainsMap` consumes. -/
-def ofRes (hφ : IsCompatible e φ) : Rep.res (e.symm : H →* G) M ⟶ N :=
-  Rep.ofHom ⟨φ, fun h ↦ by simpa using hφ (e.symm h)⟩
+def ofRes (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    Rep.res (e.symm : H →* G) M ⟶ N :=
+  Rep.ofHom ⟨φ, fun h ↦ by ext v; simpa using hφ.isIntertwining (e.symm h) v⟩
 
-@[simp] theorem toRes_hom_toLinearMap (hφ : IsCompatible e φ) :
-    hφ.toRes.hom.toLinearMap = φ := by simp [toRes]
+@[simp] theorem toRes_hom_toLinearMap
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    (toRes hφ).hom.toLinearMap = φ := by simp [toRes]
 
-@[simp] theorem ofRes_hom_toLinearMap (hφ : IsCompatible e φ) :
-    hφ.ofRes.hom.toLinearMap = φ := by simp [ofRes]
+@[simp] theorem ofRes_hom_toLinearMap
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    (ofRes hφ).hom.toLinearMap = φ := by simp [ofRes]
 
 /-- **Compatible pairs compose.** -/
-theorem trans (hφ : IsCompatible e φ) {e₂ : H ≃* K} {ψ : N.V →ₗ[R] P.V}
-    (hψ : IsCompatible e₂ ψ) : IsCompatible (e.trans e₂) (ψ ∘ₗ φ) := fun g ↦ by
-  rw [LinearMap.comp_assoc, hφ g, ← LinearMap.comp_assoc, hψ (e g), LinearMap.comp_assoc]
-  rfl
+theorem trans (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ)
+    {e₂ : H ≃* K} {ψ : N.V →ₗ[R] P.V}
+    (hψ : N.ρ.IsIntertwiningMap (P.ρ.comp (e₂ : H →* K)) ψ) :
+    M.ρ.IsIntertwiningMap (P.ρ.comp (e.trans e₂ : G →* K)) (ψ ∘ₗ φ) :=
+  ⟨fun g v ↦ by
+    have hφ' : φ (M.ρ g v) = N.ρ (e g) (φ v) := by
+      simpa using hφ.isIntertwining g v
+    have hψ' : ψ (N.ρ (e g) (φ v)) = P.ρ (e₂ (e g)) (ψ (φ v)) := by
+      simpa using hψ.isIntertwining (e g) (φ v)
+    change ψ (φ (M.ρ g v)) = P.ρ (e₂ (e g)) (ψ (φ v))
+    rw [hφ', hψ']⟩
 
 /-- **The inverse of a compatible pair whose linear part is an equivalence is compatible.** -/
-theorem symm {e' : M.V ≃ₗ[R] N.V} (he : IsCompatible e (e' : M.V →ₗ[R] N.V)) :
-    IsCompatible e.symm (e'.symm : N.V →ₗ[R] M.V) := fun h ↦ by
-  simpa using e'.isIntertwining_symm_isIntertwining (σ := N.ρ.comp (e : G →* H)) he (e.symm h)
+theorem symm {e' : M.V ≃ₗ[R] N.V}
+    (he : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) (e' : M.V →ₗ[R] N.V)) :
+    N.ρ.IsIntertwiningMap (M.ρ.comp (e.symm : H →* G))
+      (e'.symm : N.V →ₗ[R] M.V) :=
+  ⟨fun h v ↦ by
+    have he' : ∀ g, (e' : M.V →ₗ[R] N.V) ∘ₗ M.ρ g =
+        N.ρ (e g) ∘ₗ (e' : M.V →ₗ[R] N.V) :=
+      fun g ↦ by ext x; exact he.isIntertwining g x
+    simpa using congr($(e'.isIntertwining_symm_isIntertwining
+      (σ := N.ρ.comp (e : G →* H)) he' (e.symm h)) v)⟩
 
 end IsCompatible
 
 /-- The identity of a representation is compatible with the identity of its group. -/
 theorem isCompatible_id :
-    IsCompatible (MulEquiv.refl G) (LinearMap.id : M.V →ₗ[R] M.V) := fun g ↦ by simp
+    M.ρ.IsIntertwiningMap (M.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
+      (LinearMap.id : M.V →ₗ[R] M.V) := ⟨fun g v ↦ by simp⟩
 
 /-- Restricting the coefficients along `e` and comparing back by the identity is a compatible
 pair. -/
 theorem isCompatible_res (e : G ≃* H) (N : Rep R H) :
-    IsCompatible (M := Rep.res (e : G →* H) N) e
+    (Rep.res (e : G →* H) N).ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H))
       ((LinearEquiv.refl R N.V : N.V →ₗ[R] N.V) :
-        (Rep.res (e : G →* H) N).V →ₗ[R] N.V) := fun g ↦ by
-  ext x
-  simp
+        (Rep.res (e : G →* H) N).V →ₗ[R] N.V) := ⟨fun g v ↦ by simp⟩
 
 section Complex
 
@@ -136,18 +141,21 @@ namespace IsCompatible
 
 /-- **A compatible pair intertwines the two norm maps.** The group isomorphism permutes the
 summands of `∑ g, ρ g`. -/
-theorem comp_norm (hφ : IsCompatible e φ) : φ ∘ₗ M.ρ.norm = N.ρ.norm ∘ₗ φ := by
+theorem comp_norm (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    φ ∘ₗ M.ρ.norm = N.ρ.norm ∘ₗ φ := by
   ext x
   simpa [Representation.norm] using
     Fintype.sum_equiv e.toEquiv (fun g ↦ φ (M.ρ g x)) (fun h ↦ N.ρ h (φ x))
-      fun g ↦ congr($(hφ g) x)
+      fun g ↦ hφ.isIntertwining g x
 
 /-- The square joining the chain half of the Tate complex to its cochain half commutes for a
 compatible pair: this is `IsCompatible.comp_norm` in degree zero. -/
-theorem chainsMap_comp_d₀ (hφ : IsCompatible e φ) :
-    (groupHomology.chainsMap (e : G →* H) hφ.toRes).f 0 ≫ (tateComplexConnectData N).d₀ =
+theorem chainsMap_comp_d₀
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    (groupHomology.chainsMap (e : G →* H) (toRes hφ)).f 0 ≫
+      (tateComplexConnectData N).d₀ =
       (tateComplexConnectData M).d₀ ≫
-        (groupCohomology.cochainsMap (e.symm : H →* G) hφ.ofRes).f 0 := by
+        (groupCohomology.cochainsMap (e.symm : H →* G) (ofRes hφ)).f 0 := by
   simp only [tateComplexConnectData_d₀]
   ext x m y
   simp only [groupHomology.lsingle_comp_chainsMap_f_assoc, MonoidHom.coe_coe, ModuleCat.ofHom_comp,
@@ -155,16 +163,17 @@ theorem chainsMap_comp_d₀ (hφ : IsCompatible e φ) :
     Function.comp_apply, Finsupp.lsingle_apply, Rep.tateNorm_eq, groupCohomology.cochainsMap_f,
     toRes, ofRes, Finsupp.lsum_single, LinearMap.pi_apply, LinearMap.compLeft_apply,
     LinearMap.funLeft_apply]
-  exact congr($(hφ.comp_norm) m).symm
+  exact congr($(comp_norm hφ) m).symm
 
 /-- **The map of Tate complexes attached to a compatible pair.** On the chain half it is
 `groupHomology.chainsMap` along `e`, on the cochain half `groupCohomology.cochainsMap` along
 `e.symm`. -/
-def complexMap (hφ : IsCompatible e φ) : tateComplex M ⟶ tateComplex N :=
+def complexMap (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    tateComplex M ⟶ tateComplex N :=
   (tateComplexConnectData M).map (tateComplexConnectData N)
-    (groupHomology.chainsMap (e : G →* H) hφ.toRes)
-    (groupCohomology.cochainsMap (e.symm : H →* G) hφ.ofRes)
-    hφ.chainsMap_comp_d₀
+    (groupHomology.chainsMap (e : G →* H) (toRes hφ))
+    (groupCohomology.cochainsMap (e.symm : H →* G) (ofRes hφ))
+    (chainsMap_comp_d₀ hφ)
 
 end IsCompatible
 
@@ -179,8 +188,9 @@ namespace IsCompatible
 /-- The map of Tate complexes depends only on the compatible pair, not on the compatibility
 proof. -/
 theorem complexMap_congr {e₁ e₂ : G ≃* H} {φ₁ φ₂ : M.V →ₗ[R] N.V}
-    {h₁ : IsCompatible e₁ φ₁} {h₂ : IsCompatible e₂ φ₂} (he : e₁ = e₂) (hφ : φ₁ = φ₂) :
-    h₁.complexMap = h₂.complexMap := by
+    {h₁ : M.ρ.IsIntertwiningMap (N.ρ.comp (e₁ : G →* H)) φ₁}
+    {h₂ : M.ρ.IsIntertwiningMap (N.ρ.comp (e₂ : G →* H)) φ₂}
+    (he : e₁ = e₂) (hφ : φ₁ = φ₂) : complexMap h₁ = complexMap h₂ := by
   subst he; subst hφ; rfl
 
 /-- **Along the identity isomorphism the construction is Mathlib's coefficient
@@ -189,19 +199,25 @@ functoriality.** -/
 -- `IsCompatible.complexMap_id`, and its right-hand side is a dead end for `simp`, which has no
 -- lemma carrying `tateComplex.map (𝟙 M)` back to `𝟙 (tateComplex M)`.
 theorem complexMap_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V}
-    (hφ : IsCompatible (MulEquiv.refl G) φ) :
-    hφ.complexMap = tateComplex.map (Rep.ofHom ⟨φ, isCompatible_iff.mp hφ⟩) := by
+    (hφ : M.ρ.IsIntertwiningMap
+      (N.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G)) φ) :
+    complexMap hφ = tateComplex.map
+      (Rep.ofHom ⟨φ, fun g ↦ by ext v; simpa using hφ.isIntertwining g v⟩ : M ⟶ N) := by
   rw [complexMap]
   rfl
 
 /-- The identity compatible pair induces the identity of Tate complexes. -/
-@[simp] theorem complexMap_id : (isCompatible_id (M := M)).complexMap = 𝟙 (tateComplex M) :=
+@[simp] theorem complexMap_id :
+    complexMap (e := MulEquiv.refl G) (φ := LinearMap.id) (isCompatible_id (M := M)) =
+      𝟙 (tateComplex M) :=
   (tateComplexFunctor R G).map_id M
 
 /-- **The construction is functorial in the compatible pair.** -/
+@[reassoc]
 theorem complexMap_comp {e₁ : G ≃* H} {e₂ : H ≃* K} {φ : M.V →ₗ[R] N.V}
-    (hφ : IsCompatible e₁ φ) {ψ : N.V →ₗ[R] P.V} (hψ : IsCompatible e₂ ψ) :
-    hφ.complexMap ≫ hψ.complexMap = (hφ.trans hψ).complexMap := by
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e₁ : G →* H)) φ) {ψ : N.V →ₗ[R] P.V}
+    (hψ : N.ρ.IsIntertwiningMap (P.ρ.comp (e₂ : H →* K)) ψ) :
+    complexMap hφ ≫ complexMap hψ = complexMap (trans hφ hψ) := by
   refine (CochainComplex.ConnectData.map_comp_map ..).trans ?_
   congr 1
   exact (groupHomology.chainsMap_comp _ _ _ _).symm
@@ -211,9 +227,10 @@ end IsCompatible
 /-- **The isomorphism of Tate complexes attached to a compatible pair whose linear part is an
 equivalence.** -/
 def complexMapIso {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
-    (he : IsCompatible e (e' : M.V →ₗ[R] N.V)) : tateComplex M ≅ tateComplex N where
-  hom := he.complexMap
-  inv := he.symm.complexMap
+    (he : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) (e' : M.V →ₗ[R] N.V)) :
+    tateComplex M ≅ tateComplex N where
+  hom := IsCompatible.complexMap he
+  inv := IsCompatible.complexMap (IsCompatible.symm he)
   hom_inv_id := (IsCompatible.complexMap_comp ..).trans
     ((IsCompatible.complexMap_congr (by simp) (by ext x; simp)).trans
       IsCompatible.complexMap_id)
@@ -222,43 +239,49 @@ def complexMapIso {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
       IsCompatible.complexMap_id)
 
 @[simp] theorem complexMapIso_hom {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
-    (he : IsCompatible e (e' : M.V →ₗ[R] N.V)) : (complexMapIso he).hom = he.complexMap := by
+    (he : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) (e' : M.V →ₗ[R] N.V)) :
+    (complexMapIso he).hom = IsCompatible.complexMap he := by
   rw [complexMapIso]
 
 @[simp] theorem complexMapIso_inv {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
-    (he : IsCompatible e (e' : M.V →ₗ[R] N.V)) :
-    (complexMapIso he).inv = he.symm.complexMap := by
+    (he : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) (e' : M.V →ₗ[R] N.V)) :
+    (complexMapIso he).inv = IsCompatible.complexMap (IsCompatible.symm he) := by
   rw [complexMapIso]
 
 /-- **Tate cohomology along a compatible pair**, in a single integer degree. -/
-def map {e : G ≃* H} {φ : M.V →ₗ[R] N.V} (hφ : IsCompatible e φ) (n : ℤ) :
+def map {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) (n : ℤ) :
     tateCohomology M n ⟶ tateCohomology N n :=
-  HomologicalComplex.homologyMap hφ.complexMap n
+  HomologicalComplex.homologyMap (IsCompatible.complexMap hφ) n
 
 /-- `TauCeti.TateCohomology.map` is the homology map of `IsCompatible.complexMap`. This records
 the body of `map`, whose definition is not exported. -/
-theorem map_def {e : G ≃* H} {φ : M.V →ₗ[R] N.V} (hφ : IsCompatible e φ) (n : ℤ) :
-    map hφ n = HomologicalComplex.homologyMap hφ.complexMap n := by rw [map]
+theorem map_def {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) (n : ℤ) :
+    map hφ n = HomologicalComplex.homologyMap (IsCompatible.complexMap hφ) n := by rw [map]
 
 /-- **Tate cohomology along a compatible pair whose linear part is an equivalence** is an
 isomorphism in every integer degree. -/
-def mapIso {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V} (he : IsCompatible e (e' : M.V →ₗ[R] N.V))
-    (n : ℤ) : tateCohomology M n ≅ tateCohomology N n :=
+def mapIso {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
+    (he : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) (e' : M.V →ₗ[R] N.V)) (n : ℤ) :
+    tateCohomology M n ≅ tateCohomology N n :=
   HomologicalComplex.homologyMapIso (complexMapIso he) n
 
 @[simp] theorem mapIso_hom {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
-    (he : IsCompatible e (e' : M.V →ₗ[R] N.V)) (n : ℤ) :
+    (he : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) (e' : M.V →ₗ[R] N.V)) (n : ℤ) :
     (mapIso he n).hom = map he n := by
   rw [mapIso, HomologicalComplex.homologyMapIso_hom, complexMapIso_hom, map_def]
 
 @[simp] theorem mapIso_inv {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
-    (he : IsCompatible e (e' : M.V →ₗ[R] N.V)) (n : ℤ) :
-    (mapIso he n).inv = map he.symm n := by
+    (he : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) (e' : M.V →ₗ[R] N.V)) (n : ℤ) :
+    (mapIso he n).inv = map (IsCompatible.symm he) n := by
   rw [mapIso, HomologicalComplex.homologyMapIso_inv, complexMapIso_inv, map_def]
 
 /-- Tate cohomology in a fixed degree depends only on the compatible pair. -/
-theorem map_congr {e₁ e₂ : G ≃* H} {φ₁ φ₂ : M.V →ₗ[R] N.V} {h₁ : IsCompatible e₁ φ₁}
-    {h₂ : IsCompatible e₂ φ₂} (he : e₁ = e₂) (hφ : φ₁ = φ₂) (n : ℤ) :
+theorem map_congr {e₁ e₂ : G ≃* H} {φ₁ φ₂ : M.V →ₗ[R] N.V}
+    {h₁ : M.ρ.IsIntertwiningMap (N.ρ.comp (e₁ : G →* H)) φ₁}
+    {h₂ : M.ρ.IsIntertwiningMap (N.ρ.comp (e₂ : G →* H)) φ₂}
+    (he : e₁ = e₂) (hφ : φ₁ = φ₂) (n : ℤ) :
     map h₁ n = map h₂ n := by
   rw [map_def, map_def, IsCompatible.complexMap_congr he hφ]
 
@@ -267,22 +290,27 @@ functoriality. -/
 -- As for `IsCompatible.complexMap_refl`, deliberately not a `simp` lemma: it would subsume the
 -- `@[simp]` `map_id` and leave `simp` stuck on the identity, since `Rep.ofHom ⟨LinearMap.id, _⟩`
 -- has no `simp` route to `𝟙 M`.
-theorem map_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V} (hφ : IsCompatible (MulEquiv.refl G) φ)
-    (n : ℤ) :
-    map hφ n = (tateCohomologyFunctor n).map (Rep.ofHom ⟨φ, isCompatible_iff.mp hφ⟩) := by
+theorem map_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap
+      (N.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G)) φ) (n : ℤ) :
+    map hφ n = (tateCohomologyFunctor n).map
+      (Rep.ofHom ⟨φ, fun g ↦ by ext v; simpa using hφ.isIntertwining g v⟩ : M ⟶ N) := by
   rw [map_def, IsCompatible.complexMap_refl]
   exact (HomologicalComplex.homologyFunctor_map (ModuleCat R) (ComplexShape.up ℤ) n _).symm
 
 /-- The identity compatible pair induces the identity in every degree. -/
 @[simp] theorem map_id (n : ℤ) :
-    map (isCompatible_id (M := M)) n = 𝟙 (tateCohomology M n) := by
+    map (e := MulEquiv.refl G) (φ := LinearMap.id) (isCompatible_id (M := M)) n =
+      𝟙 (tateCohomology M n) := by
   rw [map_def, IsCompatible.complexMap_id]
   exact HomologicalComplex.homologyMap_id _ _
 
 /-- **Tate cohomology is functorial in the compatible pair**, in every degree. -/
-theorem map_comp {e₁ : G ≃* H} {e₂ : H ≃* K} {φ : M.V →ₗ[R] N.V} (hφ : IsCompatible e₁ φ)
-    {ψ : N.V →ₗ[R] P.V} (hψ : IsCompatible e₂ ψ) (n : ℤ) :
-    map hφ n ≫ map hψ n = map (hφ.trans hψ) n := by
+@[reassoc]
+theorem map_comp {e₁ : G ≃* H} {e₂ : H ≃* K} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e₁ : G →* H)) φ) {ψ : N.V →ₗ[R] P.V}
+    (hψ : N.ρ.IsIntertwiningMap (P.ρ.comp (e₂ : H →* K)) ψ) (n : ℤ) :
+    map hφ n ≫ map hψ n = map (IsCompatible.trans hφ hψ) n := by
   rw [map_def, map_def, map_def, ← IsCompatible.complexMap_comp hφ hψ,
     HomologicalComplex.homologyMap_comp]
   rfl
@@ -290,15 +318,15 @@ theorem map_comp {e₁ : G ≃* H} {e₂ : H ≃* K} {φ : M.V →ₗ[R] N.V} (h
 /-- **In positive degrees the construction is the ordinary cohomological change-of-group map**
 along `e.symm`, read through Mathlib's comparison between Tate and group cohomology. -/
 theorem map_comp_isoGroupCohomology_hom {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
-    (hφ : IsCompatible e φ) (n : ℕ) [NeZero n] :
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) (n : ℕ) [NeZero n] :
     map hφ (n : ℤ) ≫ (_root_.TateCohomology.isoGroupCohomology n).hom.app N =
       (_root_.TateCohomology.isoGroupCohomology n).hom.app M ≫
-        groupCohomology.map (e.symm : H →* G) hφ.ofRes n := by
-  have key : HomologicalComplex.homologyMap hφ.complexMap (n : ℤ) ≫
+        groupCohomology.map (e.symm : H →* G) (IsCompatible.ofRes hφ) n := by
+  have key : HomologicalComplex.homologyMap (IsCompatible.complexMap hφ) (n : ℤ) ≫
       ((tateComplexConnectData N).homologyIsoPos n (n : ℤ) rfl).hom =
         ((tateComplexConnectData M).homologyIsoPos n (n : ℤ) rfl).hom ≫
           HomologicalComplex.homologyMap
-            (groupCohomology.cochainsMap (e.symm : H →* G) hφ.ofRes) n := by
+            (groupCohomology.cochainsMap (e.symm : H →* G) (IsCompatible.ofRes hφ)) n := by
     rw [IsCompatible.complexMap, CochainComplex.ConnectData.homologyMap_map_of_eq_succ
       (n := n) (m := (n : ℤ)) (hmn := rfl)]
     simp
@@ -312,15 +340,17 @@ theorem map_comp_isoGroupCohomology_hom {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
 
 /-- **In degrees at most `-2` the construction is the ordinary homological change-of-group map**
 along `e`, read through Mathlib's comparison between Tate cohomology and group homology. -/
-theorem map_comp_isoGroupHomology_hom {e : G ≃* H} {φ : M.V →ₗ[R] N.V} (hφ : IsCompatible e φ)
+theorem map_comp_isoGroupHomology_hom {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ)
     (m : ℤ) (n : ℕ) (hmn : m = -(n + 1)) [NeZero n] :
     map hφ m ≫ (_root_.TateCohomology.isoGroupHomology m n hmn).hom.app N =
       (_root_.TateCohomology.isoGroupHomology m n hmn).hom.app M ≫
-        groupHomology.map (e : G →* H) hφ.toRes n := by
-  have key : HomologicalComplex.homologyMap hφ.complexMap m ≫
+        groupHomology.map (e : G →* H) (IsCompatible.toRes hφ) n := by
+  have key : HomologicalComplex.homologyMap (IsCompatible.complexMap hφ) m ≫
       ((tateComplexConnectData N).homologyIsoNeg n m hmn).hom =
         ((tateComplexConnectData M).homologyIsoNeg n m hmn).hom ≫
-          HomologicalComplex.homologyMap (groupHomology.chainsMap (e : G →* H) hφ.toRes) n := by
+          HomologicalComplex.homologyMap
+            (groupHomology.chainsMap (e : G →* H) (IsCompatible.toRes hφ)) n := by
     rw [IsCompatible.complexMap, CochainComplex.ConnectData.homologyMap_map_of_eq_neg_succ
       (n := n) (m := m) (hmn := hmn)]
     simp
@@ -336,13 +366,17 @@ def resIso (e : G ≃* H) (n : ℤ) :
       tateCohomologyFunctor n :=
   NatIso.ofComponents (fun N ↦ mapIso (isCompatible_res e N) n)
     fun {N N'} ψ ↦ by
-      have hψ : IsCompatible (MulEquiv.refl H) ψ.hom.toLinearMap := ψ.hom.isIntertwining'
-      have hres : IsCompatible (M := Rep.res (e : G →* H) N) (N := Rep.res (e : G →* H) N')
-          (MulEquiv.refl G)
-          (ψ.hom.toLinearMap : (Rep.res (e : G →* H) N).V →ₗ[R] (Rep.res (e : G →* H) N').V) :=
-        fun g ↦ hψ (e g)
-      have key : map hres n ≫ map (isCompatible_res e N') n =
-          map (isCompatible_res e N) n ≫ map hψ n := by
+      have hψ : N.ρ.IsIntertwiningMap
+          (N'.ρ.comp ((MulEquiv.refl H : H ≃* H) : H →* H)) ψ.hom.toLinearMap :=
+        ⟨fun g v ↦ congr($(ψ.hom.isIntertwining' g) v)⟩
+      have hres : (Rep.res (e : G →* H) N).ρ.IsIntertwiningMap
+          ((Rep.res (e : G →* H) N').ρ.comp
+            ((MulEquiv.refl G : G ≃* G) : G →* G))
+          (ψ.hom.toLinearMap :
+            (Rep.res (e : G →* H) N).V →ₗ[R] (Rep.res (e : G →* H) N').V) :=
+        ⟨fun g v ↦ congr($(ψ.hom.isIntertwining' (e g)) v)⟩
+      have key : map (e := MulEquiv.refl G) hres n ≫ map (isCompatible_res e N') n =
+          map (isCompatible_res e N) n ≫ map (e := MulEquiv.refl H) hψ n := by
         rw [map_comp, map_comp]
         exact map_congr (by ext x; rfl) (by ext x; rfl) n
       exact key
@@ -363,7 +397,7 @@ def resIso (e : G ≃* H) (n : ℤ) :
 /-- Tate cohomology groups matched by a compatible pair whose linear part is an equivalence have
 the same cardinality. -/
 theorem natCard_tateCohomology_eq {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
-    (he : IsCompatible e (e' : M.V →ₗ[R] N.V)) (n : ℤ) :
+    (he : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) (e' : M.V →ₗ[R] N.V)) (n : ℤ) :
     Nat.card (tateCohomology M n) = Nat.card (tateCohomology N n) :=
   Nat.card_congr (mapIso he n).toLinearEquiv.toEquiv
 
