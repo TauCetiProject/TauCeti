@@ -16,7 +16,8 @@ algebra while leaving its paths fixed.  More generally, if an `l`-algebra homomo
 `kQ`, where the target is regarded as a `k`-algebra through `f`.
 
 The construction packages the common path-algebra step in base-change maps for relation
-quotients.
+quotients.  The construction `baseChangeAlgHom` was generalized from
+`TauCeti.RepresentationTheory.Quiver.Preprojective.BaseChange`.
 -/
 
 public section
@@ -84,31 +85,6 @@ theorem baseChangeAlgHom_ofPath (f : k →+* l) (g : pathAlgebra l Q →ₐ[l] B
   rw [baseChangeAlgHom]
   exact liftAlgHom_ofPath k _ (baseChangeAlgHom_hcomp g)
     (baseChangeAlgHom_hzero g) (baseChangeAlgHom_hone g) x
-
-/-- In the `k`-algebra structure induced through `f`, the algebra map applies `f` before the
-original `l`-algebra map. -/
-@[simp]
-theorem algebraMap_baseChange (f : k →+* l) (a : k) :
-    letI : Algebra k B := ((algebraMap l B).comp f).toAlgebra'
-      (fun b y ↦ Algebra.commutes (R := l) (A := B) (f b) y)
-    algebraMap k B a = algebraMap l B (f a) := by
-  let _ : Algebra k B := ((algebraMap l B).comp f).toAlgebra'
-    (fun b y ↦ Algebra.commutes (R := l) (A := B) (f b) y)
-  -- `toAlgebra'` makes the target's `k`-algebra map the displayed composite.
-  change ((algebraMap l B).comp f) a = algebraMap l B (f a)
-  rw [RingHom.comp_apply]
-
-/-- In the algebra structure induced through `f`, the scalar action of `k` is the scalar action
-of `l` after applying `f`. -/
-@[simp]
-theorem smul_def_baseChange (f : k →+* l) (a : k) (x : B) :
-    letI : Algebra k B := ((algebraMap l B).comp f).toAlgebra'
-      (fun b y ↦ Algebra.commutes (R := l) (A := B) (f b) y)
-    a • x = f a • x := by
-  simp only [Algebra.smul_def]
-  -- Expose the coefficient map supplied by `toAlgebra'` before evaluating the composite.
-  change ((algebraMap l B).comp f) a * x = algebraMap l B (f a) * x
-  rw [RingHom.comp_apply]
 
 end BaseChange
 

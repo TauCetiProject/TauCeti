@@ -267,8 +267,8 @@ section Map
 
 variable {l : Type z} [CommMonoid l]
 
-/-- Scalar extension commutes with a gauge transform when the arrow labels are extended by the
-same coefficient homomorphism. -/
+/-- Mapping parameters along a monoid homomorphism commutes with gauge transforms when the arrow
+labels are mapped by the same homomorphism. -/
 theorem map_gauge (f : k →* l) (c : SkewZigzagParameter k G)
     (a : ∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → kˣ) :
     (c.gauge a).map f =
@@ -281,7 +281,7 @@ theorem map_gauge (f : k →* l) (c : SkewZigzagParameter k G)
   rw [map_ratio, gauge_ratio, gauge_ratio, hscale, hscale, map_mul, map_div]
   rw [map_ratio]
 
-/-- Gauge-equivalent skew-zigzag parameters remain gauge equivalent after scalar extension. -/
+/-- Mapping along a monoid homomorphism preserves gauge equivalence of skew-zigzag parameters. -/
 theorem IsGaugeEquivalent.map {c c' : SkewZigzagParameter k G}
     (h : c.IsGaugeEquivalent c') (f : k →* l) :
     (c.map f).IsGaugeEquivalent (c'.map f) := by

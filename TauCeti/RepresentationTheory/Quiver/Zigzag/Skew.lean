@@ -133,13 +133,13 @@ def map (f : k →* l) (c : SkewZigzagParameter k G) : SkewZigzagParameter l G w
     rw [← map_mul, ← map_mul, c.ratio_cocycle]
     exact map_one (Units.map f)
 
-/-- Scalar extension applies the coefficient homomorphism to a parameter ratio. -/
+/-- Mapping a parameter applies the monoid homomorphism to each ratio. -/
 @[simp]
 theorem map_ratio (f : k →* l) (c : SkewZigzagParameter k G)
     {i j j' : V} (h : G.Adj i j) (h' : G.Adj i j') :
     (c.map f).ratio h h' = Units.map f (c.ratio h h') := (rfl)
 
-/-- The constant parameter remains constant after scalar extension. -/
+/-- The constant parameter remains constant after mapping along a monoid homomorphism. -/
 @[simp]
 theorem map_one (f : k →* l) :
     map f (1 : SkewZigzagParameter k G) = 1 := by
@@ -152,7 +152,7 @@ theorem map_id (c : SkewZigzagParameter k G) : c.map (MonoidHom.id k) = c := by
   ext i j j' h h'
   simp
 
-/-- Mapping a parameter along a composite is successive scalar extension. -/
+/-- Mapping a parameter along a composite is the same as successive mapping. -/
 @[simp]
 theorem map_comp {m : Type*} [Monoid m] (f : k →* l) (g : l →* m)
     (c : SkewZigzagParameter k G) :
