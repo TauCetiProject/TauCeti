@@ -16,17 +16,12 @@ whenever its domain is compact. Indeed, the projection is a continuous surjectio
 space to a Hausdorff space, hence a quotient map. Its kernel is the finite image of the included
 group `Multiplicative (ZMod 2)`, so the standard quotient-covering construction applies.
 
-Every fiber of the projection is equivalent to its kernel. Combining this equivalence with the
-known cardinality of the Spin kernel shows that the covering has exactly two sheets.
-
 ## Main results
 
 * `CliffordAlgebra.isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom` packages the
   compact real Spin projection as a quotient covering map by its kernel.
 * `CliffordAlgebra.isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom` packages the projection
   as an ordinary covering map.
-* `CliffordAlgebra.natCard_fiber_realCliffordSpinDoubleCoverZero_rightHom` proves that every fiber
-  contains exactly two points.
 
 ## References
 
@@ -58,24 +53,5 @@ theorem isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
     (n : ℕ) [NeZero n] [CompactSpace (realCliffordSpinGroupZero n)] :
     IsCoveringMap (realCliffordSpinDoubleCoverZero n).rightHom :=
   (isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n).isCoveringMap
-
-/-- Every fiber of the compact real Spin projection has exactly two elements. -/
-theorem natCard_fiber_realCliffordSpinDoubleCoverZero_rightHom
-    (n : ℕ) [NeZero n] [CompactSpace (realCliffordSpinGroupZero n)]
-    (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
-    Nat.card ((realCliffordSpinDoubleCoverZero n).rightHom ⁻¹' {g}) = 2 := by
-  let S := realCliffordSpinDoubleCoverZero n
-  obtain ⟨x, hx⟩ := S.rightHom_surjective g
-  calc
-    Nat.card (S.rightHom ⁻¹' {g}) = Nat.card S.rightHom.ker :=
-      Nat.card_congr
-        ((isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n).fiberEquivGroup
-          ⟨x, hx⟩)
-    _ = Nat.card (MonoidHom.ker
-        (spinToSpecialOrthogonal (realCliffordForm n 0))) := by
-      rw [realCliffordSpinDoubleCoverZero_rightHom]
-    _ = 2 := card_ker_spinToSpecialOrthogonal (K := ℝ) (M := Fin (n + 0) → ℝ)
-      (by simpa using Nat.pos_of_ne_zero (NeZero.ne n)) _
-      (nondegenerate_realCliffordForm n 0)
 
 end CliffordAlgebra
