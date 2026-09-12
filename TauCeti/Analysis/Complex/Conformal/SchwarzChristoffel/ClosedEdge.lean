@@ -95,39 +95,17 @@ private theorem exists_nonneg_schwarzChristoffelBoundary_sub_eq (a e : ι → �
     ∃ c : ℝ, 0 ≤ c ∧
       schwarzChristoffelBoundary a e z₀ x - schwarzChristoffelBoundary a e z₀ y =
         (c : ℂ) * Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) := by
-  -- the nonnegative real multiples of a unimodular `u` are cut out by `((starRingEnd ℂ) u * z).im
-  -- = 0` and `0 ≤ ((starRingEnd ℂ) u * z).re`, hence form a closed set, so the statement
-  -- propagates from the open interval to its endpoints along the continuous boundary map
-  set u : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) with hu
-  have huc : (starRingEnd ℂ) u * u = 1 := by
-    rw [hu, ← Complex.exp_conj, ← Complex.exp_add]
-    have hzero : (starRingEnd ℂ) ((schwarzChristoffelEdgeAngle a e p : ℂ) * Complex.I) +
-        (schwarzChristoffelEdgeAngle a e p : ℂ) * Complex.I = 0 := by
-      rw [map_mul, Complex.conj_ofReal, Complex.conj_I]; ring
-    rw [hzero, Complex.exp_zero]
+  -- the nonnegative real multiples of `u` are the image of `Ici 0` under scalar multiplication by
+  -- `u`, hence form a closed set, so the statement propagates from the open interval to its
+  -- endpoints along the continuous boundary map
+  set u : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
   have hTclosed : IsClosed {z : ℂ | ∃ c : ℝ, 0 ≤ c ∧ z = (c : ℂ) * u} := by
-    have hTeq : {z : ℂ | ∃ c : ℝ, 0 ≤ c ∧ z = (c : ℂ) * u} =
-        {z : ℂ | ((starRingEnd ℂ) u * z).im = 0} ∩
-          {z : ℂ | 0 ≤ ((starRingEnd ℂ) u * z).re} := by
+    have hTeq : {z : ℂ | ∃ c : ℝ, 0 ≤ c ∧ z = (c : ℂ) * u} = (fun c : ℝ => c • u) '' Ici 0 := by
       ext z
-      simp only [Set.mem_ofPred_eq, Set.mem_inter_iff]
-      constructor
-      · rintro ⟨c, hc, rfl⟩
-        have hcz : (starRingEnd ℂ) u * ((c : ℂ) * u) = (c : ℂ) := by
-          linear_combination (c : ℂ) * huc
-        rw [hcz]
-        exact ⟨Complex.ofReal_im c, by simpa using hc⟩
-      · rintro ⟨him, hre⟩
-        refine ⟨((starRingEnd ℂ) u * z).re, hre, ?_⟩
-        have hz : ((((starRingEnd ℂ) u * z).re : ℝ) : ℂ) = (starRingEnd ℂ) u * z :=
-          Complex.ext (by simp) (by simp [him])
-        rw [hz]
-        linear_combination (-z) * huc
+      simp only [Set.mem_ofPred_eq, Set.mem_image, Set.mem_Ici, Complex.real_smul]
+      exact ⟨fun ⟨c, hc, hz⟩ => ⟨c, hc, hz.symm⟩, fun ⟨c, hc, hz⟩ => ⟨c, hc, hz.symm⟩⟩
     rw [hTeq]
-    exact (isClosed_eq (Complex.continuous_im.comp (continuous_const.mul continuous_id))
-        continuous_const).inter
-      (isClosed_le continuous_const
-        (Complex.continuous_re.comp (continuous_const.mul continuous_id)))
+    exact isClosedMap_smul_left u _ isClosed_Ici
   have hcont : ContinuousOn (schwarzChristoffelBoundary a e z₀) (Icc p q) :=
     continuousOn_schwarzChristoffelBoundary_Icc a e z₀ ha hp hq
   have step₁ : ∀ y ∈ Ioo p q, ∀ x ∈ Icc y q,
@@ -328,25 +306,23 @@ theorem schwarzChristoffelBoundary_image_Ioo (a e : ι → ℝ) (z₀ : UpperHal
     schwarzChristoffelBoundary a e z₀ '' Ioo p q =
       openSegment ℝ (schwarzChristoffelBoundary a e z₀ p)
         (schwarzChristoffelBoundary a e z₀ q) := by
-  obtain ⟨d, hd0, hdmono, hdcont, hrep⟩ :=
-    exists_strictMonoOn_schwarzChristoffelBoundary_eq a e z₀ ha hp hq
+  -- the open arc is the closed arc with its two endpoint values removed, and those two values are
+  -- distinct by injectivity, so what is left of the segment is exactly the open segment
   have hpI : p ∈ Icc p q := ⟨le_rfl, hpq.le⟩
   have hqI : q ∈ Icc p q := ⟨hpq.le, le_rfl⟩
-  have hdq : 0 < d q := by rw [← hd0]; exact hdmono hpI hqI hpq
-  set L : ℝ →ᵃ[ℝ] ℂ := AffineMap.lineMap (schwarzChristoffelBoundary a e z₀ p)
-    (schwarzChristoffelBoundary a e z₀ p +
-      Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)) with hL
-  -- the arclength parameter is continuous and strictly monotone, so it sweeps out `Ioo (d p) (d q)`
-  have hd : d '' Ioo p q = openSegment ℝ 0 (d q) := by
-    rw [hdcont.image_Ioo_of_strictMonoOn hpq.le hdmono, hd0, openSegment_eq_Ioo hdq]
-  have hBq : L (d q) = schwarzChristoffelBoundary a e z₀ q := (hrep hqI).symm
-  calc schwarzChristoffelBoundary a e z₀ '' Ioo p q
-      = ⇑L '' (d '' Ioo p q) := by rw [(hrep.mono Ioo_subset_Icc_self).image_eq, image_comp]
-    _ = ⇑L '' openSegment ℝ 0 (d q) := by rw [hd]
-    _ = openSegment ℝ (L 0) (L (d q)) := by rw [image_openSegment]
-    _ = openSegment ℝ (schwarzChristoffelBoundary a e z₀ p)
-          (schwarzChristoffelBoundary a e z₀ q) := by
-        rw [hBq, hL, AffineMap.lineMap_apply_zero]
+  have hinj := schwarzChristoffelBoundary_injOn_Icc a e z₀ ha hp hq
+  have hne : schwarzChristoffelBoundary a e z₀ p ≠ schwarzChristoffelBoundary a e z₀ q :=
+    fun h => hpq.ne (hinj hpI hqI h)
+  have hsub : ({p, q} : Set ℝ) ⊆ Icc p q := by
+    simp [Set.insert_subset_iff, hpI, hqI]
+  rw [← Icc_sdiff_both, hinj.image_sdiff_subset hsub,
+    schwarzChristoffelBoundary_image_Icc a e z₀ hpq.le ha hp hq, Set.image_pair]
+  refine Set.Subset.antisymm (fun z hz => ?_) fun z hz => ⟨openSegment_subset_segment _ _ _ hz, ?_⟩
+  · simp only [Set.mem_sdiff, Set.mem_insert_iff, Set.mem_singleton_iff, not_or] at hz
+    exact mem_openSegment_of_ne_left_right (Ne.symm hz.2.1) (Ne.symm hz.2.2) hz.1
+  · simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
+    exact ⟨fun h => hne (left_mem_openSegment_iff.mp (h ▸ hz)),
+      fun h => hne (right_mem_openSegment_iff.mp (h ▸ hz))⟩
 
 /-- **The straight sides of the Schwarz--Christoffel polygon.**  Between two prevertices with no
 prevertex of nonzero exponent strictly between them, and with both total exponents greater than
