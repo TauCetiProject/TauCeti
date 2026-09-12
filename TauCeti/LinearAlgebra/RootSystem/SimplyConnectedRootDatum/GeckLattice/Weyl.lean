@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Algebra.Hom
 import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Weyl
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.PointsFunctor
@@ -155,7 +156,7 @@ theorem geckPointsMap_geckSimpleWeylPoint {A : Type v} {B : Type v'}
   have hmatrix := congrArg Subtype.val h
   simp only [GeneralLinear.coe_mapHopfIdealPointsSubgroup,
     MulEquiv.subgroupCongr_apply] at hmatrix
-  rw [show (f.toIntAlgHom : A →+* B) = f by rfl] at hmatrix
+  rw [RingHom.toIntAlgHom_toRingHom] at hmatrix
   simpa only [coe_geckPointsMap, geckSimpleWeylPoint,
     MulEquiv.subgroupCongr_apply] using hmatrix
 
