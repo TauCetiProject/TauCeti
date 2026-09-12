@@ -28,6 +28,10 @@ vertical line `‖`; it is scoped, so it never competes with the `∥` of `Affin
 * `TauCeti.Nat.IsExactDivisor`: the predicate itself.
 * `TauCeti.Nat.ExactDivisor`: the exact divisors of a fixed `N`, bundled as a commutative group
   whose multiplication is symmetric difference.
+* `TauCeti.Nat.prodPrimePow`: the exact divisor `∏ p ∈ s, p ^ v_p(N)` cut out by a set `s` of
+  primes of `N`.
+* `TauCeti.Nat.ExactDivisor.primeFactorsEquiv`: the identification of the exact divisors of `N`
+  with the subsets of `N.primeFactors`.
 
 ## Notation
 
@@ -53,6 +57,12 @@ vertical line `‖`; it is scoped, so it never competes with the `∥` of `Affin
   difference of `Q` and `R` — is an exact divisor too.
 * `TauCeti.Nat.ExactDivisor.val_mul`: multiplication in the bundled group has underlying value
   `Q * R / gcd (Q, R) ^ 2`.
+* `TauCeti.Nat.isExactDivisor_prodPrimePow`, `TauCeti.Nat.primeFactors_prodPrimePow`,
+  `TauCeti.Nat.IsExactDivisor.prodPrimePow_primeFactors`: a subset of `N.primeFactors` cuts out an
+  exact divisor with exactly those prime factors, and every exact divisor arises this way — the
+  prime-power generation of the family, bundled as
+  `TauCeti.Nat.ExactDivisor.primeFactorsEquiv`.
+* `TauCeti.Nat.isExactDivisor_primePow`: the maximal prime powers `p ^ v_p(N)` are exact divisors.
 -/
 
 public section
@@ -241,11 +251,92 @@ which is why it is the composition law of the Atkin–Lehner family. -/
 theorem IsExactDivisor.mul_div_gcd_sq (hQ : IsExactDivisor Q N) (hR : IsExactDivisor R N) :
     IsExactDivisor (Q * R / Nat.gcd Q R ^ 2) N := by
   have hcop : Nat.Coprime (Q / Nat.gcd Q R) (R / Nat.gcd Q R) :=
-    (hQ.coprime_div_gcd hR).coprime_dvd_right (Nat.div_dvd_of_dvd (Nat.gcd_dvd_right Q R))
+    Nat.gcd_div_gcd_div_gcd_of_pos_left hQ.pos
   have hRdiv : IsExactDivisor (R / Nat.gcd Q R) N := by
     rw [Nat.gcd_comm]; exact hR.div_gcd hQ
   rw [sq, ← Nat.div_mul_div_comm (Nat.gcd_dvd_left Q R) (Nat.gcd_dvd_right Q R)]
   exact (hQ.div_gcd hR).mul hRdiv hcop
+
+/-! ### Exact divisors from sets of primes -/
+
+/-- **The exact divisor of `N` supported on a set of primes:** the product
+`∏ p ∈ s, p ^ v_p(N)` of the maximal prime powers of `N` at the primes of `s`. For
+`s ⊆ N.primeFactors` this is the exact divisor of `N` whose prime factors are exactly `s`
+(`TauCeti.Nat.isExactDivisor_prodPrimePow`, `TauCeti.Nat.primeFactors_prodPrimePow`), and every
+exact divisor arises this way (`TauCeti.Nat.IsExactDivisor.prodPrimePow_primeFactors`). -/
+def prodPrimePow (N : ℕ) (s : Finset ℕ) : ℕ := ∏ p ∈ s, p ^ N.factorization p
+
+variable {s : Finset ℕ}
+
+/-- **The exponents of `∏ p ∈ s, p ^ v_p(N)`:** the full exponent of `N` at the primes of `s`,
+and `0` elsewhere. -/
+theorem factorization_prodPrimePow (hs : s ⊆ N.primeFactors) (q : ℕ) :
+    (prodPrimePow N s).factorization q = if q ∈ s then N.factorization q else 0 := by
+  rw [prodPrimePow, Nat.factorization_prod fun p hp ↦
+      pow_ne_zero _ (Nat.prime_of_mem_primeFactors (hs hp)).ne_zero,
+    Finset.sum_congr rfl fun p hp ↦ (Nat.prime_of_mem_primeFactors (hs hp)).factorization_pow,
+    Finset.sum_apply']
+  simp [Finsupp.single_apply, Finset.sum_ite_eq']
+
+/-- **A subset of `N.primeFactors` cuts out an exact divisor.** It divides `N`, being a
+subproduct of the prime-power factorization of `N`, and at each prime its exponent is `0` or the
+full exponent of `N`, which is exactness. -/
+theorem isExactDivisor_prodPrimePow (hs : s ⊆ N.primeFactors) :
+    IsExactDivisor (prodPrimePow N s) N := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · rw [Nat.primeFactors_zero, Finset.subset_empty] at hs
+    simp [prodPrimePow, hs]
+  have hdvd : prodPrimePow N s ∣ N := by
+    rw [prodPrimePow]
+    conv_rhs => rw [Nat.prod_primeFactors_pow_factorization hN]
+    exact Finset.prod_dvd_prod_of_subset _ _ _ hs
+  rw [isExactDivisor_iff_factorization hN]
+  refine ⟨hdvd, fun p ↦ ?_⟩
+  rw [factorization_prodPrimePow hs]
+  split <;> simp
+
+/-- **The prime factors of `∏ p ∈ s, p ^ v_p(N)` are `s`**, so distinct subsets of
+`N.primeFactors` cut out distinct exact divisors. -/
+theorem primeFactors_prodPrimePow (hs : s ⊆ N.primeFactors) :
+    (prodPrimePow N s).primeFactors = s := by
+  ext q
+  rw [← Nat.support_factorization, Finsupp.mem_support_iff, factorization_prodPrimePow hs]
+  by_cases hq : q ∈ s
+  · have hq0 : N.factorization q ≠ 0 :=
+      Finsupp.mem_support_iff.mp (by rw [Nat.support_factorization]; exact hs hq)
+    simp [hq, hq0]
+  · simp [hq]
+
+/-- **The maximal prime powers are exact divisors.** These generate the family: every exact
+divisor is a product of them (`TauCeti.Nat.IsExactDivisor.prodPrimePow_primeFactors`). -/
+theorem isExactDivisor_primePow {p : ℕ} (hp : p ∈ N.primeFactors) :
+    IsExactDivisor (p ^ N.factorization p) N := by
+  have := isExactDivisor_prodPrimePow (N := N) (s := {p}) (by simpa using hp)
+  rwa [prodPrimePow, Finset.prod_singleton] at this
+
+/-- An exact divisor of `N` only involves primes of `N`. -/
+theorem IsExactDivisor.primeFactors_subset (h : IsExactDivisor Q N) :
+    Q.primeFactors ⊆ N.primeFactors := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · simp [isExactDivisor_zero_iff.mp h]
+  exact Nat.primeFactors_mono h.dvd hN
+
+/-- **Every exact divisor is the product of the maximal prime powers it contains**: the exponents
+of an exact divisor are those of `N` at the primes dividing it. This is the prime-power generation
+of the Atkin–Lehner family. -/
+theorem IsExactDivisor.prodPrimePow_primeFactors (h : IsExactDivisor Q N) :
+    prodPrimePow N Q.primeFactors = Q := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · simp [prodPrimePow, isExactDivisor_zero_iff.mp h]
+  have hfac := ((isExactDivisor_iff_factorization hN).mp h).2
+  rw [prodPrimePow]
+  conv_rhs => rw [Nat.prod_primeFactors_pow_factorization h.ne_zero]
+  refine Finset.prod_congr rfl fun p hp ↦ ?_
+  have hp0 : Q.factorization p ≠ 0 :=
+    Finsupp.mem_support_iff.mp (by rwa [Nat.support_factorization])
+  rcases hfac p with h0 | h0
+  · exact absurd h0 hp0
+  · rw [h0]
 
 /-! ### The exact-divisor group -/
 
@@ -369,6 +460,31 @@ instance : CommGroup (ExactDivisor N) where
   mul_comm Q R := primeFactors_injective <| by
     dsimp only
     rw [primeFactors_mul, primeFactors_mul, symmDiff_comm]
+
+/-- **The exact divisors of `N` are exactly the subsets of `N.primeFactors`.** An exact divisor
+goes to the set of primes dividing it, and a subset `s` comes back as the product
+`∏ p ∈ s, p ^ v_p(N)` of maximal prime powers. Since `primeFactors_mul` carries multiplication to
+symmetric difference and `val_inv` makes every element its own inverse, this identifies the group
+of exact divisors with the Boolean group of subsets of `N.primeFactors` — abstractly
+`(ℤ/2) ^ ω(N)`, generated by the maximal prime powers `p ^ v_p(N)`. -/
+def primeFactorsEquiv (N : ℕ) : ExactDivisor N ≃ {s : Finset ℕ // s ⊆ N.primeFactors} where
+  toFun Q := ⟨Q.val.primeFactors, Q.property.primeFactors_subset⟩
+  invFun s := ⟨prodPrimePow N s.1, isExactDivisor_prodPrimePow s.2⟩
+  left_inv Q := ext Q.property.prodPrimePow_primeFactors
+  right_inv s := Subtype.ext (primeFactors_prodPrimePow s.2)
+
+/-- `primeFactorsEquiv` sends an exact divisor to its set of prime factors. -/
+@[simp]
+theorem coe_primeFactorsEquiv (Q : ExactDivisor N) :
+    (primeFactorsEquiv N Q : Finset ℕ) = Q.val.primeFactors := by
+  simp [primeFactorsEquiv]
+
+/-- `primeFactorsEquiv` recovers an exact divisor from a set of primes as a product of maximal
+prime powers. -/
+@[simp]
+theorem val_primeFactorsEquiv_symm (s : {s : Finset ℕ // s ⊆ N.primeFactors}) :
+    ((primeFactorsEquiv N).symm s).val = prodPrimePow N s := by
+  simp [primeFactorsEquiv]
 
 end ExactDivisor
 
