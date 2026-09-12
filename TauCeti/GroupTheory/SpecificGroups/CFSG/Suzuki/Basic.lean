@@ -94,6 +94,10 @@ namespace TauCeti.SuzukiLieIndex
 
 variable (d : SuzukiLieIndex)
 
+-- The construction below follows the `SuzukiReeIndex.halfFrobenius` and
+-- `ValidLieTypeIndex.steinberg` target signatures in
+-- `TauCetiRoadmap/CFSGStatement/Suggested.lean`.
+
 /-- **The half-Frobenius of a Suzuki index**: the special isogeny of its ambient group. -/
 noncomputable def halfFrobenius :
     d.toRankTwoBLieIndex.AmbientGroup →* d.toRankTwoBLieIndex.AmbientGroup :=
