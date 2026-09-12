@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Contractible
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Cylinder
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Dimension
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 
@@ -22,6 +23,11 @@ The standard one-simplex is provided as a nontrivial witness.  Its realization i
 the homeomorphism with Mathlib's convex standard simplex, so the predicate is exercised without
 assuming the desired Zeeman conclusion.
 
+The universe-polymorphic proposition `TauCeti.ZeemanConjecture` asserts that the ordered
+simplicial cylinder is collapsible for every finite contractible complex of dimension at most two.
+The conjecture remains open; the full simplex on a finite ordered type supplies a family where its
+conclusion follows from the cylinder's cone structure.
+
 ## Main definitions
 
 * `AbstractSimplicialComplex.Contractible2Complex`: finite, at-most-two-dimensional complexes
@@ -32,8 +38,10 @@ assuming the desired Zeeman conclusion.
 * `AbstractSimplicialComplex.contractible2Complex_iff`: the defining characterization.
 * `AbstractSimplicialComplex.contractible2Complex_standardOneSimplex`: the standard one-simplex
   is a non-void contractible 2-complex (the dimension bound is at most two).
+* `TauCeti.ZeemanConjecture`: the universal statement of the conjecture.
+* `TauCeti.ZeemanConjecture.collapsible_orderedCylinder`: its specialization to one complex.
 
-No claim that a product with an interval is collapsible is made here.
+The proposition is stated, not proved.
 -/
 
 public section
@@ -103,3 +111,29 @@ theorem contractible2Complex_standardOneSimplex :
       _ ≤ 2 := by norm_num
 
 end AbstractSimplicialComplex
+
+namespace TauCeti
+
+/-- **Zeeman's conjecture**: the ordered simplicial cylinder on every finite contractible
+complex of dimension at most two is collapsible.
+
+The cylinder uses the staircase triangulation fixed by `AbstractSimplicialComplex.orderedCylinder`.
+Its collapse is taken after forgetting to a pre-abstract simplicial complex, since collapse can
+remove vertices. -/
+def ZeemanConjecture.{u} : Prop :=
+  ∀ (ι : Type u) [LinearOrder ι] (K : AbstractSimplicialComplex ι),
+    K.Contractible2Complex →
+      PreAbstractSimplicialComplex.Collapsible K.orderedCylinder.toPreAbstractSimplicialComplex
+
+namespace ZeemanConjecture
+
+/-- A proof of Zeeman's conjecture makes the ordered cylinder on any contractible two-complex
+collapsible. -/
+theorem collapsible_orderedCylinder {ι : Type u} [LinearOrder ι] (h : ZeemanConjecture.{u})
+    (K : AbstractSimplicialComplex ι) (hK : K.Contractible2Complex) :
+    PreAbstractSimplicialComplex.Collapsible K.orderedCylinder.toPreAbstractSimplicialComplex :=
+  h ι K hK
+
+end ZeemanConjecture
+
+end TauCeti
