@@ -60,7 +60,7 @@ namespace Complex
 
 /-- For a nonzero `z : ℂ`, the standard positive expression associated with the `i`-eigenvector
 coordinate relation is positive. -/
-theorem positive_I_mul_coordinate_form (z : ℂ) (hz : z ≠ 0) :
+theorem I_mul_coordinate_form_pos (z : ℂ) (hz : z ≠ 0) :
     0 < Complex.I *
       ((-Complex.I * z) * starRingEnd ℂ z -
         z * starRingEnd ℂ (-Complex.I * z)) := by
@@ -78,7 +78,7 @@ theorem positive_I_mul_coordinate_form (z : ℂ) (hz : z ≠ 0) :
 
 /-- For a nonzero `z : ℂ`, the standard positive expression associated with the `-i`-eigenvector
 coordinate relation is positive. -/
-theorem positive_neg_I_mul_coordinate_form (z : ℂ) (hz : z ≠ 0) :
+theorem neg_I_mul_coordinate_form_pos (z : ℂ) (hz : z ≠ 0) :
     0 < (-Complex.I) *
       ((Complex.I * z) * starRingEnd ℂ z -
         z * starRingEnd ℂ (Complex.I * z)) := by
@@ -91,7 +91,7 @@ theorem positive_neg_I_mul_coordinate_form (z : ℂ) (hz : z ≠ 0) :
     norm_num
     ring
   rw [heq]
-  exact positive_I_mul_coordinate_form z hz
+  exact I_mul_coordinate_form_pos z hz
 
 end Complex
 
