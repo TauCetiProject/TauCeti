@@ -22,6 +22,8 @@ subgroup order.
   character of Mathlib's `Representation.ind`, the two differing only by the small carrier model.
 * `TauCeti.character_indFDRep_sum_quotient` expresses an induced character as a sum over left
   cosets.
+* `TauCeti.character_indFDRep_eq_zero_of_notMem`: an induced character vanishes outside a normal
+  subgroup, the coset sum keeping only the cosets that conjugation by `g` fixes.
 * `TauCeti.indClassFun_ofFDRep_character` and `TauCeti.ClassFunction.ind_ofFDRep` identify that
   coset sum with `TauCeti.indClassFun`, the induced class function.
 * `TauCeti.character_ind` rewrites the coset sum as an average over the whole group when the
@@ -205,6 +207,18 @@ theorem character_indFDRep_sum_quotient {k : Type u} {G : Type v} [Field k] [Gro
       by_cases hmem : t.out⁻¹ * g * t.out ∈ S
       · rw [dite_eq_left hmem, dite_eq_left hmem, hforgetCharacter]
       · rw [dite_eq_right hmem, dite_eq_right hmem]
+
+/-- **An induced character vanishes outside a normal subgroup.** Each summand of the coset formula
+`TauCeti.character_indFDRep_sum_quotient` asks whether a conjugate `t⁻¹ g t` lies in `S`, and for a
+normal `S` that happens only when `g` itself does. -/
+@[simp]
+theorem character_indFDRep_eq_zero_of_notMem {k : Type u} {G : Type v} [Field k] [Group G]
+    {S : Subgroup G} [S.Normal] [S.FiniteIndex] (A : FDRep k S) {g : G} (hg : g ∉ S) :
+    (indFDRep (k := k) (G := G) A).character g = 0 := by
+  classical
+  rw [character_indFDRep_sum_quotient]
+  refine Finset.sum_eq_zero fun t _ => dite_eq_right fun hmem => hg ?_
+  simpa [mul_assoc] using ‹S.Normal›.conj_mem _ hmem (Quotient.out t)
 
 section ClassFun
 

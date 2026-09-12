@@ -29,10 +29,10 @@ of the induced representation takes the value `2 ψ (s ^ 2)` at the square of ev
 `N`.
 
 The other half of the group contributes nothing: at `g ∈ N` the character of the induced
-representation at `g ^ 2` is `ψ² (g) + (ψ²)⁻¹ (g)`, and `ψ² ≠ 1` is exactly the hypothesis that
-makes `Ind ψ` irreducible, so both sums vanish by the orthogonality of a nontrivial character with
-the trivial one (`sum_hom_units_eq_zero`).  What is left is `|N|` copies of `2 ψ (s ^ 2)`, and
-`|G| = 2 |N|`.
+representation at `g ^ 2` is `ψ² (g) + (ψ²)⁻¹ (g)`, and `ψ² ≠ 1` says that neither `ψ²` nor its
+inverse is the trivial character of `N`, so both sums vanish by the orthogonality of a nontrivial
+character with the trivial one (`sum_hom_units_eq_zero`).  What is left is `|N|` copies of
+`2 ψ (s ^ 2)`, and `|G| = 2 |N|`.
 
 The worked example at the end is the two-dimensional irreducible of `D₄`, induced from the faithful
 character of the rotation subgroup sending `r 1` to `i` in
@@ -64,8 +64,8 @@ variable {G : Type v} [Group G] {N : Subgroup G} {k : Type} [Field k]
 
 /-- **The Frobenius-Schur indicator of a character induced from an inverted subgroup of index
 two** is the value of the character on the common square of the elements outside the
-subgroup.  The hypothesis `ψ ^ 2 ≠ 1` is the Mackey irreducibility criterion for such a subgroup;
-it is what makes the contribution of `N` itself vanish. -/
+subgroup.  The hypothesis `ψ ^ 2 ≠ 1` says that `ψ` is not its own inverse; it is what makes the
+contribution of `N` itself vanish, a nontrivial character of `N` summing to zero over `N`. -/
 theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_of_conj_eq_inv [Fintype G]
     (hindex : N.index = 2) {s : G} (hs : s ∉ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹)
     (hG : IsUnit (Nat.card G : k)) {ψ : N →* kˣ} (hψ : ψ ^ 2 ≠ 1) :
@@ -85,7 +85,10 @@ theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_of_conj_eq_inv [Finty
   have hval : ∀ (g : G) (hg : g ∈ N),
       Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ g =
         (ψ ⟨g, hg⟩ : k) + ((ψ ⟨g, hg⟩)⁻¹ : kˣ) := fun g hg => by
-    rw [FDRep.character_ρ]
+    -- `Representation.character A.ρ` and `A.character` are the same trace of the same map:
+    -- Mathlib defines each of them as `LinearMap.trace k A (A.ρ g)`, so unfolding the two is all
+    -- that separates this module-spine goal from the `FDRep`-level formula.
+    rw [Representation.character, ← FDRep.character]
     exact character_indFDRep_ofLinearCharacter_of_conj_eq_inv hindex hs hinv hNunit ψ hg
   -- The half of `G` inside `N` contributes the sum of the nontrivial character `ψ ^ 2` and of its
   -- inverse, both of which vanish.
