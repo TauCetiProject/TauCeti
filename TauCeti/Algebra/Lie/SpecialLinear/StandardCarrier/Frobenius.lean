@@ -53,6 +53,10 @@ is finite or simple.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 
+The definition and the proofs below follow the sibling type-`Bₙ₊₁` specialization
+`TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Frobenius`, which already reads its Frobenius
+off the carrier's functorial point map.
+
 This advances the "points over an algebraically closed field" and "Chevalley--Demazure
 construction" targets in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is
 milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md`: this is the Frobenius component intended
