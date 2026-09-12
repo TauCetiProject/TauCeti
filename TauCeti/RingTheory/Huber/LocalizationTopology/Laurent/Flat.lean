@@ -31,7 +31,8 @@ statements below run in increasing generality:
   being derived rather than assumed;
 * the same conclusion asking strong noetherianity of `A` alone, for a presentation whose
   numerators generate the unit ideal together with `s` — Proposition 8.30 for a topologically
-  nilpotent denominator, which is not yet the proposition in full.
+  nilpotent denominator — the variant of the proposition that asks `hnil`, rather than the
+  proposition itself.
 
 Changing the localisation that carries a presentation is flat with no hypotheses at all.
 
@@ -541,12 +542,19 @@ theorem flat_restrictionRingHomOfSubset_of_isStronglyNoetherian_base
 Tate ring, the restriction map `A⟨T/s⟩ → A⟨T'/s⟩` of a numerator enlargement is flat, provided
 the denominator is topologically nilpotent whenever the enlargement is proper.
 
-**This is not yet Wedhorn's Proposition 8.30**, which asks nothing of the denominator beyond the
-rational-subset condition. `hnil` does not follow from that condition, nor from the Tate and
-strong-noetherian hypotheses: `s = 1` makes `hspan` automatic, and `1` is not topologically
-nilpotent in a nonzero Tate ring. Removing it needs a change of presentation — scaling `(T, s)`
-by a power of a topologically nilpotent unit leaves the rational subset and the localisation
-alone while making the denominator topologically nilpotent — and that is not proved here.
+**This is the topologically-nilpotent-denominator variant, and only that.** Wedhorn's
+Proposition 8.30 asks nothing of the denominator beyond the rational-subset condition, and `hnil`
+is strictly stronger: it follows neither from that condition nor from the Tate and
+strong-noetherian hypotheses. Taking `s = 1` makes `hspan` automatic, and in a nonzero **Hausdorff**
+Tate ring `1` is not topologically nilpotent, since `1 ^ n → 0` would force `1 = 0`. The separation
+hypothesis is doing work there: carrying the indiscrete topology, a nonzero ring is Tate and `1`
+*is* topologically nilpotent, every sequence converging to `0`.
+
+Removing `hnil` needs a change of presentation — scaling `(T, s)` by a power of a topologically
+nilpotent unit leaves the localisation alone while making the denominator topologically nilpotent
+— followed by a transport of flatness back to `(T, s)`. **This theorem performs no such
+transport**: it concludes only at the presentation it is given, so a caller without `hnil` gets
+nothing from it.
 
 What this *does* remove is the hypothesis on the localisation. Its predecessors ask strong
 noetherianity of `A⟨T/s⟩`; this asks it of `A`, which is Wedhorn's own standing hypothesis. The
