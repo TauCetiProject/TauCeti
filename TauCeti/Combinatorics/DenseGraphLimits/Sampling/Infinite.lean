@@ -37,12 +37,12 @@ positions is `sampleMass W H`.
 
 ## Main definitions
 
-* `TauCeti.DenseGraphLimits.infiniteSampleLaw` — its law, the joint sampling object;
-* `SimpleGraph.restrictFin` — the initial `n`-label window of a graph on `ℕ`.
+* `TauCeti.DenseGraphLimits.infiniteSampleLaw` — its law, the joint sampling object.
 
 ## Main results
 
-* `infiniteSampleLaw_map_restrictFin` — every finite sampling law is a window of the joint law.
+* `infiniteSampleLaw_map_restrictFin` — every finite sampling law is a window of the joint law,
+  along the window map `SimpleGraph.restrictFin`.
 
 ## References
 
@@ -60,22 +60,6 @@ open MeasureTheory
 open scoped ENNReal
 
 namespace TauCeti
-
-/-- The window of a graph on `ℕ` spanned by the first `n` labels. -/
-def _root_.SimpleGraph.restrictFin (G : SimpleGraph ℕ) (n : ℕ) : SimpleGraph (Fin n) :=
-  SimpleGraph.comap (fun i => (i : ℕ)) G
-
-@[simp]
-theorem _root_.SimpleGraph.restrictFin_adj {n : ℕ} (G : SimpleGraph ℕ) (a b : Fin n) :
-    (G.restrictFin n).Adj a b ↔ G.Adj a b := Iff.rfl
-
-/-- Taking a window is measurable. -/
-theorem _root_.SimpleGraph.measurable_restrictFin (n : ℕ) :
-    Measurable fun G : SimpleGraph ℕ => G.restrictFin n := by
-  rw [SimpleGraph.measurable_iff_adj]
-  intro a b
-  exact (measurable_pi_apply (b : ℕ)).comp
-    ((measurable_pi_apply (a : ℕ)).comp SimpleGraph.measurable_adj)
 
 namespace DenseGraphLimits
 
