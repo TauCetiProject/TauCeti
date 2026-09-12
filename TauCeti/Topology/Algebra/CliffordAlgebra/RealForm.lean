@@ -33,6 +33,7 @@ open Metric
 
 /-- The positive-definite real Clifford form is the squared Euclidean norm in Euclidean
 coordinates. -/
+@[simp]
 theorem realCliffordForm_zero_euclideanSpaceEquiv_eq_norm_sq {n : ℕ}
     (u : EuclideanSpace ℝ (Fin n)) :
     realCliffordForm n 0 (EuclideanSpace.equiv (Fin n) ℝ u) = ‖u‖ ^ 2 := by
