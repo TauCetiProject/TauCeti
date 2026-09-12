@@ -373,11 +373,6 @@ theorem IsRegular.subfan {Φ : Fan i} (hΦ : Φ.IsRegular) (S : Set (PointedCone
     (hS : S ⊆ Φ.cones) (hface : ∀ ⦃σ τ⦄, σ ∈ S → τ.IsFaceOf σ → τ ∈ S) :
     (Φ.subfan S hS hface).IsRegular := fun _ hσ ↦ hΦ (hS (by rwa [Φ.subfan_cones] at hσ))
 
-/-- The zero cone is regular for the lattice underlying any fan. Its affine chart is the dense
-torus, and a nonempty fan contains that cone, by `TauCeti.Toric.Fan.bot_mem`. -/
-theorem isRegularCone_bot (Φ : Fan i) : IsRegularCone i (⊥ : PointedCone ℝ V) :=
-  _root_.TauCeti.Toric.isRegularCone_bot Φ.lattice
-
 end Fan
 
 end TauCeti.Toric

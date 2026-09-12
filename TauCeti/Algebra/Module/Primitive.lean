@@ -86,8 +86,7 @@ namespace Module.Basis
 
 variable {ι M : Type*} [AddCommGroup M] [Module ℤ M]
 
-/-- A vector of an integral basis is primitive: its own coordinate functional takes the value one
-on it. -/
+/-- A vector of an integral basis is primitive. -/
 theorem isPrimitive (b : Module.Basis ι ℤ M) (j : ι) : TauCeti.IsPrimitive (b j) :=
   TauCeti.isPrimitive_def.2 ⟨b.coord j, by simp⟩
 
@@ -168,9 +167,7 @@ theorem exists_eq_zsmul_isPrimitive [Module.Free ℤ M] {v : M}
     Finsupp.ofSupportFinite_coe, smul_eq_mul]
   simpa only [mul_comm] using (hqgcd.symm.trans ha).symm
 
-/-- A primitive vector of a finite free integer module belongs to an integral basis of it. The
-complementary basis vectors are a basis of the kernel of a functional taking the value one on the
-given vector, which splits off a copy of `ℤ`. -/
+/-- A primitive vector of a finite free integer module belongs to an integral basis of it. -/
 theorem IsPrimitive.exists_basis [Module.Free ℤ M] [Module.Finite ℤ M] {v : M}
     (hv : IsPrimitive v) :
     ∃ (n : ℕ) (b : Module.Basis (Fin n) ℤ M) (j : Fin n), b j = v := by
