@@ -29,6 +29,8 @@ variable {R : Type*} [CommRing R] [LocallyConnectedSpace (PrimeSpectrum R)]
 /-- The coordinate algebra of a connected component is étale over the ambient ring. -/
 instance etale_quotient_connectedComponentIdeal (x : PrimeSpectrum R) :
     Algebra.Etale R (R ⧸ PrimeSpectrum.connectedComponentIdeal x) := by
+  -- The ideal's definition is not exposed across the module boundary, so recover its
+  -- presentation using the exported membership theorem.
   have hI : PrimeSpectrum.connectedComponentIdeal x =
       Ideal.span {1 - PrimeSpectrum.connectedComponentIdempotent x} := by
     ext r
