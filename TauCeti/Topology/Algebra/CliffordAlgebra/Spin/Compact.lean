@@ -295,10 +295,10 @@ private theorem subsingleton_realCliffordSpinGroupZero_zero :
   rw [hlipschitz] at hx hy
   obtain ⟨ux, huxmem, hux⟩ := hx
   obtain ⟨uy, huymem, huy⟩ := hy
-  change ux ∈ (⊥ : Subgroup (CliffordAlgebra Q)ˣ) at huxmem
-  change uy ∈ (⊥ : Subgroup (CliffordAlgebra Q)ˣ) at huymem
-  have huxone : ux = 1 := huxmem
-  have huyone : uy = 1 := huymem
+  have huxmem' : ux ∈ (⊥ : Subgroup (CliffordAlgebra Q)ˣ) := huxmem
+  have huymem' : uy ∈ (⊥ : Subgroup (CliffordAlgebra Q)ˣ) := huymem
+  have huxone : ux = 1 := Subgroup.mem_bot.mp huxmem'
+  have huyone : uy = 1 := Subgroup.mem_bot.mp huymem'
   calc
     (x : CliffordAlgebra Q) = ux := hux.symm
     _ = 1 := by simp only [huxone, Units.val_one]

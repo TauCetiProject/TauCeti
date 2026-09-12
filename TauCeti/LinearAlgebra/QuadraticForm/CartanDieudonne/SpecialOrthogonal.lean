@@ -61,10 +61,8 @@ theorem exists_even_reflectionOrthogonal_list_prod_eq
         have hdet : ∀ r ∈ l, detOrthogonal r = -1 := by
           intro r hr
           obtain ⟨v, _, rfl⟩ := hlrefl r hr
-          change LinearEquiv.det
-            ((QuadraticMap.reflectionOrthogonal Q v :
-              QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) = -1
-          simpa only [QuadraticMap.coe_reflectionOrthogonal] using
+          simpa only [detOrthogonal, MonoidHom.coe_comp, Function.comp_apply,
+            Subgroup.coe_subtype, QuadraticMap.coe_reflectionOrthogonal] using
             QuadraticMap.det_reflection Q v
         calc
           _ = (l.map detOrthogonal).prod := by
