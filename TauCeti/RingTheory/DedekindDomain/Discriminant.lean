@@ -17,6 +17,8 @@ introduces that carrier, together with the two defining identities that are vali
 separability assumption. The later arithmetic theory uses `relDiscr` rather than expanding this
 relative norm of the different at each use site.
 
+This implements [Layer 4.1 of the Number Field Arithmetic roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/NumberFieldArithmetic/README.md).
+
 -/
 
 public section
@@ -38,6 +40,12 @@ noncomputable def relDiscr (A B : Type*) [CommRing A] [IsDedekindDomain A]
 /-- The relative discriminant is the relative norm of the different ideal. -/
 theorem relDiscr_def : relDiscr A B = Ideal.relNorm A (differentIdeal A B) := by
   rw [relDiscr]
+
+/-- Membership in the relative discriminant unfolds to membership in the relative norm. -/
+@[simp]
+theorem mem_relDiscr_iff {x : A} :
+    x ∈ relDiscr A B ↔ x ∈ Ideal.relNorm A (differentIdeal A B) := by
+  rw [relDiscr_def]
 
 /-- The relative discriminant is zero exactly when the different is zero. -/
 @[simp]
