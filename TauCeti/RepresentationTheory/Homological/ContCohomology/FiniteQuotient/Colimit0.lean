@@ -64,21 +64,30 @@ section Transition
 
 variable {U V W : OpenNormalSubgroup G}
 
+private theorem fixedPointsAddSubgroup_quotientGroupMap_smul (hVU : V ≤ U)
+    (q : G ⧸ V.toSubgroup) (m : FixedPoints.addSubgroup U.toSubgroup M) :
+    AddSubgroup.inclusion (show FixedPoints.addSubgroup U.toSubgroup M ≤
+      FixedPoints.addSubgroup V.toSubgroup M from
+        fun _x hx => fixedPoints_subgroup_antitone G M hVU hx)
+        (QuotientGroup.mapOfLE hVU q • m) =
+      q • AddSubgroup.inclusion (show FixedPoints.addSubgroup U.toSubgroup M ≤
+        FixedPoints.addSubgroup V.toSubgroup M from
+          fun _x hx => fixedPoints_subgroup_antitone G M hVU hx) m := by
+  induction q using QuotientGroup.induction_on with
+  | H g =>
+    apply Subtype.ext
+    simp only [QuotientGroup.mapOfLE_mk, coe_quotient_smul_fixedPoints_addSubgroup,
+      coe_smul_fixedPoints_addSubgroup]
+    rfl
+
 /-- The degree-zero transition from the `U`-level to the `V`-level, for `V ≤ U`. -/
 noncomputable def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G) (hVU : V ≤ U) :
     H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) →+
       H0 (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M) :=
   explicitMap0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
     (QuotientGroup.mapOfLE hVU)
-    (AddSubgroup.inclusion (fixedPoints_subgroup_antitone G M hVU))
-    (fun q m => by
-      induction q using QuotientGroup.induction_on with
-      | H g =>
-        apply Subtype.ext
-        simp only [QuotientGroup.mapOfLE_mk]
-        simp only [coe_quotient_smul_fixedPoints_addSubgroup,
-          coe_smul_fixedPoints_addSubgroup]
-        rfl)
+    (AddSubgroup.inclusion (fun _x hx => fixedPoints_subgroup_antitone G M hVU hx))
+    (fixedPointsAddSubgroup_quotientGroupMap_smul G M hVU)
 
 /-- Coercion of a degree-zero transition to the coefficient group. -/
 @[simp]
@@ -119,24 +128,12 @@ theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
       (m : FixedPoints.addSubgroup U.toSubgroup M), iVU (QuotientGroup.mapOfLE hVU q • m) =
         q • iVU m := by
     intro q m
-    induction q using QuotientGroup.induction_on with
-    | H g =>
-      apply Subtype.ext
-      simp only [QuotientGroup.mapOfLE_mk]
-      simp only [coe_quotient_smul_fixedPoints_addSubgroup,
-        coe_smul_fixedPoints_addSubgroup]
-      rfl
+    simpa [iVU] using fixedPointsAddSubgroup_quotientGroupMap_smul G M hVU q m
   have hWV' : ∀ (q : G ⧸ W.toSubgroup)
       (m : FixedPoints.addSubgroup V.toSubgroup M), iWV (QuotientGroup.mapOfLE hWV q • m) =
         q • iWV m := by
     intro q m
-    induction q using QuotientGroup.induction_on with
-    | H g =>
-      apply Subtype.ext
-      simp only [QuotientGroup.mapOfLE_mk]
-      simp only [coe_quotient_smul_fixedPoints_addSubgroup,
-        coe_smul_fixedPoints_addSubgroup]
-      rfl
+    simpa [iWV] using fixedPointsAddSubgroup_quotientGroupMap_smul G M hWV q m
   unfold explicitFiniteQuotientTransition0
   convert explicitMap0_comp (G := G ⧸ U.toSubgroup)
     (M := FixedPoints.addSubgroup U.toSubgroup M) (QuotientGroup.mapOfLE hVU) iVU hVU'
