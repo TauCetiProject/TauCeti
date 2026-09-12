@@ -41,7 +41,7 @@ modulus imposes nothing at all.
   ideals with a totally positive generator.
 * `TauCeti.GlobalNumberFields.toClassGroup_narrowEquiv`: the transition map to the trivial modulus
   is the forgetful map `Cl⁺(K) → Cl(K)`, read through the identifications at both ends.
-* `TauCeti.GlobalNumberFields.classMap_one_surjective` and
+* `TauCeti.GlobalNumberFields.classMap_surjective` and
   `TauCeti.GlobalNumberFields.ker_classMap_narrowModulus`: exactness of
   `Kˣ → Cl⁺(K) → Cl(K) → 1` in ray-class form.
 * `TauCeti.GlobalNumberFields.narrowRayClassPrincipal_sq`: that kernel is an elementary abelian
@@ -218,7 +218,7 @@ is the ray class group of the trivial modulus, hence the ordinary class group. -
 noncomputable def classMapNarrowModulusEquiv [IsTotallyComplex K] :
     RayClassGroup (narrowModulus K) ≃* RayClassGroup (Modulus.one K) :=
   MulEquiv.ofBijective (classMap (Modulus.one_dvd (narrowModulus K)))
-    ⟨classMap_narrowModulus_injective, classMap_one_surjective (narrowModulus K)⟩
+    ⟨classMap_narrowModulus_injective, classMap_surjective (Modulus.one_dvd (narrowModulus K))⟩
 
 @[simp] theorem classMapNarrowModulusEquiv_apply [IsTotallyComplex K]
     (c : RayClassGroup (narrowModulus K)) :

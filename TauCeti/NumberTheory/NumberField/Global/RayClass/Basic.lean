@@ -217,6 +217,12 @@ theorem rayClassLift_unique {M : Type*} [Monoid M] {𝔪 : Modulus K} (φ : idea
   obtain ⟨I, rfl⟩ := rayClassMk_surjective 𝔪 c
   rw [rayClassLift_rayClassMk, ← hψ, MonoidHom.comp_apply]
 
+/-- The kernel of a homomorphism induced from the group of ideals prime to a modulus. -/
+theorem ker_rayClassLift {M : Type*} [Group M] {𝔪 : Modulus K}
+    (φ : idealsPrimeTo 𝔪 →* M) (h : ray 𝔪 ≤ φ.ker) :
+    (rayClassLift φ h).ker = Subgroup.map (rayClassMk 𝔪) φ.ker :=
+  QuotientGroup.ker_lift (ray 𝔪) φ h
+
 /-- **The ray class of an integral ideal prime to the modulus.**  The domain is the monoid of
 nonzero integral ideals prime to the finite part of `𝔪`, never `Ideal (𝓞 K)`: an ideal sharing a
 prime with the finite part, or the zero ideal, has no ray class, and a version totalized over
