@@ -20,9 +20,10 @@ and on `S_k(Γ₀(N))`.
 The operator carries **no** normalizing scalar, so it is not an involution: `W ^ 2` is `Q` times
 an element of `Γ₀(N)`, and a scalar matrix slashes by a power of its scalar, so the operator
 squares to `Q ^ (k - 2)` (`atkinLehnerOperator_atkinLehnerOperator`). Dividing that away is the
-job of the normalized operator `𝒲_Q = (√Q) ^ (2 - k) • (· ∣[k] W)`, which does not exist yet. The
-Fricke member `Q = N` of the family is studied separately in
-`TauCeti/NumberTheory/ModularForms/Fricke/`, on the `Γ₁(N)` carrier and likewise un-normalized.
+job of the normalized operator `𝒲_Q = (√Q) ^ (2 - k) • (· ∣[k] W)`, built on top of this one in
+`TauCeti/NumberTheory/ModularForms/AtkinLehner/Normalized.lean`. The Fricke member `Q = N` of the
+family is studied separately in `TauCeti/NumberTheory/ModularForms/Fricke/`, on the `Γ₁(N)`
+carrier.
 
 The operator does not depend on which Atkin–Lehner matrix for `Q` is used: two of them differ by
 an element of `Γ₀(N)`, which a form for `Γ₀(N)` absorbs (`atkinLehnerOperator_congr`). The
@@ -53,6 +54,8 @@ alone, with no matrix to supply — is the interface to use.
 * `TauCeti.Nat.IsExactDivisor.atkinLehnerOperator_eq`,
   `TauCeti.Nat.IsExactDivisor.atkinLehnerOperatorCusp_eq`: `W_Q` is the slash by *any* Atkin–Lehner
   matrix for `Q`.
+* `TauCeti.Nat.IsExactDivisor.atkinLehnerOperator_atkinLehnerOperator_of_coprime` and its
+  cusp-form counterpart: `W_R ∘ W_Q = W_{Q R}` at coprime exact divisors.
 * `TauCeti.Nat.IsExactDivisor.atkinLehnerOperator_one`,
   `TauCeti.Nat.IsExactDivisor.atkinLehnerOperatorCusp_one`: `W_1` is the identity.
 * `TauCeti.Nat.IsExactDivisor.coe_atkinLehnerOperator_self`,
@@ -342,6 +345,69 @@ theorem Nat.IsExactDivisor.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp (h : 
     (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
     h.atkinLehnerOperatorCusp k (h.atkinLehnerOperatorCusp k f) = (Q : ℂ) ^ (k - 2) • f :=
   _root_.TauCeti.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp h.pos h.dvd _ f
+
+/-!
+## Composition in the divisor
+
+Slashing by an Atkin–Lehner matrix for `Q` and then by one for `R` is slashing by their product,
+which is an Atkin–Lehner matrix for `Q * R` (`TauCeti.IsAtkinLehnerMatrix.mul`). On coprime exact
+divisors this reads `W_R ∘ W_Q = W_{Q R}`, and since `Q * R = R * Q` the two operators commute.
+-/
+
+/-- **The product of two Atkin–Lehner matrices, read in `GL (Fin 2) ℝ`.** -/
+theorem atkinLehnerGL_mul {R : ℕ} {M' : Matrix (Fin 2) (Fin 2) ℤ} (hQ : 0 < Q) (hR : 0 < R)
+    (hQRN : Q * R ∣ N) (h : IsAtkinLehnerMatrix N Q M) (h' : IsAtkinLehnerMatrix N R M') :
+    atkinLehnerGL hQ h * atkinLehnerGL hR h' =
+      atkinLehnerGL (Nat.mul_pos hQ hR) (h.mul hQRN h') := by
+  refine Units.ext ?_
+  simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, ← Matrix.map_mul_intCast]
+
+/-- **Composing the two raw Atkin–Lehner operators** on `M_k(Γ₀(N))`: first `W_Q`, then `W_R`,
+is the operator of the product matrix, an Atkin–Lehner matrix for `Q * R`. -/
+theorem atkinLehnerOperator_atkinLehnerOperator_mul {R : ℕ} {M' : Matrix (Fin 2) (Fin 2) ℤ}
+    (hQ : 0 < Q) (hR : 0 < R) (hQN : Q ∣ N) (hRN : R ∣ N) (hQRN : Q * R ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (h' : IsAtkinLehnerMatrix N R M')
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    atkinLehnerOperator hR hRN h' k (atkinLehnerOperator hQ hQN h k f) =
+      atkinLehnerOperator (Nat.mul_pos hQ hR) hQRN (h.mul hQRN h') k f :=
+  DFunLike.coe_injective <| by
+    rw [coe_atkinLehnerOperator, coe_atkinLehnerOperator, coe_atkinLehnerOperator,
+      ← SlashAction.slash_mul, atkinLehnerGL_mul hQ hR hQRN h h']
+
+/-- **Composing the two raw Atkin–Lehner operators** on `S_k(Γ₀(N))`. -/
+theorem atkinLehnerOperatorCusp_atkinLehnerOperatorCusp_mul {R : ℕ}
+    {M' : Matrix (Fin 2) (Fin 2) ℤ} (hQ : 0 < Q) (hR : 0 < R) (hQN : Q ∣ N) (hRN : R ∣ N)
+    (hQRN : Q * R ∣ N) (h : IsAtkinLehnerMatrix N Q M) (h' : IsAtkinLehnerMatrix N R M')
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    atkinLehnerOperatorCusp hR hRN h' k (atkinLehnerOperatorCusp hQ hQN h k f) =
+      atkinLehnerOperatorCusp (Nat.mul_pos hQ hR) hQRN (h.mul hQRN h') k f :=
+  DFunLike.coe_injective <| by
+    rw [coe_atkinLehnerOperatorCusp, coe_atkinLehnerOperatorCusp, coe_atkinLehnerOperatorCusp,
+      ← SlashAction.slash_mul, atkinLehnerGL_mul hQ hR hQRN h h']
+
+/-- **`W_R ∘ W_Q = W_{Q R}` at coprime exact divisors**, on `M_k(Γ₀(N))`. The product `Q * R` is
+again an exact divisor (`TauCeti.Nat.IsExactDivisor.mul`), so the family of operators indexed by
+exact divisors is closed under this composition. -/
+theorem Nat.IsExactDivisor.atkinLehnerOperator_atkinLehnerOperator_of_coprime {R : ℕ}
+    (hQ : Q ∥ N) (hR : R ∥ N) (hQR : Nat.Coprime Q R)
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    hR.atkinLehnerOperator k (hQ.atkinLehnerOperator k f) =
+      (hQ.mul hR hQR).atkinLehnerOperator k f := by
+  rw [(hQ.mul hR hQR).atkinLehnerOperator_eq ((isAtkinLehnerMatrix_atkinLehnerMatrix hQ).mul
+    (hQ.mul hR hQR).dvd (isAtkinLehnerMatrix_atkinLehnerMatrix hR))]
+  exact atkinLehnerOperator_atkinLehnerOperator_mul hQ.pos hR.pos hQ.dvd hR.dvd
+    (hQ.mul hR hQR).dvd _ _ f
+
+/-- **`W_R ∘ W_Q = W_{Q R}` at coprime exact divisors**, on `S_k(Γ₀(N))`. -/
+theorem Nat.IsExactDivisor.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp_of_coprime {R : ℕ}
+    (hQ : Q ∥ N) (hR : R ∥ N) (hQR : Nat.Coprime Q R)
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    hR.atkinLehnerOperatorCusp k (hQ.atkinLehnerOperatorCusp k f) =
+      (hQ.mul hR hQR).atkinLehnerOperatorCusp k f := by
+  rw [(hQ.mul hR hQR).atkinLehnerOperatorCusp_eq ((isAtkinLehnerMatrix_atkinLehnerMatrix hQ).mul
+    (hQ.mul hR hQR).dvd (isAtkinLehnerMatrix_atkinLehnerMatrix hR))]
+  exact atkinLehnerOperatorCusp_atkinLehnerOperatorCusp_mul hQ.pos hR.pos hQ.dvd hR.dvd
+    (hQ.mul hR hQR).dvd _ _ f
 
 /-!
 ## The endpoints `Q = 1` and `Q = N`

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Nat.GCD.Basic
+public import Mathlib.Data.Nat.Factorization.Basic
 
 /-!
 # Exact divisors of a natural number
@@ -40,6 +40,15 @@ vertical line `‖`; it is scoped, so it never competes with the `∥` of `Affin
   itself.
 * `TauCeti.Nat.IsExactDivisor.mul`: coprime exact divisors multiply to an exact divisor, so the
   exact divisors of `N` are closed under coprime products.
+* `TauCeti.Nat.isExactDivisor_iff_factorization`: exactness read on the factorization — at every
+  prime the exponent of `Q` is either `0` or the full exponent of `N`.
+* `TauCeti.Nat.IsExactDivisor.gcd`, `TauCeti.Nat.IsExactDivisor.div_gcd`,
+  `TauCeti.Nat.IsExactDivisor.coprime_div_gcd`: the Boolean-algebra structure, in the form the
+  Atkin–Lehner group law needs — `gcd Q R` and `Q / gcd Q R` are again exact divisors, and the
+  second is coprime to `R`.
+* `TauCeti.Nat.mul_div_gcd_sq_eq`, `TauCeti.Nat.IsExactDivisor.mul_div_gcd_sq`:
+  `Q * R / gcd (Q, R) ^ 2` — the symmetric difference of `Q` and `R` — is the product of the two
+  complementary quotients, and is an exact divisor too.
 -/
 
 public section
@@ -112,6 +121,132 @@ theorem IsExactDivisor.mul (hQ : IsExactDivisor Q N) (hR : IsExactDivisor R N)
   refine Nat.coprime_mul_iff_left.mpr ⟨?_, ?_⟩
   · exact Nat.Coprime.coprime_dvd_right (e2 ▸ Dvd.intro_left R rfl) hQ.coprime
   · exact Nat.Coprime.coprime_dvd_right (e3 ▸ Dvd.intro_left Q rfl) hR.coprime
+
+/-! ### The Boolean-algebra structure -/
+
+/-- **The only exact divisor of `0` is `1`.** The complementary divisor of `Q` in `0` is `0`
+again, and `Nat.Coprime Q 0` says `Q = 1`. Not a `simp` lemma: `isExactDivisor_iff` already
+reduces the left-hand side, and `simp` closes the resulting goal on its own. -/
+theorem isExactDivisor_zero_iff : IsExactDivisor Q 0 ↔ Q = 1 :=
+  ⟨fun h ↦ by simpa using h.coprime, fun h ↦ h ▸ isExactDivisor_one⟩
+
+/-- **Exactness, read on the factorization.** For `N ≠ 0`, a divisor `Q` of `N` is exact exactly
+when at every prime its exponent is either `0` or the full exponent of `N`. In this form the
+closure properties below are statements about `min` and truncated subtraction of exponents, which
+`omega` decides once the factorizations of `gcd` and of a quotient are unfolded. -/
+theorem isExactDivisor_iff_factorization (hN : N ≠ 0) :
+    IsExactDivisor Q N ↔
+      Q ∣ N ∧ ∀ p, Q.factorization p = 0 ∨ Q.factorization p = N.factorization p := by
+  constructor
+  · intro h
+    obtain ⟨m, hm⟩ := h.dvd
+    have hQ0 : Q ≠ 0 := h.ne_zero
+    have hm0 : m ≠ 0 := by rintro rfl; exact hN (by simpa using hm)
+    have hdiv : N / Q = m := by rw [hm]; exact Nat.mul_div_cancel_left _ h.pos
+    have hcop : Nat.Coprime Q m := hdiv ▸ h.coprime
+    have hfac : N.factorization = Q.factorization + m.factorization := by
+      rw [hm]; exact Nat.factorization_mul hQ0 hm0
+    refine ⟨h.dvd, fun p ↦ ?_⟩
+    rcases eq_or_ne (Q.factorization p) 0 with h0 | h0
+    · exact Or.inl h0
+    refine Or.inr ?_
+    have hp : p ∈ Q.primeFactors := by
+      rw [← Nat.support_factorization]; exact Finsupp.mem_support_iff.mpr h0
+    have hpm : p ∉ m.primeFactors := Finset.disjoint_left.mp hcop.disjoint_primeFactors hp
+    rw [← Nat.support_factorization] at hpm
+    rw [hfac, Finsupp.add_apply, Finsupp.notMem_support_iff.mp hpm, add_zero]
+  · rintro ⟨hQN, hf⟩
+    have hQ0 : Q ≠ 0 := by rintro rfl; exact hN (zero_dvd_iff.mp hQN)
+    obtain ⟨m, hm⟩ := hQN
+    have hm0 : m ≠ 0 := by rintro rfl; exact hN (by simpa using hm)
+    have hdiv : N / Q = m := by
+      rw [hm]; exact Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hQ0)
+    have hfac : ∀ p, N.factorization p = Q.factorization p + m.factorization p := fun p ↦ by
+      rw [hm, Nat.factorization_mul hQ0 hm0, Finsupp.add_apply]
+    refine ⟨⟨m, hm⟩, ?_⟩
+    rw [hdiv, ← Nat.disjoint_primeFactors hQ0 hm0, Finset.disjoint_left]
+    intro p hpQ hpm
+    rw [← Nat.support_factorization] at hpQ hpm
+    have h1 := Finsupp.mem_support_iff.mp hpQ
+    have h2 := Finsupp.mem_support_iff.mp hpm
+    have h3 := hfac p
+    rcases hf p with h0 | h0
+    · exact h1 h0
+    · omega
+
+/-- **Exact divisors are closed under `gcd`.** At each prime the exponent of `gcd Q R` is the
+minimum of two exponents each of which is `0` or the full exponent of `N`. -/
+theorem IsExactDivisor.gcd (hQ : IsExactDivisor Q N) (hR : IsExactDivisor R N) :
+    IsExactDivisor (Nat.gcd Q R) N := by
+  have hQ0 : Q ≠ 0 := hQ.ne_zero
+  have hR0 : R ≠ 0 := hR.ne_zero
+  rcases eq_or_ne N 0 with rfl | hN
+  · rw [isExactDivisor_zero_iff] at hQ hR ⊢
+    rw [hQ, hR, Nat.gcd_self]
+  rw [isExactDivisor_iff_factorization hN] at hQ hR ⊢
+  refine ⟨(Nat.gcd_dvd_left Q R).trans hQ.1, fun p ↦ ?_⟩
+  rw [Nat.factorization_gcd hQ0 hR0, Finsupp.inf_apply]
+  rcases hQ.2 p with h1 | h1 <;> rcases hR.2 p with h2 | h2 <;> omega
+
+/-- **The quotient of an exact divisor by a `gcd` with another one is exact.** At each prime the
+exponent of `Q / gcd Q R` is `0` unless `Q` carries the full exponent of `N` there and `R` carries
+none, in which case it is again that full exponent. -/
+theorem IsExactDivisor.div_gcd (hQ : IsExactDivisor Q N) (hR : IsExactDivisor R N) :
+    IsExactDivisor (Q / Nat.gcd Q R) N := by
+  have hQ0 : Q ≠ 0 := hQ.ne_zero
+  have hR0 : R ≠ 0 := hR.ne_zero
+  rcases eq_or_ne N 0 with rfl | hN
+  · rw [isExactDivisor_zero_iff] at hQ hR ⊢
+    rw [hQ, hR, Nat.gcd_self, Nat.div_self Nat.one_pos]
+  rw [isExactDivisor_iff_factorization hN] at hQ hR ⊢
+  refine ⟨(Nat.div_dvd_of_dvd (Nat.gcd_dvd_left Q R)).trans hQ.1, fun p ↦ ?_⟩
+  rw [Nat.factorization_div (Nat.gcd_dvd_left Q R), Finsupp.tsub_apply,
+    Nat.factorization_gcd hQ0 hR0, Finsupp.inf_apply]
+  rcases hQ.2 p with h1 | h1 <;> rcases hR.2 p with h2 | h2 <;> omega
+
+/-- **`Q / gcd Q R` is coprime to `R`.** A prime dividing the quotient carries the full exponent
+of `N` in `Q` and none of it in `R`; this is the step where the exactness of *both* divisors is
+used, and it fails for divisors in general (`Q = 4`, `R = 2`). -/
+theorem IsExactDivisor.coprime_div_gcd (hQ : IsExactDivisor Q N) (hR : IsExactDivisor R N) :
+    Nat.Coprime (Q / Nat.gcd Q R) R := by
+  have hQ0 : Q ≠ 0 := hQ.ne_zero
+  have hR0 : R ≠ 0 := hR.ne_zero
+  have hg0 : 0 < Nat.gcd Q R := Nat.gcd_pos_of_pos_left R hQ.pos
+  have hq0 : Q / Nat.gcd Q R ≠ 0 :=
+    (Nat.div_pos (Nat.le_of_dvd hQ.pos (Nat.gcd_dvd_left Q R)) hg0).ne'
+  rcases eq_or_ne N 0 with rfl | hN
+  · rw [isExactDivisor_zero_iff] at hQ hR
+    rw [hQ, hR, Nat.gcd_self, Nat.div_self Nat.one_pos]
+    exact Nat.coprime_one_left 1
+  rw [isExactDivisor_iff_factorization hN] at hQ hR
+  rw [← Nat.disjoint_primeFactors hq0 hR0, Finset.disjoint_left]
+  intro p hpq hpR
+  rw [← Nat.support_factorization] at hpq hpR
+  have h1 := Finsupp.mem_support_iff.mp hpq
+  have h2 := Finsupp.mem_support_iff.mp hpR
+  rw [Nat.factorization_div (Nat.gcd_dvd_left Q R), Finsupp.tsub_apply,
+    Nat.factorization_gcd hQ0 hR0, Finsupp.inf_apply] at h1
+  rcases hQ.2 p with hq | hq <;> rcases hR.2 p with hr | hr <;> omega
+
+/-- **The symmetric difference, in factored form.** `Q * R / gcd (Q, R) ^ 2` is the product of
+the two complementary quotients; the statement is pure `Nat` arithmetic, with no exactness
+anywhere. -/
+theorem mul_div_gcd_sq_eq (Q R : ℕ) :
+    Q * R / Nat.gcd Q R ^ 2 = Q / Nat.gcd Q R * (R / Nat.gcd Q R) := by
+  rw [Nat.div_mul_div_comm (Nat.gcd_dvd_left Q R) (Nat.gcd_dvd_right Q R), sq]
+
+/-- **The symmetric difference of two exact divisors is exact.** `Q * R / gcd (Q, R) ^ 2` is the
+product of the coprime exact divisors `Q / gcd (Q, R)` and `R / gcd (Q, R)`; under the
+identification of exact divisors with subsets of `N.primeFactors` it is the symmetric difference,
+which is why it is the composition law of the Atkin–Lehner family. -/
+theorem IsExactDivisor.mul_div_gcd_sq (hQ : IsExactDivisor Q N) (hR : IsExactDivisor R N) :
+    IsExactDivisor (Q * R / Nat.gcd Q R ^ 2) N := by
+  have hcop : Nat.Coprime (Q / Nat.gcd Q R) (R / Nat.gcd Q R) :=
+    (hQ.coprime_div_gcd hR).coprime_dvd_right (Nat.div_dvd_of_dvd (Nat.gcd_dvd_right Q R))
+  have hRdiv : IsExactDivisor (R / Nat.gcd Q R) N := by
+    rw [Nat.gcd_comm]; exact hR.div_gcd hQ
+  rw [mul_div_gcd_sq_eq]
+  exact (hQ.div_gcd hR).mul hRdiv hcop
 
 end Nat
 
