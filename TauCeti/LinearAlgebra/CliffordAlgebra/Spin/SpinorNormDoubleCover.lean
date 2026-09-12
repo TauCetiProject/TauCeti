@@ -26,7 +26,8 @@ that kernel and packages the resulting short exact sequence as a group extension
 
 ## References
 
-See H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
+See H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2. The extension API
+and proof structure are adapted from `TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DoubleCover`.
 -/
 
 public section
