@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Stability
+public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Model
 public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Regularity
 import TauCeti.Combinatorics.DenseGraphLimits.Kernel.Pullback
 import TauCeti.MeasureTheory.MeasurableSpace.Finpartition
@@ -150,32 +151,6 @@ private theorem cutDist_triangle_of_countable_middle [Countable Ω₂]
         @cutNorm _ _ π₂₃ hπ₂₃.isFiniteMeasure (overlayDiff W X π₂₃) := hnorm13
     _ ≤ cutDist U W + cutDist W X + ε := by linarith
 
-section StepModel
-
-variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
-variable {P : Finpartition (Set.univ : Set Ω)} [MeasurableSpace P.parts]
-variable [DiscreteMeasurableSpace P.parts]
-
-/-- A finite step graphon's block matrix, regarded as a graphon on the discrete probability space
-of partition parts. -/
-private def stepGraphonModel
-    (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ p q, val p q = val q p) :
-    Graphon P.parts (μ.map P.indexedPartition.index) where
-  toFun p q := val p q
-  symm' p q := congrArg Subtype.val (hsymm p q)
-  meas' := measurable_of_countable _
-  bdd' := ⟨1, fun p q => by
-    rw [abs_of_nonneg (val p q).property.1]
-    exact (val p q).property.2⟩
-  mem01' p q := (val p q).property
-
-@[simp]
-private theorem stepGraphonModel_apply
-    (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ p q, val p q = val q p)
-    (p q : P.parts) : stepGraphonModel (μ := μ) val hsymm p q = val p q := rfl
-
-end StepModel
-
 /-- The cut distance satisfies the triangle inequality when the intermediate graphon is constant
 on the rectangles of a measurable finite partition. -/
 private theorem cutDist_triangle_of_constantOn_partition
@@ -185,20 +160,19 @@ private theorem cutDist_triangle_of_constantOn_partition
       W x y = W (P.indexedPartition.some p) (P.indexedPartition.some q)) :
     cutDist U X ≤ cutDist U W + cutDist W X := by
   let _ : MeasurableSpace P.parts := ⊤
-  let ν : Measure P.parts := μ₂.map P.indexedPartition.index
-  let val : P.parts → P.parts → Set.Icc (0 : ℝ) 1 := fun p q =>
-    ⟨W (P.indexedPartition.some p) (P.indexedPartition.some q), W.mem_Icc _ _⟩
-  have hsymm : ∀ p q, val p q = val q p := fun p q => by
-    apply Subtype.ext
-    exact W.symm _ _
-  let A : Graphon P.parts ν := stepGraphonModel (μ := μ₂) val hsymm
   have hindex : Measurable P.indexedPartition.index :=
     Finpartition.measurable_indexedPartition_index P hP
-  have hmp : MeasurePreserving P.indexedPartition.index μ₂ ν := ⟨hindex, rfl⟩
-  have hmodel : W = A.comap P.indexedPartition.index hindex μ₂ := by
-    ext x y
-    rw [Graphon.comap_apply, stepGraphonModel_apply]
-    exact hconst _ _ (P.indexedPartition.mem_index x) (P.indexedPartition.mem_index y)
+  have hmp : MeasurePreserving P.indexedPartition.index μ₂
+      (μ₂.map P.indexedPartition.index) := ⟨hindex, rfl⟩
+  -- The intermediate graphon factors through the finitely many parts, so it is the pullback of a
+  -- matrix on the discrete probability space of parts.
+  have hfac : ∀ x y x' y', P.indexedPartition.index x = P.indexedPartition.index x' →
+      P.indexedPartition.index y = P.indexedPartition.index y' → W x y = W x' y' := by
+    intro x y x' y' hx hy
+    rw [hconst _ _ (P.indexedPartition.mem_index x) (P.indexedPartition.mem_index y),
+      hconst _ _ (P.indexedPartition.mem_index x') (P.indexedPartition.mem_index y'), hx, hy]
+  obtain ⟨b, hb, hmodel⟩ := exists_ofMatrix_eq_comap_of_factorsThrough W hmp hfac
+  set A := Graphon.ofMatrix (μ₂.map P.indexedPartition.index) b hb
   have hUA : cutDist U A ≤ cutDist U W := by
     rw [hmodel]
     exact cutDist_le_cutDist_comap_right U A hmp
