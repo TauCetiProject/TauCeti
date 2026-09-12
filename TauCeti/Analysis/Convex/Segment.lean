@@ -32,6 +32,10 @@ No strict convexity is involved: the alternative route through `sameRay_iff_norm
 `StrictConvexSpace ℝ E` instance, whereas `sameRay_iff_norm_smul_eq` and
 `inner_eq_norm_mul_iff_real` hold in any normed, respectively inner product, space.
 
+The affine half-open segment result is also recorded here: in an additive commutative group with a
+real module structure, it identifies the image of a scalar interval under an affine
+parametrization with a segment whose terminal endpoint is removed.
+
 ## Main results
 
 * `TauCeti.mem_segment_zero_left_iff_sameRay_and_norm_le` —
@@ -40,6 +44,8 @@ No strict convexity is involved: the alternative route through `sameRay_iff_norm
 * `TauCeti.mem_segment_zero_left_iff_real_inner_eq_norm_mul_and_norm_le` and
   `TauCeti.zero_mem_segment_iff_real_inner_eq_neg_norm_mul` — the two criteria in a real inner
   product space.
+* `TauCeti.image_add_smul_Ico` — the affine image of `Ico 0 D` is a segment with its terminal
+  endpoint removed.
 
 The consumer is `TauCeti/Analysis/Complex/Conformal/Poincare/Betweenness.lean`, which identifies
 the hyperbolic segments of the Poincaré disc issuing from, or straddling, the origin with the
@@ -107,7 +113,7 @@ end Normed
 
 section HalfOpen
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [AddCommGroup E] [Module ℝ E]
 
 /-- **A nonzero affine ray parametrizes a half-open segment.** If `y - x = D • u` with `D > 0`,
 then the points `x + t • u` for `0 ≤ t < D` are exactly the segment from `x` to `y` with `y`
@@ -120,9 +126,8 @@ theorem image_add_smul_Ico {x y u : E} {D : ℝ} (hDpos : 0 < D) (hu : u ≠ 0)
   · rintro z ⟨t, ⟨ht0, htD⟩, rfl⟩
     refine ⟨?_, ?_⟩
     · refine ⟨t / D, ⟨div_nonneg ht0 hDpos.le, (div_lt_one hDpos).2 htD |>.le⟩, ?_⟩
-      change x + (t / D) • (y - x) = x + t • u
-      rw [hdir, smul_smul]
-      rw [div_mul_cancel₀ t hDpos.ne']
+      rw [hdir]
+      simp only [smul_smul, div_mul_cancel₀ t hDpos.ne']
     · intro h
       apply htD.ne
       have hEq : x + t • u = y := by simpa using h
@@ -142,8 +147,8 @@ theorem image_add_smul_Ico {x y u : E} {D : ℝ} (hDpos : 0 < D) (hu : u ≠ 0)
       simp [hteq]
     refine ⟨t * D, ⟨mul_nonneg ht.1 hDpos.le, ?_⟩, ?_⟩
     · nlinarith [ht.2, hDpos]
-    · change x + (t * D) • u = x + t • (y - x)
-      rw [hdir, smul_smul]
+    · rw [hdir]
+      simp only [smul_smul]
 
 end HalfOpen
 
