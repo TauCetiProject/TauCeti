@@ -179,6 +179,7 @@ private theorem descendedComul_counit_right :
 
 /-- The invariant group algebra is a bialgebra over the ground field. -/
 noncomputable instance groupAlgebraInvariantsBialgebra : Bialgebra k B where
+  -- This public data field cannot reference the private helper `descendedComul`.
   comul := ((groupAlgebraInvariantsTensorEquiv rho).symm.toAlgHom.comp
     (groupAlgebraInvariantsComul rho)).toLinearMap
   counit := (groupAlgebraInvariantsCounit rho).toLinearMap
