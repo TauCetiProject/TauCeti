@@ -168,8 +168,7 @@ theorem exteriorBasis_univ_mem_spinMinus_of_odd {n : ℕ}
   rw [spinMinus_def]
   have h := b.exteriorAlgebra_mem_evenOdd_card (Finset.univ : Finset (Fin n))
   rw [Finset.card_univ, Fintype.card_fin] at h
-  have hcast : (n : ZMod 2) = 1 := ZMod.natCast_eq_one_iff_odd.mpr hn
-  rwa [hcast] at h
+  rwa [hn.natCast_zmod_two] at h
 
 /-- In odd rank, erasing the final coordinate from the all-coordinate exterior-basis vector puts
 it in the even half-spin summand. -/
@@ -204,8 +203,7 @@ theorem exteriorBasis_univ_erase_last_mem_spinMinus_of_even {n : ℕ}
   have hpar : Odd (n - 1) := by
     obtain ⟨k, hk⟩ := heven
     exact ⟨k - 1, by omega⟩
-  have hcast : ((n - 1 : ℕ) : ZMod 2) = 1 := ZMod.natCast_eq_one_iff_odd.mpr hpar
-  rwa [hcast] at h
+  rwa [hpar.natCast_zmod_two] at h
 
 /-- **The spinor module is the sum of its two half-spin summands**, `S = S⁺ ⊕ S⁻`. This is the
 exterior parity grading, and it holds for every polarization. Invariance of the summands

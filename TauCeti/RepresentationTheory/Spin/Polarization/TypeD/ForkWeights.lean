@@ -6,19 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Spin.HalfSpin
-public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.KostantLattice
+public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.GraphAutomorphism
 
 /-!
 # The fork-weight vectors in the type-D spin representation
 
 The two spin fundamental weights of type `Dₙ` occur at the fork of its Dynkin diagram. In the
 exterior model they are represented by the basis vector with every coordinate occupied and the
-basis vector obtained from it by erasing the final coordinate. This file proves the three facts
-that identify those vectors in the pinned Serre representation:
+basis vector obtained from it by erasing the final coordinate. This file combines three facts that
+identify those vectors in the pinned Serre representation:
 
 * every positive simple generator annihilates each vector;
 * their Cartan weights are respectively the final and penultimate fundamental coordinates;
-* their membership in the even and odd half-spin summands is determined by the parity of `n`.
+* the imported half-spin API assigns them to the even and odd summands according to the parity of
+  `n`.
 
 Thus the convention is explicit: the final fork weight belongs to `spinPlus` in even rank and to
 `spinMinus` in odd rank, while the penultimate fork weight has the opposite assignment. These are
@@ -55,16 +56,12 @@ variable {V : Type u} [AddCommGroup V] [Module ℚ V] {Q : QuadraticForm ℚ V}
 
 /-! ## Positive-generator annihilation -/
 
-/-- **Every positive simple type-`D` generator annihilates the all-coordinate exterior-basis
-vector.** Along the chain, contraction removes the next coordinate and creation repeats the
-still-present current coordinate. At the fork, creation immediately repeats a final coordinate. -/
-theorem typeDSpinRep_serreE_exteriorBasis_univ (hn : 4 ≤ n) (i : Fin n) :
-    P.typeDSpinRep b hn
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ
-          (TauCeti.serreE ℚ (CartanMatrix.D n) i))
+/-- Every positive simple-root Clifford bivector annihilates the all-coordinate exterior-basis
+vector. This is the action-level calculation used by the type-`D` highest-weight vector. -/
+theorem spinAction_typeDSimpleRootBivector_exteriorBasis_univ (hn : 2 ≤ n) (i : Fin n) :
+    spinAction Q P (P.typeDSimpleRootBivector b hn i)
         (b.ExteriorAlgebra (Finset.univ : Finset (Fin n))) = 0 := by
-  rw [P.typeDSpinRep_ι b hn, P.typeDSpinSerreRepresentation_serreE b hn,
-    P.typeDSimpleRootBivector_def b]
+  rw [P.typeDSimpleRootBivector_def b]
   by_cases hnext : (i : ℕ) + 1 < n
   · rw [dite_eq_left hnext, map_mul, Module.End.mul_apply, TauCeti.spinAction_ι_wedge,
       TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector,
@@ -75,6 +72,17 @@ theorem typeDSpinRep_serreE_exteriorBasis_univ (hn : 4 ≤ n) (i : Fin n) :
       TauCeti.spinAction_ι_wedge, TauCeti.ExteriorAlgebra.ι_mul_basis,
       ite_eq_left (Finset.mem_univ _), mul_zero]
 
+/-- **Every positive simple type-`D` generator annihilates the all-coordinate exterior-basis
+vector.** This supplies the positive-generator condition for the terminal fork highest-weight
+vector. -/
+theorem typeDSpinRep_serreE_exteriorBasis_univ (hn : 4 ≤ n) (i : Fin n) :
+    P.typeDSpinRep b hn
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ
+          (TauCeti.serreE ℚ (CartanMatrix.D n) i))
+        (b.ExteriorAlgebra (Finset.univ : Finset (Fin n))) = 0 := by
+  rw [P.typeDSpinRep_serreE_eq_spinAction b hn]
+  exact P.spinAction_typeDSimpleRootBivector_exteriorBasis_univ b (by omega) i
+
 /-- **Every positive simple type-`D` generator annihilates the exterior-basis vector obtained by
 erasing the final coordinate.** This is the fork companion of
 `typeDSpinRep_serreE_exteriorBasis_univ`. -/
@@ -84,21 +92,11 @@ theorem typeDSpinRep_serreE_exteriorBasis_univ_erase_last (hn : 4 ≤ n) (i : Fi
           (TauCeti.serreE ℚ (CartanMatrix.D n) i))
         (b.ExteriorAlgebra
           ((Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n))) = 0 := by
-  rw [P.typeDSpinRep_ι b hn, P.typeDSpinSerreRepresentation_serreE b hn,
-    P.typeDSimpleRootBivector_def b]
-  by_cases hnext : (i : ℕ) + 1 < n
-  · rw [dite_eq_left hnext, map_mul, Module.End.mul_apply, TauCeti.spinAction_ι_wedge,
-      TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector,
-      TauCeti.ExteriorAlgebra.contractLeft_coord_basis]
-    by_cases hlast : (⟨(i : ℕ) + 1, hnext⟩ : Fin n) = ⟨n - 1, by omega⟩
-    · rw [ite_eq_right (by simp [hlast]), mul_zero]
-    · rw [ite_eq_left (by simp [hlast]), mul_smul_comm,
-        TauCeti.ExteriorAlgebra.ι_mul_basis,
-        ite_eq_left (by simp [Fin.ext_iff]; omega), smul_zero]
-  · rw [dite_eq_right hnext, map_mul, Module.End.mul_apply, TauCeti.spinAction_ι_wedge,
-      TauCeti.spinAction_ι_wedge, TauCeti.ExteriorAlgebra.ι_mul_basis,
-      ite_eq_right (by simp), mul_smul_comm, TauCeti.ExteriorAlgebra.ι_mul_basis,
-      ite_eq_left (by simp), smul_zero]
+  apply (P.typeDGraphOperator b (by omega)).injective
+  rw [map_zero, P.typeDGraphOperator_typeDSpinRep_serreE b hn,
+    P.typeDGraphOperator_basis_of_notMem b (by omega) (by simp), map_zsmul,
+    Finset.insert_erase (Finset.mem_univ _),
+    P.typeDSpinRep_serreE_exteriorBasis_univ b hn, smul_zero]
 
 /-! ## Exact fork weights -/
 

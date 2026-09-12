@@ -448,24 +448,6 @@ private theorem typeDSpinWeight_cut_apply {n : ℕ} (i j : Fin n) :
     simp only [Fin.le_def]
     split_ifs <;> omega
 
-/-- At the terminal node, the cut sign weight is the terminal coordinate basis vector. -/
-private theorem typeDSpinWeight_cut_eq_single_of_isLast {n : ℕ} (i : Fin n)
-    (hi : (i : ℕ) + 1 = n) :
-    typeDSpinWeight (typeDSpinCut i) = Pi.single i 1 := by
-  classical
-  funext j
-  rw [typeDSpinWeight_cut_apply, Pi.single_apply]
-  split_ifs <;> omega
-
-/-- At the penultimate node, the cut sign weight is the penultimate coordinate basis vector. -/
-private theorem typeDSpinWeight_cut_eq_single_of_isPenultimate {n : ℕ} (i : Fin n)
-    (hi : (i : ℕ) + 2 = n) :
-    typeDSpinWeight (typeDSpinCut i) = Pi.single i 1 := by
-  classical
-  funext j
-  rw [typeDSpinWeight_cut_apply, Pi.single_apply]
-  split_ifs <;> omega
-
 /-- Before the two fork nodes, adding the all-positive weight to the cut sign weight gives the
 corresponding coordinate basis vector. -/
 private theorem typeDSpinWeight_cut_add_univ_eq_single {n : ℕ} (i : Fin n)
@@ -491,11 +473,20 @@ theorem span_range_typeDSpinWeight_eq_top (n : ℕ) :
   rintro _ ⟨i, rfl⟩
   rw [Pi.basisFun_apply]
   by_cases hlast : (i : ℕ) + 1 = n
-  · rw [← typeDSpinWeight_cut_eq_single_of_isLast i hlast]
-    exact Submodule.subset_span ⟨typeDSpinCut i, rfl⟩
+  · have hi : i = (⟨n - 1, by omega⟩ : Fin n) := by
+      apply Fin.ext
+      dsimp only
+      omega
+    rw [hi, ← typeDSpinWeight_univ (n := n) (by omega)]
+    exact Submodule.subset_span ⟨Finset.univ, rfl⟩
   · by_cases hpenultimate : (i : ℕ) + 2 = n
-    · rw [← typeDSpinWeight_cut_eq_single_of_isPenultimate i hpenultimate]
-      exact Submodule.subset_span ⟨typeDSpinCut i, rfl⟩
+    · have hi : i = (⟨n - 2, by omega⟩ : Fin n) := by
+        apply Fin.ext
+        dsimp only
+        omega
+      rw [hi, ← typeDSpinWeight_univ_erase_last (n := n) (by omega)]
+      exact Submodule.subset_span ⟨
+        (Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n), rfl⟩
     · have hi : (i : ℕ) + 2 < n := by omega
       rw [← typeDSpinWeight_cut_add_univ_eq_single i hi]
       exact Submodule.add_mem _

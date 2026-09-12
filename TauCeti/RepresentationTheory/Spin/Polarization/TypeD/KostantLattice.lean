@@ -137,7 +137,8 @@ theorem isNilpotent_typeDSpinRep_rootGenerator (k : Fin n ⊕ Fin n) :
         (TauCeti.serreRootGenerator (CartanMatrix.D n) k))) :=
   ⟨2, P.typeDSpinRep_rootGenerator_sq b hn k⟩
 
-private theorem typeDSpinRep_serreE_eq_spinAction (i : Fin n) :
+/-- The represented positive Serre generator acts through its simple-root Clifford bivector. -/
+theorem typeDSpinRep_serreE_eq_spinAction (i : Fin n) :
     P.typeDSpinRep b hn
         (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreE ℚ (CartanMatrix.D n) i)) =
       spinAction Q P (P.typeDSimpleRootBivector b (by omega) i) := by
