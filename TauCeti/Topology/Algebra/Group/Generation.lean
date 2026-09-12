@@ -35,8 +35,8 @@ criterion is in `TauCeti/Topology/Algebra/Group/Profinite/Generation.lean`.
   `TauCeti.IsTopologicallyFinitelyGenerated.of_surjective`,
   `TauCeti.IsTopologicallyFinitelyGenerated.quotient`: topological finite generation passes along
   continuous homomorphisms with dense range, along continuous surjections, and to quotients.
-* `TauCeti.monoidHom_ext_of_topologicalClosure_closure_eq_top`: a continuous homomorphism into a
-  Hausdorff group is determined by its values on a topological generating set.
+* `TauCeti.monoidHom_eq_of_eqOn_of_topologicalClosure_closure_eq_top`: a continuous homomorphism
+  into a Hausdorff group is determined by its values on a topological generating set.
 -/
 
 public section
@@ -55,6 +55,7 @@ variable {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
 
 /-- The defining property of `IsTopologicallyFinitelyGenerated`, available to modules that only
 see the declaration and not its body. -/
+@[simp]
 theorem isTopologicallyFinitelyGenerated_iff :
     IsTopologicallyFinitelyGenerated G ↔
       ∃ s : Finset G, (Subgroup.closure (s : Set G)).topologicalClosure = ⊤ :=
@@ -89,7 +90,7 @@ omit [IsTopologicalGroup H] in
 /-- A continuous homomorphism out of a topological group is determined by its values on a
 topological generating set, provided the target is Hausdorff. This is the uniqueness half of
 every construction that defines a map on generators. -/
-theorem monoidHom_ext_of_topologicalClosure_closure_eq_top [T2Space H] {s : Set G}
+theorem monoidHom_eq_of_eqOn_of_topologicalClosure_closure_eq_top [T2Space H] {s : Set G}
     (hs : (Subgroup.closure s).topologicalClosure = ⊤) {f g : G →* H} (hf : Continuous f)
     (hg : Continuous g) (hfg : Set.EqOn f g s) : f = g := by
   have hdense : Dense (Subgroup.closure s : Set G) := by
