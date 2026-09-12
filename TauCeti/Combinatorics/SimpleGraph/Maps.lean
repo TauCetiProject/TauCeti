@@ -31,6 +31,7 @@ namespace SimpleGraph
 variable {V W : Type*}
 
 /-- Pushing a pullback forward again cuts the graph down to the window seen by the embedding. -/
+@[simp]
 theorem map_comap_eq_inf_map_top (f : V ↪ W) (G : SimpleGraph W) :
     (G.comap ⇑f).map ⇑f = G ⊓ (⊤ : SimpleGraph V).map ⇑f := by
   ext u v
