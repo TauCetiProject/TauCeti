@@ -81,11 +81,40 @@ variable {C} (P P' : TopPair.{w}) (f : P ⟶ P') (R : C)
 noncomputable abbrev singularChainComplex : ChainComplex C ℕ :=
   (toSSetPair.obj P).chainComplex R
 
+@[simp]
+lemma singularChainComplexFunctor_obj_obj :
+    ((singularChainComplexFunctor C).obj R).obj P = P.singularChainComplex R := by
+  rw [singularChainComplexFunctor.eq_def, singularChainComplex.eq_def,
+    SSetPair.chainComplex.eq_def, Functor.comp_obj, Functor.whiskeringLeft_obj_obj,
+    Functor.comp_obj]
+
+@[simp]
+lemma singularChainComplexFunctor_map_app {R R' : C} (g : R ⟶ R') :
+    ((singularChainComplexFunctor C).map g).app P =
+      eqToHom (singularChainComplexFunctor_obj_obj (C := C) P R) ≫
+        ((SSetPair.chainComplexFunctor C).map g).app (toSSetPair.obj P) ≫
+          eqToHom (singularChainComplexFunctor_obj_obj (C := C) P R').symm := by
+  apply (conj_eqToHom_iff_heq _ _ (singularChainComplexFunctor_obj_obj (C := C) P R)
+    (singularChainComplexFunctor_obj_obj (C := C) P R')).2
+  rw [singularChainComplexFunctor.eq_def, Functor.comp_map,
+    Functor.whiskeringLeft_obj_map, Functor.whiskerLeft_app]
+
 variable {P P'} in
 /-- The chain map on relative singular chains induced by a map of topological pairs. -/
 noncomputable abbrev singularChainComplexMap :
     P.singularChainComplex R ⟶ P'.singularChainComplex R :=
   SSetPair.chainComplexMap (toSSetPair.map f) R
+
+@[simp]
+lemma singularChainComplexFunctor_obj_map :
+    ((singularChainComplexFunctor C).obj R).map f =
+      eqToHom (singularChainComplexFunctor_obj_obj (C := C) P R) ≫
+        singularChainComplexMap f R ≫
+          eqToHom (singularChainComplexFunctor_obj_obj (C := C) P' R).symm := by
+  apply (conj_eqToHom_iff_heq _ _ (singularChainComplexFunctor_obj_obj (C := C) P R)
+    (singularChainComplexFunctor_obj_obj (C := C) P' R)).2
+  rw [singularChainComplexFunctor.eq_def, Functor.comp_obj,
+    Functor.whiskeringLeft_obj_obj, Functor.comp_map, singularChainComplexMap.eq_def]
 
 /-- The quotient map from ambient singular chains to relative singular chains. -/
 noncomputable abbrev singularChainComplexπ :
@@ -93,7 +122,7 @@ noncomputable abbrev singularChainComplexπ :
   (toSSetPair.obj P).chainComplexπ R
 
 @[simp]
-lemma singularChainComplex_condition :
+lemma singularChainComplexMap_comp_singularChainComplexπ :
     SSet.chainComplexMap (TopCat.toSSet.map P.map) R ≫ P.singularChainComplexπ R = 0 := by
   rw [← toSSetPair_obj_hom]
   exact (toSSetPair.obj P).chainComplex_condition R
@@ -143,9 +172,26 @@ protected noncomputable abbrev singularHomologyMap (n : ℕ) :
   SSetPair.homologyMap (toSSetPair.map f) R n
 
 /-- Relative singular homology as a functor on topological pairs. -/
-@[implicit_reducible]
+@[no_expose]
 noncomputable def singularHomologyFunctor (n : ℕ) : TopPair.{w} ⥤ C :=
   toSSetPair ⋙ SSetPair.homologyFunctor R n
+
+@[simp]
+lemma singularHomologyFunctor_obj (n : ℕ) :
+    (singularHomologyFunctor R n).obj P = P.singularHomology R n := by
+  rw [singularHomologyFunctor.eq_def, singularHomology.eq_def, Functor.comp_obj,
+    SSetPair.homologyFunctor_obj]
+
+@[simp]
+lemma singularHomologyFunctor_map (n : ℕ) :
+    (singularHomologyFunctor R n).map f =
+      eqToHom (singularHomologyFunctor_obj P R n) ≫
+        P.singularHomologyMap f R n ≫
+          eqToHom (singularHomologyFunctor_obj P' R n).symm := by
+  apply (conj_eqToHom_iff_heq _ _ (singularHomologyFunctor_obj P R n)
+    (singularHomologyFunctor_obj P' R n)).2
+  rw [singularHomologyFunctor.eq_def, Functor.comp_map, singularHomologyMap.eq_def,
+    SSetPair.homologyFunctor_map]
 
 /-- The map from ambient singular homology to relative singular homology. -/
 noncomputable abbrev singularHomologyπ (n : ℕ) :
@@ -153,7 +199,7 @@ noncomputable abbrev singularHomologyπ (n : ℕ) :
   (toSSetPair.obj P).homologyπ R n
 
 @[simp]
-lemma singularHomologyMap_map_singularHomologyπ (n : ℕ) :
+lemma homologyMap_comp_singularHomologyπ (n : ℕ) :
     SSet.homologyMap (TopCat.toSSet.map P.map) R n ≫ P.singularHomologyπ R n = 0 := by
   rw [← toSSetPair_obj_hom]
   exact (toSSetPair.obj P).homologyMap_hom_homologyπ R n
@@ -190,7 +236,7 @@ lemma singularHomology_exact_subspace (n m : ℕ) (h : m + 1 = n := by lia) :
 
 /-- Exactness at ambient homology in the long exact sequence of a topological pair. -/
 lemma singularHomology_exact_space (n : ℕ) :
-    (ShortComplex.mk _ _ (P.singularHomologyMap_map_singularHomologyπ R n)).Exact :=
+    (ShortComplex.mk _ _ (P.homologyMap_comp_singularHomologyπ R n)).Exact :=
   (toSSetPair.obj P).homology_exact₂ R n
 
 /-- Exactness at relative homology in the long exact sequence of a topological pair. -/
