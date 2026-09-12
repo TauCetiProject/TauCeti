@@ -52,6 +52,8 @@ theorem skewSwap_snd_eq_I_mul_fst_of_mem_neg_I {x : ℂ × ℂ}
         Prod.fst, Prod.smul_fst, smul_eq_mul] using h)
     _ = Complex.I * x.1 := by ring
 
+namespace Complex
+
 /-- For a nonzero `z : ℂ`, the standard positive expression associated with the `i`-eigenvector
 coordinate relation is positive. -/
 theorem positive_I_mul_coordinate_form (z : ℂ) (hz : z ≠ 0) :
@@ -86,5 +88,7 @@ theorem positive_neg_I_mul_coordinate_form (z : ℂ) (hz : z ≠ 0) :
     ring
   rw [heq]
   exact positive_I_mul_coordinate_form z hz
+
+end Complex
 
 end TauCeti

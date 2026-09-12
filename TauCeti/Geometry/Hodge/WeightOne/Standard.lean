@@ -390,7 +390,7 @@ theorem isPolarization_riemannForm :
         apply Prod.ext <;> simp [hzero, hrel]
       rw [integralFormBaseChange_riemannForm_apply, latticeConj_apply, hrel]
       norm_num
-      simpa using positive_I_mul_coordinate_form x.1 hfst
+      simpa using TauCeti.Complex.positive_I_mul_coordinate_form x.1 hfst
     by_cases hpzero : p = 0
     · subst p
       rw [hodgeStructure_piece_zero] at hx
@@ -401,7 +401,7 @@ theorem isPolarization_riemannForm :
         apply Prod.ext <;> simp [hzero, hrel]
       rw [integralFormBaseChange_riemannForm_apply, latticeConj_apply, hrel]
       norm_num
-      simpa using positive_neg_I_mul_coordinate_form x.1 hfst
+      simpa using TauCeti.Complex.positive_neg_I_mul_coordinate_form x.1 hfst
     · rw [hodgeStructure_piece_eq_bot hpzero hpone, Submodule.mem_bot] at hx
       exact (hx0 hx).elim
 
