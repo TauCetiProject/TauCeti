@@ -98,6 +98,23 @@ theorem range_component_subset_range (L : SmoothLinkEmbedding I M n) (i : Fin n)
     Set.range (L i) ⊆ L.range :=
   Set.subset_iUnion (fun j ↦ Set.range (L j)) i
 
+/-- The continuous map from the disjoint union of a smooth link's component circles into the
+ambient manifold. -/
+def toContinuousMap (L : SmoothLinkEmbedding I M n) : C((Σ _ : Fin n, Circle), M) :=
+  ContinuousMap.sigma fun i ↦ (L i).toContinuousMap
+
+/-- The disjoint-union map restricts to the underlying map of each component. -/
+@[simp] theorem toContinuousMap_apply (L : SmoothLinkEmbedding I M n) (i : Fin n) (x : Circle) :
+    L.toContinuousMap ⟨i, x⟩ = L i x := by
+  rw [toContinuousMap.eq_def]
+  rfl
+
+/-- The range of the disjoint-union map is the subset occupied by the link. -/
+@[simp] theorem range_toContinuousMap (L : SmoothLinkEmbedding I M n) :
+    Set.range L.toContinuousMap = L.range := by
+  rw [Set.range_sigma_eq_iUnion_range]
+  rfl
+
 /-! ### Empty and one-component links -/
 
 /-- The smooth link with no components. -/
