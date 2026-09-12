@@ -21,10 +21,6 @@ and characteristic structures are the canonical Mathlib instances rather than pa
 
 * `TauCeti.ValidLieTypeIndex.Closure`: the algebraic closure of the index's prime field.
 
-The characteristic instance is also recorded at the numeral two for a Suzuki index, whose
-characteristic is fixed, so that consumers in characteristic two find it without unfolding the
-index.
-
 ## Roadmap
 
 This is the algebraic-closure part of item I0 in
@@ -55,12 +51,3 @@ example (d : ValidLieTypeIndex) : CharP d.Closure d.characteristic := inferInsta
 end
 
 end TauCeti.ValidLieTypeIndex
-
-namespace TauCeti.SuzukiLieIndex
-
-/-- The algebraic closure attached to a Suzuki index has characteristic two. -/
-instance charP_closure_two (d : SuzukiLieIndex) : CharP d.1.Closure 2 := by
-  rw [← d.characteristic_eq_two]
-  infer_instance
-
-end TauCeti.SuzukiLieIndex
