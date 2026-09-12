@@ -269,6 +269,7 @@ variable {l : Type z} [CommMonoid l]
 
 /-- Mapping parameters along a monoid homomorphism commutes with gauge transforms when the arrow
 labels are mapped by the same homomorphism. -/
+@[simp]
 theorem map_gauge (f : k →* l) (c : SkewZigzagParameter k G)
     (a : ∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → kˣ) :
     (c.gauge a).map f =

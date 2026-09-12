@@ -202,6 +202,8 @@ theorem skewZigzagIdeal_map_comp {m : Type*} [CommRing m]
       (skewZigzagIdeal m G ((c.map (f : k →* l)).map (g : l →* m))).asIdeal :=
   congrArg (fun d : SkewZigzagParameter m G => (skewZigzagIdeal m G d).asIdeal)
     (by
+      -- Expose that coercing a composite ring hom to a monoid hom gives the composite of the
+      -- coerced monoid homs, so `map_comp` applies.
       rw [show (g.comp f : k →* m) = (g : l →* m).comp (f : k →* l) by
         ext x
         rfl]
