@@ -93,7 +93,7 @@ noncomputable def crossingComponentCount (D : PDCode n) : ℕ :=
   orbitCount D.componentPerm / 2
 
 /-- A code with no crossing visits has no crossing-bearing components. -/
-@[simp] theorem crossingComponentCount_eq_zero_of_zero (D : PDCode 0) :
+@[simp] theorem crossingComponentCount_eq_zero (D : PDCode 0) :
     D.crossingComponentCount = 0 := by
   have h := Equiv.Perm.orbitCount_le_card D.componentPerm
   simp at h
@@ -182,7 +182,11 @@ def reverseOutgoingEquiv (D : OrientedPDCode n) :
 @[simp] theorem componentPermOutgoing_symm_apply_val (D : OrientedPDCode n)
     (h : {h : Fin (4 * n) // D.orientation h = true}) :
     (D.componentPermOutgoing.symm h).val = D.toPDCode.componentPerm.symm h := by
-  rfl
+  apply D.toPDCode.componentPerm.injective
+  have hx := congrArg Subtype.val (D.componentPermOutgoing.apply_symm_apply h)
+  dsimp [componentPermOutgoing] at hx
+  rw [Equiv.apply_symm_apply]
+  exact hx
 
 /-- Reversal transports inverse outgoing traversal along the arc-pairing equivalence. -/
 @[simp] theorem componentPermOutgoing_reverse (D : OrientedPDCode n) :
