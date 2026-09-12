@@ -107,6 +107,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A group homomorphism that is `C^n` at the identity is `C^n` everywhere.
 
+This is the smooth analogue of Mathlib's `continuous_of_continuousAt_one`.
+
 This only requires smooth multiplication: inverses occur at fixed group elements, so the
 inversion operation itself need not be smooth. -/
 @[to_additive
