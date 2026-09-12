@@ -60,7 +60,7 @@ invariants of its conjugate through the resulting map in degree two.
 * J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, Chapter I, §5.
 -/
 
-@[expose] public noncomputable section
+public noncomputable section
 
 universe u
 
@@ -73,8 +73,11 @@ variable {R G H K : Type u} [CommRing R] [Group G] [Group H] [Group K]
 
 /-- A group isomorphism `e : G ≃* H` and a linear map `φ` between the coefficient modules of
 `M : Rep R G` and `N : Rep R H` are **compatible** when `φ ∘ ρ g = σ (e g) ∘ φ` for every `g`.
-Such a pair is what carries the Tate cohomology of `M` to that of `N`. -/
-def IsCompatible (e : G ≃* H) (φ : M.V →ₗ[R] N.V) : Prop :=
+Such a pair is what carries the Tate cohomology of `M` to that of `N`.
+
+The body is exposed because this is a specification: a caller supplies a compatible pair by
+proving the displayed identity, which needs the definition to unfold. -/
+@[expose] def IsCompatible (e : G ≃* H) (φ : M.V →ₗ[R] N.V) : Prop :=
   ∀ g, φ ∘ₗ M.ρ g = N.ρ (e g) ∘ₗ φ
 
 namespace IsCompatible
@@ -91,10 +94,10 @@ def ofRes (hφ : IsCompatible e φ) : Rep.res (e.symm : H →* G) M ⟶ N :=
   Rep.ofHom ⟨φ, fun h ↦ by simpa using hφ (e.symm h)⟩
 
 @[simp] theorem toRes_hom_toLinearMap (hφ : IsCompatible e φ) :
-    hφ.toRes.hom.toLinearMap = φ := rfl
+    hφ.toRes.hom.toLinearMap = φ := by simp [toRes]
 
 @[simp] theorem ofRes_hom_toLinearMap (hφ : IsCompatible e φ) :
-    hφ.ofRes.hom.toLinearMap = φ := rfl
+    hφ.ofRes.hom.toLinearMap = φ := by simp [ofRes]
 
 /-- **Compatible pairs compose.** -/
 theorem trans (hφ : IsCompatible e φ) {e₂ : H ≃* K} {ψ : N.V →ₗ[R] P.V}
@@ -183,14 +186,16 @@ theorem complexMap_congr {e₁ e₂ : G ≃* H} {φ₁ φ₂ : M.V →ₗ[R] N.V
 functoriality.** -/
 theorem complexMap_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V}
     (hφ : IsCompatible (MulEquiv.refl G) φ) :
-    hφ.complexMap = tateComplex.map (Rep.ofHom ⟨φ, hφ⟩) := rfl
+    hφ.complexMap = tateComplex.map (Rep.ofHom ⟨φ, hφ⟩) := by
+  rw [complexMap]
+  rfl
 
 /-- The identity compatible pair induces the identity of Tate complexes. -/
-theorem complexMap_id : (isCompatible_id (M := M)).complexMap = 𝟙 (tateComplex M) :=
+@[simp] theorem complexMap_id : (isCompatible_id (M := M)).complexMap = 𝟙 (tateComplex M) :=
   (tateComplexFunctor R G).map_id M
 
 /-- **The construction is functorial in the compatible pair.** -/
-theorem complexMap_trans {e₁ : G ≃* H} {e₂ : H ≃* K} {φ : M.V →ₗ[R] N.V}
+theorem complexMap_comp {e₁ : G ≃* H} {e₂ : H ≃* K} {φ : M.V →ₗ[R] N.V}
     (hφ : IsCompatible e₁ φ) {ψ : N.V →ₗ[R] P.V} (hψ : IsCompatible e₂ ψ) :
     hφ.complexMap ≫ hψ.complexMap = (hφ.trans hψ).complexMap := by
   refine (CochainComplex.ConnectData.map_comp_map ..).trans ?_
@@ -205,17 +210,31 @@ def complexMapIso {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
     (he : IsCompatible e (e' : M.V →ₗ[R] N.V)) : tateComplex M ≅ tateComplex N where
   hom := he.complexMap
   inv := he.symm.complexMap
-  hom_inv_id := (IsCompatible.complexMap_trans ..).trans
+  hom_inv_id := (IsCompatible.complexMap_comp ..).trans
     ((IsCompatible.complexMap_congr (by simp) (by ext x; simp)).trans
       IsCompatible.complexMap_id)
-  inv_hom_id := (IsCompatible.complexMap_trans ..).trans
+  inv_hom_id := (IsCompatible.complexMap_comp ..).trans
     ((IsCompatible.complexMap_congr (by simp) (by ext x; simp)).trans
       IsCompatible.complexMap_id)
+
+@[simp] theorem complexMapIso_hom {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
+    (he : IsCompatible e (e' : M.V →ₗ[R] N.V)) : (complexMapIso he).hom = he.complexMap := by
+  rw [complexMapIso]
+
+@[simp] theorem complexMapIso_inv {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
+    (he : IsCompatible e (e' : M.V →ₗ[R] N.V)) :
+    (complexMapIso he).inv = he.symm.complexMap := by
+  rw [complexMapIso]
 
 /-- **Tate cohomology along a compatible pair**, in a single integer degree. -/
 def map {e : G ≃* H} {φ : M.V →ₗ[R] N.V} (hφ : IsCompatible e φ) (n : ℤ) :
     tateCohomology M n ⟶ tateCohomology N n :=
   HomologicalComplex.homologyMap hφ.complexMap n
+
+/-- `TauCeti.TateCohomology.map` is the homology map of `IsCompatible.complexMap`. This records
+the body of `map`, whose definition is not exported. -/
+theorem map_def {e : G ≃* H} {φ : M.V →ₗ[R] N.V} (hφ : IsCompatible e φ) (n : ℤ) :
+    map hφ n = HomologicalComplex.homologyMap hφ.complexMap n := by rw [map]
 
 /-- **Tate cohomology along a compatible pair whose linear part is an equivalence** is an
 isomorphism in every integer degree. -/
@@ -225,35 +244,40 @@ def mapIso {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V} (he : IsCompatible e (e' : M.
 
 @[simp] theorem mapIso_hom {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
     (he : IsCompatible e (e' : M.V →ₗ[R] N.V)) (n : ℤ) :
-    (mapIso he n).hom = map he n := rfl
+    (mapIso he n).hom = map he n := by
+  rw [mapIso, HomologicalComplex.homologyMapIso_hom, complexMapIso_hom, map_def]
 
 @[simp] theorem mapIso_inv {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
     (he : IsCompatible e (e' : M.V →ₗ[R] N.V)) (n : ℤ) :
-    (mapIso he n).inv = map he.symm n := rfl
+    (mapIso he n).inv = map he.symm n := by
+  rw [mapIso, HomologicalComplex.homologyMapIso_inv, complexMapIso_inv, map_def]
 
 /-- Tate cohomology in a fixed degree depends only on the compatible pair. -/
 theorem map_congr {e₁ e₂ : G ≃* H} {φ₁ φ₂ : M.V →ₗ[R] N.V} {h₁ : IsCompatible e₁ φ₁}
     {h₂ : IsCompatible e₂ φ₂} (he : e₁ = e₂) (hφ : φ₁ = φ₂) (n : ℤ) :
     map h₁ n = map h₂ n := by
-  rw [map, map, IsCompatible.complexMap_congr he hφ]
+  rw [map_def, map_def, IsCompatible.complexMap_congr he hφ]
 
 /-- Along the identity isomorphism, Tate cohomology of a compatible pair is Mathlib's coefficient
 functoriality. -/
 theorem map_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V} (hφ : IsCompatible (MulEquiv.refl G) φ)
     (n : ℤ) :
-    map hφ n = (tateCohomologyFunctor n).map (Rep.ofHom ⟨φ, hφ⟩) := rfl
+    map hφ n = (tateCohomologyFunctor n).map (Rep.ofHom ⟨φ, hφ⟩) := by
+  rw [map_def, IsCompatible.complexMap_refl]
+  exact (HomologicalComplex.homologyFunctor_map (ModuleCat R) (ComplexShape.up ℤ) n _).symm
 
 /-- The identity compatible pair induces the identity in every degree. -/
-theorem map_id (n : ℤ) :
+@[simp] theorem map_id (n : ℤ) :
     map (isCompatible_id (M := M)) n = 𝟙 (tateCohomology M n) := by
-  rw [map, IsCompatible.complexMap_id]
+  rw [map_def, IsCompatible.complexMap_id]
   exact HomologicalComplex.homologyMap_id _ _
 
 /-- **Tate cohomology is functorial in the compatible pair**, in every degree. -/
-theorem map_trans {e₁ : G ≃* H} {e₂ : H ≃* K} {φ : M.V →ₗ[R] N.V} (hφ : IsCompatible e₁ φ)
+theorem map_comp {e₁ : G ≃* H} {e₂ : H ≃* K} {φ : M.V →ₗ[R] N.V} (hφ : IsCompatible e₁ φ)
     {ψ : N.V →ₗ[R] P.V} (hψ : IsCompatible e₂ ψ) (n : ℤ) :
     map hφ n ≫ map hψ n = map (hφ.trans hψ) n := by
-  rw [map, map, map, ← IsCompatible.complexMap_trans hφ hψ, HomologicalComplex.homologyMap_comp]
+  rw [map_def, map_def, map_def, ← IsCompatible.complexMap_comp hφ hψ,
+    HomologicalComplex.homologyMap_comp]
   rfl
 
 /-- **In positive degrees the construction is the ordinary cohomological change-of-group map**
@@ -271,6 +295,12 @@ theorem map_comp_isoGroupCohomology_hom {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
     rw [IsCompatible.complexMap, CochainComplex.ConnectData.homologyMap_map_of_eq_succ
       (n := n) (m := (n : ℤ)) (hmn := rfl)]
     simp
+  rw [map_def]
+  -- What is left is Mathlib's own unfoldings, all of which cross `tateCohomologyFunctor`, a
+  -- semireducible `def`: `isoGroupCohomology` is `homologyIsoPos` componentwise,
+  -- `groupCohomology.map` is `homologyMap` of `cochainsMap`, and `tateCohomology M n` is the
+  -- homology of `tateComplex M`.
+  -- `rw`/`simp` cannot cross them, because their motives are ill-typed at `implicit` transparency.
   exact key
 
 /-- **In degrees at most `-2` the construction is the ordinary homological change-of-group map**
@@ -287,6 +317,9 @@ theorem map_comp_isoGroupHomology_hom {e : G ≃* H} {φ : M.V →ₗ[R] N.V} (h
     rw [IsCompatible.complexMap, CochainComplex.ConnectData.homologyMap_map_of_eq_neg_succ
       (n := n) (m := m) (hmn := hmn)]
     simp
+  rw [map_def]
+  -- As above: `isoGroupHomology` is `homologyIsoNeg` componentwise, `groupHomology.map` is
+  -- `homologyMap` of `chainsMap`, and `tateCohomology M m` is the homology of `tateComplex M`.
   exact key
 
 /-- **Restricting the coefficients along an isomorphism of finite groups does not change Tate
@@ -303,7 +336,7 @@ def resIso (e : G ≃* H) (n : ℤ) :
         fun g ↦ hψ (e g)
       have key : map hres n ≫ map (isCompatible_res e N') n =
           map (isCompatible_res e N) n ≫ map hψ n := by
-        rw [map_trans, map_trans]
+        rw [map_comp, map_comp]
         exact map_congr (by ext x; rfl) (by ext x; rfl) n
       exact key
 
