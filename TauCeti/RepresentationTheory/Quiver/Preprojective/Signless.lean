@@ -123,7 +123,7 @@ universe u w
 
 section Relator
 
-variable (k : Type w) [CommSemiring k] {V : Type u} (G : SimpleGraph V) [Fintype V]
+variable (k : Type w) [Semiring k] {V : Type u} (G : SimpleGraph V) [Fintype V]
   [DecidableRel G.Adj]
 
 /-- The **signless local relator** at a vertex `v` of a simple graph: the sum, over the neighbours
@@ -160,11 +160,11 @@ theorem signlessRelator_mul_vertexIdempotent (v : V) :
 
 end Relator
 
-/-! ### The relation ideal and the quotient algebra -/
+/-! ### The relation ideal -/
 
-section Quotient
+section Ideal
 
-variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Fintype V]
+variable (k : Type w) [Ring k] {V : Type u} (G : SimpleGraph V) [Fintype V]
   [DecidableRel G.Adj]
 
 /-- The two-sided ideal spanned by the signless local relators. -/
@@ -179,6 +179,15 @@ theorem signlessRelationIdeal_eq_span :
 theorem signlessRelator_mem_signlessRelationIdeal (v : V) :
     signlessRelator k G v ∈ signlessRelationIdeal k G :=
   TwoSidedIdeal.subset_span ⟨v, rfl⟩
+
+end Ideal
+
+/-! ### The quotient algebra -/
+
+section Quotient
+
+variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Fintype V]
+  [DecidableRel G.Adj]
 
 /-- The **signless relation quotient** of a finite simple graph: the path algebra of the doubled
 quiver modulo the signless local relations. Its identification with the quadratic dual of the

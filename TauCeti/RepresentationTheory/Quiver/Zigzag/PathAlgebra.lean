@@ -146,7 +146,7 @@ theorem exists_eq_backtrackPath {i : V} (p : _root_.Quiver.Path (vertex G i) (ve
 
 section Algebra
 
-variable (k : Type w) [CommSemiring k]
+variable (k : Type w) [Semiring k]
 
 /-- The path-algebra element of the backtrack at `i` along an edge to `j`. It descends to the
 volume element at `i` in the zigzag algebra, where it no longer depends on the chosen edge. -/
