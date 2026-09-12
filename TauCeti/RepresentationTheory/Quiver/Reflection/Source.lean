@@ -72,8 +72,6 @@ variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
 
 section OutgoingMap
 
-variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
-
 /-- **The map collecting the arrows out of a vertex.** Its coordinate at `e : i ⟶ b` is the
 action of `e`, so this is the product of the arrow actions over the arrows leaving `i`; for a
 finite quiver that product is the direct sum of the BGP construction. No hypothesis on `i` is
@@ -81,9 +79,7 @@ imposed: the map is defined at every vertex, and it is the reflection that needs
 source. Its range is quotiented out in `TauCeti.sourceReflectRep`. -/
 noncomputable def outgoingMap (M : QuiverRep.{u, v, w, max v w x} k Q) (i : Q) :
     M.obj i →ₗ[k] ((e : Σ b : Q, (i ⟶ b)) → M.obj e.1) :=
-  (DirectSum.linearEquivFunOnFintype k _ _).toLinearMap.comp
-    ((DirectSum.linearEquivFunOnFintype k _ _).symm.toLinearMap.comp
-      (LinearMap.pi fun e ↦ (M.map e.2.toPath).hom))
+  LinearMap.pi fun e ↦ (M.map e.2.toPath).hom
 
 /-- The coordinate of `TauCeti.outgoingMap` at an arrow is the action of that arrow. -/
 @[simp]
@@ -91,6 +87,8 @@ theorem outgoingMap_apply (M : QuiverRep.{u, v, w, max v w x} k Q) (i : Q) (y : 
     (e : Σ b : Q, (i ⟶ b)) :
     outgoingMap M i y e = (M.map e.2.toPath).hom y := by
   simp [outgoingMap]
+
+variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
 
 /-- The target of `TauCeti.outgoingMap` has dimension
 `∑_b #(i ⟶ b) · dim M_b`. -/
@@ -110,8 +108,6 @@ end OutgoingMap
 /-! ### The reflected representation and functor -/
 
 section SourceReflectRep
-
-variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
 
 open scoped Classical in
 /-- The vertex spaces of source reflection: the quotient by the range of the outgoing map at `i`,
@@ -226,13 +222,11 @@ private def outgoingCoordMap {M N : QuiverRep.{u, v, w, max v w x} k Q}
   map_add' f g := by ext e; simp
   map_smul' r f := by ext e; simp
 
-omit [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)] in
 private theorem outgoingCoordMap_id (M : QuiverRep.{u, v, w, max v w x} k Q) (i : Q) :
     outgoingCoordMap (𝟙 M) i = LinearMap.id := by
   ext f e
   rfl
 
-omit [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)] in
 private theorem outgoingCoordMap_comp
     {M N P : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) (θ : N ⟶ P) (i : Q) :
     outgoingCoordMap (η ≫ θ) i = (outgoingCoordMap θ i).comp (outgoingCoordMap η i) := by
@@ -536,6 +530,7 @@ section DimVector
 variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
 variable (M : QuiverRep.{u, v, w, max v w x} k Q) {i : Q} (hi : IsSource i)
 
+omit [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)] in
 /-- Away from the source, the dimension vector is unchanged. -/
 @[simp]
 theorem dimVector_sourceReflectRep_of_ne {j : Q} (h : j ≠ i) :
@@ -590,8 +585,10 @@ theorem dimVector_sourceReflectRep [DecidableEq Q]
     linarith [h']
   · rw [vertexPreReflection_apply_of_ne Q i _ hj, dimVector_sourceReflectRep_of_ne M hi hj]
 
+omit [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)] in
 /-- **Source reflection preserves finite-dimensionality** of every vertex space. -/
 theorem finiteDimensional_sourceReflectRep_obj
+    [Finite (Σ b : Q, (i ⟶ b))]
     (h : ∀ a : Q, FiniteDimensional k (M.obj a)) (j : Q) :
     FiniteDimensional k ((sourceReflectRep M hi).obj j) := by
   rcases eq_or_ne j i with rfl | hj
