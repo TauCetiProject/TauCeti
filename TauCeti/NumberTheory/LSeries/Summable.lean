@@ -13,8 +13,10 @@ public import TauCeti.NumberTheory.AbelSummation
 
 A Dirichlet series whose coefficients have `O(t log t)` partial sums need not converge on the line
 `Re s = 1`, but it does converge there once each coefficient is weighted by a factor of size
-`O((1 + log n) ^ (-3))`: two of the three logarithms pay for the growth of the partial sums, and
-the Abel-summation bound `TauCeti.summable_div_mul_one_add_log_cube` supplies the remaining one.
+`O((1 + log n) ^ (-3))`: in the Abel-summation bound
+`TauCeti.summable_div_mul_one_add_log_cube`, one of the three logarithms absorbs the `log t` in the
+growth of the partial sums, and the remaining two leave the integrable majorant
+`(t (1 + log t) ^ 2)⁻¹`.
 
 Such a weight arises whenever a Dirichlet series is tested against a smooth compactly supported
 function, whose Fourier transform decays faster than every power.
