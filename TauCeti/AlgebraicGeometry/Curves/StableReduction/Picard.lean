@@ -106,8 +106,10 @@ def weightedIntersection : Matrix T.Component T.Component ℤ :=
 lemma weightedIntersection_apply (i j : T.Component) :
     T.weightedIntersection i j = T.intersection i j / (T.weight j : ℤ) := (rfl)
 
-/-- The division defining the weighted intersection matrix is exact. -/
-@[simp]
+/-- The division defining the weighted intersection matrix is exact.
+
+This is not a `simp` lemma: `TauCeti.NumericalType.weightedIntersection_apply` rewrites the
+left-hand side to `aᵢⱼ / wⱼ * wⱼ`, so the statement is not in `simp`-normal form. -/
 lemma weightedIntersection_mul_weight (i j : T.Component) :
     T.weightedIntersection i j * (T.weight j : ℤ) = T.intersection i j :=
   Int.ediv_mul_cancel (T.weight_dvd_intersection i j)
