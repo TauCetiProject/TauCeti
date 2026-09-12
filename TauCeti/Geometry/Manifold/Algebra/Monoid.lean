@@ -11,7 +11,7 @@ public import Mathlib.Geometry.Manifold.Algebra.Monoid
 # Smooth monoid morphisms
 
 Identity, composition, and their laws for bundled smooth multiplicative and additive monoid
-morphisms.
+morphisms. It also characterizes smooth group homomorphisms by their regularity at the identity.
 -/
 
 public section
@@ -92,3 +92,39 @@ theorem comp_assoc
   rfl
 
 end ContMDiffMonoidMorphism
+
+namespace TauCeti
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {G : Type*} [Group G] [TopologicalSpace G] [ChartedSpace H G]
+  {G' : Type*} [Monoid G'] [TopologicalSpace G'] [ChartedSpace H' G']
+  {F : Type*} [FunLike F G G'] [MonoidHomClass F G G']
+  {n : ℕ∞ω} [ContMDiffMul I n G] [ContMDiffMul I' n G']
+
+/-- A group homomorphism that is `C^n` at the identity is `C^n` everywhere.
+
+This only requires smooth multiplication: inverses occur at fixed group elements, so the
+inversion operation itself need not be smooth. -/
+@[to_additive
+  /-- An additive group homomorphism that is `C^n` at zero is `C^n` everywhere. -/]
+theorem contMDiff_of_contMDiffAt_one (f : F)
+    (hf : ContMDiffAt I I' n f 1) : ContMDiff I I' n f := by
+  intro x
+  have htranslate : ContMDiffAt I I n (fun y : G ↦ x⁻¹ * y) x :=
+    contMDiffAt_const.mul contMDiffAt_id
+  have hcomp : ContMDiffAt I I' n (fun y : G ↦ f (x⁻¹ * y)) x := by
+    -- `comp_of_eq` exposes its composition explicitly, unlike the displayed translated germ.
+    change ContMDiffAt I I' n (f ∘ fun y : G ↦ x⁻¹ * y) x
+    exact hf.comp_of_eq htranslate (by simp)
+  have hmul : ContMDiffAt I I' n (fun y : G ↦ f x * f (x⁻¹ * y)) x :=
+    contMDiffAt_const.mul hcomp
+  convert hmul using 1
+  funext y
+  rw [← map_mul]
+  simp
+
+end TauCeti
