@@ -43,6 +43,25 @@ namespace HeckeRing.GL2
 
 variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
 
+omit [NeZero N] in
+/-- **The `q`-expansion coefficient of a combination**, as the linearity it is. The coefficient
+at a fixed index is a `ℂ`-linear functional on cusp forms — `ModularForm.qExpansionLinearMap`
+composed with the inclusion `CuspForm.toModularFormₗ` and with `PowerSeries.coeff` — so a
+combination's coefficient is the combination of the coefficients. Named so the computations below
+do not unfold the `Submodule`, `FunLike` and `ModularForm` coercions by hand. -/
+private theorem qExpansion_coeff_smul_sub_smul (c d : ℂ)
+    (u v : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (n : ℕ) :
+    (qExpansion 1 ⇑(c • u - d • v)).coeff n =
+      c * (qExpansion 1 ⇑u).coeff n - d * (qExpansion 1 ⇑v).coeff n := by
+  set L := (ModularForm.qExpansionLinearMap (h := 1) one_pos
+    (one_mem_strictPeriods_Gamma1_map N) k).comp CuspForm.toModularFormₗ with hL
+  have hLapply : ∀ w : CuspForm ((Gamma1 N).map (mapGL ℝ)) k, L w = qExpansion 1 ⇑w := by
+    intro w
+    rw [hL, LinearMap.comp_apply, ModularForm.qExpansionLinearMap_apply]
+    exact congrArg (qExpansion 1) (funext (CuspForm.toModularFormₗ_apply w))
+  rw [← hLapply (c • u - d • v), ← hLapply u, ← hLapply v, map_sub, map_smul, map_smul]
+  simp [smul_eq_mul]
+
 /-- **Multiplicity one on the new part of `S_k(N, χ)`** (Miyake, Theorem 4.6.13(1)): two cusp
 forms in the new part that are eigenvectors of the Hecke ring at every prime not dividing `N`,
 *with the same eigenvalue at each such prime*, are proportional: `a₁(g) • f = a₁(f) • g`. So each
@@ -69,10 +88,8 @@ theorem smul_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew
     · obtain ⟨c, hcf, hcg⟩ := ha p hp hpN
       exact ⟨c, by rw [map_sub, map_smul, map_smul, hcf, hcg, smul_sub, smul_comm c b,
         smul_comm c a]⟩
-    · rw [Submodule.coe_sub, Submodule.coe_smul, Submodule.coe_smul, FunLike.coe_sub,
-        ModularForm.qExpansion_sub one_pos (one_mem_strictPeriods_Gamma1_map _), map_sub]
-      simp only [FunLike.coe_smul, ModularForm.qExpansion_smul one_pos
-        (one_mem_strictPeriods_Gamma1_map _), map_smul, smul_eq_mul, ← hadef, ← hbdef]
+    · rw [Submodule.coe_sub, Submodule.coe_smul, Submodule.coe_smul,
+        qExpansion_coeff_smul_sub_smul, ← hadef, ← hbdef]
       ring
     · exact Submodule.sub_mem _ (Submodule.smul_mem _ _ hf) (Submodule.smul_mem _ _ hg)
   rw [Submodule.coe_sub, Submodule.coe_smul, Submodule.coe_smul, sub_eq_zero] at key

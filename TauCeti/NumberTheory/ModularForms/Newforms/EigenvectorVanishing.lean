@@ -19,8 +19,12 @@ vanish (`qExpansion_coeff_eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zer
 the Main Lemma (`TauCeti.mem_cuspFormsOld_of_forall_coprime_qExpansion_coeff_eq_zero`) then puts
 the form in the old part, and the old and new parts meet only in `0`.
 
-Both consumers reach their theorem by producing such an eigenvector: multiplicity one from
-`a₁(g) • f - a₁(f) • g`, strong multiplicity one from the difference of two newforms.
+Both consumers reach their theorem by producing such an eigenvector, and neither gets one for
+free: a difference or combination is a Hecke eigenvector only once the two forms are known to
+share an eigenvalue at each good prime. Multiplicity one assumes that agreement and forms
+`a₁(g) • f - a₁(f) • g`; strong multiplicity one first extends agreement from the complement of a
+finite set to every good index (`EigenformAwayFromLevel.eigenvalue_eq_of_forall_notMem`) and only
+then takes the difference of the two newforms.
 
 ## Main results
 
