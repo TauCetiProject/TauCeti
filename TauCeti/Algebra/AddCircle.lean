@@ -50,13 +50,13 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   are ordered by divisibility, and pairwise distinct.
 * `AddCircle.nsmul_coe_period_div`: multiplying the generator of the `n`-torsion by a divisor
   `d` of `n` produces the generator of the `n / d`-torsion.
-* `AddCircle.natCard_eq_of_range_eq_torsionBy`,
+* `AddCircle.natCard_eq_of_injective_of_range_eq_torsionBy`,
   `AddCircle.existsUnique_apply_eq_coe_period_div`,
   `AddCircle.exists_zsmul_eq_of_apply_eq_coe_period_div`,
-  `AddCircle.isAddCyclic_of_range_eq_torsionBy` and
-  `AddCircle.zmodAddEquivOfRangeEqTorsionBy`: an injective homomorphism from a group onto the
-  `n`-torsion makes that group cyclic of order `n`, with a unique element of invariant `p / n`
-  as a distinguished generator.
+  `AddCircle.isAddCyclic_of_injective_of_range_eq_torsionBy` and
+  `AddCircle.zmodAddEquivOfInjectiveOfRangeEqTorsionBy`: an injective homomorphism from a group
+  onto the `n`-torsion makes that group cyclic of order `n`, with a unique element of invariant
+  `p / n` as a distinguished generator.
 * `AddCircle.isAddTorsion_rat`: a rational circle is a torsion group, so its torsion subgroups
   exhaust it (`AddCircle.exists_mem_torsionBy_rat`).
 
@@ -211,7 +211,7 @@ is a distinguished generator. Over `ℚ` with `p = 1` this is the normalization 
 fundamental class of a class formation from its invariant map. -/
 
 /-- A group with an invariant map onto the `n`-torsion has exactly `n` elements. -/
-theorem natCard_eq_of_range_eq_torsionBy (hn : 0 < n) (hf : Function.Injective f)
+theorem natCard_eq_of_injective_of_range_eq_torsionBy (hn : 0 < n) (hf : Function.Injective f)
     (hr : Set.range f = ((AddCircle p)[(n : ℤ)] : Set (AddCircle p))) :
     Nat.card H = n := by
   have e : H ≃ ((AddCircle p)[(n : ℤ)]) := (Equiv.ofInjective f hf).trans (Set.equivOfEq hr)
@@ -237,7 +237,7 @@ theorem exists_zsmul_eq_of_apply_eq_coe_period_div (hn : 0 < n)
   exact ⟨k, hf (by rw [map_zsmul, hu, hk])⟩
 
 /-- A group with an invariant map onto the `n`-torsion is cyclic. -/
-theorem isAddCyclic_of_range_eq_torsionBy (hn : 0 < n) (hf : Function.Injective f)
+theorem isAddCyclic_of_injective_of_range_eq_torsionBy (hn : 0 < n) (hf : Function.Injective f)
     (hr : Set.range f = ((AddCircle p)[(n : ℤ)] : Set (AddCircle p))) : IsAddCyclic H := by
   obtain ⟨u, hu, -⟩ := existsUnique_apply_eq_coe_period_div p hn hf hr
   exact ⟨u, fun x ↦ mem_zmultiples_iff.mpr
@@ -245,39 +245,41 @@ theorem isAddCyclic_of_range_eq_torsionBy (hn : 0 < n) (hf : Function.Injective 
 
 /-- A group with an invariant map onto the `n`-torsion is `ZMod n`, by an isomorphism sending
 `1` to the element `u` of invariant `p / n`. -/
-noncomputable def zmodAddEquivOfRangeEqTorsionBy (hn : 0 < n) (hf : Function.Injective f)
+noncomputable def zmodAddEquivOfInjectiveOfRangeEqTorsionBy (hn : 0 < n) (hf : Function.Injective f)
     (hr : Set.range f = ((AddCircle p)[(n : ℤ)] : Set (AddCircle p)))
     {u : H} (hu : f u = ((p / n : 𝕜) : AddCircle p)) : ZMod n ≃+ H :=
   zmodAddEquivOfGenerator
     (fun x ↦ mem_zmultiples_iff.mpr
       (exists_zsmul_eq_of_apply_eq_coe_period_div p hn hf hr hu x))
-    (natCard_eq_of_range_eq_torsionBy p hn hf hr)
+    (natCard_eq_of_injective_of_range_eq_torsionBy p hn hf hr)
 
-/-- The isomorphism `AddCircle.zmodAddEquivOfRangeEqTorsionBy` sends the class of an integer `i`
-to the multiple `i • u` of the element `u` of invariant `p / n`. -/
+/-- The isomorphism `AddCircle.zmodAddEquivOfInjectiveOfRangeEqTorsionBy` sends the class of an
+integer `i` to the multiple `i • u` of the element `u` of invariant `p / n`. -/
 @[simp]
-theorem zmodAddEquivOfRangeEqTorsionBy_apply_intCast (hn : 0 < n) (hf : Function.Injective f)
+theorem zmodAddEquivOfInjectiveOfRangeEqTorsionBy_apply_intCast (hn : 0 < n)
+    (hf : Function.Injective f)
     (hr : Set.range f = ((AddCircle p)[(n : ℤ)] : Set (AddCircle p)))
     {u : H} (hu : f u = ((p / n : 𝕜) : AddCircle p)) (i : ℤ) :
-    zmodAddEquivOfRangeEqTorsionBy p hn hf hr hu i = i • u :=
+    zmodAddEquivOfInjectiveOfRangeEqTorsionBy p hn hf hr hu i = i • u :=
   zmodAddEquivOfGenerator_apply_intCast _ _ i
 
-/-- The inverse of `AddCircle.zmodAddEquivOfRangeEqTorsionBy` sends the multiple `i • u` of the
-element `u` of invariant `p / n` to the class of the integer `i`. -/
+/-- The inverse of `AddCircle.zmodAddEquivOfInjectiveOfRangeEqTorsionBy` sends the multiple
+`i • u` of the element `u` of invariant `p / n` to the class of the integer `i`. -/
 @[simp]
-theorem zmodAddEquivOfRangeEqTorsionBy_symm_apply_zsmul (hn : 0 < n) (hf : Function.Injective f)
+theorem zmodAddEquivOfInjectiveOfRangeEqTorsionBy_symm_apply_zsmul (hn : 0 < n)
+    (hf : Function.Injective f)
     (hr : Set.range f = ((AddCircle p)[(n : ℤ)] : Set (AddCircle p)))
     {u : H} (hu : f u = ((p / n : 𝕜) : AddCircle p)) (i : ℤ) :
-    (zmodAddEquivOfRangeEqTorsionBy p hn hf hr hu).symm (i • u) = i :=
+    (zmodAddEquivOfInjectiveOfRangeEqTorsionBy p hn hf hr hu).symm (i • u) = i :=
   zmodAddEquivOfGenerator_symm_apply_zsmul _ _ i
 
-/-- The isomorphism `AddCircle.zmodAddEquivOfRangeEqTorsionBy` sends `1 : ZMod n` to the
+/-- The isomorphism `AddCircle.zmodAddEquivOfInjectiveOfRangeEqTorsionBy` sends `1 : ZMod n` to the
 element `u` of invariant `p / n`. -/
 @[simp]
-theorem zmodAddEquivOfRangeEqTorsionBy_apply_one (hn : 0 < n) (hf : Function.Injective f)
+theorem zmodAddEquivOfInjectiveOfRangeEqTorsionBy_apply_one (hn : 0 < n) (hf : Function.Injective f)
     (hr : Set.range f = ((AddCircle p)[(n : ℤ)] : Set (AddCircle p)))
     {u : H} (hu : f u = ((p / n : 𝕜) : AddCircle p)) :
-    zmodAddEquivOfRangeEqTorsionBy p hn hf hr hu 1 = u :=
+    zmodAddEquivOfInjectiveOfRangeEqTorsionBy p hn hf hr hu 1 = u :=
   zmodAddEquivOfGenerator_apply_one _ _
 
 end InvariantMap
