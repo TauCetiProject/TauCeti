@@ -71,7 +71,7 @@ variable (cov : _root_.CovariantDerivative I F V)
 The output is left as an unbundled section so that the definition is available without any
 regularity assumption on the connection.  Smoothness is supplied by
 `contMDiff_curvatureOperator` when the connection and input sections are smooth. -/
-@[expose] def curvatureOperator
+def curvatureOperator
     (X Y : Π x : M, TangentSpace I x) (σ : Π x : M, V x) (x : M) : V x :=
   cov (fun y ↦ cov σ y (Y y)) x (X x) -
     cov (fun y ↦ cov σ y (X y)) x (Y x) -
@@ -83,7 +83,7 @@ theorem curvatureOperator_apply (X Y : Π x : M, TangentSpace I x) (σ : Π x : 
     curvatureOperator cov X Y σ x =
       cov (fun y ↦ cov σ y (Y y)) x (X x) -
         cov (fun y ↦ cov σ y (X y)) x (Y x) -
-          cov σ x (mlieBracket I X Y x) := rfl
+          cov σ x (mlieBracket I X Y x) := (rfl)
 
 /-- Curvature is antisymmetric in its two vector-field arguments. -/
 theorem curvatureOperator_swap (X Y : Π x : M, TangentSpace I x) (σ : Π x : M, V x) :
