@@ -27,6 +27,8 @@ at its two nodes.
 
 * `TauCeti.ContCohomology.explicitInfl0`, `explicitInfl1`, and `explicitInfl2`: inflation on the
   explicit model in degrees `0`, `1`, and `2`.
+* `TauCeti.ContCohomology.descendZ1`: the descent to `G ⧸ N` of a continuous `1`-cocycle vanishing
+  on `N`.
 
 ## Main statements
 
@@ -36,6 +38,8 @@ at its two nodes.
 * `TauCeti.ContCohomology.explicitInfl1_injective`: inflation is injective in degree `1`.
 * `TauCeti.ContCohomology.explicitInfRes_exact`: the image of inflation is exactly the kernel of
   restriction in degree `1`.
+* `TauCeti.ContCohomology.explicitInfl1_descendZ1`: a cocycle vanishing on `N` is the inflation of
+  its descent.
 
 ## Implementation notes
 
@@ -228,8 +232,9 @@ private theorem smul_apply_eq_self_of_vanishing {z : Z1 G M}
 /-- The descent to `G ⧸ N` of a continuous `1`-cocycle vanishing on `N`. It is well defined by
 `apply_mul_eq_self_of_vanishing`, takes its values in `M ^ N` by
 `smul_apply_eq_self_of_vanishing`, and is continuous because `G ⧸ N` carries the quotient
-topology. -/
-private def descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0) :
+topology. Together with `TauCeti.ContCohomology.explicitInfl1_descendZ1` it says that a cocycle
+vanishing on `N` is *itself* inflated, with no coboundary subtracted. -/
+def descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0) :
     Z1 (G ⧸ N) (FixedPoints.addSubgroup N M) :=
   ⟨fun q => Quotient.liftOn' q
       (fun g => (⟨(z : G → M) g,
@@ -260,7 +265,7 @@ private theorem coe_descendZ1_apply_mk (z : Z1 G M) (hz : ∀ n : N, (z : G → 
   rfl
 
 /-- Inflating the descent of a continuous `1`-cocycle vanishing on `N` returns its class. -/
-private theorem explicitInfl1_descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0) :
+theorem explicitInfl1_descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0) :
     explicitInfl1 G M N (descendZ1 z hz : H1 (G ⧸ N) (FixedPoints.addSubgroup N M)) =
       (z : H1 G M) := by
   rw [explicitInfl1_mk]

@@ -191,8 +191,12 @@ section System
 
 /-- The explicit degree-one finite-quotient system of a discrete module.  It sends an open normal
 subgroup `U` to `H¹(G ⧸ U, M^U)` and an inclusion `V ≤ U` to the direct explicit transition from
-the `U`-level to the `V`-level. -/
-noncomputable def explicitFiniteQuotientSystem1 :
+the `U`-level to the `V`-level.
+
+The body is exposed because a cocone on this system has to be written with `H¹(G ⧸ U, M^U)` for
+its source objects and `explicitFiniteQuotientTransition1` for its arrows, which needs the two
+fields to reduce outside this module. -/
+@[expose] noncomputable def explicitFiniteQuotientSystem1 :
     (OpenNormalSubgroup G)ᵒᵖ ⥤ AddCommGrpCat.{max u v} where
   obj U :=
     AddCommGrpCat.of
