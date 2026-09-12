@@ -18,10 +18,12 @@ with a relative Galois group: it is the subgroup of `p.Gal` fixing the simple ex
 pointwise. Every further reading of the action against the Galois correspondence goes through
 that identification.
 
-Three consequences follow at once. The fixed field of the stabilizer is `F⟮x⟯` again, so the
-correspondence loses nothing. The index of the stabilizer is `[F⟮x⟯ : F]`, which for irreducible
-`p` is `p.natDegree`. And the action is primitive exactly when `F⟮x⟯` is an atom, that is,
-exactly when `F⟮x⟯ / F` has no intermediate field other than its two ends.
+Three consequences follow, each with the hypothesis it needs. For separable `p` the splitting
+field is Galois over `F`, so the fixed field of the stabilizer is `F⟮x⟯` again and the
+correspondence loses nothing; the index of the stabilizer is then `[F⟮x⟯ : F]`, which for
+irreducible `p` is `p.natDegree`. For `p` irreducible and separable of degree greater than one,
+the action is primitive exactly when `F⟮x⟯` is an atom, that is, exactly when `F⟮x⟯ / F` has no
+intermediate field other than its two ends.
 
 ## Main results
 
@@ -52,10 +54,6 @@ the same instance, and only the intrinsic one has stabilizers that the Galois co
 reads directly. No `Fact` instance is introduced below, so `galActionAux` is the only candidate
 and no ambiguity arises. For the same reason `TauCeti.isPretransitive_of_irreducible` is proved
 here rather than taken from `Polynomial.Gal.galAction_isPretransitive`.
-
-This supplies the first milestone of Layer 2 of
-`TauCetiRoadmap/PolynomialGaloisGroups/README.md`, "Stabilizers are relative Galois groups",
-together with the primitivity reading that the same layer asks for.
 -/
 
 public section
@@ -83,8 +81,9 @@ about the polynomial. -/
 theorem stabilizer_eq_fixingSubgroup_adjoin (x : p.rootSet p.SplittingField) :
     stabilizer p.Gal x = F⟮(x : p.SplittingField)⟯.fixingSubgroup := by
   ext σ
-  rw [MulAction.mem_stabilizer_iff, Subtype.ext_iff, Polynomial.Gal.coe_smul]
-  exact mem_fixingSubgroup_adjoin_simple_iff.symm
+  rw [MulAction.mem_stabilizer_iff, Subtype.ext_iff, Polynomial.Gal.coe_smul,
+    IntermediateField.fixingSubgroup_adjoin_simple]
+  exact Iff.rfl
 
 /-- **The field a root generates is recovered from its stabilizer.** For separable `p` the
 splitting field is Galois over `F`, so the fixed field of the stabilizer of `x` is `F⟮x⟯`. -/

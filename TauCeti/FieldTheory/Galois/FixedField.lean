@@ -49,8 +49,7 @@ its surjection. The fixed-point subfield it produces is the one underlying
 * `IntermediateField.fixingSubgroup_fixedField_of_finite`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
-* `IntermediateField.mem_fixingSubgroup_adjoin_simple_iff`,
-  `IntermediateField.fixingSubgroup_adjoin_simple`
+* `IntermediateField.fixingSubgroup_adjoin_simple`
 * `IntermediateField.isCoatom_fixingSubgroup_iff_isAtom`
 * `FixedPoints.isCyclic_algEquiv`
 * `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top`
@@ -128,28 +127,18 @@ theorem card_fixingSubgroup_le (E : IntermediateField K M) [FiniteDimensional E 
   rw [Nat.card_congr (fixingSubgroupEquiv E).toEquiv, Nat.card_eq_fintype_card]
   exact AlgEquiv.card_le
 
-/-- **Fixing a simple extension pointwise is fixing its generator.** A `K`-automorphism of `M`
-is determined on `K⟮x⟯` by its value at `x`, so the two conditions coincide; no hypothesis on
-`M / K` is needed, and `x` need not be algebraic.
+/-- **The fixing subgroup of a simple extension is the stabilizer of its generator.** A
+`K`-automorphism of `M` is determined on `K⟮x⟯` by its value at `x`, so fixing `K⟮x⟯` pointwise is
+fixing `x`; no hypothesis on `M / K` is needed, and `x` need not be algebraic.
 
-Mathlib's `IntermediateField.mem_fixingSubgroup_iff` leaves a quantifier over the whole
-intermediate field; this is the form that a point stabilizer of an action on a set of generators
-matches. -/
-theorem mem_fixingSubgroup_adjoin_simple_iff {x : M} {σ : M ≃ₐ[K] M} :
-    σ ∈ K⟮x⟯.fixingSubgroup ↔ σ x = x := by
-  rw [mem_fixingSubgroup_iff]
-  refine ⟨fun h => h x (mem_adjoin_simple_self K x), fun h y hy => ?_⟩
-  have hσ : Subgroup.zpowers σ ≤ MulAction.stabilizer (M ≃ₐ[K] M) x := Subgroup.zpowers_le.mpr h
-  have hx : x ∈ fixedField (Subgroup.zpowers σ) := fun g => hσ g.2
-  exact (mem_fixedField_iff _ _).mp (adjoin_simple_le_iff.mpr hx hy) σ (Subgroup.mem_zpowers σ)
-
-/-- **The fixing subgroup of a simple extension is the stabilizer of its generator.** This is the
-subgroup form of `IntermediateField.mem_fixingSubgroup_adjoin_simple_iff`, and it is what turns a
-statement about the action of `Gal(M/K)` on a set of elements of `M` into a statement about the
-Galois correspondence. -/
+This is what turns a statement about the action of `Gal(M/K)` on a set of elements of `M` into a
+statement about the Galois correspondence. -/
+@[simp]
 theorem fixingSubgroup_adjoin_simple (x : M) :
-    K⟮x⟯.fixingSubgroup = MulAction.stabilizer (M ≃ₐ[K] M) x :=
-  Subgroup.ext fun _ => mem_fixingSubgroup_adjoin_simple_iff
+    K⟮x⟯.fixingSubgroup = MulAction.stabilizer (M ≃ₐ[K] M) x := by
+  ext σ
+  rw [mem_fixingSubgroup_iff, MulAction.mem_stabilizer_iff]
+  simpa using forall_mem_adjoin_smul_eq_self_iff K (S := {x}) σ
 
 /-- **The Galois correspondence carries atoms to coatoms.** For a finite Galois extension an
 intermediate field is an atom — that is, it is not `K` and has no intermediate field strictly
