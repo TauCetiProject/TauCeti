@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ClosedEdge
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity
 public import TauCeti.Analysis.Convex.Segment
-public import TauCeti.Algebra.Order.BigOperators.FilterSum
+public import TauCeti.Algebra.Order.BigOperators.SumFilter
 public import TauCeti.Topology.Order.Interval
 
 /-!
@@ -50,16 +50,6 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
-private theorem neg_one_lt_filter_sum_eq_of_forall_ne_zero_le (a e : ι → ℝ) {p : ℝ}
-    (hp : -1 < ∑ i with a i = p, e i) (ha : ∀ i, e i ≠ 0 → a i ≤ p) :
-    ∀ {q : ℝ}, q ∈ Ici p → -1 < ∑ i with a i = q, e i := by
-  intro q hq
-  have hq' : p ≤ q := hq
-  rcases eq_or_lt_of_le hq' with rfl | hpq
-  · exact hp
-  · rw [filter_sum_eq_zero_of_forall_ne_zero_le Finset.univ hpq ha]
-    norm_num
-
 /-- **The Schwarz--Christoffel boundary map is injective on a right-hand unbounded edge.**
 Under `-1 < ∑ i with a i = p, e i` and `∀ i, e i ≠ 0 → a i ≤ p`, distinct finite parameters in
 `Ici p` have distinct boundary values. -/
@@ -70,7 +60,10 @@ theorem schwarzChristoffelBoundary_injOn_Ici (a e : ι → ℝ) (z₀ : UpperHal
   have hfree : ∀ {q : ℝ}, q ∈ Ici p → ∀ i, e i ≠ 0 → a i ∉ Ioo p q :=
     fun _ => not_mem_Ioo_of_ne_zero_of_forall_le ha
   have hsum : ∀ {q : ℝ}, q ∈ Ici p → -1 < ∑ i with a i = q, e i :=
-    neg_one_lt_filter_sum_eq_of_forall_ne_zero_le a e hp ha
+    fun {q} hq => by
+      simpa using
+        (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (β := ℝ) (a := a) (e := e)
+          (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) ha hq)
   intro x hx y hy hxy
   rcases lt_trichotomy x y with h | h | h
   · exact schwarzChristoffelBoundary_injOn_Icc a e z₀ (hfree hy) hp (hsum hy)
@@ -97,7 +90,10 @@ theorem schwarzChristoffelBoundary_image_Ici (a e : ι → ℝ) (z₀ : UpperHal
   have hfree : ∀ {q : ℝ}, q ∈ Ici p → ∀ i, e i ≠ 0 → a i ∉ Ioo p q :=
     fun _ => not_mem_Ioo_of_ne_zero_of_forall_le ha
   have hsum : ∀ {q : ℝ}, q ∈ Ici p → -1 < ∑ i with a i = q, e i :=
-    neg_one_lt_filter_sum_eq_of_forall_ne_zero_le a e hp ha
+    fun {q} hq => by
+      simpa using
+        (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (β := ℝ) (a := a) (e := e)
+          (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) ha hq)
   -- The endpoint `p` is integrable, and every later point is free of prevertices by `hfree`.
   have hcont : ContinuousOn B (Ici p) := by
     apply continuousOn_schwarzChristoffelBoundary_of_exponent_sum_gt_neg_one
