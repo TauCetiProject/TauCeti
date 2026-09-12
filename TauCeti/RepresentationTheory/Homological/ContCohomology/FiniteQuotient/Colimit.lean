@@ -177,7 +177,7 @@ variable (G M)
 /-- The degree-one comparison maps into `H¹(G, M)`: inflation along `G → G ⧸ U`, assembled into
 the leg family of a cocone. They are named because the colimit theorem below says that *these*
 maps are universal, not that some isomorphism exists. -/
-@[expose] noncomputable def explicitFiniteQuotientComparison1 :
+noncomputable def explicitFiniteQuotientComparison1 :
     explicitFiniteQuotientSystem1 G M ⟶
       (Functor.const ((OpenNormalSubgroup G)ᵒᵖ)).obj (AddCommGrpCat.of (H1 G M)) where
   app U := AddCommGrpCat.ofHom (explicitInfl1 G M U.unop.toSubgroup)
@@ -189,10 +189,14 @@ maps are universal, not that some isomorphism exists. -/
 @[simp]
 theorem explicitFiniteQuotientComparison1_app (U : OpenNormalSubgroup G) :
     (explicitFiniteQuotientComparison1 G M).app (Opposite.op U) =
-      AddCommGrpCat.ofHom (explicitInfl1 G M U.toSubgroup) :=
-  rfl
+      AddCommGrpCat.ofHom (explicitInfl1 G M U.toSubgroup) := by
+  rw [explicitFiniteQuotientComparison1]
 
 /-- The degree-one finite-quotient cocone, whose point is `H¹(G, M)` itself. -/
+-- The body is exposed because the apex is a dependent object type: the legs and every map out of
+-- the cocone, `explicitFiniteQuotientColimit1.desc` included, are typed by `pt`, so it has to
+-- reduce outside this module.  The comparison transformation above is sealed instead, its
+-- components being recovered from `explicitFiniteQuotientComparison1_app`.
 @[expose] noncomputable def explicitFiniteQuotientCocone1 :
     Cocone (explicitFiniteQuotientSystem1 G M) where
   pt := AddCommGrpCat.of (H1 G M)
