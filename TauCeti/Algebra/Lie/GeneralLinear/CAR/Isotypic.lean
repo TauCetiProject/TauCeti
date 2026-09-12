@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.GeneralLinear.Isotypic
 import TauCeti.Algebra.Lie.GeneralLinear.CAR.Casimir
 import TauCeti.Algebra.Lie.GeneralLinear.CAR.WeightUniqueness
 import TauCeti.Algebra.Lie.GeneralLinear.Existence
+import TauCeti.Data.Fin.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 
 /-!
@@ -52,39 +53,6 @@ noncomputable section
 attribute [local instance] Classical.decEq
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-private theorem sum_range_rev (N k : ℕ) (hk : k ≤ N) :
-    Finset.sum (Finset.range k) (fun x => N - (x + 1)) =
-      k.choose 2 + k * (N - k) := by
-  calc
-    Finset.sum (Finset.range k) (fun x => N - (x + 1)) =
-        Finset.sum (Finset.range k) (fun x => (N - k) + (k - 1 - x)) := by
-      apply Finset.sum_congr rfl
-      intro x hx
-      have hxk := Finset.mem_range.mp hx
-      omega
-    _ = k * (N - k) + Finset.sum (Finset.range k) (fun x => k - 1 - x) := by
-      rw [Finset.sum_add_distrib]
-      simp
-    _ = k * (N - k) + Finset.sum (Finset.range k) (fun x => x) := by
-      rw [Finset.sum_range_reflect (fun x => x) k]
-    _ = k.choose 2 + k * (N - k) := by
-      rw [Finset.sum_range_id, Nat.choose_two_right]
-      omega
-
-private theorem sum_fin_rev_castLE (N k : ℕ) (hk : k ≤ N) :
-    (∑ i : Fin k, (Fin.rev (Fin.castLE hk i) : ℕ)) =
-      k.choose 2 + k * (N - k) := by
-  rw [Finset.sum_fin_eq_sum_range]
-  simp only [Fin.rev, Fin.castLE]
-  calc
-    Finset.sum (Finset.range k)
-        (fun x => if h : x < k then N - (x + 1) else 0) =
-        Finset.sum (Finset.range k) (fun x => N - (x + 1)) := by
-      apply Finset.sum_congr rfl
-      intro x hx
-      simp [Finset.mem_range.mp hx]
-    _ = _ := sum_range_rev N k hk
-
 namespace IsGlHighestWeightVector
 
 variable {K : Type*} [Field K] [CharZero K] {N : ℕ}
@@ -110,7 +78,7 @@ theorem eq_glHalfStaircase {μ : Fin N → K}
       (fun i _ => hv.lie_single_self_eq_smul i) (fun i _ => hμ i)
     have hnat : (∑ i : Fin k, a (Fin.castLE hk.le i)) ≤
         ∑ i : Fin k, (Fin.rev (Fin.castLE hk.le i) : ℕ) := by
-      rw [sum_fin_rev_castLE N k hk.le]
+      rw [Fin.sum_rev_castLE N k hk.le]
       simpa [s] using hbound
     exact_mod_cast hnat
   have hsum : (∑ i : Fin N, (a i : ℤ)) =
@@ -120,7 +88,7 @@ theorem eq_glHalfStaircase {μ : Fin N → K}
       hv.lie_single_self_eq_smul hμ
     have hnat : (∑ i : Fin N, a i) = ∑ i : Fin N, (Fin.rev i : ℕ) := by
       rw [hsum']
-      simpa using (sum_fin_rev_castLE N N le_rfl).symm
+      simpa using (Fin.sum_rev_castLE N N le_rfl).symm
     exact_mod_cast hnat
   have hfield :
       (∑ i : Fin N, μ i * (μ i + (N : K) - 1 - 2 * (i : K))) =
