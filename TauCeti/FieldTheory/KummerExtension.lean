@@ -36,14 +36,22 @@ namespace TauCeti
 
 universe u v
 
-variable {F : Type u} [Field F] {E : Type v} [Field E] [Algebra F E] {a : F} {δ : E}
+section RootSet
+
+variable {F : Type u} [CommRing F] {E : Type v} [Field E] [Algebra F E] {a : F}
 
 /-- A point of an extension is a root of `X ^ n - C a` exactly when its `n`-th power is `a`. -/
 @[simp]
 theorem _root_.Polynomial.mem_rootSet_X_pow_sub_C {n : ℕ} (hn : n ≠ 0) {x : E} :
     x ∈ ((X : F[X]) ^ n - C a).rootSet E ↔ x ^ n = algebraMap F E a := by
-  rw [mem_rootSet_of_ne (monic_X_pow_sub_C a hn).ne_zero, map_sub, aeval_X_pow, aeval_C,
+  rw [(monic_X_pow_sub_C a hn).mem_rootSet, map_sub, aeval_X_pow, aeval_C,
     sub_eq_zero]
+
+end RootSet
+
+section Adjoin
+
+variable {F : Type u} [Field F] {E : Type v} [Field E] [Algebra F E] {a : F} {δ : E}
 
 /-- Over a field, a square root `δ` of `a` generates the whole splitting field of `X ^ 2 - C a`,
 because the only other root is `-δ`. -/
@@ -60,6 +68,12 @@ theorem _root_.IntermediateField.adjoin_rootSet_X_pow_two_sub_C
   · exact (sub_eq_zero.mp h) ▸ IntermediateField.mem_adjoin_simple_self F δ
   · exact (eq_neg_of_add_eq_zero_left h) ▸ neg_mem (IntermediateField.mem_adjoin_simple_self F δ)
 
+end Adjoin
+
+section Splits
+
+variable {F : Type u} [CommRing F] {E : Type v} [CommRing E] [Algebra F E] {a : F} {δ : E}
+
 /-- A square root of `a` in `E` splits `X ^ 2 - C a` there: the two linear factors are `X - C δ`
 and `X + C δ`. Unlike `Polynomial.X_pow_sub_C_splits_of_isPrimitiveRoot` this needs no primitive
 root of unity, so it also covers characteristic `2`, where the two factors coincide. -/
@@ -70,5 +84,7 @@ theorem _root_.Polynomial.splits_map_X_pow_two_sub_C (hδ : δ ^ 2 = algebraMap 
     ring
   rw [hmap]
   exact (Splits.X_sub_C δ).mul (Splits.X_sub_C (-δ))
+
+end Splits
 
 end TauCeti
