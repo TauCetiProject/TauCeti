@@ -98,19 +98,22 @@ theorem range_component_subset_range (L : SmoothLinkEmbedding I M n) (i : Fin n)
     Set.range (L i) ⊆ L.range :=
   Set.subset_iUnion (fun j ↦ Set.range (L j)) i
 
-/-- Two components of a smooth link have disjoint images exactly when they are distinct.
+theorem Pairwise.disjoint_iff_ne [PartialOrder α] [OrderBot α] {ι : Type*} {f : ι → α}
+    (h : Pairwise (Function.onFun Disjoint f)) (hne : ∀ i, f i ≠ ⊥) (i j : ι) :
+    Disjoint (f i) (f j) ↔ i ≠ j := by
+  constructor
+  · intro hd hij
+    exact (Disjoint.ne (hne i) hd) (congrArg f hij)
+  · intro hij
+    exact h hij
 
-The reverse implication uses that every smooth circle embedding has a nonempty range; this makes
-the characterization convenient for statements that quantify over pairs of link components. -/
+/-- Two components of a smooth link have disjoint images exactly when their labels differ. -/
+@[simp, grind =]
 theorem disjoint_range_iff (L : SmoothLinkEmbedding I M n) (i j : Fin n) :
     Disjoint (Set.range (L i)) (Set.range (L j)) ↔ i ≠ j := by
-  constructor
-  · intro h hij
-    subst hij
-    obtain ⟨x, hx⟩ := Set.range_nonempty (L i)
-    exact (h.le_bot ⟨hx, hx⟩)
-  · intro hij
-    exact L.pairwiseDisjoint_range hij
+  apply Pairwise.disjoint_iff_ne L.pairwiseDisjoint_range
+  intro i
+  exact Set.nonempty_iff_ne_empty.mp (Set.range_nonempty (L i))
 
 /-! ### Empty and one-component links -/
 
