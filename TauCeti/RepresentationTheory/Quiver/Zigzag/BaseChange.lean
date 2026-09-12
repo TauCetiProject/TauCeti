@@ -215,9 +215,7 @@ theorem skewZigzagBaseChange_id (c : SkewZigzagParameter k G) :
     (Ideal.quotientEquivAlgOfEq k
       (I := (skewZigzagIdeal k G (c.map (RingHom.id k : k →* k))).asIdeal)
       (J := (skewZigzagIdeal k G c).asIdeal)
-      (congrArg (fun d : SkewZigzagParameter k G => (skewZigzagIdeal k G d).asIdeal) (by
-        simpa only [RingHom.toMonoidHom_eq_coe, RingHom.coe_monoidHom_id] using
-          SkewZigzagParameter.map_id c))).toRingHom.comp
+      (by exact skewZigzagIdeal_map_id G c)).toRingHom.comp
         (skewZigzagBaseChange G (RingHom.id k) c) =
       RingHom.id (skewZigzagQuotient k G c) := by
   apply PathAlgebra.ringHom_ext_of_surjective (skewZigzagMk k G c)
