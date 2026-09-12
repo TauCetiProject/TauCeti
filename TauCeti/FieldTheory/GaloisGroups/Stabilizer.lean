@@ -28,24 +28,12 @@ separable, and for irreducible `p` this follows from `p.Separable`.
   subgroup of the field the root generates.
 * `TauCeti.fixedField_stabilizer`: for a Galois splitting field, the field the stabilizer fixes
   is that same field.
-* `TauCeti.index_stabilizer_eq_minpoly_natDegree`,
+* `TauCeti.index_stabilizer_eq_natDegree_minpoly`,
   `TauCeti.index_stabilizer_eq_natDegree`: the index of the stabilizer is the degree of the
   minimal polynomial of the root, so for irreducible separable `p` it is `p.natDegree`.
 * `TauCeti.stabilizer_eq_bot_iff_adjoin_simple_eq_top`,
   `TauCeti.stabilizer_eq_top_iff_adjoin_simple_eq_bot`: the two ends of the correspondence, a
   root that generates the whole splitting field and a root that lies in the base field.
-
-## Roadmap
-
-This is the milestone "Stabilizers are relative Galois groups" of Layer 2,
-"the dictionary between Galois theory and permutations", of
-`TauCetiRoadmap/PolynomialGaloisGroups/README.md`, which asks for
-`stabilizer p.Gal α = (IntermediateField.adjoin F {α}).fixingSubgroup` of index `natDegree p`.
-The prime-degree corollary of that layer's "Primitivity and intermediate fields" milestone, which
-the roadmap records as "also available from `IsPreprimitive.of_prime_card`", is
-`TauCeti.isPreprimitive_of_irreducible_of_separable_of_prime_natDegree` of
-`TauCeti/FieldTheory/GaloisGroups/Orbits.lean`; the primitivity-as-atom equivalence itself waits
-on the block/intermediate-field correspondence the milestone lists as its prerequisite.
 
 ## Implementation notes
 
@@ -95,7 +83,7 @@ theorem fixedField_stabilizer [IsGalois F p.SplittingField] (x : p.rootSet p.Spl
 orbit of `x` consists of all roots of its minimal polynomial in the normal splitting field, and
 separability makes their number its degree, so this is orbit-stabilizer applied to
 `TauCeti.natCard_orbit_eq_natDegree_minpoly_splittingField`. -/
-theorem index_stabilizer_eq_minpoly_natDegree (x : p.rootSet p.SplittingField)
+theorem index_stabilizer_eq_natDegree_minpoly (x : p.rootSet p.SplittingField)
     (hsep : (minpoly F (x : p.SplittingField)).Separable) :
     (stabilizer p.Gal x).index = (minpoly F (x : p.SplittingField)).natDegree := by
   rw [MulAction.index_stabilizer, ← Nat.card_coe_set_eq,

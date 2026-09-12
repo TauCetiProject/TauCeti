@@ -272,11 +272,7 @@ theorem isPretransitive_of_irreducible (hp : Irreducible p) :
 
 /-- **An irreducible separable polynomial of prime degree has a primitive root action.** A
 transitive action on a set of prime cardinality is primitive, and the roots of a separable
-polynomial number its degree.
-
-This is the corollary of the milestone "Primitivity and intermediate fields" in Layer 2 of
-`TauCetiRoadmap/PolynomialGaloisGroups/README.md` that the roadmap records as "also available
-from `IsPreprimitive.of_prime_card`". -/
+polynomial number its degree. -/
 theorem isPreprimitive_of_irreducible_of_separable_of_prime_natDegree (hp : Irreducible p)
     (hsep : p.Separable) (hprime : p.natDegree.Prime) :
     MulAction.IsPreprimitive p.Gal (p.rootSet p.SplittingField) := by
