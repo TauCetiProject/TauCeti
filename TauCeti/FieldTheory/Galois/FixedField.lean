@@ -32,15 +32,13 @@ cyclic group of automorphisms has `M` cyclic over it, and for `⟨σ⟩` there i
 over the fixed field — `AlgEquiv.toFixedFieldAlgEquiv σ` acts on `M` as `σ` does, and generates
 once `⟨σ⟩` is finite.
 
-A simple extension `K⟮x⟯` is fixed pointwise by exactly those automorphisms that fix `x`, so
-its fixing subgroup is the stabilizer of `x`; this needs no hypothesis on `M / K` at all. For a
-finite Galois extension the correspondence is an order isomorphism onto the dual of the subgroup
-lattice, so an intermediate field is an atom exactly when its fixing subgroup is a coatom.
-
 Neither `M / K` Galois nor `M / K` finite is needed, and neither is faithfulness of the action:
 `FixedPoints.toAlgAut_surjective` asks only that the group be finite, and cyclicity passes along
 its surjection. The fixed-point subfield it produces is the one underlying
 `IntermediateField.fixedField`.
+
+A simple extension `K⟮x⟯` is fixed pointwise by exactly those automorphisms that fix `x`, so
+its fixing subgroup is the stabilizer of `x`; this too needs no hypothesis on `M / K` at all.
 
 ## Main results
 
@@ -50,7 +48,6 @@ its surjection. The fixed-point subfield it produces is the one underlying
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
 * `IntermediateField.fixingSubgroup_adjoin_simple`
-* `IntermediateField.isCoatom_fixingSubgroup_iff_isAtom`
 * `FixedPoints.isCyclic_algEquiv`
 * `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top`
 -/
@@ -139,19 +136,6 @@ theorem fixingSubgroup_adjoin_simple (x : M) :
   ext σ
   rw [mem_fixingSubgroup_iff, MulAction.mem_stabilizer_iff]
   simpa using forall_mem_adjoin_smul_eq_self_iff K (S := {x}) σ
-
-/-- **The Galois correspondence carries atoms to coatoms.** For a finite Galois extension an
-intermediate field is an atom — that is, it is not `K` and has no intermediate field strictly
-between `K` and it — exactly when its fixing subgroup is a maximal proper subgroup of
-`Gal(M/K)`.
-
-The correspondence `IsGalois.intermediateFieldEquivSubgroup` is an order isomorphism onto the
-*dual* of the subgroup lattice, so an atom on the field side is an atom of the dual order, which
-is a coatom of the subgroup lattice. -/
-theorem isCoatom_fixingSubgroup_iff_isAtom [FiniteDimensional K M] [IsGalois K M]
-    (E : IntermediateField K M) : IsCoatom E.fixingSubgroup ↔ IsAtom E := by
-  rw [← isAtom_dual_iff_isCoatom]
-  exact IsGalois.intermediateFieldEquivSubgroup.isAtom_iff E
 
 end IntermediateField
 

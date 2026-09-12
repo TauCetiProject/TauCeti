@@ -18,27 +18,26 @@ with a relative Galois group: it is the subgroup of `p.Gal` fixing the simple ex
 pointwise. Every further reading of the action against the Galois correspondence goes through
 that identification.
 
-Three consequences follow, each with the hypothesis it needs. For separable `p` the splitting
-field is Galois over `F`, so the fixed field of the stabilizer is `F⟮x⟯` again and the
-correspondence loses nothing; the index of the stabilizer is then `[F⟮x⟯ : F]`, which for
-irreducible `p` is `p.natDegree`. For `p` irreducible and separable of degree greater than one,
-the action is primitive exactly when `F⟮x⟯` is an atom, that is, exactly when `F⟮x⟯ / F` has no
-intermediate field other than its two ends.
+The consequences each carry the hypothesis they need. For separable `p` the splitting field is
+Galois over `F`, so the fixed field of the stabilizer is `F⟮x⟯` again and the correspondence
+loses nothing; the index of the stabilizer is then `[F⟮x⟯ : F]`, which for irreducible separable
+`p` is `p.natDegree`. For irreducible `p` the action on the roots is transitive, and when the
+degree is prime it is primitive.
 
 ## Main results
 
 * `TauCeti.stabilizer_eq_fixingSubgroup_adjoin`: the stabilizer of a root is the fixing subgroup
   of the field the root generates.
 * `TauCeti.fixedField_stabilizer`: for separable `p`, the field it fixes is that same field.
-* `TauCeti.index_stabilizer`, `TauCeti.index_stabilizer_eq_natDegree`: the index of the
-  stabilizer is the degree of the minimal polynomial of the root, so for irreducible `p` it is
-  `p.natDegree`.
+* `TauCeti.index_stabilizer`, `TauCeti.index_stabilizer_eq_natDegree`: for separable `p` the
+  index of the stabilizer is the degree of the minimal polynomial of the root, so for
+  irreducible separable `p` it is `p.natDegree`.
 * `TauCeti.stabilizer_eq_bot_iff_adjoin_eq_top`,
-  `TauCeti.stabilizer_eq_top_iff_adjoin_eq_bot`: the two ends of the correspondence, a root that
-  generates the whole splitting field and a root that lies in the base field.
-* `TauCeti.isPreprimitive_iff_isAtom_adjoin`: for irreducible separable `p` of degree greater
-  than one, the root action is primitive exactly when `F⟮x⟯` admits no proper intermediate
-  field.
+  `TauCeti.stabilizer_eq_top_iff_adjoin_eq_bot`: for separable `p`, the two ends of the
+  correspondence, a root that generates the whole splitting field and a root that lies in the
+  base field.
+* `TauCeti.isPretransitive_of_irreducible`: the root action of an irreducible polynomial is
+  transitive.
 * `TauCeti.isPreprimitive_of_prime_natDegree`: an irreducible separable polynomial of prime
   degree has a primitive root action.
 
@@ -94,9 +93,10 @@ theorem fixedField_stabilizer (hsep : p.Separable) (x : p.rootSet p.SplittingFie
 
 /-! ### The index of a point stabilizer -/
 
-/-- **The index of a point stabilizer is the degree of the minimal polynomial of the point.** The
-index of the fixing subgroup of an intermediate field is the degree of that field over the base,
-and `F⟮x⟯` has the degree of the minimal polynomial of `x`. -/
+/-- **For separable `p`, the index of a point stabilizer is the degree of the minimal polynomial
+of the point.** The index of the fixing subgroup of an intermediate field is the degree of that
+field over the base, and `F⟮x⟯` has the degree of the minimal polynomial of `x`; separability is
+what makes the splitting field Galois over `F`, so that the correspondence applies. -/
 theorem index_stabilizer (hsep : p.Separable) (x : p.rootSet p.SplittingField) :
     (stabilizer p.Gal x).index = (minpoly F (x : p.SplittingField)).natDegree := by
   have : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hsep
@@ -104,9 +104,10 @@ theorem index_stabilizer (hsep : p.Separable) (x : p.rootSet p.SplittingField) :
     ← IntermediateField.adjoin.finrank (IsIntegral.of_finite F (x : p.SplittingField))]
   exact (IntermediateField.finrank_eq_fixingSubgroup_index _ F⟮(x : p.SplittingField)⟯).symm
 
-/-- **For an irreducible polynomial every point stabilizer has index the degree.** This is the
-form the permutation representation uses: a transitive subgroup of degree `n` has point
-stabilizers of index `n`. -/
+/-- **For an irreducible separable polynomial every point stabilizer has index the degree.** This
+is the form the permutation representation uses: a transitive subgroup of degree `n` has point
+stabilizers of index `n`. Separability is needed for `TauCeti.index_stabilizer`, and without it
+an irreducible polynomial can have fewer roots than its degree. -/
 theorem index_stabilizer_eq_natDegree (hp : Irreducible p) (hsep : p.Separable)
     (x : p.rootSet p.SplittingField) : (stabilizer p.Gal x).index = p.natDegree := by
   have hmin : (minpoly F (x : p.SplittingField)).natDegree = p.natDegree := by
@@ -116,9 +117,9 @@ theorem index_stabilizer_eq_natDegree (hp : Irreducible p) (hsep : p.Separable)
 
 /-! ### The two ends of the correspondence -/
 
-/-- **A root with trivial stabilizer is a primitive element**, and conversely. Together with
-`TauCeti.stabilizer_eq_top_iff_adjoin_eq_bot` this pins the orientation of the correspondence:
-the stabilizer shrinks as the field the root generates grows. -/
+/-- **For separable `p`, a root with trivial stabilizer is a primitive element**, and conversely.
+Together with `TauCeti.stabilizer_eq_top_iff_adjoin_eq_bot` this pins the orientation of the
+correspondence: the stabilizer shrinks as the field the root generates grows. -/
 theorem stabilizer_eq_bot_iff_adjoin_eq_top (hsep : p.Separable)
     (x : p.rootSet p.SplittingField) :
     stabilizer p.Gal x = ⊥ ↔ F⟮(x : p.SplittingField)⟯ = ⊤ := by
@@ -129,7 +130,9 @@ theorem stabilizer_eq_bot_iff_adjoin_eq_top (hsep : p.Separable)
   · rw [stabilizer_eq_fixingSubgroup_adjoin, h]
     exact IntermediateField.fixingSubgroup_top
 
-/-- **A root fixed by the whole Galois group lies in the base field**, and conversely. -/
+/-- **For separable `p`, a root fixed by the whole Galois group lies in the base field**, and
+conversely. Separability is what makes the fixed field of the whole group `F` itself; over an
+inseparable extension a root outside `F` can be fixed by every automorphism. -/
 theorem stabilizer_eq_top_iff_adjoin_eq_bot (hsep : p.Separable)
     (x : p.rootSet p.SplittingField) :
     stabilizer p.Gal x = ⊤ ↔ F⟮(x : p.SplittingField)⟯ = ⊥ := by
@@ -155,30 +158,6 @@ theorem isPretransitive_of_irreducible (hp : Irreducible p) :
   have hy := minpoly.eq_of_irreducible hp (aeval_eq_zero_of_mem_rootSet y.2)
   obtain ⟨g, hg⟩ := (Normal.minpoly_eq_iff_mem_orbit p.SplittingField).mp (hy.symm.trans hx)
   exact ⟨g, Subtype.ext hg⟩
-
-/-- **Primitivity of the root action is the absence of intermediate fields.** For an irreducible
-separable `p` of degree greater than one, the action of `p.Gal` on the roots is primitive exactly
-when `F⟮x⟯` is an atom, that is, exactly when no field lies strictly between `F` and `F⟮x⟯`.
-
-The degree hypothesis cannot be dropped. For linear `p` the root set is a single point, on which
-every action is primitive, while `F⟮x⟯ = ⊥` is not an atom. It is the hypothesis that Mathlib's
-`MulAction.isCoatom_stabilizer_iff_preprimitive` carries as `[Nontrivial X]`.
-
-The conclusion does not depend on the chosen root, since the action is transitive; `x` appears on
-the right only to name a field. -/
-theorem isPreprimitive_iff_isAtom_adjoin (hp : Irreducible p) (hsep : p.Separable)
-    (hdeg : 1 < p.natDegree) (x : p.rootSet p.SplittingField) :
-    IsPreprimitive p.Gal (p.rootSet p.SplittingField) ↔
-      IsAtom F⟮(x : p.SplittingField)⟯ := by
-  have hgal : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hsep
-  have htr : IsPretransitive p.Gal (p.rootSet p.SplittingField) :=
-    isPretransitive_of_irreducible hp
-  have hcard : Fintype.card (p.rootSet p.SplittingField) = p.natDegree :=
-    Polynomial.card_rootSet_eq_natDegree hsep (IsSplittingField.splits p.SplittingField p)
-  have hnt : Nontrivial (p.rootSet p.SplittingField) :=
-    Fintype.one_lt_card_iff_nontrivial.mp (by omega)
-  rw [← isCoatom_stabilizer_iff_preprimitive p.Gal x, stabilizer_eq_fixingSubgroup_adjoin]
-  exact IntermediateField.isCoatom_fixingSubgroup_iff_isAtom F⟮(x : p.SplittingField)⟯
 
 /-- **An irreducible separable polynomial of prime degree has a primitive root action.** A
 transitive action on a set of prime cardinality is primitive, and the roots of a separable
