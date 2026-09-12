@@ -45,7 +45,7 @@ structure IsCollar (f : N → M) (c : N × Ico (0 : ℝ) 1 → M) : Prop where
 def IsCollared (f : N → M) : Prop := ∃ c, IsCollar f c
 
 /-- The identity map on the product is the canonical collar of its zero slice. -/
-theorem isCollared_prodMkLeft :
+theorem isCollar_prodMkLeft :
     IsCollar ((fun x : N => (x, ⟨0, by norm_num⟩)) : N → N × Ico (0 : ℝ) 1)
       (id : N × Ico (0 : ℝ) 1 → N × Ico (0 : ℝ) 1) := by
   refine ⟨IsOpenEmbedding.id, ?_⟩
@@ -53,9 +53,9 @@ theorem isCollared_prodMkLeft :
   rfl
 
 /-- The canonical product zero slice admits a collar. -/
-theorem isCollared_prodMkLeft_exists :
+theorem isCollared_prodMkLeft :
     IsCollared ((fun x : N => (x, ⟨0, by norm_num⟩)) : N → N × Ico (0 : ℝ) 1) :=
-  ⟨_, isCollared_prodMkLeft⟩
+  ⟨_, isCollar_prodMkLeft⟩
 
 /-- An existential collar is precisely a map together with collar data. -/
 theorem isCollared_iff : IsCollared f ↔ ∃ c, IsCollar f c := Iff.rfl
@@ -67,9 +67,6 @@ include h
 
 /-- A collar witness implies that its boundary map admits a collar. -/
 theorem isCollared : IsCollared f := ⟨c, h⟩
-
-/-- The collar agrees with its boundary map on the zero slice. -/
-theorem apply_zero_eq (x : N) : c (x, ⟨0, by norm_num⟩) = f x := h.apply_zero x
 
 /-- The boundary map of a global collar is an embedding. -/
 theorem isEmbedding : IsEmbedding f := by
@@ -124,6 +121,13 @@ theorem comp_homeomorph (e : P ≃ₜ N) :
   intro x
   simpa [Function.comp_apply] using h.apply_zero (e x)
 
+/-- Open embeddings of the ambient space carry collars to collars. -/
+theorem isOpenEmbedding_comp {g : M → P} (hg : IsOpenEmbedding g) :
+    IsCollar (g ∘ f) (g ∘ c) where
+  isOpenEmbedding := hg.comp h.isOpenEmbedding
+  apply_zero x := by
+    simpa only [Function.comp_apply] using congrArg g (h.apply_zero x)
+
 /-- Restricting a collar along an open subset of its base preserves collar data. -/
 theorem restrict {U : Set N} (hU : IsOpen U) :
     IsCollar (f ∘ ((↑) : U → N))
@@ -133,5 +137,27 @@ theorem restrict {U : Set N} (hU : IsOpen U) :
   simpa only [Function.comp_apply, Prod.map_apply, id_eq] using h.apply_zero (x : N)
 
 end IsCollar
+
+namespace IsCollared
+
+/-- A map admitting a collar is an embedding. -/
+theorem isEmbedding (h : IsCollared f) : IsEmbedding f :=
+  let ⟨_, hc⟩ := h; hc.isEmbedding
+
+/-- A collared map remains collared on every open subset of its domain. -/
+theorem restrict (h : IsCollared f) {U : Set N} (hU : IsOpen U) :
+    IsCollared (f ∘ ((↑) : U → N)) :=
+  let ⟨_, hc⟩ := h; (hc.restrict hU).isCollared
+
+/-- Open embeddings of the ambient space preserve the existence of a collar. -/
+theorem isOpenEmbedding_comp {g : M → P} (h : IsCollared f) (hg : IsOpenEmbedding g) :
+    IsCollared (g ∘ f) :=
+  let ⟨_, hc⟩ := h; (hc.isOpenEmbedding_comp hg).isCollared
+
+/-- Reparametrizing the domain by a homeomorphism preserves the existence of a collar. -/
+theorem comp_homeomorph (h : IsCollared f) (e : P ≃ₜ N) : IsCollared (f ∘ e) :=
+  let ⟨_, hc⟩ := h; (hc.comp_homeomorph e).isCollared
+
+end IsCollared
 
 end TauCeti
