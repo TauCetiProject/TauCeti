@@ -24,6 +24,8 @@ conditions in `IsCongrOne`.
 
 * `TauCeti.GlobalNumberFields.residue`, `TauCeti.GlobalNumberFields.residueHom`: reduction of an
   element that is a unit at the finite part of `𝔪` to the residue units modulo that finite part.
+* `TauCeti.GlobalNumberFields.finiteUnitsMap`: the transition map on residue units when the
+  modulus grows.
 
 ## Main results
 
@@ -33,6 +35,11 @@ conditions in `IsCongrOne`.
   finite-place conditions in `IsCongrOne`.
 * `TauCeti.GlobalNumberFields.residueHom_eq_one_of_mem_congruenceSubgroup`: an element congruent to
   one maps to one under reduction.
+* `TauCeti.GlobalNumberFields.finiteUnitsMap_refl` and
+  `TauCeti.GlobalNumberFields.finiteUnitsMap_comp_finiteUnitsMap`: the transition maps are
+  functorial in the divisibility relation on moduli.
+* `TauCeti.GlobalNumberFields.finiteUnitsMap_residueHom`: reduction commutes with changing the
+  modulus.
 
 ## References
 
@@ -248,5 +255,56 @@ theorem residueHom_eq_one_of_mem_congruenceSubgroup {𝔪 : Modulus K} {x : prim
   rw [coe_residueHom, Units.val_one]
   exact (residue_eq_one_iff x).mpr fun v hv ↦
     (mem_congruenceSubgroup.mp hx).valuation_sub_one_le hv
+
+/-! ### Transition maps for residue units -/
+
+/-- The reduction map on residue units from a larger modulus to a divisor of it.  It is induced by
+the canonical quotient map between the two ideal quotients; in particular, it does not choose a
+ring-level inverse. -/
+noncomputable def finiteUnitsMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
+    ((𝓞 K) ⧸ 𝔫.finitePart)ˣ →* ((𝓞 K) ⧸ 𝔪.finitePart)ˣ :=
+  Units.map (Ideal.Quotient.factor (Ideal.le_of_dvd (Modulus.dvd_iff.mp h).1)).toMonoidHom
+
+@[simp]
+theorem coe_finiteUnitsMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
+    (x : ((𝓞 K) ⧸ 𝔫.finitePart)ˣ) :
+    (finiteUnitsMap h x : (𝓞 K) ⧸ 𝔪.finitePart) =
+      Ideal.Quotient.factor (Ideal.le_of_dvd (Modulus.dvd_iff.mp h).1)
+        (x : (𝓞 K) ⧸ 𝔫.finitePart) := by
+  rfl
+
+@[simp]
+theorem finiteUnitsMap_refl (𝔪 : Modulus K) :
+    finiteUnitsMap (Modulus.dvd_refl 𝔪) = MonoidHom.id _ := by
+  ext x
+  simp [finiteUnitsMap]
+
+@[simp]
+theorem finiteUnitsMap_comp_finiteUnitsMap {𝔪 𝔫 𝔭 : Modulus K} (h₁ : 𝔪 ∣ 𝔫) (h₂ : 𝔫 ∣ 𝔭) :
+    (finiteUnitsMap h₁).comp (finiteUnitsMap h₂) =
+      finiteUnitsMap (Modulus.dvd_trans h₁ h₂) := by
+  ext x
+  simp [finiteUnitsMap, Ideal.Quotient.factor_comp_apply]
+
+/-- Reduction of a prime-to element commutes with passing to a smaller modulus. -/
+@[simp]
+theorem finiteUnitsMap_residueHom {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
+    (x : primeToSubgroup 𝔫) :
+    finiteUnitsMap h (residueHom 𝔫 x) =
+      residueHom 𝔪 (Subgroup.inclusion (primeToSubgroup_antitone h) x) := by
+  obtain ⟨a, b, hb, hab⟩ := exists_algebraMap_eq_mul_of_mem_primeToSubgroup x.2
+  have hbm : b - 1 ∈ 𝔪.finitePart :=
+    (Ideal.le_of_dvd (Modulus.dvd_iff.mp h).1) hb
+  have habm : algebraMap (𝓞 K) K a = algebraMap (𝓞 K) K b *
+      (((Subgroup.inclusion (primeToSubgroup_antitone h) x : primeToSubgroup 𝔪) : Kˣ) : K) := by
+    simpa only [Subgroup.coe_inclusion] using hab
+  apply Units.ext
+  -- Expose the underlying quotient values so `residue_eq` can be applied on both sides.
+  change Ideal.Quotient.factor (Ideal.le_of_dvd (Modulus.dvd_iff.mp h).1) (residue 𝔫 x) =
+    residue 𝔪 (Subgroup.inclusion (primeToSubgroup_antitone h) x)
+  rw [residue_eq (x := x) (a := a) (b := b) hb hab,
+    Ideal.Quotient.factor_mk,
+    residue_eq (x := Subgroup.inclusion (primeToSubgroup_antitone h) x)
+      (a := a) (b := b) hbm habm]
 
 end TauCeti.GlobalNumberFields
