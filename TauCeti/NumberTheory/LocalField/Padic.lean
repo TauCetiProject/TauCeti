@@ -19,8 +19,8 @@ concrete p-adic norm and valuation APIs.
 * `Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized valuation with
   `Padic.valuation`.
 * `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
-* `Padic.normalizedAbsoluteValue_eq_norm` identifies the normalized absolute value with the norm on
-  `ℚ_[p]`.
+* `Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
+  Mathlib's norm on `ℚ_[p]`.
 
 The Padic and residue-field constructions used here are part of Mathlib's upstream
 `NumberTheory/Padics` development.
@@ -64,7 +64,8 @@ theorem toAdd_normalizedValuation_eq_valuation (x : ℚ_[p]ˣ) :
 /-- The residue field of `ℚ_[p]` has cardinality `p`. -/
 @[simp]
 theorem natCard_residueField :
-    @Fintype.card 𝓀[ℚ_[p]] (Fintype.ofFinite 𝓀[ℚ_[p]]) = p := by
+    Nat.card 𝓀[ℚ_[p]] = p := by
+  rw [@Nat.card_eq_fintype_card _ (Fintype.ofFinite 𝓀[ℚ_[p]])]
   have h : 𝒪[ℚ_[p]] = PadicInt.subring p := by
     ext x
     rw [Valuation.mem_integer_iff, PadicInt.mem_subring_iff]
@@ -77,15 +78,12 @@ theorem natCard_residueField :
 
 /-- The normalized absolute value on `ℚ_[p]` agrees with Mathlib's norm. -/
 @[simp]
-theorem normalizedAbsoluteValue_eq_norm (x : ℚ_[p]) :
+theorem normalizedAbsoluteValue_eq_nnnorm (x : ℚ_[p]) :
     normalizedAbsoluteValue ℚ_[p] x = ‖x‖₊ := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp
   apply NNReal.eq
-  have hcard : Nat.card 𝓀[ℚ_[p]] = p := by
-    rw [@Nat.card_eq_fintype_card _ (Fintype.ofFinite 𝓀[ℚ_[p]])]
-    exact natCard_residueField p
-  rw [normalizedAbsoluteValue_apply_ne_zero x hx, hcard,
+  rw [normalizedAbsoluteValue_apply_ne_zero x hx, natCard_residueField p,
     toAdd_normalizedValuation_eq_valuation]
   simp only [coe_nnnorm]
   simpa using (Padic.norm_eq_zpow_neg_valuation hx).symm
