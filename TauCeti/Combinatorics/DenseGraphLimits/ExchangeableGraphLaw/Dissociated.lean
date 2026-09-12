@@ -44,9 +44,6 @@ rectangle of their upper events.
 
 * P. Diaconis, S. Janson, *Graph limits and exchangeable random graphs*, Rend. Mat. Appl. (7) 28
   (2008), 33--61, Section 5.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 9b — dissociated graph laws. The
-  body of `IsDissociated` and the signature of `isDissociated_iff_upperMass_mul` follow
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 -/
 
 public section

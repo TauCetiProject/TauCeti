@@ -52,6 +52,7 @@ instance instDecidableRelSumAdj (G : SimpleGraph V) (H : SimpleGraph W)
 
 /-- A graph on `V ⊕ W` contains the disjoint sum `G ⊕g H` exactly when its restrictions to the two
 sides contain `G` and `H`: the sum has no edges across the sides. -/
+@[simp]
 theorem _root_.SimpleGraph.sum_le_iff {K : SimpleGraph (V ⊕ W)} :
     G ⊕g H ≤ K ↔ G ≤ K.comap Sum.inl ∧ H ≤ K.comap Sum.inr := by
   refine ⟨fun h => ⟨fun a b hab => h (sum_adj_inl.2 hab), fun a b hab => h (sum_adj_inr.2 hab)⟩,
