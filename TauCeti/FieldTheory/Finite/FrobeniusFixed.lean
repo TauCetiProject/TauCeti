@@ -115,8 +115,10 @@ section Quadratic
 variable {K L : Type*} [Field K] [Finite K] [Field L] [Algebra K L]
 
 /-- **In a quadratic extension of a field with `q` elements the `q`-power map is an involution**:
-`L` has `q²` elements, so `a ^ (q²) = a`. -/
-@[simp]
+`L` has `q²` elements, so `a ^ (q²) = a`.
+
+This is deliberately not a simp lemma: in a context with a `Fintype K` instance, `Nat.card K`
+is not in simp normal form. -/
 theorem pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : L) :
     (a ^ Nat.card K) ^ Nat.card K = a := by
   have : Module.Finite K L := Module.finite_of_finrank_eq_succ (n := 1) h2
