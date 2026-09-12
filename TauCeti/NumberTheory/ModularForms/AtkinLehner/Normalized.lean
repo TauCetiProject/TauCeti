@@ -75,8 +75,11 @@ exact divisors. The action may have a kernel: nothing here claims it is injectiv
   `TauCeti.Nat.IsExactDivisor.coe_normalizedAtkinLehnerOperator_self`: `𝒲_N` is the normalized
   Fricke slash, so the two endpoints of the family are the expected ones.
 * `TauCeti.Nat.IsExactDivisor.isCompl_eigenspace_normalizedAtkinLehnerOperator` and its cusp-form
-  counterpart: the `±1` eigenspaces of `𝒲_Q` are complementary — the splitting the signs of the
-  functional equation are read off.
+  counterpart: the `±1` eigenspaces of `𝒲_Q` are complementary — the Atkin–Lehner sign
+  decomposition of the space, whose labels are the Atkin–Lehner signs `ε_Q`. For a general exact
+  divisor `Q` that label is the Atkin–Lehner eigenvalue and nothing more; it is only at the
+  Fricke member `Q = N`, and only on a newform, that it becomes a sign of the functional equation
+  of `L(s, f)`.
 
 ## References
 
@@ -459,11 +462,13 @@ theorem normalizedAtkinLehnerOperatorCusp_comm (hQ : Q ∥ N) (hR : R ∥ N) (k 
 
 /-! ### The eigenspace splitting -/
 
-/-- **The `±1` eigenspaces of `𝒲_Q` are complementary in `M_k(Γ₀(N))`.** This is the splitting
-from which the signs of the functional equation of `L(s, f)` are read off: on the `+1` eigenspace
-`𝒲_Q f = f`, on the `-1` eigenspace `𝒲_Q f = -f`, and every modular form for `Γ₀(N)` is uniquely
-a sum of one of each. Unlike the Fricke statement on the `Γ₁(N)` carrier, no parity hypothesis on
-the weight is needed. -/
+/-- **The `±1` eigenspaces of `𝒲_Q` are complementary in `M_k(Γ₀(N))`.** This is the Atkin–Lehner
+sign decomposition of the space: on the `+1` eigenspace `𝒲_Q f = f`, on the `-1` eigenspace
+`𝒲_Q f = -f`, and every modular form for `Γ₀(N)` is uniquely a sum of one of each. The label of a
+newform under this splitting is its Atkin–Lehner sign `ε_Q`, and for a general exact divisor that
+is all it is; only at the Fricke member `Q = N` is it the sign appearing in the functional
+equation of `L(s, f)` (as `i ^ k · ε_N`). Unlike the Fricke statement on the `Γ₁(N)` carrier, no
+parity hypothesis on the weight is needed. -/
 theorem isCompl_eigenspace_normalizedAtkinLehnerOperator (h : Q ∥ N) (k : ℤ) :
     IsCompl (Module.End.eigenspace (h.normalizedAtkinLehnerOperator k) 1)
       (Module.End.eigenspace (h.normalizedAtkinLehnerOperator k) (-1)) :=
