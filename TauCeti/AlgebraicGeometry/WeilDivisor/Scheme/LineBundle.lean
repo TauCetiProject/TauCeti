@@ -66,8 +66,7 @@ def toLineBundleClass (D : SchemeWeilDivisor X) : LineBundleClass X :=
 theorem toLineBundleClass_eq_of_linearlyEquivalent {D E : SchemeWeilDivisor X}
     (hDE : (WeilDivisor.OrderSystem.ofScheme X).LinearlyEquivalent D E) :
     toLineBundleClass hX D = toLineBundleClass hX E := by
-  change LineBundleClass.mk (toInvertibleSheaf hX D) =
-    LineBundleClass.mk (toInvertibleSheaf hX E)
+  unfold toLineBundleClass
   rw [LineBundleClass.mk_eq_mk_iff]
   simpa only [toInvertibleSheaf_obj] using nonempty_iso_sheaf_of_linearlyEquivalent hDE
 
@@ -75,7 +74,7 @@ theorem toLineBundleClass_eq_of_linearlyEquivalent {D E : SchemeWeilDivisor X}
 @[simp]
 lemma toLineBundleClass_zero :
     toLineBundleClass hX (0 : SchemeWeilDivisor X) = 1 := by
-  change LineBundleClass.mk (toInvertibleSheaf hX 0) = 1
+  unfold toLineBundleClass
   rw [← LineBundleClass.mk_trivial, LineBundleClass.mk_eq_mk_iff]
   simpa only [toInvertibleSheaf_obj, InvertibleSheaf.trivial_obj] using
     ⟨(unitIsoSheafZero hX).symm ≪≫

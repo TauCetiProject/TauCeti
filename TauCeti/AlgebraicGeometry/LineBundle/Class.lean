@@ -64,10 +64,6 @@ lemma mk_eq_mk_iff {L K : InvertibleSheaf X} :
   exact (ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso
     (SheafOfModules.isInvertible X) L.property K.property)
 
-/-- Every line-bundle class has a representative. -/
-lemma mk_surjective : Function.Surjective (mk : InvertibleSheaf X → LineBundleClass X) :=
-  Quotient.mk_surjective
-
 /-- Tensor product of line bundles descends to their isomorphism classes. -/
 noncomputable def tensorProduct (a b : LineBundleClass X) : LineBundleClass X :=
   Quotient.map₂ InvertibleSheaf.tensorProduct
@@ -79,10 +75,8 @@ noncomputable instance : Mul (LineBundleClass X) where
 /-- The class of a tensor product is the product of the two classes. -/
 @[simp]
 lemma mk_tensorProduct (L K : InvertibleSheaf X) :
-    mk (InvertibleSheaf.tensorProduct L K) = mk L * mk K := by
-  change mk (InvertibleSheaf.tensorProduct L K) = tensorProduct (mk L) (mk K)
-  unfold mk tensorProduct
-  exact (Quotient.map₂_mk _ _ L K).symm
+    mk (InvertibleSheaf.tensorProduct L K) = mk L * mk K :=
+  (rfl)
 
 /-- The tensor product of line-bundle classes is commutative. -/
 lemma mul_comm (a b : LineBundleClass X) : a * b = b * a := by
