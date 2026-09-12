@@ -62,23 +62,21 @@ lemma toInvertibleSheaf_obj (D : SchemeWeilDivisor X) :
 def toLineBundleClass (D : SchemeWeilDivisor X) : LineBundleClass X :=
   LineBundleClass.mk (toInvertibleSheaf hX D)
 
-/-- The line-bundle class of a divisor is represented by its associated invertible sheaf. -/
-lemma toLineBundleClass_eq_mk (D : SchemeWeilDivisor X) :
-    toLineBundleClass hX D = LineBundleClass.mk (toInvertibleSheaf hX D) :=
-  (rfl)
-
 /-- Linearly equivalent Weil divisors determine the same line-bundle class. -/
 theorem toLineBundleClass_eq_of_linearlyEquivalent {D E : SchemeWeilDivisor X}
     (hDE : (WeilDivisor.OrderSystem.ofScheme X).LinearlyEquivalent D E) :
     toLineBundleClass hX D = toLineBundleClass hX E := by
-  rw [toLineBundleClass_eq_mk, toLineBundleClass_eq_mk, LineBundleClass.mk_eq_mk_iff]
+  change LineBundleClass.mk (toInvertibleSheaf hX D) =
+    LineBundleClass.mk (toInvertibleSheaf hX E)
+  rw [LineBundleClass.mk_eq_mk_iff]
   simpa only [toInvertibleSheaf_obj] using nonempty_iso_sheaf_of_linearlyEquivalent hDE
 
 /-- The zero divisor determines the trivial line-bundle class. -/
 @[simp]
 lemma toLineBundleClass_zero :
     toLineBundleClass hX (0 : SchemeWeilDivisor X) = 1 := by
-  rw [toLineBundleClass_eq_mk, ← LineBundleClass.mk_trivial, LineBundleClass.mk_eq_mk_iff]
+  change LineBundleClass.mk (toInvertibleSheaf hX 0) = 1
+  rw [← LineBundleClass.mk_trivial, LineBundleClass.mk_eq_mk_iff]
   simpa only [toInvertibleSheaf_obj, InvertibleSheaf.trivial_obj] using
     ⟨(unitIsoSheafZero hX).symm ≪≫
       (TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf).symm⟩

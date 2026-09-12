@@ -76,15 +76,11 @@ noncomputable def tensorProduct (a b : LineBundleClass X) : LineBundleClass X :=
 noncomputable instance : Mul (LineBundleClass X) where
   mul := tensorProduct
 
-/-- Multiplication of line-bundle classes is their descended tensor product. -/
-lemma mul_def (a b : LineBundleClass X) : a * b = tensorProduct a b :=
-  (rfl)
-
 /-- The class of a tensor product is the product of the two classes. -/
 @[simp]
 lemma mk_tensorProduct (L K : InvertibleSheaf X) :
     mk (InvertibleSheaf.tensorProduct L K) = mk L * mk K := by
-  rw [mul_def]
+  change mk (InvertibleSheaf.tensorProduct L K) = tensorProduct (mk L) (mk K)
   unfold mk tensorProduct
   exact (Quotient.map₂_mk _ _ L K).symm
 
