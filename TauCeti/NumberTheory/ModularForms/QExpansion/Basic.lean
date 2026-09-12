@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 public import TauCeti.Analysis.Complex.Periodic
 
@@ -33,6 +34,8 @@ stated here rather than at the descent because it mentions only coefficients, di
 
 * `TauCeti.ModularForm.qExpansionLinearMap`.
 * `TauCeti.UpperHalfPlane.qExpansion_coeff_unique`.
+* `TauCeti.qExpansion_coeff_smul_sub_smul`: the coefficient of `c • u - d • v` is the
+  corresponding combination of coefficients — the linearity, named.
 * `TauCeti.smul_qParam_pow_shift_eq`: a shift by `1 / d` fixes every `q`-power that a
   `d`-supported coefficient function leaves alive.
 
@@ -83,6 +86,24 @@ lemma UpperHalfPlane.qExpansion_coeff_unique {f : ℍ → ℂ} {c : ℕ → ℂ}
     simpa [_root_.UpperHalfPlane.qExpansion_coeff, div_eq_mul_inv, mul_comm]
       using hfanalytic.hasFPowerSeriesAt
   simpa using congr_arg (FormalMultilinearSeries.coeff · m) (h1.eq_formalMultilinearSeries h2)
+
+/-- **A `q`-expansion coefficient is linear in the form.** The coefficient at a fixed index is a
+`ℂ`-linear functional on cusp forms — `ModularForm.qExpansionLinearMap` composed with the
+inclusion of cusp forms and with `PowerSeries.coeff` — so the coefficient of a combination is the
+combination of the coefficients. Stated for the combination `c • u - d • v` that eigenvector
+arguments form, so that their coefficient computations need not unfold the `FunLike` and
+`ModularForm` coercions by hand. -/
+theorem qExpansion_coeff_smul_sub_smul {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne] {k : ℤ}
+    (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) (c d : ℂ) (u v : CuspForm Γ k) (n : ℕ) :
+    (qExpansion h ⇑(c • u - d • v)).coeff n =
+      c * (qExpansion h ⇑u).coeff n - d * (qExpansion h ⇑v).coeff n := by
+  set L := (ModularForm.qExpansionLinearMap hh hΓ k).comp CuspForm.toModularFormₗ with hL
+  have hLapply : ∀ w : CuspForm Γ k, L w = qExpansion h ⇑w := by
+    intro w
+    rw [hL, LinearMap.comp_apply, ModularForm.qExpansionLinearMap_apply]
+    exact congrArg (qExpansion h) (funext (CuspForm.toModularFormₗ_apply w))
+  rw [← hLapply (c • u - d • v), ← hLapply u, ← hLapply v, map_sub, map_smul, map_smul]
+  simp [smul_eq_mul]
 
 /-- The translate `1 / d +ᵥ σ`, read in `ℂ`, is the subtraction `TauCeti.Periodic.qParam_sub`
 expects: that lemma is stated at `z - j`, and the shift here enters as a `+ᵥ` on `ℍ`. Naming the
