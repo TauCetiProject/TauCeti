@@ -45,7 +45,13 @@ those oriented out of `v`. Two hypotheses make that difference a sign times the 
   orientation, of any finite simple graph, bipartite or not.
 
 Outside these two cases the signless quotient is kept as an algebra of its own: nothing below
-calls it a preprojective algebra without a proof.
+calls it a preprojective algebra without a proof. The obstruction to the missing cases is
+analysed rather than assumed. Once `2 ≠ 0` the two presentations match *exactly* for a
+source--sink orientation, because at a vertex carrying both an incoming and an outgoing edge the
+two partial sums are separately nonzero and no sign converts one relator into the other; and a
+source--sink orientation exists only for a bipartite graph, an odd cycle admitting no orientation
+with every vertex a source or a sink. So for a non-bipartite graph outside characteristic two no
+orientation matches at all.
 
 ## Main definitions
 
@@ -75,14 +81,18 @@ calls it a preprojective algebra without a proof.
   signed local relator becomes the signless relator at every vertex, for every orientation.**
 * `TauCeti.isSignedMatch_of_isSourceSink` and `TauCeti.isSignedMatch_of_charTwo`: the two
   hypotheses under which the comparison isomorphism is available.
+* `TauCeti.isSignedMatch_iff_isSourceSink`: **the gauge criterion**, that outside characteristic
+  two the two presentations match exactly for a source--sink orientation, with
+  `TauCeti.not_isSignedMatch_of_not_isBipartite` its odd-cycle consequence: **no orientation of a
+  non-bipartite graph matches outside characteristic two.**
 
 ## References
 
 This is the second clause of Layer 5 of `TauCetiRoadmap/ZigzagPreprojective/README.md`, which asks
 for the signless local relation `∑_{j∼i} (i→j→i) = 0` of the doubled graph, for the comparison of
 its quotient with the signed preprojective presentation of a source--sink orientation of a
-bipartite graph, and for the characteristic-two collapse of the sign obstruction in the
-non-bipartite case. The identification of this quotient with the quadratic dual of the zigzag
+bipartite graph, and for the analysis of the sign obstruction and its characteristic-two collapse
+in the non-bipartite case. The identification of this quotient with the quadratic dual of the zigzag
 algebra is the first clause of that layer and is not proved here. The declaration names follow
 the target-signature prototype in `TauCetiRoadmap/ZigzagPreprojective/Suggested.lean`. See
 Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, and Crawley-Boevey,
@@ -613,6 +623,173 @@ theorem signlessQuadraticDualEquivPreprojectiveOfCharTwo_signlessMk [CharP k 2]
       = preprojectiveMk k (OrientedQuiver G o)
           ((DoubledQuiver.orientedPathAlgEquiv k o).symm x) :=
   signlessToPreprojective_signlessMk (isSignedMatch_of_charTwo (o := o)) x
+
+/-! ### The sign obstruction -/
+
+variable (k o)
+
+omit [Fintype V] [DecidableRel G.Adj] in
+/-- The coordinate of a backtrack element on itself, read in the path basis. -/
+private theorem coord_backtrackElem_self {v w : V} (h : G.Adj v w) :
+    (pathAlgebraBasis k (DoubledQuiver G)).coord
+        ⟨vertex G v, vertex G v, backtrackPath G h⟩ (backtrackElem G k h) = 1 := by
+  rw [Module.Basis.coord_apply, backtrackElem_eq_ofPath, ofPath_eq_single,
+    pathAlgebraBasis_repr_single, Finsupp.single_eq_same]
+
+omit [Fintype V] [DecidableRel G.Adj] in
+/-- The coordinate of a backtrack element on the backtrack at the same vertex along a different
+edge vanishes: the two are distinct basis paths. -/
+private theorem coord_backtrackElem_of_ne {v w w' : V} (h : G.Adj v w) (h' : G.Adj v w')
+    (hne : w ≠ w') :
+    (pathAlgebraBasis k (DoubledQuiver G)).coord
+        ⟨vertex G v, vertex G v, backtrackPath G h'⟩ (backtrackElem G k h) = 0 := by
+  rw [Module.Basis.coord_apply, backtrackElem_eq_ofPath, ofPath_eq_single,
+    pathAlgebraBasis_repr_single, Finsupp.single_eq_of_ne]
+  intro heq
+  simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at heq
+  exact hne (eq_of_backtrackPath_eq G heq).symm
+
+omit [DecidableRel G.Adj] in
+/-- **The outgoing corner sums see an outgoing edge once.** Only the edge `vw'` contributes to the
+coordinate on the backtrack along `vw'`, and it does so because it is oriented out of `v`. -/
+private theorem coord_sum_orientedPathAlgEquiv_sum_tailBacktrackElem {v w' : V} (h' : G.Adj v w')
+    (ho : (⟨(v, w'), h'⟩ : G.Dart) ∈ o) :
+    (pathAlgebraBasis k (DoubledQuiver G)).coord ⟨vertex G v, vertex G v, backtrackPath G h'⟩
+        (∑ w : V, DoubledQuiver.orientedPathAlgEquiv k o
+          (∑ a : (OrientedQuiver.vertex G o v ⟶ OrientedQuiver.vertex G o w),
+            tailBacktrackElem k a)) = 1 := by
+  rw [map_sum, Finset.sum_eq_single w']
+  · rw [orientedPathAlgEquiv_sum_tailBacktrackElem k o h' ho, coord_backtrackElem_self k h']
+  · intro w _ hne
+    by_cases hadj : G.Adj v w
+    · by_cases hd : (⟨(v, w), hadj⟩ : G.Dart) ∈ o
+      · rw [orientedPathAlgEquiv_sum_tailBacktrackElem k o hadj hd,
+          coord_backtrackElem_of_ne k hadj h' hne]
+      · rw [sum_tailBacktrackElem_eq_zero k o fun _ => hd, map_zero, map_zero]
+    · rw [sum_tailBacktrackElem_eq_zero k o fun hh => absurd hh hadj, map_zero, map_zero]
+  · exact fun hw => absurd (Finset.mem_univ w') hw
+
+omit [DecidableRel G.Adj] in
+/-- **The incoming corner sums see an incoming edge once**, the mirror image of
+`TauCeti.coord_sum_orientedPathAlgEquiv_sum_tailBacktrackElem`. -/
+private theorem coord_sum_orientedPathAlgEquiv_sum_headBacktrackElem {v w' : V} (h' : G.Adj v w')
+    (ho : (⟨(w', v), h'.symm⟩ : G.Dart) ∈ o) :
+    (pathAlgebraBasis k (DoubledQuiver G)).coord ⟨vertex G v, vertex G v, backtrackPath G h'⟩
+        (∑ w : V, DoubledQuiver.orientedPathAlgEquiv k o
+          (∑ a : (OrientedQuiver.vertex G o w ⟶ OrientedQuiver.vertex G o v),
+            headBacktrackElem k a)) = 1 := by
+  rw [map_sum, Finset.sum_eq_single w']
+  · rw [orientedPathAlgEquiv_sum_headBacktrackElem k o h' ho, coord_backtrackElem_self k h']
+  · intro w _ hne
+    by_cases hadj : G.Adj v w
+    · by_cases hd : (⟨(w, v), hadj.symm⟩ : G.Dart) ∈ o
+      · rw [orientedPathAlgEquiv_sum_headBacktrackElem k o hadj hd,
+          coord_backtrackElem_of_ne k hadj h' hne]
+      · rw [sum_headBacktrackElem_eq_zero k o fun _ => hd, map_zero, map_zero]
+    · rw [sum_headBacktrackElem_eq_zero k o fun hh => absurd hh.symm hadj, map_zero, map_zero]
+  · exact fun hw => absurd (Finset.mem_univ w') hw
+
+omit [DecidableRel G.Adj] in
+/-- The image of the signed local relator, split into its incoming and its outgoing corner sums. -/
+private theorem orientedPathAlgEquiv_localPreprojectiveRelator_eq_sub (v : V) :
+    DoubledQuiver.orientedPathAlgEquiv k o
+        (localPreprojectiveRelator k (OrientedQuiver.vertex G o v))
+      = (∑ w : V, DoubledQuiver.orientedPathAlgEquiv k o
+            (∑ a : (OrientedQuiver.vertex G o w ⟶ OrientedQuiver.vertex G o v),
+              headBacktrackElem k a))
+        - ∑ w : V, DoubledQuiver.orientedPathAlgEquiv k o
+            (∑ a : (OrientedQuiver.vertex G o v ⟶ OrientedQuiver.vertex G o w),
+              tailBacktrackElem k a) := by
+  have hhead : (∑ i : OrientedQuiver G o,
+        ∑ a : (i ⟶ OrientedQuiver.vertex G o v), headBacktrackElem k a)
+      = ∑ w : V, ∑ a : (OrientedQuiver.vertex G o w ⟶ OrientedQuiver.vertex G o v),
+          headBacktrackElem k a := sum_orientedQuiver o _
+  have htail : (∑ j : OrientedQuiver G o,
+        ∑ a : (OrientedQuiver.vertex G o v ⟶ j), tailBacktrackElem k a)
+      = ∑ w : V, ∑ a : (OrientedQuiver.vertex G o v ⟶ OrientedQuiver.vertex G o w),
+          tailBacktrackElem k a := sum_orientedQuiver o _
+  rw [localPreprojectiveRelator_def, hhead, htail, map_sub, map_sum, map_sum]
+
+/-- The two corner sums at a vertex add up to the signless relator: every edge at `v` lies in
+exactly one of them. -/
+private theorem sum_add_sum_eq_signlessRelator (v : V) :
+    (∑ w : V, DoubledQuiver.orientedPathAlgEquiv k o
+          (∑ a : (OrientedQuiver.vertex G o w ⟶ OrientedQuiver.vertex G o v),
+            headBacktrackElem k a))
+        + ∑ w : V, DoubledQuiver.orientedPathAlgEquiv k o
+          (∑ a : (OrientedQuiver.vertex G o v ⟶ OrientedQuiver.vertex G o w),
+            tailBacktrackElem k a)
+      = signlessRelator k G v := by
+  rw [← Finset.sum_add_distrib, signlessRelator_def]
+  exact Finset.sum_congr rfl fun w _ =>
+    orientedPathAlgEquiv_sum_headBacktrackElem_add_sum_tailBacktrackElem k o v w
+
+/-- **A vertex which is neither a source nor a sink breaks the match**, unless `2 = 0`. Reading
+the coordinate on the backtrack along the outgoing edge `vw₂` turns a match with the signless
+relator into `2 = 0`, and the coordinate along the incoming edge `vw₁` does the same for a match
+with its negative: the two corner sums at `v` are both nonzero, so no sign converts one relator
+into the other. -/
+private theorem not_isSignedMatch_of_adj_of_adj (h2 : (2 : k) ≠ 0) {v w₁ w₂ : V}
+    (h₁ : G.Adj v w₁) (h₂ : G.Adj v w₂) (ho₁ : (⟨(v, w₁), h₁⟩ : G.Dart) ∉ o)
+    (ho₂ : (⟨(v, w₂), h₂⟩ : G.Dart) ∈ o) : ¬ IsSignedMatch k o := by
+  intro hmatch
+  refine h2 ?_
+  have hsub := orientedPathAlgEquiv_localPreprojectiveRelator_eq_sub k o v
+  have hadd := sum_add_sum_eq_signlessRelator k o v
+  rcases hmatch v with hm | hm
+  · -- The relator matches the signless one: compare coordinates along the outgoing edge.
+    have hX := congrArg ((pathAlgebraBasis k (DoubledQuiver G)).coord
+      ⟨vertex G v, vertex G v, backtrackPath G h₂⟩) hsub
+    have hS := congrArg ((pathAlgebraBasis k (DoubledQuiver G)).coord
+      ⟨vertex G v, vertex G v, backtrackPath G h₂⟩) hadd
+    have hM := congrArg ((pathAlgebraBasis k (DoubledQuiver G)).coord
+      ⟨vertex G v, vertex G v, backtrackPath G h₂⟩) hm
+    rw [map_sub] at hX
+    rw [map_add] at hS
+    have hB := coord_sum_orientedPathAlgEquiv_sum_tailBacktrackElem k o h₂ ho₂
+    linear_combination hX + hS - hM - 2 * hB
+  · -- The relator matches the negated signless one: compare along the incoming edge.
+    have hX := congrArg ((pathAlgebraBasis k (DoubledQuiver G)).coord
+      ⟨vertex G v, vertex G v, backtrackPath G h₁⟩) hsub
+    have hS := congrArg ((pathAlgebraBasis k (DoubledQuiver G)).coord
+      ⟨vertex G v, vertex G v, backtrackPath G h₁⟩) hadd
+    have hM := congrArg ((pathAlgebraBasis k (DoubledQuiver G)).coord
+      ⟨vertex G v, vertex G v, backtrackPath G h₁⟩) hm
+    rw [map_sub] at hX
+    rw [map_add] at hS
+    rw [map_neg] at hM
+    have hA := coord_sum_orientedPathAlgEquiv_sum_headBacktrackElem k o h₁
+      ((o.symm_mem_iff_not_mem ⟨(v, w₁), h₁⟩).2 ho₁)
+    linear_combination -hX + hS + hM - 2 * hA
+
+/-- **The gauge criterion.** Outside characteristic two the signed presentation of an orientation
+matches the signless one exactly when the orientation is source--sink: at a vertex carrying both an
+incoming and an outgoing edge the two partial sums of backtracks are both nonzero, so no global
+sign converts one relator into the other. With `2 = 0` the criterion disappears, which is
+`TauCeti.isSignedMatch_of_charTwo`. -/
+theorem isSignedMatch_iff_isSourceSink (h2 : (2 : k) ≠ 0) :
+    IsSignedMatch k o ↔ o.IsSourceSink := by
+  rw [DoubledQuiver.Orientation.isSourceSink_iff]
+  refine ⟨fun hmatch v => ?_, fun hss =>
+    isSignedMatch_of_isSourceSink ((DoubledQuiver.Orientation.isSourceSink_iff G o).2 hss)⟩
+  by_cases hsrc : ∀ ⦃w : V⦄ (h : G.Adj v w), (⟨(v, w), h⟩ : G.Dart) ∈ o
+  · exact Or.inl hsrc
+  -- Failing to be a source, `v` carries an incoming edge; a match then forbids an outgoing one.
+  obtain ⟨w₁, h₁, ho₁⟩ : ∃ (w₁ : V) (h₁ : G.Adj v w₁), (⟨(v, w₁), h₁⟩ : G.Dart) ∉ o := by
+    by_contra hcon
+    exact hsrc fun w h => not_not.1 fun hn => hcon ⟨w, h, hn⟩
+  exact Or.inr fun w h hmem => not_isSignedMatch_of_adj_of_adj k o h2 h₁ h ho₁ hmem hmatch
+
+/-- **The sign obstruction of a non-bipartite graph.** Outside characteristic two *no* orientation
+of a non-bipartite graph has its signed presentation match the signless one, because a source--sink
+orientation bipartitions the graph: this is the odd-cycle obstruction, an odd cycle admitting no
+orientation with every vertex a source or a sink. The signless quotient of such a graph is
+therefore kept as an algebra of its own here, no comparison above exhibiting it as a preprojective
+algebra outside the two cases where the presentations do match. -/
+theorem not_isSignedMatch_of_not_isBipartite (h2 : (2 : k) ≠ 0) (hG : ¬ G.IsBipartite) :
+    ¬ IsSignedMatch k o := fun hmatch =>
+  hG (DoubledQuiver.isBipartite_of_isSourceSink G
+    ((isSignedMatch_iff_isSourceSink k o h2).1 hmatch))
 
 end Comparison
 

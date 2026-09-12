@@ -43,6 +43,8 @@ one convenient witness that every graph admits an orientation.
 * `TauCeti.DoubledQuiver.Orientation.isSourceSink_ofBipartition` and
   `TauCeti.DoubledQuiver.exists_isSourceSink_of_isBipartite`: a bipartite graph admits a
   source--sink orientation.
+* `TauCeti.DoubledQuiver.isBipartite_iff_exists_isSourceSink`: conversely a source--sink
+  orientation bipartitions the graph, so the two conditions are equivalent.
 
 ## References
 
@@ -168,6 +170,21 @@ theorem isSourceSink_ofIsBipartiteWith {s t : Set V} (h : G.IsBipartiteWith s t)
     (ofIsBipartiteWith G h).IsSourceSink :=
   isSourceSink_ofBipartition G s _
 
+/-- **A source--sink orientation bipartitions the graph**: its sources and its non-sources are
+disjoint, and every edge joins a source to a non-source. -/
+theorem IsSourceSink.isBipartiteWith {o : Orientation G} (hss : o.IsSourceSink) :
+    G.IsBipartiteWith {v : V | ∀ ⦃w : V⦄ (h : G.Adj v w), (⟨(v, w), h⟩ : G.Dart) ∈ o}
+      {v : V | ¬ ∀ ⦃w : V⦄ (h : G.Adj v w), (⟨(v, w), h⟩ : G.Dart) ∈ o} where
+  disjoint := Set.disjoint_left.2 fun _ hv hv' => hv' hv
+  mem_of_adj i j hij := by
+    by_cases hi : ∀ ⦃w : V⦄ (h : G.Adj i w), (⟨(i, w), h⟩ : G.Dart) ∈ o
+    · -- The edge leaves the source `i`, so it enters `j`, which is therefore not a source.
+      exact Or.inl ⟨hi, fun hj => (o.symm_mem_iff_not_mem ⟨(i, j), hij⟩).1 (hj hij.symm) (hi hij)⟩
+    · -- Not being a source, `i` is a sink; the edge enters `i`, so it leaves `j`, a source.
+      have hji : (⟨(j, i), hij.symm⟩ : G.Dart) ∈ o :=
+        (o.symm_mem_iff_not_mem ⟨(i, j), hij⟩).2 ((hss i).resolve_left hi hij)
+      exact Or.inr ⟨hi, (hss j).resolve_right fun hj => hj hij.symm hji⟩
+
 end Orientation
 
 /-- **A bipartite graph admits a source--sink orientation.** -/
@@ -175,6 +192,17 @@ theorem exists_isSourceSink_of_isBipartite (h : G.IsBipartite) :
     ∃ o : Orientation G, o.IsSourceSink := by
   obtain ⟨s, t, hst⟩ := G.isBipartite_iff_exists_isBipartiteWith.1 h
   exact ⟨Orientation.ofIsBipartiteWith G hst, Orientation.isSourceSink_ofIsBipartiteWith G hst⟩
+
+/-- **A graph carrying a source--sink orientation is bipartite.** This is the converse of
+`TauCeti.DoubledQuiver.exists_isSourceSink_of_isBipartite`, and the obstruction it records is the
+classical one: an odd cycle cannot be oriented with every vertex a source or a sink. -/
+theorem isBipartite_of_isSourceSink {o : Orientation G} (hss : o.IsSourceSink) : G.IsBipartite :=
+  hss.isBipartiteWith.isBipartite
+
+/-- **A graph is bipartite exactly when it admits a source--sink orientation.** -/
+theorem isBipartite_iff_exists_isSourceSink :
+    G.IsBipartite ↔ ∃ o : Orientation G, o.IsSourceSink :=
+  ⟨exists_isSourceSink_of_isBipartite G, fun ⟨_, hss⟩ => isBipartite_of_isSourceSink G hss⟩
 
 /-- The quiver obtained by retaining only the darts selected by an orientation. -/
 @[expose]
