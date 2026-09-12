@@ -53,28 +53,38 @@ private noncomputable def reflectionWord (Q : QuadraticForm K V)
     (l : List (AnisotropicVector Q)) : QuadraticMap.orthogonalGroup Q :=
   (l.map (anisotropicReflection Q)).prod
 
+/-- The determinant of a product of orthogonal reflections is the sign determined by the number
+of factors. -/
+theorem det_list_prod_of_reflectionOrthogonal [FiniteDimensional K V]
+    (Q : QuadraticForm K V) (l : List (QuadraticMap.orthogonalGroup Q))
+    (hl : ∀ r ∈ l, ∃ (v : V) (_ : Invertible (Q v)),
+      QuadraticMap.reflectionOrthogonal Q v = r) :
+    LinearEquiv.det (l.prod : V ≃ₗ[K] V) = (-1 : Kˣ) ^ l.length := by
+  let detOrthogonal : QuadraticMap.orthogonalGroup Q →* Kˣ :=
+    LinearEquiv.det.comp (QuadraticMap.orthogonalGroup Q).subtype
+  change detOrthogonal l.prod = _
+  rw [map_list_prod, ← List.length_map detOrthogonal]
+  apply List.prod_eq_pow_length
+  rw [List.forall_mem_map]
+  intro r hr
+  obtain ⟨v, _, rfl⟩ := hl r hr
+  simpa only [detOrthogonal, MonoidHom.coe_comp, Function.comp_apply,
+    Subgroup.coe_subtype, QuadraticMap.coe_reflectionOrthogonal] using
+    TauCeti.QuadraticMap.det_reflection Q v
+
 private theorem det_reflectionWord [FiniteDimensional K V] (Q : QuadraticForm K V)
     (l : List (AnisotropicVector Q)) :
     LinearEquiv.det (reflectionWord Q l : V ≃ₗ[K] V) = (-1) ^ l.length := by
-  induction l with
-  | nil => simp [reflectionWord]
-  | cons x l ih =>
-      simp only [reflectionWord, List.map_cons, List.prod_cons, Subgroup.coe_mul]
-      rw [map_mul]
-      -- `map_mul` leaves the two subgroup factors coerced through the orthogonal group; expose
-      -- their underlying linear equivalences so that the induction hypothesis can rewrite one.
-      change LinearEquiv.det (anisotropicReflection Q x : V ≃ₗ[K] V) *
-        LinearEquiv.det (reflectionWord Q l : V ≃ₗ[K] V) = _
-      rw [ih, List.length_cons, pow_succ']
-      congr 1
+  unfold reflectionWord
+  calc
+    LinearEquiv.det ((l.map (anisotropicReflection Q)).prod : V ≃ₗ[K] V) =
+        (-1) ^ (l.map (anisotropicReflection Q)).length := by
+      apply det_list_prod_of_reflectionOrthogonal
+      intro r hr
+      obtain ⟨x, _, rfl⟩ := List.mem_map.mp hr
       let _ := invertibleOfNonzero x.2
-      -- The determinant theorem is stated for `reflection`; unfold the bundled orthogonal
-      -- reflection only at this coercion boundary, which ordinary rewriting does not cross.
-      rw [show ((anisotropicReflection Q x : QuadraticMap.orthogonalGroup Q) :
-        V ≃ₗ[K] V) = QuadraticMap.reflection Q x by
-          unfold anisotropicReflection
-          exact QuadraticMap.coe_reflectionOrthogonal Q x]
-      exact TauCeti.QuadraticMap.det_reflection Q x
+      exact ⟨x, inferInstance, rfl⟩
+    _ = (-1) ^ l.length := by rw [List.length_map]
 
 private theorem anisotropicReflection_mul_self (Q : QuadraticForm K V)
     (x : AnisotropicVector Q) :
@@ -404,12 +414,10 @@ private theorem exceptional_det_eq_one
   have hfinrank_ne_one := finrank_ne_one_of_exceptional Q hQ g hexceptional
   have hfinrank_ne_two := finrank_ne_two_of_exceptional Q hQ g hexceptional
   by_cases hnzero : Module.finrank K V = 0
-  · let _ := Module.finrank_zero_iff.mp hnzero
-    refine ⟨⟨0, by omega⟩, ?_⟩
-    rw [← Units.val_inj, LinearEquiv.coe_det, Units.val_one]
-    have hg : (g : V ≃ₗ[K] V) = LinearEquiv.refl K V := Subsingleton.elim _ _
-    rw [hg]
-    exact LinearMap.det_id
+  · refine ⟨⟨0, by omega⟩, ?_⟩
+    apply Units.ext
+    rw [LinearEquiv.coe_det]
+    exact LinearMap.det_eq_one_of_finrank_eq_zero hnzero _
   have hfinrank_three : 3 ≤ Module.finrank K V := by omega
   let f : V →ₗ[K] V := (g : V ≃ₗ[K] V).toLinearMap - LinearMap.id
   have hQf (x : V) : Q (f x) = 0 :=

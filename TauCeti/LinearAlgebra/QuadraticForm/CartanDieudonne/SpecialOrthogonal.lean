@@ -56,23 +56,7 @@ theorem exists_even_reflectionOrthogonal_list_prod_eq
   apply (neg_one_pow_eq_one_iff_even (R := Kˣ) ?_).mp
   · calc
       (-1 : Kˣ) ^ l.length = LinearEquiv.det (l.prod : V ≃ₗ[K] V) := by
-        let detOrthogonal : QuadraticMap.orthogonalGroup Q →* Kˣ :=
-          LinearEquiv.det.comp (QuadraticMap.orthogonalGroup Q).subtype
-        have hdet : ∀ r ∈ l, detOrthogonal r = -1 := by
-          intro r hr
-          obtain ⟨v, _, rfl⟩ := hlrefl r hr
-          simpa only [detOrthogonal, MonoidHom.coe_comp, Function.comp_apply,
-            Subgroup.coe_subtype, QuadraticMap.coe_reflectionOrthogonal] using
-            QuadraticMap.det_reflection Q v
-        calc
-          _ = (l.map detOrthogonal).prod := by
-            symm
-            rw [← List.length_map detOrthogonal]
-            apply List.prod_eq_pow_length
-            rw [List.forall_mem_map]
-            exact hdet
-          _ = detOrthogonal l.prod := (map_list_prod detOrthogonal l).symm
-          _ = LinearEquiv.det (l.prod : V ≃ₗ[K] V) := rfl
+        exact (det_list_prod_of_reflectionOrthogonal Q l hlrefl).symm
       _ = 1 := by rw [hprod]; exact hg.2
   · intro h
     apply NeZero.ne (2 : K)

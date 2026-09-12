@@ -286,21 +286,13 @@ private theorem subsingleton_realCliffordSpinGroupZero_zero :
     rw [lipschitzGroup, hsource, Subgroup.closure_empty]
   constructor
   intro x y
-  apply Subtype.ext
-  have hx := pinGroup.mem_lipschitzGroup (spinGroup.mem_pin x.2)
-  have hy := pinGroup.mem_lipschitzGroup (spinGroup.mem_pin y.2)
+  apply spinGroup.toUnits_injective
+  have hx : spinGroup.toUnits x ∈ lipschitzGroup Q :=
+    spinGroup.units_mem_lipschitzGroup x.2
+  have hy : spinGroup.toUnits y ∈ lipschitzGroup Q :=
+    spinGroup.units_mem_lipschitzGroup y.2
   rw [hlipschitz] at hx hy
-  obtain ⟨ux, huxmem, hux⟩ := hx
-  obtain ⟨uy, huymem, huy⟩ := hy
-  have huxmem' : ux ∈ (⊥ : Subgroup (CliffordAlgebra Q)ˣ) := huxmem
-  have huymem' : uy ∈ (⊥ : Subgroup (CliffordAlgebra Q)ˣ) := huymem
-  have huxone : ux = 1 := Subgroup.mem_bot.mp huxmem'
-  have huyone : uy = 1 := Subgroup.mem_bot.mp huymem'
-  calc
-    (x : CliffordAlgebra Q) = ux := hux.symm
-    _ = 1 := by simp only [huxone, Units.val_one]
-    _ = uy := by simp only [huyone, Units.val_one]
-    _ = (y : CliffordAlgebra Q) := huy
+  exact (Subgroup.mem_bot.mp hx).trans (Subgroup.mem_bot.mp hy).symm
 
 /-- The compact real Spin group is compact in every dimension. -/
 instance instCompactSpaceRealCliffordSpinGroupZero (n : ℕ) :
