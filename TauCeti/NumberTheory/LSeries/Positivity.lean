@@ -40,13 +40,8 @@ variable {a : ℕ → ℂ}
 
 /-- At a real point, a nonnegative Dirichlet coefficient gives a term equal to its own norm. -/
 theorem term_eq_ofReal_norm_of_nonneg {n : ℕ} (ha : 0 ≤ a n) (sigma : ℝ) :
-    _root_.LSeries.term a (sigma : ℂ) n = (‖_root_.LSeries.term a (sigma : ℂ) n‖ : ℂ) := by
-  have hnn : (0 : ℂ) ≤ _root_.LSeries.term a (sigma : ℂ) n := _root_.LSeries.term_nonneg ha _
-  have hre : _root_.LSeries.term a (sigma : ℂ) n =
-      ((_root_.LSeries.term a (sigma : ℂ) n).re : ℂ) :=
-    Complex.eq_re_of_ofReal_le (by rw [Complex.ofReal_zero]; exact hnn)
-  rw [hre, Complex.norm_real,
-    Real.norm_of_nonneg (by simpa using (Complex.le_def.mp hnn).1)]
+    _root_.LSeries.term a (sigma : ℂ) n = (‖_root_.LSeries.term a (sigma : ℂ) n‖ : ℂ) :=
+  Complex.eq_coe_norm_of_nonneg (_root_.LSeries.term_nonneg ha sigma)
 
 /-- For nonnegative coefficients, summability at a real point is absolute summability. -/
 theorem summable_norm_term_of_nonneg (ha : 0 ≤ a) {sigma : ℝ}

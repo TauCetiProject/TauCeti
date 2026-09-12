@@ -19,8 +19,10 @@ Fourier-weighted series `∑ a n 𝓕 psi (log (n / x) / 2π) / n` has to conver
 `Re s = 1`, where the coefficients are no longer damped by `n ^ (-(sigma - 1))`. This file removes
 that hypothesis for nonnegative coefficients, which is the only case Wiener--Ikehara is about.
 
-The input is a growth bound for the partial sums. Nonnegativity turns the boundary data into the
-one-sided estimate `∑ ‖a n‖ / n ^ sigma ≤ B / (sigma - 1)` on `(1, 2]`, and inserting
+The input is coefficient nonnegativity together with the boundary remainder data on the real
+segment `sigma ∈ (1, 2]`; the growth bound for the partial sums is derived from them, not assumed.
+Nonnegativity turns the boundary data into the one-sided estimate
+`∑ ‖a n‖ / n ^ sigma ≤ B / (sigma - 1)` on `(1, 2]`, and inserting
 `sigma = 1 + 1 / log t` into it bounds `∑_{n ≤ t} ‖a n‖` by a multiple of `t log t`. That is weaker
 than the Chebyshev bound `O(t)` which Wiener--Ikehara ultimately proves, but it is available before
 any Tauberian argument, and one logarithm to spare is all the summability needs: the Fourier
