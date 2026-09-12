@@ -55,11 +55,6 @@ or simple.
 
 The organization follows the sibling carrier specialization
 `TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Frobenius`.
-
-This advances the "points over an algebraically closed field" and "Chevalley--Demazure
-construction" targets in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is
-milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md`: this is the Frobenius component intended
-for a future construction of the `A_r(p ^ k)` Steinberg map over an algebraic closure of `ZMod p`.
 -/
 
 public section
