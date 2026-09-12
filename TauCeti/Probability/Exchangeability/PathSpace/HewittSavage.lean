@@ -11,8 +11,8 @@ public import TauCeti.Probability.Exchangeability.IID
 -- Public: `cylinder` appears in the hypothesis of `measure_eq_zero_or_one_of_exchangeableSigma`.
 public import Mathlib.MeasureTheory.Constructions.Cylinders
 -- Non-public: used only inside proofs.
-import Mathlib.MeasureTheory.Measure.MeasuredSets
-import Mathlib.MeasureTheory.Constructions.ProjectiveFamilyContent
+import TauCeti.MeasureTheory.Constructions.CylinderApproximation
+import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 import Mathlib.Probability.Independence.InfinitePi
 import TauCeti.MeasureTheory.Measure.ZeroOne
 
@@ -59,7 +59,7 @@ formula. The final approximation squeeze — arbitrarily close factoring approxi
 ## The argument
 
 Approximate an exchangeable event by a cylinder over `[0, N)`, then move that cylinder onto the
-disjoint block `[N, 2N)`. The mover is `blockSwap N`, the half-swap of `Fin (N + N)` transported
+disjoint block `[N, 2N)`. The mover is `Nat.blockSwap N`, the half-swap of `Fin (N + N)` transported
 to `ℕ`: it is finitely supported, hence admissible for `exchangeableSigma`, so it fixes the event
 while preserving the law. Independence then factors the event against its own moved copy, and
 letting the approximation tighten gives `q = q²`.
@@ -97,39 +97,6 @@ namespace TauCeti
 
 namespace Probability
 
-/-- The finitely supported permutation of `ℕ` that swaps the block `[0, N)` with `[N, 2N)`
-pointwise and fixes everything from `2 * N` on: Mathlib's half-swap `finAddFlip` on `Fin (N + N)`,
-transported to `ℕ` along the value embedding. -/
-private def blockSwap (N : ℕ) : Equiv.Perm ℕ :=
-  Equiv.Perm.viaFintypeEmbedding (finAddFlip (m := N) (n := N)) ⟨Fin.val, Fin.val_injective⟩
-
-private theorem blockSwap_apply_of_lt {N i : ℕ} (hi : i < N) : blockSwap N i = N + i := by
-  have h : (⟨Fin.val, Fin.val_injective⟩ : Fin (N + N) ↪ ℕ)
-      (Fin.castAdd N ⟨i, hi⟩) = i := rfl
-  rw [blockSwap, ← h, Equiv.Perm.viaFintypeEmbedding_apply_image, finAddFlip_apply_castAdd]
-  rfl
-
-private theorem blockSwap_apply_of_le {N n : ℕ} (hn : N + N ≤ n) : blockSwap N n = n := by
-  refine Equiv.Perm.viaFintypeEmbedding_apply_notMem_range _ _ ?_
-  rintro ⟨j, rfl⟩
-  exact absurd j.isLt (not_lt.mpr hn)
-
-/-- `blockSwap N` carries any index block inside `[0, N)` off itself: the moved copy lands in
-`[N, 2N)`. This is the disjointness the independence step consumes. -/
-private theorem disjoint_map_blockSwap {N : ℕ} {F : Finset ℕ} (hF : F ⊆ Finset.range N) :
-    Disjoint F (F.map (Equiv.toEmbedding (blockSwap N))) := by
-  rw [Finset.disjoint_left]
-  intro a haF hamem
-  obtain ⟨b, hbF, hb⟩ := Finset.mem_map.mp hamem
-  have hbN : b < N := Finset.mem_range.mp (hF hbF)
-  have haN : a < N := Finset.mem_range.mp (hF haF)
-  rw [Equiv.coe_toEmbedding, blockSwap_apply_of_lt hbN] at hb
-  omega
-
-private theorem blockSwap_finite_support (N : ℕ) :
-    (MulAction.fixedBy ℕ (blockSwap N))ᶜ.Finite :=
-  finite_compl_fixedBy_of_eventually_eq_self ⟨N + N, fun _ hn => blockSwap_apply_of_le hn⟩
-
 section Cylinder
 
 variable {α : Type*}
@@ -158,23 +125,6 @@ private theorem measurable_pullMoved [MeasurableSpace α] (π : Equiv.Perm ℕ) 
     Measurable (pullMoved π F α) :=
   Measurable.of_eval fun _ => measurable_pi_apply _
 
-/-- Every measurable path-space event is approximated, in measure, by a measurable cylinder over a
-finite index set. -/
-private theorem exists_cylinder_measure_symmDiff_lt [MeasurableSpace α] {ρ : Measure (ℕ → α)}
-    [IsFiniteMeasure ρ] {s : Set (ℕ → α)} (hs : MeasurableSet s) {ε : ℝ≥0∞} (hε : 0 < ε) :
-    ∃ (F : Finset ℕ) (S : Set (∀ _i : F, α)),
-      MeasurableSet S ∧ ρ (symmDiff (cylinder F S) s) < ε := by
-  have hcov : ∃ D : Set (Set (ℕ → α)), D.Countable ∧
-      D ⊆ measurableCylinders (fun _ : ℕ => α) ∧ ρ (⋃₀ D)ᶜ = 0 := by
-    refine ⟨{Set.univ}, Set.countable_singleton _, ?_, ?_⟩
-    · rintro u (rfl : u = Set.univ)
-      exact univ_mem_measurableCylinders (fun _ : ℕ => α)
-    · simp
-  obtain ⟨t, ht_mem, ht⟩ := exists_measure_symmDiff_lt_of_generateFrom_isSetRing (μ := ρ)
-    isSetRing_measurableCylinders hcov generateFrom_measurableCylinders.symm hs hε
-  obtain ⟨F, S, hS, rfl⟩ := (mem_measurableCylinders t).mp ht_mem
-  exact ⟨F, S, hS, ht⟩
-
 end Cylinder
 
 section Independence
@@ -182,7 +132,7 @@ section Independence
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-- Cylinders over **disjoint** index blocks are independent events under the path law of an
-independent family. This is the step that turns the disjointness produced by `blockSwap` into a
+independent family. This is the step that turns the disjointness produced by `Nat.blockSwap` into a
 product formula. -/
 private theorem measure_pathLaw_inter_cylinder_of_disjoint {μ : Measure Ω}
     {X : ℕ → Ω → α} (hX : ∀ n, AEMeasurable (X n) μ)
@@ -237,10 +187,11 @@ theorem measure_eq_zero_or_one_of_exchangeableSigma {ρ : Measure (ℕ → α)} 
   refine TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_exists_symmDiff_lt_inter_eq_mul
     hs_meas.nullMeasurableSet ?_
   intro ε hε
-  obtain ⟨F, S, hS, hFS⟩ := exists_cylinder_measure_symmDiff_lt (ρ := ρ) hs_meas
+  obtain ⟨F, S, hS, hFS⟩ :=
+    TauCeti.MeasureTheory.exists_cylinder_measure_symmDiff_lt (ρ := ρ) hs_meas
     (ε := ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)
   obtain ⟨N, hN⟩ := Finset.exists_nat_subset_range F
-  set π := blockSwap N with hπ
+  set π := N.blockSwap with hπ
   set t := cylinder (α := fun _ : ℕ => α) F S with ht
   have ht_meas : MeasurableSet t := MeasurableSet.cylinder (α := fun _ : ℕ => α) F hS
   set t' := permReindex (α := α) π ⁻¹' t with ht'
@@ -251,7 +202,8 @@ theorem measure_eq_zero_or_one_of_exchangeableSigma {ρ : Measure (ℕ → α)} 
   have ht'_cyl : t' = cylinder (α := fun _ : ℕ => α) (F.map (Equiv.toEmbedding π))
       (pullMoved π F α ⁻¹' S) := preimage_permReindex_cylinder π F S
   have hs_inv : permReindex (α := α) π ⁻¹' s = s :=
-    MeasurableSet.preimage_permReindex_eq_of_exchangeableSigma hs (blockSwap_finite_support N)
+    MeasurableSet.preimage_permReindex_eq_of_exchangeableSigma hs
+      (Nat.finite_compl_fixedBy_blockSwap N)
   have ht'_symm : ρ (symmDiff t' s) = ρ (symmDiff t s) :=
     measure_symmDiff_preimage_permReindex hexch π ht_null hs_null hs_inv
   have h1 : ρ.real (symmDiff t s) < ε := ENNReal.toReal_lt_of_lt_ofReal hFS
@@ -259,7 +211,7 @@ theorem measure_eq_zero_or_one_of_exchangeableSigma {ρ : Measure (ℕ → α)} 
     ENNReal.toReal_lt_of_lt_ofReal (ht'_symm ▸ hFS)
   have hinter : ρ.real (t ∩ t') = ρ.real t * ρ.real t' := by
     rw [Measure.real, Measure.real, Measure.real, ht'_cyl, ht,
-      hprod (disjoint_map_blockSwap hN) hS (hS.preimage (measurable_pullMoved π F)),
+      hprod (Nat.disjoint_map_blockSwap hN) hS (hS.preimage (measurable_pullMoved π F)),
       ENNReal.toReal_mul]
   exact ⟨t, t', ht_null, ht'_null, h1, h2, hinter⟩
 

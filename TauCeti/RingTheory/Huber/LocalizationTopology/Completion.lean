@@ -29,6 +29,9 @@ complete Hausdorff targets.
 
 * `locUniformSpace_toTopologicalSpace`: the topology `locUniformSpace` induces is `locTopology`.
   This is what a proof rewrites against, so no body in this file needs exposing.
+* `locUniformSpace_congr`: presentations sharing a ring of definition share the uniformity, so
+  the two completions `A⟨T/s⟩` are the same object. Whether the restriction maps out of them
+  agree is a further question, and is not settled here.
 * `isUniformAddGroup_locUniformSpace` and `isTopologicalRing_locUniformSpace`: the two companions
   of `locUniformSpace`. Since `locTopology` is not an instance, a statement about `A⟨T/s⟩` has to
   name its structures; these three declarations are what it names.
@@ -134,6 +137,25 @@ theorem isTopologicalRing_locUniformSpace [IsTopologicalRing A] (P : PairOfDefin
     letI := locUniformSpace P T s S hden
     IsTopologicalRing S :=
   isTopologicalRing_locTopology P T s S hden
+
+/-- **A change of presentation with the same ring of definition leaves `locUniformSpace` alone.**
+`restrictionRingHomOfSubset` is stated under `locUniformSpace`, so this identifies the rings such
+a map runs between. Identifying the maps themselves needs more than this. -/
+theorem locUniformSpace_congr [IsTopologicalRing A] (P : PairOfDefinition A) (T T' : Finset A)
+    (s s' : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    [IsLocalization.Away s' S] (hden : HasDenominatorPower P T s S)
+    (hden' : HasDenominatorPower P T' s' S) (h : locSubring P T' s' S = locSubring P T s S) :
+    locUniformSpace P T' s' S hden' = locUniformSpace P T s S hden := by
+  have htop : (locUniformSpace P T' s' S hden').toTopologicalSpace
+      = (locUniformSpace P T s S hden).toTopologicalSpace := by
+    rw [locUniformSpace_toTopologicalSpace, locUniformSpace_toTopologicalSpace]
+    exact locTopology_congr P T T' s s' S hden hden' h
+  rw [← @IsUniformAddGroup.rightUniformSpace_eq S (locUniformSpace P T' s' S hden') _
+      (isUniformAddGroup_locUniformSpace P T' s' S hden'),
+    ← @IsUniformAddGroup.rightUniformSpace_eq S (locUniformSpace P T s S hden) _
+      (isUniformAddGroup_locUniformSpace P T s S hden)]
+  congr 1
+  exact proof_irrel_heq _ _
 
 /-- `Aₛ` is a Huber ring for the topology `locUniformSpace` induces. The third companion of
 `locUniformSpace`, alongside the two above. A consumer working at the uniformity can reach the

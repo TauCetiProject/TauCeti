@@ -19,9 +19,9 @@ constructs the ordered-product candidate
 
 where `dᵢⱼ = ι(Eᵢⱼ)`, for any finite linearly ordered index type. Over any field, the candidate
 is nonzero. When `2` is invertible, it is a highest-weight vector of weight
-`i ↦ 1/2 * (1 + 2 * #{j | i < j})`. For `n = Fin N` in characteristic zero, this is the
-staircase `(N - 1/2, N - 3/2, …, 1/2)` required by the later CAR simple-submodule and isotypy
-results.
+`i ↦ 1/2 * (1 + 2 * #{j | i < j})`. For `n = Fin N`, this is the half-shifted staircase
+`(N - 1/2, N - 3/2, …, 1/2)`; in characteristic zero it is also the scalar extension of the
+rational staircase required by the later CAR simple-submodule and isotypy results.
 
 ## Main definitions
 
@@ -34,6 +34,8 @@ results.
 * `TauCeti.carHighestWeightVector_eq_one_of_subsingleton`: in ranks zero and one the empty
   ordered product is `1`.
 * `TauCeti.isGlHighestWeightVector_carHighestWeightVector`: its direct highest-weight equation.
+* `TauCeti.isGlHighestWeightVector_glHalfStaircase_carHighestWeightVector`: the `Fin N`
+  half-staircase form over any field in which two is invertible.
 * `TauCeti.isGlHighestWeightVector_glStaircase_carHighestWeightVector`: the `Fin N` staircase form.
 
 ## References
@@ -365,37 +367,45 @@ theorem isGlHighestWeightVector_carHighestWeightVector :
   exact ⟨carHighestWeightVector_ne_zero, diagonal_lie_carHighestWeightVector,
     fun i j hij => raising_lie_carHighestWeightVector_eq_zero hij⟩
 
-section CharZero
-
-variable [CharZero K]
-
-omit h2 in
 private theorem half_diagonalScalarSum {N : ℕ} (i : Fin N) :
     (2 : K)⁻¹ *
         (1 + 2 * ((Finset.univ.filter fun k : Fin N => i < k).card : K)) =
-      algebraMap ℚ K (glStaircase N i) := by
-  rw [Finset.filter_lt_eq_Ioi, Fin.card_Ioi, glStaircase_apply]
+      glHalfStaircase K N i := by
+  rw [Finset.filter_lt_eq_Ioi, Fin.card_Ioi, glHalfStaircase_apply]
   have hi : (i : ℕ) < N := i.isLt
   have hsub : N - 1 - (i : ℕ) = N - ((i : ℕ) + 1) := by omega
   rw [hsub, Nat.cast_sub (by omega : (i : ℕ) + 1 ≤ N)]
   push_cast
   field_simp
-  norm_num
   ring
+
+/-- For `Fin N`, the direct cardinality weight is the half-shifted staircase over any field in
+which two is invertible. -/
+theorem isGlHighestWeightVector_glHalfStaircase_carHighestWeightVector (N : ℕ) :
+    IsGlHighestWeightVector (glHalfStaircase K N)
+      (carHighestWeightVector K (Fin N)) := by
+  let _ : DecidableEq (Fin N) := inferInstance
+  have h := isGlHighestWeightVector_carHighestWeightVector (K := K) (n := Fin N)
+  rw [isGlHighestWeightVector_iff] at h ⊢
+  refine ⟨h.1, ?_, h.2.2⟩
+  intro i
+  simpa only [half_diagonalScalarSum] using h.2.1 i
+
+section CharZero
+
+variable [CharZero K]
 
 /-- For `Fin N` in characteristic zero, the direct cardinality weight is the scalar extension of
 the rational staircase `TauCeti.glStaircase N`. -/
 theorem isGlHighestWeightVector_glStaircase_carHighestWeightVector (N : ℕ) :
     IsGlHighestWeightVector (fun i => algebraMap ℚ K (glStaircase N i))
       (carHighestWeightVector K (Fin N)) := by
-  let _ : DecidableEq (Fin N) := inferInstance
-  have h := isGlHighestWeightVector_carHighestWeightVector (K := K) (n := Fin N)
-  rw [isGlHighestWeightVector_iff] at h ⊢
-  refine ⟨h.1, ?_, ?_⟩
-  · intro i
-    simpa [half_diagonalScalarSum] using h.2.1 i
-  · intro i j hij
-    exact h.2.2 i j hij
+  have h := isGlHighestWeightVector_glHalfStaircase_carHighestWeightVector (K := K) N
+  convert h using 1
+  funext i
+  rw [glStaircase_apply, glHalfStaircase_apply]
+  push_cast
+  norm_num
 
 end CharZero
 

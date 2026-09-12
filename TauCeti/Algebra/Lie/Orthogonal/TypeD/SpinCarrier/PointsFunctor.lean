@@ -55,20 +55,15 @@ variable {A : Type v} {B : Type w} [CommRing A] [CommRing B]
 /-- The map on type-`Dₙ` spin-carrier points induced by a homomorphism of value rings. It is the
 entrywise map on the ambient general linear group, restricted to the carrier subgroup. -/
 def pointsMap (f : A →+* B) : points n hn A →* points n hn B :=
-  ((MulEquiv.subgroupCongr (points_def n hn B)).symm.toMonoidHom).comp
-    ((GeneralLinear.mapHopfIdealPointsSubgroup (dimension n) (definingIdeal n hn)
-          f.toIntAlgHom).comp
-      (MulEquiv.subgroupCongr (points_def n hn A)).toMonoidHom)
+  GeneralLinear.mapHopfIdealPointsSubgroupCongr (dimension n) (definingIdeal n hn)
+    (points_def n hn A) (points_def n hn B) f.toIntAlgHom
 
 /-- The induced map on type-`Dₙ` spin-carrier points is the entrywise matrix map. -/
 @[simp]
 theorem coe_pointsMap (f : A →+* B) (g : points n hn A) :
     (pointsMap n hn f g : Matrix.GeneralLinearGroup (Fin (dimension n)) B) =
       Matrix.GeneralLinearGroup.map f g := by
-  rw [pointsMap]
-  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulEquiv.subgroupCongr_symm_apply, GeneralLinear.coe_mapHopfIdealPointsSubgroup,
-    MulEquiv.subgroupCongr_apply, RingHom.toIntAlgHom_toRingHom]
+  simp [pointsMap]
 
 /-- Entrywise, the induced map applies the homomorphism of value rings to each matrix entry. -/
 theorem coe_pointsMap_apply (f : A →+* B) (g : points n hn A)
@@ -82,29 +77,22 @@ theorem coe_pointsMap_apply (f : A →+* B) (g : points n hn A)
 /-- The identity homomorphism induces the identity on type-`Dₙ` spin-carrier points. -/
 @[simp]
 theorem pointsMap_id : pointsMap n hn (RingHom.id A) = MonoidHom.id _ := by
-  rw [pointsMap, RingHom.toIntAlgHom_id, GeneralLinear.mapHopfIdealPointsSubgroup_id]
-  apply MonoidHom.ext
-  intro g
-  exact (MulEquiv.subgroupCongr (points_def n hn A)).symm_apply_apply g
+  simp [pointsMap]
 
 /-- The induced maps on type-`Dₙ` spin-carrier points compose. -/
 @[simp]
 theorem pointsMap_comp {C : Type*} [CommRing C] (f : A →+* B) (g : B →+* C) :
     pointsMap n hn (g.comp f) = (pointsMap n hn g).comp (pointsMap n hn f) := by
-  apply MonoidHom.ext
-  intro x
-  simp only [pointsMap, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, RingHom.toIntAlgHom_comp,
-    GeneralLinear.mapHopfIdealPointsSubgroup_comp, MulEquiv.apply_symm_apply]
+  simp only [pointsMap, RingHom.toIntAlgHom_comp]
+  exact GeneralLinear.mapHopfIdealPointsSubgroupCongr_comp (dimension n) (definingIdeal n hn)
+    (points_def n hn A) (points_def n hn B) (points_def n hn C) f.toIntAlgHom g.toIntAlgHom
 
 /-- An injective homomorphism of value rings induces an injective map on type-`Dₙ` spin-carrier
 points. -/
 theorem pointsMap_injective {f : A →+* B} (hf : Function.Injective f) :
-    Function.Injective (pointsMap n hn f) := by
-  rw [pointsMap]
-  exact (MulEquiv.subgroupCongr (points_def n hn B)).symm.injective.comp
-    ((GeneralLinear.mapHopfIdealPointsSubgroup_injective
-      (dimension n) (definingIdeal n hn) hf).comp
-        (MulEquiv.subgroupCongr (points_def n hn A)).injective)
+    Function.Injective (pointsMap n hn f) :=
+  GeneralLinear.mapHopfIdealPointsSubgroupCongr_injective (dimension n) (definingIdeal n hn)
+    (points_def n hn A) (points_def n hn B) (φ := f.toIntAlgHom) hf
 
 /-- The induced map carries a numbered root-subgroup parameter along the homomorphism of value
 rings. -/

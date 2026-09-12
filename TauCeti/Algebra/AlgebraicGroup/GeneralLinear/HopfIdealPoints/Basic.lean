@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
+public import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # General-linear points cut out by Hopf ideals
@@ -29,6 +30,9 @@ vanishing on the Hopf ideal and is functorial in the value algebra.
   value algebra.
 * `TauCeti.GeneralLinear.mapHopfIdealPointsSubgroup_injective`: an injective homomorphism of
   value algebras induces an injective map of point subgroups.
+* `TauCeti.GeneralLinear.mapHopfIdealPointsSubgroupCongr`: that functoriality read through
+  presentations of two subgroups as point subgroups, so that a carrier defined by a Hopf ideal
+  states its induced map in its own named API.
 -/
 
 public section
@@ -177,6 +181,77 @@ theorem mapHopfIdealPointsSubgroup_injective
   intro g g' h
   refine Subtype.ext (hmap ?_)
   rw [← coe_mapHopfIdealPointsSubgroup, ← coe_mapHopfIdealPointsSubgroup, h]
+
+/-! ### Transport along a presentation of the point subgroup
+
+A carrier cut out by a Hopf ideal typically carries its own `points A` together with a lemma
+`points_def : points A = hopfIdealPointsSubgroup n I A`. The declarations below read the
+functoriality above through two such presentations, so that a carrier states its induced map in
+its own named API rather than in the presentation that API is defined by. -/
+
+/-- `TauCeti.GeneralLinear.mapHopfIdealPointsSubgroup` read through presentations of two subgroups
+as Hopf-ideal point subgroups of the general linear group. -/
+noncomputable def mapHopfIdealPointsSubgroupCongr
+    (I : HopfIdeal R (coordinateHopfAlgebra R n))
+    {PA : Subgroup (Matrix.GeneralLinearGroup (Fin n) A)}
+    {PB : Subgroup (Matrix.GeneralLinearGroup (Fin n) B)}
+    (hA : PA = hopfIdealPointsSubgroup n I A) (hB : PB = hopfIdealPointsSubgroup n I B)
+    (φ : A →ₐ[R] B) : PA →* PB :=
+  (mapHopfIdealPointsSubgroup n I φ).subgroupCongr hA hB
+
+/-- The transported map applies the value-algebra homomorphism entrywise. -/
+@[simp]
+theorem coe_mapHopfIdealPointsSubgroupCongr
+    (I : HopfIdeal R (coordinateHopfAlgebra R n))
+    {PA : Subgroup (Matrix.GeneralLinearGroup (Fin n) A)}
+    {PB : Subgroup (Matrix.GeneralLinearGroup (Fin n) B)}
+    (hA : PA = hopfIdealPointsSubgroup n I A) (hB : PB = hopfIdealPointsSubgroup n I B)
+    (φ : A →ₐ[R] B) (g : PA) :
+    (mapHopfIdealPointsSubgroupCongr n I hA hB φ g :
+        Matrix.GeneralLinearGroup (Fin n) B) =
+      Matrix.GeneralLinearGroup.map (φ : A →+* B) g := by
+  simp only [mapHopfIdealPointsSubgroupCongr, MonoidHom.coe_subgroupCongr_apply,
+    coe_mapHopfIdealPointsSubgroup]
+
+/-- The identity value-algebra homomorphism induces the identity on a presented point subgroup. -/
+@[simp]
+theorem mapHopfIdealPointsSubgroupCongr_id
+    (I : HopfIdeal R (coordinateHopfAlgebra R n))
+    {PA : Subgroup (Matrix.GeneralLinearGroup (Fin n) A)}
+    (hA : PA = hopfIdealPointsSubgroup n I A) :
+    mapHopfIdealPointsSubgroupCongr n I hA hA (AlgHom.id R A) = MonoidHom.id PA := by
+  rw [mapHopfIdealPointsSubgroupCongr, mapHopfIdealPointsSubgroup_id,
+    MonoidHom.subgroupCongr_id]
+
+/-- The maps induced on presented point subgroups compose.
+
+Not a `simp` lemma: the middle subgroup and its presentation appear only on the right-hand side,
+so `simp` would have to invent them and would rewrite into an unrelated instantiation. Rewrite
+pointwise through `TauCeti.GeneralLinear.coe_mapHopfIdealPointsSubgroupCongr` instead. -/
+theorem mapHopfIdealPointsSubgroupCongr_comp
+    {C : Type*} [CommRing C] [Algebra R C]
+    (I : HopfIdeal R (coordinateHopfAlgebra R n))
+    {PA : Subgroup (Matrix.GeneralLinearGroup (Fin n) A)}
+    {PB : Subgroup (Matrix.GeneralLinearGroup (Fin n) B)}
+    {PC : Subgroup (Matrix.GeneralLinearGroup (Fin n) C)}
+    (hA : PA = hopfIdealPointsSubgroup n I A) (hB : PB = hopfIdealPointsSubgroup n I B)
+    (hC : PC = hopfIdealPointsSubgroup n I C) (φ : A →ₐ[R] B) (ψ : B →ₐ[R] C) :
+    mapHopfIdealPointsSubgroupCongr n I hA hC (ψ.comp φ) =
+      (mapHopfIdealPointsSubgroupCongr n I hB hC ψ).comp
+        (mapHopfIdealPointsSubgroupCongr n I hA hB φ) := by
+  simp only [mapHopfIdealPointsSubgroupCongr, mapHopfIdealPointsSubgroup_comp,
+    MonoidHom.subgroupCongr_comp hA hB hC]
+
+/-- An injective value-algebra homomorphism induces an injective map of presented point
+subgroups. -/
+theorem mapHopfIdealPointsSubgroupCongr_injective
+    (I : HopfIdeal R (coordinateHopfAlgebra R n))
+    {PA : Subgroup (Matrix.GeneralLinearGroup (Fin n) A)}
+    {PB : Subgroup (Matrix.GeneralLinearGroup (Fin n) B)}
+    (hA : PA = hopfIdealPointsSubgroup n I A) (hB : PB = hopfIdealPointsSubgroup n I B)
+    {φ : A →ₐ[R] B} (hφ : Function.Injective φ) :
+    Function.Injective (mapHopfIdealPointsSubgroupCongr n I hA hB φ) :=
+  MonoidHom.subgroupCongr_injective hA hB (mapHopfIdealPointsSubgroup_injective n I hφ)
 
 /-- Larger Hopf ideals cut out smaller general-linear point subgroups. -/
 theorem hopfIdealPointsSubgroup_le_of_le

@@ -290,10 +290,8 @@ theorem coe_pointsMulEquiv_mapPointsFunctor_quotientMapOfLe (A : CommAlgCat.{v} 
 entrywise map. -/
 noncomputable def upperTriangularPointsMap {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
     (f : A →+* B) : upperTriangularPoints r A →* upperTriangularPoints r B :=
-  ((MulEquiv.subgroupCongr (upperTriangularPoints_def r B)).symm.toMonoidHom).comp
-    ((GeneralLinear.mapHopfIdealPointsSubgroup (r + 1) (upperTriangularDefiningIdeal r)
-        f.toIntAlgHom).comp
-      (MulEquiv.subgroupCongr (upperTriangularPoints_def r A)).toMonoidHom)
+  GeneralLinear.mapHopfIdealPointsSubgroupCongr (r + 1) (upperTriangularDefiningIdeal r)
+    (upperTriangularPoints_def r A) (upperTriangularPoints_def r B) f.toIntAlgHom
 
 /-- The induced map on upper-triangular carrier points is the entrywise map. -/
 @[simp]
@@ -301,22 +299,14 @@ theorem coe_upperTriangularPointsMap {A : Type v} {B : Type v'} [CommRing A] [Co
     (f : A →+* B) (g : upperTriangularPoints r A) :
     (upperTriangularPointsMap r f g : Matrix.GeneralLinearGroup (Fin (r + 1)) B) =
       Matrix.GeneralLinearGroup.map f g := by
-  -- `mapHopfIdealPointsSubgroup` is stated for the `ℤ`-algebra map induced by `f`, whose
-  -- underlying ring homomorphism is `f` again.
-  rw [upperTriangularPointsMap]
-  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.subgroupCongr_symm_apply,
-    GeneralLinear.coe_mapHopfIdealPointsSubgroup, MulEquiv.subgroupCongr_apply,
-    RingHom.toIntAlgHom_toRingHom]
+  simp [upperTriangularPointsMap]
 
 /-- The identity homomorphism of value rings induces the identity on upper-triangular carrier
 points. -/
 @[simp]
 theorem upperTriangularPointsMap_id (A : Type v) [CommRing A] :
     upperTriangularPointsMap r (RingHom.id A) = MonoidHom.id (upperTriangularPoints r A) := by
-  rw [upperTriangularPointsMap, RingHom.toIntAlgHom_id, GeneralLinear.mapHopfIdealPointsSubgroup_id]
-  apply MonoidHom.ext
-  intro g
-  exact (MulEquiv.subgroupCongr (upperTriangularPoints_def r A)).symm_apply_apply g
+  simp [upperTriangularPointsMap]
 
 /-- The induced maps on upper-triangular carrier points compose. -/
 @[simp]
@@ -324,11 +314,10 @@ theorem upperTriangularPointsMap_comp {A : Type v} {B : Type v'} {C : Type*}
     [CommRing A] [CommRing B] [CommRing C] (f : A →+* B) (g : B →+* C) :
     upperTriangularPointsMap r (g.comp f) =
       (upperTriangularPointsMap r g).comp (upperTriangularPointsMap r f) := by
-  apply MonoidHom.ext
-  intro x
-  simp only [upperTriangularPointsMap, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    RingHom.toIntAlgHom_comp,
-    GeneralLinear.mapHopfIdealPointsSubgroup_comp, MulEquiv.apply_symm_apply]
+  simp only [upperTriangularPointsMap, RingHom.toIntAlgHom_comp]
+  exact GeneralLinear.mapHopfIdealPointsSubgroupCongr_comp (r + 1) (upperTriangularDefiningIdeal r)
+    (upperTriangularPoints_def r A) (upperTriangularPoints_def r B)
+    (upperTriangularPoints_def r C) f.toIntAlgHom g.toIntAlgHom
 
 /-- The group-valued functor of matrix points of the upper-triangular subgroup scheme of the
 type-`A_r` carrier. -/

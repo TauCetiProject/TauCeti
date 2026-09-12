@@ -32,12 +32,16 @@ through.
 
 * `WeierstrassCurve.pointCount`: the `Nat.card` count of the projective Weierstrass model's
   `F`-points.
+* `WeierstrassCurve.frobeniusTrace`: over a finite field, the defect `q + 1 − #W(F)` of that
+  count from `q + 1`.
 
 ## Main results
 
 * `WeierstrassCurve.pointCount_eq_card_point`: on an elliptic model whose affine solutions form a
   finite type — a finite base being one case of that — it is the cardinality of Mathlib's point
   type.
+* `WeierstrassCurve.frobeniusTrace_eq_card_point`: over a finite field, on an elliptic model the
+  trace is `q + 1` minus the cardinality of Mathlib's point type, which is the classical `a_q`.
 
 ## Provenance
 
@@ -81,6 +85,32 @@ theorem _root_.WeierstrassCurve.pointCount_eq_card_point
   rw [WeierstrassCurve.pointCount_def, Nat.card_congr W.toAffine.pointEquiv]
   -- `WithZero` is the `Option` the cardinality lemma is stated for
   exact Finite.card_option.symm
+
+/-- **The Frobenius trace** `a_q = q + 1 − #W(F)` of a Weierstrass model over a finite field of
+`q` elements, measured against `pointCount`.
+
+Taken against that count the formula returns the classical local invariant at *every* Weierstrass
+model: `a_q` at an elliptic one, and `1`, `−1`, `0` at split multiplicative, nonsplit
+multiplicative and additive reduction. That is why it carries no ellipticity hypothesis. It is
+elliptic-specific only in its reading as a *trace*, which rests on the identity
+`deg (1 − π_q) = #E(𝔽_q)`. -/
+noncomputable def _root_.WeierstrassCurve.frobeniusTrace [Finite F] : ℤ :=
+  -- `q` is a number only because the base is finite, so the count is taken through that
+  -- finiteness; `frobeniusTrace_def` restates it with `Nat.card`, the form the API is phrased in
+  have : Fintype F := Fintype.ofFinite F
+  (Fintype.card F : ℤ) + 1 - W.pointCount
+
+/-- The defining equation of `frobeniusTrace`. -/
+@[simp]
+theorem _root_.WeierstrassCurve.frobeniusTrace_def [Finite F] :
+    W.frobeniusTrace = (Nat.card F : ℤ) + 1 - W.pointCount := by
+  simp only [WeierstrassCurve.frobeniusTrace, @Nat.card_eq_fintype_card F (Fintype.ofFinite F)]
+
+/-- **Over a finite field, on an elliptic model the trace is measured against Mathlib's point
+type**, which is the classical `a_q`. -/
+theorem _root_.WeierstrassCurve.frobeniusTrace_eq_card_point [Finite F] [W.IsElliptic] :
+    W.frobeniusTrace = (Nat.card F : ℤ) + 1 - Nat.card W.toAffine.Point := by
+  rw [WeierstrassCurve.frobeniusTrace_def, WeierstrassCurve.pointCount_eq_card_point]
 
 end TauCeti
 
