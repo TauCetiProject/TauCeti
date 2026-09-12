@@ -138,69 +138,23 @@ private theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom_commHopfAlgCat :
       diagonalTorusCoordinateMap (R := k) (N := n) at h
   exact h
 
+/-- The base-change isomorphism of `GL_n` coordinate Hopf algebras carries the base-changed
+diagonal-torus ideal onto the diagonal-torus ideal over the extended base. -/
 private theorem map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal
     (K : Type u) [Field K] [Algebra k K] :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (diagonalTorusDefiningIdeal k n)).map
         (coordinateHopfAlgebraBaseChangeIso k K n).hom.hom =
-      diagonalTorusDefiningIdeal K n := by
-  let H := coordinateHopfAlgebra k n
-  let D := diagonalTorusDefiningIdeal k n
-  let e := coordinateHopfAlgebraBaseChangeIso k K n
-  let q := (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} k)
-    (_root_.CommHopfAlgCat.{u} k)).mapIso (diagonalTorusCoordinateIso k n)
-  let t := DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso k K
-    (SplitTorus.characterGroup (ULift.{u} (Fin n)))
-  let r := CommHopfAlgCat.baseChangeMap (K := K) q.hom ≫ t.hom
-  have he : Function.Bijective e.hom.hom := ConcreteCategory.bijective_of_isIso e.hom
-  have hq : CommHopfAlgCat.mkQuotient H D ≫ q.hom =
-      diagonalTorusCoordinateMap (R := k) (N := n) :=
-    mkQuotient_comp_diagonalTorusCoordinateIso_hom_commHopfAlgCat k n
-  have hqK :
-      CommHopfAlgCat.baseChangeMap (K := K) (CommHopfAlgCat.mkQuotient H D) ≫
-          CommHopfAlgCat.baseChangeMap (K := K) q.hom =
-        CommHopfAlgCat.baseChangeMap (K := K)
-          (diagonalTorusCoordinateMap (R := k) (N := n)) := by
-    rw [← (CommHopfAlgCat.baseChangeFunctor (K := K)).map_comp]
-    exact congrArg (CommHopfAlgCat.baseChangeMap (K := K)) hq
-  have hdiag := diagonalTorusCoordinateMap_baseChange (N := n) k K
-  -- The local names `e` and `t` abbreviate exactly the isomorphisms in the preceding theorem;
-  -- exposing them is a definitional conversion, with no propositional equality to rewrite.
-  change e.inv ≫
-      CommHopfAlgCat.baseChangeMap (K := K)
-        (diagonalTorusCoordinateMap (R := k) (N := n)) ≫ t.hom =
-    diagonalTorusCoordinateMap (R := K) (N := n) at hdiag
-  have hcomm :
-      CommHopfAlgCat.baseChangeMap (K := K) (CommHopfAlgCat.mkQuotient H D) ≫ r =
-        e.hom ≫ diagonalTorusCoordinateMap (R := K) (N := n) := by
-    dsimp only [r]
-    rw [← Category.assoc, hqK, ← hdiag]
-    simp
-  have hr : Function.Injective r.hom := by
-    dsimp only [r]
-    exact (ConcreteCategory.bijective_of_isIso
-      ((CommHopfAlgCat.baseChangeFunctor (K := K)).mapIso q ≪≫ t).hom).1
-  have hzero (y : CommHopfAlgCat.baseChange (K := K) H) :
-      (CommHopfAlgCat.baseChangeMap (K := K)
-          (CommHopfAlgCat.mkQuotient H D)).hom y = 0 ↔
-        (diagonalTorusCoordinateMap (R := K) (N := n)).hom (e.hom.hom y) = 0 := by
-    have hy := congrArg (fun f ↦ f.hom y) hcomm
-    simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply] at hy
-    rw [← hy]
-    exact ⟨fun hy0 ↦ by rw [hy0, map_zero], fun hy0 ↦ hr (by simpa using hy0)⟩
-  ext x
-  rw [HopfIdeal.mem_map_iff_of_surjective he.2]
-  have hmemx : x ∈ diagonalTorusDefiningIdeal K n ↔
-      (diagonalTorusCoordinateMap (R := K) (N := n)).hom x = 0 := by
-    rw [diagonalTorusDefiningIdeal, HopfIdeal.mem_kerOfSurjective]
-  rw [hmemx]
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact (hzero y).mp ((CommHopfAlgCat.mem_baseChangeHopfIdeal_iff D y).mp hy)
-  · intro hx
-    refine ⟨e.inv.hom x, ?_, _root_.CommHopfAlgCat.hom_inv_apply e x⟩
-    rw [CommHopfAlgCat.mem_baseChangeHopfIdeal_iff]
-    apply (hzero _).mpr
-    rwa [_root_.CommHopfAlgCat.hom_inv_apply]
+      diagonalTorusDefiningIdeal K n :=
+  CommHopfAlgCat.map_baseChangeHopfIdeal_of_quotientIso
+    (diagonalTorusDefiningIdeal k n) (diagonalTorusDefiningIdeal K n)
+    (coordinateHopfAlgebraBaseChangeIso k K n)
+    (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso k K
+      (SplitTorus.characterGroup (ULift.{u} (Fin n))))
+    ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} k)
+      (_root_.CommHopfAlgCat.{u} k)).mapIso (diagonalTorusCoordinateIso k n))
+    (mkQuotient_comp_diagonalTorusCoordinateIso_hom_commHopfAlgCat k n)
+    (diagonalTorusCoordinateMap_baseChange (N := n) k K)
+    (fun _ ↦ HopfIdeal.mem_kerOfSurjective _ _)
 
 /-- The quotient coordinate Hopf algebra of the diagonal torus is a split torus of rank `n`. -/
 theorem splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :
@@ -376,53 +330,13 @@ applies, and then descended using faithful flatness. -/
 @[grind =>]
 theorem isMaximalTorus_diagonalTorusDefiningIdeal :
     HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k n)
-      (diagonalTorusDefiningIdeal k n) := by
-  rw [HopfIdeal.isMaximalTorus_iff]
-  refine ⟨torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal k n, ?_⟩
-  intro I hI hID
-  let K := AlgebraicClosure k
-  let H := coordinateHopfAlgebra k n
-  let HK := coordinateHopfAlgebra K n
-  let Hft : FiniteTypeCommHopfAlgCat k :=
-    ⟨H, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
-  let HKft : FiniteTypeCommHopfAlgCat K :=
-    ⟨HK, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
-  let e := coordinateHopfAlgebraBaseChangeIso k K n
-  let IK := (CommHopfAlgCat.baseChangeHopfIdeal (K := K) I).map e.hom.hom
-  have hmapI :
-      (CommHopfAlgCat.baseChangeHopfIdeal (K := K) I).map e.hom.hom = IK := rfl
-  let qIso : FiniteTypeCommHopfAlgCat.baseChange (K := K)
-        (FiniteTypeCommHopfAlgCat.quotient Hft I) ≅
-      FiniteTypeCommHopfAlgCat.quotient HKft IK :=
-    ObjectProperty.isoMk _
-      (CommHopfAlgCat.quotientBaseChangeIsoOfMapEq I IK e hmapI)
-  have hsplit : splitTorusCommHopfAlgProperty K
-      (FiniteTypeCommHopfAlgCat.baseChange (K := K)
-        (FiniteTypeCommHopfAlgCat.quotient Hft I)) := by
-    rw [splitTorusCommHopfAlgProperty_iff]
-    rw [torusCommHopfAlgProperty_iff] at hI
-    simpa only [Hft] using hI
-  have hIK : torusCommHopfAlgProperty K
-      (FiniteTypeCommHopfAlgCat.quotient HKft IK) :=
-    ((splitTorusCommHopfAlgProperty K).prop_of_iso qIso hsplit).torus K _
-  have hIKD : IK ≤ diagonalTorusDefiningIdeal K n := by
-    rw [← map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal k n K]
-    exact HopfIdeal.map_mono e.hom.hom
-      (CommHopfAlgCat.baseChangeHopfIdeal_mono hID)
-  have hmaxK := isMaximalTorus_diagonalTorusDefiningIdeal_of_isAlgClosed K n
-  rw [HopfIdeal.isMaximalTorus_iff] at hmaxK
-  have hDIK : diagonalTorusDefiningIdeal K n ≤ IK := hmaxK.2 IK hIK hIKD
-  have he : Function.Bijective e.hom.hom := ConcreteCategory.bijective_of_isIso e.hom
-  have hbase :
-      CommHopfAlgCat.baseChangeHopfIdeal (K := K) (diagonalTorusDefiningIdeal k n) ≤
-        CommHopfAlgCat.baseChangeHopfIdeal (K := K) I := by
-    have hcomap := HopfIdeal.comapOfSurjective_mono e.hom.hom he.2 hDIK
-    rw [← map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal k n K,
-      HopfIdeal.comapOfSurjective_map_of_bijective _ _ he,
-      HopfIdeal.comapOfSurjective_map_of_bijective _ _ he] at hcomap
-    exact hcomap
-  exact (CommHopfAlgCat.baseChangeHopfIdeal_le_iff
-    (algebraMap k K).injective).mp hbase
+      (diagonalTorusDefiningIdeal k n) :=
+  HopfIdeal.isMaximalTorus_of_baseChange (diagonalTorusDefiningIdeal k n)
+    (diagonalTorusDefiningIdeal (AlgebraicClosure k) n)
+    (coordinateHopfAlgebraBaseChangeIso k (AlgebraicClosure k) n)
+    (torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal k n)
+    (map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal k n (AlgebraicClosure k))
+    (isMaximalTorus_diagonalTorusDefiningIdeal_of_isAlgClosed (AlgebraicClosure k) n)
 
 end
 
