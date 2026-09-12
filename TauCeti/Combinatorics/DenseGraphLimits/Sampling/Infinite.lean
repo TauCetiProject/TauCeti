@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
+public import TauCeti.Probability.Distributions.Uniform
 public import Mathlib.Probability.ProductMeasure
 import Mathlib.Probability.Independence.InfinitePi
 
@@ -20,9 +21,10 @@ infinite `W`-random graph on the label set `ℕ`, sampled once, from which every
 read off by restriction.
 
 The randomness is explicit. A position `x i` is drawn from the graphon's carrier independently for
-each label `i`, and an independent coin `u e`, uniform on `[0, 1]`, is drawn for each unordered
-pair `e`; the pair `{i, j}` becomes an edge exactly when its coin falls below the graphon value at
-the two positions. Both families are infinite products of probability measures, so
+each label `i`, and an independent coin `u e` is drawn for each unordered pair `e` from the uniform
+law on the unit interval, `TauCeti.Probability.uniformMeasure 0 1`; the pair `{i, j}` becomes an
+edge exactly when its coin falls below the graphon value at the two positions. Both families are
+infinite products of probability measures, so
 `MeasureTheory.Measure.infinitePi` carries them, and the resulting law on `SimpleGraph ℕ` uses the
 adjacency sigma-algebra Mathlib already provides.
 
@@ -35,7 +37,6 @@ positions is `sampleMass W H`.
 
 ## Main definitions
 
-* `TauCeti.DenseGraphLimits.edgeCoin` — the law of one edge coin;
 * `TauCeti.DenseGraphLimits.infiniteSampleSource` — the product of the positions and the coins;
 * `TauCeti.DenseGraphLimits.infiniteSampleGraph` — the infinite graph read off positions and coins;
 * `TauCeti.DenseGraphLimits.infiniteSampleLaw` — its law, the joint sampling object;
@@ -68,54 +69,14 @@ namespace DenseGraphLimits
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
 
-section Coin
-
-/-- The law of one edge coin: the uniform distribution on `[0, 1]`, carried by `ℝ` as the
-restriction of Lebesgue measure to the unit interval. -/
-def edgeCoin : Measure ℝ := (volume : Measure ℝ).restrict (Set.Icc 0 1)
-
-instance edgeCoin_isProbabilityMeasure : IsProbabilityMeasure edgeCoin := by
-  constructor
-  rw [edgeCoin, Measure.restrict_apply_univ, Real.volume_Icc]
-  simp
-
-/-- A coin falls below `t` with probability `t`. Only `t ≤ 1` is needed: for a negative
-threshold both sides vanish. -/
-theorem edgeCoin_Iio {t : ℝ} (ht₁ : t ≤ 1) :
-    edgeCoin (Set.Iio t) = ENNReal.ofReal t := by
-  have hinter : Set.Iio t ∩ Set.Icc (0 : ℝ) 1 = Set.Ico 0 t := by
-    ext s
-    simp only [Set.mem_inter_iff, Set.mem_Iio, Set.mem_Icc, Set.mem_Ico]
-    constructor
-    · rintro ⟨hs, hs₀, -⟩
-      exact ⟨hs₀, hs⟩
-    · rintro ⟨hs₀, hs⟩
-      exact ⟨hs, hs₀, hs.le.trans ht₁⟩
-  rw [edgeCoin, Measure.restrict_apply measurableSet_Iio, hinter, Real.volume_Ico, sub_zero]
-
-/-- A coin falls at or above `t` with the complementary probability `1 - t`. Only `0 ≤ t` is
-needed: for a threshold above `1` both sides vanish. -/
-theorem edgeCoin_Ici {t : ℝ} (ht₀ : 0 ≤ t) :
-    edgeCoin (Set.Ici t) = ENNReal.ofReal (1 - t) := by
-  have hinter : Set.Ici t ∩ Set.Icc (0 : ℝ) 1 = Set.Icc t 1 := by
-    ext s
-    simp only [Set.mem_inter_iff, Set.mem_Ici, Set.mem_Icc]
-    constructor
-    · rintro ⟨hs, -, hs₁⟩
-      exact ⟨hs, hs₁⟩
-    · rintro ⟨hs, hs₁⟩
-      exact ⟨hs, ht₀.trans hs, hs₁⟩
-  rw [edgeCoin, Measure.restrict_apply measurableSet_Ici, hinter, Real.volume_Icc]
-
-end Coin
-
 section Source
 
 /-- The randomness the infinite `W`-random graph is read off: an independent position in the
 graphon's carrier for every label, and an independent uniform coin for every unordered pair of
 labels. -/
 def infiniteSampleSource (μ : Measure Ω) : Measure ((ℕ → Ω) × (Sym2 ℕ → ℝ)) :=
-  (Measure.infinitePi fun _ : ℕ => μ).prod (Measure.infinitePi fun _ : Sym2 ℕ => edgeCoin)
+  (Measure.infinitePi fun _ : ℕ => μ).prod
+    (Measure.infinitePi fun _ : Sym2 ℕ => Probability.uniformMeasure 0 1)
 
 instance infiniteSampleSource_isProbabilityMeasure :
     IsProbabilityMeasure (infiniteSampleSource μ) := by
@@ -246,16 +207,18 @@ private theorem measurableSet_coinTarget (W : Graphon Ω μ) (x : ℕ → Ω) (K
   · exact measurableSet_Iio
   · exact measurableSet_Ici
 
-private theorem edgeCoin_coinTarget (W : Graphon Ω μ) (x : ℕ → Ω) (K : SimpleGraph ℕ)
+private theorem uniformMeasure_coinTarget (W : Graphon Ω μ) (x : ℕ → Ω) (K : SimpleGraph ℕ)
     (e : Sym2 ℕ) :
-    edgeCoin (coinTarget W x K e) =
+    Probability.uniformMeasure 0 1 (coinTarget W x K e) =
       ENNReal.ofReal (open Classical in
         if e ∈ K.edgeSet then edgeFactor W x e else 1 - edgeFactor W x e) := by
   classical
   rw [coinTarget]
   split_ifs
-  · exact edgeCoin_Iio (edgeFactor_le_one W x e)
-  · exact edgeCoin_Ici (edgeFactor_nonneg W x e)
+  · rw [Probability.uniformMeasure_Iio zero_lt_one (edgeFactor_le_one W x e)]
+    norm_num
+  · rw [Probability.uniformMeasure_Ici zero_lt_one (edgeFactor_nonneg W x e)]
+    norm_num
 
 /-- The event that a window of the sampled graph is a prescribed pattern is a box in the coins. -/
 private theorem setOf_restrictFin_eq (W : Graphon Ω μ) (x : ℕ → Ω) (H : SimpleGraph (Fin n)) :
@@ -290,9 +253,9 @@ private theorem mem_edgeSet_map_val {H : SimpleGraph (Fin n)} {e : Sym2 (Fin n)}
 open Classical in
 /-- At fixed positions, the coins reproduce a prescribed window with probability the conditional
 mass of that pattern: each pair contributes its graphon value or the complementary value. -/
-private theorem infinitePi_edgeCoin_setOf_restrictFin_eq (W : Graphon Ω μ) (x : ℕ → Ω)
+private theorem infinitePi_uniformMeasure_setOf_restrictFin_eq (W : Graphon Ω μ) (x : ℕ → Ω)
     (H : SimpleGraph (Fin n)) :
-    (Measure.infinitePi fun _ : Sym2 ℕ => edgeCoin)
+    (Measure.infinitePi fun _ : Sym2 ℕ => Probability.uniformMeasure 0 1)
         {u : Sym2 ℕ → ℝ | restrictFin (infiniteSampleGraph W x u) n = H} =
       ENNReal.ofReal (sampleIntegrand W H fun i : Fin n => x (i : ℕ)) := by
   set y : Fin n → Ω := fun i : Fin n => x (i : ℕ) with hy
@@ -305,10 +268,11 @@ private theorem infinitePi_edgeCoin_setOf_restrictFin_eq (W : Graphon Ω μ) (x 
       simp only [hmem, ite_false]
       linarith
   have hfactor : ∀ e ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset,
-      edgeCoin (coinTarget W x (H.map (Fin.val : Fin n → ℕ)) (Sym2.map (Fin.val : Fin n → ℕ) e)) =
+      Probability.uniformMeasure 0 1
+          (coinTarget W x (H.map (Fin.val : Fin n → ℕ)) (Sym2.map (Fin.val : Fin n → ℕ) e)) =
         ENNReal.ofReal (if e ∈ H.edgeFinset then edgeFactor W y e else 1 - edgeFactor W y e) := by
     intro e _
-    rw [edgeCoin_coinTarget]
+    rw [uniformMeasure_coinTarget]
     have hval : edgeFactor W x (Sym2.map (Fin.val : Fin n → ℕ) e) = edgeFactor W y e :=
       edgeFactor_map W _ x e
     by_cases hmem : e ∈ H.edgeFinset
@@ -340,7 +304,7 @@ theorem infiniteSampleLaw_map_restrictFin (W : Graphon Ω μ) (n : ℕ) :
       ((fun p : (ℕ → Ω) × (Sym2 ℕ → ℝ) => infiniteSampleGraph W p.1 p.2) ⁻¹'
         ((fun G : SimpleGraph ℕ => restrictFin G n) ⁻¹' {H})) =
       {u : Sym2 ℕ → ℝ | restrictFin (infiniteSampleGraph W x u) n = H} := fun _ => rfl
-  simp_rw [hslice, infinitePi_edgeCoin_setOf_restrictFin_eq]
+  simp_rw [hslice, infinitePi_uniformMeasure_setOf_restrictFin_eq]
   have hmap : (Measure.infinitePi fun _ : ℕ => μ).map (fun x (i : Fin n) => x (i : ℕ)) =
       Measure.pi fun _ : Fin n => μ := by
     rw [Measure.map_infinitePi_infinitePi_of_inj Fin.val_injective]
