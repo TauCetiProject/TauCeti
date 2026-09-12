@@ -30,6 +30,8 @@ class group (`oneEquivClassGroup`).
 
 ## Main definitions
 
+* `TauCeti.GlobalNumberFields.principalIdealPrimeTo`: the principal fractional ideals whose
+  generators are units at the finite part.
 * `TauCeti.GlobalNumberFields.rayHom`, `TauCeti.GlobalNumberFields.ray`: the principal ideals of
   the elements congruent to one, and the subgroup they form.
 * `TauCeti.GlobalNumberFields.idealsPrimeToClassGroup`: the ordinary ideal class of an invertible
@@ -102,6 +104,22 @@ theorem IsCongrOne.toPrincipalIdeal_mem_idealsPrimeTo {𝔪 : Modulus K} {x : K�
     (hx : IsCongrOne 𝔪 x) : toPrincipalIdeal (𝓞 K) K x ∈ idealsPrimeTo 𝔪 :=
   toPrincipalIdeal_mem_idealsPrimeTo_iff.mpr
     (congruenceSubgroup_le_primeToSubgroup 𝔪 (mem_congruenceSubgroup.mpr hx))
+
+/-- The principal fractional ideal of an element that is a unit at every prime dividing the
+finite part of `m`, viewed as an element of `idealsPrimeTo m`. -/
+noncomputable def principalIdealPrimeTo (m : Modulus K) :
+    primeToSubgroup m →* idealsPrimeTo m :=
+  MonoidHom.codRestrict
+    ((toPrincipalIdeal (RingOfIntegers K) K).comp (primeToSubgroup m).subtype)
+    (idealsPrimeTo m) fun x ↦ toPrincipalIdeal_mem_idealsPrimeTo_iff.mpr x.2
+
+/-- `principalIdealPrimeTo` does not change the underlying principal fractional ideal. -/
+@[simp] theorem coe_principalIdealPrimeTo (m : Modulus K) (x : primeToSubgroup m) :
+    ((principalIdealPrimeTo m x : idealsPrimeTo m) :
+        (FractionalIdeal (RingOfIntegers K)⁰ K)ˣ) =
+      toPrincipalIdeal (RingOfIntegers K) K (x : Kˣ) := by
+  simp only [principalIdealPrimeTo, MonoidHom.codRestrict_apply, MonoidHom.comp_apply,
+    Subgroup.subtype_apply]
 
 /-- The homomorphism sending an element of `Kˣ` congruent to one modulo `𝔪` to its principal
 fractional ideal, viewed inside the ideals prime to `𝔪`. -/

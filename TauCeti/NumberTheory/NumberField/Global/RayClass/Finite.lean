@@ -110,34 +110,19 @@ instance unitsCongruenceSubgroup_finiteIndex (𝔪 : Modulus K) :
 
 /-! ### Finiteness of the ray class group -/
 
-/-- The principal ideal of an element that is a unit at the finite part, viewed among the ideals
-prime to the modulus. -/
-private noncomputable def principalIdealPrimeToHom (𝔪 : Modulus K) :
-    primeToSubgroup 𝔪 →* idealsPrimeTo 𝔪 :=
-  MonoidHom.codRestrict ((toPrincipalIdeal (𝓞 K) K).comp (primeToSubgroup 𝔪).subtype)
-    (idealsPrimeTo 𝔪) fun x ↦ toPrincipalIdeal_mem_idealsPrimeTo_iff.mpr x.2
-
-@[simp] private theorem coe_principalIdealPrimeToHom (𝔪 : Modulus K)
-    (x : primeToSubgroup 𝔪) :
-    ((principalIdealPrimeToHom 𝔪 x : idealsPrimeTo 𝔪) :
-        (FractionalIdeal (𝓞 K)⁰ K)ˣ) =
-      toPrincipalIdeal (𝓞 K) K (x : Kˣ) := by
-  simp only [principalIdealPrimeToHom, MonoidHom.codRestrict_apply, MonoidHom.comp_apply,
-    Subgroup.subtype_apply]
-
 /-- The principal ideal of an element that is a unit at the finite part, viewed in the kernel of
 `idealsPrimeToClassGroup`. -/
 private noncomputable def principalIdealHom (𝔪 : Modulus K) :
     primeToSubgroup 𝔪 →* (idealsPrimeToClassGroup 𝔪).ker :=
-  MonoidHom.codRestrict (principalIdealPrimeToHom 𝔪) (idealsPrimeToClassGroup 𝔪).ker fun x ↦ by
-    rw [MonoidHom.mem_ker, idealsPrimeToClassGroup_apply, coe_principalIdealPrimeToHom]
+  MonoidHom.codRestrict (principalIdealPrimeTo 𝔪) (idealsPrimeToClassGroup 𝔪).ker fun x ↦ by
+    rw [MonoidHom.mem_ker, idealsPrimeToClassGroup_apply, coe_principalIdealPrimeTo]
     exact ClassGroup.mk_toPrincipalIdeal (x : Kˣ)
 
 @[simp] private theorem coe_principalIdealHom (𝔪 : Modulus K) (x : primeToSubgroup 𝔪) :
     (((principalIdealHom 𝔪 x : (idealsPrimeToClassGroup 𝔪).ker) : idealsPrimeTo 𝔪) :
         (FractionalIdeal (𝓞 K)⁰ K)ˣ) =
       toPrincipalIdeal (𝓞 K) K (x : Kˣ) := by
-  rw [principalIdealHom, MonoidHom.codRestrict_apply, coe_principalIdealPrimeToHom]
+  rw [principalIdealHom, MonoidHom.codRestrict_apply, coe_principalIdealPrimeTo]
 
 private theorem principalIdealHom_surjective (𝔪 : Modulus K) :
     Function.Surjective (principalIdealHom 𝔪) := by
@@ -146,7 +131,10 @@ private theorem principalIdealHom_surjective (𝔪 : Modulus K) :
     ClassGroup.mk_eq_one_iff_exists] at hker
   obtain ⟨x, hx⟩ := hker
   refine ⟨⟨x, toPrincipalIdeal_mem_idealsPrimeTo_iff.mp (hx ▸ hI)⟩, ?_⟩
-  exact Subtype.ext (Subtype.ext hx)
+  apply Subtype.ext
+  apply Subtype.ext
+  apply Units.ext
+  rw [coe_principalIdealHom, hx]
 
 /-- **The ray has finite index in the invertible fractional ideals prime to `𝔪`.**  This index is
 the ray class number, and its finiteness is what makes `RayClassGroup 𝔪` a finite group. -/
