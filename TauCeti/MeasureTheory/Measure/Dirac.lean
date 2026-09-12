@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
 /-!
@@ -24,8 +23,6 @@ under that weaker hypothesis, which is the one a.e.-measurable interfaces such a
 * `Measure.map_dirac_of_aemeasurable` — the Dirac pushforward formula for a map that is
   only a.e. measurable.
 * `Measure.dirac_eq_dirac_of_inseparable` — inseparable points have equal Borel Dirac measures.
-* `Measure.pi_dirac` — a finite product of Dirac measures is the Dirac measure at the product
-  point.
 -/
 
 public section
@@ -54,21 +51,5 @@ theorem dirac_eq_dirac_of_inseparable [TopologicalSpace X] [BorelSpace X]
     {x y : X} (hxy : Inseparable x y) : Measure.dirac x = Measure.dirac y := by
   apply MeasureTheory.dirac_eq_dirac_iff_forall_mem_iff_mem.2
   exact fun _ hs ↦ hxy.mem_measurableSet_iff hs
-
-/-- **A finite product of Dirac measures is a Dirac measure**, at the point assembled from the
-individual ones. -/
-@[simp]
-theorem pi_dirac {ι : Type*} [Fintype ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
-    (x : ∀ i, α i) : (Measure.pi fun i => Measure.dirac (x i)) = Measure.dirac x := by
-  refine Measure.pi_eq (μ' := Measure.dirac x) fun s hs => ?_
-  by_cases h : ∀ i, x i ∈ s i
-  · rw [Measure.dirac_apply_of_mem (Set.mem_univ_pi.2 h)]
-    exact (Finset.prod_eq_one fun i _ => Measure.dirac_apply_of_mem (h i)).symm
-  · simp only [not_forall] at h
-    obtain ⟨i, hi⟩ := h
-    rw [Measure.dirac_apply' _ (MeasurableSet.univ_pi hs),
-      Set.indicator_of_notMem fun hx => hi (Set.mem_univ_pi.1 hx i)]
-    refine (Finset.prod_eq_zero (Finset.mem_univ i) ?_).symm
-    rw [Measure.dirac_apply' _ (hs i), Set.indicator_of_notMem hi]
 
 end Measure

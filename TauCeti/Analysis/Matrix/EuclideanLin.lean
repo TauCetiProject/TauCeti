@@ -30,9 +30,9 @@ inverse substitution and, through `LinearMap.det_toLpLin`, the Jacobian.
 
 * `Matrix.inner_toEuclideanLin_toEuclideanLin` — the quadratic form of `B` at `A x` is the
   quadratic form of `Aᴴ * B * A` at `x`;
-* `Matrix.finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix rank is the
-  dimension of the range of the induced map, and the `LinearMap.rank` of the induced continuous
-  linear map;
+* `Matrix.rank_eq_finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix
+  rank is the dimension of the range of the induced map, and the `LinearMap.rank` of the induced
+  continuous linear map;
 * `Matrix.toEuclideanCLE` — the continuous linear equivalence of an invertible matrix, with its
   `apply`, `symm_apply`, coercion and determinant lemmas.
 -/
@@ -58,12 +58,12 @@ theorem inner_toEuclideanLin_toEuclideanLin (A : Matrix κ ι 𝕜) (B : Matrix 
 omit [Fintype κ] [DecidableEq κ] in
 /-- The rank of a matrix is the dimension of the range of the linear map it induces on Euclidean
 space. -/
-theorem finrank_range_toEuclideanLin [Finite κ] (A : Matrix κ ι 𝕜) :
-    Module.finrank 𝕜 (LinearMap.range (toEuclideanLin A)) = A.rank := by
+theorem rank_eq_finrank_range_toEuclideanLin [Finite κ] (A : Matrix κ ι 𝕜) :
+    A.rank = Module.finrank 𝕜 (LinearMap.range (toEuclideanLin A)) := by
   have : Fintype κ := Fintype.ofFinite κ
   rw [toEuclideanLin_eq_toLin_orthonormal]
-  exact (A.rank_eq_finrank_range_toLin (EuclideanSpace.basisFun κ 𝕜).toBasis
-    (EuclideanSpace.basisFun ι 𝕜).toBasis).symm
+  exact A.rank_eq_finrank_range_toLin (EuclideanSpace.basisFun κ 𝕜).toBasis
+    (EuclideanSpace.basisFun ι 𝕜).toBasis
 
 /-- The `Cardinal`-valued rank of the continuous linear map of a square matrix is its matrix rank.
 This is the bridge that turns an operator-rank statement into a matrix-rank one. -/
@@ -72,7 +72,7 @@ theorem rank_coe_toEuclideanCLM (A : Matrix ι ι 𝕜) :
         (toEuclideanCLM (n := ι) (𝕜 := 𝕜) A : EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι) =
       A.rank := by
   rw [LinearMap.rank, coe_toEuclideanCLM_eq_toEuclideanLin, ← Module.finrank_eq_rank,
-    finrank_range_toEuclideanLin]
+    rank_eq_finrank_range_toEuclideanLin]
 
 section Invertible
 

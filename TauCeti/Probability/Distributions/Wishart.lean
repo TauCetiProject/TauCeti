@@ -5,15 +5,14 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Probability.HasLaw
-public import TauCeti.MeasureTheory.Measure.Dirac
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix
 public import TauCeti.Probability.Distributions.Gaussian.Affine
 
 import Mathlib.MeasureTheory.Group.Convolution
+import Mathlib.Probability.ProductMeasure
 import TauCeti.Analysis.Matrix.Sqrt
-import TauCeti.LinearAlgebra.Matrix.Gram
-import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # The Gaussian-Gram Wishart family
@@ -74,34 +73,40 @@ variable {ι : Type*} [Fintype ι] {p ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
 /-! ### The Gram sum of a family of Euclidean vectors -/
 
 /-- The **Gram sum** `∑ r, X r * (X r)ᵀ` of a finite family of Euclidean vectors, as an element of
-the symmetric-matrix subspace.  This is the statistic whose law is the Gaussian-Gram Wishart
+the symmetric-matrix subspace.  It is the Gram matrix `Matrix.gram` of the `p` coordinate columns
+`i ↦ (r ↦ X r i)` of the family, and it is the statistic whose law is the Gaussian-Gram Wishart
 family. -/
 def wishartGram (X : ι → EuclideanSpace ℝ (Fin p)) :
     selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
-  ⟨∑ r, Matrix.vecMulVec (X r).ofLp (X r).ofLp,
-    Matrix.isHermitian_iff_isSelfAdjoint.1 <| by
-      simpa only [star_trivial] using
-        (Matrix.posSemidef_sum Finset.univ fun r _ =>
-          Matrix.posSemidef_vecMulVec_self_star (X r).ofLp).isHermitian⟩
+  ⟨Matrix.gram ℝ fun i => WithLp.toLp 2 fun r => X r i,
+    Matrix.isHermitian_iff_isSelfAdjoint.1 (Matrix.isHermitian_gram ℝ _)⟩
+
+/-- The Gram sum is the Gram matrix of the coordinate columns of the family. -/
+theorem coe_wishartGram_eq_gram (X : ι → EuclideanSpace ℝ (Fin p)) :
+    (wishartGram X : Matrix (Fin p) (Fin p) ℝ) =
+      Matrix.gram ℝ fun i => WithLp.toLp 2 fun r => X r i :=
+  (rfl)
 
 @[simp]
 theorem coe_wishartGram (X : ι → EuclideanSpace ℝ (Fin p)) :
     (wishartGram X : Matrix (Fin p) (Fin p) ℝ) =
-      ∑ r, Matrix.vecMulVec (X r).ofLp (X r).ofLp :=
-  (rfl)
+      ∑ r, Matrix.vecMulVec (X r).ofLp (X r).ofLp := by
+  ext i j
+  simp [coe_wishartGram_eq_gram, Matrix.sum_apply, Matrix.vecMulVec_apply, PiLp.inner_apply,
+    mul_comm]
 
 /-- The Gram sum of a family of Euclidean vectors is positive semidefinite. -/
 theorem posSemidef_coe_wishartGram (X : ι → EuclideanSpace ℝ (Fin p)) :
     (wishartGram X : Matrix (Fin p) (Fin p) ℝ).PosSemidef := by
-  simpa only [coe_wishartGram, star_trivial] using
-    Matrix.posSemidef_sum Finset.univ fun r _ =>
-      Matrix.posSemidef_vecMulVec_self_star (X r).ofLp
+  rw [coe_wishartGram_eq_gram]
+  exact Matrix.posSemidef_gram ℝ _
 
 /-- The Gram sum of a family of vectors has rank at most the size of the family. -/
 theorem rank_coe_wishartGram_le (X : ι → EuclideanSpace ℝ (Fin p)) :
     (wishartGram X : Matrix (Fin p) (Fin p) ℝ).rank ≤ Fintype.card ι := by
-  rw [coe_wishartGram, sum_vecMulVec_eq_transpose_mul _ _, Matrix.rank_transpose_mul_self]
-  exact (Matrix.of fun r i => X r i).rank_le_card_height
+  rw [coe_wishartGram_eq_gram, Matrix.gram_eq_conjTranspose_mul (EuclideanSpace.basisFun ι ℝ),
+    Matrix.rank_conjTranspose_mul_self]
+  exact Matrix.rank_le_card_height _
 
 /-- A linear image of the vectors congruates their Gram sum. -/
 theorem wishartGram_toEuclideanLin {q : ℕ} (M : Matrix (Fin q) (Fin p) ℝ)
@@ -117,8 +122,9 @@ theorem wishartGram_toEuclideanLin {q : ℕ} (M : Matrix (Fin q) (Fin p) ℝ)
 
 /-- The Gram sum is continuous in the family of vectors. -/
 theorem continuous_wishartGram : Continuous (wishartGram (p := p) (ι := ι)) := by
-  refine Continuous.subtype_mk (continuous_finsetSum _ fun r _ => ?_) _
-  refine continuous_matrix fun i j => ?_
+  refine continuous_induced_rng.2 ?_
+  simp only [Function.comp_def, coe_wishartGram]
+  refine continuous_finsetSum _ fun r _ => continuous_matrix fun i j => ?_
   simp only [Matrix.vecMulVec_apply]
   refine Continuous.mul ?_ ?_ <;>
     exact (PiLp.continuous_apply 2 _ _).comp (continuous_apply r)
@@ -160,7 +166,7 @@ theorem wishartGramMeasure_of_not_posSemidef (ν : ℕ) (hS : ¬ S.PosSemidef) :
     wishartGramMeasure ν S = Measure.dirac 0 := by
   rw [wishartGramMeasure]
   simp only [multivariateGaussian_of_not_posSemidef 0 hS]
-  rw [Measure.pi_dirac fun _ : Fin ν => (0 : EuclideanSpace ℝ (Fin p)),
+  rw [← Measure.infinitePi_eq_pi, Measure.infinitePi_dirac,
     Measure.map_dirac' measurable_wishartGram]
   exact congrArg _ (Subtype.ext (by simp))
 

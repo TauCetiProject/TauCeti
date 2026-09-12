@@ -10,16 +10,13 @@ public import Mathlib.LinearAlgebra.Matrix.Symmetric
 import Mathlib.Tactic.Ring
 
 /-!
-# Gram matrices, forms, and matrix reflection
+# Gram forms and matrix reflection
 
-This file records a factorization of finite outer-product sums and the basic symmetry and
-quadratic-form preservation identities for the bilinear and quadratic forms attached to a
-symmetric matrix.
+This file records the basic symmetry and quadratic-form preservation identities for the bilinear
+and quadratic forms attached to a symmetric matrix.
 
 ## Main results
 
-* `TauCeti.sum_vecMulVec_eq_transpose_mul` identifies a finite sum of paired vector outer products
-  with the product of the transpose of the first row matrix and the second row matrix.
 * `TauCeti.vecMul_dotProduct_comm`: the bilinear form `(v, w) ↦ (v ᵥ* M) ⬝ᵥ w` of a symmetric matrix
   `M` is symmetric.
 * `TauCeti.reflect_vecMul_dotProduct_self`: reflection in a vector of norm two preserves the value
@@ -31,15 +28,6 @@ public section
 namespace TauCeti
 
 open _root_.Matrix
-
-/-- The sum of the paired outer products of two finite families of vectors is the cross-product
-matrix of the matrices whose rows are those families. -/
-theorem sum_vecMulVec_eq_transpose_mul {ι m R : Type*} [Fintype ι] [Mul R] [AddCommMonoid R]
-    (v w : ι → m → R) :
-    ∑ i, Matrix.vecMulVec (v i) (w i) = (Matrix.of v)ᵀ * Matrix.of w := by
-  ext i j
-  simp only [Matrix.sum_apply, Matrix.vecMulVec_apply, Matrix.mul_apply,
-    Matrix.transpose_apply, Matrix.of_apply]
 
 variable {n : Type*} [Fintype n]
 
