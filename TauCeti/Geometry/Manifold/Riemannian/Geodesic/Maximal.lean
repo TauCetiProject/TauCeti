@@ -55,65 +55,6 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-private theorem contDiffOn_succ_of_hasDerivAt_comp {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {f : ℝ → F} {v : F → F} {s : Set ℝ} {u : Set F}
-    (hs : IsOpen s) (hv : ContDiffOn ℝ 1 v u) (hfu : MapsTo f s u)
-    (hf : ∀ t ∈ s, HasDerivAt f (v (f t)) t) : ContDiffOn ℝ 2 f s := by
-  have h : ContDiffOn ℝ ((1 : ℕ∞ω) + 1) f s := by
-    rw [contDiffOn_succ_iff_deriv_of_isOpen hs]
-    refine ⟨fun t ht => (hf t ht).differentiableAt.differentiableWithinAt, by simp, ?_⟩
-    have hf0 : ContDiffOn ℝ (0 : ℕ∞ω) f s := by
-      rw [contDiffOn_zero]
-      exact fun t ht => (hf t ht).continuousAt.continuousWithinAt
-    have hf1 : ContDiffOn ℝ 1 f s := by
-      have h0 : ContDiffOn ℝ (0 : ℕ∞ω) (fun t => v (f t)) s :=
-        (hv.of_le (by norm_num)).comp hf0 hfu |>.of_le (by norm_num)
-      have h1 : ContDiffOn ℝ ((0 : ℕ∞ω) + 1) f s := by
-        rw [contDiffOn_succ_iff_deriv_of_isOpen hs]
-        exact ⟨fun t ht => (hf t ht).differentiableAt.differentiableWithinAt, by simp,
-          h0.congr fun t ht => (hf t ht).deriv⟩
-      simpa using h1
-    exact (hv.comp hf1 hfu).congr fun t ht => (hf t ht).deriv
-  convert h using 1
-  norm_num
-
-private theorem IsMIntegralCurveAt.local_contMDiffAt_two
-    [BoundarylessManifold I M] [IsManifold I 2 M]
-    {γ : ℝ → M} {v : (x : M) → TangentSpace I x} {t₀ : ℝ}
-    (hγ : IsMIntegralCurveAt γ v t₀)
-    (hv : CMDiff 1 (fun x => (⟨x, v x⟩ : TangentBundle I M))) :
-    ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t₀ := by
-  rw [contMDiffAt_iff_target]
-  refine ⟨hγ.continuousAt, ?_⟩
-  let c : ℝ → E := (extChartAt I (γ t₀)) ∘ γ
-  let v' : E → E := fun x =>
-    tangentCoordChange I ((extChartAt I (γ t₀)).symm x) (γ t₀)
-      ((extChartAt I (γ t₀)).symm x) (v ((extChartAt I (γ t₀)).symm x))
-  have hv' : ContDiffAt ℝ 1 v' (extChartAt I (γ t₀) (γ t₀)) := by
-    have hv₀ := hv.contMDiffAt (x := γ t₀)
-    rw [contMDiffAt_iff] at hv₀
-    exact (hv₀.2.contDiffAt
-      (range_mem_nhds_isInteriorPoint BoundarylessManifold.isInteriorPoint)).snd
-  obtain ⟨u, hxu, hvu⟩ := hv'.contDiffOn le_rfl (by simp)
-  have hcsrc : ∀ᶠ t in 𝓝 t₀, γ t ∈ (extChartAt I (γ t₀)).source :=
-    hγ.continuousAt.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I) _)
-  have hderiv : ∀ᶠ t in 𝓝 t₀, HasDerivAt c (v' (c t)) t :=
-    hγ.eventually_hasDerivAt.and hcsrc |>.mono fun t ht => by
-      apply ht.1.congr_deriv
-      simp only [v', c, Function.comp_apply]
-      rw [PartialEquiv.left_inv _ ht.2]
-  have hcu : ∀ᶠ t in 𝓝 t₀, c t ∈ u :=
-    ((continuousAt_extChartAt (γ t₀)).comp hγ.continuousAt).eventually hxu
-  have hall : {t | HasDerivAt c (v' (c t)) t ∧ c t ∈ u} ∈ 𝓝 t₀ :=
-    hderiv.and hcu
-  obtain ⟨s, hsP, hsopen, hst₀⟩ := mem_nhds_iff.mp hall
-  have hc : ContDiffAt ℝ 2 c t₀ :=
-    (contDiffOn_succ_of_hasDerivAt_comp hsopen hvu (fun t ht => (hsP ht).2)
-      (fun t ht => (hsP ht).1)).contDiffAt (hsopen.mem_nhds hst₀)
-  have hc' : ContDiffAt ℝ 2 ((extChartAt I (γ t₀)) ∘ γ) t₀ := by
-    simpa only [c] using hc
-  exact hc'.contMDiffAt
-
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
@@ -288,31 +229,6 @@ omit [I.Boundaryless] in
   exact ⟨isGeodesicCurveOn_const (uniqueDiffOn_Ioo (-(|t| + 1)) (|t| + 1)) p,
     ⟨by linarith [abs_nonneg t], by linarith [abs_nonneg t]⟩, by simp⟩
 
-private theorem preimage_mul_Ioo {a b c : ℝ} (hab : a < b) (hc : c ≠ 0) :
-    (fun t : ℝ => c * t) ⁻¹' Ioo a b = Ioo (min (a / c) (b / c)) (max (a / c) (b / c)) := by
-  ext t
-  rcases lt_or_gt_of_ne hc with hc' | hc'
-  · have hab' : b / c < a / c := (div_lt_iff_of_neg hc').2 (by
-      rw [div_mul_cancel₀ _ hc]
-      exact hab)
-    simp only [mem_preimage, mem_Ioo, min_eq_right (le_of_lt hab'), max_eq_left (le_of_lt hab')]
-    constructor
-    · rintro ⟨h₁, h₂⟩
-      exact ⟨(div_lt_iff_of_neg hc').2 (by simpa [mul_comm] using h₂),
-        (lt_div_iff_of_neg hc').2 (by simpa [mul_comm] using h₁)⟩
-    · rintro ⟨h₁, h₂⟩
-      exact ⟨by simpa [mul_comm] using (lt_div_iff_of_neg hc').1 h₂,
-        by simpa [mul_comm] using (div_lt_iff_of_neg hc').1 h₁⟩
-  · have hab' : a / c < b / c := (div_lt_div_iff₀ hc' hc').2 (mul_lt_mul_of_pos_right hab hc')
-    simp only [mem_preimage, mem_Ioo, min_eq_left (le_of_lt hab'), max_eq_right (le_of_lt hab')]
-    constructor
-    · rintro ⟨h₁, h₂⟩
-      exact ⟨(div_lt_iff₀ hc').2 (by simpa [mul_comm] using h₁),
-        (lt_div_iff₀ hc').2 (by simpa [mul_comm] using h₂)⟩
-    · rintro ⟨h₁, h₂⟩
-      exact ⟨by simpa [mul_comm] using (div_lt_iff₀ hc').1 h₁,
-        by simpa [mul_comm] using (lt_div_iff₀ hc').1 h₂⟩
-
 omit [I.Boundaryless] in
 /-- Nonzero rescaling of the initial velocity rescales the maximal interval by the inverse. -/
 @[simp] theorem mem_geodesicInterval_smul_iff
@@ -323,7 +239,16 @@ omit [I.Boundaryless] in
     have hbc : b < c := hγ.zero_mem.1.trans hγ.zero_mem.2
     let u := Ioo (min (b / a⁻¹) (c / a⁻¹)) (max (b / a⁻¹) (c / a⁻¹))
     have hu : (fun s : ℝ => a⁻¹ * s) ⁻¹' Ioo b c = u := by
-      exact preimage_mul_Ioo hbc (inv_ne_zero ha)
+      rcases lt_or_gt_of_ne (inv_ne_zero ha) with hneg | hpos
+      · have hbc' : c / a⁻¹ < b / a⁻¹ := (div_lt_iff_of_neg hneg).2 (by
+          rw [div_mul_cancel₀ _ (ne_of_lt hneg)]
+          exact hbc)
+        rw [preimage_const_mul_Ioo_of_neg _ _ hneg]
+        simp only [u, min_eq_right hbc'.le, max_eq_left hbc'.le]
+      · have hbc' : b / a⁻¹ < c / a⁻¹ :=
+          (div_lt_div_iff₀ hpos hpos).2 (mul_lt_mul_of_pos_right hbc hpos)
+        rw [preimage_const_mul_Ioo₀ _ _ hpos]
+        simp only [u, min_eq_left hbc'.le, max_eq_right hbc'.le]
     have hmap : MapsTo (fun s : ℝ => a⁻¹ * s) u (Ioo b c) := by
       rw [← hu]
       exact fun _ hs => hs
@@ -345,7 +270,16 @@ omit [I.Boundaryless] in
     have hbc : b < c := hγ.zero_mem.1.trans hγ.zero_mem.2
     let u := Ioo (min (b / a) (c / a)) (max (b / a) (c / a))
     have hu : (fun s : ℝ => a * s) ⁻¹' Ioo b c = u := by
-      exact preimage_mul_Ioo hbc ha
+      rcases lt_or_gt_of_ne ha with hneg | hpos
+      · have hbc' : c / a < b / a := (div_lt_iff_of_neg hneg).2 (by
+          rw [div_mul_cancel₀ _ (ne_of_lt hneg)]
+          exact hbc)
+        rw [preimage_const_mul_Ioo_of_neg _ _ hneg]
+        simp only [u, min_eq_right hbc'.le, max_eq_left hbc'.le]
+      · have hbc' : b / a < c / a :=
+          (div_lt_div_iff₀ hpos hpos).2 (mul_lt_mul_of_pos_right hbc hpos)
+        rw [preimage_const_mul_Ioo₀ _ _ hpos]
+        simp only [u, min_eq_left hbc'.le, max_eq_right hbc'.le]
     have hmap : MapsTo (fun s : ℝ => a * s) u (Ioo b c) := by
       rw [← hu]
       exact fun _ hs => hs
