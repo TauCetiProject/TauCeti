@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Maps.Basic
 public import Mathlib.Topology.Instances.RealVectorSpace
 import Mathlib.Tactic.NormNum
 
@@ -38,25 +37,39 @@ variable {M N P : Type*} [TopologicalSpace M] [TopologicalSpace N] [TopologicalS
 
 /-- A global collar of `f` is an open embedding of the boundary times `[0,1)` whose zero slice is
 `f`.  The parameter is a subtype, so the endpoint `1` is excluded by construction. -/
-structure IsGlobalCollar (f : N → M) (c : N × Ico (0 : ℝ) 1 → M) : Prop where
+structure IsCollar (f : N → M) (c : N × Ico (0 : ℝ) 1 → M) : Prop where
   isOpenEmbedding : IsOpenEmbedding c
   apply_zero : ∀ x, c (x, ⟨0, by norm_num⟩) = f x
 
 /-- A map admits a global collar. -/
-def GloballyCollared (f : N → M) : Prop := ∃ c, IsGlobalCollar f c
+def IsCollared (f : N → M) : Prop := ∃ c, IsCollar f c
 
-/-- The product collar is a canonical example of global collar data. -/
-theorem globallyCollared_prodMk_zero :
-    GloballyCollared
-      ((fun x : N => (x, ⟨0, by norm_num⟩)) : N → N × Ico (0 : ℝ) 1) := by
-  refine ⟨(id : N × Ico (0 : ℝ) 1 → N × Ico (0 : ℝ) 1), ⟨IsOpenEmbedding.id, ?_⟩⟩
+/-- The identity map on the product is the canonical collar of its zero slice. -/
+theorem isCollared_prodMkLeft :
+    IsCollar ((fun x : N => (x, ⟨0, by norm_num⟩)) : N → N × Ico (0 : ℝ) 1)
+      (id : N × Ico (0 : ℝ) 1 → N × Ico (0 : ℝ) 1) := by
+  refine ⟨IsOpenEmbedding.id, ?_⟩
   intro x
   rfl
 
-namespace IsGlobalCollar
+/-- The canonical product zero slice admits a collar. -/
+theorem isCollared_prodMkLeft_exists :
+    IsCollared ((fun x : N => (x, ⟨0, by norm_num⟩)) : N → N × Ico (0 : ℝ) 1) :=
+  ⟨_, isCollared_prodMkLeft⟩
 
-variable (h : IsGlobalCollar f c)
+/-- An existential collar is precisely a map together with collar data. -/
+theorem isCollared_iff : IsCollared f ↔ ∃ c, IsCollar f c := Iff.rfl
+
+namespace IsCollar
+
+variable (h : IsCollar f c)
 include h
+
+/-- A collar witness implies that its boundary map admits a collar. -/
+theorem isCollared : IsCollared f := ⟨c, h⟩
+
+/-- The collar agrees with its boundary map on the zero slice. -/
+theorem apply_zero_eq (x : N) : c (x, ⟨0, by norm_num⟩) = f x := h.apply_zero x
 
 /-- The boundary map of a global collar is an embedding. -/
 theorem isEmbedding : IsEmbedding f := by
@@ -78,7 +91,7 @@ theorem range_subset_range : range f ⊆ range c := by
   exact ⟨(x, ⟨0, by norm_num⟩), h.apply_zero x⟩
 
 /-- The zero slice of a collar has exactly the boundary image as its range. -/
-theorem image_prod_univ_singleton_zero :
+theorem image_prod_singleton_zero :
     c '' (univ ×ˢ ({⟨0, by norm_num⟩} : Set (Ico (0 : ℝ) 1))) = range f := by
   ext y
   constructor
@@ -88,14 +101,37 @@ theorem image_prod_univ_singleton_zero :
   · rintro ⟨x, rfl⟩
     exact ⟨(x, ⟨0, by norm_num⟩), ⟨mem_univ _, mem_singleton _⟩, h.apply_zero x⟩
 
+/-- The collar map's preimage of the boundary is exactly its zero slice. -/
+@[simp] theorem preimage_range :
+    c ⁻¹' range f = univ ×ˢ ({⟨0, by norm_num⟩} : Set (Ico (0 : ℝ) 1)) := by
+  ext ⟨x, t⟩
+  constructor
+  · rintro ⟨y, hy⟩
+    have hxy : c (x, t) = c (y, ⟨0, by norm_num⟩) := hy.symm.trans (h.apply_zero y).symm
+    have hprod := h.isOpenEmbedding.injective hxy
+    exact ⟨mem_univ _, mem_singleton_iff.mpr (congrArg Prod.snd hprod)⟩
+  · rintro ⟨_, ht⟩
+    rw [mem_singleton_iff] at ht
+    change c (x, t) ∈ range f
+    have ht' : t = ⟨0, by norm_num⟩ := ht
+    rw [ht']
+    exact ⟨x, (h.apply_zero x).symm⟩
+
+/-- Reparametrizing the boundary of a collar by a homeomorphism preserves it. -/
+theorem comp_homeomorph (e : P ≃ₜ N) :
+    IsCollar (f ∘ e) (c ∘ Prod.map e id) := by
+  refine ⟨h.isOpenEmbedding.comp (e.isOpenEmbedding.prodMap IsOpenEmbedding.id), ?_⟩
+  intro x
+  simpa [Function.comp_apply] using h.apply_zero (e x)
+
 /-- Restricting a collar along an open subset of its base preserves collar data. -/
 theorem restrict {U : Set N} (hU : IsOpen U) :
-    IsGlobalCollar (f ∘ ((↑) : U → N))
+    IsCollar (f ∘ ((↑) : U → N))
       (c ∘ Prod.map ((↑) : U → N) id) := by
   refine ⟨h.isOpenEmbedding.comp (hU.isOpenEmbedding_subtypeVal.prodMap IsOpenEmbedding.id), ?_⟩
   intro x
-  exact h.apply_zero x
+  simpa only [Function.comp_apply, Prod.map_apply, id_eq] using h.apply_zero (x : N)
 
-end IsGlobalCollar
+end IsCollar
 
 end TauCeti
