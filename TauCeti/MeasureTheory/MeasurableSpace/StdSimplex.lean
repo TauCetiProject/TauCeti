@@ -7,42 +7,48 @@ module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
 # The measurable structure of the standard simplex
 
-A point of the standard simplex `StdSimplex ℝ≥0 ι` is determined by its weight vector
-`ι → ℝ≥0`. This file gives the simplex the σ-algebra induced by that weight vector,
-so that a probability vector is a measurable parameter, and records that the weight vector is
-measurable, which is what a consumer needs to compose with.
+A point of the standard simplex `StdSimplex R ι` is determined by its weight vector `ι → R`.
+This file gives the simplex the σ-algebra induced by that weight vector, for any coefficient type
+`R` carrying a measurable structure, so that a probability vector is a measurable parameter: the
+weight vector is measurable, and a map into the simplex is measurable exactly when its
+weight-vector map is.
 
-Mathlib's topology on the simplex is stated over a ring and does not apply to `ℝ≥0`; the induced
-σ-algebra needs no topology.
+Mathlib's topology on the simplex is stated over a ring and does not reach coefficients such as
+`ℝ≥0`; the induced σ-algebra needs no topology.
 
 ## Main declarations
 
 * `Convexity.StdSimplex.instMeasurableSpace` — the σ-algebra induced by `StdSimplex.weights`;
-* `Convexity.StdSimplex.measurable_weights` — the weight vector is measurable, the one fact
-  consumers need of the instance.
+* `Convexity.StdSimplex.measurable_toFun_comp_weights` — the weight vector is measurable;
+* `Convexity.StdSimplex.measurable_iff_weights` — measurability into the simplex is measurability
+  of the weight vector.
 -/
 
 public section
 
 open MeasureTheory
-open scoped NNReal
 
 namespace Convexity.StdSimplex
 
-variable {ι : Type*}
+variable {R ι : Type*} [LE R] [AddCommMonoid R] [One R] [MeasurableSpace R]
 
 /-- The σ-algebra on the standard simplex induced by its weight vector. -/
-instance instMeasurableSpace : MeasurableSpace (StdSimplex ℝ≥0 ι) :=
-  MeasurableSpace.comap (fun p : StdSimplex ℝ≥0 ι => (p.weights : ι → ℝ≥0)) inferInstance
+instance instMeasurableSpace : MeasurableSpace (StdSimplex R ι) :=
+  MeasurableSpace.comap (fun p : StdSimplex R ι => (p.weights : ι → R)) inferInstance
 
 /-- The weight vector of a simplex point is measurable. -/
 @[fun_prop]
-theorem measurable_weights : Measurable fun p : StdSimplex ℝ≥0 ι => (p.weights : ι → ℝ≥0) :=
+theorem measurable_toFun_comp_weights : Measurable fun p : StdSimplex R ι => (p.weights : ι → R) :=
   comap_measurable _
+
+/-- A map into the simplex is measurable iff its weight-vector map is. -/
+theorem measurable_iff_weights {δ : Type*} [MeasurableSpace δ] {f : δ → StdSimplex R ι} :
+    Measurable f ↔ Measurable fun x => ((f x).weights : ι → R) :=
+  measurable_comap_iff
 
 end Convexity.StdSimplex
