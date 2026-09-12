@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.ProperAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSLAction
-
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+public import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup
 
 /-!
 # Proper action of `PSL(2, ℝ)` on the upper half-plane
@@ -27,14 +26,6 @@ open scoped MatrixGroups
 open Matrix.SpecialLinearGroup UpperHalfPlane
 
 namespace TauCeti
-
-/-- The projective special linear group `PSL(2, ℝ)` is Hausdorff. -/
-instance : T2Space PSL(2, ℝ) := by
-  let _ : Finite (Subgroup.center SL(2, ℝ)) :=
-    Matrix.SpecialLinearGroup.finite_center (R := ℝ)
-  let _ : IsClosed ((Subgroup.center SL(2, ℝ) : Subgroup SL(2, ℝ)) : Set SL(2, ℝ)) :=
-    Set.toFinite _ |>.isClosed
-  infer_instance
 
 /-- The effective `PSL(2, ℝ)` action on the upper half-plane is jointly continuous. -/
 instance : ContinuousSMul PSL(2, ℝ) ℍ where
