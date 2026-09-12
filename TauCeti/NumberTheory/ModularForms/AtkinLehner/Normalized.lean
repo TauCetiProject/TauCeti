@@ -353,7 +353,7 @@ theorem normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator (hQ : Q ∥ 
     hg.normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator_self,
     hr.normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator_of_coprime hq hrq]
   refine normalizedAtkinLehnerOperator_congr _ _ ?_ k f
-  rw [mul_div_gcd_sq_eq]
+  rw [sq, ← Nat.div_mul_div_comm (Nat.gcd_dvd_left Q R) (Nat.gcd_dvd_right Q R)]
   exact Nat.mul_comm _ _
 
 /-- **The composition law** `𝒲_Q ∘ 𝒲_R = 𝒲_{Q R / gcd (Q, R) ²}` on `S_k(Γ₀(N))`. -/
@@ -379,7 +379,6 @@ namespace Nat.ExactDivisor
 /-- **The representation of the exact-divisor group on `M_k(Γ₀(N))`.** An exact divisor acts
 by its normalized Atkin–Lehner automorphism. Multiplicativity is precisely the symmetric-difference
 composition law. -/
-@[expose]
 noncomputable def normalizedAtkinLehnerRepresentation (N : ℕ) (k : ℤ) :
     Nat.ExactDivisor N →* (ModularForm ((Gamma0 N).map (mapGL ℝ)) k ≃ₗ[ℂ]
       ModularForm ((Gamma0 N).map (mapGL ℝ)) k) where
@@ -402,12 +401,11 @@ theorem normalizedAtkinLehnerRepresentation_apply (N : ℕ) (k : ℤ) (Q : Nat.E
     (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
     normalizedAtkinLehnerRepresentation N k Q f =
       Q.property.normalizedAtkinLehnerOperator k f := by
-  change Q.property.normalizedAtkinLehnerOperatorEquiv k f = _
-  exact Q.property.normalizedAtkinLehnerOperatorEquiv_apply k f
+  simp only [normalizedAtkinLehnerRepresentation, MonoidHom.coe_mk, OneHom.coe_mk,
+    Nat.IsExactDivisor.normalizedAtkinLehnerOperatorEquiv_apply]
 
 /-- **The representation of the exact-divisor group on `S_k(Γ₀(N))`.** An exact divisor acts
 by its normalized Atkin–Lehner automorphism on cusp forms. -/
-@[expose]
 noncomputable def normalizedAtkinLehnerCuspRepresentation (N : ℕ) (k : ℤ) :
     Nat.ExactDivisor N →* (CuspForm ((Gamma0 N).map (mapGL ℝ)) k ≃ₗ[ℂ]
       CuspForm ((Gamma0 N).map (mapGL ℝ)) k) where
@@ -430,8 +428,8 @@ theorem normalizedAtkinLehnerCuspRepresentation_apply (N : ℕ) (k : ℤ)
     (Q : Nat.ExactDivisor N) (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
     normalizedAtkinLehnerCuspRepresentation N k Q f =
       Q.property.normalizedAtkinLehnerOperatorCusp k f := by
-  change Q.property.normalizedAtkinLehnerOperatorCuspEquiv k f = _
-  exact Q.property.normalizedAtkinLehnerOperatorCuspEquiv_apply k f
+  simp only [normalizedAtkinLehnerCuspRepresentation, MonoidHom.coe_mk, OneHom.coe_mk,
+    Nat.IsExactDivisor.normalizedAtkinLehnerOperatorCuspEquiv_apply]
 
 end Nat.ExactDivisor
 
