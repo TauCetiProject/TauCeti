@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
-public import TauCeti.Algebra.Homology.DG.Algebra.SelfModule
+public import TauCeti.Algebra.Homology.DG.Module.Defs
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 
 /-!
@@ -85,7 +85,9 @@ subalgebra because the differential annihilates the image of the ground ring and
 rule applied componentwise, a product of cycles is a cycle. -/
 def cycles (h : IsDGAlgebra 𝒜 d) : Subalgebra R A :=
   (LinearMap.ker d).toSubalgebra h.map_one_eq_zero
-    fun _ _ ha hb => h.map_mul_eq_zero_of_map_eq_zero ha hb
+    fun _ _ ha hb => by
+      simpa only [LinearMap.mem_ker, smul_eq_mul] using
+        h.isDGLeftModule.map_smul_eq_zero_of_map_eq_zero ha hb
 
 @[simp]
 lemma mem_cycles (h : IsDGAlgebra 𝒜 d) {a : A} : a ∈ h.cycles ↔ d a = 0 := Iff.rfl
@@ -105,7 +107,9 @@ lemma mem_cyclesDeg (h : IsDGAlgebra 𝒜 d) {p : ℤ} {z : h.cycles} :
 /-- The cycles are closed under every homogeneous projection of the ambient grading. -/
 theorem isHomogeneous_cycles (h : IsDGAlgebra 𝒜 d) :
     SetLike.IsHomogeneous 𝒜 h.cycles.toSubmodule :=
-  fun p _ hz ↦ h.mem_cycles.mpr (h.map_proj_eq_zero (h.mem_cycles.mp hz) p)
+  fun p _ hz ↦ h.mem_cycles.mpr <| by
+    simpa only [GradedRing.proj_apply] using
+      h.isDGLeftModule.map_decompose_eq_zero (h.mem_cycles.mp hz) p
 
 /-- The cycles inherit the grading of the ambient differential graded algebra. -/
 noncomputable instance instGradedAlgebraCyclesDeg (h : IsDGAlgebra 𝒜 d) :
@@ -153,13 +157,15 @@ def boundaries (h : IsDGAlgebra 𝒜 d) : TwoSidedIdeal h.cycles :=
         Submodule.neg_mem (LinearMap.range d) hx)
     (fun {x y} hy => by
       obtain ⟨b, hb⟩ := hy
-      simpa only [Set.mem_ofPred_eq, Subalgebra.coe_mul, ← hb] using
-        h.mul_map_mem_range_of_map_left_eq_zero (h.mem_cycles.mp x.2) b)
+      simpa only [Set.mem_ofPred_eq, Subalgebra.coe_mul, ← hb, smul_eq_mul] using
+        h.isDGLeftModule.smul_mem_range_of_map_eq_zero (h.mem_cycles.mp x.2)
+          (LinearMap.mem_range_self d b))
     (fun {x y} hx => by
       obtain ⟨a, ha⟩ := hx
       simp only [Set.mem_ofPred_eq, Subalgebra.coe_mul]
       exact ⟨a * (y : A), by
-        rw [h.leibniz_of_map_right_eq_zero a (h.mem_cycles.mp y.2), ha]⟩)
+        simpa only [smul_eq_mul, ha] using
+          h.isDGLeftModule.leibniz_of_map_eq_zero a (h.mem_cycles.mp y.2)⟩)
 
 @[simp]
 lemma mem_boundaries (h : IsDGAlgebra 𝒜 d) {z : h.cycles} :
@@ -190,7 +196,7 @@ theorem isHomogeneous_boundaries (h : IsDGAlgebra 𝒜 d) :
   intro p z hz
   rw [TwoSidedIdeal.mem_asIdeal, h.mem_boundaries] at hz ⊢
   rw [h.coe_decompose_cyclesDeg]
-  exact h.proj_mem_range hz p
+  simpa only [GradedRing.proj_apply] using h.isDGLeftModule.decompose_mem_range hz p
 
 /-- The grading of the cohomology algebra: the degree-`p` piece consists of the classes of the
 homogeneous cycles of degree `p`. -/

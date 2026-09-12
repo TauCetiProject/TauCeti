@@ -22,9 +22,9 @@ need nothing but the unit: the differential annihilates the unit, and hence the 
 ring.  The consequences which decompose a factor into homogeneous components, namely that the
 differential commutes with the homogeneous projections of the grading, that the Leibniz rule
 extends from a homogeneous left factor to an arbitrary one against a cycle, and that a cycle times
-a boundary is a boundary, are specializations of the corresponding statements about a differential
-graded left module, and are proved as such in
-`TauCeti.Algebra.Homology.DG.Algebra.SelfModule`.
+a boundary is a boundary, are the corresponding statements about a differential graded left module,
+read for the algebra acting on itself through `TauCeti.IsDGAlgebra.isDGLeftModule` in
+`TauCeti.Algebra.Homology.DG.Module.Defs`.
 
 The grading is stored *internally*, as a family `𝒜 : ℤ → Submodule R A` of submodules of a single
 carrier `A` with Mathlib's `GradedAlgebra 𝒜`.  This is the presentation the `DGAInfinity` roadmap
@@ -52,8 +52,8 @@ its degree alone.
 This advances `TauCetiRoadmap/DGAInfinity/README.md`, Layer 1, item "DG algebras, categories,
 modules, and bimodules", specifically its first request to "define nonunital, unital, and augmented
 DG algebras on graded `k`-modules ... cycles, boundaries, and the induced graded cohomology
-algebra".  The homogeneous consequences of the axioms are in
-`TauCeti.Algebra.Homology.DG.Algebra.SelfModule`, and cycles, boundaries and the cohomology
+algebra".  The homogeneous consequences of the axioms are the differential graded left module
+statements of `TauCeti.Algebra.Homology.DG.Module.Defs`, and cycles, boundaries and the cohomology
 algebra are built on them in `TauCeti.Algebra.Homology.DG.Algebra.Cohomology`.  No formalization
 is vendored: the internal grading, its decomposition and its projections are Mathlib's
 `GradedAlgebra` API.

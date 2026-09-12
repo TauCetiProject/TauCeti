@@ -68,9 +68,10 @@ a differential graded algebra be a module over itself with no twist.
 * `TauCeti.isDGLeftModule_zero`: a graded module with zero differential over a graded algebra with
   zero differential is a differential graded left module.
 
-The specializations of these results to the algebra acting on itself are in
-`TauCeti.Algebra.Homology.DG.Algebra.SelfModule`, and the cycles, boundaries and cohomology module
-are built on this file in `TauCeti.Algebra.Homology.DG.Module.Cohomology`.
+Read through `TauCeti.IsDGAlgebra.isDGLeftModule`, these results are the homogeneous consequences
+of the algebra axioms used by `TauCeti.Algebra.Homology.DG.Algebra.Cohomology`; the cycles,
+boundaries and cohomology module of a module are built on this file in
+`TauCeti.Algebra.Homology.DG.Module.Cohomology`.
 
 ## References
 
