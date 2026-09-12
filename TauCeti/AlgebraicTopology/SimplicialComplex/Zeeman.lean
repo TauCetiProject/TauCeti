@@ -126,6 +126,17 @@ def ZeemanConjecture.{u} : Prop :=
     K.Contractible2Complex →
       PreAbstractSimplicialComplex.Collapsible K.orderedCylinder.toPreAbstractSimplicialComplex
 
+namespace ZeemanConjecture
+
+/-- A proof of Zeeman's conjecture makes the ordered cylinder on any contractible two-complex
+collapsible. -/
+theorem collapsible_orderedCylinder {ι : Type u} [LinearOrder ι] (h : ZeemanConjecture.{u})
+    (K : AbstractSimplicialComplex ι) (hK : K.Contractible2Complex) :
+    PreAbstractSimplicialComplex.Collapsible K.orderedCylinder.toPreAbstractSimplicialComplex :=
+  h ι K hK
+
+end ZeemanConjecture
+
 /-- The defining characterization of Zeeman's conjecture. -/
 theorem zeemanConjecture_iff :
     ZeemanConjecture.{u} ↔
@@ -133,6 +144,10 @@ theorem zeemanConjecture_iff :
         K.Contractible2Complex →
           PreAbstractSimplicialComplex.Collapsible
             K.orderedCylinder.toPreAbstractSimplicialComplex :=
-  Iff.rfl
+  by
+    constructor
+    · intro h ι _ K hK
+      exact h.collapsible_orderedCylinder K hK
+    · exact fun h => h
 
 end TauCeti
