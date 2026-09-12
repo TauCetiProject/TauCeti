@@ -34,13 +34,13 @@ section Top
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
 /-- The whole group, regarded as an open normal subgroup. -/
-instance : Top (OpenNormalSubgroup G) where
+instance instTopTauCeti : Top (OpenNormalSubgroup G) where
   top :=
     { toOpenSubgroup := ⊤
       isNormal' := Subgroup.normal_top }
 
 /-- The whole group is the greatest open normal subgroup. -/
-instance : OrderTop (OpenNormalSubgroup G) where
+instance instOrderTopTauCeti : OrderTop (OpenNormalSubgroup G) where
   le_top U := by
     change U.toSubgroup ≤ (⊤ : Subgroup G)
     exact le_top
