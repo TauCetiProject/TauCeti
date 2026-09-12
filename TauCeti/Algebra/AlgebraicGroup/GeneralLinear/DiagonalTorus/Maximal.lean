@@ -139,7 +139,8 @@ private theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom_commHopfAlgCat :
 
 /-- The base-change isomorphism of `GL_n` coordinate Hopf algebras carries the base-changed
 diagonal-torus ideal onto the diagonal-torus ideal over the extended base. -/
-private theorem map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal
+@[simp]
+theorem map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal
     (K : Type u) [Field K] [Algebra k K] :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (diagonalTorusDefiningIdeal k n)).map
         (coordinateHopfAlgebraBaseChangeIso k K n).hom.hom =

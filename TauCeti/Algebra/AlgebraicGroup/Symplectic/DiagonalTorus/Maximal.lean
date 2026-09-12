@@ -67,6 +67,7 @@ private theorem diagonalTorusDefiningIdeal_eq_ker :
   rw [mem_diagonalTorusDefiningIdeal, HopfIdeal.mem_kerOfSurjective]
 
 /-- The points cut out by `diagonalTorusDefiningIdeal` are exactly the diagonal-torus points. -/
+@[simp]
 theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} R) :
     CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R m)
         (diagonalTorusDefiningIdeal R m) A =

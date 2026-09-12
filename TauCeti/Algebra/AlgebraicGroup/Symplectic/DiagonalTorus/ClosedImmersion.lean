@@ -144,6 +144,7 @@ private theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom_commHopfAlgCat :
 
 /-- The base-change isomorphism of symplectic coordinate Hopf algebras carries the base-changed
 diagonal-torus ideal onto the diagonal-torus ideal over the extended base. -/
+@[simp]
 theorem map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal
     (K : Type u) [CommRing K] [Algebra R K] :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (diagonalTorusDefiningIdeal R m)).map
