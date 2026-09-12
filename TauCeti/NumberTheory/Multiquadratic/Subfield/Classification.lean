@@ -93,7 +93,7 @@ variable (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
 /-- **The subset-product quadratic subfield of `M` attached to a nonempty subset.** Under
 square-class independence, each nonempty subset `S` of the index type names the quadratic subfield
 `K(∏_{i ∈ S} root i)` of `M = K(rootᵢ : i)`. -/
-@[expose] def quadraticSubfieldOfFinset (S : {S : Finset ι // S.Nonempty}) :
+def quadraticSubfieldOfFinset (S : {S : Finset ι // S.Nonempty}) :
     {F : IntermediateField K (adjoin K (Set.range root)) // Module.finrank K F = 2} :=
   ⟨adjoin K {prodRootMem (K := K) root S.1}, finrank_adjoin_prodRootMem hroot (hindep S.1 S.2)⟩
 
@@ -101,7 +101,7 @@ square-class independence, each nonempty subset `S` of the index type names the 
 `K(∏_{i ∈ S} root i)`. -/
 @[simp] theorem quadraticSubfieldOfFinset_val (S : {S : Finset ι // S.Nonempty}) :
     (quadraticSubfieldOfFinset hroot hindep S : IntermediateField K (adjoin K (Set.range root)))
-      = adjoin K {prodRootMem (K := K) root S.1} := rfl
+      = adjoin K {prodRootMem (K := K) root S.1} := (rfl)
 
 include hroot hindep in
 /-- **Distinct nonempty subsets give distinct quadratic subfields.** The subset-product assignment
