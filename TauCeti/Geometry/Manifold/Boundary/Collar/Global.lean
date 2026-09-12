@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Instances.RealVectorSpace
+public import Mathlib.Topology.Instances.Real.Lemmas
+public import Mathlib.Topology.Constructions.SumProd
+public import Mathlib.Topology.Maps.Basic
 import Mathlib.Tactic.NormNum
 
 /-!
