@@ -80,6 +80,12 @@ open Classical in
 private def pairCellMap (i j : ι) (k : ι) : Bool :=
   decide (k = i ∨ k = j)
 
+open scoped Classical in
+private theorem filter_pairCellMap_eq_pair (i j : ι) :
+    Finset.univ.filter (fun x ↦ pairCellMap i j x = true) = {i, j} := by
+  ext x
+  simp [pairCellMap]
+
 omit [Fintype ι] in
 private theorem funOnFinite_map_pairCellMap_apply [Finite ι]
     (i j : ι) (hij : i ≠ j) (k : ι → ℕ) :
@@ -87,10 +93,7 @@ private theorem funOnFinite_map_pairCellMap_apply [Finite ι]
   classical
   let _ := Fintype.ofFinite ι
   rw [FunOnFinite.map_apply_apply]
-  have hfilter : Finset.univ.filter (fun x ↦ pairCellMap i j x = true) = {i, j} := by
-    ext x
-    simp [pairCellMap]
-  rw [hfilter]
+  rw [filter_pairCellMap_eq_pair]
   simp [hij]
 
 omit [Fintype ι] in
@@ -102,10 +105,7 @@ private theorem weights_map_pairCellMap_apply [Finite ι]
   let _ := Fintype.ofFinite ι
   rw [StdSimplex.weights_map, Finsupp.mapDomain_fintype]
   simp only [Finsupp.coe_finsetSum, Finset.sum_apply, Finsupp.single_apply]
-  have hfilter : Finset.univ.filter (fun x ↦ pairCellMap i j x = true) = {i, j} := by
-    ext x
-    simp [pairCellMap]
-  rw [← Finset.sum_filter, hfilter]
+  rw [← Finset.sum_filter, filter_pairCellMap_eq_pair]
   simp [hij]
 
 private theorem hasLaw_multinomial_add_apply (n : ℕ) (p : StdSimplex NNReal ι)
@@ -177,6 +177,7 @@ theorem variance_eval_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
   ring
 
 /-- Distinct coordinates of the Euclidean multinomial law have covariance `-n pᵢ pⱼ`. -/
+@[simp]
 theorem covariance_eval_map_multinomialToEuclidean_multinomialMeasure_of_ne (n : ℕ)
     (p : StdSimplex NNReal ι) {i j : ι} (hij : i ≠ j) :
     cov[fun z : EuclideanSpace ℝ ι ↦ z i, fun z ↦ z j;
@@ -200,8 +201,10 @@ theorem covariance_eval_map_multinomialToEuclidean_multinomialMeasure_of_ne (n :
   push_cast at hadd
   nlinarith
 
+open scoped Classical in
 /-- Every entry of the Euclidean multinomial covariance is `n (pᵢ δᵢⱼ - pᵢ pⱼ)`. -/
-theorem covariance_eval_map_multinomialToEuclidean_multinomialMeasure [DecidableEq ι]
+@[simp]
+theorem covariance_eval_map_multinomialToEuclidean_multinomialMeasure
     (n : ℕ) (p : StdSimplex NNReal ι) (i j : ι) :
     cov[fun z : EuclideanSpace ℝ ι ↦ z i, fun z ↦ z j;
       (multinomialMeasure n p).map multinomialToEuclidean] =
@@ -217,10 +220,11 @@ theorem covariance_eval_map_multinomialToEuclidean_multinomialMeasure [Decidable
     simp [Matrix.diagonal_apply_ne _ hij]
     ring
 
+open scoped Classical in
 /-- The covariance matrix of the Euclidean multinomial law is
 `n (diag(p) - p pᵀ)`. -/
 @[simp]
-theorem covMatrix_map_multinomialToEuclidean_multinomialMeasure [DecidableEq ι]
+theorem covMatrix_map_multinomialToEuclidean_multinomialMeasure
     (n : ℕ) (p : StdSimplex NNReal ι) :
     covMatrix ((multinomialMeasure n p).map multinomialToEuclidean) =
       (n : ℝ) • (Matrix.diagonal (fun i ↦ (p.weights i : ℝ)) -
@@ -229,9 +233,11 @@ theorem covMatrix_map_multinomialToEuclidean_multinomialMeasure [DecidableEq ι]
   rw [covMatrix_apply, covariance_eval_map_multinomialToEuclidean_multinomialMeasure]
   simp only [Matrix.smul_apply, Matrix.sub_apply, Matrix.vecMulVec_apply, smul_eq_mul]
 
+open scoped Classical in
 /-- The covariance bilinear form of the Euclidean multinomial law is represented by
 `n (diag(p) - p pᵀ)`. -/
-theorem covarianceBilin_map_multinomialToEuclidean_multinomialMeasure [DecidableEq ι]
+@[simp]
+theorem covarianceBilin_map_multinomialToEuclidean_multinomialMeasure
     (n : ℕ) (p : StdSimplex NNReal ι) (x y : EuclideanSpace ℝ ι) :
     covarianceBilin ((multinomialMeasure n p).map multinomialToEuclidean) x y =
       ⟪x, ((n : ℝ) • (Matrix.diagonal (fun i ↦ (p.weights i : ℝ)) -
