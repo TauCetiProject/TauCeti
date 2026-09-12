@@ -69,8 +69,6 @@ the symplectic group scheme or the pinned simply connected Chevalley--Demazure g
   the entrywise Frobenius action.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate III, for the numbering of the
   type-`C` diagram that the root subgroups below are indexed by.
-* The Frobenius API and proof plan are adapted from the `TauCeti.RankTwoBLieIndex.frobenius`
-  block in `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB2.lean`.
 -/
 
 -- The signatures realized here follow the human-authored formal skeleton
@@ -170,6 +168,9 @@ theorem rootGeneratorWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.1.rank)
   simp only [DynkinType.root_simpleIndex]
   rw [d.dynkinType_cartanMatrix_apply, d.cartanMatrix_C_carrierNode]
 
+-- The Frobenius API and proof plan below are adapted from the
+-- `TauCeti.RankTwoBLieIndex.frobenius` block in
+-- `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB2.lean`.
 /-! ## Frobenius on the carrier -/
 
 /-- **The `q`-power Frobenius of the standard symplectic carrier attached to a validated type-`C`
