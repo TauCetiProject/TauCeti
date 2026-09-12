@@ -136,13 +136,15 @@ instance : Category (FiniteDVRExtension R K) where
   comp_id := Hom.comp_id
   assoc := Hom.assoc
 
-/-- A finite separable field tower between two chosen DVR extensions.
-
-The local-ring maps are supplied separately by `Hom`; this structure records the field-level
-extension needed to apply tower theorems for finite dimensionality and separability. -/
+/-- A finite separable field tower between two chosen DVR extensions, together with its compatible
+map of chosen places. -/
 structure Tower (E F : FiniteDVRExtension R K) where
+  /-- The compatible map between the chosen extensions. -/
+  hom : Hom E F
   /-- The algebra structure of the upper extension field over the lower one. -/
   [fieldAlgebra : Algebra E.extensionField F.extensionField]
+  /-- The field algebra map is the field component of `hom`. -/
+  field_algebra : algebraMap E.extensionField F.extensionField = hom.field.toRingHom
   /-- The scalar actions of `K` through `E` and directly on `F` agree. -/
   [fieldTower : IsScalarTower K E.extensionField F.extensionField]
   /-- The upper field is finite-dimensional over the lower one. -/
@@ -154,21 +156,44 @@ namespace Tower
 
 variable {E F : FiniteDVRExtension R K}
 
-/-- Finiteness is transitive through a finite field tower. -/
-lemma finite_over_base (T : Tower E F) : FiniteDimensional K F.extensionField := by
-  let _ := T.fieldAlgebra
-  let _ := T.fieldTower
-  let _ := T.fieldFinite
-  let _ := T.fieldSeparable
-  exact FiniteDimensional.trans K E.extensionField F.extensionField
+variable {G : FiniteDVRExtension R K}
 
-/-- Separability is transitive through a finite separable field tower. -/
-lemma separable_over_base (T : Tower E F) : Algebra.IsSeparable K F.extensionField := by
-  let _ := T.fieldAlgebra
-  let _ := T.fieldTower
-  let _ := T.fieldFinite
-  let _ := T.fieldSeparable
-  exact Algebra.IsSeparable.trans K E.extensionField F.extensionField
+/-- Compose finite separable towers, including their compatible maps of chosen places. -/
+def comp (T : Tower E F) (U : Tower F G) : Tower E G := by
+  letI : Algebra E.extensionField F.extensionField := T.fieldAlgebra
+  letI : Algebra F.extensionField G.extensionField := U.fieldAlgebra
+  letI : IsScalarTower K E.extensionField F.extensionField := T.fieldTower
+  letI : IsScalarTower K F.extensionField G.extensionField := U.fieldTower
+  letI : Algebra E.extensionField G.extensionField :=
+    (U.hom.field.toRingHom.comp T.hom.field.toRingHom).toAlgebra
+  letI : IsScalarTower E.extensionField F.extensionField G.extensionField :=
+    IsScalarTower.of_algebraMap_eq fun x => by
+      rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, ← U.field_algebra,
+        ← T.field_algebra]
+  letI : IsScalarTower K E.extensionField G.extensionField :=
+    IsScalarTower.of_algebraMap_eq fun x => by
+      calc
+        algebraMap K G.extensionField x =
+            algebraMap F.extensionField G.extensionField (algebraMap K F.extensionField x) :=
+          IsScalarTower.algebraMap_apply K F.extensionField G.extensionField x
+        _ = U.hom.field (algebraMap K F.extensionField x) := by
+          rw [U.field_algebra]
+          rfl
+        _ = U.hom.field (T.hom.field (algebraMap K E.extensionField x)) := by
+          rw [T.hom.field.commutes]
+        _ = algebraMap E.extensionField G.extensionField (algebraMap K E.extensionField x) := by
+          rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply]
+          rfl
+  letI : FiniteDimensional E.extensionField F.extensionField := T.fieldFinite
+  letI : FiniteDimensional F.extensionField G.extensionField := U.fieldFinite
+  letI : Algebra.IsSeparable E.extensionField F.extensionField := T.fieldSeparable
+  letI : Algebra.IsSeparable F.extensionField G.extensionField := U.fieldSeparable
+  letI : FiniteDimensional E.extensionField G.extensionField :=
+    FiniteDimensional.trans E.extensionField F.extensionField G.extensionField
+  letI : Algebra.IsSeparable E.extensionField G.extensionField :=
+    Algebra.IsSeparable.trans E.extensionField F.extensionField G.extensionField
+  refine ⟨Hom.comp T.hom U.hom, ?_⟩
+  rfl
 
 end Tower
 
