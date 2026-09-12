@@ -37,8 +37,8 @@ along `algebraMap R A`, so there is only one action of `R` in play.
 The handedness is part of the name: this file defines the left interface and says nothing about
 the right one, whose Leibniz rule `dM (x • a) = dM x • a + (-1) ^ |x| • (x • d a)` is a separate
 axiom system, on an `Aᵐᵒᵖ`-module.  Turning one into the other needs the sign-twisted graded
-opposite `a *ᵒᵖ b = (-1) ^ (|a| * |b|) • (b * a)`, which neither Mathlib nor this repository has.
-The unsigned `MulOpposite` will not do: with `a *ᵒᵖ b = b * a` the Leibniz rule for `*ᵒᵖ` asks for
+opposite `a *ᵒᵖ b = (-1) ^ (|a| * |b|) • (b * a)`.  The unsigned `MulOpposite` will not do:
+with `a *ᵒᵖ b = b * a` the Leibniz rule for `*ᵒᵖ` asks for
 `d (b * a) = b * d a + (-1) ^ |a| • (d b * a)`, while the rule in `A` gives
 `d (b * a) = d b * a + (-1) ^ |b| • (b * d a)`.  So no reduction between the two handednesses is
 claimed here.  The left handedness is the one Mathlib's `Module A M` gives directly, and the one
@@ -131,7 +131,8 @@ theorem decompose_mem_range (hM : IsDGLeftModule h ℳ dM) {x : M} (hx : x ∈ L
   obtain ⟨y, rfl⟩ := hx
   refine ⟨(decompose ℳ y (p - 1) : M), ?_⟩
   have key := hM.map_decompose (p - 1) y
-  rwa [show p - 1 + 1 = p by ring] at key
+  rw [sub_add_cancel p (1 : ℤ)] at key
+  exact key
 
 /-- The homogeneous components of a cycle are cycles. -/
 theorem map_decompose_eq_zero (hM : IsDGLeftModule h ℳ dM) {x : M} (hx : dM x = 0) (p : ℤ) :

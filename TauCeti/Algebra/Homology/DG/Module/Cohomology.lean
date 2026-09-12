@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Homology.DG.Algebra.Cohomology
 public import TauCeti.Algebra.Homology.DG.Module.Defs
 
@@ -133,9 +134,10 @@ theorem isTorsionBySet_boundaries (hM : IsDGLeftModule h ℳ dM) :
   rw [← Submodule.Quotient.mk_smul, hM.quotientMk_eq_zero_iff, mem_boundaries]
   obtain ⟨b, hb⟩ := (h.mem_boundaries.mp (TwoSidedIdeal.mem_asIdeal.mp a.2))
   have hz : dM (z : M) = 0 := hM.mem_cycles.mp z.2
-  have hval : ((a : h.cycles) • z : hM.cycles) = ((a : h.cycles) : A) • (z : M) := rfl
-  rw [hval, ← hb]
-  exact hM.map_smul_mem_range_of_map_eq_zero b hz
+  have hrange := hM.map_smul_mem_range_of_map_eq_zero b hz
+  rw [hb] at hrange
+  rw [Submodule.coe_smul]
+  exact hrange
 
 /-- **The cohomology of a differential graded left module is a module over the cohomology algebra.**
 The action of a cycle of `A` on a cycle of `M` descends, because the boundaries of `A` annihilate
@@ -161,53 +163,44 @@ def cyclesDeg (hM : IsDGLeftModule h ℳ dM) (p : ℤ) : Submodule R hM.cycles :
 lemma mem_cyclesDeg (hM : IsDGLeftModule h ℳ dM) {p : ℤ} {z : hM.cycles} :
     z ∈ hM.cyclesDeg p ↔ (z : M) ∈ ℳ p := Iff.rfl
 
-/-- Every cycle is a sum of homogeneous cycles: the homogeneous components of a cycle are cycles,
-and they add up to it. -/
-theorem iSup_cyclesDeg_eq_top (hM : IsDGLeftModule h ℳ dM) : ⨆ p : ℤ, hM.cyclesDeg p = ⊤ := by
-  classical
-  refine eq_top_iff.mpr fun z _ => ?_
-  have hz : dM (z : M) = 0 := hM.mem_cycles.mp z.2
-  have hmem : ∀ p : ℤ, (decompose ℳ (z : M) p : M) ∈ hM.cycles :=
-    fun p => hM.mem_cycles.mpr (hM.map_decompose_eq_zero hz p)
-  have hsum : z = ∑ p ∈ (decompose ℳ (z : M)).support,
-      (⟨(decompose ℳ (z : M) p : M), hmem p⟩ : hM.cycles) := by
-    refine Subtype.ext ?_
-    simpa [AddSubmonoidClass.coe_finsetSum] using
-      (DirectSum.sum_support_decompose ℳ (z : M)).symm
-  rw [hsum]
-  exact Submodule.sum_mem _ fun p _ =>
-    Submodule.mem_iSup_of_mem p (SetLike.coe_mem (decompose ℳ (z : M) p))
-
-/-- The homogeneous cycle spaces are independent, as subspaces of the independent grading of the
-ambient module. -/
-theorem iSupIndep_cyclesDeg (hM : IsDGLeftModule h ℳ dM) : iSupIndep hM.cyclesDeg := by
-  intro p
-  rw [Submodule.disjoint_def]
-  rintro z hz hz'
-  have hle : Submodule.map ((hM.cycles.subtype).restrictScalars R)
-      (⨆ (q : ℤ) (_ : q ≠ p), hM.cyclesDeg q) ≤ ⨆ (q : ℤ) (_ : q ≠ p), ℳ q := by
-    rw [Submodule.map_iSup]
-    refine iSup_le fun q => ?_
-    rw [Submodule.map_iSup]
-    exact iSup_le fun hq => le_iSup_of_le q (le_iSup_of_le hq (Submodule.map_comap_le _ _))
-  have hz'prop : (z : M) ∈ ⨆ (q : ℤ) (_ : q ≠ p), ℳ q :=
-    hle (Submodule.mem_map_of_mem hz')
-  have hambient := (DirectSum.Decomposition.isInternal ℳ).submodule_iSupIndep p
-  rw [Submodule.disjoint_def] at hambient
-  have hz0 : (z : M) ∈ (⊥ : Submodule R M) :=
-    hambient (z : M) (hM.mem_cyclesDeg.mp hz) hz'prop
-  apply Subtype.ext
-  simpa only [ZeroMemClass.coe_zero, Submodule.mem_bot] using hz0
-
-/-- The homogeneous cycle spaces form an internal direct sum. -/
-theorem isInternal_cyclesDeg (hM : IsDGLeftModule h ℳ dM) : DirectSum.IsInternal hM.cyclesDeg :=
-  DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top hM.iSupIndep_cyclesDeg
-    hM.iSup_cyclesDeg_eq_top
+/-- The cycles are closed under every homogeneous projection of the ambient grading. -/
+theorem isHomogeneous_cycles (hM : IsDGLeftModule h ℳ dM) :
+    SetLike.IsHomogeneous ℳ hM.cycles :=
+  fun p _ hz ↦ hM.mem_cycles.mpr (hM.map_decompose_eq_zero (hM.mem_cycles.mp hz) p)
 
 /-- The cycles inherit the grading of the ambient differential graded left module. -/
 noncomputable instance instDecompositionCyclesDeg (hM : IsDGLeftModule h ℳ dM) :
     DirectSum.Decomposition hM.cyclesDeg :=
-  hM.isInternal_cyclesDeg.chooseDecomposition
+  DirectSum.Decomposition.restrict ℳ hM.cyclesDeg
+    ((hM.cycles.subtype).restrictScalars R) Subtype.val_injective
+    (fun _ _ ↦ hM.mem_cyclesDeg) fun p z ↦
+      ⟨⟨(decompose ℳ (z : M) p : M), hM.isHomogeneous_cycles p z.2⟩, rfl⟩
+
+/-- Every cycle is a sum of homogeneous cycles: the homogeneous components of a cycle are cycles,
+and they add up to it. -/
+theorem iSup_cyclesDeg_eq_top (hM : IsDGLeftModule h ℳ dM) : ⨆ p : ℤ, hM.cyclesDeg p = ⊤ :=
+  (DirectSum.Decomposition.isInternal hM.cyclesDeg).submodule_iSup_eq_top
+
+/-- The homogeneous cycle spaces are independent, as subspaces of the independent grading of the
+ambient module. -/
+theorem iSupIndep_cyclesDeg (hM : IsDGLeftModule h ℳ dM) : iSupIndep hM.cyclesDeg :=
+  (DirectSum.Decomposition.isInternal hM.cyclesDeg).submodule_iSupIndep
+
+/-- The homogeneous cycle spaces form an internal direct sum. -/
+theorem isInternal_cyclesDeg (hM : IsDGLeftModule h ℳ dM) : DirectSum.IsInternal hM.cyclesDeg :=
+  DirectSum.Decomposition.isInternal hM.cyclesDeg
+
+/-- Under the inherited grading of the cycles, homogeneous projection agrees with homogeneous
+projection in the ambient module. -/
+@[simp]
+theorem coe_decompose_cyclesDeg (hM : IsDGLeftModule h ℳ dM) (p : ℤ) (z : hM.cycles) :
+    ((decompose hM.cyclesDeg z p : hM.cycles) : M) =
+      (decompose ℳ (z : M) p : M) := by
+  change ((hM.cycles.subtype).restrictScalars R)
+      (decompose hM.cyclesDeg z p : hM.cycles) =
+    (decompose ℳ (((hM.cycles.subtype).restrictScalars R) z) p : M)
+  exact DirectSum.map_decompose_restrict ℳ hM.cyclesDeg
+    ((hM.cycles.subtype).restrictScalars R) (fun _ _ ↦ hM.mem_cyclesDeg) p z
 
 /-- **The cycles of a differential graded left module are a graded module over the graded algebra of
 cycles**: a homogeneous cycle of degree `p` carries a homogeneous cycle of degree `q` to one of
