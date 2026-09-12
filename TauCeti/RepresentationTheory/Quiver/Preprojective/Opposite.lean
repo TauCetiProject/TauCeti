@@ -47,7 +47,7 @@ universe u v w
 
 section Backtrack
 
-variable (k : Type w) {Q : Type u} [CommSemiring k] [Quiver.{v + 1} Q] [Finite Q]
+variable (k : Type w) {Q : Type u} [CommSemiring k] [Quiver.{v} Q] [Finite Q]
 
 /-- Reversal fixes the head backtrack of an original arrow, up to passage to the opposite path
 algebra. -/
@@ -81,7 +81,7 @@ end Backtrack
 
 section Relator
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- **Path reversal preserves every gauged preprojective relator**, up to passage to the opposite
@@ -119,7 +119,7 @@ end Relator
 
 section Quotient
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)] (ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → k)
 
 /-- Reversal followed by the opposite of the gauged preprojective quotient map. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 
 /-!
@@ -24,12 +25,24 @@ one convenient witness that every graph admits an orientation.
 * `TauCeti.DoubledQuiver.Orientation`: a choice of one dart from each reversed pair.
 * `TauCeti.DoubledQuiver.Orientation.ofLinearOrder`: orient every edge from its smaller endpoint
   to its larger endpoint.
+* `TauCeti.DoubledQuiver.Orientation.IsSourceSink`: the property that every vertex is a source or
+  a sink.
+* `TauCeti.DoubledQuiver.Orientation.ofBipartition`: the source--sink orientation attached to a
+  bipartition, directing every edge out of its endpoint in the chosen part.
 * `TauCeti.DoubledQuiver.OrientedQuiver`: the quiver of the chosen darts.
 * `TauCeti.DoubledQuiver.OrientedQuiver.homEquiv`: its arrows over a pair of graph vertices are
   exactly the adjacency proofs whose dart the orientation selects.
 * `TauCeti.DoubledQuiver.symmetrifyMap`: the canonical prefunctor from the symmetrification of an
   oriented graph to its doubled quiver.
 * `TauCeti.DoubledQuiver.unsymmetrifyMap`: its inverse prefunctor.
+
+## Main results
+
+* `TauCeti.DoubledQuiver.Orientation.isSourceSink_iff`: the defining condition of a source--sink
+  orientation.
+* `TauCeti.DoubledQuiver.Orientation.isSourceSink_ofBipartition` and
+  `TauCeti.DoubledQuiver.exists_isSourceSink_of_isBipartite`: a bipartite graph admits a
+  source--sink orientation.
 
 ## References
 
@@ -103,7 +116,65 @@ theorem mem_ofLinearOrder_iff [LinearOrder V] (d : G.Dart) :
     d ∈ ofLinearOrder G ↔ d.fst < d.snd :=
   Iff.rfl
 
+/-- An orientation is **source--sink** when every vertex is a source or a sink: at each vertex
+either every incident edge is oriented away from it, or every incident edge is oriented towards
+it. Such an orientation exists exactly for a bipartite graph. -/
+def IsSourceSink (o : Orientation G) : Prop :=
+  ∀ v : V, (∀ ⦃w : V⦄ (h : G.Adj v w), (⟨(v, w), h⟩ : G.Dart) ∈ o) ∨
+    ∀ ⦃w : V⦄ (h : G.Adj v w), (⟨(v, w), h⟩ : G.Dart) ∉ o
+
+/-- The defining condition of a source--sink orientation, exposed for use outside this module. -/
+theorem isSourceSink_iff (o : Orientation G) :
+    o.IsSourceSink ↔ ∀ v : V, (∀ ⦃w : V⦄ (h : G.Adj v w), (⟨(v, w), h⟩ : G.Dart) ∈ o) ∨
+      ∀ ⦃w : V⦄ (h : G.Adj v w), (⟨(v, w), h⟩ : G.Dart) ∉ o := Iff.rfl
+
+/-- The **source--sink orientation of a bipartition**: every edge is oriented from its endpoint
+in `s` to its endpoint outside `s`. The hypothesis says that `s` meets every edge in exactly one
+endpoint. -/
+def ofBipartition (s : Set V) (hs : ∀ ⦃i j : V⦄, G.Adj i j → (i ∈ s ↔ j ∉ s)) : Orientation G where
+  carrier := {d | d.fst ∈ s}
+  symm_mem_iff_not_mem d := by
+    -- Reversing a dart swaps its endpoints, so the condition to check is that exactly one of the
+    -- two endpoints of an edge lies in `s`.
+    change d.snd ∈ s ↔ d.fst ∉ s
+    refine ⟨fun hsnd hfst => (hs d.adj).1 hfst hsnd, fun hfst => ?_⟩
+    by_contra hsnd
+    exact hfst ((hs d.adj).2 hsnd)
+
+/-- A dart belongs to the orientation of a bipartition exactly when it leaves the chosen part. -/
+@[simp]
+theorem mem_ofBipartition_iff (s : Set V) (hs : ∀ ⦃i j : V⦄, G.Adj i j → (i ∈ s ↔ j ∉ s))
+    (d : G.Dart) : d ∈ ofBipartition G s hs ↔ d.fst ∈ s :=
+  Iff.rfl
+
+/-- **The orientation of a bipartition is source--sink**: a vertex of the chosen part is a source,
+and a vertex outside it is a sink. -/
+theorem isSourceSink_ofBipartition (s : Set V) (hs : ∀ ⦃i j : V⦄, G.Adj i j → (i ∈ s ↔ j ∉ s)) :
+    (ofBipartition G s hs).IsSourceSink := by
+  intro v
+  by_cases hv : v ∈ s
+  · exact Or.inl fun _ _ => hv
+  · exact Or.inr fun _ _ hmem => hv hmem
+
+/-- The source--sink orientation attached to one of Mathlib's bipartitions. -/
+def ofIsBipartiteWith {s t : Set V} (h : G.IsBipartiteWith s t) : Orientation G :=
+  ofBipartition G s fun i j hij => by
+    rcases h.mem_of_adj hij with ⟨his, hjt⟩ | ⟨hit, hjs⟩
+    · exact iff_of_true his (Set.disjoint_left.1 h.disjoint · hjt)
+    · exact iff_of_false (Set.disjoint_left.1 h.disjoint · hit) (not_not_intro hjs)
+
+/-- The orientation attached to a bipartition of Mathlib is source--sink. -/
+theorem isSourceSink_ofIsBipartiteWith {s t : Set V} (h : G.IsBipartiteWith s t) :
+    (ofIsBipartiteWith G h).IsSourceSink :=
+  isSourceSink_ofBipartition G s _
+
 end Orientation
+
+/-- **A bipartite graph admits a source--sink orientation.** -/
+theorem exists_isSourceSink_of_isBipartite (h : G.IsBipartite) :
+    ∃ o : Orientation G, o.IsSourceSink := by
+  obtain ⟨s, t, hst⟩ := G.isBipartite_iff_exists_isBipartiteWith.1 h
+  exact ⟨Orientation.ofIsBipartiteWith G hst, Orientation.isSourceSink_ofIsBipartiteWith G hst⟩
 
 /-- The quiver obtained by retaining only the darts selected by an orientation. -/
 @[expose]
@@ -146,6 +217,18 @@ instance [Finite V] : Finite (OrientedQuiver G o) :=
 instance (i j : OrientedQuiver G o) : Finite (i ⟶ j) :=
   Finite.of_subsingleton
 
+/-- An oriented quiver of a finite graph is a finite quiver. The path-algebra API indexes its sums
+by `Fintype`, so the instance is recorded here rather than left to each caller. -/
+instance [Fintype V] : Fintype (OrientedQuiver G o) :=
+  Fintype.ofEquiv V (vertexEquiv G o)
+
+/-- The arrows of an oriented quiver over a fixed pair of vertices form a finite type. Deciding
+whether the orientation selects a given dart would need a further decidability hypothesis, and
+everything built on path algebras is noncomputable anyway, so the enumeration is taken from the
+`Finite` instance. -/
+noncomputable instance (i j : OrientedQuiver G o) : Fintype (i ⟶ j) :=
+  Fintype.ofFinite _
+
 /-- The oriented-quiver arrow corresponding to a chosen dart. -/
 def arrow {i j : V} (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o) :
     vertex G o i ⟶ vertex G o j :=
@@ -180,6 +263,12 @@ theorem homEquiv_symm_apply {i j : V} (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G
 theorem exists_eq_arrow {i j : V} (e : vertex G o i ⟶ vertex G o j) :
     ∃ (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o), e = arrow G o h ho :=
   ⟨(homEquiv G o i j e).1, (homEquiv G o i j e).2, Subsingleton.elim _ _⟩
+
+/-- There is no arrow from `i` to `j` when the orientation selects no dart from `i` to `j`. This
+covers both a nonadjacent pair and an edge oriented the other way. -/
+theorem isEmpty_hom {i j : V} (h : ∀ hij : G.Adj i j, (⟨(i, j), hij⟩ : G.Dart) ∉ o) :
+    IsEmpty (vertex G o i ⟶ vertex G o j) :=
+  ⟨fun e => h (homEquiv G o i j e).1 (homEquiv G o i j e).2⟩
 
 /-- Forgetting the choice of orientation includes the oriented quiver into the doubled quiver. -/
 def forget : OrientedQuiver G o ⥤q DoubledQuiver G where
