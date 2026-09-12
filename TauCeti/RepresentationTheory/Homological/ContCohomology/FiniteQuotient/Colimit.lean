@@ -68,6 +68,11 @@ normal subgroups a neighbourhood basis of `1`.
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Cor. 6.5.6(a).
 -/
 
+-- Provenance: the human-authored roadmap `TauCetiRoadmap/ProfiniteCohomology`, whose `README.md`
+-- section "the finite-quotient colimit description" asks for the colimit theorem as universality
+-- of the named comparison cocone rather than as a bare isomorphism, and whose `Suggested.lean`
+-- writes down the signatures of the comparison, the cocone and the colimit followed here.
+
 public section
 
 namespace TauCeti.ContCohomology
