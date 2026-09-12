@@ -177,7 +177,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_derived
 /-- The structural morphism of the derived group scheme of a connected finite-type affine
 group over an algebraically closed field is geometrically connected. -/
 instance geometricallyConnected_derivedGroupScheme
-    (H : _root_.CommHopfAlgCat.{u} k) [Algebra.FiniteType k H]
+    {H : _root_.CommHopfAlgCat.{u} k} [Algebra.FiniteType k H]
     [ConnectedSpace (PrimeSpectrum H)] :
     AlgebraicGeometry.GeometricallyConnected (derivedGroupScheme H).X.hom :=
   (geometricallyConnectedCommHopfAlg_iff_geometricallyConnected_hopfSpec k
