@@ -12,9 +12,14 @@ public import TauCeti.Topology.Homotopy.Monodromy.Basic
 # Finite covering spaces
 
 A covering space is *finite* when all of its fibres are finite. This file records that condition
-as a property of an object of `TopCat / X`, names the resulting full subcategory
-`TauCeti.FiniteCoveringSpace X`, and gives it the same constructor API that
-`TauCeti.CoveringSpace` and `TauCeti.ConnectedCoveringSpace` carry.
+as a property of an object of `TopCat / X` and names the resulting full subcategory
+`TauCeti.FiniteCoveringSpace X`, as an instance of `TauCeti.CoveringSpace.FullSubcategory`.
+
+That general type carries the shared API, which is used here rather than restated; the module
+docstring of `TauCeti.Topology.Covering.Category` says how its members are named. What this file
+adds is the finiteness property, the constructor family and the inclusion functor — which are
+given again because they pin `P` down to finiteness — and
+`TauCeti.FiniteCoveringSpace.finite_fiber`, recording finiteness of every fibre as an instance.
 
 Finiteness of all fibres is one condition rather than infinitely many as soon as the base is path
 connected: monodromy along a path is a bijection between the fibres over its endpoints, so the
@@ -32,8 +37,10 @@ functor lands in `FintypeCat`.
   object of `TopCat / X` that all fibres of its structure morphism are finite, and its
   membership lemma.
 * `TauCeti.FiniteCoveringSpace`: finite covering spaces over `X`.
-* `TauCeti.FiniteCoveringSpace.mk`, `proj`, `homMk`, `isoMk`, `forget`,
-  `fullyFaithfulForget`, `isIso_iff_isHomeomorph_hom_left`: the constructor API.
+* `TauCeti.FiniteCoveringSpace.mk`, `mk_coe`, `mk_proj`, `forget_obj_mk` and `forget`: the
+  constructor, its computation lemmas and the inclusion into all covering spaces. The rest of the
+  API is `TauCeti.CoveringSpace.FullSubcategory`'s.
+* `TauCeti.FiniteCoveringSpace.finite_fiber`: every fibre of a finite covering space is finite.
 * `TauCeti.hasFiniteFibers_of_finite_fiber`: over a path-connected base, one finite fibre makes
   all fibres finite.
 -/
@@ -77,7 +84,7 @@ end Over
 /-- The category of finite covering spaces over `X`: covering maps to `X` all of whose fibres are
 finite, and continuous maps commuting with the projections to `X`. -/
 abbrev FiniteCoveringSpace (X : TopCat.{u}) : Type _ :=
-  (Over.isCoveringMap X ⊓ Over.hasFiniteFibers X).FullSubcategory
+  CoveringSpace.FullSubcategory X (Over.hasFiniteFibers X)
 
 namespace FiniteCoveringSpace
 
@@ -85,109 +92,36 @@ variable {X : TopCat.{u}}
 
 /-- The fully faithful inclusion of finite covering spaces into all covering spaces. -/
 abbrev forget (X : TopCat.{u}) : FiniteCoveringSpace X ⥤ CoveringSpace X :=
-  ObjectProperty.ιOfLE inf_le_left
-
-/-- The functor taking a finite covering space to its total space. -/
-abbrev totalSpace (X : TopCat.{u}) : FiniteCoveringSpace X ⥤ TopCat :=
-  forget X ⋙ CoveringSpace.totalSpace X
-
-/-- A finite covering space over `X` coerces to its total space. -/
-instance : CoeOut (FiniteCoveringSpace X) TopCat where
-  coe p := p.obj.left
+  CoveringSpace.FullSubcategory.forget X _
 
 /-- Construct a finite covering space from a covering map with finite fibres. -/
 def mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
-    (hfin : ∀ x : X, Finite ↥(⇑p ⁻¹' {x})) : FiniteCoveringSpace X where
-  obj := CategoryTheory.Over.mk p
-  property := ⟨Over.isCoveringMap_iff.2 hp, Over.hasFiniteFibers_iff.2 hfin⟩
+    (hfin : ∀ x : X, Finite ↥(⇑p ⁻¹' {x})) : FiniteCoveringSpace X :=
+  CoveringSpace.FullSubcategory.mk p hp (Over.hasFiniteFibers_iff.2 hfin)
 
 @[simp]
 theorem mk_coe {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
     (hfin : ∀ x : X, Finite ↥(⇑p ⁻¹' {x})) : (mk p hp hfin : TopCat) = E :=
-  (rfl)
-
-/-- The projection of a finite covering space to its base. -/
-abbrev proj (p : FiniteCoveringSpace X) : (p : TopCat) ⟶ X :=
-  p.obj.hom
-
-@[simp]
-theorem forget_obj_coe (p : FiniteCoveringSpace X) :
-    ((forget X).obj p : TopCat) = (p : TopCat) :=
-  rfl
-
-@[simp]
-theorem forget_obj_proj (p : FiniteCoveringSpace X) : ((forget X).obj p).proj = p.proj :=
-  rfl
-
-@[simp]
-theorem forget_map_hom_left {p q : FiniteCoveringSpace X} (f : p ⟶ q) :
-    ((forget X).map f).hom.left = f.hom.left :=
-  rfl
+  -- The `_` is the finiteness proof that `mk` supplies; the generic lemma applies because `mk`
+  -- unfolds to the generic constructor. A `rfl` cannot: this theorem is exported, so it may only
+  -- unfold definitions whose bodies are exposed, and `mk`'s is not.
+  CoveringSpace.FullSubcategory.mk_coe p hp _
 
 @[simp]
 theorem mk_proj {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
     (hfin : ∀ x : X, Finite ↥(⇑p ⁻¹' {x})) :
     (mk p hp hfin).proj = eqToHom (mk_coe p hp hfin) ≫ p :=
-  (rfl)
+  CoveringSpace.FullSubcategory.mk_proj p hp _
 
-/-- The projection from an object of `FiniteCoveringSpace X` is a covering map. -/
-theorem isCoveringMap_proj (p : FiniteCoveringSpace X) : _root_.IsCoveringMap p.proj :=
-  Over.isCoveringMap_iff.1 p.property.1
+@[simp]
+theorem forget_obj_mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
+    (hfin : ∀ x : X, Finite ↥(⇑p ⁻¹' {x})) :
+    (forget X).obj (mk p hp hfin) = CoveringSpace.mk p hp :=
+  CoveringSpace.FullSubcategory.forget_obj_mk p hp _
 
 /-- Every fibre of a finite covering space is finite. -/
 instance finite_fiber (p : FiniteCoveringSpace X) (x : X) : Finite ↥(⇑p.proj ⁻¹' {x}) :=
-  Over.hasFiniteFibers_iff.1 p.property.2 x
-
-/-- The inclusion `FiniteCoveringSpace X ⥤ CoveringSpace X` is fully faithful. -/
-def fullyFaithfulForget (X : TopCat.{u}) : (forget X).FullyFaithful :=
-  ObjectProperty.fullyFaithfulιOfLE _
-
-@[simp]
-theorem totalSpace_obj (p : FiniteCoveringSpace X) : (totalSpace X).obj p = (p : TopCat) :=
-  rfl
-
-@[simp]
-theorem totalSpace_map {p q : FiniteCoveringSpace X} (f : p ⟶ q) :
-    (totalSpace X).map f = f.hom.left :=
-  rfl
-
-/-- A morphism of finite covering spaces commutes with the projections to the base. -/
-@[reassoc]
-theorem w {p q : FiniteCoveringSpace X} (f : p ⟶ q) : f.hom.left ≫ q.proj = p.proj :=
-  CategoryTheory.Over.w _
-
-/-- Construct a morphism of finite covering spaces from a continuous map over the base. -/
-def homMk {p q : FiniteCoveringSpace X} (f : (p : TopCat) ⟶ (q : TopCat))
-    (w : f ≫ q.proj = p.proj := by cat_disch) : p ⟶ q :=
-  ObjectProperty.homMk (CategoryTheory.Over.homMk f w)
-
-@[simp]
-theorem homMk_hom_left {p q : FiniteCoveringSpace X} (f : (p : TopCat) ⟶ (q : TopCat))
-    (w : f ≫ q.proj = p.proj) : (homMk f w).hom.left = f :=
-  (rfl)
-
-/-- Construct an isomorphism of finite covering spaces from an isomorphism of their total spaces
-over the base. -/
-def isoMk {p q : FiniteCoveringSpace X} (e : (p : TopCat) ≅ (q : TopCat))
-    (w : e.hom ≫ q.proj = p.proj := by cat_disch) : p ≅ q :=
-  ObjectProperty.isoMk _ (CategoryTheory.Over.isoMk e w)
-
-@[simp]
-theorem isoMk_hom_hom_left {p q : FiniteCoveringSpace X} (e : (p : TopCat) ≅ (q : TopCat))
-    (w : e.hom ≫ q.proj = p.proj) : (isoMk e w).hom.hom.left = e.hom :=
-  (rfl)
-
-@[simp]
-theorem isoMk_inv_hom_left {p q : FiniteCoveringSpace X} (e : (p : TopCat) ≅ (q : TopCat))
-    (w : e.hom ≫ q.proj = p.proj) : (isoMk e w).inv.hom.left = e.inv :=
-  (rfl)
-
-/-- A map of finite covering spaces is an isomorphism exactly when its map of total spaces is a
-homeomorphism. -/
-theorem isIso_iff_isHomeomorph_hom_left {p q : FiniteCoveringSpace X} (f : p ⟶ q) :
-    IsIso f ↔ IsHomeomorph f.hom.left := by
-  rw [← isIso_iff_of_reflects_iso f (forget X)]
-  exact CoveringSpace.isIso_iff_isHomeomorph_hom_left ((forget X).map f)
+  Over.hasFiniteFibers_iff.1 p.prop_obj x
 
 end FiniteCoveringSpace
 
