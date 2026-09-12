@@ -33,8 +33,8 @@ No strict convexity is involved: the alternative route through `sameRay_iff_norm
 `inner_eq_norm_mul_iff_real` hold in any normed, respectively inner product, space.
 
 The affine half-open segment result is also recorded here: in an additive commutative group with a
-real module structure, it identifies the image of a scalar interval under an affine
-parametrization with a segment whose terminal endpoint is removed.
+module structure over a linear ordered field, it identifies the image of a scalar interval under
+an affine parametrization with a segment whose terminal endpoint is removed.
 
 ## Main results
 
@@ -47,15 +47,18 @@ parametrization with a segment whose terminal endpoint is removed.
 * `TauCeti.image_add_smul_Ico` — the affine image of `Ico 0 D` is a segment with its terminal
   endpoint removed.
 
-The consumer is `TauCeti/Analysis/Complex/Conformal/Poincare/Betweenness.lean`, which identifies
-the hyperbolic segments of the Poincaré disc issuing from, or straddling, the origin with the
-Euclidean ones; `ℂ` is a real inner product space with `⟪w, z⟫_ℝ = (z * conj w).re`
+The origin-at-an-end and origin-in-the-middle criteria are consumed by
+`TauCeti/Analysis/Complex/Conformal/Poincare/Betweenness.lean`, which identifies the hyperbolic
+segments of the Poincaré disc issuing from, or straddling, the origin with the Euclidean ones; `ℂ`
+is a real inner product space with `⟪w, z⟫_ℝ = (z * conj w).re`
 (`Complex.inner`), so the two inner-product criteria are what that file needs. It proved them
 itself, by hand, in the complex-number-specific `Complex.normSq` language and only for `ℂ`, its
 own docstrings recording that they are "statements about complex numbers rather than about the
 hyperbolic metric". Nothing in them is about complex numbers either, which is why they live here.
 This supports the hyperbolic-metric layer L2 of the conformal-mapping roadmap
 (`TauCetiRoadmap/ConformalMapping/README.md`) without adding to it.
+The affine half-open segment result is consumed by
+`TauCeti/Analysis/Complex/Conformal/SchwarzChristoffel/UnboundedEdge.lean`.
 -/
 
 public section
@@ -113,15 +116,16 @@ end Normed
 
 section HalfOpen
 
-variable {E : Type*} [AddCommGroup E] [Module ℝ E]
+variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup E] [Module 𝕜 E]
 
 /-- **A nonzero affine ray parametrizes a half-open segment.** If `y - x = D • u` with `D > 0`,
 then the points `x + t • u` for `0 ≤ t < D` are exactly the segment from `x` to `y` with `y`
 removed. -/
-theorem image_add_smul_Ico {x y u : E} {D : ℝ} (hDpos : 0 < D) (hu : u ≠ 0)
+theorem image_add_smul_Ico {x y u : E} {D : 𝕜} (hDpos : 0 < D) (hu : u ≠ 0)
     (hdir : y - x = D • u) :
-    (fun t : ℝ => x + t • u) '' Ico 0 D = segment ℝ x y \ {y} := by
-  rw [segment_eq_image' ℝ]
+    (fun t : 𝕜 => x + t • u) '' Ico 0 D = segment 𝕜 x y \ {y} := by
+  rw [segment_eq_image' 𝕜]
   apply Subset.antisymm
   · rintro z ⟨t, ⟨ht0, htD⟩, rfl⟩
     refine ⟨?_, ?_⟩
@@ -136,7 +140,7 @@ theorem image_add_smul_Ico {x y u : E} {D : ℝ} (hDpos : 0 < D) (hu : u ≠ 0)
           t • u = x + t • u - x := by abel
           _ = y - x := by rw [hEq]
           _ = D • u := hdir
-      exact smul_left_injective ℝ hu hmul
+      exact smul_left_injective 𝕜 hu hmul
   · intro z hz
     rcases hz with ⟨hzseg, hzYnot⟩
     rcases hzseg with ⟨t, ht, rfl⟩

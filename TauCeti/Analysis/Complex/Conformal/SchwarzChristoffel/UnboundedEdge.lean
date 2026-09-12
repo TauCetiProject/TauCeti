@@ -8,15 +8,17 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ClosedEdge
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity
 public import TauCeti.Analysis.Convex.Segment
+public import TauCeti.Algebra.Order.BigOperators.FilterSum
 public import TauCeti.Topology.Order.Interval
 
 /-!
 # The unbounded Schwarz--Christoffel boundary edges
 
-Assume that all nonzero prevertices lie at or to the left of a real point `p`.  The canonical
-boundary map then follows one straight edge on `Ici p`.  If the total exponent is less than `-1`,
-the edge has a finite endpoint at `schwarzChristoffelVertexAtInfinity`; its image is the segment
-from the value at `p` to that endpoint, with the endpoint at infinity omitted from the image.
+Assume that all prevertices having nonzero exponent lie at or to the left of a real point `p`.
+The canonical boundary map then follows one straight edge on `Ici p`.  If the total exponent is
+less than `-1`, the edge has a finite endpoint at `schwarzChristoffelVertexAtInfinity`; its image
+is the segment from the value at `p` to that endpoint, with the endpoint at infinity omitted from
+the image.
 
 This result supplies the boundary-edge description used when assembling the boundary of an
 unbounded Schwarz--Christoffel polygon.  The endpoint at infinity is identified with the common
@@ -48,14 +50,27 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
+private theorem neg_one_lt_filter_sum_eq_of_forall_ne_zero_le (a e : ι → ℝ) {p : ℝ}
+    (hp : -1 < ∑ i with a i = p, e i) (ha : ∀ i, e i ≠ 0 → a i ≤ p) :
+    ∀ {q : ℝ}, q ∈ Ici p → -1 < ∑ i with a i = q, e i := by
+  intro q hq
+  have hq' : p ≤ q := hq
+  rcases eq_or_lt_of_le hq' with rfl | hpq
+  · exact hp
+  · rw [filter_sum_eq_zero_of_forall_ne_zero_le Finset.univ hpq ha]
+    norm_num
+
 /-- **The Schwarz--Christoffel boundary map is injective on a right-hand unbounded edge.**
-Under the integrability hypothesis at `p` and the assumption that every nonzero prevertex lies at or
-to the left of `p`, distinct finite parameters in `Ici p` have distinct boundary values. -/
+Under `-1 < ∑ i with a i = p, e i` and `∀ i, e i ≠ 0 → a i ≤ p`, distinct finite parameters in
+`Ici p` have distinct boundary values. -/
 theorem schwarzChristoffelBoundary_injOn_Ici (a e : ι → ℝ) (z₀ : UpperHalfPlane) {p : ℝ}
     (hp : -1 < ∑ i with a i = p, e i)
     (ha : ∀ i, e i ≠ 0 → a i ≤ p) :
     InjOn (schwarzChristoffelBoundary a e z₀) (Ici p) := by
-  obtain ⟨hfree, hsum⟩ := interval_filter_sum_properties_of_forall_ne_zero_le a e hp ha
+  have hfree : ∀ {q : ℝ}, q ∈ Ici p → ∀ i, e i ≠ 0 → a i ∉ Ioo p q :=
+    fun _ => not_mem_Ioo_of_ne_zero_of_forall_le ha
+  have hsum : ∀ {q : ℝ}, q ∈ Ici p → -1 < ∑ i with a i = q, e i :=
+    neg_one_lt_filter_sum_eq_of_forall_ne_zero_le a e hp ha
   intro x hx y hy hxy
   rcases lt_trichotomy x y with h | h | h
   · exact schwarzChristoffelBoundary_injOn_Icc a e z₀ (hfree hy) hp (hsum hy)
@@ -79,7 +94,10 @@ theorem schwarzChristoffelBoundary_image_Ici (a e : ι → ℝ) (z₀ : UpperHal
   let d : ℝ → ℝ := fun x => ‖B x - B p‖
   let D : ℝ := ‖V - B p‖
   -- To use the finite-edge lemmas on `[p, q]`, no nonzero prevertex may lie in its interior.
-  obtain ⟨hfree, hsum⟩ := interval_filter_sum_properties_of_forall_ne_zero_le a e hp ha
+  have hfree : ∀ {q : ℝ}, q ∈ Ici p → ∀ i, e i ≠ 0 → a i ∉ Ioo p q :=
+    fun _ => not_mem_Ioo_of_ne_zero_of_forall_le ha
+  have hsum : ∀ {q : ℝ}, q ∈ Ici p → -1 < ∑ i with a i = q, e i :=
+    neg_one_lt_filter_sum_eq_of_forall_ne_zero_le a e hp ha
   -- The endpoint `p` is integrable, and every later point is free of prevertices by `hfree`.
   have hcont : ContinuousOn B (Ici p) := by
     apply continuousOn_schwarzChristoffelBoundary_of_exponent_sum_gt_neg_one
