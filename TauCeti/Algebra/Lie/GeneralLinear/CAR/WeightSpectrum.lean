@@ -34,6 +34,9 @@ and fixes the total sum.
   a CAR highest weight has the form `m + 1/2` with `m < n`.
 * `TauCeti.exists_occupationCutCount_of_lie_single_self_eq_smul`: occupation counts on a subset
   have the form `choose |s| 2 + m`, with `m` bounded by the size of the cut.
+* `TauCeti.exists_sum_eq_natCast_add_card_sq_div_two_of_lie_single_self_eq_smul`: without any
+  characteristic assumption, the sum of the diagonal eigenvalues is a bounded natural cast plus
+  `|s|² / 2`.
 * `TauCeti.IsGlHighestWeightVector.sum_occupationCounts_le`: every subset of the occupation counts
   of a CAR highest-weight vector satisfies the cut bound.
 * `TauCeti.IsGlHighestWeightVector.sum_occupationCounts_univ_eq_choose_two`: the total occupation
@@ -55,12 +58,15 @@ namespace TauCeti
 
 noncomputable section
 
-attribute [local instance] Classical.decEq
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {K n : Type*} [Field K] [Fintype n]
 
 variable [h2 : Invertible (2 : K)]
+
+section Diagonal
+
+variable [decEq : DecidableEq n]
 
 /-- Every eigenvalue of a diagonal matrix unit on a nonzero vector in the left regular CAR module
 is a natural number less than the matrix size, shifted by `1/2`. -/
@@ -68,6 +74,8 @@ theorem exists_eq_natCast_add_inv_two_of_lie_single_self_eq_smul {μ : K}
     {v : CliffordAlgebra (traceQuadraticForm K n)} {i : n} (hv : v ≠ 0)
     (hdiag : ⁅Matrix.single i i (1 : K), v⁆ = μ • v) :
     ∃ m : ℕ, m < Fintype.card n ∧ μ = (m : K) + (2 : K)⁻¹ := by
+  cases Subsingleton.elim decEq (Classical.decEq n)
+  classical
   let s := Finset.univ.erase i
   have hsum : (∑ k ∈ s, carOccupationElement (K := K) i k) • v =
       (μ - (2 : K)⁻¹) • v := by
@@ -88,20 +96,19 @@ theorem exists_eq_natCast_add_inv_two_of_lie_single_self_eq_smul {μ : K}
     simpa only [s, Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ] using hm
   omega
 
-/-- Let a nonzero vector be a simultaneous eigenvector for the diagonal matrix units, with each
-eigenvalue written as a natural occupation count plus `1/2`. On a subset `s`, the sum of the
-counts is `choose |s| 2 + m`, where `m` is bounded by the number of ordered pairs crossing from
-`s` to its complement.
+/-- If a nonzero vector is a simultaneous eigenvector for the diagonal matrix units indexed by
+`s`, the sum of their eigenvalues is `m + |s|² / 2`, where `m` is a natural number bounded by the
+number of ordered pairs crossing from `s` to its complement.
 
-The natural number `m` is the eigenvalue of the sum of the commuting cut occupation projections.
-No finite-dimensionality or splitting hypothesis is needed. -/
-theorem exists_occupationCutCount_of_lie_single_self_eq_smul [CharZero K]
-    {μ : n → K} {a : n → ℕ} {v : CliffordAlgebra (traceQuadraticForm K n)}
-    (s : Finset n) (hv : v ≠ 0)
-    (hdiag : ∀ i ∈ s, ⁅Matrix.single i i (1 : K), v⁆ = μ i • v)
-    (hμ : ∀ i ∈ s, μ i = (a i : K) + (2 : K)⁻¹) :
+The natural number is the eigenvalue of the sum of the commuting cut occupation projections. No
+characteristic, finite-dimensionality, or splitting hypothesis is needed. -/
+theorem exists_sum_eq_natCast_add_card_sq_div_two_of_lie_single_self_eq_smul
+    {μ : n → K} {v : CliffordAlgebra (traceQuadraticForm K n)} (s : Finset n) (hv : v ≠ 0)
+    (hdiag : ∀ i ∈ s, ⁅Matrix.single i i (1 : K), v⁆ = μ i • v) :
     ∃ m : ℕ, m ≤ s.card * (Fintype.card n - s.card) ∧
-      (∑ i ∈ s, a i) = s.card.choose 2 + m := by
+      (∑ i ∈ s, μ i) = (m : K) + (s.card : K) ^ 2 / 2 := by
+  cases Subsingleton.elim decEq (Classical.decEq n)
+  classical
   let t := s.product (Finset.univ \ s)
   let p : n × n → CliffordAlgebra (traceQuadraticForm K n) :=
     fun ij => carOccupationElement (K := K) ij.1 ij.2
@@ -120,7 +127,7 @@ theorem exists_occupationCutCount_of_lie_single_self_eq_smul [CharZero K]
       one_mul] at hsumdiag
     rw [sub_smul]
     exact eq_sub_of_add_eq' hsumdiag
-  obtain ⟨m, hm, hscalar⟩ := t.exists_eq_natCast_of_sum_smul_eq_smul p
+  obtain ⟨m, hm, hμ⟩ := t.exists_eq_natCast_of_sum_smul_eq_smul p
     (fun ij hij => by
       apply isIdempotentElem_carOccupationElement
       have hi := (Finset.mem_product.mp hij).1
@@ -128,12 +135,29 @@ theorem exists_occupationCutCount_of_lie_single_self_eq_smul [CharZero K]
       intro hij'
       exact hj (hij' ▸ hi))
     (fun _ _ _ _ _ => commute_carOccupationElement (K := K)) hv hboundary
-  have hm' : m ≤ s.card * (Fintype.card n - s.card) := by
-    dsimp [t] at hm
-    rw [Finset.card_product, Finset.card_sdiff, Finset.inter_univ,
-      Finset.card_univ] at hm
-    exact hm
-  refine ⟨m, hm', Nat.cast_injective (R := K) ?_⟩
+  refine ⟨m, ?_, eq_add_of_sub_eq hμ⟩
+  dsimp [t] at hm
+  rw [Finset.card_product, Finset.card_sdiff, Finset.inter_univ,
+    Finset.card_univ] at hm
+  exact hm
+
+/-- Let a nonzero vector be a simultaneous eigenvector for the diagonal matrix units, with each
+eigenvalue written as a natural occupation count plus `1/2`. On a subset `s`, the sum of the
+counts is `choose |s| 2 + m`, where `m` is bounded by the number of ordered pairs crossing from
+`s` to its complement.
+
+The natural number `m` is the eigenvalue of the sum of the commuting cut occupation projections.
+No finite-dimensionality or splitting hypothesis is needed. -/
+theorem exists_occupationCutCount_of_lie_single_self_eq_smul [CharZero K]
+    {μ : n → K} {a : n → ℕ} {v : CliffordAlgebra (traceQuadraticForm K n)}
+    (s : Finset n) (hv : v ≠ 0)
+    (hdiag : ∀ i ∈ s, ⁅Matrix.single i i (1 : K), v⁆ = μ i • v)
+    (hμ : ∀ i ∈ s, μ i = (a i : K) + (2 : K)⁻¹) :
+    ∃ m : ℕ, m ≤ s.card * (Fintype.card n - s.card) ∧
+      (∑ i ∈ s, a i) = s.card.choose 2 + m := by
+  obtain ⟨m, hm, hscalar⟩ :=
+    exists_sum_eq_natCast_add_card_sq_div_two_of_lie_single_self_eq_smul s hv hdiag
+  refine ⟨m, hm, Nat.cast_injective (R := K) ?_⟩
   rw [Nat.cast_add, Nat.cast_choose_two]
   have hleft : ((∑ i ∈ s, a i : ℕ) : K) + (s.card : K) / 2 =
       ∑ i ∈ s, μ i := by
@@ -178,6 +202,8 @@ theorem sum_occupationCounts_univ_eq_choose_two_of_lie_single_self_eq_smul [Char
   have hm0 : m = 0 := by simpa using hm
   simpa [hm0] using hsum
 
+end Diagonal
+
 namespace IsGlHighestWeightVector
 
 variable [LinearOrder n]
@@ -187,7 +213,7 @@ than the matrix size, shifted by `1/2`.
 
 This statement supplies the coordinate restriction; it does not assert that every expression is
 attained by a given vector. -/
-theorem exists_weight_apply_eq_natCast_add_inv_two {μ : n → K}
+theorem exists_weight_apply_eq_natCast_add_inv_two [DecidableEq n] {μ : n → K}
     {v : CliffordAlgebra (traceQuadraticForm K n)}
     (hv : IsGlHighestWeightVector μ v) (i : n) :
     ∃ m : ℕ, m < Fintype.card n ∧ μ i = (m : K) + (2 : K)⁻¹ := by
@@ -195,7 +221,7 @@ theorem exists_weight_apply_eq_natCast_add_inv_two {μ : n → K}
     (hv.lie_single_self_eq_smul i)
 
 /-- Package the coordinate spectrum into one natural-valued occupation-count tuple. -/
-theorem exists_occupationCounts {μ : n → K}
+theorem exists_occupationCounts [DecidableEq n] {μ : n → K}
     {v : CliffordAlgebra (traceQuadraticForm K n)}
     (hv : IsGlHighestWeightVector μ v) :
     ∃ a : n → ℕ, ∀ i,
@@ -210,7 +236,7 @@ theorem exists_occupationCounts {μ : n → K}
 /-- Every subset of a half-shifted natural occupation-count tuple for a CAR highest-weight vector
 satisfies the cut bound. For an initial segment of `Fin N`, the right side is the corresponding
 prefix sum of the reverse tuple. -/
-theorem sum_occupationCounts_le [CharZero K] {μ : n → K} {a : n → ℕ}
+theorem sum_occupationCounts_le [CharZero K] [DecidableEq n] {μ : n → K} {a : n → ℕ}
     {v : CliffordAlgebra (traceQuadraticForm K n)}
     (hv : IsGlHighestWeightVector μ v)
     (hμ : ∀ i, μ i = (a i : K) + (2 : K)⁻¹) (s : Finset n) :
@@ -220,7 +246,7 @@ theorem sum_occupationCounts_le [CharZero K] {μ : n → K} {a : n → ℕ}
 
 /-- The total of a half-shifted natural occupation-count tuple for a CAR highest-weight vector is
 `choose n 2`. -/
-theorem sum_occupationCounts_univ_eq_choose_two [CharZero K]
+theorem sum_occupationCounts_univ_eq_choose_two [CharZero K] [DecidableEq n]
     {μ : n → K} {a : n → ℕ} {v : CliffordAlgebra (traceQuadraticForm K n)}
     (hv : IsGlHighestWeightVector μ v)
     (hμ : ∀ i, μ i = (a i : K) + (2 : K)⁻¹) :

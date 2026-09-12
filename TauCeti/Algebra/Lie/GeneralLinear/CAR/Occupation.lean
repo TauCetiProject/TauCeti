@@ -239,9 +239,9 @@ private theorem sum_carOccupationElement_internal (s : Finset n) :
           (1 : CliffordAlgebra (traceQuadraticForm K n)) := by
         simp only [carOccupationElement_add_swap, Finset.sum_const, nsmul_eq_mul]
         simp [pow_two, Algebra.smul_def]
-  change P = _
   calc
-    P = (2 : K)⁻¹ • ((2 : K) • P) := by
+    (∑ i ∈ s, ∑ j ∈ s, carOccupationElement (K := K) i j) = P := rfl
+    _ = (2 : K)⁻¹ • ((2 : K) • P) := by
       rw [smul_smul]
       simp
     _ = (2 : K)⁻¹ • (P + P) := by rw [two_smul]
