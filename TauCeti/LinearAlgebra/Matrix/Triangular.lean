@@ -33,6 +33,8 @@ Lie-algebra theory.
   matrices is the pointwise product of the diagonals.
 * `Matrix.mul_apply_diag_of_isLowerTriangular` — the corresponding formula for lower-triangular
   matrices.
+* `Matrix.IsLowerTriangular.eq_one_of_mul_transpose_self_eq_one` — a lower-triangular orthogonal
+  matrix with positive diagonal is the identity.
 * `Matrix.IsLowerTriangular.eq_of_mul_transpose_self_eq` — lower-triangular matrices with positive
   diagonal are determined by their product with their transpose.
 * `Matrix.pow_apply_diag_of_isUpperTriangular` — the diagonal of a power of an upper-triangular
@@ -204,6 +206,34 @@ theorem mul_apply_diag_of_isLowerTriangular (hA : A.IsLowerTriangular)
     · rw [hA hik, zero_mul]
   · exact fun h ↦ absurd (Finset.mem_univ i) h
 
+/-- A lower-triangular matrix over an ordered field with positive diagonal whose product with its
+transpose is the identity is itself the identity. -/
+theorem IsLowerTriangular.eq_one_of_mul_transpose_self_eq_one
+    {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {Q : Matrix n n K} (hQ : Q.IsLowerTriangular) (hQpos : ∀ i, 0 < Q i i)
+    (hQorth : Q * Qᵀ = 1) : Q = 1 := by
+  let _ : Invertible Q := invertibleOfRightInverse Q Qᵀ hQorth
+  have hQttri : Qᵀ.IsLowerTriangular := by
+    rw [← Matrix.inv_eq_right_inv hQorth]
+    exact Matrix.blockTriangular_inv_of_blockTriangular hQ
+  have hQupper : Q.IsUpperTriangular := by
+    intro i j hji
+    simpa only [Matrix.transpose_apply] using hQttri hji
+  ext i j
+  rcases lt_trichotomy i j with hij | rfl | hij
+  · rw [hQ hij, Matrix.one_apply_ne hij.ne]
+  · have hii : Q i i * Q i i = 1 := by
+      have hmul := Matrix.mul_apply_diag_of_isUpperTriangular hQupper hQ.transpose i
+      calc
+        Q i i * Q i i = Q i i * Qᵀ i i := by rw [Matrix.transpose_apply]
+        _ = (Q * Qᵀ) i i := hmul.symm
+        _ = 1 := by rw [hQorth, Matrix.one_apply_eq]
+    rw [Matrix.one_apply_eq]
+    nlinarith [hQpos i]
+  · have hzero : Qᵀ j i = 0 := hQttri hij
+    rw [Matrix.one_apply_ne hij.ne']
+    simpa only [Matrix.transpose_apply] using hzero
+
 /-- Lower-triangular matrices over an ordered field with positive diagonal are determined by
 their Gram matrices `L * Lᵀ`.
 
@@ -240,30 +270,8 @@ theorem IsLowerTriangular.eq_of_mul_transpose_self_eq
       _ = L⁻¹ * (L * Lᵀ) * L⁻¹ᵀ := by rw [← hgram]
       _ = (L⁻¹ * L) * (Lᵀ * L⁻¹ᵀ) := by simp only [Matrix.mul_assoc]
       _ = 1 := by rw [Matrix.nonsing_inv_mul L hLdet, hLinvt_right, one_mul]
-  let _ : Invertible (L⁻¹ * M) :=
-    invertibleOfRightInverse (L⁻¹ * M) (L⁻¹ * M)ᵀ hQorth
-  have hQttri : (L⁻¹ * M)ᵀ.IsLowerTriangular := by
-    rw [← Matrix.inv_eq_right_inv hQorth]
-    exact Matrix.blockTriangular_inv_of_blockTriangular hQtri
-  have hQupper : (L⁻¹ * M).IsUpperTriangular := by
-    intro i j hji
-    simpa only [Matrix.transpose_apply] using hQttri hji
   have hQone : L⁻¹ * M = 1 := by
-    ext i j
-    rcases lt_trichotomy i j with hij | rfl | hij
-    · rw [hQtri hij, Matrix.one_apply_ne hij.ne]
-    · have hii : (L⁻¹ * M) i i * (L⁻¹ * M) i i = 1 := by
-        have hmul := Matrix.mul_apply_diag_of_isUpperTriangular hQupper hQtri.transpose i
-        calc
-          (L⁻¹ * M) i i * (L⁻¹ * M) i i =
-              (L⁻¹ * M) i i * (L⁻¹ * M)ᵀ i i := by rw [Matrix.transpose_apply]
-          _ = ((L⁻¹ * M) * (L⁻¹ * M)ᵀ) i i := hmul.symm
-          _ = 1 := by rw [hQorth, Matrix.one_apply_eq]
-      rw [Matrix.one_apply_eq]
-      nlinarith [hQdiag i]
-    · have hzero : (L⁻¹ * M)ᵀ j i = 0 := hQttri hij
-      rw [Matrix.one_apply_ne hij.ne']
-      simpa only [Matrix.transpose_apply] using hzero
+    exact hQtri.eq_one_of_mul_transpose_self_eq_one hQdiag hQorth
   calc
     L = L * 1 := (Matrix.mul_one L).symm
     _ = L * (L⁻¹ * M) := by rw [hQone]
