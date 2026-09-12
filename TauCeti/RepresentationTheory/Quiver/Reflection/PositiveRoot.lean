@@ -13,24 +13,23 @@ public import TauCeti.RepresentationTheory.Quiver.Reflection.Descent
 Let `Q` be a finite quiver whose Tits form is positive definite. A **positive root** is a nonzero
 `d : Q → ℤ` with `0 ≤ d` and `titsForm Q d = 1`; the dimension vector of a finite-dimensional
 indecomposable representation is one, by
-`TauCeti.titsForm_dimVector_eq_one_of_indecomposable`. This file proves the converse-facing half of
-the reflection induction: every positive root is carried to a **simple** root `αⱼ = Pi.single j 1`
-by finitely many simple reflections read along a repetition-free word running over all the
-vertices, so every positive root lies in the Weyl orbit of a simple one.
+`TauCeti.titsForm_dimVector_eq_one_of_indecomposable`. This file proves the root-lattice statement
+that every positive root is carried to a **simple** root `αⱼ = Pi.single j 1` by finitely many
+simple reflections read along a repetition-free word running over all the vertices. Equivalently,
+every positive root lies in the Weyl orbit of a simple one.
 
-On the representation side this is the numerical half of the second direction of Gabriel's
-bijection: `TauCeti.isoClassDimVector_injective` embeds the isomorphism classes of indecomposables
-into the positive roots, and an indecomposable of a prescribed positive root is built by
-transporting the vertex simple `Sⱼ` back along the word produced here, through the reflection
-functors at a source.
+This is a prerequisite for the reflection induction in Gabriel's theorem. It does not assert that
+the reflection word is sink- or source-admissible for the evolving quivers, nor that its steps
+decrease root height; those additional properties are needed to transport the word through
+reflection functors.
 
 ## Main results
 
 * `TauCeti.vertexPreReflection_apply_self_neg_iff_eq_single`: **a positive root is simple exactly
   when the reflection at that vertex makes its coordinate there negative.**
-* `TauCeti.exists_vertexPreReflectionList_take_apply_eq_single`: **the descent.** Some number of
-  full passes of the Coxeter transformation followed by an initial segment of the word carries a
-  positive root to the simple root at the next vertex of the word.
+* `TauCeti.exists_vertexPreReflectionList_take_apply_eq_single`: some number of full passes of the
+  reflection product followed by an initial segment of the word carries a positive root to the
+  simple root at the next vertex of the word.
 * `TauCeti.titsForm_eq_one_iff_exists_vertexPreReflectionList_single`: consequently the positive
   roots are exactly the nonnegative reflection images of the simple roots.
 
@@ -54,8 +53,8 @@ variable (Q : Type u) [Quiver.{v} Q] [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)
 positive definite Tits form and a nonnegative `d` with `q(d) = 1`, the coordinate of `sᵢ d` at `i`
 is negative precisely when `d` is the simple dimension vector `αᵢ`.
 
-This is the step of the Bernstein-Gelfand-Ponomarev descent at which a positive root leaves the
-positive cone: it can only be a simple root, and the reflection then merely negates it. -/
+Thus a positive root can leave the positive cone under a simple reflection only when it is the
+corresponding simple root. -/
 @[simp]
 theorem vertexPreReflection_apply_self_neg_iff_eq_single (hpd : (titsForm Q).PosDef) {i : Q}
     {d : Q → ℤ} (hd : 0 ≤ d) (hroot : titsForm Q d = 1) :
@@ -110,16 +109,15 @@ theorem vertexPreReflection_apply_self_neg_iff_eq_single (hpd : (titsForm Q).Pos
     rw [vertexPreReflection_single_self Q hloop]
     simp
 
-/-! ### The descent of a positive root to a simple root -/
+/-! ### Reduction of a positive root to a simple root -/
 
-/-- **The descent.** For a quiver with positive definite Tits form and a repetition-free word `l`
-running over all the vertices, every positive root `d` is carried to a simple root by finitely many
-full passes of the Coxeter transformation followed by an initial segment of `l`: the simple root is
-the one at the vertex `l` reaches next.
+/-- **Weyl-orbit reduction.** For a quiver with positive definite Tits form and a repetition-free
+word `l` running over all the vertices, every positive root `d` is carried to a simple root by
+finitely many full passes of the reflection product followed by an initial segment of `l`: the
+simple root is the one at the vertex `l` reaches next.
 
-This is the numerical shadow of the induction that carries an indecomposable representation down to
-a vertex simple, run in the opposite direction: read backwards it exhibits `d` in the Weyl orbit of
-a simple root, which is
+No admissibility property of the word for successive reflected quivers is asserted. Reading the
+word backwards exhibits `d` in the Weyl orbit of a simple root, as recorded by
 `TauCeti.titsForm_eq_one_iff_exists_vertexPreReflectionList_single`. -/
 theorem exists_vertexPreReflectionList_take_apply_eq_single (hpd : (titsForm Q).PosDef)
     {l : List Q} (hnd : l.Nodup) (hmem : ∀ i : Q, i ∈ l) {d : Q → ℤ}
