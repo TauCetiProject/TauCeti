@@ -13,13 +13,13 @@ import TauCeti.MeasureTheory.Measure.FiniteMeasure
 # The shift coupling of two weightings of a finite carrier
 
 Two probability measures on a finite carrier that differ by a transfer of weight onto one
-designated atom `k₀` -- so that `ν'` is dominated by `ν` everywhere else -- admit a coupling that
-moves as little mass as possible: it keeps the matched mass `min (ν {k}) (ν' {k})` at `(k, k)` and
-puts the excess `ν {k} - ν' {k}` at `(k, k₀)`.  The mass it places off the diagonal is then exactly
-the transferred weight, which is what a cost estimate against the diagonal consumes.
+designated atom `k₀` -- so that `ν'` is dominated by `ν` everywhere else -- are coupled here by
+keeping the matched mass `min (ν {k}) (ν' {k})` at `(k, k)` and putting the excess `ν {k} - ν' {k}`
+at `(k, k₀)`.  The mass this places off the diagonal is then at most the transferred weight, which
+is what a cost estimate against the diagonal consumes.
 
 Mathlib has no maximal-coupling construction, and the general one is not needed here: dominance away
-from a single atom already pins down where the unmatched mass has to go.
+from a single atom already says where the unmatched mass can go.
 
 ## Main definitions
 
