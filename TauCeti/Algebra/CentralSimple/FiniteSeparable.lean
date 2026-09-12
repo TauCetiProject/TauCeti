@@ -36,9 +36,6 @@ equivalence.
 
 ## References
 
-* [Semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md),
-  Layer 6, fourth bullet, “Splitting fields, maximal subfields, and the index”, finite-separable
-  refinement.
 See P. Gille and T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.2,
 and R. S. Pierce, *Associative Algebras*, Chapter 13.
 -/
