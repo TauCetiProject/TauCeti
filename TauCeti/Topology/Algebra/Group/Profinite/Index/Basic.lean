@@ -265,16 +265,7 @@ theorem _root_.Subgroup.profiniteIndex_eq_one_iff_topologicalClosure_eq_top (H :
               Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩) N
       rw [hindex, ← Supernatural.ofNat_one, Supernatural.ofNat_le_ofNat_iff] at hle
       exact congrArg Subtype.val ((PNat.dvd_one_iff n).mp hle)
-    rw [Subgroup.eq_iInf_sup_openNormalSubgroup H.topologicalClosure
-      H.isClosed_topologicalClosure]
-    apply iInf_eq_top.mpr
-    intro N
-    apply top_unique
-    calc
-      ⊤ = H ⊔ N.toSubgroup := by
-        rw [sup_comm, ← QuotientGroup.comap_map_mk' N.toSubgroup H, himage N,
-          Subgroup.comap_top]
-      _ ≤ H.topologicalClosure ⊔ N.toSubgroup := sup_le_sup_right H.le_topologicalClosure _
+    exact (Subgroup.topologicalClosure_eq_top_iff_forall_map_mk' H).mpr himage
   · intro hclosure
     rw [← Subgroup.profiniteIndex_topologicalClosure H, hclosure, Subgroup.profiniteIndex_top]
 
