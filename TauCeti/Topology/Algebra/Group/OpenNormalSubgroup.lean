@@ -37,16 +37,18 @@ section Top
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
 /-- The whole group, regarded as an open normal subgroup. -/
+@[to_additive]
 instance instTopOpenNormalSubgroup : Top (OpenNormalSubgroup G) where
   top :=
     { toOpenSubgroup := ⊤
       isNormal' := Subgroup.normal_top }
 
 /-- The whole group is the greatest open normal subgroup. -/
+@[to_additive]
 instance instOrderTopOpenNormalSubgroup : OrderTop (OpenNormalSubgroup G) where
   le_top U := by
-    change U.toSubgroup ≤ (⊤ : Subgroup G)
-    exact le_top
+    intro g hg
+    exact Subgroup.mem_top g
 
 end Top
 

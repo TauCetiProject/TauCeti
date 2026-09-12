@@ -42,10 +42,11 @@ uniform local constancy on a product.
 * `explicitFiniteQuotientTransition0_bijective`: every degree-zero transition is bijective.
 * `explicitFiniteQuotientColimit0`: the comparison cocone is a colimit cocone.
 
-The construction follows Neukirch, Schmidt and Wingberg, *Cohomology of Number Fields*, (1.2.5),
-and Ribes and Zalesskii, *Profinite Groups*, Corollary 6.5.6(a). It uses Mathlib's
-`Functor.IsEventuallyConstantFrom` to express that the degree-zero system is already constant at
-the top open normal subgroup.
+The construction follows the Layer 4 target in the human-authored
+`TauCetiRoadmap/ProfiniteCohomology/README.md`, as well as Neukirch, Schmidt and Wingberg,
+*Cohomology of Number Fields*, (1.2.5), and Ribes and Zalesskii, *Profinite Groups*, Corollary
+6.5.6(a). It uses Mathlib's `Functor.IsEventuallyConstantFrom` to express that the degree-zero
+system is already constant at the top open normal subgroup.
 -/
 
 public section
@@ -75,15 +76,8 @@ noncomputable def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G)
       | H g =>
         apply Subtype.ext
         simp only [QuotientGroup.mapOfLE_mk]
-        -- The reusable equivariance lemma is stated on the AddSubmonoid carrier; after
-        -- taking coefficients, the AddSubgroup inclusion has the same underlying map.
         change g • (m : M) = g • (m : M)
-        have h := congrArg Subtype.val
-          (fixedPointsInclusion_quotientGroupMap_smul (M := M) hVU
-            (g : G ⧸ V.toSubgroup) (m : FixedPoints.addSubmonoid U.toSubgroup M))
-        simp only [QuotientGroup.map_mk, MonoidHom.id_apply,
-          coe_quotient_smul_fixedPoints_addSubmonoid] at h
-        rw [coe_fixedPointsInclusion hVU] at h)
+        rfl)
 
 /-- Coercion of a degree-zero transition to the coefficient group. -/
 @[simp]
@@ -99,9 +93,14 @@ theorem coe_explicitFiniteQuotientTransition0 (hVU : V ≤ U)
 @[simp]
 theorem explicitFiniteQuotientTransition0_id (U : OpenNormalSubgroup G) :
     explicitFiniteQuotientTransition0 G M U U le_rfl = AddMonoidHom.id _ := by
-  apply AddMonoidHom.ext
-  intro x
-  exact Subtype.ext (Subtype.ext (coe_explicitFiniteQuotientTransition0 G M le_rfl x))
+  unfold explicitFiniteQuotientTransition0
+  convert explicitMap0_id (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) using 1
+  · apply AddMonoidHom.ext
+    intro x
+    apply Subtype.ext
+    apply Subtype.ext
+    simp only [coe_explicitMap0, AddMonoidHom.id_apply]
+    rfl
 
 /-- Degree-zero transitions compose along inclusions of open normal subgroups. -/
 theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
@@ -109,12 +108,42 @@ theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
     explicitFiniteQuotientTransition0 G M U W (hWV.trans hVU) =
       (explicitFiniteQuotientTransition0 G M V W hWV).comp
         (explicitFiniteQuotientTransition0 G M U V hVU) := by
-  apply AddMonoidHom.ext
-  intro x
-  apply Subtype.ext
-  apply Subtype.ext
-  simp only [AddMonoidHom.coe_comp, Function.comp_apply,
-    coe_explicitFiniteQuotientTransition0]
+  let iVU : FixedPoints.addSubgroup U.toSubgroup M →+
+      FixedPoints.addSubgroup V.toSubgroup M :=
+    AddSubgroup.inclusion (fun x hx => fixedPoints_subgroup_antitone G M hVU hx)
+  let iWV : FixedPoints.addSubgroup V.toSubgroup M →+
+      FixedPoints.addSubgroup W.toSubgroup M :=
+    AddSubgroup.inclusion (fun x hx => fixedPoints_subgroup_antitone G M hWV hx)
+  have hVU' : ∀ (q : G ⧸ V.toSubgroup)
+      (m : FixedPoints.addSubgroup U.toSubgroup M), iVU (QuotientGroup.mapOfLE hVU q • m) =
+        q • iVU m := by
+    intro q m
+    induction q using QuotientGroup.induction_on with
+    | H g =>
+      apply Subtype.ext
+      simp only [QuotientGroup.mapOfLE_mk]
+      change g • (m : M) = g • (m : M)
+      rfl
+  have hWV' : ∀ (q : G ⧸ W.toSubgroup)
+      (m : FixedPoints.addSubgroup V.toSubgroup M), iWV (QuotientGroup.mapOfLE hWV q • m) =
+        q • iWV m := by
+    intro q m
+    induction q using QuotientGroup.induction_on with
+    | H g =>
+      apply Subtype.ext
+      simp only [QuotientGroup.mapOfLE_mk]
+      change g • (m : M) = g • (m : M)
+      rfl
+  unfold explicitFiniteQuotientTransition0
+  convert explicitMap0_comp (G := G ⧸ U.toSubgroup)
+    (M := FixedPoints.addSubgroup U.toSubgroup M) (QuotientGroup.mapOfLE hVU) iVU hVU'
+    (QuotientGroup.mapOfLE hWV) iWV hWV' using 1
+  · apply AddMonoidHom.ext
+    intro x
+    apply Subtype.ext
+    apply Subtype.ext
+    simp only [coe_explicitMap0, AddMonoidHom.comp_apply]
+    rfl
 
 private theorem explicitFiniteQuotientTransition0_inflation (hVU : V ≤ U)
     (x : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
@@ -237,9 +266,7 @@ private theorem explicitFiniteQuotientSystem0_isEventuallyConstantFrom :
       (Opposite.op (⊤ : OpenNormalSubgroup G)) := by
   let _ : Nonempty (OpenNormalSubgroup G) := ⟨⊤⟩
   intro U f
-  unfold explicitFiniteQuotientSystem0
-  exact (ConcreteCategory.isIso_iff_bijective _).2
-    (explicitFiniteQuotientTransition0_bijective G M (leOfHom f.unop))
+  infer_instance
 
 /-- The degree-zero comparison cocone is colimiting. -/
 noncomputable def explicitFiniteQuotientColimit0 :
@@ -250,8 +277,6 @@ noncomputable def explicitFiniteQuotientColimit0 :
       (Opposite.op (⊤ : OpenNormalSubgroup G))) := by
     dsimp [explicitFiniteQuotientCocone0]
     apply (ConcreteCategory.isIso_iff_bijective _).2
-    -- The cocone is defined from `explicitFiniteQuotientComparison0`, whose component
-    -- is definitionally the concrete morphism `explicitInfl0` after this criterion.
     change Function.Bijective
       (explicitInfl0 G M (⊤ : OpenNormalSubgroup G).toSubgroup)
     exact explicitInfl0_bijective G M (⊤ : OpenNormalSubgroup G).toSubgroup
