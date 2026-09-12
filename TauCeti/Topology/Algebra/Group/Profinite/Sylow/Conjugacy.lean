@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Basic
 import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.GroupTheory.QuotientGroup.Map
 
 /-!
 # Conjugacy of Sylow subgroups in profinite groups
@@ -69,12 +70,12 @@ theorem exists_map_conj_eq (hP : IsProPSylow p P) (hQ : IsProPSylow p Q) :
   have ht_mono {U V : OpenNormalSubgroup G} (hVU : V ≤ U) : t V ⊆ t U := by
     intro g hg
     have hVU' : V.toSubgroup ≤ U.toSubgroup := fun _ hx ↦ hVU hx
-    have hmap (R : Subgroup G) : (R.map (QuotientGroup.mk' V.toSubgroup)).map
-        (QuotientGroup.map V.toSubgroup U.toSubgroup (.id G) (by simpa using hVU')) =
+    have hmap (R : Subgroup G) :
+        (R.map (QuotientGroup.mk' V.toSubgroup)).map (QuotientGroup.mapOfLE hVU') =
           R.map (QuotientGroup.mk' U.toSubgroup) := by
-      rw [Subgroup.map_mk'_map_quotientGroupMap, Subgroup.map_id]
+      rw [Subgroup.map_map, QuotientGroup.mapOfLE_comp_mk']
     rw [mem_t] at hg ⊢
-    rw [← hmap Q, ← hg, Subgroup.map_conj_map, hmap P, QuotientGroup.map_mk, MonoidHom.id_apply]
+    rw [← hmap Q, ← hg, Subgroup.map_conj_map, hmap P, QuotientGroup.mapOfLE_mk]
   have ht_directed : Directed (· ⊇ ·) t := by
     intro U V
     exact ⟨U ⊓ V, ht_mono inf_le_left, ht_mono inf_le_right⟩

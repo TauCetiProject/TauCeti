@@ -31,14 +31,16 @@ rewritable.
   is what characterizes it.
 * `TauCeti.QuotientGroup.mapOfLE_refl` and `TauCeti.QuotientGroup.mapOfLE_comp`: the two functor
   laws.
+* `TauCeti.QuotientGroup.mapOfLE_comp_mk'`: composing it with the quotient map of `G` modulo
+  `V` gives the quotient map of `G` modulo `U`.
 * `TauCeti.QuotientGroup.mapOfLE_surjective`: the map is surjective.
 
 ## Usage
 
-Work with `mapOfLE` through the four lemmas above: `mapOfLE_mk` evaluates it on classes,
-`mapOfLE_refl` and `mapOfLE_comp` simplify identities and composites, and `mapOfLE_surjective`
-feeds constructions that need a surjection, such as `Sylow.mapSurjective`. To identify
-`mapOfLE hVU` with another homomorphism out of `G ⧸ V`, compare the two on classes with
+Work with `mapOfLE` through the five lemmas above: `mapOfLE_mk` evaluates it on classes,
+`mapOfLE_refl`, `mapOfLE_comp` and `mapOfLE_comp_mk'` simplify identities and composites, and
+`mapOfLE_surjective` feeds constructions that need a surjection, such as `Sylow.mapSurjective`.
+To identify `mapOfLE hVU` with another homomorphism out of `G ⧸ V`, compare the two on classes with
 `QuotientGroup.induction_on` and `mapOfLE_mk`.
 -/
 
@@ -75,6 +77,13 @@ for `W ≤ U`. -/
 theorem mapOfLE_comp [U.Normal] [V.Normal] [W.Normal] (hWV : W ≤ V) (hVU : V ≤ U) :
     (mapOfLE hVU).comp (mapOfLE hWV) = mapOfLE (hWV.trans hVU) :=
   _root_.QuotientGroup.map_comp_map W V U (.id G) (.id G) _ _ _
+
+/-- The quotient homomorphism `G ⧸ V →* G ⧸ U` is the quotient map of `G` modulo `U`, read
+through the quotient map of `G` modulo `V`. -/
+@[simp]
+theorem mapOfLE_comp_mk' [U.Normal] [V.Normal] (hVU : V ≤ U) :
+    (mapOfLE hVU).comp (_root_.QuotientGroup.mk' V) = _root_.QuotientGroup.mk' U :=
+  MonoidHom.ext fun g ↦ mapOfLE_mk hVU g
 
 /-- The quotient homomorphism `G ⧸ V →* G ⧸ U` is surjective. -/
 theorem mapOfLE_surjective [U.Normal] [V.Normal] (hVU : V ≤ U) :
