@@ -15,9 +15,9 @@ Mathlib equips `SimpleGraph V` with the sigma-algebra induced by all adjacency c
 `V` is countable, an individual graph is measurable because its edge set is a measurable point in
 the countable product space. This supplies the discrete integration API for finite random graphs.
 
-Pulling a graph back along a map of vertex types reads finitely many adjacency coordinates of the
-source graph, so it is measurable with no hypothesis on either vertex type. This is what lets a
-random graph be restricted to a window of labels.
+Each adjacency coordinate of a graph pulled back along a map of vertex types is a single
+adjacency coordinate of the source graph, so the pullback is measurable with no hypothesis on
+either vertex type. This is what lets a random graph be restricted to a window of labels.
 
 ## Main results
 

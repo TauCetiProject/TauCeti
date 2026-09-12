@@ -37,6 +37,8 @@ set of them is measurable; no measurability side conditions appear below.
 
 * `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_map` — upper masses are unchanged by
   relabelling the pattern along an injection;
+* `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_anti` — a stronger pattern has a
+  smaller upper mass;
 * `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_bot`,
   `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_nonneg` and
   `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_le_one` — the range of an upper mass.
@@ -78,6 +80,16 @@ namespace ExchangeableGraphLaw
 instance instIsProbabilityMeasureLaw (L : ExchangeableGraphLaw) (k : ℕ) :
     IsProbabilityMeasure (L.law k) := L.prob k
 
+/-- A law is determined by its marginals: the two remaining fields are propositions. -/
+@[ext]
+theorem ext {L L' : ExchangeableGraphLaw} (h : ∀ k, L.law k = L'.law k) : L = L' := by
+  cases L with
+  | mk law prob consistent =>
+    cases L' with
+    | mk law' prob' consistent' =>
+      congr 1
+      exact funext h
+
 variable (L : ExchangeableGraphLaw) {k l : ℕ}
 
 /-- The upper mass of a pattern `F`: the probability that the level-`k` sample contains `F`. -/
@@ -95,6 +107,10 @@ theorem upperMass_nonneg (F : SimpleGraph (Fin k)) : 0 ≤ L.upperMass F :=
 theorem upperMass_le_one (F : SimpleGraph (Fin k)) : L.upperMass F ≤ 1 := by
   rw [upperMass_def, ← ENNReal.toReal_one]
   exact ENNReal.toReal_mono ENNReal.one_ne_top prob_le_one
+
+/-- Strengthening a pattern shrinks its upper event, so upper masses are antitone. -/
+theorem upperMass_anti : Antitone (L.upperMass (k := k)) := fun _ _ h =>
+  ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono fun _ hG => h.trans hG)
 
 /-- Every graph contains the edgeless pattern, so its upper mass is `1`. -/
 @[simp]
