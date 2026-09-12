@@ -28,6 +28,7 @@ public section
 namespace TauCeti.Hodge.StandardWeightOne
 
 open scoped ComplexOrder
+open scoped TensorProduct
 
 /-! ### The standard rank-two lattice and its complex structure -/
 
@@ -40,9 +41,16 @@ abbrev RationalSpace := ℚ × ℚ
 /-- The complex vector space underlying the standard rank-two weight-one example. -/
 abbrev ComplexSpace := ℂ × ℂ
 
+noncomputable local instance moduleRatOfComplex : Module ℚ ComplexSpace :=
+  Module.restrictScalars ℚ ℂ ComplexSpace
+
 /-- Coordinatewise inclusion of the standard lattice into its rationalization. -/
 def latticeToRational : Lattice →ₗ[ℤ] RationalSpace :=
   (Algebra.linearMap ℤ ℚ).prodMap (Algebra.linearMap ℤ ℚ)
+
+/-! The coordinatewise rational inclusion is a base change from `ℤ` to `ℚ`. -/
+theorem isBaseChange_latticeToRational : IsBaseChange ℚ latticeToRational :=
+  IsBaseChange.prodMap _ _ (IsBaseChange.linearMap ℤ ℚ) (IsBaseChange.linearMap ℤ ℚ)
 
 /-- Coordinatewise inclusion of the standard lattice into its complexification. -/
 def latticeToComplex : Lattice →ₗ[ℤ] ComplexSpace :=
@@ -50,7 +58,7 @@ def latticeToComplex : Lattice →ₗ[ℤ] ComplexSpace :=
 
 /-- Coordinatewise inclusion of the rationalization into the complexification. -/
 noncomputable def rationalToComplex : RationalSpace →ₗ[ℚ] ComplexSpace :=
-  (Algebra.linearMap ℚ ℂ).prodMap (Algebra.linearMap ℚ ℂ)
+  Hodge.rationalToComplexMap isBaseChange_latticeToRational latticeToComplex
 
 @[simp]
 theorem latticeToRational_apply (x : Lattice) :
@@ -65,7 +73,25 @@ theorem latticeToComplex_apply (x : Lattice) :
 @[simp]
 theorem rationalToComplex_apply (x : RationalSpace) :
     rationalToComplex x = ((x.1 : ℂ), (x.2 : ℂ)) := by
-  simp [rationalToComplex]
+  induction x using isBaseChange_latticeToRational.inductionOn with
+  | zero =>
+      change rationalToComplex 0 = (((0 : ℚ) : ℂ), ((0 : ℚ) : ℂ))
+      rw [LinearMap.map_zero]
+      ext <;> norm_num
+  | tmul x =>
+      change rationalToComplex (latticeToRational x) = _
+      rw [show rationalToComplex = Hodge.rationalToComplexMap
+          isBaseChange_latticeToRational latticeToComplex from rfl,
+        Hodge.rationalToComplexMap_apply_ι]
+      simp
+  | smul q x hx =>
+      change rationalToComplex (q • x) = _
+      rw [LinearMap.map_smul rationalToComplex, hx]
+      change (((q : ℂ) • (x.1 : ℂ)), ((q : ℂ) • (x.2 : ℂ))) = _
+      ext <;> simp [Algebra.smul_def]
+  | add x y hx hy =>
+      simp only [map_add, hx, hy]
+      ext <;> simp
 
 /-- The two coordinatewise inclusions agree after passing through the rationalization.
 
@@ -73,11 +99,7 @@ This is deliberately not `@[simp]`: the coordinatewise application lemmas above 
 left-hand side in simp normal form, so tagging this consequence fails `simpNF`. -/
 theorem rationalToComplex_comp_latticeToRational (x : Lattice) :
     rationalToComplex (latticeToRational x) = latticeToComplex x := by
-  simp
-
-/-- The coordinatewise rational inclusion is a base change from `ℤ` to `ℚ`. -/
-theorem isBaseChange_latticeToRational : IsBaseChange ℚ latticeToRational :=
-  IsBaseChange.prodMap _ _ (IsBaseChange.linearMap ℤ ℚ) (IsBaseChange.linearMap ℤ ℚ)
+  exact Hodge.rationalToComplexMap_apply_ι isBaseChange_latticeToRational latticeToComplex x
 
 /-- The coordinatewise complex inclusion is a base change from `ℤ` to `ℂ`. -/
 theorem isBaseChange_latticeToComplex : IsBaseChange ℂ latticeToComplex :=
@@ -85,16 +107,8 @@ theorem isBaseChange_latticeToComplex : IsBaseChange ℂ latticeToComplex :=
 
 /-- The coordinatewise inclusion from `ℚ × ℚ` to `ℂ × ℂ` is a base change. -/
 theorem isBaseChange_rationalToComplex : IsBaseChange ℂ rationalToComplex :=
-  IsBaseChange.prodMap _ _ (IsBaseChange.linearMap ℚ ℂ) (IsBaseChange.linearMap ℚ ℂ)
-
-/-- The standard complex structure squares to minus the identity. -/
-theorem complexStructure_sq :
-    (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap.comp
-        (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap =
-      -(LinearMap.id : ComplexSpace →ₗ[ℂ] ComplexSpace) := by
-  apply LinearMap.ext
-  rintro ⟨z, w⟩
-  ext <;> simp
+  Hodge.isBaseChange_rationalToComplexMap isBaseChange_latticeToRational
+    isBaseChange_latticeToComplex
 
 private noncomputable def coordinateConjugation :
     ComplexSpace →ₛₗ[starRingEnd ℂ] ComplexSpace where
@@ -113,104 +127,105 @@ theorem latticeConj_apply (z : ComplexSpace) :
   · intro x
     ext <;> simp [coordinateConjugation]
 
-private theorem map_eigenspace_I :
-    (Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I).map
-        (latticeConjugation isBaseChange_latticeToComplex).toEquiv.toLinearMap =
-      Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap (-Complex.I) := by
-  ext z
+private abbrev RealSpace := ℝ × ℝ
+
+private noncomputable def realAlmostComplexStructure : AlmostComplexStructure RealSpace :=
+  AlmostComplexStructure.product ℝ
+
+private noncomputable def complexificationEquiv :
+    ℂ ⊗[ℝ] RealSpace ≃ₗ[ℂ] ComplexSpace :=
+  (TensorProduct.prodRight ℝ ℂ ℂ ℝ ℝ).trans
+    ((TensorProduct.AlgebraTensorModule.rid ℝ ℂ ℂ).prodCongr
+      (TensorProduct.AlgebraTensorModule.rid ℝ ℂ ℂ))
+
+@[simp]
+private theorem complexificationEquiv_tmul (z : ℂ) (x : RealSpace) :
+    complexificationEquiv (z ⊗ₜ[ℝ] x) = (z * x.1, z * x.2) := by
+  simp only [complexificationEquiv, LinearEquiv.trans_apply, TensorProduct.prodRight_tmul,
+    LinearEquiv.prodCongr_apply, TensorProduct.AlgebraTensorModule.rid_tmul]
+  ext <;> simp [Algebra.smul_def, mul_comm]
+
+private theorem complexificationEquiv_conj (x : ℂ ⊗[ℝ] RealSpace) :
+    complexificationEquiv ((Hodge.complexificationConjugation RealSpace).toEquiv x) =
+      coordinateConjugation (complexificationEquiv x) := by
+  induction x using TensorProduct.induction_on with
+  | zero => simp
+  | add x y hx hy => simp only [map_add, hx, hy, coordinateConjugation.map_add]
+  | tmul z x =>
+      rw [Hodge.complexificationConjugation_toEquiv_tmul, complexificationEquiv_tmul,
+        complexificationEquiv_tmul]
+      simp [coordinateConjugation]
+
+private theorem complexificationEquiv_J (x : ℂ ⊗[ℝ] RealSpace) :
+    complexificationEquiv (realAlmostComplexStructure.toLinearMap.baseChange ℂ x) =
+      (LinearEquiv.skewSwap ℂ ℂ ℂ) (complexificationEquiv x) := by
+  induction x using TensorProduct.induction_on with
+  | zero => simp [complexificationEquiv]
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul z x =>
+      rw [LinearMap.baseChange_tmul, complexificationEquiv_tmul, complexificationEquiv_tmul]
+      simp [realAlmostComplexStructure, AlmostComplexStructure.product]
+
+private theorem complexificationEquiv_conj_symm (x : ComplexSpace) :
+    complexificationEquiv.symm ((latticeConjugation isBaseChange_latticeToComplex).toEquiv x) =
+      (Hodge.complexificationConjugation RealSpace).toEquiv
+        (complexificationEquiv.symm x) := by
+  apply complexificationEquiv.injective
+  rw [complexificationEquiv.apply_symm_apply, latticeConjugation_toEquiv_apply,
+    complexificationEquiv_conj]
+  simp only [complexificationEquiv.apply_symm_apply]
+  rw [latticeConj_apply]
+  rfl
+
+private theorem complexificationEquiv_eigenspace_comap (μ : ℂ) :
+    (Module.End.eigenspace (realAlmostComplexStructure.toLinearMap.baseChange ℂ) μ).comap
+        complexificationEquiv.symm.toLinearMap =
+      Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap μ := by
+  ext x
+  rw [Submodule.mem_comap, Module.End.mem_eigenspace_iff, Module.End.mem_eigenspace_iff]
   constructor
-  · rintro ⟨w, hw, rfl⟩
-    have hw' : w ∈ Module.End.eigenspace
-        (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I := hw
-    rw [Module.End.mem_eigenspace_iff] at hw'
-    rw [Module.End.mem_eigenspace_iff]
-    simp only [LinearEquiv.coe_toLinearMap, latticeConjugation_toEquiv_apply, latticeConj_apply]
-    have hfst := congrArg Prod.fst hw'
-    have hsnd := congrArg Prod.snd hw'
-    apply Prod.ext
-    · simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply,
-        Prod.smul_fst, Prod.smul_snd,
-        smul_eq_mul, map_neg, map_mul, Complex.conj_I, neg_mul, mul_neg, neg_neg] using
-        congrArg (starRingEnd ℂ) hfst
-    · simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply,
-        Prod.smul_fst, Prod.smul_snd,
-        smul_eq_mul, map_neg, map_mul, Complex.conj_I, neg_mul, mul_neg, neg_neg] using
-        congrArg (starRingEnd ℂ) hsnd
-  · intro hz
-    rw [Module.End.mem_eigenspace_iff] at hz
-    have hfst := congrArg Prod.fst hz
-    have hsnd := congrArg Prod.snd hz
-    refine ⟨(starRingEnd ℂ z.1, starRingEnd ℂ z.2), ?_, ?_⟩
-    · have hw : (starRingEnd ℂ z.1, starRingEnd ℂ z.2) ∈
-          Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I := by
-        rw [Module.End.mem_eigenspace_iff]
-        apply Prod.ext
-        · simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply,
-            Prod.smul_fst, Prod.smul_snd,
-            smul_eq_mul, map_neg, map_mul, Complex.conj_I, neg_mul, mul_neg, neg_neg] using
-            congrArg (starRingEnd ℂ) hfst
-        · simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply,
-            Prod.smul_fst, Prod.smul_snd,
-            smul_eq_mul, map_neg, map_mul, Complex.conj_I, neg_mul, mul_neg, neg_neg] using
-            congrArg (starRingEnd ℂ) hsnd
-      exact hw
-    · simp only [LinearEquiv.coe_toLinearMap, latticeConjugation_toEquiv_apply, latticeConj_apply]
-      simp
+  · intro hx
+    calc
+      (LinearEquiv.skewSwap ℂ ℂ ℂ) x =
+          complexificationEquiv
+            (realAlmostComplexStructure.toLinearMap.baseChange ℂ
+              (complexificationEquiv.symm x)) := by
+            rw [complexificationEquiv_J, complexificationEquiv.apply_symm_apply]
+      _ = complexificationEquiv (μ • complexificationEquiv.symm x) := congrArg _ hx
+      _ = μ • x := by rw [map_smul, complexificationEquiv.apply_symm_apply]
+  · intro hx
+    apply complexificationEquiv.injective
+    calc
+      complexificationEquiv
+          (realAlmostComplexStructure.toLinearMap.baseChange ℂ
+            (complexificationEquiv.symm x)) = (LinearEquiv.skewSwap ℂ ℂ ℂ) x := by
+              rw [complexificationEquiv_J, complexificationEquiv.apply_symm_apply]
+      _ = μ • x := hx
+      _ = complexificationEquiv (μ • complexificationEquiv.symm x) := by
+        rw [map_smul, complexificationEquiv.apply_symm_apply]
 
-private theorem isCompl_eigenspaces :
-    IsCompl (Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I)
-      (Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap (-Complex.I)) :=
-  Module.End.isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id
-    (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap complexStructure_sq
-
-private def filtration (p : ℤ) : Submodule ℂ ComplexSpace :=
-  if p ≤ 0 then ⊤ else if p = 1 then
-    Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I else ⊥
-
-private theorem filtration_antitone : Antitone filtration := by
-  intro p q hpq
-  simp only [filtration]
-  by_cases hp : p ≤ 0
-  · rw [ite_eq_left hp]
-    exact le_top
-  have hq : ¬q ≤ 0 := by omega
-  rw [ite_eq_right hp, ite_eq_right hq]
-  by_cases hq_one : q = 1
-  · have hp_one : p = 1 := by omega
-    subst p
-    subst q
-    exact le_rfl
-  rw [ite_eq_right hq_one]
-  exact bot_le
+private theorem comap_weilOperator (hs : HodgeStructureOn (ℂ ⊗[ℝ] RealSpace)
+    (Hodge.complexificationConjugation RealSpace) 1) :
+    (hs.comap complexificationEquiv.symm complexificationEquiv_conj_symm).weilOperator =
+      complexificationEquiv.toLinearMap ∘ₗ hs.weilOperator ∘ₗ
+        complexificationEquiv.symm.toLinearMap := by
+  symm
+  apply (hs.comap complexificationEquiv.symm complexificationEquiv_conj_symm).weilOperator_unique
+  intro p x hx
+  rw [LinearMap.comp_apply, LinearMap.comp_apply]
+  have hx' : complexificationEquiv.symm x ∈ hs.piece p := by
+    rw [HodgeStructureOn.comap_piece] at hx
+    exact hx
+  change complexificationEquiv (hs.weilOperator (complexificationEquiv.symm x)) = _
+  rw [hs.weilOperator_apply_of_mem hx', map_smul]
+  simp only [complexificationEquiv.apply_symm_apply]
 
 /-- The standard effective Hodge structure of weight one on `ℤ × ℤ`. Its degree-one
 filtration is the `i`-eigenspace of `J(x, y) = (-y, x)`. -/
 noncomputable def hodgeStructure :
-    HodgeStructure isBaseChange_latticeToComplex 1 where
-  F := filtration
-  F_antitone := filtration_antitone
-  F_top := ⟨0, by simp [filtration]⟩
-  opposed p := by
-    by_cases hp : p ≤ 0
-    · have hother : ¬1 + 1 - p ≤ 0 := by omega
-      have hotherone : 1 + 1 - p ≠ 1 := by omega
-      rw [filtration, ite_eq_left hp, filtration, ite_eq_right hother,
-        ite_eq_right hotherone,
-        Submodule.map_bot]
-      exact isCompl_top_bot
-    · by_cases hpone : p = 1
-      · subst p
-        norm_num [filtration, map_eigenspace_I]
-        exact isCompl_eigenspaces
-      · have hpge : 2 ≤ p := by omega
-        have hother : 1 + 1 - p ≤ 0 := by omega
-        have hmaptop : (⊤ : Submodule ℂ ComplexSpace).map
-            (latticeConjugation isBaseChange_latticeToComplex).toEquiv.toLinearMap = ⊤ := by
-          rw [Submodule.map_top, LinearMap.range_eq_top]
-          exact (latticeConjugation isBaseChange_latticeToComplex).toEquiv.surjective
-        rw [filtration, ite_eq_right hp, ite_eq_right hpone, filtration,
-          ite_eq_left hother, hmaptop]
-        exact isCompl_bot_top
+    HodgeStructure isBaseChange_latticeToComplex 1 :=
+  HodgeStructureOn.comap complexificationEquiv.symm complexificationEquiv_conj_symm
+      (realAlmostComplexStructure.hodgeStructure)
 
 /-- The filtration is top in nonpositive degrees, the `i`-eigenspace in degree one, and bottom
 above degree one. -/
@@ -219,29 +234,36 @@ theorem hodgeStructure_F (p : ℤ) :
     hodgeStructure.F p = if p ≤ 0 then ⊤ else if p = 1 then
       Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I else ⊥ :=
   by
-    -- Expose the private filtration definition while keeping its implementation private.
-    change filtration p = _
-    rfl
+    rw [hodgeStructure, HodgeStructureOn.comap_F,
+      realAlmostComplexStructure.hodgeStructure_F]
+    by_cases hp : p ≤ 0
+    · simp [hp]
+    · by_cases hpone : p = 1
+      · simp [hpone, complexificationEquiv_eigenspace_comap]
+      · simp [hp, hpone]
 
 /-- The standard weight-one Hodge structure is effective. -/
 theorem isEffective_hodgeStructure : hodgeStructure.IsEffective := by
-  simp [HodgeStructureOn.isEffective_iff]
+  rw [HodgeStructureOn.isEffective_iff, hodgeStructure_F]
+  simp
 
 /-- The `H^{1,0}` piece is the `i`-eigenspace of the standard complex structure. -/
 @[simp]
 theorem hodgeStructure_piece_one :
     hodgeStructure.piece 1 =
       Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I := by
-  rw [HodgeStructureOn.piece_def, HodgeStructureOn.conjF_def]
-  norm_num [hodgeStructure_F]
+  rw [hodgeStructure, HodgeStructureOn.comap_piece,
+    realAlmostComplexStructure.hodgeStructure_piece_one,
+    complexificationEquiv_eigenspace_comap]
 
 /-- The `H^{0,1}` piece is the `-i`-eigenspace of the standard complex structure. -/
 @[simp]
 theorem hodgeStructure_piece_zero :
     hodgeStructure.piece 0 =
       Module.End.eigenspace (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap (-Complex.I) := by
-  rw [HodgeStructureOn.piece_def, HodgeStructureOn.conjF_def]
-  norm_num [hodgeStructure_F, map_eigenspace_I]
+  rw [hodgeStructure, HodgeStructureOn.comap_piece,
+    realAlmostComplexStructure.hodgeStructure_piece_zero,
+    complexificationEquiv_eigenspace_comap]
 
 /-- Every Hodge piece except `H^{1,0}` and `H^{0,1}` vanishes. -/
 theorem hodgeStructure_piece_eq_bot {p : ℤ} (hpzero : p ≠ 0) (hpone : p ≠ 1) :
@@ -255,21 +277,16 @@ theorem hodgeStructure_piece_eq_bot {p : ℤ} (hpzero : p ≠ 0) (hpone : p ≠ 
 @[simp]
 theorem hodgeStructure_weilOperator :
     hodgeStructure.weilOperator = (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap := by
-  symm
-  apply hodgeStructure.weilOperator_unique
-  intro p x hx
-  by_cases hpone : p = 1
-  · subst p
-    rw [hodgeStructure_piece_one, Module.End.mem_eigenspace_iff] at hx
-    norm_num
-    simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply] using hx
-  by_cases hpzero : p = 0
-  · subst p
-    rw [hodgeStructure_piece_zero, Module.End.mem_eigenspace_iff] at hx
-    norm_num
-    simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply, neg_smul] using hx
-  rw [hodgeStructure_piece_eq_bot hpzero hpone, Submodule.mem_bot] at hx
-  subst x
+  rw [hodgeStructure, comap_weilOperator,
+    realAlmostComplexStructure.hodgeStructure_weilOperator]
+  apply LinearMap.ext
+  intro x
+  obtain ⟨y, rfl⟩ := complexificationEquiv.surjective x
+  rw [LinearMap.comp_apply, LinearMap.comp_apply]
+  change complexificationEquiv
+      (realAlmostComplexStructure.toLinearMap.baseChange ℂ
+        (complexificationEquiv.symm (complexificationEquiv y))) = _
+  rw [complexificationEquiv.symm_apply_apply, complexificationEquiv_J]
   simp
 
 /-! ### The standard Riemann form -/
