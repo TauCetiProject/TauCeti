@@ -27,6 +27,9 @@ separable polynomial of positive degree, and records what the orbit count says a
 inside the splitting field itself: an irreducible polynomial acts transitively there, and an
 irreducible separable polynomial of prime degree acts primitively.
 
+The prime-degree statement is the corollary recorded in the “Primitivity and intermediate
+fields” milestone of `TauCetiRoadmap/PolynomialGaloisGroups/README.md`, Layer 2.
+
 ## Main results
 
 * `TauCeti.mem_orbit_iff_minpoly_eq`: two roots of `p` are in the same Galois orbit exactly when

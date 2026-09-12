@@ -17,6 +17,9 @@ with a relative Galois group: it is the subgroup of `p.Gal` fixing the simple ex
 pointwise. The fixed-field and endpoint readings of the action against the Galois correspondence
 go through that identification.
 
+This is the “Stabilizers are relative Galois groups” milestone of
+`TauCetiRoadmap/PolynomialGaloisGroups/README.md`, Layer 2.
+
 The identification itself needs no hypothesis on `p`. Recovering the fixed field and the two
 ends of the Galois correspondence needs `IsGalois F L`. The index, however, is an
 orbit-stabilizer calculation: it only needs the minimal polynomial of the chosen root to be
