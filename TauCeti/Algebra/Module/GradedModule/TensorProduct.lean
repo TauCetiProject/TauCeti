@@ -38,8 +38,6 @@ roadmap and supplies the grading used by tensor products of DG objects.
 * `TauCeti.InternalGrading.tmul_mem_tensorProduct`: degrees add on pure tensors.
 * `TauCeti.InternalGrading.piTensorProduct_ext`: linear maps from a finite tensor product agree
   when they agree on pure tensors of homogeneous elements.
-* `TauCeti.InternalGrading.linearMap_ext`: linear maps agree when they agree on homogeneous
-  elements.
 * `TauCeti.InternalGrading.multilinearMap_ext`: multilinear maps agree when they agree on tuples
   of homogeneous elements.
 * `TauCeti.LinearMap.IsHomogeneous.tensorProduct`: tensoring homogeneous maps adds their degrees.
@@ -80,16 +78,6 @@ theorem piTensorProduct_ext (G : InternalGrading R M) {n : ℕ}
     intro a ha
     exact Submodule.subset_span ⟨⟨d, ⟨a, ha⟩⟩, rfl⟩
   · exact h
-
-/-- Two linear maps on an internally graded module agree if they agree on homogeneous elements. -/
-theorem linearMap_ext (G : InternalGrading R M) {f g : M →ₗ[R] N}
-    (h : ∀ (p : ℤ) (x : M), x ∈ G.piece p → f x = g x) : f = g := by
-  apply (Submodule.linearMap_eq_iff_of_span_eq_top f g ?_).2
-  · rintro ⟨x, hx⟩
-    obtain ⟨p, hp⟩ := Set.mem_iUnion.mp hx
-    exact h p x hp
-  · rw [← Submodule.iSup_eq_span]
-    exact G.isInternal.submodule_iSup_eq_top
 
 /-- Two multilinear maps on an internally graded module agree if they agree on tuples of
 homogeneous elements. -/

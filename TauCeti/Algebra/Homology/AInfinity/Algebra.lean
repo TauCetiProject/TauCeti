@@ -308,6 +308,8 @@ theorem stasheff_arity_four (𝒜 : AInfinityAlgebra R A) (a b c d : A) (p q r :
 theorem m_two_assoc_of_m_three_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : 𝒜.m 3 = 0)
     (x y z : A) :
     𝒜.m 2 ![𝒜.m 2 ![x, y], z] = 𝒜.m 2 ![x, 𝒜.m 2 ![y, z]] := by
+  -- Package the left- and right-associated products as trilinear maps. It then suffices to
+  -- compare them on homogeneous first and second inputs via `stasheff_arity_three`.
   let L : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
     (((𝒜.m 2).domDomCongr (Fin.oneSlotEquiv 0 1).symm).oneSlot (𝒜.m 2)).domDomCongr
       (Fin.blockEquiv 0 2 1)
@@ -327,6 +329,8 @@ theorem m_two_assoc_of_m_three_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : �
         apply Fin.ext
         exact Fin.oneSlotEquiv_middle_val 0 1
       rw [hout]
+      -- Expose the inner tuple selected by `oneSlot` so that `blockEquiv` can be evaluated
+      -- coordinatewise; simplification does not unfold vector notation to this form.
       change (𝒜.m 2) (fun j ↦ ![a, b, c] (Fin.blockEquiv 0 2 1 (.inr (.inl j)))) =
         𝒜.m 2 ![a, b]
       congr 1
@@ -369,6 +373,8 @@ theorem m_two_assoc_of_m_three_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : �
         apply Fin.ext
         exact Fin.oneSlotEquiv_middle_val 1 0
       rw [hout]
+      -- As above, expose the inner tuple; the coordinate proof below identifies this middle
+      -- block with the final two entries of the original tuple.
       change (𝒜.m 2) (fun j ↦ ![a, b, c] (Fin.blockEquiv 1 2 0 (.inr (.inl j)))) =
         𝒜.m 2 ![b, c]
       congr 1
