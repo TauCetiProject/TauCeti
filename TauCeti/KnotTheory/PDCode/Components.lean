@@ -50,7 +50,7 @@ def componentPerm (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
   simp [crossingTurn]
 
 /-- The crossing turn is an involution. -/
-@[simp] theorem crossingTurn_crossingTurn (D : PDCode n) (h : Fin (4 * n)) :
+@[simp] theorem crossingTurn_apply_apply (D : PDCode n) (h : Fin (4 * n)) :
     D.crossingTurn (D.crossingTurn h) = h := by
   obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
   obtain ⟨⟨i, slot⟩, rfl⟩ := (PDCode.crossingSlotEquiv n).surjective x
@@ -205,7 +205,7 @@ def reverseOutgoingEquiv (D : OrientedPDCode n) :
   have hbase : D.edgePair.val (D.crossingTurn h) =
       D.toPDCode.componentPerm.symm h := by
     apply D.toPDCode.componentPerm.injective
-    simp [PDCode.componentPerm_apply, PDCode.crossingTurn_crossingTurn]
+    simp [PDCode.componentPerm_apply, PDCode.crossingTurn_apply_apply]
   exact hbase.trans (componentPermOutgoing_symm_apply_val D h).symm
 
 /-- Outgoing traversal has the same half-edge value as unrestricted traversal. -/
@@ -233,7 +233,7 @@ def reverseOutgoingEquiv (D : OrientedPDCode n) :
     apply incoming.injective
     apply Subtype.ext
     simp [e, incoming, Equiv.subtypeEquiv, componentPermOutgoing,
-      PDCode.componentPerm_apply, PDCode.crossingTurn_crossingTurn]
+      PDCode.componentPerm_apply, PDCode.crossingTurn_apply_apply]
   -- Splitting by orientation accounts for every unrestricted orbit, including fixed points.
   have hsplit : D.toPDCode.componentPerm =
       (Equiv.sumCompl p).permCongr (Equiv.Perm.sumCongr D.componentPermOutgoing incoming) := by
