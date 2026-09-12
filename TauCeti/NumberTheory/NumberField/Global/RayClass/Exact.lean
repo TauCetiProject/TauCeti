@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
 
 import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 -- Private in `RayClass.Basic`; needed below for `ClassGroup.mk_toPrincipalIdeal`.
