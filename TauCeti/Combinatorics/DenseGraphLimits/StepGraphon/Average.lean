@@ -30,7 +30,7 @@ contribution.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.stepGraphonAvg_eq_stepGraphon` identifies it as the step graphon of
+* `TauCeti.DenseGraphLimits.stepGraphonAvg_def` identifies it as the step graphon of
   `blockAverage`;
 * `TauCeti.DenseGraphLimits.stepGraphonAvg_apply` is its pointwise block formula;
 * `TauCeti.DenseGraphLimits.stepGraphonAvg_apply_of_measure_eq_zero_left` and
@@ -123,7 +123,7 @@ def stepGraphonAvg (P : Finpartition (Set.univ : Set Ω))
 
 `stepGraphonAvg` is a definition whose body is not exposed outside this module, so this is the only
 way a downstream file can name its block matrix. -/
-theorem stepGraphonAvg_eq_stepGraphon (P : Finpartition (Set.univ : Set Ω))
+theorem stepGraphonAvg_def (P : Finpartition (Set.univ : Set Ω))
     (hP : ∀ p ∈ P.parts, MeasurableSet p) (W : Graphon Ω μ) :
     stepGraphonAvg (μ := μ) P hP W =
       stepGraphon (μ := μ) P hP (blockAverage P W) (blockAverage_comm P W) := by

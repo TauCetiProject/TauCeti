@@ -2,6 +2,8 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors, Claude
+Weight-rounding construction adapted from:
+`TauCeti/MeasureTheory/OptimalTransport/Wasserstein/FiniteSupport.lean`
 -/
 module
 
@@ -25,9 +27,7 @@ finite total masses is used there, not normalization to one.
 Rounding to a common denominator `M` cannot be done pointwise, since the weights have to keep
 summing to one.  `TauCeti.exists_nat_weights_of_sum_eq_one` rounds every weight but the one at
 `x₀` down to a multiple of `1 / M` and lets `x₀` absorb the slack; the rounded weights are then
-dominated away from `x₀` and lose less than `1 / M` each.  That construction was extracted from
-`TauCeti/MeasureTheory/OptimalTransport/Wasserstein/FiniteSupport.lean`, where it was first
-written for `TauCeti.MeasureTheory.exists_nat_weights_wassersteinEDist_le`, which now calls it.
+dominated away from `x₀` and lose less than `1 / M` each.
 
 ## Main results
 

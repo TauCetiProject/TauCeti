@@ -59,7 +59,7 @@ theorem exists_stepGraphon_cutDist_le (W : Graphon Ω μ) {ε : ℝ} (hε : 0 < 
         cutDist W (stepGraphon (μ := μ) P hP val hsymm) ≤ ε := by
   obtain ⟨P, hP, hcard, happrox⟩ := weak_regularity_frieze_kannan μ W hε
   refine ⟨P, hP, blockAverage P W, blockAverage_comm P W, hcard, ?_⟩
-  rw [← stepGraphonAvg_eq_stepGraphon]
+  rw [← stepGraphonAvg_def]
   exact (cutDist_le_cutNorm_sub W _).trans happrox
 
 /-- **Every graphon is within `ε` in cut distance of a finite weighted graph**, on any vertex set
