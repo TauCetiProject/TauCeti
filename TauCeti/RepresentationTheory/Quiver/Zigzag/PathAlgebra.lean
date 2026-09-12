@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Basic
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Map
+public import TauCeti.RepresentationTheory.Quiver.Symmetrify
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
 
 /-!
 # Vertices, oriented edges, and backtracks in a doubled path algebra
@@ -20,6 +22,10 @@ is a *backtrack*: it leaves along an edge and returns along the same edge. The t
 results below show that these are the only short paths, so that the zigzag relations, which are
 imposed on length-two paths, can be enumerated by adjacencies.
 
+The last section relabels the doubled path algebra along an orientation of the graph: the
+symmetrification of an oriented quiver is the doubled quiver, so their path algebras are
+isomorphic, and the isomorphism carries the arrow of a selected dart to the arrow of that dart.
+
 Products are computed in Tau Ceti's *later-factor-first* convention: for a path `a` from `i` to `j`
 the vertex idempotents satisfy `e_j * a = a = a * e_i`, and traversing `h : G.Adj i j` and then
 returning is the product `ofArrow (arrow G h.symm) * ofArrow (arrow G h)`.
@@ -29,6 +35,8 @@ returning is the product `ofArrow (arrow G h.symm) * ofArrow (arrow G h)`.
 * `TauCeti.DoubledQuiver.arrowPath`: the length-one path along an adjacency.
 * `TauCeti.DoubledQuiver.backtrackPath`: the length-two path leaving along an edge and returning.
 * `TauCeti.DoubledQuiver.backtrackElem`: the path-algebra element of a backtrack.
+* `TauCeti.DoubledQuiver.orientedPathAlgEquiv`: the isomorphism of path algebras attached to an
+  orientation of the graph.
 
 ## Main results
 
@@ -43,6 +51,9 @@ returning is the product `ofArrow (arrow G h.symm) * ofArrow (arrow G h)`.
   `TauCeti.DoubledQuiver.backtrackElem_mul_vertexIdempotent`, and their vanishing counterparts.
 * `TauCeti.DoubledQuiver.linearIndependent_vertexIdempotent_ofArrow_backtrackElem`: the vertex
   idempotents, the oriented-edge elements, and the backtrack elements are linearly independent.
+* `TauCeti.DoubledQuiver.orientedPathAlgEquiv_ofArrow_of` and
+  `TauCeti.DoubledQuiver.orientedPathAlgEquiv_ofArrow_reverse_of`: the relabelling reads an
+  oriented arrow and its formal reverse as the two darts over the same edge.
 
 ## References
 
@@ -308,6 +319,60 @@ theorem linearIndependent_vertexIdempotent_ofArrow_backtrackElem
   rw [hfam]
   exact (pathAlgebraBasis k (DoubledQuiver G)).linearIndependent.comp _
     (shortPathIndex_injective G)
+
+/-! ### The path algebra of an orientation -/
+
+section Orientation
+
+variable (k : Type w) [CommSemiring k] [Fintype V] {G} (o : Orientation G)
+
+/-- **The isomorphism of path algebras attached to an orientation of a simple graph**: the
+symmetrification of the oriented quiver of `o` is the doubled quiver of `G`, so the two path
+algebras are relabellings of one another. -/
+noncomputable def orientedPathAlgEquiv :
+    pathAlgebra k (_root_.Quiver.Symmetrify (OrientedQuiver G o)) ≃ₐ[k]
+      pathAlgebra k (DoubledQuiver G) :=
+  PathAlgebra.mapAlgEquiv k (symmetrifyMap G o) (unsymmetrifyMap G o)
+    (symmetrifyMap_comp_unsymmetrifyMap G o) (unsymmetrifyMap_comp_symmetrifyMap G o)
+
+/-- The relabelling sends the element of an arrow to the element of its image arrow. Deliberately
+not a `simp` lemma: `TauCeti.PathAlgebra.ofArrow_eq_ofPath` already rewrites its left-hand side,
+and `simpNF` rejects the pair. -/
+theorem orientedPathAlgEquiv_ofArrow {x y : _root_.Quiver.Symmetrify (OrientedQuiver G o)}
+    (e : x ⟶ y) :
+    orientedPathAlgEquiv k o (ofArrow e) = ofArrow ((symmetrifyMap G o).map e) := by
+  rw [orientedPathAlgEquiv, PathAlgebra.mapAlgEquiv_apply, PathAlgebra.mapAlgHom_ofArrow]
+
+/-- The relabelling sends the arrow of a dart selected by the orientation to the doubled-quiver
+arrow of that dart. -/
+theorem orientedPathAlgEquiv_ofArrow_of {i j : V} (h : G.Adj i j)
+    (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o) :
+    orientedPathAlgEquiv k o
+        (ofArrow (_root_.Quiver.Symmetrify.of.map (OrientedQuiver.arrow G o h ho)))
+      = ofArrow (arrow G h) := by
+  have hmap : (symmetrifyMap G o).map
+      (_root_.Quiver.Symmetrify.of.map (OrientedQuiver.arrow G o h ho))
+      = _root_.Quiver.homOfEq (arrow G h) (symmetrifyMap_obj G o i).symm
+          (symmetrifyMap_obj G o j).symm := Subsingleton.elim _ _
+  rw [orientedPathAlgEquiv_ofArrow, hmap]
+  exact ofArrow_homOfEq _ _ _
+
+/-- The relabelling sends the formal reverse of the arrow of a selected dart to the doubled-quiver
+arrow of the reversed dart. -/
+theorem orientedPathAlgEquiv_ofArrow_reverse_of {i j : V} (h : G.Adj i j)
+    (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o) :
+    orientedPathAlgEquiv k o
+        (ofArrow (_root_.Quiver.reverse
+          (_root_.Quiver.Symmetrify.of.map (OrientedQuiver.arrow G o h ho))))
+      = ofArrow (arrow G h.symm) := by
+  have hmap : (symmetrifyMap G o).map
+      (_root_.Quiver.reverse (_root_.Quiver.Symmetrify.of.map (OrientedQuiver.arrow G o h ho)))
+        = _root_.Quiver.homOfEq (arrow G h.symm) (symmetrifyMap_obj G o j).symm
+            (symmetrifyMap_obj G o i).symm := Subsingleton.elim _ _
+  rw [orientedPathAlgEquiv_ofArrow, hmap]
+  exact ofArrow_homOfEq _ _ _
+
+end Orientation
 
 end DoubledQuiver
 

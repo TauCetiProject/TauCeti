@@ -29,9 +29,8 @@ spans, and the quotient algebra `TauCeti.signlessQuadraticDual`, and compares th
 additive preprojective algebra of an orientation of the graph.
 
 The comparison runs along the algebra isomorphism
-`TauCeti.DoubledQuiver.orientedPathAlgEquiv` induced by the prefunctors of
-`TauCeti/RepresentationTheory/Quiver/Zigzag/Orientation.lean`, which identify the symmetrification
-of an oriented graph with its doubled quiver. Under it the head backtrack of an oriented arrow
+`TauCeti.DoubledQuiver.orientedPathAlgEquiv`, which identifies the symmetrification of an oriented
+graph with its doubled quiver. Under it the head backtrack of an oriented arrow
 `a : i ⟶ j` becomes the backtrack at `j` along the edge `ij`, and its tail backtrack becomes the
 backtrack at `i` along the same edge; so at a vertex `v` the signed local relator becomes the
 difference of the two partial sums of backtracks at `v`, over the edges oriented into `v` and over
@@ -39,9 +38,9 @@ those oriented out of `v`. Two hypotheses make that difference a sign times the 
 
 * if the orientation is **source--sink**, one of the two partial sums is empty at every vertex, so
   the signed relator is `±` the signless one and the two quotients agree. A bipartite graph admits
-  such an orientation, and the roadmap's rescaling of arrows is then not needed: with every edge
-  oriented out of the chosen part the two relation ideals are equal on the nose, the overall sign
-  at a source being absorbed by the ideal;
+  such an orientation, and no rescaling of the arrows is then needed: with every edge oriented out
+  of the chosen part the two relation ideals are equal on the nose, the overall sign at a source
+  being absorbed by the ideal;
 * in **characteristic two** the signs disappear, so the two quotients agree for *every*
   orientation, of any finite simple graph, bipartite or not.
 
@@ -69,15 +68,15 @@ any rescaling of the arrows.
 * `TauCeti.signlessQuadraticDualIdeal` and `TauCeti.signlessQuadraticDual`: the two-sided ideal it
   spans and the relation quotient, with quotient map `TauCeti.signlessMk` and universal property
   `TauCeti.signlessLift`.
-* `TauCeti.DoubledQuiver.orientedPathAlgEquiv`: the isomorphism of path algebras attached to an
-  orientation of a simple graph.
 * `TauCeti.IsSignedMatch`: the hypothesis that the signed local relators of an orientation become
   the signless relators up to sign.
 * `TauCeti.IsGaugedMatch`: the same hypothesis after a rescaling of the arrows, with a unit of `k`
   at each vertex in place of the sign.
-* `TauCeti.signlessQuadraticDualEquivPreprojective`: **the comparison isomorphism** for a
-  source--sink orientation, with `TauCeti.signlessQuadraticDualEquivPreprojectiveOfCharTwo` its
-  characteristic-two counterpart for an arbitrary orientation, both specialising
+* `TauCeti.signlessQuadraticDualEquivPreprojective`: **the comparison isomorphism** of a
+  bipartite graph, with `TauCeti.signlessQuadraticDualEquivPreprojectiveOfIsSourceSink` its form
+  for a given source--sink orientation and
+  `TauCeti.signlessQuadraticDualEquivPreprojectiveOfCharTwo` its characteristic-two counterpart for
+  an arbitrary orientation, all specialising
   `TauCeti.signlessQuadraticDualEquivPreprojectiveOfSignedMatch`.
 
 ## Main results
@@ -106,16 +105,10 @@ any rescaling of the arrows.
 
 ## References
 
-This is the second clause of Layer 5 of `TauCetiRoadmap/ZigzagPreprojective/README.md`, which asks
-for the signless local relation `∑_{j∼i} (i→j→i) = 0` of the doubled graph, for the comparison of
-its quotient with the signed preprojective presentation of a source--sink orientation of a
-bipartite graph, and for the analysis of the sign and gauge obstruction and its
-characteristic-two collapse in the non-bipartite case. The identification of this quotient with
-the quadratic dual of the zigzag algebra is the first clause of that layer and is not proved
-here. The declaration names follow
-the target-signature prototype in `TauCetiRoadmap/ZigzagPreprojective/Suggested.lean`. See
-Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, and Crawley-Boevey,
-*Quiver algebras, weighted projective lines, and the Deligne--Simpson problem*, Section 1.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, for the zigzag
+algebra of a graph, its quadratic dual, and the signless relation read here; and Crawley-Boevey,
+*Quiver algebras, weighted projective lines, and the Deligne--Simpson problem*, Section 1, for the
+signed preprojective presentation it is compared with.
 -/
 
 public section
@@ -130,7 +123,7 @@ universe u w
 
 section Relator
 
-variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Fintype V]
+variable (k : Type w) [CommSemiring k] {V : Type u} (G : SimpleGraph V) [Fintype V]
   [DecidableRel G.Adj]
 
 /-- The **signless local relator** at a vertex `v` of a simple graph: the sum, over the neighbours
@@ -165,7 +158,14 @@ theorem signlessRelator_mul_vertexIdempotent (v : V) :
   · rw [backtrackElem_mul_vertexIdempotent]
   · rw [zero_mul]
 
+end Relator
+
 /-! ### The relation ideal and the quotient algebra -/
+
+section Quotient
+
+variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Fintype V]
+  [DecidableRel G.Adj]
 
 /-- The two-sided ideal spanned by the signless local relators. -/
 noncomputable def signlessQuadraticDualIdeal : TwoSidedIdeal (pathAlgebra k (DoubledQuiver G)) :=
@@ -182,7 +182,8 @@ theorem signlessRelator_mem_signlessQuadraticDualIdeal (v : V) :
 
 /-- The **signless relation quotient** of a finite simple graph: the path algebra of the doubled
 quiver modulo the signless local relations. Its identification with the quadratic dual of the
-zigzag algebra is a theorem of Layer 5 of the roadmap, not part of this definition. -/
+zigzag algebra, from which it takes its name, is a theorem about two presentations and is not
+proved here. -/
 noncomputable abbrev signlessQuadraticDual : Type _ :=
   pathAlgebra k (DoubledQuiver G) ⧸ (signlessQuadraticDualIdeal k G).asIdeal
 
@@ -218,7 +219,7 @@ theorem sum_signlessMk_backtrackElem_eq_zero (v : V) :
     by_cases hw : G.Adj v w <;> simp [hw]
   rw [hsum, signlessMk_signlessRelator]
 
-end Relator
+end Quotient
 
 /-! ### The universal property -/
 
@@ -264,53 +265,12 @@ theorem signlessLift_unique (hf : ∀ v : V, f (signlessRelator k G v) = 0)
 
 end Lift
 
-/-! ### The path algebra of an orientation -/
+/-! ### The backtracks of an oriented arrow -/
 
 namespace DoubledQuiver
 
-variable (k : Type w) [CommRing k] {V : Type u} {G : SimpleGraph V} [Fintype V]
+variable (k : Type w) [CommSemiring k] {V : Type u} {G : SimpleGraph V} [Fintype V]
   (o : Orientation G)
-
-/-- **The isomorphism of path algebras attached to an orientation of a simple graph**: the
-symmetrification of the oriented quiver of `o` is the doubled quiver of `G`, so the two path
-algebras are relabellings of one another. -/
-noncomputable def orientedPathAlgEquiv :
-    pathAlgebra k (Symmetrify (OrientedQuiver G o)) ≃ₐ[k] pathAlgebra k (DoubledQuiver G) :=
-  PathAlgebra.mapAlgEquiv k (symmetrifyMap G o) (unsymmetrifyMap G o)
-    (symmetrifyMap_comp_unsymmetrifyMap G o) (unsymmetrifyMap_comp_symmetrifyMap G o)
-
-/-- The relabelling sends the element of an arrow to the element of its image arrow. Deliberately
-not a `simp` lemma: `TauCeti.PathAlgebra.ofArrow_eq_ofPath` already rewrites its left-hand side,
-and `simpNF` rejects the pair. -/
-theorem orientedPathAlgEquiv_ofArrow {x y : Symmetrify (OrientedQuiver G o)} (e : x ⟶ y) :
-    orientedPathAlgEquiv k o (ofArrow e) = ofArrow ((symmetrifyMap G o).map e) := by
-  rw [orientedPathAlgEquiv, PathAlgebra.mapAlgEquiv_apply, PathAlgebra.mapAlgHom_ofArrow]
-
-/-- The relabelling sends the arrow of a dart selected by the orientation to the doubled-quiver
-arrow of that dart. -/
-theorem orientedPathAlgEquiv_ofArrow_of {i j : V} (h : G.Adj i j)
-    (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o) :
-    orientedPathAlgEquiv k o (ofArrow (Symmetrify.of.map (OrientedQuiver.arrow G o h ho)))
-      = ofArrow (arrow G h) := by
-  have hmap : (symmetrifyMap G o).map (Symmetrify.of.map (OrientedQuiver.arrow G o h ho))
-      = Quiver.homOfEq (arrow G h) (symmetrifyMap_obj G o i).symm
-          (symmetrifyMap_obj G o j).symm := Subsingleton.elim _ _
-  rw [orientedPathAlgEquiv_ofArrow, hmap]
-  exact ofArrow_homOfEq _ _ _
-
-/-- The relabelling sends the formal reverse of the arrow of a selected dart to the doubled-quiver
-arrow of the reversed dart. -/
-theorem orientedPathAlgEquiv_ofArrow_reverse_of {i j : V} (h : G.Adj i j)
-    (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o) :
-    orientedPathAlgEquiv k o
-        (ofArrow (Quiver.reverse (Symmetrify.of.map (OrientedQuiver.arrow G o h ho))))
-      = ofArrow (arrow G h.symm) := by
-  have hmap : (symmetrifyMap G o).map
-      (Quiver.reverse (Symmetrify.of.map (OrientedQuiver.arrow G o h ho)))
-        = Quiver.homOfEq (arrow G h.symm) (symmetrifyMap_obj G o j).symm
-            (symmetrifyMap_obj G o i).symm := Subsingleton.elim _ _
-  rw [orientedPathAlgEquiv_ofArrow, hmap]
-  exact ofArrow_homOfEq _ _ _
 
 /-- **The head backtrack of an oriented arrow is the backtrack at its head.** The arrow
 `a : i ⟶ j` of the orientation traverses the edge `ij`; the word `a a*` leaves `j` along that edge
@@ -339,56 +299,8 @@ end DoubledQuiver
 
 section Corner
 
-variable (k : Type w) [CommRing k] {V : Type u} {G : SimpleGraph V}
+variable (k : Type w) [CommRing k] {V : Type u} {G : SimpleGraph V} [Fintype V]
   (o : DoubledQuiver.Orientation G)
-
-/-- **A corner of the oriented quiver over an unselected dart is empty**, so a sum indexed by it
-vanishes whatever its terms. -/
-theorem sum_eq_zero_of_notMem {M : Type*} [AddCommMonoid M] {w v : V}
-    (hwv : ∀ h : G.Adj w v, (⟨(w, v), h⟩ : G.Dart) ∉ o)
-    (F : (OrientedQuiver.vertex G o w ⟶ OrientedQuiver.vertex G o v) → M) :
-    ∑ a, F a = 0 :=
-  haveI := OrientedQuiver.isEmpty_hom G o hwv
-  Fintype.sum_empty _
-
-/-- The head-backtrack sum of a corner with no incoming arrow vanishes. -/
-theorem sum_headBacktrackElem_eq_zero {w v : V}
-    (hwv : ∀ h : G.Adj w v, (⟨(w, v), h⟩ : G.Dart) ∉ o) :
-    (∑ a : (OrientedQuiver.vertex G o w ⟶ OrientedQuiver.vertex G o v),
-      headBacktrackElem k a) = 0 :=
-  sum_eq_zero_of_notMem o hwv _
-
-/-- The tail-backtrack sum of a corner with no outgoing arrow vanishes. -/
-theorem sum_tailBacktrackElem_eq_zero {v w : V}
-    (hvw : ∀ h : G.Adj v w, (⟨(v, w), h⟩ : G.Dart) ∉ o) :
-    (∑ a : (OrientedQuiver.vertex G o v ⟶ OrientedQuiver.vertex G o w),
-      tailBacktrackElem k a) = 0 :=
-  sum_eq_zero_of_notMem o hvw _
-
-/-- The rescaled head-backtrack sum of a corner with no incoming arrow vanishes. -/
-theorem sum_smul_headBacktrackElem_eq_zero
-    (ε : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → k) {w v : V}
-    (hwv : ∀ h : G.Adj w v, (⟨(w, v), h⟩ : G.Dart) ∉ o) :
-    (∑ a : (OrientedQuiver.vertex G o w ⟶ OrientedQuiver.vertex G o v),
-      ε a • headBacktrackElem k a) = 0 :=
-  sum_eq_zero_of_notMem o hwv _
-
-/-- The rescaled tail-backtrack sum of a corner with no outgoing arrow vanishes. -/
-theorem sum_smul_tailBacktrackElem_eq_zero
-    (ε : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → k) {v w : V}
-    (hvw : ∀ h : G.Adj v w, (⟨(v, w), h⟩ : G.Dart) ∉ o) :
-    (∑ a : (OrientedQuiver.vertex G o v ⟶ OrientedQuiver.vertex G o w),
-      ε a • tailBacktrackElem k a) = 0 :=
-  sum_eq_zero_of_notMem o hvw _
-
-variable [Fintype V]
-
-/-- A sum over the vertices of an oriented quiver is a sum over the vertices of the graph. -/
-private theorem sum_orientedQuiver {M : Type*} [AddCommMonoid M]
-    (F : OrientedQuiver G o → M) :
-    ∑ i : OrientedQuiver G o, F i = ∑ w : V, F (OrientedQuiver.vertex G o w) := by
-  rw [← Equiv.sum_comp (OrientedQuiver.vertexEquiv G o) F]
-  exact Finset.sum_congr rfl fun w _ => by rw [OrientedQuiver.vertexEquiv_apply]
 
 /-- **A corner carrying an arrow into `v` contributes the backtrack at `v` along that edge**,
 rescaled by the value of `ε` on that arrow. -/
@@ -446,16 +358,17 @@ theorem orientedPathAlgEquiv_sum_headBacktrackElem_add_sum_tailBacktrackElem
       = if h : G.Adj v w then backtrackElem G k h else 0 := by
   by_cases hadj : G.Adj v w
   · by_cases hd : (⟨(v, w), hadj⟩ : G.Dart) ∈ o
-    · rw [sum_headBacktrackElem_eq_zero k o
+    · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o
         (fun h => (o.symm_mem_iff_not_mem ⟨(w, v), h⟩).1 hd), map_zero, zero_add,
         orientedPathAlgEquiv_sum_tailBacktrackElem k o hadj hd]
       simp [hadj]
-    · rw [sum_tailBacktrackElem_eq_zero k o (fun _ => hd), map_zero, add_zero,
+    · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o (fun _ => hd), map_zero, add_zero,
         orientedPathAlgEquiv_sum_headBacktrackElem k o hadj
           ((o.symm_mem_iff_not_mem ⟨(v, w), hadj⟩).2 hd)]
       simp [hadj]
-  · rw [sum_headBacktrackElem_eq_zero k o (fun h => absurd h.symm hadj),
-      sum_tailBacktrackElem_eq_zero k o (fun h => absurd h hadj), map_zero, add_zero]
+  · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o (fun h => absurd h.symm hadj),
+      OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o (fun h => absurd h hadj), map_zero,
+      add_zero]
     simp [hadj]
 
 end Corner
@@ -478,20 +391,21 @@ theorem orientedPathAlgEquiv_localPreprojectiveRelator_of_sink (v : V)
   have hhead : (∑ i : OrientedQuiver G o,
         ∑ a : (i ⟶ OrientedQuiver.vertex G o v), headBacktrackElem k a)
       = ∑ w : V, ∑ a : (OrientedQuiver.vertex G o w ⟶ OrientedQuiver.vertex G o v),
-          headBacktrackElem k a := sum_orientedQuiver o _
+          headBacktrackElem k a := OrientedQuiver.sum_eq_sum_vertex G o _
   have htail : (∑ j : OrientedQuiver G o,
         ∑ a : (OrientedQuiver.vertex G o v ⟶ j), tailBacktrackElem k a)
       = ∑ w : V, ∑ a : (OrientedQuiver.vertex G o v ⟶ OrientedQuiver.vertex G o w),
-          tailBacktrackElem k a := sum_orientedQuiver o _
+          tailBacktrackElem k a := OrientedQuiver.sum_eq_sum_vertex G o _
   rw [localPreprojectiveRelator_def, hhead, htail,
-    Finset.sum_eq_zero fun w _ => sum_tailBacktrackElem_eq_zero k o fun h => hv h, sub_zero,
-    map_sum, signlessRelator_def]
+    Finset.sum_eq_zero fun w _ =>
+      OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun h => hv h,
+    sub_zero, map_sum, signlessRelator_def]
   refine Finset.sum_congr rfl fun w _ => ?_
   by_cases hw : G.Adj v w
   · rw [orientedPathAlgEquiv_sum_headBacktrackElem k o hw
       ((o.symm_mem_iff_not_mem ⟨(v, w), hw⟩).2 (hv hw))]
     simp [hw]
-  · rw [sum_headBacktrackElem_eq_zero k o fun h => absurd h.symm hw, map_zero]
+  · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun h => absurd h.symm hw, map_zero]
     simp [hw]
 
 /-- **At a source the signed local relator becomes the negative of the signless relator.** Every
@@ -505,20 +419,20 @@ theorem orientedPathAlgEquiv_localPreprojectiveRelator_of_source (v : V)
   have hhead : (∑ i : OrientedQuiver G o,
         ∑ a : (i ⟶ OrientedQuiver.vertex G o v), headBacktrackElem k a)
       = ∑ w : V, ∑ a : (OrientedQuiver.vertex G o w ⟶ OrientedQuiver.vertex G o v),
-          headBacktrackElem k a := sum_orientedQuiver o _
+          headBacktrackElem k a := OrientedQuiver.sum_eq_sum_vertex G o _
   have htail : (∑ j : OrientedQuiver G o,
         ∑ a : (OrientedQuiver.vertex G o v ⟶ j), tailBacktrackElem k a)
       = ∑ w : V, ∑ a : (OrientedQuiver.vertex G o v ⟶ OrientedQuiver.vertex G o w),
-          tailBacktrackElem k a := sum_orientedQuiver o _
+          tailBacktrackElem k a := OrientedQuiver.sum_eq_sum_vertex G o _
   rw [localPreprojectiveRelator_def, hhead, htail,
-    Finset.sum_eq_zero fun w _ => sum_headBacktrackElem_eq_zero k o
+    Finset.sum_eq_zero fun w _ => OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o
       fun h => (o.symm_mem_iff_not_mem ⟨(w, v), h⟩).1 (hv h.symm),
     zero_sub, map_neg, map_sum, signlessRelator_def]
   refine congrArg Neg.neg (Finset.sum_congr rfl fun w _ => ?_)
   by_cases hw : G.Adj v w
   · rw [orientedPathAlgEquiv_sum_tailBacktrackElem k o hw (hv hw)]
     simp [hw]
-  · rw [sum_tailBacktrackElem_eq_zero k o fun h => absurd h hw, map_zero]
+  · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun h => absurd h hw, map_zero]
     simp [hw]
 
 /-- **In characteristic two the signed local relator becomes the signless relator**, at every
@@ -531,14 +445,14 @@ theorem orientedPathAlgEquiv_localPreprojectiveRelator_of_charTwo [CharP k 2] (v
   have hhead : (∑ i : OrientedQuiver G o,
         ∑ a : (i ⟶ OrientedQuiver.vertex G o v), headBacktrackElem k a)
       = ∑ w : V, ∑ a : (OrientedQuiver.vertex G o w ⟶ OrientedQuiver.vertex G o v),
-          headBacktrackElem k a := sum_orientedQuiver o _
+          headBacktrackElem k a := OrientedQuiver.sum_eq_sum_vertex G o _
   have htail : (∑ j : OrientedQuiver G o,
         ∑ a : (OrientedQuiver.vertex G o v ⟶ j), tailBacktrackElem k a)
       = ∑ w : V, ∑ a : (OrientedQuiver.vertex G o v ⟶ OrientedQuiver.vertex G o w),
-          tailBacktrackElem k a := sum_orientedQuiver o _
+          tailBacktrackElem k a := OrientedQuiver.sum_eq_sum_vertex G o _
+  have htwo : (2 : k) = 0 := by exact_mod_cast CharP.cast_eq_zero k 2
   have hneg : ∀ y : pathAlgebra k (Symmetrify (OrientedQuiver G o)), -y = y := fun y => by
-    rw [neg_eq_iff_add_eq_zero, ← two_smul k y, show ((2 : k) = 0) from by
-      exact_mod_cast CharP.cast_eq_zero k 2, zero_smul]
+    rw [neg_eq_iff_add_eq_zero, ← two_smul k y, htwo, zero_smul]
   rw [localPreprojectiveRelator_def, hhead, htail, sub_eq_add_neg, hneg, map_add, map_sum, map_sum,
     ← Finset.sum_add_distrib, signlessRelator_def]
   exact Finset.sum_congr rfl fun w _ =>
@@ -659,21 +573,43 @@ theorem isSignedMatch_of_isSourceSink (hss : o.IsSourceSink) : IsSignedMatch k o
 theorem isSignedMatch_of_charTwo [CharP k 2] : IsSignedMatch k o := fun v =>
   Or.inl (orientedPathAlgEquiv_localPreprojectiveRelator_of_charTwo k o v)
 
-/-- **The comparison for a source--sink orientation.** For a bipartite graph, with every edge
-oriented out of one part of a bipartition, the signless relation quotient of the doubled graph is
-the additive preprojective algebra of the orientation. -/
-noncomputable def signlessQuadraticDualEquivPreprojective (hss : o.IsSourceSink) :
+/-- **The comparison for a source--sink orientation**: with every edge oriented out of one part of
+a bipartition, the signless relation quotient of the doubled graph is the additive preprojective
+algebra of the orientation. -/
+noncomputable def signlessQuadraticDualEquivPreprojectiveOfIsSourceSink (hss : o.IsSourceSink) :
     signlessQuadraticDual k G ≃ₐ[k] preprojectiveAlgebra k (OrientedQuiver G o) :=
   signlessQuadraticDualEquivPreprojectiveOfSignedMatch (isSignedMatch_of_isSourceSink hss)
 
 /-- The source--sink comparison on the class of a doubled path. -/
 @[simp]
-theorem signlessQuadraticDualEquivPreprojective_signlessMk (hss : o.IsSourceSink)
+theorem signlessQuadraticDualEquivPreprojectiveOfIsSourceSink_signlessMk (hss : o.IsSourceSink)
     (x : pathAlgebra k (DoubledQuiver G)) :
-    signlessQuadraticDualEquivPreprojective hss (signlessMk k G x)
+    signlessQuadraticDualEquivPreprojectiveOfIsSourceSink hss (signlessMk k G x)
       = preprojectiveMk k (OrientedQuiver G o)
           ((DoubledQuiver.orientedPathAlgEquiv k o).symm x) :=
   signlessToPreprojective_signlessMk (isSignedMatch_of_isSourceSink hss) x
+
+/-- **The comparison isomorphism of a bipartite graph**: the signless relation quotient of the
+doubled graph is the additive preprojective algebra of the source--sink orientation
+`TauCeti.DoubledQuiver.Orientation.ofIsBipartite` attached to a bipartition. This is the form of
+the comparison which reads the bipartiteness of `G` directly; the orientation it names is the only
+input the preprojective side needs beyond `G` itself. -/
+noncomputable def signlessQuadraticDualEquivPreprojective (hG : G.IsBipartite) :
+    signlessQuadraticDual k G ≃ₐ[k]
+      preprojectiveAlgebra k (OrientedQuiver G (DoubledQuiver.Orientation.ofIsBipartite G hG)) :=
+  signlessQuadraticDualEquivPreprojectiveOfIsSourceSink
+    (DoubledQuiver.Orientation.isSourceSink_ofIsBipartite G hG)
+
+/-- The bipartite comparison on the class of a doubled path. -/
+@[simp]
+theorem signlessQuadraticDualEquivPreprojective_signlessMk (hG : G.IsBipartite)
+    (x : pathAlgebra k (DoubledQuiver G)) :
+    signlessQuadraticDualEquivPreprojective hG (signlessMk k G x)
+      = preprojectiveMk k (OrientedQuiver G (DoubledQuiver.Orientation.ofIsBipartite G hG))
+          ((DoubledQuiver.orientedPathAlgEquiv k
+            (DoubledQuiver.Orientation.ofIsBipartite G hG)).symm x) :=
+  signlessToPreprojective_signlessMk
+    (isSignedMatch_of_isSourceSink (DoubledQuiver.Orientation.isSourceSink_ofIsBipartite G hG)) x
 
 /-- **The comparison in characteristic two**, for an arbitrary orientation of an arbitrary finite
 simple graph: the sign obstruction which forces bipartiteness above disappears. -/
@@ -745,8 +681,9 @@ private theorem coord_sum_smul_tailBacktrackElem_of_mem
     · by_cases hd : (⟨(v, w), hadj⟩ : G.Dart) ∈ o
       · rw [orientedPathAlgEquiv_sum_smul_tailBacktrackElem k o ε hadj hd, map_smul, smul_eq_mul,
           coord_backtrackElem_of_ne k hadj h' hne, mul_zero]
-      · rw [sum_smul_tailBacktrackElem_eq_zero k o ε fun _ => hd, map_zero, map_zero]
-    · rw [sum_smul_tailBacktrackElem_eq_zero k o ε fun hh => absurd hh hadj, map_zero, map_zero]
+      · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun _ => hd, map_zero, map_zero]
+    · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun hh => absurd hh hadj, map_zero,
+        map_zero]
   · exact fun hw => absurd (Finset.mem_univ w') hw
 
 omit [DecidableRel G.Adj] in
@@ -767,9 +704,9 @@ private theorem coord_sum_smul_headBacktrackElem_of_mem
     · by_cases hd : (⟨(w, v), hadj.symm⟩ : G.Dart) ∈ o
       · rw [orientedPathAlgEquiv_sum_smul_headBacktrackElem k o ε hadj hd, map_smul, smul_eq_mul,
           coord_backtrackElem_of_ne k hadj h' hne, mul_zero]
-      · rw [sum_smul_headBacktrackElem_eq_zero k o ε fun _ => hd, map_zero, map_zero]
-    · rw [sum_smul_headBacktrackElem_eq_zero k o ε fun hh => absurd hh.symm hadj, map_zero,
-        map_zero]
+      · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun _ => hd, map_zero, map_zero]
+    · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun hh => absurd hh.symm hadj,
+        map_zero, map_zero]
   · exact fun hw => absurd (Finset.mem_univ w') hw
 
 omit [DecidableRel G.Adj] in
@@ -791,8 +728,9 @@ private theorem coord_sum_smul_tailBacktrackElem_of_notMem
         exact absurd hd ho
       · rw [orientedPathAlgEquiv_sum_smul_tailBacktrackElem k o ε hadj hd, map_smul, smul_eq_mul,
           coord_backtrackElem_of_ne k hadj h' hne, mul_zero]
-    · rw [sum_smul_tailBacktrackElem_eq_zero k o ε fun _ => hd, map_zero, map_zero]
-  · rw [sum_smul_tailBacktrackElem_eq_zero k o ε fun hh => absurd hh hadj, map_zero, map_zero]
+    · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun _ => hd, map_zero, map_zero]
+  · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun hh => absurd hh hadj, map_zero,
+      map_zero]
 
 omit [DecidableRel G.Adj] in
 /-- **The incoming corner sums do not see an outgoing edge**, the mirror image of
@@ -813,8 +751,9 @@ private theorem coord_sum_smul_headBacktrackElem_of_notMem
         exact absurd hd ho
       · rw [orientedPathAlgEquiv_sum_smul_headBacktrackElem k o ε hadj hd, map_smul, smul_eq_mul,
           coord_backtrackElem_of_ne k hadj h' hne, mul_zero]
-    · rw [sum_smul_headBacktrackElem_eq_zero k o ε fun _ => hd, map_zero, map_zero]
-  · rw [sum_smul_headBacktrackElem_eq_zero k o ε fun hh => absurd hh.symm hadj, map_zero, map_zero]
+    · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun _ => hd, map_zero, map_zero]
+  · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun hh => absurd hh.symm hadj,
+      map_zero, map_zero]
 
 omit [DecidableRel G.Adj] in
 /-- The image of a gauged signed local relator, split into its incoming and its outgoing corner
@@ -832,11 +771,11 @@ private theorem orientedPathAlgEquiv_gaugedLocalPreprojectiveRelator_eq_sub
   have hhead : (∑ i : OrientedQuiver G o,
         ∑ a : (i ⟶ OrientedQuiver.vertex G o v), ε a • headBacktrackElem k a)
       = ∑ w : V, ∑ a : (OrientedQuiver.vertex G o w ⟶ OrientedQuiver.vertex G o v),
-          ε a • headBacktrackElem k a := sum_orientedQuiver o _
+          ε a • headBacktrackElem k a := OrientedQuiver.sum_eq_sum_vertex G o _
   have htail : (∑ j : OrientedQuiver G o,
         ∑ a : (OrientedQuiver.vertex G o v ⟶ j), ε a • tailBacktrackElem k a)
       = ∑ w : V, ∑ a : (OrientedQuiver.vertex G o v ⟶ OrientedQuiver.vertex G o w),
-          ε a • tailBacktrackElem k a := sum_orientedQuiver o _
+          ε a • tailBacktrackElem k a := OrientedQuiver.sum_eq_sum_vertex G o _
   rw [gaugedLocalPreprojectiveRelator_def, hhead, htail, map_sub, map_sum, map_sum]
 
 /-- **An edge oriented out of `v` reads the scaling factor at `v` with a minus sign.** Comparing
@@ -919,9 +858,9 @@ theorem isSignedMatch_iff_isSourceSink (h2 : (2 : k) ≠ 0) :
 
 /-- The two presentations **match after a rescaling of the arrows**: there is a labelling `ε` of
 the arrows of the orientation by scalars for which, at every vertex, the `ε`-rescaled signed local
-relator becomes a unit multiple of the signless relator. This is the gauge freedom the roadmap
-allows in comparing the two presentations, and it is strictly weaker than
-`TauCeti.IsSignedMatch`, which is its constant labelling `1` with the unit `±1`. Invertibility of
+relator becomes a unit multiple of the signless relator. This is the gauge freedom available in
+comparing the two presentations, and it is strictly weaker than `TauCeti.IsSignedMatch`, which is
+its constant labelling `1` with the unit `±1`. Invertibility of
 `ε` is deliberately not assumed: only the vertex scalars are units, by which the two relation
 ideals correspond, so the obstruction below covers every rescaling, invertible or not. -/
 def IsGaugedMatch : Prop :=
