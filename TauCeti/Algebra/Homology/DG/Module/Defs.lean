@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.GradedModule
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
+public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
 # Differential graded left modules
@@ -15,7 +16,8 @@ public import TauCeti.Algebra.Homology.DG.Algebra.Defs
 Let `d` be a differential on an internally `ℤ`-graded `R`-algebra `𝒜` on a carrier `A`, in the
 sense of `TauCeti.IsDGAlgebra`.  A **differential graded left module** over it is an `A`-module `M`
 with an internal `ℤ`-grading `ℳ` for which the action adds degrees, together with an `R`-linear
-differential `dM` of degree `+1` which squares to zero and satisfies the graded Leibniz rule
+differential `dM` of degree `+1`, in the sense of `TauCeti.LinearMap.IsHomogeneous`, which squares
+to zero and satisfies the graded Leibniz rule
 
 `dM (a • x) = d a • x + (-1) ^ |a| • (a • dM x)`.
 
@@ -93,19 +95,17 @@ homogeneous scalar.  The sign `(-1) ^ p` is `Int.negOnePow p`, acting through th
 structure IsDGLeftModule [IsScalarTower R A M] (h : IsDGAlgebra 𝒜 d) (ℳ : ℤ → Submodule R M)
     [SetLike.GradedSMul 𝒜 ℳ] [DirectSum.Decomposition ℳ] (dM : M →ₗ[R] M) : Prop where
   /-- The differential raises the degree by one. -/
-  map_mem : ∀ {p : ℤ} {x : M}, x ∈ ℳ p → dM x ∈ ℳ (p + 1)
+  isHomogeneous : LinearMap.IsHomogeneous dM ℳ ℳ 1
   /-- The differential squares to zero. -/
   sq_zero (x : M) : dM (dM x) = 0
   /-- The graded Leibniz rule for a scalar of degree `p`. -/
   leibniz : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ x : M,
     dM (a • x) = d a • x + p.negOnePow • (a • dM x)
 
-attribute [grind =>] IsDGLeftModule.map_mem
-
 /-- **A differential graded algebra is a differential graded left module over itself.**  The Leibniz
 rule is the one of the algebra, read through `smul_eq_mul`. -/
 theorem IsDGAlgebra.isDGLeftModule (h : IsDGAlgebra 𝒜 d) : IsDGLeftModule h 𝒜 d where
-  map_mem := h.map_mem
+  isHomogeneous := LinearMap.isHomogeneous_def.mpr fun _ _ ha ↦ h.map_mem ha
   sq_zero := h.sq_zero
   leibniz ha b := by simpa only [smul_eq_mul] using h.leibniz ha b
 
@@ -119,7 +119,7 @@ of the grading, up to the shift by one that it applies to degrees. -/
 theorem map_decompose (hM : IsDGLeftModule h ℳ dM) (p : ℤ) (x : M) :
     dM (decompose ℳ x p : M) = (decompose ℳ (dM x) (p + 1) : M) :=
   DirectSum.map_decompose_shift ℳ ℳ dM (· + 1) (add_left_injective 1)
-    (fun _ _ hy ↦ hM.map_mem hy) p x
+    (fun _ _ hy ↦ hM.isHomogeneous.map_mem hy) p x
 
 /-- Every homogeneous projection of a boundary is again a boundary. -/
 theorem decompose_mem_range (hM : IsDGLeftModule h ℳ dM) {x : M} (hx : x ∈ LinearMap.range dM)
@@ -184,7 +184,7 @@ differential graded left module. -/
 theorem isDGLeftModule_zero (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜] (ℳ : ℤ → Submodule R M)
     [SetLike.GradedSMul 𝒜 ℳ] [DirectSum.Decomposition ℳ] :
     IsDGLeftModule (isDGAlgebra_zero 𝒜) ℳ (0 : M →ₗ[R] M) where
-  map_mem := fun _ => zero_mem _
+  isHomogeneous := LinearMap.isHomogeneous_zero ℳ ℳ 1
   sq_zero _ := rfl
   leibniz := fun _ _ => by simp
 
