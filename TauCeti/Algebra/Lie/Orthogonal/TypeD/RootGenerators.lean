@@ -39,9 +39,9 @@ The lowering generators are their transposes. The resulting matrices lie in the 
 Lie algebra and are square-zero in its standard representation.
 
 These are the carrier-specific numbered root vectors needed to feed the type-`D` spin lattice
-into Tau Ceti's existing Kostant-form and toral-closure machinery. Identifying their action with
-quadratic Clifford elements, and then proving the divided-power stability needed by the full-weight
-spin lattice, are deliberately left to the next carrier step.
+into Tau Ceti's existing Kostant-form and toral-closure machinery. Their images under the
+even-polarization quadratic equivalence are computed by
+`SpinPolarizationData.typeDQuadraticEquiv_rootGenerator`.
 
 ## Main definitions and results
 

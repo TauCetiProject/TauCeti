@@ -78,59 +78,89 @@ private theorem polar_dualVector_left (i j : Fin n) :
     polar Q (P.dualVector b i : V) (b j : V) = if j = i then 1 else 0 := by
   rw [polar_comm, P.polar_dualVector]
 
+@[simp]
+private theorem chainNext_eq_mk {i : Fin n} (hi : (i : ℕ) + 1 < n) :
+    TypeDStd.chainNext n i hi = ⟨(i : ℕ) + 1, hi⟩ :=
+  Fin.ext (TypeDStd.chainNext_val n i hi)
+
+@[simp]
+private theorem forkLeft_eq_mk (hn : 4 ≤ n) :
+    TypeDStd.forkLeft n hn = ⟨n - 2, by omega⟩ :=
+  Fin.ext (TypeDStd.forkLeft_val n hn)
+
+@[simp]
+private theorem forkRight_eq_mk (hn : 4 ≤ n) :
+    TypeDStd.forkRight n hn = ⟨n - 1, by omega⟩ :=
+  Fin.ext (TypeDStd.forkRight_val n hn)
+
 private theorem typeDQuadraticEquiv_rootGenerator_inl_of_add_one_lt
     (hn : 4 ≤ n) (hline : P.line = ⊥) {i : Fin n} (hi : (i : ℕ) + 1 < n) :
-    P.typeDQuadraticEquiv b hline (TypeDStd.rootGenerator n hn (.inl i)) =
-      ⟨bivector Q (b i : V) (P.dualVector b (TypeDStd.chainNext n i hi) : V),
-        bivector_mem_quadraticLieSubalgebra Q _ _⟩ := by
-  apply P.typeDQuadraticEquiv_eq_bivector b hline
-  rintro (j | j)
-  all_goals rw [TypeDStd.val_rootGenerator_inl,
-    TypeDStd.toLinAlgEquiv_raisingMatrix_apply_basis_of_chain n hn
-      (P.typeDBasis b hline) hi]
-  · simp [P.typeDBasis_inl, P.polar_W_eq_zero, P.polar_dualVector_left, eq_comm]
-  · simp [P.typeDBasis_inr, P.polar_W'_eq_zero, P.polar_dualVector, eq_comm]
+    (P.typeDQuadraticEquiv b hline
+        (TypeDStd.rootGenerator n hn (.inl i)) : CliffordAlgebra Q) =
+      P.typeDSimpleRootBivector b (by omega) i := by
+  calc
+    _ = bivector Q (b i : V) (P.dualVector b ⟨(i : ℕ) + 1, hi⟩ : V) :=
+      congrArg Subtype.val (P.typeDQuadraticEquiv_eq_bivector b hline _ _ _ (by
+        rintro (j | j)
+        all_goals rw [TypeDStd.val_rootGenerator_inl,
+          TypeDStd.toLinAlgEquiv_raisingMatrix_apply_basis_of_chain n hn
+            (P.typeDBasis b hline) hi]
+        · simp [P.typeDBasis_inl, P.polar_W_eq_zero, P.polar_dualVector_left, eq_comm]
+        · simp [P.typeDBasis_inr, P.polar_W'_eq_zero, P.polar_dualVector]))
+    _ = _ := by
+      exact (P.typeDSimpleRootBivector_of_add_one_lt b (by omega) hi).symm
 
 private theorem typeDQuadraticEquiv_rootGenerator_inl_of_not_add_one_lt
     (hn : 4 ≤ n) (hline : P.line = ⊥) {i : Fin n} (hi : ¬(i : ℕ) + 1 < n) :
-    P.typeDQuadraticEquiv b hline (TypeDStd.rootGenerator n hn (.inl i)) =
-      ⟨bivector Q (b (TypeDStd.forkLeft n hn) : V)
-          (b (TypeDStd.forkRight n hn) : V),
-        bivector_mem_quadraticLieSubalgebra Q _ _⟩ := by
-  apply P.typeDQuadraticEquiv_eq_bivector b hline
-  rintro (j | j)
-  all_goals rw [TypeDStd.val_rootGenerator_inl,
-    TypeDStd.toLinAlgEquiv_raisingMatrix_apply_basis_of_fork n hn
-      (P.typeDBasis b hline) hi]
-  · simp [P.typeDBasis_inl, P.polar_W_eq_zero, eq_comm]
-  · simp [P.typeDBasis_inr, P.polar_dualVector, eq_comm]
+    (P.typeDQuadraticEquiv b hline
+        (TypeDStd.rootGenerator n hn (.inl i)) : CliffordAlgebra Q) =
+      P.typeDSimpleRootBivector b (by omega) i := by
+  calc
+    _ = bivector Q (b ⟨n - 2, by omega⟩ : V) (b ⟨n - 1, by omega⟩ : V) :=
+      congrArg Subtype.val (P.typeDQuadraticEquiv_eq_bivector b hline _ _ _ (by
+        rintro (j | j)
+        all_goals rw [TypeDStd.val_rootGenerator_inl,
+          TypeDStd.toLinAlgEquiv_raisingMatrix_apply_basis_of_fork n hn
+            (P.typeDBasis b hline) hi]
+        · simp [P.typeDBasis_inl, P.polar_W_eq_zero, eq_comm]
+        · simp [P.typeDBasis_inr, P.polar_dualVector, eq_comm]))
+    _ = _ := by
+      exact (P.typeDSimpleRootBivector_of_not_add_one_lt b (by omega) hi).symm
 
 private theorem typeDQuadraticEquiv_rootGenerator_inr_of_add_one_lt
     (hn : 4 ≤ n) (hline : P.line = ⊥) {i : Fin n} (hi : (i : ℕ) + 1 < n) :
-    P.typeDQuadraticEquiv b hline (TypeDStd.rootGenerator n hn (.inr i)) =
-      ⟨bivector Q (b (TypeDStd.chainNext n i hi) : V) (P.dualVector b i : V),
-        bivector_mem_quadraticLieSubalgebra Q _ _⟩ := by
-  apply P.typeDQuadraticEquiv_eq_bivector b hline
-  rintro (j | j)
-  all_goals rw [TypeDStd.val_rootGenerator_inr,
-    TypeDStd.toLinAlgEquiv_loweringMatrix_apply_basis_of_chain n hn
-      (P.typeDBasis b hline) hi]
-  · simp [P.typeDBasis_inl, P.polar_W_eq_zero, P.polar_dualVector_left, eq_comm]
-  · simp [P.typeDBasis_inr, P.polar_W'_eq_zero, P.polar_dualVector, eq_comm]
+    (P.typeDQuadraticEquiv b hline
+        (TypeDStd.rootGenerator n hn (.inr i)) : CliffordAlgebra Q) =
+      P.typeDSimpleNegativeRootBivector b (by omega) i := by
+  calc
+    _ = bivector Q (b ⟨(i : ℕ) + 1, hi⟩ : V) (P.dualVector b i : V) :=
+      congrArg Subtype.val (P.typeDQuadraticEquiv_eq_bivector b hline _ _ _ (by
+        rintro (j | j)
+        all_goals rw [TypeDStd.val_rootGenerator_inr,
+          TypeDStd.toLinAlgEquiv_loweringMatrix_apply_basis_of_chain n hn
+            (P.typeDBasis b hline) hi]
+        · simp [P.typeDBasis_inl, P.polar_W_eq_zero, P.polar_dualVector_left, eq_comm]
+        · simp [P.typeDBasis_inr, P.polar_W'_eq_zero, P.polar_dualVector, eq_comm]))
+    _ = _ := by
+      exact (P.typeDSimpleNegativeRootBivector_of_add_one_lt b (by omega) hi).symm
 
 private theorem typeDQuadraticEquiv_rootGenerator_inr_of_not_add_one_lt
     (hn : 4 ≤ n) (hline : P.line = ⊥) {i : Fin n} (hi : ¬(i : ℕ) + 1 < n) :
-    P.typeDQuadraticEquiv b hline (TypeDStd.rootGenerator n hn (.inr i)) =
-      ⟨bivector Q (P.dualVector b (TypeDStd.forkRight n hn) : V)
-          (P.dualVector b (TypeDStd.forkLeft n hn) : V),
-        bivector_mem_quadraticLieSubalgebra Q _ _⟩ := by
-  apply P.typeDQuadraticEquiv_eq_bivector b hline
-  rintro (j | j)
-  all_goals rw [TypeDStd.val_rootGenerator_inr,
-    TypeDStd.toLinAlgEquiv_loweringMatrix_apply_basis_of_fork n hn
-      (P.typeDBasis b hline) hi]
-  · simp [P.typeDBasis_inl, P.polar_dualVector_left, eq_comm]
-  · simp [P.typeDBasis_inr, P.polar_W'_eq_zero, eq_comm]
+    (P.typeDQuadraticEquiv b hline
+        (TypeDStd.rootGenerator n hn (.inr i)) : CliffordAlgebra Q) =
+      P.typeDSimpleNegativeRootBivector b (by omega) i := by
+  calc
+    _ = bivector Q (P.dualVector b ⟨n - 1, by omega⟩ : V)
+        (P.dualVector b ⟨n - 2, by omega⟩ : V) :=
+      congrArg Subtype.val (P.typeDQuadraticEquiv_eq_bivector b hline _ _ _ (by
+        rintro (j | j)
+        all_goals rw [TypeDStd.val_rootGenerator_inr,
+          TypeDStd.toLinAlgEquiv_loweringMatrix_apply_basis_of_fork n hn
+            (P.typeDBasis b hline) hi]
+        · simp [P.typeDBasis_inl, P.polar_dualVector_left, eq_comm]
+        · simp [P.typeDBasis_inr, P.polar_W'_eq_zero, eq_comm]))
+    _ = _ := by
+      exact (P.typeDSimpleNegativeRootBivector_of_not_add_one_lt b (by omega) hi).symm
 
 /-- **The numbered type-`D` matrix root generators are the corresponding positive and negative
 Clifford root representatives.** This fixes all four chain/fork and sign cases at once. -/
@@ -143,57 +173,13 @@ theorem typeDQuadraticEquiv_rootGenerator (hn : 4 ≤ n) (hline : P.line = ⊥)
       | .inr i => P.typeDSimpleNegativeRootBivector b (by omega) i := by
   cases k with
   | inl i =>
-      simp only
       by_cases hi : (i : ℕ) + 1 < n
-      · have hnext : TypeDStd.chainNext n i hi = ⟨(i : ℕ) + 1, hi⟩ := by
-          apply Fin.ext
-          simp
-        exact (congrArg Subtype.val
-          (P.typeDQuadraticEquiv_rootGenerator_inl_of_add_one_lt b hn hline hi)).trans
-            ((congrArg (fun j => bivector Q (b i : V) (P.dualVector b j : V)) hnext).trans
-              (P.typeDSimpleRootBivector_of_add_one_lt b (by omega) hi).symm)
-      · have hfork :
-            bivector Q (b (TypeDStd.forkLeft n hn) : V)
-                (b (TypeDStd.forkRight n hn) : V) =
-              P.typeDSimpleRootBivector b (by omega) i := by
-          have hleft : TypeDStd.forkLeft n hn = ⟨n - 2, by omega⟩ := by
-            apply Fin.ext
-            simp
-          have hright : TypeDStd.forkRight n hn = ⟨n - 1, by omega⟩ := by
-            apply Fin.ext
-            simp
-          exact (congrArg₂ (fun x y : V => bivector Q x y)
-            (congrArg (fun j => (b j : V)) hleft)
-            (congrArg (fun j => (b j : V)) hright)).trans
-              (P.typeDSimpleRootBivector_of_not_add_one_lt b (by omega) hi).symm
-        exact (congrArg Subtype.val
-          (P.typeDQuadraticEquiv_rootGenerator_inl_of_not_add_one_lt b hn hline hi)).trans hfork
+      · simpa using P.typeDQuadraticEquiv_rootGenerator_inl_of_add_one_lt b hn hline hi
+      · simpa using P.typeDQuadraticEquiv_rootGenerator_inl_of_not_add_one_lt b hn hline hi
   | inr i =>
-      simp only
       by_cases hi : (i : ℕ) + 1 < n
-      · have hnext : TypeDStd.chainNext n i hi = ⟨(i : ℕ) + 1, hi⟩ := by
-          apply Fin.ext
-          simp
-        exact (congrArg Subtype.val
-          (P.typeDQuadraticEquiv_rootGenerator_inr_of_add_one_lt b hn hline hi)).trans
-            ((congrArg (fun j => bivector Q (b j : V) (P.dualVector b i : V)) hnext).trans
-              (P.typeDSimpleNegativeRootBivector_of_add_one_lt b (by omega) hi).symm)
-      · have hfork :
-            bivector Q (P.dualVector b (TypeDStd.forkRight n hn) : V)
-                (P.dualVector b (TypeDStd.forkLeft n hn) : V) =
-              P.typeDSimpleNegativeRootBivector b (by omega) i := by
-          have hleft : TypeDStd.forkLeft n hn = ⟨n - 2, by omega⟩ := by
-            apply Fin.ext
-            simp
-          have hright : TypeDStd.forkRight n hn = ⟨n - 1, by omega⟩ := by
-            apply Fin.ext
-            simp
-          exact (congrArg₂ (fun x y : V => bivector Q x y)
-            (congrArg (fun j => (P.dualVector b j : V)) hright)
-            (congrArg (fun j => (P.dualVector b j : V)) hleft)).trans
-              (P.typeDSimpleNegativeRootBivector_of_not_add_one_lt b (by omega) hi).symm
-        exact (congrArg Subtype.val
-          (P.typeDQuadraticEquiv_rootGenerator_inr_of_not_add_one_lt b hn hline hi)).trans hfork
+      · simpa using P.typeDQuadraticEquiv_rootGenerator_inr_of_add_one_lt b hn hline hi
+      · simpa using P.typeDQuadraticEquiv_rootGenerator_inr_of_not_add_one_lt b hn hline hi
 
 /-- **The numbered type-`D` matrix coroot maps to the corresponding Clifford simple-coroot
 representative.** In particular, the two root-generator normalizations have the same bracket. -/
