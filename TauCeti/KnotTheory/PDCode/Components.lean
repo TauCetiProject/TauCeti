@@ -136,7 +136,7 @@ noncomputable def componentPermOutgoing (D : OrientedPDCode n) :
       simp only [orientation_componentPerm])
 
 /-- Mirroring preserves the outgoing traversal. -/
-@[simp] theorem componentPermOutgoing_mirror (D : OrientedPDCode n) :
+theorem componentPermOutgoing_mirror (D : OrientedPDCode n) :
     ∀ h : {h : Fin (4 * n) // D.orientation h = true},
       (D.mirror.componentPermOutgoing ⟨h, by simpa using h.property⟩).val =
         (D.componentPermOutgoing h).val := by
