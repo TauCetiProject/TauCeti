@@ -84,14 +84,10 @@ a Layer 9 target of `TauCetiRoadmap/ReductiveGroups/README.md` that the CFSG roa
 rather than builds. The full character span proved here is the lattice hypothesis that
 identification needs, so it is a prerequisite of L0 and not a substitute for it.
 
-Against the Geck carrier, `steinberg` is the map `Frob_q`; the fixed points and derived-central
-candidate on the three untwisted branches are exposed through
-`d.toGraphTwistedIndex.geckFixedPoints` and `d.toGraphTwistedIndex.geckGroupCandidate`. These
-carrier-level objects transfer to the L0 carrier along the Layer 9 identification, and not before.
-What the `²G₂`, `²F₄` and Tits branches lack in
-addition is their Steinberg map: it is an odd power of the special isogeny `τ` of milestone L2, and
-`τ` is a Layer 9 target as well. The relation `τ ^ 2 = Frob_p` that L2 records will be read against
-`TauCeti.ValidLieTypeIndex.geckFrobenius`.
+On the three untwisted branches treated here, `steinberg` is the `q`-power Frobenius on the Geck
+carrier, and `mem_fixedSubgroup_steinberg_iff` identifies its fixed points with the carrier points
+whose matrix entries lie in `𝔽_q`. The other unimodular branches use half-Frobenius maps instead
+and are therefore not included in `UnimodularExceptionalIndex`.
 -/
 
 public section

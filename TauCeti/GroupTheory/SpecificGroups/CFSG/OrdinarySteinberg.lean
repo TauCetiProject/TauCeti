@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.RootDatumAutomorphism
-public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Unimodular
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.TwistedFrobenius
 
@@ -49,9 +48,9 @@ The `geck` prefix is the same disclaimer it carries in
 `TauCeti/GroupTheory/SpecificGroups/CFSG/GeckCarrier.lean`. Geck's module is the adjoint module, so
 outside the `E₈`, `F₄` and `G₂` diagrams the characters occurring in the carrier generate the root
 lattice and not the whole character lattice of the pinned torus, and the carrier is therefore not
-yet the simply connected group. No declaration below asserts that it is, nor that any group here is
-finite, perfect or simple. The fixed-point candidate below is explicitly only a carrier-level object
-until that identification is available.
+yet the simply connected group that milestone L0 asks for. No declaration below asserts that it is,
+nor that any group here is finite, perfect or simple, and no fixed-point subgroup is formed on a
+branch whose carrier has not been identified.
 
 ## Main definitions
 
@@ -80,9 +79,6 @@ until that identification is available.
   weight-torus point to the `q`-th power and relabels them by the inverse of that permutation.
 * `TauCeti.GraphTwistedIndex.geckWeightTorus_mem_fixedSubgroup_geckSteinberg`: a weight-torus point
   satisfying the resulting twisted equations `s_{σ⁻¹ k} ^ q = s_k` is fixed by the Steinberg map.
-* `TauCeti.GraphTwistedIndex.geckFixedPoints` and
-  `TauCeti.GraphTwistedIndex.geckGroupCandidate`: the fixed points and derived-central quotient
-  formed on this carrier.
 * `TauCeti.GraphTwistedIndex.geckSteinberg_eq_geckFrobenius_of_diagramPerm_eq_one`: on an untwisted
   family it is the Frobenius.
 * `TauCeti.UnimodularExceptionalIndex.steinberg_eq_geckSteinberg`: it agrees with the Steinberg map
@@ -304,22 +300,6 @@ theorem geckSteinberg_eq_geckFrobenius_of_diagramPerm_eq_one (h : d.diagramPerm 
     d.geckSteinberg = d.1.geckFrobenius := by
   refine MonoidHom.ext fun g => ?_
   rw [geckSteinberg_apply, geckGraphAut_eq_one_of_diagramPerm_eq_one d h, MulAut.one_apply]
-
-/-! ## Fixed points and the candidate quotient on the Geck carrier -/
-
-/-- The fixed-point subgroup of the ordinary Steinberg map on the Geck carrier. -/
-abbrev geckFixedPoints (d : GraphTwistedIndex) : Type :=
-  ↥(fixedSubgroup d.geckSteinberg)
-
-/-- The derived subgroup of the fixed points of the ordinary Steinberg map on the Geck carrier,
-modulo the centre of that derived subgroup.
-
-This candidate is formed on the explicit Geck carrier, which has not been identified with the
-pinned simply connected carrier. -/
-abbrev geckGroupCandidate (d : GraphTwistedIndex) : Type := FixedPointCandidate d.geckSteinberg
-
-/- The quotient construction supplies the group structure for this candidate. -/
-example (d : GraphTwistedIndex) : _root_.Group d.geckGroupCandidate := inferInstance
 
 end
 
