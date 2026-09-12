@@ -136,14 +136,12 @@ namespace IsIntertwiningMap
 
 /-- An intertwining map along `f : G →* H` read as a morphism `M ⟶ Res(f)(N)` of
 `G`-representations. This is the datum that `groupHomology.chainsMap` consumes. -/
--- Exposed, like Mathlib's `Rep.resMap`, because the comparison of a change-of-group map along
--- the identity isomorphism with the coefficient functoriality of a fixed group is definitional.
-@[expose] def toRes {f : G →* H} (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp f) φ) : M ⟶ Rep.res f N :=
+def toRes {f : G →* H} (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp f) φ) : M ⟶ Rep.res f N :=
   Rep.ofHom ⟨φ, fun g ↦ by ext v; exact hφ.isIntertwining g v⟩
 
 /-- An intertwining map along an isomorphism `e : G ≃* H` read as a morphism `Res(e⁻¹)(M) ⟶ N` of
 `H`-representations. This is the datum that `groupCohomology.cochainsMap` consumes. -/
-@[expose] def ofRes {e : G ≃* H} (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+def ofRes {e : G ≃* H} (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
     Rep.res (e.symm : H →* G) M ⟶ N :=
   Rep.ofHom ⟨φ, fun h ↦ by ext v; simpa using hφ.isIntertwining (e.symm h) v⟩
 

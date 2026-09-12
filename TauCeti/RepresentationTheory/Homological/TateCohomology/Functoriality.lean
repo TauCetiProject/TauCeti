@@ -130,13 +130,16 @@ theorem complexMap_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V}
     complexMap hφ = tateComplex.map
       (Rep.ofHom ⟨φ, fun g ↦ by ext v; simpa using hφ.isIntertwining g v⟩ : M ⟶ N) := by
   rw [complexMap]
-  rfl
+  congr 1
+  · exact groupHomology.chainsMap_congr rfl (IsIntertwiningMap.toRes_hom_toLinearMap hφ)
+  · exact groupCohomology.cochainsMap_congr rfl (IsIntertwiningMap.ofRes_hom_toLinearMap hφ)
 
 /-- The identity compatible pair induces the identity of Tate complexes. -/
 @[simp] theorem complexMap_id :
     complexMap (e := MulEquiv.refl G) (φ := LinearMap.id) (Rep.isIntertwiningMap_id M) =
-      𝟙 (tateComplex M) :=
-  (tateComplexFunctor R G).map_id M
+      𝟙 (tateComplex M) := by
+  rw [complexMap_refl]
+  exact (tateComplexFunctor R G).map_id M
 
 /-- **The construction is functorial in the compatible pair.** -/
 -- The underlying monoid homomorphism of `e₁.trans e₂` is only extensionally equal to the
@@ -152,7 +155,14 @@ theorem complexMap_comp {e₁ : G ≃* H} {e₂ : H ≃* K} {φ : M.V →ₗ[R] 
       rfl) := by
   refine (CochainComplex.ConnectData.map_comp_map ..).trans ?_
   congr 1
-  exact (groupHomology.chainsMap_comp _ _ _ _).symm
+  · refine (groupHomology.chainsMap_comp _ _ _ _).symm.trans
+      (groupHomology.chainsMap_congr (by ext x; rfl) ?_)
+    rw [IsIntertwiningMap.toRes_hom_toLinearMap]
+    simp
+  · refine (groupCohomology.cochainsMap_comp _ _ _ _).symm.trans
+      (groupCohomology.cochainsMap_congr (by ext x; rfl) ?_)
+    rw [IsIntertwiningMap.ofRes_hom_toLinearMap]
+    simp
 
 /-- **The isomorphism of Tate complexes attached to a compatible pair whose linear part is an
 equivalence.** -/
@@ -316,6 +326,11 @@ def resIso (e : G ≃* H) (n : ℤ) :
             map (e := MulEquiv.refl H) hψ n := by
         rw [map_comp, map_comp]
         exact map_congr (by ext x; rfl) (by ext x; rfl) n
+      have hsrc : (Rep.resFunctor (e : G →* H) ⋙ tateCohomologyFunctor (R := R) (G := G) n).map ψ =
+          map (e := MulEquiv.refl G) hres n := (map_refl hres n).symm
+      have htgt : (tateCohomologyFunctor n).map ψ = map (e := MulEquiv.refl H) hψ n :=
+        (map_refl hψ n).symm
+      rw [hsrc, htgt, mapIso_hom, mapIso_hom]
       exact key
 
 @[simp] theorem resIso_hom_app (e : G ≃* H) (n : ℤ) (N : Rep R H) :
