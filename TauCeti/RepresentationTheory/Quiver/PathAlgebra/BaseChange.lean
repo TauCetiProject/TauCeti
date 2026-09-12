@@ -104,6 +104,7 @@ theorem algebraMap_baseChange (f : k →+* l) (a : k) :
 
 /-- In the algebra structure induced through `f`, the scalar action of `k` is the scalar action
 of `l` after applying `f`. -/
+@[simp]
 theorem smul_def_baseChange (f : k →+* l) (a : k) (x : B) :
     letI : Algebra k B := ((algebraMap l B).comp f).toAlgebra'
       (fun b y ↦ Algebra.commutes (R := l) (A := B) (f b) y)
