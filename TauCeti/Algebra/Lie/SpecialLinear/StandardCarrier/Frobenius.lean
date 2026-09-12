@@ -28,9 +28,8 @@ split weight torus by the same exponent. Its fixed points are exactly the points
 carrier over the Frobenius-fixed subring.
 
 The construction is the carrier's functorial point map at the iterated Frobenius of the value
-ring, so the entrywise equations and the iteration laws are read off the points API rather than
-reproved here. Nothing here asserts that the carrier is reductive, or that any fixed-point group
-is finite or simple.
+ring. Nothing here asserts that the carrier is reductive, or that any fixed-point group is finite
+or simple.
 
 ## Main definitions
 
@@ -53,9 +52,8 @@ is finite or simple.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 
-The definition and the proofs below follow the sibling type-`Bₙ₊₁` specialization
-`TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Frobenius`, which already reads its Frobenius
-off the carrier's functorial point map.
+The organization follows the sibling carrier specialization
+`TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Frobenius`.
 
 This advances the "points over an algebraically closed field" and "Chevalley--Demazure
 construction" targets in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is
@@ -92,8 +90,7 @@ theorem coe_frobenius (g : points r A) :
   rw [frobenius, coe_pointsMap]
 
 /-- **The carrier Frobenius is the functorial map on points** induced by the iterated Frobenius
-endomorphism of the value ring. This is how `TauCeti.SlStd.frobenius` is defined; the equation is
-stated so that callers rewrite with it instead of unfolding the definition. -/
+endomorphism of the value ring. -/
 theorem frobenius_eq_pointsMap :
     frobenius r p k A = pointsMap r (iterateFrobenius A p k) := by
   rw [frobenius]
