@@ -52,12 +52,6 @@ in this file are the span-level input to that identification.
 
 ## Main results
 
-* `TauCeti.commute_permTensorActionAlgHom_of_forall_commute`: commuting with every factor
-  permutation propagates to the whole image of the group algebra the permutations span. (In the
-  other direction, commuting with every diagonal operator propagates to their span by Mathlib's
-  `Commute.span_right`.)
-* `TauCeti.mem_centralizer_range_permTensorActionAlgHom_iff_forall_commute`: centralizing the
-  symmetric-group algebra image is equivalent to commuting with every factor permutation.
 * `TauCeti.coe_centralizer_range_permTensorActionAlgHom_eq_span_range_map_const`: the commutant of
   the symmetric-group image is the span of the diagonal operators.
 * `TauCeti.centralizer_span_range_map_const_eq_range_permTensorActionAlgHom`: **the commutant of
@@ -83,31 +77,6 @@ open PiTensorProduct
 
 namespace TauCeti
 
-section CommSemiring
-
-variable {R : Type*} {n d : ℕ} [CommSemiring R]
-
-/-- An endomorphism of `(Rⁿ)^{⊗d}` commuting with every factor permutation commutes with the whole
-image of the group algebra `R[S_d]`, the group algebra being spanned by the permutations. -/
-theorem commute_permTensorActionAlgHom_of_forall_commute
-    {y : Module.End R (⨂[R] _ : Fin d, Fin n → R)}
-    (hy : ∀ σ : Equiv.Perm (Fin d), Commute y (permTensorAction R n d σ))
-    (a : MonoidAlgebra R (Equiv.Perm (Fin d))) :
-    Commute y (permTensorActionAlgHom R n d a) := by
-  simpa only [permTensorActionAlgHom_def] using
-    Representation.commute_asAlgebraHom_of_forall_commute
-      (permTensorAction R n d) hy a
-
-/-- An endomorphism centralizes the image of the symmetric-group algebra exactly when it commutes
-with every factor permutation. -/
-theorem mem_centralizer_range_permTensorActionAlgHom_iff_forall_commute
-    {y : Module.End R (⨂[R] _ : Fin d, Fin n → R)} :
-    y ∈ Subalgebra.centralizer R (Set.range ⇑(permTensorActionAlgHom R n d)) ↔
-      ∀ σ : Equiv.Perm (Fin d), Commute y (permTensorAction R n d σ) := by
-  rw [permTensorActionAlgHom_def, Representation.mem_centralizer_range_asAlgebraHom_iff]
-
-end CommSemiring
-
 section CommRing
 
 variable {R : Type*} {n d : ℕ} [CommRing R]
@@ -124,8 +93,8 @@ theorem coe_centralizer_range_permTensorActionAlgHom_eq_span_range_map_const
       (Submodule.span R (Set.range fun f : (Fin n → R) →ₗ[R] (Fin n → R) =>
         map fun _ : Fin d => f) : Set (Module.End R (⨂[R] _ : Fin d, Fin n → R))) := by
   ext y
-  rw [SetLike.mem_coe, SetLike.mem_coe, AlgHom.coe_range,
-    mem_centralizer_range_permTensorActionAlgHom_iff_forall_commute,
+  rw [SetLike.mem_coe, SetLike.mem_coe, AlgHom.coe_range, permTensorActionAlgHom_def,
+    Representation.mem_centralizer_range_asAlgebraHom_iff,
     mem_span_range_map_const_iff_forall_commute_permTensorAction h]
 
 end CommRing

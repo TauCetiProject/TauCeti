@@ -92,19 +92,8 @@ theorem mem_range_permTensorActionAlgHom_iff_forall_commute_tensorPowerRep
     (x : Module.End k (⨂[k] _ : Fin d, Fin n → k)) :
     x ∈ (permTensorActionAlgHom k n d).range ↔
       ∀ g : GL (Fin n) k, Commute x (tensorPowerRep k n d g) := by
-  rw [mem_range_permTensorActionAlgHom_iff_forall_commute]
-  constructor
-  · intro hx g
-    rw [tensorPowerRep_apply]
-    exact hx (Matrix.mulVecLin (g : Matrix (Fin n) (Fin n) k))
-  · intro hx f
-    have hf : map (fun _ : Fin d => f) ∈
-        Subalgebra.toSubmodule (tensorPowerRep k n d).asAlgebraHom.range := by
-      rw [toSubmodule_range_tensorPowerRep_asAlgebraHom_eq_span_range_map_const]
-      exact Submodule.subset_span ⟨f, rfl⟩
-    obtain ⟨a, ha⟩ := hf
-    rw [← ha]
-    exact Representation.commute_asAlgebraHom_of_forall_commute (tensorPowerRep k n d) hx a
+  rw [← centralizer_range_tensorPowerRep_asAlgebraHom_eq_range_permTensorActionAlgHom,
+    Representation.mem_centralizer_range_asAlgebraHom_iff]
 
 /-- **Schur-Weyl duality, as a membership criterion.** An endomorphism of `(kⁿ)^{⊗d}` is the
 diagonal action of an element of the group algebra `k[GLₙ]` exactly when it commutes with the
@@ -116,7 +105,7 @@ theorem mem_range_tensorPowerRep_asAlgebraHom_iff_forall_commute_permTensorActio
     x ∈ (tensorPowerRep k n d).asAlgebraHom.range ↔
       ∀ σ : Equiv.Perm (Fin d), Commute x (permTensorAction k n d σ) := by
   rw [← centralizer_range_permTensorActionAlgHom_eq_range_tensorPowerRep_asAlgebraHom,
-    mem_centralizer_range_permTensorActionAlgHom_iff_forall_commute]
+    permTensorActionAlgHom_def, Representation.mem_centralizer_range_asAlgebraHom_iff]
 
 /-- **Schur-Weyl duality for the group ranges:** the commutant of the general-linear group action
 is the image of `k[S_d]`. -/
