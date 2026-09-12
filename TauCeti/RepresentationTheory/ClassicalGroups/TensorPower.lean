@@ -58,7 +58,6 @@ noncomputable abbrev tensorPowerRep :
 
 /-- The tensor-power representation acts by applying the matrix of a general-linear element in
 every tensor factor. -/
-@[simp]
 theorem tensorPowerRep_apply (g : GL (Fin n) k) :
     tensorPowerRep k n d g =
       PiTensorProduct.map fun _ : Fin d => Matrix.mulVecLin (g : Matrix (Fin n) (Fin n) k) := by
