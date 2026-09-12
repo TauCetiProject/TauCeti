@@ -75,6 +75,11 @@ open scoped MeasureTheory
 
 variable {a r : ℝ}
 
+/-- A Gamma measure is sigma-finite for all parameter values. -/
+instance (a r : ℝ) : SigmaFinite (gammaMeasure a r) := by
+  unfold gammaMeasure gammaPDF
+  infer_instance
+
 /-! ### Reduction to the positive half-line -/
 
 /-- A gamma measure is almost everywhere strictly positive, for all parameter values. -/

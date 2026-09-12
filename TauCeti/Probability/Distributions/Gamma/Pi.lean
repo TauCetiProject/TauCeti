@@ -13,9 +13,8 @@ public import TauCeti.Probability.Distributions.Gamma.Basic
 
 This file records the almost-sure positivity inherited by finite products of Gamma measures.
 The coordinatewise result holds for arbitrary shape and rate vectors because
-`ae_pos_gammaMeasure` is parameter-independent; sigma-finiteness follows from the `withDensity`
-construction.  For a nonempty index type, coordinatewise positivity makes the coordinate sum
-positive.
+`ae_pos_gammaMeasure` is parameter-independent, and every Gamma measure is sigma-finite.  For a
+nonempty index type, coordinatewise positivity makes the coordinate sum positive.
 
 These facts supply the null-denominator statement for the normalized-Gamma construction of the
 Dirichlet distribution.
@@ -39,9 +38,6 @@ variable {ι : Type*} [Fintype ι]
 positive. -/
 theorem ae_pos_pi_gammaMeasure (a r : ι → ℝ) :
     ∀ᵐ x ∂Measure.pi (fun i ↦ gammaMeasure (a i) (r i)), ∀ i, 0 < x i := by
-  let _ (i : ι) : SigmaFinite (gammaMeasure (a i) (r i)) := by
-    unfold gammaMeasure gammaPDF
-    infer_instance
   exact ae_all_iff.mpr fun i ↦
     Measure.tendsto_eval_ae_ae.eventually (ae_pos_gammaMeasure (a i) (r i))
 

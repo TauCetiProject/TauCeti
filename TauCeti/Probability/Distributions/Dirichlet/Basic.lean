@@ -120,11 +120,11 @@ theorem dirichletMeasure_of_pos [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < 
       (Measure.pi fun i ↦ gammaMeasure (a i) 1).map dirichletNormalize := by
   rw [dirichletMeasure, ite_eq_left ⟨inferInstance, ha⟩]
 
-/-- An invalid concentration vector gives the zero Dirichlet measure. -/
+/-- Outside the valid nonempty, positive-parameter range, the Dirichlet measure is zero. -/
 @[simp]
-theorem dirichletMeasure_of_not_pos {a : ι → ℝ} (ha : ¬∀ i, 0 < a i) :
-    dirichletMeasure a = 0 := by
-  rw [dirichletMeasure, ite_eq_right fun h ↦ ha h.2]
+theorem dirichletMeasure_eq_zero_of_invalid {a : ι → ℝ}
+    (ha : ¬(Nonempty ι ∧ ∀ i, 0 < a i)) : dirichletMeasure a = 0 := by
+  rw [dirichletMeasure, ite_eq_right ha]
 
 /-- A Dirichlet measure with positive concentration parameters is a probability measure. -/
 theorem isProbabilityMeasure_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
