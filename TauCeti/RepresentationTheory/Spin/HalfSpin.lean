@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 public import Mathlib.RepresentationTheory.Subrepresentation
 public import TauCeti.RepresentationTheory.Spin.Representation
 -- Private: `CliffordAlgebra.contractLeft_mem_evenOdd` is used only inside a proof, and
@@ -78,6 +79,9 @@ belong to the complex theory and are not proved here.
   of `spinRep`, so the splitting is one of representations.
 * `TauCeti.nontrivial_spinPlus` and `TauCeti.nontrivial_spinMinus`: neither summand is zero, the
   odd one as soon as `W` is nonzero.
+* `TauCeti.exteriorBasis_univ_mem_spinPlus_of_even` and its three parity companions: the two
+  coordinate-basis vectors indexed by `univ` and by `univ` with its final index erased lie in the
+  expected half-spin summands according to the rank parity.
 * `TauCeti.coe_spinPlusAction_spinGroup_apply` and
   `TauCeti.coe_spinMinusAction_spinGroup_apply`: the two bundlings agree, in that
   the even-subalgebra actions restrict along the spin group to the subrepresentations of
@@ -143,6 +147,76 @@ theorem mem_spinPlus {s : ExteriorAlgebra K P.W} :
 theorem mem_spinMinus {s : ExteriorAlgebra K P.W} :
     s ∈ spinMinus Q P ↔ s ∈ evenOdd (0 : QuadraticForm K P.W) 1 := by
   rw [spinMinus_def]
+
+/-! ### Coordinate-basis parity -/
+
+private theorem exteriorBasis_mem_evenOdd_card {n : ℕ}
+    (b : Module.Basis (Fin n) K P.W) (s : Finset (Fin n)) :
+    b.ExteriorAlgebra s ∈
+      evenOdd (0 : QuadraticForm K P.W) (s.card : ZMod 2) := by
+  rw [CliffordAlgebra.evenOdd]
+  refine Submodule.mem_iSup_of_mem ⟨s.card, rfl⟩ ?_
+  have h := (b.exteriorPower s.card
+    (⟨s, rfl⟩ : Set.powersetCard (Fin n) s.card)).2
+  rw [← ExteriorAlgebra.basis_eq_coe_basis] at h
+  exact h
+
+/-- The all-coordinate exterior-basis vector belongs to the even half-spin summand in even
+rank. -/
+theorem exteriorBasis_univ_mem_spinPlus_of_even {n : ℕ}
+    (b : Module.Basis (Fin n) K P.W) (hn : Even n) :
+    b.ExteriorAlgebra (Finset.univ : Finset (Fin n)) ∈ spinPlus Q P := by
+  rw [spinPlus_def]
+  have h := exteriorBasis_mem_evenOdd_card P b (Finset.univ : Finset (Fin n))
+  rw [Finset.card_univ, Fintype.card_fin, hn.natCast_zmod_two] at h
+  exact h
+
+/-- The all-coordinate exterior-basis vector belongs to the odd half-spin summand in odd
+rank. -/
+theorem exteriorBasis_univ_mem_spinMinus_of_odd {n : ℕ}
+    (b : Module.Basis (Fin n) K P.W) (hn : Odd n) :
+    b.ExteriorAlgebra (Finset.univ : Finset (Fin n)) ∈ spinMinus Q P := by
+  rw [spinMinus_def]
+  have h := exteriorBasis_mem_evenOdd_card P b (Finset.univ : Finset (Fin n))
+  rw [Finset.card_univ, Fintype.card_fin] at h
+  have hcast : (n : ZMod 2) = 1 := ZMod.natCast_eq_one_iff_odd.mpr hn
+  rwa [hcast] at h
+
+/-- In odd rank, erasing the final coordinate from the all-coordinate exterior-basis vector puts
+it in the even half-spin summand. -/
+theorem exteriorBasis_univ_erase_last_mem_spinPlus_of_odd {n : ℕ}
+    (b : Module.Basis (Fin n) K P.W) (hn : Odd n) :
+    b.ExteriorAlgebra
+        ((Finset.univ : Finset (Fin n)).erase
+          (⟨n - 1, by have := hn.pos; omega⟩ : Fin n)) ∈
+      spinPlus Q P := by
+  rw [spinPlus_def]
+  have h := exteriorBasis_mem_evenOdd_card P b
+    ((Finset.univ : Finset (Fin n)).erase
+      (⟨n - 1, by have := hn.pos; omega⟩ : Fin n))
+  rw [Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ, Fintype.card_fin] at h
+  have hpar : Even (n - 1) := by
+    obtain ⟨k, hk⟩ := hn
+    exact ⟨k, by omega⟩
+  rw [hpar.natCast_zmod_two] at h
+  exact h
+
+/-- In positive even rank, erasing the final coordinate from the all-coordinate exterior-basis
+vector puts it in the odd half-spin summand. -/
+theorem exteriorBasis_univ_erase_last_mem_spinMinus_of_even {n : ℕ}
+    (b : Module.Basis (Fin n) K P.W) (hn : 1 ≤ n) (heven : Even n) :
+    b.ExteriorAlgebra
+        ((Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n)) ∈
+      spinMinus Q P := by
+  rw [spinMinus_def]
+  have h := exteriorBasis_mem_evenOdd_card P b
+    ((Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n))
+  rw [Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ, Fintype.card_fin] at h
+  have hpar : Odd (n - 1) := by
+    obtain ⟨k, hk⟩ := heven
+    exact ⟨k - 1, by omega⟩
+  have hcast : ((n - 1 : ℕ) : ZMod 2) = 1 := ZMod.natCast_eq_one_iff_odd.mpr hpar
+  rwa [hcast] at h
 
 /-- **The spinor module is the sum of its two half-spin summands**, `S = S⁺ ⊕ S⁻`. This is the
 exterior parity grading, and it holds for every polarization. Invariance of the summands
