@@ -62,6 +62,7 @@ theorem toContinuousMap_apply (L : SmoothLinkEmbedding I M n) (i : Fin n) (x : C
   rfl
 
 /-- The range of the disjoint-union map is the subset occupied by the link. -/
+@[simp]
 theorem range_toContinuousMap (L : SmoothLinkEmbedding I M n) :
     Set.range L.toContinuousMap = L.range := by
   apply Set.Subset.antisymm
@@ -77,13 +78,6 @@ disjoint-union maps into one another, and hence simultaneously carries every lab
 of the first to the corresponding component of the second. -/
 def ContinuousAmbientIsotopic (L K : SmoothLinkEmbedding I M n) : Prop :=
   TauCeti.AmbientIsotopic L.toContinuousMap K.toContinuousMap
-
-/-- Continuous ambient isotopy of smooth links is witnessed by an ambient isotopy whose final
-map postcomposes the first link's disjoint-union map to the second. -/
-theorem continuousAmbientIsotopic_def :
-    ContinuousAmbientIsotopic L K ↔
-      ∃ Φ : AmbientIsotopy M, Φ.final.comp L.toContinuousMap = K.toContinuousMap :=
-  ambientIsotopic_def
 
 namespace ContinuousAmbientIsotopic
 
@@ -238,10 +232,6 @@ def setoid (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] (n : ℕ) : Setoid (SmoothLinkEmbedding I M n) where
   r := ContinuousAmbientIsotopic
   iseqv := equivalence
-
-@[simp]
-theorem setoid_r_iff {L K : SmoothLinkEmbedding I M n} :
-    (setoid I M n).r L K ↔ ContinuousAmbientIsotopic L K := Iff.rfl
 
 end ContinuousAmbientIsotopic
 
