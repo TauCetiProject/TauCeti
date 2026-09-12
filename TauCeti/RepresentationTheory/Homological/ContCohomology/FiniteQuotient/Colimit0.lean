@@ -60,6 +60,27 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M]
 
+private def finiteLevelLift (U : OpenNormalSubgroup G) (m : M)
+    (hm : ∀ g : G, g • m = m) :
+    H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) :=
+  let mU : FixedPoints.addSubgroup U.toSubgroup M :=
+    ⟨m, (FixedPoints.mem_addSubgroup U.toSubgroup M m).2 (fun u => hm (u : G))⟩
+  ⟨mU, (FixedPoints.mem_addSubgroup (G ⧸ U.toSubgroup)
+      (FixedPoints.addSubgroup U.toSubgroup M) mU).2 (by
+    intro q
+    induction q using QuotientGroup.induction_on with
+    | _ g =>
+      apply Subtype.ext
+      simpa only [coe_quotient_smul_fixedPoints_addSubgroup,
+        coe_smul_fixedPoints_addSubgroup] using hm g)⟩
+
+omit [IsTopologicalGroup G] [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+private theorem coe_finiteLevelLift (U : OpenNormalSubgroup G) (m : M)
+    (hm : ∀ g : G, g • m = m) :
+    (finiteLevelLift G M U m hm : M) = m :=
+  rfl
+
 section Transition
 
 variable {U V W : OpenNormalSubgroup G}
@@ -70,20 +91,10 @@ noncomputable def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G)
       H0 (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M) :=
   explicitMap0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
     (continuousFiniteQuotientMap G hVU)
-    ({ toFun := fun m =>
-         let n := fixedPointsInclusion (M := M) hVU
-           (⟨m, m.2⟩ : FixedPoints.addSubmonoid U.toSubgroup M)
-         ⟨n, n.2⟩
-       map_zero' := by
-         apply Subtype.ext
-         dsimp
-         simp
-       map_add' := by
-         intro x y
-         apply Subtype.ext
-         dsimp
-         simp } :
-      FixedPoints.addSubgroup U.toSubgroup M →+ FixedPoints.addSubgroup V.toSubgroup M)
+    (by
+      change AddMonoidHom (FixedPoints.addSubmonoid U.toSubgroup M)
+        (FixedPoints.addSubmonoid V.toSubgroup M)
+      exact fixedPointsInclusion hVU)
     (fun q m => by
       induction q using QuotientGroup.induction_on with
       | H g =>
@@ -94,45 +105,17 @@ noncomputable def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G)
               (g : G ⧸ U.toSubgroup) := continuousFiniteQuotientMap_mk G hVU g
         rw [hmap]
         dsimp
-        simp only [coe_fixedPointsInclusion])
+        exact congrArg Subtype.val (fixedPointsInclusion_smul (M := M) hVU g m))
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
 @[simp]
-theorem explicitFiniteQuotientTransition0_coe (hVU : V ≤ U)
+theorem coe_explicitFiniteQuotientTransition0 (hVU : V ≤ U)
     (x : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
     (explicitFiniteQuotientTransition0 G M U V hVU x : M) = (x : M) :=
   by
     unfold explicitFiniteQuotientTransition0
-    have h := coe_explicitMap0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
-      (continuousFiniteQuotientMap G hVU : (G ⧸ V.toSubgroup) →* (G ⧸ U.toSubgroup))
-      ({ toFun := fun m =>
-           let n := fixedPointsInclusion (M := M) hVU
-             (⟨m, m.2⟩ : FixedPoints.addSubmonoid U.toSubgroup M)
-           ⟨n, n.2⟩
-         map_zero' := by
-           apply Subtype.ext
-           dsimp
-           simp
-         map_add' := by
-           intro x y
-           apply Subtype.ext
-           dsimp
-           simp } :
-        FixedPoints.addSubgroup U.toSubgroup M →+ FixedPoints.addSubgroup V.toSubgroup M)
-      (fun (q : G ⧸ V.toSubgroup) (m : FixedPoints.addSubgroup U.toSubgroup M) => by
-        induction q using QuotientGroup.induction_on with
-        | H g =>
-          apply Subtype.ext
-          have hmap :
-              (continuousFiniteQuotientMap G hVU :
-                (G ⧸ V.toSubgroup) →* (G ⧸ U.toSubgroup)) (g : G ⧸ V.toSubgroup) =
-                (g : G ⧸ U.toSubgroup) := continuousFiniteQuotientMap_mk G hVU g
-          rw [hmap]
-          dsimp
-          simp only [coe_fixedPointsInclusion]) x
-    rw [h]
-    dsimp
-    simp only [coe_fixedPointsInclusion]
+    rw [coe_explicitMap0]
+    exact coe_fixedPointsInclusion hVU (x : FixedPoints.addSubgroup U.toSubgroup M)
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
 @[simp]
@@ -140,7 +123,7 @@ theorem explicitFiniteQuotientTransition0_id (U : OpenNormalSubgroup G) :
     explicitFiniteQuotientTransition0 G M U U le_rfl = AddMonoidHom.id _ := by
   apply AddMonoidHom.ext
   intro x
-  exact Subtype.ext (Subtype.ext (explicitFiniteQuotientTransition0_coe G M le_rfl x))
+  exact Subtype.ext (Subtype.ext (coe_explicitFiniteQuotientTransition0 G M le_rfl x))
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
 theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
@@ -153,7 +136,7 @@ theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
   apply Subtype.ext
   apply Subtype.ext
   simp only [AddMonoidHom.coe_comp, Function.comp_apply,
-    explicitFiniteQuotientTransition0_coe]
+    coe_explicitFiniteQuotientTransition0]
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
 private theorem explicitFiniteQuotientTransition0_injective (hVU : V ≤ U) :
@@ -161,7 +144,7 @@ private theorem explicitFiniteQuotientTransition0_injective (hVU : V ≤ U) :
   intro x y hxy
   apply Subtype.ext
   apply Subtype.ext
-  simpa only [explicitFiniteQuotientTransition0_coe G M hVU] using
+  simpa only [coe_explicitFiniteQuotientTransition0 G M hVU] using
     congrArg (fun z : H0 (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M) =>
       ((z : FixedPoints.addSubgroup V.toSubgroup M) : M)) hxy
 
@@ -176,21 +159,11 @@ private theorem explicitFiniteQuotientTransition0_surjective (hVU : V ≤ U) :
       y.2 (QuotientGroup.mk g)
     simpa only [coe_quotient_smul_fixedPoints_addSubgroup, coe_smul_fixedPoints_addSubgroup]
       using congrArg Subtype.val hy
-  let xM : FixedPoints.addSubgroup U.toSubgroup M :=
-    ⟨(y : M), (FixedPoints.mem_addSubgroup U.toSubgroup M (y : M)).2 (fun u => hyG (u : G))⟩
-  let x : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) :=
-    ⟨xM, (FixedPoints.mem_addSubgroup (G ⧸ U.toSubgroup)
-        (FixedPoints.addSubgroup U.toSubgroup M) xM).2 (by
-        intro q
-        induction q using QuotientGroup.induction_on with
-        | _ g =>
-          apply Subtype.ext
-          simpa only [coe_quotient_smul_fixedPoints_addSubgroup,
-            coe_smul_fixedPoints_addSubgroup] using hyG g)⟩
-  refine ⟨x, ?_⟩
+  refine ⟨finiteLevelLift G M U (y : M) hyG, ?_⟩
   apply Subtype.ext
   apply Subtype.ext
-  simp only [explicitFiniteQuotientTransition0_coe G M hVU, x, xM]
+  simp only [coe_explicitFiniteQuotientTransition0 G M hVU,
+    coe_finiteLevelLift]
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
 /-- Every degree-zero transition is a bijection: both its source and target are the global
@@ -205,7 +178,7 @@ end Transition
 section System
 
 /-- The degree-zero finite-quotient system of a discrete module. -/
-@[expose] noncomputable def explicitFiniteQuotientSystem0 :
+noncomputable def explicitFiniteQuotientSystem0 :
     (OpenNormalSubgroup G)ᵒᵖ ⥤ AddCommGrpCat.{v} where
   obj U := AddCommGrpCat.of
     (H0 (G ⧸ U.unop.toSubgroup) (FixedPoints.addSubgroup U.unop.toSubgroup M))
@@ -224,21 +197,27 @@ omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [Contin
 theorem explicitFiniteQuotientSystem0_obj (U : OpenNormalSubgroup G) :
     (explicitFiniteQuotientSystem0 G M).obj (Opposite.op U) =
       AddCommGrpCat.of (H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :=
-  rfl
+  by
+    unfold explicitFiniteQuotientSystem0
+    rfl
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
 @[simp]
 theorem explicitFiniteQuotientSystem0_map {U V : (OpenNormalSubgroup G)ᵒᵖ} (f : U ⟶ V) :
-    (explicitFiniteQuotientSystem0 G M).map f = AddCommGrpCat.ofHom
+    eqToHom (explicitFiniteQuotientSystem0_obj G M U.unop).symm ≫
+        (explicitFiniteQuotientSystem0 G M).map f ≫
+      eqToHom (explicitFiniteQuotientSystem0_obj G M V.unop) = AddCommGrpCat.ofHom
       (explicitFiniteQuotientTransition0 G M U.unop V.unop (leOfHom f.unop)) :=
-  rfl
+  by
+    unfold explicitFiniteQuotientSystem0
+    rfl
 
 end System
 
 section Comparison
 
 /-- The degree-zero comparison legs are inflation from the finite quotient to `G`. -/
-@[expose] noncomputable def explicitFiniteQuotientComparison0 :
+noncomputable def explicitFiniteQuotientComparison0 :
     explicitFiniteQuotientSystem0 G M ⟶
       (Functor.const ((OpenNormalSubgroup G)ᵒᵖ)).obj (AddCommGrpCat.of (H0 G M)) where
   app U := AddCommGrpCat.ofHom (explicitInfl0 G M U.unop.toSubgroup)
@@ -259,7 +238,7 @@ section Comparison
           (explicitFiniteQuotientTransition0 G M U.unop V.unop (leOfHom f.unop) x')) =
           (explicitFiniteQuotientTransition0 G M U.unop V.unop (leOfHom f.unop) x' : M) :=
         coe_explicitInfl0 G M V.unop.toSubgroup _
-      _ = (x' : M) := explicitFiniteQuotientTransition0_coe G M (leOfHom f.unop) x'
+      _ = (x' : M) := coe_explicitFiniteQuotientTransition0 G M (leOfHom f.unop) x'
       _ = (explicitInfl0 G M U.unop.toSubgroup x' : M) :=
         (coe_explicitInfl0 G M U.unop.toSubgroup x').symm
 
@@ -270,32 +249,37 @@ noncomputable def explicitFiniteQuotientCocone0 :
   ι := explicitFiniteQuotientComparison0 G M
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
+@[simp]
+theorem explicitFiniteQuotientComparison0_app (U : OpenNormalSubgroup G) :
+    eqToHom (explicitFiniteQuotientSystem0_obj G M U).symm ≫
+        (explicitFiniteQuotientComparison0 G M).app (Opposite.op U) =
+      AddCommGrpCat.ofHom (explicitInfl0 G M U.toSubgroup) := by
+  unfold explicitFiniteQuotientComparison0
+  rfl
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
+@[simp]
+theorem explicitFiniteQuotientCocone0_pt :
+    (explicitFiniteQuotientCocone0 G M).pt = AddCommGrpCat.of (H0 G M) := by
+  unfold explicitFiniteQuotientCocone0
+  rfl
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
+@[simp]
+theorem explicitFiniteQuotientCocone0_ι_app (U : OpenNormalSubgroup G) :
+    eqToHom (explicitFiniteQuotientSystem0_obj G M U).symm ≫
+        (explicitFiniteQuotientCocone0 G M).ι.app (Opposite.op U) ≫
+      eqToHom (explicitFiniteQuotientCocone0_pt (G := G) (M := M)) =
+      AddCommGrpCat.ofHom (explicitInfl0 G M U.toSubgroup) := by
+  unfold explicitFiniteQuotientCocone0 explicitFiniteQuotientComparison0
+  rfl
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
 private theorem explicitFiniteQuotientComparison0_bijective (U : OpenNormalSubgroup G) :
     Function.Bijective ((explicitFiniteQuotientComparison0 G M).app (Opposite.op U)) := by
   -- Identify the component of the comparison transformation with its inflation hom.
   change Function.Bijective (explicitInfl0 G M U.toSubgroup)
-  constructor
-  · intro x y hxy
-    apply Subtype.ext
-    apply Subtype.ext
-    simpa only [coe_explicitInfl0] using congrArg (fun z : H0 G M => (z : M)) hxy
-  · intro y
-    have hy : ∀ g : G, g • (y : M) = (y : M) :=
-      fun g => (FixedPoints.mem_addSubgroup G M (y : M)).1 y.2 g
-    let xM : FixedPoints.addSubgroup U.toSubgroup M :=
-      ⟨(y : M), fun u => hy (u : G)⟩
-    let x : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) :=
-      ⟨xM, (FixedPoints.mem_addSubgroup (G ⧸ U.toSubgroup)
-        (FixedPoints.addSubgroup U.toSubgroup M) xM).2 (by
-          intro q
-          induction q using QuotientGroup.induction_on with
-          | _ g =>
-            apply Subtype.ext
-            simpa only [coe_quotient_smul_fixedPoints_addSubgroup,
-              coe_smul_fixedPoints_addSubgroup] using hy g)⟩
-    refine ⟨x, ?_⟩
-    apply Subtype.ext
-    simp only [coe_explicitInfl0, x, xM]
+  exact explicitInfl0_bijective G M U.toSubgroup
 
 private def topOpenNormalSubgroup : OpenNormalSubgroup G :=
   { toOpenSubgroup := ⊤
@@ -307,7 +291,7 @@ private theorem explicitFiniteQuotientSystem0_isEventuallyConstantFrom :
       (Opposite.op (topOpenNormalSubgroup G)) := by
   let _ : Nonempty (OpenNormalSubgroup G) := ⟨topOpenNormalSubgroup G⟩
   intro U f
-  rw [explicitFiniteQuotientSystem0_map]
+  unfold explicitFiniteQuotientSystem0
   exact (ConcreteCategory.isIso_iff_bijective _).2
     (explicitFiniteQuotientTransition0_bijective G M (leOfHom f.unop))
 
