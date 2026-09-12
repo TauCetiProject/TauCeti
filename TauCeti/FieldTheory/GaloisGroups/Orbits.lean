@@ -210,6 +210,7 @@ minimal polynomials over the base field agree.
 
 This is `TauCeti.mem_orbit_iff_minpoly_eq` for the intrinsic action; see the note above for why
 that instance is not the one the general statement carries. -/
+@[simp]
 theorem mem_orbit_iff_minpoly_eq_splittingField {x y : p.rootSet p.SplittingField} :
     x ∈ MulAction.orbit p.Gal y ↔
       minpoly F (x : p.SplittingField) = minpoly F (y : p.SplittingField) := by
