@@ -45,6 +45,7 @@ conditions in `IsCongrOne`.
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VI, §1.
 * S. Lang, *Algebraic Number Theory*, Chapter VI, §1.
+* `TauCetiRoadmap/GlobalNumberFields/Suggested.lean` (`GlobalNumberFields.finiteUnitsMap`).
 -/
 
 public section
