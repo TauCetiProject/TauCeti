@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.E6.Minuscule.PointsFunctor
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
+public import TauCeti.Algebra.CharP.Frobenius.Basic
+public import TauCeti.Algebra.Lie.E6.Minuscule.PointsFunctor
 
 /-!
 # The Frobenius of the full-weight type-E6 minuscule carrier

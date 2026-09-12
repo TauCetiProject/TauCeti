@@ -5,8 +5,9 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.PointsFunctor
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
+public import TauCeti.Algebra.CharP.Frobenius.Basic
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.PointsFunctor
 
 /-!
 # Frobenius on the full-weight type-B spin carrier
