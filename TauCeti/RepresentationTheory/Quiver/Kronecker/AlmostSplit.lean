@@ -24,9 +24,9 @@ sequence
 
 joining them and proves that it is an **almost-split (Auslander--Reiten) sequence**: its inclusion
 is left almost split and its projection is right almost split. By the uniqueness theorem
-`CategoryTheory.ShortComplex.IsAlmostSplit.nonempty_iso` it is therefore *the* Auslander--Reiten
-sequence ending at `S₁`, so `S₂` is the Auslander--Reiten translate of `S₁` and the Auslander--
-Reiten quiver of the `A₂` quiver is the three-vertex mesh `S₂ → P₁ → S₁`.
+`CategoryTheory.ShortComplex.IsAlmostSplit.nonempty_iso` every almost-split sequence ending at `S₁`
+is isomorphic to it, so `S₂` is the Auslander--Reiten translate of `S₁` and the Auslander--Reiten
+quiver of the `A₂` quiver is the three-vertex mesh `S₂ → P₁ → S₁`.
 
 Both lifting properties come out of a single computation at each end, and neither needs a
 finiteness hypothesis. A morphism `M ⟶ S₁` is a pair consisting of a linear functional on the
@@ -51,8 +51,8 @@ it under the arrow is what a factorization through `S₂ ↪ P₁` needs at the 
 * `TauCeti.isSplitEpi_iff_exists_of_hom_simpleRep_src` and
   `TauCeti.isSplitMono_iff_notMem_range_of_hom_simpleRep_tgt`: **the two splitting criteria** at the
   two ends of the sequence.
-* `TauCeti.injective_indecProjRep_map_arrowPath` and
-  `TauCeti.surjective_indecProjRep_map_arrowPath`: **the arrow acts invertibly on `P₁`**.
+* `TauCeti.indecProjRep_map_arrowPath_injective` and
+  `TauCeti.indecProjRep_map_arrowPath_surjective`: **the arrow acts invertibly on `P₁`**.
 * `TauCeti.shortExact_kroneckerArSequence`: **the sequence is short exact**, the inclusion being a
   kernel of the projection.
 * `TauCeti.isLeftAlmostSplit_kroneckerArSequence_f` and
@@ -77,17 +77,17 @@ it is stated for a base field in the universe `max v w` of the vertices and the 
 the `A₂` quiver — whose vertex and arrow types are small — forces `k : Type`, whereas everything
 here, like the classification it builds on, is stated for `k : Type u`.
 
-`TauCeti.kroneckerArSequence` carries `@[expose]`: the three objects of a
-`CategoryTheory.ShortComplex` are determined by its body, so without exposure not even
-`TauCeti.kroneckerArSequence_X₁` elaborates.
+`TauCeti.kroneckerArSequence` carries `@[expose]`, and this cannot be traded for `:= (rfl)` proofs:
+the two sides of `TauCeti.kroneckerArSequence_f` are morphisms of the types
+`(kroneckerArSequence k A).X₁ ⟶ (kroneckerArSequence k A).X₂` and `S₂ ⟶ P₁`, so it is the
+*statement* that needs the body, not the proof. Unexposed, it fails to elaborate with
+“type mismatch … the following definitions were not unfolded because their definition is not
+exposed: kroneckerArSequence”.
 
 ## References
 
-This supplies the Auslander--Reiten half of the “`A₂` quiver” worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, which asks for the
-three-vertex mesh `S₂ → P₁ → S₁` with `τ S₁ = S₂`. See Assem--Simson--Skowroński, *Elements of the
-Representation Theory of Associative Algebras I*, Ch. IV, and Schiffler, *Quiver Representations*,
-Ch. 3.
+See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
+Ch. IV, and Schiffler, *Quiver Representations*, Ch. 3.
 -/
 
 public section
@@ -135,6 +135,7 @@ theorem kroneckerProjTgtEquiv_basis (p : Quiver.Path (src : Quiver.Kronecker A) 
 
 /-- **The arrow of the `A₂` quiver acts on `P₁` by the identity**, read through the two
 identifications of its vertex spaces with the base field. -/
+@[simp]
 theorem kroneckerProjTgtEquiv_map (a : A)
     (x : (indecProjRep k (Quiver.Kronecker A) src).obj src) :
     kroneckerProjTgtEquiv k A ((indecProjRep k (Quiver.Kronecker A) src).map (arrowPath a) x)
@@ -159,15 +160,6 @@ omit [Unique A] in
 /-- A zero object of `ModuleCat` has only the zero element. -/
 private theorem eq_zero_of_isZero {M : ModuleCat.{u} k} (h : IsZero M) (x : M) : x = 0 :=
   (ModuleCat.subsingleton_of_isZero h).elim x 0
-
-omit [Unique A] in
-/-- A linear functional killing the kernel of a linear map factors through that map. -/
-private theorem exists_comp_eq_of_ker_le_ker {V W : Type*} [AddCommGroup V] [Module k V]
-    [AddCommGroup W] [Module k W] (u : V →ₗ[k] W) (φ : V →ₗ[k] k)
-    (h : LinearMap.ker u ≤ LinearMap.ker φ) : ∃ θ : W →ₗ[k] k, ∀ x, θ (u x) = φ x := by
-  obtain ⟨θ, hθ⟩ := ((LinearMap.ker u).liftQ φ h ∘ₗ
-    u.quotKerEquivRange.symm.toLinearMap).exists_extend
-  exact ⟨θ, fun x ↦ by simpa using LinearMap.congr_fun hθ ⟨u x, LinearMap.mem_range_self u x⟩⟩
 
 /-! ### The two maps of the sequence -/
 
@@ -248,14 +240,14 @@ theorem kroneckerArSequence_g :
 /-! ### The arrow acts invertibly on `P₁` -/
 
 /-- **The arrow of the `A₂` quiver acts injectively on `P₁`.** -/
-theorem injective_indecProjRep_map_arrowPath (a : A) :
+theorem indecProjRep_map_arrowPath_injective (a : A) :
     Function.Injective ((indecProjRep k (Quiver.Kronecker A) src).map (arrowPath a)).hom :=
   fun x y h ↦ (kroneckerProjSrcEquiv k A).injective
     ((kroneckerProjTgtEquiv_map a x).symm.trans
       ((congrArg (⇑(kroneckerProjTgtEquiv k A)) h).trans (kroneckerProjTgtEquiv_map a y)))
 
 /-- **The arrow of the `A₂` quiver acts surjectively on `P₁`.** -/
-theorem surjective_indecProjRep_map_arrowPath (a : A) :
+theorem indecProjRep_map_arrowPath_surjective (a : A) :
     Function.Surjective ((indecProjRep k (Quiver.Kronecker A) src).map (arrowPath a)).hom := by
   intro y
   refine ⟨(kroneckerProjSrcEquiv k A).symm (kroneckerProjTgtEquiv k A y),
@@ -319,6 +311,12 @@ theorem isSplitEpi_iff_exists_of_hom_simpleRep_src
     · intro a
       obtain rfl : a = default := Unique.eq_default a
       refine comp_zero.trans (ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)).symm
+      -- Element-level form of an equation of `ModuleCat` morphisms, reached by `change` and not
+      -- by `rw`/`simp`: the type of the element and the domain of the composite agree only
+      -- after unfolding the unexposed `simpleRep`, so the pattern of a rewrite is not
+      -- type-correct at `implicit` transparency and nothing matches the subterm (`rw` fails
+      -- with “Did not find an occurrence of the pattern”). Every other `change` below is this
+      -- same step, at the vertex spaces of `simpleRep`, of `indecProjRep`, or of both.
       change Z.map (arrowPath (default : A))
         (((simpleRepSelfEquiv k src (ψ.app src x))⁻¹ * simpleRepSelfEquiv k src y) • x) = 0
       have hsm : Z.map (arrowPath (default : A))
@@ -331,6 +329,8 @@ theorem isSplitEpi_iff_exists_of_hom_simpleRep_src
       refine (NatTrans.comp_app _ _ _).trans (Eq.trans ?_ (NatTrans.id_app _ _).symm)
       rw [kroneckerHom_app_src]
       refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)
+      -- `change`: element-level form of a `ModuleCat` composite, out of reach of `rw`/`simp`
+      -- (see the note in `isSplitEpi_iff_exists_of_hom_simpleRep_src`).
       change (ψ.app src) (((simpleRepSelfEquiv k src (ψ.app src x))⁻¹
         * simpleRepSelfEquiv k src y) • x) = y
       have hsm : (ψ.app src) (((simpleRepSelfEquiv k src (ψ.app src x))⁻¹
@@ -379,6 +379,8 @@ theorem isSplitMono_iff_notMem_range_of_hom_simpleRep_tgt
       refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)
       have hker : θ (Z.map (arrowPath (default : A)) y) = 0 :=
         hsub (LinearMap.mem_range_self _ y)
+      -- `change`: element-level form of a `ModuleCat` composite, out of reach of `rw`/`simp`
+      -- (see the note in `isSplitEpi_iff_exists_of_hom_simpleRep_src`).
       change (simpleRepSelfEquiv k tgt).symm
         ((θ (ψ.app tgt (simpleRepGenerator k tgt)))⁻¹ • θ
           (Z.map (arrowPath (default : A)) y)) = 0
@@ -390,6 +392,8 @@ theorem isSplitMono_iff_notMem_range_of_hom_simpleRep_tgt
       obtain ⟨c, rfl⟩ := exists_eq_smul_simpleRepGenerator k y
       have h1 : (ψ.app tgt) (c • simpleRepGenerator k tgt)
           = c • (ψ.app tgt) (simpleRepGenerator k tgt) := map_smul _ _ _
+      -- `change`: element-level form of a `ModuleCat` composite, out of reach of `rw`/`simp`
+      -- (see the note in `isSplitEpi_iff_exists_of_hom_simpleRep_src`).
       change (simpleRepSelfEquiv k tgt).symm
         ((θ (ψ.app tgt (simpleRepGenerator k tgt)))⁻¹ • θ
           (ψ.app tgt (c • simpleRepGenerator k tgt))) = c • simpleRepGenerator k tgt
@@ -410,7 +414,7 @@ theorem isRightAlmostSplit_kroneckerArSequence_g :
     IsRightAlmostSplit (kroneckerArSequence k A).g := by
   refine isRightAlmostSplit_iff.mpr ⟨fun hs ↦ ?_, fun W ψ hψ ↦ ?_⟩
   · obtain ⟨x, hx, hne⟩ := (isSplitEpi_iff_exists_of_hom_simpleRep_src _).mp hs
-    exact hne ((congrArg _ (injective_indecProjRep_map_arrowPath default
+    exact hne ((congrArg _ (indecProjRep_map_arrowPath_injective default
       (hx.trans (map_zero _).symm))).trans (map_zero _))
   · have hker0 : ∀ x : W.obj src, W.map (arrowPath (default : A)) x = 0 → ψ.app src x = 0 := by
       intro x hx
@@ -422,8 +426,18 @@ theorem isRightAlmostSplit_kroneckerArSequence_g :
       refine LinearMap.mem_ker.mpr ?_
       have h0 : ψ.app src x = 0 := hker0 x (LinearMap.mem_ker.mp hx)
       exact (congrArg (⇑(simpleRepSelfEquiv k src)) h0).trans (map_zero _)
-    obtain ⟨θ, hθ⟩ := exists_comp_eq_of_ker_le_ker (W.map (arrowPath (default : A))).hom
-      ((simpleRepSelfEquiv k src).toLinearMap ∘ₗ (ψ.app src).hom) hker
+    -- A functional killing the kernel of the arrow factors through it: descend it to the
+    -- quotient by that kernel, read that quotient as the range of the arrow, and extend the
+    -- resulting functional on the range to the whole target vertex space.
+    obtain ⟨θ, hθ⟩ : ∃ θ : W.obj tgt →ₗ[k] k, ∀ x,
+        θ ((W.map (arrowPath (default : A))).hom x)
+          = ((simpleRepSelfEquiv k src).toLinearMap ∘ₗ (ψ.app src).hom) x := by
+      obtain ⟨θ, hθ⟩ := ((LinearMap.ker (W.map (arrowPath (default : A))).hom).liftQ
+        ((simpleRepSelfEquiv k src).toLinearMap ∘ₗ (ψ.app src).hom) hker ∘ₗ
+        (W.map (arrowPath (default : A))).hom.quotKerEquivRange.symm.toLinearMap).exists_extend
+      exact ⟨θ, fun x ↦ by
+        simpa using LinearMap.congr_fun hθ
+          ⟨(W.map (arrowPath (default : A))).hom x, LinearMap.mem_range_self _ x⟩⟩
     refine ⟨kroneckerHom
       (ModuleCat.ofHom ((kroneckerProjSrcEquiv k A).symm.toLinearMap ∘ₗ
         ((simpleRepSelfEquiv k src).toLinearMap ∘ₗ (ψ.app src).hom)))
@@ -431,6 +445,8 @@ theorem isRightAlmostSplit_kroneckerArSequence_g :
     · intro a
       obtain rfl : a = default := Unique.eq_default a
       refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
+      -- `change`: element-level form of a `ModuleCat` composite, out of reach of `rw`/`simp`
+      -- (see the note in `isSplitEpi_iff_exists_of_hom_simpleRep_src`).
       change (kroneckerProjTgtEquiv k A).symm (θ (W.map (arrowPath (default : A)) x))
         = (indecProjRep k (Quiver.Kronecker A) src).map (arrowPath (default : A))
           ((kroneckerProjSrcEquiv k A).symm (simpleRepSelfEquiv k src (ψ.app src x)))
@@ -442,6 +458,8 @@ theorem isRightAlmostSplit_kroneckerArSequence_g :
       refine (NatTrans.comp_app _ _ _).trans ?_
       rw [kroneckerHom_app_src]
       refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
+      -- `change`: element-level form of a `ModuleCat` composite, out of reach of `rw`/`simp`
+      -- (see the note in `isSplitEpi_iff_exists_of_hom_simpleRep_src`).
       change (kroneckerArSequence k A).g.app src
           ((kroneckerProjSrcEquiv k A).symm (simpleRepSelfEquiv k src (ψ.app src x)))
         = ψ.app src x
@@ -458,7 +476,7 @@ theorem isLeftAlmostSplit_kroneckerArSequence_f :
     IsLeftAlmostSplit (kroneckerArSequence k A).f := by
   refine isLeftAlmostSplit_iff.mpr ⟨fun hs ↦ ?_, fun W ψ hψ ↦ ?_⟩
   · exact (isSplitMono_iff_notMem_range_of_hom_simpleRep_tgt _).mp hs
-      (LinearMap.mem_range.mpr (surjective_indecProjRep_map_arrowPath default _))
+      (LinearMap.mem_range.mpr (indecProjRep_map_arrowPath_surjective default _))
   · have hv : ψ.app tgt (simpleRepGenerator k tgt)
         ∈ LinearMap.range (W.map (arrowPath (default : A))).hom := by
       by_contra h
@@ -473,6 +491,8 @@ theorem isLeftAlmostSplit_kroneckerArSequence_f :
     · intro a
       obtain rfl : a = default := Unique.eq_default a
       refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)
+      -- `change`: element-level form of a `ModuleCat` composite, out of reach of `rw`/`simp`
+      -- (see the note in `isSplitEpi_iff_exists_of_hom_simpleRep_src`).
       change kroneckerProjTgtEquiv k A
             ((indecProjRep k (Quiver.Kronecker A) src).map (arrowPath (default : A)) y)
             • ψ.app tgt (simpleRepGenerator k tgt)
@@ -489,6 +509,8 @@ theorem isLeftAlmostSplit_kroneckerArSequence_f :
       rw [kroneckerArSequence_f, kroneckerSimpleTgtToIndecProjRep_app_tgt, kroneckerHom_app_tgt]
       refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)
       obtain ⟨c, rfl⟩ := exists_eq_smul_simpleRepGenerator k y
+      -- `change`: element-level form of a `ModuleCat` composite, out of reach of `rw`/`simp`
+      -- (see the note in `isSplitEpi_iff_exists_of_hom_simpleRep_src`).
       change kroneckerProjTgtEquiv k A ((kroneckerProjTgtEquiv k A).symm
             (simpleRepSelfEquiv k tgt (c • simpleRepGenerator k tgt)))
             • ψ.app tgt (simpleRepGenerator k tgt)
@@ -561,6 +583,8 @@ theorem shortExact_kroneckerArSequence : (kroneckerArSequence k A).ShortExact wh
       obtain rfl : a = default := Unique.eq_default a
       refine Eq.trans ?_ zero_comp.symm
       refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
+      -- `change`: element-level form of a `ModuleCat` composite, out of reach of `rw`/`simp`
+      -- (see the note in `isSplitEpi_iff_exists_of_hom_simpleRep_src`).
       change (simpleRepSelfEquiv k tgt).symm (kroneckerProjTgtEquiv k A
         (u.app tgt (W.map (arrowPath (default : A)) x))) = 0
       have hnat : u.app tgt (W.map (arrowPath (default : A)) x)
@@ -580,6 +604,8 @@ theorem shortExact_kroneckerArSequence : (kroneckerArSequence k A).ShortExact wh
         rw [kroneckerHom_app_tgt, kroneckerArSequence_f,
           kroneckerSimpleTgtToIndecProjRep_app_tgt]
         refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
+        -- `change`: element-level form of a `ModuleCat` composite, out of reach of `rw`/`simp`
+        -- (see the note in `isSplitEpi_iff_exists_of_hom_simpleRep_src`).
         change (kroneckerProjTgtEquiv k A).symm (simpleRepSelfEquiv k tgt
             ((simpleRepSelfEquiv k tgt).symm (kroneckerProjTgtEquiv k A (u.app tgt x))))
           = u.app tgt x
@@ -589,9 +615,10 @@ theorem shortExact_kroneckerArSequence : (kroneckerArSequence k A).ShortExact wh
 variable (k A) in
 /-- **The sequence `0 ⟶ S₂ ⟶ P₁ ⟶ S₁ ⟶ 0` is an almost-split sequence of the `A₂` quiver.** It is
 short exact, its inclusion is left almost split and its projection is right almost split, so it is
-the Auslander--Reiten sequence ending at the vertex simple `S₁`; by
-`CategoryTheory.ShortComplex.IsAlmostSplit.nonempty_iso` it is the only one, and `S₂` is therefore
-the Auslander--Reiten translate of `S₁`. -/
+an Auslander--Reiten sequence ending at the vertex simple `S₁`; by
+`CategoryTheory.ShortComplex.IsAlmostSplit.nonempty_iso` it is unique up to isomorphism among the
+almost-split sequences ending at `S₁`, and `S₂` is therefore the Auslander--Reiten translate of
+`S₁`. -/
 theorem isAlmostSplit_kroneckerArSequence : (kroneckerArSequence k A).IsAlmostSplit where
   shortExact := shortExact_kroneckerArSequence k A
   isLeftAlmostSplit_f := isLeftAlmostSplit_kroneckerArSequence_f k A
