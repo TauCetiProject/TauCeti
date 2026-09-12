@@ -184,9 +184,10 @@ theorem complexMap_congr {e₁ e₂ : G ≃* H} {φ₁ φ₂ : M.V →ₗ[R] N.V
   subst he; subst hφ; rfl
 
 /-- **Along the identity isomorphism the construction is Mathlib's coefficient
-functoriality.** This is deliberately not a `simp` lemma: its left-hand side subsumes that of the
-`@[simp]` `IsCompatible.complexMap_id`, and its right-hand side is a dead end for `simp`, which
-has no lemma carrying `tateComplex.map (𝟙 M)` back to `𝟙 (tateComplex M)`. -/
+functoriality.** -/
+-- Deliberately not a `simp` lemma: its left-hand side subsumes that of the `@[simp]`
+-- `IsCompatible.complexMap_id`, and its right-hand side is a dead end for `simp`, which has no
+-- lemma carrying `tateComplex.map (𝟙 M)` back to `𝟙 (tateComplex M)`.
 theorem complexMap_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V}
     (hφ : IsCompatible (MulEquiv.refl G) φ) :
     hφ.complexMap = tateComplex.map (Rep.ofHom ⟨φ, isCompatible_iff.mp hφ⟩) := by
@@ -262,9 +263,10 @@ theorem map_congr {e₁ e₂ : G ≃* H} {φ₁ φ₂ : M.V →ₗ[R] N.V} {h₁
   rw [map_def, map_def, IsCompatible.complexMap_congr he hφ]
 
 /-- Along the identity isomorphism, Tate cohomology of a compatible pair is Mathlib's coefficient
-functoriality. As for `IsCompatible.complexMap_refl`, this is deliberately not a `simp` lemma: it
-would subsume the `@[simp]` `map_id` and leave `simp` stuck on the identity, since
-`Rep.ofHom ⟨LinearMap.id, _⟩` has no `simp` route to `𝟙 M`. -/
+functoriality. -/
+-- As for `IsCompatible.complexMap_refl`, deliberately not a `simp` lemma: it would subsume the
+-- `@[simp]` `map_id` and leave `simp` stuck on the identity, since `Rep.ofHom ⟨LinearMap.id, _⟩`
+-- has no `simp` route to `𝟙 M`.
 theorem map_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V} (hφ : IsCompatible (MulEquiv.refl G) φ)
     (n : ℤ) :
     map hφ n = (tateCohomologyFunctor n).map (Rep.ofHom ⟨φ, isCompatible_iff.mp hφ⟩) := by
