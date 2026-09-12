@@ -369,8 +369,8 @@ theorem isPolarization_riemannForm :
             (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I := by
           simpa [hodgeStructure_F] using hy
         rw [integralFormBaseChange_riemannForm_apply,
-          skewSwap_snd_eq_neg_I_mul_fst_of_mem_I hxI,
-          skewSwap_snd_eq_neg_I_mul_fst_of_mem_I hyI]
+          skewSwap_snd_eq_neg_I_mul_fst_of_mem_I (E := ℂ) hxI,
+          skewSwap_snd_eq_neg_I_mul_fst_of_mem_I (E := ℂ) hyI]
         ring
       · have hxzero : x = 0 := by
           have : x ∈ (⊥ : Submodule ℂ ComplexSpace) := by
@@ -383,7 +383,7 @@ theorem isPolarization_riemannForm :
     by_cases hpone : p = 1
     · subst p
       rw [hodgeStructure_piece_one] at hx
-      have hrel := skewSwap_snd_eq_neg_I_mul_fst_of_mem_I hx
+      have hrel := skewSwap_snd_eq_neg_I_mul_fst_of_mem_I (E := ℂ) hx
       have hfst : x.1 ≠ 0 := by
         intro hzero
         apply hx0
@@ -394,7 +394,7 @@ theorem isPolarization_riemannForm :
     by_cases hpzero : p = 0
     · subst p
       rw [hodgeStructure_piece_zero] at hx
-      have hrel := skewSwap_snd_eq_I_mul_fst_of_mem_neg_I hx
+      have hrel := skewSwap_snd_eq_I_mul_fst_of_mem_neg_I (E := ℂ) hx
       have hfst : x.1 ≠ 0 := by
         intro hzero
         apply hx0

@@ -24,33 +24,37 @@ open scoped ComplexOrder
 
 /-- An `i`-eigenvector of the standard complex structure on `ℂ × ℂ` has second coordinate
 `-i` times its first coordinate. -/
-theorem skewSwap_snd_eq_neg_I_mul_fst_of_mem_I {x : ℂ × ℂ}
+theorem skewSwap_snd_eq_neg_I_mul_fst_of_mem_I {E : Type*} [AddCommGroup E] [Module ℂ E]
+    {x : E × E}
     (hx : x ∈ Module.End.eigenspace
-        (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I) :
-    x.2 = -Complex.I * x.1 := by
+        (LinearEquiv.skewSwap ℂ E E).toLinearMap Complex.I) :
+    x.2 = -Complex.I • x.1 := by
   rw [Module.End.mem_eigenspace_iff] at hx
   have h := congrArg Prod.fst hx
+  have h' : -x.2 = Complex.I • x.1 := by
+    simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply, Prod.fst,
+      Prod.smul_fst] using h
   calc
     x.2 = -(-x.2) := by simp
-    _ = -(Complex.I * x.1) := congrArg Neg.neg (by
-      simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply,
-        Prod.fst, Prod.smul_fst, smul_eq_mul] using h)
-    _ = -Complex.I * x.1 := by ring
+    _ = -(Complex.I • x.1) := congrArg Neg.neg h'
+    _ = -Complex.I • x.1 := by rw [neg_smul]
 
 /-- A `-i`-eigenvector of the standard complex structure on `ℂ × ℂ` has second coordinate
 `i` times its first coordinate. -/
-theorem skewSwap_snd_eq_I_mul_fst_of_mem_neg_I {x : ℂ × ℂ}
+theorem skewSwap_snd_eq_I_mul_fst_of_mem_neg_I {E : Type*} [AddCommGroup E] [Module ℂ E]
+    {x : E × E}
     (hx : x ∈ Module.End.eigenspace
-        (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap (-Complex.I)) :
-    x.2 = Complex.I * x.1 := by
+        (LinearEquiv.skewSwap ℂ E E).toLinearMap (-Complex.I)) :
+    x.2 = Complex.I • x.1 := by
   rw [Module.End.mem_eigenspace_iff] at hx
   have h := congrArg Prod.fst hx
+  have h' : -x.2 = (-Complex.I) • x.1 := by
+    simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply, Prod.fst,
+      Prod.smul_fst] using h
   calc
     x.2 = -(-x.2) := by simp
-    _ = -((-Complex.I) * x.1) := congrArg Neg.neg (by
-      simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply,
-        Prod.fst, Prod.smul_fst, smul_eq_mul] using h)
-    _ = Complex.I * x.1 := by ring
+    _ = -((-Complex.I) • x.1) := congrArg Neg.neg h'
+    _ = Complex.I • x.1 := by rw [neg_smul, neg_neg]
 
 namespace Complex
 
