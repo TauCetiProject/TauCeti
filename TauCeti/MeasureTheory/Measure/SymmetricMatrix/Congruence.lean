@@ -69,7 +69,8 @@ theorem coe_symmetricCongruenceLinearMap_apply (M : Matrix (Fin q) (Fin p) ℝ)
       M * (A : Matrix (Fin p) (Fin p) ℝ) * Mᵀ :=
   (rfl)
 
-theorem symmetricCongruenceLinearMap_mul (M N : Matrix (Fin p) (Fin p) ℝ) :
+theorem symmetricCongruenceLinearMap_mul {r : ℕ} (M : Matrix (Fin q) (Fin p) ℝ)
+    (N : Matrix (Fin p) (Fin r) ℝ) :
     symmetricCongruenceLinearMap (M * N) =
       (symmetricCongruenceLinearMap M).comp (symmetricCongruenceLinearMap N) := by
   refine LinearMap.ext fun A => Subtype.ext ?_

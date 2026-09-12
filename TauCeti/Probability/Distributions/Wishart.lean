@@ -120,9 +120,8 @@ theorem wishartGram_toEuclideanLin {q : ℕ} (M : Matrix (Fin q) (Fin p) ℝ)
   rw [Matrix.coe_symmetricCongruenceLinearMap_apply, coe_wishartGram, coe_wishartGram]
   rw [Matrix.mul_sum, Matrix.sum_mul]
   refine Finset.sum_congr rfl fun r _ => ?_
-  ext i j
-  simp [Matrix.mul_apply, Matrix.vecMulVec_apply, Matrix.mulVec, dotProduct, Finset.mul_sum,
-    mul_comm, mul_left_comm, mul_assoc]
+  rw [Matrix.mul_vecMulVec, Matrix.vecMulVec_mul, Matrix.vecMul_transpose]
+  simp only [Matrix.ofLp_toLpLin, Matrix.toLin'_apply]
 
 /-- The Gram sum is continuous in the family of vectors. -/
 theorem continuous_wishartGram : Continuous (wishartGram (p := p) (ι := ι)) := by
