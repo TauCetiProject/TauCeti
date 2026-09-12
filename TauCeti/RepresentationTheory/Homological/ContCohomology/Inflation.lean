@@ -35,6 +35,8 @@ at its two nodes.
 * `TauCeti.ContCohomology.explicitRes1_comp_explicitInfl1` and
   `TauCeti.ContCohomology.explicitRes2_comp_explicitInfl2`: restricting an inflated class back to
   `N` gives zero.
+* `TauCeti.ContCohomology.explicitInfl1_eq_explicitMap1`: inflation in degree `1` is the
+  compatible-pair pullback along `G → G ⧸ N`.
 * `TauCeti.ContCohomology.explicitInfl1_injective`: inflation is injective in degree `1`.
 * `TauCeti.ContCohomology.explicitInfRes_exact`: the image of inflation is exactly the kernel of
   restriction in degree `1`.
@@ -164,6 +166,15 @@ theorem explicitInfl1_mk (c : Z1 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
         (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
         (subtype_quotientMk_smul G M N) c : H1 G M) :=
   explicitMap1_mk _ _ _ _ _ _ _ _ c
+
+/-- Inflation in degree one is the compatible-pair pullback along the quotient homomorphism
+`G → G ⧸ N` and the inclusion of the invariants `M ^ N` into `M`. -/
+theorem explicitInfl1_eq_explicitMap1 :
+    explicitInfl1 G M N =
+      explicitMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
+        (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
+        (subtype_quotientMk_smul G M N) := by
+  rw [explicitInfl1]
 
 /-- **Restriction to `N` kills inflation in degree one**, the first half of the
 inflation-restriction sequence: the inflation of a cocycle restricts to the zero cochain on `N`,

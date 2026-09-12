@@ -68,10 +68,9 @@ normal subgroups a neighbourhood basis of `1`.
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Cor. 6.5.6(a).
 -/
 
--- Provenance: the human-authored roadmap `TauCetiRoadmap/ProfiniteCohomology`, whose `README.md`
--- section "the finite-quotient colimit description" asks for the colimit theorem as universality
--- of the named comparison cocone rather than as a bare isomorphism, and whose `Suggested.lean`
--- writes down the signatures of the comparison, the cocone and the colimit followed here.
+-- Provenance: the statements follow the human-authored roadmap
+-- `TauCetiRoadmap/ProfiniteCohomology`, whose `README.md` and `Suggested.lean` fix the names and
+-- the signatures used here.
 
 public section
 
@@ -96,7 +95,8 @@ theorem explicitInfl1_comp_explicitFiniteQuotientTransition1 (U V : OpenNormalSu
     (hVU : V ≤ U) :
     (explicitInfl1 G M V.toSubgroup).comp (explicitFiniteQuotientTransition1 G M U V hVU) =
       explicitInfl1 G M U.toSubgroup := by
-  -- The two composable compatible pairs compose to the pair defining `explicitInfl1` at `U`.
+  -- Both maps are compatible-pair pullbacks, so the composite is the pullback along the composite
+  -- pair by `explicitMap1_comp`, and that pair is the one defining `explicitInfl1` at `U`.
   have hquot : (continuousFiniteQuotientMap G hVU).comp
       (ContinuousMonoidHom.quotientMk V.toSubgroup) =
       ContinuousMonoidHom.quotientMk U.toSubgroup := by
@@ -107,67 +107,13 @@ theorem explicitInfl1_comp_explicitFiniteQuotientTransition1 (U V : OpenNormalSu
         FixedPoints.addSubgroup V.toSubgroup M) =
       (FixedPoints.addSubgroup U.toSubgroup M).subtype :=
     AddMonoidHom.ext fun m => coe_fixedPointsInclusion hVU m
-  have hcomp : ∀ (g : G) (m : FixedPoints.addSubgroup U.toSubgroup M),
-      (((FixedPoints.addSubgroup V.toSubgroup M).subtype).comp
-          (fixedPointsInclusion hVU : FixedPoints.addSubgroup U.toSubgroup M →+
-            FixedPoints.addSubgroup V.toSubgroup M))
-        (((continuousFiniteQuotientMap G hVU).comp
-          (ContinuousMonoidHom.quotientMk V.toSubgroup)) g • m) =
-      g • (((FixedPoints.addSubgroup V.toSubgroup M).subtype).comp
-          (fixedPointsInclusion hVU : FixedPoints.addSubgroup U.toSubgroup M →+
-            FixedPoints.addSubgroup V.toSubgroup M)) m := by
-    intro g m
-    rw [hquot, hincl]
-    exact subtype_quotientMk_smul G M U.toSubgroup g m
-  refine AddMonoidHom.ext fun x => ?_
-  induction x using QuotientAddGroup.induction_on with
-  | _ c =>
-    have htrans : explicitFiniteQuotientTransition1 G M U V hVU
-        (c : H1 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) =
-        H1pi (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
-          (cocyclesMap1 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
-            (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
-            (continuousFiniteQuotientMap G hVU) (fixedPointsInclusion hVU)
-            continuous_of_discreteTopology
-            (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) c) :=
-      explicitFiniteQuotientTransition1_mk G M hVU c
-    refine (congrArg (explicitInfl1 G M V.toSubgroup) htrans).trans ?_
-    refine (explicitInfl1_mk G M V.toSubgroup _).trans ?_
-    refine Eq.trans ?_ (explicitInfl1_mk G M U.toSubgroup c).symm
-    refine congrArg (fun w : Z1 G M => (w : H1 G M)) ?_
-    -- Functoriality of the cocycle pullback is `cocyclesMap1_comp`; only the identification of the
-    -- composite pair with the inflation pair at `U` is left.
-    have hfunct := DFunLike.congr_fun (cocyclesMap1_comp
-      (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
-      (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
-      (continuousFiniteQuotientMap G hVU)
-      (fixedPointsInclusion hVU : FixedPoints.addSubgroup U.toSubgroup M →+
-        FixedPoints.addSubgroup V.toSubgroup M)
-      continuous_of_discreteTopology
-      (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) G M
-      (ContinuousMonoidHom.quotientMk V.toSubgroup)
-      (FixedPoints.addSubgroup V.toSubgroup M).subtype
-      (continuous_fixedPoints_addSubgroup_subtype G M V.toSubgroup)
-      (subtype_quotientMk_smul G M V.toSubgroup) hcomp) c
-    rw [AddMonoidHom.comp_apply] at hfunct
-    refine hfunct.symm.trans (Subtype.ext (funext fun g => ?_))
-    -- The two evaluations are spelled with all their arguments because the coefficient map of a
-    -- transition is `fixedPointsInclusion`, stated on `FixedPoints.addSubmonoid`, so the cocycle
-    -- below does not unify with the pattern of `cocyclesMap1_apply` at reducible transparency.
-    have hA := cocyclesMap1_apply (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) G M
-      ((continuousFiniteQuotientMap G hVU).comp (ContinuousMonoidHom.quotientMk V.toSubgroup))
-      (((FixedPoints.addSubgroup V.toSubgroup M).subtype).comp
-        (fixedPointsInclusion hVU : FixedPoints.addSubgroup U.toSubgroup M →+
-          FixedPoints.addSubgroup V.toSubgroup M))
-      ((continuous_fixedPoints_addSubgroup_subtype G M V.toSubgroup).comp
-        continuous_of_discreteTopology) hcomp c g
-    have hB := cocyclesMap1_apply (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) G M
-      (ContinuousMonoidHom.quotientMk U.toSubgroup)
-      (FixedPoints.addSubgroup U.toSubgroup M).subtype
-      (continuous_fixedPoints_addSubgroup_subtype G M U.toSubgroup)
-      (subtype_quotientMk_smul G M U.toSubgroup) c g
-    rw [hA, hB, hquot]
-    exact coe_fixedPointsInclusion hVU _
+  rw [explicitInfl1_eq_explicitMap1, explicitFiniteQuotientTransition1_eq_explicitMap1,
+    explicitInfl1_eq_explicitMap1]
+  refine (explicitMap1_comp _ _ _ _ _ _ _ _ _ _ _ _ _ _ ?_).symm.trans
+    (explicitMap1_congr_of_eq _ _ _ _ _ _ _ _ hquot hincl)
+  exact fun g m => comp_apply_smul _ _ _ _
+    (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU)
+    (subtype_quotientMk_smul G M V.toSubgroup) g m
 
 /-- Inflating a class from a level to a deeper one does not change it: the elementwise form of
 `TauCeti.ContCohomology.explicitInfl1_comp_explicitFiniteQuotientTransition1`. -/
