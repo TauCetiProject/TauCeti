@@ -44,7 +44,8 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
 * `TauCeti.IsGlDominantIntegral μ`: the consecutive differences of `μ : Fin n → R` are natural
   numbers, for `R` of characteristic zero.
 * `TauCeti.glStaircase N`: the staircase tuple `(N - 1/2, N - 3/2, …, 1/2) : Fin N → ℚ`.
-* `TauCeti.glHalfStaircase F N`: the same half-shifted staircase over any field.
+* `TauCeti.glHalfStaircase F N`: the formula `N - 1/2 - i` over any field; when two is
+  invertible, this is the same half-shifted staircase.
 * `TauCeti.IsGlHighestWeightVector μ v`: `v` is nonzero, the diagonal matrix unit `Eᵢᵢ` acts on it
   by `μ i`, and every raising matrix unit `Eᵢⱼ` with `i < j` annihilates it.
 
@@ -267,9 +268,10 @@ def glStaircase (N : ℕ) : Fin N → ℚ := fun i => (N : ℚ) - 1 / 2 - (i : �
 theorem glStaircase_apply (N : ℕ) (i : Fin N) :
     glStaircase N i = (N : ℚ) - 1 / 2 - (i : ℕ) := (rfl)
 
-/-- The half-shifted staircase weight `(N - 1/2, N - 3/2, …, 1/2)` over a field. Unlike
-`TauCeti.glStaircase`, this definition does not require a map from the rationals, so it remains
-available in positive characteristic whenever two is invertible. -/
+/-- The formula `N - 1/2 - i` over a field. When two is invertible, this is the half-shifted
+staircase weight `(N - 1/2, N - 3/2, …, 1/2)`. Unlike `TauCeti.glStaircase`, this definition does
+not require a map from the rationals, so it remains available in positive characteristic whenever
+two is invertible. -/
 def glHalfStaircase (F : Type*) [Field F] (N : ℕ) : Fin N → F :=
   fun i => (N : F) - 1 / 2 - (i : ℕ)
 
