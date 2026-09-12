@@ -211,7 +211,7 @@ theorem eval_diagramSchurPoly (y : Fin N → R) :
 /-- **A Schur polynomial evaluated at one counts bounded semistandard tableaux.**  Every monomial
 in the tableau generating function contributes one, so the value is the cardinality of
 `TauCeti.BoundedSSYT N μ`. -/
-theorem eval_one_diagramSchurPoly_eq_card_boundedSSYT (N : ℕ) (μ : YoungDiagram) :
+@[simp] theorem eval_one_diagramSchurPoly_eq_card_boundedSSYT (N : ℕ) (μ : YoungDiagram) :
     eval (fun _ : Fin N => (1 : R)) (diagramSchurPoly N R μ) =
       (Nat.card (BoundedSSYT N μ) : R) := by
   rw [eval_diagramSchurPoly]
