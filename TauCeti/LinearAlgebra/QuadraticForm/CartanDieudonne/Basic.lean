@@ -145,61 +145,6 @@ theorem exists_reflectionOrthogonal_list_prod_eq [FiniteDimensional K V] [NeZero
     l.prod = l.prod * g⁻¹ * g := by simp
     _ = g := by rw [hprod, one_mul]
 
-private theorem exists_mem_subgroup_mul_eqOn_of_codim
-    [FiniteDimensional K V] [Invertible (2 : K)]
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (n : ℕ)
-    (H : Subgroup (QuadraticMap.orthogonalGroup Q))
-    (hreflection : ∀ (v : V) [Invertible (Q v)],
-      QuadraticMap.reflectionOrthogonal Q v ∈ H)
-    (g : QuadraticMap.orthogonalGroup Q) (W : Submodule K V)
-    (hW : (LinearMap.BilinForm.restrict (QuadraticMap.associated Q) W).Nondegenerate)
-    (hfix : ∀ w ∈ W, ((g : V ≃ₗ[K] V) w) = w)
-    (hcodim : Module.finrank K V - Module.finrank K W = n) :
-    ∃ r : QuadraticMap.orthogonalGroup Q, r ∈ H ∧
-      ∀ y : V, (((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) = y := by
-  induction n using Nat.strong_induction_on generalizing g W with
-  | h n ih =>
-      by_cases htop : W = ⊤
-      · refine ⟨1, H.one_mem, ?_⟩
-        intro y
-        simpa only [one_mul] using hfix y (by simp [htop])
-      · let B : LinearMap.BilinForm K V := QuadraticMap.associated Q
-        have hB : B.Nondegenerate := QuadraticMap.nondegenerate_associated_iff.mpr hQ
-        have hBsymm : B.IsSymm :=
-          LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)
-        obtain ⟨x, hxorth, hxx⟩ :=
-          exists_mem_orthogonal_self_ne_zero B hB hBsymm W hW htop
-        have hxQ : Q x ≠ 0 := by
-          rwa [QuadraticMap.associated_eq_self_apply] at hxx
-        let _ : Invertible (Q x) := (isUnit_iff_ne_zero.mpr hxQ).invertible
-        let S : Submodule K V := W ⊔ Submodule.span K {x}
-        have hxx' : B x x ∈ nonZeroDivisorsRight K := by
-          simpa only [nonZeroDivisorsRight_eq_nonZeroDivisors] using
-            mem_nonZeroDivisors_of_ne_zero hxx
-        have hS : (B.restrict S).Nondegenerate :=
-          TauCeti.BilinForm.restrict_nondegenerate_sup_span_singleton
-            B hBsymm.isRefl W hW.1 x hxx' hxorth
-        have hxQorth : ∀ w ∈ W, Q.IsOrtho x w := by
-          intro w hw
-          rw [← QuadraticMap.associated_isOrtho]
-          exact hBsymm.eq_iff.mpr (hxorth w hw)
-        obtain ⟨l, hlrefl, _, hfixl⟩ :=
-          exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton Q g W hfix x hxQorth
-        have hlmem : l.prod ∈ H := H.list_prod_mem fun s hs => by
-          obtain ⟨v, _, rfl⟩ := hlrefl s hs
-          exact hreflection v
-        have hlt : Module.finrank K V - Module.finrank K S < n := by
-          have hxW : x ∉ W := fun hxW => hxx (hxorth x hxW)
-          have hSfinrank : Module.finrank K S = Module.finrank K W + 1 :=
-            Submodule.finrank_sup_span_singleton hxW
-          have hWlt : Module.finrank K W < Module.finrank K V := Submodule.finrank_lt htop
-          omega
-        obtain ⟨r, hr, hfixr⟩ :=
-          ih (Module.finrank K V - Module.finrank K S) hlt (l.prod * g) S hS hfixl rfl
-        refine ⟨r * l.prod, H.mul_mem hr hlmem, ?_⟩
-        intro y
-        simpa only [mul_assoc] using hfixr y
-
 /-- **Cartan--Dieudonné generation.** Any subgroup of the orthogonal group that contains every
 reflection in a vector of invertible norm is the whole orthogonal group. -/
 theorem subgroup_eq_top_of_reflection_mem
@@ -211,14 +156,9 @@ theorem subgroup_eq_top_of_reflection_mem
     H = ⊤ := by
   rw [Subgroup.eq_top_iff']
   intro g
-  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
-  obtain ⟨r, hr, hrg⟩ :=
-    exists_mem_subgroup_mul_eqOn_of_codim Q hQ (Module.finrank K V) H hreflection
-      g ⊥ (by constructor <;> intro x _ <;> exact Subsingleton.elim x 0) (by simp) (by simp)
-  have hrg_eq : r * g = 1 := by
-    ext y
-    exact hrg y
-  rw [eq_inv_of_mul_eq_one_right hrg_eq]
-  exact H.inv_mem hr
+  obtain ⟨l, hlrefl, _, rfl⟩ := exists_reflectionOrthogonal_list_prod_eq Q hQ g
+  exact H.list_prod_mem fun r hr => by
+    obtain ⟨v, _, rfl⟩ := hlrefl r hr
+    exact hreflection v
 
 end TauCeti.QuadraticMap
