@@ -19,6 +19,8 @@ public import TauCeti.RingTheory.Norm.Units
 -- inside proofs, so downstream importers do not pay for them.
 import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
 import TauCeti.GroupTheory.Index
+-- Non-public: conjugation invariance of the shifted determinant is used only inside a proof.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 -- Non-public: the order of `GL (Fin 2) F` over a finite field is used only inside the proof of
 -- `TauCeti.GL2NonSplitTorus.index_eq`.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
@@ -126,28 +128,6 @@ noncomputable def GL2NonSplitTorus (hE : Module.finrank F E = 2) : Subgroup (GL 
 namespace GL2NonSplitTorus
 
 variable (hE : Module.finrank F E = 2)
-
-/-- Shifting a `GL₂` matrix by a scalar and taking its determinant is invariant under
-conjugation. -/
-private theorem det_sub_algebraMap_conj (g x : GL (Fin 2) F) (a : F) :
-    (((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) -
-      algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det =
-        ((g : Matrix (Fin 2) (Fin 2) F) -
-          algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det := by
-  have hxx : ((x⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) *
-      (x : Matrix (Fin 2) (Fin 2) F) = 1 := by
-    rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
-  have hcancel : ((x⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) *
-      algebraMap F (Matrix (Fin 2) (Fin 2) F) a * (x : Matrix (Fin 2) (Fin 2) F) =
-      algebraMap F (Matrix (Fin 2) (Fin 2) F) a := by
-    rw [mul_assoc, Algebra.commutes a (x : Matrix (Fin 2) (Fin 2) F), ← mul_assoc, hxx, one_mul]
-  have hsplit : ((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) -
-      algebraMap F (Matrix (Fin 2) (Fin 2) F) a =
-      ((x⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) *
-        ((g : Matrix (Fin 2) (Fin 2) F) -
-          algebraMap F (Matrix (Fin 2) (Fin 2) F) a) * (x : Matrix (Fin 2) (Fin 2) F) := by
-    rw [mul_sub, sub_mul, hcancel, Units.val_mul, Units.val_mul]
-  rw [hsplit, Matrix.coe_units_inv, Matrix.det_conj' x.isUnit]
 
 /-- Membership in the non-split torus: a matrix lies in it exactly when it is left multiplication
 by a unit of `E`. -/
