@@ -49,7 +49,7 @@ noncomputable local instance moduleRatOfComplex : Module ℚ ComplexSpace :=
 def latticeToRational : Lattice →ₗ[ℤ] RationalSpace :=
   (Algebra.linearMap ℤ ℚ).prodMap (Algebra.linearMap ℤ ℚ)
 
-/-! The coordinatewise rational inclusion is a base change from `ℤ` to `ℚ`. -/
+/-- The coordinatewise rational inclusion is a base change from `ℤ` to `ℚ`. -/
 theorem isBaseChange_latticeToRational : IsBaseChange ℚ latticeToRational :=
   IsBaseChange.prodMap _ _ (IsBaseChange.linearMap ℤ ℚ) (IsBaseChange.linearMap ℤ ℚ)
 
@@ -76,28 +76,22 @@ theorem rationalToComplex_apply (x : RationalSpace) :
     rationalToComplex x = ((x.1 : ℂ), (x.2 : ℂ)) := by
   induction x using isBaseChange_latticeToRational.inductionOn with
   | zero =>
-      change rationalToComplex 0 = (((0 : ℚ) : ℂ), ((0 : ℚ) : ℂ))
       rw [LinearMap.map_zero]
       ext <;> norm_num
   | tmul x =>
-      change rationalToComplex (latticeToRational x) = _
-      rw [show rationalToComplex = Hodge.rationalToComplexMap
-          isBaseChange_latticeToRational latticeToComplex from rfl,
-        Hodge.rationalToComplexMap_apply_ι]
+      rw [rationalToComplex, Hodge.rationalToComplexMap_apply_ι]
       simp
   | smul q x hx =>
-      change rationalToComplex (q • x) = _
       rw [LinearMap.map_smul rationalToComplex, hx]
+      -- Expose the restricted-scalar action on the product so that its coordinates can be
+      -- simplified explicitly; the generic product simp lemmas do not unfold this action.
       change (((q : ℂ) • (x.1 : ℂ)), ((q : ℂ) • (x.2 : ℂ))) = _
       ext <;> simp [Algebra.smul_def]
   | add x y hx hy =>
       simp only [map_add, hx, hy]
       ext <;> simp
 
-/-- The two coordinatewise inclusions agree after passing through the rationalization.
-
-This is deliberately not `@[simp]`: the coordinatewise application lemmas above already put its
-left-hand side in simp normal form, so tagging this consequence fails `simpNF`. -/
+/-- The two coordinatewise inclusions agree after passing through the rationalization. -/
 theorem rationalToComplex_comp_latticeToRational (x : Lattice) :
     rationalToComplex (latticeToRational x) = latticeToComplex x := by
   exact Hodge.rationalToComplexMap_apply_ι isBaseChange_latticeToRational latticeToComplex x
@@ -217,9 +211,12 @@ private theorem comap_weilOperator (hs : HodgeStructureOn (ℂ ⊗[ℝ] RealSpac
   have hx' : complexificationEquiv.symm x ∈ hs.piece p := by
     rw [HodgeStructureOn.comap_piece] at hx
     exact hx
-  change complexificationEquiv (hs.weilOperator (complexificationEquiv.symm x)) = _
-  rw [hs.weilOperator_apply_of_mem hx', map_smul]
-  simp only [complexificationEquiv.apply_symm_apply]
+  calc
+    complexificationEquiv (hs.weilOperator (complexificationEquiv.symm x)) =
+        complexificationEquiv
+          (Complex.I ^ (2 * p - 1) • complexificationEquiv.symm x) :=
+      congrArg complexificationEquiv (hs.weilOperator_apply_of_mem hx')
+    _ = _ := by rw [map_smul, complexificationEquiv.apply_symm_apply]
 
 /-- The standard effective Hodge structure of weight one on `ℤ × ℤ`. Its degree-one
 filtration is the `i`-eigenspace of `J(x, y) = (-y, x)`. -/
@@ -284,11 +281,15 @@ theorem hodgeStructure_weilOperator :
   intro x
   obtain ⟨y, rfl⟩ := complexificationEquiv.surjective x
   rw [LinearMap.comp_apply, LinearMap.comp_apply]
-  change complexificationEquiv
-      (realAlmostComplexStructure.toLinearMap.baseChange ℂ
-        (complexificationEquiv.symm (complexificationEquiv y))) = _
-  rw [complexificationEquiv.symm_apply_apply, complexificationEquiv_J]
-  simp
+  calc
+    complexificationEquiv
+        (realAlmostComplexStructure.toLinearMap.baseChange ℂ
+          (complexificationEquiv.symm (complexificationEquiv y))) =
+        complexificationEquiv
+          (realAlmostComplexStructure.toLinearMap.baseChange ℂ y) := by
+      rw [complexificationEquiv.symm_apply_apply]
+    _ = (LinearEquiv.skewSwap ℂ ℂ ℂ) (complexificationEquiv y) :=
+      complexificationEquiv_J y
 
 /-! ### The standard Riemann form -/
 
