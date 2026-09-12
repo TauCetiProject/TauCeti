@@ -14,15 +14,15 @@ public import TauCeti.Geometry.Toric.Algebraic.Ray.Primitive
 A toric cone is *regular*, or smooth, when its primitive ray generators can be completed to a
 single integral basis of the lattice. This is the combinatorial condition under which the affine
 chart of the cone is a mixed chart `ℂ ^ k × (ℂ ^ *) ^ (n - k)` rather than a singular affine toric
-variety, so it is the hypothesis carried by every analytic statement about a toric variety built
-from a fan.
+variety, so it is the hypothesis carried by the downstream mixed-chart and complex-manifold
+constructions.
 
 Regularity is defined here as the conjunction of `TauCeti.Toric.IsToricCone` with the existence of
 an *extending basis*: an integral basis `b` of the lattice together with an injection `r` of the
 rays of the cone into the basis indices such that `b (r ρ)` is the primitive generator of the ray
-`ρ`. Carrying the toric-cone hypothesis is what stops regularity from holding vacuously: an
-irrational or nonsalient cone has no rational rays to constrain, so the basis condition alone would
-be satisfied by cones that are not cones of smooth affine toric varieties at all.
+`ρ`. The toric-cone hypothesis separately enforces lattice rationality, salience, and finite
+generation; the basis condition alone would be vacuous whenever the cone's `ToricRay` type is
+empty.
 
 Two extending bases of the same cone cannot differ at the ray indices, because a ray of a toric
 cone in an integral lattice has only one primitive generator. This pins the block form of the
@@ -100,9 +100,9 @@ structure IsExtendingBasis (i : N →+ V) {σ : PointedCone ℝ V} {n : ℕ}
 /-! ### Regular cones -/
 
 /-- A toric cone is *regular*, or smooth, when some integral basis of the lattice extends its
-primitive ray generators. The toric-cone hypothesis is part of the definition: without it the
-basis condition would hold vacuously for irrational and nonsalient cones, which have no rational
-rays. -/
+primitive ray generators. The toric-cone hypothesis is part of the definition: it enforces
+lattice rationality, salience, and finite generation, while the basis condition alone would be
+vacuous for any cone whose `ToricRay` type is empty. -/
 -- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 structure IsRegularCone (i : N →+ V) (σ : PointedCone ℝ V) : Prop extends IsToricCone i σ where
   /-- Some integral basis extends the primitive ray generators of the cone. -/
@@ -134,6 +134,7 @@ end IsRegularCone
 
 /-- The zero cone is regular. Its affine chart is the dense torus of the lattice, which is
 therefore a smooth chart of every toric variety built from a fan. -/
+@[simp]
 theorem isRegularCone_bot (hi : IsIntegralLattice i) :
     IsRegularCone i (⊥ : PointedCone ℝ V) := by
   have _ := hi.free
@@ -145,6 +146,7 @@ theorem isRegularCone_bot (hi : IsIntegralLattice i) :
 integral basis, and the cone it spans is its own only ray. Having a single ray, this cone has
 exactly one boundary coordinate: its affine chart is `ℂ × (ℂ ^ *) ^ (n - 1)` for `n` the rank of
 the lattice, into which the chart of the zero face is the inclusion of the dense torus. -/
+@[simp]
 theorem isRegularCone_hull_singleton (hi : IsIntegralLattice i) {v : N} (hv : IsPrimitive v) :
     IsRegularCone i (PointedCone.hull ℝ {i v}) := by
   have _ := hi.free
