@@ -59,6 +59,8 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
 * `TauCeti.IsGlDominantIntegral.add_const`: dominance is invariant under the central direction, and
   `TauCeti.IsGlDominantIntegral.exists_antitone_natCast_add_const` is the converse decomposition:
   every dominant weight is an antitone tuple of natural numbers translated along that direction.
+  `TauCeti.IsGlDominantIntegral.antitone_of_eq_natCast_add_const` recovers antitonicity when that
+  translated tuple is prescribed.
 * `TauCeti.isGlDominantIntegral_glStaircase` and `TauCeti.glStaircase_ne_intCast`: the staircase is
   dominant and no entry of it is an integer, so dominance genuinely does not force integrality.
 * `TauCeti.sum_glStaircase`: the sum of the staircase entries after mapping to a
@@ -249,6 +251,25 @@ theorem IsGlDominantIntegral.exists_antitone_natCast_add_const (hmu : IsGlDomina
       ring
     exact Nat.le.intro (Nat.cast_injective hcast)
   · exact sub_eq_iff_eq_add.mp (key i)
+
+/-- If a dominant integral weight is already expressed as a common translate of a natural tuple,
+that tuple is antitone. This is the prescribed-tuple counterpart to
+`TauCeti.IsGlDominantIntegral.exists_antitone_natCast_add_const`. -/
+theorem IsGlDominantIntegral.antitone_of_eq_natCast_add_const
+    (hmu : IsGlDominantIntegral mu) {a : Fin n → ℕ} {c : R}
+    (h : mu = fun i => (a i : R) + c) : Antitone a := by
+  intro i j hij
+  obtain ⟨d, hd⟩ := hmu.exists_natCast_sub_of_le hij
+  have hdiff : (a i : R) - (a j : R) = (d : R) := by
+    calc
+      (a i : R) - (a j : R) = mu i - mu j := by rw [h]; ring
+      _ = (d : R) := hd
+  have hcast : ((a j + d : ℕ) : R) = (a i : R) := by
+    rw [Nat.cast_add]
+    calc
+      (a j : R) + (d : R) = (d : R) + (a j : R) := add_comm _ _
+      _ = (a i : R) := (sub_eq_iff_eq_add.mp hdiff).symm
+  exact Nat.le.intro (Nat.cast_injective hcast)
 
 /-- Over an index type with at most one element there is no consecutive pair, so every tuple is
 dominant. -/
