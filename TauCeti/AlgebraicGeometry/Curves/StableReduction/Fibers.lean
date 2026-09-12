@@ -86,7 +86,7 @@ lemma isOpenImmersion_Spec_map_fractionRing (R K : Type u) [CommRing R] [IsDomai
     IsOpenImmersion (Spec.map (CommRingCat.ofHom (algebraMap R K))) := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
   let : IsLocalization.Away ϖ K :=
-    TauCeti.Irreducible.isLocalizationAway_fractionRing hϖ
+    isLocalizationAway_fractionRing hϖ
   exact IsOpenImmersion.of_isLocalization ϖ
 
 /-- The morphism from the spectrum of a local ring's residue field is a closed immersion. -/
