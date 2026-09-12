@@ -6,7 +6,8 @@ Authors: Claude
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
-public import Mathlib.Probability.ProbabilityMassFunction.Constructions
+public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.OfMatrix
+import Mathlib.Probability.ProbabilityMassFunction.Constructions
 import TauCeti.MeasureTheory.MeasurableSpace.Finpartition
 
 /-!
@@ -72,28 +73,6 @@ namespace DenseGraphLimits
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
 
-/-- The block-average step graphon of a graphon is a step graphon with an explicit block matrix:
-the value it takes at the chosen representatives of the two parts.
-
-This repackages `stepGraphonAvg` as a `stepGraphon`, which `stepGraphonAvg` is by construction; the
-matrix is existentially quantified because the averages themselves are not part of the public
-`stepGraphonAvg` interface. -/
-theorem exists_stepGraphon_eq_stepGraphonAvg (P : Finpartition (Set.univ : Set Ω))
-    (hP : ∀ p ∈ P.parts, MeasurableSet p) (W : Graphon Ω μ) :
-    ∃ (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ p q, val p q = val q p),
-      stepGraphon (μ := μ) P hP val hsymm = stepGraphonAvg (μ := μ) P hP W := by
-  refine ⟨fun p q => ⟨stepGraphonAvg (μ := μ) P hP W (P.indexedPartition.some p)
-      (P.indexedPartition.some q), (stepGraphonAvg (μ := μ) P hP W).mem_Icc _ _⟩,
-    fun p q => Subtype.ext ((stepGraphonAvg (μ := μ) P hP W).symm _ _), ?_⟩
-  ext x y
-  refine (stepGraphon_apply P hP _ _ (P.indexedPartition.mem_index x)
-    (P.indexedPartition.mem_index y)).trans ?_
-  exact (stepGraphonAvg_apply P hP W
-      (P.indexedPartition.some_mem (P.indexedPartition.index x))
-      (P.indexedPartition.some_mem (P.indexedPartition.index y))).trans
-    (stepGraphonAvg_apply P hP W (P.indexedPartition.mem_index x)
-      (P.indexedPartition.mem_index y)).symm
-
 /-- **Step graphons are dense in the cut metric**, with the Frieze--Kannan part count: every
 graphon is within `ε` in cut distance of a step graphon on a measurable finite partition with at
 most `4 ^ (⌈1 / ε²⌉ + 1)` parts. -/
@@ -103,9 +82,8 @@ theorem exists_stepGraphon_cutDist_le (W : Graphon Ω μ) {ε : ℝ} (hε : 0 < 
       P.parts.card ≤ 4 ^ (Nat.ceil (1 / ε ^ 2) + 1) ∧
         cutDist W (stepGraphon (μ := μ) P hP val hsymm) ≤ ε := by
   obtain ⟨P, hP, hcard, happrox⟩ := weak_regularity_frieze_kannan μ W hε
-  obtain ⟨val, hsymm, hval⟩ := exists_stepGraphon_eq_stepGraphonAvg P hP W
-  refine ⟨P, hP, val, hsymm, hcard, ?_⟩
-  rw [hval]
+  refine ⟨P, hP, blockAverage P W, blockAverage_comm P W, hcard, ?_⟩
+  rw [← stepGraphonAvg_eq_stepGraphon]
   exact (cutDist_le_cutNorm_sub W _).trans happrox
 
 /-- **Every graphon is within `ε` in cut distance of a finite weighted graph**, on any vertex set
@@ -140,7 +118,8 @@ theorem exists_ofMatrix_cutDist_le (W : Graphon Ω μ) {ε : ℝ} (hε : 0 < ε)
       stepGraphonAvg_apply P hP W (P.indexedPartition.mem_index x')
         (P.indexedPartition.mem_index y'), e.injective hx, e.injective hy]
   obtain ⟨b, hb, hmodel⟩ :=
-    exists_ofMatrix_eq_comap_of_factorsThrough (stepGraphonAvg (μ := μ) P hP W) hmp hfac
+    exists_ofMatrix_eq_comap_of_factorsThrough (ν := μ.map fun x => e (P.indexedPartition.index x))
+      (stepGraphonAvg (μ := μ) P hP W) hmp.measurable hfac
   refine ⟨_, hg, b, hb, ?_⟩
   rw [← cutDist_comap_right W (Graphon.ofMatrix _ b hb) hmp, ← hmodel]
   exact (cutDist_le_cutNorm_sub W _).trans happrox
@@ -516,7 +495,7 @@ theorem exists_gridWeightMeasure_cutDist_le {n N : ℕ} [NeZero n] (hN : 0 < N)
       simp
     · rw [tsub_le_iff_right, hweight i, hw]
       simp only [ite_eq_right hi]
-      rw [natCast_div_natCast_eq_ofReal hN, show (1 : ℝ≥0∞) = ((1 : ℕ) : ℝ≥0∞) by simp,
+      rw [natCast_div_natCast_eq_ofReal hN, ← Nat.cast_one (R := ℝ≥0∞),
         natCast_div_natCast_eq_ofReal hN, ← ENNReal.ofReal_add (by positivity) (by positivity),
         ← ENNReal.ofReal_toReal (measure_ne_top ν {i})]
       refine ENNReal.ofReal_le_ofReal ?_

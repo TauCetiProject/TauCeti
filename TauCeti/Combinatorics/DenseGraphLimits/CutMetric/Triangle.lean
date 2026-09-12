@@ -6,8 +6,8 @@ Authors: Codex
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Stability
-public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Model
 public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Regularity
+import TauCeti.Combinatorics.DenseGraphLimits.Graphon.OfMatrix
 import TauCeti.Combinatorics.DenseGraphLimits.Kernel.Pullback
 import TauCeti.MeasureTheory.MeasurableSpace.Finpartition
 import TauCeti.MeasureTheory.OptimalTransport.Gluing
@@ -171,7 +171,8 @@ private theorem cutDist_triangle_of_constantOn_partition
     intro x y x' y' hx hy
     rw [hconst _ _ (P.indexedPartition.mem_index x) (P.indexedPartition.mem_index y),
       hconst _ _ (P.indexedPartition.mem_index x') (P.indexedPartition.mem_index y'), hx, hy]
-  obtain ⟨b, hb, hmodel⟩ := exists_ofMatrix_eq_comap_of_factorsThrough W hmp hfac
+  obtain ⟨b, hb, hmodel⟩ := exists_ofMatrix_eq_comap_of_factorsThrough
+    (ν := μ₂.map P.indexedPartition.index) W hmp.measurable hfac
   set A := Graphon.ofMatrix (μ₂.map P.indexedPartition.index) b hb
   have hUA : cutDist U A ≤ cutDist U W := by
     rw [hmodel]

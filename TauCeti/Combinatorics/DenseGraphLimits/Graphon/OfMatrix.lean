@@ -8,12 +8,13 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.Pullback
 
 /-!
-# Graphons of finite weighted graphs
+# Graphons given by a matrix on a countable carrier
 
 On a countable discrete probability carrier there is nothing to a graphon beyond a symmetric
 `[0, 1]`-valued matrix: measurability is automatic.  `Graphon.ofMatrix` packages such a matrix as a
-graphon, with the vertex weights carried by the measure and the edge weights by the matrix -- a
-**finite weighted graph** in the terminology of the graph-limit literature.
+graphon, with the vertex weights carried by the measure and the edge weights by the matrix.  When
+the carrier is finite this is a **weighted graph** in the terminology of the graph-limit
+literature, but nothing here needs finiteness.
 
 The point of the construction is that these carriers are the *values* a graphon takes once it has
 been coarsened: a graphon whose value at `(x, y)` depends on `x` and `y` only through a measurable
@@ -57,8 +58,9 @@ section OfMatrix
 variable {κ : Type*} [MeasurableSpace κ] [Countable κ] [MeasurableSingletonClass κ]
   (ν : Measure κ) [IsProbabilityMeasure ν]
 
-/-- The graphon of a **finite weighted graph**: a symmetric `[0, 1]`-valued matrix `b` on a
-countable discrete probability carrier `(κ, ν)`, with `ν` carrying the vertex weights.
+/-- The graphon of a symmetric `[0, 1]`-valued matrix `b` on a countable discrete probability
+carrier `(κ, ν)`, with `ν` carrying the vertex weights and `b` the edge weights.  For a finite
+carrier this is the graphon of a weighted graph.
 
 Nothing has to be checked beyond symmetry and the range constraint: every function out of a
 countable discrete space is measurable. -/
@@ -82,17 +84,18 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasu
   {κ : Type*} [MeasurableSpace κ] [Countable κ] [MeasurableSingletonClass κ]
   {ν : Measure κ} [IsProbabilityMeasure ν]
 
-/-- A graphon whose value at `(x, y)` depends on `x` and `y` only through a measure-preserving map
-`g` into a countable discrete carrier is the pullback along `g` of a matrix on that carrier.
+/-- A graphon whose value at `(x, y)` depends on `x` and `y` only through a measurable map `g` into
+a countable discrete carrier is the pullback along `g` of a matrix on that carrier.  The vertex
+weights `ν` are arbitrary: only the underlying function is being rebuilt.
 
 The matrix is existentially quantified because it is only determined on the range of `g`: outside
 the range any symmetric completion does, and the one produced here reads the value at an arbitrary
 `g`-preimage. -/
 theorem exists_ofMatrix_eq_comap_of_factorsThrough (W : Graphon Ω μ) {g : Ω → κ}
-    (hg : MeasurePreserving g μ ν)
+    (hg : Measurable g)
     (hfac : ∀ x y x' y', g x = g x' → g y = g y' → W x y = W x' y') :
     ∃ (b : κ → κ → Set.Icc (0 : ℝ) 1) (hb : ∀ i j, b i j = b j i),
-      W = (Graphon.ofMatrix ν b hb).comap g hg.measurable μ := by
+      W = (Graphon.ofMatrix ν b hb).comap g hg μ := by
   have : Nonempty Ω := nonempty_of_isProbabilityMeasure μ
   refine ⟨fun i j => ⟨W (Function.invFun g i) (Function.invFun g j), W.mem_Icc _ _⟩,
     fun i j => Subtype.ext (W.symm _ _), ?_⟩
