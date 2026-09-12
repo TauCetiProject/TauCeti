@@ -46,7 +46,7 @@ universe u
 noncomputable section
 
 /-- The type of isomorphism classes of line bundles on a scheme. -/
-abbrev LineBundleClass (X : Scheme.{u}) : Type _ :=
+def LineBundleClass (X : Scheme.{u}) : Type _ :=
   Skeleton (InvertibleSheaf X)
 
 namespace LineBundleClass
@@ -68,20 +68,10 @@ lemma mk_eq_mk_iff {L K : InvertibleSheaf X} :
 lemma mk_surjective : Function.Surjective (mk : InvertibleSheaf X → LineBundleClass X) :=
   Quotient.mk_surjective
 
-/-- Tensor product preserves isomorphism of line bundles in both variables. -/
-lemma isIsomorphic_tensorProduct {L L' K K' : InvertibleSheaf X}
-    (hL : IsIsomorphic L L') (hK : IsIsomorphic K K') :
-    IsIsomorphic (InvertibleSheaf.tensorProduct L K)
-      (InvertibleSheaf.tensorProduct L' K') := by
-  obtain ⟨e⟩ := hL
-  obtain ⟨f⟩ := hK
-  exact ⟨InvertibleSheaf.tensorProductCongrLeft e ≪≫
-    InvertibleSheaf.tensorProductCongrRight f⟩
-
 /-- Tensor product of line bundles descends to their isomorphism classes. -/
 noncomputable def tensorProduct (a b : LineBundleClass X) : LineBundleClass X :=
   Quotient.map₂ InvertibleSheaf.tensorProduct
-    (fun _ _ hL _ _ hK ↦ isIsomorphic_tensorProduct hL hK) a b
+    (fun _ _ hL _ _ hK ↦ InvertibleSheaf.isIsomorphic_tensorProduct hL hK) a b
 
 noncomputable instance : Mul (LineBundleClass X) where
   mul := tensorProduct

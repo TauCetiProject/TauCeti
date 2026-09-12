@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.LocalTriviality
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.LocallyPrincipal
 
 /-!
 # Line-bundle classes attached to Weil divisors
@@ -89,10 +88,10 @@ lemma toLineBundleClass_zero :
 lemma toLineBundleClass_principalDivisor (g : Additive X.functionFieldˣ) :
     toLineBundleClass hX
         ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) = 1 := by
-  rw [toLineBundleClass_eq_mk, ← LineBundleClass.mk_trivial, LineBundleClass.mk_eq_mk_iff]
-  simpa only [toInvertibleSheaf_obj, InvertibleSheaf.trivial_obj] using
-    ⟨sheafPrincipalDivisorIsoUnit hX g ≪≫
-      (TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf).symm⟩
+  rw [← toLineBundleClass_zero hX,
+    ← zero_add ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor g)]
+  exact toLineBundleClass_eq_of_linearlyEquivalent hX
+    ((WeilDivisor.OrderSystem.ofScheme X).linearlyEquivalent_add_principalDivisor 0 g)
 
 /-- The map from the divisor class group to isomorphism classes of line bundles which sends
 the class of `D` to the class of `𝓞_X(D)`. -/
