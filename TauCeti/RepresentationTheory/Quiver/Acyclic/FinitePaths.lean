@@ -19,8 +19,7 @@ count finite is the acyclic one: every path has length below the number of verti
 reduces to the bounded-length count of `TauCeti.Combinatorics.Quiver.BoundedPaths`.
 
 The converse needs no finiteness of the quiver at all: an oriented cycle has infinitely many
-powers (`TauCeti.Quiver.eq_nil_of_finite_path_self`), so a quiver with finitely many paths has
-none.
+powers (`Quiver.Path.eq_nil_of_finite`), so a quiver with finitely many paths has none.
 
 ## Main results
 
@@ -29,12 +28,6 @@ none.
 * `TauCeti.isAcyclic_of_finite_paths`: **a quiver with finitely many paths is acyclic.**
 * `TauCeti.isAcyclic_iff_finite_paths`: the two together, the extensional form of acyclicity that
   the finite-dimensionality of the path algebra is read off.
-
-## References
-
-This file implements the `finite_paths_of_isAcyclic` part of Layer 0, “Acyclicity, as a
-predicate”, in `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose
-statement is that for a finite quiver acyclicity *is* finiteness of the path space.
 -/
 
 public section
@@ -95,7 +88,7 @@ theorem isAcyclic_of_finite_paths (h : Finite (Σ a b : V, _root_.Quiver.Path a 
     Finite.of_injective
       (fun q : _root_.Quiver.Path a a => (⟨a, a, q⟩ : Σ a b : V, _root_.Quiver.Path a b))
       fun _ _ hxy => by simpa using hxy
-  exact Quiver.eq_nil_of_finite_path_self p
+  exact p.eq_nil_of_finite
 
 /-- **For a finite quiver with finite arrow types, acyclicity is finiteness of the path space.**
 This is the extensional form of acyclicity, the hypothesis under which the path algebra is a

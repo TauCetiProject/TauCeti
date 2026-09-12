@@ -37,11 +37,8 @@ module of its own: the path algebra itself needs nothing from the theory of acyc
 
 ## References
 
-This file implements the finite-dimensionality part of Layer 0 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose statement is that
-`kQ` is finite-dimensional exactly when `Q` has finitely many paths, the extensional form of
-being finite and acyclic. See Assem--Simson--Skowroński, *Elements of the Representation Theory of
-Associative Algebras I*, Ch. II.
+See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
+Ch. II.
 -/
 
 public section
