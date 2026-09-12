@@ -12,15 +12,16 @@ public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
 /-!
 # Maximal intervals of geodesics
 
-For initial data `(p, v)`, this file defines the maximal interval of geodesic existence as the union
-of open intervals carrying genuine geodesics with those initial data.  It proves local existence
-from the geodesic spray, and records that the resulting set is an open interval containing zero.
-The key homogeneity theorem identifies the interval for `a • v` with the inverse scalar image of the
-interval for `v`; this is the domain statement used later by the exponential map.
+For initial data `(p, v)`, this file defines the set of times covered by open intervals carrying
+geodesic witnesses with those initial data.  It proves local existence, uniqueness on overlapping
+intervals, and that this set is an open interval containing zero.  The key homogeneity theorem
+identifies the interval for `a • v` with the inverse scalar image of the interval for `v`; this is
+the domain statement used later by the exponential map.
 
-The interval is defined from geodesic witnesses rather than from arbitrary curves.  Thus its
-membership theorem is already suitable for downstream arguments that need an actual geodesic,
-while uniqueness, a chosen maximal curve, and finite-endpoint extension are separate results.
+The interval is defined as a union of geodesic witnesses, so the definition itself does not choose
+one geodesic on the union.  Its membership characterization is suitable for downstream arguments
+that need an actual witness; a chosen maximal curve and finite-endpoint extension are separate
+results.
 
 ## Main definitions and results
 
@@ -28,15 +29,17 @@ while uniqueness, a chosen maximal curve, and finite-endpoint extension are sepa
 * `TauCeti.Manifold.exists_geodesicCurveOnFrom_Ioo` gives local geodesic existence.
 * `TauCeti.Manifold.isOpen_geodesicInterval` and
   `TauCeti.Manifold.ordConnected_geodesicInterval` give its interval structure.
+* `TauCeti.Manifold.mem_geodesicInterval_iff` extracts a geodesic witness from membership.
+* `TauCeti.Manifold.IsGeodesicCurveOnFrom.eqOn_of_inter` gives uniqueness on overlapping intervals.
 * `TauCeti.Manifold.mem_geodesicInterval_smul_iff` is the precise nonzero scalar domain relation.
 
 ## References
 
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 3, §2.
 * J. Lee, *Introduction to Riemannian Manifolds*, GTM 176, 2018, Ch. 5.
-* [Geodesics, the exponential map, and the Hopf--Rinow roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Maximal interval and homogeneity".
 -/
+
+-- Roadmap: HopfRinow
 
 public section
 
@@ -179,9 +182,17 @@ theorem exists_geodesicCurveOnFrom_Ioo
 /-! ### The maximal interval -/
 
 variable (I M) in
-/-- The maximal interval on which a geodesic with initial data `(p, v)` can exist. -/
+/-- The union of times covered by open-interval geodesic witnesses with initial data `(p, v)`. -/
 def geodesicInterval (p : M) (v : TangentSpace I p) : Set ℝ :=
   {t | ∃ γ a b, IsGeodesicCurveOnFrom I γ (Ioo a b) p v ∧ t ∈ Ioo a b}
+
+omit [I.Boundaryless] in
+/-- Membership in `geodesicInterval` is witnessed by a geodesic on an open interval containing the
+given time. -/
+theorem mem_geodesicInterval_iff {p : M} {v : TangentSpace I p} {t : ℝ} :
+    t ∈ geodesicInterval I M p v ↔
+      ∃ γ a b, IsGeodesicCurveOnFrom I γ (Ioo a b) p v ∧ t ∈ Ioo a b := by
+  rfl
 
 omit [I.Boundaryless] in
 /-- Every geodesic witness with initial data `(p, v)` is defined inside
@@ -192,6 +203,47 @@ theorem IsGeodesicCurveOnFrom.subset_geodesicInterval
     Ioo a b ⊆ geodesicInterval I M p v := by
   intro t ht
   exact ⟨γ, a, b, h, ht⟩
+
+/-- Geodesics with the same initial data agree on the overlap of their intervals. -/
+theorem IsGeodesicCurveOnFrom.eqOn_of_inter
+    [T2Space (TangentBundle I M)] {p : M} {v : TangentSpace I p}
+    {γ γ' : ℝ → M} {a b a' b' : ℝ}
+    (hγ : IsGeodesicCurveOnFrom I γ (Ioo a b) p v)
+    (hγ' : IsGeodesicCurveOnFrom I γ' (Ioo a' b') p v) :
+    EqOn γ γ' (Ioo (max a a') (min b b')) := by
+  let u := Ioo (max a a') (min b b')
+  have h0 : (0 : ℝ) ∈ u := ⟨max_lt hγ.zero_mem.1 hγ'.zero_mem.1,
+    lt_min hγ.zero_mem.2 hγ'.zero_mem.2⟩
+  have huγ : u ⊆ Ioo a b := fun t ht =>
+    ⟨le_max_left _ _ |>.trans_lt ht.1, (lt_min_iff.mp ht.2).1⟩
+  have huγ' : u ⊆ Ioo a' b' := fun t ht =>
+    ⟨le_max_right _ _ |>.trans_lt ht.1, (lt_min_iff.mp ht.2).2⟩
+  have hγuFrom : IsGeodesicCurveOnFrom I γ u p v :=
+    hγ.mono (uniqueDiffOn_Ioo _ _) huγ h0
+  have hγ'uFrom : IsGeodesicCurveOnFrom I γ' u p v :=
+    hγ'.mono (uniqueDiffOn_Ioo _ _) huγ' h0
+  have hγu : IsGeodesicCurveOn I γ u := hγuFrom.isGeodesicCurveOn
+  have hγ'u : IsGeodesicCurveOn I γ' u := hγ'uFrom.isGeodesicCurveOn
+  have hv : CMDiff 1 (fun z : TangentBundle I M ↦
+      (⟨z, geodesicSpray I M z⟩ : TangentBundle I.tangent (TangentBundle I M))) := by
+    have h := contMDiff_geodesicSpray (I := I) (M := M) (n := (1 : ℕ∞ω))
+      (m := ∞) (k := ∞) (by norm_num) (by norm_num)
+    exact h.of_le (by norm_num)
+  have hγlift : IsMIntegralCurveOn (curveVelocityLiftWithin I γ u)
+      (geodesicSpray I M) u :=
+    (isMIntegralCurveOn_curveVelocityLiftWithin_iff (uniqueDiffOn_Ioo _ _)
+      hγu.contMDiffOn).2 hγu
+  have hγ'lift : IsMIntegralCurveOn (curveVelocityLiftWithin I γ' u)
+      (geodesicSpray I M) u :=
+    (isMIntegralCurveOn_curveVelocityLiftWithin_iff (uniqueDiffOn_Ioo _ _)
+      hγ'u.contMDiffOn).2 hγ'u
+  have heq : EqOn (curveVelocityLiftWithin I γ u) (curveVelocityLiftWithin I γ' u) u := by
+    apply isMIntegralCurveOn_Ioo_eqOn_of_contMDiff h0
+      (fun _ _ => BoundarylessManifold.isInteriorPoint) hv hγlift hγ'lift
+    simpa only [curveVelocityLiftWithin_apply] using
+      hγuFrom.initial_eq.trans hγ'uFrom.initial_eq.symm
+  intro t ht
+  simpa only [curveVelocityLiftWithin_proj] using congrArg TotalSpace.proj (heq ht)
 
 omit [I.Boundaryless] in
 /-- The maximal geodesic interval is open. -/
@@ -219,7 +271,7 @@ theorem isPreconnected_geodesicInterval {p : M} {v : TangentSpace I p} :
   ordConnected_geodesicInterval.isPreconnected
 
 /-- The initial parameter belongs to the maximal geodesic interval. -/
-theorem zero_mem_geodesicInterval {p : M} {v : TangentSpace I p} :
+@[simp] theorem zero_mem_geodesicInterval {p : M} {v : TangentSpace I p} :
     (0 : ℝ) ∈ geodesicInterval I M p v := by
   obtain ⟨a, b, hab, h0, γ, hγ⟩ :=
     exists_geodesicCurveOnFrom_Ioo (I := I) (M := M) p v
@@ -227,7 +279,7 @@ theorem zero_mem_geodesicInterval {p : M} {v : TangentSpace I p} :
 
 omit [I.Boundaryless] in
 /-- The zero-velocity geodesic exists for all time. -/
-theorem geodesicInterval_zero {p : M} :
+@[simp] theorem geodesicInterval_zero {p : M} :
     geodesicInterval I M p (0 : TangentSpace I p) = univ := by
   apply eq_univ_of_forall
   intro t
@@ -263,7 +315,8 @@ private theorem preimage_mul_Ioo {a b c : ℝ} (hab : a < b) (hc : c ≠ 0) :
 
 omit [I.Boundaryless] in
 /-- Nonzero rescaling of the initial velocity rescales the maximal interval by the inverse. -/
-theorem mem_geodesicInterval_smul_iff {p : M} {v : TangentSpace I p} {a t : ℝ} (ha : a ≠ 0) :
+@[simp] theorem mem_geodesicInterval_smul_iff
+    {p : M} {v : TangentSpace I p} {a t : ℝ} (ha : a ≠ 0) :
     t ∈ geodesicInterval I M p (a • v) ↔ a * t ∈ geodesicInterval I M p v := by
   constructor
   · rintro ⟨γ, b, c, hγ, ht⟩
