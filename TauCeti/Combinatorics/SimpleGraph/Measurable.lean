@@ -5,19 +5,25 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.Combinatorics.SimpleGraph.Maps
 public import Mathlib.MeasureTheory.Constructions.SimpleGraph
 
 /-!
-# Measurability of individual simple graphs
+# Measurability of individual simple graphs and of relabelling
 
 Mathlib equips `SimpleGraph V` with the sigma-algebra induced by all adjacency coordinates. When
 `V` is countable, an individual graph is measurable because its edge set is a measurable point in
 the countable product space. This supplies the discrete integration API for finite random graphs.
 
-## Main result
+Pulling a graph back along a map of vertex types reads finitely many adjacency coordinates of the
+source graph, so it is measurable with no hypothesis on either vertex type. This is what lets a
+random graph be restricted to a window of labels.
+
+## Main results
 
 * `SimpleGraph.instMeasurableSingletonClass` — singletons of graphs on a countable vertex type are
-  measurable.
+  measurable;
+* `SimpleGraph.measurable_comap` — pulling back along a map of vertex types is measurable.
 
 ## Reference
 
@@ -40,5 +46,14 @@ instance instMeasurableSingletonClass [Countable V] :
   measurableSet_singleton G := by
     rw [← measurableEmbedding_edgeSet.measurableSet_image, Set.image_singleton]
     exact MeasurableSet.singleton _
+
+variable {W : Type*}
+
+/-- Pulling a simple graph back along a map of vertex types is measurable: each adjacency
+coordinate of the pullback is an adjacency coordinate of the source. -/
+@[fun_prop]
+theorem measurable_comap (f : V → W) :
+    Measurable (SimpleGraph.comap f : SimpleGraph W → SimpleGraph V) :=
+  measurable_iff_adj.2 fun u v => measurable_iff_adj.1 measurable_id (f u) (f v)
 
 end SimpleGraph
