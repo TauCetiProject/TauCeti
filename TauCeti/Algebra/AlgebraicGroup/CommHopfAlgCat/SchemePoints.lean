@@ -80,7 +80,10 @@ lemma mapMulEquiv_left
     {S T : Type u} [CommRing S] [CommRing T] [Bialgebra R S] [Algebra R T]
     (f : WithConv (S →ₐ[R] T)) :
     (AlgebraicGeometry.Spec.mapMulEquiv f).left =
-      Spec.map (CommRingCat.ofHom f.ofConv) :=
+      Spec.map (CommRingCat.ofHom f.ofConv) := by
+  rw [← AlgHom.toRingHom_eq_coe]
+  -- `rfl` then closes Mathlib's `Spec.mapMulEquiv` wrapper, as it did before the coercion
+  -- step was named.
   rfl
 
 /-- Mathlib's spectrum-points equivalence is contravariantly natural in the coordinate
@@ -321,6 +324,7 @@ private theorem mapMulEquivOfPresentation_apply_left_comp
         eqToHom hX =
       Spec.map (CommRingCat.ofHom f.ofConv) := by
   subst G
+  rw [← AlgHom.toRingHom_eq_coe]
   rfl
 
 /-- The underlying scheme map of the spectrum point transported across a named presentation.
@@ -338,6 +342,7 @@ theorem mapMulEquivOfPresentation_apply_left
         eqToHom hX.symm := by
   apply (cancel_mono (eqToHom hX)).1
   subst G
+  rw [← AlgHom.toRingHom_eq_coe]
   rfl
 
 /-- Mathlib's spectrum-points equivalence is natural in the value algebra. Postcomposing
@@ -408,6 +413,7 @@ private lemma transportedHopfSpecMap_left
         eqToHom (congrArg (fun K : Grp (Over (Spec (CommRingCat.of R))) ↦ K.X.left) hG).symm := by
   subst G
   subst H'
+  rw [← AlgHom.toRingHom_eq_coe]
   rfl
 
 /-- Contravariant naturality in the coordinate Hopf algebra for named point equivalences.

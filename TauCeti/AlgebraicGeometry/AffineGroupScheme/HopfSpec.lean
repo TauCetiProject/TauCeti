@@ -192,7 +192,7 @@ lemma algSpec_map_left_ofAlgHom {A B : Type u} [CommRing A] [CommRing B]
     ((AlgebraicGeometry.algSpec (CommRingCat.of R)).map
       (CommAlgCat.ofHom f).op).left =
         Spec.map (CommRingCat.ofHom f) := by
-  rw [AlgebraicGeometry.algSpec_map_left]
+  rw [AlgebraicGeometry.algSpec_map_left, ← AlgHom.toRingHom_eq_coe]
   rfl
 
 /-- Mathlib's `hopfSpec` object is the group object on the ordinary spectrum.
