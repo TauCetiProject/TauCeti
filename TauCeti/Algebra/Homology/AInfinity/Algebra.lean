@@ -182,32 +182,13 @@ theorem ext {𝒜 𝒜' : AInfinityAlgebra R A} (hG : 𝒜.grading = 𝒜'.gradi
 
 /-! ### Low-arity identities -/
 
-private theorem linearMap_ext_of_homogeneous (G : InternalGrading R A)
-    {f g : A →ₗ[R] A} (h : ∀ (p : ℤ) (x : A), x ∈ G.piece p → f x = g x) : f = g := by
-  let F : MultilinearMap R (fun _ : Fin 1 ↦ A) A :=
-    { toFun := fun x ↦ f (x 0)
-      map_update_add' := by intro _ x i; simp [Fin.eq_zero i]
-      map_update_smul' := by intro _ x i; simp [Fin.eq_zero i] }
-  let H : MultilinearMap R (fun _ : Fin 1 ↦ A) A :=
-    { toFun := fun x ↦ g (x 0)
-      map_update_add' := by intro _ x i; simp [Fin.eq_zero i]
-      map_update_smul' := by intro _ x i; simp [Fin.eq_zero i] }
-  have hFH : F = H := by
-    apply G.multilinearMap_ext
-    intro d x hx
-    exact h (d 0) (x 0) (hx 0)
-  ext x
-  have hx := MultilinearMap.congr_fun hFH (fun _ ↦ x)
-  change f x = g x at hx
-  exact hx
-
 /-- The arity-one identity is `m₁ m₁ = 0`. -/
-theorem stasheff_one (𝒜 : AInfinityAlgebra R A) (x : A) : 𝒜.m 1 ![𝒜.m 1 ![x]] = 0 := by
+theorem stasheff_arity_one (𝒜 : AInfinityAlgebra R A) (x : A) : 𝒜.m 1 ![𝒜.m 1 ![x]] = 0 := by
   let E : A →ₗ[R] A :=
     ((𝒜.m 1).curryRight ![]).comp ((𝒜.m 1).curryRight ![])
   suffices E x = 0 by simpa [E] using this
   have hE : E = 0 := by
-    apply linearMap_ext_of_homogeneous 𝒜.grading
+    apply 𝒜.grading.linearMap_ext
     intro p y hy
     have h := 𝒜.stasheff 1 (by omega) (fun _ ↦ p) (fun _ ↦ y) (fun _ _ ↦ hy)
     simpa [E, AInfinity.stasheffSum_one] using h
@@ -215,7 +196,7 @@ theorem stasheff_one (𝒜 : AInfinityAlgebra R A) (x : A) : 𝒜.m 1 ![𝒜.m 1
 
 /-- The arity-two identity is the graded Leibniz rule, with sign `(-1)^(d 0)` on the second
 differentiated input. -/
-theorem stasheff_two (𝒜 : AInfinityAlgebra R A) (x y : A) (p : ℤ)
+theorem stasheff_arity_two (𝒜 : AInfinityAlgebra R A) (x y : A) (p : ℤ)
     (hx : x ∈ 𝒜.grading.piece p) :
     𝒜.m 1 ![𝒜.m 2 ![x, y]] =
       𝒜.m 2 ![𝒜.m 1 ![x], y] +
@@ -227,7 +208,7 @@ theorem stasheff_two (𝒜 : AInfinityAlgebra R A) (x y : A) (p : ℤ)
       negOnePowCast R p • ((𝒜.m 2).curryRight ![x]).comp ((𝒜.m 1).curryRight ![])
   suffices L y = Q y by simpa [L, Q] using this
   have hLQ : L = Q := by
-    apply linearMap_ext_of_homogeneous 𝒜.grading
+    apply 𝒜.grading.linearMap_ext
     intro q z hz
     let d : ℕ → ℤ := fun i ↦ if i = 0 then p else q
     let a : ℕ → A := fun i ↦ if i = 0 then x else z
@@ -244,7 +225,7 @@ theorem stasheff_two (𝒜 : AInfinityAlgebra R A) (x y : A) (p : ℤ)
 
 /-- The arity-three Stasheff identity, with the Koszul signs determined by the degrees of its
 first two inputs. -/
-theorem stasheff_three (𝒜 : AInfinityAlgebra R A) (a b c : A) (p q : ℤ)
+theorem stasheff_arity_three (𝒜 : AInfinityAlgebra R A) (a b c : A) (p q : ℤ)
     (ha : a ∈ 𝒜.grading.piece p) (hb : b ∈ 𝒜.grading.piece q) :
     𝒜.m 1 ![𝒜.m 3 ![a, b, c]]
       + 𝒜.m 2 ![𝒜.m 2 ![a, b], c] - 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]]
@@ -261,7 +242,7 @@ theorem stasheff_three (𝒜 : AInfinityAlgebra R A) (a b c : A) (p q : ℤ)
         ((𝒜.m 3).curryRight ![a, b]).comp ((𝒜.m 1).curryRight ![])
   suffices E c = 0 by simpa [E] using this
   have hE : E = 0 := by
-    apply linearMap_ext_of_homogeneous 𝒜.grading
+    apply 𝒜.grading.linearMap_ext
     intro r z hz
     let d : ℕ → ℤ := fun i ↦ if i = 0 then p else if i = 1 then q else r
     let x : ℕ → A := fun i ↦ if i = 0 then a else if i = 1 then b else z
@@ -279,7 +260,7 @@ theorem stasheff_three (𝒜 : AInfinityAlgebra R A) (a b c : A) (p q : ℤ)
 
 /-- The arity-four Stasheff identity, with the Koszul signs determined by the degrees of its
 first three inputs. -/
-theorem stasheff_four (𝒜 : AInfinityAlgebra R A) (a b c d : A) (p q r : ℤ)
+theorem stasheff_arity_four (𝒜 : AInfinityAlgebra R A) (a b c d : A) (p q r : ℤ)
     (ha : a ∈ 𝒜.grading.piece p) (hb : b ∈ 𝒜.grading.piece q)
     (hc : c ∈ 𝒜.grading.piece r) :
     𝒜.m 1 ![𝒜.m 4 ![a, b, c, d]] - 𝒜.m 2 ![𝒜.m 3 ![a, b, c], d]
@@ -304,7 +285,7 @@ theorem stasheff_four (𝒜 : AInfinityAlgebra R A) (a b c d : A) (p q r : ℤ)
         ((𝒜.m 4).curryRight ![a, b, c]).comp ((𝒜.m 1).curryRight ![])
   suffices E d = 0 by simpa [E] using this
   have hE : E = 0 := by
-    apply linearMap_ext_of_homogeneous 𝒜.grading
+    apply 𝒜.grading.linearMap_ext
     intro s z hz
     let e : ℕ → ℤ := fun i ↦
       if i = 0 then p else if i = 1 then q else if i = 2 then r else s
@@ -327,35 +308,82 @@ theorem stasheff_four (𝒜 : AInfinityAlgebra R A) (a b c d : A) (p q r : ℤ)
 theorem m_two_assoc_of_m_three_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : 𝒜.m 3 = 0)
     (x y z : A) :
     𝒜.m 2 ![𝒜.m 2 ![x, y], z] = 𝒜.m 2 ![x, 𝒜.m 2 ![y, z]] := by
-  have m_add_left (a b c : A) : 𝒜.m 2 ![a + b, c] = 𝒜.m 2 ![a, c] + 𝒜.m 2 ![b, c] := by
-    simpa only [Matrix.vecCons, Fin.update_cons_zero] using
-      (𝒜.m 2).map_update_add (Fin.cons a ![c]) 0 a b
-  have m_add_right (a b c : A) : 𝒜.m 2 ![a, b + c] = 𝒜.m 2 ![a, b] + 𝒜.m 2 ![a, c] := by
-    have h := (𝒜.m 2).map_update_add (Fin.snoc ![a] b) (Fin.last 1) b c
-    rw [Fin.update_snoc_last, Fin.update_snoc_last, Fin.update_snoc_last] at h
-    simpa using h
-  have m_smul_left (r : R) (a b : A) : 𝒜.m 2 ![r • a, b] = r • 𝒜.m 2 ![a, b] := by
-    simpa only [Matrix.vecCons, Fin.update_cons_zero] using
-      (𝒜.m 2).map_update_smul (Fin.cons a ![b]) 0 r a
-  have m_smul_right (r : R) (a b : A) : 𝒜.m 2 ![a, r • b] = r • 𝒜.m 2 ![a, b] := by
-    have h := (𝒜.m 2).map_update_smul (Fin.snoc ![a] b) (Fin.last 1) r b
-    rw [Fin.update_snoc_last, Fin.update_snoc_last] at h
-    simpa using h
   let L : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    MultilinearMap.mk' (fun a ↦ 𝒜.m 2 ![𝒜.m 2 ![a 0, a 1], a 2])
-      (by intro a i u v; fin_cases i <;> simp [m_add_left, m_add_right])
-      (by intro a i r u; fin_cases i <;> simp [m_smul_left, m_smul_right])
+    (((𝒜.m 2).domDomCongr (Fin.oneSlotEquiv 0 1).symm).oneSlot (𝒜.m 2)).domDomCongr
+      (Fin.blockEquiv 0 2 1)
   let Q : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    MultilinearMap.mk' (fun a ↦ 𝒜.m 2 ![a 0, 𝒜.m 2 ![a 1, a 2]])
-      (by intro a i u v; fin_cases i <;> simp [m_add_left, m_add_right])
-      (by intro a i r u; fin_cases i <;> simp [m_smul_left, m_smul_right])
-  have L_apply (a b c : A) : L ![a, b, c] = 𝒜.m 2 ![𝒜.m 2 ![a, b], c] := rfl
-  have Q_apply (a b c : A) : Q ![a, b, c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := rfl
+    (((𝒜.m 2).domDomCongr (Fin.oneSlotEquiv 1 0).symm).oneSlot (𝒜.m 2)).domDomCongr
+      (Fin.blockEquiv 1 2 0)
+  have L_apply (a b c : A) : L ![a, b, c] = 𝒜.m 2 ![𝒜.m 2 ![a, b], c] := by
+    simp only [L, MultilinearMap.domDomCongr_apply, MultilinearMap.oneSlot_apply]
+    congr 1
+    funext i
+    obtain ⟨j, rfl⟩ := (Fin.oneSlotEquiv 0 1).surjective i
+    rcases j with j | (j | j)
+    · exact Fin.elim0 j
+    · rcases j with ⟨⟩
+      simp only [Equiv.symm_apply_apply, Sum.elim_inr, Sum.elim_inl]
+      have hout : Fin.oneSlotEquiv 0 1 (.inr (.inl ())) = (0 : Fin 2) := by
+        apply Fin.ext
+        exact Fin.oneSlotEquiv_middle_val 0 1
+      rw [hout]
+      change (𝒜.m 2) (fun j ↦ ![a, b, c] (Fin.blockEquiv 0 2 1 (.inr (.inl j)))) =
+        𝒜.m 2 ![a, b]
+      congr 1
+      funext k
+      have hi : Fin.blockEquiv 0 2 1 (.inr (.inl k)) =
+          ⟨k, by omega⟩ := by
+        apply Fin.ext
+        simpa only [Nat.zero_add] using Fin.blockEquiv_middle_val 0 2 1 k
+      rw [hi]
+      fin_cases k <;> rfl
+    · simp only [Equiv.symm_apply_apply, Sum.elim_inr]
+      have hout : Fin.oneSlotEquiv 0 1 (.inr (.inr j)) = ⟨1 + j, by omega⟩ := by
+        apply Fin.ext
+        exact Fin.oneSlotEquiv_suffix_val 0 1 j
+      have hin : Fin.blockEquiv 0 2 1 (.inr (.inr j)) = ⟨2 + j, by omega⟩ := by
+        apply Fin.ext
+        exact Fin.blockEquiv_suffix_val 0 2 1 j
+      rw [hout, hin]
+      fin_cases j
+      rfl
+  have Q_apply (a b c : A) : Q ![a, b, c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
+    simp only [Q, MultilinearMap.domDomCongr_apply, MultilinearMap.oneSlot_apply]
+    congr 1
+    funext i
+    obtain ⟨j, rfl⟩ := (Fin.oneSlotEquiv 1 0).surjective i
+    rcases j with j | (j | j)
+    · simp only [Equiv.symm_apply_apply, Sum.elim_inl]
+      have hout : Fin.oneSlotEquiv 1 0 (.inl j) = ⟨j, by omega⟩ := by
+        apply Fin.ext
+        exact Fin.oneSlotEquiv_inl_val 1 0 j
+      have hin : Fin.blockEquiv 1 2 0 (.inl j) = ⟨j, by omega⟩ := by
+        apply Fin.ext
+        exact Fin.blockEquiv_inl_val 1 2 0 j
+      rw [hout, hin]
+      fin_cases j
+      rfl
+    · rcases j with ⟨⟩
+      simp only [Equiv.symm_apply_apply, Sum.elim_inr, Sum.elim_inl]
+      have hout : Fin.oneSlotEquiv 1 0 (.inr (.inl ())) = (1 : Fin 2) := by
+        apply Fin.ext
+        exact Fin.oneSlotEquiv_middle_val 1 0
+      rw [hout]
+      change (𝒜.m 2) (fun j ↦ ![a, b, c] (Fin.blockEquiv 1 2 0 (.inr (.inl j)))) =
+        𝒜.m 2 ![b, c]
+      congr 1
+      funext k
+      have hi : Fin.blockEquiv 1 2 0 (.inr (.inl k)) = ⟨1 + k, by omega⟩ := by
+        apply Fin.ext
+        exact Fin.blockEquiv_middle_val 1 2 0 k
+      rw [hi]
+      fin_cases k <;> rfl
+    · exact Fin.elim0 j
   have hcurry : L.curryRight = Q.curryRight := by
     apply 𝒜.grading.multilinearMap_ext
     intro d a ha
     ext c
-    have h := 𝒜.stasheff_three (a 0) (a 1) c (d 0) (d 1) (ha 0) (ha 1)
+    have h := 𝒜.stasheff_arity_three (a 0) (a 1) c (d 0) (d 1) (ha 0) (ha 1)
     rw [h₃] at h
     have hz : 𝒜.m 1 ![(0 : A)] = 0 := (𝒜.m 1).map_coord_zero 0 rfl
     simp only [MultilinearMap.curryRight_apply]
