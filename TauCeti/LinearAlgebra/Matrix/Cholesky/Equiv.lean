@@ -17,8 +17,8 @@ between positive-definite symmetric matrices and positive-diagonal lower-triangu
 
 ## Main results
 
-* `TauCeti.cholesky_unique` identifies any positive-diagonal lower-triangular Gram factor with the
-  Cholesky factor.
+* `TauCeti.eq_cholesky_of_mul_transpose_self_eq` identifies any positive-diagonal lower-triangular
+  Gram factor with the Cholesky factor.
 * `TauCeti.cholesky_choleskyReconstruction` is the inverse identity from factors to matrices.
 * `TauCeti.choleskyEquiv` is the resulting equivalence.
 
@@ -38,7 +38,8 @@ namespace TauCeti
 
 /-- A positive-diagonal lower-triangular square root of a positive-definite matrix is its
 Cholesky factor. -/
-theorem cholesky_unique {p : ℕ} (A : PosDefMatrix p) (L : PosDiagLowerTriangular p)
+theorem eq_cholesky_of_mul_transpose_self_eq {p : ℕ} (A : PosDefMatrix p)
+    (L : PosDiagLowerTriangular p)
     (hL : L.1 * L.1ᵀ = (A.1 : Matrix (Fin p) (Fin p) ℝ)) : L = cholesky A := by
   apply Subtype.ext
   exact L.2.1.eq_of_mul_transpose_self_eq (cholesky A).2.1 L.2.2 (cholesky A).2.2
@@ -49,7 +50,8 @@ lower-triangular factor returns that factor. -/
 @[simp]
 theorem cholesky_choleskyReconstruction {p : ℕ} (L : PosDiagLowerTriangular p) :
     cholesky (choleskyReconstruction L) = L :=
-  (cholesky_unique (choleskyReconstruction L) L (choleskyReconstruction_coe L).symm).symm
+  (eq_cholesky_of_mul_transpose_self_eq (choleskyReconstruction L) L
+      (choleskyReconstruction_coe L).symm).symm
 
 /-- Cholesky factorization is an equivalence between positive-definite symmetric matrices and
 positive-diagonal lower-triangular matrices. -/
