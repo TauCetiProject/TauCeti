@@ -14,11 +14,12 @@ public import TauCeti.Topology.Order.Interval
 /-!
 # The unbounded Schwarz--Christoffel boundary edges
 
-Assume that all prevertices having nonzero exponent lie at or to the left of a real point `p`.
-The canonical boundary map then follows one straight edge on `Ici p`.  If the total exponent is
-less than `-1`, the edge has a finite endpoint at `schwarzChristoffelVertexAtInfinity`; its image
-is the segment from the value at `p` to that endpoint, with the endpoint at infinity omitted from
-the image.
+Assume that all prevertices having nonzero exponent lie at or to the left of a real point `p`, and
+that the sum of the exponents at `p` is greater than `-1`.  The canonical boundary map then follows
+one straight edge on `Ici p`.  If the total exponent is less than `-1`, the edge has a finite
+endpoint at `schwarzChristoffelVertexAtInfinity`; together with the local exponent-sum hypothesis,
+its image is the segment from the value at `p` to that endpoint, with the endpoint at infinity
+omitted from the image.
 
 This result supplies the boundary-edge description used when assembling the boundary of an
 unbounded Schwarz--Christoffel polygon.  The endpoint at infinity is identified with the common
@@ -63,7 +64,7 @@ theorem schwarzChristoffelBoundary_injOn_Ici (a e : ι → ℝ) (z₀ : UpperHal
     fun {q} hq => by
       simpa using
         (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (β := ℝ) (a := a) (e := e)
-          (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) ha hq)
+          (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) (by simpa using ha) hq)
   intro x hx y hy hxy
   rcases lt_trichotomy x y with h | h | h
   · exact schwarzChristoffelBoundary_injOn_Icc a e z₀ (hfree hy) hp (hsum hy)
@@ -93,7 +94,7 @@ theorem schwarzChristoffelBoundary_image_Ici (a e : ι → ℝ) (z₀ : UpperHal
     fun {q} hq => by
       simpa using
         (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (β := ℝ) (a := a) (e := e)
-          (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) ha hq)
+          (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) (by simpa using ha) hq)
   -- The endpoint `p` is integrable, and every later point is free of prevertices by `hfree`.
   have hcont : ContinuousOn B (Ici p) := by
     apply continuousOn_schwarzChristoffelBoundary_of_exponent_sum_gt_neg_one

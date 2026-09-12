@@ -23,11 +23,11 @@ open scoped BigOperators
 
 namespace TauCeti
 
-variable {ι α M : Type*} [Preorder α] [AddCommMonoid M]
+variable {ι α M : Type*} [Preorder α]
 
 /-- A nonzero term whose index is at or to the left of `p` does not occur strictly between `p` and
 any later point. -/
-theorem not_mem_Ioo_of_ne_zero_of_forall_le {a : ι → α} {e : ι → M} {p q : α}
+theorem not_mem_Ioo_of_ne_zero_of_forall_le [Zero M] {a : ι → α} {e : ι → M} {p q : α}
     (ha : ∀ i, e i ≠ 0 → a i ≤ p) :
     ∀ i, e i ≠ 0 → a i ∉ Ioo p q := by
   intro i hei hi
@@ -42,12 +42,12 @@ variable {ι α M : Type*} [Preorder α] [AddCommMonoid M]
 /-- If all nonzero terms of a finite family have indices at or to the left of `p`, then its sum
 over the terms indexed by `q` vanishes whenever `p < q`. -/
 theorem sum_filter_eq_zero_of_forall_ne_zero_le [DecidableEq α] (s : Finset ι) {a : ι → α}
-    {e : ι → M} {p q : α} (hpq : p < q) (ha : ∀ i, e i ≠ 0 → a i ≤ p) :
+    {e : ι → M} {p q : α} (hpq : p < q) (ha : ∀ i ∈ s, e i ≠ 0 → a i ≤ p) :
     Finset.sum (s.filter (fun i => a i = q)) e = 0 := by
   apply Finset.sum_eq_zero
   intro i hi
   by_contra hei
-  have hai := ha i hei
+  have hai := ha i (Finset.mem_filter.mp hi).1 hei
   exact (not_lt_of_ge hai) ((Finset.mem_filter.mp hi).2 ▸ hpq)
 
 /-- If all nonzero terms of a finite family have indices at or to the left of `p`, then a filtered
@@ -56,7 +56,7 @@ theorem lt_sum_filter_of_lt_zero_of_forall_ne_zero_le {γ β : Type*} [PartialOr
     [Preorder β] [AddCommMonoid β] [DecidableEq γ] (s : Finset ι) {a : ι → γ} {e : ι → β}
     {p : γ} {c : β} (hc : c < 0)
     (hp : c < Finset.sum (s.filter (fun i => a i = p)) e)
-    (ha : ∀ i, e i ≠ 0 → a i ≤ p) :
+    (ha : ∀ i ∈ s, e i ≠ 0 → a i ≤ p) :
     ∀ {q : γ}, p ≤ q → c < Finset.sum (s.filter (fun i => a i = q)) e := by
   intro q hpq
   rcases eq_or_lt_of_le hpq with rfl | hpq
