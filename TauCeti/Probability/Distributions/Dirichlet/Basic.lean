@@ -15,7 +15,8 @@ public import TauCeti.Probability.Distributions.Gamma.Pi
 For a finite nonempty concentration vector `a`, the Dirichlet distribution is the law obtained by
 normalizing independent unit-rate Gamma variables of shapes `a i` by their sum.  This file defines
 that normalization and the resulting measure on `EuclideanSpace ℝ ι`.  The measure is
-totalized to zero when any concentration parameter is nonpositive.
+totalized to zero when the coordinate type is empty or any concentration parameter is
+nonpositive.
 
 For positive parameters, the Gamma product is almost surely contained in the strictly positive
 orthant.  In particular, the denominator in the normalization is almost surely positive, the
@@ -105,9 +106,10 @@ open Classical in
 /-- The Dirichlet measure with concentration vector `a`.
 
 For a positive concentration vector, this is the image of independent unit-rate Gamma laws under
-coordinate normalization.  For every other concentration vector, it is the zero measure. -/
-def dirichletMeasure [Nonempty ι] (a : ι → ℝ) : Measure (EuclideanSpace ℝ ι) :=
-  if ∀ i, 0 < a i then
+coordinate normalization.  For an empty coordinate type or any other concentration vector, it is
+the zero measure. -/
+def dirichletMeasure (a : ι → ℝ) : Measure (EuclideanSpace ℝ ι) :=
+  if Nonempty ι ∧ ∀ i, 0 < a i then
     (Measure.pi fun i ↦ gammaMeasure (a i) 1).map dirichletNormalize
   else 0
 
@@ -116,13 +118,13 @@ pushforward. -/
 theorem dirichletMeasure_of_pos [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
     dirichletMeasure a =
       (Measure.pi fun i ↦ gammaMeasure (a i) 1).map dirichletNormalize := by
-  rw [dirichletMeasure, ite_eq_left ha]
+  rw [dirichletMeasure, ite_eq_left ⟨inferInstance, ha⟩]
 
 /-- An invalid concentration vector gives the zero Dirichlet measure. -/
 @[simp]
-theorem dirichletMeasure_of_not_pos [Nonempty ι] {a : ι → ℝ} (ha : ¬∀ i, 0 < a i) :
+theorem dirichletMeasure_of_not_pos {a : ι → ℝ} (ha : ¬∀ i, 0 < a i) :
     dirichletMeasure a = 0 := by
-  rw [dirichletMeasure, ite_eq_right ha]
+  rw [dirichletMeasure, ite_eq_right fun h ↦ ha h.2]
 
 /-- A Dirichlet measure with positive concentration parameters is a probability measure. -/
 theorem isProbabilityMeasure_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
@@ -132,18 +134,20 @@ theorem isProbabilityMeasure_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha
     isProbabilityMeasure_gammaMeasure (ha i) one_pos
   infer_instance
 
-/-- The totalized Dirichlet measure is a probability measure exactly for positive concentration
-parameters. -/
+/-- The totalized Dirichlet measure is a probability measure exactly for a nonempty coordinate type
+and positive concentration parameters. -/
 @[simp]
-theorem isProbabilityMeasure_dirichletMeasure_iff [Nonempty ι] {a : ι → ℝ} :
-    IsProbabilityMeasure (dirichletMeasure a) ↔ ∀ i, 0 < a i := by
+theorem isProbabilityMeasure_dirichletMeasure_iff {a : ι → ℝ} :
+    IsProbabilityMeasure (dirichletMeasure a) ↔ Nonempty ι ∧ ∀ i, 0 < a i := by
   constructor
   · intro h
     by_contra ha
-    rw [dirichletMeasure_of_not_pos ha] at h
+    rw [dirichletMeasure, ite_eq_right ha] at h
     let _ : IsProbabilityMeasure (0 : Measure (EuclideanSpace ℝ ι)) := h
     exact (IsProbabilityMeasure.ne_zero (0 : Measure (EuclideanSpace ℝ ι))) rfl
-  · exact isProbabilityMeasure_dirichletMeasure
+  · rintro ⟨hι, ha⟩
+    let _ : Nonempty ι := hι
+    exact isProbabilityMeasure_dirichletMeasure ha
 
 /-- Every coordinate is almost everywhere strictly positive under a Dirichlet law with positive
 concentration parameters. -/
