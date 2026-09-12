@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
 public import TauCeti.Probability.Distributions.Uniform
 public import Mathlib.Probability.ProductMeasure
-import Mathlib.Probability.Independence.InfinitePi
+import TauCeti.MeasureTheory.Measure.ProductKernel
 
 /-!
 # The joint sampling law of a graphon
@@ -37,15 +37,11 @@ positions is `sampleMass W H`.
 
 ## Main definitions
 
-* `TauCeti.DenseGraphLimits.infiniteSampleSource` — the product of the positions and the coins;
-* `TauCeti.DenseGraphLimits.infiniteSampleGraph` — the infinite graph read off positions and coins;
 * `TauCeti.DenseGraphLimits.infiniteSampleLaw` — its law, the joint sampling object;
-* `TauCeti.DenseGraphLimits.restrictFin` — the initial `n`-label window of a graph on `ℕ`.
+* `TauCeti.SimpleGraph.restrictFin` — the initial `n`-label window of a graph on `ℕ`.
 
 ## Main results
 
-* `restrictFin_infiniteSampleGraph_eq_iff` — a window of the sampled graph is a prescribed pattern
-  exactly when the coins of the pairs inside the window fall on the prescribed side of the graphon;
 * `infiniteSampleLaw_map_restrictFin` — every finite sampling law is a window of the joint law.
 
 ## References
@@ -65,6 +61,25 @@ open scoped ENNReal
 
 namespace TauCeti
 
+namespace SimpleGraph
+
+/-- The window of a graph on `ℕ` spanned by the first `n` labels. -/
+def restrictFin (G : SimpleGraph ℕ) (n : ℕ) : SimpleGraph (Fin n) :=
+  SimpleGraph.comap (fun i => (i : ℕ)) G
+
+@[simp]
+theorem restrictFin_adj {n : ℕ} (G : SimpleGraph ℕ) (a b : Fin n) :
+    (restrictFin G n).Adj a b ↔ G.Adj a b := Iff.rfl
+
+/-- Taking a window is measurable. -/
+theorem measurable_restrictFin (n : ℕ) : Measurable fun G : SimpleGraph ℕ => restrictFin G n := by
+  rw [SimpleGraph.measurable_iff_adj]
+  intro a b
+  exact (measurable_pi_apply (b : ℕ)).comp
+    ((measurable_pi_apply (a : ℕ)).comp SimpleGraph.measurable_adj)
+
+end SimpleGraph
+
 namespace DenseGraphLimits
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
@@ -74,18 +89,18 @@ section Source
 /-- The randomness the infinite `W`-random graph is read off: an independent position in the
 graphon's carrier for every label, and an independent uniform coin for every unordered pair of
 labels. -/
-def infiniteSampleSource (μ : Measure Ω) : Measure ((ℕ → Ω) × (Sym2 ℕ → ℝ)) :=
+private def infiniteSampleSource (μ : Measure Ω) : Measure ((ℕ → Ω) × (Sym2 ℕ → ℝ)) :=
   (Measure.infinitePi fun _ : ℕ => μ).prod
     (Measure.infinitePi fun _ : Sym2 ℕ => Probability.uniformMeasure 0 1)
 
-instance infiniteSampleSource_isProbabilityMeasure :
+private instance infiniteSampleSource_isProbabilityMeasure :
     IsProbabilityMeasure (infiniteSampleSource μ) := by
   rw [infiniteSampleSource]
   infer_instance
 
 /-- The infinite `W`-random graph attached to a family of positions and a family of coins: the
 pair `{i, j}` is an edge when its coin falls below the graphon value at the two positions. -/
-def infiniteSampleGraph (W : Graphon Ω μ) (x : ℕ → Ω) (u : Sym2 ℕ → ℝ) : SimpleGraph ℕ where
+private def infiniteSampleGraph (W : Graphon Ω μ) (x : ℕ → Ω) (u : Sym2 ℕ → ℝ) : SimpleGraph ℕ where
   Adj i j := i ≠ j ∧ u s(i, j) < edgeFactor W x s(i, j)
   symm := ⟨by
     rintro i j ⟨hne, hlt⟩
@@ -94,11 +109,11 @@ def infiniteSampleGraph (W : Graphon Ω μ) (x : ℕ → Ω) (u : Sym2 ℕ → �
   loopless := ⟨fun i h => h.1 rfl⟩
 
 @[simp]
-theorem infiniteSampleGraph_adj (W : Graphon Ω μ) (x : ℕ → Ω) (u : Sym2 ℕ → ℝ) (i j : ℕ) :
+private theorem infiniteSampleGraph_adj (W : Graphon Ω μ) (x : ℕ → Ω) (u : Sym2 ℕ → ℝ) (i j : ℕ) :
     (infiniteSampleGraph W x u).Adj i j ↔ i ≠ j ∧ u s(i, j) < edgeFactor W x s(i, j) := Iff.rfl
 
 /-- The sampled graph depends measurably on the positions and the coins. -/
-theorem measurable_infiniteSampleGraph (W : Graphon Ω μ) :
+private theorem measurable_infiniteSampleGraph (W : Graphon Ω μ) :
     Measurable fun p : (ℕ → Ω) × (Sym2 ℕ → ℝ) => infiniteSampleGraph W p.1 p.2 := by
   rw [SimpleGraph.measurable_iff_adj]
   intro i j
@@ -125,21 +140,6 @@ instance infiniteSampleLaw_isProbabilityMeasure (W : Graphon Ω μ) :
   rw [infiniteSampleLaw]
   infer_instance
 
-/-- The window of a graph on `ℕ` spanned by the first `n` labels. -/
-def restrictFin (G : SimpleGraph ℕ) (n : ℕ) : SimpleGraph (Fin n) :=
-  SimpleGraph.comap (fun i => (i : ℕ)) G
-
-@[simp]
-theorem restrictFin_adj {n : ℕ} (G : SimpleGraph ℕ) (a b : Fin n) :
-    (restrictFin G n).Adj a b ↔ G.Adj a b := Iff.rfl
-
-/-- Taking a window is measurable. -/
-theorem measurable_restrictFin (n : ℕ) : Measurable fun G : SimpleGraph ℕ => restrictFin G n := by
-  rw [SimpleGraph.measurable_iff_adj]
-  intro a b
-  exact (measurable_pi_apply (b : ℕ)).comp
-    ((measurable_pi_apply (a : ℕ)).comp SimpleGraph.measurable_adj)
-
 end Law
 
 section Window
@@ -149,13 +149,14 @@ variable {n : ℕ}
 /-- A window of the sampled graph is a prescribed pattern exactly when, for every pair of distinct
 labels in the window, the coin of that pair falls below the graphon value precisely when the
 pattern joins the pair. -/
-theorem restrictFin_infiniteSampleGraph_eq_iff (W : Graphon Ω μ) (x : ℕ → Ω) (u : Sym2 ℕ → ℝ)
+private theorem restrictFin_infiniteSampleGraph_eq_iff (W : Graphon Ω μ) (x : ℕ → Ω)
+    (u : Sym2 ℕ → ℝ)
     (H : SimpleGraph (Fin n)) :
-    restrictFin (infiniteSampleGraph W x u) n = H ↔
+    SimpleGraph.restrictFin (infiniteSampleGraph W x u) n = H ↔
       ∀ a b : Fin n, a ≠ b →
         (u s((a : ℕ), (b : ℕ)) < edgeFactor W x s((a : ℕ), (b : ℕ)) ↔ H.Adj a b) := by
   rw [SimpleGraph.ext_iff, funext_iff]
-  simp only [funext_iff, eq_iff_iff, restrictFin_adj, infiniteSampleGraph_adj, ne_eq,
+  simp only [funext_iff, eq_iff_iff, SimpleGraph.restrictFin_adj, infiniteSampleGraph_adj, ne_eq,
     Fin.val_inj]
   constructor
   · intro h a b hab
@@ -222,7 +223,7 @@ private theorem uniformMeasure_coinTarget (W : Graphon Ω μ) (x : ℕ → Ω) (
 
 /-- The event that a window of the sampled graph is a prescribed pattern is a box in the coins. -/
 private theorem setOf_restrictFin_eq (W : Graphon Ω μ) (x : ℕ → Ω) (H : SimpleGraph (Fin n)) :
-    {u : Sym2 ℕ → ℝ | restrictFin (infiniteSampleGraph W x u) n = H} =
+    {u : Sym2 ℕ → ℝ | SimpleGraph.restrictFin (infiniteSampleGraph W x u) n = H} =
       Set.pi (windowPairs n) (coinTarget W x (H.map (Fin.val : Fin n → ℕ))) := by
   ext u
   rw [Set.mem_ofPred_eq, restrictFin_infiniteSampleGraph_eq_iff]
@@ -256,7 +257,7 @@ mass of that pattern: each pair contributes its graphon value or the complementa
 private theorem infinitePi_uniformMeasure_setOf_restrictFin_eq (W : Graphon Ω μ) (x : ℕ → Ω)
     (H : SimpleGraph (Fin n)) :
     (Measure.infinitePi fun _ : Sym2 ℕ => Probability.uniformMeasure 0 1)
-        {u : Sym2 ℕ → ℝ | restrictFin (infiniteSampleGraph W x u) n = H} =
+        {u : Sym2 ℕ → ℝ | SimpleGraph.restrictFin (infiniteSampleGraph W x u) n = H} =
       ENNReal.ofReal (sampleIntegrand W H fun i : Fin n => x (i : ℕ)) := by
   set y : Fin n → Ω := fun i : Fin n => x (i : ℕ) with hy
   have hnonneg : ∀ e ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset,
@@ -292,23 +293,23 @@ private theorem infinitePi_uniformMeasure_setOf_restrictFin_eq (W : Graphon Ω �
 graph spanned by the first `n` labels has the law of the `W`-random graph on `Fin n`: every finite
 sampling law is a restriction of this one random object. -/
 theorem infiniteSampleLaw_map_restrictFin (W : Graphon Ω μ) (n : ℕ) :
-    (infiniteSampleLaw W).map (fun G => restrictFin G n) = sampleGraph W n := by
+    (infiniteSampleLaw W).map (fun G => SimpleGraph.restrictFin G n) = sampleGraph W n := by
   refine Measure.ext_of_singleton fun H => ?_
-  have hfiber : MeasurableSet ((fun G : SimpleGraph ℕ => restrictFin G n) ⁻¹' {H}) :=
-    measurable_restrictFin n (measurableSet_singleton H)
-  rw [Measure.map_apply (measurable_restrictFin n) (measurableSet_singleton H),
+  have hfiber : MeasurableSet ((fun G : SimpleGraph ℕ => SimpleGraph.restrictFin G n) ⁻¹' {H}) :=
+    SimpleGraph.measurable_restrictFin n (measurableSet_singleton H)
+  rw [Measure.map_apply (SimpleGraph.measurable_restrictFin n) (measurableSet_singleton H),
     infiniteSampleLaw, Measure.map_apply (measurable_infiniteSampleGraph W) hfiber,
     infiniteSampleSource, Measure.prod_apply
       ((measurable_infiniteSampleGraph W) hfiber), sampleGraph_singleton]
   have hslice : ∀ x : ℕ → Ω, (Prod.mk x) ⁻¹'
       ((fun p : (ℕ → Ω) × (Sym2 ℕ → ℝ) => infiniteSampleGraph W p.1 p.2) ⁻¹'
-        ((fun G : SimpleGraph ℕ => restrictFin G n) ⁻¹' {H})) =
-      {u : Sym2 ℕ → ℝ | restrictFin (infiniteSampleGraph W x u) n = H} := fun _ => rfl
+        ((fun G : SimpleGraph ℕ => SimpleGraph.restrictFin G n) ⁻¹' {H})) =
+      {u : Sym2 ℕ → ℝ | SimpleGraph.restrictFin (infiniteSampleGraph W x u) n = H} := fun _ => rfl
   simp_rw [hslice, infinitePi_uniformMeasure_setOf_restrictFin_eq]
   have hmap : (Measure.infinitePi fun _ : ℕ => μ).map (fun x (i : Fin n) => x (i : ℕ)) =
-      Measure.pi fun _ : Fin n => μ := by
-    rw [Measure.map_infinitePi_infinitePi_of_inj Fin.val_injective]
-    exact Measure.infinitePi_eq_pi _
+      Measure.pi fun _ : Fin n => μ :=
+    TauCeti.MeasureTheory.map_prefixProj_infinitePi_const
+      (⟨μ, inferInstance⟩ : ProbabilityMeasure Ω) n
   have hmeasurable : Measurable fun y : Fin n → Ω => ENNReal.ofReal (sampleIntegrand W H y) :=
     (measurable_sampleIntegrand W H).ennreal_ofReal
   rw [← lintegral_map hmeasurable (by fun_prop), hmap,
