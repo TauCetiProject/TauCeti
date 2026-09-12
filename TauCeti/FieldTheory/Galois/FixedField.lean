@@ -124,6 +124,12 @@ theorem card_fixingSubgroup_le (E : IntermediateField K M) [FiniteDimensional E 
   rw [Nat.card_congr (fixingSubgroupEquiv E).toEquiv, Nat.card_eq_fintype_card]
   exact AlgEquiv.card_le
 
+-- The subgroup extensionality argument below, reducing membership of `K⟮x⟯.fixingSubgroup` to
+-- `IntermediateField.forall_mem_adjoin_smul_eq_self_iff` at the singleton `{x}`, is adapted from
+-- the proof of `stabilizer_isOpen_of_isIntegral` in `Mathlib/FieldTheory/KrullTopology.lean`,
+-- which uses it there to identify a point stabilizer with the fixing subgroup of a finite
+-- intermediate field. Here it is recorded as a statement in its own right, with no integrality
+-- hypothesis.
 /-- **The fixing subgroup of a simple extension is the stabilizer of its generator.** A
 `K`-automorphism of `M` is determined on `K⟮x⟯` by its value at `x`, so fixing `K⟮x⟯` pointwise is
 fixing `x`; no hypothesis on `M / K` is needed, and `x` need not be algebraic.
