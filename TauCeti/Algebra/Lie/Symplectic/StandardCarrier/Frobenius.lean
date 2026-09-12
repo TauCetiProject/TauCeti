@@ -105,12 +105,11 @@ private theorem coe_pointsEquivKostantToralPoints (g : points n A) :
 For `p` prime, `0 < k`, and `A` an algebraic closure of `ZMod p`, this is the Frobenius component
 intended for a future construction of the `C_(n+1)(p ^ k)` Steinberg map. -/
 def frobenius : points n A →* points n A :=
-  (pointsEquivKostantToralPoints n A).symm.toMonoidHom.comp
-    ((TauCeti.UniversalEnvelopingAlgebra.kostantToralFrobenius (rootGenerator n)
+  (TauCeti.UniversalEnvelopingAlgebra.kostantToralFrobenius (rootGenerator n)
       (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
       (fun _ hu _ hv ↦ rep_kostantForm_mem_lattice n hu hv)
-      (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) p k A).comp
-        (pointsEquivKostantToralPoints n A).toMonoidHom)
+      (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) p k A).subgroupCongr
+    (points_eq_kostantToralPointsSubgroup n A) (points_eq_kostantToralPointsSubgroup n A)
 
 private theorem pointsEquivKostantToralPoints_frobenius (g : points n A) :
     pointsEquivKostantToralPoints n A (frobenius n p k A g) =
@@ -119,8 +118,8 @@ private theorem pointsEquivKostantToralPoints_frobenius (g : points n A) :
         (fun _ hu _ hv ↦ rep_kostantForm_mem_lattice n hu hv)
         (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) p k A
         (pointsEquivKostantToralPoints n A g) := by
-  simp only [frobenius, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulEquiv.apply_symm_apply]
+  apply Subtype.ext
+  simp [frobenius]
 
 /-- The Frobenius endomorphism of the type-`C_(n+1)` carrier acts by entrywise Frobenius.
 

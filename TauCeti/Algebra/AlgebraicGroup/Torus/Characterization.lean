@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
 import Mathlib.LinearAlgebra.FreeModule.PID
-import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Torsion
 import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.BaseChange
+import TauCeti.Algebra.MonoidAlgebra.Torsion
 
 /-!
 # Characterization of tori among groups of multiplicative type

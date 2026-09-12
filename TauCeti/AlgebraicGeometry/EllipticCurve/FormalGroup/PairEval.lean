@@ -334,6 +334,16 @@ theorem hasEval_formalThirdRootEval {t₁ t₂ : O} (h₁ : PowerSeries.HasEval 
     (MvPowerSeries.continuous_aeval (hasEval_pair h₁ h₂)) hnil
   simpa [formalThirdRootEval, MvPowerSeries.coe_aeval, Algebra.algebraMap_self] using h
 
+/-- **The third-root series can be substituted into at a pair of parameters**: it evaluates to
+`formalThirdRootEval`, which is itself substitutable. -/
+private theorem hasEval_aeval_formalThirdRoot {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
+    (h₂ : PowerSeries.HasEval t₂) :
+    PowerSeries.HasEval (MvPowerSeries.aeval (hasEval_pair h₁ h₂) W.formalThirdRoot) := by
+  -- the coercion lands on `eval₂ (algebraMap O O)` while `formalThirdRootEval` is defined with
+  -- `eval₂ (RingHom.id O)`; `Algebra.algebraMap_self` is what identifies the two
+  simpa [formalThirdRootEval, MvPowerSeries.coe_aeval, Algebra.algebraMap_self] using
+    W.hasEval_formalThirdRootEval h₁ h₂
+
 /-- **The evaluated on-line identity**: `w(t₃(t₁, t₂)) = λ(t₁, t₂) * t₃(t₁, t₂) + ν(t₁, t₂)`, so
 the `w`-expansion read at the third root agrees with the chord line read there. Over a field, where
 the parameters carry the coordinates `x = t / w` and `y = -1 / w`, this is what says the third root
@@ -342,14 +352,9 @@ theorem formalWEval_formalThirdRootEval {t₁ t₂ : O} (h₁ : PowerSeries.HasE
     (h₂ : PowerSeries.HasEval t₂) :
     W.formalWEval (W.formalThirdRootEval t₁ t₂) =
       W.formalSlopeEval t₁ t₂ * W.formalThirdRootEval t₁ t₂ + W.formalInterceptEval t₁ t₂ := by
-  have hae : MvPowerSeries.aeval (hasEval_pair h₁ h₂) W.formalThirdRoot =
-      W.formalThirdRootEval t₁ t₂ :=
-    congrFun (MvPowerSeries.coe_aeval (hasEval_pair h₁ h₂)) W.formalThirdRoot
-  have hT' : PowerSeries.HasEval (MvPowerSeries.aeval (hasEval_pair h₁ h₂) W.formalThirdRoot) := by
-    rw [hae]; exact W.hasEval_formalThirdRootEval h₁ h₂
   have h := MvPowerSeries.aeval_subst W.hasSubst_formalThirdRoot
     (MvPowerSeries.continuous_aeval (hasEval_pair h₁ h₂))
-    (PowerSeries.hasEval hT') W.formalW
+    (PowerSeries.hasEval (W.hasEval_aeval_formalThirdRoot h₁ h₂)) W.formalW
   -- distribute while the evaluation is still an algebra map: after `coe_aeval` rewrites it to
   -- `eval₂`, `map_add` and `map_mul` no longer apply.
   rw [W.subst_formalThirdRoot_formalW, map_add, map_mul] at h
@@ -386,14 +391,9 @@ chord through them. -/
 theorem formalAddEval_eq {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
     (h₂ : PowerSeries.HasEval t₂) :
     W.formalAddEval t₁ t₂ = W.formalInverseEval (W.formalThirdRootEval t₁ t₂) := by
-  have hae : MvPowerSeries.aeval (hasEval_pair h₁ h₂) W.formalThirdRoot =
-      W.formalThirdRootEval t₁ t₂ :=
-    congrFun (MvPowerSeries.coe_aeval (hasEval_pair h₁ h₂)) W.formalThirdRoot
-  have hT' : PowerSeries.HasEval (MvPowerSeries.aeval (hasEval_pair h₁ h₂) W.formalThirdRoot) := by
-    rw [hae]; exact W.hasEval_formalThirdRootEval h₁ h₂
   have h := MvPowerSeries.aeval_subst W.hasSubst_formalThirdRoot
     (MvPowerSeries.continuous_aeval (hasEval_pair h₁ h₂))
-    (PowerSeries.hasEval hT') W.formalInverse
+    (PowerSeries.hasEval (W.hasEval_aeval_formalThirdRoot h₁ h₂)) W.formalInverse
   rw [← W.formalAdd_def] at h
   simpa [formalAddEval, W.formalInverseEval_def, MvPowerSeries.coe_aeval, PowerSeries.eval₂,
     ← W.formalThirdRootEval_def] using h

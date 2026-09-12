@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Finsupp.LSum
-public import TauCeti.KnotTheory.Grid.Complex
+public import TauCeti.KnotTheory.Grid.Chain.Basic
 
 /-!
 # Symmetries of the fully blocked grid differential
@@ -24,8 +24,8 @@ reflection `GridRectangleBetween.transpose` preserves emptiness and marking avoi
 `fullyBlockedRectangleCount_transpose` and `fullyBlockedRectangleCount_swapMarkings`. Here we lift
 those matrix coefficients to the differential itself: the marking swap fixes the whole
 differential, while the diagonal reflection intertwines the differentials of `G` and
-`G.transpose` through the chain relabeling `GridChain.transposeEquiv` (defined in `Complex.lean`)
-induced by `GridState.transpose`.
+`G.transpose` through the chain relabeling `TauCeti.GridChain.transposeEquiv` induced by
+`GridState.transpose`.
 
 ## Main results
 

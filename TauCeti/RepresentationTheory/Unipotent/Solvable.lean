@@ -134,8 +134,7 @@ theorem _root_.Representation.exists_basis_isUpperUnitriangular_of_isUnipotent
                   rw [finSumFinEquiv_apply_right, finSumFinEquiv_apply_right,
                     LinearMap.toMatrixAlgEquiv_apply,
                     extensionBasis_repr_natAdd]
-                  rw [← q_apply]
-                  rw [Submodule.mkQ_apply, extensionBasis_natAdd_mkQ]
+                  rw [← q_apply, Submodule.mkQ_apply, extensionBasis_natAdd_mkQ]
                   simpa only [LinearMap.toMatrixAlgEquiv_apply] using
                     (hbq g |>.isUpperTriangular
                       ((Fin.strictMono_natAdd 1).lt_iff_lt.mp hji))
@@ -153,8 +152,7 @@ theorem _root_.Representation.exists_basis_isUpperUnitriangular_of_isUnipotent
           | inr i =>
               rw [finSumFinEquiv_apply_right, LinearMap.toMatrixAlgEquiv_apply,
                 extensionBasis_repr_natAdd]
-              rw [← q_apply]
-              rw [Submodule.mkQ_apply, extensionBasis_natAdd_mkQ]
+              rw [← q_apply, Submodule.mkQ_apply, extensionBasis_natAdd_mkQ]
               simpa only [LinearMap.toMatrixAlgEquiv_apply] using hbq g |>.apply_diag i
       · let _ : Subsingleton V := not_nontrivial_iff_subsingleton.mp hV
         have hzero : finrank K V = 0 := Module.finrank_zero_of_subsingleton

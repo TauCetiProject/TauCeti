@@ -40,6 +40,8 @@ the letterwise tuple operation that applies it on a half-open index interval.
 ## Main results
 
 * `TauCeti.InternalGrading.ext`: internal gradings are determined by their homogeneous pieces.
+* `TauCeti.InternalGrading.linearMap_ext`: linear maps agree when they agree on homogeneous
+  elements.
 * `TauCeti.InternalGrading.finite_piece_ne_bot`: a finitely generated internally graded module has
   only finitely many nonzero homogeneous pieces.
 * `TauCeti.InternalGrading.koszulTwist_apply_of_mem`: the twist acts by the Koszul scalar on
@@ -99,6 +101,17 @@ noncomputable def ofDecomposition (ℳ : ℤ → Submodule R M) [DirectSum.Decom
 @[simp]
 theorem ofDecomposition_piece (ℳ : ℤ → Submodule R M) [DirectSum.Decomposition ℳ] :
     (ofDecomposition ℳ).piece = ℳ := (rfl)
+
+/-- Two linear maps on an internally graded module agree if they agree on homogeneous elements. -/
+theorem linearMap_ext {N : Type w} [AddCommMonoid N] [Module R N]
+    (G : InternalGrading R M) {f g : M →ₗ[R] N}
+    (h : ∀ (p : ℤ) (x : M), x ∈ G.piece p → f x = g x) : f = g := by
+  apply (Submodule.linearMap_eq_iff_of_span_eq_top f g ?_).2
+  · rintro ⟨x, hx⟩
+    obtain ⟨p, hp⟩ := Set.mem_iUnion.mp hx
+    exact h p x hp
+  · rw [← Submodule.iSup_eq_span]
+    exact G.isInternal.submodule_iSup_eq_top
 
 section Map
 

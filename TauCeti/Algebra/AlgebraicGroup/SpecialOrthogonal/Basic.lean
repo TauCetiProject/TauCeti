@@ -327,7 +327,7 @@ theorem pointsMulEquiv_mapValue {B : Type v} [CommRing B] [Algebra R B]
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     pointsMulEquiv R n (A := B)
         (AlgHom.mapValue (H := coordinateHopfAlgebra R n) phi f) =
-      Matrix.SpecialOrthogonalGroup.map phi.toRingHom
+      Matrix.SpecialOrthogonalGroup.map (phi : A →+* B)
         (pointsMulEquiv R n (A := A) f) := by
   apply Subtype.ext
   have hcoe_lhs := pointsMulEquiv_coe R n
@@ -338,7 +338,7 @@ theorem pointsMulEquiv_mapValue {B : Type v} [CommRing B] [Algebra R B]
   rw [← hcoe_lhs, hnatural, GeneralLinear.pointsMulEquiv_mapValue,
     Matrix.SpecialOrthogonalGroup.coe_map]
   simpa only [Matrix.GeneralLinearGroup.val_map_apply] using
-    congrArg (fun M : Matrix (Fin n) (Fin n) A ↦ M.map phi.toRingHom) hcoe_rhs
+    congrArg (fun M : Matrix (Fin n) (Fin n) A ↦ M.map (phi : A →+* B)) hcoe_rhs
 
 /-- Naturality of the inverse pointwise equivalence in the value algebra. -/
 theorem mapValue_pointsMulEquiv_symm_apply {B : Type v} [CommRing B] [Algebra R B]

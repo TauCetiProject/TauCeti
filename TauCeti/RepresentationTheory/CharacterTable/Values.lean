@@ -46,23 +46,23 @@ representation of a group, from the eigenvalues alone, with no invariant inner p
   `(ρ g).charpoly` splits, a character value is a sum of `finrank` many `n`-th roots of unity. The
   variant `TauCeti.Representation.exists_multiset_rootsOfUnity_char_eq_sum` specializes it to an
   algebraically closed field.
-* `TauCeti.Representation.isIntegral_char` and `TauCeti.FDRep.isIntegral_char`: **character values
-  are algebraic integers**, over an arbitrary field.
-* `TauCeti.Representation.exists_char_eq_intCast` and `TauCeti.FDRep.exists_char_eq_intCast`:
+* `TauCeti.Representation.isIntegral_char`: **character values are algebraic integers**, over an
+  arbitrary field. The bundled `FDRep` form is Mathlib's `FDRep.isIntegral_character`.
+* `TauCeti.Representation.exists_char_eq_intCast` and `FDRep.exists_char_eq_intCast`:
   **a rational character is integer-valued**.
-* `TauCeti.FDRep.intCharacter`: the resulting `ℤ`-valued character of a rational representation of
-  a finite group, taking the degree at the identity, and `TauCeti.FDRep.intClassFunction`: the same
+* `FDRep.intCharacter`: the resulting `ℤ`-valued character of a rational representation of
+  a finite group, taking the degree at the identity, and `FDRep.intClassFunction`: the same
   character read as an element of `TauCeti.ClassFunction ℤ G`.
-* `TauCeti.FDRep.char_mem_adjoin_of_isPrimitiveRoot`: over `ℂ` they lie in `ℤ[ζ_e]`, for `ζ_e`
+* `FDRep.char_mem_adjoin_of_isPrimitiveRoot`: over `ℂ` they lie in `ℤ[ζ_e]`, for `ζ_e`
   a primitive root of unity of order the exponent of the group.
-* `TauCeti.FDRep.norm_char_le_finrank`: over `ℂ`, `‖χ(g)‖ ≤ χ(1)`.
+* `FDRep.norm_char_le_finrank`: over `ℂ`, `‖χ(g)‖ ≤ χ(1)`.
 * `Representation.exists_apply_eq_smul_of_norm_char_eq_finrank` and its bundled form
   `FDRep.exists_apply_eq_smul_of_norm_char_eq_finrank`: the equality case of that bound,
   `‖χ(g)‖ = χ(1)`, which forces `ρ g` to be a root of unity times the identity.
-* `TauCeti.FDRep.conj_char`: over `ℂ`, **inversion conjugates character values**,
+* `FDRep.conj_char`: over `ℂ`, **inversion conjugates character values**,
   `conj (χ g) = χ g⁻¹`. This is what makes the character pairing agree with the Hermitian inner
   product on complex class functions.
-* `TauCeti.Representation.isSemisimple_apply` and `TauCeti.FDRep.isSemisimple_ρ`: if the
+* `TauCeti.Representation.isSemisimple_apply` and `FDRep.isSemisimple_ρ`: if the
   characteristic of `k` does not divide `|G|`, then `ρ g` is a semisimple endomorphism; over `ℂ`
   the hypothesis is found by instance search.
 
@@ -242,73 +242,69 @@ namespace FDRep
 
 variable {G : Type v} [Group G] [Finite G]
 
-/-- **Character values are algebraic integers.** For a finite group, every value of the character
-of a finite-dimensional representation over any field is integral over `ℤ`. -/
-theorem isIntegral_char {k : Type u} [Field k] (V : FDRep k G) (g : G) :
-    IsIntegral ℤ (V.character g) :=
-  Representation.isIntegral_char V.ρ (isOfFinOrder_of_finite g).orderOf_pos.ne'
-    (pow_orderOf_eq_one g)
-
 /-- **A rational character is integer-valued.** For a finite group, every value of the character of
 a finite-dimensional representation over `ℚ` is the cast of an integer. -/
-theorem exists_char_eq_intCast (V : FDRep ℚ G) (g : G) : ∃ m : ℤ, V.character g = (m : ℚ) :=
+theorem _root_.FDRep.exists_char_eq_intCast (V : FDRep ℚ G) (g : G) :
+    ∃ m : ℤ, V.character g = (m : ℚ) :=
   Representation.exists_char_eq_intCast V.ρ (isOfFinOrder_of_finite g).orderOf_pos.ne'
     (pow_orderOf_eq_one g)
 
 /-- **The integer character** of a rational representation of a finite group: the character value
-`V.character g` is the cast of an integer (`TauCeti.FDRep.exists_char_eq_intCast`), and this is
+`V.character g` is the cast of an integer (`FDRep.exists_char_eq_intCast`), and this is
 that integer, extracted as the numerator of the rational value. Read it only through
-`TauCeti.FDRep.intCharacter_cast`, which is what pins it down; the numerator is a way of naming the
+`FDRep.intCharacter_cast`, which is what pins it down; the numerator is a way of naming the
 integer, not extra information.
 
-Being in the `TauCeti.FDRep` namespace rather than the root one, it is not available through dot
-notation on an `FDRep ℚ G`, and is written `intCharacter V g` throughout. -/
-noncomputable def intCharacter (V : FDRep ℚ G) (g : G) : ℤ := (V.character g).num
+It lives in the root `FDRep` namespace, so dot notation on an `FDRep ℚ G` reaches it: write
+`V.intCharacter g`. -/
+noncomputable def _root_.FDRep.intCharacter (V : FDRep ℚ G) (g : G) : ℤ := (V.character g).num
 
 omit [Finite G] in
 private theorem intCharacter_def (V : FDRep ℚ G) (g : G) :
-    intCharacter V g = (V.character g).num := (rfl)
+    FDRep.intCharacter V g = (V.character g).num := (rfl)
 
 /-- **The integer character casts back to the character.** -/
 @[simp]
-theorem intCharacter_cast (V : FDRep ℚ G) (g : G) : (intCharacter V g : ℚ) = V.character g := by
-  obtain ⟨m, hm⟩ := exists_char_eq_intCast V g
+theorem _root_.FDRep.intCharacter_cast (V : FDRep ℚ G) (g : G) :
+    (FDRep.intCharacter V g : ℚ) = V.character g := by
+  obtain ⟨m, hm⟩ := FDRep.exists_char_eq_intCast V g
   rw [intCharacter_def, hm, Rat.num_intCast]
 
 /-- **The integer character carries exactly the information of the rational one**: this is the
-elimination principle for `TauCeti.FDRep.intCharacter`, an integer equation between its values
+elimination principle for `FDRep.intCharacter`, an integer equation between its values
 being the corresponding equation between character values. -/
-theorem intCharacter_eq_iff {V W : FDRep ℚ G} {g h : G} :
-    intCharacter V g = intCharacter W h ↔ V.character g = W.character h := by
-  rw [← Int.cast_inj (α := ℚ), intCharacter_cast, intCharacter_cast]
+theorem _root_.FDRep.intCharacter_eq_iff {V W : FDRep ℚ G} {g h : G} :
+    FDRep.intCharacter V g = FDRep.intCharacter W h ↔ V.character g = W.character h := by
+  rw [← Int.cast_inj (α := ℚ), FDRep.intCharacter_cast, FDRep.intCharacter_cast]
 
 /-- **The integer character is a class function.** -/
 @[simp]
-theorem intCharacter_conj (V : FDRep ℚ G) (g h : G) :
-    intCharacter V (h * g * h⁻¹) = intCharacter V g :=
-  intCharacter_eq_iff.2 (_root_.FDRep.char_conj V g h)
+theorem _root_.FDRep.intCharacter_conj (V : FDRep ℚ G) (g h : G) :
+    FDRep.intCharacter V (h * g * h⁻¹) = FDRep.intCharacter V g :=
+  _root_.FDRep.intCharacter_eq_iff.2 (_root_.FDRep.char_conj V g h)
 
 /-- **The integer character of a rational representation, as a class function.** -/
-noncomputable def intClassFunction (V : FDRep ℚ G) : ClassFunction ℤ G :=
-  ⟨intCharacter V, ClassFunction.mem_iff.2 (intCharacter_conj V)⟩
+noncomputable def _root_.FDRep.intClassFunction (V : FDRep ℚ G) : ClassFunction ℤ G :=
+  ⟨FDRep.intCharacter V, ClassFunction.mem_iff.2 (FDRep.intCharacter_conj V)⟩
 
 @[simp]
-theorem intClassFunction_apply (V : FDRep ℚ G) (g : G) :
-    (intClassFunction V).1 g = intCharacter V g := (rfl)
+theorem _root_.FDRep.intClassFunction_apply (V : FDRep ℚ G) (g : G) :
+    (FDRep.intClassFunction V).1 g = FDRep.intCharacter V g := (rfl)
 
 /-- Conjugate elements have the same integer character. -/
-theorem intCharacter_eq_of_isConj (V : FDRep ℚ G) {g h : G} (hgh : IsConj g h) :
-    intCharacter V g = intCharacter V h :=
-  ClassFunction.eq_of_isConj (intClassFunction V) hgh
+theorem _root_.FDRep.intCharacter_eq_of_isConj (V : FDRep ℚ G) {g h : G} (hgh : IsConj g h) :
+    FDRep.intCharacter V g = FDRep.intCharacter V h :=
+  ClassFunction.eq_of_isConj (FDRep.intClassFunction V) hgh
 
 /-- **The integer character at the identity is the degree.** -/
 @[simp]
-theorem intCharacter_one (V : FDRep ℚ G) : intCharacter V 1 = Module.finrank ℚ V :=
+theorem _root_.FDRep.intCharacter_one (V : FDRep ℚ G) :
+    FDRep.intCharacter V 1 = Module.finrank ℚ V :=
   Int.cast_injective (α := ℚ) (by simp)
 
 /-- **Character values are cyclotomic integers.** For a finite group of exponent `e` and a
 primitive `e`-th root of unity `ζ`, every value of a complex character lies in `ℤ[ζ]`. -/
-theorem char_mem_adjoin_of_isPrimitiveRoot (V : FDRep ℂ G) {ζ : ℂ}
+theorem _root_.FDRep.char_mem_adjoin_of_isPrimitiveRoot (V : FDRep ℂ G) {ζ : ℂ}
     (hζ : IsPrimitiveRoot ζ (Monoid.exponent G)) (g : G) :
     V.character g ∈ Algebra.adjoin ℤ ({ζ} : Set ℂ) :=
   haveI : NeZero (Monoid.exponent G) := ⟨Monoid.exponent_ne_zero_of_finite⟩
@@ -316,13 +312,13 @@ theorem char_mem_adjoin_of_isPrimitiveRoot (V : FDRep ℂ G) {ζ : ℂ}
 
 /-- Over `ℂ`, a character of a finite group is bounded in absolute value by its degree,
 `‖χ(g)‖ ≤ χ(1)`. -/
-theorem norm_char_le_finrank (V : FDRep ℂ G) (g : G) : ‖V.character g‖ ≤ finrank ℂ V :=
+theorem _root_.FDRep.norm_char_le_finrank (V : FDRep ℂ G) (g : G) : ‖V.character g‖ ≤ finrank ℂ V :=
   Representation.norm_char_le_finrank V.ρ (isOfFinOrder_of_finite g).orderOf_pos.ne'
     (pow_orderOf_eq_one g)
 
 /-- **The equality case of the bound on a character value**, for a finite group: if `‖χ(g)‖`
 attains the degree, then `V.ρ g` is a scalar, the scalar being a root of unity of order dividing
-that of `g`. The bound itself is `TauCeti.FDRep.norm_char_le_finrank`. -/
+that of `g`. The bound itself is `FDRep.norm_char_le_finrank`. -/
 theorem _root_.FDRep.exists_apply_eq_smul_of_norm_char_eq_finrank (V : FDRep ℂ G) {g : G}
     (h : ‖V.character g‖ = (finrank ℂ V : ℝ)) :
     ∃ μ : ℂ, μ ^ orderOf g = 1 ∧ V.ρ g = μ • 1 :=
@@ -332,7 +328,7 @@ theorem _root_.FDRep.exists_apply_eq_smul_of_norm_char_eq_finrank (V : FDRep ℂ
 /-- **Over `ℂ`, inversion conjugates the character values of a finite group**, so that a complex
 character is a "unitary" class function: `conj (χ g) = χ g⁻¹`. -/
 @[simp]
-theorem conj_char (V : FDRep ℂ G) (g : G) :
+theorem _root_.FDRep.conj_char (V : FDRep ℂ G) (g : G) :
     (starRingEnd ℂ) (V.character g) = V.character g⁻¹ :=
   Representation.conj_char V.ρ g
 
@@ -341,7 +337,7 @@ omit [Finite G] in
 and which every finite group satisfies in characteristic zero, then `V.ρ g` is a semisimple
 endomorphism. Over an algebraically closed field, `ℂ` for instance, this is its
 diagonalizability. -/
-theorem isSemisimple_ρ {k : Type u} [Field k] [NeZero (Nat.card G : k)] (V : FDRep k G)
+theorem _root_.FDRep.isSemisimple_ρ {k : Type u} [Field k] [NeZero (Nat.card G : k)] (V : FDRep k G)
     (g : G) : End.IsSemisimple (V.ρ g) :=
   Representation.isSemisimple_apply V.ρ (NeZero.ne _) g
 

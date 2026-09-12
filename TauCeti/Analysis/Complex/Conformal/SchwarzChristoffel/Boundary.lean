@@ -45,8 +45,6 @@ eventual polygon meet.
   edge is a real integral times the fixed edge direction.
 * `TauCeti.schwarzChristoffelBoundary_injOn` and
   `TauCeti.collinear_schwarzChristoffelBoundary_image` -- an open edge is embedded in a line.
-* `TauCeti.schwarzChristoffelBoundary_image_Icc_eq_closure_image_Ioo` -- the closed boundary arc
-  is the closure of its open edge.
 
 ## References
 
@@ -231,21 +229,5 @@ theorem continuousOn_schwarzChristoffelBoundary_Icc (a e : ι → ℝ)
     exact ha i hei ⟨hi ▸ hpx, hi ▸ hxq⟩
   rw [hzero]
   norm_num
-
-/-- The closed boundary arc between two real endpoints whose total exponents are greater than
-`-1`, with no prevertex of nonzero exponent strictly between them, is exactly the closure of its
-open straight edge.  When the endpoints are prevertices, this places both endpoint vertices --
-rewriting with `schwarzChristoffelBoundary_apply_prevertex` -- in the closure of that edge, which
-is the local gluing statement needed to assemble the Schwarz--Christoffel polygon. -/
-theorem schwarzChristoffelBoundary_image_Icc_eq_closure_image_Ioo (a e : ι → ℝ)
-    (z₀ : UpperHalfPlane) {p q : ℝ} (hpq : p < q)
-    (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q)
-    (hp : -1 < ∑ i with a i = p, e i) (hq : -1 < ∑ i with a i = q, e i) :
-    schwarzChristoffelBoundary a e z₀ '' Icc p q =
-      closure (schwarzChristoffelBoundary a e z₀ '' Ioo p q) := by
-  rw [← closure_Ioo hpq.ne]
-  refine image_closure_of_isCompact ?_ ?_ <;> rw [closure_Ioo hpq.ne]
-  · exact isCompact_Icc
-  · exact continuousOn_schwarzChristoffelBoundary_Icc a e z₀ ha hp hq
 
 end TauCeti

@@ -130,7 +130,7 @@ theorem pglPointsFunctor_map {R : Type u} [CommRing R]
     {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     (pglPointsFunctor n).map φ =
       eqToHom (pglPointsFunctor_obj n A) ≫
-        GrpCat.ofHom (Matrix.ProjGenLinGroup.map (n := Fin n) φ.hom.toRingHom) ≫
+        GrpCat.ofHom (Matrix.ProjGenLinGroup.map (n := Fin n) φ.hom) ≫
           eqToHom (pglPointsFunctor_obj n B).symm :=
   (rfl)
 

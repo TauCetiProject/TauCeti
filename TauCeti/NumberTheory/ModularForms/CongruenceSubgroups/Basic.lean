@@ -92,6 +92,11 @@ infrastructure independent of the diamond operators.
   prime `p` and `k ≥ 1`.
 * `CongruenceSubgroup.Gamma_gcd_eq_sup`: `Γ(gcd a b) = Γ(a) ⊔ Γ(b)` — Shimura's Lemma 3.28,
   the Chinese remainder theorem for `SL₂`.
+* `CongruenceSubgroup.intCast_mul_apply_one_zero_eq_zero_of_mem_Gamma0_div` and
+  `CongruenceSubgroup.intCast_apply_one_one_eq_of_mem_Gamma0_of_eq`: entry congruences for
+  elements of `Γ₀`, the shapes the descent factorisations produce.
+* `CongruenceSubgroup.Gamma_lcm_eq_inf`: `Γ(lcm a b) = Γ(a) ⊓ Γ(b)`, with the coprime case
+  `CongruenceSubgroup.Gamma_mul_eq_inf_of_coprime`.
 
 ## References
 
@@ -741,5 +746,48 @@ theorem exists_mem_Gamma_map_intCast_zmod_eq {d d' : ℕ} (hcop : Nat.Coprime d 
   obtain ⟨γ, hγ⟩ := Matrix.SpecialLinearGroup.map_intCast_zmod_prod_surjective hcop (A, 1)
   rw [MonoidHom.prod_apply, Prod.mk.injEq] at hγ
   exact ⟨γ, Gamma_mem'.mpr hγ.2, hγ.1⟩
+
+/-! ### Entry congruences in `Γ₀` -/
+
+/-- **The level hypothesis of the factorisation at a divided level.** For `δ ∈ Γ₀(N / p)` with
+`p ∣ N`, `N = p (N / p)` divides `p δ₁₀`, because `N / p ∣ δ₁₀`. -/
+theorem intCast_mul_apply_one_zero_eq_zero_of_mem_Gamma0_div {p N : ℕ} (hpN : p ∣ N) {δ : SL(2, ℤ)}
+    (hδ : δ ∈ Gamma0 (N / p)) : (((p : ℤ) * δ 1 0 : ℤ) : ZMod N) = 0 := by
+  refine (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr ?_
+  have hpNp : (N : ℤ) = (p : ℤ) * ((N / p : ℕ) : ℤ) := by
+    exact_mod_cast (Nat.mul_div_cancel' hpN).symm
+  rw [hpNp]
+  exact mul_dvd_mul_left _ ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp hδ))
+
+/-- **The entry equation reads as a congruence at any level where `c` vanishes.** If a
+factorisation gives `α 1 1 = δ 1 1 - δ 1 0 * k`, then modulo a level `M` with `δ ∈ Γ₀(M)` the
+lower-right entry of `α` is that of `δ`. -/
+theorem intCast_apply_one_one_eq_of_mem_Gamma0_of_eq {M : ℕ} {δ α : SL(2, ℤ)} (hδ : δ ∈ Gamma0 M)
+    {k : ℤ} (h : (α 1 1 : ℤ) = δ 1 1 - δ 1 0 * k) :
+    ((α 1 1 : ℤ) : ZMod M) = ((δ 1 1 : ℤ) : ZMod M) := by
+  rw [h]
+  push_cast
+  rw [Gamma0_mem.mp hδ]
+  ring
+/-- **`Γ(lcm a b) = Γ(a) ⊓ Γ(b)`**: a matrix is congruent to the identity modulo two levels
+exactly when it is modulo their least common multiple. -/
+theorem Gamma_lcm_eq_inf (a b : ℕ) : Gamma (Nat.lcm a b) = Gamma a ⊓ Gamma b := by
+  refine le_antisymm (le_inf (Gamma_le_Gamma_of_dvd (Nat.dvd_lcm_left a b))
+    (Gamma_le_Gamma_of_dvd (Nat.dvd_lcm_right a b))) fun γ hγ ↦ ?_
+  obtain ⟨ha, hb⟩ := Subgroup.mem_inf.mp hγ
+  rw [Gamma_mem] at ha hb ⊢
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simpa using ZMod.intCast_lcm_eq_of_eq_of_eq (y := 1) (by simpa using ha.1) (by simpa using hb.1)
+  · simpa using ZMod.intCast_lcm_eq_of_eq_of_eq (y := 0) (by simpa using ha.2.1)
+      (by simpa using hb.2.1)
+  · simpa using ZMod.intCast_lcm_eq_of_eq_of_eq (y := 0) (by simpa using ha.2.2.1)
+      (by simpa using hb.2.2.1)
+  · simpa using ZMod.intCast_lcm_eq_of_eq_of_eq (y := 1) (by simpa using ha.2.2.2)
+      (by simpa using hb.2.2.2)
+
+/-- **`Γ(a b) = Γ(a) ⊓ Γ(b)` for coprime `a` and `b`**: `Gamma_lcm_eq_inf` at coprime levels. -/
+theorem Gamma_mul_eq_inf_of_coprime {a b : ℕ} (hab : Nat.Coprime a b) :
+    Gamma (a * b) = Gamma a ⊓ Gamma b := by
+  rw [← hab.lcm_eq_mul, Gamma_lcm_eq_inf]
 
 end CongruenceSubgroup

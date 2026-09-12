@@ -155,8 +155,7 @@ corresponding polarization coordinate. -/
     · rw [Matrix.toLinAlgEquiv_self]
       simp only [typeDDiagonalMatrix_apply, ite_smul, zero_smul, Finset.sum_ite_eq',
         Finset.mem_univ, ↓reduceIte, typeDDiagonalValue_inr, typeDBasis_inr, neg_smul]
-      rw [P.polar_W'_eq_zero, zero_smul, zero_sub, P.polar_dualVector, neg_inj]
-      rw [Pi.single_apply]
+      rw [P.polar_W'_eq_zero, zero_smul, zero_sub, P.polar_dualVector, neg_inj, Pi.single_apply]
       split <;> simp_all [eq_comm]
   rw [key]
   exact Subtype.ext (P.diagonalBivector_def b i).symm

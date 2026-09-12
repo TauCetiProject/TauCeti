@@ -52,37 +52,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 universe u
 
-section Decomposition
-
-variable {K : Type*} [Field K]
-
-/-- Every square matrix is the sum of a trace-zero matrix and a scalar matrix, as soon as the rank
-is invertible in `K`. This is the elementwise form of the existing centre/derived-ideal complement;
-the separate rank-zero branch is why the hypothesis is an implication rather than invertibility of
-the cardinality of an empty index type. -/
-private theorem exists_sl_add_smul_one_eq {n : ℕ} (hn : n ≠ 0 → (n : K) ≠ 0)
-    (A : Matrix (Fin n) (Fin n) K) :
-    ∃ (X : LieAlgebra.SpecialLinear.sl (Fin n) K) (r : K),
-      (X : Matrix (Fin n) (Fin n) K) + r • 1 = A := by
-  cases n with
-  | zero =>
-      exact ⟨0, 0, Subsingleton.elim _ _⟩
-  | succ n =>
-      have hcard : (Fintype.card (Fin (n + 1)) : K) ≠ 0 := by
-        rw [Fintype.card_fin]
-        exact hn (Nat.succ_ne_zero n)
-      let _ : Invertible (Fintype.card (Fin (n + 1)) : K) :=
-        invertibleOfNonzero hcard
-      obtain ⟨Z, X, hZ, hX, hZX⟩ := Submodule.codisjoint_iff_exists_add_eq.mp
-        (isCompl_center_derivedSeries_one_matrix K (Fin (n + 1))).codisjoint A
-      obtain ⟨r, rfl⟩ := mem_center_matrix_iff.mp hZ
-      have hXsl : X ∈ LieAlgebra.SpecialLinear.sl (Fin (n + 1)) K := by
-        rw [← derivedSeries_one_toLieSubalgebra_eq_sl K (Fin (n + 1))]
-        exact hX
-      exact ⟨⟨X, hXsl⟩, r, (add_comm X (r • 1)).trans hZX⟩
-
-end Decomposition
-
 section Restriction
 
 variable {K : Type*} [Field K]
@@ -96,7 +65,12 @@ private theorem sup_center_eq_top (hn : n ≠ 0 → (n : K) ≠ 0) :
       (LieAlgebra.center K (Matrix (Fin n) (Fin n) K)).toSubmodule = ⊤ := by
   apply top_unique
   intro A _
-  obtain ⟨X, r, hA⟩ := exists_sl_add_smul_one_eq hn A
+  obtain ⟨X, r, hA⟩ := exists_sl_add_smul_one_eq (n := Fin n)
+    (fun (h : Nonempty (Fin n)) ↦ by
+      let _ := h
+      rw [Fintype.card_fin, isUnit_iff_ne_zero]
+      exact hn (by simpa only [Fintype.card_fin] using
+        (Fintype.card_ne_zero : Fintype.card (Fin n) ≠ 0))) A
   refine Submodule.mem_sup.mpr ⟨X, X.property, r • 1, ?_, hA⟩
   rw [LieSubmodule.mem_toSubmodule]
   exact mem_center_matrix_iff.mpr ⟨r, rfl⟩
@@ -166,7 +140,8 @@ theorem gl_equiv_of_sl_equiv_of_central_scalar (c : K)
   -- The anonymous constructor exposes its `toFun` only after the bundled linear equivalence is
   -- unfolded; the restricted `sl n` action is then definitionally the ambient matrix action.
   change e ⁅A, m⁆ = ⁅A, e m⁆
-  obtain ⟨X, r, hA⟩ := exists_sl_add_smul_one_eq (fun hn => Nat.cast_ne_zero.mpr hn) A
+  obtain ⟨X, r, hA⟩ := exists_sl_add_smul_one_eq (n := Fin n)
+    (fun _ => isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)) A
   have hXaction :
       e ⁅(X : Matrix (Fin n) (Fin n) K), m⁆ = ⁅(X : Matrix (Fin n) (Fin n) K), e m⁆ := by
     simpa only [LieSubalgebra.coe_bracket_of_module, LieModuleEquiv.coe_toLieModuleHom]

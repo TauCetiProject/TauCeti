@@ -147,4 +147,16 @@ theorem ncard_setOf_map_frobeniusAlgHom_eq_self : {P : (W.baseChange L).toAffine
   rw [hset]
   exact Set.ncard_range_of_injective (Affine.Point.map_injective _)
 
+/-- **The induced map on points commutes with the `q`-power map.** Raising the coordinates to the
+`#K`-th power and then applying a `K`-algebra homomorphism gives the same point as applying the
+homomorphism first. -/
+@[simp]
+theorem map_frobeniusAlgHom_comm {Ω : Type*} [Field Ω] [DecidableEq Ω] [Algebra K Ω]
+    (σ : L →ₐ[K] Ω) (P : (W.baseChange L).toAffine.Point) :
+    Affine.Point.map (W' := W) σ
+        (Affine.Point.map (W' := W) (FiniteField.frobeniusAlgHom K L) P) =
+      Affine.Point.map (W' := W) (FiniteField.frobeniusAlgHom K Ω)
+        (Affine.Point.map (W' := W) σ P) := by
+  rw [Affine.Point.map_map, Affine.Point.map_map, AlgHom.comp_frobeniusAlgHom]
+
 end WeierstrassCurve.Affine.Point

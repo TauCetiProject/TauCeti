@@ -25,10 +25,13 @@ contribution.
 
 ## Main definitions
 
+* `TauCeti.DenseGraphLimits.blockAverage` is the matrix of rectangle averages;
 * `TauCeti.DenseGraphLimits.stepGraphonAvg` is the block-average step graphon.
 
 ## Main results
 
+* `TauCeti.DenseGraphLimits.stepGraphonAvg_def` identifies it as the step graphon of
+  `blockAverage`;
 * `TauCeti.DenseGraphLimits.stepGraphonAvg_apply` is its pointwise block formula;
 * `TauCeti.DenseGraphLimits.stepGraphonAvg_apply_of_measure_eq_zero_left` and
   `TauCeti.DenseGraphLimits.stepGraphonAvg_apply_of_measure_eq_zero_right` record the null-cell
@@ -66,8 +69,8 @@ section BlockAverage
 variable (P : Finpartition (Set.univ : Set Ω)) (W : Graphon Ω μ)
 
 /-- The average of a graphon over one rectangle of a finite partition, regarded as a point of
-`[0, 1]`. -/
-private def blockAverage (p q : P.parts) : Set.Icc (0 : ℝ) 1 :=
+`[0, 1]`.  This is the canonical block matrix of `stepGraphonAvg`. -/
+def blockAverage (p q : P.parts) : Set.Icc (0 : ℝ) 1 :=
   ⟨⨍ z in (p : Set Ω) ×ˢ (q : Set Ω), W z.1 z.2 ∂(μ.prod μ),
     average_nonneg fun z => W.nonneg z.1 z.2,
     by
@@ -90,7 +93,7 @@ private def blockAverage (p q : P.parts) : Set.Icc (0 : ℝ) 1 :=
       linarith⟩
 
 /-- Rectangle averages of a symmetric graphon are symmetric in the two partition parts. -/
-private theorem blockAverage_comm (p q : P.parts) :
+theorem blockAverage_comm (p q : P.parts) :
     blockAverage P W p q = blockAverage P W q p := by
   apply Subtype.ext
   simp only [blockAverage]
@@ -99,6 +102,12 @@ private theorem blockAverage_comm (p q : P.parts) :
   congr 1
   simpa only [SymmKernel.rectIntegral_def, Graphon.coe_toSymmKernel] using
     W.toSymmKernel.rectIntegral_comm μ (p : Set Ω) (q : Set Ω)
+
+/-- The rectangle average, as a real number. -/
+@[simp]
+theorem coe_blockAverage (p q : P.parts) :
+    (blockAverage P W p q : ℝ) = ⨍ z in (p : Set Ω) ×ˢ (q : Set Ω), W z.1 z.2 ∂(μ.prod μ) := by
+  rw [blockAverage]
 
 end BlockAverage
 
@@ -109,6 +118,16 @@ value is zero when either side of the rectangle has measure zero. -/
 def stepGraphonAvg (P : Finpartition (Set.univ : Set Ω))
     (hP : ∀ p ∈ P.parts, MeasurableSet p) (W : Graphon Ω μ) : Graphon Ω μ :=
   stepGraphon (μ := μ) P hP (blockAverage P W) (blockAverage_comm P W)
+
+/-- The block-average step graphon is the step graphon of the rectangle averages.
+
+`stepGraphonAvg` is a definition whose body is not exposed outside this module, so this is the only
+way a downstream file can name its block matrix. -/
+theorem stepGraphonAvg_def (P : Finpartition (Set.univ : Set Ω))
+    (hP : ∀ p ∈ P.parts, MeasurableSet p) (W : Graphon Ω μ) :
+    stepGraphonAvg (μ := μ) P hP W =
+      stepGraphon (μ := μ) P hP (blockAverage P W) (blockAverage_comm P W) := by
+  rw [stepGraphonAvg]
 
 /-- The block-average step graphon takes the average of `W` over its containing partition
 rectangle. -/

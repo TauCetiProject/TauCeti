@@ -29,11 +29,14 @@ a typeclass diamond.
 
 ## Main results
 
-* `WeierstrassCurve.Affine.CoordinateRing.algHom_ext`: two pullbacks agreeing on the two
-  coordinates are equal.
+* `TauCeti.CoordinatePullback.mapsInfinity_iff`: pointedness says exactly that the source
+  coordinate ring is integral over the target acting through the pullback.
+* `TauCeti.CoordinatePullback.mapsInfinity_id`: the integrality witness for the identity pullback,
+  which with `mapsInfinity_iff` is what makes `TauCeti.Isogeny.id` an isogeny.
 
 The coordinate-ring universal property used to build and move pullbacks is stated at its natural
-generality in `Affine/Eval.lean`. `Isogeny/MulByInt/Basic.lean` makes `[n]` from the
+generality in `Affine/Eval.lean`, as `WeierstrassCurve.Affine.CoordinateRing.algHom_ext`.
+`Isogeny/MulByInt/Basic.lean` makes `[n]` from the
 division-polynomial point, and `Isogeny/BaseChange.lean` carries a pullback along a change of base
 field by carrying its point. The identity and Frobenius pullbacks instead come directly from their
 underlying ring maps.

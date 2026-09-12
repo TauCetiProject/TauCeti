@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Extension
 public import TauCeti.MeasureTheory.Function.Lp.Translation
+import Mathlib.MeasureTheory.Group.Integral
 
 /-!
 # The `Lᵖ` translation estimate on `W^{1,p}_0`
@@ -68,6 +69,8 @@ estimate give the fixed-bounded-support and translation inputs for Fréchet--Kol
   zero extensions of a gradient-bounded family have uniformly small translation increments.
 * `TauCeti.W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_norm_le`:
   zero extensions of a norm-bounded family have uniformly small translation increments.
+* `TauCeti.Sobolev1JetLp.translateLp_mem_w1pSubmodule`: translation preserves `W^{1,p}(ℝⁿ)`,
+  since on the whole space the weak-derivative identities are translation invariant.
 
 ## References
 
@@ -235,6 +238,66 @@ theorem W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_no
     (C := C) (epsilon := epsilon) ?_ hepsilon
   intro u hu
   exact (W1p.norm_gradient_le (u : W1p mu Omega p)).trans (hS u hu)
+
+/-! ### Translation preserves `W^{1,p}(ℝⁿ)` -/
+
+section TranslateJet
+
+/-- The whole-space restriction of an additive Haar measure is the measure itself. -/
+local instance : (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
+  rw [Opens.coe_top, Measure.restrict_univ]
+  infer_instance
+
+/-- The translate `y ↦ φ (y + h)` of a whole-space test function. -/
+private def translateTestFunction (phi : 𝓓((⊤ : Opens E), ℝ)) (h : E) :
+    𝓓((⊤ : Opens E), ℝ) :=
+  ⟨fun y => phi (y + h), phi.contDiff.comp (contDiff_id.add contDiff_const),
+    phi.hasCompactSupport.comp_homeomorph (Homeomorph.addRight h), subset_univ _⟩
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private theorem translateTestFunction_apply (phi : 𝓓((⊤ : Opens E), ℝ)) (h y : E) :
+    translateTestFunction phi h y = phi (y + h) :=
+  rfl
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private theorem lineDeriv_translateTestFunction (phi : 𝓓((⊤ : Opens E), ℝ)) (h y v : E) :
+    lineDeriv ℝ (translateTestFunction phi h : E → ℝ) y v =
+      lineDeriv ℝ (phi : E → ℝ) (y + h) v := by
+  simp only [lineDeriv, translateTestFunction_apply, add_right_comm y _ h]
+
+omit [FiniteDimensional ℝ E] in
+/-- **Translation preserves `W^{1,p}(ℝⁿ)`.**  On the whole space the weak-derivative identities
+are invariant under translation: testing the translated jet against `φ` is testing the original
+jet against the translate of `φ`. -/
+theorem Sobolev1JetLp.translateLp_mem_w1pSubmodule (h : E) {J : Sobolev1JetLp mu ⊤ p}
+    (hJ : J ∈ w1pSubmodule mu ⊤ p) :
+    (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h J ∈ w1pSubmodule mu ⊤ p := by
+  set nu := mu.restrict ((⊤ : Opens E) : Set E)
+  rw [mem_w1pSubmodule_iff] at hJ ⊢
+  intro phi v
+  let f : E → ℝ := fun y =>
+    lineDeriv ℝ (translateTestFunction phi (-h) : E → ℝ) y v * Sobolev1JetLp.value J y +
+      translateTestFunction phi (-h) y * Sobolev1JetLp.candidateWeakFDeriv J y v
+  have hq : Filter.Tendsto (· + h) (ae nu) (ae nu) :=
+    (measurePreserving_add_right nu h).quasiMeasurePreserving.tendsto_ae
+  calc
+    ∫ x in (⊤ : Opens E), (lineDeriv ℝ (phi : E → ℝ) x v *
+        Sobolev1JetLp.value (nu.translateLp p h J) x +
+        phi x * Sobolev1JetLp.candidateWeakFDeriv (nu.translateLp p h J) x v) ∂mu
+        = ∫ x in (⊤ : Opens E), f (x + h) ∂mu := by
+      apply integral_congr_ae
+      filter_upwards [Sobolev1JetLp.value_apply_ae (nu.translateLp p h J),
+        Sobolev1JetLp.gradient_apply_ae (nu.translateLp p h J),
+        Measure.coeFn_translateLp (mu := nu) h J,
+        hq.eventually (Sobolev1JetLp.value_apply_ae J),
+        hq.eventually (Sobolev1JetLp.gradient_apply_ae J)] with x hvK hgK hK hvJ hgJ
+      simp only [f, Sobolev1JetLp.candidateWeakFDeriv_apply, lineDeriv_translateTestFunction,
+        translateTestFunction_apply, add_neg_cancel_right, hvK, hgK, hK, Function.comp_apply,
+        hvJ, hgJ]
+    _ = ∫ x in (⊤ : Opens E), f x ∂mu := integral_add_right_eq_self f h
+    _ = 0 := hJ (translateTestFunction phi (-h)) v
+
+end TranslateJet
 
 end Sobolev
 

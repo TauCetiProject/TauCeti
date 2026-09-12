@@ -148,6 +148,30 @@ theorem stabilizer_eq_decompositionSubgroup :
   rw [MulAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff, ← integers_smul]
   exact ⟨fun h ↦ by rw [h], fun h ↦ integers_injective h⟩
 
+section Transport
+
+variable (F) (g : P.integers.decompositionSubgroup F)
+
+/-- An automorphism fixing `P` leaves the valuation at `P` unchanged. -/
+@[simp]
+theorem valuation_decompositionSubgroup_apply (x : F') :
+    P.valuation ((g : F' ≃ₐ[F] F') x) = P.valuation x := by
+  have h : (g : F' ≃ₐ[F] F') • P = P := by
+    have hg : (g : F' ≃ₐ[F] F') ∈ MulAction.stabilizer (F' ≃ₐ[F] F') P := by
+      rw [stabilizer_eq_decompositionSubgroup]
+      exact g.2
+    exact hg
+  calc P.valuation ((g : F' ≃ₐ[F] F') x)
+      = ((g : F' ≃ₐ[F] F') • P).valuation ((g : F' ≃ₐ[F] F') x) := by rw [h]
+    _ = P.valuation x := valuation_smul_apply _ _ _
+
+/-- An automorphism fixing `P` preserves the valuation ring of `P`. -/
+theorem mem_integers_decompositionSubgroup_apply {x : F'} :
+    (g : F' ≃ₐ[F] F') x ∈ P.integers ↔ x ∈ P.integers := by
+  simp only [mem_integers_iff, valuation_decompositionSubgroup_apply]
+
+end Transport
+
 /-- Two equal places have the same valuation ring; the isomorphism between the two carriers is
 the identity on representatives. -/
 private def integersEquivOfEq {P Q : Place k F} (h : P = Q) : P.integers ≃+* Q.integers where

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.Points
-public import TauCeti.Algebra.CharP.FrobeniusFixed
+public import TauCeti.Algebra.CharP.Frobenius.Fixed
 public import TauCeti.GroupTheory.FixedSubgroup
 
 /-!

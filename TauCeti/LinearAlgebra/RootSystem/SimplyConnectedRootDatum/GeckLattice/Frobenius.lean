@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
+public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.GroupTheory.FixedSubgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.PointsFunctor
 
@@ -169,12 +170,8 @@ theorem geckFrobenius_geckRootSubgroupPoints (i : Fin t.rank ⊕ Fin t.rank)
 theorem geckFrobenius_geckWeightTorusPoints (s : Fin t.rank → Aˣ) :
     t.geckFrobenius ht p k A (t.geckWeightTorusPoints ht A s) =
       t.geckWeightTorusPoints ht A (s ^ p ^ k) := by
-  have hs : (fun j => Units.map (iterateFrobenius A p k : A →* A) (s j)) = s ^ p ^ k := by
-    funext j
-    exact Units.ext (by
-      rw [Units.coe_map, MonoidHom.coe_coe, iterateFrobenius_def, Pi.pow_apply,
-        Units.val_pow_eq_pow_val])
-  rw [geckFrobenius, t.geckPointsMap_geckWeightTorusPoints ht (iterateFrobenius A p k) s, hs]
+  rw [geckFrobenius, t.geckPointsMap_geckWeightTorusPoints ht (iterateFrobenius A p k) s,
+    map_iterateFrobenius_units_eq_pow]
 
 /-- **The Frobenius-fixed points of the pinned Geck carrier are its points over the
 Frobenius-fixed subring.** For `p` prime, `0 < k`, `A` an algebraic closure of `ZMod p` and

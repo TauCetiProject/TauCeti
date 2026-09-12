@@ -55,6 +55,8 @@ rational function field that sits *inside* `R(W)` as an intermediate field.
   acting on `F(W)`.
 * `WeierstrassCurve.Affine.relfinrank_map_ratFuncRange_fieldRange`: mapping the pair
   `F(x) ⊆ F(W)` along a function-field embedding preserves its relative degree two.
+* `WeierstrassCurve.Affine.finrank_map_ratFuncRange`: consequently the image of `F(x)` sits twice
+  the degree of the image of `F(W)` below the target.
 
 Exporting the algebra instance is safe here for the reason Mathlib withholds it in general: the
 collision is with the identity structure on `FractionRing R[X]`, and `R(W)` is a *quadratic*
@@ -227,6 +229,18 @@ theorem relfinrank_map_ratFuncRange_fieldRange {M : Type*} [Field M] [Algebra F 
     IntermediateField.relfinrank ((ratFuncRange W).map f) f.fieldRange = 2 := by
   rw [AlgHom.fieldRange_eq_map, IntermediateField.relfinrank_map_map,
     IntermediateField.relfinrank_top_right, finrank_ratFuncRange]
+
+/-- **The image of `F(x)` sits twice the degree of the image of `F(W)` below the target**, the
+bottom step of the tower having relative degree `2`. It converts a degree over the image of `F(W)`
+into one over a rational subfield. -/
+@[simp]
+theorem finrank_map_ratFuncRange {M : Type*} [Field M] [Algebra F M]
+    (f : W.FunctionField →ₐ[F] M) :
+    Module.finrank ((ratFuncRange W).map f) M = 2 * Module.finrank f.fieldRange M := by
+  have hle : (ratFuncRange W).map f ≤ f.fieldRange := by
+    rw [AlgHom.fieldRange_eq_map]
+    exact IntermediateField.map_mono _ le_top
+  rw [← IntermediateField.relfinrank_mul_finrank_top hle, relfinrank_map_ratFuncRange_fieldRange]
 
 end Field
 

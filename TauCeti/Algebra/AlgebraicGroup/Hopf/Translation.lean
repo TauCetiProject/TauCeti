@@ -29,6 +29,8 @@ action laws, and identifies its action on the prime spectrum.
 * `TauCeti.HopfAlgebra.rightTranslationAlgEquiv_mul` and
   `TauCeti.HopfAlgebra.rightTranslationAlgHom_mul`: right translation respects the convolution
   product of points.
+* `TauCeti.HopfAlgebra.rightTranslationStabilizer`: the subgroup of points whose right
+  translation fixes a given function.
 * `TauCeti.HopfAlgebra.comap_rightTranslationAlgEquiv_augmentationPoint`: the translated counit
   point is the given point.
 * `TauCeti.HopfAlgebra.rightTranslationHomeomorph`: right translation on the prime spectrum.
@@ -226,6 +228,25 @@ theorem rightTranslationAlgHom_mul (g h : WithConv (H →ₐ[k] k)) :
 theorem rightTranslationAlgEquiv_inv (g : WithConv (H →ₐ[k] k)) :
     rightTranslationAlgEquiv g⁻¹ = (rightTranslationAlgEquiv g)⁻¹ := by
   exact map_inv (MonoidHom.mk' rightTranslationAlgEquiv rightTranslationAlgEquiv_mul) g
+
+/-- The points whose right translation fixes a given function form a subgroup. -/
+noncomputable def rightTranslationStabilizer (x : H) : Subgroup (WithConv (H →ₐ[k] k)) where
+  carrier := {g | rightTranslationAlgHom g x = x}
+  one_mem' := by simp
+  mul_mem' {g h} hg hh := by
+    simp only [Set.mem_ofPred_eq] at hg hh ⊢
+    rw [rightTranslationAlgHom_mul, AlgHom.comp_apply, hh, hg]
+  inv_mem' {g} hg := by
+    simp only [Set.mem_ofPred_eq] at hg ⊢
+    have h := DFunLike.congr_fun (rightTranslationAlgHom_mul g⁻¹ g) x
+    rw [inv_mul_cancel, rightTranslationAlgHom_one, AlgHom.id_apply, AlgHom.comp_apply, hg] at h
+    exact h.symm
+
+/-- A point lies in the stabilizer of a function exactly when its right translation fixes it. -/
+@[simp]
+theorem mem_rightTranslationStabilizer {x : H} {g : WithConv (H →ₐ[k] k)} :
+    g ∈ rightTranslationStabilizer x ↔ rightTranslationAlgHom g x = x :=
+  Iff.rfl
 
 /-- Right translation as an algebra equivalence has the expected evaluation formula. -/
 theorem rightTranslationAlgEquiv_apply (g : WithConv (H →ₐ[k] k)) (x : H) :

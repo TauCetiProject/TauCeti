@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Complex
+public import TauCeti.KnotTheory.Grid.Chain.Basic
 public import TauCeti.KnotTheory.Grid.Differential.Square.Annulus
 import TauCeti.KnotTheory.Grid.StateCardinality
 
@@ -140,8 +140,10 @@ At most two grid states are available. If the source and the target of a two-ste
 distinct they exhaust those states, so every intermediate state coincides with the source or with
 the target and its term is killed by the vanishing of the diagonal matrix coefficient. If instead
 the source and the target coincide, the term returns to its source and the annular argument
-applies. This is the first instance of the roadmap's square-zero milestone for `GC⁻`; the general
-case still needs the disjoint and overlapping juxtaposition cases. -/
+applies. Unlike the general square-zero theorem
+`GridDiagram.unblockedDifferential_comp_self_eq_zero`, which pairs juxtaposed rectangles and so
+needs characteristic two, this small-grid instance holds over every commutative coefficient
+semiring. -/
 theorem unblockedDifferential_comp_self_eq_zero_of_le_two (hn : n ≤ 2) :
     G.unblockedDifferential R ∘ₗ G.unblockedDifferential R =
       (0 : GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n) := by
