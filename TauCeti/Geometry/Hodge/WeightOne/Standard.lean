@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Hodge.WeightOne.Basic
 public import TauCeti.Geometry.Hodge.Polarization
+public import TauCeti.LinearAlgebra.Complex.SkewSwap
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 
 /-!
@@ -340,63 +341,6 @@ theorem integralFormBaseChange_riemannForm_apply (x y : ComplexSpace) :
   rw [integralFormBaseChange_riemannForm]
   simp [complexRiemannForm]
 
-private theorem snd_eq_neg_I_mul_fst_of_mem_I {x : ComplexSpace}
-    (hx : x ∈ Module.End.eigenspace
-        (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I) :
-    x.2 = -Complex.I * x.1 := by
-  rw [Module.End.mem_eigenspace_iff] at hx
-  have h := congrArg Prod.fst hx
-  calc
-    x.2 = -(-x.2) := by simp
-    _ = -(Complex.I * x.1) := congrArg Neg.neg (by
-      simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply,
-        Prod.fst, Prod.smul_fst, smul_eq_mul] using h)
-    _ = -Complex.I * x.1 := by ring
-
-private theorem snd_eq_I_mul_fst_of_mem_neg_I {x : ComplexSpace}
-    (hx : x ∈ Module.End.eigenspace
-        (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap (-Complex.I)) :
-    x.2 = Complex.I * x.1 := by
-  rw [Module.End.mem_eigenspace_iff] at hx
-  have h := congrArg Prod.fst hx
-  calc
-    x.2 = -(-x.2) := by simp
-    _ = -((-Complex.I) * x.1) := congrArg Neg.neg (by
-      simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.skewSwap_apply,
-        Prod.fst, Prod.smul_fst, smul_eq_mul] using h)
-    _ = Complex.I * x.1 := by ring
-
-private theorem positive_coordinate_I (z : ℂ) (hz : z ≠ 0) :
-    0 < Complex.I *
-      ((-Complex.I * z) * starRingEnd ℂ z -
-        z * starRingEnd ℂ (-Complex.I * z)) := by
-  have hcalc : Complex.I *
-      ((-Complex.I * z) * starRingEnd ℂ z -
-        z * starRingEnd ℂ (-Complex.I * z)) = (2 * Complex.normSq z : ℝ) := by
-    rw [map_mul, map_neg]
-    norm_num
-    rw [Complex.normSq_eq_conj_mul_self]
-    ring_nf
-    rw [Complex.I_sq]
-    ring
-  rw [hcalc]
-  exact Complex.zero_lt_real.mpr (mul_pos (by norm_num) (Complex.normSq_pos.mpr hz))
-
-private theorem positive_coordinate_neg_I (z : ℂ) (hz : z ≠ 0) :
-    0 < (-Complex.I) *
-      ((Complex.I * z) * starRingEnd ℂ z -
-        z * starRingEnd ℂ (Complex.I * z)) := by
-  have heq : (-Complex.I) *
-      ((Complex.I * z) * starRingEnd ℂ z -
-        z * starRingEnd ℂ (Complex.I * z)) = Complex.I *
-      ((-Complex.I * z) * starRingEnd ℂ z -
-        z * starRingEnd ℂ (-Complex.I * z)) := by
-    rw [map_mul]
-    norm_num
-    ring
-  rw [heq]
-  exact positive_coordinate_I z hz
-
 /-- The standard alternating form satisfies the Hodge–Riemann relations for the standard
 weight-one Hodge structure. -/
 theorem isPolarization_riemannForm :
@@ -425,7 +369,8 @@ theorem isPolarization_riemannForm :
             (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap Complex.I := by
           simpa [hodgeStructure_F] using hy
         rw [integralFormBaseChange_riemannForm_apply,
-          snd_eq_neg_I_mul_fst_of_mem_I hxI, snd_eq_neg_I_mul_fst_of_mem_I hyI]
+          skewSwap_snd_eq_neg_I_mul_fst_of_mem_I hxI,
+          skewSwap_snd_eq_neg_I_mul_fst_of_mem_I hyI]
         ring
       · have hxzero : x = 0 := by
           have : x ∈ (⊥ : Submodule ℂ ComplexSpace) := by
@@ -438,25 +383,25 @@ theorem isPolarization_riemannForm :
     by_cases hpone : p = 1
     · subst p
       rw [hodgeStructure_piece_one] at hx
-      have hrel := snd_eq_neg_I_mul_fst_of_mem_I hx
+      have hrel := skewSwap_snd_eq_neg_I_mul_fst_of_mem_I hx
       have hfst : x.1 ≠ 0 := by
         intro hzero
         apply hx0
         apply Prod.ext <;> simp [hzero, hrel]
       rw [integralFormBaseChange_riemannForm_apply, latticeConj_apply, hrel]
       norm_num
-      simpa using positive_coordinate_I x.1 hfst
+      simpa using positive_I_mul_coordinate_form x.1 hfst
     by_cases hpzero : p = 0
     · subst p
       rw [hodgeStructure_piece_zero] at hx
-      have hrel := snd_eq_I_mul_fst_of_mem_neg_I hx
+      have hrel := skewSwap_snd_eq_I_mul_fst_of_mem_neg_I hx
       have hfst : x.1 ≠ 0 := by
         intro hzero
         apply hx0
         apply Prod.ext <;> simp [hzero, hrel]
       rw [integralFormBaseChange_riemannForm_apply, latticeConj_apply, hrel]
       norm_num
-      simpa using positive_coordinate_neg_I x.1 hfst
+      simpa using positive_neg_I_mul_coordinate_form x.1 hfst
     · rw [hodgeStructure_piece_eq_bot hpzero hpone, Submodule.mem_bot] at hx
       exact (hx0 hx).elim
 
