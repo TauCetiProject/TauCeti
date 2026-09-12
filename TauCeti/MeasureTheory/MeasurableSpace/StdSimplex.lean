@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
 # The measurable structure of the standard simplex
@@ -25,8 +24,8 @@ Mathlib's topology on the simplex is stated over a ring and does not reach coeff
 
 * `Convexity.StdSimplex.instMeasurableSpace` — the σ-algebra induced by `StdSimplex.weights`;
 * `Convexity.StdSimplex.measurable_toFun_comp_weights` — the weight vector is measurable;
-* `Convexity.StdSimplex.measurable_iff_weights` — measurability into the simplex is measurability
-  of the weight vector.
+* `Convexity.StdSimplex.measurable_iff_toFun_comp_weights` — measurability into the simplex is
+  measurability of the weight vector.
 -/
 
 public section
@@ -47,7 +46,7 @@ theorem measurable_toFun_comp_weights : Measurable fun p : StdSimplex R ι => (p
   comap_measurable _
 
 /-- A map into the simplex is measurable iff its weight-vector map is. -/
-theorem measurable_iff_weights {δ : Type*} [MeasurableSpace δ] {f : δ → StdSimplex R ι} :
+theorem measurable_iff_toFun_comp_weights {δ : Type*} [MeasurableSpace δ] {f : δ → StdSimplex R ι} :
     Measurable f ↔ Measurable fun x => ((f x).weights : ι → R) :=
   measurable_comap_iff
 
