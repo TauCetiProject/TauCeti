@@ -177,17 +177,15 @@ section Prod
 
 variable {V' : Type*} [AddCommGroup V'] [Module ℝ V'] {τ : PointedCone ℝ V'}
 
-/-- A ray of a product of cones is spanned by a single point, so its two projections are the cones
-spanned by the two coordinates of that point. -/
-private lemma exists_eq_hull_and_map_eq_hull
-    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
-    (G : ToricRay (σ.prod τ)) :
+/-- A salient ray of a product of cones is spanned by a single point, so its two projections are
+the cones spanned by the two coordinates of that point. -/
+private lemma exists_eq_hull_and_map_eq_hull (G : ToricRay (σ.prod τ))
+    (hG : (G.toPointedCone : ConvexCone ℝ (V × V')).Salient) :
     ∃ p : V × V', p ≠ 0 ∧ G.toPointedCone = PointedCone.hull ℝ {p} ∧
       PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone = PointedCone.hull ℝ {p.1} ∧
       PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = PointedCone.hull ℝ {p.2} := by
   obtain ⟨p, hpG, hp0⟩ := G.exists_mem_ne_zero
-  have hGeq : G.toPointedCone = PointedCone.hull ℝ {p} :=
-    G.eq_hull_singleton (hστ.anti fun _ hx ↦ G.1.isFaceOf.le hx) hpG hp0
+  have hGeq : G.toPointedCone = PointedCone.hull ℝ {p} := G.eq_hull_singleton hG hpG hp0
   have hmapfst : PointedCone.map (LinearMap.fst ℝ V V') (PointedCone.hull ℝ {p})
       = PointedCone.hull ℝ ((LinearMap.fst ℝ V V') '' {p}) := Submodule.map_span _ _
   have hmapsnd : PointedCone.map (LinearMap.snd ℝ V V') (PointedCone.hull ℝ {p})
@@ -196,14 +194,13 @@ private lemma exists_eq_hull_and_map_eq_hull
   · rw [hGeq, hmapfst, Set.image_singleton]; rfl
   · rw [hGeq, hmapsnd, Set.image_singleton]; rfl
 
-/-- A ray of a product of salient cones cannot project nontrivially to both factors: if its
+/-- A salient ray of a product of cones cannot project nontrivially to both factors: if its
 projection to the second factor is nonzero, then its projection to the first factor is zero. -/
-theorem map_fst_eq_bot_of_map_snd_ne_bot
-    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
-    (G : ToricRay (σ.prod τ))
+theorem map_fst_eq_bot_of_map_snd_ne_bot (G : ToricRay (σ.prod τ))
+    (hG : (G.toPointedCone : ConvexCone ℝ (V × V')).Salient)
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone ≠ ⊥) :
     PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone = ⊥ := by
-  obtain ⟨p, -, hGeq, hfst, hsnd⟩ := exists_eq_hull_and_map_eq_hull hστ G
+  obtain ⟨p, -, hGeq, hfst, hsnd⟩ := exists_eq_hull_and_map_eq_hull G hG
   have hp2 : p.2 ≠ 0 := fun hp2 ↦ h (by rw [hsnd, hp2]; simp)
   have hpG : p ∈ G.toPointedCone := by
     rw [hGeq]; exact PointedCone.subset_hull (Set.mem_singleton p)
@@ -224,80 +221,72 @@ theorem map_fst_eq_bot_of_map_snd_ne_bot
   rw [hfst, hp1]
   simp
 
-/-- The projection to the first factor of a ray of a product of salient cones whose projection to
+/-- The projection to the first factor of a salient ray of a product of cones whose projection to
 the second factor is the zero cone is one-dimensional, hence a ray of that factor. -/
-theorem finrank_span_map_fst_eq_one
-    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
-    (G : ToricRay (σ.prod τ))
+theorem finrank_span_map_fst_eq_one (G : ToricRay (σ.prod τ))
+    (hG : (G.toPointedCone : ConvexCone ℝ (V × V')).Salient)
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥) :
     Module.finrank ℝ (Submodule.span ℝ
       ((PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone : PointedCone ℝ V) : Set V))
       = 1 := by
-  obtain ⟨p, hp0, -, hfst, hsnd⟩ := exists_eq_hull_and_map_eq_hull hστ G
+  obtain ⟨p, hp0, -, hfst, hsnd⟩ := exists_eq_hull_and_map_eq_hull G hG
   have hp2 : p.2 = 0 := by simpa using hsnd.symm.trans h
   rw [hfst]
   exact PointedCone.finrank_span_coe_hull_singleton fun hp1 ↦ hp0 (Prod.ext hp1 hp2)
 
-/-- The projection to the second factor of a ray of a product of salient cones whose projection to
+/-- The projection to the second factor of a salient ray of a product of cones whose projection to
 the second factor is not the zero cone is one-dimensional, hence a ray of that factor. -/
-theorem finrank_span_map_snd_eq_one
-    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
-    (G : ToricRay (σ.prod τ))
+theorem finrank_span_map_snd_eq_one (G : ToricRay (σ.prod τ))
+    (hG : (G.toPointedCone : ConvexCone ℝ (V × V')).Salient)
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone ≠ ⊥) :
     Module.finrank ℝ (Submodule.span ℝ
       ((PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone : PointedCone ℝ V') : Set V'))
       = 1 := by
-  obtain ⟨p, hp0, -, hfst, hsnd⟩ := exists_eq_hull_and_map_eq_hull hστ G
+  obtain ⟨p, hp0, -, hfst, hsnd⟩ := exists_eq_hull_and_map_eq_hull G hG
   have hp1 : p.1 = 0 := by
-    simpa using hfst.symm.trans (map_fst_eq_bot_of_map_snd_ne_bot hστ G h)
+    simpa using hfst.symm.trans (map_fst_eq_bot_of_map_snd_ne_bot G hG h)
   rw [hsnd]
   exact PointedCone.finrank_span_coe_hull_singleton fun hp2 ↦ hp0 (Prod.ext hp1 hp2)
 
-/-- The ray of the first factor underlying a ray of a product of salient cones whose projection to
+/-- The ray of the first factor underlying a salient ray of a product of cones whose projection to
 the second factor is the zero cone. -/
-noncomputable def prodRayFst
-    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
-    (G : ToricRay (σ.prod τ))
+noncomputable def prodRayFst (G : ToricRay (σ.prod τ))
+    (hG : (G.toPointedCone : ConvexCone ℝ (V × V')).Salient)
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥) : ToricRay σ :=
-  ⟨⟨_, G.1.isFaceOf.fst⟩, finrank_span_map_fst_eq_one hστ G h⟩
+  ⟨⟨_, G.1.isFaceOf.fst⟩, finrank_span_map_fst_eq_one G hG h⟩
 
 @[simp]
-theorem toPointedCone_prodRayFst
-    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
-    (G : ToricRay (σ.prod τ))
+theorem toPointedCone_prodRayFst (G : ToricRay (σ.prod τ))
+    (hG : (G.toPointedCone : ConvexCone ℝ (V × V')).Salient)
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥) :
-    (prodRayFst hστ G h).toPointedCone =
+    (prodRayFst G hG h).toPointedCone =
       PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone := (rfl)
 
 @[simp]
-theorem mem_prodRayFst
-    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
-    (G : ToricRay (σ.prod τ))
+theorem mem_prodRayFst (G : ToricRay (σ.prod τ))
+    (hG : (G.toPointedCone : ConvexCone ℝ (V × V')).Salient)
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥) {x : V} :
-    x ∈ prodRayFst hστ G h ↔ x ∈ PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone := (Iff.rfl)
+    x ∈ prodRayFst G hG h ↔ x ∈ PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone := (Iff.rfl)
 
-/-- The ray of the second factor underlying a ray of a product of salient cones whose projection to
-the second factor is not the zero cone. -/
-noncomputable def prodRaySnd
-    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
-    (G : ToricRay (σ.prod τ))
+/-- The ray of the second factor underlying a salient ray of a product of cones whose projection
+to the second factor is not the zero cone. -/
+noncomputable def prodRaySnd (G : ToricRay (σ.prod τ))
+    (hG : (G.toPointedCone : ConvexCone ℝ (V × V')).Salient)
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone ≠ ⊥) : ToricRay τ :=
-  ⟨⟨_, G.1.isFaceOf.snd⟩, finrank_span_map_snd_eq_one hστ G h⟩
+  ⟨⟨_, G.1.isFaceOf.snd⟩, finrank_span_map_snd_eq_one G hG h⟩
 
 @[simp]
-theorem toPointedCone_prodRaySnd
-    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
-    (G : ToricRay (σ.prod τ))
+theorem toPointedCone_prodRaySnd (G : ToricRay (σ.prod τ))
+    (hG : (G.toPointedCone : ConvexCone ℝ (V × V')).Salient)
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone ≠ ⊥) :
-    (prodRaySnd hστ G h).toPointedCone =
+    (prodRaySnd G hG h).toPointedCone =
       PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone := (rfl)
 
 @[simp]
-theorem mem_prodRaySnd
-    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
-    (G : ToricRay (σ.prod τ))
+theorem mem_prodRaySnd (G : ToricRay (σ.prod τ))
+    (hG : (G.toPointedCone : ConvexCone ℝ (V × V')).Salient)
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone ≠ ⊥) {x : V'} :
-    x ∈ prodRaySnd hστ G h ↔ x ∈ PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone := (Iff.rfl)
+    x ∈ prodRaySnd G hG h ↔ x ∈ PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone := (Iff.rfl)
 
 /-- A ray of a product of cones is determined by its two projections. -/
 theorem prod_ext {G H : ToricRay (σ.prod τ)}
@@ -375,7 +364,8 @@ cone. The two cases of the forward map are computed by
 noncomputable def prodSplit (hσ : (σ : ConvexCone ℝ V).Salient)
     (hτ : (τ : ConvexCone ℝ V').Salient) : ToricRay (σ.prod τ) ≃ ToricRay σ ⊕ ToricRay τ where
   toFun G := if h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥ then
-    Sum.inl (prodRayFst (hσ.prod hτ) G h) else Sum.inr (prodRaySnd (hσ.prod hτ) G h)
+    Sum.inl (prodRayFst G ((hσ.prod hτ).anti fun _ hx ↦ G.1.isFaceOf.le hx) h)
+    else Sum.inr (prodRaySnd G ((hσ.prod hτ).anti fun _ hx ↦ G.1.isFaceOf.le hx) h)
   invFun := Sum.elim (prodInl hτ) (prodInr hσ)
   left_inv G := by
     dsimp only
@@ -386,7 +376,9 @@ noncomputable def prodSplit (hσ : (σ : ConvexCone ℝ V).Salient)
     · -- The ray is the product of the zero cone with its second projection.
       rw [dite_eq_right h, Sum.elim_inr]
       exact prod_ext ((Submodule.prod_map_fst ..).trans
-        (map_fst_eq_bot_of_map_snd_ne_bot (hσ.prod hτ) G h).symm) (Submodule.prod_map_snd ..)
+        (map_fst_eq_bot_of_map_snd_ne_bot G
+          ((hσ.prod hτ).anti fun _ hx ↦ G.1.isFaceOf.le hx) h).symm)
+        (Submodule.prod_map_snd ..)
   right_inv := by
     rintro (ρ | ρ)
     · have h : PointedCone.map (LinearMap.snd ℝ V V') (prodInl hτ ρ).toPointedCone = ⊥ :=
@@ -404,13 +396,17 @@ noncomputable def prodSplit (hσ : (σ : ConvexCone ℝ V).Salient)
 theorem prodSplit_eq_inl (hσ : (σ : ConvexCone ℝ V).Salient)
     (hτ : (τ : ConvexCone ℝ V').Salient) (G : ToricRay (σ.prod τ))
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥) :
-    prodSplit hσ hτ G = Sum.inl (prodRayFst (hσ.prod hτ) G h) := dite_eq_left h
+    prodSplit hσ hτ G =
+      Sum.inl (prodRayFst G ((hσ.prod hτ).anti fun _ hx ↦ G.1.isFaceOf.le hx) h) :=
+  dite_eq_left h
 
 @[simp]
 theorem prodSplit_eq_inr (hσ : (σ : ConvexCone ℝ V).Salient)
     (hτ : (τ : ConvexCone ℝ V').Salient) (G : ToricRay (σ.prod τ))
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone ≠ ⊥) :
-    prodSplit hσ hτ G = Sum.inr (prodRaySnd (hσ.prod hτ) G h) := dite_eq_right h
+    prodSplit hσ hτ G =
+      Sum.inr (prodRaySnd G ((hσ.prod hτ).anti fun _ hx ↦ G.1.isFaceOf.le hx) h) :=
+  dite_eq_right h
 
 @[simp]
 theorem prodSplit_symm_inl (hσ : (σ : ConvexCone ℝ V).Salient)

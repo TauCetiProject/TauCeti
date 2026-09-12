@@ -51,7 +51,7 @@ boundary coordinates, twists them by `B`, and acts on the torus coordinates by `
   as the rank of the lattice, which is the count that gives the dimensions of its mixed chart.
 * `TauCeti.Toric.IsExtendingBasis.basis_apply_eq`,
   `TauCeti.Toric.IsExtendingBasis.repr_basis_apply` and
-  `TauCeti.Toric.IsExtendingBasis.toMatrix_apply`: the ray columns of the transition matrix
+  `TauCeti.Toric.IsExtendingBasis.toMatrix_apply`: the salient ray columns of the transition matrix
   relating two extending bases.
 * `TauCeti.Toric.IsExtendingBasis.isUnit_det_toMatrix_compl` and
   `TauCeti.Toric.IsExtendingBasis.exists_isUnit_det_toMatrix_compl`: the complementary block of
@@ -238,20 +238,23 @@ namespace IsExtendingBasis
 variable {n n' : ℕ} {b : Module.Basis (Fin n) ℤ N} {b' : Module.Basis (Fin n') ℤ N}
   {r : ToricRay σ ↪ Fin n} {r' : ToricRay σ ↪ Fin n'}
 
-/-- Two integral bases extending the primitive ray generators of a salient cone carry the same
-vector at the indices of a given ray: both are primitive generators of that ray, and a salient ray
-in an integral lattice has only one. -/
-theorem basis_apply_eq (hi : IsIntegralLattice i) (hσ : (σ : ConvexCone ℝ V).Salient)
-    (hb : IsExtendingBasis i b r) (hb' : IsExtendingBasis i b' r') (ρ : ToricRay σ) :
+/-- Two integral bases extending the primitive ray generators of a cone carry the same vector at
+the indices of a given salient ray: both are primitive generators of that ray, and a salient ray in
+an integral lattice has only one. Only the ray itself has to be salient; for a ray of a salient
+ambient cone this follows from `ConvexCone.Salient.anti` along the face inclusion. -/
+theorem basis_apply_eq (hi : IsIntegralLattice i) (hb : IsExtendingBasis i b r)
+    (hb' : IsExtendingBasis i b' r') (ρ : ToricRay σ)
+    (hρ : (ρ.toPointedCone : ConvexCone ℝ V).Salient) :
     b (r ρ) = b' (r' ρ) :=
-  (hb.isPrimitiveGenerator_apply ρ).unique hi
-    (hσ.anti fun _ hx ↦ ρ.1.isFaceOf.le hx) (hb'.isPrimitiveGenerator_apply ρ)
+  (hb.isPrimitiveGenerator_apply ρ).unique hi hρ (hb'.isPrimitiveGenerator_apply ρ)
 
-/-- The ray columns of the transition matrix between two extending bases are standard columns. -/
-theorem repr_basis_apply (hi : IsIntegralLattice i) (hσ : (σ : ConvexCone ℝ V).Salient)
-    (hb : IsExtendingBasis i b r) (hb' : IsExtendingBasis i b' r') (ρ : ToricRay σ) :
+/-- The salient ray columns of the transition matrix between two extending bases are standard
+columns. -/
+theorem repr_basis_apply (hi : IsIntegralLattice i) (hb : IsExtendingBasis i b r)
+    (hb' : IsExtendingBasis i b' r') (ρ : ToricRay σ)
+    (hρ : (ρ.toPointedCone : ConvexCone ℝ V).Salient) :
     b'.repr (b (r ρ)) = Finsupp.single (r' ρ) 1 := by
-  rw [hb.basis_apply_eq hi hσ hb' ρ, Module.Basis.repr_self]
+  rw [hb.basis_apply_eq hi hb' ρ hρ, Module.Basis.repr_self]
 
 /-- The entries of a ray column of the transition matrix between two extending bases: the column of
 the index that `b` assigns to a ray carries a single `1`, in the row that `b'` assigns to that same
@@ -259,18 +262,20 @@ ray, and zeroes elsewhere. Splitting both index sets into ray and nonray indices
 `[[P, B], [0, C]]` shape of the matrix, with `P` the comparison of the two ray indexings. When both
 splittings are indexed by the rays themselves, `P` is the identity and `C` is unimodular, by
 `TauCeti.Toric.IsExtendingBasis.isUnit_det_toMatrix_compl`. -/
-theorem toMatrix_apply (hi : IsIntegralLattice i) (hσ : (σ : ConvexCone ℝ V).Salient)
-    (hb : IsExtendingBasis i b r) (hb' : IsExtendingBasis i b' r') (ρ : ToricRay σ)
+theorem toMatrix_apply (hi : IsIntegralLattice i) (hb : IsExtendingBasis i b r)
+    (hb' : IsExtendingBasis i b' r') (ρ : ToricRay σ)
+    (hρ : (ρ.toPointedCone : ConvexCone ℝ V).Salient)
     (j : Fin n') : b'.toMatrix b j (r ρ) = if j = r' ρ then 1 else 0 := by
-  rw [Module.Basis.toMatrix_apply, hb.repr_basis_apply hi hσ hb' ρ, Finsupp.single_apply]
+  rw [Module.Basis.toMatrix_apply, hb.repr_basis_apply hi hb' ρ hρ, Finsupp.single_apply]
   exact if_congr eq_comm rfl rfl
 
 /-- The nonray-row, ray-column block of the transition matrix between two extending bases
-vanishes. -/
-theorem toMatrix_apply_eq_zero (hi : IsIntegralLattice i) (hσ : (σ : ConvexCone ℝ V).Salient)
-    (hb : IsExtendingBasis i b r) (hb' : IsExtendingBasis i b' r') (ρ : ToricRay σ)
+vanishes at a salient ray. -/
+theorem toMatrix_apply_eq_zero (hi : IsIntegralLattice i) (hb : IsExtendingBasis i b r)
+    (hb' : IsExtendingBasis i b' r') (ρ : ToricRay σ)
+    (hρ : (ρ.toPointedCone : ConvexCone ℝ V).Salient)
     {j : Fin n'} (hj : j ≠ r' ρ) : b'.toMatrix b j (r ρ) = 0 := by
-  simp [hb.toMatrix_apply hi hσ hb' ρ, hj]
+  simp [hb.toMatrix_apply hi hb' ρ hρ, hj]
 
 /-- The complementary block of the transition matrix between two extending bases is unimodular.
 For compatible splittings of both index sets into the rays of the cone and a common complement
@@ -285,6 +290,9 @@ theorem isUnit_det_toMatrix_compl {ι : Type*} [Fintype ι] [DecidableEq ι]
       (fun k : ι ↦ e (Sum.inr k))).det := by
   classical
   have _ : Fintype (ToricRay σ) := Fintype.ofInjective r r.injective
+  -- Every ray of a salient cone is salient, by `ConvexCone.Salient.anti` along the face inclusion.
+  have hray : ∀ ρ : ToricRay σ, (ρ.toPointedCone : ConvexCone ℝ V).Salient :=
+    fun ρ ↦ hσ.anti fun _ hx ↦ ρ.1.isFaceOf.le hx
   set B₁ : Module.Basis (ToricRay σ ⊕ ι) ℤ N := b.reindex e.symm with hB₁
   set B₂ : Module.Basis (ToricRay σ ⊕ ι) ℤ N := b'.reindex e'.symm with hB₂
   have hM : ∀ k j, B₂.toMatrix B₁ k j = b'.toMatrix b (e' k) (e j) := by
@@ -299,11 +307,11 @@ theorem isUnit_det_toMatrix_compl {ι : Type*} [Fintype ι] [DecidableEq ι]
       Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂,
       Matrix.submatrix_apply, Matrix.zero_apply]
     -- The ray block is the identity, since the two bases agree at the indices of a ray.
-    · rw [he, he', hb.toMatrix_apply hi hσ hb' ρ, Matrix.one_apply]
+    · rw [he, he', hb.toMatrix_apply hi hb' ρ (hray ρ), Matrix.one_apply]
       simp [r'.injective.eq_iff]
     -- The nonray-row, ray-column block vanishes, since a nonray index is not a ray index.
     · rw [he]
-      refine hb.toMatrix_apply_eq_zero hi hσ hb' ρ ?_
+      refine hb.toMatrix_apply_eq_zero hi hb' ρ (hray ρ) ?_
       rw [← he']
       exact fun h ↦ by simpa using e'.injective h
   let _ : Invertible (B₂.toMatrix B₁) := B₂.invertibleToMatrix B₁
