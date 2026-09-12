@@ -105,12 +105,7 @@ power.** -/
 theorem frobenius_weightTorusPoints (s : Fin (n + 1) → Aˣ) :
     frobenius n p k A (weightTorusPoints n A s) =
       weightTorusPoints n A (s ^ p ^ k) := by
-  have hs : (fun i => Units.map (iterateFrobenius A p k : A →* A) (s i)) = s ^ p ^ k := by
-    funext i
-    exact Units.ext (by
-      rw [Units.coe_map, MonoidHom.coe_coe, iterateFrobenius_def, Pi.pow_apply,
-        Units.val_pow_eq_pow_val])
-  rw [frobenius, pointsMap_weightTorusPoints, hs]
+  rw [frobenius, pointsMap_weightTorusPoints, map_iterateFrobenius_units_eq_pow]
 
 /-- The zeroth Frobenius iterate is the identity on the type-`Bₙ₊₁` spin carrier's point
 group. -/

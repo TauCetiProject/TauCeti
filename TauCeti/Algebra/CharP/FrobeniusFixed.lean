@@ -17,7 +17,9 @@ Let `A` be a commutative ring of exponential characteristic `p` and let `q = p ^
 of `A` satisfying `a ^ q = a` are the equalizer of the ring homomorphism `iterateFrobenius A p n`
 and the identity, hence a subring: this file names it `TauCeti.frobeniusFixedSubring` and records
 its elementary properties. Over a field the equalizer is closed under inverses as well, giving
-`TauCeti.frobeniusFixedSubfield`.
+`TauCeti.frobeniusFixedSubfield`. It also records the coordinatewise action of an iterated
+Frobenius on a family of units, which is elementary and belongs with the rest of this file's
+iterated-Frobenius plumbing rather than with any one consumer.
 
 For `p` prime, `0 < n` and `A` an algebraic closure of `ZMod p` this subring is the field of `q`
 elements sitting inside `A`, which is why the construction is the ring-theoretic half of "the fixed
@@ -59,6 +61,16 @@ namespace TauCeti
 section Ring
 
 variable (A : Type*) [CommRing A] (p n : ℕ) [ExpChar A p]
+
+/-- Applying the `p ^ n`-power Frobenius to each coordinate of a family of units raises the family
+to its `p ^ n`-th power. Stated for a family rather than a single unit because that is the shape a
+coordinatewise torus calculation meets it in. -/
+theorem map_iterateFrobenius_units_eq_pow {ι : Type*} (s : ι → Aˣ) :
+    (fun i => Units.map (iterateFrobenius A p n : A →* A) (s i)) = s ^ p ^ n := by
+  funext i
+  exact Units.ext (by
+    rw [Units.coe_map, MonoidHom.coe_coe, iterateFrobenius_def, Pi.pow_apply,
+      Units.val_pow_eq_pow_val])
 
 /-- The subring of elements of `A` fixed by the `p ^ n`-power Frobenius, that is, the solutions of
 `a ^ p ^ n = a`. It is the equalizer of `iterateFrobenius A p n` with the identity.
