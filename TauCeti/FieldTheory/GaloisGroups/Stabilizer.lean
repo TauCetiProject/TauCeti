@@ -58,10 +58,6 @@ variable {F : Type*} [Field F] {p : F[X]}
 
 /-! ### The stabilizer of a root -/
 
--- Source. Both the identification of the point stabilizer with the subgroup fixing the field
--- the root generates and the index of that stabilizer are the statements specified by
--- `TauCetiRoadmap/PolynomialGaloisGroups/README.md`, section "Stabilizers are relative Galois
--- groups".
 /-- **The stabilizer of a root is a relative Galois group.** An automorphism of the splitting
 field fixes a root `x` exactly when it fixes the subfield `F⟮x⟯` pointwise, so the point
 stabilizer of the root action is the fixing subgroup of that subfield.
