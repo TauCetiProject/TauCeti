@@ -6,16 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Ring.Finset
-public import Mathlib.Algebra.Module.Torsion.Free
+public import Mathlib.Algebra.NoZeroSMulDivisors.Defs
 public import Mathlib.Algebra.Ring.Idempotent
 
 /-!
 # Eigenvalues of sums of commuting idempotents
 
 A finite family of pairwise commuting idempotents has a particularly rigid spectrum. If its sum
-scales a nonzero vector in a torsion-free module over a cancellation ring, then the scalar is the
-image of a natural number no larger than the size of the family. This bounds the possible
-eigenvalues without requiring finite-dimensionality or a simultaneous eigenspace decomposition.
+scales a nonzero vector in a module with no zero scalar divisors, then the scalar is the image of a
+natural number no larger than the size of the family. This bounds the possible eigenvalues without
+requiring finite-dimensionality or a simultaneous eigenspace decomposition.
 
 ## Main results
 
@@ -29,15 +29,15 @@ open scoped BigOperators
 
 namespace Finset
 
-variable {K A M ι : Type*} [Ring K] [IsCancelMulZero K] [Semiring A]
+variable {K A M ι : Type*} [Ring K] [Semiring A]
   [AddCommGroup M] [Module K M] [Module A M] [SMulCommClass A K M]
-  [Module.IsTorsionFree K M]
+  [NoZeroSMulDivisors K M]
 
 /-- If a finite sum of pairwise commuting idempotents scales a nonzero vector, its eigenvalue is
 the cast of a natural number bounded by the number of idempotents.
 
-No finite-dimensionality or splitting hypothesis is needed. The torsion-free assumption is exactly
-what makes a scalar determined by its action on the nonzero vector. -/
+No finite-dimensionality or splitting hypothesis is needed. The no-zero-scalar-divisors assumption
+is exactly what makes a scalar determined by its action on the nonzero vector. -/
 theorem exists_eq_natCast_of_sum_smul_eq_smul
     (s : Finset ι) (p : ι → A)
     (hp : ∀ i ∈ s, IsIdempotentElem (p i))
@@ -49,8 +49,7 @@ theorem exists_eq_natCast_of_sum_smul_eq_smul
   induction s using Finset.induction_on generalizing μ x with
   | empty =>
       have hμ : μ = 0 := by
-        apply smul_left_injective K hx
-        simpa using heigen.symm
+        exact (eq_zero_or_eq_zero_of_smul_eq_zero (by simpa using heigen.symm)).resolve_right hx
       exact ⟨0, by simp, by simpa using hμ⟩
   | @insert a s ha ih =>
       have hpa : IsIdempotentElem (p a) := hp a (by simp)
