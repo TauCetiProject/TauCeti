@@ -478,6 +478,16 @@ theorem labelTabloidEquiv_apply (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (t
   -- `(rfl)`, not `rfl`: the body of `labelTabloidEquiv` is not `@[expose]`d.
   (rfl)
 
+/-- The naming of the tabloids by the labels, read backwards: the label naming a tabloid is the
+label of the short row of any tableau representing it. -/
+@[simp]
+theorem labelTabloidEquiv_symm_tabloid (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0)
+    (t u : YoungTableau μ) :
+    (labelTabloidEquiv h1 h2 t).symm (tabloid u) = secondRowLabel h1 u := by
+  rw [Equiv.symm_apply_eq, labelTabloidEquiv_apply, labelTabloid_def,
+    tabloid_eq_iff_secondRowLabel_eq h1 h2]
+  simp
+
 /-- **The Young permutation module of a shape `(m, 1)` is the permutation module on the labels.** -/
 noncomputable def labelTabloidRepresentationEquiv (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0)
     (t : YoungTableau μ) :
