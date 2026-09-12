@@ -140,7 +140,6 @@ def hullSingleton {x : V} (hx : x ≠ 0) : ToricRay (PointedCone.hull ℝ {x}) :
   ⟨⟨PointedCone.hull ℝ {x}, PointedCone.IsFaceOf.refl _⟩,
     PointedCone.finrank_span_coe_hull_singleton hx⟩
 
-@[simp]
 theorem toPointedCone_hullSingleton {x : V} (hx : x ≠ 0) :
     (hullSingleton hx).toPointedCone = PointedCone.hull ℝ {x} := (rfl)
 
