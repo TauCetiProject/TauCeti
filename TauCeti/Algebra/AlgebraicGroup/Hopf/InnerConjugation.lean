@@ -43,50 +43,48 @@ namespace HopfAlgebra
 
 variable (H : Type w) [Semiring H] [_root_.HopfAlgebra R H]
 
-/-- Conjugation by the extension of an `R`-valued point, as an automorphism of `A`-valued points. -/
+/-- Conjugation by an `A`-valued point, as an automorphism of `A`-valued points. -/
 noncomputable def innerConjugationPointIso
-    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
-    (A : CommAlgCat.{v} R) :
+    (A : CommAlgCat.{v} R) (g : HopfAlgebra.points (R := R) (H := H) A) :
     (HopfAlgebra.pointsFunctor (R := R) (H := H)).obj A ≅
       (HopfAlgebra.pointsFunctor (R := R) (H := H)).obj A :=
-  MulEquiv.toGrpIso (MulAut.conj (extendPoint H A g))
+  MulEquiv.toGrpIso (MulAut.conj g)
 
-/-- Inner conjugation acts by `x ↦ g * x * g⁻¹` after extending `g` to the value algebra. -/
+/-- Inner conjugation acts by `x ↦ g * x * g⁻¹`. -/
 @[simp]
 theorem innerConjugationPointIso_hom_apply
-    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
-    (A : CommAlgCat.{v} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
-    (innerConjugationPointIso H g A).hom x =
-      extendPoint H A g * x * (extendPoint H A g)⁻¹ := by
+    (A : CommAlgCat.{v} R) (g x : HopfAlgebra.points (R := R) (H := H) A) :
+    (innerConjugationPointIso H A g).hom x = g * x * g⁻¹ := by
   -- Expose the group isomorphism's forward map to use Mathlib's conjugation equation.
   dsimp only [innerConjugationPointIso, MulEquiv.toGrpIso]
-  exact MulAut.conj_apply (extendPoint H A g) x
+  exact MulAut.conj_apply g x
 
-/-- The inverse inner-conjugation map is conjugation by the inverse of the extended point. -/
+/-- The inverse inner-conjugation map is conjugation by the inverse point. -/
 @[simp]
 theorem innerConjugationPointIso_inv_apply
-    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
-    (A : CommAlgCat.{v} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
-    (innerConjugationPointIso H g A).inv x =
-      (extendPoint H A g)⁻¹ * x * extendPoint H A g := by
+    (A : CommAlgCat.{v} R) (g x : HopfAlgebra.points (R := R) (H := H) A) :
+    (innerConjugationPointIso H A g).inv x = g⁻¹ * x * g := by
   -- Expose the group isomorphism's inverse map to use Mathlib's conjugation equation.
   dsimp only [innerConjugationPointIso, MulEquiv.toGrpIso]
-  exact MulAut.conj_symm_apply (extendPoint H A g) x
+  exact MulAut.conj_symm_apply g x
 
 /-- Conjugation by an `R`-valued point, naturally on the full functor of points. -/
 noncomputable def innerConjugationPointNatIso
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
     HopfAlgebra.pointsFunctor.{u, w, v} (R := R) (H := H) ≅
       HopfAlgebra.pointsFunctor.{u, w, v} (R := R) (H := H) :=
-  NatIso.ofComponents (innerConjugationPointIso H g) fun {A B} f ↦ by
+  NatIso.ofComponents (fun A ↦ innerConjugationPointIso H A (extendPoint H A g))
+    fun {A B} f ↦ by
     apply GrpCat.hom_ext
     apply MonoidHom.ext
     intro x
     let x' : HopfAlgebra.points (R := R) (H := H) A := x
     -- `NatIso.ofComponents` stores this naturality square through the categorical wrappers for
     -- `GrpCat`; expose its pointwise form so the named point-map laws apply.
-    change (innerConjugationPointIso H g B).hom (HopfAlgebra.mapPoints (H := H) f x') =
-      HopfAlgebra.mapPoints (H := H) f ((innerConjugationPointIso H g A).hom x')
+    change (innerConjugationPointIso H B (extendPoint H B g)).hom
+        (HopfAlgebra.mapPoints (H := H) f x') =
+      HopfAlgebra.mapPoints (H := H) f
+        ((innerConjugationPointIso H A (extendPoint H A g)).hom x')
     rw [innerConjugationPointIso_hom_apply, innerConjugationPointIso_hom_apply]
     rw [HopfAlgebra.mapPoints_mul, HopfAlgebra.mapPoints_mul, HopfAlgebra.mapPoints_inv,
       HopfAlgebra.mapPoints_extendPoint]
@@ -99,7 +97,7 @@ theorem innerConjugationPointNatIso_hom_app_apply
     (innerConjugationPointNatIso H g).hom.app A x =
       extendPoint H A g * x * (extendPoint H A g)⁻¹ := by
   rw [innerConjugationPointNatIso, NatIso.ofComponents_hom_app _ _]
-  exact innerConjugationPointIso_hom_apply H g A x
+  exact innerConjugationPointIso_hom_apply H A (extendPoint H A g) x
 
 /-- The inverse component of the natural inner-conjugation isomorphism acts by conjugation by
 the inverse extended point. -/
@@ -110,7 +108,7 @@ theorem innerConjugationPointNatIso_inv_app_apply
     (innerConjugationPointNatIso H g).inv.app A x =
       (extendPoint H A g)⁻¹ * x * extendPoint H A g := by
   rw [innerConjugationPointNatIso, NatIso.ofComponents_inv_app _ _]
-  exact innerConjugationPointIso_inv_apply H g A x
+  exact innerConjugationPointIso_inv_apply H A (extendPoint H A g) x
 
 private theorem pointNatIso_ext
     {e₁ e₂ : HopfAlgebra.pointsFunctor.{u, w, v} (R := R) (H := H) ≅
