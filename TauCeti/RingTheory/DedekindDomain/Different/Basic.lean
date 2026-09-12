@@ -10,9 +10,10 @@ public import Mathlib.RingTheory.DedekindDomain.Different
 /-!
 # The different ideal
 
-This file supplies general lemmas about trace-dual fractional ideals.  The coercion result connects
+This file supplies general lemmas about trace-dual fractional ideals. The coercion result connects
 the fractional-ideal and submodule trace duals, allowing submodule results such as localization to
-be transferred to fractional ideals.
+be transferred to fractional ideals. The identity-extension trace-dual theorem gives the unit
+different, which is used to compute the relative discriminant of the identity extension.
 -/
 
 public section
@@ -57,6 +58,7 @@ variable {A : Type*} [CommRing A] [IsDomain A]
 
 /-- The trace dual of the unit submodule is the unit submodule for the identity extension of a
 domain to its fraction field. -/
+@[simp]
 theorem traceDual_one_fractionRing_self :
     letI : Algebra (FractionRing A) (FractionRing A) :=
       FractionRing.liftAlgebra A (FractionRing A)
@@ -90,6 +92,28 @@ theorem traceDual_one_fractionRing_self :
     refine ⟨x * y, ?_⟩
     rw [Algebra.traceForm_apply, htrace]
     simp
+
+variable {D : Type*} [CommRing D] [IsDedekindDomain D]
+
+/-- The different ideal of the identity extension of a Dedekind domain is the unit ideal. -/
+@[simp]
+theorem differentIdeal_self : differentIdeal D D = ⊤ := by
+  let _ : Algebra (FractionRing D) (FractionRing D) :=
+    FractionRing.liftAlgebra D (FractionRing D)
+  rw [differentIdeal]
+  -- Unfolding `differentIdeal` and its coercion exposes the quotient's ambient
+  -- submodule while retaining the comap by `Algebra.linearMap`.
+  change Submodule.comap (Algebra.linearMap D (FractionRing D))
+    (1 / (Submodule.traceDual D (FractionRing D) 1)) = ⊤
+  rw [traceDual_one_fractionRing_self]
+  -- This is a coercion bridge: the unfolded different uses submodule division,
+  -- while the available normalization lemmas for division apply to fractional ideals.
+  rw [show (1 / (1 : Submodule D (FractionRing D))) =
+      (↑((1 : FractionalIdeal D⁰ (FractionRing D)) / 1) : Submodule D (FractionRing D)) by
+    rw [FractionalIdeal.coe_div one_ne_zero, FractionalIdeal.coe_one]]
+  rw [FractionalIdeal.div_one, FractionalIdeal.coe_one]
+  ext x
+  simp [Submodule.mem_one]
 
 end TauCeti
 

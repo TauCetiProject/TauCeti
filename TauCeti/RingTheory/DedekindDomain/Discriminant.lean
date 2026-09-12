@@ -17,6 +17,9 @@ introduces that carrier, together with the two defining identities that are vali
 separability assumption. The later arithmetic theory uses `relDiscr` rather than expanding this
 relative norm of the different at each use site.
 
+The definition and the Layer 4.1 identities follow the human-authored
+`TauCetiRoadmap/NumberFieldArithmetic/README.md` roadmap (with its prototype in `Suggested.lean`).
+
 -/
 
 public section
@@ -39,13 +42,6 @@ noncomputable def relDiscr (A B : Type*) [CommRing A] [IsDedekindDomain A]
 theorem relDiscr_def : relDiscr A B = Ideal.relNorm A (differentIdeal A B) := by
   rw [relDiscr]
 
-/-- Membership in the relative discriminant is membership in the span of norms from the different.
--/
-theorem mem_relDiscr_iff {x : A} :
-    x ∈ relDiscr A B ↔
-      x ∈ Ideal.span (Algebra.intNorm A B '' (differentIdeal A B : Set B) : Set A) := by
-  rw [relDiscr_def, Ideal.relNorm_apply]
-
 /-- The relative discriminant is zero exactly when the different is zero. -/
 @[simp]
 theorem relDiscr_eq_bot_iff : relDiscr A B = ⊥ ↔ differentIdeal A B = ⊥ := by
@@ -56,20 +52,7 @@ theorem relDiscr_eq_bot_iff : relDiscr A B = ⊥ ↔ differentIdeal A B = ⊥ :=
 theorem relDiscr_self : relDiscr A A = ⊤ := by
   let _ : Algebra (FractionRing A) (FractionRing A) :=
     FractionRing.liftAlgebra A (FractionRing A)
-  have hdifferent : differentIdeal A A = ⊤ := by
-    rw [differentIdeal]
-    -- Unfolding `differentIdeal` and its coercion exposes the quotient's ambient
-    -- submodule while retaining the comap by `Algebra.linearMap`.
-    change Submodule.comap (Algebra.linearMap A (FractionRing A))
-      (1 / (Submodule.traceDual A (FractionRing A) 1)) = ⊤
-    rw [traceDual_one_fractionRing_self]
-    rw [show (1 / (1 : Submodule A (FractionRing A))) =
-        (↑((1 : FractionalIdeal A⁰ (FractionRing A)) / 1) : Submodule A (FractionRing A)) by
-      rw [FractionalIdeal.coe_div one_ne_zero, FractionalIdeal.coe_one]]
-    rw [FractionalIdeal.div_one, FractionalIdeal.coe_one]
-    ext x
-    simp [Submodule.mem_one]
-  simp [relDiscr_def, hdifferent]
+  rw [relDiscr_def, differentIdeal_self, Ideal.relNorm_top]
 
 end TauCeti
 
