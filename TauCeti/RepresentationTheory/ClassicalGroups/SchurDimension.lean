@@ -23,10 +23,6 @@ Weyl character formula for `GL n`:
 
 `s_μ(1, …, 1) = # BoundedSSYT n μ = weylDimension (weightOfShape n μ)`.
 
-No representation is used here.  Identifying this common number with the dimension of an
-irreducible representation remains downstream of the construction and character theorem for
-those representations.
-
 The determinant-normalized form applies the same comparison to an arbitrary dominant integral
 weight `l`.  Its polynomial shape `l.detShiftShape` has the same dimension because translating
 all entries of a Gelfand--Tsetlin pattern by the determinant weight is a bijection.
@@ -38,16 +34,14 @@ all entries of a Gelfand--Tsetlin pattern by the determinant weight is a bijecti
 * `TauCeti.card_boundedSSYT_eq_weylDimension`: the bounded tableau count is the Weyl dimension.
 * `TauCeti.eval_one_diagramSchurPoly_eq_weylDimension`: the Schur polynomial of a bounded-height
   shape evaluates at one to its Weyl dimension.
-* `TauCeti.eval_one_schurPoly_eq_weylDimension`: the same result in the roadmap's
-  partition-indexed Schur-polynomial API.
+* `TauCeti.eval_one_schurPoly_eq_weylDimension`: the same result for a partition-indexed Schur
+  polynomial over an arbitrary finite alphabet.
 * `TauCeti.eval_one_diagramSchurPoly_detShiftShape_eq_weylDimension`: the corresponding statement
   for the determinant-normalized shape of an arbitrary dominant weight.
 
 ## References
 
 * [W. Fulton and J. Harris, *Representation Theory: A First Course*][fulton1991], §15.3.
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 6, "The Gelfand--Tsetlin dimension formula".
 -/
 
 public section
@@ -89,6 +83,7 @@ theorem card_boundedSSYT_eq_weylDimension (n : ℕ) (μ : YoungDiagram)
 /-- **The Schur polynomial at one is the Weyl dimension.**  For a Young diagram with at most
 `n` rows, evaluating its Schur polynomial in `n` variables at all ones gives the Weyl product
 attached to its dominant weight. -/
+@[simp]
 theorem eval_one_diagramSchurPoly_eq_weylDimension (n : ℕ) (μ : YoungDiagram)
     (hμ : μ.colLen 0 ≤ n) :
     eval (fun _ : Fin n => (1 : R)) (diagramSchurPoly n R μ) =
@@ -99,19 +94,20 @@ theorem eval_one_diagramSchurPoly_eq_weylDimension (n : ℕ) (μ : YoungDiagram)
 /-- **A partition-indexed Schur polynomial at one is the Weyl dimension.**  This is
 `TauCeti.eval_one_diagramSchurPoly_eq_weylDimension` transported from the ordered alphabet
 `Fin (Fintype.card σ)` to an arbitrary finite alphabet `σ`. -/
+@[simp]
 theorem eval_one_schurPoly_eq_weylDimension {σ : Type*} [Fintype σ] {d : ℕ}
-    (μ : d.Partition) (hμ : (diagramOf μ).colLen 0 ≤ Fintype.card σ) :
+    (μ : d.Partition) (hμ : μ.parts.card ≤ Fintype.card σ) :
     eval (fun _ : σ => (1 : R)) (schurPoly σ R μ) =
       (weylDimension (weightOfShape (Fintype.card σ) (diagramOf μ)) : R) := by
   rw [schurPoly_eq_rename, eval_rename]
-  change eval (fun _ : Fin (Fintype.card σ) => (1 : R))
-      (diagramSchurPoly (Fintype.card σ) R (diagramOf μ)) = _
-  exact eval_one_diagramSchurPoly_eq_weylDimension
-    (R := R) (Fintype.card σ) (diagramOf μ) hμ
+  simpa only [Function.comp_def] using
+    (eval_one_diagramSchurPoly_eq_weylDimension
+      (R := R) (Fintype.card σ) (diagramOf μ) (by simpa only [colLen_zero_diagramOf] using hμ))
 
 /-- **Determinant-normalized Schur evaluation for a dominant weight.**  Evaluating the Schur
 polynomial of `l.detShiftShape` at one gives the Weyl dimension of `l`; translating by the
 determinant weight changes neither the Gelfand--Tsetlin pattern count nor the dimension. -/
+@[simp]
 theorem eval_one_diagramSchurPoly_detShiftShape_eq_weylDimension {n : ℕ}
     (l : DominantWeight n) :
     eval (fun _ : Fin n => (1 : R)) (diagramSchurPoly n R l.detShiftShape) =
