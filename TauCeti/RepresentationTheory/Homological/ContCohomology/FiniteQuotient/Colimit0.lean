@@ -40,7 +40,7 @@ uniform local constancy on a product.
 ## Main statements
 
 * `explicitFiniteQuotientTransition0_bijective`: every degree-zero transition is bijective.
-* `explicitFiniteQuotientColimit0`: the comparison cocone is a colimit cocone.
+* `explicitFiniteQuotientCocone0_isColimit`: the comparison cocone is a colimit cocone.
 
 The construction follows Neukirch, Schmidt and Wingberg, *Cohomology of Number Fields*, (1.2.5),
 and Ribes and Zalesskii, *Profinite Groups*, Corollary 6.5.6(a). It uses Mathlib's
@@ -60,27 +60,6 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M]
 
-private def finiteLevelLift (U : OpenNormalSubgroup G) (m : M)
-    (hm : ∀ g : G, g • m = m) :
-    H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) :=
-  let mU : FixedPoints.addSubgroup U.toSubgroup M :=
-    ⟨m, (FixedPoints.mem_addSubgroup U.toSubgroup M m).2 (fun u => hm (u : G))⟩
-  ⟨mU, (FixedPoints.mem_addSubgroup (G ⧸ U.toSubgroup)
-      (FixedPoints.addSubgroup U.toSubgroup M) mU).2 (by
-    intro q
-    induction q using QuotientGroup.induction_on with
-    | _ g =>
-      apply Subtype.ext
-      simpa only [coe_quotient_smul_fixedPoints_addSubgroup,
-        coe_smul_fixedPoints_addSubgroup] using hm g)⟩
-
-omit [IsTopologicalGroup G] [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
-  [ContinuousSMul G M] in
-private theorem coe_finiteLevelLift (U : OpenNormalSubgroup G) (m : M)
-    (hm : ∀ g : G, g • m = m) :
-    (finiteLevelLift G M U m hm : M) = m :=
-  rfl
-
 section Transition
 
 variable {U V W : OpenNormalSubgroup G}
@@ -92,6 +71,8 @@ noncomputable def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G)
   explicitMap0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
     (continuousFiniteQuotientMap G hVU)
     (by
+      -- `fixedPointsInclusion` is stated for the `AddSubmonoid` view. The fixed-point
+      -- `AddSubgroup` has the same subtype operations, so this wrapper change is definitional.
       change AddMonoidHom (FixedPoints.addSubmonoid U.toSubgroup M)
         (FixedPoints.addSubmonoid V.toSubgroup M)
       exact fixedPointsInclusion hVU)
@@ -139,39 +120,32 @@ theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
     coe_explicitFiniteQuotientTransition0]
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
-private theorem explicitFiniteQuotientTransition0_injective (hVU : V ≤ U) :
-    Function.Injective (explicitFiniteQuotientTransition0 G M U V hVU) := by
-  intro x y hxy
-  apply Subtype.ext
-  apply Subtype.ext
-  simpa only [coe_explicitFiniteQuotientTransition0 G M hVU] using
-    congrArg (fun z : H0 (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M) =>
-      ((z : FixedPoints.addSubgroup V.toSubgroup M) : M)) hxy
-
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
-private theorem explicitFiniteQuotientTransition0_surjective (hVU : V ≤ U) :
-    Function.Surjective (explicitFiniteQuotientTransition0 G M U V hVU) := by
-  intro y
-  have hyG : ∀ g : G, g • (y : M) = (y : M) := by
-    intro g
-    have hy := (FixedPoints.mem_addSubgroup (G ⧸ V.toSubgroup)
-      (FixedPoints.addSubgroup V.toSubgroup M) (y : FixedPoints.addSubgroup V.toSubgroup M)).1
-      y.2 (QuotientGroup.mk g)
-    simpa only [coe_quotient_smul_fixedPoints_addSubgroup, coe_smul_fixedPoints_addSubgroup]
-      using congrArg Subtype.val hy
-  refine ⟨finiteLevelLift G M U (y : M) hyG, ?_⟩
+private theorem explicitFiniteQuotientTransition0_inflation (hVU : V ≤ U)
+    (x : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
+    explicitInfl0 G M V.toSubgroup
+        (explicitFiniteQuotientTransition0 G M U V hVU x) =
+      explicitInfl0 G M U.toSubgroup x := by
   apply Subtype.ext
-  apply Subtype.ext
-  simp only [coe_explicitFiniteQuotientTransition0 G M hVU,
-    coe_finiteLevelLift]
+  simp only [coe_explicitInfl0, coe_explicitFiniteQuotientTransition0]
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
 /-- Every degree-zero transition is a bijection: both its source and target are the global
 invariants, with the map acting as the identity on the underlying coefficient. -/
 theorem explicitFiniteQuotientTransition0_bijective (hVU : V ≤ U) :
-    Function.Bijective (explicitFiniteQuotientTransition0 G M U V hVU) :=
-  ⟨explicitFiniteQuotientTransition0_injective G M hVU,
-    explicitFiniteQuotientTransition0_surjective G M hVU⟩
+    Function.Bijective (explicitFiniteQuotientTransition0 G M U V hVU) := by
+  have hU := TauCeti.ContCohomology.explicitInfl0_bijective G M U.toSubgroup
+  have hV := TauCeti.ContCohomology.explicitInfl0_bijective G M V.toSubgroup
+  constructor
+  · intro x y hxy
+    apply hU.1
+    rw [← explicitFiniteQuotientTransition0_inflation G M hVU x,
+      ← explicitFiniteQuotientTransition0_inflation G M hVU y, hxy]
+  · intro y
+    obtain ⟨x, hx⟩ := hU.2 (explicitInfl0 G M V.toSubgroup y)
+    refine ⟨x, ?_⟩
+    apply hV.1
+    rw [explicitFiniteQuotientTransition0_inflation G M hVU, hx]
 
 end Transition
 
@@ -279,7 +253,7 @@ private theorem explicitFiniteQuotientComparison0_bijective (U : OpenNormalSubgr
     Function.Bijective ((explicitFiniteQuotientComparison0 G M).app (Opposite.op U)) := by
   -- Identify the component of the comparison transformation with its inflation hom.
   change Function.Bijective (explicitInfl0 G M U.toSubgroup)
-  exact explicitInfl0_bijective G M U.toSubgroup
+  exact TauCeti.ContCohomology.explicitInfl0_bijective G M U.toSubgroup
 
 private def topOpenNormalSubgroup : OpenNormalSubgroup G :=
   { toOpenSubgroup := ⊤
@@ -296,7 +270,7 @@ private theorem explicitFiniteQuotientSystem0_isEventuallyConstantFrom :
     (explicitFiniteQuotientTransition0_bijective G M (leOfHom f.unop))
 
 /-- The degree-zero comparison cocone is colimiting. -/
-noncomputable def explicitFiniteQuotientColimit0 :
+noncomputable def explicitFiniteQuotientCocone0_isColimit :
     IsColimit (explicitFiniteQuotientCocone0 G M) := by
   letI : Nonempty (OpenNormalSubgroup G) := ⟨topOpenNormalSubgroup G⟩
   let h := explicitFiniteQuotientSystem0_isEventuallyConstantFrom G M
