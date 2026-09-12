@@ -92,7 +92,7 @@ noncomputable def crossingComponentCount (D : PDCode n) : ℕ :=
   orbitCount D.componentPerm / 2
 
 /-- A code with no crossing visits has no crossing-bearing components. -/
-@[simp] theorem crossingComponentCount_eq_zero_of_zero (D : PDCode 0) :
+@[simp] theorem crossingComponentCount_eq_zero (D : PDCode 0) :
     D.crossingComponentCount = 0 := by
   have h := Equiv.Perm.orbitCount_le_card D.componentPerm
   simp at h
@@ -137,8 +137,14 @@ def mirrorOutgoingEquiv (D : OrientedPDCode n) :
       {h : Fin (4 * n) // D.mirror.orientation h = true} :=
   (Equiv.refl _).subtypeEquiv fun _ => by simp
 
+/-- The outgoing mirror equivalence preserves the underlying half-edge label. -/
+@[simp] theorem mirrorOutgoingEquiv_apply (D : OrientedPDCode n)
+    (h : {h : Fin (4 * n) // D.orientation h = true}) :
+    (D.mirrorOutgoingEquiv h).val = h := by
+  simp [mirrorOutgoingEquiv, Equiv.subtypeEquiv]
+
 /-- Mirroring transports the outgoing traversal along the outgoing half-edge equivalence. -/
-theorem componentPermOutgoing_mirror (D : OrientedPDCode n) :
+@[simp] theorem componentPermOutgoing_mirror (D : OrientedPDCode n) :
     D.mirror.componentPermOutgoing =
       D.mirrorOutgoingEquiv.permCongr D.componentPermOutgoing := by
   apply Equiv.ext
@@ -152,8 +158,20 @@ def reverseOutgoingEquiv (D : OrientedPDCode n) :
       {h : Fin (4 * n) // D.reverse.orientation h = true} :=
   D.edgePair.val.subtypeEquiv fun _ => by simp
 
+/-- The outgoing reversal equivalence acts by arc pairing on half-edge labels. -/
+@[simp] theorem reverseOutgoingEquiv_apply (D : OrientedPDCode n)
+    (h : {h : Fin (4 * n) // D.orientation h = true}) :
+    (D.reverseOutgoingEquiv h).val = D.edgePair.val h := by
+  simp [reverseOutgoingEquiv, Equiv.subtypeEquiv]
+
+/-- Inverse outgoing traversal has the same half-edge value as inverse unrestricted traversal. -/
+private theorem componentPermOutgoing_symm_apply_val (D : OrientedPDCode n)
+    (h : {h : Fin (4 * n) // D.orientation h = true}) :
+    (D.componentPermOutgoing.symm h).val = D.toPDCode.componentPerm.symm h := by
+  rfl
+
 /-- Reversal transports inverse outgoing traversal along the arc-pairing equivalence. -/
-theorem componentPermOutgoing_reverse (D : OrientedPDCode n) :
+@[simp] theorem componentPermOutgoing_reverse (D : OrientedPDCode n) :
     D.reverse.componentPermOutgoing =
       D.reverseOutgoingEquiv.permCongr D.componentPermOutgoing⁻¹ := by
   apply Equiv.ext
@@ -162,20 +180,15 @@ theorem componentPermOutgoing_reverse (D : OrientedPDCode n) :
   apply Subtype.ext
   rw [Equiv.permCongr_apply, Equiv.symm_apply_apply]
   simp only [componentPermOutgoing, Equiv.Perm.subtypePerm_apply, reverse_toPDCode]
-  simp only [reverseOutgoingEquiv, Equiv.subtypeEquiv_apply]
-  change D.toPDCode.componentPerm (D.edgePair.val h) =
-    D.edgePair.val (D.componentPermOutgoing⁻¹ h)
+  simp only [reverseOutgoingEquiv_apply]
   rw [PDCode.componentPerm_apply, D.edgePair.apply_apply]
   apply D.edgePair.val.injective
   rw [D.edgePair.apply_apply]
-  let x : {h : Fin (4 * n) // D.orientation h = true} :=
-    ⟨D.edgePair.val (D.crossingTurn h), by simpa using h.property⟩
-  change x.val = (D.componentPermOutgoing⁻¹ h).val
-  apply congrArg Subtype.val
-  change x = D.componentPermOutgoing.symm h
-  rw [D.componentPermOutgoing.eq_symm_apply]
-  apply Subtype.ext
-  simp [x, componentPermOutgoing, PDCode.componentPerm_apply]
+  have hbase : D.edgePair.val (D.crossingTurn h) =
+      D.toPDCode.componentPerm.symm h := by
+    apply D.toPDCode.componentPerm.injective
+    simp [PDCode.componentPerm_apply, PDCode.crossingTurn_crossingTurn]
+  exact hbase.trans (componentPermOutgoing_symm_apply_val D h).symm
 
 /-- Outgoing traversal has the same half-edge value as unrestricted traversal. -/
 @[simp] theorem componentPermOutgoing_apply (D : OrientedPDCode n)
