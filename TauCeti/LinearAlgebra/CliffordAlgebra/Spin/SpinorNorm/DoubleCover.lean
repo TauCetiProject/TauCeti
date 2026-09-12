@@ -12,8 +12,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 # The Spin cover of the spinor-norm kernel
 
 Over a general field, the Spin action need not be surjective onto the whole special orthogonal
-group. Its image is exactly the kernel of the spinor norm. This file corestricts the action to
-that kernel and packages the resulting short exact sequence as a group extension.
+group. Its image is exactly the kernel of the spinor norm. `SpinorNorm.Basic` corestricts the
+action to that kernel; this file packages the resulting short exact sequence as a group extension.
 
 ## Main definitions and results
 
@@ -62,13 +62,9 @@ theorem spinDoubleCoverSpinorNormKernel_inl_ofAdd_one [Nontrivial V]
       spinGroup.negOne Q hQ.ne_zero := by
   rw [spinDoubleCoverSpinorNormKernel, GroupExtension.ofMulEquivKer_inl,
     MonoidHom.comp_apply]
-  change ((((zmodTwoMulEquivKerSpinToSpecialOrthogonal Q hQ).trans <|
-    MulEquiv.subgroupCongr (ker_spinToSpinorNormKernel Q hQ).symm)
-      (Multiplicative.ofAdd 1) : MonoidHom.ker (spinToSpinorNormKernel Q hQ)) :
-        spinGroup Q) = spinGroup.negOne Q hQ.ne_zero
-  rw [MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply]
-  exact congrArg Subtype.val
-    (zmodTwoMulEquivKerSpinToSpecialOrthogonal_apply_ofAdd_one Q hQ)
+  simpa only [MulEquiv.coe_toMonoidHom, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
+    Subgroup.subtype_apply] using congrArg Subtype.val
+      (zmodTwoMulEquivKerSpinToSpecialOrthogonal_apply_ofAdd_one Q hQ)
 
 /-- The projection in the Spin cover of the spinor-norm kernel is the corestricted Spin action. -/
 @[simp]
