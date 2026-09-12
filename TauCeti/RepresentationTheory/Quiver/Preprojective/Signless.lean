@@ -23,8 +23,8 @@ the relation one can write on it without choosing one is the **signless** local 
 ```
 
 the sum of all backtracks based at `v`. This file defines that relation, the two-sided ideal it
-spans, and the quotient algebra `TauCeti.signlessQuadraticDual`, and compares the quotient with the
-additive preprojective algebra of an orientation of the graph.
+spans, and the quotient algebra `TauCeti.signlessRelationAlgebra`, and compares the quotient with
+the additive preprojective algebra of an orientation of the graph.
 
 The comparison runs along the algebra isomorphism
 `TauCeti.DoubledQuiver.orientedPathAlgEquiv`, which identifies the symmetrification of an oriented
@@ -36,7 +36,7 @@ those oriented out of `v`. Two hypotheses make that difference a sign times the 
 
 * if the orientation is **source--sink**, one of the two partial sums is empty at every vertex, so
   the signed relator is `±` the signless one and the two quotients agree. A bipartite graph admits
-  such an orientation, and no rescaling of the arrows is then needed: with every edge oriented out
+  such an orientation, and no weighting of the arrows is then needed: with every edge oriented out
   of the chosen part the two relation ideals are equal on the nose, the overall sign at a source
   being absorbed by the ideal;
 * in **characteristic two** the signs disappear, so the two quotients agree for *every*
@@ -46,42 +46,40 @@ Outside these two cases the signless quotient is kept as an algebra of its own: 
 calls it a preprojective algebra without a proof. The obstruction to the missing cases is
 analysed rather than assumed, at two strengths.
 
-* Along the canonical relabelling, with no rescaling of the arrows, the two presentations match
+* Along the canonical relabelling, with every arrow weighted by `1`, the two presentations match
   outside characteristic two *exactly* for a source--sink orientation: at a vertex carrying both
   an incoming and an outgoing edge the two partial sums are separately nonzero, so no sign
   converts one relator into the other.
-* Allowing an arbitrary rescaling of the arrows, a match forces the graph to be **bipartite**
-  outside characteristic two. The scaling factors of a match alternate in sign along every edge,
-  so a closed walk of odd length would force `2 = 0`. This is the gauge obstruction, and with
-  `TauCeti.isBipartite_iff_exists_isGaugedMatch` it is sharp: what a rescaled comparison needs is
-  bipartiteness, and a bipartite graph already matches with no rescaling at all, along a
+* Weighting the arrows of the orientation by arbitrary scalars, a match of the *weighted* signed
+  local relators against the signless ones forces the graph to be **bipartite** outside
+  characteristic two. The vertex scalars of such a match alternate in sign along every edge, so a
+  closed walk of odd length would force `2 = 0`. This is the gauge obstruction, and with
+  `TauCeti.isBipartite_iff_exists_isGaugedMatch` it is sharp: a weighted match exists precisely
+  for a bipartite graph, which already matches with every arrow weighted by `1`, along a
   source--sink orientation.
 
-So for a non-bipartite graph outside characteristic two no orientation matches, before or after
-any rescaling of the arrows.
+So for a non-bipartite graph outside characteristic two no orientation matches, however its arrows
+are weighted.
 
 ## Main definitions
 
 * `TauCeti.signlessRelator`: the signless local relator at a vertex.
-* `TauCeti.signlessQuadraticDualIdeal` and `TauCeti.signlessQuadraticDual`: the two-sided ideal it
+* `TauCeti.signlessRelationIdeal` and `TauCeti.signlessRelationAlgebra`: the two-sided ideal it
   spans and the relation quotient, with quotient map `TauCeti.signlessMk` and universal property
   `TauCeti.signlessLift`.
 * `TauCeti.IsSignedMatch`: the hypothesis that the signed local relators of an orientation become
   the signless relators up to sign.
-* `TauCeti.IsGaugedMatch`: the same hypothesis after a rescaling of the arrows, with a unit of `k`
-  at each vertex in place of the sign.
-* `TauCeti.signlessQuadraticDualEquivPreprojective`: **the comparison isomorphism** of a
-  bipartite graph, with `TauCeti.signlessQuadraticDualEquivPreprojectiveOfIsSourceSink` its form
+* `TauCeti.IsGaugedMatch`: the same hypothesis for the local relators weighted by scalars on the
+  arrows, with a unit of `k` at each vertex in place of the sign.
+* `TauCeti.signlessRelationAlgebraEquivPreprojective`: **the comparison isomorphism** of a
+  bipartite graph, with `TauCeti.signlessRelationAlgebraEquivPreprojectiveOfIsSourceSink` its form
   for a given source--sink orientation and
-  `TauCeti.signlessQuadraticDualEquivPreprojectiveOfCharTwo` its characteristic-two counterpart for
-  an arbitrary orientation, all specialising
-  `TauCeti.signlessQuadraticDualEquivPreprojectiveOfSignedMatch`.
+  `TauCeti.signlessRelationAlgebraEquivPreprojectiveOfCharTwo` its characteristic-two counterpart
+  for an arbitrary orientation, all specialising
+  `TauCeti.signlessRelationAlgebraEquivPreprojectiveOfSignedMatch`.
 
 ## Main results
 
-* `TauCeti.DoubledQuiver.orientedPathAlgEquiv_headBacktrackElem` and
-  `TauCeti.DoubledQuiver.orientedPathAlgEquiv_tailBacktrackElem`: the two backtracks of an
-  oriented arrow, read in the doubled path algebra.
 * `TauCeti.orientedPathAlgEquiv_localPreprojectiveRelator_of_source` and
   `TauCeti.orientedPathAlgEquiv_localPreprojectiveRelator_of_sink`: **at a source the signed local
   relator becomes the negative of the signless relator, and at a sink it becomes the signless
@@ -91,15 +89,15 @@ any rescaling of the arrows.
 * `TauCeti.isSignedMatch_of_isSourceSink` and `TauCeti.isSignedMatch_of_charTwo`: the two
   hypotheses under which the comparison isomorphism is available.
 * `TauCeti.isSignedMatch_iff_isSourceSink`: **the sign criterion**, that outside characteristic
-  two the two presentations match, with no rescaling of the arrows, exactly for a source--sink
+  two the two presentations match, with every arrow weighted by `1`, exactly for a source--sink
   orientation.
 * `TauCeti.isBipartite_of_isGaugedMatch`: **the gauge obstruction**, that outside characteristic
-  two a match after any rescaling of the arrows forces the graph to be bipartite, with
-  `TauCeti.not_isGaugedMatch_of_not_isBipartite` and
+  two a match of the weighted signed local relators, under any scalar weighting of the arrows,
+  forces the graph to be bipartite, with `TauCeti.not_isGaugedMatch_of_not_isBipartite` and
   `TauCeti.not_isSignedMatch_of_not_isBipartite` its odd-cycle consequences: **no orientation of a
-  non-bipartite graph matches outside characteristic two, rescaled or not.**
+  non-bipartite graph matches outside characteristic two, however its arrows are weighted.**
 * `TauCeti.isBipartite_iff_exists_isGaugedMatch`: **the obstruction is exactly bipartiteness**,
-  some orientation matching after a rescaling precisely for a bipartite graph.
+  some orientation admitting a weighted match precisely for a bipartite graph.
 
 ## References
 
@@ -107,6 +105,10 @@ See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, 
 algebra of a graph, its quadratic dual, and the signless relation read here; and Crawley-Boevey,
 *Quiver algebras, weighted projective lines, and the Deligne--Simpson problem*, Section 1, for the
 signed preprojective presentation it is compared with.
+
+The signless relator, the two-sided ideal it spans, the quotient it presents and the bipartite
+comparison are adapted from the prototype declarations of
+`TauCetiRoadmap/ZigzagPreprojective/Suggested.lean`.
 -/
 
 public section
@@ -166,32 +168,32 @@ variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Fintype V]
   [DecidableRel G.Adj]
 
 /-- The two-sided ideal spanned by the signless local relators. -/
-noncomputable def signlessQuadraticDualIdeal : TwoSidedIdeal (pathAlgebra k (DoubledQuiver G)) :=
+noncomputable def signlessRelationIdeal : TwoSidedIdeal (pathAlgebra k (DoubledQuiver G)) :=
   TwoSidedIdeal.span (Set.range (signlessRelator k G))
 
 /-- The signless relation ideal is the two-sided span of the signless relators. This is the
 defining equation, exposed for use outside this module. -/
-theorem signlessQuadraticDualIdeal_eq_span :
-    signlessQuadraticDualIdeal k G = TwoSidedIdeal.span (Set.range (signlessRelator k G)) := (rfl)
+theorem signlessRelationIdeal_eq_span :
+    signlessRelationIdeal k G = TwoSidedIdeal.span (Set.range (signlessRelator k G)) := (rfl)
 
-theorem signlessRelator_mem_signlessQuadraticDualIdeal (v : V) :
-    signlessRelator k G v ∈ signlessQuadraticDualIdeal k G :=
+theorem signlessRelator_mem_signlessRelationIdeal (v : V) :
+    signlessRelator k G v ∈ signlessRelationIdeal k G :=
   TwoSidedIdeal.subset_span ⟨v, rfl⟩
 
 /-- The **signless relation quotient** of a finite simple graph: the path algebra of the doubled
 quiver modulo the signless local relations. Its identification with the quadratic dual of the
-zigzag algebra, from which it takes its name, is a theorem about two presentations and is not
-proved here. -/
-noncomputable abbrev signlessQuadraticDual : Type _ :=
-  pathAlgebra k (DoubledQuiver G) ⧸ (signlessQuadraticDualIdeal k G).asIdeal
+zigzag algebra is a theorem about two presentations and is not proved here, so the name records
+the relation imposed rather than that identification. -/
+noncomputable abbrev signlessRelationAlgebra : Type _ :=
+  pathAlgebra k (DoubledQuiver G) ⧸ (signlessRelationIdeal k G).asIdeal
 
 /-- The quotient map onto the signless relation quotient. -/
 noncomputable def signlessMk :
-    pathAlgebra k (DoubledQuiver G) →ₐ[k] signlessQuadraticDual k G :=
+    pathAlgebra k (DoubledQuiver G) →ₐ[k] signlessRelationAlgebra k G :=
   Ideal.Quotient.mkₐ k _
 
 theorem signlessMk_apply (f : pathAlgebra k (DoubledQuiver G)) :
-    signlessMk k G f = Ideal.Quotient.mk (signlessQuadraticDualIdeal k G).asIdeal f := by
+    signlessMk k G f = Ideal.Quotient.mk (signlessRelationIdeal k G).asIdeal f := by
   rw [signlessMk, Ideal.Quotient.mkₐ_eq_mk]
 
 theorem signlessMk_surjective : Function.Surjective (signlessMk k G) :=
@@ -199,12 +201,12 @@ theorem signlessMk_surjective : Function.Surjective (signlessMk k G) :=
 
 @[simp]
 theorem signlessMk_eq_zero_iff {f : pathAlgebra k (DoubledQuiver G)} :
-    signlessMk k G f = 0 ↔ f ∈ signlessQuadraticDualIdeal k G := by
+    signlessMk k G f = 0 ↔ f ∈ signlessRelationIdeal k G := by
   rw [signlessMk_apply, Ideal.Quotient.eq_zero_iff_mem, TwoSidedIdeal.mem_asIdeal]
 
 @[simp]
 theorem signlessMk_signlessRelator (v : V) : signlessMk k G (signlessRelator k G v) = 0 :=
-  (signlessMk_eq_zero_iff k G).2 (signlessRelator_mem_signlessQuadraticDualIdeal k G v)
+  (signlessMk_eq_zero_iff k G).2 (signlessRelator_mem_signlessRelationIdeal k G v)
 
 /-- **The defining relation of the signless quotient**, read at a vertex `v`: the backtracks based
 at `v` sum to zero. -/
@@ -228,8 +230,8 @@ variable {k : Type w} {V : Type u} {B : Type*} [CommRing k] (G : SimpleGraph V) 
 
 /-- An algebra map out of the doubled path algebra which kills every signless relator kills the
 whole relation ideal. -/
-theorem signlessQuadraticDualIdeal_le_ker (hf : ∀ v : V, f (signlessRelator k G v) = 0) :
-    signlessQuadraticDualIdeal k G ≤ TwoSidedIdeal.ker f := by
+theorem signlessRelationIdeal_le_ker (hf : ∀ v : V, f (signlessRelator k G v) = 0) :
+    signlessRelationIdeal k G ≤ TwoSidedIdeal.ker f := by
   refine TwoSidedIdeal.span_le.2 ?_
   rintro _ ⟨v, rfl⟩
   exact (TwoSidedIdeal.mem_ker f).2 (hf v)
@@ -237,10 +239,10 @@ theorem signlessQuadraticDualIdeal_le_ker (hf : ∀ v : V, f (signlessRelator k 
 /-- **The universal property of the signless relation quotient**: an algebra map out of the doubled
 path algebra which kills every signless relator descends to the quotient. -/
 noncomputable def signlessLift (hf : ∀ v : V, f (signlessRelator k G v) = 0) :
-    signlessQuadraticDual k G →ₐ[k] B :=
+    signlessRelationAlgebra k G →ₐ[k] B :=
   Ideal.Quotient.liftₐ _ f fun _ ha =>
     (TwoSidedIdeal.mem_ker f).1
-      (signlessQuadraticDualIdeal_le_ker G f hf (TwoSidedIdeal.mem_asIdeal.1 ha))
+      (signlessRelationIdeal_le_ker G f hf (TwoSidedIdeal.mem_asIdeal.1 ha))
 
 theorem signlessLift_comp_signlessMk (hf : ∀ v : V, f (signlessRelator k G v) = 0) :
     (signlessLift G f hf).comp (signlessMk k G) = f := by
@@ -255,7 +257,7 @@ theorem signlessLift_signlessMk (hf : ∀ v : V, f (signlessRelator k G v) = 0)
 /-- **The lift is the only one**: the quotient map is surjective, so an algebra map on the signless
 quotient is determined by its composite with it. -/
 theorem signlessLift_unique (hf : ∀ v : V, f (signlessRelator k G v) = 0)
-    (g : signlessQuadraticDual k G →ₐ[k] B) (hg : g.comp (signlessMk k G) = f) :
+    (g : signlessRelationAlgebra k G →ₐ[k] B) (hg : g.comp (signlessMk k G) = f) :
     g = signlessLift G f hf := by
   refine AlgHom.ext fun y => ?_
   obtain ⟨x, rfl⟩ := signlessMk_surjective k G y
@@ -263,45 +265,15 @@ theorem signlessLift_unique (hf : ∀ v : V, f (signlessRelator k G v) = 0)
 
 end Lift
 
-/-! ### The backtracks of an oriented arrow -/
-
-namespace DoubledQuiver
-
-variable (k : Type w) [CommSemiring k] {V : Type u} {G : SimpleGraph V} [Fintype V]
-  (o : Orientation G)
-
-/-- **The head backtrack of an oriented arrow is the backtrack at its head.** The arrow
-`a : i ⟶ j` of the orientation traverses the edge `ij`; the word `a a*` leaves `j` along that edge
-and returns, so it becomes the backtrack at `j`. -/
-theorem orientedPathAlgEquiv_headBacktrackElem {i j : V} (h : G.Adj i j)
-    (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o) :
-    orientedPathAlgEquiv k o (headBacktrackElem k (OrientedQuiver.arrow G o h ho))
-      = backtrackElem G k h.symm := by
-  rw [← ofArrow_mul_ofArrow_reverse_eq_headBacktrackElem, map_mul,
-    orientedPathAlgEquiv_ofArrow_of k o h ho, orientedPathAlgEquiv_ofArrow_reverse_of k o h ho]
-  exact ofArrow_symm_mul_ofArrow G k h.symm
-
-/-- **The tail backtrack of an oriented arrow is the backtrack at its tail.** The word `a* a`
-leaves the tail `i` of `a : i ⟶ j` along the edge `ij` and returns. -/
-theorem orientedPathAlgEquiv_tailBacktrackElem {i j : V} (h : G.Adj i j)
-    (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o) :
-    orientedPathAlgEquiv k o (tailBacktrackElem k (OrientedQuiver.arrow G o h ho))
-      = backtrackElem G k h := by
-  rw [← ofArrow_reverse_mul_ofArrow_eq_tailBacktrackElem, map_mul,
-    orientedPathAlgEquiv_ofArrow_reverse_of k o h ho, orientedPathAlgEquiv_ofArrow_of k o h ho]
-  exact ofArrow_symm_mul_ofArrow G k h
-
-end DoubledQuiver
-
 /-! ### The corner sums of an orientation -/
 
 section Corner
 
-variable (k : Type w) [CommRing k] {V : Type u} {G : SimpleGraph V} [Fintype V]
+variable (k : Type w) [CommRing k] {V : Type u} {G : SimpleGraph V} [Finite V]
   (o : DoubledQuiver.Orientation G)
 
 /-- **A corner carrying an arrow into `v` contributes the backtrack at `v` along that edge**,
-rescaled by the value of `ε` on that arrow. -/
+weighted by the value of `ε` on that arrow. -/
 theorem orientedPathAlgEquiv_sum_smul_headBacktrackElem
     (ε : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → k) {v w : V} (h : G.Adj v w)
     (ho : (⟨(w, v), h.symm⟩ : G.Dart) ∈ o) :
@@ -313,7 +285,7 @@ theorem orientedPathAlgEquiv_sum_smul_headBacktrackElem
     DoubledQuiver.orientedPathAlgEquiv_headBacktrackElem k o h.symm ho]
 
 /-- **A corner carrying an arrow out of `v` contributes the backtrack at `v` along that edge**,
-rescaled by the value of `ε` on that arrow. -/
+weighted by the value of `ε` on that arrow. -/
 theorem orientedPathAlgEquiv_sum_smul_tailBacktrackElem
     (ε : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → k) {v w : V} (h : G.Adj v w)
     (ho : (⟨(v, w), h⟩ : G.Dart) ∈ o) :
@@ -408,7 +380,7 @@ theorem orientedPathAlgEquiv_localPreprojectiveRelator_of_sink (v : V)
 
 /-- **At a source the signed local relator becomes the negative of the signless relator.** Every
 edge at `v` is oriented out of `v`, so the local relator has no incoming term. The sign is absorbed
-by the relation ideal, which is why no rescaling of arrows is needed below. -/
+by the relation ideal, which is why no weighting of arrows is needed below. -/
 theorem orientedPathAlgEquiv_localPreprojectiveRelator_of_source (v : V)
     (hv : ∀ ⦃w : V⦄ (h : G.Adj v w), (⟨(v, w), h⟩ : G.Dart) ∈ o) :
     DoubledQuiver.orientedPathAlgEquiv k o
@@ -499,14 +471,14 @@ private theorem preprojectiveMk_orientedPathAlgEquiv_symm_signlessRelator
 
 /-- The map from the signless quotient to the preprojective algebra of a matching orientation. -/
 private noncomputable def signlessToPreprojective (hsign : IsSignedMatch k o) :
-    signlessQuadraticDual k G →ₐ[k] preprojectiveAlgebra k (OrientedQuiver G o) :=
+    signlessRelationAlgebra k G →ₐ[k] preprojectiveAlgebra k (OrientedQuiver G o) :=
   signlessLift G ((preprojectiveMk k (OrientedQuiver G o)).comp
       (DoubledQuiver.orientedPathAlgEquiv k o).symm.toAlgHom)
     (preprojectiveMk_orientedPathAlgEquiv_symm_signlessRelator hsign)
 
 /-- The map from the preprojective algebra of a matching orientation to the signless quotient. -/
 private noncomputable def preprojectiveToSignless (hsign : IsSignedMatch k o) :
-    preprojectiveAlgebra k (OrientedQuiver G o) →ₐ[k] signlessQuadraticDual k G :=
+    preprojectiveAlgebra k (OrientedQuiver G o) →ₐ[k] signlessRelationAlgebra k G :=
   preprojectiveLiftOfForallLocalPreprojectiveRelator
     ((signlessMk k G).comp (DoubledQuiver.orientedPathAlgEquiv k o).toAlgHom)
     fun v => by
@@ -529,9 +501,9 @@ private theorem preprojectiveToSignless_preprojectiveMk (hsign : IsSignedMatch k
   preprojectiveLift_of_forall_localPreprojectiveRelator_preprojectiveMk _ _ x
 
 /-- **The signless quotient is the preprojective algebra of a matching orientation.** -/
-noncomputable def signlessQuadraticDualEquivPreprojectiveOfSignedMatch
+noncomputable def signlessRelationAlgebraEquivPreprojectiveOfSignedMatch
     (hsign : IsSignedMatch k o) :
-    signlessQuadraticDual k G ≃ₐ[k] preprojectiveAlgebra k (OrientedQuiver G o) :=
+    signlessRelationAlgebra k G ≃ₐ[k] preprojectiveAlgebra k (OrientedQuiver G o) :=
   AlgEquiv.ofAlgHom (signlessToPreprojective hsign) (preprojectiveToSignless hsign)
     (AlgHom.ext fun y => by
       obtain ⟨x, rfl⟩ := preprojectiveMk_surjective k (OrientedQuiver G o) y
@@ -544,18 +516,18 @@ noncomputable def signlessQuadraticDualEquivPreprojectiveOfSignedMatch
 
 /-- The comparison isomorphism on the class of a doubled path. -/
 @[simp]
-theorem signlessQuadraticDualEquivPreprojectiveOfSignedMatch_signlessMk
+theorem signlessRelationAlgebraEquivPreprojectiveOfSignedMatch_signlessMk
     (hsign : IsSignedMatch k o) (x : pathAlgebra k (DoubledQuiver G)) :
-    signlessQuadraticDualEquivPreprojectiveOfSignedMatch hsign (signlessMk k G x)
+    signlessRelationAlgebraEquivPreprojectiveOfSignedMatch hsign (signlessMk k G x)
       = preprojectiveMk k (OrientedQuiver G o)
           ((DoubledQuiver.orientedPathAlgEquiv k o).symm x) :=
   signlessToPreprojective_signlessMk hsign x
 
 /-- The inverse comparison isomorphism on the class of a doubled path. -/
 @[simp]
-theorem signlessQuadraticDualEquivPreprojectiveOfSignedMatch_symm_preprojectiveMk
+theorem signlessRelationAlgebraEquivPreprojectiveOfSignedMatch_symm_preprojectiveMk
     (hsign : IsSignedMatch k o) (x : pathAlgebra k (Symmetrify (OrientedQuiver G o))) :
-    (signlessQuadraticDualEquivPreprojectiveOfSignedMatch hsign).symm
+    (signlessRelationAlgebraEquivPreprojectiveOfSignedMatch hsign).symm
         (preprojectiveMk k (OrientedQuiver G o) x)
       = signlessMk k G (DoubledQuiver.orientedPathAlgEquiv k o x) :=
   preprojectiveToSignless_preprojectiveMk hsign x
@@ -574,24 +546,24 @@ theorem isSignedMatch_of_charTwo [CharP k 2] : IsSignedMatch k o := fun v =>
 /-- **The comparison for a source--sink orientation**: with every edge oriented out of one part of
 a bipartition, the signless relation quotient of the doubled graph is the additive preprojective
 algebra of the orientation. -/
-noncomputable def signlessQuadraticDualEquivPreprojectiveOfIsSourceSink (hss : o.IsSourceSink) :
-    signlessQuadraticDual k G ≃ₐ[k] preprojectiveAlgebra k (OrientedQuiver G o) :=
-  signlessQuadraticDualEquivPreprojectiveOfSignedMatch (isSignedMatch_of_isSourceSink hss)
+noncomputable def signlessRelationAlgebraEquivPreprojectiveOfIsSourceSink (hss : o.IsSourceSink) :
+    signlessRelationAlgebra k G ≃ₐ[k] preprojectiveAlgebra k (OrientedQuiver G o) :=
+  signlessRelationAlgebraEquivPreprojectiveOfSignedMatch (isSignedMatch_of_isSourceSink hss)
 
 /-- The source--sink comparison on the class of a doubled path. -/
 @[simp]
-theorem signlessQuadraticDualEquivPreprojectiveOfIsSourceSink_signlessMk (hss : o.IsSourceSink)
+theorem signlessRelationAlgebraEquivPreprojectiveOfIsSourceSink_signlessMk (hss : o.IsSourceSink)
     (x : pathAlgebra k (DoubledQuiver G)) :
-    signlessQuadraticDualEquivPreprojectiveOfIsSourceSink hss (signlessMk k G x)
+    signlessRelationAlgebraEquivPreprojectiveOfIsSourceSink hss (signlessMk k G x)
       = preprojectiveMk k (OrientedQuiver G o)
           ((DoubledQuiver.orientedPathAlgEquiv k o).symm x) :=
   signlessToPreprojective_signlessMk (isSignedMatch_of_isSourceSink hss) x
 
 /-- The inverse source--sink comparison on the class of an oriented path. -/
 @[simp]
-theorem signlessQuadraticDualEquivPreprojectiveOfIsSourceSink_symm_preprojectiveMk
+theorem signlessRelationAlgebraEquivPreprojectiveOfIsSourceSink_symm_preprojectiveMk
     (hss : o.IsSourceSink) (x : pathAlgebra k (Symmetrify (OrientedQuiver G o))) :
-    (signlessQuadraticDualEquivPreprojectiveOfIsSourceSink hss).symm
+    (signlessRelationAlgebraEquivPreprojectiveOfIsSourceSink hss).symm
         (preprojectiveMk k (OrientedQuiver G o) x)
       = signlessMk k G (DoubledQuiver.orientedPathAlgEquiv k o x) :=
   preprojectiveToSignless_preprojectiveMk (isSignedMatch_of_isSourceSink hss) x
@@ -601,17 +573,17 @@ doubled graph is the additive preprojective algebra of the source--sink orientat
 `TauCeti.DoubledQuiver.Orientation.ofIsBipartite` attached to a bipartition. This is the form of
 the comparison which reads the bipartiteness of `G` directly; the orientation it names is the only
 input the preprojective side needs beyond `G` itself. -/
-noncomputable def signlessQuadraticDualEquivPreprojective (hG : G.IsBipartite) :
-    signlessQuadraticDual k G ≃ₐ[k]
+noncomputable def signlessRelationAlgebraEquivPreprojective (hG : G.IsBipartite) :
+    signlessRelationAlgebra k G ≃ₐ[k]
       preprojectiveAlgebra k (OrientedQuiver G (DoubledQuiver.Orientation.ofIsBipartite G hG)) :=
-  signlessQuadraticDualEquivPreprojectiveOfIsSourceSink
+  signlessRelationAlgebraEquivPreprojectiveOfIsSourceSink
     (DoubledQuiver.Orientation.isSourceSink_ofIsBipartite G hG)
 
 /-- The bipartite comparison on the class of a doubled path. -/
 @[simp]
-theorem signlessQuadraticDualEquivPreprojective_signlessMk (hG : G.IsBipartite)
+theorem signlessRelationAlgebraEquivPreprojective_signlessMk (hG : G.IsBipartite)
     (x : pathAlgebra k (DoubledQuiver G)) :
-    signlessQuadraticDualEquivPreprojective hG (signlessMk k G x)
+    signlessRelationAlgebraEquivPreprojective hG (signlessMk k G x)
       = preprojectiveMk k (OrientedQuiver G (DoubledQuiver.Orientation.ofIsBipartite G hG))
           ((DoubledQuiver.orientedPathAlgEquiv k
             (DoubledQuiver.Orientation.ofIsBipartite G hG)).symm x) :=
@@ -620,10 +592,10 @@ theorem signlessQuadraticDualEquivPreprojective_signlessMk (hG : G.IsBipartite)
 
 /-- The inverse bipartite comparison on the class of an oriented path. -/
 @[simp]
-theorem signlessQuadraticDualEquivPreprojective_symm_preprojectiveMk (hG : G.IsBipartite)
+theorem signlessRelationAlgebraEquivPreprojective_symm_preprojectiveMk (hG : G.IsBipartite)
     (x : pathAlgebra k
       (Symmetrify (OrientedQuiver G (DoubledQuiver.Orientation.ofIsBipartite G hG)))) :
-    (signlessQuadraticDualEquivPreprojective hG).symm
+    (signlessRelationAlgebraEquivPreprojective hG).symm
         (preprojectiveMk k
           (OrientedQuiver G (DoubledQuiver.Orientation.ofIsBipartite G hG)) x)
       = signlessMk k G
@@ -634,24 +606,24 @@ theorem signlessQuadraticDualEquivPreprojective_symm_preprojectiveMk (hG : G.IsB
 
 /-- **The comparison in characteristic two**, for an arbitrary orientation of an arbitrary finite
 simple graph: the sign obstruction which forces bipartiteness above disappears. -/
-noncomputable def signlessQuadraticDualEquivPreprojectiveOfCharTwo [CharP k 2] :
-    signlessQuadraticDual k G ≃ₐ[k] preprojectiveAlgebra k (OrientedQuiver G o) :=
-  signlessQuadraticDualEquivPreprojectiveOfSignedMatch (isSignedMatch_of_charTwo (o := o))
+noncomputable def signlessRelationAlgebraEquivPreprojectiveOfCharTwo [CharP k 2] :
+    signlessRelationAlgebra k G ≃ₐ[k] preprojectiveAlgebra k (OrientedQuiver G o) :=
+  signlessRelationAlgebraEquivPreprojectiveOfSignedMatch (isSignedMatch_of_charTwo (o := o))
 
 /-- The characteristic-two comparison on the class of a doubled path. -/
 @[simp]
-theorem signlessQuadraticDualEquivPreprojectiveOfCharTwo_signlessMk [CharP k 2]
+theorem signlessRelationAlgebraEquivPreprojectiveOfCharTwo_signlessMk [CharP k 2]
     (x : pathAlgebra k (DoubledQuiver G)) :
-    signlessQuadraticDualEquivPreprojectiveOfCharTwo (k := k) (o := o) (signlessMk k G x)
+    signlessRelationAlgebraEquivPreprojectiveOfCharTwo (k := k) (o := o) (signlessMk k G x)
       = preprojectiveMk k (OrientedQuiver G o)
           ((DoubledQuiver.orientedPathAlgEquiv k o).symm x) :=
   signlessToPreprojective_signlessMk (isSignedMatch_of_charTwo (o := o)) x
 
 /-- The inverse characteristic-two comparison on the class of an oriented path. -/
 @[simp]
-theorem signlessQuadraticDualEquivPreprojectiveOfCharTwo_symm_preprojectiveMk [CharP k 2]
+theorem signlessRelationAlgebraEquivPreprojectiveOfCharTwo_symm_preprojectiveMk [CharP k 2]
     (x : pathAlgebra k (Symmetrify (OrientedQuiver G o))) :
-    (signlessQuadraticDualEquivPreprojectiveOfCharTwo (k := k) (o := o)).symm
+    (signlessRelationAlgebraEquivPreprojectiveOfCharTwo (k := k) (o := o)).symm
         (preprojectiveMk k (OrientedQuiver G o) x)
       = signlessMk k G (DoubledQuiver.orientedPathAlgEquiv k o x) :=
   preprojectiveToSignless_preprojectiveMk (isSignedMatch_of_charTwo (o := o)) x
@@ -837,7 +809,7 @@ private theorem orientedPathAlgEquiv_gaugedLocalPreprojectiveRelator_eq_sub
           ε a • tailBacktrackElem k a := OrientedQuiver.sum_eq_sum_vertex G o _
   rw [gaugedLocalPreprojectiveRelator_def, hhead, htail, map_sub, map_sum, map_sum]
 
-/-- **An edge oriented out of `v` reads the scaling factor at `v` with a minus sign.** Comparing
+/-- **An edge oriented out of `v` reads the vertex scalar at `v` with a minus sign.** Comparing
 the coordinates on the backtrack along that edge turns a match at `v` into an equation between the
 scalar of the match and the value of `ε` on the arrow. -/
 private theorem eq_neg_gauge_of_mem {ε : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → k} {c : k}
@@ -855,7 +827,7 @@ private theorem eq_neg_gauge_of_mem {ε : ∀ ⦃i j : OrientedQuiver G o⦄, (i
     coord_signlessRelator k h, mul_one] at hcoord
   exact hcoord.symm
 
-/-- **An edge oriented into `v` reads the scaling factor at `v` with a plus sign**, the mirror
+/-- **An edge oriented into `v` reads the vertex scalar at `v` with a plus sign**, the mirror
 image of `TauCeti.eq_neg_gauge_of_mem`. -/
 private theorem eq_gauge_of_symm_mem {ε : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → k} {c : k}
     {v : V} (hv : DoubledQuiver.orientedPathAlgEquiv k o
@@ -876,7 +848,7 @@ private theorem eq_gauge_of_symm_mem {ε : ∀ ⦃i j : OrientedQuiver G o⦄, (
 
 /-- **A vertex which is neither a source nor a sink breaks the match**, unless `2 = 0`. The
 outgoing edge `vw₂` reads the scalar at `v` as `-1` and the incoming edge `vw₁` reads it as `1`,
-because the unrescaled relator weights every arrow by `1`; the two corner sums at `v` are
+because the unweighted relator weights every arrow by `1`; the two corner sums at `v` are
 therefore both nonzero and no sign converts one relator into the other. -/
 private theorem not_isSignedMatch_of_adj_of_adj (h2 : (2 : k) ≠ 0) {v w₁ w₂ : V}
     (h₁ : G.Adj v w₁) (h₂ : G.Adj v w₂) (ho₁ : (⟨(v, w₁), h₁⟩ : G.Dart) ∉ o)
@@ -895,11 +867,12 @@ private theorem not_isSignedMatch_of_adj_of_adj (h2 : (2 : k) ≠ 0) {v w₁ w�
   exact h2 (by linear_combination hout - hin)
 
 /-- **The sign criterion.** Outside characteristic two the signed presentation of an orientation
-matches the signless one *along the canonical relabelling, with no rescaling of the arrows* exactly
-when the orientation is source--sink: at a vertex carrying both an incoming and an outgoing edge
-the two partial sums of backtracks are both nonzero, so no global sign converts one relator into
-the other. With `2 = 0` the criterion disappears, which is `TauCeti.isSignedMatch_of_charTwo`. The
-rescaled comparison is `TauCeti.isBipartite_of_isGaugedMatch`. -/
+matches the signless one *along the canonical relabelling, with every arrow weighted by `1`*
+exactly when the orientation is source--sink: at a vertex carrying both an incoming and an
+outgoing edge the two partial sums of backtracks are both nonzero, so no global sign converts one
+relator into the other. With `2 = 0` the criterion disappears, which is
+`TauCeti.isSignedMatch_of_charTwo`. The weighted analogue is
+`TauCeti.isBipartite_of_isGaugedMatch`. -/
 theorem isSignedMatch_iff_isSourceSink (h2 : (2 : k) ≠ 0) :
     IsSignedMatch k o ↔ o.IsSourceSink := by
   rw [DoubledQuiver.Orientation.isSourceSink_iff]
@@ -915,13 +888,13 @@ theorem isSignedMatch_iff_isSourceSink (h2 : (2 : k) ≠ 0) :
 
 /-! ### The gauge obstruction -/
 
-/-- The two presentations **match after a rescaling of the arrows**: there is a labelling `ε` of
-the arrows of the orientation by scalars for which, at every vertex, the `ε`-rescaled signed local
-relator becomes a unit multiple of the signless relator. This is the gauge freedom available in
-comparing the two presentations, and it is strictly weaker than `TauCeti.IsSignedMatch`, which is
-its constant labelling `1` with the unit `±1`. Invertibility of
-`ε` is deliberately not assumed: only the vertex scalars are units, by which the two relation
-ideals correspond, so the obstruction below covers every rescaling, invertible or not. -/
+/-- The signed local relators **match the signless ones after weighting the arrows**: there is a
+labelling `ε` of the arrows of the orientation by scalars of `k` for which, at every vertex, the
+`ε`-weighted signed local relator becomes a unit multiple of the signless relator.
+`TauCeti.isGaugedMatch_of_isSignedMatch` records that `TauCeti.IsSignedMatch` is the case of the
+constant labelling `1` with the unit `±1`. Invertibility of `ε` is deliberately not assumed, so
+the obstruction below rules out every labelling; for a labelling which is not invertible the
+condition need not identify the two relation ideals, and nothing here claims that it does. -/
 def IsGaugedMatch : Prop :=
   ∃ ε : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → k, ∀ v : V, ∃ c : kˣ,
     DoubledQuiver.orientedPathAlgEquiv k o
@@ -943,7 +916,7 @@ theorem isGaugedMatch_of_isSignedMatch (hsign : IsSignedMatch k o) : IsGaugedMat
     · exact ⟨1, by rw [h]; simp⟩
     · exact ⟨-1, by rw [h]; simp⟩⟩
 
-/-- **Adjacent vertices carry opposite scaling factors.** The arrow over the edge `vw` enters the
+/-- **Adjacent vertices carry opposite vertex scalars.** The arrow over the edge `vw` enters the
 relator at one endpoint with a plus sign and at the other with a minus sign, so the two scalars of
 a gauged match differ by a sign. -/
 private theorem coe_eq_neg_coe_of_adj {ε : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → k}
@@ -959,7 +932,7 @@ private theorem coe_eq_neg_coe_of_adj {ε : ∀ ⦃i j : OrientedQuiver G o⦄, 
       neg_neg]
 
 omit [Fintype V] [DecidableRel G.Adj] in
-/-- **A walk multiplies the scaling factor by the sign of its length**, by induction along the
+/-- **A walk multiplies the vertex scalar by the sign of its length**, by induction along the
 walk from `TauCeti.coe_eq_neg_coe_of_adj`. -/
 private theorem coe_eq_neg_one_pow_mul {c : V → kˣ}
     (hc : ∀ ⦃v w : V⦄, G.Adj v w → (c v : k) = -(c w : k)) {u v : V} (p : G.Walk u v) :
@@ -970,11 +943,11 @@ private theorem coe_eq_neg_one_pow_mul {c : V → kˣ}
     rw [SimpleGraph.Walk.length_cons, ih, hc h, pow_succ]
     ring
 
-/-- **The gauge obstruction.** Outside characteristic two a graph whose signed presentation matches
-the signless one after *any* rescaling of the arrows is bipartite: the scaling factors of the match
-alternate in sign along every edge, so a closed walk of odd length would force `2 = 0`. With
-`TauCeti.isSignedMatch_of_isSourceSink` this pins the obstruction down exactly, as
-`TauCeti.isBipartite_iff_exists_isGaugedMatch`. -/
+/-- **The gauge obstruction.** Outside characteristic two a graph admitting a match of the
+weighted signed local relators against the signless ones, under *any* scalar weighting of the
+arrows, is bipartite: the vertex scalars of the match alternate in sign along every edge, so a
+closed walk of odd length would force `2 = 0`. With `TauCeti.isSignedMatch_of_isSourceSink` this
+pins the obstruction down exactly, as `TauCeti.isBipartite_iff_exists_isGaugedMatch`. -/
 theorem isBipartite_of_isGaugedMatch (h2 : (2 : k) ≠ 0) (hgm : IsGaugedMatch k o) :
     G.IsBipartite := by
   obtain ⟨ε, hmatch⟩ := (isGaugedMatch_iff k o).1 hgm
@@ -987,24 +960,24 @@ theorem isBipartite_of_isGaugedMatch (h2 : (2 : k) ≠ 0) (hgm : IsGaugedMatch k
   rw [hodd.neg_one_pow] at hp
   linear_combination hp
 
-/-- **The gauge obstruction of a non-bipartite graph.** Outside characteristic two no rescaling of
-the arrows of any orientation of a non-bipartite graph matches the signless presentation: this is
-the odd-cycle obstruction, and it is why the signless quotient of such a graph is kept here as an
-algebra of its own rather than called preprojective. -/
+/-- **The gauge obstruction of a non-bipartite graph.** Outside characteristic two no scalar
+weighting of the arrows of any orientation of a non-bipartite graph matches the signless local
+relators: this is the odd-cycle obstruction, and it is why the signless quotient of such a graph
+is kept here as an algebra of its own rather than called preprojective. -/
 theorem not_isGaugedMatch_of_not_isBipartite (h2 : (2 : k) ≠ 0) (hG : ¬ G.IsBipartite) :
     ¬ IsGaugedMatch k o := fun hgm => hG (isBipartite_of_isGaugedMatch k o h2 hgm)
 
-/-- **The sign obstruction of a non-bipartite graph**, the unrescaled case of
+/-- **The sign obstruction of a non-bipartite graph**, the constant-weight case of
 `TauCeti.not_isGaugedMatch_of_not_isBipartite`: outside characteristic two *no* orientation of a
 non-bipartite graph has its signed presentation match the signless one. -/
 theorem not_isSignedMatch_of_not_isBipartite (h2 : (2 : k) ≠ 0) (hG : ¬ G.IsBipartite) :
     ¬ IsSignedMatch k o := fun hmatch =>
   not_isGaugedMatch_of_not_isBipartite k o h2 hG (isGaugedMatch_of_isSignedMatch k o hmatch)
 
-/-- **Bipartiteness is exactly what a rescaled comparison needs.** Outside characteristic two some
-orientation of `G` matches the signless presentation after a rescaling of its arrows precisely
-when `G` is bipartite, and then, by `TauCeti.isSignedMatch_of_isSourceSink`, a source--sink
-orientation already matches with no rescaling at all. -/
+/-- **Bipartiteness is exactly what a weighted match needs.** Outside characteristic two some
+orientation of `G` matches the signless local relators after weighting its arrows precisely when
+`G` is bipartite, and then, by `TauCeti.isSignedMatch_of_isSourceSink`, a source--sink orientation
+already matches with every arrow weighted by `1`. -/
 theorem isBipartite_iff_exists_isGaugedMatch (h2 : (2 : k) ≠ 0) :
     G.IsBipartite ↔ ∃ o : DoubledQuiver.Orientation G, IsGaugedMatch k o := by
   refine ⟨fun hG => ?_, fun ⟨o, hgm⟩ => isBipartite_of_isGaugedMatch k o h2 hgm⟩

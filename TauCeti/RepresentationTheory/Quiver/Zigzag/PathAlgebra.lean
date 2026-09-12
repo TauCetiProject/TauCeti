@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Map
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Basic
 public import TauCeti.RepresentationTheory.Quiver.Symmetrify
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
 
@@ -23,7 +24,8 @@ imposed on length-two paths, can be enumerated by adjacencies.
 
 The last section relabels the doubled path algebra along an orientation of the graph: the
 symmetrification of an oriented quiver is the doubled quiver, so their path algebras are
-isomorphic, and the isomorphism carries the arrow of a selected dart to the arrow of that dart.
+isomorphic, and the isomorphism carries the arrow of a selected dart to the arrow of that dart,
+and the two backtracks of an oriented arrow to the backtracks at its two endpoints.
 
 Products are computed in Tau Ceti's *later-factor-first* convention: for a path `a` from `i` to `j`
 the vertex idempotents satisfy `e_j * a = a = a * e_i`, and traversing `h : G.Adj i j` and then
@@ -56,6 +58,9 @@ returning is the product `ofArrow (arrow G h.symm) * ofArrow (arrow G h)`.
 * `TauCeti.DoubledQuiver.orientedPathAlgEquiv_ofArrow_of` and
   `TauCeti.DoubledQuiver.orientedPathAlgEquiv_ofArrow_reverse_of`: the relabelling reads an
   oriented arrow and its formal reverse as the two darts over the same edge.
+* `TauCeti.DoubledQuiver.orientedPathAlgEquiv_headBacktrackElem` and
+  `TauCeti.DoubledQuiver.orientedPathAlgEquiv_tailBacktrackElem`: the relabelling reads the two
+  backtracks of an oriented arrow as the backtracks at its head and at its tail.
 
 ## References
 
@@ -326,7 +331,7 @@ theorem linearIndependent_vertexIdempotent_ofArrow_backtrackElem
 
 section Orientation
 
-variable (k : Type w) [CommSemiring k] [Fintype V] {G} (o : Orientation G)
+variable (k : Type w) [CommSemiring k] [Finite V] {G} (o : Orientation G)
 
 /-- **The isomorphism of path algebras attached to an orientation of a simple graph**: the
 symmetrification of the oriented quiver of `o` is the doubled quiver of `G`, so the two path
@@ -411,6 +416,27 @@ theorem orientedPathAlgEquiv_ofArrow_reverse_of {i j : V} (h : G.Adj i j)
             (symmetrifyMap_obj G o i).symm := Subsingleton.elim _ _
   rw [orientedPathAlgEquiv_ofArrow, hmap]
   exact ofArrow_homOfEq _ _ _
+
+/-- **The head backtrack of an oriented arrow is the backtrack at its head.** The arrow
+`a : i ⟶ j` of the orientation traverses the edge `ij`; the word `a a*` leaves `j` along that edge
+and returns, so it becomes the backtrack at `j`. -/
+theorem orientedPathAlgEquiv_headBacktrackElem {i j : V} (h : G.Adj i j)
+    (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o) :
+    orientedPathAlgEquiv k o (headBacktrackElem k (OrientedQuiver.arrow G o h ho))
+      = backtrackElem G k h.symm := by
+  rw [← ofArrow_mul_ofArrow_reverse_eq_headBacktrackElem, map_mul,
+    orientedPathAlgEquiv_ofArrow_of k o h ho, orientedPathAlgEquiv_ofArrow_reverse_of k o h ho]
+  exact ofArrow_symm_mul_ofArrow G k h.symm
+
+/-- **The tail backtrack of an oriented arrow is the backtrack at its tail.** The word `a* a`
+leaves the tail `i` of `a : i ⟶ j` along the edge `ij` and returns. -/
+theorem orientedPathAlgEquiv_tailBacktrackElem {i j : V} (h : G.Adj i j)
+    (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o) :
+    orientedPathAlgEquiv k o (tailBacktrackElem k (OrientedQuiver.arrow G o h ho))
+      = backtrackElem G k h := by
+  rw [← ofArrow_reverse_mul_ofArrow_eq_tailBacktrackElem, map_mul,
+    orientedPathAlgEquiv_ofArrow_reverse_of k o h ho, orientedPathAlgEquiv_ofArrow_of k o h ho]
+  exact ofArrow_symm_mul_ofArrow G k h
 
 end Orientation
 

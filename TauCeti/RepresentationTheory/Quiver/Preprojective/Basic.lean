@@ -351,8 +351,8 @@ theorem localPreprojectiveRelator_def (v : Q) :
 ρ_{ε,v} = ∑_{head a = v} ε_a a a* - ∑_{tail a = v} ε_a a* a,
 ```
 
-the local relator with every arrow rescaled by the labelling `ε`. The constant labelling `1` gives
-`TauCeti.localPreprojectiveRelator`. -/
+the local relator with every arrow weighted by the scalar the labelling `ε` gives it. The constant
+labelling `1` gives `TauCeti.localPreprojectiveRelator`. -/
 noncomputable def gaugedLocalPreprojectiveRelator (ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) (v : Q) :
     pathAlgebra k (Symmetrify Q) :=
   (∑ i : Q, ∑ a : (i ⟶ v), ε a • headBacktrackElem k a) -
