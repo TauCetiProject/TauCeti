@@ -87,6 +87,36 @@ theorem isSuspension_def (G : InternalGrading R A) (F : ReducedTensorWords R A �
             evalNat (MultilinearMap.suspend d (m n)) x :=
   Iff.rfl
 
+/-- Two Taylor maps which suspend the same operations are equal.  Thus retaining both the
+suspended Taylor map and the unsuspended operations does not add unconstrained data. -/
+theorem IsSuspension.taylor_eq {G : InternalGrading R A}
+    {F F' : ReducedTensorWords R A →ₗ[R] A}
+    {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
+    (hF : IsSuspension G F m) (hF' : IsSuspension G F' m) : F = F' := by
+  apply ReducedTensorWords.linearMap_ext
+  intro n z
+  have hn : F ∘ₗ ReducedTensorWords.of R A n =
+      F' ∘ₗ ReducedTensorWords.of R A n := by
+    apply PiTensorProduct.ext_of_span_eq_top
+      (g := fun _ (q : Σ d : ℤ, G.piece d) ↦ (q.2 : A))
+    · intro i
+      apply top_unique
+      rw [← G.isInternal.submodule_iSup_eq_top]
+      refine iSup_le fun d ↦ ?_
+      intro a ha
+      exact Submodule.subset_span ⟨⟨d, ⟨a, ha⟩⟩, rfl⟩
+    · intro q
+      let d : ℕ → ℤ := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).1 else 0
+      let x : ℕ → A := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).2 else 0
+      have hx : ∀ i < n.1, x i ∈ G.piece (d i) := by
+        intro i hi
+        simp only [x, d, hi, dite_true]
+        exact (q ⟨i, hi⟩).2.property
+      have hleft := (isSuspension_def G F m).1 hF n.1 n.2 d x hx
+      have hright := (isSuspension_def G F' m).1 hF' n.1 n.2 d x hx
+      simpa only [LinearMap.comp_apply, x, Fin.isLt, dite_true] using hleft.trans hright.symm
+  exact LinearMap.congr_fun hn (PiTensorProduct.tprod R z)
+
 /-- A Taylor map related by suspension to operations of degree `2 - n` has degree one from tensor
 words in the suspended grading to suspended letters.  This is the homogeneity input that makes the
 square of its bar coderivation an ordinary coderivation. -/
