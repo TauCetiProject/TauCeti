@@ -267,14 +267,14 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
             (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).source ∩
               (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm) ⁻¹'
                 (extChartPartialDiffeomorph J n (f x)).symm.source := by
-      simp only [PartialDiffeomorph.trans_toPartialEquiv,
-        OpenPartialHomeomorph.trans_toPartialEquiv,
-        PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
-        PartialEquiv.trans_source]
+      exact OpenPartialHomeomorph.trans_source
+        (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).toOpenPartialHomeomorph
+        (extChartPartialDiffeomorph J n (f x)).symm.toOpenPartialHomeomorph
     have hchartSymmSource :
         (extChartPartialDiffeomorph J n (f x)).symm.source =
           (extChartPartialDiffeomorph J n (f x)).target := by
-      simp only [PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_source]
+      exact OpenPartialHomeomorph.symm_source
+        (extChartPartialDiffeomorph J n (f x)).toOpenPartialHomeomorph
     rw [hΨ, htransSource, hchartSymmSource]
     simp only [extChartPartialDiffeomorph_target, hψ,
       PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv,
@@ -286,10 +286,8 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
         ((extChartPartialDiffeomorph I n x).trans Ψ).source =
           (extChartPartialDiffeomorph I n x).source ∩
           (extChartPartialDiffeomorph I n x) ⁻¹' Ψ.source := by
-      simp only [PartialDiffeomorph.trans_toPartialEquiv,
-        OpenPartialHomeomorph.trans_toPartialEquiv,
-        PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
-        PartialEquiv.trans_source]
+      exact OpenPartialHomeomorph.trans_source
+        (extChartPartialDiffeomorph I n x).toOpenPartialHomeomorph Ψ.toOpenPartialHomeomorph
     rw [hΦ, htransSource]
     simp only [hΨsource, extChartPartialDiffeomorph_source, hφ,
       coe_extChartPartialDiffeomorph]
@@ -297,20 +295,18 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
   have hcoe (y : M) : Φ y = ψ.symm (Θ (φ y)) := by
     calc
       Φ y = Ψ ((extChartPartialDiffeomorph I n x) y) := by
-        simp only [hΦ, PartialDiffeomorph.trans_toPartialEquiv,
-          OpenPartialHomeomorph.trans_toPartialEquiv,
-          PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
-          PartialEquiv.trans_apply]
+        rw [hΦ]
+        exact OpenPartialHomeomorph.trans_apply
+          (extChartPartialDiffeomorph I n x).toOpenPartialHomeomorph Ψ.toOpenPartialHomeomorph
       _ = (extChartPartialDiffeomorph J n (f x)).symm
           ((PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm)
             ((extChartPartialDiffeomorph I n x) y)) := by
-        simp only [hΨ, PartialDiffeomorph.trans_toPartialEquiv,
-          OpenPartialHomeomorph.trans_toPartialEquiv,
-          PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
-          PartialEquiv.trans_apply]
+        rw [hΨ]
+        exact OpenPartialHomeomorph.trans_apply
+          (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).toOpenPartialHomeomorph
+          (extChartPartialDiffeomorph J n (f x)).symm.toOpenPartialHomeomorph
       _ = ψ.symm (Θ (φ y)) := by
-        simp only [PartialDiffeomorph.symm_toPartialEquiv,
-          coe_extChartPartialDiffeomorph,
+        simp only [coe_extChartPartialDiffeomorph,
           PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv,
           PartialHomeomorph.toFun_eq_coe, OpenPartialHomeomorph.coe_toPartialHomeomorph,
           hφ, hψ]

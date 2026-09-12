@@ -573,12 +573,11 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
   -- chart. The resulting `q : E ↔ G` has the desired source, target, and smooth inverse.
   set q := d.trans c.symm with hqdef
   have hqsource : q.source = d.source ∩ d ⁻¹' c.symm.source := by
-    simp only [hqdef, PartialDiffeomorph.trans_toPartialEquiv,
-      OpenPartialHomeomorph.trans_toPartialEquiv,
-      PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
-      PartialEquiv.trans_source]
+    rw [hqdef]
+    exact OpenPartialHomeomorph.trans_source d.toOpenPartialHomeomorph
+      c.symm.toOpenPartialHomeomorph
   have hcsymmsource : c.symm.source = c.target := by
-    simp only [PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_source]
+    exact OpenPartialHomeomorph.symm_source c.toOpenPartialHomeomorph
   have hzeroq : (0 : E) ∈ q.source := by
     rw [hqsource]
     refine ⟨hzero, ?_⟩
@@ -589,10 +588,9 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
   have hq (x : E) (hx : x ∈ q.source) : f x = q x := by
     rw [hqsource] at hx
     have hqapply : q x = c.toPartialEquiv.symm (d x) := by
-      simp only [hqdef, PartialDiffeomorph.trans_toPartialEquiv,
-        OpenPartialHomeomorph.trans_toPartialEquiv,
-        PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
-        PartialEquiv.trans_apply, PartialDiffeomorph.symm_toPartialEquiv]
+      rw [hqdef]
+      exact OpenPartialHomeomorph.trans_apply d.toOpenPartialHomeomorph
+        c.symm.toOpenPartialHomeomorph
     calc
       f x = chart.symm (d x) := by
         rw [← hd]
