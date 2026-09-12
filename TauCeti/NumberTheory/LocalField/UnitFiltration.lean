@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import Mathlib.NumberTheory.LocalField.Basic
 
 /-!
 # The unit filtration of a nonarchimedean local field
@@ -56,8 +56,7 @@ of `K`, which simultaneously records that the criterion does not depend on the c
 
 The valuation appearing in the criteria is Mathlib's multiplicative `ValuativeRel.valuation K`,
 for which greater depth means a smaller value and for which `0` is the smallest value; this is
-what lets `1` belong to every step. The additively normalized `TauCeti.normalizedValuation` is
-used in the proofs, where an integer depth is needed.
+what lets `1` belong to every step.
 
 ## References
 
@@ -98,10 +97,7 @@ theorem mem_unitFiltration_iff_exists {i : ℕ} {x : Kˣ} :
 
 /-- Membership in the unit filtration at positive depth for a unit of `𝒪[K]`: the congruence
 `u ≡ 1 mod 𝓂[K] ^ (i + 1)`. The general-depth statement is `mem_unitFiltration_iff_exists`.
-
-This is deliberately not `@[simp]`: `simp` rewrites `RingHom.toMonoidHom` to the bundled
-coercion, so the roadmap-fixed left-hand side is not in simp-normal form and `simpNF` rejects
-the attribute. -/
+-/
 theorem mem_unitFiltration_succ_congr (i : ℕ) (u : 𝒪[K]ˣ) :
     Units.map (Subring.subtype 𝒪[K]).toMonoidHom u ∈ unitFiltration K (i + 1) ↔
       (u : 𝒪[K]) - 1 ∈ 𝓂[K] ^ (i + 1) := by
@@ -243,29 +239,10 @@ private theorem image_unitFiltration_zero :
     have hy0 : y ≠ 0 := fun h ↦ by simp [h] at hy
     exact ⟨Units.mk0 y hy0, (mem_unitFiltration_zero _).mpr (by simpa using hy), rfl⟩
 
-/-- The image in `K` of a positive-depth step of the unit filtration. -/
-private theorem image_unitFiltration_succ {i : ℕ} {π : 𝒪[K]} (hπ : Irreducible π) :
-    Units.val '' (unitFiltration K (i + 1) : Set Kˣ)
-      = (1 + ·) '' {z : K | valuation K z ≤ valuation K (π : K) ^ (i + 1)} := by
-  have hπ1 : valuation K (π : K) ^ (i + 1) < 1 :=
-    pow_lt_one₀ zero_le (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ)
-      i.succ_ne_zero
-  ext y
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    exact ⟨(x : K) - 1, by simpa using (mem_unitFiltration_succ_valuation i x π hπ).mp hx,
-      by ring⟩
-  · rintro ⟨z, hz, rfl⟩
-    have hval : valuation K (1 + z) = 1 := (valuation K).map_one_add_of_lt (hz.trans_lt hπ1)
-    have h0 : (1 : K) + z ≠ 0 := fun h ↦ by simp [h] at hval
-    refine ⟨Units.mk0 _ h0, (mem_unitFiltration_succ_valuation i _ π hπ).mpr ?_, rfl⟩
-    simpa using hz
-
 /-- Each step of the unit filtration is a compact subset of `Kˣ`. -/
 theorem isCompact_unitFiltration (i : ℕ) : IsCompact (unitFiltration K i : Set Kˣ) := by
-  rw [Units.isEmbedding_val₀.isCompact_iff]
-  match i with
-  | 0 =>
+  have hzero : IsCompact (unitFiltration K 0 : Set Kˣ) := by
+    rw [Units.isEmbedding_val₀.isCompact_iff]
     have hdiff : {y : K | valuation K y = 1}
         = {y : K | valuation K y ≤ 1} \ {y : K | valuation K y < 1} := by
       ext y; simp [le_antisymm_iff, and_comm]
@@ -279,10 +256,9 @@ theorem isCompact_unitFiltration (i : ℕ) : IsCompact (unitFiltration K i : Set
       simpa using (IsValuativeTopology.hasBasis_nhds_zero K).mem_of_mem (i := 1) trivial
     rw [image_unitFiltration_zero, hdiff]
     exact (isCompact_closedBall K 1).diff hopen
-  | i + 1 =>
-    obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
-    rw [image_unitFiltration_succ hπ]
-    exact (isCompact_closedBall K _).image (by fun_prop)
+  exact hzero.of_isClosed_subset
+    ((unitFiltration K i).isClosed_of_isOpen (isOpen_unitFiltration i))
+    (unitFiltration_antitone (Nat.zero_le i))
 
 /-- The unit filtration is a neighbourhood basis of `1` in `Kˣ`. -/
 theorem hasBasis_nhds_one_unitFiltration :
