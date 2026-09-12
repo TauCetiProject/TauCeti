@@ -289,8 +289,7 @@ private theorem straightWeight_lt_of_swap {t : YoungTableau μ} {x y : Fin μ.ca
     have hstep : rowMoment t + (rowIndex t x * (x : ℕ) + rowIndex t y * (y : ℕ)) <
         rowMoment t + (rowIndex t x * (y : ℕ) + rowIndex t y * (x : ℕ)) :=
       Nat.add_lt_add_left (mul_add_mul_lt_mul_add_mul hrow (Fin.lt_def.mp hyx)) _
-    rw [rowMoment] at hstep
-    rw [← hr] at hstep
+    rw [rowMoment, ← hr] at hstep
     exact lt_of_add_lt_add_right hstep
   rw [straightWeight, straightWeight, hcol']
   exact Nat.add_lt_add_left hrow' _

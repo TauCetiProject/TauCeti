@@ -140,8 +140,7 @@ theorem characterPairing_classIndicator_inv (f : ClassFunction k G) (x : G) :
       intro g hg
       exact ClassFunction.eq_of_isConj f (by simpa using Finset.mem_filter.mp hg |>.2)
     _ = _ := by
-      rw [Finset.sum_const, nsmul_eq_mul]
-      rw [hcarrier, Nat.card_eq_fintype_card]
+      rw [Finset.sum_const, nsmul_eq_mul, hcarrier, Nat.card_eq_fintype_card]
       rw [(Fintype.card_ofFinset (p := {g | IsConj g x})
         (Finset.univ.filter fun g => IsConj g x) (by simp)).symm]
 

@@ -288,8 +288,7 @@ theorem spinAction_typeDSimpleCorootBivector_exteriorBasis
     have hspin : spinWeight ℚ s i = spinWeight ℚ s (⟨n - 1, by omega⟩ : Fin n) :=
       congrArg (spinWeight ℚ s) hi
     have hwt := TauCeti.DynkinType.algebraMap_typeDSpinWeight_apply (K := ℚ) s i
-    rw [dite_eq_right hnext, hprev] at hwt
-    rw [hspin] at hwt
+    rw [dite_eq_right hnext, hprev, hspin] at hwt
     simpa only [algebraMap_int_eq, Int.coe_castRingHom] using
       (congrArg (fun z : ℚ ↦ z • b.ExteriorAlgebra s) hwt).symm
 
