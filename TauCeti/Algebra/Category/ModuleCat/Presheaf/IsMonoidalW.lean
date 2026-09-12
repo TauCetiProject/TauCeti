@@ -36,17 +36,6 @@ sheafifying `M ⊗ N` before tensoring with `P` does not change the sheafificati
   modules preserves local isomorphisms;
 * `PresheafOfModules.isMonoidal_inverseImage_W_toPresheaf`: the resulting `IsMonoidal` instance.
 
-## Proof
-
-For free presheaves of modules the statement is checked on sections: a section of
-`free F ⊗ N` over `U` is a finite sum `∑ z ⊗ n_z` indexed by distinct elements `z` of `F(U)`, and
-it is killed by `free F ◁ f` exactly when every coefficient `n_z` is killed by `f`. Local
-injectivity of `f` then makes all the coefficients vanish on a common covering sieve.
-A general presheaf of modules is a cokernel of a morphism between coproducts of free presheaves
-of modules (`PresheafOfModules.isColimitFreeYonedaCoproductsCokernelCofork`). Tensoring preserves
-colimits, and local isomorphisms are stable under colimits because sheafification preserves them,
-so the statement passes from free presheaves to all presheaves of modules. No formalization is
-vendored.
 -/
 
 public section
@@ -55,7 +44,7 @@ open CategoryTheory Limits MonoidalCategory Opposite TensorProduct
 
 namespace TauCeti
 
-universe u
+universe v u
 
 section Algebra
 
@@ -82,7 +71,10 @@ private lemma eq_sum_single_tmul [DecidableEq ι] (t : (ι →₀ S) ⊗[S] B) :
 
 end Algebra
 
-variable {C : Type u} [SmallCategory C] (J : GrothendieckTopology C) {R : Cᵒᵖ ⥤ CommRingCat.{u}}
+section Locality
+
+variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
+  {R : Cᵒᵖ ⥤ CommRingCat.{u}}
 
 /-- Tensoring with a presheaf of modules `P` preserves local surjectivity: a section of
 `P ⊗ N'` is locally a sum of elementary tensors whose second factors lift along `f`. -/
@@ -91,6 +83,7 @@ theorem _root_.PresheafOfModules.isLocallySurjective_whiskerLeft
     (f : N ⟶ N') [Presheaf.IsLocallySurjective J ((PresheafOfModules.toPresheaf _).map f)] :
     Presheaf.IsLocallySurjective J ((PresheafOfModules.toPresheaf _).map (P ◁ f)) where
   imageSieve_mem {U} t := by
+    -- Expose the sectionwise tensor product in order to use tensor-product induction.
     change (P.obj (op U) ⊗ N'.obj (op U) : ModuleCat _) at t
     induction t using TensorProduct.induction_on with
     | zero =>
@@ -102,7 +95,9 @@ theorem _root_.PresheafOfModules.isLocallySurjective_whiskerLeft
         (Presheaf.imageSieve_mem J ((PresheafOfModules.toPresheaf _).map f) n')
       rintro V g ⟨n, hn⟩
       refine ⟨P.map g.op p ⊗ₜ n, ?_⟩
+      -- Expose the component of the whiskered morphism as a tensor product of module maps.
       change P.map g.op p ⊗ₜ f.app (op V) n = (P ⊗ N').map g.op (p ⊗ₜ n')
+      -- Expose the underlying-presheaf components in the local lifting equation.
       change f.app (op V) n = N'.map g.op n' at hn
       rw [hn]
       rfl
@@ -143,9 +138,14 @@ theorem _root_.PresheafOfModules.isLocallyInjective_free_whiskerLeft (F : Cᵒ�
     have key : ((PresheafOfModules.free _).obj F ⊗ N).map g.op t = 0 := by
       refine (congrArg _ (eq_sum_single_tmul t)).trans
         ((map_sum _ _ _).trans (Finset.sum_eq_zero fun z hz ↦ ?_))
+      -- Expose the sectionwise tensor map in order to rewrite its second tensor factor.
       change _ ⊗ₜ N.map g.op (e t z) = 0
       exact (congrArg _ (hg' z hz)).trans (tmul_zero _ _)
     exact sub_eq_zero.1 ((map_sub _ x y).symm.trans key)
+
+end Locality
+
+variable {C : Type u} [SmallCategory C] (J : GrothendieckTopology C) {R : Cᵒᵖ ⥤ CommRingCat.{u}}
 
 variable [HasWeakSheafify J AddCommGrpCat.{u}]
 

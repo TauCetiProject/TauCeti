@@ -28,8 +28,6 @@ isomorphisms. The scheme-level line-bundle associator
 
 ## Main declarations
 
-* `SheafOfModules.isIso_sheafification_map_of_inverseImage_W_toPresheaf`: sheafification inverts
-  local isomorphisms of presheaves of modules;
 * `SheafOfModules.tensorProductAssoc`: the associativity isomorphism of the sheafified tensor
   product;
 * `SheafOfModules.tensorProductAssoc_hom`: its forward map, spelled out through the sectionwise
@@ -37,7 +35,7 @@ isomorphisms. The scheme-level line-bundle associator
 
 The site is assumed small, with modules in the universe of its objects and morphisms, because the
 comparison of local isomorphisms passes through Mathlib's presentation of presheaves of modules
-by free presheaves of modules. No formalization is vendored.
+by free presheaves of modules.
 -/
 
 public section
@@ -58,41 +56,32 @@ namespace SheafOfModules
 
 variable (R : Sheaf J CommRingCat.{u})
 
-/-- Sheafification of presheaves of modules inverts local isomorphisms: morphisms whose
-underlying morphism of presheaves of abelian groups becomes an isomorphism after
-sheafification. -/
-theorem isIso_sheafification_map_of_inverseImage_W_toPresheaf
-    {M₀ N₀ : PresheafOfModules.{u} (ringCatSheaf R).obj} {g : M₀ ⟶ N₀}
-    (hg : (J.W (A := AddCommGrpCat.{u})).inverseImage (PresheafOfModules.toPresheaf _) g) :
-    IsIso ((PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map g) := by
-  rwa [PresheafOfModules.inverseImage_W_toPresheaf_eq_inverseImage_isomorphisms
-    (𝟙 (ringCatSheaf R).obj)] at hg
-
-/-- The unit `M₀ ⟶ a(M₀)` of the sheafification adjunction for presheaves of modules is a local
-isomorphism. -/
-theorem inverseImage_W_toPresheaf_sheafificationAdjunction_unit_app
-    (M₀ : PresheafOfModules.{u} (ringCatSheaf R).obj) :
-    (J.W (A := AddCommGrpCat.{u})).inverseImage (PresheafOfModules.toPresheaf _)
-      ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app M₀) :=
-  J.W_toSheafify M₀.presheaf
-
 /-- Sheafifying the whiskered unit `(M ⊗ N) ⊗ P ⟶ a(M ⊗ N) ⊗ P` gives an isomorphism. -/
 instance (M₀ P₀ : PresheafOfModules.{u} (ringCatSheaf R).obj) :
     IsIso ((PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
       ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app M₀ ▷
-        P₀)) :=
-  isIso_sheafification_map_of_inverseImage_W_toPresheaf R
-    (PresheafOfModules.inverseImage_W_toPresheaf_whiskerRight J
-      (inverseImage_W_toPresheaf_sheafificationAdjunction_unit_app R M₀) P₀)
+        P₀)) := by
+  change ((MorphismProperty.isomorphisms _).inverseImage
+    (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)))
+      ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app M₀ ▷ P₀)
+  rw [← PresheafOfModules.inverseImage_W_toPresheaf_eq_inverseImage_isomorphisms]
+  exact PresheafOfModules.inverseImage_W_toPresheaf_whiskerRight J
+    (f := (PresheafOfModules.sheafificationAdjunction
+      (𝟙 (ringCatSheaf R).obj)).unit.app M₀) (J.W_toSheafify M₀.presheaf) P₀
 
 /-- Sheafifying the whiskered unit `M ⊗ (N ⊗ P) ⟶ M ⊗ a(N ⊗ P)` gives an isomorphism. -/
 instance (M₀ P₀ : PresheafOfModules.{u} (ringCatSheaf R).obj) :
     IsIso ((PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
       (M₀ ◁ (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-        P₀)) :=
-  isIso_sheafification_map_of_inverseImage_W_toPresheaf R
-    (PresheafOfModules.inverseImage_W_toPresheaf_whiskerLeft J M₀
-      (inverseImage_W_toPresheaf_sheafificationAdjunction_unit_app R P₀))
+        P₀)) := by
+  change ((MorphismProperty.isomorphisms _).inverseImage
+    (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)))
+      (M₀ ◁ (PresheafOfModules.sheafificationAdjunction
+        (𝟙 (ringCatSheaf R).obj)).unit.app P₀)
+  rw [← PresheafOfModules.inverseImage_W_toPresheaf_eq_inverseImage_isomorphisms]
+  exact PresheafOfModules.inverseImage_W_toPresheaf_whiskerLeft J M₀
+    (f := (PresheafOfModules.sheafificationAdjunction
+      (𝟙 (ringCatSheaf R).obj)).unit.app P₀) (J.W_toSheafify P₀.presheaf)
 
 /-- Associativity of the tensor product of sheaves of `R`-modules. Through the defining
 identifications `tensorProductIso`, it is the sheafification of the sectionwise associator,
