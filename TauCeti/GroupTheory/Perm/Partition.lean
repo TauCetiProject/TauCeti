@@ -262,7 +262,7 @@ theorem _root_.Equiv.Perm.parts_partition_permCongr (e : α ≃ β) (σ : Equiv.
 /-- `fullCycleType` is the unbundled parts of Mathlib's permutation partition. -/
 theorem _root_.Equiv.Perm.fullCycleType_eq_parts_partition (σ : Equiv.Perm α) :
     fullCycleType σ = σ.partition.parts := by
-  rw [fullCycleType, Equiv.Perm.parts_partition]
+  rfl
 
 /-- The full cycle lengths of a permutation sum to the cardinality of its carrier. -/
 theorem _root_.Equiv.Perm.sum_fullCycleType (σ : Equiv.Perm α) :
