@@ -19,8 +19,8 @@ computed from those of the family.
 
 Mathlib proves the measurable supremum, `Finset.measurable_sup'`, and has no infimum counterpart;
 this file supplies the infimum, the almost-everywhere forms of both, and the coordinatewise
-version `x ↦ sup' (fun n => f n x)` of each. The infimum lemmas are the supremum lemmas at the
-order dual.
+version `x ↦ sup' (fun n => f n x)` of the almost-everywhere forms, which is the spelling their
+consumers use. The infimum lemmas are the supremum lemmas at the order dual.
 -/
 
 public section
@@ -38,24 +38,6 @@ theorem measurable_inf' [SemilatticeInf α] [MeasurableInf₂ α] (hs : s.Nonemp
     (hf : ∀ n ∈ s, Measurable (f n)) : Measurable (s.inf' hs f) :=
   -- the infimum is the supremum of the order dual: `Finset.toDual_sup'` is `rfl`
   Finset.measurable_sup' (α := αᵒᵈ) hs hf
-
-/-- The coordinatewise form of `Finset.measurable_sup'`: the pointwise supremum
-`x ↦ sup' (fun n => f n x)` of a nonempty finite family of measurable functions is measurable. -/
-@[fun_prop]
-theorem measurable_fun_sup' [SemilatticeSup α] [MeasurableSup₂ α] (hs : s.Nonempty)
-    (hf : ∀ n ∈ s, Measurable (f n)) : Measurable (fun x => s.sup' hs fun n => f n x) := by
-  have h : (fun x => s.sup' hs fun n => f n x) = s.sup' hs f :=
-    funext fun x => (Finset.sup'_apply hs f x).symm
-  rw [h]; exact Finset.measurable_sup' hs hf
-
-/-- The coordinatewise form of `Finset.measurable_inf'`: the pointwise infimum
-`x ↦ inf' (fun n => f n x)` of a nonempty finite family of measurable functions is measurable. -/
-@[fun_prop]
-theorem measurable_fun_inf' [SemilatticeInf α] [MeasurableInf₂ α] (hs : s.Nonempty)
-    (hf : ∀ n ∈ s, Measurable (f n)) : Measurable (fun x => s.inf' hs fun n => f n x) := by
-  have h : (fun x => s.inf' hs fun n => f n x) = s.inf' hs f :=
-    funext fun x => (Finset.inf'_apply hs f x).symm
-  rw [h]; exact measurable_inf' hs hf
 
 /-- The supremum of a nonempty finite family of a.e.-measurable functions is a.e. measurable. -/
 @[fun_prop]

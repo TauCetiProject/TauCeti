@@ -55,11 +55,8 @@ evaluates `∫ t in Ioi 0, t ^ n * exp (-(a * t))` as `n ! / a ^ (n + 1)`,
 ## References
 
 * [mathlib4#35504](https://github.com/leanprover-community/mathlib4/pull/35504) by Joakim
-  Björnander (Apache 2.0), the upstream exponential mgf, moments and memorylessness work that the
-  roadmap names as the source for this material. It has not landed at Tau Ceti's current Mathlib
-  pin, so the names, the theorem shapes, and the real-integral proof pattern of the mgf, moment
-  and memorylessness results below are adapted from it, and they should be dropped once the pin
-  provides them.
+  Björnander (Apache 2.0): the names, the theorem shapes, and the real-integral proof pattern of
+  the mgf, moment and memorylessness results below are adapted from it.
 -/
 
 public section
