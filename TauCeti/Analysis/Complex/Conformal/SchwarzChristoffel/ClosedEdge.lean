@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Segment
+public import Mathlib.Analysis.Normed.Module.Ray
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
 
 /-!
@@ -16,8 +17,9 @@ nonzero exponent are collinear and injective on the open interval.  This file pi
 closed arc: the image of a closed prevertex-free interval is exactly the *segment* joining the two
 boundary values at its endpoints, and the image of the open interval is the corresponding open
 segment.  When the endpoints are prevertices, the two boundary values are the Schwarz--Christoffel
-vertices, so each closed boundary interval is carried homeomorphically onto the straight polygon
-side joining two consecutive vertices, and that side is nondegenerate.
+vertices, so each closed boundary interval is carried injectively onto the straight polygon side
+joining two consecutive vertices; that side is nondegenerate as soon as the two prevertices
+themselves are distinct.
 
 All the results below share the same hypotheses on the interval `[p, q]`: no prevertex of nonzero
 exponent lies in `Ioo p q`, and each of `p` and `q` carries total exponent greater than `-1`, which
@@ -50,7 +52,8 @@ of either unbounded interval as a segment or a ray remains open.
   `TauCeti.schwarzChristoffelBoundary_image_Ioo_prevertex` -- between two prevertices the closed
   and open boundary arcs are the straight side joining the corresponding Schwarz--Christoffel
   vertices and its interior.
-* `TauCeti.schwarzChristoffelVertex_ne` -- that side is nondegenerate.
+* `TauCeti.schwarzChristoffelVertex_ne` -- that side is nondegenerate when the two prevertices
+  are distinct.
 
 ## References
 
@@ -198,18 +201,21 @@ theorem norm_schwarzChristoffelBoundary_sub_add (a e : ι → ℝ) (z₀ : Upper
     ‖schwarzChristoffelBoundary a e z₀ z - schwarzChristoffelBoundary a e z₀ x‖ =
       ‖schwarzChristoffelBoundary a e z₀ y - schwarzChristoffelBoundary a e z₀ x‖ +
         ‖schwarzChristoffelBoundary a e z₀ z - schwarzChristoffelBoundary a e z₀ y‖ := by
-  have h₁ := schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ ha hp hq hy hx hxy
-  have h₂ := schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ ha hp hq hz hy hyz
-  have h₃ := schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ ha hp hq hz hx (hxy.trans hyz)
-  have key : ((‖schwarzChristoffelBoundary a e z₀ z -
-        schwarzChristoffelBoundary a e z₀ x‖ : ℝ) : ℂ) *
-      Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) =
-      ((‖schwarzChristoffelBoundary a e z₀ y - schwarzChristoffelBoundary a e z₀ x‖ +
-        ‖schwarzChristoffelBoundary a e z₀ z - schwarzChristoffelBoundary a e z₀ y‖ : ℝ) : ℂ) *
-        Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) := by
-    push_cast
-    linear_combination -h₃ + h₁ + h₂
-  exact_mod_cast mul_right_cancel₀ (Complex.exp_ne_zero _) key
+  -- the two increments are nonnegative real multiples of one and the same unimodular direction,
+  -- hence lie on a common ray, along which the triangle inequality is an equality
+  obtain ⟨c₁, hc₁, h₁⟩ := exists_nonneg_schwarzChristoffelBoundary_sub_eq a e z₀ ha hp hq hy hx hxy
+  obtain ⟨c₂, hc₂, h₂⟩ := exists_nonneg_schwarzChristoffelBoundary_sub_eq a e z₀ ha hp hq hz hy hyz
+  have hray : SameRay ℝ (schwarzChristoffelBoundary a e z₀ y - schwarzChristoffelBoundary a e z₀ x)
+      (schwarzChristoffelBoundary a e z₀ z - schwarzChristoffelBoundary a e z₀ y) := by
+    rw [h₁, h₂, ← Complex.real_smul, ← Complex.real_smul]
+    exact (SameRay.sameRay_nonneg_smul_left _ hc₁).nonneg_smul_right hc₂
+  calc ‖schwarzChristoffelBoundary a e z₀ z - schwarzChristoffelBoundary a e z₀ x‖
+      = ‖(schwarzChristoffelBoundary a e z₀ y - schwarzChristoffelBoundary a e z₀ x) +
+          (schwarzChristoffelBoundary a e z₀ z - schwarzChristoffelBoundary a e z₀ y)‖ := by
+        rw [sub_add_sub_cancel']
+    _ = ‖schwarzChristoffelBoundary a e z₀ y - schwarzChristoffelBoundary a e z₀ x‖ +
+          ‖schwarzChristoffelBoundary a e z₀ z - schwarzChristoffelBoundary a e z₀ y‖ :=
+        hray.norm_add
 
 /-- Distinct points of a closed interval free of prevertices with nonzero exponent, both of whose
 endpoints carry total exponent greater than `-1`, have distinct boundary values. -/
