@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.SmoothCircle
+public import TauCeti.Order.Disjoint
 
 /-!
 # Smooth link presentations
@@ -97,15 +98,6 @@ theorem mem_range_iff (L : SmoothLinkEmbedding I M n) (x : M) :
 theorem range_component_subset_range (L : SmoothLinkEmbedding I M n) (i : Fin n) :
     Set.range (L i) ⊆ L.range :=
   Set.subset_iUnion (fun j ↦ Set.range (L j)) i
-
-theorem _root_.Pairwise.disjoint_iff_ne [PartialOrder α] [OrderBot α] {ι : Type*} {f : ι → α}
-    (h : Pairwise (Function.onFun Disjoint f)) (hne : ∀ i, f i ≠ ⊥) (i j : ι) :
-    Disjoint (f i) (f j) ↔ i ≠ j := by
-  constructor
-  · intro hd hij
-    exact (Disjoint.ne (hne i) hd) (congrArg f hij)
-  · intro hij
-    exact h hij
 
 /-- Two components of a smooth link have disjoint images exactly when their labels differ. -/
 @[simp, grind =]
