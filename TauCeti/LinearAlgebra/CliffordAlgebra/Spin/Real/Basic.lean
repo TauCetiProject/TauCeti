@@ -30,7 +30,7 @@ separate.
 * `CliffordAlgebra.realCliffordSpinGroup` names the real Spin groups by signature.
 * `CliffordAlgebra.realCliffordSpinGroupZero` names the compact real Spin group.
 * `CliffordAlgebra.realCliffordSpinDoubleCoverZero` packages its double cover in positive dimension.
-* `CliffordAlgebra.natCard_fiber_realCliffordSpinDoubleCoverZero_rightHom` proves that every fiber
+* `CliffordAlgebra.card_fiber_realCliffordSpinDoubleCoverZero_rightHom` proves that every fiber
   of the double cover contains exactly two points.
 
 ## References
@@ -102,19 +102,10 @@ theorem realCliffordSpinDoubleCoverZero_rightHom (n : ℕ) [NeZero n] :
   rw [realCliffordSpinDoubleCoverZero, spinDoubleCoverOfSurjective_rightHom]
 
 /-- Every fiber of the compact real Spin double cover has exactly two elements. -/
-theorem natCard_fiber_realCliffordSpinDoubleCoverZero_rightHom
+theorem card_fiber_realCliffordSpinDoubleCoverZero_rightHom
     (n : ℕ) [NeZero n]
     (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
     Nat.card ((realCliffordSpinDoubleCoverZero n).rightHom ⁻¹' {g}) = 2 := by
-  let S := realCliffordSpinDoubleCoverZero n
-  calc
-    Nat.card (S.rightHom ⁻¹' {g}) = Nat.card S.rightHom.ker :=
-      Nat.card_congr (MonoidHom.fiberEquivKerOfSurjective S.rightHom_surjective g)
-    _ = Nat.card (MonoidHom.ker
-        (spinToSpecialOrthogonal (realCliffordForm n 0))) := by
-      rw [realCliffordSpinDoubleCoverZero_rightHom]
-    _ = 2 := card_ker_spinToSpecialOrthogonal (K := ℝ) (M := Fin (n + 0) → ℝ)
-      (by simpa using Nat.pos_of_ne_zero (NeZero.ne n)) _
-      (nondegenerate_realCliffordForm n 0)
+  simpa using (realCliffordSpinDoubleCoverZero n).card_fiber_rightHom g
 
 end CliffordAlgebra
