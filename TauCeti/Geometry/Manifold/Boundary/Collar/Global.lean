@@ -23,7 +23,8 @@ gluing: restriction along an open subset of the boundary, and the injectivity an
 consequences.
 
 The collar-neighborhood formulation follows J. Lee, *Introduction to Smooth Manifolds*, 2nd ed.,
-Theorem 9.25; this declaration is its topological abstraction.
+Theorem 9.25; this declaration is its topological abstraction.  The API adapts the existing
+`TauCeti.Geometry.Manifold.LocallyFlat.Bicollar` formalization by replacing `ℝ` with `Ico 0 1`.
 -/
 
 public section
@@ -71,7 +72,7 @@ theorem injective : Function.Injective f := h.isEmbedding.injective
 /-- The boundary map of a global collar is continuous. -/
 theorem continuous : Continuous f := h.isEmbedding.continuous
 
-/-- The boundary image lies in the image of the collar. -/
+/-- The boundary image lies in the image of the collar map. -/
 theorem range_subset_range : range f ⊆ range c := by
   rintro _ ⟨x, rfl⟩
   exact ⟨(x, ⟨0, by norm_num⟩), h.apply_zero x⟩
