@@ -111,9 +111,7 @@ theorem trans (hφ : IsCompatible e φ) {e₂ : H ≃* K} {ψ : N.V →ₗ[R] P.
 /-- **The inverse of a compatible pair whose linear part is an equivalence is compatible.** -/
 theorem symm {e' : M.V ≃ₗ[R] N.V} (he : IsCompatible e (e' : M.V →ₗ[R] N.V)) :
     IsCompatible e.symm (e'.symm : N.V →ₗ[R] M.V) := fun h ↦ by
-  rw [e'.toLinearMap_symm_comp_eq, ← LinearMap.comp_assoc, he (e.symm h)]
-  ext x
-  simp
+  simpa using e'.isIntertwining_symm_isIntertwining (σ := N.ρ.comp (e : G →* H)) he (e.symm h)
 
 end IsCompatible
 
