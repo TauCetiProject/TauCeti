@@ -268,6 +268,14 @@ theorem arrowPath_surjective : Function.Surjective (arrowPath (A := A)) := by
       | src => exact ⟨e, by rw [path_src_src_eq_nil q]; rfl⟩
       | tgt => exact (isEmpty_hom_from_tgt _).elim e
 
+/-- **Over the `A₂` quiver there is exactly one path from the source to the target**: the arrows
+are the paths `src → tgt`, and there is only one arrow. -/
+instance instUniquePathSrcTgt [Unique A] : Unique (Path (src : Kronecker A) tgt) where
+  default := arrowPath default
+  uniq p := by
+    obtain ⟨a, rfl⟩ := arrowPath_surjective p
+    rw [Unique.eq_default a]
+
 /-- The paths from the source to the target of the generalized Kronecker quiver are its arrows. -/
 noncomputable def pathEquivArrow : Path (src : Kronecker A) tgt ≃ A :=
   (Equiv.ofBijective arrowPath ⟨arrowPath_injective, arrowPath_surjective⟩).symm
