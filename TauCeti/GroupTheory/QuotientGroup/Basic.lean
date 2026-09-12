@@ -114,8 +114,12 @@ section Finite
 
 variable {M : Type*} [AddCommMonoid M] [Fintype G] (H : Subgroup G)
 
-noncomputable local instance : Fintype H := Fintype.ofFinite H
-noncomputable local instance : Fintype (G ⧸ H) := H.fintypeQuotientOfFiniteIndex
+/-- A subgroup of a finite group is a finite type. -/
+noncomputable local instance fintypeSubgroup : Fintype H := Fintype.ofFinite H
+
+/-- The quotient of a finite group by a subgroup is a finite type. -/
+noncomputable local instance fintypeQuotientGroup : Fintype (G ⧸ H) :=
+  H.fintypeQuotientOfFiniteIndex
 
 /-- Every element of a finite group `G` is uniquely the product of the `Quotient.out`
 representative of a left coset of `H` and an element of `H`. -/

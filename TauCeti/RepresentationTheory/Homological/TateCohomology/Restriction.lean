@@ -69,8 +69,12 @@ namespace TauCeti.TateCohomology
 variable {R G : Type u} [CommRing R] [Group G] [Fintype G] (M : Rep R G)
   (H : Subgroup G)
 
-noncomputable local instance : Fintype H := Fintype.ofFinite H
-noncomputable local instance : Fintype (G ⧸ H) := H.fintypeQuotientOfFiniteIndex
+/-- A subgroup of a finite group is a finite type. -/
+noncomputable local instance fintypeSubgroup : Fintype H := Fintype.ofFinite H
+
+/-- The quotient of a finite group by a subgroup is a finite type. -/
+noncomputable local instance fintypeQuotientGroup : Fintype (G ⧸ H) :=
+  H.fintypeQuotientOfFiniteIndex
 
 section Zero
 
