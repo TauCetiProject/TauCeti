@@ -19,6 +19,8 @@ relative norm of the different at each use site.
 
 -/
 
+-- Source: `TauCetiRoadmap/NumberFieldArithmetic`.
+
 public section
 
 namespace TauCeti
