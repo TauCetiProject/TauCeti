@@ -6,24 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisGroups.Discriminant.Basic
+import TauCeti.FieldTheory.KummerExtension
 
 /-!
 # The discriminant field `F(√disc f)`
 
 Let `f` be a polynomial over a field `F` and let `E` be an extension of `F`. The **discriminant
 field** of `f` in `E` is the subfield of `E` generated over `F` by the square roots of
-`Polynomial.discr f`, that is, the splitting field of `X ^ 2 - C f.discr` realized inside `E`.
-It is `TauCeti.discrField f E`, defined as the adjunction to `F` of the root set of
-`X ^ 2 - C f.discr` in `E`.
+`Polynomial.discr f` that lie in `E`. It is `TauCeti.discrField f E`, defined as the adjunction to
+`F` of the root set of `X ^ 2 - C f.discr` in `E`.
 
 Whenever `E` contains an element `δ` with `δ ^ 2 = discr f` — for monic separable `f` splitting in
 `E` the square root `TauCeti.discrSqrt` of the previous file is one — the definition collapses to
-the simple extension `F⟮δ⟯`, because the only other square root of the discriminant is `-δ`. In
-particular the discriminant field does not depend on the numbering of the roots that `discrSqrt`
-is computed from, even though `discrSqrt` itself changes sign with it. From that description one
-reads off the two possibilities: `F⟮δ⟯` is `F` when `discr f` is a square in `F`, and a quadratic
-extension of `F` otherwise. Away from characteristic `2` it is moreover a Galois extension of `F`,
-since `X ^ 2 - C f.discr` is then separable.
+the simple extension `F⟮δ⟯`, because the only other square root of the discriminant is `-δ`, and it
+is then a splitting field of `X ^ 2 - C f.discr` over `F`. (When `E` contains no square root at all
+the root set is empty and the discriminant field is just `F`.) In particular the discriminant field
+does not depend on the numbering of the roots that `discrSqrt` is computed from, even though
+`discrSqrt` itself changes sign with it. From that description one reads off the two
+possibilities: `F⟮δ⟯` is `F` when `discr f` is a square in `F`, and a quadratic extension of `F`
+otherwise. Away from characteristic `2` it is moreover a Galois extension of `F` as soon as the
+discriminant is nonzero, since `X ^ 2 - C f.discr` is then separable.
 
 The reason the discriminant field is an invariant of `f` and not merely of its discriminant is the
 comparison theorem `TauCeti.fixedField_evenAutSubgroup`: in a Galois splitting extension and away
@@ -47,12 +49,13 @@ the alternating group.
 
 * `TauCeti.discrField_eq_adjoin_simple`: a square root `δ` of the discriminant generates the
   discriminant field.
-* `TauCeti.isSplittingField_discrField`: the discriminant field is a splitting field of
-  `X ^ 2 - C f.discr`.
+* `TauCeti.isSplittingField_discrField`: if `E` contains a square root of the discriminant, the
+  discriminant field is a splitting field of `X ^ 2 - C f.discr`.
 * `TauCeti.discrField_map`: it is natural in the extension.
 * `TauCeti.discrField_eq_bot_iff`, `TauCeti.finrank_discrField`: the discriminant field is `F`
   exactly when the discriminant is a square, and has degree `2` otherwise.
-* `TauCeti.isGalois_discrField`: away from characteristic `2` it is a Galois extension of `F`.
+* `TauCeti.isGalois_discrField`: away from characteristic `2`, and for nonzero discriminant, it is
+  a Galois extension of `F`.
 * `TauCeti.fixedField_evenAutSubgroup`: **the comparison theorem**, that the discriminant field is
   the fixed field of the even part of the Galois group.
 * `TauCeti.discrField_eq_bot_iff_range_le_alternatingGroup`,
@@ -75,53 +78,14 @@ universe u v w
 
 variable {F : Type u} [Field F] {E : Type v} [Field E] [Algebra F E]
 
-/-! ## Adjoining a root of `X ^ n - C a` -/
-
-section Radical
-
-variable {a : F} {δ : E}
-
-/-- A point of an extension is a root of `X ^ n - C a` exactly when its `n`-th power is `a`. -/
-theorem _root_.Polynomial.mem_rootSet_X_pow_sub_C {n : ℕ} (hn : n ≠ 0) {x : E} :
-    x ∈ ((X : F[X]) ^ n - C a).rootSet E ↔ x ^ n = algebraMap F E a := by
-  rw [mem_rootSet_of_ne (monic_X_pow_sub_C a hn).ne_zero, map_sub, aeval_X_pow, aeval_C,
-    sub_eq_zero]
-
-/-- Over a field, a square root `δ` of `a` generates the whole splitting field of `X ^ 2 - C a`,
-because the only other root is `-δ`. -/
-theorem _root_.IntermediateField.adjoin_rootSet_X_pow_two_sub_C
-    (hδ : δ ^ 2 = algebraMap F E a) :
-    IntermediateField.adjoin F (((X : F[X]) ^ 2 - C a).rootSet E) = F⟮δ⟯ := by
-  have hmem : δ ∈ ((X : F[X]) ^ 2 - C a).rootSet E :=
-    (Polynomial.mem_rootSet_X_pow_sub_C two_ne_zero).mpr hδ
-  refine le_antisymm (IntermediateField.adjoin_le_iff.mpr fun x hx ↦ ?_)
-    (IntermediateField.adjoin_simple_le_iff.mpr (IntermediateField.subset_adjoin F _ hmem))
-  have hx' : x ^ 2 = algebraMap F E a := (Polynomial.mem_rootSet_X_pow_sub_C two_ne_zero).mp hx
-  have hfac : (x - δ) * (x + δ) = 0 := by linear_combination hx' - hδ
-  rcases mul_eq_zero.mp hfac with h | h
-  · exact (sub_eq_zero.mp h) ▸ IntermediateField.mem_adjoin_simple_self F δ
-  · exact (eq_neg_of_add_eq_zero_left h) ▸ neg_mem (IntermediateField.mem_adjoin_simple_self F δ)
-
-/-- A square root of `a` in `E` splits `X ^ 2 - C a` there: the two linear factors are `X - C δ`
-and `X + C δ`. Unlike `Polynomial.X_pow_sub_C_splits_of_isPrimitiveRoot` this needs no primitive
-root of unity, so it also covers characteristic `2`, where the two factors coincide. -/
-theorem _root_.Polynomial.splits_map_X_pow_two_sub_C (hδ : δ ^ 2 = algebraMap F E a) :
-    (((X : F[X]) ^ 2 - C a).map (algebraMap F E)).Splits := by
-  have hmap : ((X : F[X]) ^ 2 - C a).map (algebraMap F E) = (X - C δ) * (X - C (-δ)) := by
-    rw [Polynomial.map_sub, Polynomial.map_pow, map_X, map_C, ← hδ, map_pow, map_neg]
-    ring
-  rw [hmap]
-  exact (Splits.X_sub_C δ).mul (Splits.X_sub_C (-δ))
-
-end Radical
-
 /-! ## The discriminant field -/
 
 variable {f : F[X]}
 
 /-- **The discriminant field of `f` in `E`**: the subfield of `E` generated over `F` by the square
-roots of `Polynomial.discr f`, that is, the splitting field of `X ^ 2 - C f.discr` realized inside
-`E`.
+roots of `Polynomial.discr f` that lie in `E`. If `E` contains such a square root this is a
+splitting field of `X ^ 2 - C f.discr` over `F` (`TauCeti.isSplittingField_discrField`); if it
+contains none, the root set is empty and the discriminant field is `F` itself.
 
 `TauCeti.discrField_eq_adjoin_simple` describes it as `F⟮δ⟯` for any square root `δ` of the
 discriminant in `E`. Stating it as an adjunction of the whole root set instead of a simple
@@ -135,9 +99,9 @@ theorem discrField_eq_adjoin_simple {δ : E} (hδ : δ ^ 2 = algebraMap F E f.di
     discrField f E = F⟮δ⟯ :=
   IntermediateField.adjoin_rootSet_X_pow_two_sub_C hδ
 
-/-- The discriminant field is a splitting field of `X ^ 2 - C f.discr` over `F`. This is the
-milestone's definition of `F(√disc f)`, and `Polynomial.IsSplittingField.algEquiv` identifies it
-with the abstract splitting field. -/
+/-- If `E` contains a square root of the discriminant, then the discriminant field is a splitting
+field of `X ^ 2 - C f.discr` over `F`; `Polynomial.IsSplittingField.algEquiv` therefore identifies
+it with the abstract splitting field of that polynomial. -/
 theorem isSplittingField_discrField {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr) :
     IsSplittingField F (discrField f E) (X ^ 2 - C f.discr) :=
   IntermediateField.adjoin_rootSet_isSplittingField (Polynomial.splits_map_X_pow_two_sub_C hδ)
@@ -148,8 +112,8 @@ every `F`-automorphism of `E` maps the discriminant field onto itself.
 
 Base change of the base field needs no separate statement: `Polynomial.Monic.discr_map` turns the
 discriminant of `f.map φ` into the image of `discr f`, so the results below apply verbatim to
-`discrField (f.map φ) E`, and in particular the degree stays `2` as long as the image of the
-discriminant is not a square. -/
+`discrField (f.map φ) E`, and in particular the degree stays `2` as long as `E` contains a square
+root of that image and the image is not a square in the base field. -/
 theorem discrField_map {E' : Type w} [Field E'] [Algebra F E'] (ψ : E ≃ₐ[F] E') :
     (discrField f E).map ψ.toAlgHom = discrField f E' := by
   rw [discrField, discrField, IntermediateField.adjoin_map]
@@ -201,14 +165,14 @@ theorem finrank_discrField {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr)
   rw [hrank]
   omega
 
-/-- Away from characteristic `2`, the discriminant field of a monic separable polynomial is a
-Galois extension of the base field: it is the splitting field of `X ^ 2 - C f.discr`, which is
-separable because the discriminant is nonzero and `2` is invertible. -/
-theorem isGalois_discrField {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr) (hf : f.Monic)
-    (hsep : f.Separable) (hchar : ringChar F ≠ 2) : IsGalois F (discrField f E) := by
+/-- Away from characteristic `2`, the discriminant field of a polynomial with nonzero discriminant
+is a Galois extension of the base field: it is the splitting field of `X ^ 2 - C f.discr`, which is
+separable because the discriminant is nonzero and `2` is invertible. For a monic polynomial,
+`Polynomial.Monic.discr_ne_zero_iff` reads the hypothesis as separability of `f`. -/
+theorem isGalois_discrField {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr) (hdisc : f.discr ≠ 0)
+    (hchar : ringChar F ≠ 2) : IsGalois F (discrField f E) := by
   have hsep2 : ((X : F[X]) ^ 2 - C f.discr).Separable :=
-    separable_X_pow_sub_C _ (by simpa using Ring.two_ne_zero hchar)
-      (hf.discr_ne_zero_iff.mpr hsep)
+    separable_X_pow_sub_C _ (by simpa using Ring.two_ne_zero hchar) hdisc
   have := isSplittingField_discrField hδ
   exact IsGalois.of_separable_splitting_field hsep2
 
