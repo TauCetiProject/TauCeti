@@ -266,12 +266,15 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
           (extChartPartialDiffeomorph J n (f x)).symm).source =
             (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).source ∩
               (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm) ⁻¹'
-                (extChartPartialDiffeomorph J n (f x)).symm.source :=
-      PartialEquiv.trans_source _ _
+                (extChartPartialDiffeomorph J n (f x)).symm.source := by
+      simp only [PartialDiffeomorph.trans_toPartialEquiv,
+        OpenPartialHomeomorph.trans_toPartialEquiv,
+        PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+        PartialEquiv.trans_source]
     have hchartSymmSource :
         (extChartPartialDiffeomorph J n (f x)).symm.source =
-          (extChartPartialDiffeomorph J n (f x)).target :=
-      PartialEquiv.symm_source (extChartPartialDiffeomorph J n (f x)).toPartialEquiv
+          (extChartPartialDiffeomorph J n (f x)).target := by
+      simp only [PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_source]
     rw [hΨ, htransSource, hchartSymmSource]
     simp only [extChartPartialDiffeomorph_target, hψ,
       PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv,
@@ -283,7 +286,10 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
         ((extChartPartialDiffeomorph I n x).trans Ψ).source =
           (extChartPartialDiffeomorph I n x).source ∩
           (extChartPartialDiffeomorph I n x) ⁻¹' Ψ.source := by
-      exact PartialEquiv.trans_source _ _
+      simp only [PartialDiffeomorph.trans_toPartialEquiv,
+        OpenPartialHomeomorph.trans_toPartialEquiv,
+        PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+        PartialEquiv.trans_source]
     rw [hΦ, htransSource]
     simp only [hΨsource, extChartPartialDiffeomorph_source, hφ,
       coe_extChartPartialDiffeomorph]
@@ -291,25 +297,20 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
   have hcoe (y : M) : Φ y = ψ.symm (Θ (φ y)) := by
     calc
       Φ y = Ψ ((extChartPartialDiffeomorph I n x) y) := by
-        rw [hΦ]
-        change ((extChartPartialDiffeomorph I n x).toPartialEquiv.trans Ψ.toPartialEquiv) y =
-          Ψ.toPartialEquiv ((extChartPartialDiffeomorph I n x).toPartialEquiv y)
-        exact PartialEquiv.trans_apply _ _
+        simp only [hΦ, PartialDiffeomorph.trans_toPartialEquiv,
+          OpenPartialHomeomorph.trans_toPartialEquiv,
+          PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+          PartialEquiv.trans_apply]
       _ = (extChartPartialDiffeomorph J n (f x)).symm
           ((PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm)
             ((extChartPartialDiffeomorph I n x) y)) := by
-        rw [hΨ]
-        change ((PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).toPartialEquiv.trans
-            (extChartPartialDiffeomorph J n (f x)).symm.toPartialEquiv)
-            ((extChartPartialDiffeomorph I n x).toPartialEquiv y) = _
-        exact PartialEquiv.trans_apply _ _
+        simp only [hΨ, PartialDiffeomorph.trans_toPartialEquiv,
+          OpenPartialHomeomorph.trans_toPartialEquiv,
+          PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+          PartialEquiv.trans_apply]
       _ = ψ.symm (Θ (φ y)) := by
-        -- Expose the generated projections of `PartialDiffeomorph.symm` before applying the
-        -- chart-specific semantic equations below.
-        change (extChartPartialDiffeomorph J n (f x)).toPartialEquiv.symm
-            ((PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).toPartialEquiv
-              ((extChartPartialDiffeomorph I n x).toPartialEquiv y)) = ψ.symm (Θ (φ y))
-        simp only [coe_extChartPartialDiffeomorph,
+        simp only [PartialDiffeomorph.symm_toPartialEquiv,
+          coe_extChartPartialDiffeomorph,
           PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv,
           PartialHomeomorph.toFun_eq_coe, OpenPartialHomeomorph.coe_toPartialHomeomorph,
           hφ, hψ]

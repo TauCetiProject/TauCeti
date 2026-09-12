@@ -573,10 +573,12 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
   -- chart. The resulting `q : E ↔ G` has the desired source, target, and smooth inverse.
   set q := d.trans c.symm with hqdef
   have hqsource : q.source = d.source ∩ d ⁻¹' c.symm.source := by
-    rw [hqdef]
-    exact PartialEquiv.trans_source d.toPartialEquiv c.symm.toPartialEquiv
+    simp only [hqdef, PartialDiffeomorph.trans_toPartialEquiv,
+      OpenPartialHomeomorph.trans_toPartialEquiv,
+      PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+      PartialEquiv.trans_source]
   have hcsymmsource : c.symm.source = c.target := by
-    exact PartialEquiv.symm_source c.toPartialEquiv
+    simp only [PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_source]
   have hzeroq : (0 : E) ∈ q.source := by
     rw [hqsource]
     refine ⟨hzero, ?_⟩
@@ -587,13 +589,10 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
   have hq (x : E) (hx : x ∈ q.source) : f x = q x := by
     rw [hqsource] at hx
     have hqapply : q x = c.toPartialEquiv.symm (d x) := by
-      rw [hqdef]
-      -- Expose the generated projections of composition and symmetry, then use Mathlib's
-      -- underlying partial-equivalence composition equation.
-      change (d.toPartialEquiv.trans c.symm.toPartialEquiv) x =
-        c.toPartialEquiv.symm (d.toPartialEquiv x)
-      rw [PartialEquiv.trans_apply]
-      rfl
+      simp only [hqdef, PartialDiffeomorph.trans_toPartialEquiv,
+        OpenPartialHomeomorph.trans_toPartialEquiv,
+        PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+        PartialEquiv.trans_apply, PartialDiffeomorph.symm_toPartialEquiv]
     calc
       f x = chart.symm (d x) := by
         rw [← hd]
