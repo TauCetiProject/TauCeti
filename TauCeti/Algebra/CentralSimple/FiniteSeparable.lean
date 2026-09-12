@@ -216,24 +216,10 @@ private theorem extendToSplittingField_injective
     {n : ℕ} (e : E ⊗[K] A ≃ₐ[E] Matrix (Fin n) (Fin n) E) :
     Function.Injective (extendToSplittingField e) := by
   let L := finiteSplittingField K A e
-  have hmap : (extendToSplittingField e).toLinearMap.restrictScalars K =
-      (IsScalarTower.toAlgHom K L E).toLinearMap.rTensor A := by
-    apply TensorProduct.ext'
-    intro x a
-    -- The two sides hide the same coefficient map behind different `AlgHom`/`LinearMap` wrappers.
-    -- Their pure-tensor reduction lemmas cannot rewrite until those wrappers are exposed by
-    -- definitional equality.
-    change (Algebra.TensorProduct.map (Algebra.ofId L E) (AlgHom.id K A))
-        (x ⊗ₜ[K] a) =
-      (IsScalarTower.toAlgHom K L E).toLinearMap.rTensor A (x ⊗ₜ[K] a)
-    rw [Algebra.TensorProduct.map_tmul, LinearMap.rTensor_tmul, Algebra.ofId_apply,
-      AlgHom.id_apply, AlgHom.toLinearMap_apply, IsScalarTower.toAlgHom_apply]
-  have hinjective : Function.Injective
-      ((extendToSplittingField e).toLinearMap.restrictScalars K) := by
-    rw [hmap]
-    exact Module.Flat.rTensor_preserves_injective_linearMap _
-      (IsScalarTower.toAlgHom K L E).injective
-  exact hinjective
+  change Function.Injective (TensorProduct.map
+    (IsScalarTower.toAlgHom K L E).toLinearMap (LinearMap.id (R := K) (M := A)))
+  exact TensorProduct.map_injective_of_flat_flat _ _
+    (IsScalarTower.toAlgHom K L E).injective Function.injective_id
 
 /-- The algebra equivalence from matrices over the generated intermediate field to the descended
 scalar extension, upgrading `descendedMatrixLinearEquiv`. -/
