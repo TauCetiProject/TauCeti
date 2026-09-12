@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import TauCeti.Algebra.Homology.OneObject
 public import TauCeti.KnotTheory.Grid.Differential.Square.Zero
 
 /-!
@@ -56,29 +56,6 @@ namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
 
-universe u v
-
-private def oneObjectComplex {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
-    (X : C) (d : X ⟶ X) (d_comp_d : d ≫ d = 0) :
-    HomologicalComplex C (ComplexShape.refl Unit) where
-  X _ := X
-  d _ _ := d
-  d_comp_d' _ _ _ _ _ := d_comp_d
-
-private theorem oneObjectComplex_X {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
-    (X : C) (d : X ⟶ X) (d_comp_d : d ≫ d = 0) (i : Unit) :
-    (oneObjectComplex X d d_comp_d).X i = X :=
-  rfl
-
-private theorem oneObjectComplex_d {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
-    (X : C) (d : X ⟶ X) (d_comp_d : d ≫ d = 0)
-    (hX : (oneObjectComplex X d d_comp_d).X () = X) :
-    (oneObjectComplex X d d_comp_d).d () () =
-      eqToHom hX ≫ d ≫ eqToHom hX.symm := by
-  unfold oneObjectComplex at hX ⊢
-  cases hX
-  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
-
 /-! ### Fully blocked complex -/
 
 /-- The fully blocked grid chain module and differential as a one-object homological complex over
@@ -87,7 +64,7 @@ private theorem oneObjectComplex_d {C : Type u} [Category.{v} C] [HasZeroMorphis
 The unique differential counts empty rectangles avoiding every marking and squares to zero. -/
 noncomputable def fullyBlockedComplex :
     HomologicalComplex (ModuleCat (ZMod 2)) (ComplexShape.refl Unit) :=
-  oneObjectComplex (ModuleCat.of (ZMod 2) (GridChain (ZMod 2) n))
+  oneObjectHomologicalComplex (ModuleCat.of (ZMod 2) (GridChain (ZMod 2) n))
     (ModuleCat.ofHom G.fullyBlockedDifferential) (by
       rw [← ModuleCat.ofHom_comp, G.fullyBlockedDifferential_comp_self_eq_zero,
         ModuleCat.ofHom_zero])
@@ -96,7 +73,7 @@ noncomputable def fullyBlockedComplex :
 @[simp]
 theorem fullyBlockedComplex_X (i : Unit) :
     G.fullyBlockedComplex.X i = ModuleCat.of (ZMod 2) (GridChain (ZMod 2) n) :=
-  oneObjectComplex_X _ _ _ _
+  oneObjectHomologicalComplex_X _ _ _ _
 
 /-- The unique differential of the fully blocked complex is the fully blocked grid differential. -/
 @[simp]
@@ -106,7 +83,7 @@ theorem fullyBlockedComplex_d :
         ModuleCat.ofHom G.fullyBlockedDifferential ≫
           eqToHom (G.fullyBlockedComplex_X ()).symm := by
   unfold fullyBlockedComplex
-  exact oneObjectComplex_d _ _ _ _
+  exact oneObjectHomologicalComplex_d _ _ _
 
 /-! ### Unblocked complex -/
 
@@ -119,7 +96,7 @@ The unique differential counts empty rectangles avoiding the `X`-markings and we
 rectangle by the monomial of the `O`-markings it covers. -/
 noncomputable def unblockedComplex :
     HomologicalComplex (SemimoduleCat (MvPolynomial (Fin n) R)) (ComplexShape.refl Unit) :=
-  oneObjectComplex (SemimoduleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n))
+  oneObjectHomologicalComplex (SemimoduleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n))
     (SemimoduleCat.ofHom (G.unblockedDifferential R)) (by
     rw [← SemimoduleCat.ofHom_comp, G.unblockedDifferential_comp_self_eq_zero R]
     rfl)
@@ -129,7 +106,7 @@ noncomputable def unblockedComplex :
 theorem unblockedComplex_X (i : Unit) :
     (G.unblockedComplex R).X i =
       SemimoduleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n) :=
-  oneObjectComplex_X _ _ _ _
+  oneObjectHomologicalComplex_X _ _ _ _
 
 /-- The unique differential of the unblocked complex is the unblocked grid differential. -/
 @[simp]
@@ -139,7 +116,7 @@ theorem unblockedComplex_d :
         SemimoduleCat.ofHom (G.unblockedDifferential R) ≫
           eqToHom (G.unblockedComplex_X R ()).symm := by
   unfold unblockedComplex
-  exact oneObjectComplex_d _ _ _ _
+  exact oneObjectHomologicalComplex_d _ _ _
 
 /-! ### One-variable specialization -/
 
@@ -152,7 +129,7 @@ the standard simply blocked theory sets one variable on each component to zero. 
 noncomputable def simplyBlockedComplex (i : Fin n) :
     HomologicalComplex (SemimoduleCat (MvPolynomial {c : Fin n // c ≠ i} R))
       (ComplexShape.refl Unit) :=
-  oneObjectComplex
+  oneObjectHomologicalComplex
     (SemimoduleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i))
     (SemimoduleCat.ofHom (G.simplyBlockedDifferential R i)) (by
     rw [← SemimoduleCat.ofHom_comp, G.simplyBlockedDifferential_comp_self_eq_zero R i]
@@ -163,7 +140,7 @@ noncomputable def simplyBlockedComplex (i : Fin n) :
 theorem simplyBlockedComplex_X (i : Fin n) (j : Unit) :
     (G.simplyBlockedComplex R i).X j =
       SemimoduleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i) :=
-  oneObjectComplex_X _ _ _ _
+  oneObjectHomologicalComplex_X _ _ _ _
 
 /-- The unique differential of the one-variable specialization is its specialized grid
 differential. -/
@@ -174,7 +151,7 @@ theorem simplyBlockedComplex_d (i : Fin n) :
         SemimoduleCat.ofHom (G.simplyBlockedDifferential R i) ≫
           eqToHom (G.simplyBlockedComplex_X R i ()).symm := by
   unfold simplyBlockedComplex
-  exact oneObjectComplex_d _ _ _ _
+  exact oneObjectHomologicalComplex_d _ _ _
 
 end GridDiagram
 
