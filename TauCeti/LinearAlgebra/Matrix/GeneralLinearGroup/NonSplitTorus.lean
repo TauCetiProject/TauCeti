@@ -257,7 +257,7 @@ theorem conj_notMem_of_det_sub_algebraMap_eq_zero {g : GL (Fin 2) F}
           ((g : Matrix (Fin 2) (Fin 2) F) -
             algebraMap F (Matrix (Fin 2) (Fin 2) F) a) * (x : Matrix (Fin 2) (Fin 2) F) := by
       rw [mul_sub, sub_mul, hcancel, Units.val_mul, Units.val_mul]
-    rw [hsplit, Matrix.det_mul, Matrix.det_mul, ha, mul_zero, zero_mul]
+    rw [hsplit, Matrix.coe_units_inv, Matrix.det_conj' x.isUnit, ha]
   -- so the norm of `v - a` vanishes, forcing `v` into `F`
   have hnorm : Algebra.norm F ((v : E) - algebraMap F E a) = 0 := by
     rw [Algebra.norm_eq_matrix_det (nonSplitTorusBasis F E hE), map_sub,

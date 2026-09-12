@@ -91,7 +91,7 @@ theorem pow_card_eq_self_iff_mem_range_algebraMap {K L : Type*} [Field K] [Finty
 
 section Finite
 
-variable {K L : Type*} [Field K] [Finite K] [Field L] [Algebra K L]
+variable {K L : Type*} [Field K] [Finite K] [CommRing L] [IsDomain L] [Algebra K L]
 
 /-- **The `Nat.card` spelling of
 `TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`**, for a base field given as
@@ -106,7 +106,13 @@ theorem pow_natCard_eq_self_iff (a : L) :
 theorem pow_natCard_ne {a : L} (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ≠ a :=
   fun h => ha ((pow_natCard_eq_self_iff a).mp h)
 
+end Finite
+
 /-! ### Quadratic extensions -/
+
+section Quadratic
+
+variable {K L : Type*} [Field K] [Finite K] [Field L] [Algebra K L]
 
 /-- **In a quadratic extension of a field with `q` elements the `q`-power map is an involution**:
 `L` has `q²` elements, so `a ^ (q²) = a`. -/
@@ -130,7 +136,7 @@ theorem pow_natCard_notMem_range_algebraMap (h2 : Module.finrank K L = 2) {a : L
   rw [pow_natCard_pow_natCard h2] at h1
   exact ha ((pow_natCard_eq_self_iff a).mp h1.symm)
 
-end Finite
+end Quadratic
 
 end FiniteField
 

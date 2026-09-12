@@ -49,6 +49,8 @@ and to deduce `TauCeti.character_ind` from `TauCeti.indClassFun_eq_natCard_inv_m
   `TauCeti.indClassFun_eq_sum_of_smul_eq_self_mem`: only the cosets `g` fixes contribute, so the
   coset sum may be taken over any finite set of cosets containing the fixed ones.  This is what
   turns the formula into a finite explicit computation for a concrete group.
+* `TauCeti.indTerm_eq_of_mk_eq_of_conj`: a summand depends only on its coset representative when
+  the inducing function is invariant under conjugation in the subgroup.
 * `TauCeti.indClassFun_mem_classFunction`: the induced function of a class function is a class
   function.
 * `TauCeti.natCard_mul_indClassFun`: the group-sum form, `|S| · (Ind f)(g) = ∑_{x ∈ G} f(x⁻¹gx)`,
@@ -70,8 +72,9 @@ invariance of the total sum.  It is the only regime the results below use.
 
 `TauCeti.indTerm` and the lemmas that evaluate it are shared, not internal to this file:
 `TauCeti.RepresentationTheory.Induction.Character` sums it over right cosets and
-`TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity` sums it over all of `G`.  Only
-`indTerm_mul`, which serves the proof of `TauCeti.indTerm_eq_of_mk_eq` alone, is private.
+`TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity` sums it over all of `G`.
+`TauCeti.indTerm_eq_of_mk_eq_of_conj` gives the additive, explicitly conjugation-invariant form of
+representative independence; `TauCeti.indTerm_eq_of_mk_eq` specializes it to class functions.
 
 ## References
 
@@ -128,6 +131,33 @@ open scoped Classical in
 theorem indTerm_one (f : S → k) (g : G) :
     indTerm f g 1 = if h : g ∈ S then f ⟨g, h⟩ else 0 := by
   simp [indTerm]
+
+/-- **A conjugation-invariant summand depends only on the left coset of its representative.**
+This is the weakly typed form of `TauCeti.indTerm_eq_of_mk_eq`: it needs only an additive
+commutative monoid of coefficients and an explicit conjugation-invariance hypothesis on `f`. -/
+theorem indTerm_eq_of_mk_eq_of_conj {f : S → k}
+    (hf : ∀ y s : S, f (s * y * s⁻¹) = f y) (g x y : G)
+    (hxy : (QuotientGroup.mk x : G ⧸ S) = QuotientGroup.mk y) :
+    indTerm f g x = indTerm f g y := by
+  have hs : x⁻¹ * y ∈ S := QuotientGroup.leftRel_apply.mp (Quotient.exact' hxy)
+  let s : S := ⟨x⁻¹ * y, hs⟩
+  have hy : x * (s : G) = y := by simp [s]
+  rw [← hy]
+  classical
+  by_cases hx : x⁻¹ * g * x ∈ S
+  · have hxs : (x * (s : G))⁻¹ * g * (x * s) ∈ S := by
+      simpa [mul_assoc] using S.mul_mem (S.mul_mem (S.inv_mem s.2) hx) s.2
+    rw [indTerm, dite_eq_left hx, indTerm, dite_eq_left hxs]
+    have helem : (⟨(x * (s : G))⁻¹ * g * (x * s), hxs⟩ : S) =
+        s⁻¹ * ⟨x⁻¹ * g * x, hx⟩ * s⁻¹⁻¹ := by
+      apply Subtype.ext
+      simp only [Subgroup.coe_mul, Subgroup.coe_inv, inv_inv]
+      group
+    rw [helem, hf ⟨x⁻¹ * g * x, hx⟩ s⁻¹]
+  · have hxs : (x * (s : G))⁻¹ * g * (x * s) ∉ S := by
+      intro h
+      exact hx (by simpa [mul_assoc] using S.mul_mem (S.mul_mem s.2 h) (S.inv_mem s.2))
+    rw [indTerm, dite_eq_right hx, indTerm, dite_eq_right hxs]
 
 open scoped Classical in
 /-- **The induced class function.**  For `f : S → k` and `g : G`, sum `f (t⁻¹ g t)` over those
@@ -236,36 +266,12 @@ section ClassFun
 
 variable {f : S → k}
 
-/-- Replacing a representative `x` by `x * s` for `s` in the subgroup does not change the
-summand, because `f` is constant on conjugacy classes of the subgroup.
-
-It is private: `TauCeti.indTerm_eq_of_mk_eq` is the form every consumer uses. -/
-private theorem indTerm_mul (hf : f ∈ ClassFunction k S) (g x : G) (s : S) :
-    indTerm f g (x * s) = indTerm f g x := by
-  classical
-  by_cases hx : x⁻¹ * g * x ∈ S
-  · have hxs : (x * (s : G))⁻¹ * g * (x * s) ∈ S := by
-      simpa [mul_assoc] using S.mul_mem (S.mul_mem (S.inv_mem s.2) hx) s.2
-    rw [indTerm, dite_eq_left hxs, indTerm, dite_eq_left hx]
-    have helem : (⟨(x * (s : G))⁻¹ * g * (x * s), hxs⟩ : S) =
-        s⁻¹ * ⟨x⁻¹ * g * x, hx⟩ * s⁻¹⁻¹ := by
-      apply Subtype.ext
-      simp only [Subgroup.coe_mul, Subgroup.coe_inv, inv_inv]
-      group
-    rw [helem, ClassFunction.mem_iff.mp hf ⟨x⁻¹ * g * x, hx⟩ s⁻¹]
-  · have hxs : (x * (s : G))⁻¹ * g * (x * s) ∉ S := by
-      intro h
-      exact hx (by simpa [mul_assoc] using S.mul_mem (S.mul_mem s.2 h) (S.inv_mem s.2))
-    rw [indTerm, dite_eq_right hxs, indTerm, dite_eq_right hx]
-
 /-- The summand of the induced class function depends only on the left coset of its
 representative. -/
 theorem indTerm_eq_of_mk_eq (hf : f ∈ ClassFunction k S) (g x y : G)
     (hxy : (QuotientGroup.mk x : G ⧸ S) = QuotientGroup.mk y) :
-    indTerm f g x = indTerm f g y := by
-  have hs : x⁻¹ * y ∈ S := QuotientGroup.leftRel_apply.mp (Quotient.exact' hxy)
-  have hy : x * ((⟨x⁻¹ * y, hs⟩ : S) : G) = y := by simp
-  rw [← hy, indTerm_mul hf]
+    indTerm f g x = indTerm f g y :=
+  indTerm_eq_of_mk_eq_of_conj (ClassFunction.mem_iff.mp hf) g x y hxy
 
 /-- **The induced function of a class function is a class function.** -/
 theorem indClassFun_mem_classFunction [S.FiniteIndex] (hf : f ∈ ClassFunction k S) :

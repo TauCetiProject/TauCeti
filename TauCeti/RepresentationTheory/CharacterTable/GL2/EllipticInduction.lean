@@ -263,53 +263,16 @@ theorem indClassFun_gl2NonSplitTorusHom (f : GL2NonSplitTorus F E hE → k)
     refine Subtype.ext ?_
     rw [Subgroup.coe_mul, Subgroup.coe_mul, Subgroup.coe_inv, ← hp, ← hr, ← map_inv, ← map_mul,
       ← map_mul, mul_comm r p, mul_assoc, mul_inv_cancel, mul_one]
-  -- Consequently a summand depends only on its coset representative. This direct form avoids
-  -- imposing the semiring structure needed to package `f` as a `ClassFunction`.
-  have hterm (g x y : GL (Fin 2) F)
-      (hxy : (QuotientGroup.mk x : GL (Fin 2) F ⧸ GL2NonSplitTorus F E hE) =
-        QuotientGroup.mk y) : indTerm f g x = indTerm f g y := by
-    have hs : x⁻¹ * y ∈ GL2NonSplitTorus F E hE :=
-      QuotientGroup.leftRel_apply.mp (Quotient.exact' hxy)
-    let s : GL2NonSplitTorus F E hE := ⟨x⁻¹ * y, hs⟩
-    have hy : x * (s : GL (Fin 2) F) = y := by simp [s]
-    rw [← hy]
-    classical
-    by_cases hx : x⁻¹ * g * x ∈ GL2NonSplitTorus F E hE
-    · have hxs : (x * (s : GL (Fin 2) F))⁻¹ * g * (x * s) ∈
-          GL2NonSplitTorus F E hE := by
-        have hm := (GL2NonSplitTorus F E hE).mul_mem
-          ((GL2NonSplitTorus F E hE).mul_mem
-            ((GL2NonSplitTorus F E hE).inv_mem s.2) hx) s.2
-        convert hm using 1
-        all_goals group
-      have helem :
-          (⟨(x * (s : GL (Fin 2) F))⁻¹ * g * (x * s), hxs⟩ :
-              GL2NonSplitTorus F E hE) =
-            s⁻¹ * ⟨x⁻¹ * g * x, hx⟩ * s := by
-        apply Subtype.ext
-        simp only [Subgroup.coe_mul, Subgroup.coe_inv]
-        group
-      rw [indTerm_apply, dite_eq_left hx, indTerm_apply, dite_eq_left hxs]
-      exact congrArg f (helem.trans (by
-        simpa using hcomm (⟨x⁻¹ * g * x, hx⟩ : GL2NonSplitTorus F E hE) s⁻¹)).symm
-    · have hxs : (x * (s : GL (Fin 2) F))⁻¹ * g * (x * s) ∉
-          GL2NonSplitTorus F E hE := by
-        intro h
-        apply hx
-        have hm := (GL2NonSplitTorus F E hE).mul_mem
-          ((GL2NonSplitTorus F E hE).mul_mem s.2 h)
-          ((GL2NonSplitTorus F E hE).inv_mem s.2)
-        convert hm using 1
-        all_goals group
-      rw [indTerm_apply, dite_eq_right hx, indTerm_apply, dite_eq_right hxs]
   rw [indClassFun_eq_sum_of_smul_eq_self_mem f _
     ({((1 : GL (Fin 2) F) : GL (Fin 2) F ⧸ GL2NonSplitTorus F E hE),
       (d : GL (Fin 2) F ⧸ GL2NonSplitTorus F E hE)} : Finset _) ?_, Finset.sum_pair hne]
   · congr 1
-    · rw [hterm _ _ (1 : GL (Fin 2) F) (QuotientGroup.out_eq' _), indTerm_one,
+    · rw [indTerm_eq_of_mk_eq_of_conj (fun y z => congrArg f (hcomm y z)) _ _
+          (1 : GL (Fin 2) F) (QuotientGroup.out_eq' _), indTerm_one,
         dite_eq_left hgmem]
       exact congrArg f (Subtype.ext (coe_unitsEquiv_apply hE u).symm)
-    · rw [hterm _ _ d (QuotientGroup.out_eq' _), indTerm_apply, hdg,
+    · rw [indTerm_eq_of_mk_eq_of_conj (fun y z => congrArg f (hcomm y z)) _ _ d
+          (QuotientGroup.out_eq' _), indTerm_apply, hdg,
         dite_eq_left hgmem']
       exact congrArg f (Subtype.ext (coe_unitsEquiv_apply hE _).symm)
   · intro t ht
