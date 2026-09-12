@@ -26,14 +26,13 @@ of a connection on the tangent bundle.
 
 ## Main definitions and results
 
-* `TauCeti.CovariantDerivative.curvatureOperator`: the curvature operator of a connection.
-* `TauCeti.CovariantDerivative.curvatureOperator_swap`: curvature is antisymmetric in its two
+* `TauCeti.curvatureOperator`: the curvature operator of a connection.
+* `TauCeti.curvatureOperator_swap`: curvature is antisymmetric in its two
   vector-field arguments.
-* `TauCeti.CovariantDerivative.contMDiff_curvatureOperator`: a smooth connection has smooth
+* `TauCeti.contMDiff_curvatureOperator`: a smooth connection has smooth
   curvature on smooth fields and sections.
-* `TauCeti.CovariantDerivative.curvatureOperator_smul_first`,
-  `TauCeti.CovariantDerivative.curvatureOperator_smul_second`, and
-  `TauCeti.CovariantDerivative.curvatureOperator_smul_section`: curvature is linear over smooth
+* `TauCeti.curvatureOperator_smul_first`, `TauCeti.curvatureOperator_smul_second`, and
+  `TauCeti.curvatureOperator_smul_section`: curvature is linear over smooth
   functions in each argument.
 
 ## References
@@ -51,7 +50,7 @@ open scoped ContDiff Manifold Topology
 
 noncomputable section
 
-namespace TauCeti.CovariantDerivative
+namespace TauCeti
 
 section Basic
 
@@ -374,4 +373,4 @@ theorem curvatureOperator_smul_section
 
 end Smooth
 
-end TauCeti.CovariantDerivative
+end TauCeti
