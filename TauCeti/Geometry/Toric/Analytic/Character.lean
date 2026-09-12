@@ -55,6 +55,8 @@ variable {N N' N'' : Type*}
 
 /-- The lattice of integral characters of a finite free `ℤ`-module `N`. -/
 abbrev IntegralCharacter (N : Type*) [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N] :=
+  let _ := (inferInstance : Module.Free ℤ N)
+  let _ := (inferInstance : Module.Finite ℤ N)
   N →+ ℤ
 
 /-- The coordinate-free complex torus with character lattice `N →+ ℤ`, for a finite free `ℤ`-
