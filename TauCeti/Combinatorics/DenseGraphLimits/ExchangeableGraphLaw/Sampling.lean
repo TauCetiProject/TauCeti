@@ -5,7 +5,8 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Defs
+public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Dissociated
+public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Structural
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Consistency
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Unbiased
 
@@ -20,7 +21,8 @@ law, which is what this file packages.
 
 The upper mass of a pattern under a sampling law is its graphon homomorphism density: the sample
 contains `F` exactly when every edge of `F` wins its coin toss, whose conditional probability at
-fixed positions is the product of the edge factors of `F`.
+fixed positions is the product of the edge factors of `F`. Hence sampling laws are dissociated:
+the upper masses of a disjoint union of patterns multiply because homomorphism densities do.
 
 ## Main definitions
 
@@ -30,7 +32,8 @@ fixed positions is the product of the edge factors of `F`.
 ## Main results
 
 * `TauCeti.DenseGraphLimits.upperMass_sampleExchangeableLaw` — the upper mass of a pattern under
-  a sampling law is its homomorphism density.
+  a sampling law is its homomorphism density;
+* `TauCeti.DenseGraphLimits.isDissociated_sampleExchangeableLaw` — sampling laws are dissociated.
 
 ## References
 
@@ -83,6 +86,17 @@ theorem upperMass_sampleExchangeableLaw {k : ℕ} (F : SimpleGraph (Fin k)) [Dec
   rw [← ENNReal.ofReal_sum_of_nonneg fun G _ => sampleMass_nonneg W G,
     sum_sampleMass_supergraph_eq_homDensity W F,
     ENNReal.toReal_ofReal (homDensity_nonneg F W)]
+
+/-- **Sampling laws are dissociated.** Disjoint label windows of a graphon sample read disjoint
+sets of sampled points and coins. Through upper masses this is the multiplicativity of
+homomorphism densities over disjoint unions: the upper mass of a pattern is its homomorphism
+density, which is unchanged by relabelling the pattern into `Fin (k + l)`. -/
+theorem isDissociated_sampleExchangeableLaw (W : Graphon Ω μ) :
+    (sampleExchangeableLaw W).IsDissociated := by
+  classical
+  refine (ExchangeableGraphLaw.isDissociated_iff_upperMass_mul _).2 fun k l F₁ F₂ => ?_
+  rw [upperMass_sampleExchangeableLaw, upperMass_sampleExchangeableLaw,
+    upperMass_sampleExchangeableLaw, homDensity_map_embedding, homDensity_sum]
 
 end DenseGraphLimits
 
