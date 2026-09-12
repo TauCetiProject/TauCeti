@@ -14,28 +14,26 @@ public import TauCeti.FieldTheory.Galois.FixedField
 Let `p` be a polynomial over a field `F` and let `L = p.SplittingField`. The Galois group
 `Polynomial.Gal p` acts on `p.rootSet L`, and this file identifies the stabilizer of a root `x`
 with a relative Galois group: it is the subgroup of `p.Gal` fixing the simple extension `F⟮x⟯`
-pointwise. Every further reading of the action against the Galois correspondence goes through
-that identification.
+pointwise. The fixed-field and endpoint readings of the action against the Galois correspondence
+go through that identification.
 
-The identification itself needs no hypothesis on `p`. Reading it back through the Galois
-correspondence needs one, and the hypothesis it needs is `IsGalois F L`: that is what makes the
-fixed field of the stabilizer `F⟮x⟯` again, and its index `[F⟮x⟯ : F]`, which for irreducible `p`
-is `p.natDegree`. Separability of `p` supplies that instance through
-`IsGalois.of_separable_splitting_field`, but it is not the weakest hypothesis that does: a power
-of a separable irreducible polynomial is inseparable and still has a Galois splitting field.
+The identification itself needs no hypothesis on `p`. Recovering the fixed field and the two
+ends of the Galois correspondence needs `IsGalois F L`. The index, however, is an
+orbit-stabilizer calculation: it only needs the minimal polynomial of the chosen root to be
+separable, and for irreducible `p` this follows from `p.Separable`.
 
 ## Main results
 
-* `TauCeti.stabilizer_eq_fixingSubgroup_adjoin`: the stabilizer of a root is the fixing subgroup
-  of the field the root generates.
+* `TauCeti.stabilizer_eq_fixingSubgroup_adjoin_simple`: the stabilizer of a root is the fixing
+  subgroup of the field the root generates.
 * `TauCeti.fixedField_stabilizer`: for a Galois splitting field, the field the stabilizer fixes
   is that same field.
 * `TauCeti.index_stabilizer_eq_minpoly_natDegree`,
   `TauCeti.index_stabilizer_eq_natDegree`: the index of the stabilizer is the degree of the
-  minimal polynomial of the root, so for irreducible `p` it is `p.natDegree`.
-* `TauCeti.stabilizer_eq_bot_iff_adjoin_eq_top`,
-  `TauCeti.stabilizer_eq_top_iff_adjoin_eq_bot`: the two ends of the correspondence, a root that
-  generates the whole splitting field and a root that lies in the base field.
+  minimal polynomial of the root, so for irreducible separable `p` it is `p.natDegree`.
+* `TauCeti.stabilizer_eq_bot_iff_adjoin_simple_eq_top`,
+  `TauCeti.stabilizer_eq_top_iff_adjoin_simple_eq_bot`: the two ends of the correspondence, a
+  root that generates the whole splitting field and a root that lies in the base field.
 
 ## Implementation notes
 
@@ -72,7 +70,7 @@ stabilizer of the root action is the fixing subgroup of that subfield.
 
 No hypothesis on `p` is needed: the statement is about one root and the field it generates, not
 about the polynomial. -/
-theorem stabilizer_eq_fixingSubgroup_adjoin (x : p.rootSet p.SplittingField) :
+theorem stabilizer_eq_fixingSubgroup_adjoin_simple (x : p.rootSet p.SplittingField) :
     stabilizer p.Gal x = F⟮(x : p.SplittingField)⟯.fixingSubgroup := by
   ext σ
   rw [MulAction.mem_stabilizer_iff, Subtype.ext_iff, Polynomial.Gal.coe_smul,
@@ -83,59 +81,92 @@ theorem stabilizer_eq_fixingSubgroup_adjoin (x : p.rootSet p.SplittingField) :
 Galois over `F` the fixed field of the stabilizer of `x` is `F⟮x⟯`. -/
 theorem fixedField_stabilizer [IsGalois F p.SplittingField] (x : p.rootSet p.SplittingField) :
     IntermediateField.fixedField (stabilizer p.Gal x) = F⟮(x : p.SplittingField)⟯ := by
-  rw [stabilizer_eq_fixingSubgroup_adjoin, IsGalois.fixedField_fixingSubgroup]
+  rw [stabilizer_eq_fixingSubgroup_adjoin_simple, IsGalois.fixedField_fixingSubgroup]
 
 /-! ### The index of a point stabilizer -/
 
 /-- **The index of a point stabilizer is the degree of the minimal polynomial of the point.** The
-index of the fixing subgroup of an intermediate field is the degree of that field over the base,
-and `F⟮x⟯` has the degree of the minimal polynomial of `x`; the splitting field being Galois over
-`F` is what makes the correspondence apply. -/
-theorem index_stabilizer_eq_minpoly_natDegree [IsGalois F p.SplittingField]
-    (x : p.rootSet p.SplittingField) :
+orbit of `x` consists of all roots of its minimal polynomial in the normal splitting field, and
+separability makes their number its degree. -/
+theorem index_stabilizer_eq_minpoly_natDegree (x : p.rootSet p.SplittingField)
+    (hsep : (minpoly F (x : p.SplittingField)).Separable) :
     (stabilizer p.Gal x).index = (minpoly F (x : p.SplittingField)).natDegree := by
-  rw [stabilizer_eq_fixingSubgroup_adjoin,
-    ← IntermediateField.adjoin.finrank (IsIntegral.of_finite F (x : p.SplittingField))]
-  exact (IntermediateField.finrank_eq_fixingSubgroup_index _ F⟮(x : p.SplittingField)⟯).symm
+  rw [MulAction.index_stabilizer]
+  have hint : IsIntegral F (x : p.SplittingField) :=
+    (isAlgebraic_of_mem_rootSet x.2).isIntegral
+  have hdvd : minpoly F (x : p.SplittingField) ∣ p :=
+    minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2)
+  have horbit :
+      Subtype.val '' MulAction.orbit p.Gal x =
+        (minpoly F (x : p.SplittingField)).rootSet p.SplittingField := by
+    ext y
+    constructor
+    · rintro ⟨z, hz, rfl⟩
+      obtain ⟨g, rfl⟩ := hz
+      rw [mem_rootSet]
+      refine ⟨minpoly.ne_zero hint, ?_⟩
+      rw [← minpoly.algEquiv_eq g (x : p.SplittingField)]
+      exact minpoly.aeval F (g (x : p.SplittingField))
+    · intro hy
+      have hp0 : p ≠ 0 := ne_zero_of_mem_rootSet x.2
+      have hyp : y ∈ p.rootSet p.SplittingField :=
+        mem_rootSet.mpr ⟨hp0, aeval_eq_zero_of_dvd_aeval_eq_zero hdvd
+          (aeval_eq_zero_of_mem_rootSet hy)⟩
+      have hmin : minpoly F y = minpoly F (x : p.SplittingField) :=
+        (minpoly.eq_of_irreducible_of_monic (minpoly.irreducible hint)
+          (aeval_eq_zero_of_mem_rootSet hy) (minpoly.monic hint)).symm
+      obtain ⟨g, hg⟩ :=
+        (Normal.minpoly_eq_iff_mem_orbit p.SplittingField).mp hmin
+      exact ⟨⟨y, hyp⟩, ⟨g, Subtype.ext hg⟩, rfl⟩
+  calc
+    (MulAction.orbit p.Gal x).ncard =
+        (Subtype.val '' MulAction.orbit p.Gal x).ncard :=
+      (Set.ncard_image_of_injective _ Subtype.val_injective).symm
+    _ = ((minpoly F (x : p.SplittingField)).rootSet p.SplittingField).ncard :=
+      congrArg Set.ncard horbit
+    _ = (minpoly F (x : p.SplittingField)).natDegree := by
+      rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card,
+        card_rootSet_eq_natDegree hsep
+          (Normal.splits (SplittingField.instNormal p) (x : p.SplittingField))]
 
-/-- **For an irreducible polynomial every point stabilizer has index the degree.** This is the
-form the permutation representation uses: a transitive subgroup of degree `n` has point
+/-- **For an irreducible separable polynomial every point stabilizer has index the degree.** This
+is the form the permutation representation uses: a transitive subgroup of degree `n` has point
 stabilizers of index `n`.
 
-An irreducible `p` whose splitting field is Galois over `F` is separable, and an inseparable
-irreducible polynomial has fewer roots than its degree; so the hypotheses here are the same as
-irreducibility together with `p.Separable`, stated in the form the Galois correspondence uses. -/
-theorem index_stabilizer_eq_natDegree [IsGalois F p.SplittingField] (hp : Irreducible p)
+Separability cannot be dropped: an inseparable irreducible polynomial has fewer roots than its
+degree. -/
+theorem index_stabilizer_eq_natDegree (hp : Irreducible p) (hsep : p.Separable)
     (x : p.rootSet p.SplittingField) : (stabilizer p.Gal x).index = p.natDegree := by
   have hmin : (minpoly F (x : p.SplittingField)).natDegree = p.natDegree := by
     rw [← minpoly.eq_of_irreducible hp (aeval_eq_zero_of_mem_rootSet x.2)]
     exact natDegree_mul_C (inv_ne_zero (leadingCoeff_ne_zero.mpr hp.ne_zero))
-  rw [index_stabilizer_eq_minpoly_natDegree x, hmin]
+  rw [index_stabilizer_eq_minpoly_natDegree x
+    (hsep.of_dvd (minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2))), hmin]
 
 /-! ### The two ends of the correspondence -/
 
 /-- **A root with trivial stabilizer is a primitive element**, and conversely. Together with
-`TauCeti.stabilizer_eq_top_iff_adjoin_eq_bot` this pins the orientation of the correspondence:
-the stabilizer shrinks as the field the root generates grows. -/
-theorem stabilizer_eq_bot_iff_adjoin_eq_top [IsGalois F p.SplittingField]
+`TauCeti.stabilizer_eq_top_iff_adjoin_simple_eq_bot` this pins the orientation of the
+correspondence: the stabilizer shrinks as the field the root generates grows. -/
+theorem stabilizer_eq_bot_iff_adjoin_simple_eq_top [IsGalois F p.SplittingField]
     (x : p.rootSet p.SplittingField) :
     stabilizer p.Gal x = ⊥ ↔ F⟮(x : p.SplittingField)⟯ = ⊤ := by
   refine ⟨fun h => ?_, fun h => ?_⟩
   · rw [← fixedField_stabilizer x, h]
     exact IntermediateField.fixedField_bot
-  · rw [stabilizer_eq_fixingSubgroup_adjoin, h]
+  · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, h]
     exact IntermediateField.fixingSubgroup_top
 
 /-- **A root fixed by the whole Galois group lies in the base field**, and conversely. The
 splitting field being Galois over `F` is what makes the fixed field of the whole group `F`
 itself; over an inseparable extension a root outside `F` can be fixed by every automorphism. -/
-theorem stabilizer_eq_top_iff_adjoin_eq_bot [IsGalois F p.SplittingField]
+theorem stabilizer_eq_top_iff_adjoin_simple_eq_bot [IsGalois F p.SplittingField]
     (x : p.rootSet p.SplittingField) :
     stabilizer p.Gal x = ⊤ ↔ F⟮(x : p.SplittingField)⟯ = ⊥ := by
   refine ⟨fun h => ?_, fun h => ?_⟩
   · rw [← fixedField_stabilizer x, h]
     exact IsGalois.fixedField_top
-  · rw [stabilizer_eq_fixingSubgroup_adjoin, h]
+  · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, h]
     exact IntermediateField.fixingSubgroup_bot
 
 end TauCeti
