@@ -7,8 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Coinvariants
 public import Mathlib.RepresentationTheory.Invariants
-public import Mathlib.GroupTheory.Complement
-public import Mathlib.GroupTheory.GroupAction.Quotient
+public import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
 # The relative norm and the relative transfer of a subgroup
@@ -27,7 +26,8 @@ but each becomes canonical after passing to the appropriate quotient. The relati
 independent of the transversal on the invariants `V^H`, where it takes values in `V^G` and
 restricts to multiplication by `[G : H]` on `V^G`; the relative transfer is independent of the
 transversal modulo the augmentation submodule of `H`, into which it carries the augmentation
-submodule of `G`, and modulo which it is multiplication by `[G : H]`.
+submodule of `G`. Modulo the larger augmentation submodule of `G`, the relative transfer is
+multiplication by `[G : H]`.
 
 These are the two maps that give restriction and corestriction on the Tate cohomology of a
 subgroup in the two degrees where Tate cohomology is not ordinary group cohomology or homology.
@@ -54,7 +54,7 @@ subgroup in the two degrees where Tate cohomology is not ordinary group cohomolo
 * J. S. Milne, *Class Field Theory*, v4.03, Chapter II, §1.
 -/
 
-@[expose] public noncomputable section
+public noncomputable section
 
 namespace Representation
 
@@ -86,42 +86,12 @@ theorem relTransfer_apply (x : V) : relTransfer ρ H x = ∑ q : G ⧸ H, ρ q.o
 
 end Defs
 
-section Sums
-
-variable {M : Type*} [AddCommMonoid M] [Fintype G] [DecidablePred (· ∈ H)]
-
-/-- Every element of `G` is uniquely the product of a `Quotient.out` representative of its coset
-and an element of `H`, so a sum over `G` splits as an iterated sum over `G ⧸ H` and over `H`. -/
-private theorem sum_eq_sum_quotient_sum (f : G → M) :
-    ∑ g : G, f g = ∑ q : G ⧸ H, ∑ h : H, f (q.out * h) := by
-  have hmk (q : G ⧸ H) (h : H) : ((q.out * h : G) : G ⧸ H) = q := by
-    rw [QuotientGroup.mk_mul_of_mem _ h.2, QuotientGroup.out_eq']
-  have hbij : Function.Bijective fun p : (G ⧸ H) × H => (p.1.out : G) * (p.2 : G) := by
-    refine Function.bijective_iff_has_inverse.2 ⟨fun g => ((g : G ⧸ H),
-      ⟨(Quotient.out (g : G ⧸ H))⁻¹ * g, QuotientGroup.eq.mp (QuotientGroup.out_eq' _)⟩),
-      fun p => ?_, fun g => ?_⟩
-    · refine Prod.ext (hmk p.1 p.2) (Subtype.ext ?_)
-      simp [hmk p.1 p.2]
-    · simp
-  have key := Fintype.sum_bijective _ hbij
-    (fun p : (G ⧸ H) × H => f ((p.1.out : G) * (p.2 : G))) f fun _ => rfl
-  rw [← key, Fintype.sum_prod_type]
-
-/-- The dual splitting of a sum over `G`, along the right cosets of `H`. -/
-private theorem sum_eq_sum_quotient_sum' (f : G → M) :
-    ∑ g : G, f g = ∑ q : G ⧸ H, ∑ h : H, f ((h : G) * (q.out : G)⁻¹) := by
-  have h1 : ∑ g : G, f g = ∑ g : G, f g⁻¹ :=
-    Fintype.sum_equiv (Equiv.inv G) _ _ fun _ => by simp
-  rw [h1, sum_eq_sum_quotient_sum (H := H) fun g => f g⁻¹]
-  refine Finset.sum_congr rfl fun q _ => ?_
-  exact (Fintype.sum_equiv (Equiv.inv H) (fun h => f ((h : G) * (q.out : G)⁻¹))
-    (fun h => f ((q.out * (h : G))⁻¹)) fun _ => by simp).symm
-
-end Sums
-
 section Norm
 
-variable [Fintype G] [DecidablePred (· ∈ H)] {ρ H}
+variable [Fintype G] {ρ H}
+
+noncomputable local instance : Fintype H := Fintype.ofFinite H
+noncomputable local instance : Fintype (G ⧸ H) := H.fintypeQuotientOfFiniteIndex
 
 private theorem norm_apply' (x : V) : ρ.norm x = ∑ g : G, ρ g x := by
   simp [Representation.norm]
@@ -129,7 +99,7 @@ private theorem norm_apply' (x : V) : ρ.norm x = ∑ g : G, ρ g x := by
 /-- The norm of `G` is the relative norm of `H` evaluated on the norm of `H`. -/
 theorem relNorm_norm_apply (x : V) :
     relNorm ρ H (Representation.norm (ρ.comp H.subtype) x) = ρ.norm x := by
-  conv_rhs => rw [norm_apply', sum_eq_sum_quotient_sum (H := H) fun g => ρ g x]
+  conv_rhs => rw [norm_apply', TauCeti.sum_eq_sum_quotient_sum H fun g => ρ g x]
   rw [relNorm_apply]
   refine Finset.sum_congr rfl fun q _ => ?_
   simp [Representation.norm, map_sum, ← Module.End.mul_apply, ← map_mul]
@@ -142,7 +112,7 @@ theorem relNorm_comp_norm :
 /-- The norm of `G` is the norm of `H` evaluated on the relative transfer of `H`. -/
 theorem norm_relTransfer_apply (x : V) :
     Representation.norm (ρ.comp H.subtype) (relTransfer ρ H x) = ρ.norm x := by
-  conv_rhs => rw [norm_apply', sum_eq_sum_quotient_sum' (H := H) fun g => ρ g x]
+  conv_rhs => rw [norm_apply', TauCeti.sum_eq_sum_quotient_sum' H fun g => ρ g x]
   rw [relTransfer_apply, map_sum]
   refine Finset.sum_congr rfl fun q _ => ?_
   simp [Representation.norm, LinearMap.sum_apply, ← Module.End.mul_apply, ← map_mul]
@@ -175,7 +145,9 @@ def relTransferKerNorm :
 
 @[simp]
 theorem coe_relTransferKerNorm (x : LinearMap.ker ρ.norm) :
-    (relTransferKerNorm ρ H x : V) = relTransfer ρ H x := rfl
+    (relTransferKerNorm ρ H x : V) = relTransfer ρ H x := by
+  unfold relTransferKerNorm
+  rfl
 
 end Norm
 
@@ -228,7 +200,9 @@ def relNormInvariants :
 
 @[simp]
 theorem coe_relNormInvariants (x : Representation.invariants (ρ.comp H.subtype)) :
-    (relNormInvariants ρ H x : V) = relNorm ρ H x := rfl
+    (relNormInvariants ρ H x : V) = relNorm ρ H x := by
+  unfold relNormInvariants
+  rfl
 
 end Invariants
 

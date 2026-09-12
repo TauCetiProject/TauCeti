@@ -67,7 +67,10 @@ open CategoryTheory LinearMap Rep Representation
 namespace TauCeti.TateCohomology
 
 variable {R G : Type u} [CommRing R] [Group G] [Fintype G] (M : Rep R G)
-  (H : Subgroup G) [DecidablePred (· ∈ H)]
+  (H : Subgroup G)
+
+noncomputable local instance : Fintype H := Fintype.ofFinite H
+noncomputable local instance : Fintype (G ⧸ H) := H.fintypeQuotientOfFiniteIndex
 
 section Zero
 
@@ -113,7 +116,8 @@ theorem H0π_comp_H0Res :
     Category.assoc, H0π_comp_H0IsoNormQuotient_hom, H0Res, Category.assoc, Category.assoc,
     Iso.inv_hom_id, Category.comp_id, H0π_comp_H0IsoNormQuotient_hom_assoc]
   ext x
-  rfl
+  simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+    Submodule.mkQ_apply, Submodule.mapQ_apply]
 
 /-- Corestriction in degree zero sends the class of an `H`-invariant element to the class of its
 relative norm. -/
@@ -125,7 +129,8 @@ theorem H0π_comp_H0Cor :
     Category.assoc, H0π_comp_H0IsoNormQuotient_hom, H0Cor, Category.assoc, Category.assoc,
     Iso.inv_hom_id, Category.comp_id, H0π_comp_H0IsoNormQuotient_hom_assoc]
   ext x
-  rfl
+  simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+    Submodule.mkQ_apply, Submodule.mapQ_apply]
 
 /-- Corestriction of the restriction of a degree-zero class is the index multiple of it. -/
 theorem H0Cor_H0Res_apply (x : tateCohomology M 0) :
@@ -152,7 +157,11 @@ private theorem hNegOne_res_le :
       Submodule.comap (Representation.relTransferKerNorm M.ρ H)
         ((Coinvariants.ker (Rep.res H.subtype M).ρ).submoduleOf
           (ker (Rep.res H.subtype M).ρ.norm)) :=
-  fun _ hx => Representation.relTransfer_mem_coinvariantsKer (H := H) hx
+  fun x hx => by
+    change (Representation.relTransferKerNorm M.ρ H x : M.V) ∈
+      Coinvariants.ker (Rep.res H.subtype M).ρ
+    rw [Representation.coe_relTransferKerNorm]
+    exact Representation.relTransfer_mem_coinvariantsKer (H := H) hx
 
 private theorem hNegOne_cor_le :
     (Coinvariants.ker (Rep.res H.subtype M).ρ).submoduleOf (ker (Rep.res H.subtype M).ρ.norm) ≤
@@ -189,7 +198,8 @@ theorem HNegOneπ_comp_HNegOneRes :
     Category.assoc, Iso.inv_hom_id, Category.comp_id,
     HNegOneπ_comp_HNegOneIsoNormKernelQuotient_hom_assoc]
   ext x
-  rfl
+  simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+    Submodule.mkQ_apply, Submodule.mapQ_apply]
 
 /-- Corestriction in degree `-1` sends the class of a norm-zero element to the class of the same
 element. -/
@@ -204,7 +214,8 @@ theorem HNegOneπ_comp_HNegOneCor :
     Category.assoc, Iso.inv_hom_id, Category.comp_id,
     HNegOneπ_comp_HNegOneIsoNormKernelQuotient_hom_assoc]
   ext x
-  rfl
+  simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+    Submodule.mkQ_apply, Submodule.mapQ_apply]
 
 /-- Corestriction of the restriction of a degree `-1` class is the index multiple of it. -/
 theorem HNegOneCor_HNegOneRes_apply (x : tateCohomology M (-1)) :
