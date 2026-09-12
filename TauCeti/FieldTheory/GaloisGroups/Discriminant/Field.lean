@@ -27,12 +27,13 @@ possibilities: `F⟮δ⟯` is `F` when `discr f` is a square in `F`, and a quadr
 otherwise. Away from characteristic `2` it is moreover a Galois extension of `F` as soon as the
 discriminant is nonzero, since `X ^ 2 - C f.discr` is then separable.
 
-The reason the discriminant field is an invariant of `f` and not merely of its discriminant is the
-comparison theorem `TauCeti.fixedField_evenAutSubgroup`: in a Galois splitting extension and away
-from characteristic `2`, the discriminant field is exactly the field fixed by the automorphisms
-that permute the roots of `f` evenly. That subgroup is `TauCeti.evenAutSubgroup f E`. The
-transformation law `AlgEquiv.map_discrSqrt` makes both inclusions short: an even automorphism fixes
-`δ`, and an odd one negates it, which is a genuine move because `δ ≠ 0` and `2 ≠ 0`.
+The discriminant field is determined by the discriminant alone. The comparison theorem
+`TauCeti.fixedField_evenAutSubgroup` characterizes it additionally through the action on the roots
+of `f`: in a Galois splitting extension and away from characteristic `2`, the discriminant field is
+exactly the field fixed by the automorphisms that permute the roots of `f` evenly. That subgroup is
+`TauCeti.evenAutSubgroup f E`. The transformation law `AlgEquiv.map_discrSqrt` makes both
+inclusions short: an even automorphism fixes `δ`, and an odd one negates it, which is a genuine move
+because `δ ≠ 0` and `2 ≠ 0`.
 
 Downstream, the quartic decision table separates the labels `4T1` and `4T3` by a factorization
 over the discriminant field, and the discriminant test of the previous file is recovered here as
@@ -52,8 +53,8 @@ the alternating group.
 * `TauCeti.isSplittingField_discrField`: if `E` contains a square root of the discriminant, the
   discriminant field is a splitting field of `X ^ 2 - C f.discr`.
 * `TauCeti.discrField_map`: it is natural in the extension.
-* `TauCeti.discrField_eq_bot_iff`, `TauCeti.finrank_discrField`: the discriminant field is `F`
-  exactly when the discriminant is a square, and has degree `2` otherwise.
+* `TauCeti.discrField_eq_bot_iff`, `TauCeti.finrank_discrField_eq_two`: the discriminant field is
+  `F` exactly when the discriminant is a square, and has degree `2` otherwise.
 * `TauCeti.isGalois_discrField`: away from characteristic `2`, and for nonzero discriminant, it is
   a Galois extension of `F`.
 * `TauCeti.fixedField_evenAutSubgroup`: **the comparison theorem**, that the discriminant field is
@@ -114,6 +115,7 @@ Base change of the base field needs no separate statement: `Polynomial.Monic.dis
 discriminant of `f.map φ` into the image of `discr f`, so the results below apply verbatim to
 `discrField (f.map φ) E`, and in particular the degree stays `2` as long as `E` contains a square
 root of that image and the image is not a square in the base field. -/
+@[simp]
 theorem discrField_map {E' : Type w} [Field E'] [Algebra F E'] (ψ : E ≃ₐ[F] E') :
     (discrField f E).map ψ.toAlgHom = discrField f E' := by
   rw [discrField, discrField, IntermediateField.adjoin_map]
@@ -148,7 +150,7 @@ theorem finrank_discrField_eq_one_iff {δ : E} (hδ : δ ^ 2 = algebraMap F E f.
 
 /-- **The quadratic case.** When the discriminant is not a square in the base field, the
 discriminant field is a quadratic extension of it. -/
-theorem finrank_discrField {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr)
+theorem finrank_discrField_eq_two {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr)
     (hsq : ¬ IsSquare f.discr) : Module.finrank F (discrField f E) = 2 := by
   have haeval : (aeval δ) ((X : F[X]) ^ 2 - C f.discr) = 0 := by
     rw [map_sub, aeval_X_pow, aeval_C, hδ, sub_self]
@@ -265,7 +267,7 @@ theorem finrank_discrField_eq_two_iff [IsGalois F E] (hf : f.Monic) (hsep : f.Se
     ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
   have hδ := hf.discrSqrt_sq hsep e
   rw [← hf.isSquare_discr_iff_range_le_alternatingGroup (E := E) hsep hchar]
-  refine ⟨fun h hsq ↦ ?_, finrank_discrField hδ⟩
+  refine ⟨fun h hsq ↦ ?_, finrank_discrField_eq_two hδ⟩
   rw [← finrank_discrField_eq_one_iff hδ] at hsq
   omega
 

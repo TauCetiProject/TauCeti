@@ -39,6 +39,7 @@ universe u v
 variable {F : Type u} [Field F] {E : Type v} [Field E] [Algebra F E] {a : F} {δ : E}
 
 /-- A point of an extension is a root of `X ^ n - C a` exactly when its `n`-th power is `a`. -/
+@[simp]
 theorem _root_.Polynomial.mem_rootSet_X_pow_sub_C {n : ℕ} (hn : n ≠ 0) {x : E} :
     x ∈ ((X : F[X]) ^ n - C a).rootSet E ↔ x ^ n = algebraMap F E a := by
   rw [mem_rootSet_of_ne (monic_X_pow_sub_C a hn).ne_zero, map_sub, aeval_X_pow, aeval_C,
