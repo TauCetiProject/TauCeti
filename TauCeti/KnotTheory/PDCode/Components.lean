@@ -184,7 +184,7 @@ def reverseOutgoingEquiv (D : OrientedPDCode n) :
     (D.componentPermOutgoing.symm h).val = D.toPDCode.componentPerm.symm h := by
   apply D.toPDCode.componentPerm.injective
   have hx := congrArg Subtype.val (D.componentPermOutgoing.apply_symm_apply h)
-  dsimp [componentPermOutgoing] at hx
+  simp only [componentPermOutgoing, Equiv.Perm.subtypePerm_apply] at hx
   rw [Equiv.apply_symm_apply]
   exact hx
 
