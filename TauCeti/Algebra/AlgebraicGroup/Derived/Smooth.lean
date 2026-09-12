@@ -22,7 +22,7 @@ The reduction of the derived subgroup is again a closed subgroup. The commutator
 factors through this reduction because its source, the product of the ambient group with
 itself, is reduced. Minimality of the derived subgroup then identifies it with its reduction.
 Neither connectedness nor solvability is needed for this argument. The reducedness argument
-works over any reduced commutative base when the ambient tensor square and the tensor square
+works over any commutative base when the ambient tensor square and the tensor square
 of the reduced derived coordinate ring are reduced.
 
 ## References
@@ -40,16 +40,18 @@ namespace TauCeti.CommHopfAlgCat
 
 universe u v
 
-/-- The derived closed subgroup has reduced coordinate ring over a reduced commutative base
+/-- The derived closed subgroup has reduced coordinate ring over a commutative base
 if the ambient tensor square and the tensor square of the reduced derived coordinate ring
 are reduced. -/
 theorem isReduced_quotient_derivedDefiningIdeal_of_isReduced_tensorProduct
-    {R : Type u} [CommRing R] [IsReduced R] (H : _root_.CommHopfAlgCat.{v} R)
+    {R : Type u} [CommRing R] (H : _root_.CommHopfAlgCat.{v} R)
     [IsReduced (H ⊗[R] H)]
     [IsReduced
       ((quotient H (derivedDefiningIdeal H) ⧸ nilradical (quotient H (derivedDefiningIdeal H))) ⊗[R]
         (quotient H (derivedDefiningIdeal H) ⧸ nilradical (quotient H (derivedDefiningIdeal H))))] :
     IsReduced (quotient H (derivedDefiningIdeal H)) := by
+  let _ : IsReduced R := isReduced_of_injective (algebraMap R (H ⊗[R] H))
+    (Bialgebra.algebraMap_injective (H ⊗[R] H))
   let I := derivedDefiningIdeal (R := R) H
   let D := quotient H I
   let q := (mkQuotient H I).hom
