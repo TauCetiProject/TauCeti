@@ -55,8 +55,6 @@ vanishes, and sends the slack to the absorbing vertex; the cost is twice the tra
 
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §9.2 --
   weighted graphs are dense in the space of graphons.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 -- "density of step graphons in
-  `δ□`", with weighted graphs as "the technically convenient dense subset".
 -/
 
 public section
@@ -192,15 +190,10 @@ section Weights
 
 variable {κ : Type*} [Fintype κ] {f g : κ → ℝ≥0∞} {k₀ : κ}
 
-/-- Keeping the smaller of two weights and adding the excess of the first recovers the first: the
-commuted form of Mathlib's `tsub_add_min`, in the shape the coupling below is written in. -/
-private theorem min_add_tsub (a b : ℝ≥0∞) : min a b + (a - b) = a :=
-  (add_comm _ _).trans tsub_add_min
-
 private theorem sum_min_add_sum_tsub (hf : ∑ k, f k = 1) :
     ∑ k, min (f k) (g k) + ∑ k, (f k - g k) = 1 := by
   rw [← Finset.sum_add_distrib]
-  simpa only [min_add_tsub] using hf
+  exact (Finset.sum_congr rfl fun k _ => (add_comm _ _).trans tsub_add_min).trans hf
 
 /-- Away from `k₀` the smaller weight is `g`, so the designated atom can only gain weight. -/
 private theorem weight_le_of_dom (hf : ∑ k, f k = 1) (hg : ∑ k, g k = 1)
@@ -294,7 +287,7 @@ private theorem isCoupling_shiftCoupling [IsProbabilityMeasure ν] [IsProbabilit
         rw [Set.indicator_of_notMem (by simpa using hk), mul_zero]
       · rw [Set.indicator_of_mem (by simp), Pi.one_apply, mul_one]
     rw [h1, h2]
-    exact min_add_tsub _ _
+    exact (add_comm _ _).trans tsub_add_min
   · refine Measure.ext_of_singleton fun i => ?_
     rw [Measure.snd_apply (MeasurableSet.singleton i), shiftCoupling_apply]
     have h1 : ∑ k, min (ν {k}) (ν' {k}) * (Prod.snd ⁻¹' ({i} : Set κ)).indicator 1 (k, k)

@@ -5,16 +5,14 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Basic
-public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Density
+public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Density
 import TauCeti.MeasureTheory.Measure.UnitIntervalMap
 
 /-!
 # Graphon space is totally bounded
 
-Step graphons are dense in the cut metric (`dense_stepGraphon`), and on the canonical carrier
-`(I, volume)` the space of graphons is **totally bounded**: for every `ε` there are finitely many
-graphons within `ε` in cut distance of every graphon.
+On the canonical carrier `(I, volume)` the space of graphons is **totally bounded**: for every `ε`
+there are finitely many graphons within `ε` in cut distance of every graphon.
 
 The net is finite because a Frieze--Kannan approximation is a finite weighted graph on a vertex set
 whose size depends only on `ε`, and both of its weightings can be pushed onto a grid at a controlled
@@ -24,12 +22,11 @@ rounding all but one of them down and letting the remaining vertex absorb the sl
 remain, each read onto `(I, volume)` along a measure-preserving map out of the unit interval
 (Janson, Theorem A.9).
 
-Total boundedness is one of the two halves of the Lovász--Szegedy compactness theorem; the other,
-completeness, is not proved here.
+Total boundedness is one of the two halves of the Lovász--Szegedy compactness theorem, the other
+being completeness.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.dense_stepGraphon` -- step graphons are dense in graphon space;
 * `TauCeti.DenseGraphLimits.totallyBounded_graphonSpaceI` -- `GraphonSpaceI` is totally bounded.
 
 ## References
@@ -37,8 +34,6 @@ completeness, is not proved here.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §9.3.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), Theorem A.9.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 -- "density of step graphons in
-  `δ□` and total boundedness of `(GraphonSpace, δ□)`".
 -/
 
 public section
@@ -54,21 +49,6 @@ namespace TauCeti
 namespace DenseGraphLimits
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
-
-/-- **Step graphons are dense in graphon space.** -/
-theorem dense_stepGraphon :
-    Dense {x : GraphonSpace Ω μ | ∃ (P : Finpartition (Set.univ : Set Ω))
-      (hP : ∀ p ∈ P.parts, MeasurableSet p) (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1)
-      (hsymm : ∀ p q, val p q = val q p),
-      x = SeparationQuotient.mk (stepGraphon (μ := μ) P hP val hsymm)} := by
-  rw [Metric.dense_iff]
-  rintro x r hr
-  obtain ⟨W, rfl⟩ := SeparationQuotient.surjective_mk x
-  obtain ⟨P, hP, val, hsymm, _, hle⟩ := exists_stepGraphon_cutDist_le W (half_pos hr)
-  refine ⟨SeparationQuotient.mk (stepGraphon (μ := μ) P hP val hsymm), ?_,
-    ⟨P, hP, val, hsymm, rfl⟩⟩
-  rw [Metric.mem_ball, dist_comm, dist_graphonSpace_mk_mk]
-  exact hle.trans_lt (half_lt_self hr)
 
 section Net
 

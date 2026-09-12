@@ -36,9 +36,6 @@ matrix and the cut distance to it is a cut distance to a finite object.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 -- weighted graphs as "the
-  technically convenient dense subset", and the step graphons the density and total-boundedness
-  statements are about.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §7.1 and
   §9.2.
 -/

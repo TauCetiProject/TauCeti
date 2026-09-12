@@ -119,8 +119,10 @@ def stepGraphonAvg (P : Finpartition (Set.univ : Set Ω))
     (hP : ∀ p ∈ P.parts, MeasurableSet p) (W : Graphon Ω μ) : Graphon Ω μ :=
   stepGraphon (μ := μ) P hP (blockAverage P W) (blockAverage_comm P W)
 
-/-- The block-average step graphon is the step graphon of the rectangle averages.  This is the
-definition, exported so that consumers can name the block matrix. -/
+/-- The block-average step graphon is the step graphon of the rectangle averages.
+
+`stepGraphonAvg` is a definition whose body is not exposed outside this module, so this is the only
+way a downstream file can name its block matrix. -/
 theorem stepGraphonAvg_eq_stepGraphon (P : Finpartition (Set.univ : Set Ω))
     (hP : ∀ p ∈ P.parts, MeasurableSet p) (W : Graphon Ω μ) :
     stepGraphonAvg (μ := μ) P hP W =
