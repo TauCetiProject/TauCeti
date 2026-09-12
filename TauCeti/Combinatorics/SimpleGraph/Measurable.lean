@@ -5,8 +5,8 @@ Authors: Codex, Claude
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Maps
 public import Mathlib.MeasureTheory.Constructions.SimpleGraph
+public import TauCeti.Combinatorics.SimpleGraph.Maps
 
 /-!
 # Measurability of individual simple graphs and of relabelling
@@ -17,13 +17,8 @@ the countable product space. This supplies the discrete integration API for fini
 
 Each adjacency coordinate of a graph pulled back along a map of vertex types is a single
 adjacency coordinate of the source graph, so the pullback is measurable with no hypothesis on
-either vertex type. This is what lets a random graph be restricted to a window of labels. The
-window of a graph on `ℕ` spanned by the first `n` labels — the map a random graph on an infinite
-label set is read through to recover a finite sample — is the special case along `Fin.val`.
-
-## Main definitions
-
-* `SimpleGraph.restrictFin` — the initial `n`-label window of a graph on `ℕ`.
+either vertex type. This is what lets a random graph be restricted to a window of labels: the
+window `SimpleGraph.restrictFin` is the special case along `Fin.val`.
 
 ## Main results
 
@@ -63,18 +58,14 @@ theorem measurable_comap (f : V → W) :
     Measurable (SimpleGraph.comap f : SimpleGraph W → SimpleGraph V) :=
   measurable_iff_adj.2 fun u v => measurable_iff_adj.1 measurable_id (f u) (f v)
 
-/-- The window of a graph on `ℕ` spanned by the first `n` labels. -/
-def restrictFin (G : SimpleGraph ℕ) (n : ℕ) : SimpleGraph (Fin n) :=
-  SimpleGraph.comap (fun i => (i : ℕ)) G
-
-@[simp]
-theorem restrictFin_adj {n : ℕ} (G : SimpleGraph ℕ) (a b : Fin n) :
-    (G.restrictFin n).Adj a b ↔ G.Adj a b := Iff.rfl
-
 /-- Taking a window is measurable. -/
 @[fun_prop]
 theorem measurable_restrictFin (n : ℕ) :
     Measurable fun G : SimpleGraph ℕ => G.restrictFin n :=
-  measurable_comap _
+  -- `restrictFin` does not unfold outside the module that defines it, so `measurable_comap` is
+  -- not applicable directly; `restrictFin_adj` supplies the same adjacency equation.
+  measurable_iff_adj.2 fun u v => by
+    simp only [restrictFin_adj]
+    exact measurable_iff_adj.1 measurable_id (u : ℕ) v
 
 end SimpleGraph
