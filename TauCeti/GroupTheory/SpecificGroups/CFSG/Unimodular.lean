@@ -71,6 +71,10 @@ group is finite, perfect, or simple.
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
+* R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, Memoirs Amer. Math. Soc. **80**
+  (1968), §11, for the Steinberg endomorphism conventions.
+* M. Geck, *On the construction of semisimple Lie algebras and Chevalley groups*,
+  Proc. Amer. Math. Soc. **145** (2017), 3233--3247, for the matrix realization of the carrier.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plates VII--IX, for the unimodularity
   of the `E₈`, `F₄` and `G₂` Cartan matrices.
 
