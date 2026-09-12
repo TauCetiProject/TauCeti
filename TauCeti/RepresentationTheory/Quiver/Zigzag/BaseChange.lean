@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.BaseChange
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Gauge
 
 /-!
@@ -22,9 +23,8 @@ presentation-level scalar-extension map; it does not identify the target with a 
 The parameter construction is functorial in the coefficient homomorphism and is compatible with
 gauge transforms, so gauge-equivalent parameters remain gauge equivalent after scalar extension.
 
-The parameter construction only needs a monoid homomorphism.  Injectivity is stated only when the
-homomorphism itself is injective, since extending coefficients need not distinguish units without
-that hypothesis.
+The parameter construction only needs a monoid homomorphism.  Injectivity is stated exactly when
+the induced map on units is injective, since the parameters only record unit-valued ratios.
 
 ## Main definitions
 
@@ -40,10 +40,13 @@ that hypothesis.
 * `TauCeti.skewZigzagBaseChange_skewZigzagMk_ofPath`: scalar extension fixes every doubled path.
 * `TauCeti.skewZigzagBaseChange_algebraMap`: scalar coefficients are transported by the given
   ring homomorphism.
+* `TauCeti.skewZigzagBaseChange_id` and `TauCeti.skewZigzagBaseChange_comp`: scalar extension is
+  functorial in the coefficient homomorphism.
 
 The parameter conventions follow C. Couture, *Skew-Zigzag Algebras*, Sections 3 and 4,
-https://arxiv.org/abs/1509.08405; the coefficient map is induced directly from the presented
-relations.
+https://arxiv.org/abs/1509.08405.  The coefficient-map construction follows
+`TauCeti.RepresentationTheory.Quiver.Preprojective.BaseChange` and implements the scalar-extension
+clause of Layer 1 of `TauCetiRoadmap/ZigzagPreprojective/README.md`.
 -/
 
 public section
@@ -101,14 +104,13 @@ theorem map_comp {m : Type*} [Monoid m] (f : k →* l) (g : l →* m)
   ext i j j' h h'
   simp [Units.map_comp]
 
-/-- An injective coefficient homomorphism induces an injective map on skew-zigzag parameters. -/
-theorem map_injective (f : k →* l) (hf : Function.Injective f) :
+/-- Injectivity on units induces an injective map on skew-zigzag parameters. -/
+theorem map_injective (f : k →* l) (hf : Function.Injective (Units.map f)) :
     Function.Injective (map (G := G) f) := by
   intro c c' h
   apply SkewZigzagParameter.ext
   funext i j j' hi hj
-  apply Units.map_injective hf
-  exact congrArg (fun d : SkewZigzagParameter l G => d.ratio hi hj) h
+  exact hf (congrArg (fun d : SkewZigzagParameter l G => d.ratio hi hj) h)
 
 end Map
 
@@ -148,140 +150,93 @@ section Quotient
 variable {k : Type w} {l : Type z} {V : Type u}
   [CommRing k] [CommRing l] (G : SimpleGraph V) [Finite V]
 
-private theorem skewZigzagBaseChangePathAlgHom_hcomp
-    (f : k →+* l) (c : SkewZigzagParameter k G) {a b d : DoubledQuiver G}
-    (p : Path a b) (q : Path d a) :
-    (skewZigzagMk l G (c.map f.toMonoidHom) (ofPath ⟨a, b, p⟩) :
-        skewZigzagQuotient l G (c.map f.toMonoidHom)) *
-      skewZigzagMk l G (c.map f.toMonoidHom)
-          (ofPath ⟨d, a, q⟩) =
-        skewZigzagMk l G (c.map f.toMonoidHom)
-          (ofPath ⟨d, b, q.comp p⟩) := by
-  rw [← map_mul, ofPath_mul_ofPath_of_comp]
-
-private theorem skewZigzagBaseChangePathAlgHom_hzero
-    (f : k →+* l) (c : SkewZigzagParameter k G)
-    {x y : Quiver.TotalPath (DoubledQuiver G)} (h : y.2.1 ≠ x.1) :
-    (skewZigzagMk l G (c.map f.toMonoidHom) (ofPath x) :
-        skewZigzagQuotient l G (c.map f.toMonoidHom)) *
-      skewZigzagMk l G (c.map f.toMonoidHom) (ofPath y) = 0 := by
-  rw [← map_mul, ofPath_mul_ofPath_of_not_composable h, map_zero]
-
-private theorem skewZigzagBaseChangePathAlgHom_hone
-    (f : k →+* l) (c : SkewZigzagParameter k G) :
-    letI : Fintype (DoubledQuiver G) := Fintype.ofFinite _
-    (∑ v : DoubledQuiver G,
-        (skewZigzagMk l G (c.map f.toMonoidHom)
-          (ofPath ⟨v, v, Path.nil⟩) : skewZigzagQuotient l G (c.map f.toMonoidHom))) = 1 := by
-  let _ := Fintype.ofFinite (DoubledQuiver G)
-  calc
-    (∑ v : DoubledQuiver G,
-        (skewZigzagMk l G (c.map f.toMonoidHom)
-          (ofPath ⟨v, v, Path.nil⟩) : skewZigzagQuotient l G (c.map f.toMonoidHom))) =
-        skewZigzagMk l G (c.map f.toMonoidHom)
-          (∑ v : DoubledQuiver G, (ofPath ⟨v, v, Path.nil⟩ :
-            pathAlgebra l (DoubledQuiver G))) := by
-      rw [map_sum]
-    _ = skewZigzagMk l G (c.map f.toMonoidHom)
-        (∑ v : DoubledQuiver G, vertexIdempotent l v) := by
-      congr 1
-      apply Finset.sum_congr rfl
-      intro v hv
-      rw [vertexIdempotent_eq_ofPath]
-    _ = skewZigzagMk l G (c.map f.toMonoidHom) 1 := by rw [one_def]
-    _ = 1 := (skewZigzagMk l G (c.map f.toMonoidHom)).map_one
-
 private noncomputable def skewZigzagBaseChangePathAlgHom
     (f : k →+* l) (c : SkewZigzagParameter k G) :
-    letI : Algebra k (skewZigzagQuotient l G (c.map f.toMonoidHom)) :=
-      ((algebraMap l (skewZigzagQuotient l G (c.map f.toMonoidHom))).comp f).toAlgebra'
+    letI : Algebra k (skewZigzagQuotient l G (c.map (f : k →* l))) :=
+      ((algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l)))).comp f).toAlgebra'
         (fun a x => Algebra.commutes (R := l)
-          (A := skewZigzagQuotient l G (c.map f.toMonoidHom)) (f a) x)
-    pathAlgebra k (DoubledQuiver G) →ₐ[k] skewZigzagQuotient l G (c.map f.toMonoidHom) := by
-  let _ : Algebra k (skewZigzagQuotient l G (c.map f.toMonoidHom)) :=
-    ((algebraMap l (skewZigzagQuotient l G (c.map f.toMonoidHom))).comp f).toAlgebra'
+          (A := skewZigzagQuotient l G (c.map (f : k →* l))) (f a) x)
+    pathAlgebra k (DoubledQuiver G) →ₐ[k] skewZigzagQuotient l G (c.map (f : k →* l)) := by
+  let _ : Algebra k (skewZigzagQuotient l G (c.map (f : k →* l))) :=
+    ((algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l)))).comp f).toAlgebra'
       (fun a x => Algebra.commutes (R := l)
-        (A := skewZigzagQuotient l G (c.map f.toMonoidHom)) (f a) x)
-  exact PathAlgebra.liftAlgHom k
-    (fun x => skewZigzagMk l G (c.map f.toMonoidHom) (ofPath x))
-    (skewZigzagBaseChangePathAlgHom_hcomp G f c)
-    (skewZigzagBaseChangePathAlgHom_hzero G f c)
-    (skewZigzagBaseChangePathAlgHom_hone G f c)
+        (A := skewZigzagQuotient l G (c.map (f : k →* l))) (f a) x)
+  exact PathAlgebra.baseChangeAlgHom f (skewZigzagMk l G (c.map (f : k →* l)))
 
 private theorem skewZigzagBaseChangePathAlgHom_ofPath
     (f : k →+* l) (c : SkewZigzagParameter k G)
     (x : Quiver.TotalPath (DoubledQuiver G)) :
-    letI : Algebra k (skewZigzagQuotient l G (c.map f.toMonoidHom)) :=
-      ((algebraMap l (skewZigzagQuotient l G (c.map f.toMonoidHom))).comp f).toAlgebra'
+    letI : Algebra k (skewZigzagQuotient l G (c.map (f : k →* l))) :=
+      ((algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l)))).comp f).toAlgebra'
         (fun a y => Algebra.commutes (R := l)
-          (A := skewZigzagQuotient l G (c.map f.toMonoidHom)) (f a) y)
+          (A := skewZigzagQuotient l G (c.map (f : k →* l))) (f a) y)
     skewZigzagBaseChangePathAlgHom G f c (ofPath x) =
-      skewZigzagMk l G (c.map f.toMonoidHom) (ofPath x) := by
-  let _ : Algebra k (skewZigzagQuotient l G (c.map f.toMonoidHom)) :=
-    ((algebraMap l (skewZigzagQuotient l G (c.map f.toMonoidHom))).comp f).toAlgebra'
+      skewZigzagMk l G (c.map (f : k →* l)) (ofPath x) := by
+  let _ : Algebra k (skewZigzagQuotient l G (c.map (f : k →* l))) :=
+    ((algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l)))).comp f).toAlgebra'
       (fun a y => Algebra.commutes (R := l)
-        (A := skewZigzagQuotient l G (c.map f.toMonoidHom)) (f a) y)
-  rw [skewZigzagBaseChangePathAlgHom]
-  exact PathAlgebra.liftAlgHom_ofPath k _ _ _ _ x
+        (A := skewZigzagQuotient l G (c.map (f : k →* l))) (f a) y)
+  exact PathAlgebra.baseChangeAlgHom_ofPath f
+    (skewZigzagMk l G (c.map (f : k →* l))) x
 
 private theorem skewZigzagBaseChangePathAlgHom_backtrackElem
     (f : k →+* l) (c : SkewZigzagParameter k G) {i j : V} (h : G.Adj i j) :
-    letI : Algebra k (skewZigzagQuotient l G (c.map f.toMonoidHom)) :=
-      ((algebraMap l (skewZigzagQuotient l G (c.map f.toMonoidHom))).comp f).toAlgebra'
+    letI : Algebra k (skewZigzagQuotient l G (c.map (f : k →* l))) :=
+      ((algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l)))).comp f).toAlgebra'
         (fun a y => Algebra.commutes (R := l)
-          (A := skewZigzagQuotient l G (c.map f.toMonoidHom)) (f a) y)
+          (A := skewZigzagQuotient l G (c.map (f : k →* l))) (f a) y)
     skewZigzagBaseChangePathAlgHom G f c (backtrackElem G k h) =
-      skewZigzagMk l G (c.map f.toMonoidHom) (backtrackElem G l h) := by
-  let _ : Algebra k (skewZigzagQuotient l G (c.map f.toMonoidHom)) :=
-    ((algebraMap l (skewZigzagQuotient l G (c.map f.toMonoidHom))).comp f).toAlgebra'
+      skewZigzagMk l G (c.map (f : k →* l)) (backtrackElem G l h) := by
+  let _ : Algebra k (skewZigzagQuotient l G (c.map (f : k →* l))) :=
+    ((algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l)))).comp f).toAlgebra'
       (fun a y => Algebra.commutes (R := l)
-        (A := skewZigzagQuotient l G (c.map f.toMonoidHom)) (f a) y)
+        (A := skewZigzagQuotient l G (c.map (f : k →* l))) (f a) y)
   rw [backtrackElem_eq_ofPath, skewZigzagBaseChangePathAlgHom_ofPath,
     backtrackElem_eq_ofPath]
 
 private theorem skewZigzagBaseChangePathAlgHom_relator
     (f : k →+* l) (c : SkewZigzagParameter k G)
     (x : pathAlgebra k (DoubledQuiver G)) (hx : IsSkewZigzagRelator k G c x) :
-    letI : Algebra k (skewZigzagQuotient l G (c.map f.toMonoidHom)) :=
-      ((algebraMap l (skewZigzagQuotient l G (c.map f.toMonoidHom))).comp f).toAlgebra'
+    letI : Algebra k (skewZigzagQuotient l G (c.map (f : k →* l))) :=
+      ((algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l)))).comp f).toAlgebra'
         (fun a y => Algebra.commutes (R := l)
-          (A := skewZigzagQuotient l G (c.map f.toMonoidHom)) (f a) y)
+          (A := skewZigzagQuotient l G (c.map (f : k →* l))) (f a) y)
     skewZigzagBaseChangePathAlgHom G f c x = 0 := by
-  let _ : Algebra k (skewZigzagQuotient l G (c.map f.toMonoidHom)) :=
-    ((algebraMap l (skewZigzagQuotient l G (c.map f.toMonoidHom))).comp f).toAlgebra'
+  let _ : Algebra k (skewZigzagQuotient l G (c.map (f : k →* l))) :=
+    ((algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l)))).comp f).toAlgebra'
       (fun a y => Algebra.commutes (R := l)
-        (A := skewZigzagQuotient l G (c.map f.toMonoidHom)) (f a) y)
+        (A := skewZigzagQuotient l G (c.map (f : k →* l))) (f a) y)
   cases hx with
   | nonreturn p hlen hne =>
       rw [skewZigzagBaseChangePathAlgHom_ofPath]
-      exact skewZigzagMk_ofPath_eq_zero_of_ne l G (c.map f.toMonoidHom) p hlen hne
+      exact skewZigzagMk_ofPath_eq_zero_of_ne l G (c.map (f : k →* l)) p hlen hne
   | backtrack_ratio h h' =>
       rw [map_sub, map_smul, skewZigzagBaseChangePathAlgHom_backtrackElem,
         skewZigzagBaseChangePathAlgHom_backtrackElem, sub_eq_zero]
       calc
-        skewZigzagMk l G (c.map f.toMonoidHom) (backtrackElem G l h) =
-            ((c.map f.toMonoidHom).ratio h h' : l) •
-              skewZigzagMk l G (c.map f.toMonoidHom) (backtrackElem G l h') :=
-          skewZigzagMk_backtrackElem_eq_smul l G (c.map f.toMonoidHom) h h'
+        skewZigzagMk l G (c.map (f : k →* l)) (backtrackElem G l h) =
+            ((c.map (f : k →* l)).ratio h h' : l) •
+              skewZigzagMk l G (c.map (f : k →* l)) (backtrackElem G l h') :=
+          skewZigzagMk_backtrackElem_eq_smul l G (c.map (f : k →* l)) h h'
         _ = (c.ratio h h' : k) •
-              skewZigzagMk l G (c.map f.toMonoidHom) (backtrackElem G l h') := by
-          simp only [Algebra.smul_def, SkewZigzagParameter.map_ratio, Units.coe_map]
-          rfl
+              skewZigzagMk l G (c.map (f : k →* l)) (backtrackElem G l h') := by
+          rw [PathAlgebra.smul_def_baseChange]
+          simp
   | long_path y h3 =>
       rw [skewZigzagBaseChangePathAlgHom_ofPath]
-      exact skewZigzagMk_ofPath_eq_zero_of_three_le l G (c.map f.toMonoidHom) y h3
+      exact skewZigzagMk_ofPath_eq_zero_of_three_le l G (c.map (f : k →* l)) y h3
 
 private noncomputable def skewZigzagBaseChangeAlgHom
     (f : k →+* l) (c : SkewZigzagParameter k G) :
-    letI : Algebra k (skewZigzagQuotient l G (c.map f.toMonoidHom)) :=
-      ((algebraMap l (skewZigzagQuotient l G (c.map f.toMonoidHom))).comp f).toAlgebra'
+    letI : Algebra k (skewZigzagQuotient l G (c.map (f : k →* l))) :=
+      ((algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l)))).comp f).toAlgebra'
         (fun a y => Algebra.commutes (R := l)
-          (A := skewZigzagQuotient l G (c.map f.toMonoidHom)) (f a) y)
-    skewZigzagQuotient k G c →ₐ[k] skewZigzagQuotient l G (c.map f.toMonoidHom) := by
-  let _ : Algebra k (skewZigzagQuotient l G (c.map f.toMonoidHom)) :=
-    ((algebraMap l (skewZigzagQuotient l G (c.map f.toMonoidHom))).comp f).toAlgebra'
+          (A := skewZigzagQuotient l G (c.map (f : k →* l))) (f a) y)
+    skewZigzagQuotient k G c →ₐ[k] skewZigzagQuotient l G (c.map (f : k →* l)) := by
+  let _ : Algebra k (skewZigzagQuotient l G (c.map (f : k →* l))) :=
+    ((algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l)))).comp f).toAlgebra'
       (fun a y => Algebra.commutes (R := l)
-        (A := skewZigzagQuotient l G (c.map f.toMonoidHom)) (f a) y)
+        (A := skewZigzagQuotient l G (c.map (f : k →* l))) (f a) y)
   exact skewZigzagLift k G c (skewZigzagBaseChangePathAlgHom G f c)
     (skewZigzagBaseChangePathAlgHom_relator G f c)
 
@@ -291,10 +246,10 @@ It fixes every doubled path and applies `f` to scalar coefficients.  The codomai
 parameter obtained by applying `f` to every unit-valued ratio. -/
 noncomputable def skewZigzagBaseChange (f : k →+* l) (c : SkewZigzagParameter k G) :
     skewZigzagQuotient k G c →+* skewZigzagQuotient l G (c.map (f : k →* l)) := by
-  let _ : Algebra k (skewZigzagQuotient l G (c.map f.toMonoidHom)) :=
-    ((algebraMap l (skewZigzagQuotient l G (c.map f.toMonoidHom))).comp f).toAlgebra'
+  let _ : Algebra k (skewZigzagQuotient l G (c.map (f : k →* l))) :=
+    ((algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l)))).comp f).toAlgebra'
       (fun a y => Algebra.commutes (R := l)
-        (A := skewZigzagQuotient l G (c.map f.toMonoidHom)) (f a) y)
+        (A := skewZigzagQuotient l G (c.map (f : k →* l))) (f a) y)
   exact (skewZigzagBaseChangeAlgHom G f c).toRingHom
 
 /-- Scalar extension sends the class of every doubled path to the class of the same path over the
@@ -305,15 +260,14 @@ theorem skewZigzagBaseChange_skewZigzagMk_ofPath
     (x : Quiver.TotalPath (DoubledQuiver G)) :
     skewZigzagBaseChange G f c (skewZigzagMk k G c (ofPath x)) =
       skewZigzagMk l G (c.map (f : k →* l)) (ofPath x) := by
-  let _ : Algebra k (skewZigzagQuotient l G (c.map f.toMonoidHom)) :=
-    ((algebraMap l (skewZigzagQuotient l G (c.map f.toMonoidHom))).comp f).toAlgebra'
+  let _ : Algebra k (skewZigzagQuotient l G (c.map (f : k →* l))) :=
+    ((algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l)))).comp f).toAlgebra'
       (fun a y => Algebra.commutes (R := l)
-        (A := skewZigzagQuotient l G (c.map f.toMonoidHom)) (f a) y)
+        (A := skewZigzagQuotient l G (c.map (f : k →* l))) (f a) y)
   -- The public map is the underlying ring map of the quotient lift.
   change skewZigzagBaseChangeAlgHom G f c (skewZigzagMk k G c (ofPath x)) = _
   rw [skewZigzagBaseChangeAlgHom, skewZigzagLift_skewZigzagMk,
     skewZigzagBaseChangePathAlgHom_ofPath]
-  rfl
 
 /-- Scalar extension carries the source scalar action to the target scalar action through the
 coefficient homomorphism. -/
@@ -322,14 +276,67 @@ theorem skewZigzagBaseChange_algebraMap
     (f : k →+* l) (c : SkewZigzagParameter k G) (a : k) :
     skewZigzagBaseChange G f c (algebraMap k (skewZigzagQuotient k G c) a) =
       algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l))) (f a) := by
-  let _ : Algebra k (skewZigzagQuotient l G (c.map f.toMonoidHom)) :=
-    ((algebraMap l (skewZigzagQuotient l G (c.map f.toMonoidHom))).comp f).toAlgebra'
+  let _ : Algebra k (skewZigzagQuotient l G (c.map (f : k →* l))) :=
+    ((algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l)))).comp f).toAlgebra'
       (fun b y => Algebra.commutes (R := l)
-        (A := skewZigzagQuotient l G (c.map f.toMonoidHom)) (f b) y)
+        (A := skewZigzagQuotient l G (c.map (f : k →* l))) (f b) y)
   -- The target is a `k`-algebra via the composite coefficient map.
   change skewZigzagBaseChangeAlgHom G f c (algebraMap k (skewZigzagQuotient k G c) a) =
-    ((algebraMap l (skewZigzagQuotient l G (c.map f.toMonoidHom))).comp f) a
+    ((algebraMap l (skewZigzagQuotient l G (c.map (f : k →* l)))).comp f) a
   exact (skewZigzagBaseChangeAlgHom G f c).commutes a
+
+/-- Scalar extension along the identity coefficient homomorphism is the identity map. -/
+@[simp]
+theorem skewZigzagBaseChange_id (c : SkewZigzagParameter k G) :
+    (skewZigzagQuotientCongr k G (by
+      simpa only [RingHom.toMonoidHom_eq_coe, RingHom.coe_monoidHom_id] using
+        SkewZigzagParameter.map_id c)).toRingHom.comp
+        (skewZigzagBaseChange G (RingHom.id k) c) =
+      RingHom.id (skewZigzagQuotient k G c) := by
+  apply PathAlgebra.ringHom_ext_of_surjective (skewZigzagMk k G c)
+    (skewZigzagMk_surjective k G c)
+  · intro a
+    simp only [RingHom.comp_apply, skewZigzagBaseChange_algebraMap,
+      RingEquiv.toRingHom_eq_coe, AlgEquiv.toRingEquiv_toRingHom, RingHom.coe_coe,
+      AlgEquiv.commutes, RingHom.id_apply]
+  · intro x
+    simp only [RingHom.comp_apply, skewZigzagBaseChange_skewZigzagMk_ofPath,
+      RingEquiv.toRingHom_eq_coe, AlgEquiv.toRingEquiv_toRingHom, RingHom.coe_coe,
+      skewZigzagQuotientCongr_skewZigzagMk, RingHom.id_apply]
+
+/-- Scalar extension along a composite coefficient homomorphism is the composite of the two
+scalar-extension maps. -/
+@[simp]
+theorem skewZigzagBaseChange_comp {m : Type*} [CommRing m]
+    (f : k →+* l) (g : l →+* m) (c : SkewZigzagParameter k G) :
+    ((↑(skewZigzagQuotientCongr m G
+      (c := c.map (g.comp f : k →* m))
+      (c' := (c.map (f : k →* l)).map (g : l →* m))
+      (by
+        ext i j j' h h'
+        simp)) :
+      skewZigzagQuotient m G (c.map (g.comp f : k →* m)) →+*
+        skewZigzagQuotient m G ((c.map (f : k →* l)).map (g : l →* m))).comp
+        (skewZigzagBaseChange G (g.comp f) c)) =
+      (skewZigzagBaseChange G g (c.map (f : k →* l))).comp
+        (skewZigzagBaseChange G f c) := by
+  apply PathAlgebra.ringHom_ext_of_surjective (skewZigzagMk k G c)
+    (skewZigzagMk_surjective k G c)
+  · intro a
+    simp only [RingHom.comp_apply]
+    rw [skewZigzagBaseChange_algebraMap, skewZigzagBaseChange_algebraMap,
+      skewZigzagBaseChange_algebraMap]
+    exact (skewZigzagQuotientCongr m G (by
+      ext i j j' h h'
+      simp)).commutes (g (f a))
+  · intro x
+    simp only [RingHom.comp_apply]
+    rw [skewZigzagBaseChange_skewZigzagMk_ofPath,
+      skewZigzagBaseChange_skewZigzagMk_ofPath,
+      skewZigzagBaseChange_skewZigzagMk_ofPath]
+    exact skewZigzagQuotientCongr_skewZigzagMk m G (by
+      ext i j j' h h'
+      simp) (ofPath x)
 
 end Quotient
 
