@@ -36,9 +36,9 @@ equivalence.
 
 ## References
 
-This completes the finite-separable refinement of the fourth bullet of Layer 6, “Splitting fields,
-maximal subfields, and the index”, of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
+* [Semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md),
+  Layer 6, fourth bullet, “Splitting fields, maximal subfields, and the index”, finite-separable
+  refinement.
 See P. Gille and T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.2,
 and R. S. Pierce, *Associative Algebras*, Chapter 13.
 -/
@@ -140,19 +140,21 @@ private theorem linearIndependent_descendedMatrixUnit
     LinearIndependent (finiteSplittingField K A e)
       (fun q : Fin n × Fin n ↦ descendedMatrixUnit e q.1 q.2) := by
   apply LinearIndependent.of_comp (extendToSplittingField e).toLinearMap
-  rw [show (extendToSplittingField e).toLinearMap ∘
+  have h_extend : (extendToSplittingField e).toLinearMap ∘
       (fun q : Fin n × Fin n ↦ descendedMatrixUnit e q.1 q.2) =
-      fun q ↦ e.symm (Matrix.single q.1 q.2 1) by
-        funext q
-        exact extendToSplittingField_descendedMatrixUnit e q.1 q.2]
+      fun q ↦ e.symm (Matrix.single q.1 q.2 1) := by
+    funext q
+    exact extendToSplittingField_descendedMatrixUnit e q.1 q.2
+  rw [h_extend]
   have h : LinearIndependent E
       (fun q : Fin n × Fin n ↦ e.symm (Matrix.single q.1 q.2 1)) := by
     have h' := (Matrix.stdBasis E (Fin n) (Fin n)).linearIndependent.map'
       e.symm.toLinearMap (LinearMap.ker_eq_bot_of_injective e.symm.injective)
-    rw [show e.symm.toLinearMap ∘ ⇑(Matrix.stdBasis E (Fin n) (Fin n)) =
-        fun q ↦ e.symm (Matrix.single q.1 q.2 1) by
+    have h_stdBasis : e.symm.toLinearMap ∘ ⇑(Matrix.stdBasis E (Fin n) (Fin n)) =
+        (fun q ↦ e.symm (Matrix.single q.1 q.2 1)) := by
       funext q
-      rw [Function.comp_apply, Matrix.stdBasis_eq_single, AlgEquiv.toLinearMap_apply]] at h'
+      rw [Function.comp_apply, Matrix.stdBasis_eq_single, AlgEquiv.toLinearMap_apply]
+    rw [h_stdBasis] at h'
     exact h'
   exact h.restrict_scalars' (finiteSplittingField K A e)
 
@@ -221,6 +223,9 @@ private theorem extendToSplittingField_injective
       (IsScalarTower.toAlgHom K L E).toLinearMap.rTensor A := by
     apply TensorProduct.ext'
     intro x a
+    -- The two sides hide the same coefficient map behind different `AlgHom`/`LinearMap` wrappers.
+    -- Their pure-tensor reduction lemmas cannot rewrite until those wrappers are exposed by
+    -- definitional equality.
     change (Algebra.TensorProduct.map (Algebra.ofId L E) (AlgHom.id K A))
         (x ⊗ₜ[K] a) =
       (IsScalarTower.toAlgHom K L E).toLinearMap.rTensor A (x ⊗ₜ[K] a)
