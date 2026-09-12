@@ -74,7 +74,7 @@ theorem _root_.Subgroup.topologicalClosure_eq_top_iff_forall_map_mk' (H : Subgro
 
 /-- A subset of a profinite group generates a dense subgroup exactly when its image generates
 every quotient by an open normal subgroup. -/
-theorem _root_.Subgroup.topologicalClosure_closure_eq_top_iff (s : Set G) :
+theorem _root_.Subgroup.topologicalClosure_closure_eq_top_iff {s : Set G} :
     (Subgroup.closure s).topologicalClosure = ⊤ ↔
       ∀ U : OpenNormalSubgroup G,
         Subgroup.closure ((QuotientGroup.mk' U.toSubgroup) '' s) = ⊤ := by
@@ -141,7 +141,7 @@ theorem exists_topologicalClosure_closure_range_eq_top_of_rank_le {n : ℕ}
       hcomp ▸ hfgen
     exact ⟨g, hmem⟩
   obtain ⟨g, hg⟩ := nonempty_iInter_of_directed_nonempty_isClosed C hdir hne hclosed
-  refine ⟨g, (Subgroup.topologicalClosure_closure_eq_top_iff _).mpr fun U ↦ ?_⟩
+  refine ⟨g, Subgroup.topologicalClosure_closure_eq_top_iff.mpr fun U ↦ ?_⟩
   have hgU : Subgroup.closure (Set.range (⇑(QuotientGroup.mk' U.toSubgroup) ∘ g)) = ⊤ :=
     Set.mem_iInter.mp hg U
   rwa [Set.range_comp] at hgU
@@ -165,7 +165,7 @@ theorem rank_quotient_le_card_of_topologicalClosure_closure_eq_top {s : Finset G
   refine le_trans (Group.rank_le (S := s.image (QuotientGroup.mk' U.toSubgroup)) ?_)
     Finset.card_image_le
   rw [Finset.coe_image]
-  exact (Subgroup.topologicalClosure_closure_eq_top_iff _).mp hs U
+  exact Subgroup.topologicalClosure_closure_eq_top_iff.mp hs U
 
 /-- **Topological finite generation is a uniform bound on the ranks of the finite quotients.**
 A profinite group is topologically finitely generated if and only if there is an `n` bounding the
