@@ -5,18 +5,18 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Coupling
+public import TauCeti.MeasureTheory.Measure.Coupling.Basic
 import TauCeti.Data.ENNReal.Weights
 import TauCeti.MeasureTheory.Measure.FiniteMeasure
 
 /-!
 # The shift coupling of two weightings of a finite carrier
 
-Two probability measures on a finite carrier that differ by a transfer of weight onto one
-designated atom `k₀` -- so that `ν'` is dominated by `ν` everywhere else -- are coupled here by
-keeping the matched mass `min (ν {k}) (ν' {k})` at `(k, k)` and putting the excess `ν {k} - ν' {k}`
-at `(k, k₀)`.  The mass this places off the diagonal is then at most the transferred weight, which
-is what a cost estimate against the diagonal consumes.
+Two measures of equal finite total mass on a finite carrier that differ by a transfer of weight
+onto one designated atom `k₀` -- so that `ν'` is dominated by `ν` everywhere else -- are coupled
+here by keeping the matched mass `min (ν {k}) (ν' {k})` at `(k, k)` and putting the excess
+`ν {k} - ν' {k}` at `(k, k₀)`.  The mass this places off the diagonal is then at most the
+transferred weight, which is what a cost estimate against the diagonal consumes.
 
 Mathlib has no maximal-coupling construction, and the general one is not needed here: dominance away
 from a single atom already says where the unmatched mass can go.
@@ -57,9 +57,9 @@ variable (ν ν' : Measure κ) (k₀ : κ)
 /-- The coupling of two weight vectors on a finite carrier that keeps as much mass as possible on
 the diagonal and transfers the excess of every other atom to the designated atom `k₀`.
 
-It couples `ν` and `ν'` exactly when `ν'` is dominated by `ν` away from `k₀`
-(`isCoupling_shiftCoupling`), and the mass it puts off the diagonal is then the total transferred
-weight (`shiftCoupling_compl_diagonal_le_sum_tsub`). -/
+It couples `ν` and `ν'` when their total singleton masses are equal and finite and `ν'` is dominated
+by `ν` away from `k₀` (`isCoupling_shiftCoupling`), and the mass it puts off the diagonal is then
+bounded by the total transferred weight (`shiftCoupling_compl_diagonal_le_sum_tsub`). -/
 def shiftCoupling : Measure (κ × κ) :=
   ∑ k, min (ν {k}) (ν' {k}) • Measure.dirac (k, k) +
     ∑ k, (ν {k} - ν' {k}) • Measure.dirac (k, k₀)
@@ -91,13 +91,12 @@ theorem shiftCoupling_compl_diagonal_le_sum_tsub :
 
 variable {ν ν' k₀}
 
-/-- **The shift coupling is a coupling.**  Its first marginal is `ν` because the matched mass and
-the excess add up at every atom, and its second marginal is `ν'` because the designated atom `k₀`
-absorbs exactly the total excess. -/
-theorem isCoupling_shiftCoupling [IsProbabilityMeasure ν] [IsProbabilityMeasure ν']
-    (hdom : ∀ k, k ≠ k₀ → ν' {k} ≤ ν {k}) : IsCoupling ν ν' (shiftCoupling ν ν' k₀) := by
-  have hfg : ∑ k, ν {k} = ∑ k, ν' {k} := ν.sum_singleton_eq_one.trans ν'.sum_singleton_eq_one.symm
-  have hne : ∑ k, ν {k} ≠ ⊤ := by rw [ν.sum_singleton_eq_one]; exact ENNReal.one_ne_top
+/-- **The shift coupling is a coupling.**  For measures with equal finite total singleton mass, its
+first marginal is `ν` because the matched mass and the excess add up at every atom, and its second
+marginal is `ν'` because the designated atom `k₀` absorbs exactly the total excess. -/
+theorem isCoupling_shiftCoupling (hfg : ∑ k, ν {k} = ∑ k, ν' {k})
+    (hne : ∑ k, ν {k} ≠ ⊤) (hdom : ∀ k, k ≠ k₀ → ν' {k} ≤ ν {k}) :
+    IsCoupling ν ν' (shiftCoupling ν ν' k₀) := by
   have hdom' : ∀ k ∈ Finset.univ, k ≠ k₀ → ν' {k} ≤ ν {k} := fun k _ hk => hdom k hk
   have hk₀ := le_of_sum_eq_of_forall_ne_le (Finset.mem_univ k₀) hfg hne hdom'
   refine isCoupling_iff.2 ⟨?_, ?_⟩

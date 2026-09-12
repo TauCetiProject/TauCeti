@@ -143,7 +143,11 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
     cutDist (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb)
       ≤ 2 * (∑ k, (ν {k} - ν' {k})).toReal := by
   set π := MeasureTheory.shiftCoupling ν ν' k₀
-  have hπ : MeasureTheory.IsCoupling ν ν' π := MeasureTheory.isCoupling_shiftCoupling hdom
+  have hfg : ∑ k, ν {k} = ∑ k, ν' {k} :=
+    ν.sum_singleton_eq_one.trans ν'.sum_singleton_eq_one.symm
+  have hne : ∑ k, ν {k} ≠ ⊤ := by rw [ν.sum_singleton_eq_one]; exact ENNReal.one_ne_top
+  have hπ : MeasureTheory.IsCoupling ν ν' π :=
+    MeasureTheory.isCoupling_shiftCoupling hfg hne hdom
   have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
   have hrne : ∑ k, (ν {k} - ν' {k}) ≠ ⊤ := by
     refine ne_top_of_le_ne_top ENNReal.one_ne_top ?_
