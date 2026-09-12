@@ -57,6 +57,7 @@ theorem dirac_eq_dirac_of_inseparable [TopologicalSpace X] [BorelSpace X]
 
 /-- **A finite product of Dirac measures is a Dirac measure**, at the point assembled from the
 individual ones. -/
+@[simp]
 theorem pi_dirac {ι : Type*} [Fintype ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
     (x : ∀ i, α i) : (Measure.pi fun i => Measure.dirac (x i)) = Measure.dirac x := by
   refine Measure.pi_eq (μ' := Measure.dirac x) fun s hs => ?_

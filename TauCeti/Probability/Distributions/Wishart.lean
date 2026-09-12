@@ -10,8 +10,6 @@ public import TauCeti.MeasureTheory.Measure.Dirac
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix
 public import TauCeti.Probability.Distributions.Gaussian.Affine
 
-import Mathlib.Analysis.CStarAlgebra.Matrix
-import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.MeasureTheory.Group.Convolution
 import TauCeti.Analysis.Matrix.Sqrt
 
@@ -37,7 +35,7 @@ a density definition cannot.
 
 * `TauCeti.isProbabilityMeasure_wishartGramMeasure` — it is a probability measure, at every
   degree and every scale matrix.
-* `TauCeti.hasLaw_sum_vecMulVec_gaussian` — the Gram sum of an independent centred Gaussian
+* `TauCeti.hasLaw_wishartGram_gaussian` — the Gram sum of an independent centred Gaussian
   family has this law.
 * `TauCeti.wishartGramMeasure_of_not_posSemidef` — outside the positive-semidefinite cone the law
   is the Dirac mass at zero.
@@ -173,6 +171,7 @@ theorem wishartGramMeasure_zero (S : Matrix (Fin p) (Fin p) ℝ) :
 
 /-- With a scale matrix outside the positive-semidefinite cone, Mathlib totalizes the Gaussian
 factor to a Dirac mass, and the Gaussian-Gram law is then the Dirac mass at the zero matrix. -/
+@[simp]
 theorem wishartGramMeasure_of_not_posSemidef (ν : ℕ) (hS : ¬ S.PosSemidef) :
     wishartGramMeasure ν S = Measure.dirac 0 := by
   rw [wishartGramMeasure_eq_map_pi]
@@ -182,7 +181,7 @@ theorem wishartGramMeasure_of_not_posSemidef (ν : ℕ) (hS : ¬ S.PosSemidef) :
   exact congrArg _ (Subtype.ext (by simp))
 
 /-- **The Gram sum of an independent centred Gaussian family is Gaussian-Gram Wishart.** -/
-theorem hasLaw_sum_vecMulVec_gaussian {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+theorem hasLaw_wishartGram_gaussian {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
     {X : Fin ν → Ω → EuclideanSpace ℝ (Fin p)}
     (hX : ∀ r, HasLaw (X r) (multivariateGaussian 0 S) P) (hindep : iIndepFun X P) :
     HasLaw (fun ω => wishartGram fun r => X r ω) (wishartGramMeasure ν S) P :=
@@ -270,92 +269,50 @@ private theorem rank_coe_symmetricCongruence_wishartGram_le (hS : S.PosSemidef)
 
 /-- **The Gaussian-Gram law of degree `ν` has rank at most `min ν S.rank`.**  With fewer Gaussian
 samples than dimensions, or a singular scale matrix, the law lives on singular matrices. -/
-theorem wishartGramMeasure_setOf_rank_le (ν : ℕ) (hS : S.PosSemidef) :
+theorem wishartGramMeasure_setOf_rank_le (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ) :
     wishartGramMeasure ν S
       {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ min ν S.rank} = 1 := by
-  refine le_antisymm prob_le_one ?_
-  rw [wishartGramMeasure_eq_map_sqrt ν hS, wishartGramMeasure_eq_map_pi,
-    Measure.map_map (LinearMap.continuous_of_finiteDimensional _).measurable
-      measurable_wishartGram]
-  calc (1 : ℝ≥0∞)
-      = (Measure.pi fun _ : Fin ν => multivariateGaussian 0 1) Set.univ := (measure_univ).symm
-    _ = (Measure.pi fun _ : Fin ν => multivariateGaussian 0 1)
-          ((⇑(Matrix.symmetricCongruenceLinearMap (CFC.sqrt S)) ∘ wishartGram) ⁻¹'
-            {A | (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ min ν S.rank}) :=
-        congrArg _ (Set.eq_univ_of_forall fun X =>
-          rank_coe_symmetricCongruence_wishartGram_le hS X).symm
-    _ ≤ _ := Measure.le_map_apply
-          (((LinearMap.continuous_of_finiteDimensional _).measurable.comp
-            measurable_wishartGram).aemeasurable) _
-
-private theorem measurableSet_setOf_rank_le (k : ℕ) :
-    MeasurableSet {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-      (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ k} := by
-  apply IsClosed.measurableSet
-  rw [← isOpen_compl_iff]
-  simp only [Set.compl_ofPred, not_le]
-  let f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) →ₗ[ℝ]
-      EuclideanSpace ℝ (Fin p) →L[ℝ] EuclideanSpace ℝ (Fin p) :=
-    (Matrix.toEuclideanCLM (n := Fin p) (𝕜 := ℝ)).toAlgEquiv.toLinearEquiv.toLinearMap.comp
-      (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)).subtype
-  have hf : Continuous f := LinearMap.continuous_of_finiteDimensional f
-  have hopen := (isOpen_setOfPred_nat_le_rank (𝕜 := ℝ)
-    (E := EuclideanSpace ℝ (Fin p)) (F := EuclideanSpace ℝ (Fin p)) (k + 1)).preimage hf
-  have hrank (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-      (f A : EuclideanSpace ℝ (Fin p) →ₗ[ℝ] EuclideanSpace ℝ (Fin p)).rank =
-        (A : Matrix (Fin p) (Fin p) ℝ).rank := by
-    change Module.rank ℝ (LinearMap.range (f A).toLinearMap) =
-      ((A : Matrix (Fin p) (Fin p) ℝ).rank : Cardinal)
-    rw [← Module.finrank_eq_rank]
-    norm_cast
-    change Module.finrank ℝ (LinearMap.range (Matrix.toEuclideanLin
-      (A : Matrix (Fin p) (Fin p) ℝ))) = (A : Matrix (Fin p) (Fin p) ℝ).rank
-    rw [Matrix.toEuclideanLin_eq_toLin_orthonormal]
-    exact (Matrix.rank_eq_finrank_range_toLin (A : Matrix (Fin p) (Fin p) ℝ)
-      (EuclideanSpace.basisFun (Fin p) ℝ).toBasis
-      (EuclideanSpace.basisFun (Fin p) ℝ).toBasis).symm
-  have hset : {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-      k < (A : Matrix (Fin p) (Fin p) ℝ).rank} =
-      f ⁻¹' {g | (k + 1 : ℕ) ≤ (g : EuclideanSpace ℝ (Fin p) →ₗ[ℝ]
-        EuclideanSpace ℝ (Fin p)).rank} := by
-    ext A
-    change k < (A : Matrix (Fin p) (Fin p) ℝ).rank ↔
-      ((k + 1 : ℕ) : Cardinal) ≤
-        (f A : EuclideanSpace ℝ (Fin p) →ₗ[ℝ] EuclideanSpace ℝ (Fin p)).rank
-    rw [hrank]
-    norm_cast
-  rw [hset]
-  exact hopen
+  by_cases hS : S.PosSemidef
+  · refine le_antisymm prob_le_one ?_
+    rw [wishartGramMeasure_eq_map_sqrt ν hS, wishartGramMeasure_eq_map_pi,
+      Measure.map_map (LinearMap.continuous_of_finiteDimensional _).measurable
+        measurable_wishartGram]
+    calc (1 : ℝ≥0∞)
+        = (Measure.pi fun _ : Fin ν => multivariateGaussian 0 1) Set.univ := (measure_univ).symm
+      _ = (Measure.pi fun _ : Fin ν => multivariateGaussian 0 1)
+            ((⇑(Matrix.symmetricCongruenceLinearMap (CFC.sqrt S)) ∘ wishartGram) ⁻¹'
+              {A | (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ min ν S.rank}) :=
+          congrArg _ (Set.eq_univ_of_forall fun X =>
+            rank_coe_symmetricCongruence_wishartGram_le hS X).symm
+      _ ≤ _ := Measure.le_map_apply
+            (((LinearMap.continuous_of_finiteDimensional _).measurable.comp
+              measurable_wishartGram).aemeasurable) _
+  · rw [wishartGramMeasure_of_not_posSemidef ν hS]
+    refine Measure.dirac_apply_of_mem ?_
+    simp
 
 /-- A Gaussian-Gram Wishart matrix has rank at most `min ν S.rank` almost everywhere. -/
-theorem ae_rank_le_wishartGramMeasure (ν : ℕ) (hS : S.PosSemidef) :
+theorem ae_rank_le_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ) :
     ∀ᵐ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ∂wishartGramMeasure ν S,
       (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ min ν S.rank := by
-  refine (ae_iff_prob_eq_one ?_).2 (wishartGramMeasure_setOf_rank_le ν hS)
-  exact measurableSet_setOfPred.mp (measurableSet_setOf_rank_le (min ν S.rank))
+  refine (ae_iff_prob_eq_one ?_).2 (wishartGramMeasure_setOf_rank_le ν S)
+  exact measurableSet_setOfPred.mp (measurableSet_setOfPred_rank_le (min ν S.rank))
 
 /-- **Below the rank threshold the Gaussian-Gram law has no density.**  It is then carried by the
 singular symmetric matrices, which are `TauCeti.symmetricLebesgue`-null. -/
-theorem mutuallySingular_wishartGramMeasure_symmetricLebesgue (ν : ℕ) (hS : S.PosSemidef)
-    (hrank : min ν S.rank < p) :
+theorem mutuallySingular_wishartGramMeasure_symmetricLebesgue (ν : ℕ)
+    (S : Matrix (Fin p) (Fin p) ℝ) (hrank : min ν S.rank < p) :
     (wishartGramMeasure ν S).MutuallySingular (symmetricLebesgue p) := by
   refine ⟨{A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).det = 0}ᶜ, (measurableSet_setOfPred_det_eq_zero p).compl,
     ?_, ?_⟩
-  · rw [wishartGramMeasure_eq_map_sqrt ν hS, wishartGramMeasure_eq_map_pi,
-      Measure.map_map (LinearMap.continuous_of_finiteDimensional _).measurable
-        measurable_wishartGram,
-      Measure.map_apply ((LinearMap.continuous_of_finiteDimensional _).measurable.comp
-        measurable_wishartGram) (measurableSet_setOfPred_det_eq_zero p).compl]
-    convert measure_empty (μ := Measure.pi fun _ : Fin ν => multivariateGaussian 0 1)
-    refine Set.eq_empty_of_forall_notMem fun X hX => absurd ?_ (not_le.2 hrank)
-    have hdet : ((Matrix.symmetricCongruenceLinearMap (CFC.sqrt S) (wishartGram X) :
-        selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-        Matrix (Fin p) (Fin p) ℝ).det ≠ 0 := hX
-    refine le_trans (le_of_eq ?_) (rank_coe_symmetricCongruence_wishartGram_le hS X)
-    rw [Matrix.rank_of_isUnit _ ((Matrix.isUnit_iff_isUnit_det _).2 (isUnit_iff_ne_zero.2 hdet)),
-      Fintype.card_fin]
+  · refine measure_mono_null (fun A hA => ?_) (ae_iff.1 (ae_rank_le_wishartGramMeasure ν S))
+    have hdet : (A : Matrix (Fin p) (Fin p) ℝ).det ≠ 0 := hA
+    have hrk : (A : Matrix (Fin p) (Fin p) ℝ).rank = p := by
+      rw [Matrix.rank_of_isUnit _ ((Matrix.isUnit_iff_isUnit_det _).2 (isUnit_iff_ne_zero.2 hdet)),
+        Fintype.card_fin]
+    exact fun hle => absurd (hrk.symm.trans_le hle) (not_le.2 hrank)
   · rw [compl_compl, symmetricLebesgue_setOf_det_eq_zero]
 
 /-! ### Convolution -/

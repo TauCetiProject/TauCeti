@@ -48,6 +48,7 @@ variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι]
 
 open scoped Classical in
 /-- The square root of a positive-semidefinite matrix has the same rank as the matrix. -/
+@[simp]
 theorem PosSemidef.rank_sqrt {S : Matrix ι ι 𝕜} (hS : S.PosSemidef) :
     (CFC.sqrt S).rank = S.rank := by
   have hh : (CFC.sqrt S).IsHermitian :=
