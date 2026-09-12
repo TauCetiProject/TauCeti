@@ -5,9 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DiscreteValuationRing.Basic
-public import Mathlib.Topology.Algebra.GroupWithZero
-public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 
 /-!
@@ -29,10 +26,10 @@ while `U(K,i) = 1 + 𝓂[K] ^ i` for `i ≥ 1`.
 
 ## Main results
 
-* `TauCeti.mem_unitFiltration_iff_exists` and `TauCeti.map_mem_unitFiltration_iff`: the
+* `TauCeti.mem_unitFiltration_iff_exists` and `TauCeti.mem_unitFiltration_succ_congr`: the
   congruence form of membership, `x ≡ 1 mod 𝓂[K] ^ i` inside `𝒪[K]`.
 * `TauCeti.mem_unitFiltration_iff_valuation_le` and
-  `TauCeti.mem_unitFiltration_succ_iff_valuation_le`: the valuation form of membership, an
+  `TauCeti.mem_unitFiltration_succ_valuation`: the valuation form of membership, an
   inequality on `x - 1` measured against a uniformizer. At positive depth the inequality alone
   already forces `x` to be a unit of `𝒪[K]`.
 * `TauCeti.unitFiltration_zero` and `TauCeti.unitFiltration_one`: the two shallow steps are
@@ -91,11 +88,15 @@ theorem mem_unitFiltration_iff_exists {i : ℕ} {x : Kˣ} :
     Units.val_one, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, Subring.coe_subtype,
     ← (Ideal.Quotient.mk (𝓂[K] ^ i)).map_one, Ideal.Quotient.mk_eq_mk_iff_sub_mem]
 
-/-- Membership in the unit filtration for a unit of `𝒪[K]`: the congruence
-`u ≡ 1 mod 𝓂[K] ^ i`. -/
-theorem map_mem_unitFiltration_iff (i : ℕ) (u : 𝒪[K]ˣ) :
-    Units.map (Subring.subtype 𝒪[K]).toMonoidHom u ∈ unitFiltration K i ↔
-      (u : 𝒪[K]) - 1 ∈ 𝓂[K] ^ i := by
+/-- Membership in the unit filtration at positive depth for a unit of `𝒪[K]`: the congruence
+`u ≡ 1 mod 𝓂[K] ^ (i + 1)`. The general-depth statement is `mem_unitFiltration_iff_exists`.
+
+This is deliberately not `@[simp]`: `simp` rewrites `RingHom.toMonoidHom` to the bundled
+coercion, so the roadmap-fixed left-hand side is not in simp-normal form and `simpNF` rejects
+the attribute. -/
+theorem mem_unitFiltration_succ_congr (i : ℕ) (u : 𝒪[K]ˣ) :
+    Units.map (Subring.subtype 𝒪[K]).toMonoidHom u ∈ unitFiltration K (i + 1) ↔
+      (u : 𝒪[K]) - 1 ∈ 𝓂[K] ^ (i + 1) := by
   rw [mem_unitFiltration_iff_exists]
   refine ⟨?_, fun h ↦ ⟨u, h, rfl⟩⟩
   rintro ⟨w, hw, hwu⟩
@@ -117,6 +118,7 @@ theorem mem_unitFiltration_zero (x : Kˣ) :
 
 /-- The depth-zero step of the unit filtration is Mathlib's unit group of the valuation subring
 of `K`. -/
+@[simp]
 theorem unitFiltration_zero :
     unitFiltration K 0 = (valuation K).valuationSubring.unitGroup :=
   Subgroup.ext fun x ↦ (mem_unitFiltration_zero x).trans
@@ -145,14 +147,13 @@ theorem mem_unitFiltration_iff_valuation_le {i : ℕ} {x : Kˣ} {π : 𝒪[K]} (
 
 /-- Membership in the unit filtration at positive depth, valuation form: the inequality on
 `x - 1` already forces `x` to be a unit of `𝒪[K]`, so no further hypothesis is needed. -/
-theorem mem_unitFiltration_succ_iff_valuation_le {i : ℕ} {x : Kˣ} {π : 𝒪[K]}
-    (hπ : Irreducible π) :
+theorem mem_unitFiltration_succ_valuation (i : ℕ) (x : Kˣ) (π : 𝒪[K]) (hπ : Irreducible π) :
     x ∈ unitFiltration K (i + 1) ↔
-      valuation K ((x : K) - 1) ≤ valuation K (π : K) ^ (i + 1) := by
+      valuation K ((x : K) - 1) ≤ valuation K ((π : K) ^ (i + 1)) := by
   have hπ1 : valuation K (π : K) ^ (i + 1) < 1 :=
     pow_lt_one₀ zero_le (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ)
       i.succ_ne_zero
-  rw [mem_unitFiltration_iff_valuation_le hπ, and_iff_right_iff_imp]
+  rw [mem_unitFiltration_iff_valuation_le hπ, map_pow, and_iff_right_iff_imp]
   intro hx1
   have h : valuation K ((x : K) - 1 + 1) = 1 := by
     rw [add_comm]
@@ -161,6 +162,7 @@ theorem mem_unitFiltration_succ_iff_valuation_le {i : ℕ} {x : Kˣ} {π : 𝒪[
 
 /-- The depth-one step of the unit filtration is Mathlib's principal unit group of the valuation
 subring of `K`. -/
+@[simp]
 theorem unitFiltration_one :
     unitFiltration K 1 = (valuation K).valuationSubring.principalUnitGroup := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
@@ -176,9 +178,9 @@ theorem unitFiltration_one :
     have hset := Set.ext_iff.mp (hπ.maximalIdeal_eq_setOfPred_le_v_coe (valuation K)) ⟨y, hy⟩
     simpa using hset.mp hmem
   refine Subgroup.ext fun x ↦ ?_
-  rw [mem_unitFiltration_succ_iff_valuation_le (i := 0) hπ,
-    ValuationSubring.mem_principalUnitGroup_iff,
-    ← (Valuation.isEquiv_valuation_valuationSubring (valuation K)).lt_one_iff_lt_one, pow_one]
+  rw [mem_unitFiltration_succ_valuation 0 x π hπ, ValuationSubring.mem_principalUnitGroup_iff,
+    ← (Valuation.isEquiv_valuation_valuationSubring (valuation K)).lt_one_iff_lt_one, zero_add,
+    pow_one]
   exact hdvd _
 
 /-- The unit filtration is decreasing. -/
@@ -216,7 +218,7 @@ theorem unitFiltration_mem_nhds_one (i : ℕ) :
     Units.continuous_val.continuousAt (by simpa using hball)
   refine mem_of_superset hpre fun x hx ↦ ?_
   exact unitFiltration_antitone i.le_succ
-    ((mem_unitFiltration_succ_iff_valuation_le hπ).mpr (le_of_lt hx))
+    ((mem_unitFiltration_succ_valuation i x π hπ).mpr (by simpa using hx.le))
 
 /-- Each step of the unit filtration is an open subgroup of `Kˣ`. -/
 theorem isOpen_unitFiltration (i : ℕ) : IsOpen (unitFiltration K i : Set Kˣ) :=
@@ -243,11 +245,12 @@ private theorem image_unitFiltration_succ {i : ℕ} {π : 𝒪[K]} (hπ : Irredu
   ext y
   constructor
   · rintro ⟨x, hx, rfl⟩
-    exact ⟨(x : K) - 1, (mem_unitFiltration_succ_iff_valuation_le hπ).mp hx, by ring⟩
+    exact ⟨(x : K) - 1, by simpa using (mem_unitFiltration_succ_valuation i x π hπ).mp hx,
+      by ring⟩
   · rintro ⟨z, hz, rfl⟩
     have hval : valuation K (1 + z) = 1 := (valuation K).map_one_add_of_lt (hz.trans_lt hπ1)
     have h0 : (1 : K) + z ≠ 0 := fun h ↦ by simp [h] at hval
-    refine ⟨Units.mk0 _ h0, (mem_unitFiltration_succ_iff_valuation_le hπ).mpr ?_, rfl⟩
+    refine ⟨Units.mk0 _ h0, (mem_unitFiltration_succ_valuation i _ π hπ).mpr ?_, rfl⟩
     simpa using hz
 
 /-- Each step of the unit filtration is a compact subset of `Kˣ`. -/
