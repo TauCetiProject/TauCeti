@@ -23,16 +23,15 @@ file composes them into
 twistedFrobenius = γ₂ ∘ Frob_q,      q = p ^ k,
 ```
 
-and proves the relations that make the composite behave like the Frobenius it twists: the two
-factors commute, `γ₂` is an involution, and consequently
+Using the naturality of the graph automorphism and its involutivity, the file proves
 
 ```text
 twistedFrobenius ∘ twistedFrobenius = Frob_(q ^ 2).
 ```
 
-The commutation is not a computation about the carrier, and nothing here reproves it. The graph
-automorphism is conjugation by `TauCeti.E6DoubledMinuscule.graphAutomorphismMatrix`, whose entries
-are `0` and `±1`, so it is natural in the coefficient ring by
+The required commutation is not a computation about the carrier, and nothing here reproves it. The
+graph automorphism is conjugation by `TauCeti.E6DoubledMinuscule.graphAutomorphismMatrix`, whose
+entries are `0` and `±1`, so it is natural in the coefficient ring by
 `TauCeti.E6DoubledMinuscule.pointsMap_comp_graphAutomorphismPoints`, while the Frobenius is the
 map on points induced by a ring endomorphism of that same coefficient ring, by
 `TauCeti.E6DoubledMinuscule.frobenius_eq_pointsMap`; the commutation is the Frobenius instance of
