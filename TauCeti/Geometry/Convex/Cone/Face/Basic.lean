@@ -20,13 +20,6 @@ records that a face of a product of two cones is the product of its two projecti
 * `ConvexCone.Salient.bot_isFaceOf`: the zero cone is a face of a salient pointed cone.
 * `PointedCone.IsFaceOf.eq_prod_map`: a face of a product of two pointed cones is the product of
   its images under the two coordinate projections.
-
-## Implementation notes
-
-Mathlib's `PointedCone.Face.fst_prod_snd` is the same statement for the bundled face lattice, but
-the definitions `PointedCone.Face.prod`, `PointedCone.Face.fst` and `PointedCone.Face.snd` are not
-exposed, so that equation of faces cannot be read off as an equation of the underlying cones.
-`PointedCone.IsFaceOf.eq_prod_map` states it on the cones instead; the proof follows Mathlib's.
 -/
 
 public section
@@ -59,6 +52,8 @@ variable {R M M' : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R] [AddCo
 /-- A face of a product of two pointed cones is the product of its images under the two coordinate
 projections: a point of the product of the images already lies on the face, because it is a
 summand of a point of the face. -/
+-- Adapted from Mathlib's `PointedCone.Face.fst_prod_snd`, the same fact for the bundled face
+-- lattice, whose defining equations are sealed outside Mathlib.
 theorem eq_prod_map (hF : F.IsFaceOf (C.prod C')) :
     F = (F.map (LinearMap.fst R M M')).prod (F.map (LinearMap.snd R M M')) := by
   refine le_antisymm (fun x hx ↦ Submodule.mem_prod.2

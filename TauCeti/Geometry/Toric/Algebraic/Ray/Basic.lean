@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.Basic
-public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import TauCeti.Geometry.Convex.Cone.Basic
 public import TauCeti.Geometry.Convex.Cone.Face.Basic
 public import TauCeti.Geometry.Convex.Cone.Face.Finite
@@ -33,8 +31,9 @@ pointed cone.
 * `TauCeti.Toric.ToricRay.hullSingleton` and `TauCeti.Toric.ToricRay.eq_hullSingleton`: the cone
   spanned by a nonzero vector is its own only ray.
 * `TauCeti.Toric.ToricRay.map_fst_eq_bot_of_map_snd_ne_bot`,
-  `TauCeti.Toric.ToricRay.prodRayFst`, `TauCeti.Toric.ToricRay.prodRaySnd` and
-  `TauCeti.Toric.ToricRay.prodSplit`: a ray of a product of salient cones is a ray of exactly one
+  `TauCeti.Toric.ToricRay.prodRayFst`, `TauCeti.Toric.ToricRay.prodRaySnd`,
+  `TauCeti.Toric.ToricRay.prodInl`, `TauCeti.Toric.ToricRay.prodInr` and
+  `TauCeti.Toric.ToricRay.prodSplit`: the rays of a product of salient cones are exactly the rays
   of the two factors.
 
 ## References
@@ -307,45 +306,104 @@ theorem prod_ext {G H : ToricRay (σ.prod τ)}
   toPointedCone_injective
     (G.1.isFaceOf.eq_prod_map.trans (by rw [h₁, h₂]; exact H.1.isFaceOf.eq_prod_map.symm))
 
+/-- Multiplying a pointed cone by the zero cone leaves the dimension of its span unchanged: the
+product is the image of the cone under the inclusion of the first factor. -/
+private lemma finrank_span_coe_prod_bot (p : PointedCone ℝ V) :
+    Module.finrank ℝ (Submodule.span ℝ
+        ((p.prod (⊥ : PointedCone ℝ V') : PointedCone ℝ (V × V')) : Set (V × V')))
+      = Module.finrank ℝ (Submodule.span ℝ (p : Set V)) := by
+  rw [Submodule.prod_coe, Submodule.span_prod_eq ℝ p.zero_mem (Submodule.zero_mem _),
+    Submodule.bot_coe, Submodule.span_zero_singleton, ← Submodule.map_inl]
+  exact (Submodule.equivMapOfInjective _ LinearMap.inl_injective
+    (Submodule.span ℝ (p : Set V))).finrank_eq.symm
+
+/-- Multiplying a pointed cone by the zero cone leaves the dimension of its span unchanged: the
+product is the image of the cone under the inclusion of the second factor. -/
+private lemma finrank_span_coe_bot_prod (q : PointedCone ℝ V') :
+    Module.finrank ℝ (Submodule.span ℝ
+        (((⊥ : PointedCone ℝ V).prod q : PointedCone ℝ (V × V')) : Set (V × V')))
+      = Module.finrank ℝ (Submodule.span ℝ (q : Set V')) := by
+  rw [Submodule.prod_coe, Submodule.span_prod_eq ℝ (Submodule.zero_mem _) q.zero_mem,
+    Submodule.bot_coe, Submodule.span_zero_singleton, ← Submodule.map_inr]
+  exact (Submodule.equivMapOfInjective _ LinearMap.inr_injective
+    (Submodule.span ℝ (q : Set V'))).finrank_eq.symm
+
+/-- A ray of the first factor, read as a ray of a product of cones: its product with the zero
+cone. This is a face of the product because the zero cone is a face of the salient second
+factor, and its span has the dimension of the span of the ray. -/
+def prodInl (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : ToricRay σ) : ToricRay (σ.prod τ) :=
+  ⟨⟨ρ.toPointedCone.prod ⊥, ρ.1.isFaceOf.prod hτ.bot_isFaceOf⟩,
+    (finrank_span_coe_prod_bot ρ.toPointedCone).trans ρ.2⟩
+
+@[simp]
+theorem toPointedCone_prodInl (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : ToricRay σ) :
+    (prodInl hτ ρ).toPointedCone = ρ.toPointedCone.prod ⊥ := (rfl)
+
+/-- A ray of the second factor, read as a ray of a product of cones: its product with the zero
+cone. This is a face of the product because the zero cone is a face of the salient first factor,
+and its span has the dimension of the span of the ray. -/
+def prodInr (hσ : (σ : ConvexCone ℝ V).Salient) (ρ : ToricRay τ) : ToricRay (σ.prod τ) :=
+  ⟨⟨(⊥ : PointedCone ℝ V).prod ρ.toPointedCone, hσ.bot_isFaceOf.prod ρ.1.isFaceOf⟩,
+    (finrank_span_coe_bot_prod ρ.toPointedCone).trans ρ.2⟩
+
+@[simp]
+theorem toPointedCone_prodInr (hσ : (σ : ConvexCone ℝ V).Salient) (ρ : ToricRay τ) :
+    (prodInr hσ ρ).toPointedCone = (⊥ : PointedCone ℝ V).prod ρ.toPointedCone := (rfl)
+
 open Classical in
-/-- The decomposition of the rays of a product of salient cones: every ray of `σ.prod τ` is a ray
-of exactly one of the two factors. The two cases are computed by
+/-- The decomposition of the rays of a product of salient cones: the rays of `σ.prod τ` are
+exactly the rays of the two factors, a ray of a factor corresponding to its product with the zero
+cone. The two cases of the forward map are computed by
 `TauCeti.Toric.ToricRay.prodSplit_eq_inl` and `TauCeti.Toric.ToricRay.prodSplit_eq_inr`. -/
-noncomputable def prodSplit
-    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient) :
-    ToricRay (σ.prod τ) ↪ ToricRay σ ⊕ ToricRay τ where
+noncomputable def prodSplit (hσ : (σ : ConvexCone ℝ V).Salient)
+    (hτ : (τ : ConvexCone ℝ V').Salient) : ToricRay (σ.prod τ) ≃ ToricRay σ ⊕ ToricRay τ where
   toFun G := if h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥ then
-    Sum.inl (prodRayFst hστ G h) else Sum.inr (prodRaySnd hστ G h)
-  inj' G H hGH := by
-    dsimp only at hGH
-    by_cases hG : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥
-    · by_cases hH : PointedCone.map (LinearMap.snd ℝ V V') H.toPointedCone = ⊥
-      · rw [dite_eq_left hG, dite_eq_left hH] at hGH
-        refine prod_ext ?_ (hG.trans hH.symm)
-        simpa using congrArg toPointedCone (Sum.inl_injective hGH)
-      · rw [dite_eq_left hG, dite_eq_right hH] at hGH
-        exact absurd hGH (by simp)
-    · by_cases hH : PointedCone.map (LinearMap.snd ℝ V V') H.toPointedCone = ⊥
-      · rw [dite_eq_right hG, dite_eq_left hH] at hGH
-        exact absurd hGH (by simp)
-      · rw [dite_eq_right hG, dite_eq_right hH] at hGH
-        refine prod_ext ((map_fst_eq_bot_of_map_snd_ne_bot hστ G hG).trans
-          (map_fst_eq_bot_of_map_snd_ne_bot hστ H hH).symm) ?_
-        simpa using congrArg toPointedCone (Sum.inr_injective hGH)
+    Sum.inl (prodRayFst (hσ.prod hτ) G h) else Sum.inr (prodRaySnd (hσ.prod hτ) G h)
+  invFun := Sum.elim (prodInl hτ) (prodInr hσ)
+  left_inv G := by
+    dsimp only
+    by_cases h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥
+    · -- The ray is the product of its first projection with the zero cone.
+      rw [dite_eq_left h, Sum.elim_inl]
+      exact prod_ext (Submodule.prod_map_fst ..) ((Submodule.prod_map_snd ..).trans h.symm)
+    · -- The ray is the product of the zero cone with its second projection.
+      rw [dite_eq_right h, Sum.elim_inr]
+      exact prod_ext ((Submodule.prod_map_fst ..).trans
+        (map_fst_eq_bot_of_map_snd_ne_bot (hσ.prod hτ) G h).symm) (Submodule.prod_map_snd ..)
+  right_inv := by
+    rintro (ρ | ρ)
+    · have h : PointedCone.map (LinearMap.snd ℝ V V') (prodInl hτ ρ).toPointedCone = ⊥ :=
+        Submodule.prod_map_snd ..
+      dsimp only
+      rw [Sum.elim_inl, dite_eq_left h]
+      exact congrArg Sum.inl (toPointedCone_injective (Submodule.prod_map_fst ..))
+    · have h : PointedCone.map (LinearMap.snd ℝ V V') (prodInr hσ ρ).toPointedCone ≠ ⊥ :=
+        fun hbot ↦ ρ.toPointedCone_ne_bot ((Submodule.prod_map_snd ..).symm.trans hbot)
+      dsimp only
+      rw [Sum.elim_inr, dite_eq_right h]
+      exact congrArg Sum.inr (toPointedCone_injective (Submodule.prod_map_snd ..))
 
 @[simp]
-theorem prodSplit_eq_inl
-    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
-    (G : ToricRay (σ.prod τ))
+theorem prodSplit_eq_inl (hσ : (σ : ConvexCone ℝ V).Salient)
+    (hτ : (τ : ConvexCone ℝ V').Salient) (G : ToricRay (σ.prod τ))
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥) :
-    prodSplit hστ G = Sum.inl (prodRayFst hστ G h) := dite_eq_left h
+    prodSplit hσ hτ G = Sum.inl (prodRayFst (hσ.prod hτ) G h) := dite_eq_left h
 
 @[simp]
-theorem prodSplit_eq_inr
-    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
-    (G : ToricRay (σ.prod τ))
+theorem prodSplit_eq_inr (hσ : (σ : ConvexCone ℝ V).Salient)
+    (hτ : (τ : ConvexCone ℝ V').Salient) (G : ToricRay (σ.prod τ))
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone ≠ ⊥) :
-    prodSplit hστ G = Sum.inr (prodRaySnd hστ G h) := dite_eq_right h
+    prodSplit hσ hτ G = Sum.inr (prodRaySnd (hσ.prod hτ) G h) := dite_eq_right h
+
+@[simp]
+theorem prodSplit_symm_inl (hσ : (σ : ConvexCone ℝ V).Salient)
+    (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : ToricRay σ) :
+    (prodSplit hσ hτ).symm (Sum.inl ρ) = prodInl hτ ρ := (rfl)
+
+@[simp]
+theorem prodSplit_symm_inr (hσ : (σ : ConvexCone ℝ V).Salient)
+    (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : ToricRay τ) :
+    (prodSplit hσ hτ).symm (Sum.inr ρ) = prodInr hσ ρ := (rfl)
 
 end Prod
 

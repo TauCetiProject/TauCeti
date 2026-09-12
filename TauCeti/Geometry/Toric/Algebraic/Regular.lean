@@ -194,14 +194,15 @@ theorem IsRegularCone.prod {τ' : PointedCone ℝ V'} (hσ : IsRegularCone i σ)
   have hBinr : ∀ k : Fin n', B (finSumFinEquiv (Sum.inr k)) = (0, b' k) := fun k ↦ by
     rw [hB, Module.Basis.reindex_apply, Equiv.symm_apply_apply]; simp
   refine ⟨hσ.toIsToricCone.prod hτ'.toIsToricCone, n + n', B,
-    (ToricRay.prodSplit hστ).trans ((r.sumMap r').trans finSumFinEquiv.toEmbedding),
+    (ToricRay.prodSplit hσ.salient hτ'.salient).toEmbedding.trans
+      ((r.sumMap r').trans finSumFinEquiv.toEmbedding),
     ⟨fun G ↦ ?_⟩⟩
   by_cases hG : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥
   · set ρ := ToricRay.prodRayFst hστ G hG with hρ
-    have hidx : ((ToricRay.prodSplit hστ).trans
+    have hidx : ((ToricRay.prodSplit hσ.salient hτ'.salient).toEmbedding.trans
         ((r.sumMap r').trans finSumFinEquiv.toEmbedding)) G
         = finSumFinEquiv (Sum.inl (r ρ)) := by
-      simp [ToricRay.prodSplit_eq_inl hστ G hG, hρ]
+      simp [ToricRay.prodSplit_eq_inl hσ.salient hτ'.salient G hG, hρ]
     have hprim : IsPrimitive ((b (r ρ), (0 : N')) : N × N') := by
       have h := B.isPrimitive (finSumFinEquiv (Sum.inl (r ρ)))
       rwa [hBinl] at h
@@ -211,10 +212,10 @@ theorem IsRegularCone.prod {τ' : PointedCone ℝ V'} (hσ : IsRegularCone i σ)
     · simpa [hρ] using (isPrimitiveGenerator_iff.1 (hb.isPrimitiveGenerator_apply ρ)).1
     · simp
   · set ρ := ToricRay.prodRaySnd hστ G hG with hρ
-    have hidx : ((ToricRay.prodSplit hστ).trans
+    have hidx : ((ToricRay.prodSplit hσ.salient hτ'.salient).toEmbedding.trans
         ((r.sumMap r').trans finSumFinEquiv.toEmbedding)) G
         = finSumFinEquiv (Sum.inr (r' ρ)) := by
-      simp [ToricRay.prodSplit_eq_inr hστ G hG, hρ]
+      simp [ToricRay.prodSplit_eq_inr hσ.salient hτ'.salient G hG, hρ]
     have hprim : IsPrimitive (((0 : N), b' (r' ρ)) : N × N') := by
       have h := B.isPrimitive (finSumFinEquiv (Sum.inr (r' ρ)))
       rwa [hBinr] at h
