@@ -219,8 +219,13 @@ private theorem extendToSplittingField_injective
   let L := finiteSplittingField K A e
   have hmap : (extendToSplittingField e).toLinearMap.restrictScalars K =
       (IsScalarTower.toAlgHom K L E).toLinearMap.rTensor A := by
-    ext x a
-    rfl
+    apply TensorProduct.ext'
+    intro x a
+    change (Algebra.TensorProduct.map (Algebra.ofId L E) (AlgHom.id K A))
+        (x ⊗ₜ[K] a) =
+      (IsScalarTower.toAlgHom K L E).toLinearMap.rTensor A (x ⊗ₜ[K] a)
+    rw [Algebra.TensorProduct.map_tmul, LinearMap.rTensor_tmul, Algebra.ofId_apply,
+      AlgHom.id_apply, AlgHom.toLinearMap_apply, IsScalarTower.toAlgHom_apply]
   have hinjective : Function.Injective
       ((extendToSplittingField e).toLinearMap.restrictScalars K) := by
     rw [hmap]
@@ -259,7 +264,7 @@ private noncomputable def descendedMatrixAlgEquiv
           (extendToSplittingField e).map_mul _ _ |>.symm)
 
 /-- A splitting over an algebraic extension descends to a finite intermediate field. -/
-private theorem exists_intermediateField_isSplittingField_finiteDimensional
+theorem exists_intermediateField_isSplittingField_finiteDimensional
     (h : IsSplittingField K A E) :
     ∃ L : IntermediateField K E, FiniteDimensional K L ∧ IsSplittingField K A L := by
   obtain ⟨n, ⟨e⟩⟩ := (isSplittingField_iff K A E).1 h
