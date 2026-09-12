@@ -7,15 +7,31 @@ module
 
 public import TauCeti.KnotTheory.SmoothLink
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.ContinuousAmbientIsotopy.Basic
+public import TauCeti.Topology.Homotopy.AmbientIsotopic.Complement
+public import TauCeti.Topology.Homotopy.AmbientIsotopic.Naturality
 
 /-!
 # Ambient isotopy of smooth link presentations
 
-A smooth link is a finite labelled family of embedded oriented circles.  Its geometric
- equivalence must move every component by one ambient isotopy; allowing a separate isotopy for
-each component would lose the complement data that knot invariants detect.  This file packages
-that relation and its quotient setoid, the first equivalence object for the geometric presentation
-in Layer 4 of the geometric-topology roadmap.
+A smooth link is a finite labelled family of embedded oriented circles. Its geometric
+equivalence must move every component by one ambient isotopy; allowing a separate isotopy for
+each component would lose the complement data that knot invariants detect. This file represents
+the whole link by the continuous map from the disjoint union of its circles and specializes the
+general ambient-isotopy relation to that map.
+
+## Main definitions
+
+* `TauCeti.SmoothLinkEmbedding.toContinuousMap`: the map from the disjoint union of the link's
+  component circles into the ambient manifold.
+* `TauCeti.SmoothLinkEmbedding.ContinuousAmbientIsotopic`: simultaneous continuous ambient
+  isotopy of labelled smooth links.
+* `TauCeti.SmoothLinkEmbedding.ContinuousAmbientIsotopic.setoid`: the ambient-isotopy relation
+  packaged as a setoid.
+
+## References
+
+* G. Burde and H. Zieschang, *Knots*, 2nd ed., De Gruyter Studies in Mathematics 5 (2003),
+  Chapter 1, especially Definition 1.2 and the discussion of knot complements.
 -/
 
 public section
@@ -24,7 +40,7 @@ noncomputable section
 
 namespace TauCeti
 
-open scoped Manifold
+open scoped Manifold ContDiff
 
 namespace SmoothLinkEmbedding
 
@@ -33,94 +49,198 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   [ChartedSpace H M]
   {L K P : SmoothLinkEmbedding I M n}
 
-/-- Two smooth link presentations are equivalent when one ambient isotopy carries every labelled
-component of the first to the corresponding component of the second. -/
-def ContinuousAmbientIsotopic (L K : SmoothLinkEmbedding I M n) : Prop :=
-  ∃ Φ : AmbientIsotopy M, ∀ i,
-    Φ.final.comp (L i).toContinuousMap = (K i).toContinuousMap
+/-- The continuous map from the disjoint union of a smooth link's component circles into the
+ambient manifold. -/
+def toContinuousMap (L : SmoothLinkEmbedding I M n) : C((Σ _ : Fin n, Circle), M) :=
+  ContinuousMap.sigma fun i ↦ (L i).toContinuousMap
 
-/-- An ambient isotopy witnessing link equivalence, with the endpoint equation oriented as
-`K = Φ.final ∘ L`. -/
+/-- The disjoint-union map restricts to the underlying map of each component. -/
+@[simp]
+theorem toContinuousMap_apply (L : SmoothLinkEmbedding I M n) (i : Fin n) (x : Circle) :
+    L.toContinuousMap ⟨i, x⟩ = L i x := by
+  rw [toContinuousMap.eq_def]
+  rfl
+
+/-- The range of the disjoint-union map is the subset occupied by the link. -/
+theorem range_toContinuousMap (L : SmoothLinkEmbedding I M n) :
+    Set.range L.toContinuousMap = L.range := by
+  apply Set.Subset.antisymm
+  · rintro x ⟨⟨i, y⟩, rfl⟩
+    exact L.range_component_subset_range i ⟨y, rfl⟩
+  · intro x
+    rw [L.mem_range_iff x]
+    rintro ⟨i, y, rfl⟩
+    exact ⟨⟨i, y⟩, rfl⟩
+
+/-- Two smooth link presentations are equivalent when one ambient isotopy carries their
+disjoint-union maps into one another, and hence simultaneously carries every labelled component
+of the first to the corresponding component of the second. -/
+def ContinuousAmbientIsotopic (L K : SmoothLinkEmbedding I M n) : Prop :=
+  TauCeti.AmbientIsotopic L.toContinuousMap K.toContinuousMap
+
+/-- Continuous ambient isotopy of smooth links is witnessed by an ambient isotopy whose final
+map postcomposes the first link's disjoint-union map to the second. -/
 theorem continuousAmbientIsotopic_def :
     ContinuousAmbientIsotopic L K ↔
-      ∃ Φ : AmbientIsotopy M, ∀ i,
-        (K i).toContinuousMap = Φ.final.comp (L i).toContinuousMap := by
-  constructor
-  · rintro ⟨Φ, hΦ⟩
-    exact ⟨Φ, fun i => (hΦ i).symm⟩
-  · rintro ⟨Φ, hΦ⟩
-    exact ⟨Φ, fun i => (hΦ i).symm⟩
+      ∃ Φ : AmbientIsotopy M, Φ.final.comp L.toContinuousMap = K.toContinuousMap :=
+  ambientIsotopic_def
 
 namespace ContinuousAmbientIsotopic
 
-/-- Ambient-isotopic smooth links have homeomorphic complements. The homeomorphism is the
-restriction of the final homeomorphism of the shared ambient-isotopy witness. -/
+/-- Project a simultaneous ambient isotopy of links to any labelled component. -/
+theorem component (hLK : ContinuousAmbientIsotopic L K) (i : Fin n) :
+    SmoothEmbedding.ContinuousAmbientIsotopic (L i) (K i) := by
+  let j := ContinuousMap.sigmaMk (X := fun _ : Fin n ↦ Circle) i
+  have hL : L.toContinuousMap.comp j = (L i).toContinuousMap := by
+    ext x
+    simp [j]
+  have hK : K.toContinuousMap.comp j = (K i).toContinuousMap := by
+    ext x
+    simp [j]
+  rw [SmoothEmbedding.continuousAmbientIsotopic_def]
+  apply ambientIsotopic_def.mp
+  rw [← hL, ← hK]
+  exact hLK.precomp j
+
+/-- For one-component links, simultaneous ambient isotopy is exactly the existing ambient-isotopy
+relation on smooth circle embeddings. -/
+@[simp]
+theorem singleton_iff {f g : SmoothCircleEmbedding I M} :
+    ContinuousAmbientIsotopic (singleton f) (singleton g) ↔
+      SmoothEmbedding.ContinuousAmbientIsotopic f g := by
+  constructor
+  · intro h
+    simpa only [singleton_apply] using h.component 0
+  · intro h
+    have h' : AmbientIsotopic f.toContinuousMap g.toContinuousMap :=
+      ambientIsotopic_def.mpr (SmoothEmbedding.continuousAmbientIsotopic_def.mp h)
+    let p := ContinuousMap.sigma fun _ : Fin 1 ↦ ContinuousMap.id Circle
+    have hf : f.toContinuousMap.comp p = (singleton f).toContinuousMap := by
+      ext ⟨i, x⟩
+      simp [p]
+    have hg : g.toContinuousMap.comp p = (singleton g).toContinuousMap := by
+      ext ⟨i, x⟩
+      simp [p]
+    rw [ContinuousAmbientIsotopic, ← hf, ← hg]
+    exact h'.precomp p
+
+/-- Ambient-isotopic smooth links have homeomorphic complements. -/
 theorem nonempty_complementHomeomorph (hLK : ContinuousAmbientIsotopic L K) :
     Nonempty (↑(L.range)ᶜ ≃ₜ ↑(K.range)ᶜ) := by
-  rcases hLK with ⟨Φ, hΦ⟩
-  let e := Φ.finalHomeomorph
-  have hmem (x : M) : x ∈ L.range ↔ e x ∈ K.range := by
-    constructor
-    · intro hx
-      rcases (L.mem_range_iff x).mp hx with ⟨i, y, hy⟩
-      apply (K.mem_range_iff (e x)).mpr
-      refine ⟨i, y, ?_⟩
-      have hi := congrArg (fun f ↦ f y) (hΦ i)
-      simpa [e, hy] using hi.symm
-    · intro hx
-      rcases (K.mem_range_iff (e x)).mp hx with ⟨i, y, hy⟩
-      apply (L.mem_range_iff x).mpr
-      refine ⟨i, y, e.injective ?_⟩
-      have hi := congrArg (fun f ↦ f y) (hΦ i)
-      simpa [e] using hi.trans hy
-  exact ⟨e.subtype fun x ↦ not_congr (hmem x)⟩
+  rw [← range_toContinuousMap L, ← range_toContinuousMap K]
+  exact TauCeti.AmbientIsotopic.nonempty_complementHomeomorph hLK
 
 /-- The identity ambient isotopy witnesses reflexivity. -/
-@[refl] theorem refl (L : SmoothLinkEmbedding I M n) : ContinuousAmbientIsotopic L L := by
-  refine ⟨AmbientIsotopy.refl M, ?_⟩
-  intro i
-  ext x
-  exact_mod_cast (AmbientIsotopy.final_refl ((L i).toContinuousMap x))
+@[refl]
+theorem refl (L : SmoothLinkEmbedding I M n) : ContinuousAmbientIsotopic L L :=
+  AmbientIsotopic.refl L.toContinuousMap
 
 /-- Ambient link equivalence is symmetric. -/
-@[symm] theorem symm (hLK : ContinuousAmbientIsotopic L K) :
-    ContinuousAmbientIsotopic K L := by
-  rcases hLK with ⟨Φ, hΦ⟩
-  refine ⟨Φ.symm, ?_⟩
-  intro i
-  ext x
-  have hx := congrArg (fun f => Φ.symm.final (f x)) (hΦ i)
-  change Φ.symm.final (Φ.final ((L i).toContinuousMap x)) = _ at hx
-  exact hx.symm.trans (Φ.symm_final_final _)
+@[symm]
+theorem symm (hLK : ContinuousAmbientIsotopic L K) :
+    ContinuousAmbientIsotopic K L :=
+  AmbientIsotopic.symm hLK
 
 /-- Ambient link equivalence is transitive. -/
-@[trans] theorem trans (hLK : ContinuousAmbientIsotopic L K)
-    (hKP : ContinuousAmbientIsotopic K P) : ContinuousAmbientIsotopic L P := by
-  rcases hLK with ⟨Φ, hΦ⟩
-  rcases hKP with ⟨Ψ, hΨ⟩
-  refine ⟨Φ.trans Ψ, ?_⟩
-  intro i
-  ext x
-  change (Φ.trans Ψ).final ((L i).toContinuousMap x) = (P i).toContinuousMap x
-  rw [AmbientIsotopy.final_trans]
-  have hx := congrArg (fun f => f x) (hΦ i)
-  have hy := congrArg (fun f => f x) (hΨ i)
-  change Φ.final ((L i).toContinuousMap x) = (K i).toContinuousMap x at hx
-  change Ψ.final ((K i).toContinuousMap x) = (P i).toContinuousMap x at hy
-  exact (congrArg Ψ.final hx).trans hy
+@[trans]
+theorem trans (hLK : ContinuousAmbientIsotopic L K)
+    (hKP : ContinuousAmbientIsotopic K P) : ContinuousAmbientIsotopic L P :=
+  AmbientIsotopic.trans hLK hKP
+
+/-- Simultaneously relabelling corresponding components preserves ambient link equivalence. -/
+theorem relabel (hLK : ContinuousAmbientIsotopic L K) (e : Equiv.Perm (Fin n)) :
+    ContinuousAmbientIsotopic (L.relabel e) (K.relabel e) := by
+  let e' : C((Σ _ : Fin n, Circle), (Σ _ : Fin n, Circle)) :=
+    ContinuousMap.sigma fun i ↦
+      ContinuousMap.sigmaMk (X := fun _ : Fin n ↦ Circle) (e.symm i)
+  have hL : (L.relabel e).toContinuousMap = L.toContinuousMap.comp e' := by
+    ext ⟨i, x⟩
+    simp [e']
+  have hK : (K.relabel e).toContinuousMap = K.toContinuousMap.comp e' := by
+    ext ⟨i, x⟩
+    simp [e']
+  rw [ContinuousAmbientIsotopic, hL, hK]
+  exact hLK.precomp e'
+
+/-- Simultaneous component relabelling preserves and reflects ambient link equivalence. -/
+@[simp]
+theorem relabel_iff (e : Equiv.Perm (Fin n)) :
+    ContinuousAmbientIsotopic (L.relabel e) (K.relabel e) ↔ ContinuousAmbientIsotopic L K := by
+  constructor
+  · intro h
+    simpa using h.relabel e.symm
+  · exact fun h ↦ h.relabel e
+
+/-- Simultaneously reversing every component orientation preserves ambient link equivalence. -/
+theorem reverse (hLK : ContinuousAmbientIsotopic L K) :
+    ContinuousAmbientIsotopic L.reverse K.reverse := by
+  let r : C((Σ _ : Fin n, Circle), (Σ _ : Fin n, Circle)) :=
+    ContinuousMap.sigma fun i ↦
+      (ContinuousMap.sigmaMk i).comp (circleReflection.toHomeomorph : C(Circle, Circle))
+  have hL : L.reverse.toContinuousMap = L.toContinuousMap.comp r := by
+    ext ⟨i, x⟩
+    simp [r]
+  have hK : K.reverse.toContinuousMap = K.toContinuousMap.comp r := by
+    ext ⟨i, x⟩
+    simp [r]
+  rw [ContinuousAmbientIsotopic, hL, hK]
+  exact hLK.precomp r
+
+/-- Simultaneous orientation reversal preserves and reflects ambient link equivalence. -/
+@[simp]
+theorem reverse_iff :
+    ContinuousAmbientIsotopic L.reverse K.reverse ↔ ContinuousAmbientIsotopic L K := by
+  constructor
+  · intro h
+    simpa using h.reverse
+  · exact fun h ↦ h.reverse
+
+section Ambient
+
+variable {Q : Type*} [TopologicalSpace Q] [ChartedSpace H Q] [IsManifold I ∞ Q]
+
+/-- Transporting both links through the same ambient diffeomorphism preserves ambient link
+equivalence. -/
+theorem transDiffeomorph (hLK : ContinuousAmbientIsotopic L K) (e : M ≃ₘ⟮I, I⟯ Q) :
+    ContinuousAmbientIsotopic (L.transDiffeomorph e) (K.transDiffeomorph e) := by
+  have hL : (L.transDiffeomorph e).toContinuousMap =
+      (e.toHomeomorph : C(M, Q)).comp L.toContinuousMap := by
+    ext ⟨i, x⟩
+    simp
+  have hK : (K.transDiffeomorph e).toContinuousMap =
+      (e.toHomeomorph : C(M, Q)).comp K.toContinuousMap := by
+    ext ⟨i, x⟩
+    simp
+  rw [ContinuousAmbientIsotopic, hL, hK]
+  exact hLK.postcomp_homeomorph e.toHomeomorph
+
+variable [IsManifold I ∞ M] in
+/-- Simultaneous ambient transport preserves and reflects ambient link equivalence. -/
+@[simp]
+theorem transDiffeomorph_iff (e : M ≃ₘ⟮I, I⟯ Q) :
+    ContinuousAmbientIsotopic (L.transDiffeomorph e) (K.transDiffeomorph e) ↔
+      ContinuousAmbientIsotopic L K := by
+  constructor
+  · intro h
+    simpa using h.transDiffeomorph e.symm
+  · exact fun h ↦ h.transDiffeomorph e
+
+end Ambient
 
 /-- The relation on labelled smooth links is an equivalence relation. -/
 theorem equivalence :
     Equivalence (ContinuousAmbientIsotopic (I := I) (M := M) (n := n)) :=
-  ⟨refl, fun h => h.symm, fun h₁ h₂ => h₁.trans h₂⟩
+  ⟨refl, fun h ↦ h.symm, fun h₁ h₂ ↦ h₁.trans h₂⟩
 
-/-- The quotient of smooth link presentations by ambient isotopy. -/
+/-- The ambient-isotopy equivalence relation on smooth link presentations, packaged as a
+`Setoid`. -/
 def setoid (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] (n : ℕ) : Setoid (SmoothLinkEmbedding I M n) where
   r := ContinuousAmbientIsotopic
   iseqv := equivalence
 
-@[simp] theorem setoid_r_iff {L K : SmoothLinkEmbedding I M n} :
+@[simp]
+theorem setoid_r_iff {L K : SmoothLinkEmbedding I M n} :
     (setoid I M n).r L K ↔ ContinuousAmbientIsotopic L K := Iff.rfl
 
 end ContinuousAmbientIsotopic
