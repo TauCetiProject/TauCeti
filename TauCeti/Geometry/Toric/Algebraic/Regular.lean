@@ -262,16 +262,17 @@ namespace IsExtendingBasis
 variable {n n' : ℕ} {b : Module.Basis (Fin n) ℤ N} {b' : Module.Basis (Fin n') ℤ N}
   {r : ToricRay σ ↪ Fin n} {r' : ToricRay σ ↪ Fin n'}
 
-/-- Two integral bases extending the primitive ray generators of a toric cone carry the same
-vector at the indices of a given ray: both are primitive generators of that ray, and a ray of a
-toric cone in an integral lattice has only one. -/
-theorem basis_apply_eq (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
+/-- Two integral bases extending the primitive ray generators of a salient cone carry the same
+vector at the indices of a given ray: both are primitive generators of that ray, and a salient ray
+in an integral lattice has only one. -/
+theorem basis_apply_eq (hi : IsIntegralLattice i) (hσ : (σ : ConvexCone ℝ V).Salient)
     (hb : IsExtendingBasis i b r) (hb' : IsExtendingBasis i b' r') (ρ : ToricRay σ) :
     b (r ρ) = b' (r' ρ) :=
-  (hb.isPrimitiveGenerator_apply ρ).unique hi hσ (hb'.isPrimitiveGenerator_apply ρ)
+  (hb.isPrimitiveGenerator_apply ρ).unique hi
+    (hσ.anti fun _ hx ↦ ρ.1.isFaceOf.le hx) (hb'.isPrimitiveGenerator_apply ρ)
 
 /-- The ray columns of the transition matrix between two extending bases are standard columns. -/
-theorem repr_basis_apply (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
+theorem repr_basis_apply (hi : IsIntegralLattice i) (hσ : (σ : ConvexCone ℝ V).Salient)
     (hb : IsExtendingBasis i b r) (hb' : IsExtendingBasis i b' r') (ρ : ToricRay σ) :
     b'.repr (b (r ρ)) = Finsupp.single (r' ρ) 1 := by
   rw [hb.basis_apply_eq hi hσ hb' ρ, Module.Basis.repr_self]
@@ -282,23 +283,15 @@ ray, and zeroes elsewhere. Splitting both index sets into ray and nonray indices
 `[[P, B], [0, C]]` shape of the matrix, with `P` the comparison of the two ray indexings. When both
 splittings are indexed by the rays themselves, `P` is the identity and `C` is unimodular, by
 `TauCeti.Toric.IsExtendingBasis.isUnit_det_toMatrix_compl`. -/
-theorem toMatrix_apply (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
+theorem toMatrix_apply (hi : IsIntegralLattice i) (hσ : (σ : ConvexCone ℝ V).Salient)
     (hb : IsExtendingBasis i b r) (hb' : IsExtendingBasis i b' r') (ρ : ToricRay σ)
     (j : Fin n') : b'.toMatrix b j (r ρ) = if j = r' ρ then 1 else 0 := by
   rw [Module.Basis.toMatrix_apply, hb.repr_basis_apply hi hσ hb' ρ, Finsupp.single_apply]
   exact if_congr eq_comm rfl rfl
 
-/-- The transition matrix between two extending bases has the entry `1` at the pair of indices
-that the two bases assign to the same ray. The full description of the ray block is
-`TauCeti.Toric.IsExtendingBasis.toMatrix_apply`. -/
-theorem toMatrix_apply_self (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
-    (hb : IsExtendingBasis i b r) (hb' : IsExtendingBasis i b' r') (ρ : ToricRay σ) :
-    b'.toMatrix b (r' ρ) (r ρ) = 1 := by
-  simp [hb.toMatrix_apply hi hσ hb' ρ]
-
 /-- The nonray-row, ray-column block of the transition matrix between two extending bases
 vanishes. -/
-theorem toMatrix_apply_eq_zero (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
+theorem toMatrix_apply_eq_zero (hi : IsIntegralLattice i) (hσ : (σ : ConvexCone ℝ V).Salient)
     (hb : IsExtendingBasis i b r) (hb' : IsExtendingBasis i b' r') (ρ : ToricRay σ)
     {j : Fin n'} (hj : j ≠ r' ρ) : b'.toMatrix b j (r ρ) = 0 := by
   simp [hb.toMatrix_apply hi hσ hb' ρ, hj]
@@ -311,7 +304,7 @@ and its determinant is the determinant of the complementary square block `D`. Th
 a unit because the transition matrix between two bases is invertible. This is the unimodularity
 hypothesis that the analytic change of chart carries. -/
 theorem isUnit_det_toMatrix_compl {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
+    (hi : IsIntegralLattice i) (hσ : (σ : ConvexCone ℝ V).Salient)
     (hb : IsExtendingBasis i b r) (hb' : IsExtendingBasis i b' r')
     (e : ToricRay σ ⊕ ι ≃ Fin n) (e' : ToricRay σ ⊕ ι ≃ Fin n')
     (he : ∀ ρ, e (Sum.inl ρ) = r ρ) (he' : ∀ ρ, e' (Sum.inl ρ) = r' ρ) :
@@ -348,7 +341,8 @@ theorem isUnit_det_toMatrix_compl {ι : Type*} [Fintype ι] [DecidableEq ι]
 rays of the cone and a common complement `Fin l`, in which the transition matrix has the block form
 `[[1, B], [0, D]]` with `D` unimodular. The two index sets have the same size, both being the rank
 of the lattice, so the same `l` serves for both. -/
-theorem exists_isUnit_det_toMatrix_compl (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
+theorem exists_isUnit_det_toMatrix_compl (hi : IsIntegralLattice i)
+    (hσ : (σ : ConvexCone ℝ V).Salient)
     (hb : IsExtendingBasis i b r) (hb' : IsExtendingBasis i b' r') :
     ∃ (l : ℕ) (e : ToricRay σ ⊕ Fin l ≃ Fin n) (e' : ToricRay σ ⊕ Fin l ≃ Fin n'),
       (∀ ρ, e (Sum.inl ρ) = r ρ) ∧ (∀ ρ, e' (Sum.inl ρ) = r' ρ) ∧

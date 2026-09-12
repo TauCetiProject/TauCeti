@@ -27,8 +27,8 @@ vectors which enter the definition of a regular cone and, later, its affine mono
   integral lattice has a unique primitive generator.
 * `TauCeti.Toric.primitiveGenerator`: the resulting canonical lattice vector, with membership,
   nonvanishing, and primitivity lemmas.
-* `TauCeti.Toric.IsPrimitiveGenerator.unique`: two primitive generators of the same ray of a toric
-  cone in an integral lattice are equal.
+* `TauCeti.Toric.IsPrimitiveGenerator.unique`: two primitive generators of the same salient ray in
+  an integral lattice are equal.
 * `TauCeti.Toric.isPrimitiveGenerator_faceEmbedding`: being a primitive generator of a ray does not
   depend on which cone the ray is viewed as a face of.
 
@@ -79,6 +79,39 @@ theorem isPrimitiveGenerator_faceEmbedding {τ : PointedCone ℝ V} (hτ : τ.Is
     IsPrimitiveGenerator i (ToricRay.faceEmbedding hτ ρ) v ↔ IsPrimitiveGenerator i ρ v := by
   simp [isPrimitiveGenerator_iff]
 
+/-- A salient ray in an integral lattice has at most one primitive generator. -/
+theorem IsPrimitiveGenerator.unique {ρ : ToricRay σ} {v w : N} (hi : IsIntegralLattice i)
+    (hρ : (ρ.toPointedCone : ConvexCone ℝ V).Salient)
+    (hv : IsPrimitiveGenerator i ρ v) (hw : IsPrimitiveGenerator i ρ w) : v = w := by
+  have hρeq : ρ.toPointedCone = PointedCone.hull ℝ {i v} :=
+    ρ.eq_hull_singleton hρ hv.mem (by simpa using hi.injective.ne hv.ne_zero)
+  have hwρ : i w ∈ ρ.toPointedCone := hw.mem
+  rw [hρeq] at hwρ
+  obtain ⟨a, ha, haw⟩ := PointedCone.mem_hull_singleton.mp hwρ
+  obtain ⟨f, hfv⟩ := isPrimitive_def.mp hv.isPrimitive
+  let g : V →ₗ[ℝ] ℝ := hi.extend (Int.castAddHom ℝ) f.toAddMonoidHom
+  have hg (x : N) : g (i x) = (f x : ℝ) := by
+    have hcast (z : ℤ) : (Int.castAddHom ℝ) z = (z : ℝ) := rfl
+    have hcoe : f.toAddMonoidHom x = f x := rfl
+    simpa only [g, hcast, hcoe] using
+      hi.extend_apply (Int.castAddHom ℝ) f.toAddMonoidHom x
+  have haInt : a = (f w : ℝ) := by
+    have h := congrArg g haw
+    rw [map_smul, hg, hg, hfv, Int.cast_one, smul_eq_mul, mul_one] at h
+    exact h
+  let k := f w
+  have hk0 : 0 ≤ k := by exact_mod_cast haInt ▸ ha
+  let m := k.toNat
+  have hmk : (m : ℤ) = k := Int.toNat_of_nonneg hk0
+  have ham : a = (m : ℝ) := by
+    calc
+      a = (k : ℝ) := haInt
+      _ = (m : ℝ) := by exact_mod_cast hmk.symm
+  have hwv : w = m • v := by
+    apply hi.injective
+    rw [map_nsmul, ← Nat.cast_smul_eq_nsmul ℝ, ← ham, haw]
+  exact (hwv.trans (by rw [hw.isPrimitive.eq_one_of_eq_nsmul hwv, one_nsmul])).symm
+
 namespace IsToricCone
 
 /-- Every toric ray in an integral lattice has a unique primitive generator. -/
@@ -96,35 +129,7 @@ theorem existsUnique_primitiveGenerator {ρ : ToricRay σ}
       inv_smul_smul₀ hdℝ.ne'] at hscaled
     exact hscaled
   have hvgen : IsPrimitiveGenerator i ρ v := ⟨hvρ, hv⟩
-  refine ⟨v, hvgen, fun u hu ↦ ?_⟩
-  have hρeq : ρ.toPointedCone = PointedCone.hull ℝ {i v} :=
-    ρ.eq_hull_singleton hρ.salient hvρ (by simpa using hi.injective.ne hv.ne_zero)
-  have huρ : i u ∈ ρ.toPointedCone := hu.mem
-  rw [hρeq] at huρ
-  obtain ⟨a, ha, hau⟩ := PointedCone.mem_hull_singleton.mp huρ
-  obtain ⟨f, hfv⟩ := isPrimitive_def.mp hv
-  let g : V →ₗ[ℝ] ℝ := hi.extend (Int.castAddHom ℝ) f.toAddMonoidHom
-  have hg (x : N) : g (i x) = (f x : ℝ) := by
-    have hcast (z : ℤ) : (Int.castAddHom ℝ) z = (z : ℝ) := rfl
-    have hcoe : f.toAddMonoidHom x = f x := rfl
-    simpa only [g, hcast, hcoe] using
-      hi.extend_apply (Int.castAddHom ℝ) f.toAddMonoidHom x
-  have haInt : a = (f u : ℝ) := by
-    have h := congrArg g hau
-    rw [map_smul, hg, hg, hfv, Int.cast_one, smul_eq_mul, mul_one] at h
-    exact h
-  let k := f u
-  have hk0 : 0 ≤ k := by exact_mod_cast haInt ▸ ha
-  let m := k.toNat
-  have hmk : (m : ℤ) = k := Int.toNat_of_nonneg hk0
-  have ham : a = (m : ℝ) := by
-    calc
-      a = (k : ℝ) := haInt
-      _ = (m : ℝ) := by exact_mod_cast hmk.symm
-  have huv : u = m • v := by
-    apply hi.injective
-    rw [map_nsmul, ← Nat.cast_smul_eq_nsmul ℝ, ← ham, hau]
-  exact huv.trans (by rw [hu.isPrimitive.eq_one_of_eq_nsmul huv, one_nsmul])
+  exact ⟨v, hvgen, fun _ hu ↦ (hvgen.unique hi hρ.salient hu).symm⟩
 
 end IsToricCone
 
@@ -162,12 +167,6 @@ theorem IsPrimitiveGenerator.eq_primitiveGenerator {v : N} (hv : IsPrimitiveGene
     (hi : IsIntegralLattice i) (hσ : IsToricCone i σ) :
     v = primitiveGenerator hi hσ ρ :=
   ((hσ.face ρ.1).existsUnique_primitiveGenerator hi).choose_spec.2 v hv
-
-/-- A ray of a toric cone in an integral lattice has at most one primitive generator. -/
-theorem IsPrimitiveGenerator.unique {ρ : ToricRay σ} {v w : N} (hi : IsIntegralLattice i)
-    (hσ : IsToricCone i σ)
-    (hv : IsPrimitiveGenerator i ρ v) (hw : IsPrimitiveGenerator i ρ w) : v = w :=
-  (hv.eq_primitiveGenerator hi hσ).trans (hw.eq_primitiveGenerator hi hσ).symm
 
 /-- A lattice vector is a primitive generator of a ray exactly when it is the canonical one. -/
 @[simp]
