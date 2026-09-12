@@ -59,7 +59,6 @@ invariants of its conjugate through the resulting map in degree two.
 
 ## References
 
-* `TauCetiRoadmap/ClassFieldTheory/README.md`, §4, Layers 0–1.
 * E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §4.
 * J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, Chapter I, §5.
 -/
@@ -68,7 +67,7 @@ public noncomputable section
 
 universe u
 
-open CategoryTheory TauCeti.Representation
+open CategoryTheory Representation
 
 namespace TauCeti.TateCohomology
 
