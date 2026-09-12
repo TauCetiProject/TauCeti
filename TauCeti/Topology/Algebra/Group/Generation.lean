@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
-public import Mathlib.Topology.Algebra.Group.Subgroup
 
 /-!
 # Topological generation of a topological group
@@ -67,11 +67,14 @@ theorem _root_.Set.Finite.isTopologicallyFinitelyGenerated {s : Set G} (hs : s.F
     IsTopologicallyFinitelyGenerated G :=
   ⟨hs.toFinset, by rwa [hs.coe_toFinset]⟩
 
-/-- A finite group, in any group topology, is topologically finitely generated. -/
-theorem isTopologicallyFinitelyGenerated_of_finite [Finite G] :
-    IsTopologicallyFinitelyGenerated G :=
-  Set.finite_univ.isTopologicallyFinitelyGenerated <| by
-    rw [Subgroup.closure_univ]
+/-- A finitely generated group, in any group topology, is topologically finitely generated: an
+algebraic generating set is a topological one. Via `Group.fg_of_finite` this covers the finite
+groups, and so all the finite quotients of a profinite group. -/
+theorem isTopologicallyFinitelyGenerated_of_fg [Group.FG G] :
+    IsTopologicallyFinitelyGenerated G := by
+  obtain ⟨s, hs, hsfin⟩ := Group.fg_iff.mp ‹Group.FG G›
+  exact hsfin.isTopologicallyFinitelyGenerated <| by
+    rw [hs]
     exact eq_top_iff.mpr (⊤ : Subgroup G).le_topologicalClosure
 
 /-- The image of a topological generating set under a continuous homomorphism with dense range
