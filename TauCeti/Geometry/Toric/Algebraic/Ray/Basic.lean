@@ -144,6 +144,11 @@ def hullSingleton {x : V} (hx : x ≠ 0) : ToricRay (PointedCone.hull ℝ {x}) :
 theorem toPointedCone_hullSingleton {x : V} (hx : x ≠ 0) :
     (hullSingleton hx).toPointedCone = PointedCone.hull ℝ {x} := (rfl)
 
+/-- Membership in the ray spanned by a vector is membership in its underlying cone. -/
+@[simp]
+theorem mem_hullSingleton {x : V} (hx : x ≠ 0) {y : V} :
+    y ∈ hullSingleton hx ↔ y ∈ PointedCone.hull ℝ {x} := (Iff.rfl)
+
 /-- A ray of the cone spanned by a vector is the whole cone: a proper face of that cone misses the
 spanning vector, hence is the zero cone, which is not a ray. -/
 theorem toPointedCone_eq_of_hull_singleton {x : V}
@@ -316,9 +321,10 @@ theorem prod_ext {G H : ToricRay (σ.prod τ)}
       (hsnd (Submodule.mem_map.2 ⟨x, hx, rfl⟩))
     have hxa : (x.1, a.2) = a := Prod.ext ha1.symm rfl
     have hcx : (c.1, x.2) = c := Prod.ext rfl hc2.symm
+    have hadd : (x.1, a.2) + (c.1, x.2) = x + (c.1, a.2) := by
+      ext <;> simp [add_comm]
     have hsum : x + (c.1, a.2) ∈ B.toPointedCone := by
-      rw [← show (x.1, a.2) + (c.1, x.2) = x + (c.1, a.2) by
-        simp [Prod.ext_iff, add_comm], hxa, hcx]
+      rw [← hadd, hxa, hcx]
       exact Submodule.add_mem _ ha hc
     exact B.1.isFaceOf.mem_of_add_mem_left (x := x) (y := (c.1, a.2))
       (Submodule.mem_prod.2 ⟨by
@@ -344,6 +350,11 @@ def prodInl (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : ToricRay σ) : ToricR
 theorem toPointedCone_prodInl (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : ToricRay σ) :
     (prodInl hτ ρ).toPointedCone = ρ.toPointedCone.prod ⊥ := (rfl)
 
+/-- Membership in a ray included from the first factor is coordinatewise. -/
+@[simp]
+theorem mem_prodInl (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : ToricRay σ) {x : V × V'} :
+    x ∈ prodInl hτ ρ ↔ x.1 ∈ ρ ∧ x.2 = 0 := (Iff.rfl)
+
 /-- A ray of the second factor, read as a ray of a product of cones: its product with the zero
 cone. This is a face of the product because the zero cone is a face of the salient first factor,
 and its span has the dimension of the span of the ray. -/
@@ -354,6 +365,11 @@ def prodInr (hσ : (σ : ConvexCone ℝ V).Salient) (ρ : ToricRay τ) : ToricRa
 @[simp]
 theorem toPointedCone_prodInr (hσ : (σ : ConvexCone ℝ V).Salient) (ρ : ToricRay τ) :
     (prodInr hσ ρ).toPointedCone = (⊥ : PointedCone ℝ V).prod ρ.toPointedCone := (rfl)
+
+/-- Membership in a ray included from the second factor is coordinatewise. -/
+@[simp]
+theorem mem_prodInr (hσ : (σ : ConvexCone ℝ V).Salient) (ρ : ToricRay τ) {x : V × V'} :
+    x ∈ prodInr hσ ρ ↔ x.1 = 0 ∧ x.2 ∈ ρ := (Iff.rfl)
 
 open Classical in
 /-- The decomposition of the rays of a product of salient cones: the rays of `σ.prod τ` are

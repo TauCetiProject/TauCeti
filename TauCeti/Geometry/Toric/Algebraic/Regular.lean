@@ -133,7 +133,7 @@ end IsRegularCone
 /-! ### The zero cone and the cone of a ray -/
 
 /-- The zero cone is regular. Its affine chart is the dense torus of the lattice, which is
-therefore a smooth chart of every toric variety built from a fan. -/
+therefore a smooth chart of every toric variety built from a nonempty fan. -/
 @[simp]
 theorem isRegularCone_bot (hi : IsIntegralLattice i) :
     IsRegularCone i (⊥ : PointedCone ℝ V) := by
@@ -224,8 +224,7 @@ theorem IsRegularCone.prod {τ' : PointedCone ℝ V'} (hσ : IsRegularCone i σ)
       apply Prod.ext
       · simpa using hx1
       · exact hx2
-    change (i (b (r ρ)), i' 0) ∈ G
-    rw [map_zero]
+    simp only [AddMonoidHom.coe_prodMap, Prod.map, map_zero]
     rw [← hxeq]
     exact hx
   · set ρ := ToricRay.prodRaySnd hστ G hG with hρ
@@ -250,8 +249,7 @@ theorem IsRegularCone.prod {τ' : PointedCone ℝ V'} (hσ : IsRegularCone i σ)
       apply Prod.ext
       · exact hx1
       · simpa using hx2
-    change (i 0, i' (b' (r' ρ))) ∈ G
-    rw [map_zero]
+    simp only [AddMonoidHom.coe_prodMap, Prod.map, map_zero]
     rw [← hxeq]
     exact hx
 
