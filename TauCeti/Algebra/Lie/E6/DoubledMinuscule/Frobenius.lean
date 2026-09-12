@@ -40,8 +40,8 @@ set on which the `E₆` diagram symmetry acts, by
 moves every minuscule weight off the twenty-seven-element table by
 `TauCeti.DynkinType.e6MinusculeWeight_comp_graphPermE6_notMem_range`. A Steinberg map composing a
 graph automorphism with a field Frobenius therefore needs the Frobenius of *this* carrier, which
-is what is built here. The graph automorphism itself is not built here, and no declaration below
-mentions the diagram symmetry.
+is what is built here. The graph automorphism is built in a separate module, and no declaration
+below mentions the diagram symmetry.
 
 Nothing here asserts reductivity, maximality of the weight torus, an identification of the
 carrier's root datum, or any finiteness or simplicity statement.
@@ -51,8 +51,6 @@ carrier's root datum, or any finiteness or simplicity statement.
 * `TauCeti.E6DoubledMinuscule.frobenius`: the `p ^ k`-power Frobenius on the carrier's points.
 * `TauCeti.E6DoubledMinuscule.coe_frobenius` and `coe_frobenius_apply`: its matrix and entrywise
   actions.
-* `TauCeti.E6DoubledMinuscule.frobenius_eq_pointsMap`: it is the functorial point map induced by
-  the iterated Frobenius endomorphism of the value ring.
 * `TauCeti.E6DoubledMinuscule.frobenius_rootSubgroupPoints`: its action on every numbered
   simple-root subgroup.
 * `TauCeti.E6DoubledMinuscule.frobenius_weightTorusPoints`: its action on the split weight torus.
@@ -90,7 +88,7 @@ consumer is milestone L1, "ordinary and graph Steinberg maps", of
 `TauCetiRoadmap/CFSGStatement/README.md`, whose Steinberg map for the twisted family `²E₆(q)` is
 `γ₂ ∘ Frob_q` on the points of a carrier for the `E₆` diagram over an algebraic closure of
 `ZMod p`; the identification of this carrier with the pinned simply connected Chevalley--Demazure
-group that milestone requires remains pending, as does the graph automorphism `γ₂`.
+group that milestone requires remains pending.
 -/
 
 public section
@@ -121,13 +119,6 @@ theorem coe_frobenius (g : points A) :
     (frobenius p k A g : _root_.Matrix.GeneralLinearGroup (Fin 54) A) =
       _root_.Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) g := by
   rw [frobenius, coe_pointsMap]
-
-/-- **The carrier Frobenius is the functorial map on points** induced by the iterated Frobenius
-endomorphism of the value ring, so it is an instance of
-`TauCeti.E6DoubledMinuscule.pointsMap` rather than a separate endomorphism. -/
-theorem frobenius_eq_pointsMap :
-    frobenius p k A = pointsMap (iterateFrobenius A p k) :=
-  MonoidHom.ext fun g => Subtype.ext (by rw [coe_frobenius, coe_pointsMap])
 
 /-- Entrywise, the Frobenius endomorphism raises each matrix coefficient to its `p ^ k`-th
 power. -/
