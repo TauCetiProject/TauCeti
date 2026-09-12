@@ -75,6 +75,8 @@ names around it. The cardinality identity is still expressed through the squarin
 * `MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow`: a surjection with a kernel of order at
   most `2 ^ n` drops the 2-rank by at most `n`, via
   `MonoidHom.card_ker_elementaryTwoQuotientMap_le_card_ker`.
+* `MonoidHom.twoRank_eq_twoRank_iff_ker_le_square`: a surjection keeps the 2-rank exactly when its
+  kernel consists of squares.
 -/
 
 public section
@@ -531,5 +533,26 @@ theorem _root_.MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow
   rw [LinearMap.range_eq_top.mpr (elementaryTwoQuotientMap_surjective f hf), finrank_top] at hrn
   rw [twoRank_def, twoRank_def, ← hrn]
   omega
+
+/-- **A surjection keeps the 2-rank exactly when its kernel consists of squares.** For a surjective
+`f : G →* H`, the induced map `G / G² → H / H²` is surjective with kernel the image of `ker f`
+(`MonoidHom.exists_mem_ker_elementaryTwoQuotientMk_eq`), so by rank-nullity the two 2-ranks agree
+exactly when every element of `ker f` has trivial class in `G / G²`, that is, is a square. -/
+theorem _root_.MonoidHom.twoRank_eq_twoRank_iff_ker_le_square
+    [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] (f : G →* H)
+    (hf : Function.Surjective f) :
+    twoRank H = twoRank G ↔ MonoidHom.ker f ≤ Subgroup.square G := by
+  have hrn := LinearMap.finrank_range_add_finrank_ker (elementaryTwoQuotientMap f)
+  rw [LinearMap.range_eq_top.mpr (elementaryTwoQuotientMap_surjective f hf), finrank_top] at hrn
+  rw [twoRank_def, twoRank_def, ← hrn, left_eq_add, Submodule.finrank_eq_zero,
+    LinearMap.ker_eq_bot']
+  constructor
+  · intro h g hg
+    rw [Subgroup.mem_square, ← elementaryTwoQuotientMk_eq_zero_iff]
+    apply h
+    rw [elementaryTwoQuotientMap_mk, MonoidHom.mem_ker.mp hg, elementaryTwoQuotientMk_one]
+  · intro h x hx
+    obtain ⟨g, hg, rfl⟩ := f.exists_mem_ker_elementaryTwoQuotientMk_eq hf hx
+    exact (elementaryTwoQuotientMk_eq_zero_iff g).mpr (h hg)
 
 end TauCeti

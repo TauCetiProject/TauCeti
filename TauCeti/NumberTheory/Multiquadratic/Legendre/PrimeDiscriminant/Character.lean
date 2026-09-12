@@ -48,6 +48,7 @@ to Eisenstein*, §2.2.
 * `TauCeti.Multiquadratic.primeDiscriminantCharFun_mod_right'`: it is a character modulo `|P|`.
 * `TauCeti.Multiquadratic.primeDiscriminantCharFun_eq_legendreSym`: at an odd prime `q` its value
   is the Legendre symbol `legendreSym q P`.
+* `TauCeti.Multiquadratic.primeDiscriminantCharFun_neg_one`: its value at `-1` is the sign of `P`.
 * `TauCeti.Multiquadratic.exists_primeDiscriminantCharFun_eq_neg_one` and
   `TauCeti.Multiquadratic.exists_primeDiscriminantCharFun_eq`: the character is nontrivial, so it
   takes each of the values `±1` at some natural number.
@@ -227,6 +228,29 @@ theorem primeDiscriminantCharFun_eq_legendreSym {P : ℤ} (hP : IsPrimeDiscrimin
     rw [primeDiscriminantCharFun_oddPrimeDiscriminant hodd,
       legendreSym_oddPrimeDiscriminant_eq_legendreSym hp2 hq,
       jacobiSym.legendreSym.to_jacobiSym]
+
+/-- **The character of a prime discriminant at `-1` is the sign of the discriminant.** The
+character attached to `P` is odd exactly when `P` is negative: `χ₄(-1) = -1` and `χ₈'(-1) = -1` for
+`-4` and `-8`, `χ₈(-1) = 1` for `8`, and at an odd prime discriminant `p* = ±p` the value
+`(-1 / p) = χ₄(p)` is `1` exactly when `p ≡ 1 [MOD 4]`, which is when `p* = p` is positive. -/
+theorem primeDiscriminantCharFun_neg_one {P : ℤ} (hP : IsPrimeDiscriminant P) :
+    primeDiscriminantCharFun P (-1) = P.sign := by
+  rcases isPrimeDiscriminant_iff.mp hP with hev | ⟨p, hp, hodd, rfl⟩
+  · rcases hev with rfl | rfl | rfl
+    · rw [primeDiscriminantCharFun_neg_four, ZMod.χ₄_int_eq_if_mod_four]
+      rfl
+    · rw [primeDiscriminantCharFun_eight, ZMod.χ₈_int_eq_if_mod_eight]
+      rfl
+    · rw [primeDiscriminantCharFun_neg_eight, ZMod.χ₈'_int_eq_if_mod_eight]
+      rfl
+  · rw [primeDiscriminantCharFun_oddPrimeDiscriminant hodd, jacobiSym.at_neg_one hodd,
+      ZMod.χ₄_nat_eq_if_mod_four, oddPrimeDiscriminant_def]
+    have hp0 : (0 : ℤ) < p := by exact_mod_cast hp.pos
+    have h2 : p % 2 ≠ 0 := by have := Nat.odd_iff.mp hodd; omega
+    simp only [h2, ↓reduceIte]
+    split_ifs
+    · rw [Int.sign_eq_one_of_pos hp0]
+    · rw [Int.sign_neg, Int.sign_eq_one_of_pos hp0]
 
 /-! ### Nontriviality -/
 
