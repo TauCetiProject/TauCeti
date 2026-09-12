@@ -55,21 +55,13 @@ of the first to the corresponding component of the second. -/
 def ContinuousAmbientIsotopic (L K : SmoothLinkEmbedding I M n) : Prop :=
   TauCeti.AmbientIsotopic L.toContinuousMap K.toContinuousMap
 
-/-- Link ambient isotopy is witnessed by an ambient isotopy whose final map carries one
-link map to the other. -/
-theorem continuousAmbientIsotopic_def :
-    ContinuousAmbientIsotopic L K ↔
-      ∃ Φ : TauCeti.AmbientIsotopy M, Φ.final.comp L.toContinuousMap = K.toContinuousMap :=
-  TauCeti.ambientIsotopic_def
-
-
 namespace ContinuousAmbientIsotopic
 
 /-- An ambient isotopy whose final map carries one link to the other witnesses link ambient
 isotopy. -/
 theorem of_ambientIsotopy (Φ : TauCeti.AmbientIsotopy M)
     (hΦ : Φ.final.comp L.toContinuousMap = K.toContinuousMap) : ContinuousAmbientIsotopic L K :=
-  continuousAmbientIsotopic_def.mpr ⟨Φ, hΦ⟩
+  TauCeti.ambientIsotopic_def.mpr ⟨Φ, hΦ⟩
 
 
 /-- Project a simultaneous ambient isotopy of links to any labelled component. -/
@@ -215,18 +207,14 @@ end Ambient
 /-- The relation on labelled smooth links is an equivalence relation. -/
 theorem equivalence :
     Equivalence (ContinuousAmbientIsotopic (I := I) (M := M) (n := n)) :=
-  ⟨refl, fun h ↦ h.symm, fun h₁ h₂ ↦ h₁.trans h₂⟩
+  AmbientIsotopic.equivalence.comap SmoothLinkEmbedding.toContinuousMap
 
 /-- The ambient-isotopy equivalence relation on smooth link presentations, packaged as a
 `Setoid`. -/
 def setoid (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
-    [ChartedSpace H M] (n : ℕ) : Setoid (SmoothLinkEmbedding I M n) where
-  r := ContinuousAmbientIsotopic
-  iseqv := equivalence
-
-/-- The setoid relation is exactly simultaneous continuous ambient isotopy. -/
-@[simp] theorem setoid_r_iff {L K : SmoothLinkEmbedding I M n} :
-    (setoid I M n).r L K ↔ ContinuousAmbientIsotopic L K := Iff.rfl
+    [ChartedSpace H M] (n : ℕ) : Setoid (SmoothLinkEmbedding I M n) :=
+  (AmbientIsotopic.setoid (Σ _ : Fin n, Circle) M).comap
+    SmoothLinkEmbedding.toContinuousMap
 
 end ContinuousAmbientIsotopic
 
