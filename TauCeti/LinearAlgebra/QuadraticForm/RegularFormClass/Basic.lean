@@ -46,6 +46,8 @@ rank is additive.
 * `TauCeti.formClass_mk`: the class of a form is computed by any of its diagonalizations.
 * `TauCeti.formClass_eq_iff`: two regular forms are isometric exactly when their classes agree.
 * `TauCeti.presentedFormAppendIsometryEquiv`: concatenating weights presents the orthogonal sum.
+* `TauCeti.presentedFormConsIsometryEquiv`: peeling the first weight off presents the form as a
+  line orthogonal to the presentation of the remaining weights.
 * `TauCeti.formClass_prod`: the class of an orthogonal product is the sum of the classes.
 
 ## References
@@ -240,6 +242,20 @@ theorem equivalent_presentedForm_append_prod (p q : RegularFormPresentation K) :
     (presentedForm (RegularFormPresentation.append p q)).Equivalent
       ((presentedForm p).prod (presentedForm q)) :=
   ⟨presentedFormAppendIsometryEquiv p q⟩
+
+/-- Peeling the first weight off a presentation of positive rank exhibits the presented form as
+the orthogonal sum of the line `⟨w 0⟩` and the presentation of the remaining weights:
+`⟨w 0⟩ ⊥ ⟨w 1, …, w n⟩ ≅ ⟨w 0, …, w n⟩`. The first factor is carried by `K` itself rather than by
+`Fin 1 → K`, which is what makes it a line spanned by `1`. -/
+def presentedFormConsIsometryEquiv {n : ℕ} (w : Fin (n + 1) → Kˣ) :
+    (((w 0 : K) • (QuadraticMap.sq : QuadraticForm K K)).prod
+        (presentedForm ⟨n, fun i => w i.succ⟩)).IsometryEquiv (presentedForm ⟨n + 1, w⟩) where
+  toLinearEquiv := Fin.consLinearEquiv K fun _ : Fin (n + 1) => K
+  map_app' x := by
+    -- `presentedForm_apply` does not fire under `simp` here: the rank of the presentation appears
+    -- in the type of `x`, so the rewrite has to be directed by hand.
+    rw [presentedForm_apply, QuadraticMap.prod_apply, presentedForm_apply, Fin.sum_univ_succ]
+    simp
 
 /-- Concatenation of presentations respects isometry in each argument. -/
 theorem presentedForm_append_congr {p p' q q' : RegularFormPresentation K}

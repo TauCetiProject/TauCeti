@@ -13,8 +13,8 @@ public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
 Over a field in which `2` is invertible, a regular summand may be cancelled from an orthogonal
 sum: if `q ⊥ q₁` and `q ⊥ q₂` are isometric and `q` is regular and finite dimensional, then `q₁`
 and `q₂` are isometric. This is Witt's cancellation theorem, and it is what makes the isometry
-classes of regular forms cancellative under orthogonal sum, hence a monoid with a Grothendieck
-group.
+classes of regular forms cancellative under orthogonal sum, hence a monoid that embeds into its
+Grothendieck group.
 
 The proof follows Lam I.4.5-I.4.7 and runs in three steps.
 
@@ -26,14 +26,15 @@ of `q`. The second component of `e (0, ·)` is then an isometry of `q₁` onto `
 
 The second step makes an arbitrary isometry fix a line pointwise. Over a field of characteristic
 different from two the orthogonal group of a form acts transitively on the vectors of a fixed
-nonzero value (`TauCeti.exists_isometryEquiv_apply_eq_of_map_eq`): one of `x - y` and `x + y` has
-nonzero norm, and the reflection in it carries `x` to `y` or to `-y`. Composing the given isometry
-with such an element cancels a summand spanned by a single vector of nonzero value
+nonzero value (`QuadraticMap.exists_isometryEquiv_apply_eq_of_map_eq`): one of `x - y` and `x + y`
+has nonzero norm, and the reflection in it carries `x` to `y` or to `-y`. Composing the given
+isometry with such an element cancels a summand spanned by a single vector of nonzero value
 (`TauCeti.equivalent_of_equivalent_prod_of_span_singleton_eq_top`).
 
 The third step is induction on a diagonalization of the cancelled summand: peeling the first
-weight off `⟨a₀, …, aₙ⟩` with `Fin.consLinearEquiv` exhibits it as `⟨a₀⟩ ⊥ ⟨a₁, …, aₙ⟩`, whose
-first factor is carried by the line `K` and is cancelled by the second step.
+weight off `⟨a₀, …, aₙ⟩` with `TauCeti.presentedFormConsIsometryEquiv` exhibits it as
+`⟨a₀⟩ ⊥ ⟨a₁, …, aₙ⟩`, whose first factor is carried by the line `K` and is cancelled by the second
+step.
 
 ## Main definitions
 
@@ -42,8 +43,6 @@ first factor is carried by the line `K` and is cancelled by the second step.
 
 ## Main results
 
-* `TauCeti.exists_isometryEquiv_apply_eq_of_map_eq`: **Witt transitivity**, the orthogonal group
-  acts transitively on the vectors of a fixed nonzero value.
 * `TauCeti.equivalent_of_equivalent_prod_of_span_singleton_eq_top`: cancellation of a summand
   carried by a line spanned by a vector of nonzero value.
 * `TauCeti.equivalent_of_equivalent_prod`: **Witt cancellation** for a regular finite-dimensional
@@ -82,13 +81,6 @@ variable {R : Type u} [CommRing R] [Invertible (2 : R)]
   {V₂ : Type v₂} [AddCommGroup V₂] [Module R V₂]
   {Q₀ : QuadraticMap R V₀ P} {Q₁ : QuadraticMap R V₁ P} {Q₂ : QuadraticMap R V₂ P}
 
--- Mathlib records that an isometry preserves the values of a quadratic map, but not that it
--- preserves its polarization; that is all the proofs below need of it.
-omit [Invertible (2 : R)] in
-private theorem polar_apply_isometryEquiv (e : Q₁.IsometryEquiv Q₂) (x y : V₁) :
-    polar Q₂ (e x) (e y) = polar Q₁ x y := by
-  simp only [QuadraticMap.polar, ← map_add e, IsometryEquiv.map_app]
-
 -- The candidate isometry: transport the second summand through `e` and forget the first
 -- coordinate. `TauCeti.isometryEquiv_prod_fst_eq_zero` shows that nothing is forgotten.
 private def prodCancelMap (e : (Q₀.prod Q₁).IsometryEquiv (Q₀.prod Q₂)) : V₁ →ₗ[R] V₂ :=
@@ -112,8 +104,8 @@ theorem isometryEquiv_prod_fst_eq_zero (hQ₀ : Q₀.Nondegenerate)
   have hmem : (e (0, v)).1 ∈ Q₀.radical := by
     rw [QuadraticMap.radical_eq_ker_polarBilin, LinearMap.mem_ker]
     ext u
-    have h := polar_apply_isometryEquiv e (0, v) (u, 0)
-    rw [he u] at h
+    have h := QuadraticMap.Isometry.polar_apply e.toIsometry (0, v) (u, 0)
+    simp only [QuadraticMap.IsometryEquiv.toIsometry_apply, he] at h
     simpa using h
   rw [hQ₀.radical_eq_bot] at hmem
   simpa using hmem
@@ -149,42 +141,6 @@ theorem prodCancelIsometryEquiv_apply (hQ₀ : Q₀.Nondegenerate)
 
 end CommRing
 
-/-! ### Witt transitivity -/
-
-section Transitivity
-
-variable {K : Type u} [Field K] [NeZero (2 : K)] {V : Type v} [AddCommGroup V] [Module K V]
-
-/-- **Witt transitivity** (Lam I.4.5): over a field of characteristic different from two, the
-orthogonal group of a quadratic form acts transitively on the vectors of a fixed nonzero value.
-
-One of `x - y` and `x + y` has nonzero, hence invertible, norm. In the first case the reflection
-in `x - y` carries `x` to `y`; in the second the reflection in `x + y` carries `x` to `-y`, which
-the reflection in `y` sends to `y`. -/
-theorem exists_isometryEquiv_apply_eq_of_map_eq (Q : QuadraticForm K V) {x y : V}
-    (hxy : Q x = Q y) (hy : Q y ≠ 0) : ∃ f : Q.IsometryEquiv Q, f x = y := by
-  rcases QuadraticMap.isUnit_sub_or_add_of_map_eq Q x y hxy hy with h | h
-  · have := h.invertible
-    refine ⟨QuadraticMap.orthogonalGroupEquivIsometryEquiv Q
-      ⟨QuadraticMap.reflection Q (x - y), QuadraticMap.reflection_mem_orthogonalGroup Q _⟩, ?_⟩
-    simpa using QuadraticMap.reflection_sub_apply_eq_of_map_eq Q x y hxy
-  · have : Invertible (Q y) := (isUnit_iff_ne_zero.mpr hy).invertible
-    have : Invertible (Q (x - -y)) := by simpa only [sub_neg_eq_add] using h.invertible
-    have hmem : (QuadraticMap.reflection Q (x - -y)).trans (QuadraticMap.reflection Q y) ∈
-        QuadraticMap.orthogonalGroup Q :=
-      QuadraticMap.mem_orthogonalGroup_iff.mpr fun m => by
-      rw [LinearEquiv.trans_apply,
-        QuadraticMap.map_app_of_mem_orthogonalGroup
-          (QuadraticMap.reflection_mem_orthogonalGroup Q y),
-        QuadraticMap.map_app_of_mem_orthogonalGroup
-          (QuadraticMap.reflection_mem_orthogonalGroup Q (x - -y))]
-    refine ⟨QuadraticMap.orthogonalGroupEquivIsometryEquiv Q ⟨_, hmem⟩, ?_⟩
-    have hneg : QuadraticMap.reflection Q (x - -y) x = -y :=
-      QuadraticMap.reflection_sub_apply_eq_of_map_eq Q x (-y) (hxy.trans (Q.map_neg y).symm)
-    simp [hneg, map_neg]
-
-end Transitivity
-
 /-! ### Cancelling a line -/
 
 section Line
@@ -217,7 +173,7 @@ theorem equivalent_of_equivalent_prod_of_span_singleton_eq_top {Q₀ : Quadratic
     {Q₂ : QuadraticForm K V₂} (h : (Q₀.prod Q₁).Equivalent (Q₀.prod Q₂)) : Q₁.Equivalent Q₂ := by
   have : NeZero (2 : K) := ⟨(isUnit_of_invertible (2 : K)).ne_zero⟩
   obtain ⟨e⟩ := h
-  obtain ⟨f, hf⟩ := exists_isometryEquiv_apply_eq_of_map_eq (Q₀.prod Q₂)
+  obtain ⟨f, hf⟩ := (Q₀.prod Q₂).exists_isometryEquiv_apply_eq_of_map_eq
     (x := e (v₀, 0)) (y := (v₀, 0)) (by simp) (by simpa using hv₀)
   have hfix : ∀ u : V₀, (e.trans f) (u, 0) = (u, 0) := by
     intro u
@@ -238,18 +194,6 @@ variable {K : Type u} [Field K] [Invertible (2 : K)]
   {V₀ : Type v₀} [AddCommGroup V₀] [Module K V₀]
   {V₁ : Type v₁} [AddCommGroup V₁] [Module K V₁]
   {V₂ : Type v₂} [AddCommGroup V₂] [Module K V₂]
-
--- Peel the first weight off a diagonal presentation: `⟨a₀, …, aₙ⟩ ≅ ⟨a₀⟩ ⊥ ⟨a₁, …, aₙ⟩`, with the
--- first factor carried by the line `K`, so that the line cancellation above applies to it.
-private def presentedFormConsIsometryEquiv {n : ℕ} (w : Fin (n + 1) → Kˣ) :
-    (((w 0 : K) • (QuadraticMap.sq : QuadraticForm K K)).prod
-        (presentedForm ⟨n, fun i => w i.succ⟩)).IsometryEquiv (presentedForm ⟨n + 1, w⟩) where
-  toLinearEquiv := Fin.consLinearEquiv K fun _ : Fin (n + 1) => K
-  map_app' x := by
-    -- `presentedForm_apply` does not fire under `simp` here: the rank of the presentation appears
-    -- in the type of `x`, so the rewrite has to be directed by hand.
-    rw [presentedForm_apply, QuadraticMap.prod_apply, presentedForm_apply, Fin.sum_univ_succ]
-    simp
 
 private theorem equivalent_of_equivalent_presentedForm_prod {Q₁ : QuadraticForm K V₁}
     {Q₂ : QuadraticForm K V₂} (n : ℕ) (w : Fin n → Kˣ)
@@ -314,8 +258,8 @@ private theorem isLeftCancelAdd_regularFormClass : IsLeftCancelAdd (RegularFormC
         (h.trans (equivalent_presentedForm_append_prod p r)))
 
 /-- Orthogonal sum is cancellative on the isometry classes of regular forms: this is Witt
-cancellation read on `TauCeti.RegularFormClass`, and it is what gives the Witt-Grothendieck ring
-its Grothendieck group. -/
+cancellation read on `TauCeti.RegularFormClass`, and it is what makes the canonical map from the
+monoid of isometry classes into the Witt-Grothendieck ring injective. -/
 instance : IsCancelAdd (RegularFormClass K) :=
   have := isLeftCancelAdd_regularFormClass (K := K)
   AddCommMagma.IsLeftCancelAdd.toIsCancelAdd _
