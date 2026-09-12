@@ -61,6 +61,10 @@ The valuation appearing in the criteria is Mathlib's multiplicative `ValuativeRe
 for which greater depth means a smaller value and for which `0` is the smallest value; this is
 what lets `1` belong to every step.
 
+The two cardinality statements at depth zero are deliberately not `simp` lemmas. `simp` rewrites
+`unitFiltration K 0` and `unitFiltration K 1` to Mathlib's unit and principal unit groups, so
+neither left-hand side is in `simp` normal form.
+
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §2.
@@ -251,7 +255,6 @@ noncomputable instance unitFiltration_one_isFiniteRelIndex_zero :
 
 /-- The depth-zero graded piece has `q - 1` elements, where `q` is the cardinality of the residue
 field. -/
-@[simp]
 theorem natCard_unitFiltrationGradedPiece_zero :
     Nat.card (UnitFiltrationGradedPiece K 0) = Nat.card 𝓀[K] - 1 := by
   rw [← Nat.card_units]
@@ -259,7 +262,6 @@ theorem natCard_unitFiltrationGradedPiece_zero :
 
 /-- The relative index `[U(K,0) : U(K,1)]` is one less than the cardinality of the residue
 field. -/
-@[simp]
 theorem relIndex_unitFiltration_one_zero :
     (unitFiltration K 1).relIndex (unitFiltration K 0) = Nat.card 𝓀[K] - 1 := by
   rw [Subgroup.relIndex, Subgroup.index]
