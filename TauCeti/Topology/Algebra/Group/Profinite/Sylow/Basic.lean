@@ -28,6 +28,7 @@ a separate compatible inverse-limit argument.
 * `IsProPSylow`: the predicate for a Sylow pro-`p` subgroup.
 * `IsProPSylow.map_continuousMulEquiv`, `IsProPSylow.map_conj`: the predicate is preserved by
   isomorphisms of topological groups, in particular by conjugation.
+* `IsProP.isProPSylow_top`: a pro-`p` group is its own Sylow pro-`p` subgroup.
 * `isProPSylow_iff_isClosed_and_isProP_and_not_dvd_profiniteIndex`: its
   supernatural-index formulation.
 * `isProPSylow_iff_isPGroup_and_not_dvd_index`: its specialization to a discrete group.
@@ -119,6 +120,18 @@ theorem map_conj [IsTopologicalGroup G] (hP : IsProPSylow p P) (g : G) :
         rw [inv_inv]; exact (MulAut.conj_symm_apply g x).symm }
 
 end IsProPSylow
+
+/-- A pro-`p` topological group is its own Sylow pro-`p` subgroup: the top subgroup is closed,
+is pro-`p`, and its image in every quotient by an open normal subgroup is everything, hence of
+index `1`. -/
+theorem IsProP.isProPSylow_top [Fact p.Prime] (hG : IsProP p G) :
+    IsProPSylow p (⊤ : Subgroup G) := by
+  refine isProPSylow_iff.mpr ⟨?_, hG.top, fun U ↦ ?_⟩
+  · rw [Subgroup.coe_top]
+    exact isClosed_univ
+  · rw [Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective U.toSubgroup),
+      Subgroup.index_top, Nat.dvd_one]
+    exact (Fact.out : p.Prime).ne_one
 
 section ProfiniteIndex
 

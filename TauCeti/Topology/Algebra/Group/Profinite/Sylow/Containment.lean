@@ -35,8 +35,9 @@ pro-`p` group is its own unique Sylow pro-`p` subgroup.
   subgroups.
 * `isProPSylow_iff_isProP_and_maximal`: the Sylow pro-`p` subgroups are exactly the
   maximal pro-`p` subgroups.
-* `IsProPSylow.eq_top` and `IsProP.isProPSylow_top`: a profinite group is
-  pro-`p` exactly when it is its own Sylow pro-`p` subgroup.
+* `IsProPSylow.eq_top`: a Sylow pro-`p` subgroup of a pro-`p` profinite group is the whole
+  group. Together with `IsProP.isProPSylow_top` this says that a pro-`p` profinite group is its
+  own unique Sylow pro-`p` subgroup.
 
 ## References
 
@@ -163,10 +164,5 @@ theorem isProPSylow_iff_isProP_and_maximal :
 /-- A Sylow pro-`p` subgroup of a pro-`p` group is the whole group. -/
 theorem IsProPSylow.eq_top (hP : IsProPSylow p P) (hG : IsProP p G) : P = ⊤ :=
   hP.eq_of_le hG.top le_top
-
-/-- A pro-`p` profinite group is its own Sylow pro-`p` subgroup. -/
-theorem IsProP.isProPSylow_top (hG : IsProP p G) : IsProPSylow p (⊤ : Subgroup G) := by
-  obtain ⟨P, hP⟩ := exists_isProPSylow p G
-  exact hP.eq_top hG ▸ hP
 
 end TauCeti
