@@ -19,6 +19,14 @@ The indexing is by natural numbers, and the depth-zero case is part of the defin
 than a separate convention: `𝓂[K] ^ 0 = ⊤`, so `U(K,0)` is the whole image of `𝒪[K]ˣ` in `Kˣ`,
 while `U(K,i) = 1 + 𝓂[K] ^ i` for `i ≥ 1`.
 
+The filtration is the standard tool for resolving the multiplicative structure of `K` near `1`.
+Its steps are a neighbourhood basis of `1` in `Kˣ`, so they carry the topology of the unit group
+and reduce statements about `Kˣ` to statements about the finite quotients `𝒪[K]ˣ ⧸ U(K,i)`. Its
+successive quotients are where ramification is measured: `U(K,0) ⧸ U(K,1)` is the multiplicative
+group of the residue field and `U(K,i) ⧸ U(K,i+1)` is its additive group for `i ≥ 1`. Later work
+uses the filtration in that role, through its graded pieces, its stability under the Galois
+action on a finite extension, and its behaviour under a field embedding.
+
 ## Main definitions
 
 * `TauCeti.unitFiltration`: the unit filtration `U(K,i)` of a nonarchimedean local field, as a
