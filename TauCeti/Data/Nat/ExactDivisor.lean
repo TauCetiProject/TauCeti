@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Finset.SymmDiff
 public import Mathlib.Data.Nat.Factorization.Basic
 
 /-!
@@ -25,6 +26,8 @@ vertical line `‖`; it is scoped, so it never competes with the `∥` of `Affin
 ## Main definitions
 
 * `TauCeti.Nat.IsExactDivisor`: the predicate itself.
+* `TauCeti.Nat.ExactDivisor`: the exact divisors of a fixed `N`, bundled as a commutative group
+  whose multiplication is symmetric difference.
 
 ## Notation
 
@@ -49,9 +52,13 @@ vertical line `‖`; it is scoped, so it never competes with the `∥` of `Affin
 * `TauCeti.Nat.mul_div_gcd_sq_eq`, `TauCeti.Nat.IsExactDivisor.mul_div_gcd_sq`:
   `Q * R / gcd (Q, R) ^ 2` — the symmetric difference of `Q` and `R` — is the product of the two
   complementary quotients, and is an exact divisor too.
+* `TauCeti.Nat.ExactDivisor.val_mul`: multiplication in the bundled group has underlying value
+  `Q * R / gcd (Q, R) ^ 2`.
 -/
 
 public section
+
+open scoped symmDiff
 
 namespace TauCeti
 
@@ -247,6 +254,127 @@ theorem IsExactDivisor.mul_div_gcd_sq (hQ : IsExactDivisor Q N) (hR : IsExactDiv
     rw [Nat.gcd_comm]; exact hR.div_gcd hQ
   rw [mul_div_gcd_sq_eq]
   exact (hQ.div_gcd hR).mul hRdiv hcop
+
+/-! ### The exact-divisor group -/
+
+/-- **The exact divisors of `N`, bundled as a group.** Multiplication is symmetric difference:
+the value of `Q * R` is `Q R / gcd(Q, R)²`. Every element is its own inverse, and the identity is
+the exact divisor `1`. -/
+structure ExactDivisor (N : ℕ) where
+  /-- The underlying natural-number divisor. -/
+  val : ℕ
+  /-- The underlying value is an exact divisor of `N`. -/
+  property : IsExactDivisor val N
+
+namespace ExactDivisor
+
+/-- Two exact divisors are equal when their underlying natural numbers are equal. -/
+@[ext]
+theorem ext {Q R : ExactDivisor N} (h : Q.val = R.val) : Q = R := by
+  cases Q
+  cases R
+  simp_all
+
+instance : CoeOut (ExactDivisor N) ℕ := ⟨ExactDivisor.val⟩
+
+instance : One (ExactDivisor N) := ⟨⟨1, isExactDivisor_one⟩⟩
+
+instance : Mul (ExactDivisor N) where
+  mul Q R := ⟨Q.val * R.val / Nat.gcd Q.val R.val ^ 2, Q.property.mul_div_gcd_sq R.property⟩
+
+instance : Inv (ExactDivisor N) := ⟨id⟩
+
+/-- An exact divisor of `N` is determined by the set of primes dividing it. -/
+theorem primeFactors_injective :
+    Function.Injective (fun Q : ExactDivisor N ↦ Q.val.primeFactors) := by
+  intro Q R hQR
+  apply ext
+  rcases eq_or_ne N 0 with rfl | hN
+  · rw [isExactDivisor_zero_iff.mp Q.property, isExactDivisor_zero_iff.mp R.property]
+  apply Nat.eq_of_factorization_eq Q.property.ne_zero R.property.ne_zero
+  have hQ := (isExactDivisor_iff_factorization hN).mp Q.property
+  have hR := (isExactDivisor_iff_factorization hN).mp R.property
+  intro p
+  have hs : Q.val.factorization.support = R.val.factorization.support := by
+    simpa only [Nat.support_factorization] using hQR
+  have hp : (Q.val.factorization p ≠ 0) = (R.val.factorization p ≠ 0) := by
+    simpa only [Finsupp.mem_support_iff] using congrArg (p ∈ ·) hs
+  by_cases hpN : N.factorization p = 0
+  · rcases hQ.2 p with hQp | hQp <;> rcases hR.2 p with hRp | hRp <;>
+      simp [hQp, hRp, hpN]
+  rcases hQ.2 p with hQp | hQp <;> rcases hR.2 p with hRp | hRp <;>
+    simp [hQp, hRp, hpN] at hp ⊢
+
+/-- Prime factors turn exact-divisor multiplication into symmetric difference. -/
+theorem primeFactors_mul (Q R : ExactDivisor N) :
+    (Q * R).val.primeFactors = Q.val.primeFactors ∆ R.val.primeFactors := by
+  ext p
+  rcases eq_or_ne N 0 with rfl | hN
+  · have hQ := isExactDivisor_zero_iff.mp Q.property
+    have hR := isExactDivisor_zero_iff.mp R.property
+    change p ∈ (Q.val * R.val / Nat.gcd Q.val R.val ^ 2).primeFactors ↔ _
+    simp [hQ, hR]
+  have hQ0 := Q.property.ne_zero
+  have hR0 := R.property.ne_zero
+  have hQg0 : Q.val / Nat.gcd Q.val R.val ≠ 0 :=
+    (Nat.div_pos (Nat.le_of_dvd Q.property.pos (Nat.gcd_dvd_left Q.val R.val))
+      (Nat.gcd_pos_of_pos_left R.val Q.property.pos)).ne'
+  have hRg0 : R.val / Nat.gcd Q.val R.val ≠ 0 :=
+    (Nat.div_pos (Nat.le_of_dvd R.property.pos (Nat.gcd_dvd_right Q.val R.val))
+      (Nat.gcd_pos_of_pos_left R.val Q.property.pos)).ne'
+  change p ∈ (Q.val * R.val / Nat.gcd Q.val R.val ^ 2).primeFactors ↔ _
+  rw [← Nat.support_factorization, ← Nat.support_factorization,
+    ← Nat.support_factorization, Finset.mem_symmDiff, Finsupp.mem_support_iff,
+    Finsupp.mem_support_iff, Finsupp.mem_support_iff]
+  rw [mul_div_gcd_sq_eq, Nat.factorization_mul hQg0 hRg0, Finsupp.add_apply,
+    Nat.factorization_div (Nat.gcd_dvd_left Q.val R.val), Finsupp.tsub_apply,
+    Nat.factorization_div (Nat.gcd_dvd_right Q.val R.val), Finsupp.tsub_apply,
+    Nat.factorization_gcd hQ0 hR0, Finsupp.inf_apply]
+  have hQ := (isExactDivisor_iff_factorization hN).mp Q.property
+  have hR := (isExactDivisor_iff_factorization hN).mp R.property
+  rcases hQ.2 p with hQp | hQp <;> rcases hR.2 p with hRp | hRp <;>
+    simp only [hQp, hRp] <;> omega
+
+instance : CommGroup (ExactDivisor N) where
+  one := 1
+  mul := (· * ·)
+  inv := id
+  mul_assoc Q R S := primeFactors_injective <| by
+    change (Q * R * S).val.primeFactors = (Q * (R * S)).val.primeFactors
+    rw [primeFactors_mul, primeFactors_mul, primeFactors_mul, primeFactors_mul, symmDiff_assoc]
+  one_mul Q := primeFactors_injective <| by
+    change (1 * Q).val.primeFactors = Q.val.primeFactors
+    rw [primeFactors_mul]
+    change (1 : ℕ).primeFactors ∆ Q.val.primeFactors = Q.val.primeFactors
+    simp
+  mul_one Q := primeFactors_injective <| by
+    change (Q * 1).val.primeFactors = Q.val.primeFactors
+    rw [primeFactors_mul]
+    change Q.val.primeFactors ∆ (1 : ℕ).primeFactors = Q.val.primeFactors
+    simp
+  inv_mul_cancel Q := primeFactors_injective <| by
+    change (id Q * Q).val.primeFactors = (1 : ExactDivisor N).val.primeFactors
+    rw [primeFactors_mul]
+    change Q.val.primeFactors ∆ Q.val.primeFactors = (1 : ℕ).primeFactors
+    simp
+  mul_comm Q R := primeFactors_injective <| by
+    change (Q * R).val.primeFactors = (R * Q).val.primeFactors
+    rw [primeFactors_mul, primeFactors_mul, symmDiff_comm]
+
+/-- The identity exact divisor has underlying value `1`. -/
+@[simp]
+theorem val_one : (1 : ExactDivisor N).val = 1 := rfl
+
+/-- **Multiplication of exact divisors is symmetric difference:** its underlying value is
+`Q R / gcd(Q, R)²`. -/
+theorem val_mul (Q R : ExactDivisor N) :
+    (Q * R).val = Q.val * R.val / Nat.gcd Q.val R.val ^ 2 := rfl
+
+/-- Every exact divisor is its own inverse. -/
+@[simp]
+theorem val_inv (Q : ExactDivisor N) : Q⁻¹.val = Q.val := rfl
+
+end ExactDivisor
 
 end Nat
 

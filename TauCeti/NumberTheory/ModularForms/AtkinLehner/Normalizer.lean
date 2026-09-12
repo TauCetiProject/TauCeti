@@ -24,8 +24,7 @@ operator — the member `Q = N` of the Atkin–Lehner family — is normalized b
 `𝒲_Q` is.
 
 The square root is taken in `ℝ` and cast to `ℂ`, rather than as a complex power, so that no branch
-of `(·) ^ (2 - k)` has to be chosen. In odd weight the constant is genuinely irrational, which is
-why the normalized operators cannot be defined over `ℚ`.
+of `(·) ^ (2 - k)` has to be chosen.
 
 ## Main definitions
 
