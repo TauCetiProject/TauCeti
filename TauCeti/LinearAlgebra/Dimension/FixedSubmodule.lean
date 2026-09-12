@@ -52,95 +52,114 @@ theorem two_mul_finrank_iInf_fixedSubmodule_insert
       finrank K ((⨅ i ∈ s, (p i).fixedSubmodule) : Submodule K V) := by
   let S : Submodule K V := ⨅ i ∈ s, (p i).fixedSubmodule
   let A : Submodule K V := ⨅ i ∈ insert a s, (p i).fixedSubmodule
-  let B : Submodule K V := S ⊓ LinearMap.ker (p a)
   have hAS : A ≤ S := by
     intro x hx
     have hx' : ∀ i ∈ insert a s, p i x = x := by
       simpa only [A, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using hx
     simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using
       (fun i hi => hx' i (Finset.mem_insert_of_mem hi))
-  have hAfix : ∀ x ∈ A, p a x = x := by
+  have hpS : ∀ x ∈ S, p a x ∈ S := by
     intro x hx
-    have hx' : ∀ i ∈ insert a s, p i x = x := by
-      simpa only [A, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using hx
-    exact hx' a (Finset.mem_insert_self a s)
-  -- Decompose the previous common fixed space into the `1`- and `0`-eigenspaces of `p a`.
-  have hsup : A ⊔ B = S := by
-    apply le_antisymm
-    · exact sup_le hAS inf_le_left
-    · intro x hx
-      have hx' : ∀ i ∈ s, p i x = x := by
-        simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using hx
-      have hpxS : p a x ∈ S := by
-        simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using fun i hi =>
-          calc
-            p i (p a x) = p a (p i x) := LinearMap.congr_fun (hcomm i hi).eq x
-            _ = p a x := congrArg (p a) (hx' i hi)
-      have hpxS' : ∀ i ∈ s, p i (p a x) = p a x := by
-        simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using hpxS
-      have hrestS : x - p a x ∈ S := S.sub_mem hx hpxS
-      have hpxA : p a x ∈ A := by
-        simp only [A, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff]
-        intro i hi
-        rw [Finset.mem_insert] at hi
-        rcases hi with rfl | hi
-        · exact congrArg (fun f : Module.End K V => f x) hpa.eq
-        · exact hpxS' i hi
-      have hrestB : x - p a x ∈ B := by
-        dsimp only [B]
-        refine ⟨hrestS, LinearMap.mem_ker.mpr ?_⟩
-        rw [map_sub]
-        exact sub_eq_zero.mpr (congrArg (fun f : Module.End K V => f x) hpa.eq).symm
-      rw [← add_sub_cancel (p a x) x]
-      exact Submodule.add_mem _ (Submodule.mem_sup_left hpxA) (Submodule.mem_sup_right hrestB)
-  have hinf : A ⊓ B = ⊥ := by
-    rw [eq_bot_iff]
-    intro x hx
-    apply (Submodule.mem_bot K).mpr
-    rw [← hAfix x hx.1, LinearMap.mem_ker.mp hx.2.2]
-  -- The supplied exchange maps restrict to inverse maps between those two eigenspaces.
-  let U : A →ₗ[K] B :=
-    (u.domRestrict A).codRestrict B fun x => by
-      dsimp only [B]
-      refine ⟨?_, LinearMap.mem_ker.mpr (hu0 x (hAfix x x.2))⟩
-      have hxA : ∀ i ∈ insert a s, p i x = x := by
-        simpa only [A, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using x.2
-      have hxS : ∀ i ∈ s, p i x = x :=
-        fun i hi => hxA i (Finset.mem_insert_of_mem hi)
-      have huS_mem : u (x : V) ∈ (⨅ i ∈ s, (p i).fixedSubmodule) := by
-        simp only [Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff]
-        intro i hi
-        exact
-          calc
-          p i (u x) = u (p i x) := LinearMap.congr_fun (huS i hi).eq x
-          _ = u x := congrArg u (hxS i hi)
-      exact huS_mem
-  let W : B →ₗ[K] A :=
-    (v.domRestrict B).codRestrict A fun x => by
-      have hxS : ∀ i ∈ s, p i x = x := by
-        have hxS' : (x : V) ∈ (⨅ i ∈ s, (p i).fixedSubmodule) := x.2.1
-        simpa only [Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using hxS'
-      simp only [LinearMap.domRestrict_apply, A, Submodule.mem_iInf,
+    have hx' : ∀ i ∈ s, p i x = x := by
+      simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using hx
+    simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using fun i hi =>
+      calc
+        p i (p a x) = p a (p i x) := LinearMap.congr_fun (hcomm i hi).eq x
+        _ = p a x := congrArg (p a) (hx' i hi)
+  let q : Module.End K S := (p a).restrict hpS
+  have hq : IsIdempotentElem q := by
+    apply LinearMap.ext
+    intro x
+    apply Subtype.ext
+    simpa only [q, Module.End.mul_apply, LinearMap.coe_restrict_apply] using
+      LinearMap.congr_fun hpa.eq (x : V)
+  have hqrange : LinearMap.range q = A.comap S.subtype := by
+    ext x
+    rw [LinearMap.IsIdempotentElem.mem_range_iff hq]
+    constructor
+    · intro hx
+      have hxa : p a (x : V) = x := by
+        simpa only [q, LinearMap.coe_restrict_apply] using congrArg Subtype.val hx
+      have hxS : ∀ i ∈ s, p i (x : V) = x := by
+        simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using x.2
+      simp only [Submodule.mem_comap, A, Submodule.mem_iInf,
         LinearMap.mem_fixedSubmodule_iff]
       intro i hi
       rw [Finset.mem_insert] at hi
       rcases hi with rfl | hi
-      · exact hv1 x (LinearMap.mem_ker.mp x.2.2)
-      · calc
-          p i (v x) = v (p i x) := LinearMap.congr_fun (hvS i hi).eq x
-          _ = v x := congrArg v (hxS i hi)
-  let e : A ≃ₗ[K] B := LinearEquiv.ofLinearMap U W
-    (LinearMap.ext fun x => Subtype.ext (huv x (LinearMap.mem_ker.mp x.2.2)))
-    (LinearMap.ext fun x => Subtype.ext (hvu x (hAfix x x.2)))
-  -- Equal dimensions of complementary summands give the desired factor of two.
-  have hrank := Submodule.finrank_sup_add_finrank_inf_eq A B
-  rw [hsup, hinf, finrank_bot, add_zero] at hrank
+      · exact hxa
+      · exact hxS i hi
+    · intro hx
+      have hx' : ∀ i ∈ insert a s, p i (S.subtype x) = S.subtype x := by
+        simpa only [Submodule.mem_comap, A, Submodule.mem_iInf,
+          LinearMap.mem_fixedSubmodule_iff] using hx
+      apply Subtype.ext
+      convert hx' a (Finset.mem_insert_self a s) using 1 <;> rfl
+  have huS' : ∀ x ∈ S, u x ∈ S := by
+    intro x hx
+    have hx' : ∀ i ∈ s, p i x = x := by
+      simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using hx
+    simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using fun i hi =>
+      calc
+        p i (u x) = u (p i x) := LinearMap.congr_fun (huS i hi).eq x
+        _ = u x := congrArg u (hx' i hi)
+  have hvS' : ∀ x ∈ S, v x ∈ S := by
+    intro x hx
+    have hx' : ∀ i ∈ s, p i x = x := by
+      simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using hx
+    simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using fun i hi =>
+      calc
+        p i (v x) = v (p i x) := LinearMap.congr_fun (hvS i hi).eq x
+        _ = v x := congrArg v (hx' i hi)
+  let uS : Module.End K S := u.restrict huS'
+  let vS : Module.End K S := v.restrict hvS'
+  let U : LinearMap.range q →ₗ[K] LinearMap.ker q :=
+    uS.restrict fun x hx => by
+      have hxfix : p a (x : V) = x := by
+        have hx' := LinearMap.IsIdempotentElem.mem_range_iff hq |>.mp hx
+        simpa only [q, LinearMap.coe_restrict_apply] using congrArg Subtype.val hx'
+      apply LinearMap.mem_ker.mpr
+      apply Subtype.ext
+      simpa only [q, uS, LinearMap.coe_restrict_apply, ZeroMemClass.coe_zero] using
+        hu0 (x : V) hxfix
+  let W : LinearMap.ker q →ₗ[K] LinearMap.range q :=
+    vS.restrict fun x hx => by
+      apply LinearMap.IsIdempotentElem.mem_range_iff hq |>.mpr
+      have hxzero : p a (x : V) = 0 := by
+        have hx' := LinearMap.mem_ker.mp hx
+        simpa only [q, LinearMap.coe_restrict_apply, ZeroMemClass.coe_zero] using
+          congrArg Subtype.val hx'
+      apply Subtype.ext
+      simpa only [q, vS, LinearMap.coe_restrict_apply] using hv1 (x : V) hxzero
+  let e : LinearMap.range q ≃ₗ[K] LinearMap.ker q := LinearEquiv.ofLinearMap U W
+    (LinearMap.ext fun x => Subtype.ext (Subtype.ext (by
+      have hxzero : p a (x : V) = 0 := by
+        have hx' := LinearMap.mem_ker.mp x.2
+        simpa only [q, LinearMap.coe_restrict_apply, ZeroMemClass.coe_zero] using
+          congrArg Subtype.val hx'
+      simpa only [U, W, uS, vS, LinearMap.comp_apply, LinearMap.id_apply,
+        LinearMap.coe_restrict_apply] using
+        huv (x : V) hxzero)))
+    (LinearMap.ext fun x => Subtype.ext (Subtype.ext (by
+      have hxfix : p a (x : V) = x := by
+        have hx' := LinearMap.IsIdempotentElem.mem_range_iff hq |>.mp x.2
+        simpa only [q, LinearMap.coe_restrict_apply] using congrArg Subtype.val hx'
+      simpa only [U, W, uS, vS, LinearMap.comp_apply, LinearMap.id_apply,
+        LinearMap.coe_restrict_apply] using
+        hvu (x : V) hxfix)))
+  have hrank := Submodule.finrank_add_eq_of_isCompl
+    (LinearMap.IsIdempotentElem.isCompl hq)
+  have hrangeA : finrank K (LinearMap.range q) = finrank K A := by
+    rw [hqrange]
+    exact (Submodule.comapSubtypeEquivOfLe hAS).finrank_eq
   calc
     2 * finrank K ((⨅ i ∈ insert a s, (p i).fixedSubmodule) : Submodule K V) =
         2 * finrank K A := rfl
-    _ = finrank K A + finrank K A := two_mul _
-    _ = finrank K A + finrank K B := by rw [e.finrank_eq]
-    _ = finrank K S := hrank.symm
+    _ = 2 * finrank K (LinearMap.range q) := by rw [hrangeA]
+    _ = finrank K (LinearMap.range q) + finrank K (LinearMap.range q) := two_mul _
+    _ = finrank K (LinearMap.range q) + finrank K (LinearMap.ker q) := by
+      rw [e.finrank_eq]
+    _ = finrank K S := hrank
     _ = finrank K ((⨅ i ∈ s, (p i).fixedSubmodule) : Submodule K V) := rfl
 
 /-- A finite family of commuting idempotent endomorphisms has common fixed-space dimension

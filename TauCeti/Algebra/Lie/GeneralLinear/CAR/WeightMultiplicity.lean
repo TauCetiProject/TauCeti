@@ -106,41 +106,18 @@ private noncomputable def carScaledRaisingEnd
     (a : ↥(carPositiveRootPairs (Fin N))) : Module.End K (carAlgebra K N) :=
   Module.toModuleEnd K (carAlgebra K N) ((2 : K)⁻¹ • carGenerator K a.1.1 a.1.2)
 
-private theorem carOccupationElement_mul_carGenerator_fst
-    {K : Type*} [Field K] [CharZero K] {N : ℕ} {i j : Fin N} (hij : i ≠ j) :
-    carOccupationElement (K := K) i j * carGenerator K i j = carGenerator K i j := by
-  classical
-  have hcar : carGenerator K i j * carGenerator K j i +
-      carGenerator K j i * carGenerator K i j = (2 : K) • 1 := by
-    simpa [carGenerator, Algebra.smul_def] using
-      (traceQuadraticForm_ι_single_mul_ι_single_add_swap
-        (R := K) i j j i 1 1)
-  have hsq : carGenerator K i j * carGenerator K i j = 0 := by
-    simp [carGenerator, hij]
-  have hreverse : carGenerator K j i * carGenerator K i j =
-      (2 : K) • 1 - carGenerator K i j * carGenerator K j i := by
-    rw [eq_sub_iff_add_eq]
-    simpa [add_comm] using hcar
-  rw [carOccupationElement_def, smul_mul_assoc, mul_assoc]
-  calc
-    (2 : K)⁻¹ • (carGenerator K i j *
-        (carGenerator K j i * carGenerator K i j)) =
-      (2 : K)⁻¹ • (carGenerator K i j *
-        ((2 : K) • 1 - carGenerator K i j * carGenerator K j i)) := by
-        rw [hreverse]
-    _ = (2 : K)⁻¹ • ((2 : K) • carGenerator K i j) := by
-      rw [mul_sub, ← mul_assoc, hsq, zero_mul, sub_zero]
-      simp
-    _ = carGenerator K i j := by
-      rw [smul_smul]
-      simp
-
 private theorem carOccupationElement_mul_carGenerator_snd
     {K : Type*} [Field K] {N : ℕ} {i j : Fin N} (hij : i ≠ j) :
     carOccupationElement (K := K) i j * carGenerator K j i = 0 := by
   classical
   rw [carOccupationElement_def, smul_mul_assoc, mul_assoc]
   simp [carGenerator, hij.symm]
+
+private theorem carOccupationElement_mul_carGenerator_fst
+    {K : Type*} [Field K] [Invertible (2 : K)] {N : ℕ} {i j : Fin N} (hij : i ≠ j) :
+    carOccupationElement (K := K) i j * carGenerator K i j = carGenerator K i j := by
+  rw [carOccupationElement_swap (K := K) j i, sub_mul, one_mul,
+    carOccupationElement_mul_carGenerator_snd hij.symm, sub_zero]
 
 private theorem carPositiveRootPair_ne_reverse {N : ℕ}
     (a b : ↥(carPositiveRootPairs (Fin N))) :
@@ -153,7 +130,7 @@ private theorem carPositiveRootPair_ne_reverse {N : ℕ}
   exact lt_asymm ha (hfst ▸ hsnd ▸ hb)
 
 private theorem pow_card_mul_finrank_carOccupationFixed
-    {K : Type*} [Field K] [CharZero K] [Invertible (2 : K)] (N : ℕ) :
+    {K : Type*} [Field K] [Invertible (2 : K)] (N : ℕ) :
     2 ^ (carPositiveRootPairs (Fin N)).card *
         finrank K ((⨅ a ∈ Finset.univ,
           (carOccupationEnd (K := K) (N := N) a).fixedSubmodule) :
@@ -234,7 +211,7 @@ private theorem choose_two_add_upperTriangle (N : ℕ) :
     ring
 
 private theorem finrank_carOccupationFixed
-    {K : Type*} [Field K] [CharZero K] [Invertible (2 : K)] (N : ℕ) :
+    {K : Type*} [Field K] [Invertible (2 : K)] (N : ℕ) :
     finrank K ((⨅ a ∈ Finset.univ,
       (carOccupationEnd (K := K) (N := N) a).fixedSubmodule) :
         Submodule K (carAlgebra K N)) =
@@ -260,9 +237,10 @@ private theorem sum_positive_diagonal_scalar
     {K : Type*} [Field K] [CharZero K] {N : ℕ} (i : Fin N) :
     (∑ k : Fin N, if k < i then (0 : K)
       else if k = i then (2 : K)⁻¹ else 1) = glHalfStaircase K N i := by
-  rw [glHalfStaircase_apply]
-  have hcount : (Finset.univ.filter fun k : Fin N => i < k).card = N - 1 - i := by
+  have hcount : (Finset.univ.filter fun k : Fin N => i < k).card = Fin.rev i := by
     rw [Finset.filter_lt_eq_Ioi, Fin.card_Ioi]
+    simp only [Fin.rev, Fin.val_mk]
+    omega
   calc
     (∑ k : Fin N, if k < i then (0 : K)
         else if k = i then (2 : K)⁻¹ else 1) =
@@ -277,23 +255,10 @@ private theorem sum_positive_diagonal_scalar
     _ = ((Finset.univ.filter fun k : Fin N => i < k).card : K) + (2 : K)⁻¹ := by
       rw [Finset.sum_add_distrib]
       simp
-    _ = ((N - 1 - i : ℕ) : K) + (2 : K)⁻¹ := by rw [hcount]
-    _ = (N : K) - 1 / 2 - (i : ℕ) := by
-      have hi : i + 1 ≤ N := i.isLt
-      rw [Nat.cast_sub (Nat.le_sub_of_add_le hi),
-        Nat.cast_sub (Nat.succ_le_iff.mpr (Nat.zero_lt_of_lt i.isLt))]
-      norm_num
-      ring
-
-private theorem card_Ioi_add_inv_two_eq_glHalfStaircase
-    {K : Type*} [Field K] [CharZero K] {N : ℕ} (i : Fin N) :
-    ((Finset.Ioi i).card : K) + (2 : K)⁻¹ = glHalfStaircase K N i := by
-  rw [Fin.card_Ioi, glHalfStaircase_apply]
-  have hi : i + 1 ≤ N := i.isLt
-  rw [Nat.cast_sub (Nat.le_sub_of_add_le hi),
-    Nat.cast_sub (Nat.succ_le_iff.mpr (Nat.zero_lt_of_lt i.isLt))]
-  norm_num
-  ring
+    _ = ((Fin.rev i : ℕ) : K) + (2 : K)⁻¹ := by rw [hcount]
+    _ = glHalfStaircase K N i := by
+      rw [show (2 : K)⁻¹ = 1 / 2 by norm_num]
+      exact Fin.natCast_rev_add_one_div_two_eq_glHalfStaircase i
 
 private theorem carOccupationElement_mul_eq_self_of_mem_commonFixed
     {K : Type*} [Field K] {N : ℕ} {x : carAlgebra K N}
@@ -378,8 +343,15 @@ private theorem sum_upper_occupation_smul_eq_card_smul
     rw [Finset.filter_lt_eq_Ioi]
     simp [Finset.sum_ite_eq']
   rw [hsum, ← Finset.sum_mul] at hdiag
-  rw [← card_Ioi_add_inv_two_eq_glHalfStaircase, add_smul] at hdiag
-  simpa [smul_eq_mul] using add_right_cancel hdiag
+  rw [← Fin.natCast_rev_add_one_div_two_eq_glHalfStaircase (F := K) i,
+    add_smul] at hdiag
+  have hcard : (Finset.Ioi i).card = Fin.rev i := by
+    rw [Fin.card_Ioi]
+    simp only [Fin.rev, Fin.val_mk]
+    omega
+  rw [hcard]
+  norm_num at hdiag
+  simpa [smul_eq_mul] using hdiag
 
 private theorem commonFixed_le_glHalfStaircase_weightSpace
     {K : Type*} [Field K] [CharZero K] [Invertible (2 : K)] (N : ℕ) :
