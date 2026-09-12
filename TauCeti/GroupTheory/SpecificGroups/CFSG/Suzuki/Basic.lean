@@ -32,7 +32,7 @@ number `2m+1`, so the Steinberg map is the `fieldExponent`-th power throughout a
 lands on the `q`-power Frobenius `TauCeti.RankTwoBLieIndex.frobenius` that the index records rather
 than on a separately tabulated field order.
 
-## The pinning
+## The simple-root-subgroup action
 
 What is recorded of `τ` is its action on the numbered simple root subgroups:
 
@@ -54,11 +54,11 @@ and that numbering correspondence.
 
 ## Main results
 
-* `TauCeti.SuzukiLieIndex.steinberg_simpleRootSubgroup`: the Steinberg map's own pinning equation
-  at every numbered simple root, exchanging the two roots and raising the parameter to
+* `TauCeti.SuzukiLieIndex.steinberg_simpleRootSubgroup`: the Steinberg map's own action formula at
+  every numbered simple root, exchanging the two roots and raising the parameter to
   `p ^ m * exponent i`.
-* `TauCeti.SuzukiLieIndex.halfFrobenius_simpleRootSubgroup`: the pinning equation at every
-  numbered simple root, against the index's own length permutation and exponent.
+* `TauCeti.SuzukiLieIndex.halfFrobenius_simpleRootSubgroup`: the action formula at every numbered
+  simple root, against the index's own length permutation and exponent.
 * `TauCeti.SuzukiLieIndex.halfFrobenius_halfFrobenius`: the square of the half-Frobenius is the
   prime-field Frobenius, with `TauCeti.SuzukiLieIndex.halfFrobenius_comp_halfFrobenius` for the
   composite itself.
@@ -78,7 +78,7 @@ no pinning datum is constructed for it here or in the files it imports, so what 
 an endomorphism of that explicit carrier, and it is not claimed to be the endomorphism of the
 pinned group. The identification with the `B₂` diagram that is available is the one on numbered
 root characters, `TauCeti.RankTwoBLieIndex.rootGeneratorWeight_carrierNode_eq_root_simpleIndex`,
-and the pinning equations below are stated against it.
+and the simple-root-subgroup action equations below are stated against it.
 
 ## References
 
@@ -243,8 +243,9 @@ private theorem exponent_eq (i : Fin d.1.rank) :
   · rw [SuzukiReeIndex.exponent_of_not_isLongSimpleRoot _ _ hi, d.characteristic_eq_two]
     exact (ite_eq_right_iff.mpr fun h => absurd (hnode.mp h) hi).symm
 
-/-- **The pinning equation of the half-Frobenius at every numbered simple root**, stated against
-the index's own length permutation and exponent rather than against the two carrier nodes:
+/-- **The simple-root-subgroup action formula for the half-Frobenius at every numbered simple
+root**, stated against the index's own length permutation and exponent rather than against the two
+carrier nodes:
 
 ```text
 τ (x_{α i}(t)) = x_{α (lengthPerm i)}(t ^ exponent i).
@@ -278,9 +279,9 @@ theorem steinberg_comp_steinberg :
     d.steinberg.comp d.steinberg = d.toRankTwoBLieIndex.frobenius :=
   MonoidHom.ext d.steinberg_steinberg
 
-/-- **The pinning equation of the Steinberg endomorphism at every numbered simple root.** It
-exchanges the two simple roots exactly as the half-Frobenius does, its odd power acting on the
-parameter by the remaining even power of the characteristic:
+/-- **The simple-root-subgroup action formula for the Steinberg endomorphism at every numbered
+simple root.** It exchanges the two simple roots exactly as the half-Frobenius does, its odd power
+acting on the parameter by the remaining even power of the characteristic:
 
 ```text
 steinberg (x_{α i}(t)) = x_{α (lengthPerm i)}(t ^ (p ^ m * exponent i)).

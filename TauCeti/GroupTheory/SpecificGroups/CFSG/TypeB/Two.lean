@@ -80,13 +80,15 @@ The same carrier-and-Frobenius material on the branches already assembled is in
   that subgroup is the corresponding simple root of the `B₂` root datum.
 * `TauCeti.RankTwoBLieIndex.frobenius`, `TauCeti.RankTwoBLieIndex.coe_frobenius_apply` and
   `TauCeti.RankTwoBLieIndex.frobenius_simpleRootSubgroup`: the `q`-power Frobenius, its entrywise
-  description, and its pinned equation `Frob_q (x_i(u)) = x_i(u ^ q)`.
+  description, and its simple-root-subgroup action formula `Frob_q (x_i(u)) = x_i(u ^ q)`.
 * `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff`: its fixed points are the points whose
   matrix entries lie in the field of definition `𝔽_q`.
-* `TauCeti.RankTwoBLieIndex.primeFrobenius` and
-  `TauCeti.RankTwoBLieIndex.primeFrobenius_simpleRootSubgroup`: the prime-field Frobenius and its
-  pinned equation `Frob_p (x_i(u)) = x_i(u ^ p)`, the map an odd power of a half-Frobenius on this
-  diagram is built over.
+* `TauCeti.RankTwoBLieIndex.primeFrobenius`,
+  `TauCeti.RankTwoBLieIndex.coe_primeFrobenius_apply` and
+  `TauCeti.RankTwoBLieIndex.primeFrobenius_simpleRootSubgroup`: the prime-field Frobenius, its
+  entrywise description, and its simple-root-subgroup action formula
+  `Frob_p (x_i(u)) = x_i(u ^ p)`, the map an odd power of a half-Frobenius on this diagram is built
+  over.
 
 ## References
 
@@ -143,7 +145,7 @@ def simpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.Am
 /-- The simple-root subgroup is the carrier's numbered raising subgroup at the corresponding
 carrier node. This is the equation through which the upstream root-subgroup API reaches
 `simpleRootSubgroup`. It is not a `simp` lemma: `frobenius_simpleRootSubgroup` is the normal form
-the pinned equations of this file are stated against, and unfolding to
+the simple-root-subgroup action equations of this file are stated against, and unfolding to
 `TauCeti.SpStd.rootSubgroupPoints` would keep it from firing. -/
 theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
     d.simpleRootSubgroup i = SpStd.rootSubgroupPoints 1 (.inl (d.carrierNode i)) d.1.Closure :=
@@ -179,7 +181,8 @@ def frobenius : d.AmbientGroup →* d.AmbientGroup :=
 index records. This is its unfolding lemma; the definition itself stays sealed.
 
 It is deliberately not a `simp` lemma: `frobenius_simpleRootSubgroup` and `coe_frobenius_apply` are
-the normal forms the pinned equations of this file are stated against, and unfolding to
+the normal forms the simple-root-subgroup action equations of this file are stated against, and
+unfolding to
 `TauCeti.SpStd.frobenius` would keep them from firing. -/
 theorem frobenius_def :
     d.frobenius = SpStd.frobenius 1 d.1.characteristic d.1.fieldExponent d.1.Closure :=
@@ -202,8 +205,8 @@ theorem coe_frobenius_apply (g : d.AmbientGroup) (r c : Fin 4) :
   exact SpStd.coe_frobenius_apply 1 _ _ _ g r c
 
 /-- **The Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises its parameter
-to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. This is the equation that pins an
-ordinary Frobenius factor of a Steinberg map on the numbered simple-root subgroups. -/
+to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. This describes an ordinary
+Frobenius factor of a Steinberg map on the numbered simple-root subgroups. -/
 @[simp]
 theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
     d.frobenius (d.simpleRootSubgroup i u) =
@@ -224,10 +227,22 @@ def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
 exponent one. This is its unfolding lemma; the definition itself stays sealed.
 
 As with `frobenius_def` it is deliberately not a `simp` lemma:
-`primeFrobenius_simpleRootSubgroup` is the normal form stated against it. -/
+`primeFrobenius_simpleRootSubgroup` and `coe_primeFrobenius_apply` are the normal forms stated
+against it. -/
 theorem primeFrobenius_def :
     d.primeFrobenius = SpStd.frobenius 1 d.1.characteristic 1 d.1.Closure :=
   (rfl)
+
+/-- The prime-field Frobenius acts on the ambient group by raising every matrix entry to the
+`p`-th power, for `p` the defining characteristic. -/
+@[simp]
+theorem coe_primeFrobenius_apply (g : d.AmbientGroup) (r c : Fin 4) :
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 4) d.1.Closure) :
+        Matrix (Fin 4) (Fin 4) d.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 4) d.1.Closure) :
+        Matrix (Fin 4) (Fin 4) d.1.Closure) r c ^ d.1.characteristic := by
+  rw [primeFrobenius_def]
+  simpa only [pow_one] using SpStd.coe_frobenius_apply 1 d.1.characteristic 1 d.1.Closure g r c
 
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
 its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
