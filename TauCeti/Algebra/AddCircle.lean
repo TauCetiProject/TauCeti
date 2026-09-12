@@ -150,7 +150,7 @@ theorem isAddCyclic_torsionBy (hn : 0 < n) : IsAddCyclic ((AddCircle p)[(n : ℤ
 theorem eq_torsionBy_of_natCard_eq (hn : 0 < n) {H : AddSubgroup (AddCircle p)}
     (hH : Nat.card H = n) : H = (AddCircle p)[(n : ℤ)] :=
   have := finite_torsionBy p hn
-  AddSubgroup.eq_of_le_of_card_ge (AddSubgroup.le_torsionBy_of_natCard_eq hH)
+  AddSubgroup.eq_of_le_of_card_ge (hH ▸ AddSubgroup.le_torsionBy_natCard)
     (by rw [natCard_torsionBy p hn, hH])
 
 /-- Every finite subgroup of `AddCircle p` is a torsion subgroup. -/
