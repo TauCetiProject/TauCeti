@@ -378,6 +378,7 @@ theorem coe_spinToSpinorNormKernel_apply
   by rw [spinToSpinorNormKernel, MonoidHom.codRestrict_apply]
 
 /-- Corestricting the Spin action to the spinor-norm kernel does not change its kernel. -/
+@[simp]
 theorem ker_spinToSpinorNormKernel
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
     MonoidHom.ker (spinToSpinorNormKernel Q hQ) =
@@ -388,13 +389,9 @@ theorem ker_spinToSpinorNormKernel
 theorem spinToSpinorNormKernel_surjective
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
     Function.Surjective (spinToSpinorNormKernel Q hQ) := by
-  intro g
-  have hg : (g : QuadraticMap.specialOrthogonalGroup Q) ∈
-      MonoidHom.range (spinToSpecialOrthogonal Q) := by
-    rw [range_spinToSpecialOrthogonal_eq_ker_spinorNorm Q hQ]
-    exact g.2
-  obtain ⟨x, hx⟩ := hg
-  exact ⟨x, Subtype.ext hx⟩
+  apply (Set.surjective_codRestrict fun x ↦
+    MonoidHom.mem_ker.mpr (spinorNorm_spinToSpecialOrthogonal Q hQ x)).2
+  rw [← MonoidHom.coe_range, range_spinToSpecialOrthogonal_eq_ker_spinorNorm Q hQ]
 
 /-- If every value of a finite-dimensional nondegenerate quadratic form is a square, the Spin
 action on its special orthogonal group is surjective. This differs from
