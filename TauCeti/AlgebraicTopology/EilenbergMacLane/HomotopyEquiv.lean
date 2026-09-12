@@ -60,7 +60,7 @@ variable {G : Type*} [Group G]
 theorem of_homotopyEquiv (h : IsEilenbergMacLaneSpaceOne G X x) (e : X ≃ₕ Y) (y : Y) :
     IsEilenbergMacLaneSpaceOne G Y y := by
   let : PathConnectedSpace X := h.isAspherical.pathConnectedSpace
-  obtain ⟨φ⟩ := FundamentalGroup.nonempty_fundamentalGroupMulEquiv_of_homotopyEquiv e x y
+  obtain ⟨φ⟩ := e.nonempty_fundamentalGroupMulEquiv x y
   exact IsEilenbergMacLaneSpaceOne.mk (h.isAspherical.of_homotopyEquiv e y)
     (h.nonempty_fundamentalGroupMulEquiv.map fun f => φ.symm.trans f)
 
