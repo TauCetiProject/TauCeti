@@ -42,8 +42,8 @@ index-four root lattice.
 * `TauCeti.DynkinType.algebraMap_typeDSpinWeight_apply`: comparison with the half-integer
   orthonormal coordinates of `TauCeti.spinWeight`.
 * `TauCeti.DynkinType.typeDSpinWeight_univ_apply`,
-  `TauCeti.DynkinType.typeDSpinWeight_univ`, and
-  `TauCeti.DynkinType.typeDSpinWeight_univ_erase_last`: the terminal and penultimate fork
+  `TauCeti.DynkinType.typeDSpinWeight_univ_eq_single`, and
+  `TauCeti.DynkinType.typeDSpinWeight_univ_erase_last_eq_single`: the terminal and penultimate fork
   fundamental weights.
 * `TauCeti.DynkinType.span_range_typeDSpinWeight_eq_top`: the spin weights generate the full
   simply connected character lattice.
@@ -390,7 +390,7 @@ coordinate. -/
 
 /-- **The all-positive type-`D` spin weight is the terminal fundamental weight.** In fundamental-
 weight coordinates it has value one at the final fork node and zero at every other node. -/
-theorem typeDSpinWeight_univ {n : ℕ} (hn : 1 ≤ n) :
+theorem typeDSpinWeight_univ_eq_single {n : ℕ} (hn : 1 ≤ n) :
     typeDSpinWeight (Finset.univ : Finset (Fin n)) =
       Pi.single (⟨n - 1, by omega⟩ : Fin n) 1 := by
   classical
@@ -412,14 +412,14 @@ theorem typeDSpinWeight_univ {n : ℕ} (hn : 1 ≤ n) :
 
 /-- **Erasing the final sign from the all-positive type-`D` spin weight gives the penultimate
 fundamental weight.** This pins the order of the two fork weights under the diagram symmetry. -/
-theorem typeDSpinWeight_univ_erase_last {n : ℕ} (hn : 2 ≤ n) :
+theorem typeDSpinWeight_univ_erase_last_eq_single {n : ℕ} (hn : 2 ≤ n) :
     typeDSpinWeight
         ((Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n)) =
       Pi.single (⟨n - 2, by omega⟩ : Fin n) 1 := by
   classical
   rw [← typeDSpinGraphPerm_of_mem n (by omega) (Finset.mem_univ _)]
   funext i
-  rw [typeDSpinWeight_typeDSpinGraphPerm_apply hn, typeDSpinWeight_univ (by omega),
+  rw [typeDSpinWeight_typeDSpinGraphPerm_apply hn, typeDSpinWeight_univ_eq_single (by omega),
     Pi.single_apply, Pi.single_apply]
   by_cases hpen : (i : ℕ) = n - 2
   · have hi : i = (⟨n - 2, by omega⟩ : Fin n) := Fin.ext hpen
@@ -477,14 +477,14 @@ theorem span_range_typeDSpinWeight_eq_top (n : ℕ) :
       apply Fin.ext
       dsimp only
       omega
-    rw [hi, ← typeDSpinWeight_univ (n := n) (by omega)]
+    rw [hi, ← typeDSpinWeight_univ_eq_single (n := n) (by omega)]
     exact Submodule.subset_span ⟨Finset.univ, rfl⟩
   · by_cases hpenultimate : (i : ℕ) + 2 = n
     · have hi : i = (⟨n - 2, by omega⟩ : Fin n) := by
         apply Fin.ext
         dsimp only
         omega
-      rw [hi, ← typeDSpinWeight_univ_erase_last (n := n) (by omega)]
+      rw [hi, ← typeDSpinWeight_univ_erase_last_eq_single (n := n) (by omega)]
       exact Submodule.subset_span ⟨
         (Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n), rfl⟩
     · have hi : (i : ℕ) + 2 < n := by omega

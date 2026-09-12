@@ -5,14 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 public import Mathlib.RepresentationTheory.Subrepresentation
 public import TauCeti.RepresentationTheory.Spin.Representation
 -- Private: `CliffordAlgebra.contractLeft_mem_evenOdd` is used only inside a proof, and
 -- `CliffordAction` imports this module privately too, so it is not available transitively.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
--- Private: the grading base cases and `Module.Basis.exteriorAlgebra_mem_evenOdd_card` are used
--- only inside proofs.
+-- Private: `CliffordAlgebra.exists_algebraMap_of_mem_range_ι_pow_zero` and
+-- `CliffordAlgebra.exists_ι_of_mem_range_ι_pow_one` are used only inside a proof.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 -- Private: `Subrepresentation.mem_toSubmodule`, `Subrepresentation.toSubmodule_bot` and
 -- `Subrepresentation.toSubmodule_top` are used only inside a proof.
@@ -79,9 +78,6 @@ belong to the complex theory and are not proved here.
   of `spinRep`, so the splitting is one of representations.
 * `TauCeti.nontrivial_spinPlus` and `TauCeti.nontrivial_spinMinus`: neither summand is zero, the
   odd one as soon as `W` is nonzero.
-* `Module.Basis.exteriorAlgebra_univ_mem_spinPlus_of_even` and its three parity companions: the two
-  coordinate-basis vectors indexed by `univ` and by `univ` with its final index erased lie in the
-  expected half-spin summands according to the rank parity.
 * `TauCeti.coe_spinPlusAction_spinGroup_apply` and
   `TauCeti.coe_spinMinusAction_spinGroup_apply`: the two bundlings agree, in that
   the even-subalgebra actions restrict along the spin group to the subrepresentations of
@@ -147,79 +143,6 @@ theorem mem_spinPlus {s : ExteriorAlgebra K P.W} :
 theorem mem_spinMinus {s : ExteriorAlgebra K P.W} :
     s ∈ spinMinus Q P ↔ s ∈ evenOdd (0 : QuadraticForm K P.W) 1 := by
   rw [spinMinus_def]
-
-end TauCeti
-
-namespace Module.Basis
-
-/-! ### Coordinate-basis parity -/
-
-variable {K : Type u} [CommRing K] {V : Type v} [AddCommGroup V] [Module K V]
-  {Q : QuadraticForm K V}
-
-/-- The all-coordinate exterior-basis vector belongs to the even half-spin summand in even
-rank. -/
-theorem exteriorAlgebra_univ_mem_spinPlus_of_even {n : ℕ}
-    {P : TauCeti.SpinPolarizationData Q} (b : Module.Basis (Fin n) K P.W) (hn : Even n) :
-    b.ExteriorAlgebra (Finset.univ : Finset (Fin n)) ∈ TauCeti.spinPlus Q P := by
-  rw [TauCeti.spinPlus_def]
-  have h := b.exteriorAlgebra_mem_evenOdd_card (Finset.univ : Finset (Fin n))
-  rw [Finset.card_univ, Fintype.card_fin, hn.natCast_zmod_two] at h
-  exact h
-
-/-- The all-coordinate exterior-basis vector belongs to the odd half-spin summand in odd
-rank. -/
-theorem exteriorAlgebra_univ_mem_spinMinus_of_odd {n : ℕ}
-    {P : TauCeti.SpinPolarizationData Q} (b : Module.Basis (Fin n) K P.W) (hn : Odd n) :
-    b.ExteriorAlgebra (Finset.univ : Finset (Fin n)) ∈ TauCeti.spinMinus Q P := by
-  rw [TauCeti.spinMinus_def]
-  have h := b.exteriorAlgebra_mem_evenOdd_card (Finset.univ : Finset (Fin n))
-  rw [Finset.card_univ, Fintype.card_fin] at h
-  rwa [hn.natCast_zmod_two] at h
-
-/-- In odd rank, erasing the final coordinate from the all-coordinate exterior-basis vector puts
-it in the even half-spin summand. -/
-theorem exteriorAlgebra_univ_erase_last_mem_spinPlus_of_odd {n : ℕ}
-    {P : TauCeti.SpinPolarizationData Q} (b : Module.Basis (Fin n) K P.W) (hn : Odd n) :
-    b.ExteriorAlgebra
-        ((Finset.univ : Finset (Fin n)).erase
-          (⟨n - 1, by have := hn.pos; omega⟩ : Fin n)) ∈
-      TauCeti.spinPlus Q P := by
-  rw [TauCeti.spinPlus_def]
-  have h := b.exteriorAlgebra_mem_evenOdd_card
-    ((Finset.univ : Finset (Fin n)).erase
-      (⟨n - 1, by have := hn.pos; omega⟩ : Fin n))
-  rw [Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ, Fintype.card_fin] at h
-  have hpar : Even (n - 1) := by
-    obtain ⟨k, hk⟩ := hn
-    exact ⟨k, by omega⟩
-  rw [hpar.natCast_zmod_two] at h
-  exact h
-
-/-- In positive even rank, erasing the final coordinate from the all-coordinate exterior-basis
-vector puts it in the odd half-spin summand. -/
-theorem exteriorAlgebra_univ_erase_last_mem_spinMinus_of_even {n : ℕ}
-    {P : TauCeti.SpinPolarizationData Q} (b : Module.Basis (Fin n) K P.W)
-    (hn : 1 ≤ n) (heven : Even n) :
-    b.ExteriorAlgebra
-        ((Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n)) ∈
-      TauCeti.spinMinus Q P := by
-  rw [TauCeti.spinMinus_def]
-  have h := b.exteriorAlgebra_mem_evenOdd_card
-    ((Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n))
-  rw [Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ, Fintype.card_fin] at h
-  have hpar : Odd (n - 1) := by
-    obtain ⟨k, hk⟩ := heven
-    exact ⟨k - 1, by omega⟩
-  rwa [hpar.natCast_zmod_two] at h
-
-end Module.Basis
-
-namespace TauCeti
-
-variable {K : Type u} [CommRing K] {V : Type v} [AddCommGroup V] [Module K V]
-
-variable {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
 
 /-- **The spinor module is the sum of its two half-spin summands**, `S = S⁺ ⊕ S⁻`. This is the
 exterior parity grading, and it holds for every polarization. Invariance of the summands
