@@ -195,8 +195,8 @@ theorem iInf_unitFiltration : ⨅ i, unitFiltration K i = ⊥ := by
   simp only [Subgroup.mem_iInf] at hx
   rw [Subgroup.mem_bot, ← Units.val_eq_one, ← sub_eq_zero]
   by_contra h
-  obtain ⟨i, hi⟩ := exists_valuation_pow_lt_of_irreducible hπ
-      (γ := valuation K ((x : K) - 1)) (by simpa using h)
+  obtain ⟨i, hi⟩ := exists_pow_lt₀ (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ)
+      (Units.mk0 (valuation K ((x : K) - 1)) (by simpa using h))
   exact absurd ((mem_unitFiltration_iff_valuation_le hπ).mp (hx i)).2 hi.not_ge
 
 section Topology
@@ -282,8 +282,8 @@ theorem hasBasis_nhds_one_unitFiltration :
     obtain ⟨t, ht, hts⟩ := hs
     obtain ⟨γ, -, hγ⟩ := (IsValuativeTopology.hasBasis_nhds (1 : K)).mem_iff.mp
       (by simpa using ht)
-    obtain ⟨i, hi⟩ := exists_valuation_pow_lt_of_irreducible hπ
-      (γ := (γ : ValueGroupWithZero K)) γ.ne_zero
+    obtain ⟨i, hi⟩ :=
+      exists_pow_lt₀ (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ) γ
     refine ⟨i, trivial, fun x hx ↦ hts ?_⟩
     exact hγ (((mem_unitFiltration_iff_valuation_le hπ).mp hx).2.trans_lt hi)
   · rintro ⟨i, -, hi⟩

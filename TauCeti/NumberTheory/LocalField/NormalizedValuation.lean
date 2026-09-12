@@ -57,8 +57,6 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
   strong triangle inequality.
 * `TauCeti.eq_normalizedValuation`: the kernel condition together with the uniformizer equation
   characterizes the normalized valuation among homomorphisms `Kˣ →* Multiplicative ℤ`.
-* `TauCeti.exists_valuation_pow_lt_of_irreducible`: the powers of a uniformizer are cofinal
-  towards `0` in the value group, which is its discreteness.
 * `TauCeti.isUnit_iff_normalizedValuationWithZero_eq_one`,
   `TauCeti.mem_integer_iff_toAdd_normalizedValuation_nonneg` and
   `TauCeti.dvd_iff_toAdd_normalizedValuation_le`: the normalized valuation reads off the units,
@@ -333,30 +331,6 @@ theorem exists_eq_valuation_zpow_of_irreducible {π : 𝒪[K]} (hπ : Irreducibl
   obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp hγ
   refine ⟨n, ?_⟩
   simpa using congrArg Units.val hn.symm
-
-/-- The powers of a uniformizer are eventually below any prescribed nonzero value: the value
-group of a nonarchimedean local field is discrete. -/
-theorem exists_valuation_pow_lt_of_irreducible {π : 𝒪[K]} (hπ : Irreducible π)
-    {γ : ValueGroupWithZero K} (hγ : γ ≠ 0) :
-    ∃ i : ℕ, valuation K (π : K) ^ i < γ := by
-  obtain ⟨y, hy⟩ := ValuativeRel.valuation_surjective γ
-  have hy0 : y ≠ 0 := fun h ↦ hγ (by simp [← hy, h])
-  have hπ0 : (π : K) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
-  obtain ⟨u, rfl⟩ : ∃ u : Kˣ, (u : K) = y := ⟨Units.mk0 y hy0, rfl⟩
-  have hle : ∀ i : ℕ, (i : ℤ) ≤ (normalizedValuation K u).toAdd
-      ↔ valuation K (u : K) ≤ valuation K (π : K) ^ i := by
-    intro i
-    have key : valuation K (π : K) ^ i
-        = valuation K ((Units.mk0 (π : K) hπ0 ^ i : Kˣ) : K) := by
-      rw [Units.val_pow_eq_pow_val, map_pow, Units.val_mk0]
-    have hpow : (normalizedValuation K (Units.mk0 (π : K) hπ0 ^ i)).toAdd = (i : ℤ) := by
-      rw [map_pow, normalizedValuation_irreducible hπ]
-      simp
-    rw [key, ← toAdd_normalizedValuation_le_iff_valuation_le (Units.mk0 (π : K) hπ0 ^ i) u, hpow]
-  refine ⟨(normalizedValuation K u).toAdd.toNat + 1, ?_⟩
-  rw [← hy, ← not_le, ← hle]
-  have := Int.self_le_toNat (normalizedValuation K u).toAdd
-  omega
 
 section NormalizedAbsoluteValue
 
