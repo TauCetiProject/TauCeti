@@ -69,6 +69,8 @@ the symplectic group scheme or the pinned simply connected Chevalley--Demazure g
   the entrywise Frobenius action.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate III, for the numbering of the
   type-`C` diagram that the root subgroups below are indexed by.
+* The Frobenius API and proof plan are adapted from the `TauCeti.RankTwoBLieIndex.frobenius`
+  block in `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB2.lean`.
 -/
 
 -- The signatures realized here follow the human-authored formal skeleton
@@ -221,12 +223,11 @@ theorem frobenius_weightTorusPoints
 /-- **A point of the ambient group is fixed by the Frobenius exactly when all of its matrix entries
 lie in the field of definition.** Writing `𝔽_q` for `TauCeti.ValidLieTypeIndex.fixedField`, the copy
 of the field of `q` elements inside the algebraic closure, the fixed points of the Frobenius are the
-points of the standard symplectic carrier whose entries all lie in `𝔽_q`.
-
-As for `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff`, this is not a `simp` lemma:
-`TauCeti.fixedSubgroup` is `MonoidHom.eqLocus` against the identity, so `simp` rewrites its
-left-hand side to `d.frobenius g = g` through `MonoidHom.mem_eqLocus`, and the `simpNF` linter
-rejects the annotation. -/
+points of the standard symplectic carrier whose entries all lie in `𝔽_q`. -/
+-- Not `@[simp]`, as for `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff`:
+-- `TauCeti.fixedSubgroup` is `MonoidHom.eqLocus` against the identity, so `simp` rewrites its
+-- left-hand side to `d.frobenius g = g` through `MonoidHom.mem_eqLocus`, and the `simpNF` linter
+-- rejects the annotation.
 theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.frobenius ↔
       ∀ r c, ((g : Matrix.GeneralLinearGroup
