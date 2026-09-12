@@ -25,7 +25,7 @@ covariance bilinear form.
 
 * `TauCeti.Probability.integral_id_map_multinomialToEuclidean_multinomialMeasure` computes the
   Euclidean mean.
-* `TauCeti.Probability.covariance_apply_map_multinomialToEuclidean_multinomialMeasure` computes
+* `TauCeti.Probability.covariance_eval_map_multinomialToEuclidean_multinomialMeasure` computes
   every coordinate covariance.
 * `TauCeti.Probability.covMatrix_map_multinomialToEuclidean_multinomialMeasure` gives the
   covariance matrix as a diagonal matrix minus a rank-one matrix.
@@ -70,8 +70,10 @@ private theorem hasLaw_apply_map_multinomialToEuclidean (n : ℕ)
       ((multinomialMeasure n p).map multinomialToEuclidean) := by
   refine ⟨by fun_prop, ?_⟩
   rw [Measure.map_map (by fun_prop) measurable_multinomialToEuclidean]
-  change (multinomialMeasure n p).map (fun k ↦ multinomialToEuclidean k i) = _
-  simpa only [multinomialToEuclidean_apply] using (hasLaw_multinomial_apply n p i).map_eq
+  rw [← (hasLaw_multinomial_apply n p i).map_eq]
+  apply Measure.map_congr
+  filter_upwards [] with k
+  simpa only [Function.comp_apply] using multinomialToEuclidean_apply k i
 
 open Classical in
 /-- Map two selected cells to `true` and all remaining cells to `false`. -/
@@ -129,10 +131,10 @@ private theorem hasLaw_add_apply_map_multinomialToEuclidean (n : ℕ)
       ((multinomialMeasure n p).map multinomialToEuclidean) := by
   refine ⟨by fun_prop, ?_⟩
   rw [Measure.map_map (by fun_prop) measurable_multinomialToEuclidean]
-  change (multinomialMeasure n p).map
-    (fun k ↦ multinomialToEuclidean k i + multinomialToEuclidean k j) = _
-  simpa only [multinomialToEuclidean_apply] using
-    (hasLaw_multinomial_add_apply n p i j hij).map_eq
+  rw [← (hasLaw_multinomial_add_apply n p i j hij).map_eq]
+  apply Measure.map_congr
+  filter_upwards [] with k
+  simp only [Function.comp_apply, multinomialToEuclidean_apply]
 
 /-- The Euclidean multinomial law has a finite second moment. -/
 theorem memLp_id_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
@@ -145,6 +147,7 @@ theorem memLp_id_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
 
 /-- The mean of the Euclidean multinomial law is the trial count times its vector of cell
 probabilities. -/
+@[simp]
 theorem integral_id_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
     (p : StdSimplex NNReal ι) :
     ∫ z, z ∂(multinomialMeasure n p).map multinomialToEuclidean =
@@ -157,16 +160,14 @@ theorem integral_id_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
       ((multinomialMeasure n p).map multinomialToEuclidean) := by
     exact hint.congr (Filter.Eventually.of_forall fun _ ↦ rfl)
   ext i
-  change (EuclideanSpace.proj i) (∫ z, z ∂(multinomialMeasure n p).map
-    multinomialToEuclidean) = _
-  rw [← (EuclideanSpace.proj i).integral_comp_comm hint']
-  change (∫ z, z i ∂(multinomialMeasure n p).map multinomialToEuclidean) = _
-  rw [integral_of_hasLaw_binomial (hasLaw_apply_map_multinomialToEuclidean n p i)]
+  rw [eval_integral_piLp (fun j ↦ hint'.eval_piLp j) i,
+    integral_of_hasLaw_binomial (hasLaw_apply_map_multinomialToEuclidean n p i)]
   simp
   ring
 
 /-- The variance of a coordinate of the Euclidean multinomial law is `n pᵢ (1 - pᵢ)`. -/
-theorem variance_apply_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
+@[simp]
+theorem variance_eval_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
     (p : StdSimplex NNReal ι) (i : ι) :
     Var[fun z : EuclideanSpace ℝ ι ↦ z i;
       (multinomialMeasure n p).map multinomialToEuclidean] =
@@ -176,7 +177,7 @@ theorem variance_apply_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
   ring
 
 /-- Distinct coordinates of the Euclidean multinomial law have covariance `-n pᵢ pⱼ`. -/
-theorem covariance_apply_map_multinomialToEuclidean_multinomialMeasure_of_ne (n : ℕ)
+theorem covariance_eval_map_multinomialToEuclidean_multinomialMeasure_of_ne (n : ℕ)
     (p : StdSimplex NNReal ι) {i j : ι} (hij : i ≠ j) :
     cov[fun z : EuclideanSpace ℝ ι ↦ z i, fun z ↦ z j;
       (multinomialMeasure n p).map multinomialToEuclidean] =
@@ -192,15 +193,15 @@ theorem covariance_apply_map_multinomialToEuclidean_multinomialMeasure_of_ne (n 
   have hadd := variance_fun_add hi hj
   rw [variance_of_hasLaw_binomial
       (hasLaw_add_apply_map_multinomialToEuclidean n p i j hij),
-    variance_apply_map_multinomialToEuclidean_multinomialMeasure,
-    variance_apply_map_multinomialToEuclidean_multinomialMeasure] at hadd
+    variance_eval_map_multinomialToEuclidean_multinomialMeasure,
+    variance_eval_map_multinomialToEuclidean_multinomialMeasure] at hadd
   rw [StdSimplex.coe_multinomialCellProbability,
     weights_map_pairCellMap_apply p i j hij] at hadd
   push_cast at hadd
   nlinarith
 
 /-- Every entry of the Euclidean multinomial covariance is `n (pᵢ δᵢⱼ - pᵢ pⱼ)`. -/
-theorem covariance_apply_map_multinomialToEuclidean_multinomialMeasure [DecidableEq ι]
+theorem covariance_eval_map_multinomialToEuclidean_multinomialMeasure [DecidableEq ι]
     (n : ℕ) (p : StdSimplex NNReal ι) (i j : ι) :
     cov[fun z : EuclideanSpace ℝ ι ↦ z i, fun z ↦ z j;
       (multinomialMeasure n p).map multinomialToEuclidean] =
@@ -209,10 +210,10 @@ theorem covariance_apply_map_multinomialToEuclidean_multinomialMeasure [Decidabl
   by_cases hij : i = j
   · subst j
     rw [covariance_self (by fun_prop),
-      variance_apply_map_multinomialToEuclidean_multinomialMeasure]
+      variance_eval_map_multinomialToEuclidean_multinomialMeasure]
     simp
     ring
-  · rw [covariance_apply_map_multinomialToEuclidean_multinomialMeasure_of_ne n p hij]
+  · rw [covariance_eval_map_multinomialToEuclidean_multinomialMeasure_of_ne n p hij]
     simp [Matrix.diagonal_apply_ne _ hij]
     ring
 
@@ -225,7 +226,7 @@ theorem covMatrix_map_multinomialToEuclidean_multinomialMeasure [DecidableEq ι]
       (n : ℝ) • (Matrix.diagonal (fun i ↦ (p.weights i : ℝ)) -
         Matrix.vecMulVec (fun i ↦ (p.weights i : ℝ)) fun i ↦ (p.weights i : ℝ)) := by
   ext i j
-  rw [covMatrix_apply, covariance_apply_map_multinomialToEuclidean_multinomialMeasure]
+  rw [covMatrix_apply, covariance_eval_map_multinomialToEuclidean_multinomialMeasure]
   simp only [Matrix.smul_apply, Matrix.sub_apply, Matrix.vecMulVec_apply, smul_eq_mul]
 
 /-- The covariance bilinear form of the Euclidean multinomial law is represented by
