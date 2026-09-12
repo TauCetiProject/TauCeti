@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
+public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Connected
 import TauCeti.Algebra.AlgebraicGroup.Connected.Comultiplication
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Comap
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
@@ -146,7 +147,7 @@ private theorem identityComponentHopfIdeal_quotient_derivedDefiningIdeal_eq_bot
 
 /-- The derived subgroup of a connected finite-type affine group over an algebraically closed
 field has connected spectrum. Smoothness and reducedness are not required. -/
-theorem connectedSpace_quotient_derivedDefiningIdeal
+theorem connectedSpace_derived
     (H : Type v) [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
     [ConnectedSpace (PrimeSpectrum H)] :
     ConnectedSpace (PrimeSpectrum (H ⧸ (derivedDefiningIdeal (R := k) H).toIdeal)) := by
@@ -165,12 +166,22 @@ theorem connectedSpace_quotient_derivedDefiningIdeal
 
 /-- The derived subgroup of a connected finite-type affine group over an algebraically closed
 field is geometrically connected. -/
-theorem geometricallyConnectedCommHopfAlgProperty_quotient_derivedDefiningIdeal
+theorem geometricallyConnectedCommHopfAlgProperty_derived
     (H : Type v) [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
     [ConnectedSpace (PrimeSpectrum H)] :
     geometricallyConnectedCommHopfAlgProperty k
       (quotient (_root_.CommHopfAlgCat.of k H) (derivedDefiningIdeal H)) :=
   (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k _).mpr
-    (connectedSpace_quotient_derivedDefiningIdeal H)
+    (connectedSpace_derived H)
+
+/-- The structural morphism of the derived group scheme of a connected finite-type affine
+group over an algebraically closed field is geometrically connected. -/
+instance geometricallyConnected_derivedGroupScheme
+    (H : _root_.CommHopfAlgCat.{u} k) [Algebra.FiniteType k H]
+    [ConnectedSpace (PrimeSpectrum H)] :
+    AlgebraicGeometry.GeometricallyConnected (derivedGroupScheme H).X.hom :=
+  (geometricallyConnectedCommHopfAlg_iff_geometricallyConnected_hopfSpec k
+    (quotient H (derivedDefiningIdeal H))).mp
+      (geometricallyConnectedCommHopfAlgProperty_derived H)
 
 end TauCeti.CommHopfAlgCat
