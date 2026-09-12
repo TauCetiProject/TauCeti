@@ -94,11 +94,6 @@ namespace TauCeti.SuzukiLieIndex
 
 variable (d : SuzukiLieIndex)
 
-/-- The algebraic closure attached to a Suzuki index has characteristic two. -/
-instance charP_closure_two : CharP d.1.Closure 2 := by
-  rw [← d.characteristic_eq_two]
-  infer_instance
-
 /-- **The half-Frobenius of a Suzuki index**: the special isogeny of its ambient group. -/
 noncomputable def halfFrobenius :
     d.toRankTwoBLieIndex.AmbientGroup →* d.toRankTwoBLieIndex.AmbientGroup :=
