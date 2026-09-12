@@ -67,13 +67,6 @@ module `N`.
 abbrev ComplexTorus (N : Type*) [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N] :=
   AddChar (IntegralCharacter N) ℂˣ
 
-/-- The standard multiplicative-character presentation of `ComplexTorus`. -/
-@[expose]
-def complexTorusMonoidHomEquiv (N : Type*) [AddCommGroup N] [Module.Free ℤ N]
-    [Module.Finite ℤ N] :
-    ComplexTorus N ≃* (Multiplicative (IntegralCharacter N) →* ℂˣ) :=
-  AddChar.toMonoidHomMulEquiv
-
 /-- Evaluation of the integral character `m` as a homomorphism on complex-torus points.
 
 The map is the homomorphism obtained by evaluating an additive character at `m`. -/
@@ -89,49 +82,9 @@ theorem characterEvaluation_apply (m : IntegralCharacter N) (x : ComplexTorus N)
     characterEvaluation m x = x m :=
   by simp [characterEvaluation]
 
-/-- The zero character evaluates to one. -/
-theorem characterEvaluation_zero (x : ComplexTorus N) :
-    characterEvaluation (0 : IntegralCharacter N) x = 1 :=
-  x.map_zero_eq_one
-
-/-- A sum of integral characters evaluates as a product. -/
-theorem characterEvaluation_add (m n : IntegralCharacter N) (x : ComplexTorus N) :
-    characterEvaluation (m + n) x = characterEvaluation m x * characterEvaluation n x :=
-  x.map_add_eq_mul m n
-
-/-- The negative of an integral character evaluates as the inverse. -/
-theorem characterEvaluation_neg (m : IntegralCharacter N) (x : ComplexTorus N) :
-    characterEvaluation (-m) x = (characterEvaluation m x)⁻¹ :=
-  x.map_neg_eq_inv m
-
-/-- An integral multiple of a character evaluates as the corresponding integral power. -/
-theorem characterEvaluation_zsmul (z : ℤ) (m : IntegralCharacter N) (x : ComplexTorus N) :
-    characterEvaluation (z • m) x = characterEvaluation m x ^ z :=
-  x.map_zsmul_eq_zpow z m
-
-/-- Every integral character evaluates to one at the identity torus point. -/
-theorem characterEvaluation_one (m : IntegralCharacter N) :
-    characterEvaluation m (1 : ComplexTorus N) = 1 :=
-  (characterEvaluation m).map_one
-
-/-- Character evaluation is multiplicative in the torus point. -/
-theorem characterEvaluation_mul (m : IntegralCharacter N) (x y : ComplexTorus N) :
-    characterEvaluation m (x * y) = characterEvaluation m x * characterEvaluation m y :=
-  (characterEvaluation m).map_mul x y
-
-/-- Pullback of integral characters along an additive map of lattices. -/
-def pullbackCharacter (f : N →+ N') : IntegralCharacter N' →+ IntegralCharacter N :=
-  AddMonoidHom.compHom' f
-
-/-- Pullback of a character is precomposition with the lattice map. -/
-@[simp]
-theorem pullbackCharacter_apply (f : N →+ N') (m : IntegralCharacter N') (n : N) :
-    pullbackCharacter f m n = m (f n) :=
-  by simp [pullbackCharacter]
-
 /-- The map of complex tori induced covariantly by an additive map of lattices. -/
 def complexTorusMap (f : N →+ N') : ComplexTorus N →* ComplexTorus N' where
-  toFun x := x.compAddMonoidHom (pullbackCharacter f)
+  toFun x := x.compAddMonoidHom (AddMonoidHom.compHom' f)
   map_one' := by
     apply AddChar.ext
     intro m
@@ -146,7 +99,7 @@ def complexTorusMap (f : N →+ N') : ComplexTorus N →* ComplexTorus N' where
 theorem characterEvaluation_complexTorusMap (f : N →+ N') (x : ComplexTorus N)
     (m : IntegralCharacter N') :
     (complexTorusMap f x) m =
-      characterEvaluation (pullbackCharacter f m) x :=
+      characterEvaluation (AddMonoidHom.compHom' f m) x :=
   by simp [complexTorusMap]
 
 /-- The identity lattice map induces the identity map of complex tori. -/
@@ -183,7 +136,7 @@ theorem exists_characterEvaluation_ne {x y : ComplexTorus N} (h : x ≠ y) :
 with a product of copies of `ℂˣ`.  The last step is Tau Ceti's `freeAbelianCharEquiv`. -/
 noncomputable def complexTorusCoordinates {σ : Type*}
     (e : IntegralCharacter N ≃+ (σ →₀ ℤ)) : ComplexTorus N ≃* (σ → ℂˣ) :=
-  (complexTorusMonoidHomEquiv N).trans
+  AddChar.toMonoidHomMulEquiv.trans
     (e.toMultiplicative.monoidHomCongrLeft (N := ℂˣ) |>.trans freeAbelianCharEquiv)
 
 /-- A coordinate supplied by a free presentation is evaluation at the corresponding transported
@@ -192,7 +145,6 @@ standard generator of the character lattice. -/
 theorem complexTorusCoordinates_apply {σ : Type*} (e : IntegralCharacter N ≃+ (σ →₀ ℤ))
     (x : ComplexTorus N) (i : σ) :
     complexTorusCoordinates e x i = x (e.symm (Finsupp.single i 1)) :=
-  by simp [complexTorusCoordinates, complexTorusMonoidHomEquiv,
-    AddChar.toMonoidHomMulEquiv]
+  by simp [complexTorusCoordinates, AddChar.toMonoidHomMulEquiv]
 
 end TauCeti.Toric
