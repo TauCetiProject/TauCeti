@@ -674,8 +674,7 @@ theorem exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton
         -- Normalize the singleton word product to the correcting group element.
         (show ∀ y ∈ W ⊔ Submodule.span K {x},
           ((((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)) y) = y by
-            apply TauCeti.LinearMap.eqOn_sup_span_singleton
-              (f := (r * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap)
+            apply ((r * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap).eqOn_sup_span_singleton
               (g := LinearMap.id)
             · intro w hw
               -- Expose the reflection underlying the orthogonal-group product.
@@ -705,8 +704,8 @@ theorem exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton
         -- Normalize the two-element word product to the correcting group elements.
         (show ∀ y ∈ W ⊔ Submodule.span K {x},
           (((((r₁ * r₂) * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)) y) = y by
-            apply TauCeti.LinearMap.eqOn_sup_span_singleton
-              (f := ((r₁ * r₂) * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap)
+            let f := ((r₁ * r₂) * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap
+            apply f.eqOn_sup_span_singleton
               (g := LinearMap.id)
             · intro w hw
               -- Expose the two reflections underlying the orthogonal-group product.
