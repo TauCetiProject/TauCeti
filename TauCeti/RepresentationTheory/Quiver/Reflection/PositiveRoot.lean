@@ -18,21 +18,6 @@ the reflection induction: every positive root is carried to a **simple** root `�
 by finitely many simple reflections read along a repetition-free word running over all the
 vertices, so every positive root lies in the Weyl orbit of a simple one.
 
-The mechanism is `TauCeti.exists_vertexPreReflectionList_pow_apply_neg`, which says that a nonzero
-dimension vector cannot stay nonnegative under all the iterates of the Coxeter transformation.
-Following the reflections one at a time until nonnegativity first fails isolates a single step
-`d ↦ sⱼ d` that turns a nonnegative root negative, and the whole content is that such a `d` is
-already `αⱼ` (`TauCeti.vertexPreReflection_apply_self_neg_iff_eq_single`).
-
-That step is a computation with the polarized Tits form. Write `a = d j` and
-`S = ∑ᵥ (#(j ⟶ v) + #(v ⟶ j)) dᵥ`, so that the reflected coordinate is `sⱼ d j = -a + S`; it is
-negative exactly when `a > S`, and `S ≥ 0` because `d` is nonnegative. Splitting `d = r + a αⱼ`
-with `r` supported away from `j` makes `S = -⟨αⱼ, r⟩` for the polarized form, whence
-
-`1 = q(d) = q(r) + a (a - S)`
-
-with `q(r) ≥ 0` and `a (a - S) ≥ 1`, forcing `q(r) = 0`, hence `r = 0` by anisotropy, and `a = 1`.
-
 On the representation side this is the numerical half of the second direction of Gabriel's
 bijection: `TauCeti.isoClassDimVector_injective` embeds the isomorphism classes of indecomposables
 into the positive roots, and an indecomposable of a prescribed positive root is built by
@@ -213,9 +198,7 @@ theorem exists_vertexPreReflectionList_take_apply_eq_single (hpd : (titsForm Q).
 quiver with positive definite Tits form, a nonnegative dimension vector has Tits norm one if and
 only if it is obtained from a simple dimension vector by a product of simple reflections.
 
-The forward direction is the descent, read backwards along the word it produces; the reverse
-direction only records that a reflection product preserves the Tits form. Combined with
-`TauCeti.titsForm_dimVector_eq_one_of_indecomposable`, the forward direction places the dimension
+Combined with `TauCeti.titsForm_dimVector_eq_one_of_indecomposable`, this places the dimension
 vector of every finite-dimensional indecomposable representation in the Weyl orbit of a simple
 dimension vector. -/
 theorem titsForm_eq_one_iff_exists_vertexPreReflectionList_single (hpd : (titsForm Q).PosDef)
