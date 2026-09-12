@@ -50,6 +50,15 @@ public section
 
 open CategoryTheory CategoryTheory.Limits
 
+universe u v
+
+private lemma semimoduleCat_ofHom_zero {R : Type u} {M N : Type v} [Semiring R]
+    [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] :
+    SemimoduleCat.ofHom (0 : M →ₗ[R] N) = 0 := by
+  apply SemimoduleCat.hom_injective
+  simp
+
 namespace TauCeti
 
 namespace GridDiagram
@@ -98,8 +107,8 @@ noncomputable def unblockedComplex :
     HomologicalComplex (SemimoduleCat (MvPolynomial (Fin n) R)) (ComplexShape.refl Unit) :=
   oneObjectHomologicalComplex (SemimoduleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n))
     (SemimoduleCat.ofHom (G.unblockedDifferential R)) (by
-    rw [← SemimoduleCat.ofHom_comp, G.unblockedDifferential_comp_self_eq_zero R]
-    rfl)
+    rw [← SemimoduleCat.ofHom_comp, G.unblockedDifferential_comp_self_eq_zero R,
+      semimoduleCat_ofHom_zero])
 
 /-- The unique object of the unblocked complex is the unblocked grid chain module. -/
 @[simp]
@@ -132,8 +141,8 @@ noncomputable def simplyBlockedComplex (i : Fin n) :
   oneObjectHomologicalComplex
     (SemimoduleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i))
     (SemimoduleCat.ofHom (G.simplyBlockedDifferential R i)) (by
-    rw [← SemimoduleCat.ofHom_comp, G.simplyBlockedDifferential_comp_self_eq_zero R i]
-    rfl)
+    rw [← SemimoduleCat.ofHom_comp, G.simplyBlockedDifferential_comp_self_eq_zero R i,
+      semimoduleCat_ofHom_zero])
 
 /-- The unique object of the one-variable specialization is its specialized grid chain module. -/
 @[simp]
