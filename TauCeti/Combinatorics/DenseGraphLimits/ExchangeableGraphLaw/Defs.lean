@@ -183,8 +183,7 @@ theorem ext_upperMass {L L' : ExchangeableGraphLaw}
         Finset.sum_congr rfl fun H hH => ih H (Finset.mem_filter.1 hH).2
       have hadd := ((hsplit L).symm.trans (h k G)).trans (hsplit L')
       rwa [htail, add_right_cancel_iff] at hadd
-  exact ext fun k => Measure.ext_of_singleton fun G =>
-    (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)).1 (key k G)
+  exact ext fun k => Measure.ext_of_measureReal_singleton (key k)
 
 end ExchangeableGraphLaw
 
