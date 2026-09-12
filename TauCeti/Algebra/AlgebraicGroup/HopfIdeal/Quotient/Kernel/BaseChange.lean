@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.TensorProduct.Quotient
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
 
@@ -25,10 +26,19 @@ product) and the first isomorphism theorem for the counit
 introduced with `letI` in the statement, as they are determined by `f` and the counit
 rather than by instance search.
 
+Two consequences of the identification are recorded here: the kernel coordinate ring is
+finite over the base as soon as the coordinate morphism is finite, and faithfully flat over
+the base as soon as the coordinate morphism is faithfully flat. Both are the corresponding
+base-change stability results transported across the identification.
+
 ## Main declarations
 
 * `TauCeti.CommHopfAlgCat.quotientKernelHopfIdealAlgEquiv`: the `K`-algebra equivalence
   from the kernel coordinate ring to `K ⊗[H] R`.
+* `TauCeti.CommHopfAlgCat.moduleFinite_quotient_kernelHopfIdeal`: the kernel coordinate
+  ring is finite over the base.
+* `TauCeti.CommHopfAlgCat.moduleFaithfullyFlat_quotient_kernelHopfIdeal`: the kernel coordinate
+  ring is faithfully flat over the base.
 -/
 
 public section
@@ -117,6 +127,37 @@ lemma quotientKernelHopfIdealAlgEquiv_symm_tmul (f : H ⟶ K) (k : ↥K) (r : R)
     Algebra.TensorProduct.quotIdealMapEquivTensorQuot_symm_tmul, hr]
   rw [Algebra.smul_def, hK]
   rfl
+
+/-- The coordinate ring of the kernel is finite as a module over the base when the coordinate
+map is finite. -/
+theorem moduleFinite_quotient_kernelHopfIdeal {f : H ⟶ K} (hf : f.hom.toAlgHom.Finite) :
+    Module.Finite R (K ⧸ (kernelHopfIdeal f).toIdeal) := by
+  let : Algebra ↥H ↥K := f.hom.toAlgHom.toAlgebra
+  let : Algebra ↥H R := (Bialgebra.counitAlgHom R ↥H).toAlgebra
+  let _ : Module.Finite ↥H ↥K := hf
+  let _ : Module.Finite R (TensorProduct ↥H R ↥K) := inferInstance
+  let _ : Module.Finite R (TensorProduct ↥H ↥K R) :=
+    Module.Finite.equiv
+      ((_root_.TensorProduct.comm ↥H R ↥K).restrictScalars R)
+  exact Module.Finite.equiv
+    ((quotientKernelHopfIdealAlgEquiv f).restrictScalars R).toLinearEquiv.symm
+
+/-- The coordinate ring of the kernel is faithfully flat over the base when the coordinate
+map is faithfully flat. -/
+theorem moduleFaithfullyFlat_quotient_kernelHopfIdeal {f : H ⟶ K}
+    (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat) :
+    Module.FaithfullyFlat R (K ⧸ (kernelHopfIdeal f).toIdeal) := by
+  let : Algebra ↥H ↥K := f.hom.toAlgHom.toAlgebra
+  let : Algebra ↥H R := (Bialgebra.counitAlgHom R ↥H).toAlgebra
+  let _ : Module.FaithfullyFlat ↥H ↥K := by
+    rw [← RingHom.faithfullyFlat_algebraMap_iff]
+    exact hf
+  let _ : Module.FaithfullyFlat R (TensorProduct ↥H R ↥K) := inferInstance
+  let _ : Module.FaithfullyFlat R (TensorProduct ↥H ↥K R) :=
+    Module.FaithfullyFlat.of_linearEquiv R _
+      ((_root_.TensorProduct.comm ↥H R ↥K).symm.restrictScalars R)
+  exact Module.FaithfullyFlat.of_linearEquiv R _
+    ((quotientKernelHopfIdealAlgEquiv f).restrictScalars R).toLinearEquiv
 
 end CommHopfAlgCat
 

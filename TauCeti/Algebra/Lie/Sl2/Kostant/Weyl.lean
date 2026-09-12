@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+import TauCeti.Algebra.Algebra.Hom
 public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
 public import TauCeti.Algebra.Lie.Sl2.Kostant.GroupScheme
 public import TauCeti.Algebra.Lie.Sl2.Weyl.Standard
@@ -94,9 +95,8 @@ theorem rankOneCarrierPointsMap_weylPoint
   simp only [rankOneWeylPoint, MulEquiv.subgroupCongr_symm_apply]
   have hmap := congrArg Subtype.val
     (map_kostantToralWeylPoint e h ρ M hM hnil b rankOneWeight φ 0 1)
-  have hring : φ.toIntAlgHom.toRingHom = φ := RingHom.ext (RingHom.toIntAlgHom_apply φ)
-  simpa only [GeneralLinear.coe_mapHopfIdealPointsSubgroup,
-    MulEquiv.subgroupCongr_apply, hring] using hmap
+  simpa only [GeneralLinear.coe_mapHopfIdealPointsSubgroup, MulEquiv.subgroupCongr_apply,
+    RingHom.toIntAlgHom_toRingHom] using hmap
 
 /-- The integral rank-one Weyl automorphism sends a standard lattice basis vector to the reversed
 basis vector with the usual sign. -/

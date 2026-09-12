@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Frobenius
+import TauCeti.Algebra.Algebra.Hom
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 
 /-!
@@ -18,10 +19,10 @@ a monoid endomorphism of the points represented by `H`. When `H` is a Hopf algeb
 convolution points form a group. If `H` is also commutative, they are the points of the affine
 group scheme `Spec H`.
 
-This is the field-endomorphism part of the pinned Chevalley--Demazure interface in Layer 9 of the
-ReductiveGroups roadmap. Once a pinned group's integral coordinate Hopf algebra is constructed,
-`iterateFrobeniusPoints p n` supplies the `p ^ n`-power endomorphism on its points over an
-algebraic closure. The construction itself needs neither algebraic closedness nor finite type.
+This is the field-endomorphism part of the pinned Chevalley--Demazure interface: once a pinned
+group's integral coordinate Hopf algebra is constructed, `iterateFrobeniusPoints p n` supplies the
+`p ^ n`-power endomorphism on its points over an algebraic closure. The construction itself
+needs neither algebraic closedness nor finite type.
 
 ## Main definitions and results
 
@@ -37,12 +38,9 @@ algebraic closure. The construction itself needs neither algebraic closedness no
 
 The construction post-composes with Mathlib's `iterateFrobenius`, whose laws supply every proof
 here, and reuses Tau Ceti's convolution-valued functor of points. Those laws are equalities of
-ring homomorphisms, while `AlgHom.mapValue` consumes `ℤ`-algebra homomorphisms; Mathlib has
-`RingHom.toIntAlgHom_coe` and `toIntAlgHom_apply` but no identity or composition lemma for
-`RingHom.toIntAlgHom`, so three private lemmas below record its functoriality and transport the
-Mathlib equalities into `AlgHom`. This file advances the “points over an algebraically closed
-field” target in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`; that target explicitly
-requests the `q`-power Frobenius as its first field-endomorphism case.
+ring homomorphisms, while `AlgHom.mapValue` consumes `ℤ`-algebra homomorphisms; the functoriality
+of `RingHom.toIntAlgHom` that transports the one into the other lives in
+`TauCeti/Algebra/Algebra/Hom.lean`.
 -/
 
 public section
@@ -54,30 +52,6 @@ namespace TauCeti
 namespace Bialgebra
 
 universe u v w
-
-section ToIntAlgHom
-
-variable {R : Type*} {S : Type*} {T : Type*} [Ring R] [Ring S] [Ring T]
-
-/-- `RingHom.toIntAlgHom` sends the identity ring homomorphism to the identity `ℤ`-algebra
-homomorphism. Kept private: it is a wrapper identity used only to transport Mathlib's ring
-homomorphism equalities into `AlgHom`. -/
-private lemma toIntAlgHom_id : (RingHom.id R).toIntAlgHom = AlgHom.id ℤ R :=
-  AlgHom.ext fun _ ↦ rfl
-
-/-- `RingHom.toIntAlgHom` preserves composition. Kept private: it is a wrapper identity used only
-to transport Mathlib's ring homomorphism equalities into `AlgHom`. -/
-private lemma toIntAlgHom_comp (f : S →+* T) (g : R →+* S) :
-    (f.comp g).toIntAlgHom = f.toIntAlgHom.comp g.toIntAlgHom :=
-  AlgHom.ext fun _ ↦ rfl
-
-/-- `RingHom.toIntAlgHom` is a left inverse of `AlgHom.toRingHom` on `ℤ`-algebra homomorphisms.
-Kept private: it is a wrapper identity used only to transport Mathlib's ring homomorphism
-equalities into `AlgHom`. -/
-private lemma toIntAlgHom_toRingHom (φ : R →ₐ[ℤ] S) : φ.toRingHom.toIntAlgHom = φ :=
-  AlgHom.ext fun _ ↦ rfl
-
-end ToIntAlgHom
 
 variable (p n : ℕ)
 variable {H : Type u} [Semiring H] [_root_.Bialgebra ℤ H]
@@ -113,14 +87,14 @@ implementation-level `iterateFrobenius` expression instead. -/
 /-- The zeroth Frobenius iterate is the identity on points. -/
 @[simp] theorem iterateFrobeniusPoints_zero :
     iterateFrobeniusPoints p 0 (H := H) (A := A) = MonoidHom.id _ := by
-  rw [iterateFrobeniusPoints, iterateFrobenius_zero, toIntAlgHom_id, AlgHom.mapValue_id]
+  rw [iterateFrobeniusPoints, iterateFrobenius_zero, RingHom.toIntAlgHom_id, AlgHom.mapValue_id]
 
 /-- Frobenius iterates add under composition on the monoid of points. -/
 theorem iterateFrobeniusPoints_add (m : ℕ) :
     iterateFrobeniusPoints p (n + m) (H := H) (A := A) =
       (iterateFrobeniusPoints p n).comp (iterateFrobeniusPoints p m) := by
   rw [iterateFrobeniusPoints, iterateFrobeniusPoints, iterateFrobeniusPoints,
-    iterateFrobenius_add, toIntAlgHom_comp, AlgHom.mapValue_comp]
+    iterateFrobenius_add, RingHom.toIntAlgHom_comp, AlgHom.mapValue_comp]
 
 variable {B : Type w} [CommRing B] [ExpChar B p]
 
@@ -135,7 +109,8 @@ theorem mapValue_comp_iterateFrobeniusPoints (φ : A →ₐ[ℤ] B) :
   have hφ : φ.comp (iterateFrobenius A p n).toIntAlgHom =
       (iterateFrobenius B p n).toIntAlgHom.comp φ := by
     have h := congrArg RingHom.toIntAlgHom (φ.toRingHom.iterateFrobenius_comm p n)
-    rwa [toIntAlgHom_comp, toIntAlgHom_comp, toIntAlgHom_toRingHom] at h
+    simpa only [RingHom.toIntAlgHom_comp, AlgHom.toRingHom_eq_coe,
+      AlgHom.toRingHom_toIntAlgHom] using h
   rw [iterateFrobeniusPoints, iterateFrobeniusPoints, ← AlgHom.mapValue_comp,
     ← AlgHom.mapValue_comp, hφ]
 

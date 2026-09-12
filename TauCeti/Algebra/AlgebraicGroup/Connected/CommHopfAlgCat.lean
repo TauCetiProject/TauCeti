@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
 public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 import Mathlib.RingTheory.Flat.Basic
@@ -76,6 +77,17 @@ theorem geometricallyConnectedCommHopfAlgProperty.connectedSpace
     ConnectedSpace (PrimeSpectrum (H : Type v)) :=
   (PrimeSpectrum.homeomorphOfRingEquiv
     (Algebra.TensorProduct.rid k k H).toRingEquiv).connectedSpace_iff.mp (h k)
+
+/-- The geometric fibre of a geometrically connected commutative Hopf algebra has connected prime
+spectrum, written with the algebraic closure on the left. This is the orientation used by the
+geometric character group. -/
+theorem geometricallyConnectedCommHopfAlgProperty.connectedSpace_algebraicClosureBaseChange
+    {k : Type u} [Field k] {H : CommHopfAlgCat.{v} k}
+    (h : geometricallyConnectedCommHopfAlgProperty k H) :
+    ConnectedSpace (PrimeSpectrum (AlgebraicClosure k ⊗[k] (H : Type v))) :=
+  let e := Algebra.TensorProduct.comm k (AlgebraicClosure k) (H : Type v)
+  have _ := h (AlgebraicClosure k)
+  connectedSpace_primeSpectrum_of_injective e.toRingHom e.injective
 
 /-- Geometric connectedness is invariant under isomorphisms of commutative Hopf algebras. -/
 instance (k : Type u) [Field k] :

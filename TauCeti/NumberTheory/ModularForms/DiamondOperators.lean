@@ -57,6 +57,7 @@ re-founded slash action with built-in character) and their names. The Hecke pair
 * `diamondOp_coe_cuspForm`, `coe_mem_modFormCharSpace_iff`: the diamond operators, and hence the
   character spaces, commute with the coercion `S_k(Γ₁(N)) → M_k(Γ₁(N))`; a cusp form is a
   `χ`-form exactly when the modular form underlying it is.
+* `eq_of_mem_cuspFormCharSpace_of_ne_zero`: a nonzero cusp form determines its nebentypus.
 
 ## References
 
@@ -293,6 +294,15 @@ theorem diamondOpCusp_apply_of_mem_cuspFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ 
     (hf : f ∈ cuspFormCharSpace k χ) :
     diamondOpCusp k d f = (↑(χ d) : ℂ) • f :=
   (mem_cuspFormCharSpace_iff k χ f).mp hf d
+
+/-- **A nonzero cusp form determines its nebentypus**: the character spaces of two distinct
+characters meet only in `0`, since `⟨d⟩ f = χ(d) • f = χ'(d) • f` forces `χ(d) = χ'(d)`. -/
+theorem eq_of_mem_cuspFormCharSpace_of_ne_zero {k : ℤ} {χ χ' : (ZMod N)ˣ →* ℂˣ}
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ)
+    (hf' : f ∈ cuspFormCharSpace k χ') (h0 : f ≠ 0) : χ = χ' :=
+  MonoidHom.ext fun d ↦ Units.ext <| smul_left_injective ℂ h0 <|
+    (diamondOpCusp_apply_of_mem_cuspFormCharSpace k χ d hf).symm.trans
+      (diamondOpCusp_apply_of_mem_cuspFormCharSpace k χ' d hf')
 
 /-- The modular-form nebentypus character space `M_k(Γ₁(N), χ)`. -/
 noncomputable def modFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) :

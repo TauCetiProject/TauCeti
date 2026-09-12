@@ -10,15 +10,20 @@ import Mathlib.Tactic.LinearCombination
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 
 /-!
-# Values represented by quadratic forms
+# Representation by quadratic forms
 
-This file defines representation of values by a quadratic map and the represented-unit value set.
-It proves the elementary square-class invariance of the latter and the criterion that, for a form
-with trivial radical, representing a unit is equivalent to isotropy after adjoining the
-one-dimensional form with that unit as its negative coefficient. A nondegenerate form has trivial
-radical by Mathlib's `radical_eq_bot` theorem. These results provide the basic bridge from value
-questions to isotropy questions, following Lam, *Introduction to Quadratic Forms over Fields*,
-I.2.3 and I.3.5.
+This file defines both representation of values by a quadratic map and representation of one
+quadratic map by another through an injective isometry.  It gives the latter relation its basic
+reflexivity, transitivity, and equivalence-invariance API.
+
+For scalar values, it defines the represented-unit value set, proves its elementary square-class
+invariance, and gives the criterion that, for a form with trivial radical, representing a unit is
+equivalent to isotropy after adjoining the one-dimensional form with that unit as its negative
+coefficient. A nondegenerate form has trivial radical by Mathlib's `radical_eq_bot` theorem. A
+nondegenerate isotropic form over a field also contains an isotropic pair: two isotropic vectors
+whose polar pairing is one. These results provide the basic bridge from value questions to
+isotropy questions, following Lam,
+*Introduction to Quadratic Forms over Fields*, I.2.3 and I.3.5.
 -/
 
 public section
@@ -32,6 +37,90 @@ variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 /-- A value `a : N` is represented by a quadratic map if it is the value of the map at a vector. -/
 def _root_.QuadraticMap.Represents (Q : QuadraticMap R M N) (a : N) : Prop := ∃ v, Q v = a
+
+/-- A quadratic map is represented by another if it admits an injective isometry into it. -/
+def _root_.QuadraticMap.IsRepresentedBy {M' : Type*} [AddCommMonoid M'] [Module R M']
+    (Q : QuadraticMap R M N) (Q' : QuadraticMap R M' N) : Prop :=
+  ∃ f : Q →qᵢ Q', Function.Injective f
+
+/-- Representation by a quadratic map is witnessed by an injective linear map preserving the
+quadratic map. -/
+theorem _root_.QuadraticMap.isRepresentedBy_iff {M' : Type*}
+    [AddCommMonoid M'] [Module R M'] (Q : QuadraticMap R M N) (Q' : QuadraticMap R M' N) :
+    Q.IsRepresentedBy Q' ↔
+      ∃ f : M →ₗ[R] M', Function.Injective f ∧ ∀ x, Q' (f x) = Q x := by
+  constructor
+  · rintro ⟨f, hf⟩
+    exact ⟨f.toLinearMap, hf, f.map_app⟩
+  · rintro ⟨f, hf, hQ⟩
+    exact ⟨⟨f, hQ⟩, hf⟩
+
+/-- Every quadratic map is represented by itself. -/
+@[refl]
+theorem _root_.QuadraticMap.IsRepresentedBy.refl (Q : QuadraticMap R M N) :
+    Q.IsRepresentedBy Q :=
+  ⟨QuadraticMap.Isometry.id Q, Function.injective_id⟩
+
+/-- Representation of quadratic maps is transitive. -/
+@[trans]
+theorem _root_.QuadraticMap.IsRepresentedBy.trans
+    {M₁ M₂ M₃ : Type*} [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid M₃] [Module R M₃]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    {Q₃ : QuadraticMap R M₃ N} (h₁₂ : Q₁.IsRepresentedBy Q₂)
+    (h₂₃ : Q₂.IsRepresentedBy Q₃) : Q₁.IsRepresentedBy Q₃ := by
+  obtain ⟨f, hf⟩ := h₁₂
+  obtain ⟨g, hg⟩ := h₂₃
+  exact ⟨g.comp f, hg.comp hf⟩
+
+/-- An equivalent quadratic map is represented by the other map. -/
+theorem _root_.QuadraticMap.Equivalent.isRepresentedBy
+    {M₁ M₂ : Type*} [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    (h : Q₁.Equivalent Q₂) : Q₁.IsRepresentedBy Q₂ := by
+  obtain ⟨e⟩ := h
+  exact ⟨e.toIsometry, e.injective⟩
+
+/-- A scalar represented by a represented quadratic map is represented by the ambient map. -/
+theorem _root_.QuadraticMap.IsRepresentedBy.represents
+    {M₁ M₂ : Type*} [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N} {a : N}
+    (h : Q₁.IsRepresentedBy Q₂) (ha : Q₁.Represents a) : Q₂.Represents a := by
+  obtain ⟨f, _⟩ := h
+  obtain ⟨x, hx⟩ := ha
+  exact ⟨f x, (f.map_app x).trans hx⟩
+
+/-- An ambient quadratic map is isotropic when it represents an isotropic quadratic map. -/
+theorem _root_.QuadraticMap.IsRepresentedBy.not_anisotropic
+    {M₁ M₂ : Type*} [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    (h : Q₁.IsRepresentedBy Q₂) (hQ₁ : ¬ Q₁.Anisotropic) : ¬ Q₂.Anisotropic := by
+  obtain ⟨f, hf⟩ := h
+  rw [QuadraticMap.not_anisotropic_iff_exists] at hQ₁ ⊢
+  obtain ⟨x, hx, hQx⟩ := hQ₁
+  exact ⟨f x, fun hzero ↦ hx (hf (by simpa using hzero)), (f.map_app x).trans hQx⟩
+
+/-- Replacing either quadratic map by an equivalent one preserves representation. -/
+theorem _root_.QuadraticMap.Equivalent.isRepresentedBy_congr
+    {M₁ M₂ M₃ M₄ : Type*} [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid M₃] [Module R M₃]
+    [AddCommMonoid M₄] [Module R M₄]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    {Q₃ : QuadraticMap R M₃ N} {Q₄ : QuadraticMap R M₄ N}
+    (h₁₂ : Q₁.Equivalent Q₂) (h₃₄ : Q₃.Equivalent Q₄) :
+    Q₁.IsRepresentedBy Q₃ ↔ Q₂.IsRepresentedBy Q₄ := by
+  obtain ⟨e₁₂⟩ := h₁₂
+  obtain ⟨e₃₄⟩ := h₃₄
+  constructor
+  · rintro ⟨f, hf⟩
+    exact ⟨e₃₄.toIsometry.comp (f.comp e₁₂.symm.toIsometry),
+      e₃₄.injective.comp (hf.comp e₁₂.symm.injective)⟩
+  · rintro ⟨f, hf⟩
+    exact ⟨e₃₄.symm.toIsometry.comp (f.comp e₁₂.toIsometry),
+      e₃₄.symm.injective.comp (hf.comp e₁₂.injective)⟩
 
 /-- Every quadratic map represents zero. -/
 @[simp]
@@ -147,6 +236,37 @@ theorem _root_.QuadraticMap.represents_of_nondegenerate_of_not_anisotropic
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) (a : K) :
     Represents Q a :=
   represents_of_radical_eq_bot_of_not_anisotropic Q hQ.radical_eq_bot hiso a
+
+/-- A nondegenerate isotropic quadratic form contains two isotropic vectors whose polar pairing
+is one. -/
+theorem _root_.QuadraticMap.Nondegenerate.exists_isotropic_pair
+    {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
+    ∃ x y : V, x ≠ 0 ∧ Q x = 0 ∧ Q y = 0 ∧ polar Q x y = 1 := by
+  obtain ⟨x, hx, hxQ⟩ := (not_anisotropic_iff_exists Q).mp hiso
+  obtain ⟨w, hw⟩ : ∃ w, polar Q x w ≠ 0 := by
+    by_contra h
+    push Not at h
+    apply hx
+    have hxrad : x ∈ Q.radical := by
+      rw [mem_radical_iff']
+      refine ⟨hxQ, fun z ↦ ?_⟩
+      rw [QuadraticMap.map_add Q, hxQ, h z, zero_add, add_zero]
+    rw [hQ.radical_eq_bot] at hxrad
+    exact hxrad
+  let z := w - (Q w / polar Q x w) • x
+  have hzQ : Q z = 0 := by
+    have hw' : polar Q w x ≠ 0 := by simpa only [polar_comm] using hw
+    dsimp [z]
+    simp only [sub_eq_add_neg, ← neg_smul, QuadraticMap.map_add, Q.map_smul, hxQ,
+      polar_smul_right, polar_comm, smul_eq_mul, mul_zero, add_zero]
+    field_simp [hw']
+    ring
+  have hxz : polar Q x z = polar Q x w := by
+    simp [z, polar_sub_right, polar_smul_right, polar_self, hxQ]
+  let y := (polar Q x w)⁻¹ • z
+  refine ⟨x, y, hx, hxQ, ?_, ?_⟩
+  · simp [y, Q.map_smul, hzQ]
+  · simp [y, polar_smul_right, hxz, hw]
 
 /-- Multiplying a represented scalar by the square of a unit preserves representation. -/
 @[simp] theorem _root_.QuadraticMap.represents_mul_sq_iff (Q : QuadraticMap R M R) (a : R)

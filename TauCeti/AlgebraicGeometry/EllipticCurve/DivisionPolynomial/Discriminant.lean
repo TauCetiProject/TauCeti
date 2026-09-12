@@ -22,13 +22,12 @@ no domain or factorisation hypothesis on the ring.
 
 The Nagell–Lutz route needs the on-curve form — with `κ = ψ₂(x, y) = 2y + a₁x + a₃` Mathlib's
 `2`-division polynomial at a point, take `d = κ²`, which on the curve *is* `Ψ₂Sq(x)` by
-`evalEval_ψ₂_sq`. That specialisation is still deliberately **not** stated here, but the reason has
-changed. It used to be that nothing could discharge its hypothesis `κ² ∣ 4·Ψ₃(x)`; the point-level
-`[n]`-multiplication material has since landed, and `Torsion/Discriminant.lean` supplies exactly
-that premise from a torsion point and concludes `κ² ∣ 4Δ`. Having the specialisation here as well
-would name twice what that file already does with the point in hand, so this module keeps to the
-polynomial statement and lets its consumer instantiate it. For a short model (`a₁ = a₃ = 0`, so
-`κ = 2y`) the consumer's conclusion reads `(2y)² ∣ 4Δ`.
+`evalEval_ψ₂_sq`. That specialisation is deliberately **not** stated here: discharging its
+hypothesis `κ² ∣ 4·Ψ₃(x)` takes a torsion point, and `Torsion/Discriminant.lean` uses one to prove
+the nonzero branch of the disjunction `κ = 0 ∨ κ² ∣ 4Δ`. Stating the specialisation here as well
+would name the same result twice, so this module keeps to the polynomial statement and lets its
+consumer instantiate it. For a short model (`a₁ = a₃ = 0`, so
+`κ = 2y`) the consumer's conclusion reads `2y = 0 ∨ (2y)² ∣ 4Δ`.
 
 ## Main results
 

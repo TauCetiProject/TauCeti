@@ -36,6 +36,9 @@ into pole orders, but no order or valuation hypothesis is assumed here.
 ## Main results
 
 * `WeierstrassCurve.equation_formalPoint`: the parametrized pair lies on the curve.
+* `WeierstrassCurve.formalPoint_eq_some`: a point both of whose ratios `-x / y` and `-1 / y` come
+  from the ideal is the parametrised point of the first, the surjectivity companion of
+  `WeierstrassCurve.formalPoint_injective`.
 * `WeierstrassCurve.neg_xCoord_div_yCoord_formalPoint`: the parameter read back off the point as
   `-x / y`, and with it `WeierstrassCurve.formalPoint_eq_zero_iff` and
   `WeierstrassCurve.formalPoint_injective`.
@@ -85,11 +88,11 @@ public section
 
 open PowerSeries
 
+namespace WeierstrassCurve
+
 variable {O : Type*} [CommRing O] [UniformSpace O] [IsUniformAddGroup O] [CompleteSpace O]
   [T2Space O] [IsTopologicalRing O] [IsLinearTopology O O]
   {K : Type*} [Field K] [Algebra O K]
-
-namespace WeierstrassCurve
 
 variable (W : WeierstrassCurve O)
 
@@ -238,6 +241,41 @@ theorem formalPoint_injective {I : Ideal O} (hI : IsAdic I) :
   rw [← W.neg_xCoord_div_yCoord_formalPoint (K := K) hI t₁.property,
     ← W.neg_xCoord_div_yCoord_formalPoint (K := K) hI t₂.property]
   exact congrArg (fun P ↦ -P.xCoord / P.yCoord) h
+
+open scoped Classical in
+/-- **A point of the curve is the parametrised point of `-x / y`** as soon as `-x / y` and `-1 / y`
+both come from the ideal `I`. This is surjectivity of the parametrisation in its valuation-free
+form: which points satisfy the hypothesis is a separate question, answered over an adic completion
+in `Point/Range.lean` by `exists_formalPoint_eq_of_one_lt_valuation_xCoord`.
+
+The two ratios are asked for as products, `t * y = -x` and `s * y = -1`, so that no division is
+needed to state the hypothesis and `y ≠ 0` follows from the second rather than being assumed. The
+parameter `s` does not appear in the conclusion: it is there only to witness that `-1 / y` is a
+value of the ideal, and the proof identifies it as `w(t)`, which is what pins the point down. -/
+theorem formalPoint_eq_some {I : Ideal O} (hI : IsAdic I) {t s : O} (ht : t ∈ I) (hs : s ∈ I)
+    {x y : K} (hns : (W.baseChange K).toAffine.Nonsingular x y)
+    (hxt : algebraMap O K t * y = -x) (hys : algebraMap O K s * y = -1) :
+    W.formalPoint (K := K) hI ht = .some x y hns := by
+  have hy : y ≠ 0 := by
+    rintro rfl
+    simp at hys
+  have hT : algebraMap O K t = -(x / y) := by field_simp; linear_combination hxt
+  have hS : algebraMap O K s = -y⁻¹ := by field_simp; linear_combination hys
+  have hkey : s = W.formalWEval t := by
+    refine W.eq_formalWEval_of_wEquation hI ht hs (FaithfulSMul.algebraMap_injective O K ?_)
+    rw [W.algebraMap_wEquationRHS (B := K) t s, hT, hS]
+    exact W.wEquation_of_equation hns.left hy
+  have ht0 : t ≠ 0 := by
+    rintro rfl
+    rw [W.formalWEval_zero] at hkey
+    rw [hkey] at hys
+    simp at hys
+  refine Affine.Point.eq_of_coords (fun h ↦ ht0 ((W.formalPoint_eq_zero_iff hI ht).mp h))
+    (by simp) ?_ ?_
+  · rw [W.xCoord_formalPoint hI ht ht0, ← hkey, hS, hT, Affine.Point.xCoord_some]
+    field_simp
+  · rw [W.yCoord_formalPoint hI ht ht0, ← hkey, hS, Affine.Point.yCoord_some]
+    field_simp
 
 open scoped Classical in
 /-- **The parametrisation respects negation.** The formal inverse `ι` on parameters becomes the

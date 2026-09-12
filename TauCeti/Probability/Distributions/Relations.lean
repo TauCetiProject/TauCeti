@@ -42,12 +42,7 @@ of `d` i.i.d. exponentials of rate `r` is exponential of rate `d * r`.
 * `TauCeti.Probability.cdf_max_iid`, `TauCeti.Probability.cdf_min_iid` — the same two formulas for
   the laws of the two extremes.
 
-A general theory of order statistics is outside the scope of the roadmap target below.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 4, item 6,
-  **Finite minima and maxima**.
+Only the two extremes are treated; a general theory of order statistics is not.
 -/
 
 public section

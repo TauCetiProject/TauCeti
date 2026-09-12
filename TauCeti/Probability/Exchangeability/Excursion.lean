@@ -102,14 +102,6 @@ theorem MarkovExchangeable.prefixLaw_singleton_eq_of_perm_excursions (h : Markov
   rw [← funext hu, ← funext hv]
   exact h.prefixLaw_loopPathAt_eq_of_perm a₀ hperm hn
 
-/-- The mass of a finite path, as the measure of the event that the process spells it out. -/
-private theorem prefixLaw_singleton_eq_measure [MeasurableSingletonClass α]
-    (hX : ∀ i, AEMeasurable (X i) μ) {n : ℕ} (w : Fin n → α) :
-    prefixLaw μ X n {w} = μ {ω | ∀ i : Fin n, X i.val ω = w i} := by
-  rw [prefixLaw_def, blockLaw_apply_of_measurable μ X (fun i : Fin n => i.val)
-    (fun i => hX i.val) (measurableSet_singleton w)]
-  exact congrArg μ (Set.ext fun ω => by simp [funext_iff, eq_comm])
-
 /-- **Reordering the excursions of a loop does not change the probability that the process
 traverses it.** The event-level form of
 `TauCeti.Probability.MarkovExchangeable.prefixLaw_loopPathAt_eq_of_perm`. -/

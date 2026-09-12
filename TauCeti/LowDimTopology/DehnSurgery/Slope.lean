@@ -9,11 +9,10 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Data.Rat.Lemmas
-public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.LinearAlgebra.Pi
-public import Mathlib.RingTheory.Int.Basic
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 public import Mathlib.Topology.Instances.AddCircle.Real
+public import TauCeti.Algebra.Module.Primitive
 
 /-!
 # Slopes on a framed boundary torus
@@ -96,26 +95,6 @@ would have to expose every definition it unfolds. -/
 
 variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Module ℤ M] [Module ℤ N]
 
-/-- A homology class `v : M` on a boundary torus is **primitive** when some `ℤ`-linear functional
-`M →ₗ[ℤ] ℤ` sends it to `1`, so the span of `v` splits off a copy of `ℤ`. Over the standard
-lattice `ℤ × ℤ` this is coprimality of the two coordinates (`TauCeti.isPrimitive_prod_iff`). The
-definition mentions no basis, so it is preserved by every `ℤ`-linear equivalence
-(`TauCeti.isPrimitive_congr`). -/
-def IsPrimitive (v : M) : Prop := ∃ f : M →ₗ[ℤ] ℤ, f v = 1
-
-/-- Primitivity is unchanged by the sign action `v ↦ -v`. -/
-theorem IsPrimitive.neg {v : M} (h : IsPrimitive v) : IsPrimitive (-v) := by
-  obtain ⟨f, hf⟩ := h
-  exact ⟨-f, by simp [hf]⟩
-
-/-- Primitivity transports along a `ℤ`-linear equivalence: it is a basis-free property. -/
-theorem isPrimitive_congr (φ : M ≃ₗ[ℤ] N) {v : M} : IsPrimitive (φ v) ↔ IsPrimitive v := by
-  constructor
-  · rintro ⟨g, hg⟩
-    exact ⟨g.comp (φ : M →ₗ[ℤ] N), by simpa using hg⟩
-  · rintro ⟨f, hf⟩
-    exact ⟨f.comp (φ.symm : N →ₗ[ℤ] M), by simpa using hf⟩
-
 /-- Two primitive classes represent the same slope when they agree up to sign. This is an
 equivalence relation on primitive classes. -/
 private def slopeSetoid (M : Type*) [AddCommGroup M] [Module ℤ M] :
@@ -169,8 +148,8 @@ theorem induction_on {C : Slope M → Prop} (s : Slope M)
 isomorphism uses this to carry a slope to the standard lattice. -/
 def congr (φ : M ≃ₗ[ℤ] N) : Slope M ≃ Slope N :=
   Quotient.congr
-    { toFun := fun v => ⟨φ v.1, (isPrimitive_congr φ).mpr v.2⟩
-      invFun := fun w => ⟨φ.symm w.1, (isPrimitive_congr φ.symm).mpr w.2⟩
+    { toFun := fun v => ⟨φ v.1, φ.isPrimitive_iff.mpr v.2⟩
+      invFun := fun w => ⟨φ.symm w.1, φ.symm.isPrimitive_iff.mpr w.2⟩
       left_inv := fun v => Subtype.ext (φ.symm_apply_apply v.1)
       right_inv := fun w => Subtype.ext (φ.apply_symm_apply w.1) }
     fun a b => by
@@ -185,7 +164,7 @@ def congr (φ : M ≃ₗ[ℤ] N) : Slope M ≃ Slope N :=
 
 @[simp]
 theorem congr_mk (φ : M ≃ₗ[ℤ] N) (v : M) (h : IsPrimitive v) :
-    congr φ (mk v h) = mk (φ v) ((isPrimitive_congr φ).mpr h) :=
+    congr φ (mk v h) = mk (φ v) (φ.isPrimitive_iff.mpr h) :=
   (rfl)
 
 /-- Transporting slopes along `φ` and along `φ.symm` are inverse to one another. -/
@@ -207,6 +186,7 @@ bijection through its coordinate isomorphism. -/
 
 /-- Over `ℤ × ℤ`, a class is primitive exactly when its two coordinates are coprime. -/
 theorem isPrimitive_prod_iff {v : ℤ × ℤ} : IsPrimitive v ↔ IsCoprime v.1 v.2 := by
+  rw [isPrimitive_def]
   constructor
   · rintro ⟨f, hf⟩
     have hv : v = v.1 • ((1 : ℤ), (0 : ℤ)) + v.2 • ((0 : ℤ), (1 : ℤ)) := by
@@ -407,10 +387,10 @@ theorem coord_symm_apply (v : ℤ × ℤ) : T.coord.symm v = v.1 • T.basis 0 +
   simp [coord, Basis.equivFun_symm_apply, Fin.sum_univ_two]
 
 theorem isPrimitive_basis_zero : IsPrimitive (T.basis 0) :=
-  (isPrimitive_congr T.coord).mp (by rw [T.coord_basis_zero]; exact isPrimitive_prod_one_zero)
+  T.coord.isPrimitive_iff.mp (by rw [T.coord_basis_zero]; exact isPrimitive_prod_one_zero)
 
 theorem isPrimitive_basis_one : IsPrimitive (T.basis 1) :=
-  (isPrimitive_congr T.coord).mp (by rw [T.coord_basis_one]; exact isPrimitive_prod_zero_one)
+  T.coord.isPrimitive_iff.mp (by rw [T.coord_basis_one]; exact isPrimitive_prod_zero_one)
 
 /-- The meridian slope `μ = basis 0` of the framing. -/
 noncomputable def meridian : Slope T.H := Slope.mk (T.basis 0) T.isPrimitive_basis_zero

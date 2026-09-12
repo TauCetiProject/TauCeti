@@ -47,14 +47,13 @@ evaluates `∫ t in Ioi 0, t ^ n * exp (-(a * t))` as `n ! / a ^ (n + 1)`,
 * `charFun_expMeasure` — characteristic function `(r : ℂ) / (r - I * t)`;
 * `measureReal_Ioi_expMeasure`, `measure_Ioi_expMeasure` — tail probabilities;
 * `memoryless_expMeasure` — the conditional tail is unchanged by elapsed time;
-* `hasLaw_min_expMeasure_of_indepFun` — minimum of two independent exponentials;
+* `hasLaw_min_expMeasure_of_indepFun` — minimum of independent exponentials.
 * `hasLaw_min_iid_expMeasure` — minimum of `d` i.i.d. exponentials of rate `r` is exponential of
   rate `d * r`.
+* `nnrealExpMeasure` — the exponential measure transported to `ℝ≥0`.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, exponential; and Layer 4,
-  item 6, **Finite minima and maxima**, for `hasLaw_min_iid_expMeasure`.
 * [mathlib4#35504](https://github.com/leanprover-community/mathlib4/pull/35504) by Joakim
   Björnander (Apache 2.0), the upstream exponential mgf, moments and memorylessness work that the
   roadmap names as the source for this material. It has not landed at Tau Ceti's current Mathlib
@@ -92,12 +91,28 @@ private theorem toReal_gammaPDF_one (hr : 0 < r) (x : ℝ) :
   unfold gammaPDF exponentialPDFReal
   rw [ENNReal.toReal_ofReal (gammaPDFReal_nonneg one_pos hr x)]
 
+/-- `expMeasure r` is the Lebesgue measure weighted by its exponential density. -/
+theorem expMeasure_eq_withDensity (r : ℝ) :
+    expMeasure r = volume.withDensity (exponentialPDF r) := rfl
+
+/-- A positive-rate exponential law on `ℝ` is nonnegative almost surely. -/
+theorem ae_nonneg_expMeasure {r : ℝ} (hr : 0 < r) :
+    ∀ᵐ x ∂expMeasure r, 0 ≤ x := by
+  let _ := isProbabilityMeasure_expMeasure hr
+  have hIic : expMeasure r (Iic (0 : ℝ)) = 0 := by
+    rw [← ProbabilityTheory.ofReal_cdf]
+    simp [cdf_expMeasure_eq hr]
+  have hIio : expMeasure r (Iio (0 : ℝ)) = 0 :=
+    measure_mono_null Iio_subset_Iic_self hIic
+  filter_upwards [measure_eq_zero_iff_ae_notMem.mp hIio] with x hx
+  exact not_lt.mp hx
+
 /-- `expMeasure r` is the Lebesgue measure weighted by the Gamma density of shape `1`.
 
 `rfl` closes this because both steps it crosses are definitional unfoldings: `expMeasure r` is
 `gammaMeasure 1 r`, which is `volume.withDensity (gammaPDF 1 r)`. The density is left in its
 `gammaPDF` spelling, the one `measurable_gammaPDF` and `toReal_gammaPDF_one` are stated in. -/
-private lemma expMeasure_eq_withDensity (r : ℝ) :
+private lemma expMeasure_eq_withDensity_gammaPDF (r : ℝ) :
     expMeasure r = volume.withDensity (gammaPDF 1 r) := rfl
 
 /-- The density weight against `exp (t * x)`. This one identity is the integrand algebra behind
@@ -113,7 +128,7 @@ computations below. -/
 private lemma integral_expMeasure_Ioi {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (hr : 0 < r) (f : ℝ → E) :
     ∫ x, f x ∂(expMeasure r) = ∫ x in Ioi 0, (r * exp (-(r * x))) • f x := by
-  rw [expMeasure_eq_withDensity,
+  rw [expMeasure_eq_withDensity_gammaPDF,
     integral_withDensity_eq_integral_toReal_smul (measurable_gammaPDF 1 r)
       (ae_of_all _ fun _ => ENNReal.ofReal_lt_top)]
   have hIci :
@@ -156,7 +171,7 @@ private theorem integrable_expMeasure_iff (hr : 0 < r) (g : ℝ → ℝ) :
     intro x
     rw [toReal_gammaPDF_one hr]
     ring
-  rw [expMeasure_eq_withDensity,
+  rw [expMeasure_eq_withDensity_gammaPDF,
     integrable_withDensity_iff (measurable_gammaPDF 1 r)
       (ae_of_all _ fun _ => ENNReal.ofReal_lt_top),
     funext htoReal]
@@ -416,5 +431,39 @@ theorem hasLaw_min_iid_expMeasure {Ω ι : Type*} {mΩ : MeasurableSpace Ω} [Fi
   · rw [ite_eq_right hx, ite_eq_right hx, sub_zero, one_pow, sub_self]
 
 end Probability
+
+/-- The exponential measure of rate `r` on `ℝ≥0`, obtained by transporting the usual exponential
+law on `ℝ` along `Real.toNNReal`.
+
+For `r > 0` this transport loses no information because the exponential law is supported on the
+nonnegative half-line. -/
+noncomputable def nnrealExpMeasure (r : ℝ) : Measure ℝ≥0 :=
+  (expMeasure r).map Real.toNNReal
+
+/-- The exponential measure on `ℝ≥0` is the pushforward of Mathlib's exponential measure along
+`Real.toNNReal`. -/
+theorem nnrealExpMeasure_def (r : ℝ) :
+    nnrealExpMeasure r = (expMeasure r).map Real.toNNReal := (rfl)
+
+/-- At unit rate, `nnrealExpMeasure` is the measure with density `e⁻ˣ` on the nonnegative real
+half-line, transported to `ℝ≥0`.  The displayed `if` makes the zero density on negative reals
+explicit before the transport. -/
+theorem nnrealExpMeasure_one_eq_map_withDensity :
+    nnrealExpMeasure 1 =
+      (volume.withDensity fun x : ℝ =>
+        ENNReal.ofReal (if 0 ≤ x then Real.exp (-x) else 0)).map Real.toNNReal := by
+  rw [nnrealExpMeasure_def, Probability.expMeasure_eq_withDensity]
+  apply congrArg (Measure.map Real.toNNReal)
+  apply congrArg volume.withDensity
+  funext x
+  rw [exponentialPDF_eq]
+  by_cases hx : 0 ≤ x <;> simp [hx]
+
+/-- The positive-rate exponential measure on `ℝ≥0` is a probability measure. -/
+theorem isProbabilityMeasure_nnrealExpMeasure {r : ℝ} (hr : 0 < r) :
+    IsProbabilityMeasure (nnrealExpMeasure r) := by
+  let _ := isProbabilityMeasure_expMeasure hr
+  rw [nnrealExpMeasure_def]
+  infer_instance
 
 end TauCeti

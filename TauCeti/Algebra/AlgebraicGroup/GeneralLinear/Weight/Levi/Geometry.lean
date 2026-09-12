@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.Smooth.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Basic
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.BaseChange
 
 /-!
 # Geometry of general-linear weight Levis
@@ -27,8 +27,6 @@ the weight Levi is geometrically connected.
 
 * `TauCeti.GeneralLinear.WeightLeviIndex`: the matrix entries within equal-weight blocks.
 * `TauCeti.GeneralLinear.weightLeviCoordinateAlgEquiv`: the localized polynomial presentation.
-* `TauCeti.GeneralLinear.weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv`: compatibility of
-  the presentation with scalar extension.
 * `TauCeti.GeneralLinear.instSmoothWeightLeviCoordinateHopfAlgebra`: every weight Levi is smooth.
 * `TauCeti.GeneralLinear.geometricallyConnectedCommHopfAlgProperty_weightLeviCoordinateHopfAlgebra`:
   every weight Levi over a field is geometrically connected.
@@ -460,54 +458,6 @@ theorem weightLeviCoordinateRingBaseChangeAlgEquiv_tmul_algebraMap
     ← IsScalarTower.algebraMap_apply K (MvPolynomial (WeightLeviIndex w) K)]
   rw [Algebra.smul_def]
 
-/-- Scalar extension of the weight-Levi coordinate Hopf algebra is ring-equivalent to the
-weight-Levi coordinate Hopf algebra over the extended base ring. -/
-def weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv
-    (k : Type u) (K : Type v) [CommRing k] [CommRing K] [Algebra k K] (w : Fin N → ℤ) :
-    weightLeviCoordinateHopfAlgebra k w ⊗[k] K ≃+*
-      weightLeviCoordinateHopfAlgebra K w :=
-  (Algebra.TensorProduct.congr (weightLeviCoordinateAlgEquiv k w)
-    (AlgEquiv.refl : K ≃ₐ[k] K)).toRingEquiv.trans <|
-  (Algebra.TensorProduct.comm k (WeightLeviCoordinateRing k w) K).toRingEquiv.trans <|
-  (weightLeviCoordinateRingBaseChangeAlgEquiv k K w).toRingEquiv.trans <|
-  (weightLeviCoordinateAlgEquiv K w).symm.toRingEquiv
-
-/-- Base change carries each quotient generic-matrix entry of the weight Levi to the
-corresponding quotient generic-matrix entry over the new base. -/
-@[simp]
-theorem weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv_tmul_mk_genericMatrix_apply
-    (k : Type u) (K : Type v) [CommRing k] [CommRing K] [Algebra k K] (w : Fin N → ℤ)
-    (i j : Fin N) :
-    weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv k K w
-        (Ideal.Quotient.mk (weightLeviDefiningHopfIdeal k w).toIdeal
-          (coordinateHopfAlgebraAlgEquiv k N
-            (coordinateRingMap k N (MvPolynomial.X (i, j)))) ⊗ₜ[k] (1 : K)) =
-      Ideal.Quotient.mk (weightLeviDefiningHopfIdeal K w).toIdeal
-        (coordinateHopfAlgebraAlgEquiv K N
-          (coordinateRingMap K N (MvPolynomial.X (i, j)))) := by
-  rw [← genericMatrix_apply (R := k) (n := N) i j,
-    ← genericMatrix_apply (R := K) (n := N) i j,
-    ← Ideal.Quotient.mkₐ_eq_mk (R₁ := k),
-    ← Ideal.Quotient.mkₐ_eq_mk (R₁ := K)]
-  by_cases hij : w i = w j
-  · -- Unfold the composed ring equivalence just enough to expose its presentation and
-    -- localization base-change stages, whose generator computation lemmas apply below.
-    change (weightLeviCoordinateAlgEquiv K w).symm
-        (weightLeviCoordinateRingBaseChangeAlgEquiv k K w
-          ((1 : K) ⊗ₜ[k] weightLeviCoordinateAlgEquiv k w
-            (Ideal.Quotient.mkₐ k (weightLeviDefiningHopfIdeal k w).toIdeal
-              ((genericMatrix k N) i j)))) = _
-    rw [genericMatrix_apply, Ideal.Quotient.mkₐ_eq_mk,
-      weightLeviCoordinateAlgEquiv_mk_genericMatrix_apply,
-      weightLeviLocalizedGenericMatrix_apply_of_eq k w hij,
-      IsScalarTower.toAlgHom_apply,
-      weightLeviCoordinateRingBaseChangeAlgEquiv_tmul_algebraMap,
-      MvPolynomial.map_X, one_smul,
-      weightLeviCoordinateAlgEquiv_symm_algebraMap_X]
-  · simp [weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv,
-      weightLeviQuotient_mk_genericMatrix_apply_of_ne k w hij,
-      weightLeviQuotient_mk_genericMatrix_apply_of_ne K w hij]
-
 /-- The weight Levi is geometrically connected over every field. -/
 theorem geometricallyConnectedCommHopfAlgProperty_weightLeviCoordinateHopfAlgebra
     (k : Type u) [Field k] (w : Fin N → ℤ) :
@@ -515,9 +465,10 @@ theorem geometricallyConnectedCommHopfAlgProperty_weightLeviCoordinateHopfAlgebr
       (weightLeviCoordinateHopfAlgebra k w) := by
   rw [geometricallyConnectedCommHopfAlgProperty_iff]
   intro K _ _
-  exact (PrimeSpectrum.homeomorphOfRingEquiv
-    (weightLeviCoordinateHopfAlgebraBaseChangeRingEquiv k K w)).connectedSpace_iff.mpr
-      inferInstance
+  let e := (Algebra.TensorProduct.comm k
+    (weightLeviCoordinateHopfAlgebra k w) K).toRingEquiv.trans (CommHopfAlgCat.ofIso
+      (weightLeviCoordinateHopfAlgebraBaseChangeIso k K w)).toAlgEquiv.toRingEquiv
+  exact (PrimeSpectrum.homeomorphOfRingEquiv e).connectedSpace_iff.mpr inferInstance
 
 end
 

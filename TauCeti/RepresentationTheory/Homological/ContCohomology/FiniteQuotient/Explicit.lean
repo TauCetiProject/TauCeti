@@ -39,6 +39,8 @@ It is the source diagram for the explicit degree-one finite-quotient colimit the
 
 ## Main statements
 
+* `explicitFiniteQuotientTransition1_eq_explicitMap1` identifies a transition map with the
+  compatible-pair pullback it is built from.
 * `explicitFiniteQuotientTransition1_id` and `explicitFiniteQuotientTransition1_comp` are the
   identity and composition laws for the transition maps.
 * `explicitFiniteQuotientSystem1_obj` and `explicitFiniteQuotientSystem1_map` identify the
@@ -94,6 +96,27 @@ theorem explicitFiniteQuotientTransition1_mk (hVU : V ≤ U)
         continuous_of_discreteTopology
           (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) c) :=
   explicitMap1_mk _ _ _ _ _ _ _ _ c
+
+omit [ContinuousSMul G M] in
+/-- A degree-one finite-quotient transition is the compatible-pair pullback along the quotient
+homomorphism `G ⧸ V → G ⧸ U` and the inclusion of invariant coefficients `M ^ U → M ^ V`. -/
+-- The pullback is ascribed its type because `fixedPointsInclusion` is stated on
+-- `FixedPoints.addSubmonoid`, so the coefficient instances of the right-hand side are fixed by the
+-- left-hand side rather than synthesized on their own.
+theorem explicitFiniteQuotientTransition1_eq_explicitMap1 (hVU : V ≤ U) :
+    explicitFiniteQuotientTransition1 G M U V hVU =
+      (explicitMap1 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
+        (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
+        (continuousFiniteQuotientMap G hVU) (fixedPointsInclusion hVU)
+        continuous_of_discreteTopology
+          (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) :
+        H1 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) →+
+          H1 (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)) := by
+  refine AddMonoidHom.ext fun x => ?_
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    exact (explicitFiniteQuotientTransition1_mk G M hVU c).trans
+      (explicitMap1_mk _ _ _ _ _ _ _ _ c).symm
 
 omit [ContinuousSMul G M] in
 /-- The transition from an open normal subgroup to itself is the identity. -/
@@ -192,7 +215,10 @@ section System
 /-- The explicit degree-one finite-quotient system of a discrete module.  It sends an open normal
 subgroup `U` to `H¹(G ⧸ U, M^U)` and an inclusion `V ≤ U` to the direct explicit transition from
 the `U`-level to the `V`-level. -/
-noncomputable def explicitFiniteQuotientSystem1 :
+-- The body is exposed because a cocone on this system is written with `H¹(G ⧸ U, M^U)` for its
+-- source objects and `explicitFiniteQuotientTransition1` for its arrows, so both fields have to
+-- reduce outside this module.
+@[expose] noncomputable def explicitFiniteQuotientSystem1 :
     (OpenNormalSubgroup G)ᵒᵖ ⥤ AddCommGrpCat.{max u v} where
   obj U :=
     AddCommGrpCat.of

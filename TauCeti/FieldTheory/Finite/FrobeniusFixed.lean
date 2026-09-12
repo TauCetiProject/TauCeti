@@ -8,26 +8,27 @@ module
 public import Mathlib.FieldTheory.Finite.GaloisField
 
 /-!
-# The fixed points of the `q`-power map in an extension of a finite field
+# The fixed points of the `q`-power map over a finite field
 
-For a finite field `K` with `q` elements and any field extension `L`, an element of `L` is fixed by
-the `q`-power map exactly when it comes from `K`:
+For a finite field `K` with `q` elements and any commutative domain `L` that is a `K`-algebra, an
+element of `L` is fixed by the `q`-power map exactly when it comes from `K`:
 
 `a ^ q = a ↔ a ∈ Set.range (algebraMap K L)`.
 
 ## Main results
 
 * `TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`: the criterion above.
-* `TauCeti.algebraMap_bijective_of_pow_card_eq_self`: its immediate global consequence, that an
-  extension *all* of whose elements are fixed by the `q`-power map is `K` itself.
+* `TauCeti.algebraMap_bijective_of_pow_card_eq_self`: its immediate global consequence, that a
+  domain over `K` *all* of whose elements are fixed by the `q`-power map is `K` itself.
 
 Mathlib has the easy direction (`FiniteField.pow_card`) but not the equivalence.
 `IsGalois.mem_range_algebraMap_iff_fixed` characterises the base field of a Galois extension by
 being fixed, but it needs `[FiniteDimensional F E]` and quantifies over the whole Galois group
 rather than the single `q`-power map.
 
-Nothing is assumed of `L` beyond being a field extension: in particular it need not be
-algebraically closed, which is the only case the source states.
+`L` need not be a field: a commutative domain is enough, which covers polynomial rings over `K`,
+and the coordinate ring of an integral affine curve such as a Weierstrass curve, as well as field
+extensions. Nor need `L` be algebraically closed, which is the only case the source states.
 
 This is the elementary field-theoretic input to the Silverman V.1 route to the Hasse bound: it says
 that the `K`-rational coordinates are exactly the Frobenius-fixed ones.
@@ -39,7 +40,8 @@ Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apa
 `HasseWeil/Curves/FrobeniusFixedLocus.lean`, declaration `frobenius_fixed_iff_mem_baseField`.
 
 Changes from the source. It is stated there only for `L = AlgebraicClosure K`; here `L` is an
-arbitrary field extension, since nothing in the argument uses algebraic closedness. The source
+arbitrary commutative domain over `K`, since nothing in the argument uses algebraic closedness or
+inverses. The source
 builds the root-set transport by hand, through a separability argument and a finset count; here
 that is Mathlib's `Splits.image_rootSet` applied to `FiniteField.isSplittingField_sub`. And the
 source's other public theorem is stated in terms of its own `private` finsets, so it cannot be
@@ -54,8 +56,8 @@ namespace TauCeti
 
 namespace FiniteField
 
-/-- **An element of a field extension of a finite field is fixed by the `q`-power map exactly when
-it comes from the base field**, where `q` is the cardinality of the base. -/
+/-- **An element of a domain over a finite field is fixed by the `q`-power map exactly when it
+comes from the base field**, where `q` is the cardinality of the base. -/
 @[simp]
 theorem pow_card_eq_self_iff_mem_range_algebraMap {K L : Type*} [Field K] [Fintype K]
     [CommRing L] [IsDomain L] [Algebra K L] (a : L) :
@@ -79,9 +81,9 @@ theorem pow_card_eq_self_iff_mem_range_algebraMap {K L : Type*} [Field K] [Finty
 
 end FiniteField
 
-/-- **A field extension in which `x ^ |K| = x` is `K` itself.** Every element of the extension is
-then in the range of the algebra map by
-`TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`. -/
+/-- **A domain over `K` all of whose elements satisfy `x ^ |K| = x` is `K` itself.** Every element
+is then in the range of the algebra map by
+`TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`, which is injective. -/
 theorem algebraMap_bijective_of_pow_card_eq_self {K L : Type*} [Field K] [Fintype K] [CommRing L]
     [IsDomain L] [Algebra K L] (h : ∀ x : L, x ^ Fintype.card K = x) :
     Function.Bijective (algebraMap K L) :=

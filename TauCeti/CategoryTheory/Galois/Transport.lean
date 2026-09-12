@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Galois.Basic
+public import Mathlib.CategoryTheory.Galois.IsFundamentalgroup
+public import TauCeti.CategoryTheory.Galois.Connected
 
 /-!
 # Transporting the Galois-category axioms along an equivalence
@@ -36,6 +37,8 @@ preimage under `e.functor` of `e.counit.app Z ≫ u`; taking the preimage rather
   composes with an equivalence `C ≌ D` to a fibre functor on `C`.
 * `TauCeti.galoisCategory_of_equivalence`: a category equivalent to a Galois category is a
   Galois category.
+* `CategoryTheory.Functor.isFundamentalGroup_comp`: a fundamental group of a fibre functor
+  remains one after the functor is transported along an equivalence.
 
 ## References
 
@@ -94,5 +97,70 @@ theorem galoisCategory_of_equivalence {D : Type u₂} [Category.{v₁} D] (e : C
     have := preGaloisCategory_of_equivalence e
     obtain ⟨F, hF⟩ := GaloisCategory.hasFiberFunctor D
     exact ⟨e.functor ⋙ F, fiberFunctor_comp_of_equivalence e F⟩
+
+variable (K : C ⥤ D) (F : D ⥤ FintypeCat.{w})
+  (G : Type*) [Group G] [∀ Y, MulAction G (F.obj Y)]
+
+/-- The action on a fibre functor, pulled back along a functor on its source category. -/
+-- Expose the body so transported fundamental-group instances use the original action
+-- definitionally.
+@[expose, instance_reducible] def _root_.CategoryTheory.Functor.mulActionComp
+    (X : C) : MulAction G ((K ⋙ F).obj X) := by
+  -- Functor composition does not reduce while typeclass inference searches for the source action.
+  change MulAction G (F.obj (K.obj X))
+  infer_instance
+
+attribute [local instance] CategoryTheory.Functor.mulActionComp
+
+/-- A natural action on a fibre functor remains natural after precomposition. -/
+theorem _root_.CategoryTheory.Functor.isNaturalSMul_comp
+    [IsNaturalSMul F G] : IsNaturalSMul (K ⋙ F) G where
+  naturality g {X Y} f x := by
+    -- Reveal the composite map so that the original naturality field applies.
+    change F.map (K.map f) (g • x) = g • F.map (K.map f) x
+    exact IsNaturalSMul.naturality g (K.map f) x
+
+/-- **A fundamental group of a fibre functor remains a fundamental group after transport along
+an equivalence of its source category.**
+
+The action on each transported fibre is the original action on the corresponding object. -/
+theorem _root_.CategoryTheory.Functor.isFundamentalGroup_comp [K.IsEquivalence]
+    [GaloisCategory C] [GaloisCategory D] [TopologicalSpace G]
+    [IsTopologicalGroup G] [CompactSpace G] [IsFundamentalGroup F G] :
+    IsFundamentalGroup (K ⋙ F) G := by
+  refine
+    { toIsNaturalSMul := K.isNaturalSMul_comp F G
+      transitive_of_isGalois := fun X _ => ?_
+      continuous_smul := fun X =>
+        IsFundamentalGroup.continuous_smul (F := F) (G := G) (K.obj X)
+      non_trivial' := fun g h => ?_ }
+  · let : IsConnected X := IsGalois.toIsConnected
+    let : IsConnected (K.obj X) := isConnected_map K X
+    let : IsGalois (K.obj X) := by
+      obtain ⟨H, hH⟩ := GaloisCategory.hasFiberFunctor D
+      let : FiberFunctor H := hH
+      let : FiberFunctor (K ⋙ H) := fiberFunctor_comp_of_equivalence K.asEquivalence H
+      apply (isGalois_iff_pretransitive H (K.obj X)).2
+      refine ⟨fun y z => ?_⟩
+      -- Typeclass inference does not unfold functor composition here, so expose the definitional
+      -- equality between `H.obj (K.obj X)` and `(K ⋙ H).obj X` before synthesizing both instances.
+      let : MulAction (Aut X) (H.obj (K.obj X)) := by
+        change MulAction (Aut X) ((K ⋙ H).obj X)
+        infer_instance
+      let : MulAction.IsPretransitive (Aut X) (H.obj (K.obj X)) := by
+        change MulAction.IsPretransitive (Aut X) ((K ⋙ H).obj X)
+        infer_instance
+      obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (Aut X) y z
+      exact ⟨K.mapIso φ, hφ⟩
+    exact IsFundamentalGroup.transitive_of_isGalois (F := F) (G := G) (K.obj X)
+  · apply IsFundamentalGroup.non_trivial (F := F) g
+    intro Y y
+    let X := K.objPreimage Y
+    let i := K.objObjPreimageIso Y
+    have hg := h X (F.map i.inv y)
+    have hn := IsNaturalSMul.naturality g i.hom (F.map i.inv y)
+    have hi : F.map i.hom (F.map i.inv y) = y :=
+      FintypeCat.inv_hom_id_apply (F.mapIso i) y
+    simpa only [hg, hi] using hn.symm
 
 end TauCeti

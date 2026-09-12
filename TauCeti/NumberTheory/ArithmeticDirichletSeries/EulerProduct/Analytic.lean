@@ -156,8 +156,7 @@ own ideal as the `e = 1` member of its power series, and distinct primes give di
 absolute convergence over ideals restricts to the primes. Multiplicativity plays no part. -/
 theorem summable_idealTerm_primeIdealPow_one (hs : Summable (idealTerm K f s)) :
     Summable fun P : HeightOneSpectrum (𝓞 K) ↦ idealTerm K f s (P.primeIdealPow 1) :=
-  hs.comp_injective fun P Q h ↦ HeightOneSpectrum.asIdeal_injective
-    (by simpa only [HeightOneSpectrum.coe_primeIdealPow, pow_one] using congrArg Subtype.val h)
+  hs.comp_injective HeightOneSpectrum.primeIdealPow_one_injective
 
 end IdealArithmeticFunction
 
