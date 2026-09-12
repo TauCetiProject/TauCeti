@@ -57,7 +57,10 @@ noncomputable abbrev tensorPowerRep :
   (stdRep k n).tensorPower d
 
 /-- The tensor-power representation acts by applying the matrix of a general-linear element in
-every tensor factor. -/
+every tensor factor.
+
+This is intentionally not a simp lemma: `Representation.tensorPower_apply` and `stdRep_apply`
+already prove the same simplification, so the `simpNF` linter rejects this specialization. -/
 theorem tensorPowerRep_apply (g : GL (Fin n) k) :
     tensorPowerRep k n d g =
       PiTensorProduct.map fun _ : Fin d => Matrix.mulVecLin (g : Matrix (Fin n) (Fin n) k) := by
