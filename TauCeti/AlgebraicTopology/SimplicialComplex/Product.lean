@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.IsCone
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Maps
 import Mathlib.Data.Finset.Prod
-import Mathlib.Data.Fintype.Powerset
+import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Set.Finite.Lattice
 
 /-!
