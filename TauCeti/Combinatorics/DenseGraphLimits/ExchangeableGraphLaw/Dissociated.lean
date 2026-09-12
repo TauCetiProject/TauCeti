@@ -35,6 +35,8 @@ rectangle of their upper events.
 
 ## Main results
 
+* `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.isDissociated_iff` — the defining identity of a
+  dissociated law;
 * `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_map_sum` — the upper mass of a disjoint
   union of patterns is the mass of a rectangle under the law of the pair of windows;
 * `TauCeti.DenseGraphLimits.isDissociated_iff_upperMass_mul` — a law is dissociated iff its upper
@@ -45,6 +47,9 @@ rectangle of their upper events.
 * P. Diaconis, S. Janson, *Graph limits and exchangeable random graphs*, Rend. Mat. Appl. (7) 28
   (2008), 33--61, Section 5.
 -/
+
+-- Provenance: the body of `IsDissociated` and the signature of `isDissociated_iff_upperMass_mul`
+-- follow `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 
 public section
 
@@ -68,6 +73,16 @@ def IsDissociated : Prop :=
     (L.law (k + l)).map
         (fun G => (SimpleGraph.comap (Fin.castAdd l) G, SimpleGraph.comap (Fin.natAdd k) G))
       = (L.law k).prod (L.law l)
+
+/-- The defining identity of a dissociated law: the level-`(k + l)` marginal pushed to the pair of
+windows is the product of the level-`k` and level-`l` marginals. -/
+@[simp]
+theorem isDissociated_iff :
+    L.IsDissociated ↔
+      ∀ k l : ℕ,
+        (L.law (k + l)).map
+            (fun G => (SimpleGraph.comap (Fin.castAdd l) G, SimpleGraph.comap (Fin.natAdd k) G))
+          = (L.law k).prod (L.law l) := (Iff.rfl)
 
 /-- The upper mass of a disjoint union of two patterns, placed on the first `k` and the last `l`
 labels, is the mass of the rectangle of their two upper events under the law of the pair of

@@ -6,7 +6,6 @@ Authors: Claude
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Dissociated
-public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Structural
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Consistency
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Unbiased
 
