@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
-public import Mathlib.LinearAlgebra.Matrix.Rank
 public import TauCeti.Analysis.Matrix.EuclideanLin
 
 /-!

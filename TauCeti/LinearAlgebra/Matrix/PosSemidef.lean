@@ -29,7 +29,6 @@ Mathlib code is vendored.
 * `TauCeti.posSemidef_const_one` and `TauCeti.posSemidef_const_of_nonneg`: constant matrices.
 * `TauCeti.posSemidef_iff_finite_sum`: the quadratic-form characterization.
 * `TauCeti.posSemidef_finset_sum`: finite pointwise sums.
-* `TauCeti.posSemidef_sum_vecMulVec_self_star`: finite sums of rank-one outer products.
 * `TauCeti.posSemidef_schur_finset_prod` and `TauCeti.posSemidef_schur_pow`: finite Schur
   products and Schur powers.
 
@@ -170,14 +169,6 @@ theorem posSemidef_finset_sum {R : Type u}
     intro a b
     simp
   exact heq ▸ h
-
-/-- A finite sum of the rank-one matrices `vecMulVec (v i) (star (v i))` is positive
-semidefinite; for real vectors this is the Gram sum `∑ i, v i * (v i)ᵀ`. -/
-theorem posSemidef_sum_vecMulVec_self_star {R : Type u}
-    [Ring R] [PartialOrder R] [StarRing R] [StarOrderedRing R]
-    {n : Type w} [Finite n] {ι : Type*} (s : Finset ι) (v : ι → n → R) :
-    (∑ i ∈ s, Matrix.vecMulVec (v i) (star (v i))).PosSemidef :=
-  Matrix.posSemidef_sum s fun i _ => Matrix.posSemidef_vecMulVec_self_star (v i)
 
 variable {𝕜 : Type u} [RCLike 𝕜]
 

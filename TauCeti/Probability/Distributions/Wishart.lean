@@ -81,7 +81,8 @@ def wishartGram (X : ι → EuclideanSpace ℝ (Fin p)) :
   ⟨∑ r, Matrix.vecMulVec (X r).ofLp (X r).ofLp,
     Matrix.isHermitian_iff_isSelfAdjoint.1 <| by
       simpa only [star_trivial] using
-        (posSemidef_sum_vecMulVec_self_star Finset.univ fun r => (X r).ofLp).isHermitian⟩
+        (Matrix.posSemidef_sum Finset.univ fun r _ =>
+          Matrix.posSemidef_vecMulVec_self_star (X r).ofLp).isHermitian⟩
 
 @[simp]
 theorem coe_wishartGram (X : ι → EuclideanSpace ℝ (Fin p)) :
@@ -93,12 +94,13 @@ theorem coe_wishartGram (X : ι → EuclideanSpace ℝ (Fin p)) :
 theorem posSemidef_coe_wishartGram (X : ι → EuclideanSpace ℝ (Fin p)) :
     (wishartGram X : Matrix (Fin p) (Fin p) ℝ).PosSemidef := by
   simpa only [coe_wishartGram, star_trivial] using
-    posSemidef_sum_vecMulVec_self_star Finset.univ fun r => (X r).ofLp
+    Matrix.posSemidef_sum Finset.univ fun r _ =>
+      Matrix.posSemidef_vecMulVec_self_star (X r).ofLp
 
 /-- The Gram sum of a family of vectors has rank at most the size of the family. -/
 theorem rank_coe_wishartGram_le (X : ι → EuclideanSpace ℝ (Fin p)) :
     (wishartGram X : Matrix (Fin p) (Fin p) ℝ).rank ≤ Fintype.card ι := by
-  rw [coe_wishartGram, sum_vecMulVec_eq_transpose_mul, Matrix.rank_transpose_mul_self]
+  rw [coe_wishartGram, sum_vecMulVec_eq_transpose_mul _ _, Matrix.rank_transpose_mul_self]
   exact (Matrix.of fun r i => X r i).rank_le_card_height
 
 /-- A linear image of the vectors congruates their Gram sum. -/
@@ -136,23 +138,16 @@ def wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ) :
     Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
   (Measure.pi fun _ : Fin ν => multivariateGaussian 0 S).map wishartGram
 
-/-- The defining pushforward representation, so that importing modules need not unfold the
-definition. -/
-theorem wishartGramMeasure_eq_map_pi (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ) :
-    wishartGramMeasure ν S =
-      (Measure.pi fun _ : Fin ν => multivariateGaussian 0 S).map wishartGram :=
-  (rfl)
-
 instance isProbabilityMeasure_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ) :
     IsProbabilityMeasure (wishartGramMeasure ν S) := by
-  rw [wishartGramMeasure_eq_map_pi]
+  rw [wishartGramMeasure]
   exact (Measure.isProbabilityMeasure_map_iff measurable_wishartGram.aemeasurable).2 inferInstance
 
 /-- At degree zero the Gaussian-Gram law is the Dirac mass at the zero matrix. -/
 @[simp]
 theorem wishartGramMeasure_zero (S : Matrix (Fin p) (Fin p) ℝ) :
     wishartGramMeasure 0 S = Measure.dirac 0 := by
-  rw [wishartGramMeasure_eq_map_pi]
+  rw [wishartGramMeasure]
   have h : (wishartGram (p := p) (ι := Fin 0)) = fun _ => 0 :=
     funext fun _ => Subtype.ext (by simp)
   rw [h, Measure.map_const]
@@ -163,7 +158,7 @@ factor to a Dirac mass, and the Gaussian-Gram law is then the Dirac mass at the 
 @[simp]
 theorem wishartGramMeasure_of_not_posSemidef (ν : ℕ) (hS : ¬ S.PosSemidef) :
     wishartGramMeasure ν S = Measure.dirac 0 := by
-  rw [wishartGramMeasure_eq_map_pi]
+  rw [wishartGramMeasure]
   simp only [multivariateGaussian_of_not_posSemidef 0 hS]
   rw [Measure.pi_dirac fun _ : Fin ν => (0 : EuclideanSpace ℝ (Fin p)),
     Measure.map_dirac' measurable_wishartGram]
@@ -197,7 +192,7 @@ theorem map_symmetricCongruenceLinearMap_wishartGramMeasure {q : ℕ} (ν : ℕ)
   have : ∀ _ : Fin ν, SigmaFinite
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S).map
         (Matrix.toEuclideanLin M)) := fun _ => by rw [hmap]; infer_instance
-  rw [wishartGramMeasure_eq_map_pi, wishartGramMeasure_eq_map_pi,
+  rw [wishartGramMeasure, wishartGramMeasure,
     Measure.map_map hcong.measurable measurable_wishartGram]
   have hfun : (Matrix.symmetricCongruenceLinearMap M) ∘ (wishartGram (p := p) (ι := Fin ν)) =
       wishartGram ∘ fun X r => Matrix.toEuclideanLin M (X r) :=
@@ -224,7 +219,7 @@ theorem wishartGramMeasure_setOf_posSemidef (ν : ℕ) (S : Matrix (Fin p) (Fin 
       {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef} = 1 := by
   refine le_antisymm prob_le_one ?_
-  rw [wishartGramMeasure_eq_map_pi]
+  rw [wishartGramMeasure]
   calc (1 : ℝ≥0∞)
       = (Measure.pi fun _ : Fin ν => multivariateGaussian 0 S) Set.univ := (measure_univ).symm
     _ = (Measure.pi fun _ : Fin ν => multivariateGaussian 0 S)
@@ -264,7 +259,7 @@ theorem wishartGramMeasure_setOf_rank_le (ν : ℕ) (S : Matrix (Fin p) (Fin p) 
         (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ min ν S.rank} = 1 := by
   by_cases hS : S.PosSemidef
   · refine le_antisymm prob_le_one ?_
-    rw [wishartGramMeasure_eq_map_sqrt ν hS, wishartGramMeasure_eq_map_pi,
+    rw [wishartGramMeasure_eq_map_sqrt ν hS, wishartGramMeasure,
       Measure.map_map (LinearMap.continuous_of_finiteDimensional _).measurable
         measurable_wishartGram]
     calc (1 : ℝ≥0∞)
@@ -330,10 +325,10 @@ theorem wishartGramMeasure_conv_wishartGramMeasure (ν₁ ν₂ : ℕ)
   have hcongr := (measurePreserving_piCongrLeft
     (fun _ : Fin (ν₁ + ν₂) => multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S)
     finSumFinEquiv).map_eq
-  rw [Measure.conv, wishartGramMeasure_eq_map_pi, wishartGramMeasure_eq_map_pi,
+  rw [Measure.conv, wishartGramMeasure, wishartGramMeasure,
     Measure.map_prod_map _ _ measurable_wishartGram measurable_wishartGram, ← hsum,
     Measure.map_map (by fun_prop) (by fun_prop), Measure.map_map (by fun_prop) (by fun_prop),
-    wishartGramMeasure_eq_map_pi, ← hcongr, Measure.map_map measurable_wishartGram (by fun_prop)]
+    wishartGramMeasure, ← hcongr, Measure.map_map measurable_wishartGram (by fun_prop)]
   congr 1
   funext Z
   rw [MeasurableEquiv.coe_piCongrLeft, Function.comp_apply, Function.comp_apply,
