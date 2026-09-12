@@ -41,6 +41,7 @@ abbrev RationalSpace := ℚ × ℚ
 /-- The complex vector space underlying the standard rank-two weight-one example. -/
 abbrev ComplexSpace := ℂ × ℂ
 
+/-- The rational scalar action on the complexification of the standard rational space. -/
 noncomputable local instance moduleRatOfComplex : Module ℚ ComplexSpace :=
   Module.restrictScalars ℚ ℂ ComplexSpace
 
