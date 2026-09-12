@@ -487,11 +487,11 @@ theorem sourceReflectionFunctor_map_app_self_mk
     {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) {i : Q} (hi : IsSource i)
     (f : (e : Σ b : Q, (i ⟶ b)) → M.obj e.1) :
     (eqToHom ((congrArg (fun R : QuiverRep k (Reflect Q i) ↦ R.obj i)
-          (sourceReflectionFunctor_obj i hi M)).trans (sourceReflectRep_obj_self M hi)).symm ≫
-        ((sourceReflectionFunctor i hi).map η).app i ≫
-        eqToHom ((congrArg (fun R : QuiverRep k (Reflect Q i) ↦ R.obj i)
-          (sourceReflectionFunctor_obj i hi N)).trans (sourceReflectRep_obj_self N hi)))
-        ((LinearMap.range (outgoingMap M i)).mkQ f) =
+          (sourceReflectionFunctor_obj i hi N)).trans (sourceReflectRep_obj_self N hi))).hom
+        ((((sourceReflectionFunctor i hi).map η).app i).hom
+          ((eqToHom ((congrArg (fun R : QuiverRep k (Reflect Q i) ↦ R.obj i)
+            (sourceReflectionFunctor_obj i hi M)).trans
+              (sourceReflectRep_obj_self M hi)).symm).hom (Submodule.Quotient.mk f))) =
       (LinearMap.range (outgoingMap N i)).mkQ (fun e ↦ η.app e.1 (f e)) := by
   have hM : (congrArg (fun R : QuiverRep k (Reflect Q i) ↦ R.obj i)
       (sourceReflectionFunctor_obj i hi M)).trans (sourceReflectRep_obj_self M hi) =
