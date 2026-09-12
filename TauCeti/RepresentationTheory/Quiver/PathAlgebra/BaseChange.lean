@@ -90,6 +90,7 @@ theorem baseChangeAlgHom_ofPath (f : k →+* l) (g : pathAlgebra l Q →ₐ[l] B
     (baseChangeAlgHom_hzero g) (baseChangeAlgHom_hone g) x
 
 /-- Changing coefficients and applying `g` transports a scalar through `f`. -/
+@[simp]
 theorem baseChangeAlgHom_algebraMap (f : k →+* l) (g : pathAlgebra l Q →ₐ[l] B)
     (a : k) :
     letI : Algebra k B := ((algebraMap l B).comp f).toAlgebra'
@@ -97,8 +98,8 @@ theorem baseChangeAlgHom_algebraMap (f : k →+* l) (g : pathAlgebra l Q →ₐ[
     baseChangeAlgHom f g (algebraMap k (pathAlgebra k Q) a) = algebraMap l B (f a) := by
   let _ : Algebra k B := ((algebraMap l B).comp f).toAlgebra'
     (fun b y ↦ Algebra.commutes (R := l) (A := B) (f b) y)
-  change baseChangeAlgHom f g (algebraMap k (pathAlgebra k Q) a) =
-    ((algebraMap l B).comp f) a
+  -- `toAlgebra'` makes the target's `k`-algebra map the displayed composite.
+  rw [← RingHom.comp_apply]
   exact (baseChangeAlgHom f g).commutes a
 
 /-- In the algebra structure induced through `f`, the scalar action of `k` is the scalar action
@@ -108,7 +109,9 @@ theorem smul_def_baseChange (f : k →+* l) (a : k) (x : B) :
       (fun b y ↦ Algebra.commutes (R := l) (A := B) (f b) y)
     a • x = f a • x := by
   simp only [Algebra.smul_def]
-  rfl
+  -- Expose the coefficient map supplied by `toAlgebra'` before evaluating the composite.
+  change ((algebraMap l B).comp f) a * x = algebraMap l B (f a) * x
+  rw [RingHom.comp_apply]
 
 end BaseChange
 
