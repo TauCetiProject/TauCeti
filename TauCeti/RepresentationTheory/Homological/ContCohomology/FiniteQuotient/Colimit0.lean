@@ -42,11 +42,10 @@ uniform local constancy on a product.
 * `explicitFiniteQuotientTransition0_bijective`: every degree-zero transition is bijective.
 * `explicitFiniteQuotientColimit0`: the comparison cocone is a colimit cocone.
 
-The construction follows the Layer 4 target in the human-authored
-`TauCetiRoadmap/ProfiniteCohomology/README.md`, as well as Neukirch, Schmidt and Wingberg,
-*Cohomology of Number Fields*, (1.2.5), and Ribes and Zalesskii, *Profinite Groups*, Corollary
-6.5.6(a). It uses Mathlib's `Functor.IsEventuallyConstantFrom` to express that the degree-zero
-system is already constant at the top open normal subgroup.
+The construction follows Neukirch, Schmidt and Wingberg, *Cohomology of Number Fields*, (1.2.5),
+and Ribes and Zalesskii, *Profinite Groups*, Corollary 6.5.6(a). It uses Mathlib's
+`Functor.IsEventuallyConstantFrom` to express that the degree-zero system is already constant at
+the top open normal subgroup.
 -/
 
 public section
