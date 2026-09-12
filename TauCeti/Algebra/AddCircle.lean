@@ -178,7 +178,7 @@ end Torsion
 
 section PeriodDiv
 
-variable {𝕜 : Type*} [Field 𝕜] [CharZero 𝕜] (p : 𝕜) {n : ℕ}
+variable {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜] (p : 𝕜) {n : ℕ}
 
 /-- Scaling the class of `p / n` by a divisor `d` of `n` gives the class of `p / (n / d)`. For
 positive `n` these two classes are the canonical generators of the `n`-torsion and of the
@@ -192,11 +192,9 @@ theorem nsmul_coe_period_div {d : ℕ} (hd : d ∣ n) :
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   have hd0 : d ≠ 0 := by rintro rfl; exact hn (Nat.zero_dvd.mp hd)
-  have hn0 : (n : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hn
   have hd0' : (d : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hd0
   have key : (d : 𝕜) * (p / n) = p / ((n / d : ℕ) : 𝕜) := by
-    rw [Nat.cast_div hd hd0']
-    field_simp
+    rw [Nat.cast_div hd hd0', div_div_eq_mul_div, ← mul_div_assoc, (Nat.cast_commute d p).eq]
   rw [← coe_nsmul, nsmul_eq_mul, key]
 
 end PeriodDiv
