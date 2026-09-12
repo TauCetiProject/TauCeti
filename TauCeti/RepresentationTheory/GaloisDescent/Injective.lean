@@ -41,7 +41,7 @@ injective after scalar extension. Semilinearity is only required on scalar multi
 image of the map. No dimension restriction is imposed on either module. -/
 theorem liftBaseChange_injective_of_invariant
     {ρ : Representation k (L ≃ₐ[k] L) V}
-    (f : W →ₗ[k] V) (hf : Function.Injective f)
+    {f : W →ₗ[k] V} (hf : Function.Injective f)
     (hsemi : ∀ (σ : L ≃ₐ[k] L) (a : L) (w : W),
       ρ σ (a • f w) = σ a • f w) :
     Function.Injective (f.liftBaseChange L) := by
