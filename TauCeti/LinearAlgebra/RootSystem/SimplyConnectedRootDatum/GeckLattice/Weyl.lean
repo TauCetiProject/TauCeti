@@ -299,11 +299,24 @@ theorem geckSimpleWeylPoint_mem_normalizer_geckWeightTorusPoints (i : Fin t.rank
         (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (.inl i) (.inr i) A := by
     apply Subtype.ext
     rfl
-  rw [← Subgroup.mem_map_iff_mem (f := carrierEquiv.toMonoidHom) carrierEquiv.injective,
-    Subgroup.map_equiv_normalizer_eq, htorus]
-  change carrierEquiv (t.geckSimpleWeylPoint ht i A) ∈ _
-  rw [hweylPoint]
-  exact
+  have htransport :
+      t.geckSimpleWeylPoint ht i A ∈
+          Subgroup.normalizer (t.geckWeightTorusPoints ht A).range ↔
+        carrierEquiv (t.geckSimpleWeylPoint ht i A) ∈
+          Subgroup.normalizer
+            (UniversalEnvelopingAlgebra.kostantToralWeightTorusPoints
+              (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+              (t.geckCoordinateLattice ht).toAddSubgroup
+              (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+              (t.isNilpotent_geckRepresentation_rootGenerator ht)
+              (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A).range := by
+    have hcarrierApply :
+        carrierEquiv.toMonoidHom (t.geckSimpleWeylPoint ht i A) =
+          carrierEquiv (t.geckSimpleWeylPoint ht i A) := rfl
+    rw [← Subgroup.mem_map_iff_mem (f := carrierEquiv.toMonoidHom) carrierEquiv.injective,
+      Subgroup.map_equiv_normalizer_eq, htorus, hcarrierApply]
+  rw [htransport]
+  simpa only [hweylPoint] using
     (UniversalEnvelopingAlgebra.kostantToralWeylPoint_mem_normalizer_weightTorusPoints
       (i := Sum.inl i) (j := Sum.inr i) (c := i)
       (α := (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i))
