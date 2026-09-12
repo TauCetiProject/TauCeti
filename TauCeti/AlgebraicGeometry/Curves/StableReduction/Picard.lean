@@ -14,16 +14,21 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType
 # The Picard group of a numerical type
 
 Let `T` be a numerical type, with components `i`, multiplicities `mᵢ`, weights `wᵢ` and
-intersection matrix `A = (aᵢⱼ)`. A divisor class on the special fibre of a regular model
-realising `T` is recorded by its multidegree: the tuple of the degrees of a line bundle on the
-components, each taken over the constant field `κᵢ` of its own component. The degree over `κⱼ` of
-the restriction to `Cⱼ` of the line bundle attached to `Cᵢ` is `aᵢⱼ / wⱼ`, so the classes coming
-from the components themselves span the image of
+intersection matrix `A = (aᵢⱼ)`. A *multidegree* of `T` is a tuple `d : T.Component → ℤ`, and the
+Picard group of `T` is the cokernel of
 
 `eᵢ ↦ ∑ⱼ (aᵢⱼ / wⱼ) eⱼ`,
 
-and the Picard group of the numerical type is the cokernel of that map, as in
-[Stacks, Tag 0C7H](https://stacks.math.columbia.edu/tag/0C7H).
+as in [Stacks, Tag 0C7H](https://stacks.math.columbia.edu/tag/0C7H). Everything in this file is
+purely numerical: it is a construction on the combinatorial datum `T` alone, and no model, line
+bundle or realisation statement occurs in any definition or proof below.
+
+The geometry the construction abstracts, and from which the terminology is borrowed, is the
+following. On the special fibre of a regular model realising `T`, a line bundle has a multidegree:
+the tuple of the degrees of its restrictions to the components, each taken over the constant field
+`κᵢ` of its own component. The degree over `κⱼ` of the restriction to `Cⱼ` of the line bundle
+attached to `Cᵢ` is `aᵢⱼ / wⱼ`, so the bundles coming from the components themselves have
+multidegrees spanning the image of the map above.
 
 The divisions `aᵢⱼ / wⱼ` are exact: the defining axiom of a numerical type gives `wⱼ ∣ aⱼᵢ`, and
 the intersection matrix is symmetric. Performing them is not cosmetic. The cokernel `Coker(A)` of
@@ -41,8 +46,8 @@ halves of that statement are proved below.
   `TauCeti.NumericalType.Coker`, the cokernel of `A`.
 * `TauCeti.NumericalType.picToCoker`: the comparison map `Pic(T) → Coker(A)` induced by
   `eⱼ ↦ wⱼeⱼ`.
-* `TauCeti.NumericalType.degree`: the total degree `∑ⱼ mⱼwⱼdⱼ` of a divisor class, the degree over
-  the residue field of the corresponding line bundle on the whole special fibre.
+* `TauCeti.NumericalType.degree`: the total degree `∑ⱼ mⱼwⱼdⱼ` of a multidegree, as a homomorphism
+  on `Pic(T)`.
 * `TauCeti.NumericalType.Equiv.picCongr`: the isomorphism of Picard groups induced by an
   equivalence of numerical types.
 
@@ -93,8 +98,9 @@ lemma weight_dvd_intersection (i j : T.Component) : (T.weight j : ℤ) ∣ T.int
   exact T.weight_dvd j i
 
 /-- The weighted intersection matrix `a'ᵢⱼ = aᵢⱼ / wⱼ` of a numerical type. Its `i`-th row is the
-multidegree of the line bundle attached to the `i`-th component: the `j`-th entry is the degree,
-over the constant field `κⱼ` of the `j`-th component, of the restriction of that bundle to `Cⱼ`.
+multidegree attached to the `i`-th component: geometrically, the `j`-th entry is the degree, over
+the constant field `κⱼ` of the `j`-th component, of the restriction to `Cⱼ` of the line bundle
+attached to `Cᵢ`.
 
 The division is exact by `TauCeti.NumericalType.weight_dvd_intersection`; see
 `TauCeti.NumericalType.weightedIntersection_mul_weight`. -/
@@ -124,8 +130,8 @@ lemma weightedIntersection_mul_diagonal :
 /-! ### Multidegrees and the two relation subgroups -/
 
 /-- Rescaling the `j`-th coordinate of a multidegree by the weight `wⱼ`, that is, the map
-`eⱼ ↦ wⱼeⱼ`. It converts a degree measured over the constant field `κⱼ` into a degree measured
-over the residue field. -/
+`eⱼ ↦ wⱼeⱼ`. Geometrically it converts a degree measured over the constant field `κⱼ` into a
+degree measured over the residue field. -/
 def weightScaling : (T.Component → ℤ) →ₗ[ℤ] T.Component → ℤ :=
   (Matrix.diagonal fun i ↦ (T.weight i : ℤ)).vecMulLinear
 
@@ -151,8 +157,8 @@ lemma weightScaling_comp_weightedIntersection :
       Matrix.vecMul_vecMul, weightedIntersection_mul_diagonal, Matrix.vecMulLinear_apply]
 
 /-- The principal multidegrees of a numerical type: the subgroup spanned by the rows
-`j ↦ aᵢⱼ / wⱼ` of the weighted intersection matrix, that is, by the multidegrees of the line
-bundles attached to the components. -/
+`j ↦ aᵢⱼ / wⱼ` of the weighted intersection matrix, that is, by the multidegrees attached to the
+components. -/
 def principalDivisors : Submodule ℤ (T.Component → ℤ) :=
   LinearMap.range T.weightedIntersection.vecMulLinear
 
@@ -193,8 +199,8 @@ lemma principalDivisors_le_comap_intersectionRelations :
 /-! ### The Picard group and the cokernel of the intersection matrix -/
 
 /-- The Picard group of a numerical type: the cokernel of `eᵢ ↦ ∑ⱼ (aᵢⱼ/wⱼ)eⱼ`, as in
-[Stacks, Tag 0C7H](https://stacks.math.columbia.edu/tag/0C7H). Its elements are multidegrees of
-line bundles on the special fibre modulo those coming from the components. -/
+[Stacks, Tag 0C7H](https://stacks.math.columbia.edu/tag/0C7H). Its elements are multidegrees
+`T.Component → ℤ` modulo the principal ones, the rows of the weighted intersection matrix. -/
 abbrev Pic := (T.Component → ℤ) ⧸ T.principalDivisors
 
 /-- The cokernel of the intersection matrix of a numerical type. It is a coarser invariant than
@@ -255,9 +261,10 @@ theorem picToCoker_surjective_iff :
 
 /-- The total degree `∑ⱼ mⱼwⱼdⱼ` of a multidegree `d`, before passing to the Picard group.
 
-Geometrically this is the degree over the residue field of a line bundle on the whole special
-fibre `∑ⱼ mⱼCⱼ`: the `j`-th component contributes its multiplicity times the degree of the
-restriction, measured over the residue field rather than over the constant field `κⱼ`. -/
+The `j`-th component contributes its multiplicity times its coordinate, rescaled by `wⱼ` so as to
+be measured over the residue field rather than over the constant field `κⱼ`. This is the numerical
+counterpart of the degree over the residue field of a line bundle on the whole special fibre
+`∑ⱼ mⱼCⱼ`. -/
 def totalDegree : (T.Component → ℤ) →ₗ[ℤ] ℤ :=
   Fintype.linearCombination ℤ fun j ↦ (T.multiplicity j : ℤ) * (T.weight j : ℤ)
 
@@ -281,8 +288,9 @@ lemma totalDegree_comp_weightedIntersection :
     ring
   rw [Finset.sum_congr rfl fun j _ ↦ key j, ← Finset.mul_sum, T.fiber_relation i, mul_zero]
 
-/-- The total degree of a divisor class on a numerical type: the degree over the residue field of
-the corresponding line bundle on the whole special fibre. -/
+/-- The total degree of a class in the Picard group of a numerical type. The fibre relation makes
+`TauCeti.NumericalType.totalDegree` vanish on the principal multidegrees, so it descends to
+`Pic(T)`. -/
 def degree : T.Pic →ₗ[ℤ] ℤ :=
   Submodule.liftQ _ T.totalDegree <| by
     rw [principalDivisors, LinearMap.range_le_ker_iff]
@@ -293,8 +301,8 @@ def degree : T.Pic →ₗ[ℤ] ℤ :=
 lemma degree_mk (d : T.Component → ℤ) :
     T.degree (Submodule.Quotient.mk d) = T.totalDegree d := (rfl)
 
-/-- A divisor class of nonzero total degree has infinite order in `Pic(T)`: no nonzero multiple of
-it vanishes. -/
+/-- A class of nonzero total degree has infinite order in `Pic(T)`: no nonzero multiple of it
+vanishes. -/
 theorem smul_ne_zero_of_degree_ne_zero {x : T.Pic} (hx : T.degree x ≠ 0) {n : ℤ} (hn : n ≠ 0) :
     n • x ≠ 0 := by
   intro h
@@ -395,8 +403,8 @@ lemma picCongr_symm (f : T.Equiv T') : f.picCongr.symm = f.symm.picCongr := by
   rw [Submodule.Quotient.equiv_symm]
   simp only [symm_toEquiv, LinearEquiv.funCongrLeft_symm, _root_.Equiv.symm_symm]
 
-/-- The total degree of a divisor class on a numerical type is an invariant of its equivalence
-class. -/
+/-- The total degree of a class in `Pic(T)` does not change under transport along an equivalence of
+numerical types. -/
 @[simp]
 lemma degree_picCongr (f : T.Equiv T') (x : T.Pic) : T'.degree (f.picCongr x) = T.degree x := by
   induction x using Submodule.Quotient.induction_on with
