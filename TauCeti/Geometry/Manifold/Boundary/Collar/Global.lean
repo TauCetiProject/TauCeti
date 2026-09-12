@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Constructions.SumProd
-public import Mathlib.Topology.Maps.Basic
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -103,25 +102,19 @@ theorem image_prod_singleton_zero :
 /-- The collar map's preimage of the boundary is exactly its zero slice. -/
 @[simp] theorem preimage_range :
     c ⁻¹' range f = univ ×ˢ ({⟨0, by norm_num⟩} : Set (Ico (0 : ℝ) 1)) := by
-  ext ⟨x, t⟩
-  constructor
-  · rintro ⟨y, hy⟩
-    have hxy : c (x, t) = c (y, ⟨0, by norm_num⟩) := hy.symm.trans (h.apply_zero y).symm
-    have hprod := h.isOpenEmbedding.injective hxy
-    exact ⟨mem_univ _, mem_singleton_iff.mpr (congrArg Prod.snd hprod)⟩
-  · rintro ⟨_, ht⟩
-    rw [mem_singleton_iff] at ht
-    change c (x, t) ∈ range f
-    have ht' : t = ⟨0, by norm_num⟩ := ht
-    rw [ht']
-    exact ⟨x, (h.apply_zero x).symm⟩
+  rw [← h.image_prod_singleton_zero, h.isOpenEmbedding.injective.preimage_image]
+
+/-- Pulling back the boundary parameter along an open embedding preserves collar data. -/
+theorem comp_isOpenEmbedding {e : P → N} (he : IsOpenEmbedding e) :
+    IsCollar (f ∘ e) (c ∘ Prod.map e id) := by
+  refine ⟨h.isOpenEmbedding.comp (he.prodMap IsOpenEmbedding.id), ?_⟩
+  intro x
+  simpa [Function.comp_apply] using h.apply_zero (e x)
 
 /-- Reparametrizing the boundary of a collar by a homeomorphism preserves it. -/
 theorem comp_homeomorph (e : P ≃ₜ N) :
-    IsCollar (f ∘ e) (c ∘ Prod.map e id) := by
-  refine ⟨h.isOpenEmbedding.comp (e.isOpenEmbedding.prodMap IsOpenEmbedding.id), ?_⟩
-  intro x
-  simpa [Function.comp_apply] using h.apply_zero (e x)
+    IsCollar (f ∘ e) (c ∘ Prod.map e id) :=
+  h.comp_isOpenEmbedding e.isOpenEmbedding
 
 /-- Open embeddings of the ambient space carry collars to collars. -/
 theorem isOpenEmbedding_comp {g : M → P} (hg : IsOpenEmbedding g) :
@@ -133,10 +126,8 @@ theorem isOpenEmbedding_comp {g : M → P} (hg : IsOpenEmbedding g) :
 /-- Restricting a collar along an open subset of its base preserves collar data. -/
 theorem restrict {U : Set N} (hU : IsOpen U) :
     IsCollar (f ∘ ((↑) : U → N))
-      (c ∘ Prod.map ((↑) : U → N) id) := by
-  refine ⟨h.isOpenEmbedding.comp (hU.isOpenEmbedding_subtypeVal.prodMap IsOpenEmbedding.id), ?_⟩
-  intro x
-  simpa only [Function.comp_apply, Prod.map_apply, id_eq] using h.apply_zero (x : N)
+      (c ∘ Prod.map ((↑) : U → N) id) :=
+  h.comp_isOpenEmbedding hU.isOpenEmbedding_subtypeVal
 
 end IsCollar
 
@@ -146,10 +137,15 @@ namespace IsCollared
 theorem isEmbedding (h : IsCollared f) : IsEmbedding f :=
   let ⟨_, hc⟩ := h; hc.isEmbedding
 
+/-- Precomposing a collared map with an open embedding preserves the existence of a collar. -/
+theorem comp_isOpenEmbedding (h : IsCollared f) {e : P → N} (he : IsOpenEmbedding e) :
+    IsCollared (f ∘ e) :=
+  let ⟨_, hc⟩ := h; (hc.comp_isOpenEmbedding he).isCollared
+
 /-- A collared map remains collared on every open subset of its domain. -/
 theorem restrict (h : IsCollared f) {U : Set N} (hU : IsOpen U) :
     IsCollared (f ∘ ((↑) : U → N)) :=
-  let ⟨_, hc⟩ := h; (hc.restrict hU).isCollared
+  h.comp_isOpenEmbedding hU.isOpenEmbedding_subtypeVal
 
 /-- Open embeddings of the ambient space preserve the existence of a collar. -/
 theorem isOpenEmbedding_comp {g : M → P} (h : IsCollared f) (hg : IsOpenEmbedding g) :
@@ -158,7 +154,7 @@ theorem isOpenEmbedding_comp {g : M → P} (h : IsCollared f) (hg : IsOpenEmbedd
 
 /-- Reparametrizing the domain by a homeomorphism preserves the existence of a collar. -/
 theorem comp_homeomorph (h : IsCollared f) (e : P ≃ₜ N) : IsCollared (f ∘ e) :=
-  let ⟨_, hc⟩ := h; (hc.comp_homeomorph e).isCollared
+  h.comp_isOpenEmbedding e.isOpenEmbedding
 
 end IsCollared
 
