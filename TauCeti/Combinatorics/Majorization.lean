@@ -16,18 +16,10 @@ This file identifies an integer sequence from three numerical properties: it is 
 majorized by the finite staircase `N - 1, ..., 0`, and it has the same value as that staircase
 under a particular quadratic weighted sum.
 
-The proof uses discrete summation by parts. For the target `t i = N - (i + 1)`, put
-
-`D k = ∑ i < k, (t i - a i)` and `q i = t i + a i + N - 2i`.
-
-The total-sum hypothesis says `D N = 0`, while equality of the quadratic sums and summation by
-parts give
-
-`0 = ∑ k < N - 1, D (k + 1) * (q k - q (k + 1))`.
-
-Majorization makes every `D (k + 1)` nonnegative. Antitonicity of `a` makes every other factor
-positive, since `q k - q (k + 1) = 3 + a k - a (k + 1)`. Thus all partial deficits vanish, which
-recovers every coordinate of `a`.
+The criterion is intended for uniqueness arguments in which prefix inequalities alone leave many
+possible sequences, but equality of a strictly convex statistic forces the extremal staircase.
+Its integer-valued statement applies directly to occupation-number tuples after passing between
+finite indices and natural-number ranges.
 
 ## Main result
 
@@ -46,38 +38,6 @@ public section
 namespace TauCeti
 
 open scoped BigOperators
-
-/-- Discrete summation by parts, written using initial sums of `d`.
-
-The separate final term makes the statement valid without assuming that the total sum of `d`
-vanishes. This is the algebraic identity used in the staircase uniqueness proof below. -/
-private theorem sum_range_mul_eq_sum_range_partialSum_mul_sub_add
-    (d q : ℕ → ℤ) : ∀ n : ℕ,
-    (∑ i ∈ Finset.range n, d i * q i) =
-      (∑ k ∈ Finset.range (n - 1), (∑ i ∈ Finset.range (k + 1), d i) *
-        (q k - q (k + 1))) + (∑ i ∈ Finset.range n, d i) * q (n - 1) := by
-  intro n
-  have h := Finset.sum_range_by_parts q d n
-  simp only [smul_eq_mul] at h
-  calc
-    _ = ∑ i ∈ Finset.range n, q i * d i := by
-      apply Finset.sum_congr rfl
-      intro i _
-      ring
-    _ = q (n - 1) * (∑ i ∈ Finset.range n, d i) -
-        ∑ k ∈ Finset.range (n - 1),
-          (q (k + 1) - q k) * (∑ i ∈ Finset.range (k + 1), d i) := h
-    _ = _ := by
-      have hneg : -(∑ k ∈ Finset.range (n - 1),
-          (q (k + 1) - q k) * (∑ i ∈ Finset.range (k + 1), d i)) =
-          ∑ k ∈ Finset.range (n - 1),
-            (∑ i ∈ Finset.range (k + 1), d i) * (q k - q (k + 1)) := by
-        rw [← Finset.sum_neg_distrib]
-        apply Finset.sum_congr rfl
-        intro k _
-        ring
-      rw [sub_eq_add_neg, hneg]
-      ring
 
 /-- **A sequence majorized by the finite staircase and having its quadratic sum is that
 staircase.**
@@ -130,8 +90,28 @@ theorem eq_staircase_of_antitone_of_prefix_sum_le_of_sum_eq_of_casimir_eq
     have hak := ha k hk
     simp only [q, t]
     omega
-  have hdecomp := sum_range_mul_eq_sum_range_partialSum_mul_sub_add d q N
-  rw [hcasimir_range, hsum_range, zero_mul, add_zero] at hdecomp
+  have hparts := Finset.sum_range_by_parts q d N
+  simp only [smul_eq_mul] at hparts
+  have hdecomp :
+      (∑ k ∈ Finset.range (N - 1), (∑ i ∈ Finset.range (k + 1), d i) *
+        (q k - q (k + 1))) = 0 := by
+    calc
+      _ = -(∑ k ∈ Finset.range (N - 1),
+          (q (k + 1) - q k) * (∑ i ∈ Finset.range (k + 1), d i)) := by
+        rw [← Finset.sum_neg_distrib]
+        apply Finset.sum_congr rfl
+        intro k _
+        ring
+      _ = q (N - 1) * (∑ i ∈ Finset.range N, d i) -
+          ∑ k ∈ Finset.range (N - 1),
+            (q (k + 1) - q k) * (∑ i ∈ Finset.range (k + 1), d i) := by
+        rw [hsum_range, mul_zero, zero_sub]
+      _ = ∑ i ∈ Finset.range N, q i * d i := hparts.symm
+      _ = ∑ i ∈ Finset.range N, d i * q i := by
+        apply Finset.sum_congr rfl
+        intro i _
+        ring
+      _ = 0 := hcasimir_range
   have hterms_nonneg : ∀ k ∈ Finset.range (N - 1),
       0 ≤ (∑ i ∈ Finset.range (k + 1), d i) * (q k - q (k + 1)) := by
     intro k hk
@@ -140,7 +120,7 @@ theorem eq_staircase_of_antitone_of_prefix_sum_le_of_sum_eq_of_casimir_eq
     exact mul_nonneg (hpartial_nonneg (k + 1) hkN) (le_of_lt (hqdiff k hkN))
   have hterm_zero : ∀ k ∈ Finset.range (N - 1),
       (∑ i ∈ Finset.range (k + 1), d i) * (q k - q (k + 1)) = 0 :=
-    (Finset.sum_eq_zero_iff_of_nonneg hterms_nonneg).mp hdecomp.symm
+    (Finset.sum_eq_zero_iff_of_nonneg hterms_nonneg).mp hdecomp
   have hpartial_zero (k : ℕ) (hk : k ≤ N) :
       (∑ i ∈ Finset.range k, d i) = 0 := by
     rcases eq_or_lt_of_le hk with rfl | hkN

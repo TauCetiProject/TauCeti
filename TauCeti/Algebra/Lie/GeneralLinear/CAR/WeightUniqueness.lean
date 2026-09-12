@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
 public import TauCeti.Combinatorics.Majorization
 
 import Mathlib.Tactic
@@ -16,13 +15,11 @@ import Mathlib.Tactic
 The half-integral weights arising from the CAR model have the form `a i + 1 / 2`, where `a` is a
 tuple of natural-number occupation counts. This file specializes the integer staircase criterion
 from `TauCeti.Combinatorics.Majorization` to the finite natural-number tuples produced by that
-model. The scalar normal form
-`TauCeti.natCast_fin_rev_add_one_div_two_eq_glHalfStaircase` then identifies the recovered tuple
-with the existing half-staircase weight.
+model.
 
 ## Main results
 
-* `TauCeti.eq_fin_rev_of_antitone_of_prefix_sum_le_of_sum_eq_of_casimir_eq`: a natural occupation
+* `TauCeti.eq_finRev_of_antitone_of_prefix_sum_le_of_sum_eq_of_casimir_eq`: a natural occupation
   tuple dominated by `Fin.rev`, with the same total and quadratic sum, is `Fin.rev`.
 
 ## References
@@ -47,7 +44,7 @@ sums are equal. If the two tuples also have the same value under
 
 then `a` is the reverse-index tuple. For CAR highest weights this is the integral form of the
 trace-form `gl_N` Casimir polynomial after a common half-unit shift. -/
-theorem eq_fin_rev_of_antitone_of_prefix_sum_le_of_sum_eq_of_casimir_eq
+theorem eq_finRev_of_antitone_of_prefix_sum_le_of_sum_eq_of_casimir_eq
     {N : ℕ} (a : Fin N → ℕ) (ha : Antitone a)
     (hmajor : ∀ (k : ℕ) (hk : k < N),
       (∑ i : Fin k, (a (Fin.castLE hk.le i) : ℤ)) ≤
