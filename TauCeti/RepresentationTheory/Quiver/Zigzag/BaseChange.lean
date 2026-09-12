@@ -187,7 +187,7 @@ theorem skewZigzagBaseChange_algebraMap
 
 /-- Mapping a skew-zigzag parameter along the identity homomorphism leaves its relation ideal
 unchanged. -/
-theorem skewZigzagIdeal_map_id (c : SkewZigzagParameter k G) :
+private theorem skewZigzagIdeal_map_id (c : SkewZigzagParameter k G) :
     (skewZigzagIdeal k G (c.map (RingHom.id k : k →* k))).asIdeal =
       (skewZigzagIdeal k G c).asIdeal :=
   congrArg (fun d : SkewZigzagParameter k G => (skewZigzagIdeal k G d).asIdeal) (by
@@ -196,7 +196,7 @@ theorem skewZigzagIdeal_map_id (c : SkewZigzagParameter k G) :
 
 /-- Mapping a skew-zigzag parameter along a composite or successively gives the same relation
 ideal. -/
-theorem skewZigzagIdeal_map_comp {m : Type*} [CommRing m]
+private theorem skewZigzagIdeal_map_comp {m : Type*} [CommRing m]
     (f : k →+* l) (g : l →+* m) (c : SkewZigzagParameter k G) :
     (skewZigzagIdeal m G (c.map (g.comp f : k →* m))).asIdeal =
       (skewZigzagIdeal m G ((c.map (f : k →* l)).map (g : l →* m))).asIdeal :=
@@ -214,7 +214,10 @@ theorem skewZigzagIdeal_map_comp {m : Type*} [CommRing m]
 theorem skewZigzagBaseChange_id (c : SkewZigzagParameter k G) :
     (Ideal.quotientEquivAlgOfEq k
       (I := (skewZigzagIdeal k G (c.map (RingHom.id k : k →* k))).asIdeal)
-      (J := (skewZigzagIdeal k G c).asIdeal) (skewZigzagIdeal_map_id G c)).toRingHom.comp
+      (J := (skewZigzagIdeal k G c).asIdeal)
+      (congrArg (fun d : SkewZigzagParameter k G => (skewZigzagIdeal k G d).asIdeal) (by
+        simpa only [RingHom.toMonoidHom_eq_coe, RingHom.coe_monoidHom_id] using
+          SkewZigzagParameter.map_id c))).toRingHom.comp
         (skewZigzagBaseChange G (RingHom.id k) c) =
       RingHom.id (skewZigzagQuotient k G c) := by
   apply PathAlgebra.ringHom_ext_of_surjective (skewZigzagMk k G c)
@@ -235,7 +238,12 @@ scalar-extension maps. -/
 @[simp]
 theorem skewZigzagBaseChange_comp {m : Type*} [CommRing m]
     (f : k →+* l) (g : l →+* m) (c : SkewZigzagParameter k G) :
-    (Ideal.Quotient.factor (le_of_eq (skewZigzagIdeal_map_comp G f g c))).comp
+    (Ideal.Quotient.factor (le_of_eq
+      (congrArg (fun d : SkewZigzagParameter m G => (skewZigzagIdeal m G d).asIdeal) (by
+        rw [show (g.comp f : k →* m) = (g : l →* m).comp (f : k →* l) by
+          ext x
+          rfl]
+        exact SkewZigzagParameter.map_comp (f : k →* l) (g : l →* m) c)))).comp
         (skewZigzagBaseChange G (g.comp f) c) =
       (skewZigzagBaseChange G g (c.map (f : k →* l))).comp
         (skewZigzagBaseChange G f c) := by
