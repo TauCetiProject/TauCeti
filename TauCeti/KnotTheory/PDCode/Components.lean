@@ -48,6 +48,13 @@ def componentPerm (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
       D.crossing i (oppositeCrossingSlot slot) := by
   simp [crossingTurn]
 
+/-- The crossing turn is an involution. -/
+@[simp] theorem crossingTurn_crossingTurn (D : PDCode n) (h : Fin (4 * n)) :
+    D.crossingTurn (D.crossingTurn h) = h := by
+  obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
+  obtain ⟨⟨i, slot⟩, rfl⟩ := (PDCode.crossingSlotEquiv n).surjective x
+  simp [crossingTurn]
+
 /-- Mirroring preserves the opposite-slot permutation. -/
 @[simp] theorem crossingTurn_mirror (D : PDCode n) : D.mirror.crossingTurn = D.crossingTurn := by
   simp [crossingTurn]
@@ -125,8 +132,16 @@ theorem orientation_componentPerm (D : OrientedPDCode n) (h : Fin (4 * n)) :
 /-- The component traversal permutation restricted to half-edges pointing away from crossings. -/
 noncomputable def componentPermOutgoing (D : OrientedPDCode n) :
     Equiv.Perm {h : Fin (4 * n) // D.orientation h = true} :=
-  D.toPDCode.componentPerm.subtypePerm (fun h => by
-    simp only [orientation_componentPerm])
+    D.toPDCode.componentPerm.subtypePerm (fun h => by
+      simp only [orientation_componentPerm])
+
+/-- Mirroring preserves the outgoing traversal. -/
+@[simp] theorem componentPermOutgoing_mirror (D : OrientedPDCode n) :
+    ∀ h : {h : Fin (4 * n) // D.orientation h = true},
+      (D.mirror.componentPermOutgoing ⟨h, by simpa using h.property⟩).val =
+        (D.componentPermOutgoing h).val := by
+  intro h
+  simp [componentPermOutgoing]
 
 /-- Outgoing traversal has the same half-edge value as unrestricted traversal. -/
 @[simp] theorem componentPermOutgoing_apply (D : OrientedPDCode n)
@@ -144,10 +159,6 @@ theorem orbitCount_componentPermOutgoing (D : OrientedPDCode n) :
     (fun h => by simp only [p, orientation_componentPerm])
   let e : {h // p h} ≃ {h // ¬p h} :=
     D.edgePair.val.subtypeEquiv (fun h => by simp [p])
-  have hturn (h : Fin (4 * n)) : D.crossingTurn (D.crossingTurn h) = h := by
-    obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
-    obtain ⟨⟨i, slot⟩, rfl⟩ := (PDCode.crossingSlotEquiv n).surjective x
-    simp [PDCode.crossingTurn]
   -- Arc pairing exchanges outgoing and incoming traversal, reversing its direction.
   have he : e.permCongr D.componentPermOutgoing = incoming⁻¹ := by
     apply Equiv.ext
@@ -157,7 +168,7 @@ theorem orbitCount_componentPermOutgoing (D : OrientedPDCode n) :
     apply incoming.injective
     apply Subtype.ext
     simp [e, incoming, Equiv.subtypeEquiv, componentPermOutgoing,
-      PDCode.componentPerm_apply, hturn]
+      PDCode.componentPerm_apply, PDCode.crossingTurn_crossingTurn]
   -- Splitting by orientation accounts for every unrestricted orbit, including fixed points.
   have hsplit : D.toPDCode.componentPerm =
       (Equiv.sumCompl p).permCongr (Equiv.Perm.sumCongr D.componentPermOutgoing incoming) := by
