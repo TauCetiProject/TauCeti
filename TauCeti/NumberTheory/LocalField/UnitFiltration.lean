@@ -61,10 +61,6 @@ The valuation appearing in the criteria is Mathlib's multiplicative `ValuativeRe
 for which greater depth means a smaller value and for which `0` is the smallest value; this is
 what lets `1` belong to every step.
 
-The two cardinality statements at depth zero are deliberately not `simp` lemmas. `simp` rewrites
-`unitFiltration K 0` and `unitFiltration K 1` to Mathlib's unit and principal unit groups, so
-neither left-hand side is in `simp` normal form.
-
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §2.
@@ -196,17 +192,20 @@ theorem unitFiltration_one :
 
 /-! ### The depth-zero graded piece
 
-The mathematical content of the depth-zero identification is entirely Mathlib's
-`ValuationSubring.unitsModPrincipalUnitsEquivResidueFieldUnits`, together with the reduction map
-`ValuationSubring.unitGroupToResidueFieldUnits` it is built from
-(`Mathlib/RingTheory/Valuation/ValuationSubring.lean`). The declarations below only transport that
-equivalence from the unit and principal unit groups to the two shallow steps of the filtration. -/
+Reduction modulo `𝓂[K]` carries `U(K,0)`, the units of `𝒪[K]`, onto the multiplicative group
+`𝓀[K]ˣ` of the residue field, and a unit reduces to `1` exactly when it lies in `U(K,1)`. So
+reduction has kernel `U(K,1)` and identifies the depth-zero graded piece `U(K,0) / U(K,1)` with
+`𝓀[K]ˣ`; in particular that quotient is finite of order `q - 1`, where `q = #𝓀[K]`. -/
 
 /-- The successive quotient `U(K,i) / U(K,i+1)` of the unit filtration. -/
 abbrev UnitFiltrationGraded (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
     [IsNonarchimedeanLocalField K] (i : ℕ) :=
   unitFiltration K i ⧸ (unitFiltration K (i + 1)).subgroupOf (unitFiltration K i)
 
+-- Provenance: the equivalence below is Mathlib's
+-- `ValuationSubring.unitsModPrincipalUnitsEquivResidueFieldUnits`, built from the reduction map
+-- `ValuationSubring.unitGroupToResidueFieldUnits`, both in
+-- `Mathlib/RingTheory/Valuation/ValuationSubring.lean`.
 /-- The depth-zero graded piece `U(K,0) / U(K,1)` is the multiplicative group of the residue
 field. The isomorphism is induced by reduction modulo the maximal ideal. -/
 noncomputable def unitFiltrationGradedZeroEquivResidueFieldUnits :
@@ -259,6 +258,9 @@ noncomputable instance unitFiltration_one_isFiniteRelIndex_zero :
   rw [Subgroup.isFiniteRelIndex_iff_finiteIndex, Subgroup.finiteIndex_iff_finite_quotient]
   infer_instance
 
+-- The two cardinalities below are deliberately not `simp` lemmas: `simp` rewrites
+-- `unitFiltration K 0` and `unitFiltration K 1` to Mathlib's unit and principal unit groups, so
+-- neither left-hand side is in `simp` normal form.
 /-- The depth-zero graded piece has `q - 1` elements, where `q` is the cardinality of the residue
 field. -/
 theorem natCard_unitFiltrationGraded_zero :
