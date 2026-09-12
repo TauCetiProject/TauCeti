@@ -187,9 +187,7 @@ theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
           v.valuation K (x : K) = v.valuation K (p v) :=
             Valuation.map_eq_of_sub_lt _ (by
               have hlt := hx v hv
-              rw [show a v = p v by simp only [a, ite_eq_right hvm],
-                show γ v = WithZero.exp (FractionalIdeal.count K v I.1.1) by
-                  simp only [γ, ite_eq_right hvm]] at hlt
+              simp only [a, γ, ite_eq_right hvm] at hlt
               rw [hp v]
               exact hlt)
           _ = _ := hp v
@@ -206,7 +204,6 @@ theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
     rw [NumberFieldArithmetic.coe_idealsAwayInclusion, Subgroup.coe_mul,
       coe_principalIdealPrimeTo]
   rw [hJ, map_mul]
-  change rayClassMk 𝔪 I * principalRayClass 𝔪 xm = rayClassMk 𝔪 I
-  rw [principalRayClass_eq_one_of_isCongrOne hxm, mul_one]
+  rw [← principalRayClass_apply, principalRayClass_eq_one_of_isCongrOne hxm, mul_one]
 
 end TauCeti.GlobalNumberFields

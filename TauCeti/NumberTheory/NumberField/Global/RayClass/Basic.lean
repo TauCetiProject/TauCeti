@@ -217,8 +217,8 @@ theorem rayClassLift_unique {M : Type*} [Monoid M] {𝔪 : Modulus K} (φ : idea
   obtain ⟨I, rfl⟩ := rayClassMk_surjective 𝔪 c
   rw [rayClassLift_rayClassMk, ← hψ, MonoidHom.comp_apply]
 
-/-- The kernel of a homomorphism induced from the group of ideals prime to a modulus.  This
-exposes `QuotientGroup.ker_lift` through the module-opaque `RayClassGroup` representation. -/
+/-- The kernel of `rayClassLift φ h` is the image under `rayClassMk 𝔪` of `φ.ker`.  This exposes
+`QuotientGroup.ker_lift` through the module-opaque `RayClassGroup` representation. -/
 theorem ker_rayClassLift {M : Type*} [Group M] {𝔪 : Modulus K}
     (φ : idealsPrimeTo 𝔪 →* M) (h : ray 𝔪 ≤ φ.ker) :
     (rayClassLift φ h).ker = Subgroup.map (rayClassMk 𝔪) φ.ker :=
