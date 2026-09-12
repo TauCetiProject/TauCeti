@@ -91,10 +91,6 @@ half-edges. -/
 noncomputable def crossingComponentCount (D : PDCode n) : ℕ :=
   orbitCount D.componentPerm / 2
 
-/-- The crossing-bearing component count is half the unrestricted traversal orbit count. -/
-theorem crossingComponentCount_def (D : PDCode n) :
-    D.crossingComponentCount = orbitCount D.componentPerm / 2 := by simp [crossingComponentCount]
-
 /-- A code with no crossing visits has no crossing-bearing components. -/
 @[simp] theorem crossingComponentCount_zero (D : PDCode 0) :
     D.crossingComponentCount = 0 := by
@@ -136,7 +132,7 @@ noncomputable def componentPermOutgoing (D : OrientedPDCode n) :
       simp only [orientation_componentPerm])
 
 /-- Mirroring preserves the outgoing traversal. -/
-theorem componentPermOutgoing_mirror (D : OrientedPDCode n) :
+theorem componentPermOutgoing_mirror_apply (D : OrientedPDCode n) :
     ∀ h : {h : Fin (4 * n) // D.orientation h = true},
       (D.mirror.componentPermOutgoing ⟨h, by simpa using h.property⟩).val =
         (D.componentPermOutgoing h).val := by
@@ -178,7 +174,8 @@ theorem orbitCount_componentPermOutgoing (D : OrientedPDCode n) :
         Equiv.sumCompl_symm_apply_of_neg, hh, incoming, componentPermOutgoing]
   have hcount : orbitCount incoming = orbitCount D.componentPermOutgoing := by
     simpa using (congrArg orbitCount he).symm
-  rw [PDCode.crossingComponentCount_def, hsplit, Equiv.orbitCount_permCongr,
+  simp only [PDCode.crossingComponentCount]
+  rw [hsplit, Equiv.orbitCount_permCongr,
     Equiv.Perm.orbitCount_sumCongr, hcount]
   omega
 
