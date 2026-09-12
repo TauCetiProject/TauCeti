@@ -392,8 +392,7 @@ theorem finite_faces_orderedCylinder (hfin : K.faces.Finite) :
   refine (Finset.finite_toSet ((τ.product Finset.univ).powerset)).subset ?_
   intro σ hστ
   rw [Set.mem_preimage, Set.mem_singleton_iff] at hστ
-  change σ ∈ (τ.product Finset.univ).powerset
-  rw [Finset.mem_powerset]
+  rw [Finset.mem_coe, Finset.mem_powerset]
   intro p hp
   apply Finset.mem_product.mpr
   refine ⟨?_, Finset.mem_univ _⟩
