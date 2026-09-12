@@ -19,9 +19,8 @@ form the category of chosen extensions. It also records the finite separable fie
 occur between such extensions; these maps are the compatible pieces used by later
 common-refinement arguments.
 
-The existence of a common refinement for two arbitrary chosen extensions is deliberately not
-asserted here. Constructing it requires the compositum together with a compatible choice of a
-place, which is the next arithmetic step in the roadmap.
+The existence of a common refinement for two arbitrary chosen extensions is not asserted here.
+Constructing it requires the compositum together with a compatible choice of a place.
 -/
 
 public section
@@ -57,9 +56,11 @@ structure Hom (E F : FiniteDVRExtension R K) where
   local_isLocal : IsLocalHom localMap.toRingHom
 
 attribute [instance] Hom.local_isLocal
+attribute [simp] Hom.field_local
 
 namespace Hom
 
+/-- Two maps are equal when their field and local-ring components agree. -/
 @[ext (iff := false)]
 lemma ext {E F : FiniteDVRExtension R K} {f g : Hom E F}
     (hfield : f.field = g.field) (hlocal : f.localMap = g.localMap) : f = g := by
@@ -147,11 +148,27 @@ structure Tower (E F : FiniteDVRExtension R K) where
   /-- The upper field is separable over the lower one. -/
   [fieldSeparable : Algebra.IsSeparable E.extensionField F.extensionField]
 
+attribute [simp] Tower.field_algebra
+
 namespace Tower
 
 variable {E F : FiniteDVRExtension R K}
 
 variable {G : FiniteDVRExtension R K}
+
+@[ext]
+lemma ext {T U : Tower E F} (h : T.hom = U.hom) : T = U := by
+  cases T with
+  | @mk hom fieldAlgebra field_algebra fieldTower fieldFinite fieldSeparable =>
+    cases U with
+    | @mk hom' fieldAlgebra' field_algebra' fieldTower' fieldFinite' fieldSeparable' =>
+      dsimp at h ⊢
+      cases h
+      congr
+      · apply Algebra.algebra_ext fieldAlgebra fieldAlgebra'
+        intro r
+        rw [field_algebra, field_algebra']
+      all_goals exact proof_irrel_heq _ _
 
 /-- Compose finite separable towers, including their compatible maps of chosen places. -/
 def comp (T : Tower E F) (U : Tower F G) : Tower E G := by
