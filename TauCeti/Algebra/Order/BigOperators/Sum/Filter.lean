@@ -39,9 +39,10 @@ namespace Finset
 
 variable {ι α M : Type*} [Preorder α] [AddCommMonoid M]
 
+open scoped Classical in
 /-- If all nonzero terms of a finite family have indices at or to the left of `p`, then its sum
 over the terms indexed by `q` vanishes whenever `p < q`. -/
-theorem sum_filter_eq_zero_of_forall_ne_zero_le [DecidableEq α] (s : Finset ι) {a : ι → α}
+theorem sum_filter_eq_zero_of_forall_ne_zero_le (s : Finset ι) {a : ι → α}
     {e : ι → M} {p q : α} (hpq : p < q) (ha : ∀ i ∈ s, e i ≠ 0 → a i ≤ p) :
     Finset.sum (s.filter (fun i => a i = q)) e = 0 := by
   apply Finset.sum_eq_zero
@@ -50,10 +51,11 @@ theorem sum_filter_eq_zero_of_forall_ne_zero_le [DecidableEq α] (s : Finset ι)
   have hai := ha i (Finset.mem_filter.mp hi).1 hei
   exact (not_lt_of_ge hai) ((Finset.mem_filter.mp hi).2 ▸ hpq)
 
+open scoped Classical in
 /-- If all nonzero terms of a finite family have indices at or to the left of `p`, then a filtered
-sum beyond `p` is bounded below by any negative number bounded below by the sum at `p`. -/
+sum beyond `p` is bounded below by any negative `c` that also bounds the sum at `p` from below. -/
 theorem lt_sum_filter_of_lt_zero_of_forall_ne_zero_le {γ β : Type*} [PartialOrder γ]
-    [Preorder β] [AddCommMonoid β] [DecidableEq γ] (s : Finset ι) {a : ι → γ} {e : ι → β}
+    [Preorder β] [AddCommMonoid β] (s : Finset ι) {a : ι → γ} {e : ι → β}
     {p : γ} {c : β} (hc : c < 0)
     (hp : c < Finset.sum (s.filter (fun i => a i = p)) e)
     (ha : ∀ i ∈ s, e i ≠ 0 → a i ≤ p) :
