@@ -220,6 +220,7 @@ theorem mem_orbit_iff_minpoly_eq_splittingField {x y : p.rootSet p.SplittingFiel
 minimal polynomial.
 
 This is `TauCeti.image_val_orbit_eq_rootSet_minpoly` for the intrinsic action. -/
+@[simp]
 theorem image_val_orbit_eq_rootSet_minpoly_splittingField (x : p.rootSet p.SplittingField) :
     Subtype.val '' MulAction.orbit p.Gal x =
       (minpoly F (x : p.SplittingField)).rootSet p.SplittingField :=
