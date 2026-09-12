@@ -167,7 +167,7 @@ theorem exists_sum_eq_choose_two_add_of_lie_single_self_eq_smul [CharZero K]
 /-- Under the hypotheses of
 `TauCeti.exists_sum_eq_choose_two_add_of_lie_single_self_eq_smul`, the occupation-count sum on `s`
 is bounded by `choose |s| 2 + |s| (n - |s|)`. -/
-theorem sum_occupationCounts_le_of_lie_single_self_eq_smul [CharZero K]
+theorem sum_le_choose_two_add_card_mul_sub_of_lie_single_self_eq_smul [CharZero K]
     {μ : n → K} {a : n → ℕ} {v : CliffordAlgebra (traceQuadraticForm K n)}
     (s : Finset n) (hv : v ≠ 0)
     (hdiag : ∀ i ∈ s, ⁅Matrix.single i i (1 : K), v⁆ = μ i • v)
@@ -181,7 +181,7 @@ theorem sum_occupationCounts_le_of_lie_single_self_eq_smul [CharZero K]
 /-- For simultaneous half-shifted natural diagonal eigenvalues, the total occupation count is
 `choose n 2`. This is the full-subset case of the cut calculation, where no projection crosses
 the boundary. -/
-theorem sum_occupationCounts_univ_eq_choose_two_of_lie_single_self_eq_smul [CharZero K]
+theorem sum_univ_eq_choose_two_of_lie_single_self_eq_smul [CharZero K]
     {μ : n → K} {a : n → ℕ} {v : CliffordAlgebra (traceQuadraticForm K n)} (hv : v ≠ 0)
     (hdiag : ∀ i : n, ⁅Matrix.single i i (1 : K), v⁆ = μ i • v)
     (hμ : ∀ i : n, μ i = (a i : K) + (2 : K)⁻¹) :
