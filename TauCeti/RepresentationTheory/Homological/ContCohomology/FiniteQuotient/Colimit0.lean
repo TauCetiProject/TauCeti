@@ -206,15 +206,7 @@ noncomputable def explicitFiniteQuotientComparison0 :
     change explicitInfl0 G M V.unop.toSubgroup
         (explicitFiniteQuotientTransition0 G M U.unop V.unop (leOfHom f.unop) x') =
       explicitInfl0 G M U.unop.toSubgroup x'
-    apply Subtype.ext
-    calc
-      (explicitInfl0 G M V.unop.toSubgroup
-          (explicitFiniteQuotientTransition0 G M U.unop V.unop (leOfHom f.unop) x')) =
-          (explicitFiniteQuotientTransition0 G M U.unop V.unop (leOfHom f.unop) x' : M) :=
-        coe_explicitInfl0 G M V.unop.toSubgroup _
-      _ = (x' : M) := coe_explicitFiniteQuotientTransition0 G M (leOfHom f.unop) x'
-      _ = (explicitInfl0 G M U.unop.toSubgroup x' : M) :=
-        (coe_explicitInfl0 G M U.unop.toSubgroup x').symm
+    exact explicitFiniteQuotientTransition0_inflation G M (leOfHom f.unop) x'
 
 /-- The named comparison cocone for degree zero, with apex `H⁰(G, M)`. -/
 noncomputable def explicitFiniteQuotientCocone0 :
@@ -248,13 +240,6 @@ theorem explicitFiniteQuotientCocone0_ι_app (U : OpenNormalSubgroup G) :
   unfold explicitFiniteQuotientCocone0 explicitFiniteQuotientComparison0
   rfl
 
-omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
-private theorem explicitFiniteQuotientComparison0_bijective (U : OpenNormalSubgroup G) :
-    Function.Bijective ((explicitFiniteQuotientComparison0 G M).app (Opposite.op U)) := by
-  -- Identify the component of the comparison transformation with its inflation hom.
-  change Function.Bijective (explicitInfl0 G M U.toSubgroup)
-  exact TauCeti.ContCohomology.explicitInfl0_bijective G M U.toSubgroup
-
 private def topOpenNormalSubgroup : OpenNormalSubgroup G :=
   { toOpenSubgroup := ⊤
     isNormal' := Subgroup.normal_top }
@@ -277,8 +262,10 @@ noncomputable def explicitFiniteQuotientCocone0IsColimit :
   letI : IsIso ((explicitFiniteQuotientCocone0 G M).ι.app
       (Opposite.op (topOpenNormalSubgroup G))) := by
     dsimp [explicitFiniteQuotientCocone0]
-    exact (ConcreteCategory.isIso_iff_bijective _).2
-      (explicitFiniteQuotientComparison0_bijective G M (topOpenNormalSubgroup G))
+    apply (ConcreteCategory.isIso_iff_bijective _).2
+    change Function.Bijective
+      (explicitInfl0 G M (topOpenNormalSubgroup G).toSubgroup)
+    exact explicitInfl0_bijective G M (topOpenNormalSubgroup G).toSubgroup
   exact h.isColimitOfIsIso (explicitFiniteQuotientCocone0 G M)
 
 end Comparison
