@@ -6,10 +6,8 @@ Authors: Claude
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Finite
-public import TauCeti.Combinatorics.SimpleGraph.Maps
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
 import TauCeti.Probability.Distributions.Uniform
-import Mathlib.Probability.ProductMeasure
 import TauCeti.MeasureTheory.Measure.ProductKernel
 
 /-!
