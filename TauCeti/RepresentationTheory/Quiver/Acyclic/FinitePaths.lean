@@ -19,7 +19,8 @@ count finite is the acyclic one: every path has length below the number of verti
 reduces to the bounded-length count of `TauCeti.Combinatorics.Quiver.BoundedPaths`.
 
 The converse needs no finiteness of the quiver at all: an oriented cycle has infinitely many
-powers (`Quiver.Path.eq_nil_of_finite`), so a quiver with finitely many paths has none.
+powers (`Quiver.Path.infinite_of_ne_nil`), so a quiver with finitely many paths has none — the
+form the proof uses is the contrapositive `Quiver.Path.eq_nil_of_finite`.
 
 ## Main results
 
@@ -28,6 +29,11 @@ powers (`Quiver.Path.eq_nil_of_finite`), so a quiver with finitely many paths ha
 * `TauCeti.isAcyclic_of_finite_paths`: **a quiver with finitely many paths is acyclic.**
 * `TauCeti.isAcyclic_iff_finite_paths`: the two together, the extensional form of acyclicity that
   the finite-dimensionality of the path algebra is read off.
+
+## References
+
+See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
+Ch. II.
 -/
 
 public section

@@ -69,16 +69,10 @@ theorem _root_.Quiver.Path.loopPow_succ (p : Quiver.Path a a) (n : ℕ) :
     p.loopPow (n + 1) = (p.loopPow n).comp p :=
   (rfl)
 
-/-- **The first power of a closed path is the path itself.** This is not `@[simp]`: with
-`Quiver.Path.loopPow_succ` and `Quiver.Path.loopPow_zero` tagged, `simp` already reduces
-`p.loopPow 1`. -/
-theorem _root_.Quiver.Path.loopPow_one (p : Quiver.Path a a) : p.loopPow 1 = p := by
-  rw [Quiver.Path.loopPow_succ, Quiver.Path.loopPow_zero, Quiver.Path.nil_comp]
-
 /-- **Every power of the trivial path is trivial**: running around a path of no arrows changes
 nothing. -/
 @[simp]
-theorem _root_.Quiver.Path.loopPow_nil (n : ℕ) :
+theorem _root_.Quiver.Path.nil_loopPow (n : ℕ) :
     (Quiver.Path.nil : Quiver.Path a a).loopPow n = Quiver.Path.nil := by
   induction n with
   | zero => rw [Quiver.Path.loopPow_zero]
