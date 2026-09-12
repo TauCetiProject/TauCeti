@@ -39,8 +39,6 @@ of a connection on the tangent bundle.
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176, 2018,
   Chapter 7, pp. 196--198.
-* [Geometric topology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GeometricTopology/README.md),
-  Layer 7, "Riemannian volume and curvature".
 -/
 
 public section
@@ -80,6 +78,7 @@ regularity assumption on the connection.  Smoothness is supplied by
       cov σ x (mlieBracket I X Y x)
 
 /-- The defining formula for the curvature operator. -/
+@[simp]
 theorem curvatureOperator_apply (X Y : Π x : M, TangentSpace I x) (σ : Π x : M, V x) (x : M) :
     curvatureOperator cov X Y σ x =
       cov (fun y ↦ cov σ y (Y y)) x (X x) -
@@ -264,7 +263,7 @@ theorem curvatureOperator_smul_first
     (hσ : CMDiff ∞ (T% σ)) :
     curvatureOperator cov (f • X) Y σ = f • curvatureOperator cov X Y σ := by
   funext x
-  -- Expose pointwise scalar multiplication before expanding the curvature formula.
+  -- The pointwise `Pi` action on the right hides the applied curvature operator from `rw`.
   change curvatureOperator cov (f • X) Y σ x = f x • curvatureOperator cov X Y σ x
   have hXσ := contMDiff_cov_apply cov hX hσ
   have hXσd : MDiff (T% (fun y ↦ cov σ y (X y))) := hXσ.mdifferentiable (by simp)
@@ -278,7 +277,8 @@ theorem curvatureOperator_smul_first
     cov.isCovariantDerivativeOn.leibniz (hXσd x) (hfd x),
     mlieBracket_smul_left (hfd x) (hXd x)]
   simp only [eX, map_smul, map_add, add_apply, ContinuousLinearMap.smulRight_apply]
-  -- Name the four vector terms to expose the cancellation of the two derivative terms.
+  -- Fold the expanded vector expressions into local names: rewriting cannot target these
+  -- abbreviations, while `change` recognizes their definitional equality before `abel`.
   let A := f x • cov (fun y ↦ cov σ y (Y y)) x (X x)
   let B := f x • cov (fun y ↦ cov σ y (X y)) x (Y x)
   let C := d% f x (Y x) • cov σ x (X x)
@@ -296,15 +296,13 @@ theorem curvatureOperator_smul_second
     curvatureOperator_smul_first hf hY hσ, curvatureOperator_swap cov Y X σ]
   simp
 
-/-- Curvature is linear over smooth functions in its section argument.  The second-derivative
-terms cancel by the identity expressing the Lie bracket as the commutator of directional
-derivatives. -/
+/-- Curvature is linear over smooth functions in its section argument. -/
 theorem curvatureOperator_smul_section
     (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hX : CMDiff ∞ (T% X))
     (hY : CMDiff ∞ (T% Y)) (hσ : CMDiff ∞ (T% σ)) :
     curvatureOperator cov X Y (f • σ) = f • curvatureOperator cov X Y σ := by
   funext x
-  -- Expose pointwise scalar multiplication before expanding the curvature formula.
+  -- The pointwise `Pi` action on the right hides the applied curvature operator from `rw`.
   change curvatureOperator cov X Y (f • σ) x = f x • curvatureOperator cov X Y σ x
   let gX : M → ℝ := fun y ↦ d% f y (X y)
   let gY : M → ℝ := fun y ↦ d% f y (Y y)
@@ -328,6 +326,8 @@ theorem curvatureOperator_smul_section
       f • (fun y ↦ cov σ y (X y)) + gX • σ := by
     funext y
     have h := cov.isCovariantDerivativeOn.leibniz (hσd y) (hfd y)
+    -- `h` is an equality of continuous linear maps; expose its value at `X y` through the
+    -- pointwise `Pi` operations before rewriting by it.
     change cov (f • σ) y (X y) = f y • cov σ y (X y) + gX y • σ y
     rw [h]
     simp [gX, add_apply, ContinuousLinearMap.smulRight_apply]
@@ -335,6 +335,8 @@ theorem curvatureOperator_smul_section
       f • (fun y ↦ cov σ y (Y y)) + gY • σ := by
     funext y
     have h := cov.isCovariantDerivativeOn.leibniz (hσd y) (hfd y)
+    -- `h` is an equality of continuous linear maps; expose its value at `Y y` through the
+    -- pointwise `Pi` operations before rewriting by it.
     change cov (f • σ) y (Y y) = f y • cov σ y (Y y) + gY y • σ y
     rw [h]
     simp [gY, add_apply, ContinuousLinearMap.smulRight_apply]
@@ -346,6 +348,7 @@ theorem curvatureOperator_smul_section
   have hgYσd : MDiff (T% (gY • σ)) := (hgY.smul_section hσ).mdifferentiable (by simp)
   let _ : IsManifold I (minSmoothness ℝ 2) M :=
     IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) (by simp)
+  -- The commutator identity below cancels the second-derivative terms.
   have hcomm := mvfderiv_mlieBracket (f := f) (V := X) (W := Y) (x := x)
     (hf.contMDiffAt) (by simp) (hXd x) (hYd x)
   rw [curvatureOperator_apply, curvatureOperator_apply, hinnerY, hinnerX,
@@ -360,7 +363,8 @@ theorem curvatureOperator_smul_section
   rw [hcomm]
   simp only [gX, gY]
   simp only [sub_smul, smul_sub]
-  -- Name the seven vector terms left after the two Leibniz expansions.
+  -- Fold the expanded vector expressions into local names: rewriting cannot target these
+  -- abbreviations, while `change` recognizes their definitional equality before `abel`.
   let A := f x • cov (fun y ↦ cov σ y (Y y)) x (X x)
   let B := f x • cov (fun y ↦ cov σ y (X y)) x (Y x)
   let D := f x • cov σ x (mlieBracket I X Y x)
