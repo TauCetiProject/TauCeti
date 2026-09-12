@@ -27,7 +27,7 @@ open IsDiscreteValuationRing
 uniformizer. Here uniformizers are expressed using Mathlib's equivalent `Irreducible` predicate.
 -/
 lemma isLocalizationAway_fractionRing {R K : Type*} [CommRing R] [IsDomain R]
-    [IsDiscreteValuationRing R] [Field K] [Algebra R K] [IsFractionRing R K]
+    [IsDiscreteValuationRing R] [CommRing K] [Algebra R K] [IsFractionRing R K]
     {ϖ : R} (hϖ : Irreducible ϖ) : IsLocalization.Away ϖ K := by
   refine (IsLocalization.iff_of_le_of_exists_dvd (S := K) (M := Submonoid.powers ϖ)
     (nonZeroDivisors R) (by
