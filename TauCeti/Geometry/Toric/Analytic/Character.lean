@@ -70,17 +70,14 @@ abbrev ComplexTorus (N : Type*) [AddCommGroup N] [Module.Free ℤ N] [Module.Fin
 /-- Evaluation of the integral character `m` as a homomorphism on complex-torus points.
 
 The map is the homomorphism obtained by evaluating an additive character at `m`. -/
-@[expose]
 def characterEvaluation (m : IntegralCharacter N) : ComplexTorus N →* ℂˣ :=
-  { toFun := fun x ↦ x m
-    map_one' := by simp
-    map_mul' := by intro x y; simp }
+  (MonoidHom.eval (Multiplicative.ofAdd m)).comp AddChar.toMonoidHomMulEquiv.toMonoidHom
 
 /-- Character evaluation is ordinary application of the underlying additive character. -/
 @[simp]
 theorem characterEvaluation_apply (m : IntegralCharacter N) (x : ComplexTorus N) :
     characterEvaluation m x = x m :=
-  by simp [characterEvaluation]
+  by simp [characterEvaluation, AddChar.toMonoidHomMulEquiv, AddChar.toMonoidHomEquiv]
 
 /-- The map of complex tori induced covariantly by an additive map of lattices. -/
 def complexTorusMap (f : N →+ N') : ComplexTorus N →* ComplexTorus N' where
@@ -96,7 +93,7 @@ def complexTorusMap (f : N →+ N') : ComplexTorus N →* ComplexTorus N' where
 
 /-- The torus map induced by `f` evaluates by pulling the character back along `f`. -/
 @[simp]
-theorem characterEvaluation_complexTorusMap (f : N →+ N') (x : ComplexTorus N)
+theorem complexTorusMap_apply (f : N →+ N') (x : ComplexTorus N)
     (m : IntegralCharacter N') :
     (complexTorusMap f x) m =
       characterEvaluation (AddMonoidHom.compHom' f m) x :=
@@ -121,11 +118,15 @@ theorem complexTorusMap_comp (g : N' →+ N'') (f : N →+ N') :
   intro m
   rfl
 
+namespace ComplexTorus
+
 /-- Two complex-torus points agreeing under every integral character are equal. -/
 @[ext]
-theorem complexTorus_ext {x y : ComplexTorus N}
+theorem ext {x y : ComplexTorus N}
     (h : ∀ m : IntegralCharacter N, characterEvaluation m x = characterEvaluation m y) : x = y :=
-  AddChar.ext x y h
+  AddChar.ext x y fun m ↦ by simpa only [characterEvaluation_apply] using h m
+
+end ComplexTorus
 
 /-- Integral characters separate distinct points of the coordinate-free complex torus. -/
 theorem exists_characterEvaluation_ne {x y : ComplexTorus N} (h : x ≠ y) :
