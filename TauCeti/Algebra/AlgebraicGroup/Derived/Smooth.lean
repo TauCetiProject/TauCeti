@@ -18,12 +18,9 @@ Over an algebraically closed field, the derived closed subgroup of a reduced fin
 affine group is reduced, and hence smooth. This supplies the smooth subgroup needed when
 applying representation-theoretic induction to the derived subgroup of a solvable group.
 
-The reduction of the derived subgroup is again a closed subgroup. The commutator morphism
-factors through this reduction because its source, the product of the ambient group with
-itself, is reduced. Minimality of the derived subgroup then identifies it with its reduction.
-Neither connectedness nor solvability is needed for this argument. The reducedness argument
-works over any commutative base when the ambient tensor square and the tensor square
-of the reduced derived coordinate ring are reduced.
+More generally, the derived coordinate ring is reduced over any commutative base when the
+ambient tensor square and the tensor square of the reduced derived coordinate ring are
+reduced. Neither connectedness nor solvability is required for these results.
 
 ## References
 
@@ -56,23 +53,17 @@ theorem isReduced_quotient_derivedDefiningIdeal_of_isReduced_tensorProduct
   let D := quotient H I
   let q := (mkQuotient H I).hom
   let J := (HopfIdeal.reduction R D).comapOfSurjective q (mkQuotient_surjective H I)
-  -- The commutator kills the reduction's defining ideal since its target algebra is reduced.
+  -- The commutator kernel is radical since its target algebra is reduced.
   have hJI : J ≤ I := by
     apply (le_derivedDefiningIdeal_iff H J).mpr
-    intro x hx
-    have hnil : IsNilpotent (q x) :=
-      (HopfIdeal.mem_reduction R D).mp
-        (HopfIdeal.mem_comapOfSurjective.mp (HopfIdeal.mem_toIdeal.mp hx))
-    obtain ⟨n, hn⟩ := hnil
-    have hxn : x ^ n ∈ I :=
-      (mkQuotient_eq_zero_iff H I (x ^ n)).mp ((map_pow q x n).trans hn)
-    have hzero := derivedDefiningIdeal_toIdeal_le_ker (R := R) H
-      (HopfIdeal.mem_toIdeal.mpr hxn)
-    rw [RingHom.mem_ker] at hzero ⊢
-    have hnil : IsNilpotent
-        ((HopfAlgebra.commutatorAlgHom (R := R) (H := H)).toRingHom x) :=
-      ⟨n, by simpa only [map_pow] using hzero⟩
-    exact hnil.eq_zero
+    dsimp only [J]
+    rw [HopfIdeal.comapOfSurjective_toIdeal, HopfIdeal.reduction_toIdeal,
+      nilradical, Ideal.comap_radical, Ideal.zero_eq_bot, ← RingHom.ker_eq_comap_bot]
+    -- Identify the coerced bialgebra map with its underlying ring homomorphism.
+    change (RingHom.ker (mkQuotient H I).hom.toAlgHom.toRingHom).radical ≤ _
+    rw [mkQuotient_ker]
+    exact (Ideal.isRadical_bot.comap _).radical_le_iff.mpr
+      (derivedDefiningIdeal_toIdeal_le_ker (R := R) H)
   have hred : HopfIdeal.reduction R D = ⊥ :=
     eq_bot_of_comapOfSurjective_le _ hJI
   exact nilradical_eq_bot_iff.mp (by
