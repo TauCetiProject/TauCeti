@@ -64,8 +64,7 @@ theorem toAdd_normalizedValuation_eq_valuation (x : ℚ_[p]ˣ) :
 /-- The residue field of `ℚ_[p]` has cardinality `p`. -/
 @[simp]
 theorem natCard_residueField :
-    Nat.card 𝓀[ℚ_[p]] = p := by
-  rw [@Nat.card_eq_fintype_card _ (Fintype.ofFinite 𝓀[ℚ_[p]])]
+    @Fintype.card 𝓀[ℚ_[p]] (Fintype.ofFinite 𝓀[ℚ_[p]]) = p := by
   have h : 𝒪[ℚ_[p]] = PadicInt.subring p := by
     ext x
     rw [Valuation.mem_integer_iff, PadicInt.mem_subring_iff]
@@ -83,7 +82,10 @@ theorem normalizedAbsoluteValue_eq_norm (x : ℚ_[p]) :
   rcases eq_or_ne x 0 with rfl | hx
   · simp
   apply NNReal.eq
-  rw [normalizedAbsoluteValue_apply_ne_zero x hx, natCard_residueField p,
+  have hcard : Nat.card 𝓀[ℚ_[p]] = p := by
+    rw [@Nat.card_eq_fintype_card _ (Fintype.ofFinite 𝓀[ℚ_[p]])]
+    exact natCard_residueField p
+  rw [normalizedAbsoluteValue_apply_ne_zero x hx, hcard,
     toAdd_normalizedValuation_eq_valuation]
   simp only [coe_nnnorm]
   simpa using (Padic.norm_eq_zpow_neg_valuation hx).symm
