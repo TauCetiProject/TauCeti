@@ -188,11 +188,11 @@ theorem ofStasheff_m (G : InternalGrading R A)
 /-- `A∞` algebras are determined by their grading and unsuspended operations; the Taylor map is
 forced by the suspension relation and all remaining fields are propositions. -/
 @[ext]
-theorem ext {𝒜 𝒝 : AInfinityAlgebra R A} (hG : 𝒜.grading = 𝒝.grading)
-    (hm : 𝒜.m = 𝒝.m) : 𝒜 = 𝒝 := by
+theorem ext {𝒜 𝒜' : AInfinityAlgebra R A} (hG : 𝒜.grading = 𝒜'.grading)
+    (hm : 𝒜.m = 𝒜'.m) : 𝒜 = 𝒜' := by
   cases 𝒜 with
   | mk G m hm0 hmdeg F hFm hsq =>
-    cases 𝒝 with
+    cases 𝒜' with
     | mk G' m' hm0' hmdeg' F' hFm' hsq' =>
       simp only at hG hm
       subst G'
