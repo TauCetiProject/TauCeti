@@ -156,9 +156,8 @@ theorem homotopic_transport_of_path_homotopic {γ δ : Path x y} (h : γ.Homotop
 /-! ### Functoriality of transport -/
 
 /-- The constant homotopy is a homotopy along the constant path. -/
-def HomotopyAlong.refl (f : Ω^ N X x) : HomotopyAlong (Path.refl x) f f where
-  toHomotopy := ContinuousMap.Homotopy.refl (f : C(I^N, X))
-  map_boundary _ z hz := f.2 z hz
+def HomotopyAlong.refl (f : Ω^ N X x) : HomotopyAlong (Path.refl x) f f :=
+  HomotopyAlong.ofHomotopyRel (ContinuousMap.HomotopyRel.refl _ _)
 
 /-- Transport along a constant path does nothing, up to homotopy. -/
 theorem homotopic_transport_refl (f : Ω^ N X x) :
