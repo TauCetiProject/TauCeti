@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.RingTheory.Ideal.Norm.RelNorm
 public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 
@@ -18,8 +17,6 @@ introduces that carrier, together with the two defining identities that are vali
 separability assumption. The later arithmetic theory uses `relDiscr` rather than expanding this
 relative norm of the different at each use site.
 
-This implements Layer 4.1 of the [NumberFieldArithmetic roadmap]
-(https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/NumberFieldArithmetic/README.md).
 -/
 
 public section
