@@ -12,6 +12,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Affine
 
 import Mathlib.MeasureTheory.Group.Convolution
 import TauCeti.Analysis.Matrix.Sqrt
+import TauCeti.LinearAlgebra.Matrix.Gram
 import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
@@ -72,16 +73,6 @@ variable {ι : Type*} [Fintype ι] {p ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
 
 /-! ### The Gram sum of a family of Euclidean vectors -/
 
-/-- The matrix whose rows are a given finite family of Euclidean vectors.  The Gram sum below is
-its Gram matrix, which is what makes the rank bound available. -/
-private def rowMatrix (X : ι → EuclideanSpace ℝ (Fin p)) : Matrix ι (Fin p) ℝ :=
-  Matrix.of fun r i => X r i
-
-private theorem sum_vecMulVec_eq (X : ι → EuclideanSpace ℝ (Fin p)) :
-    ∑ r, Matrix.vecMulVec (X r).ofLp (X r).ofLp = (rowMatrix X)ᵀ * rowMatrix X := by
-  ext i j
-  simp [rowMatrix, Matrix.mul_apply, Matrix.sum_apply, Matrix.vecMulVec_apply]
-
 /-- The **Gram sum** `∑ r, X r * (X r)ᵀ` of a finite family of Euclidean vectors, as an element of
 the symmetric-matrix subspace.  This is the statistic whose law is the Gaussian-Gram Wishart
 family. -/
@@ -107,8 +98,8 @@ theorem posSemidef_coe_wishartGram (X : ι → EuclideanSpace ℝ (Fin p)) :
 /-- The Gram sum of a family of vectors has rank at most the size of the family. -/
 theorem rank_coe_wishartGram_le (X : ι → EuclideanSpace ℝ (Fin p)) :
     (wishartGram X : Matrix (Fin p) (Fin p) ℝ).rank ≤ Fintype.card ι := by
-  rw [coe_wishartGram, sum_vecMulVec_eq, Matrix.rank_transpose_mul_self]
-  exact (rowMatrix X).rank_le_card_height
+  rw [coe_wishartGram, sum_vecMulVec_eq_transpose_mul, Matrix.rank_transpose_mul_self]
+  exact (Matrix.of fun r i => X r i).rank_le_card_height
 
 /-- A linear image of the vectors congruates their Gram sum. -/
 theorem wishartGram_toEuclideanLin {q : ℕ} (M : Matrix (Fin q) (Fin p) ℝ)
