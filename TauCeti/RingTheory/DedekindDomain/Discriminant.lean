@@ -17,6 +17,8 @@ introduces that carrier, together with the two defining identities that are vali
 separability assumption. The later arithmetic theory uses `relDiscr` rather than expanding this
 relative norm of the different at each use site.
 
+Source: `TauCetiRoadmap/NumberFieldArithmetic`.
+
 -/
 
 public section
