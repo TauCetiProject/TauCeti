@@ -12,6 +12,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Affine
 
 import Mathlib.MeasureTheory.Group.Convolution
 import TauCeti.Analysis.Matrix.Sqrt
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # The Gaussian-Gram Wishart family
@@ -81,18 +82,15 @@ private theorem sum_vecMulVec_eq (X : ι → EuclideanSpace ℝ (Fin p)) :
   ext i j
   simp [rowMatrix, Matrix.mul_apply, Matrix.sum_apply, Matrix.vecMulVec_apply]
 
-private theorem posSemidef_sum_vecMulVec (X : ι → EuclideanSpace ℝ (Fin p)) :
-    (∑ r, Matrix.vecMulVec (X r).ofLp (X r).ofLp).PosSemidef := by
-  refine Matrix.posSemidef_sum Finset.univ fun r _ => ?_
-  simpa only [star_trivial] using Matrix.posSemidef_vecMulVec_self_star (X r).ofLp
-
 /-- The **Gram sum** `∑ r, X r * (X r)ᵀ` of a finite family of Euclidean vectors, as an element of
 the symmetric-matrix subspace.  This is the statistic whose law is the Gaussian-Gram Wishart
 family. -/
 def wishartGram (X : ι → EuclideanSpace ℝ (Fin p)) :
     selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
   ⟨∑ r, Matrix.vecMulVec (X r).ofLp (X r).ofLp,
-    Matrix.isHermitian_iff_isSelfAdjoint.1 (posSemidef_sum_vecMulVec X).isHermitian⟩
+    Matrix.isHermitian_iff_isSelfAdjoint.1 <| by
+      simpa only [star_trivial] using
+        (posSemidef_sum_vecMulVec_self_star Finset.univ fun r => (X r).ofLp).isHermitian⟩
 
 @[simp]
 theorem coe_wishartGram (X : ι → EuclideanSpace ℝ (Fin p)) :
@@ -102,8 +100,9 @@ theorem coe_wishartGram (X : ι → EuclideanSpace ℝ (Fin p)) :
 
 /-- The Gram sum of a family of Euclidean vectors is positive semidefinite. -/
 theorem posSemidef_coe_wishartGram (X : ι → EuclideanSpace ℝ (Fin p)) :
-    (wishartGram X : Matrix (Fin p) (Fin p) ℝ).PosSemidef :=
-  posSemidef_sum_vecMulVec X
+    (wishartGram X : Matrix (Fin p) (Fin p) ℝ).PosSemidef := by
+  simpa only [coe_wishartGram, star_trivial] using
+    posSemidef_sum_vecMulVec_self_star Finset.univ fun r => (X r).ofLp
 
 /-- The Gram sum of a family of vectors has rank at most the size of the family. -/
 theorem rank_coe_wishartGram_le (X : ι → EuclideanSpace ℝ (Fin p)) :
