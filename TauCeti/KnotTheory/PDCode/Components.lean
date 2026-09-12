@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.Basic
-public import TauCeti.GroupTheory.Perm.SumCongr
+public import TauCeti.GroupTheory.Perm.OrbitCount
+import TauCeti.GroupTheory.Perm.SumCongr
 
 /-! # Components of PD-codes
 
@@ -92,7 +93,7 @@ noncomputable def crossingComponentCount (D : PDCode n) : ℕ :=
   orbitCount D.componentPerm / 2
 
 /-- A code with no crossing visits has no crossing-bearing components. -/
-@[simp] theorem crossingComponentCount_eq_zero (D : PDCode 0) :
+@[simp] theorem crossingComponentCount_eq_zero_of_zero (D : PDCode 0) :
     D.crossingComponentCount = 0 := by
   have h := Equiv.Perm.orbitCount_le_card D.componentPerm
   simp at h
@@ -143,6 +144,12 @@ def mirrorOutgoingEquiv (D : OrientedPDCode n) :
     (D.mirrorOutgoingEquiv h).val = h := by
   simp [mirrorOutgoingEquiv, Equiv.subtypeEquiv]
 
+/-- The inverse outgoing mirror equivalence preserves the underlying half-edge label. -/
+@[simp] theorem mirrorOutgoingEquiv_symm_apply (D : OrientedPDCode n)
+    (h : {h : Fin (4 * n) // D.mirror.orientation h = true}) :
+    (D.mirrorOutgoingEquiv.symm h).val = h := by
+  simp [mirrorOutgoingEquiv, Equiv.subtypeEquiv]
+
 /-- Mirroring transports the outgoing traversal along the outgoing half-edge equivalence. -/
 @[simp] theorem componentPermOutgoing_mirror (D : OrientedPDCode n) :
     D.mirror.componentPermOutgoing =
@@ -164,8 +171,15 @@ def reverseOutgoingEquiv (D : OrientedPDCode n) :
     (D.reverseOutgoingEquiv h).val = D.edgePair.val h := by
   simp [reverseOutgoingEquiv, Equiv.subtypeEquiv]
 
+/-- The inverse outgoing reversal equivalence acts by arc pairing. -/
+@[simp] theorem reverseOutgoingEquiv_symm_apply (D : OrientedPDCode n)
+    (h : {h : Fin (4 * n) // D.reverse.orientation h = true}) :
+    (D.reverseOutgoingEquiv.symm h).val = D.edgePair.val h := by
+  apply D.edgePair.val.injective
+  simp [reverseOutgoingEquiv, Equiv.subtypeEquiv, D.edgePair.apply_apply]
+
 /-- Inverse outgoing traversal has the same half-edge value as inverse unrestricted traversal. -/
-private theorem componentPermOutgoing_symm_apply_val (D : OrientedPDCode n)
+@[simp] theorem componentPermOutgoing_symm_apply_val (D : OrientedPDCode n)
     (h : {h : Fin (4 * n) // D.orientation h = true}) :
     (D.componentPermOutgoing.symm h).val = D.toPDCode.componentPerm.symm h := by
   rfl
@@ -242,6 +256,13 @@ def relabelOutgoingEquiv (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n))
     (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n))
     (h : {h : Fin (4 * n) // D.orientation h = true}) :
     (D.relabelOutgoingEquiv half cross h).val = half h := by
+  simp [relabelOutgoingEquiv, Equiv.subtypeEquiv]
+
+/-- The inverse outgoing relabelling equivalence acts by the inverse permutation. -/
+@[simp] theorem relabelOutgoingEquiv_symm_apply (D : OrientedPDCode n)
+    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n))
+    (h : {h : Fin (4 * n) // (D.relabel half cross).orientation h = true}) :
+    ((D.relabelOutgoingEquiv half cross).symm h).val = half.symm h.val := by
   simp [relabelOutgoingEquiv, Equiv.subtypeEquiv]
 
 /-- Relabelling transports outgoing traversal along the outgoing half-edge equivalence. -/
