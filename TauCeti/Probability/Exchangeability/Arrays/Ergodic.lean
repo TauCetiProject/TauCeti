@@ -9,8 +9,7 @@ public import TauCeti.Probability.Exchangeability.Arrays.ZeroOne
 public import TauCeti.MeasureTheory.Group.CountableAction
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 -- Non-public: cylinder approximation and its real-valued measure estimates are proof tools.
-import Mathlib.MeasureTheory.Constructions.ProjectiveFamilyContent
-import Mathlib.MeasureTheory.Measure.MeasuredSets
+import TauCeti.MeasureTheory.Constructions.CylinderApproximation
 import TauCeti.MeasureTheory.Measure.ZeroOne
 
 /-!
@@ -23,9 +22,10 @@ exactly when the coordinate array is jointly dissociated.  By the corner-tail th
 
 Together with the corner-tail theorem this closes a representation-free triangle for jointly
 exchangeable arrays: joint dissociation, triviality of the corner tail, and ergodicity of the
-diagonal relabelling action are the same condition. It is the condition singling out the ergodic
-form of the Aldous--Hoover representation, in which the array is coded without a global
-coordinate, and it is stated on the law alone, with no representation in hand.
+diagonal relabelling action are the same condition. It is stated on the law alone, for any
+measurable value space. Where the Aldous--Hoover representation theorem applies (a standard Borel
+value space), it is the condition singling out the ergodic form of that representation, in which
+the array is coded without a global coordinate.
 
 ## Main declarations
 
@@ -155,11 +155,11 @@ theorem JointlyExchangeable.smulInvariantMeasure {ρ : Measure (ℕ × ℕ → �
   intro g s hs
   simp only [jointArrayPerm_smul_def]
   rw [← Measure.map_apply (measurable_pairReindex _ _) hs]
-  rw [show pairReindex (JointArrayPerm.toPerm g)⁻¹ (JointArrayPerm.toPerm g)⁻¹ =
-      (fun x p => x ((JointArrayPerm.toPerm g)⁻¹ p.1,
-        (JointArrayPerm.toPerm g)⁻¹ p.2)) by
-    funext x p
-    rw [pairReindex_apply]]
+  have hfun : pairReindex (JointArrayPerm.toPerm g)⁻¹ (JointArrayPerm.toPerm g)⁻¹ =
+      fun (x : ℕ × ℕ → α) p =>
+        x ((JointArrayPerm.toPerm g)⁻¹ p.1, (JointArrayPerm.toPerm g)⁻¹ p.2) :=
+    funext fun x => funext fun p => pairReindex_apply _ _ x p
+  rw [hfun]
   have hmap := congrArg (fun m : Measure (ℕ × ℕ → α) => m s)
     (jointlyExchangeable_iff.mp hρ (JointArrayPerm.toPerm g)⁻¹)
   -- the identity reindexing is `id` by unfolding, which no propositional lemma states
@@ -209,53 +209,6 @@ private theorem preimage_jointArrayPerm_smul_eq_of_measurable_arrayTail
 
 /-! ## The block-swap zero-one argument -/
 
-/-- Swap the blocks `[0, N)` and `[N, 2N)`, fixing every later index. -/
-private def blockSwap (N : ℕ) : Equiv.Perm ℕ :=
-  Equiv.Perm.viaFintypeEmbedding (finAddFlip (m := N) (n := N)) ⟨Fin.val, Fin.val_injective⟩
-
-private theorem blockSwap_apply_of_lt {N i : ℕ} (hi : i < N) : blockSwap N i = N + i := by
-  have h : (⟨Fin.val, Fin.val_injective⟩ : Fin (N + N) ↪ ℕ)
-      (Fin.castAdd N ⟨i, hi⟩) = i := rfl
-  rw [blockSwap, ← h, Equiv.Perm.viaFintypeEmbedding_apply_image, finAddFlip_apply_castAdd]
-  rfl
-
-private theorem blockSwap_apply_of_le {N n : ℕ} (hn : N + N ≤ n) : blockSwap N n = n := by
-  refine Equiv.Perm.viaFintypeEmbedding_apply_notMem_range _ _ ?_
-  rintro ⟨j, rfl⟩
-  exact absurd j.isLt (not_lt.mpr hn)
-
-private theorem blockSwap_finite_support (N : ℕ) :
-    (MulAction.fixedBy ℕ (blockSwap N))ᶜ.Finite :=
-  finite_compl_fixedBy_of_eventually_eq_self ⟨N + N, fun _ hn => blockSwap_apply_of_le hn⟩
-
-private theorem disjoint_map_blockSwap {N : ℕ} {F : Finset ℕ}
-    (hF : F ⊆ Finset.range N) :
-    Disjoint F (F.map (Equiv.toEmbedding (blockSwap N))) := by
-  rw [Finset.disjoint_left]
-  intro a haF hamem
-  obtain ⟨b, hbF, hb⟩ := Finset.mem_map.mp hamem
-  have hbN : b < N := Finset.mem_range.mp (hF hbF)
-  have haN : a < N := Finset.mem_range.mp (hF haF)
-  rw [Equiv.coe_toEmbedding, blockSwap_apply_of_lt hbN] at hb
-  omega
-
-/-- Every measurable array-space event is approximated in measure by a cylinder over finitely many
-array coordinates. -/
-private theorem exists_arrayCylinder_measure_symmDiff_lt {ρ : Measure (ℕ × ℕ → α)}
-    [IsFiniteMeasure ρ] {s : Set (ℕ × ℕ → α)} (hs : MeasurableSet s) {ε : ℝ≥0∞} (hε : 0 < ε) :
-    ∃ (F : Finset (ℕ × ℕ)) (S : Set (∀ _i : F, α)),
-      MeasurableSet S ∧ ρ (symmDiff (cylinder F S) s) < ε := by
-  have hcov : ∃ D : Set (Set (ℕ × ℕ → α)), D.Countable ∧
-      D ⊆ measurableCylinders (fun _ : ℕ × ℕ => α) ∧ ρ (⋃₀ D)ᶜ = 0 := by
-    refine ⟨{Set.univ}, Set.countable_singleton _, ?_, ?_⟩
-    · rintro u (rfl : u = Set.univ)
-      exact univ_mem_measurableCylinders (fun _ : ℕ × ℕ => α)
-    · simp
-  obtain ⟨t, ht_mem, ht⟩ := exists_measure_symmDiff_lt_of_generateFrom_isSetRing (μ := ρ)
-    isSetRing_measurableCylinders hcov generateFrom_measurableCylinders.symm hs hε
-  obtain ⟨F, S, hS, rfl⟩ := (mem_measurableCylinders t).mp ht_mem
-  exact ⟨F, S, hS, ht⟩
-
 private theorem measurableSet_cylinder_blockSigma {F : Finset (ℕ × ℕ)} {I : Finset ℕ}
     (hFI : ∀ p ∈ F, p.1 ∈ I ∧ p.2 ∈ I) {S : Set (∀ _p : F, α)} (hS : MeasurableSet S) :
     MeasurableSet[blockSigma (fun p (x : ℕ × ℕ → α) => x p)
@@ -269,8 +222,8 @@ private theorem measurableSet_cylinder_blockSigma {F : Finset (ℕ × ℕ)} {I :
 
 private theorem measure_eq_zero_or_one_of_jointlyDissociated
     {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
+    [SMulInvariantMeasure JointArrayPerm (ℕ × ℕ → α) ρ]
     (hdiss : JointlyDissociated ρ fun p x => x p)
-    (hexch : JointlyExchangeable ρ fun p x => x p)
     {s : Set (ℕ × ℕ → α)} (hs : MeasurableSet s)
     (hinv : ∀ g : JointArrayPerm, (fun x : ℕ × ℕ → α => g • x) ⁻¹' s = s) :
     ρ s = 0 ∨ ρ s = 1 := by
@@ -282,7 +235,7 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
     hs.nullMeasurableSet ?_
   intro ε hε
   -- Step 1: the approximating cylinder `t` on a finite square `I × I` inside `[0, N)²`.
-  obtain ⟨F, S, hS, hFS⟩ := exists_arrayCylinder_measure_symmDiff_lt (ρ := ρ) hs
+  obtain ⟨F, S, hS, hFS⟩ := TauCeti.MeasureTheory.exists_cylinder_measure_symmDiff_lt (ρ := ρ) hs
     (ε := ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)
   let I : Finset ℕ := F.image Prod.fst ∪ F.image Prod.snd
   have hFI : ∀ p ∈ F, p.1 ∈ I ∧ p.2 ∈ I := by
@@ -291,7 +244,7 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
       Finset.mem_union_right _ (Finset.mem_image_of_mem _ hp)⟩
   obtain ⟨N, hIN⟩ := Finset.exists_nat_subset_range I
   -- Step 2: the block swap moves `I` onto a disjoint copy `J`; `t'` is `t` read through it.
-  let π : Equiv.Perm ℕ := blockSwap N
+  let π : Equiv.Perm ℕ := N.blockSwap
   let J : Finset ℕ := I.map (Equiv.toEmbedding π)
   set t : Set (ℕ × ℕ → α) := cylinder F S with ht
   set t' : Set (ℕ × ℕ → α) := pairReindex π π ⁻¹' t with ht'
@@ -310,17 +263,21 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
     let _ : MeasurableSpace (ℕ × ℕ → α) :=
       blockSigma (fun p (x : ℕ × ℕ → α) => x p) ((J : Set ℕ) ×ˢ (J : Set ℕ))
     rw [ht', ht]
-    change MeasurableSet ((fun x : ℕ × ℕ → α => fun p : F => pairReindex π π x p.1) ⁻¹' S)
+    -- a cylinder is the preimage of `S` under restriction to `F`; `cylinder` is a definition with
+    -- no propositional unfolding lemma, so the preimage form is by `rfl`
+    have hcyl : pairReindex π π ⁻¹' cylinder F S
+        = (fun x : ℕ × ℕ → α => fun p : F => pairReindex π π x p.1) ⁻¹' S := rfl
+    rw [hcyl]
     have hread : Measurable (fun x : ℕ × ℕ → α => fun p : F => pairReindex π π x p.1) :=
       Measurable.of_eval fun p => by
         have hp1 : π p.1.1 ∈ J := Finset.mem_map_of_mem _ (hFI p.1 p.2).1
         have hp2 : π p.1.2 ∈ J := Finset.mem_map_of_mem _ (hFI p.1 p.2).2
+        have hpJ : (π p.1.1, π p.1.2) ∈ (J : Set ℕ) ×ˢ (J : Set ℕ) := ⟨hp1, hp2⟩
         simpa only [pairReindex_apply] using (measurable_blockSigma_of_mem
-          (Z := fun p (x : ℕ × ℕ → α) => x p)
-          (show (π p.1.1, π p.1.2) ∈ (J : Set ℕ) ×ˢ (J : Set ℕ) from ⟨hp1, hp2⟩))
+          (Z := fun p (x : ℕ × ℕ → α) => x p) hpJ)
     exact hread hS
   -- Step 3: `s` is invariant under the swap, so `t'` is as close to `s` as `t` is.
-  have hIJ : Disjoint I J := disjoint_map_blockSwap hIN
+  have hIJ : Disjoint I J := Nat.disjoint_map_blockSwap hIN
   have hIJset : Disjoint (I : Set ℕ) (J : Set ℕ) := by
     rw [Set.disjoint_left]
     intro i hiI hiJ
@@ -331,20 +288,18 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
       (blockSigma (fun p (x : ℕ × ℕ → α) => x p) ((J : Set ℕ) ×ˢ (J : Set ℕ))) ρ).mp
         (hdiss.indep_blockSigma_prod_self hIJset) t t' ht_block ht'_block
   have hπinv : (MulAction.fixedBy ℕ π⁻¹)ᶜ.Finite := by
-    simpa only [π, MulAction.fixedBy_inv ℕ] using blockSwap_finite_support N
+    simpa only [π, MulAction.fixedBy_inv ℕ] using Nat.finite_compl_fixedBy_blockSwap N
   have hs_inv : pairReindex π π ⁻¹' s = s := by
     have hg := hinv (JointArrayPerm.ofPerm π⁻¹ hπinv)
     simpa only [jointArrayPerm_smul_def, JointArrayPerm.toPerm_ofPerm, inv_inv] using hg
+  -- the swap acts by `pairReindex π π`, so invariance of `ρ` under the action is invariance
+  -- under this reindexing
   have hmap : ρ.map (pairReindex π π) = ρ := by
-    calc
-      ρ.map (pairReindex π π) = ρ.map (fun x p => x (π p.1, π p.2)) := by
-        congr 1
-        funext x p
-        rw [pairReindex_apply]
-      _ = ρ.map (fun x p => x p) := jointlyExchangeable_iff.mp hexch π
-      _ = ρ := by
-        -- the identity reindexing is `id` by unfolding, which no propositional lemma states
-        rw [show (fun (x : ℕ × ℕ → α) p => x p) = id by rfl, Measure.map_id]
+    ext u hu
+    rw [Measure.map_apply (measurable_pairReindex _ _) hu]
+    have h := SMulInvariantMeasure.measure_preimage_smul (JointArrayPerm.ofPerm π⁻¹ hπinv) hu
+      (μ := ρ)
+    simpa only [jointArrayPerm_smul_def, JointArrayPerm.toPerm_ofPerm, inv_inv] using h
   have ht'_symm : ρ (symmDiff t' s) = ρ (symmDiff t s) := by
     have hpre : symmDiff t' s = pairReindex π π ⁻¹' symmDiff t s := by
       rw [Set.preimage_symmDiff, hs_inv, ht']
@@ -360,17 +315,18 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
     rw [measureReal_def, measureReal_def, measureReal_def, hfactor, ENNReal.toReal_mul]
   exact ⟨t, t', ht_meas.nullMeasurableSet, ht'_meas.nullMeasurableSet, h1, h2, hfactor_real⟩
 
-/-- Joint dissociation makes the diagonal finitary-permutation action ergodic. -/
+/-- **Joint dissociation makes the diagonal finitary-permutation action ergodic**, for a law
+invariant under that action; joint exchangeability supplies the invariance
+(`JointlyExchangeable.smulInvariantMeasure`). -/
 theorem ergodicSMul_of_jointlyDissociated {ρ : Measure (ℕ × ℕ → α)} [IsZeroOrProbabilityMeasure ρ]
-    (hdiss : JointlyDissociated ρ fun p x => x p)
-    (hexch : JointlyExchangeable ρ fun p x => x p) :
+    [SMulInvariantMeasure JointArrayPerm (ℕ × ℕ → α) ρ]
+    (hdiss : JointlyDissociated ρ fun p x => x p) :
     ErgodicSMul JointArrayPerm (ℕ × ℕ → α) ρ := by
-  let _ := hexch.smulInvariantMeasure
   refine TauCeti.MeasureTheory.ergodicSMul_of_forall_smul_invariant fun s hs hinv => ?_
   rcases eq_zero_or_isProbabilityMeasure ρ with rfl | _
   · exact eventuallyConst_set'.mpr (Or.inl (by rw [ae_zero]; exact Filter.eventually_bot))
   refine eventuallyConst_set'.mpr ?_
-  rcases measure_eq_zero_or_one_of_jointlyDissociated hdiss hexch hs hinv with h | h
+  rcases measure_eq_zero_or_one_of_jointlyDissociated hdiss hs hinv with h | h
   · exact Or.inl (ae_eq_empty.mpr h)
   · exact Or.inr (ae_eq_univ.mpr ((prob_compl_eq_zero_iff hs).mpr h))
 
@@ -399,7 +355,7 @@ simultaneously applies one finitely supported permutation to both coordinates. -
 theorem jointlyDissociated_iff_ergodicSMul {ρ : Measure (ℕ × ℕ → α)} [IsZeroOrProbabilityMeasure ρ]
     (hexch : JointlyExchangeable ρ fun p x => x p) :
     JointlyDissociated ρ (fun p x => x p) ↔ ErgodicSMul JointArrayPerm (ℕ × ℕ → α) ρ :=
-  ⟨fun h => ergodicSMul_of_jointlyDissociated h hexch,
+  ⟨fun h => haveI := hexch.smulInvariantMeasure; ergodicSMul_of_jointlyDissociated h,
     fun _ => jointlyDissociated_of_ergodicSMul hexch⟩
 
 end Probability
