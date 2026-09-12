@@ -28,7 +28,7 @@ multi-component link, that interpretation instead requires one blocked `O`-marki
 component.
 
 The fully blocked complex is over `ZMod 2`. The unblocked complex and the one-variable
-specialization are defined over an arbitrary commutative coefficient semiring of characteristic
+specialization are defined over an arbitrary commutative coefficient ring of characteristic
 two.
 Their coefficient rings are, respectively, the polynomial ring on all columns and the polynomial
 ring on the columns other than the selected blocked column.
@@ -49,15 +49,6 @@ The three grid complexes and their coefficient conventions follow Ozsváth--Stip
 public section
 
 open CategoryTheory CategoryTheory.Limits
-
-universe u v
-
-private lemma semimoduleCat_ofHom_zero {R : Type u} {M N : Type v} [Semiring R]
-    [AddCommMonoid M] [Module R M]
-    [AddCommMonoid N] [Module R N] :
-    SemimoduleCat.ofHom (0 : M →ₗ[R] N) = 0 := by
-  apply SemimoduleCat.hom_injective
-  simp
 
 namespace TauCeti
 
@@ -96,25 +87,25 @@ theorem fullyBlockedComplex_d :
 
 /-! ### Unblocked complex -/
 
-variable (R : Type*) [CommSemiring R] [CharP R 2]
+variable (R : Type*) [CommRing R] [CharP R 2]
 
 /-- The unblocked grid chain module `GC⁻` and its differential as a one-object homological complex
-over the polynomial semiring `R[V₀, ..., V_{n-1}]`.
+over the polynomial ring `R[V₀, ..., V_{n-1}]`.
 
 The unique differential counts empty rectangles avoiding the `X`-markings and weights each
 rectangle by the monomial of the `O`-markings it covers. -/
 noncomputable def unblockedComplex :
-    HomologicalComplex (SemimoduleCat (MvPolynomial (Fin n) R)) (ComplexShape.refl Unit) :=
-  oneObjectHomologicalComplex (SemimoduleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n))
-    (SemimoduleCat.ofHom (G.unblockedDifferential R)) (by
-    rw [← SemimoduleCat.ofHom_comp, G.unblockedDifferential_comp_self_eq_zero R,
-      semimoduleCat_ofHom_zero])
+    HomologicalComplex (ModuleCat (MvPolynomial (Fin n) R)) (ComplexShape.refl Unit) :=
+  oneObjectHomologicalComplex (ModuleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n))
+    (ModuleCat.ofHom (G.unblockedDifferential R)) (by
+    rw [← ModuleCat.ofHom_comp, G.unblockedDifferential_comp_self_eq_zero R,
+      ModuleCat.ofHom_zero])
 
 /-- The unique object of the unblocked complex is the unblocked grid chain module. -/
 @[simp]
 theorem unblockedComplex_X (i : Unit) :
     (G.unblockedComplex R).X i =
-      SemimoduleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n) :=
+      ModuleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n) :=
   oneObjectHomologicalComplex_X _ _ _ _
 
 /-- The unique differential of the unblocked complex is the unblocked grid differential. -/
@@ -122,7 +113,7 @@ theorem unblockedComplex_X (i : Unit) :
 theorem unblockedComplex_d :
     (G.unblockedComplex R).d () () =
       eqToHom (G.unblockedComplex_X R ()) ≫
-        SemimoduleCat.ofHom (G.unblockedDifferential R) ≫
+        ModuleCat.ofHom (G.unblockedDifferential R) ≫
           eqToHom (G.unblockedComplex_X R ()).symm := by
   unfold unblockedComplex
   exact oneObjectHomologicalComplex_d _ _ _
@@ -130,25 +121,25 @@ theorem unblockedComplex_d :
 /-! ### One-variable specialization -/
 
 /-- The one-variable specialization of the grid chain module and differential as a one-object
-homological complex over the polynomial semiring on the columns other than `i`.
+homological complex over the polynomial ring on the columns other than `i`.
 
 The unique differential is obtained from the unblocked differential by setting the selected
 variable `V_i` to zero. For a knot grid this is the standard simply blocked complex; for a link,
 the standard simply blocked theory sets one variable on each component to zero. -/
 noncomputable def simplyBlockedComplex (i : Fin n) :
-    HomologicalComplex (SemimoduleCat (MvPolynomial {c : Fin n // c ≠ i} R))
+    HomologicalComplex (ModuleCat (MvPolynomial {c : Fin n // c ≠ i} R))
       (ComplexShape.refl Unit) :=
   oneObjectHomologicalComplex
-    (SemimoduleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i))
-    (SemimoduleCat.ofHom (G.simplyBlockedDifferential R i)) (by
-    rw [← SemimoduleCat.ofHom_comp, G.simplyBlockedDifferential_comp_self_eq_zero R i,
-      semimoduleCat_ofHom_zero])
+    (ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i))
+    (ModuleCat.ofHom (G.simplyBlockedDifferential R i)) (by
+    rw [← ModuleCat.ofHom_comp, G.simplyBlockedDifferential_comp_self_eq_zero R i,
+      ModuleCat.ofHom_zero])
 
 /-- The unique object of the one-variable specialization is its specialized grid chain module. -/
 @[simp]
 theorem simplyBlockedComplex_X (i : Fin n) (j : Unit) :
     (G.simplyBlockedComplex R i).X j =
-      SemimoduleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i) :=
+      ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i) :=
   oneObjectHomologicalComplex_X _ _ _ _
 
 /-- The unique differential of the one-variable specialization is its specialized grid
@@ -157,7 +148,7 @@ differential. -/
 theorem simplyBlockedComplex_d (i : Fin n) :
     (G.simplyBlockedComplex R i).d () () =
       eqToHom (G.simplyBlockedComplex_X R i ()) ≫
-        SemimoduleCat.ofHom (G.simplyBlockedDifferential R i) ≫
+        ModuleCat.ofHom (G.simplyBlockedDifferential R i) ≫
           eqToHom (G.simplyBlockedComplex_X R i ()).symm := by
   unfold simplyBlockedComplex
   exact oneObjectHomologicalComplex_d _ _ _
