@@ -80,7 +80,7 @@ private theorem exists_isAnalyticPoint_isContinuous_of_valuation
     rw [← u.mem_supp_iff]
     exact (hS ▸ Ideal.span_le.mpr hSsupp) haI
   obtain ⟨v, hvcont, ht₀not, -⟩ :=
-    P.exists_continuous_extension_of_valuation u hu_le hS ht₀I
+    P.exists_continuous_coarsened_extension_of_valuation u hu_le hS ht₀I
       (fun t ht ↦ ht₀max t (Finset.mem_coe.mp ht)) (hu_lt t₀ ht₀I) hut₀ne
   refine ⟨v, ?_, hvcont⟩
   rw [isAnalyticPoint_def]
@@ -212,7 +212,8 @@ theorem spaAnalytic_eq_empty_iff_discrete_separationQuotient [IsHuberRing A]
     obtain ⟨n, hn⟩ := Ideal.exists_forall_pow_eq_pow
       (C := C) P.fg_idealOfDefinition hprime
     have hopen : IsOpen (Ideal.closure (⊥ : Ideal A) : Set A) :=
-      P.isOpen_closure_zero_of_eventually_constant_powers ⟨n, hn⟩
+      P.isOpen_closure_zero_of_eventually_constant_powers
+        ⟨n, hn (n + 1) (Nat.le_succ n)⟩
     let _ : DiscreteTopology (separationQuotientRing (A := A)) :=
       QuotientAddGroup.discreteTopology hopen
     exact (UniformSpace.sepQuotHomeomorphRingQuot A).symm.discreteTopology

@@ -48,7 +48,7 @@ continuous in three moves:
    `x` are `restrictToConvex_mul_inv_le_one` and `one_lt_restrictToConvex_mul_inv`.
 
 Moves 2 and 3 together are
-`PairOfDefinition.exists_continuous_extension_of_valuation` below. They are stated for a
+`PairOfDefinition.exists_continuous_coarsened_extension_of_valuation` below. They are stated for a
 valuation of the ring of definition, and record how the resulting point compares with any
 ambient valuation extending it. Nothing in them uses the fraction field, and `Spv R` already
 hides the value group, so the convex subgroup and the extension can be built inside and never
@@ -73,7 +73,7 @@ the quotient topology.
 
 ## Main results
 
-* `TauCeti.Huber.PairOfDefinition.exists_continuous_extension_of_valuation` : coarsen a
+* `TauCeti.Huber.PairOfDefinition.exists_continuous_coarsened_extension_of_valuation` : coarsen a
   bounded valuation of a ring of definition along a dominating nonzero generator and extend it
   to a continuous point of the ambient Huber ring.
 * `TauCeti.Huber.exists_continuous_valuation_of_not_isIntegral` : the refuting valuation, for
@@ -203,14 +203,14 @@ private theorem exists_spv_of_isContinuous {Γ₀ : Type*} [LinearOrderedCommGro
 
 /-! ### Coarsening and extension -/
 
-/-- **A continuous extension of a bounded valuation of a ring of definition.** Suppose `t₀`
-belongs to the ideal of definition, has nonzero value strictly below `1`, and dominates a spanning
-set of that ideal. Then convex restriction along its value and extension to the ambient ring give
-a continuous point of `Spv R` whose support does not contain `t₀`.
+/-- **A continuous coarsened extension of a bounded valuation of a ring of definition.** Suppose
+`t₀` belongs to the ideal of definition, has nonzero value strictly below `1`, and dominates a
+spanning set of that ideal. Then convex restriction along its value and extension to the ambient
+ring give a continuous point of `Spv R` whose support does not contain `t₀`.
 
 If `w₀` is any valuation of `R` restricting to the given valuation on the ring of definition,
 the new point has value at most `1` exactly where `w₀` does. -/
-theorem PairOfDefinition.exists_continuous_extension_of_valuation
+theorem PairOfDefinition.exists_continuous_coarsened_extension_of_valuation
     (P : PairOfDefinition R) {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
     (v₀ : Valuation P.ringOfDefinition Γ₀)
     (hA₀le : ∀ a : P.ringOfDefinition, v₀ a ≤ 1)
@@ -325,7 +325,7 @@ private theorem exists_continuous_valuation_of_forall_le (P : PairOfDefinition R
   have hv₀t₀ne : v₀ t₀ ≠ 0 := hw₀app t₀ ▸ hne
   have hglt : v₀ t₀ < 1 := hw₀app t₀ ▸ hlt
   obtain ⟨v, hvcont, -, hvle⟩ :=
-    P.exists_continuous_extension_of_valuation v₀ hA₀le hS ht₀I
+    P.exists_continuous_coarsened_extension_of_valuation v₀ hA₀le hS ht₀I
       (fun t ht ↦ by rw [← hw₀app, ← hw₀app]; exact hle t ht) hglt hv₀t₀ne
   refine ⟨v, hvcont, fun b hb ↦ (hvle w₀ hw₀app b).mpr (hBle b hb), ?_⟩
   exact fun hx ↦ (not_le.mpr hxgt) ((hvle w₀ hw₀app x).mp hx)

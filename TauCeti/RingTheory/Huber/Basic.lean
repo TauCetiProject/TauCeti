@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Finiteness.Ideal
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.PowerBounded
+import TauCeti.RingTheory.Ideal.PowerStabilization
 public import TauCeti.Topology.Algebra.Group.FirstCountable
 
 /-!
@@ -40,8 +41,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   continue to generate its extension to `A`.
 * `TauCeti.Huber.PairOfDefinition.hasBasis_nhds_zero`: the images of `Iⁿ` are a neighbourhood
   basis of zero.
-* `TauCeti.Huber.PairOfDefinition.isOpen_closure_zero_of_eventually_constant_powers`: if the
-  powers of `I` eventually stabilize, the closure of zero in the Huber ring is open.
+* `TauCeti.Huber.PairOfDefinition.isOpen_closure_zero_of_eventually_constant_powers`: if two
+  adjacent powers of `I` agree, the closure of zero in the Huber ring is open.
 * `TauCeti.Huber.PairOfDefinition.exists_pow_idealOfDefinition_mul_mem`: some `Iⁿ`
   multiplies a given element into a given open subring.
 * `TauCeti.Huber.IsAdic.comap`: an adic topology transports along a ring equivalence that is an
@@ -351,15 +352,18 @@ theorem hasBasis_nhds_zero (P : PairOfDefinition A) :
   rw [← hmap]
   exact P.isAdic_idealOfDefinition.hasBasis_nhds_zero.map _
 
-/-- If the powers of an ideal of definition eventually stabilize, then the closure of zero in
-the ambient Huber ring is open. The stable image of a power is both a basic open neighbourhood
+/-- If two adjacent powers of an ideal of definition agree, then the closure of zero in the
+ambient Huber ring is open. The stable image of that power is both a basic open neighbourhood
 and the intersection of all basic neighbourhoods. -/
 theorem isOpen_closure_zero_of_eventually_constant_powers [IsTopologicalRing A]
     (P : PairOfDefinition A)
-    (hstable : ∃ n : ℕ, ∀ k, n ≤ k →
-      P.idealOfDefinition ^ k = P.idealOfDefinition ^ n) :
+    (hstable : ∃ n : ℕ,
+      P.idealOfDefinition ^ (n + 1) = P.idealOfDefinition ^ n) :
     IsOpen (Ideal.closure (⊥ : Ideal A) : Set A) := by
-  obtain ⟨n, hn⟩ := hstable
+  obtain ⟨n, hsucc⟩ := hstable
+  have hn : ∀ k, n ≤ k →
+      P.idealOfDefinition ^ k = P.idealOfDefinition ^ n :=
+    fun k hk ↦ Ideal.pow_eq_pow_of_pow_succ_eq_pow hsucc hk
   have hclosed : IsClosed (P.idealImage n : Set A) :=
     AddSubgroup.isClosed_of_isOpen _ (P.isOpen_idealImage n)
   have hclosure_le : (Ideal.closure (⊥ : Ideal A) : Set A) ⊆ P.idealImage n := by
