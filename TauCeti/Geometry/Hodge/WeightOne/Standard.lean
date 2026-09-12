@@ -448,13 +448,13 @@ theorem isPolarization_riemannForm :
 
 /-- The standard Riemann form bundled as a polarization of the standard weight-one Hodge
 structure. -/
-@[expose] noncomputable def polarization :
+noncomputable def polarization :
     Polarization isBaseChange_latticeToComplex hodgeStructure where
   Qint := riemannForm
   isPolarization := isPolarization_riemannForm
 
 @[simp]
-theorem polarization_Qint : polarization.Qint = riemannForm := rfl
+theorem polarization_Qint : polarization.Qint = riemannForm := (rfl)
 
 @[simp]
 theorem polarization_Q (x y : ComplexSpace) :
