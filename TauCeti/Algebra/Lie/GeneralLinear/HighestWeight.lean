@@ -289,6 +289,7 @@ namespace Fin
 
 /-- Casting a reverse finite index and adding the half-unit shift gives the corresponding entry of
 the half-shifted staircase. -/
+@[simp↓]
 theorem natCast_rev_add_one_div_two_eq_glHalfStaircase
     {F : Type*} [Field F] [Invertible (2 : F)] {N : ℕ} (i : Fin N) :
     (((Fin.rev i : ℕ) : F) + 1 / 2) = TauCeti.glHalfStaircase F N i := by
