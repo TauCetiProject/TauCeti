@@ -53,6 +53,37 @@ theorem coe_dual_one_of_isDomain [IsDomain S] :
 
 end FractionalIdeal
 
+variable {A : Type*} [CommRing A] [IsDedekindDomain A]
+
+/-- The trace dual of the unit submodule is the unit submodule for the identity extension of a
+Dedekind domain to its fraction field. -/
+theorem traceDual_one_fractionRing_self :
+    letI : Algebra (FractionRing A) (FractionRing A) :=
+      FractionRing.liftAlgebra A (FractionRing A)
+    Submodule.traceDual A (FractionRing A) (1 : Submodule A (FractionRing A)) = 1 := by
+  let _ : Algebra (FractionRing A) (FractionRing A) :=
+    FractionRing.liftAlgebra A (FractionRing A)
+  apply le_antisymm
+  · intro x hx
+    have hx' := (@Submodule.mem_traceDual A (FractionRing A) (FractionRing A) A
+      _ _ _ _ _ _ _ (FractionRing.liftAlgebra A (FractionRing A)) _ _ _).mp hx 1 (by simp)
+    have htrace : Algebra.trace (FractionRing A) (FractionRing A) x = x := by
+      have htrace' := @Algebra.trace_eq_of_equiv_equiv
+        (FractionRing A) (FractionRing A) (FractionRing A) (FractionRing A)
+        _ _ _ _ (Algebra.id (FractionRing A))
+        (FractionRing.liftAlgebra A (FractionRing A)) (RingEquiv.refl _) (RingEquiv.refl _) ?_ x
+      · simpa using htrace'.symm
+      · ext y
+        -- The compatibility goal is definitionally the identity algebra map after
+        -- reducing the two identity equivalences and the lifted algebra wrapper.
+        change algebraMap (FractionRing A) (FractionRing A) y = y
+        rw [FractionRing.algebraMap_liftAlgebra]
+        exact IsLocalization.lift_id y
+    rw [Submodule.mem_one]
+    exact (by simpa [Algebra.traceForm_apply, htrace] using hx')
+  · exact @Submodule.one_le_traceDual_one A (FractionRing A) (FractionRing A) A
+      _ _ _ _ _ _ _ (FractionRing.liftAlgebra A (FractionRing A)) _ _ _ _ _ _ _
+
 end TauCeti
 
 end

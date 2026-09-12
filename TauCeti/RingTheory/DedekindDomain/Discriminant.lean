@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.RingTheory.Ideal.Norm.RelNorm
+public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 
 /-!
 # Relative discriminant ideals
@@ -24,6 +25,8 @@ This implements Layer 4.1 of the [NumberFieldArithmetic roadmap]
 public section
 
 namespace TauCeti
+
+open scoped nonZeroDivisors
 
 variable {A B : Type*} [CommRing A] [IsDedekindDomain A]
   [CommRing B] [IsDedekindDomain B] [Algebra A B] [Module.Finite A B]
@@ -51,47 +54,6 @@ theorem mem_relDiscr_iff {x : A} :
 theorem relDiscr_eq_bot_iff : relDiscr A B = ⊥ ↔ differentIdeal A B = ⊥ := by
   rw [relDiscr_def, Ideal.relNorm_eq_bot_iff]
 
-/-- The trace dual of the unit submodule is the unit submodule for the identity extension of a
-Dedekind domain to its fraction field. -/
-theorem traceDual_one_fractionRing_self :
-    letI : Algebra (FractionRing A) (FractionRing A) :=
-      FractionRing.liftAlgebra A (FractionRing A)
-    Submodule.traceDual A (FractionRing A) (1 : Submodule A (FractionRing A)) = 1 := by
-  let _ : Algebra (FractionRing A) (FractionRing A) :=
-    FractionRing.liftAlgebra A (FractionRing A)
-  apply le_antisymm
-  · intro x hx
-    have hx' := (@Submodule.mem_traceDual A (FractionRing A) (FractionRing A) A
-      _ _ _ _ _ _ _ (FractionRing.liftAlgebra A (FractionRing A)) _ _ _).mp hx 1 (by simp)
-    have htrace : Algebra.trace (FractionRing A) (FractionRing A) x = x := by
-      have htrace' := @Algebra.trace_eq_of_equiv_equiv
-        (FractionRing A) (FractionRing A) (FractionRing A) (FractionRing A)
-        _ _ _ _ (Algebra.id (FractionRing A))
-        (FractionRing.liftAlgebra A (FractionRing A)) (RingEquiv.refl _) (RingEquiv.refl _) ?_ x
-      · simpa using htrace'.symm
-      · ext y
-        change algebraMap (FractionRing A) (FractionRing A) y = y
-        rw [FractionRing.algebraMap_liftAlgebra]
-        exact IsLocalization.lift_id y
-    rw [Submodule.mem_one]
-    exact (by simpa [Algebra.traceForm_apply, htrace] using hx')
-  · exact @Submodule.one_le_traceDual_one A (FractionRing A) (FractionRing A) A
-      _ _ _ _ _ _ _ (FractionRing.liftAlgebra A (FractionRing A)) _ _ _ _ _ _ _
-
-/-- The quotient of the unit submodule by itself is the unit submodule. -/
-theorem one_div_one_submodule :
-    (1 / (1 : Submodule A (FractionRing A))) = (1 : Submodule A (FractionRing A)) := by
-  ext x
-  rw [Submodule.mem_div_iff_forall_mul_mem]
-  constructor
-  · intro h
-    simpa using h 1 (by simp)
-  · intro hx y hy
-    rw [Submodule.mem_one] at hx hy ⊢
-    obtain ⟨a, rfl⟩ := hx
-    obtain ⟨b, rfl⟩ := hy
-    exact ⟨a * b, by simp [map_mul]⟩
-
 /-- The relative discriminant of the identity extension is the unit ideal. -/
 @[simp]
 theorem relDiscr_self : relDiscr A A = ⊤ := by
@@ -99,11 +61,15 @@ theorem relDiscr_self : relDiscr A A = ⊤ := by
     FractionRing.liftAlgebra A (FractionRing A)
   have hdifferent : differentIdeal A A = ⊤ := by
     rw [differentIdeal]
-    -- The quotient in `differentIdeal` fixes the ambient submodule, so expose it
-    -- before rewriting by the identity-extension trace-dual calculation.
+    -- Unfolding `differentIdeal` and its coercion exposes the quotient's ambient
+    -- submodule while retaining the comap by `Algebra.linearMap`.
     change Submodule.comap (Algebra.linearMap A (FractionRing A))
       (1 / (Submodule.traceDual A (FractionRing A) 1)) = ⊤
-    rw [traceDual_one_fractionRing_self, one_div_one_submodule]
+    rw [traceDual_one_fractionRing_self]
+    rw [show (1 / (1 : Submodule A (FractionRing A))) =
+        (↑((1 : FractionalIdeal A⁰ (FractionRing A)) / 1) : Submodule A (FractionRing A)) by
+      rw [FractionalIdeal.coe_div one_ne_zero, FractionalIdeal.coe_one]]
+    rw [FractionalIdeal.div_one, FractionalIdeal.coe_one]
     ext x
     simp [Submodule.mem_one]
   simp [relDiscr_def, hdifferent]
