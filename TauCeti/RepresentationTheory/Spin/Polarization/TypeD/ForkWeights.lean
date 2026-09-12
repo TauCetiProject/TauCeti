@@ -69,6 +69,19 @@ vector. This is the action-level calculation used by the type-`D` highest-weight
       Module.End.mul_apply, TauCeti.spinAction_ι_wedge,
       TauCeti.ExteriorAlgebra.ι_mul_basis, Finset.mem_univ, ite_true, mul_zero]
 
+/-- Every positive simple-root Clifford bivector annihilates the exterior-basis vector obtained by
+erasing the final coordinate. -/
+@[simp] theorem spinAction_typeDSimpleRootBivector_exteriorBasis_univ_erase_last_eq_zero
+    (hn : 2 ≤ n) (i : Fin n) :
+    spinAction Q P (P.typeDSimpleRootBivector b hn i)
+        (b.ExteriorAlgebra
+          ((Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n))) = 0 := by
+  apply (P.typeDGraphOperator b hn).injective
+  rw [map_zero, P.typeDGraphOperator_spinAction_typeDSimpleRootBivector b hn,
+    P.typeDGraphOperator_basis_of_notMem b hn (by simp), map_zsmul,
+    Finset.insert_erase (Finset.mem_univ _),
+    P.spinAction_typeDSimpleRootBivector_exteriorBasis_univ_eq_zero b hn, smul_zero]
+
 variable {V : Type u} [AddCommGroup V] [Module ℚ V] {Q : QuadraticForm ℚ V}
   (P : SpinPolarizationData Q) {n : ℕ} (b : Module.Basis (Fin n) ℚ P.W)
 
@@ -93,11 +106,9 @@ theorem typeDSpinRep_serreE_exteriorBasis_univ_erase_last_eq_zero
           (TauCeti.serreE ℚ (CartanMatrix.D n) i))
         (b.ExteriorAlgebra
           ((Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n))) = 0 := by
-  apply (P.typeDGraphOperator b (by omega)).injective
-  rw [map_zero, P.typeDGraphOperator_typeDSpinRep_serreE b hn,
-    P.typeDGraphOperator_basis_of_notMem b (by omega) (by simp), map_zsmul,
-    Finset.insert_erase (Finset.mem_univ _),
-    P.typeDSpinRep_serreE_exteriorBasis_univ_eq_zero b hn, smul_zero]
+  rw [P.typeDSpinRep_serreE_eq_spinAction b hn]
+  exact P.spinAction_typeDSimpleRootBivector_exteriorBasis_univ_erase_last_eq_zero
+    b (by omega) i
 
 /-! ## Exact fork weights -/
 
