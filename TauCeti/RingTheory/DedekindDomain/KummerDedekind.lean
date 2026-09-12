@@ -46,6 +46,8 @@ factor, so the bijection can be evaluated on a concrete example.
   residue degree is the degree of the factor.
 * `TauCeti.KummerDedekind.ramificationIdx_primesOverEquivNormalizedFactorsMinPolyMk_symm_apply`:
   its ramification index is the multiplicity of the factor in `minpoly R x` modulo `p`.
+* `TauCeti.KummerDedekind.irreducible_map_iff_irreducible_minpoly`: `p` stays prime in `S`
+  exactly when `minpoly R x` is irreducible modulo `p`.
 
 ## Provenance
 
@@ -195,6 +197,43 @@ theorem ramificationIdx_primesOverEquivNormalizedFactorsMinPolyMk_symm_apply {d 
   congr 1
   exact congrArg Subtype.val ((KummerDedekind.normalizedFactorsMapEquivNormalizedFactorsMinPolyMk
     hp hp0 hx hx').apply_symm_apply ⟨d, hd⟩)
+
+omit hp0 in
+open scoped Classical in
+/-- **The converse of `Ideal.irreducible_map_of_irreducible_minpoly`.** If `p S` is irreducible,
+that is, if `p` stays prime in `S`, then `minpoly R x` modulo `p` is irreducible. -/
+theorem irreducible_minpoly_of_irreducible_map (h : Irreducible (p.map (algebraMap R S))) :
+    Irreducible ((minpoly R x).map (Ideal.Quotient.mk p)) := by
+  have hp0 : p ≠ ⊥ := by
+    rintro rfl
+    exact h.ne_zero (by simp)
+  have hm0 : (minpoly R x).map (Ideal.Quotient.mk p) ≠ 0 :=
+    Polynomial.map_monic_ne_zero (minpoly.monic hx')
+  -- The prime factors of `p S` form a singleton, and they are the image of the normalized factors
+  -- of `minpoly R x` modulo `p` under the Kummer–Dedekind bijection.
+  have hcard : Multiset.card (normalizedFactors ((minpoly R x).map (Ideal.Quotient.mk p))) = 1 := by
+    have h1 : Multiset.card (normalizedFactors (p.map (algebraMap R S))) = 1 := by
+      rw [normalizedFactors_irreducible h, Multiset.card_singleton]
+    have hmap := congrArg Multiset.card
+      (KummerDedekind.normalizedFactors_ideal_map_eq_normalizedFactors_min_poly_mk_map hp hp0 hx
+        hx')
+    rw [h1, Multiset.card_map, Multiset.card_attach] at hmap
+    exact hmap.symm
+  obtain ⟨d, hd⟩ := Multiset.card_eq_one.mp hcard
+  have hdirr : Irreducible d :=
+    irreducible_of_normalized_factor d (by rw [hd]; exact Multiset.mem_singleton_self d)
+  -- Hence `minpoly R x` modulo `p` is associated to the irreducible `d`.
+  have hassoc := prod_normalizedFactors hm0
+  rw [hd, Multiset.prod_singleton] at hassoc
+  exact hassoc.irreducible hdirr
+
+/-- **The Kummer–Dedekind irreducibility criterion.** `p` stays prime in `S` exactly when
+`minpoly R x` is irreducible modulo `p`. -/
+theorem irreducible_map_iff_irreducible_minpoly :
+    Irreducible (p.map (algebraMap R S)) ↔
+      Irreducible ((minpoly R x).map (Ideal.Quotient.mk p)) :=
+  ⟨irreducible_minpoly_of_irreducible_map hp hx hx',
+    KummerDedekind.Ideal.irreducible_map_of_irreducible_minpoly hp hp0 hx hx'⟩
 
 end KummerDedekind
 
