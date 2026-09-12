@@ -24,8 +24,8 @@ the members of `Polynomial.Factors p`.
 
 The dictionary also identifies transitivity of the root action with irreducibility for a
 separable polynomial of positive degree, and records what the orbit count says about the action
-inside the splitting field itself: an irreducible polynomial acts transitively there, and when
-its degree is prime it acts primitively.
+inside the splitting field itself: an irreducible polynomial acts transitively there, and an
+irreducible separable polynomial of prime degree acts primitively.
 
 ## Main results
 
@@ -41,9 +41,10 @@ its degree is prime it acts primitively.
   `TauCeti.image_val_orbit_eq_rootSet_minpoly_splittingField`,
   `TauCeti.natCard_orbit_eq_natDegree_minpoly_splittingField`: the same three descriptions of an
   orbit for the intrinsic action on the roots in the splitting field.
-* `TauCeti.isPretransitive_of_irreducible`, `TauCeti.isPreprimitive_of_prime_natDegree`: inside
-  the splitting field, an irreducible polynomial has a transitive root action, and an irreducible
-  separable polynomial of prime degree a primitive one.
+* `TauCeti.isPretransitive_of_irreducible`,
+  `TauCeti.isPreprimitive_of_irreducible_of_separable_of_prime_natDegree`: inside the splitting
+  field, an irreducible polynomial has a transitive root action, and an irreducible separable
+  polynomial of prime degree a primitive one.
 * `TauCeti.orbitQuotientEquivFactors`: the orbit quotient is in bijection with the
   monic irreducible factors of `p`, the orbit of a root going to its minimal polynomial.
 * `TauCeti.natCard_orbit_eq_natDegree_factor`: along that bijection, a separable
@@ -205,6 +206,12 @@ here; the orbit descriptions are obtained by feeding the intrinsic orbit criteri
 proofs as above, and transitivity is proved directly rather than read off
 `TauCeti.isPretransitive_iff_irreducible` or `Polynomial.Gal.galAction_isPretransitive`. -/
 
+/-- The Galois action on the roots in the splitting field is the action by evaluation. -/
+@[simp]
+theorem _root_.Polynomial.Gal.coe_smul (g : p.Gal) (x : p.rootSet p.SplittingField) :
+    ((g • x : p.rootSet p.SplittingField) : p.SplittingField) = g x :=
+  rfl
+
 /-- Two roots of `p` in the splitting field lie in the same Galois orbit exactly when their
 minimal polynomials over the base field agree.
 
@@ -216,6 +223,15 @@ theorem mem_orbit_iff_minpoly_eq_splittingField {x y : p.rootSet p.SplittingFiel
       minpoly F (x : p.SplittingField) = minpoly F (y : p.SplittingField) := by
   rw [Normal.minpoly_eq_iff_mem_orbit p.SplittingField]
   exact ⟨fun ⟨g, hg⟩ => ⟨g, congrArg Subtype.val hg⟩, fun ⟨g, hg⟩ => ⟨g, Subtype.ext hg⟩⟩
+
+/-- The orbit of a root of `p` in the splitting field consists of the roots of its minimal
+polynomial.
+
+This is `TauCeti.orbit_eq_preimage_rootSet_minpoly` for the intrinsic action. -/
+theorem orbit_eq_preimage_rootSet_minpoly_splittingField (x : p.rootSet p.SplittingField) :
+    MulAction.orbit p.Gal x =
+      Subtype.val ⁻¹' (minpoly F (x : p.SplittingField)).rootSet p.SplittingField :=
+  orbit_eq_preimage_rootSet_minpoly_aux (fun _ _ => mem_orbit_iff_minpoly_eq_splittingField) x
 
 /-- Read inside the splitting field, the orbit of a root of `p` is exactly the root set of its
 minimal polynomial.
@@ -256,9 +272,13 @@ theorem isPretransitive_of_irreducible (hp : Irreducible p) :
 
 /-- **An irreducible separable polynomial of prime degree has a primitive root action.** A
 transitive action on a set of prime cardinality is primitive, and the roots of a separable
-polynomial number its degree. -/
-theorem isPreprimitive_of_prime_natDegree (hp : Irreducible p) (hsep : p.Separable)
-    (hprime : p.natDegree.Prime) :
+polynomial number its degree.
+
+This is the corollary of the milestone "Primitivity and intermediate fields" in Layer 2 of
+`TauCetiRoadmap/PolynomialGaloisGroups/README.md` that the roadmap records as "also available
+from `IsPreprimitive.of_prime_card`". -/
+theorem isPreprimitive_of_irreducible_of_separable_of_prime_natDegree (hp : Irreducible p)
+    (hsep : p.Separable) (hprime : p.natDegree.Prime) :
     MulAction.IsPreprimitive p.Gal (p.rootSet p.SplittingField) := by
   have htr : MulAction.IsPretransitive p.Gal (p.rootSet p.SplittingField) :=
     isPretransitive_of_irreducible hp

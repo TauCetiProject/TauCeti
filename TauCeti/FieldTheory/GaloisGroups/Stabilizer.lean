@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.PolynomialGaloisGroup
 public import TauCeti.FieldTheory.Galois.FixedField
 public import TauCeti.FieldTheory.GaloisGroups.Orbits
 
@@ -36,6 +35,18 @@ separable, and for irreducible `p` this follows from `p.Separable`.
   `TauCeti.stabilizer_eq_top_iff_adjoin_simple_eq_bot`: the two ends of the correspondence, a
   root that generates the whole splitting field and a root that lies in the base field.
 
+## Roadmap
+
+This is the milestone "Stabilizers are relative Galois groups" of Layer 2,
+"the dictionary between Galois theory and permutations", of
+`TauCetiRoadmap/PolynomialGaloisGroups/README.md`, which asks for
+`stabilizer p.Gal α = (IntermediateField.adjoin F {α}).fixingSubgroup` of index `natDegree p`.
+The prime-degree corollary of that layer's "Primitivity and intermediate fields" milestone, which
+the roadmap records as "also available from `IsPreprimitive.of_prime_card`", is
+`TauCeti.isPreprimitive_of_irreducible_of_separable_of_prime_natDegree` of
+`TauCeti/FieldTheory/GaloisGroups/Orbits.lean`; the primitivity-as-atom equivalence itself waits
+on the block/intermediate-field correspondence the milestone lists as its prerequisite.
+
 ## Implementation notes
 
 The action used here is Mathlib's `Polynomial.Gal.galActionAux`, the intrinsic action on
@@ -58,12 +69,6 @@ open Polynomial IntermediateField MulAction
 variable {F : Type*} [Field F] {p : F[X]}
 
 /-! ### The stabilizer of a root -/
-
-/-- The Galois action on the roots in the splitting field is the action by evaluation. -/
-@[simp]
-theorem _root_.Polynomial.Gal.coe_smul (g : p.Gal) (x : p.rootSet p.SplittingField) :
-    ((g • x : p.rootSet p.SplittingField) : p.SplittingField) = g x :=
-  rfl
 
 /-- **The stabilizer of a root is a relative Galois group.** An automorphism of the splitting
 field fixes a root `x` exactly when it fixes the subfield `F⟮x⟯` pointwise, so the point
@@ -104,11 +109,9 @@ Separability cannot be dropped: an inseparable irreducible polynomial has fewer 
 degree. -/
 theorem index_stabilizer_eq_natDegree (hp : Irreducible p) (hsep : p.Separable)
     (x : p.rootSet p.SplittingField) : (stabilizer p.Gal x).index = p.natDegree := by
-  have hmin : (minpoly F (x : p.SplittingField)).natDegree = p.natDegree := by
-    rw [← minpoly.eq_of_irreducible hp (aeval_eq_zero_of_mem_rootSet x.2)]
-    exact natDegree_mul_C (inv_ne_zero (leadingCoeff_ne_zero.mpr hp.ne_zero))
-  rw [index_stabilizer_eq_minpoly_natDegree x
-    (hsep.of_dvd (minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2))), hmin]
+  have := isPretransitive_of_irreducible hp
+  rw [MulAction.index_stabilizer_of_transitive, Nat.card_eq_fintype_card,
+    card_rootSet_eq_natDegree hsep (IsSplittingField.splits p.SplittingField p)]
 
 /-! ### The two ends of the correspondence -/
 
