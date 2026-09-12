@@ -55,19 +55,21 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 private theorem sum_range_rev (N k : ℕ) (hk : k ≤ N) :
     Finset.sum (Finset.range k) (fun x => N - (x + 1)) =
       k.choose 2 + k * (N - k) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-      calc
-        Finset.sum (Finset.range (k + 1)) (fun x => N - (x + 1)) =
-            Finset.sum (Finset.range k) (fun x => N - (x + 1)) + (N - (k + 1)) :=
-          Finset.sum_range_succ _ _
-        _ = (k.choose 2 + k * (N - k)) + (N - (k + 1)) := by
-          rw [ih (by omega)]
-        _ = (k + 1).choose 2 + (k + 1) * (N - (k + 1)) := by
-          have hsub : N - k = (N - (k + 1)) + 1 := by omega
-          rw [hsub, Nat.choose_succ_succ, Nat.choose_one_right]
-          ring
+  calc
+    Finset.sum (Finset.range k) (fun x => N - (x + 1)) =
+        Finset.sum (Finset.range k) (fun x => (N - k) + (k - 1 - x)) := by
+      apply Finset.sum_congr rfl
+      intro x hx
+      have hxk := Finset.mem_range.mp hx
+      omega
+    _ = k * (N - k) + Finset.sum (Finset.range k) (fun x => k - 1 - x) := by
+      rw [Finset.sum_add_distrib]
+      simp
+    _ = k * (N - k) + Finset.sum (Finset.range k) (fun x => x) := by
+      rw [Finset.sum_range_reflect (fun x => x) k]
+    _ = k.choose 2 + k * (N - k) := by
+      rw [Finset.sum_range_id, Nat.choose_two_right]
+      omega
 
 private theorem sum_fin_rev_castLE (N k : ℕ) (hk : k ≤ N) :
     (∑ i : Fin k, (Fin.rev (Fin.castLE hk i) : ℕ)) =
