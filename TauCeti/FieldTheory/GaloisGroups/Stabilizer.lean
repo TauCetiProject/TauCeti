@@ -48,11 +48,6 @@ reads directly. No `Fact` instance is introduced below, so `galActionAux` is the
 and no ambiguity arises.
 -/
 
--- Source. The identification of the point stabilizer of the root action with the subgroup
--- fixing the field the root generates, and its index, are asked for by the Tau Ceti
--- `PolynomialGaloisGroups` roadmap, `README.md`, section "Stabilizers are relative Galois
--- groups".
-
 public section
 
 namespace TauCeti
@@ -63,6 +58,10 @@ variable {F : Type*} [Field F] {p : F[X]}
 
 /-! ### The stabilizer of a root -/
 
+-- Source. Both the identification of the point stabilizer with the subgroup fixing the field
+-- the root generates and the index of that stabilizer are the statements specified by
+-- `TauCetiRoadmap/PolynomialGaloisGroups/README.md`, section "Stabilizers are relative Galois
+-- groups".
 /-- **The stabilizer of a root is a relative Galois group.** An automorphism of the splitting
 field fixes a root `x` exactly when it fixes the subfield `F⟮x⟯` pointwise, so the point
 stabilizer of the root action is the fixing subgroup of that subfield.

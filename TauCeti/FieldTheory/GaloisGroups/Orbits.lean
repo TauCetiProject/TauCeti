@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
-public import Mathlib.GroupTheory.GroupAction.Primitive
 public import TauCeti.RingTheory.Polynomial.Factors
 
 /-!
@@ -23,9 +22,8 @@ turns this into a bijection with the distinct monic irreducible factors of `p`, 
 the members of `Polynomial.Factors p`.
 
 The dictionary also identifies transitivity of the root action with irreducibility for a
-separable polynomial of positive degree, and records what the orbit count says about the action
-inside the splitting field itself: an irreducible polynomial acts transitively there, and an
-irreducible separable polynomial of prime degree acts primitively.
+separable polynomial of positive degree, and records the same descriptions for the action inside
+the splitting field itself, where an irreducible polynomial acts transitively.
 
 ## Main results
 
@@ -41,19 +39,13 @@ irreducible separable polynomial of prime degree acts primitively.
   `TauCeti.image_val_orbit_eq_rootSet_minpoly_splittingField`,
   `TauCeti.natCard_orbit_eq_natDegree_minpoly_splittingField`: the same three descriptions of an
   orbit for the intrinsic action on the roots in the splitting field.
-* `TauCeti.isPretransitive_of_irreducible`,
-  `TauCeti.isPreprimitive_of_irreducible_of_separable_of_prime_natDegree`: inside the splitting
-  field, an irreducible polynomial has a transitive root action, and an irreducible separable
-  polynomial of prime degree a primitive one.
+* `TauCeti.isPretransitive_of_irreducible`: inside the splitting field, an irreducible
+  polynomial has a transitive root action.
 * `TauCeti.orbitQuotientEquivFactors`: the orbit quotient is in bijection with the
   monic irreducible factors of `p`, the orbit of a root going to its minimal polynomial.
 * `TauCeti.natCard_orbit_eq_natDegree_factor`: along that bijection, a separable
   factor has as many roots in the matching orbit as its degree.
 -/
-
--- Source. The primitivity of the root action of an irreducible separable polynomial of prime
--- degree is asked for by the Tau Ceti `PolynomialGaloisGroups` roadmap, `README.md`, section
--- "Primitivity and intermediate fields".
 
 public section
 
@@ -273,18 +265,6 @@ theorem isPretransitive_of_irreducible (hp : Irreducible p) :
   have hy := minpoly.eq_of_irreducible hp (aeval_eq_zero_of_mem_rootSet y.2)
   obtain ⟨g, hg⟩ := (Normal.minpoly_eq_iff_mem_orbit p.SplittingField).mp (hy.symm.trans hx)
   exact ⟨g, Subtype.ext hg⟩
-
-/-- **An irreducible separable polynomial of prime degree has a primitive root action.** A
-transitive action on a set of prime cardinality is primitive, and the roots of a separable
-polynomial number its degree. -/
-theorem isPreprimitive_of_irreducible_of_separable_of_prime_natDegree (hp : Irreducible p)
-    (hsep : p.Separable) (hprime : p.natDegree.Prime) :
-    MulAction.IsPreprimitive p.Gal (p.rootSet p.SplittingField) := by
-  have htr : MulAction.IsPretransitive p.Gal (p.rootSet p.SplittingField) :=
-    isPretransitive_of_irreducible hp
-  refine MulAction.IsPreprimitive.of_prime_card ?_
-  rwa [Nat.card_eq_fintype_card,
-    card_rootSet_eq_natDegree hsep (IsSplittingField.splits p.SplittingField p)]
 
 /-! ## Orbits and monic irreducible factors -/
 
