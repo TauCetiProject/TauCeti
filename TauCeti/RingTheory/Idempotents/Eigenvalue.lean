@@ -85,18 +85,15 @@ theorem exists_eq_natCast_of_sum_smul_eq_smul
           exact eq_add_of_sub_eq hμ
 
 /-- If a sum of commuting idempotents acts on a vector by the cardinality of the family, then
-every idempotent in the family fixes that vector.
-
-The statement includes the zero vector, where the conclusion is immediate. For a nonzero vector,
-apply `Finset.exists_eq_natCast_of_sum_smul_eq_smul` after projecting to the zero eigenspace of the
-chosen idempotent; the resulting eigenvalue would have to be both `s.card` and at most one less. -/
+every idempotent in the family fixes that vector, including when the vector is zero. -/
 theorem smul_eq_self_of_sum_smul_eq_card_smul
-    {K A ι : Type*} [DivisionRing K] [CharZero K] [Ring A]
-    [Module K A] [SMulCommClass A K A]
+    {K A M ι : Type*} [Ring K] [CharZero K] [Ring A]
+    [AddCommGroup M] [Module K M] [Module A M] [SMulCommClass A K M]
+    [NoZeroSMulDivisors K M]
     (s : Finset ι) (p : ι → A)
     (hp : ∀ i ∈ s, IsIdempotentElem (p i))
     (hcomm : (s : Set ι).Pairwise fun i j => Commute (p i) (p j))
-    {x : A} (heigen : (∑ i ∈ s, p i) • x = (s.card : K) • x)
+    {x : M} (heigen : (∑ i ∈ s, p i) • x = (s.card : K) • x)
     {a : ι} (ha : a ∈ s) : p a • x = x := by
   classical
   let y := (1 - p a) • x

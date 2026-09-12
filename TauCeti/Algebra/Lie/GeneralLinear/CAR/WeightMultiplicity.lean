@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.GeneralLinear.CAR.WeightSpectrum
+public import TauCeti.Algebra.Lie.GeneralLinear.CAR.HighestWeight
 import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 import TauCeti.Algebra.Lie.GeneralLinear.CAR.Occupation
-import TauCeti.Algebra.Lie.GeneralLinear.Fock
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.Dimension.FixedSubmodule
 import TauCeti.RingTheory.Idempotents.Eigenvalue
@@ -309,19 +308,6 @@ private theorem carOccupationElement_mul_eq_self_of_mem_commonFixed
   simpa [carOccupationEnd, Module.toModuleEnd_apply,
     DistribSMul.toLinearMap_apply, smul_eq_mul] using h
 
-private theorem glCliffordHom_single_self_eq_sum_positive_local
-    {K : Type*} [Field K] [Invertible (2 : K)] {N : ℕ} (i : Fin N) :
-    glCliffordHom (K := K) (n := Fin N) (Matrix.single i i 1) =
-      ∑ k : Fin N, if k < i then 1 - carOccupationElement (K := K) k i
-        else carOccupationElement (K := K) i k := by
-  let E : Matrix (Fin N) (Fin N) K :=
-    @Matrix.single (Fin N) (Fin N) K (Classical.decEq _) (Classical.decEq _) _ i i 1
-  have hE : Matrix.single i i (1 : K) = E := by
-    ext a b
-    simp [E, Matrix.single_apply]
-  rw [hE]
-  exact glCliffordHom_single_self_eq_sum_positive_occupation (K := K) (n := Fin N) i
-
 private theorem diagonal_lie_eq_glHalfStaircase_smul_of_occupation_fixed
     {K : Type*} [Field K] [CharZero K] [Invertible (2 : K)] {N : ℕ}
     (x : carAlgebra K N)
@@ -337,12 +323,23 @@ private theorem diagonal_lie_eq_glHalfStaircase_smul_of_occupation_fixed
     · simp only [hki, ↓reduceIte, sub_mul, one_mul, hfixed hki, sub_self, zero_smul]
     · simp [carOccupationElement_self]
     · simp only [not_lt_of_ge hik.le, ne_of_gt hik, ↓reduceIte, hfixed hik, one_smul]
+  have hoccupation :
+      glCliffordHom (K := K) (n := Fin N) (Matrix.single i i 1) =
+        ∑ k : Fin N, if k < i then 1 - carOccupationElement (K := K) k i
+          else carOccupationElement (K := K) i k := by
+    -- The conversion reconciles the canonical theorem's classical matrix instance with `Fin`'s.
+    convert glCliffordHom_single_self_eq_sum_positive_occupation
+      (K := K) (n := Fin N) i using 1
+    all_goals
+      congr 1
+      ext a b
+      simp [Matrix.single_apply]
   calc
     glCliffordHom (Matrix.single i i (1 : K)) * x =
         (∑ k : Fin N, if k < i then 1 - carOccupationElement (K := K) k i
           else carOccupationElement (K := K) i k) * x :=
       congrArg (fun z => z * x)
-        (glCliffordHom_single_self_eq_sum_positive_local (K := K) i)
+        hoccupation
     _ = ∑ k : Fin N, (if k < i then 1 - carOccupationElement (K := K) k i
           else carOccupationElement (K := K) i k) * x := by rw [Finset.sum_mul]
     _ = ∑ k : Fin N, (if k < i then (0 : K)
@@ -370,7 +367,18 @@ private theorem sum_upper_occupation_smul_eq_card_smul
     · simp [hki, ne_of_lt hki, not_lt_of_ge hki.le, hlower hki, sub_mul]
     · simp [carOccupationElement_self]
     · simp [hik, not_lt_of_ge hik.le]
-  rw [car_lie_def, glCliffordHom_single_self_eq_sum_positive_local,
+  have hoccupation :
+      glCliffordHom (K := K) (n := Fin N) (Matrix.single i i 1) =
+        ∑ k : Fin N, if k < i then 1 - carOccupationElement (K := K) k i
+          else carOccupationElement (K := K) i k := by
+    -- The conversion reconciles the canonical theorem's classical matrix instance with `Fin`'s.
+    convert glCliffordHom_single_self_eq_sum_positive_occupation
+      (K := K) (n := Fin N) i using 1
+    all_goals
+      congr 1
+      ext a b
+      simp [Matrix.single_apply]
+  rw [car_lie_def, hoccupation,
     Finset.sum_mul, Finset.sum_congr rfl fun k _ => hterm k] at hdiag
   have hsum :
       (∑ k : Fin N, if i < k then carOccupationElement (K := K) i k * x

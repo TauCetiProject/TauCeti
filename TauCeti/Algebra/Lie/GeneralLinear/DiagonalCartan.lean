@@ -254,10 +254,8 @@ theorem glWeightEquiv_symm_apply (f : Module.Dual R (diagonalCartan R n)) (i : n
     ← Module.Basis.toDualEquiv_apply, LinearEquiv.apply_symm_apply]
 
 /-- A vector has general-linear weight `μ` if and only if each diagonal matrix unit acts on it by
-the corresponding coordinate `μ i`.
-
-The reverse implication reconstructs an arbitrary diagonal action from the
-`diagonalCartanBasis`. -/
+the corresponding coordinate `μ i`. -/
+@[simp]
 theorem mem_weightSpace_glWeightEquiv_iff
     {K M n : Type*} [CommRing K] [Fintype n] [DecidableEq n]
     [AddCommGroup M] [Module K M] [LieRingModule (Matrix n n K) M]
