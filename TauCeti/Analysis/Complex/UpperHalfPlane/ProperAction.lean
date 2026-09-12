@@ -25,7 +25,7 @@ open scoped MatrixGroups
 
 open Matrix.SpecialLinearGroup UpperHalfPlane
 
-namespace TauCeti
+namespace TauCeti.UpperHalfPlane
 
 /-- The effective `PSL(2, ℝ)` action on the upper half-plane is jointly continuous. -/
 instance : ContinuousSMul PSL(2, ℝ) ℍ where
@@ -63,4 +63,4 @@ theorem isProperMap_psl_smul_I : IsProperMap fun g : PSL(2, ℝ) ↦ g • I := 
 instance : ProperSMul PSL(2, ℝ) ℍ :=
   MulAction.properSMul_of_proper_orbitMap isProperMap_psl_smul_I
 
-end TauCeti
+end TauCeti.UpperHalfPlane
