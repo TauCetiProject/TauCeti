@@ -265,6 +265,40 @@ theorem signlessLift_unique (hf : ∀ v : V, f (signlessRelator k G v) = 0)
 
 end Lift
 
+/-! ### Backtracks under orientation relabelling -/
+
+namespace DoubledQuiver
+
+section OrientationBacktracks
+
+variable (k : Type w) [CommSemiring k] {V : Type u} {G : SimpleGraph V} [Finite V]
+  (o : Orientation G)
+
+/-- **The head backtrack of an oriented arrow is the backtrack at its head.** The arrow
+`a : i ⟶ j` of the orientation traverses the edge `ij`; the word `a a*` leaves `j` along that edge
+and returns, so it becomes the backtrack at `j`. -/
+theorem orientedPathAlgEquiv_headBacktrackElem {i j : V} (h : G.Adj i j)
+    (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o) :
+    orientedPathAlgEquiv k o (headBacktrackElem k (OrientedQuiver.arrow G o h ho))
+      = backtrackElem G k h.symm := by
+  rw [← ofArrow_mul_ofArrow_reverse_eq_headBacktrackElem, map_mul,
+    orientedPathAlgEquiv_ofArrow_of k o h ho, orientedPathAlgEquiv_ofArrow_reverse_of k o h ho]
+  exact ofArrow_symm_mul_ofArrow G k h.symm
+
+/-- **The tail backtrack of an oriented arrow is the backtrack at its tail.** The word `a* a`
+leaves the tail `i` of `a : i ⟶ j` along the edge `ij` and returns. -/
+theorem orientedPathAlgEquiv_tailBacktrackElem {i j : V} (h : G.Adj i j)
+    (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o) :
+    orientedPathAlgEquiv k o (tailBacktrackElem k (OrientedQuiver.arrow G o h ho))
+      = backtrackElem G k h := by
+  rw [← ofArrow_reverse_mul_ofArrow_eq_tailBacktrackElem, map_mul,
+    orientedPathAlgEquiv_ofArrow_reverse_of k o h ho, orientedPathAlgEquiv_ofArrow_of k o h ho]
+  exact ofArrow_symm_mul_ofArrow G k h
+
+end OrientationBacktracks
+
+end DoubledQuiver
+
 /-! ### The corner sums of an orientation -/
 
 section Corner
