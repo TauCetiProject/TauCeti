@@ -135,7 +135,10 @@ private theorem preimage_pairReindex_eq_of_measurable_arrayTailFamily
       rw [Set.preimage_iUnion]
       simp [hf]
 
-private theorem preimage_finitaryPerm_smul_array_eq_self_of_measurableSet_arrayTail
+/-- **Every corner-tail event is fixed by the diagonal action**: a finitely supported relabelling
+of both coordinates changes only finitely many entries, and a corner-tail event does not read
+them. -/
+theorem preimage_finitaryPerm_smul_array_eq_self_of_measurableSet_arrayTail
     {s : Set (ℕ × ℕ → α)}
     (hs : MeasurableSet[arrayTail (fun p (x : ℕ × ℕ → α) => x p)] s)
     (g : FinitaryPerm) : (fun x : ℕ × ℕ → α => g • x) ⁻¹' s = s := by
