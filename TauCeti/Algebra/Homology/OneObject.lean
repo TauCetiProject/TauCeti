@@ -29,7 +29,7 @@ namespace TauCeti
 universe u v
 
 /-- The one-object homological complex associated to a square-zero endomorphism. -/
-@[expose] def oneObjectHomologicalComplex {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+def oneObjectHomologicalComplex {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
     (X : C) (d : X ⟶ X) (d_comp_d : d ≫ d = 0) :
     HomologicalComplex C (ComplexShape.refl Unit) where
   X _ := X
@@ -41,7 +41,7 @@ universe u v
 theorem oneObjectHomologicalComplex_X {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
     (X : C) (d : X ⟶ X) (d_comp_d : d ≫ d = 0) (i : Unit) :
     (oneObjectHomologicalComplex X d d_comp_d).X i = X :=
-  rfl
+  (rfl)
 
 /-- The unique differential of the one-object homological complex is its defining endomorphism,
 transported across the canonical object equation. -/
