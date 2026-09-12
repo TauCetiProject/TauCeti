@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.GradedModule
+public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
 
 /-!
@@ -65,17 +66,15 @@ a differential graded algebra be a module over itself with no twist.
 * `TauCeti.isDGLeftModule_zero`: a graded module with zero differential over a graded algebra with
   zero differential is a differential graded left module.
 
-The cycles, boundaries and cohomology module are built on this file in
-`TauCeti.Algebra.Homology.DG.Module.Cohomology`.
+The specializations of these results to the algebra acting on itself are in
+`TauCeti.Algebra.Homology.DG.Algebra.SelfModule`, and the cycles, boundaries and cohomology module
+are built on this file in `TauCeti.Algebra.Homology.DG.Module.Cohomology`.
 
 ## References
 
 * B. Keller, *Deriving DG categories*, Sections 1 and 2.
 * B. Keller, *Introduction to A-infinity algebras and modules*, Section 3.1.
 -/
--- Provenance: the Tau Ceti `DGAInfinity` roadmap `README.md`, whose section "Cohomological
--- grading and Koszul signs" fixes the cohomological Keller sign convention used here, and whose
--- section "Ground rings, size, and handedness" fixes the module conventions.
 
 public section
 
@@ -103,6 +102,13 @@ structure IsDGLeftModule [IsScalarTower R A M] (h : IsDGAlgebra 𝒜 d) (ℳ : �
 
 attribute [grind =>] IsDGLeftModule.map_mem
 
+/-- **A differential graded algebra is a differential graded left module over itself.**  The Leibniz
+rule is the one of the algebra, read through `smul_eq_mul`. -/
+theorem IsDGAlgebra.isDGLeftModule (h : IsDGAlgebra 𝒜 d) : IsDGLeftModule h 𝒜 d where
+  map_mem := h.map_mem
+  sq_zero := h.sq_zero
+  leibniz ha b := by simpa only [smul_eq_mul] using h.leibniz ha b
+
 variable {h : IsDGAlgebra 𝒜 d} {ℳ : ℤ → Submodule R M}
   [SetLike.GradedSMul 𝒜 ℳ] [DirectSum.Decomposition ℳ] {dM : M →ₗ[R] M}
 
@@ -111,19 +117,9 @@ namespace IsDGLeftModule
 /-- The differential of a differential graded left module commutes with the homogeneous projections
 of the grading, up to the shift by one that it applies to degrees. -/
 theorem map_decompose (hM : IsDGLeftModule h ℳ dM) (p : ℤ) (x : M) :
-    dM (decompose ℳ x p : M) = (decompose ℳ (dM x) (p + 1) : M) := by
-  induction x using DirectSum.Decomposition.inductionOn ℳ with
-  | zero => simp
-  | @homogeneous q y =>
-    have hy : (y : M) ∈ ℳ q := y.2
-    have hdy : dM (y : M) ∈ ℳ (q + 1) := hM.map_mem hy
-    by_cases hpq : p = q
-    · subst hpq
-      rw [DirectSum.decompose_of_mem_same ℳ hy, DirectSum.decompose_of_mem_same ℳ hdy]
-    · rw [DirectSum.decompose_of_mem_ne ℳ hy (fun hq => hpq hq.symm), map_zero,
-        DirectSum.decompose_of_mem_ne ℳ hdy (fun hq => hpq (by omega))]
-  | add x y hx hy => simp only [map_add, DirectSum.decompose_add, DirectSum.add_apply,
-      Submodule.coe_add, hx, hy]
+    dM (decompose ℳ x p : M) = (decompose ℳ (dM x) (p + 1) : M) :=
+  DirectSum.map_decompose_shift ℳ ℳ dM (· + 1) (add_left_injective 1)
+    (fun _ _ hy ↦ hM.map_mem hy) p x
 
 /-- Every homogeneous projection of a boundary is again a boundary. -/
 theorem decompose_mem_range (hM : IsDGLeftModule h ℳ dM) {x : M} (hx : x ∈ LinearMap.range dM)
@@ -173,7 +169,7 @@ theorem smul_mem_range_of_map_eq_zero (hM : IsDGLeftModule h ℳ dM) {a : A} (ha
   refine Submodule.sum_mem _ fun p _ => ⟨p.negOnePow • ((decompose 𝒜 a p : A) • x), ?_⟩
   rw [Units.smul_def, map_zsmul, ← Units.smul_def]
   exact (hM.smul_map_eq_negOnePow_smul_map_smul (SetLike.coe_mem _)
-    (h.map_proj_eq_zero ha p) x).symm
+    (h.isDGLeftModule.map_decompose_eq_zero ha p) x).symm
 
 /-- A boundary of the algebra carries a cycle of the module to a boundary: `d a • x` is the
 differential of `a • x`. -/
@@ -182,13 +178,6 @@ theorem map_smul_mem_range_of_map_eq_zero (hM : IsDGLeftModule h ℳ dM) (a : A)
   ⟨a • x, hM.leibniz_of_map_eq_zero a hx⟩
 
 end IsDGLeftModule
-
-/-- **A differential graded algebra is a differential graded left module over itself.**  The Leibniz
-rule is the one of the algebra, read through `smul_eq_mul`. -/
-theorem IsDGAlgebra.isDGLeftModule (h : IsDGAlgebra 𝒜 d) : IsDGLeftModule h 𝒜 d where
-  map_mem := h.map_mem
-  sq_zero := h.sq_zero
-  leibniz ha b := by simpa only [smul_eq_mul] using h.leibniz ha b
 
 /-- A graded module with zero differential over a graded algebra with zero differential is a
 differential graded left module. -/

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
+public import TauCeti.Algebra.Homology.DG.Algebra.SelfModule
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 
 /-!
@@ -179,10 +180,9 @@ projection in the ambient algebra. -/
 @[simp]
 theorem coe_decompose_cyclesDeg (h : IsDGAlgebra 𝒜 d) (p : ℤ) (z : h.cycles) :
     ((decompose h.cyclesDeg z p : h.cycles) : A) = GradedRing.proj 𝒜 p (z : A) := by
-  change h.cycles.val.toLinearMap (decompose h.cyclesDeg z p : h.cycles) =
-    (decompose 𝒜 (h.cycles.val.toLinearMap z) p : A)
-  exact DirectSum.map_decompose_restrict 𝒜 h.cyclesDeg h.cycles.val.toLinearMap
-    (fun _ _ ↦ h.mem_cyclesDeg) p z
+  simpa only [GradedRing.proj_apply, AlgHom.toLinearMap_apply, Subalgebra.coe_val] using
+    DirectSum.map_decompose_restrict 𝒜 h.cyclesDeg h.cycles.val.toLinearMap
+      (fun _ _ ↦ h.mem_cyclesDeg) p z
 
 /-- The boundary ideal is homogeneous in the inherited grading of the cycles. -/
 theorem isHomogeneous_boundaries (h : IsDGAlgebra 𝒜 d) :

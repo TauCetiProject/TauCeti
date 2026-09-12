@@ -17,10 +17,14 @@ Leibniz rule
 
 `d (a * b) = d a * b + (-1) ^ |a| * (a * d b)`.
 
-This file fixes that structure and proves elementary consequences of the degree and Leibniz
-axioms: the differential annihilates the image of the ground ring, it commutes with the homogeneous
-projections of the grading up to the shift of degrees by one, and the Leibniz rule extends from a
-homogeneous left factor to an arbitrary one as soon as the other factor is a cycle.
+This file fixes that structure and proves the consequences of the degree and Leibniz axioms which
+need nothing but the unit: the differential annihilates the unit, and hence the image of the ground
+ring.  The consequences which decompose a factor into homogeneous components, namely that the
+differential commutes with the homogeneous projections of the grading, that the Leibniz rule
+extends from a homogeneous left factor to an arbitrary one against a cycle, and that a cycle times
+a boundary is a boundary, are specializations of the corresponding statements about a differential
+graded left module, and are proved as such in
+`TauCeti.Algebra.Homology.DG.Algebra.SelfModule`.
 
 The grading is stored *internally*, as a family `𝒜 : ℤ → Submodule R A` of submodules of a single
 carrier `A` with Mathlib's `GradedAlgebra 𝒜`.  This is the presentation the `DGAInfinity` roadmap
@@ -31,8 +35,7 @@ sign.  The cochain-complex presentation, in which the same data is a monoid obje
 of this file.
 
 Only a homogeneous *left* factor is constrained by the Leibniz axiom, because the sign depends on
-its degree alone.  Decomposing into homogeneous components extends the Leibniz rule to an arbitrary
-left factor against a cycle, and shows that a cycle times a boundary is a boundary.
+its degree alone.
 
 ## Main definitions
 
@@ -43,22 +46,17 @@ left factor against a cycle, and shows that a cycle times a boundary is a bounda
 
 * `TauCeti.IsDGAlgebra.map_one_eq_zero` and `TauCeti.IsDGAlgebra.map_algebraMap`: the differential
   annihilates the unit and, more generally, the image of the ground ring.
-* `TauCeti.IsDGAlgebra.map_proj`: the differential commutes with the homogeneous projections of
-  the grading, `d (proj p a) = proj (p + 1) (d a)`; in particular the homogeneous components of a
-  cycle are cycles.
-* `TauCeti.IsDGAlgebra.leibniz_of_map_right_eq_zero`: the Leibniz rule for an arbitrary left
-  factor against a cycle.
-* `TauCeti.IsDGAlgebra.mul_map_mem_range_of_map_left_eq_zero`: a cycle times a boundary is a
-  boundary; a boundary times a cycle is one by the previous item.
 * `TauCeti.isDGAlgebra_zero`: a graded algebra with zero differential is a differential graded
   algebra.
 
 This advances `TauCetiRoadmap/DGAInfinity/README.md`, Layer 1, item "DG algebras, categories,
 modules, and bimodules", specifically its first request to "define nonunital, unital, and augmented
 DG algebras on graded `k`-modules ... cycles, boundaries, and the induced graded cohomology
-algebra".  Cycles, boundaries and the cohomology algebra are built on this file in
-`TauCeti.Algebra.Homology.DG.Algebra.Cohomology`.  No formalization is vendored: the internal
-grading, its decomposition and its projections are Mathlib's `GradedAlgebra` API.
+algebra".  The homogeneous consequences of the axioms are in
+`TauCeti.Algebra.Homology.DG.Algebra.SelfModule`, and cycles, boundaries and the cohomology
+algebra are built on them in `TauCeti.Algebra.Homology.DG.Algebra.Cohomology`.  No formalization
+is vendored: the internal grading, its decomposition and its projections are Mathlib's
+`GradedAlgebra` API.
 
 ## References
 
@@ -104,70 +102,6 @@ theorem map_one_eq_zero (h : IsDGAlgebra 𝒜 d) : d 1 = 0 := by
 /-- The differential of a differential graded algebra annihilates the image of the ground ring. -/
 theorem map_algebraMap (h : IsDGAlgebra 𝒜 d) (r : R) : d (algebraMap R A r) = 0 := by
   rw [Algebra.algebraMap_eq_smul_one, map_smul, h.map_one_eq_zero, smul_zero]
-
-/-- The differential commutes with the homogeneous projections of the grading, up to the shift by
-one that it applies to degrees. -/
-theorem map_proj (h : IsDGAlgebra 𝒜 d) (p : ℤ) (a : A) :
-    d (GradedRing.proj 𝒜 p a) = GradedRing.proj 𝒜 (p + 1) (d a) := by
-  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | @homogeneous q x =>
-    have hx : (x : A) ∈ 𝒜 q := x.2
-    have hdx : d (x : A) ∈ 𝒜 (q + 1) := h.map_mem hx
-    by_cases hpq : p = q
-    · subst hpq
-      rw [GradedRing.proj_apply, DirectSum.decompose_of_mem_same 𝒜 hx, GradedRing.proj_apply,
-        DirectSum.decompose_of_mem_same 𝒜 hdx]
-    · rw [GradedRing.proj_apply, DirectSum.decompose_of_mem_ne 𝒜 hx (fun hq => hpq hq.symm),
-        map_zero, GradedRing.proj_apply,
-        DirectSum.decompose_of_mem_ne 𝒜 hdx (fun hq => hpq (by omega))]
-  | add x y hx hy => simp only [map_add, hx, hy]
-
-/-- Every homogeneous projection of a boundary is again a boundary. -/
-theorem proj_mem_range (h : IsDGAlgebra 𝒜 d) {a : A} (ha : a ∈ LinearMap.range d) (p : ℤ) :
-    GradedRing.proj 𝒜 p a ∈ LinearMap.range d := by
-  obtain ⟨b, rfl⟩ := ha
-  exact ⟨GradedRing.proj 𝒜 (p - 1) b, by simpa using h.map_proj (p - 1) b⟩
-
-/-- The homogeneous components of a cycle are cycles. -/
-theorem map_proj_eq_zero (h : IsDGAlgebra 𝒜 d) {a : A} (ha : d a = 0) (p : ℤ) :
-    d (GradedRing.proj 𝒜 p a) = 0 := by
-  rw [h.map_proj, ha, map_zero]
-
-/-- The Leibniz rule against a cycle on the right: the sign disappears with the term it multiplies,
-so the left factor need not be homogeneous. -/
-theorem leibniz_of_map_right_eq_zero (h : IsDGAlgebra 𝒜 d) (a : A) {b : A} (hb : d b = 0) :
-    d (a * b) = d a * b := by
-  classical
-  conv_lhs => rw [← DirectSum.sum_support_decompose 𝒜 a, Finset.sum_mul, map_sum]
-  conv_rhs => rw [← DirectSum.sum_support_decompose 𝒜 a, map_sum, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun p _ => ?_
-  rw [h.leibniz (SetLike.coe_mem _) b, hb, mul_zero, smul_zero, add_zero]
-
-/-- The product of two cycles is a cycle. -/
-theorem map_mul_eq_zero_of_map_eq_zero (h : IsDGAlgebra 𝒜 d) {a b : A}
-    (ha : d a = 0) (hb : d b = 0) :
-    d (a * b) = 0 := by
-  rw [h.leibniz_of_map_right_eq_zero a hb, ha, zero_mul]
-
-/-- A homogeneous cycle times a boundary is, up to the sign of the cycle's degree, the
-differential of the product. -/
-theorem mul_map_eq_negOnePow_smul_map_mul (h : IsDGAlgebra 𝒜 d) {p : ℤ} {a : A}
-    (ha : a ∈ 𝒜 p) (hda : d a = 0) (b : A) :
-    a * d b = p.negOnePow • d (a * b) := by
-  simp only [h.leibniz ha b, hda, zero_mul, zero_add, smul_smul, Int.units_mul_self, one_smul]
-
-/-- A cycle times a boundary is a boundary.  Componentwise this is the Leibniz rule read backwards:
-`x * d b = (-1) ^ |x| * d (x * b)` when `x` is a homogeneous cycle. -/
-theorem mul_map_mem_range_of_map_left_eq_zero (h : IsDGAlgebra 𝒜 d) {a : A}
-    (ha : d a = 0) (b : A) :
-    a * d b ∈ LinearMap.range d := by
-  classical
-  rw [← DirectSum.sum_support_decompose 𝒜 a, Finset.sum_mul]
-  refine Submodule.sum_mem _ fun p _ => ⟨p.negOnePow • ((decompose 𝒜 a p : A) * b), ?_⟩
-  rw [Units.smul_def, map_zsmul, ← Units.smul_def]
-  exact
-    (h.mul_map_eq_negOnePow_smul_map_mul (SetLike.coe_mem _) (h.map_proj_eq_zero ha p) b).symm
 
 end IsDGAlgebra
 

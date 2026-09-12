@@ -63,10 +63,6 @@ algebras.  The descent of the action along the boundary ideal is Mathlib's
 * B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3.1 and 4.1.
 -/
 
--- Provenance: the Tau Ceti `DGAInfinity` roadmap `README.md`, whose section "Cohomological
--- grading and Koszul signs" fixes the cohomological Keller sign convention used here, and whose
--- section "Ground rings, size, and handedness" fixes the module conventions.
-
 public section
 
 open DirectSum
@@ -196,11 +192,9 @@ projection in the ambient module. -/
 theorem coe_decompose_cyclesDeg (hM : IsDGLeftModule h ℳ dM) (p : ℤ) (z : hM.cycles) :
     ((decompose hM.cyclesDeg z p : hM.cycles) : M) =
       (decompose ℳ (z : M) p : M) := by
-  change ((hM.cycles.subtype).restrictScalars R)
-      (decompose hM.cyclesDeg z p : hM.cycles) =
-    (decompose ℳ (((hM.cycles.subtype).restrictScalars R) z) p : M)
-  exact DirectSum.map_decompose_restrict ℳ hM.cyclesDeg
-    ((hM.cycles.subtype).restrictScalars R) (fun _ _ ↦ hM.mem_cyclesDeg) p z
+  simpa only [LinearMap.coe_restrictScalars, Submodule.coe_subtype] using
+    DirectSum.map_decompose_restrict ℳ hM.cyclesDeg
+      ((hM.cycles.subtype).restrictScalars R) (fun _ _ ↦ hM.mem_cyclesDeg) p z
 
 /-- **The cycles of a differential graded left module are a graded module over the graded algebra of
 cycles**: a homogeneous cycle of degree `p` carries a homogeneous cycle of degree `q` to one of
