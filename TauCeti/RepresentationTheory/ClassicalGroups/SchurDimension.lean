@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Dimension
-public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Shift
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
+import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Tableau
 
 /-!
 # Schur polynomials at one and the Weyl dimension
@@ -29,8 +29,6 @@ all entries of a Gelfand--Tsetlin pattern by the determinant weight is a bijecti
 
 ## Main results
 
-* `TauCeti.eval_one_diagramSchurPoly_eq_card_boundedSSYT`: evaluation at one is the bounded
-  tableau count, over any commutative semiring.
 * `TauCeti.card_boundedSSYT_eq_weylDimension`: the bounded tableau count is the Weyl dimension.
 * `TauCeti.eval_one_diagramSchurPoly_eq_weylDimension`: the Schur polynomial of a bounded-height
   shape evaluates at one to its Weyl dimension.
@@ -51,16 +49,6 @@ namespace TauCeti
 open Finset MvPolynomial
 
 variable {R : Type*} [CommSemiring R]
-
-/-- **A Schur polynomial evaluated at one counts bounded semistandard tableaux.**  Every monomial
-in the tableau generating function contributes one, so the value is the cardinality of
-`TauCeti.BoundedSSYT n μ`. -/
-theorem eval_one_diagramSchurPoly_eq_card_boundedSSYT (n : ℕ) (μ : YoungDiagram) :
-    eval (fun _ : Fin n => (1 : R)) (diagramSchurPoly n R μ) =
-      (Nat.card (BoundedSSYT n μ) : R) := by
-  rw [eval_diagramSchurPoly]
-  simp only [one_pow, prod_const_one, sum_const, card_univ, Nat.card_eq_fintype_card,
-    nsmul_eq_mul, mul_one]
 
 /-- **Bounded semistandard tableaux are counted by the Weyl dimension formula.**  This is the
 three-way combinatorial comparison: tableaux correspond to Gelfand--Tsetlin patterns with the
@@ -112,9 +100,7 @@ theorem eval_one_diagramSchurPoly_detShiftShape_eq_weylDimension {n : ℕ}
     (l : DominantWeight n) :
     eval (fun _ : Fin n => (1 : R)) (diagramSchurPoly n R l.detShiftShape) =
       (weylDimension l : R) := by
-  rw [eval_one_diagramSchurPoly_eq_card_boundedSSYT]
-  exact congrArg (fun m : ℕ => (m : R))
-    ((GTPattern.card_topWeight_eq_card_boundedSSYT_detShiftShape l).symm.trans
-      (GTPattern.card_topWeight_eq_weylDimension l))
+  rw [eval_one_diagramSchurPoly_eq_weylDimension _ _ l.colLen_zero_detShiftShape_le,
+    DominantWeight.weightOfShape_detShiftShape, weylDimension_shift]
 
 end TauCeti
