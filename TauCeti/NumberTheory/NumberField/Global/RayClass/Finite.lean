@@ -126,15 +126,12 @@ private noncomputable def principalIdealHom (𝔪 : Modulus K) :
 
 private theorem principalIdealHom_surjective (𝔪 : Modulus K) :
     Function.Surjective (principalIdealHom 𝔪) := by
-  rintro ⟨⟨I, hI⟩, hker⟩
-  rw [MonoidHom.mem_ker, idealsPrimeToClassGroup_apply,
-    ClassGroup.mk_eq_one_iff_exists] at hker
-  obtain ⟨x, hx⟩ := hker
-  refine ⟨⟨x, toPrincipalIdeal_mem_idealsPrimeTo_iff.mp (hx ▸ hI)⟩, ?_⟩
-  apply Subtype.ext
-  apply Subtype.ext
-  apply Units.ext
-  rw [coe_principalIdealHom, hx]
+  intro I
+  have hI : (I : idealsPrimeTo 𝔪) ∈ (principalIdealPrimeTo 𝔪).range := by
+    rw [range_principalIdealPrimeTo]
+    exact I.2
+  obtain ⟨x, hx⟩ := hI
+  exact ⟨x, Subtype.ext hx⟩
 
 /-- **The ray has finite index in the invertible fractional ideals prime to `𝔪`.**  This index is
 the ray class number, and its finiteness is what makes `RayClassGroup 𝔪` a finite group. -/

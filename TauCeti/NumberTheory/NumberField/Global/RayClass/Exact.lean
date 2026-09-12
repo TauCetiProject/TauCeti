@@ -141,16 +141,12 @@ theorem ker_rayClassToClassGroup (m : Modulus K) :
   constructor
   · intro hc
     obtain ⟨I, rfl⟩ := rayClassMk_surjective m c
-    rw [rayClassToClassGroup_rayClassMk, ClassGroup.mk_eq_one_iff_exists] at hc
-    obtain ⟨x, hx⟩ := hc
-    have hxmem : x ∈ primeToSubgroup m :=
-      toPrincipalIdeal_mem_idealsPrimeTo_iff.mp (hx ▸ I.2)
-    exact ⟨⟨x, hxmem⟩, by
-      rw [principalRayClass_apply]
-      apply congrArg (rayClassMk m)
-      apply Subtype.ext
-      apply Units.ext
-      rw [coe_principalIdealPrimeTo, hx]⟩
+    rw [rayClassToClassGroup_rayClassMk] at hc
+    have hI : I ∈ (principalIdealPrimeTo m).range := by
+      rw [range_principalIdealPrimeTo, MonoidHom.mem_ker, idealsPrimeToClassGroup_apply]
+      exact hc
+    obtain ⟨x, hx⟩ := hI
+    exact ⟨x, by rw [principalRayClass_apply, hx]⟩
   · rintro ⟨x, rfl⟩
     rw [principalRayClass_apply, rayClassToClassGroup_rayClassMk,
       coe_principalIdealPrimeTo, ClassGroup.mk_toPrincipalIdeal]

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus
 
+import TauCeti.RingTheory.ClassGroup.Basic
+
 /-!
 # The ray class group of a modulus
 
@@ -156,6 +158,22 @@ noncomputable def idealsPrimeToClassGroup (𝔪 : Modulus K) :
     idealsPrimeToClassGroup 𝔪 I =
       ClassGroup.mk K (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :=
   by simp only [idealsPrimeToClassGroup, MonoidHom.comp_apply, Subgroup.subtype_apply]
+
+/-- The principal fractional ideals prime to a modulus are exactly the kernel of the map to the
+ordinary ideal class group. -/
+theorem range_principalIdealPrimeTo (m : Modulus K) :
+    (principalIdealPrimeTo m).range = (idealsPrimeToClassGroup m).ker := by
+  ext I
+  rw [MonoidHom.mem_range, MonoidHom.mem_ker, idealsPrimeToClassGroup_apply,
+    ClassGroup.mk_eq_one_iff_exists]
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact ⟨(x : Kˣ), coe_principalIdealPrimeTo m x⟩
+  · rintro ⟨x, hx⟩
+    refine ⟨⟨x, toPrincipalIdeal_mem_idealsPrimeTo_iff.mp (hx ▸ I.2)⟩, ?_⟩
+    apply Subtype.ext
+    apply Units.ext
+    rw [coe_principalIdealPrimeTo, hx]
 
 /-- **The ray class group of a modulus**: the invertible fractional ideals prime to the finite part
 of `𝔪`, modulo the principal ideals of the elements congruent to one modulo `𝔪`. -/
