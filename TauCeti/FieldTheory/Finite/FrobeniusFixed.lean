@@ -23,7 +23,7 @@ what the elliptic conjugacy classes of `GL₂(𝔽_q)` are read off from.
 ## Main results
 
 * `TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`: the criterion above, with
-  `TauCeti.FiniteField.pow_natCard_eq_self_iff` its `Nat.card` spelling.
+  `TauCeti.FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap` its `Nat.card` spelling.
 * `TauCeti.algebraMap_bijective_of_pow_card_eq_self`: its immediate global consequence, that a
   domain over `K` *all* of whose elements are fixed by the `q`-power map is `K` itself.
 * `TauCeti.FiniteField.pow_natCard_pow_natCard`: in a quadratic extension the `q`-power map is an
@@ -96,7 +96,7 @@ variable {K L : Type*} [Field K] [Finite K] [CommRing L] [IsDomain L] [Algebra K
 /-- **The `Nat.card` spelling of
 `TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`**, for a base field given as
 `Finite` rather than as a `Fintype`. -/
-theorem pow_natCard_eq_self_iff (a : L) :
+theorem pow_natCard_eq_self_iff_mem_range_algebraMap (a : L) :
     a ^ Nat.card K = a ↔ a ∈ Set.range (algebraMap K L) := by
   let _ := Fintype.ofFinite K
   rw [Nat.card_eq_fintype_card]
@@ -104,7 +104,7 @@ theorem pow_natCard_eq_self_iff (a : L) :
 
 /-- **An element outside the base field is not fixed by the `q`-power map.** -/
 theorem pow_natCard_ne {a : L} (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ≠ a :=
-  fun h => ha ((pow_natCard_eq_self_iff a).mp h)
+  fun h => ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h)
 
 end Finite
 
@@ -116,6 +116,7 @@ variable {K L : Type*} [Field K] [Finite K] [Field L] [Algebra K L]
 
 /-- **In a quadratic extension of a field with `q` elements the `q`-power map is an involution**:
 `L` has `q²` elements, so `a ^ (q²) = a`. -/
+@[simp]
 theorem pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : L) :
     (a ^ Nat.card K) ^ Nat.card K = a := by
   have : Module.Finite K L := Module.finite_of_finrank_eq_succ (n := 1) h2
@@ -132,9 +133,9 @@ be fixed. -/
 theorem pow_natCard_notMem_range_algebraMap (h2 : Module.finrank K L = 2) {a : L}
     (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ∉ Set.range (algebraMap K L) := by
   intro hmem
-  have h1 := (pow_natCard_eq_self_iff _).mpr hmem
+  have h1 := (pow_natCard_eq_self_iff_mem_range_algebraMap _).mpr hmem
   rw [pow_natCard_pow_natCard h2] at h1
-  exact ha ((pow_natCard_eq_self_iff a).mp h1.symm)
+  exact ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h1.symm)
 
 end Quadratic
 
