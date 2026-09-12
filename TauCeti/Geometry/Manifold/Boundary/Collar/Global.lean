@@ -106,6 +106,55 @@ theorem comp_isOpenEmbedding {e : P → N} (he : IsOpenEmbedding e) :
   intro x
   simpa [Function.comp_apply] using h.apply_zero (e x)
 
+/-- Reparametrizing the depth coordinate by an open embedding that fixes zero preserves a
+collar. -/
+theorem reparam_isOpenEmbedding {e : Ico (0 : ℝ) 1 → Ico (0 : ℝ) 1}
+    (he : IsOpenEmbedding e) (he_zero : e ⟨0, by norm_num⟩ = ⟨0, by norm_num⟩) :
+    IsCollar f (c ∘ Prod.map id e) := by
+  refine ⟨h.isOpenEmbedding.comp (IsOpenEmbedding.id.prodMap he), ?_⟩
+  intro x
+  simpa [Function.comp_apply, he_zero] using h.apply_zero x
+
+/-- Shrinking the depth of a collar by a factor in `(0,1]` preserves collar data. -/
+theorem scale (r : ℝ) (hr : r ∈ Ioc (0 : ℝ) 1) :
+    IsCollar f (c ∘ Prod.map id fun t : Ico (0 : ℝ) 1 =>
+      ⟨r * t, mul_nonneg hr.1.le t.2.1,
+        (mul_le_of_le_one_left t.2.1 hr.2).trans_lt t.2.2⟩) := by
+  let e : Ico (0 : ℝ) 1 → Ico (0 : ℝ) 1 := fun t =>
+    ⟨r * t, mul_nonneg hr.1.le t.2.1,
+      (mul_le_of_le_one_left t.2.1 hr.2).trans_lt t.2.2⟩
+  have he : IsOpenEmbedding e := by
+    let er : Ico (0 : ℝ) 1 ≃ₜ Ico (0 : ℝ) r :=
+      (Homeomorph.mulLeft₀ r hr.1.ne').subtype fun x => by
+        change (0 ≤ x ∧ x < 1) ↔ 0 ≤ r * x ∧ r * x < r
+        constructor
+        · rintro ⟨hx0, hx1⟩
+          exact ⟨mul_nonneg hr.1.le hx0, by
+            simpa only [mul_one] using mul_lt_mul_of_pos_left hx1 hr.1⟩
+        · rintro ⟨hx0, hxr⟩
+          exact ⟨(mul_nonneg_iff_of_pos_left hr.1).1 hx0,
+            lt_of_mul_lt_mul_left (by simpa only [mul_one] using hxr) hr.1.le⟩
+    have hsubset : Ico (0 : ℝ) r ⊆ Ico (0 : ℝ) 1 :=
+      fun _ hx => ⟨hx.1, hx.2.trans_le hr.2⟩
+    have hopen : IsOpen {x : Ico (0 : ℝ) 1 | (x : ℝ) ∈ Ico (0 : ℝ) r} := by
+      have heq : {x : Ico (0 : ℝ) 1 | (x : ℝ) ∈ Ico (0 : ℝ) r} =
+          ((↑) : Ico (0 : ℝ) 1 → ℝ) ⁻¹' Iio r := by
+        ext x
+        simp [x.2.1]
+      rw [heq]
+      exact isOpen_Iio.preimage continuous_subtype_val
+    have he' := (IsOpenEmbedding.inclusion hsubset hopen).comp er.isOpenEmbedding
+    rw [show e = Set.inclusion hsubset ∘ er by
+      funext x
+      apply Subtype.ext
+      rfl]
+    exact he'
+  change IsCollar f (c ∘ Prod.map id e)
+  exact h.reparam_isOpenEmbedding he (by
+    apply Subtype.ext
+    change r * 0 = 0
+    exact mul_zero r)
+
 /-- Reparametrizing the boundary of a collar by a homeomorphism preserves it. -/
 theorem comp_homeomorph (e : P ≃ₜ N) :
     IsCollar (f ∘ e) (c ∘ Prod.map e id) :=
