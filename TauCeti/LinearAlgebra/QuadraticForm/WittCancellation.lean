@@ -16,25 +16,9 @@ and `q₂` are isometric. This is Witt's cancellation theorem, and it is what ma
 classes of regular forms cancellative under orthogonal sum, hence a monoid that embeds into its
 Grothendieck group.
 
-The proof follows Lam I.4.5-I.4.7 and runs in three steps.
-
-The first step uses no reflection: an isometry `e` of `q ⊥ q₁` onto `q ⊥ q₂` that fixes the first
-summand *pointwise* carries the second summand into the second summand, because the first
-component of `e (0, v)` is orthogonal to the whole of the first summand and so lies in the radical
-of `q`. The second component of `e (0, ·)` is then an isometry of `q₁` onto `q₂`
-(`TauCeti.prodCancelIsometryEquiv`).
-
-The second step makes an arbitrary isometry fix a line pointwise. Over a field of characteristic
-different from two the orthogonal group of a form acts transitively on the vectors of a fixed
-nonzero value (`QuadraticMap.exists_isometryEquiv_apply_eq_of_map_eq`): one of `x - y` and `x + y`
-has nonzero norm, and the reflection in it carries `x` to `y` or to `-y`. Composing the given
-isometry with such an element cancels a summand spanned by a single vector of nonzero value
-(`TauCeti.equivalent_of_equivalent_prod_of_span_singleton_eq_top`).
-
-The third step is induction on a diagonalization of the cancelled summand: peeling the first
-weight off `⟨a₀, …, aₙ⟩` with `TauCeti.presentedFormConsIsometryEquiv` exhibits it as
-`⟨a₀⟩ ⊥ ⟨a₁, …, aₙ⟩`, whose first factor is carried by the line `K` and is cancelled by the second
-step.
+The file also provides cancellation interfaces for a summand fixed pointwise and for a form on a
+space spanned by one vector of nonzero value. The proof of the general theorem follows Lam
+I.4.5–I.4.7.
 
 ## Main definitions
 
@@ -48,14 +32,6 @@ step.
 * `TauCeti.equivalent_of_equivalent_prod`: **Witt cancellation** for a regular finite-dimensional
   summand, and `TauCeti.equivalent_of_equivalent_prod_right` on the other side.
 * `TauCeti.RegularFormClass` is cancellative under orthogonal sum.
-
-## Implementation notes
-
-Cancellation of a *degenerate* summand is not proved here, and is not a matter of weakening a
-hypothesis: over a field in which `2` is invertible it reduces to the uniqueness half of the Witt
-decomposition, which splits a form as a regular part orthogonal to the zero form on its radical.
-That decomposition is a separate milestone, and the reflection route below genuinely needs
-regularity, because a reflection is only defined in a vector of invertible value.
 
 ## References
 
@@ -95,9 +71,8 @@ private theorem isometryEquiv_symm_apply_inl (e : (Q₀.prod Q₁).IsometryEquiv
     (he : ∀ u : V₀, e (u, 0) = (u, 0)) (u : V₀) : e.symm (u, 0) = (u, 0) := by
   rw [← he u, e.symm_apply_apply]
 
-/-- An isometry of orthogonal sums that fixes the first summand pointwise carries the second
-summand into the second summand, as soon as the first summand is regular: the first component of
-`e (0, v)` is orthogonal to all of `V₀`, hence lies in the radical of `Q₀`. -/
+/-- If an isometry of orthogonal sums fixes a regular first summand pointwise, the first component
+of the image of every vector in the second summand is zero. -/
 theorem isometryEquiv_prod_fst_eq_zero (hQ₀ : Q₀.Nondegenerate)
     (e : (Q₀.prod Q₁).IsometryEquiv (Q₀.prod Q₂)) (he : ∀ u : V₀, e (u, 0) = (u, 0)) (v : V₁) :
     (e (0, v)).1 = 0 := by
@@ -139,6 +114,13 @@ theorem prodCancelIsometryEquiv_apply (hQ₀ : Q₀.Nondegenerate)
     (e : (Q₀.prod Q₁).IsometryEquiv (Q₀.prod Q₂)) (he : ∀ u : V₀, e (u, 0) = (u, 0)) (v : V₁) :
     prodCancelIsometryEquiv hQ₀ e he v = (e (0, v)).2 := (rfl)
 
+/-- The inverse cancellation isometry is the second component of `e.symm` on the second
+summand. -/
+@[simp]
+theorem prodCancelIsometryEquiv_symm_apply (hQ₀ : Q₀.Nondegenerate)
+    (e : (Q₀.prod Q₁).IsometryEquiv (Q₀.prod Q₂)) (he : ∀ u : V₀, e (u, 0) = (u, 0)) (w : V₂) :
+    (prodCancelIsometryEquiv hQ₀ e he).symm w = (e.symm (0, w)).2 := (rfl)
+
 end CommRing
 
 /-! ### Cancelling a line -/
@@ -164,10 +146,7 @@ theorem nondegenerate_of_span_singleton_eq_top {Q₀ : QuadraticForm K V₀} {v�
   rw [hc, zero_smul]
 
 /-- **Witt cancellation** for a summand carried by a line: a form on a space spanned by a single
-vector of nonzero value cancels from an orthogonal sum.
-
-Witt transitivity moves the image of the spanning vector back onto itself, after which the
-isometry fixes the whole line and `TauCeti.prodCancelIsometryEquiv` applies. -/
+vector of nonzero value cancels from an orthogonal sum. -/
 theorem equivalent_of_equivalent_prod_of_span_singleton_eq_top {Q₀ : QuadraticForm K V₀} {v₀ : V₀}
     (hspan : Submodule.span K {v₀} = ⊤) (hv₀ : Q₀ v₀ ≠ 0) {Q₁ : QuadraticForm K V₁}
     {Q₂ : QuadraticForm K V₂} (h : (Q₀.prod Q₁).Equivalent (Q₀.prod Q₂)) : Q₁.Equivalent Q₂ := by
@@ -226,10 +205,7 @@ private theorem equivalent_of_equivalent_presentedForm_prod {Q₁ : QuadraticFor
       (equivalent_of_equivalent_prod_of_span_singleton_eq_top hspan (by simp [ha]) key)
 
 /-- **Witt cancellation** (Lam I.4.2): a regular finite-dimensional summand cancels from an
-orthogonal sum.
-
-Regularity of the cancelled summand is Lam's hypothesis and is what the reflection argument needs;
-see the implementation notes of this file for what cancelling a degenerate summand would take. -/
+orthogonal sum. -/
 theorem equivalent_of_equivalent_prod [FiniteDimensional K V₀] {Q₀ : QuadraticForm K V₀}
     (hQ₀ : Q₀.Nondegenerate) {Q₁ : QuadraticForm K V₁} {Q₂ : QuadraticForm K V₂}
     (h : (Q₀.prod Q₁).Equivalent (Q₀.prod Q₂)) : Q₁.Equivalent Q₂ := by

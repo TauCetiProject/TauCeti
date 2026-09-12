@@ -257,6 +257,24 @@ def presentedFormConsIsometryEquiv {n : ℕ} (w : Fin (n + 1) → Kˣ) :
     rw [presentedForm_apply, QuadraticMap.prod_apply, presentedForm_apply, Fin.sum_univ_succ]
     simp
 
+/-- The forward map of `TauCeti.presentedFormConsIsometryEquiv` prepends the line coordinate. -/
+@[simp]
+theorem presentedFormConsIsometryEquiv_apply {n : ℕ} (w : Fin (n + 1) → Kˣ)
+    (x : K × (Fin n → K)) :
+    presentedFormConsIsometryEquiv w x = Fin.cons x.1 x.2 := by
+  change (Fin.consLinearEquiv K fun _ : Fin (n + 1) ↦ K) x = _
+  ext i
+  exact Fin.consLinearEquiv_apply K (fun _ : Fin (n + 1) ↦ K) x i
+
+/-- The inverse map of `TauCeti.presentedFormConsIsometryEquiv` separates the first coordinate
+from the remaining coordinates. -/
+@[simp]
+theorem presentedFormConsIsometryEquiv_symm_apply {n : ℕ} (w : Fin (n + 1) → Kˣ)
+    (x : Fin (n + 1) → K) :
+    (presentedFormConsIsometryEquiv w).symm x = (x 0, Fin.tail x) := by
+  change (Fin.consLinearEquiv K fun _ : Fin (n + 1) ↦ K).symm x = _
+  exact Fin.consLinearEquiv_symm_apply K (fun _ : Fin (n + 1) ↦ K) x
+
 /-- Concatenation of presentations respects isometry in each argument. -/
 theorem presentedForm_append_congr {p p' q q' : RegularFormPresentation K}
     (hp : (presentedForm p).Equivalent (presentedForm p'))

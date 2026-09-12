@@ -232,9 +232,8 @@ section Polar
 variable {R : Type u} {M : Type v} {N : Type w} [CommSemiring R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] {Q : QuadraticMap R M N}
 
-/-- An isometry preserves the polarization of a quadratic map, because the polarization is built
-from the map and the additive structure alone. Mathlib records that an isometry preserves the
-values of a quadratic map (`QuadraticMap.Isometry.map_app`), but not this. -/
+/-- An isometry preserves the polarization of a quadratic map. -/
+@[simp]
 theorem _root_.QuadraticMap.Isometry.polar_apply {M₁ : Type*} {M₂ : Type*} [AddCommGroup M₁]
     [Module R M₁] [AddCommGroup M₂] [Module R M₂] {Q₁ : QuadraticMap R M₁ N}
     {Q₂ : QuadraticMap R M₂ N} (f : Q₁ →qᵢ Q₂) (x y : M₁) :
@@ -623,12 +622,8 @@ theorem isUnit_sub_or_add_of_map_eq (x y : V) (hxy : Q x = Q y) (hy : Q y ≠ 0)
     exact hy ((mul_eq_zero.mp hzero).resolve_left h4)
   · exact Or.inl hsub
 
-/-- **Witt transitivity** (Lam I.4.5): over a field of characteristic different from two, the
-orthogonal group of a quadratic form acts transitively on the vectors of a fixed nonzero value.
-
-One of `x - y` and `x + y` has nonzero, hence invertible, norm. In the first case the reflection
-in `x - y` carries `x` to `y`; in the second the reflection in `x + y` carries `x` to `-y`, which
-the reflection in `y` sends to `y`. -/
+/-- **Witt transitivity** (Lam I.4.5): over a field of characteristic different from two, any two
+vectors with the same nonzero value are related by an isometry of the quadratic form. -/
 theorem _root_.QuadraticMap.exists_isometryEquiv_apply_eq_of_map_eq {x y : V} (hxy : Q x = Q y)
     (hy : Q y ≠ 0) : ∃ f : Q.IsometryEquiv Q, f x = y := by
   rcases isUnit_sub_or_add_of_map_eq Q x y hxy hy with h | h
