@@ -172,22 +172,6 @@ theorem skewZigzagMk_apply (x : pathAlgebra k (DoubledQuiver G)) :
 theorem skewZigzagMk_surjective : Function.Surjective (skewZigzagMk k G c) :=
   Ideal.Quotient.mk_surjective
 
-/-- Equal skew-zigzag parameters define canonically isomorphic relation quotients. -/
-noncomputable def skewZigzagQuotientCongr {c c' : SkewZigzagParameter k G} (h : c = c') :
-    skewZigzagQuotient k G c ≃ₐ[k] skewZigzagQuotient k G c' := by
-  subst c'
-  exact AlgEquiv.refl
-
-/-- The canonical quotient isomorphism attached to an equality of parameters preserves every
-quotient class. -/
-@[simp]
-theorem skewZigzagQuotientCongr_skewZigzagMk {c c' : SkewZigzagParameter k G} (h : c = c')
-    (x : pathAlgebra k (DoubledQuiver G)) :
-    skewZigzagQuotientCongr k G h (skewZigzagMk k G c x) =
-      skewZigzagMk k G c' x := by
-  subst c'
-  rfl
-
 /-- The kernel of the skew-zigzag quotient map is its relation ideal. -/
 @[simp]
 theorem skewZigzagMk_eq_zero_iff {x : pathAlgebra k (DoubledQuiver G)} :
