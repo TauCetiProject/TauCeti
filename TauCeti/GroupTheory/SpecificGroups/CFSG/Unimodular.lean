@@ -78,18 +78,10 @@ group is finite, perfect, or simple.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plates VII--IX, for the unimodularity
   of the `E₈`, `F₄` and `G₂` Cartan matrices.
 
-## Roadmap
+## Carrier-level description
 
-Milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md` asks for the points of the pinned simply
-connected Chevalley--Demazure group scheme of `TauCeti.DynkinType.simplyConnectedRootDatum`, with
-its root subgroups. **This file does not close L0 on any branch, and the Geck carrier is not
-offered as its carrier.** The pinned Chevalley--Demazure group, its root datum and its pinning are
-a Layer 9 target of `TauCetiRoadmap/ReductiveGroups/README.md` that the CFSG roadmap consumes
-rather than builds. The full character span proved here is the lattice hypothesis that
-identification needs, so it is a prerequisite of L0 and not a substitute for it.
-
-On the three untwisted branches treated here, `steinberg` is the `q`-power Frobenius on the Geck
-carrier, and `mem_fixedSubgroup_steinberg_iff` identifies its fixed points with the carrier points
+For the three untwisted branches treated here, `steinberg` is the `q`-power Frobenius on the Geck
+carrier. Thus `mem_fixedSubgroup_steinberg_iff` identifies its fixed points with the carrier points
 whose matrix entries lie in `𝔽_q`. The other unimodular branches use half-Frobenius maps instead
 and are therefore not included in `UnimodularExceptionalIndex`.
 -/
