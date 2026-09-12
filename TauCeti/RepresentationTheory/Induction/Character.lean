@@ -208,9 +208,9 @@ theorem character_indFDRep_sum_quotient {k : Type u} {G : Type v} [Field k] [Gro
       · rw [dite_eq_left hmem, dite_eq_left hmem, hforgetCharacter]
       · rw [dite_eq_right hmem, dite_eq_right hmem]
 
-/-- **An induced character vanishes outside a normal subgroup.** Each summand of the coset formula
-`TauCeti.character_indFDRep_sum_quotient` asks whether a conjugate `t⁻¹ g t` lies in `S`, and for a
-normal `S` that happens only when `g` itself does. -/
+/-- **An induced character vanishes outside a normal subgroup.** For a normal subgroup `S` of
+finite index, the character of a representation induced from `S` is supported on `S`, so computing
+it only takes describing its values on `S`. -/
 @[simp]
 theorem character_indFDRep_eq_zero_of_notMem {k : Type u} {G : Type v} [Field k] [Group G]
     {S : Subgroup G} [S.Normal] [S.FiniteIndex] (A : FDRep k S) {g : G} (hg : g ∉ S) :

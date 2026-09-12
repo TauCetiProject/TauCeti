@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.IndexNormal
 public import TauCeti.GroupTheory.IndexTwo
 public import TauCeti.RepresentationTheory.Induction.LinearCharacter
+import Mathlib.GroupTheory.IndexNormal
 
 /-!
 # Inducing a linear character from an inverted subgroup of index two
@@ -45,11 +45,10 @@ universe u v
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] {N : Subgroup G} [Finite G]
 
-/-- **On an inverted subgroup of index two, the character induced from a linear character is
-`ψ + ψ⁻¹`.**  In the average form of the induced character the conjugating elements of `N`
-contribute `ψ g`, because `kˣ` is commutative, and those outside contribute `(ψ g)⁻¹`, because they
-conjugate by inversion; the two halves of `G` have `|N|` elements each, which the factor `|N|⁻¹`
-cancels. -/
+/-- **On an inverted subgroup of index two, the character induced from a linear character `ψ` is
+`ψ + ψ⁻¹`.**  Together with `TauCeti.character_indFDRep_eq_zero_of_notMem`, which gives the value
+`0` off `N`, this determines the induced character on all of `G`.  The hypothesis `hN` asks that
+the order of `N` be invertible in `k`. -/
 theorem character_indFDRep_ofLinearCharacter_of_conj_eq_inv (hindex : N.index = 2) {s : G}
     (hs : s ∉ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) (hN : IsUnit (Nat.card N : k))
     (ψ : N →* kˣ) {g : G} (hg : g ∈ N) :

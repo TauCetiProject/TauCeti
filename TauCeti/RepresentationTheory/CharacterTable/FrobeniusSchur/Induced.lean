@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.IntegralDomain
 public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Basic
 public import TauCeti.RepresentationTheory.Induction.IndexTwo
-public import TauCeti.RepresentationTheory.Induction.Mackey.Dihedral
+import Mathlib.RingTheory.IntegralDomain
 
 /-!
 # The Frobenius-Schur indicator of a character induced from an index-two subgroup
@@ -19,35 +18,24 @@ inverse.  Inducing `ψ` gives a two-dimensional representation of `G`, and this 
 **Frobenius-Schur indicator**: it is `ψ (s ^ 2)`, the value of `ψ` on the common square of the
 elements outside `N`.
 
-The computation is a one-line reading of the character formula
-`TauCeti.character_indFDRep_ofLinearCharacter_of_conj_eq_inv`, once two elementary observations
-about the outside coset are in place.  All the squares in `G` lie in `N`, since the index is two,
-and every element outside `N` has the *same* square,
-`TauCeti.sq_eq_sq_of_notMem_of_index_two`; that common square is moreover an involution,
-`TauCeti.sq_sq_eq_one_of_conj_eq_inv`, so `ψ` sends it to a square root of `1`, and the character
-of the induced representation takes the value `2 ψ (s ^ 2)` at the square of every element outside
-`N`.
+This is the shape of a dihedral group over its rotations and of a dicyclic group over its cyclic
+subgroup, so for such a group the indicator of an induced linear character is read off the square
+of a single element outside the subgroup; the dihedral instance is in
+`TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/Dihedral.lean`.
 
-The other half of the group contributes nothing: at `g ∈ N` the character of the induced
-representation at `g ^ 2` is `ψ² (g) + (ψ²)⁻¹ (g)`, and `ψ² ≠ 1` says that neither `ψ²` nor its
-inverse is the trivial character of `N`, so both sums vanish by the orthogonality of a nontrivial
-character with the trivial one (`sum_hom_units_eq_zero`).  What is left is `|N|` copies of
-`2 ψ (s ^ 2)`, and `|G| = 2 |N|`.
-
-The worked example at the end is the two-dimensional irreducible of `D₄`, induced from the faithful
-character of the rotation subgroup sending `r 1` to `i` in
-`TauCeti/RepresentationTheory/Induction/Mackey/Dihedral.lean`.  A reflection squares to the
-identity, so its indicator is `1`: `D₄` is of **orthogonal** type, and its two-dimensional
-irreducible carries a nonzero invariant symmetric form.
+The computation reads the character formula
+`TauCeti.character_indFDRep_ofLinearCharacter_of_conj_eq_inv` against the two elementary facts
+about the outside coset recorded in `TauCeti/GroupTheory/IndexTwo.lean`: its elements all have the
+same square (`TauCeti.sq_eq_sq_of_notMem_of_index_two`), and that square is an involution
+(`TauCeti.sq_sq_eq_one_of_conj_eq_inv`).  Inside `N` the character of the induced representation
+at `g ^ 2` is `ψ² (g) + (ψ²)⁻¹ (g)`, and `ψ ^ 2 ≠ 1` makes both of those characters nontrivial, so
+their sums over `N` vanish (`sum_hom_units_eq_zero`).
 
 ## Main statements
 
 * `TauCeti.frobeniusSchurIndicator_indFDRep_ofLinearCharacter_of_conj_eq_inv`: **the indicator of
   the representation induced from a linear character of an inverted subgroup of index two is the
   value of the character on the common square of the outside elements.**
-* `TauCeti.frobeniusSchurIndicator_indFDRep_ofLinearCharacter_dihedralGroupFourRotationChar`:
-  **the two-dimensional irreducible of `D₄` has Frobenius-Schur indicator `1`**, so it is of
-  orthogonal type.
 
 ## References
 
@@ -63,9 +51,9 @@ universe v
 variable {G : Type v} [Group G] {N : Subgroup G} {k : Type} [Field k]
 
 /-- **The Frobenius-Schur indicator of a character induced from an inverted subgroup of index
-two** is the value of the character on the common square of the elements outside the
-subgroup.  The hypothesis `ψ ^ 2 ≠ 1` says that `ψ` is not its own inverse; it is what makes the
-contribution of `N` itself vanish, a nontrivial character of `N` summing to zero over `N`. -/
+two** is the value of the character on the common square `s ^ 2` of the elements outside the
+subgroup.  The hypothesis `ψ ^ 2 ≠ 1` says that `ψ` is not its own inverse, and `hG` that the order
+of `G` is invertible in `k`. -/
 theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_of_conj_eq_inv [Fintype G]
     (hindex : N.index = 2) {s : G} (hs : s ∉ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹)
     (hG : IsUnit (Nat.card G : k)) {ψ : N →* kˣ} (hψ : ψ ^ 2 ≠ 1) :
@@ -145,37 +133,5 @@ theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_of_conj_eq_inv [Finty
   rw [FDRep.frobeniusSchurIndicator_def, Representation.frobeniusSchurIndicator_def,
     ← Finset.sum_filter_add_sum_filter_not Finset.univ (fun g : G => g ∈ N), hinner, houter,
     zero_add, hcollect, ← mul_assoc, inv_mul_cancel₀ hG.ne_zero, one_mul]
-
-/-- **The two-dimensional irreducible representation of `D₄` has Frobenius-Schur indicator `1`.**
-It is induced from the faithful character of the rotation subgroup sending `r 1` to `i`, and every
-reflection squares to the identity, so the general formula returns the value of that character at
-`1`.  `D₄` is therefore of orthogonal type: its two-dimensional irreducible carries a nonzero
-invariant symmetric form. -/
-theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_dihedralGroupFourRotationChar :
-    FDRep.frobeniusSchurIndicator
-      (indFDRep (FDRep.ofLinearCharacter dihedralGroupFourRotationChar)) = 1 := by
-  have hcard : (Nat.card (DihedralGroup 4) : ℂ) = 8 := by
-    rw [Nat.card_eq_fintype_card, DihedralGroup.card]; norm_num
-  have hψ : dihedralGroupFourRotationChar ^ 2 ≠ 1 := fun hcontra => by
-    have h := congrFun (congrArg DFunLike.coe hcontra)
-      (⟨DihedralGroup.r 1, r_mem_dihedralRotations 1⟩ : dihedralRotations 4)
-    rw [MonoidHom.one_apply] at h
-    have hI : Complex.I ^ 2 = 1 := by
-      rw [← coe_dihedralGroupFourRotationChar_r_one, ← Units.val_pow_eq_pow_val]
-      simpa using congrArg (fun u : ℂˣ => (u : ℂ)) h
-    rw [Complex.I_sq] at hI
-    exact absurd hI (by norm_num)
-  have hsq : (DihedralGroup.sr (0 : ZMod 4)) ^ 2 = 1 := by
-    rw [pow_two, DihedralGroup.sr_mul_sr]; simp
-  -- The reflection `sr 0` squares to the identity, so the value the general formula returns is
-  -- that of the character at `1`.
-  have hone : (⟨(DihedralGroup.sr (0 : ZMod 4)) ^ 2,
-      Subgroup.sq_mem_of_index_two (index_dihedralRotations 4) _⟩ : dihedralRotations 4) = 1 :=
-    Subtype.ext hsq
-  rw [frobeniusSchurIndicator_indFDRep_ofLinearCharacter_of_conj_eq_inv
-    (index_dihedralRotations 4) (sr_notMem_dihedralRotations 0)
-    (fun _ hx => conj_eq_inv_of_notMem_dihedralRotations (sr_notMem_dihedralRotations 0) hx)
-    (isUnit_iff_ne_zero.mpr (by rw [hcard]; norm_num)) hψ]
-  rw [hone, map_one, Units.val_one]
 
 end TauCeti

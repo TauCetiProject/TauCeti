@@ -37,8 +37,8 @@ namespace TauCeti
 variable {G : Type*} [Group G] {N : Subgroup G}
 
 /-- **One inverting element outside a subgroup of index two makes every element outside it
-invert.**  Conjugation by `s` reverses products on `N` while being an automorphism, so `N` is
-abelian; an arbitrary element outside `N` is `s * n` with `n ∈ N`, and the `n` then drops out. -/
+invert.**  If some `s ∉ N` satisfies `s * x * s⁻¹ = x⁻¹` for every `x ∈ N`, then so does every
+`t ∉ N`; the inversion hypothesis may therefore be checked on a single outside element. -/
 theorem conj_eq_inv_of_notMem_of_index_two (hindex : N.index = 2) {s : G} (hs : s ∉ N)
     (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) {t : G} (ht : t ∉ N) {x : G} (hx : x ∈ N) :
     t * x * t⁻¹ = x⁻¹ := by
@@ -57,9 +57,9 @@ theorem conj_eq_inv_of_notMem_of_index_two (hindex : N.index = 2) {s : G} (hs : 
     _ = s * x * s⁻¹ := by rw [hcomm n hn x hx, mul_inv_cancel_right]
     _ = x⁻¹ := hinv x hx
 
-/-- **All the elements outside an inverted subgroup of index two have the same square.**  An
-outside element is `s * n` with `n ∈ N`, the inversion property rewrites `n * s` as `s * n⁻¹`, and
-the two copies of `n` cancel. -/
+/-- **All the elements outside an inverted subgroup of index two have the same square**, namely
+the square of the chosen inverting element `s`.  That square lies in `N` by
+`Subgroup.sq_mem_of_index_two`. -/
 theorem sq_eq_sq_of_notMem_of_index_two (hindex : N.index = 2) {s : G} (hs : s ∉ N)
     (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) {g : G} (hg : g ∉ N) : g ^ 2 = s ^ 2 := by
   have hsinv : s⁻¹ ∉ N := fun h => hs (by simpa using N.inv_mem h)
@@ -75,8 +75,7 @@ theorem sq_eq_sq_of_notMem_of_index_two (hindex : N.index = 2) {s : G} (hs : s �
     _ = s * s := by group
 
 /-- **The common square of the elements outside an inverted subgroup of index two is an
-involution.**  Conjugating `s ^ 2` by `s` leaves it fixed, and inverts it because `s ^ 2` lies in
-the subgroup. -/
+involution:** `(s ^ 2) ^ 2 = 1`. -/
 theorem sq_sq_eq_one_of_conj_eq_inv (hindex : N.index = 2) {s : G}
     (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) : (s ^ 2) ^ 2 = 1 := by
   have hfix : s ^ 2 = (s ^ 2)⁻¹ := by
