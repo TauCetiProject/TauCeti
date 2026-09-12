@@ -33,7 +33,11 @@ theorem not_mem_Ioo_of_ne_zero_of_forall_le {a : ι → α} {e : ι → M} {p q 
   intro i hei hi
   exact (not_lt_of_ge (ha i hei)) hi.1
 
+end TauCeti
+
 namespace Finset
+
+variable {ι α M : Type*} [Preorder α] [AddCommMonoid M]
 
 /-- If all nonzero terms of a finite family have indices at or to the left of `p`, then its sum
 over the terms indexed by `q` vanishes whenever `p < q`. -/
@@ -61,5 +65,3 @@ theorem lt_sum_filter_of_lt_zero_of_forall_ne_zero_le {γ β : Type*} [PartialOr
     exact hc
 
 end Finset
-
-end TauCeti
