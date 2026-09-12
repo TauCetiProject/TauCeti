@@ -265,7 +265,7 @@ theorem _root_.Equiv.Perm.fullCycleType_eq_parts_partition (σ : Equiv.Perm α) 
   rw [fullCycleType, Equiv.Perm.parts_partition]
 
 /-- The full cycle lengths of a permutation sum to the cardinality of its carrier. -/
-theorem _root_.Equiv.Perm.fullCycleType_sum (σ : Equiv.Perm α) :
+theorem _root_.Equiv.Perm.sum_fullCycleType (σ : Equiv.Perm α) :
     (fullCycleType σ).sum = Fintype.card α := by
   rw [fullCycleType_eq_parts_partition]
   exact σ.partition.parts_sum
