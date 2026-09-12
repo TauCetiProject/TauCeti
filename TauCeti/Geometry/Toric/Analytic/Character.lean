@@ -80,7 +80,6 @@ theorem characterEvaluation_apply (m : IntegralCharacter N) (x : ComplexTorus N)
   by simp [characterEvaluation]
 
 /-- The zero character evaluates to one. -/
-@[simp]
 theorem characterEvaluation_zero (x : ComplexTorus N) :
     characterEvaluation (0 : IntegralCharacter N) x = 1 :=
   x.map_zero_eq_one
@@ -101,13 +100,11 @@ theorem characterEvaluation_zsmul (z : ℤ) (m : IntegralCharacter N) (x : Compl
   x.map_zsmul_eq_zpow z m
 
 /-- Every integral character evaluates to one at the identity torus point. -/
-@[simp]
 theorem characterEvaluation_one (m : IntegralCharacter N) :
     characterEvaluation m (1 : ComplexTorus N) = 1 :=
   (characterEvaluation m).map_one
 
 /-- Character evaluation is multiplicative in the torus point. -/
-@[simp]
 theorem characterEvaluation_mul (m : IntegralCharacter N) (x y : ComplexTorus N) :
     characterEvaluation m (x * y) = characterEvaluation m x * characterEvaluation m y :=
   (characterEvaluation m).map_mul x y
@@ -138,7 +135,7 @@ def complexTorusMap (f : N →+ N') : ComplexTorus N →* ComplexTorus N' where
 @[simp]
 theorem characterEvaluation_complexTorusMap (f : N →+ N') (x : ComplexTorus N)
     (m : IntegralCharacter N') :
-    characterEvaluation m (complexTorusMap f x) =
+    (complexTorusMap f x) m =
       characterEvaluation (pullbackCharacter f m) x :=
   by simp [complexTorusMap]
 
