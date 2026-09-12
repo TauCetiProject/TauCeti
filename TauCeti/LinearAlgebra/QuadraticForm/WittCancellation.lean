@@ -132,19 +132,6 @@ variable {K : Type u} [Field K] [Invertible (2 : K)]
   {V₁ : Type v₁} [AddCommGroup V₁] [Module K V₁]
   {V₂ : Type v₂} [AddCommGroup V₂] [Module K V₂]
 
-/-- A form on a line spanned by a vector of nonzero value is regular. -/
-theorem nondegenerate_of_span_singleton_eq_top {Q₀ : QuadraticForm K V₀} {v₀ : V₀}
-    (hspan : Submodule.span K {v₀} = ⊤) (hv₀ : Q₀ v₀ ≠ 0) : Q₀.Nondegenerate := by
-  rw [QuadraticMap.nondegenerate_iff_radical_eq_bot, QuadraticMap.radical_eq_ker_polarBilin,
-    LinearMap.ker_eq_bot']
-  intro z hz
-  obtain ⟨c, rfl⟩ := (Submodule.span_singleton_eq_top_iff K v₀).mp hspan z
-  have hpolar : polar Q₀ (c • v₀) v₀ = 0 := by
-    simpa using congrArg (fun L : V₀ →ₗ[K] K => L v₀) hz
-  rw [QuadraticMap.polar_smul_left, QuadraticMap.polar_self] at hpolar
-  have hc : c = 0 := by simpa [(isUnit_of_invertible (2 : K)).ne_zero, hv₀] using hpolar
-  rw [hc, zero_smul]
-
 /-- **Witt cancellation** for a summand carried by a line: a form on a space spanned by a single
 vector of nonzero value cancels from an orthogonal sum. -/
 theorem equivalent_of_equivalent_prod_of_span_singleton_eq_top {Q₀ : QuadraticForm K V₀} {v₀ : V₀}

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
+public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 import TauCeti.Algebra.Group.Subgroup.Map
@@ -51,9 +51,8 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
 
 ## Main results
 
-* `QuadraticMap.Isometry.polar_apply`: an isometry preserves the polarization of a quadratic map.
-  `TauCeti.QuadraticMap.polar_apply_of_mem_orthogonalGroup` says the same of an orthogonal
-  automorphism, which preserves the orthogonality relation as well
+* `TauCeti.QuadraticMap.polar_apply_of_mem_orthogonalGroup`: an orthogonal automorphism preserves
+  polarization and the orthogonality relation
   (`isOrtho_iff_of_mem_orthogonalGroup`). As soon as `2` acts injectively on the target the
   converse holds, `TauCeti.QuadraticMap.mem_orthogonalGroup_iff_polar`, which is the usual
   identification of the isometries of a quadratic form with the isometries of its polar bilinear
@@ -231,14 +230,6 @@ section Polar
 
 variable {R : Type u} {M : Type v} {N : Type w} [CommSemiring R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] {Q : QuadraticMap R M N}
-
-/-- An isometry preserves the polarization of a quadratic map. -/
-@[simp]
-theorem _root_.QuadraticMap.Isometry.polar_apply {M₁ : Type*} {M₂ : Type*} [AddCommGroup M₁]
-    [Module R M₁] [AddCommGroup M₂] [Module R M₂] {Q₁ : QuadraticMap R M₁ N}
-    {Q₂ : QuadraticMap R M₂ N} (f : Q₁ →qᵢ Q₂) (x y : M₁) :
-    polar Q₂ (f x) (f y) = polar Q₁ x y := by
-  simp only [QuadraticMap.polar, ← map_add f, QuadraticMap.Isometry.map_app]
 
 /-- An orthogonal automorphism preserves the polarization of `Q`, because the polarization is
 built from `Q` and the additive structure alone. -/
