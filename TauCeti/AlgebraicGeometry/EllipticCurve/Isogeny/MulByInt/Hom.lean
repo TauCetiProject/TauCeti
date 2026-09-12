@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Add
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Differential
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.MapsInfinity
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Separability
 
 /-!
 # Multiplication by `n` is `n` times the identity
@@ -21,6 +23,7 @@ apply to `[n]` and results about `[n]` are available additively.
 * `TauCeti.Isogeny.ofIsogeny_mulByIntIsogeny`: `[n] = n • id` in `Hom W W`.
 * `TauCeti.Isogeny.isSeparable_mulByIntIsogeny_iff`: `[n]` is separable exactly when `n` is
   nonzero in the base field.
+* `TauCeti.Isogeny.separableDegree_mulByIntIsogeny`: in that case its separable degree is `n ²`.
 
 ## References
 
@@ -51,6 +54,13 @@ theorem isSeparable_mulByIntIsogeny_iff [W.IsElliptic] {n : ℤ} (hn : psiFuncti
   rw [isSeparable_iff_pullbackDifferential_ne_zero, ← Hom.pullbackDifferential_ofIsogeny,
     ofIsogeny_mulByIntIsogeny, Hom.pullbackDifferential_zsmul_id_invariantDifferential, ne_eq,
     zsmul_invariantDifferential_eq_zero_iff]
+
+/-- **A separable `[n]` has separable degree `n ²`**, its degree, since nothing is inseparable. -/
+theorem separableDegree_mulByIntIsogeny [W.IsElliptic] {n : ℤ}
+    (hn : psiFunctionField W n ≠ 0) (hchar : (n : F) ≠ 0) :
+    (mulByIntIsogeny W hn).separableDegree = n.natAbs ^ 2 := by
+  have := (isSeparable_mulByIntIsogeny_iff W hn).2 hchar
+  rw [separableDegree_eq_degree_of_isSeparable, degree_mulByIntIsogeny]
 
 end TauCeti.Isogeny
 
