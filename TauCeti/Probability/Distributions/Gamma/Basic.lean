@@ -77,8 +77,10 @@ variable {a r : ℝ}
 
 /-- A Gamma measure is sigma-finite for all parameter values. -/
 instance (a r : ℝ) : SigmaFinite (gammaMeasure a r) := by
-  unfold gammaMeasure gammaPDF
-  infer_instance
+  rw [gammaMeasure]
+  exact SigmaFinite.withDensity_of_ne_top' fun x ↦ by
+    rw [gammaPDF_eq]
+    exact ENNReal.ofReal_ne_top
 
 /-! ### Reduction to the positive half-line -/
 
