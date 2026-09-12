@@ -56,16 +56,6 @@ noncomputable abbrev tensorPowerRep :
     Representation k (GL (Fin n) k) (⨂[k]^d (Fin n → k)) :=
   (stdRep k n).tensorPower d
 
-/-- The tensor-power representation acts by applying the matrix of a general-linear element in
-every tensor factor.
-
-This is intentionally not a simp lemma: `Representation.tensorPower_apply` and `stdRep_apply`
-already prove the same simplification, so the `simpNF` linter rejects this specialization. -/
-theorem tensorPowerRep_apply (g : GL (Fin n) k) :
-    tensorPowerRep k n d g =
-      PiTensorProduct.map fun _ : Fin d => Matrix.mulVecLin (g : Matrix (Fin n) (Fin n) k) := by
-  rw [tensorPowerRep, Representation.tensorPower_apply, stdRep_apply]
-
 /-- The tensor power of the standard representation, bundled as an object of `FDRep`. -/
 noncomputable abbrev tensorPowerFDRep : FDRep k (GL (Fin n) k) :=
   FDRep.of (tensorPowerRep k n d)
@@ -110,12 +100,12 @@ theorem span_range_tensorPowerRep_eq_span_range_map_const :
     constructor
     · rintro ⟨g, rfl⟩
       refine ⟨Matrix.GeneralLinearGroup.toLin g, ?_⟩
-      rw [tensorPowerRep_apply]
+      rw [tensorPowerRep, Representation.tensorPower_apply, stdRep_apply]
       simp [Matrix.GeneralLinearGroup.coe_toLin]
     · rintro ⟨u, rfl⟩
       obtain ⟨g, rfl⟩ := Matrix.GeneralLinearGroup.toLin.surjective u
       refine ⟨g, ?_⟩
-      rw [tensorPowerRep_apply]
+      rw [tensorPowerRep, Representation.tensorPower_apply, stdRep_apply]
       simp [Matrix.GeneralLinearGroup.coe_toLin]
   rw [hrange, PiTensorProduct.span_range_map_const_units_eq_span_range_map_const]
 

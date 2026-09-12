@@ -87,10 +87,7 @@ theorem centralizer_range_permTensorActionAlgHom_eq_range_tensorPowerRep_asAlgeb
 
 /-- **Schur-Weyl duality, as a membership criterion.** An endomorphism of `(kⁿ)^{⊗d}` is the action
 of an element of the group algebra `k[S_d]` exactly when it commutes with the diagonal action of
-every element of `GLₙ`.
-
-This is intentionally not a simp lemma: `AlgHom.mem_range` first normalizes its left-hand side to
-an existential, so the `simpNF` linter rejects this orientation. -/
+every element of `GLₙ`. -/
 theorem mem_range_permTensorActionAlgHom_iff_forall_commute_tensorPowerRep
     (x : Module.End k (⨂[k] _ : Fin d, Fin n → k)) :
     x ∈ (permTensorActionAlgHom k n d).range ↔
@@ -102,10 +99,7 @@ theorem mem_range_permTensorActionAlgHom_iff_forall_commute_tensorPowerRep
 diagonal action of an element of the group algebra `k[GLₙ]` exactly when it commutes with the
 permutation of the tensor factors by every element of `S_d`. This is the companion of
 `TauCeti.mem_range_permTensorActionAlgHom_iff_forall_commute_tensorPowerRep` with the roles of the
-two groups exchanged.
-
-This is intentionally not a simp lemma: `AlgHom.mem_range` first normalizes its left-hand side to
-an existential, so the `simpNF` linter rejects this orientation. -/
+two groups exchanged. -/
 theorem mem_range_tensorPowerRep_asAlgebraHom_iff_forall_commute_permTensorAction
     (x : Module.End k (⨂[k] _ : Fin d, Fin n → k)) :
     x ∈ (tensorPowerRep k n d).asAlgebraHom.range ↔
