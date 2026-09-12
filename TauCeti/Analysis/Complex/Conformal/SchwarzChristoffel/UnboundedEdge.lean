@@ -59,7 +59,7 @@ theorem schwarzChristoffelBoundary_injOn_Ici (a e : ι → ℝ) (z₀ : UpperHal
     (ha : ∀ i, e i ≠ 0 → a i ≤ p) :
     InjOn (schwarzChristoffelBoundary a e z₀) (Ici p) := by
   have hfree : ∀ {q : ℝ}, q ∈ Ici p → ∀ i, e i ≠ 0 → a i ∉ Ioo p q :=
-    fun _ => not_mem_Ioo_of_ne_zero_of_forall_le ha
+    fun _ i hei hi => (not_lt_of_ge (ha i hei)) hi.1
   have hsum : ∀ {q : ℝ}, q ∈ Ici p → -1 < ∑ i with a i = q, e i :=
     fun {q} hq => by
       simpa using
@@ -89,7 +89,7 @@ theorem schwarzChristoffelBoundary_image_Ici (a e : ι → ℝ) (z₀ : UpperHal
   let D : ℝ := ‖V - B p‖
   -- To use the finite-edge lemmas on `[p, q]`, no nonzero prevertex may lie in its interior.
   have hfree : ∀ {q : ℝ}, q ∈ Ici p → ∀ i, e i ≠ 0 → a i ∉ Ioo p q :=
-    fun _ => not_mem_Ioo_of_ne_zero_of_forall_le ha
+    fun _ i hei hi => (not_lt_of_ge (ha i hei)) hi.1
   have hsum : ∀ {q : ℝ}, q ∈ Ici p → -1 < ∑ i with a i = q, e i :=
     fun {q} hq => by
       simpa using
@@ -130,7 +130,7 @@ theorem schwarzChristoffelBoundary_image_Ici (a e : ι → ℝ) (z₀ : UpperHal
     exact lt_add_of_pos_right _ hpos
   -- Strict monotonicity and the limit at infinity identify the distance parameter's image.
   have hdimage : d '' Ici p = Ico 0 D := by
-    simpa [d] using image_Ici_of_continuousOn_of_strictMonoOn_of_tendsto hdcont hdmono hdl
+    simpa [d] using hdcont.image_Ici_of_strictMonoOn_of_tendsto hdmono hdl
   have hDpos : 0 < D := by
     have hp1 : p + 1 ∈ Ici p := by
       exact mem_Ici.mpr (le_add_of_nonneg_right (by norm_num))

@@ -21,20 +21,6 @@ public section
 open Set
 open scoped BigOperators
 
-namespace TauCeti
-
-variable {ι α M : Type*} [Preorder α]
-
-/-- A nonzero term whose index is at or to the left of `p` does not occur strictly between `p` and
-any later point. -/
-theorem not_mem_Ioo_of_ne_zero_of_forall_le [Zero M] {a : ι → α} {e : ι → M} {p q : α}
-    (ha : ∀ i, e i ≠ 0 → a i ≤ p) :
-    ∀ i, e i ≠ 0 → a i ∉ Ioo p q := by
-  intro i hei hi
-  exact (not_lt_of_ge (ha i hei)) hi.1
-
-end TauCeti
-
 namespace Finset
 
 variable {ι α M : Type*} [Preorder α] [AddCommMonoid M]

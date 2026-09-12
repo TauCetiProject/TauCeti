@@ -16,7 +16,7 @@ when the limit is finite.
 
 ## Main result
 
-* `TauCeti.image_Ici_of_continuousOn_of_strictMonoOn_of_tendsto` — a continuous strictly
+* `ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto` — a continuous strictly
   increasing map
   on `Ici p` with a finite limit at `+∞` maps that interval to the half-open interval between its
   endpoint value and its limit.
@@ -30,7 +30,7 @@ namespace TauCeti
 
 /-- **A continuous strictly increasing map sends a half-line to a half-open interval.** The finite
 limit at `+∞` is approached but is not attained. -/
-theorem image_Ici_of_continuousOn_of_strictMonoOn_of_tendsto
+theorem _root_.ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto
     {α β : Type*} [ConditionallyCompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α]
     [DenselyOrdered α] [NoMaxOrder α]
     [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] {d : α → β} {p : α} {D : β}
