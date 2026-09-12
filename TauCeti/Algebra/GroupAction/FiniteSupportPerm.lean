@@ -31,7 +31,9 @@ intersections (Mathlib's `CountableInterFilter`), such as the a.e. filter of a m
 
 The file also supplies `Equiv.Perm.exists_prodCongrRight_mem_finitary_apply_eq_on_finset`:
 finitely many values of an arbitrary family of permutations can be matched by a family whose
-induced permutation of the product moves only finitely many indexed points altogether; and the
+induced permutation of the product moves only finitely many indexed points altogether; the
+type synonym `FinitaryPerm` of the finitary symmetric group of `ℕ`, carrying the domain actions on
+path and array spaces that are installed beside those spaces; and the
 **block swap** `Nat.blockSwap N`, the finitely supported permutation of `ℕ` exchanging `[0, N)` with
 `[N, 2N)`, which carries any finite index set inside `[0, N)` onto a disjoint copy.
 -/
@@ -317,3 +319,76 @@ theorem exists_prodCongrRight_mem_finitary_apply_eq_on_finset {ι β : Type*}
     simpa [τ, hrow] using (hσ p.1).2 p.2 hmem
 
 end Equiv.Perm
+
+namespace TauCeti
+
+/-! ## The finitary symmetric group as a type synonym -/
+
+/-- The **finitary symmetric group of `ℕ`**, the group of finitely supported permutations of `ℕ`,
+as a type synonym for `↥(Equiv.Perm.finitary ℕ)` carrying the domain actions on path and array
+spaces: finitary reindexing of the time index of a path `x : ℕ → α`, and diagonal relabelling of
+both coordinates of an array `x : ℕ × ℕ → α`. Each action is installed beside the space it acts
+on. The synonym is deliberate: these are actions on the *domain* of a function, whereas
+`Pi.instSMul` would make a subgroup of `Equiv.Perm ℕ` act on the *values* whenever the state space
+`α` carries an action of it — which it does for `α = ℕ`. Wrapping the group keeps the domain
+actions from competing with that one.
+
+The interface is `equivFinitary`, `toPerm`, `ofPerm` and `FinitaryPerm.ext`; no proof outside this
+section unfolds the synonym. -/
+-- The group structure, and with it `toPerm_one`, `toPerm_mul` and `toPerm_inv`, is transported
+-- along the synonym, so those lemmas hold definitionally and by nothing else; the module system
+-- therefore requires this definition and `equivFinitary`, `toPerm`, `ofPerm` below to be
+-- `@[expose]`d.
+@[expose]
+def FinitaryPerm : Type := Equiv.Perm.finitary ℕ
+
+namespace FinitaryPerm
+
+instance instGroup : Group FinitaryPerm := inferInstanceAs (Group (Equiv.Perm.finitary ℕ))
+
+instance instCountable : Countable FinitaryPerm :=
+  inferInstanceAs (Countable (Equiv.Perm.finitary ℕ))
+
+/-- The identification of `FinitaryPerm` with the finitary symmetric group `Equiv.Perm.finitary ℕ`
+that it abbreviates. -/
+@[expose]
+def equivFinitary : FinitaryPerm ≃ Equiv.Perm.finitary ℕ := Equiv.refl _
+
+/-- The finitely supported permutation of `ℕ` underlying an element of `FinitaryPerm`. -/
+@[expose]
+def toPerm (g : FinitaryPerm) : Equiv.Perm ℕ := (equivFinitary g).val
+
+/-- The permutation underlying an element of `FinitaryPerm` is finitely supported. -/
+theorem finite_compl_fixedBy_toPerm (g : FinitaryPerm) :
+    (MulAction.fixedBy ℕ (toPerm g))ᶜ.Finite :=
+  Equiv.Perm.mem_finitary.mp (equivFinitary g).2
+
+/-- An element of `FinitaryPerm` is determined by the permutation underlying it. -/
+theorem toPerm_injective : Function.Injective toPerm := fun _ _ h =>
+  equivFinitary.injective (Subtype.ext h)
+
+@[ext]
+theorem ext {g h : FinitaryPerm} (hgh : toPerm g = toPerm h) : g = h := toPerm_injective hgh
+
+/-- Package a finitely supported permutation of `ℕ` as an element of `FinitaryPerm`. -/
+@[expose]
+def ofPerm (π : Equiv.Perm ℕ) (hπ : (MulAction.fixedBy ℕ π)ᶜ.Finite) : FinitaryPerm :=
+  equivFinitary.symm ⟨π, Equiv.Perm.mem_finitary.mpr hπ⟩
+
+@[simp]
+theorem toPerm_ofPerm (π : Equiv.Perm ℕ) (hπ : (MulAction.fixedBy ℕ π)ᶜ.Finite) :
+    toPerm (ofPerm π hπ) = π :=
+  rfl
+
+@[simp]
+theorem toPerm_one : toPerm 1 = 1 := rfl
+
+@[simp]
+theorem toPerm_mul (g h : FinitaryPerm) : toPerm (g * h) = toPerm g * toPerm h := rfl
+
+@[simp]
+theorem toPerm_inv (g : FinitaryPerm) : toPerm g⁻¹ = (toPerm g)⁻¹ := rfl
+
+end FinitaryPerm
+
+end TauCeti

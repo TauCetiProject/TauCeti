@@ -46,6 +46,8 @@ without first passing through root-system combinatorics.
 * `TauCeti.vertexReflectionList`: the same map as a linear automorphism, over a word in loopless
   vertices, with `TauCeti.vertexReflectionList_symm` identifying its inverse as the automorphism
   along the reversed word.
+* `TauCeti.vertexPreReflectionList_flatten_replicate`: repeating a word raises its reflection
+  product to the corresponding power, so a run of Coxeter passes is itself a reflection product.
 * `TauCeti.titsForm_vertexPreReflectionList` and
   `TauCeti.bijOn_vertexPreReflectionList`: along a word in loopless vertices, the composite
   preserves the Tits form, and hence permutes each of its level sets, in particular the roots
@@ -122,6 +124,15 @@ theorem vertexPreReflectionList_append (l₁ l₂ : List Q) :
     vertexPreReflectionList Q (l₁ ++ l₂)
       = vertexPreReflectionList Q l₂ * vertexPreReflectionList Q l₁ := by
   simp [vertexPreReflectionList, List.map_append, List.prod_append]
+
+/-- Repeating a word `N` times raises its reflection product to the `N`-th power. -/
+@[simp]
+theorem vertexPreReflectionList_flatten_replicate (l : List Q) (N : ℕ) :
+    vertexPreReflectionList Q (List.replicate N l).flatten = vertexPreReflectionList Q l ^ N := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    rw [List.replicate_succ, List.flatten_cons, vertexPreReflectionList_append, ih, pow_succ]
 
 /-- Off the word, the reflection product changes no coordinate: each simple reflection in the
 composite alters only the coordinate at its own vertex. -/

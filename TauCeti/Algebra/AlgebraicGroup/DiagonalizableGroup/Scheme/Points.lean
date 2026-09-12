@@ -178,14 +178,14 @@ transported to the named diagonalizable group scheme. -/
 lemma groupSchemePointsMulEquiv_symm_apply_left (G : FGCommGrpCat.{u})
     (f : WithConv (MonoidAlgebra R G →ₐ[R] A)) :
     ((groupSchemePointsMulEquiv (R := R) (A := A) G).symm f).left =
-      Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) ≫
+      Spec.map (CommRingCat.ofHom f.ofConv) ≫
         eqToHom (groupScheme_X_left R G).symm := by
   apply (cancel_mono (eqToHom (groupScheme_X_left R G))).1
   rw [groupSchemePointsMulEquiv_apply_left_comp, MulEquiv.apply_symm_apply,
     CommHopfAlgCat.mapMulEquiv_left]
   -- Normalize the `Over.left` source and the proof-irrelevant equality witnesses.
-  change Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) =
-    (Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) ≫
+  change Spec.map (CommRingCat.ofHom (f.ofConv : MonoidAlgebra R G →+* A)) =
+    (Spec.map (CommRingCat.ofHom (f.ofConv : MonoidAlgebra R G →+* A)) ≫
       eqToHom (groupScheme_X_left R G).symm) ≫ eqToHom (groupScheme_X_left R G)
   simp
 

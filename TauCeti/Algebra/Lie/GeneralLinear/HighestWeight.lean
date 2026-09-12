@@ -46,6 +46,8 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
 * `TauCeti.glStaircase N`: the staircase tuple `(N - 1/2, N - 3/2, …, 1/2) : Fin N → ℚ`.
 * `TauCeti.glHalfStaircase F N`: the formula `N - 1/2 - i` over any field; when two is
   invertible, this is the same half-shifted staircase.
+* `Fin.natCast_rev_add_one_div_two_eq_glHalfStaircase`: the reverse finite index, cast to
+  a field and shifted by one half, is the corresponding half-staircase entry.
 * `TauCeti.IsGlHighestWeightVector μ v`: `v` is nonzero, the diagonal matrix unit `Eᵢᵢ` acts on it
   by `μ i`, and every raising matrix unit `Eᵢⱼ` with `i < j` annihilates it.
 
@@ -278,6 +280,35 @@ def glHalfStaircase (F : Type*) [Field F] (N : ℕ) : Fin N → F :=
 @[simp]
 theorem glHalfStaircase_apply {F : Type*} [Field F] (N : ℕ) (i : Fin N) :
     glHalfStaircase F N i = (N : F) - 1 / 2 - (i : ℕ) := (rfl)
+
+end Dominant
+
+end TauCeti
+
+namespace Fin
+
+/-- Casting a reverse finite index and adding the half-unit shift gives the corresponding entry of
+the half-shifted staircase. -/
+@[simp↓]
+theorem natCast_rev_add_one_div_two_eq_glHalfStaircase
+    {F : Type*} [Field F] [Invertible (2 : F)] {N : ℕ} (i : Fin N) :
+    (((Fin.rev i : ℕ) : F) + 1 / 2) = TauCeti.glHalfStaircase F N i := by
+  rw [TauCeti.glHalfStaircase_apply]
+  simp only [Fin.rev, Fin.val_mk]
+  rw [Nat.cast_sub (by omega : (i : ℕ) + 1 ≤ N)]
+  push_cast
+  field_simp [Invertible.ne_zero (2 : F)]
+  ring
+
+end Fin
+
+namespace TauCeti
+
+open Matrix
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+section Dominant
 
 /-- The entries of the half-shifted staircase over a field in which two is invertible sum to
 `N² / 2`. -/

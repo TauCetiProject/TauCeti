@@ -173,6 +173,11 @@ theorem card_hook : (hook μ c).card = hookLength μ c := by
 
 theorem hookLength_pos : 0 < hookLength μ c := Nat.succ_pos _
 
+/-- Every hook length is positive, so the product of the hook lengths of a diagram is positive.
+This is what makes the quotient form of the hook-length formula meaningful. -/
+theorem prod_hookLength_pos : 0 < ∏ d ∈ μ.cells, hookLength μ d :=
+  Finset.prod_pos fun d _ => hookLength_pos μ d
+
 variable {μ c}
 
 /-- A cell of the diagram has hook length at most the size of the diagram. -/

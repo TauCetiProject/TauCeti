@@ -313,7 +313,7 @@ noncomputable def groupSchemePointMulEquiv :
 theorem groupSchemePointMulEquiv_apply_left
     (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
     (groupSchemePointMulEquiv m A f).left =
-      AlgebraicGeometry.Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) ≫
+      AlgebraicGeometry.Spec.map (CommRingCat.ofHom f.ofConv) ≫
         eqToHom (groupScheme_X_left R m).symm := by
   simpa only [groupSchemePointMulEquiv] using
     CommHopfAlgCat.mapMulEquivOfPresentation_apply_left

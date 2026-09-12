@@ -569,7 +569,9 @@ private theorem kostantToralSchemePointMulEquiv_apply_left (A : Type) [CommRing 
     (q : WithConv (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
       (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →ₐ[ℤ] A)) :
     (kostantToralSchemePointMulEquiv e h ρ M hM hnil b wt A q).left =
-      Spec.map (CommRingCat.ofHom q.ofConv.toRingHom) ≫
+      Spec.map (CommRingCat.ofHom (q.ofConv :
+        CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
+          (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →+* A)) ≫
         eqToHom (congrArg (fun K : Grp (Over (Spec (CommRingCat.of ℤ))) => K.X.left)
           (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)).symm := by
   simpa only [kostantToralSchemePointMulEquiv] using

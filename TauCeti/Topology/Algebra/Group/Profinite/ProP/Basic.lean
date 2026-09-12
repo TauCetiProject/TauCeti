@@ -30,6 +30,7 @@ separate topological fact is supplied by `QuotientGroup.instTotallyDisconnectedS
 * `isProP_iff_isPGroup`: for a discrete topology, pro-`p` agrees with `IsPGroup`.
 * `IsProP.of_surjective`: a continuous surjective image of a pro-`p` group is pro-`p`.
 * `IsProP.quotient`: a quotient of a pro-`p` group by a normal subgroup is pro-`p`.
+* `IsProP.top`: the top subgroup of a pro-`p` group is pro-`p`.
 * `IsProP.isPGroup_range`: a continuous homomorphism from a pro-`p` group to a discrete group
   has a `p`-group as its range.
 * `IsProP.isPGroup_map_mk'`: the image of a pro-`p` subgroup in the quotient by an open normal
@@ -112,6 +113,11 @@ Hausdorff and profinite, not whether its open-normal quotients are `p`-groups. -
 theorem quotient (hG : IsProP p G) (N : Subgroup G) [N.Normal] : IsProP p (G ⧸ N) :=
   hG.of_surjective (QuotientGroup.mk' N) QuotientGroup.continuous_mk
     (QuotientGroup.mk'_surjective N)
+
+/-- The top subgroup of a pro-`p` group, with its subspace topology, is pro-`p`. -/
+theorem top (hG : IsProP p G) : IsProP p (⊤ : Subgroup G) :=
+  hG.of_surjective (Subgroup.topEquiv (G := G)).symm.toMonoidHom
+    (continuous_induced_rng.mpr continuous_id) (Subgroup.topEquiv (G := G)).symm.surjective
 
 /-- A topological group isomorphism carries the pro-`p` property to its target. -/
 theorem of_equiv (hG : IsProP p G) (e : G ≃ₜ* H) : IsProP p H :=
