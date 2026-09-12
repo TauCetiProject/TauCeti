@@ -91,13 +91,8 @@ theorem range_subset_range : range f ⊆ range c := by
 /-- The zero slice of a collar has exactly the boundary image as its range. -/
 theorem image_prod_singleton_zero :
     c '' (univ ×ˢ ({⟨0, by norm_num⟩} : Set (Ico (0 : ℝ) 1))) = range f := by
-  ext y
-  constructor
-  · rintro ⟨⟨x, t⟩, ⟨_, ht⟩, rfl⟩
-    rw [mem_singleton_iff] at ht
-    exact ⟨x, (h.apply_zero x).symm.trans (congrArg c (congrArg (fun z => (x, z)) ht.symm))⟩
-  · rintro ⟨x, rfl⟩
-    exact ⟨(x, ⟨0, by norm_num⟩), ⟨mem_univ _, mem_singleton _⟩, h.apply_zero x⟩
+  rw [Set.prod_singleton, Set.image_image, Set.image_univ]
+  exact congrArg Set.range (funext h.apply_zero)
 
 /-- The collar map's preimage of the boundary is exactly its zero slice. -/
 @[simp] theorem preimage_range :
