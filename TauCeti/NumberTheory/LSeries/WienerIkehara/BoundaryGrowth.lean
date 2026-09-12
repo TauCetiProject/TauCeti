@@ -48,9 +48,6 @@ asymptotic specializes the half-plane hypotheses it inherits from
 
 ## References
 
-* Layer 9.1 of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, which asks for the growth
-  bound to be derived from coefficient nonnegativity, the half-plane summability hypothesis, and
-  the boundary data.
 * J. Korevaar, *Tauberian Theory: A Century of Developments*, Chapter III.
 * G. Tenenbaum, *Introduction to Analytic and Probabilistic Number Theory*, Chapter II.
 -/
