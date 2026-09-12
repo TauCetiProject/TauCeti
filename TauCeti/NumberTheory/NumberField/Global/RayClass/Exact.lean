@@ -7,8 +7,8 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
 
-import TauCeti.NumberTheory.NumberField.NarrowClassGroup.CoprimeRepresentative
 import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
+import TauCeti.RingTheory.ClassGroup.Basic
 
 /-!
 # The exact sequence from ray classes to ordinary ideal classes
@@ -20,9 +20,8 @@ class to an ordinary ideal class.  This file constructs that homomorphism and pr
 
 The first map sends an element of `Kˣ` that is a unit at the finite part to the ray class of its
 principal ideal.  The second map is surjective, and its kernel is exactly the range of the first.
-The surjectivity proof chooses an integral representative coprime to the finite part; this is the
-same moving argument that ensures every ordinary ideal class has a representative on which a ray
-class can be evaluated.
+Surjectivity of the transition maps follows by weak approximation, and surjectivity onto the
+ordinary class group follows by transition to the trivial modulus.
 
 This is the right-hand part of the ray-class exact sequence.  The left-hand part further presents
 the kernel as residue units and signs modulo the image of the integer units, and yields the ray
@@ -104,47 +103,6 @@ theorem rayClassToClassGroup_eq_oneEquivClassGroup_comp_classMap (m : Modulus K)
     MulEquiv.coe_toMonoidHom, oneEquivClassGroup_rayClassMk,
     NumberFieldArithmetic.coe_idealsAwayInclusion]
 
-/-- Every ordinary ideal class is represented by a ray class. -/
-theorem rayClassToClassGroup_surjective (m : Modulus K) :
-    Function.Surjective (rayClassToClassGroup m) := by
-  intro C
-  obtain ⟨D, hDC⟩ := NarrowClassGroup.toClassGroup_surjective C
-  let M : (Ideal (RingOfIntegers K))⁰ :=
-    ⟨m.finitePart, mem_nonZeroDivisors_iff_ne_zero.mpr m.finitePart_ne_zero⟩
-  obtain ⟨J, hJD, hcop⟩ := NarrowClassGroup.exists_mk0_eq_and_isCoprime D M
-  have hJ0 : (J : Ideal (RingOfIntegers K)) ≠ ⊥ := by
-    simpa only [Ideal.zero_eq_bot] using mem_nonZeroDivisors_iff_ne_zero.mp J.2
-  have hJmem : (J : Ideal (RingOfIntegers K)) ∈ integralIdealsPrimeTo m :=
-    Modulus.mem_integralIdealsPrimeTo.mpr <|
-      Modulus.isCoprimeTo_iff_sup_eq_top.mpr
-        ⟨hJ0, Ideal.isCoprime_iff_sup_eq.mp hcop⟩
-  let I : integralIdealsPrimeTo m := ⟨J, hJmem⟩
-  refine ⟨idealClass m I, ?_⟩
-  rw [idealClass_apply, rayClassToClassGroup_rayClassMk]
-  calc
-    ClassGroup.mk K
-        (NumberFieldArithmetic.integralIdealsAwayHom m.support I :
-          (FractionalIdeal (RingOfIntegers K)⁰ K)ˣ) =
-        ClassGroup.mk K (FractionalIdeal.mk0 K J) := by
-      congr 1
-      exact Units.ext (NumberFieldArithmetic.coe_integralIdealsAwayHom m.support I)
-    _ = ClassGroup.mk0 J := ClassGroup.mk_mk0 K J
-    _ = NarrowClassGroup.toClassGroup (NarrowClassGroup.mk0 J) :=
-      (NarrowClassGroup.toClassGroup_mk0 J).symm
-    _ = C := by rw [hJD, hDC]
-
-/-- The ray classes with trivial ordinary ideal class are exactly the principal ray classes.  This
-is exactness at `RayClassGroup m` in the ray-class exact sequence. -/
-theorem ker_rayClassToClassGroup (m : Modulus K) :
-    (rayClassToClassGroup m).ker = (principalRayClass m).range := by
-  rw [rayClassToClassGroup, ker_rayClassLift, ← range_principalIdealPrimeTo,
-    principalRayClass, MonoidHom.range_comp]
-
-/-- The principal-ray-class map followed by forgetting the modulus is exact. -/
-theorem mulExact_principalRayClass_rayClassToClassGroup (m : Modulus K) :
-    Function.MulExact (principalRayClass m) (rayClassToClassGroup m) :=
-  MonoidHom.mulExact_iff.mpr (ker_rayClassToClassGroup m)
-
 /-- Transition from a larger modulus to any divisor is surjective. -/
 theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
     Function.Surjective (classMap h) := by
@@ -205,5 +163,23 @@ theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
       coe_principalIdealPrimeTo]
   rw [hJ, map_mul]
   rw [← principalRayClass_apply, principalRayClass_eq_one_of_isCongrOne hxm, mul_one]
+
+/-- Every ordinary ideal class is represented by a ray class. -/
+theorem rayClassToClassGroup_surjective (m : Modulus K) :
+    Function.Surjective (rayClassToClassGroup m) := by
+  rw [rayClassToClassGroup_eq_oneEquivClassGroup_comp_classMap]
+  exact oneEquivClassGroup.surjective.comp (classMap_surjective (Modulus.one_dvd m))
+
+/-- The ray classes with trivial ordinary ideal class are exactly the principal ray classes.  This
+is exactness at `RayClassGroup m` in the ray-class exact sequence. -/
+theorem ker_rayClassToClassGroup (m : Modulus K) :
+    (rayClassToClassGroup m).ker = (principalRayClass m).range := by
+  rw [rayClassToClassGroup, ker_rayClassLift, ← range_principalIdealPrimeTo,
+    principalRayClass, MonoidHom.range_comp]
+
+/-- The principal-ray-class map followed by forgetting the modulus is exact. -/
+theorem mulExact_principalRayClass_rayClassToClassGroup (m : Modulus K) :
+    Function.MulExact (principalRayClass m) (rayClassToClassGroup m) :=
+  MonoidHom.mulExact_iff.mpr (ker_rayClassToClassGroup m)
 
 end TauCeti.GlobalNumberFields
