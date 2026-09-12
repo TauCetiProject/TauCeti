@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 
 /-!
 # Maximality of the diagonal torus in the general linear group

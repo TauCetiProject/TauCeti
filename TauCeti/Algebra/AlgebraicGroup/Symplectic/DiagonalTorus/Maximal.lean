@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.ClosedImmersion
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
 import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Diagonal.Centralizer
