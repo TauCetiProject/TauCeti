@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Hodge.WeightOne.Basic
 public import TauCeti.Geometry.Hodge.Polarization
-public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
+import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 
 /-!
 # The standard polarized effective Hodge structure of weight one
@@ -90,11 +90,6 @@ theorem rationalToComplex_apply (x : RationalSpace) :
   | add x y hx hy =>
       simp only [map_add, hx, hy]
       ext <;> simp
-
-/-- The two coordinatewise inclusions agree after passing through the rationalization. -/
-theorem rationalToComplex_comp_latticeToRational (x : Lattice) :
-    rationalToComplex (latticeToRational x) = latticeToComplex x := by
-  exact Hodge.rationalToComplexMap_apply_ι isBaseChange_latticeToRational latticeToComplex x
 
 /-- The coordinatewise complex inclusion is a base change from `ℤ` to `ℂ`. -/
 theorem isBaseChange_latticeToComplex : IsBaseChange ℂ latticeToComplex :=
