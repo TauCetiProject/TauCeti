@@ -190,8 +190,6 @@ theorem IsRegularCone.prod {τ' : PointedCone ℝ V'} (hσ : IsRegularCone i σ)
     (hτ' : IsRegularCone i' τ') : IsRegularCone (i.prodMap i') (σ.prod τ') := by
   obtain ⟨n, b, r, hb⟩ := hσ.exists_basis
   obtain ⟨n', b', r', hb'⟩ := hτ'.exists_basis
-  have hστ : ((σ.prod τ' : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient :=
-    hσ.salient.prod hτ'.salient
   set B := (b.prod b').reindex finSumFinEquiv with hB
   have hBinl : ∀ k : Fin n, B (finSumFinEquiv (Sum.inl k)) = (b k, 0) := fun k ↦ by
     rw [hB, Module.Basis.reindex_apply, Equiv.symm_apply_apply]; simp
@@ -201,57 +199,37 @@ theorem IsRegularCone.prod {τ' : PointedCone ℝ V'} (hσ : IsRegularCone i σ)
     (ToricRay.prodSplit hσ.salient hτ'.salient).toEmbedding.trans
       ((r.sumMap r').trans finSumFinEquiv.toEmbedding),
     ⟨fun G ↦ ?_⟩⟩
-  by_cases hG : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥
-  · set ρ := ToricRay.prodRayFst hστ G hG with hρ
+  rcases hG : ToricRay.prodSplit hσ.salient hτ'.salient G with ρ | ρ
+  · have hGρ : G = ToricRay.prodInl hτ'.salient ρ := by
+      calc
+        G = (ToricRay.prodSplit hσ.salient hτ'.salient).symm
+            (ToricRay.prodSplit hσ.salient hτ'.salient G) :=
+          ((ToricRay.prodSplit hσ.salient hτ'.salient).symm_apply_apply G).symm
+        _ = (ToricRay.prodSplit hσ.salient hτ'.salient).symm (Sum.inl ρ) :=
+          congrArg (ToricRay.prodSplit hσ.salient hτ'.salient).symm hG
+        _ = ToricRay.prodInl hτ'.salient ρ :=
+          ToricRay.prodSplit_symm_inl hσ.salient hτ'.salient ρ
     have hidx : ((ToricRay.prodSplit hσ.salient hτ'.salient).toEmbedding.trans
         ((r.sumMap r').trans finSumFinEquiv.toEmbedding)) G
         = finSumFinEquiv (Sum.inl (r ρ)) := by
-      simp [ToricRay.prodSplit_eq_inl hσ.salient hτ'.salient G hG, hρ]
-    have hprim : IsPrimitive ((b (r ρ), (0 : N')) : N × N') := by
-      have h := B.isPrimitive (finSumFinEquiv (Sum.inl (r ρ)))
-      rwa [hBinl] at h
-    rw [hidx, hBinl]
-    refine isPrimitiveGenerator_iff.2 ⟨?_, hprim⟩
-    have hmem : i (b (r ρ)) ∈ PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone := by
-      simpa [hρ] using (isPrimitiveGenerator_iff.1 (hb.isPrimitiveGenerator_apply ρ)).1
-    obtain ⟨x, hx, hx1⟩ := Submodule.mem_map.1 hmem
-    have hx2 : x.2 = 0 := by
-      have : x.2 ∈ PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone :=
-        Submodule.mem_map.2 ⟨x, hx, rfl⟩
-      rw [hG] at this
-      simpa using this
-    have hxeq : x = (i (b (r ρ)), 0) := by
-      apply Prod.ext
-      · simpa using hx1
-      · exact hx2
-    simp only [AddMonoidHom.coe_prodMap, Prod.map, map_zero]
-    rw [← hxeq]
-    exact hx
-  · set ρ := ToricRay.prodRaySnd hστ G hG with hρ
+      simp [hG]
+    rw [hidx, hBinl, hGρ]
+    exact (hb.isPrimitiveGenerator_apply ρ).prodInl hτ'.salient
+  · have hGρ : G = ToricRay.prodInr hσ.salient ρ := by
+      calc
+        G = (ToricRay.prodSplit hσ.salient hτ'.salient).symm
+            (ToricRay.prodSplit hσ.salient hτ'.salient G) :=
+          ((ToricRay.prodSplit hσ.salient hτ'.salient).symm_apply_apply G).symm
+        _ = (ToricRay.prodSplit hσ.salient hτ'.salient).symm (Sum.inr ρ) :=
+          congrArg (ToricRay.prodSplit hσ.salient hτ'.salient).symm hG
+        _ = ToricRay.prodInr hσ.salient ρ :=
+          ToricRay.prodSplit_symm_inr hσ.salient hτ'.salient ρ
     have hidx : ((ToricRay.prodSplit hσ.salient hτ'.salient).toEmbedding.trans
         ((r.sumMap r').trans finSumFinEquiv.toEmbedding)) G
         = finSumFinEquiv (Sum.inr (r' ρ)) := by
-      simp [ToricRay.prodSplit_eq_inr hσ.salient hτ'.salient G hG, hρ]
-    have hprim : IsPrimitive (((0 : N), b' (r' ρ)) : N × N') := by
-      have h := B.isPrimitive (finSumFinEquiv (Sum.inr (r' ρ)))
-      rwa [hBinr] at h
-    rw [hidx, hBinr]
-    refine isPrimitiveGenerator_iff.2 ⟨?_, hprim⟩
-    have hmem : i' (b' (r' ρ)) ∈ PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone := by
-      simpa [hρ] using (isPrimitiveGenerator_iff.1 (hb'.isPrimitiveGenerator_apply ρ)).1
-    obtain ⟨x, hx, hx2⟩ := Submodule.mem_map.1 hmem
-    have hx1 : x.1 = 0 := by
-      have : x.1 ∈ PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone :=
-        Submodule.mem_map.2 ⟨x, hx, rfl⟩
-      rw [ToricRay.map_fst_eq_bot_of_map_snd_ne_bot hστ G hG] at this
-      simpa using this
-    have hxeq : x = (0, i' (b' (r' ρ))) := by
-      apply Prod.ext
-      · exact hx1
-      · simpa using hx2
-    simp only [AddMonoidHom.coe_prodMap, Prod.map, map_zero]
-    rw [← hxeq]
-    exact hx
+      simp [hG]
+    rw [hidx, hBinr, hGρ]
+    exact (hb'.isPrimitiveGenerator_apply ρ).prodInr hσ.salient
 
 /-! ### Two extending bases -/
 

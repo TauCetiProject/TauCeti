@@ -151,6 +151,7 @@ theorem mem_hullSingleton {x : V} (hx : x ≠ 0) {y : V} :
 
 /-- A ray of the cone spanned by a vector is the whole cone: a proper face of that cone misses the
 spanning vector, hence is the zero cone, which is not a ray. -/
+@[simp]
 theorem toPointedCone_eq_of_hull_singleton {x : V}
     (ρ : ToricRay (PointedCone.hull ℝ {x})) : ρ.toPointedCone = PointedCone.hull ℝ {x} := by
   have hx : x ∈ ρ.toPointedCone := by

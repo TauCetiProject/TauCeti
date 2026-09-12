@@ -31,6 +31,9 @@ vectors which enter the definition of a regular cone and, later, its affine mono
   an integral lattice are equal.
 * `TauCeti.Toric.isPrimitiveGenerator_faceEmbedding`: being a primitive generator of a ray does not
   depend on which cone the ray is viewed as a face of.
+* `TauCeti.Toric.IsPrimitiveGenerator.prodInl` and
+  `TauCeti.Toric.IsPrimitiveGenerator.prodInr`: primitive generators remain primitive generators
+  under the two inclusions into a product cone.
 
 ## References
 
@@ -78,6 +81,33 @@ theorem isPrimitiveGenerator_faceEmbedding {τ : PointedCone ℝ V} (hτ : τ.Is
     (ρ : ToricRay τ) {v : N} :
     IsPrimitiveGenerator i (ToricRay.faceEmbedding hτ ρ) v ↔ IsPrimitiveGenerator i ρ v := by
   simp [isPrimitiveGenerator_iff]
+
+section Prod
+
+variable {N' V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
+  {i' : N' →+ V'} {τ : PointedCone ℝ V'}
+
+/-- A primitive generator remains a primitive generator under inclusion from the first factor of
+a product cone. -/
+theorem IsPrimitiveGenerator.prodInl {ρ : ToricRay σ} {v : N}
+    (hρ : IsPrimitiveGenerator i ρ v) (hτ : (τ : ConvexCone ℝ V').Salient) :
+    IsPrimitiveGenerator (i.prodMap i') (ToricRay.prodInl hτ ρ) (v, 0) := by
+  refine isPrimitiveGenerator_iff.2 ⟨?_, ?_⟩
+  · simpa using hρ.mem
+  · obtain ⟨f, hf⟩ := isPrimitive_def.1 hρ.isPrimitive
+    exact isPrimitive_def.2 ⟨f.comp (LinearMap.fst ℤ N N'), by simpa using hf⟩
+
+/-- A primitive generator remains a primitive generator under inclusion from the second factor of
+a product cone. -/
+theorem IsPrimitiveGenerator.prodInr {ρ : ToricRay τ} {v : N'}
+    (hρ : IsPrimitiveGenerator i' ρ v) (hσ : (σ : ConvexCone ℝ V).Salient) :
+    IsPrimitiveGenerator (i.prodMap i') (ToricRay.prodInr hσ ρ) (0, v) := by
+  refine isPrimitiveGenerator_iff.2 ⟨?_, ?_⟩
+  · simpa using hρ.mem
+  · obtain ⟨f, hf⟩ := isPrimitive_def.1 hρ.isPrimitive
+    exact isPrimitive_def.2 ⟨f.comp (LinearMap.snd ℤ N N'), by simpa using hf⟩
+
+end Prod
 
 /-- A salient ray in an integral lattice has at most one primitive generator. -/
 theorem IsPrimitiveGenerator.unique {ρ : ToricRay σ} {v w : N} (hi : IsIntegralLattice i)
