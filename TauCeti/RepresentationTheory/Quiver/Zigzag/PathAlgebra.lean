@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Map
 public import TauCeti.RepresentationTheory.Quiver.Symmetrify
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
 
 /-!

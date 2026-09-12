@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Two
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Map
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Basic
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.PathAlgebra
 import Mathlib.Combinatorics.SimpleGraph.Coloring.Constructions
 
@@ -589,6 +587,15 @@ theorem signlessQuadraticDualEquivPreprojectiveOfIsSourceSink_signlessMk (hss : 
           ((DoubledQuiver.orientedPathAlgEquiv k o).symm x) :=
   signlessToPreprojective_signlessMk (isSignedMatch_of_isSourceSink hss) x
 
+/-- The inverse source--sink comparison on the class of an oriented path. -/
+@[simp]
+theorem signlessQuadraticDualEquivPreprojectiveOfIsSourceSink_symm_preprojectiveMk
+    (hss : o.IsSourceSink) (x : pathAlgebra k (Symmetrify (OrientedQuiver G o))) :
+    (signlessQuadraticDualEquivPreprojectiveOfIsSourceSink hss).symm
+        (preprojectiveMk k (OrientedQuiver G o) x)
+      = signlessMk k G (DoubledQuiver.orientedPathAlgEquiv k o x) :=
+  preprojectiveToSignless_preprojectiveMk (isSignedMatch_of_isSourceSink hss) x
+
 /-- **The comparison isomorphism of a bipartite graph**: the signless relation quotient of the
 doubled graph is the additive preprojective algebra of the source--sink orientation
 `TauCeti.DoubledQuiver.Orientation.ofIsBipartite` attached to a bipartition. This is the form of
@@ -611,6 +618,20 @@ theorem signlessQuadraticDualEquivPreprojective_signlessMk (hG : G.IsBipartite)
   signlessToPreprojective_signlessMk
     (isSignedMatch_of_isSourceSink (DoubledQuiver.Orientation.isSourceSink_ofIsBipartite G hG)) x
 
+/-- The inverse bipartite comparison on the class of an oriented path. -/
+@[simp]
+theorem signlessQuadraticDualEquivPreprojective_symm_preprojectiveMk (hG : G.IsBipartite)
+    (x : pathAlgebra k
+      (Symmetrify (OrientedQuiver G (DoubledQuiver.Orientation.ofIsBipartite G hG)))) :
+    (signlessQuadraticDualEquivPreprojective hG).symm
+        (preprojectiveMk k
+          (OrientedQuiver G (DoubledQuiver.Orientation.ofIsBipartite G hG)) x)
+      = signlessMk k G
+          (DoubledQuiver.orientedPathAlgEquiv k
+            (DoubledQuiver.Orientation.ofIsBipartite G hG) x) :=
+  preprojectiveToSignless_preprojectiveMk
+    (isSignedMatch_of_isSourceSink (DoubledQuiver.Orientation.isSourceSink_ofIsBipartite G hG)) x
+
 /-- **The comparison in characteristic two**, for an arbitrary orientation of an arbitrary finite
 simple graph: the sign obstruction which forces bipartiteness above disappears. -/
 noncomputable def signlessQuadraticDualEquivPreprojectiveOfCharTwo [CharP k 2] :
@@ -625,6 +646,15 @@ theorem signlessQuadraticDualEquivPreprojectiveOfCharTwo_signlessMk [CharP k 2]
       = preprojectiveMk k (OrientedQuiver G o)
           ((DoubledQuiver.orientedPathAlgEquiv k o).symm x) :=
   signlessToPreprojective_signlessMk (isSignedMatch_of_charTwo (o := o)) x
+
+/-- The inverse characteristic-two comparison on the class of an oriented path. -/
+@[simp]
+theorem signlessQuadraticDualEquivPreprojectiveOfCharTwo_symm_preprojectiveMk [CharP k 2]
+    (x : pathAlgebra k (Symmetrify (OrientedQuiver G o))) :
+    (signlessQuadraticDualEquivPreprojectiveOfCharTwo (k := k) (o := o)).symm
+        (preprojectiveMk k (OrientedQuiver G o) x)
+      = signlessMk k G (DoubledQuiver.orientedPathAlgEquiv k o x) :=
+  preprojectiveToSignless_preprojectiveMk (isSignedMatch_of_charTwo (o := o)) x
 /-! ### The coordinates of the relators -/
 
 variable (k o)
