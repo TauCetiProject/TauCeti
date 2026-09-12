@@ -23,8 +23,6 @@ connected before base-point change is available there.
 
 ## Main declarations
 
-* `ContinuousMap.HomotopyEquiv.joined_toFun_invFun`: the trace path of the homotopy
-  `e.toFun ∘ e.invFun ≃ id` joins `e.toFun (e.invFun y)` to `y`.
 * `ContinuousMap.HomotopyEquiv.pathConnectedSpace`: a space homotopy equivalent to a path
   connected space is path connected.
 -/
@@ -37,21 +35,18 @@ open scoped ContinuousMap
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
-/-- Evaluating the homotopy `e.toFun ∘ e.invFun ≃ id` at `y` gives a path from
-`e.toFun (e.invFun y)` to `y`. -/
-theorem _root_.ContinuousMap.HomotopyEquiv.joined_toFun_invFun (e : X ≃ₕ Y) (y : Y) :
-    Joined (e.toFun (e.invFun y)) y :=
-  ⟨e.right_inv.some.evalAt y⟩
-
 /-- **Path connectedness is a homotopy invariant.** A space homotopy equivalent to a path
 connected space is path connected. -/
 theorem _root_.ContinuousMap.HomotopyEquiv.pathConnectedSpace [PathConnectedSpace X]
     (e : X ≃ₕ Y) : PathConnectedSpace Y where
   nonempty := (PathConnectedSpace.nonempty (X := X)).map e.toFun
   joined y₀ y₁ :=
-    ((e.joined_toFun_invFun y₀).symm.trans
+    -- Evaluating the homotopy `e.toFun ∘ e.invFun ≃ id` at `y` is a path from
+    -- `e.toFun (e.invFun y)` to `y`.
+    have trace : ∀ y : Y, Joined (e.toFun (e.invFun y)) y := fun y => ⟨e.right_inv.some.evalAt y⟩
+    ((trace y₀).symm.trans
         (Joined.map ⟨PathConnectedSpace.somePath (e.invFun y₀) (e.invFun y₁)⟩
           e.toFun.continuous)).trans
-      (e.joined_toFun_invFun y₁)
+      (trace y₁)
 
 end TauCeti

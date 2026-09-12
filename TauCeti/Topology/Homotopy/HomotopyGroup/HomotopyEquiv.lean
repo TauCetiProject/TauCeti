@@ -166,6 +166,7 @@ def equivOfHomotopyEquiv (e : X ≃ₕ Y) (x : X) :
     HomotopyGroup N X x ≃ HomotopyGroup N Y (e.toFun x) :=
   Equiv.ofBijective _ (map_bijective_of_homotopyEquiv e x)
 
+/-- The bijection induced by a homotopy equivalence acts as the map induced by `e.toFun`. -/
 @[simp]
 theorem equivOfHomotopyEquiv_apply (e : X ≃ₕ Y) (x : X) (a : HomotopyGroup N X x) :
     equivOfHomotopyEquiv e x a = map e.toFun rfl a :=
@@ -178,6 +179,8 @@ def mulEquivOfHomotopyEquiv [Nonempty N] [DecidableEq N] (e : X ≃ₕ Y) (x : X
     HomotopyGroup N X x ≃* HomotopyGroup N Y (e.toFun x) :=
   MulEquiv.ofBijective (mapHom e.toFun rfl) (map_bijective_of_homotopyEquiv e x)
 
+/-- The group isomorphism induced by a homotopy equivalence acts as the map induced by
+`e.toFun`. -/
 @[simp]
 theorem mulEquivOfHomotopyEquiv_apply [Nonempty N] [DecidableEq N] (e : X ≃ₕ Y) (x : X)
     (a : HomotopyGroup N X x) :
