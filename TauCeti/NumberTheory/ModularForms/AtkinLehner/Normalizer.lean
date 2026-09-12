@@ -56,31 +56,25 @@ multiplied, so that the normalized operator squares to `1` rather than to `Q ^ (
 noncomputable def atkinLehnerNormalizer (Q : ℕ) (k : ℤ) : ℂ :=
   ((Real.sqrt Q : ℝ) : ℂ) ^ (2 - k)
 
-/-- Defining equation for `atkinLehnerNormalizer`. The definition is `public` but is not marked
-`@[expose]`, so a downstream module rewrites with this rather than unfolding the body. -/
+/-- Defining equation for `atkinLehnerNormalizer`: it is `(√Q) ^ (2 - k)`. -/
 theorem atkinLehnerNormalizer_def (Q : ℕ) (k : ℤ) :
     atkinLehnerNormalizer Q k = ((Real.sqrt Q : ℝ) : ℂ) ^ (2 - k) := (rfl)
-
-/-- `√Q` is nonzero in `ℂ` for `Q ≠ 0`, the base of `atkinLehnerNormalizer`. Both facts this file
-needs about the constant — that it is invertible, and that it squares to `Q ^ (2 - k)` — rest on
-this. -/
-private theorem ofReal_sqrt_natCast_ne_zero (hQ : Q ≠ 0) : ((Real.sqrt Q : ℝ) : ℂ) ≠ 0 :=
-  Complex.ofReal_ne_zero.mpr <|
-    Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hQ))
 
 /-- `atkinLehnerNormalizer Q k` is nonzero, which is what makes the normalized operator a
 bijection and lets the normalization be undone. -/
 theorem atkinLehnerNormalizer_ne_zero (hQ : Q ≠ 0) (k : ℤ) : atkinLehnerNormalizer Q k ≠ 0 :=
-  zpow_ne_zero _ (ofReal_sqrt_natCast_ne_zero hQ)
+  zpow_ne_zero _ <| Complex.ofReal_ne_zero.mpr <|
+    Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hQ))
 
 /-- **The normalizer squares to `Q ^ (2 - k)`.** -/
 theorem atkinLehnerNormalizer_sq (hQ : Q ≠ 0) (k : ℤ) :
     atkinLehnerNormalizer Q k ^ 2 = (Q : ℂ) ^ (2 - k) := by
+  have hs0 : ((Real.sqrt Q : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr <|
+    Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hQ))
   have hs : (Q : ℂ) = ((Real.sqrt Q : ℝ) : ℂ) ^ (2 : ℤ) := by
     rw [zpow_two, ← Complex.ofReal_mul, Real.mul_self_sqrt (Nat.cast_nonneg Q),
       Complex.ofReal_natCast]
-  rw [atkinLehnerNormalizer_def, hs, ← zpow_mul, pow_two,
-    ← zpow_add₀ (ofReal_sqrt_natCast_ne_zero hQ), two_mul]
+  rw [atkinLehnerNormalizer_def, hs, ← zpow_mul, pow_two, ← zpow_add₀ hs0, two_mul]
 
 /-- **The normalization cancels the scalar the raw slash squares to.** Multiplying
 `Q ^ (k - 2)` by the square of the normalizer leaves `1`; this single identity is the whole
@@ -94,6 +88,7 @@ theorem atkinLehnerNormalizer_sq_mul (hQ : Q ≠ 0) (k : ℤ) :
 /-- **The normalizer is multiplicative in the divisor**, because the square root is: `√(Q R)` is
 `√Q · √R`. This is what lets the composition law of the Atkin–Lehner operators be read off from
 the composition law of the raw slashes. -/
+@[simp]
 theorem atkinLehnerNormalizer_mul (Q R : ℕ) (k : ℤ) :
     atkinLehnerNormalizer (Q * R) k = atkinLehnerNormalizer Q k * atkinLehnerNormalizer R k := by
   rw [atkinLehnerNormalizer_def, atkinLehnerNormalizer_def, atkinLehnerNormalizer_def,

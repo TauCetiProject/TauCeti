@@ -131,15 +131,15 @@ theorem IsExactDivisor.mul (hQ : IsExactDivisor Q N) (hR : IsExactDivisor R N)
 /-! ### The Boolean-algebra structure -/
 
 /-- **The only exact divisor of `0` is `1`.** The complementary divisor of `Q` in `0` is `0`
-again, and `Nat.Coprime Q 0` says `Q = 1`. Not a `simp` lemma: `isExactDivisor_iff` already
-reduces the left-hand side, and `simp` closes the resulting goal on its own. -/
+again, and `Nat.Coprime Q 0` says `Q = 1`. This is what lets the closure properties below carry
+no `N ≠ 0` hypothesis. -/
 theorem isExactDivisor_zero_iff : IsExactDivisor Q 0 ↔ Q = 1 :=
   ⟨fun h ↦ by simpa using h.coprime, fun h ↦ h ▸ isExactDivisor_one⟩
 
 /-- **Exactness, read on the factorization.** For `N ≠ 0`, a divisor `Q` of `N` is exact exactly
 when at every prime its exponent is either `0` or the full exponent of `N`. In this form the
-closure properties below are statements about `min` and truncated subtraction of exponents, which
-`omega` decides once the factorizations of `gcd` and of a quotient are unfolded. -/
+closure properties below become statements about the exponents of `gcd` and of a quotient, namely
+about `min` and truncated subtraction. -/
 theorem isExactDivisor_iff_factorization (hN : N ≠ 0) :
     IsExactDivisor Q N ↔
       Q ∣ N ∧ ∀ p, Q.factorization p = 0 ∨ Q.factorization p = N.factorization p := by

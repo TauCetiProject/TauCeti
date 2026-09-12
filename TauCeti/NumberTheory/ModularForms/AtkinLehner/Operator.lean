@@ -365,10 +365,11 @@ theorem atkinLehnerGL_mul {R : ℕ} {M' : Matrix (Fin 2) (Fin 2) ℤ} (hQ : 0 < 
 /-- **Composing the two raw Atkin–Lehner operators** on `M_k(Γ₀(N))`: first `W_Q`, then `W_R`,
 is the operator of the product matrix, an Atkin–Lehner matrix for `Q * R`. -/
 theorem atkinLehnerOperator_atkinLehnerOperator_mul {R : ℕ} {M' : Matrix (Fin 2) (Fin 2) ℤ}
-    (hQ : 0 < Q) (hR : 0 < R) (hQN : Q ∣ N) (hRN : R ∣ N) (hQRN : Q * R ∣ N)
+    (hQ : 0 < Q) (hR : 0 < R) (hQRN : Q * R ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) (h' : IsAtkinLehnerMatrix N R M')
     (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
-    atkinLehnerOperator hR hRN h' k (atkinLehnerOperator hQ hQN h k f) =
+    atkinLehnerOperator hR ((Nat.dvd_mul_left R Q).trans hQRN) h' k
+        (atkinLehnerOperator hQ ((Nat.dvd_mul_right Q R).trans hQRN) h k f) =
       atkinLehnerOperator (Nat.mul_pos hQ hR) hQRN (h.mul hQRN h') k f :=
   DFunLike.coe_injective <| by
     rw [coe_atkinLehnerOperator, coe_atkinLehnerOperator, coe_atkinLehnerOperator,
@@ -376,10 +377,11 @@ theorem atkinLehnerOperator_atkinLehnerOperator_mul {R : ℕ} {M' : Matrix (Fin 
 
 /-- **Composing the two raw Atkin–Lehner operators** on `S_k(Γ₀(N))`. -/
 theorem atkinLehnerOperatorCusp_atkinLehnerOperatorCusp_mul {R : ℕ}
-    {M' : Matrix (Fin 2) (Fin 2) ℤ} (hQ : 0 < Q) (hR : 0 < R) (hQN : Q ∣ N) (hRN : R ∣ N)
+    {M' : Matrix (Fin 2) (Fin 2) ℤ} (hQ : 0 < Q) (hR : 0 < R)
     (hQRN : Q * R ∣ N) (h : IsAtkinLehnerMatrix N Q M) (h' : IsAtkinLehnerMatrix N R M')
     (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
-    atkinLehnerOperatorCusp hR hRN h' k (atkinLehnerOperatorCusp hQ hQN h k f) =
+    atkinLehnerOperatorCusp hR ((Nat.dvd_mul_left R Q).trans hQRN) h' k
+        (atkinLehnerOperatorCusp hQ ((Nat.dvd_mul_right Q R).trans hQRN) h k f) =
       atkinLehnerOperatorCusp (Nat.mul_pos hQ hR) hQRN (h.mul hQRN h') k f :=
   DFunLike.coe_injective <| by
     rw [coe_atkinLehnerOperatorCusp, coe_atkinLehnerOperatorCusp, coe_atkinLehnerOperatorCusp,
@@ -395,8 +397,7 @@ theorem Nat.IsExactDivisor.atkinLehnerOperator_atkinLehnerOperator_of_coprime {R
       (hQ.mul hR hQR).atkinLehnerOperator k f := by
   rw [(hQ.mul hR hQR).atkinLehnerOperator_eq ((isAtkinLehnerMatrix_atkinLehnerMatrix hQ).mul
     (hQ.mul hR hQR).dvd (isAtkinLehnerMatrix_atkinLehnerMatrix hR))]
-  exact atkinLehnerOperator_atkinLehnerOperator_mul hQ.pos hR.pos hQ.dvd hR.dvd
-    (hQ.mul hR hQR).dvd _ _ f
+  exact atkinLehnerOperator_atkinLehnerOperator_mul hQ.pos hR.pos (hQ.mul hR hQR).dvd _ _ f
 
 /-- **`W_R ∘ W_Q = W_{Q R}` at coprime exact divisors**, on `S_k(Γ₀(N))`. -/
 theorem Nat.IsExactDivisor.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp_of_coprime {R : ℕ}
@@ -406,7 +407,7 @@ theorem Nat.IsExactDivisor.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp_of_co
       (hQ.mul hR hQR).atkinLehnerOperatorCusp k f := by
   rw [(hQ.mul hR hQR).atkinLehnerOperatorCusp_eq ((isAtkinLehnerMatrix_atkinLehnerMatrix hQ).mul
     (hQ.mul hR hQR).dvd (isAtkinLehnerMatrix_atkinLehnerMatrix hR))]
-  exact atkinLehnerOperatorCusp_atkinLehnerOperatorCusp_mul hQ.pos hR.pos hQ.dvd hR.dvd
+  exact atkinLehnerOperatorCusp_atkinLehnerOperatorCusp_mul hQ.pos hR.pos
     (hQ.mul hR hQR).dvd _ _ f
 
 /-!

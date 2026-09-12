@@ -107,7 +107,8 @@ noncomputable def normalizedAtkinLehnerOperator (h : Q ∥ N) (k : ℤ) :
       ModularForm ((Gamma0 N).map (mapGL ℝ)) k :=
   atkinLehnerNormalizer Q k • h.atkinLehnerOperator k
 
-/-- Defining equation for `normalizedAtkinLehnerOperator`, for clients that cannot unfold it. -/
+/-- Defining equation for `normalizedAtkinLehnerOperator`: it is the raw operator `W_Q` scaled
+by `atkinLehnerNormalizer Q k`. -/
 theorem normalizedAtkinLehnerOperator_def (h : Q ∥ N) (k : ℤ) :
     h.normalizedAtkinLehnerOperator k = atkinLehnerNormalizer Q k • h.atkinLehnerOperator k :=
   (rfl)
@@ -127,7 +128,8 @@ noncomputable def normalizedAtkinLehnerOperatorCusp (h : Q ∥ N) (k : ℤ) :
     CuspForm ((Gamma0 N).map (mapGL ℝ)) k →ₗ[ℂ] CuspForm ((Gamma0 N).map (mapGL ℝ)) k :=
   atkinLehnerNormalizer Q k • h.atkinLehnerOperatorCusp k
 
-/-- Defining equation for `normalizedAtkinLehnerOperatorCusp`. -/
+/-- Defining equation for `normalizedAtkinLehnerOperatorCusp`: it is the raw cusp-form operator
+`W_Q` scaled by `atkinLehnerNormalizer Q k`. -/
 theorem normalizedAtkinLehnerOperatorCusp_def (h : Q ∥ N) (k : ℤ) :
     h.normalizedAtkinLehnerOperatorCusp k =
       atkinLehnerNormalizer Q k • h.atkinLehnerOperatorCusp k := (rfl)
@@ -155,7 +157,7 @@ theorem normalizedAtkinLehnerOperator_coe_cuspForm (h : Q ∥ N) (k : ℤ)
 
 /-- **The operator depends on the divisor only through its value.** Two proofs that the same
 natural number is an exact divisor give the same operator, so an identity between divisors
-transports the operators along it; this is what the composition law below is assembled with. -/
+transports the operators along it. -/
 theorem normalizedAtkinLehnerOperator_congr {Q Q' : ℕ} (h : Q ∥ N)
     (h' : Q' ∥ N) (hQQ' : Q = Q') (k : ℤ) (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
     h.normalizedAtkinLehnerOperator k f = h'.normalizedAtkinLehnerOperator k f := by
@@ -205,9 +207,8 @@ theorem normalizedAtkinLehnerOperatorCusp_involutive (h : Q ∥ N) (k : ℤ) :
 /-- **`𝒲_Q` as a linear automorphism of `M_k(Γ₀(N))`**, its own inverse. -/
 noncomputable def normalizedAtkinLehnerOperatorEquiv (h : Q ∥ N) (k : ℤ) :
     ModularForm ((Gamma0 N).map (mapGL ℝ)) k ≃ₗ[ℂ] ModularForm ((Gamma0 N).map (mapGL ℝ)) k :=
-  LinearEquiv.ofLinearMap (h.normalizedAtkinLehnerOperator k) (h.normalizedAtkinLehnerOperator k)
-    (LinearMap.ext (h.normalizedAtkinLehnerOperator_involutive k))
-    (LinearMap.ext (h.normalizedAtkinLehnerOperator_involutive k))
+  LinearEquiv.ofInvolutive (h.normalizedAtkinLehnerOperator k)
+    (h.normalizedAtkinLehnerOperator_involutive k)
 
 /-- The bundled automorphism acts as `𝒲_Q`. -/
 @[simp]
@@ -224,10 +225,8 @@ theorem normalizedAtkinLehnerOperatorEquiv_symm_apply (h : Q ∥ N) (k : ℤ)
 /-- **`𝒲_Q` as a linear automorphism of `S_k(Γ₀(N))`**, its own inverse. -/
 noncomputable def normalizedAtkinLehnerOperatorCuspEquiv (h : Q ∥ N) (k : ℤ) :
     CuspForm ((Gamma0 N).map (mapGL ℝ)) k ≃ₗ[ℂ] CuspForm ((Gamma0 N).map (mapGL ℝ)) k :=
-  LinearEquiv.ofLinearMap (h.normalizedAtkinLehnerOperatorCusp k)
-    (h.normalizedAtkinLehnerOperatorCusp k)
-    (LinearMap.ext (h.normalizedAtkinLehnerOperatorCusp_involutive k))
-    (LinearMap.ext (h.normalizedAtkinLehnerOperatorCusp_involutive k))
+  LinearEquiv.ofInvolutive (h.normalizedAtkinLehnerOperatorCusp k)
+    (h.normalizedAtkinLehnerOperatorCusp_involutive k)
 
 /-- The bundled cusp-form automorphism acts as `𝒲_Q`. -/
 @[simp]
@@ -313,13 +312,16 @@ theorem normalizedAtkinLehnerOperatorCusp_normalizedAtkinLehnerOperatorCusp_of_c
     atkinLehnerNormalizer_mul, mul_comm (atkinLehnerNormalizer Q k)]
 
 /-- **The composition law** `𝒲_Q ∘ 𝒲_R = 𝒲_{Q R / gcd (Q, R) ²}` on `M_k(Γ₀(N))`, for arbitrary
-exact divisors `Q` and `R` of `N`. Writing `g = gcd (Q, R)`, `q = Q / g` and `r = R / g` — three
-pairwise coprime exact divisors — the coprime case turns both sides into words in `𝒲_g`, `𝒲_q`
-and `𝒲_r`, and the involution cancels the two copies of `𝒲_g`. -/
+exact divisors `Q` and `R` of `N`. The divisor on the right is the symmetric difference of `Q`
+and `R` under the identification of exact divisors with subsets of `N.primeFactors`. -/
+@[simp]
 theorem normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator (hQ : Q ∥ N) (hR : R ∥ N)
     (k : ℤ) (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
     hQ.normalizedAtkinLehnerOperator k (hR.normalizedAtkinLehnerOperator k f) =
       (hQ.mul_div_gcd_sq hR).normalizedAtkinLehnerOperator k f := by
+  -- Write `g = gcd (Q, R)`, `q = Q / g` and `r = R / g`: three pairwise coprime exact divisors.
+  -- The coprime case turns both sides into words in `𝒲_g`, `𝒲_q` and `𝒲_r`, and the involution
+  -- cancels the two copies of `𝒲_g`.
   have hg : Nat.gcd Q R ∥ N := hQ.gcd hR
   have hq : Q / Nat.gcd Q R ∥ N := hQ.div_gcd hR
   have hr : R / Nat.gcd Q R ∥ N := by rw [Nat.gcd_comm]; exact hR.div_gcd hQ
@@ -357,6 +359,7 @@ theorem normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator (hQ : Q ∥ 
   exact Nat.mul_comm _ _
 
 /-- **The composition law** `𝒲_Q ∘ 𝒲_R = 𝒲_{Q R / gcd (Q, R) ²}` on `S_k(Γ₀(N))`. -/
+@[simp]
 theorem normalizedAtkinLehnerOperatorCusp_normalizedAtkinLehnerOperatorCusp (hQ : Q ∥ N)
     (hR : R ∥ N) (k : ℤ) (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
     hQ.normalizedAtkinLehnerOperatorCusp k (hR.normalizedAtkinLehnerOperatorCusp k f) =
