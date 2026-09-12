@@ -64,27 +64,26 @@ section Transition
 
 variable {U V W : OpenNormalSubgroup G}
 
-private def fixedPointsAddSubgroupInclusion (h : V.toSubgroup ≤ U.toSubgroup) :
-    FixedPoints.addSubgroup U.toSubgroup M →+ FixedPoints.addSubgroup V.toSubgroup M :=
-  (FixedPoints.addSubgroup U.toSubgroup M).subtype.codRestrict
-    (FixedPoints.addSubgroup V.toSubgroup M) (fun m =>
-      (fixedPoints_subgroup_antitone G M h) m.2)
-
-omit [IsTopologicalGroup G] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DiscreteTopology M] [ContinuousSMul G M] in
-@[simp]
-private theorem coe_fixedPointsAddSubgroupInclusion
-    (h : V.toSubgroup ≤ U.toSubgroup)
-    (m : FixedPoints.addSubgroup U.toSubgroup M) :
-    (fixedPointsAddSubgroupInclusion G M h m : M) = (m : M) :=
-  rfl
-
 /-- The degree-zero transition from the `U`-level to the `V`-level, for `V ≤ U`. -/
 noncomputable def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G) (hVU : V ≤ U) :
     H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) →+
       H0 (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M) :=
   explicitMap0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
-    (continuousFiniteQuotientMap G hVU) (fixedPointsAddSubgroupInclusion G M hVU)
+    (continuousFiniteQuotientMap G hVU)
+    ({ toFun := fun m =>
+         let n := fixedPointsInclusion (M := M) hVU
+           (⟨m, m.2⟩ : FixedPoints.addSubmonoid U.toSubgroup M)
+         ⟨n, n.2⟩
+       map_zero' := by
+         apply Subtype.ext
+         dsimp
+         simp
+       map_add' := by
+         intro x y
+         apply Subtype.ext
+         dsimp
+         simp } :
+      FixedPoints.addSubgroup U.toSubgroup M →+ FixedPoints.addSubgroup V.toSubgroup M)
     (fun q m => by
       induction q using QuotientGroup.induction_on with
       | H g =>
@@ -94,14 +93,8 @@ noncomputable def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G)
               (G ⧸ V.toSubgroup) →* (G ⧸ U.toSubgroup)) (g : G ⧸ V.toSubgroup) =
               (g : G ⧸ U.toSubgroup) := continuousFiniteQuotientMap_mk G hVU g
         rw [hmap]
-        -- The quotient map is definitionally used through its underlying monoid hom here.
-        change (fixedPointsAddSubgroupInclusion G M hVU
-            ((g : G ⧸ U.toSubgroup) • m) : M) =
-          (((((g : G ⧸ V.toSubgroup) •
-            (fixedPointsAddSubgroupInclusion G M hVU m :
-              FixedPoints.addSubgroup V.toSubgroup M)) :
-                FixedPoints.addSubgroup V.toSubgroup M)) : M)
-        simp)
+        dsimp
+        simp only [coe_fixedPointsInclusion])
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
 @[simp]
@@ -112,7 +105,20 @@ theorem explicitFiniteQuotientTransition0_coe (hVU : V ≤ U)
     unfold explicitFiniteQuotientTransition0
     have h := coe_explicitMap0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
       (continuousFiniteQuotientMap G hVU : (G ⧸ V.toSubgroup) →* (G ⧸ U.toSubgroup))
-      (fixedPointsAddSubgroupInclusion G M hVU)
+      ({ toFun := fun m =>
+           let n := fixedPointsInclusion (M := M) hVU
+             (⟨m, m.2⟩ : FixedPoints.addSubmonoid U.toSubgroup M)
+           ⟨n, n.2⟩
+         map_zero' := by
+           apply Subtype.ext
+           dsimp
+           simp
+         map_add' := by
+           intro x y
+           apply Subtype.ext
+           dsimp
+           simp } :
+        FixedPoints.addSubgroup U.toSubgroup M →+ FixedPoints.addSubgroup V.toSubgroup M)
       (fun (q : G ⧸ V.toSubgroup) (m : FixedPoints.addSubgroup U.toSubgroup M) => by
         induction q using QuotientGroup.induction_on with
         | H g =>
@@ -122,15 +128,11 @@ theorem explicitFiniteQuotientTransition0_coe (hVU : V ≤ U)
                 (G ⧸ V.toSubgroup) →* (G ⧸ U.toSubgroup)) (g : G ⧸ V.toSubgroup) =
                 (g : G ⧸ U.toSubgroup) := continuousFiniteQuotientMap_mk G hVU g
           rw [hmap]
-          -- The quotient map is definitionally used through its underlying monoid hom here.
-          change (fixedPointsAddSubgroupInclusion G M hVU
-              ((g : G ⧸ U.toSubgroup) • m) : M) =
-            (((((g : G ⧸ V.toSubgroup) •
-              (fixedPointsAddSubgroupInclusion G M hVU m :
-                FixedPoints.addSubgroup V.toSubgroup M)) :
-                  FixedPoints.addSubgroup V.toSubgroup M)) : M)
-          simp) x
-    simpa only [coe_fixedPointsAddSubgroupInclusion] using congrArg Subtype.val h
+          dsimp
+          simp only [coe_fixedPointsInclusion]) x
+    rw [h]
+    dsimp
+    simp only [coe_fixedPointsInclusion]
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
 @[simp]
