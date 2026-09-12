@@ -49,7 +49,8 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
 
 The definition `fullCycleType σ` below uses the same `[Fintype α] [DecidableEq α]` arguments as
 `Equiv.Perm.partition`, so the invariant is a wrapper around its defining expression. The
-public `mem_fullCycleType` lemma exposes the positivity of its parts (`Nat.Partition.parts_pos`),
+public `pos_of_mem_fullCycleType` lemma exposes the positivity of its parts
+(`Nat.Partition.parts_pos`),
 and `count_fullCycleType_of_ne_one` exposes the non-one count comparison. The filter lemma
 (`Equiv.Perm.filter_parts_partition_eq_cycleType`) and the completeness of the conjugacy invariant
 (`Equiv.Perm.partition_eq_of_isConj`) remain stated for `partition.parts` and are available through
@@ -273,7 +274,7 @@ theorem _root_.Equiv.Perm.sum_fullCycleType (σ : Equiv.Perm α) :
   exact σ.partition.parts_sum
 
 /-- Every part of a permutation's full cycle type is positive. -/
-theorem _root_.Equiv.Perm.mem_fullCycleType {σ : Equiv.Perm α} {n : ℕ}
+theorem _root_.Equiv.Perm.pos_of_mem_fullCycleType {σ : Equiv.Perm α} {n : ℕ}
     (hn : n ∈ fullCycleType σ) : 0 < n := by
   rw [fullCycleType_def] at hn
   exact σ.partition.parts_pos hn
