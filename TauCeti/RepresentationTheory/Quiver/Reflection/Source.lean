@@ -265,7 +265,7 @@ private noncomputable def outgoingQuotMap
 private theorem outgoingQuotMap_mk
     {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) (i : Q)
     (f : (e : Σ b : Q, (i ⟶ b)) → M.obj e.1) :
-    outgoingQuotMap η i ((LinearMap.range (outgoingMap M i)).mkQ f) =
+    outgoingQuotMap η i (Submodule.Quotient.mk f) =
       (LinearMap.range (outgoingMap N i)).mkQ (fun e ↦ η.app e.1 (f e)) := by
   unfold outgoingQuotMap
   exact LinearMap.congr_fun
@@ -296,7 +296,7 @@ private theorem outgoingQuotMap_single
     {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) (i : Q)
     {a : Q} (e : i ⟶ a) (y : M.obj a) :
     outgoingQuotMap η i
-        ((LinearMap.range (outgoingMap M i)).mkQ (Pi.single ⟨a, e⟩ y)) =
+        (Submodule.Quotient.mk (Pi.single ⟨a, e⟩ y)) =
       (LinearMap.range (outgoingMap N i)).mkQ (Pi.single ⟨a, e⟩ (η.app a y)) := by
   rw [outgoingQuotMap_mk]
   congr 1
