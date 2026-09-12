@@ -444,7 +444,14 @@ private theorem outgoingQuotMap_add
   apply LinearMap.ext
   intro q
   induction q using Submodule.Quotient.induction_on with
-  | _ f => rfl
+  | _ f =>
+    have h : (fun e ↦ (η + θ).app e.1 (f e)) =
+        (fun e ↦ η.app e.1 (f e) + θ.app e.1 (f e)) := by
+      ext e
+      rfl
+    rw [LinearMap.add_apply, outgoingQuotMap_mk, outgoingQuotMap_mk, outgoingQuotMap_mk]
+    rw [h]
+    exact map_add _ _ _
 
 /-- **The source reflection functor is additive.** The map induced on the quotient is additive in
 the original morphism, coordinate by coordinate. -/
@@ -475,6 +482,7 @@ private theorem sourceReflectionFunctor_map_app_self
 
 /-- At the reflected vertex, source reflection sends a morphism to the induced map on quotient
 classes, computed here on a representative. -/
+@[simp]
 theorem sourceReflectionFunctor_map_app_self_mk
     {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) {i : Q} (hi : IsSource i)
     (f : (e : Σ b : Q, (i ⟶ b)) → M.obj e.1) :

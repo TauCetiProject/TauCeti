@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.EqToHom
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Basic
 public import TauCeti.RepresentationTheory.Quiver.Reflection.DimensionVector
 public import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
@@ -401,8 +402,8 @@ private theorem reflectRepMapApp_of_ne
 
 /-! The components of the reflected morphism are transports of components of the original one, so
 every identity about them is an identity of the original conjugated by `eqToHom`. The next two
-lemmas, together with the generic conjugation lemmas in
-`TauCeti.RepresentationTheory.Quiver.Reflection.Basic`, are what the proofs below use instead of
+lemmas, together with the generic conjugation lemmas in `TauCeti.CategoryTheory.EqToHom`, are what
+the proofs below use instead of
 `simp`: the vertex `i` is used both as a vertex of `Q` and as an object of `CategoryTheory.Paths`
 of the reflected quiver, so a goal about the reflected representation is type-correct only up to
 unfolding the semireducible `CategoryTheory.Paths` and `TauCeti.Quiver.Reflect`, which is more than
