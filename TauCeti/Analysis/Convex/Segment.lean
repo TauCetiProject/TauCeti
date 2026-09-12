@@ -103,6 +103,50 @@ theorem eq_of_mem_segment_zero_left_of_norm_eq {m₁ m₂ : E} (h₁ : m₁ ∈ 
 
 end Normed
 
+/-! ### Half-open affine segments -/
+
+section HalfOpen
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **A nonzero affine ray parametrizes a half-open segment.** If `y - x = D • u` with `D > 0`,
+then the points `x + t • u` for `0 ≤ t < D` are exactly the segment from `x` to `y` with `y`
+removed. -/
+theorem image_add_smul_Ico {x y u : E} {D : ℝ} (hDpos : 0 < D) (hu : u ≠ 0)
+    (hdir : y - x = D • u) :
+    (fun t : ℝ => x + t • u) '' Ico 0 D = segment ℝ x y \ {y} := by
+  rw [segment_eq_image' ℝ]
+  apply Subset.antisymm
+  · rintro z ⟨t, ⟨ht0, htD⟩, rfl⟩
+    refine ⟨?_, ?_⟩
+    · refine ⟨t / D, ⟨div_nonneg ht0 hDpos.le, (div_lt_one hDpos).2 htD |>.le⟩, ?_⟩
+      change x + (t / D) • (y - x) = x + t • u
+      rw [hdir, smul_smul]
+      rw [div_mul_cancel₀ t hDpos.ne']
+    · intro h
+      apply htD.ne
+      have hEq : x + t • u = y := by simpa using h
+      have hmul : t • u = D • u := by
+        calc
+          t • u = x + t • u - x := by abel
+          _ = y - x := by rw [hEq]
+          _ = D • u := hdir
+      exact smul_left_injective ℝ hu hmul
+  · intro z hz
+    rcases hz with ⟨hzseg, hzYnot⟩
+    rcases hzseg with ⟨t, ht, rfl⟩
+    have htD : t < 1 := by
+      by_contra hnot
+      have hteq : t = 1 := le_antisymm ht.2 (le_of_not_gt hnot)
+      apply hzYnot
+      simp [hteq]
+    refine ⟨t * D, ⟨mul_nonneg ht.1 hDpos.le, ?_⟩, ?_⟩
+    · nlinarith [ht.2, hDpos]
+    · change x + (t * D) • u = x + t • (y - x)
+      rw [hdir, smul_smul]
+
+end HalfOpen
+
 /-! ### The inner-product forms -/
 
 section InnerProduct
