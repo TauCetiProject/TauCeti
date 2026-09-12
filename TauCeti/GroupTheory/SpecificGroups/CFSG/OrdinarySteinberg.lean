@@ -49,8 +49,8 @@ The `geck` prefix is the same disclaimer it carries in
 outside the `E₈`, `F₄` and `G₂` diagrams the characters occurring in the carrier generate the root
 lattice and not the whole character lattice of the pinned torus, and the carrier is therefore not
 yet the simply connected group that milestone L0 asks for. No declaration below asserts that it is,
-nor that any group here is finite, perfect or simple, and no fixed-point subgroup is formed on a
-branch whose carrier has not been identified.
+nor that any group here is finite, perfect or simple. The fixed-point candidate below is explicitly
+only a carrier-level object until that identification is available.
 
 ## Main definitions
 
@@ -79,6 +79,8 @@ branch whose carrier has not been identified.
   weight-torus point to the `q`-th power and relabels them by the inverse of that permutation.
 * `TauCeti.GraphTwistedIndex.geckWeightTorus_mem_fixedSubgroup_geckSteinberg`: a weight-torus point
   satisfying the resulting twisted equations `s_{σ⁻¹ k} ^ q = s_k` is fixed by the Steinberg map.
+* `TauCeti.GraphTwistedIndex.FixedPoints` and `TauCeti.GraphTwistedIndex.Group`: the fixed-point
+  type and the derived-central quotient prescribed by milestone L3, formed on this carrier.
 * `TauCeti.GraphTwistedIndex.geckSteinberg_eq_geckFrobenius_of_diagramPerm_eq_one`: on an untwisted
   family it is the Frobenius.
 * `TauCeti.UnimodularExceptionalIndex.steinberg_eq_geckSteinberg`: it agrees with the Steinberg map
@@ -108,7 +110,10 @@ identification with the pinned simply connected Chevalley--Demazure group of
 stands to `TauCeti/GroupTheory/SpecificGroups/CFSG/Datum/Steinberg.lean` as
 `TauCeti/GroupTheory/SpecificGroups/CFSG/GeckCarrier.lean` stands to
 `TauCeti/GroupTheory/SpecificGroups/CFSG/Datum/Frobenius.lean`: the same map one layer up, on
-points instead of on the root datum.
+points instead of on the root datum. The aliases below take the next L3 step on the same carrier:
+they name its fixed points and apply the carrier-independent
+`TauCeti.FixedPointCandidate` recipe to them. They do not identify the Geck carrier with the pinned
+simply connected carrier required by L0.
 -/
 
 public section
@@ -300,6 +305,23 @@ theorem geckSteinberg_eq_geckFrobenius_of_diagramPerm_eq_one (h : d.diagramPerm 
     d.geckSteinberg = d.1.geckFrobenius := by
   refine MonoidHom.ext fun g => ?_
   rw [geckSteinberg_apply, geckGraphAut_eq_one_of_diagramPerm_eq_one d h, MulAut.one_apply]
+
+/-! ## The fixed-point candidate on the Geck carrier -/
+
+/-- The fixed-point subgroup of the ordinary Steinberg map on the Geck carrier. -/
+abbrev FixedPoints (d : GraphTwistedIndex) : Type :=
+  ↥(fixedSubgroup d.geckSteinberg)
+
+/-- The L3 candidate for an ordinary Lie-type index on the Geck carrier: the derived subgroup of
+the fixed points, modulo the centre of that derived subgroup.
+
+This is formed on the explicit Geck carrier and is therefore not yet the `CFSGIndex.Group` branch:
+identifying this carrier with the pinned simply connected Chevalley--Demazure carrier is the L0
+dependency owned by the reductive-groups roadmap. -/
+abbrev Group (d : GraphTwistedIndex) : Type := FixedPointCandidate d.geckSteinberg
+
+/- The quotient construction supplies the group structure required by the L3 recipe. -/
+example (d : GraphTwistedIndex) : _root_.Group d.Group := inferInstance
 
 end
 
