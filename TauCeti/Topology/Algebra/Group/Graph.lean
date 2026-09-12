@@ -17,20 +17,18 @@ as a subgroup of a product. The source is continuously multiplicatively equivale
 and the graph is closed when the codomain is Hausdorff.
 -/
 
-@[expose] public section
+public section
 
-namespace TauCeti
-
-variable {G H : Type*} [Group G] [Group H] [TopologicalSpace G] [TopologicalSpace H]
-
-namespace ContinuousMonoidHom
+variable {G H F : Type*} [Group G] [Group H] [TopologicalSpace G] [TopologicalSpace H]
+  [FunLike F G H] [MonoidHomClass F G H] [ContinuousMapClass F G H]
 
 /-- A group is continuously multiplicatively equivalent to the graph of a continuous
 homomorphism out of it. -/
-@[to_additive ContinuousAddMonoidHom.graphEquiv
+@[to_additive
   /-- An additive group is continuously additively equivalent to the graph of a continuous
   homomorphism out of it. -/]
-def graphEquiv (f : G →ₜ* H) : G ≃ₜ* (f : G →* H).graph where
+def MonoidHomClass.graphEquiv (f : F) :
+    G ≃ₜ* (MonoidHomClass.toMonoidHom f).graph where
   toFun g := ⟨(g, f g), rfl⟩
   invFun x := x.1.1
   left_inv _ := rfl
@@ -40,33 +38,26 @@ def graphEquiv (f : G →ₜ* H) : G ≃ₜ* (f : G →* H).graph where
     · rfl
     · exact x.property
   map_mul' x y := by
-    apply Subtype.ext
-    change (x * y, f (x * y)) = (x * y, f x * f y)
-    simp
-  continuous_toFun := (continuous_id.prodMk f.continuous).subtype_mk _
+    ext <;> simp
+  continuous_toFun := (continuous_id.prodMk (map_continuous f)).subtype_mk _
   continuous_invFun := continuous_fst.comp continuous_subtype_val
 
 /-- The graph equivalence sends an element to the corresponding point of the graph. -/
-@[to_additive (attr := simp) ContinuousAddMonoidHom.coe_graphEquiv_apply
+@[to_additive (attr := simp)
   /-- The additive graph equivalence sends an element to the corresponding point of the graph. -/]
-theorem coe_graphEquiv_apply (f : G →ₜ* H) (g : G) :
-    (graphEquiv f g : G × H) = (g, f g) :=
-  rfl
+theorem MonoidHomClass.coe_graphEquiv_apply (f : F) (g : G) :
+    (MonoidHomClass.graphEquiv f g : G × H) = (g, f g) := (rfl)
 
 /-- The inverse graph equivalence is the first projection. -/
-@[to_additive (attr := simp) ContinuousAddMonoidHom.graphEquiv_symm_apply
+@[to_additive (attr := simp)
   /-- The inverse additive graph equivalence is the first projection. -/]
-theorem graphEquiv_symm_apply (f : G →ₜ* H) (x : (f : G →* H).graph) :
-    (graphEquiv f).symm x = x.1.1 :=
-  rfl
+theorem MonoidHomClass.graphEquiv_symm_apply (f : F)
+    (x : (MonoidHomClass.toMonoidHom f).graph) :
+    (MonoidHomClass.graphEquiv f).symm x = x.1.1 := (rfl)
 
 /-- The graph of a continuous homomorphism into a Hausdorff group is closed. -/
-@[to_additive ContinuousAddMonoidHom.isClosed_graph
+@[to_additive
   /-- The graph of a continuous additive homomorphism into a Hausdorff additive group is closed. -/]
-theorem isClosed_graph [T2Space H] (f : G →ₜ* H) :
-    IsClosed ((f : G →* H).graph : Set (G × H)) := by
-  exact isClosed_eq (f.continuous.comp continuous_fst) continuous_snd
-
-end ContinuousMonoidHom
-
-end TauCeti
+theorem MonoidHomClass.isClosed_graph [T2Space H] (f : F) :
+    IsClosed ((MonoidHomClass.toMonoidHom f).graph : Set (G × H)) := by
+  exact isClosed_eq ((map_continuous f).comp continuous_fst) continuous_snd
