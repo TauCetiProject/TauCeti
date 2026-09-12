@@ -430,51 +430,77 @@ theorem spechtSubrepresentation_eq_augmentationSubrepresentation (h1 : μ.rowLen
 
 /-! ## The tabloids of a shape `(m, 1)` are the labels -/
 
-/-- **The tabloid named by a label**: relabel a fixed tableau by the transposition carrying its own
-short-row label to the prescribed one. -/
-noncomputable def labelTabloid (h1 : μ.rowLen 1 = 1) (t : YoungTableau μ) (k : Fin μ.card) :
+/-- **The tabloid named by a label**: the tabloid of a shape `(m, 1)` whose short row carries the
+prescribed label.  Relabelling a tableau of the shape by the transposition carrying its own
+short-row label to the prescribed one produces it; which tableau is relabelled is irrelevant, since
+a tabloid of such a shape is named by the label of its short row, so the naming is canonical
+(`TauCeti.labelTabloid_eq_tabloid_relabel`). -/
+noncomputable def labelTabloid (h1 : μ.rowLen 1 = 1) (k : Fin μ.card) :
     Equiv.Perm (Fin μ.card) ⧸ youngSubgroup (shapePartition μ) :=
-  tabloid (relabel (Equiv.swap (secondRowLabel h1 t) k) t)
+  tabloid (relabel (Equiv.swap (secondRowLabel h1 (YoungTableau.nonempty μ).some) k)
+    (YoungTableau.nonempty μ).some)
 
-theorem labelTabloid_def (h1 : μ.rowLen 1 = 1) (t : YoungTableau μ) (k : Fin μ.card) :
-    labelTabloid h1 t k = tabloid (relabel (Equiv.swap (secondRowLabel h1 t) k) t) :=
+/-- The tableau `TauCeti.labelTabloid` relabels is the one `TauCeti.YoungTableau.nonempty`
+chooses; `TauCeti.labelTabloid_eq_tabloid_relabel` is the statement freed of that choice. -/
+private theorem labelTabloid_def (h1 : μ.rowLen 1 = 1) (k : Fin μ.card) :
+    labelTabloid h1 k =
+      tabloid (relabel (Equiv.swap (secondRowLabel h1 (YoungTableau.nonempty μ).some) k)
+        (YoungTableau.nonempty μ).some) :=
   -- `(rfl)`, not `rfl`: the body of `labelTabloid` is not `@[expose]`d, so this must not be
   -- inferred `@[defeq]`.
   (rfl)
 
-theorem labelTabloid_bijective (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (t : YoungTableau μ) :
-    Function.Bijective (labelTabloid h1 t) := by
+/-- Relabelling a tableau by the transposition carrying the label of its short row to `k` puts `k`
+in its short row. -/
+private theorem secondRowLabel_relabel_swap (h1 : μ.rowLen 1 = 1) (t : YoungTableau μ)
+    (k : Fin μ.card) :
+    secondRowLabel h1 (relabel (Equiv.swap (secondRowLabel h1 t) k) t) = k := by
+  rw [secondRowLabel_relabel, Equiv.swap_apply_left]
+
+/-- **The tabloid named by a label is read off any tableau of the shape**: relabel it by the
+transposition carrying the label of its short row to the prescribed one. -/
+theorem labelTabloid_eq_tabloid_relabel (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0)
+    (t : YoungTableau μ) (k : Fin μ.card) :
+    labelTabloid h1 k = tabloid (relabel (Equiv.swap (secondRowLabel h1 t) k) t) := by
+  rw [labelTabloid_def, tabloid_eq_iff_secondRowLabel_eq h1 h2, secondRowLabel_relabel_swap,
+    secondRowLabel_relabel_swap]
+
+theorem labelTabloid_bijective (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) :
+    Function.Bijective (labelTabloid h1) := by
+  obtain ⟨t⟩ := YoungTableau.nonempty μ
   constructor
   · intro k l hkl
-    rw [labelTabloid_def, labelTabloid_def, tabloid_eq_iff_secondRowLabel_eq h1 h2] at hkl
-    simpa using hkl
+    rw [labelTabloid_eq_tabloid_relabel h1 h2 t, labelTabloid_eq_tabloid_relabel h1 h2 t,
+      tabloid_eq_iff_secondRowLabel_eq h1 h2, secondRowLabel_relabel_swap,
+      secondRowLabel_relabel_swap] at hkl
+    exact hkl
   · intro X
     obtain ⟨u, rfl⟩ := tabloid_surjective X
     refine ⟨secondRowLabel h1 u, ?_⟩
-    rw [labelTabloid_def, tabloid_eq_iff_secondRowLabel_eq h1 h2]
-    simp
+    rw [labelTabloid_eq_tabloid_relabel h1 h2 u, tabloid_eq_iff_secondRowLabel_eq h1 h2,
+      secondRowLabel_relabel_swap]
 
 /-- Naming a tabloid by the label of its short row is equivariant.  The left-hand side is stated
 with `σ k` rather than the `σ • k` of the equivariance interfaces, since `Equiv.Perm.smul_def`
 is `simp`; the two are definitionally equal. -/
 @[simp]
-theorem labelTabloid_smul (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (t : YoungTableau μ)
+theorem labelTabloid_smul (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0)
     (σ : Equiv.Perm (Fin μ.card)) (k : Fin μ.card) :
-    labelTabloid h1 t (σ k) = σ • labelTabloid h1 t k := by
-  rw [labelTabloid_def, labelTabloid_def, ← tabloid_relabel,
-    tabloid_eq_iff_secondRowLabel_eq h1 h2]
+    labelTabloid h1 (σ k) = σ • labelTabloid h1 k := by
+  obtain ⟨t⟩ := YoungTableau.nonempty μ
+  rw [labelTabloid_eq_tabloid_relabel h1 h2 t, labelTabloid_eq_tabloid_relabel h1 h2 t,
+    ← tabloid_relabel, tabloid_eq_iff_secondRowLabel_eq h1 h2, secondRowLabel_relabel_swap]
   simp
 
 /-- **The tabloids of a shape `(m, 1)` are the labels.**  A tabloid of such a shape splits the
 labels into a long row and a single short one, so it is named by the label of the short row. -/
-noncomputable def labelTabloidEquiv (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0)
-    (t : YoungTableau μ) :
+noncomputable def labelTabloidEquiv (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) :
     Fin μ.card ≃ (Equiv.Perm (Fin μ.card) ⧸ youngSubgroup (shapePartition μ)) :=
-  Equiv.ofBijective _ (labelTabloid_bijective h1 h2 t)
+  Equiv.ofBijective _ (labelTabloid_bijective h1 h2)
 
 @[simp]
-theorem labelTabloidEquiv_apply (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (t : YoungTableau μ)
-    (k : Fin μ.card) : labelTabloidEquiv h1 h2 t k = labelTabloid h1 t k :=
+theorem labelTabloidEquiv_apply (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (k : Fin μ.card) :
+    labelTabloidEquiv h1 h2 k = labelTabloid h1 k :=
   -- `(rfl)`, not `rfl`: the body of `labelTabloidEquiv` is not `@[expose]`d.
   (rfl)
 
@@ -482,45 +508,42 @@ theorem labelTabloidEquiv_apply (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (t
 label of the short row of any tableau representing it. -/
 @[simp]
 theorem labelTabloidEquiv_symm_tabloid (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0)
-    (t u : YoungTableau μ) :
-    (labelTabloidEquiv h1 h2 t).symm (tabloid u) = secondRowLabel h1 u := by
-  rw [Equiv.symm_apply_eq, labelTabloidEquiv_apply, labelTabloid_def,
-    tabloid_eq_iff_secondRowLabel_eq h1 h2]
-  simp
+    (u : YoungTableau μ) :
+    (labelTabloidEquiv h1 h2).symm (tabloid u) = secondRowLabel h1 u := by
+  rw [Equiv.symm_apply_eq, labelTabloidEquiv_apply, labelTabloid_eq_tabloid_relabel h1 h2 u,
+    tabloid_eq_iff_secondRowLabel_eq h1 h2, secondRowLabel_relabel_swap]
 
 /-- **The Young permutation module of a shape `(m, 1)` is the permutation module on the labels.** -/
-noncomputable def labelTabloidRepresentationEquiv (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0)
-    (t : YoungTableau μ) :
+noncomputable def labelTabloidRepresentationEquiv (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) :
     (Representation.ofMulAction ℚ (Equiv.Perm (Fin μ.card)) (Fin μ.card)).Equiv
       (permutationModule (shapePartition μ)).ρ :=
-  ofMulActionEquivCongr ℚ (labelTabloidEquiv h1 h2 t) fun g k => by
+  ofMulActionEquivCongr ℚ (labelTabloidEquiv h1 h2) fun g k => by
     rw [labelTabloidEquiv_apply, labelTabloidEquiv_apply]
-    exact labelTabloid_smul h1 h2 t g k
+    exact labelTabloid_smul h1 h2 g k
 
 @[simp]
 theorem labelTabloidRepresentationEquiv_apply_single (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0)
-    (t : YoungTableau μ) (k : Fin μ.card) (r : ℚ) :
-    labelTabloidRepresentationEquiv h1 h2 t (MonoidAlgebra.single k r) =
-      MonoidAlgebra.single (labelTabloid h1 t k) r := by
+    (k : Fin μ.card) (r : ℚ) :
+    labelTabloidRepresentationEquiv h1 h2 (MonoidAlgebra.single k r) =
+      MonoidAlgebra.single (labelTabloid h1 k) r := by
   rw [labelTabloidRepresentationEquiv, ofMulActionEquivCongr_apply_single, labelTabloidEquiv_apply]
 
 /-- The transport of `ℚ[Fin μ.card]` onto the Young permutation module carries the augmentation
 subrepresentation of the labels onto the Specht module of the shape. -/
-private theorem map_augmentationSubrepresentation (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0)
-    (t : YoungTableau μ) :
+private theorem map_augmentationSubrepresentation (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) :
     Submodule.map
-        ((labelTabloidRepresentationEquiv h1 h2 t).toLinearEquiv :
+        ((labelTabloidRepresentationEquiv h1 h2).toLinearEquiv :
           MonoidAlgebra ℚ (Fin μ.card) →ₗ[ℚ] (permutationModule (shapePartition μ)).V)
         (augmentationSubrepresentation ℚ (Equiv.Perm (Fin μ.card)) (Fin μ.card)).toSubmodule =
       (spechtSubrepresentation μ).toSubmodule := by
   have hsingle : ∀ (k : Fin μ.card) (r : ℚ),
-      ((labelTabloidRepresentationEquiv h1 h2 t).toLinearEquiv :
+      ((labelTabloidRepresentationEquiv h1 h2).toLinearEquiv :
           MonoidAlgebra ℚ (Fin μ.card) →ₗ[ℚ] (permutationModule (shapePartition μ)).V)
-        (MonoidAlgebra.single k r) = MonoidAlgebra.single (labelTabloid h1 t k) r :=
-    fun k r => labelTabloidRepresentationEquiv_apply_single h1 h2 t k r
+        (MonoidAlgebra.single k r) = MonoidAlgebra.single (labelTabloid h1 k) r :=
+    fun k r => labelTabloidRepresentationEquiv_apply_single h1 h2 k r
   have hsum : (MonoidAlgebra.basis
         (Equiv.Perm (Fin μ.card) ⧸ youngSubgroup (shapePartition μ)) ℚ).sumCoords ∘ₗ
-        ((labelTabloidRepresentationEquiv h1 h2 t).toLinearEquiv :
+        ((labelTabloidRepresentationEquiv h1 h2).toLinearEquiv :
           MonoidAlgebra ℚ (Fin μ.card) →ₗ[ℚ] (permutationModule (shapePartition μ)).V) =
       (MonoidAlgebra.basis (Fin μ.card) ℚ).sumCoords :=
     Module.Basis.ext (MonoidAlgebra.basis (Fin μ.card) ℚ) fun k => by
@@ -530,7 +553,7 @@ private theorem map_augmentationSubrepresentation (h1 : μ.rowLen 1 = 1) (h2 : �
     toSubmodule_augmentationSubrepresentation, toSubmodule_augmentationSubrepresentation,
     ← hsum, LinearMap.ker_comp]
   exact Submodule.map_comap_eq_of_surjective
-    (labelTabloidRepresentationEquiv h1 h2 t).toLinearEquiv.surjective _
+    (labelTabloidRepresentationEquiv h1 h2).toLinearEquiv.surjective _
 
 /-- **The Specht module of a shape `(m, 1)` is the standard representation.**  Naming the tabloids
 by the labels of their short rows carries `ℚ[Fin μ.card]` onto the Young permutation module and its
@@ -542,27 +565,27 @@ This is the third of the named small irreducibles of `Sₙ`, beside the trivial 
 `S^{(n)}` and the sign representation `S^{(1ⁿ)}` of
 `TauCeti.RepresentationTheory.Symmetric.Specht.Extremes`. -/
 noncomputable def standardRepresentationEquivSpechtSubrepresentation (h1 : μ.rowLen 1 = 1)
-    (h2 : μ.rowLen 2 = 0) (t : YoungTableau μ) :
+    (h2 : μ.rowLen 2 = 0) :
     (standardRepresentation ℚ (Fin μ.card)).Equiv (spechtSubrepresentation μ).toRepresentation :=
   Representation.Equiv.mk
-    (LinearEquiv.ofSubmodules (labelTabloidRepresentationEquiv h1 h2 t).toLinearEquiv _ _
-      (map_augmentationSubrepresentation h1 h2 t))
+    (LinearEquiv.ofSubmodules (labelTabloidRepresentationEquiv h1 h2).toLinearEquiv _ _
+      (map_augmentationSubrepresentation h1 h2))
     fun g => LinearMap.ext fun v => Subtype.ext <| by
       simp only [← toRepresentation_augmentationSubrepresentation, LinearMap.comp_apply,
         LinearEquiv.coe_coe, LinearEquiv.ofSubmodules_apply,
         Subrepresentation.toRepresentation_apply, LinearMap.coe_restrict_apply,
         Representation.Equiv.toLinearEquiv_apply]
       exact Representation.IntertwiningMap.isIntertwining _ _
-        (labelTabloidRepresentationEquiv h1 h2 t).toIntertwiningMap g v
+        (labelTabloidRepresentationEquiv h1 h2).toIntertwiningMap g v
 
 /-- The underlying equivalence of the identification is the transport of the tabloids. -/
 @[simp]
 theorem coe_standardRepresentationEquivSpechtSubrepresentation_apply (h1 : μ.rowLen 1 = 1)
-    (h2 : μ.rowLen 2 = 0) (t : YoungTableau μ)
+    (h2 : μ.rowLen 2 = 0)
     (v : (augmentationSubrepresentation ℚ (Equiv.Perm (Fin μ.card)) (Fin μ.card)).toSubmodule) :
-    (standardRepresentationEquivSpechtSubrepresentation h1 h2 t v :
+    (standardRepresentationEquivSpechtSubrepresentation h1 h2 v :
         (permutationModule (shapePartition μ)).V) =
-      labelTabloidRepresentationEquiv h1 h2 t (v : MonoidAlgebra ℚ (Fin μ.card)) :=
+      labelTabloidRepresentationEquiv h1 h2 (v : MonoidAlgebra ℚ (Fin μ.card)) :=
   -- `(rfl)`, not `rfl`: the body of the equivalence is not `@[expose]`d.
   (rfl)
 
@@ -571,19 +594,19 @@ along an identification `μ.card = N` of the labels.  This is the shape in which
 partition-indexed `TauCeti.spechtModule`, which relabels the symmetric group along
 `TauCeti.card_diagramOf`, consumes it. -/
 private noncomputable def standardRepresentationEquivSpechtSubrepresentationOfCard {N : ℕ}
-    (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (t : YoungTableau μ) (hN : μ.card = N) :
+    (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (hN : μ.card = N) :
     (standardRepresentation ℚ (Fin N)).Equiv
       ((spechtSubrepresentation μ).toRepresentation.comp
         (finCongr hN.symm).permCongrHom.toMonoidHom) := by
   subst hN
-  exact standardRepresentationEquivSpechtSubrepresentation h1 h2 t
+  exact standardRepresentationEquivSpechtSubrepresentation h1 h2
 
 private theorem coe_standardRepresentationEquivSpechtSubrepresentationOfCard_apply {N : ℕ}
-    (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (t : YoungTableau μ) (hN : μ.card = N)
+    (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (hN : μ.card = N)
     (v : (augmentationSubrepresentation ℚ (Equiv.Perm (Fin N)) (Fin N)).toSubmodule) :
-    (standardRepresentationEquivSpechtSubrepresentationOfCard h1 h2 t hN v :
+    (standardRepresentationEquivSpechtSubrepresentationOfCard h1 h2 hN v :
         (permutationModule (shapePartition μ)).V) =
-      labelTabloidRepresentationEquiv h1 h2 t
+      labelTabloidRepresentationEquiv h1 h2
         (MonoidAlgebra.mapDomainLinearEquiv ℚ ℚ (finCongr hN.symm)
           (v : MonoidAlgebra ℚ (Fin N))) := by
   subst hN
@@ -593,15 +616,14 @@ private theorem coe_standardRepresentationEquivSpechtSubrepresentationOfCard_app
       (v : MonoidAlgebra ℚ (Fin μ.card)) = (v : MonoidAlgebra ℚ (Fin μ.card)) := by
     simp [MonoidAlgebra.mapDomainLinearEquiv]
   rw [hrefl]
-  exact coe_standardRepresentationEquivSpechtSubrepresentation_apply h1 h2 t v
+  exact coe_standardRepresentationEquivSpechtSubrepresentation_apply h1 h2 v
 
 /-- **The Specht module of a shape `(m, 1)` has dimension one less than the number of labels**:
 the standard representation of the symmetric group on `μ.card` labels has dimension
 `μ.card - 1`. -/
 theorem finrank_spechtSubrepresentation_of_rowLen (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) :
     Module.finrank ℚ (spechtSubrepresentation μ).toSubmodule = μ.card - 1 := by
-  obtain ⟨t⟩ := YoungTableau.nonempty μ
-  rw [← (standardRepresentationEquivSpechtSubrepresentation h1 h2 t).toLinearEquiv.finrank_eq,
+  rw [← (standardRepresentationEquivSpechtSubrepresentation h1 h2).toLinearEquiv.finrank_eq,
     finrank_augmentationSubrepresentation, Fintype.card_fin]
 
 /-! ## The shape `(n+1, 1)` -/
@@ -620,28 +642,26 @@ theorem finrank_spechtModule_singletonSecondRow (n : ℕ) :
 `TauCeti.standardRepresentationEquivSpechtSubrepresentation` for the shape `(n+1, 1)`, with the
 symmetric group on the labels of the diagram identified with `S_{n+2}` along
 `TauCeti.card_diagramOf`, the relabelling `TauCeti.spechtModule` is defined by. -/
-noncomputable def standardRepresentationEquivSpechtModuleSingletonSecondRow (n : ℕ)
-    (t : YoungTableau (diagramOf (Nat.Partition.singletonSecondRow n))) :
+noncomputable def standardRepresentationEquivSpechtModuleSingletonSecondRow (n : ℕ) :
     (standardRepresentation ℚ (Fin (n + 2))).Equiv
       (spechtModule (Nat.Partition.singletonSecondRow n)).ρ :=
   standardRepresentationEquivSpechtSubrepresentationOfCard
-    (rowLen_diagramOf_singletonSecondRow_one n) (rowLen_diagramOf_singletonSecondRow_two n) t
+    (rowLen_diagramOf_singletonSecondRow_one n) (rowLen_diagramOf_singletonSecondRow_two n)
     (card_diagramOf _)
 
 /-- The identification of `S^{(n+1,1)}` with the standard representation is the transport of the
 tabloids, read on the labels of the diagram along `TauCeti.card_diagramOf`. -/
 @[simp]
 theorem coe_standardRepresentationEquivSpechtModuleSingletonSecondRow_apply (n : ℕ)
-    (t : YoungTableau (diagramOf (Nat.Partition.singletonSecondRow n)))
     (v : (augmentationSubrepresentation ℚ (Equiv.Perm (Fin (n + 2))) (Fin (n + 2))).toSubmodule) :
-    (standardRepresentationEquivSpechtModuleSingletonSecondRow n t v :
+    (standardRepresentationEquivSpechtModuleSingletonSecondRow n v :
         (permutationModule
           (shapePartition (diagramOf (Nat.Partition.singletonSecondRow n)))).V) =
       labelTabloidRepresentationEquiv (rowLen_diagramOf_singletonSecondRow_one n)
-        (rowLen_diagramOf_singletonSecondRow_two n) t
+        (rowLen_diagramOf_singletonSecondRow_two n)
         (MonoidAlgebra.mapDomainLinearEquiv ℚ ℚ
           (finCongr (card_diagramOf (Nat.Partition.singletonSecondRow n)).symm)
           (v : MonoidAlgebra ℚ (Fin (n + 2)))) :=
-  coe_standardRepresentationEquivSpechtSubrepresentationOfCard_apply _ _ t _ v
+  coe_standardRepresentationEquivSpechtSubrepresentationOfCard_apply _ _ _ v
 
 end TauCeti
