@@ -400,9 +400,7 @@ theorem explicitFiniteQuotientTransition2_comp (U V W : OpenNormalSubgroup G)
 /-- The explicit degree-two finite-quotient system of a discrete module. It sends an open normal
 subgroup `U` to `H²(G ⧸ U, M^U)` and an inclusion `V ≤ U` to the direct explicit transition from
 the `U`-level to the `V`-level. -/
--- The body is exposed for the same reason as the degree-one system: the source objects and arrows
--- of its comparison cocone must reduce to the named explicit groups and transition maps.
-@[expose] noncomputable def explicitFiniteQuotientSystem2 :
+noncomputable def explicitFiniteQuotientSystem2 :
     (OpenNormalSubgroup G)ᵒᵖ ⥤ AddCommGrpCat.{max u v} where
   obj U :=
     AddCommGrpCat.of
