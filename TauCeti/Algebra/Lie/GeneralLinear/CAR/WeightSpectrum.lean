@@ -32,7 +32,7 @@ and fixes the total sum.
   eigenvalue has the form `m + 1/2` with `m < n`.
 * `TauCeti.IsGlHighestWeightVector.exists_weight_apply_eq_natCast_add_inv_two`: every coordinate of
   a CAR highest weight has the form `m + 1/2` with `m < n`.
-* `TauCeti.exists_occupationCutCount_of_lie_single_self_eq_smul`: occupation counts on a subset
+* `TauCeti.exists_sum_eq_choose_two_add_of_lie_single_self_eq_smul`: occupation counts on a subset
   have the form `choose |s| 2 + m`, with `m` bounded by the size of the cut.
 * `TauCeti.exists_sum_eq_natCast_add_card_sq_div_two_of_lie_single_self_eq_smul`: without a
   `CharZero` assumption, but with two invertible, the sum of the diagonal eigenvalues is a bounded
@@ -137,7 +137,7 @@ counts is `choose |s| 2 + m`, where `m` is bounded by the number of ordered pair
 
 The natural number `m` is the eigenvalue of the sum of the commuting cut occupation projections.
 No finite-dimensionality or splitting hypothesis is needed. -/
-theorem exists_occupationCutCount_of_lie_single_self_eq_smul [CharZero K]
+theorem exists_sum_eq_choose_two_add_of_lie_single_self_eq_smul [CharZero K]
     {μ : n → K} {a : n → ℕ} {v : CliffordAlgebra (traceQuadraticForm K n)}
     (s : Finset n) (hv : v ≠ 0)
     (hdiag : ∀ i ∈ s, ⁅Matrix.single i i (1 : K), v⁆ = μ i • v)
@@ -165,7 +165,7 @@ theorem exists_occupationCutCount_of_lie_single_self_eq_smul [CharZero K]
   linear_combination hscalar
 
 /-- Under the hypotheses of
-`TauCeti.exists_occupationCutCount_of_lie_single_self_eq_smul`, the occupation-count sum on `s`
+`TauCeti.exists_sum_eq_choose_two_add_of_lie_single_self_eq_smul`, the occupation-count sum on `s`
 is bounded by `choose |s| 2 + |s| (n - |s|)`. -/
 theorem sum_occupationCounts_le_of_lie_single_self_eq_smul [CharZero K]
     {μ : n → K} {a : n → ℕ} {v : CliffordAlgebra (traceQuadraticForm K n)}
@@ -174,7 +174,7 @@ theorem sum_occupationCounts_le_of_lie_single_self_eq_smul [CharZero K]
     (hμ : ∀ i ∈ s, μ i = (a i : K) + (2 : K)⁻¹) :
     (∑ i ∈ s, a i) ≤ s.card.choose 2 + s.card * (Fintype.card n - s.card) := by
   obtain ⟨m, hm, hsum⟩ :=
-    exists_occupationCutCount_of_lie_single_self_eq_smul s hv hdiag hμ
+    exists_sum_eq_choose_two_add_of_lie_single_self_eq_smul s hv hdiag hμ
   rw [hsum]
   omega
 
@@ -186,7 +186,7 @@ theorem sum_occupationCounts_univ_eq_choose_two_of_lie_single_self_eq_smul [Char
     (hdiag : ∀ i : n, ⁅Matrix.single i i (1 : K), v⁆ = μ i • v)
     (hμ : ∀ i : n, μ i = (a i : K) + (2 : K)⁻¹) :
     (∑ i : n, a i) = (Fintype.card n).choose 2 := by
-  obtain ⟨m, hm, hsum⟩ := exists_occupationCutCount_of_lie_single_self_eq_smul
+  obtain ⟨m, hm, hsum⟩ := exists_sum_eq_choose_two_add_of_lie_single_self_eq_smul
     (Finset.univ : Finset n) hv (fun i _ => hdiag i) (fun i _ => hμ i)
   have hm0 : m = 0 := by simpa using hm
   simpa [hm0] using hsum
@@ -208,19 +208,6 @@ theorem exists_weight_apply_eq_natCast_add_inv_two [DecidableEq n] {μ : n → K
     ∃ m : ℕ, m < Fintype.card n ∧ μ i = (m : K) + (2 : K)⁻¹ := by
   exact exists_eq_natCast_add_inv_two_of_lie_single_self_eq_smul hv.ne_zero
     (hv.lie_single_self_eq_smul i)
-
-/-- Package the coordinate spectrum into one natural-valued occupation-count tuple. -/
-theorem exists_occupationCounts [DecidableEq n] {μ : n → K}
-    {v : CliffordAlgebra (traceQuadraticForm K n)}
-    (hv : IsGlHighestWeightVector μ v) :
-    ∃ a : n → ℕ, ∀ i,
-      a i < Fintype.card n ∧ μ i = (a i : K) + (2 : K)⁻¹ := by
-  have hcoord (i : n) :
-      ∃ m : ℕ, m < Fintype.card n ∧ μ i = (m : K) + (2 : K)⁻¹ := by
-    exact exists_eq_natCast_add_inv_two_of_lie_single_self_eq_smul hv.ne_zero
-      (hv.lie_single_self_eq_smul i)
-  let a : n → ℕ := fun i => (hcoord i).choose
-  exact ⟨a, fun i => (hcoord i).choose_spec⟩
 
 end IsGlHighestWeightVector
 
