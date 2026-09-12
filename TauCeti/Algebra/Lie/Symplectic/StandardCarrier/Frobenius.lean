@@ -56,14 +56,6 @@ that any fixed-point group is finite or simple.
 
 The organization follows the sibling carrier specialization
 `TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Frobenius`.
-
-This advances the "points over an algebraically closed field" and "Chevalley--Demazure
-construction" targets in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, whose first named
-case is the `q`-power Frobenius. Its consumer is milestone L1 of
-`TauCetiRoadmap/CFSGStatement/README.md`, whose Steinberg map for the untwisted family `C_n(q)` is
-`Frob_q` on the points of the pinned type-`C` ambient group over an algebraic closure of `ZMod p`.
-The type-`A` counterpart is
-`TauCeti/Algebra/Lie/SpecialLinear/StandardCarrier/Frobenius.lean`.
 -/
 
 public section
