@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Explicit
+public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
 # The degree-zero finite-quotient colimit
@@ -89,6 +90,7 @@ noncomputable def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G)
         exact congrArg Subtype.val (fixedPointsInclusion_smul (M := M) hVU g m))
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
+/-- Coercion of a degree-zero transition to the coefficient group. -/
 @[simp]
 theorem coe_explicitFiniteQuotientTransition0 (hVU : V ≤ U)
     (x : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
@@ -99,6 +101,7 @@ theorem coe_explicitFiniteQuotientTransition0 (hVU : V ≤ U)
     exact coe_fixedPointsInclusion hVU (x : FixedPoints.addSubgroup U.toSubgroup M)
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
+/-- The transition at an open normal subgroup is the identity. -/
 @[simp]
 theorem explicitFiniteQuotientTransition0_id (U : OpenNormalSubgroup G) :
     explicitFiniteQuotientTransition0 G M U U le_rfl = AddMonoidHom.id _ := by
@@ -107,6 +110,7 @@ theorem explicitFiniteQuotientTransition0_id (U : OpenNormalSubgroup G) :
   exact Subtype.ext (Subtype.ext (coe_explicitFiniteQuotientTransition0 G M le_rfl x))
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
+/-- Degree-zero transitions compose along inclusions of open normal subgroups. -/
 theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
     (hVU : V ≤ U) (hWV : W ≤ V) :
     explicitFiniteQuotientTransition0 G M U W (hWV.trans hVU) =
@@ -167,6 +171,7 @@ noncomputable def explicitFiniteQuotientSystem0 :
     rfl
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
+/-- The object at `U` of the degree-zero finite-quotient system. -/
 @[simp]
 theorem explicitFiniteQuotientSystem0_obj (U : OpenNormalSubgroup G) :
     (explicitFiniteQuotientSystem0 G M).obj (Opposite.op U) =
@@ -176,6 +181,7 @@ theorem explicitFiniteQuotientSystem0_obj (U : OpenNormalSubgroup G) :
     rfl
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
+/-- The map of the degree-zero finite-quotient system at a morphism `f`. -/
 @[simp]
 theorem explicitFiniteQuotientSystem0_map {U V : (OpenNormalSubgroup G)ᵒᵖ} (f : U ⟶ V) :
     eqToHom (explicitFiniteQuotientSystem0_obj G M U.unop).symm ≫
@@ -185,6 +191,14 @@ theorem explicitFiniteQuotientSystem0_map {U V : (OpenNormalSubgroup G)ᵒᵖ} (
   by
     unfold explicitFiniteQuotientSystem0
     rfl
+
+/-- Every morphism in the degree-zero finite-quotient system is an isomorphism. -/
+instance explicitFiniteQuotientSystem0_map_isIso
+    {U V : (OpenNormalSubgroup G)ᵒᵖ} (f : U ⟶ V) :
+    IsIso ((explicitFiniteQuotientSystem0 G M).map f) := by
+  unfold explicitFiniteQuotientSystem0
+  apply (ConcreteCategory.isIso_iff_bijective _).2
+  exact explicitFiniteQuotientTransition0_bijective G M (leOfHom f.unop)
 
 end System
 
@@ -215,6 +229,7 @@ noncomputable def explicitFiniteQuotientCocone0 :
   ι := explicitFiniteQuotientComparison0 G M
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
+/-- The degree-zero comparison map at `U` is inflation from the quotient level. -/
 @[simp]
 theorem explicitFiniteQuotientComparison0_app (U : OpenNormalSubgroup G) :
     eqToHom (explicitFiniteQuotientSystem0_obj G M U).symm ≫
@@ -224,6 +239,7 @@ theorem explicitFiniteQuotientComparison0_app (U : OpenNormalSubgroup G) :
   rfl
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
+/-- The apex of the named degree-zero comparison cocone is `H⁰(G, M)`. -/
 @[simp]
 theorem explicitFiniteQuotientCocone0_pt :
     (explicitFiniteQuotientCocone0 G M).pt = AddCommGrpCat.of (H0 G M) := by
@@ -231,24 +247,10 @@ theorem explicitFiniteQuotientCocone0_pt :
   rfl
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
-@[simp]
-theorem explicitFiniteQuotientCocone0_ι_app (U : OpenNormalSubgroup G) :
-    eqToHom (explicitFiniteQuotientSystem0_obj G M U).symm ≫
-        (explicitFiniteQuotientCocone0 G M).ι.app (Opposite.op U) ≫
-      eqToHom (explicitFiniteQuotientCocone0_pt (G := G) (M := M)) =
-      AddCommGrpCat.ofHom (explicitInfl0 G M U.toSubgroup) := by
-  unfold explicitFiniteQuotientCocone0 explicitFiniteQuotientComparison0
-  rfl
-
-private def topOpenNormalSubgroup : OpenNormalSubgroup G :=
-  { toOpenSubgroup := ⊤
-    isNormal' := Subgroup.normal_top }
-
-omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M] in
 private theorem explicitFiniteQuotientSystem0_isEventuallyConstantFrom :
     (explicitFiniteQuotientSystem0 G M).IsEventuallyConstantFrom
-      (Opposite.op (topOpenNormalSubgroup G)) := by
-  let _ : Nonempty (OpenNormalSubgroup G) := ⟨topOpenNormalSubgroup G⟩
+      (Opposite.op (⊤ : OpenNormalSubgroup G)) := by
+  let _ : Nonempty (OpenNormalSubgroup G) := ⟨⊤⟩
   intro U f
   unfold explicitFiniteQuotientSystem0
   exact (ConcreteCategory.isIso_iff_bijective _).2
@@ -257,15 +259,17 @@ private theorem explicitFiniteQuotientSystem0_isEventuallyConstantFrom :
 /-- The degree-zero comparison cocone is colimiting. -/
 noncomputable def explicitFiniteQuotientCocone0IsColimit :
     IsColimit (explicitFiniteQuotientCocone0 G M) := by
-  letI : Nonempty (OpenNormalSubgroup G) := ⟨topOpenNormalSubgroup G⟩
+  letI : Nonempty (OpenNormalSubgroup G) := ⟨⊤⟩
   let h := explicitFiniteQuotientSystem0_isEventuallyConstantFrom G M
   letI : IsIso ((explicitFiniteQuotientCocone0 G M).ι.app
-      (Opposite.op (topOpenNormalSubgroup G))) := by
+      (Opposite.op (⊤ : OpenNormalSubgroup G))) := by
     dsimp [explicitFiniteQuotientCocone0]
     apply (ConcreteCategory.isIso_iff_bijective _).2
+    -- The cocone is defined from `explicitFiniteQuotientComparison0`, whose component
+    -- is definitionally the concrete morphism `explicitInfl0` after this criterion.
     change Function.Bijective
-      (explicitInfl0 G M (topOpenNormalSubgroup G).toSubgroup)
-    exact explicitInfl0_bijective G M (topOpenNormalSubgroup G).toSubgroup
+      (explicitInfl0 G M (⊤ : OpenNormalSubgroup G).toSubgroup)
+    exact explicitInfl0_bijective G M (⊤ : OpenNormalSubgroup G).toSubgroup
   exact h.isColimitOfIsIso (explicitFiniteQuotientCocone0 G M)
 
 end Comparison

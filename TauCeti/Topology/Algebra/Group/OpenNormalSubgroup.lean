@@ -29,6 +29,24 @@ namespace OpenNormalSubgroup
 
 variable {G H : Type*} [Group G] [TopologicalSpace G] [Group H] [TopologicalSpace H]
 
+section Top
+
+variable {G : Type*} [Group G] [TopologicalSpace G]
+
+/-- The whole group, regarded as an open normal subgroup. -/
+instance : Top (OpenNormalSubgroup G) where
+  top :=
+    { toOpenSubgroup := ⊤
+      isNormal' := Subgroup.normal_top }
+
+/-- The whole group is the greatest open normal subgroup. -/
+instance : OrderTop (OpenNormalSubgroup G) where
+  le_top U := by
+    change U.toSubgroup ≤ (⊤ : Subgroup G)
+    exact le_top
+
+end Top
+
 /-- The preimage of an open normal subgroup under a continuous group homomorphism. -/
 def comap (U : OpenNormalSubgroup H) (f : G →* H) (hf : Continuous f) :
     OpenNormalSubgroup G where
