@@ -266,8 +266,7 @@ private theorem presentedFormConsIsometryEquiv_toLinearEquiv {n : ℕ} (w : Fin 
 theorem presentedFormConsIsometryEquiv_apply {n : ℕ} (w : Fin (n + 1) → Kˣ)
     (x : K × (Fin n → K)) :
     presentedFormConsIsometryEquiv w x = Fin.cons x.1 x.2 := by
-  change (presentedFormConsIsometryEquiv w).toLinearEquiv x = _
-  rw [presentedFormConsIsometryEquiv_toLinearEquiv]
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv, presentedFormConsIsometryEquiv_toLinearEquiv]
   ext i
   exact Fin.consLinearEquiv_apply K (fun _ : Fin (n + 1) ↦ K) x i
 
@@ -277,9 +276,8 @@ from the remaining coordinates. -/
 theorem presentedFormConsIsometryEquiv_symm_apply {n : ℕ} (w : Fin (n + 1) → Kˣ)
     (x : Fin (n + 1) → K) :
     (presentedFormConsIsometryEquiv w).symm x = (x 0, Fin.tail x) := by
-  change (presentedFormConsIsometryEquiv w).toLinearEquiv.symm x = _
-  rw [presentedFormConsIsometryEquiv_toLinearEquiv]
-  exact Fin.consLinearEquiv_symm_apply K (fun _ : Fin (n + 1) ↦ K) x
+  rw [QuadraticMap.IsometryEquiv.symm_apply_eq, presentedFormConsIsometryEquiv_apply,
+    Fin.cons_self_tail]
 
 /-- Concatenation of presentations respects isometry in each argument. -/
 theorem presentedForm_append_congr {p p' q q' : RegularFormPresentation K}
