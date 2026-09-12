@@ -89,18 +89,18 @@ theorem baseChangeAlgHom_ofPath (f : k →+* l) (g : pathAlgebra l Q →ₐ[l] B
   exact liftAlgHom_ofPath k _ (baseChangeAlgHom_hcomp g)
     (baseChangeAlgHom_hzero g) (baseChangeAlgHom_hone g) x
 
-/-- Changing coefficients and applying `g` transports a scalar through `f`. -/
+/-- In the `k`-algebra structure induced through `f`, the algebra map applies `f` before the
+original `l`-algebra map. -/
 @[simp]
-theorem baseChangeAlgHom_algebraMap (f : k →+* l) (g : pathAlgebra l Q →ₐ[l] B)
-    (a : k) :
+theorem algebraMap_baseChange (f : k →+* l) (a : k) :
     letI : Algebra k B := ((algebraMap l B).comp f).toAlgebra'
       (fun b y ↦ Algebra.commutes (R := l) (A := B) (f b) y)
-    baseChangeAlgHom f g (algebraMap k (pathAlgebra k Q) a) = algebraMap l B (f a) := by
+    algebraMap k B a = algebraMap l B (f a) := by
   let _ : Algebra k B := ((algebraMap l B).comp f).toAlgebra'
     (fun b y ↦ Algebra.commutes (R := l) (A := B) (f b) y)
   -- `toAlgebra'` makes the target's `k`-algebra map the displayed composite.
-  rw [← RingHom.comp_apply]
-  exact (baseChangeAlgHom f g).commutes a
+  change ((algebraMap l B).comp f) a = algebraMap l B (f a)
+  rw [RingHom.comp_apply]
 
 /-- In the algebra structure induced through `f`, the scalar action of `k` is the scalar action
 of `l` after applying `f`. -/
