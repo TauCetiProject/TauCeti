@@ -1,0 +1,315 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Reparametrization
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
+public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
+
+/-!
+# Maximal intervals of geodesics
+
+For initial data `(p, v)`, this file defines the maximal interval of geodesic existence as the union
+of open intervals carrying genuine geodesics with those initial data.  It proves local existence
+from the geodesic spray, and records that the resulting set is an open interval containing zero.
+The key homogeneity theorem identifies the interval for `a • v` with the inverse scalar image of the
+interval for `v`; this is the domain statement used later by the exponential map.
+
+The interval is defined from geodesic witnesses rather than from arbitrary curves.  Thus its
+membership theorem is already suitable for downstream arguments that need an actual geodesic,
+while uniqueness, a chosen maximal curve, and finite-endpoint extension are separate results.
+
+## Main definitions and results
+
+* `TauCeti.Manifold.geodesicInterval` is the maximal interval of geodesic existence.
+* `TauCeti.Manifold.exists_geodesicCurveOnFrom_Ioo` gives local geodesic existence.
+* `TauCeti.Manifold.isOpen_geodesicInterval` and
+  `TauCeti.Manifold.ordConnected_geodesicInterval` give its interval structure.
+* `TauCeti.Manifold.mem_geodesicInterval_smul_iff` is the precise nonzero scalar domain relation.
+
+## References
+
+* M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 3, §2.
+* J. Lee, *Introduction to Riemannian Manifolds*, GTM 176, 2018, Ch. 5.
+* [Geodesics, the exponential map, and the Hopf--Rinow roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
+  Layer 1, "Maximal interval and homogeneity".
+-/
+
+public section
+
+open Bundle Filter Function Manifold Set
+open scoped ContDiff Manifold Topology
+
+noncomputable section
+
+namespace TauCeti.Manifold
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+private theorem contDiffOn_succ_of_hasDerivAt_comp {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {f : ℝ → F} {v : F → F} {s : Set ℝ} {u : Set F}
+    (hs : IsOpen s) (hv : ContDiffOn ℝ 1 v u) (hfu : MapsTo f s u)
+    (hf : ∀ t ∈ s, HasDerivAt f (v (f t)) t) : ContDiffOn ℝ 2 f s := by
+  have h : ContDiffOn ℝ ((1 : ℕ∞ω) + 1) f s := by
+    rw [contDiffOn_succ_iff_deriv_of_isOpen hs]
+    refine ⟨fun t ht => (hf t ht).differentiableAt.differentiableWithinAt, by simp, ?_⟩
+    have hf0 : ContDiffOn ℝ (0 : ℕ∞ω) f s := by
+      rw [contDiffOn_zero]
+      exact fun t ht => (hf t ht).continuousAt.continuousWithinAt
+    have hf1 : ContDiffOn ℝ 1 f s := by
+      have h0 : ContDiffOn ℝ (0 : ℕ∞ω) (fun t => v (f t)) s :=
+        (hv.of_le (by norm_num)).comp hf0 hfu |>.of_le (by norm_num)
+      have h1 : ContDiffOn ℝ ((0 : ℕ∞ω) + 1) f s := by
+        rw [contDiffOn_succ_iff_deriv_of_isOpen hs]
+        exact ⟨fun t ht => (hf t ht).differentiableAt.differentiableWithinAt, by simp,
+          h0.congr fun t ht => (hf t ht).deriv⟩
+      simpa using h1
+    exact (hv.comp hf1 hfu).congr fun t ht => (hf t ht).deriv
+  convert h using 1
+  norm_num
+
+private theorem IsMIntegralCurveAt.local_contMDiffAt_two
+    [BoundarylessManifold I M] [IsManifold I 2 M]
+    {γ : ℝ → M} {v : (x : M) → TangentSpace I x} {t₀ : ℝ}
+    (hγ : IsMIntegralCurveAt γ v t₀)
+    (hv : CMDiff 1 (fun x => (⟨x, v x⟩ : TangentBundle I M))) :
+    ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t₀ := by
+  rw [contMDiffAt_iff_target]
+  refine ⟨hγ.continuousAt, ?_⟩
+  let c : ℝ → E := (extChartAt I (γ t₀)) ∘ γ
+  let v' : E → E := fun x =>
+    tangentCoordChange I ((extChartAt I (γ t₀)).symm x) (γ t₀)
+      ((extChartAt I (γ t₀)).symm x) (v ((extChartAt I (γ t₀)).symm x))
+  have hv' : ContDiffAt ℝ 1 v' (extChartAt I (γ t₀) (γ t₀)) := by
+    have hv₀ := hv.contMDiffAt (x := γ t₀)
+    rw [contMDiffAt_iff] at hv₀
+    exact (hv₀.2.contDiffAt
+      (range_mem_nhds_isInteriorPoint BoundarylessManifold.isInteriorPoint)).snd
+  obtain ⟨u, hxu, hvu⟩ := hv'.contDiffOn le_rfl (by simp)
+  have hcsrc : ∀ᶠ t in 𝓝 t₀, γ t ∈ (extChartAt I (γ t₀)).source :=
+    hγ.continuousAt.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I) _)
+  have hderiv : ∀ᶠ t in 𝓝 t₀, HasDerivAt c (v' (c t)) t :=
+    hγ.eventually_hasDerivAt.and hcsrc |>.mono fun t ht => by
+      apply ht.1.congr_deriv
+      simp only [v', c, Function.comp_apply]
+      rw [PartialEquiv.left_inv _ ht.2]
+  have hcu : ∀ᶠ t in 𝓝 t₀, c t ∈ u :=
+    ((continuousAt_extChartAt (γ t₀)).comp hγ.continuousAt).eventually hxu
+  have hall : {t | HasDerivAt c (v' (c t)) t ∧ c t ∈ u} ∈ 𝓝 t₀ :=
+    hderiv.and hcu
+  obtain ⟨s, hsP, hsopen, hst₀⟩ := mem_nhds_iff.mp hall
+  have hc : ContDiffAt ℝ 2 c t₀ :=
+    (contDiffOn_succ_of_hasDerivAt_comp hsopen hvu (fun t ht => (hsP ht).2)
+      (fun t ht => (hsP ht).1)).contDiffAt (hsopen.mem_nhds hst₀)
+  have hc' : ContDiffAt ℝ 2 ((extChartAt I (γ t₀)) ∘ γ) t₀ := by
+    simpa only [c] using hc
+  exact hc'.contMDiffAt
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- A smooth Riemannian manifold has a geodesic with any prescribed initial data on a neighbourhood
+of the initial parameter. -/
+theorem exists_geodesicCurveOnFrom
+    (p : M) (v : TangentSpace I p) :
+    ∃ s ∈ 𝓝 (0 : ℝ), ∃ γ : ℝ → M, IsGeodesicCurveOnFrom I γ s p v := by
+  let z₀ : TangentBundle I M := TotalSpace.mk' E p v
+  have hv : CMDiff 1 (fun z : TangentBundle I M ↦
+      (⟨z, geodesicSpray I M z⟩ : TangentBundle I.tangent (TangentBundle I M))) := by
+    have h := contMDiff_geodesicSpray (I := I) (M := M) (n := (1 : ℕ∞ω))
+      (m := ∞) (k := ∞) (by norm_num) (by norm_num)
+    exact h.of_le (by norm_num)
+  obtain ⟨γ, hγ₀, hγ⟩ :=
+    exists_isMIntegralCurveAt_of_contMDiffAt_boundaryless (I := I.tangent)
+      (x₀ := z₀) (t₀ := 0) hv.contMDiffAt
+  obtain ⟨s, hs, hγs⟩ := isMIntegralCurveAt_iff.mp hγ
+  obtain ⟨u, hu, huopen, hu0⟩ := mem_nhds_iff.mp hs
+  have hγu : IsMIntegralCurveOn γ (geodesicSpray I M) u := hγs.mono hu
+  have hbase : ContMDiffOn 𝓘(ℝ, ℝ) I 2 (fun t ↦ (γ t).proj) u := by
+    apply contMDiffOn_of_locally_contMDiffOn
+    intro t ht
+    have hγt : IsMIntegralCurveAt γ (geodesicSpray I M) t :=
+      hγu.isMIntegralCurveAt (huopen.mem_nhds ht)
+    have hγt2 : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2 γ t :=
+      IsMIntegralCurveAt.local_contMDiffAt_two hγt hv
+    have hproj : ContMDiffAt I.tangent I 2 TotalSpace.proj (γ t) :=
+      Bundle.contMDiffAt_proj (fun x : M ↦ TangentSpace I x) (IB := I) (n := (2 : ℕ∞ω))
+    have hbase_t : ContMDiffAt 𝓘(ℝ, ℝ) I 2 ((fun z : TangentBundle I M => z.proj) ∘ γ) t :=
+      hproj.comp t hγt2
+    obtain ⟨u, hu, h'u⟩ := contMDiffAt_iff_contMDiffOn_nhds (n := (2 : ℕ∞ω))
+      (by norm_num) |>.mp hbase_t
+    obtain ⟨w, hwsub, hwopen, hwt⟩ := mem_nhds_iff.mp hu
+    refine ⟨w, hwopen, hwt, ?_⟩
+    exact (h'u.mono (inter_subset_right.trans hwsub)).congr
+      (fun x _ => rfl)
+  let hsu : UniqueDiffOn ℝ u := huopen.uniqueDiffOn
+  let base : ℝ → M := fun t => (γ t).proj
+  have hlift : EqOn γ (curveVelocityLiftWithin I base u) u := by
+    intro r hr
+    exact eq_curveVelocityLiftWithin_of_isMIntegralCurveOn (s := u) (t := r)
+      (hsu r hr) hγu hr
+  have hgeo : IsGeodesicCurveOn I base u :=
+    (isMIntegralCurveOn_curveVelocityLiftWithin_iff hsu hbase).1
+      (hγu.congr fun r hr => (hlift hr).symm)
+  refine ⟨u, huopen.mem_nhds hu0, base, hgeo, hu0, ?_⟩
+  simpa only [curveVelocityLiftWithin_apply, base, z₀] using (hlift hu0).symm.trans hγ₀
+
+/-- A neighbourhood of zero contains an interval of geodesic existence. -/
+theorem exists_geodesicCurveOnFrom_Ioo
+    (p : M) (v : TangentSpace I p) :
+    ∃ a b : ℝ, a < b ∧ 0 ∈ Ioo a b ∧
+      ∃ γ : ℝ → M, IsGeodesicCurveOnFrom I γ (Ioo a b) p v := by
+  obtain ⟨s, hs, γ, hγ⟩ := exists_geodesicCurveOnFrom (I := I) (M := M) p v
+  obtain ⟨u, hu, huopen, hu0⟩ := mem_nhds_iff.mp hs
+  obtain ⟨ε, hε, hεball⟩ := Metric.isOpen_iff.mp huopen 0 hu0
+  rw [Real.ball_eq_Ioo] at hεball
+  have hεball' : Ioo (-ε) ε ⊆ u := by
+    simpa only [zero_sub, zero_add] using hεball
+  have hγu : IsGeodesicCurveOnFrom I γ u p v := hγ.mono huopen.uniqueDiffOn hu hu0
+  refine ⟨-ε, ε, by linarith, ⟨by linarith, by linarith⟩, γ, ?_⟩
+  exact hγu.mono (uniqueDiffOn_Ioo _ _) hεball' ⟨by linarith, by linarith⟩
+
+/-! ### The maximal interval -/
+
+variable (I M) in
+/-- The maximal interval on which a geodesic with initial data `(p, v)` can exist. -/
+def geodesicInterval (p : M) (v : TangentSpace I p) : Set ℝ :=
+  {t | ∃ γ a b, IsGeodesicCurveOnFrom I γ (Ioo a b) p v ∧ t ∈ Ioo a b}
+
+omit [I.Boundaryless] in
+/-- Every geodesic witness with initial data `(p, v)` is defined inside
+`geodesicInterval I M p v`. -/
+theorem IsGeodesicCurveOnFrom.subset_geodesicInterval
+    {p : M} {v : TangentSpace I p} {γ : ℝ → M} {a b : ℝ}
+    (h : IsGeodesicCurveOnFrom I γ (Ioo a b) p v) :
+    Ioo a b ⊆ geodesicInterval I M p v := by
+  intro t ht
+  exact ⟨γ, a, b, h, ht⟩
+
+omit [I.Boundaryless] in
+/-- The maximal geodesic interval is open. -/
+theorem isOpen_geodesicInterval {p : M} {v : TangentSpace I p} :
+    IsOpen (geodesicInterval I M p v) := by
+  rw [isOpen_iff_forall_mem_open]
+  rintro t ⟨γ, a, b, hγ, ht⟩
+  exact ⟨Ioo a b, hγ.subset_geodesicInterval, isOpen_Ioo, ht⟩
+
+omit [I.Boundaryless] in
+/-- The maximal geodesic interval is order-connected, hence an interval in `ℝ`. -/
+theorem ordConnected_geodesicInterval {p : M} {v : TangentSpace I p} :
+    (geodesicInterval I M p v).OrdConnected := by
+  refine ⟨fun p hp q hq t ht ↦ ?_⟩
+  rcases le_or_gt 0 t with h | h
+  · obtain ⟨γ, a, b, hγ, hq'⟩ := hq
+    exact hγ.subset_geodesicInterval ⟨hγ.zero_mem.1.trans_le h, ht.2.trans_lt hq'.2⟩
+  · obtain ⟨γ, a, b, hγ, hp'⟩ := hp
+    exact hγ.subset_geodesicInterval ⟨hp'.1.trans_le ht.1, h.trans hγ.zero_mem.2⟩
+
+omit [I.Boundaryless] in
+/-- The maximal geodesic interval is preconnected. -/
+theorem isPreconnected_geodesicInterval {p : M} {v : TangentSpace I p} :
+    IsPreconnected (geodesicInterval I M p v) :=
+  ordConnected_geodesicInterval.isPreconnected
+
+/-- The initial parameter belongs to the maximal geodesic interval. -/
+theorem zero_mem_geodesicInterval {p : M} {v : TangentSpace I p} :
+    (0 : ℝ) ∈ geodesicInterval I M p v := by
+  obtain ⟨a, b, hab, h0, γ, hγ⟩ :=
+    exists_geodesicCurveOnFrom_Ioo (I := I) (M := M) p v
+  exact ⟨γ, a, b, hγ, h0⟩
+
+omit [I.Boundaryless] in
+/-- The zero-velocity geodesic exists for all time. -/
+theorem geodesicInterval_zero {p : M} :
+    geodesicInterval I M p (0 : TangentSpace I p) = univ := by
+  apply eq_univ_of_forall
+  intro t
+  refine ⟨fun _ : ℝ => p, -(|t| + 1), |t| + 1, ?_, ⟨by
+    linarith [neg_abs_le t], by linarith [le_abs_self t]⟩⟩
+  exact ⟨isGeodesicCurveOn_const (uniqueDiffOn_Ioo (-(|t| + 1)) (|t| + 1)) p,
+    ⟨by linarith [abs_nonneg t], by linarith [abs_nonneg t]⟩, by simp⟩
+
+private theorem preimage_mul_Ioo {a b c : ℝ} (hab : a < b) (hc : c ≠ 0) :
+    (fun t : ℝ => c * t) ⁻¹' Ioo a b = Ioo (min (a / c) (b / c)) (max (a / c) (b / c)) := by
+  ext t
+  rcases lt_or_gt_of_ne hc with hc' | hc'
+  · have hab' : b / c < a / c := (div_lt_iff_of_neg hc').2 (by
+      rw [div_mul_cancel₀ _ hc]
+      exact hab)
+    simp only [mem_preimage, mem_Ioo, min_eq_right (le_of_lt hab'), max_eq_left (le_of_lt hab')]
+    constructor
+    · rintro ⟨h₁, h₂⟩
+      exact ⟨(div_lt_iff_of_neg hc').2 (by simpa [mul_comm] using h₂),
+        (lt_div_iff_of_neg hc').2 (by simpa [mul_comm] using h₁)⟩
+    · rintro ⟨h₁, h₂⟩
+      exact ⟨by simpa [mul_comm] using (lt_div_iff_of_neg hc').1 h₂,
+        by simpa [mul_comm] using (div_lt_iff_of_neg hc').1 h₁⟩
+  · have hab' : a / c < b / c := (div_lt_div_iff₀ hc' hc').2 (mul_lt_mul_of_pos_right hab hc')
+    simp only [mem_preimage, mem_Ioo, min_eq_left (le_of_lt hab'), max_eq_right (le_of_lt hab')]
+    constructor
+    · rintro ⟨h₁, h₂⟩
+      exact ⟨(div_lt_iff₀ hc').2 (by simpa [mul_comm] using h₁),
+        (lt_div_iff₀ hc').2 (by simpa [mul_comm] using h₂)⟩
+    · rintro ⟨h₁, h₂⟩
+      exact ⟨by simpa [mul_comm] using (div_lt_iff₀ hc').1 h₁,
+        by simpa [mul_comm] using (lt_div_iff₀ hc').1 h₂⟩
+
+omit [I.Boundaryless] in
+/-- Nonzero rescaling of the initial velocity rescales the maximal interval by the inverse. -/
+theorem mem_geodesicInterval_smul_iff {p : M} {v : TangentSpace I p} {a t : ℝ} (ha : a ≠ 0) :
+    t ∈ geodesicInterval I M p (a • v) ↔ a * t ∈ geodesicInterval I M p v := by
+  constructor
+  · rintro ⟨γ, b, c, hγ, ht⟩
+    have hbc : b < c := hγ.zero_mem.1.trans hγ.zero_mem.2
+    let u := Ioo (min (b / a⁻¹) (c / a⁻¹)) (max (b / a⁻¹) (c / a⁻¹))
+    have hu : (fun s : ℝ => a⁻¹ * s) ⁻¹' Ioo b c = u := by
+      exact preimage_mul_Ioo hbc (inv_ne_zero ha)
+    have hmap : MapsTo (fun s : ℝ => a⁻¹ * s) u (Ioo b c) := by
+      rw [← hu]
+      exact fun _ hs => hs
+    have h0u : (0 : ℝ) ∈ u := by
+      rw [← hu]
+      simpa using hγ.zero_mem
+    have huuniq : UniqueDiffOn ℝ u := by
+      dsimp [u]
+      exact uniqueDiffOn_Ioo _ _
+    have hγ' : IsGeodesicCurveOnFrom I (γ ∘ fun s : ℝ => a⁻¹ * s) u p v := by
+      simpa [u, smul_smul, inv_mul_cancel₀ ha] using
+        hγ.comp_mul_left a⁻¹ huuniq hmap h0u
+    refine ⟨γ ∘ fun s : ℝ => a⁻¹ * s, _, _, hγ', ?_⟩
+    -- The existential witness unfolds `u`; rewrite its membership as the preimage condition.
+    change a * t ∈ u
+    rw [← hu]
+    simpa [← mul_assoc, inv_mul_cancel₀ ha] using ht
+  · rintro ⟨γ, b, c, hγ, ht⟩
+    have hbc : b < c := hγ.zero_mem.1.trans hγ.zero_mem.2
+    let u := Ioo (min (b / a) (c / a)) (max (b / a) (c / a))
+    have hu : (fun s : ℝ => a * s) ⁻¹' Ioo b c = u := by
+      exact preimage_mul_Ioo hbc ha
+    have hmap : MapsTo (fun s : ℝ => a * s) u (Ioo b c) := by
+      rw [← hu]
+      exact fun _ hs => hs
+    have h0u : (0 : ℝ) ∈ u := by
+      rw [← hu]
+      simpa using hγ.zero_mem
+    have huuniq : UniqueDiffOn ℝ u := by
+      dsimp [u]
+      exact uniqueDiffOn_Ioo _ _
+    have hγ' : IsGeodesicCurveOnFrom I (γ ∘ fun s : ℝ => a * s) u p (a • v) :=
+      hγ.comp_mul_left a huuniq hmap h0u
+    refine ⟨γ ∘ fun s : ℝ => a * s, _, _, hγ', ?_⟩
+    -- As above, expose the named witness interval before applying the preimage equality.
+    change t ∈ u
+    rw [← hu]
+    exact ht
+
+end Manifold
+
+end TauCeti
