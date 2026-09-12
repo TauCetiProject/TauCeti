@@ -138,6 +138,24 @@ theorem integrable_sampleIntegrand :
   rw [Real.norm_eq_abs, abs_of_nonneg (sampleIntegrand_nonneg W G x)]
   exact sampleIntegrand_le_one W G x
 
+open Classical in
+/-- The conditional mass of `G` as a single product over the pairs of the complete graph: each
+pair contributes the graphon value if `G` joins it and the complementary value if it does not. -/
+theorem sampleIntegrand_eq_prod_edgeFinset_top (x : Fin n → Ω) :
+    sampleIntegrand W G x = ∏ e ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset,
+      (if e ∈ G.edgeFinset then edgeFactor W x e else 1 - edgeFactor W x e) := by
+  have hsub : G.edgeFinset ⊆ (⊤ : SimpleGraph (Fin n)).edgeFinset :=
+    SimpleGraph.edgeFinset_mono le_top
+  have hedges : ∏ e ∈ G.edgeFinset,
+      (if e ∈ G.edgeFinset then edgeFactor W x e else 1 - edgeFactor W x e) =
+      ∏ e ∈ G.edgeFinset, edgeFactor W x e :=
+    Finset.prod_congr rfl fun e he => by simp [he]
+  have hnonedges : ∏ e ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset \ G.edgeFinset,
+      (if e ∈ G.edgeFinset then edgeFactor W x e else 1 - edgeFactor W x e) =
+      ∏ e ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset \ G.edgeFinset, (1 - edgeFactor W x e) :=
+    Finset.prod_congr rfl fun e he => by simp [(Finset.mem_sdiff.mp he).2]
+  rw [← Finset.prod_sdiff hsub, hedges, hnonedges, mul_comm, sampleIntegrand_def]
+
 /-- Sampled-graph masses are nonnegative. -/
 theorem sampleMass_nonneg : 0 ≤ sampleMass W G := by
   classical
