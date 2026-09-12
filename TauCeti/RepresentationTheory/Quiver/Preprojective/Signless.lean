@@ -694,6 +694,73 @@ private theorem coord_signlessRelator {v w : V} (h : G.Adj v w) :
   · exact fun hw => absurd (Finset.mem_univ w) hw
 
 omit [DecidableRel G.Adj] in
+/-- **A corner sum is read one term at a time.** In a sum of path-algebra elements indexed by the
+vertices, each term of which is either zero or a multiple of the backtrack at `v` along its own
+edge, the coordinate on the backtrack along the edge `vw'` sees only the term at `w'`. -/
+private theorem coord_sum_eq_coord_apply {v w' : V} (h' : G.Adj v w')
+    {T : V → pathAlgebra k (DoubledQuiver G)}
+    (hT : ∀ ⦃w : V⦄, w ≠ w' → T w = 0 ∨ ∃ (c : k) (h : G.Adj v w), T w = c • backtrackElem G k h) :
+    (pathAlgebraBasis k (DoubledQuiver G)).coord ⟨vertex G v, vertex G v, backtrackPath G h'⟩
+        (∑ w : V, T w)
+      = (pathAlgebraBasis k (DoubledQuiver G)).coord
+          ⟨vertex G v, vertex G v, backtrackPath G h'⟩ (T w') := by
+  rw [map_sum, Finset.sum_eq_single w']
+  · intro w _ hne
+    rcases hT hne with hzero | ⟨c, h, hc⟩
+    · rw [hzero, map_zero]
+    · rw [hc, map_smul, smul_eq_mul, coord_backtrackElem_of_ne k h h' hne, mul_zero]
+  · exact fun hw => absurd (Finset.mem_univ w') hw
+
+omit [DecidableRel G.Adj] in
+/-- **The outgoing corner sums see only the edge `vw'`**: every outgoing corner at another
+neighbour of `v` is either empty or a multiple of a different backtrack. -/
+private theorem coord_sum_smul_tailBacktrackElem_eq
+    (ε : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → k) {v w' : V} (h' : G.Adj v w') :
+    (pathAlgebraBasis k (DoubledQuiver G)).coord ⟨vertex G v, vertex G v, backtrackPath G h'⟩
+        (∑ w : V, DoubledQuiver.orientedPathAlgEquiv k o
+          (∑ a : (OrientedQuiver.vertex G o v ⟶ OrientedQuiver.vertex G o w),
+            ε a • tailBacktrackElem k a))
+      = (pathAlgebraBasis k (DoubledQuiver G)).coord
+          ⟨vertex G v, vertex G v, backtrackPath G h'⟩
+          (DoubledQuiver.orientedPathAlgEquiv k o
+            (∑ a : (OrientedQuiver.vertex G o v ⟶ OrientedQuiver.vertex G o w'),
+              ε a • tailBacktrackElem k a)) := by
+  refine coord_sum_eq_coord_apply k h' fun w _ => ?_
+  by_cases hadj : G.Adj v w
+  · by_cases hd : (⟨(v, w), hadj⟩ : G.Dart) ∈ o
+    · exact Or.inr ⟨ε (OrientedQuiver.arrow G o hadj hd), hadj,
+        orientedPathAlgEquiv_sum_smul_tailBacktrackElem k o ε hadj hd⟩
+    · exact Or.inl (by
+        rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun _ => hd, map_zero])
+  · exact Or.inl (by
+      rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun hh => absurd hh hadj, map_zero])
+
+omit [DecidableRel G.Adj] in
+/-- **The incoming corner sums see only the edge `vw'`**, the mirror image of
+`TauCeti.coord_sum_smul_tailBacktrackElem_eq`. -/
+private theorem coord_sum_smul_headBacktrackElem_eq
+    (ε : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → k) {v w' : V} (h' : G.Adj v w') :
+    (pathAlgebraBasis k (DoubledQuiver G)).coord ⟨vertex G v, vertex G v, backtrackPath G h'⟩
+        (∑ w : V, DoubledQuiver.orientedPathAlgEquiv k o
+          (∑ a : (OrientedQuiver.vertex G o w ⟶ OrientedQuiver.vertex G o v),
+            ε a • headBacktrackElem k a))
+      = (pathAlgebraBasis k (DoubledQuiver G)).coord
+          ⟨vertex G v, vertex G v, backtrackPath G h'⟩
+          (DoubledQuiver.orientedPathAlgEquiv k o
+            (∑ a : (OrientedQuiver.vertex G o w' ⟶ OrientedQuiver.vertex G o v),
+              ε a • headBacktrackElem k a)) := by
+  refine coord_sum_eq_coord_apply k h' fun w _ => ?_
+  by_cases hadj : G.Adj v w
+  · by_cases hd : (⟨(w, v), hadj.symm⟩ : G.Dart) ∈ o
+    · exact Or.inr ⟨ε (OrientedQuiver.arrow G o hadj.symm hd), hadj,
+        orientedPathAlgEquiv_sum_smul_headBacktrackElem k o ε hadj hd⟩
+    · exact Or.inl (by
+        rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun _ => hd, map_zero])
+  · exact Or.inl (by
+      rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun hh => absurd hh.symm hadj,
+        map_zero])
+
+omit [DecidableRel G.Adj] in
 /-- **The outgoing corner sums see an outgoing edge once.** Only the edge `vw'` contributes to the
 coordinate on the backtrack along `vw'`, and it does so with the weight `ε` gives its arrow. -/
 private theorem coord_sum_smul_tailBacktrackElem_of_mem
@@ -703,18 +770,9 @@ private theorem coord_sum_smul_tailBacktrackElem_of_mem
         (∑ w : V, DoubledQuiver.orientedPathAlgEquiv k o
           (∑ a : (OrientedQuiver.vertex G o v ⟶ OrientedQuiver.vertex G o w),
             ε a • tailBacktrackElem k a)) = ε (OrientedQuiver.arrow G o h' ho) := by
-  rw [map_sum, Finset.sum_eq_single w']
-  · rw [orientedPathAlgEquiv_sum_smul_tailBacktrackElem k o ε h' ho, map_smul, smul_eq_mul,
-      coord_backtrackElem_self k h', mul_one]
-  · intro w _ hne
-    by_cases hadj : G.Adj v w
-    · by_cases hd : (⟨(v, w), hadj⟩ : G.Dart) ∈ o
-      · rw [orientedPathAlgEquiv_sum_smul_tailBacktrackElem k o ε hadj hd, map_smul, smul_eq_mul,
-          coord_backtrackElem_of_ne k hadj h' hne, mul_zero]
-      · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun _ => hd, map_zero, map_zero]
-    · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun hh => absurd hh hadj, map_zero,
-        map_zero]
-  · exact fun hw => absurd (Finset.mem_univ w') hw
+  rw [coord_sum_smul_tailBacktrackElem_eq k o ε h',
+    orientedPathAlgEquiv_sum_smul_tailBacktrackElem k o ε h' ho, map_smul, smul_eq_mul,
+    coord_backtrackElem_self k h', mul_one]
 
 omit [DecidableRel G.Adj] in
 /-- **The incoming corner sums see an incoming edge once**, the mirror image of
@@ -726,18 +784,9 @@ private theorem coord_sum_smul_headBacktrackElem_of_mem
         (∑ w : V, DoubledQuiver.orientedPathAlgEquiv k o
           (∑ a : (OrientedQuiver.vertex G o w ⟶ OrientedQuiver.vertex G o v),
             ε a • headBacktrackElem k a)) = ε (OrientedQuiver.arrow G o h'.symm ho) := by
-  rw [map_sum, Finset.sum_eq_single w']
-  · rw [orientedPathAlgEquiv_sum_smul_headBacktrackElem k o ε h' ho, map_smul, smul_eq_mul,
-      coord_backtrackElem_self k h', mul_one]
-  · intro w _ hne
-    by_cases hadj : G.Adj v w
-    · by_cases hd : (⟨(w, v), hadj.symm⟩ : G.Dart) ∈ o
-      · rw [orientedPathAlgEquiv_sum_smul_headBacktrackElem k o ε hadj hd, map_smul, smul_eq_mul,
-          coord_backtrackElem_of_ne k hadj h' hne, mul_zero]
-      · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun _ => hd, map_zero, map_zero]
-    · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun hh => absurd hh.symm hadj,
-        map_zero, map_zero]
-  · exact fun hw => absurd (Finset.mem_univ w') hw
+  rw [coord_sum_smul_headBacktrackElem_eq k o ε h',
+    orientedPathAlgEquiv_sum_smul_headBacktrackElem k o ε h' ho, map_smul, smul_eq_mul,
+    coord_backtrackElem_self k h', mul_one]
 
 omit [DecidableRel G.Adj] in
 /-- **The outgoing corner sums do not see an incoming edge.** If the edge `vw'` is oriented into
@@ -749,18 +798,8 @@ private theorem coord_sum_smul_tailBacktrackElem_of_notMem
         (∑ w : V, DoubledQuiver.orientedPathAlgEquiv k o
           (∑ a : (OrientedQuiver.vertex G o v ⟶ OrientedQuiver.vertex G o w),
             ε a • tailBacktrackElem k a)) = 0 := by
-  rw [map_sum]
-  refine Finset.sum_eq_zero fun w _ => ?_
-  by_cases hadj : G.Adj v w
-  · by_cases hd : (⟨(v, w), hadj⟩ : G.Dart) ∈ o
-    · by_cases hne : w = w'
-      · subst hne
-        exact absurd hd ho
-      · rw [orientedPathAlgEquiv_sum_smul_tailBacktrackElem k o ε hadj hd, map_smul, smul_eq_mul,
-          coord_backtrackElem_of_ne k hadj h' hne, mul_zero]
-    · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun _ => hd, map_zero, map_zero]
-  · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun hh => absurd hh hadj, map_zero,
-      map_zero]
+  rw [coord_sum_smul_tailBacktrackElem_eq k o ε h',
+    OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun _ => ho, map_zero, map_zero]
 
 omit [DecidableRel G.Adj] in
 /-- **The incoming corner sums do not see an outgoing edge**, the mirror image of
@@ -772,18 +811,8 @@ private theorem coord_sum_smul_headBacktrackElem_of_notMem
         (∑ w : V, DoubledQuiver.orientedPathAlgEquiv k o
           (∑ a : (OrientedQuiver.vertex G o w ⟶ OrientedQuiver.vertex G o v),
             ε a • headBacktrackElem k a)) = 0 := by
-  rw [map_sum]
-  refine Finset.sum_eq_zero fun w _ => ?_
-  by_cases hadj : G.Adj v w
-  · by_cases hd : (⟨(w, v), hadj.symm⟩ : G.Dart) ∈ o
-    · by_cases hne : w = w'
-      · subst hne
-        exact absurd hd ho
-      · rw [orientedPathAlgEquiv_sum_smul_headBacktrackElem k o ε hadj hd, map_smul, smul_eq_mul,
-          coord_backtrackElem_of_ne k hadj h' hne, mul_zero]
-    · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun _ => hd, map_zero, map_zero]
-  · rw [OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun hh => absurd hh.symm hadj,
-      map_zero, map_zero]
+  rw [coord_sum_smul_headBacktrackElem_eq k o ε h',
+    OrientedQuiver.sum_hom_eq_zero_of_forall_notMem G o fun _ => ho, map_zero, map_zero]
 
 omit [DecidableRel G.Adj] in
 /-- The image of a gauged signed local relator, split into its incoming and its outgoing corner

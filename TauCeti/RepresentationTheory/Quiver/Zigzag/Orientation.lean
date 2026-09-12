@@ -142,7 +142,7 @@ def ofBipartition (s : Set V) (hs : ∀ ⦃i j : V⦄, G.Adj i j → (i ∈ s �
   symm_mem_iff_not_mem d := by
     -- Reversing a dart swaps its endpoints, so the condition to check is that exactly one of the
     -- two endpoints of an edge lies in `s`.
-    change d.snd ∈ s ↔ d.fst ∉ s
+    simp only [Set.mem_ofPred_eq, SimpleGraph.Dart.symm_toProd, Prod.fst_swap]
     refine ⟨fun hsnd hfst => (hs d.adj).1 hfst hsnd, fun hfst => ?_⟩
     by_contra hsnd
     exact hfst ((hs d.adj).2 hsnd)

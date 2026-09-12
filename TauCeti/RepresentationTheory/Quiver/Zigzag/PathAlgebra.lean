@@ -50,6 +50,9 @@ returning is the product `ofArrow (arrow G h.symm) * ofArrow (arrow G h)`.
   `TauCeti.DoubledQuiver.backtrackElem_mul_vertexIdempotent`, and their vanishing counterparts.
 * `TauCeti.DoubledQuiver.linearIndependent_vertexIdempotent_ofArrow_backtrackElem`: the vertex
   idempotents, the oriented-edge elements, and the backtrack elements are linearly independent.
+* `TauCeti.DoubledQuiver.orientedPathAlgEquiv_ofPath` and
+  `TauCeti.DoubledQuiver.orientedPathAlgEquiv_vertexIdempotent`, with their inverse counterparts:
+  the relabelling on the generators of the path algebra.
 * `TauCeti.DoubledQuiver.orientedPathAlgEquiv_ofArrow_of` and
   `TauCeti.DoubledQuiver.orientedPathAlgEquiv_ofArrow_reverse_of`: the relabelling reads an
   oriented arrow and its formal reverse as the two darts over the same edge.
@@ -333,6 +336,44 @@ noncomputable def orientedPathAlgEquiv :
       pathAlgebra k (DoubledQuiver G) :=
   PathAlgebra.mapAlgEquiv k (symmetrifyMap G o) (unsymmetrifyMap G o)
     (symmetrifyMap_comp_unsymmetrifyMap G o) (unsymmetrifyMap_comp_symmetrifyMap G o)
+
+/-- The relabelling sends the basis element of a path of the symmetrified oriented quiver to the
+basis element of the relabelled path of the doubled quiver. -/
+@[simp]
+theorem orientedPathAlgEquiv_ofPath
+    (x : Quiver.TotalPath (_root_.Quiver.Symmetrify (OrientedQuiver G o))) :
+    orientedPathAlgEquiv k o (ofPath x) = ofPath ((symmetrifyMap G o).mapTotalPath x) := by
+  rw [orientedPathAlgEquiv, PathAlgebra.mapAlgEquiv_apply, PathAlgebra.mapAlgHom_ofPath]
+
+/-- The inverse relabelling sends the basis element of a path of the doubled quiver to the basis
+element of the relabelled path of the symmetrified oriented quiver. -/
+@[simp]
+theorem orientedPathAlgEquiv_symm_ofPath (x : Quiver.TotalPath (DoubledQuiver G)) :
+    (orientedPathAlgEquiv k o).symm (ofPath x) = ofPath ((unsymmetrifyMap G o).mapTotalPath x) := by
+  rw [orientedPathAlgEquiv, PathAlgebra.mapAlgEquiv_symm_apply, PathAlgebra.mapAlgHom_ofPath]
+
+/-- The inverse relabelling carries the idempotent of a vertex of the doubled quiver to the
+idempotent of the same vertex of the oriented quiver. The two vertex types are definitionally
+equal, so the symmetrified quiver structure is named explicitly to keep it from being replaced by
+that of the oriented quiver. -/
+@[simp]
+theorem orientedPathAlgEquiv_symm_vertexIdempotent (i : V) :
+    (orientedPathAlgEquiv k o).symm (vertexIdempotent k (vertex G i))
+      = @vertexIdempotent k (_root_.Quiver.Symmetrify (OrientedQuiver G o)) _
+          (_root_.Quiver.symmetrifyQuiver _) (OrientedQuiver.vertex G o i) := by
+  rw [orientedPathAlgEquiv, PathAlgebra.mapAlgEquiv_symm_apply,
+    PathAlgebra.mapAlgHom_vertexIdempotent, unsymmetrifyMap_obj]
+
+/-- The relabelling carries the idempotent of a vertex of the oriented quiver to the idempotent of
+the same vertex of the doubled quiver, with the symmetrified quiver structure named explicitly as
+above. -/
+@[simp]
+theorem orientedPathAlgEquiv_vertexIdempotent (i : V) :
+    orientedPathAlgEquiv k o
+        (@vertexIdempotent k (_root_.Quiver.Symmetrify (OrientedQuiver G o)) _
+          (_root_.Quiver.symmetrifyQuiver _) (OrientedQuiver.vertex G o i))
+      = vertexIdempotent k (vertex G i) := by
+  rw [← orientedPathAlgEquiv_symm_vertexIdempotent k o i, AlgEquiv.apply_symm_apply]
 
 /-- The relabelling sends the element of an arrow to the element of its image arrow. Deliberately
 not a `simp` lemma: `TauCeti.PathAlgebra.ofArrow_eq_ofPath` already rewrites its left-hand side,
