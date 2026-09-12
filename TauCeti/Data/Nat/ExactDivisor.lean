@@ -286,8 +286,9 @@ theorem isExactDivisor_prodPrimePow : IsExactDivisor (prodPrimePow N s) N := by
     symm
     exact Finset.prod_subset Finset.inter_subset_left fun p hp hpnmem ↦ by
       have hpN : p ∉ N.primeFactors := fun hpN ↦ hpnmem (Finset.mem_inter.mpr ⟨hp, hpN⟩)
-      rw [show N.factorization p = 0 by
-        simpa [← Nat.support_factorization] using hpN, pow_zero]
+      have hpFac : N.factorization p = 0 := by
+        simpa [← Nat.support_factorization] using hpN
+      rw [hpFac, pow_zero]
   rw [hprod]
   rcases eq_or_ne N 0 with rfl | hN
   · simp [prodPrimePow]
