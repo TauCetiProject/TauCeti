@@ -232,7 +232,7 @@ omit [TopologicalSpace G] in
 
 /-- A coefficient homomorphism induces a natural transformation between the degree-zero
 finite-quotient systems. -/
-noncomputable def explicitFiniteQuotientSystem0_coeffNatTrans (f : M →+[G] N) :
+noncomputable def explicitFiniteQuotientSystem0CoeffNatTrans (f : M →+[G] N) :
     explicitFiniteQuotientSystem0 G M ⟶ explicitFiniteQuotientSystem0 G N where
   app U := AddCommGrpCat.ofHom (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
     (FixedPoints.addSubgroup U.unop.toSubgroup M)
@@ -262,17 +262,17 @@ noncomputable def explicitFiniteQuotientSystem0_coeffNatTrans (f : M →+[G] N) 
 theorem explicitFiniteQuotientSystem0_coeffNatTrans_app (f : M →+[G] N)
     (U : OpenNormalSubgroup G) :
     eqToHom (explicitFiniteQuotientSystem0_obj G M U).symm ≫
-        (explicitFiniteQuotientSystem0_coeffNatTrans G M f).app (Opposite.op U) ≫
+        (explicitFiniteQuotientSystem0CoeffNatTrans G M f).app (Opposite.op U) ≫
       eqToHom (explicitFiniteQuotientSystem0_obj G N U) =
       AddCommGrpCat.ofHom (explicitCoeff0 (G ⧸ U.toSubgroup)
         (FixedPoints.addSubgroup U.toSubgroup M)
         (fixedPointsAddSubgroupQuotientMap G M f U.toSubgroup)) := by
-  unfold explicitFiniteQuotientSystem0_coeffNatTrans
+  unfold explicitFiniteQuotientSystem0CoeffNatTrans
   rfl
 
 @[simp]
 theorem explicitFiniteQuotientSystem0_coeffNatTrans_id :
-    explicitFiniteQuotientSystem0_coeffNatTrans G M
+    explicitFiniteQuotientSystem0CoeffNatTrans G M
         (DistribMulActionHom.id G) = 𝟙 (explicitFiniteQuotientSystem0 G M) := by
   apply NatTrans.ext
   funext U
@@ -281,7 +281,7 @@ theorem explicitFiniteQuotientSystem0_coeffNatTrans_id :
   intro x
   apply Subtype.ext
   apply Subtype.ext
-  dsimp [explicitFiniteQuotientSystem0_coeffNatTrans]
+  dsimp [explicitFiniteQuotientSystem0CoeffNatTrans]
   let x' : H0 (G ⧸ U.unop.toSubgroup)
       (FixedPoints.addSubgroup U.unop.toSubgroup M) := x
   change
@@ -295,9 +295,9 @@ theorem explicitFiniteQuotientSystem0_coeffNatTrans_id :
 theorem explicitFiniteQuotientSystem0_coeffNatTrans_comp
     {P : Type v} [AddCommGroup P] [DistribMulAction G P]
     (f : M →+[G] N) (q : N →+[G] P) :
-    explicitFiniteQuotientSystem0_coeffNatTrans G M (q.comp f) =
-      explicitFiniteQuotientSystem0_coeffNatTrans G M f ≫
-        explicitFiniteQuotientSystem0_coeffNatTrans G N q := by
+    explicitFiniteQuotientSystem0CoeffNatTrans G M (q.comp f) =
+      explicitFiniteQuotientSystem0CoeffNatTrans G M f ≫
+        explicitFiniteQuotientSystem0CoeffNatTrans G N q := by
   apply NatTrans.ext
   funext U
   apply AddCommGrpCat.hom_ext
@@ -305,7 +305,7 @@ theorem explicitFiniteQuotientSystem0_coeffNatTrans_comp
   intro x
   apply Subtype.ext
   apply Subtype.ext
-  dsimp [explicitFiniteQuotientSystem0_coeffNatTrans]
+  dsimp [explicitFiniteQuotientSystem0CoeffNatTrans]
   let x' : H0 (G ⧸ U.unop.toSubgroup)
       (FixedPoints.addSubgroup U.unop.toSubgroup M) := x
   change
