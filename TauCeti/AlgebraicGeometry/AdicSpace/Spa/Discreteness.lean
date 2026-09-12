@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.SeparationQuotient
 import TauCeti.RingTheory.Huber.Continuous.ValuativeCriterion
 import TauCeti.RingTheory.Ideal.OneAddLocalisation
-import TauCeti.RingTheory.Valuation.LocalSubring
+import Mathlib.RingTheory.Valuation.LocalSubring
 import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 
 /-!
