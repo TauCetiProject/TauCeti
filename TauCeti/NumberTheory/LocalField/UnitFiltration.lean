@@ -219,12 +219,11 @@ theorem unitFiltrationGradedPieceZeroEquivResidueFieldUnits_mk (x : unitFiltrati
         QuotientGroup.mk
           (⟨(x : Kˣ), (unitFiltration_zero (K := K)).le x.prop⟩ :
             (valuation K).valuationSubring.unitGroup) := by
-    change
-      QuotientGroup.quotientMapSubgroupOfOfLe
-          (unitFiltration_one (K := K)).le (unitFiltration_zero (K := K)).le
-          (QuotientGroup.mk x) = _
-    rw [QuotientGroup.quotientMapSubgroupOfOfLe_mk]
-    rfl
+    exact QuotientGroup.quotientMapSubgroupOfOfLe_mk
+      (unitFiltration_one (K := K)).le (unitFiltration_zero (K := K)).le x
+  -- Mathlib states the residue-field equivalence using `principalUnitGroup.comap`, whereas the
+  -- transported quotient is written with `principalUnitGroup.subgroupOf`. These subgroups are
+  -- definitionally equal, but there is no propositional rewrite lemma between the presentations.
   change
     (valuation K).valuationSubring.unitsModPrincipalUnitsEquivResidueFieldUnits
         (QuotientGroup.equivQuotientSubgroupOfOfEq
@@ -252,6 +251,7 @@ noncomputable instance unitFiltration_one_isFiniteRelIndex_zero :
 
 /-- The depth-zero graded piece has `q - 1` elements, where `q` is the cardinality of the residue
 field. -/
+@[simp]
 theorem natCard_unitFiltrationGradedPiece_zero :
     Nat.card (UnitFiltrationGradedPiece K 0) = Nat.card 𝓀[K] - 1 := by
   rw [← Nat.card_units]
@@ -259,6 +259,7 @@ theorem natCard_unitFiltrationGradedPiece_zero :
 
 /-- The relative index `[U(K,0) : U(K,1)]` is one less than the cardinality of the residue
 field. -/
+@[simp]
 theorem relIndex_unitFiltration_one_zero :
     (unitFiltration K 1).relIndex (unitFiltration K 0) = Nat.card 𝓀[K] - 1 := by
   rw [Subgroup.relIndex, Subgroup.index]
