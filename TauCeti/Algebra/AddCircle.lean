@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
-public import Mathlib.GroupTheory.Torsion
 public import Mathlib.Topology.Instances.AddCircle.Defs
 
 /-!
@@ -48,6 +46,8 @@ for `AddCircle (1 : ℚ)`.
 * `AddCircle.eq_torsionBy_of_natCard_eq`: a subgroup of `AddCircle p` with `n` elements is the
   `n`-torsion; equivalently, `AddCircle.exists_eq_torsionBy` writes every finite subgroup as a
   torsion subgroup.
+* `AddSubgroup.le_torsionBy_of_natCard_eq`: the general fact behind that uniqueness, that a
+  subgroup with `n` elements consists of `n`-torsion points.
 * `AddCircle.torsionBy_le_torsionBy_iff` and `AddCircle.torsionBy_inj`: the torsion subgroups
   are ordered by divisibility, and pairwise distinct.
 * `AddCircle.nsmul_coe_period_div`: multiplying the generator of the `n`-torsion by a divisor
@@ -56,9 +56,9 @@ for `AddCircle (1 : ℚ)`.
   `AddCircle.existsUnique_apply_eq_coe_period_div`,
   `AddCircle.exists_zsmul_eq_of_apply_eq_coe_period_div`,
   `AddCircle.isAddCyclic_of_range_eq_torsionBy` and
-  `AddCircle.zmodAddEquivOfRangeEqTorsionBy`: an injective homomorphism from an abelian group
-  onto the `n`-torsion makes that group cyclic of order `n`, with a unique element of invariant
-  `p / n` as a distinguished generator.
+  `AddCircle.zmodAddEquivOfRangeEqTorsionBy`: an injective homomorphism from a group onto the
+  `n`-torsion makes that group cyclic of order `n`, with a unique element of invariant `p / n`
+  as a distinguished generator.
 * `AddCircle.isAddTorsion_rat`: a rational circle is a torsion group, so its torsion subgroups
   exhaust it (`AddCircle.exists_mem_torsionBy_rat`).
 
@@ -78,6 +78,18 @@ open AddSubgroup
 Mathlib's torsion API for `AddCircle p` is stated under `Fact (0 < p)`, and this is the instance
 that makes it apply to the rational circle. -/
 instance Rat.fact_zero_lt_one : Fact ((0 : ℚ) < 1) := ⟨one_pos⟩
+
+namespace AddSubgroup
+
+/-- A subgroup with `n` elements consists of `n`-torsion points. -/
+theorem le_torsionBy_of_natCard_eq {A : Type*} [AddCommGroup A] {n : ℕ} {H : AddSubgroup A}
+    (hH : Nat.card H = n) : H ≤ A[(n : ℤ)] := fun x hx ↦
+  torsionBy.nsmul_iff.mpr <| by
+    have : Nat.card H • (⟨x, hx⟩ : H) = 0 := card_nsmul_eq_zero'
+    rw [hH] at this
+    exact congrArg Subtype.val this
+
+end AddSubgroup
 
 namespace AddCircle
 
@@ -136,9 +148,10 @@ theorem exists_zsmul_eq_of_mem_torsionBy (hn : 0 < n) {u : AddCircle p}
 theorem natCard_torsionBy (hn : 0 < n) : Nat.card ((AddCircle p)[(n : ℤ)]) = n := by
   rw [torsionBy_eq_zmultiples p hn, Nat.card_zmultiples, addOrderOf_period_div hn]
 
+omit hp in
 /-- The `n`-torsion of `AddCircle p` is finite for positive `n`. -/
 theorem finite_torsionBy (hn : 0 < n) : Finite ((AddCircle p)[(n : ℤ)]) :=
-  Nat.finite_of_card_ne_zero <| by rw [natCard_torsionBy p hn]; omega
+  ((finite_torsion p hn).subset fun _ hu ↦ torsionBy.nsmul_iff.mp hu).to_subtype
 
 /-- The `n`-torsion of `AddCircle p` is cyclic; by `AddCircle.natCard_torsionBy` it is cyclic of
 order exactly `n`. -/
@@ -146,21 +159,12 @@ theorem isAddCyclic_torsionBy (hn : 0 < n) : IsAddCyclic ((AddCircle p)[(n : ℤ
   (AddSubgroup.isAddCyclic_iff_exists_zmultiples_eq_top _).mpr
     ⟨_, (torsionBy_eq_zmultiples p hn).symm⟩
 
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] hp in
-/-- A subgroup of `AddCircle p` with `n` elements consists of `n`-torsion points. -/
-theorem le_torsionBy_of_natCard_eq {H : AddSubgroup (AddCircle p)} (hH : Nat.card H = n) :
-    H ≤ (AddCircle p)[(n : ℤ)] := fun x hx ↦
-  torsionBy.nsmul_iff.mpr <| by
-    have : Nat.card H • (⟨x, hx⟩ : H) = 0 := card_nsmul_eq_zero'
-    rw [hH] at this
-    exact congrArg Subtype.val this
-
 /-- There is exactly one subgroup of `AddCircle p` of any given finite order: a subgroup with
 `n` elements is the `n`-torsion. -/
 theorem eq_torsionBy_of_natCard_eq (hn : 0 < n) {H : AddSubgroup (AddCircle p)}
     (hH : Nat.card H = n) : H = (AddCircle p)[(n : ℤ)] :=
   have := finite_torsionBy p hn
-  AddSubgroup.eq_of_le_of_card_ge (le_torsionBy_of_natCard_eq p hH)
+  AddSubgroup.eq_of_le_of_card_ge (AddSubgroup.le_torsionBy_of_natCard_eq hH)
     (by rw [natCard_torsionBy p hn, hH])
 
 /-- Every finite subgroup of `AddCircle p` is a torsion subgroup. -/
@@ -204,14 +208,14 @@ end Torsion
 section InvariantMap
 
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] (p : 𝕜) [hp : Fact (0 < p)]
-  {n : ℕ} {H : Type*} [AddCommGroup H] {f : H →+ AddCircle p}
+  {n : ℕ} {H : Type*} [AddGroup H] {f : H →+ AddCircle p}
 
 /-! ### Groups normalized by an invariant map
 
-An *invariant map* on an abelian group `H` is an injective homomorphism `f : H →+ AddCircle p`
-whose image is the `n`-torsion. The classification above turns such a map into a complete
-description of `H`: it is cyclic of order `n`, and the element of invariant `p / n` is a
-distinguished generator. Over `ℚ` with `p = 1` this is the normalization that produces the
+An *invariant map* on a group `H` is an injective homomorphism `f : H →+ AddCircle p` whose
+image is the `n`-torsion. The classification above turns such a map into a complete description
+of `H`: it is cyclic of order `n` — in particular abelian — and the element of invariant `p / n`
+is a distinguished generator. Over `ℚ` with `p = 1` this is the normalization that produces the
 fundamental class of a class formation from its invariant map. -/
 
 /-- A group with an invariant map onto the `n`-torsion has exactly `n` elements. -/
@@ -257,6 +261,26 @@ noncomputable def zmodAddEquivOfRangeEqTorsionBy (hn : 0 < n) (hf : Function.Inj
       (exists_zsmul_eq_of_apply_eq_coe_period_div p hn hf hr hu x))
     (natCard_eq_of_range_eq_torsionBy p hn hf hr)
 
+/-- The isomorphism `AddCircle.zmodAddEquivOfRangeEqTorsionBy` sends the class of an integer `i`
+to the multiple `i • u` of the element `u` of invariant `p / n`. -/
+@[simp]
+theorem zmodAddEquivOfRangeEqTorsionBy_apply_intCast (hn : 0 < n) (hf : Function.Injective f)
+    (hr : Set.range f = ((AddCircle p)[(n : ℤ)] : Set (AddCircle p)))
+    {u : H} (hu : f u = ((p / n : 𝕜) : AddCircle p)) (i : ℤ) :
+    zmodAddEquivOfRangeEqTorsionBy p hn hf hr hu i = i • u :=
+  zmodAddEquivOfGenerator_apply_intCast _ _ i
+
+/-- The inverse of `AddCircle.zmodAddEquivOfRangeEqTorsionBy` sends the multiple `i • u` of the
+element `u` of invariant `p / n` to the class of the integer `i`. -/
+@[simp]
+theorem zmodAddEquivOfRangeEqTorsionBy_symm_apply_zsmul (hn : 0 < n) (hf : Function.Injective f)
+    (hr : Set.range f = ((AddCircle p)[(n : ℤ)] : Set (AddCircle p)))
+    {u : H} (hu : f u = ((p / n : 𝕜) : AddCircle p)) (i : ℤ) :
+    (zmodAddEquivOfRangeEqTorsionBy p hn hf hr hu).symm (i • u) = i :=
+  zmodAddEquivOfGenerator_symm_apply_zsmul _ _ i
+
+/-- The isomorphism `AddCircle.zmodAddEquivOfRangeEqTorsionBy` sends `1 : ZMod n` to the
+element `u` of invariant `p / n`. -/
 @[simp]
 theorem zmodAddEquivOfRangeEqTorsionBy_apply_one (hn : 0 < n) (hf : Function.Injective f)
     (hr : Set.range f = ((AddCircle p)[(n : ℤ)] : Set (AddCircle p)))
@@ -286,7 +310,8 @@ theorem isAddTorsion_rat : IsAddTorsion (AddCircle p) := isOfFinAddOrder_rat
 
 /-- The torsion subgroups exhaust a rational circle: every element lies in `(ℚ ⧸ pℤ)[n]` for some
 positive `n`. Together with `AddCircle.eq_torsionBy_of_natCard_eq` this describes `ℚ/ℤ` as the
-increasing union of its unique subgroups of each finite order. -/
+union of its unique subgroups of each finite order, a family directed by divisibility rather than
+by the order on `ℕ` (`AddCircle.torsionBy_le_torsionBy_iff`). -/
 theorem exists_mem_torsionBy_rat (u : AddCircle p) :
     ∃ n : ℕ, 0 < n ∧ u ∈ (AddCircle p)[(n : ℤ)] :=
   ⟨addOrderOf u, (isOfFinAddOrder_rat u).addOrderOf_pos,
