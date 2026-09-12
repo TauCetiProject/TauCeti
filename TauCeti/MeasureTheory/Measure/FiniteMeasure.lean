@@ -21,7 +21,7 @@ On a finite measurable space, a probability measure is the sum of its singleton 
 
 * `MeasureTheory.FiniteMeasure.instMeasurableSingletonClass`
 * `MeasureTheory.ProbabilityMeasure.instMeasurableSingletonClass`
-* `TauCeti.MeasureTheory.sum_measure_singleton_eq_one`
+* `MeasureTheory.Measure.sum_singleton_eq_one`
 
 ## Implementation
 
@@ -96,20 +96,10 @@ instance ProbabilityMeasure.instMeasurableSingletonClass [CountablyGenerated α]
     rw [hpre]
     exact hmap (measurableSet_singleton _)
 
-
-end MeasureTheory
-
-namespace TauCeti
-
-namespace MeasureTheory
-
-variable {κ : Type*} [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
-
 /-- The singleton masses of a probability measure on a finite measurable space sum to one. -/
-theorem sum_measure_singleton_eq_one (ν : Measure κ) [IsProbabilityMeasure ν] :
+theorem Measure.sum_singleton_eq_one {κ : Type*} [Fintype κ] [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] (ν : Measure κ) [IsProbabilityMeasure ν] :
     ∑ k, ν {k} = 1 := by
-  rw [_root_.MeasureTheory.sum_measure_singleton, Finset.coe_univ, measure_univ]
+  rw [sum_measure_singleton, Finset.coe_univ, measure_univ]
 
 end MeasureTheory
-
-end TauCeti

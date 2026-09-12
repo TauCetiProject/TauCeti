@@ -19,7 +19,8 @@ records the arithmetic of comparing two weight vectors, and of rounding one onto
 Two weight vectors split against each other: the mass `min (f x) (g x)` matched at `x` and the
 excess `f x - g x` above `g` add up to `f x`.  When `g` is dominated by `f` away from one
 designated atom `x₀` -- so that `g` arises from `f` by transferring weight onto `x₀` -- the
-designated atom can only gain, and it gains exactly the total excess.
+designated atom can only gain, and it gains exactly the total excess.  Only equality of the two
+finite total masses is used there, not normalization to one.
 
 Rounding to a common denominator `M` cannot be done pointwise, since the weights have to keep
 summing to one.  `TauCeti.exists_nat_weights_of_sum_eq_one` rounds every weight but the one at
@@ -30,7 +31,7 @@ written for `TauCeti.MeasureTheory.exists_nat_weights_wassersteinEDist_le`, whic
 
 ## Main results
 
-* `TauCeti.sum_min_add_sum_tsub` -- the matched mass and the excess mass add up to the total;
+* `Finset.sum_min_add_sum_tsub` -- the matched mass and the excess mass add up to the total;
 * `TauCeti.le_of_sum_eq_of_forall_ne_le` -- an atom dominating everywhere else can only gain;
 * `TauCeti.add_sum_tsub_eq_of_forall_ne_le` -- it gains exactly the total excess;
 * `TauCeti.exists_nat_weights_of_sum_eq_one` -- rounding a weight vector to a common denominator.
@@ -45,38 +46,38 @@ namespace TauCeti
 variable {X : Type*}
 
 /-- The mass of `f` matched by `g` and the mass of `f` above `g` add up to `f`. -/
-theorem sum_min_add_sum_tsub (s : Finset X) (f g : X → ℝ≥0∞) :
+theorem _root_.Finset.sum_min_add_sum_tsub (s : Finset X) (f g : X → ℝ≥0∞) :
     ∑ x ∈ s, min (f x) (g x) + ∑ x ∈ s, (f x - g x) = ∑ x ∈ s, f x := by
   rw [← Finset.sum_add_distrib]
   exact Finset.sum_congr rfl fun x _ => (add_comm _ _).trans tsub_add_min
 
 variable {s : Finset X} {f g : X → ℝ≥0∞} {x₀ : X}
 
-/-- Away from `x₀` the smaller of two weight vectors of total mass one is `g`, so the designated
-atom `x₀` can only gain weight. -/
-theorem le_of_sum_eq_of_forall_ne_le (hx₀ : x₀ ∈ s) (hf : ∑ x ∈ s, f x = 1)
-    (hg : ∑ x ∈ s, g x = 1) (hdom : ∀ x ∈ s, x ≠ x₀ → g x ≤ f x) : f x₀ ≤ g x₀ := by
+/-- Away from `x₀` the smaller of two weight vectors of equal finite total mass is `g`, so the
+designated atom `x₀` can only gain weight. -/
+theorem le_of_sum_eq_of_forall_ne_le (hx₀ : x₀ ∈ s) (hfg : ∑ x ∈ s, f x = ∑ x ∈ s, g x)
+    (hne : ∑ x ∈ s, f x ≠ ⊤) (hdom : ∀ x ∈ s, x ≠ x₀ → g x ≤ f x) : f x₀ ≤ g x₀ := by
   by_contra hlt
   push Not at hlt
   have hmin : ∀ x ∈ s, min (f x) (g x) = g x := fun x hx => by
     rcases eq_or_ne x x₀ with rfl | hx'
     · exact min_eq_right hlt.le
     · exact min_eq_right (hdom x hx hx')
-  have hsum : ∑ x ∈ s, g x + ∑ x ∈ s, (f x - g x) = 1 := by
-    have h := sum_min_add_sum_tsub s f g
-    rwa [Finset.sum_congr rfl hmin, hf] at h
+  have hsum : ∑ x ∈ s, g x + ∑ x ∈ s, (f x - g x) = ∑ x ∈ s, f x := by
+    have h := Finset.sum_min_add_sum_tsub s f g
+    rwa [Finset.sum_congr rfl hmin] at h
   have key : ∑ x ∈ s, g x + ∑ x ∈ s, (f x - g x) = ∑ x ∈ s, g x + 0 := by
-    rw [add_zero, hsum, hg]
+    rw [add_zero, hsum, hfg]
   have hzero : ∑ x ∈ s, (f x - g x) = 0 :=
-    (ENNReal.add_right_inj (by rw [hg]; exact ENNReal.one_ne_top)).1 key
+    (ENNReal.add_right_inj (by rw [← hfg]; exact hne)).1 key
   exact absurd (tsub_eq_zero_iff_le.1 (Finset.sum_eq_zero_iff.1 hzero x₀ hx₀)) (not_le.2 hlt)
 
 open scoped Classical in
 /-- The designated atom `x₀` absorbs exactly the total weight transferred onto it. -/
-theorem add_sum_tsub_eq_of_forall_ne_le (hx₀ : x₀ ∈ s) (hf : ∑ x ∈ s, f x = 1)
-    (hg : ∑ x ∈ s, g x = 1) (hdom : ∀ x ∈ s, x ≠ x₀ → g x ≤ f x) :
+theorem add_sum_tsub_eq_of_forall_ne_le (hx₀ : x₀ ∈ s) (hfg : ∑ x ∈ s, f x = ∑ x ∈ s, g x)
+    (hne : ∑ x ∈ s, f x ≠ ⊤) (hdom : ∀ x ∈ s, x ≠ x₀ → g x ≤ f x) :
     f x₀ + ∑ x ∈ s, (f x - g x) = g x₀ := by
-  have hx := le_of_sum_eq_of_forall_ne_le hx₀ hf hg hdom
+  have hx := le_of_sum_eq_of_forall_ne_le hx₀ hfg hne hdom
   have hsplit : ∀ x ∈ s, min (f x) (g x) + (if x = x₀ then g x₀ - f x₀ else 0) = g x := by
     intro x hxs
     split_ifs with hxx
@@ -84,17 +85,16 @@ theorem add_sum_tsub_eq_of_forall_ne_le (hx₀ : x₀ ∈ s) (hf : ∑ x ∈ s, 
       rw [min_eq_left hx, add_tsub_cancel_of_le hx]
     · rw [add_zero]
       exact min_eq_right (hdom x hxs hxx)
-  have hsum : ∑ x ∈ s, min (f x) (g x) + (g x₀ - f x₀) = 1 := by
-    have h1 : ∑ x ∈ s, (min (f x) (g x) + (if x = x₀ then g x₀ - f x₀ else 0)) = 1 := by
-      rw [Finset.sum_congr rfl hsplit, hg]
+  have hsum : ∑ x ∈ s, min (f x) (g x) + (g x₀ - f x₀) = ∑ x ∈ s, g x := by
+    have h1 : ∑ x ∈ s, (min (f x) (g x) + (if x = x₀ then g x₀ - f x₀ else 0)) = ∑ x ∈ s, g x :=
+      Finset.sum_congr rfl hsplit
     rw [Finset.sum_add_distrib, Finset.sum_ite_eq' s x₀ fun _ => g x₀ - f x₀] at h1
     simpa [hx₀] using h1
-  have hfin : ∑ x ∈ s, min (f x) (g x) ≠ ⊤ := by
-    refine ne_top_of_le_ne_top ENNReal.one_ne_top ?_
-    calc ∑ x ∈ s, min (f x) (g x) ≤ ∑ x ∈ s, f x := Finset.sum_le_sum fun x _ => min_le_left _ _
-      _ = 1 := hf
+  have hfin : ∑ x ∈ s, min (f x) (g x) ≠ ⊤ :=
+    ne_top_of_le_ne_top hne (Finset.sum_le_sum fun x _ => min_le_left _ _)
   have hdiff : ∑ x ∈ s, (f x - g x) = g x₀ - f x₀ :=
-    (ENNReal.add_right_inj hfin).1 (((sum_min_add_sum_tsub s f g).trans hf).trans hsum.symm)
+    (ENNReal.add_right_inj hfin).1
+      (((Finset.sum_min_add_sum_tsub s f g).trans hfg).trans hsum.symm)
   rw [hdiff, add_tsub_cancel_of_le hx]
 
 /-- **Rounding a weight vector to a common denominator.**  A weight vector of total mass one is

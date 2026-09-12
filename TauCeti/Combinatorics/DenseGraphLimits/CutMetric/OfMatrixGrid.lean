@@ -149,10 +149,10 @@ variable {ν ν' k₀}
 private theorem isCoupling_shiftCoupling [IsProbabilityMeasure ν] [IsProbabilityMeasure ν']
     (hdom : ∀ k, k ≠ k₀ → ν' {k} ≤ ν {k}) :
     TauCeti.MeasureTheory.IsCoupling ν ν' (shiftCoupling ν ν' k₀) := by
-  have hf := TauCeti.MeasureTheory.sum_measure_singleton_eq_one ν
-  have hg := TauCeti.MeasureTheory.sum_measure_singleton_eq_one ν'
+  have hfg : ∑ k, ν {k} = ∑ k, ν' {k} := ν.sum_singleton_eq_one.trans ν'.sum_singleton_eq_one.symm
+  have hne : ∑ k, ν {k} ≠ ⊤ := by rw [ν.sum_singleton_eq_one]; exact ENNReal.one_ne_top
   have hdom' : ∀ k ∈ Finset.univ, k ≠ k₀ → ν' {k} ≤ ν {k} := fun k _ hk => hdom k hk
-  have hk₀ := le_of_sum_eq_of_forall_ne_le (Finset.mem_univ k₀) hf hg hdom'
+  have hk₀ := le_of_sum_eq_of_forall_ne_le (Finset.mem_univ k₀) hfg hne hdom'
   refine TauCeti.MeasureTheory.isCoupling_iff.2 ⟨?_, ?_⟩
   · refine Measure.ext_of_singleton fun i => ?_
     rw [Measure.fst_apply (MeasurableSet.singleton i), shiftCoupling_apply]
@@ -184,7 +184,7 @@ private theorem isCoupling_shiftCoupling [IsProbabilityMeasure ν] [IsProbabilit
         Finset.sum_congr rfl fun k _ => by
           rw [Set.indicator_of_mem (by simp), Pi.one_apply, mul_one]
       rw [h1, h2, min_eq_left hk₀]
-      exact add_sum_tsub_eq_of_forall_ne_le (Finset.mem_univ k₀) hf hg hdom'
+      exact add_sum_tsub_eq_of_forall_ne_le (Finset.mem_univ k₀) hfg hne hdom'
     · have h2 : ∑ k, (ν {k} - ν' {k}) * (Prod.snd ⁻¹' ({i} : Set κ)).indicator 1 (k, k₀)
           = 0 :=
         Finset.sum_eq_zero fun k _ => by
@@ -210,7 +210,7 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
   have hrne : ∑ k, (ν {k} - ν' {k}) ≠ ⊤ := by
     refine ne_top_of_le_ne_top ENNReal.one_ne_top ?_
     calc ∑ k, (ν {k} - ν' {k}) ≤ ∑ k, ν {k} := Finset.sum_le_sum fun k _ => tsub_le_self
-      _ = 1 := TauCeti.MeasureTheory.sum_measure_singleton_eq_one ν
+      _ = 1 := ν.sum_singleton_eq_one
   -- The coupling puts at most the transferred mass off the diagonal.
   have hoff : shiftCoupling ν ν' k₀ (Set.diagonal κ)ᶜ ≤ ∑ k, (ν {k} - ν' {k}) := by
     rw [shiftCoupling_apply]
@@ -308,7 +308,7 @@ theorem exists_gridWeightMeasure_cutDist_le {n N : ℕ} [NeZero n] (hN : 0 < N)
   have hN0 : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast hN.ne'
   have hNtop : (N : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top N
   obtain ⟨w, hwsum, hle, hge⟩ := exists_nat_weights_of_sum_eq_one (Finset.mem_univ (0 : Fin n))
-    (TauCeti.MeasureTheory.sum_measure_singleton_eq_one ν) hN
+    ν.sum_singleton_eq_one hN
   refine ⟨w, hwsum, ?_⟩
   set ν' := gridWeightMeasure hN w hwsum with hν'
   have hweight : ∀ i, ν' {i} = (w i : ℝ≥0∞) / (N : ℝ≥0∞) := fun i => by
@@ -322,8 +322,8 @@ theorem exists_gridWeightMeasure_cutDist_le {n N : ℕ} [NeZero n] (hN : 0 < N)
     intro i
     rcases eq_or_ne i (0 : Fin n) with rfl | hi
     · rw [tsub_eq_zero_of_le (le_of_sum_eq_of_forall_ne_le (Finset.mem_univ (0 : Fin n))
-        (TauCeti.MeasureTheory.sum_measure_singleton_eq_one ν)
-          (TauCeti.MeasureTheory.sum_measure_singleton_eq_one ν')
+        (ν.sum_singleton_eq_one.trans ν'.sum_singleton_eq_one.symm)
+        (by rw [ν.sum_singleton_eq_one]; exact ENNReal.one_ne_top)
         fun k _ hk => hdom k hk)]
       simp
     · rw [tsub_le_iff_left, hweight i, ENNReal.div_add_div_same,
