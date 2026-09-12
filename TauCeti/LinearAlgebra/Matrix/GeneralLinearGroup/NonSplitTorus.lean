@@ -127,6 +127,28 @@ namespace GL2NonSplitTorus
 
 variable (hE : Module.finrank F E = 2)
 
+/-- Shifting a `GL₂` matrix by a scalar and taking its determinant is invariant under
+conjugation. -/
+private theorem det_sub_algebraMap_conj (g x : GL (Fin 2) F) (a : F) :
+    (((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) -
+      algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det =
+        ((g : Matrix (Fin 2) (Fin 2) F) -
+          algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det := by
+  have hxx : ((x⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) *
+      (x : Matrix (Fin 2) (Fin 2) F) = 1 := by
+    rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
+  have hcancel : ((x⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) *
+      algebraMap F (Matrix (Fin 2) (Fin 2) F) a * (x : Matrix (Fin 2) (Fin 2) F) =
+      algebraMap F (Matrix (Fin 2) (Fin 2) F) a := by
+    rw [mul_assoc, Algebra.commutes a (x : Matrix (Fin 2) (Fin 2) F), ← mul_assoc, hxx, one_mul]
+  have hsplit : ((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) -
+      algebraMap F (Matrix (Fin 2) (Fin 2) F) a =
+      ((x⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) *
+        ((g : Matrix (Fin 2) (Fin 2) F) -
+          algebraMap F (Matrix (Fin 2) (Fin 2) F) a) * (x : Matrix (Fin 2) (Fin 2) F) := by
+    rw [mul_sub, sub_mul, hcancel, Units.val_mul, Units.val_mul]
+  rw [hsplit, Matrix.coe_units_inv, Matrix.det_conj' x.isUnit]
+
 /-- Membership in the non-split torus: a matrix lies in it exactly when it is left multiplication
 by a unit of `E`. -/
 theorem mem_iff {g : GL (Fin 2) F} :
@@ -244,20 +266,7 @@ theorem conj_notMem_of_det_sub_algebraMap_eq_zero {g : GL (Fin 2) F}
   -- conjugation does not change the determinant of `g - a`
   have hdet : (((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) -
       algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det = 0 := by
-    have hxx : ((x⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) *
-        (x : Matrix (Fin 2) (Fin 2) F) = 1 := by
-      rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
-    have hcancel : ((x⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) *
-        algebraMap F (Matrix (Fin 2) (Fin 2) F) a * (x : Matrix (Fin 2) (Fin 2) F) =
-        algebraMap F (Matrix (Fin 2) (Fin 2) F) a := by
-      rw [mul_assoc, Algebra.commutes a (x : Matrix (Fin 2) (Fin 2) F), ← mul_assoc, hxx, one_mul]
-    have hsplit : ((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) -
-        algebraMap F (Matrix (Fin 2) (Fin 2) F) a =
-        ((x⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) *
-          ((g : Matrix (Fin 2) (Fin 2) F) -
-            algebraMap F (Matrix (Fin 2) (Fin 2) F) a) * (x : Matrix (Fin 2) (Fin 2) F) := by
-      rw [mul_sub, sub_mul, hcancel, Units.val_mul, Units.val_mul]
-    rw [hsplit, Matrix.coe_units_inv, Matrix.det_conj' x.isUnit, ha]
+    rw [det_sub_algebraMap_conj, ha]
   -- so the norm of `v - a` vanishes, forcing `v` into `F`
   have hnorm : Algebra.norm F ((v : E) - algebraMap F E a) = 0 := by
     rw [Algebra.norm_eq_matrix_det (nonSplitTorusBasis F E hE), map_sub,
