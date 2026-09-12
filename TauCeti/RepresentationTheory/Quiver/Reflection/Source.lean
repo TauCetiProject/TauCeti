@@ -21,24 +21,16 @@ from `i`, replaces `Mᵢ` by the cokernel of this map, and lets a reversed arrow
 its coordinate and passing to the quotient. The construction is functorial because a morphism of
 representations gives a commuting square of outgoing maps.
 
-The target is the product over the arrows leaving `i`, not a direct sum, and that is the only
-choice available: a linear map into a direct sum must produce finitely supported families, which
-fails as soon as infinitely many arrows leave `i`, whereas the arrow actions always assemble into
-a map to the product. Over a finite quiver, the BGP setting of the roadmap target below, the two
-agree by `DirectSum.linearEquivFunOnFintype`, so `TauCeti.outgoingMap` is then the direct sum map
-`Mᵢ → ⨁_{a : i ⟶ b} M_b` of the BGP construction. Accordingly the finiteness instances
-`[Fintype Q]` and `[∀ a b : Q, Fintype (a ⟶ b)]` are imposed exactly on the statements whose
-content needs them, the arrow-count and dimension-vector results; on the construction itself
-they would be unused hypotheses.
+The target is the product over the arrows leaving `i`, not a direct sum: a linear map into a direct
+sum must produce finitely supported families, which need not hold when infinitely many arrows leave
+`i`, whereas the arrow actions always assemble into a map to the product. Over a finite quiver the
+product and direct sum agree by `DirectSum.linearEquivFunOnFintype`, so `TauCeti.outgoingMap` is
+then the direct-sum map `Mᵢ → ⨁_{a : i ⟶ b} M_b` of the BGP construction. The arrow-count and
+dimension-vector results below therefore carry the relevant finiteness hypotheses.
 
 When the outgoing map is injective, the quotient dimension is the simple reflection of the old
 dimension vector. This is the dual of the surjectivity condition on `TauCeti.incomingSum` in the
-sink-side construction, and it is likewise the general hypothesis the construction supports: on
-the sink side the semantic form of that hypothesis, that `M` is indecomposable and is not the
-vertex simple `Sᵢ`, is discharged downstream by
-`TauCeti.incomingSum_surjective_of_indecomposable`, which runs on the idempotent machinery of
-`TauCeti.RepresentationTheory.Quiver.Reflection.Indecomposable`. The source-side dual of that
-discharge belongs with its dual machinery, not here.
+sink-side construction.
 
 ## Main definitions
 
@@ -61,9 +53,7 @@ discharge belongs with its dual machinery, not here.
 
 ## References
 
-This implements the source half of the reflection functors in Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See
-Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and
+See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and
 Derksen--Weyman, *An Introduction to Quiver Representations*, Ch. 2.
 -/
 
@@ -232,6 +222,17 @@ private def outgoingCoordMap {M N : QuiverRep.{u, v, w, max v w x} k Q}
   map_add' f g := by ext e; simp
   map_smul' r f := by ext e; simp
 
+private theorem outgoingCoordMap_id (M : QuiverRep.{u, v, w, max v w x} k Q) (i : Q) :
+    outgoingCoordMap (𝟙 M) i = LinearMap.id := by
+  ext f e
+  rfl
+
+private theorem outgoingCoordMap_comp
+    {M N P : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) (θ : N ⟶ P) (i : Q) :
+    outgoingCoordMap (η ≫ θ) i = (outgoingCoordMap θ i).comp (outgoingCoordMap η i) := by
+  ext f e
+  rfl
+
 /-- The outgoing map is natural in the representation. -/
 theorem outgoingMap_naturality {M N : QuiverRep.{u, v, w, max v w x} k Q}
     (η : M ⟶ N) (i : Q) (y : M.obj i) :
@@ -239,14 +240,17 @@ theorem outgoingMap_naturality {M N : QuiverRep.{u, v, w, max v w x} k Q}
   ext e
   exact congrArg (fun f : M.obj i ⟶ N.obj e.1 ↦ f.hom y) (η.naturality e.2.toPath)
 
+private theorem outgoingCoordMap_outgoingMap
+    {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) (i : Q) (y : M.obj i) :
+    outgoingCoordMap η i (outgoingMap M i y) = outgoingMap N i (η.app i y) :=
+  outgoingMap_naturality η i y
+
 private theorem outgoingCoordMap_range_le
     {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) (i : Q) :
     LinearMap.range (outgoingMap M i) ≤
       (LinearMap.range (outgoingMap N i)).comap (outgoingCoordMap η i) := by
   rintro _ ⟨y, rfl⟩
-  rw [Submodule.mem_comap]
-  change (fun e ↦ η.app e.1 (outgoingMap M i y e)) ∈ _
-  rw [outgoingMap_naturality]
+  rw [Submodule.mem_comap, outgoingCoordMap_outgoingMap]
   exact LinearMap.mem_range_self _ _
 
 /-- The quotient map induced at the reflected vertex by a morphism of representations. -/
@@ -261,26 +265,46 @@ private noncomputable def outgoingQuotMap
 private theorem outgoingQuotMap_mk
     {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) (i : Q)
     (f : (e : Σ b : Q, (i ⟶ b)) → M.obj e.1) :
-    outgoingQuotMap η i (Submodule.Quotient.mk f) =
-      (LinearMap.range (outgoingMap N i)).mkQ (fun e ↦ η.app e.1 (f e)) :=
-  rfl
+    outgoingQuotMap η i ((LinearMap.range (outgoingMap M i)).mkQ f) =
+      (LinearMap.range (outgoingMap N i)).mkQ (fun e ↦ η.app e.1 (f e)) := by
+  unfold outgoingQuotMap
+  exact LinearMap.congr_fun
+    (Submodule.mapQ_mkQ (p := LinearMap.range (outgoingMap M i))
+      (LinearMap.range (outgoingMap N i)) (outgoingCoordMap η i)
+      (h := outgoingCoordMap_range_le η i)) f
 
 @[simp]
 private theorem outgoingQuotMap_id (M : QuiverRep.{u, v, w, max v w x} k Q) (i : Q) :
     outgoingQuotMap (𝟙 M) i = LinearMap.id := by
-  apply LinearMap.ext
-  intro q
-  induction q using Submodule.Quotient.induction_on with
-  | _ f => rfl
+  unfold outgoingQuotMap
+  cases outgoingCoordMap_id M i
+  exact Submodule.mapQ_id (LinearMap.range (outgoingMap M i))
 
 @[simp]
 private theorem outgoingQuotMap_comp
     {M N P : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) (θ : N ⟶ P) (i : Q) :
     outgoingQuotMap (η ≫ θ) i = (outgoingQuotMap θ i).comp (outgoingQuotMap η i) := by
-  apply LinearMap.ext
-  intro q
-  induction q using Submodule.Quotient.induction_on with
-  | _ f => rfl
+  unfold outgoingQuotMap
+  cases outgoingCoordMap_comp η θ i
+  exact Submodule.mapQ_comp (LinearMap.range (outgoingMap M i))
+    (LinearMap.range (outgoingMap N i)) (LinearMap.range (outgoingMap P i))
+    (outgoingCoordMap η i) (outgoingCoordMap θ i) (outgoingCoordMap_range_le η i)
+    (outgoingCoordMap_range_le θ i)
+
+open scoped Classical in
+private theorem outgoingQuotMap_single
+    {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) (i : Q)
+    {a : Q} (e : i ⟶ a) (y : M.obj a) :
+    outgoingQuotMap η i
+        ((LinearMap.range (outgoingMap M i)).mkQ (Pi.single ⟨a, e⟩ y)) =
+      (LinearMap.range (outgoingMap N i)).mkQ (Pi.single ⟨a, e⟩ (η.app a y)) := by
+  rw [outgoingQuotMap_mk]
+  congr 1
+  ext c
+  by_cases hc : c = ⟨a, e⟩
+  · subst c
+    simp
+  · simp [Pi.single_eq_of_ne hc]
 
 open scoped Classical in
 private noncomputable def sourceReflectRepMapApp
@@ -334,19 +358,7 @@ private theorem sourceReflectRepMapApp_naturality_arrow
     refine (eqToHom_conjugate_square _ _ (sourceReflectRep_obj_self N hi)
       (sourceReflectRep_obj_of_ne N hi (hi.ne_of_hom e')) _ _ _ _).mpr ?_
     ext y
-    change (LinearMap.range (outgoingMap N i)).mkQ
-        (outgoingCoordMap η i (Pi.single ⟨a, e'⟩ y)) =
-      (LinearMap.range (outgoingMap N i)).mkQ (Pi.single ⟨a, e'⟩ (η.app a y))
-    congr 1
-    ext c
-    by_cases hc : c = ⟨a, e'⟩
-    · subst c
-      simp [outgoingCoordMap]
-    · change (η.app c.1).hom
-          ((Pi.single ⟨a, e'⟩ y : (e : Σ b : Q, (i ⟶ b)) → M.obj e.1) c) =
-        (Pi.single ⟨a, e'⟩ ((η.app a).hom y) :
-          (e : Σ b : Q, (i ⟶ b)) → N.obj e.1) c
-      rw [Pi.single_eq_of_ne hc, Pi.single_eq_of_ne hc, map_zero]
+    exact outgoingQuotMap_single η i e' y
   · by_cases ha : a = i
     · subst a
       exact (hi.isSink_reflect.isEmpty_hom b).elim e
@@ -365,29 +377,39 @@ private noncomputable def sourceReflectRepMap
     sourceReflectRep M hi ⟶ sourceReflectRep N hi :=
   Paths.liftNatTrans (sourceReflectRepMapApp η hi) (sourceReflectRepMapApp_naturality_arrow η hi)
 
-private theorem sourceEqToHom_conjugate_eq_id {C : Type*} [Category* C] {X Y : C}
-    (h : X = Y) (f : Y ⟶ Y) (hf : f = 𝟙 Y) :
-    eqToHom h ≫ f ≫ eqToHom h.symm = 𝟙 X := by
-  subst h
-  simp [hf]
+private theorem sourceReflectRepMap_id (M : QuiverRep.{u, v, w, max v w x} k Q)
+    {i : Q} (hi : IsSource i) : sourceReflectRepMap (𝟙 M) hi = 𝟙 (sourceReflectRep M hi) := by
+  apply NatTrans.ext
+  funext j
+  classical
+  -- `Paths.liftNatTrans` has no propositional lemma exposing its `app`; this one definitional
+  -- reduction is isolated here, before reasoning about the resulting categorical morphism.
+  change sourceReflectRepMapApp (𝟙 M) hi j = 𝟙 _
+  by_cases hj : j = i
+  · subst j
+    rw [sourceReflectRepMapApp_self, outgoingQuotMap_id, ModuleCat.ofHom_id]
+    exact eqToHom_conjugate_eq_id _ _ rfl
+  · rw [sourceReflectRepMapApp_of_ne _ _ hj]
+    exact eqToHom_conjugate_eq_id _ _ rfl
 
-private theorem sourceEqToHom_conjugate_eq_comp {C : Type*} [Category* C]
-    {X X' Y Y' Z Z' : C} (hX : X = X') (hY : Y = Y') (hZ : Z = Z')
-    (f : X' ⟶ Z') (g : X' ⟶ Y') (h : Y' ⟶ Z') (hf : f = g ≫ h) :
-    eqToHom hX ≫ f ≫ eqToHom hZ.symm =
-      (eqToHom hX ≫ g ≫ eqToHom hY.symm) ≫ eqToHom hY ≫ h ≫ eqToHom hZ.symm := by
-  subst hX
-  subst hY
-  subst hZ
-  simp [hf]
-
-private theorem sourceEqToHom_conjugate_add {C : Type*} [Category* C] [Preadditive C]
-    {X X' Y Y' : C} (hX : X = X') (hY : Y' = Y) {f g h : X' ⟶ Y'} (hf : f = g + h) :
-    eqToHom hX ≫ f ≫ eqToHom hY =
-      (eqToHom hX ≫ g ≫ eqToHom hY) + (eqToHom hX ≫ h ≫ eqToHom hY) := by
-  subst hX
-  subst hY
-  simp [hf]
+private theorem sourceReflectRepMap_comp
+    {M N P : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) (θ : N ⟶ P)
+    {i : Q} (hi : IsSource i) :
+    sourceReflectRepMap (η ≫ θ) hi = sourceReflectRepMap η hi ≫ sourceReflectRepMap θ hi := by
+  apply NatTrans.ext
+  funext j
+  classical
+  -- As above, this isolates the definitional `app` reduction for `Paths.liftNatTrans`.
+  change sourceReflectRepMapApp (η ≫ θ) hi j =
+    sourceReflectRepMapApp η hi j ≫ sourceReflectRepMapApp θ hi j
+  by_cases hj : j = i
+  · subst j
+    rw [sourceReflectRepMapApp_self, sourceReflectRepMapApp_self,
+      sourceReflectRepMapApp_self, outgoingQuotMap_comp, ModuleCat.ofHom_comp]
+    exact eqToHom_conjugate_eq_comp _ _ (sourceReflectRep_obj_self _ hi) _ _ _ rfl
+  · rw [sourceReflectRepMapApp_of_ne _ _ hj, sourceReflectRepMapApp_of_ne _ _ hj,
+      sourceReflectRepMapApp_of_ne _ _ hj]
+    exact eqToHom_conjugate_eq_comp _ _ (sourceReflectRep_obj_of_ne _ hi hj) _ _ _ rfl
 
 /-- **The BGP reflection functor at a source.** It uses the quotient map induced by each morphism
 at the reflected vertex and leaves all other components unchanged. -/
@@ -395,32 +417,8 @@ noncomputable def sourceReflectionFunctor (i : Q) (hi : IsSource i) :
     QuiverRep.{u, v, w, max v w x} k Q ⥤ QuiverRep k (Reflect Q i) where
   obj M := sourceReflectRep M hi
   map η := sourceReflectRepMap η hi
-  map_id M := by
-    apply NatTrans.ext
-    funext j
-    classical
-    change sourceReflectRepMapApp (𝟙 M) hi j = 𝟙 _
-    by_cases hj : j = i
-    · subst j
-      rw [sourceReflectRepMapApp_self, outgoingQuotMap_id, ModuleCat.ofHom_id]
-      exact sourceEqToHom_conjugate_eq_id _ _ rfl
-    · rw [sourceReflectRepMapApp_of_ne _ _ hj]
-      exact sourceEqToHom_conjugate_eq_id _ _ rfl
-  map_comp η θ := by
-    apply NatTrans.ext
-    funext j
-    classical
-    change sourceReflectRepMapApp (η ≫ θ) hi j =
-      sourceReflectRepMapApp η hi j ≫ sourceReflectRepMapApp θ hi j
-    by_cases hj : j = i
-    · subst j
-      rw [sourceReflectRepMapApp_self, sourceReflectRepMapApp_self,
-        sourceReflectRepMapApp_self, outgoingQuotMap_comp, ModuleCat.ofHom_comp]
-      exact sourceEqToHom_conjugate_eq_comp _ _ (sourceReflectRep_obj_self _ hi) _ _ _ rfl
-    · rw [sourceReflectRepMapApp_of_ne _ _ hj, sourceReflectRepMapApp_of_ne _ _ hj,
-        sourceReflectRepMapApp_of_ne _ _ hj]
-      exact sourceEqToHom_conjugate_eq_comp _ _ (sourceReflectRep_obj_of_ne _ hi hj)
-        _ _ _ rfl
+  map_id M := sourceReflectRepMap_id M hi
+  map_comp η θ := sourceReflectRepMap_comp η θ hi
 
 private theorem sourceReflectionFunctor_obj_def (i : Q) (hi : IsSource i)
     (M : QuiverRep.{u, v, w, max v w x} k Q) :
@@ -462,10 +460,10 @@ instance sourceReflectionFunctor_additive (i : Q) (hi : IsSource i) :
     · subst j
       rw [sourceReflectRepMapApp_self, sourceReflectRepMapApp_self,
         sourceReflectRepMapApp_self, outgoingQuotMap_add, ModuleCat.ofHom_add]
-      exact sourceEqToHom_conjugate_add _ _ rfl
+      exact eqToHom_conjugate_add _ _ rfl
     · rw [sourceReflectRepMapApp_of_ne _ _ hj, sourceReflectRepMapApp_of_ne _ _ hj,
         sourceReflectRepMapApp_of_ne _ _ hj]
-      exact sourceEqToHom_conjugate_add _ _ rfl
+      exact eqToHom_conjugate_add _ _ rfl
 
 private theorem sourceReflectionFunctor_map_app_self
     {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) {i : Q} (hi : IsSource i) :

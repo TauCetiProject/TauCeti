@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Quiver.Path
+public import Mathlib.CategoryTheory.Preadditive.Basic
 public import Mathlib.Data.Fintype.Card
 
 /-!
@@ -56,11 +57,42 @@ public section
 
 namespace TauCeti
 
+open CategoryTheory
 open _root_.Quiver
 
 universe u v
 
 variable {V : Type u} [_root_.Quiver.{v} V]
+
+/-! ### Transporting categorical identities -/
+
+/-- A morphism equal to an identity remains the identity after transport along an object
+equality. -/
+theorem eqToHom_conjugate_eq_id {C : Type*} [Category* C] {X Y : C} (h : X = Y)
+    (f : Y ⟶ Y) (hf : f = 𝟙 Y) : eqToHom h ≫ f ≫ eqToHom h.symm = 𝟙 X := by
+  subst h
+  simp [hf]
+
+/-- Transport along object equalities distributes over composition. -/
+theorem eqToHom_conjugate_eq_comp {C : Type*} [Category* C] {X X' Y Y' Z Z' : C}
+    (hX : X = X') (hY : Y = Y') (hZ : Z = Z') (f : X' ⟶ Z') (g : X' ⟶ Y')
+    (h : Y' ⟶ Z') (hf : f = g ≫ h) :
+    eqToHom hX ≫ f ≫ eqToHom hZ.symm =
+      (eqToHom hX ≫ g ≫ eqToHom hY.symm) ≫ eqToHom hY ≫ h ≫ eqToHom hZ.symm := by
+  subst hX
+  subst hY
+  subst hZ
+  simp [hf]
+
+/-- Transport along object equalities preserves addition of morphisms. -/
+theorem eqToHom_conjugate_add {C : Type*} [Category* C] [Preadditive C]
+    {X X' Y Y' : C} (hX : X = X') (hY : Y' = Y) {f g h : X' ⟶ Y'}
+    (hfgh : f = g + h) :
+    eqToHom hX ≫ f ≫ eqToHom hY =
+      (eqToHom hX ≫ g ≫ eqToHom hY) + (eqToHom hX ≫ h ≫ eqToHom hY) := by
+  subst hX
+  subst hY
+  simp [hfgh]
 
 /-! ### Sinks and sources -/
 

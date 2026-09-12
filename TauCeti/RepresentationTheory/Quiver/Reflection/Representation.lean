@@ -400,17 +400,18 @@ private theorem reflectRepMapApp_of_ne
   simp [reflectRepMapApp, hj]
 
 /-! The components of the reflected morphism are transports of components of the original one, so
-every identity about them is an identity of the original conjugated by `eqToHom`. The next five
-lemmas are those conjugations, stated generically. They are what the proofs below use instead of
+every identity about them is an identity of the original conjugated by `eqToHom`. The next two
+lemmas, together with the generic conjugation lemmas in
+`TauCeti.RepresentationTheory.Quiver.Reflection.Basic`, are what the proofs below use instead of
 `simp`: the vertex `i` is used both as a vertex of `Q` and as an object of `CategoryTheory.Paths`
 of the reflected quiver, so a goal about the reflected representation is type-correct only up to
 unfolding the semireducible `CategoryTheory.Paths` and `TauCeti.Quiver.Reflect`, which is more than
 the transparency `rw` and `simp` use to build a motive. Conjugation is stripped by `subst` inside
 these lemmas, where no such identification is in play.
 
-The first and the last of them are public: that obstruction, and this remedy for it, recur wherever
-the reflection functor is used, so they are available to `TauCeti.reflectionFunctor`'s consumers
-rather than copied by each of them. -/
+These two lemmas are public: that obstruction, and this remedy for it, recur wherever the
+reflection functor is used, so they are available to `TauCeti.reflectionFunctor`'s consumers rather
+than copied by each of them. -/
 
 /-- Transporting a morphism along object equalities and then back leaves it unchanged. -/
 theorem eqToHom_conjugate_cancel {C : Type*} [Category* C] {X X' Y Y' : C}
@@ -419,32 +420,6 @@ theorem eqToHom_conjugate_cancel {C : Type*} [Category* C] {X X' Y Y' : C}
   subst X'
   subst Y'
   simp
-
-/-- A conjugated identity is the identity. -/
-private theorem eqToHom_conjugate_eq_id {C : Type*} [Category* C] {X Y : C} (h : X = Y)
-    (f : Y ⟶ Y) (hf : f = 𝟙 Y) : eqToHom h ≫ f ≫ eqToHom h.symm = 𝟙 X := by
-  subst h
-  simp [hf]
-
-/-- Conjugation distributes over composition. -/
-private theorem eqToHom_conjugate_eq_comp {C : Type*} [Category* C] {X X' Y Y' Z Z' : C}
-    (hX : X = X') (hY : Y = Y') (hZ : Z = Z') (f : X' ⟶ Z') (g : X' ⟶ Y') (h : Y' ⟶ Z')
-    (hf : f = g ≫ h) :
-    eqToHom hX ≫ f ≫ eqToHom hZ.symm =
-      (eqToHom hX ≫ g ≫ eqToHom hY.symm) ≫ eqToHom hY ≫ h ≫ eqToHom hZ.symm := by
-  subst hX
-  subst hY
-  subst hZ
-  simp [hf]
-
-/-- Conjugation by object equalities is additive. -/
-private theorem eqToHom_conjugate_add {C : Type*} [Category* C] [Preadditive C] {X X' Y Y' : C}
-    (hX : X = X') (hY : Y' = Y) {f g h : X' ⟶ Y'} (hfgh : f = g + h) :
-    eqToHom hX ≫ f ≫ eqToHom hY
-      = (eqToHom hX ≫ g ≫ eqToHom hY) + (eqToHom hX ≫ h ≫ eqToHom hY) := by
-  subst hX
-  subst hY
-  simp [hfgh]
 
 /-- **Conjugating a commuting square by object equalities leaves it commuting**, and nothing else
 becomes commuting that way: the square of transported edges commutes exactly when the original
