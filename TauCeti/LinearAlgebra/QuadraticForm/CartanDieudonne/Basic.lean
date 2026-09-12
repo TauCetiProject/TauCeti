@@ -21,7 +21,7 @@ a nondegenerate fixed subspace by one dimension at each step.
 * `TauCeti.QuadraticMap.subgroup_eq_top_of_reflection_mem`: any subgroup containing
   every reflection in a vector of invertible norm is the full orthogonal group.
 * `TauCeti.QuadraticMap.exists_reflectionOrthogonal_list_prod_eq`: every orthogonal transformation
-  of an anisotropic space is a product of at most the dimension many reflections.
+  is a product of at most twice the dimension many reflections.
 
 ## References
 
@@ -59,74 +59,9 @@ private theorem exists_mem_orthogonal_self_ne_zero
       (LinearMap.BilinForm.isSymm_iff.mp (hBsymm.restrict _))
   exact ⟨x, x.2, hxx⟩
 
-private theorem exists_reflectionOrthogonal_list_prod_mul_fix_sup_span_singleton
-    (Q : QuadraticForm K V) (hQ : Q.Anisotropic)
-    (g : QuadraticMap.orthogonalGroup Q) (W : Submodule K V)
-    (hfix : ∀ w ∈ W, ((g : V ≃ₗ[K] V) w) = w) (x : V)
-    (hxQorth : ∀ w ∈ W, Q.IsOrtho x w) :
-    ∃ l : List (QuadraticMap.orthogonalGroup Q),
-      (∀ r ∈ l, ∃ (v : V) (_ : Invertible (Q v)),
-        QuadraticMap.reflectionOrthogonal Q v = r) ∧
-      l.length ≤ 1 ∧
-      ∀ y ∈ W ⊔ Submodule.span K {x},
-        (((l.prod * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) = y := by
-  have hmap : Q ((g : V ≃ₗ[K] V) x) = Q x :=
-    QuadraticMap.map_app_of_mem_orthogonalGroup g.2 x
-  have hgxQorth : ∀ w ∈ W, Q.IsOrtho ((g : V ≃ₗ[K] V) x) w := by
-    intro w hw
-    rw [← hfix w hw]
-    exact (QuadraticMap.isOrtho_iff_of_mem_orthogonalGroup g.2 x w).mpr (hxQorth w hw)
-  have hsubQorth : ∀ w ∈ W, Q.IsOrtho ((g : V ≃ₗ[K] V) x - x) w := by
-    intro w hw
-    apply QuadraticMap.isOrtho_polarBilin.mp
-    simp only [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_sub_left,
-      (hgxQorth w hw).polar_eq_zero, (hxQorth w hw).polar_eq_zero, sub_self]
-  by_cases hgxx : (g : V ≃ₗ[K] V) x = x
-  · have hfixg : ∀ y ∈ W ⊔ Submodule.span K {x}, ((g : V ≃ₗ[K] V) y) = y := by
-      apply TauCeti.LinearMap.eqOn_sup_span_singleton
-        (f := g.1.toLinearMap) (g := LinearMap.id)
-      · exact hfix
-      · exact hgxx
-    exact ⟨[], by simp, by simp, by simpa using hfixg⟩
-  · have hsubQ : Q ((g : V ≃ₗ[K] V) x - x) ≠ 0 := by
-      intro hzero
-      exact hgxx (sub_eq_zero.mp (hQ _ hzero))
-    let _ : Invertible (Q ((g : V ≃ₗ[K] V) x - x)) :=
-      (isUnit_iff_ne_zero.mpr hsubQ).invertible
-    let r : QuadraticMap.orthogonalGroup Q :=
-      QuadraticMap.reflectionOrthogonal Q ((g : V ≃ₗ[K] V) x - x)
-    have hfixrgW : ∀ w ∈ W,
-        (((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) w) = w := by
-      intro w hw
-      dsimp only [r]
-      simp only [Subgroup.coe_mul, LinearEquiv.mul_apply,
-        QuadraticMap.coe_reflectionOrthogonal]
-      rw [hfix w hw]
-      exact QuadraticMap.reflection_apply_of_isOrtho Q _ (hsubQorth w hw)
-    have hfixrgx :
-        (((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) x) = x := by
-      dsimp only [r]
-      simp only [Subgroup.coe_mul, LinearEquiv.mul_apply,
-        QuadraticMap.coe_reflectionOrthogonal]
-      exact QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ x hmap
-    have hfixrg : ∀ y ∈ W ⊔ Submodule.span K {x},
-        (((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) = y := by
-      apply TauCeti.LinearMap.eqOn_sup_span_singleton
-        (f := (r * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap)
-        (g := LinearMap.id)
-      · intro w hw
-        simpa using hfixrgW w hw
-      · simpa using hfixrgx
-    refine ⟨[r], ?_, by simp, ?_⟩
-    · intro s hs
-      simp only [List.mem_singleton] at hs
-      subst s
-      exact ⟨_, inferInstance, rfl⟩
-    · simpa only [List.prod_cons, List.prod_nil, mul_one] using hfixrg
-
 private theorem exists_reflectionOrthogonal_list_prod_mul_eq_one_of_codim
     [FiniteDimensional K V] [Invertible (2 : K)]
-    (Q : QuadraticForm K V) (hQ : Q.Anisotropic) (n : ℕ)
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (n : ℕ)
     (g : QuadraticMap.orthogonalGroup Q) (W : Submodule K V)
     (hW : (LinearMap.BilinForm.restrict (QuadraticMap.associated Q) W).Nondegenerate)
     (hfix : ∀ w ∈ W, ((g : V ≃ₗ[K] V) w) = w)
@@ -134,7 +69,7 @@ private theorem exists_reflectionOrthogonal_list_prod_mul_eq_one_of_codim
     ∃ l : List (QuadraticMap.orthogonalGroup Q),
       (∀ r ∈ l, ∃ (v : V) (_ : Invertible (Q v)),
         QuadraticMap.reflectionOrthogonal Q v = r) ∧
-      l.length ≤ n ∧ l.prod * g = 1 := by
+      l.length ≤ 2 * n ∧ l.prod * g = 1 := by
   induction n using Nat.strong_induction_on generalizing g W with
   | h n ih =>
       by_cases htop : W = ⊤
@@ -147,7 +82,7 @@ private theorem exists_reflectionOrthogonal_list_prod_mul_eq_one_of_codim
         exact hfix y (by simp [htop])
       · let B : LinearMap.BilinForm K V := QuadraticMap.associated Q
         have hB : B.Nondegenerate :=
-          QuadraticMap.nondegenerate_associated_iff.mpr hQ.nondegenerate
+          QuadraticMap.nondegenerate_associated_iff.mpr hQ
         have hBsymm : B.IsSymm :=
           LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)
         obtain ⟨x, hxorth, hxx⟩ :=
@@ -170,11 +105,11 @@ private theorem exists_reflectionOrthogonal_list_prod_mul_eq_one_of_codim
             ∃ l₁ : List (QuadraticMap.orthogonalGroup Q),
               (∀ r ∈ l₁, ∃ (v : V) (_ : Invertible (Q v)),
                 QuadraticMap.reflectionOrthogonal Q v = r) ∧
-              l₁.length ≤ 1 ∧
+              l₁.length ≤ 2 ∧
               ∀ y ∈ S,
                 (((l₁.prod * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) = y := by
-          exact exists_reflectionOrthogonal_list_prod_mul_fix_sup_span_singleton
-            Q hQ g W hfix x hxQorth
+          exact exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton
+            Q g W hfix x hxQorth
         have hlt : Module.finrank K V - Module.finrank K S < n := by
           have hxW : x ∉ W := fun hxW => hxx (hxorth x hxW)
           have hSfinrank : Module.finrank K S = Module.finrank K W + 1 :=
@@ -191,15 +126,15 @@ private theorem exists_reflectionOrthogonal_list_prod_mul_eq_one_of_codim
           omega
         · simpa only [List.prod_append, mul_assoc] using hprod₂
 
-/-- Every orthogonal transformation of an anisotropic quadratic space is a product of at most the
-dimension many reflections. -/
+/-- Every orthogonal transformation of a nondegenerate quadratic space is a product of at most
+twice the dimension many reflections. -/
 theorem exists_reflectionOrthogonal_list_prod_eq [FiniteDimensional K V] [NeZero (2 : K)]
-    (Q : QuadraticForm K V) (hQ : Q.Anisotropic)
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (g : QuadraticMap.orthogonalGroup Q) :
     ∃ l : List (QuadraticMap.orthogonalGroup Q),
       (∀ r ∈ l, ∃ (v : V) (_ : Invertible (Q v)),
         QuadraticMap.reflectionOrthogonal Q v = r) ∧
-      l.length ≤ Module.finrank K V ∧ l.prod = g := by
+      l.length ≤ 2 * Module.finrank K V ∧ l.prod = g := by
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   obtain ⟨l, hlrefl, hllen, hprod⟩ :=
     exists_reflectionOrthogonal_list_prod_mul_eq_one_of_codim Q hQ

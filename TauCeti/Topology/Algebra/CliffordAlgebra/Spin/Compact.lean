@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.ReflectionPair
 import TauCeti.Data.List.Pair
 import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
+import Mathlib.Analysis.Normed.Group.BallSphere
 import Mathlib.Analysis.Normed.Module.Normalize
 
 /-!
@@ -176,16 +177,12 @@ private theorem continuous_realCliffordSpinCompactParam (n : ℕ) :
     (fun i _ => (continuous_realCliffordSpinSpherePair n).comp (continuous_apply i))
   simpa only [List.map_ofFn, Function.comp_def] using h
 
-private def negUnitSphere {n : ℕ} (u : realCliffordUnitSphere n) :
-    realCliffordUnitSphere n :=
-  ⟨-u, by simpa only [mem_sphere, dist_zero_right, norm_neg] using u.2⟩
-
 private theorem realCliffordSpinSpherePair_neg (n : ℕ) [NeZero n]
     (u : realCliffordUnitSphere n) :
-    realCliffordSpinSpherePair n (u, negUnitSphere u) =
+    realCliffordSpinSpherePair n (u, -u) =
       spinGroup.negOne (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0).ne_zero := by
   apply Subtype.ext
-  simp only [realCliffordSpinSpherePair, coe_spinReflectionPair, negUnitSphere,
+  simp only [realCliffordSpinSpherePair, coe_spinReflectionPair, coe_neg_sphere,
     ContinuousLinearEquiv.map_neg, spinGroup.coe_negOne]
   rw [map_neg, mul_neg, ι_sq_scalar, realCliffordForm_zero_euclideanSpaceEquiv_eq_one]
   simp
@@ -201,7 +198,7 @@ private theorem exists_sphere_pair_list_prod_eq (n : ℕ) [NeZero n]
   let g := spinToSpecialOrthogonal Q x
   obtain ⟨l, hlrefl, hllen, hleven, hlprod⟩ :=
     QuadraticMap.exists_even_reflectionOrthogonal_list_prod_eq Q
-      (posDef_realCliffordForm_zero n).anisotropic g
+      (nondegenerate_realCliffordForm n 0) g
   obtain ⟨u, hulen, huprod⟩ := exists_unitSphere_reflection_list n l hlrefl
   let p := List.pairAdjacent u
   let z : realCliffordSpinGroupZero n := (p.map (realCliffordSpinSpherePair n)).prod
@@ -232,13 +229,13 @@ private theorem exists_sphere_pair_list_prod_eq (n : ℕ) [NeZero n]
     have hpair : 2 * p.length ≤ l.length := by
       simp only [p, List.length_pairAdjacent, hulen]
       omega
-    have hllen' : l.length ≤ n := by simpa using hllen
-    omega
+    simpa using
+      (Nat.le_of_mul_le_mul_left (hpair.trans hllen) (by decide : 0 < 2))
   rcases eq_or_eq_negOne_mul_of_spinToSpecialOrthogonal_eq Q
       (nondegenerate_realCliffordForm n 0) x z (by simpa only [g] using hzproj.symm) with hx | hx
   · exact ⟨p, hplen.trans (by omega), hx.symm⟩
   · let e := firstUnitSphere n
-    refine ⟨(e, negUnitSphere e) :: p, by simp only [List.length_cons]; omega, ?_⟩
+    refine ⟨(e, -e) :: p, by simp only [List.length_cons]; omega, ?_⟩
     rw [List.map_cons, List.prod_cons, realCliffordSpinSpherePair_neg]
     exact hx.symm
 
