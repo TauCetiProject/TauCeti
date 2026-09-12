@@ -13,6 +13,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Affine
 import Mathlib.Analysis.CStarAlgebra.Matrix
 import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.MeasureTheory.Group.Convolution
+import TauCeti.Analysis.Matrix.Sqrt
 
 /-!
 # The Gaussian-Gram Wishart family
@@ -40,21 +41,22 @@ a density definition cannot.
   family has this law.
 * `TauCeti.wishartGramMeasure_of_not_posSemidef` — outside the positive-semidefinite cone the law
   is the Dirac mass at zero.
-* `TauCeti.map_symmetricCongruenceLinearMap_wishartGramMeasure` — a square congruence carries the
-  law of scale `S` to the law of scale `M * S * Mᵀ`, and
+* `TauCeti.map_symmetricCongruenceLinearMap_wishartGramMeasure` — a rectangular congruence carries
+  the law of scale `S` to the law of scale `M * S * Mᵀ`, and
   `TauCeti.wishartGramMeasure_eq_map_sqrt` specializes it to the square root of the scale.
 * `TauCeti.wishartGramMeasure_conv_wishartGramMeasure` — the degrees add under convolution.
 * `TauCeti.wishartGramMeasure_setOf_posSemidef` — the law is carried by the positive-semidefinite
   cone.
+* `TauCeti.ae_posSemidef_wishartGramMeasure` — the sampled matrix is positive semidefinite almost
+  everywhere.
 * `TauCeti.wishartGramMeasure_setOf_rank_le` — the rank is at most `min ν S.rank`.
+* `TauCeti.ae_rank_le_wishartGramMeasure` — the same rank bound holds almost everywhere.
 * `TauCeti.mutuallySingular_wishartGramMeasure_symmetricLebesgue` — below that rank threshold the
   law has no density against `TauCeti.symmetricLebesgue`.
 
 ## References
 
 * R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Wiley, 1982, chapter 3.
-* `TauCetiRoadmap/StandardDistributions/README.md`, Layer 6, item 4, **Wishart distributions**,
-  the natural-degree Gaussian-Gram family.
 -/
 
 public section
@@ -83,9 +85,8 @@ private theorem sum_vecMulVec_eq (X : ι → EuclideanSpace ℝ (Fin p)) :
 
 private theorem posSemidef_sum_vecMulVec (X : ι → EuclideanSpace ℝ (Fin p)) :
     (∑ r, Matrix.vecMulVec (X r).ofLp (X r).ofLp).PosSemidef := by
-  rw [sum_vecMulVec_eq]
-  simpa only [Matrix.conjTranspose_eq_transpose_of_trivial] using
-    Matrix.posSemidef_conjTranspose_mul_self (rowMatrix X)
+  refine Matrix.posSemidef_sum Finset.univ fun r _ => ?_
+  simpa only [star_trivial] using Matrix.posSemidef_vecMulVec_self_star (X r).ofLp
 
 /-- The **Gram sum** `∑ r, X r * (X r)ᵀ` of a finite family of Euclidean vectors, as an element of
 the symmetric-matrix subspace.  This is the statistic whose law is the Gaussian-Gram Wishart
@@ -113,13 +114,13 @@ theorem rank_coe_wishartGram_le (X : ι → EuclideanSpace ℝ (Fin p)) :
   exact (rowMatrix X).rank_le_card_height
 
 /-- A linear image of the vectors congruates their Gram sum. -/
-theorem wishartGram_toEuclideanCLM (M : Matrix (Fin p) (Fin p) ℝ)
+theorem wishartGram_toEuclideanLin {q : ℕ} (M : Matrix (Fin q) (Fin p) ℝ)
     (X : ι → EuclideanSpace ℝ (Fin p)) :
-    wishartGram (fun r => Matrix.toEuclideanCLM (𝕜 := ℝ) M (X r)) =
+    wishartGram (fun r => Matrix.toEuclideanLin M (X r)) =
       Matrix.symmetricCongruenceLinearMap M (wishartGram X) := by
   refine Subtype.ext ?_
-  rw [Matrix.coe_symmetricCongruenceLinearMap_apply, coe_wishartGram, coe_wishartGram,
-    Finset.mul_sum, Finset.sum_mul]
+  rw [Matrix.coe_symmetricCongruenceLinearMap_apply, coe_wishartGram, coe_wishartGram]
+  rw [Matrix.mul_sum, Matrix.sum_mul]
   refine Finset.sum_congr rfl fun r _ => ?_
   ext i j
   simp [Matrix.mul_apply, Matrix.vecMulVec_apply, Matrix.mulVec, dotProduct, Finset.mul_sum,
@@ -189,30 +190,30 @@ theorem hasLaw_sum_vecMulVec_gaussian {Ω : Type*} {mΩ : MeasurableSpace Ω} {P
 
 /-! ### Congruence -/
 
-/-- **Congruence by a square matrix carries the Gaussian-Gram law of scale `S` to the one of
+/-- **Congruence by a rectangular matrix carries the Gaussian-Gram law of scale `S` to the one of
 scale `M * S * Mᵀ`.**  No rank hypothesis on `M` is needed. -/
-theorem map_symmetricCongruenceLinearMap_wishartGramMeasure (ν : ℕ)
-    (M : Matrix (Fin p) (Fin p) ℝ) (hS : S.PosSemidef) :
+theorem map_symmetricCongruenceLinearMap_wishartGramMeasure {q : ℕ} (ν : ℕ)
+    (M : Matrix (Fin q) (Fin p) ℝ) (hS : S.PosSemidef) :
     (wishartGramMeasure ν S).map (Matrix.symmetricCongruenceLinearMap M) =
       wishartGramMeasure ν (M * S * Mᵀ) := by
-  have hmap : (multivariateGaussian 0 S).map (Matrix.toEuclideanCLM (𝕜 := ℝ) M) =
+  have hmap : (multivariateGaussian 0 S).map (Matrix.toEuclideanLin M) =
       multivariateGaussian 0 (M * S * Mᵀ) := by
     have h := map_affine_multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) hS M 0
     have hfun : (fun x : EuclideanSpace ℝ (Fin p) =>
-        Matrix.toEuclideanLin M x + (0 : EuclideanSpace ℝ (Fin p))) =
-        ⇑(Matrix.toEuclideanCLM (𝕜 := ℝ) M) := funext fun x => by rw [add_zero]; rfl
+        Matrix.toEuclideanLin M x + (0 : EuclideanSpace ℝ (Fin q))) =
+        ⇑(Matrix.toEuclideanLin M) := funext fun x => by rw [add_zero]
     rw [hfun] at h
     simpa using h
   have hcong : Continuous (Matrix.symmetricCongruenceLinearMap M) :=
     LinearMap.continuous_of_finiteDimensional _
   have : ∀ _ : Fin ν, SigmaFinite
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S).map
-        (Matrix.toEuclideanCLM (𝕜 := ℝ) M)) := fun _ => by rw [hmap]; infer_instance
+        (Matrix.toEuclideanLin M)) := fun _ => by rw [hmap]; infer_instance
   rw [wishartGramMeasure_eq_map_pi, wishartGramMeasure_eq_map_pi,
     Measure.map_map hcong.measurable measurable_wishartGram]
   have hfun : (Matrix.symmetricCongruenceLinearMap M) ∘ (wishartGram (p := p) (ι := Fin ν)) =
-      wishartGram ∘ fun X r => Matrix.toEuclideanCLM (𝕜 := ℝ) M (X r) :=
-    funext fun X => (wishartGram_toEuclideanCLM M X).symm
+      wishartGram ∘ fun X r => Matrix.toEuclideanLin M (X r) :=
+    funext fun X => (wishartGram_toEuclideanLin M X).symm
   rw [hfun, ← Measure.map_map measurable_wishartGram (by fun_prop),
     Measure.pi_map_pi fun _ => (by fun_prop : Measurable _).aemeasurable, hmap]
 
@@ -243,14 +244,14 @@ theorem wishartGramMeasure_setOf_posSemidef (ν : ℕ) (S : Matrix (Fin p) (Fin 
         exact congrArg _ (Set.eq_univ_of_forall fun X => posSemidef_coe_wishartGram X).symm
     _ ≤ _ := Measure.le_map_apply measurable_wishartGram.aemeasurable _
 
-/-- The square root of a positive-semidefinite matrix has its rank. -/
-private theorem rank_sqrt (hS : S.PosSemidef) : (CFC.sqrt S).rank = S.rank := by
-  have hh : (CFC.sqrt S).IsHermitian :=
-    (Matrix.nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg S)).isHermitian
-  have hfac : (CFC.sqrt S)ᵀ * CFC.sqrt S = S := by
-    rw [← Matrix.conjTranspose_eq_transpose_of_trivial, hh.eq, CFC.sqrt_mul_sqrt_self S hS.nonneg]
-  conv_rhs => rw [← hfac]
-  rw [Matrix.rank_transpose_mul_self]
+/-- A Gaussian-Gram Wishart matrix is positive semidefinite almost everywhere. -/
+theorem ae_posSemidef_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ) :
+    ∀ᵐ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ∂wishartGramMeasure ν S,
+      (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef := by
+  refine (ae_iff_prob_eq_one ?_).2 (wishartGramMeasure_setOf_posSemidef ν S)
+  apply measurableSet_setOfPred.mp
+  exact (Matrix.posSemidef_is_closed (n := Fin p) (𝕜 := ℝ)).measurableSet.preimage
+    continuous_subtype_val.measurable
 
 /-- Every value of the congruated Gram sum has rank at most `min ν S.rank`: the Gram sum of `ν`
 vectors caps the rank at `ν`, and congruating by the square root of `S` caps it at `S.rank`. -/
@@ -265,7 +266,7 @@ private theorem rank_coe_symmetricCongruence_wishartGram_le (hS : S.PosSemidef)
   refine le_min (hstep.trans ((Matrix.rank_mul_le_right _ _).trans ?_))
     (hstep.trans ((Matrix.rank_mul_le_left _ _).trans ?_))
   · simpa using rank_coe_wishartGram_le X
-  · exact (rank_sqrt hS).le
+  · exact hS.rank_sqrt.le
 
 /-- **The Gaussian-Gram law of degree `ν` has rank at most `min ν S.rank`.**  With fewer Gaussian
 samples than dimensions, or a singular scale matrix, the law lives on singular matrices. -/
@@ -287,6 +288,52 @@ theorem wishartGramMeasure_setOf_rank_le (ν : ℕ) (hS : S.PosSemidef) :
     _ ≤ _ := Measure.le_map_apply
           (((LinearMap.continuous_of_finiteDimensional _).measurable.comp
             measurable_wishartGram).aemeasurable) _
+
+private theorem measurableSet_setOf_rank_le (k : ℕ) :
+    MeasurableSet {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+      (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ k} := by
+  apply IsClosed.measurableSet
+  rw [← isOpen_compl_iff]
+  simp only [Set.compl_ofPred, not_le]
+  let f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) →ₗ[ℝ]
+      EuclideanSpace ℝ (Fin p) →L[ℝ] EuclideanSpace ℝ (Fin p) :=
+    (Matrix.toEuclideanCLM (n := Fin p) (𝕜 := ℝ)).toAlgEquiv.toLinearEquiv.toLinearMap.comp
+      (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)).subtype
+  have hf : Continuous f := LinearMap.continuous_of_finiteDimensional f
+  have hopen := (isOpen_setOfPred_nat_le_rank (𝕜 := ℝ)
+    (E := EuclideanSpace ℝ (Fin p)) (F := EuclideanSpace ℝ (Fin p)) (k + 1)).preimage hf
+  have hrank (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+      (f A : EuclideanSpace ℝ (Fin p) →ₗ[ℝ] EuclideanSpace ℝ (Fin p)).rank =
+        (A : Matrix (Fin p) (Fin p) ℝ).rank := by
+    change Module.rank ℝ (LinearMap.range (f A).toLinearMap) =
+      ((A : Matrix (Fin p) (Fin p) ℝ).rank : Cardinal)
+    rw [← Module.finrank_eq_rank]
+    norm_cast
+    change Module.finrank ℝ (LinearMap.range (Matrix.toEuclideanLin
+      (A : Matrix (Fin p) (Fin p) ℝ))) = (A : Matrix (Fin p) (Fin p) ℝ).rank
+    rw [Matrix.toEuclideanLin_eq_toLin_orthonormal]
+    exact (Matrix.rank_eq_finrank_range_toLin (A : Matrix (Fin p) (Fin p) ℝ)
+      (EuclideanSpace.basisFun (Fin p) ℝ).toBasis
+      (EuclideanSpace.basisFun (Fin p) ℝ).toBasis).symm
+  have hset : {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+      k < (A : Matrix (Fin p) (Fin p) ℝ).rank} =
+      f ⁻¹' {g | (k + 1 : ℕ) ≤ (g : EuclideanSpace ℝ (Fin p) →ₗ[ℝ]
+        EuclideanSpace ℝ (Fin p)).rank} := by
+    ext A
+    change k < (A : Matrix (Fin p) (Fin p) ℝ).rank ↔
+      ((k + 1 : ℕ) : Cardinal) ≤
+        (f A : EuclideanSpace ℝ (Fin p) →ₗ[ℝ] EuclideanSpace ℝ (Fin p)).rank
+    rw [hrank]
+    norm_cast
+  rw [hset]
+  exact hopen
+
+/-- A Gaussian-Gram Wishart matrix has rank at most `min ν S.rank` almost everywhere. -/
+theorem ae_rank_le_wishartGramMeasure (ν : ℕ) (hS : S.PosSemidef) :
+    ∀ᵐ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ∂wishartGramMeasure ν S,
+      (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ min ν S.rank := by
+  refine (ae_iff_prob_eq_one ?_).2 (wishartGramMeasure_setOf_rank_le ν hS)
+  exact measurableSet_setOfPred.mp (measurableSet_setOf_rank_le (min ν S.rank))
 
 /-- **Below the rank threshold the Gaussian-Gram law has no density.**  It is then carried by the
 singular symmetric matrices, which are `TauCeti.symmetricLebesgue`-null. -/
