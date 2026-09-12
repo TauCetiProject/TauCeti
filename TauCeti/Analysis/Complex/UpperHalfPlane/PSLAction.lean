@@ -5,9 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
-public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 -- supplies the `FaithfulSMul PGL(2, ℝ) ℍ` instance behind the projective faithfulness
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
@@ -31,8 +29,6 @@ Mathlib's `GL(2, ℝ)`-invariance).
 * `UpperHalfPlane.instMulActionPSL2` — the `PSL(2, R)`-action for any coefficients mapping
   to `ℝ`, descending the `SL(2, R)`-action along the central quotient, with the
   representative compatibility `pslMk_smul`.
-* `TauCeti.instContMDiffConstSMulPSL2UpperHalfPlane` — every element of `PSL(2, ℝ)`
-  acts by a biholomorphism.
 * `FaithfulSMul` instances for `PSL(2, ℤ)` and `PSL(2, ℝ)` on `ℍ`, restricting Mathlib's
   faithful `PGL(2, ℝ)`-action along the injective `toPGL` and `psl2zToPSL2R`.
 * `SMulInvariantMeasure` instances for `SL(2, R)` and `PSL(2, R)` (any coefficients
@@ -62,7 +58,7 @@ public section
 
 noncomputable section
 
-open scoped ContDiff Manifold MatrixGroups Pointwise
+open scoped MatrixGroups Pointwise
 
 open ModularGroup UpperHalfPlane Matrix.SpecialLinearGroup MeasureTheory
 
@@ -143,24 +139,6 @@ noncomputable instance : MeasurableConstSMul PSL(2, R) ℍ where
     refine QuotientGroup.induction_on g fun a ↦ ?_
     simp only [pslMk_smul]
     exact measurable_const_smul a
-
-end UpperHalfPlane
-
-namespace TauCeti
-
-/-- Every element of `PSL(2, ℝ)` acts on the upper half-plane by a biholomorphism. -/
-noncomputable instance instContMDiffConstSMulPSL2UpperHalfPlane :
-    ContMDiffConstSMul 𝓘(ℂ) ∞ PSL(2, ℝ) ℍ where
-  contMDiff_const_smul g := by
-    refine QuotientGroup.induction_on g fun a ↦ ?_
-    change CMDiff ∞ fun x : ℍ ↦ (a : SL(2, ℝ)) • x
-    exact UpperHalfPlane.contMDiff_smul (n := ∞) (g := a) (by simp)
-
-end TauCeti
-
-namespace UpperHalfPlane
-
-variable {R : Type*} [CommRing R] [Algebra R ℝ]
 
 /-- `PSL(2, R)` preserves the invariant measure on `ℍ`, descending the `SL(2, R)`
 invariance. -/
