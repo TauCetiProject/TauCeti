@@ -65,6 +65,12 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 * E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §2: the invariant map of a class
   formation takes values in `ℚ/ℤ`, and on a layer of degree `n` its image is the unique subgroup
   of order `n`, in which the fundamental class is the element `1 / n`.
+* `TauCetiRoadmap/ClassFieldTheory/README.md`, Layer 2, "class formations and fundamental
+  classes", with the anchors of the `Suggested.lean` section "Preliminaries: the invariant target
+  `ℚ/ℤ`": `RatModInt`, `ratModIntTorsion n` and `fundamentalInvariant n` are `AddCircle (1 : ℚ)`,
+  its `n`-torsion subgroup and the class of `1 / n`, and the axioms `inv_injective` and
+  `inv_range` of `ClassFormation` are the hypotheses of the invariant-map results below, taken
+  here for a general period.
 -/
 
 public section
@@ -185,10 +191,12 @@ canonical generator of the `n / d`-torsion.
 For `p = 1` over `ℚ` this reads `d • (1 / n) = 1 / (n / d)`, the arithmetic behind the way
 restriction rescales a class-field-theoretic invariant. -/
 @[simp]
-theorem nsmul_coe_period_div {d : ℕ} (hn : 0 < n) (hd : d ∣ n) :
+theorem nsmul_coe_period_div {d : ℕ} (hd : d ∣ n) :
     d • ((p / n : 𝕜) : AddCircle p) = ((p / (n / d : ℕ) : 𝕜) : AddCircle p) := by
-  have hd0 : d ≠ 0 := by rintro rfl; simp only [Nat.zero_dvd] at hd; omega
-  have hn0 : (n : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  have hd0 : d ≠ 0 := by rintro rfl; exact hn (Nat.zero_dvd.mp hd)
+  have hn0 : (n : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hn
   have hd0' : (d : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hd0
   have key : (d : 𝕜) * (p / n) = p / ((n / d : ℕ) : 𝕜) := by
     rw [Nat.cast_div hd hd0']
