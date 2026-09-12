@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Distance
 public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.OfMatrix
 import Mathlib.Probability.ProbabilityMassFunction.Constructions
 import TauCeti.Data.ENNReal.Weights
+import TauCeti.MeasureTheory.Measure.FiniteMeasure
 
 /-!
 # Rounding the weights of a finite weighted graph
@@ -73,7 +74,7 @@ def gridValue (N : ℕ) (k : Fin (N + 2)) : Set.Icc (0 : ℝ) 1 :=
     exact_mod_cast Nat.lt_succ_iff.mp k.isLt⟩
 
 @[simp]
-theorem gridValue_coe (N : ℕ) (k : Fin (N + 2)) :
+theorem coe_gridValue (N : ℕ) (k : Fin (N + 2)) :
     (gridValue N k : ℝ) = (k : ℕ) / ((N : ℝ) + 1) := (rfl)
 
 /-- The grid point just below a `[0, 1]` value: the index of `⌊t (N + 1)⌋ / (N + 1)`. -/
@@ -96,7 +97,7 @@ theorem abs_sub_gridValue_gridIndex_le (N : ℕ) (t : Set.Icc (0 : ℝ) 1) :
   have hfloor : ((⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ : ℕ) : ℝ) ≤ (t : ℝ) * ((N : ℝ) + 1) := Nat.floor_le hx
   have hfloor' : (t : ℝ) * ((N : ℝ) + 1) < ((⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ : ℕ) : ℝ) + 1 :=
     Nat.lt_floor_add_one _
-  rw [gridValue_coe, gridIndex_val, abs_le]
+  rw [coe_gridValue, gridIndex_val, abs_le]
   have hlow : ((⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ : ℕ) : ℝ) / ((N : ℝ) + 1) ≤ (t : ℝ) :=
     (div_le_iff₀ hN).2 hfloor
   have hhigh : (t : ℝ) - ((⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ : ℕ) : ℝ) / ((N : ℝ) + 1)
@@ -125,10 +126,6 @@ section WeightShift
 
 variable {κ : Type*} [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
-private theorem sum_measure_singleton_eq_one (ν : Measure κ) [IsProbabilityMeasure ν] :
-    ∑ k, ν {k} = 1 := by
-  rw [MeasureTheory.sum_measure_singleton, Finset.coe_univ, measure_univ]
-
 variable (ν ν' : Measure κ) (k₀ : κ)
 
 /-- The coupling of two weight vectors on a finite carrier that keeps as much mass as possible on
@@ -152,8 +149,8 @@ variable {ν ν' k₀}
 private theorem isCoupling_shiftCoupling [IsProbabilityMeasure ν] [IsProbabilityMeasure ν']
     (hdom : ∀ k, k ≠ k₀ → ν' {k} ≤ ν {k}) :
     TauCeti.MeasureTheory.IsCoupling ν ν' (shiftCoupling ν ν' k₀) := by
-  have hf := sum_measure_singleton_eq_one ν
-  have hg := sum_measure_singleton_eq_one ν'
+  have hf := TauCeti.MeasureTheory.sum_measure_singleton_eq_one ν
+  have hg := TauCeti.MeasureTheory.sum_measure_singleton_eq_one ν'
   have hdom' : ∀ k ∈ Finset.univ, k ≠ k₀ → ν' {k} ≤ ν {k} := fun k _ hk => hdom k hk
   have hk₀ := le_of_sum_eq_of_forall_ne_le (Finset.mem_univ k₀) hf hg hdom'
   refine TauCeti.MeasureTheory.isCoupling_iff.2 ⟨?_, ?_⟩
@@ -213,7 +210,7 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
   have hrne : ∑ k, (ν {k} - ν' {k}) ≠ ⊤ := by
     refine ne_top_of_le_ne_top ENNReal.one_ne_top ?_
     calc ∑ k, (ν {k} - ν' {k}) ≤ ∑ k, ν {k} := Finset.sum_le_sum fun k _ => tsub_le_self
-      _ = 1 := sum_measure_singleton_eq_one ν
+      _ = 1 := TauCeti.MeasureTheory.sum_measure_singleton_eq_one ν
   -- The coupling puts at most the transferred mass off the diagonal.
   have hoff : shiftCoupling ν ν' k₀ (Set.diagonal κ)ᶜ ≤ ∑ k, (ν {k} - ν' {k}) := by
     rw [shiftCoupling_apply]
@@ -311,7 +308,7 @@ theorem exists_gridWeightMeasure_cutDist_le {n N : ℕ} [NeZero n] (hN : 0 < N)
   have hN0 : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast hN.ne'
   have hNtop : (N : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top N
   obtain ⟨w, hwsum, hle, hge⟩ := exists_nat_weights_of_sum_eq_one (Finset.mem_univ (0 : Fin n))
-    (sum_measure_singleton_eq_one ν) hN
+    (TauCeti.MeasureTheory.sum_measure_singleton_eq_one ν) hN
   refine ⟨w, hwsum, ?_⟩
   set ν' := gridWeightMeasure hN w hwsum with hν'
   have hweight : ∀ i, ν' {i} = (w i : ℝ≥0∞) / (N : ℝ≥0∞) := fun i => by
@@ -325,7 +322,8 @@ theorem exists_gridWeightMeasure_cutDist_le {n N : ℕ} [NeZero n] (hN : 0 < N)
     intro i
     rcases eq_or_ne i (0 : Fin n) with rfl | hi
     · rw [tsub_eq_zero_of_le (le_of_sum_eq_of_forall_ne_le (Finset.mem_univ (0 : Fin n))
-        (sum_measure_singleton_eq_one ν) (sum_measure_singleton_eq_one ν')
+        (TauCeti.MeasureTheory.sum_measure_singleton_eq_one ν)
+          (TauCeti.MeasureTheory.sum_measure_singleton_eq_one ν')
         fun k _ hk => hdom k hk)]
       simp
     · rw [tsub_le_iff_left, hweight i, ENNReal.div_add_div_same,

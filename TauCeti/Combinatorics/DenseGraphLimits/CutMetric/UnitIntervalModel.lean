@@ -69,6 +69,7 @@ def unitIntervalModel (ν : Measure α) [IsProbabilityMeasure ν] (V : Graphon �
     (Measure.exists_measurePreserving_from_unitInterval ν).choose_spec.measurable volume
 
 /-- Reading a graphon on the unit interval leaves every cut distance to it unchanged. -/
+@[simp]
 theorem cutDist_unitIntervalModel (ν : Measure α) [IsProbabilityMeasure ν] (U : Graphon Ω μ)
     (V : Graphon α ν) : cutDist U (unitIntervalModel ν V) = cutDist U V :=
   cutDist_comap_right U V (Measure.exists_measurePreserving_from_unitInterval ν).choose_spec

@@ -105,7 +105,7 @@ theorem blockAverage_comm (p q : P.parts) :
 
 /-- The rectangle average, as a real number. -/
 @[simp]
-theorem blockAverage_coe (p q : P.parts) :
+theorem coe_blockAverage (p q : P.parts) :
     (blockAverage P W p q : ℝ) = ⨍ z in (p : Set Ω) ×ˢ (q : Set Ω), W z.1 z.2 ∂(μ.prod μ) := by
   rw [blockAverage]
 
