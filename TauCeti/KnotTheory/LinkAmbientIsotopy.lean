@@ -53,6 +53,28 @@ theorem continuousAmbientIsotopic_def :
 
 namespace ContinuousAmbientIsotopic
 
+/-- Ambient-isotopic smooth links have homeomorphic complements. The homeomorphism is the
+restriction of the final homeomorphism of the shared ambient-isotopy witness. -/
+theorem nonempty_complementHomeomorph (hLK : ContinuousAmbientIsotopic L K) :
+    Nonempty (↑(L.range)ᶜ ≃ₜ ↑(K.range)ᶜ) := by
+  rcases hLK with ⟨Φ, hΦ⟩
+  let e := Φ.finalHomeomorph
+  have hmem (x : M) : x ∈ L.range ↔ e x ∈ K.range := by
+    constructor
+    · intro hx
+      rcases (L.mem_range_iff x).mp hx with ⟨i, y, hy⟩
+      apply (K.mem_range_iff (e x)).mpr
+      refine ⟨i, y, ?_⟩
+      have hi := congrArg (fun f ↦ f y) (hΦ i)
+      simpa [e, hy] using hi.symm
+    · intro hx
+      rcases (K.mem_range_iff (e x)).mp hx with ⟨i, y, hy⟩
+      apply (L.mem_range_iff x).mpr
+      refine ⟨i, y, e.injective ?_⟩
+      have hi := congrArg (fun f ↦ f y) (hΦ i)
+      simpa [e] using hi.trans hy
+  exact ⟨e.subtype fun x ↦ not_congr (hmem x)⟩
+
 /-- The identity ambient isotopy witnesses reflexivity. -/
 @[refl] theorem refl (L : SmoothLinkEmbedding I M n) : ContinuousAmbientIsotopic L L := by
   refine ⟨AmbientIsotopy.refl M, ?_⟩
