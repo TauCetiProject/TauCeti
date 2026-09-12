@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: The Tau Ceti contributors, Claude
 -/
 module
 
@@ -24,7 +24,9 @@ designated atom can only gain, and it gains exactly the total excess.
 Rounding to a common denominator `M` cannot be done pointwise, since the weights have to keep
 summing to one.  `TauCeti.exists_nat_weights_of_sum_eq_one` rounds every weight but the one at
 `x₀` down to a multiple of `1 / M` and lets `x₀` absorb the slack; the rounded weights are then
-dominated away from `x₀` and lose less than `1 / M` each.
+dominated away from `x₀` and lose less than `1 / M` each.  That construction was extracted from
+`TauCeti/MeasureTheory/OptimalTransport/Wasserstein/FiniteSupport.lean`, where it was first
+written for `TauCeti.MeasureTheory.exists_nat_weights_wassersteinEDist_le`, which now calls it.
 
 ## Main results
 
@@ -95,33 +97,37 @@ theorem add_sum_tsub_eq_of_forall_ne_le (hx₀ : x₀ ∈ s) (hf : ∑ x ∈ s, 
     (ENNReal.add_right_inj hfin).1 (((sum_min_add_sum_tsub s f g).trans hf).trans hsum.symm)
   rw [hdiff, add_tsub_cancel_of_le hx]
 
-/-- **Rounding a weight vector to a common denominator.**  A weight vector of total mass one whose
-entries are finite is turned into one whose entries are the multiples `m x / M` of `1 / M`, by
-rounding every weight but the one at a designated atom `x₀` down and letting `x₀` absorb the
-slack.  Away from `x₀` the rounded weight is below the original one and within `1 / M` of it; at
-`x₀` nothing is claimed, since that is where all the slack goes.
+/-- **Rounding a weight vector to a common denominator.**  A weight vector of total mass one is
+turned into one whose entries are the multiples `m x / M` of `1 / M`, by rounding every weight but
+the one at a designated atom `x₀` down and letting `x₀` absorb the slack.  Away from `x₀` the
+rounded weight is below the original one and within `1 / M` of it; at `x₀` nothing is claimed,
+since that is where all the slack goes.
 
 The conclusion is stated multiplicatively, as `m x ≤ M * f x` and `M * f x ≤ m x + 1`, so that it
-holds with no inequality between `M` and the finiteness of the weights. -/
-theorem exists_nat_weights_of_sum_eq_one (hx₀ : x₀ ∈ s) (hf : ∑ x ∈ s, f x = 1)
-    (hfin : ∀ x, f x ≠ ⊤) {M : ℕ} (hM : 0 < M) :
+holds with no inequality between `M` and the size of the weights. -/
+theorem exists_nat_weights_of_sum_eq_one (hx₀ : x₀ ∈ s) (hf : ∑ x ∈ s, f x = 1) {M : ℕ}
+    (hM : 0 < M) :
     ∃ m : X → ℕ, ∑ x ∈ s, m x = M ∧ (∀ x ∈ s, x ≠ x₀ → (m x : ℝ≥0∞) ≤ M * f x) ∧
       ∀ x ∈ s, x ≠ x₀ → (M : ℝ≥0∞) * f x ≤ (m x : ℝ≥0∞) + 1 := by
   classical
-  have hfloor_le : ∀ y : X, ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞) ≤ M * f y := by
-    intro y
+  -- an entry of a weight vector of total mass one is at most one, hence finite
+  have hfin : ∀ y ∈ s, f y ≠ ⊤ := fun y hy =>
+    ne_top_of_le_ne_top ENNReal.one_ne_top
+      (hf ▸ Finset.single_le_sum (f := f) (fun z _ => zero_le) hy)
+  have hfloor_le : ∀ y ∈ s, ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞) ≤ M * f y := by
+    intro y hy
     calc ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞)
         = ENNReal.ofReal (⌊(M : ℝ) * (f y).toReal⌋₊ : ℝ) := by rw [ENNReal.ofReal_natCast]
       _ ≤ ENNReal.ofReal ((M : ℝ) * (f y).toReal) :=
           ENNReal.ofReal_le_ofReal (Nat.floor_le (by positivity))
       _ = M * f y := by
           rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast,
-            ENNReal.ofReal_toReal (hfin y)]
-  have hlt_floor : ∀ y : X, (M : ℝ≥0∞) * f y ≤ ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞) + 1 := by
-    intro y
+            ENNReal.ofReal_toReal (hfin y hy)]
+  have hlt_floor : ∀ y ∈ s, (M : ℝ≥0∞) * f y ≤ ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞) + 1 := by
+    intro y hy
     calc (M : ℝ≥0∞) * f y = ENNReal.ofReal ((M : ℝ) * (f y).toReal) := by
           rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast,
-            ENNReal.ofReal_toReal (hfin y)]
+            ENNReal.ofReal_toReal (hfin y hy)]
       _ ≤ ENNReal.ofReal ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℝ) + 1) :=
           ENNReal.ofReal_le_ofReal (Nat.lt_floor_add_one _).le
       _ = ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞) + 1 := by
@@ -131,7 +137,8 @@ theorem exists_nat_weights_of_sum_eq_one (hx₀ : x₀ ∈ s) (hf : ∑ x ∈ s,
     have hcast : ((∑ y ∈ s.erase x₀, ⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞) ≤ (M : ℝ≥0∞) := by
       push_cast
       calc ∑ y ∈ s.erase x₀, ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞)
-          ≤ ∑ y ∈ s.erase x₀, (M : ℝ≥0∞) * f y := Finset.sum_le_sum fun y _ => hfloor_le y
+          ≤ ∑ y ∈ s.erase x₀, (M : ℝ≥0∞) * f y :=
+            Finset.sum_le_sum fun y hy => hfloor_le y (Finset.mem_of_mem_erase hy)
         _ = (M : ℝ≥0∞) * ∑ y ∈ s.erase x₀, f y := by rw [Finset.mul_sum]
         _ ≤ (M : ℝ≥0∞) * 1 := by
             gcongr
@@ -149,8 +156,8 @@ theorem exists_nat_weights_of_sum_eq_one (hx₀ : x₀ ∈ s) (hf : ∑ x ∈ s,
     rw [h]
     simp only [↓reduceIte]
     omega
-  · exact fun x _ hx => by simpa only [ite_eq_right hx] using hfloor_le x
-  · exact fun x _ hx => by simpa only [ite_eq_right hx] using hlt_floor x
+  · exact fun x hxs hx => by simpa only [ite_eq_right hx] using hfloor_le x hxs
+  · exact fun x hxs hx => by simpa only [ite_eq_right hx] using hlt_floor x hxs
 
 end TauCeti
 

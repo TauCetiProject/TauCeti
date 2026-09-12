@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
+public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Distance
 public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.OfMatrix
 import Mathlib.Probability.ProbabilityMassFunction.Constructions
 import TauCeti.Data.ENNReal.Weights
@@ -311,7 +311,7 @@ theorem exists_gridWeightMeasure_cutDist_le {n N : ℕ} [NeZero n] (hN : 0 < N)
   have hN0 : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast hN.ne'
   have hNtop : (N : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top N
   obtain ⟨w, hwsum, hle, hge⟩ := exists_nat_weights_of_sum_eq_one (Finset.mem_univ (0 : Fin n))
-    (sum_measure_singleton_eq_one ν) (fun i => measure_ne_top ν {i}) hN
+    (sum_measure_singleton_eq_one ν) hN
   refine ⟨w, hwsum, ?_⟩
   set ν' := gridWeightMeasure hN w hwsum with hν'
   have hweight : ∀ i, ν' {i} = (w i : ℝ≥0∞) / (N : ℝ≥0∞) := fun i => by

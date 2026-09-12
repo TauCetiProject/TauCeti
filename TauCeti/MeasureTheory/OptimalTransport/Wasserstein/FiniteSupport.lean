@@ -222,7 +222,7 @@ theorem exists_nat_weights_wassersteinEDist_le
     exact hM.le
   -- the rounded multiplicities, and their comparison with the original weights
   obtain ⟨m, hm_sum, hfloor_le, hlt_floor⟩ :=
-    exists_nat_weights_of_sum_eq_one hx₀ ha_sum ha_fin hMpos
+    exists_nat_weights_of_sum_eq_one hx₀ ha_sum hMpos
   refine ⟨m, by rw [hm_sum]; exact hMpos, ?_⟩
   -- the rounded weights, and the comparison with the original ones
   set b : X → ℝ≥0∞ := fun x ↦ (M : ℝ≥0∞)⁻¹ * m x with hb_def
