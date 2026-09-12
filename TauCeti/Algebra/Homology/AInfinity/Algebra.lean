@@ -1,0 +1,235 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+import Mathlib.LinearAlgebra.PiTensorProduct.Generators
+public import TauCeti.Algebra.Homology.AInfinity.Coderivation
+
+/-!
+# Nonunital A-infinity algebras
+
+An uncurved nonunital `A∞` algebra on an internally `ℤ`-graded module consists of operations
+`m n` of degree `2 - n`, with `m 0 = 0`, whose suspended Taylor map extends to a square-zero
+degree-one coderivation of the reduced tensor coalgebra.  This file packages that definition and
+exposes both of its standard presentations: the bar differential and the unsuspended Stasheff
+identities.
+
+The comparison between the presentations uses the degree-`-1` suspension convention.  In
+particular, the arity-two identity has the sign `(-1)^|a|` on `m₂(a,m₁(b))`, while the arity-three
+identity becomes ordinary associativity when `m₃` vanishes.  Arity zero is explicitly forced to
+vanish, rather than being unconstrained data hidden from the bar construction.
+
+## Main definitions
+
+* `TauCeti.AInfinityAlgebra`: an uncurved nonunital `A∞` algebra.
+* `TauCeti.AInfinityAlgebra.barDifferential`: its square-zero bar coderivation.
+* `TauCeti.AInfinityAlgebra.ofStasheff`: construct an algebra from the unsuspended identities.
+
+## References
+
+* E. Getzler and J. D. S. Jones, *A-infinity algebras and the cyclic bar complex*, Sections 1--2.
+* B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3.1 and 3.6.
+-/
+
+public section
+
+open scoped DirectSum TensorProduct
+
+universe uR uA
+
+namespace TauCeti
+
+namespace AInfinity
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
+
+/-- Two Taylor maps which suspend the same operations are equal.  Thus retaining both the
+suspended Taylor map and the unsuspended operations does not add unconstrained data. -/
+theorem IsSuspension.taylor_eq {G : InternalGrading R A}
+    {F F' : ReducedTensorWords R A →ₗ[R] A}
+    {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
+    (hF : IsSuspension G F m) (hF' : IsSuspension G F' m) : F = F' := by
+  apply ReducedTensorWords.linearMap_ext
+  intro n z
+  have hn : F ∘ₗ ReducedTensorWords.of R A n =
+      F' ∘ₗ ReducedTensorWords.of R A n := by
+    apply PiTensorProduct.ext_of_span_eq_top
+      (g := fun _ (q : Σ d : ℤ, G.piece d) ↦ (q.2 : A))
+    · intro i
+      apply top_unique
+      rw [← G.isInternal.submodule_iSup_eq_top]
+      refine iSup_le fun d ↦ ?_
+      intro a ha
+      exact Submodule.subset_span ⟨⟨d, ⟨a, ha⟩⟩, rfl⟩
+    · intro q
+      let d : ℕ → ℤ := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).1 else 0
+      let x : ℕ → A := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).2 else 0
+      have hx : ∀ i < n.1, x i ∈ G.piece (d i) := by
+        intro i hi
+        simp only [x, d, hi, dite_true]
+        exact (q ⟨i, hi⟩).2.property
+      have hleft := (isSuspension_def G F m).1 hF n.1 n.2 d x hx
+      have hright := (isSuspension_def G F' m).1 hF' n.1 n.2 d x hx
+      simpa only [LinearMap.comp_apply, x, Fin.isLt, dite_true] using hleft.trans hright.symm
+  exact LinearMap.congr_fun hn (PiTensorProduct.tprod R z)
+
+end AInfinity
+
+/-- An uncurved nonunital `A∞` algebra over a commutative ring.
+
+The Taylor map is stored alongside the operations because suspension depends on the degrees of
+homogeneous inputs.  `taylor_isSuspension` determines it uniquely from `grading` and `m`, as
+recorded by `AInfinity.IsSuspension.taylor_eq`.  Its graded Taylor expansion is the primary bar
+coderivation, and `bar_square_zero` is the stored Stasheff law. -/
+structure AInfinityAlgebra (R : Type uR) (A : Type uA) [CommRing R] [AddCommGroup A]
+    [Module R A] where
+  /-- The internal cohomological grading of the carrier. -/
+  grading : InternalGrading R A
+  /-- The unsuspended arity-`n` operation. -/
+  m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A
+  /-- The arity-zero operation vanishes: the algebra is uncurved. -/
+  m_zero : m 0 = 0
+  /-- The operation `m n` has cohomological degree `2 - n`. -/
+  m_degree : ∀ n, 0 < n →
+    MultilinearMap.IsHomogeneous (m n) (fun _ ↦ grading.piece) grading.piece (2 - n)
+  /-- The Taylor map from nonempty suspended tensor words to suspended letters. -/
+  taylor : ReducedTensorWords R A →ₗ[R] A
+  /-- The Taylor map is the suspension of the displayed operations. -/
+  taylor_isSuspension : AInfinity.IsSuspension grading taylor m
+  /-- The degree-one coderivation extended from `taylor` squares to zero. -/
+  bar_square_zero :
+    ReducedTensorWords.gradedCoderiv (grading.shift 1) taylor 1 ∘ₗ
+        ReducedTensorWords.gradedCoderiv (grading.shift 1) taylor 1 = 0
+
+namespace AInfinityAlgebra
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
+
+attribute [simp] AInfinityAlgebra.m_zero
+
+/-- The degree-one coderivation of the reduced bar construction. -/
+noncomputable def barDifferential (𝒜 : AInfinityAlgebra R A) :
+    ReducedTensorWords R A →ₗ[R] ReducedTensorWords R A :=
+  ReducedTensorWords.gradedCoderiv (𝒜.grading.shift 1) 𝒜.taylor 1
+
+/-- The bar differential is a graded coderivation for the suspended grading. -/
+theorem isGradedCoderivation_barDifferential (𝒜 : AInfinityAlgebra R A) :
+    ReducedTensorWords.IsGradedCoderivation (𝒜.grading.shift 1) 1 𝒜.barDifferential :=
+  ReducedTensorWords.isGradedCoderivation_gradedCoderiv _ _ _
+
+/-- The bar differential has cohomological degree one. -/
+theorem barDifferential_isHomogeneous (𝒜 : AInfinityAlgebra R A) :
+    LinearMap.IsHomogeneous 𝒜.barDifferential
+      (ReducedTensorWords.gradedPiece (𝒜.grading.shift 1))
+      (ReducedTensorWords.gradedPiece (𝒜.grading.shift 1)) 1 :=
+  ReducedTensorWords.isHomogeneous_gradedCoderiv _ _ _ _
+    (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree)
+
+/-- The letter component of the bar differential is its stored Taylor map. -/
+@[simp]
+theorem letter_comp_barDifferential (𝒜 : AInfinityAlgebra R A) :
+    ReducedTensorWords.letter R A ∘ₗ 𝒜.barDifferential = 𝒜.taylor := by
+  rw [barDifferential, ReducedTensorWords.letter_comp_gradedCoderiv]
+
+/-- The bar differential squares to zero. -/
+@[simp]
+theorem barDifferential_sq (𝒜 : AInfinityAlgebra R A) :
+    𝒜.barDifferential ∘ₗ 𝒜.barDifferential = 0 :=
+  𝒜.bar_square_zero
+
+/-- The square-zero bar law is equivalent to all unsuspended Stasheff identities on homogeneous
+inputs. -/
+theorem barDifferential_sq_iff_stasheff (𝒜 : AInfinityAlgebra R A) :
+    𝒜.barDifferential ∘ₗ 𝒜.barDifferential = 0 ↔
+      ∀ (n : ℕ) (_hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A),
+        (∀ i < n, x i ∈ 𝒜.grading.piece (d i)) →
+          AInfinity.stasheffSum 𝒜.m d x n = 0 :=
+  𝒜.taylor_isSuspension.comp_self_eq_zero_iff_forall_stasheffSum_eq_zero 𝒜.m_degree
+
+/-- The unsuspended operations of an `A∞` algebra satisfy every Stasheff identity on homogeneous
+inputs. -/
+theorem stasheff (𝒜 : AInfinityAlgebra R A) (n : ℕ) (hn : 0 < n)
+    (d : ℕ → ℤ) (x : ℕ → A) (hx : ∀ i < n, x i ∈ 𝒜.grading.piece (d i)) :
+    AInfinity.stasheffSum 𝒜.m d x n = 0 :=
+  𝒜.barDifferential_sq_iff_stasheff.mp 𝒜.barDifferential_sq n hn d x hx
+
+/-- Construct an `A∞` algebra from homogeneous operations satisfying the unsuspended Stasheff
+identities and a Taylor map realizing their suspension. -/
+def ofStasheff (G : InternalGrading R A)
+    (m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A) (hm0 : m 0 = 0)
+    (hm : ∀ n, 0 < n →
+      MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
+    (F : ReducedTensorWords R A →ₗ[R] A) (hFm : AInfinity.IsSuspension G F m)
+    (hSI : ∀ (n : ℕ) (_hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A),
+      (∀ i < n, x i ∈ G.piece (d i)) → AInfinity.stasheffSum m d x n = 0) :
+    AInfinityAlgebra R A where
+  grading := G
+  m := m
+  m_zero := hm0
+  m_degree := hm
+  taylor := F
+  taylor_isSuspension := hFm
+  bar_square_zero :=
+    (hFm.comp_self_eq_zero_iff_forall_stasheffSum_eq_zero hm).2 hSI
+
+@[simp]
+theorem ofStasheff_grading (G : InternalGrading R A)
+    (m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A) (hm0 hm F hFm hSI) :
+    (ofStasheff G m hm0 hm F hFm hSI).grading = G := (rfl)
+
+@[simp]
+theorem ofStasheff_m (G : InternalGrading R A)
+    (m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A) (hm0 hm F hFm hSI) :
+    (ofStasheff G m hm0 hm F hFm hSI).m = m := (rfl)
+
+/-- `A∞` algebras are determined by their grading and unsuspended operations; the Taylor map is
+forced by the suspension relation and all remaining fields are propositions. -/
+@[ext]
+theorem ext {𝒜 𝒝 : AInfinityAlgebra R A} (hG : 𝒜.grading = 𝒝.grading)
+    (hm : 𝒜.m = 𝒝.m) : 𝒜 = 𝒝 := by
+  cases 𝒜 with
+  | mk G m hm0 hmdeg F hFm hsq =>
+    cases 𝒝 with
+    | mk G' m' hm0' hmdeg' F' hFm' hsq' =>
+      simp only at hG hm
+      subst G'
+      subst m'
+      have hFF' := AInfinity.IsSuspension.taylor_eq hFm hFm'
+      subst F'
+      rfl
+
+/-! ### Low-arity identities -/
+
+/-- The arity-one identity is `m₁ m₁ = 0`. -/
+theorem stasheff_one (𝒜 : AInfinityAlgebra R A) (d : ℕ → ℤ) (x : ℕ → A)
+    (hx : x 0 ∈ 𝒜.grading.piece (d 0)) : 𝒜.m 1 ![𝒜.m 1 ![x 0]] = 0 := by
+  have h := 𝒜.stasheff 1 (by omega) d x (fun i hi ↦ by
+    have hi0 : i = 0 := by omega
+    subst i
+    exact hx)
+  rwa [AInfinity.stasheffSum_one] at h
+
+/-- The arity-two identity is the graded Leibniz rule, with sign `(-1)^(d 0)` on the second
+differentiated input. -/
+theorem stasheff_two (𝒜 : AInfinityAlgebra R A) (d : ℕ → ℤ) (x : ℕ → A)
+    (hx : ∀ i < 2, x i ∈ 𝒜.grading.piece (d i)) :
+    𝒜.m 1 ![𝒜.m 2 ![x 0, x 1]] =
+      𝒜.m 2 ![𝒜.m 1 ![x 0], x 1] +
+        negOnePowCast R (d 0) • 𝒜.m 2 ![x 0, 𝒜.m 1 ![x 1]] := by
+  exact (AInfinity.stasheffSum_two_eq_zero_iff 𝒜.m d x).mp
+    (𝒜.stasheff 2 (by omega) d x hx)
+
+/-- If the ternary operation vanishes, the arity-three identity says that `m₂` is associative
+on homogeneous inputs. -/
+theorem m_two_assoc_of_m_three_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : 𝒜.m 3 = 0)
+    (d : ℕ → ℤ) (x : ℕ → A) (hx : ∀ i < 3, x i ∈ 𝒜.grading.piece (d i)) :
+    𝒜.m 2 ![𝒜.m 2 ![x 0, x 1], x 2] = 𝒜.m 2 ![x 0, 𝒜.m 2 ![x 1, x 2]] := by
+  exact (AInfinity.stasheffSum_three_eq_zero_iff_of_m_three_eq_zero 𝒜.m d x h₃).mp
+    (𝒜.stasheff 3 (by omega) d x hx)
+
+end AInfinityAlgebra
+
+end TauCeti
