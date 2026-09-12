@@ -239,11 +239,7 @@ scalar-extension maps. -/
 theorem skewZigzagBaseChange_comp {m : Type*} [CommRing m]
     (f : k →+* l) (g : l →+* m) (c : SkewZigzagParameter k G) :
     (Ideal.Quotient.factor (le_of_eq
-      (congrArg (fun d : SkewZigzagParameter m G => (skewZigzagIdeal m G d).asIdeal) (by
-        rw [show (g.comp f : k →* m) = (g : l →* m).comp (f : k →* l) by
-          ext x
-          rfl]
-        exact SkewZigzagParameter.map_comp (f : k →* l) (g : l →* m) c)))).comp
+      (by exact skewZigzagIdeal_map_comp G f g c))).comp
         (skewZigzagBaseChange G (g.comp f) c) =
       (skewZigzagBaseChange G g (c.map (f : k →* l))).comp
         (skewZigzagBaseChange G f c) := by
