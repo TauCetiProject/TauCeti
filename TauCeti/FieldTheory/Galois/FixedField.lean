@@ -32,6 +32,11 @@ cyclic group of automorphisms has `M` cyclic over it, and for `⟨σ⟩` there i
 over the fixed field — `AlgEquiv.toFixedFieldAlgEquiv σ` acts on `M` as `σ` does, and generates
 once `⟨σ⟩` is finite.
 
+A simple extension `K⟮x⟯` is fixed pointwise by exactly those automorphisms that fix `x`, so
+its fixing subgroup is the stabilizer of `x`; this needs no hypothesis on `M / K` at all. For a
+finite Galois extension the correspondence is an order isomorphism onto the dual of the subgroup
+lattice, so an intermediate field is an atom exactly when its fixing subgroup is a coatom.
+
 Neither `M / K` Galois nor `M / K` finite is needed, and neither is faithfulness of the action:
 `FixedPoints.toAlgAut_surjective` asks only that the group be finite, and cyclicity passes along
 its surjection. The fixed-point subfield it produces is the one underlying
@@ -44,6 +49,9 @@ its surjection. The fixed-point subfield it produces is the one underlying
 * `IntermediateField.fixingSubgroup_fixedField_of_finite`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
+* `IntermediateField.mem_fixingSubgroup_adjoin_simple_iff`,
+  `IntermediateField.fixingSubgroup_adjoin_simple`
+* `IntermediateField.isCoatom_fixingSubgroup_iff_isAtom`
 * `FixedPoints.isCyclic_algEquiv`
 * `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top`
 -/
@@ -119,6 +127,42 @@ theorem card_fixingSubgroup_le (E : IntermediateField K M) [FiniteDimensional E 
     Nat.card (fixingSubgroup E) ≤ Module.finrank E M := by
   rw [Nat.card_congr (fixingSubgroupEquiv E).toEquiv, Nat.card_eq_fintype_card]
   exact AlgEquiv.card_le
+
+/-- **Fixing a simple extension pointwise is fixing its generator.** A `K`-automorphism of `M`
+is determined on `K⟮x⟯` by its value at `x`, so the two conditions coincide; no hypothesis on
+`M / K` is needed, and `x` need not be algebraic.
+
+Mathlib's `IntermediateField.mem_fixingSubgroup_iff` leaves a quantifier over the whole
+intermediate field; this is the form that a point stabilizer of an action on a set of generators
+matches. -/
+theorem mem_fixingSubgroup_adjoin_simple_iff {x : M} {σ : M ≃ₐ[K] M} :
+    σ ∈ K⟮x⟯.fixingSubgroup ↔ σ x = x := by
+  rw [mem_fixingSubgroup_iff]
+  refine ⟨fun h => h x (mem_adjoin_simple_self K x), fun h y hy => ?_⟩
+  have hσ : Subgroup.zpowers σ ≤ MulAction.stabilizer (M ≃ₐ[K] M) x := Subgroup.zpowers_le.mpr h
+  have hx : x ∈ fixedField (Subgroup.zpowers σ) := fun g => hσ g.2
+  exact (mem_fixedField_iff _ _).mp (adjoin_simple_le_iff.mpr hx hy) σ (Subgroup.mem_zpowers σ)
+
+/-- **The fixing subgroup of a simple extension is the stabilizer of its generator.** This is the
+subgroup form of `IntermediateField.mem_fixingSubgroup_adjoin_simple_iff`, and it is what turns a
+statement about the action of `Gal(M/K)` on a set of elements of `M` into a statement about the
+Galois correspondence. -/
+theorem fixingSubgroup_adjoin_simple (x : M) :
+    K⟮x⟯.fixingSubgroup = MulAction.stabilizer (M ≃ₐ[K] M) x :=
+  Subgroup.ext fun _ => mem_fixingSubgroup_adjoin_simple_iff
+
+/-- **The Galois correspondence carries atoms to coatoms.** For a finite Galois extension an
+intermediate field is an atom — that is, it is not `K` and has no intermediate field strictly
+between `K` and it — exactly when its fixing subgroup is a maximal proper subgroup of
+`Gal(M/K)`.
+
+The correspondence `IsGalois.intermediateFieldEquivSubgroup` is an order isomorphism onto the
+*dual* of the subgroup lattice, so an atom on the field side is an atom of the dual order, which
+is a coatom of the subgroup lattice. -/
+theorem isCoatom_fixingSubgroup_iff_isAtom [FiniteDimensional K M] [IsGalois K M]
+    (E : IntermediateField K M) : IsCoatom E.fixingSubgroup ↔ IsAtom E := by
+  rw [← isAtom_dual_iff_isCoatom]
+  exact IsGalois.intermediateFieldEquivSubgroup.isAtom_iff E
 
 end IntermediateField
 
