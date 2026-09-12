@@ -306,34 +306,12 @@ theorem prod_ext {G H : ToricRay (σ.prod τ)}
   toPointedCone_injective
     (G.1.isFaceOf.eq_prod_map.trans (by rw [h₁, h₂]; exact H.1.isFaceOf.eq_prod_map.symm))
 
-/-- Multiplying a pointed cone by the zero cone leaves the dimension of its span unchanged: the
-product is the image of the cone under the inclusion of the first factor. -/
-private lemma finrank_span_coe_prod_bot (p : PointedCone ℝ V) :
-    Module.finrank ℝ (Submodule.span ℝ
-        ((p.prod (⊥ : PointedCone ℝ V') : PointedCone ℝ (V × V')) : Set (V × V')))
-      = Module.finrank ℝ (Submodule.span ℝ (p : Set V)) := by
-  rw [Submodule.prod_coe, Submodule.span_prod_eq ℝ p.zero_mem (Submodule.zero_mem _),
-    Submodule.bot_coe, Submodule.span_zero_singleton, ← Submodule.map_inl]
-  exact (Submodule.equivMapOfInjective _ LinearMap.inl_injective
-    (Submodule.span ℝ (p : Set V))).finrank_eq.symm
-
-/-- Multiplying a pointed cone by the zero cone leaves the dimension of its span unchanged: the
-product is the image of the cone under the inclusion of the second factor. -/
-private lemma finrank_span_coe_bot_prod (q : PointedCone ℝ V') :
-    Module.finrank ℝ (Submodule.span ℝ
-        (((⊥ : PointedCone ℝ V).prod q : PointedCone ℝ (V × V')) : Set (V × V')))
-      = Module.finrank ℝ (Submodule.span ℝ (q : Set V')) := by
-  rw [Submodule.prod_coe, Submodule.span_prod_eq ℝ (Submodule.zero_mem _) q.zero_mem,
-    Submodule.bot_coe, Submodule.span_zero_singleton, ← Submodule.map_inr]
-  exact (Submodule.equivMapOfInjective _ LinearMap.inr_injective
-    (Submodule.span ℝ (q : Set V'))).finrank_eq.symm
-
 /-- A ray of the first factor, read as a ray of a product of cones: its product with the zero
 cone. This is a face of the product because the zero cone is a face of the salient second
 factor, and its span has the dimension of the span of the ray. -/
 def prodInl (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : ToricRay σ) : ToricRay (σ.prod τ) :=
   ⟨⟨ρ.toPointedCone.prod ⊥, ρ.1.isFaceOf.prod hτ.bot_isFaceOf⟩,
-    (finrank_span_coe_prod_bot ρ.toPointedCone).trans ρ.2⟩
+    (PointedCone.finrank_span_coe_prod_bot ρ.toPointedCone).trans ρ.2⟩
 
 @[simp]
 theorem toPointedCone_prodInl (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : ToricRay σ) :
@@ -344,7 +322,7 @@ cone. This is a face of the product because the zero cone is a face of the salie
 and its span has the dimension of the span of the ray. -/
 def prodInr (hσ : (σ : ConvexCone ℝ V).Salient) (ρ : ToricRay τ) : ToricRay (σ.prod τ) :=
   ⟨⟨(⊥ : PointedCone ℝ V).prod ρ.toPointedCone, hσ.bot_isFaceOf.prod ρ.1.isFaceOf⟩,
-    (finrank_span_coe_bot_prod ρ.toPointedCone).trans ρ.2⟩
+    (PointedCone.finrank_span_coe_bot_prod ρ.toPointedCone).trans ρ.2⟩
 
 @[simp]
 theorem toPointedCone_prodInr (hσ : (σ : ConvexCone ℝ V).Salient) (ρ : ToricRay τ) :

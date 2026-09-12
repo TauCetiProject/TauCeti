@@ -17,8 +17,9 @@ Mathlib's `ConvexCone.Salient` records that a convex cone contains no line. This
 two closure properties of salience that concern standard cone constructions: the image under an
 injective linear map, and the product of two pointed cones. It also computes the dimension of the
 linear span of the cone hull of a single nonzero vector, which is the one-dimensionality making
-such a cone a ray. None of these statements involves a lattice, so they belong to the generic
-convex-cone API rather than to any consumer of it.
+such a cone a ray, and the invariance of that dimension under multiplying a cone by the zero cone.
+None of these statements involves a lattice, so they belong to the generic convex-cone API rather
+than to any consumer of it.
 
 ## Main declarations
 
@@ -26,6 +27,9 @@ convex-cone API rather than to any consumer of it.
   salient.
 * `ConvexCone.Salient.prod`: a product of salient pointed cones is salient.
 * `PointedCone.finrank_span_coe_hull_singleton`: the cone hull of a nonzero vector spans a line.
+* `PointedCone.finrank_span_coe_prod_bot` and `PointedCone.finrank_span_coe_bot_prod`:
+  multiplying a pointed cone by the zero cone leaves the dimension of the span of the cone
+  unchanged.
 -/
 
 public section
@@ -56,7 +60,7 @@ end ConvexCone.Salient
 
 namespace PointedCone
 
-variable {V : Type*} [AddCommGroup V] [Module ℝ V]
+variable {V V' : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup V'] [Module ℝ V']
 
 /-- The linear span of the cone hull of a nonzero vector is the line it spans, of dimension one.
 Passing from the cone hull to the linear span is the scalar extension from the nonnegative reals
@@ -64,5 +68,27 @@ to the reals. -/
 theorem finrank_span_coe_hull_singleton {x : V} (hx : x ≠ 0) :
     Module.finrank ℝ (Submodule.span ℝ ((hull ℝ {x} : PointedCone ℝ V) : Set V)) = 1 := by
   rw [Submodule.span_span_of_tower (Nonneg ℝ) ℝ, finrank_span_singleton hx]
+
+/-- Multiplying a pointed cone by the zero cone leaves the dimension of its span unchanged: the
+product is the image of the cone under the inclusion of the first factor. -/
+theorem finrank_span_coe_prod_bot (p : PointedCone ℝ V) :
+    Module.finrank ℝ (Submodule.span ℝ
+        ((p.prod (⊥ : PointedCone ℝ V') : PointedCone ℝ (V × V')) : Set (V × V')))
+      = Module.finrank ℝ (Submodule.span ℝ (p : Set V)) := by
+  rw [Submodule.prod_coe, Submodule.span_prod_eq ℝ p.zero_mem (Submodule.zero_mem _),
+    Submodule.bot_coe, Submodule.span_zero_singleton, ← Submodule.map_inl]
+  exact (Submodule.equivMapOfInjective _ LinearMap.inl_injective
+    (Submodule.span ℝ (p : Set V))).finrank_eq.symm
+
+/-- Multiplying a pointed cone by the zero cone leaves the dimension of its span unchanged: the
+product is the image of the cone under the inclusion of the second factor. -/
+theorem finrank_span_coe_bot_prod (q : PointedCone ℝ V') :
+    Module.finrank ℝ (Submodule.span ℝ
+        (((⊥ : PointedCone ℝ V).prod q : PointedCone ℝ (V × V')) : Set (V × V')))
+      = Module.finrank ℝ (Submodule.span ℝ (q : Set V')) := by
+  rw [Submodule.prod_coe, Submodule.span_prod_eq ℝ (Submodule.zero_mem _) q.zero_mem,
+    Submodule.bot_coe, Submodule.span_zero_singleton, ← Submodule.map_inr]
+  exact (Submodule.equivMapOfInjective _ LinearMap.inr_injective
+    (Submodule.span ℝ (q : Set V'))).finrank_eq.symm
 
 end PointedCone

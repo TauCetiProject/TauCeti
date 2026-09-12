@@ -40,7 +40,8 @@ boundary coordinates, twists them by `B`, and acts on the torus coordinates by `
 * `TauCeti.Toric.isRegularCone_bot`: the zero cone, whose affine chart is the dense torus, is
   regular.
 * `TauCeti.Toric.isRegularCone_hull_singleton`: the cone spanned by a primitive lattice vector,
-  whose affine chart is the complex line, is regular.
+  whose affine chart is the mixed chart `ℂ × (ℂ ^ *) ^ (n - 1)` with a single boundary coordinate,
+  is regular.
 * `TauCeti.Toric.IsRegularCone.of_isFaceOf` and `TauCeti.Toric.IsRegularCone.face`: a face of a
   regular cone is regular. Since the pairwise intersections of the cones of a fan are faces, this
   also makes the overlaps of the affine charts of a regular fan regular.
@@ -141,8 +142,9 @@ theorem isRegularCone_bot (hi : IsIntegralLattice i) :
     Function.Embedding.ofIsEmpty, ⟨fun ρ ↦ isEmptyElim ρ⟩⟩
 
 /-- The cone spanned by a primitive lattice vector is regular: a primitive vector belongs to an
-integral basis, and the cone it spans is its own only ray. The affine chart of this cone is the
-complex line, into which the chart of the zero face is the inclusion of the punctured line. -/
+integral basis, and the cone it spans is its own only ray. Having a single ray, this cone has
+exactly one boundary coordinate: its affine chart is `ℂ × (ℂ ^ *) ^ (n - 1)` for `n` the rank of
+the lattice, into which the chart of the zero face is the inclusion of the dense torus. -/
 theorem isRegularCone_hull_singleton (hi : IsIntegralLattice i) {v : N} (hv : IsPrimitive v) :
     IsRegularCone i (PointedCone.hull ℝ {i v}) := by
   have _ := hi.free
