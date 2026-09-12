@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
 public import TauCeti.FieldTheory.Galois.FixedField
+public import TauCeti.FieldTheory.GaloisGroups.Orbits
 
 /-!
 # Point stabilizers of the Galois action on the roots
@@ -87,47 +88,13 @@ theorem fixedField_stabilizer [IsGalois F p.SplittingField] (x : p.rootSet p.Spl
 
 /-- **The index of a point stabilizer is the degree of the minimal polynomial of the point.** The
 orbit of `x` consists of all roots of its minimal polynomial in the normal splitting field, and
-separability makes their number its degree. -/
+separability makes their number its degree, so this is orbit-stabilizer applied to
+`TauCeti.natCard_orbit_eq_natDegree_minpoly_splittingField`. -/
 theorem index_stabilizer_eq_minpoly_natDegree (x : p.rootSet p.SplittingField)
     (hsep : (minpoly F (x : p.SplittingField)).Separable) :
     (stabilizer p.Gal x).index = (minpoly F (x : p.SplittingField)).natDegree := by
-  rw [MulAction.index_stabilizer]
-  have hint : IsIntegral F (x : p.SplittingField) :=
-    (isAlgebraic_of_mem_rootSet x.2).isIntegral
-  have hdvd : minpoly F (x : p.SplittingField) ∣ p :=
-    minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2)
-  have horbit :
-      Subtype.val '' MulAction.orbit p.Gal x =
-        (minpoly F (x : p.SplittingField)).rootSet p.SplittingField := by
-    ext y
-    constructor
-    · rintro ⟨z, hz, rfl⟩
-      obtain ⟨g, rfl⟩ := hz
-      rw [mem_rootSet]
-      refine ⟨minpoly.ne_zero hint, ?_⟩
-      rw [← minpoly.algEquiv_eq g (x : p.SplittingField)]
-      exact minpoly.aeval F (g (x : p.SplittingField))
-    · intro hy
-      have hp0 : p ≠ 0 := ne_zero_of_mem_rootSet x.2
-      have hyp : y ∈ p.rootSet p.SplittingField :=
-        mem_rootSet.mpr ⟨hp0, aeval_eq_zero_of_dvd_aeval_eq_zero hdvd
-          (aeval_eq_zero_of_mem_rootSet hy)⟩
-      have hmin : minpoly F y = minpoly F (x : p.SplittingField) :=
-        (minpoly.eq_of_irreducible_of_monic (minpoly.irreducible hint)
-          (aeval_eq_zero_of_mem_rootSet hy) (minpoly.monic hint)).symm
-      obtain ⟨g, hg⟩ :=
-        (Normal.minpoly_eq_iff_mem_orbit p.SplittingField).mp hmin
-      exact ⟨⟨y, hyp⟩, ⟨g, Subtype.ext hg⟩, rfl⟩
-  calc
-    (MulAction.orbit p.Gal x).ncard =
-        (Subtype.val '' MulAction.orbit p.Gal x).ncard :=
-      (Set.ncard_image_of_injective _ Subtype.val_injective).symm
-    _ = ((minpoly F (x : p.SplittingField)).rootSet p.SplittingField).ncard :=
-      congrArg Set.ncard horbit
-    _ = (minpoly F (x : p.SplittingField)).natDegree := by
-      rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card,
-        card_rootSet_eq_natDegree hsep
-          (Normal.splits (SplittingField.instNormal p) (x : p.SplittingField))]
+  rw [MulAction.index_stabilizer, ← Nat.card_coe_set_eq,
+    natCard_orbit_eq_natDegree_minpoly_splittingField x hsep]
 
 /-- **For an irreducible separable polynomial every point stabilizer has index the degree.** This
 is the form the permutation representation uses: a transitive subgroup of degree `n` has point

@@ -37,6 +37,10 @@ its degree is prime it acts primitively.
   separable, an orbit has as many elements as its degree.
 * `TauCeti.isPretransitive_iff_irreducible`: for separable `p` of positive degree, transitivity
   of the root action is equivalent to irreducibility of `p`.
+* `TauCeti.mem_orbit_iff_minpoly_eq_splittingField`,
+  `TauCeti.image_val_orbit_eq_rootSet_minpoly_splittingField`,
+  `TauCeti.natCard_orbit_eq_natDegree_minpoly_splittingField`: the same three descriptions of an
+  orbit for the intrinsic action on the roots in the splitting field.
 * `TauCeti.isPretransitive_of_irreducible`, `TauCeti.isPreprimitive_of_prime_natDegree`: inside
   the splitting field, an irreducible polynomial has a transitive root action, and an irreducible
   separable polynomial of prime degree a primitive one.
@@ -104,28 +108,52 @@ theorem mem_orbit_iff_minpoly_eq {x y : p.rootSet E} :
 
 /-! ## The orbit of a root -/
 
-/-- The orbit of a root of `p` consists of the roots of its minimal polynomial. -/
-theorem orbit_eq_preimage_rootSet_minpoly (x : p.rootSet E) :
-    MulAction.orbit p.Gal x = Subtype.val ⁻¹' (minpoly F (x : E)).rootSet E := by
-  have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
+/- The two descriptions of an orbit below use nothing about the action beyond its orbits being
+the fibres of `minpoly F`, so they are proved once for an arbitrary action of `p.Gal` on a root
+set and then applied twice: to `Polynomial.Gal.galAction` on a general splitting extension here,
+and to `Polynomial.Gal.galActionAux` on the splitting field itself in the section on the action
+inside the splitting field below. -/
+
+-- The preimage description, from the minimal polynomial as an orbit invariant.
+private theorem orbit_eq_preimage_rootSet_minpoly_aux {L : Type w} [Field L] [Algebra F L]
+    [MulAction p.Gal (p.rootSet L)]
+    (horbit : ∀ x y : p.rootSet L,
+      x ∈ MulAction.orbit p.Gal y ↔ minpoly F (x : L) = minpoly F (y : L))
+    (x : p.rootSet L) :
+    MulAction.orbit p.Gal x = Subtype.val ⁻¹' (minpoly F (x : L)).rootSet L := by
+  have hint : IsIntegral F (x : L) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
   ext y
-  rw [Set.mem_preimage, mem_rootSet, mem_orbit_iff_minpoly_eq]
-  refine ⟨fun h => ⟨minpoly.ne_zero hint, h ▸ minpoly.aeval F (y : E)⟩, fun h => ?_⟩
+  rw [Set.mem_preimage, mem_rootSet, horbit y x]
+  refine ⟨fun h => ⟨minpoly.ne_zero hint, h ▸ minpoly.aeval F (y : L)⟩, fun h => ?_⟩
   exact (minpoly.eq_of_irreducible_of_monic (minpoly.irreducible hint) h.2
     (minpoly.monic hint)).symm
+
+-- The image description, from the preimage one and `minpoly F x ∣ p`.
+private theorem image_val_orbit_eq_rootSet_minpoly_aux {L : Type w} [Field L] [Algebra F L]
+    [MulAction p.Gal (p.rootSet L)]
+    (horbit : ∀ x y : p.rootSet L,
+      x ∈ MulAction.orbit p.Gal y ↔ minpoly F (x : L) = minpoly F (y : L))
+    (x : p.rootSet L) :
+    Subtype.val '' MulAction.orbit p.Gal x = (minpoly F (x : L)).rootSet L := by
+  have hdvd : minpoly F (x : L) ∣ p := minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2)
+  refine Set.Subset.antisymm ?_ fun z hz => ?_
+  · rintro _ ⟨y, hy, rfl⟩
+    exact (orbit_eq_preimage_rootSet_minpoly_aux horbit x).le hy
+  · have hzp : z ∈ p.rootSet L := mem_rootSet.mpr ⟨ne_zero_of_mem_rootSet x.2,
+      aeval_eq_zero_of_dvd_aeval_eq_zero hdvd (aeval_eq_zero_of_mem_rootSet hz)⟩
+    exact ⟨⟨z, hzp⟩, (orbit_eq_preimage_rootSet_minpoly_aux horbit x).ge hz, rfl⟩
+
+/-- The orbit of a root of `p` consists of the roots of its minimal polynomial. -/
+theorem orbit_eq_preimage_rootSet_minpoly (x : p.rootSet E) :
+    MulAction.orbit p.Gal x = Subtype.val ⁻¹' (minpoly F (x : E)).rootSet E :=
+  orbit_eq_preimage_rootSet_minpoly_aux (fun _ _ => mem_orbit_iff_minpoly_eq E) x
 
 /-- Read inside the ambient field, the orbit of a root of `p` is exactly the root set of its
 minimal polynomial. -/
 @[simp]
 theorem image_val_orbit_eq_rootSet_minpoly (x : p.rootSet E) :
-    Subtype.val '' MulAction.orbit p.Gal x = (minpoly F (x : E)).rootSet E := by
-  have hdvd : minpoly F (x : E) ∣ p := minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2)
-  refine Set.Subset.antisymm ?_ fun z hz => ?_
-  · rintro _ ⟨y, hy, rfl⟩
-    exact (orbit_eq_preimage_rootSet_minpoly E x).le hy
-  · have hzp : z ∈ p.rootSet E := mem_rootSet.mpr ⟨ne_zero_of_mem_rootSet x.2,
-      aeval_eq_zero_of_dvd_aeval_eq_zero hdvd (aeval_eq_zero_of_mem_rootSet hz)⟩
-    exact ⟨⟨z, hzp⟩, (orbit_eq_preimage_rootSet_minpoly E x).ge hz, rfl⟩
+    Subtype.val '' MulAction.orbit p.Gal x = (minpoly F (x : E)).rootSet E :=
+  image_val_orbit_eq_rootSet_minpoly_aux (fun _ _ => mem_orbit_iff_minpoly_eq E) x
 
 /-- When the minimal polynomial of a root is separable, its orbit has as many elements as the
 degree of that minimal polynomial. -/
@@ -167,14 +195,48 @@ theorem isPretransitive_iff_irreducible (hsep : p.Separable) (hdeg : 0 < p.natDe
 
 /-! ## The action inside the splitting field -/
 
-/- The two results below are about `p.rootSet p.SplittingField` carrying Mathlib's
+/- The results below are about `p.rootSet p.SplittingField` carrying Mathlib's
 `Polynomial.Gal.galActionAux`, the intrinsic action for which `↑(g • x)` is literally `g ↑x`.
 That is not the instance `E := p.SplittingField` gives the results above: those use
 `Polynomial.Gal.galAction`, the transport of `galActionAux` along `Gal.rootsEquivRoots`, which
 goes through the `Algebra p.SplittingField p.SplittingField` instance built from
 `IsSplittingField.lift` rather than through the identity. So no `Fact` instance is introduced
-here, and transitivity is proved directly rather than read off
+here; the orbit descriptions are obtained by feeding the intrinsic orbit criterion to the same
+proofs as above, and transitivity is proved directly rather than read off
 `TauCeti.isPretransitive_iff_irreducible` or `Polynomial.Gal.galAction_isPretransitive`. -/
+
+/-- Two roots of `p` in the splitting field lie in the same Galois orbit exactly when their
+minimal polynomials over the base field agree.
+
+This is `TauCeti.mem_orbit_iff_minpoly_eq` for the intrinsic action; see the note above for why
+that instance is not the one the general statement carries. -/
+theorem mem_orbit_iff_minpoly_eq_splittingField {x y : p.rootSet p.SplittingField} :
+    x ∈ MulAction.orbit p.Gal y ↔
+      minpoly F (x : p.SplittingField) = minpoly F (y : p.SplittingField) := by
+  rw [Normal.minpoly_eq_iff_mem_orbit p.SplittingField]
+  exact ⟨fun ⟨g, hg⟩ => ⟨g, congrArg Subtype.val hg⟩, fun ⟨g, hg⟩ => ⟨g, Subtype.ext hg⟩⟩
+
+/-- Read inside the splitting field, the orbit of a root of `p` is exactly the root set of its
+minimal polynomial.
+
+This is `TauCeti.image_val_orbit_eq_rootSet_minpoly` for the intrinsic action. -/
+theorem image_val_orbit_eq_rootSet_minpoly_splittingField (x : p.rootSet p.SplittingField) :
+    Subtype.val '' MulAction.orbit p.Gal x =
+      (minpoly F (x : p.SplittingField)).rootSet p.SplittingField :=
+  image_val_orbit_eq_rootSet_minpoly_aux (fun _ _ => mem_orbit_iff_minpoly_eq_splittingField) x
+
+/-- When the minimal polynomial of a root is separable, its orbit in the splitting field has as
+many elements as the degree of that minimal polynomial.
+
+This is `TauCeti.natCard_orbit_eq_natDegree_minpoly` for the intrinsic action; the minimal
+polynomial splits because the splitting field is normal over `F`. -/
+theorem natCard_orbit_eq_natDegree_minpoly_splittingField (x : p.rootSet p.SplittingField)
+    (hsep : (minpoly F (x : p.SplittingField)).Separable) :
+    Nat.card (MulAction.orbit p.Gal x) = (minpoly F (x : p.SplittingField)).natDegree := by
+  rw [Nat.card_congr (Equiv.Set.image _ _ Subtype.val_injective),
+    image_val_orbit_eq_rootSet_minpoly_splittingField, Nat.card_eq_fintype_card,
+    card_rootSet_eq_natDegree hsep
+      (Normal.splits (SplittingField.instNormal p) (x : p.SplittingField))]
 
 /-- **The root action of an irreducible polynomial is transitive.** Two roots of an irreducible
 polynomial have the same minimal polynomial, and a normal extension moves one to the other.
