@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.PointsFunctor
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
+public import TauCeti.Algebra.CharP.Frobenius.Basic
+public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.PointsFunctor
 
 /-!
 # Frobenius on the full-weight type-A carrier
@@ -119,12 +120,7 @@ theorem frobenius_rootSubgroupPoints (i : Fin r ⊕ Fin r) (u : Multiplicative A
 @[simp]
 theorem frobenius_weightTorusPoints (s : Fin r → Aˣ) :
     frobenius r p k A (weightTorusPoints r A s) = weightTorusPoints r A (s ^ p ^ k) := by
-  have hs : (fun i => Units.map (iterateFrobenius A p k : A →* A) (s i)) = s ^ p ^ k := by
-    funext i
-    exact Units.ext (by
-      rw [Units.coe_map, MonoidHom.coe_coe, iterateFrobenius_def, Pi.pow_apply,
-        Units.val_pow_eq_pow_val])
-  rw [frobenius, pointsMap_weightTorusPoints, hs]
+  rw [frobenius, pointsMap_weightTorusPoints, map_iterateFrobenius_units_eq_pow]
 
 /-- The zeroth Frobenius iterate is the identity on the type-`A_r` point group. -/
 @[simp]
