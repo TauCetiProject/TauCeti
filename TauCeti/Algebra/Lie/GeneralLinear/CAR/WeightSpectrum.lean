@@ -37,10 +37,6 @@ and fixes the total sum.
 * `TauCeti.exists_sum_eq_natCast_add_card_sq_div_two_of_lie_single_self_eq_smul`: without a
   `CharZero` assumption, but with two invertible, the sum of the diagonal eigenvalues is a bounded
   natural cast plus `|s|² / 2`.
-* `TauCeti.IsGlHighestWeightVector.sum_occupationCounts_le`: every subset of the occupation counts
-  of a CAR highest-weight vector satisfies the cut bound.
-* `TauCeti.IsGlHighestWeightVector.sum_occupationCounts_univ_eq_choose_two`: the total occupation
-  count is `choose n 2`.
 
 ## References
 
@@ -67,34 +63,6 @@ variable [h2 : Invertible (2 : K)]
 section Diagonal
 
 variable [decEq : DecidableEq n]
-
-/-- Every eigenvalue of a diagonal matrix unit on a nonzero vector in the left regular CAR module
-is a natural number less than the matrix size, shifted by `1/2`. -/
-theorem exists_eq_natCast_add_inv_two_of_lie_single_self_eq_smul {μ : K}
-    {v : CliffordAlgebra (traceQuadraticForm K n)} {i : n} (hv : v ≠ 0)
-    (hdiag : ⁅Matrix.single i i (1 : K), v⁆ = μ • v) :
-    ∃ m : ℕ, m < Fintype.card n ∧ μ = (m : K) + (2 : K)⁻¹ := by
-  cases Subsingleton.elim decEq (Classical.decEq n)
-  classical
-  let s := Finset.univ.erase i
-  have hsum : (∑ k ∈ s, carOccupationElement (K := K) i k) • v =
-      (μ - (2 : K)⁻¹) • v := by
-    rw [smul_eq_mul]
-    rw [car_lie_def,
-      @glCliffordHom_single_self_eq_sum_occupation K n inferInstance inferInstance h2 i] at hdiag
-    rw [← Finset.sum_erase_add _ _ (Finset.mem_univ i), add_mul,
-      carOccupationElement_self, smul_mul_assoc, one_mul] at hdiag
-    rw [sub_smul]
-    exact eq_sub_of_add_eq hdiag
-  obtain ⟨m, hm, hμ⟩ := s.exists_eq_natCast_of_sum_smul_eq_smul
-    (carOccupationElement (K := K) i)
-    (fun k hk => isIdempotentElem_carOccupationElement (Finset.ne_of_mem_erase hk).symm)
-    (fun _ _ _ _ _ => commute_carOccupationElement (K := K)) hv hsum
-  refine ⟨m, ?_, eq_add_of_sub_eq hμ⟩
-  have hcard : 0 < Fintype.card n := Fintype.card_pos_iff.mpr ⟨i⟩
-  have hm' : m ≤ Fintype.card n - 1 := by
-    simpa only [s, Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ] using hm
-  omega
 
 /-- If a nonzero vector is a simultaneous eigenvector for the diagonal matrix units indexed by
 `s`, the sum of their eigenvalues is `m + |s|² / 2`, where `m` is a natural number bounded by the
@@ -140,6 +108,27 @@ theorem exists_sum_eq_natCast_add_card_sq_div_two_of_lie_single_self_eq_smul
   rw [Finset.card_product, Finset.card_sdiff, Finset.inter_univ,
     Finset.card_univ] at hm
   exact hm
+
+/-- Every eigenvalue of a diagonal matrix unit on a nonzero vector in the left regular CAR module
+is a natural number less than the matrix size, shifted by `1/2`. -/
+theorem exists_eq_natCast_add_inv_two_of_lie_single_self_eq_smul {μ : K}
+    {v : CliffordAlgebra (traceQuadraticForm K n)} {i : n} (hv : v ≠ 0)
+    (hdiag : ⁅Matrix.single i i (1 : K), v⁆ = μ • v) :
+    ∃ m : ℕ, m < Fintype.card n ∧ μ = (m : K) + (2 : K)⁻¹ := by
+  let μ' : n → K := fun _ => μ
+  obtain ⟨m, hm, hμ⟩ :=
+    exists_sum_eq_natCast_add_card_sq_div_two_of_lie_single_self_eq_smul
+      (μ := μ') ({i} : Finset n) hv (by
+        intro j hj
+        have hji : j = i := Finset.mem_singleton.mp hj
+        subst j
+        exact hdiag)
+  refine ⟨m, ?_, ?_⟩
+  · have hcard : 0 < Fintype.card n := Fintype.card_pos_iff.mpr ⟨i⟩
+    have hm' : m ≤ Fintype.card n - 1 := by
+      simpa only [Finset.card_singleton, one_mul] using hm
+    omega
+  · simpa [μ', div_eq_mul_inv] using hμ
 
 /-- Let a nonzero vector be a simultaneous eigenvector for the diagonal matrix units, with each
 eigenvalue written as a natural occupation count plus `1/2`. On a subset `s`, the sum of the
@@ -232,27 +221,6 @@ theorem exists_occupationCounts [DecidableEq n] {μ : n → K}
       (hv.lie_single_self_eq_smul i)
   let a : n → ℕ := fun i => (hcoord i).choose
   exact ⟨a, fun i => (hcoord i).choose_spec⟩
-
-/-- Every subset of a half-shifted natural occupation-count tuple for a CAR highest-weight vector
-satisfies the cut bound. For an initial segment of `Fin N`, the right side is the corresponding
-prefix sum of the reverse tuple. -/
-theorem sum_occupationCounts_le [CharZero K] [DecidableEq n] {μ : n → K} {a : n → ℕ}
-    {v : CliffordAlgebra (traceQuadraticForm K n)}
-    (hv : IsGlHighestWeightVector μ v)
-    (hμ : ∀ i, μ i = (a i : K) + (2 : K)⁻¹) (s : Finset n) :
-    (∑ i ∈ s, a i) ≤ s.card.choose 2 + s.card * (Fintype.card n - s.card) := by
-  exact sum_occupationCounts_le_of_lie_single_self_eq_smul s hv.ne_zero
-    (fun i _ => hv.lie_single_self_eq_smul i) (fun i _ => hμ i)
-
-/-- The total of a half-shifted natural occupation-count tuple for a CAR highest-weight vector is
-`choose n 2`. -/
-theorem sum_occupationCounts_univ_eq_choose_two [CharZero K] [DecidableEq n]
-    {μ : n → K} {a : n → ℕ} {v : CliffordAlgebra (traceQuadraticForm K n)}
-    (hv : IsGlHighestWeightVector μ v)
-    (hμ : ∀ i, μ i = (a i : K) + (2 : K)⁻¹) :
-    (∑ i : n, a i) = (Fintype.card n).choose 2 := by
-  exact sum_occupationCounts_univ_eq_choose_two_of_lie_single_self_eq_smul hv.ne_zero
-    hv.lie_single_self_eq_smul hμ
 
 end IsGlHighestWeightVector
 
