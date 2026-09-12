@@ -47,6 +47,13 @@ asymptotic specializes the half-plane hypotheses it inherits from
 
 ## References
 
+The growth bound is the one demanded by the boundary formulation 9.1 of
+`TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, which requires that the proof "derives its
+Chebyshev-type growth bound from coefficient nonnegativity, the half-plane `LSeriesHasSum`
+hypothesis, and the boundary data; it does not silently assume that bound", and, failing that,
+that the bound be exposed in the public theorem. That layer's export contract names
+`wienerIkehara` and `wienerIkehara_zero`, which the sandwich step still to come will supply.
+
 * J. Korevaar, *Tauberian Theory: A Century of Developments*, Chapter III.
 * G. Tenenbaum, *Introduction to Analytic and Probabilistic Number Theory*, Chapter II.
 -/
