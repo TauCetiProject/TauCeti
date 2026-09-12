@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Distance
 public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.OfMatrix
 import Mathlib.Probability.ProbabilityMassFunction.Constructions
 import TauCeti.Data.ENNReal.Weights
+import TauCeti.MeasureTheory.Measure.Coupling.Shift
 import TauCeti.MeasureTheory.Measure.FiniteMeasure
 
 /-!
@@ -23,9 +24,9 @@ difference of the two kernels is bounded by the mesh, and so is the cut norm.  *
 cannot be rounded pointwise -- they have to keep summing to one -- so all but one of them are
 rounded down and the remaining vertex absorbs the slack
 (`TauCeti.exists_nat_weights_of_sum_eq_one`).  Comparing the two weightings then needs a coupling
-of them, and the one used here keeps the matched mass on the diagonal, where the overlaid
-difference vanishes, and sends the slack to the absorbing vertex; the cost is twice the transferred
-mass.
+of them, and the one used here (`TauCeti.MeasureTheory.shiftCoupling`) keeps the matched mass on the
+diagonal, where the overlaid difference vanishes, and sends the slack to the absorbing vertex; the
+cost is twice the transferred mass.
 
 ## Main definitions
 
@@ -86,7 +87,7 @@ def gridIndex (N : ℕ) (t : Set.Icc (0 : ℝ) 1) : Fin (N + 2) :=
     exact Nat.lt_succ_of_le ((Nat.floor_mono h).trans_eq (Nat.floor_natCast _))⟩
 
 @[simp]
-theorem gridIndex_val (N : ℕ) (t : Set.Icc (0 : ℝ) 1) :
+theorem coe_gridIndex (N : ℕ) (t : Set.Icc (0 : ℝ) 1) :
     (gridIndex N t : ℕ) = ⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ := (rfl)
 
 /-- Rounding to the grid moves a value by at most the mesh `1 / (N + 1)`. -/
@@ -97,7 +98,7 @@ theorem abs_sub_gridValue_gridIndex_le (N : ℕ) (t : Set.Icc (0 : ℝ) 1) :
   have hfloor : ((⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ : ℕ) : ℝ) ≤ (t : ℝ) * ((N : ℝ) + 1) := Nat.floor_le hx
   have hfloor' : (t : ℝ) * ((N : ℝ) + 1) < ((⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ : ℕ) : ℝ) + 1 :=
     Nat.lt_floor_add_one _
-  rw [coe_gridValue, gridIndex_val, abs_le]
+  rw [coe_gridValue, coe_gridIndex, abs_le]
   have hlow : ((⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ : ℕ) : ℝ) / ((N : ℝ) + 1) ≤ (t : ℝ) :=
     (div_le_iff₀ hN).2 hfloor
   have hhigh : (t : ℝ) - ((⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ : ℕ) : ℝ) / ((N : ℝ) + 1)
@@ -126,111 +127,39 @@ section WeightShift
 
 variable {κ : Type*} [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
-variable (ν ν' : Measure κ) (k₀ : κ)
-
-/-- The coupling of two weight vectors on a finite carrier that keeps as much mass as possible on
-the diagonal and transfers the excess of every other atom to the designated atom `k₀`.
-
-It couples `ν` and `ν'` exactly when `ν'` is dominated by `ν` away from `k₀`, and the mass it puts
-off the diagonal is then the total transferred weight. -/
-private def shiftCoupling : Measure (κ × κ) :=
-  ∑ k, min (ν {k}) (ν' {k}) • Measure.dirac (k, k) +
-    ∑ k, (ν {k} - ν' {k}) • Measure.dirac (k, k₀)
-
-private theorem shiftCoupling_apply (S : Set (κ × κ)) :
-    shiftCoupling ν ν' k₀ S =
-      ∑ k, min (ν {k}) (ν' {k}) * S.indicator 1 (k, k) +
-        ∑ k, (ν {k} - ν' {k}) * S.indicator 1 (k, k₀) := by
-  simp only [shiftCoupling, Measure.coe_add, Pi.add_apply, Measure.finsetSum_apply,
-    Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ MeasurableSet.of_discrete]
-
-variable {ν ν' k₀}
-
-private theorem isCoupling_shiftCoupling [IsProbabilityMeasure ν] [IsProbabilityMeasure ν']
-    (hdom : ∀ k, k ≠ k₀ → ν' {k} ≤ ν {k}) :
-    TauCeti.MeasureTheory.IsCoupling ν ν' (shiftCoupling ν ν' k₀) := by
-  have hfg : ∑ k, ν {k} = ∑ k, ν' {k} := ν.sum_singleton_eq_one.trans ν'.sum_singleton_eq_one.symm
-  have hne : ∑ k, ν {k} ≠ ⊤ := by rw [ν.sum_singleton_eq_one]; exact ENNReal.one_ne_top
-  have hdom' : ∀ k ∈ Finset.univ, k ≠ k₀ → ν' {k} ≤ ν {k} := fun k _ hk => hdom k hk
-  have hk₀ := le_of_sum_eq_of_forall_ne_le (Finset.mem_univ k₀) hfg hne hdom'
-  refine TauCeti.MeasureTheory.isCoupling_iff.2 ⟨?_, ?_⟩
-  · refine Measure.ext_of_singleton fun i => ?_
-    rw [Measure.fst_apply (MeasurableSet.singleton i), shiftCoupling_apply]
-    have h1 : ∑ k, min (ν {k}) (ν' {k}) * (Prod.fst ⁻¹' ({i} : Set κ)).indicator 1 (k, k)
-        = min (ν {i}) (ν' {i}) := by
-      refine (Finset.sum_eq_single_of_mem i (Finset.mem_univ _) ?_).trans ?_
-      · intro k _ hk
-        rw [Set.indicator_of_notMem (by simpa using hk), mul_zero]
-      · rw [Set.indicator_of_mem (by simp), Pi.one_apply, mul_one]
-    have h2 : ∑ k, (ν {k} - ν' {k}) * (Prod.fst ⁻¹' ({i} : Set κ)).indicator 1 (k, k₀)
-        = ν {i} - ν' {i} := by
-      refine (Finset.sum_eq_single_of_mem i (Finset.mem_univ _) ?_).trans ?_
-      · intro k _ hk
-        rw [Set.indicator_of_notMem (by simpa using hk), mul_zero]
-      · rw [Set.indicator_of_mem (by simp), Pi.one_apply, mul_one]
-    rw [h1, h2]
-    exact (add_comm _ _).trans tsub_add_min
-  · refine Measure.ext_of_singleton fun i => ?_
-    rw [Measure.snd_apply (MeasurableSet.singleton i), shiftCoupling_apply]
-    have h1 : ∑ k, min (ν {k}) (ν' {k}) * (Prod.snd ⁻¹' ({i} : Set κ)).indicator 1 (k, k)
-        = min (ν {i}) (ν' {i}) := by
-      refine (Finset.sum_eq_single_of_mem i (Finset.mem_univ _) ?_).trans ?_
-      · intro k _ hk
-        rw [Set.indicator_of_notMem (by simpa using hk), mul_zero]
-      · rw [Set.indicator_of_mem (by simp), Pi.one_apply, mul_one]
-    rcases eq_or_ne k₀ i with rfl | hne
-    · have h2 : ∑ k, (ν {k} - ν' {k}) * (Prod.snd ⁻¹' ({k₀} : Set κ)).indicator 1 (k, k₀)
-          = ∑ k, (ν {k} - ν' {k}) :=
-        Finset.sum_congr rfl fun k _ => by
-          rw [Set.indicator_of_mem (by simp), Pi.one_apply, mul_one]
-      rw [h1, h2, min_eq_left hk₀]
-      exact add_sum_tsub_eq_of_forall_ne_le (Finset.mem_univ k₀) hfg hne hdom'
-    · have h2 : ∑ k, (ν {k} - ν' {k}) * (Prod.snd ⁻¹' ({i} : Set κ)).indicator 1 (k, k₀)
-          = 0 :=
-        Finset.sum_eq_zero fun k _ => by
-          rw [Set.indicator_of_notMem (by simpa using hne), mul_zero]
-      rw [h1, h2, add_zero]
-      exact min_eq_right (hdom i fun e => hne e.symm)
+variable {ν ν' : Measure κ} {k₀ : κ}
 
 /-- **Moving vertex weights costs at most twice the moved mass.**  If `ν'` is dominated by `ν` away
 from one designated vertex `k₀` -- so that `ν'` arises from `ν` by transferring weight onto `k₀` --
 then the two finite weighted graphs with the same edge weights `b` are at cut distance at most twice
 the transferred mass.
 
-The witnessing coupling keeps the matched mass on the diagonal, where the overlaid difference
-vanishes, and sends the rest to `k₀`; the overlaid difference is bounded by one and supported on the
-pairs with a mismatched coordinate. -/
+The witnessing coupling is `TauCeti.MeasureTheory.shiftCoupling`, which keeps the matched mass on
+the diagonal, where the overlaid difference vanishes, and sends the rest to `k₀`; the overlaid
+difference is bounded by one and supported on the pairs with a mismatched coordinate. -/
 theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbabilityMeasure ν']
     (hdom : ∀ k, k ≠ k₀ → ν' {k} ≤ ν {k}) (b : κ → κ → Set.Icc (0 : ℝ) 1)
     (hb : ∀ i j, b i j = b j i) :
     cutDist (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb)
       ≤ 2 * (∑ k, (ν {k} - ν' {k})).toReal := by
-  have hπ := isCoupling_shiftCoupling (ν := ν) (ν' := ν') (k₀ := k₀) hdom
-  have : IsProbabilityMeasure (shiftCoupling ν ν' k₀) := hπ.isProbabilityMeasure
+  set π := MeasureTheory.shiftCoupling ν ν' k₀
+  have hπ : MeasureTheory.IsCoupling ν ν' π := MeasureTheory.isCoupling_shiftCoupling hdom
+  have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
   have hrne : ∑ k, (ν {k} - ν' {k}) ≠ ⊤ := by
     refine ne_top_of_le_ne_top ENNReal.one_ne_top ?_
     calc ∑ k, (ν {k} - ν' {k}) ≤ ∑ k, ν {k} := Finset.sum_le_sum fun k _ => tsub_le_self
       _ = 1 := ν.sum_singleton_eq_one
   -- The coupling puts at most the transferred mass off the diagonal.
-  have hoff : shiftCoupling ν ν' k₀ (Set.diagonal κ)ᶜ ≤ ∑ k, (ν {k} - ν' {k}) := by
-    rw [shiftCoupling_apply]
-    have h1 : ∑ k, min (ν {k}) (ν' {k}) * ((Set.diagonal κ)ᶜ).indicator 1 (k, k) = 0 :=
-      Finset.sum_eq_zero fun k _ => by
-        rw [Set.indicator_of_notMem (by simp [Set.mem_diagonal_iff]), mul_zero]
-    rw [h1, zero_add]
-    refine Finset.sum_le_sum fun k _ => ?_
-    by_cases hk : ((k, k₀) : κ × κ) ∈ ((Set.diagonal κ)ᶜ : Set (κ × κ))
-    · rw [Set.indicator_of_mem hk, Pi.one_apply, mul_one]
-    · rw [Set.indicator_of_notMem hk, mul_zero]
-      simp
+  have hoff : π (Set.diagonal κ)ᶜ ≤ ∑ k, (ν {k} - ν' {k}) :=
+    MeasureTheory.shiftCoupling_compl_diagonal_le_sum_tsub ν ν' k₀
   -- The overlaid difference vanishes unless one of the two coordinates is mismatched.
   set B : Set ((κ × κ) × (κ × κ)) :=
     ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
       ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) with hB
   have hBmeas : MeasurableSet B := MeasurableSet.of_discrete
   have hle : ∀ z : (κ × κ) × (κ × κ),
-      |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb)
-          (shiftCoupling ν ν' k₀) z.1 z.2| ≤ B.indicator (1 : ((κ × κ) × (κ × κ)) → ℝ) z := by
+      |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb) π z.1 z.2|
+        ≤ B.indicator (1 : ((κ × κ) × (κ × κ)) → ℝ) z := by
     intro z
     by_cases hz : z ∈ B
     · rw [Set.indicator_of_mem hz, Pi.one_apply]
@@ -243,16 +172,12 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
   refine (cutDist_le _ _ hπ).trans ?_
   refine (cutNorm_le_integral_abs _ _).trans ?_
   have hint : Integrable (fun z : (κ × κ) × (κ × κ) =>
-      |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb)
-        (shiftCoupling ν ν' k₀) z.1 z.2|)
-      ((shiftCoupling ν ν' k₀).prod (shiftCoupling ν ν' k₀)) :=
+      |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb) π z.1 z.2|) (π.prod π) :=
     (SymmKernel.integrable_uncurry _ _).abs
-  calc ∫ z, |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb)
-          (shiftCoupling ν ν' k₀) z.1 z.2| ∂_
+  calc ∫ z, |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb) π z.1 z.2| ∂_
       ≤ ∫ z, B.indicator (1 : ((κ × κ) × (κ × κ)) → ℝ) z ∂_ :=
         integral_mono hint ((integrable_const (1 : ℝ)).indicator hBmeas) hle
-    _ = ((shiftCoupling ν ν' k₀).prod (shiftCoupling ν ν' k₀)).real B :=
-        integral_indicator_one hBmeas
+    _ = (π.prod π).real B := integral_indicator_one hBmeas
     _ ≤ 2 * (∑ k, (ν {k} - ν' {k})).toReal := by
         have htwo : (2 : ℝ) * (∑ k, (ν {k} - ν' {k})).toReal
             = ((2 : ℝ≥0∞) * ∑ k, (ν {k} - ν' {k})).toReal := by
@@ -260,13 +185,10 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
           norm_num
         rw [measureReal_def, htwo]
         refine ENNReal.toReal_mono (ENNReal.mul_ne_top (by simp) hrne) ?_
-        calc ((shiftCoupling ν ν' k₀).prod (shiftCoupling ν ν' k₀)) B
-            ≤ ((shiftCoupling ν ν' k₀).prod (shiftCoupling ν ν' k₀))
-                ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) +
-              ((shiftCoupling ν ν' k₀).prod (shiftCoupling ν ν' k₀))
-                ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) := measure_union_le _ _
-          _ = shiftCoupling ν ν' k₀ (Set.diagonal κ)ᶜ +
-              shiftCoupling ν ν' k₀ (Set.diagonal κ)ᶜ := by
+        calc (π.prod π) B
+            ≤ (π.prod π) ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) +
+              (π.prod π) ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) := measure_union_le _ _
+          _ = π (Set.diagonal κ)ᶜ + π (Set.diagonal κ)ᶜ := by
               rw [Measure.prod_prod, Measure.prod_prod, measure_univ, mul_one, one_mul]
           _ ≤ ∑ k, (ν {k} - ν' {k}) + ∑ k, (ν {k} - ν' {k}) := add_le_add hoff hoff
           _ = 2 * ∑ k, (ν {k} - ν' {k}) := (two_mul _).symm
