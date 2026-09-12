@@ -38,6 +38,8 @@ at its two nodes.
 * `TauCeti.ContCohomology.explicitInfl1_injective`: inflation is injective in degree `1`.
 * `TauCeti.ContCohomology.explicitInfRes_exact`: the image of inflation is exactly the kernel of
   restriction in degree `1`.
+* `TauCeti.ContCohomology.coe_descendZ1_apply_mk`: the descent of a cocycle takes on the coset of
+  `g` the value the cocycle takes at `g`.
 * `TauCeti.ContCohomology.explicitInfl1_descendZ1`: a cocycle vanishing on `N` is the inflation of
   its descent.
 
@@ -256,12 +258,13 @@ def descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0) :
 
 omit [ContinuousSMul G M] [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
 /-- The descent takes on the coset of `g` the value the original cocycle takes at `g`. This is the
-computation rule of `Quotient.liftOn'` at a representative, so it is a `rfl`; isolating it here is
-what lets `explicitInfl1_descendZ1` below be a rewrite rather than a definitional unfolding. -/
-private theorem coe_descendZ1_apply_mk (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0)
+computation rule that characterises `TauCeti.ContCohomology.descendZ1`. -/
+@[simp]
+theorem coe_descendZ1_apply_mk (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0)
     (g : G) :
     ((descendZ1 z hz : (G ⧸ N) → FixedPoints.addSubgroup N M) (g : G ⧸ N) : M) =
-      (z : G → M) g :=
+      (z : G → M) g := by
+  rw [descendZ1]
   rfl
 
 /-- Inflating the descent of a continuous `1`-cocycle vanishing on `N` returns its class. -/
