@@ -24,9 +24,10 @@ standard observation that every vertex of a full ordered simplex lies below its 
 
 ## Main results
 
-* `AbstractSimplicialComplex.isCone_orderedCylinder_of_isCone`: taking the ordered cylinder
-  preserves a cone whose apex is greatest.
-* `AbstractSimplicialComplex.isCone_orderedCylinder_top`: the full-simplex specialization.
+* `AbstractSimplicialComplex.collapsesTo_point_orderedCylinder_of_isCone`: a finite cone's
+  ordered cylinder collapses to its terminal apex.
+* `AbstractSimplicialComplex.collapsible_orderedCylinder_of_isCone`: a finite cone's ordered
+  cylinder is collapsible.
 * `AbstractSimplicialComplex.collapsesTo_point_orderedCylinder_top`: a finite such cylinder
   collapses to its greatest terminal vertex.
 * `AbstractSimplicialComplex.collapsible_orderedCylinder_top`: a finite such cylinder is
@@ -37,65 +38,45 @@ public section
 
 namespace AbstractSimplicialComplex
 
-variable {ι : Type*} [LinearOrder ι] [OrderTop ι]
+variable {ι : Type*} [LinearOrder ι]
 
-/-- The ordered cylinder of a cone whose apex is the greatest vertex is a cone with apex the pair
-of that vertex and the terminal endpoint of the interval. -/
-theorem isCone_orderedCylinder_of_isCone {K : AbstractSimplicialComplex ι}
-    (hK : PreAbstractSimplicialComplex.IsCone K.toPreAbstractSimplicialComplex ⊤) :
-    PreAbstractSimplicialComplex.IsCone
-      K.orderedCylinder.toPreAbstractSimplicialComplex (⊤, (1 : Fin 2)) := by
-  refine ⟨K.orderedCylinder.singleton_mem _, ?_⟩
-  intro σ hσ
-  rw [orderedCylinder_toPreAbstractSimplicialComplex] at hσ ⊢
-  rw [PreAbstractSimplicialComplex.mem_orderedProd_iff] at hσ ⊢
-  refine ⟨?_, ?_, ?_⟩
-  · simpa only [Finset.image_insert, Prod.fst] using hK.insert_mem hσ.1
-  · exact Finset.image_nonempty.mpr (Finset.insert_nonempty _ _)
-  · rw [Finset.coe_insert]
-    exact hσ.2.2.insert fun p _ _ ↦ Or.inr ⟨le_top, Fin.le_last p.2⟩
-
-/-- The ordered cylinder of the full abstract simplex is a cone with apex the greatest vertex at
-the terminal endpoint of the interval. -/
-theorem isCone_orderedCylinder_top :
-    PreAbstractSimplicialComplex.IsCone
-      (orderedCylinder (⊤ : AbstractSimplicialComplex ι)).toPreAbstractSimplicialComplex
-      (⊤, (1 : Fin 2)) := by
-  apply isCone_orderedCylinder_of_isCone
-  exact ⟨Finset.singleton_nonempty _, fun _ _ ↦ Finset.insert_nonempty _ _⟩
-
-/-- The ordered cylinder of a cone with greatest apex on a finite vertex type collapses to the
+/-- The ordered cylinder of a finite cone whose apex bounds every vertex collapses to the
 corresponding terminal apex. -/
-theorem collapsesTo_point_orderedCylinder_of_isCone [Finite ι]
+theorem collapsesTo_point_orderedCylinder_of_isCone {v : ι}
     {K : AbstractSimplicialComplex ι}
-    (hK : PreAbstractSimplicialComplex.IsCone K.toPreAbstractSimplicialComplex ⊤) :
+    (hfin : K.faces.Finite)
+    (hK : PreAbstractSimplicialComplex.IsCone K.toPreAbstractSimplicialComplex v)
+    (hv : ∀ w, ({w} : Finset ι) ∈ K → w ≤ v) :
     PreAbstractSimplicialComplex.CollapsesTo K.orderedCylinder.toPreAbstractSimplicialComplex
-      (PreAbstractSimplicialComplex.point (⊤, (1 : Fin 2))) := by
-  classical
-  let _ := Fintype.ofFinite ι
-  exact (isCone_orderedCylinder_of_isCone hK).collapsesTo_point (Set.toFinite _)
+      (PreAbstractSimplicialComplex.point (v, (1 : Fin 2))) :=
+  (isCone_orderedCylinder_of_isCone hK hv).collapsesTo_point
+    (finite_faces_orderedCylinder hfin)
 
-/-- The ordered cylinder of a cone with greatest apex on a finite vertex type is collapsible. -/
-theorem collapsible_orderedCylinder_of_isCone [Finite ι] {K : AbstractSimplicialComplex ι}
-    (hK : PreAbstractSimplicialComplex.IsCone K.toPreAbstractSimplicialComplex ⊤) :
+/-- The ordered cylinder of a finite cone whose apex bounds every vertex is collapsible. -/
+theorem collapsible_orderedCylinder_of_isCone {v : ι} {K : AbstractSimplicialComplex ι}
+    (hfin : K.faces.Finite)
+    (hK : PreAbstractSimplicialComplex.IsCone K.toPreAbstractSimplicialComplex v)
+    (hv : ∀ w, ({w} : Finset ι) ∈ K → w ≤ v) :
     PreAbstractSimplicialComplex.Collapsible K.orderedCylinder.toPreAbstractSimplicialComplex :=
-  PreAbstractSimplicialComplex.collapsible_iff.mpr
-    ⟨(⊤, (1 : Fin 2)), collapsesTo_point_orderedCylinder_of_isCone hK⟩
+  (isCone_orderedCylinder_of_isCone hK hv).collapsible (finite_faces_orderedCylinder hfin)
+
+variable [OrderTop ι]
 
 /-- The ordered cylinder of a full simplex on a finite vertex type collapses to its greatest
 vertex at the terminal endpoint. -/
 theorem collapsesTo_point_orderedCylinder_top [Finite ι] :
     PreAbstractSimplicialComplex.CollapsesTo
       (orderedCylinder (⊤ : AbstractSimplicialComplex ι)).toPreAbstractSimplicialComplex
-      (PreAbstractSimplicialComplex.point (⊤, (1 : Fin 2))) :=
-  collapsesTo_point_orderedCylinder_of_isCone
-    ⟨Finset.singleton_nonempty _, fun _ _ ↦ Finset.insert_nonempty _ _⟩
+      (PreAbstractSimplicialComplex.point (⊤, (1 : Fin 2))) := by
+  classical
+  let _ := Fintype.ofFinite ι
+  exact isCone_orderedCylinder_top.collapsesTo_point (Set.toFinite _)
 
 /-- The ordered cylinder of a full simplex on a finite vertex type is collapsible. -/
 theorem collapsible_orderedCylinder_top [Finite ι] :
     PreAbstractSimplicialComplex.Collapsible
       (orderedCylinder (⊤ : AbstractSimplicialComplex ι)).toPreAbstractSimplicialComplex :=
-  collapsible_orderedCylinder_of_isCone
-    ⟨Finset.singleton_nonempty _, fun _ _ ↦ Finset.insert_nonempty _ _⟩
+  PreAbstractSimplicialComplex.collapsible_iff.mpr
+    ⟨(⊤, (1 : Fin 2)), collapsesTo_point_orderedCylinder_top⟩
 
 end AbstractSimplicialComplex

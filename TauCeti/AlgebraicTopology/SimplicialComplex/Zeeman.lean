@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Contractible
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Cylinder
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Dimension
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Product
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 
 /-!
@@ -25,8 +26,8 @@ assuming the desired Zeeman conclusion.
 
 The universe-polymorphic proposition `TauCeti.ZeemanConjecture` asserts that the ordered
 simplicial cylinder is collapsible for every finite contractible complex of dimension at most two.
-The conjecture remains open; the full simplex on a finite ordered type supplies a family where its
-conclusion follows from the cylinder's cone structure.
+The conjecture remains open; the full simplex on a finite linearly ordered type with a greatest
+element supplies a family where its conclusion follows from the cylinder's cone structure.
 
 ## Main definitions
 
@@ -39,7 +40,7 @@ conclusion follows from the cylinder's cone structure.
 * `AbstractSimplicialComplex.contractible2Complex_standardOneSimplex`: the standard one-simplex
   is a non-void contractible 2-complex (the dimension bound is at most two).
 * `TauCeti.ZeemanConjecture`: the universal statement of the conjecture.
-* `TauCeti.ZeemanConjecture.collapsible_orderedCylinder`: its specialization to one complex.
+* `TauCeti.zeemanConjecture_iff`: the defining characterization.
 
 The proposition is stated, not proved.
 -/
@@ -125,15 +126,13 @@ def ZeemanConjecture.{u} : Prop :=
     K.Contractible2Complex →
       PreAbstractSimplicialComplex.Collapsible K.orderedCylinder.toPreAbstractSimplicialComplex
 
-namespace ZeemanConjecture
-
-/-- A proof of Zeeman's conjecture makes the ordered cylinder on any contractible two-complex
-collapsible. -/
-theorem collapsible_orderedCylinder {ι : Type u} [LinearOrder ι] (h : ZeemanConjecture.{u})
-    (K : AbstractSimplicialComplex ι) (hK : K.Contractible2Complex) :
-    PreAbstractSimplicialComplex.Collapsible K.orderedCylinder.toPreAbstractSimplicialComplex :=
-  h ι K hK
-
-end ZeemanConjecture
+/-- The defining characterization of Zeeman's conjecture. -/
+theorem zeemanConjecture_iff :
+    ZeemanConjecture.{u} ↔
+      ∀ (ι : Type u) [LinearOrder ι] (K : AbstractSimplicialComplex ι),
+        K.Contractible2Complex →
+          PreAbstractSimplicialComplex.Collapsible
+            K.orderedCylinder.toPreAbstractSimplicialComplex :=
+  Iff.rfl
 
 end TauCeti

@@ -8,7 +8,11 @@ module
 public import Mathlib.Order.Preorder.Chain
 public import Mathlib.Order.Fin.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.IsCone
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Maps
+import Mathlib.Data.Finset.Prod
+import Mathlib.Data.Fintype.Powerset
+import Mathlib.Data.Set.Finite.Lattice
 
 /-!
 # Ordered products of abstract simplicial complexes
@@ -36,6 +40,8 @@ product is made here; identifying its realization with the product of realizatio
 * `PreAbstractSimplicialComplex.orderedProd`: the ordered product of two precomplexes.
 * `AbstractSimplicialComplex.orderedProd`: the ordered product of two complexes.
 * `AbstractSimplicialComplex.orderedCylinder`: product with the standard one-simplex.
+* `AbstractSimplicialComplex.isCone_orderedCylinder_of_isCone`: taking the ordered cylinder
+  preserves a cone whose apex is greatest.
 * `PreAbstractSimplicialComplex.SimplicialMap.orderedProdFst` and
   `orderedProdSnd`: the coordinate projections.
 * `PreAbstractSimplicialComplex.SimplicialMap.prodMkLeft` and `prodMkRight`:
@@ -377,6 +383,52 @@ theorem image_fst_mem_of_mem_orderedCylinder {σ : Finset (α × Fin 2)}
 theorem isChain_of_mem_orderedCylinder {σ : Finset (α × Fin 2)}
     (hσ : σ ∈ orderedCylinder K) : IsChain (· ≤ ·) (σ : Set (α × Fin 2)) :=
   (mem_orderedCylinder_iff.mp hσ).2
+
+/-- The ordered cylinder of a finite abstract simplicial complex has finitely many faces. -/
+theorem finite_faces_orderedCylinder (hfin : K.faces.Finite) :
+    K.orderedCylinder.faces.Finite := by
+  refine (hfin.preimage' fun τ _ ↦ ?_).subset fun σ hσ ↦
+    image_fst_mem_of_mem_orderedCylinder hσ
+  refine (Finset.finite_toSet ((τ.product Finset.univ).powerset)).subset ?_
+  intro σ hστ
+  rw [Set.mem_preimage, Set.mem_singleton_iff] at hστ
+  change σ ∈ (τ.product Finset.univ).powerset
+  rw [Finset.mem_powerset]
+  intro p hp
+  apply Finset.mem_product.mpr
+  refine ⟨?_, Finset.mem_univ _⟩
+  rw [← hστ]
+  exact Finset.mem_image.mpr ⟨p, hp, rfl⟩
+
+/-- The ordered cylinder of a cone whose apex bounds every vertex of the complex is a cone with
+apex the pair of that vertex and the terminal endpoint of the interval. -/
+theorem isCone_orderedCylinder_of_isCone {v : α}
+    (hK : PreAbstractSimplicialComplex.IsCone K.toPreAbstractSimplicialComplex v)
+    (hv : ∀ w, ({w} : Finset α) ∈ K → w ≤ v) :
+    PreAbstractSimplicialComplex.IsCone
+      K.orderedCylinder.toPreAbstractSimplicialComplex (v, (1 : Fin 2)) := by
+  refine ⟨K.orderedCylinder.singleton_mem _, ?_⟩
+  intro σ hσ
+  rw [orderedCylinder_toPreAbstractSimplicialComplex] at hσ ⊢
+  rw [PreAbstractSimplicialComplex.mem_orderedProd_iff] at hσ ⊢
+  refine ⟨?_, ?_, ?_⟩
+  · simpa only [Finset.image_insert, Prod.fst] using hK.insert_mem hσ.1
+  · exact Finset.image_nonempty.mpr (Finset.insert_nonempty _ _)
+  · rw [Finset.coe_insert]
+    exact hσ.2.2.insert fun p _ _ ↦
+      Or.inr ⟨hv p.1 (K.singleton_mem p.1), Fin.le_last p.2⟩
+
+variable [OrderTop α]
+
+/-- The ordered cylinder of the full abstract simplex is a cone with apex the greatest vertex at
+the terminal endpoint of the interval. -/
+theorem isCone_orderedCylinder_top :
+    PreAbstractSimplicialComplex.IsCone
+      (orderedCylinder (⊤ : AbstractSimplicialComplex α)).toPreAbstractSimplicialComplex
+      (⊤, (1 : Fin 2)) := by
+  apply isCone_orderedCylinder_of_isCone
+  · exact ⟨Finset.singleton_nonempty _, fun _ _ ↦ Finset.insert_nonempty _ _⟩
+  · exact fun _ _ ↦ le_top
 
 end OrderedProd
 
