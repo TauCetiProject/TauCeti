@@ -75,10 +75,13 @@ variable {R G H K : Type u} [CommRing R] [Group G] [Group H] [Group K]
 `M : Rep R G` and `N : Rep R H` are **compatible** when `φ ∘ ρ g = σ (e g) ∘ φ` for every `g`.
 Such a pair is what carries the Tate cohomology of `M` to that of `N`.
 
-The body is exposed because this is a specification: a caller supplies a compatible pair by
-proving the displayed identity, which needs the definition to unfold. -/
-@[expose] def IsCompatible (e : G ≃* H) (φ : M.V →ₗ[R] N.V) : Prop :=
+Use `TauCeti.TateCohomology.isCompatible_iff` to build or to destructure such a pair. -/
+def IsCompatible (e : G ≃* H) (φ : M.V →ₗ[R] N.V) : Prop :=
   ∀ g, φ ∘ₗ M.ρ g = N.ρ (e g) ∘ₗ φ
+
+/-- The defining intertwining condition of a compatible pair. -/
+theorem isCompatible_iff {e : G ≃* H} {φ : M.V →ₗ[R] N.V} :
+    IsCompatible e φ ↔ ∀ g, φ ∘ₗ M.ρ g = N.ρ (e g) ∘ₗ φ := Iff.rfl
 
 namespace IsCompatible
 
@@ -186,7 +189,7 @@ theorem complexMap_congr {e₁ e₂ : G ≃* H} {φ₁ φ₂ : M.V →ₗ[R] N.V
 functoriality.** -/
 theorem complexMap_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V}
     (hφ : IsCompatible (MulEquiv.refl G) φ) :
-    hφ.complexMap = tateComplex.map (Rep.ofHom ⟨φ, hφ⟩) := by
+    hφ.complexMap = tateComplex.map (Rep.ofHom ⟨φ, isCompatible_iff.mp hφ⟩) := by
   rw [complexMap]
   rfl
 
@@ -262,7 +265,7 @@ theorem map_congr {e₁ e₂ : G ≃* H} {φ₁ φ₂ : M.V →ₗ[R] N.V} {h₁
 functoriality. -/
 theorem map_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V} (hφ : IsCompatible (MulEquiv.refl G) φ)
     (n : ℤ) :
-    map hφ n = (tateCohomologyFunctor n).map (Rep.ofHom ⟨φ, hφ⟩) := by
+    map hφ n = (tateCohomologyFunctor n).map (Rep.ofHom ⟨φ, isCompatible_iff.mp hφ⟩) := by
   rw [map_def, IsCompatible.complexMap_refl]
   exact (HomologicalComplex.homologyFunctor_map (ModuleCat R) (ComplexShape.up ℤ) n _).symm
 
@@ -339,6 +342,19 @@ def resIso (e : G ≃* H) (n : ℤ) :
         rw [map_comp, map_comp]
         exact map_congr (by ext x; rfl) (by ext x; rfl) n
       exact key
+
+@[simp] theorem resIso_hom_app (e : G ≃* H) (n : ℤ) (N : Rep R H) :
+    (resIso e n).hom.app N = (mapIso (isCompatible_res e N) n).hom := by
+  rw [resIso]
+  -- `NatIso.ofComponents_hom_app` is not usable as a rewrite here: its motive is ill-typed at
+  -- `implicit` transparency, because `tateCohomologyFunctor` is a semireducible `def`.
+  rfl
+
+@[simp] theorem resIso_inv_app (e : G ≃* H) (n : ℤ) (N : Rep R H) :
+    (resIso e n).inv.app N = (mapIso (isCompatible_res e N) n).inv := by
+  rw [resIso]
+  -- As above for `NatIso.ofComponents_inv_app`.
+  rfl
 
 /-- Tate cohomology groups matched by a compatible pair whose linear part is an equivalence have
 the same cardinality. -/
