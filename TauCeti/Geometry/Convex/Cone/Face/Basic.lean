@@ -67,13 +67,12 @@ theorem eq_prod_map (hF : F.IsFaceOf (C.prod C')) :
   obtain ⟨a, ha, ha1⟩ := Submodule.mem_map.1 h1
   obtain ⟨c, hc, hc2⟩ := Submodule.mem_map.1 h2
   -- The face contains `(x.1, a.2)` and `(c.1, x.2)`, whose sum is `x + (c.1, a.2)`.
-  have hy : (x.1, a.2) ∈ F := by rw [show (x.1, a.2) = a from Prod.ext ha1.symm rfl]; exact ha
-  have hz : (c.1, x.2) ∈ F := by rw [show (c.1, x.2) = c from Prod.ext rfl hc2.symm]; exact hc
-  have hsum : (x.1, x.2) + (c.1, a.2) ∈ F := by
-    have hadd := Submodule.add_mem _ hy hz
-    rw [show ((x.1, a.2) + (c.1, x.2) : M × M') = (x.1, x.2) + (c.1, a.2) by
-      simp [Prod.ext_iff, add_comm]] at hadd
-    exact hadd
+  have hxa : (x.1, a.2) = a := Prod.ext ha1.symm rfl
+  have hcx : (c.1, x.2) = c := Prod.ext rfl hc2.symm
+  have hswap : (x.1, a.2) + (c.1, x.2) = x + (c.1, a.2) := by simp [Prod.ext_iff, add_comm]
+  have hy : (x.1, a.2) ∈ F := by rw [hxa]; exact ha
+  have hz : (c.1, x.2) ∈ F := by rw [hcx]; exact hc
+  have hsum : x + (c.1, a.2) ∈ F := by rw [← hswap]; exact Submodule.add_mem _ hy hz
   refine hF.mem_of_add_mem_left ?_ ?_ hsum
   · exact Submodule.mem_prod.2 ⟨(Submodule.mem_prod.1 (hF.le hy)).1,
       (Submodule.mem_prod.1 (hF.le hz)).2⟩

@@ -117,7 +117,6 @@ instance instIsEmptyBot : IsEmpty (ToricRay (⊥ : PointedCone ℝ V)) where
 
 /-- A ray of a face `τ` of a cone `σ` is a ray of `σ`: a face of a face is a face, and
 one-dimensionality of the span does not mention the ambient cone. -/
-@[expose]
 def faceEmbedding (hτ : τ.IsFaceOf σ) : ToricRay τ ↪ ToricRay σ where
   toFun ρ := ⟨⟨ρ.toPointedCone, ρ.1.isFaceOf.trans hτ⟩, ρ.2⟩
   inj' ρ ρ' h := by
@@ -128,24 +127,23 @@ def faceEmbedding (hτ : τ.IsFaceOf σ) : ToricRay τ ↪ ToricRay σ where
 
 @[simp]
 theorem toPointedCone_faceEmbedding (hτ : τ.IsFaceOf σ) (ρ : ToricRay τ) :
-    (faceEmbedding hτ ρ).toPointedCone = ρ.toPointedCone := rfl
+    (faceEmbedding hτ ρ).toPointedCone = ρ.toPointedCone := (rfl)
 
 @[simp]
 theorem mem_faceEmbedding (hτ : τ.IsFaceOf σ) (ρ : ToricRay τ) {x : V} :
-    x ∈ faceEmbedding hτ ρ ↔ x ∈ ρ := Iff.rfl
+    x ∈ faceEmbedding hτ ρ ↔ x ∈ ρ := (Iff.rfl)
 
 /-! ### The ray spanned by a vector -/
 
 /-- The cone spanned by a nonzero vector is a ray of itself, and by
 `TauCeti.Toric.ToricRay.eq_hullSingleton` its only one. -/
-@[expose]
 def hullSingleton {x : V} (hx : x ≠ 0) : ToricRay (PointedCone.hull ℝ {x}) :=
   ⟨⟨PointedCone.hull ℝ {x}, PointedCone.IsFaceOf.refl _⟩,
     PointedCone.finrank_span_coe_hull_singleton hx⟩
 
 @[simp]
 theorem toPointedCone_hullSingleton {x : V} (hx : x ≠ 0) :
-    (hullSingleton hx).toPointedCone = PointedCone.hull ℝ {x} := rfl
+    (hullSingleton hx).toPointedCone = PointedCone.hull ℝ {x} := (rfl)
 
 /-- A ray of the cone spanned by a vector is the whole cone: a proper face of that cone misses the
 spanning vector, hence is the zero cone, which is not a ray. -/
@@ -256,7 +254,6 @@ theorem finrank_span_map_snd_eq_one
 
 /-- The ray of the first factor underlying a ray of a product of salient cones whose projection to
 the second factor is the zero cone. -/
-@[expose]
 noncomputable def prodRayFst
     (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
     (G : ToricRay (σ.prod τ))
@@ -269,11 +266,17 @@ theorem toPointedCone_prodRayFst
     (G : ToricRay (σ.prod τ))
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥) :
     (prodRayFst hστ G h).toPointedCone =
-      PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone := rfl
+      PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone := (rfl)
+
+@[simp]
+theorem mem_prodRayFst
+    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
+    (G : ToricRay (σ.prod τ))
+    (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥) {x : V} :
+    x ∈ prodRayFst hστ G h ↔ x ∈ PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone := (Iff.rfl)
 
 /-- The ray of the second factor underlying a ray of a product of salient cones whose projection to
 the second factor is not the zero cone. -/
-@[expose]
 noncomputable def prodRaySnd
     (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
     (G : ToricRay (σ.prod τ))
@@ -286,7 +289,14 @@ theorem toPointedCone_prodRaySnd
     (G : ToricRay (σ.prod τ))
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone ≠ ⊥) :
     (prodRaySnd hστ G h).toPointedCone =
-      PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone := rfl
+      PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone := (rfl)
+
+@[simp]
+theorem mem_prodRaySnd
+    (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient)
+    (G : ToricRay (σ.prod τ))
+    (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone ≠ ⊥) {x : V'} :
+    x ∈ prodRaySnd hστ G h ↔ x ∈ PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone := (Iff.rfl)
 
 /-- A ray of a product of cones is determined by its two projections. -/
 theorem prod_ext {G H : ToricRay (σ.prod τ)}
@@ -301,7 +311,6 @@ open Classical in
 /-- The decomposition of the rays of a product of salient cones: every ray of `σ.prod τ` is a ray
 of exactly one of the two factors. The two cases are computed by
 `TauCeti.Toric.ToricRay.prodSplit_eq_inl` and `TauCeti.Toric.ToricRay.prodSplit_eq_inr`. -/
-@[expose]
 noncomputable def prodSplit
     (hστ : ((σ.prod τ : PointedCone ℝ (V × V')) : ConvexCone ℝ (V × V')).Salient) :
     ToricRay (σ.prod τ) ↪ ToricRay σ ⊕ ToricRay τ where
