@@ -202,15 +202,6 @@ noncomputable def explicitFiniteQuotientSystem0CoeffNatTrans (f : M →+[G] N) :
     apply Subtype.ext
     apply Subtype.ext
     dsimp
-    change
-      (explicitCoeff0 (G ⧸ V.unop.toSubgroup)
-          (FixedPoints.addSubgroup V.unop.toSubgroup M)
-          (fixedPointsAddSubgroupQuotientMap f V.unop.toSubgroup)
-          (explicitFiniteQuotientTransition0 G M U.unop V.unop (leOfHom h.unop) x) : N) =
-        (explicitFiniteQuotientTransition0 G N U.unop V.unop (leOfHom h.unop)
-          (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
-            (FixedPoints.addSubgroup U.unop.toSubgroup M)
-            (fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup) x) : N)
     simp only [coe_explicitCoeff0, coe_explicitFiniteQuotientTransition0,
       coe_fixedPointsAddSubgroupQuotientMap]
 
@@ -240,13 +231,13 @@ theorem explicitFiniteQuotientSystem0_coeffNatTrans_id :
   dsimp [explicitFiniteQuotientSystem0CoeffNatTrans]
   let x' : H0 (G ⧸ U.unop.toSubgroup)
       (FixedPoints.addSubgroup U.unop.toSubgroup M) := x
-  change
+  exact (show
     (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
       (FixedPoints.addSubgroup U.unop.toSubgroup M)
       (fixedPointsAddSubgroupQuotientMap (DistribMulActionHom.id G) U.unop.toSubgroup)
-      x' : M) = (x' : M)
-  simp only [coe_explicitCoeff0, coe_fixedPointsAddSubgroupQuotientMap]
-  rfl
+      x' : M) = (x' : M) from by
+    simp only [coe_explicitCoeff0, coe_fixedPointsAddSubgroupQuotientMap]
+    rfl)
 
 theorem explicitFiniteQuotientSystem0_coeffNatTrans_comp
     {P : Type v} [AddCommGroup P] [DistribMulAction G P]
@@ -264,7 +255,7 @@ theorem explicitFiniteQuotientSystem0_coeffNatTrans_comp
   dsimp [explicitFiniteQuotientSystem0CoeffNatTrans]
   let x' : H0 (G ⧸ U.unop.toSubgroup)
       (FixedPoints.addSubgroup U.unop.toSubgroup M) := x
-  change
+  exact (show
     (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
       (FixedPoints.addSubgroup U.unop.toSubgroup M)
       (fixedPointsAddSubgroupQuotientMap (q.comp f) U.unop.toSubgroup)
@@ -275,9 +266,9 @@ theorem explicitFiniteQuotientSystem0_coeffNatTrans_comp
         (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
           (FixedPoints.addSubgroup U.unop.toSubgroup M)
           (fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup)
-          x') : P)
-  simp only [coe_explicitCoeff0, coe_fixedPointsAddSubgroupQuotientMap]
-  rfl
+          x') : P) from by
+    simp only [coe_explicitCoeff0, coe_fixedPointsAddSubgroupQuotientMap]
+    rfl)
 
 end CoefficientFunctoriality
 

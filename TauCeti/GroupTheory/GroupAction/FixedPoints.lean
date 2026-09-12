@@ -340,7 +340,7 @@ theorem coe_fixedPointsQuotientMap (f : M →+[G] N) (H : Subgroup G) [H.Normal]
 
 /-- A quotient-equivariant map induced on fixed-point additive subgroups by an equivariant
 coefficient homomorphism. -/
-def fixedPointsAddSubgroupQuotientMap {M N : Type*} [AddCommGroup M] [AddCommGroup N]
+def fixedPointsAddSubgroupQuotientMap {M N : Type*} [AddGroup M] [AddGroup N]
     [DistribMulAction G M] [DistribMulAction G N] (f : M →+[G] N) (H : Subgroup G) [H.Normal] :
     FixedPoints.addSubgroup H M →+[G ⧸ H] FixedPoints.addSubgroup H N where
   toAddMonoidHom :=
@@ -357,15 +357,15 @@ def fixedPointsAddSubgroupQuotientMap {M N : Type*} [AddCommGroup M] [AddCommGro
     | H g =>
       dsimp
       rw [coe_fixedPointsQuotientMap, coe_fixedPointsQuotientMap]
-      change f (g • (m : M)) = g • f (m : M)
-      exact f.map_smul g (m : M)
+      simpa only [coe_smul_fixedPoints_addSubgroup,
+        coe_quotient_smul_fixedPoints_addSubgroup, MonoidHom.id_apply] using
+        map_smulₛₗ f g (m : M)
 
-@[simp] theorem coe_fixedPointsAddSubgroupQuotientMap {M N : Type*} [AddCommGroup M]
-    [AddCommGroup N] [DistribMulAction G M] [DistribMulAction G N]
+@[simp] theorem coe_fixedPointsAddSubgroupQuotientMap {M N : Type*} [AddGroup M]
+    [AddGroup N] [DistribMulAction G M] [DistribMulAction G N]
     (f : M →+[G] N) (H : Subgroup G) [H.Normal] (m : FixedPoints.addSubgroup H M) :
     (fixedPointsAddSubgroupQuotientMap f H m : N) = f (m : M) := by
-  change (fixedPointsQuotientMap f H ⟨(m : M), m.2⟩ : N) = f (m : M)
-  exact coe_fixedPointsQuotientMap f H ⟨(m : M), m.2⟩
+  rfl
 
 /-- Quotient-equivariant restriction to fixed points preserves the identity map. -/
 @[simp]
