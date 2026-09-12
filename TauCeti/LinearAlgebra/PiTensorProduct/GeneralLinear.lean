@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `Subspace.dualAnnihilator_dualCoannihilator_eq`, the detection of a subspace by the functionals
--- vanishing on it.
+-- `Subspace.forall_mem_dualAnnihilator_apply_eq_zero_iff`, the detection of a subspace by the
+-- functionals vanishing on it.
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 -- `Matrix.toLinAlgEquiv`, the algebra isomorphism between matrices and endomorphisms.
 public import Mathlib.LinearAlgebra.Matrix.ToLin
@@ -29,7 +29,7 @@ the span of the diagonal operators and one wants it to be the image of `K[GL(V)]
 ## The argument
 
 A vector of a vector space lies in a subspace as soon as every functional vanishing on the subspace
-kills it (`Subspace.dualAnnihilator_dualCoannihilator_eq`). So fix a functional `φ` on
+kills it (`Subspace.forall_mem_dualAnnihilator_apply_eq_zero_iff`). So fix a functional `φ` on
 `End (⨂[K] (_ : ι), V)` vanishing on the span of the invertible diagonal operators. Composing `φ`
 with `PiTensorProduct.mapMultilinear`, which is multilinear in the family of endomorphisms, and with
 the matrix-to-endomorphism isomorphism attached to a basis, produces a multilinear form `Θ` in `ι`
@@ -69,10 +69,8 @@ theorem map_const_mem_span_range_map_const_units (f : V →ₗ[K] V) :
     (Set.range fun u : (V →ₗ[K] V)ˣ => map fun _ : ι => (u : V →ₗ[K] V)) with hSdef
   suffices h : ∀ φ : Module.Dual K ((⨂[K] _ : ι, V) →ₗ[K] (⨂[K] _ : ι, V)),
       (∀ y ∈ S, φ y = 0) → φ (map fun _ : ι => f) = 0 by
-    have hmem : (map fun _ : ι => f) ∈ S.dualAnnihilator.dualCoannihilator :=
-      (Submodule.mem_dualCoannihilator _).mpr fun φ hφ =>
-        h φ ((Submodule.mem_dualAnnihilator _).mp hφ)
-    rwa [Subspace.dualAnnihilator_dualCoannihilator_eq] at hmem
+    exact (Subspace.forall_mem_dualAnnihilator_apply_eq_zero_iff S _).mp fun φ hφ =>
+      h φ ((Submodule.mem_dualAnnihilator _).mp hφ)
   intro φ hφ
   set e := Module.finBasis K V with hedef
   set Θ : MultilinearMap K

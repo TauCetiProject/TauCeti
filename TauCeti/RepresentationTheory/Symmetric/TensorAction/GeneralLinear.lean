@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.PiTensorProduct.GeneralLinear
-public import TauCeti.RepresentationTheory.AsAlgebraHom
 public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower
 public import TauCeti.RepresentationTheory.Symmetric.TensorAction.SchurWeyl
 
@@ -22,11 +20,11 @@ centralizers.
 
 `TauCeti/RepresentationTheory/Symmetric/TensorAction/SchurWeyl.lean` proves the duality with the
 span of *all* the diagonal operators `f^{⊗d}`, for `f` an arbitrary endomorphism of `kⁿ`, in place
-of the image of `k[GLₙ]`. This file identifies the two. The image of a group algebra is the span of
-the image of the group (`Representation.toSubmodule_range_asAlgebraHom`), and over an infinite field
-the span of the invertible diagonal operators is already the span of all of them
-(`PiTensorProduct.span_range_map_const_units_eq_span_range_map_const`, the Zariski density of the
-invertible endomorphisms). Both mutual-commutant statements follow.
+of the image of `k[GLₙ]`. The imported module
+`TauCeti/RepresentationTheory/ClassicalGroups/TensorPower.lean` identifies the two: the image of a
+monoid algebra is the span of the image of the monoid, and over an infinite field the invertible
+diagonal operators already span all diagonal operators. This file combines that identification
+with the span-level duality to obtain both mutual-commutant statements.
 
 The two hypotheses on the field play different roles: that `d !` is nonzero is Maschke's theorem for
 `S_d`, which the semisimple half of the duality needs, while the infinitude of `k` is what the
@@ -34,12 +32,12 @@ density argument identifying the two spans needs.
 
 ## Main results
 
-* `TauCeti.span_range_tensorPowerRep_eq_span_range_map_const` and
-  `TauCeti.toSubmodule_range_tensorPowerRep_asAlgebraHom_eq_span_range_map_const`: the image of
-  `k[GLₙ]` is the span of all the diagonal operators, not only of the invertible ones.
 * `TauCeti.centralizer_range_tensorPowerRep_asAlgebraHom_eq_range_permTensorActionAlgHom` and
   `TauCeti.centralizer_range_permTensorActionAlgHom_eq_range_tensorPowerRep_asAlgebraHom`: **the
   images of `k[GLₙ]` and of `k[S_d]` are each other's centralizers.**
+* `TauCeti.centralizer_range_tensorPowerRep_eq_range_permTensorActionAlgHom` and
+  `TauCeti.centralizer_range_permTensorAction_eq_range_tensorPowerRep_asAlgebraHom`: the same
+  mutual-commutant result stated directly for the ranges of the two group actions.
 * `TauCeti.mem_range_permTensorActionAlgHom_iff_forall_commute_tensorPowerRep` and
   `TauCeti.mem_range_tensorPowerRep_asAlgebraHom_iff_forall_commute_permTensorAction`: the same as
   membership criteria, an endomorphism acting as an element of `k[S_d]` exactly when it commutes
@@ -61,40 +59,6 @@ open PiTensorProduct
 namespace TauCeti
 
 variable {k : Type*} {n d : ℕ} [Field k] [Infinite k]
-
-/-- **The general linear group spans the same operators on `(kⁿ)^{⊗d}` as the whole endomorphism
-algebra of `kⁿ`**: the span of the diagonal operators `g^{⊗d}` for `g` invertible is the span of all
-the diagonal operators `f^{⊗d}`. This is the Zariski density of the invertible endomorphisms of
-`kⁿ`, and it needs the field to be infinite. -/
-theorem span_range_tensorPowerRep_eq_span_range_map_const :
-    Submodule.span k (Set.range (tensorPowerRep k n d)) =
-      Submodule.span k (Set.range fun f : (Fin n → k) →ₗ[k] (Fin n → k) =>
-        map fun _ : Fin d => f) := by
-  have hrange : Set.range (tensorPowerRep k n d) =
-      Set.range fun u : ((Fin n → k) →ₗ[k] Fin n → k)ˣ =>
-        map fun _ : Fin d => (u : (Fin n → k) →ₗ[k] Fin n → k) := by
-    ext x
-    constructor
-    · rintro ⟨g, rfl⟩
-      refine ⟨Matrix.GeneralLinearGroup.toLin g, ?_⟩
-      simp [Matrix.GeneralLinearGroup.coe_toLin]
-    · rintro ⟨u, rfl⟩
-      obtain ⟨g, rfl⟩ := Matrix.GeneralLinearGroup.toLin.surjective u
-      refine ⟨g, ?_⟩
-      simp [Matrix.GeneralLinearGroup.coe_toLin]
-  rw [hrange, PiTensorProduct.span_range_map_const_units_eq_span_range_map_const]
-
-/-- **The image of the group algebra `k[GLₙ]` in `End ((kⁿ)^{⊗d})` is the span of all the diagonal
-operators `f^{⊗d}`**, with `f` ranging over every endomorphism of `kⁿ` and not only the invertible
-ones. This is what turns the Schur-Weyl duality of
-`TauCeti/RepresentationTheory/Symmetric/TensorAction/SchurWeyl.lean` into a statement about the
-image of `k[GLₙ]`. -/
-theorem toSubmodule_range_tensorPowerRep_asAlgebraHom_eq_span_range_map_const :
-    Subalgebra.toSubmodule (tensorPowerRep k n d).asAlgebraHom.range =
-      Submodule.span k (Set.range fun f : (Fin n → k) →ₗ[k] (Fin n → k) =>
-        map fun _ : Fin d => f) := by
-  rw [Representation.toSubmodule_range_asAlgebraHom,
-    span_range_tensorPowerRep_eq_span_range_map_const]
 
 variable [NeZero (d ! : k)]
 
@@ -131,15 +95,16 @@ theorem mem_range_permTensorActionAlgHom_iff_forall_commute_tensorPowerRep
   rw [mem_range_permTensorActionAlgHom_iff_forall_commute]
   constructor
   · intro hx g
-    simpa only [tensorPowerRep, Representation.tensorPower_apply, stdRep_apply] using
-      hx (Matrix.mulVecLin (g : Matrix (Fin n) (Fin n) k))
+    rw [tensorPowerRep_apply]
+    exact hx (Matrix.mulVecLin (g : Matrix (Fin n) (Fin n) k))
   · intro hx f
-    refine Commute.span_right (R := k) (s := Set.range (tensorPowerRep k n d))
-      (fun y hy => ?_) _ ?_
-    · obtain ⟨g, rfl⟩ := hy
-      exact hx g
-    · rw [span_range_tensorPowerRep_eq_span_range_map_const]
+    have hf : map (fun _ : Fin d => f) ∈
+        Subalgebra.toSubmodule (tensorPowerRep k n d).asAlgebraHom.range := by
+      rw [toSubmodule_range_tensorPowerRep_asAlgebraHom_eq_span_range_map_const]
       exact Submodule.subset_span ⟨f, rfl⟩
+    obtain ⟨a, ha⟩ := hf
+    rw [← ha]
+    exact Representation.commute_asAlgebraHom_of_forall_commute (tensorPowerRep k n d) hx a
 
 /-- **Schur-Weyl duality, as a membership criterion.** An endomorphism of `(kⁿ)^{⊗d}` is the
 diagonal action of an element of the group algebra `k[GLₙ]` exactly when it commutes with the
@@ -151,10 +116,32 @@ theorem mem_range_tensorPowerRep_asAlgebraHom_iff_forall_commute_permTensorActio
     x ∈ (tensorPowerRep k n d).asAlgebraHom.range ↔
       ∀ σ : Equiv.Perm (Fin d), Commute x (permTensorAction k n d σ) := by
   rw [← centralizer_range_permTensorActionAlgHom_eq_range_tensorPowerRep_asAlgebraHom,
+    mem_centralizer_range_permTensorActionAlgHom_iff_forall_commute]
+
+/-- **Schur-Weyl duality for the group ranges:** the commutant of the general-linear group action
+is the image of `k[S_d]`. -/
+@[simp]
+theorem centralizer_range_tensorPowerRep_eq_range_permTensorActionAlgHom :
+    Subalgebra.centralizer k (Set.range (tensorPowerRep k n d)) =
+      (permTensorActionAlgHom k n d).range := by
+  ext x
+  rw [mem_range_permTensorActionAlgHom_iff_forall_commute_tensorPowerRep,
     Subalgebra.mem_centralizer_iff]
-  refine ⟨fun hx σ => (hx _ ⟨MonoidAlgebra.of k _ σ, permTensorActionAlgHom_of k n d σ⟩).symm,
-    fun hx y hy => ?_⟩
-  obtain ⟨a, rfl⟩ := hy
-  exact (commute_permTensorActionAlgHom_of_forall_commute hx a).symm
+  refine ⟨fun hx g => (hx _ ⟨g, rfl⟩).symm, fun hx _ hy => ?_⟩
+  obtain ⟨g, rfl⟩ := hy
+  exact (hx g).symm
+
+/-- **Schur-Weyl duality for the group ranges:** the commutant of the symmetric-group action is
+the image of `k[GLₙ]`. -/
+@[simp]
+theorem centralizer_range_permTensorAction_eq_range_tensorPowerRep_asAlgebraHom :
+    Subalgebra.centralizer k (Set.range (permTensorAction k n d)) =
+      (tensorPowerRep k n d).asAlgebraHom.range := by
+  ext x
+  rw [mem_range_tensorPowerRep_asAlgebraHom_iff_forall_commute_permTensorAction,
+    Subalgebra.mem_centralizer_iff]
+  refine ⟨fun hx σ => (hx _ ⟨σ, rfl⟩).symm, fun hx _ hy => ?_⟩
+  obtain ⟨σ, rfl⟩ := hy
+  exact (hx σ).symm
 
 end TauCeti
