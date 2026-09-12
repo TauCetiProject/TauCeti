@@ -37,13 +37,16 @@ rectangle of their upper events.
 
 * `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.upperMass_map_sum` — the upper mass of a disjoint
   union of patterns is the mass of a rectangle under the law of the pair of windows;
-* `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.isDissociated_iff_upperMass_mul` — a law is
-  dissociated iff its upper masses are multiplicative over disjoint unions of patterns.
+* `TauCeti.DenseGraphLimits.isDissociated_iff_upperMass_mul` — a law is dissociated iff its upper
+  masses are multiplicative over disjoint unions of patterns.
 
 ## References
 
 * P. Diaconis, S. Janson, *Graph limits and exchangeable random graphs*, Rend. Mat. Appl. (7) 28
   (2008), 33--61, Section 5.
+* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 9b — dissociated graph laws. The
+  body of `IsDissociated` and the signature of `isDissociated_iff_upperMass_mul` follow
+  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 -/
 
 public section
@@ -69,14 +72,6 @@ def IsDissociated : Prop :=
         (fun G => (SimpleGraph.comap (Fin.castAdd l) G, SimpleGraph.comap (Fin.natAdd k) G))
       = (L.law k).prod (L.law l)
 
-/-- The defining identity of a dissociated law. -/
-theorem isDissociated_iff :
-    L.IsDissociated ↔
-      ∀ k l : ℕ,
-        (L.law (k + l)).map
-            (fun G => (SimpleGraph.comap (Fin.castAdd l) G, SimpleGraph.comap (Fin.natAdd k) G))
-          = (L.law k).prod (L.law l) := Iff.rfl
-
 /-- The upper mass of a disjoint union of two patterns, placed on the first `k` and the last `l`
 labels, is the mass of the rectangle of their two upper events under the law of the pair of
 windows: a graph contains the union exactly when its two windows contain the two patterns. -/
@@ -98,29 +93,30 @@ theorem upperMass_map_sum (F₁ : SimpleGraph (Fin k)) (F₂ : SimpleGraph (Fin 
     SimpleGraph.comap_comap, SimpleGraph.comap_comap, hinl, hinr]
   rfl
 
+end ExchangeableGraphLaw
+
 /-- **Dissociation via upper masses.** A law is dissociated iff its upper masses are multiplicative
 over disjoint unions of patterns. The forward direction evaluates the two laws on upper
 rectangles; the converse holds because the upper rectangles are the upper rays of the product of
 the two finite lattices of graphs, which determine a finite law on it. -/
-theorem isDissociated_iff_upperMass_mul :
+theorem isDissociated_iff_upperMass_mul (L : ExchangeableGraphLaw) :
     L.IsDissociated ↔
       ∀ (k l : ℕ) (F₁ : SimpleGraph (Fin k)) (F₂ : SimpleGraph (Fin l)),
         L.upperMass ((F₁ ⊕g F₂).map finSumFinEquiv.toEmbedding) =
           L.upperMass F₁ * L.upperMass F₂ := by
   constructor
   · intro h k l F₁ F₂
-    rw [upperMass_map_sum, h k l, Measure.prod_prod, ENNReal.toReal_mul, upperMass_def,
-      upperMass_def]
+    rw [ExchangeableGraphLaw.upperMass_map_sum, h k l, Measure.prod_prod, ENNReal.toReal_mul,
+      ExchangeableGraphLaw.upperMass_def, ExchangeableGraphLaw.upperMass_def]
     rfl
   · intro h k l
     refine Measure.ext_of_Ici_of_finite _ _ fun F => ?_
     rw [← Set.Ici_prod_Ici, Measure.prod_prod]
     refine (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) ?_).1 ?_
     · exact ENNReal.mul_ne_top (measure_ne_top _ _) (measure_ne_top _ _)
-    · rw [ENNReal.toReal_mul, ← upperMass_map_sum, h k l F.1 F.2, upperMass_def, upperMass_def]
+    · rw [ENNReal.toReal_mul, ← ExchangeableGraphLaw.upperMass_map_sum, h k l F.1 F.2,
+        ExchangeableGraphLaw.upperMass_def, ExchangeableGraphLaw.upperMass_def]
       rfl
-
-end ExchangeableGraphLaw
 
 end DenseGraphLimits
 

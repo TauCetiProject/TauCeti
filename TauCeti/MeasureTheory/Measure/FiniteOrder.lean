@@ -5,9 +5,9 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import Mathlib.Order.Interval.Set.Basic
+import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
 /-!
 # Measures on a finite partial order are determined by their upper sets

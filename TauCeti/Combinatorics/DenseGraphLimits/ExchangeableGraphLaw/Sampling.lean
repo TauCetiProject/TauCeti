@@ -46,6 +46,10 @@ the upper masses of a disjoint union of patterns multiply because homomorphism d
   `Graphon/ExchangeableGraphLaw.lean`. The packaging of the sampling laws and the identification of
   the upper mass with a homomorphism density follow that source, adapted to Tau Ceti's strict
   graphon carrier.
+* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 9b — the sampling anchor
+  `upperMass_sampleExchangeableLaw` and the dissociation of sampling laws
+  `isDissociated_sampleExchangeableLaw`. The signatures follow
+  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 -/
 
 public section
@@ -94,7 +98,7 @@ density, which is unchanged by relabelling the pattern into `Fin (k + l)`. -/
 theorem isDissociated_sampleExchangeableLaw (W : Graphon Ω μ) :
     (sampleExchangeableLaw W).IsDissociated := by
   classical
-  refine (ExchangeableGraphLaw.isDissociated_iff_upperMass_mul _).2 fun k l F₁ F₂ => ?_
+  refine (isDissociated_iff_upperMass_mul _).2 fun k l F₁ F₂ => ?_
   rw [upperMass_sampleExchangeableLaw, upperMass_sampleExchangeableLaw,
     upperMass_sampleExchangeableLaw, homDensity_map_embedding, homDensity_sum]
 
