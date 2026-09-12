@@ -37,6 +37,9 @@ Neither `M / K` Galois nor `M / K` finite is needed, and neither is faithfulness
 its surjection. The fixed-point subfield it produces is the one underlying
 `IntermediateField.fixedField`.
 
+A simple extension `K⟮x⟯` is fixed pointwise by exactly those automorphisms that fix `x`, so
+its fixing subgroup is the stabilizer of `x`; this too needs no hypothesis on `M / K` at all.
+
 ## Main results
 
 * `Subgroup.fixedField_sup_eq_top_iff`
@@ -44,6 +47,7 @@ its surjection. The fixed-point subfield it produces is the one underlying
 * `IntermediateField.fixingSubgroup_fixedField_of_finite`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
+* `IntermediateField.fixingSubgroup_adjoin_simple`
 * `FixedPoints.isCyclic_algEquiv`
 * `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top`
 -/
@@ -119,6 +123,25 @@ theorem card_fixingSubgroup_le (E : IntermediateField K M) [FiniteDimensional E 
     Nat.card (fixingSubgroup E) ≤ Module.finrank E M := by
   rw [Nat.card_congr (fixingSubgroupEquiv E).toEquiv, Nat.card_eq_fintype_card]
   exact AlgEquiv.card_le
+
+-- The subgroup extensionality argument below, reducing membership of `K⟮x⟯.fixingSubgroup` to
+-- `IntermediateField.forall_mem_adjoin_smul_eq_self_iff` at the singleton `{x}`, is adapted from
+-- the proof of `stabilizer_isOpen_of_isIntegral` in `Mathlib/FieldTheory/KrullTopology.lean`,
+-- which uses it there to identify a point stabilizer with the fixing subgroup of a finite
+-- intermediate field. Here it is recorded as a statement in its own right, with no integrality
+-- hypothesis.
+/-- **The fixing subgroup of a simple extension is the stabilizer of its generator.** A
+`K`-automorphism of `M` is determined on `K⟮x⟯` by its value at `x`, so fixing `K⟮x⟯` pointwise is
+fixing `x`; no hypothesis on `M / K` is needed, and `x` need not be algebraic.
+
+This is what turns a statement about the action of `Gal(M/K)` on a set of elements of `M` into a
+statement about the Galois correspondence. -/
+@[simp]
+theorem fixingSubgroup_adjoin_simple (x : M) :
+    K⟮x⟯.fixingSubgroup = MulAction.stabilizer (M ≃ₐ[K] M) x := by
+  ext σ
+  rw [mem_fixingSubgroup_iff, MulAction.mem_stabilizer_iff]
+  simpa using forall_mem_adjoin_smul_eq_self_iff K (S := {x}) σ
 
 end IntermediateField
 

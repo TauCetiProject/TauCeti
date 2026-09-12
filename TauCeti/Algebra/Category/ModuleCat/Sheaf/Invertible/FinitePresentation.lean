@@ -51,7 +51,8 @@ The rank-one local bases give finite generating families, and the locally free p
 have no relations. -/
 instance IsInvertible.isFinitePresentation [hM : IsInvertible M] : M.IsFinitePresentation := by
   obtain ⟨q, hq⟩ := hM.exists_isInvertible
-  apply LocalGeneratorsData.IsLocallyFreeData.isFinitePresentation hq.isLocallyFreeData
+  apply SheafOfModules.LocalGeneratorsData.IsLocallyFreeData.isFinitePresentation
+    hq.isLocallyFreeData
   exact ⟨fun i ↦ by
     let : Subsingleton (q.generators i).I := hq.basisSubsingleton i
     exact ⟨Finite.of_subsingleton⟩⟩

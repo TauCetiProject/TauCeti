@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.GeckCarrier
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Torus
 
@@ -50,9 +49,7 @@ group is finite, perfect, or simple.
 
 * `TauCeti.UnimodularExceptionalIndex`: the unimodular indices whose Steinberg map is not a
   half-Frobenius power, that is `E₈(q)`, `F₄(q)` and `G₂(q)`, with
-  `TauCeti.UnimodularExceptionalIndex.steinberg` their Steinberg map and
-  `TauCeti.UnimodularExceptionalIndex.Group` the candidate simple group, the derived subgroup of
-  the fixed points of that map modulo the centre of that derived subgroup.
+  `TauCeti.UnimodularExceptionalIndex.steinberg` their Steinberg map.
 
 ## Main results
 
@@ -74,26 +71,19 @@ group is finite, perfect, or simple.
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
+* R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, Memoirs Amer. Math. Soc. **80**
+  (1968), §11, for the Steinberg endomorphism conventions.
+* M. Geck, *On the construction of semisimple Lie algebras and Chevalley groups*,
+  Proc. Amer. Math. Soc. **145** (2017), 3233--3247, for the matrix realization of the carrier.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plates VII--IX, for the unimodularity
   of the `E₈`, `F₄` and `G₂` Cartan matrices.
 
-## Roadmap
+## Carrier-level description
 
-Milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md` asks for the points of the pinned simply
-connected Chevalley--Demazure group scheme of `TauCeti.DynkinType.simplyConnectedRootDatum`, with
-its root subgroups. **This file does not close L0 on any branch, and the Geck carrier is not
-offered as its carrier.** The pinned Chevalley--Demazure group, its root datum and its pinning are
-a Layer 9 target of `TauCetiRoadmap/ReductiveGroups/README.md` that the CFSG roadmap consumes
-rather than builds. The full character span proved here is the lattice hypothesis that
-identification needs, so it is a prerequisite of L0 and not a substitute for it.
-
-Against the Geck carrier, `steinberg` is the map `Frob_q` and `Group` the composite
-`[H_d, H_d] / Z([H_d, H_d])` on the three untwisted branches, so the equations that milestones L1
-and L3 ask for are proved here in the shape they will be needed; they transfer to the L0 carrier
-along the Layer 9 identification, and not before. What the `²G₂`, `²F₄` and Tits branches lack in
-addition is their Steinberg map: it is an odd power of the special isogeny `τ` of milestone L2, and
-`τ` is a Layer 9 target as well. The relation `τ ^ 2 = Frob_p` that L2 records will be read against
-`TauCeti.ValidLieTypeIndex.geckFrobenius`.
+For the three untwisted branches treated here, `steinberg` is the `q`-power Frobenius on the Geck
+carrier. Thus `mem_fixedSubgroup_steinberg_iff` identifies its fixed points with the carrier points
+whose matrix entries lie in `𝔽_q`. The other unimodular branches use half-Frobenius maps instead
+and are therefore not included in `UnimodularExceptionalIndex`.
 -/
 
 public section
@@ -208,7 +198,7 @@ theorem steinberg_geckWeightTorus (s : Fin d.1.1.dynkinType.rank → d.1.1.Closu
 /-- **A point of the Geck point group is fixed by the Steinberg map exactly when all of its matrix
 entries lie in the field of definition.** Writing `𝔽_q` for
 `TauCeti.ValidLieTypeIndex.fixedField`, the copy of the field of `q` elements inside the algebraic
-closure, the group `H_d` that the milestone L3 recipe is run on below is therefore the group of
+closure, the fixed-point subgroup associated to this map is therefore the group of
 points of the Geck carrier whose entries lie in `𝔽_q`.
 
 As for `TauCeti.ValidLieTypeIndex.mem_fixedSubgroup_geckFrobenius_iff`, this is not a `simp` lemma:
@@ -223,18 +213,6 @@ theorem mem_fixedSubgroup_steinberg_iff (g : ValidLieTypeIndex.GeckGroup d.1.1) 
         d.1.1.fixedField := by
   rw [steinberg_eq_geckFrobenius]
   exact d.1.1.mem_fixedSubgroup_geckFrobenius_iff g
-
-/-- **The candidate simple group of an untwisted unimodular exceptional index**: the derived
-subgroup of the fixed points of its Steinberg map, modulo the centre of that derived subgroup.
-
-This is the CFSG recipe on the `E₈`, `F₄` and `G₂` branches, run on the Geck carrier. Nothing
-below asserts that it is finite, perfect, or simple, nor that the carrier is the one milestone L0
-asks for. -/
-abbrev Group : Type := FixedPointCandidate d.steinberg
-
-/-- Milestone L3 asks every valid branch to carry a group instance; the quotient construction
-supplies it. -/
-example : _root_.Group d.Group := inferInstance
 
 end
 

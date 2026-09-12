@@ -42,7 +42,10 @@ product as the class of a concatenation `GenLoop.transAt i` in any cube directio
   `TauCeti.homotopyGroupTransport_refl`, `TauCeti.homotopyGroupTransport_trans` and
   `TauCeti.homotopyGroupTransport_congr`.
 * `TauCeti.homotopyGroupEquivOfPath`: transport is a bijection, with inverse the transport
-  along the reversed path.
+  along the reversed path, with `TauCeti.homotopyGroupEquivOfPath_apply`,
+  `TauCeti.homotopyGroupEquivOfPath_symm_apply` and the same four functoriality laws
+  `TauCeti.homotopyGroupEquivOfPath_refl`, `TauCeti.homotopyGroupEquivOfPath_trans`,
+  `TauCeti.homotopyGroupEquivOfPath_congr` and `TauCeti.homotopyGroupEquivOfPath_symm`.
 * `TauCeti.homotopyGroupMulEquivOfPath`: **a path from `x` to `y` induces a group isomorphism
   `HomotopyGroup N X x ≃* HomotopyGroup N X y`.**
 * `TauCeti.nonempty_homotopyGroupMulEquiv`: on a path-connected space, all the homotopy groups
@@ -351,12 +354,57 @@ theorem homotopyGroupEquivOfPath_mk (γ : Path x y) (f : Ω^ N X x) :
   unfold homotopyGroupEquivOfPath
   exact homotopyGroupTransport_mk γ f
 
+/-- Base-point change, as an equivalence, acts by transport. -/
+@[simp]
+theorem homotopyGroupEquivOfPath_apply (γ : Path x y) (a : HomotopyGroup N X x) :
+    homotopyGroupEquivOfPath γ a = homotopyGroupTransport γ a := by
+  unfold homotopyGroupEquivOfPath
+  rfl
+
+/-- The inverse base-point-change equivalence acts by transport along the reversed path. -/
+@[simp]
+theorem homotopyGroupEquivOfPath_symm_apply (γ : Path x y) (a : HomotopyGroup N X y) :
+    (homotopyGroupEquivOfPath γ).symm a = homotopyGroupTransport γ.symm a := by
+  unfold homotopyGroupEquivOfPath
+  rfl
+
 @[simp]
 theorem homotopyGroupEquivOfPath_symm_mk (γ : Path x y) (f : Ω^ N X y) :
     (homotopyGroupEquivOfPath γ).symm (⟦f⟧ : HomotopyGroup N X y) =
       ⟦GenLoop.transport γ.symm f⟧ := by
   unfold homotopyGroupEquivOfPath
   exact homotopyGroupTransport_mk γ.symm f
+
+/-- The equivalence for a constant path is the identity. -/
+@[simp]
+theorem homotopyGroupEquivOfPath_refl :
+    homotopyGroupEquivOfPath (N := N) (Path.refl x) = Equiv.refl (HomotopyGroup N X x) := by
+  ext a
+  rw [homotopyGroupEquivOfPath_apply, homotopyGroupTransport_refl]
+  rfl
+
+/-- The equivalence for a concatenated path is the composite equivalence. -/
+@[simp]
+theorem homotopyGroupEquivOfPath_trans {w : X} (γ : Path x y) (δ : Path y w) :
+    homotopyGroupEquivOfPath (N := N) (γ.trans δ) =
+      (homotopyGroupEquivOfPath γ).trans (homotopyGroupEquivOfPath δ) := by
+  ext a
+  rw [homotopyGroupEquivOfPath_apply, Equiv.trans_apply, homotopyGroupEquivOfPath_apply,
+    homotopyGroupEquivOfPath_apply]
+  exact congrFun (homotopyGroupTransport_trans γ δ) a
+
+/-- Homotopic paths induce the same base-point-change equivalence. -/
+theorem homotopyGroupEquivOfPath_congr {γ δ : Path x y} (h : γ.Homotopic δ) :
+    homotopyGroupEquivOfPath (N := N) γ = homotopyGroupEquivOfPath δ := by
+  ext a
+  rw [homotopyGroupEquivOfPath_apply, homotopyGroupEquivOfPath_apply]
+  exact congrFun (homotopyGroupTransport_congr h) a
+
+/-- Reversing the path gives the inverse equivalence. -/
+theorem homotopyGroupEquivOfPath_symm (γ : Path x y) :
+    (homotopyGroupEquivOfPath γ).symm = homotopyGroupEquivOfPath (N := N) γ.symm := by
+  ext a
+  rw [homotopyGroupEquivOfPath_symm_apply, homotopyGroupEquivOfPath_apply]
 
 /-- **Base-point change for higher homotopy groups.** A path from `x` to `y` induces a group
 isomorphism between the homotopy groups based at `x` and at `y`. -/

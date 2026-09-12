@@ -64,6 +64,8 @@ involution, and it lives downstream in
   `TauCeti.coeff_schurPoly_partWeight` reads it at the exponent of a partition.
 * `TauCeti.eval_diagramSchurPoly`: evaluating a Schur polynomial sums the monomials of its
   tableaux.
+* `TauCeti.eval_one_diagramSchurPoly_eq_card_boundedSSYT`: evaluating at one counts the bounded
+  tableaux.
 * `TauCeti.diagramSchurPoly_eq_zero_iff` and `TauCeti.schurPoly_eq_zero_iff`: a Schur polynomial
   vanishes exactly for a shape taller than its alphabet.
 * `TauCeti.isHomogeneous_diagramSchurPoly` and `TauCeti.isHomogeneous_schurPoly`: a Schur
@@ -205,6 +207,16 @@ theorem eval_diagramSchurPoly (y : Fin N → R) :
   refine Finset.sum_congr rfl fun T _ => ?_
   rw [eval_monomial, one_mul]
   exact Finsupp.prod_fintype _ _ fun _ => pow_zero _
+
+/-- **A Schur polynomial evaluated at one counts bounded semistandard tableaux.**  Every monomial
+in the tableau generating function contributes one, so the value is the cardinality of
+`TauCeti.BoundedSSYT N μ`. -/
+@[simp] theorem eval_one_diagramSchurPoly_eq_card_boundedSSYT (N : ℕ) (μ : YoungDiagram) :
+    eval (fun _ : Fin N => (1 : R)) (diagramSchurPoly N R μ) =
+      (Nat.card (BoundedSSYT N μ) : R) := by
+  rw [eval_diagramSchurPoly]
+  simp only [one_pow, prod_const_one, sum_const, card_univ, Nat.card_eq_fintype_card,
+    nsmul_eq_mul, mul_one]
 
 /-- Scalars pass through a Schur polynomial: every coefficient is the cast of a natural number,
 namely of a Kostka number, and casts of natural numbers are preserved by semiring homomorphisms. -/

@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
+public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
+public import TauCeti.Algebra.Homology.DG.Module.Defs
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 
 /-!
@@ -83,7 +85,9 @@ subalgebra because the differential annihilates the image of the ground ring and
 rule applied componentwise, a product of cycles is a cycle. -/
 def cycles (h : IsDGAlgebra 𝒜 d) : Subalgebra R A :=
   (LinearMap.ker d).toSubalgebra h.map_one_eq_zero
-    fun _ _ ha hb => h.map_mul_eq_zero_of_map_eq_zero ha hb
+    fun _ _ ha hb => by
+      simpa only [LinearMap.mem_ker, smul_eq_mul] using
+        h.isDGLeftModule.map_smul_eq_zero_of_map_eq_zero ha hb
 
 @[simp]
 lemma mem_cycles (h : IsDGAlgebra 𝒜 d) {a : A} : a ∈ h.cycles ↔ d a = 0 := Iff.rfl
@@ -100,58 +104,41 @@ def cyclesDeg (h : IsDGAlgebra 𝒜 d) (p : ℤ) : Submodule R h.cycles :=
 lemma mem_cyclesDeg (h : IsDGAlgebra 𝒜 d) {p : ℤ} {z : h.cycles} :
     z ∈ h.cyclesDeg p ↔ (z : A) ∈ 𝒜 p := Iff.rfl
 
-/-- Every cycle is a sum of homogeneous cycles: the homogeneous components of a cycle are cycles,
-and they add up to it. -/
-theorem iSup_cyclesDeg_eq_top (h : IsDGAlgebra 𝒜 d) : ⨆ p : ℤ, h.cyclesDeg p = ⊤ := by
-  classical
-  refine eq_top_iff.mpr fun z _ => ?_
-  have hz : d (z : A) = 0 := h.mem_cycles.mp z.2
-  set s := (decompose 𝒜 (z : A)).support
-  have hmem : ∀ p : ℤ, (decompose 𝒜 (z : A) p : A) ∈ h.cycles :=
-    fun p => h.mem_cycles.mpr (h.map_proj_eq_zero hz p)
-  have hsum : z = ∑ p ∈ s, (⟨(decompose 𝒜 (z : A) p : A), hmem p⟩ : h.cycles) := by
-    refine Subtype.ext ?_
-    simpa [AddSubmonoidClass.coe_finsetSum] using
-      (DirectSum.sum_support_decompose 𝒜 (z : A)).symm
-  rw [hsum]
-  exact Submodule.sum_mem _ fun p _ =>
-    Submodule.mem_iSup_of_mem p (SetLike.coe_mem (decompose 𝒜 (z : A) p))
-
-/-- The homogeneous cycle spaces are independent, as subspaces of the independent grading of the
-ambient algebra. -/
-theorem iSupIndep_cyclesDeg (h : IsDGAlgebra 𝒜 d) : iSupIndep h.cyclesDeg := by
-  intro p
-  rw [Submodule.disjoint_def]
-  rintro z hz hz'
-  have hle : Submodule.map h.cycles.val.toLinearMap
-      (⨆ (q : ℤ) (_ : q ≠ p), h.cyclesDeg q) ≤ ⨆ (q : ℤ) (_ : q ≠ p), 𝒜 q := by
-    rw [Submodule.map_iSup]
-    refine iSup_le fun q => ?_
-    rw [Submodule.map_iSup]
-    exact iSup_le fun hq => le_iSup_of_le q (le_iSup_of_le hq (Submodule.map_comap_le _ _))
-  have hz'prop : (z : A) ∈ ⨆ (q : ℤ) (_ : q ≠ p), 𝒜 q :=
-    hle (Submodule.mem_map_of_mem hz')
-  have hambient := (DirectSum.Decomposition.isInternal 𝒜).submodule_iSupIndep p
-  rw [Submodule.disjoint_def] at hambient
-  have hzprop : (z : A) ∈ 𝒜 p := h.mem_cyclesDeg.mp hz
-  have hz0 : (z : A) ∈ (⊥ : Submodule R A) := hambient (z : A) hzprop hz'prop
-  apply Subtype.ext
-  simpa only [Subalgebra.coe_zero, Submodule.mem_bot] using hz0
-
-/-- The homogeneous cycle spaces form an internal direct sum. -/
-theorem isInternal_cyclesDeg (h : IsDGAlgebra 𝒜 d) : DirectSum.IsInternal h.cyclesDeg :=
-  DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top h.iSupIndep_cyclesDeg
-    h.iSup_cyclesDeg_eq_top
+/-- The cycles are closed under every homogeneous projection of the ambient grading. -/
+theorem isHomogeneous_cycles (h : IsDGAlgebra 𝒜 d) :
+    SetLike.IsHomogeneous 𝒜 h.cycles.toSubmodule :=
+  fun p _ hz ↦ h.mem_cycles.mpr <| by
+    simpa only [GradedRing.proj_apply] using
+      h.isDGLeftModule.map_decompose_eq_zero (h.mem_cycles.mp hz) p
 
 /-- The cycles inherit the grading of the ambient differential graded algebra. -/
 noncomputable instance instGradedAlgebraCyclesDeg (h : IsDGAlgebra 𝒜 d) :
-    GradedAlgebra h.cyclesDeg :=
-  { h.isInternal_cyclesDeg.chooseDecomposition with
+    GradedAlgebra h.cyclesDeg := by
+  letI : DirectSum.Decomposition h.cyclesDeg :=
+    DirectSum.Decomposition.restrict 𝒜 h.cyclesDeg h.cycles.val.toLinearMap
+      Subtype.val_injective (fun _ _ ↦ h.mem_cyclesDeg) fun p z ↦
+        ⟨⟨(decompose 𝒜 (z : A) p : A), h.isHomogeneous_cycles p z.2⟩, rfl⟩
+  exact
+  { (inferInstance : DirectSum.Decomposition h.cyclesDeg) with
     one_mem := by
       simpa only [mem_cyclesDeg, Subalgebra.coe_one] using SetLike.one_mem_graded 𝒜
     mul_mem := fun _ _ _ _ hx hy => by
       rw [h.mem_cyclesDeg] at hx hy ⊢
       simpa only [Subalgebra.coe_mul] using SetLike.mul_mem_graded hx hy }
+
+/-- Every cycle is a sum of homogeneous cycles: the homogeneous components of a cycle are cycles,
+and they add up to it. -/
+theorem iSup_cyclesDeg_eq_top (h : IsDGAlgebra 𝒜 d) : ⨆ p : ℤ, h.cyclesDeg p = ⊤ :=
+  (DirectSum.Decomposition.isInternal h.cyclesDeg).submodule_iSup_eq_top
+
+/-- The homogeneous cycle spaces are independent, as subspaces of the independent grading of the
+ambient algebra. -/
+theorem iSupIndep_cyclesDeg (h : IsDGAlgebra 𝒜 d) : iSupIndep h.cyclesDeg :=
+  (DirectSum.Decomposition.isInternal h.cyclesDeg).submodule_iSupIndep
+
+/-- The homogeneous cycle spaces form an internal direct sum. -/
+theorem isInternal_cyclesDeg (h : IsDGAlgebra 𝒜 d) : DirectSum.IsInternal h.cyclesDeg :=
+  DirectSum.Decomposition.isInternal h.cyclesDeg
 
 /-- The **boundaries** of a differential graded algebra: the image of the differential, viewed
 inside the cycles.  It is a two-sided ideal there: a cycle times a boundary is a boundary by the
@@ -170,13 +157,15 @@ def boundaries (h : IsDGAlgebra 𝒜 d) : TwoSidedIdeal h.cycles :=
         Submodule.neg_mem (LinearMap.range d) hx)
     (fun {x y} hy => by
       obtain ⟨b, hb⟩ := hy
-      simpa only [Set.mem_ofPred_eq, Subalgebra.coe_mul, ← hb] using
-        h.mul_map_mem_range_of_map_left_eq_zero (h.mem_cycles.mp x.2) b)
+      simpa only [Set.mem_ofPred_eq, Subalgebra.coe_mul, ← hb, smul_eq_mul] using
+        h.isDGLeftModule.smul_mem_range_of_map_eq_zero (h.mem_cycles.mp x.2)
+          (LinearMap.mem_range_self d b))
     (fun {x y} hx => by
       obtain ⟨a, ha⟩ := hx
       simp only [Set.mem_ofPred_eq, Subalgebra.coe_mul]
       exact ⟨a * (y : A), by
-        rw [h.leibniz_of_map_right_eq_zero a (h.mem_cycles.mp y.2), ha]⟩)
+        simpa only [smul_eq_mul, ha] using
+          h.isDGLeftModule.leibniz_of_map_eq_zero a (h.mem_cycles.mp y.2)⟩)
 
 @[simp]
 lemma mem_boundaries (h : IsDGAlgebra 𝒜 d) {z : h.cycles} :
@@ -197,19 +186,9 @@ projection in the ambient algebra. -/
 @[simp]
 theorem coe_decompose_cyclesDeg (h : IsDGAlgebra 𝒜 d) (p : ℤ) (z : h.cycles) :
     ((decompose h.cyclesDeg z p : h.cycles) : A) = GradedRing.proj 𝒜 p (z : A) := by
-  induction z using DirectSum.Decomposition.inductionOn h.cyclesDeg with
-  | zero => simp [GradedRing.proj_apply]
-  | @homogeneous q z =>
-    have hz : (z : h.cycles) ∈ h.cyclesDeg q := z.2
-    have hzA : ((z : h.cycles) : A) ∈ 𝒜 q := h.mem_cyclesDeg.mp hz
-    by_cases hpq : p = q
-    · subst hpq
-      rw [DirectSum.decompose_of_mem_same h.cyclesDeg hz, GradedRing.proj_apply,
-        DirectSum.decompose_of_mem_same 𝒜 hzA]
-    · rw [DirectSum.decompose_of_mem_ne h.cyclesDeg hz (Ne.symm hpq),
-        ZeroMemClass.coe_zero, GradedRing.proj_apply,
-        DirectSum.decompose_of_mem_ne 𝒜 hzA (Ne.symm hpq)]
-  | add x y hx hy => simp [hx, hy]
+  simpa only [GradedRing.proj_apply, AlgHom.toLinearMap_apply, Subalgebra.coe_val] using
+    DirectSum.map_decompose_restrict 𝒜 h.cyclesDeg h.cycles.val.toLinearMap
+      (fun _ _ ↦ h.mem_cyclesDeg) p z
 
 /-- The boundary ideal is homogeneous in the inherited grading of the cycles. -/
 theorem isHomogeneous_boundaries (h : IsDGAlgebra 𝒜 d) :
@@ -217,7 +196,7 @@ theorem isHomogeneous_boundaries (h : IsDGAlgebra 𝒜 d) :
   intro p z hz
   rw [TwoSidedIdeal.mem_asIdeal, h.mem_boundaries] at hz ⊢
   rw [h.coe_decompose_cyclesDeg]
-  exact h.proj_mem_range hz p
+  simpa only [GradedRing.proj_apply] using h.isDGLeftModule.decompose_mem_range hz p
 
 /-- The grading of the cohomology algebra: the degree-`p` piece consists of the classes of the
 homogeneous cycles of degree `p`. -/

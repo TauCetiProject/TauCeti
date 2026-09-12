@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Frobenius
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.RootDatum
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Closure
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Frobenius
 
 /-!
 # The standard symplectic carrier of a validated type-`C` index
@@ -17,6 +18,13 @@ the Kostant toral closure of the standard representation of `sp_(2n)` inside `GL
 This file attaches that carrier to a validated type-`C` index: the group of algebraic-closure-valued
 points of the carrier at the index's rank, its Bourbaki-numbered simple root subgroups, and the
 reading of their root characters in the type-`C` root datum the index names.
+
+The carrier also has a `q`-power Frobenius, where `q` is the field order recorded by the index: the
+endomorphism of its point group raising every matrix entry to the `q`-th power. This file records
+that entrywise action, the equations it satisfies on the numbered simple-root subgroups and on the
+split weight torus, where it raises the subgroup parameter and every torus coordinate to the `q`-th
+power, and the description of its fixed points as the carrier points all of whose matrix entries lie
+in the field of `q` elements inside the closure.
 
 The carrier is indexed by `n` in the spelling `C (n + 1)`, so a validated index of rank `r` uses
 the carrier at `TauCeti.TypeCLieIndex.carrierRank`, which is `r - 1`. That subtraction is harmless
@@ -47,10 +55,18 @@ the symplectic group scheme or the pinned simply connected Chevalley--Demazure g
   Bourbaki-numbered node, with
   `TauCeti.TypeCLieIndex.rootGeneratorWeight_carrierNode_eq_root_simpleIndex` identifying the
   character of that subgroup with the corresponding simple root of the type-`C` root datum.
+* `TauCeti.TypeCLieIndex.frobenius`: the carrier's `q`-power Frobenius, with
+  `TauCeti.TypeCLieIndex.frobenius_simpleRootSubgroup` and
+  `TauCeti.TypeCLieIndex.frobenius_weightTorusPoints` recording its action on the numbered
+  simple-root subgroups and split weight torus.
+* `TauCeti.TypeCLieIndex.mem_fixedSubgroup_frobenius_iff`: its fixed points are the carrier points
+  whose matrix entries all lie in the field of `q` elements inside the closure.
 
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 11.3.
+* R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17, for
+  the entrywise Frobenius action.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate III, for the numbering of the
   type-`C` diagram that the root subgroups below are indexed by.
 -/
@@ -151,6 +167,77 @@ theorem rootGeneratorWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.1.rank)
   rw [SpStd.rootGeneratorWeight_inl]
   simp only [DynkinType.root_simpleIndex]
   rw [d.dynkinType_cartanMatrix_apply, d.cartanMatrix_C_carrierNode]
+
+-- The Frobenius API and proof plan below are adapted from the
+-- `TauCeti.RankTwoBLieIndex.frobenius` block in
+-- `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB2.lean`.
+/-! ## Frobenius on the carrier -/
+
+/-- **The `q`-power Frobenius of the standard symplectic carrier attached to a validated type-`C`
+index**, where `q` is the field order recorded by the index. It is the endomorphism of the point
+group raising every matrix entry to the `q`-th power. -/
+def frobenius : d.AmbientGroup →* d.AmbientGroup :=
+  SpStd.frobenius d.carrierRank d.1.characteristic d.1.fieldExponent d.1.Closure
+
+/-- The Frobenius is the standard carrier's Frobenius at the characteristic and field exponent
+recorded by the index. -/
+theorem frobenius_def :
+    d.frobenius =
+      SpStd.frobenius d.carrierRank d.1.characteristic d.1.fieldExponent d.1.Closure :=
+  (rfl)
+
+/-- The Frobenius raises every matrix entry to the field order recorded by the index. -/
+@[simp]
+theorem coe_frobenius_apply (g : d.AmbientGroup)
+    (r c : Fin (d.carrierRank + 1 + (d.carrierRank + 1))) :
+    ((d.frobenius g : Matrix.GeneralLinearGroup
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+        Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+        Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c ^ d.1.fieldOrder := by
+  rw [frobenius_def, d.1.fieldOrder_eq_characteristic_pow]
+  exact SpStd.coe_frobenius_apply d.carrierRank _ _ _ g r c
+
+/-- **The Frobenius fixes the numbering of a simple-root subgroup and raises its parameter to the
+`q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. -/
+@[simp]
+theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.frobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+  rw [frobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints,
+    ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
+/-- **The Frobenius raises every coordinate of the split weight torus to the `q`-th power.** -/
+@[simp]
+theorem frobenius_weightTorusPoints
+    (s : Fin (d.carrierRank + 1) → d.1.Closureˣ) :
+    d.frobenius (SpStd.weightTorusPoints d.carrierRank d.1.Closure s) =
+      SpStd.weightTorusPoints d.carrierRank d.1.Closure (s ^ d.1.fieldOrder) := by
+  rw [frobenius_def, SpStd.frobenius_weightTorusPoints,
+    ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
+/-- **A point of the ambient group is fixed by the Frobenius exactly when all of its matrix entries
+lie in the field of definition.** Writing `𝔽_q` for `TauCeti.ValidLieTypeIndex.fixedField`, the copy
+of the field of `q` elements inside the algebraic closure, the fixed points of the Frobenius are the
+points of the standard symplectic carrier whose entries all lie in `𝔽_q`. -/
+-- Not `@[simp]`, as for `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff`:
+-- `TauCeti.fixedSubgroup` is `MonoidHom.eqLocus` against the identity, so `simp` rewrites its
+-- left-hand side to `d.frobenius g = g` through `MonoidHom.mem_eqLocus`, and the `simpNF` linter
+-- rejects the annotation.
+theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
+    g ∈ fixedSubgroup d.frobenius ↔
+      ∀ r c, ((g : Matrix.GeneralLinearGroup
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+        Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c ∈ d.1.fixedField := by
+  rw [mem_fixedSubgroup, frobenius_def, SpStd.frobenius_eq_self_iff]
+  simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
+    d.1.fieldOrder_eq_characteristic_pow]
 
 end
 

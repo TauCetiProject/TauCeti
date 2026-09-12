@@ -113,8 +113,7 @@ theorem IsRationalRep.exists_forall_diagGL_eq_sum_smul (h : IsRationalRep ρ) :
     fun l hl ↦ Finset.mem_biUnion.mpr ⟨(i, j), Finset.mem_univ _, hl⟩
   have hleft : LinearMap.toMatrix b b (ρ (diagGL t)) i j
       = ∑ l ∈ Finset.univ.biUnion fun q ↦ (c q).support, c (i, j) l * weightCharHom ℂ l t := by
-    rw [← congrFun (hc (i, j)) t, Finsupp.sum]
-    rw [Finset.sum_apply]
+    rw [← congrFun (hc (i, j)) t, Finsupp.sum, Finset.sum_apply]
     refine Finset.sum_subset hsub fun l _ hl ↦ ?_
     rw [Finsupp.notMem_support_iff.mp hl, zero_smul, Pi.zero_apply]
   rw [hleft, Matrix.sum_apply]

@@ -16,8 +16,18 @@ This file provides reusable infrastructure for direct sums of submodules.  The g
 `DirectSum.piInclusion`, `DirectSum.piSubmodule`, and `DirectSum.piSubmoduleEquiv` declarations
 describe their componentwise inclusion and range, while `DirectSum.isInternal_of_lof` gives a
 criterion for proving that a family of submodules is an internal direct sum by identifying its
-summands with the components of a linear equivalence.  The file also specializes the compactness
-bound `TauCeti.finite_ne_bot_of_iSupIndep_of_isCompactElement` to submodules,
+summands with the components of a linear equivalence.
+
+A second group of declarations restricts a decomposition along a linear map.
+`DirectSum.map_decompose_shift` says that a map carrying each summand of one decomposition into a
+summand of another, along an injective reindexing of the degrees, commutes with the homogeneous
+projections, while `DirectSum.isInternal_comap` and
+`DirectSum.Decomposition.restrict` transport a decomposition backwards along an injective linear
+map whose range contains the homogeneous projections of its elements, with
+`DirectSum.map_decompose_restrict` computing the projections of the restricted decomposition.
+
+The file also specializes the compactness bound
+`TauCeti.finite_ne_bot_of_iSupIndep_of_isCompactElement` to submodules,
 `TauCeti.Submodule.finite_ne_bot_of_iSupIndep_of_fg`.
 -/
 
@@ -112,6 +122,96 @@ theorem DirectSum.lof_mem_piSubmodule {R ι : Type*} {M : ι → Type*} [Semirin
     DirectSum.lof R ι M i x ∈ TauCeti.DirectSum.piSubmodule N := by
   refine ⟨DirectSum.lof R ι (fun i ↦ N i) i x, ?_⟩
   exact TauCeti.DirectSum.piInclusion_lof N i x
+
+/-- Restrict an internal direct sum decomposition along an injective linear map `f` which detects
+membership in the summands and whose range contains every homogeneous projection of each of its
+elements: the summands `𝓝` pulled back from `ℳ` are again an internal direct sum. -/
+theorem DirectSum.isInternal_comap {R ι M N : Type*} [Semiring R]
+    [DecidableEq ι] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] (𝓝 : ι → Submodule R N)
+    (f : N →ₗ[R] M) (hf : Function.Injective f)
+    (hmem : ∀ i x, x ∈ 𝓝 i ↔ f x ∈ ℳ i)
+    (hproj : ∀ i x, (DirectSum.decompose ℳ (f x) i : M) ∈ LinearMap.range f) :
+    DirectSum.IsInternal 𝓝 := by
+  classical
+  let φ : ∀ i, 𝓝 i →ₗ[R] ℳ i := fun i ↦
+    (f.comp (𝓝 i).subtype).codRestrict (ℳ i) fun x ↦ (hmem i x).mp x.2
+  have hφ : ∀ (i : ι) (x : 𝓝 i), (φ i x : M) = f x := fun _ _ ↦ rfl
+  have hΦinj : Function.Injective (DirectSum.lmap φ) :=
+    (DirectSum.lmap_injective φ).mpr fun i x y hxy ↦
+      Subtype.ext (hf (by rw [← hφ i x, ← hφ i y, hxy]))
+  have hcoe : ∀ y : ⨁ i, 𝓝 i, f (DirectSum.coeAddMonoidHom 𝓝 y) =
+      DirectSum.coeAddMonoidHom ℳ (DirectSum.lmap φ y) := by
+    intro y
+    induction y using DirectSum.induction_on with
+    | zero => simp
+    | of i x =>
+      simp only [DirectSum.lmap_of, DirectSum.coeAddMonoidHom_of]
+      exact hφ i x
+    | add y z hy hz => simp [hy, hz]
+  have hsurj : ∀ x : N, ∃ y : ⨁ i, 𝓝 i,
+      DirectSum.lmap φ y = DirectSum.decompose ℳ (f x) := by
+    intro x
+    have hmemrange : DirectSum.decompose ℳ (f x) ∈ LinearMap.range (DirectSum.lmap φ) := by
+      rw [← DirectSum.sum_support_of (DirectSum.decompose ℳ (f x))]
+      refine Submodule.sum_mem _ fun i _ ↦ ?_
+      obtain ⟨n, hn⟩ := hproj i x
+      have hn' : n ∈ 𝓝 i := (hmem i n).mpr (by rw [hn]; exact SetLike.coe_mem _)
+      refine ⟨DirectSum.of (fun i ↦ 𝓝 i) i ⟨n, hn'⟩, ?_⟩
+      rw [DirectSum.lmap_of]
+      exact congrArg _ (Subtype.ext hn)
+    exact hmemrange
+  refine ⟨fun y z hyz ↦ hΦinj ((DirectSum.Decomposition.isInternal ℳ).injective ?_), fun x ↦ ?_⟩
+  · rw [← hcoe, ← hcoe, hyz]
+  · obtain ⟨y, hy⟩ := hsurj x
+    refine ⟨y, hf ?_⟩
+    rw [hcoe, hy]
+    simpa using DirectSum.Decomposition.left_inv (ℳ := ℳ) (f x)
+
+/-- Restrict an internal decomposition along an injective linear map whose range contains every
+homogeneous projection of each of its elements. -/
+@[instance_reducible]
+noncomputable def DirectSum.Decomposition.restrict {R ι M N : Type*} [Semiring R]
+    [DecidableEq ι] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] (𝓝 : ι → Submodule R N)
+    (f : N →ₗ[R] M) (hf : Function.Injective f) (hmem : ∀ i x, x ∈ 𝓝 i ↔ f x ∈ ℳ i)
+    (hproj : ∀ i x, (DirectSum.decompose ℳ (f x) i : M) ∈ LinearMap.range f) :
+    DirectSum.Decomposition 𝓝 :=
+  (DirectSum.isInternal_comap ℳ 𝓝 f hf hmem hproj).chooseDecomposition
+
+/-- A linear map which carries the degree-`i` summand of one internal decomposition into the
+degree-`σ i` summand of another, along an injective reindexing `σ` of the degrees, commutes with
+the homogeneous projections. -/
+theorem DirectSum.map_decompose_shift {R ι κ M N : Type*} [Semiring R]
+    [DecidableEq ι] [DecidableEq κ] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] (𝓝 : κ → Submodule R N)
+    [DirectSum.Decomposition 𝓝] (f : M →ₗ[R] N) (σ : ι → κ) (hσ : Function.Injective σ)
+    (hf : ∀ (i : ι) (x : M), x ∈ ℳ i → f x ∈ 𝓝 (σ i)) (i : ι) (x : M) :
+    f (DirectSum.decompose ℳ x i : M) = (DirectSum.decompose 𝓝 (f x) (σ i) : N) := by
+  induction x using DirectSum.Decomposition.inductionOn ℳ with
+  | zero => simp
+  | @homogeneous j x =>
+    have hxM : (x : M) ∈ ℳ j := x.2
+    have hxN : f (x : M) ∈ 𝓝 (σ j) := hf j x hxM
+    by_cases hij : i = j
+    · subst hij
+      rw [DirectSum.decompose_of_mem_same ℳ hxM, DirectSum.decompose_of_mem_same 𝓝 hxN]
+    · rw [DirectSum.decompose_of_mem_ne ℳ hxM (Ne.symm hij), map_zero,
+        DirectSum.decompose_of_mem_ne 𝓝 hxN fun hc ↦ Ne.symm hij (hσ hc)]
+  | add x y hx hy => simp [hx, hy]
+
+/-- Homogeneous projection in a restricted decomposition agrees with projection in the ambient
+module. -/
+@[simp]
+theorem DirectSum.map_decompose_restrict {R ι M N : Type*} [Semiring R]
+    [DecidableEq ι] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] (𝓝 : ι → Submodule R N)
+    [DirectSum.Decomposition 𝓝] (f : N →ₗ[R] M) (hmem : ∀ i x, x ∈ 𝓝 i ↔ f x ∈ ℳ i)
+    (i : ι) (x : N) :
+    f (DirectSum.decompose 𝓝 x i : N) =
+      (DirectSum.decompose ℳ (f x) i : M) :=
+  DirectSum.map_decompose_shift 𝓝 ℳ f id Function.injective_id
+    (fun i x hx ↦ (hmem i x).mp hx) i x
 
 -- The inverse congruence is definitionally the direct sum of the componentwise inverses; this
 -- helper exposes that computation through the `DirectSum.lmap` API.

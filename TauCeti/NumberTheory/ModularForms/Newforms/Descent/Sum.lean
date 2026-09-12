@@ -14,11 +14,12 @@ import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Units
 /-!
 # The descent slash sum is `Γ₀(N / p)`-invariant
 
-`Newforms/Descent/Action.lean` shows that, at a prime `p` with `p² ∣ N`, right multiplication by
-`γ ∈ Γ₀(N / p)` permutes the family `descendMatrix p N` up to `Γ₀(N)`. This file draws the
-consequence that the descent consumes: if `f` transforms under `Γ₀(N)` by a scalar, the sum of
-the slashes of `f` along the family transforms under `Γ₀(N / p)` by that scalar; in particular
-the sum is `Γ₀(N / p)`-invariant whenever `f` is `Γ₀(N)`-invariant.
+`Newforms/Descent/Action.lean` shows that, at a prime `p ∣ N`, right multiplication by
+`γ ∈ Γ₀(N / p)` permutes the family `descendMatrix p N` up to `Γ₀(N)` — by `descendShift` when
+`p² ∣ N`, by `descendIndexShift` when `p` exactly divides `N`. This file draws the consequence
+that the descent consumes: if `f` transforms under `Γ₀(N)` by a scalar, the sum of the slashes of
+`f` along the family transforms under `Γ₀(N / p)` by that scalar; in particular the sum is
+`Γ₀(N / p)`-invariant whenever `f` is `Γ₀(N)`-invariant.
 
 ## Main definitions
 
@@ -26,7 +27,8 @@ the sum is `Γ₀(N / p)`-invariant whenever `f` is `Γ₀(N)`-invariant.
 
 ## Main results
 
-* `TauCeti.descendSlash_zero`, `TauCeti.descendSlash_add`, `TauCeti.descendSlash_smul`:
+* `TauCeti.descendSlash_zero`, `TauCeti.descendSlash_add`, `TauCeti.descendSlash_smul`,
+  `TauCeti.descendSlash_finsetSum`:
   `f ↦ descendSlash k p N f` is linear.
 * `TauCeti.descendSlash_slash_mapGL_of_mem_Gamma0`: for `p² ∣ N` and `γ ∈ Γ₀(N / p)`, if
   `f ∣[k] δ = u • f` for every `δ ∈ Γ₀(N)` with the lower-right entry of `γ` modulo `N / p`, then
@@ -37,12 +39,17 @@ the sum is `Γ₀(N / p)`-invariant whenever `f` is `Γ₀(N)`-invariant.
 * `TauCeti.descendSlash_slash_mapGL_of_nebentypus`: if `f` transforms under `Γ₀(N)` by `χ`, and
   `χ` is the pull-back of `χ₀` modulo `N / p`, then `descendSlash k p N f` transforms under
   `Γ₀(N / p)` by `χ₀` — the descent lowers the level of the nebentypus.
+* `TauCeti.descendSlash_slash_mapGL_of_mem_Gamma0_of_prime`,
+  `TauCeti.descendSlash_slash_mapGL_eq_self_of_mem_Gamma0_of_prime`,
+  `TauCeti.descendSlash_slash_mapGL_of_nebentypus_of_prime`: the three statements at every prime
+  `p ∣ N`, the `p² ∣ N` case above and the `p ∥ N` case (a private lemma, with the family
+  permuted by `descendIndexShift`) combined.
 
 ## Scope
 
-Only the `p² ∣ N` case. The behaviour at cusps is not claimed.
+The behaviour at cusps is not claimed; it is `Newforms/Descent/Cusps.lean`.
 
-Corresponds to the `p² ∣ N` case of `miyake_hecke_descend_char` in the AINTLIB
+Corresponds to `miyake_hecke_descend_char` in the AINTLIB
 `LeanModularForms` project (`LeanModularForms/StrongMultiplicityOne/HeckeDescent.lean`,
 Chris Birkbeck, commit `2baa76f742bdb4fb8ee323fabba41203bd390e08`, Apache-2.0,
 <https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>).
@@ -52,7 +59,7 @@ public section
 
 open CongruenceSubgroup HeckeRing.GL2 Matrix Matrix.SpecialLinearGroup UpperHalfPlane
 
-open scoped MatrixGroups ModularForm
+open scoped Manifold MatrixGroups ModularForm
 
 namespace TauCeti
 
@@ -72,6 +79,12 @@ lemma descendSlash_apply (k : ℤ) (p N : ℕ) [NeZero p] (f : ℍ → ℂ) (τ 
     descendSlash k p N f τ
       = ∑ v : Fin (descendMatrixCount p N), (f ∣[k] descendMatrix p N v) τ := by
   rw [descendSlash_def, Finset.sum_apply]
+
+/-- The descent slash sum of a holomorphic function is holomorphic: each slash is. -/
+theorem mdifferentiable_descendSlash (k : ℤ) (p N : ℕ) [NeZero p] {f : ℍ → ℂ}
+    (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (descendSlash k p N f) := by
+  rw [descendSlash_def]
+  exact MDifferentiable.sum fun v _ ↦ hf.slash k _
 
 /-- The descent slash sum sends the zero function to zero. -/
 @[simp] lemma descendSlash_zero (k : ℤ) (p N : ℕ) [NeZero p] : descendSlash k p N 0 = 0 := by
@@ -94,6 +107,16 @@ positive determinant (`descendMatrix_det_pos`). -/
   rw [descendSlash_def, descendSlash_def, Finset.smul_sum]
   exact Finset.sum_congr rfl fun v _ ↦
     ModularForm.smul_slash_of_det_pos k (descendMatrix_det_pos p N v) f c
+
+/-- **The descent slash sum commutes with a finite sum**, the `Finset.sum` form of
+`descendSlash_add` and `descendSlash_zero`. -/
+@[simp] lemma descendSlash_finsetSum (k : ℤ) (p N : ℕ) [NeZero p] {ι : Type*} (s : Finset ι)
+    (f : ι → ℍ → ℂ) :
+    descendSlash k p N (∑ i ∈ s, f i) = ∑ i ∈ s, descendSlash k p N (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp only [Finset.sum_empty, descendSlash_zero]
+  | insert a s ha ih => rw [Finset.sum_insert ha, Finset.sum_insert ha, descendSlash_add, ih]
 
 /-- **The descent slash sum is `Γ₀(N / p)`-equivariant at `p² ∣ N`.** If `f ∣[k] δ = u • f` for
 every `δ ∈ Γ₀(N)` with the same lower-right entry modulo `N / p` as `γ ∈ Γ₀(N / p)`, then
@@ -152,6 +175,76 @@ theorem descendSlash_slash_mapGL_of_nebentypus (k : ℤ) [NeZero p] (hpsq : p ^ 
   apply descendSlash_slash_mapGL_of_mem_Gamma0 k hpsq γ.2
   intro δ hδ hd
   have hdvd : N / p ∣ N := Nat.div_dvd_of_dvd ((dvd_pow_self p two_ne_zero).trans hpsq)
+  have hmap : ZMod.unitsMap hdvd ((Gamma0Map N).toHomUnits ⟨δ, hδ⟩) =
+      (Gamma0Map (N / p)).toHomUnits γ := by
+    rw [← Gamma0Map_toHomUnits_of_dvd hdvd ⟨δ, hδ⟩ (Gamma0_le_Gamma0_of_dvd hdvd hδ)]
+    exact Units.ext hd
+  rw [hf ⟨δ, hδ⟩, hcomp, MonoidHom.comp_apply, hmap]
+
+/-- The `p ∥ N` case of `descendSlash_slash_mapGL_of_mem_Gamma0_of_prime`, with the family
+permuted by `descendIndexShift` (`exists_mem_Gamma0_descendMatrix_mul_of_not_sq_dvd`). -/
+private theorem descendSlash_slash_mapGL_of_mem_Gamma0_of_not_sq_dvd (k : ℤ) (hp : p.Prime)
+    (hpN : p ∣ N) (hpsq : ¬ p ^ 2 ∣ N) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 (N / p)) {α : Type*}
+    [DistribSMul α ℂ] [IsScalarTower α ℂ ℂ] {f : ℍ → ℂ} {u : α}
+    (hf : ∀ δ ∈ Gamma0 N, ((δ 1 1 : ℤ) : ZMod (N / p)) = ((γ 1 1 : ℤ) : ZMod (N / p)) →
+      f ∣[k] (mapGL ℝ δ : GL (Fin 2) ℝ) = u • f) :
+    haveI : NeZero p := ⟨hp.ne_zero⟩
+    descendSlash k p N f ∣[k] (mapGL ℝ γ : GL (Fin 2) ℝ) = u • descendSlash k p N f := by
+  have : NeZero p := ⟨hp.ne_zero⟩
+  have : Fact p.Prime := ⟨hp⟩
+  rw [descendSlash_def, SlashAction.sum_slash, Finset.smul_sum]
+  have key : ∀ v : Fin (descendMatrixCount p N),
+      (f ∣[k] descendMatrix p N v) ∣[k] (mapGL ℝ γ : GL (Fin 2) ℝ)
+        = u • (f ∣[k] descendMatrix p N (descendIndexShift p N hpsq γ v)) := fun v ↦ by
+    obtain ⟨α, hα, hd, hmul⟩ := exists_mem_Gamma0_descendMatrix_mul_of_not_sq_dvd hpN hpsq hγ v
+    rw [← SlashAction.slash_mul, hmul, SlashAction.slash_mul, hf α hα hd,
+      ModularForm.smul_slash_of_det_pos k (descendMatrix_det_pos p N _) f u]
+  rw [Finset.sum_congr rfl fun v _ ↦ key v]
+  exact Fintype.sum_bijective (descendIndexShift p N hpsq γ) (descendIndexShift_bijective hpsq γ)
+    (fun v ↦ u • (f ∣[k] descendMatrix p N (descendIndexShift p N hpsq γ v)))
+    (fun v ↦ u • (f ∣[k] descendMatrix p N v)) fun _ ↦ rfl
+
+/-- **The descent slash sum is `Γ₀(N / p)`-equivariant at every prime `p ∣ N`**: the case
+`p² ∣ N` is `descendSlash_slash_mapGL_of_mem_Gamma0`; when `p` exactly divides `N` the family is
+permuted by `descendIndexShift` instead. -/
+theorem descendSlash_slash_mapGL_of_mem_Gamma0_of_prime (k : ℤ) (hp : p.Prime) (hpN : p ∣ N)
+    {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 (N / p)) {α : Type*} [DistribSMul α ℂ] [IsScalarTower α ℂ ℂ]
+    {f : ℍ → ℂ} {u : α}
+    (hf : ∀ δ ∈ Gamma0 N, ((δ 1 1 : ℤ) : ZMod (N / p)) = ((γ 1 1 : ℤ) : ZMod (N / p)) →
+      f ∣[k] (mapGL ℝ δ : GL (Fin 2) ℝ) = u • f) :
+    haveI : NeZero p := ⟨hp.ne_zero⟩
+    descendSlash k p N f ∣[k] (mapGL ℝ γ : GL (Fin 2) ℝ) = u • descendSlash k p N f := by
+  have : NeZero p := ⟨hp.ne_zero⟩
+  by_cases hpsq : p ^ 2 ∣ N
+  · exact descendSlash_slash_mapGL_of_mem_Gamma0 k hpsq hγ hf
+  · exact descendSlash_slash_mapGL_of_mem_Gamma0_of_not_sq_dvd k hp hpN hpsq hγ hf
+
+/-- **The descent slash sum is `Γ₀(N / p)`-invariant at every prime `p ∣ N`**: the case `u = 1`
+of `descendSlash_slash_mapGL_of_mem_Gamma0_of_prime`. -/
+theorem descendSlash_slash_mapGL_eq_self_of_mem_Gamma0_of_prime (k : ℤ) (hp : p.Prime)
+    (hpN : p ∣ N) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 (N / p)) {f : ℍ → ℂ}
+    (hf : ∀ δ ∈ Gamma0 N, f ∣[k] (mapGL ℝ δ : GL (Fin 2) ℝ) = f) :
+    haveI : NeZero p := ⟨hp.ne_zero⟩
+    descendSlash k p N f ∣[k] (mapGL ℝ γ : GL (Fin 2) ℝ) = descendSlash k p N f := by
+  have : NeZero p := ⟨hp.ne_zero⟩
+  simpa using descendSlash_slash_mapGL_of_mem_Gamma0_of_prime k hp hpN hγ (u := (1 : ℂ))
+    fun δ hδ _ ↦ by rw [hf δ hδ, one_smul]
+
+/-- **The descent sum lowers the level of the nebentypus at every prime `p ∣ N`**: the every-prime
+form of `descendSlash_slash_mapGL_of_nebentypus`. -/
+theorem descendSlash_slash_mapGL_of_nebentypus_of_prime (k : ℤ) (hp : p.Prime) (hpN : p ∣ N)
+    {χ : (ZMod N)ˣ →* ℂˣ} {χ₀ : (ZMod (N / p))ˣ →* ℂˣ}
+    (hcomp : χ = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN))) (γ : ↥(Gamma0 (N / p)))
+    {f : ℍ → ℂ}
+    (hf : ∀ δ : ↥(Gamma0 N), f ∣[k] (mapGL ℝ (δ : SL(2, ℤ)) : GL (Fin 2) ℝ)
+      = (↑(χ ((Gamma0Map N).toHomUnits δ)) : ℂ) • f) :
+    haveI : NeZero p := ⟨hp.ne_zero⟩
+    descendSlash k p N f ∣[k] (mapGL ℝ (γ : SL(2, ℤ)) : GL (Fin 2) ℝ)
+      = (↑(χ₀ ((Gamma0Map (N / p)).toHomUnits γ)) : ℂ) • descendSlash k p N f := by
+  have : NeZero p := ⟨hp.ne_zero⟩
+  apply descendSlash_slash_mapGL_of_mem_Gamma0_of_prime k hp hpN γ.2
+  intro δ hδ hd
+  have hdvd : N / p ∣ N := Nat.div_dvd_of_dvd hpN
   have hmap : ZMod.unitsMap hdvd ((Gamma0Map N).toHomUnits ⟨δ, hδ⟩) =
       (Gamma0Map (N / p)).toHomUnits γ := by
     rw [← Gamma0Map_toHomUnits_of_dvd hdvd ⟨δ, hδ⟩ (Gamma0_le_Gamma0_of_dvd hdvd hδ)]

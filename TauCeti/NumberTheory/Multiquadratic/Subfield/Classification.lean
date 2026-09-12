@@ -14,9 +14,9 @@ public import TauCeti.NumberTheory.Multiquadratic.Subfield.Count
 /-!
 # The quadratic subfields are exactly the subset-product subfields
 
-For square roots `root i` of radicands `d i ∈ K` over a field `K` with `2 ≠ 0`, the nonempty
-subset products `∏_{i ∈ S} root i` generate quadratic subfields of the multiquadratic field
-`M = K(rootᵢ : i)`, and under square-class independence distinct nonempty subsets give distinct
+For square roots `root i` of radicands `d i ∈ K` over a field `K`, the nonempty subset products
+`∏_{i ∈ S} root i` generate quadratic subfields of the multiquadratic field `M = K(rootᵢ : i)`,
+and when `2 ≠ 0`, under square-class independence, distinct nonempty subsets give distinct
 subfields (`TauCeti.NumberTheory.Multiquadratic.Quadratic.Subfield`). Separately, `M` has exactly
 `2ⁿ - 1` quadratic subfields (`TauCeti.NumberTheory.Multiquadratic.Subfield.Count`). Since the
 nonempty subsets of an `n`-element index type also number `2ⁿ - 1`, the injective subset-product
@@ -79,7 +79,7 @@ theorem prodRootMem_sq (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) (S : F
 /-- **A nonempty subset-product subfield of `M` is quadratic.** Computed inside `M`, the simple
 extension `K(∏_{i ∈ S} root i)` has the same degree as its `L`-level counterpart, which is `2`
 when the radicand product `∏_{i ∈ S} d i` is not a square. -/
-theorem finrank_adjoin_prodRootMem [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+theorem finrank_adjoin_prodRootMem (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     {S : Finset ι} (hSsq : ¬ IsSquare (∏ i ∈ S, d i)) :
     Module.finrank K (adjoin K {prodRootMem (K := K) root S}) = 2 := by
   -- Transport the degree across the `M`-into-`L` lift algebra equivalence.
@@ -93,15 +93,15 @@ variable (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
 /-- **The subset-product quadratic subfield of `M` attached to a nonempty subset.** Under
 square-class independence, each nonempty subset `S` of the index type names the quadratic subfield
 `K(∏_{i ∈ S} root i)` of `M = K(rootᵢ : i)`. -/
-@[expose] def quadraticSubfieldOfFinset [NeZero (2 : K)] (S : {S : Finset ι // S.Nonempty}) :
+def quadraticSubfieldOfFinset (S : {S : Finset ι // S.Nonempty}) :
     {F : IntermediateField K (adjoin K (Set.range root)) // Module.finrank K F = 2} :=
   ⟨adjoin K {prodRootMem (K := K) root S.1}, finrank_adjoin_prodRootMem hroot (hindep S.1 S.2)⟩
 
 /-- The subfield underlying `quadraticSubfieldOfFinset hroot hindep S` is
 `K(∏_{i ∈ S} root i)`. -/
-@[simp] theorem quadraticSubfieldOfFinset_val [NeZero (2 : K)] (S : {S : Finset ι // S.Nonempty}) :
+@[simp] theorem quadraticSubfieldOfFinset_val (S : {S : Finset ι // S.Nonempty}) :
     (quadraticSubfieldOfFinset hroot hindep S : IntermediateField K (adjoin K (Set.range root)))
-      = adjoin K {prodRootMem (K := K) root S.1} := rfl
+      = adjoin K {prodRootMem (K := K) root S.1} := (rfl)
 
 include hroot hindep in
 /-- **Distinct nonempty subsets give distinct quadratic subfields.** The subset-product assignment

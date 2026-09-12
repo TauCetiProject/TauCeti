@@ -183,7 +183,7 @@ variable {M₁ : Type*} {M₂ : Type*} [AddCommMonoid M₁] [Module R M₁] [Add
 
 /-- Conjugation by an isometric equivalence carries `O(Q₁)` onto `O(Q₂)`. -/
 private theorem map_orthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
-    (orthogonalGroup Q₁).map (LinearEquiv.congrAut e.toLinearEquiv : _ →* _)
+    (orthogonalGroup Q₁).map (LinearEquiv.autCongr e.toLinearEquiv : _ →* _)
       = orthogonalGroup Q₂ := by
   have key : ∀ x : M₁, Q₂ (e.toLinearEquiv x) = Q₁ x := e.map_app
   have key' : ∀ x : M₂, Q₁ (e.toLinearEquiv.symm x) = Q₂ x := fun x => by
@@ -192,10 +192,10 @@ private theorem map_orthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
   simp only [Subgroup.mem_map, MonoidHom.coe_coe, mem_orthogonalGroup_iff]
   constructor
   · rintro ⟨f, hf, rfl⟩ m
-    rw [LinearEquiv.congrAut_apply, key, hf, key']
-  · refine fun hg => ⟨(LinearEquiv.congrAut e.toLinearEquiv).symm g, fun m => ?_,
-      (LinearEquiv.congrAut e.toLinearEquiv).apply_symm_apply g⟩
-    rw [LinearEquiv.congrAut_symm_apply, key', hg, key]
+    rw [LinearEquiv.autCongr_apply_apply, key, hf, key']
+  · refine fun hg => ⟨(LinearEquiv.autCongr e.toLinearEquiv).symm g, fun m => ?_,
+      (LinearEquiv.autCongr e.toLinearEquiv).apply_symm_apply g⟩
+    rw [LinearEquiv.autCongr_symm_apply_apply, key', hg, key]
 
 /-- Isometric quadratic maps have isomorphic orthogonal groups: conjugation by an isometric
 equivalence `e : Q₁ ≃qᵢ Q₂` carries `O(Q₁)` onto `O(Q₂)`.
@@ -204,20 +204,20 @@ Over an algebraically closed field every nondegenerate quadratic form of a given
 to every other, so this is what makes `O(Q)` depend on the rank alone. -/
 def orthogonalGroupCongr (e : Q₁.IsometryEquiv Q₂) :
     orthogonalGroup Q₁ ≃* orthogonalGroup Q₂ :=
-  ((LinearEquiv.congrAut e.toLinearEquiv).subgroupMap _).trans
+  ((LinearEquiv.autCongr e.toLinearEquiv).subgroupMap _).trans
     (MulEquiv.subgroupCongr (map_orthogonalGroup e))
 
 @[simp]
 theorem coe_orthogonalGroupCongr_apply (e : Q₁.IsometryEquiv Q₂) (f : orthogonalGroup Q₁) (m : M₂) :
     (orthogonalGroupCongr e f : M₂ ≃ₗ[R] M₂) m
       = e.toLinearEquiv ((f : M₁ ≃ₗ[R] M₁) (e.toLinearEquiv.symm m)) := by
-  simp [orthogonalGroupCongr, LinearEquiv.congrAut_apply]
+  simp [orthogonalGroupCongr, LinearEquiv.autCongr_apply_apply]
 
 @[simp]
 theorem coe_orthogonalGroupCongr_symm_apply (e : Q₁.IsometryEquiv Q₂) (g : orthogonalGroup Q₂)
     (m : M₁) : ((orthogonalGroupCongr e).symm g : M₁ ≃ₗ[R] M₁) m
       = e.toLinearEquiv.symm ((g : M₂ ≃ₗ[R] M₂) (e.toLinearEquiv m)) := by
-  simp [orthogonalGroupCongr, LinearEquiv.congrAut_symm_apply]
+  simp [orthogonalGroupCongr, LinearEquiv.autCongr_symm_apply_apply]
 
 end Congr
 
@@ -310,7 +310,7 @@ variable {M₁ : Type*} {M₂ : Type*} [AddCommGroup M₁] [Module R M₁]
 
 /-- Conjugation by an isometric equivalence carries `SO(Q₁)` onto `SO(Q₂)`. -/
 private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
-    (specialOrthogonalGroup Q₁).map (LinearEquiv.congrAut e.toLinearEquiv : _ →* _) =
+    (specialOrthogonalGroup Q₁).map (LinearEquiv.autCongr e.toLinearEquiv : _ →* _) =
       specialOrthogonalGroup Q₂ := by
   ext g
   simp only [Subgroup.mem_map, MonoidHom.coe_coe, mem_specialOrthogonalGroup_iff]
@@ -318,22 +318,16 @@ private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
   · rintro ⟨f, hf, rfl⟩
     constructor
     · exact (orthogonalGroupCongr e ⟨f, hf.1⟩).2
-    · -- Restate `congrAut` through Mathlib's special-linear congruence.
-      rw [show (LinearEquiv.congrAut e.toLinearEquiv) f =
-          (e.toLinearEquiv.symm.trans f).trans e.toLinearEquiv by
-        ext m
-        exact LinearEquiv.congrAut_apply e.toLinearEquiv f m]
+    · -- Restate `autCongr` through Mathlib's special-linear congruence.
+      rw [LinearEquiv.autCongr_apply]
       exact (SpecialLinearGroup.congr_linearEquiv e.toLinearEquiv ⟨f, hf.2⟩).prop
   · intro hg
-    refine ⟨(LinearEquiv.congrAut e.toLinearEquiv).symm g, ?_,
-      (LinearEquiv.congrAut e.toLinearEquiv).apply_symm_apply g⟩
+    refine ⟨(LinearEquiv.autCongr e.toLinearEquiv).symm g, ?_,
+      (LinearEquiv.autCongr e.toLinearEquiv).apply_symm_apply g⟩
     constructor
     · exact ((orthogonalGroupCongr e).symm ⟨g, hg.1⟩).2
-    · -- Restate inverse `congrAut` through Mathlib's special-linear congruence.
-      rw [show (LinearEquiv.congrAut e.toLinearEquiv).symm g =
-          (e.toLinearEquiv.trans g).trans e.toLinearEquiv.symm by
-        ext m
-        exact LinearEquiv.congrAut_symm_apply e.toLinearEquiv g m]
+    · -- Restate inverse `autCongr` through Mathlib's special-linear congruence.
+      rw [LinearEquiv.autCongr_symm_apply]
       exact (SpecialLinearGroup.congr_linearEquiv e.toLinearEquiv.symm ⟨g, hg.2⟩).prop
 
 /-- Isometric quadratic maps have isomorphic special orthogonal groups: conjugation by an
@@ -341,7 +335,7 @@ isometric equivalence `e : Q₁ ≃qᵢ Q₂` carries `SO(Q₁)` onto `SO(Q₂)`
 noncomputable def _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr
     (e : Q₁.IsometryEquiv Q₂) :
     specialOrthogonalGroup Q₁ ≃* specialOrthogonalGroup Q₂ :=
-  Subgroup.congrOfMapEq (LinearEquiv.congrAut e.toLinearEquiv)
+  Subgroup.congrOfMapEq (LinearEquiv.autCongr e.toLinearEquiv)
     (map_specialOrthogonalGroup e)
 
 /-- Evaluating special-orthogonal transport is conjugation by the isometry `e`. -/
@@ -352,7 +346,7 @@ theorem _root_.QuadraticMap.IsometryEquiv.coe_specialOrthogonalGroupCongr_apply
       e ((f : M₁ ≃ₗ[R] M₁) (e.symm m)) := by
   simp only [QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr,
     Subgroup.coe_congrOfMapEq_apply,
-    LinearEquiv.congrAut_apply]
+    LinearEquiv.autCongr_apply_apply]
   rfl
 
 /-- Evaluating inverse special-orthogonal transport is conjugation by the inverse isometry
@@ -364,7 +358,7 @@ theorem _root_.QuadraticMap.IsometryEquiv.coe_specialOrthogonalGroupCongr_symm_a
       e.symm ((g : M₂ ≃ₗ[R] M₂) (e m)) := by
   simp only [QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr,
     Subgroup.coe_congrOfMapEq_symm_apply,
-    LinearEquiv.congrAut_symm_apply]
+    LinearEquiv.autCongr_symm_apply_apply]
   rfl
 
 end SpecialCongr

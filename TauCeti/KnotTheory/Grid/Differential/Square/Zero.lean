@@ -31,7 +31,8 @@ in characteristic two the two terms of a pair cancel.
 Specializing carries the square-zero identity to the two blocked theories as well. Setting one
 `V_i` to zero gives the simply blocked map, and specialization intertwines the two differentials.
 Setting every `V_i` to zero — that is, taking constant terms — gives the fully blocked
-differential of `Complex.lean`, whose rectangles must avoid the `O`-markings as well:
+differential `TauCeti.GridDiagram.fullyBlockedDifferential`, whose rectangles must avoid the
+`O`-markings as well:
 `GridDiagram.fullyBlockedRectangleCount_eq_constantCoeff` identifies its matrix coefficients with
 the constant terms of `∂⁻` over `ZMod 2`.
 
@@ -168,7 +169,8 @@ theorem fullyBlockedDecompositionCount_eq_zero (x z : GridState n) :
   rw [G.fullyBlockedDecompositionCount_eq_sum x z, Finset.sum_congr rfl fun y _ => hterm y,
     ← map_sum, G.sum_unblockedCoefficient_mul_unblockedCoefficient_eq_zero (ZMod 2) x z, map_zero]
 
-/-- The fully blocked grid differential of `Complex.lean` squares to zero. -/
+/-- The fully blocked grid differential `TauCeti.GridDiagram.fullyBlockedDifferential` squares to
+zero. -/
 theorem fullyBlockedDifferential_comp_self_eq_zero :
     G.fullyBlockedDifferential.comp G.fullyBlockedDifferential = 0 :=
   G.fullyBlockedDifferential_comp_self_eq_zero_iff_decompositionCount.mpr

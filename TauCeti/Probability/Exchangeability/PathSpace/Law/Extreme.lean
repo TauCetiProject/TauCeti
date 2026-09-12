@@ -101,9 +101,9 @@ theorem ergodic_shift_infinitePi_const (P : ProbabilityMeasure α) :
   · exact Or.inr (ae_iff.mpr (by simpa using hzero))
   · exact Or.inl ((_root_.MeasureTheory.mem_ae_iff_prob_eq_one hs).2 hone)
 
-private theorem cond_eq_of_extreme_iidMixture [StandardBorelSpace α]
+private theorem cond_eq_of_extreme_iidMixture
     {p : Measure (ProbabilityMeasure α)} [IsProbabilityMeasure p]
-    {ρ : Measure (ℕ → α)} [IsProbabilityMeasure ρ]
+    {ρ : Measure (ℕ → α)}
     (hρ : ρ ∈ extremePoints ℝ≥0∞
       {ν : Measure (ℕ → α) | ExchangeableLaw ν ∧ IsProbabilityMeasure ν})
     (hrepr : ρ = deFinettiBarycenter p)

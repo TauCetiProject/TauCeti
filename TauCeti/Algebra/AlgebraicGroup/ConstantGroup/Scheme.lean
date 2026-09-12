@@ -118,7 +118,7 @@ coordinate functions along `f`. -/
 theorem groupSchemeMap_hom_left {H : Type u} [Group H] [Finite H] (f : G →* H) :
     (groupSchemeMap R f).hom.hom.left =
       eqToHom (groupScheme_X_left R G) ≫
-        Spec.map (CommRingCat.ofHom (coordinateMap R G H f).toRingHom) ≫
+        Spec.map (CommRingCat.ofHom (coordinateMap R G H f)) ≫
         eqToHom (groupScheme_X_left R H).symm := by
   apply (conj_eqToHom_iff_heq _ _
     (groupScheme_X_left R G) (groupScheme_X_left R H)).2
@@ -191,7 +191,7 @@ noncomputable def groupSchemePointMulEquiv (A : Type u) [CommRing A] [Algebra R 
 theorem groupSchemePointMulEquiv_apply_left (A : Type u) [CommRing A] [Algebra R A]
     (p : WithConv (coordinateRing R G →ₐ[R] A)) :
     (groupSchemePointMulEquiv R G A p).left =
-      Spec.map (CommRingCat.ofHom p.ofConv.toRingHom) ≫
+      Spec.map (CommRingCat.ofHom p.ofConv) ≫
         eqToHom (groupScheme_X_left R G).symm := by
   exact CommHopfAlgCat.mapMulEquivOfPresentation_apply_left
     (CommHopfAlgCat.of R (coordinateRing R G)) A (groupScheme_def R G)

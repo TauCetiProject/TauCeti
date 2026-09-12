@@ -7,7 +7,7 @@ module
 
 -- `TauCeti.frobeniusFixedSubring`, its membership criterion and its behaviour under divisibility
 -- of the exponent; this module also supplies Mathlib's `iterateFrobenius`.
-public import TauCeti.Algebra.CharP.FrobeniusFixed
+public import TauCeti.Algebra.CharP.Frobenius.Fixed
 -- `TauCeti.fixedSubgroup` and `TauCeti.fixedSubgroup_eq_top_iff`.
 public import TauCeti.GroupTheory.FixedSubgroup
 -- The `GL` notation, `Matrix.GeneralLinearGroup.map` and its entrywise description.

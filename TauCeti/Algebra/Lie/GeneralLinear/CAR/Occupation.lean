@@ -34,6 +34,8 @@ off-diagonal zero-one operators used to calculate weights in the left regular CA
 * `TauCeti.carOccupationElement_mul_self`: the corresponding multiplication normal form.
 * `TauCeti.commute_carOccupationElement`: all occupation elements commute.
 * `TauCeti.glCliffordHom_single_self_eq_sum_occupation`: `Fᵢᵢ = ∑ k, pᵢₖ`.
+* `TauCeti.sum_glCliffordHom_single_self_eq_cut_occupation`: summing the diagonal lifts over a
+  subset leaves a scalar internal contribution and the occupation elements crossing its cut.
 
 ## References
 
@@ -215,6 +217,75 @@ theorem glCliffordHom_single_self_eq_sum_positive_occupation
   split_ifs with hki
   · exact eq_sub_iff_add_eq.mpr (carOccupationElement_add_swap (K := K) i k)
   · rfl
+
+private theorem sum_carOccupationElement_internal (s : Finset n) :
+    (∑ i ∈ s, ∑ j ∈ s, carOccupationElement (K := K) i j) =
+      ((s.card : K) ^ 2 / 2) • (1 : CliffordAlgebra (traceQuadraticForm K n)) := by
+  let P : CliffordAlgebra (traceQuadraticForm K n) :=
+    ∑ i ∈ s, ∑ j ∈ s, carOccupationElement (K := K) i j
+  have htranspose :
+      (∑ i ∈ s, ∑ j ∈ s, carOccupationElement (K := K) j i) = P := by
+    simp only [P]
+    rw [Finset.sum_comm]
+  have htwo : P + P =
+      (s.card : K) ^ 2 • (1 : CliffordAlgebra (traceQuadraticForm K n)) := by
+    calc
+      P + P = P + ∑ i ∈ s, ∑ j ∈ s, carOccupationElement (K := K) j i := by
+        rw [htranspose]
+      _ = ∑ i ∈ s, ∑ j ∈ s,
+          (carOccupationElement (K := K) i j + carOccupationElement (K := K) j i) := by
+        simp only [P, Finset.sum_add_distrib]
+      _ = (s.card : K) ^ 2 •
+          (1 : CliffordAlgebra (traceQuadraticForm K n)) := by
+        simp only [carOccupationElement_add_swap, Finset.sum_const, nsmul_eq_mul]
+        simp [pow_two, Algebra.smul_def]
+  calc
+    (∑ i ∈ s, ∑ j ∈ s, carOccupationElement (K := K) i j) = P := rfl
+    _ = (2 : K)⁻¹ • ((2 : K) • P) := by
+      rw [smul_smul]
+      simp
+    _ = (2 : K)⁻¹ • (P + P) := by rw [two_smul]
+    _ = (2 : K)⁻¹ •
+        ((s.card : K) ^ 2 • (1 : CliffordAlgebra (traceQuadraticForm K n))) := by rw [htwo]
+    _ = ((s.card : K) ^ 2 / 2) •
+        (1 : CliffordAlgebra (traceQuadraticForm K n)) := by
+      rw [smul_smul]
+      congr 1
+      rw [div_eq_mul_inv]
+      ring
+
+/-- Summing the diagonal normal-ordered lifts over `s` leaves the scalar contribution from pairs
+with both indices in `s`, together with the occupation elements whose first index lies in `s` and
+whose second index lies outside it. The scalar is `|s|² / 2`, including the diagonal halves. -/
+theorem sum_glCliffordHom_single_self_eq_cut_occupation (s : Finset n) :
+    (∑ i ∈ s, glCliffordHom (K := K) (n := n) (Matrix.single i i 1)) =
+      ((s.card : K) ^ 2 / 2) • (1 : CliffordAlgebra (traceQuadraticForm K n)) +
+        ∑ ij ∈ s.product (Finset.univ \ s),
+          carOccupationElement (K := K) ij.1 ij.2 := by
+  calc
+    (∑ i ∈ s, glCliffordHom (K := K) (n := n) (Matrix.single i i 1)) =
+        ∑ i ∈ s, ∑ j : n, carOccupationElement (K := K) i j := by
+      apply Finset.sum_congr rfl
+      intro i hi
+      exact glCliffordHom_single_self_eq_sum_occupation i
+    _ = ∑ i ∈ s, ((∑ j ∈ s, carOccupationElement (K := K) i j) +
+          ∑ j ∈ Finset.univ \ s, carOccupationElement (K := K) i j) := by
+      apply Finset.sum_congr rfl
+      intro i hi
+      rw [← Finset.sum_sdiff (Finset.subset_univ s), add_comm]
+    _ = (∑ i ∈ s, ∑ j ∈ s, carOccupationElement (K := K) i j) +
+          ∑ i ∈ s, ∑ j ∈ Finset.univ \ s,
+            carOccupationElement (K := K) i j := by
+      rw [Finset.sum_add_distrib]
+    _ = ((s.card : K) ^ 2 / 2) •
+          (1 : CliffordAlgebra (traceQuadraticForm K n)) +
+          ∑ i ∈ s, ∑ j ∈ Finset.univ \ s,
+            carOccupationElement (K := K) i j := by
+      rw [sum_carOccupationElement_internal]
+    _ = _ := by
+      congr 1
+      exact (Finset.sum_product s (Finset.univ \ s)
+        (fun ij => carOccupationElement (K := K) ij.1 ij.2)).symm
 
 end Diagonal
 

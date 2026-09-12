@@ -48,8 +48,7 @@ private def structureConstantFiberEquiv (Cᵢ Cⱼ : ConjClasses G) {g h : G}
   invFun p := ⟨
     (conjugateCarrierEquiv s⁻¹ Cᵢ p.1.1, conjugateCarrierEquiv s⁻¹ Cⱼ p.1.2),
     by
-      rw [conjugateCarrierEquiv_apply, conjugateCarrierEquiv_apply, conj_mul, p.2]
-      rw [← hs]
+      rw [conjugateCarrierEquiv_apply, conjugateCarrierEquiv_apply, conj_mul, p.2, ← hs]
       simp [mul_assoc]⟩
   left_inv p := by
     apply Subtype.ext

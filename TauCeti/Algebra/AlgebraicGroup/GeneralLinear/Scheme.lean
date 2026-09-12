@@ -271,7 +271,7 @@ private lemma groupScheme_inv_left_bundled :
     ι[(groupScheme R n).X].left =
       eqToHom (groupScheme_X_left R n) ≫
         Spec.map (CommRingCat.ofHom
-          (HopfAlgebra.antipodeAlgHom R (coordinateHopfAlgebra R n)).toRingHom) ≫
+          (HopfAlgebra.antipodeAlgHom R (coordinateHopfAlgebra R n))) ≫
         eqToHom (groupScheme_X_left R n).symm := by
   unfold groupScheme
   convert hopfSpec_obj_inv_left R (coordinateHopfAlgebra R n) using 1
@@ -280,7 +280,7 @@ private lemma groupScheme_inv_left_bundled :
 @[simp]
 lemma groupScheme_one_left :
     η[(groupScheme R n).X].left =
-      Spec.map (CommRingCat.ofHom (counit R n).toRingHom) ≫
+      Spec.map (CommRingCat.ofHom (counit R n)) ≫
         (groupSchemeSpecIso R n).inv := by
   rw [groupScheme_one_left_bundled, groupSchemeSpecIso]
   simp only [Iso.trans_inv, eqToIso.inv,
@@ -292,7 +292,8 @@ lemma groupScheme_one_left :
   rw [Spec.map_inj]
   rw [← CommRingCat.ofHom_comp]
   exact congrArg (fun f : coordinateHopfAlgebra R n →ₐ[R] R ↦
-    CommRingCat.ofHom f.toRingHom) (coordinateHopfAlgebra_counitAlgHom R n)
+    CommRingCat.ofHom (f : coordinateHopfAlgebra R n →+* R))
+    (coordinateHopfAlgebra_counitAlgHom R n)
 
 /-- Multiplication on the general linear group scheme is induced by the raw matrix-multiplication
 comultiplication. The source presentation fixes the tensor-factor order representing ordinary
@@ -301,7 +302,7 @@ matrix multiplication. -/
 lemma groupScheme_mul_left :
     μ[(groupScheme R n).X].left =
       (groupSchemeMulSourceIso R n).hom ≫
-        Spec.map (CommRingCat.ofHom (comul R n).toRingHom) ≫
+        Spec.map (CommRingCat.ofHom (comul R n)) ≫
         (groupSchemeSpecIso R n).inv := by
   rw [groupScheme_mul_left_bundled, groupSchemeMulSourceIso, groupSchemeSpecIso]
   simp only [Iso.trans_hom, eqToIso.hom, Functor.mapIso_hom, Iso.op_hom,
@@ -320,14 +321,16 @@ lemma groupScheme_mul_left :
   exact congrArg
     (fun f : coordinateHopfAlgebra R n →ₐ[R]
       coordinateHopfAlgebra R n ⊗[R] coordinateHopfAlgebra R n ↦
-        CommRingCat.ofHom f.toRingHom) (coordinateHopfAlgebra_comulAlgHom R n)
+        CommRingCat.ofHom (f : coordinateHopfAlgebra R n →+*
+          coordinateHopfAlgebra R n ⊗[R] coordinateHopfAlgebra R n))
+    (coordinateHopfAlgebra_comulAlgHom R n)
 
 /-- Inversion on the general linear group scheme is induced by the raw inverse-matrix antipode. -/
 @[simp]
 lemma groupScheme_inv_left :
     ι[(groupScheme R n).X].left =
       (groupSchemeSpecIso R n).hom ≫
-        Spec.map (CommRingCat.ofHom (antipode R n).toRingHom) ≫
+        Spec.map (CommRingCat.ofHom (antipode R n)) ≫
         (groupSchemeSpecIso R n).inv := by
   rw [groupScheme_inv_left_bundled, groupSchemeSpecIso]
   simp only [Iso.trans_hom, eqToIso.hom, Functor.mapIso_hom, Iso.op_hom,
@@ -342,7 +345,8 @@ lemma groupScheme_inv_left :
   rw [← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp]
   exact congrArg
     (fun f : coordinateHopfAlgebra R n →ₐ[R] coordinateHopfAlgebra R n ↦
-      CommRingCat.ofHom f.toRingHom) (coordinateHopfAlgebra_antipodeAlgHom R n)
+      CommRingCat.ofHom (f : coordinateHopfAlgebra R n →+* coordinateHopfAlgebra R n))
+    (coordinateHopfAlgebra_antipodeAlgHom R n)
 
 /-- The general linear group scheme is affine. -/
 instance isAffine_groupScheme : IsAffine (groupScheme R n).X.left := by
@@ -381,7 +385,7 @@ noncomputable def groupSchemePointMulEquiv :
 lemma groupSchemePointMulEquiv_apply_left
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     (groupSchemePointMulEquiv n A f).left =
-      Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) ≫
+      Spec.map (CommRingCat.ofHom f.ofConv) ≫
         eqToHom (groupScheme_X_left R n).symm := by
   simpa only [groupSchemePointMulEquiv] using
     CommHopfAlgCat.mapMulEquivOfPresentation_apply_left
