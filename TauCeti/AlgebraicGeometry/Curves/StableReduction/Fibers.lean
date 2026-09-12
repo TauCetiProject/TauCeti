@@ -124,17 +124,15 @@ variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
 
 /-- The chosen generic fibre of a model, included into its total space. -/
-noncomputable abbrev genericι (M : Model R K C toK) : C ⟶ M.total :=
+noncomputable def genericι (M : Model R K C toK) : C ⟶ M.total :=
   M.genericFiberIso.inv.left ≫ genericFiberι R K M.toBase
 
 /-- The inclusion of a model's chosen generic fibre lies over the fraction-field morphism. -/
 @[reassoc (attr := simp)]
 lemma genericι_toBase (M : Model R K C toK) :
-    M.genericFiberIso.inv.left ≫
-        (pullback.snd M.toBase (Spec.map (CommRingCat.ofHom (algebraMap R K))) ≫
-          Spec.map (CommRingCat.ofHom (algebraMap R K))) =
+    M.genericι ≫ M.toBase =
       toK ≫ Spec.map (CommRingCat.ofHom (algebraMap R K)) := by
-  rw [← genericFiber_hom, ← Category.assoc, Over.w]
+  rw [genericι, Category.assoc, genericFiberι_toBase, ← Category.assoc, Over.w]
   rfl
 
 /-- A model's chosen generic fibre is an open subscheme of its total space. -/
