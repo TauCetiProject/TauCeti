@@ -34,7 +34,7 @@ Lie-algebra theory.
 * `Matrix.mul_apply_diag_of_isLowerTriangular` — the corresponding formula for lower-triangular
   matrices.
 * `Matrix.IsLowerTriangular.eq_one_of_mul_transpose_self_eq_one` — a lower-triangular orthogonal
-  matrix with positive diagonal is the identity.
+  matrix with nonnegative diagonal is the identity.
 * `Matrix.IsLowerTriangular.eq_of_mul_transpose_self_eq` — lower-triangular matrices with positive
   diagonal are determined by their product with their transpose.
 * `Matrix.pow_apply_diag_of_isUpperTriangular` — the diagonal of a power of an upper-triangular
@@ -206,11 +206,11 @@ theorem mul_apply_diag_of_isLowerTriangular (hA : A.IsLowerTriangular)
     · rw [hA hik, zero_mul]
   · exact fun h ↦ absurd (Finset.mem_univ i) h
 
-/-- A lower-triangular matrix over an ordered field with positive diagonal whose product with its
-transpose is the identity is itself the identity. -/
+/-- A lower-triangular matrix over an ordered field with nonnegative diagonal whose product with
+its transpose is the identity is itself the identity. -/
 theorem IsLowerTriangular.eq_one_of_mul_transpose_self_eq_one
     {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-    {Q : Matrix n n K} (hQ : Q.IsLowerTriangular) (hQpos : ∀ i, 0 < Q i i)
+    {Q : Matrix n n K} (hQ : Q.IsLowerTriangular) (hQnonneg : ∀ i, 0 ≤ Q i i)
     (hQorth : Q * Qᵀ = 1) : Q = 1 := by
   let _ : Invertible Q := invertibleOfRightInverse Q Qᵀ hQorth
   have hQttri : Qᵀ.IsLowerTriangular := by
@@ -229,7 +229,7 @@ theorem IsLowerTriangular.eq_one_of_mul_transpose_self_eq_one
         _ = (Q * Qᵀ) i i := hmul.symm
         _ = 1 := by rw [hQorth, Matrix.one_apply_eq]
     rw [Matrix.one_apply_eq]
-    nlinarith [hQpos i]
+    nlinarith [hQnonneg i]
   · have hzero : Qᵀ j i = 0 := hQttri hij
     rw [Matrix.one_apply_ne hij.ne']
     simpa only [Matrix.transpose_apply] using hzero
@@ -271,7 +271,7 @@ theorem IsLowerTriangular.eq_of_mul_transpose_self_eq
       _ = (L⁻¹ * L) * (Lᵀ * L⁻¹ᵀ) := by simp only [Matrix.mul_assoc]
       _ = 1 := by rw [Matrix.nonsing_inv_mul L hLdet, hLinvt_right, one_mul]
   have hQone : L⁻¹ * M = 1 := by
-    exact hQtri.eq_one_of_mul_transpose_self_eq_one hQdiag hQorth
+    exact hQtri.eq_one_of_mul_transpose_self_eq_one (fun i ↦ (hQdiag i).le) hQorth
   calc
     L = L * 1 := (Matrix.mul_one L).symm
     _ = L * (L⁻¹ * M) := by rw [hQone]
