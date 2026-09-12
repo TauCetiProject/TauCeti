@@ -67,7 +67,10 @@ theorem rationalToComplex_apply (x : RationalSpace) :
     rationalToComplex x = ((x.1 : ℂ), (x.2 : ℂ)) := by
   simp [rationalToComplex]
 
-@[simp]
+/-- The two coordinatewise inclusions agree after passing through the rationalization.
+
+This is deliberately not `@[simp]`: the coordinatewise application lemmas above already put its
+left-hand side in simp normal form, so tagging this consequence fails `simpNF`. -/
 theorem rationalToComplex_comp_latticeToRational (x : Lattice) :
     rationalToComplex (latticeToRational x) = latticeToComplex x := by
   simp
