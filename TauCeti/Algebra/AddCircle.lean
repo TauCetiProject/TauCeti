@@ -279,12 +279,7 @@ variable {p : ℚ} [hp : Fact (0 < p)]
 killed by the denominator of `r / p`. -/
 theorem isOfFinAddOrder_rat (u : AddCircle p) : IsOfFinAddOrder u := by
   induction u using QuotientAddGroup.induction_on with
-  | _ r =>
-    have hp0 : p ≠ 0 := (Fact.out : (0 : ℚ) < p).ne'
-    have h := addOrderOf_coe_rat (p := p) (q := r / p)
-    rw [Rat.cast_id, div_mul_cancel₀ _ hp0] at h
-    rw [← addOrderOf_pos_iff, h]
-    exact (r / p).pos
+  | _ r => exact isOfFinAddOrder_iff_exists_rat_eq_div.mpr ⟨r / p, rfl⟩
 
 /-- A rational circle `ℚ ⧸ pℤ` is a torsion group. -/
 theorem isAddTorsion_rat : IsAddTorsion (AddCircle p) := isOfFinAddOrder_rat
