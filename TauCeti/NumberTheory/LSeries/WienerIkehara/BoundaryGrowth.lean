@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.NumberTheory.LSeries.Positivity
 public import TauCeti.Analysis.Fourier.Decay
 public import TauCeti.NumberTheory.LSeries.Summable
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.Asymptotic
@@ -47,13 +48,9 @@ asymptotic specializes the half-plane hypotheses it inherits from
 
 ## References
 
-The growth bound is the one demanded by the boundary formulation 9.1 of
-`TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, which requires that the proof "derives its
-Chebyshev-type growth bound from coefficient nonnegativity, the half-plane `LSeriesHasSum`
-hypothesis, and the boundary data; it does not silently assume that bound", and, failing that,
-that the bound be exposed in the public theorem. That layer's export contract names
-`wienerIkehara` and `wienerIkehara_zero`, which the sandwich step still to come will supply.
-
+* Layer 9.1 of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, which asks for the growth
+  bound to be derived from coefficient nonnegativity, the half-plane summability hypothesis, and
+  the boundary data.
 * J. Korevaar, *Tauberian Theory: A Century of Developments*, Chapter III.
 * G. Tenenbaum, *Introduction to Analytic and Probabilistic Number Theory*, Chapter II.
 -/
@@ -66,29 +63,6 @@ open Asymptotics Complex Filter FourierTransform MeasureTheory Real Set
 open scoped ComplexOrder ContDiff Topology
 
 variable {a : ℕ → ℂ} {A : ℂ} {G : ℂ → ℂ} {psi : ℝ → ℂ} {x : ℝ}
-
-/-! ### Nonnegative coefficients on the real axis -/
-
-/-- At a real point, a nonnegative Dirichlet coefficient system has terms equal to their own
-norms. -/
-private lemma term_eq_ofReal_norm (ha : 0 ≤ a) (sigma : ℝ) (n : ℕ) :
-    _root_.LSeries.term a (sigma : ℂ) n = (‖_root_.LSeries.term a (sigma : ℂ) n‖ : ℂ) := by
-  have hnn : (0 : ℂ) ≤ _root_.LSeries.term a (sigma : ℂ) n := _root_.LSeries.term_nonneg (ha n) _
-  have hre : _root_.LSeries.term a (sigma : ℂ) n =
-      ((_root_.LSeries.term a (sigma : ℂ) n).re : ℂ) :=
-    Complex.eq_re_of_ofReal_le (by rw [Complex.ofReal_zero]; exact hnn)
-  rw [hre, Complex.norm_real,
-    Real.norm_of_nonneg (by simpa using (Complex.le_def.mp hnn).1)]
-
-private lemma summable_norm_term (ha : 0 ≤ a) {sigma : ℝ} (h : LSeriesSummable a sigma) :
-    Summable fun n : ℕ ↦ ‖_root_.LSeries.term a (sigma : ℂ) n‖ := by
-  rw [← Complex.summable_ofReal]
-  exact h.congr fun n ↦ term_eq_ofReal_norm ha sigma n
-
-private lemma LSeries_eq_ofReal_tsum_norm (ha : 0 ≤ a) (sigma : ℝ) :
-    LSeries a (sigma : ℂ) = ((∑' n : ℕ, ‖_root_.LSeries.term a (sigma : ℂ) n‖ : ℝ) : ℂ) := by
-  rw [Complex.ofReal_tsum]
-  exact tsum_congr fun n ↦ term_eq_ofReal_norm ha sigma n
 
 /-! ### The one-sided bound coming from the boundary data -/
 
@@ -109,7 +83,7 @@ theorem tsum_norm_term_le_of_boundary (ha : 0 ≤ a)
   obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn hG
   have hM0 : 0 ≤ M := le_trans (norm_nonneg _) (hM 1 ⟨le_rfl, one_le_two⟩)
   refine ⟨M + ‖A‖, by positivity, fun sigma h1 h2 ↦
-    ⟨summable_norm_term ha (hsum sigma h1 h2), ?_⟩⟩
+    ⟨summable_norm_term_of_nonneg ha (hsum sigma h1 h2), ?_⟩⟩
   have hsub : (sigma : ℂ) - 1 = ((sigma - 1 : ℝ) : ℂ) := by push_cast; ring
   have hnorm : ‖A / ((sigma : ℂ) - 1)‖ = ‖A‖ / (sigma - 1) := by
     rw [hsub, norm_div, Complex.norm_real, Real.norm_of_nonneg (by linarith)]
@@ -117,7 +91,7 @@ theorem tsum_norm_term_le_of_boundary (ha : 0 ≤ a)
     tsum_nonneg fun _ ↦ norm_nonneg _
   have hS : ((∑' n : ℕ, ‖_root_.LSeries.term a (sigma : ℂ) n‖ : ℝ) : ℂ) =
       G (sigma : ℂ) + A / ((sigma : ℂ) - 1) := by
-    rw [← LSeries_eq_ofReal_tsum_norm ha sigma, hG' sigma h1 h2]
+    rw [← LSeries_eq_ofReal_tsum_norm_of_nonneg ha sigma, hG' sigma h1 h2]
     ring
   have hMdiv : M ≤ M / (sigma - 1) := by
     rw [le_div_iff₀ (by linarith : (0 : ℝ) < sigma - 1)]
