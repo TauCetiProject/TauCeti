@@ -43,7 +43,7 @@ action on a finite extension, and its behaviour under a field embedding.
   already forces `x` to be a unit of `𝒪[K]`.
 * `TauCeti.unitFiltration_zero` and `TauCeti.unitFiltration_one`: the two shallow steps are
   Mathlib's `ValuationSubring.unitGroup` and `ValuationSubring.principalUnitGroup`.
-* `TauCeti.unitFiltrationGradedPieceZeroEquivResidueFieldUnits`: reduction identifies the
+* `TauCeti.unitFiltrationGradedZeroEquivResidueFieldUnits`: reduction identifies the
   depth-zero graded piece with the multiplicative group of the residue field.
 * `TauCeti.unitFiltration_antitone`: the filtration is decreasing.
 * `TauCeti.iInf_unitFiltration`: the filtration separates points, `⨅ i, U(K,i) = ⊥`.
@@ -194,17 +194,23 @@ theorem unitFiltration_one :
     pow_one]
   exact hdvd _
 
-/-! ### The depth-zero graded piece -/
+/-! ### The depth-zero graded piece
+
+The mathematical content of the depth-zero identification is entirely Mathlib's
+`ValuationSubring.unitsModPrincipalUnitsEquivResidueFieldUnits`, together with the reduction map
+`ValuationSubring.unitGroupToResidueFieldUnits` it is built from
+(`Mathlib/RingTheory/Valuation/ValuationSubring.lean`). The declarations below only transport that
+equivalence from the unit and principal unit groups to the two shallow steps of the filtration. -/
 
 /-- The successive quotient `U(K,i) / U(K,i+1)` of the unit filtration. -/
-abbrev UnitFiltrationGradedPiece (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+abbrev UnitFiltrationGraded (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
     [IsNonarchimedeanLocalField K] (i : ℕ) :=
   unitFiltration K i ⧸ (unitFiltration K (i + 1)).subgroupOf (unitFiltration K i)
 
 /-- The depth-zero graded piece `U(K,0) / U(K,1)` is the multiplicative group of the residue
 field. The isomorphism is induced by reduction modulo the maximal ideal. -/
-noncomputable def unitFiltrationGradedPieceZeroEquivResidueFieldUnits :
-    UnitFiltrationGradedPiece K 0 ≃* (𝓀[K])ˣ :=
+noncomputable def unitFiltrationGradedZeroEquivResidueFieldUnits :
+    UnitFiltrationGraded K 0 ≃* (𝓀[K])ˣ :=
   (QuotientGroup.equivQuotientSubgroupOfOfEq
       (unitFiltration_one (K := K)) (unitFiltration_zero (K := K))).trans
     (valuation K).valuationSubring.unitsModPrincipalUnitsEquivResidueFieldUnits
@@ -212,8 +218,8 @@ noncomputable def unitFiltrationGradedPieceZeroEquivResidueFieldUnits :
 /-- On a class represented by `x ∈ U(K,0)`, the depth-zero graded equivalence is reduction of
 `x` modulo the maximal ideal. -/
 @[simp]
-theorem unitFiltrationGradedPieceZeroEquivResidueFieldUnits_mk (x : unitFiltration K 0) :
-    unitFiltrationGradedPieceZeroEquivResidueFieldUnits (K := K) (QuotientGroup.mk x) =
+theorem unitFiltrationGradedZeroEquivResidueFieldUnits_mk (x : unitFiltration K 0) :
+    unitFiltrationGradedZeroEquivResidueFieldUnits (K := K) (QuotientGroup.mk x) =
       (valuation K).valuationSubring.unitGroupToResidueFieldUnits
         ⟨(x : Kˣ), (unitFiltration_zero (K := K)).le x.prop⟩ := by
   have htransport :
@@ -242,10 +248,10 @@ theorem unitFiltrationGradedPieceZeroEquivResidueFieldUnits_mk (x : unitFiltrati
       ⟨(x : Kˣ), (unitFiltration_zero (K := K)).le x.prop⟩
 
 /-- The depth-zero graded piece is finite. -/
-noncomputable instance finite_unitFiltrationGradedPiece_zero :
-    Finite (UnitFiltrationGradedPiece K 0) :=
+noncomputable instance finite_unitFiltrationGraded_zero :
+    Finite (UnitFiltrationGraded K 0) :=
   Finite.of_equiv (𝓀[K])ˣ
-    unitFiltrationGradedPieceZeroEquivResidueFieldUnits.symm.toEquiv
+    unitFiltrationGradedZeroEquivResidueFieldUnits.symm.toEquiv
 
 /-- The first positive-depth step has finite relative index in the depth-zero step. -/
 noncomputable instance unitFiltration_one_isFiniteRelIndex_zero :
@@ -255,18 +261,18 @@ noncomputable instance unitFiltration_one_isFiniteRelIndex_zero :
 
 /-- The depth-zero graded piece has `q - 1` elements, where `q` is the cardinality of the residue
 field. -/
-theorem natCard_unitFiltrationGradedPiece_zero :
-    Nat.card (UnitFiltrationGradedPiece K 0) = Nat.card 𝓀[K] - 1 := by
+theorem natCard_unitFiltrationGraded_zero :
+    Nat.card (UnitFiltrationGraded K 0) = Nat.card 𝓀[K] - 1 := by
   rw [← Nat.card_units]
-  exact Nat.card_congr unitFiltrationGradedPieceZeroEquivResidueFieldUnits.toEquiv
+  exact Nat.card_congr unitFiltrationGradedZeroEquivResidueFieldUnits.toEquiv
 
 /-- The relative index `[U(K,0) : U(K,1)]` is one less than the cardinality of the residue
 field. -/
 theorem relIndex_unitFiltration_one_zero :
     (unitFiltration K 1).relIndex (unitFiltration K 0) = Nat.card 𝓀[K] - 1 := by
   rw [Subgroup.relIndex, Subgroup.index]
-  simpa only [UnitFiltrationGradedPiece, zero_add] using
-    natCard_unitFiltrationGradedPiece_zero (K := K)
+  simpa only [UnitFiltrationGraded, zero_add] using
+    natCard_unitFiltrationGraded_zero (K := K)
 
 /-- The unit filtration is decreasing. -/
 theorem unitFiltration_antitone : Antitone (unitFiltration K) := by
