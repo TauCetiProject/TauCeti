@@ -42,12 +42,13 @@ open CliffordAlgebra
 
 namespace TauCeti.SpinPolarizationData
 
-universe u
-
-variable {V : Type u} [AddCommGroup V] [Module ℚ V] {Q : QuadraticForm ℚ V}
-  (P : SpinPolarizationData Q) {n : ℕ} (b : Module.Basis (Fin n) ℚ P.W)
+universe u v
 
 /-! ## Positive-generator annihilation -/
+
+variable {K : Type u} [CommRing K] {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V} (P : SpinPolarizationData Q) {n : ℕ}
+  (b : Module.Basis (Fin n) K P.W)
 
 /-- Every positive simple-root Clifford bivector annihilates the all-coordinate exterior-basis
 vector. This is the action-level calculation used by the type-`D` highest-weight vector. -/
@@ -67,6 +68,9 @@ vector. This is the action-level calculation used by the type-`D` highest-weight
   · simp only [P.typeDSimpleRootBivector_def b, dite_eq_right hnext, map_mul,
       Module.End.mul_apply, TauCeti.spinAction_ι_wedge,
       TauCeti.ExteriorAlgebra.ι_mul_basis, Finset.mem_univ, ite_true, mul_zero]
+
+variable {V : Type u} [AddCommGroup V] [Module ℚ V] {Q : QuadraticForm ℚ V}
+  (P : SpinPolarizationData Q) {n : ℕ} (b : Module.Basis (Fin n) ℚ P.W)
 
 /-- **Every positive simple type-`D` generator annihilates the all-coordinate exterior-basis
 vector.** This supplies the positive-generator condition for the terminal fork highest-weight
