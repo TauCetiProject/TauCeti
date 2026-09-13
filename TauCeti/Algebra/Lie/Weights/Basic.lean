@@ -24,6 +24,12 @@ weight-space theory.
   corresponding weight space.
 * `TauCeti.Weight.coe_neg_eq_add_of_coe_eq_add`: reading a vanishing sum of four weights as an
   equation between opposite pair sums.
+
+## References
+
+The weight-space transport family follows the generalized-weight-space API
+`LieModule.map_genWeightSpace_le` through `LieModule.map_genWeightSpace_eq` in
+`Mathlib.Algebra.Lie.Weights.Basic`.
 -/
 
 public section
