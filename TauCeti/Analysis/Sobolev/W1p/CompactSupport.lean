@@ -43,13 +43,10 @@ arguments use: multiplying *any* `u ∈ W^{1,p}(Ω)` by a smooth cutoff compactl
 produces an element of `W^{1,p}_0(Ω)`.  The companion
 `TauCeti.W1p.contDiffSMul_mem_w1p0Submodule` needs `u` to lie in `W^{1,p}_0(Ω)` already, which is
 exactly what the compact support replaces here.  This is the localization step of Meyers--Serrin
-density and of the interior estimates, Lane A.2 and Lane E.20 of
-`TauCetiRoadmap/PDE/README.md`.
+density and of interior estimates.
 
 ## Main declarations
 
-* `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes where the
-  function vanishes on an open set.
 * `TauCeti.W1p.mem_w1p0Submodule_of_isCompact`: a compactly supported Sobolev function has zero
   boundary values.
 * `TauCeti.W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport`: multiplication by a
@@ -57,9 +54,8 @@ density and of the interior estimates, Lane A.2 and Lane E.20 of
 
 ## References
 
-Lane A.2 of `TauCetiRoadmap/PDE/README.md`; L. C. Evans, *Partial Differential Equations*,
-§5.3.3; H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
-Lemma 9.5.
+L. C. Evans, *Partial Differential Equations*, §5.3.3; H. Brezis, *Functional Analysis,
+Sobolev Spaces and Partial Differential Equations*, Lemma 9.5.
 -/
 
 public section
@@ -75,22 +71,6 @@ namespace TauCeti
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)] {K : Set E}
-
-/-! ### The gradient where the function vanishes -/
-
-/-- **A Sobolev function vanishing on an open subset has vanishing weak gradient there.**  The
-weak gradient is determined almost everywhere by the function on every open set
-(`TauCeti.HasWeakFDerivOn.ae_eq`), and the zero function has zero weak gradient. -/
-theorem W1p.gradient_ae_eq_zero_of_value_ae_eq_zero {V : Opens E} (hV : V ≤ Omega)
-    {u : W1p mu Omega p} (hu : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value u x = 0) :
-    ∀ᵐ x ∂mu.restrict (V : Set E), W1p.gradient u x = 0 := by
-  have hzero : HasWeakFDerivOn mu V (W1p.value u) 0 :=
-    hasWeakFDerivOn_zero.congr_ae (by filter_upwards [hu] with x hx; exact hx.symm)
-  filter_upwards [((W1p.hasWeakFDerivOn u).mono hV).ae_eq hzero] with x hx
-  have h0 : innerSL ℝ (W1p.gradient u x) = innerSL ℝ (0 : E) := by
-    rw [map_zero]
-    simpa using hx
-  exact innerSL_inj.1 h0
 
 /-! ### Zero boundary values -/
 

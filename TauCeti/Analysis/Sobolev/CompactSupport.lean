@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 public import TauCeti.Analysis.Sobolev.WeakDeriv
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Extending a compactly supported weak derivative across the boundary
@@ -38,9 +39,8 @@ needs a Lipschitz boundary.
 
 ## References
 
-Lane A.2 of `TauCetiRoadmap/PDE/README.md`; L. C. Evans, *Partial Differential Equations*,
-§5.3.3, and H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
-Lemma 9.5.
+L. C. Evans, *Partial Differential Equations*, §5.3.3, and H. Brezis, *Functional Analysis,
+Sobolev Spaces and Partial Differential Equations*, Lemma 9.5.
 -/
 
 public section
@@ -54,23 +54,6 @@ namespace TauCeti
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [OpensMeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {mu : Measure E} {Omega : Opens E} {u u' : E → F} {v : E} {K : Set E}
-
-omit [FiniteDimensional ℝ E] [NormedSpace ℝ E] [NormedSpace ℝ F] in
-/-- A function locally integrable on `Ω` and vanishing almost everywhere on `Ω` off a compact
-`K ⊆ Ω` is, after extension by zero, integrable on the whole space. -/
-private theorem integrable_indicator_of_isCompact (hK : IsCompact K) (hKO : K ⊆ Omega)
-    (hloc : LocallyIntegrableOn u Omega mu)
-    (hu : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → u x = 0) :
-    Integrable ((Omega : Set E).indicator u) mu := by
-  have hae : (Omega : Set E).indicator u =ᵐ[mu] K.indicator u := by
-    filter_upwards [(ae_restrict_iff' Omega.isOpen.measurableSet).1 hu] with x hx
-    by_cases hxO : x ∈ (Omega : Set E)
-    · by_cases hxK : x ∈ K
-      · rw [indicator_of_mem hxO, indicator_of_mem hxK]
-      · rw [indicator_of_mem hxO, indicator_of_notMem hxK, hx hxO hxK]
-    · rw [indicator_of_notMem hxO, indicator_of_notMem fun hxK => hxO (hKO hxK)]
-  exact ((hloc.integrableOn_compact_subset hKO hK).integrable_indicator
-    hK.isClosed.measurableSet).congr hae.symm
 
 /-- **Extension by zero of a compactly supported weak directional derivative.**  If `u'` is a
 weak derivative of `u` in the direction `v` on `Ω`, and both vanish almost everywhere on `Ω`
@@ -105,9 +88,11 @@ theorem HasWeakLineDerivOn.indicator_of_isCompact (h : HasWeakLineDerivOn mu Ome
   have hu'O := (ae_restrict_iff' Omega.isOpen.measurableSet).1 hu'
   rw [hasWeakLineDerivOn_iff_testFunction]
   refine ⟨‹CompleteSpace F›,
-    (integrable_indicator_of_isCompact hK hKO h.locallyIntegrableOn hu).locallyIntegrable
+    (TauCeti.MeasureTheory.integrable_indicator_of_isCompact hK hKO h.locallyIntegrableOn hu)
+      |>.locallyIntegrable
       |>.locallyIntegrableOn _,
-    (integrable_indicator_of_isCompact hK hKO h.locallyIntegrableOn_deriv hu').locallyIntegrable
+    (TauCeti.MeasureTheory.integrable_indicator_of_isCompact hK hKO h.locallyIntegrableOn_deriv hu')
+      |>.locallyIntegrable
       |>.locallyIntegrableOn _, fun phi => ?_⟩
   -- `χ φ` is a test function on `Ω`
   obtain ⟨Phi, hPhi⟩ : ∃ Phi : 𝓓(Omega, ℝ), (Phi : E → ℝ) = chi * (phi : E → ℝ) :=
