@@ -51,6 +51,8 @@ instance instMax : Max (Subcoalgebra R C) where
   max D E :=
     { carrier := D.toSubmodule ⊔ E.toSubmodule
       comul_mem' := by
+        -- The stability field is pointwise. Express it as submodule containment to use the
+        -- join's universal property; its membership API is not available during construction.
         change D.toSubmodule ⊔ E.toSubmodule ≤
           (LinearMap.range (TensorProduct.map _ _)).comap Coalgebra.comul
         exact sup_le
@@ -63,6 +65,8 @@ instance instSupSet : SupSet (Subcoalgebra R C) where
   sSup S :=
     { carrier := ⨆ D : S, (D : Subcoalgebra R C).toSubmodule
       comul_mem' := by
+        -- The stability field is pointwise. Express it as submodule containment to use the
+        -- join's universal property; its membership API is not available during construction.
         change (⨆ D : S, (D : Subcoalgebra R C).toSubmodule) ≤
           (LinearMap.range (TensorProduct.map _ _)).comap Coalgebra.comul
         exact iSup_le fun D _ hc ↦
@@ -84,12 +88,15 @@ theorem mem_sup {D E : Subcoalgebra R C} {c : C} :
 underlying submodules. -/
 instance instSemilatticeSup : SemilatticeSup (Subcoalgebra R C) where
   sup D E := D ⊔ E
-  le_sup_left := fun D E ↦
-    show D.toSubmodule ≤ D.toSubmodule ⊔ E.toSubmodule from le_sup_left
-  le_sup_right := fun D E ↦
-    show E.toSubmodule ≤ D.toSubmodule ⊔ E.toSubmodule from le_sup_right
-  sup_le := fun D E F hD hE ↦
-    show D.toSubmodule ⊔ E.toSubmodule ≤ F.toSubmodule from sup_le hD hE
+  le_sup_left D E := by
+    rw [← toSubmodule_le_toSubmodule, sup_toSubmodule]
+    exact le_sup_left
+  le_sup_right D E := by
+    rw [← toSubmodule_le_toSubmodule, sup_toSubmodule]
+    exact le_sup_right
+  sup_le D E F hD hE := by
+    rw [← toSubmodule_le_toSubmodule, sup_toSubmodule]
+    exact sup_le (toSubmodule_le_toSubmodule.2 hD) (toSubmodule_le_toSubmodule.2 hE)
 
 /-- The underlying submodule of a supremum of a set of subcoalgebras is the supremum of the
 underlying submodules indexed by that set. -/
@@ -161,10 +168,10 @@ instance instCompleteSemilatticeSup : CompleteSemilatticeSup (Subcoalgebra R C) 
   sSup := sSup
   isLUB_sSup S := by
     refine ⟨fun D hD ↦ ?_, fun D hD ↦ ?_⟩
-    · change D.toSubmodule ≤ ⨆ E : S, (E : Subcoalgebra R C).toSubmodule
+    · rw [← toSubmodule_le_toSubmodule, sSup_toSubmodule]
       exact le_iSup (fun E : S ↦ (E : Subcoalgebra R C).toSubmodule) ⟨D, hD⟩
-    · change (⨆ E : S, (E : Subcoalgebra R C).toSubmodule) ≤ D.toSubmodule
-      exact iSup_le fun E ↦ hD E.2
+    · rw [← toSubmodule_le_toSubmodule, sSup_toSubmodule]
+      exact iSup_le fun E ↦ toSubmodule_le_toSubmodule.2 (hD E.2)
 
 /-- The join of finitely generated subcoalgebras is finitely generated as an `R`-module. -/
 theorem sup_finite (D E : Subcoalgebra R C)

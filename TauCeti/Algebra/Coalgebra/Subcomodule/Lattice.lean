@@ -58,6 +58,8 @@ instance instMax : Max (Subcomodule R C M) where
   max N P :=
     { carrier := N.toSubmodule ⊔ P.toSubmodule
       coact_mem' := by
+        -- The stability field is pointwise. Express it as submodule containment to use the
+        -- join's universal property; its membership API is not available during construction.
         change N.toSubmodule ⊔ P.toSubmodule ≤
           (LinearMap.range (TensorProduct.map _ _)).comap (Comodule.coact (C := C))
         refine sup_le (fun _ hm ↦ ?_) (fun _ hm ↦ ?_)
@@ -74,6 +76,8 @@ instance instSupSet : SupSet (Subcomodule R C M) where
   sSup S :=
     { carrier := ⨆ N : S, (N : Subcomodule R C M).toSubmodule
       coact_mem' := by
+        -- The stability field is pointwise. Express it as submodule containment to use the
+        -- join's universal property; its membership API is not available during construction.
         change (⨆ N : S, (N : Subcomodule R C M).toSubmodule) ≤
           (LinearMap.range (TensorProduct.map _ _)).comap (Comodule.coact (C := C))
         refine iSup_le fun N _ hm ↦ ?_
@@ -99,12 +103,15 @@ theorem mem_sup {N P : Subcomodule R C M} {m : M} :
 underlying submodules. -/
 instance instSemilatticeSup : SemilatticeSup (Subcomodule R C M) where
   sup D E := D ⊔ E
-  le_sup_left := fun N P ↦
-    show N.toSubmodule ≤ N.toSubmodule ⊔ P.toSubmodule from le_sup_left
-  le_sup_right := fun N P ↦
-    show P.toSubmodule ≤ N.toSubmodule ⊔ P.toSubmodule from le_sup_right
-  sup_le := fun N P Q hN hP ↦
-    show N.toSubmodule ⊔ P.toSubmodule ≤ Q.toSubmodule from sup_le hN hP
+  le_sup_left N P := by
+    rw [← toSubmodule_le_toSubmodule, sup_toSubmodule]
+    exact le_sup_left
+  le_sup_right N P := by
+    rw [← toSubmodule_le_toSubmodule, sup_toSubmodule]
+    exact le_sup_right
+  sup_le N P Q hN hP := by
+    rw [← toSubmodule_le_toSubmodule, sup_toSubmodule]
+    exact sup_le (toSubmodule_le_toSubmodule.2 hN) (toSubmodule_le_toSubmodule.2 hP)
 
 /-- The underlying submodule of a supremum of a set of subcomodules is the supremum of the
 underlying submodules indexed by that set. -/
@@ -143,10 +150,10 @@ instance instCompleteSemilatticeSup : CompleteSemilatticeSup (Subcomodule R C M)
   sSup := sSup
   isLUB_sSup S := by
     refine ⟨fun N hN ↦ ?_, fun N hN ↦ ?_⟩
-    · change N.toSubmodule ≤ ⨆ P : S, (P : Subcomodule R C M).toSubmodule
+    · rw [← toSubmodule_le_toSubmodule, sSup_toSubmodule]
       exact le_iSup (fun P : S ↦ (P : Subcomodule R C M).toSubmodule) ⟨N, hN⟩
-    · change (⨆ P : S, (P : Subcomodule R C M).toSubmodule) ≤ N.toSubmodule
-      exact iSup_le fun P ↦ hN P.2
+    · rw [← toSubmodule_le_toSubmodule, sSup_toSubmodule]
+      exact iSup_le fun P ↦ toSubmodule_le_toSubmodule.2 (hN P.2)
 
 /-- The carrier of a nonempty directed supremum of subcomodules is the union of their carriers. -/
 @[simp]
