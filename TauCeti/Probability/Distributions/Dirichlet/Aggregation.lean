@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Probability.Distributions.Dirichlet.Basic
 
 /-!
@@ -13,17 +14,17 @@ public import TauCeti.Probability.Distributions.Dirichlet.Basic
 Merging the coordinates of a Dirichlet vector along a surjection `f : ι → κ`, by replacing the
 coordinates in each fibre of `f` by their total, again gives a Dirichlet vector: the
 concentration parameters are merged the same way.  Surjectivity is what keeps every merged
-parameter positive.
+parameter positive.  If `ι` is empty then so is `κ`, and the statement degenerates to an identity
+between two zero measures, since `dirichletMeasure` has no probability law to offer on an empty
+index type.
 
-The proof reads the aggregation off the defining construction of `dirichletMeasure`.  Summing
-over a fibre commutes with dividing by the grand total, so aggregating a normalized Gamma vector
-is the same as normalizing the aggregated Gamma vector; the aggregated Gamma vector is again a
-Gamma product by `TauCeti.map_funOnFinite_map_pi_gammaMeasure`.
+Aggregation is how a Dirichlet model is coarsened, and it is the source of the laws of the blocks
+of a Dirichlet vector: the law of the total mass carried by a set of coordinates is the
+two-coordinate case of the aggregation law, and the covariance of two coordinates is read off the
+variance of their total, which is again a case of it.
 
-## Main definitions and results
+## Main results
 
-* `TauCeti.Probability.euclideanFiberSum` sums the coordinates of a Euclidean vector over each
-  fibre of a map of index types.
 * `TauCeti.Probability.map_euclideanFiberSum_dirichletMeasure` is the aggregation law.
 
 Its random-variable form is `MeasureTheory.MeasurePreserving.fun_comp_hasLaw` applied to the
@@ -47,32 +48,6 @@ namespace Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 
-/-! ### Fibrewise sums of Euclidean vectors -/
-
-/-- Sum the coordinates of a Euclidean vector over each fibre of `f`.
-
-This is Mathlib's `FunOnFinite.map` read in Euclidean coordinates. -/
-def euclideanFiberSum (f : ι → κ) (x : EuclideanSpace ℝ ι) : EuclideanSpace ℝ κ :=
-  (EuclideanSpace.equiv κ ℝ).symm (FunOnFinite.map f (EuclideanSpace.equiv ι ℝ x))
-
-@[simp]
-theorem euclideanFiberSum_apply [DecidableEq κ] (f : ι → κ) (x : EuclideanSpace ℝ ι) (j : κ) :
-    euclideanFiberSum f x j = ∑ i with f i = j, x i := by
-  simp [euclideanFiberSum, FunOnFinite.map_apply_apply]
-
-/-- Fibrewise summation is continuous. -/
-@[fun_prop]
-theorem continuous_euclideanFiberSum (f : ι → κ) :
-    Continuous (euclideanFiberSum (ι := ι) f) :=
-  (EuclideanSpace.equiv κ ℝ).symm.continuous.comp <|
-    (FunOnFinite.continuous_map ℝ f).comp (EuclideanSpace.equiv ι ℝ).continuous
-
-/-- Fibrewise summation is measurable. -/
-@[fun_prop]
-theorem measurable_euclideanFiberSum (f : ι → κ) :
-    Measurable (euclideanFiberSum (ι := ι) f) :=
-  (continuous_euclideanFiberSum f).measurable
-
 /-- Summing over a fibre commutes with dividing by the grand total: aggregating a normalized
 vector is the same as normalizing the aggregated vector. -/
 theorem euclideanFiberSum_dirichletNormalize (f : ι → κ) (x : ι → ℝ) :
@@ -87,7 +62,8 @@ theorem euclideanFiberSum_dirichletNormalize (f : ι → κ) (x : ι → ℝ) :
 
 /-- **Aggregation law for the Dirichlet distribution.** Replacing the coordinates in each fibre
 of a surjection `f` by their total gives the Dirichlet law whose concentration parameters are the
-fibre totals of the original ones. -/
+fibre totals of the original ones.  On an empty index type, where `dirichletMeasure` is the zero
+measure, this is the identity between two zero measures. -/
 theorem map_euclideanFiberSum_dirichletMeasure [DecidableEq κ] {f : ι → κ}
     (hf : Function.Surjective f) {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
     (dirichletMeasure a).map (euclideanFiberSum f) =

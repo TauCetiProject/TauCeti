@@ -15,11 +15,12 @@ import Mathlib.Probability.Independence.CharacteristicFunction
 /-!
 # Sums and differences of classical distributions
 
-This file identifies three laws obtained from independent scalar random variables. The difference
+This file identifies four laws obtained from independent scalar random variables. The difference
 of two exponential variables with common rate `b⁻¹` has the centered Laplace law of scale `b`.
 A finite sum of geometric variables with nonzero success probability has a negative-binomial law,
-including the empty sum and the success-probability-one boundary. A nonempty finite sum of
-exponential variables with common rate has the corresponding Erlang law.
+including the empty sum and the success-probability-one boundary. A nonempty finite sum of gamma
+variables with a common rate has the gamma law whose shape is the total of the shapes; at shape
+one, that is a sum of exponential variables and the corresponding Erlang law.
 
 These closure laws identify independent sums and differences directly with members of the standard
 distribution families, so consumers can transfer the established APIs of those families to the
@@ -29,12 +30,13 @@ resulting random variables.
 
 * `TauCeti.Probability.IndepFun.hasLaw_sub_expMeasure` identifies an exponential difference;
 * `TauCeti.Probability.iIndepFun.hasLaw_sum_geometricMeasure` identifies a finite geometric sum;
+* `TauCeti.Probability.iIndepFun.hasLaw_sum_gammaMeasure` identifies a finite gamma sum;
 * `TauCeti.Probability.iIndepFun.hasLaw_sum_expMeasure` identifies a finite exponential sum.
 
 ## References
 
 * N. L. Johnson, S. Kotz, and N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
-  2nd ed., Wiley (1994), chapters 19 and 23.
+  2nd ed., Wiley (1994), chapters 17, 19 and 23.
 * N. L. Johnson, A. W. Kemp, and S. Kotz, *Univariate Discrete Distributions*, 3rd ed., Wiley
   (2005), chapter 5.
 -/
@@ -145,6 +147,39 @@ theorem iIndepFun.hasLaw_sum_geometricMeasure {ι : Type*} [Fintype ι]
   rw [hX]
   simpa only [Finset.card_univ] using hsum Finset.univ
 
+/-! ### Sums of gamma variables -/
+
+/-- A nonempty finite sum of independent gamma variables with positive shapes and a common
+positive rate `r` has the gamma law whose shape is the total of the shapes. -/
+theorem iIndepFun.hasLaw_sum_gammaMeasure {ι : Type*} [Fintype ι] [Nonempty ι]
+    {X : ι → Ω → ℝ} {a : ι → ℝ} {r : ℝ} (hindep : iIndepFun X P) (ha : ∀ i, 0 < a i) (hr : 0 < r)
+    (hlaw : ∀ i, HasLaw (X i) (gammaMeasure (a i) r) P) :
+    HasLaw (fun ω => ∑ i, X i ω) (gammaMeasure (∑ i, a i) r) P := by
+  classical
+  let _ : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  have hsum (s : Finset ι) (hs : s.Nonempty) :
+      HasLaw (∑ i ∈ s, X i) (gammaMeasure (∑ i ∈ s, a i) r) P := by
+    induction s using Finset.induction_on with
+    | empty => simp at hs
+    | @insert i s hi ih =>
+        rcases s.eq_empty_or_nonempty with rfl | hs'
+        · simpa using hlaw i
+        · have hpos : 0 < ∑ j ∈ s, a j := Finset.sum_pos (fun j _ => ha j) hs'
+          let _ : IsProbabilityMeasure (gammaMeasure (a i) r) :=
+            isProbabilityMeasure_gammaMeasure (ha i) hr
+          let _ : IsProbabilityMeasure (gammaMeasure (∑ j ∈ s, a j) r) :=
+            isProbabilityMeasure_gammaMeasure hpos hr
+          have hadd :=
+            (hindep.indepFun_finsetSum_of_notMem₀
+              (fun j => (hlaw j).aemeasurable) hi).symm.hasLaw_add (hlaw i) (ih hs')
+          rw [gammaMeasure_conv_gammaMeasure (ha i) hpos hr] at hadd
+          simpa only [Finset.sum_insert hi] using hadd
+  have hX : (fun ω => ∑ i, X i ω) = ∑ i, X i := by
+    funext ω
+    exact (Fintype.sum_apply ω X).symm
+  rw [hX]
+  exact hsum Finset.univ Finset.univ_nonempty
+
 /-! ### Sums of exponential variables -/
 
 /-- A nonempty finite sum of independent exponential variables with common positive rate `r` has
@@ -153,30 +188,9 @@ theorem iIndepFun.hasLaw_sum_expMeasure {ι : Type*} [Fintype ι] [Nonempty ι]
     {X : ι → Ω → ℝ} {r : ℝ} (hindep : iIndepFun X P) (hr : 0 < r)
     (hlaw : ∀ i, HasLaw (X i) (expMeasure r) P) :
     HasLaw (fun ω => ∑ i, X i ω) (gammaMeasure (Fintype.card ι) r) P := by
-  classical
-  let _ : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  have hsum (s : Finset ι) (hs : s.Nonempty) :
-      HasLaw (∑ i ∈ s, X i) (gammaMeasure (s.card : ℝ) r) P := by
-    induction s using Finset.induction_on with
-    | empty => simp at hs
-    | @insert i s hi ih =>
-        rcases s.eq_empty_or_nonempty with rfl | hs'
-        · simpa [expMeasure] using hlaw i
-        · have hcard : (0 : ℝ) < s.card := by exact_mod_cast hs'.card_pos
-          let _ : IsProbabilityMeasure (expMeasure r) := isProbabilityMeasure_expMeasure hr
-          let _ : IsProbabilityMeasure (gammaMeasure (s.card : ℝ) r) :=
-            isProbabilityMeasure_gammaMeasure hcard hr
-          have hadd :=
-            (hindep.indepFun_finsetSum_of_notMem₀
-              (fun j => (hlaw j).aemeasurable) hi).symm.hasLaw_add (hlaw i) (ih hs')
-          rw [expMeasure, gammaMeasure_conv_gammaMeasure zero_lt_one hcard hr] at hadd
-          simpa only [Finset.sum_insert hi, Finset.card_insert_of_notMem hi, Nat.cast_add,
-            Nat.cast_one, add_comm] using hadd
-  have hX : (fun ω => ∑ i, X i ω) = ∑ i, X i := by
-    funext ω
-    exact (Fintype.sum_apply ω X).symm
-  rw [hX]
-  simpa only [Finset.card_univ] using hsum Finset.univ Finset.univ_nonempty
+  have h := iIndepFun.hasLaw_sum_gammaMeasure (a := fun _ => 1) hindep (fun _ => one_pos) hr
+    (by simpa only [expMeasure] using hlaw)
+  simpa only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one] using h
 
 end Probability
 
