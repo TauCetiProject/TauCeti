@@ -216,9 +216,8 @@ end Lift
 
 section Split
 
-/-- **A split presenting map has vanishing transpose.**  If `p₁` admits a retraction `r`, then
-every functional on `P₁` factors through `p₁`, namely as the composite with `r`, so the cokernel
-defining the transpose is the whole of `Hom_A(P₁, A)` and the transpose is zero.
+/-- **A split presenting map has vanishing transpose.**  If `p₁` admits a retraction, its
+Auslander--Reiten transpose is a subsingleton.
 
 No finiteness or projectivity is needed for this direction;
 `TauCeti.AuslanderReitenTranspose.exists_comp_eq_id_of_subsingleton` is the converse, and it needs
@@ -238,12 +237,8 @@ theorem subsingleton_of_comp_eq_id {r : P₀ →ₗ[A] P₁} (hr : r ∘ₗ p₁
 /-- **A vanishing transpose splits the presenting map.**  If `P₁` is a finitely generated
 projective module and the transpose of `p₁ : P₁ → P₀` vanishes, then `p₁` admits a retraction.
 
-Both hypotheses on `P₁` are used, and they are used together: a finite projective module carries a
-*finite* dual basis, and only finitely many of the chosen factorizations may be assembled into a
-single map `P₀ → P₁`.  Concretely, write `P₁` as a retract `f ∘ₗ g = id` of a finite free module
-`Aⁿ`; each coordinate of `g` is a functional on `P₁`, hence — the transpose being zero — of the
-form `ψ i ∘ₗ p₁`, and the `n` functionals `ψ i` assemble into a map `P₀ → Aⁿ` through which `g`
-factors.  Following it by `f` retracts `p₁`. -/
+Both hypotheses on `P₁` are needed, and they are needed together: they supply a *finite* dual
+basis of `P₁`, and only finitely many functionals may be assembled into a single map `P₀ → P₁`. -/
 theorem exists_comp_eq_id_of_subsingleton [Module.Finite A P₁] [Module.Projective A P₁]
     (h : Subsingleton (AuslanderReitenTranspose p₁)) :
     ∃ r : P₀ →ₗ[A] P₁, r ∘ₗ p₁ = LinearMap.id := by
@@ -428,17 +423,10 @@ variable {p₁ : P₁ →ₗ[A] P₀} {p₀ : P₀ →ₗ[A] M}
 /-- **A module with vanishing Auslander--Reiten transpose is projective**, the converse of
 `TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_of_projective`.
 
-The transpose vanishing splits the presenting map `p₁`, by
-`TauCeti.AuslanderReitenTranspose.exists_comp_eq_id_of_subsingleton`, and minimality then forces
-`P₁` itself to vanish: the image of `p₁` is the syzygy `ker p₀`, which is superfluous in `P₀`, and
-a retraction `r` of `p₁` writes `P₀` as `range p₁ ⊔ ker r`, so `ker r` is already everything and
-the retraction is zero.  Being a retraction of `p₁` it is also a left inverse, so `P₁` is zero, the
-syzygy is zero, and `p₀` is an isomorphism `P₀ ≅ M` from a projective module.
-
-Finite generation of `P₁` is a genuine hypothesis rather than a convenience, as it is what makes
-the dual basis assembling the retraction finite; it is automatic for a *finitely generated* `M`
-over an Artin algebra, where such an `M` has a minimal projective presentation by finitely
-generated projectives. -/
+Finite generation of `P₁` is a genuine hypothesis rather than a convenience: it is what makes the
+dual basis splitting `p₁` finite.  It is automatic for a *finitely generated* `M` over an Artin
+algebra, where such an `M` has a minimal projective presentation by finitely generated
+projectives. -/
 theorem projective_of_subsingleton_auslanderReitenTranspose [Module.Finite A P₁]
     (h : IsMinimalProjectivePresentation p₁ p₀)
     (hTr : Subsingleton (AuslanderReitenTranspose p₁)) : Module.Projective A M := by

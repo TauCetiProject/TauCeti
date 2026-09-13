@@ -45,9 +45,9 @@ that statement, and it is what licenses the notation `τ M`.
 * `TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranslate_of_projective`: the
   translate of a projective module vanishes.
 * `TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranslate_iff_projective`:
-  over a field, and for a finitely generated left-hand source, the converse holds too — **the
-  translate vanishes exactly on the projective modules** — so that `τ` assigns a nonzero module to
-  every non-projective one.
+  for a finitely generated left-hand source and a transpose projective over the base, the converse
+  holds too — **the translate vanishes exactly on the projective modules** — so that `τ` assigns a
+  nonzero module to every non-projective one.
 
 ## Implementation notes
 
@@ -212,22 +212,19 @@ section Vanishing
 variable {P₁ : Type w} [AddCommGroup P₁] [Module A P₁]
 variable {p₁ : P₁ →ₗ[A] P₀} {p₀ : P₀ →ₗ[A] M}
 
-/-- **The Auslander--Reiten translate vanishes exactly on the projective modules**, when the
-duality is taken over a field.
+/-- **The Auslander--Reiten translate vanishes exactly on the projective modules**, for a
+minimal projective presentation with finitely generated left-hand source and a transpose that is
+projective over the base.  This is what makes `τ` a construction on the *non-projective* modules:
+it assigns a nonzero module to every module that is not projective.
 
-Over a field the dual of a module is zero only if the module is, so the translate `D (Tr M)`
-vanishes exactly when the transpose does, and
-`TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_iff_projective`
-identifies that with projectivity of `M`.  This is the statement that makes `τ` a construction on
-the *non-projective* modules: it assigns a nonzero module to every module that is not projective.
-
-A field is what the backward direction needs: it enters only through
-`Module.subsingleton_dual_iff`, which asks the transpose to be a projective `K`-module, and over a
-field every module is.  The forward direction, the dual of a subsingleton being a subsingleton, is
-`TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranslate_of_projective` and
-holds over any commutative base. -/
-theorem subsingleton_auslanderReitenTranslate_iff_projective (K : Type*) [Field K] [Algebra K A]
-    [Module.Finite A P₁] (h : IsMinimalProjectivePresentation p₁ p₀) :
+The projectivity of the transpose over `K` is what lets a vanishing translate imply projectivity
+of `M`, through `Module.subsingleton_dual_iff`; it is automatic when `K` is a field.  The
+implication the other way — a projective `M` has vanishing translate — is
+`TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranslate_of_projective`, and
+needs neither hypothesis. -/
+theorem subsingleton_auslanderReitenTranslate_iff_projective (K : Type*) [CommSemiring K]
+    [Algebra K A] [Module.Projective K (AuslanderReitenTranspose p₁)] [Module.Finite A P₁]
+    (h : IsMinimalProjectivePresentation p₁ p₀) :
     Subsingleton (AuslanderReitenTranslate K p₁) ↔ Module.Projective A M :=
   (Module.subsingleton_dual_iff K).trans h.subsingleton_auslanderReitenTranspose_iff_projective
 
