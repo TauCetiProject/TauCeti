@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma
-public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Lebesgue
-public import Mathlib.LinearAlgebra.Matrix.PosDef
 
 /-!
 # The multivariate Gamma function
@@ -18,10 +16,9 @@ The multivariate Gamma function of dimension `p` is
 
 It is the normalizing constant of the Wishart density, because for `(p - 1) / 2 < a` it is the
 integral of `(det A) ^ (a - (p + 1) / 2) * exp (-trace A)` over the cone of positive-definite
-symmetric `p × p` matrices, taken against `TauCeti.symmetricLebesgue p`. The normalization of
-that reference measure is part of the identity, not a convention that can be changed afterwards.
-`TauCeti.integral_posDef_multivariateGamma_zero` records the identity in dimension zero, where
-the symmetric matrices form a single point and both sides are `1`.
+symmetric `p × p` matrices, taken against `TauCeti.symmetricLebesgue p`; that integral identity
+lives in `TauCeti/Analysis/SpecialFunctions/MultivariateGamma/Integral.lean`, which is where the
+symmetric-matrix measure theory enters.
 
 The exponent of `π` is real, not the truncated natural-number quotient `p * (p - 1) / 4`, and so
 is the shift `i / 2` in each Gamma factor; `Γ_p` interpolates the classical constants in half
@@ -43,8 +40,7 @@ inherit.
 * `TauCeti.multivariateGamma_pos` — positivity on the classical range `(p - 1) / 2 < a`;
 * `TauCeti.multivariateGamma_eq_zero_iff` — the vanishing locus outside that range;
 * `TauCeti.measurable_multivariateGamma` — measurability in the parameter, as the parameter
-  measurability of the Wishart laws needs;
-* `TauCeti.integral_posDef_multivariateGamma_zero` — the cone integral in dimension zero.
+  measurability of the Wishart laws needs.
 
 ## References
 
@@ -56,7 +52,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Real
+open Real
 
 namespace TauCeti
 
@@ -143,22 +139,5 @@ theorem measurable_multivariateGamma (p : ℕ) : Measurable (multivariateGamma p
   rw [hfun]
   exact measurable_const.mul (Finset.measurable_prod _ fun i _ =>
     Real.measurable_Gamma.comp (measurable_id.sub_const _))
-
-/-- The cone integral that characterizes `Γ_p`, in dimension zero: the symmetric `0 × 0` matrices
-form a single point, which is positive definite and has determinant `1` and trace `0`, and
-`symmetricLebesgue 0` is the Dirac measure there. Both sides are `1`, so unlike the
-positive-dimensional identity this one needs no hypothesis on the shape parameter. -/
-theorem integral_posDef_multivariateGamma_zero (a : ℝ) :
-    ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin 0) (Fin 0) ℝ) |
-        (A : Matrix (Fin 0) (Fin 0) ℝ).PosDef},
-      (A : Matrix (Fin 0) (Fin 0) ℝ).det ^ (a - 1 / 2) *
-        exp (-(A : Matrix (Fin 0) (Fin 0) ℝ).trace) ∂symmetricLebesgue 0 =
-      multivariateGamma 0 a := by
-  have hset : {A : selfAdjoint.submodule ℝ (Matrix (Fin 0) (Fin 0) ℝ) |
-      (A : Matrix (Fin 0) (Fin 0) ℝ).PosDef} = Set.univ :=
-    Set.eq_univ_of_forall fun A =>
-      ⟨selfAdjoint.isHermitian_coe A, fun x hx => absurd (by ext i; exact i.elim0) hx⟩
-  rw [hset, Measure.restrict_univ, symmetricLebesgue_zero, integral_dirac]
-  simp [Matrix.det_fin_zero]
 
 end TauCeti
