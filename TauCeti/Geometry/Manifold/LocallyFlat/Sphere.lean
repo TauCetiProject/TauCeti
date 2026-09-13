@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
-public import Mathlib.Topology.Maps.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
 
 /-!
@@ -19,10 +18,7 @@ the two sides of the bicollar distinguish the regions adjacent to a locally flat
 conclusion which fails for wild embeddings such as the Alexander horned sphere.
 
 This file records Brown's theorem as the dimension-indexed proposition
-`TauCeti.BrownBicollaring`.  The theorem is stated rather than proved.  The existing local
-comparison shows that its hypothesis can equivalently be expressed as an embedding which is
-locally bicollared; `TauCeti.brownBicollaring_iff_isEmbedding_and_isLocallyBicollared` records
-that form explicitly.
+`TauCeti.BrownBicollaring`.  The theorem is stated rather than proved.
 
 The indexing uses an `n`-sphere in `EuclideanSpace ℝ (Fin (n + 1))` embedded in the
 `(n + 1)`-sphere in `EuclideanSpace ℝ (Fin (n + 2))`.  Local flatness is read in the split
@@ -37,10 +33,7 @@ side is included in the statement.
 
 ## Main results
 
-* `TauCeti.brownBicollaring_iff_isEmbedding_and_isLocallyBicollared`: Brown's theorem in its
-  equivalent local-to-global collar form.
-* `TauCeti.BrownBicollaring.isBicollared` and `.exists_isBicollar`: elimination forms for using
-  the statement at a chosen embedding.
+* `TauCeti.brownBicollaring_iff`: the defining characterization of Brown's theorem.
 
 ## References
 
@@ -73,49 +66,13 @@ def BrownBicollaring (n : ℕ) : Prop :=
         sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1,
     IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f → IsBicollared f
 
-namespace BrownBicollaring
-
-variable {n : ℕ}
-
-/-- A proof of Brown's bicollaring statement supplies a global bicollar for a chosen locally flat
-embedding between the standard spheres. -/
-theorem isBicollared (h : BrownBicollaring n)
-    (f :
-      sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 →
-        sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)
-    (hf : IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f) : IsBicollared f :=
-  h f hf
-
-/-- A proof of Brown's bicollaring statement produces an open product embedding whose zero slice
-is a chosen locally flat embedding between the standard spheres. -/
-theorem exists_isBicollar (h : BrownBicollaring n)
-    (f :
-      sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 →
-        sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)
-    (hf : IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f) :
-    ∃ b :
-        sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 × ℝ →
-          sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1,
-      IsBicollar f b :=
-  isBicollared_iff.mp (h.isBicollared f hf)
-
-end BrownBicollaring
-
-/-- Brown's theorem is equivalently the local-to-global assertion that every embedded standard
-sphere which is locally bicollared is globally bicollared.
-
-The explicit embedding hypothesis is essential: local bicollars only constrain a map near each
-point of its domain and do not by themselves rule out distinct source points with the same image. -/
-theorem brownBicollaring_iff_isEmbedding_and_isLocallyBicollared {n : ℕ} :
+/-- The defining characterization of Brown's bicollaring theorem. -/
+theorem brownBicollaring_iff {n : ℕ} :
     BrownBicollaring n ↔
       ∀ f :
           sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 →
             sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1,
-        IsEmbedding f ∧ IsLocallyBicollared f → IsBicollared f := by
-  constructor
-  · intro h f hf
-    exact h.isBicollared f (hf.2.isLocallyFlat hf.1)
-  · intro h f hf
-    exact h f ⟨hf.isEmbedding, hf.isLocallyBicollared⟩
+        IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f → IsBicollared f :=
+  by rfl
 
 end TauCeti
