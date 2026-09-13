@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.MinimalProjectivePresentation
+public import TauCeti.Algebra.Module.MinimalProjectivePresentation.Basic
 
 /-!
 # The Auslander--Reiten transpose
