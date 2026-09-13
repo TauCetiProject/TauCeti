@@ -81,6 +81,7 @@ abbrev realCliffordSpinGroupZero (n : ℕ) := realCliffordSpinGroup n 0
 
 /-- Scaling a nonzero vector by the inverse square root of its value under the positive-definite
 real Clifford form gives a vector of quadratic value one. -/
+@[simp]
 theorem realCliffordForm_zero_inv_sqrt_smul {n : ℕ} (v : Fin n → ℝ) (hv : v ≠ 0) :
     realCliffordForm n 0
         ((Real.sqrt (realCliffordForm n 0 v))⁻¹ • v) = 1 := by
@@ -101,6 +102,7 @@ theorem realCliffordForm_zero_inv_sqrt_smul {n : ℕ} (v : Fin n → ℝ) (hv : 
 
 /-- Normalizing a nonzero vector in the positive-definite real Clifford form does not change its
 quadratic reflection. -/
+@[simp]
 theorem reflection_realCliffordForm_zero_inv_sqrt_smul {n : ℕ}
     (v : Fin n → ℝ) (hv : v ≠ 0)
     [Invertible (realCliffordForm n 0 v)]
