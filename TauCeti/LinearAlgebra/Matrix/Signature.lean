@@ -48,11 +48,6 @@ public section
 
 open Finset QuadraticMap
 
-/-- The cardinality of a decidable subset of a finite type as a sum of indicators. -/
-private theorem Set.ncard_setOf_eq_sum {ι : Type*} [Fintype ι] (p : ι → Prop)
-    [DecidablePred p] : ({i | p i} : Set ι).ncard = ∑ i, if p i then 1 else 0 := by
-  rw [Set.ncard_eq_toFinset_card', Set.toFinset_ofPred, Finset.card_filter]
-
 namespace Matrix
 
 section CommRing
@@ -65,10 +60,9 @@ theorem toQuadraticForm'_apply (A : Matrix ι ι R) (x : ι → R) :
     A.toQuadraticForm' x = x ⬝ᵥ A *ᵥ x := by
   simp [Matrix.toQuadraticForm', Matrix.toLinearMap₂'_apply']
 
-/-- A matrix and its transpose carry the same quadratic form.
-
-This is not a `simp` lemma: `TauCeti.PDE.toQuadraticForm'_transpose` already normalises the
-same left-hand side pointwise on `EuclideanSpace ℝ n`, and the two cannot both be simp-normal. -/
+-- Not a `simp` lemma: `TauCeti.PDE.toQuadraticForm'_transpose` already normalises the same
+-- left-hand side pointwise on `EuclideanSpace ℝ n`, and the two cannot both be simp-normal.
+/-- A matrix and its transpose carry the same quadratic form. -/
 theorem toQuadraticForm'_transpose (A : Matrix ι ι R) :
     (Aᵀ).toQuadraticForm' = A.toQuadraticForm' := by
   ext x
@@ -218,7 +212,8 @@ theorem signature_diagonal (d : ι → 𝕜) :
     signature (diagonal d) = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
   classical
   rw [signature_def, toQuadraticForm'_diagonal, QuadraticForm.sigPos_weightedSumSquares,
-    QuadraticForm.sigNeg_weightedSumSquares, Set.ncard_setOf_eq_sum, Set.ncard_setOf_eq_sum,
+    QuadraticForm.sigNeg_weightedSumSquares, Set.ncard_eq_toFinset_card', Set.toFinset_ofPred,
+    Finset.card_filter, Set.ncard_eq_toFinset_card', Set.toFinset_ofPred, Finset.card_filter,
     Nat.cast_sum, Nat.cast_sum, ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
   rcases lt_trichotomy (d i) 0 with h | h | h
