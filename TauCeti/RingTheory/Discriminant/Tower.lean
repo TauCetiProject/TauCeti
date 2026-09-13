@@ -63,6 +63,8 @@ theorem traceMatrix_smulTower {K : Type*} [CommRing K]
     rw [LinearMap.toMatrix_apply, Basis.smulTower_apply, Basis.smulTower_repr,
       LinearMap.coe_restrictScalars, map_smul]
     rw [map_smul]
+    -- This unfolds the local `f` and `C` abbreviations and the basis-coordinate wrappers;
+    -- the public `Matrix.repr_toLin` lemma can rewrite the resulting `c.repr` expression.
     change b.repr (b j * (c.repr (f (c l)) k)) i = b.repr (b j * C k l) i
     rw [Matrix.repr_toLin, Basis.repr_self]
     rw [Finsupp.single_eq_pi_single, Matrix.mulVec_single_one]
