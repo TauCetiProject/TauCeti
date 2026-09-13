@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Hodge.Mixed.DeligneSplitting
 public import TauCeti.Geometry.Hodge.Mixed.Graded
+import TauCeti.Order.CompactlyGenerated
 
 /-!
 # Deligne's bigrading is an internal direct sum
@@ -65,6 +66,8 @@ What remains of Deligne's theory after this file: the conjugation symmetry
   the bigrading is an internal direct sum.
 * `TauCeti.Hodge.MixedHodgeStructure.F_eq_iSup_deligneSplitting`: the recovery
   `F^p = ⨆_{p' ≥ p} ⨆_{q'} I^{p',q'}` of the Hodge filtration.
+* `TauCeti.Hodge.MixedHodgeStructure.F_inf_WC_eq_iSup_deligneSplitting`: simultaneous
+  truncation by a Hodge step and a weight step.
 
 ## References
 
@@ -615,6 +618,18 @@ theorem F_eq_iSup_deligneSplitting (p : ℤ) :
     exact mhs.WC_monotone (le_max_right k₀ k₁)
   intro x hx
   exact key (max k₀ k₁) (le_max_left _ _) ⟨hx, by rw [htop]; trivial⟩
+
+/-- Intersecting a Hodge-filtration step with a weight-filtration step selects exactly the
+Deligne components satisfying both index bounds. -/
+theorem F_inf_WC_eq_iSup_deligneSplitting (p k : ℤ) :
+    mhs.F p ⊓ mhs.WC k =
+      ⨆ (rs : ℤ × ℤ) (_ : p ≤ rs.1 ∧ rs.1 + rs.2 ≤ k),
+        mhs.deligneSplitting rs.1 rs.2 := by
+  rw [mhs.F_eq_iSup_deligneSplitting p, mhs.WC_eq_iSup_deligneSplitting k]
+  simpa only [deligneSplittingFamily_apply] using
+    TauCeti.iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and
+      (A := mhs.deligneSplittingFamily) mhs.iSupIndep_deligneSplittingFamily
+      (fun rs ↦ p ≤ rs.1) (fun rs ↦ rs.1 + rs.2 ≤ k)
 
 end MixedHodgeStructure
 
