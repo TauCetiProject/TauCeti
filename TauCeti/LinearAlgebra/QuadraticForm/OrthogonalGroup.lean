@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.LinearMap.EqOn
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
@@ -81,9 +82,9 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
 * `QuadraticMap.exists_isometryEquiv_apply_eq_of_map_eq`: **Witt transitivity**, the orthogonal
   group acts transitively on the vectors of a fixed nonzero value, by reflecting in `x - y` or in
   `x + y`.
-* `TauCeti.QuadraticMap.exists_mem_subgroup_mul_eqOn_sup_span_singleton_of_reflection_mem`: a
-  subgroup containing the invertible-norm reflections supplies the one-step fixed-subspace
-  correction used by Cartan--Dieudonne induction.
+* `TauCeti.QuadraticMap.exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton`: at most
+  two anisotropic reflections supply the one-step fixed-subspace correction used by
+  Cartan--Dieudonne induction.
 * `TauCeti.QuadraticMap.specialOrthogonalGroup_normal`: `SO(Q)` is normal in `O(Q)`, being the
   kernel of the determinant restricted there.
 
@@ -629,37 +630,20 @@ section FixedSubspace
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
 variable (Q : QuadraticForm K V) [NeZero (2 : K)]
 
-omit [NeZero (2 : K)] in
-private theorem linearEquiv_eqOn_sup_span_singleton
-    (f : V ≃ₗ[K] V) (W : Submodule K V) (x : V)
-    (hW : ∀ w ∈ W, f w = w) (hx : f x = x) :
-    ∀ y ∈ W ⊔ Submodule.span K {x}, f y = y := by
-  apply LinearMap.eqOn_sup (f := f) (g := LinearEquiv.refl K V)
-  · intro w hw
-    simpa only [LinearEquiv.refl_apply] using hW w hw
-  · apply LinearMap.eqOn_span'
-    intro y hy
-    simp only [Set.mem_singleton_iff] at hy
-    subst y
-    -- Remove the identity-equivalence coercion introduced by `eqOn_span'`.
-    change f x = x
-    exact hx
-
-/-- Let `H` be a subgroup of the orthogonal group containing every reflection in a vector of
-invertible norm. If `g` fixes a subspace `W` pointwise and `x` is anisotropic and orthogonal to
-`W`, an element of `H` can be multiplied into `g` so that the product fixes
+/-- If `g` fixes a subspace `W` pointwise and `x` is anisotropic and orthogonal to `W`, a list of
+at most two anisotropic reflections can be multiplied into `g` so that the product fixes
 `W ⊔ K ∙ x` pointwise. -/
-theorem exists_mem_subgroup_mul_eqOn_sup_span_singleton_of_reflection_mem
-    (H : Subgroup (QuadraticMap.orthogonalGroup Q))
-    (hreflection : ∀ (v : V) [Invertible (Q v)],
-      QuadraticMap.reflectionOrthogonal Q v ∈ H)
+theorem exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton
     (g : QuadraticMap.orthogonalGroup Q) (W : Submodule K V)
     (hfix : ∀ w ∈ W, ((g : V ≃ₗ[K] V) w) = w)
     (x : V) [Invertible (Q x)]
     (hx : ∀ w ∈ W, Q.IsOrtho x w) :
-    ∃ r : QuadraticMap.orthogonalGroup Q, r ∈ H ∧
+    ∃ l : List (QuadraticMap.orthogonalGroup Q),
+      (∀ r ∈ l, ∃ (v : V) (_ : Invertible (Q v)),
+        QuadraticMap.reflectionOrthogonal Q v = r) ∧
+      l.length ≤ 2 ∧
       ∀ y ∈ W ⊔ Submodule.span K {x},
-        (((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) = y := by
+        (((l.prod * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) = y := by
   have hmap : Q ((g : V ≃ₗ[K] V) x) = Q x :=
     QuadraticMap.map_app_of_mem_orthogonalGroup g.2 x
   have hgx : ∀ w ∈ W, Q.IsOrtho ((g : V ≃ₗ[K] V) x) w := by
@@ -681,19 +665,27 @@ theorem exists_mem_subgroup_mul_eqOn_sup_span_singleton_of_reflection_mem
   · let : Invertible (Q ((g : V ≃ₗ[K] V) x - x)) := hsubUnit.invertible
     let r : QuadraticMap.orthogonalGroup Q :=
       QuadraticMap.reflectionOrthogonal Q ((g : V ≃ₗ[K] V) x - x)
-    refine ⟨r, hreflection _, ?_⟩
-    apply linearEquiv_eqOn_sup_span_singleton _ W x
-    · intro w hw
-      -- Expose the reflection underlying the subgroup product before applying its pointwise API.
-      change QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - x)
-        ((g : V ≃ₗ[K] V) w) = w
-      rw [hfix w hw]
-      apply QuadraticMap.reflection_apply_of_isOrtho
-      exact hsub w hw
-    · -- Expose the reflection underlying the subgroup product at the new generator.
-      change QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - x)
-        ((g : V ≃ₗ[K] V) x) = x
-      exact QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ x hmap
+    refine ⟨[r], ?_, by simp, ?_⟩
+    · intro s hs
+      simp only [List.mem_singleton] at hs
+      subst s
+      exact ⟨_, inferInstance, rfl⟩
+    · simpa only [List.prod_cons, List.prod_nil, mul_one] using
+        -- Normalize the singleton word product to the correcting group element.
+        (show ∀ y ∈ W ⊔ Submodule.span K {x},
+          ((((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)) y) = y by
+            apply ((r * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap).eqOn_sup_span_singleton
+              (g := LinearMap.id)
+            · intro w hw
+              -- Expose the reflection underlying the orthogonal-group product.
+              change QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - x)
+                ((g : V ≃ₗ[K] V) w) = w
+              rw [hfix w hw]
+              exact QuadraticMap.reflection_apply_of_isOrtho Q _ (hsub w hw)
+            · -- Expose the reflection at the new fixed generator.
+              change QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - x)
+                ((g : V ≃ₗ[K] V) x) = x
+              exact QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ x hmap)
   · have : Invertible (Q ((g : V ≃ₗ[K] V) x - -x)) := by
       simpa only [sub_neg_eq_add] using haddUnit.invertible
     have hadd' : ∀ w ∈ W, Q.IsOrtho ((g : V ≃ₗ[K] V) x - -x) w := by
@@ -702,26 +694,34 @@ theorem exists_mem_subgroup_mul_eqOn_sup_span_singleton_of_reflection_mem
       QuadraticMap.reflectionOrthogonal Q x
     let r₂ : QuadraticMap.orthogonalGroup Q :=
       QuadraticMap.reflectionOrthogonal Q ((g : V ≃ₗ[K] V) x - -x)
-    refine ⟨r₁ * r₂, H.mul_mem (hreflection x) (hreflection _), ?_⟩
-    apply linearEquiv_eqOn_sup_span_singleton _ W x
-    · intro w hw
-      -- Expose the two reflections underlying the subgroup product.
-      change QuadraticMap.reflection Q x
-        (QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - -x)
-          ((g : V ≃ₗ[K] V) w)) = w
-      rw [hfix w hw]
-      have hfix₂ : QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - -x) w = w :=
-        QuadraticMap.reflection_apply_of_isOrtho Q _
-        (hadd' w hw)
-      rw [hfix₂]
-      exact QuadraticMap.reflection_apply_of_isOrtho Q _
-        (hx w hw)
-    · -- Expose the two reflections underlying the subgroup product at the new generator.
-      change QuadraticMap.reflection Q x
-        (QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - -x)
-          ((g : V ≃ₗ[K] V) x)) = x
-      rw [QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ (-x)
-        (hmap.trans (Q.map_neg x).symm), map_neg, QuadraticMap.reflection_apply_self, neg_neg]
+    refine ⟨[r₁, r₂], ?_, by simp, ?_⟩
+    · intro s hs
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hs
+      rcases hs with rfl | rfl
+      · exact ⟨x, inferInstance, rfl⟩
+      · exact ⟨_, inferInstance, rfl⟩
+    · simpa only [List.prod_cons, List.prod_nil, mul_one] using
+        -- Normalize the two-element word product to the correcting group elements.
+        (show ∀ y ∈ W ⊔ Submodule.span K {x},
+          (((((r₁ * r₂) * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)) y) = y by
+            let f := ((r₁ * r₂) * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap
+            apply f.eqOn_sup_span_singleton
+              (g := LinearMap.id)
+            · intro w hw
+              -- Expose the two reflections underlying the orthogonal-group product.
+              change QuadraticMap.reflection Q x
+                (QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - -x)
+                  ((g : V ≃ₗ[K] V) w)) = w
+              rw [hfix w hw]
+              rw [QuadraticMap.reflection_apply_of_isOrtho Q _ (hadd' w hw)]
+              exact QuadraticMap.reflection_apply_of_isOrtho Q _ (hx w hw)
+            · -- Expose the two reflections at the new fixed generator.
+              change QuadraticMap.reflection Q x
+                (QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - -x)
+                  ((g : V ≃ₗ[K] V) x)) = x
+              rw [QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ (-x)
+                (hmap.trans (Q.map_neg x).symm), map_neg,
+                QuadraticMap.reflection_apply_self, neg_neg])
 
 end FixedSubspace
 
