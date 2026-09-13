@@ -6,17 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.AlgClosed
-public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+public import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
-# Complex local quadratic forms
+# Quadratic forms over the complex numbers
 
 Over `ℂ`, a regular finite-dimensional quadratic form is determined up to equivalence by its
-dimension.  In particular, a regular form of rank at least two is isotropic.  These facts justify
-the omission of complex places from the local predicates used by the global local-to-global theory.
+dimension.  In particular, every form of rank at least two is isotropic.  These facts justify the
+omission of complex places from the local predicates used by the global local-to-global theory.
 
-The proofs use Mathlib's algebraically closed classification and the actual complex localization
-defined in `Global.Localization`; no separate complex quadratic-form carrier is introduced.
+The proofs use Mathlib's algebraically closed classification.  No separate complex quadratic-form
+carrier is introduced.
 -/
 
 public section
@@ -26,26 +27,13 @@ open QuadraticMap
 
 namespace TauCeti.QuadraticForm
 
-private noncomputable def standardIsometry (n m : ℕ) (h : n = m) :
-    IsometryEquiv (weightedSumSquares ℂ (1 : Fin n → ℂ))
-      (weightedSumSquares ℂ (1 : Fin m → ℂ)) := by
-  let e : (Fin n → ℂ) ≃ₗ[ℂ] (Fin m → ℂ) :=
-    LinearEquiv.piCongrLeft ℂ (fun _ : Fin m => ℂ) (finCongr h)
-  exact
-    { toLinearEquiv := e
-      map_app' := by
-        intro x
-        simp only [weightedSumSquares_apply, Pi.one_apply, one_smul]
-        dsimp [e, LinearEquiv.piCongrLeft, LinearEquiv.piCongrLeft']
-        -- The linear reindexing is the inverse reindexing of `finCongr`.
-        exact (finCongr h).symm.sum_comp (fun i => x i * x i) }
-
-/-- A regular complex quadratic form of rank at least two has a nonzero isotropic vector. -/
+/-- A form over `ℂ` of rank at least two has a nonzero isotropic vector. -/
 theorem _root_.QuadraticForm.not_anisotropic_complex {W : Type*} [AddCommGroup W] [Module ℂ W]
-    [FiniteDimensional ℂ W] (Q : QuadraticForm ℂ W) (hQ : Q.Nondegenerate)
+    [FiniteDimensional ℂ W] (Q : QuadraticForm ℂ W)
     (h : 2 ≤ Module.finrank ℂ W) : ¬ Q.Anisotropic := by
+  intro hQ
   obtain ⟨e⟩ := Q.equivalent_weightedSumSquares_of_isAlgClosed
-    ((QuadraticMap.nondegenerate_associated_iff (Q := Q)).mpr hQ).1
+    (QuadraticMap.separatingLeft_of_anisotropic Q hQ)
   let k := Module.finrank ℂ W - 2
   have hk : k + 1 + 1 = Module.finrank ℂ W := by
     dsimp [k]
@@ -59,23 +47,15 @@ theorem _root_.QuadraticForm.not_anisotropic_complex {W : Type*} [AddCommGroup W
     let i₀ : Fin (Module.finrank ℂ W) := ⟨0, hn⟩
     have hi := congrArg (fun f => f i₀) hx
     simp [x, x₀, i₀] at hi
-  refine (QuadraticMap.not_anisotropic_iff_exists Q).mpr ⟨e.symm x, ?_, ?_⟩
-  · intro hz
-    apply hx
-    rw [← e.apply_symm_apply x, hz]
-    exact map_zero e
-  · rw [← e.map_app]
+  have hzero : Q (e.symm x) = 0 := by
+    rw [← e.map_app]
     rw [e.apply_symm_apply]
     simp only [weightedSumSquares_apply, Pi.one_apply, one_smul]
     rw [← (finCongr hk).sum_comp (fun i => x i * x i)]
     simp [x, x₀, Fin.sum_univ_succ]
-
-private theorem _root_.QuadraticForm.equivalent_standard_complex {W : Type*} [AddCommGroup W]
-    [Module ℂ W] [FiniteDimensional ℂ W] (Q : QuadraticForm ℂ W) (hQ : Q.Nondegenerate) :
-    Q.Equivalent (weightedSumSquares ℂ
-      (1 : Fin (Module.finrank ℂ W) → ℂ)) :=
-  Q.equivalent_weightedSumSquares_of_isAlgClosed
-    ((QuadraticMap.nondegenerate_associated_iff (Q := Q)).mpr hQ).1
+  apply hx
+  rw [← e.apply_symm_apply x, hQ _ hzero]
+  exact map_zero e
 
 /-- Regular complex quadratic forms on possibly different spaces are equivalent exactly when their
 dimensions agree. -/
@@ -85,12 +65,22 @@ theorem _root_.QuadraticForm.equivalent_of_finrank_eq_complex {W₁ W₂ : Type*
     (Q : QuadraticForm ℂ W₁) (R : QuadraticForm ℂ W₂)
     (hQ : Q.Nondegenerate) (hR : R.Nondegenerate)
     (h : Module.finrank ℂ W₁ = Module.finrank ℂ W₂) : Q.Equivalent R := by
-  obtain ⟨eQ⟩ := _root_.QuadraticForm.equivalent_standard_complex Q hQ
-  obtain ⟨eR⟩ := _root_.QuadraticForm.equivalent_standard_complex R hR
-  exact ⟨eQ.trans ((standardIsometry (Module.finrank ℂ W₁) (Module.finrank ℂ W₂) h).trans eR.symm)⟩
+  let e : W₁ ≃ₗ[ℂ] W₂ := LinearEquiv.ofFinrankEq W₁ W₂ h
+  have hQ' : (QuadraticMap.associated Q).SeparatingLeft :=
+    (QuadraticMap.nondegenerate_associated_iff.mpr hQ).1
+  have hRsep : (QuadraticMap.associated R).SeparatingLeft :=
+    (QuadraticMap.nondegenerate_associated_iff.mpr hR).1
+  have hR' : (QuadraticMap.associated (R.comp (e : W₁ →ₗ[ℂ] W₂))).SeparatingLeft := by
+    rw [QuadraticMap.associated_comp]
+    intro x hx
+    apply e.injective
+    simpa using hRsep (e x) (fun y ↦ by
+      simpa [LinearMap.compl₁₂_apply] using hx (e.symm y))
+  obtain ⟨e'⟩ := Q.equivalent_of_isAlgClosed (R.comp (e : W₁ →ₗ[ℂ] W₂)) hQ' hR'
+  exact ⟨e'.trans (R.isometryEquivOfCompLinearEquiv e).symm⟩
 
 /-- Two regular complex quadratic forms are equivalent precisely when their dimensions agree. -/
-theorem _root_.QuadraticForm.equivalent_iff_finrank_eq_complex {W₁ W₂ : Type*}
+@[simp] theorem _root_.QuadraticForm.equivalent_iff_finrank_eq_complex {W₁ W₂ : Type*}
     [AddCommGroup W₁] [Module ℂ W₁] [FiniteDimensional ℂ W₁]
     [AddCommGroup W₂] [Module ℂ W₂] [FiniteDimensional ℂ W₂]
     (Q : QuadraticForm ℂ W₁) (R : QuadraticForm ℂ W₂)
