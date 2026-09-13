@@ -10,7 +10,7 @@ public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Probability.ProductMeasure
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
 public import TauCeti.Probability.Distributions.Gamma.Basic
-public import TauCeti.Probability.Distributions.Sums
+public import TauCeti.Probability.Distributions.Gamma.Sum
 
 /-!
 # Finite products of Gamma distributions
@@ -80,9 +80,10 @@ theorem map_sum_pi_gammaMeasure [Nonempty ι] {a : ι → ℝ} {r : ℝ} (ha : �
       gammaMeasure (∑ i, a i) r := by
   let _ (i : ι) : IsProbabilityMeasure (gammaMeasure (a i) r) :=
     isProbabilityMeasure_gammaMeasure (ha i) hr
-  exact (Probability.iIndepFun.hasLaw_sum_gammaMeasure
-    (iIndepFun_pi (X := fun _ ↦ (id : ℝ → ℝ)) fun _ ↦ aemeasurable_id) ha hr
-    fun i ↦ ⟨(measurable_pi_apply i).aemeasurable, (measurePreserving_eval _ i).map_eq⟩).map_eq
+  exact (iIndepFun.hasLaw_sum_gammaMeasure (s := Finset.univ)
+    (iIndepFun_pi (X := fun _ ↦ (id : ℝ → ℝ)) fun _ ↦ aemeasurable_id) hr Finset.univ_nonempty
+    (fun i _ ↦ ha i)
+    fun i _ ↦ ⟨(measurable_pi_apply i).aemeasurable, (measurePreserving_eval _ i).map_eq⟩).map_eq
 
 /-! ### The joint law of the fibre sums -/
 

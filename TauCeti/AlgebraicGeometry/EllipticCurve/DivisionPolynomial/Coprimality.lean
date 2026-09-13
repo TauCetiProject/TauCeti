@@ -120,9 +120,7 @@ theorem isCoprime_Φ_ΨSq (n : ℤ) (hΔ : W.Δ ≠ 0) : IsCoprime (W.Φ n) (W.�
   have hZ : smulEval W' a b n 2 = 0 := by simp [smulEval, hψ]
   have hX : smulEval W' a b n 0 = 0 := by simp [smulEval, hφ]
   -- but `n • (a, b)` is a nonsingular Jacobian point, and those never have `X = Z = 0`
-  have hns_smul : Jacobian.Nonsingular W' (smulEval W' a b n) := by
-    rw [← Jacobian.nonsingularLift_iff, ← zsmul_point_eq_smulEval W' hns n]
-    exact (n • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)).nonsingular
+  have hns_smul : Jacobian.Nonsingular W' (smulEval W' a b n) := nonsingular_smulEval W' hns n
   exact Jacobian.X_ne_zero_of_Z_eq_zero hns_smul hZ hX
 
 /-- **`ΨSqₙ` is nonzero on a nonsingular curve, in every characteristic.** Mathlib's
