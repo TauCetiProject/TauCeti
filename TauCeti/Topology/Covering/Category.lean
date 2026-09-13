@@ -26,13 +26,9 @@ carries the constructor API. `TauCeti.ConnectedCoveringSpace X`, the covers with
 space, is the instance taking `P` to be connectedness; `TauCeti.FiniteCoveringSpace` in
 `TauCeti.Topology.Covering.Finite` is the other.
 
-Each is a reducible abbreviation, so the general API applies to it unchanged. Dot notation
-resolves on an *object* of a subcategory — `p.proj`, `p.prop_obj`, `p.isCoveringMap_proj`,
-`p.mkProjIso`, and equally `p.homMk f w`, `p.isoMk e w`, `p.w f` — but not on a morphism, whose
-type is headed by `CategoryTheory.InducedCategory.Hom`, so `f.w` does not resolve. A member
-parameterized only by `X` and `P`, such as `totalSpace` and `fullyFaithfulForget`, is named
-through the `CoveringSpace.FullSubcategory` namespace. Each subcategory states its own
-constructor, since each takes its property in a different form.
+Each is a reducible abbreviation, so the general API applies to it unchanged, and only the
+constructor is restated at each subcategory. The docstring of
+`TauCeti.CoveringSpace.FullSubcategory` says how to name its members from a subcategory.
 
 The connected covers are the source category for the classification by transitive
 fundamental-group actions.
@@ -58,8 +54,6 @@ fundamental-group actions.
 * `TauCeti.CoveringSpace.FullSubcategory.prop_obj`: the cutting property of an object.
 * `TauCeti.CoveringSpace.FullSubcategory.forget`, `fullyFaithfulForget`: the inclusion into all
   covers and its full faithfulness.
-* `TauCeti.CoveringSpace.FullSubcategory.totalSpace`: the functor taking an object to its total
-  space.
 * `TauCeti.CoveringSpace.FullSubcategory.isIso_iff_isHomeomorph_hom_left`: the corresponding
   isomorphism criterion.
 * `TauCeti.ConnectedCoveringSpace X`: connected covering spaces over `X`, with
@@ -254,15 +248,20 @@ end CoveringSpace
 underlying object of `TopCat / X`.
 
 A subcategory of covers is built by abbreviating this type at its own `P`, as
-`TauCeti.ConnectedCoveringSpace` and `TauCeti.FiniteCoveringSpace` do. Because such an
-abbreviation is reducible, a member of the API below is reached from it by dot notation on an
-*object* — `p.proj`, and equally `p.homMk f w` and `p.w f`, whose subcategory argument is
-implicit — and need not be restated. Dot notation on a morphism does not resolve, since its type
-is headed by `CategoryTheory.InducedCategory.Hom`; `f.w` must be written
-`CoveringSpace.FullSubcategory.w f`. A member parameterized only by `X` and `P`, such as
-`totalSpace` and `fullyFaithfulForget`, is likewise named through this namespace.
-A constructor is restated at each subcategory, since each takes its property in a different
-form. -/
+`TauCeti.ConnectedCoveringSpace` and `TauCeti.FiniteCoveringSpace` do, and the API below is then
+used from it rather than restated. Naming a member from such a subcategory:
+
+* dot notation on an **object** reaches anything with an object or morphism argument, since the
+  subcategory argument may be implicit — `p.proj`, `p.prop_obj`, `p.isCoveringMap_proj`,
+  `p.mkProjIso`, and equally `p.homMk f w`, `p.isoMk e w`, `p.w f`;
+* dot notation on a **morphism** does not resolve, its type being headed by
+  `CategoryTheory.InducedCategory.Hom`, so `f.w` must be written
+  `CoveringSpace.FullSubcategory.w f`;
+* a member parameterized only by `X` and `P`, such as `fullyFaithfulForget`, is named through
+  this namespace.
+
+Only the constructor is restated at each subcategory, since each takes its property in a
+different form. -/
 abbrev CoveringSpace.FullSubcategory (X : TopCat.{u})
     (P : ObjectProperty (CategoryTheory.Over X)) : Type _ :=
   (Over.isCoveringMap X ⊓ P).FullSubcategory
@@ -275,11 +274,6 @@ variable {X : TopCat.{u}} {P : ObjectProperty (CategoryTheory.Over X)}
 abbrev forget (X : TopCat.{u}) (P : ObjectProperty (CategoryTheory.Over X)) :
     CoveringSpace.FullSubcategory X P ⥤ CoveringSpace X :=
   ObjectProperty.ιOfLE inf_le_left
-
-/-- The functor taking an object to its total space. -/
-abbrev totalSpace (X : TopCat.{u}) (P : ObjectProperty (CategoryTheory.Over X)) :
-    CoveringSpace.FullSubcategory X P ⥤ TopCat :=
-  forget X P ⋙ CoveringSpace.totalSpace X
 
 /-- An object of a full subcategory of covering spaces coerces to its total space. -/
 instance : CoeOut (CoveringSpace.FullSubcategory X P) TopCat where

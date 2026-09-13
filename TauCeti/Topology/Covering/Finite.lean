@@ -15,8 +15,8 @@ A covering space is *finite* when all of its fibres are finite. This file record
 as a property of an object of `TopCat / X` and names the resulting full subcategory
 `TauCeti.FiniteCoveringSpace X`, as an instance of `TauCeti.CoveringSpace.FullSubcategory`.
 
-That general type carries the shared API, which is used here rather than restated; the module
-docstring of `TauCeti.Topology.Covering.Category` says how its members are named. What this file
+That general type carries the shared API, which is used here rather than restated; its docstring
+says how to name its members from a subcategory. What this file
 adds is the finiteness property, the constructor family and the inclusion functor — which are
 given again because they pin `P` down to finiteness — and
 `TauCeti.FiniteCoveringSpace.finite_fiber`, recording finiteness of every fibre as an instance.
