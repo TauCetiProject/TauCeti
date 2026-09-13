@@ -21,14 +21,15 @@ field. In practice a torus is produced together with a splitting field that is m
 finite Galois extension over which the coordinate Hopf algebra becomes a group algebra. This file
 converts such data into the definition.
 
-Concretely, if `L / k` is algebraic and `L ⊗[k] H` is the coordinate Hopf algebra of a
-diagonalizable group whose character group is torsion-free, then `H` is a torus over `k`.
+Concretely, if `L / k` is algebraic and `L ⊗[k] H` is a split torus, then `H` is a torus
+over `k`.
 
 ## Main declaration
 
-* `TauCeti.torusCommHopfAlgProperty.of_baseChange_iso_coordinateRing`: a finite-type commutative
-  Hopf algebra that becomes a torsion-free diagonalizable coordinate ring over an algebraic
-  extension is a torus.
+* `TauCeti.torusCommHopfAlgProperty.of_baseChange`: a finite-type commutative Hopf algebra that
+  becomes a split torus over an algebraic extension is a torus.
+* `TauCeti.torusCommHopfAlgProperty.of_baseChange_iso_coordinateRing`: the corresponding
+  coordinate-ring criterion.
 
 ## References
 
@@ -45,18 +46,17 @@ universe u
 
 namespace torusCommHopfAlgProperty
 
-/-- **A finite-type commutative Hopf algebra that becomes a torsion-free diagonalizable
-coordinate ring over an algebraic extension is a torus.**
-
-Torsion freeness of the character group `G` distinguishes tori among the groups of multiplicative
-type; finite generation then supplies the unique-product property used to prove connectedness and
-reducedness. -/
-theorem of_baseChange_iso_coordinateRing
+/-- **A finite-type commutative Hopf algebra that becomes a split torus over an algebraic
+extension is a torus.** -/
+theorem of_baseChange
     (k L : Type u) [Field k] [Field L] [Algebra k L] [Algebra.IsAlgebraic k L]
-    (H : FiniteTypeCommHopfAlgCat.{u, u} k) (G : FGCommGrpCat.{u}) [IsMulTorsionFree G]
-    (i : FiniteTypeCommHopfAlgCat.baseChange (K := L) H ≅
-      DiagonalizableGroup.coordinateRing L G) :
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    (hH : splitTorusCommHopfAlgProperty L
+      (FiniteTypeCommHopfAlgCat.baseChange (K := L) H)) :
     torusCommHopfAlgProperty k H := by
+  rw [splitTorusCommHopfAlgProperty_iff] at hH
+  obtain ⟨n, ⟨i⟩⟩ := hH
+  let G := SplitTorus.characterGroup (ULift.{u} (Fin n))
   let _ : Algebra L (AlgebraicClosure k) :=
     (IsAlgClosed.lift (R := k) (S := L) (M := AlgebraicClosure k)).toAlgebra
   have : IsScalarTower k L (AlgebraicClosure k) :=
@@ -68,7 +68,7 @@ theorem of_baseChange_iso_coordinateRing
       FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H :=
     ((DiagonalizableGroup.baseChangeCoordinateRingIso L (AlgebraicClosure k) G).symm ≪≫
       (FiniteTypeCommHopfAlgCat.baseChangeFunctor
-        (K := AlgebraicClosure k)).mapIso i.symm) ≪≫
+        (K := AlgebraicClosure k)).mapIso i) ≪≫
       ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso k (AlgebraicClosure k) H.obj)
   let j' := (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
     (CommHopfAlgCat.{u} (AlgebraicClosure k))).mapIso j
@@ -81,6 +81,21 @@ theorem of_baseChange_iso_coordinateRing
   · exact geometricallyReducedCommHopfAlgProperty.of_baseChange (AlgebraicClosure k) H.obj
       ((geometricallyReducedCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso j'
         (DiagonalizableGroup.geometricallyReduced_coordinateRing (AlgebraicClosure k) G))
+
+/-- **A finite-type commutative Hopf algebra that becomes a torsion-free diagonalizable
+coordinate ring over an algebraic extension is a torus.**
+
+Torsion freeness of the character group `G` distinguishes tori among the groups of multiplicative
+type; finite generation then supplies the split-torus property. -/
+theorem of_baseChange_iso_coordinateRing
+    (k L : Type u) [Field k] [Field L] [Algebra k L] [Algebra.IsAlgebraic k L]
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) (G : FGCommGrpCat.{u}) [IsMulTorsionFree G]
+    (i : FiniteTypeCommHopfAlgCat.baseChange (K := L) H ≅
+      DiagonalizableGroup.coordinateRing L G) :
+    torusCommHopfAlgProperty k H :=
+  of_baseChange k L H <|
+    (splitTorusCommHopfAlgProperty L).prop_of_iso i.symm
+      (splitTorusCommHopfAlgProperty_coordinateRing L G)
 
 end torusCommHopfAlgProperty
 
