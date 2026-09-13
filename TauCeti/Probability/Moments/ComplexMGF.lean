@@ -16,9 +16,9 @@ The moment-generating function of a real random variable `X` is the restriction 
 of `ProbabilityTheory.complexMGF X μ`, which is analytic on the vertical strip over the interior
 of the exponential-integrability domain.  A closed form for `mgf X μ` on a real interval therefore
 determines `complexMGF X μ` on the whole strip above it, as soon as the proposed formula is itself
-analytic there.  Since `complexMGF X μ` on the imaginary axis is the characteristic function of
-the law of `X`, this is the standard route from a moment-generating function to a characteristic
-function.
+analytic there.  For an a.e.-measurable `X`, `complexMGF X μ` on the imaginary axis is the
+characteristic function of the law of `X`, so this is the standard route from a moment-generating
+function to a characteristic function.
 
 `TauCeti.eqOn_complexMGF_of_eqOn_mgf` packages that continuation step.  The rest of the file
 carries it out for the closed form
