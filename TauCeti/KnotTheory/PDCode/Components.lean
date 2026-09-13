@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.Basic
-public import TauCeti.GroupTheory.Perm.OrbitCount
+public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 import TauCeti.GroupTheory.Perm.SumCongr
 
 /-! # Components of PD-codes

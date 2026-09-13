@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.GaussCode.PDCode.Basic
 public import TauCeti.KnotTheory.PDCode.Components
-import TauCeti.GroupTheory.Perm.OrbitCountFinRotate
+import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 
 /-!
 # Component traversal of the PD-code of a Gauss code
@@ -74,6 +74,7 @@ theorem outgoingHalfEdgeEquiv_symm_apply (D : BasedOrientedGaussCode n)
     D.outgoingHalfEdgeEquiv.symm h = ((visitHalfEdgeEquiv n).symm h.val).1 := (rfl)
 
 /-- Outgoing component traversal of a converted Gauss code is cyclic rotation of its visits. -/
+@[simp]
 theorem toOrientedPDCode_componentPermOutgoing (D : BasedOrientedGaussCode n) :
     D.toOrientedPDCode.componentPermOutgoing = D.outgoingHalfEdgeEquiv.permCongr (finRotate _) := by
   ext h
