@@ -74,17 +74,19 @@ noncomputable def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G)
     letI : DistribMulAction (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M) :=
       inferInstanceAs <| DistribMulAction (G ⧸ V.toSubgroup)
         (FixedPoints.addSubmonoid V.toSubgroup M)
+    let hsub : FixedPoints.addSubgroup U.toSubgroup M ≤
+        FixedPoints.addSubgroup V.toSubgroup M := fun _ hm =>
+      fixedPoints_subgroup_antitone G M hVU hm
     exact explicitMap0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
       (QuotientGroup.mapOfLE hVU)
-      (fixedPointsInclusionOnAddSubgroup hVU)
+      (AddSubgroup.inclusion hsub)
       (by
         intro q m
         induction q using QuotientGroup.induction_on with
         | H g =>
           apply Subtype.ext
           rw [QuotientGroup.mapOfLE_mk]
-          simp only [coe_quotient_smul_fixedPoints_addSubgroup,
-            coe_fixedPointsInclusionOnAddSubgroup, coe_smul_fixedPoints_addSubgroup])
+          simp [coe_quotient_smul_fixedPoints_addSubgroup, coe_smul_fixedPoints_addSubgroup])
 
 /-- Coercion of a degree-zero transition to the coefficient group. -/
 @[simp]
@@ -94,7 +96,7 @@ theorem coe_explicitFiniteQuotientTransition0 (hVU : V ≤ U)
   by
     unfold explicitFiniteQuotientTransition0
     rw [coe_explicitMap0]
-    exact coe_fixedPointsInclusionOnAddSubgroup hVU ⟨(x : M), x.1.2⟩
+    exact AddSubgroup.coe_inclusion _ _
 
 /-- The transition at an open normal subgroup is the identity. -/
 @[simp]
@@ -106,7 +108,7 @@ theorem explicitFiniteQuotientTransition0_id (U : OpenNormalSubgroup G) :
   apply Subtype.ext
   simp only [coe_explicitMap0, AddMonoidHom.id_apply]
   apply Subtype.ext
-  simp only [coe_fixedPointsInclusionOnAddSubgroup]
+  rfl
 
 /-- Degree-zero transitions compose along inclusions of open normal subgroups. -/
 theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
@@ -120,7 +122,7 @@ theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
   apply Subtype.ext
   simp only [coe_explicitMap0, AddMonoidHom.comp_apply]
   apply Subtype.ext
-  simp only [coe_fixedPointsInclusionOnAddSubgroup]
+  rfl
 
 private theorem explicitFiniteQuotientTransition0_inflation (hVU : V ≤ U)
     (x : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :

@@ -186,24 +186,6 @@ theorem coe_fixedPointsInclusion (h : K ≤ H) (m : FixedPoints.addSubmonoid H M
     (fixedPointsInclusion h m : M) = (m : M) :=
   AddSubmonoid.coe_inclusion _ m
 
-/-- The inclusion between fixed-point additive subgroups. -/
-def fixedPointsInclusionOnAddSubgroup {G : Type*} [Group G] {M : Type*} [AddCommGroup M]
-    [DistribMulAction G M] {H K : Subgroup G} (h : K ≤ H) :
-    FixedPoints.addSubgroup H M →+ FixedPoints.addSubgroup K M where
-  toFun m :=
-    ⟨(fixedPointsInclusion h ⟨(m : M), m.2⟩ : M),
-      (fixedPointsInclusion h ⟨(m : M), m.2⟩).2⟩
-  map_zero' := by ext; simp
-  map_add' _ _ := by ext; simp
-
-/-- The fixed-point subgroup inclusion does not move an element of `M`. -/
-@[simp]
-theorem coe_fixedPointsInclusionOnAddSubgroup {G : Type*} [Group G] {M : Type*} [AddCommGroup M]
-    [DistribMulAction G M] {H K : Subgroup G} (h : K ≤ H)
-    (m : FixedPoints.addSubgroup H M) :
-    (fixedPointsInclusionOnAddSubgroup h m : M) = (m : M) := by
-  exact coe_fixedPointsInclusion h ⟨(m : M), m.2⟩
-
 /-- The fixed-point inclusions are injective. -/
 theorem fixedPointsInclusion_injective (h : K ≤ H) :
     Function.Injective (fixedPointsInclusion (M := M) h) :=
