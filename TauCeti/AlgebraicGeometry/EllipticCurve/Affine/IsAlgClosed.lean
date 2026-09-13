@@ -7,6 +7,9 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.BaseChange
+-- Proof-only: an integral element of an extension of an algebraically closed field lies in it.
+import Mathlib.RingTheory.Adjoin.Field
 
 /-!
 # Every `x`-coordinate of a Weierstrass curve over an algebraically closed field is attained
@@ -20,6 +23,8 @@ involved, which is why it lives here rather than with any consumer.
 
 * `WeierstrassCurve.Affine.exists_point_on_curve`: over an algebraically closed field
   every element is the `x`-coordinate of a solution of `W.Equation`.
+* `WeierstrassCurve.mem_range_y_of_equation_of_mem_range_x`: hence, over an algebraically closed
+  one, the `y`-coordinate is in the base field too.
 
 Stated for an arbitrary affine Weierstrass curve over an algebraically closed field. It yields a
 solution of the *equation*, not an element of `W.Point`; a caller wanting a point pairs it with
@@ -68,6 +73,15 @@ theorem exists_point_on_curve (a : F) : ∃ b : F, W.Equation a b := by
   exact ⟨b, (W.equation_iff a b).mpr (by linear_combination hb)⟩
 
 end Affine
+
+/-- **The `y`-coordinate of a point with rational `x` is rational** when the base field is
+algebraically closed: integrality then puts it in the image of `F`. -/
+theorem mem_range_y_of_equation_of_mem_range_x {F : Type*} [Field F] [IsAlgClosed F]
+    (W : WeierstrassCurve F) {Ω : Type*} [Field Ω] [Algebra F Ω] {x y : Ω}
+    (heq : (W.baseChange Ω).toAffine.Equation x y) {x₀ : F} (hx : algebraMap F Ω x₀ = x) :
+    y ∈ Set.range (algebraMap F Ω) :=
+  (isIntegral_y_of_equation_of_mem_range_x W heq hx).mem_range_algebraMap_of_minpoly_splits
+    (by simpa using IsAlgClosed.splits (minpoly F y))
 
 end WeierstrassCurve
 

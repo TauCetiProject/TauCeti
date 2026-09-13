@@ -20,6 +20,8 @@ This is infrastructure for the base-change lane of
 
 public section
 
+open Polynomial
+
 open _root_.WeierstrassCurve
 
 section
@@ -33,5 +35,21 @@ instance _root_.WeierstrassCurve.Affine.instIsEllipticBaseChange : (W⁄A).toAff
   inferInstanceAs (W.map (algebraMap R A)).IsElliptic
 
 end
+
+/-- **The `y`-coordinate is integral over the base ring** once the `x`-coordinate comes from it:
+fixing `x` leaves the Weierstrass equation a monic quadratic in `y` with coefficients in the
+base. No field or nonsingularity hypothesis is used. -/
+theorem isIntegral_y_of_equation_of_mem_range_x {F : Type*} [CommRing F] (W : WeierstrassCurve F)
+    {Ω : Type*} [CommRing Ω] [Algebra F Ω] {x y : Ω}
+    (heq : (W.baseChange Ω).toAffine.Equation x y) {x₀ : F} (hx : algebraMap F Ω x₀ = x) :
+    IsIntegral F y := by
+  refine ⟨X ^ 2 + C (W.a₁ * x₀ + W.a₃) * X -
+    C (x₀ ^ 3 + W.a₂ * x₀ ^ 2 + W.a₄ * x₀ + W.a₆), by monicity!, ?_⟩
+  have h := ((W.baseChange Ω).toAffine.equation_iff' x y).mp heq
+  rw [← hx] at h
+  simp only [eval₂_sub, eval₂_add, eval₂_mul, eval₂_pow, eval₂_X, eval₂_C, map_add, map_mul,
+    map_pow]
+  simp only [baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at h
+  linear_combination h
 
 end
