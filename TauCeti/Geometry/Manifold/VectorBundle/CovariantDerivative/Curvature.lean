@@ -179,6 +179,7 @@ variable {cov}
   {X X' Y Y' : Π x : M, TangentSpace I x} {σ τ : Π x : M, V x} {f : M → ℝ}
 
 /-- Curvature is additive in its first vector-field argument. -/
+@[simp]
 theorem curvatureOperator_add_first
     (hX : CMDiff ∞ (T% X)) (hX' : CMDiff ∞ (T% X'))
     (hσ : CMDiff ∞ (T% σ)) :
@@ -203,6 +204,7 @@ theorem curvatureOperator_add_first
   abel
 
 /-- Curvature is additive in its second vector-field argument. -/
+@[simp]
 theorem curvatureOperator_add_second
     (hY : CMDiff ∞ (T% Y)) (hY' : CMDiff ∞ (T% Y'))
     (hσ : CMDiff ∞ (T% σ)) :
@@ -215,6 +217,7 @@ theorem curvatureOperator_add_second
 
 omit [CompleteSpace E] in
 /-- Curvature is additive in its section argument. -/
+@[simp]
 theorem curvatureOperator_add_section
     (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y))
     (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ)) :
@@ -250,6 +253,7 @@ theorem curvatureOperator_add_section
   abel
 
 /-- Curvature is linear over smooth functions in its first vector-field argument. -/
+@[simp]
 theorem curvatureOperator_smul_first
     (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hX : CMDiff ∞ (T% X))
     (hσ : CMDiff ∞ (T% σ)) :
@@ -280,6 +284,7 @@ theorem curvatureOperator_smul_first
   abel
 
 /-- Curvature is linear over smooth functions in its second vector-field argument. -/
+@[simp]
 theorem curvatureOperator_smul_second
     (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hY : CMDiff ∞ (T% Y))
     (hσ : CMDiff ∞ (T% σ)) :
@@ -289,6 +294,7 @@ theorem curvatureOperator_smul_second
   simp
 
 /-- Curvature is linear over smooth functions in its section argument. -/
+@[simp]
 theorem curvatureOperator_smul_section
     (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hX : CMDiff ∞ (T% X))
     (hY : CMDiff ∞ (T% Y)) (hσ : CMDiff ∞ (T% σ)) :
