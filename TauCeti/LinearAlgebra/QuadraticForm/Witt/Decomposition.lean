@@ -70,6 +70,7 @@ section Hyperbolic
 variable [Invertible (2 : K)]
 
 /-- The diagonal presentation `⟨1, -1⟩` presents the hyperbolic plane. -/
+@[simp]
 theorem presentedForm_one_neg_one :
     presentedForm (⟨2, ![1, -1]⟩ : RegularFormPresentation K) = hyperbolicPlane K := by
   ext x
@@ -85,21 +86,16 @@ confines the definition to characteristic not two, where `⟨1, -1⟩` is the hy
 def hyperbolicClass (K : Type u) [Field K] [_i2 : Invertible (2 : K)] : RegularFormClass K :=
   Quotient.mk (regularFormSetoid K) ⟨2, ![1, -1]⟩
 
-/-- The hyperbolic class is the class of the presentation `⟨1, -1⟩`. -/
-theorem hyperbolicClass_def :
-    hyperbolicClass K = Quotient.mk (regularFormSetoid K) ⟨2, ![1, -1]⟩ := by
-  rw [hyperbolicClass]
-
 /-- The hyperbolic class has rank two. -/
 @[simp]
 theorem rank_hyperbolicClass : RegularFormClass.rank (hyperbolicClass K) = 2 := by
-  rw [hyperbolicClass_def, RegularFormClass.rank_mk]
+  rw [hyperbolicClass, RegularFormClass.rank_mk]
 
 /-- The class of the hyperbolic plane, as a form, is the hyperbolic class. -/
 @[simp]
 theorem formClass_hyperbolicPlane :
     formClass (hyperbolicPlane K) nondegenerate_hyperbolicPlane = hyperbolicClass K := by
-  rw [hyperbolicClass_def]
+  rw [hyperbolicClass]
   refine formClass_mk _ _ _ ?_
   rw [presentedForm_one_neg_one]
   exact QuadraticMap.Equivalent.refl _
@@ -128,7 +124,7 @@ theorem mk_hyperbolicPresentation (m : ℕ) :
   | zero => rw [hyperbolicPresentation, zero_nsmul, RegularFormClass.zero_def]
   | succ m ih =>
     rw [hyperbolicPresentation, ← RegularFormClass.mk_add_mk, ih, succ_nsmul',
-      hyperbolicClass_def]
+      hyperbolicClass]
 
 end Hyperbolic
 
@@ -169,11 +165,12 @@ theorem _root_.QuadraticForm.not_anisotropic_hyperbolicPlane_prod {W : Type v} [
   · simp [QuadraticMap.prod_apply]
 
 /-- A class with a hyperbolic summand is not anisotropic. -/
+@[simp]
 theorem not_anisotropic_hyperbolicClass_add (c : RegularFormClass K) :
     ¬ RegularFormClass.Anisotropic (hyperbolicClass K + c) := by
   induction c using Quotient.inductionOn with
   | _ p =>
-    rw [hyperbolicClass_def, RegularFormClass.mk_add_mk, RegularFormClass.anisotropic_mk]
+    rw [hyperbolicClass, RegularFormClass.mk_add_mk, RegularFormClass.anisotropic_mk]
     intro hani
     refine QuadraticForm.not_anisotropic_hyperbolicPlane_prod (presentedForm p) ?_
     rw [← presentedForm_one_neg_one]
@@ -211,7 +208,7 @@ private theorem exists_nsmul_hyperbolicClass_add_aux (n : ℕ) :
           (nondegenerate_presentedForm p) hani
         have hsplit : (Quotient.mk (regularFormSetoid K) p : RegularFormClass K) =
             hyperbolicClass K + Quotient.mk (regularFormSetoid K) q := by
-          rw [hyperbolicClass_def, RegularFormClass.mk_add_mk, RegularFormClass.mk_eq_mk_iff]
+          rw [hyperbolicClass, RegularFormClass.mk_add_mk, RegularFormClass.mk_eq_mk_iff]
           refine hq.trans ?_
           rw [← presentedForm_one_neg_one]
           exact (equivalent_presentedForm_append_prod _ q).symm
@@ -263,6 +260,7 @@ noncomputable def RegularFormClass.anisotropicPart (c : RegularFormClass K) :
   (exists_nsmul_hyperbolicClass_add c).choose_spec.choose
 
 /-- The anisotropic part of a class is anisotropic. -/
+@[simp]
 theorem RegularFormClass.anisotropic_anisotropicPart (c : RegularFormClass K) :
     RegularFormClass.Anisotropic (RegularFormClass.anisotropicPart c) :=
   (exists_nsmul_hyperbolicClass_add c).choose_spec.choose_spec.1
@@ -319,14 +317,6 @@ theorem RegularFormClass.anisotropicPart_nsmul_hyperbolicClass_add (m : ℕ)
 theorem RegularFormClass.wittIndex_zero :
     RegularFormClass.wittIndex (0 : RegularFormClass K) = 0 :=
   RegularFormClass.wittIndex_eq (m := 0) RegularFormClass.anisotropic_zero
-    (by rw [zero_nsmul, add_zero])
-
--- Not `@[simp]`: `simp` already proves this from `anisotropicPart_eq_self` and
--- `anisotropic_zero`, so tagging it duplicates that rule and fails `simpNF`.
-/-- The anisotropic part of the rank-zero class is itself. -/
-theorem RegularFormClass.anisotropicPart_zero :
-    RegularFormClass.anisotropicPart (0 : RegularFormClass K) = 0 :=
-  RegularFormClass.anisotropicPart_eq (m := 0) RegularFormClass.anisotropic_zero
     (by rw [zero_nsmul, add_zero])
 
 /-- An anisotropic class has Witt index zero, and conversely. -/
