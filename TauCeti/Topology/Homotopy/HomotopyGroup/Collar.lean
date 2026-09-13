@@ -272,6 +272,15 @@ instance {γ : Path x y} {f : Ω^ N X x} {g : Ω^ N X y} :
 
 end HomotopyAlong
 
+omit [Fintype N] in
+/-- A homotopy relative to the cube boundary is a homotopy along the constant path: the base
+point does not move. -/
+def HomotopyAlong.ofHomotopyRel {f g : Ω^ N X x}
+    (K : ContinuousMap.HomotopyRel (f : C(I^N, X)) (g : C(I^N, X)) (Cube.boundary N)) :
+    HomotopyAlong (Path.refl x) f g where
+  toHomotopy := K.toHomotopy
+  map_boundary t z hz := (K.eq_fst t hz).trans (f.2 z hz)
+
 /-- The collar homotopy is a homotopy along `γ` from `f` to the transported loop. -/
 def collarHomotopyAlong (γ : Path x y) (f : Ω^ N X x) :
     HomotopyAlong γ f (transport γ f) where
