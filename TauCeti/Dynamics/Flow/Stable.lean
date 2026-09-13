@@ -189,8 +189,8 @@ private theorem tendsto_flow_iff (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {
         simpa only [Function.comp_apply] using hconj.semiconj t y) h'
 
 /-- A topological conjugacy carries membership in a stable set to membership in the
-corresponding stable set. -/
-@[simp]
+corresponding stable set. This is stated as an explicit rewrite lemma because
+`Flow.mem_stableSet` already puts its left-hand side in simp-normal form. -/
 theorem _root_.Homeomorph.map_mem_stableSet_iff
     (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
     e y ∈ stableSet ψ (e x) ↔ y ∈ stableSet φ x := by
@@ -198,7 +198,8 @@ theorem _root_.Homeomorph.map_mem_stableSet_iff
   exact tendsto_flow_iff e hconj
 
 /-- A topological conjugacy carries a stable set to the corresponding stable set. -/
-@[simp]
+/- This is an explicit rewrite lemma: the target flow is not determined by the left-hand
+side when this equality is used as a global simp rule. -/
 theorem _root_.Homeomorph.image_stableSet_eq
     (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) (x : α) :
     e '' stableSet φ x = stableSet ψ (e x) := by
@@ -211,8 +212,8 @@ theorem _root_.Homeomorph.image_stableSet_eq
     simpa only [e.apply_symm_apply] using hy
 
 /-- A topological conjugacy carries membership in an unstable set to membership in the
-corresponding unstable set. -/
-@[simp]
+corresponding unstable set. This is stated as an explicit rewrite lemma because
+`Flow.mem_unstableSet` already puts its left-hand side in simp-normal form. -/
 theorem _root_.Homeomorph.map_mem_unstableSet_iff
     (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
     e y ∈ unstableSet ψ (e x) ↔ y ∈ unstableSet φ x := by
@@ -220,7 +221,8 @@ theorem _root_.Homeomorph.map_mem_unstableSet_iff
   exact tendsto_flow_iff e hconj
 
 /-- A topological conjugacy carries an unstable set to the corresponding unstable set. -/
-@[simp]
+/- This is an explicit rewrite lemma: the target flow is not determined by the left-hand
+side when this equality is used as a global simp rule. -/
 theorem _root_.Homeomorph.image_unstableSet_eq
     (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) (x : α) :
     e '' unstableSet φ x = unstableSet ψ (e x) := by
