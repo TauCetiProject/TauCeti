@@ -39,10 +39,13 @@ from the identification of its commutator subgroup with the Klein four subgroup.
 closing the file records that case: over an algebraically closed field of characteristic zero, `S₄`
 has a two-dimensional irreducible representation induced from `A₄`.
 
-Two further facts about the pair `A₄ ◁ S₄` lie outside the scope of this file: that the nontrivial
-linear characters of `A₄` are *exactly* `χ` and `χ⁻¹`, which needs the order of the character group
-and not just the orbit; and that the three-dimensional irreducible of `A₄` is `S₄`-fixed, the case
-of the Clifford correspondence complementary to the one treated here.
+That the nontrivial linear characters of `A₄` are *exactly* `χ` and `χ⁻¹`, and so form a single
+`S₄`-orbit rather than merely a pair inside one, is the character count
+`TauCeti.card_monoidHom_alternatingGroup` and its consequence
+`TauCeti.exists_comp_conjNormal_alternatingGroup_eq`, both proved with the group theory in
+`TauCeti.GroupTheory.Perm.AlternatingCharacter`. One further fact about the pair `A₄ ◁ S₄` lies
+outside the scope of this file: that the three-dimensional irreducible of `A₄` is `S₄`-fixed, the
+case of the Clifford correspondence complementary to the one treated here.
 
 ## Main statements
 
