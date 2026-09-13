@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
@@ -122,11 +121,6 @@ theorem to_reflTransGen_binaryStep {w w' : Fin n → Rˣ} (h : PermutationStep w
   funext i
   exact hσ i
 
-/-- A permutation step is a diagonal chain. -/
-theorem to_diagonalChain {w w' : Fin n → Rˣ} (h : PermutationStep w w') :
-    DiagonalChain w w' :=
-  Relation.ReflTransGen.single (Or.inl h)
-
 /-- The diagonal forms at the endpoints of a permutation step are equivalent. -/
 theorem equivalent {w w' : Fin n → Rˣ} (h : PermutationStep w w') :
     (weightedSumSquares R fun i => (w i : R)).Equivalent
@@ -148,11 +142,6 @@ theorem symm {w w' : Fin n → Rˣ} (h : BinaryStep w w') : BinaryStep w' w := b
   rw [BinaryStep] at h ⊢
   obtain ⟨i, j, hij, hrest, hpair⟩ := h
   exact ⟨i, j, hij, fun k hki hkj => (hrest k hki hkj).symm, hpair.symm⟩
-
-/-- A binary step is a single-step diagonal chain. -/
-theorem to_diagonalChain {w w' : Fin n → Rˣ} (h : BinaryStep w w') :
-    DiagonalChain w w' :=
-  Relation.ReflTransGen.single (Or.inr h)
 
 /-- The diagonal forms at the endpoints of a binary step are equivalent. -/
 theorem equivalent {w w' : Fin n → Rˣ} (h : BinaryStep w w') :
