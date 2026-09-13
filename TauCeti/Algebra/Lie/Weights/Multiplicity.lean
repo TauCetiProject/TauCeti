@@ -73,25 +73,6 @@ variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
   {M : Type*} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   {ι : Type*} {N : ι → LieSubmodule K L M}
 
-/-- The image of a summand's weight space is its intersection with the ambient weight space. -/
-private theorem toSubmodule_map_weightSpace_incl (i : ι) (χ : H → K) :
-    ((weightSpace ↥(N i) χ).map ((N i).incl.restrictLie H)).toSubmodule
-      = (weightSpace M χ).toSubmodule ⊓ (N i).toSubmodule := by
-  rw [LieModule.map_weightSpace_eq_of_injective χ (LieSubmodule.injective_incl (N i)),
-    LieSubmodule.inf_toSubmodule]
-  congr 1
-  ext x
-  simp
-
-/-- The intersection carrying a summand's weight space has the expected dimension. -/
-private theorem finrank_inf_weightSpace (i : ι) (χ : H → K) :
-    finrank K ((weightSpace M χ).toSubmodule ⊓ (N i).toSubmodule : Submodule K M)
-      = finrank K (weightSpace ↥(N i) χ) := by
-  have hequiv := (LieSubmodule.equivMapOfInjective
-    (f := (N i).incl.restrictLie H) (weightSpace ↥(N i) χ)
-      (LieSubmodule.injective_incl (N i))).toLinearEquiv.finrank_eq
-  rw [← toSubmodule_map_weightSpace_incl i χ, TauCeti.finrank_toSubmodule, ← hequiv]
-
 /-- **Weight-space dimensions are additive over an internal decomposition.** If a finite family of
 `L`-submodules is an internal direct sum of `M`, then the dimension of the `χ`-weight space for any
 Lie subalgebra `H` is the sum of the dimensions of the summands' `χ`-weight spaces. -/
@@ -116,7 +97,7 @@ theorem finrank_weightSpace_eq_sum [FiniteDimensional K M]
   rw [← TauCeti.finrank_toSubmodule,
     ← h.iSup_inf_eq_of_component_mem (weightSpace M χ).toSubmodule hcomponent,
     TauCeti.finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
-  exact Finset.sum_congr rfl fun i _ ↦ finrank_inf_weightSpace i χ
+  exact Finset.sum_congr rfl fun i _ ↦ (N i).finrank_inf_weightSpace χ
 
 end DirectSum.IsInternal
 
