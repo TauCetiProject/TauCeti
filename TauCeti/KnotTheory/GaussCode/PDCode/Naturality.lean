@@ -22,7 +22,7 @@ namespace TauCeti.BasedOrientedGaussCode
 variable {n : ℕ}
 
 /-- Reflection negates the crossing signs after converting a Gauss code to a PD-code. -/
-@[simp] theorem toOrientedPDCode_mirror_crossingSign (D : BasedOrientedGaussCode n) (c : Fin n) :
+theorem toOrientedPDCode_mirror_crossingSign (D : BasedOrientedGaussCode n) (c : Fin n) :
     D.mirror.toOrientedPDCode.crossingSign c =
       -D.toOrientedPDCode.crossingSign c := by
   rw [toOrientedPDCode_crossingSign, toOrientedPDCode_crossingSign,
@@ -30,7 +30,7 @@ variable {n : ℕ}
   simp
 
 /-- Reflection negates the writhe after converting a Gauss code to a PD-code. -/
-@[simp] theorem toOrientedPDCode_mirror_writhe (D : BasedOrientedGaussCode n) :
+theorem toOrientedPDCode_mirror_writhe (D : BasedOrientedGaussCode n) :
     D.mirror.toOrientedPDCode.writhe = -D.toOrientedPDCode.writhe := by
   rw [toOrientedPDCode_writhe, toOrientedPDCode_writhe]
   simp [writhe_mirror]
