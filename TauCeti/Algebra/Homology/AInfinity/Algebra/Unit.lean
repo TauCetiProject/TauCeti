@@ -23,8 +23,6 @@ strictly unital morphism and augmentation constructions.
 
 * B. Keller, *Introduction to A-infinity algebras and modules*, Section 3.1.
 * E. Getzler and J. D. S. Jones, *A-infinity algebras and the cyclic bar complex*, Sections 1--2.
-* `TauCetiRoadmap/DGAInfinity/Suggested.lean`, following the “Units, morphisms, and equivalences”
-  section of the roadmap.
 -/
 
 public section
