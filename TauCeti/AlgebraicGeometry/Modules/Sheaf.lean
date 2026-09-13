@@ -14,8 +14,8 @@ public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 Mathlib packages the forgetful functors out of the category `X.Modules` of `𝒪_X`-modules on a
 scheme that land in presheaves: `AlgebraicGeometry.Scheme.Modules.toPresheafOfModules` and
 `AlgebraicGeometry.Scheme.Modules.toPresheaf`. This file adds the conversion of sheaf-level
-isomorphisms back to `𝒪_X`-module isomorphisms, the one that lands in abelian sheaves, records
-that the latter is exact, and reads the naturality of a morphism of `𝒪_X`-modules on sections.
+isomorphisms back to `𝒪_X`-module isomorphisms, the one that lands in abelian sheaves, and records
+that the latter is exact.
 
 ## Main declarations
 
@@ -25,9 +25,7 @@ that the latter is exact, and reads the naturality of a morphism of `𝒪_X`-mod
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso`, which lifts an isomorphism of
   underlying sheaves of modules to an isomorphism in `X.Modules`;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.shortExact_map_toSheaf`: a short exact sequence of
-  `𝒪_X`-modules stays short exact after forgetting the module structures;
-* `AlgebraicGeometry.Scheme.Modules.Hom.naturality_apply`, the naturality of a morphism of
-  `𝒪_X`-modules read on sections.
+  `𝒪_X`-modules stays short exact after forgetting the module structures.
 
 `TauCeti/AlgebraicGeometry/Cohomology/Basic.lean` defines the cohomology of an `𝒪_X`-module as
 the sheaf cohomology of its underlying abelian sheaf, so this exactness is what puts that
@@ -76,14 +74,6 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val (X : Scheme.
     {M N : X.Modules} (e : @Iso (SheafOfModules X.ringCatSheaf) _ M N) :
     (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X e).inv.val = e.inv.val :=
   by simp only [_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso]
-
-/-- Naturality of a morphism of `𝒪_X`-modules, read on sections: applying the morphism commutes
-with restricting a section along an inclusion of open subsets. This is
-`PresheafOfModules.naturality_apply` transported to the category `X.Modules`. -/
-lemma _root_.AlgebraicGeometry.Scheme.Modules.Hom.naturality_apply {X : Scheme.{u}}
-    {M N : X.Modules} (φ : M ⟶ N) {U V : X.Opens} (i : V ⟶ U) (x : Γ(M, U)) :
-    φ.app V (M.presheaf.map i.op x) = N.presheaf.map i.op (φ.app U x) :=
-  ConcreteCategory.congr_hom (φ.mapPresheaf.naturality i.op) x
 
 /-- The forgetful functor from `𝒪_X`-modules to sheaves of abelian groups on `X`.
 

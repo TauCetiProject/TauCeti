@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.LocallyPrincipal
 
 /-!
@@ -92,6 +91,12 @@ resulting multiplier is independent of the open subset because `𝒦_X` is the c
 theorem IsLocallyPrincipal.exists_rationalFunctionsMul_eq {D : SchemeWeilDivisor X}
     (hD : IsLocallyPrincipal D) (ψ : sheaf D ⟶ Scheme.rationalFunctions X) :
     ∃ g : X.functionField, ψ = sheafι D ≫ Scheme.rationalFunctionsMul X g := by
+  -- `NatTrans.naturality_apply` for the underlying map of presheaves, read in the
+  -- `Scheme.Modules.Hom.app` normal form used below
+  have hnat {M N : X.Modules} (χ : M ⟶ N) {V W : X.Opens} (i : W ⟶ V) (x : Γ(M, V)) :
+      Scheme.Modules.Hom.app χ W (M.presheaf.map i.op x) =
+        N.presheaf.map i.op (Scheme.Modules.Hom.app χ V x) :=
+    χ.mapPresheaf.naturality_apply i.op x
   obtain ⟨U₀, hU₀, f, hf⟩ := isLocallyPrincipal_iff.mp hD (genericPoint X)
   have : Nonempty U₀ := ⟨⟨_, hU₀⟩⟩
   set fK : X.functionField := ((Additive.toMul f : X.functionFieldˣ) : X.functionField)
@@ -129,14 +134,14 @@ theorem IsLocallyPrincipal.exists_rationalFunctionsMul_eq {D : SchemeWeilDivisor
       have hres : (sheaf D).presheaf.map (homOfLE hWU).op s =
           a • (sheaf D).presheaf.map (homOfLE hWU₀).op s₀ := by
         refine sheafι_app_injective D W ((Scheme.rationalFunctionsEquiv W).injective ?_)
-        rw [(sheafι D).naturality_apply (homOfLE hWU) s, Scheme.rationalFunctionsEquiv_map,
-          Scheme.Modules.Hom.app_smul, map_smul, (sheafι D).naturality_apply (homOfLE hWU₀) s₀,
+        rw [hnat (sheafι D) (homOfLE hWU) s, Scheme.rationalFunctionsEquiv_map,
+          Scheme.Modules.Hom.app_smul, map_smul, hnat (sheafι D) (homOfLE hWU₀) s₀,
           Scheme.rationalFunctionsEquiv_map, hιs₀, Algebra.smul_def,
           RingHom.algebraMap_toAlgebra, hgerm, ← htdef, mul_assoc, mul_inv_cancel₀ hfK, mul_one]
       have hψ : Scheme.rationalFunctionsEquiv U (Scheme.Modules.Hom.app ψ U s) = g * t := by
         rw [← Scheme.rationalFunctionsEquiv_map (homOfLE hWU)
-          (Scheme.Modules.Hom.app ψ U s), ← ψ.naturality_apply (homOfLE hWU) s, hres,
-          Scheme.Modules.Hom.app_smul, map_smul, ψ.naturality_apply (homOfLE hWU₀) s₀,
+          (Scheme.Modules.Hom.app ψ U s), ← hnat ψ (homOfLE hWU) s, hres,
+          Scheme.Modules.Hom.app_smul, map_smul, hnat ψ (homOfLE hWU₀) s₀,
           Scheme.rationalFunctionsEquiv_map, Algebra.smul_def, RingHom.algebraMap_toAlgebra,
           hgerm, hgdef]
         ring
