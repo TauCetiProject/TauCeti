@@ -59,6 +59,50 @@ universe u v
 variable (G : Type u) [Group G] [TopologicalSpace G]
   (M : Type v) [AddCommGroup M] [DistribMulAction G M]
 
+private def fixedPointsQuotientMapAddSubgroup {G : Type u} [Group G]
+    {M N : Type v} [AddCommGroup M] [AddCommGroup N] [DistribMulAction G M]
+    [DistribMulAction G N] (f : M →+[G] N) (H : Subgroup G) [H.Normal] :
+    FixedPoints.addSubgroup H M →+[G ⧸ H] FixedPoints.addSubgroup H N := by
+  letI : DistribMulAction (G ⧸ H) (FixedPoints.addSubgroup H M) :=
+    inferInstanceAs <| DistribMulAction (G ⧸ H) (FixedPoints.addSubmonoid H M)
+  letI : DistribMulAction (G ⧸ H) (FixedPoints.addSubgroup H N) :=
+    inferInstanceAs <| DistribMulAction (G ⧸ H) (FixedPoints.addSubmonoid H N)
+  refine {
+    toAddMonoidHom := {
+      toFun := fun m =>
+        let m' : FixedPoints.addSubmonoid H M := ⟨(m : M), m.2⟩
+        let n' := fixedPointsQuotientMap f H m'
+        ⟨(n' : N), n'.2⟩
+      map_zero' := by simp
+      map_add' _ _ := by simp }
+    map_smul' := ?_ }
+  intro q m
+  induction q using QuotientGroup.induction_on with
+  | H g =>
+    apply Subtype.ext
+    dsimp
+    rw [coe_fixedPointsQuotientMap, coe_fixedPointsQuotientMap]
+    change f (g • (m : M)) = g • f (m : M)
+    exact f.map_smul g (m : M)
+
+private theorem coe_fixedPointsQuotientMapAddSubgroup {G : Type u} [Group G]
+    {M N : Type v} [AddCommGroup M] [AddCommGroup N] [DistribMulAction G M]
+    [DistribMulAction G N] (f : M →+[G] N) (H : Subgroup G) [H.Normal]
+    (m : FixedPoints.addSubgroup H M) :
+    (fixedPointsQuotientMapAddSubgroup f H m : N) = f (m : M) := by
+  change (fixedPointsQuotientMap f H ⟨(m : M), m.2⟩ : N) = f (m : M)
+  exact coe_fixedPointsQuotientMap f H ⟨(m : M), m.2⟩
+
+private def fixedPointsInclusion_onAddSubgroup {G : Type u} [Group G]
+    {M : Type v} [AddCommGroup M] [DistribMulAction G M]
+    {H K : Subgroup G} (h : K ≤ H) :
+    FixedPoints.addSubgroup H M →+ FixedPoints.addSubgroup K M where
+  toFun m :=
+    ⟨(fixedPointsInclusion h ⟨(m : M), m.2⟩ : M),
+      (fixedPointsInclusion h ⟨(m : M), m.2⟩).2⟩
+  map_zero' := by ext; simp
+  map_add' _ _ := by ext; simp
+
 section Transition
 
 variable {U V W : OpenNormalSubgroup G}
@@ -67,10 +111,22 @@ variable {U V W : OpenNormalSubgroup G}
 noncomputable def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G) (hVU : V ≤ U) :
     H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) →+
     H0 (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M) :=
-  explicitMap0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
-    (QuotientGroup.mapOfLE hVU)
-    (fixedPointsAddSubgroupInclusion hVU)
-    (fixedPointsAddSubgroupInclusion_mapOfLE_smul hVU)
+  by
+    letI : DistribMulAction (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) :=
+      inferInstanceAs <| DistribMulAction (G ⧸ U.toSubgroup)
+        (FixedPoints.addSubmonoid U.toSubgroup M)
+    letI : DistribMulAction (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M) :=
+      inferInstanceAs <| DistribMulAction (G ⧸ V.toSubgroup)
+        (FixedPoints.addSubmonoid V.toSubgroup M)
+    exact explicitMap0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
+      (QuotientGroup.mapOfLE hVU)
+      (fixedPointsInclusion_onAddSubgroup hVU)
+      (by
+        intro q m
+        induction q using QuotientGroup.induction_on with
+        | H g =>
+          apply Subtype.ext
+          simp [fixedPointsInclusion_onAddSubgroup])
 
 /-- Coercion of a degree-zero transition to the coefficient group. -/
 @[simp]
@@ -80,7 +136,7 @@ theorem coe_explicitFiniteQuotientTransition0 (hVU : V ≤ U)
   by
     unfold explicitFiniteQuotientTransition0
     rw [coe_explicitMap0]
-    exact coe_fixedPointsAddSubgroupInclusion hVU (x : FixedPoints.addSubgroup U.toSubgroup M)
+    exact coe_fixedPointsInclusion hVU ⟨(x : M), x.1.2⟩
 
 /-- The transition at an open normal subgroup is the identity. -/
 @[simp]
@@ -92,7 +148,7 @@ theorem explicitFiniteQuotientTransition0_id (U : OpenNormalSubgroup G) :
   apply Subtype.ext
   simp only [coe_explicitMap0, AddMonoidHom.id_apply]
   apply Subtype.ext
-  simp only [coe_fixedPointsAddSubgroupInclusion]
+  simp [fixedPointsInclusion_onAddSubgroup]
 
 /-- Degree-zero transitions compose along inclusions of open normal subgroups. -/
 theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
@@ -106,7 +162,7 @@ theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
   apply Subtype.ext
   simp only [coe_explicitMap0, AddMonoidHom.comp_apply]
   apply Subtype.ext
-  simp only [coe_fixedPointsAddSubgroupInclusion]
+  simp [fixedPointsInclusion_onAddSubgroup]
 
 private theorem explicitFiniteQuotientTransition0_inflation (hVU : V ≤ U)
     (x : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
@@ -192,7 +248,7 @@ noncomputable def explicitFiniteQuotientSystem0CoeffNatTrans (f : M →+[G] N) :
     explicitFiniteQuotientSystem0 G M ⟶ explicitFiniteQuotientSystem0 G N where
   app U := AddCommGrpCat.ofHom (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
     (FixedPoints.addSubgroup U.unop.toSubgroup M)
-    (fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup))
+    (fixedPointsQuotientMapAddSubgroup f U.unop.toSubgroup))
   naturality := by
     intro U V h
     dsimp [explicitFiniteQuotientSystem0, Functor.const_obj_map]
@@ -203,7 +259,7 @@ noncomputable def explicitFiniteQuotientSystem0CoeffNatTrans (f : M →+[G] N) :
     apply Subtype.ext
     dsimp
     simp only [coe_explicitCoeff0, coe_explicitFiniteQuotientTransition0,
-      coe_fixedPointsAddSubgroupQuotientMap]
+      coe_fixedPointsQuotientMapAddSubgroup]
 
 @[simp]
 theorem explicitFiniteQuotientSystem0_coeffNatTrans_app (f : M →+[G] N)
@@ -213,7 +269,16 @@ theorem explicitFiniteQuotientSystem0_coeffNatTrans_app (f : M →+[G] N)
       eqToHom (explicitFiniteQuotientSystem0_obj G N U) =
       AddCommGrpCat.ofHom (explicitCoeff0 (G ⧸ U.toSubgroup)
         (FixedPoints.addSubgroup U.toSubgroup M)
-        (fixedPointsAddSubgroupQuotientMap f U.toSubgroup)) := by
+        (by
+          letI : DistribMulAction (G ⧸ U.toSubgroup)
+              (FixedPoints.addSubgroup U.toSubgroup M) :=
+            inferInstanceAs <| DistribMulAction (G ⧸ U.toSubgroup)
+              (FixedPoints.addSubmonoid U.toSubgroup M)
+          letI : DistribMulAction (G ⧸ U.toSubgroup)
+              (FixedPoints.addSubgroup U.toSubgroup N) :=
+            inferInstanceAs <| DistribMulAction (G ⧸ U.toSubgroup)
+              (FixedPoints.addSubmonoid U.toSubgroup N)
+          exact fixedPointsQuotientMap f U.toSubgroup)) := by
   unfold explicitFiniteQuotientSystem0CoeffNatTrans
   rfl
 
@@ -234,9 +299,9 @@ theorem explicitFiniteQuotientSystem0_coeffNatTrans_id :
   change
     (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
       (FixedPoints.addSubgroup U.unop.toSubgroup M)
-      (fixedPointsAddSubgroupQuotientMap (DistribMulActionHom.id G) U.unop.toSubgroup)
+      (fixedPointsQuotientMapAddSubgroup (DistribMulActionHom.id G) U.unop.toSubgroup)
       x' : M) = (x' : M)
-  simp only [coe_explicitCoeff0, coe_fixedPointsAddSubgroupQuotientMap]
+  simp only [coe_explicitCoeff0, coe_fixedPointsQuotientMapAddSubgroup]
   rfl
 
 theorem explicitFiniteQuotientSystem0_coeffNatTrans_comp
@@ -258,16 +323,16 @@ theorem explicitFiniteQuotientSystem0_coeffNatTrans_comp
   change
     (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
       (FixedPoints.addSubgroup U.unop.toSubgroup M)
-      (fixedPointsAddSubgroupQuotientMap (q.comp f) U.unop.toSubgroup)
+      (fixedPointsQuotientMapAddSubgroup (q.comp f) U.unop.toSubgroup)
       x' : P) =
       (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
           (FixedPoints.addSubgroup U.unop.toSubgroup N)
-          (fixedPointsAddSubgroupQuotientMap q U.unop.toSubgroup)
+          (fixedPointsQuotientMapAddSubgroup q U.unop.toSubgroup)
         (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
           (FixedPoints.addSubgroup U.unop.toSubgroup M)
-          (fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup)
+          (fixedPointsQuotientMapAddSubgroup f U.unop.toSubgroup)
           x') : P)
-  simp only [coe_explicitCoeff0, coe_fixedPointsAddSubgroupQuotientMap]
+  simp only [coe_explicitCoeff0, coe_fixedPointsQuotientMapAddSubgroup]
   rfl
 
 end CoefficientFunctoriality
@@ -311,23 +376,23 @@ theorem explicitFiniteQuotientComparison0_coeffNatTrans_naturality
   change ((explicitInfl0 G N U.unop.toSubgroup
       (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
         (FixedPoints.addSubgroup U.unop.toSubgroup M)
-        (fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup) x')) : N) =
+        (fixedPointsQuotientMapAddSubgroup f U.unop.toSubgroup) x')) : N) =
     (explicitCoeff0 G M f (explicitInfl0 G M U.unop.toSubgroup x') : N)
   calc
     ((explicitInfl0 G N U.unop.toSubgroup
         (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
           (FixedPoints.addSubgroup U.unop.toSubgroup M)
-          (fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup) x')) : N) =
+          (fixedPointsQuotientMapAddSubgroup f U.unop.toSubgroup) x')) : N) =
       (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
         (FixedPoints.addSubgroup U.unop.toSubgroup M)
-        (fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup) x' : N) :=
+        (fixedPointsQuotientMapAddSubgroup f U.unop.toSubgroup) x' : N) :=
       coe_explicitInfl0 G N U.unop.toSubgroup _
-    _ = (fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup x' : N) := by
+    _ = (fixedPointsQuotientMapAddSubgroup f U.unop.toSubgroup x' : N) := by
       exact congrArg (fun z : FixedPoints.addSubgroup U.unop.toSubgroup N => (z : N))
         (coe_explicitCoeff0 (G := G ⧸ U.unop.toSubgroup)
           (M := FixedPoints.addSubgroup U.unop.toSubgroup M)
-          (f := fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup) x')
-    _ = f (x' : M) := coe_fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup x'
+          (f := fixedPointsQuotientMapAddSubgroup f U.unop.toSubgroup) x')
+    _ = f (x' : M) := coe_fixedPointsQuotientMapAddSubgroup f U.unop.toSubgroup x'
     _ = f (explicitInfl0 G M U.unop.toSubgroup x' : M) := by rw [coe_explicitInfl0]
     _ = (explicitCoeff0 G M f (explicitInfl0 G M U.unop.toSubgroup x') : N) :=
       (coe_explicitCoeff0 G M f _).symm
