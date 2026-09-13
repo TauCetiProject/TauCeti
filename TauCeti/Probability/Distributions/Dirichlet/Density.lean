@@ -32,8 +32,8 @@ Gamma product density factors as the chart density times a Gamma density of shap
 
 * `TauCeti.Probability.dirichletChart` reconstructs a point of `EuclideanSpace ℝ ι` from its
   coordinates away from `i₀`;
-* `TauCeti.Probability.dirichletChartRegion` is the part of the chart mapping onto the interior of
-  the simplex;
+* `TauCeti.Probability.dirichletChartRegion` is the part of the chart mapping onto the strictly
+  positive part of the simplex;
 * `TauCeti.Probability.dirichletChartPDFReal` and `TauCeti.Probability.dirichletChartPDF` are the
   real- and `ℝ≥0∞`-valued densities in that chart;
 * `TauCeti.Probability.dirichletUnchart` and `TauCeti.Probability.dirichletChartCoords` are the
@@ -122,11 +122,14 @@ theorem dirichletChart_injective (i₀ : ι) :
   simpa using this
 
 /-- The chart region: the coordinate vectors with positive coordinates of total less than one.
-These are exactly the ones the chart sends into the interior of the standard simplex. -/
+These are exactly the ones the chart sends to points of the standard simplex all of whose
+coordinates are strictly positive, that is, to its relative interior inside the affine hyperplane
+`∑ i, x i = 1`.  The simplex has empty interior in the ambient `EuclideanSpace ℝ ι`. -/
 def dirichletChartRegion (i₀ : ι) : Set ({i // i ≠ i₀} → ℝ) :=
   {x | (∀ j, 0 < x j) ∧ ∑ j, x j < 1}
 
 /-- Membership in the chart region, unfolded. -/
+@[simp]
 theorem mem_dirichletChartRegion_iff {x : {i // i ≠ i₀} → ℝ} :
     x ∈ dirichletChartRegion i₀ ↔ (∀ j, 0 < x j) ∧ ∑ j, x j < 1 := Iff.rfl
 
@@ -249,9 +252,20 @@ of the chart region. -/
 def dirichletUnchartSource (i₀ : ι) : Set (ℝ × ({i // i ≠ i₀} → ℝ)) :=
   Ioi 0 ×ˢ dirichletChartRegion i₀
 
+/-- Membership in the source region, unfolded. -/
+@[simp]
+theorem mem_dirichletUnchartSource_iff {z : ℝ × ({i // i ≠ i₀} → ℝ)} :
+    z ∈ dirichletUnchartSource i₀ ↔ 0 < z.1 ∧ (∀ j, 0 < z.2 j) ∧ ∑ j, z.2 j < 1 := Iff.rfl
+
 /-- The target region of the scaling change of variables: the open positive orthant. -/
 def dirichletUnchartTarget (i₀ : ι) : Set (ℝ × ({i // i ≠ i₀} → ℝ)) :=
   Ioi 0 ×ˢ {y | ∀ j, 0 < y j}
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- Membership in the target region, unfolded. -/
+@[simp]
+theorem mem_dirichletUnchartTarget_iff {z : ℝ × ({i // i ≠ i₀} → ℝ)} :
+    z ∈ dirichletUnchartTarget i₀ ↔ 0 < z.1 ∧ ∀ j, 0 < z.2 j := Iff.rfl
 
 /-- The scaling map is measurable. -/
 @[fun_prop]
