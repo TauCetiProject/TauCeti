@@ -14,8 +14,9 @@ public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
 A locally flat codimension-one sphere in a sphere has a global bicollar.  This is the global
 collaring theorem that turns the local product charts in `TauCeti.IsLocallyFlat` into one product
 neighbourhood of the entire embedded sphere.  It is the structural input to the annulus theorem:
-the two sides of the bicollar distinguish the regions adjacent to a locally flat sphere, a
-conclusion which fails for wild embeddings such as the Alexander horned sphere.
+the collar presents a whole neighbourhood of the sphere as a product, which is what identifies
+the regions adjacent to it.  It is that global bicollar that wild embeddings such as the
+Alexander horned sphere fail to admit.
 
 This file records Brown's theorem as the dimension-indexed proposition
 `TauCeti.BrownBicollaring`.  The theorem is stated rather than proved.
@@ -69,7 +70,10 @@ def BrownBicollaring (n : ℕ) : Prop :=
         sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1,
     IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f → IsBicollared f
 
-/-- The defining characterization of Brown's bicollaring theorem. -/
+/-- The defining characterization of Brown's bicollaring theorem.  The module system does not
+expose the body of `TauCeti.BrownBicollaring`, so a downstream file cannot unfold it; this lemma
+is how the proposition is introduced and eliminated there. -/
+@[simp]
 theorem brownBicollaring_iff {n : ℕ} :
     BrownBicollaring n ↔
       ∀ f :
@@ -81,8 +85,9 @@ theorem brownBicollaring_iff {n : ℕ} :
 /-- Granting Brown's theorem, a locally flat `n`-sphere in the `(n + 1)`-sphere is **two-sided**:
 it has an open neighbourhood whose complement in that neighbourhood is the union of two disjoint
 nonempty open sets, the two sides of the collar the theorem provides.  This is the separation
-statement the annulus theorem consumes, and the conclusion that fails for a wild embedding such
-as the Alexander horned sphere. -/
+statement the annulus theorem consumes.  What local flatness supplies is the collar, not the
+separation on its own: a wild embedding such as the Alexander horned sphere admits no global
+bicollar, even though its complement is still a union of two open regions. -/
 theorem BrownBicollaring.exists_isOpen_sdiff_range_eq_union {n : ℕ} (h : BrownBicollaring n)
     (f : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 →
       sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)
