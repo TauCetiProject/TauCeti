@@ -32,8 +32,6 @@ its limiting point is fixed by the flow.  Time reversal exchanges the two constr
   stable and unstable sets.
 * `Homeomorph.image_stableSet_eq` and `Homeomorph.image_unstableSet_eq`: a topological conjugacy
   transports stable and unstable sets.
-* `Homeomorph.image_unstableSet_inter_stableSet_eq`: a conjugacy transports the set of
-  connecting points between two endpoints.
 
 ## References
 
@@ -174,12 +172,9 @@ section Conjugacy
 variable {β : Type*} [TopologicalSpace β]
   {φ : _root_.Flow ℝ α} {ψ : _root_.Flow ℝ β} (e : α ≃ₜ β)
 
-/-- A topological conjugacy carries membership in a stable set to membership in the
-corresponding stable set. -/
-theorem _root_.Homeomorph.map_mem_stableSet_iff
-    (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
-    e y ∈ stableSet ψ (e x) ↔ y ∈ stableSet φ x := by
-  rw [mem_stableSet, mem_stableSet]
+private theorem tendsto_flow_iff (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {l : Filter ℝ}
+    {x y : α} :
+    Tendsto (fun t ↦ ψ t (e y)) l (𝓝 (e x)) ↔ Tendsto (fun t ↦ φ t y) l (𝓝 x) := by
   constructor
   · intro h
     apply e.isInducing.tendsto_nhds_iff.mpr
@@ -187,13 +182,23 @@ theorem _root_.Homeomorph.map_mem_stableSet_iff
       (Eventually.of_forall fun t ↦ by
         simpa only [Function.comp_apply] using (hconj.semiconj t y).symm) h
   · intro h
-    have h' : Tendsto (e ∘ fun t ↦ φ t y) atTop (𝓝 (e x)) :=
+    have h' : Tendsto (e ∘ fun t ↦ φ t y) l (𝓝 (e x)) :=
       e.isInducing.tendsto_nhds_iff.mp h
     refine Filter.Tendsto.congr' (f₂ := fun t ↦ ψ t (e y))
       (Eventually.of_forall fun t ↦ by
         simpa only [Function.comp_apply] using hconj.semiconj t y) h'
 
+/-- A topological conjugacy carries membership in a stable set to membership in the
+corresponding stable set. -/
+@[simp]
+theorem _root_.Homeomorph.map_mem_stableSet_iff
+    (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
+    e y ∈ stableSet ψ (e x) ↔ y ∈ stableSet φ x := by
+  rw [mem_stableSet, mem_stableSet]
+  exact tendsto_flow_iff e hconj
+
 /-- A topological conjugacy carries a stable set to the corresponding stable set. -/
+@[simp]
 theorem _root_.Homeomorph.image_stableSet_eq
     (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) (x : α) :
     e '' stableSet φ x = stableSet ψ (e x) := by
@@ -207,24 +212,15 @@ theorem _root_.Homeomorph.image_stableSet_eq
 
 /-- A topological conjugacy carries membership in an unstable set to membership in the
 corresponding unstable set. -/
+@[simp]
 theorem _root_.Homeomorph.map_mem_unstableSet_iff
     (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
     e y ∈ unstableSet ψ (e x) ↔ y ∈ unstableSet φ x := by
   rw [mem_unstableSet, mem_unstableSet]
-  constructor
-  · intro h
-    apply e.isInducing.tendsto_nhds_iff.mpr
-    refine Filter.Tendsto.congr' (f₂ := e ∘ fun t ↦ φ t y)
-      (Eventually.of_forall fun t ↦ by
-        simpa only [Function.comp_apply] using (hconj.semiconj t y).symm) h
-  · intro h
-    have h' : Tendsto (e ∘ fun t ↦ φ t y) atBot (𝓝 (e x)) :=
-      e.isInducing.tendsto_nhds_iff.mp h
-    refine Filter.Tendsto.congr' (f₂ := fun t ↦ ψ t (e y))
-      (Eventually.of_forall fun t ↦ by
-        simpa only [Function.comp_apply] using hconj.semiconj t y) h'
+  exact tendsto_flow_iff e hconj
 
 /-- A topological conjugacy carries an unstable set to the corresponding unstable set. -/
+@[simp]
 theorem _root_.Homeomorph.image_unstableSet_eq
     (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) (x : α) :
     e '' unstableSet φ x = unstableSet ψ (e x) := by
@@ -235,13 +231,6 @@ theorem _root_.Homeomorph.image_unstableSet_eq
   · intro hy
     refine ⟨e.symm y, (e.map_mem_unstableSet_iff hconj).1 ?_, e.apply_symm_apply y⟩
     simpa only [e.apply_symm_apply] using hy
-
-/-- A topological conjugacy transports the points whose trajectories connect two endpoints. -/
-theorem _root_.Homeomorph.image_unstableSet_inter_stableSet_eq
-    (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) (p q : α) :
-    e '' (unstableSet φ p ∩ stableSet φ q) =
-      unstableSet ψ (e p) ∩ stableSet ψ (e q) := by
-  rw [Set.image_inter e.injective, e.image_unstableSet_eq hconj, e.image_stableSet_eq hconj]
 
 end Conjugacy
 
