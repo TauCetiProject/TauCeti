@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.RelativeNorm
-public import Mathlib.RepresentationTheory.Rep.Res
 
 /-!
 # Restriction and corestriction to a subgroup in degrees `0` and `-1` of Tate cohomology
@@ -144,7 +143,7 @@ theorem H0π_comp_H0Cor :
     (H0π_comp_H0IsoNormQuotient_hom _) _ _
 
 /-- Corestriction of the restriction of a degree-zero class is the index multiple of it. -/
-theorem H0Cor_H0Res_apply (x : tateCohomology M 0) :
+theorem H0Cor_comp_H0Res_apply (x : tateCohomology M 0) :
     H0Cor M H (H0Res M H x) = H.index • x := by
   induction x using H0_induction_on with
   | h y =>
@@ -157,7 +156,7 @@ theorem H0Cor_H0Res_apply (x : tateCohomology M 0) :
 theorem H0Res_comp_H0Cor :
     H0Res M H ≫ H0Cor M H = H.index • 𝟙 (tateCohomology M 0) := by
   ext x
-  simpa using H0Cor_H0Res_apply M H x
+  simpa using H0Cor_comp_H0Res_apply M H x
 
 end Zero
 
@@ -220,7 +219,7 @@ theorem HNegOneπ_comp_HNegOneCor :
     (HNegOneπ_comp_HNegOneIsoNormKernelQuotient_hom _) _ _
 
 /-- Corestriction of the restriction of a degree `-1` class is the index multiple of it. -/
-theorem HNegOneCor_HNegOneRes_apply (x : tateCohomology M (-1)) :
+theorem HNegOneCor_comp_HNegOneRes_apply (x : tateCohomology M (-1)) :
     HNegOneCor M H (HNegOneRes M H x) = H.index • x := by
   induction x using HNegOne_induction_on with
   | h y =>
@@ -233,7 +232,7 @@ theorem HNegOneCor_HNegOneRes_apply (x : tateCohomology M (-1)) :
 theorem HNegOneRes_comp_HNegOneCor :
     HNegOneRes M H ≫ HNegOneCor M H = H.index • 𝟙 (tateCohomology M (-1)) := by
   ext x
-  simpa using HNegOneCor_HNegOneRes_apply M H x
+  simpa using HNegOneCor_comp_HNegOneRes_apply M H x
 
 end NegOne
 
