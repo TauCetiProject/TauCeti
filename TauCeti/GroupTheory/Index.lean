@@ -30,13 +30,15 @@ centre gives the `Γ.withCenter` readings.
   centre already lies inside `Γ`.
 * `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: the relative index `2`
   and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
-* `instCountableQuotientSubgroup`: a coset space of a countable group is countable.
+* `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}`.
 -/
 
 
 public section
+
+namespace Subgroup
 
 /-- **A coset space of a countable group is countable.** `Countable (Quotient s)` is found for
 a bare setoid quotient, but `G ⧸ H` reaches it only through `HasQuotient`, which instance
@@ -45,11 +47,9 @@ instance search, and with it that of any further quotient. -/
 @[to_additive /-- **A coset space of a countable additive group is countable.** `Countable
 (Quotient s)` is found for a bare setoid quotient, but `G ⧸ H` reaches it only through
 `HasQuotient`, which instance synthesis does not unfold. -/]
-instance instCountableQuotientSubgroup {G : Type*} [Group G] [Countable G] (H : Subgroup G) :
+instance instCountableQuotient {G : Type*} [Group G] [Countable G] (H : Subgroup G) :
     Countable (G ⧸ H) :=
   inferInstanceAs (Countable (Quotient (QuotientGroup.leftRel H)))
-
-namespace Subgroup
 
 /-- The preimage of a finite-index subgroup under a group homomorphism has finite index. -/
 @[to_additive]
