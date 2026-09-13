@@ -72,8 +72,9 @@ theorem coe_symmetricInv (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 
 /-- Inversion is an involution at an invertible matrix. -/
 @[simp]
 theorem symmetricInv_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
-    (hA : IsUnit (A : Matrix (Fin p) (Fin p) ℝ).det) : symmetricInv (symmetricInv A) = A :=
-  Subtype.ext <| by rw [coe_symmetricInv, coe_symmetricInv, Matrix.nonsing_inv_nonsing_inv _ hA]
+    (hA : (A : Matrix (Fin p) (Fin p) ℝ).det ≠ 0) : symmetricInv (symmetricInv A) = A :=
+  Subtype.ext <| by
+    rw [coe_symmetricInv, coe_symmetricInv, Matrix.nonsing_inv_nonsing_inv _ hA.isUnit]
 
 /-- The inverse of a positive-definite symmetric matrix is positive definite. -/
 theorem posDef_coe_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
@@ -195,19 +196,19 @@ theorem map_symmetricInv_symmetricLebesgue (p : ℕ) :
   set g : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → ℝ≥0∞ :=
     fun B => ENNReal.ofReal ((B : Matrix (Fin p) (Fin p) ℝ).det ^ (-((p : ℝ) + 1))) with hg_def
   have hs : MeasurableSet s := measurableSet_posDefMatrix p
-  have hunit : ∀ A ∈ s, IsUnit (A : Matrix (Fin p) (Fin p) ℝ).det := fun _ hA =>
-    (Matrix.PosDef.det_pos hA).ne'.isUnit
+  have hdet : ∀ A ∈ s, (A : Matrix (Fin p) (Fin p) ℝ).det ≠ 0 := fun _ hA =>
+    (Matrix.PosDef.det_pos hA).ne'
   have himg : symmetricInv '' s = s := by
     refine Set.Subset.antisymm ?_ fun A hA => ⟨symmetricInv A, posDef_coe_symmetricInv hA, ?_⟩
     · rintro _ ⟨A, hA, rfl⟩
       exact posDef_coe_symmetricInv hA
-    · exact symmetricInv_symmetricInv (hunit A hA)
+    · exact symmetricInv_symmetricInv (hdet A hA)
   have hinj : Set.InjOn symmetricInv s := fun A hA B hB h => by
-    rw [← symmetricInv_symmetricInv (hunit A hA), h, symmetricInv_symmetricInv (hunit B hB)]
+    rw [← symmetricInv_symmetricInv (hdet A hA), h, symmetricInv_symmetricInv (hdet B hB)]
   have hderiv : ∀ A ∈ s, HasFDerivWithinAt symmetricInv (fderiv ℝ symmetricInv A) s A :=
     fun A hA => by
-      rw [(hasFDerivAt_symmetricInv (hunit A hA)).fderiv]
-      exact (hasFDerivAt_symmetricInv (hunit A hA)).hasFDerivWithinAt
+      rw [(hasFDerivAt_symmetricInv (hdet A hA).isUnit).fderiv]
+      exact (hasFDerivAt_symmetricInv (hdet A hA).isUnit).hasFDerivWithinAt
   have key := MeasureTheory.map_withDensity_abs_det_fderiv_eq_addHaar (symmetricLebesgue p)
     hs.nullMeasurableSet hderiv hinj
   rw [himg] at key
@@ -216,7 +217,7 @@ theorem map_symmetricInv_symmetricLebesgue (p : ℕ) :
       (fun A => ENNReal.ofReal |(fderiv ℝ symmetricInv A).det|) =
       ((symmetricLebesgue p).restrict s).withDensity g :=
     withDensity_congr_ae <| (ae_restrict_mem hs).mono fun A hA => by
-      simp only [hg_def, abs_det_fderiv_symmetricInv (hunit A hA),
+      simp only [hg_def, abs_det_fderiv_symmetricInv (hdet A hA).isUnit,
         abs_of_pos (Matrix.PosDef.det_pos hA)]
   rw [hweight] at key
   -- Inversion is an involution on the cone, so applying it to both sides of `key` inverts it.
@@ -224,7 +225,7 @@ theorem map_symmetricInv_symmetricLebesgue (p : ℕ) :
     (withDensity_absolutelyContinuous _ g).ae_le (ae_restrict_mem hs)
   have hinvol : symmetricInv ∘ symmetricInv
       =ᵐ[((symmetricLebesgue p).restrict s).withDensity g] id :=
-    hmem.mono fun A hA => symmetricInv_symmetricInv (hunit A hA)
+    hmem.mono fun A hA => symmetricInv_symmetricInv (hdet A hA)
   calc ((symmetricLebesgue p).restrict s).map symmetricInv
       = ((((symmetricLebesgue p).restrict s).withDensity g).map symmetricInv).map symmetricInv := by
         rw [key]
