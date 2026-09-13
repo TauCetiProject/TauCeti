@@ -53,7 +53,10 @@ fundamental-group actions.
   object satisfies `P`.
 * `TauCeti.CoveringSpace.FullSubcategory.mk`, `mk_coe`, `mk_proj`, `forget_obj_mk`, `proj`,
   `homMk`, `isoMk`: the constructor API shared by every such subcategory.
-* `TauCeti.CoveringSpace.FullSubcategory.prop_obj`: the cutting property of an object.
+* `TauCeti.CoveringSpace.FullSubcategory.prop_obj` and `prop_over_mk_proj`: the cutting property
+  of an object, and of the object rebuilt from its projection.
+* `TauCeti.CoveringSpace.FullSubcategory.totalSpace`, `totalSpace_obj`, `totalSpace_map`: the
+  functor taking an object to its total space, and its characteristic equations.
 * `TauCeti.CoveringSpace.FullSubcategory.forget`: the inclusion into all covers.
 * `TauCeti.CoveringSpace.FullSubcategory.isIso_iff_isHomeomorph_hom_left`: the corresponding
   isomorphism criterion.
@@ -296,6 +299,25 @@ theorem mk_coe {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
 abbrev proj (p : CoveringSpace.FullSubcategory X P) : (p : TopCat) ⟶ X :=
   p.obj.hom
 
+/-- The functor taking an object to its total space. -/
+abbrev totalSpace (X : TopCat.{u}) (P : ObjectProperty (CategoryTheory.Over X)) :
+    CoveringSpace.FullSubcategory X P ⥤ TopCat :=
+  forget X P ⋙ CoveringSpace.totalSpace X
+
+-- The two characteristic equations below are deliberately not `@[simp]`: Mathlib's
+-- `ObjectProperty.ι*` and `Functor.comp_*` lemmas match these goals first, so a `simp`
+-- attribute here would never fire.
+
+/-- The total-space functor sends an object to its total space. -/
+theorem totalSpace_obj (p : CoveringSpace.FullSubcategory X P) :
+    (totalSpace X P).obj p = (p : TopCat) :=
+  rfl
+
+/-- The total-space functor sends a morphism to its map of total spaces. -/
+theorem totalSpace_map {p q : CoveringSpace.FullSubcategory X P} (f : p ⟶ q) :
+    (totalSpace X P).map f = f.hom.left :=
+  rfl
+
 @[simp]
 theorem forget_obj_proj (p : CoveringSpace.FullSubcategory X P) :
     ((forget X P).obj p).proj = p.proj :=
@@ -319,6 +341,15 @@ theorem isCoveringMap_proj (p : CoveringSpace.FullSubcategory X P) : _root_.IsCo
 /-- The cutting property holds of the underlying object of `TopCat / X`. -/
 theorem prop_obj (p : CoveringSpace.FullSubcategory X P) : P p.obj :=
   p.property.2
+
+/-- The cutting property holds of the object rebuilt from an object's projection.
+
+`CategoryTheory.Over.mk p.proj` and `p.obj` are definitionally equal by eta for the `Over`
+structure, so `prop_obj` already elaborates where this is wanted; naming the step keeps that
+definitional equality out of the statements that depend on it. -/
+theorem prop_over_mk_proj (p : CoveringSpace.FullSubcategory X P) :
+    P (CategoryTheory.Over.mk p.proj) :=
+  p.prop_obj
 
 /-- A morphism commutes with the projections to the base. -/
 @[reassoc]
@@ -354,19 +385,19 @@ theorem isoMk_inv_hom_left {p q : CoveringSpace.FullSubcategory X P}
 
 /-- Reconstructing an object from its projection gives an isomorphic object. -/
 def mkProjIso (p : CoveringSpace.FullSubcategory X P) :
-    mk (P := P) p.proj p.isCoveringMap_proj p.prop_obj ≅ p :=
+    mk p.proj p.isCoveringMap_proj p.prop_over_mk_proj ≅ p :=
   isoMk (Iso.refl _)
 
 @[simp]
 theorem mkProjIso_hom_hom_left (p : CoveringSpace.FullSubcategory X P) :
     (mkProjIso p).hom.hom.left =
-      eqToHom (mk_coe (P := P) p.proj p.isCoveringMap_proj p.prop_obj) :=
+      eqToHom (mk_coe p.proj p.isCoveringMap_proj p.prop_over_mk_proj) :=
   (rfl)
 
 @[simp]
 theorem mkProjIso_inv_hom_left (p : CoveringSpace.FullSubcategory X P) :
     (mkProjIso p).inv.hom.left =
-      eqToHom (mk_coe (P := P) p.proj p.isCoveringMap_proj p.prop_obj).symm :=
+      eqToHom (mk_coe p.proj p.isCoveringMap_proj p.prop_over_mk_proj).symm :=
   (rfl)
 
 /-- A morphism is an isomorphism exactly when its map of total spaces is a homeomorphism. -/
