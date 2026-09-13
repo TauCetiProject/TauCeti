@@ -62,6 +62,8 @@ theorem det_list_prod_of_reflectionOrthogonal [FiniteDimensional K V]
     LinearEquiv.det (l.prod : V ≃ₗ[K] V) = (-1 : Kˣ) ^ l.length := by
   let detOrthogonal : QuadraticMap.orthogonalGroup Q →* Kˣ :=
     LinearEquiv.det.comp (QuadraticMap.orthogonalGroup Q).subtype
+  -- The goal's determinant coerces the subgroup product directly to a linear equivalence. Expose
+  -- the definitionally equal composite monoid hom so `map_list_prod` can distribute over the list.
   change detOrthogonal l.prod = _
   rw [map_list_prod, ← List.length_map detOrthogonal]
   apply List.prod_eq_pow_length

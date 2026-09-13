@@ -268,7 +268,8 @@ private theorem surjective_realCliffordSpinCompactParam (n : ℕ) [NeZero n] :
     List.prod_replicate, hpprod]
   rw [hfiller, one_pow, mul_one]
 
-private theorem subsingleton_realCliffordSpinGroupZero_zero :
+/-- The zero-dimensional compact real Spin group has at most one element. -/
+instance instSubsingletonRealCliffordSpinGroupZeroZero :
     Subsingleton (realCliffordSpinGroupZero 0) := by
   let Q := realCliffordForm 0 0
   have hsource : ((↑) ⁻¹' Set.range (ι Q) : Set (CliffordAlgebra Q)ˣ) = ∅ := by
@@ -299,7 +300,6 @@ instance instCompactSpaceRealCliffordSpinGroupZero (n : ℕ) :
     CompactSpace (realCliffordSpinGroupZero n) := by
   cases n with
   | zero =>
-      let _ := subsingleton_realCliffordSpinGroupZero_zero
       infer_instance
   | succ n =>
       let _ : NeZero (n + 1) := ⟨Nat.succ_ne_zero n⟩
