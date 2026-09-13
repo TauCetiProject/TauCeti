@@ -186,6 +186,16 @@ theorem coe_fixedPointsInclusion (h : K ≤ H) (m : FixedPoints.addSubmonoid H M
     (fixedPointsInclusion h m : M) = (m : M) :=
   AddSubmonoid.coe_inclusion _ m
 
+/-- The inclusion between fixed-point additive subgroups. -/
+@[expose] def fixedPointsInclusion_onAddSubgroup {G : Type*} [Group G] {M : Type*} [AddCommGroup M]
+    [DistribMulAction G M] {H K : Subgroup G} (h : K ≤ H) :
+    FixedPoints.addSubgroup H M →+ FixedPoints.addSubgroup K M where
+  toFun m :=
+    ⟨(fixedPointsInclusion h ⟨(m : M), m.2⟩ : M),
+      (fixedPointsInclusion h ⟨(m : M), m.2⟩).2⟩
+  map_zero' := by ext; simp
+  map_add' _ _ := by ext; simp
+
 /-- The fixed-point inclusions are injective. -/
 theorem fixedPointsInclusion_injective (h : K ≤ H) :
     Function.Injective (fixedPointsInclusion (M := M) h) :=
@@ -307,6 +317,45 @@ theorem coe_fixedPointsQuotientMap (f : M →+[G] N) (H : Subgroup G) [H.Normal]
     (m : FixedPoints.addSubmonoid H M) :
     (fixedPointsQuotientMap f H m : N) = f (m : M) := by
   rfl
+
+/-- A quotient-equivariant map on fixed-point additive subgroups induced by an equivariant
+coefficient homomorphism. -/
+@[expose] def fixedPointsQuotientMapAddSubgroup {G : Type*} [Group G]
+    {M N : Type*} [AddCommGroup M] [AddCommGroup N] [DistribMulAction G M]
+    [DistribMulAction G N] (f : M →+[G] N) (H : Subgroup G) [H.Normal] :
+    FixedPoints.addSubgroup H M →+[G ⧸ H] FixedPoints.addSubgroup H N := by
+  letI : DistribMulAction (G ⧸ H) (FixedPoints.addSubgroup H M) :=
+    inferInstanceAs <| DistribMulAction (G ⧸ H) (FixedPoints.addSubmonoid H M)
+  letI : DistribMulAction (G ⧸ H) (FixedPoints.addSubgroup H N) :=
+    inferInstanceAs <| DistribMulAction (G ⧸ H) (FixedPoints.addSubmonoid H N)
+  refine {
+    toAddMonoidHom := {
+      toFun := fun m =>
+        let m' : FixedPoints.addSubmonoid H M := ⟨(m : M), m.2⟩
+        let n' := fixedPointsQuotientMap f H m'
+        ⟨(n' : N), n'.2⟩
+      map_zero' := by simp
+      map_add' _ _ := by simp }
+    map_smul' := ?_ }
+  intro q m
+  induction q using QuotientGroup.induction_on with
+  | H g =>
+    apply Subtype.ext
+    dsimp
+    rw [coe_fixedPointsQuotientMap, coe_fixedPointsQuotientMap]
+    change f (g • (m : M)) = g • f (m : M)
+    exact f.map_smul g (m : M)
+
+/-- The quotient-equivariant map on fixed-point additive subgroups is the original map on
+underlying elements. -/
+@[simp]
+theorem coe_fixedPointsQuotientMapAddSubgroup {G : Type*} [Group G]
+    {M N : Type*} [AddCommGroup M] [AddCommGroup N] [DistribMulAction G M]
+    [DistribMulAction G N] (f : M →+[G] N) (H : Subgroup G) [H.Normal]
+    (m : FixedPoints.addSubgroup H M) :
+    (fixedPointsQuotientMapAddSubgroup f H m : N) = f (m : M) := by
+  change (fixedPointsQuotientMap f H ⟨(m : M), m.2⟩ : N) = f (m : M)
+  exact coe_fixedPointsQuotientMap f H ⟨(m : M), m.2⟩
 
 /-- Quotient-equivariant restriction to fixed points preserves the identity map. -/
 @[simp]

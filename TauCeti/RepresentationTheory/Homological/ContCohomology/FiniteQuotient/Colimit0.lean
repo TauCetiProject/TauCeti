@@ -59,54 +59,6 @@ universe u v
 variable (G : Type u) [Group G] [TopologicalSpace G]
   (M : Type v) [AddCommGroup M] [DistribMulAction G M]
 
-private def fixedPointsQuotientMapAddSubgroup {G : Type u} [Group G]
-    {M N : Type v} [AddCommGroup M] [AddCommGroup N] [DistribMulAction G M]
-    [DistribMulAction G N] (f : M →+[G] N) (H : Subgroup G) [H.Normal] :
-    FixedPoints.addSubgroup H M →+[G ⧸ H] FixedPoints.addSubgroup H N := by
-  letI : DistribMulAction (G ⧸ H) (FixedPoints.addSubgroup H M) :=
-    inferInstanceAs <| DistribMulAction (G ⧸ H) (FixedPoints.addSubmonoid H M)
-  letI : DistribMulAction (G ⧸ H) (FixedPoints.addSubgroup H N) :=
-    inferInstanceAs <| DistribMulAction (G ⧸ H) (FixedPoints.addSubmonoid H N)
-  refine {
-    toAddMonoidHom := {
-      toFun := fun m =>
-        let m' : FixedPoints.addSubmonoid H M := ⟨(m : M), m.2⟩
-        let n' := fixedPointsQuotientMap f H m'
-        ⟨(n' : N), n'.2⟩
-      map_zero' := by simp
-      map_add' _ _ := by simp }
-    map_smul' := ?_ }
-  intro q m
-  induction q using QuotientGroup.induction_on with
-  | H g =>
-    apply Subtype.ext
-    dsimp
-    rw [coe_fixedPointsQuotientMap, coe_fixedPointsQuotientMap]
-    -- The private bridge changes the carrier from `addSubgroup` to the generic fixed-point
-    -- `addSubmonoid`; expose the underlying coefficient equality to apply equivariance of `f`.
-    change f (g • (m : M)) = g • f (m : M)
-    exact f.map_smul g (m : M)
-
-private theorem coe_fixedPointsQuotientMapAddSubgroup {G : Type u} [Group G]
-    {M N : Type v} [AddCommGroup M] [AddCommGroup N] [DistribMulAction G M]
-    [DistribMulAction G N] (f : M →+[G] N) (H : Subgroup G) [H.Normal]
-    (m : FixedPoints.addSubgroup H M) :
-    (fixedPointsQuotientMapAddSubgroup f H m : N) = f (m : M) := by
-  -- The bridge is defined through the generic `addSubmonoid` map, so this reduction exposes its
-  -- underlying value before applying the generic coercion theorem.
-  change (fixedPointsQuotientMap f H ⟨(m : M), m.2⟩ : N) = f (m : M)
-  exact coe_fixedPointsQuotientMap f H ⟨(m : M), m.2⟩
-
-private def fixedPointsInclusion_onAddSubgroup {G : Type u} [Group G]
-    {M : Type v} [AddCommGroup M] [DistribMulAction G M]
-    {H K : Subgroup G} (h : K ≤ H) :
-    FixedPoints.addSubgroup H M →+ FixedPoints.addSubgroup K M where
-  toFun m :=
-    ⟨(fixedPointsInclusion h ⟨(m : M), m.2⟩ : M),
-      (fixedPointsInclusion h ⟨(m : M), m.2⟩).2⟩
-  map_zero' := by ext; simp
-  map_add' _ _ := by ext; simp
-
 section Transition
 
 variable {U V W : OpenNormalSubgroup G}
