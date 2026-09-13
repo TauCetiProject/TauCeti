@@ -71,19 +71,6 @@ statement here: the two criteria above hold for an arbitrary representation, bec
 of a linear functional from a subspace and the existence of a functional separating a vector from
 a subspace are available over a field in any dimension.
 
-The projection `P₁ ↠ S₁` is `TauCeti.indecProjRepHom` at the generator of the line `(S₁)₁`, which
-is the construction of `TauCeti.indecProjRepToSimpleRep`. That declaration itself is not reused:
-it is stated for a base field in the universe `max v w` of the vertices and the arrows, which for
-the `A₂` quiver — whose vertex and arrow types are small — forces `k : Type`, whereas everything
-here, like the classification it builds on, is stated for `k : Type u`.
-
-`TauCeti.kroneckerArSequence` carries `@[expose]`, and this cannot be traded for `:= (rfl)` proofs:
-the two sides of `TauCeti.kroneckerArSequence_f` are morphisms of the types
-`(kroneckerArSequence k A).X₁ ⟶ (kroneckerArSequence k A).X₂` and `S₂ ⟶ P₁`, so it is the
-*statement* that needs the body, not the proof. Unexposed, it fails to elaborate with
-“type mismatch … the following definitions were not unfolded because their definition is not
-exposed: kroneckerArSequence”.
-
 ## References
 
 See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
@@ -200,6 +187,12 @@ theorem kroneckerSimpleTgtToIndecProjRep_app_tgt_apply
 
 variable (k A) in
 /-- **The Auslander--Reiten sequence of the `A₂` quiver** `0 ⟶ S₂ ⟶ P₁ ⟶ S₁ ⟶ 0`. -/
+-- The second map repeats the construction of `indecProjRepToSimpleRep`, which asks for a base field
+-- in the universe `max v w` of the vertices and the arrows, hence `k : Type` for the small vertex
+-- and arrow types here, whereas this file takes `k : Type u`.
+-- `@[expose]` is needed by the *statements* of `kroneckerArSequence_f` and `kroneckerArSequence_g`
+-- below: they compare a morphism of `(kroneckerArSequence k A).X₁ ⟶ (kroneckerArSequence k A).X₂`
+-- with one of `S₂ ⟶ P₁`, and those hom-types agree only once the body reduces.
 @[expose] noncomputable def kroneckerArSequence : ShortComplex (QuiverRep k (Quiver.Kronecker A)) :=
   ShortComplex.mk (kroneckerSimpleTgtToIndecProjRep k A)
     (indecProjRepHom src (simpleRep k (Quiver.Kronecker A) src) (simpleRepGenerator k src))
