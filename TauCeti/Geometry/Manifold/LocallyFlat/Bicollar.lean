@@ -235,9 +235,8 @@ theorem isLocallyBicollared (h : IsBicollared f) : IsLocallyBicollared f :=
 
 /-- A bicollared map with nonempty domain is **two-sided**: its image has an open neighbourhood
 whose complement in that neighbourhood is the union of two disjoint nonempty open sets, the two
-sides of a bicollar.  The domain must be nonempty for the two sides to be nonempty; the rest is
-`TauCeti.IsBicollar.range_diff_range_eq_union` and
-`TauCeti.IsBicollar.disjoint_image_Ioi_Iio` read inside the open set the collar sweeps out. -/
+sides of a bicollar.  Each side is a copy of the domain, so the domain must be nonempty for the
+two sides to be nonempty. -/
 theorem exists_isOpen_sdiff_range_eq_union [Nonempty N] (h : IsBicollared f) :
     ∃ U V W : Set M,
       IsOpen U ∧ IsOpen V ∧ IsOpen W ∧ range f ⊆ U ∧ V.Nonempty ∧ W.Nonempty ∧
