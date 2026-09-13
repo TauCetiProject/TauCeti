@@ -276,7 +276,6 @@ theorem _root_.Equiv.Perm.filter_fullCycleType_eq_cycleType {σ : Equiv.Perm α}
   exact Equiv.Perm.filter_parts_partition_eq_cycleType
 
 /-- Conjugate permutations have equal full cycle types. -/
-@[simp]
 theorem _root_.Equiv.Perm.fullCycleType_eq_of_isConj {σ τ : Equiv.Perm α}
     (hστ : IsConj σ τ) : fullCycleType σ = fullCycleType τ := by
   rw [fullCycleType_def, fullCycleType_def]
