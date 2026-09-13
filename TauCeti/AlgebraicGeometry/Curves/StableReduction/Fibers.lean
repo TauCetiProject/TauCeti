@@ -49,9 +49,10 @@ lemma isPullback_genericι (M : Model R K C toK) :
       (Spec.map (CommRingCat.ofHom (algebraMap R K))) := by
   refine (isPullback_genericFiber R K M.toBase).of_iso (Comma.leftIso M.genericFiberIso)
     (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_
-  · change genericFiberι R K M.toBase =
-      M.genericFiberIso.hom.left ≫ M.genericFiberIso.inv.left ≫ genericFiberι R K M.toBase
-    rw [← Category.assoc, Over.hom_left_inv_left, Category.id_comp]
+  · have hleft :
+        (Comma.leftIso M.genericFiberIso).hom = M.genericFiberIso.hom.left := rfl
+    rw [hleft, genericι, ← Category.assoc, Over.hom_left_inv_left, Category.id_comp]
+    simp
   · exact M.genericFiberIso.hom.w.symm
   · simp
   · simp
