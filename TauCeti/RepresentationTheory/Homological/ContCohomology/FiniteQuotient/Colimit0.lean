@@ -82,6 +82,8 @@ private def fixedPointsQuotientMapAddSubgroup {G : Type u} [Group G]
     apply Subtype.ext
     dsimp
     rw [coe_fixedPointsQuotientMap, coe_fixedPointsQuotientMap]
+    -- The private bridge changes the carrier from `addSubgroup` to the generic fixed-point
+    -- `addSubmonoid`; expose the underlying coefficient equality to apply equivariance of `f`.
     change f (g • (m : M)) = g • f (m : M)
     exact f.map_smul g (m : M)
 
@@ -90,6 +92,8 @@ private theorem coe_fixedPointsQuotientMapAddSubgroup {G : Type u} [Group G]
     [DistribMulAction G N] (f : M →+[G] N) (H : Subgroup G) [H.Normal]
     (m : FixedPoints.addSubgroup H M) :
     (fixedPointsQuotientMapAddSubgroup f H m : N) = f (m : M) := by
+  -- The bridge is defined through the generic `addSubmonoid` map, so this reduction exposes its
+  -- underlying value before applying the generic coercion theorem.
   change (fixedPointsQuotientMap f H ⟨(m : M), m.2⟩ : N) = f (m : M)
   exact coe_fixedPointsQuotientMap f H ⟨(m : M), m.2⟩
 
@@ -296,6 +300,8 @@ theorem explicitFiniteQuotientSystem0_coeffNatTrans_id :
   dsimp [explicitFiniteQuotientSystem0CoeffNatTrans]
   let x' : H0 (G ⧸ U.unop.toSubgroup)
       (FixedPoints.addSubgroup U.unop.toSubgroup M) := x
+  -- Extensionality has reduced the natural-transformation and cohomology wrappers to the
+  -- underlying coefficient map; this is the carrier expected by the coercion lemma below.
   change
     (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
       (FixedPoints.addSubgroup U.unop.toSubgroup M)
@@ -320,6 +326,7 @@ theorem explicitFiniteQuotientSystem0_coeffNatTrans_comp
   dsimp [explicitFiniteQuotientSystem0CoeffNatTrans]
   let x' : H0 (G ⧸ U.unop.toSubgroup)
       (FixedPoints.addSubgroup U.unop.toSubgroup M) := x
+  -- As above, expose the underlying coefficient values after removing the categorical wrappers.
   change
     (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
       (FixedPoints.addSubgroup U.unop.toSubgroup M)
@@ -373,6 +380,8 @@ theorem explicitFiniteQuotientComparison0_coeffNatTrans_naturality
   apply Subtype.ext
   let x' : H0 (G ⧸ U.unop.toSubgroup)
       (FixedPoints.addSubgroup U.unop.toSubgroup M) := x
+  -- The comparison square is an equality of underlying coefficients after subtype extensionality;
+  -- this reduction makes the two explicit coefficient maps visible.
   change ((explicitInfl0 G N U.unop.toSubgroup
       (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
         (FixedPoints.addSubgroup U.unop.toSubgroup M)
