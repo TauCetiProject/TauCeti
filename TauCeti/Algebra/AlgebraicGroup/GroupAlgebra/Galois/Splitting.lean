@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.Hopf
 public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
+public import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!
 # Splitting the descended group algebra
@@ -106,5 +107,19 @@ theorem groupAlgebraInvariantsBaseChangeBialgEquiv_symm_apply (x : B) :
     (groupAlgebraInvariantsBaseChangeBialgEquiv rho).symm (x : A) = 1 ⊗ₜ[k] x := by
   apply EquivLike.injective (groupAlgebraInvariantsBaseChangeBialgEquiv rho)
   rw [BialgEquiv.apply_symm_apply, groupAlgebraInvariantsBaseChangeBialgEquiv_tmul, one_smul]
+
+/-- The splitting identifies the scalar-factor Galois action on the base change with the
+simultaneous coefficient and exponent action on the split group algebra. -/
+theorem groupAlgebraInvariantsBaseChangeBialgEquiv_smul (sigma : L ≃ₐ[k] L)
+    (x : L ⊗[k] B) :
+    groupAlgebraInvariantsBaseChangeBialgEquiv rho (sigma • x) =
+      groupAlgebraAction rho sigma (groupAlgebraInvariantsBaseChangeBialgEquiv rho x) := by
+  induction x using TensorProduct.induction_on with
+  | zero => simp
+  | add x y hx hy => simp only [smul_add, map_add, hx, hy]
+  | tmul a x =>
+      rw [ScalarAut.smul_tmul, groupAlgebraInvariantsBaseChangeBialgEquiv_tmul,
+        groupAlgebraInvariantsBaseChangeBialgEquiv_tmul, groupAlgebraAction_smul,
+        (mem_groupAlgebraInvariants_iff rho x).mp x.property sigma]
 
 end TauCeti.GaloisDescent
