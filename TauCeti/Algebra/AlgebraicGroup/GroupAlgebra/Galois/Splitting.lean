@@ -97,12 +97,14 @@ theorem groupAlgebraInvariantsBaseChangeBialgEquiv_toAlgEquiv :
 @[simp]
 theorem groupAlgebraInvariantsBaseChangeBialgEquiv_tmul (a : L) (x : B) :
     groupAlgebraInvariantsBaseChangeBialgEquiv rho (a ⊗ₜ[k] x) = a • (x : A) := by
-  exact groupAlgebraInvariantsBaseChangeEquiv_tmul rho a x
+  rw [← BialgEquiv.coe_toAlgEquiv, groupAlgebraInvariantsBaseChangeBialgEquiv_toAlgEquiv,
+    groupAlgebraInvariantsBaseChangeEquiv_tmul]
 
 /-- An invariant split element corresponds to its tensor with one under the inverse splitting. -/
 @[simp]
 theorem groupAlgebraInvariantsBaseChangeBialgEquiv_symm_apply (x : B) :
     (groupAlgebraInvariantsBaseChangeBialgEquiv rho).symm (x : A) = 1 ⊗ₜ[k] x := by
-  exact groupAlgebraInvariantsBaseChangeEquiv_symm_apply rho x
+  apply EquivLike.injective (groupAlgebraInvariantsBaseChangeBialgEquiv rho)
+  rw [BialgEquiv.apply_symm_apply, groupAlgebraInvariantsBaseChangeBialgEquiv_tmul, one_smul]
 
 end TauCeti.GaloisDescent
