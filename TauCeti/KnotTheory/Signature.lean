@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Notation
 public import TauCeti.KnotTheory.Alexander
 public import TauCeti.LinearAlgebra.Matrix.Signature
 
