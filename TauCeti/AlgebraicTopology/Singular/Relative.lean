@@ -122,7 +122,7 @@ noncomputable abbrev singularChainComplexπ :
   (toSSetPair.obj P).chainComplexπ R
 
 @[simp]
-lemma singularChainComplexMap_comp_singularChainComplexπ :
+lemma chainComplexMap_comp_singularChainComplexπ :
     SSet.chainComplexMap (TopCat.toSSet.map P.map) R ≫ P.singularChainComplexπ R = 0 := by
   rw [← toSSetPair_obj_hom]
   exact (toSSetPair.obj P).chainComplex_condition R
