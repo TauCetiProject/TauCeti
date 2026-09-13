@@ -39,11 +39,10 @@ that automorphisms of `ℂ` realize.  For a representation already defined over 
 `AlgebraicClosure ℚ` realizes every coprime power and then descends the resulting character
 identity back to `ℚ`.
 
-Only the direction "an automorphism determines the power map" is proved here. The converse
-direction, that every `j` coprime to the exponent is realized by some `σ : ℂ →+* ℂ`, needs a
-cyclotomic Galois automorphism to be extended along a transcendence basis of `ℂ`, and is not proved
-here; the identity above is the load-bearing half, and it is the half the Dixon-Schneider lift
-consumes once such a `σ` is in hand.
+Conversely, over a normal extension of `ℚ`, every power coprime to `n` is realized on a primitive
+`n`-th root by an algebra automorphism. After base change to `AlgebraicClosure ℚ`, this gives
+coprime-power invariance for characters of representations defined over `ℚ`. This does not assert
+the analogous realization by an automorphism of `ℂ`.
 
 ## Main statements
 
@@ -170,10 +169,8 @@ theorem _root_.FDRep.character_pow_eq_character_of_mem_range (X : FDRep ℂ G) {
   obtain ⟨q, hq⟩ := hχ
   rw [← FDRep.map_character_eq_character_pow_of_isPrimitiveRoot X hζ hg f, ← hq, AlgEquiv.commutes]
 
-/-- **Rational characters are invariant under coprime power maps.** If `g ^ n = 1` and `j` is
-coprime to `n`, then a representation defined over `ℚ` has `χ(g ^ j) = χ(g)`. The proof realizes
-the power map by a Galois automorphism after base change to `AlgebraicClosure ℚ`, whose action fixes
-the original rational character value. -/
+/-- **Rational characters are invariant under coprime power maps.** A representation defined over
+`ℚ` has `χ(g ^ j) = χ(g)` whenever `g ^ n = 1` and `j` is coprime to `n`. -/
 theorem _root_.FDRep.character_pow_eq_character_of_coprime (X : FDRep ℚ G) {g : G} {n j : ℕ}
     [NeZero n] (hg : g ^ n = 1) (hj : n.Coprime j) :
     X.character (g ^ j) = X.character g := by
