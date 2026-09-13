@@ -67,8 +67,8 @@ The component count is read off the underlying permutation `TauCeti.BraidGroup.p
 closure, the strand ending at position `i` is joined to the strand starting at position `i`, so
 the components of the closure are exactly the orbits of that permutation on the strands. Its
 invariance under stabilization is where the work is, and it is supplied by
-`TauCeti/GroupTheory/Perm/OrbitCount.lean`: stabilizing adjoins a fixed point to the underlying
-permutation and immediately splices it into an existing orbit.
+`TauCeti/GroupTheory/Perm/OrbitCount/Basic.lean`: stabilization adjoins a fixed point to the
+underlying permutation and immediately splices it into an existing orbit.
 
 ## References
 

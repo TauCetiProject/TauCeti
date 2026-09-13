@@ -110,6 +110,22 @@ noncomputable def crossingComponentCount (D : PDCode n) : ℕ :=
     (D.relabel half cross).crossingComponentCount = D.crossingComponentCount := by
   simp [crossingComponentCount]
 
+/-- The total number of components, including crossing-free circles. -/
+noncomputable abbrev componentCount (D : PDCode n) : ℕ :=
+  D.crossingComponentCount + D.crossinglessComponentCount
+
+@[simp] theorem componentCount_eq (D : PDCode n) :
+    D.componentCount = D.crossingComponentCount + D.crossinglessComponentCount := rfl
+
+theorem componentCount_mirror (D : PDCode n) :
+    D.mirror.componentCount = D.componentCount := by
+  simp [componentCount]
+
+theorem componentCount_relabel (D : PDCode n)
+    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
+    (D.relabel half cross).componentCount = D.componentCount := by
+  simp [componentCount]
+
 end PDCode
 
 namespace OrientedPDCode

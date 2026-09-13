@@ -45,7 +45,7 @@ how the orbit-count steps below supply that.
 `ℤ`, with `a` and `b` the two origins, the product `Equiv.swap a b * σ` cuts both lines and
 reconnects them into two lines again, so the two orbits do not merge.
 
-`TauCeti.orbitCount_mul_swap_add_one` in `TauCeti/GroupTheory/Perm/OrbitCount.lean` is the
+`TauCeti.orbitCount_mul_swap_add_one` in `TauCeti/GroupTheory/Perm/OrbitCount/Basic.lean` is the
 specialized fixed-point formulation of the right-multiplication merging step: the transposition
 splices that one-point orbit into another one. The generalized step lemmas below assume only
 finiteness of the relevant orbit quotient together with an explicit periodic-point hypothesis;
