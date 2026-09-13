@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Add
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Differential
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.MapsInfinity
 
@@ -26,8 +25,6 @@ additive, is not proved here.
 ## Main results
 
 * `TauCeti.Isogeny.ofIsogeny_mulByIntIsogeny`: `[n] = n • id` in `Hom W W`.
-* `TauCeti.Isogeny.isSeparable_mulByIntIsogeny_iff`: `[n]` is separable exactly when `n` is
-  nonzero in the base field.
 * `TauCeti.Isogeny.Hom.degree_zsmul` and `TauCeti.Isogeny.Hom.degree_nsmul`:
   `deg (n • f) = n² · deg f`, the degree's homogeneity, for an integer and a natural scalar.
 
@@ -54,14 +51,6 @@ theorem ofIsogeny_mulByIntIsogeny [W.IsElliptic] {n : ℤ} (hn : psiFunctionFiel
   refine Hom.ext_tautologicalPoint ?_
   simp [Hom.id_def, mulByIntIsogeny_pullback, tautologicalPoint_mulByIntPullback]
 
-/-- **`[n]` is separable exactly when `n` is nonzero in the base field** (Silverman III.5.4). -/
-@[simp]
-theorem isSeparable_mulByIntIsogeny_iff [W.IsElliptic] {n : ℤ} (hn : psiFunctionField W n ≠ 0) :
-    Algebra.IsSeparable (mulByIntIsogeny W hn).fieldPullback.fieldRange W.FunctionField ↔
-      (n : F) ≠ 0 := by
-  rw [isSeparable_iff_pullbackDifferential_ne_zero, ← Hom.pullbackDifferential_ofIsogeny,
-    ofIsogeny_mulByIntIsogeny, Hom.pullbackDifferential_zsmul_id_invariantDifferential, ne_eq,
-    zsmul_invariantDifferential_eq_zero_iff]
 variable {W₁ W₂ : WeierstrassCurve.Affine F}
 
 /-- **The degree scales quadratically**: `deg (n • f) = n² · deg f`.
