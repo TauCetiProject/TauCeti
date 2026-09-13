@@ -200,9 +200,11 @@ theorem schwarzChristoffelBoundary_injOn_Iic (a e : ι → ℝ) (z₀ : UpperHal
     fun _ i hei hi => (not_lt_of_ge (ha i hei)) hi.2
   have hsum : ∀ {q : ℝ}, q ∈ Iic p → -1 < ∑ i with a i = q, e i :=
     fun {q} hq => by
-      simpa using
-        (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_ge (β := ℝ) (a := a) (e := e)
-          (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) (by simpa using ha) hq)
+      exact
+        @Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le ι (OrderDual ℝ) ℝ
+          (@OrderDual.instPartialOrder ℝ Real.partialOrder) Real.instPreorder
+          Real.instAddCommMonoid Finset.univ a e p (-1) (by norm_num) hp
+          (by intro i _ hei; exact ha i hei) q hq
   intro x hx y hy hxy
   rcases lt_trichotomy x y with h | h | h
   · exact schwarzChristoffelBoundary_injOn_Icc a e z₀ (hfree hx) (hsum hx) hp
@@ -230,9 +232,11 @@ theorem schwarzChristoffelBoundary_image_Iic (a e : ι → ℝ) (z₀ : UpperHal
     fun _ i hei hi => (not_lt_of_ge (ha i hei)) hi.2
   have hsum : ∀ {q : ℝ}, q ∈ Iic p → -1 < ∑ i with a i = q, e i :=
     fun {q} hq => by
-      simpa using
-        (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_ge (β := ℝ) (a := a) (e := e)
-          (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) (by simpa using ha) hq)
+      exact
+        @Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le ι (OrderDual ℝ) ℝ
+          (@OrderDual.instPartialOrder ℝ Real.partialOrder) Real.instPreorder
+          Real.instAddCommMonoid Finset.univ a e p (-1) (by norm_num) hp
+          (by intro i _ hei; exact ha i hei) q hq
   have hangle : ∀ {x : ℝ}, x < p →
       schwarzChristoffelEdgeAngle a e x = Real.pi * ∑ i, e i := by
     intro x hx
@@ -279,7 +283,22 @@ theorem schwarzChristoffelBoundary_image_Iic (a e : ι → ℝ) (z₀ : UpperHal
     exact lt_add_of_pos_left _ hpos
   -- Strict antitonicity and the limit at infinity identify the distance parameter's image.
   have hdimage : d '' Iic p = Ico 0 D := by
-    simpa [d] using hdcont.image_Iic_of_strictAntiOn_of_tendsto hdanti hdl
+    have himage : d '' Iic p = Ico (d p) D := by
+      exact
+        @ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto (OrderDual ℝ) ℝ
+        (@OrderDual.instConditionallyCompleteLinearOrder ℝ
+          Real.instConditionallyCompleteLinearOrder)
+        (inferInstance : TopologicalSpace ℝ)
+        (@instOrderTopologyOrderDual ℝ (inferInstance : TopologicalSpace ℝ) Real.instPreorder
+          instOrderTopologyReal)
+        (@OrderDual.denselyOrdered ℝ Real.instLT (inferInstance : DenselyOrdered ℝ))
+        (@OrderDual.noMaxOrder ℝ Real.instLT (inferInstance : NoMinOrder ℝ)) Real.linearOrder
+        (inferInstance : TopologicalSpace ℝ) (inferInstance : OrderClosedTopology ℝ) d p D hdcont
+        (by
+          intro x hx y hy hxy
+          exact hdanti hy hx hxy)
+        hdl
+    simpa [d] using himage
   have hDpos : 0 < D := by
     have hp1 : p - 1 ∈ Iic p := by
       exact mem_Iic.mpr (sub_le_self p (by norm_num))
