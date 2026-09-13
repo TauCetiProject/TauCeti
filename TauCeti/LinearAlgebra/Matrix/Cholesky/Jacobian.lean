@@ -42,11 +42,8 @@ doubled when `i = j`.
 ## References
 
 * R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Wiley, 1982, Theorem 2.1.9.
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 6, item 2, "Cholesky
-  decomposition".
-* Declaration skeleton: `TauCetiRoadmap/StandardDistributions/Suggested.lean`, section "Cholesky
-  coordinates", which supplies `choleskyReconstructionCoordinates` and the statement of the
-  Jacobian theorem.
+* Formal declaration scaffold: `TauCetiRoadmap/StandardDistributions/Suggested.lean`, section
+  "Cholesky coordinates".
 -/
 
 public section
