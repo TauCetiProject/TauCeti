@@ -380,6 +380,30 @@ private noncomputable def sourceReflectRepMap
     sourceReflectRep M hi ⟶ sourceReflectRep N hi :=
   Paths.liftNatTrans (sourceReflectRepMapApp η hi) (sourceReflectRepMapApp_naturality_arrow η hi)
 
+private theorem sourceEqToHom_conjugate_eq_id {C : Type*} [Category* C] {X Y : C}
+    (h : X = Y) (f : Y ⟶ Y) (hf : f = 𝟙 Y) :
+    eqToHom h ≫ f ≫ eqToHom h.symm = 𝟙 X := by
+  subst h
+  simp [hf]
+
+private theorem sourceEqToHom_conjugate_eq_comp {C : Type*} [Category* C]
+    {X X' Y Y' Z Z' : C} (hX : X = X') (hY : Y = Y') (hZ : Z = Z')
+    (f : X' ⟶ Z') (g : X' ⟶ Y') (h : Y' ⟶ Z') (hf : f = g ≫ h) :
+    eqToHom hX ≫ f ≫ eqToHom hZ.symm =
+      (eqToHom hX ≫ g ≫ eqToHom hY.symm) ≫ eqToHom hY ≫ h ≫ eqToHom hZ.symm := by
+  subst hX
+  subst hY
+  subst hZ
+  simp [hf]
+
+private theorem sourceEqToHom_conjugate_add {C : Type*} [Category* C] [Preadditive C]
+    {X X' Y Y' : C} (hX : X = X') (hY : Y' = Y) {f g h : X' ⟶ Y'} (hf : f = g + h) :
+    eqToHom hX ≫ f ≫ eqToHom hY =
+      (eqToHom hX ≫ g ≫ eqToHom hY) + (eqToHom hX ≫ h ≫ eqToHom hY) := by
+  subst hX
+  subst hY
+  simp [hf]
+
 private theorem sourceReflectRepMap_id (M : QuiverRep.{u, v, w, max v w x} k Q)
     {i : Q} (hi : IsSource i) : sourceReflectRepMap (𝟙 M) hi = 𝟙 (sourceReflectRep M hi) := by
   apply NatTrans.ext
@@ -391,9 +415,9 @@ private theorem sourceReflectRepMap_id (M : QuiverRep.{u, v, w, max v w x} k Q)
   by_cases hj : j = i
   · subst j
     rw [sourceReflectRepMapApp_self, outgoingQuotMap_id, ModuleCat.ofHom_id]
-    exact eqToHom_conjugate_eq_id _ _ rfl
+    exact sourceEqToHom_conjugate_eq_id _ _ rfl
   · rw [sourceReflectRepMapApp_of_ne _ _ hj]
-    exact eqToHom_conjugate_eq_id _ _ rfl
+    exact sourceEqToHom_conjugate_eq_id _ _ rfl
 
 private theorem sourceReflectRepMap_comp
     {M N P : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) (θ : N ⟶ P)
@@ -409,10 +433,10 @@ private theorem sourceReflectRepMap_comp
   · subst j
     rw [sourceReflectRepMapApp_self, sourceReflectRepMapApp_self,
       sourceReflectRepMapApp_self, outgoingQuotMap_comp, ModuleCat.ofHom_comp]
-    exact eqToHom_conjugate_eq_comp _ _ (sourceReflectRep_obj_self _ hi) _ _ _ rfl
+    exact sourceEqToHom_conjugate_eq_comp _ _ (sourceReflectRep_obj_self _ hi) _ _ _ rfl
   · rw [sourceReflectRepMapApp_of_ne _ _ hj, sourceReflectRepMapApp_of_ne _ _ hj,
       sourceReflectRepMapApp_of_ne _ _ hj]
-    exact eqToHom_conjugate_eq_comp _ _ (sourceReflectRep_obj_of_ne _ hi hj) _ _ _ rfl
+    exact sourceEqToHom_conjugate_eq_comp _ _ (sourceReflectRep_obj_of_ne _ hi hj) _ _ _ rfl
 
 /-- **The BGP reflection functor at a source.** It uses the quotient map induced by each morphism
 at the reflected vertex and leaves all other components unchanged. -/
@@ -470,10 +494,10 @@ instance sourceReflectionFunctor_additive (i : Q) (hi : IsSource i) :
     · subst j
       rw [sourceReflectRepMapApp_self, sourceReflectRepMapApp_self,
         sourceReflectRepMapApp_self, outgoingQuotMap_add, ModuleCat.ofHom_add]
-      exact eqToHom_conjugate_add _ _ rfl
+      exact sourceEqToHom_conjugate_add _ _ rfl
     · rw [sourceReflectRepMapApp_of_ne _ _ hj, sourceReflectRepMapApp_of_ne _ _ hj,
         sourceReflectRepMapApp_of_ne _ _ hj]
-      exact eqToHom_conjugate_add _ _ rfl
+      exact sourceEqToHom_conjugate_add _ _ rfl
 
 private theorem sourceReflectionFunctor_map_app_self
     {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) {i : Q} (hi : IsSource i) :
