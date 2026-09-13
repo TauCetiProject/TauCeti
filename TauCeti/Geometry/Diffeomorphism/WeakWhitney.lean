@@ -49,6 +49,22 @@ noncomputable instance instTopologicalSpaceWeakWhitney :
     TopologicalSpace 𝓓 :=
   weakWhitneyTopology
 
+/-- The weak Whitney topology is induced by the forgetful map to bundled smooth maps. -/
+theorem isInducing_toContMDiffMap :
+    IsInducing (Diffeomorph.toContMDiffMap : 𝓓 → 𝓒) :=
+  ⟨rfl⟩
+
+/-- The forgetful map embeds diffeomorphisms into bundled smooth maps with the weak Whitney
+topology. -/
+theorem isEmbedding_toContMDiffMap :
+    IsEmbedding (Diffeomorph.toContMDiffMap : 𝓓 → 𝓒) where
+  toIsInducing := isInducing_toContMDiffMap
+  injective := by
+    intro f g h
+    apply Diffeomorph.ext
+    intro x
+    exact congr_fun (congrArg (fun k : 𝓒 => fun y => k y) h) x
+
 /-- The forgetful map to bundled smooth maps is continuous by construction. -/
 theorem continuous_toContMDiffMap :
     Continuous (Diffeomorph.toContMDiffMap :
@@ -60,8 +76,8 @@ are continuous in the weak Whitney topology. -/
 theorem continuous_iff_toContMDiffMap {X : Type*} [TopologicalSpace X]
     {f : X → 𝓓} :
     Continuous f ↔ Continuous (fun x => (f x).toContMDiffMap) := by
-  change Continuous f ↔ Continuous (Diffeomorph.toContMDiffMap ∘ f)
-  exact continuous_induced_rng
+  convert (continuous_induced_rng (f := Diffeomorph.toContMDiffMap) (g := f)) using 1
+  · rfl
 
 /-- A jointly smooth family whose fibres are diffeomorphisms is continuous in the weak Whitney
 topology on global-chart diffeomorphisms.
@@ -84,8 +100,7 @@ theorem tendsto_weakWhitney_iff {X : Type*} {l : Filter X}
     {f : X → 𝓓} {g : 𝓓} :
     Tendsto f l (nhds g) ↔
       Tendsto (fun x => (f x).toContMDiffMap) l (nhds g.toContMDiffMap) := by
-  have hi : IsInducing (Diffeomorph.toContMDiffMap : 𝓓 → 𝓒) := ⟨rfl⟩
-  rw [hi.tendsto_nhds_iff]
+  rw [isInducing_toContMDiffMap.tendsto_nhds_iff]
   rfl
 
 end Diffeomorph
