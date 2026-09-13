@@ -19,15 +19,19 @@ being an automorphism, so `N` is abelian, and every other element outside `N` is
 outside element is already the inversion hypothesis on all of them.
 
 This is the shape of a dihedral group over its rotations and of a dicyclic group over its cyclic
-subgroup, and two further elementary consequences of it are recorded here: all the elements
-outside `N` have one and the same square, and that common square is an involution.
+subgroup, and three further elementary consequences of it are recorded here: all the elements
+outside `N` have one and the same square, that common square squares to one, and -- for a finite
+`G` -- the elements outside `N` are exactly as many as those inside.
 
 ## Main statements
 
+* `TauCeti.isMulCommutative_of_conj_eq_inv`: **a subgroup inverted by conjugation is abelian.**
 * `TauCeti.conj_eq_inv_of_notMem_of_index_two`: **one inverting element outside a subgroup of index
   two makes every element outside it invert.**
 * `TauCeti.sq_eq_sq_of_notMem_of_index_two`: the elements outside such a subgroup all have the same
-  square, and `TauCeti.sq_sq_eq_one_of_conj_eq_inv`: that square is an involution.
+  square, and `TauCeti.sq_sq_eq_one_of_conj_eq_inv`: that square squares to one.
+* `TauCeti.card_filter_notMem_eq_card_of_index_two`: the complement of a subgroup of index two in a
+  finite group has as many elements as the subgroup.
 -/
 
 public section
@@ -36,6 +40,20 @@ namespace TauCeti
 
 variable {G : Type*} [Group G] {N : Subgroup G}
 
+/-- **A subgroup conjugated by inversion is abelian.**  If `s * x * s⁻¹ = x⁻¹` for every `x ∈ N`,
+then conjugation by `s` is at once an automorphism of `N` and the inversion of `N`, and inversion
+is an automorphism only of an abelian group.  Neither `s ∉ N` nor any hypothesis on the index of
+`N` is needed. -/
+theorem isMulCommutative_of_conj_eq_inv {s : G} (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) :
+    IsMulCommutative N :=
+  IsMulCommutative.of_comm fun y z => Subtype.ext <| by
+    have h : (z : G)⁻¹ * (y : G)⁻¹ = (y : G)⁻¹ * (z : G)⁻¹ :=
+      calc (z : G)⁻¹ * (y : G)⁻¹ = ((y : G) * z)⁻¹ := (mul_inv_rev _ _).symm
+        _ = s * ((y : G) * z) * s⁻¹ := (hinv _ (N.mul_mem y.2 z.2)).symm
+        _ = s * y * s⁻¹ * (s * z * s⁻¹) := by group
+        _ = (y : G)⁻¹ * (z : G)⁻¹ := by rw [hinv y y.2, hinv z z.2]
+    simpa using congrArg Inv.inv h
+
 /-- **One inverting element outside a subgroup of index two makes every element outside it
 invert.**  If some `s ∉ N` satisfies `s * x * s⁻¹ = x⁻¹` for every `x ∈ N`, then so does every
 `t ∉ N`; the inversion hypothesis may therefore be checked on a single outside element. -/
@@ -43,12 +61,8 @@ theorem conj_eq_inv_of_notMem_of_index_two (hindex : N.index = 2) {s : G} (hs : 
     (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) {t : G} (ht : t ∉ N) {x : G} (hx : x ∈ N) :
     t * x * t⁻¹ = x⁻¹ := by
   have hcomm : ∀ y ∈ N, ∀ z ∈ N, y * z = z * y := fun y hy z hz => by
-    have h : z⁻¹ * y⁻¹ = y⁻¹ * z⁻¹ :=
-      calc z⁻¹ * y⁻¹ = (y * z)⁻¹ := (mul_inv_rev y z).symm
-        _ = s * (y * z) * s⁻¹ := (hinv _ (N.mul_mem hy hz)).symm
-        _ = s * y * s⁻¹ * (s * z * s⁻¹) := by group
-        _ = y⁻¹ * z⁻¹ := by rw [hinv y hy, hinv z hz]
-    simpa using congrArg Inv.inv h
+    simpa using congrArg Subtype.val
+      (isMulCommutative_iff.mp (isMulCommutative_of_conj_eq_inv hinv) ⟨y, hy⟩ ⟨z, hz⟩)
   have hsinv : s⁻¹ ∉ N := fun h => hs (by simpa using N.inv_mem h)
   obtain ⟨n, hn, rfl⟩ : ∃ n, n ∈ N ∧ t = s * n :=
     ⟨s⁻¹ * t, by rw [Subgroup.mul_mem_iff_of_index_two hindex]; exact iff_of_false hsinv ht,
@@ -74,7 +88,7 @@ theorem sq_eq_sq_of_notMem_of_index_two (hindex : N.index = 2) {s : G} (hs : s �
     _ = s * (s * n⁻¹) * n := by rw [hns]
     _ = s * s := by group
 
-/-- **The common square of the elements outside an inverted subgroup is an involution:**
+/-- **The common square of the elements outside an inverted subgroup squares to one:**
 `(s ^ 2) ^ 2 = 1`. Only membership of `s ^ 2` in `N` is needed, which
 `Subgroup.sq_mem_of_index_two` supplies when `N` has index two. -/
 theorem sq_sq_eq_one_of_conj_eq_inv {s : G} (hsq : s ^ 2 ∈ N)
@@ -85,5 +99,18 @@ theorem sq_sq_eq_one_of_conj_eq_inv {s : G} (hsq : s ^ 2 ∈ N)
   rw [pow_two]
   nth_rewrite 2 [hfix]
   exact mul_inv_cancel _
+
+/-- **The complement of a subgroup of index two has as many elements as the subgroup:** both
+halves of `G` have `Nat.card N` elements, since together they exhaust `G`, whose order is
+`Nat.card N * 2`. -/
+theorem card_filter_notMem_eq_card_of_index_two [Fintype G] [DecidablePred (· ∈ N)]
+    (hindex : N.index = 2) : (Finset.univ.filter (fun x : G => x ∉ N)).card = Nat.card N := by
+  have hsplit := Finset.card_filter_add_card_filter_not (s := (Finset.univ : Finset G))
+    (p := fun x : G => x ∈ N)
+  have hmem : (Finset.univ.filter (fun x : G => x ∈ N)).card = Nat.card N := by
+    simp [Nat.card_eq_fintype_card, Fintype.card_subtype]
+  have hcard : (Finset.univ : Finset G).card = Nat.card N * 2 := by
+    rw [Finset.card_univ, ← Nat.card_eq_fintype_card, ← Subgroup.card_mul_index N, hindex]
+  omega
 
 end TauCeti

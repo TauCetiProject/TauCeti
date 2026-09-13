@@ -13,10 +13,11 @@ import Mathlib.RingTheory.IntegralDomain
 # The Frobenius-Schur indicator of a character induced from an index-two subgroup
 
 Let `N` be a subgroup of index two in a finite group `G` on which some element `s` outside `N` acts
-by inversion, `s * x * s⁻¹ = x⁻¹`, and let `ψ` be a linear character of `N` that is not its own
-inverse.  Inducing `ψ` gives a two-dimensional representation of `G`, and this file computes its
-**Frobenius-Schur indicator**: it is `ψ (s ^ 2)`, the value of `ψ` on the common square of the
-elements outside `N`.
+by inversion, `s * x * s⁻¹ = x⁻¹`, and let `ψ` be a linear character of `N`, valued in a field `k`
+in which the order of `G` is invertible, that is not its own inverse.  Inducing `ψ` gives a
+two-dimensional representation of `G`, and this file computes its **Frobenius-Schur indicator**
+under that invertibility hypothesis: it is `ψ (s ^ 2)`, the value of `ψ` on the common square of
+the elements outside `N`.
 
 This is the shape of a dihedral group over its rotations and of a dicyclic group over its cyclic
 subgroup, so for such a group the indicator of an induced linear character is read off the square
@@ -24,18 +25,19 @@ of a single element outside the subgroup; the dihedral instance is in
 `TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/Dihedral.lean`.
 
 The computation reads the character formula
-`TauCeti.character_indFDRep_ofLinearCharacter_of_conj_eq_inv` against the two elementary facts
-about the outside coset recorded in `TauCeti/GroupTheory/IndexTwo.lean`: its elements all have the
-same square (`TauCeti.sq_eq_sq_of_notMem_of_index_two`), and that square is an involution
-(`TauCeti.sq_sq_eq_one_of_conj_eq_inv`).  Inside `N` the character of the induced representation
-at `g ^ 2` is `ψ² (g) + (ψ²)⁻¹ (g)`, and `ψ ^ 2 ≠ 1` makes both of those characters nontrivial, so
-their sums over `N` vanish (`sum_hom_units_eq_zero`).
+`TauCeti.character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv` against the two
+elementary facts about the outside coset recorded in `TauCeti/GroupTheory/Index/Two.lean`: its
+elements all have the same square (`TauCeti.sq_eq_sq_of_notMem_of_index_two`), and that square
+squares to one (`TauCeti.sq_sq_eq_one_of_conj_eq_inv`).  Inside `N` the character of the induced
+representation at `g ^ 2` is `ψ² (g) + (ψ²)⁻¹ (g)`, and `ψ ^ 2 ≠ 1` makes both of those characters
+nontrivial, so their sums over `N` vanish (`sum_hom_units_eq_zero`).
 
 ## Main statements
 
-* `TauCeti.frobeniusSchurIndicator_indFDRep_ofLinearCharacter_of_conj_eq_inv`: **the indicator of
-  the representation induced from a linear character of an inverted subgroup of index two is the
-  value of the character on the common square of the outside elements.**
+* `TauCeti.frobeniusSchurIndicator_indFDRep_ofLinearCharacter_eq_apply_sq_of_conj_eq_inv`: **the
+  indicator of the representation induced from a linear character of an inverted subgroup of index
+  two is the value of the character on the common square of the outside elements**, whenever the
+  order of the group is invertible in the coefficient field.
 
 ## References
 
@@ -55,8 +57,8 @@ two** is the value of the character on the common square `s ^ 2` of the elements
 subgroup.  The hypothesis `ψ ^ 2 ≠ 1` says that `ψ` is not its own inverse, and `hG` that the order
 of `G` is invertible in `k`.  That `s` lies outside `N` need not be assumed: inside `N` the
 inversion hypothesis would make `ψ` its own inverse. -/
-theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_of_conj_eq_inv [Fintype G]
-    (hindex : N.index = 2) {s : G} (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹)
+theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_eq_apply_sq_of_conj_eq_inv
+    [Fintype G] (hindex : N.index = 2) {s : G} (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹)
     (hG : IsUnit (Nat.card G : k)) {ψ : N →* kˣ} (hψ : ψ ^ 2 ≠ 1) :
     FDRep.frobeniusSchurIndicator (indFDRep (FDRep.ofLinearCharacter ψ)) =
       (ψ ⟨s ^ 2, Subgroup.sq_mem_of_index_two hindex s⟩ : k) := by
@@ -98,7 +100,8 @@ theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_of_conj_eq_inv [Finty
         (indFDRep (FDRep.ofLinearCharacter ψ)).character g :=
       FDRep.character_forget₂_obj _ g
     rw [hbridge]
-    exact character_indFDRep_ofLinearCharacter_of_conj_eq_inv hindex hs hinv hNunit ψ hg
+    exact character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv hindex hs hinv
+      hNunit ψ hg
   -- The half of `G` inside `N` contributes the sum of the nontrivial character `ψ ^ 2` and of its
   -- inverse, both of which vanish.
   have hzeroSum : ∀ χ : N →* kˣ, χ ≠ 1 → ∑ x : N, (χ x : k) = 0 := by
@@ -140,14 +143,9 @@ theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_of_conj_eq_inv [Finty
       ring
     rw [Finset.sum_congr rfl houterStep, Finset.sum_const, nsmul_eq_mul]
     congr 1
-    have hsplit := Finset.card_filter_add_card_filter_not (s := (Finset.univ : Finset G))
-      (p := fun x : G => x ∈ N)
-    have hmemCard : (Finset.univ.filter (fun x : G => x ∈ N)).card = Nat.card N := by
-      simp [Nat.card_eq_fintype_card, Fintype.card_subtype]
-    have hcard : (Finset.univ : Finset G).card = Nat.card N * 2 := by
-      rw [Finset.card_univ, ← Nat.card_eq_fintype_card, ← Subgroup.card_mul_index N, hindex]
-    have : (Finset.univ.filter (fun x : G => ¬ x ∈ N)).card = Nat.card N := by omega
-    rw [this]
+    have hnotMemCard : (Finset.univ.filter (fun x : G => ¬ x ∈ N)).card = Nat.card N := by
+      simpa using card_filter_notMem_eq_card_of_index_two (N := N) hindex
+    rw [hnotMemCard]
   -- `|G| = 2 |N|` turns the two halves into a single multiple of `|G|`, which the average cancels.
   have hcollect : (Nat.card N : k) * (2 * (ψ z : k)) = (Nat.card G : k) * (ψ z : k) := by
     rw [hcast]; ring

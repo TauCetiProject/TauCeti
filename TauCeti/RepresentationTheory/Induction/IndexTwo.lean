@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.IndexTwo
+public import TauCeti.GroupTheory.Index.Two
 public import TauCeti.RepresentationTheory.Induction.LinearCharacter
 import Mathlib.GroupTheory.IndexNormal
 
@@ -19,7 +19,8 @@ already forces every element outside `N` to conjugate by inversion as well
 rotations and of a dicyclic group over its cyclic subgroup, and it makes the character of the
 representation induced from a linear character `ψ` of `N` completely explicit: it vanishes off `N`
 (`TauCeti.character_indFDRep_eq_zero_of_notMem`, which needs only normality), and on `N` it is
-`ψ + ψ⁻¹`.
+`ψ + ψ⁻¹` as soon as the order of `N` is invertible in the coefficient field, which the average
+form of the induced character below asks for.
 
 On `N` the average form `TauCeti.character_ind` of the induced character is the one to use.  A
 linear character takes its values in the commutative group `kˣ`, so conjugating by an element of
@@ -29,8 +30,9 @@ linear character takes its values in the commutative group `kˣ`, so conjugating
 
 ## Main statements
 
-* `TauCeti.character_indFDRep_ofLinearCharacter_of_conj_eq_inv`: **on the subgroup, the character
-  induced from a linear character is `ψ + ψ⁻¹`.**
+* `TauCeti.character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv`: **on the
+  subgroup, the character induced from a linear character is `ψ + ψ⁻¹`**, provided the order of
+  the subgroup is invertible in the coefficient field.
 
 ## References
 
@@ -49,9 +51,9 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] {N : Subgroup G} [Finite 
 `ψ + ψ⁻¹`.**  Together with `TauCeti.character_indFDRep_eq_zero_of_notMem`, which gives the value
 `0` off `N`, this determines the induced character on all of `G`.  The hypothesis `hN` asks that
 the order of `N` be invertible in `k`. -/
-theorem character_indFDRep_ofLinearCharacter_of_conj_eq_inv (hindex : N.index = 2) {s : G}
-    (hs : s ∉ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) (hN : IsUnit (Nat.card N : k))
-    (ψ : N →* kˣ) {g : G} (hg : g ∈ N) :
+theorem character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv
+    (hindex : N.index = 2) {s : G} (hs : s ∉ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹)
+    (hN : IsUnit (Nat.card N : k)) (ψ : N →* kˣ) {g : G} (hg : g ∈ N) :
     (indFDRep (k := k) (G := G) (FDRep.ofLinearCharacter ψ)).character g =
       (ψ ⟨g, hg⟩ : k) + ((ψ ⟨g, hg⟩)⁻¹ : kˣ) := by
   classical
@@ -80,11 +82,7 @@ theorem character_indFDRep_ofLinearCharacter_of_conj_eq_inv (hindex : N.index = 
   have hmemCard : (Finset.univ.filter (fun x : G => x ∈ N)).card = Nat.card N := by
     simp [Nat.card_eq_fintype_card, Fintype.card_subtype]
   have hnotMemCard : (Finset.univ.filter (fun x : G => ¬ x ∈ N)).card = Nat.card N := by
-    have hsplit := Finset.card_filter_add_card_filter_not (s := (Finset.univ : Finset G))
-      (p := fun x : G => x ∈ N)
-    have hcard : (Finset.univ : Finset G).card = Nat.card N * 2 := by
-      rw [Finset.card_univ, ← Nat.card_eq_fintype_card, ← Subgroup.card_mul_index N, hindex]
-    omega
+    simpa using card_filter_notMem_eq_card_of_index_two (N := N) hindex
   rw [character_ind hN _ g, Finset.sum_congr rfl fun x _ => hterm x, Finset.sum_ite,
     Finset.sum_const, Finset.sum_const, hmemCard, hnotMemCard, nsmul_eq_mul, nsmul_eq_mul,
     ← mul_add, ← mul_assoc, inv_mul_cancel₀ hN.ne_zero, one_mul]
