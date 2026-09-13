@@ -359,6 +359,36 @@ theorem coe_symmetricBasis_offDiag {i j : Fin p} (hij : i ≤ j) (hne : i ≠ j)
 
 end coordinates
 
+/-! ### Symmetrized matrix units -/
+
+/-- The **symmetrized matrix unit** at `(i, j)`: half the sum of the matrix units at `(i, j)` and
+at `(j, i)`, as an element of the symmetric subspace. Its trace pairing with a symmetric matrix
+is the entry at `(i, j)`, so it is the symmetric matrix dual to that entry. -/
+def symmetricSingle {p : ℕ} (i j : Fin p) : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
+  ⟨(2 : ℝ)⁻¹ • (Matrix.single i j 1 + Matrix.single j i 1),
+    Matrix.isHermitian_iff_isSelfAdjoint.1 <| Matrix.isHermitian_iff_isSymm.2 <| by
+      simp [Matrix.IsSymm, Matrix.transpose_add, Matrix.transpose_single, add_comm]⟩
+
+theorem coe_symmetricSingle {p : ℕ} (i j : Fin p) :
+    (symmetricSingle i j : Matrix (Fin p) (Fin p) ℝ) =
+      (2 : ℝ)⁻¹ • (Matrix.single i j 1 + Matrix.single j i 1) := (rfl)
+
+theorem symmetricSingle_comm {p : ℕ} (i j : Fin p) :
+    symmetricSingle i j = symmetricSingle j i :=
+  Subtype.ext <| by rw [coe_symmetricSingle, coe_symmetricSingle, add_comm]
+
+/-- The trace pairing of a symmetric matrix with a symmetrized matrix unit reads off the entry at
+that position. -/
+@[simp]
+theorem trace_symmetricSingle_mul {p : ℕ} (i j : Fin p)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    ((symmetricSingle i j : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace =
+      (A : Matrix (Fin p) (Fin p) ℝ) i j := by
+  rw [coe_symmetricSingle, Matrix.smul_mul, Matrix.trace_smul, Matrix.add_mul, Matrix.trace_add,
+    Matrix.trace_single_mul, Matrix.trace_single_mul, selfAdjoint.coe_apply_comm A j i]
+  simp only [smul_eq_mul]
+  ring
+
 end TauCeti
 
 /-! ### The trace pairing -/

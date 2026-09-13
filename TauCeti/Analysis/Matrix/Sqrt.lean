@@ -32,7 +32,10 @@ in the original parameters.
 * `Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin` — the quadratic form of `Θ` at
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
 * `Matrix.PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul` — for
-  positive-semidefinite `S`, the pencil determinants of the sandwich and of `Θ * S` agree.
+  positive-semidefinite `S`, the pencil determinants of the sandwich and of `Θ * S` agree;
+* `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt` and
+  `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` — the traces of the sandwich and of its
+  square are those of `Θ * S` and of `Θ * S * Θ * S`.
 -/
 
 public section
@@ -84,5 +87,27 @@ theorem PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul [D
     CFC.sqrt_mul_sqrt_self S hS.nonneg
   rw [← Matrix.smul_mul, det_one_sub_mul_comm, Matrix.mul_smul, ← Matrix.mul_assoc, hsq,
     ← Matrix.smul_mul, det_one_sub_mul_comm, Matrix.mul_smul]
+
+open scoped Classical in
+/-- For positive-semidefinite `S`, the sandwich `CFC.sqrt S * Θ * CFC.sqrt S` has the same trace
+as the product `Θ * S`. -/
+theorem PosSemidef.trace_sqrt_mul_mul_sqrt {S : Matrix ι ι 𝕜} (hS : S.PosSemidef)
+    (Θ : Matrix ι ι 𝕜) : (CFC.sqrt S * Θ * CFC.sqrt S).trace = (Θ * S).trace := by
+  have hsq : CFC.sqrt S * CFC.sqrt S = S := CFC.sqrt_mul_sqrt_self S hS.nonneg
+  rw [Matrix.mul_assoc, Matrix.trace_mul_comm, Matrix.mul_assoc, hsq]
+
+open scoped Classical in
+/-- For positive-semidefinite `S`, the square of the sandwich `CFC.sqrt S * Θ * CFC.sqrt S` has
+the same trace as `Θ * S * Θ * S`. This is the second spectral moment of the sandwich, expressed
+in the original parameters. -/
+theorem PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self {S : Matrix ι ι 𝕜} (hS : S.PosSemidef)
+    (Θ : Matrix ι ι 𝕜) :
+    (CFC.sqrt S * Θ * CFC.sqrt S * (CFC.sqrt S * Θ * CFC.sqrt S)).trace =
+      (Θ * S * Θ * S).trace := by
+  have hsq : CFC.sqrt S * CFC.sqrt S = S := CFC.sqrt_mul_sqrt_self S hS.nonneg
+  have key : CFC.sqrt S * (Θ * (CFC.sqrt S * CFC.sqrt S) * Θ) * CFC.sqrt S =
+      CFC.sqrt S * Θ * CFC.sqrt S * (CFC.sqrt S * Θ * CFC.sqrt S) := by
+    simp only [Matrix.mul_assoc]
+  rw [← key, hsq, hS.trace_sqrt_mul_mul_sqrt]
 
 end Matrix
