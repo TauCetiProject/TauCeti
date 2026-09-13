@@ -29,6 +29,17 @@ its limiting point is fixed by the flow.  Time reversal exchanges the two constr
   point of a trajectory is fixed.
 * `Flow.stableSet_reverse` and `Flow.unstableSet_reverse`: time reversal exchanges
   stable and unstable sets.
+* `Homeomorph.image_stableSet_eq` and `Homeomorph.image_unstableSet_eq`: a topological conjugacy
+  transports stable and unstable sets.
+* `Homeomorph.image_unstableSet_inter_stableSet_eq`: a conjugacy transports the set of
+  connecting points between two endpoints.
+
+## References
+
+The stable and unstable set viewpoint follows M. Audin and M. Damian, *Morse Theory and Floer
+Homology*, Springer Universitext (2014), Chapter 2, §2.1.d.  The conjugacy and coordinate-transport
+perspective is used throughout D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic
+Topology*, 2nd ed., AMS (2012), Chapters 2–4 and 10, with analytic background in Appendices A–C.
 -/
 
 public section
@@ -156,5 +167,80 @@ theorem unstableSet_id [T1Space α] (x : α) :
     unstableSet (_root_.Flow.id ℝ α) x = {x} := by
   ext y
   simp [unstableSet]
+
+section Conjugacy
+
+variable {β : Type*} [TopologicalSpace β]
+  {φ : _root_.Flow ℝ α} {ψ : _root_.Flow ℝ β} (e : α ≃ₜ β)
+
+theorem _root_.Homeomorph.map_flow_symm (hconj : ∀ t x, e (φ t x) = ψ t (e x)) (t : ℝ) (y : β) :
+    e.symm (ψ t y) = φ t (e.symm y) := by
+  apply e.injective
+  rw [e.apply_symm_apply, hconj, e.apply_symm_apply]
+
+private theorem tendsto_map_flow_iff (hconj : ∀ t x, e (φ t x) = ψ t (e x)) {l : Filter ℝ}
+    {x y : α} :
+    Tendsto (fun t ↦ ψ t (e y)) l (𝓝 (e x)) ↔ Tendsto (fun t ↦ φ t y) l (𝓝 x) := by
+  constructor
+  · intro hy
+    have h := e.symm.continuous.continuousAt.tendsto.comp hy
+    have h' : Tendsto (e.symm ∘ fun t ↦ ψ t (e y)) l (𝓝 x) := by
+      simpa only [e.symm_apply_apply] using h
+    refine Filter.Tendsto.congr' (f₂ := fun t ↦ φ t y) (Eventually.of_forall fun t ↦ by
+      simp only [Function.comp_apply, e.map_flow_symm hconj, e.symm_apply_apply])
+      h'
+  · intro hy
+    have h := e.continuous.continuousAt.tendsto.comp hy
+    refine Filter.Tendsto.congr' (f₂ := fun t ↦ ψ t (e y)) (Eventually.of_forall fun t ↦ by
+      simpa only [Function.comp_apply] using hconj t y) h
+
+/-- A topological conjugacy carries membership in a stable set to membership in the
+corresponding stable set. -/
+theorem _root_.Homeomorph.mem_stableSet_map_iff
+    (hconj : ∀ t x, e (φ t x) = ψ t (e x)) {x : α} {y : α} :
+    e y ∈ stableSet ψ (e x) ↔ y ∈ stableSet φ x := by
+  rw [mem_stableSet, mem_stableSet]
+  exact tendsto_map_flow_iff e hconj
+
+/-- A topological conjugacy carries a stable set to the corresponding stable set. -/
+theorem _root_.Homeomorph.image_stableSet_eq
+    (hconj : ∀ t x, e (φ t x) = ψ t (e x)) (x : α) :
+    e '' stableSet φ x = stableSet ψ (e x) := by
+  ext y
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    exact (e.mem_stableSet_map_iff hconj).2 hz
+  · intro hy
+    refine ⟨e.symm y, (e.mem_stableSet_map_iff hconj).1 ?_, e.apply_symm_apply y⟩
+    simpa only [e.apply_symm_apply] using hy
+
+/-- A topological conjugacy carries membership in an unstable set to membership in the
+corresponding unstable set. -/
+theorem _root_.Homeomorph.mem_unstableSet_map_iff
+    (hconj : ∀ t x, e (φ t x) = ψ t (e x)) {x : α} {y : α} :
+    e y ∈ unstableSet ψ (e x) ↔ y ∈ unstableSet φ x := by
+  rw [mem_unstableSet, mem_unstableSet]
+  exact tendsto_map_flow_iff e hconj
+
+/-- A topological conjugacy carries an unstable set to the corresponding unstable set. -/
+theorem _root_.Homeomorph.image_unstableSet_eq
+    (hconj : ∀ t x, e (φ t x) = ψ t (e x)) (x : α) :
+    e '' unstableSet φ x = unstableSet ψ (e x) := by
+  ext y
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    exact (e.mem_unstableSet_map_iff hconj).2 hz
+  · intro hy
+    refine ⟨e.symm y, (e.mem_unstableSet_map_iff hconj).1 ?_, e.apply_symm_apply y⟩
+    simpa only [e.apply_symm_apply] using hy
+
+/-- A topological conjugacy transports the points whose trajectories connect two endpoints. -/
+theorem _root_.Homeomorph.image_unstableSet_inter_stableSet_eq
+    (hconj : ∀ t x, e (φ t x) = ψ t (e x)) (p q : α) :
+    e '' (unstableSet φ p ∩ stableSet φ q) =
+      unstableSet ψ (e p) ∩ stableSet ψ (e q) := by
+  rw [Set.image_inter e.injective, e.image_unstableSet_eq hconj, e.image_stableSet_eq hconj]
+
+end Conjugacy
 
 end Flow
