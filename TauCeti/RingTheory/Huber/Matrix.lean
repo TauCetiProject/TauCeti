@@ -33,7 +33,7 @@ carries **no topology**, and `A` need not be commutative, which is what lets it 
 
 ## References
 
-* [S. Bosch, U. Güntzer and R. Remmert, *Non-Archimedean Analysis*][bosch_guntzer_remmert],
+* [S. Bosch, U. Güntzer and R. Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert],
   §3.7.2/1, where this is the algebraic engine behind closedness of finitely generated submodules.
 
 ## Provenance

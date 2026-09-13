@@ -8,6 +8,9 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.Unique
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Place
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Prime
+-- Proof-only: `Valuation.algebraMap_coordinateRing_le_one`, the integrality of the coordinate ring
+-- at a valuation with no pole at `x`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.CoordinateRingIntegral
 
 /-!
 # Rational points as degree-one places of an elliptic function field
@@ -149,18 +152,7 @@ theorem exists_eq_ofPrime_iff_valuation_X_le_one [IsDedekindDomain W.CoordinateR
     simpa only [IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField] using
       P.mem_integers_iff.mp (hR (algebraMap F[X] W.CoordinateRing Polynomial.X))
   · intro hx r
-    apply P.mem_integers_of_isIntegral
-      (R := F[X]) (fun p ↦ ?_) ((Algebra.IsIntegral.isIntegral r).map
-        (IsScalarTower.toAlgHom F[X] W.CoordinateRing W.FunctionField))
-    apply P.adjoin_le_integers_iff.mpr (P.mem_integers_iff.mpr hx)
-    rw [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range]
-    have heval :
-        (Polynomial.aeval (algebraMap F[X] W.FunctionField Polynomial.X) :
-            F[X] →ₐ[F] W.FunctionField) =
-          IsScalarTower.toAlgHom F F[X] W.FunctionField := by
-      apply Polynomial.algHom_ext
-      rw [Polynomial.aeval_X, IsScalarTower.toAlgHom_apply]
-    exact ⟨p, congrArg (fun f : F[X] →ₐ[F] W.FunctionField ↦ f p) heval⟩
+    exact P.mem_integers_iff.mpr (P.valuation.algebraMap_coordinateRing_le_one hx r)
 
 /-- If the coordinate ring is Dedekind, every normalized place of a Weierstrass function field is
 either the place at infinity or the place of a unique height-one prime of the coordinate ring. -/
