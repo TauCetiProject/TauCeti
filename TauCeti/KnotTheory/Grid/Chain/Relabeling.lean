@@ -132,7 +132,6 @@ theorem relabelColumnsEquiv_symm (κ : Equiv.Perm (Fin n)) :
   rfl
 
 /-- The inverse row relabeling has the expected coefficient formula. -/
-@[simp]
 theorem relabelRowsEquiv_symm_apply (ρ : Equiv.Perm (Fin n)) (f : GridChain R n)
     (y : GridState n) :
     (relabelRowsEquiv ρ).symm f y = f (y.relabelRows ρ) := by
@@ -140,7 +139,6 @@ theorem relabelRowsEquiv_symm_apply (ρ : Equiv.Perm (Fin n)) (f : GridChain R n
   simp
 
 /-- The inverse column relabeling has the expected coefficient formula. -/
-@[simp]
 theorem relabelColumnsEquiv_symm_apply (κ : Equiv.Perm (Fin n)) (f : GridChain R n)
     (y : GridState n) :
     (relabelColumnsEquiv κ).symm f y = f (y.relabelColumns κ) := by
