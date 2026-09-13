@@ -107,6 +107,7 @@ theorem exists_isResolventAt_of_isResolventAt_restrictScalars
 
 /-- The resolvent sets of an operator and of its restriction of scalars agree at the points of the
 smaller field. -/
+@[simp]
 theorem mem_resolventSet_restrictScalars_iff :
     mu ∈ resolventSet (A.restrictScalars 𝕜) ↔ algebraMap 𝕜 𝕜' mu ∈ resolventSet A := by
   rw [mem_resolventSet_iff, mem_resolventSet_iff]
@@ -118,6 +119,7 @@ theorem mem_resolventSet_restrictScalars_iff :
     exact ⟨R.restrictScalars 𝕜, hR.restrictScalars⟩
 
 /-- The resolvent of the restriction of scalars is the restriction of scalars of the resolvent. -/
+@[simp]
 theorem restrictScalars_resolvent (h : mu ∈ resolventSet (A.restrictScalars 𝕜)) :
     (resolvent A (algebraMap 𝕜 𝕜' mu)).restrictScalars 𝕜 = resolvent (A.restrictScalars 𝕜) mu :=
   (resolvent_eq_of_isResolventAt

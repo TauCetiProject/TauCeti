@@ -47,10 +47,6 @@ the complex generator is reached in
 
 * K.-J. Engel and R. Nagel, *One-Parameter Semigroups for Linear Evolution Equations*,
   Section II.2.2 (rescaled semigroups).
-
-The construction is new here: it is built on Tau Ceti's own semigroup and generator API, not
-ported. (The real-parameter resolvent files of `TauCeti/Analysis/Semigroups/Resolvent/` record
-their own provenance in `mrdouglasny/hille-yosida`; nothing below is taken from it.)
 -/
 
 public section
@@ -138,8 +134,8 @@ omit [CompleteSpace X] in
 /-- Successive phase shifts add their parameters. -/
 @[simp]
 theorem phaseShift_phaseShift (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear)
-    (b c : ℝ) (hSb : (S.phaseShift hS b).IsComplexLinear) :
-    (S.phaseShift hS b).phaseShift hSb c = S.phaseShift hS (b + c) := by
+    (b c : ℝ) :
+    (S.phaseShift hS b).phaseShift (hS.phaseShift b) c = S.phaseShift hS (b + c) := by
   ext t x
   simp only [phaseShift_apply_apply]
   rw [smul_smul, ← Complex.exp_add]
