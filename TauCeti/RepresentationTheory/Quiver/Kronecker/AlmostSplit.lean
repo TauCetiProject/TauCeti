@@ -73,8 +73,14 @@ a subspace are available over a field in any dimension.
 
 ## References
 
-See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
-Ch. IV, and Schiffler, *Quiver Representations*, Ch. 3.
+This supplies the Auslander--Reiten half of the "`A₂` quiver" worked example of
+`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose acceptance criterion
+asks for the AR quiver of `A₂` to be "the three-vertex mesh `S₂ → P₁ → S₁` with `τ S₁ = S₂`", and
+builds on the Layer 6 machinery of that roadmap; its path-algebra half is
+`TauCeti.RepresentationTheory.Quiver.Kronecker.UpperTriangular` and its classification half is
+`TauCeti.RepresentationTheory.Quiver.Kronecker.Indecomposable`. See Assem--Simson--Skowroński,
+*Elements of the Representation Theory of Associative Algebras I*, Ch. IV, and Schiffler,
+*Quiver Representations*, Ch. 3.
 -/
 
 public section
