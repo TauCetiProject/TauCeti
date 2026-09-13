@@ -14,11 +14,10 @@ public import TauCeti.CategoryTheory.Skeletal
 The Picard group of a scheme consists of line bundles up to isomorphism, with tensor product as
 its operation. This file constructs the underlying type of isomorphism classes and descends the
 tensor product and the trivial line bundle to it. Tensor symmetry and the unit isomorphisms give
-the corresponding laws on classes.
+the corresponding laws on classes, while the tensor associator gives associativity.
 
-Associativity and inverses are deliberately not asserted here: they require, respectively, an
-associator for the sheafified tensor product and the dual of an invertible sheaf. Once those are
-available, the operations defined here are the operations of the Picard group.
+Inverses are deliberately not asserted here: they require the dual of an invertible sheaf. Once
+those are available, the operations defined here are the operations of the Picard group.
 
 ## Main declarations
 
@@ -27,7 +26,8 @@ available, the operations defined here are the operations of the Picard group.
 * `LineBundleClass.mk_eq_mk_iff` characterizes equality by an isomorphism of the underlying
   sheaves;
 * multiplication is induced by `InvertibleSheaf.tensorProduct`, and `1` is the class of the
-  trivial line bundle.
+  trivial line bundle;
+* tensor product makes `LineBundleClass X` a commutative monoid.
 
 The construction uses Mathlib's `CategoryTheory.Skeleton`, its standard implementation of the
 isomorphism classes of objects of a category.
@@ -78,13 +78,6 @@ lemma mk_tensorProduct (L K : InvertibleSheaf X) :
     mk (InvertibleSheaf.tensorProduct L K) = mk L * mk K :=
   (rfl)
 
-/-- The tensor product of line-bundle classes is commutative. -/
-lemma mul_comm (a b : LineBundleClass X) : a * b = b * a := by
-  induction a using Quotient.inductionOn with
-  | _ L =>
-    induction b using Quotient.inductionOn with
-    | _ K => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorProductComm L K)
-
 /-- The unit for tensor product is the class of the trivial line bundle. -/
 noncomputable instance : One (LineBundleClass X) where
   one := mk (InvertibleSheaf.trivial X)
@@ -94,17 +87,35 @@ noncomputable instance : One (LineBundleClass X) where
 lemma mk_trivial : mk (InvertibleSheaf.trivial X) = (1 : LineBundleClass X) :=
   rfl
 
-/-- The trivial line bundle is a left unit on isomorphism classes. -/
-@[simp]
-lemma one_mul (a : LineBundleClass X) : 1 * a = a := by
-  induction a using Quotient.inductionOn with
-  | _ L => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorTrivialLeftIso L)
-
-/-- The trivial line bundle is a right unit on isomorphism classes. -/
-@[simp]
-lemma mul_one (a : LineBundleClass X) : a * 1 = a := by
-  induction a using Quotient.inductionOn with
-  | _ L => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorTrivialRightIso L)
+/-- Tensor product makes line-bundle classes a commutative monoid. -/
+noncomputable instance : CommMonoid (LineBundleClass X) := by
+  let mulComm : ∀ a b : LineBundleClass X, a * b = b * a := by
+    intro a b
+    induction a using Quotient.inductionOn with
+    | _ L =>
+      induction b using Quotient.inductionOn with
+      | _ K => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorProductComm L K)
+  let mulAssoc : ∀ a b c : LineBundleClass X, a * b * c = a * (b * c) := by
+    intro a b c
+    induction a using Quotient.inductionOn with
+    | _ L =>
+      induction b using Quotient.inductionOn with
+      | _ K =>
+        induction c using Quotient.inductionOn with
+        | _ M => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorProductAssoc L K M)
+  let oneMul : ∀ a : LineBundleClass X, 1 * a = a := by
+    intro a
+    induction a using Quotient.inductionOn with
+    | _ L => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorTrivialLeftIso L)
+  let mulOne : ∀ a : LineBundleClass X, a * 1 = a := by
+    intro a
+    induction a using Quotient.inductionOn with
+    | _ L => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorTrivialRightIso L)
+  exact
+    { mul_assoc := mulAssoc
+      one_mul := oneMul
+      mul_one := mulOne
+      mul_comm := mulComm }
 
 end LineBundleClass
 
