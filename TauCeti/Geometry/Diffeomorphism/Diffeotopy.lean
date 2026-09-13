@@ -388,32 +388,4 @@ theorem symm_trans_self : Φ.symm.trans Φ = refl J n M := by
 
 end Diffeotopy
 
-/-! The composition calculus equips diffeotopies themselves with a group structure. -/
-
-namespace Diffeotopy
-
-instance instOne : One (Diffeotopy J n M) where
-  one := refl J n M
-
-@[simp] theorem one_eq_refl : (1 : Diffeotopy J n M) = refl J n M := rfl
-
-/-- Multiplication composes `Ψ` after `Φ`, matching the pointwise `Diffeomorph` product. -/
-instance instMul : Mul (Diffeotopy J n M) where
-  mul Φ Ψ := trans Ψ Φ
-
-@[simp] theorem mul_eq_trans (Φ Ψ : Diffeotopy J n M) : Φ * Ψ = trans Ψ Φ := rfl
-
-instance instInv : Inv (Diffeotopy J n M) where
-  inv := symm
-
-@[simp] theorem inv_eq_symm (Φ : Diffeotopy J n M) : Φ⁻¹ = Φ.symm := rfl
-
-instance instGroup : Group (Diffeotopy J n M) where
-  mul_assoc a b c := (trans_assoc c b a).symm
-  one_mul a := trans_refl a
-  mul_one a := refl_trans a
-  inv_mul_cancel a := self_trans_symm a
-
-end Diffeotopy
-
 end TauCeti
