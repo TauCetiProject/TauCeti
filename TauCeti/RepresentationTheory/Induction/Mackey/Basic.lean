@@ -78,7 +78,7 @@ restriction of the conjugate representation that the roadmap describes.
 
 Only the character form is proved here; the isomorphism of representations
 `Res_K (Ind_H^G A) ≅ ⨁_{KsH} Ind_{K ⊓ sHs⁻¹}^K Res ({}^s A)` refining it is
-`TauCeti.Rep.mackeyDecomposition`, in
+`Rep.mackeyDecomposition`, in
 `TauCeti.RepresentationTheory.Induction.Mackey.Decomposition`.
 
 ## References
