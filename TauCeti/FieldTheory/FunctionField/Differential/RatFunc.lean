@@ -112,7 +112,8 @@ private theorem exists_isGreatest_ratFuncWeilDifferential (k : Type*) [Field k] 
       WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_self, mul_one]
   have hne := repartitionDualComponent_uniformizer_zpow_ne_zero (IsFunctionField.ratFunc k)
     isIntegrallyClosedIn_ratFunc hmem hω0 (Place.degree_infty k) Place.isUniformizer_infty
-  rw [hord, show -(-2 : ℤ) - 1 = 1 by norm_num, zpow_one] at hne
+  rw [hord] at hne
+  norm_num only [zpow_one] at hne
   -- Scale by the constant that normalizes that value to `-1`.
   set v := repartitionDualComponent ω (Place.infty k) (RatFunc.X : RatFunc k)⁻¹ with hv
   refine ⟨repartitionDualMul (IsFunctionField.ratFunc k) (algebraMap k (RatFunc k) (-v⁻¹)) ω,

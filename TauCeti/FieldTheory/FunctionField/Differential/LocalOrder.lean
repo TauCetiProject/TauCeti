@@ -109,7 +109,8 @@ kill `t ^ (-r - 1)`.
 
 Some function `z` with `v_P z ≤ exp (r + 1)` escapes `ω_P`, since `r + 1` exceeds the order.  As
 the residue field of `P` is `k`, the function `z` differs from a constant multiple of
-`t ^ (-r - 1)` by a function `ω_P` does kill, so the multiple does not escape `ω_P` either. -/
+`t ^ (-r - 1)` by a function `ω_P` does kill, so that multiple escapes `ω_P` too, and hence so
+does `t ^ (-r - 1)` itself. -/
 theorem repartitionDualComponent_uniformizer_zpow_ne_zero (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
     (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) {P : Place k F} (hdeg : P.degree = 1)
