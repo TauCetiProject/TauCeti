@@ -17,9 +17,6 @@ group over that simple extension, so transitivity on the other roots is equivale
 irreducibility of the quotient. This identifies double transitivity of the original root action
 with that irreducibility criterion.
 
-This implements the “2-transitivity” milestone in Layer 2 of
-`TauCetiRoadmap/PolynomialGaloisGroups/README.md`.
-
 ## Main result
 
 * `TauCeti.is_two_pretransitive_iff_irreducible_divByMonic`: the root action is doubly
@@ -97,8 +94,10 @@ theorem is_two_pretransitive_iff_irreducible_divByMonic
       hsep.map.aeval_derivative_ne_zero
       (Polynomial.IsRoot.def.mp hroot)
   have hqevala : q.eval a ≠ 0 := by
-    rw [← hfactor] at hderiv
-    simpa using hderiv
+    rw [← hfactor, Polynomial.derivative_mul, Polynomial.derivative_X_sub_C] at hderiv
+    simpa only [Polynomial.eval_add, Polynomial.eval_mul, Polynomial.eval_one,
+      Polynomial.eval_sub, Polynomial.eval_X, Polynomial.eval_C, one_mul, sub_self, zero_mul,
+      add_zero] using hderiv
   -- Consequently, the roots of `q` in `L` are exactly the roots of `p` other than `x`.
   have hqroot_iff (y : p.rootSet L) :
       (y : L) ∈ q.rootSet L ↔ y ≠ x := by
