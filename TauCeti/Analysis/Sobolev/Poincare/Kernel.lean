@@ -21,8 +21,8 @@ Jacobian is `r ^ (d - 1)`, so the powers cancel.  For an additive Haar measure `
 `\int x in ball 0 R, ‖x‖ ^ (1 - d) ∂μ = d * μ.real (ball 0 1) * R`.
 
 The translated estimate bounds the same kernel on a ball centred elsewhere, with its pole at a
-point of that ball.  This is the kernel bound used when the straight-segment estimate is averaged
-over a ball in the proof of the Poincaré--Wirtinger inequality.
+point of the closed ball.  This is the kernel bound used when the straight-segment estimate is
+averaged over a ball in the proof of the Poincaré--Wirtinger inequality.
 
 ## Main declarations
 
@@ -137,20 +137,20 @@ theorem integral_norm_sub_rpow_one_sub_finrank_ball {R : ℝ} (hR : 0 ≤ R) (x 
     simp [norm_neg]
   rw [hfun, integral_norm_rpow_one_sub_finrank_ball hR]
 
-/-- If `x` lies in `ball 0 R`, then the integral there of the kernel with pole `x` is bounded by
-the exact integral on `ball 0 (2R)`. -/
+/-- If `x` lies in `closedBall 0 R`, then the integral over `ball 0 R` of the kernel with pole
+`x` is bounded by the exact integral on `ball 0 (2R)`. -/
 theorem integral_norm_sub_rpow_one_sub_finrank_le {R : ℝ} (x : E)
-    (hx : x ∈ ball (0 : E) R) :
+    (hx : x ∈ closedBall (0 : E) R) :
     ∫ y in ball (0 : E) R, ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu ≤
       (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) * (2 * R) := by
-  have hxR : dist x 0 < R := mem_ball.mp hx
-  have hR : 0 < R := dist_nonneg.trans_lt hxR
+  have hxR : dist x 0 ≤ R := mem_closedBall.mp hx
+  have hR : 0 ≤ R := dist_nonneg.trans hxR
   have hsub : ball (0 : E) R ⊆ ball x (2 * R) := by
     intro y hy
     rw [mem_ball] at hy ⊢
     calc
       dist y x ≤ dist y 0 + dist 0 x := dist_triangle y 0 x
-      _ < R + R := by rw [dist_comm] at hxR; exact add_lt_add hy hxR
+      _ < R + R := by rw [dist_comm] at hxR; exact add_lt_add_of_lt_of_le hy hxR
       _ = 2 * R := by ring
   have htwoR : 0 ≤ 2 * R := by positivity
   have hintegrable :
