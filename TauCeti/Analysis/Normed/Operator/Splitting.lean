@@ -36,8 +36,6 @@ underlying inverse is Mathlib's total `ContinuousLinearMap.inverse`.
 * `ContinuousLinearMap.eq_kerSection`: it is the only map with that defining property.
 * `ContinuousLinearMap.range_kerSection`: its range is exactly `ker A`.
 * `ContinuousLinearMap.kerEquivOfProd`: the resulting isomorphism `G ≃L[R] ↥A.ker`.
-* `ContinuousLinearMap.surjective_of_surjective_prod`: a surjective pair has surjective first
-  component.
 -/
 
 public section
@@ -82,6 +80,7 @@ theorem apply_kerSection_right (h : (A.prod q).IsInvertible) (v : G) :
   congrArg Prod.snd (prod_apply_kerSection h v)
 
 /-- On the kernel of `A` the section undoes `q`. -/
+@[simp]
 theorem kerSection_apply_of_mem_ker (h : (A.prod q).IsInvertible) {x : M} (hx : x ∈ A.ker) :
     A.kerSection q (q x) = x := by
   obtain ⟨e, he⟩ := h
@@ -133,15 +132,6 @@ theorem coe_kerEquivOfProd_apply (h : (A.prod q).IsInvertible) (v : G) :
 theorem kerEquivOfProd_symm_apply (h : (A.prod q).IsInvertible) (x : ↥A.ker) :
     (kerEquivOfProd A q h).symm x = q x :=
   (rfl)
-
-/-- The first component of a surjective pair is surjective: it is the pair followed by the
-projection `F × G →L[R] F`. -/
-theorem surjective_of_surjective_prod (h : Function.Surjective (A.prod q)) :
-    Function.Surjective A := by
-  intro y
-  obtain ⟨x, hx⟩ := h (y, 0)
-  refine ⟨x, ?_⟩
-  exact congrArg Prod.fst hx
 
 end ContinuousLinearMap
 

@@ -212,9 +212,11 @@ points, with no continuity argument on `x ↦ fderiv f x`. -/
 theorem surjective_of_mem_implicitCoordSource (hf : HasStrictFDerivAt f f' a)
     (hf' : f'.range = ⊤) (hker : f'.ker.ClosedComplemented) {x : E}
     (hx : x ∈ hf.implicitCoordSource hf' hker) {A : E →L[K] F} (hA : HasFDerivAt f A x) :
-  Function.Surjective A :=
-  ContinuousLinearMap.surjective_of_surjective_prod
-    (hf.isInvertible_prod_of_mem_implicitCoordSource hf' hker hx hA).surjective
+  Function.Surjective A := by
+  intro x
+  obtain ⟨y, hy⟩ := (Prod.fst_surjective.comp
+    (hf.isInvertible_prod_of_mem_implicitCoordSource hf' hker hx hA).surjective) x
+  exact ⟨y, by simpa using hy⟩
 
 /-- **The implicit function is `C^n` on a whole neighbourhood of the origin of the slice.** The
 inverse of the implicit-function homeomorphism is `C^n` at every point of its target whose
