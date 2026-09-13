@@ -82,7 +82,7 @@ theorem exists_geodesicCurveOnFrom
     have hγt : IsMIntegralCurveAt γ (geodesicSpray I M) t :=
       hγu.isMIntegralCurveAt (huopen.mem_nhds ht)
     have hγt2 : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2 γ t :=
-      IsMIntegralCurveAt.local_contMDiffAt_two hγt hv
+      IsMIntegralCurveAt.contMDiffAt_two hγt hv
     have hproj : ContMDiffAt I.tangent I 2 TotalSpace.proj (γ t) :=
       Bundle.contMDiffAt_proj (fun x : M ↦ TangentSpace I x) (IB := I) (n := (2 : ℕ∞ω))
     have hbase_t : ContMDiffAt 𝓘(ℝ, ℝ) I 2 ((fun z : TangentBundle I M => z.proj) ∘ γ) t :=
