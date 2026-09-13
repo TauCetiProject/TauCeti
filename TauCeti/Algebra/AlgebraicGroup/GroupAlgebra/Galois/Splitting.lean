@@ -110,6 +110,7 @@ theorem groupAlgebraInvariantsBaseChangeBialgEquiv_symm_apply (x : B) :
 
 /-- The splitting identifies the scalar-factor Galois action on the base change with the
 simultaneous coefficient and exponent action on the split group algebra. -/
+-- Use as an explicit rewrite: `simp` expands the action via `ScalarAut.smul_def` first.
 theorem groupAlgebraInvariantsBaseChangeBialgEquiv_smul (sigma : L ≃ₐ[k] L)
     (x : L ⊗[k] B) :
     groupAlgebraInvariantsBaseChangeBialgEquiv rho (sigma • x) =
