@@ -15,11 +15,21 @@ element of `L` is fixed by the `q`-power map exactly when it comes from `K`:
 
 `a ^ q = a ↔ a ∈ Set.range (algebraMap K L)`.
 
+So an element outside `K` is moved by the map. In a quadratic extension the map is moreover an
+involution, since `L` then has `q²` elements, and it therefore exchanges the two roots of the
+minimal polynomial of such an element; in particular it keeps it outside `K`. Those statements are
+what the elliptic conjugacy classes of `GL₂(𝔽_q)` are read off from.
+
 ## Main results
 
-* `TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`: the criterion above.
+* `TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`: the criterion above, with
+  `TauCeti.FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap` its `Nat.card` spelling.
 * `TauCeti.algebraMap_bijective_of_pow_card_eq_self`: its immediate global consequence, that a
   domain over `K` *all* of whose elements are fixed by the `q`-power map is `K` itself.
+* `TauCeti.FiniteField.pow_natCard_pow_natCard`: in a quadratic extension the `q`-power map is an
+  involution, with `TauCeti.FiniteField.pow_natCard_ne` and
+  `TauCeti.FiniteField.pow_natCard_notMem_range_algebraMap` its two consequences for an element
+  outside `K`.
 
 Mathlib has the easy direction (`FiniteField.pow_card`) but not the equivalence.
 `IsGalois.mem_range_algebraMap_iff_fixed` characterises the base field of a Galois extension by
@@ -78,6 +88,58 @@ theorem pow_card_eq_self_iff_mem_range_algebraMap {K L : Type*} [Field K] [Finty
   simp only [hK, Set.image_univ, Algebra.ofId_apply, mem_rootSet_of_ne hne, aeval_def,
     eval₂_sub, eval₂_X_pow, eval₂_X, sub_eq_zero] at this
   exact this.symm
+
+section Finite
+
+variable {K L : Type*} [Field K] [Finite K] [CommRing L] [IsDomain L] [Algebra K L]
+
+/-- **The `Nat.card` spelling of
+`TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`**, for a base field given as
+`Finite` rather than as a `Fintype`. -/
+theorem pow_natCard_eq_self_iff_mem_range_algebraMap (a : L) :
+    a ^ Nat.card K = a ↔ a ∈ Set.range (algebraMap K L) := by
+  let _ := Fintype.ofFinite K
+  rw [Nat.card_eq_fintype_card]
+  exact pow_card_eq_self_iff_mem_range_algebraMap a
+
+/-- **An element outside the base field is not fixed by the `q`-power map.** -/
+theorem pow_natCard_ne {a : L} (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ≠ a :=
+  fun h => ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h)
+
+end Finite
+
+/-! ### Quadratic extensions -/
+
+section Quadratic
+
+variable {K L : Type*} [Field K] [Finite K] [Field L] [Algebra K L]
+
+/-- **In a quadratic extension of a field with `q` elements the `q`-power map is an involution**:
+`L` has `q²` elements, so `a ^ (q²) = a`.
+
+This is deliberately not a simp lemma: in a context with a `Fintype K` instance, `Nat.card K`
+is not in simp normal form. -/
+theorem pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : L) :
+    (a ^ Nat.card K) ^ Nat.card K = a := by
+  have : Module.Finite K L := Module.finite_of_finrank_eq_succ (n := 1) h2
+  have : Finite L := Module.finite_of_finite K
+  let _ := Fintype.ofFinite L
+  have hcard : Nat.card L = Nat.card K ^ 2 := by
+    rw [Module.natCard_eq_pow_finrank (K := K) (V := L), h2]
+  rw [← pow_mul, ← pow_two, ← hcard, Nat.card_eq_fintype_card]
+  exact _root_.FiniteField.pow_card a
+
+/-- **In a quadratic extension the `q`-th power of an element outside the base field is again
+outside it**: the `q`-power map is an involution there, so a fixed value would force `a` itself to
+be fixed. -/
+theorem pow_natCard_notMem_range_algebraMap (h2 : Module.finrank K L = 2) {a : L}
+    (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ∉ Set.range (algebraMap K L) := by
+  intro hmem
+  have h1 := (pow_natCard_eq_self_iff_mem_range_algebraMap _).mpr hmem
+  rw [pow_natCard_pow_natCard h2] at h1
+  exact ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h1.symm)
+
+end Quadratic
 
 /-- **A `K`-algebra homomorphism commutes with the finite-base-field Frobenius.** Applying the
 homomorphism and raising to the `#K`-th power can be done in either order, a ring homomorphism

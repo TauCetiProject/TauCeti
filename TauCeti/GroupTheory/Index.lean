@@ -25,6 +25,8 @@ centre gives the `Γ.withCenter` readings.
 ## Main results
 
 * `Subgroup.mem_withCenter_iff`: an element of `Γ·Z(G)` is one of `Γ` times a central one.
+* `TauCeti.index_eq_of_natCard_eq_mul`: cancel a known nonzero subgroup order from the
+  order-index formula.
 * `Subgroup.withCenter_le_iff`: the universal property — containing `Γ·Z(G)` is containing both.
 * `Subgroup.withCenter_eq_self_iff`: adjoining the centre changes nothing exactly when the
   centre already lies inside `Γ`.
@@ -163,6 +165,15 @@ theorem index_eq_two_mul_index_withCenter (ha : a ∈ Subgroup.center G) (haΓ :
 end Subgroup
 
 namespace TauCeti
+
+/-- **Cancel a known nonzero subgroup order from the order-index formula.** If `H` has order `c`
+and its ambient group has order `c * d`, with `c > 0`, then `H` has index `d`. -/
+theorem index_eq_of_natCard_eq_mul {G : Type*} [Group G] {H : Subgroup G} {c d : ℕ}
+    (hpos : 0 < c) (hH : Nat.card H = c) (hG : Nat.card G = c * d) : H.index = d := by
+  refine Nat.eq_of_mul_eq_mul_left hpos ?_
+  calc c * H.index = Nat.card H * H.index := by rw [hH]
+    _ = Nat.card G := Subgroup.card_mul_index H
+    _ = c * d := hG
 
 /-- If the order of a finite group is invertible in `k`, then so is the order of any subgroup,
 because the two differ by the index. -/
