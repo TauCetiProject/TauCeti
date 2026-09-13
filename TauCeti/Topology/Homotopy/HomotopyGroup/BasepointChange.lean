@@ -294,6 +294,7 @@ theorem homotopic_transAt_transport [DecidableEq N] (i : N) (γ : Path x y) (f f
 /-! ### Naturality of transport -/
 
 /-- Postcomposition with a continuous map commutes with transport, along the image path. -/
+@[simp]
 theorem map_transport {Y : Type*} [TopologicalSpace Y] (F : C(X, Y)) (γ : Path x y)
     (f : Ω^ N X x) :
     _root_.GenLoop.map F rfl (transport γ f) =

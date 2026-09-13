@@ -281,13 +281,6 @@ def HomotopyAlong.ofHomotopyRel {f g : Ω^ N X x}
   toHomotopy := K.toHomotopy
   map_boundary t z hz := (K.eq_fst t hz).trans (f.2 z hz)
 
-omit [Fintype N] in
-/-- Generalized loops homotopic relative to the cube boundary are connected by a homotopy along
-the constant path. -/
-theorem HomotopyAlong.nonempty_of_homotopic {f g : Ω^ N X x}
-    (h : _root_.GenLoop.Homotopic f g) : Nonempty (HomotopyAlong (Path.refl x) f g) :=
-  Nonempty.map HomotopyAlong.ofHomotopyRel h
-
 /-- The collar homotopy is a homotopy along `γ` from `f` to the transported loop. -/
 def collarHomotopyAlong (γ : Path x y) (f : Ω^ N X x) :
     HomotopyAlong γ f (transport γ f) where

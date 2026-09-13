@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
-public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 
 /-!
 # The action of the fundamental group on the higher homotopy groups
@@ -185,6 +184,7 @@ theorem fundamentalGroupMulAut_apply [Nonempty N] [DecidableEq N] (γ : Fundamen
 
 /-- Postcomposition with a continuous map commutes with transport of homotopy classes, along
 the image class of paths. -/
+@[simp]
 theorem map_homotopyGroupTransportQuotient (F : C(X, Y)) (γ : Path.Homotopic.Quotient x x')
     (a : HomotopyGroup N X x) :
     _root_.HomotopyGroup.map F rfl (homotopyGroupTransportQuotient γ a) =
@@ -198,13 +198,14 @@ theorem map_homotopyGroupTransportQuotient (F : C(X, Y)) (γ : Path.Homotopic.Qu
 
 /-- **A based continuous map is equivariant** for the actions of the fundamental groups on
 source and target, along the homomorphism it induces on fundamental groups. -/
+@[simp]
 theorem map_fundamentalGroup_smul (F : C(X, Y)) (γ : FundamentalGroup X x)
     (a : HomotopyGroup N X x) :
     _root_.HomotopyGroup.map F rfl (γ • a) =
       FundamentalGroup.map F x γ • _root_.HomotopyGroup.map F rfl a := by
   rw [fundamentalGroup_smul_def, fundamentalGroup_smul_def,
     map_homotopyGroupTransportQuotient]
-  rfl
+  rw [FundamentalGroup.map_apply]
 
 /-! ### The orbits of the action -/
 
@@ -233,7 +234,7 @@ theorem exists_homotopyAlong_iff_exists_homotopic_transport (f g : Ω^ N X x) :
   · rintro ⟨γ, ⟨h⟩⟩
     exact ⟨γ, h.homotopic_transport.symm⟩
   · rintro ⟨p, hp⟩
-    obtain ⟨K⟩ := HomotopyAlong.nonempty_of_homotopic hp
+    obtain ⟨K⟩ := Nonempty.map HomotopyAlong.ofHomotopyRel hp
     exact ⟨p.trans (Path.refl x), ⟨(collarHomotopyAlong p f).trans K⟩⟩
 
 end GenLoop
@@ -260,6 +261,7 @@ theorem homotopyGroup_mem_orbit_iff_exists_homotopyAlong {a b : HomotopyGroup N 
 the action is trivial. Thus in positive dimensions based and free homotopy classes of maps
 `Sⁿ → X` landing in the path component of `x` agree; in dimension zero this uses the
 interpretation with the distinguished point restricted to the path component of `x`. -/
+@[simp]
 theorem fundamentalGroup_smul_eq_self [Subsingleton (FundamentalGroup X x)]
     (γ : FundamentalGroup X x) (a : HomotopyGroup N X x) : γ • a = a := by
   rw [Subsingleton.elim γ 1, one_smul]
