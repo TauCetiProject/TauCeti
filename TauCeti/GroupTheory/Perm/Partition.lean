@@ -79,7 +79,7 @@ variable {α β : Type*} [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq
 Unlike `Equiv.Perm.cycleType`, this is a partition of the cardinality of the whole carrier. It
 is the permutation-side cycle invariant used to compare a Galois action with factor degrees. -/
 def _root_.Equiv.Perm.fullCycleType (σ : Equiv.Perm α) : Multiset ℕ :=
-  σ.partition.parts
+  σ.cycleType + Multiset.replicate (Fintype.card α - σ.support.card) 1
 
 /-! ### The two halves of the multiset -/
 
@@ -264,7 +264,7 @@ theorem _root_.Equiv.Perm.parts_partition_permCongr (e : α ≃ β) (σ : Equiv.
 /-- `fullCycleType` is the unbundled parts of Mathlib's permutation partition. -/
 theorem _root_.Equiv.Perm.fullCycleType_def (σ : Equiv.Perm α) :
     fullCycleType σ = σ.partition.parts := by
-  rfl
+  rw [fullCycleType, Equiv.Perm.parts_partition]
 
 /-! The filter and conjugacy forms of the partition API. -/
 
