@@ -152,11 +152,11 @@ noncomputable abbrev mackeySummandFunctor (s : G) : Rep.{u} k H ⥤ Rep.{u} k K 
     Rep.indFunctor k ((TauCeti.mackeySubgroup s H K).subgroupOf K).subtype
 
 variable (H K) in
-/-- The direct sum of the Mackey summands, as a functor of the representation of `H`: on
-morphisms it applies `Rep.mackeySummandFunctor` in each summand
-(`Rep.mackeyDirectSumFunctor_map_hom_lof`).  The body is exposed because the type
-`(mackeyDirectSumFunctor H K).obj A` is otherwise opaque, so no lemma about the functor could even
-be stated. -/
+/-- The direct sum of the Mackey summands, as a functor of the representation of `H`: it sends `A`
+to `Rep.mackeyDirectSum H K A` (`Rep.mackeyDirectSumFunctor_obj`) and on morphisms it applies
+`Rep.mackeySummandFunctor` in each summand (`Rep.mackeyDirectSumFunctor_map_hom_lof`).  The body is
+exposed because the type `(mackeyDirectSumFunctor H K).obj A` is otherwise opaque: without it not
+even `Rep.mackeyDirectSumFunctor_obj` can be stated, let alone proved. -/
 @[expose]
 noncomputable def mackeyDirectSumFunctor : Rep.{u} k H ⥤ Rep.{u} k K where
   obj A := mackeyDirectSum H K A
@@ -194,6 +194,13 @@ noncomputable def mackeyDirectSumFunctor : Rep.{u} k H ⥤ Rep.{u} k K where
     refine DirectSum.linearMap_ext k fun D => LinearMap.ext fun y => ?_
     simp only [LinearMap.coe_comp, Function.comp_apply, DirectSum.lmap_lof]
     exact congrArg (DirectSum.lof k _ _ D) (LinearMap.congr_fun (h D.out) y)
+
+/-- The direct sum functor sends a representation of `H` to the direct sum of its Mackey
+summands. -/
+@[simp]
+theorem mackeyDirectSumFunctor_obj (A : Rep.{u} k H) :
+    (mackeyDirectSumFunctor H K).obj A = mackeyDirectSum H K A :=
+  rfl
 
 /-- The direct sum of the Mackey summands acts summandwise on morphisms: on the generator
 `⟦u ⊗ₜ a⟧` of the summand of `D` it is `⟦u ⊗ₜ f a⟧` in the summand of `D`. -/
