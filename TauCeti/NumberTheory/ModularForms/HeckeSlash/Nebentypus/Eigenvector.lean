@@ -7,7 +7,7 @@ module
 
 import TauCeti.NumberTheory.ArithmeticFunction.PrimeRecurrence
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Diagonal.Composite
-public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime
+public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime.Basic
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Recurrence
 
 /-!

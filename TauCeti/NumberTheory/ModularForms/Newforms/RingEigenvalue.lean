@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Scalar
+public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime.Recurrence
 public import TauCeti.NumberTheory.ModularForms.Newforms.Newform
 
 /-!
@@ -109,8 +109,8 @@ private theorem heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0 {p : ℕ+}
 
 /-- **The recurrence along the powers of a good prime**:
 `λ_{p^{r+2}} = λ_p λ_{p^{r+1}} − χ(p) p^{k−1} λ_{p^r}`. This is the image of the defining
-recurrence `heckeTGeneratorRecGamma0_succ_succ` of the ring, with the scalar coset acting by
-`χ(p) p^{k−2}` (`heckeRingHomCuspCharSpace_heckeTScalarGamma0`). -/
+recurrence of the ring on the character space
+(`heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_succ_succ_apply`), evaluated on the form. -/
 theorem eigenvalue_prime_pow_add_two {p : ℕ+} (hp : (p : ℕ).Prime) (hpN : Nat.Coprime p N)
     (r : ℕ) :
     f.eigenvalue (p ^ (r + 2)) (PNat.pow_coe p (r + 2) ▸ hpN.pow_left (r + 2)) =
@@ -119,38 +119,20 @@ theorem eigenvalue_prime_pow_add_two {p : ℕ+} (hp : (p : ℕ).Prime) (hpN : Na
         (f.χ (ZMod.unitOfCoprime p hpN) : ℂ) * (p : ℂ) ^ (k - 1) *
           f.eigenvalue (p ^ r) (PNat.pow_coe p r ▸ hpN.pow_left r) := by
   have hc (v : ℕ) : Nat.Coprime ((p ^ v : ℕ+) : ℕ) N := PNat.pow_coe p v ▸ hpN.pow_left v
-  -- the ring recurrence, transported along the ring homomorphism
-  have hrec : heckeRingHomCuspCharSpace k f.χ (heckeTGeneratorRecGamma0 N p (r + 2)) =
-      heckeRingHomCuspCharSpace k f.χ (heckeTGeneratorGamma0 N p) *
-          heckeRingHomCuspCharSpace k f.χ (heckeTGeneratorRecGamma0 N p (r + 1)) -
-        (p : ℤ) • heckeRingHomCuspCharSpace k f.χ (heckeTScalarGamma0 N p) *
-          heckeRingHomCuspCharSpace k f.χ (heckeTGeneratorRecGamma0 N p r) := by
-    rw [heckeTGeneratorRecGamma0_succ_succ, map_sub, map_mul, map_mul, map_zsmul]
-  -- the generator and the scalar coset evaluated on the form
+  -- the generator acts by `λ_p`
   have eₚ : heckeRingHomCuspCharSpace k f.χ (heckeTGeneratorGamma0 N p)
       ⟨f.toCuspForm, f.mem_charSpace⟩ =
       f.eigenvalue p hpN • (⟨f.toCuspForm, f.mem_charSpace⟩ : cuspFormCharSpace k f.χ) := by
     have := f.heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0 hp (hc 1)
     rwa [heckeTGeneratorRecGamma0_one, f.eigenvalue_congr (pow_one p) (hn := hpN)] at this
-  have eₛ : heckeRingHomCuspCharSpace k f.χ (heckeTScalarGamma0 N p)
-      ⟨f.toCuspForm, f.mem_charSpace⟩ =
-      ((f.χ (ZMod.unitOfCoprime p hpN) : ℂ) * (p : ℂ) ^ (k - 2)) •
-        (⟨f.toCuspForm, f.mem_charSpace⟩ : cuspFormCharSpace k f.χ) := by
-    rw [heckeRingHomCuspCharSpace_heckeTScalarGamma0 k f.χ p hp.pos hpN, LinearMap.smul_apply,
-      Module.End.one_apply]
-  -- evaluate the recurrence on the form and read off the scalars
-  have h := congrArg (fun T : Module.End ℂ (cuspFormCharSpace k f.χ) ↦
-    T ⟨f.toCuspForm, f.mem_charSpace⟩) hrec
-  simp only [LinearMap.sub_apply, Module.End.mul_apply, LinearMap.smul_apply,
-    f.heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0 hp (hc r),
+  -- the ring's two-step recurrence at the form, with `p • S_p` already read as `χ(p) p^{k−1}`
+  have h := heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_succ_succ_apply k f.χ hp.pos hpN
+    ⟨f.toCuspForm, f.mem_charSpace⟩ r
+  rw [f.heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0 hp (hc r),
     f.heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0 hp (hc (r + 1)),
-    f.heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0 hp (hc (r + 2)), map_smul, eₚ, eₛ,
-    smul_smul, ← Int.cast_smul_eq_zsmul ℂ, ← sub_smul] at h
-  have hp0 : (p : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hp.ne_zero
-  have hk : k - 1 = k - 2 + 1 := by ring
-  have hpow : (p : ℂ) ^ (k - 1) = (p : ℂ) ^ (k - 2) * p := by rw [hk, zpow_add_one₀ hp0]
-  rw [f.eq_of_smul_eq h, hpow]
-  push_cast
+    f.heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0 hp (hc (r + 2)), map_smul, eₚ,
+    smul_smul, smul_smul, ← sub_smul] at h
+  rw [f.eq_of_smul_eq h]
   ring
 
 /-- **The prime-square identity**: `λ_{p²} = λ_p² − χ(p) p^{k−1}` at a good prime. -/
