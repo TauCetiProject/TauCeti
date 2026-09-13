@@ -216,6 +216,8 @@ private theorem extendToSplittingField_injective
     {n : ℕ} (e : E ⊗[K] A ≃ₐ[E] Matrix (Fin n) (Fin n) E) :
     Function.Injective (extendToSplittingField e) := by
   let L := finiteSplittingField K A e
+  -- `extendToSplittingField` is bundled as an algebra hom over `L`, while the injectivity theorem
+  -- applies to the underlying `K`-linear tensor-product map with the tower-induced inclusion.
   change Function.Injective (TensorProduct.map
     (IsScalarTower.toAlgHom K L E).toLinearMap (LinearMap.id (R := K) (M := A)))
   exact TensorProduct.map_injective_of_flat_flat _ _
