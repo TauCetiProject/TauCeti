@@ -149,6 +149,7 @@ theorem hasFDerivAt (f : C1HolderSpace α E F) (x : E) :
   f.2 x
 
 /-- The derivative accessor agrees with Mathlib's `fderiv`. -/
+@[simp]
 theorem fderiv_eq (f : C1HolderSpace α E F) (x : E) :
     _root_.fderiv ℝ (f : E → F) x = fderiv f x :=
   (hasFDerivAt f x).fderiv
