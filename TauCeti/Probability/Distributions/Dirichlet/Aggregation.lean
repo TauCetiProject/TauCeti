@@ -50,6 +50,7 @@ variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- Summing over a fibre commutes with dividing by the grand total: aggregating a normalized
 vector is the same as normalizing the aggregated vector. -/
+@[simp]
 theorem euclideanFiberSum_dirichletNormalize (f : ι → κ) (x : ι → ℝ) :
     euclideanFiberSum f (dirichletNormalize x) = dirichletNormalize (FunOnFinite.map f x) := by
   classical

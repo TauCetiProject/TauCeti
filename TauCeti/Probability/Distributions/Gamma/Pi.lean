@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Probability.ProductMeasure
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
