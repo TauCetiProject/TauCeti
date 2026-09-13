@@ -106,17 +106,10 @@ theorem torusCharacter_geckSimpleReflectionTorusPoint (i : Fin t.rank)
       TauCeti.torusCharacter s
         (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht)
           (t.simpleIndex ht i) • mu) := by
-  have hcoroot :
-      (t.simplyConnectedRootDatum ht).coroot' (t.simpleIndex ht i) mu = mu i := by
-    -- `coroot'` is an abbreviation for the flipped pairing.  Expose that representation so the
-    -- linter-normal coordinate evaluation lemma can be applied after rewriting the simple coroot.
-    change (t.simplyConnectedRootDatum ht).toLinearMap mu
-      ((t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht i)) = mu i
-    rw [t.coroot_simpleIndex ht, t.coroot'_simpleIndex_apply ht]
   rw [t.geckSimpleReflectionTorusPoint_def ht,
     TauCeti.torusCharacter_weylReflectTorusPoint,
     RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul,
-    RootPairing.reflection_apply, hcoroot]
+    RootPairing.reflection_apply, t.coroot'_simpleIndex_apply ht]
 
 /-- **The character formula for a Geck Weyl word.** If the word spells `w`, its action on torus
 points is dual to the action of `w⁻¹` on the character lattice. -/
