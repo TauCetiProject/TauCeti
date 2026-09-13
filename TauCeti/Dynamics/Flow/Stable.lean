@@ -176,7 +176,6 @@ variable {β : Type*} [TopologicalSpace β]
 
 /-- A topological conjugacy carries membership in a stable set to membership in the
 corresponding stable set. -/
-@[simp]
 theorem _root_.Homeomorph.map_mem_stableSet_iff
     (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
     e y ∈ stableSet ψ (e x) ↔ y ∈ stableSet φ x := by
@@ -208,7 +207,6 @@ theorem _root_.Homeomorph.image_stableSet_eq
 
 /-- A topological conjugacy carries membership in an unstable set to membership in the
 corresponding unstable set. -/
-@[simp]
 theorem _root_.Homeomorph.map_mem_unstableSet_iff
     (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
     e y ∈ unstableSet ψ (e x) ↔ y ∈ unstableSet φ x := by
