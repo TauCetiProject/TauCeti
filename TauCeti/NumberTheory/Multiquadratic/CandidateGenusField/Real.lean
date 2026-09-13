@@ -206,11 +206,11 @@ theorem exists_algHom_candidateGenusFieldReal {M : Type*} [Field M] [NumberField
   let ψ : M →ₐ[ℚ] candidateGenusFieldReal hd :=
     φ.codRestrict (candidateGenusFieldReal hd).toSubalgebra fun x => hrange ⟨x, rfl⟩
   apply TauCeti.exists_algHom_apply_eq_of_sq_eq
-    (d := d) (y := candidateGenusFieldRealBaseRoot hd hpos) (z := z)
-  · rw [candidateGenusFieldRealBaseRoot_sq, IsScalarTower.algebraMap_apply ℤ ℚ]
-    norm_num
+    (r := ((d : ℤ) : ℚ)) (y := candidateGenusFieldRealBaseRoot hd hpos) (z := z)
+  · rw [candidateGenusFieldRealBaseRoot_sq]
   · exact finrank_adjoin_candidateGenusFieldRealBaseRoot hd hnsq hpos
-  · exact hz
+  · rw [hz, IsScalarTower.algebraMap_apply ℤ ℚ M]
+    norm_num
   · exact ⟨ψ⟩
 
 end TauCeti.Multiquadratic

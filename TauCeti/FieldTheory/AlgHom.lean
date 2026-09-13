@@ -41,34 +41,28 @@ theorem algEquivOfFinrankEq_apply (f : L →ₐ[K] M)
 
 end Finrank
 
-variable {L M : Type*} [Field L] [Field M] [Algebra ℚ L] [Algebra ℚ M]
-  {d : ℤ} {y : L} {z : M}
+variable {K L M : Type*} [Field K] [Field L] [Field M] [Algebra K L] [Algebra K M]
+  {r : K} {y : L} {z : M}
 
-/-- If `y` and `z` are square roots of the same integer and `ℚ(y)` is quadratic, any
-`ℚ`-embedding from the field containing `z` into the normal field containing `y` can be
+/-- If `y` and `z` are square roots of the same scalar and `K(y)` is quadratic, any
+`K`-embedding from the field containing `z` into the normal field containing `y` can be
 adjusted by a target automorphism to carry `z` to `y`. -/
-theorem exists_algHom_apply_eq_of_sq_eq [Normal ℚ L]
-    (hy : y ^ 2 = algebraMap ℤ L d)
-    (hydegree : Module.finrank ℚ (IntermediateField.adjoin ℚ {y}) = 2)
-    (hz : z ^ 2 = algebraMap ℤ M d) (hφ : Nonempty (M →ₐ[ℚ] L)) :
-    ∃ φ : M →ₐ[ℚ] L, φ z = y := by
+theorem exists_algHom_apply_eq_of_sq_eq [Normal K L]
+    (hy : y ^ 2 = algebraMap K L r)
+    (hydegree : Module.finrank K (IntermediateField.adjoin K {y}) = 2)
+    (hz : z ^ 2 = algebraMap K M r) (hφ : Nonempty (M →ₐ[K] L)) :
+    ∃ φ : M →ₐ[K] L, φ z = y := by
   obtain ⟨φ⟩ := hφ
-  have hyQ : y ^ 2 = algebraMap ℚ L ((d : ℤ) : ℚ) := by
-    rw [hy, IsScalarTower.algebraMap_apply ℤ ℚ L]
-    norm_num
-  have hzQ : z ^ 2 = algebraMap ℚ M ((d : ℤ) : ℚ) := by
-    rw [hz, IsScalarTower.algebraMap_apply ℤ ℚ M]
-    norm_num
-  have hyint : IsIntegral ℚ y := by
+  have hyint : IsIntegral K y := by
     apply IsIntegral.of_pow (by norm_num : 0 < 2)
-    rw [hyQ]
+    rw [hy]
     exact isIntegral_algebraMap
-  have hmin : minpoly ℚ y = Polynomial.X ^ 2 - Polynomial.C ((d : ℤ) : ℚ) := by
-    apply Algebra.minpoly_eq_X_sq_sub_C_of_sq_eq_of_natDegree_eq_two hyQ
+  have hmin : minpoly K y = Polynomial.X ^ 2 - Polynomial.C r := by
+    apply Algebra.minpoly_eq_X_sq_sub_C_of_sq_eq_of_natDegree_eq_two hy
     rw [← IntermediateField.adjoin.finrank hyint, hydegree]
-  have hroot : Polynomial.aeval (φ z) (minpoly ℚ y) = 0 := by
-    have hφz : (φ z) ^ 2 = algebraMap ℚ L ((d : ℤ) : ℚ) := by
-      rw [← map_pow, hzQ, φ.commutes]
+  have hroot : Polynomial.aeval (φ z) (minpoly K y) = 0 := by
+    have hφz : (φ z) ^ 2 = algebraMap K L r := by
+      rw [← map_pow, hz, φ.commutes]
     simp [hmin, hφz]
   obtain ⟨σ, hσ⟩ := minpoly.exists_algEquiv_of_root hyint.isAlgebraic hroot
   exact ⟨σ.toAlgHom.comp φ, hσ⟩

@@ -133,14 +133,15 @@ theorem isGenusField_candidateGenusField {d : ℤ} (hd : Squarefree d) (hneg : d
   · rw [← candidateGenusFieldBase_def hd]
     exact isUnramifiedAtInfinitePlaces_candidateGenusField hd hneg
   · intro M _ _ _ z hz hfinite _
-    apply exists_algHom_apply_eq_of_sq_eq
+    apply exists_algHom_apply_eq_of_sq_eq (r := ((d : ℤ) : ℚ))
       (by
-        rw [candidateGenusFieldBaseRoot_sq hd, IsScalarTower.algebraMap_apply ℤ ℚ]
-        norm_num)
+        rw [candidateGenusFieldBaseRoot_sq hd])
       (by
         rw [← candidateGenusFieldBase_def hd]
         exact finrank_candidateGenusFieldBase hd hnsq)
-      hz
+      (by
+        rw [hz, IsScalarTower.algebraMap_apply ℤ ℚ M]
+        norm_num)
     exact nonempty_algHom_candidateGenusField hd hnsq hz hfinite
 
 end TauCeti.Multiquadratic
