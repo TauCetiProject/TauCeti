@@ -17,9 +17,6 @@ public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.Algebra.Group.Conj
 -- `TauCeti.GL2NonSplitTorusHom` occurs in the elliptic conjugacy criterion below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus
--- Non-public: `Matrix.GeneralLinearGroup.center_eq_range_scalar` turns a scalar element of `GL₂`
--- into the scalar matrix of a unit, in a proof only.
-import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 -- Non-public: `Nat.card_units`, `Nat.card_sum` and `Nat.card_prod` are used only in the final
 -- count.
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
@@ -311,11 +308,15 @@ theorem bijective_mk_conjRepGLFinTwo :
   · intro C
     obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
     by_cases hg : (g : Matrix (Fin 2) (Fin 2) F) ∈ Set.range (Matrix.scalar (Fin 2))
-    · obtain ⟨a, ha⟩ : ∃ a : Fˣ, Matrix.GeneralLinearGroup.scalar (Fin 2) a = g := by
-        refine MonoidHom.mem_range.1 ?_
-        rw [← Matrix.GeneralLinearGroup.center_eq_range_scalar]
-        exact Matrix.GeneralLinearGroup.mem_center_iff_val_mem_range_scalar.2 hg
-      exact ⟨Sum.inl a, congrArg ConjClasses.mk ha⟩
+    · obtain ⟨a, ha⟩ := hg
+      have ha0 : a ≠ 0 := by
+        rintro rfl
+        have h1 : (g : Matrix (Fin 2) (Fin 2) F) *
+            ((g⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) = 1 := by
+          rw [← Units.val_mul, mul_inv_cancel, Units.val_one]
+        rw [← ha, map_zero, zero_mul] at h1
+        exact zero_ne_one h1
+      exact ⟨Sum.inl (Units.mk0 a ha0), congrArg ConjClasses.mk (Units.ext ha)⟩
     · exact ⟨Sum.inr ((g : Matrix (Fin 2) (Fin 2) F).trace, Matrix.GeneralLinearGroup.det g),
         ConjClasses.mk_eq_mk_iff_isConj.2 (isConj_companionGL hg).symm⟩
 
