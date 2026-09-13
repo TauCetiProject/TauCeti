@@ -83,30 +83,6 @@ private theorem abs_sub_le_of_bounded_differences {ι : Type*} [Fintype ι]
   have := key Finset.univ x x' (by simp)
   simpa using this
 
-/-- A uniform bound on a measurable real function supplies the exponential bound and
-integrability needed for centered moment-generating functions. -/
-private theorem exp_mul_sub_bound_and_integrable {α : Type*} [MeasurableSpace α]
-    (μ : Measure α) [IsFiniteMeasure μ] (F : α → ℝ) (hF : Measurable F) (M : ℝ)
-    (hFM : ∀ x, |F x| ≤ M) (I t : ℝ) :
-    (∀ x, |Real.exp (t * (F x - I))| ≤ Real.exp (|t| * (M + |I|))) ∧
-      Integrable (fun x => Real.exp (t * (F x - I))) μ := by
-  have hbound : ∀ x, |Real.exp (t * (F x - I))| ≤ Real.exp (|t| * (M + |I|)) := by
-    intro x
-    rw [Real.abs_exp]
-    apply Real.exp_le_exp.mpr
-    calc
-      t * (F x - I) ≤ |t * (F x - I)| := le_abs_self _
-      _ = |t| * |F x - I| := abs_mul _ _
-      _ ≤ |t| * (M + |I|) := by
-        apply mul_le_mul_of_nonneg_left _ (abs_nonneg t)
-        calc
-          |F x - I| ≤ |F x| + |I| := by
-            rw [sub_eq_add_neg, ← abs_neg I]
-            exact abs_add_le _ _
-          _ ≤ M + |I| := by linarith [hFM x]
-  exact ⟨hbound, (integrable_const (Real.exp (|t| * (M + |I|)))).mono'
-    (((hF.sub_const I).const_mul t).exp).aestronglyMeasurable (ae_of_all _ hbound)⟩
-
 /-- The exponential-moment estimate underlying McDiarmid's inequality, on a product indexed by
 `Fin n`. -/
 private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpace β]
@@ -305,7 +281,13 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
         rw [hsplit, integral_mul_const]
         exact mul_le_mul_of_nonneg_right (hHoeff w) (Real.exp_nonneg _)
       have hexpg_int : Integrable (fun w => Real.exp (t * (g w - I))) πn :=
-        (exp_mul_sub_bound_and_integrable πn g hg_meas M hg_bdd I t).2
+        ProbabilityTheory.integrable_exp_mul_of_mem_Icc (μ := πn)
+          (a := -(M + |I|)) (b := M + |I|) ((hg_meas.sub_const I).aemeasurable)
+          (ae_of_all _ fun w => abs_le.mp <| calc
+            |g w - I| ≤ |g w| + |I| := by
+              rw [sub_eq_add_neg, ← abs_neg I]
+              exact abs_add_le _ _
+            _ ≤ M + |I| := by linarith [hg_bdd w])
       have hR_int : Integrable (fun w => Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) *
           Real.exp (t * (g w - I))) πn := hexpg_int.const_mul _
       have hLmeas : Measurable (fun w => ∫ a, Real.exp (t * (f (Fin.cons a w) - I)) ∂ν) := by
@@ -318,8 +300,20 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
         refine hR_int.mono' hLmeas.aestronglyMeasurable (ae_of_all _ fun w => ?_)
         rw [Real.norm_eq_abs, abs_of_nonneg (integral_nonneg (fun a => Real.exp_nonneg _))]
         exact hpoint w
-      have hFexp_bd : ∀ x, |Real.exp (t * (f x - I))| ≤ Real.exp (|t| * (M + |I|)) :=
-        (exp_mul_sub_bound_and_integrable π1 f hf M hMf I t).1
+      have hFexp_bd : ∀ x, |Real.exp (t * (f x - I))| ≤ Real.exp (|t| * (M + |I|)) := by
+        intro x
+        rw [Real.abs_exp]
+        apply Real.exp_le_exp.mpr
+        calc
+          t * (f x - I) ≤ |t * (f x - I)| := le_abs_self _
+          _ = |t| * |f x - I| := abs_mul _ _
+          _ ≤ |t| * (M + |I|) := by
+            apply mul_le_mul_of_nonneg_left _ (abs_nonneg t)
+            calc
+              |f x - I| ≤ |f x| + |I| := by
+                rw [sub_eq_add_neg, ← abs_neg I]
+                exact abs_add_le _ _
+              _ ≤ M + |I| := by linarith [hMf x]
       rw [htrans (fun x => Real.exp (t * (f x - I)))
         (hprodint _ (Real.exp (|t| * (M + |I|))) (((hf.sub_const I).const_mul t).exp)
           hFexp_bd)]
@@ -421,7 +415,13 @@ theorem hasSubgaussianMGF_of_bounded_differences
       _ ≤ |f x - f x₀| + |f x₀| := abs_add_le _ _
       _ ≤ M := by rw [hM]; linarith
   have hint : ∀ t : ℝ, Integrable (fun x => Real.exp (t * (f x - I))) π := fun t =>
-    (exp_mul_sub_bound_and_integrable π f hf M hMf I t).2
+    ProbabilityTheory.integrable_exp_mul_of_mem_Icc (μ := π)
+      (a := -(M + |I|)) (b := M + |I|) ((hf.sub_const I).aemeasurable)
+      (ae_of_all _ fun x => abs_le.mp <| calc
+        |f x - I| ≤ |f x| + |I| := by
+          rw [sub_eq_add_neg, ← abs_neg I]
+          exact abs_add_le _ _
+        _ ≤ M + |I| := by linarith [hMf x])
   refine ⟨hint, fun t => ?_⟩
   have hkey := integral_exp_mul_centered_le_pi ν f hf c hc hbd t
   have hcoe : (((∑ i, (c i).toNNReal ^ 2 / 4 : ℝ≥0) : ℝ)) =
