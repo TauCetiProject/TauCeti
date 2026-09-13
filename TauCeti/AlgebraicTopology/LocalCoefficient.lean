@@ -100,6 +100,24 @@ def pullbackIdIso (X : TopCat.{v}) :
     ext x a
     simp [pullback])
 
+@[simp]
+theorem pullbackIdIso_hom_app_app (X : TopCat.{v}) (L : LocalCoefficientSystem.{u, v, w} R X)
+    (x : FundamentalGroupoid X) :
+    ((pullbackIdIso (R := R) X).hom.app L).app x = 𝟙 _ := by
+  -- Expose the whiskered `eqToHom` component underlying the isomorphism.
+  change L.map ((eqToHom FundamentalGroupoid.map_id).app x) ≫ 𝟙 _ = 𝟙 _
+  rw [eqToHom_app, eqToHom_map, Category.comp_id]
+  rfl
+
+@[simp]
+theorem pullbackIdIso_inv_app_app (X : TopCat.{v}) (L : LocalCoefficientSystem.{u, v, w} R X)
+    (x : FundamentalGroupoid X) :
+    ((pullbackIdIso (R := R) X).inv.app L).app x = 𝟙 _ := by
+  -- Expose the whiskered `eqToHom` component underlying the isomorphism.
+  change 𝟙 _ ≫ L.map ((eqToHom FundamentalGroupoid.map_id.symm).app x) = 𝟙 _
+  rw [eqToHom_app, eqToHom_map, Category.id_comp]
+  rfl
+
 /-- Pullback along a composite is naturally isomorphic to the composite of the two pullback
 functors, in contravariant order. -/
 def pullbackCompIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z : TopCat.{v₃}}
@@ -113,12 +131,44 @@ def pullbackCompIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z : TopCat.{v₃}}
     ext x a
     simp [pullback])
 
+@[simp]
+theorem pullbackCompIso_hom_app_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z : TopCat.{v₃}}
+    (f : C(X, Y)) (g : C(Y, Z)) (L : LocalCoefficientSystem.{u, v₃, w} R Z)
+    (x : FundamentalGroupoid X) :
+    ((pullbackCompIso (R := R) f g).hom.app L).app x = 𝟙 _ := by
+  -- Expose the whiskered `eqToHom` component underlying the isomorphism.
+  change L.map ((eqToHom (FundamentalGroupoid.map_comp g f)).app x) ≫ 𝟙 _ = 𝟙 _
+  rw [eqToHom_app, eqToHom_map, Category.comp_id]
+  rfl
+
+@[simp]
+theorem pullbackCompIso_inv_app_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z : TopCat.{v₃}}
+    (f : C(X, Y)) (g : C(Y, Z)) (L : LocalCoefficientSystem.{u, v₃, w} R Z)
+    (x : FundamentalGroupoid X) :
+    ((pullbackCompIso (R := R) f g).inv.app L).app x = 𝟙 _ := by
+  -- Expose the whiskered `eqToHom` component underlying the isomorphism.
+  change 𝟙 _ ≫ L.map ((eqToHom (FundamentalGroupoid.map_comp g f).symm).app x) = 𝟙 _
+  rw [eqToHom_app, eqToHom_map, Category.id_comp]
+  rfl
+
 /-- Pulling back a constant local coefficient system leaves it constant. -/
 def pullbackConstantIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
     (M : ModuleCat.{w} R) :
     (pullback (R := R) f).obj ((constantFunctor (R := R) Y).obj M) ≅
       (constantFunctor (R := R) X).obj M :=
   Iso.refl _
+
+@[simp]
+theorem pullbackConstantIso_hom_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (M : ModuleCat.{w} R) (x : FundamentalGroupoid X) :
+    (pullbackConstantIso (R := R) f M).hom.app x = 𝟙 M :=
+  (rfl)
+
+@[simp]
+theorem pullbackConstantIso_inv_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (M : ModuleCat.{w} R) (x : FundamentalGroupoid X) :
+    (pullbackConstantIso (R := R) f M).inv.app x = 𝟙 M :=
+  (rfl)
 
 /-- Evaluation of a local coefficient system at a point of the space. -/
 @[expose] def fiberFunctor (R : Type u) [Ring R] (X : TopCat.{v}) (x : X) :
@@ -148,6 +198,7 @@ theorem transport_apply {x y : X} (L : LocalCoefficientSystem.{u, v, w} R X)
     transport L p a = L.map p a :=
   by simp [transport]
 
+/-- Transport along the constant path is the identity. -/
 @[simp]
 theorem transport_refl (L : LocalCoefficientSystem.{u, v, w} R X) (x : X) :
     transport L (Path.Homotopic.Quotient.refl x) = LinearEquiv.refl R _ := by
@@ -158,6 +209,7 @@ theorem transport_refl (L : LocalCoefficientSystem.{u, v, w} R X) (x : X) :
   rw [h]
   exact L.map_id_apply _ a
 
+/-- Transport along a concatenation of paths is the composite of the two transports. -/
 @[simp]
 theorem transport_trans {x y z : X} (L : LocalCoefficientSystem.{u, v, w} R X)
     (p : Path.Homotopic.Quotient x y) (q : Path.Homotopic.Quotient y z) :
@@ -165,6 +217,7 @@ theorem transport_trans {x y z : X} (L : LocalCoefficientSystem.{u, v, w} R X)
   ext a
   exact L.map_comp_apply p q a
 
+/-- Transport along the reversed path is the inverse of transport along the path. -/
 @[simp]
 theorem transport_symm {x y : X} (L : LocalCoefficientSystem.{u, v, w} R X)
     (p : Path.Homotopic.Quotient x y) :
@@ -218,6 +271,7 @@ theorem monodromyRepresentation_apply
     monodromyRepresentation L x g a = L.map g a :=
   rfl
 
+/-- The monodromy representation of a constant local coefficient system is trivial. -/
 @[simp]
 theorem constant_monodromyRepresentation (X : TopCat.{v}) (M : ModuleCat.{w} R) (x : X) :
     monodromyRepresentation ((constantFunctor (R := R) X).obj M) x =
@@ -225,6 +279,8 @@ theorem constant_monodromyRepresentation (X : TopCat.{v}) (M : ModuleCat.{w} R) 
   ext g a
   rfl
 
+/-- The monodromy representation of a pullback is the monodromy representation at the image
+point, restricted along the induced map of fundamental groups. -/
 @[simp]
 theorem pullback_monodromyRepresentation {X : TopCat.{v₁}} {Y : TopCat.{v₂}}
     (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v₂, w} R Y) (x : X) :
