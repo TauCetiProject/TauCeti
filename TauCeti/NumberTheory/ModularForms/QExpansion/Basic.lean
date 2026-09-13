@@ -23,6 +23,12 @@ invoke it. The proof is Mathlib's, run through `UpperHalfPlane.hasFPowerSeriesOn
 which *is* stated for `{f : ℍ → ℂ}`, with `qExpansionFormalMultilinearSeries` spelled out
 inline for the same reason.
 
+Alongside them, the `n`-th coefficient bundled as a `ℂ`-linear functional on *cusp* forms,
+`CuspForm.qExpansionCoeffₗ` — the linear map above, composed with the inclusion of cusp forms
+and with `PowerSeries.coeff n`. Coefficient computations on a linear combination of cusp forms
+then go through `map_sub` and `map_smul` rather than through the `FunLike` and `ModularForm`
+coercions.
+
 Alongside those, the effect of a `1 / d` translation on the `q`-powers a support condition
 leaves alive: shifting the argument by `1 / d` scales the `n`-th `q`-power by a `d`-th root of
 unity raised to `n`, so a coefficient function supported on the multiples of `d` does not see the
@@ -34,8 +40,9 @@ stated here rather than at the descent because it mentions only coefficients, di
 
 * `TauCeti.ModularForm.qExpansionLinearMap`.
 * `TauCeti.UpperHalfPlane.qExpansion_coeff_unique`.
-* `TauCeti.qExpansion_coeff_smul_sub_smul`: the coefficient of `c • u - d • v` is the
-  corresponding combination of coefficients — the linearity, named.
+* `TauCeti.CuspForm.qExpansionCoeffₗ`: the `n`-th coefficient as a `ℂ`-linear functional on
+  cusp forms, with `TauCeti.qExpansion_coeff_smul_sub_smul` the combination `c • u - d • v`
+  read off it.
 * `TauCeti.smul_qParam_pow_shift_eq`: a shift by `1 / d` fixes every `q`-power that a
   `d`-supported coefficient function leaves alive.
 
@@ -87,23 +94,44 @@ lemma UpperHalfPlane.qExpansion_coeff_unique {f : ℍ → ℂ} {c : ℕ → ℂ}
       using hfanalytic.hasFPowerSeriesAt
   simpa using congr_arg (FormalMultilinearSeries.coeff · m) (h1.eq_formalMultilinearSeries h2)
 
-/-- **A `q`-expansion coefficient is linear in the form.** The coefficient at a fixed index is a
-`ℂ`-linear functional on cusp forms — `ModularForm.qExpansionLinearMap` composed with the
-inclusion of cusp forms and with `PowerSeries.coeff` — so the coefficient of a combination is the
-combination of the coefficients. Stated for the combination `c • u - d • v` that eigenvector
-arguments form, so that their coefficient computations need not unfold the `FunLike` and
-`ModularForm` coercions by hand. -/
+/-- **The `n`-th `q`-expansion coefficient as a `ℂ`-linear functional on cusp forms.**
+`ModularForm.qExpansionLinearMap` composed with the inclusion `CuspForm.toModularFormₗ` and with
+the coefficient map `PowerSeries.coeff n`, each of the three already linear. Naming the
+composite is what lets a coefficient computation on a linear combination of cusp forms go
+through `map_add`, `map_sub` and `map_smul` instead of unfolding the `FunLike` and `ModularForm`
+coercions by hand. -/
+def CuspForm.qExpansionCoeffₗ {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne]
+    (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) (k : ℤ) (n : ℕ) : CuspForm Γ k →ₗ[ℂ] ℂ :=
+  (PowerSeries.coeff n).comp
+    ((ModularForm.qExpansionLinearMap hh hΓ k).comp CuspForm.toModularFormₗ)
+
+@[simp]
+lemma CuspForm.qExpansionCoeffₗ_apply {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne]
+    (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) {k : ℤ} (n : ℕ) (f : CuspForm Γ k) :
+    CuspForm.qExpansionCoeffₗ hh hΓ k n f = (qExpansion h ⇑f).coeff n := by
+  rw [CuspForm.qExpansionCoeffₗ, LinearMap.comp_apply, LinearMap.comp_apply,
+    ModularForm.qExpansionLinearMap_apply]
+  exact congrArg (fun g ↦ (qExpansion h g).coeff n) (funext (CuspForm.toModularFormₗ_apply f))
+
+/-- **A `q`-expansion coefficient is linear in the form**, in the combination `c • u - d • v`
+that eigenvector arguments form: the specialisation of `CuspForm.qExpansionCoeffₗ` along
+`map_sub` and `map_smul`.
+
+The combination is written with the coercion distributed, `c • ⇑u - d • ⇑v` rather than
+`⇑(c • u - d • v)`, because that is the simp-normal form — `FunLike.coe_sub` and
+`FunLike.coe_smul` push the coercion inwards — and only in that spelling does the lemma fire
+as a `simp` lemma. -/
+@[simp]
 theorem qExpansion_coeff_smul_sub_smul {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne] {k : ℤ}
     (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) (c d : ℂ) (u v : CuspForm Γ k) (n : ℕ) :
-    (qExpansion h ⇑(c • u - d • v)).coeff n =
+    (qExpansion h (c • ⇑u - d • ⇑v)).coeff n =
       c * (qExpansion h ⇑u).coeff n - d * (qExpansion h ⇑v).coeff n := by
-  set L := (ModularForm.qExpansionLinearMap hh hΓ k).comp CuspForm.toModularFormₗ with hL
-  have hLapply : ∀ w : CuspForm Γ k, L w = qExpansion h ⇑w := by
-    intro w
-    rw [hL, LinearMap.comp_apply, ModularForm.qExpansionLinearMap_apply]
-    exact congrArg (qExpansion h) (funext (CuspForm.toModularFormₗ_apply w))
-  rw [← hLapply (c • u - d • v), ← hLapply u, ← hLapply v, map_sub, map_smul, map_smul]
-  simp [smul_eq_mul]
+  have hcoe : c • ⇑u - d • ⇑v = ⇑(c • u - d • v) := by
+    rw [FunLike.coe_sub, FunLike.coe_smul, FunLike.coe_smul]
+  have h1 := map_sub (CuspForm.qExpansionCoeffₗ hh hΓ k n) (c • u) (d • v)
+  rw [map_smul, map_smul] at h1
+  rw [hcoe]
+  simpa [smul_eq_mul] using h1
 
 /-- The translate `1 / d +ᵥ σ`, read in `ℂ`, is the subtraction `TauCeti.Periodic.qParam_sub`
 expects: that lemma is stated at `z - j`, and the shift here enters as a `+ᵥ` on `ℍ`. Naming the

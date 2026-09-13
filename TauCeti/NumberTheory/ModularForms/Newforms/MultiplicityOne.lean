@@ -69,7 +69,8 @@ theorem smul_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew
     · obtain ⟨c, hcf, hcg⟩ := ha p hp hpN
       exact ⟨c, by rw [map_sub, map_smul, map_smul, hcf, hcg, smul_sub, smul_comm c b,
         smul_comm c a]⟩
-    · rw [Submodule.coe_sub, Submodule.coe_smul, Submodule.coe_smul,
+    · rw [Submodule.coe_sub, Submodule.coe_smul, Submodule.coe_smul, FunLike.coe_sub,
+        FunLike.coe_smul, FunLike.coe_smul,
         TauCeti.qExpansion_coeff_smul_sub_smul one_pos
           (one_mem_strictPeriods_Gamma1_map N), ← hadef, ← hbdef]
       ring
