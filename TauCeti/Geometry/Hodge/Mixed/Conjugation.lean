@@ -69,12 +69,6 @@ variable (mhs : MixedHodgeStructure hℚ hℂ)
 noncomputable def deligneSplittingBelow (p q : ℤ) : Submodule ℂ Vℂ :=
   ⨆ r, ⨆ (_ : r < p), ⨆ s, ⨆ (_ : s < q), mhs.deligneSplitting r s
 
-/-- The lower Deligne sum as a supremum over its two strict index bounds. -/
-theorem deligneSplittingBelow_def (p q : ℤ) :
-    mhs.deligneSplittingBelow p q =
-      ⨆ r, ⨆ (_ : r < p), ⨆ s, ⨆ (_ : s < q), mhs.deligneSplitting r s :=
-  (rfl)
-
 /-- A Deligne component strictly below both bounds belongs to the lower Deligne sum. -/
 theorem deligneSplitting_le_deligneSplittingBelow {r s p q : ℤ} (hr : r < p) (hs : s < q) :
     mhs.deligneSplitting r s ≤ mhs.deligneSplittingBelow p q :=
@@ -388,6 +382,8 @@ private theorem map_latticeConj_deligneSplitting_sup_below_of_lower (p q : ℤ)
   let C := mhs.conjF p ⊓ mhs.WC (p + q)
   let F := mhs.F q ⊓ mhs.WC (p + q)
   let E := mhs.deligneSplittingBelow q p
+  -- Fold the three abbreviations into the goal, so that what remains is the purely
+  -- lattice-theoretic identity `(C ⊓ (F ⊔ E)) ⊔ E = (F ⊓ (C ⊔ E)) ⊔ E` proved below.
   change (C ⊓ (F ⊔ E)) ⊔ E = (F ⊓ (C ⊔ E)) ⊔ E
   calc
     (C ⊓ (F ⊔ E)) ⊔ E = E ⊔ (C ⊓ (F ⊔ E)) := sup_comm _ _
