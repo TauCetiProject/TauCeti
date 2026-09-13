@@ -125,7 +125,19 @@ theorem hasFDerivAt_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
       (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)).subtype with hι
   set π : Matrix (Fin p) (Fin p) ℝ →L[ℝ]
       selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
-    LinearMap.toContinuousLinearMap symmetricPart with hπ
+    LinearMap.toContinuousLinearMap (selfAdjointPart ℝ)
+  -- Mathlib states `selfAdjointPart` into the additive subgroup `selfAdjoint`, whose subtype is
+  -- the submodule's but whose module instances are different, so its lemmas transport to `π` only
+  -- definitionally, not by rewriting.
+  have hπ_apply : ∀ X : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
+      π (X : Matrix (Fin p) (Fin p) ℝ) = X := fun X =>
+    Subtype.ext (IsSelfAdjoint.coe_selfAdjointPart_apply ℝ X.2)
+  have hπ_coe : ∀ M : Matrix (Fin p) (Fin p) ℝ,
+      (π M : Matrix (Fin p) (Fin p) ℝ) = (2 : ℝ)⁻¹ • (M + Mᵀ) := fun M => by
+    have h : (π M : Matrix (Fin p) (Fin p) ℝ) = (⅟2 : ℝ) • (M + star M) :=
+      selfAdjointPart_apply_coe ℝ M
+    rw [h, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_eq_transpose_of_trivial,
+      invOf_eq_inv]
   have hι_apply : ∀ X : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
       ι X = (X : Matrix (Fin p) (Fin p) ℝ) := fun X => by
     rw [hι, LinearMap.coe_toContinuousLinearMap', Submodule.subtype_apply]
@@ -137,20 +149,19 @@ theorem hasFDerivAt_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
   have hfun : (fun X : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       π (Ring.inverse (ι X))) = symmetricInv := by
     funext X
-    rw [hι_apply, ← Matrix.nonsing_inv_eq_ringInverse, ← coe_symmetricInv X, hπ,
-      LinearMap.coe_toContinuousLinearMap', symmetricPart_coe]
+    rw [hι_apply, ← Matrix.nonsing_inv_eq_ringInverse, ← coe_symmetricInv X, hπ_apply]
   rw [hfun] at hcomp
   refine hcomp.congr_fderiv (ContinuousLinearMap.ext fun H => ?_)
   have hHT : (H : Matrix (Fin p) (Fin p) ℝ)ᵀ = (H : Matrix (Fin p) (Fin p) ℝ) :=
     (Matrix.isHermitian_iff_isSymm.1 (selfAdjoint.isHermitian_coe H)).eq
   -- Both sides are the symmetric part of `-A⁻¹ H A⁻¹`: on the left the composite of continuous
   -- linear maps evaluates to it definitionally, and on the right the matrix is already symmetric.
-  have hvalue : symmetricPart (-((A : Matrix (Fin p) (Fin p) ℝ)⁻¹ *
+  have hvalue : π (-((A : Matrix (Fin p) (Fin p) ℝ)⁻¹ *
         (H : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)⁻¹)) =
       -(Matrix.symmetricCongruenceLinearMap
         ((A : Matrix (Fin p) (Fin p) ℝ)⁻¹)).toContinuousLinearMap H := by
     refine Subtype.ext ?_
-    simp only [coe_symmetricPart, LinearMap.coe_toContinuousLinearMap',
+    simp only [hπ_coe, LinearMap.coe_toContinuousLinearMap',
       NegMemClass.coe_neg, Matrix.coe_symmetricCongruenceLinearMap_apply, Matrix.transpose_neg,
       Matrix.transpose_mul, Matrix.transpose_nonsing_inv, hAT, hHT, Matrix.mul_assoc]
     module
