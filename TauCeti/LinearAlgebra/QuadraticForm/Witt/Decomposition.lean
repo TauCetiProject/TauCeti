@@ -16,12 +16,10 @@ space is isometric to an orthogonal sum of hyperbolic planes and an anisotropic 
 the number of planes and the anisotropic summand are determined by the isometry class. The number
 of planes is the *Witt index* and the last summand is the *anisotropic part*.
 
-Existence is the hyperbolic splitting theorem of
-`TauCeti.exists_hyperbolicPlane_prod_equivalent`, iterated until no isotropic vector is left.
-Uniqueness is Witt cancellation, in the form of the `IsCancelAdd (TauCeti.RegularFormClass K)`
-instance: cancelling the common hyperbolic planes from two decompositions leaves an anisotropic
-class equal to a class with a hyperbolic summand, which is impossible unless no plane is left
-over.
+The material rests on two earlier results of this library: the hyperbolic splitting theorem
+`TauCeti.exists_hyperbolicPlane_prod_equivalent` gives the existence of the decomposition, and
+Witt cancellation, in the form of the `IsCancelAdd (TauCeti.RegularFormClass K)` instance, gives
+its uniqueness.
 
 Both statements are phrased on `TauCeti.RegularFormClass K`, the isometry classes of regular
 forms, whose addition is orthogonal sum. `m` hyperbolic planes are then `m • hyperbolicClass K`,
@@ -29,7 +27,7 @@ so the decomposition reads `c = m • hyperbolicClass K + a`, and the invariance
 and of the anisotropic part under isometry is automatic. `TauCeti.hyperbolicPresentation` names
 the diagonal presentation `⟨1, -1, …, 1, -1⟩` realising `m • hyperbolicClass K`, which is what
 turns the statement back into an isometry of quadratic forms in
-`TauCeti.exists_equivalent_hyperbolicPresentation_prod`.
+`QuadraticForm.exists_equivalent_hyperbolicPresentation_prod`.
 
 This file treats the regular case, which is the case the Witt ring needs. A form with a nonzero
 radical is the orthogonal sum of the zero form on its radical and a regular form, and its Witt
@@ -52,8 +50,8 @@ decomposition follows from the regular one.
   index and anisotropic part.
 * `TauCeti.RegularFormClass.rank_eq_two_mul_wittIndex_add`: the rank formula
   `rank c = 2 * wittIndex c + rank (anisotropicPart c)`.
-* `TauCeti.exists_equivalent_hyperbolicPresentation_prod`: the decomposition read as an isometry
-  of quadratic forms.
+* `QuadraticForm.exists_equivalent_hyperbolicPresentation_prod`: the decomposition read as an
+  isometry of quadratic forms.
 
 ## References
 
@@ -167,8 +165,8 @@ section Hyperbolic
 variable [Invertible (2 : K)]
 
 /-- A hyperbolic plane is isotropic, so an orthogonal sum with one is never anisotropic. -/
-theorem not_anisotropic_hyperbolicPlane_prod {W : Type v} [AddCommGroup W] [Module K W]
-    (R : QuadraticForm K W) : ¬ ((hyperbolicPlane K).prod R).Anisotropic := by
+theorem _root_.QuadraticForm.not_anisotropic_hyperbolicPlane_prod {W : Type v} [AddCommGroup W]
+    [Module K W] (R : QuadraticForm K W) : ¬ ((hyperbolicPlane K).prod R).Anisotropic := by
   rw [QuadraticMap.not_anisotropic_iff_exists]
   refine ⟨(![1, 1], 0), fun hzero => ?_, ?_⟩
   · have h := congrFun (congrArg Prod.fst hzero) 0
@@ -182,7 +180,7 @@ theorem not_anisotropic_hyperbolicClass_add (c : RegularFormClass K) :
   | _ p =>
     rw [hyperbolicClass_def, RegularFormClass.mk_add_mk, RegularFormClass.anisotropic_mk]
     intro hani
-    refine not_anisotropic_hyperbolicPlane_prod (presentedForm p) ?_
+    refine QuadraticForm.not_anisotropic_hyperbolicPlane_prod (presentedForm p) ?_
     rw [← presentedForm_one_neg_one]
     exact (equivalent_presentedForm_append_prod _ p).anisotropic_iff.mp hani
 
@@ -295,6 +293,31 @@ theorem RegularFormClass.anisotropicPart_eq {c a : RegularFormClass K} {m : ℕ}
   (eq_of_nsmul_hyperbolicClass_add_eq (RegularFormClass.anisotropic_anisotropicPart c) ha
     ((RegularFormClass.wittDecomposition c).symm.trans h)).2
 
+-- The Witt decomposition of `c` with `m` further hyperbolic planes adjoined.
+private theorem nsmul_hyperbolicClass_add_wittDecomposition (m : ℕ) (c : RegularFormClass K) :
+    m • hyperbolicClass K + c =
+      (m + RegularFormClass.wittIndex c) • hyperbolicClass K +
+        RegularFormClass.anisotropicPart c := by
+  conv_lhs => rw [RegularFormClass.wittDecomposition c]
+  rw [← add_assoc, ← add_nsmul]
+
+/-- Adjoining `m` hyperbolic planes raises the Witt index by `m`. -/
+@[simp]
+theorem RegularFormClass.wittIndex_nsmul_hyperbolicClass_add (m : ℕ) (c : RegularFormClass K) :
+    RegularFormClass.wittIndex (m • hyperbolicClass K + c) =
+      m + RegularFormClass.wittIndex c :=
+  RegularFormClass.wittIndex_eq (RegularFormClass.anisotropic_anisotropicPart c)
+    (nsmul_hyperbolicClass_add_wittDecomposition m c)
+
+/-- Adjoining hyperbolic planes leaves the anisotropic part unchanged. -/
+@[simp]
+theorem RegularFormClass.anisotropicPart_nsmul_hyperbolicClass_add (m : ℕ)
+    (c : RegularFormClass K) :
+    RegularFormClass.anisotropicPart (m • hyperbolicClass K + c) =
+      RegularFormClass.anisotropicPart c :=
+  RegularFormClass.anisotropicPart_eq (RegularFormClass.anisotropic_anisotropicPart c)
+    (nsmul_hyperbolicClass_add_wittDecomposition m c)
+
 /-- The rank-zero class has Witt index zero. -/
 @[simp]
 theorem RegularFormClass.wittIndex_zero :
@@ -361,7 +384,8 @@ variable [Invertible (2 : K)] {V : Type v} [AddCommGroup V] [Module K V] [Finite
 
 /-- A regular form is anisotropic exactly when its isometry class is. -/
 @[simp]
-theorem anisotropic_formClass (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
+theorem _root_.QuadraticForm.anisotropic_formClass (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) :
     RegularFormClass.Anisotropic (formClass Q hQ) ↔ Q.Anisotropic := by
   obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
   rw [formClass_mk Q hQ p hp, RegularFormClass.anisotropic_mk]
@@ -370,7 +394,7 @@ theorem anisotropic_formClass (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
 /-- **Witt decomposition** for a regular form: a nondegenerate quadratic form on a
 finite-dimensional space is isometric to the orthogonal sum of `m` hyperbolic planes and an
 anisotropic diagonal form, and `m` is the Witt index of its class. -/
-theorem exists_equivalent_hyperbolicPresentation_prod (Q : QuadraticForm K V)
+theorem _root_.QuadraticForm.exists_equivalent_hyperbolicPresentation_prod (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) :
     ∃ p : RegularFormPresentation K, (presentedForm p).Anisotropic ∧
       Module.finrank K V = 2 * RegularFormClass.wittIndex (formClass Q hQ) + p.1 ∧
