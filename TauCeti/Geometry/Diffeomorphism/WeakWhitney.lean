@@ -12,12 +12,8 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.SmoothFamily
 # The weak Whitney topology on global-chart diffeomorphisms
 
 For a pair of normed spaces, `ContMDiffMap.WeakWhitney` supplies the weak Whitney topology on
-global-chart `C^n` maps.  This file transports that topology to the self-diffeomorphisms of a
-global-chart manifold by the canonical forgetful map
-`Diffeomorph.toContMDiffMap`.
-
-The topology on diffeomorphisms is obtained by transporting the weak Whitney topology on bundled
-smooth maps along the forgetful map.  This provides a chart-level topology and continuity
+global-chart `C^n` maps. This file transports that topology to self-diffeomorphisms via the
+canonical forgetful map `Diffeomorph.toContMDiffMap`, providing a topology and continuity
 criterion for families of diffeomorphisms.
 -/
 
@@ -79,9 +75,8 @@ theorem continuous_iff_toContMDiffMap {X : Type*} [TopologicalSpace X]
   convert (continuous_induced_rng (f := Diffeomorph.toContMDiffMap) (g := f)) using 1
   · rfl
 
-/-- A family of global-chart diffeomorphisms is continuous in the weak Whitney topology when its
-underlying map, jointly in the parameter and point, is `C^n`.
--/
+/-- A family indexed by a normed space is continuous when evaluation jointly in the parameter
+and point is `C^n`. -/
 theorem continuous_of_contDiff_family {P : Type*}
     [NormedAddCommGroup P] [NormedSpace 𝕜 P]
     {f : P → 𝓓}
