@@ -72,6 +72,16 @@ private def replacePair (f : (Fin 2 → R) → (Fin 2 → R)) (i j : Fin n)
     (x : Fin n → R) (k : Fin n) : R :=
   if k = i then f ![x i, x j] 0 else if k = j then f ![x i, x j] 1 else x k
 
+omit [CommSemiring R] in
+private theorem replacePair_apply_left (f : (Fin 2 → R) → (Fin 2 → R))
+    (i j : Fin n) (x : Fin n → R) : replacePair f i j x i = f ![x i, x j] 0 := by
+  simp [replacePair]
+
+omit [CommSemiring R] in
+private theorem replacePair_apply_right (f : (Fin 2 → R) → (Fin 2 → R))
+    (hij : i ≠ j) (x : Fin n → R) : replacePair f i j x j = f ![x i, x j] 1 := by
+  simp [replacePair, hij.symm]
+
 private def pairLinearEquiv (hij : i ≠ j)
     (e : (weightedSumSquares R ![w i, w j]).IsometryEquiv
       (weightedSumSquares R ![w' i, w' j])) :
@@ -166,8 +176,7 @@ private def pairIsometryEquiv (hij : i ≠ j)
     have hpair := e.map_app ![x i, x j]
     simp only [weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
       Matrix.cons_val_one, smul_eq_mul] at hpair
-    rw [show replacePair e i j x i = e ![x i, x j] 0 by simp [replacePair],
-      show replacePair e i j x j = e ![x i, x j] 1 by simp [replacePair, hij.symm]]
+    rw [replacePair_apply_left, replacePair_apply_right (f := e) (i := i) (j := j) hij x]
     simp only [smul_eq_mul]
     rw [hpair]
     congr 1
@@ -193,9 +202,19 @@ section Steps
 
 variable {R : Type u} [CommSemiring R] {n : ℕ}
 
-/-- A permutation step reorders the unit coefficients of a regular diagonal quadratic form. -/
+/-- A permutation step reorders the unit coefficients of a diagonal quadratic form. -/
 def PermutationStep (w w' : Fin n → Rˣ) : Prop :=
   ∃ σ : Equiv.Perm (Fin n), ∀ i, w' i = w (σ i)
+
+namespace PermutationStep
+
+/-- A permutation step is witnessed by a permutation of the coefficient indices. -/
+@[simp]
+theorem iff {w w' : Fin n → Rˣ} :
+    PermutationStep w w' ↔ ∃ σ : Equiv.Perm (Fin n), ∀ i, w' i = w (σ i) :=
+  Iff.rfl
+
+end PermutationStep
 
 /-- A binary step replaces two distinct unit coefficients by an equivalent binary form and fixes
 all other coefficients. -/
@@ -205,26 +224,60 @@ def BinaryStep (w w' : Fin n → Rˣ) : Prop :=
     (weightedSumSquares R ![(w i : R), (w j : R)]).Equivalent
       (weightedSumSquares R ![(w' i : R), (w' j : R)])
 
+namespace BinaryStep
+
+/-- A binary step is witnessed by two distinct indices, agreement away from those indices, and
+an equivalence of the corresponding binary forms. -/
+@[simp]
+theorem iff {w w' : Fin n → Rˣ} : BinaryStep w w' ↔
+    ∃ i j : Fin n, i ≠ j ∧
+      (∀ k, k ≠ i → k ≠ j → w k = w' k) ∧
+      (weightedSumSquares R ![(w i : R), (w j : R)]).Equivalent
+        (weightedSumSquares R ![(w' i : R), (w' j : R)]) :=
+  Iff.rfl
+
+end BinaryStep
+
 /-- An elementary step between diagonal coefficient families is either a permutation step or a
 binary step. -/
 def DiagonalStep (w w' : Fin n → Rˣ) : Prop :=
   PermutationStep w w' ∨ BinaryStep w w'
 
+namespace DiagonalStep
+
+/-- An elementary diagonal step is either a permutation step or a binary step. -/
+@[simp]
+theorem iff {w w' : Fin n → Rˣ} :
+    DiagonalStep w w' ↔ PermutationStep w w' ∨ BinaryStep w w' :=
+  Iff.rfl
+
+end DiagonalStep
+
 /-- A diagonal chain is a finite sequence of permutation or binary steps. -/
 def DiagonalChain (w w' : Fin n → Rˣ) : Prop :=
   Relation.ReflTransGen DiagonalStep w w'
+
+namespace DiagonalChain
+
+/-- An elementary diagonal step forms a single-step diagonal chain. -/
+theorem single {w w' : Fin n → Rˣ} (h : DiagonalStep w w') : DiagonalChain w w' :=
+  Relation.ReflTransGen.single h
+
+end DiagonalChain
 
 namespace PermutationStep
 
 /-- Permutation steps may be reversed. -/
 theorem symm {w w' : Fin n → Rˣ} (h : PermutationStep w w') : PermutationStep w' w := by
+  rw [PermutationStep.iff] at h ⊢
   obtain ⟨σ, hσ⟩ := h
   refine ⟨σ.symm, fun i => ?_⟩
   rw [hσ (σ.symm i), σ.apply_symm_apply]
 
 /-- A transposition of two distinct coefficients is a binary step. -/
-theorem swap_binaryStep (w : Fin n → Rˣ) {i j : Fin n} (hij : i ≠ j) :
+theorem binaryStep_swap (w : Fin n → Rˣ) {i j : Fin n} (hij : i ≠ j) :
     BinaryStep w (w ∘ Equiv.swap i j) := by
+  rw [BinaryStep.iff]
   refine ⟨i, j, hij, ?_, ?_⟩
   · intro k hki hkj
     simp [Function.comp_apply, Equiv.swap_apply_def, hki, hkj]
@@ -235,6 +288,7 @@ theorem swap_binaryStep (w : Fin n → Rˣ) {i j : Fin n} (hij : i ≠ j) :
 permutations introduce no generators beyond binary equivalence. -/
 theorem to_reflTransGen_binaryStep {w w' : Fin n → Rˣ} (h : PermutationStep w w') :
     Relation.ReflTransGen BinaryStep w w' := by
+  rw [PermutationStep.iff] at h
   obtain ⟨σ, hσ⟩ := h
   have hperm : ∀ (τ : Equiv.Perm (Fin n)) (v : Fin n → Rˣ),
       Relation.ReflTransGen BinaryStep v (v ∘ τ) := by
@@ -246,7 +300,7 @@ theorem to_reflTransGen_binaryStep {w w' : Fin n → Rˣ} (h : PermutationStep w
           Relation.ReflTransGen BinaryStep v v)
     | swap_mul τ i j hij ih =>
         intro v
-        refine (Relation.ReflTransGen.single (swap_binaryStep v hij)).trans ?_
+        refine (Relation.ReflTransGen.single (binaryStep_swap v hij)).trans ?_
         simpa [Function.comp_def] using ih (v ∘ Equiv.swap i j)
   convert hperm σ w using 1
   funext i
@@ -254,15 +308,14 @@ theorem to_reflTransGen_binaryStep {w w' : Fin n → Rˣ} (h : PermutationStep w
 
 /-- A permutation step is a diagonal chain. -/
 theorem to_diagonalChain {w w' : Fin n → Rˣ} (h : PermutationStep w w') :
-    DiagonalChain w w' := by
-  apply Relation.ReflTransGen.mono (r := BinaryStep) (p := DiagonalStep)
-  · exact fun _ _ hbinary => Or.inr hbinary
-  · exact h.to_reflTransGen_binaryStep
+    DiagonalChain w w' :=
+  DiagonalChain.single (DiagonalStep.iff.mpr (Or.inl h))
 
 /-- The diagonal forms at the endpoints of a permutation step are equivalent. -/
 theorem equivalent {w w' : Fin n → Rˣ} (h : PermutationStep w w') :
     (weightedSumSquares R fun i => (w i : R)).Equivalent
       (weightedSumSquares R fun i => (w' i : R)) := by
+  rw [PermutationStep.iff] at h
   obtain ⟨σ, hσ⟩ := h
   have hw : (fun i => (w' i : R)) = (fun i => (w i : R)) ∘ σ := by
     funext i
@@ -276,13 +329,20 @@ namespace BinaryStep
 
 /-- Binary steps may be reversed. -/
 theorem symm {w w' : Fin n → Rˣ} (h : BinaryStep w w') : BinaryStep w' w := by
+  rw [BinaryStep.iff] at h ⊢
   obtain ⟨i, j, hij, hrest, hpair⟩ := h
   exact ⟨i, j, hij, fun k hki hkj => (hrest k hki hkj).symm, hpair.symm⟩
+
+/-- A binary step is a single-step diagonal chain. -/
+theorem to_diagonalChain {w w' : Fin n → Rˣ} (h : BinaryStep w w') :
+    DiagonalChain w w' :=
+  DiagonalChain.single (DiagonalStep.iff.mpr (Or.inr h))
 
 /-- The diagonal forms at the endpoints of a binary step are equivalent. -/
 theorem equivalent {w w' : Fin n → Rˣ} (h : BinaryStep w w') :
     (weightedSumSquares R fun i => (w i : R)).Equivalent
       (weightedSumSquares R fun i => (w' i : R)) := by
+  rw [BinaryStep.iff] at h
   obtain ⟨i, j, hij, hrest, hpair⟩ := h
   exact equivalent_weightedSumSquares_of_pair hij hpair fun k hki hkj =>
     congrArg Units.val (hrest k hki hkj)
@@ -293,13 +353,14 @@ namespace DiagonalStep
 
 /-- Elementary diagonal steps may be reversed. -/
 theorem symm {w w' : Fin n → Rˣ} (h : DiagonalStep w w') : DiagonalStep w' w :=
-  h.elim (Or.inl ∘ PermutationStep.symm) (Or.inr ∘ BinaryStep.symm)
+  DiagonalStep.iff.mpr <| (DiagonalStep.iff.mp h).elim
+    (Or.inl ∘ PermutationStep.symm) (Or.inr ∘ BinaryStep.symm)
 
 /-- The diagonal forms at the endpoints of an elementary diagonal step are equivalent. -/
 theorem equivalent {w w' : Fin n → Rˣ} (h : DiagonalStep w w') :
     (weightedSumSquares R fun i => (w i : R)).Equivalent
       (weightedSumSquares R fun i => (w' i : R)) :=
-  h.elim PermutationStep.equivalent BinaryStep.equivalent
+  (DiagonalStep.iff.mp h).elim PermutationStep.equivalent BinaryStep.equivalent
 
 end DiagonalStep
 
