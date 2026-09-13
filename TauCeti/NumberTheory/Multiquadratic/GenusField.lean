@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.GaloisGroup
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.InfinitePlace
 public import TauCeti.NumberTheory.Multiquadratic.Unramified.Maximality
-import TauCeti.FieldTheory.Minpoly
 
 /-!
 # The genus field of an imaginary quadratic field
@@ -110,31 +109,6 @@ theorem exists_algEquiv_apply_eq (hL : IsGenusField.{u, v} d L y)
   simpa using hφ
 
 end IsGenusField
-
-private theorem exists_algHom_apply_eq_of_sq_eq {d : ℤ} {L : Type u} [Field L]
-    [NumberField L] [IsGalois ℚ L] {y : L}
-    (hy : y ^ 2 = algebraMap ℤ L d)
-    (hydegree : Module.finrank ℚ (adjoin ℚ {y} : IntermediateField ℚ L) = 2)
-    {M : Type v} [Field M] [NumberField M] {z : M}
-    (hz : z ^ 2 = algebraMap ℤ M d) (hφ : Nonempty (M →ₐ[ℚ] L)) :
-    ∃ φ : M →ₐ[ℚ] L, φ z = y := by
-  obtain ⟨φ⟩ := hφ
-  have hyQ : y ^ 2 = algebraMap ℚ L ((d : ℤ) : ℚ) := by
-    rw [hy, IsScalarTower.algebraMap_apply ℤ ℚ L]
-    norm_num
-  have hzQ : z ^ 2 = algebraMap ℚ M ((d : ℤ) : ℚ) := by
-    rw [hz, IsScalarTower.algebraMap_apply ℤ ℚ M]
-    norm_num
-  have hyint : IsIntegral ℚ y := IsIntegral.of_finite ℚ y
-  have hmin : minpoly ℚ y = Polynomial.X ^ 2 - Polynomial.C ((d : ℤ) : ℚ) := by
-    apply TauCeti.Algebra.minpoly_eq_X_sq_sub_C_of_sq_eq_of_natDegree_eq_two hyQ
-    rw [← adjoin.finrank hyint, hydegree]
-  have hroot : Polynomial.aeval (φ z) (minpoly ℚ y) = 0 := by
-    have hφz : (φ z) ^ 2 = algebraMap ℚ L ((d : ℤ) : ℚ) := by
-      rw [← map_pow, hzQ, φ.commutes]
-    simp [hmin, hφz]
-  obtain ⟨σ, hσ⟩ := minpoly.exists_algEquiv_of_root (IsAlgebraic.of_finite ℚ y) hroot
-  exact ⟨σ.toAlgHom.comp φ, hσ⟩
 
 /-- **The prime-discriminant compositum is the genus field in the imaginary quadratic case.**
 For a squarefree negative integer `d`, `candidateGenusField hd` is abelian over `ℚ`, is unramified
