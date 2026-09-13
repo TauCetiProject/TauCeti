@@ -55,12 +55,16 @@ variable (α : ℝ≥0) (E : Type u) (F : Type v)
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+set_option backward.privateInPublic true
+set_option backward.privateInPublic.warn false
+namespace C1HolderSpace
+
 /-- The ambient jet space for bounded `C^{1,α}` maps: a bounded continuous value field paired with
 a bounded globally Hölder derivative field. -/
-abbrev C1HolderJet := (E →ᵇ F) × HolderSpace α E (E →L[ℝ] F)
+private abbrev C1HolderJet := (E →ᵇ F) × HolderSpace α E (E →L[ℝ] F)
 
 /-- The derivative graph inside the ambient `C^{1,α}` jet space. -/
-def c1HolderSubmodule : Submodule ℝ (C1HolderJet α E F) where
+private def c1HolderSubmodule : Submodule ℝ (C1HolderJet α E F) where
   carrier := {J | ∀ x, HasFDerivAt (J.1 : E → F) (J.2 x) x}
   zero_mem' := fun x ↦ by
     have hfun : ((0 : E →ᵇ F) : E → F) = fun _ ↦ 0 := by
@@ -90,13 +94,24 @@ def c1HolderSubmodule : Submodule ℝ (C1HolderJet α E F) where
 
 `max ‖f‖_∞ (‖Df‖_∞ + [Df]_α)`.
 -/
-abbrev C1HolderSpace := c1HolderSubmodule α E F
-
-namespace C1HolderSpace
+@[expose] def _root_.TauCeti.C1HolderSpace : Type _ := c1HolderSubmodule α E F
 
 variable {α : ℝ≥0} {E : Type u} {F : Type v}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+instance instNormedAddCommGroup : NormedAddCommGroup (C1HolderSpace α E F) := by
+  change NormedAddCommGroup (c1HolderSubmodule α E F)
+  infer_instance
+
+instance instNormedSpace : NormedSpace ℝ (C1HolderSpace α E F) := by
+  change NormedSpace ℝ (c1HolderSubmodule α E F)
+  infer_instance
+
+private abbrev toSubmodule (f : C1HolderSpace α E F) : c1HolderSubmodule α E F := f
+
+private theorem norm_toSubmodule (f : C1HolderSpace α E F) :
+    ‖toSubmodule f‖ = ‖f‖ := rfl
 
 /-- A bounded `C^{1,α}` element coerces to its underlying function from `E` to `F`. -/
 instance : CoeFun (C1HolderSpace α E F) fun _ ↦ E → F :=
@@ -108,6 +123,12 @@ def toBoundedContinuousFunction (f : C1HolderSpace α E F) : E →ᵇ F := f.1.1
 /-- The Fréchet derivative, as a bounded globally Hölder function with values in continuous
 linear maps. -/
 def fderiv (f : C1HolderSpace α E F) : HolderSpace α E (E →L[ℝ] F) := f.1.2
+
+private theorem toBoundedContinuousFunction_eq_fst (f : C1HolderSpace α E F) :
+    toBoundedContinuousFunction f = (toSubmodule f : C1HolderJet α E F).1 := rfl
+
+private theorem fderiv_eq_snd (f : C1HolderSpace α E F) :
+    fderiv f = (toSubmodule f : C1HolderJet α E F).2 := rfl
 
 @[simp]
 theorem toBoundedContinuousFunction_apply (f : C1HolderSpace α E F) (x : E) :
@@ -198,26 +219,41 @@ theorem ext {f g : C1HolderSpace α E F} (h : ∀ x, f x = g x) : f = g := by
       exact congrArg DFunLike.coe hvalue
     _ = fderiv g x := fderiv_eq g x
 
-/-- Forgetting the derivative defines a continuous linear map to bounded continuous functions. -/
-def valueL : C1HolderSpace α E F →L[ℝ] (E →ᵇ F) :=
-  LinearMap.mkContinuous
-    { toFun := fun f ↦ (f : C1HolderJet α E F).1
+private abbrev valueLinearMap : C1HolderSpace α E F →ₗ[ℝ] (E →ᵇ F) :=
+    { toFun := fun f ↦ (toSubmodule f : C1HolderJet α E F).1
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl }
-    1 fun f ↦ by simpa using norm_fst_le (f : C1HolderJet α E F)
+
+private theorem valueLinearMap_apply (f : C1HolderSpace α E F) :
+    valueLinearMap f = (toSubmodule f : C1HolderJet α E F).1 := rfl
+
+/-- Forgetting the derivative defines a continuous linear map to bounded continuous functions. -/
+def valueL : C1HolderSpace α E F →L[ℝ] (E →ᵇ F) :=
+  LinearMap.mkContinuous valueLinearMap 1 fun f ↦ by
+    rw [← norm_toSubmodule f]
+    simpa only [valueLinearMap_apply, Submodule.norm_coe, one_mul] using
+      norm_fst_le (toSubmodule f : C1HolderJet α E F)
 
 @[simp]
 theorem valueL_apply (f : C1HolderSpace α E F) :
     valueL f = toBoundedContinuousFunction f :=
   (rfl)
 
-/-- Returning the derivative defines a continuous linear map to the global Hölder space. -/
-def fderivL : C1HolderSpace α E F →L[ℝ] HolderSpace α E (E →L[ℝ] F) :=
-  LinearMap.mkContinuous
-    { toFun := fun f ↦ (f : C1HolderJet α E F).2
+private abbrev fderivLinearMap :
+    C1HolderSpace α E F →ₗ[ℝ] HolderSpace α E (E →L[ℝ] F) :=
+    { toFun := fun f ↦ (toSubmodule f : C1HolderJet α E F).2
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl }
-    1 fun f ↦ by simpa using norm_snd_le (f : C1HolderJet α E F)
+
+private theorem fderivLinearMap_apply (f : C1HolderSpace α E F) :
+    fderivLinearMap f = (toSubmodule f : C1HolderJet α E F).2 := rfl
+
+/-- Returning the derivative defines a continuous linear map to the global Hölder space. -/
+def fderivL : C1HolderSpace α E F →L[ℝ] HolderSpace α E (E →L[ℝ] F) :=
+  LinearMap.mkContinuous fderivLinearMap 1 fun f ↦ by
+    rw [← norm_toSubmodule f]
+    simpa only [fderivLinearMap_apply, Submodule.norm_coe, one_mul] using
+      norm_snd_le (toSubmodule f : C1HolderJet α E F)
 
 @[simp]
 theorem fderivL_apply (f : C1HolderSpace α E F) : fderivL f = fderiv f := (rfl)
@@ -226,20 +262,28 @@ theorem fderivL_apply (f : C1HolderSpace α E F) : fderivL f = fderiv f := (rfl)
 supremum-plus-Hölder norm of its derivative. -/
 theorem norm_eq_max (f : C1HolderSpace α E F) :
     ‖f‖ = max ‖toBoundedContinuousFunction f‖ ‖fderiv f‖ := by
-  simpa [toBoundedContinuousFunction, fderiv] using
-    Prod.norm_def (f : C1HolderJet α E F)
+  rw [← norm_toSubmodule f]
+  rw [toBoundedContinuousFunction_eq_fst, fderiv_eq_snd]
+  simpa only [Submodule.norm_coe] using
+    Prod.norm_def (toSubmodule f : C1HolderJet α E F)
 
 /-- The supremum norm of the function is controlled by the `C^{1,α}` norm. -/
 theorem norm_toBoundedContinuousFunction_le (f : C1HolderSpace α E F) :
-    ‖toBoundedContinuousFunction f‖ ≤ ‖f‖ :=
-  norm_fst_le (f : C1HolderJet α E F)
+    ‖toBoundedContinuousFunction f‖ ≤ ‖f‖ := by
+  rw [← norm_toSubmodule f]
+  rw [toBoundedContinuousFunction_eq_fst]
+  simpa only [Submodule.norm_coe] using
+    norm_fst_le (toSubmodule f : C1HolderJet α E F)
 
 /-- The Hölder-space norm of the derivative is controlled by the `C^{1,α}` norm. -/
-theorem norm_fderiv_le (f : C1HolderSpace α E F) : ‖fderiv f‖ ≤ ‖f‖ :=
-  norm_snd_le (f : C1HolderJet α E F)
+theorem norm_fderiv_le (f : C1HolderSpace α E F) : ‖fderiv f‖ ≤ ‖f‖ := by
+  rw [← norm_toSubmodule f]
+  rw [fderiv_eq_snd]
+  simpa only [Submodule.norm_coe] using
+    norm_snd_le (toSubmodule f : C1HolderJet α E F)
 
 /-- The derivative graph defining `C1HolderSpace` is closed. -/
-theorem isClosed_c1HolderSubmodule :
+private theorem isClosed_c1HolderSubmodule :
     IsClosed (c1HolderSubmodule α E F : Set (C1HolderJet α E F)) := by
   rw [← isSeqClosed_iff_isClosed]
   intro J j hJ hjlim x
@@ -280,6 +324,8 @@ theorem isClosed_c1HolderSubmodule :
 noncomputable instance instCompleteSpace [CompleteSpace F] :
     CompleteSpace (C1HolderSpace α E F) :=
   isClosed_c1HolderSubmodule.completeSpace_coe
+
+attribute [irreducible] _root_.TauCeti.C1HolderSpace
 
 end C1HolderSpace
 
