@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.ZMod.Units
@@ -63,6 +64,8 @@ proof is independent of the source's.
   `rootsOfUnity n A` when `0 < n`.
 * `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one`: the centre of `SL₂` is
   `{±I}` when `R` has no zero divisors.
+* `Matrix.SpecialLinearGroup.pslMk_eq_one_iff`: a matrix is trivial in `PSL₂` exactly when it
+  is `±I`.
 * `Matrix.SpecialLinearGroup.finite_center` and
   `Matrix.SpecialLinearGroup.card_center_le_two`: that centre is finite, of order at most two.
 * `Matrix.SpecialLinearGroup.disjoint_center_iff_neg_one_notMem`: the simp-normal form of the
@@ -200,6 +203,17 @@ theorem mem_center_iff_eq_one_or_eq_neg_one [NoZeroDivisors R] {γ : SpecialLine
   · rintro (rfl | rfl)
     · exact Subgroup.one_mem _
     · exact Subgroup.mem_center_iff.mpr fun g ↦ by rw [neg_one_mul, mul_neg_one]
+
+/-- **A matrix is trivial in `PSL(2, R)` exactly when it is `±I`.** The kernel of the projection
+`SL(2, R) → PSL(2, R)` is the centre, which over a ring without zero divisors is `{±I}`.
+
+Deliberately not `@[simp]`: `simp` already proves this statement from `QuotientGroup.eq_one_iff`
+and `mem_center_iff_eq_one_or_eq_neg_one`, so tagging it makes the `simpNF` linter fail. It is
+named so that a proof can say what it is using instead of leaving it to a broad `simpa`. -/
+theorem pslMk_eq_one_iff [NoZeroDivisors R] (γ : SpecialLinearGroup (Fin 2) R) :
+    (γ : Matrix.ProjectiveSpecialLinearGroup (Fin 2) R) = 1 ↔ γ = 1 ∨ γ = -1 := by
+  rw [← QuotientGroup.mk_one, QuotientGroup.eq, mul_one, Subgroup.inv_mem_iff,
+    mem_center_iff_eq_one_or_eq_neg_one]
 
 /-- The centre of `SL₂` is finite: by `mem_center_iff_eq_one_or_eq_neg_one` it is the set `{±I}`,
 which has at most two elements — exactly two unless `1 = -1` in `R`, where it is a singleton. -/

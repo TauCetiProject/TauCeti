@@ -42,6 +42,9 @@ public section
 a bare setoid quotient, but `G ⧸ H` reaches it only through `HasQuotient`, which instance
 synthesis does not unfold; naming the composite makes the countability of `G ⧸ H` available to
 instance search, and with it that of any further quotient. -/
+@[to_additive /-- **A coset space of a countable additive group is countable.** `Countable
+(Quotient s)` is found for a bare setoid quotient, but `G ⧸ H` reaches it only through
+`HasQuotient`, which instance synthesis does not unfold. -/]
 instance instCountableQuotientSubgroup {G : Type*} [Group G] [Countable G] (H : Subgroup G) :
     Countable (G ⧸ H) :=
   inferInstanceAs (Countable (Quotient (QuotientGroup.leftRel H)))
