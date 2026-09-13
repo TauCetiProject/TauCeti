@@ -62,7 +62,7 @@ smooth compatibility and a countable cover, and is not asserted here.
 * `TauCeti.surjective_fderiv_levelSetParameterMap_iff_of_mem`: a nearby chart point is a regular
   point of the local parameter map exactly when the linearization of the equation at the solution
   it names is surjective.
-* `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_notSurjective_levelSetParameterMap`:
+* `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap`:
   local parametric transversality.
 
 ## References
@@ -324,7 +324,7 @@ neighbourhood `U` of the chart origin, as
 the plain statement.
 
 Here criticality is defined intrinsically for the local parameter map;
-`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_notSurjective_levelSetParameterMap`
+`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap`
 rewrites it as failure of regularity of the original equation.
 
 The differentiability threshold is the one currently supplied by
@@ -385,7 +385,7 @@ parameter at which the equation has a solution, by
 Only a neighbourhood of one solution is described: passing to a residual set of parameters for a
 whole universal moduli space needs a countable cover, which is not asserted here. The
 differentiability threshold is the one supplied by the local Sard--Smale theorem. -/
-theorem exists_mem_nhds_isClosed_isNowhereDense_image_notSurjective_levelSetParameterMap
+theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap
     {n : ℕ∞ω} {U : Set (D₁.coprod D₂).ker}
     (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
     (hcont : ContDiffAt ℝ n f (x, l))

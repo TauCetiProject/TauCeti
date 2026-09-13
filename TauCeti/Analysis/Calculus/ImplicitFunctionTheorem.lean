@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.Implicit
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import TauCeti.Analysis.Normed.Operator.Splitting
 
 /-!
 # Smoothness of the complemented-kernel implicit function theorem
