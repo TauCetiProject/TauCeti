@@ -24,7 +24,7 @@ an eigenvector.
 
 * `HeckeRing.GL2.smul_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew`: two good
   Hecke eigenvectors in the new part sharing their eigenvalues satisfy `a₁(g) • f = a₁(f) • g`.
-* `HeckeRing.GL2.exists_smul_eq_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew`: the same
+* `HeckeRing.GL2.exists_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew`: the same
   conclusion as proportionality — if one of them is nonzero, the other is a scalar multiple of
   it.
 
@@ -93,7 +93,7 @@ spanned by any one of its nonzero vectors, which is one-dimensionality in concre
 The nonvanishing hypothesis is only on `f`: the case `a₁(f) = 0` is not an exception to be
 excluded but is impossible once `f ≠ 0`, by
 `eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspFormsNew`. -/
-theorem exists_smul_eq_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew
+theorem exists_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew
     {f g : cuspFormCharSpace k χ}
     (ha : ∀ p : ℕ, p.Prime → Nat.Coprime p N → ∃ c : ℂ,
       heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N p) f = c • f ∧
