@@ -1,0 +1,219 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.Quadratic
+public import TauCeti.NumberTheory.NumberField.InfinitePlace
+public import TauCeti.NumberTheory.Multiquadratic.Unramified.Maximality
+import Mathlib.NumberTheory.NumberField.CMField
+import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.GaloisGroup
+
+/-!
+# The genus-field candidate of a real quadratic field
+
+For positive squarefree nonsquare `d`, the prime-discriminant compositum `candidateGenusField hd`
+is the narrow genus field of `ℚ(√d)`, but it can ramify at the real places. Its maximal totally
+real subfield is the candidate for the ordinary genus field. This file defines that field and
+relates it to the embedded quadratic base.
+
+The key archimedean fact is intrinsic: an extension of a totally real field is unramified at all
+infinite places exactly when it is totally real. Consequently every everywhere-unramified abelian
+extension admitted by the genus-field universal property maps into this maximal real subfield.
+
+The construction is classical; see F. Lemmermeyer, *Reciprocity Laws: From Euler to Eisenstein*,
+Section 2.2, and D. A. Cox, *Primes of the Form x² + ny²*, Section 6.A.
+
+## Main definitions
+
+* `TauCeti.Multiquadratic.candidateGenusFieldReal`: the maximal totally real subfield of the
+  prime-discriminant compositum.
+* `TauCeti.Multiquadratic.candidateGenusFieldRealBaseRoot`: its chosen square root of `d`.
+
+## Main results
+
+* `TauCeti.Multiquadratic.candidateGenusFieldBase_le_candidateGenusFieldReal`: the real quadratic
+  base lies in the real candidate.
+* `TauCeti.Multiquadratic.isAbelianGalois_candidateGenusFieldReal`: the real candidate is abelian
+  and Galois over `ℚ`.
+* `TauCeti.Multiquadratic.exists_algHom_candidateGenusFieldReal`: every abelian extension
+  unramified over the base at all places embeds into the real candidate.
+-/
+
+public section
+
+open IntermediateField NumberField
+open scoped NumberField
+
+namespace TauCeti.Multiquadratic
+
+variable {d : ℤ}
+
+/-- **The ordinary genus-field candidate of a real quadratic field.** This is the maximal totally
+real subfield of the prime-discriminant compositum. It is viewed as an intermediate field over
+`ℚ`; rational elements belong because every embedding into `ℂ` fixes them and hence has real
+image. -/
+noncomputable def candidateGenusFieldReal (hd : Squarefree d) :
+    IntermediateField ℚ (candidateGenusField hd) :=
+  (maximalRealSubfield (candidateGenusField hd)).toIntermediateField fun q => by
+    rw [mem_maximalRealSubfield_iff]
+    intro φ
+    simp
+
+/-- Membership in the real candidate means that every complex embedding has real value. -/
+@[simp] theorem mem_candidateGenusFieldReal_iff (hd : Squarefree d)
+    (x : candidateGenusField hd) :
+    x ∈ candidateGenusFieldReal hd ↔ ∀ φ : candidateGenusField hd →+* ℂ, star (φ x) = φ x :=
+  (Iff.rfl)
+
+/-- For positive `d`, the embedded quadratic base `ℚ(√d)` is totally real. -/
+theorem isTotallyReal_candidateGenusFieldBase (hd : Squarefree d)
+    (hpos : 0 < d) : IsTotallyReal (candidateGenusFieldBase hd) :=
+  NumberField.isTotallyReal_of_sq_ratCast_of_pos
+    (x := ((candidateGenusFieldBaseGen hd : 𝓞 (candidateGenusFieldBase hd)) :
+      candidateGenusFieldBase hd)) (r := ((d : ℤ) : ℚ))
+    (by
+      rw [coe_candidateGenusFieldBaseGen, candidateGenusFieldBaseSqrt_sq,
+        IsScalarTower.algebraMap_apply ℤ ℚ]
+      norm_num)
+    (adjoin_candidateGenusFieldBaseGen_eq_top hd) (by exact_mod_cast hpos)
+
+/-- **The embedded real quadratic base lies in the real genus-field candidate.** -/
+theorem candidateGenusFieldBase_le_candidateGenusFieldReal (hd : Squarefree d)
+    (hpos : 0 < d) :
+    candidateGenusFieldBase hd ≤ candidateGenusFieldReal hd := by
+  let _ : IsTotallyReal (candidateGenusFieldBase hd) :=
+    isTotallyReal_candidateGenusFieldBase hd hpos
+  exact IsTotallyReal.le_maximalRealSubfield (candidateGenusFieldBase hd).toSubfield
+
+/-- The chosen square root of `d`, regarded as an element of the real genus-field candidate. -/
+noncomputable def candidateGenusFieldRealBaseRoot (hd : Squarefree d)
+    (hpos : 0 < d) :
+    candidateGenusFieldReal hd :=
+  ⟨candidateGenusFieldBaseRoot hd,
+    candidateGenusFieldBase_le_candidateGenusFieldReal hd hpos
+      (candidateGenusFieldBaseRoot_mem hd)⟩
+
+/-- The chosen root in the real candidate has underlying value
+`candidateGenusFieldBaseRoot hd`. -/
+@[simp] theorem candidateGenusFieldRealBaseRoot_val (hd : Squarefree d)
+    (hpos : 0 < d) :
+    (candidateGenusFieldRealBaseRoot hd hpos : candidateGenusField hd) =
+      candidateGenusFieldBaseRoot hd :=
+  (rfl)
+
+/-- The chosen root in the real candidate squares to `d`. -/
+@[simp] theorem candidateGenusFieldRealBaseRoot_sq (hd : Squarefree d)
+    (hpos : 0 < d) :
+    candidateGenusFieldRealBaseRoot hd hpos ^ 2 =
+      algebraMap ℚ (candidateGenusFieldReal hd) ((d : ℤ) : ℚ) := by
+  apply Subtype.ext
+  exact candidateGenusFieldBaseRoot_sq hd
+
+/-- The real genus-field candidate is totally real. -/
+noncomputable instance isTotallyReal_candidateGenusFieldReal (hd : Squarefree d) :
+    IsTotallyReal (candidateGenusFieldReal hd) :=
+  isTotallyReal_maximalRealSubfield
+
+/-- The real genus-field candidate is an abelian Galois extension of `ℚ`. -/
+noncomputable instance isAbelianGalois_candidateGenusFieldReal (hd : Squarefree d) :
+    IsAbelianGalois ℚ (candidateGenusFieldReal hd) :=
+  inferInstance
+
+/-- The quadratic subfield generated by the chosen base root inside the real candidate has degree
+two over `ℚ`. -/
+theorem finrank_adjoin_candidateGenusFieldRealBaseRoot (hd : Squarefree d)
+    (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d) :
+    Module.finrank ℚ
+      (adjoin ℚ {candidateGenusFieldRealBaseRoot hd hpos} :
+        IntermediateField ℚ (candidateGenusFieldReal hd)) = 2 := by
+  have hsq : candidateGenusFieldRealBaseRoot hd hpos ^ 2 ∈
+      (⊥ : IntermediateField ℚ (candidateGenusFieldReal hd)) := by
+    rw [candidateGenusFieldRealBaseRoot_sq]
+    exact IntermediateField.algebraMap_mem _ _
+  have hnot : candidateGenusFieldRealBaseRoot hd hpos ∉
+      (⊥ : IntermediateField ℚ (candidateGenusFieldReal hd)) := by
+    intro hmem
+    rw [IntermediateField.mem_bot] at hmem
+    obtain ⟨q, hq⟩ := hmem
+    apply hnsq
+    refine ⟨q, ?_⟩
+    apply (algebraMap ℚ (candidateGenusFieldReal hd)).injective
+    rw [map_mul, hq]
+    simpa only [pow_two] using
+      (candidateGenusFieldRealBaseRoot_sq hd hpos).symm
+  have hfin :=
+    (⊥ : IntermediateField ℚ (candidateGenusFieldReal hd)).finrank_sup_adjoin_simple_eq_mul_two
+      hsq hnot
+  rwa [bot_sup_eq, IntermediateField.finrank_bot, one_mul] at hfin
+
+/-- The real genus-field candidate is unramified at every infinite place over its chosen quadratic
+base. In fact its total reality makes it unramified at infinity over every subfield. -/
+theorem isUnramifiedAtInfinitePlaces_candidateGenusFieldReal (hd : Squarefree d)
+    (hpos : 0 < d) :
+    IsUnramifiedAtInfinitePlaces
+      (adjoin ℚ {candidateGenusFieldRealBaseRoot hd hpos} :
+        IntermediateField ℚ (candidateGenusFieldReal hd))
+      (candidateGenusFieldReal hd) :=
+  IsTotallyReal.isUnramifiedAtInfinitePlaces
+
+/-- **Every everywhere-unramified abelian extension of `ℚ(√d)` embeds into the real
+candidate.** The narrow genus-field maximality first embeds it into the full prime-discriminant
+compositum. Unramifiedness at infinity over the real quadratic base makes the source totally real,
+so its image lies in the maximal totally real subfield. The embedding can then be adjusted to
+carry the chosen square root to the chosen root in the real candidate. -/
+theorem exists_algHom_candidateGenusFieldReal {M : Type*} [Field M] [NumberField M]
+    [IsAbelianGalois ℚ M] (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
+    (hpos : 0 < d) {z : M} (hz : z ^ 2 = algebraMap ℤ M d)
+    (hfinite : ∀ q : Ideal (𝓞 (adjoin ℚ {z} : IntermediateField ℚ M)),
+      q.IsPrime → q ≠ ⊥ → Algebra.IsUnramifiedIn (𝓞 M) q)
+    (hinfinite : IsUnramifiedAtInfinitePlaces (adjoin ℚ {z} : IntermediateField ℚ M) M) :
+    ∃ φ : M →ₐ[ℚ] candidateGenusFieldReal hd,
+      φ z = candidateGenusFieldRealBaseRoot hd hpos := by
+  -- The chosen quadratic base is totally real; infinite unramifiedness then forces `M` to be
+  -- totally real as well.
+  let _ : IsTotallyReal (adjoin ℚ {z} : IntermediateField ℚ M) :=
+    NumberField.isTotallyReal_of_sq_ratCast_of_pos
+      (x := ⟨z, IntermediateField.mem_adjoin_of_mem ℚ (Set.mem_singleton z)⟩)
+      (r := ((d : ℤ) : ℚ))
+      (by
+        apply Subtype.ext
+        rw [IntermediateField.coe_pow, hz, IsScalarTower.algebraMap_apply ℤ ℚ M]
+        norm_num)
+      (by
+        rw [← IntermediateField.adjoin_eq_top_iff]
+        refine IntermediateField.map_injective (adjoin ℚ {z}).val ?_
+        have hmaptop :
+            (⊤ : IntermediateField ℚ (adjoin ℚ {z} : IntermediateField ℚ M)).map
+                (adjoin ℚ {z}).val = adjoin ℚ {z} := by
+          ext x
+          simp only [IntermediateField.mem_map, IntermediateField.mem_top, true_and]
+          exact ⟨fun ⟨y, hy⟩ => hy ▸ y.2, fun hx => ⟨⟨x, hx⟩, rfl⟩⟩
+        rw [IntermediateField.adjoin_map, hmaptop]
+        congr 1
+        ext x
+        simp)
+      (by exact_mod_cast hpos)
+  let _ : IsUnramifiedAtInfinitePlaces (adjoin ℚ {z} : IntermediateField ℚ M) M := hinfinite
+  let _ : IsTotallyReal M := IsTotallyReal.of_isUnramifiedAtInfinitePlaces
+    (k := (adjoin ℚ {z} : IntermediateField ℚ M)) (K := M)
+  -- Finite unramifiedness supplies an embedding into the full candidate. Its totally real image
+  -- lies in the maximal real subfield, so the embedding factors through the real candidate.
+  obtain ⟨φ⟩ := nonempty_algHom_candidateGenusField hd hnsq hz hfinite
+  let e : M ≃+* φ.fieldRange := (AlgEquiv.ofInjective φ φ.injective).toRingEquiv
+  let _ : IsTotallyReal φ.fieldRange := IsTotallyReal.ofRingEquiv e
+  have hrange : φ.fieldRange.toSubfield ≤ maximalRealSubfield (candidateGenusField hd) :=
+    IsTotallyReal.le_maximalRealSubfield φ.fieldRange.toSubfield
+  let ψ : M →ₐ[ℚ] candidateGenusFieldReal hd :=
+    φ.codRestrict (candidateGenusFieldReal hd).toSubalgebra fun x => hrange ⟨x, rfl⟩
+  apply TauCeti.exists_algHom_apply_eq_of_sq_eq
+    (d := d) (y := candidateGenusFieldRealBaseRoot hd hpos) (z := z)
+  · rw [candidateGenusFieldRealBaseRoot_sq, IsScalarTower.algebraMap_apply ℤ ℚ]
+    norm_num
+  · exact finrank_adjoin_candidateGenusFieldRealBaseRoot hd hnsq hpos
+  · exact hz
+  · exact ⟨ψ⟩
+
+end TauCeti.Multiquadratic
