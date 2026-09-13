@@ -39,26 +39,26 @@ open Coalgebra HopfAlgebra TensorProduct WithConv
 
 namespace TauCeti
 
-namespace BialgHom
+section
 
 variable {R A B : Type*} [CommSemiring R]
 variable [Semiring A] [Semiring B] [_root_.HopfAlgebra R A] [_root_.HopfAlgebra R B]
 
 /-- The coalgebra-hom projection of a bialgebra hom has the same underlying linear map as the
 bialgebra hom itself. -/
-private lemma toCoalgHom_toLinearMap (φ : A →ₐc[R] B) :
+private lemma _root_.BialgHom.toCoalgHom_toLinearMap (φ : A →ₐc[R] B) :
     (φ.toCoalgHom : A →ₗ[R] B) = φ.toLinearMap :=
   rfl
 
 /-- The coalgebra-hom coercion of a bialgebra hom has the same underlying linear map as the
 bialgebra hom itself. -/
-private lemma coe_coalgHom_toLinearMap (φ : A →ₐc[R] B) :
+private lemma _root_.BialgHom.coe_coalgHom_toLinearMap (φ : A →ₐc[R] B) :
     ((φ : A →ₗc[R] B) : A →ₗ[R] B) = φ.toLinearMap :=
   rfl
 
 /-- Applying an algebra homomorphism to a convolution product, oriented so it rewrites the
 `WithConv.ofConv` shape arising from bialgebra morphism composition. -/
-private lemma algHom_comp_convMul_ofConv (φ : A →ₐc[R] B) (f g : A →ₗ[R] A) :
+private lemma _root_.BialgHom.algHom_comp_convMul_ofConv (φ : A →ₐc[R] B) (f g : A →ₗ[R] A) :
     (toConv (φ.toLinearMap.comp f) *
           toConv (φ.toLinearMap.comp g)).ofConv =
       φ.toLinearMap.comp (toConv f * toConv g).ofConv := by
@@ -70,12 +70,12 @@ private lemma algHom_comp_convMul_ofConv (φ : A →ₐc[R] B) (f g : A →ₗ[R
 
 /-- Precomposing a convolution product with a coalgebra homomorphism, oriented so it rewrites
 the `WithConv.ofConv` shape arising from bialgebra morphism composition. -/
-private lemma convMul_comp_coalgHom_ofConv (f g : B →ₗ[R] B) (φ : A →ₐc[R] B) :
+private lemma _root_.BialgHom.convMul_comp_coalgHom_ofConv (f g : B →ₗ[R] B) (φ : A →ₐc[R] B) :
     (toConv (f.comp φ.toLinearMap) *
           toConv (g.comp φ.toLinearMap)).ofConv =
       (toConv f * toConv g).ofConv.comp φ.toLinearMap := by
   have hφ : φ.toLinearMap = ((φ : A →ₗc[R] B) : A →ₗ[R] B) :=
-    (coe_coalgHom_toLinearMap φ).symm
+    (BialgHom.coe_coalgHom_toLinearMap φ).symm
   rw [hφ]
   simpa using
     (LinearMap.convMul_comp_coalgHom_distrib (toConv f) (toConv g)
@@ -83,28 +83,28 @@ private lemma convMul_comp_coalgHom_ofConv (f g : B →ₗ[R] B) (φ : A →ₐc
 
 /-- Applying a bialgebra homomorphism to the convolution product `S * id`, in the exact
 normal form used in the antipode-preservation proof. -/
-private lemma algHom_comp_antipode_id_ofConv (φ : A →ₐc[R] B) :
+private lemma _root_.BialgHom.algHom_comp_antipode_id_ofConv (φ : A →ₐc[R] B) :
     (toConv (φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A))) *
           toConv φ.toLinearMap).ofConv =
       φ.toLinearMap.comp
         (toConv (HopfAlgebra.antipode R (A := A)) * toConv LinearMap.id).ofConv := by
-  have h := algHom_comp_convMul_ofConv φ (HopfAlgebra.antipode R (A := A)) LinearMap.id
+  have h := BialgHom.algHom_comp_convMul_ofConv φ (HopfAlgebra.antipode R (A := A)) LinearMap.id
   simpa only [LinearMap.comp_id] using h
 
 /-- Precomposing the convolution product `id * S` with a bialgebra homomorphism, in the
 exact normal form used in the antipode-preservation proof. -/
-private lemma id_antipode_comp_coalgHom_ofConv (φ : A →ₐc[R] B) :
+private lemma _root_.BialgHom.id_antipode_comp_coalgHom_ofConv (φ : A →ₐc[R] B) :
     (toConv φ.toLinearMap *
           toConv ((HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap)).ofConv =
       (toConv LinearMap.id * toConv (HopfAlgebra.antipode R (A := B))).ofConv.comp
         φ.toLinearMap := by
-  have h := convMul_comp_coalgHom_ofConv (LinearMap.id : B →ₗ[R] B)
+  have h := BialgHom.convMul_comp_coalgHom_ofConv (LinearMap.id : B →ₗ[R] B)
     (HopfAlgebra.antipode R (A := B)) φ
   simpa only [LinearMap.id_comp] using h
 
 /-- A bialgebra morphism between Hopf algebras commutes with the antipodes, as a statement
 about underlying linear maps. -/
-theorem toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
+theorem _root_.BialgHom.toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
     φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A)) =
       (HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap := by
   let f : WithConv (A →ₗ[R] B) := toConv φ.toLinearMap
@@ -115,16 +115,16 @@ theorem toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
   have hg_left : g * f = 1 := by
     refine WithConv.ofConv_injective ?_
     dsimp [g, f]
-    rw [toCoalgHom_toLinearMap φ]
-    rw [algHom_comp_antipode_id_ofConv φ]
+    rw [BialgHom.toCoalgHom_toLinearMap φ]
+    rw [BialgHom.algHom_comp_antipode_id_ofConv φ]
     rw [LinearMap.antipode_mul_id]
     ext a
     exact (φ : A →ₐ[R] B).commutes (Coalgebra.counit a)
   have hh_right : f * h = 1 := by
     refine WithConv.ofConv_injective ?_
     dsimp [f, h]
-    rw [toCoalgHom_toLinearMap φ]
-    rw [id_antipode_comp_coalgHom_ofConv φ]
+    rw [BialgHom.toCoalgHom_toLinearMap φ]
+    rw [BialgHom.id_antipode_comp_coalgHom_ofConv φ]
     rw [LinearMap.id_mul_antipode]
     ext a
     exact congr_arg (algebraMap R B) (CoalgHomClass.counit_comp_apply φ a)
@@ -138,13 +138,13 @@ theorem toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
   exact WithConv.toConv_injective h_eq
 
 /-- A bialgebra morphism between Hopf algebras commutes with the antipodes, pointwise. -/
-theorem map_antipode (φ : A →ₐc[R] B) (a : A) :
+theorem _root_.BialgHom.map_antipode (φ : A →ₐc[R] B) (a : A) :
     φ (HopfAlgebra.antipode R a) = HopfAlgebra.antipode R (φ a) :=
-  LinearMap.congr_fun (toLinearMap_comp_antipode φ) a
+  LinearMap.congr_fun (BialgHom.toLinearMap_comp_antipode φ) a
 
-end BialgHom
+end
 
-namespace BialgHomClass
+section
 
 variable {R A B F : Type*} [CommSemiring R]
 variable [Semiring A] [Semiring B] [_root_.HopfAlgebra R A] [_root_.HopfAlgebra R B]
@@ -152,10 +152,10 @@ variable [FunLike F A B] [BialgHomClass F R A B]
 
 /-- A bialgebra-hom-like map between Hopf algebras commutes with the antipodes, pointwise. -/
 @[simp]
-theorem map_antipode (φ : F) (a : A) :
+theorem _root_.BialgHomClass.map_antipode (φ : F) (a : A) :
     φ (HopfAlgebra.antipode R a) = HopfAlgebra.antipode R (φ a) :=
   BialgHom.map_antipode (φ : A →ₐc[R] B) a
 
-end BialgHomClass
+end
 
 end TauCeti
