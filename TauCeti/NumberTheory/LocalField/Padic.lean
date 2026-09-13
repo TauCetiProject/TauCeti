@@ -16,10 +16,10 @@ concrete p-adic norm and valuation APIs.
 
 ## Main results
 
-* `TauCeti.Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized
+* `Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized
   valuation with `Padic.valuation`.
-* `TauCeti.Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
-* `TauCeti.Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
+* `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
+* `Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
   Mathlib's norm on `ℚ_[p]`.
 
 The Padic and residue-field constructions used here are part of Mathlib's upstream
@@ -48,13 +48,33 @@ private theorem valueGroupWithZeroIsoInt_padic (x : ℚ_[p]) :
     ((Valuation.isEquiv_map_self_of_strictMono e.toMonoidWithZeroHom e.strictMono).trans
       (ValuativeRel.isEquiv _ _))) x
 
+end TauCeti
+
 namespace Padic
+
+/-- The inverse of the zero-preserving normalized valuation on `ℚ_[p]` is
+Mathlib's p-adic valuation. -/
+@[simp]
+theorem normalizedValuationWithZero_inv_eq_mulValuation (x : ℚ_[p]) :
+    (TauCeti.normalizedValuationWithZero ℚ_[p] x)⁻¹ = Padic.mulValuation x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  let u : ℚ_[p]ˣ := Units.mk0 x hx
+  rw [← show (u : ℚ_[p]) = x by simp [u], TauCeti.normalizedValuationWithZero_coe]
+  have hcoe (a : Multiplicative ℤ) : (a : ℤᵐ⁰) = WithZero.exp a.toAdd := by
+    rw [WithZero.exp_eq_coe_ofAdd, ofAdd_toAdd]
+  rw [hcoe, ← WithZero.exp_neg, Padic.mulValuation_toFun]
+  simp only [Units.ne_zero, ↓reduceIte, WithZero.exp_inj, neg_inj]
+  rw [TauCeti.toAdd_normalizedValuation_eq_neg_log,
+    TauCeti.valueGroupWithZeroIsoInt_padic]
+  simp [Padic.mulValuation]
 
 /-- The additive normalized valuation on `ℚ_[p]` is Mathlib's p-adic valuation. -/
 @[simp]
 theorem toAdd_normalizedValuation_eq_valuation (x : ℚ_[p]ˣ) :
-    (normalizedValuation ℚ_[p] x).toAdd = (x : ℚ_[p]).valuation := by
-  rw [toAdd_normalizedValuation_eq_neg_log, TauCeti.valueGroupWithZeroIsoInt_padic]
+    (TauCeti.normalizedValuation ℚ_[p] x).toAdd = (x : ℚ_[p]).valuation := by
+  rw [TauCeti.toAdd_normalizedValuation_eq_neg_log,
+    TauCeti.valueGroupWithZeroIsoInt_padic]
   simp [Padic.mulValuation, x.ne_zero]
 
 /-- The residue field of `ℚ_[p]` has cardinality `p`. -/
@@ -75,15 +95,13 @@ theorem natCard_residueField :
 /-- The normalized absolute value on `ℚ_[p]` agrees with Mathlib's norm. -/
 @[simp]
 theorem normalizedAbsoluteValue_eq_nnnorm (x : ℚ_[p]) :
-    normalizedAbsoluteValue ℚ_[p] x = ‖x‖₊ := by
+    TauCeti.normalizedAbsoluteValue ℚ_[p] x = ‖x‖₊ := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp
   apply NNReal.eq
-  rw [normalizedAbsoluteValue_apply_ne_zero x hx,
+  rw [TauCeti.normalizedAbsoluteValue_apply_ne_zero x hx,
     natCard_residueField p, toAdd_normalizedValuation_eq_valuation]
   simp only [coe_nnnorm]
   simpa using (Padic.norm_eq_zpow_neg_valuation hx).symm
 
 end Padic
-
-end TauCeti
