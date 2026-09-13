@@ -160,6 +160,8 @@ noncomputable def mackeyDirectSumFunctor : Rep.{u} k H ⥤ Rep.{u} k K where
       simp only [LinearMap.coe_comp, Function.comp_apply, directSum_apply, DirectSum.lmap_lof]
       exact congrArg (DirectSum.lof k _ _ D) (Rep.hom_comm_apply _ x y)⟩
   map_id A := by
+    -- `h` is stated for an arbitrary `s : G` rather than directly for `D.out`, whose summand
+    -- types are too costly to elaborate; `simp only` instantiates it at `D.out` below.
     have h (s : G) :
         ((mackeySummandFunctor H K s).map (𝟙 A)).hom.toLinearMap = LinearMap.id := by
       rw [CategoryTheory.Functor.map_id]
@@ -168,11 +170,7 @@ noncomputable def mackeyDirectSumFunctor : Rep.{u} k H ⥤ Rep.{u} k K where
     -- The `map` field above is being defined, so no `_map` lemma exists yet; unfold the `Rep.ofHom`
     -- and `IntertwiningMap` wrappers around it definitionally to expose the `DirectSum.lmap`.
     change DirectSum.lmap _ = LinearMap.id
-    -- Compare summand by summand; `h` is stated for an arbitrary `s` rather than for `D.out`, since
-    -- rewriting inside a term whose type mentions `D.out` fails.
-    refine DirectSum.linearMap_ext k fun D => LinearMap.ext fun y => ?_
-    simp only [LinearMap.coe_comp, Function.comp_apply, DirectSum.lmap_lof, LinearMap.id_apply]
-    exact congrArg (DirectSum.lof k _ _ D) (LinearMap.congr_fun (h D.out) y)
+    simp only [h, DirectSum.lmap_id]
   map_comp {A B C} f g := by
     have h (s : G) :
         ((mackeySummandFunctor H K s).map (f ≫ g)).hom.toLinearMap =
@@ -184,9 +182,7 @@ noncomputable def mackeyDirectSumFunctor : Rep.{u} k H ⥤ Rep.{u} k K where
     -- As for `map_id`: the `map` field is under definition, so the `Rep.ofHom` and
     -- `IntertwiningMap` wrappers can only be removed definitionally.
     change DirectSum.lmap _ = DirectSum.lmap _ ∘ₗ DirectSum.lmap _
-    refine DirectSum.linearMap_ext k fun D => LinearMap.ext fun y => ?_
-    simp only [LinearMap.coe_comp, Function.comp_apply, DirectSum.lmap_lof]
-    exact congrArg (DirectSum.lof k _ _ D) (LinearMap.congr_fun (h D.out) y)
+    simp only [h, DirectSum.lmap_comp]
 
 /-- The direct sum functor sends a representation of `H` to the direct sum of its Mackey
 summands. -/
