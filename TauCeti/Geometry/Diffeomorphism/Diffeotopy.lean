@@ -394,15 +394,15 @@ instance instOne : One (Diffeotopy J n M) where
   one := Diffeotopy.refl J n M
 
 instance instMul : Mul (Diffeotopy J n M) where
-  mul := Diffeotopy.trans
+  mul Φ Ψ := Diffeotopy.trans Ψ Φ
 
 instance instInv : Inv (Diffeotopy J n M) where
   inv := Diffeotopy.symm
 
 instance instGroup : Group (Diffeotopy J n M) where
-  mul_assoc a b c := Diffeotopy.trans_assoc a b c
-  one_mul a := Diffeotopy.refl_trans a
-  mul_one a := Diffeotopy.trans_refl a
-  inv_mul_cancel a := Diffeotopy.symm_trans_self a
+  mul_assoc a b c := (Diffeotopy.trans_assoc c b a).symm
+  one_mul a := Diffeotopy.trans_refl a
+  mul_one a := Diffeotopy.refl_trans a
+  inv_mul_cancel a := Diffeotopy.self_trans_symm a
 
 end TauCeti
