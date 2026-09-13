@@ -9,21 +9,26 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuot
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation
 
 /-!
-# The degree-one finite-quotient colimit
+# The finite-quotient colimit in degrees zero and one
 
-For a profinite group `G` acting continuously on a discrete module `M`, the first continuous
-cohomology group is the colimit of the finite-level groups over the open normal subgroups:
+For a profinite group `G` acting continuously on a discrete module `M`, the explicit continuous
+cohomology groups in degrees zero and one are colimits of the finite-level groups over the open
+normal subgroups:
 
 ```text
-H¹(G, M) = colim_U H¹(G ⧸ U, M^U).
+Hⁱ(G, M) = colim_U Hⁱ(G ⧸ U, M^U),  i = 0, 1.
 ```
 
-This file names the comparison maps into `H¹(G, M)`, assembles them into a cocone on the system
-`TauCeti.ContCohomology.explicitFiniteQuotientSystem1`, and proves that the cocone is colimiting.
-The statement is universality of those named maps, not a bare isomorphism.
+This file names the comparison maps into `Hⁱ(G, M)`, assembles them into cocones on the systems
+`TauCeti.ContCohomology.explicitFiniteQuotientSystem0` and `explicitFiniteQuotientSystem1`, and
+proves that the cocones are colimiting. The statements are universality of those named maps, not
+bare isomorphisms.
 
 ## Main definitions
 
+* `TauCeti.ContCohomology.explicitFiniteQuotientComparison0` and
+  `explicitFiniteQuotientCocone0`: degree-zero inflation assembled as a cocone.
+* `TauCeti.ContCohomology.explicitFiniteQuotientColimit0`: that cocone is colimiting.
 * `TauCeti.ContCohomology.explicitFiniteQuotientComparison1`: the leg family, inflation along
   `G → G ⧸ U`.
 * `TauCeti.ContCohomology.explicitFiniteQuotientCocone1`: the cocone those legs form, with apex
@@ -32,6 +37,8 @@ The statement is universality of those named maps, not a bare isomorphism.
 
 ## Main statements
 
+* `TauCeti.ContCohomology.explicitInfl0_comp_explicitFiniteQuotientTransition0`: degree-zero
+  inflation is compatible with the finite-level transitions.
 * `TauCeti.ContCohomology.explicitInfl1_comp_explicitFiniteQuotientTransition1` and its
   elementwise form `explicitInfl1_explicitFiniteQuotientTransition1`: inflating through a deeper
   level is inflating directly, which is the cocone condition.
@@ -45,9 +52,12 @@ The statement is universality of those named maps, not a bare isomorphism.
 ## Implementation notes
 
 The comparison map from the `U`-level is inflation along `G → G ⧸ U`, already built as
-`TauCeti.ContCohomology.explicitInfl1`; it is used under that name, and
-`explicitFiniteQuotientComparison1` is the natural transformation assembling those maps, not a
-second name for a single one.
+`TauCeti.ContCohomology.explicitInfl0` or `explicitInfl1`; each comparison natural transformation
+assembles those maps and is not a second name for a single one.
+
+In degree zero every comparison leg is an additive equivalence: being fixed by the quotient on
+`M^U` is exactly being fixed by `G` on `M`. Consequently the degree-zero cocone is already
+colimiting for any topological group; no compactness or discreteness hypothesis enters that proof.
 
 Surjectivity of the comparison is *strict*. The zero set of a continuous `1`-cocycle is an open
 neighbourhood of `1`, so `ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one` puts an open
@@ -83,6 +93,190 @@ universe u v
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M]
+
+section DegreeZero
+
+variable {G M}
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] [IsTopologicalGroup G] in
+/-- The whole group, used as a distinguished level in the degree-zero colimit proof. -/
+private def topOpenNormalSubgroup0 : OpenNormalSubgroup G where
+  toOpenSubgroup := ⊤
+  isNormal' := Subgroup.normal_top
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] [IsTopologicalGroup G] in
+/-- Every open normal subgroup lies below the distinguished whole-group level. -/
+private theorem le_topOpenNormalSubgroup0 (U : OpenNormalSubgroup G) :
+    U ≤ topOpenNormalSubgroup0 (G := G) := by
+  intro g _
+  exact Subgroup.mem_top g
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- Inflating from the `U`-level through the `V`-level, for `V ≤ U`, is the same as inflating
+from the `U`-level directly. -/
+theorem explicitInfl0_comp_explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G)
+    (hVU : V ≤ U) :
+    (explicitInfl0 G M V.toSubgroup).comp (explicitFiniteQuotientTransition0 G M U V hVU) =
+      explicitInfl0 G M U.toSubgroup := by
+  ext m
+  simp only [AddMonoidHom.comp_apply]
+  exact (coe_explicitInfl0 G M V.toSubgroup _).trans
+    ((coe_explicitFiniteQuotientTransition0 G M hVU m).trans
+      (coe_explicitInfl0 G M U.toSubgroup m).symm)
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- Inflating a degree-zero class through a deeper finite level does not change it. -/
+theorem explicitInfl0_explicitFiniteQuotientTransition0 {U V : OpenNormalSubgroup G} (hVU : V ≤ U)
+    (m : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
+    explicitInfl0 G M V.toSubgroup (explicitFiniteQuotientTransition0 G M U V hVU m) =
+      explicitInfl0 G M U.toSubgroup m := by
+  rw [← AddMonoidHom.comp_apply, explicitInfl0_comp_explicitFiniteQuotientTransition0]
+
+variable (G M)
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The degree-zero comparison maps into `H⁰(G, M)`, assembled from inflation at every open
+normal subgroup. -/
+noncomputable def explicitFiniteQuotientComparison0 :
+    explicitFiniteQuotientSystem0 G M ⟶
+      (Functor.const ((OpenNormalSubgroup G)ᵒᵖ)).obj (AddCommGrpCat.of (H0 G M)) where
+  app U := AddCommGrpCat.ofHom (explicitInfl0 G M U.unop.toSubgroup)
+  naturality U V f :=
+    AddCommGrpCat.hom_ext (explicitInfl0_comp_explicitFiniteQuotientTransition0
+      U.unop V.unop (leOfHom f.unop))
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The degree-zero comparison map at `U` is inflation along `G → G ⧸ U`. -/
+@[simp]
+theorem explicitFiniteQuotientComparison0_app (U : OpenNormalSubgroup G) :
+    (explicitFiniteQuotientComparison0 G M).app (Opposite.op U) =
+      AddCommGrpCat.ofHom (explicitInfl0 G M U.toSubgroup) := by
+  rw [explicitFiniteQuotientComparison0]
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The degree-zero finite-quotient cocone, whose point is `H⁰(G, M)`. -/
+@[expose] noncomputable def explicitFiniteQuotientCocone0 :
+    Cocone (explicitFiniteQuotientSystem0 G M) where
+  pt := AddCommGrpCat.of (H0 G M)
+  ι := explicitFiniteQuotientComparison0 G M
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The apex of the degree-zero finite-quotient cocone is `H⁰(G, M)`. -/
+@[simp]
+theorem explicitFiniteQuotientCocone0_pt :
+    (explicitFiniteQuotientCocone0 G M).pt = AddCommGrpCat.of (H0 G M) :=
+  rfl
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The legs of the degree-zero finite-quotient cocone are the comparison maps. -/
+@[simp]
+theorem explicitFiniteQuotientCocone0_ι :
+    (explicitFiniteQuotientCocone0 G M).ι = explicitFiniteQuotientComparison0 G M :=
+  rfl
+
+variable {G M}
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- Naturality of an arbitrary cocone, evaluated on a degree-zero finite-level transition. -/
+private theorem cocone_ι_explicitFiniteQuotientTransition0
+    (s : Cocone (explicitFiniteQuotientSystem0 G M)) {U V : OpenNormalSubgroup G} (hVU : V ≤ U)
+    (m : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
+    (s.ι.app (Opposite.op V)).hom (explicitFiniteQuotientTransition0 G M U V hVU m) =
+      (s.ι.app (Opposite.op U)).hom m :=
+  congrArg (fun w : (explicitFiniteQuotientSystem0 G M).obj (Opposite.op U) ⟶ s.pt ↦ w.hom m)
+    ((s.ι.naturality (homOfLE hVU).op).trans (Category.comp_id _))
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- Moving the inverse image of an inflated degree-zero class from the top level to any level
+recovers the original class. -/
+private theorem transition0_top_symm_explicitInfl0 (U : OpenNormalSubgroup G)
+    (m : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
+    explicitFiniteQuotientTransition0 G M (topOpenNormalSubgroup0 (G := G)) U
+        (le_topOpenNormalSubgroup0 U)
+        ((explicitInfl0Equiv G M (topOpenNormalSubgroup0 (G := G)).toSubgroup).symm
+          (explicitInfl0 G M U.toSubgroup m)) = m := by
+  apply explicitInfl0_injective G M U.toSubgroup
+  rw [explicitInfl0_explicitFiniteQuotientTransition0]
+  rw [← explicitInfl0Equiv_toAddMonoidHom]
+  exact (explicitInfl0Equiv G M (topOpenNormalSubgroup0 (G := G)).toSubgroup).apply_symm_apply
+    (explicitInfl0 G M U.toSubgroup m)
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The map from `H⁰(G, M)` to the point of an arbitrary cocone, obtained from its top-level
+leg and the inverse of degree-zero inflation. -/
+private noncomputable def coconeDesc0 (s : Cocone (explicitFiniteQuotientSystem0 G M)) :
+    H0 G M →+ s.pt :=
+  (AddCommGrpCat.ofHom ((explicitInfl0Equiv G M
+      (topOpenNormalSubgroup0 (G := G)).toSubgroup).symm.toAddMonoidHom) ≫
+    eqToHom (explicitFiniteQuotientSystem0_obj G M
+      (topOpenNormalSubgroup0 (G := G))).symm ≫
+    s.ι.app (Opposite.op (topOpenNormalSubgroup0 (G := G)))).hom
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The defining formula for the degree-zero descent through the distinguished top level. -/
+private theorem coconeDesc0_apply (s : Cocone (explicitFiniteQuotientSystem0 G M)) (m : H0 G M) :
+    coconeDesc0 s m =
+      (s.ι.app (Opposite.op (topOpenNormalSubgroup0 (G := G)))).hom
+        ((explicitInfl0Equiv G M
+          (topOpenNormalSubgroup0 (G := G)).toSubgroup).symm m) := by
+  rfl
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The descent of a degree-zero cocone is computed by every finite-level comparison leg. -/
+private theorem coconeDesc0_explicitInfl0 (s : Cocone (explicitFiniteQuotientSystem0 G M))
+    (U : OpenNormalSubgroup G)
+    (m : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
+    coconeDesc0 s (explicitInfl0 G M U.toSubgroup m) = (s.ι.app (Opposite.op U)).hom m := by
+  rw [coconeDesc0_apply,
+    ← cocone_ι_explicitFiniteQuotientTransition0 s (le_topOpenNormalSubgroup0 U)
+      ((explicitInfl0Equiv G M (topOpenNormalSubgroup0 (G := G)).toSubgroup).symm
+        (explicitInfl0 G M U.toSubgroup m)),
+    transition0_top_symm_explicitInfl0]
+
+variable (G M)
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- **The degree-zero finite-quotient colimit theorem**: `H⁰(G, M)` is the colimit of
+`H⁰(G ⧸ U, M^U)` over the open normal subgroups, through the inflation maps. -/
+noncomputable def explicitFiniteQuotientColimit0 :
+    IsColimit (explicitFiniteQuotientCocone0 G M) where
+  desc s := AddCommGrpCat.ofHom (coconeDesc0 s)
+  fac s U := by
+    refine AddCommGrpCat.hom_ext (AddMonoidHom.ext fun m ↦ ?_)
+    exact coconeDesc0_explicitInfl0 s U.unop m
+  uniq s f hf := by
+    refine AddCommGrpCat.hom_ext (AddMonoidHom.ext fun m ↦ ?_)
+    let y := (explicitInfl0Equiv G M
+      (topOpenNormalSubgroup0 (G := G)).toSubgroup).symm m
+    have hy : explicitInfl0 G M (topOpenNormalSubgroup0 (G := G)).toSubgroup y = m :=
+      by
+        rw [← explicitInfl0Equiv_toAddMonoidHom]
+        exact (explicitInfl0Equiv G M
+          (topOpenNormalSubgroup0 (G := G)).toSubgroup).apply_symm_apply m
+    rw [← hy]
+    refine Eq.trans ?_
+      (coconeDesc0_explicitInfl0 s (topOpenNormalSubgroup0 (G := G)) y).symm
+    exact congrArg
+      (fun w : (explicitFiniteQuotientSystem0 G M).obj
+        (Opposite.op (topOpenNormalSubgroup0 (G := G))) ⟶ s.pt ↦ w.hom y)
+      (hf (Opposite.op (topOpenNormalSubgroup0 (G := G))))
+
+end DegreeZero
 
 section Cocone
 

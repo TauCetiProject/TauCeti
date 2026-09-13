@@ -12,10 +12,10 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Invariants
 # The explicit low-degree finite-quotient systems
 
 For a topological group `G` acting continuously on a discrete additive group `M`, the explicit
-cohomology groups in degrees one and two
+cohomology groups in degrees zero, one, and two
 
 ```text
-Hⁱ(G ⧸ U, M^U),  i = 1, 2,
+Hⁱ(G ⧸ U, M^U),  i = 0, 1, 2,
 ```
 
 form a directed system as the open normal subgroup `U` shrinks.  If `V ≤ U`, its transition
@@ -26,13 +26,17 @@ require compactness.
 
 `TauCeti.finiteQuotientSystem` already packages the corresponding system in Mathlib's discrete
 `groupCohomology`.  The systems here are instead constructed directly with
-`TauCeti.ContCohomology.explicitMap1` and `explicitMap2`.  In particular they are
+`TauCeti.ContCohomology.explicitMap0`, `explicitMap1`, and `explicitMap2`. In particular they are
 universe-polymorphic and do not transport their arrows through the universe-restricted comparison
 with discrete group cohomology.  They are the source diagrams for the explicit finite-quotient
-colimit theorems in degrees one and two.
+colimit theorems in degrees zero, one, and two.
 
 ## Main definitions
 
+* `TauCeti.ContCohomology.explicitFiniteQuotientTransition0`: the transition
+  `H⁰(G ⧸ U, M^U) → H⁰(G ⧸ V, M^V)` for `V ≤ U`.
+* `TauCeti.ContCohomology.explicitFiniteQuotientSystem0`: the resulting functor on
+  `(OpenNormalSubgroup G)ᵒᵖ`.
 * `TauCeti.ContCohomology.explicitFiniteQuotientTransition1`: the transition
   `H¹(G ⧸ U, M^U) → H¹(G ⧸ V, M^V)` for `V ≤ U`.
 * `TauCeti.ContCohomology.explicitFiniteQuotientSystem1`: the resulting functor on
@@ -42,6 +46,9 @@ colimit theorems in degrees one and two.
 
 ## Main statements
 
+* `explicitFiniteQuotientTransition0_eq_explicitMap0` identifies the degree-zero transition with
+  compatible-pair pullback; its identity, composition, object, and arrow lemmas give the same
+  characteristic API as the positive-degree systems.
 * `explicitFiniteQuotientTransition1_eq_explicitMap1` identifies a transition map with the
   compatible-pair pullback it is built from.
 * `explicitFiniteQuotientTransition1_id` and `explicitFiniteQuotientTransition1_comp` are the
@@ -71,6 +78,70 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 section Transition
 
 variable {U V W : OpenNormalSubgroup G}
+
+/-! ### Degree zero -/
+
+/-- The explicit degree-zero transition from the `U`-level to the `V`-level, for `V ≤ U`.
+
+It is compatible-pair pullback along `G ⧸ V → G ⧸ U` and the inclusion `M^U → M^V`.
+On underlying coefficients it is just that inclusion. -/
+def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G) (hVU : V ≤ U) :
+    H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) →+
+      H0 (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M) :=
+  explicitMap0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
+    (continuousFiniteQuotientMap G hVU)
+    (fixedPointsInclusion (M := M) hVU : FixedPoints.addSubgroup U.toSubgroup M →+
+      FixedPoints.addSubgroup V.toSubgroup M)
+    (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU)
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- A degree-zero finite-quotient transition does not change the underlying coefficient. -/
+@[simp]
+theorem coe_explicitFiniteQuotientTransition0 (hVU : V ≤ U)
+    (m : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
+    ((explicitFiniteQuotientTransition0 G M U V hVU m :
+        FixedPoints.addSubgroup V.toSubgroup M) : M) = (m : M) := by
+  exact (congrArg (fun x : FixedPoints.addSubgroup V.toSubgroup M ↦ (x : M))
+    (coe_explicitMap0 _ _ _ _ _ m)).trans (coe_fixedPointsInclusion hVU (m :
+      FixedPoints.addSubgroup U.toSubgroup M))
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- A degree-zero transition is the compatible-pair pullback along the quotient map and the
+inclusion of invariant coefficients. -/
+theorem explicitFiniteQuotientTransition0_eq_explicitMap0 (hVU : V ≤ U) :
+    explicitFiniteQuotientTransition0 G M U V hVU =
+      explicitMap0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
+        (N := FixedPoints.addSubgroup V.toSubgroup M)
+        (continuousFiniteQuotientMap G hVU)
+        (fixedPointsInclusion (M := M) hVU : FixedPoints.addSubgroup U.toSubgroup M →+
+          FixedPoints.addSubgroup V.toSubgroup M)
+        (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) := (rfl)
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The degree-zero transition from a level to itself is the identity. -/
+@[simp]
+theorem explicitFiniteQuotientTransition0_id (U : OpenNormalSubgroup G) :
+    explicitFiniteQuotientTransition0 G M U U le_rfl = AddMonoidHom.id _ := by
+  ext m
+  exact coe_explicitFiniteQuotientTransition0 G M le_rfl m
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- For `W ≤ V ≤ U`, the degree-zero transition from the `U`-level to the `W`-level is the
+composite through the `V`-level. -/
+theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
+    (hVU : V ≤ U) (hWV : W ≤ V) :
+    explicitFiniteQuotientTransition0 G M U W (hWV.trans hVU) =
+      (explicitFiniteQuotientTransition0 G M V W hWV).comp
+        (explicitFiniteQuotientTransition0 G M U V hVU) := by
+  ext m
+  rw [AddMonoidHom.comp_apply, coe_explicitFiniteQuotientTransition0,
+    coe_explicitFiniteQuotientTransition0, coe_explicitFiniteQuotientTransition0]
+
+/-! ### Degree one -/
 
 /-- The explicit degree-one transition from the `U`-level to the `V`-level, for `V ≤ U`.
 
@@ -215,6 +286,51 @@ theorem explicitFiniteQuotientTransition1_comp (U V W : OpenNormalSubgroup G)
 end Transition
 
 section System
+
+/-! ### Degree zero -/
+
+/-- The explicit degree-zero finite-quotient system. It sends an open normal subgroup `U` to
+`H⁰(G ⧸ U, M^U)` and an inclusion `V ≤ U` to compatible-pair pullback from the `U`-level to
+the `V`-level. -/
+@[expose] def explicitFiniteQuotientSystem0 :
+    (OpenNormalSubgroup G)ᵒᵖ ⥤ AddCommGrpCat.{v} where
+  obj U :=
+    AddCommGrpCat.of
+      (H0 (G ⧸ U.unop.toSubgroup) (FixedPoints.addSubgroup U.unop.toSubgroup M))
+  map := fun {U V} f => AddCommGrpCat.ofHom
+    (explicitFiniteQuotientTransition0 G M U.unop V.unop (leOfHom f.unop))
+  map_id U := by
+    rw [explicitFiniteQuotientTransition0_id]
+    rfl
+  map_comp f g := by
+    rw [explicitFiniteQuotientTransition0_comp G M _ _ _
+      (leOfHom f.unop) (leOfHom g.unop)]
+    rfl
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The object at `U` of the degree-zero finite-quotient system is `H⁰(G ⧸ U, M^U)`. -/
+@[simp]
+theorem explicitFiniteQuotientSystem0_obj (U : OpenNormalSubgroup G) :
+    (explicitFiniteQuotientSystem0 G M).obj (Opposite.op U) =
+      AddCommGrpCat.of
+        (H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :=
+  by rfl
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- Every arrow of the degree-zero finite-quotient system is the direct compatible-pair
+transition. -/
+@[simp]
+theorem explicitFiniteQuotientSystem0_map
+    {U V : (OpenNormalSubgroup G)ᵒᵖ} (f : U ⟶ V) :
+    eqToHom (explicitFiniteQuotientSystem0_obj G M U.unop).symm ≫
+        (explicitFiniteQuotientSystem0 G M).map f ≫
+      eqToHom (explicitFiniteQuotientSystem0_obj G M V.unop) = AddCommGrpCat.ofHom
+      (explicitFiniteQuotientTransition0 G M U.unop V.unop (leOfHom f.unop)) :=
+  by rfl
+
+/-! ### Degree one -/
 
 /-- The explicit degree-one finite-quotient system of a discrete module.  It sends an open normal
 subgroup `U` to `H¹(G ⧸ U, M^U)` and an inclusion `V ≤ U` to the direct explicit transition from

@@ -14,8 +14,8 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Invariants
 Inflation is the third named instance of the compatible-pair pullback on the explicit low-degree
 complex: for a normal subgroup `N` of a topological group `G` it is the pullback along the
 quotient homomorphism `G → G ⧸ N` paired with the inclusion `M ^ N ↪ M` of the invariants, which
-is equivariant along that homomorphism. This file defines inflation in degrees `1` and `2` and
-proves the exactness of
+is equivariant along that homomorphism. This file defines inflation in degrees `0`, `1`, and `2`.
+In degree one it proves the exactness of
 
 ```text
 0 → H¹(G ⧸ N, M ^ N) → H¹(G, M) → H¹(N, M)
@@ -27,11 +27,15 @@ at its two nodes.
 
 * `TauCeti.ContCohomology.explicitInfl0`, `explicitInfl1`, and `explicitInfl2`: inflation on the
   explicit model in degrees `0`, `1`, and `2`.
+* `TauCeti.ContCohomology.explicitInfl0Equiv`: the additive equivalence between degree-zero
+  cohomology before and after inflation.
 * `TauCeti.ContCohomology.descendZ1`: the descent to `G ⧸ N` of a continuous `1`-cocycle vanishing
   on `N`.
 
 ## Main statements
 
+* `TauCeti.ContCohomology.explicitInfl0_injective` and `explicitInfl0_surjective`: inflation in
+  degree zero is bijective.
 * `TauCeti.ContCohomology.explicitRes1_comp_explicitInfl1` and
   `TauCeti.ContCohomology.explicitRes2_comp_explicitInfl2`: restricting an inflated class back to
   `N` gives zero.
@@ -139,6 +143,42 @@ def explicitInfl0 : H0 (G ⧸ N) (FixedPoints.addSubgroup N M) →+ H0 G M :=
 theorem coe_explicitInfl0 (m : H0 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     (explicitInfl0 G M N m : M) = (m : M) :=
   coe_explicitMap0 _ _ _ _ _ m
+
+/-- Degree-zero inflation is injective. In fact it is an equivalence, as packaged by
+`TauCeti.ContCohomology.explicitInfl0Equiv`. -/
+theorem explicitInfl0_injective : Function.Injective (explicitInfl0 G M N) := by
+  intro x y h
+  apply Subtype.ext
+  apply Subtype.ext
+  simpa only [coe_explicitInfl0] using congrArg Subtype.val h
+
+/-- Degree-zero inflation is surjective: a `G`-invariant element belongs to `M^N`, and remains
+fixed under the quotient action. -/
+theorem explicitInfl0_surjective : Function.Surjective (explicitInfl0 G M N) := by
+  intro m
+  have hm : ∀ g : G, g • (m : M) = m :=
+    (FixedPoints.mem_addSubgroup G M (m : M)).1 m.2
+  let n : FixedPoints.addSubgroup N M :=
+    ⟨m, (FixedPoints.mem_addSubgroup N M (m : M)).2 fun g ↦ hm g⟩
+  have hn : n ∈ H0 (G ⧸ N) (FixedPoints.addSubgroup N M) :=
+    (FixedPoints.mem_addSubgroup (G ⧸ N) (FixedPoints.addSubgroup N M) n).2 fun q ↦ by
+      apply Subtype.ext
+      induction q using QuotientGroup.induction_on with
+      | H g => exact hm g
+  refine ⟨⟨n, hn⟩, Subtype.ext ?_⟩
+  exact coe_explicitInfl0 G M N ⟨n, hn⟩
+
+/-- Inflation identifies `H⁰(G ⧸ N, M^N)` with `H⁰(G, M)`. This is the degree-zero
+edge case of inflation: invariance under the quotient action is exactly invariance under `G`. -/
+noncomputable def explicitInfl0Equiv :
+    H0 (G ⧸ N) (FixedPoints.addSubgroup N M) ≃+ H0 G M :=
+  AddEquiv.ofBijective (explicitInfl0 G M N)
+    ⟨explicitInfl0_injective G M N, explicitInfl0_surjective G M N⟩
+
+/-- The additive equivalence in degree zero has forward map `explicitInfl0`. -/
+@[simp]
+theorem explicitInfl0Equiv_toAddMonoidHom :
+    (explicitInfl0Equiv G M N).toAddMonoidHom = explicitInfl0 G M N := (rfl)
 
 end DegreeZero
 
