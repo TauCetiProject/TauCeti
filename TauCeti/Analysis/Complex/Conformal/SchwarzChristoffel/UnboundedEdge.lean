@@ -284,20 +284,8 @@ theorem schwarzChristoffelBoundary_image_Iic (a e : ι → ℝ) (z₀ : UpperHal
   -- Strict antitonicity and the limit at infinity identify the distance parameter's image.
   have hdimage : d '' Iic p = Ico 0 D := by
     have himage : d '' Iic p = Ico (d p) D := by
-      exact
-        @ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto (OrderDual ℝ) ℝ
-        (@OrderDual.instConditionallyCompleteLinearOrder ℝ
-          Real.instConditionallyCompleteLinearOrder)
-        (inferInstance : TopologicalSpace ℝ)
-        (@instOrderTopologyOrderDual ℝ (inferInstance : TopologicalSpace ℝ) Real.instPreorder
-          instOrderTopologyReal)
-        (@OrderDual.denselyOrdered ℝ Real.instLT (inferInstance : DenselyOrdered ℝ))
-        (@OrderDual.noMaxOrder ℝ Real.instLT (inferInstance : NoMinOrder ℝ)) Real.linearOrder
-        (inferInstance : TopologicalSpace ℝ) (inferInstance : OrderClosedTopology ℝ) d p D hdcont
-        (by
-          intro x hx y hy hxy
-          exact hdanti hy hx hxy)
-        hdl
+      exact ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto (α := OrderDual ℝ)
+        hdcont (fun x hx y hy hxy => hdanti hy hx hxy) hdl
     simpa [d] using himage
   have hDpos : 0 < D := by
     have hp1 : p - 1 ∈ Iic p := by
