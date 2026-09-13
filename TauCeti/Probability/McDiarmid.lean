@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Moments.SubGaussian
 public import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Algebra.Order.BigOperators.BoundedDifferences
 
 /-!
 # McDiarmid's bounded-differences inequality
@@ -44,44 +45,6 @@ open MeasureTheory
 open scoped ENNReal NNReal
 
 namespace TauCeti.Probability
-
-/-- If changing coordinate `i` moves `f` by at most `c i`, then changing every coordinate moves it
-by at most the sum of the coordinate bounds. -/
-private theorem abs_sub_le_of_bounded_differences {ι : Type*} [Fintype ι]
-    {β : Type*} (c : ι → ℝ) (f : (ι → β) → ℝ)
-    (hbd : ∀ (i : ι) (x x' : ι → β), (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
-    (x x' : ι → β) : |f x - f x'| ≤ ∑ i, c i := by
-  classical
-  have key : ∀ (s : Finset ι) (y y' : ι → β),
-      (∀ l ∉ s, y l = y' l) → |f y - f y'| ≤ ∑ i ∈ s, c i := by
-    intro s
-    induction s using Finset.induction with
-    | empty =>
-        intro y y' h
-        have hyy : y = y' := funext fun l => h l (by simp)
-        rw [hyy, sub_self, abs_zero]
-        simp
-    | insert i s hi ih =>
-        intro y y' h
-        set y'' := Function.update y i (y' i) with hy''
-        have h1 : |f y - f y''| ≤ c i := by
-          apply hbd i
-          intro l hl
-          simp [hy'', Function.update_of_ne hl]
-        have h2 : |f y'' - f y'| ≤ ∑ j ∈ s, c j := by
-          apply ih
-          intro l hl
-          by_cases hli : l = i
-          · subst hli
-            simp [hy'']
-          · rw [hy'', Function.update_of_ne hli]
-            exact h l (by simp [Finset.mem_insert, hli, hl])
-        calc
-          |f y - f y'| ≤ |f y - f y''| + |f y'' - f y'| := abs_sub_le _ _ _
-          _ ≤ c i + ∑ j ∈ s, c j := by linarith
-          _ = ∑ j ∈ insert i s, c j := by simp [hi]
-  have := key Finset.univ x x' (by simp)
-  simpa using this
 
 /-- The exponential-moment estimate underlying McDiarmid's inequality, on a product indexed by
 `Fin n`. -/
