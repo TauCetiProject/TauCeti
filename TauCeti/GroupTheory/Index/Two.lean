@@ -41,9 +41,7 @@ namespace TauCeti
 variable {G : Type*} [Group G] {N : Subgroup G}
 
 /-- **A subgroup conjugated by inversion is abelian.**  If `s * x * s⁻¹ = x⁻¹` for every `x ∈ N`,
-then conjugation by `s` is at once an automorphism of `N` and the inversion of `N`, and inversion
-is an automorphism only of an abelian group.  Neither `s ∉ N` nor any hypothesis on the index of
-`N` is needed. -/
+then `N` is commutative.  Neither `s ∉ N` nor any hypothesis on the index of `N` is needed. -/
 theorem isMulCommutative_of_conj_eq_inv {s : G} (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) :
     IsMulCommutative N :=
   IsMulCommutative.of_comm fun y z => Subtype.ext <| by
@@ -100,9 +98,8 @@ theorem sq_sq_eq_one_of_conj_eq_inv {s : G} (hsq : s ^ 2 ∈ N)
   nth_rewrite 2 [hfix]
   exact mul_inv_cancel _
 
-/-- **The complement of a subgroup of index two has as many elements as the subgroup:** both
-halves of `G` have `Nat.card N` elements, since together they exhaust `G`, whose order is
-`Nat.card N * 2`. -/
+/-- **The complement of a subgroup of index two has as many elements as the subgroup:** in a
+finite group, both halves of `G` have `Nat.card N` elements. -/
 theorem card_filter_notMem_eq_card_of_index_two [Fintype G] [DecidablePred (· ∈ N)]
     (hindex : N.index = 2) : (Finset.univ.filter (fun x : G => x ∉ N)).card = Nat.card N := by
   have hsplit := Finset.card_filter_add_card_filter_not (s := (Finset.univ : Finset G))

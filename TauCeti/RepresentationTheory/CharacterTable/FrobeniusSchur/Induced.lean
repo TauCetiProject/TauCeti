@@ -55,8 +55,8 @@ variable {G : Type v} [Group G] {N : Subgroup G} {k : Type} [Field k]
 /-- **The Frobenius-Schur indicator of a character induced from an inverted subgroup of index
 two** is the value of the character on the common square `s ^ 2` of the elements outside the
 subgroup.  The hypothesis `ψ ^ 2 ≠ 1` says that `ψ` is not its own inverse, and `hG` that the order
-of `G` is invertible in `k`.  That `s` lies outside `N` need not be assumed: inside `N` the
-inversion hypothesis would make `ψ` its own inverse. -/
+of `G` is invertible in `k`.  That `s` lies outside `N` need not be assumed, being already a
+consequence of those two hypotheses. -/
 theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_eq_apply_sq_of_conj_eq_inv
     [Fintype G] (hindex : N.index = 2) {s : G} (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹)
     (hG : IsUnit (Nat.card G : k)) {ψ : N →* kˣ} (hψ : ψ ^ 2 ≠ 1) :

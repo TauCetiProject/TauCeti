@@ -23,7 +23,7 @@ subgroup order.
 * `TauCeti.character_indFDRep_sum_quotient` expresses an induced character as a sum over left
   cosets.
 * `TauCeti.character_indFDRep_eq_zero_of_notMem`: an induced character vanishes outside a normal
-  subgroup, the coset sum keeping only the cosets that conjugation by `g` fixes.
+  subgroup of finite index.
 * `TauCeti.indClassFun_ofFDRep_character` and `TauCeti.ClassFunction.ind_ofFDRep` identify that
   coset sum with `TauCeti.indClassFun`, the induced class function.
 * `TauCeti.character_ind` rewrites the coset sum as an average over the whole group when the
