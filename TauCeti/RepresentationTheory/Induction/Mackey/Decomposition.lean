@@ -69,8 +69,8 @@ universe u
 
 variable {k G : Type u} [CommRing k] [Group G] {H K : Subgroup G}
 
--- A double coset quotient carries no canonical decidable equality; `DirectSum.lof` and
--- `DirectSum.linearMap_ext` need one, so the classical instance is used throughout this file.
+/-- The classical decidable equality on `K \ G / H`, used throughout this file: a double coset
+quotient carries no canonical one, and `DirectSum.lof` and `DirectSum.linearMap_ext` need it. -/
 noncomputable local instance decidableEqDoubleCosetQuotient :
     DecidableEq (DoubleCoset.Quotient (K : Set G) (H : Set G)) :=
   Classical.decEq _
