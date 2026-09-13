@@ -19,7 +19,7 @@ The inverse of a symmetric matrix is symmetric, so matrix inversion is a self-ma
 `TauCeti.symmetricInv` of the symmetric subspace, and an involution of the positive-definite cone.
 Its derivative at an invertible `A` is `H ↦ -A⁻¹ H A⁻¹`, that is, minus the congruence by `A⁻¹`,
 whose determinant `Matrix.det_symmetricCongruenceLinearMap` already computes. Hence the absolute
-Jacobian of inversion is `(det A) ^ (-(p + 1))`, and
+Jacobian of inversion is `|det A| ^ (-(p + 1))`, and
 `TauCeti.map_symmetricInv_symmetricLebesgue` records the resulting change of variables: inversion
 carries `TauCeti.symmetricLebesgue` restricted to the cone to the same restriction weighted by
 `(det B) ^ (-(p + 1))`.
@@ -84,6 +84,7 @@ theorem posDef_coe_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (
 
 /-- Inversion is measurable, being a rational expression in the entries: Mathlib's totalized
 inverse is `(det A)⁻¹ • adjugate A` everywhere. -/
+@[fun_prop]
 theorem measurable_symmetricInv : Measurable (symmetricInv (p := p)) := by
   refine Measurable.subtype_mk ?_
   have hdet : Measurable fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
@@ -126,9 +127,10 @@ theorem hasFDerivAt_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
   set π : Matrix (Fin p) (Fin p) ℝ →L[ℝ]
       selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
     LinearMap.toContinuousLinearMap (selfAdjointPart ℝ)
-  -- Mathlib states `selfAdjointPart` into the additive subgroup `selfAdjoint`, whose subtype is
-  -- the submodule's but whose module instances are different, so its lemmas transport to `π` only
-  -- definitionally, not by rewriting.
+  -- Mathlib states `selfAdjointPart` into the additive subgroup `selfAdjoint`, which carries the
+  -- same subtype and the same module structure as `selfAdjoint.submodule`; Mathlib itself reads
+  -- the two interchangeably, as in `selfAdjointPart_comp_subtype_selfAdjoint`. Its lemmas
+  -- therefore apply to `π` after `Subtype.ext`.
   have hπ_apply : ∀ X : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
       π (X : Matrix (Fin p) (Fin p) ℝ) = X := fun X =>
     Subtype.ext (IsSelfAdjoint.coe_selfAdjointPart_apply ℝ X.2)
@@ -172,21 +174,20 @@ theorem hasFDerivAt_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
 theorem abs_det_fderiv_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
     (hA : IsUnit (A : Matrix (Fin p) (Fin p) ℝ).det) :
     |(fderiv ℝ symmetricInv A).det| = |(A : Matrix (Fin p) (Fin p) ℝ).det| ^ (-((p : ℝ) + 1)) := by
-  have hne : (A : Matrix (Fin p) (Fin p) ℝ).det ≠ 0 := hA.ne_zero
-  have habs : 0 < |(A : Matrix (Fin p) (Fin p) ℝ).det| := abs_pos.2 hne
+  have habs : 0 < |(A : Matrix (Fin p) (Fin p) ℝ).det| := abs_pos.2 hA.ne_zero
   have hcoe : (fderiv ℝ symmetricInv A).det =
       LinearMap.det (-Matrix.symmetricCongruenceLinearMap
         ((A : Matrix (Fin p) (Fin p) ℝ)⁻¹)) := by
     rw [(hasFDerivAt_symmetricInv hA).fderiv, ContinuousLinearMap.det,
       ContinuousLinearMap.toLinearMap_neg, LinearMap.coe_toContinuousLinearMap]
-  rw [hcoe, ← neg_one_smul ℝ (Matrix.symmetricCongruenceLinearMap
+  have hrpow : |(A : Matrix (Fin p) (Fin p) ℝ).det| ^ (-((p : ℝ) + 1)) =
+      |(A : Matrix (Fin p) (Fin p) ℝ).det|⁻¹ ^ (p + 1) := by
+    rw [show -((p : ℝ) + 1) = -((p + 1 : ℕ) : ℝ) by push_cast; ring, Real.rpow_neg habs.le,
+      Real.rpow_natCast, ← inv_pow]
+  rw [hcoe, hrpow, ← neg_one_smul ℝ (Matrix.symmetricCongruenceLinearMap
       ((A : Matrix (Fin p) (Fin p) ℝ)⁻¹)), LinearMap.det_smul,
-    Matrix.det_symmetricCongruenceLinearMap, Matrix.det_nonsing_inv, Ring.inverse_eq_inv',
-    abs_mul, abs_pow, abs_pow, abs_neg, abs_one, one_pow, one_mul, abs_inv,
-    ← Real.rpow_natCast |(A : Matrix (Fin p) (Fin p) ℝ).det|⁻¹ (p + 1),
-    ← Real.rpow_neg_one |(A : Matrix (Fin p) (Fin p) ℝ).det|, ← Real.rpow_mul habs.le]
-  push_cast
-  ring_nf
+    Matrix.det_symmetricCongruenceLinearMap, Matrix.det_nonsing_inv, Ring.inverse_eq_inv']
+  simp [abs_mul, abs_pow, abs_inv]
 
 /-! ### The change of variables -/
 
