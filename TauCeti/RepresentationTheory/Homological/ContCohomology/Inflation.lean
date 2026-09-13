@@ -32,6 +32,7 @@ at its two nodes.
 
 ## Main statements
 
+* `TauCeti.ContCohomology.explicitInfl0_bijective`: degree-zero inflation is bijective.
 * `TauCeti.ContCohomology.explicitRes1_comp_explicitInfl1` and
   `TauCeti.ContCohomology.explicitRes2_comp_explicitInfl2`: restricting an inflated class back to
   `N` gives zero.
@@ -139,6 +140,32 @@ def explicitInfl0 : H0 (G ⧸ N) (FixedPoints.addSubgroup N M) →+ H0 G M :=
 theorem coe_explicitInfl0 (m : H0 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     (explicitInfl0 G M N m : M) = (m : M) :=
   coe_explicitMap0 _ _ _ _ _ m
+
+/-- **Degree-zero inflation is bijective.** Both the source and target are the global invariant
+subgroup, and inflation preserves the underlying coefficient. -/
+theorem explicitInfl0_bijective : Function.Bijective (explicitInfl0 G M N) := by
+  constructor
+  · intro x y hxy
+    apply Subtype.ext
+    apply Subtype.ext
+    simpa only [coe_explicitInfl0] using congrArg (fun z : H0 G M => (z : M)) hxy
+  · intro y
+    have hy : ∀ g : G, g • (y : M) = (y : M) :=
+      fun g => (FixedPoints.mem_addSubgroup G M (y : M)).1 y.2 g
+    let xM : FixedPoints.addSubgroup N M :=
+      ⟨(y : M), (FixedPoints.mem_addSubgroup N M (y : M)).2 (fun n => hy (n : G))⟩
+    let x : H0 (G ⧸ N) (FixedPoints.addSubgroup N M) :=
+      ⟨xM, (FixedPoints.mem_addSubgroup (G ⧸ N)
+        (FixedPoints.addSubgroup N M) xM).2 (by
+          intro q
+          induction q using QuotientGroup.induction_on with
+          | _ g =>
+            apply Subtype.ext
+            simpa only [coe_quotient_smul_fixedPoints_addSubgroup,
+              coe_smul_fixedPoints_addSubgroup] using hy g)⟩
+    refine ⟨x, ?_⟩
+    apply Subtype.ext
+    simp only [coe_explicitInfl0, x, xM]
 
 end DegreeZero
 

@@ -10,15 +10,18 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 /-!
 # Constructions of open normal subgroups
 
-Two bundled constructions of `OpenNormalSubgroup` that Mathlib provides for `OpenSubgroup`
-but not for its normal variant: the preimage under a continuous group homomorphism, and the
-trivial subgroup of a group with the discrete topology. Both are stated for an arbitrary
-topological space structure on a group; no continuity of the group operations is required.
+Three bundled constructions of `OpenNormalSubgroup` that Mathlib provides for `OpenSubgroup`
+but not for its normal variant: the greatest subgroup, the preimage under a continuous group
+homomorphism, and the trivial subgroup of a group with the discrete topology. The first two are
+stated for an arbitrary topological space structure on a group; no continuity of the group
+operations is required.
 
 ## Main definitions
 
 * `OpenNormalSubgroup.comap`: the preimage of an open normal subgroup under a continuous
   group homomorphism.
+* `OpenNormalSubgroup.instTopOpenNormalSubgroup` and
+  `OpenNormalSubgroup.instOrderTopOpenNormalSubgroup`: the greatest open normal subgroup.
 * `TauCeti.openNormalSubgroupBot`: the trivial subgroup of a group with the discrete
   topology, as an open normal subgroup.
 -/
@@ -28,6 +31,26 @@ public section
 namespace OpenNormalSubgroup
 
 variable {G H : Type*} [Group G] [TopologicalSpace G] [Group H] [TopologicalSpace H]
+
+section Top
+
+variable {G : Type*} [Group G] [TopologicalSpace G]
+
+/-- The whole group, regarded as an open normal subgroup. -/
+@[to_additive]
+instance instTopOpenNormalSubgroup : Top (OpenNormalSubgroup G) where
+  top :=
+    { toOpenSubgroup := ⊤
+      isNormal' := Subgroup.normal_top }
+
+/-- The whole group is the greatest open normal subgroup. -/
+@[to_additive]
+instance instOrderTopOpenNormalSubgroup : OrderTop (OpenNormalSubgroup G) where
+  le_top U := by
+    intro g hg
+    exact Subgroup.mem_top g
+
+end Top
 
 /-- The preimage of an open normal subgroup under a continuous group homomorphism. -/
 def comap (U : OpenNormalSubgroup H) (f : G →* H) (hf : Continuous f) :
