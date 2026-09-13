@@ -60,7 +60,8 @@ theorem normalizedValuationWithZero_inv_eq_mulValuation (x : ℚ_[p]) :
   rcases eq_or_ne x 0 with rfl | hx
   · simp
   let u : ℚ_[p]ˣ := Units.mk0 x hx
-  rw [← show (u : ℚ_[p]) = x by simp [u], TauCeti.normalizedValuationWithZero_coe]
+  have hu : (u : ℚ_[p]) = x := by simp [u]
+  rw [← hu, TauCeti.normalizedValuationWithZero_coe]
   have hcoe (a : Multiplicative ℤ) : (a : ℤᵐ⁰) = WithZero.exp a.toAdd := by
     rw [WithZero.exp_eq_coe_ofAdd, ofAdd_toAdd]
   rw [hcoe, ← WithZero.exp_neg, Padic.mulValuation_toFun]
