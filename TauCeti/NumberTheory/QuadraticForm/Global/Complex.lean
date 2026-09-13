@@ -41,7 +41,7 @@ private noncomputable def standardIsometry (n m : ℕ) (h : n = m) :
         exact (finCongr h).symm.sum_comp (fun i => x i * x i) }
 
 /-- A regular complex quadratic form of rank at least two has a nonzero isotropic vector. -/
-theorem not_anisotropic_complex {W : Type*} [AddCommGroup W] [Module ℂ W]
+theorem _root_.QuadraticForm.not_anisotropic_complex {W : Type*} [AddCommGroup W] [Module ℂ W]
     [FiniteDimensional ℂ W] (Q : QuadraticForm ℂ W) (hQ : Q.Nondegenerate)
     (h : 2 ≤ Module.finrank ℂ W) : ¬ Q.Anisotropic := by
   obtain ⟨e⟩ := Q.equivalent_weightedSumSquares_of_isAlgClosed
@@ -70,8 +70,8 @@ theorem not_anisotropic_complex {W : Type*} [AddCommGroup W] [Module ℂ W]
     rw [← (finCongr hk).sum_comp (fun i => x i * x i)]
     simp [x, x₀, Fin.sum_univ_succ]
 
-private theorem equivalent_standard_complex {W : Type*} [AddCommGroup W] [Module ℂ W]
-    [FiniteDimensional ℂ W] (Q : QuadraticForm ℂ W) (hQ : Q.Nondegenerate) :
+private theorem _root_.QuadraticForm.equivalent_standard_complex {W : Type*} [AddCommGroup W]
+    [Module ℂ W] [FiniteDimensional ℂ W] (Q : QuadraticForm ℂ W) (hQ : Q.Nondegenerate) :
     Q.Equivalent (weightedSumSquares ℂ
       (1 : Fin (Module.finrank ℂ W) → ℂ)) :=
   Q.equivalent_weightedSumSquares_of_isAlgClosed
@@ -79,18 +79,18 @@ private theorem equivalent_standard_complex {W : Type*} [AddCommGroup W] [Module
 
 /-- Regular complex quadratic forms on possibly different spaces are equivalent exactly when their
 dimensions agree. -/
-theorem equivalent_of_finrank_eq_complex {W₁ W₂ : Type*}
+theorem _root_.QuadraticForm.equivalent_of_finrank_eq_complex {W₁ W₂ : Type*}
     [AddCommGroup W₁] [Module ℂ W₁] [FiniteDimensional ℂ W₁]
     [AddCommGroup W₂] [Module ℂ W₂] [FiniteDimensional ℂ W₂]
     (Q : QuadraticForm ℂ W₁) (R : QuadraticForm ℂ W₂)
     (hQ : Q.Nondegenerate) (hR : R.Nondegenerate)
     (h : Module.finrank ℂ W₁ = Module.finrank ℂ W₂) : Q.Equivalent R := by
-  obtain ⟨eQ⟩ := equivalent_standard_complex Q hQ
-  obtain ⟨eR⟩ := equivalent_standard_complex R hR
+  obtain ⟨eQ⟩ := _root_.QuadraticForm.equivalent_standard_complex Q hQ
+  obtain ⟨eR⟩ := _root_.QuadraticForm.equivalent_standard_complex R hR
   exact ⟨eQ.trans ((standardIsometry (Module.finrank ℂ W₁) (Module.finrank ℂ W₂) h).trans eR.symm)⟩
 
 /-- Two regular complex quadratic forms are equivalent precisely when their dimensions agree. -/
-theorem equivalent_iff_finrank_eq_complex {W₁ W₂ : Type*}
+theorem _root_.QuadraticForm.equivalent_iff_finrank_eq_complex {W₁ W₂ : Type*}
     [AddCommGroup W₁] [Module ℂ W₁] [FiniteDimensional ℂ W₁]
     [AddCommGroup W₂] [Module ℂ W₂] [FiniteDimensional ℂ W₂]
     (Q : QuadraticForm ℂ W₁) (R : QuadraticForm ℂ W₂)
@@ -99,6 +99,6 @@ theorem equivalent_iff_finrank_eq_complex {W₁ W₂ : Type*}
   constructor
   · rintro ⟨e⟩
     exact e.toLinearEquiv.finrank_eq
-  · exact equivalent_of_finrank_eq_complex Q R hQ hR
+  · exact _root_.QuadraticForm.equivalent_of_finrank_eq_complex Q R hQ hR
 
 end TauCeti.QuadraticForm
