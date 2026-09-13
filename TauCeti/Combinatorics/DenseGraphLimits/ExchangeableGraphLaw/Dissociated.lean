@@ -16,8 +16,9 @@ import TauCeti.MeasureTheory.Measure.FiniteOrder
 An exchangeable graph law is **dissociated** when the random graph restricted to two disjoint
 windows of labels consists of two independent pieces: the level-`(k + l)` marginal, pushed to the
 pair of graphs it induces on the first `k` and on the last `l` labels, is the product of the
-level-`k` and level-`l` marginals. By consistency the choice of the two windows is immaterial, so
-the first `k` and the last `l` labels of `Fin (k + l)` suffice.
+level-`k` and level-`l` marginals. By exchangeability two disjoint windows of sizes `k` and `l`
+can be relabelled as the first `k` and the next `l` labels, and by consistency the labels beyond
+them can then be dropped, so the first `k` and the last `l` labels of `Fin (k + l)` suffice.
 
 Dissociation is an identity between two laws on pairs of graphs, while the upper masses of a law
 only see its upper events. The two meet in the bridge `isDissociated_iff_upperMass_mul`: a law is
