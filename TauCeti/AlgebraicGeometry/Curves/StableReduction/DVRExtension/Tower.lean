@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.SeparableDegree
 public import Mathlib.CategoryTheory.Category.Basic
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.DVRExtension.Basic
 
@@ -21,6 +20,12 @@ common-refinement arguments.
 
 The existence of a common refinement for two arbitrary chosen extensions is not asserted here.
 Constructing it requires the compositum together with a compatible choice of a place.
+
+## References
+
+This module implements the finite and separable tower and compatible-embedding target in Layer 0
+of the StableReduction roadmap:
+https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/README.md
 -/
 
 public section
@@ -53,9 +58,9 @@ structure Hom (E F : FiniteDVRExtension R K) where
     field (algebraMap E.localRing E.extensionField x) =
       algebraMap F.localRing F.extensionField (localMap x)
   /-- The map preserves the chosen maximal ideals. -/
-  isLocal_localMap : IsLocalHom localMap.toRingHom
+  isLocalHom_localMap : IsLocalHom localMap.toRingHom
 
-attribute [instance] Hom.isLocal_localMap
+attribute [instance] Hom.isLocalHom_localMap
 attribute [simp] Hom.field_local
 
 namespace Hom
@@ -70,87 +75,77 @@ lemma ext {E F : FiniteDVRExtension R K} {f g : Hom E F}
   cases hlocal
   congr
 
-/-- The identity map of a chosen finite DVR extension. -/
-def id (E : FiniteDVRExtension R K) : Hom E E where
-  field := AlgHom.id K E.extensionField
-  localMap := AlgHom.id R E.localRing
-  field_local x := by simp
-  isLocal_localMap := by
-    have h : (AlgHom.id R E.localRing).toRingHom = RingHom.id E.localRing := by
-      ext x
-      simp
-    rw [h]
-    exact isLocalHom_id _
-
-/-- Composition of maps of chosen finite DVR extensions. -/
-def comp {E F G : FiniteDVRExtension R K} (f : Hom E F) (g : Hom F G) : Hom E G where
-  field := g.field.comp f.field
-  localMap := g.localMap.comp f.localMap
-  field_local x := by
-    simp only [AlgHom.comp_apply]
-    rw [f.field_local x, g.field_local (f.localMap x)]
-  isLocal_localMap := by
-    let _ : IsLocalHom g.localMap.toRingHom := g.isLocal_localMap
-    let _ : IsLocalHom f.localMap.toRingHom := f.isLocal_localMap
-    have h : (g.localMap.comp f.localMap).toRingHom =
-        g.localMap.toRingHom.comp f.localMap.toRingHom := by
-      ext x
-      rfl
-    rw [h]
-    exact RingHom.isLocalHom_comp _ _
-
-@[simp] lemma id_field (E : FiniteDVRExtension R K) :
-    (id E).field = AlgHom.id K E.extensionField := by
-  ext x
-  simp [id]
-
-@[simp] lemma id_localMap (E : FiniteDVRExtension R K) :
-    (id E).localMap = AlgHom.id R E.localRing := by
-  ext x
-  simp [id]
-
-@[simp] lemma comp_field {E F G : FiniteDVRExtension R K} (f : Hom E F) (g : Hom F G) :
-    (comp f g).field = g.field.comp f.field := by
-  ext x
-  rfl
-
-@[simp] lemma comp_localMap {E F G : FiniteDVRExtension R K} (f : Hom E F) (g : Hom F G) :
-    (comp f g).localMap = g.localMap.comp f.localMap := by
-  ext x
-  rfl
-
-@[simp] lemma id_comp {E F : FiniteDVRExtension R K} (f : Hom E F) : comp (id E) f = f := by
-  apply ext
-  · ext x
-    simp
-  · ext x
-    simp
-
-@[simp] lemma comp_id {E F : FiniteDVRExtension R K} (f : Hom E F) : comp f (id F) = f := by
-  apply ext
-  · ext x
-    simp
-  · ext x
-    simp
-
-lemma assoc {E F G H : FiniteDVRExtension R K} (f : Hom E F) (g : Hom F G) (h : Hom G H) :
-    comp (comp f g) h = comp f (comp g h) := by
-  apply ext
-  · ext x
-    simp
-  · ext x
-    simp
-
 end Hom
 
 /-- Chosen extensions and their compatible maps form a category over a fixed `R` and `K`. -/
-instance : Category (FiniteDVRExtension R K) where
+instance finiteDVRExtensionCategory : Category (FiniteDVRExtension R K) where
   Hom := Hom
-  id := Hom.id
-  comp f g := Hom.comp f g
-  id_comp := Hom.id_comp
-  comp_id := Hom.comp_id
-  assoc := Hom.assoc
+  id E :=
+    { field := AlgHom.id K E.extensionField
+      localMap := AlgHom.id R E.localRing
+      field_local := fun x ↦ by simp
+      isLocalHom_localMap := by
+        have h : (AlgHom.id R E.localRing).toRingHom = RingHom.id E.localRing := by
+          ext x
+          simp
+        rw [h]
+        exact isLocalHom_id _ }
+  comp f g :=
+    { field := g.field.comp f.field
+      localMap := g.localMap.comp f.localMap
+      field_local := fun x ↦ by
+        simp only [AlgHom.comp_apply]
+        rw [f.field_local x, g.field_local (f.localMap x)]
+      isLocalHom_localMap := by
+        let _ : IsLocalHom g.localMap.toRingHom := g.isLocalHom_localMap
+        let _ : IsLocalHom f.localMap.toRingHom := f.isLocalHom_localMap
+        have h : (g.localMap.comp f.localMap).toRingHom =
+            g.localMap.toRingHom.comp f.localMap.toRingHom := by
+          ext x
+          rfl
+        rw [h]
+        exact RingHom.isLocalHom_comp _ _ }
+  id_comp := by
+    intro E F f
+    apply Hom.ext
+    · ext x
+      rfl
+    · ext x
+      rfl
+  comp_id := by
+    intro E F f
+    apply Hom.ext
+    · ext x
+      rfl
+    · ext x
+      rfl
+  assoc := by
+    intro E F G H f g h
+    apply Hom.ext
+    · ext x
+      rfl
+    · ext x
+      rfl
+
+namespace Hom
+
+@[simp] lemma id_field (E : FiniteDVRExtension R K) :
+    (𝟙 E : E ⟶ E).field = AlgHom.id K E.extensionField := by
+  simp [CategoryStruct.id]
+
+@[simp] lemma id_localMap (E : FiniteDVRExtension R K) :
+    (𝟙 E : E ⟶ E).localMap = AlgHom.id R E.localRing := by
+  simp [CategoryStruct.id]
+
+@[simp] lemma comp_field {E F G : FiniteDVRExtension R K} (f : E ⟶ F) (g : F ⟶ G) :
+    (f ≫ g).field = g.field.comp f.field := by
+  rfl
+
+@[simp] lemma comp_localMap {E F G : FiniteDVRExtension R K} (f : E ⟶ F) (g : F ⟶ G) :
+    (f ≫ g).localMap = g.localMap.comp f.localMap := by
+  rfl
+
+end Hom
 
 /-- The algebra structure induced by the compatible field embedding. -/
 @[instance_reducible]
@@ -166,8 +161,7 @@ instance Hom.fieldTower {E F : FiniteDVRExtension R K} (T : Hom E F) :
   exact @IsScalarTower.of_algebraMap_eq K E.extensionField F.extensionField _ _ _
     inferInstance algebra inferInstance (by
       intro x
-      change algebraMap K F.extensionField x = T.field (algebraMap K E.extensionField x)
-      exact (T.field.commutes x).symm)
+      simp [RingHom.algebraMap_toAlgebra, AlgHom.commutes])
 
 /-- Finiteness of the upper field over the lower field follows from its finiteness over `K`. -/
 instance Hom.fieldFinite {E F : FiniteDVRExtension R K} (T : Hom E F) :
