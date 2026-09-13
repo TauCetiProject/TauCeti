@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
+public import TauCeti.RingTheory.Ideal.Quotient.Representative
 
 /-!
 # The residue-and-sign presentation of the congruence quotient
@@ -29,8 +30,9 @@ isomorphism `residueSignEquiv` computes the relative index
   = Nat.card (𝓞 K ⧸ 𝔪.finitePart)ˣ * 2 ^ 𝔪.infinitePart.card,
 ```
 
-which is the middle term of the ray class number formula and strengthens the bare finiteness
-recorded by `congruenceSubgroup_finiteIndex`.
+which is the residue-and-sign factor of the ray class number formula — the factor *before* the
+image of the global units is divided out — and strengthens the bare finiteness recorded by
+`congruenceSubgroup_finiteIndex`.
 
 Surjectivity is the arithmetic content and is *not* a chinese-remainder statement: the residue
 class and the signs have to be realized by one and the same element of `Kˣ`, so the proof runs
@@ -134,16 +136,6 @@ theorem ker_residueSignHom (𝔪 : Modulus K) :
 
 /-! ### Surjectivity -/
 
-/-- A nonzero ideal has a nonzero representative for every residue class: a representative that
-happens to vanish can be corrected by a nonzero element of the ideal. -/
-private theorem exists_ne_zero_quotient_mk_eq {R : Type*} [CommRing R] {I : Ideal R} (hI : I ≠ ⊥)
-    (y : R ⧸ I) : ∃ a : R, a ≠ 0 ∧ Ideal.Quotient.mk I a = y := by
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective y
-  obtain ⟨m, hm, hm0⟩ := (Submodule.ne_bot_iff I).mp hI
-  rcases eq_or_ne a 0 with rfl | ha
-  · exact ⟨m, hm0, by rw [Ideal.Quotient.eq_zero_iff_mem.mpr hm, map_zero]⟩
-  · exact ⟨a, ha, rfl⟩
-
 /-- An integral representative of a *unit* residue class lies outside every prime dividing the
 finite part: a common prime factor would make `1` divisible by that prime. -/
 private theorem notMem_of_quotient_mk_eq_unit {𝔪 : Modulus K} {a : 𝓞 K}
@@ -165,7 +157,7 @@ finite part, and reduces to the class it represents. -/
 private theorem exists_mem_primeToSubgroup_residueHom_eq {𝔪 : Modulus K}
     (u : (𝓞 K ⧸ 𝔪.finitePart)ˣ) :
     ∃ (α : Kˣ) (hα : α ∈ primeToSubgroup 𝔪), residueHom 𝔪 ⟨α, hα⟩ = u := by
-  obtain ⟨a, ha0, ha⟩ := exists_ne_zero_quotient_mk_eq 𝔪.finitePart_ne_bot
+  obtain ⟨a, ha0, ha⟩ := Ideal.Quotient.exists_ne_zero_mk_eq 𝔪.finitePart_ne_bot
     ((u : 𝓞 K ⧸ 𝔪.finitePart))
   have haK : algebraMap (𝓞 K) K a ≠ 0 :=
     (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).mpr ha0
@@ -249,14 +241,19 @@ noncomputable def residueSignEquiv (𝔪 : Modulus K) :
     (QuotientGroup.quotientKerEquivOfSurjective _ (residueSignHom_surjective 𝔪))
 
 @[simp] theorem residueSignEquiv_mk (𝔪 : Modulus K) (x : primeToSubgroup 𝔪) :
-    residueSignEquiv 𝔪 (QuotientGroup.mk x) = residueSignHom 𝔪 x := (rfl)
+    residueSignEquiv 𝔪 (QuotientGroup.mk x) = residueSignHom 𝔪 x := by
+  rw [residueSignEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
+    QuotientGroup.quotientKerEquivOfSurjective,
+    QuotientGroup.quotientKerEquivOfRightInverse_apply, QuotientGroup.kerLift_mk]
 
 /-- **The exact relative index of the congruence subgroup.**  The elements that are units at the
 finite part of `𝔪`, modulo those congruent to one, are counted by the residue units modulo the
 finite part times two for each real place of the infinite part.
 
-This refines the finiteness statement `congruenceSubgroup_finiteIndex` to an equality, and it is
-the factor multiplying the class number in the ray class number formula. -/
+This refines the finiteness statement `congruenceSubgroup_finiteIndex` to an equality.  It is the
+residue-and-sign factor entering the ray class number formula, which multiplies the class number
+only after the image of the global units in this quotient is divided out; that image is the
+obstruction described in the module docstring. -/
 theorem relIndex_congruenceSubgroup (𝔪 : Modulus K) :
     (congruenceSubgroup 𝔪).relIndex (primeToSubgroup 𝔪) =
       Nat.card (𝓞 K ⧸ 𝔪.finitePart)ˣ * 2 ^ 𝔪.infinitePart.card := by
