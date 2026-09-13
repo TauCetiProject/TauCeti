@@ -31,7 +31,7 @@ object used to identify the image of a Schwarz--Christoffel primitive with a pol
 
 * `TauCeti.continuous_schwarzChristoffelCompactifiedBoundary` -- integrable finite prevertices and
   decay at infinity make the compactified boundary continuous.
-* `TauCeti.injective_schwarzChristoffelCompactifiedBoundary_iff` -- exact global simplicity
+* `TauCeti.schwarzChristoffelCompactifiedBoundary_injective_iff` -- exact global simplicity
   criterion in terms of the finite boundary and the vertex at infinity.
 * `TauCeti.isJordanCurve_range_schwarzChristoffelCompactifiedBoundary` -- an injective
   compactified boundary traces a Jordan curve.
@@ -116,7 +116,7 @@ theorem continuous_schwarzChristoffelCompactifiedBoundary (a e : ι → ℝ)
 /-- The compactified boundary is injective exactly when its finite part is injective and no finite
 boundary value equals the vertex at infinity.  Thus the global boundary-simplicity problem has no
 hidden condition at the compactification point. -/
-theorem injective_schwarzChristoffelCompactifiedBoundary_iff (a e : ι → ℝ)
+theorem schwarzChristoffelCompactifiedBoundary_injective_iff (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) :
     Function.Injective (schwarzChristoffelCompactifiedBoundary a e z₀) ↔
       Function.Injective (schwarzChristoffelBoundary a e z₀) ∧
@@ -133,7 +133,7 @@ theorem injective_schwarzChristoffelCompactifiedBoundary_iff (a e : ι → ℝ)
 
 /-- An injective compactified Schwarz--Christoffel boundary traces a Jordan curve.  Continuity is
 supplied by integrability at every finite prevertex and decay at infinity; injectivity is left in
-the exact form characterized by `injective_schwarzChristoffelCompactifiedBoundary_iff`. -/
+the exact form characterized by `schwarzChristoffelCompactifiedBoundary_injective_iff`. -/
 theorem isJordanCurve_range_schwarzChristoffelCompactifiedBoundary (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i)
     (hinfty : ∑ i, e i < -1)

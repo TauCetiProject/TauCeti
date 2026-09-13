@@ -50,7 +50,7 @@ noncomputable def onePointRealHomeomorphCircle : OnePoint ℝ ≃ₜ Circle := b
   let es : sphere (0 : EuclideanSpace ℝ (Fin 2)) 1 ≃ₜ sphere (0 : ℂ) 1 :=
     e.subtype fun x => by
       simp only [mem_sphere_zero_iff_norm, e]
-      rw [show eL.toHomeomorph x = eL x from rfl, eL.norm_map]
+      rw [LinearIsometryEquiv.coe_toHomeomorph, eL.norm_map]
   exact ((onePointEquivSphereOfFinrankEq (V := ℝ) (by norm_num)).trans es).trans
     (Homeomorph.refl _)
 
