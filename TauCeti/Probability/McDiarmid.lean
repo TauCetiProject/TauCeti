@@ -58,6 +58,22 @@ private theorem abs_le_sum_add_abs_of_bounded_differences {ι : Type*} [Fintype 
     _ ≤ |f x - f x₀| + |f x₀| := abs_add_le _ _
     _ ≤ (∑ i, c i) + |f x₀| := by linarith
 
+/-- Centering a uniformly bounded quantity keeps it bounded. -/
+private theorem abs_sub_le_add_abs_of_abs_le {u K : ℝ} (hu : |u| ≤ K) (I : ℝ) :
+    |u - I| ≤ K + |I| := by
+  calc
+    |u - I| ≤ |u| + |I| := by
+      rw [sub_eq_add_neg, ← abs_neg I]
+      exact abs_add_le _ _
+    _ ≤ K + |I| := by linarith
+
+/-- The centered exponential of a uniformly bounded measurable function is integrable. -/
+private theorem integrable_exp_mul_sub_const {γ : Type*} [MeasurableSpace γ] {μ : Measure γ}
+    [IsFiniteMeasure μ] {F : γ → ℝ} (hF : AEMeasurable F μ) {K : ℝ} (hFb : ∀ x, |F x| ≤ K)
+    (I t : ℝ) : Integrable (fun x => Real.exp (t * (F x - I))) μ :=
+  ProbabilityTheory.integrable_exp_mul_of_mem_Icc (a := -(K + |I|)) (b := K + |I|)
+    (hF.sub_const I) (ae_of_all _ fun x => abs_le.mp (abs_sub_le_add_abs_of_abs_le (hFb x) I))
+
 /-- The exponential-moment estimate underlying McDiarmid's inequality, on a product indexed by
 `Fin n`. -/
 private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpace β]
@@ -252,13 +268,7 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
         rw [hsplit, integral_mul_const]
         exact mul_le_mul_of_nonneg_right (hHoeff w) (Real.exp_nonneg _)
       have hexpg_int : Integrable (fun w => Real.exp (t * (g w - I))) πn :=
-        ProbabilityTheory.integrable_exp_mul_of_mem_Icc (μ := πn)
-          (a := -(M + |I|)) (b := M + |I|) ((hg_meas.sub_const I).aemeasurable)
-          (ae_of_all _ fun w => abs_le.mp <| calc
-            |g w - I| ≤ |g w| + |I| := by
-              rw [sub_eq_add_neg, ← abs_neg I]
-              exact abs_add_le _ _
-            _ ≤ M + |I| := by linarith [hg_bdd w])
+        integrable_exp_mul_sub_const hg_meas.aemeasurable hg_bdd I t
       have hR_int : Integrable (fun w => Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) *
           Real.exp (t * (g w - I))) πn := hexpg_int.const_mul _
       have hLmeas : Measurable (fun w => ∫ a, Real.exp (t * (f (Fin.cons a w) - I)) ∂ν) := by
@@ -278,13 +288,8 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
         calc
           t * (f x - I) ≤ |t * (f x - I)| := le_abs_self _
           _ = |t| * |f x - I| := abs_mul _ _
-          _ ≤ |t| * (M + |I|) := by
-            apply mul_le_mul_of_nonneg_left _ (abs_nonneg t)
-            calc
-              |f x - I| ≤ |f x| + |I| := by
-                rw [sub_eq_add_neg, ← abs_neg I]
-                exact abs_add_le _ _
-              _ ≤ M + |I| := by linarith [hMf x]
+          _ ≤ |t| * (M + |I|) :=
+            mul_le_mul_of_nonneg_left (abs_sub_le_add_abs_of_abs_le (hMf x) I) (abs_nonneg t)
       rw [htrans (fun x => Real.exp (t * (f x - I)))
         (hprodint _ (Real.exp (|t| * (M + |I|))) (((hf.sub_const I).const_mul t).exp)
           hFexp_bd)]
@@ -385,13 +390,7 @@ theorem hasSubgaussianMGF_of_bounded_differences
     rw [hM]
     exact abs_le_sum_add_abs_of_bounded_differences c f hbd x₀ x
   have hint : ∀ t : ℝ, Integrable (fun x => Real.exp (t * (f x - I))) π := fun t =>
-    ProbabilityTheory.integrable_exp_mul_of_mem_Icc (μ := π)
-      (a := -(M + |I|)) (b := M + |I|) ((hf.sub_const I).aemeasurable)
-      (ae_of_all _ fun x => abs_le.mp <| calc
-        |f x - I| ≤ |f x| + |I| := by
-          rw [sub_eq_add_neg, ← abs_neg I]
-          exact abs_add_le _ _
-        _ ≤ M + |I| := by linarith [hMf x])
+    integrable_exp_mul_sub_const hf.aemeasurable hMf I t
   refine ⟨hint, fun t => ?_⟩
   have hkey := integral_exp_mul_centered_le_pi ν f hf c hc hbd t
   have hcoe : (((∑ i, (c i).toNNReal ^ 2 / 4 : ℝ≥0) : ℝ)) =

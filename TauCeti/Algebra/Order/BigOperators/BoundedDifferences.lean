@@ -7,16 +7,15 @@ module
 
 public import Mathlib.Algebra.Order.Group.Abs
 public import Mathlib.Data.Fintype.BigOperators
-public import Mathlib.Basic.Real.Basic
 
 /-!
 # Bounded differences on a finite product
 
-A real-valued function on a finite product `ι → β` has *bounded differences* with bounds
-`c : ι → ℝ` when changing a single coordinate `i`, leaving the others fixed, moves the value by
-at most `c i`. `TauCeti.abs_sub_le_of_bounded_differences` telescopes that coordinatewise
-hypothesis into a global one: any two points of the product, however many coordinates they differ
-in, have values at most `∑ i, c i` apart.
+A function on a finite product `ι → β`, valued in a linearly ordered additive commutative group,
+has *bounded differences* with bounds `c : ι → α` when changing a single coordinate `i`, leaving
+the others fixed, moves the value by at most `c i`. `TauCeti.abs_sub_le_of_bounded_differences`
+telescopes that coordinatewise hypothesis into a global one: any two points of the product, however
+many coordinates they differ in, have values at most `∑ i, c i` apart.
 
 The argument changes the coordinates one at a time, using `Function.update` to interpolate between
 the two points, and adds up the resulting one-coordinate bounds with the triangle inequality. It
@@ -34,8 +33,8 @@ namespace TauCeti
 /-- **A function with bounded differences varies by at most the sum of its coordinate bounds.**
 If changing coordinate `i` moves `f` by at most `c i`, then changing every coordinate moves it by
 at most `∑ i, c i`. -/
-theorem abs_sub_le_of_bounded_differences {ι : Type*} [Fintype ι]
-    {β : Type*} (c : ι → ℝ) (f : (ι → β) → ℝ)
+theorem abs_sub_le_of_bounded_differences {ι : Type*} [Fintype ι] {α β : Type*}
+    [AddCommGroup α] [LinearOrder α] [IsOrderedAddMonoid α] (c : ι → α) (f : (ι → β) → α)
     (hbd : ∀ (i : ι) (x x' : ι → β), (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
     (x x' : ι → β) : |f x - f x'| ≤ ∑ i, c i := by
   classical
