@@ -376,8 +376,10 @@ def symmetricFinOneEquiv : selfAdjoint.submodule ℝ (Matrix (Fin 1) (Fin 1) ℝ
 
 @[simp]
 theorem symmetricFinOneEquiv_apply (A : selfAdjoint.submodule ℝ (Matrix (Fin 1) (Fin 1) ℝ)) :
-    symmetricFinOneEquiv A = (A : Matrix (Fin 1) (Fin 1) ℝ) 0 0 :=
-  (rfl)
+    symmetricFinOneEquiv A = (A : Matrix (Fin 1) (Fin 1) ℝ) 0 0 := by
+  have hdefault : (default : upperTriangle 1) = ⟨(0, 0), le_rfl⟩ := Subsingleton.elim _ _
+  rw [symmetricFinOneEquiv, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.coe_funUnique, Function.eval, hdefault, symmetricCoordinates_apply]
 
 @[simp]
 theorem coe_symmetricFinOneEquiv_symm_apply (x : ℝ) (i j : Fin 1) :
@@ -385,7 +387,9 @@ theorem coe_symmetricFinOneEquiv_symm_apply (x : ℝ) (i j : Fin 1) :
         Matrix (Fin 1) (Fin 1) ℝ) i j = x := by
   obtain rfl : i = 0 := Subsingleton.elim _ _
   obtain rfl : j = 0 := Subsingleton.elim _ _
-  exact coe_symmetricCoordinates_symm_apply_of_le 1 _ le_rfl
+  rw [symmetricFinOneEquiv, ContinuousLinearEquiv.symm_trans_apply,
+    ContinuousLinearEquiv.coe_funUnique_symm, coe_symmetricCoordinates_symm_apply_of_le 1 _ le_rfl,
+    Function.const_apply]
 
 end TauCeti
 
