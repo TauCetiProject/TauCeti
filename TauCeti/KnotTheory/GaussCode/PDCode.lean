@@ -52,6 +52,9 @@ Diagram Codes*, Definitions 2--3, and the oriented crossing convention of W. B. 
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_crossingSign` proves preservation of crossing
   signs.
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_writhe` proves agreement of the two writhes.
+* `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_mirror_crossingSign` and
+  `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_mirror_writhe` prove that conversion commutes
+  with reflection on these observables.
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_injective` proves that the conversion loses no
   Gauss-code data.
 * `TauCeti.FramedBasedOrientedGaussCode.toFramedOrientedPDCode_injective` proves the same for the
@@ -411,6 +414,19 @@ theorem toOrientedPDCode_crossingSign (D : BasedOrientedGaussCode n) (c : Fin n)
 theorem toOrientedPDCode_writhe (D : BasedOrientedGaussCode n) :
     D.toOrientedPDCode.writhe = D.writhe := by
   simp [OrientedPDCode.writhe_def, writhe_def]
+
+/-- Conversion commutes with reflection on crossing signs. -/
+@[simp]
+theorem toOrientedPDCode_mirror_crossingSign (D : BasedOrientedGaussCode n) (c : Fin n) :
+    D.mirror.toOrientedPDCode.crossingSign c =
+      D.toOrientedPDCode.mirror.crossingSign c := by
+  simp
+
+/-- Conversion commutes with reflection on writhe. -/
+@[simp]
+theorem toOrientedPDCode_mirror_writhe (D : BasedOrientedGaussCode n) :
+    D.mirror.toOrientedPDCode.writhe = D.toOrientedPDCode.mirror.writhe := by
+  simp
 
 /-- The conversion to oriented PD-codes is injective: the crossing-incidence data remembers the
 visit sequence, the over/under data, and the crossing signs of the Gauss code. -/
