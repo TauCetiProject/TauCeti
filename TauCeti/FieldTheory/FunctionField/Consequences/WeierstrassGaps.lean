@@ -75,15 +75,20 @@ def IsPoleNumber (P : Place k F) (n : ℕ) : Prop :=
 def IsGap (P : Place k F) (n : ℕ) : Prop :=
   ¬ P.IsPoleNumber n
 
+/-- Being a gap at `P` is being a non-pole number at `P`. -/
+@[simp]
+theorem isGap_iff_not_isPoleNumber (P : Place k F) (n : ℕ) :
+    P.IsGap n ↔ ¬ P.IsPoleNumber n :=
+  Iff.rfl
+
 /-- Zero is a pole number at every place, witnessed by the constant function `1`. -/
 @[simp]
 theorem isPoleNumber_zero (P : Place k F) : P.IsPoleNumber 0 := by
   refine ⟨1, one_ne_zero, ?_, fun Q _ ↦ ?_⟩ <;> simp
 
 /-- Zero is never a gap at a place. -/
-@[simp]
 theorem not_isGap_zero (P : Place k F) : ¬ P.IsGap 0 := by
-  simpa only [IsGap, not_not] using P.isPoleNumber_zero
+  simpa only [isGap_iff_not_isPoleNumber, not_not] using P.isPoleNumber_zero
 
 /-- Pole numbers are closed under addition: multiply functions having their unique poles at the
 same place. -/
@@ -140,7 +145,7 @@ theorem isGap_iff_dim_eq (hF : IsFunctionField k F) (P : Place k F) {n : ℕ} (h
     P.IsGap n ↔
       Divisor.dim ((n : ℤ) • WeilDivisor.ofPoint P) =
         Divisor.dim (((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) := by
-  rw [IsGap, P.isPoleNumber_iff_dim_lt hF hn, not_lt]
+  rw [isGap_iff_not_isPoleNumber, P.isPoleNumber_iff_dim_lt hF hn, not_lt]
   have hle :
       Divisor.dim (((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) ≤
         Divisor.dim ((n : ℤ) • WeilDivisor.ofPoint P) :=
@@ -247,10 +252,11 @@ theorem mem_weierstrassGaps_iff (P : Place k F) (n : ℕ) :
 theorem not_isGap_of_two_mul_genus_le (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (P : Place k F) {n : ℕ} (hn : 2 * genus k F ≤ n) :
     ¬ P.IsGap n := by
-  rw [IsGap, not_not]
+  rw [isGap_iff_not_isPoleNumber, not_not]
   exact P.exists_ord_eq_neg_and_forall_ne_ord_nonneg hF hex hn
 
-/-- The displayed finite set captures every gap at a place of an exact function field. -/
+/-- The displayed finite set captures every gap at a place of a function field with integrally
+closed constants. -/
 theorem mem_weierstrassGaps_iff_isGap (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (P : Place k F) (n : ℕ) :
     n ∈ P.weierstrassGaps ↔ P.IsGap n := by
@@ -285,7 +291,8 @@ theorem one_mem_weierstrassGaps (hF : IsFunctionField k F)
   by_contra hone
   have hnotgap : ¬ P.IsGap 1 := fun hgap ↦ hone ((P.mem_weierstrassGaps_iff_isGap
     hF hex 1).mpr hgap)
-  have hpole : P.IsPoleNumber 1 := not_not.mp (by simpa only [IsGap] using hnotgap)
+  have hpole : P.IsPoleNumber 1 :=
+    not_not.mp (by simpa only [isGap_iff_not_isPoleNumber] using hnotgap)
   have hall : ∀ n : ℕ, P.IsPoleNumber n := by
     intro n
     induction n with
@@ -295,7 +302,7 @@ theorem one_mem_weierstrassGaps (hF : IsFunctionField k F)
     ext n
     simp only [mem_weierstrassGaps_iff, Finset.notMem_empty, iff_false, not_and]
     intro _ _
-    simpa only [IsGap, not_not] using hall n
+    simpa only [isGap_iff_not_isPoleNumber, not_not] using hall n
   have hcard := P.card_weierstrassGaps hF hex hP
   rw [hempty, Finset.card_empty] at hcard
   omega
