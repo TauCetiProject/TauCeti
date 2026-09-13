@@ -48,6 +48,8 @@ make this explicit data available without requiring downstream users to unfold t
 * `TauCeti.DynkinType.card_support_simplyConnectedBase`: the pinned base has `t.rank` elements.
 * `TauCeti.DynkinType.toLinearMap_simplyConnectedRootDatum`: the pinned pairing is the dot
   product, uniformly in the type.
+* `TauCeti.DynkinType.coroot'_simpleIndex_apply`: evaluation at a simple coroot extracts the
+  corresponding fundamental-weight coordinate.
 * `TauCeti.DynkinType.simpleIndex_B`, `simpleIndex_F4` and `simpleIndex_G2`: the simple-root
   index of the dispatcher is the family module's own simple-root index, for the three families
   carrying a special isogeny.
@@ -459,6 +461,16 @@ theorem toLinearMap_simplyConnectedRootDatum (t : DynkinType) (ht : t.Valid)
   | G2 =>
     rw [simplyConnectedRootDatum_G2]
     exact g2SimplyConnectedRootDatum_toLinearMap x y
+
+/-- Evaluation at the `i`-th simple coroot extracts the `i`-th fundamental-weight coordinate. -/
+@[simp] theorem coroot'_simpleIndex_apply (t : DynkinType) (ht : t.Valid)
+    (i : Fin t.rank) (mu : Fin t.rank → ℤ) :
+    (t.simplyConnectedRootDatum ht).coroot' (t.simpleIndex ht i) mu = mu i := by
+  -- `coroot'` reduces through the coercion of a root pairing to two nested linear maps.
+  change (t.simplyConnectedRootDatum ht).toLinearMap mu
+    ((t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht i)) = mu i
+  rw [t.toLinearMap_simplyConnectedRootDatum ht,
+    t.coroot_simpleIndex ht i, dotProduct_single, mul_one]
 
 /-- **The Cartan integers of the pinned datum at the simple indices are the entries of its
 Bourbaki-numbered Cartan matrix.** The simple root is a row of the Cartan matrix and the simple
