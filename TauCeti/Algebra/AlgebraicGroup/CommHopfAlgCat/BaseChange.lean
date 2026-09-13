@@ -9,6 +9,7 @@ import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 
 public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
+public import TauCeti.Algebra.Bialgebra.BaseChange
 public import TauCeti.Algebra.Category.CommAlgCat.RestrictScalars
 
 /-!
@@ -135,6 +136,30 @@ lemma baseChangeFunctor_obj (H : _root_.CommHopfAlgCat.{v} k) :
 lemma baseChangeFunctor_map {H L : _root_.CommHopfAlgCat.{v} k} (φ : H ⟶ L) :
     (baseChangeFunctor (K := K)).map φ = baseChangeMap (K := K) φ :=
   (rfl)
+
+section Tower
+
+variable (k K) {E : Type v} [CommRing E] [Algebra k E] [Algebra E K] [IsScalarTower k E K]
+
+/-- **Base change of commutative Hopf algebras composes in stages.** For a tower `k → E → K`,
+extending a coordinate Hopf algebra to `E` and then to `K` agrees with extending it to `K` in one
+step.
+
+Contravariantly this says that the fibre of an affine group scheme over `K` may be computed
+through an intermediate ring, which is how a group split by a finite extension is recognised
+over an algebraic closure. -/
+noncomputable def baseChangeTowerIso (H : _root_.CommHopfAlgCat.{v} k) :
+    baseChange (K := K) (baseChange (K := E) H) ≅ baseChange (K := K) H :=
+  _root_.CommHopfAlgCat.isoMk
+    (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k E H K)
+
+/-- The tower comparison of coordinate Hopf algebras absorbs the intermediate scalar. -/
+@[simp]
+lemma baseChangeTowerIso_hom_apply (H : _root_.CommHopfAlgCat.{v} k) (s : K) (e : E) (h : H) :
+    (baseChangeTowerIso k K H).hom.hom (s ⊗ₜ[E] (e ⊗ₜ[k] h)) = (e • s) ⊗ₜ[k] h :=
+  TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_tmul k E H K s e h
+
+end Tower
 
 variable (A : CommAlgCat.{x} K)
 
