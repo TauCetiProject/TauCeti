@@ -30,8 +30,8 @@ Each is a reducible abbreviation, so the general API applies to it unchanged. Do
 resolves on an *object* of a subcategory — `p.proj`, `p.prop_obj`, `p.isCoveringMap_proj`,
 `p.mkProjIso`, and equally `p.homMk f w`, `p.isoMk e w`, `p.w f` — but not on a morphism, whose
 type is headed by `CategoryTheory.InducedCategory.Hom`, so `f.w` does not resolve. A member
-parameterized only by `X` and `P`, such as `totalSpace` and `fullyFaithfulForget`, is named
-through the `CoveringSpace.FullSubcategory` namespace. Each subcategory states its own
+parameterized only by `X` and `P`, such as `totalSpace`, is named through the
+`CoveringSpace.FullSubcategory` namespace. Each subcategory states its own
 constructor, since each takes its property in a different form.
 
 The connected covers are the source category for the classification by transitive
@@ -57,8 +57,7 @@ fundamental-group actions.
   `homMk`, `isoMk`: the constructor API shared by every such subcategory.
 * `TauCeti.CoveringSpace.FullSubcategory.prop_obj` and `prop_over_mk_proj`: the cutting
   property of an object, and of the object rebuilt from its projection.
-* `TauCeti.CoveringSpace.FullSubcategory.forget`, `fullyFaithfulForget`: the inclusion into all
-  covers and its full faithfulness.
+* `TauCeti.CoveringSpace.FullSubcategory.forget`: the inclusion into all covers.
 * `TauCeti.CoveringSpace.FullSubcategory.totalSpace`: the functor taking an object to its total
   space.
 * `TauCeti.CoveringSpace.FullSubcategory.isIso_iff_isHomeomorph_hom_left`: the corresponding
@@ -258,7 +257,7 @@ A subcategory of covers is built by abbreviating this type at its own `P`, as
 `TauCeti.ConnectedCoveringSpace` and `TauCeti.FiniteCoveringSpace` do. Because such an
 abbreviation is reducible, every member of the API below that takes an object or a morphism is
 reached from it by dot notation and need not be restated; a member parameterized only by `X` and
-`P`, such as `totalSpace` and `fullyFaithfulForget`, is not, and is used through this namespace.
+`P`, such as `totalSpace`, is not, and is used through this namespace.
 A constructor is restated at each subcategory, since each takes its property in a different
 form. -/
 abbrev CoveringSpace.FullSubcategory (X : TopCat.{u})
@@ -340,11 +339,6 @@ theorem prop_over_mk_proj (p : CoveringSpace.FullSubcategory X P) :
     P (CategoryTheory.Over.mk p.proj) :=
   p.prop_obj
 
-/-- The inclusion into all covering spaces is fully faithful. -/
-def fullyFaithfulForget (X : TopCat.{u}) (P : ObjectProperty (CategoryTheory.Over X)) :
-    (forget X P).FullyFaithful :=
-  ObjectProperty.fullyFaithfulιOfLE _
-
 @[simp]
 theorem totalSpace_obj (p : CoveringSpace.FullSubcategory X P) :
     (totalSpace X P).obj p = (p : TopCat) :=
@@ -407,8 +401,7 @@ theorem mkProjIso_inv_hom_left (p : CoveringSpace.FullSubcategory X P) :
 /-- A morphism is an isomorphism exactly when its map of total spaces is a homeomorphism. -/
 theorem isIso_iff_isHomeomorph_hom_left {p q : CoveringSpace.FullSubcategory X P} (f : p ⟶ q) :
     IsIso f ↔ IsHomeomorph f.hom.left := by
-  rw [← isIso_iff_of_reflects_iso f (forget X P)]
-  exact CoveringSpace.isIso_iff_isHomeomorph_hom_left ((forget X P).map f)
+  rw [← ObjectProperty.isIso_hom_iff, Over.isIso_iff_isHomeomorph_left]
 
 end CoveringSpace.FullSubcategory
 
