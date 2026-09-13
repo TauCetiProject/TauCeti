@@ -13,14 +13,16 @@ public import TauCeti.Probability.Moments.Covariance
 
 A Dirichlet law is carried by the standard simplex, so it has moments of every order and its
 elementary moments can be read off its block marginals.  Writing `a₀ = ∑ j, a j` for the total
-concentration, the total of a block of coordinates is a Beta variable with parameters the block
-concentration and its complement, whence the mean `a i / a₀` of a coordinate, the variance
-`a i * (a₀ - a i) / (a₀ ^ 2 * (a₀ + 1))`, and, by polarization on a two-element block, the
-covariance `-(a i * a j) / (a₀ ^ 2 * (a₀ + 1))` of two distinct coordinates.
+concentration, the total of a nonempty block of coordinates whose complement is also nonempty is a
+Beta variable with parameters the block concentration and its complement, whence the mean
+`a i / a₀` of a coordinate, the variance `a i * (a₀ - a i) / (a₀ ^ 2 * (a₀ + 1))`, and, by
+polarization on a two-element block, the covariance `-(a i * a j) / (a₀ ^ 2 * (a₀ + 1))` of two
+distinct coordinates.
 
-The block variance is stated for an arbitrary block, including the two degenerate ones: an empty
-block has constant total `0` and a full block has almost surely constant total `1`, and in both
-cases the complementary concentration factor makes the stated value vanish.
+The two degenerate blocks are not Beta but constant, and the block variance is stated for an
+arbitrary block anyway: the total over the empty block is constantly `0` and the total over the
+whole index type is almost surely `1`, and in both cases the complementary concentration factor
+makes the stated value vanish.
 
 ## Main results
 
@@ -29,7 +31,7 @@ cases the complementary concentration factor makes the stated value vanish.
   concentration vector.
 * `TauCeti.Probability.variance_sum_dirichletMeasure` — the variance of the total of a block of
   coordinates, with `TauCeti.Probability.variance_eval_dirichletMeasure` the one-coordinate case.
-* `TauCeti.Probability.covariance_eval_dirichletMeasure` — the covariance of two distinct
+* `TauCeti.Probability.covariance_eval_dirichletMeasure_of_ne` — the covariance of two distinct
   coordinates.
 * `TauCeti.Probability.integrableExpSet_inner_dirichletMeasure` — every directional exponential
   moment is finite.
@@ -71,15 +73,8 @@ theorem ae_norm_le_one_dirichletMeasure (ha : ∀ i, 0 < a i) :
     refine Finset.sum_le_sum fun i _ ↦ ?_
     rw [Real.norm_eq_abs, abs_of_pos (hpos i), sq]
     nlinarith [hpos i, hle i]
-  rw [EuclideanSpace.norm_eq, show (1 : ℝ) = √1 by simp]
-  exact Real.sqrt_le_sqrt hsq
-
-/-- A coordinate of a Dirichlet vector almost surely has absolute value at most one. -/
-theorem ae_norm_eval_le_one_dirichletMeasure (ha : ∀ i, 0 < a i) (i : ι) :
-    ∀ᵐ x ∂dirichletMeasure a, ‖x i‖ ≤ 1 := by
-  filter_upwards [ae_pos_dirichletMeasure ha, ae_sum_eq_one_dirichletMeasure ha] with x hpos hsum
-  rw [Real.norm_eq_abs, abs_of_pos (hpos i), ← hsum]
-  exact Finset.single_le_sum (fun j _ ↦ (hpos j).le) (Finset.mem_univ i)
+  rw [EuclideanSpace.norm_eq]
+  simpa using Real.sqrt_le_sqrt hsq
 
 /-- A Dirichlet law with positive concentration parameters has moments of every order: it is
 carried by the standard simplex, which is bounded. -/
@@ -90,9 +85,8 @@ theorem memLp_id_dirichletMeasure (ha : ∀ i, 0 < a i) (p : ℝ≥0∞) :
 
 /-- Every coordinate of a Dirichlet law has moments of every order. -/
 theorem memLp_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i : ι) (p : ℝ≥0∞) :
-    MemLp (fun x : EuclideanSpace ℝ ι ↦ x i) p (dirichletMeasure a) := by
-  have : IsProbabilityMeasure (dirichletMeasure a) := isProbabilityMeasure_dirichletMeasure ha
-  exact MemLp.of_bound (by fun_prop) 1 (ae_norm_eval_le_one_dirichletMeasure ha i)
+    MemLp (fun x : EuclideanSpace ℝ ι ↦ x i) p (dirichletMeasure a) :=
+  (memLp_id_dirichletMeasure ha p).eval_piLp i
 
 /-- The identity is integrable for a Dirichlet law with positive concentration parameters. -/
 theorem integrable_id_dirichletMeasure (ha : ∀ i, 0 < a i) :
@@ -104,6 +98,7 @@ theorem integrable_id_dirichletMeasure (ha : ∀ i, 0 < a i) :
 
 omit [Nonempty ι] in
 /-- The mean of a Dirichlet coordinate is its share of the total concentration. -/
+@[simp]
 theorem integral_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i : ι) :
     ∫ x, x i ∂dirichletMeasure a = a i / ∑ j, a j := by
   classical
@@ -120,6 +115,7 @@ theorem integral_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i : ι) :
       Finset.add_sum_erase _ a (Finset.mem_univ i)]
 
 /-- The Bochner mean of a Dirichlet law is the normalized concentration vector. -/
+@[simp]
 theorem integral_id_dirichletMeasure (ha : ∀ i, 0 < a i) :
     ∫ x, x ∂dirichletMeasure a = (EuclideanSpace.equiv ι ℝ).symm fun i ↦ a i / ∑ j, a j := by
   refine (EuclideanSpace.equiv ι ℝ).injective ?_
@@ -164,6 +160,7 @@ theorem variance_sum_dirichletMeasure [DecidableEq ι] (ha : ∀ i, 0 < a i) (s 
       Finset.sum_add_sum_compl]
 
 /-- The variance of a Dirichlet coordinate. -/
+@[simp]
 theorem variance_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i : ι) :
     Var[fun x ↦ x i; dirichletMeasure a] =
       a i * ((∑ j, a j) - a i) / ((∑ j, a j) ^ 2 * ((∑ j, a j) + 1)) := by
@@ -174,7 +171,8 @@ theorem variance_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i : ι) :
 
 /-- The covariance of two distinct Dirichlet coordinates.  It is negative: the coordinates
 compete for a fixed total. -/
-theorem covariance_eval_dirichletMeasure (ha : ∀ i, 0 < a i) {i j : ι}
+@[simp]
+theorem covariance_eval_dirichletMeasure_of_ne (ha : ∀ i, 0 < a i) {i j : ι}
     (hij : i ≠ j) :
     cov[fun x ↦ x i, fun x ↦ x j; dirichletMeasure a] =
       -(a i * a j) / ((∑ k, a k) ^ 2 * ((∑ k, a k) + 1)) := by
@@ -191,9 +189,11 @@ theorem covariance_eval_dirichletMeasure (ha : ∀ i, 0 < a i) {i j : ι}
   field_simp at hpair ⊢
   linarith
 
+open scoped Classical in
 /-- The covariance matrix of a Dirichlet law: the concentration-weighted diagonal minus the outer
 square of the concentration vector, normalized by `a₀ ^ 2 * (a₀ + 1)`. -/
-theorem covMatrix_dirichletMeasure [DecidableEq ι] (ha : ∀ i, 0 < a i) :
+@[simp]
+theorem covMatrix_dirichletMeasure (ha : ∀ i, 0 < a i) :
     covMatrix (dirichletMeasure a) =
       ((∑ k, a k) ^ 2 * ((∑ k, a k) + 1))⁻¹ •
         ((∑ k, a k) • Matrix.diagonal a - Matrix.vecMulVec a a) := by
@@ -205,14 +205,16 @@ theorem covMatrix_dirichletMeasure [DecidableEq ι] (ha : ∀ i, 0 < a i) :
     simp only [Matrix.smul_apply, Matrix.sub_apply, Matrix.diagonal_apply_eq,
       Matrix.vecMulVec_apply, smul_eq_mul]
     field_simp
-  · rw [covMatrix_apply, covariance_eval_dirichletMeasure ha hij]
+  · rw [covMatrix_apply, covariance_eval_dirichletMeasure_of_ne ha hij]
     simp only [Matrix.smul_apply, Matrix.sub_apply, Matrix.diagonal_apply_ne _ hij,
       Matrix.vecMulVec_apply, smul_eq_mul]
     field_simp
     ring
 
+open scoped Classical in
 /-- The covariance bilinear form of a Dirichlet law, read off its covariance matrix. -/
-theorem covarianceBilin_dirichletMeasure [DecidableEq ι] (ha : ∀ i, 0 < a i)
+@[simp]
+theorem covarianceBilin_dirichletMeasure (ha : ∀ i, 0 < a i)
     (x y : EuclideanSpace ℝ ι) :
     covarianceBilin (dirichletMeasure a) x y =
       ⟪x, (((∑ k, a k) ^ 2 * ((∑ k, a k) + 1))⁻¹ •
@@ -224,8 +226,7 @@ theorem covarianceBilin_dirichletMeasure [DecidableEq ι] (ha : ∀ i, 0 < a i)
 /-! ### Exponential moments -/
 
 /-- Every directional exponential moment of a Dirichlet law is finite, because the law is carried
-by the bounded standard simplex.  The roadmap asks for no closed form: the chart integral is not a
-transform formula. -/
+by the bounded standard simplex. -/
 theorem integrableExpSet_inner_dirichletMeasure (ha : ∀ i, 0 < a i) (θ : EuclideanSpace ℝ ι) :
     integrableExpSet (fun x ↦ ⟪θ, x⟫) (dirichletMeasure a) = Set.univ := by
   have _ : IsProbabilityMeasure (dirichletMeasure a) := isProbabilityMeasure_dirichletMeasure ha
