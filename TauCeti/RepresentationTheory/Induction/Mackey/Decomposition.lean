@@ -30,16 +30,7 @@ Mackey subgroup (`Rep.mackeySummand_eq_ind_res_conjRep`).
 
 In Mathlib's convention `Ind_H^G A` is the space of coinvariants `(k[G] ⊗ A)_H`, with
 `⟦h g ⊗ₜ h a⟧ = ⟦g ⊗ₜ a⟧` for `h ∈ H`, and `x ∈ G` acts by `⟦g ⊗ₜ a⟧ ↦ ⟦g x⁻¹ ⊗ₜ a⟧`.  The summand
-of the representative `s` embeds by `⟦u ⊗ₜ a⟧ ↦ ⟦s⁻¹ u ⊗ₜ a⟧` (`Rep.mackeyInclusion`),
-and these embeddings assemble to the inverse of the decomposition.  The forward map sends
-`⟦h s⁻¹ u ⊗ₜ a⟧` to `⟦u ⊗ₜ h⁻¹ a⟧` in the summand of `KsH`; every element of `G` can be written as
-`h s⁻¹ u` because `g⁻¹` lies in the double coset `K s H` of its representative, and the value does
-not depend on the chosen factorization because two of them differ by an element of the Mackey
-subgroup.
-
-The double coset quotient carries no canonical decidable equality, so the direct-sum inclusions
-`DirectSum.lof` appearing below use the classical one; it is the only choice available and
-`DecidableEq` is a subsingleton, so nothing in the statements depends on it.
+of the representative `s` is included through `Rep.mackeyInclusion`.
 
 ## Main definitions
 
@@ -78,8 +69,8 @@ universe u
 
 variable {k G : Type u} [CommRing k] [Group G] {H K : Subgroup G}
 
-/-- A double coset quotient carries no canonical decidable equality; `DirectSum.lof` and
-`DirectSum.linearMap_ext` need one, so the classical instance is used throughout this file. -/
+-- A double coset quotient carries no canonical decidable equality; `DirectSum.lof` and
+-- `DirectSum.linearMap_ext` need one, so the classical instance is used throughout this file.
 noncomputable local instance decidableEqDoubleCosetQuotient :
     DecidableEq (DoubleCoset.Quotient (K : Set G) (H : Set G)) :=
   Classical.decEq _
@@ -154,9 +145,9 @@ noncomputable abbrev mackeySummandFunctor (s : G) : Rep.{u} k H ⥤ Rep.{u} k K 
 variable (H K) in
 /-- The direct sum of the Mackey summands, as a functor of the representation of `H`: it sends `A`
 to `Rep.mackeyDirectSum H K A` (`Rep.mackeyDirectSumFunctor_obj`) and on morphisms it applies
-`Rep.mackeySummandFunctor` in each summand (`Rep.mackeyDirectSumFunctor_map_hom_lof`).  The body is
-exposed because the type `(mackeyDirectSumFunctor H K).obj A` is otherwise opaque: without it not
-even `Rep.mackeyDirectSumFunctor_obj` can be stated, let alone proved. -/
+`Rep.mackeySummandFunctor` in each summand (`Rep.mackeyDirectSumFunctor_map_hom_lof`). -/
+-- The body must be exposed because `(mackeyDirectSumFunctor H K).obj A` is otherwise opaque, so
+-- even the exported object-characterization lemma below cannot be stated and proved.
 @[expose]
 noncomputable def mackeyDirectSumFunctor : Rep.{u} k H ⥤ Rep.{u} k K where
   obj A := mackeyDirectSum H K A
@@ -218,6 +209,11 @@ theorem mackeyDirectSumFunctor_map_hom_lof {A B : Rep.{u} k H} (f : A ⟶ B)
 end Summand
 
 section Decomposition
+
+/- The inverse is assembled from the summand inclusions, which send `⟦u ⊗ₜ a⟧` to
+`⟦s⁻¹ u ⊗ₜ a⟧`.  The forward map sends `⟦h s⁻¹ u ⊗ₜ a⟧` to `⟦u ⊗ₜ h⁻¹ a⟧` in the
+summand of `KsH`.  Its construction below factors each `g` as `h s⁻¹ u` and proves that the
+result is independent of the factorization. -/
 
 /-- Every `g : G` factors as `h s⁻¹ u` with `h ∈ H`, `u ∈ K`, and `s` the chosen representative of
 the double coset `K g⁻¹ H`. -/
