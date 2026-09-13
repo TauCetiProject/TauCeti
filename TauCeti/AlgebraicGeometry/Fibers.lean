@@ -171,10 +171,9 @@ private lemma fractionRingEquivResidueFieldGenericPrime_algebraMap (r : R) :
     fractionRingEquivResidueFieldGenericPrime R K (algebraMap R K r) =
       (Scheme.Spec.residueFieldIso R (⟨⊥, inferInstance⟩ : Spec R)).inv
         (algebraMap R (⊥ : Ideal R).ResidueField r) := by
-  rw [fractionRingEquivResidueFieldGenericPrime, RingEquiv.trans_apply,
-    IsFractionRing.ringEquivOfRingEquiv_algebraMap, RingEquiv.refl_apply,
-    RingEquiv.symm_apply_eq, Iso.commRingCatIsoToRingEquiv, RingEquiv.ofRingHom_apply,
-    ← CommRingCat.comp_apply, Iso.inv_hom_id, CommRingCat.id_apply]
+  -- `Iso.commRingCatIsoToRingEquiv` has no `symm`-application lemma, so it is unfolded here,
+  -- as in `Mathlib/Algebra/Category/Ring/Constructions.lean`.
+  simp [fractionRingEquivResidueFieldGenericPrime, Iso.commRingCatIsoToRingEquiv]
 
 /-- The spectrum of a chosen fraction ring is isomorphic to the spectrum of the residue field at
 the generic prime. -/
