@@ -106,12 +106,14 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
     exact one_ne_zero h2
   induction n with
   | zero =>
+      -- On the empty product every function is constant, so the centered integrand is one.
       have : Subsingleton (Fin 0 → β) := ⟨fun a b => funext fun i => i.elim0⟩
       have hconst : ∀ x y : Fin 0 → β, f x = f y := fun x y => by rw [Subsingleton.elim x y]
       have hInt : ∀ x : Fin 0 → β,
           (∫ x', f x' ∂Measure.pi (fun _ : Fin 0 => ν)) = f x := by
         intro x
-        rw [show (fun x' => f x') = (fun _ => f x) from funext fun y => hconst y x]
+        have hfun : (fun x' => f x') = (fun _ => f x) := funext fun y => hconst y x
+        rw [hfun]
         simp
       have hone : (fun x : Fin 0 → β =>
           Real.exp (t * (f x - ∫ x', f x' ∂Measure.pi (fun _ : Fin 0 => ν)))) = fun _ => 1 := by
@@ -121,6 +123,7 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
       rw [hone]
       simp
   | succ n ih =>
+      -- Identify the successor product with the first coordinate times the remaining product.
       set π1 := Measure.pi (fun _ : Fin (n + 1) => ν) with hπ1
       set πn := Measure.pi (fun _ : Fin n => ν) with hπn
       set I : ℝ := ∫ x', f x' ∂π1 with hI_def
@@ -163,6 +166,7 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
           (mp.symm.integral_comp' F).symm
         rw [step1, integral_prod_symm _ (by simpa only [hcons] using hFint)]
         simp_rw [hcons]
+      -- Uniform boundedness supplies all integrability facts needed for the product decomposition.
       have hprodint : ∀ (F : (Fin (n + 1) → β) → ℝ) (K : ℝ), Measurable F →
           (∀ x, |F x| ≤ K) →
           Integrable (fun p : β × (Fin n → β) => F (Fin.cons p.1 p.2)) (ν.prod πn) := by
@@ -170,6 +174,7 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
         refine (integrable_const K).mono' (hpair_meas F hFm).aestronglyMeasurable
           (ae_of_all _ fun p => ?_)
         simpa using hFb (Fin.cons p.1 p.2)
+      -- Average out the first coordinate; the resulting function inherits bounded differences.
       set g : (Fin n → β) → ℝ := fun w => ∫ a, f (Fin.cons a w) ∂ν with hg_def
       have hg_meas : Measurable g :=
         (hpair_meas f hf).stronglyMeasurable.integral_prod_left.measurable
@@ -223,6 +228,7 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
           _ = c := by simp
       have hgf : I = ∫ w, g w ∂πn := by
         rw [hI_def, htrans f (hprodint f M hf hMf)]
+      -- Hoeffding's lemma controls the centered fluctuation in the peeled coordinate.
       have hHoeff : ∀ w, ∫ a, Real.exp (t * (f (Fin.cons a w) - g w)) ∂ν
           ≤ Real.exp ((c / 2) ^ 2 * t ^ 2 / 2) := by
         intro w
@@ -265,6 +271,7 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
           ∫ a, Real.exp (t * (f (Fin.cons a w) - ∫ a', f (Fin.cons a' w) ∂ν)) ∂ν
               ≤ Real.exp (((‖(A + c) - A‖₊ / 2) ^ 2 : NNReal) * t ^ 2 / 2) := hml
           _ = Real.exp ((c / 2) ^ 2 * t ^ 2 / 2) := by rw [hexp]
+      -- Split off the averaged function, then integrate the pointwise Hoeffding estimate.
       have hpoint : ∀ w, ∫ a, Real.exp (t * (f (Fin.cons a w) - I)) ∂ν
           ≤ Real.exp ((c / 2) ^ 2 * t ^ 2 / 2) * Real.exp (t * (g w - I)) := by
         intro w
@@ -381,19 +388,19 @@ private theorem integral_exp_mul_centered_le_pi {ι : Type*} [Fintype ι] {β : 
   exact key
 
 /-- **McDiarmid's bounded-differences inequality at MGF level.** Let `f` be a measurable
-real-valued function on a finite i.i.d. product. If updating any one coordinate changes `f` by at
-most `c`, then the centered `f` is sub-Gaussian with variance proxy
+real-valued function on a finite i.i.d. product. If two inputs that differ only at one coordinate
+have outputs differing by at most `c`, then the centered `f` is sub-Gaussian with variance proxy
 `Fintype.card ι * (c / 2) ^ 2`.
 
 The result is stated using Mathlib's `ProbabilityTheory.HasSubgaussianMGF`; its
 `measure_ge_le` theorem gives the one-sided Chernoff tail, and applying `neg` gives the other side.
 -/
 theorem hasSubgaussianMGF_of_bounded_differences
-    {ι : Type*} [Fintype ι] [DecidableEq ι] {β : Type*} [MeasurableSpace β]
+    {ι : Type*} [Fintype ι] {β : Type*} [MeasurableSpace β]
     (ν : Measure β) [IsProbabilityMeasure ν]
     (f : (ι → β) → ℝ) (hf : Measurable f) (c : ℝ) (hc : 0 ≤ c)
-    (hosc : ∀ (x : ι → β) (i : ι) (b : β),
-      |f (Function.update x i b) - f x| ≤ c) :
+    (hbd : ∀ (i : ι) (x x' : ι → β),
+      (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c) :
     ProbabilityTheory.HasSubgaussianMGF
       (fun x => f x - ∫ y, f y ∂Measure.pi (fun _ : ι => ν))
       ((Fintype.card ι : ℝ≥0) * (c.toNNReal / 2) ^ 2)
@@ -405,18 +412,6 @@ theorem hasSubgaussianMGF_of_bounded_differences
     have h2 : ν Set.univ = 0 := by rw [h1]; simp
     rw [measure_univ] at h2
     exact one_ne_zero h2
-  have hbd : ∀ (i : ι) (x x' : ι → β),
-      (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c := by
-    intro i x x' hxx'
-    have hx' : x' = Function.update x i (x' i) := by
-      funext l
-      by_cases hl : l = i
-      · subst hl
-        simp
-      · rw [Function.update_of_ne hl]
-        exact (hxx' l hl).symm
-    rw [hx', abs_sub_comm]
-    exact hosc x i (x' i)
   set π : Measure (ι → β) := Measure.pi (fun _ : ι => ν) with hπ
   set I : ℝ := ∫ y, f y ∂π with hI
   set x₀ : ι → β := fun _ => Classical.arbitrary β with hx0
@@ -453,7 +448,8 @@ theorem hasSubgaussianMGF_of_bounded_differences
   rw [ProbabilityTheory.mgf, hcoe]
   exact hkey
 
-/-- McDiarmid's bounded-differences inequality for a product indexed by `Fin n`. -/
+/-- McDiarmid's bounded-differences inequality for a product indexed by `Fin n`, stated in the
+convenient form where one coordinate is updated explicitly. -/
 theorem hasSubgaussianMGF_of_bounded_differences_fin
     {n : ℕ} {β : Type*} [MeasurableSpace β] (ν : Measure β) [IsProbabilityMeasure ν]
     (f : (Fin n → β) → ℝ) (hf : Measurable f) (c : ℝ) (hc : 0 ≤ c)
@@ -463,7 +459,19 @@ theorem hasSubgaussianMGF_of_bounded_differences_fin
       (fun x => f x - ∫ y, f y ∂Measure.pi (fun _ : Fin n => ν))
       ((n : ℝ≥0) * (c.toNNReal / 2) ^ 2)
       (Measure.pi fun _ : Fin n => ν) := by
+  have hbd : ∀ (i : Fin n) (x x' : Fin n → β),
+      (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c := by
+    intro i x x' hxx'
+    have hx' : x' = Function.update x i (x' i) := by
+      funext l
+      by_cases hl : l = i
+      · subst hl
+        simp
+      · rw [Function.update_of_ne hl]
+        exact (hxx' l hl).symm
+    rw [hx', abs_sub_comm]
+    exact hosc x i (x' i)
   simpa only [Fintype.card_fin] using
-    hasSubgaussianMGF_of_bounded_differences ν f hf c hc hosc
+    hasSubgaussianMGF_of_bounded_differences ν f hf c hc hbd
 
 end TauCeti.Probability
