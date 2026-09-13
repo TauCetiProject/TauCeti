@@ -76,28 +76,6 @@ def DiagonalStep (w w' : Fin n → Rˣ) : Prop :=
 def DiagonalChain (w w' : Fin n → Rˣ) : Prop :=
   Relation.ReflTransGen DiagonalStep w w'
 
-namespace DiagonalChain
-
-/-- Every coefficient family is connected to itself by a diagonal chain. -/
-theorem refl (w : Fin n → Rˣ) : DiagonalChain w w :=
-  Relation.ReflTransGen.refl
-
-/-- Concatenating two diagonal chains gives a diagonal chain. -/
-theorem trans {w w' w'' : Fin n → Rˣ} (h : DiagonalChain w w')
-    (h' : DiagonalChain w' w'') : DiagonalChain w w'' :=
-  Relation.ReflTransGen.trans h h'
-
-end DiagonalChain
-
-namespace DiagonalStep
-
-/-- An elementary diagonal step is a single-step diagonal chain. -/
-theorem to_diagonalChain {w w' : Fin n → Rˣ} (h : DiagonalStep w w') :
-    DiagonalChain w w' :=
-  Relation.ReflTransGen.single h
-
-end DiagonalStep
-
 namespace BinaryStep
 
 /-- Swapping two distinct coefficients is a binary step. -/
@@ -146,7 +124,7 @@ theorem to_reflTransGen_binaryStep {w w' : Fin n → Rˣ} (h : PermutationStep w
 /-- A permutation step is a diagonal chain. -/
 theorem to_diagonalChain {w w' : Fin n → Rˣ} (h : PermutationStep w w') :
     DiagonalChain w w' :=
-  DiagonalStep.to_diagonalChain (Or.inl h)
+  Relation.ReflTransGen.single (Or.inl h)
 
 /-- The diagonal forms at the endpoints of a permutation step are equivalent. -/
 theorem equivalent {w w' : Fin n → Rˣ} (h : PermutationStep w w') :
@@ -173,7 +151,7 @@ theorem symm {w w' : Fin n → Rˣ} (h : BinaryStep w w') : BinaryStep w' w := b
 /-- A binary step is a single-step diagonal chain. -/
 theorem to_diagonalChain {w w' : Fin n → Rˣ} (h : BinaryStep w w') :
     DiagonalChain w w' :=
-  DiagonalStep.to_diagonalChain (Or.inr h)
+  Relation.ReflTransGen.single (Or.inr h)
 
 /-- The diagonal forms at the endpoints of a binary step are equivalent. -/
 theorem equivalent {w w' : Fin n → Rˣ} (h : BinaryStep w w') :
