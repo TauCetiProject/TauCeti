@@ -35,15 +35,16 @@ step again and the presented module may be arbitrary.
 Finite generation is therefore not part of the existence statements, and a consumer that needs it
 reads it off the presentation they produce: `TauCeti.IsProjectiveCover.finite` makes the middle term
 finitely generated as soon as `M` is, with no hypothesis on the ring at all, and
-`TauCeti.IsMinimalProjectivePresentation.finite` makes the left-hand source finitely generated over
-a noetherian ring, that hypothesis being what makes the syzygy cut out of the middle term finitely
-generated. So `obtain`ing a presentation of a finitely generated module over a semiprimary
-noetherian ring and applying `h.isProjectiveCover.finite` and `h.finite` to it gives a minimal
+`TauCeti.IsMinimalProjectivePresentation.finite` makes the left-hand source finitely generated as
+soon as the middle term is noetherian, noetherianity being what makes the syzygy cut out of the
+middle term finitely generated. So `obtain`ing a presentation of a finitely generated module over a
+semiprimary noetherian ring, reading off `Module.Finite R P₀` by `h.isProjectiveCover.finite` —
+which makes `P₀` noetherian over a noetherian ring — and applying `h.finite` gives a minimal
 presentation by finitely generated projectives, which is the form the Auslander-Reiten transpose
 consumes, its vanishing criterion asking for a finitely generated left-hand source. A
-finite-dimensional algebra is Artinian, hence both semiprimary and noetherian, so a consumer working
-over one installs `IsArtinianRing.of_finite` and `IsNoetherianRing.of_finite` and applies these
-statements as they stand.
+finite-dimensional algebra is Artinian, hence both semiprimary and noetherian, so a consumer
+working over one installs `IsArtinianRing.of_finite` and `IsNoetherianRing.of_finite` and applies
+these statements as they stand.
 
 ## The shape of the statements
 
