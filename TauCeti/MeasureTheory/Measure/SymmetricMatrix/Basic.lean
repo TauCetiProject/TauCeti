@@ -45,6 +45,7 @@ subspace: `TauCeti.symmetricCoordinates` reads off the entries above the diagona
 * `TauCeti.symmetricCoordinates` — the continuous linear equivalence with `upperTriangle p → ℝ`.
 * `TauCeti.symmetricCoordinatesMeasurableEquiv` — its measurable-equivalence form.
 * `TauCeti.symmetricBasis` — the basis dual to the upper-triangular coordinates.
+* `TauCeti.symmetricFinOneEquiv` — the identification of `1 × 1` symmetric matrices with `ℝ`.
 * `TauCeti.finrank_symmetricMatrix` — the dimension is `p * (p + 1) / 2`.
 * `selfAdjoint.inner_eq_trace_mul` — the Frobenius pairing is the trace pairing.
 -/
@@ -356,6 +357,33 @@ theorem coe_symmetricBasis_offDiag {i j : Fin p} (hij : i ≤ j) (hne : i ≠ j)
     simp [Subtype.ext_iff, Prod.ext_iff, and_comm]
 
 end coordinates
+
+/-! ### The one-dimensional carrier -/
+
+/-- In dimension one there is a single on-or-above-diagonal position. -/
+instance uniqueUpperTriangleOne : Unique (upperTriangle 1) where
+  default := ⟨(0, 0), le_rfl⟩
+  uniq _ := Subtype.ext (Subsingleton.elim _ _)
+
+/-- **A `1 × 1` symmetric matrix is its single entry.** This is the upper-triangular coordinate
+system `TauCeti.symmetricCoordinates` in dimension one, with the single coordinate read as a real
+number rather than as a function on a one-element index type. It is the identification under which
+a one-dimensional symmetric-matrix law becomes a law on `ℝ`. -/
+def symmetricFinOneEquiv : selfAdjoint.submodule ℝ (Matrix (Fin 1) (Fin 1) ℝ) ≃L[ℝ] ℝ :=
+  (symmetricCoordinates 1).trans (ContinuousLinearEquiv.funUnique (upperTriangle 1) ℝ ℝ)
+
+@[simp]
+theorem symmetricFinOneEquiv_apply (A : selfAdjoint.submodule ℝ (Matrix (Fin 1) (Fin 1) ℝ)) :
+    symmetricFinOneEquiv A = (A : Matrix (Fin 1) (Fin 1) ℝ) 0 0 :=
+  (rfl)
+
+@[simp]
+theorem coe_symmetricFinOneEquiv_symm_apply (x : ℝ) (i j : Fin 1) :
+    ((symmetricFinOneEquiv.symm x : selfAdjoint.submodule ℝ (Matrix (Fin 1) (Fin 1) ℝ)) :
+        Matrix (Fin 1) (Fin 1) ℝ) i j = x := by
+  obtain rfl : i = 0 := Subsingleton.elim _ _
+  obtain rfl : j = 0 := Subsingleton.elim _ _
+  exact coe_symmetricCoordinates_symm_apply_of_le 1 _ le_rfl
 
 end TauCeti
 
