@@ -18,7 +18,8 @@ of the exponential-integrability domain.  A closed form for `mgf X μ` on a real
 determines `complexMGF X μ` on the whole strip above it, as soon as the proposed formula is itself
 analytic there.  For an a.e.-measurable `X`, `complexMGF X μ` on the imaginary axis is the
 characteristic function of the law of `X`, so this is the standard route from a moment-generating
-function to a characteristic function.
+function to a characteristic function.  The same route computes `MeasureTheory.charFun` on a
+space with a real pairing, whose statistic is `x ↦ ⟪x, t⟫`.
 
 `TauCeti.eqOn_complexMGF_of_eqOn_mgf` packages that continuation step.  The rest of the file
 carries it out for the closed form
@@ -33,6 +34,8 @@ product: multiplying the factors before taking the logarithm can cross the branc
 
 ## Main results
 
+* `TauCeti.charFun_eq_complexMGF_inner`: the characteristic function at `t` is the value at
+  `Complex.I` of the complex moment-generating function of the pairing statistic `x ↦ ⟪x, t⟫`.
 * `TauCeti.eqOn_complexMGF_of_eqOn_mgf`: an analytic function agreeing with `mgf X μ` on an open
   convex set of reals inside the exponential-integrability domain agrees with `complexMGF X μ` on
   the vertical strip above that set.
@@ -53,11 +56,23 @@ product: multiplying the factors before taking the logarithm can cross the branc
 public section
 
 open Complex Filter MeasureTheory ProbabilityTheory Set
-open scoped Topology
+open scoped RealInnerProductSpace Topology
 
 namespace TauCeti
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {X : Ω → ℝ}
+
+/-! ### The characteristic function as a value on the imaginary axis -/
+
+/-- The characteristic function at `t` is the value at `Complex.I` of the complex
+moment-generating function of the pairing statistic `x ↦ ⟪x, t⟫`.
+
+This is what carries a closed form for the moment-generating function of that statistic over to
+the characteristic function of the measure. -/
+theorem charFun_eq_complexMGF_inner {E : Type*} [Inner ℝ E] [MeasurableSpace E]
+    (μ : Measure E) (t : E) :
+    charFun μ t = complexMGF (fun x ↦ ⟪x, t⟫) μ Complex.I := by
+  simp only [charFun_apply, complexMGF, mul_comm]
 
 /-! ### Continuation from a real interval to a vertical strip -/
 
