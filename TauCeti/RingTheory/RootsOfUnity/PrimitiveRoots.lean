@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import Mathlib.FieldTheory.Minpoly.IsConjRoot
+import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 
 /-!
 # Maps determined by their value on a primitive root
@@ -18,12 +20,18 @@ The same principle characterises when the cyclotomic character `IsPrimitiveRoot.
 trivial: it kills an automorphism exactly when that automorphism fixes the chosen primitive root,
 because the character records nothing but the power the root is sent to.
 
+Over a normal extension of `ℚ`, every coprime power of a primitive root is attained by an
+automorphism. Indeed the two primitive roots have the same cyclotomic minimal polynomial, and
+normality extends that conjugacy to the ambient field.
+
 ## Main results
 
 * `IsPrimitiveRoot.map_eq_pow`: a ring endomorphism sending a primitive `n`-th root of
   unity `ζ` to `ζ ^ j` sends every `n`-th root of unity `μ` to `μ ^ j`.
 * `IsPrimitiveRoot.autToPow_eq_one_iff`: the cyclotomic character kills an automorphism exactly
   when it fixes the chosen primitive root.
+* `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
+  root in a normal extension of `ℚ` is realized by an automorphism.
 
 ## References
 
@@ -47,6 +55,21 @@ theorem _root_.IsPrimitiveRoot.map_eq_pow {n j : ℕ} [NeZero n] {ζ : R} (hζ :
     (σ : R →+* R) (hσ : σ ζ = ζ ^ j) {μ : R} (hμ : μ ^ n = 1) : σ μ = μ ^ j := by
   obtain ⟨i, -, rfl⟩ := hζ.eq_pow_of_pow_eq_one hμ
   rw [map_pow, hσ, ← pow_mul, ← pow_mul, Nat.mul_comm]
+
+/-- In a normal extension of `ℚ`, every coprime power of a primitive root is the image of that root
+under a `ℚ`-algebra automorphism. -/
+theorem _root_.IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime
+    {K : Type*} [Field K] [CharZero K] [Normal ℚ K]
+    {n j : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (hj : n.Coprime j) :
+    ∃ σ : K ≃ₐ[ℚ] K, σ ζ = ζ ^ j := by
+  have hpow : IsPrimitiveRoot (ζ ^ j) n := hζ.pow_of_coprime j hj.symm
+  have hconj : IsConjRoot ℚ (ζ ^ j) ζ := by
+    rw [isConjRoot_def,
+      (hpow.minpoly_eq_cyclotomic_of_irreducible
+        (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))).symm,
+      (hζ.minpoly_eq_cyclotomic_of_irreducible
+        (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))).symm]
+  exact hconj.exists_algEquiv
 
 end TauCeti
 
