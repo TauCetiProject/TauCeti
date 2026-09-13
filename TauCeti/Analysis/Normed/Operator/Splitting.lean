@@ -36,7 +36,7 @@ underlying inverse is Mathlib's total `ContinuousLinearMap.inverse`.
 * `ContinuousLinearMap.eq_kerSection`: it is the only map with that defining property.
 * `ContinuousLinearMap.range_kerSection`: its range is exactly `ker A`.
 * `ContinuousLinearMap.kerEquivOfProd`: the resulting isomorphism `G ≃L[R] ↥A.ker`.
-* `ContinuousLinearMap.surjective_of_isInvertible_prod`: an invertible pair has surjective first
+* `ContinuousLinearMap.surjective_of_surjective_prod`: a surjective pair has surjective first
   component.
 -/
 
@@ -116,7 +116,6 @@ theorem range_kerSection (h : (A.prod q).IsInvertible) : (A.kerSection q).range 
 /-- **An invertible pair identifies the kernel of its first component with the codomain of its
 second.** The isomorphism is the restriction of `q`; its inverse is
 `ContinuousLinearMap.kerSection`. -/
-@[expose]
 noncomputable def kerEquivOfProd (A : M →L[R] F) (q : M →L[R] G)
     (h : (A.prod q).IsInvertible) : G ≃L[R] ↥A.ker :=
   ContinuousLinearEquiv.equivOfInverse ((A.kerSection q).codRestrict A.ker (kerSection_mem_ker h))
@@ -127,23 +126,22 @@ noncomputable def kerEquivOfProd (A : M →L[R] F) (q : M →L[R] G)
 @[simp]
 theorem coe_kerEquivOfProd_apply (h : (A.prod q).IsInvertible) (v : G) :
     ((kerEquivOfProd A q h v : ↥A.ker) : M) = A.kerSection q v :=
-  rfl
+  (rfl)
 
 /-- Its inverse is the restriction of `q` to the kernel of `A`. -/
 @[simp]
 theorem kerEquivOfProd_symm_apply (h : (A.prod q).IsInvertible) (x : ↥A.ker) :
     (kerEquivOfProd A q h).symm x = q x :=
-  rfl
+  (rfl)
 
-/-- The first component of an invertible pair is surjective: it is the pair followed by the
+/-- The first component of a surjective pair is surjective: it is the pair followed by the
 projection `F × G →L[R] F`. -/
-theorem surjective_of_isInvertible_prod (h : (A.prod q).IsInvertible) : Function.Surjective A := by
-  obtain ⟨e, he⟩ := h
+theorem surjective_of_surjective_prod (h : Function.Surjective (A.prod q)) :
+    Function.Surjective A := by
   intro y
-  obtain ⟨x, hx⟩ := e.surjective (y, 0)
+  obtain ⟨x, hx⟩ := h (y, 0)
   refine ⟨x, ?_⟩
-  have : A.prod q x = (y, 0) := by rw [← he]; exact hx
-  exact congrArg Prod.fst this
+  exact congrArg Prod.fst hx
 
 end ContinuousLinearMap
 
