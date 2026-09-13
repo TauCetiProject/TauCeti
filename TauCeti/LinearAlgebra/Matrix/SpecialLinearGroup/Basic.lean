@@ -52,6 +52,7 @@ proof is independent of the source's.
   laws for base change, which support whole-matrix reduction arguments such as the level
   antitonicity of the principal congruence subgroups.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
+* `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates.
 * `Matrix.SpecialLinearGroup.coe_mapGL_fin_two`: the entrywise matrix of `mapGL S` on `SL₂(R)`,
@@ -88,6 +89,14 @@ open scoped MatrixGroups
 variable {d : ℕ}
 
 namespace Matrix.SpecialLinearGroup
+
+/-- **`SL(n, R)` is countable when the coefficient ring is.** `Matrix n n R` is a `def` wrapping
+`n → n → R`, so instance search reaches through it to neither the `Pi` instance nor
+`Subtype.countable`; both steps are spelled out here. -/
+instance {R : Type*} [CommRing R] [Countable R] {n : Type*} [Fintype n] [DecidableEq n] :
+    Countable (SpecialLinearGroup n R) :=
+  letI : Countable (Matrix n n R) := inferInstanceAs (Countable (n → n → R))
+  inferInstanceAs (Countable { A : Matrix n n R // A.det = 1 })
 
 /-- **Functoriality of the induced map on special linear groups, identity law.** Base change
 along the identity ring hom is the identity. -/

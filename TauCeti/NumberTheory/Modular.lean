@@ -7,6 +7,9 @@ module
 
 public import Mathlib.NumberTheory.Modular
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PSLAction
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+public import TauCeti.MeasureTheory.Group.FundamentalDomain
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
@@ -16,9 +19,18 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 The measure theory of the standard fundamental domain `𝒟 = ModularGroup.fd` for `SL₂(ℤ)`,
 complementing its topology from `Mathlib/NumberTheory/Modular.lean`: `𝒟` has finite
 invariant measure, its frontier is null, and therefore integrals over `𝒟` and its interior
-`𝒟ᵒ` agree. The last section records that the translates `γ • 𝒟ᵒ` are open and that two are
+`𝒟ᵒ` agree. The next section records that the translates `γ • 𝒟ᵒ` are open and that two are
 disjoint unless their translating elements differ by a sign; these facts turn suitable finite
 sums of integrals over translates into a single integral over their union.
+
+Those two halves are exactly what `MeasureTheory.IsFundamentalDomain` asks for, and the last
+section assembles them: `𝒟ᵒ` is a fundamental domain in the measure-theoretic sense. The group
+acting has to be `PSL(2, ℤ)`, not `SL(2, ℤ)` — `−I` fixes every point of `ℍ`, so the translates
+indexed by `SL(2, ℤ)` are never pairwise disjoint — and the domain has to be the open `𝒟ᵒ`, on
+which Mathlib's Second Fundamental Domain Lemma is an honest disjointness rather than a
+statement about a boundary. Covering is then only almost everywhere, the two domains differing
+by the null frontier. Tiled over the cosets of a subgroup this gives a fundamental domain at
+every level, which is what a Petersson product for a congruence subgroup is an integral over.
 
 ## Main results
 
@@ -32,14 +44,25 @@ sums of integrals over translates into a single integral over their union.
 * `ModularGroup.isOpen_smul_fdo` and `ModularGroup.disjoint_smul_fdo`: the translates of the
   open fundamental domain are open, and two of them are disjoint unless the translating
   elements differ by a sign.
+* `ModularGroup.pslMk_smul_set` and `ModularGroup.pslMk_eq_one_iff`: the `PSL(2, ℤ)`-action on
+  subsets of `ℍ` read through a representative, and triviality of a class in terms of one.
+* `ModularGroup.isFundamentalDomain_fdo`: `𝒟ᵒ` is a fundamental domain for `PSL(2, ℤ)` acting
+  on `ℍ` with the invariant measure.
+* `ModularGroup.isFundamentalDomain_iUnion_out_inv_smul_fdo`: the coset tiling of `𝒟ᵒ` is a
+  fundamental domain for a subgroup of `PSL(2, ℤ)` with countable coset space.
 
 Split out of the Petersson inner-product development ported from the AINTLIB
 `LeanModularForms` project
 (<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>,
 `Modularforms/PeterssonInnerProduct.lean`, Chris Birkbeck).
 
-The final section on translates of `𝒟ᵒ` was developed in Tau Ceti and has no counterpart in
-that AINTLIB source.
+The section on translates of `𝒟ᵒ` was developed in Tau Ceti and has no counterpart in that
+AINTLIB source. `ModularGroup.isFundamentalDomain_fdo` restates AINTLIB's
+`isFundamentalDomain_fdo_PSL` (`Modularforms/PSL2Action.lean`) for Mathlib's `volume : Measure ℍ`
+in place of that project's own hyperbolic measure; the covering half follows the same route
+through the translates of `𝒟 \ 𝒟ᵒ`, while the disjointness half is shorter here because
+`ModularGroup.disjoint_smul_fdo` and
+`Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one` are already available.
 -/
 
 public section
@@ -197,5 +220,58 @@ theorem disjoint_smul_fdo {γ δ : SL(2, ℤ)} (h₁ : γ⁻¹ * δ ≠ 1) (h₂
   refine (eq_one_or_neg_one_of_mem_fdo_mem_fdo hz' (g := γ⁻¹ * δ) ?_).elim h₁ h₂
   rw [mul_smul, hw', inv_smul_smul]
   exact hz
+
+
+
+/-! ### `𝒟ᵒ` is a fundamental domain for `PSL(2, ℤ)` -/
+
+/-- **The `PSL(2, ℤ)`-action on subsets of `ℍ` is the `SL(2, ℤ)`-action of any representative**,
+the pointwise-image counterpart of `UpperHalfPlane.pslMk_smul`. -/
+@[simp]
+theorem pslMk_smul_set (γ : SL(2, ℤ)) (S : Set ℍ) : (γ : PSL(2, ℤ)) • S = γ • S := (rfl)
+
+/-- **A class in `PSL(2, ℤ)` is trivial exactly when a representative is `±I`**, the kernel of
+`SL(2, ℤ) → PSL(2, ℤ)` being the centre. -/
+theorem pslMk_eq_one_iff {γ : SL(2, ℤ)} : (γ : PSL(2, ℤ)) = 1 ↔ γ = 1 ∨ γ = -1 := by
+  rw [← QuotientGroup.mk_one, QuotientGroup.eq, mul_one, Subgroup.inv_mem_iff,
+    Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
+
+/-- **The open standard domain `𝒟ᵒ` is a fundamental domain for `PSL(2, ℤ)` acting on `ℍ`.**
+
+The two halves are Mathlib's two Fundamental Domain Lemmas. Disjointness is the cleaner one:
+`ModularGroup.disjoint_smul_fdo` makes distinct translates of `𝒟ᵒ` genuinely disjoint, not
+merely almost disjoint, and it is `PSL(2, ℤ)` rather than `SL(2, ℤ)` that indexes them because
+`−I` acts trivially. Covering holds only almost everywhere: `ModularGroup.exists_smul_mem_fd`
+moves every point into the *closed* `𝒟`, and the points it cannot move into `𝒟ᵒ` lie in the
+countable union `⋃_γ γ • (𝒟 \ 𝒟ᵒ)` of translates of the null frontier. -/
+theorem isFundamentalDomain_fdo :
+    MeasureTheory.IsFundamentalDomain PSL(2, ℤ) (fdo : Set ℍ) volume := by
+  refine MeasureTheory.IsFundamentalDomain.mk'' isOpen_fdo.measurableSet.nullMeasurableSet
+    ?_ ?_ fun g ↦ (measurePreserving_smul g volume).quasiMeasurePreserving
+  · -- the points never landing in `𝒟ᵒ` are covered by the translates of the null `𝒟 \ 𝒟ᵒ`
+    rw [MeasureTheory.ae_iff]
+    refine measure_mono_null (t := ⋃ γ : SL(2, ℤ), (γ • ·) ⁻¹' ((fd : Set ℍ) \ fdo))
+      (fun τ hτ ↦ ?_) (measure_iUnion_null fun γ ↦
+        (measurePreserving_smul γ (volume : Measure ℍ)).quasiMeasurePreserving.preimage_null
+          (MeasureTheory.ae_eq_set.mp fd_ae_eq_fdo).1)
+    obtain ⟨γ, hγ⟩ := exists_smul_mem_fd τ
+    exact Set.mem_iUnion.mpr ⟨γ, hγ, not_exists.mp hτ (γ : PSL(2, ℤ))⟩
+  · refine fun g hg ↦ QuotientGroup.induction_on g (fun γ hγ ↦ ?_) hg
+    have hne : ¬ (γ = 1 ∨ γ = -1) := fun h ↦ hγ (pslMk_eq_one_iff.mpr h)
+    rw [pslMk_smul_set]
+    refine Disjoint.aedisjoint (Disjoint.symm ?_)
+    simpa using disjoint_smul_fdo (γ := 1) (δ := γ) (by simpa using fun h ↦ hne (Or.inl h))
+      (by simpa using fun h ↦ hne (Or.inr h))
+
+/-- **A fundamental domain for a subgroup of `PSL(2, ℤ)`**: the union of the `[PSL(2, ℤ) : H]`
+translates `(q.out)⁻¹ • 𝒟ᵒ`, one for each coset `q ∈ PSL(2, ℤ) ⧸ H`. This is
+`MeasureTheory.IsFundamentalDomain.subgroup_iUnion_out_inv_smul` at
+`ModularGroup.isFundamentalDomain_fdo`; the coset space is countable at finite index, which is
+the case of a congruence subgroup. -/
+theorem isFundamentalDomain_iUnion_out_inv_smul_fdo (H : Subgroup PSL(2, ℤ))
+    [Countable (PSL(2, ℤ) ⧸ H)] :
+    MeasureTheory.IsFundamentalDomain H
+      (⋃ q : PSL(2, ℤ) ⧸ H, ((q.out : PSL(2, ℤ)))⁻¹ • (fdo : Set ℍ)) volume :=
+  isFundamentalDomain_fdo.subgroup_iUnion_out_inv_smul H
 
 end ModularGroup
