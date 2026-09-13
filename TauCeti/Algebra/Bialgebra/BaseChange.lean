@@ -32,9 +32,11 @@ extension be recognised over an algebraic closure.
 * `TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_symm_tmul`: the value of its
   inverse on pure tensors.
 
-The counit and comultiplication compatibilities are checked on pure tensors, exactly as for the
-sibling comparison `TauCeti.Bialgebra.TensorProduct.baseChangeTensorBialgEquiv` between base
-change and tensor products.
+## References
+
+* This formalization is adapted from the sibling comparison
+  `TauCeti.Bialgebra.TensorProduct.baseChangeTensorBialgEquiv` between base change and tensor
+  products.
 -/
 
 public section

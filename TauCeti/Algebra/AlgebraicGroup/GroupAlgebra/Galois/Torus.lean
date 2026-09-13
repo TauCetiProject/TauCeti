@@ -29,7 +29,8 @@ case of the trivial action.
 ## Main declarations
 
 * `TauCeti.GaloisDescent.exponentGroup`: the exponent group of the split group algebra, bundled
-  as a finitely generated commutative group.
+  as a finitely generated commutative group, with `TauCeti.GaloisDescent.exponentGroup_obj`
+  identifying its underlying group with `M` written multiplicatively.
 * `TauCeti.GaloisDescent.descendedCoordinateRing`: the descended coordinate Hopf algebra as a
   finite-type object.
 * `TauCeti.GaloisDescent.descendedBaseChangeIso`: over `L` it becomes the diagonalizable group
@@ -66,6 +67,17 @@ bundling. -/
 noncomputable def exponentGroup : FGCommGrpCat.{u} :=
   letI : AddGroup.FG M := Module.Finite.iff_addGroup_fg.mp inferInstance
   FGCommGrpCat.of (Multiplicative M)
+
+/-- The underlying commutative group of the exponent group is `M` written multiplicatively. -/
+@[simp]
+theorem exponentGroup_obj :
+    (exponentGroup (M := M)).obj = _root_.CommGrpCat.of (Multiplicative M) :=
+  rfl
+
+/-- The exponent group of a torsion-free lattice is torsion-free. -/
+instance instIsMulTorsionFreeExponentGroup [IsAddTorsionFree M] :
+    IsMulTorsionFree (exponentGroup (M := M)) :=
+  inferInstanceAs (IsMulTorsionFree (Multiplicative M))
 
 /-- The affine group descended from the diagonalizable group `D(M)` along a finite Galois
 extension, as an object of the category of finite-type commutative Hopf algebras.
@@ -118,21 +130,15 @@ Torsion freeness of the lattice is what rules out the finite groups of multiplic
 as `μ_n`; no hypothesis is placed on the characteristic of `k` or on the action of `Gal(L/k)` on
 the lattice. -/
 theorem torusCommHopfAlgProperty_descendedCoordinateRing [IsAddTorsionFree M] :
-    torusCommHopfAlgProperty k (descendedCoordinateRing rho) := by
-  have : AddGroup.FG M := Module.Finite.iff_addGroup_fg.mp inferInstance
-  have : IsMulTorsionFree (exponentGroup (M := M)) :=
-    inferInstanceAs (IsMulTorsionFree (Multiplicative M))
-  exact torusCommHopfAlgProperty.of_baseChange_iso_coordinateRing k L
+    torusCommHopfAlgProperty k (descendedCoordinateRing rho) :=
+  torusCommHopfAlgProperty.of_baseChange_iso_coordinateRing k L
     (descendedCoordinateRing rho) (exponentGroup (M := M)) (descendedBaseChangeIso rho)
 
 /-- **The descended torus is split by the Galois extension it was descended along.** -/
 theorem splitTorusCommHopfAlgProperty_baseChange_descendedCoordinateRing [IsAddTorsionFree M] :
     splitTorusCommHopfAlgProperty L
-      (FiniteTypeCommHopfAlgCat.baseChange (K := L) (descendedCoordinateRing rho)) := by
-  have : AddGroup.FG M := Module.Finite.iff_addGroup_fg.mp inferInstance
-  have : IsMulTorsionFree (exponentGroup (M := M)) :=
-    inferInstanceAs (IsMulTorsionFree (Multiplicative M))
-  exact (splitTorusCommHopfAlgProperty L).prop_of_iso (descendedBaseChangeIso rho).symm
+      (FiniteTypeCommHopfAlgCat.baseChange (K := L) (descendedCoordinateRing rho)) :=
+  (splitTorusCommHopfAlgProperty L).prop_of_iso (descendedBaseChangeIso rho).symm
     (splitTorusCommHopfAlgProperty_coordinateRing L (exponentGroup (M := M)))
 
 end TauCeti.GaloisDescent

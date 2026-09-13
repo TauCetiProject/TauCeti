@@ -22,11 +22,7 @@ finite Galois extension over which the coordinate Hopf algebra becomes a group a
 converts such data into the definition.
 
 Concretely, if `L / k` is algebraic and `L ⊗[k] H` is the coordinate Hopf algebra of a
-diagonalizable group whose character group is torsion-free, then `H` is a torus
-over `k`. The proof embeds `L` in the algebraic closure of `k` and pushes the given isomorphism
-along that embedding, using that base change of Hopf algebras composes in stages; the three
-conditions of the intrinsic characterization of tori are then read off the resulting group
-algebra over the algebraic closure.
+diagonalizable group whose character group is torsion-free, then `H` is a torus over `k`.
 
 ## Main declaration
 
