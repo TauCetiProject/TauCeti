@@ -274,6 +274,8 @@ end CoefficientFunctoriality
 
 section Comparison
 
+variable {N : Type v} [AddCommGroup N] [DistribMulAction G N]
+
 /-- The degree-zero comparison legs are inflation from the finite quotient to `G`. -/
 noncomputable def explicitFiniteQuotientComparison0 :
     explicitFiniteQuotientSystem0 G M ⟶
@@ -288,6 +290,47 @@ noncomputable def explicitFiniteQuotientComparison0 :
         (FixedPoints.addSubgroup U.unop.toSubgroup M) := x
     dsimp [explicitFiniteQuotientSystem0, Functor.const_obj_map]
     exact explicitFiniteQuotientTransition0_inflation G M (leOfHom f.unop) x'
+
+/-- Coefficient maps commute with the degree-zero comparison maps. -/
+@[simp]
+theorem explicitFiniteQuotientComparison0_coeffNatTrans_naturality
+    (f : M →+[G] N) :
+    explicitFiniteQuotientSystem0CoeffNatTrans G M f ≫
+        explicitFiniteQuotientComparison0 G N =
+      explicitFiniteQuotientComparison0 G M ≫
+        (Functor.const ((OpenNormalSubgroup G)ᵒᵖ)).map
+          (AddCommGrpCat.ofHom (explicitCoeff0 G M f)) := by
+  apply NatTrans.ext
+  funext U
+  apply AddCommGrpCat.hom_ext
+  apply AddMonoidHom.ext
+  intro x
+  apply Subtype.ext
+  let x' : H0 (G ⧸ U.unop.toSubgroup)
+      (FixedPoints.addSubgroup U.unop.toSubgroup M) := x
+  change ((explicitInfl0 G N U.unop.toSubgroup
+      (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
+        (FixedPoints.addSubgroup U.unop.toSubgroup M)
+        (fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup) x')) : N) =
+    (explicitCoeff0 G M f (explicitInfl0 G M U.unop.toSubgroup x') : N)
+  calc
+    ((explicitInfl0 G N U.unop.toSubgroup
+        (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
+          (FixedPoints.addSubgroup U.unop.toSubgroup M)
+          (fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup) x')) : N) =
+      (explicitCoeff0 (G ⧸ U.unop.toSubgroup)
+        (FixedPoints.addSubgroup U.unop.toSubgroup M)
+        (fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup) x' : N) :=
+      coe_explicitInfl0 G N U.unop.toSubgroup _
+    _ = (fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup x' : N) := by
+      exact congrArg (fun z : FixedPoints.addSubgroup U.unop.toSubgroup N => (z : N))
+        (coe_explicitCoeff0 (G := G ⧸ U.unop.toSubgroup)
+          (M := FixedPoints.addSubgroup U.unop.toSubgroup M)
+          (f := fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup) x')
+    _ = f (x' : M) := coe_fixedPointsAddSubgroupQuotientMap f U.unop.toSubgroup x'
+    _ = f (explicitInfl0 G M U.unop.toSubgroup x' : M) := by rw [coe_explicitInfl0]
+    _ = (explicitCoeff0 G M f (explicitInfl0 G M U.unop.toSubgroup x') : N) :=
+      (coe_explicitCoeff0 G M f _).symm
 
 /-- The named comparison cocone for degree zero, with apex `H⁰(G, M)`. -/
 noncomputable def explicitFiniteQuotientCocone0 :
