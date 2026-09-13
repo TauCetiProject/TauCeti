@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.ContinuousAmbientIsotopy.Basic
 import Mathlib.Geometry.Manifold.Algebra.SMul
 
 /-!
@@ -116,6 +117,41 @@ namespace SmoothCircleEmbedding
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-! ### Ambient-isotopy equivalence -/
+
+/-- Knot-equivalence for smooth circle presentations, using continuous ambient isotopy. -/
+abbrev AmbientIsotopic (f g : SmoothCircleEmbedding I M) : Prop :=
+  SmoothEmbedding.ContinuousAmbientIsotopic f g
+
+namespace AmbientIsotopic
+
+variable {f g h : SmoothCircleEmbedding I M}
+
+@[refl] theorem refl (f : SmoothCircleEmbedding I M) : AmbientIsotopic f f :=
+  SmoothEmbedding.ContinuousAmbientIsotopic.refl f
+
+@[symm] theorem symm (hfg : AmbientIsotopic f g) : AmbientIsotopic g f :=
+  SmoothEmbedding.ContinuousAmbientIsotopic.symm hfg
+
+@[trans]
+theorem trans (hfg : AmbientIsotopic f g) (hgh : AmbientIsotopic g h) :
+    AmbientIsotopic f h :=
+  SmoothEmbedding.ContinuousAmbientIsotopic.trans hfg hgh
+
+theorem equivalence : Equivalence (AmbientIsotopic (I := I) (M := M)) :=
+  ⟨refl, fun hfg => hfg.symm, fun hfg hgh => hfg.trans hgh⟩
+
+/-- The knot-equivalence relation packaged as a setoid. -/
+def setoid (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M] [ChartedSpace H M] :
+    Setoid (SmoothCircleEmbedding I M) where
+  r := AmbientIsotopic
+  iseqv := equivalence
+
+@[simp] theorem setoid_r_iff {f g : SmoothCircleEmbedding I M} :
+    (setoid I M).r f g ↔ AmbientIsotopic f g := Iff.rfl
+
+end AmbientIsotopic
 
 /-- Reparametrize a smooth circle embedding by the orientation-preserving rotation `x ↦ a * x`.
 This changes the marked parametrization but not the oriented image. -/
