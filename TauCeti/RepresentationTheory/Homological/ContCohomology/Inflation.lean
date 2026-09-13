@@ -171,7 +171,7 @@ theorem explicitInfl0_surjective : Function.Surjective (explicitInfl0 G M N) := 
 
 /-- Inflation identifies `H⁰(G ⧸ N, M^N)` with `H⁰(G, M)`. This is the degree-zero
 edge case of inflation: invariance under the quotient action is exactly invariance under `G`. -/
-@[expose] noncomputable def explicitInfl0Equiv :
+noncomputable def explicitInfl0Equiv :
     H0 (G ⧸ N) (FixedPoints.addSubgroup N M) ≃+ H0 G M :=
   AddEquiv.ofBijective (explicitInfl0 G M N)
     ⟨explicitInfl0_injective G M N, explicitInfl0_surjective G M N⟩

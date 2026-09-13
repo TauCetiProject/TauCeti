@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Explicit
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation
+public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
 # Finite-quotient comparison in degrees zero, one and two
@@ -115,13 +116,6 @@ section DegreeZero
 variable {G M}
 
 omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
-  [ContinuousSMul G M] [IsTopologicalGroup G] in
-/-- The whole group, used as a distinguished level in the degree-zero colimit proof. -/
-private def topOpenNormalSubgroup0 : OpenNormalSubgroup G where
-  toOpenSubgroup := ⊤
-  isNormal' := Subgroup.normal_top
-
-omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
   [ContinuousSMul G M] in
 /-- Inflating from the `U`-level through the `V`-level, for `V ≤ U`, is the same as inflating
 from the `U`-level directly. -/
@@ -214,7 +208,7 @@ omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
 every transition out of that level is an isomorphism. -/
 private theorem isEventuallyConstantFrom_explicitFiniteQuotientSystem0 :
     (explicitFiniteQuotientSystem0 G M).IsEventuallyConstantFrom
-      (Opposite.op (topOpenNormalSubgroup0 (G := G))) := by
+      (Opposite.op (openNormalSubgroupTop G)) := by
   intro U f
   rw [ConcreteCategory.isIso_iff_bijective]
   exact explicitFiniteQuotientTransition0_bijective (leOfHom f.unop)
@@ -229,11 +223,11 @@ level — where the comparison leg is the equivalence
 `TauCeti.ContCohomology.explicitInfl0Equiv` — already computes the colimit. -/
 noncomputable def explicitFiniteQuotientColimit0 :
     IsColimit (explicitFiniteQuotientCocone0 G M) :=
-  haveI : Nonempty (OpenNormalSubgroup G) := ⟨topOpenNormalSubgroup0⟩
+  haveI : Nonempty (OpenNormalSubgroup G) := ⟨openNormalSubgroupTop G⟩
   haveI : IsIso ((explicitFiniteQuotientCocone0 G M).ι.app
-      (Opposite.op (topOpenNormalSubgroup0 (G := G)))) := by
+      (Opposite.op (openNormalSubgroupTop G))) := by
     rw [ConcreteCategory.isIso_iff_bijective]
-    exact (explicitInfl0Equiv G M (topOpenNormalSubgroup0 (G := G)).toSubgroup).bijective
+    exact ⟨explicitInfl0_injective G M _, explicitInfl0_surjective G M _⟩
   (isEventuallyConstantFrom_explicitFiniteQuotientSystem0 G M).isColimitOfIsIso _
 
 end DegreeZero
