@@ -202,7 +202,7 @@ theorem _root_.Homeomorph.image_stableSet_eq
     refine ⟨e.symm y, (e.map_mem_stableSet_iff hconj).1 ?_, e.apply_symm_apply y⟩
     simpa only [e.apply_symm_apply] using hy
 
-/-- A topological conjugacy carries membership in an unstable set to membership in the
+/-- An inducing semiconjugacy carries membership in an unstable set to membership in the
 corresponding unstable set. This is stated as an explicit rewrite lemma because
 `Flow.mem_unstableSet` already puts its left-hand side in simp-normal form. -/
 theorem _root_.Topology.IsInducing.map_mem_unstableSet_iff {f : α → β} (hf : IsInducing f)
