@@ -67,16 +67,6 @@ private theorem galIsGaloisGroup [IsGalois F p.SplittingField]
     isInvariant := ⟨fun y hy ↦
       (IsGalois.mem_range_algebraMap_iff_fixed y).2 fun σ ↦ hy σ⟩ }
 
-private theorem fixingSubgroup_adjoin_simple_eq_stabilizer
-    (x : p.rootSet p.SplittingField) :
-    fixingSubgroup p.Gal (F⟮(x : p.SplittingField)⟯ : Set p.SplittingField) =
-      stabilizer p.Gal x := by
-  let _ : SMulCommClass p.Gal F p.SplittingField := galSMulCommClass
-  ext σ
-  rw [_root_.mem_fixingSubgroup_iff, mem_stabilizer_iff, Subtype.ext_iff, Gal.coe_smul]
-  simpa [gal_smul_eq_apply] using
-    forall_mem_adjoin_smul_eq_self_iff F (S := {(x : p.SplittingField)}) σ
-
 /-- **Blocks containing a root correspond to intermediate fields of its simple extension.**
 
 The correspondence sends a block `B` to the field fixed by its setwise stabilizer. Its inverse
@@ -86,79 +76,24 @@ and hence smaller fixed fields. -/
 noncomputable def rootBlockIntermediateFieldOrderIso
     (hp : Irreducible p) (hsep : p.Separable)
     (x : p.rootSet p.SplittingField) :
-    BlockMem p.Gal x ≃o (Set.Iic F⟮(x : p.SplittingField)⟯)ᵒᵈ := by
+    BlockMem p.Gal x ≃o (Set.Iic F⟮(x : p.SplittingField)⟯)ᵒᵈ :=
   letI : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hsep
   letI : IsPretransitive p.Gal (p.rootSet p.SplittingField) :=
     isPretransitive_of_irreducible hp
   letI : SMulCommClass p.Gal F p.SplittingField := galSMulCommClass
   letI : IsGaloisGroup p.Gal F p.SplittingField := galIsGaloisGroup
-  refine
-    { toFun := fun B ↦ OrderDual.toDual
-        ⟨FixedPoints.intermediateField (stabilizer p.Gal
-          (B : Set (p.rootSet p.SplittingField))), ?_⟩
-      invFun := fun E ↦
-        ⟨orbit (fixingSubgroup p.Gal (E.ofDual.1 : Set p.SplittingField)) x,
-          mem_orbit_self x,
-          @IsBlock.of_orbit p.Gal _ (p.rootSet p.SplittingField) (Gal.galActionAux p)
-            (fixingSubgroup p.Gal (E.ofDual.1 : Set p.SplittingField)) x ?_⟩
-      left_inv := fun B ↦ ?_
-      right_inv := fun E ↦ ?_
-      map_rel_iff' := fun {B C} ↦ ?_ }
-  · -- Expose the field containment required by the codomain interval.
-    change FixedPoints.intermediateField
-        (stabilizer p.Gal (B : Set (p.rootSet p.SplittingField))) ≤ F⟮(x : p.SplittingField)⟯
-    exact (IsGaloisGroup.fixedPoints_le_of_le p.Gal F p.SplittingField _ _
-      (B.property.2.stabilizer_le B.property.1)).trans <| by
-      rw [← fixingSubgroup_adjoin_simple_eq_stabilizer x,
-        IsGaloisGroup.fixedPoints_fixingSubgroup p.Gal F p.SplittingField]
-  · rw [← fixingSubgroup_adjoin_simple_eq_stabilizer x]
-    exact IsGaloisGroup.fixingSubgroup_le_of_le p.Gal F p.SplittingField _ _ E.ofDual.2
-  · apply Subtype.ext
-    -- Expose both structure maps so the Galois fixed-point identity can rewrite the goal.
-    change orbit (fixingSubgroup p.Gal
-      ((FixedPoints.intermediateField
-        (stabilizer p.Gal (B : Set (p.rootSet p.SplittingField))) :
-          IntermediateField F p.SplittingField) : Set p.SplittingField)) x = B
-    rw [IsGaloisGroup.fixingSubgroup_fixedPoints p.Gal F p.SplittingField,
-      B.property.2.orbit_stabilizer_eq B.property.1]
-  · apply Subtype.ext
-    -- Expose both structure maps so the orbit-stabilizer identity can rewrite the goal.
-    change FixedPoints.intermediateField
-      (stabilizer p.Gal (orbit (fixingSubgroup p.Gal
-        (E.ofDual.1 : Set p.SplittingField)) x)) = E.ofDual.1
-    rw [stabilizer_orbit_eq,
-      IsGaloisGroup.fixedPoints_fixingSubgroup p.Gal F p.SplittingField]
-    rw [← fixingSubgroup_adjoin_simple_eq_stabilizer x]
-    exact IsGaloisGroup.fixingSubgroup_le_of_le p.Gal F p.SplittingField _ _ E.ofDual.2
-  · constructor
-    · intro h
-      -- Expose the fixed fields represented by the two order-dual subtype values.
-      change (FixedPoints.intermediateField
-        (stabilizer p.Gal (C : Set (p.rootSet p.SplittingField))) :
-          IntermediateField F p.SplittingField) ≤
-        FixedPoints.intermediateField
-          (stabilizer p.Gal (B : Set (p.rootSet p.SplittingField))) at h
-      have := IsGaloisGroup.fixingSubgroup_le_of_le p.Gal F p.SplittingField _ _ h
-      have hstab : stabilizer p.Gal (B : Set (p.rootSet p.SplittingField)) ≤
-          stabilizer p.Gal (C : Set (p.rootSet p.SplittingField)) := by
-        simpa only [IsGaloisGroup.fixingSubgroup_fixedPoints
-          p.Gal F p.SplittingField] using this
-      intro y hy
-      rw [← B.property.2.orbit_stabilizer_eq B.property.1] at hy
-      rw [← C.property.2.orbit_stabilizer_eq C.property.1]
-      obtain ⟨g, rfl⟩ := hy
-      exact ⟨⟨g, hstab g.2⟩, rfl⟩
-    · intro h
-      -- Expose the fixed fields represented by the two order-dual subtype values.
-      change (FixedPoints.intermediateField
-        (stabilizer p.Gal (C : Set (p.rootSet p.SplittingField))) :
-          IntermediateField F p.SplittingField) ≤
-        FixedPoints.intermediateField
-          (stabilizer p.Gal (B : Set (p.rootSet p.SplittingField)))
-      apply IsGaloisGroup.fixedPoints_le_of_le p.Gal F p.SplittingField
-      intro g hg
-      apply C.property.2.smul_eq_of_mem C.property.1
-      exact h (hg.symm ▸ Set.smul_mem_smul_set B.property.1)
+  let e := IsGaloisGroup.intermediateFieldEquivSubgroup p.Gal F p.SplittingField
+  -- Identify the stabilizer interval with the dual of the image interval of `F⟮x⟯`.
+  let dualIci : Set.Ici (stabilizer p.Gal x) ≃o (Set.Iic (e F⟮(x : p.SplittingField)⟯))ᵒᵈ :=
+    { toFun := fun H ↦ OrderDual.toDual ⟨OrderDual.toDual H.1,
+        (stabilizer_eq_fixingSubgroup_adjoin_simple x).symm.trans_le H.2⟩
+      invFun := fun H ↦ ⟨(OrderDual.ofDual H).1.ofDual,
+        (stabilizer_eq_fixingSubgroup_adjoin_simple x).trans_le (OrderDual.ofDual H).2⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
+      map_rel_iff' := Iff.rfl }
+  (block_stabilizerOrderIso p.Gal x).trans <|
+    dualIci.trans (e.Iic F⟮(x : p.SplittingField)⟯).symm.dual
 
 /-- A block is sent to the field fixed by its setwise stabilizer: an element belongs to the
 corresponding intermediate field exactly when every element of the stabilizer fixes it. -/
@@ -170,12 +105,16 @@ theorem mem_rootBlockIntermediateFieldOrderIso_apply_iff
       IntermediateField F p.SplittingField) ↔
       ∀ g ∈ stabilizer p.Gal (B : Set (p.rootSet p.SplittingField)), g • y = y :=
   by
+    let _ : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hsep
     let _ : SMulCommClass p.Gal F p.SplittingField := galSMulCommClass
-    -- Expose the fixed-field definition in the left side of the equivalence.
-    change y ∈ (FixedPoints.intermediateField
-      (stabilizer p.Gal (B : Set (p.rootSet p.SplittingField))) :
-        IntermediateField F p.SplittingField) ↔ _
-    rw [FixedPoints.mem_intermediateField_iff]
+    let _ : IsGaloisGroup p.Gal F p.SplittingField := galIsGaloisGroup
+    -- `block_stabilizerOrderIso` matches on its argument, so destructure the block first.
+    obtain ⟨B, hxB, hB⟩ := B
+    have hfield : ((rootBlockIntermediateFieldOrderIso hp hsep x ⟨B, hxB, hB⟩).ofDual :
+        IntermediateField F p.SplittingField) =
+          FixedPoints.intermediateField (stabilizer p.Gal B) :=
+      IsGaloisGroup.intermediateFieldEquivSubgroup_symm_apply_toDual p.Gal F p.SplittingField
+    rw [hfield, FixedPoints.mem_intermediateField_iff]
     exact ⟨fun h g hg ↦ h ⟨g, hg⟩, fun h g ↦ h g g.2⟩
 
 /-- The singleton block corresponds to the whole simple extension, confirming the orientation of
