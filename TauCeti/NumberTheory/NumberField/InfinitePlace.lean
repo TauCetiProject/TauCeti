@@ -66,7 +66,7 @@ theorem IsTotallyReal.isUnramifiedAtInfinitePlaces {k : Type*} [Field k] [Algebr
 omit [NumberField K] in
 /-- Over a totally real base, an extension is unramified at every infinite place exactly
 when it is totally real. -/
-theorem isUnramifiedAtInfinitePlaces_iff_isTotallyReal {k : Type*} [Field k] [Algebra k K]
+@[simp] theorem isUnramifiedAtInfinitePlaces_iff_isTotallyReal {k : Type*} [Field k] [Algebra k K]
     [IsTotallyReal k] : IsUnramifiedAtInfinitePlaces k K ↔ IsTotallyReal K := by
   constructor
   · intro h

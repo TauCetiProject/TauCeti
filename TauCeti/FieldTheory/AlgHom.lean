@@ -47,7 +47,7 @@ variable {L M : Type*} [Field L] [Field M] [Algebra ℚ L] [Algebra ℚ M]
 /-- If `y` and `z` are square roots of the same integer and `ℚ(y)` is quadratic, any
 `ℚ`-embedding from the field containing `z` into the Galois number field containing `y` can be
 adjusted by a target automorphism to carry `z` to `y`. -/
-theorem exists_algHom_apply_eq_of_sq_eq [FiniteDimensional ℚ L] [IsGalois ℚ L]
+theorem exists_algHom_apply_eq_of_sq_eq [IsGalois ℚ L]
     (hy : y ^ 2 = algebraMap ℤ L d)
     (hydegree : Module.finrank ℚ (IntermediateField.adjoin ℚ {y}) = 2)
     (hz : z ^ 2 = algebraMap ℤ M d) (hφ : Nonempty (M →ₐ[ℚ] L)) :
@@ -59,7 +59,7 @@ theorem exists_algHom_apply_eq_of_sq_eq [FiniteDimensional ℚ L] [IsGalois ℚ 
   have hzQ : z ^ 2 = algebraMap ℚ M ((d : ℤ) : ℚ) := by
     rw [hz, IsScalarTower.algebraMap_apply ℤ ℚ M]
     norm_num
-  have hyint : IsIntegral ℚ y := IsIntegral.of_finite ℚ y
+  have hyint : IsIntegral ℚ y := IsGalois.integral ℚ y
   have hmin : minpoly ℚ y = Polynomial.X ^ 2 - Polynomial.C ((d : ℤ) : ℚ) := by
     apply Algebra.minpoly_eq_X_sq_sub_C_of_sq_eq_of_natDegree_eq_two hyQ
     rw [← IntermediateField.adjoin.finrank hyint, hydegree]
@@ -67,7 +67,7 @@ theorem exists_algHom_apply_eq_of_sq_eq [FiniteDimensional ℚ L] [IsGalois ℚ 
     have hφz : (φ z) ^ 2 = algebraMap ℚ L ((d : ℤ) : ℚ) := by
       rw [← map_pow, hzQ, φ.commutes]
     simp [hmin, hφz]
-  obtain ⟨σ, hσ⟩ := minpoly.exists_algEquiv_of_root (IsAlgebraic.of_finite ℚ y) hroot
+  obtain ⟨σ, hσ⟩ := minpoly.exists_algEquiv_of_root hyint.isAlgebraic hroot
   exact ⟨σ.toAlgHom.comp φ, hσ⟩
 
 end TauCeti
