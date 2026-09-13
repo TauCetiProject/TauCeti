@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -154,24 +155,14 @@ variable (cov : _root_.CovariantDerivative I F V)
 variable [CompleteSpace E] [IsManifold I ∞ M] [VectorBundle ℝ F V]
   [_root_.CovariantDerivative.ContMDiffCovariantDerivative cov ∞]
 
-omit [CompleteSpace E] in
-private theorem contMDiff_cov_apply
-    {X : Π x : M, TangentSpace I x} {σ : Π x : M, V x}
-    (hX : CMDiff ∞ (T% X)) (hσ : CMDiff ∞ (T% σ)) :
-    CMDiff ∞ (T% (fun x ↦ cov σ x (X x))) := by
-  rw [← contMDiffOn_univ]
-  exact ContMDiffOn.clm_bundle_apply
-    (_root_.CovariantDerivative.ContMDiffCovariantDerivative.contMDiff.contMDiff
-      hσ.contMDiffOn) hX.contMDiffOn
-
 /-- The curvature operator of a smooth connection sends smooth vector fields and smooth sections
 to a smooth section. -/
 theorem contMDiff_curvatureOperator
     {X Y : Π x : M, TangentSpace I x} {σ : Π x : M, V x}
     (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y)) (hσ : CMDiff ∞ (T% σ)) :
     CMDiff ∞ (T% (curvatureOperator cov X Y σ)) := by
-  have hYσ := contMDiff_cov_apply cov hY hσ
-  have hXσ := contMDiff_cov_apply cov hX hσ
+  have hYσ := Manifold.contMDiff_covariantDerivative_apply cov hY hσ
+  have hXσ := Manifold.contMDiff_covariantDerivative_apply cov hX hσ
   let _ : IsManifold I (minSmoothness ℝ 2) M :=
     IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) (by simp)
   let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M :=
@@ -180,8 +171,9 @@ theorem contMDiff_curvatureOperator
     ContDiff.mlieBracket_vectorField (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) hX hY (by
       rw [minSmoothness_of_isRCLikeNormedField]
       simp)
-  exact ((contMDiff_cov_apply cov hX hYσ).sub_section
-    (contMDiff_cov_apply cov hY hXσ)).sub_section (contMDiff_cov_apply cov hXY hσ)
+  exact ((Manifold.contMDiff_covariantDerivative_apply cov hX hYσ).sub_section
+    (Manifold.contMDiff_covariantDerivative_apply cov hY hXσ)).sub_section
+      (Manifold.contMDiff_covariantDerivative_apply cov hXY hσ)
 
 variable {cov}
   {X X' Y Y' : Π x : M, TangentSpace I x} {σ τ : Π x : M, V x} {f : M → ℝ}
@@ -194,8 +186,8 @@ theorem curvatureOperator_add_first
       curvatureOperator cov X Y σ + curvatureOperator cov X' Y σ := by
   funext x
   simp only [Pi.add_apply]
-  have hXσ := contMDiff_cov_apply cov hX hσ
-  have hX'σ := contMDiff_cov_apply cov hX' hσ
+  have hXσ := Manifold.contMDiff_covariantDerivative_apply cov hX hσ
+  have hX'σ := Manifold.contMDiff_covariantDerivative_apply cov hX' hσ
   have hXd : MDiff (T% X) := hX.mdifferentiable (by simp)
   have hX'd : MDiff (T% X') := hX'.mdifferentiable (by simp)
   have hXσd : MDiff (T% (fun y ↦ cov σ y (X y))) := hXσ.mdifferentiable (by simp)
@@ -229,10 +221,10 @@ theorem curvatureOperator_add_section
     curvatureOperator cov X Y (σ + τ) =
       curvatureOperator cov X Y σ + curvatureOperator cov X Y τ := by
   funext x
-  have hYσ := contMDiff_cov_apply cov hY hσ
-  have hYτ := contMDiff_cov_apply cov hY hτ
-  have hXσ := contMDiff_cov_apply cov hX hσ
-  have hXτ := contMDiff_cov_apply cov hX hτ
+  have hYσ := Manifold.contMDiff_covariantDerivative_apply cov hY hσ
+  have hYτ := Manifold.contMDiff_covariantDerivative_apply cov hY hτ
+  have hXσ := Manifold.contMDiff_covariantDerivative_apply cov hX hσ
+  have hXτ := Manifold.contMDiff_covariantDerivative_apply cov hX hτ
   have hσd : MDiff (T% σ) := hσ.mdifferentiable (by simp)
   have hτd : MDiff (T% τ) := hτ.mdifferentiable (by simp)
   have hYσd : MDiff (T% (fun y ↦ cov σ y (Y y))) := hYσ.mdifferentiable (by simp)
@@ -265,7 +257,7 @@ theorem curvatureOperator_smul_first
   funext x
   -- The pointwise `Pi` action on the right hides the applied curvature operator from `rw`.
   change curvatureOperator cov (f • X) Y σ x = f x • curvatureOperator cov X Y σ x
-  have hXσ := contMDiff_cov_apply cov hX hσ
+  have hXσ := Manifold.contMDiff_covariantDerivative_apply cov hX hσ
   have hXσd : MDiff (T% (fun y ↦ cov σ y (X y))) := hXσ.mdifferentiable (by simp)
   have hfd : MDiff f := hf.mdifferentiable (by simp)
   have hXd : MDiff (T% X) := hX.mdifferentiable (by simp)
@@ -310,8 +302,8 @@ theorem curvatureOperator_smul_section
   have hXd : MDiff (T% X) := hX.mdifferentiable (by simp)
   have hYd : MDiff (T% Y) := hY.mdifferentiable (by simp)
   have hσd : MDiff (T% σ) := hσ.mdifferentiable (by simp)
-  have hXσ := contMDiff_cov_apply cov hX hσ
-  have hYσ := contMDiff_cov_apply cov hY hσ
+  have hXσ := Manifold.contMDiff_covariantDerivative_apply cov hX hσ
+  have hYσ := Manifold.contMDiff_covariantDerivative_apply cov hY hσ
   have hXσd : MDiff (T% (fun y ↦ cov σ y (X y))) := hXσ.mdifferentiable (by simp)
   have hYσd : MDiff (T% (fun y ↦ cov σ y (Y y))) := hYσ.mdifferentiable (by simp)
   have hgX : ContMDiff I 𝓘(ℝ) ∞ gX := by
