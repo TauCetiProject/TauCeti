@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.CongruenceQuotient
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.TotallyComplex
 
@@ -46,6 +47,9 @@ modulus imposes nothing at all.
   `Kˣ → Cl⁺(K) → Cl(K) → 1` in ray-class form.
 * `TauCeti.GlobalNumberFields.narrowRayClassPrincipal_sq`: that kernel is an elementary abelian
   `2`-group.
+* `TauCeti.GlobalNumberFields.relIndex_congruenceSubgroup_narrowModulus`: the congruence subgroup
+  of the narrow modulus has relative index `2 ^ r₁`, the narrow specialization of
+  `TauCeti.GlobalNumberFields.relIndex_congruenceSubgroup`.
 
 ## References
 
@@ -69,6 +73,26 @@ survive, and they are imposed at every real place. -/
     congruenceSubgroup (narrowModulus K) = (totallyPositiveUnits : Subgroup Kˣ) := by
   ext x
   rw [mem_congruenceSubgroup, isCongrOne_narrowModulus_iff, mem_totallyPositiveUnits]
+
+variable (K) in
+/-- **The narrow modulus is counted by the real places alone.**  Its finite part is the unit ideal,
+so the residue-unit factor disappears and the congruence quotient is the sign group `{±1}^{r₁}`.
+
+This is the nonempty-infinite-part specialization of `relIndex_congruenceSubgroup`: over a field
+with a real place it is `2 ^ r₁ > 1`, so the narrow conditions do not collapse to the wide ones. -/
+theorem relIndex_congruenceSubgroup_narrowModulus :
+    (congruenceSubgroup (narrowModulus K)).relIndex (primeToSubgroup (narrowModulus K)) =
+      2 ^ InfinitePlace.nrRealPlaces K := by
+  classical
+  have hcard : (narrowModulus K).infinitePart.card = InfinitePlace.nrRealPlaces K := by
+    have huniv : (narrowModulus K).infinitePart = Finset.univ :=
+      Finset.eq_univ_iff_forall.mpr mem_narrowModulus_infinitePart
+    rw [huniv, Finset.card_univ]
+  have hunits : Nat.card (𝓞 K ⧸ (narrowModulus K).finitePart)ˣ = 1 := by
+    have : Subsingleton (𝓞 K ⧸ (narrowModulus K).finitePart) :=
+      Ideal.Quotient.subsingleton_iff.mpr narrowModulus_finitePart
+    exact Nat.card_eq_one_iff_unique.mpr ⟨inferInstance, inferInstance⟩
+  rw [relIndex_congruenceSubgroup, hunits, hcard, one_mul]
 
 /-- **The ray of the narrow modulus consists of the principal fractional ideals with a totally
 positive generator**, that is, of the ideals of `narrowPrincipalSubgroup K`. -/
