@@ -10,8 +10,10 @@ public import TauCeti.Algebra.Lie.Isotypic
 public import TauCeti.Algebra.Lie.Multiplicity
 -- Non-public: these declarations support the internal-decomposition proof.
 import TauCeti.Algebra.Lie.Submodule.Decomposition
+import TauCeti.Algebra.Lie.Submodule.DirectSum
 import TauCeti.Algebra.Lie.Submodule.Finrank
 import TauCeti.LinearAlgebra.Dimension.DirectSum
+import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 
 /-!
 # Weight-space multiplicities in isotypic Lie modules
@@ -26,6 +28,10 @@ isotypic multiplicity.
 The statements concern simultaneous eigenspaces `LieModule.weightSpace`, not generalized weight
 spaces. They therefore require neither nilpotence of the acting Lie algebra nor triangularizability
 of the module.
+
+The internal-decomposition argument adapts the generalized-weight-space construction in
+`TauCeti.Algebra.Lie.Weights.FormalCharacter`; the common component/reassembly step is factored
+through `DirectSum.IsInternal.iSup_inf_eq_of_component_mem`.
 
 ## Main results
 
@@ -75,20 +81,18 @@ private theorem injective_incl_restrictLie (i : ι) :
 private theorem toSubmodule_map_weightSpace_incl (i : ι) (χ : H → K) :
     ((weightSpace ↥(N i) χ).map ((N i).incl.restrictLie H)).toSubmodule
       = (weightSpace M χ).toSubmodule ⊓ (N i).toSubmodule := by
-  ext m
-  simp only [LieSubmodule.mem_toSubmodule, Submodule.mem_inf]
-  constructor
-  · intro hm
-    rw [LieSubmodule.mem_map] at hm
-    obtain ⟨x, hx, rfl⟩ := hm
-    exact ⟨LieModule.map_weightSpace_le ((N i).incl.restrictLie H) χ
-      (LieSubmodule.mem_map_of_mem hx), x.2⟩
-  · rintro ⟨hm, hmi⟩
-    rw [LieSubmodule.mem_map]
-    refine ⟨⟨m, hmi⟩, ?_, rfl⟩
-    rw [mem_weightSpace] at hm ⊢
-    intro x
-    exact Subtype.ext (hm x)
+  have hp : ∀ x : H, Set.MapsTo (LieModule.toEnd K H M x)
+      (N i).toSubmodule (N i).toSubmodule := fun _ _ hm ↦ (N i).lie_mem hm
+  have hbridge := Submodule.inf_iInf_eigenspace_of_forall_mapsTo
+    (f := fun x : H ↦ LieModule.toEnd K H M x) (N i).toSubmodule hp χ
+  change (N i).toSubmodule ⊓
+      (⨅ x : H, (LieModule.toEnd K H M x).eigenspace (χ x)) =
+    (⨅ x : H, (LieModule.toEnd K H ↥(N i) x).eigenspace (χ x)).map
+      (N i).toSubmodule.subtype at hbridge
+  change (⨅ x : H, (LieModule.toEnd K H ↥(N i) x).eigenspace (χ x)).map
+      (N i).toSubmodule.subtype =
+    (⨅ x : H, (LieModule.toEnd K H M x).eigenspace (χ x)) ⊓ (N i).toSubmodule
+  rw [← hbridge, inf_comm]
 
 /-- The intersection carrying a summand's weight space has the expected dimension. -/
 private theorem finrank_inf_weightSpace (i : ι) (χ : H → K) :
@@ -97,30 +101,6 @@ private theorem finrank_inf_weightSpace (i : ι) (χ : H → K) :
   have hequiv := (LieSubmodule.equivMapOfInjective
     (weightSpace ↥(N i) χ) (injective_incl_restrictLie i)).toLinearEquiv.finrank_eq
   rw [← toSubmodule_map_weightSpace_incl i χ, finrank_toSubmodule, ← hequiv]
-
-/-- The intersections of an ambient weight space with the summands span that weight space. -/
-private theorem iSup_inf_weightSpace_eq [Finite ι] [DecidableEq ι]
-    (h : DirectSum.IsInternal fun i ↦ (N i).toSubmodule) (χ : H → K) :
-    ⨆ i, ((weightSpace M χ).toSubmodule ⊓ (N i).toSubmodule)
-      = (weightSpace M χ).toSubmodule := by
-  classical
-  have _ := Fintype.ofFinite ι
-  refine le_antisymm (iSup_le fun i ↦ inf_le_left) fun m hm ↦ ?_
-  set e := DirectSum.lieModuleEquivOfIsInternal N h with he
-  have hcomp : ∀ i, (e.symm m i : ↥(N i)) ∈ weightSpace ↥(N i) χ := fun i ↦
-    LieModule.map_weightSpace_le
-      ((((DirectSum.lieModuleComponent K ι L fun j ↦ ↥(N j)) i).comp
-        (e.symm : M →ₗ⁅K,L⁆ ⨁ j, ↥(N j))).restrictLie H) χ ⟨m, hm, rfl⟩
-  have hmem : ∀ i, ((e.symm m i : ↥(N i)) : M)
-      ∈ (weightSpace M χ).toSubmodule ⊓ (N i).toSubmodule := fun i ↦
-    ⟨LieModule.map_weightSpace_le ((N i).incl.restrictLie H) χ ⟨_, hcomp i, rfl⟩,
-      (e.symm m i).2⟩
-  have hsum : m = ∑ i, ((e.symm m i : ↥(N i)) : M) := by
-    conv_lhs => rw [← e.apply_symm_apply m, ← DirectSum.sum_univ_of (e.symm m)]
-    rw [map_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ by simp [he]
-  rw [hsum]
-  exact Submodule.sum_mem _ fun i _ ↦ Submodule.mem_iSup_of_mem i (hmem i)
 
 /-- **Weight-space dimensions are additive over an internal decomposition.** If a finite family of
 `L`-submodules is an internal direct sum of `M`, then the dimension of the `χ`-weight space for any
@@ -132,7 +112,18 @@ theorem finrank_weightSpace_eq_sum_of_isInternal [FiniteDimensional K M]
   have hindep : iSupIndep fun i ↦
       ((weightSpace M χ).toSubmodule ⊓ (N i).toSubmodule) :=
     h.submodule_iSupIndep.mono fun i ↦ inf_le_right
-  rw [← finrank_toSubmodule, ← iSup_inf_weightSpace_eq h χ,
+  have hcomponent : ∀ (m : M), m ∈ (weightSpace M χ).toSubmodule → ∀ i,
+      (((DirectSum.lieModuleEquivOfIsInternal N h).symm m i : N i) : M)
+        ∈ (weightSpace M χ).toSubmodule := fun m hm i ↦ by
+    have hcomp : (DirectSum.lieModuleEquivOfIsInternal N h).symm m i
+        ∈ weightSpace ↥(N i) χ :=
+      LieModule.map_weightSpace_le
+        ((((DirectSum.lieModuleComponent K ι L fun j ↦ ↥(N j)) i).comp
+          ((DirectSum.lieModuleEquivOfIsInternal N h).symm :
+            M →ₗ⁅K,L⁆ ⨁ j, ↥(N j))).restrictLie H) χ ⟨m, hm, rfl⟩
+    exact LieModule.map_weightSpace_le ((N i).incl.restrictLie H) χ ⟨_, hcomp, rfl⟩
+  rw [← finrank_toSubmodule,
+    ← h.iSup_inf_eq_of_component_mem (weightSpace M χ).toSubmodule hcomponent,
     finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
   exact Finset.sum_congr rfl fun i _ ↦ finrank_inf_weightSpace i χ
 
