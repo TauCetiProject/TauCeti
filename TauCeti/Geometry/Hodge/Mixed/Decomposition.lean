@@ -48,8 +48,8 @@ filtration, so — the graded piece being pure — that class is a sum of Hodge 
 index at least `p`, each the image of a bigrading piece; correcting the vector by a representative
 of that sum drops it into `F^p ∩ W_{k-1}`.
 
-What remains of Deligne's theory after this file: the conjugation symmetry
-`I^{p,q} ≡ conj I^{q,p}` modulo strictly lower bidegree.
+The simultaneous recovery formula also supplies the lower-bidegree sums used to state and prove
+the conjugation symmetry developed in `TauCeti.Geometry.Hodge.Mixed.Conjugation`.
 
 ## Main declarations
 
@@ -68,6 +68,8 @@ What remains of Deligne's theory after this file: the conjugation symmetry
   `F^p = ⨆_{p' ≥ p} ⨆_{q'} I^{p',q'}` of the Hodge filtration.
 * `TauCeti.Hodge.MixedHodgeStructure.F_inf_WC_eq_iSup_deligneSplitting`: simultaneous
   truncation by a Hodge step and a weight step.
+* `TauCeti.Hodge.MixedHodgeStructure.deligneSplittingBelow`: the sum of the bigrading pieces
+  strictly below a given bidegree.
 
 ## References
 
@@ -630,6 +632,36 @@ theorem F_inf_WC_eq_iSup_deligneSplitting (p k : ℤ) :
     TauCeti.iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and
       (A := mhs.deligneSplittingFamily) mhs.iSupIndep_deligneSplittingFamily
       (fun rs ↦ p ≤ rs.1) (fun rs ↦ rs.1 + rs.2 ≤ k)
+
+/-! ### Lower-bidegree sums -/
+
+/-- The sum of the Deligne components strictly below `(p,q)` in both bidegrees. -/
+noncomputable def deligneSplittingBelow (p q : ℤ) : Submodule ℂ Vℂ :=
+  ⨆ r, ⨆ (_ : r < p), ⨆ s, ⨆ (_ : s < q), mhs.deligneSplitting r s
+
+/-- A Deligne component strictly below both bounds belongs to the lower Deligne sum. -/
+theorem deligneSplitting_le_deligneSplittingBelow {r s p q : ℤ} (hr : r < p) (hs : s < q) :
+    mhs.deligneSplitting r s ≤ mhs.deligneSplittingBelow p q :=
+  le_iSup₂_of_le r hr (le_iSup₂_of_le s hs le_rfl)
+
+/-- The lower Deligne sum is contained in a submodule exactly when every component strictly below
+both bounds is. -/
+@[simp]
+theorem deligneSplittingBelow_le_iff {p q : ℤ} {S : Submodule ℂ Vℂ} :
+    mhs.deligneSplittingBelow p q ≤ S ↔ ∀ r < p, ∀ s < q, mhs.deligneSplitting r s ≤ S := by
+  simp [deligneSplittingBelow]
+
+/-- The lower-bidegree error below `(p,q)` lies at least two steps below total weight `p+q`. -/
+theorem deligneSplittingBelow_le_WC (p q : ℤ) :
+    mhs.deligneSplittingBelow p q ≤ mhs.WC (p + q - 2) :=
+  mhs.deligneSplittingBelow_le_iff.2 fun r _ s _ ↦
+    (mhs.deligneSplitting_le_WC r s).trans (mhs.WC_monotone (by omega))
+
+/-- Enlarging either bound enlarges the sum of lower Deligne components. -/
+theorem deligneSplittingBelow_mono {p q p' q' : ℤ} (hp : p ≤ p') (hq : q ≤ q') :
+    mhs.deligneSplittingBelow p q ≤ mhs.deligneSplittingBelow p' q' :=
+  mhs.deligneSplittingBelow_le_iff.2 fun _ hr _ hs ↦
+    mhs.deligneSplitting_le_deligneSplittingBelow (hr.trans_le hp) (hs.trans_le hq)
 
 end MixedHodgeStructure
 

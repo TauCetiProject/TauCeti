@@ -41,6 +41,8 @@ subspaces.
   elementwise modular-congruence form.
 * `TauCeti.Hodge.MixedHodgeStructure.map_latticeConj_deligneSplitting_sup_below`: the full
   Deligne relation, with the error supported in strictly lower bidegrees.
+* `TauCeti.Hodge.MixedHodgeStructure.map_deligneSplittingBelow`: conjugation exchanges the
+  corresponding lower-bidegree sums.
 * `TauCeti.Hodge.MixedHodgeStructure.exists_mem_deligneSplitting_smodEq_latticeConj_below`:
   the elementwise form of the full relation.
 
@@ -65,34 +67,6 @@ namespace MixedHodgeStructure
 
 variable (mhs : MixedHodgeStructure hℚ hℂ)
 
-/-- The sum of the Deligne components strictly below `(p,q)` in both bidegrees. -/
-noncomputable def deligneSplittingBelow (p q : ℤ) : Submodule ℂ Vℂ :=
-  ⨆ r, ⨆ (_ : r < p), ⨆ s, ⨆ (_ : s < q), mhs.deligneSplitting r s
-
-/-- A Deligne component strictly below both bounds belongs to the lower Deligne sum. -/
-theorem deligneSplitting_le_deligneSplittingBelow {r s p q : ℤ} (hr : r < p) (hs : s < q) :
-    mhs.deligneSplitting r s ≤ mhs.deligneSplittingBelow p q :=
-  le_iSup₂_of_le r hr (le_iSup₂_of_le s hs le_rfl)
-
-/-- The lower Deligne sum is contained in a submodule exactly when every component strictly below
-both bounds is. -/
-@[simp]
-theorem deligneSplittingBelow_le_iff {p q : ℤ} {S : Submodule ℂ Vℂ} :
-    mhs.deligneSplittingBelow p q ≤ S ↔ ∀ r < p, ∀ s < q, mhs.deligneSplitting r s ≤ S := by
-  simp [deligneSplittingBelow]
-
-/-- The lower-bidegree error below `(p,q)` lies at least two steps below total weight `p+q`. -/
-theorem deligneSplittingBelow_le_WC (p q : ℤ) :
-    mhs.deligneSplittingBelow p q ≤ mhs.WC (p + q - 2) :=
-  mhs.deligneSplittingBelow_le_iff.2 fun r _ s _ ↦
-    (mhs.deligneSplitting_le_WC r s).trans (mhs.WC_monotone (by omega))
-
-/-- Enlarging either bound enlarges the sum of lower Deligne components. -/
-theorem deligneSplittingBelow_mono {p q p' q' : ℤ} (hp : p ≤ p') (hq : q ≤ q') :
-    mhs.deligneSplittingBelow p q ≤ mhs.deligneSplittingBelow p' q' :=
-  mhs.deligneSplittingBelow_le_iff.2 fun _ hr _ hs ↦
-    mhs.deligneSplitting_le_deligneSplittingBelow (hr.trans_le hp) (hs.trans_le hq)
-
 /-- The part of Deligne's formula below its leading conjugate-filtration term. -/
 private noncomputable def hodgeTail (p q : ℤ) : Submodule ℂ Vℂ :=
   ⨆ j : ℕ, mhs.F (q - (j : ℤ) - 1) ⊓ mhs.WC (p + q - (j : ℤ) - 2)
@@ -112,8 +86,8 @@ private theorem inf_sup_hodgeTail_eq_inf_sup_deligneSplittingBelow (p q : ℤ) :
         ((mhs.deligneSplitting_le_F rs.1 rs.2).trans (mhs.F_antitone hr))
         ((mhs.deligneSplitting_le_WC rs.1 rs.2).trans (mhs.WC_monotone (by omega))))
     · exact le_sup_of_le_right
-        (le_iSup₂_of_le rs.1 (by omega) (le_iSup₂_of_le rs.2 (by omega) le_rfl))
-  · refine sup_le le_sup_left (iSup₂_le fun r hr ↦ iSup₂_le fun s hs ↦ ?_)
+        (mhs.deligneSplitting_le_deligneSplittingBelow (by omega) (by omega))
+  · refine sup_le le_sup_left (mhs.deligneSplittingBelow_le_iff.2 fun r hr s hs ↦ ?_)
     let j : ℕ := (q - r - 1).toNat
     have hj : (j : ℤ) = q - r - 1 := by
       rw [Int.toNat_of_nonneg]
@@ -322,15 +296,9 @@ private theorem map_deligneSplittingBelow_eq_of_fine (p q : ℤ)
       (mhs.deligneSplittingBelow a b).map (latticeConj hℂ) ≤
         mhs.deligneSplittingBelow b a := by
     intro a b hab
-    simp only [deligneSplittingBelow, Submodule.map_iSup]
-    apply iSup_le
-    intro r
-    apply iSup_le
-    intro hr
-    apply iSup_le
-    intro s
-    apply iSup_le
-    intro hs
+    rw [Submodule.map_le_iff_le_comap]
+    refine mhs.deligneSplittingBelow_le_iff.2 fun r hr s hs ↦ ?_
+    rw [← Submodule.map_le_iff_le_comap]
     calc
       (mhs.deligneSplitting r s).map (latticeConj hℂ) ≤
           (mhs.deligneSplitting r s).map (latticeConj hℂ) ⊔
@@ -338,7 +306,7 @@ private theorem map_deligneSplittingBelow_eq_of_fine (p q : ℤ)
       _ = mhs.deligneSplitting s r ⊔
             mhs.deligneSplittingBelow s r := ih r s (by omega)
       _ ≤ mhs.deligneSplittingBelow b a := sup_le
-        (le_iSup₂_of_le s hs (le_iSup₂_of_le r hr le_rfl))
+        (mhs.deligneSplitting_le_deligneSplittingBelow hs hr)
         (mhs.deligneSplittingBelow_mono hs.le hr.le)
   refine le_antisymm (hforward p q rfl) ?_
   have hmap :
@@ -421,6 +389,13 @@ theorem map_latticeConj_deligneSplitting_sup_below (p q : ℤ) :
       · exact mhs.map_latticeConj_deligneSplitting_sup_below_of_lower p q
           (fun r s hrs ↦ ih r s (by omega))
   exact key (max k₀ (p + q)) (le_max_left _ _) p q (le_max_right _ _)
+
+/-- Conjugation exchanges the sums of Deligne components below transposed bidegrees. -/
+theorem map_deligneSplittingBelow (p q : ℤ) :
+    (mhs.deligneSplittingBelow p q).map (latticeConj hℂ) =
+      mhs.deligneSplittingBelow q p :=
+  mhs.map_deligneSplittingBelow_eq_of_fine p q fun r s _ ↦
+    mhs.map_latticeConj_deligneSplitting_sup_below r s
 
 /-- Elementwise form of Deligne's fine conjugation relation. -/
 theorem exists_mem_deligneSplitting_smodEq_latticeConj_below (p q : ℤ) {x : Vℂ}
