@@ -17,6 +17,9 @@ group over that simple extension, so transitivity on the other roots is equivale
 irreducibility of the quotient. This identifies double transitivity of the original root action
 with that irreducibility criterion.
 
+This implements the “2-transitivity” milestone in Layer 2 of
+`TauCetiRoadmap/PolynomialGaloisGroups/README.md`.
+
 ## Main result
 
 * `TauCeti.is_two_pretransitive_iff_irreducible_divByMonic`: the root action is doubly
@@ -39,8 +42,8 @@ For an irreducible separable polynomial of degree at least two, the Galois actio
 doubly pretransitive exactly when, after adjoining a chosen root `x`, the quotient
 `p / (X - x)` remains irreducible.
 
-The quotient is formed after mapping `p` to `F⟮x⟯`; its distinguished root is
-`IntermediateField.AdjoinSimple.gen F x`. -/
+The quotient is formed after mapping `p` to `F⟮x⟯`; the removed linear factor is
+`X - C (IntermediateField.AdjoinSimple.gen F x)`. -/
 theorem is_two_pretransitive_iff_irreducible_divByMonic
     (hp : Irreducible p) (hsep : p.Separable) (hdeg : 1 < p.natDegree)
     (x : p.rootSet p.SplittingField) :
