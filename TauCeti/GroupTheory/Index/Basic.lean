@@ -25,18 +25,35 @@ centre gives the `Γ.withCenter` readings.
 ## Main results
 
 * `Subgroup.mem_withCenter_iff`: an element of `Γ·Z(G)` is one of `Γ` times a central one.
+* `TauCeti.index_eq_of_natCard_eq_mul`: cancel a known nonzero subgroup order from the
+  order-index formula.
 * `Subgroup.withCenter_le_iff`: the universal property — containing `Γ·Z(G)` is containing both.
 * `Subgroup.withCenter_eq_self_iff`: adjoining the centre changes nothing exactly when the
   centre already lies inside `Γ`.
 * `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: the relative index `2`
   and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
+* `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}`.
 -/
 
+
 public section
 
 namespace Subgroup
+
+/-- **A coset space of a countable group is countable.** A countable group has only countably
+many cosets of any subgroup. Where a construction runs over `G ⧸ H` one coset at a time it is
+this that keeps the family countable — as in
+`ModularGroup.isFundamentalDomain_iUnion_out_inv_smul_fdo`, which tiles a fundamental domain for
+`H ≤ PSL(2, ℤ)` by one translate of `𝒟ᵒ` per coset. -/
+@[to_additive /-- **A coset space of a countable additive group is countable.** A countable
+additive group has only countably many cosets of any subgroup. -/]
+instance instCountableQuotient {G : Type*} [Group G] [Countable G] (H : Subgroup G) :
+    Countable (G ⧸ H) :=
+  -- Stated as an instance because `G ⧸ H` reaches `Quotient` only through `HasQuotient`, which
+  -- instance synthesis does not unfold: without this, `Countable (G ⧸ H)` is not found.
+  inferInstanceAs (Countable (Quotient (QuotientGroup.leftRel H)))
 
 /-- The preimage of a finite-index subgroup under a group homomorphism has finite index. -/
 @[to_additive]
@@ -163,6 +180,15 @@ theorem index_eq_two_mul_index_withCenter (ha : a ∈ Subgroup.center G) (haΓ :
 end Subgroup
 
 namespace TauCeti
+
+/-- **Cancel a known nonzero subgroup order from the order-index formula.** If `H` has order `c`
+and its ambient group has order `c * d`, with `c > 0`, then `H` has index `d`. -/
+theorem index_eq_of_natCard_eq_mul {G : Type*} [Group G] {H : Subgroup G} {c d : ℕ}
+    (hpos : 0 < c) (hH : Nat.card H = c) (hG : Nat.card G = c * d) : H.index = d := by
+  refine Nat.eq_of_mul_eq_mul_left hpos ?_
+  calc c * H.index = Nat.card H * H.index := by rw [hH]
+    _ = Nat.card G := Subgroup.card_mul_index H
+    _ = c * d := hG
 
 /-- If the order of a finite group is invertible in `k`, then so is the order of any subgroup,
 because the two differ by the index. -/

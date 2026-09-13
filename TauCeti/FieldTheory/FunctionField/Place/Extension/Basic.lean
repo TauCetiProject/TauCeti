@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.Valuation.Extension
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.RingTheory.Valuation.Discrete.Normalize
+-- Proof-only: nontriviality survives restriction along an algebraic extension.
+import TauCeti.RingTheory.Valuation.NontrivialComap
 
 /-!
 # Extensions of places: the ramification index and the relative degree
@@ -267,11 +269,10 @@ private theorem ord_comap (f : F) :
 contained in a valuation ring is contained in that valuation ring, so a place of `F'` trivial on
 `F` would have all of `F'` as its valuation ring. -/
 private theorem ordIndex_comap_ne_zero [Algebra.IsIntegral F F'] :
-    Valuation.ordIndex (P'.valuation.comap (algebraMap F F')) ≠ 0 := fun h ↦ by
-  have hall := (Valuation.ordIndex_eq_zero_iff _).mp h
-  refine P'.integers_ne_top (top_unique fun y _ ↦ ?_)
-  refine P'.mem_integers_of_isIntegral (R := F) (fun f ↦ ?_) (Algebra.IsIntegral.isIntegral y)
-  exact P'.mem_integers_iff_ord_nonneg.mpr (by rw [← ord_comap F P' f, hall f])
+    Valuation.ordIndex (P'.valuation.comap (algebraMap F F')) ≠ 0 :=
+  haveI := Valuation.isNontrivial_of_surjective P'.valuation_surjective
+  haveI := Valuation.isNontrivial_comap_algebraMap (K := F) P'.valuation
+  Valuation.ordIndex_ne_zero_of_isNontrivial _
 
 variable [Algebra.IsIntegral F F']
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Equiv.Fin.Basic
-public import TauCeti.GroupTheory.Perm.OrbitCount
+public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 import Mathlib.Tactic.Abel
 
 /-!

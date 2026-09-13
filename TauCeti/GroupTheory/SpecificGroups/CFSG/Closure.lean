@@ -51,12 +51,3 @@ example (d : ValidLieTypeIndex) : CharP d.Closure d.characteristic := inferInsta
 end
 
 end TauCeti.ValidLieTypeIndex
-
-namespace TauCeti.SuzukiLieIndex
-
-/-- The algebraic closure attached to a Suzuki index has characteristic two. -/
-instance charP_closure_two (d : SuzukiLieIndex) : CharP d.1.Closure 2 := by
-  rw [← d.characteristic_eq_two]
-  infer_instance
-
-end TauCeti.SuzukiLieIndex
