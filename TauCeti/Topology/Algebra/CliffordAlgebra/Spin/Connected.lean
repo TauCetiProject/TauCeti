@@ -33,21 +33,6 @@ namespace CliffordAlgebra
 
 open TauCeti
 
-private theorem ne_zero_of_invertible_realCliffordForm_zero {n : ℕ} (v : Fin n → ℝ)
-    [Invertible (realCliffordForm n 0 v)] : v ≠ 0 := by
-  intro hv
-  subst v
-  exact (isUnit_of_invertible
-    (realCliffordForm n 0 (0 : Fin n → ℝ))).ne_zero (by simp)
-
-private theorem sqrt_norm_ne_zero_realCliffordForm_zero {n : ℕ} (v : Fin n → ℝ)
-    [Invertible (realCliffordForm n 0 v)] :
-    Real.sqrt (realCliffordForm n 0 v) ≠ 0 := by
-  have hvpos : 0 < realCliffordForm n 0 v :=
-    posDef_realCliffordForm_zero n v
-      (ne_zero_of_invertible_realCliffordForm_zero v)
-  exact ne_of_gt (Real.sqrt_pos.2 hvpos)
-
 /-- The compact real Spin group is path-connected in every dimension at least two. -/
 theorem pathConnectedSpace_realCliffordSpinGroupZero_add_two (n : ℕ) :
     PathConnectedSpace (realCliffordSpinGroupZero (n + 2)) := by
@@ -59,20 +44,20 @@ theorem pathConnectedSpace_realCliffordSpinGroupZero_add_two (n : ℕ) :
     · exact mem_pathComponent_iff.mpr
         (joined_one_negOne_realCliffordSpinGroupZero_add_two n)
     · intro v w _ _
-      have hv0 : v ≠ 0 := ne_zero_of_invertible_realCliffordForm_zero v
-      have hw0 : w ≠ 0 := ne_zero_of_invertible_realCliffordForm_zero w
+      have hv0 : v ≠ 0 := _root_.QuadraticMap.ne_zero_of_invertible_apply Q v
+      have hw0 : w ≠ 0 := _root_.QuadraticMap.ne_zero_of_invertible_apply Q w
       let a := (Real.sqrt (Q v))⁻¹
       let b := (Real.sqrt (Q w))⁻¹
       have hva : a ≠ 0 :=
-        inv_ne_zero (sqrt_norm_ne_zero_realCliffordForm_zero v)
+        inv_ne_zero ((posDef_realCliffordForm_zero (n + 2)).sqrt_apply_ne_zero v hv0)
       have hwb : b ≠ 0 :=
-        inv_ne_zero (sqrt_norm_ne_zero_realCliffordForm_zero w)
+        inv_ne_zero ((posDef_realCliffordForm_zero (n + 2)).sqrt_apply_ne_zero w hw0)
       let _ : Invertible a := (isUnit_iff_ne_zero.mpr hva).invertible
       let _ : Invertible b := (isUnit_iff_ne_zero.mpr hwb).invertible
       have hv : Q (a • v) = 1 :=
-        realCliffordForm_zero_inv_sqrt_smul (n := n + 2) v hv0
+        (posDef_realCliffordForm_zero (n + 2)).inv_sqrt_smul_apply v hv0
       have hw : Q (b • w) = 1 :=
-        realCliffordForm_zero_inv_sqrt_smul (n := n + 2) w hw0
+        (posDef_realCliffordForm_zero (n + 2)).inv_sqrt_smul_apply w hw0
       let _ : Invertible (Q (a • v)) := hv.symm ▸ invertibleOne
       let _ : Invertible (Q (b • w)) := hw.symm ▸ invertibleOne
       let x := spinReflectionPair Q (a • v) (b • w) hv hw
@@ -85,11 +70,11 @@ theorem pathConnectedSpace_realCliffordSpinGroupZero_add_two (n : ℕ) :
         have hvref : QuadraticMap.reflection Q (a • v) =
             QuadraticMap.reflection Q v := by
           simpa only [Q, a] using
-            reflection_realCliffordForm_zero_inv_sqrt_smul (n := n + 2) v hv0
+            (posDef_realCliffordForm_zero (n + 2)).reflection_inv_sqrt_smul_eq v hv0
         have hwref : QuadraticMap.reflection Q (b • w) =
             QuadraticMap.reflection Q w := by
           simpa only [Q, b] using
-            reflection_realCliffordForm_zero_inv_sqrt_smul (n := n + 2) w hw0
+            (posDef_realCliffordForm_zero (n + 2)).reflection_inv_sqrt_smul_eq w hw0
         rw [hvref, hwref]
   apply pathConnectedSpace_iff_eq.mpr
   refine ⟨1, ?_⟩

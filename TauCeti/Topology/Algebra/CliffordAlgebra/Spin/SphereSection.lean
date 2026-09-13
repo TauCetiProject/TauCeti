@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.ReflectionPair
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
-public import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # A local section of the compact Spin sphere action
@@ -31,7 +30,10 @@ here.
 
 * `CliffordAlgebra.realCliffordSpinLastUnitNeighborhood` is the unit level away from the antipode
   of the last coordinate vector.
+* `CliffordAlgebra.realCliffordSpinLastLocalSectionDirection` is the normalized direction used by
+  the lift.
 * `CliffordAlgebra.realCliffordSpinLastLocalSection` is the normalized reflection-pair lift.
+* `CliffordAlgebra.realCliffordSpinLastLocalSection_apply` evaluates the lift on its neighborhood.
 * `CliffordAlgebra.continuousOn_realCliffordSpinLastLocalSection` proves its continuity on the
   neighborhood.
 * `CliffordAlgebra.realCliffordSpinLastLocalSection_action` proves that the lift carries the last
@@ -58,17 +60,23 @@ private abbrev compactUnitLevel (n : ℕ) :=
 private def lastUnitVector (n : ℕ) : Fin (n + 1) → ℝ :=
   Pi.single (Fin.last n) 1
 
-private theorem compactForm_lastUnitVector (n : ℕ) :
-    compactForm n (lastUnitVector n) = 1 := by
+/-- The last coordinate unit vector has value one under the compact real Clifford form. -/
+@[simp]
+theorem realCliffordForm_lastUnitVector (n : ℕ) :
+    realCliffordForm (n + 1) 0 (Pi.single (Fin.last n) 1) = 1 := by
   classical
-  rw [compactForm, realCliffordForm_zero_eq_weightedSumSquares_one]
+  rw [realCliffordForm_zero_eq_weightedSumSquares_one]
   rw [QuadraticMap.weightedSumSquares_apply]
-  simp only [Pi.one_apply, one_smul, lastUnitVector]
+  simp only [Pi.one_apply, one_smul]
   rw [Finset.sum_eq_single (Fin.last n)]
   · simp
   · intro b _ hb
     simp [hb]
   · simp
+
+private theorem compactForm_lastUnitVector (n : ℕ) :
+    compactForm n (lastUnitVector n) = 1 :=
+  realCliffordForm_lastUnitVector n
 
 /-- The unit level of `realCliffordForm (n + 1) 0` with the antipode of the last coordinate unit
 vector removed. -/
@@ -104,23 +112,29 @@ private theorem compactForm_last_sub_neg_pos {n : ℕ} {x : compactUnitLevel n}
     0 < compactForm n (lastUnitVector n - -x.1) :=
   posDef_realCliffordForm_zero (n + 1) _ (last_sub_neg_ne_zero hx)
 
-private def localSectionDirection {n : ℕ} (x : compactUnitLevel n)
-    (_hx : x ∈ realCliffordSpinLastUnitNeighborhood n) : Fin (n + 1) → ℝ :=
-  (Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹ •
-    (lastUnitVector n - -x.1)
+/-- The unit direction from the antipode of the last coordinate vector toward a unit-level point.
+At the excluded antipode it is totalized to zero by the real inverse. -/
+noncomputable def realCliffordSpinLastLocalSectionDirection {n : ℕ}
+    (x : {x : Fin (n + 1) → ℝ // realCliffordForm (n + 1) 0 x = 1}) : Fin (n + 1) → ℝ :=
+  (Real.sqrt (realCliffordForm (n + 1) 0 (Pi.single (Fin.last n) 1 - -x.1)))⁻¹ •
+    (Pi.single (Fin.last n) 1 - -x.1)
 
-private theorem compactForm_localSectionDirection {n : ℕ} (x : compactUnitLevel n)
+/-- On the last-vector neighborhood, the local-section direction has quadratic value one. -/
+@[simp]
+theorem realCliffordSpinLastLocalSectionDirection_form {n : ℕ}
+    (x : {x : Fin (n + 1) → ℝ // realCliffordForm (n + 1) 0 x = 1})
     (hx : x ∈ realCliffordSpinLastUnitNeighborhood n) :
-    compactForm n (localSectionDirection x hx) = 1 := by
-  simpa only [compactForm, localSectionDirection] using
-    realCliffordForm_zero_inv_sqrt_smul
-      (n := n + 1) (lastUnitVector n - -x.1) (last_sub_neg_ne_zero hx)
+    realCliffordForm (n + 1) 0 (realCliffordSpinLastLocalSectionDirection x) = 1 := by
+  simpa only [compactForm, realCliffordSpinLastLocalSectionDirection, lastUnitVector] using
+    (posDef_realCliffordForm_zero (n + 1)).inv_sqrt_smul_apply
+      (lastUnitVector n - -x.1) (last_sub_neg_ne_zero hx)
 
 private def localSectionOn {n : ℕ} (x : compactUnitLevel n)
     (hx : x ∈ realCliffordSpinLastUnitNeighborhood n) :
     realCliffordSpinGroupZero (n + 1) :=
-  spinReflectionPair (compactForm n) (localSectionDirection x hx) (lastUnitVector n)
-    (compactForm_localSectionDirection x hx) (compactForm_lastUnitVector n)
+  spinReflectionPair (compactForm n) (realCliffordSpinLastLocalSectionDirection x)
+    (lastUnitVector n) (realCliffordSpinLastLocalSectionDirection_form x hx)
+    (compactForm_lastUnitVector n)
 
 /-- A normalized reflection-pair lift on the last-vector unit neighborhood, totalized by the
 identity at the excluded antipode. -/
@@ -129,6 +143,19 @@ def realCliffordSpinLastLocalSection (n : ℕ)
     realCliffordSpinGroupZero (n + 1) := by
   classical
   exact if hx : x ∈ realCliffordSpinLastUnitNeighborhood n then localSectionOn x hx else 1
+
+/-- On the last-vector neighborhood, the local section is the normalized reflection-pair lift. -/
+theorem realCliffordSpinLastLocalSection_apply {n : ℕ}
+    (x : {x : Fin (n + 1) → ℝ // realCliffordForm (n + 1) 0 x = 1})
+    (hx : x ∈ realCliffordSpinLastUnitNeighborhood n) :
+    realCliffordSpinLastLocalSection n x =
+      spinReflectionPair (realCliffordForm (n + 1) 0)
+        (realCliffordSpinLastLocalSectionDirection x)
+        (Pi.single (Fin.last n) 1)
+        (realCliffordSpinLastLocalSectionDirection_form x hx)
+        (realCliffordForm_lastUnitVector n) := by
+  rw [realCliffordSpinLastLocalSection]
+  simp only [hx, dite_true, localSectionOn, compactForm, lastUnitVector]
 
 /-- The normalized reflection-pair lift is continuous on the punctured last-vector neighborhood. -/
 theorem continuousOn_realCliffordSpinLastLocalSection (n : ℕ) :
@@ -149,18 +176,18 @@ theorem continuousOn_realCliffordSpinLastLocalSection (n : ℕ) :
       (Real.sqrt (compactForm n (lastUnitVector n - -x.1.1)))⁻¹) :=
     hform.sqrt.inv₀ fun x => Real.sqrt_ne_zero'.mpr (hpos x)
   have hdirection : Continuous (fun x : realCliffordSpinLastUnitNeighborhood n =>
-      localSectionDirection x.1 x.2) := by
+      realCliffordSpinLastLocalSectionDirection x.1) := by
     convert hscalar.smul hvector using 1
     funext x
     rfl
   have hvalue : Continuous (fun x : realCliffordSpinLastUnitNeighborhood n =>
-      ι (compactForm n) (localSectionDirection x.1 x.2) *
+      ι (compactForm n) (realCliffordSpinLastLocalSectionDirection x.1) *
         ι (compactForm n) (lastUnitVector n)) :=
     ((continuous_ι (compactForm n)).comp hdirection).mul continuous_const
   exact hvalue.congr fun x => by
     -- The induced topology on the Spin subtype reduces continuity to its Clifford-algebra
     -- carrier; expose that carrier to compare with the explicit reflection-pair product.
-    change ι (compactForm n) (localSectionDirection x.1 x.2) *
+    change ι (compactForm n) (realCliffordSpinLastLocalSectionDirection x.1) *
         ι (compactForm n) (lastUnitVector n) =
       (realCliffordSpinLastLocalSection n x.1 : CliffordAlgebra (compactForm n))
     rw [realCliffordSpinLastLocalSection]
@@ -175,8 +202,8 @@ theorem realCliffordSpinLastLocalSection_action {n : ℕ}
     spinVectorAction (realCliffordForm (n + 1) 0)
         (realCliffordSpinLastLocalSection n x)
         (Pi.single (Fin.last n) 1) = x.1 := by
-  let _ : Invertible (compactForm n (localSectionDirection x hx)) :=
-    (compactForm_localSectionDirection x hx).symm ▸ invertibleOne
+  let _ : Invertible (compactForm n (realCliffordSpinLastLocalSectionDirection x)) :=
+    (realCliffordSpinLastLocalSectionDirection_form x hx).symm ▸ invertibleOne
   let _ : Invertible (compactForm n (lastUnitVector n)) :=
     (compactForm_lastUnitVector n).symm ▸ invertibleOne
   rw [realCliffordSpinLastLocalSection]
@@ -199,16 +226,16 @@ theorem realCliffordSpinLastLocalSection_action {n : ℕ}
     QuadraticMap.reflection_sub_apply_eq_of_map_eq
       (compactForm n) (lastUnitVector n) (-x.1) hform
   have hreflection : QuadraticMap.reflection (compactForm n)
-      (localSectionDirection x hx) =
+      (realCliffordSpinLastLocalSectionDirection x) =
         QuadraticMap.reflection (compactForm n) (lastUnitVector n - -x.1) := by
     let _ : Invertible (realCliffordForm (n + 1) 0
         ((Real.sqrt (realCliffordForm (n + 1) 0
-          (lastUnitVector n - -x.1)))⁻¹ • (lastUnitVector n - -x.1))) :=
-      (realCliffordForm_zero_inv_sqrt_smul
-        (n := n + 1) (lastUnitVector n - -x.1)
+      (lastUnitVector n - -x.1)))⁻¹ • (lastUnitVector n - -x.1))) :=
+      ((posDef_realCliffordForm_zero (n + 1)).inv_sqrt_smul_apply
+        (lastUnitVector n - -x.1)
         (last_sub_neg_ne_zero hx)).symm ▸ invertibleOne
-    convert reflection_realCliffordForm_zero_inv_sqrt_smul
-      (n := n + 1) (lastUnitVector n - -x.1) (last_sub_neg_ne_zero hx) using 1
+    convert (posDef_realCliffordForm_zero (n + 1)).reflection_inv_sqrt_smul_eq
+      (lastUnitVector n - -x.1) (last_sub_neg_ne_zero hx) using 1
     -- The direction is definitionally this normalized vector; only its proof-irrelevant norm
     -- instance differs from the one constructed for the shared rescaling theorem.
     congr 1

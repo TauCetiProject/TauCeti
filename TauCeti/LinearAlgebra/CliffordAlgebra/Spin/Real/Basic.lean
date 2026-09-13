@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DoubleCover
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
-public import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # Compact real Spin groups
@@ -29,10 +28,6 @@ separate.
   finite-dimensional positive-definite real form.
 * `CliffordAlgebra.realCliffordSpinGroup` names the real Spin groups by signature.
 * `CliffordAlgebra.realCliffordSpinGroupZero` names the compact real Spin group.
-* `CliffordAlgebra.realCliffordForm_zero_inv_sqrt_smul` normalizes a nonzero vector in the
-  positive-definite real form.
-* `CliffordAlgebra.reflection_realCliffordForm_zero_inv_sqrt_smul` shows that this normalization
-  does not change its reflection.
 * `CliffordAlgebra.realCliffordSpinDoubleCoverZero` packages its double cover in positive dimension.
 * `CliffordAlgebra.card_fiber_realCliffordSpinDoubleCoverZero_rightHom` proves that every fiber
   of the double cover contains exactly two points.
@@ -78,50 +73,6 @@ abbrev realCliffordSpinGroup (p q : ℕ) := spinGroup (realCliffordForm p q)
 
 /-- The compact real Spin group `Spin(n)`. -/
 abbrev realCliffordSpinGroupZero (n : ℕ) := realCliffordSpinGroup n 0
-
-/-- Scaling a nonzero vector by the inverse square root of its value under the positive-definite
-real Clifford form gives a vector of quadratic value one. -/
-@[simp]
-theorem realCliffordForm_zero_inv_sqrt_smul {n : ℕ} (v : Fin n → ℝ) (hv : v ≠ 0) :
-    realCliffordForm n 0
-        ((Real.sqrt (realCliffordForm n 0 v))⁻¹ • v) = 1 := by
-  have hpos : 0 < realCliffordForm n 0 v :=
-    posDef_realCliffordForm_zero n v hv
-  have hsqrt : Real.sqrt (realCliffordForm n 0 v) ≠ 0 :=
-    Real.sqrt_ne_zero'.mpr hpos
-  calc
-    realCliffordForm n 0
-        ((Real.sqrt (realCliffordForm n 0 v))⁻¹ • v) =
-        (Real.sqrt (realCliffordForm n 0 v))⁻¹ *
-          (Real.sqrt (realCliffordForm n 0 v))⁻¹ * realCliffordForm n 0 v := by
-      rw [QuadraticMap.map_smul]
-      rfl
-    _ = 1 := by
-      field_simp
-      simpa [pow_two] using (Real.sq_sqrt hpos.le).symm
-
-/-- Normalizing a nonzero vector in the positive-definite real Clifford form does not change its
-quadratic reflection. -/
-@[simp]
-theorem reflection_realCliffordForm_zero_inv_sqrt_smul {n : ℕ}
-    (v : Fin n → ℝ) (hv : v ≠ 0)
-    [Invertible (realCliffordForm n 0 v)]
-    [Invertible (realCliffordForm n 0
-      ((Real.sqrt (realCliffordForm n 0 v))⁻¹ • v))] :
-    QuadraticMap.reflection (realCliffordForm n 0)
-        ((Real.sqrt (realCliffordForm n 0 v))⁻¹ • v) =
-      QuadraticMap.reflection (realCliffordForm n 0) v := by
-  have ha : (Real.sqrt (realCliffordForm n 0 v))⁻¹ ≠ 0 :=
-    inv_ne_zero (Real.sqrt_ne_zero'.mpr
-      (posDef_realCliffordForm_zero n v hv))
-  let _ : Invertible (Real.sqrt (realCliffordForm n 0 v))⁻¹ :=
-    (isUnit_iff_ne_zero.mpr ha).invertible
-  -- `reflection_smul_eq` constructs its own proof-irrelevant norm instance; align that instance
-  -- with the one in the public statement after applying the theorem.
-  convert QuadraticMap.reflection_smul_eq (realCliffordForm n 0) v
-    (Real.sqrt (realCliffordForm n 0 v))⁻¹ using 1
-  congr 1
-  exact Subsingleton.elim _ _
 
 /-- The algebraic double cover from `Spin(n)` to the special orthogonal group in positive
 dimension. -/
