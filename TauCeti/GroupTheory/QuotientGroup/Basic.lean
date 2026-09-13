@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 
 /-!
@@ -27,6 +28,9 @@ The cosets of `⊥` in a group `G` are the elements of `G`, and Mathlib's
 `QuotientGroup.quotientBot` is that identification.  The identification is equivariant for left
 translation, and the only element of `G` fixing a coset of `⊥` is the identity.
 
+For a finite group, a sum can also be split over the left or right cosets of a subgroup by using
+`Quotient.out` as a transversal.
+
 ## Main statements
 
 * `TauCeti.stabilizer_quotientGroup_mk`: the stabilizer of `sH` in `G` is `sHs⁻¹`.
@@ -36,6 +40,8 @@ translation, and the only element of `G` fixing a coset of `⊥` is the identity
   `G ⧸ ⊥` with left translation in `G`.
 * `TauCeti.quotientBot_smul_eq_self_iff`: a group element fixes a coset of the trivial subgroup
   only when it is the identity.
+* `Subgroup.sum_eq_sum_leftCosets` and `Subgroup.sum_eq_sum_rightCosets`: split a finite sum
+  along the left or right cosets of a subgroup.
 -/
 
 public section
@@ -103,5 +109,45 @@ theorem quotientBot_smul_eq_self_iff (g : G) (q : G ⧸ (⊥ : Subgroup G)) :
     | H x => simpa [quotientBot_smul] using this
   · rintro rfl
     exact one_smul _ _
+
+section Finite
+
+variable {M : Type*} [AddCommMonoid M] [Fintype G] (H : Subgroup G)
+
+/-- A subgroup of a finite group is a finite type. -/
+noncomputable local instance fintypeSubgroup : Fintype H := Fintype.ofFinite H
+
+/-- The quotient of a finite group by a subgroup is a finite type. -/
+noncomputable local instance fintypeQuotientGroup : Fintype (G ⧸ H) :=
+  H.fintypeQuotientOfFiniteIndex
+
+/-- Every element of a finite group `G` is uniquely the product of the `Quotient.out`
+representative of a left coset of `H` and an element of `H`. -/
+theorem _root_.Subgroup.sum_eq_sum_leftCosets (f : G → M) :
+    ∑ g : G, f g = ∑ q : G ⧸ H, ∑ h : H, f (q.out * h) := by
+  have hmk (q : G ⧸ H) (h : H) : ((q.out * h : G) : G ⧸ H) = q := by
+    rw [QuotientGroup.mk_mul_of_mem _ h.2, QuotientGroup.out_eq']
+  have hbij : Function.Bijective fun p : (G ⧸ H) × H => (p.1.out : G) * (p.2 : G) := by
+    refine Function.bijective_iff_has_inverse.2 ⟨fun g => ((g : G ⧸ H),
+      ⟨(Quotient.out (g : G ⧸ H))⁻¹ * g, QuotientGroup.eq.mp (QuotientGroup.out_eq' _)⟩),
+      fun p => ?_, fun g => ?_⟩
+    · refine Prod.ext (hmk p.1 p.2) (Subtype.ext ?_)
+      simp [hmk p.1 p.2]
+    · simp
+  have key := Fintype.sum_bijective _ hbij
+    (fun p : (G ⧸ H) × H => f ((p.1.out : G) * (p.2 : G))) f fun _ => rfl
+  rw [← key, Fintype.sum_prod_type]
+
+/-- The right-coset form of `Subgroup.sum_eq_sum_leftCosets`. -/
+theorem _root_.Subgroup.sum_eq_sum_rightCosets (f : G → M) :
+    ∑ g : G, f g = ∑ q : G ⧸ H, ∑ h : H, f ((h : G) * (q.out : G)⁻¹) := by
+  have h1 : ∑ g : G, f g = ∑ g : G, f g⁻¹ :=
+    Fintype.sum_equiv (Equiv.inv G) _ _ fun _ => by simp
+  rw [h1, H.sum_eq_sum_leftCosets fun g => f g⁻¹]
+  refine Finset.sum_congr rfl fun q _ => ?_
+  exact (Fintype.sum_equiv (Equiv.inv H) (fun h => f ((h : G) * (q.out : G)⁻¹))
+    (fun h => f ((q.out * (h : G))⁻¹)) fun _ => by simp).symm
+
+end Finite
 
 end TauCeti
