@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.Generator.ComplexLinear
 public import TauCeti.Analysis.Semigroups.GrowthBound
+public import TauCeti.Analysis.SpecialFunctions.Complex.ExpSlope
 public import TauCeti.LinearAlgebra.LinearPMap.Shift
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 
@@ -165,24 +166,6 @@ end HasGrowthBound
 /-! ## The generator of a phase shift -/
 
 omit [CompleteSpace X] in
-/-- The phase `t ↦ exp (-i b t)` has derivative `-i b` at `0`, in difference-quotient form along
-the positive reals. -/
-private theorem tendsto_phase_slope (b : ℝ) :
-    Tendsto (fun t : ℝ => t⁻¹ • (Complex.exp (-(b * t) * Complex.I) - 1))
-      (𝓝[>] (0 : ℝ)) (𝓝 (-(b * Complex.I))) := by
-  have hderiv : HasDerivAt (fun t : ℝ => Complex.exp (-(b * t) * Complex.I))
-      (-(b * Complex.I)) 0 := by
-    have h : HasDerivAt (fun t : ℝ => (-(b * (t : ℂ)) * Complex.I)) (-(b * Complex.I)) 0 := by
-      simpa using ((hasDerivAt_id (0 : ℝ)).ofReal_comp.const_mul (-(b : ℂ))).mul_const Complex.I
-    simpa using h.cexp
-  have hslope := hasDerivAt_iff_tendsto_slope.mp hderiv
-  refine (hslope.mono_left (nhdsWithin_mono _ ?_)).congr ?_
-  · intro t ht
-    exact ne_of_gt ht
-  · intro t
-    simp [slope_def_module]
-
-omit [CompleteSpace X] in
 /-- Phase shifting a semigroup shifts the limit of a generator difference quotient by `-i b`. -/
 private theorem tendsto_phaseShift_genQuot (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) (b : ℝ) {x Ax : X}
@@ -194,7 +177,11 @@ private theorem tendsto_phaseShift_genQuot (S : StronglyContinuousSemigroup X)
       (𝓝[>] (0 : ℝ)) (𝓝 1) := by
     have hcont : ContinuousAt (fun t : ℝ => Complex.exp (-(b * t) * Complex.I)) 0 := by fun_prop
     simpa using hcont.tendsto.mono_left nhdsWithin_le_nhds
-  have hsum := (hphase.smul hgen).add ((tendsto_phase_slope b).smul
+  have hphaseSlope : Tendsto (fun t : ℝ => t⁻¹ • (Complex.exp (-(b * t) * Complex.I) - 1))
+      (𝓝[>] (0 : ℝ)) (𝓝 (-(b * Complex.I))) :=
+    (TauCeti.tendsto_inv_smul_exp_mul_ofReal_sub_one (-(b * Complex.I))).congr fun t => by
+      rw [show -((b : ℂ) * Complex.I) * (t : ℂ) = -((b : ℂ) * (t : ℂ)) * Complex.I by ring]
+  have hsum := (hphase.smul hgen).add (hphaseSlope.smul
     (tendsto_const_nhds : Tendsto (fun _ : ℝ => x) (𝓝[>] (0 : ℝ)) (𝓝 x)))
   have hsum' : Tendsto
       (fun t : ℝ => Complex.exp (-(b * t) * Complex.I) • ((1 / t) • (S.realOperator t x - x)) +
