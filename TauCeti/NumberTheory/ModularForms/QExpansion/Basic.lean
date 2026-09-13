@@ -40,9 +40,9 @@ stated here rather than at the descent because it mentions only coefficients, di
 
 * `TauCeti.ModularForm.qExpansionLinearMap`.
 * `TauCeti.UpperHalfPlane.qExpansion_coeff_unique`.
-* `TauCeti.CuspForm.qExpansionCoeffₗ`: the `n`-th coefficient as a `ℂ`-linear functional on
-  cusp forms, with `TauCeti.qExpansion_coeff_smul_sub_smul` the combination `c • u - d • v`
-  read off it.
+* `CuspForm.qExpansionCoeffₗ` (at root, so dot notation on `CuspForm` elaborates): the `n`-th
+  coefficient as a `ℂ`-linear functional on cusp forms, with
+  `TauCeti.qExpansion_coeff_smul_sub_smul` the combination `c • u - d • v` read off it.
 * `TauCeti.smul_qParam_pow_shift_eq`: a shift by `1 / d` fixes every `q`-power that a
   `d`-supported coefficient function leaves alive.
 
@@ -100,13 +100,13 @@ the coefficient map `PowerSeries.coeff n`, each of the three already linear. Nam
 composite is what lets a coefficient computation on a linear combination of cusp forms go
 through `map_add`, `map_sub` and `map_smul` instead of unfolding the `FunLike` and `ModularForm`
 coercions by hand. -/
-def CuspForm.qExpansionCoeffₗ {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne]
+def _root_.CuspForm.qExpansionCoeffₗ {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne]
     (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) (k : ℤ) (n : ℕ) : CuspForm Γ k →ₗ[ℂ] ℂ :=
   (PowerSeries.coeff n).comp
     ((ModularForm.qExpansionLinearMap hh hΓ k).comp CuspForm.toModularFormₗ)
 
 @[simp]
-lemma CuspForm.qExpansionCoeffₗ_apply {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne]
+lemma _root_.CuspForm.qExpansionCoeffₗ_apply {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne]
     (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) {k : ℤ} (n : ℕ) (f : CuspForm Γ k) :
     CuspForm.qExpansionCoeffₗ hh hΓ k n f = (qExpansion h ⇑f).coeff n := by
   rw [CuspForm.qExpansionCoeffₗ, LinearMap.comp_apply, LinearMap.comp_apply,
