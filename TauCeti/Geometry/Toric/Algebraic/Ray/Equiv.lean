@@ -82,6 +82,42 @@ theorem mem_map (rho : ToricRay σ) (e : V ≃ₗ[ℝ] V') (x : V') :
   · intro hx
     exact ⟨e.symm x, hx, by simp⟩
 
+private theorem cast_eq_iff {W : Type*} [AddCommGroup W] [Module ℝ W]
+    {C D : PointedCone ℝ W} (h : C = D) {rho : ToricRay C} {tau : ToricRay D} :
+    cast (congrArg ToricRay h) rho = tau ↔ ∀ x, x ∈ rho ↔ x ∈ tau := by
+  subst D
+  simp only [cast_eq]
+  exact SetLike.ext_iff
+
+/-- Transporting a ray along the identity equivalence is the original ray, after identifying the
+image cone with the original cone. -/
+@[simp]
+theorem map_id (rho : ToricRay σ) :
+    cast (congrArg ToricRay (by
+      ext x
+      simp)) (rho.map (LinearEquiv.refl ℝ V)) = rho := by
+  apply (cast_eq_iff (by
+    ext x
+    simp)).2
+  intro x
+  rw [mem_map]
+  simp
+
+/-- Successive transports of a ray agree with transport along the composite equivalence, after
+identifying the iterated image cone with the image under the composite. -/
+@[simp]
+theorem map_comp {V'' : Type*} [AddCommGroup V''] [Module ℝ V''] (rho : ToricRay σ)
+    (e : V ≃ₗ[ℝ] V') (e' : V' ≃ₗ[ℝ] V'') :
+    cast (congrArg ToricRay (by
+      ext x
+      simp)) ((rho.map e).map e') = rho.map (e.trans e') := by
+  apply (cast_eq_iff (by
+    ext x
+    simp)).2
+  intro x
+  rw [mem_map, mem_map, mem_map]
+  rfl
+
 /-- Mapping rays along a linear equivalence is injective. -/
 private theorem map_injective (e : V ≃ₗ[ℝ] V') :
     Function.Injective
@@ -163,6 +199,33 @@ noncomputable def mapLinearEquiv (e : V ≃ₗ[ℝ] V') :
 theorem mapLinearEquiv_apply (e : V ≃ₗ[ℝ] V') (rho : ToricRay σ) :
     mapLinearEquiv e rho = rho.map e :=
   (rfl)
+
+/-- The ray equivalence induced by the identity linear equivalence is the identity, after
+identifying the image cone with the original cone. -/
+@[simp]
+theorem mapLinearEquiv_refl :
+    (mapLinearEquiv (σ := σ) (LinearEquiv.refl ℝ V)).trans
+        (Equiv.cast (congrArg ToricRay (by
+          ext x
+          simp))) = Equiv.refl _ := by
+  apply Equiv.ext
+  intro rho
+  exact map_id rho
+
+/-- Ray equivalences induced by successive linear equivalences compose to the ray equivalence
+induced by their composite, after identifying the two image cones. -/
+@[simp]
+theorem mapLinearEquiv_trans {V'' : Type*} [AddCommGroup V''] [Module ℝ V'']
+    (e : V ≃ₗ[ℝ] V') (e' : V' ≃ₗ[ℝ] V'') :
+    (mapLinearEquiv (σ := σ) e).trans
+        ((mapLinearEquiv (σ := σ.map (e : V →ₗ[ℝ] V')) e').trans
+          (Equiv.cast (congrArg ToricRay (by
+            ext x
+            simp)))) =
+      mapLinearEquiv (σ := σ) (e.trans e') := by
+  apply Equiv.ext
+  intro rho
+  exact map_comp rho e e'
 
 /-- The inverse ray equivalence is transport along the inverse linear equivalence, after
 identifying the double image cone with the original cone. -/
