@@ -61,20 +61,6 @@ private abbrev compactUnitLevel (n : ℕ) :=
 private def lastUnitVector (n : ℕ) : Fin (n + 1) → ℝ :=
   Pi.single (Fin.last n) 1
 
-/-- The last coordinate unit vector has value one under the compact real Clifford form. -/
-@[simp]
-theorem realCliffordForm_lastUnitVector (n : ℕ) :
-    realCliffordForm (n + 1) 0 (Pi.single (Fin.last n) 1) = 1 := by
-  classical
-  rw [realCliffordForm_zero_eq_weightedSumSquares_one]
-  rw [QuadraticMap.weightedSumSquares_apply]
-  simp only [Pi.one_apply, one_smul]
-  rw [Finset.sum_eq_single (Fin.last n)]
-  · simp
-  · intro b _ hb
-    simp [hb]
-  · simp
-
 private theorem compactForm_lastUnitVector (n : ℕ) :
     compactForm n (lastUnitVector n) = 1 :=
   realCliffordForm_lastUnitVector n
@@ -120,6 +106,15 @@ noncomputable def realCliffordSpinLastLocalSectionDirection {n : ℕ}
   (Real.sqrt (realCliffordForm (n + 1) 0 (Pi.single (Fin.last n) 1 - -x.1)))⁻¹ •
     (Pi.single (Fin.last n) 1 - -x.1)
 
+/-- The local-section direction is the normalized vector from the excluded antipode to `x`. -/
+theorem realCliffordSpinLastLocalSectionDirection_def {n : ℕ}
+    (x : {x : Fin (n + 1) → ℝ // realCliffordForm (n + 1) 0 x = 1}) :
+    realCliffordSpinLastLocalSectionDirection x =
+      (Real.sqrt (realCliffordForm (n + 1) 0
+        (Pi.single (Fin.last n) 1 - -x.1)))⁻¹ •
+        (Pi.single (Fin.last n) 1 - -x.1) := by
+  rw [realCliffordSpinLastLocalSectionDirection]
+
 /-- On the last-vector neighborhood, the local-section direction has quadratic value one. -/
 @[simp]
 theorem realCliffordSpinLastLocalSectionDirection_form {n : ℕ}
@@ -135,7 +130,7 @@ theorem realCliffordSpinLastLocalSectionDirection_form {n : ℕ}
           (Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹ *
             compactForm n (lastUnitVector n - -x.1) := by
       rw [realCliffordSpinLastLocalSectionDirection, QuadraticMap.map_smul]
-      rfl
+      simp only [compactForm, lastUnitVector, smul_eq_mul]
     _ = 1 := by
       field_simp
       simpa [pow_two] using (Real.sq_sqrt hpos.le).symm
