@@ -54,7 +54,10 @@ sink-side construction.
 ## References
 
 See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and
-Derksen--Weyman, *An Introduction to Quiver Representations*, Ch. 2.
+Derksen--Weyman, *An Introduction to Quiver Representations*, Ch. 2. The formal template for this
+dual construction is the sink-side API in
+`TauCeti.RepresentationTheory.Quiver.Reflection.Representation`, especially `TauCeti.incomingSum`,
+`TauCeti.reflectRep`, and `TauCeti.reflectionFunctor`.
 -/
 
 public section
