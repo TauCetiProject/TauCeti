@@ -20,8 +20,11 @@ points with that ideal class group gives the points as degree-zero divisor class
 
 ## Main results
 
-* `WeierstrassCurve.Affine.setOf_exists_notMem_integers_eq_singleton_infinity`: the place at
-  infinity is the only place infinite on the coordinate ring.
+* `WeierstrassCurve.Affine.exists_one_lt_valuation_algebraMap_iff_eq_infinity`: a place is
+  infinite on the coordinate ring exactly when it is the place at infinity — the pointwise form,
+  and the `@[simp]` rule downstream proofs fire.
+* `WeierstrassCurve.Affine.setOf_exists_notMem_integers_eq_singleton_infinity`: the same fact as an
+  equality of sets, which is the shape `Divisor.degreeZeroClassGroupEquiv` consumes.
 * `WeierstrassCurve.Affine.pointEquivDegreeZeroDivisorClass`: **the points of `W` are the
   degree-zero divisor classes of `F(W)`.**
 * `WeierstrassCurve.Affine.val_pointEquivDegreeZeroDivisorClass_some`: that equivalence sends an
@@ -42,24 +45,34 @@ open TauCeti AlgebraicGeometry IsDedekindDomain Polynomial
 variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
   [IsDedekindDomain W.CoordinateRing]
 
-/-- **The place at infinity is the only place infinite on the coordinate ring.** Every other place
-is the place of a height-one prime, and such a place contains the whole coordinate ring; the place
-at infinity is infinite on it because `x` has a pole there. -/
-theorem setOf_exists_notMem_integers_eq_singleton_infinity :
-    {Q : Place F W.FunctionField | ∃ r : W.CoordinateRing,
-        algebraMap W.CoordinateRing W.FunctionField r ∉ Q.integers} = {Place.infinity W} := by
-  ext Q
-  simp only [Set.mem_ofPred_eq, Set.mem_singleton_iff]
+/-- **A place is infinite on the coordinate ring exactly when it is the place at infinity.** Every
+other place is the place of a height-one prime, and such a place contains the whole coordinate
+ring; the place at infinity is infinite on it because `x` has a pole there. -/
+-- Stated as `1 < Q.valuation …` rather than `… ∉ Q.integers`: `Place.mem_integers_iff` and
+-- `not_le` are both `@[simp]` and already carry the latter phrasing to this one, so only this one
+-- is in simp normal form. A `@[simp]` rule stated with `∉ Q.integers` never fires.
+@[simp]
+theorem exists_one_lt_valuation_algebraMap_iff_eq_infinity {Q : Place F W.FunctionField} :
+    (∃ r : W.CoordinateRing, 1 < Q.valuation (algebraMap W.CoordinateRing W.FunctionField r)) ↔
+      Q = Place.infinity W := by
   constructor
   · rintro ⟨r, hr⟩
     rcases Place.eq_infinity_or_existsUnique_eq_ofPrime (W := W) Q with h | ⟨𝔭, h𝔭, -⟩
     · exact h
-    · exact absurd ((Place.exists_eq_ofPrime_iff F W.FunctionField Q).mp ⟨𝔭, h𝔭⟩ r) hr
+    · exact absurd ((Place.exists_eq_ofPrime_iff F W.FunctionField Q).mp ⟨𝔭, h𝔭⟩ r)
+        (by simpa using hr)
   · rintro rfl
     refine ⟨algebraMap F[X] W.CoordinateRing X, ?_⟩
-    rw [Place.mem_integers_iff, Place.valuation_infinity,
+    rw [Place.valuation_infinity,
       ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField]
-    exact not_le.mpr W.one_lt_infinityPlace_X
+    exact W.one_lt_infinityPlace_X
+
+/-- **The place at infinity is the only place infinite on the coordinate ring**, as an equality of
+sets. -/
+theorem setOf_exists_notMem_integers_eq_singleton_infinity :
+    {Q : Place F W.FunctionField | ∃ r : W.CoordinateRing,
+        algebraMap W.CoordinateRing W.FunctionField r ∉ Q.integers} = {Place.infinity W} :=
+  Set.ext fun _ ↦ by simp
 
 /-- **The ideal class of a point's place is the class Mathlib's `toClass` takes.** The place of a
 point has the point's ideal `⟨X - x, Y - y⟩` underneath it, and `XYIdeal'` is that ideal as an
