@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Basic
 public import TauCeti.NumberTheory.ModularForms.Petersson.Basic
-public import TauCeti.GroupTheory.Index
+public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.NumberTheory.ModularForms.WithCenter
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 

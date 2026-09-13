@@ -32,9 +32,9 @@ higher-regularity argument when the dimensions differ.
 
 * `TauCeti.addHaar_image_eq_zero_of_not_surjective_fderivWithin`: a map between equal-dimensional
   spaces sends a set of nonsurjective derivative points to a null set.
-* `TauCeti.Differentiable.addHaar_image_criticalPoints_eq_zero`: the critical values of a globally
+* `Differentiable.addHaar_image_criticalPoints_eq_zero`: the critical values of a globally
   differentiable map between equal-dimensional spaces form a null set.
-* `TauCeti.Differentiable.dense_compl_image_criticalPoints`: the regular values of such a map are
+* `Differentiable.dense_compl_image_criticalPoints`: the regular values of such a map are
   dense.
 
 The measure-theoretic input follows Sébastien Gouëzel's Mathlib formalization of the change of
@@ -93,7 +93,7 @@ theorem addHaar_image_eq_zero_of_not_surjective_fderivWithin
 /-- The critical values of a differentiable map between equal-dimensional finite-dimensional real
 normed spaces have additive Haar measure zero. A point is critical here exactly when the Fréchet
 derivative is not surjective. -/
-theorem Differentiable.addHaar_image_criticalPoints_eq_zero
+theorem _root_.Differentiable.addHaar_image_criticalPoints_eq_zero
     (hf : Differentiable ℝ f) (hdim : finrank ℝ E = finrank ℝ F) :
     ν (f '' {x | ¬ Surjective (fderiv ℝ f x)}) = 0 := by
   apply addHaar_image_eq_zero_of_not_surjective_fderivWithin ν hdim
@@ -104,7 +104,7 @@ theorem Differentiable.addHaar_image_criticalPoints_eq_zero
 /-- The regular values of a differentiable map between equal-dimensional finite-dimensional real
 normed spaces are dense. Here the regular values are expressed as the complement of the image of
 the points where the Fréchet derivative is not surjective. -/
-theorem Differentiable.dense_compl_image_criticalPoints
+theorem _root_.Differentiable.dense_compl_image_criticalPoints
     (hf : Differentiable ℝ f) (hdim : finrank ℝ E = finrank ℝ F) :
     Dense (f '' {x | ¬ Surjective (fderiv ℝ f x)})ᶜ := by
   let t : Set F := f '' {x | ¬ Surjective (fderiv ℝ f x)}

@@ -29,6 +29,11 @@ for set and probability integrals.
 * The set-integral inequality specializes to the second-moment lower bound for a real-valued
   function on a probability space.
 
+## Compact support
+
+* `integrable_indicator_of_isCompact` promotes local integrability on an open set to global
+  integrability when the function vanishes almost everywhere away from a compact subset.
+
 ## `L¹` convergence
 
 `L¹` convergence is often produced in the Bochner form `∫ ω, ‖f i ω - g ω‖ ∂μ → 0` but consumed
@@ -59,13 +64,31 @@ public section
 
 noncomputable section
 
-open MeasureTheory Filter
+open MeasureTheory Filter TopologicalSpace
 
 open scoped ENNReal Topology
 
 namespace TauCeti
 
 namespace MeasureTheory
+
+/-- A function locally integrable on `Ω` and vanishing almost everywhere on `Ω` off a compact
+`K ⊆ Ω` is, after extension by zero, integrable on the whole space. -/
+theorem integrable_indicator_of_isCompact {X F : Type*} [NormedAddCommGroup X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] [NormedAddCommGroup F] {μ : Measure X}
+    {Ω : Opens X} {f : X → F} {K : Set X} (hK : IsCompact K) (hKΩ : K ⊆ Ω)
+    (hloc : LocallyIntegrableOn f Ω μ)
+    (hf : ∀ᵐ x ∂μ.restrict Ω, x ∉ K → f x = 0) :
+    Integrable ((Ω : Set X).indicator f) μ := by
+  have hae : (Ω : Set X).indicator f =ᵐ[μ] K.indicator f := by
+    filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hf] with x hx
+    by_cases hxΩ : x ∈ (Ω : Set X)
+    · by_cases hxK : x ∈ K
+      · rw [Set.indicator_of_mem hxΩ, Set.indicator_of_mem hxK]
+      · rw [Set.indicator_of_mem hxΩ, Set.indicator_of_notMem hxK, hx hxΩ hxK]
+    · rw [Set.indicator_of_notMem hxΩ, Set.indicator_of_notMem fun hxK => hxΩ (hKΩ hxK)]
+  exact ((hloc.integrableOn_compact_subset hKΩ hK).integrable_indicator
+    hK.isClosed.measurableSet).congr hae.symm
 
 /-- A function whose norm is eventually at least a positive constant at `atTop` is not integrable
 on any right half-line: it is bounded below in norm on a set of infinite measure. -/

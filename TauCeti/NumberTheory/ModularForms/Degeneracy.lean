@@ -1038,6 +1038,23 @@ theorem CuspForm.qExpansion_levelRaise_coeff_Gamma1 (M : ℕ) [NeZero d]
   refine CuspForm.qExpansion_levelRaise_coeff ?_ ?_ _ f n <;>
     exact one_mem_strictPeriods_Gamma1_map _
 
+/-- **The coefficients of a level-raise, read backwards.** If a cusp form `G` of level `Γ₁(M)`
+is `V_d g` as a function on `ℍ`, that is `⇑G = d ^ (1 - k) • (⇑g ∣[k] diag(d, 1))` for a cusp
+form `g` of level `Γ₁(M / d)` with `d ∣ M`, then `a_m(g) = a_{dm}(G)`. This is how a form
+recovered by the level-lowering dichotomy (`ConductorDichotomy.lean`) hands its coefficients
+back. -/
+theorem CuspForm.qExpansion_coeff_eq_qExpansion_coeff_mul_of_coe_eq_smul_slash_scaleGL {M : ℕ}
+    [NeZero d] (hdM : d ∣ M) {G : CuspForm ((Gamma1 M).map (mapGL ℝ)) k}
+    {g : CuspForm ((Gamma1 (M / d)).map (mapGL ℝ)) k}
+    (h : ⇑G = (d : ℂ) ^ (1 - k) • (⇑g ∣[k] scaleGL d)) (m : ℕ) :
+    (qExpansion 1 g).coeff m = (qExpansion 1 G).coeff (d * m) := by
+  have hG : G = CuspForm.levelRaise d
+      (Gamma1_map_le_conjAct_scaleGL_of_dvd (dvd_of_eq (Nat.mul_div_cancel' hdM))) g :=
+    DFunLike.coe_injective (by rw [CuspForm.coe_levelRaise, h])
+  rw [hG, CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map _)
+    (one_mem_strictPeriods_Gamma1_map _)]
+  simp only [dvd_mul_right, ↓reduceIte, Nat.mul_div_cancel_left m (NeZero.pos d)]
+
 /-- **Level-raising lands in the series supported on multiples of `d`.** The `q`-expansion of
 `V_d f` is the `PowerSeries.expand d` of that of `f`, so its coefficients away from the multiples
 of `d` vanish.

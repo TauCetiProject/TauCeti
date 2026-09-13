@@ -37,6 +37,7 @@ law in `Quadratic/Ramification.lean`: a prime coprime to `2` divides it exactly 
   `p ∣ fundamentalDiscriminant d ↔ p ∣ d` (the ramified odd primes are the divisors of `d`).
 * `TauCeti.Multiquadratic.two_not_dvd_fundamentalDiscriminant_iff_mod_four_eq_one`:
   `2 ∤ fundamentalDiscriminant d ↔ d ≡ 1 (mod 4)` (`2` is unramified exactly then).
+* `TauCeti.Multiquadratic.fundamentalDiscriminant_ne_zero`: it is nonzero for nonzero `d`.
 * `TauCeti.Multiquadratic.fundamentalDiscriminant_primeDiscriminantRadicand`: a prime discriminant
   is the fundamental discriminant of its own radicand.
 -/
@@ -78,6 +79,14 @@ theorem exists_sq_mul_eq_fundamentalDiscriminant (d : ℤ) :
   rcases fundamentalDiscriminant_eq_self_or_four_mul d with h | h
   · exact ⟨1, Or.inl rfl, by rw [h]; ring⟩
   · exact ⟨2, Or.inr rfl, by rw [h]; ring⟩
+
+/-- **The fundamental discriminant of a nonzero integer is nonzero**, being a nonzero square
+multiple of it. -/
+theorem fundamentalDiscriminant_ne_zero {d : ℤ} (hd : d ≠ 0) :
+    fundamentalDiscriminant d ≠ 0 := by
+  obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
+  rw [← hcd]
+  exact mul_ne_zero (pow_ne_zero 2 (by rcases hc with rfl | rfl <;> norm_num)) hd
 
 /-- **The fundamental discriminant of a squarefree integer is a fundamental discriminant.** When
 `d ≡ 1 (mod 4)` the value is `d` itself (`≡ 1 (mod 4)`, squarefree); otherwise `d ≡ 2` or

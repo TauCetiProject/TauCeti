@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Stability
 public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Regularity
+import TauCeti.Combinatorics.DenseGraphLimits.Graphon.OfMatrix
 import TauCeti.Combinatorics.DenseGraphLimits.Kernel.Pullback
 import TauCeti.MeasureTheory.MeasurableSpace.Finpartition
 import TauCeti.MeasureTheory.OptimalTransport.Gluing
@@ -26,8 +27,8 @@ gluing argument applies, and stability of cut distance under cut-norm approximat
 replacement error.  This avoids imposing standard-Borel or atomlessness hypotheses on any of the
 three carriers.
 
-The triangle inequality is the final pseudometric law needed to form the metric quotient of
-graphons at cut distance zero.
+The triangle inequality is the last pseudometric law still missing, so this file also equips the
+strict graphons on a fixed probability carrier with the cut-distance pseudometric.
 
 ## Main results
 
@@ -35,12 +36,18 @@ graphons at cut distance zero.
   probability carriers.
 * `TauCeti.DenseGraphLimits.cutDist_comap_right` states that reading the right-hand graphon along
   a measure-preserving map leaves the cut distance unchanged.
+* `TauCeti.DenseGraphLimits.Graphon.instPseudoMetricSpace` is the cut-distance pseudometric on
+  strict graphons over one carrier, and
+  `TauCeti.DenseGraphLimits.Graphon.dist_eq_cutDist` identifies its distance with `cutDist`.
 
 ## References
 
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), Lemma 6.5.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Section 8.2.
+* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — the arbitrary-carrier triangle
+  inequality and the fixed-carrier pseudometric. The `cutDist_triangle` signature follows
+  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 -/
 
 public section
@@ -144,32 +151,6 @@ private theorem cutDist_triangle_of_countable_middle [Countable Ω₂]
         @cutNorm _ _ π₂₃ hπ₂₃.isFiniteMeasure (overlayDiff W X π₂₃) := hnorm13
     _ ≤ cutDist U W + cutDist W X + ε := by linarith
 
-section StepModel
-
-variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
-variable {P : Finpartition (Set.univ : Set Ω)} [MeasurableSpace P.parts]
-variable [DiscreteMeasurableSpace P.parts]
-
-/-- A finite step graphon's block matrix, regarded as a graphon on the discrete probability space
-of partition parts. -/
-private def stepGraphonModel
-    (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ p q, val p q = val q p) :
-    Graphon P.parts (μ.map P.indexedPartition.index) where
-  toFun p q := val p q
-  symm' p q := congrArg Subtype.val (hsymm p q)
-  meas' := measurable_of_countable _
-  bdd' := ⟨1, fun p q => by
-    rw [abs_of_nonneg (val p q).property.1]
-    exact (val p q).property.2⟩
-  mem01' p q := (val p q).property
-
-@[simp]
-private theorem stepGraphonModel_apply
-    (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ p q, val p q = val q p)
-    (p q : P.parts) : stepGraphonModel (μ := μ) val hsymm p q = val p q := rfl
-
-end StepModel
-
 /-- The cut distance satisfies the triangle inequality when the intermediate graphon is constant
 on the rectangles of a measurable finite partition. -/
 private theorem cutDist_triangle_of_constantOn_partition
@@ -179,20 +160,20 @@ private theorem cutDist_triangle_of_constantOn_partition
       W x y = W (P.indexedPartition.some p) (P.indexedPartition.some q)) :
     cutDist U X ≤ cutDist U W + cutDist W X := by
   let _ : MeasurableSpace P.parts := ⊤
-  let ν : Measure P.parts := μ₂.map P.indexedPartition.index
-  let val : P.parts → P.parts → Set.Icc (0 : ℝ) 1 := fun p q =>
-    ⟨W (P.indexedPartition.some p) (P.indexedPartition.some q), W.mem_Icc _ _⟩
-  have hsymm : ∀ p q, val p q = val q p := fun p q => by
-    apply Subtype.ext
-    exact W.symm _ _
-  let A : Graphon P.parts ν := stepGraphonModel (μ := μ₂) val hsymm
   have hindex : Measurable P.indexedPartition.index :=
     Finpartition.measurable_indexedPartition_index P hP
-  have hmp : MeasurePreserving P.indexedPartition.index μ₂ ν := ⟨hindex, rfl⟩
-  have hmodel : W = A.comap P.indexedPartition.index hindex μ₂ := by
-    ext x y
-    rw [Graphon.comap_apply, stepGraphonModel_apply]
-    exact hconst _ _ (P.indexedPartition.mem_index x) (P.indexedPartition.mem_index y)
+  have hmp : MeasurePreserving P.indexedPartition.index μ₂
+      (μ₂.map P.indexedPartition.index) := ⟨hindex, rfl⟩
+  -- The intermediate graphon factors through the finitely many parts, so it is the pullback of a
+  -- matrix on the discrete probability space of parts.
+  have hfac : ∀ x y x' y', P.indexedPartition.index x = P.indexedPartition.index x' →
+      P.indexedPartition.index y = P.indexedPartition.index y' → W x y = W x' y' := by
+    intro x y x' y' hx hy
+    rw [hconst _ _ (P.indexedPartition.mem_index x) (P.indexedPartition.mem_index y),
+      hconst _ _ (P.indexedPartition.mem_index x') (P.indexedPartition.mem_index y'), hx, hy]
+  obtain ⟨b, hb, hmodel⟩ := exists_ofMatrix_eq_comap_of_factorsThrough
+    (ν := μ₂.map P.indexedPartition.index) W hmp.measurable hfac
+  set A := Graphon.ofMatrix (μ₂.map P.indexedPartition.index) b hb
   have hUA : cutDist U A ≤ cutDist U W := by
     rw [hmodel]
     exact cutDist_le_cutDist_comap_right U A hmp
@@ -241,6 +222,22 @@ theorem cutDist_comap_right {Ω₂' : Type*} [MeasurableSpace Ω₂'] {μ₂' : 
     cutDist U (W.comap f hf.measurable μ₂') ≤
         cutDist U W + cutDist W (W.comap f hf.measurable μ₂') := cutDist_triangle U W _
     _ = cutDist U W := by rw [hzero, add_zero]
+
+/-- The coupling cut distance gives strict graphons on one probability carrier a pseudometric.
+
+Distinct strict representatives can have distance zero, for example after a measure-preserving
+rearrangement, so this is intentionally not a `MetricSpace`. -/
+instance Graphon.instPseudoMetricSpace {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsProbabilityMeasure μ] : PseudoMetricSpace (Graphon Ω μ) where
+  dist := cutDist
+  dist_self := cutDist_self
+  dist_comm := cutDist_comm
+  dist_triangle := cutDist_triangle
+
+/-- The distance between strict graphons on one carrier is their coupling cut distance. -/
+@[simp]
+theorem Graphon.dist_eq_cutDist {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (U W : Graphon Ω μ) : dist U W = cutDist U W := (rfl)
 
 end DenseGraphLimits
 

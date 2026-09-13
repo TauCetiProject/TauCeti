@@ -121,9 +121,8 @@ lemma mulMap_rep_mk_eq_of_mem_normalizer [IsHeckeTriple Δ Γ Γ]
       u * a * ((x : G) * (v * b) * (x : G)⁻¹) * ((x : G) * (y : G)) * 1 := fun u v ↦ by group
   have key := key₀ (p.1.out : G) (p.2.out : G)
   rw [← hA, ← hB] at key
-  rw [mulMap_eq_mk]
-  exact mk_eq_mk_of_mem (g₂ := x * y) (DoubleCoset.mem_doubleCoset.mpr
-    ⟨_, Subgroup.mul_mem _ (Subgroup.mul_mem _ p.1.out.2 ha) hc, 1, Subgroup.one_mem _, key⟩)
+  exact mulMap_eq_of_eq_mul_mul (d := x * y)
+    (Subgroup.mul_mem _ (Subgroup.mul_mem _ p.1.out.2 ha) hc) (Subgroup.one_mem _) key
 
 end HeckeCoset
 
@@ -134,9 +133,9 @@ variable {G : Type*} [Group G] {Δ : Submonoid G} {Γ : Subgroup G} {x y : Δ}
 /-- **The basis elements of two normalizing elements multiply**, `[ΓxΓ] · [ΓyΓ] = [Γ(xy)Γ]`,
 over any coefficient semiring.
 
-There is no structure constant to compute: both decomposition quotients are subsingletons, so
-`multiplicity ≤ 1` is automatic, and every pair of representatives multiplies into the same
-double coset. -/
+There is no structure constant to compute: `x` normalizes `Γ`, so its decomposition quotient
+is a subsingleton and `multiplicity ≤ 1` follows, and every pair of representatives multiplies
+into the same double coset. -/
 theorem single_mul_single_of_mem_normalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semiring R]
     (hx : (x : G) ∈ Subgroup.normalizer (Γ : Set G))
     (hy : (y : G) ∈ Subgroup.normalizer (Γ : Set G)) :
@@ -144,14 +143,11 @@ theorem single_mul_single_of_mem_normalizer [IsHeckeTriple Δ Γ Γ] (R : Type*)
       single R (HeckeCoset.mk Γ Γ (x * y)) 1 := by
   classical
   rw [mul_def]
-  have := DoubleCoset.subsingleton_decompQuotient_of_mem_normalizer
-    (HeckeCoset.rep_mk_mem_normalizer_of_mem_normalizer hx)
-  have := DoubleCoset.subsingleton_decompQuotient_of_mem_normalizer
-    (HeckeCoset.rep_mk_mem_normalizer_of_mem_normalizer hy)
   refine mul_single_single_of_mulMap_eq R _ _ _
     (HeckeCoset.mulMap_rep_mk_eq_of_mem_normalizer hx hy) ?_
-  rw [DoubleCoset.multiplicity_def, Nat.card_eq_fintype_card]
-  exact Fintype.card_le_one_iff_subsingleton.mpr inferInstance
+  exact DoubleCoset.multiplicity_le_one_of_subsingleton
+    (DoubleCoset.subsingleton_decompQuotient_of_mem_normalizer
+      (HeckeCoset.rep_mk_mem_normalizer_of_mem_normalizer hx))
 
 end HeckeCosetModule
 

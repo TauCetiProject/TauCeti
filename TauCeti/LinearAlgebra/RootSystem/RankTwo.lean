@@ -347,7 +347,7 @@ the given base.
 
 The bridge is root length. A pair of roots pairing to `-3` has its transposed pairing `-1`, so the
 two differ in squared length by the factor `3`; every root has the length of a simple root
-(`TauCeti.RootPairing.RootPositiveForm.exists_mem_support_rootLength_eq`), so two of the simple
+(`RootPairing.RootPositiveForm.exists_mem_support_rootLength_eq`), so two of the simple
 roots already differ by that factor, and reading the ratio back off the Cartan matrix makes their
 two off-diagonal entries `-3` and `-1`. Since the base has two elements, these entries and the
 diagonal entries `2` identify its Cartan matrix with the standard matrix of `G₂`. -/

@@ -10,12 +10,17 @@ import TauCeti.LinearAlgebra.RootSystem.E8Coordinates
 import Mathlib.Data.Rat.Star
 
 /-!
-# Exceptional Cartan matrices are of finite type
+# Exceptional Cartan matrices are of finite type, and the simply-laced ones positive definite
 
 This file proves that the five exceptional Cartan matrices in `TauCeti.DynkinType` are of finite
-type.  The proof exhibits each symmetrized Cartan matrix as `Bᴴ * B` for an explicit rational
-matrix `B` and reads off positive definiteness from
-`TauCeti.isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero`.
+type, and that the three simply-laced ones are positive definite over `ℚ` -- for those the
+constant-one vector is a symmetriser, whose symmetrisation is the Cartan matrix itself read over
+`ℚ`, so the Gram model below proves positive definiteness of the Cartan matrix directly.  The
+proof exhibits each symmetrized Cartan matrix as `Bᴴ * B` for an explicit rational matrix `B` and
+reads off positive definiteness from
+`TauCeti.isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero`, or, for `E₈`, from
+`TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit` followed by
+`TauCeti.isFiniteType_of_posDef_map_intCast`.
 
 The columns of `B` are the simple **coroots** `αᵢ^∨ = 2 αᵢ / (αᵢ, αᵢ)`, in orthonormal rational
 coordinates and up to one common positive scale, rather than the simple roots themselves.  That is
@@ -40,6 +45,12 @@ recorded in `TauCeti.DynkinType.rootLength_F4` and `TauCeti.DynkinType.rootLengt
 * `TauCeti.DynkinType.isFiniteType_cartanMatrix_E7`
 * `TauCeti.DynkinType.isFiniteType_cartanMatrix_F4`
 * `TauCeti.DynkinType.isFiniteType_cartanMatrix_G2`
+* `TauCeti.posDef_map_intCast_cartanMatrix_E6`, `TauCeti.posDef_map_intCast_cartanMatrix_E7` and
+  `TauCeti.posDef_map_intCast_cartanMatrix_E8`: the exceptional simply-laced Cartan matrices
+  `CartanMatrix.E 6`, `CartanMatrix.E 7` and `CartanMatrix.E 8` are positive definite over `ℚ`,
+  `E₆` and `E₇` as principal submatrices of `E₈`. Like `TauCeti.posDef_map_intCast_cartanMatrix_A`
+  these are stated for Mathlib's matrices and live in the `TauCeti` namespace, not in
+  `TauCeti.DynkinType`.
 * `TauCeti.DynkinType.cartanMatrix_E6_eq_submatrix_E8` and
   `TauCeti.DynkinType.cartanMatrix_E7_eq_submatrix_E8`: the nesting `E₆ ⊂ E₇ ⊂ E₈` at the level of
   Cartan matrices, which is what makes the two derivations above possible.
@@ -67,10 +78,10 @@ whose rows are twice them. -/
 private def rootsE8 : _root_.Matrix (Fin 8) (Fin 8) ℚ :=
   (2 : ℚ)⁻¹ • (e8DoubledSimpleRoot.map ((↑) : ℤ → ℚ))ᵀ
 
-/-- The standard Cartan matrix of type `E₈` is of finite type. -/
-theorem isFiniteType_cartanMatrix_E8 : IsFiniteType E8.cartanMatrix := by
-  have hgram : _root_.Matrix.of (fun i j ↦ (1 : ℚ) * (CartanMatrix.E 8 i j : ℚ))
-      = rootsE8ᴴ * rootsE8 := by
+/-- The Gram matrix of the coordinate model of `E₈` is the `E₈` Cartan matrix read over `ℚ`: the
+family is simply laced, so no symmetrizer is needed. -/
+private theorem rootsE8_conjTranspose_mul_self :
+    rootsE8ᴴ * rootsE8 = (CartanMatrix.E 8).map (Int.cast : ℤ → ℚ) := by
     ext i j
     -- The `(i, j)` entry of the Gram matrix of the doubled rows is four times the Cartan entry.
     have hrowQ : ∑ k, (e8DoubledSimpleRoot i k : ℚ) * (e8DoubledSimpleRoot j k : ℚ)
@@ -81,15 +92,30 @@ theorem isFiniteType_cartanMatrix_E8 : IsFiniteType E8.cartanMatrix := by
         ((2 : ℚ)⁻¹ * (e8DoubledSimpleRoot j k : ℚ))
         = 4⁻¹ * ((e8DoubledSimpleRoot i k : ℚ) * (e8DoubledSimpleRoot j k : ℚ)) :=
       fun k ↦ by ring
-    simp only [rootsE8, _root_.Matrix.of_apply, _root_.Matrix.mul_apply,
+    simp only [rootsE8, _root_.Matrix.map_apply, _root_.Matrix.mul_apply,
       _root_.Matrix.conjTranspose_apply, _root_.Matrix.smul_apply, _root_.Matrix.transpose_apply,
-      _root_.Matrix.map_apply, star_trivial, smul_eq_mul]
+      star_trivial, smul_eq_mul]
     rw [Finset.sum_congr rfl fun k _ ↦ hpoint k, ← Finset.mul_sum, hrowQ]
     ring
-  have hdet : (CartanMatrix.E 8).det ≠ 0 := by rw [CartanMatrix.E₈_det]; norm_num
+
+/-- **The `E₈` Cartan matrix is positive definite** over `ℚ`: it is the Gram matrix of the
+coordinate model, and it is nonsingular. -/
+theorem _root_.TauCeti.posDef_map_intCast_cartanMatrix_E8 :
+    ((CartanMatrix.E 8).map (Int.cast : ℤ → ℚ)).PosDef := by
+  rw [← rootsE8_conjTranspose_mul_self]
+  refine TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit _ ?_
+  rw [rootsE8_conjTranspose_mul_self, _root_.Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero,
+    ← Int.cast_det, CartanMatrix.E₈_det]
+  norm_num
+
+/-- The standard Cartan matrix of type `E₈` is of finite type: the family is simply laced, so the
+constant-one vector is a symmetriser and `TauCeti.posDef_map_intCast_cartanMatrix_E8` is the
+positive definiteness of its symmetrisation. -/
+theorem isFiniteType_cartanMatrix_E8 : IsFiniteType E8.cartanMatrix := by
   rw [cartanMatrix_E8]
-  exact isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero (CartanMatrix.E_diag 8)
-    (CartanMatrix.E_off_diag_nonpos 8) (d := fun _ ↦ 1) (fun _ ↦ by positivity) hgram hdet
+  exact isFiniteType_of_posDef_map_intCast (CartanMatrix.E_diag 8)
+    (CartanMatrix.E_off_diag_nonpos 8) posDef_map_intCast_cartanMatrix_E8
+
 
 /-- The `E₆` Cartan matrix is the principal submatrix of the `E₈` one on the first six nodes: in
 Bourbaki's numbering the exceptional `E` diagrams are nested, `E₆ ⊂ E₇ ⊂ E₈`. -/
@@ -118,6 +144,20 @@ theorem isFiniteType_cartanMatrix_E6 : IsFiniteType E6.cartanMatrix := by
 theorem isFiniteType_cartanMatrix_E7 : IsFiniteType E7.cartanMatrix := by
   simp only [cartanMatrix_E7, cartanMatrix_E7_eq_submatrix_E8]
   exact (cartanMatrix_E8 ▸ isFiniteType_cartanMatrix_E8).submatrix (Fin.castAdd_injective 7 1)
+
+/-- **The `E₆` Cartan matrix is positive definite** over `ℚ`: it is a principal submatrix of the
+`E₈` one. -/
+theorem _root_.TauCeti.posDef_map_intCast_cartanMatrix_E6 :
+    ((CartanMatrix.E 6).map (Int.cast : ℤ → ℚ)).PosDef := by
+  rw [cartanMatrix_E6_eq_submatrix_E8, ← _root_.Matrix.submatrix_map]
+  exact posDef_map_intCast_cartanMatrix_E8.submatrix (Fin.castAdd_injective 6 2)
+
+/-- **The `E₇` Cartan matrix is positive definite** over `ℚ`: it is a principal submatrix of the
+`E₈` one. -/
+theorem _root_.TauCeti.posDef_map_intCast_cartanMatrix_E7 :
+    ((CartanMatrix.E 7).map (Int.cast : ℤ → ℚ)).PosDef := by
+  rw [cartanMatrix_E7_eq_submatrix_E8, ← _root_.Matrix.submatrix_map]
+  exact posDef_map_intCast_cartanMatrix_E8.submatrix (Fin.castAdd_injective 7 1)
 
 /-- The coordinate model of type `F₄`: column `i` is the simple coroot `αᵢ₊₁^∨` of Bourbaki's plate
 VIII, in the orthonormal coordinates `ε₁, ..., ε₄` used there, cyclically relabelled so that `ε₁`

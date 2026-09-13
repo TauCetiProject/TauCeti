@@ -220,6 +220,23 @@ lemma map_mapGL_le_glpos (G : Subgroup SL(2, ℤ)) :
 
 end ModularForm
 
+namespace SlashInvariantFormClass
+
+/-- **A slash-invariant form is invariant under the rational image of its level.** This is
+`ModularForm.slash_eq_of_mem_map_mapGL` with the real-invariance hypothesis discharged from the
+`SlashInvariantFormClass` instance — the common case of a bundled form. The class is indexed by
+a subgroup of `GL(2, ℝ)`, so a form of integral level `G` carries invariance at `G.map (mapGL ℝ)`;
+this transports it to `G.map (mapGL ℚ)`, the way the Hecke triples of `HeckeRing/GL2/` are
+spelled. Consumers carrying an arbitrary invariance hypothesis instead use
+`ModularForm.slash_eq_of_mem_map_mapGL` directly. -/
+lemma slash_eq_of_mem_map_mapGL {F : Type*} {k : ℤ} {G : Subgroup SL(2, ℤ)}
+    [FunLike F ℍ ℂ] [SlashInvariantFormClass F (G.map (mapGL ℝ)) k] (f : F) {δ : GL (Fin 2) ℚ}
+    (hδ : δ ∈ G.map (mapGL ℚ)) : ⇑f ∣[k] δ = ⇑f :=
+  ModularForm.slash_eq_of_mem_map_mapGL
+    (fun γ' hγ' ↦ SlashInvariantFormClass.slash_action_eq f γ' hγ') hδ
+
+end SlashInvariantFormClass
+
 namespace UpperHalfPlane
 
 /-- **The rational form of `IsBoundedAtImInfty.slash`.** Mathlib's lemma is stated for the real
@@ -246,7 +263,8 @@ end UpperHalfPlane
 theorem _root_.SlashInvariantFormClass.slash_eq_of_mem_SLnZ {F : Type*} [FunLike F ℍ ℂ]
     {k : ℤ} [SlashInvariantFormClass F 𝒮ℒ k] (f : F) (γ : GL (Fin 2) ℚ)
     (hγ : γ ∈ SLnZ 2) : ⇑f ∣[k] γ = ⇑f := by
+  have hinst : SlashInvariantFormClass F ((⊤ : Subgroup SL(2, ℤ)).map (mapGL ℝ)) k := by
+    rwa [← MonoidHom.range_eq_map]
   obtain ⟨σ, rfl⟩ := (mem_SLnZ_iff 2).mp hγ
-  have h_mem : mapGL ℝ σ ∈ 𝒮ℒ := MonoidHom.mem_range.mpr ⟨σ, rfl⟩
-  rw [ModularForm.rat_slash, map_mapGL]
-  exact SlashInvariantFormClass.slash_action_eq f (mapGL ℝ σ) h_mem
+  exact SlashInvariantFormClass.slash_eq_of_mem_map_mapGL f
+    (Subgroup.mem_map_of_mem _ (Subgroup.mem_top σ))

@@ -29,7 +29,7 @@ while root negation does not change the reflection.
 * `TauCeti.wordProd` multiplies out a word in the simple reflections of a base.
 * `TauCeti.wordProd_reverse` says that reversing a word inverts the element it spells.
 * `TauCeti.exists_wordProd_eq` writes every Weyl-group element as a product of simple reflections.
-* `TauCeti.RootPairing.weylGroup.ofIdx_ne_ofIdx_of_ne` says distinct simple roots give distinct
+* `RootPairing.weylGroup.ofIdx_ne_ofIdx_of_ne` says distinct simple roots give distinct
   simple reflections.
 
 ## References
@@ -157,19 +157,21 @@ theorem exists_wordProd_eq (w : P.weylGroup) :
   rw [wordProd, ← FreeMonoid.lift_apply]
   exact hl
 
-namespace RootPairing.weylGroup
+section
 
 omit [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] in
 /-- Distinct simple roots give distinct simple reflections: the two reflections already disagree on
 the second simple root, since the two simple roots are linearly independent. -/
-theorem ofIdx_ne_ofIdx_of_ne [NeZero (2 : R)] {i j : ι} (hi : i ∈ b.support) (hj : j ∈ b.support)
+theorem _root_.RootPairing.weylGroup.ofIdx_ne_ofIdx_of_ne
+    [NeZero (2 : R)] {i j : ι} (hi : i ∈ b.support) (hj : j ∈ b.support)
     (hij : i ≠ j) :
     _root_.RootPairing.weylGroup.ofIdx P i ≠ _root_.RootPairing.weylGroup.ofIdx P j := by
   intro hEq
   have hindep : LinearIndependent R ![P.root i, P.root j] :=
     b.linearIndependent_pair_of_ne (i := ⟨i, hi⟩) (j := ⟨j, hj⟩) (by simpa using hij)
   have happ : P.root (P.reflectionPerm i j) = P.root (P.reflectionPerm j j) := by
-    rw [← weylGroupToPerm_ofIdx_apply P i j, ← weylGroupToPerm_ofIdx_apply P j j, hEq]
+    rw [← RootPairing.weylGroupToPerm_ofIdx_apply P i j,
+      ← RootPairing.weylGroupToPerm_ofIdx_apply P j j, hEq]
   rw [P.root_reflectionPerm, P.root_reflectionPerm, P.reflection_apply_root,
     P.reflection_apply_self] at happ
   -- `happ` now reads `αⱼ - ⟨αⱼ, αᵢ^∨⟩ • αᵢ = -αⱼ`, so `2 • αⱼ` is a multiple of `αᵢ`.
@@ -178,6 +180,6 @@ theorem ofIdx_ne_ofIdx_of_ne [NeZero (2 : R)] {i j : ι} (hi : i ∈ b.support) 
       (by linear_combination (norm := module) happ)).2
   exact two_ne_zero h2
 
-end RootPairing.weylGroup
+end
 
 end TauCeti

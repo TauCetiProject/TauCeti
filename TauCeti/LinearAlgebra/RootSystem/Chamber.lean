@@ -67,7 +67,7 @@ The maximization argument is proved as `exists_mem_dominantChamber_of_finite_wey
 asks for no root-system assumption: on top of the standing `Finite ι`, `P.IsCrystallographic` and
 `P.IsReduced` hypotheses that the positive-root permutation step needs, it assumes only
 `Finite P.weylGroup`. The roadmap-signature `exists_mem_dominantChamber` is the root-system case,
-where that finiteness comes from `TauCeti.RootPairing.finite_weylGroup`.
+where that finiteness comes from `RootPairing.finite_weylGroup`.
 
 Regularity quantifies over *all* root indices, not just the positive ones. The two are equivalent,
 since the coroot functional of a negated root is the negative of the original, and quantifying

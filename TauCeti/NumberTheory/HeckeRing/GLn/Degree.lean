@@ -51,11 +51,7 @@ branch, which is `1`, whose double coset is the identity — not from centrality
 @[simp]
 theorem degree_diagCoset_const (c : ℕ) : (diagCoset (fun _ : Fin n ↦ c)).degree = 1 := by
   rw [diagCoset_def, HeckeCoset.degree_mk]
-  -- a central element normalizes every subgroup, so Mathlib's lemma applies
-  have hnorm : natDiagGL n (fun _ ↦ c) ∈ Subgroup.normalizer (SLnZ n) := by
-    rw [Subgroup.mem_normalizer_iff]
-    intro x
-    rw [natDiagGL_const_comm n c x, mul_assoc, mul_inv_cancel, mul_one]
+  have hnorm := natDiagGL_const_mem_normalizer n c (SLnZ n)
   rw [Subgroup.conjAct_pointwise_smul_eq_self hnorm, Subgroup.relIndex_self]
 
 end HeckeRing.GLn

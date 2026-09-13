@@ -56,7 +56,7 @@ model itself is `WeierstrassCurve.integralModel O W`; the coefficient bounds are
 `WeierstrassCurve.integralModel_aᵢ_eq` composed with membership in `O`.
 
 The `y`-half of the dichotomy is not reproved by a valuation computation. Once `x` is known to be
-integral, `TauCeti.WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x` gives that `y` is
+integral, `WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x` gives that `y` is
 integral over `O` from the curve equation alone, over any algebra and with no valuation in sight;
 `O` is a valuation subring, hence integrally closed in `F`, so integrality over it is membership.
 That is how the main theorem discharges its `y`-half. Only the `x`-half — the parity argument that
@@ -330,7 +330,7 @@ theorem valuation_x_le_one_and_valuation_y_le_one_of_valuation_x_lt_exp_two {x y
   have hxy' : ((integralModel v.valuationSubring W).baseChange F).toAffine.Equation x y := by
     rw [baseChange_integralModel_eq]; exact hxy
   have hy : _root_.IsIntegral v.valuationSubring y :=
-    _root_.TauCeti.WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x _ hxy'
+    _root_.WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x _ hxy'
       (isIntegral_algebraMap
         (x := (⟨x, (Valuation.mem_valuationSubring_iff v x).mpr hA1⟩ : v.valuationSubring)))
   exact (Valuation.valuationSubring.integers v).isIntegral_iff_v_le_one.mp hy

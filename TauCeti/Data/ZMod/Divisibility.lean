@@ -37,6 +37,8 @@ proof uses, and the name places the divisibility in Mathlib's operand order.
   whenever `b` is a unit modulo `n`.
 * `ZMod.natCast_dvd_val_sub_of_unitsMap_eq`: two units with the same image under `ZMod.unitsMap`
   along `d ∣ N` have representatives congruent modulo `d`, as integers.
+* `ZMod.intCast_lcm_eq_of_eq_of_eq`: one residue modulo `lcm a b` from the residues modulo `a`
+  and `b` — the Chinese remainder theorem for a single integer.
 -/
 
 public section
@@ -69,5 +71,14 @@ theorem natCast_dvd_val_sub_of_unitsMap_eq {N : ℕ} [NeZero N] {d : ℕ} (hd : 
   push_cast
   rw [natCast_val (u' : ZMod N), natCast_val (u : ZMod N),
     ← castHom_apply (h := hd) (u' : ZMod N), ← castHom_apply (h := hd) (u : ZMod N), h_cast]
+
+/-- **One residue modulo a least common multiple** from the residues modulo the two moduli: the
+Chinese remainder theorem `Int.modEq_and_modEq_iff_modEq_lcm`, read in `ZMod`. -/
+theorem intCast_lcm_eq_of_eq_of_eq {a b : ℕ} {x y : ℤ} (ha : (x : ZMod a) = y)
+    (hb : (x : ZMod b) = y) : (x : ZMod (Nat.lcm a b)) = y := by
+  rw [ZMod.intCast_eq_intCast_iff] at ha hb ⊢
+  have hlcm : (↑(Nat.lcm a b) : ℤ) = ↑(Int.lcm (a : ℤ) (b : ℤ)) := by simp [Int.lcm, Nat.lcm]
+  rw [hlcm, ← Int.modEq_and_modEq_iff_modEq_lcm]
+  exact ⟨ha, hb⟩
 
 end ZMod

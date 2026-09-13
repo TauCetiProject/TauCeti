@@ -16,7 +16,7 @@ honest count when accompanied by finiteness.
 
 ## Main results
 
-* `TauCeti.WeierstrassCurve.Affine.finite_point`: `W.Point` is finite whenever the base is.
+* `WeierstrassCurve.Affine.finite_point`: `W.Point` is finite whenever the base is.
 
 Stated over an arbitrary finite commutative ring and an arbitrary affine Weierstrass curve: neither
 a field nor `IsElliptic` is needed. The roadmap seeds this over a finite field with
@@ -43,14 +43,14 @@ public section
 
 namespace TauCeti
 
-namespace WeierstrassCurve
+section
 
-namespace Affine
+section
 
 variable {R : Type*} [CommRing R] [Finite R] (W : _root_.WeierstrassCurve.Affine R)
 
 /-- **The affine points of a Weierstrass curve over a finite ring form a finite type.** -/
-instance finite_point : Finite W.Point :=
+instance _root_.WeierstrassCurve.Affine.finite_point : Finite W.Point :=
   -- transport along Mathlib's decomposition of `Point` as the point at infinity together with the
   -- pairs satisfying `Nonsingular`; `WithZero` carries no `Finite` instance of its own, so it is
   -- taken from the `Option` it unfolds to
@@ -58,8 +58,8 @@ instance finite_point : Finite W.Point :=
     inferInstanceAs (Finite (Option _))
   .of_equiv _ W.nonsingularPointEquiv.symm
 
-end Affine
+end
 
-end WeierstrassCurve
+end
 
 end TauCeti

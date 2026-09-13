@@ -155,7 +155,7 @@ private theorem measure_inter_blockCylinder_eq_setLIntegral_of_injective
       (directingProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S)
       = directingProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S := by
     rw [← Set.preimage_comp, comp_permReindex_eq_of_measurable_exchangeableSigma
-      (measurable_tailProcess_directingProbabilityMeasure.mono tail_le_exchangeableSigma le_rfl)
+      (measurable_tailProcess_directingProbabilityMeasure.mono pathTail_le_exchangeableSigma le_rfl)
       hπfin]
   have hcyl := blockCylinder_eq_preimage_permReindex (B := B) hπval
   have hmp : MeasurePreserving (permReindex (α := α) π) μ μ :=

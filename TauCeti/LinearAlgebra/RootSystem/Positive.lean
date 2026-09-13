@@ -48,7 +48,7 @@ positive root is a nonnegative integer combination of the simple coroots.
   over those roots.
 * `TauCeti.mem_support_iff_isPos_and_forall_ne_add` says the simple roots are exactly the
   indecomposable positive roots: those that are not the sum of two positive roots.
-* `TauCeti.RootPairing.Base.isPos_flip_iff` says a root is positive for a base exactly when its
+* `RootPairing.Base.isPos_flip_iff` says a root is positive for a base exactly when its
   coroot is positive for that base, and `TauCeti.posRoots_flip` restates it for the sets.
 * `TauCeti.root_mem_posRootCone_of_mem_posRoots` says the positive roots lie in `Q⁺`,
   `TauCeti.isPointed_posRootCone` says `Q⁺` is pointed,
@@ -609,11 +609,11 @@ lemma sum_posRootsFinset_erase_comp_reflectionPerm [DecidableEq ι] {A : Type*} 
   Finset.sum_equiv (P.reflectionPerm i)
     (fun j ↦ (reflectionPerm_mem_posRootsFinset_erase_iff P b hi j).symm) fun _ _ ↦ rfl
 
-namespace RootPairing.Base
+section
 
 /-- A simple reflection preserves and reflects positivity of every root other than its own simple
 root and the negative of that simple root. -/
-lemma isPos_reflectionPerm_iff {i j : ι} (hj : j ∈ b.support) (hij : i ≠ j)
+lemma _root_.RootPairing.Base.isPos_reflectionPerm_iff {i j : ι} (hj : j ∈ b.support) (hij : i ≠ j)
     (hij' : i ≠ P.reflectionPerm j j) :
     b.IsPos (P.reflectionPerm j i) ↔ b.IsPos i := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.reflectionPerm hj hij⟩
@@ -622,7 +622,8 @@ lemma isPos_reflectionPerm_iff {i j : ι} (hj : j ∈ b.support) (hij : i ≠ j)
 
 /-- **A root is positive for a base exactly when its coroot is positive for that base.** -/
 @[simp]
-theorem isPos_flip_iff [P.flip.IsReduced] (i : ι) : b.flip.IsPos i ↔ b.IsPos i := by
+theorem _root_.RootPairing.Base.isPos_flip_iff
+    [P.flip.IsReduced] (i : ι) : b.flip.IsPos i ↔ b.IsPos i := by
   -- Both sides hold for a simple root, both are exchanged by root negation, and away from a
   -- simple root and its negative both are preserved by the corresponding simple reflection, so
   -- the positive-root induction propagates the equivalence over the whole index type.
@@ -643,11 +644,12 @@ theorem isPos_flip_iff [P.flip.IsReduced] (i : ι) : b.flip.IsPos i ↔ b.IsPos 
   rcases eq_or_ne j (P.reflectionPerm k k) with rfl | hjk'
   · rw [P.reflectionPerm_self k k]
     exact hsimple k hk
-  · rw [isPos_reflectionPerm_iff P b hk hjk hjk', ← hflip k j,
-      isPos_reflectionPerm_iff P.flip b.flip (by simpa using hk) hjk (by rwa [hflip k k])]
+  · rw [RootPairing.Base.isPos_reflectionPerm_iff P b hk hjk hjk', ← hflip k j,
+      RootPairing.Base.isPos_reflectionPerm_iff P.flip b.flip (by simpa using hk) hjk
+        (by rwa [hflip k k])]
     exact hj
 
-end RootPairing.Base
+end
 
 variable [P.flip.IsReduced]
 

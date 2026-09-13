@@ -60,8 +60,8 @@ open MeasureTheory Polynomial Polynomial.Chebyshev
 /-- **Finite exponential moments of the Chebyshev weight.** For every rate `a` the function
 `e^{a|x|}` is integrable against the weighted measure `w·(volume|_{(-1,1]})`. The measure lives on a
 bounded interval, so this is the bounded-support principle
-`TauCeti.Integrable.exp_abs_smul_of_ae_abs_le` applied to integrability of the weight itself, which
-is Mathlib's `Polynomial.Chebyshev.intervalIntegrable_sqrt_one_sub_sq_inv`.
+`MeasureTheory.Integrable.exp_abs_smul_of_ae_abs_le` applied to integrability of the weight
+itself, which is Mathlib's `Polynomial.Chebyshev.intervalIntegrable_sqrt_one_sub_sq_inv`.
 
 This is the single analytic hypothesis behind both the `L²` membership of the polynomials and the
 completeness of the family. -/

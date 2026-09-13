@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.SegmentIncrement
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.Topology.Instances.ENNReal
+public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Measure.Prod
@@ -15,8 +17,9 @@ import Mathlib.MeasureTheory.Measure.Prod
 /-!
 # The `Lᵖ` translation estimate
 
-This file proves the translation estimate for a `C¹` function on a finite-dimensional real normed
-space carrying an additive Haar measure:
+This file defines translation of `Lᵖ` classes as a linear isometric equivalence, proves its strong
+continuity for `p < ∞`, and proves the translation estimate for a `C¹` function on a
+finite-dimensional real normed space carrying an additive Haar measure:
 
 `‖u(· + h) - u‖_p ≤ ‖h‖ ‖Du‖_p`.
 
@@ -27,6 +30,18 @@ exchanging the order of integration.
 
 ## Main declarations
 
+* `MeasureTheory.Measure.translateLp`: translation by a vector as a linear isometric equivalence
+  of `Lᵖ`.
+* `MeasureTheory.Measure.coeFn_translateLp`: translation is almost everywhere precomposition by
+  addition.
+* `MeasureTheory.Measure.translateLp_zero`, `MeasureTheory.Measure.translateLp_symm`,
+  `MeasureTheory.Measure.translateLp_add`: translation is an action of the additive group of
+  vectors.
+* `MeasureTheory.Measure.continuous_translateLp`: strong continuity of translation for `p < ∞`.
+* `MeasureTheory.Measure.enorm_translateLp_sub`: identifies the norm of an `Lᵖ` translation
+  increment with its pointwise `eLpNorm`.
+* `TauCeti.tendsto_eLpNorm_comp_add_sub_of_memLp`: translation increments of an `Lᵖ` function
+  tend to zero.
 * `TauCeti.lintegral_enorm_comp_add_sub_rpow_le`: the translation estimate in `∫⁻` form.
 * `TauCeti.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`: the `Lᵖ` translation estimate for a `C¹`
   function.
@@ -44,10 +59,125 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open MeasureTheory Set
 open scoped ENNReal
+
+namespace MeasureTheory.Measure
+
+section LpTranslation
+
+variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- Translation by `h` on `Lᵖ`, as a linear isometric equivalence.
+
+Precomposition by `· + h` is invertible, its inverse being precomposition by `· + -h`; carrying
+that inverse makes the identity, inverse and composition laws
+`MeasureTheory.Measure.translateLp_zero`, `MeasureTheory.Measure.translateLp_symm` and
+`MeasureTheory.Measure.translateLp_add` available as an action of the additive group of vectors
+on `Lᵖ`. -/
+def translateLp (mu : Measure E) [mu.IsAddHaarMeasure] (p : ENNReal) [Fact (1 ≤ p)]
+    (h : E) : Lp F p mu ≃ₗᵢ[ℝ] Lp F p mu :=
+  Lp.compMeasurePreservingₗᵢEquiv ℝ (measurePreserving_add_right mu h)
+    (measurePreserving_add_right mu (-h))
+    (Filter.EventuallyEq.of_eq (funext fun x ↦ by simp))
+
+omit [NormedSpace ℝ E] in
+/-- Translation by `h` is almost everywhere precomposition by addition of `h`. -/
+theorem coeFn_translateLp (h : E) (f : Lp F p mu) :
+    ⇑(translateLp mu p h f) =ᵐ[mu] ⇑f ∘ (· + h) := by
+  rw [translateLp]
+  exact Lp.coeFn_compMeasurePreservingₗᵢEquiv ℝ _ _ _ f
+
+omit [NormedSpace ℝ E] in
+/-- Translating by `h₁ + h₂` is translating by `h₁` and then by `h₂`. -/
+theorem translateLp_add (h₁ h₂ : E) :
+    translateLp (F := F) mu p (h₁ + h₂) = (translateLp mu p h₁).trans (translateLp mu p h₂) := by
+  refine LinearIsometryEquiv.ext fun f => Lp.ext ?_
+  filter_upwards [coeFn_translateLp (mu := mu) (h₁ + h₂) f,
+    coeFn_translateLp (mu := mu) h₂ (translateLp mu p h₁ f),
+    (measurePreserving_add_right mu h₂).quasiMeasurePreserving.ae_eq_comp
+      (coeFn_translateLp (mu := mu) h₁ f)] with x hx hy hz
+  simp only [Function.comp_apply] at hx hy hz
+  rw [hx, LinearIsometryEquiv.trans_apply, hy, hz]
+  exact congrArg _ (by abel)
+
+omit [NormedSpace ℝ E] in
+/-- Translation by zero is the identity on `Lᵖ`. -/
+@[simp]
+theorem translateLp_zero (f : Lp F p mu) : translateLp mu p 0 f = f := by
+  apply Lp.ext
+  filter_upwards [coeFn_translateLp (mu := mu) 0 f] with x hx
+  simpa only [Function.comp_apply, add_zero] using hx
+
+omit [NormedSpace ℝ E] in
+/-- The inverse of translation by `h` is translation by `-h`. -/
+@[simp]
+theorem translateLp_symm (h : E) :
+    (translateLp (F := F) mu p h).symm = translateLp mu p (-h) :=
+  LinearIsometryEquiv.ext fun f => (LinearIsometryEquiv.symm_apply_eq _).2 <| by
+    rw [← LinearIsometryEquiv.trans_apply, ← translateLp_add, neg_add_cancel, translateLp_zero]
+
+omit [NormedSpace ℝ E] in
+/-- Translation of a fixed `Lᵖ` class depends continuously on the translation vector when
+`p < ∞`. -/
+theorem continuous_translateLp [ProperSpace E] (hp : p ≠ ∞) (f : Lp F p mu) :
+    Continuous fun h : E ↦ translateLp mu p h f := by
+  let T : E → C(E, E) := fun h ↦ ⟨fun x ↦ x + h, continuous_id.add continuous_const⟩
+  have hT : Continuous T := ContinuousMap.continuous_of_continuous_uncurry T <| by
+    dsimp only [T, Function.uncurry_apply_pair, ContinuousMap.coe_mk]
+    fun_prop
+  have hpres : ∀ h, MeasurePreserving (T h) mu mu := fun h ↦ by
+    simpa only [T, ContinuousMap.coe_mk] using measurePreserving_add_right mu h
+  have hcont : Continuous (fun h : E ↦ Lp.compMeasurePreserving (T h) (hpres h) f) :=
+    (continuous_const : Continuous fun _ : E ↦ f).compMeasurePreservingLp hT hpres hp
+  simpa only [translateLp, T, ContinuousMap.coe_mk,
+    Lp.compMeasurePreservingₗᵢEquiv_apply] using hcont
+
+omit [NormedSpace ℝ E] in
+/-- The `Lᵖ` extended norm of a translation increment is its pointwise `eLpNorm`. -/
+theorem enorm_translateLp_sub (h : E) (f : Lp F p mu) :
+    ‖translateLp mu p h f - f‖ₑ = eLpNorm (fun x ↦ f (x + h) - f x) p mu := by
+  have hae : ⇑(translateLp mu p h f - f) =ᵐ[mu] fun x ↦ f (x + h) - f x := by
+    filter_upwards [Lp.coeFn_sub (translateLp mu p h f) f,
+      coeFn_translateLp (mu := mu) h f] with x hx hy
+    rw [hx, Pi.sub_apply, hy]
+    rfl
+  rw [Lp.enorm_def, eLpNorm_congr_ae hae]
+
+end LpTranslation
+
+end MeasureTheory.Measure
+
+namespace TauCeti
+
+section MemLpTranslation
+
+variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal}
+
+/-- Translation increments of an `Lᵖ` function tend to zero as the translation tends to zero. -/
+theorem tendsto_eLpNorm_comp_add_sub_of_memLp [ProperSpace E] {u : E → F}
+    (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    (hu : MemLp u p mu) :
+    Filter.Tendsto (fun h : E ↦ eLpNorm (fun x ↦ u (x + h) - u x) p mu)
+      (nhds 0) (nhds 0) := by
+  let _ : Fact (1 ≤ p) := ⟨hp⟩
+  have hcont := (Measure.continuous_translateLp (mu := mu) hp' (hu.toLp u)).tendsto (0 : E)
+  have htend : Filter.Tendsto (fun h : E ↦ mu.translateLp p h (hu.toLp u))
+      (nhds 0) (nhds (hu.toLp u)) := by
+    simpa only [Measure.translateLp_zero] using hcont
+  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at htend
+  apply htend.congr'
+  filter_upwards with h
+  apply eLpNorm_congr_ae
+  exact ((Measure.coeFn_translateLp (mu := mu) h (hu.toLp u)).trans
+      ((measurePreserving_add_right mu h).quasiMeasurePreserving.ae_eq_comp hu.coeFn_toLp)).sub
+    hu.coeFn_toLp
+
+end MemLpTranslation
 
 section Calculus
 
@@ -152,3 +282,27 @@ theorem tendsto_eLpNorm_comp_add_sub (hu : ContDiff ℝ 1 u) {p : ℝ≥0∞} (h
 end Translation
 
 end TauCeti
+
+namespace Set
+
+open MeasureTheory
+
+variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
+
+omit [NormedSpace ℝ E] [CompleteSpace F] in
+/-- The set integral of a translated `Lᵖ` class is the integral of its translated representative. -/
+@[simp]
+theorem setIntegral_translateLp_toLp
+    (s : Set E) {f : E → F} (hfLp : MemLp f p mu) (t : E) :
+    (∫ x in s, (mu.translateLp p (-t) (hfLp.toLp f)) x ∂mu) =
+      ∫ x in s, f (x - t) ∂mu := by
+  apply integral_congr_ae
+  filter_upwards [ae_restrict_of_ae
+      ((Measure.coeFn_translateLp (mu := mu) (-t) (hfLp.toLp f)).trans
+        ((measurePreserving_add_right mu (-t)).quasiMeasurePreserving.ae_eq_comp
+          hfLp.coeFn_toLp))] with x hx
+  simpa only [Function.comp_apply, sub_eq_add_neg] using hx
+
+end Set

@@ -76,7 +76,7 @@ theorem mapsInfinity_iff_isIntegralElem_genericX (p : CoordinatePullback W₁ W�
     ext x; exact (halg x).symm
   have hgx : IsIntegral W₂.CoordinateRing W₁.genericX := hx
   have hgy : IsIntegral W₂.CoordinateRing W₁.genericY :=
-    TauCeti.WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x
+    WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x
       (W₁.map (algebraMap F W₂.CoordinateRing))
       (by
         simpa only [_root_.WeierstrassCurve.baseChange, _root_.WeierstrassCurve.map_map, hmap]

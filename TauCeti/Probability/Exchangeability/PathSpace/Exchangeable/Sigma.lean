@@ -163,11 +163,6 @@ theorem pathTail_le_exchangeableSigma :
     exact preimage_permReindex_eq_of_measurable_tailFamily
       ((pathTail_le_tailFamily (α := α) N) s hs) hN
 
-/-- The path-space tail σ-algebra is contained in the exchangeable σ-algebra. -/
-theorem tail_le_exchangeableSigma :
-    pathTail α ≤ exchangeableSigma α :=
-  pathTail_le_exchangeableSigma
-
 end Probability
 
 end TauCeti

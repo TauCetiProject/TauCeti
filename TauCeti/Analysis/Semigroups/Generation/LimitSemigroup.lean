@@ -178,7 +178,7 @@ private theorem yosidaLimit_time_add_of_tendsto_of_norm_le {A : X →ₗ.[ℝ] X
     (hbound_s : ∀ᶠ lambda in atTop, ‖exp (s • yosidaApproximation A lambda)‖ ≤ M) :
     yosidaLimit A (s + t) x = yosidaLimit A s (yosidaLimit A t x) := by
   refine tendsto_nhds_unique htend_st ?_
-  have hcomp := TauCeti.ContinuousLinearMap.tendsto_apply_of_eventually_norm_le
+  have hcomp := ContinuousLinearMap.tendsto_apply_of_eventually_norm_le
     hbound_s htend_s htend_t
   simpa only [exp_add_smul_apply] using hcomp
 

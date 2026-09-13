@@ -30,8 +30,8 @@ domain rationalizes to its ambient vector space over the fraction field.
   with restricting a submodule to another submodule.
 * `TauCeti.Submodule.IsLattice.finrank_eq_finrank`: a full lattice and its ambient space have the
   same finrank.
-* `TauCeti.LinearEquiv.extendOfIsLattice`: extension of an integral linear equivalence between
-  full submodules to their rational ambient spaces.
+* `LinearEquiv.extendOfIsLattice`: extension of an `R`-linear equivalence between
+  full submodules to their ambient `K`-vector spaces.
 * `TauCeti.Submodule.IsLattice.isBaseChange_subtype`: the inclusion of a free full lattice
   submodule into its ambient vector space over the fraction field is a base change.
 * `TauCeti.Submodule.rationalizationEquiv`: the canonical equivalence from the scalar extension
@@ -100,67 +100,68 @@ theorem Submodule.IsLattice.toAddSubgroup_eq_closure_range_extendOfIsLattice
 
 end
 
-namespace LinearEquiv
+section
 
-variable {V : Type u} {W : Type v}
-variable [AddCommGroup V] [Module ℚ V]
-variable [AddCommGroup W] [Module ℚ W]
+variable {R : Type*} {K : Type*} {V : Type u} {W : Type v}
+variable [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
+variable [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
+variable [AddCommGroup W] [Module R W] [Module K W] [IsScalarTower R K W]
 
-/-- Extend an integral linear equivalence between full submodules uniquely to their rational
-ambient spaces. -/
-noncomputable def extendOfIsLattice {S : Submodule ℤ V} {T : Submodule ℤ W}
-    [S.IsLattice ℚ] [T.IsLattice ℚ] (e : S ≃ₗ[ℤ] T) : V ≃ₗ[ℚ] W :=
-  let b := Module.Free.chooseBasis ℤ S
-  (b.extendOfIsLattice ℚ).equiv ((b.map e).extendOfIsLattice ℚ) (Equiv.refl _)
+/-- Extend an `R`-linear equivalence between full submodules uniquely to their ambient
+`K`-vector spaces. -/
+noncomputable def _root_.LinearEquiv.extendOfIsLattice {S : Submodule R V} {T : Submodule R W}
+    [S.IsLattice K] [T.IsLattice K] [Module.Free R S] (e : S ≃ₗ[R] T) : V ≃ₗ[K] W :=
+  let b := Module.Free.chooseBasis R S
+  (b.extendOfIsLattice K).equiv ((b.map e).extendOfIsLattice K) (Equiv.refl _)
 
-/-- The rational extension of a full-submodule equivalence agrees with it on the submodule. -/
+/-- The ambient extension of a full-submodule equivalence agrees with it on the submodule. -/
 @[simp]
-theorem extendOfIsLattice_apply {S : Submodule ℤ V} {T : Submodule ℤ W}
-    [S.IsLattice ℚ] [T.IsLattice ℚ] (e : S ≃ₗ[ℤ] T) (x : S) :
-    extendOfIsLattice e (x : V) = (e x : W) := by
-  let b := Module.Free.chooseBasis ℤ S
-  have h : (extendOfIsLattice e).toLinearMap.restrictScalars ℤ ∘ₗ S.subtype =
+theorem _root_.LinearEquiv.extendOfIsLattice_apply {S : Submodule R V} {T : Submodule R W}
+    [S.IsLattice K] [T.IsLattice K] [Module.Free R S] (e : S ≃ₗ[R] T) (x : S) :
+    LinearEquiv.extendOfIsLattice e (x : V) = (e x : W) := by
+  let b := Module.Free.chooseBasis R S
+  have h : (LinearEquiv.extendOfIsLattice e).toLinearMap.restrictScalars R ∘ₗ S.subtype =
       T.subtype ∘ₗ e.toLinearMap := by
     apply b.ext
     intro i
     dsimp only [b]
     simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, Submodule.subtype_apply,
       LinearEquiv.coe_toLinearMap]
-    rw [← Basis.extendOfIsLattice_apply ℚ (Module.Free.chooseBasis ℤ S) i]
+    rw [← Basis.extendOfIsLattice_apply K (Module.Free.chooseBasis R S) i]
     -- Expose the constructed basis equivalence so `Basis.equiv_apply` can identify its values.
-    unfold extendOfIsLattice
+    unfold LinearEquiv.extendOfIsLattice
     rw [Basis.equiv_apply, Basis.extendOfIsLattice_apply, Basis.map_apply, Equiv.refl_apply]
   exact LinearMap.congr_fun h x
 
-/-- A rational linear equivalence extending a given equivalence of full submodules is the
+/-- A `K`-linear equivalence extending a given equivalence of full submodules is the
 canonical extension. -/
-theorem eq_extendOfIsLattice {S : Submodule ℤ V} {T : Submodule ℤ W}
-    [S.IsLattice ℚ] [T.IsLattice ℚ] (e : S ≃ₗ[ℤ] T) (f : V ≃ₗ[ℚ] W)
-    (h : ∀ x : S, f (x : V) = (e x : W)) : f = extendOfIsLattice e := by
+theorem _root_.LinearEquiv.eq_extendOfIsLattice {S : Submodule R V} {T : Submodule R W}
+    [S.IsLattice K] [T.IsLattice K] [Module.Free R S] (e : S ≃ₗ[R] T) (f : V ≃ₗ[K] W)
+    (h : ∀ x : S, f (x : V) = (e x : W)) : f = LinearEquiv.extendOfIsLattice e := by
   apply LinearEquiv.toLinearMap_injective
-  apply (Module.Free.chooseBasis ℤ S).extendOfIsLattice ℚ |>.ext
+  apply (Module.Free.chooseBasis R S).extendOfIsLattice K |>.ext
   intro i
   rw [Basis.extendOfIsLattice_apply]
-  exact (h (Module.Free.chooseBasis ℤ S i)).trans
-    (extendOfIsLattice_apply e (Module.Free.chooseBasis ℤ S i)).symm
+  exact (h (Module.Free.chooseBasis R S i)).trans
+    (LinearEquiv.extendOfIsLattice_apply e (Module.Free.chooseBasis R S i)).symm
 
-/-- The rational extension maps the source full submodule onto the target full submodule. -/
-theorem extendOfIsLattice_map {S : Submodule ℤ V} {T : Submodule ℤ W}
-    [S.IsLattice ℚ] [T.IsLattice ℚ] (e : S ≃ₗ[ℤ] T) :
-    S.map ((extendOfIsLattice e).restrictScalars ℤ).toLinearMap = T := by
+/-- The ambient extension maps the source full submodule onto the target full submodule. -/
+theorem _root_.LinearEquiv.extendOfIsLattice_map {S : Submodule R V} {T : Submodule R W}
+    [S.IsLattice K] [T.IsLattice K] [Module.Free R S] (e : S ≃ₗ[R] T) :
+    S.map ((LinearEquiv.extendOfIsLattice e).restrictScalars R).toLinearMap = T := by
   apply le_antisymm
   · rintro _ ⟨x, hx, rfl⟩
     have hmem : (e (⟨x, hx⟩ : S) : W) ∈ T := (e ⟨x, hx⟩).2
-    rw [← extendOfIsLattice_apply] at hmem
+    rw [← LinearEquiv.extendOfIsLattice_apply] at hmem
     simpa only [LinearEquiv.restrictScalars_apply, LinearEquiv.coe_toLinearMap] using hmem
   · intro y hy
     let yT : T := ⟨y, hy⟩
     let xS : S := e.symm yT
     refine ⟨(xS : V), xS.2, ?_⟩
     simpa only [LinearEquiv.restrictScalars_apply, LinearEquiv.coe_toLinearMap,
-      extendOfIsLattice_apply] using congr_arg Subtype.val (e.apply_symm_apply yT)
+      LinearEquiv.extendOfIsLattice_apply] using congr_arg Subtype.val (e.apply_symm_apply yT)
 
-end LinearEquiv
+end
 
 namespace Submodule
 

@@ -69,6 +69,7 @@ local notation:max "𝕃" p:max => AdjoinRoot (p : F[X])
 section Semilocal
 
 open AdjoinRoot IsDedekindDomain.HeightOneSpectrum
+open scoped AdicCompletionExtension
 
 variable (v : HeightOneSpectrum (𝓞 F))
 
@@ -148,31 +149,14 @@ private lemma integerMapOfDvd_comp_algebraMap {p : W.f.Factors} {q : 𝕎[v].f.F
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
 
-/- The `F_v`-algebra structure on the completion of the field factor `F[X] ⧸ (p)` at a place `w`
-above `v`, via `adicCompletionExtension`; a local instance for the constructions below. -/
-@[implicit_reducible]
-private noncomputable def algebraAdicCompletionFactor (p : W.f.Factors)
-    (w : HeightOneSpectrum (W.ringOfIntegersFactor (𝓞 F) p)) [w.asIdeal.LiesOver v.asIdeal] :
-    Algebra F_[v] (w.adicCompletion (𝕃 p)) :=
-  (adicCompletionExtension F (𝕃 p) v w).toAlgebra
-
-attribute [local instance] algebraAdicCompletionFactor
-
-/- The `algebraMap` of that local instance is `adicCompletionExtension` itself. Stated here,
-where `algebraAdicCompletionFactor` is visible, because `adicCompletionExtension` is not exposed
-outside its own module, so the identification is not available by `rfl` at the use sites. -/
-private lemma algebraMap_adicCompletionFactor_apply (p : W.f.Factors)
-    (w : HeightOneSpectrum (W.ringOfIntegersFactor (𝓞 F) p)) [w.asIdeal.LiesOver v.asIdeal]
-    (x : F_[v]) :
-    algebraMap F_[v] (w.adicCompletion (𝕃 p)) x = adicCompletionExtension F (𝕃 p) v w x :=
-  rfl
-
 /- The square `F → F_v → (F[X] ⧸ (p))_w` = `F → F[X] ⧸ (p) → (F[X] ⧸ (p))_w` of coefficient maps. -/
 private lemma algebraMap_adicCompletion_comp (p : W.f.Factors)
     (w : HeightOneSpectrum (W.ringOfIntegersFactor (𝓞 F) p)) [w.asIdeal.LiesOver v.asIdeal] :
     (algebraMap F_[v] (w.adicCompletion (𝕃 p))).comp (algebraMap F F_[v]) =
       (algebraMap (𝕃 p) (w.adicCompletion (𝕃 p))).comp (algebraMap F (𝕃 p)) :=
-  RingHom.ext fun c ↦ adicCompletionExtension_coe F (𝕃 p) v w c
+  RingHom.ext fun c ↦ by
+    rw [RingHom.comp_apply, RingHom.comp_apply, algebraMap_adicCompletionExtensionAlgebra]
+    exact adicCompletionExtension_coe F (𝕃 p) v w c
 
 /- Evaluating a base-changed polynomial at the image of the root in the completion. -/
 private lemma aeval_root_adicCompletion (p : W.f.Factors)
@@ -233,7 +217,7 @@ private lemma localFactorEmb_comp_algebraMap (p : W.f.Factors)
   rw [RingHom.comp_apply, IsScalarTower.algebraMap_apply 𝒪_[v] F_[v]
       (AdjoinRoot (W.localFactor v p w : F_[v][X])),
     AdjoinRoot.algebraMap_eq, localFactorEmb, AdjoinRoot.lift_of]
-  rw [RingHom.comp_apply, W.algebraMap_adicCompletionFactor_apply v p w]
+  rw [RingHom.comp_apply, algebraMap_adicCompletionExtensionAlgebra]
   exact congrArg _ (coe_adicCompletionIntegersExtension F (𝕃 p) v w c).symm
 
 /- The embedding maps the local ring of integers into the integers of the completion. -/

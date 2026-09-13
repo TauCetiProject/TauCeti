@@ -43,6 +43,8 @@ AINTLIB `LeanModularForms` project
 
 ## Main results
 
+* `ModularForm.slash_scalar`: a real scalar matrix acts by its scalar to the power `k - 2`
+  under the weight-`k` slash action.
 * `SlashInvariantFormClass.SL_slash_eq`: a form invariant under the image of `Γ ≤ SL(2, ℤ)`
   is fixed by the slash action of every element of `Γ`.
 * `SlashInvariantForm.slash_action_eqn_of_det_pos`: the transformation law
@@ -205,6 +207,31 @@ theorem _root_.ModularForm.smul_slash_of_det_pos {α : Type*} [SMul α ℂ] [IsS
     (c : α) : (c • f) ∣[k] g = c • f ∣[k] g := by
   ext τ : 1
   simp [ModularForm.slash_apply_of_det_pos k hg, smul_mul_assoc]
+
+/-- A real scalar matrix acts trivially on the upper half-plane, and its weight-`k`
+slash is multiplication by the scalar to the power `k - 2`.
+
+The calculation generalizes AINTLIB's `slash_diag_scalar` (Chris Birkbeck, Apache-2.0), in
+`LeanModularForms/HeckeRIngs/GL2/Unified/NebentypusHeckeRingHom.lean` at commit
+`2baa76f742bdb4fb8ee323fabba41203bd390e08`. -/
+theorem _root_.ModularForm.slash_scalar (k : ℤ) (u : ℝˣ) (f : ℍ → ℂ) :
+    f ∣[k] Matrix.GeneralLinearGroup.scalar (Fin 2) u =
+      ((u : ℝ) : ℂ) ^ (k - 2) • f := by
+  have hdet : ((Matrix.GeneralLinearGroup.scalar (Fin 2) u).det : ℝ) = (u : ℝ) ^ 2 := by
+    rw [Matrix.GeneralLinearGroup.det_scalar]
+    simp
+  have hdetpos : 0 < ((Matrix.GeneralLinearGroup.scalar (Fin 2) u).det : ℝ) := by
+    rw [hdet]
+    exact (sq_nonneg _).lt_of_ne' (pow_ne_zero 2 u.ne_zero)
+  ext z
+  rw [ModularForm.slash_apply_of_det_pos k hdetpos, UpperHalfPlane.glScalar_smul,
+    UpperHalfPlane.denom_scalar, hdet, abs_of_nonneg (sq_nonneg (u : ℝ))]
+  push_cast
+  rw [← zpow_natCast (((u : ℝ) : ℂ)) 2, ← zpow_mul]
+  simp only [Pi.smul_apply, smul_eq_mul]
+  rw [mul_assoc, ← zpow_add₀ (by exact_mod_cast u.ne_zero), mul_comm]
+  congr 1
+  ring_nf
 
 /-- A form invariant under the image in `GL(2, ℝ)` of a subgroup `Γ ≤ SL(2, ℤ)` is fixed by
 the weight-`k` slash action of every element of `Γ` — the invariance condition read back at

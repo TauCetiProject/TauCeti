@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.AbsolutelyMonotone
 public import Mathlib.Analysis.Calculus.Deriv.MeanValue
+public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Topology.Order.MonotoneConvergence
 public import TauCeti.Analysis.Calculus.IteratedDerivWithin
@@ -66,6 +67,11 @@ point `0`); on the open half-line it agrees with the ordinary iterated derivativ
   scalar multiples.
 * `TauCeti.IsCompletelyMonotoneOnIoi`: the open-half-line analogue, using ordinary iterated
   derivatives on `(0, ∞)`.
+* `TauCeti.IsCompletelyMonotoneOnIoi.convexOn`: a completely monotone function on `(0, ∞)` is
+  convex there.
+* `TauCeti.isCompletelyMonotoneOnIoi_of_forall_comp_add_const`: complete monotonicity on
+  `(0, ∞)` can be checked on the positive translates of a function, the converse of
+  `TauCeti.IsCompletelyMonotoneOnIoi.isCompletelyMonotone_comp_add_const`.
 * `TauCeti.IsContinuousCompletelyMonotoneOnIoi`: the closed-half-line predicate used by the
   finite-measure Hausdorff--Bernstein--Widder theorem: continuity on `[0, ∞)` plus complete
   monotonicity on `(0, ∞)`.
@@ -381,6 +387,20 @@ lemma deriv_nonpos (hf : IsCompletelyMonotoneOnIoi f) {t : ℝ} (ht : 0 < t) :
   rw [pow_one, iteratedDeriv_one] at h
   linarith
 
+/-- A function completely monotone on `(0, ∞)` is convex there: its second derivative is the
+alternating derivative of order `2`, hence nonnegative. -/
+lemma convexOn (hf : IsCompletelyMonotoneOnIoi f) : ConvexOn ℝ (Ioi 0) f := by
+  have hd : DifferentiableOn ℝ f (Ioi 0) := hf.contDiffOn.differentiableOn (by simp)
+  have hderiv : ContDiffOn ℝ ∞ (deriv f) (Ioi 0) :=
+    hf.contDiffOn.deriv_of_isOpen isOpen_Ioi (by simp)
+  have hd' : DifferentiableOn ℝ (deriv f) (Ioi 0) := hderiv.differentiableOn (by simp)
+  refine convexOn_of_deriv2_nonneg (convex_Ioi 0) hf.contDiffOn.continuousOn ?_ ?_ ?_
+  · rwa [interior_Ioi]
+  · rwa [interior_Ioi]
+  · rw [interior_Ioi]
+    intro x hx
+    simpa [iteratedDeriv_eq_iterate] using hf.neg_one_pow_mul_iteratedDeriv_nonneg 2 hx
+
 /-- Complete monotonicity on `(0, ∞)` is preserved by pointwise equality there. -/
 lemma congr (hf : IsCompletelyMonotoneOnIoi f) (h : Set.EqOn g f (Ioi 0)) :
     IsCompletelyMonotoneOnIoi g := by
@@ -429,6 +449,29 @@ lemma isCompletelyMonotone_comp_add_const (hf : IsCompletelyMonotoneOnIoi f) {a 
     exact hf.neg_one_pow_mul_iteratedDeriv_nonneg n htpa
 
 end IsCompletelyMonotoneOnIoi
+
+/-- Complete monotonicity on `(0, ∞)` is detected by the positive translates of a function: if
+`t ↦ f (t + a)` is completely monotone on `(0, ∞)` for every `a > 0`, then so is `f`.  This is the
+converse of `TauCeti.IsCompletelyMonotoneOnIoi.isCompletelyMonotone_comp_add_const`, and it is how
+a statement proved after moving the boundary into the open half-line is transported back. -/
+theorem isCompletelyMonotoneOnIoi_of_forall_comp_add_const {f : ℝ → ℝ}
+    (h : ∀ a : ℝ, 0 < a → IsCompletelyMonotoneOnIoi fun s => f (s + a)) :
+    IsCompletelyMonotoneOnIoi f := by
+  have hsmooth : ContDiffOn ℝ ∞ f (Ioi 0) := by
+    intro u hu
+    have ha : (0 : ℝ) < u / 2 := by linarith [mem_Ioi.mp hu]
+    have hhalf : u - u / 2 = u / 2 := by ring
+    have hshift : ContDiffAt ℝ ∞ (fun s : ℝ => f (s + u / 2)) ((fun s : ℝ => s - u / 2) u) := by
+      have := ((h (u / 2) ha).contDiffOn).contDiffAt (isOpen_Ioi.mem_nhds (mem_Ioi.mpr ha))
+      simpa [hhalf] using this
+    have hcomp := hshift.comp u (by fun_prop : ContDiffAt ℝ ∞ (fun s : ℝ => s - u / 2) u)
+    exact (by simpa [Function.comp_def] using hcomp : ContDiffAt ℝ ∞ f u).contDiffWithinAt
+  refine ⟨hsmooth, fun n u hu => ?_⟩
+  have ha : (0 : ℝ) < u / 2 := by linarith
+  have hhalves : u / 2 + u / 2 = u := by ring
+  have hsign := (h (u / 2) ha).neg_one_pow_mul_iteratedDeriv_nonneg n ha
+  rw [iteratedDeriv_comp_add_const] at hsign
+  simpa [hhalves] using hsign
 
 /-! ## Closed-half-line complete monotonicity -/
 

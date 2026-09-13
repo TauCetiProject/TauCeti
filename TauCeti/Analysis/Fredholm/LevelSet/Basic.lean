@@ -27,7 +27,7 @@ Heegaard Floer roadmap asks for (McDuff--Salamon, *J-holomorphic Curves and Symp
 Appendix A.3). The linear half of that lane is already available:
 `ContinuousLinearMap.IsFredholm` provides the
 finite-dimensional, topologically complemented kernel, and
-`TauCeti.ContinuousLinearMap.index_of_surjective` identifies its dimension with the index. What is
+`ContinuousLinearMap.index_of_surjective` identifies its dimension with the index. What is
 added here is the nonlinear half, which is Mathlib's implicit function theorem for a map with
 surjective derivative and complemented kernel,
 `HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplemented`, restricted to the level set:
@@ -63,7 +63,7 @@ already cut down to `TauCeti.levelSetImplicitCoordSource` so that they can be co
   preferred chart there is cut down.
 * `TauCeti.levelSetChartedSpace`: a regular level set on which the index is constantly `n` is a
   charted space modelled on `Fin n → 𝕜`; by
-  `TauCeti.ContinuousLinearMap.index_of_surjective` the model dimension is the Fredholm index.
+  `ContinuousLinearMap.index_of_surjective` the model dimension is the Fredholm index.
 * `TauCeti.not_accPt_levelSet_of_injective_of_isClosed_range` and
   `TauCeti.not_accPt_levelSet_of_index_eq_zero`: a point where the derivative is injective with
   closed range, in particular a regular point of index `0`, is isolated in the level set through
@@ -266,7 +266,7 @@ variable [CompleteSpace 𝕜]
 
 /-- The identification of the kernel of a continuous linear map with the model space `Fin n → 𝕜`,
 when that kernel is finite-dimensional of dimension `n` — by
-`TauCeti.ContinuousLinearMap.index_of_surjective`, for a surjective Fredholm operator, the Fredholm
+`ContinuousLinearMap.index_of_surjective`, for a surjective Fredholm operator, the Fredholm
 index. -/
 noncomputable def _root_.ContinuousLinearMap.kerModelEquiv {n : ℕ} (T : E →L[𝕜] F)
     (hfin : FiniteDimensional 𝕜 ↥T.ker) (hn : finrank 𝕜 ↥T.ker = n) :

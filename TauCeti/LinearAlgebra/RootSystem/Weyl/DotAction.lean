@@ -178,7 +178,7 @@ theorem dotAction_injective (w : P.weylGroup) : Function.Injective (dotAction P 
 fixes every weight for the linear action, hence is the identity. -/
 theorem dotActionPerm_injective : Function.Injective (dotActionPerm P b) := by
   refine (injective_iff_map_eq_one _).mpr fun w hw ↦ ?_
-  refine _root_.TauCeti.RootPairing.weylGroup.eq_one_of_smul_eq_self fun y ↦ ?_
+  refine _root_.RootPairing.weylGroup.eq_one_of_smul_eq_self fun y ↦ ?_
   have h := congrArg (fun e : Equiv.Perm M ↦ e (y - weylVector P b)) hw
   simp only [dotActionPerm_apply, Equiv.Perm.coe_one, id_eq] at h
   rw [dotAction_eq_iff, sub_add_cancel] at h
@@ -202,7 +202,7 @@ theorem dotAction_eq_self_iff {w : P.weylGroup} {x : M} :
 /-- A simple reflection is an involution for the dot action, as it is for the linear one. -/
 theorem dotAction_ofIdx_involutive (i : ι) :
     Function.Involutive (dotAction P b (_root_.RootPairing.weylGroup.ofIdx P i)) := fun x ↦ by
-  rw [← dotAction_mul, _root_.TauCeti.RootPairing.weylGroup.ofIdx_mul_self, dotAction_one]
+  rw [← dotAction_mul, _root_.RootPairing.weylGroup.ofIdx_mul_self, dotAction_one]
 
 section Reduced
 

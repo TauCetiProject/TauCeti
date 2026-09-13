@@ -6,17 +6,17 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.Presentation
-public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.RingTheory.Huber.Restricted.Laurent
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
+public import TauCeti.Topology.Algebra.Nonarchimedean.Completion.RingHom
 
-import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.Identification
+import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.StronglyNoetherian
 
 /-!
 # Flatness of the Laurent quotient, and of a numerator enlargement
 
-Restriction maps between the rings of a Laurent presentation are flat, at the ring level. Three
-statements, in increasing generality:
+Restriction maps between the rings of a Laurent presentation are flat, at the ring level. The
+statements below run in increasing generality:
 
 * the Laurent quotient `A⟨T/s⟩⟨X⟩ ⧸ (t/s - X)` is a flat `A⟨T/s⟩`-module when that base is a
   complete noetherian Tate ring;
@@ -24,9 +24,13 @@ statements, in increasing generality:
   when `T'` is `T` with one numerator `t` adjoined. It asks the hypotheses above of `A⟨T/s⟩`,
   together with closedness of the Laurent relation ideal, **only when `t ∉ T`**;
 * the restriction map of an arbitrary enlargement `T ⊆ T'` is flat, assuming `s` topologically
-  nilpotent and `A⟨U/s⟩` strongly noetherian for every `U` with `T ⊆ U ⊂ T'`. This is **not**
-  Wedhorn's Proposition 8.30, which assumes strong noetherianity of `A` alone; see
-  *What this is not*.
+  nilpotent and `A⟨U/s⟩` strongly noetherian for every `U` with `T ⊆ U ⊂ T'`. On its own this is
+  **not** Wedhorn's Proposition 8.30, which assumes strong noetherianity of the base alone; see
+  *The three chain results, and which to use*;
+* the same conclusion asking strong noetherianity only at `T`, the per-intermediate hypothesis
+  being derived rather than assumed;
+* the same conclusion asking strong noetherianity of `A` alone, for a presentation whose
+  numerators generate the unit ideal together with `s` — Wedhorn's Proposition 8.30 in full.
 
 Changing the localisation that carries a presentation is flat with no hypotheses at all.
 
@@ -51,16 +55,45 @@ in: `s` topologically nilpotent over a strongly noetherian base.
 * `TauCeti.Huber.PairOfDefinition.flat_restrictionRingHomOfSubset_of_forall_isStronglyNoetherian`
   : the chain form — the restriction map of an arbitrary enlargement `T ⊆ T'` is flat, **assuming
   `A⟨U/s⟩` strongly noetherian for every `U` with `T ⊆ U ⊂ T'`**. That family hypothesis is what
-  separates this from Wedhorn's Proposition 8.30, which assumes it of `A` alone; see *What this is
-  not*.
+  separates this from Wedhorn's Proposition 8.30, which assumes it of `A` alone; see *The three
+  chain results, and which to use*.
+* `TauCeti.Huber.PairOfDefinition.flat_restrictionRingHomOfSubset_of_isStronglyNoetherian_base` :
+  the same conclusion asking strong noetherianity only at `T`, the family hypothesis above being
+  derived from it rather than assumed.
+* `PairOfDefinition.flat_restrictionRingHomOfSubset_of_span_eq_top` : **Wedhorn's Proposition
+  8.30**. Strong noetherianity is asked of `A`, as Wedhorn asks it, and the unit-ideal condition on
+  `(T, s)` is the algebraic form of rationality over a Tate ring. No condition is imposed on the
+  denominator itself.
 
-## What this is not
+## The three chain results, and which to use
 
-The chain result is **not** Wedhorn's Proposition 8.30 as he states it. His standing hypothesis is
-that `A` is strongly noetherian; the hypothesis here is that `A⟨U/s⟩` is, for every `U` with
-`T ⊆ U ⊂ T'`. What separates the two is the standing hypothesis of Wedhorn's §8.2 — that rational
-localisations of a strongly noetherian ring are again strongly noetherian. The family hypothesis
-is carried rather than derived from that, and the theorem is named for what it assumes.
+Where strong noetherianity is assumed is the primary distinction, and each is the right one for a
+different caller. It is not the only one: the third asks the Tate condition, strong noetherianity,
+and the unit-ideal condition on `(T, s)` — all three **only of a proper enlargement**, as explicit
+hypotheses rather than instances. Its one unconditional assumption is `[IsHuberRing A]`.
+
+`TauCeti.Huber.PairOfDefinition.flat_restrictionRingHomOfSubset_of_forall_isStronglyNoetherian`
+asks it of `A⟨U/s⟩` for *every* `U` with `T ⊆ U ⊂ T'` — a family of hypotheses, carried rather
+than derived, and the theorem is named for what it assumes. It is the one to use when strong
+noetherianity is known only at the intermediate presentations.
+
+`TauCeti.Huber.PairOfDefinition.flat_restrictionRingHomOfSubset_of_isStronglyNoetherian_base`
+asks it only at `T`, deriving the rest by
+`TauCeti.Huber.PairOfDefinition.isStronglyNoetherian_completion_of_subset`. It is the one to use
+when the localisation is known to be strongly noetherian but `A` is not, or when `(T, s)` is not
+known to cut out a rational subset.
+
+`PairOfDefinition.flat_restrictionRingHomOfSubset_of_span_eq_top` asks it of `A`, which is
+Wedhorn's own hypothesis. It costs three explicit hypotheses, each asked only when `T ⊂ T'`:
+`IsTateRing A`, `IsStronglyNoetherian A`, and the unit-ideal condition on `(T, s)`. All three are
+free in the intended use — restriction between rational subsets of `Spa(A, A⁺)` of a strongly
+noetherian Tate ring — where the first two hold by hypothesis and the third follows from
+rationality, since an open ideal of a Tate ring is `⊤`
+(`TauCeti.Huber.IsTateRing.isOpen_iff_eq_top`). A caller there passes
+`fun _ ↦ inferInstance` for the first two.
+
+Only `[IsHuberRing A]` remains an instance binder, because stating `IsStronglyNoetherian A` needs
+the nonarchimedean structure it carries.
 
 The elementary case is unaffected: it needs strong noetherianity only at its own base, which is
 where Lemma 8.31 needs it too.
@@ -423,6 +456,13 @@ separates the two is the standing hypothesis of his §8.2 — that rational loca
 strongly noetherian ring are again strongly noetherian — which `hSN` assumes case by case rather
 than deriving.
 
+`TauCeti.Huber.PairOfDefinition.flat_restrictionRingHomOfSubset_of_isStronglyNoetherian_base`
+supplies that derivation, reducing the family hypothesis to strong noetherianity of `A⟨T/s⟩`
+alone. The passage from `A` to `A⟨T/s⟩` is supplied in turn by
+`flat_restrictionRingHomOfSubset_of_span_eq_top`, which reaches Wedhorn's own hypothesis at the
+cost of the unit-ideal condition on `(T, s)`. This form remains the one to use when strong
+noetherianity is known only at the intermediate presentations.
+
 The enlargement is arbitrary and so is the localisation `S'` carrying the target, matching
 `TauCeti.Huber.PairOfDefinition.flat_restrictionRingHomOfSubset` and the rest of the restriction
 API.
@@ -458,6 +498,134 @@ theorem flat_restrictionRingHomOfSubset_of_forall_isStronglyNoetherian
       (Finset.union_sdiff_of_subset hTT').symm le_rfl hTT')
     (flat_restrictionRingHomOfSubset_self P T' s S (hden.mono hTT') S' hden')
 
+
+/-- **The chain form of Proposition 8.30 asking strong noetherianity only at `T`**: if the
+completed localisation carrying the `T`-topology is strongly noetherian, the restriction map of
+any numerator enlargement is flat.
+
+**It is not Wedhorn's Proposition 8.30 as he states it.** He assumes strong noetherianity
+of `A`; this asks it of `A⟨T/s⟩`. The passage between the two is
+`TauCeti.Huber.PairOfDefinition.isStronglyNoetherian_completion`, applied in
+`flat_restrictionRingHomOfSubset_of_span_eq_top` below, which asks `A` alone but adds the
+unit-ideal condition on `(T, s)`. Both hypotheses here are asked only of a *proper* enlargement:
+for `T' = T` the map is flat outright, by
+`TauCeti.Huber.PairOfDefinition.flat_restrictionRingHomOfSubset_self`. -/
+theorem flat_restrictionRingHomOfSubset_of_isStronglyNoetherian_base
+    (hnil : T ⊂ T' → IsTopologicallyNilpotent s)
+    (hSN : T ⊂ T' →
+      letI := locUniformSpace P T s S hden
+      letI := isUniformAddGroup_locUniformSpace P T s S hden
+      letI := isTopologicalRing_locUniformSpace P T s S hden
+      letI := isHuberRing_locUniformSpace P T s S hden
+      IsStronglyNoetherian (UniformSpace.Completion S)) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P T' s S' hden'
+    letI := isUniformAddGroup_locUniformSpace P T' s S' hden'
+    letI := isTopologicalRing_locUniformSpace P T' s S' hden'
+    (restrictionRingHomOfSubset P T s S hden T' S' hden' hTT').Flat :=
+  flat_restrictionRingHomOfSubset_of_forall_isStronglyNoetherian P T s S hden T' S' hden' hTT'
+    hnil fun U hU hUlt ↦
+      isStronglyNoetherian_completion_of_subset P T s S hden U hU
+        (fun _ ↦ hnil (lt_of_le_of_lt hU hUlt)) (hSN (lt_of_le_of_lt hU hUlt))
+
+-- The topologically nilpotent case used after rescaling in the full proposition below.
+private theorem flat_restrictionRingHomOfSubset_of_isTopologicallyNilpotent_of_span_eq_top
+    [IsHuberRing A]
+    (hTate : T ⊂ T' → IsTateRing A) (hSN : T ⊂ T' → IsStronglyNoetherian A)
+    (hnil : T ⊂ T' → IsTopologicallyNilpotent s)
+    (hspan : T ⊂ T' → Ideal.span (insert s (T : Set A)) = ⊤) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P T' s S' hden'
+    letI := isUniformAddGroup_locUniformSpace P T' s S' hden'
+    letI := isTopologicalRing_locUniformSpace P T' s S' hden'
+    (restrictionRingHomOfSubset P T s S hden T' S' hden' hTT').Flat :=
+  flat_restrictionRingHomOfSubset_of_isStronglyNoetherian_base P T s S hden T' S' hden' hTT'
+    hnil fun hproper ↦
+      have : IsTateRing A := hTate hproper
+      have : IsStronglyNoetherian A := hSN hproper
+      isStronglyNoetherian_completion P T s S hden (hspan hproper)
+
+/-- **Wedhorn's Proposition 8.30.** Over a strongly noetherian Tate ring, the restriction map
+`A⟨T/s⟩ → A⟨T'/s⟩` attached to a numerator enlargement is flat when `T` together with `s`
+generates the unit ideal.
+
+No topological-nilpotence condition is imposed on `s`. The three hypotheses are conditional on
+`T ⊂ T'`. Thus the identity enlargement remains
+hypothesis-free, while in the intended application to rational subsets of a strongly noetherian
+Tate ring they are supplied by the ambient instances and by
+`TauCeti.Huber.IsTateRing.isOpen_iff_eq_top`. -/
+theorem flat_restrictionRingHomOfSubset_of_span_eq_top [IsHuberRing A]
+    (hTate : T ⊂ T' → IsTateRing A) (hSN : T ⊂ T' → IsStronglyNoetherian A)
+    (hspan : T ⊂ T' → Ideal.span (insert s (T : Set A)) = ⊤) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P T' s S' hden'
+    letI := isUniformAddGroup_locUniformSpace P T' s S' hden'
+    letI := isTopologicalRing_locUniformSpace P T' s S' hden'
+    (restrictionRingHomOfSubset P T s S hden T' S' hden' hTT').Flat := by
+  by_cases hproper : T ⊂ T'
+  · let _ := hTate hproper
+    let _ := hSN hproper
+    classical
+    obtain ⟨ϖ, i, hϖ, hnil⟩ := IsTateRing.exists_isTopologicallyNilpotent_pow_mul s
+    let u := ϖ ^ i
+    have hu : IsUnit u := hϖ.isUnit.pow i
+    let U := T.image (u * ·)
+    let U' := T'.image (u * ·)
+    have hU : (U : Set A) = (u * ·) '' (T : Set A) := Finset.coe_image
+    have hU' : (U' : Set A) = (u * ·) '' (T' : Set A) := Finset.coe_image
+    let _ : IsLocalization.Away (u * s) S :=
+      IsLocalization.Away.of_associated (associated_unit_mul_left s u hu).symm
+    let _ : IsLocalization.Away (u * s) S' :=
+      IsLocalization.Away.of_associated (associated_unit_mul_left s u hu).symm
+    have hdenU : HasDenominatorPower P U (u * s) S :=
+      hden.of_coe_eq_image_mul_left hu hU
+    have hdenU' : HasDenominatorPower P U' (u * s) S' :=
+      hden'.of_coe_eq_image_mul_left hu hU'
+    have hUU' : ∀ x ∈ U, x ∈ U' := by
+      intro x hx
+      obtain ⟨t, ht, rfl⟩ := hU ▸ Finset.mem_coe.mpr hx
+      exact Finset.mem_coe.mp (hU' ▸ Set.mem_image_of_mem _ (hTT' t ht))
+    have hspanU : Ideal.span (insert (u * s) (U : Set A)) = ⊤ := by
+      apply top_unique
+      rw [← hspan hproper, Ideal.span_le]
+      intro x hx
+      have hux : u * x ∈ insert (u * s) (U : Set A) := by
+        rcases hx with rfl | hx
+        · exact Set.mem_insert _ _
+        · exact Set.mem_insert_iff.mpr <| Or.inr <| hU ▸ Set.mem_image_of_mem _ hx
+      have huinv : (↑hu.unit⁻¹ : A) * u = 1 := by
+        simpa only [hu.unit_spec] using Units.inv_mul hu.unit
+      have hmul := (Ideal.span (insert (u * s) (U : Set A))).mul_mem_left
+        (↑hu.unit⁻¹ : A) (Ideal.subset_span hux)
+      rwa [← mul_assoc, huinv, one_mul] at hmul
+    have hflat :=
+      flat_restrictionRingHomOfSubset_of_isTopologicallyNilpotent_of_span_eq_top
+        P U (u * s) S hdenU U' S' hdenU' hUU' (fun _ ↦ inferInstance)
+          (fun _ ↦ inferInstance) (fun _ ↦ hnil) (fun _ ↦ hspanU)
+    have hsource := locSubring_eq_of_coe_eq_image_mul_left P T U u s S hU
+    have htarget := locSubring_eq_of_coe_eq_image_mul_left P T' U' u s S' hU'
+    have hmap := restrictionRingHomOfSubset_heq P T T' s S hden S' hden' hTT'
+      U U' (u * s) hdenU hdenU' hUU' hsource htarget
+    exact ringHom_flat_of_completion_heq
+      (locUniformSpace_congr P T U s (u * s) S hden hdenU hsource)
+      (locUniformSpace_congr P T' U' s (u * s) S' hden' hdenU' htarget)
+      (isUniformAddGroup_locUniformSpace P T s S hden)
+      (isUniformAddGroup_locUniformSpace P U (u * s) S hdenU)
+      (isTopologicalRing_locUniformSpace P T s S hden)
+      (isTopologicalRing_locUniformSpace P U (u * s) S hdenU)
+      (isUniformAddGroup_locUniformSpace P T' s S' hden')
+      (isUniformAddGroup_locUniformSpace P U' (u * s) S' hdenU')
+      (isTopologicalRing_locUniformSpace P T' s S' hden')
+      (isTopologicalRing_locUniformSpace P U' (u * s) S' hdenU') _ _ hmap hflat
+  · exact flat_restrictionRingHomOfSubset_of_isTopologicallyNilpotent_of_span_eq_top
+      P T s S hden T' S' hden' hTT' (False.elim ∘ hproper) (False.elim ∘ hproper)
+      (False.elim ∘ hproper) (False.elim ∘ hproper)
 
 end PairOfDefinition
 

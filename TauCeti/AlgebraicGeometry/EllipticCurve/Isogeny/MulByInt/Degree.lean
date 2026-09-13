@@ -57,7 +57,7 @@ theorem fieldPullback_mulByIntIsogeny_X [W.IsElliptic] {n : ℤ}
       W.toAffine.FunctionField, fieldPullback_algebraMap, mulByIntIsogeny_pullback,
     AdjoinRoot.algebraMap_eq, mulByIntPullback_X, mulByIntX_def,
     phiFunctionField_eq_algebraMap, psiFunctionField_sq,
-    TauCeti.WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
+    WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
     ← IsScalarTower.algebraMap_apply, map_div₀]
 
 /-- **`deg [n] = n²`** (Silverman III.6.4(a)). The pullback of `[n]` sends the affine coordinate

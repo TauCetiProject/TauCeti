@@ -25,8 +25,8 @@ target carries no measurable structure of its own.
 The strata of the critical set are handled in the neighbouring files, and this one supplies the
 outermost stratum, where the derivative is nonzero but not surjective, together with the assembly
 of all the strata into the theorem itself. The two earlier slices,
-`TauCeti.Differentiable.addHaar_image_criticalPoints_eq_zero` (equal dimensions),
-`TauCeti.Differentiable.addHaar_image_not_surjective_fderiv_eq_zero_of_finrank_lt_finrank`
+`Differentiable.addHaar_image_criticalPoints_eq_zero` (equal dimensions),
+`Differentiable.addHaar_image_not_surjective_fderiv_eq_zero_of_finrank_lt_finrank`
 (smaller source), are both subsumed by the statement proved here, which needs no relation between
 the two dimensions.
 

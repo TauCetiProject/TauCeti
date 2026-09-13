@@ -219,11 +219,10 @@ private lemma mulMap_coprime_eq (a b : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i)
         = σ₁ * h₁a * (natDiagGL n a * (h₂a * σ₂ * h₁b) * natDiagGL n b) * h₂b := by group
       _ = σ₁ * h₁a * (hc₁ * natDiagGL n (a * b) * hc₂) * h₂b := by rw [h_eq]
       _ = σ₁ * h₁a * hc₁ * natDiagGL n (a * b) * (hc₂ * h₂b) := by group
-  rw [HeckeCoset.mulMap_eq_mk]
-  exact (HeckeCoset.mk_eq_mk_of_mem (mem_doubleCoset.mpr
-    ⟨(p.1.out : GL (Fin n) ℚ) * h₁a * hc₁,
-      (SLnZ n).mul_mem ((SLnZ n).mul_mem p.1.out.2 hh₁a) hhc₁,
-      hc₂ * h₂b, (SLnZ n).mul_mem hhc₂ hh₂b, hprod⟩)).trans (diagCoset_def _).symm
+  rw [diagCoset_def (a * b)]
+  exact HeckeCoset.mulMap_eq_of_eq_mul_mul
+    ((SLnZ n).mul_mem ((SLnZ n).mul_mem p.1.out.2 hh₁a) hhc₁)
+    ((SLnZ n).mul_mem hhc₂ hh₂b) hprod
 
 end CoprimeCosets
 

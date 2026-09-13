@@ -138,12 +138,12 @@ theorem isSerreSystemQ :
     simpa only [cartanGeneratorMatrixQ, loweringMatrixQ, Int.cast_smul_eq_zsmul] using h
   ad_pow_lie_E_E i j := by
     have h := congrArg castMatrixLieHom (isSerreSystem.ad_pow_lie_E_E i j)
-    rw [TauCeti.LieHom.map_ad_pow, map_zero] at h
+    rw [LieHom.map_ad_pow, map_zero] at h
     rw [← ad_pow_int_eq_rat]
     simpa only [LieHom.map_lie, raisingMatrixQ] using h
   ad_pow_lie_F_F i j := by
     have h := congrArg castMatrixLieHom (isSerreSystem.ad_pow_lie_F_F i j)
-    rw [TauCeti.LieHom.map_ad_pow, map_zero] at h
+    rw [LieHom.map_ad_pow, map_zero] at h
     rw [← ad_pow_int_eq_rat]
     simpa only [LieHom.map_lie, loweringMatrixQ] using h
 

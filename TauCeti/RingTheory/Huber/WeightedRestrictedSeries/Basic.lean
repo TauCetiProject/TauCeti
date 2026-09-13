@@ -999,10 +999,40 @@ theorem weightedPolynomialHom_X [NonarchimedeanRing A] {T : Fin k → Set A}
     weightedPolynomialHom T hT (MvPolynomial.X i) = weightedX T hT i :=
   Subtype.ext (by simp [coe_weightedX])
 
+/-- **The inclusion of the polynomials is injective**: a polynomial is determined by its
+coefficients, and the inclusion changes none of them.
+
+This is what makes `TauCeti.Huber.weightedPolynomials` a faithful copy of `MvPolynomial (Fin k) A`
+inside `A⟨X⟩_T`, so that a map defined on polynomials transfers to it. -/
+theorem weightedPolynomialHom_injective [NonarchimedeanRing A] {T : Fin k → Set A}
+    (hT : IsWeightFamily T) : Function.Injective (weightedPolynomialHom T hT) := by
+  intro p q h
+  have hcoe : (p : MvPowerSeries (Fin k) A) = (q : MvPowerSeries (Fin k) A) := by
+    simpa only [coe_weightedPolynomialHom] using congrArg Subtype.val h
+  exact MvPolynomial.coe_injective (Fin k) A hcoe
+
 /-- `A[X] ⊆ A⟨X⟩_T`, as a subring. -/
 noncomputable def weightedPolynomials [NonarchimedeanRing A] (T : Fin k → Set A)
     (hT : IsWeightFamily T) : Subring (weightedRestrictedSubring T hT) :=
   (weightedPolynomialHom T hT).range
+
+/-- **`A[X]` and its copy inside `A⟨X⟩_T` are the same ring.** The inclusion is injective by
+`TauCeti.Huber.weightedPolynomialHom_injective` and surjective onto its range by construction.
+
+This is what lets a homomorphism defined on `MvPolynomial (Fin k) A` — an evaluation, say — be
+read as one defined on the subring of `A⟨X⟩_T`, which is where the uniformity lives. -/
+noncomputable def weightedPolynomialsEquiv [NonarchimedeanRing A] {T : Fin k → Set A}
+    (hT : IsWeightFamily T) : MvPolynomial (Fin k) A ≃+* weightedPolynomials T hT :=
+  RingEquiv.ofBijective (weightedPolynomialHom T hT).rangeRestrict
+    ⟨fun _ _ h ↦ weightedPolynomialHom_injective hT (congrArg Subtype.val h),
+      (weightedPolynomialHom T hT).rangeRestrict_surjective⟩
+
+@[simp]
+theorem coe_weightedPolynomialsEquiv [NonarchimedeanRing A] {T : Fin k → Set A}
+    {hT : IsWeightFamily T} (p : MvPolynomial (Fin k) A) :
+    (weightedPolynomialsEquiv hT p : weightedRestrictedSubring T hT)
+      = weightedPolynomialHom T hT p :=
+  (rfl)
 
 /-- Membership in `weightedPolynomials` is exactly having finitely many nonzero coefficients.
 
@@ -1126,8 +1156,7 @@ noncomputable def weightedPolynomialEquiv [NonarchimedeanRing A] [DiscreteTopolo
     (T : Fin k → Set A) (hT : IsWeightFamily T) :
     MvPolynomial (Fin k) A ≃+* weightedRestrictedSubring T hT :=
   RingEquiv.ofBijective (weightedPolynomialHom T hT)
-    ⟨fun p q hpq ↦ MvPolynomial.coe_injective _ _ (by
-        simpa only [coe_weightedPolynomialHom] using congrArg Subtype.val hpq),
+    ⟨weightedPolynomialHom_injective hT,
       fun f ↦ by
         have hmem : f ∈ weightedPolynomials T hT := by
           rw [weightedPolynomials_eq_top (hT := hT)]

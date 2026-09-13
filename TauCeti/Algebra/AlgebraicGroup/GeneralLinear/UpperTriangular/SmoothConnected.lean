@@ -12,9 +12,9 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 # Geometry of the upper-triangular subgroup scheme
 
 The standard upper-triangular subgroup of `GL_n` is the weight parabolic for the strictly
-decreasing weights `i ↦ n - 1 - i`. This file specializes the general geometry of
-injective-weight parabolics to establish smoothness and geometric connectedness of the
-upper-triangular group over every field.
+decreasing weights `i ↦ n - 1 - i`. This file specializes the general geometry of weight
+parabolics to establish smoothness and geometric connectedness of the upper-triangular group
+over an arbitrary commutative ring for smoothness and over a field for geometric connectedness.
 
 ## Main declarations
 
@@ -28,10 +28,6 @@ upper-triangular group over every field.
 
 * J. S. Milne, *Algebraic Groups* (2017), Chapters 12--13 and 17.
 * T. A. Springer, *Linear Algebraic Groups*, Sections 6.2--6.3.
-
-This advances the Borel-subgroup milestone in Layer 7, "Structure theory", of the
-ReductiveGroups roadmap: together with the existing solvability theorem, it supplies the smooth
-connected solvable standard subgroup that will be shown maximal among such subgroups.
 -/
 
 public section
@@ -46,12 +42,12 @@ namespace UpperTriangular
 
 variable (n : ℕ)
 
-/-- **The standard upper-triangular subgroup of `GL_n` is smooth over every field.** -/
+/-- **The standard upper-triangular subgroup of `GL_n` is smooth over every commutative ring.** -/
 theorem smoothCommHopfAlgProperty_coordinateHopfAlgebra
-    (k : Type u) [Field k] :
-    smoothCommHopfAlgProperty k (coordinateHopfAlgebra k n) :=
+    (R : Type u) [CommRing R] :
+    smoothCommHopfAlgProperty R (coordinateHopfAlgebra R n) :=
   smoothCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra
-    k (weights n) (weights_injective n)
+    R (weights n)
 
 /-- **The standard upper-triangular subgroup of `GL_n` is geometrically connected over every
 field.** -/
@@ -59,7 +55,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra
     (k : Type u) [Field k] :
     geometricallyConnectedCommHopfAlgProperty k (coordinateHopfAlgebra k n) :=
   geometricallyConnectedCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra
-    k (weights n) (weights_injective n)
+    k (weights n)
 
 end UpperTriangular
 

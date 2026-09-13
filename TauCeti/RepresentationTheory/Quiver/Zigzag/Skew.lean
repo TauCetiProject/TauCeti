@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.PathAlgebra
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
-public import Mathlib.RingTheory.TwoSidedIdeal.Kernel
-public import Mathlib.RingTheory.TwoSidedIdeal.Operations
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Relations
 
 /-!
 # Scalar-labelled skew-zigzag relation quotients
@@ -24,21 +21,27 @@ backtrack(h) = ratio(h,h') • backtrack(h').
 ```
 
 As for the ordinary relation quotient, non-returning length-two paths and paths of length at least
-three vanish.  This file supplies the presentation and its universal property only.  Gauge
-comparisons of parameters, including normalization on trees, belong to later work.
+three vanish.  At the constant parameter, all of whose ratios are one, the relation ideal is the
+ordinary zigzag relation ideal, so the two presentations agree there.
 
 ## Main definitions
 
 * `TauCeti.SkewZigzagParameter`: a unit-valued backtrack-ratio labelling.
+* the `One` instance on `TauCeti.SkewZigzagParameter`: the constant parameter, all of whose ratios
+  are one.
 * `TauCeti.IsSkewZigzagRelator` and `TauCeti.skewZigzagIdeal`: the uniform skew relation family
   and the two-sided ideal it generates.
 * `TauCeti.skewZigzagQuotient` and `TauCeti.skewZigzagMk`: the relation quotient and quotient map.
+* `TauCeti.skewZigzagQuotientOneEquiv`: the identification of the constant-parameter quotient with
+  the ordinary zigzag relation quotient.
 
 ## Main results
 
 * `TauCeti.skewZigzagMk_backtrackElem_eq_smul`: the defining scalar backtrack relation in the
   quotient.
 * `TauCeti.skewZigzagLift` and `TauCeti.skewZigzagLift_unique`: the quotient universal property.
+* `TauCeti.skewZigzagIdeal_one_eq_zigzagIdeal`: the constant parameter spans the ordinary zigzag
+  relation ideal.
 
 ## References
 
@@ -53,7 +56,7 @@ namespace TauCeti
 
 open PathAlgebra DoubledQuiver
 
-universe u w
+universe u w z
 
 /-- A skew-zigzag parameter assigns a unit-valued, hence invertible, scalar ratio to every ordered
 pair of adjacencies with a common source.  The units make invertibility part of the type, and the
@@ -75,6 +78,97 @@ structure SkewZigzagParameter (k : Type w) [Monoid k] {V : Type u} (G : SimpleGr
 attribute [simp] SkewZigzagParameter.ratio_self
 
 namespace SkewZigzagParameter
+
+section Ratio
+
+variable {k : Type w} [Monoid k] {V : Type u} {G : SimpleGraph V}
+
+/-- **Skew-zigzag ratios compose along incident edges.** -/
+@[simp]
+theorem ratio_mul_ratio (c : SkewZigzagParameter k G) {i j j' j'' : V}
+    (h : G.Adj i j) (h' : G.Adj i j') (h'' : G.Adj i j'') :
+    c.ratio h h' * c.ratio h' h'' = c.ratio h h'' := by
+  calc
+    c.ratio h h' * c.ratio h' h'' = (c.ratio h'' h)⁻¹ :=
+      eq_inv_of_mul_eq_one_left (c.ratio_cocycle h h' h'')
+    _ = c.ratio h h'' := by
+      rw [eq_inv_of_mul_eq_one_left (c.ratio_inv h'' h), inv_inv]
+
+end Ratio
+
+section One
+
+variable {k : Type w} [Monoid k] {V : Type u} {G : SimpleGraph V}
+
+/-- The constant skew-zigzag parameter, all of whose ratios are one: it imposes that all backtracks
+at a vertex are equal, which is the ordinary zigzag relation. -/
+instance : One (SkewZigzagParameter k G) where
+  one :=
+    { ratio _ _ _ _ _ := 1
+      ratio_self := by intro i j h; rfl
+      ratio_inv := by intro i j j' h h'; exact one_mul 1
+      ratio_cocycle := by intro i j j' j'' h h' h''; rw [one_mul, one_mul] }
+
+@[simp]
+theorem one_ratio {i j j' : V} (h : G.Adj i j) (h' : G.Adj i j') :
+    (1 : SkewZigzagParameter k G).ratio h h' = 1 := (rfl)
+
+end One
+
+section Map
+
+variable {k : Type w} {l : Type z} [Monoid k] [Monoid l]
+  {V : Type u} {G : SimpleGraph V}
+
+/-- Apply a monoid homomorphism to every ratio of a skew-zigzag parameter. -/
+def map (f : k →* l) (c : SkewZigzagParameter k G) : SkewZigzagParameter l G where
+  ratio _ _ _ h h' := Units.map f (c.ratio h h')
+  ratio_self := by intro i j h; simp
+  ratio_inv := by
+    intro i j j' h h'
+    rw [← map_mul, c.ratio_inv]
+    exact map_one (Units.map f)
+  ratio_cocycle := by
+    intro i j j' j'' h h' h''
+    rw [← map_mul, ← map_mul, c.ratio_cocycle]
+    exact map_one (Units.map f)
+
+/-- Mapping a parameter applies the monoid homomorphism to each ratio. -/
+@[simp]
+theorem map_ratio (f : k →* l) (c : SkewZigzagParameter k G)
+    {i j j' : V} (h : G.Adj i j) (h' : G.Adj i j') :
+    (c.map f).ratio h h' = Units.map f (c.ratio h h') := (rfl)
+
+/-- The constant parameter remains constant after mapping along a monoid homomorphism. -/
+@[simp]
+theorem map_one (f : k →* l) :
+    map f (1 : SkewZigzagParameter k G) = 1 := by
+  ext i j j' h h'
+  simp
+
+/-- Mapping a parameter along the identity homomorphism changes nothing. -/
+@[simp]
+theorem map_id (c : SkewZigzagParameter k G) : c.map (MonoidHom.id k) = c := by
+  ext i j j' h h'
+  simp
+
+/-- Mapping a parameter along a composite is the same as successive mapping. -/
+@[simp]
+theorem map_comp {m : Type*} [Monoid m] (f : k →* l) (g : l →* m)
+    (c : SkewZigzagParameter k G) :
+    c.map (g.comp f) = (c.map f).map g := by
+  ext i j j' h h'
+  simp [Units.map_comp]
+
+/-- Injectivity on units induces an injective map on skew-zigzag parameters. -/
+theorem map_injective (f : k →* l) (hf : Function.Injective (Units.map f)) :
+    Function.Injective (map (G := G) f) := by
+  intro c c' h
+  apply SkewZigzagParameter.ext
+  funext i j j' hi hj
+  exact hf (congrArg (fun d : SkewZigzagParameter l G => d.ratio hi hj) h)
+
+end Map
 
 variable {k : Type w} [MonoidWithZero k] [Nontrivial k] {V : Type u} {G : SimpleGraph V}
 
@@ -128,6 +222,10 @@ noncomputable def skewZigzagMk :
 theorem skewZigzagMk_apply (x : pathAlgebra k (DoubledQuiver G)) :
     skewZigzagMk k G c x = Ideal.Quotient.mk (skewZigzagIdeal k G c).asIdeal x :=
   by rw [skewZigzagMk, Ideal.Quotient.mkₐ_eq_mk]
+
+/-- The skew-zigzag quotient map is surjective. -/
+theorem skewZigzagMk_surjective : Function.Surjective (skewZigzagMk k G c) :=
+  Ideal.Quotient.mk_surjective
 
 /-- The kernel of the skew-zigzag quotient map is its relation ideal. -/
 @[simp]
@@ -207,5 +305,73 @@ theorem skewZigzagLift_unique (f : pathAlgebra k (DoubledQuiver G) →ₐ[k] B)
 end Lift
 
 end Relations
+
+/-! ### The constant parameter and the ordinary zigzag relations -/
+
+section One
+
+variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
+
+/-- **The constant parameter imposes exactly the ordinary zigzag relations.** Its backtrack relators
+say that two backtracks at a vertex are equal, which is the ordinary quadratic relator, and the
+non-returning and long-path families of the two presentations agree. -/
+theorem skewZigzagIdeal_one_eq_zigzagIdeal : skewZigzagIdeal k G 1 = zigzagIdeal k G := by
+  refine le_antisymm ?_ ?_
+  · rw [skewZigzagIdeal, TwoSidedIdeal.span_le]
+    intro x hx
+    cases hx with
+    | nonreturn p hlen hne =>
+      exact mem_zigzagIdeal_of_isZigzagRelator k G
+        (IsZigzagRelator.quadratic (IsQuadraticZigzagRelator.nonreturn p hlen hne))
+    | backtrack_ratio h h' =>
+      rw [SkewZigzagParameter.one_ratio, Units.val_one, one_smul]
+      exact quadraticZigzagIdeal_le_zigzagIdeal k G
+        (backtrackElem_sub_backtrackElem_mem_quadraticZigzagIdeal k G h h')
+    | long_path y h3 =>
+      exact mem_zigzagIdeal_of_isZigzagRelator k G (IsZigzagRelator.long_path y h3)
+  · rw [zigzagIdeal_eq_span, TwoSidedIdeal.span_le]
+    intro x hx
+    cases hx with
+    | quadratic hq =>
+      cases hq with
+      | nonreturn p hlen hne =>
+        exact mem_skewZigzagIdeal_of_isSkewZigzagRelator k G 1
+          (IsSkewZigzagRelator.nonreturn p hlen hne)
+      | equal_backtracks p q hp hq =>
+        rename_i i
+        obtain ⟨v, rfl⟩ : ∃ v, i = vertex G v :=
+          ⟨(vertexEquiv G).symm i, (vertexEquiv_symm_apply G i).symm⟩
+        obtain ⟨j, hj, rfl⟩ := exists_eq_backtrackPath G p hp
+        obtain ⟨j', hj', rfl⟩ := exists_eq_backtrackPath G q hq
+        have hmem := mem_skewZigzagIdeal_of_isSkewZigzagRelator k G 1
+          (IsSkewZigzagRelator.backtrack_ratio hj hj')
+        rw [SkewZigzagParameter.one_ratio, Units.val_one, one_smul] at hmem
+        rwa [← backtrackElem_eq_ofPath, ← backtrackElem_eq_ofPath]
+    | long_path y h3 =>
+      exact mem_skewZigzagIdeal_of_isSkewZigzagRelator k G 1
+        (IsSkewZigzagRelator.long_path y h3)
+
+/-- **The constant parameter presents the ordinary zigzag algebra**: its skew relation is that all
+backtracks at a vertex are equal, which is the ordinary zigzag relation. -/
+noncomputable def skewZigzagQuotientOneEquiv :
+    skewZigzagQuotient k G 1 ≃ₐ[k] nonisolatedZigzagQuotient k G :=
+  Ideal.quotientEquivAlgOfEq k
+    (congrArg TwoSidedIdeal.asIdeal (skewZigzagIdeal_one_eq_zigzagIdeal k G))
+
+/-- The comparison with the ordinary zigzag quotient sends the class of an element to its ordinary
+class. -/
+@[simp]
+theorem skewZigzagQuotientOneEquiv_skewZigzagMk (x : pathAlgebra k (DoubledQuiver G)) :
+    skewZigzagQuotientOneEquiv k G (skewZigzagMk k G 1 x) = zigzagMk k G x := by
+  rw [skewZigzagMk_apply, skewZigzagQuotientOneEquiv, Ideal.quotientEquivAlgOfEq_mk, zigzagMk_apply]
+
+/-- The inverse comparison with the ordinary zigzag quotient sends the class of an element to its
+skew class at the constant parameter. -/
+@[simp]
+theorem skewZigzagQuotientOneEquiv_symm_zigzagMk (x : pathAlgebra k (DoubledQuiver G)) :
+    (skewZigzagQuotientOneEquiv k G).symm (zigzagMk k G x) = skewZigzagMk k G 1 x := by
+  rw [AlgEquiv.symm_apply_eq, skewZigzagQuotientOneEquiv_skewZigzagMk]
+
+end One
 
 end TauCeti

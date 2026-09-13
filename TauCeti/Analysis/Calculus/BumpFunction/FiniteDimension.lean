@@ -28,8 +28,6 @@ globally Lipschitz field.
 
 public section
 
-open scoped ContDiff
-
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 

@@ -6,7 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Ring.Ideal
+public import TauCeti.RingTheory.Huber.StronglyNoetherian
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
+
+import TauCeti.RingTheory.Huber.OpenMapping
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
+import TauCeti.Topology.Algebra.GroupCompletion
 
 /-!
 # Homomorphisms topologically of finite type
@@ -79,6 +84,12 @@ it.
 * `TauCeti.Huber.isStrictlyTopologicallyFiniteType_quotientMk_algebraMap`: every quotient of
   `A⟨X₁, …, Xₖ⟩` is strictly topologically of finite type over `A` — the shape of every Laurent
   and rational presentation.
+* `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.isStronglyNoetherian`: over a strongly
+  noetherian Huber ring, an algebra strictly topologically of finite type is again strongly
+  noetherian.
+* `TauCeti.Huber.isStrictlyTopologicallyFiniteType_of_surjective`: **over a Tate ring, a
+  surjection out of `A⟨X₁, …, Xₖ⟩` that is continuous at zero is already a strict
+  presentation** — openness is supplied by the open mapping theorem rather than assumed.
 
 ## References
 
@@ -139,14 +150,15 @@ theorem isStrictlyTopologicallyFiniteType_algebraMap (k : ℕ) :
 presentation is a presentation. -/
 theorem IsStrictlyTopologicallyFiniteType.isTopologicallyFiniteType {φ : A →+* B}
     (h : IsStrictlyTopologicallyFiniteType φ) : IsTopologicallyFiniteType φ := by
-  obtain ⟨k, π, hπ, hcomm⟩ := h
-  exact ⟨k, _, fun _ ↦ Set.finite_singleton 1, isWeightFamily_one_weight, π, hπ, hcomm⟩
+  obtain ⟨k, π, hπ, hcomm⟩ := isStrictlyTopologicallyFiniteType_iff.mp h
+  exact isTopologicallyFiniteType_iff.mpr
+    ⟨k, _, fun _ ↦ Set.finite_singleton 1, isWeightFamily_one_weight, π, hπ, hcomm⟩
 
 /-- A homomorphism topologically of finite type is continuous: it factors as an open quotient map
 after the presenting algebra's structure map, and both are continuous. -/
 theorem IsTopologicallyFiniteType.continuous {φ : A →+* B} (h : IsTopologicallyFiniteType φ) :
     Continuous φ := by
-  obtain ⟨k, T, _, hT, π, hπ, hcomm⟩ := h
+  obtain ⟨k, T, _, hT, π, hπ, hcomm⟩ := isTopologicallyFiniteType_iff.mp h
   rw [← hcomm]
   exact hπ.continuous.comp (continuous_algebraMap_completion_weightedRestrictedSubring k A hT)
 
@@ -169,8 +181,9 @@ the presenting `A⟨X₁, …, Xₖ⟩ ↠ B` with `ψ`, and use that open quoti
 theorem IsStrictlyTopologicallyFiniteType.comp_isOpenQuotientMap {φ : A →+* B} {ψ : B →+* C}
     (h : IsStrictlyTopologicallyFiniteType φ) (hψ : IsOpenQuotientMap ψ) :
     IsStrictlyTopologicallyFiniteType (ψ.comp φ) := by
-  obtain ⟨k, π, hπ, hcomm⟩ := h
-  exact ⟨k, ψ.comp π, hψ.comp hπ, by rw [RingHom.comp_assoc, hcomm]⟩
+  obtain ⟨k, π, hπ, hcomm⟩ := isStrictlyTopologicallyFiniteType_iff.mp h
+  exact isStrictlyTopologicallyFiniteType_iff.mpr
+    ⟨k, ψ.comp π, hψ.comp hπ, by rw [RingHom.comp_assoc, hcomm]⟩
 
 /-- **A presentation pushes along an open quotient map**, the weighted form of
 `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.comp_isOpenQuotientMap`. The weight family is
@@ -178,8 +191,9 @@ carried across unchanged; only the presenting map moves. -/
 theorem IsTopologicallyFiniteType.comp_isOpenQuotientMap {φ : A →+* B} {ψ : B →+* C}
     (h : IsTopologicallyFiniteType φ) (hψ : IsOpenQuotientMap ψ) :
     IsTopologicallyFiniteType (ψ.comp φ) := by
-  obtain ⟨k, T, hTfin, hT, π, hπ, hcomm⟩ := h
-  exact ⟨k, T, hTfin, hT, ψ.comp π, hψ.comp hπ, by rw [RingHom.comp_assoc, hcomm]⟩
+  obtain ⟨k, T, hTfin, hT, π, hπ, hcomm⟩ := isTopologicallyFiniteType_iff.mp h
+  exact isTopologicallyFiniteType_iff.mpr
+    ⟨k, T, hTfin, hT, ψ.comp π, hψ.comp hπ, by rw [RingHom.comp_assoc, hcomm]⟩
 
 variable [IsTopologicalRing B]
 
@@ -206,5 +220,84 @@ theorem isStrictlyTopologicallyFiniteType_quotientMk_algebraMap (k : ℕ)
   (isStrictlyTopologicallyFiniteType_algebraMap k).quotientMk I
 
 end OpenQuotient
+
+/-! ### Strong noetherianness
+
+Strong noetherianness passes from `A` to any algebra strictly topologically of finite type over
+it. This is the standing hypothesis of Wedhorn's §8.2 in the form the flatness results consume:
+rational localisations of a strongly noetherian ring are again strongly noetherian, once they are
+known to be strictly topologically of finite type.
+-/
+
+section StronglyNoetherian
+
+variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  [IsStronglyNoetherian A]
+  [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B]
+  [T0Space B]
+
+/-- **Strong noetherianness passes to an algebra strictly topologically of finite type.** Over a
+strongly noetherian Huber ring `A`, a complete Hausdorff nonarchimedean ring `B` admitting a map
+`φ : A →+* B` strictly topologically of finite type is again strongly noetherian.
+
+The intended use is Wedhorn's §8.2, where
+`TauCeti.Huber.PairOfDefinition.flat_restrictionRingHomOfSubset_of_forall_isStronglyNoetherian`
+asks that every rational localisation in a cover be strongly noetherian. Combined with a strict
+finite type presentation of such a localisation over its base — the shape
+`TauCeti.Huber.isStrictlyTopologicallyFiniteType_quotientMk_algebraMap` produces, and the one
+Wedhorn's Examples 6.38 and 6.39 exhibit — this theorem reduces that hypothesis to strong
+noetherianness of the base alone. -/
+theorem IsStrictlyTopologicallyFiniteType.isStronglyNoetherian {φ : A →+* B}
+    (hφ : IsStrictlyTopologicallyFiniteType φ) : IsStronglyNoetherian B := by
+  obtain ⟨k, π, hπ, -⟩ := isStrictlyTopologicallyFiniteType_iff.mp hφ
+  exact hπ.isStronglyNoetherian
+
+end StronglyNoetherian
+
+/-! ### Presentations supplied by the open mapping theorem
+
+Over a Tate ring a strict presentation need not be exhibited as an *open* map: **openness is
+automatic**. A surjection out of `A⟨X₁, …, Xₖ⟩` onto a complete Hausdorff first countable algebra
+that is continuous at zero is open, so continuity and surjectivity together already make it a
+strict presentation.
+-/
+
+section OpenMappingPresentation
+
+open Filter
+open scoped Uniformity
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
+  [IsTateRing A]
+  {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [CompleteSpace B]
+  [(𝓤 B).IsCountablyGenerated] [T0Space B] [Algebra A B] [ContinuousConstSMul A B]
+
+/-- **Over a Tate ring, a surjection out of `A⟨X₁, …, Xₖ⟩` that is continuous at zero is a strict
+presentation.** Openness is not a third obligation: with continuity at zero and surjectivity in
+hand, Wedhorn Definition 6.28 asks for nothing more.
+
+The hypotheses on the target are the standing hypotheses of Wedhorn's §8.2: complete, Hausdorff,
+and first countable in the form of a countably generated uniformity. The source needs nothing
+beyond what `A⟨X₁, …, Xₖ⟩` already carries.
+
+The target is an arbitrary ring receiving a surjection, not the literal quotient type
+`A⟨X₁, …, Xₖ⟩ ⧸ I` that
+`TauCeti.Huber.isStrictlyTopologicallyFiniteType_quotientMk_algebraMap` covers. That is what a
+consumer holds: a completed rational localisation is not a quotient type.
+
+**This constructs no surjection.** Exhibiting one onto a given `B` is the work; this theorem
+removes openness from the list of things that then have to be checked. -/
+theorem isStrictlyTopologicallyFiniteType_of_surjective {k : ℕ}
+    (π : restrictedMvPowerSeriesCompletion k A →ₐ[A] B)
+    (hπ : ContinuousAt (π : restrictedMvPowerSeriesCompletion k A → B) 0)
+    (hs : Function.Surjective π) :
+    IsStrictlyTopologicallyFiniteType (algebraMap A B) := by
+  let _ : (𝓤 (restrictedMvPowerSeriesCompletion k A)).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
+  exact isStrictlyTopologicallyFiniteType_iff.mpr
+    ⟨k, π.toRingHom, ⟨hs, continuous_of_continuousAt_zero π.toLinearMap hπ,
+      IsTateRing.isOpenMap π.toLinearMap hs hπ⟩, π.comp_algebraMap⟩
+
+end OpenMappingPresentation
 
 end TauCeti.Huber

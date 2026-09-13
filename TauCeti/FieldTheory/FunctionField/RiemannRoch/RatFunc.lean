@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Polynomial.DegreeLT
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
+public import TauCeti.FieldTheory.FunctionField.RiemannRoch.AffineClassNumber
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.DegreeZero
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
 
@@ -51,6 +52,11 @@ classification.
   equivalent to `(deg D) · P_∞`, so a divisor class on the rational function field is determined
   by its degree; hence `TauCeti.Divisor.dim_ratFunc`, the closed formula
   `ℓ(D) = (deg D + 1)⁺` for **every** divisor of `k(x)`, not only the multiples of `P_∞`.
+* `TauCeti.Divisor.degreeZeroClassGroupEquivPolynomial`: `Cl⁰(k(x)) ≃+ ClassGroup k[X]`, the
+  affine class-group bridge at the model `k[X]`, whose only place at infinity is the rational
+  place `P_∞`; hence `TauCeti.Divisor.ker_degreeClass_ratFunc_eq_bot` and
+  `TauCeti.Divisor.classNumber_ratFunc`, **the rational function field has class number one**
+  (Stichtenoth, Example 5.1).
 
 ## Provenance
 
@@ -240,5 +246,52 @@ theorem Divisor.dim_ratFunc (D : Divisor k (RatFunc k)) :
   rw [Divisor.dim_eq_of_linearlyEquivalent (IsFunctionField.ratFunc k)
       (Divisor.linearlyEquivalent_zsmul_ofPoint_infty D),
     Divisor.dim_zsmul_ofPoint_infty]
+
+/-! ### The class number of `k(x)` -/
+
+section ClassNumber
+
+variable (k)
+
+/-- **The degree-zero divisor class group of `k(x)` is the ideal class group of `k[X]`**: the
+model `k[X]` has a single place at infinity
+(`TauCeti.Place.exists_algebraMap_notMem_integers_iff_eq_infty`), and that place is rational, so
+the affine bridge `TauCeti.Divisor.degreeZeroClassGroupEquiv` applies. -/
+def Divisor.degreeZeroClassGroupEquivPolynomial :
+    (Divisor.degreeClass (IsFunctionField.ratFunc k)).ker ≃+ Additive (ClassGroup k[X]) :=
+  Divisor.degreeZeroClassGroupEquiv k[X] (IsFunctionField.ratFunc k)
+    (Set.ext fun _ ↦ Place.exists_algebraMap_notMem_integers_iff_eq_infty)
+    (Place.degree_infty k)
+
+@[simp]
+theorem Divisor.degreeZeroClassGroupEquivPolynomial_apply
+    (c : (Divisor.degreeClass (IsFunctionField.ratFunc k)).ker) :
+    Divisor.degreeZeroClassGroupEquivPolynomial k c =
+      Divisor.classGroupHom k[X] (IsFunctionField.ratFunc k) c :=
+  Divisor.degreeZeroClassGroupEquiv_apply k[X] (IsFunctionField.ratFunc k) _ _ c
+
+/-- **Every degree-zero divisor class of the rational function field is trivial**: through the
+affine bridge it is an ideal class of `k[X]`, and `k[X]` is a principal ideal domain.  The
+description of the divisor classes of `k(x)` in
+`TauCeti.Divisor.linearlyEquivalent_zsmul_ofPoint_infty` gives the same conclusion directly. -/
+@[simp]
+theorem Divisor.ker_degreeClass_ratFunc_eq_bot :
+    (Divisor.degreeClass (IsFunctionField.ratFunc k)).ker = ⊥ :=
+  -- Neither `Subsingleton (ClassGroup k[X])` nor its `Additive` copy is found by instance
+  -- search unaided, so both are installed as local instances here.
+  have : Subsingleton (ClassGroup k[X]) :=
+    Fintype.card_le_one_iff_subsingleton.mp (card_classGroup_eq_one (R := k[X])).le
+  have : Subsingleton (Additive (ClassGroup k[X])) :=
+    inferInstanceAs (Subsingleton (ClassGroup k[X]))
+  have : Subsingleton (Divisor.degreeClass (IsFunctionField.ratFunc k)).ker :=
+    (Divisor.degreeZeroClassGroupEquivPolynomial k).toEquiv.subsingleton
+  AddSubgroup.eq_bot_of_subsingleton _
+
+/-- **The rational function field has class number one** (Stichtenoth, Example 5.1). -/
+@[simp]
+theorem Divisor.classNumber_ratFunc : Divisor.classNumber (IsFunctionField.ratFunc k) = 1 := by
+  rw [Divisor.classNumber_def, Divisor.ker_degreeClass_ratFunc_eq_bot, AddSubgroup.card_bot]
+
+end ClassNumber
 
 end TauCeti

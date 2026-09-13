@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 public import TauCeti.NumberTheory.ModularForms.Petersson.Orthogonal
+import Mathlib.Analysis.Normed.Ring.Finite
 
 /-!
 # The Petersson product is unitary under a normalising slash
@@ -174,15 +175,6 @@ theorem diamondOpCusp_mem_peterssonOrthogonal {k : ℤ}
 
 /-! ### Distinct nebentypus characters are orthogonal -/
 
-/-- A character of the finite group `(ZMod N)ˣ` takes unimodular values. -/
-private lemma conj_mul_char_eq_one (χ : (ZMod N)ˣ →* ℂˣ) (d : (ZMod N)ˣ) :
-    conj (χ d : ℂ) * (χ d : ℂ) = 1 := by
-  have hpow : ((χ d : ℂ)) ^ Nat.card (ZMod N)ˣ = 1 := by
-    rw [← Units.val_pow_eq_pow_val, ← map_pow, pow_card_eq_one', map_one, Units.val_one]
-  have hnorm : ‖(χ d : ℂ)‖ = 1 := Complex.norm_eq_one_of_pow_eq_one hpow Nat.card_pos.ne'
-  rw [RCLike.conj_mul, hnorm]
-  norm_num
-
 /-- **Cusp forms with distinct nebentypus characters are Petersson-orthogonal.** The diamond
 operators are unitary and act on the two forms by the scalars `χ(d)` and `ψ(d)`, so the pairing
 is multiplied by `conj (χ d) * ψ d`; at a `d` where the characters differ this scalar is not `1`,
@@ -195,10 +187,16 @@ theorem peterssonInnerCosets_eq_zero_of_mem_cuspFormCharSpace_of_ne {k : ℤ}
   obtain ⟨d, hd⟩ : ∃ d, χ d ≠ ψ d := by
     by_contra hcon
     exact hne (MonoidHom.ext fun d ↦ not_not.mp fun h ↦ hcon ⟨d, h⟩)
+  -- the value `χ d` is unimodular — it has finite order, `(ZMod N)ˣ` being finite — so
+  -- `conj (χ d) * ψ d = 1` would force `χ d = ψ d`
+  have hnorm : ‖(χ d : ℂ)‖ = 1 :=
+    (((Units.coeHom ℂ).comp χ).isOfFinOrder (isOfFinOrder_of_finite d)).norm_eq_one
+  have hunit : conj (χ d : ℂ) * (χ d : ℂ) = 1 := by
+    rw [RCLike.conj_mul, hnorm]
+    norm_num
   have hscal : conj (χ d : ℂ) * (ψ d : ℂ) ≠ 1 := fun h ↦ hd <| Units.ext <| by
     have h2 : (χ d : ℂ) * (conj (χ d : ℂ) * (ψ d : ℂ)) = (χ d : ℂ) * 1 := by rw [h]
-    rwa [← mul_assoc, mul_comm (χ d : ℂ) (conj (χ d : ℂ)), conj_mul_char_eq_one, one_mul,
-      mul_one, eq_comm] at h2
+    rwa [← mul_assoc, mul_comm (χ d : ℂ) (conj (χ d : ℂ)), hunit, one_mul, mul_one, eq_comm] at h2
   have key : peterssonInnerCosets f g =
       conj (χ d : ℂ) * (ψ d : ℂ) * peterssonInnerCosets f g := by
     conv_lhs => rw [← peterssonInnerCosets_diamondOpCusp k d f g]

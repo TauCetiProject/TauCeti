@@ -8,9 +8,10 @@ module
 public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Basic
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
 public import TauCeti.RingTheory.DedekindDomain.Ideal
+public import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # Completely multiplicative ideal weights
@@ -406,6 +407,17 @@ def toIdealArithmeticFunction (χ : MultiplicativeIdealWeight K) : IdealArithmet
 theorem toIdealArithmeticFunction_apply (χ : MultiplicativeIdealWeight K) (I : (Ideal (𝓞 K))⁰) :
     χ.toIdealArithmeticFunction I = χ I := (rfl)
 
+/-- **Regrouping absorbs a norm twist.** Twisting a weight by `N(I) ^ (-z)` twists its `n`-th norm
+coefficient by `n ^ (-z)`. -/
+@[simp]
+theorem normCoeff_normTwist (z : ℂ) (χ : MultiplicativeIdealWeight K) (n : ℕ) :
+    normCoeff K (normTwist z χ).toIdealArithmeticFunction n =
+      normCoeff K χ.toIdealArithmeticFunction n * (n : ℂ) ^ (-z) := by
+  have h : (normTwist z χ).toIdealArithmeticFunction =
+      fun I ↦ χ.toIdealArithmeticFunction I * (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-z) :=
+    funext fun I ↦ by simp [normTwist_apply]
+  rw [h, normCoeff_mul_absNorm_cpow]
+
 /-- The ideal arithmetic function underlying a completely multiplicative ideal weight is
 multiplicative on relatively prime ideals. -/
 theorem isMultiplicative_toIdealArithmeticFunction (χ : MultiplicativeIdealWeight K) :
@@ -464,13 +476,6 @@ omit [NumberField K] [NumberField L] in
 private theorem asIdeal_equivOfRingEquiv_symm (e : K ≃+* L) (𝔮 : HeightOneSpectrum (𝓞 L)) :
     ((HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)).symm 𝔮).asIdeal =
       Ideal.comap (RingOfIntegers.mapRingEquiv e) 𝔮.asIdeal := rfl
-
-private theorem absNorm_comap_mapRingEquiv (e : K ≃+* L) (I : Ideal (𝓞 L)) :
-    Ideal.absNorm (Ideal.comap (RingOfIntegers.mapRingEquiv e) I) = Ideal.absNorm I := by
-  rw [Ideal.absNorm_apply, Ideal.absNorm_apply, Submodule.cardQuot_apply,
-    Submodule.cardQuot_apply]
-  exact Nat.card_congr (Ideal.quotientEquiv _ _ (RingOfIntegers.mapRingEquiv e)
-    (Ideal.map_comap_eq_self_of_equiv (RingOfIntegers.mapRingEquiv e) I).symm)
 
 /-- **Transport along an isomorphism of fields.** An isomorphism `e : K ≃+* L` carries a
 multiplicative ideal weight on `K` to one on `L`, by pulling ideals of `𝓞 L` back to `𝓞 K`
@@ -585,7 +590,7 @@ theorem map_normTwist (e : K ≃+* L) (z : ℂ) (χ : MultiplicativeIdealWeight 
     map e (normTwist z χ) = normTwist z (map e χ) := by
   ext I
   rw [map_apply, normTwist_apply, normTwist_apply, map_apply,
-    absNorm_comap_mapRingEquiv]
+    Ideal.absNorm_comap_of_ringEquiv]
 
 end Transport
 
@@ -612,6 +617,22 @@ theorem norm_eq_one (χ : UnitaryIdealWeight K) {I : Ideal (𝓞 K)} (hI : χ.1.
     ‖χ.1 I‖ = 1 := by
   refine hI.induction_on (by simp) fun 𝔭 J h𝔭 _ ih ↦ ?_
   rw [map_mul, norm_mul, χ.2 𝔭 h𝔭, ih, one_mul]
+
+-- Source. The statement and its proof follow `DirichletCharacter.norm_le_one` in Mathlib's
+-- `Mathlib/NumberTheory/DirichletCharacter/Bounds.lean`, transposed from a Dirichlet character on
+-- `ZMod n` to a unitary ideal weight: the case split there is on `IsUnit a` and closes with
+-- `map_nonunit`, here it is on `MultiplicativeIdealWeight.IsGood` and closes with
+-- `apply_eq_zero_iff_not_isGood`.
+
+/-- **A unitary weight is bounded by one on every ideal.** The bound is unconditional: it carries
+no goodness hypothesis, so a comparison indexed by all of `(Ideal (𝓞 K))⁰` can apply it termwise.
+`norm_eq_one` is sharper where it applies, but obliges the caller to split that index type first;
+this is the form a convergence estimate wants. -/
+theorem norm_le_one (χ : UnitaryIdealWeight K) (I : Ideal (𝓞 K)) : ‖χ.1 I‖ ≤ 1 := by
+  by_cases hI : χ.1.IsGood I
+  · exact (norm_eq_one χ hI).le
+  · rw [(MultiplicativeIdealWeight.apply_eq_zero_iff_not_isGood χ.1 I).mpr hI, norm_zero]
+    exact zero_le_one
 
 /-- The trivial weight is unitary. -/
 noncomputable instance : One (UnitaryIdealWeight K) :=
@@ -807,6 +828,15 @@ def toIdealArithmeticFunction (χ : UnitaryIdealWeight K) : IdealArithmeticFunct
 @[simp]
 theorem toIdealArithmeticFunction_apply (χ : UnitaryIdealWeight K) (I : (Ideal (𝓞 K))⁰) :
     χ.toIdealArithmeticFunction I = χ.1 I := (rfl)
+
+/-- **Regrouping absorbs an imaginary norm twist.** For `z.re = 0`, twisting a unitary weight by
+`N(I) ^ (-z)` multiplies its `n`-th norm coefficient by `n ^ (-z)`. -/
+@[simp]
+theorem normCoeff_normTwist (z : ℂ) (hz : z.re = 0) (χ : UnitaryIdealWeight K) (n : ℕ) :
+    normCoeff K (normTwist z hz χ).toIdealArithmeticFunction n =
+      normCoeff K χ.toIdealArithmeticFunction n * (n : ℂ) ^ (-z) := by
+  simpa only [toIdealArithmeticFunction, val_normTwist] using
+    MultiplicativeIdealWeight.normCoeff_normTwist z χ.1 n
 
 /-- The ideal arithmetic function underlying a unitary ideal weight is multiplicative on
 relatively prime ideals. -/

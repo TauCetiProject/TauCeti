@@ -155,7 +155,7 @@ lemma groupScheme_inv_left (G : FGCommGrpCat.{u}) :
     ι[(groupScheme R G).X].left =
       eqToHom (groupScheme_X_left R G) ≫
       Spec.map (CommRingCat.ofHom
-        (HopfAlgebra.antipodeAlgHom R (MonoidAlgebra R G)).toRingHom) ≫
+        (HopfAlgebra.antipodeAlgHom R (MonoidAlgebra R G))) ≫
       eqToHom (groupScheme_X_left R G).symm := by
   unfold groupScheme
   convert hopfSpec_obj_inv_left R (coordinateRing R G).obj using 1
@@ -186,7 +186,7 @@ lemma groupSchemeMap_hom_left {G H : FGCommGrpCat.{u}} (f : G ⟶ H) :
     (groupSchemeMap R f).hom.hom.left =
       eqToHom (groupScheme_X_left R H) ≫
         Spec.map (CommRingCat.ofHom
-          (FiniteTypeCommHopfAlgCat.toBialgHom (coordinateMap R f)).toAlgHom.toRingHom) ≫
+          (FiniteTypeCommHopfAlgCat.toBialgHom (coordinateMap R f)).toAlgHom) ≫
         eqToHom (groupScheme_X_left R G).symm := by
   apply (conj_eqToHom_iff_heq _ _
     (groupScheme_X_left R H) (groupScheme_X_left R G)).2

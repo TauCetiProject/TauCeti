@@ -52,13 +52,16 @@ so the hypothesis is now gone from the statement.
 **The sibling `Finite.lean` still carries it, and no longer for a shared reason.**
 `Isogeny.moduleFinite_intermediateRing` concludes that `φ.intermediateRing` is a finite
 `W₂.CoordinateRing`-module, and Krull–Akizuki does not supply that: the integral closure it
-produces is Noetherian but need not be a finite module. Removing separability there is a
-normalization-finiteness question of Nagata type, separate from this one.
+produces is Noetherian but need not be a finite module. Separability is not needed for that
+conclusion either: `IsIntegralClosure.finite_of_fraction_model` supplies module-finiteness without
+a trace form, and `Isogeny.moduleFinite_intermediateRing_of_isDedekindDomain` is what uses it.
 
-`IsDedekindDomain W₂.CoordinateRing` is taken as a hypothesis rather than derived. For an elliptic
-curve it is supplied by `WeierstrassCurve.Affine.isDedekindDomain_coordinateRing`, which needs
-`[W₂.IsElliptic]`; taking the Dedekind property directly keeps that ellipticity out of this file,
-exactly as the sibling takes `[IsIntegrallyClosed W₂.CoordinateRing]` rather than assuming a curve.
+`IsDedekindDomain W₂.CoordinateRing` is taken as a hypothesis rather than derived. It is supplied
+in two steps: `WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed`
+needs `[IsIntegrallyClosed W₂.CoordinateRing]`, and for an elliptic curve
+`WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing` supplies that from `[W₂.IsElliptic]`.
+Taking the Dedekind property directly keeps both steps out of this file, exactly as the sibling
+takes `[IsIntegrallyClosed W₂.CoordinateRing]` rather than assuming a curve.
 
 ## Provenance
 

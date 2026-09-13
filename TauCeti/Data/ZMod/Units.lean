@@ -8,12 +8,12 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.EuclideanDomain.Int
-import Mathlib.Data.ZMod.Units
+public import Mathlib.Data.ZMod.Units
 
 /-!
 # Units and coprimality over `ZMod d`
 
-Two results connecting unit and coprimality data over `ZMod d`, independent of one another:
+Results connecting unit and coprimality data over `ZMod d`, independent of one another:
 
 * `Int.isUnit_intCast_iff_gcd_eq_one` — an integer is a *unit* mod `d` exactly when it is
   coprime to `d`. Its consumers are the Atkin-Lehner and bad-prime double-coset arguments in
@@ -25,6 +25,13 @@ Two results connecting unit and coprimality data over `ZMod d`, independent of o
   (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck); its consumer is the
   strong approximation theorem `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective` in
   `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Basic.lean`.
+* `TauCeti.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left` — a lowered unit homomorphism
+  stays lowered after restricting to a multiple of its modulus.
+* `TauCeti.eq_comp_unitsMap_of_comp_unitsMap_eq` — a unit homomorphism that agrees with a lowered
+  one after restriction along `ZMod.unitsMap` is itself that lowered one, read at the smaller
+  modulus. Its consumers are the descent arguments of
+  `TauCeti/NumberTheory/ModularForms/Newforms/Descent/`, which carry a nebentypus lowered modulo
+  `M / p` along a chain of divisibilities.
 -/
 
 public section
@@ -46,6 +53,35 @@ private lemma isCoprime_emod {a₁ c₁ : ℤ}
   rw [h]
   push_cast
   exact hac.symm.add_mul_left_right _
+
+/-- **A lowered unit homomorphism is determined at the smaller modulus.** If `χM` is pulled back
+from `χ₀` modulo `M / p`, and `χ'` modulo `N'` agrees with `χM` after restriction to the units
+modulo a common multiple `M'`, then `χ'` is itself pulled back from `χ₀`, along `N' / p`.
+`ZMod.unitsMap` is surjective onto the units of a divisor, so the restriction can be cancelled. -/
+theorem TauCeti.eq_comp_unitsMap_of_comp_unitsMap_eq {G : Type*} [Monoid G] {p M M' N' : ℕ}
+    [NeZero M'] (hpM : p ∣ M) (hMN' : M ∣ N') (hN'M' : N' ∣ M')
+    {χM : (ZMod M)ˣ →* G} {χ₀ : (ZMod (M / p))ˣ →* G}
+    (hcomp : χM = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpM))) {χ' : (ZMod N')ˣ →* G}
+    (h : χ'.comp (ZMod.unitsMap hN'M') = χM.comp (ZMod.unitsMap (hMN'.trans hN'M'))) :
+    χ' = (χ₀.comp (ZMod.unitsMap
+        ((Nat.div_dvd_div_iff_right hpM (hpM.trans hMN')).mpr hMN'))).comp
+      (ZMod.unitsMap (Nat.div_dvd_of_dvd (hpM.trans hMN'))) := by
+  rw [hcomp, MonoidHom.comp_assoc, ZMod.unitsMap_comp] at h
+  refine (MonoidHom.cancel_right (ZMod.unitsMap_surjective hN'M')).mp (h.trans ?_)
+  rw [MonoidHom.comp_assoc, MonoidHom.comp_assoc, ZMod.unitsMap_comp, ZMod.unitsMap_comp]
+
+/-- **A lowered unit homomorphism stays lowered after restricting to a multiple.** If `χ` modulo
+`N` is pulled back from `χ₀` modulo `N / p`, then restricting `χ` to the units modulo `N * L` is
+again a pull-back of `χ₀`, now along `N * L / p`. Both sides collapse to one `ZMod.unitsMap` by
+`ZMod.unitsMap_comp`. -/
+theorem TauCeti.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left {G : Type*} [Monoid G]
+    {p N L : ℕ} (hpN : p ∣ N) {χ : (ZMod N)ˣ →* G} {χ₀ : (ZMod (N / p))ˣ →* G}
+    (hcomp : χ = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN))) :
+    χ.comp (ZMod.unitsMap (dvd_mul_left N L)) =
+      (χ₀.comp (ZMod.unitsMap (Nat.mul_div_assoc L hpN ▸ dvd_mul_left (N / p) L))).comp
+        (ZMod.unitsMap (Nat.div_dvd_of_dvd (dvd_mul_of_dvd_right hpN L))) := by
+  rw [hcomp, MonoidHom.comp_assoc, ZMod.unitsMap_comp, MonoidHom.comp_assoc, ZMod.unitsMap_comp]
+
 
 /-- Coprime residues modulo `d` lift to coprime integers: if `a` and `c` are coprime in
 `ZMod d`, there are integers `a₀`, `c₀` reducing to `a`, `c` with `IsCoprime a₀ c₀`. -/

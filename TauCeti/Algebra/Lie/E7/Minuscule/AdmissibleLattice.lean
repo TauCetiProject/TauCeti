@@ -138,7 +138,7 @@ private theorem cast_ad_pow_lie_eq_zero {x y : Matrix (Fin 56) (Fin 56) ℤ} (n 
     (LieAlgebra.ad ℚ _ (castMatrixLieHom x) ^ n)
       ⁅castMatrixLieHom x, castMatrixLieHom y⁆ = 0 := by
   have h' := congrArg castMatrixLieHom h
-  rw [TauCeti.LieHom.map_ad_pow, LieHom.map_lie, map_zero] at h'
+  rw [LieHom.map_ad_pow, LieHom.map_lie, map_zero] at h'
   rw [← ad_pow_int_eq_rat]
   exact h'
 

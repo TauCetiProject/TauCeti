@@ -37,7 +37,7 @@ here and are sent to `0`, Mathlib's encoding of an infinite Coxeter order.
 The final section checks the smallest of the intended braid relations, the one available before the
 Coxeter presentation of the Weyl group is built: an entry is `2` exactly for orthogonal simple
 roots, and there the two simple reflections commute
-(`TauCeti.RootPairing.weylGroup.commute_ofIdx_of_isOrthogonal`) and their product has order exactly
+(`RootPairing.weylGroup.commute_ofIdx_of_isOrthogonal`) and their product has order exactly
 `2`, as the entry asserts.
 
 ## Main definitions
@@ -58,7 +58,7 @@ roots, and there the two simple reflections commute
   exactly when all entries are at most `3`.
 * `TauCeti.coxeterMatrixOfBase_eq_three_of_hasCartanType_A_two` and its `B₂` and `G₂`
   companions evaluate the Coxeter entries of the three rank-two Cartan types.
-* `TauCeti.RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_two_of_coxeterMatrixOfBase_eq_two`:
+* `RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_two_of_coxeterMatrixOfBase_eq_two`:
   where the matrix entry is `2`, the product of the two simple reflections does have order `2`.
 
 ## References
@@ -272,7 +272,7 @@ product `4` with itself.
 That the entries really are those orders is the classical rank-two computation, and follows in
 general from the Coxeter presentation of the Weyl group, which is not built here; the entry `2` is
 checked directly in
-`TauCeti.RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_two_of_coxeterMatrixOfBase_eq_two`.
+`RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_two_of_coxeterMatrixOfBase_eq_two`.
 
 The body is not exposed: `TauCeti.coxeterMatrixOfBase_apply` is the entry API. -/
 noncomputable def coxeterMatrixOfBase : CoxeterMatrix b.support :=
@@ -383,25 +383,28 @@ end CartanType
 
 /-! ## The orthogonal case: commuting simple reflections -/
 
-namespace RootPairing.weylGroup
+section
 
 variable [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic]
 
 /-- **Where the Coxeter matrix of a base has the entry `2`, the product of the two simple
 reflections does have order `2`.** This is the one entry of `coxeterMatrixOfBase` that can be
 checked before the Coxeter presentation of the Weyl group is available. -/
-theorem orderOf_ofIdx_mul_ofIdx_eq_two_of_coxeterMatrixOfBase_eq_two
+theorem _root_.RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_two_of_coxeterMatrixOfBase_eq_two
     (b : P.Base) {i j : b.support} (h : coxeterMatrixOfBase P b i j = 2) :
     orderOf (_root_.RootPairing.weylGroup.ofIdx P (i : ι) *
       _root_.RootPairing.weylGroup.ofIdx P (j : ι)) = 2 := by
   have hij : i ≠ j := by rintro rfl; simp at h
   have hij' : (i : ι) ≠ (j : ι) := fun h ↦ hij (Subtype.ext h)
-  have hcomm := commute_ofIdx_of_isOrthogonal P ((coxeterMatrixOfBase_eq_two_iff P b i j).mp h)
+  have hcomm := RootPairing.weylGroup.commute_ofIdx_of_isOrthogonal P
+    ((coxeterMatrixOfBase_eq_two_iff P b i j).mp h)
   refine orderOf_eq_prime ?_ ?_
-  · rw [hcomm.mul_pow, sq, sq, ofIdx_mul_self, ofIdx_mul_self, mul_one]
-  · rw [Ne, mul_eq_one_iff_eq_inv, inv_eq_of_mul_eq_one_right (ofIdx_mul_self P (j : ι))]
-    exact ofIdx_ne_ofIdx_of_ne P b i.property j.property hij'
+  · rw [hcomm.mul_pow, sq, sq, RootPairing.weylGroup.ofIdx_mul_self,
+      RootPairing.weylGroup.ofIdx_mul_self, mul_one]
+  · rw [Ne, mul_eq_one_iff_eq_inv,
+      inv_eq_of_mul_eq_one_right (RootPairing.weylGroup.ofIdx_mul_self P (j : ι))]
+    exact RootPairing.weylGroup.ofIdx_ne_ofIdx_of_ne P b i.property j.property hij'
 
-end RootPairing.weylGroup
+end
 
 end TauCeti

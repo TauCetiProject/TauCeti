@@ -446,7 +446,7 @@ private noncomputable def groupSchemePointMulEquiv (A : Type) [CommRing A] :
 private theorem groupSchemePointMulEquiv_apply_left {A : Type} [CommRing A]
     (q : WithConv (carrierCoordinateHopfAlgebra r →ₐ[ℤ] A)) :
     (groupSchemePointMulEquiv r A q).left =
-      Spec.map (CommRingCat.ofHom q.ofConv.toRingHom) ≫
+      Spec.map (CommRingCat.ofHom (q.ofConv : carrierCoordinateHopfAlgebra r →+* A)) ≫
         eqToHom (congrArg
           (fun K : Grp (Over (Spec (CommRingCat.of ℤ))) => K.X.left)
           (groupScheme_eq_hopfSpec r)).symm := by

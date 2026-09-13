@@ -409,6 +409,15 @@ theorem finrank_line_eq_one_of_finrank_eq_two_mul_add_one {l : ℕ} (hV : finran
   have h₂ := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   omega
 
+/-- In odd dimension, the coordinate map from the one-dimensional orthogonal remainder to the
+base field is surjective. -/
+theorem lineCoordinate_surjective_of_finrank_eq_two_mul_add_one {l : ℕ}
+    (hV : finrank K V = 2 * l + 1) : Function.Surjective P.lineCoordinate := by
+  apply (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).mp
+    P.lineCoordinate_injective
+  rw [P.finrank_line_eq_one_of_finrank_eq_two_mul_add_one hV]
+  simp
+
 end Dimension
 
 end SpinPolarizationData

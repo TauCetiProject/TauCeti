@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.PGroup
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 
 /-!
 # The maximal pro-`p` quotient of a profinite group

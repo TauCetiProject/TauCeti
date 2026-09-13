@@ -658,7 +658,7 @@ theorem isSerreSystem_typeDSimpleRootBivector_quadraticLieSubalgebra (hn : 4 ≤
       _ = (LieAlgebra.ad K (CliffordAlgebra Q)
             ((quadraticLieSubalgebra Q).incl x) ^ m)
           ((quadraticLieSubalgebra Q).incl ⁅x, y⁆) :=
-        TauCeti.LieHom.map_ad_pow (quadraticLieSubalgebra Q).incl x m ⁅x, y⁆
+        LieHom.map_ad_pow (quadraticLieSubalgebra Q).incl x m ⁅x, y⁆
       _ = (LieAlgebra.ad K (CliffordAlgebra Q) (x : CliffordAlgebra Q) ^ m)
           ⁅(x : CliffordAlgebra Q), (y : CliffordAlgebra Q)⁆ := by
         simp only [LieHom.map_lie, LieSubalgebra.coe_incl]

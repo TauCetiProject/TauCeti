@@ -6,6 +6,7 @@ Authors: Chris Birkbeck, Claude
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.UpperUnit
+public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Diagonal.Coset
 public import Mathlib.Basic.Complex.Basic
 
 /-!
@@ -39,6 +40,7 @@ of the one attached to a group element acting on forms. It is inherited directly
   downstream neither `rfl`, `unfold`, `simp [delta0NebentypusChar]` nor `MonoidHom.comp_apply`
   can recover it — but plain `simp` does, *through this lemma*.
 * `HeckeRing.GL2.delta0NebentypusChar_mapGL`: on `Γ₀(N)` it is inverse to `χ ∘ Gamma0Map`.
+* `HeckeRing.GL2.delta0NebentypusChar_natDiagGL`: its value on a positive natural diagonal.
 
 ## References
 
@@ -91,5 +93,20 @@ lemma delta0NebentypusChar_mapGL (χ : (ZMod N)ˣ →* ℂˣ) (γ : Gamma0 N) :
     delta0NebentypusChar N χ ⟨_, mapGL_mem_Delta0 N γ⟩ =
       (χ ((Gamma0Map N).toHomUnits γ))⁻¹ := by
   rw [delta0NebentypusChar_apply, Delta0UpperUnit_mapGL, map_inv]
+
+/-- The twisting character reads a positive natural diagonal from its upper-left entry. -/
+lemma delta0NebentypusChar_natDiagGL (χ : (ZMod N)ˣ →* ℂˣ) (a : Fin 2 → ℕ)
+    (ha : ∀ i, 0 < a i) (haN : Nat.Coprime (a 0) N) :
+    delta0NebentypusChar N χ
+        ⟨natDiagGL 2 a, natDiagGL_mem_Delta0_of_coprime N a fun _ ↦ haN⟩ =
+      χ (ZMod.unitOfCoprime (a 0) haN) := by
+  rw [delta0NebentypusChar_apply]
+  apply congrArg χ
+  apply Units.ext
+  rw [Delta0UpperUnit_apply_val N
+    (A := Matrix.diagonal (fun i : Fin 2 ↦ (a i : ℤ)))
+    (by
+      rw [natDiagGL_coe_eq_map_intCast 2 a ha])]
+  simp [ZMod.coe_unitOfCoprime]
 
 end HeckeRing.GL2

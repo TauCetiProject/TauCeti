@@ -34,7 +34,7 @@ services on top of Mathlib's `RingTheory/Frobenius.lean`:
 * **the square-root action** — for a number field `K`, `p` odd, and `x ∈ K` with
   `x² = d ∈ ℤ`, `p ∤ d`, a
   Frobenius at any ideal `Q` over `p` satisfies `σ x = legendreSym p d • x`, transporting the
-  `𝓞 K`-level computation `TauCeti.AlgHom.IsArithFrobAt.apply_sqrt` along the Galois action
+  `𝓞 K`-level computation `AlgHom.IsArithFrobAt.apply_sqrt` along the Galois action
   on the ring of integers (via `NumberField.algebraMap_smul_eq_apply`), with the `σ x = x`
   characterization read off from it.
 
@@ -172,7 +172,7 @@ theorem isArithFrobAt_apply_sqrt (hodd : p ≠ 2) {d : ℤ} (hd : ¬ (p : ℤ) �
     σ x = legendreSym p d • x := by
   -- Apply the `𝓞 K`-level computation to the packaged square root and push down along `𝓞 K ↪ K`.
   have hsmul : σ • integralSqrt hx = legendreSym p d • integralSqrt hx :=
-    TauCeti.IsArithFrobAt.smul_sqrt hσ hodd hd (integralSqrt_sq hx)
+    IsArithFrobAt.smul_sqrt hσ hodd hd (integralSqrt_sq hx)
   have hcoe := congrArg (algebraMap (𝓞 K) K) hsmul
   rw [map_zsmul, algebraMap_integralSqrt, algebraMap_smul_eq_apply] at hcoe
   rwa [algebraMap_integralSqrt] at hcoe

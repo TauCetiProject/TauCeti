@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import Mathlib.Algebra.Homology.QuasiIso
-public import Mathlib.Data.Int.Interval
+public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 
 /-!
@@ -76,20 +75,6 @@ variable {A : Type u} [Category.{v} A] [Abelian A]
 private theorem isZero_kernel_of_isZero {X Y : A} (f : X ⟶ Y) (hX : IsZero X) :
     IsZero (kernel f) :=
   IsZero.of_iso hX (kernelIsoOfEq (hX.eq_of_src f 0) ≪≫ kernelZeroIsoSource)
-
-private theorem isZero_X_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsStrictlyGE a]
-    [K.IsStrictlyLE b] {n : ℤ} (hn : n ∉ Finset.Icc a b) : IsZero (K.X n) := by
-  rw [Finset.mem_Icc] at hn
-  rcases lt_or_ge n a with h | h
-  · exact K.isZero_of_isStrictlyGE a n h
-  · exact K.isZero_of_isStrictlyLE b n (by omega)
-
-private theorem isZero_homology_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsStrictlyGE a]
-    [K.IsStrictlyLE b] {n : ℤ} (hn : n ∉ Finset.Icc a b) : IsZero (K.homology n) := by
-  rw [Finset.mem_Icc] at hn
-  rcases lt_or_ge n a with h | h
-  · exact K.isZero_of_isGE a n h
-  · exact K.isZero_of_isLE b n (by omega)
 
 namespace AbelianK0
 
@@ -210,11 +195,13 @@ theorem sum_negOnePow_obj_X_eq_sum_negOnePow_obj_homology (a b : ℤ) [K.IsStric
   have hX : ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.X n)
       = ∑ n ∈ Finset.Icc a b, ((n.negOnePow : ℤ)) • v.obj (K.X n) :=
     (Finset.sum_subset hs fun x _ hx => by
-      rw [obj_eq_zero_of_isZero v (isZero_X_of_notMem_Icc K a b hx), smul_zero]).symm
+      rw [obj_eq_zero_of_isZero v
+        (K.isZero_X_of_notMem_Icc a b hx), smul_zero]).symm
   have hH : ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.homology n)
       = ∑ n ∈ Finset.Icc a b, ((n.negOnePow : ℤ)) • v.obj (K.homology n) :=
     (Finset.sum_subset hs fun x _ hx => by
-      rw [obj_eq_zero_of_isZero v (isZero_homology_of_notMem_Icc K a b hx), smul_zero]).symm
+      rw [obj_eq_zero_of_isZero v
+        (K.isZero_homology_of_notMem_Icc a b hx), smul_zero]).symm
   rw [hX, hH]
   rcases le_or_gt a b with hab | hab
   · rw [sum_negOnePow_obj_Icc_aux v K a b hab,
@@ -282,14 +269,16 @@ Euler characteristic. -/
 theorem eulerChar_eq_eulerChar_Icc {s : Finset ℤ} (hs : Finset.Icc a b ⊆ s) :
     eulerChar K s = eulerChar K (Finset.Icc a b) :=
   (Finset.sum_subset hs fun x _ hx => by
-    rw [of_eq_zero_of_isZero (isZero_X_of_notMem_Icc K a b hx), smul_zero]).symm
+    rw [of_eq_zero_of_isZero
+      (K.isZero_X_of_notMem_Icc a b hx), smul_zero]).symm
 
 /-- Enlarging the range of degrees beyond the support of a bounded complex does not change the
 alternating class of its cohomology. -/
 theorem homologyEulerChar_eq_homologyEulerChar_Icc {s : Finset ℤ} (hs : Finset.Icc a b ⊆ s) :
     homologyEulerChar K s = homologyEulerChar K (Finset.Icc a b) :=
   (Finset.sum_subset hs fun x _ hx => by
-    rw [of_eq_zero_of_isZero (isZero_homology_of_notMem_Icc K a b hx), smul_zero]).symm
+    rw [of_eq_zero_of_isZero
+      (K.isZero_homology_of_notMem_Icc a b hx), smul_zero]).symm
 
 /-- The Euler characteristic of a bounded complex does not depend on the finite range of degrees
 over which it is summed, as long as that range contains the support. -/

@@ -40,8 +40,8 @@ set on which the `E₆` diagram symmetry acts, by
 moves every minuscule weight off the twenty-seven-element table by
 `TauCeti.DynkinType.e6MinusculeWeight_comp_graphPermE6_notMem_range`. A Steinberg map composing a
 graph automorphism with a field Frobenius therefore needs the Frobenius of *this* carrier, which
-is what is built here. The graph automorphism itself is not built here, and no declaration below
-mentions the diagram symmetry.
+is what is built here. The graph automorphism is built in a separate module, and no declaration
+below mentions the diagram symmetry.
 
 Nothing here asserts reductivity, maximality of the weight torus, an identification of the
 carrier's root datum, or any finiteness or simplicity statement.
@@ -88,7 +88,7 @@ consumer is milestone L1, "ordinary and graph Steinberg maps", of
 `TauCetiRoadmap/CFSGStatement/README.md`, whose Steinberg map for the twisted family `²E₆(q)` is
 `γ₂ ∘ Frob_q` on the points of a carrier for the `E₆` diagram over an algebraic closure of
 `ZMod p`; the identification of this carrier with the pinned simply connected Chevalley--Demazure
-group that milestone requires remains pending, as does the graph automorphism `γ₂`.
+group that milestone requires remains pending.
 -/
 
 public section

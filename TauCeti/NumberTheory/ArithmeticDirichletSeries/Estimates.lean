@@ -45,6 +45,9 @@ of a convergent series of nonnegative terms must become arbitrarily small.
   `NumberField.dedekindZeta` is the `LSeries` of.  That system counts *all* integral ideals, so it
   differs from the trivial norm coefficients at `n = 0` and the two statements are related only
   through the `n ≠ 0` congruence `LSeries.abscissaOfAbsConv_congr`.
+* `TauCeti.summable_idealTerm_of_bounded_of_one_lt_re`: a uniformly bounded weight has an
+  absolutely convergent ideal-indexed Dirichlet series on `Re s > 1`, and
+  `TauCeti.summable_idealTerm_of_unitary_of_one_lt_re` is its unitary specialization.
 
 ## Implementation notes
 
@@ -133,13 +136,18 @@ structure IdealCountingLinearBounds where
   card_le (x : ℝ) (hx : 1 ≤ x) :
     (Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x} : ℝ) ≤ upper * x
 
-/-- **Two-sided linear ideal counts.** The number of nonzero integral ideals of absolute norm at
-most `x` is bounded above and below by positive multiples of `x`, for every cutoff `x ≥ 1`.
+/-- **Beyond a threshold the count lies between two multiples of `x`.**  There is a cutoff
+`X ≥ 1` such that every `x ≥ X` has at least `r / 2 * x` and at most `(r + 1) * x` nonzero integral
+ideals of absolute norm at most `x`, where `r` is `NumberField.dedekindZeta_residue K`.
 
-Both constants come from Mathlib's asymptotic `NumberField.Ideal.tendsto_norm_le_div_atTop₀`,
-whose limit is positive by `NumberField.dedekindZeta_residue_pos`; below the threshold produced by
-that limit the bounds are secured by the unit ideal and by monotonicity of the count. -/
-theorem idealCount_linearBounds : Nonempty (IdealCountingLinearBounds K) := by
+The constants are not optimal and are not meant to be: `idealCount_linearBounds` needs only that
+some positive multiples of `x` sandwich the count above the cutoff. -/
+private theorem exists_le_card_and_card_le_of_le :
+    ∃ X : ℝ, 1 ≤ X ∧ ∀ x : ℝ, X ≤ x →
+      NumberField.dedekindZeta_residue K / 2 * x ≤
+          Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x} ∧
+        (Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x} : ℝ) ≤
+          (NumberField.dedekindZeta_residue K + 1) * x := by
   set r : ℝ := NumberField.dedekindZeta_residue K with hr
   have hpos : 0 < r := NumberField.dedekindZeta_residue_pos K
   have htend : Tendsto (fun x : ℝ ↦
@@ -150,19 +158,33 @@ theorem idealCount_linearBounds : Nonempty (IdealCountingLinearBounds K) := by
   obtain ⟨X₀, hX₀⟩ := eventually_atTop.mp
     (((htend.eventually_const_lt (by linarith : r / 2 < r)).and
       (htend.eventually_lt_const (by linarith : r < r + 1))).and (eventually_ge_atTop (1 : ℝ)))
-  set X : ℝ := max X₀ 1
-  have hX1 : 1 ≤ X := le_max_right _ _
+  refine ⟨max X₀ 1, le_max_right _ _, fun x hx ↦ ?_⟩
+  obtain ⟨⟨h₁, h₂⟩, h₃⟩ := hX₀ x ((le_max_left X₀ 1).trans hx)
+  have hxpos : 0 < x := lt_of_lt_of_le zero_lt_one h₃
+  exact ⟨(le_div_iff₀ hxpos).mp h₁.le, (div_le_iff₀ hxpos).mp h₂.le⟩
+
+/-- **Below the threshold, `X⁻¹` serves as the lower constant.**  For `1 ≤ x ≤ X` there are at
+least `X⁻¹ * x` nonzero integral ideals of absolute norm at most `x`.  This is the half of
+`idealCount_linearBounds`'s lower bound that the asymptotic does not reach, and it asks for nothing
+beyond `1 ≤ x ≤ X`. -/
+private theorem inv_mul_le_card_of_le_of_le {X x : ℝ} (hx : 1 ≤ x) (hxX : x ≤ X) :
+    X⁻¹ * x ≤ Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x} :=
+  le_trans (inv_mul_le_one_of_le₀ hxX (zero_le_one.trans (hx.trans hxX)))
+    (by exact_mod_cast one_le_card_absNorm_real_le K hx)
+
+/-- **Two-sided linear ideal counts.** The number of nonzero integral ideals of absolute norm at
+most `x` is bounded above and below by positive multiples of `x`, for every cutoff `x ≥ 1`.
+
+Both constants come from Mathlib's asymptotic `NumberField.Ideal.tendsto_norm_le_div_atTop₀`,
+whose limit is positive by `NumberField.dedekindZeta_residue_pos`; below the threshold produced by
+that limit the bounds are secured by the unit ideal and by monotonicity of the count. -/
+theorem idealCount_linearBounds : Nonempty (IdealCountingLinearBounds K) := by
+  set r : ℝ := NumberField.dedekindZeta_residue K
+  have hpos : 0 < r := NumberField.dedekindZeta_residue_pos K
+  obtain ⟨X, hX1, hmain⟩ := exists_le_card_and_card_le_of_le K
   have hXpos : 0 < X := lt_of_lt_of_le zero_lt_one hX1
   set M : ℝ :=
     (Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ X} : ℝ) with hM
-  have hmain : ∀ x : ℝ, X ≤ x →
-      r / 2 * x ≤ Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x} ∧
-      (Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x} : ℝ) ≤
-        (r + 1) * x := by
-    intro x hx
-    obtain ⟨⟨h₁, h₂⟩, h₃⟩ := hX₀ x ((le_max_left X₀ 1).trans hx)
-    have hxpos : 0 < x := lt_of_lt_of_le zero_lt_one h₃
-    exact ⟨(le_div_iff₀ hxpos).mp h₁.le, (div_le_iff₀ hxpos).mp h₂.le⟩
   have hupos : (0 : ℝ) < max (r + 1) M := lt_of_lt_of_le (by linarith) (le_max_left _ _)
   refine ⟨{
     lower := min (r / 2) X⁻¹
@@ -175,11 +197,8 @@ theorem idealCount_linearBounds : Nonempty (IdealCountingLinearBounds K) := by
     have hxpos : 0 < x := lt_of_lt_of_le zero_lt_one hx
     rcases le_or_gt X x with hxX | hxX
     · exact le_trans (mul_le_mul_of_nonneg_right (min_le_left _ _) hxpos.le) (hmain x hxX).1
-    · refine le_trans (mul_le_mul_of_nonneg_right (min_le_right _ _) hxpos.le) ?_
-      have h1 : X⁻¹ * x ≤ 1 :=
-        calc X⁻¹ * x ≤ X⁻¹ * X := mul_le_mul_of_nonneg_left hxX.le (inv_nonneg.mpr hXpos.le)
-          _ = 1 := inv_mul_cancel₀ hXpos.ne'
-      exact le_trans h1 (by exact_mod_cast one_le_card_absNorm_real_le K hx)
+    · exact le_trans (mul_le_mul_of_nonneg_right (min_le_right _ _) hxpos.le)
+        (inv_mul_le_card_of_le_of_le K hx hxX.le)
   · intro x hx
     have hxpos : 0 < x := lt_of_lt_of_le zero_lt_one hx
     rcases le_or_gt X x with hxX | hxX
@@ -419,6 +438,47 @@ theorem summable_idealTerm_one_iff {K : Type*} [Field K] [NumberField K] {s : �
     fun h ↦ ?_⟩
   exact summable_idealTerm_of_nonneg K 1 (fun _ ↦ zero_le_one)
     ((LSeriesSummable_normCoeff_one_iff K).mpr h)
+
+/-- **A uniformly bounded weight converges wherever the trivial weight does.** If every value of
+`f` on a nonzero integral ideal has modulus at most `C`, its ideal-indexed Dirichlet series
+converges absolutely on `Re s > 1`.
+
+The bound may be any nonnegative real — a negative `C` makes the hypothesis unsatisfiable, since
+`‖f I‖` is a norm — and no `C = 1` normalisation is wanted, since a weight is often bounded by
+something other than `1` without being rescaled. The unitary case — a Dirichlet or Galois
+character, of modulus `1` at the good primes and `0` at the bad ones — is `C = 1`, and is packaged
+as `summable_idealTerm_of_unitary_of_one_lt_re`. Stating the hypothesis here as a bound rather than
+as unitarity is what lets the vanishing at the bad primes pass without a special case.
+
+Only one direction holds, unlike `summable_idealTerm_one_iff`: a weight that vanishes identically
+is bounded by every nonnegative `C` and converges everywhere. -/
+theorem summable_idealTerm_of_bounded_of_one_lt_re {K : Type*} [Field K] [NumberField K]
+    {f : IdealArithmeticFunction K} {C : ℝ} (hf : ∀ I : (Ideal (𝓞 K))⁰, ‖f I‖ ≤ C) {s : ℂ}
+    (hs : 1 < s.re) : Summable (idealTerm K f s) := by
+  refine Summable.of_norm_bounded
+    (g := fun I ↦ C * ‖idealTerm K (1 : IdealArithmeticFunction K) s I‖)
+    (((summable_idealTerm_one_iff.mpr hs).norm).mul_left C) fun I ↦ ?_
+  rw [norm_idealTerm, norm_idealTerm]
+  have hpos : (0 : ℝ) < (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ s.re :=
+    Real.rpow_pos_of_pos (by exact_mod_cast Ideal.absNorm_pos_of_nonZeroDivisors I) _
+  have hone : ‖(1 : IdealArithmeticFunction K) I‖ = 1 := by simp
+  rw [hone, mul_one_div]
+  gcongr
+  exact hf I
+
+/-- **A unitary weight converges on `Re s > 1`.** The specialization of
+`summable_idealTerm_of_bounded_of_one_lt_re` at `C = 1`, through
+`TauCeti.UnitaryIdealWeight.norm_le_one`: a unitary weight has modulus `1` on the good ideals and
+vanishes on the rest, so it is bounded by `1` on all of them and the caller is left no case split.
+
+This is the form the Euler-product code consumes, its `hasProd_eulerFactor` asking for exactly a
+`Summable (idealTerm K · s)` hypothesis on the weight's passage to `IdealArithmeticFunction`. -/
+theorem summable_idealTerm_of_unitary_of_one_lt_re {K : Type*} [Field K] [NumberField K]
+    (χ : UnitaryIdealWeight K) {s : ℂ} (hs : 1 < s.re) :
+    Summable (idealTerm K χ.toIdealArithmeticFunction s) := by
+  refine summable_idealTerm_of_bounded_of_one_lt_re (C := 1) (fun I ↦ ?_) hs
+  rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply]
+  exact χ.norm_le_one _
 
 /-- **The Dedekind zeta series has abscissa of absolute convergence `1`.** -/
 @[simp]

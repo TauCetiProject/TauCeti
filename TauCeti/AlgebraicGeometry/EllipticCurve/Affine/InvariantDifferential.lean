@@ -27,6 +27,8 @@ by `W_Y⁻¹` gives the invariant-differential basis.
 * `WeierstrassCurve.Affine.invariantDifferential`: the invariant differential `ω`, as an
   element of `Ω[K(E)/F]`.
 * `WeierstrassCurve.Affine.invariantDifferentialBasis`: `ω` as a basis of `Ω[K(E)/F]`.
+* `WeierstrassCurve.Affine.zsmul_invariantDifferential_eq_zero_iff`: an integer multiple of `ω`
+  vanishes exactly when the integer does in the base field.
 
 ## Main results
 
@@ -163,5 +165,14 @@ theorem existsUnique_smul_invariantDifferential [E.IsElliptic]
   rcases smul_eq_zero.mp h with h' | h'
   · exact sub_eq_zero.mp h'
   · exact absurd h' (invariantDifferential_ne_zero E)
+
+/-- **An integer multiple of `ω` vanishes exactly when the integer does in the base field.** -/
+@[simp]
+theorem zsmul_invariantDifferential_eq_zero_iff [E.IsElliptic] (n : ℤ) :
+    n • invariantDifferential E = 0 ↔ (n : F) = 0 := by
+  rw [← Int.cast_smul_eq_zsmul E.FunctionField n (invariantDifferential E),
+    smul_eq_zero, or_iff_left (invariantDifferential_ne_zero E)]
+  rw [← map_intCast (algebraMap F E.FunctionField) n]
+  exact map_eq_zero_iff _ (algebraMap F E.FunctionField).injective
 
 end WeierstrassCurve.Affine

@@ -274,11 +274,11 @@ theorem tendsto_fwdDiffList {ι : Type*} {L : Filter ι} {F : ι → ℝ → ℝ
 finite-difference formulation: the derivative form is not visibly stable under pointwise
 convergence. -/
 theorem isDifferenceCompletelyMonotone_of_tendsto {ι : Type*} {L : Filter ι} [L.NeBot]
-    {F : ι → ℝ → ℝ} (hF : ∀ i, IsDifferenceCompletelyMonotone (F i))
+    {F : ι → ℝ → ℝ} (hF : ∀ᶠ i in L, IsDifferenceCompletelyMonotone (F i))
     (hlim : ∀ u : ℝ, 0 ≤ u → Tendsto (fun i => F i u) L (𝓝 (f u))) :
     IsDifferenceCompletelyMonotone f := fun l hl t ht =>
   ge_of_tendsto (tendsto_const_nhds.mul (tendsto_fwdDiffList hl hlim ht))
-    (Eventually.of_forall fun i => hF i l hl t ht)
+    (hF.mono fun _ hi => hi l hl t ht)
 
 namespace IsDifferenceCompletelyMonotone
 
