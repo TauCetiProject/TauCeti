@@ -18,9 +18,9 @@ already forces every element outside `N` to conjugate by inversion as well
 (`TauCeti.conj_eq_inv_of_notMem_of_index_two`).  It is the shape of a dihedral group over its
 rotations and of a dicyclic group over its cyclic subgroup, and it makes the character of the
 representation induced from a linear character `ψ` of `N` completely explicit: it vanishes off `N`
-(`TauCeti.character_indFDRep_eq_zero_of_notMem`, which needs only normality), and on `N` it is
-`ψ + ψ⁻¹` as soon as the order of `N` is invertible in the coefficient field, which the average
-form of the induced character below asks for.
+(`TauCeti.character_indFDRep_eq_zero_of_notMem_of_index_two`, which needs neither the inversion
+hypothesis nor linearity), and on `N` it is `ψ + ψ⁻¹` as soon as the order of `N` is invertible in
+the coefficient field, which the average form of the induced character below asks for.
 
 On `N` the average form `TauCeti.character_ind` of the induced character is the one to use.  A
 linear character takes its values in the commutative group `kˣ`, so conjugating by an element of
@@ -30,6 +30,8 @@ linear character takes its values in the commutative group `kˣ`, so conjugating
 
 ## Main statements
 
+* `TauCeti.character_indFDRep_eq_zero_of_notMem_of_index_two`: **off a subgroup of index two, an
+  induced character vanishes.**
 * `TauCeti.character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv`: **on the
   subgroup, the character induced from a linear character is `ψ + ψ⁻¹`**, provided the order of
   the subgroup is invertible in the coefficient field.
@@ -47,10 +49,20 @@ universe u v
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] {N : Subgroup G} [Finite G]
 
+/-- **Off a subgroup of index two, an induced character vanishes.**  A subgroup of index two is
+normal, so this is `TauCeti.character_indFDRep_eq_zero_of_notMem` stated against the explicit
+hypothesis `N.index = 2` that the formula on `N` below is stated against, rather than against a
+`N.Normal` instance a user holding only that hypothesis cannot synthesize. -/
+@[simp]
+theorem character_indFDRep_eq_zero_of_notMem_of_index_two (hindex : N.index = 2) (A : FDRep k N)
+    {g : G} (hg : g ∉ N) : (indFDRep (k := k) (G := G) A).character g = 0 := by
+  have := Subgroup.normal_of_index_eq_two hindex
+  exact character_indFDRep_eq_zero_of_notMem A hg
+
 /-- **On an inverted subgroup of index two, the character induced from a linear character `ψ` is
-`ψ + ψ⁻¹`.**  Together with `TauCeti.character_indFDRep_eq_zero_of_notMem`, which gives the value
-`0` off `N`, this determines the induced character on all of `G`.  The hypothesis `hN` asks that
-the order of `N` be invertible in `k`. -/
+`ψ + ψ⁻¹`.**  Together with `TauCeti.character_indFDRep_eq_zero_of_notMem_of_index_two`, which
+gives the value `0` off `N` from the same hypothesis `hindex`, this determines the induced
+character on all of `G`.  The hypothesis `hN` asks that the order of `N` be invertible in `k`. -/
 theorem character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv
     (hindex : N.index = 2) {s : G} (hs : s ∉ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹)
     (hN : IsUnit (Nat.card N : k)) (ψ : N →* kˣ) {g : G} (hg : g ∈ N) :
