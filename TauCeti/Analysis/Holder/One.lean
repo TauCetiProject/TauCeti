@@ -22,8 +22,6 @@ codomain is Banach.  Its norm is the maximum of the supremum norm of the functio
 An element is represented by a bounded continuous function and a Hölder-space derivative, subject
 to the condition that the latter is the Fréchet derivative of the former.  The derivative field is
 therefore uniquely determined, and `C1HolderSpace.ext` only asks for equality of the functions.
-Completeness follows from Mathlib's theorem that uniform limits of functions and their derivatives
-preserve differentiability.
 
 This is the first positive-order member of the bounded global `C^{k,α}` scale used in Schauder
 estimates.  It extends `TauCeti.HolderSpace`, which supplies the order-zero member and the complete
@@ -68,10 +66,7 @@ def c1HolderSubmodule : Submodule ℝ (C1HolderJet α E F) where
     have hfun : ((0 : E →ᵇ F) : E → F) = fun _ ↦ 0 := by
       ext
       rfl
-    have hder : (0 : HolderSpace α E (E →L[ℝ] F)) x = 0 := by
-      rw [← HolderSpace.toBoundedContinuousFunction_apply,
-        HolderSpace.toBoundedContinuousFunction_zero]
-      rfl
+    have hder : (0 : HolderSpace α E (E →L[ℝ] F)) x = 0 := rfl
     rw [Prod.fst_zero, Prod.snd_zero, hfun, hder]
     exact hasFDerivAt_const (x := x) (c := (0 : F))
   add_mem' := fun {f g} hf hg x ↦ by
@@ -79,25 +74,14 @@ def c1HolderSubmodule : Submodule ℝ (C1HolderJet α E F) where
         (f.1 : E → F) + (g.1 : E → F) := by
       ext
       rfl
-    have hder : (f + g).2 x = f.2 x + g.2 x := by
-      have hsnd : (f + g).2 = f.2 + g.2 := rfl
-      rw [hsnd, ← HolderSpace.toBoundedContinuousFunction_apply,
-        HolderSpace.toBoundedContinuousFunction_add,
-        BoundedContinuousFunction.add_apply,
-        HolderSpace.toBoundedContinuousFunction_apply,
-        HolderSpace.toBoundedContinuousFunction_apply]
+    have hder : (f + g).2 x = f.2 x + g.2 x := rfl
     rw [hfun, hder]
     exact (hf x).add (hg x)
   smul_mem' := fun c {f} hf x ↦ by
     have hfun : (((c • f).1 : E →ᵇ F) : E → F) = c • (f.1 : E → F) := by
       ext
       rfl
-    have hder : (c • f).2 x = c • f.2 x := by
-      have hsnd : (c • f).2 = c • f.2 := rfl
-      rw [hsnd, ← HolderSpace.toBoundedContinuousFunction_apply,
-        HolderSpace.toBoundedContinuousFunction_smul,
-        BoundedContinuousFunction.smul_apply,
-        HolderSpace.toBoundedContinuousFunction_apply]
+    have hder : (c • f).2 x = c • f.2 x := rfl
     rw [hfun, hder]
     exact (hf x).const_smul c
 
@@ -114,6 +98,7 @@ variable {α : ℝ≥0} {E : Type u} {F : Type v}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+/-- A bounded `C^{1,α}` element coerces to its underlying function from `E` to `F`. -/
 instance : CoeFun (C1HolderSpace α E F) fun _ ↦ E → F :=
   ⟨fun f ↦ f.1.1⟩
 
@@ -123,14 +108,6 @@ def toBoundedContinuousFunction (f : C1HolderSpace α E F) : E →ᵇ F := f.1.1
 /-- The Fréchet derivative, as a bounded globally Hölder function with values in continuous
 linear maps. -/
 def fderiv (f : C1HolderSpace α E F) : HolderSpace α E (E →L[ℝ] F) := f.1.2
-
-/-- The value accessor is the first component of the ambient jet. -/
-private theorem toBoundedContinuousFunction_eq_fst (f : C1HolderSpace α E F) :
-    toBoundedContinuousFunction f = (f : C1HolderJet α E F).1 := (rfl)
-
-/-- The derivative accessor is the second component of the ambient jet. -/
-private theorem fderiv_eq_snd (f : C1HolderSpace α E F) :
-    fderiv f = (f : C1HolderJet α E F).2 := (rfl)
 
 @[simp]
 theorem toBoundedContinuousFunction_apply (f : C1HolderSpace α E F) (x : E) :
@@ -154,10 +131,7 @@ theorem fderiv_mk (f : E →ᵇ F) (f' : HolderSpace α E (E →L[ℝ] F)) (hf) 
 /-- The constant map as a bounded `C^{1,α}` map. -/
 def const (c : F) : C1HolderSpace α E F :=
   mk (BoundedContinuousFunction.const E c) 0 fun x ↦ by
-    have hder : (0 : HolderSpace α E (E →L[ℝ] F)) x = 0 := by
-      rw [← HolderSpace.toBoundedContinuousFunction_apply,
-        HolderSpace.toBoundedContinuousFunction_zero]
-      rfl
+    have hder : (0 : HolderSpace α E (E →L[ℝ] F)) x = 0 := rfl
     rw [hder]
     exact hasFDerivAt_const (x := x) (c := c)
 
@@ -249,12 +223,10 @@ theorem fderivL_apply (f : C1HolderSpace α E F) : fderivL f = fderiv f := (rfl)
 
 /-- The `C^{1,α}` norm is the maximum of the supremum norm of the function and the
 supremum-plus-Hölder norm of its derivative. -/
-@[simp]
 theorem norm_eq_max (f : C1HolderSpace α E F) :
-    ‖(f : C1HolderJet α E F)‖ =
-      max ‖toBoundedContinuousFunction f‖ ‖fderiv f‖ := by
-  rw [toBoundedContinuousFunction_eq_fst, fderiv_eq_snd]
-  exact Prod.norm_def (f : C1HolderJet α E F)
+    ‖f‖ = max ‖toBoundedContinuousFunction f‖ ‖fderiv f‖ := by
+  simpa [toBoundedContinuousFunction, fderiv] using
+    Prod.norm_def (f : C1HolderJet α E F)
 
 /-- The supremum norm of the function is controlled by the `C^{1,α}` norm. -/
 theorem norm_toBoundedContinuousFunction_le (f : C1HolderSpace α E F) :
