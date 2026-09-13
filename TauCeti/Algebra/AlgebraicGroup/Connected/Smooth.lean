@@ -18,6 +18,10 @@ over the ambient finite-type Hopf algebra. Consequently the identity component o
 affine group is smooth. Smoothness of the ambient group is an explicit hypothesis; the
 étale inclusion itself also applies to non-smooth group schemes.
 
+The algebraically closed hypothesis belongs to the bundled `identityComponent` construction
+and its underlying `HopfAlgebra.identityComponentHopfIdeal`. The ring-theoretic étaleness
+result `etale_quotient_connectedComponentIdeal` only requires a locally connected spectrum.
+
 In particular this supplies smoothness of the identity component of a reduced center,
 once the reduced center has been shown smooth. Together with geometric connectedness,
 this allows semisimplicity to trivialize that central subgroup.
