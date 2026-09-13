@@ -25,8 +25,10 @@ abelian) abbreviates. Its orbits have a purely topological meaning, recorded her
 lie in the
 same orbit exactly when they are *freely* homotopic, that is, when some homotopy connects them
 through generalized loops whose base points sweep out a loop at `x`. So the quotient of
-`π_n(X, x)` by the action is the set of free homotopy classes of maps `Sⁿ → X`, and the action
-is trivial precisely when based and free homotopy classes agree.
+`π_n(X, x)` by the action is the set of free homotopy classes of maps `Sⁿ → X` in positive
+dimensions. In dimension zero, it instead records the classes for which the distinguished point
+of `S⁰` remains in the path component of `x`. The action is trivial precisely when the
+corresponding based and free homotopy classes agree.
 
 ## Conventions
 
@@ -50,7 +52,8 @@ monodromy action `IsCoveringMap.fundamentalGroupMulAction` a left action.
   source and target, along the homomorphism it induces on fundamental groups.
 * `TauCeti.homotopyGroup_mem_orbit_iff` and
   `TauCeti.homotopyGroup_mem_orbit_iff_exists_homotopyAlong`: **the orbits of the action are
-  the free homotopy classes**, the latter through
+  the free homotopy classes in positive dimensions (with the distinguished point restricted to
+  the component of `x` in dimension zero)**, the latter through
   `TauCeti.GenLoop.exists_homotopyAlong_iff_exists_homotopic_transport`, which reads free
   homotopy as transport up to based homotopy.
 * `TauCeti.fundamentalGroup_smul_eq_self`: on a simply connected space the action is trivial.
@@ -248,11 +251,13 @@ theorem exists_homotopyAlong_iff_exists_homotopic_transport (f g : Ω^ N X x) :
 
 end GenLoop
 
-/-- **The orbits of the action of `π₁(X, x)` on `π_n(X, x)` are the free homotopy classes.**
-Classes of two generalized loops based at `x` lie in the same orbit exactly when some homotopy
-connects the two loops through generalized loops, the base point sweeping out a loop at `x`. So
-the quotient of `π_n(X, x)` by the action is the set of free homotopy classes of maps
-`Sⁿ → X`.
+/-- **In positive dimensions, the orbits of the action of `π₁(X, x)` on `π_n(X, x)` are the
+free homotopy classes.** Classes of two generalized loops based at `x` lie in the same orbit
+exactly when some homotopy connects the two loops through generalized loops, the base point
+sweeping out a loop at `x`. Thus in positive dimensions the quotient of `π_n(X, x)` by the
+action is the set of free homotopy classes of maps `Sⁿ → X`. In dimension zero, it instead
+classifies the free homotopy classes of maps `S⁰ → X` whose distinguished point lies in the path
+component of `x`.
 
 The two classes are given by representatives rather than written as `⟦f⟧` and `⟦g⟧` directly,
 because the type of `⟦f⟧` is the underlying quotient rather than `HomotopyGroup N X x`, which
@@ -269,7 +274,9 @@ theorem homotopyGroup_mem_orbit_iff_exists_homotopyAlong {a b : HomotopyGroup N 
   exact Quotient.eq
 
 /-- On a space with trivial fundamental group at `x` — a simply connected space, for instance —
-the action is trivial, so based and free homotopy classes of maps `Sⁿ → X` agree. -/
+the action is trivial. Thus in positive dimensions based and free homotopy classes of maps
+`Sⁿ → X` agree; in dimension zero this uses the interpretation with the distinguished point
+restricted to the path component of `x`. -/
 theorem fundamentalGroup_smul_eq_self [Subsingleton (FundamentalGroup X x)]
     (γ : FundamentalGroup X x) (a : HomotopyGroup N X x) : γ • a = a := by
   rw [Subsingleton.elim γ 1, one_smul]
