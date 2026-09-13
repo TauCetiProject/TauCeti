@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
+public import TauCeti.NumberTheory.NumberField.Units.Signature.Integer
 
+import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!

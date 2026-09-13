@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
-public import TauCeti.RingTheory.Ideal.Quotient.Representative
 public import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
+
+import TauCeti.RingTheory.Ideal.Quotient.Representative
 
 /-!
 # Reduction modulo the finite part of a modulus
