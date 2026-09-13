@@ -8,6 +8,8 @@ module
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
+import TauCeti.Algebra.Group.Subgroup.ZPowers
+
 /-!
 # Membership in a subgroup of a cyclic group, by index
 
@@ -21,6 +23,12 @@ lands in `K` at all, and both readings agree through the convention `index = 0`.
 * `Subgroup.zpow_mem_iff_index_dvd`: `g ^ n ∈ K ↔ (K.index : ℤ) ∣ n` for `n : ℤ`, with `g` a
   generator.
 * `Subgroup.pow_mem_iff_index_dvd`: the same for a natural exponent.
+* `Subgroup.isLeast_pow_mem_index`: when `K` has finite index, `K.index` **is** the least positive
+  exponent with `g ^ n ∈ K`, with `AddSubgroup.isLeast_nsmul_mem_index` its additive form.
+* `Subgroup.isLeast_pow_mem_relIndex_zpowers`: when `H` has finite relative index in `⟨g⟩`, that
+  relative index is the least positive exponent with `g ^ n ∈ H`. No generator hypothesis is needed
+  here, `g` generating `⟨g⟩`; `AddSubgroup.isLeast_nsmul_mem_relIndex_zmultiples` is the additive
+  form.
 -/
 
 public section
@@ -65,5 +73,36 @@ theorem zpow_mem_iff_index_dvd (K : Subgroup G) (hg : zpowers g = ⊤) (n : ℤ)
 theorem pow_mem_iff_index_dvd (K : Subgroup G) (hg : zpowers g = ⊤) (n : ℕ) :
     g ^ n ∈ K ↔ K.index ∣ n := by
   rw [← zpow_natCast, zpow_mem_iff_index_dvd K hg, Int.natCast_dvd_natCast]
+
+/-- **The index is the least exponent that lands in `K`.**  For a generator `g` of `G` and a
+subgroup `K` of finite index, `K.index` is the smallest `n ≥ 1` with `g ^ n ∈ K`.
+
+This is the finite-index reading of `pow_mem_iff_index_dvd`: the exponents landing in `K` are the
+multiples of `K.index`, so the least positive one is the index itself. -/
+@[to_additive
+/-- **The index is the least multiple that lands in `K`.**  For a generator `g` of `G` and a
+subgroup `K` of finite index, `K.index` is the smallest `n ≥ 1` with `n • g ∈ K`. -/]
+theorem isLeast_pow_mem_index (K : Subgroup G) (hg : zpowers g = ⊤) [K.FiniteIndex] :
+    IsLeast {n : ℕ | 0 < n ∧ g ^ n ∈ K} K.index :=
+  ⟨⟨Nat.pos_of_ne_zero FiniteIndex.index_ne_zero, (pow_mem_iff_index_dvd K hg _).2 dvd_rfl⟩,
+    fun _ hn ↦ Nat.le_of_dvd hn.1 ((pow_mem_iff_index_dvd K hg _).1 hn.2)⟩
+
+/-- **The relative index in a cyclic subgroup is the least exponent that lands in `H`.**  When `H`
+has finite relative index in `⟨g⟩`, that index is the smallest `n ≥ 1` with `g ^ n ∈ H`.
+
+This is `isLeast_pow_mem_index` transported into `⟨g⟩`, where the canonical generator generates. -/
+@[to_additive
+/-- **The relative index in a cyclic subgroup is the least multiple that lands in `H`.**  When `H`
+has finite relative index in `⟨g⟩`, that index is the smallest `n ≥ 1` with `n • g ∈ H`. -/]
+theorem isLeast_pow_mem_relIndex_zpowers (g : G) (H : Subgroup G)
+    [H.IsFiniteRelIndex (zpowers g)] :
+    IsLeast {n : ℕ | 0 < n ∧ g ^ n ∈ H} (H.relIndex (zpowers g)) := by
+  have hset : {n : ℕ | 0 < n ∧ g ^ n ∈ H}
+      = {n : ℕ | 0 < n ∧ (⟨g, mem_zpowers g⟩ : ↥(zpowers g)) ^ n
+          ∈ H.subgroupOf (zpowers g)} := by
+    ext n
+    simp [Subgroup.mem_subgroupOf]
+  rw [hset, relIndex]
+  exact isLeast_pow_mem_index (H.subgroupOf (zpowers g)) (zpowers_mk_self_eq_top g)
 
 end Subgroup
