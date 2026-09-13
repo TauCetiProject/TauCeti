@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.Index
+public import Mathlib.GroupTheory.Subgroup.Centralizer
 public import Mathlib.Tactic.Group
 
 /-!
@@ -51,6 +52,9 @@ exceptional-character argument for Frobenius's theorem.  That induction statemen
 * `TauCeti.isTISubgroup_iff_inf_conj_smul_eq_bot`: the lattice form of the definition.
 * `TauCeti.IsTISubgroup.normalizer_eq_self`: a nontrivial trivial-intersection subgroup is
   self-normalizing.
+* `TauCeti.IsTISubgroup.mem_of_conj_eq_self` and
+  `TauCeti.IsTISubgroup.centralizer_singleton_le`: the centralizer of a nonidentity element of a
+  trivial-intersection subgroup is contained in that subgroup.
 * `TauCeti.IsTISubgroup.isTISet`: an `H`-invariant subset of `H` avoiding the identity is a
   trivial-intersection set, and in particular so is the nonidentity part of `H`.
 * `TauCeti.IsTISet.one_notMem`: conversely, a trivial-intersection set for a proper subgroup
@@ -115,6 +119,29 @@ theorem normalizer_eq_self (hH : IsTISubgroup H) (hne : H ≠ ⊥) :
   obtain ⟨⟨x, hx⟩, hx1⟩ := Subgroup.ne_bot_iff_exists_ne_one.mp hne
   by_contra hgH
   exact hx1 (Subtype.ext (hH hgH hx ((Subgroup.mem_normalizer_iff.mp hg x).mp hx)))
+
+/-- **An element commuting with a nonidentity element of a trivial-intersection subgroup lies in
+that subgroup.**  Conjugating `x` by such an element returns `x`, hence lands back in `H`, and
+that is exactly what the trivial-intersection condition forbids an element outside `H` from
+doing. -/
+theorem mem_of_conj_eq_self (hH : IsTISubgroup H) {g x : G} (hx : x ∈ H) (hx1 : x ≠ 1)
+    (hgx : g * x * g⁻¹ = x) : g ∈ H := by
+  by_contra hg
+  refine hH.conj_notMem hg hx hx1 ?_
+  rw [hgx]
+  exact hx
+
+/-- **The centralizer of a nonidentity element of a trivial-intersection subgroup is contained in
+it**, the inclusion form of `TauCeti.IsTISubgroup.mem_of_conj_eq_self`.  Equivalently, a
+trivial-intersection subgroup contains the centralizer of each of its nonidentity elements, so
+those centralizers are as small as the subgroup itself allows. -/
+theorem centralizer_singleton_le (hH : IsTISubgroup H) {x : G} (hx : x ∈ H) (hx1 : x ≠ 1) :
+    Subgroup.centralizer {x} ≤ H := by
+  intro g hg
+  rw [Subgroup.mem_centralizer_singleton_iff] at hg
+  refine hH.mem_of_conj_eq_self hx hx1 ?_
+  rw [hg]
+  group
 
 end IsTISubgroup
 
