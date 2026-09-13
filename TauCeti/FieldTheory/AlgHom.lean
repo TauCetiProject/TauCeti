@@ -45,9 +45,9 @@ variable {L M : Type*} [Field L] [Field M] [Algebra ℚ L] [Algebra ℚ M]
   {d : ℤ} {y : L} {z : M}
 
 /-- If `y` and `z` are square roots of the same integer and `ℚ(y)` is quadratic, any
-`ℚ`-embedding from the field containing `z` into the Galois number field containing `y` can be
+`ℚ`-embedding from the field containing `z` into the normal field containing `y` can be
 adjusted by a target automorphism to carry `z` to `y`. -/
-theorem exists_algHom_apply_eq_of_sq_eq [IsGalois ℚ L]
+theorem exists_algHom_apply_eq_of_sq_eq [Normal ℚ L]
     (hy : y ^ 2 = algebraMap ℤ L d)
     (hydegree : Module.finrank ℚ (IntermediateField.adjoin ℚ {y}) = 2)
     (hz : z ^ 2 = algebraMap ℤ M d) (hφ : Nonempty (M →ₐ[ℚ] L)) :
@@ -59,7 +59,10 @@ theorem exists_algHom_apply_eq_of_sq_eq [IsGalois ℚ L]
   have hzQ : z ^ 2 = algebraMap ℚ M ((d : ℤ) : ℚ) := by
     rw [hz, IsScalarTower.algebraMap_apply ℤ ℚ M]
     norm_num
-  have hyint : IsIntegral ℚ y := IsGalois.integral ℚ y
+  have hyint : IsIntegral ℚ y := by
+    apply IsIntegral.of_pow (by norm_num : 0 < 2)
+    rw [hyQ]
+    exact isIntegral_algebraMap
   have hmin : minpoly ℚ y = Polynomial.X ^ 2 - Polynomial.C ((d : ℤ) : ℚ) := by
     apply Algebra.minpoly_eq_X_sq_sub_C_of_sq_eq_of_natDegree_eq_two hyQ
     rw [← IntermediateField.adjoin.finrank hyint, hydegree]
