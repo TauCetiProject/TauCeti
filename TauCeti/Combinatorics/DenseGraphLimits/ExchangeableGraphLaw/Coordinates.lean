@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.Data.Set.BoolIndicator
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
 
 /-!
@@ -54,37 +55,25 @@ namespace DenseGraphLimits
 /-- The coordinate type of an infinite simple graph: unordered pairs of distinct naturals. -/
 abbrev EdgeIndex : Type := {e : Sym2 ℕ // ¬ e.IsDiag}
 
-open Classical in
 /-- An infinite simple graph is equivalently a Boolean assignment to its possible edges. -/
 def graphCoordEquiv : SimpleGraph ℕ ≃ (EdgeIndex → Bool) where
-  toFun G e := if e.1 ∈ G.edgeSet then true else false
+  toFun G e := G.edgeSet.boolIndicator e.1
   invFun f := SimpleGraph.fromEdgeSet {s : Sym2 ℕ | ∃ h : ¬ s.IsDiag, f ⟨s, h⟩ = true}
   left_inv G := by
     -- The coordinate predicate cuts out exactly `G.edgeSet`, so `fromEdgeSet_edgeSet` applies.
     refine Eq.trans ?_ (SimpleGraph.fromEdgeSet_edgeSet G)
     refine congrArg SimpleGraph.fromEdgeSet (Set.ext fun s => ?_)
     simp only [Set.mem_ofPred_eq]
-    refine ⟨fun h => ?_, fun hs => ⟨G.not_isDiag_of_mem_edgeSet hs, by simp [hs]⟩⟩
-    by_contra hnot
-    simp [hnot] at h
+    exact ⟨fun ⟨_, h⟩ => (Set.mem_iff_boolIndicator _ _).mpr h,
+      fun hs => ⟨G.not_isDiag_of_mem_edgeSet hs, (Set.mem_iff_boolIndicator _ _).mp hs⟩⟩
   right_inv f := by
     funext e
-    have hcond :
-        ((∃ h : ¬(e : Sym2 ℕ).IsDiag, f ⟨e, h⟩ = true) ∧ ¬(e : Sym2 ℕ).IsDiag) ↔
-          f e = true := by
-      constructor
-      · rintro ⟨⟨h, htrue⟩, -⟩
-        exact (Subtype.ext rfl : (⟨(e : Sym2 ℕ), h⟩ : EdgeIndex) = e) ▸ htrue
-      · exact fun htrue => ⟨⟨e.2, htrue⟩, e.2⟩
+    -- Both sides are Boolean, so compare them through membership in the decoded edge set.
+    rw [Bool.eq_iff_iff, ← Set.mem_iff_boolIndicator]
     simp only [SimpleGraph.edgeSet_fromEdgeSet, Set.mem_sdiff, Set.mem_ofPred_eq,
       Sym2.mem_diagSet]
-    by_cases hf : f e = true
-    · have hc := hcond.mpr hf
-      exact (ite_eq_left hc).trans hf.symm
-    · have hc : ¬((∃ h : ¬(e : Sym2 ℕ).IsDiag, f ⟨e, h⟩ = true) ∧
-          ¬(e : Sym2 ℕ).IsDiag) := fun h => hf (hcond.mp h)
-      have hfalse : f e = false := Bool.eq_false_of_not_eq_true hf
-      exact (ite_eq_right hc).trans hfalse.symm
+    exact ⟨fun ⟨⟨h, htrue⟩, _⟩ => (Subtype.ext rfl : (⟨(e : Sym2 ℕ), h⟩ : EdgeIndex) = e) ▸ htrue,
+      fun htrue => ⟨⟨e.2, htrue⟩, e.2⟩⟩
 
 end DenseGraphLimits
 
@@ -97,9 +86,8 @@ open TauCeti.DenseGraphLimits
 /-- The coordinate at `e` is true exactly when `e` is an edge of the graph. -/
 @[simp]
 theorem graphCoordEquiv_apply (G : SimpleGraph ℕ) (e : EdgeIndex) :
-    graphCoordEquiv G e = true ↔ e.1 ∈ G.edgeSet := by
-  classical
-  simp [graphCoordEquiv]
+    graphCoordEquiv G e = true ↔ e.1 ∈ G.edgeSet :=
+  (Set.mem_iff_boolIndicator _ _).symm
 
 end SimpleGraph
 
@@ -119,10 +107,12 @@ on simple graphs and the product measurable space on Boolean coordinates. -/
 theorem measurable_graphCoordEquiv : Measurable ⇑graphCoordEquiv := by
   rw [measurable_pi_iff]
   intro e
-  classical
-  have hmem : Measurable fun G : SimpleGraph ℕ => e.1 ∈ G.edgeSet :=
-    measurable_set_iff.1 SimpleGraph.measurable_edgeSet e.1
-  exact Measurable.ite hmem.setOf measurable_const measurable_const
+  refine measurable_to_bool ?_
+  have hpre : (fun G : SimpleGraph ℕ => graphCoordEquiv G e) ⁻¹' {true} =
+      {G : SimpleGraph ℕ | e.1 ∈ G.edgeSet} := Set.ext fun G =>
+    SimpleGraph.graphCoordEquiv_apply G e
+  rw [hpre]
+  exact (measurable_set_iff.1 SimpleGraph.measurable_edgeSet e.1).setOf
 
 /-- The coordinate-to-graph map is measurable, so `graphCoordEquiv` is a measurable equivalence in
 substance. -/
