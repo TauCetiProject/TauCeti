@@ -28,7 +28,8 @@ Mathlib's `GL(2, ℝ)`-invariance).
   for any coefficients mapping to `ℝ`.
 * `UpperHalfPlane.instMulActionPSL2` — the `PSL(2, R)`-action for any coefficients mapping
   to `ℝ`, descending the `SL(2, R)`-action along the central quotient, with the
-  representative compatibility `pslMk_smul`.
+  representative compatibility `pslMk_smul` and its pointwise-image form
+  `Matrix.SpecialLinearGroup.pslMk_smul_set`.
 * `FaithfulSMul` instances for `PSL(2, ℤ)` and `PSL(2, ℝ)` on `ℍ`, restricting Mathlib's
   faithful `PGL(2, ℝ)`-action along the injective `toPGL` and `psl2zToPSL2R`.
 * `SMulInvariantMeasure` instances for `SL(2, R)` and `PSL(2, R)` (any coefficients
@@ -133,6 +134,13 @@ noncomputable instance instMulActionPSL2 : MulAction PSL(2, R) ℍ :=
 /-- The `PSL(2, R)` action of a representative coincides with the `SL(2, R)` action. -/
 @[simp]
 theorem pslMk_smul (g : SL(2, R)) (τ : ℍ) : (↑g : PSL(2, R)) • τ = g • τ := (rfl)
+
+/-- **The `PSL(2, R)`-action on subsets of `ℍ` is the `SL(2, R)`-action of any representative**,
+the pointwise-image counterpart of `UpperHalfPlane.pslMk_smul`. -/
+@[simp]
+theorem _root_.Matrix.SpecialLinearGroup.pslMk_smul_set (g : SL(2, R)) (S : Set ℍ) :
+    (↑g : PSL(2, R)) • S = g • S :=
+  Set.image_congr fun τ _ ↦ pslMk_smul g τ
 
 noncomputable instance : MeasurableConstSMul PSL(2, R) ℍ where
   measurable_const_smul g := by
