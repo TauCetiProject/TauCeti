@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Weights.RootSystem
+import TauCeti.Algebra.Lie.Submodule.Finrank
 
 /-!
 # Elementary identities for Lie algebra weights
@@ -22,6 +23,10 @@ weight-space theory.
   weight space with the intersection of the target weight space and its range.
 * `LieModule.map_weightSpace_eq`: a Lie-module equivalence maps each weight space onto the
   corresponding weight space.
+* `LieSubmodule.toSubmodule_map_weightSpace_incl`: inclusion identifies a submodule's weight space
+  with its intersection with the ambient weight space.
+* `LieSubmodule.finrank_inf_weightSpace`: that intersection has the dimension of the submodule's
+  weight space.
 * `TauCeti.Weight.coe_neg_eq_add_of_coe_eq_add`: reading a vanishing sum of four weights as an
   equation between opposite pair sums.
 
@@ -83,6 +88,38 @@ theorem map_weightSpace_eq (e : LieModuleEquiv R L M M₂) (χ : L → R) :
   simp [map_weightSpace_eq_of_injective χ e.injective]
 
 end LieModule
+
+namespace LieSubmodule
+
+open LieModule Module
+
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+  {H : LieSubalgebra R L}
+
+/-- Inclusion of a Lie submodule identifies its weight space with the intersection of the ambient
+weight space and its carrier. -/
+theorem toSubmodule_map_weightSpace_incl (N : LieSubmodule R L M) (χ : H → R) :
+    ((weightSpace ↥N χ).map (N.incl.restrictLie H)).toSubmodule
+      = (weightSpace M χ).toSubmodule ⊓ N.toSubmodule := by
+  rw [LieModule.map_weightSpace_eq_of_injective χ (injective_incl N),
+    LieSubmodule.inf_toSubmodule]
+  congr 1
+  ext x
+  simp
+
+/-- The intersection of an ambient weight space with a Lie submodule has the dimension of the
+corresponding weight space in the submodule. -/
+theorem finrank_inf_weightSpace {K : Type*} [Field K] [LieAlgebra K L]
+    [Module K M] [LieModule K L M] {H : LieSubalgebra K L}
+    (N : LieSubmodule K L M) (χ : H → K) :
+    finrank K ((weightSpace M χ).toSubmodule ⊓ N.toSubmodule : Submodule K M)
+      = finrank K (weightSpace ↥N χ) := by
+  have hequiv := (LieSubmodule.equivMapOfInjective
+    (f := N.incl.restrictLie H) (weightSpace ↥N χ) (injective_incl N)).toLinearEquiv.finrank_eq
+  rw [← N.toSubmodule_map_weightSpace_incl χ, TauCeti.finrank_toSubmodule, ← hequiv]
+
+end LieSubmodule
 
 namespace TauCeti
 
