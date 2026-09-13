@@ -64,6 +64,8 @@ consumer may rely on that.
   over a field the partial derivative `W_Y` is nonzero at the generic point.
 * `WeierstrassCurve.Affine.map_genericPoint_injective`: an `F`-algebra homomorphism from the
   function field into a field extension is determined by the point it sends the generic point to.
+* `WeierstrassCurve.Affine.eq_of_baseChange_eq_sub_map_genericPoint`: an embedding is likewise
+  determined by the rational point it displaces the generic point by.
 
 ## Roadmap
 
@@ -300,6 +302,23 @@ theorem map_genericPoint_injective [W.IsElliptic] {Ω : Type*} [Field Ω] [Algeb
   refine AlgHom.coe_ringHom_injective
     (IsFractionRing.ringHom_ext (A := W.CoordinateRing) fun a ↦ ?_)
   exact congrArg (fun f : W.CoordinateRing →ₐ[F] Ω ↦ f a) key
+
+/-- **An embedding is determined by the rational point it displaces the generic point by.** If
+each index `i` carries a rational point whose base change is `e i`'s displacement of the generic
+point from a fixed embedding `σ₀`, then that point determines `e i`.
+
+This is the injectivity step shared by the embedding counts of the isogenies whose kernels are
+counted this way: they differ in *why* the displacement is rational, not in this step. -/
+theorem eq_of_baseChange_eq_sub_map_genericPoint [W.IsElliptic] [DecidableEq F] {Ω : Type*}
+    [Field Ω] [Algebra F Ω] [DecidableEq Ω] {ι : Type*} (e : ι → (W.FunctionField →ₐ[F] Ω))
+    (σ₀ : W.FunctionField →ₐ[F] Ω) {f : ι → (W⁄F).toAffine.Point}
+    (hf : ∀ i, Point.baseChange (W' := W) F Ω (f i) =
+      Point.map (e i) (genericPoint W) - Point.map σ₀ (genericPoint W))
+    {i j : ι} (h : f i = f j) : e i = e j := by
+  have h2 : Point.map (e i) (genericPoint W) - Point.map σ₀ (genericPoint W) =
+      Point.map (e j) (genericPoint W) - Point.map σ₀ (genericPoint W) := by
+    rw [← hf i, ← hf j, h]
+  exact map_genericPoint_injective W (sub_left_inj.1 h2)
 
 end Field
 
