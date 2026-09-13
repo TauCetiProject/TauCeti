@@ -19,11 +19,6 @@ field.  It turns the hom-bundle-valued regularity supplied by
 
 * `TauCeti.Manifold.contMDiff_covariantDerivative_apply`: applying a `C^n` covariant derivative
   to a `C^(n + 1)` section along a `C^n` vector field produces a `C^n` section.
-
-## References
-
-* [Geometric topology and the solved Kirby-list problems roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GeometricTopology/README.md),
-  Layer 7, "Riemannian geometric structures and volume".
 -/
 
 public section
