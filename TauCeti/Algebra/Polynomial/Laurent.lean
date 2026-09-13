@@ -28,12 +28,17 @@ The module-theoretic use is `TauCeti.laurentTAut`: on any `R[T;T⁻¹]`-module, 
 -- written `q` in the graded `K`-theory literature -- is an automorphism of the underlying additive
 monoid, and that automorphism is what a shift-compatible invariant is compared against.
 
+Evaluation also lets a module of the target algebra be read as an `R[T;T⁻¹]`-module, by
+`TauCeti.laurentEvalModule`.
+
 ## Main definitions
 
 * `TauCeti.laurentEval`: evaluation of a Laurent polynomial at a unit of an `R`-algebra.
 * `TauCeti.laurentEvalEquiv`: the units of `A` are the `R`-algebra maps `R[T;T⁻¹] →ₐ[R] A`.
 * `TauCeti.laurentTAut`: multiplication by `T` on an `R[T;T⁻¹]`-module, as an additive
   automorphism.
+* `TauCeti.laurentEvalModule`: the `R[T;T⁻¹]`-module structure induced on an `A`-module by
+  evaluating the variable at a unit of `A`.
 
 ## Main results
 
@@ -128,6 +133,30 @@ theorem laurentEval_eq_eval₂ {S : Type*} [CommSemiring S] [Algebra R S] (u : S
   | C_mul_T n a => simp
 
 end Eval
+
+section EvalModule
+
+variable {R : Type*} [CommSemiring R] {A : Type*} [Semiring A] [Algebra R A]
+
+/-- **The module structure obtained by evaluating the variable at a unit**: an `A`-module is an
+`R[T;T⁻¹]`-module once `T` is made to act through the unit `u`.
+
+It is kept as a named class-valued definition because tensor products over the Laurent coefficient
+ring must remember this particular module structure. -/
+@[expose, instance_reducible]
+noncomputable def laurentEvalModule (u : Aˣ) (N : Type*) [AddCommMonoid N] [Module A N] :
+    Module R[T;T⁻¹] N :=
+  Module.compHom N (laurentEval u).toRingHom
+
+/-- **The computation rule of `TauCeti.laurentEvalModule`**: a Laurent scalar acts through its
+value at the unit. -/
+theorem laurentEvalModule_smul (u : Aˣ) {N : Type*} [AddCommMonoid N] [Module A N]
+    (p : R[T;T⁻¹]) (x : N) :
+    letI := laurentEvalModule (R := R) u N
+    p • x = laurentEval u p • x :=
+  (rfl)
+
+end EvalModule
 
 section TAut
 
