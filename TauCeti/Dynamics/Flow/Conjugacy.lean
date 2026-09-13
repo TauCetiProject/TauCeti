@@ -10,7 +10,9 @@ public import Mathlib.Dynamics.Flow
 /-!
 # Conjugacies of flows
 
-This file collects general consequences of an inducing map that semiconjugates two flows.
+This file collects general consequences of an inducing map that semiconjugates two flows. These
+lemmas transport asymptotic trajectory behavior, enabling stable and unstable sets to be
+transferred through coordinate conjugacies.
 
 ## Main declarations
 
