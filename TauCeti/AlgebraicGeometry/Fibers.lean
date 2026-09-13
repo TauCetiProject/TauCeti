@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.OpenImmersion
+public import Mathlib.AlgebraicGeometry.Fiber
+public import Mathlib.AlgebraicGeometry.FunctionField
 public import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 
 /-!
@@ -18,6 +20,10 @@ residue field. The projection identities and pullback witnesses expose the defin
 
 When `R` is a discrete valuation ring and `K` is a fraction ring, the generic fibre is an open
 subscheme of the total space. The special fibre over any local ring is a closed subscheme.
+
+For a domain, the generic fibre is canonically isomorphic to Mathlib's scheme-theoretic fibre at
+the generic point. Iterated scalar extension is also canonically isomorphic to direct scalar
+extension, compatibly with both pullback projections.
 -/
 
 public section
@@ -142,5 +148,210 @@ lemma isClosedImmersion_specialFiberι (R : Type u) [CommRing R] [IsLocalRing R]
       (Spec.map (CommRingCat.ofHom (algebraMap R (ResidueField R)))) :=
     isClosedImmersion_Spec_map_residue R
   exact inferInstance
+
+section GenericPoint
+
+variable (R : CommRingCat.{u}) (K : Type u) [IsDomain R]
+variable [Field K] [Algebra R K] [IsFractionRing R K]
+
+/-- A chosen fraction ring of a domain is isomorphic to the residue field at its generic prime.
+
+The generic prime of `Spec R` is represented here by the zero ideal. Mathlib's
+`genericPoint_eq_bot_of_affine` identifies this point with `genericPoint (Spec R)`. -/
+noncomputable def fractionRingEquivResidueFieldGenericPrime :
+    K ≃+* (Spec R).residueField (⟨⊥, inferInstance⟩ : Spec R) :=
+  (IsFractionRing.ringEquivOfRingEquiv (K := K)
+      (L := (⊥ : Ideal R).ResidueField) (.refl R)).trans
+    (Scheme.Spec.residueFieldIso R
+      (⟨⊥, inferInstance⟩ : Spec R)).commRingCatIsoToRingEquiv.symm
+
+/-- The fraction-ring equivalence at the generic prime respects the maps from the domain. -/
+lemma fractionRingEquivResidueFieldGenericPrime_algebraMap (r : R) :
+    fractionRingEquivResidueFieldGenericPrime R K (algebraMap R K r) =
+      (Scheme.Spec.residueFieldIso R (⟨⊥, inferInstance⟩ : Spec R)).inv
+        (algebraMap R (⊥ : Ideal R).ResidueField r) := by
+  simp [fractionRingEquivResidueFieldGenericPrime]
+  rfl
+
+/-- The spectrum of a chosen fraction ring is isomorphic to the spectrum of the residue field at
+the generic prime. -/
+noncomputable def specFractionRingIsoResidueFieldGenericPrime :
+    Spec (.of K) ≅
+      Spec (.of ((Spec R).residueField (⟨⊥, inferInstance⟩ : Spec R))) :=
+  Scheme.Spec.mapIso
+    (fractionRingEquivResidueFieldGenericPrime R K).toCommRingCatIso.symm.op
+
+/-- The spectrum isomorphism from the fraction ring to the generic residue field commutes with
+the two canonical maps to `Spec R`. -/
+lemma specFractionRingIsoResidueFieldGenericPrime_hom_fromSpecResidueField :
+    (specFractionRingIsoResidueFieldGenericPrime R K).hom ≫
+        (Spec R).fromSpecResidueField (⟨⊥, inferInstance⟩ : Spec R) =
+      Spec.map (CommRingCat.ofHom (algebraMap R K)) := by
+  erw [← Scheme.Spec.map_residueFieldIso_inv_eq_fromSpecResidueField]
+  dsimp [specFractionRingIsoResidueFieldGenericPrime]
+  rw [← Spec.map_comp_assoc]
+  have h : CommRingCat.ofHom (algebraMap R (⊥ : Ideal R).ResidueField) ≫
+        (Scheme.Spec.residueFieldIso R (⟨⊥, inferInstance⟩ : Spec R)).inv ≫
+        (fractionRingEquivResidueFieldGenericPrime R K).toCommRingCatIso.inv =
+      CommRingCat.ofHom (algebraMap R K) := by
+    ext r
+    simp only [RingEquiv.toCommRingCatIso_inv, CommRingCat.hom_comp,
+      ConcreteCategory.hom_ofHom, RingHom.coe_comp, RingHom.coe_coe, Function.comp_apply]
+    rw [← fractionRingEquivResidueFieldGenericPrime_algebraMap R K r,
+      RingEquiv.symm_apply_apply]
+  exact (Scheme.Spec.map_comp _ _).symm.trans (congrArg Spec.map h)
+
+variable {R K} {X : Scheme.{u}} (toBase : X ⟶ Spec R)
+
+/-- After identifying the fraction ring with the residue field at the generic prime, the square
+defining `genericFiber` is the square defining Mathlib's `Scheme.Hom.fiber`. -/
+lemma isPullback_genericFiber_genericPrime :
+    IsPullback (genericFiberι R K toBase)
+      ((genericFiber R K toBase).hom ≫
+        (specFractionRingIsoResidueFieldGenericPrime R K).hom)
+      toBase ((Spec R).fromSpecResidueField (⟨⊥, inferInstance⟩ : Spec R)) := by
+  refine (isPullback_genericFiber R K toBase).of_iso (Iso.refl _) (Iso.refl _)
+    (specFractionRingIsoResidueFieldGenericPrime R K) (Iso.refl _) ?_ ?_ ?_ ?_
+  · simp
+  · rfl
+  · simp
+  · simpa using
+      (specFractionRingIsoResidueFieldGenericPrime_hom_fromSpecResidueField R K).symm
+
+/-- The scalar-extension generic fibre is isomorphic to the scheme-theoretic fibre at the
+generic prime. -/
+noncomputable def genericFiberIsoFiberGenericPrime :
+    (genericFiber R K toBase).left ≅
+      toBase.fiber (⟨⊥, inferInstance⟩ : Spec R) :=
+  (isPullback_genericFiber_genericPrime toBase).isoIsPullback X
+    (Spec (.of ((Spec R).residueField (⟨⊥, inferInstance⟩ : Spec R))))
+    (IsPullback.of_hasPullback toBase
+      ((Spec R).fromSpecResidueField (⟨⊥, inferInstance⟩ : Spec R)))
+
+/-- The generic-prime fibre comparison commutes with the projections to the total space. -/
+@[reassoc (attr := simp)]
+lemma genericFiberIsoFiberGenericPrime_hom_fiberι :
+    (genericFiberIsoFiberGenericPrime toBase).hom ≫
+        toBase.fiberι (⟨⊥, inferInstance⟩ : Spec R) =
+      genericFiberι R K toBase :=
+  (isPullback_genericFiber_genericPrime toBase).isoIsPullback_hom_fst _ _
+    (IsPullback.of_hasPullback toBase
+      ((Spec R).fromSpecResidueField (⟨⊥, inferInstance⟩ : Spec R)))
+
+/-- The generic-prime fibre comparison commutes with the projections to the residue-field
+spectrum. -/
+@[reassoc (attr := simp)]
+lemma genericFiberIsoFiberGenericPrime_hom_fiberToSpecResidueField :
+    (genericFiberIsoFiberGenericPrime toBase).hom ≫
+        toBase.fiberToSpecResidueField (⟨⊥, inferInstance⟩ : Spec R) =
+      (genericFiber R K toBase).hom ≫
+        (specFractionRingIsoResidueFieldGenericPrime R K).hom :=
+  (isPullback_genericFiber_genericPrime toBase).isoIsPullback_hom_snd _ _
+    (IsPullback.of_hasPullback toBase
+      ((Spec R).fromSpecResidueField (⟨⊥, inferInstance⟩ : Spec R)))
+
+/-- The inverse generic-prime fibre comparison commutes with the projections to the total
+space. -/
+@[reassoc (attr := simp)]
+lemma genericFiberIsoFiberGenericPrime_inv_genericFiberι :
+    (genericFiberIsoFiberGenericPrime toBase).inv ≫ genericFiberι R K toBase =
+      toBase.fiberι (⟨⊥, inferInstance⟩ : Spec R) :=
+  (isPullback_genericFiber_genericPrime toBase).isoIsPullback_inv_fst _ _
+    (IsPullback.of_hasPullback toBase
+      ((Spec R).fromSpecResidueField (⟨⊥, inferInstance⟩ : Spec R)))
+
+/-- The inverse generic-prime fibre comparison commutes with the projections to the
+residue-field spectrum. -/
+@[reassoc (attr := simp)]
+lemma genericFiberIsoFiberGenericPrime_inv_hom :
+    (genericFiberIsoFiberGenericPrime toBase).inv ≫
+        (genericFiber R K toBase).hom ≫
+        (specFractionRingIsoResidueFieldGenericPrime R K).hom =
+      toBase.fiberToSpecResidueField (⟨⊥, inferInstance⟩ : Spec R) :=
+  (isPullback_genericFiber_genericPrime toBase).isoIsPullback_inv_snd _ _
+    (IsPullback.of_hasPullback toBase
+      ((Spec R).fromSpecResidueField (⟨⊥, inferInstance⟩ : Spec R)))
+
+/-- The scalar-extension generic fibre is isomorphic to Mathlib's scheme-theoretic fibre at the
+generic point. -/
+noncomputable def genericFiberIsoFiberGenericPoint :
+    (genericFiber R K toBase).left ≅ toBase.fiber (genericPoint (Spec R)) := by
+  rw [genericPoint_eq_bot_of_affine R]
+  exact genericFiberIsoFiberGenericPrime toBase
+
+end GenericPoint
+
+section Tower
+
+variable (R K L : Type u) [CommRing R] [CommRing K] [CommRing L]
+variable [Algebra R K] [Algebra K L] [Algebra R L] [IsScalarTower R K L]
+variable {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
+
+/-- Iterated scalar extension from `R` through `K` to `L` is a pullback of the direct map from
+`R` to `L`. -/
+lemma isPullback_genericFiberTower :
+    IsPullback
+      (genericFiberι K L (genericFiber R K toBase).hom ≫ genericFiberι R K toBase)
+      (genericFiber K L (genericFiber R K toBase).hom).hom toBase
+      (Spec.map (CommRingCat.ofHom (algebraMap R L))) := by
+  have h := (isPullback_genericFiber K L (genericFiber R K toBase).hom).paste_horiz
+    (isPullback_genericFiber R K toBase)
+  refine h.of_iso (Iso.refl _) (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_
+  · simp
+  · simp
+  · simp
+  · have hMap :
+        Spec.map (CommRingCat.ofHom (algebraMap K L)) ≫
+            Spec.map (CommRingCat.ofHom (algebraMap R K)) =
+          Spec.map (CommRingCat.ofHom (algebraMap R L)) := by
+      rw [← Spec.map_comp]
+      congr 1
+      ext r
+      exact (IsScalarTower.algebraMap_apply R K L r).symm
+    simpa using hMap
+
+/-- Iterated scalar extension is canonically isomorphic to direct scalar extension. -/
+noncomputable def genericFiberTowerIso :
+    (genericFiber K L (genericFiber R K toBase).hom).left ≅
+      (genericFiber R L toBase).left :=
+  (isPullback_genericFiberTower R K L toBase).isoIsPullback X (Spec (.of L))
+    (isPullback_genericFiber R L toBase)
+
+/-- The scalar-extension tower isomorphism commutes with the projections to the total space. -/
+@[reassoc (attr := simp)]
+lemma genericFiberTowerIso_hom_genericFiberι :
+    (genericFiberTowerIso R K L toBase).hom ≫ genericFiberι R L toBase =
+      genericFiberι K L (genericFiber R K toBase).hom ≫ genericFiberι R K toBase :=
+  (isPullback_genericFiberTower R K L toBase).isoIsPullback_hom_fst _ _
+    (isPullback_genericFiber R L toBase)
+
+/-- The scalar-extension tower isomorphism commutes with the projections to `Spec L`. -/
+@[reassoc (attr := simp)]
+lemma genericFiberTowerIso_hom_hom :
+    (genericFiberTowerIso R K L toBase).hom ≫ (genericFiber R L toBase).hom =
+      (genericFiber K L (genericFiber R K toBase).hom).hom :=
+  (isPullback_genericFiberTower R K L toBase).isoIsPullback_hom_snd _ _
+    (isPullback_genericFiber R L toBase)
+
+/-- The inverse scalar-extension tower isomorphism commutes with the projections to the total
+space. -/
+@[reassoc (attr := simp)]
+lemma genericFiberTowerIso_inv_genericFiberι :
+    (genericFiberTowerIso R K L toBase).inv ≫
+        genericFiberι K L (genericFiber R K toBase).hom ≫ genericFiberι R K toBase =
+      genericFiberι R L toBase :=
+  (isPullback_genericFiberTower R K L toBase).isoIsPullback_inv_fst _ _
+    (isPullback_genericFiber R L toBase)
+
+/-- The inverse scalar-extension tower isomorphism commutes with the projections to `Spec L`. -/
+@[reassoc (attr := simp)]
+lemma genericFiberTowerIso_inv_hom :
+    (genericFiberTowerIso R K L toBase).inv ≫
+        (genericFiber K L (genericFiber R K toBase).hom).hom =
+      (genericFiber R L toBase).hom :=
+  (isPullback_genericFiberTower R K L toBase).isoIsPullback_inv_snd _ _
+    (isPullback_genericFiber R L toBase)
+
+end Tower
 
 end TauCeti
