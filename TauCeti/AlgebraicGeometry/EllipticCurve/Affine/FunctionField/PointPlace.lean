@@ -42,6 +42,8 @@ the normalized adic place of the maximal ideal `(X - x, Y - y)`.
   exactly when `x` has no pole there.
 * `TauCeti.Place.eq_infinity_or_existsUnique_eq_ofPrime`: every place is either the place at
   infinity or the place of a unique height-one prime of the coordinate ring.
+* `TauCeti.Place.exists_one_lt_valuation_algebraMap_iff_eq_infinity`: a place is infinite on the
+  coordinate ring exactly when it is the place at infinity.
 * `TauCeti.Place.degree_infinity`: the place at infinity has degree one.
 
 ## Roadmap
@@ -173,6 +175,29 @@ theorem eq_infinity_or_existsUnique_eq_ofPrime [IsDedekindDomain W.CoordinateRin
     obtain ⟨𝔭, h𝔭⟩ := (exists_eq_ofPrime_iff_valuation_X_le_one P).mpr hx
     refine ⟨𝔭, h𝔭, fun 𝔮 h𝔮 ↦ ?_⟩
     exact ofPrime_injective F W.FunctionField (h𝔮.trans h𝔭.symm)
+
+/-- **A place is infinite on the coordinate ring exactly when it is the place at infinity.** -/
+-- Forwards, a place that is not the place at infinity is the place of a height-one prime, and
+-- such a place contains the whole coordinate ring; backwards, `x` has a pole at infinity.
+-- Stated as `1 < Q.valuation …` rather than `… ∉ Q.integers`: `Place.mem_integers_iff` and
+-- `not_le` are both `@[simp]` and already carry the latter phrasing to this one, so only this one
+-- is in simp normal form. A `@[simp]` rule stated with `∉ Q.integers` never fires.
+@[simp]
+theorem exists_one_lt_valuation_algebraMap_iff_eq_infinity [IsDedekindDomain W.CoordinateRing]
+    (Q : Place F W.FunctionField) :
+    (∃ r : W.CoordinateRing, 1 < Q.valuation (algebraMap W.CoordinateRing W.FunctionField r)) ↔
+      Q = infinity W := by
+  constructor
+  · rintro ⟨r, hr⟩
+    rcases eq_infinity_or_existsUnique_eq_ofPrime (W := W) Q with h | ⟨𝔭, h𝔭, -⟩
+    · exact h
+    · exact absurd ((exists_eq_ofPrime_iff F W.FunctionField Q).mp ⟨𝔭, h𝔭⟩ r)
+        (by simpa using hr)
+  · rintro rfl
+    refine ⟨algebraMap F[X] W.CoordinateRing X, ?_⟩
+    rw [valuation_infinity,
+      ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField]
+    exact W.one_lt_infinityPlace_X
 
 /-- The place at infinity is rational: its residue field has degree one over the base field. -/
 @[simp]

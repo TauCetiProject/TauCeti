@@ -39,25 +39,25 @@ permutation that `TauCeti.TypeBLieIndex.diagramPerm_eq_one` computes after the c
 into the general type-`B` family: the `B₂` diagram has no symmetry to twist by, its two nodes
 carrying different root lengths. On the Suzuki
 branch it is instead `τ ^ (2m+1)` for the special isogeny `τ` of the pinned `B₂` group scheme in
-characteristic two, which is not constructed here. That `τ` satisfies `τ ^ 2 = Frob_p` in the
-prime characteristic. Both Frobenius maps are supplied below:
-`TauCeti.RankTwoBLieIndex.frobenius` is the `q`-power one, the map the odd power `τ ^ (2m+1)`
-squares to, and `TauCeti.RankTwoBLieIndex.primeFrobenius` is the `p`-power one that `τ` itself
-squares to. On a Suzuki index they differ, validity forcing `1 ≤ m` and so `q = 2 ^ (2m+1)` above
-the prime; on an untwisted index of prime field order they coincide.
+characteristic two, which is not constructed here. That `τ` is identified by the relation
+`τ ^ 2 = Frob_p` in the prime characteristic, and `Frob_p` is not the map supplied here: validity
+forces `1 ≤ m`, so the field order `q = 2 ^ (2m+1)` the index records is larger than the prime.
+Carrier-level calculations that only need `Frob_p` should use
+`TauCeti.SpStd.frobenius 1 d.1.characteristic 1 d.1.Closure` directly.
+What this file supplies is `Frob_q`, the map the odd power `τ ^ (2m+1)` squares to. Either way the
+map below is the `q`-power Frobenius at the field order the index records, taken on this carrier.
 A Suzuki index reaches all of it through `TauCeti.SuzukiLieIndex.toRankTwoBLieIndex`.
 
-Neither branch gets a Steinberg endomorphism here. What is named below is named after what it is:
+Neither branch gets a Steinberg endomorphism here, and neither gets a candidate simple group. The
+Steinberg endomorphism of either family is an endomorphism of the points of the *pinned* simply
+connected group scheme of the diagram, and no identification of the carrier below with that pinned
+group is available; so neither that endomorphism, nor the group of its fixed points, nor the
+quotient of the derived subgroup of those fixed points by its centre, is stated of the rank-two
+type-`C` carrier. What is named below is named after what it is:
 `TauCeti.RankTwoBLieIndex.frobenius` is the Frobenius of this carrier, and
 `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff` describes the group it fixes as the
 points whose matrix entries lie in the field of definition `𝔽_q`. The Steinberg and fixed-group
 APIs require a pinned carrier, which this file does not supply.
-
-The Suzuki branch's Steinberg endomorphism is stated on this carrier in
-`TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`. No identification of this carrier with
-the pinned simply connected group scheme of the diagram is available, so neither file offers it as
-a substitute for that pinned group: that construction carries over to the pinned group once such an
-identification is proved, and not before.
 
 Nothing here asserts that the carrier is reductive, that its weight torus is maximal, that it is
 the symplectic group scheme, or that any group below is finite, perfect, or simple. In particular
@@ -85,12 +85,6 @@ The same carrier-and-Frobenius material on the branches already assembled is in
   description, and its simple-root-subgroup action formula `Frob_q (x_i(u)) = x_i(u ^ q)`.
 * `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff`: its fixed points are the points whose
   matrix entries lie in the field of definition `𝔽_q`.
-* `TauCeti.RankTwoBLieIndex.primeFrobenius`,
-  `TauCeti.RankTwoBLieIndex.coe_primeFrobenius_apply` and
-  `TauCeti.RankTwoBLieIndex.primeFrobenius_simpleRootSubgroup`: the prime-field Frobenius, its
-  entrywise description, and its simple-root-subgroup action formula
-  `Frob_p (x_i(u)) = x_i(u ^ p)`, the map an odd power of a half-Frobenius on this diagram is built
-  over.
 
 ## References
 
@@ -207,53 +201,14 @@ theorem coe_frobenius_apply (g : d.AmbientGroup) (r c : Fin 4) :
   exact SpStd.coe_frobenius_apply 1 _ _ _ g r c
 
 /-- **The Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises its parameter
-to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. This describes an ordinary
-Frobenius factor of a Steinberg map on the numbered simple-root subgroups. -/
+to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. This is the
+simple-root-subgroup action formula for the ordinary Frobenius on this carrier. -/
 @[simp]
 theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
     d.frobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
-
-/-- **The prime-field Frobenius endomorphism of the ambient group of an index on the `B₂`
-diagram**, the `p`-power map for `p` the defining characteristic. It agrees with the `q`-power map
-`TauCeti.RankTwoBLieIndex.frobenius` above exactly when the index has field order `p`, which
-happens on an untwisted branch of prime field order and never on a Suzuki index, whose validity
-forces `q = 2 ^ (2m+1)` with `1 ≤ m`. It is the map that the half-Frobenius of a Suzuki index
-squares to. -/
-def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
-  SpStd.frobenius 1 d.1.characteristic 1 d.1.Closure
-
-/-- The prime-field Frobenius of an index on the `B₂` diagram is the carrier's Frobenius at
-exponent one. This is its unfolding lemma; the definition itself stays sealed.
-
-As with `frobenius_def` it is deliberately not a `simp` lemma:
-`primeFrobenius_simpleRootSubgroup` and `coe_primeFrobenius_apply` are the normal forms stated
-against it. -/
-theorem primeFrobenius_def :
-    d.primeFrobenius = SpStd.frobenius 1 d.1.characteristic 1 d.1.Closure :=
-  (rfl)
-
-/-- The prime-field Frobenius acts on the ambient group by raising every matrix entry to the
-`p`-th power, for `p` the defining characteristic. -/
-@[simp]
-theorem coe_primeFrobenius_apply (g : d.AmbientGroup) (r c : Fin 4) :
-    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 4) d.1.Closure) :
-        Matrix (Fin 4) (Fin 4) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup (Fin 4) d.1.Closure) :
-        Matrix (Fin 4) (Fin 4) d.1.Closure) r c ^ d.1.characteristic := by
-  rw [primeFrobenius_def]
-  simpa only [pow_one] using SpStd.coe_frobenius_apply 1 d.1.characteristic 1 d.1.Closure g r c
-
-/-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
-its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
-@[simp]
-theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
-    d.primeFrobenius (d.simpleRootSubgroup i u) =
-      d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
-  rw [primeFrobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints, pow_one]
 
 /-- **A point of the ambient group is fixed by the Frobenius exactly when all of its matrix entries
 lie in the field of definition.** Writing `𝔽_q` for `TauCeti.ValidLieTypeIndex.fixedField`, the copy

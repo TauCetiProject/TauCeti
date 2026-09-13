@@ -10,6 +10,8 @@ public import TauCeti.FieldTheory.FunctionField.ConstantField
 public import TauCeti.FieldTheory.FunctionField.Divisor.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Zeros
+-- Proof-only: an intermediate field algebraic over an algebraically closed base is trivial.
+import Mathlib.FieldTheory.IsAlgClosed.Basic
 
 /-!
 # Principal divisors of an algebraic function field
@@ -49,6 +51,10 @@ the places themselves.
 * `TauCeti.Divisor.principal_eq_zero_iff_mem_algebraicClosure`: `div z = 0` exactly when `z` is
   a constant, and `TauCeti.Divisor.principal_eq_zero_iff`: over an exact constant field, exactly
   when `z ∈ kˣ`.
+* `TauCeti.Divisor.exists_units_algebraMap_mul_of_principal_eq`: over an exact constant field,
+  two functions with the same divisor differ by a constant, and
+  `TauCeti.Divisor.exists_units_algebraMap_mul_of_principal_eq_of_isAlgClosed`: likewise over an
+  algebraically closed one.
 * `TauCeti.Divisor.linearlyEquivalent_iff`: two divisors are linearly equivalent exactly when
   their difference is the divisor of a function (Definition 1.4.3).
 * `TauCeti.Divisor.mem_principalSubgroup_iff` and
@@ -75,6 +81,11 @@ Everything in this file is independent of it.
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Section I.4.
+
+## Provenance
+
+`exists_units_algebraMap_mul_of_principal_eq` corresponds to `const_of_projectiveDivisorOf_eq_zero`
+in AINTLIB's `HasseWeil/HasseBound/WeilPairing/Constancy.lean`, which states it for plane curves.
 -/
 
 public section
@@ -275,6 +286,31 @@ theorem zeros_sub_poles (hF : IsFunctionField k F) (z : Fˣ) :
 theorem poles_eq_zeros_inv (hF : IsFunctionField k F) (z : Fˣ) :
     poles hF z = zeros hF z⁻¹ :=
   WeilDivisor.ext fun P => by rw [coeff_poles, coeff_zeros, Units.val_inv_eq_inv_val, P.ord_inv]
+
+/-- **Two functions with the same divisor differ by a constant of the base field**, over an exact
+constant field. -/
+theorem exists_units_algebraMap_mul_of_principal_eq (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {y z : Fˣ}
+    (h : principal hF y = principal hF z) :
+    ∃ c : kˣ, (y : F) = algebraMap k F c * z := by
+  have hdiv : principal hF (y / z) = 0 := by rw [principal_div, h, sub_self]
+  obtain ⟨c₀, hc₀⟩ := (principal_eq_zero_iff hF hex (y / z)).1 hdiv
+  have hc₀0 : c₀ ≠ 0 := by
+    rintro rfl
+    exact (Units.ne_zero (y / z)) (by rw [← hc₀, map_zero])
+  refine ⟨Units.mk0 c₀ hc₀0, ?_⟩
+  rw [Units.val_mk0, hc₀, Units.val_div_eq_div_val, div_mul_cancel₀]
+  exact Units.ne_zero z
+
+/-- **Two functions with the same divisor differ by a constant**, over an algebraically closed
+constant field — which is exact, every element of `F` algebraic over `k` lying in `k`. This is the
+form the divisor construction of the Weil pairing works under. -/
+theorem exists_units_algebraMap_mul_of_principal_eq_of_isAlgClosed [IsAlgClosed k]
+    (hF : IsFunctionField k F) {y z : Fˣ} (h : principal hF y = principal hF z) :
+    ∃ c : kˣ, (y : F) = algebraMap k F c * z :=
+  exists_units_algebraMap_mul_of_principal_eq hF
+    (algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.1
+      (IntermediateField.eq_bot_of_isAlgClosed_of_isAlgebraic (algebraicClosure k F))) h
 
 /-- Zeros and poles never meet: no place is both. -/
 theorem support_zeros_disjoint_poles (hF : IsFunctionField k F) (z : Fˣ) :

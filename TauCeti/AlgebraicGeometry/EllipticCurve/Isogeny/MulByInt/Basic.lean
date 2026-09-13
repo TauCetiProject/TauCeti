@@ -239,9 +239,8 @@ theorem equation_mulByInt [W.IsElliptic] {n : ℤ} (hn : psiFunctionField W n �
     (W⁄W.FunctionField).toAffine.Equation (mulByIntX W n) (mulByIntY W n) := by
   have hns := W.nonsingular_genericX_genericY
   have hsmul : Jacobian.Nonsingular (W⁄W.FunctionField).toAffine.toJacobian
-      (smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n) := by
-    rw [← Jacobian.nonsingularLift_iff, ← zsmul_point_eq_smulEval _ hns n]
-    exact (n • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)).nonsingular
+      (smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n) :=
+    nonsingular_smulEval _ hns n
   have hZ : smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n 2 ≠ 0 := by
     rw [smulEval_genericPoint_Z]; exact hn
   have hJ := (Jacobian.equation_of_Z_ne_zero hZ).mp hsmul.1
@@ -349,11 +348,8 @@ theorem tautologicalPoint_mulByIntPullback [W.IsElliptic] {n : ℤ}
   have hns' : (W⁄W.FunctionField).toAffine.Nonsingular (mulByIntX W n) (mulByIntY W n) :=
     equation_iff_nonsingular.mp (equation_mulByInt W hn)
   have hnsEval : Jacobian.Nonsingular (W⁄W.FunctionField).toAffine.toJacobian
-      (smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n) := by
-    rw [← Jacobian.nonsingularLift_iff,
-      ← zsmul_point_eq_smulEval _ W.nonsingular_genericX_genericY n]
-    exact (n • Jacobian.Point.fromAffine
-      (Affine.Point.some _ _ W.nonsingular_genericX_genericY)).nonsingular
+      (smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n) :=
+    nonsingular_smulEval _ W.nonsingular_genericX_genericY n
   have hpoint : n • Jacobian.Point.fromAffine
         (Affine.Point.some _ _ W.nonsingular_genericX_genericY) =
       (⟨(Jacobian.nonsingularLift_iff _).2 hnsEval⟩ :

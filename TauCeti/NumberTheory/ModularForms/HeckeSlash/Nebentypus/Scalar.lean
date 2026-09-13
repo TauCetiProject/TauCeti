@@ -27,6 +27,9 @@ The factor is `χ(c)`, not `χ(c)⁻¹`: the twisted slash sum is written using 
 representatives in `Δ₀(N)` and weights them by `delta0NebentypusChar`, whose value on the
 scalar representative is its upper-left unit `c`.
 
+That scalar is what `Prime/Recurrence.lean` spends to turn the Hecke ring's prime-power
+recurrence into a recurrence of operators on the character spaces.
+
 ## Main results
 
 * `HeckeRing.GL2.twistedHeckeSlashSumCharEnd_diagCosetGamma0_const`: the scalar double coset

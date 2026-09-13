@@ -11,6 +11,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FunctionField
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MapsInfinity
 import TauCeti.FieldTheory.FunctionField.Place.OfValuationSubring
 import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
+-- Proof-only: `Valuation.IsTrivialOn.comap`, which carries triviality on `F` across restriction
+-- along the field pullback.
+import TauCeti.RingTheory.Valuation.IsTrivialOn
 import TauCeti.RingTheory.Valuation.IntegralOfValuationLeOne
 import TauCeti.RingTheory.Valuation.Polynomial
 import Mathlib.RingTheory.Valuation.Integral
@@ -71,14 +74,6 @@ open scoped Polynomial.Bivariate
 namespace Isogeny
 
 variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F} (φ : Isogeny W₁ W₂)
-
-/-- The restriction of the place at infinity along an isogeny is trivial on the base field, the
-pullback being an `F`-algebra map. -/
-instance : ((infinityPlace W₁).comap φ.fieldPullback.toRingHom).IsTrivialOn F where
-  eq_one c hc := by
-    rw [Valuation.comap_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      AlgHom.commutes]
-    exact Valuation.IsTrivialOn.eq_one c hc
 
 /-- **The restricted place, evaluated on an affine function of the target**: it is the value at
 infinity of the pullback of that function. -/

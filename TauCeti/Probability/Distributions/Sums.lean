@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Exponential
-public import TauCeti.Probability.Distributions.Gamma.Basic
+public import TauCeti.Probability.Distributions.Gamma.Sum
 public import TauCeti.Probability.Distributions.Geometric
 public import TauCeti.Probability.Distributions.Laplace
 public import TauCeti.Probability.Distributions.NegativeBinomial.Basic
@@ -153,30 +153,10 @@ theorem iIndepFun.hasLaw_sum_expMeasure {ι : Type*} [Fintype ι] [Nonempty ι]
     {X : ι → Ω → ℝ} {r : ℝ} (hindep : iIndepFun X P) (hr : 0 < r)
     (hlaw : ∀ i, HasLaw (X i) (expMeasure r) P) :
     HasLaw (fun ω => ∑ i, X i ω) (gammaMeasure (Fintype.card ι) r) P := by
-  classical
-  let _ : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  have hsum (s : Finset ι) (hs : s.Nonempty) :
-      HasLaw (∑ i ∈ s, X i) (gammaMeasure (s.card : ℝ) r) P := by
-    induction s using Finset.induction_on with
-    | empty => simp at hs
-    | @insert i s hi ih =>
-        rcases s.eq_empty_or_nonempty with rfl | hs'
-        · simpa [expMeasure] using hlaw i
-        · have hcard : (0 : ℝ) < s.card := by exact_mod_cast hs'.card_pos
-          let _ : IsProbabilityMeasure (expMeasure r) := isProbabilityMeasure_expMeasure hr
-          let _ : IsProbabilityMeasure (gammaMeasure (s.card : ℝ) r) :=
-            isProbabilityMeasure_gammaMeasure hcard hr
-          have hadd :=
-            (hindep.indepFun_finsetSum_of_notMem₀
-              (fun j => (hlaw j).aemeasurable) hi).symm.hasLaw_add (hlaw i) (ih hs')
-          rw [expMeasure, gammaMeasure_conv_gammaMeasure zero_lt_one hcard hr] at hadd
-          simpa only [Finset.sum_insert hi, Finset.card_insert_of_notMem hi, Nat.cast_add,
-            Nat.cast_one, add_comm] using hadd
-  have hX : (fun ω => ∑ i, X i ω) = ∑ i, X i := by
-    funext ω
-    exact (Fintype.sum_apply ω X).symm
-  rw [hX]
-  simpa only [Finset.card_univ] using hsum Finset.univ Finset.univ_nonempty
+  have h := iIndepFun.hasLaw_sum_gammaMeasure (a := fun _ => (1 : ℝ)) (s := Finset.univ)
+    hindep hr Finset.univ_nonempty (fun i _ => one_pos)
+    (fun i _ => by simpa only [expMeasure] using hlaw i)
+  simpa only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one] using h
 
 end Probability
 
