@@ -152,13 +152,13 @@ lemma isClosedImmersion_specialFiberι (R : Type u) [CommRing R] [IsLocalRing R]
 section GenericPoint
 
 variable (R : CommRingCat.{u}) (K : Type u) [IsDomain R]
-variable [Field K] [Algebra R K] [IsFractionRing R K]
+variable [CommRing K] [Algebra R K] [IsFractionRing R K]
 
 /-- A chosen fraction ring of a domain is isomorphic to the residue field at its generic prime.
 
 The generic prime of `Spec R` is represented here by the zero ideal. Mathlib's
 `genericPoint_eq_bot_of_affine` identifies this point with `genericPoint (Spec R)`. -/
-noncomputable def fractionRingEquivResidueFieldGenericPrime :
+private noncomputable def fractionRingEquivResidueFieldGenericPrime :
     K ≃+* (Spec R).residueField (⟨⊥, inferInstance⟩ : Spec R) :=
   (IsFractionRing.ringEquivOfRingEquiv (K := K)
       (L := (⊥ : Ideal R).ResidueField) (.refl R)).trans
@@ -167,16 +167,18 @@ noncomputable def fractionRingEquivResidueFieldGenericPrime :
 
 /-- The fraction-ring equivalence at the generic prime respects the maps from the domain. -/
 @[simp]
-lemma fractionRingEquivResidueFieldGenericPrime_algebraMap (r : R) :
+private lemma fractionRingEquivResidueFieldGenericPrime_algebraMap (r : R) :
     fractionRingEquivResidueFieldGenericPrime R K (algebraMap R K r) =
       (Scheme.Spec.residueFieldIso R (⟨⊥, inferInstance⟩ : Spec R)).inv
         (algebraMap R (⊥ : Ideal R).ResidueField r) := by
-  simp [fractionRingEquivResidueFieldGenericPrime]
-  rfl
+  rw [fractionRingEquivResidueFieldGenericPrime, RingEquiv.trans_apply,
+    IsFractionRing.ringEquivOfRingEquiv_algebraMap, RingEquiv.refl_apply,
+    RingEquiv.symm_apply_eq, Iso.commRingCatIsoToRingEquiv, RingEquiv.ofRingHom_apply,
+    ← CommRingCat.comp_apply, Iso.inv_hom_id, CommRingCat.id_apply]
 
 /-- The spectrum of a chosen fraction ring is isomorphic to the spectrum of the residue field at
 the generic prime. -/
-noncomputable def specFractionRingIsoResidueFieldGenericPrime :
+private noncomputable def specFractionRingIsoResidueFieldGenericPrime :
     Spec (.of K) ≅
       Spec (.of ((Spec R).residueField (⟨⊥, inferInstance⟩ : Spec R))) :=
   Scheme.Spec.mapIso
@@ -185,7 +187,7 @@ noncomputable def specFractionRingIsoResidueFieldGenericPrime :
 /-- The spectrum isomorphism from the fraction ring to the generic residue field commutes with
 the two canonical maps to `Spec R`. -/
 @[reassoc (attr := simp)]
-lemma specFractionRingIsoResidueFieldGenericPrime_hom_fromSpecResidueField :
+private lemma specFractionRingIsoResidueFieldGenericPrime_hom_fromSpecResidueField :
     (specFractionRingIsoResidueFieldGenericPrime R K).hom ≫
         (Spec R).fromSpecResidueField (⟨⊥, inferInstance⟩ : Spec R) =
       Spec.map (CommRingCat.ofHom (algebraMap R K)) := by
@@ -226,75 +228,6 @@ lemma specFractionRingIsoResidueFieldGenericPoint_hom_fromSpecResidueField :
     (specFractionRingIsoResidueFieldGenericPrime_hom_fromSpecResidueField R K)
 
 variable {R K} {X : Scheme.{u}} (toBase : X ⟶ Spec R)
-
-/-- After identifying the fraction ring with the residue field at the generic prime, the square
-defining `genericFiber` is the square defining Mathlib's `Scheme.Hom.fiber`. -/
-lemma isPullback_genericFiber_genericPrime :
-    IsPullback (genericFiberι R K toBase)
-      ((genericFiber R K toBase).hom ≫
-        (specFractionRingIsoResidueFieldGenericPrime R K).hom)
-      toBase ((Spec R).fromSpecResidueField (⟨⊥, inferInstance⟩ : Spec R)) := by
-  refine (isPullback_genericFiber R K toBase).of_iso (Iso.refl _) (Iso.refl _)
-    (specFractionRingIsoResidueFieldGenericPrime R K) (Iso.refl _) ?_ ?_ ?_ ?_
-  · simp
-  · rfl
-  · simp
-  · simp
-
-/-- The scalar-extension generic fibre is isomorphic to the scheme-theoretic fibre at the
-generic prime. -/
-noncomputable def genericFiberIsoFiberGenericPrime :
-    (genericFiber R K toBase).left ≅
-      toBase.fiber (⟨⊥, inferInstance⟩ : Spec R) :=
-  (isPullback_genericFiber_genericPrime toBase).isoIsPullback X
-    (Spec (.of ((Spec R).residueField (⟨⊥, inferInstance⟩ : Spec R))))
-    (IsPullback.of_hasPullback toBase
-      ((Spec R).fromSpecResidueField (⟨⊥, inferInstance⟩ : Spec R)))
-
-/-- The generic-prime fibre comparison commutes with the projections to the total space. -/
-@[reassoc (attr := simp)]
-lemma genericFiberIsoFiberGenericPrime_hom_fiberι :
-    (genericFiberIsoFiberGenericPrime toBase).hom ≫
-        toBase.fiberι (⟨⊥, inferInstance⟩ : Spec R) =
-      genericFiberι R K toBase :=
-  (isPullback_genericFiber_genericPrime toBase).isoIsPullback_hom_fst _ _
-    (IsPullback.of_hasPullback toBase
-      ((Spec R).fromSpecResidueField (⟨⊥, inferInstance⟩ : Spec R)))
-
-/-- The generic-prime fibre comparison commutes with the projections to the residue-field
-spectrum. -/
-@[reassoc (attr := simp)]
-lemma genericFiberIsoFiberGenericPrime_hom_fiberToSpecResidueField :
-    (genericFiberIsoFiberGenericPrime toBase).hom ≫
-        toBase.fiberToSpecResidueField (⟨⊥, inferInstance⟩ : Spec R) =
-      (genericFiber R K toBase).hom ≫
-        (specFractionRingIsoResidueFieldGenericPrime R K).hom :=
-  (isPullback_genericFiber_genericPrime toBase).isoIsPullback_hom_snd _ _
-    (IsPullback.of_hasPullback toBase
-      ((Spec R).fromSpecResidueField (⟨⊥, inferInstance⟩ : Spec R)))
-
-/-- The inverse generic-prime fibre comparison commutes with the projections to the total
-space. -/
-@[reassoc (attr := simp)]
-lemma genericFiberIsoFiberGenericPrime_inv_genericFiberι :
-    (genericFiberIsoFiberGenericPrime toBase).inv ≫ genericFiberι R K toBase =
-      toBase.fiberι (⟨⊥, inferInstance⟩ : Spec R) :=
-  (isPullback_genericFiber_genericPrime toBase).isoIsPullback_inv_fst _ _
-    (IsPullback.of_hasPullback toBase
-      ((Spec R).fromSpecResidueField (⟨⊥, inferInstance⟩ : Spec R)))
-
-/-- The inverse generic-prime fibre comparison commutes with the projections to the
-residue-field spectrum. -/
-@[reassoc (attr := simp)]
-lemma genericFiberIsoFiberGenericPrime_inv_hom :
-    (genericFiberIsoFiberGenericPrime toBase).inv ≫
-        pullback.snd toBase
-          (Spec.map (CommRingCat.ofHom (algebraMap R K))) ≫
-        (specFractionRingIsoResidueFieldGenericPrime R K).hom =
-      toBase.fiberToSpecResidueField (⟨⊥, inferInstance⟩ : Spec R) :=
-  (isPullback_genericFiber_genericPrime toBase).isoIsPullback_inv_snd _ _
-    (IsPullback.of_hasPullback toBase
-      ((Spec R).fromSpecResidueField (⟨⊥, inferInstance⟩ : Spec R)))
 
 /-- After identifying the fraction ring with the residue field at the generic point, the square
 defining `genericFiber` is the square defining Mathlib's `Scheme.Hom.fiber`. -/
