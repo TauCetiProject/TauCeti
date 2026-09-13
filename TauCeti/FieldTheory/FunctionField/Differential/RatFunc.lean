@@ -188,15 +188,17 @@ theorem weilDifferentialDivisor_ratFuncWeilDifferential (k : Type*) [Field k] :
 /-- **Uniqueness in Stichtenoth, Proposition 1.7.4**: a Weil differential of `k(x)` with divisor
 `-2 · P_∞` whose local component at `P_∞` sends `x⁻¹` to `-1` is `η`.
 
-Any such differential is a function multiple `c · η`; the two divisors agree, so `div c = 0` and
-`c` is a constant because `k` is the exact constant field of `k(x)`; the normalization then makes
-that constant `1`. -/
+This is what makes the normalization meaningful: the two conditions of
+`TauCeti.ratFuncWeilDifferential` pin down a single differential. -/
 theorem eq_ratFuncWeilDifferential {ω : Module.Dual k ↥(repartitionSpace k (RatFunc k))}
     (hmem : ω ∈ weilDifferentialSpace k (RatFunc k))
     (hgreat : IsGreatest {D : Divisor k (RatFunc k) | ω ∈ weilDifferentialFiltration D}
       ((-2 : ℤ) • WeilDivisor.ofPoint (Place.infty k)))
     (hnorm : repartitionDualComponent ω (Place.infty k) (RatFunc.X : RatFunc k)⁻¹ = -1) :
     ω = ratFuncWeilDifferential k := by
+  -- Any such differential is a function multiple `c · η`; the two divisors agree, so `div c = 0`
+  -- and `c` is a constant because `k` is the exact constant field of `k(x)`; the normalization
+  -- then makes that constant `1`.
   obtain ⟨c, hc⟩ := exists_repartitionDualMul_eq (IsFunctionField.ratFunc k)
     isIntegrallyClosedIn_ratFunc (ratFuncWeilDifferential_mem k)
     (ratFuncWeilDifferential_ne_zero k) hmem
@@ -248,14 +250,13 @@ theorem repartitionDualComponent_ratFuncWeilDifferential_of_ne_infty {P : Place 
 
 /-- **A polynomial has no residue at infinity**: `η_{P_∞} (p) = 0` for every `p ∈ k[X]`.
 
-This is the abstract residue theorem `∑_P η_P (p) = 0` of Stichtenoth, (1.45): a polynomial is
-regular at every finite place, so all the other summands vanish by
-`TauCeti.repartitionDualComponent_ratFuncWeilDifferential_of_ne_infty`.  Classically it says that
-`p dx` is a regular differential on the affine line, so its only residue — the one at infinity —
-must vanish. -/
+Classically this says that `p dx` is a regular differential on the affine line, so its only
+residue — the one at infinity — must vanish. -/
 theorem repartitionDualComponent_ratFuncWeilDifferential_algebraMap (p : k[X]) :
     repartitionDualComponent (ratFuncWeilDifferential k) (Place.infty k)
       (algebraMap k[X] (RatFunc k) p) = 0 := by
+  -- The abstract residue theorem `∑_P η_P (p) = 0` of Stichtenoth, (1.45): a polynomial is
+  -- regular at every finite place, so all the other summands vanish.
   have hzero : ∀ P : Place k (RatFunc k), P ≠ Place.infty k →
       repartitionDualComponent (ratFuncWeilDifferential k) P
         (algebraMap k[X] (RatFunc k) p) = 0 := fun P hP ↦
@@ -267,13 +268,12 @@ theorem repartitionDualComponent_ratFuncWeilDifferential_algebraMap (p : k[X]) :
   rwa [finsum_eq_single _ (Place.infty k) hzero] at hsum
 
 /-- **The local components of `η` on the powers of `x`** (Stichtenoth, Proposition 1.7.4): at the
-place at infinity, `η_{P_∞} (xⁿ) = -1` for `n = -1` and `0` otherwise — the residues of `xⁿ dx`.
-
-For `n ≤ -2` the bound `(η) = -2 · P_∞` applies, for `n = -1` this is the normalization, and for
-`n ≥ 0` the power is a polynomial, which has no residue at infinity. -/
+place at infinity, `η_{P_∞} (xⁿ) = -1` for `n = -1` and `0` otherwise — the residues of `xⁿ dx`. -/
 theorem repartitionDualComponent_ratFuncWeilDifferential_zpow (k : Type*) [Field k] (n : ℤ) :
     repartitionDualComponent (ratFuncWeilDifferential k) (Place.infty k)
       ((RatFunc.X : RatFunc k) ^ n) = if n = -1 then -1 else 0 := by
+  -- For `n ≤ -2` the bound `(η) = -2 · P_∞` applies, for `n = -1` this is the normalization, and
+  -- for `n ≥ 0` the power is a polynomial, which has no residue at infinity.
   split_ifs with hn
   · rw [hn, zpow_neg_one, repartitionDualComponent_ratFuncWeilDifferential_inv_X]
   rcases lt_or_ge n 0 with hneg | hnonneg

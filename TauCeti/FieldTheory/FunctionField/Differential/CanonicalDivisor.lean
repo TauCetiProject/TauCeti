@@ -432,14 +432,14 @@ theorem isRiemannRochDivisor_of_divisorClass_eq_canonicalClass (hF : IsFunctionF
 
 /-- **Every divisor of the canonical class is the divisor of a Weil differential**: the canonical
 class does not merely contain the divisors of nonzero Weil differentials up to linear equivalence,
-every one of its representatives is such a divisor on the nose.  Multiplying a differential by a
-function `z` with `div z = D - (ω)` moves its divisor onto `D`, by the transformation law
-`TauCeti.weilDifferentialDivisor_repartitionDualMul`. -/
+every one of its representatives is such a divisor on the nose. -/
 theorem exists_isGreatest_of_divisorClass_eq_canonicalClass (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {D : Divisor k F}
     (hD : (Place.orderSystem hF).divisorClass D = canonicalClass hF hex) :
     ∃ ω ∈ weilDifferentialSpace k F, ω ≠ 0 ∧
       IsGreatest {E : Divisor k F | ω ∈ weilDifferentialFiltration E} D := by
+  -- Multiplying a differential by a function `z` with `div z = D - (ω)` moves its divisor onto
+  -- `D`, by the transformation law `weilDifferentialDivisor_repartitionDualMul`.
   obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
   have hclass : (Place.orderSystem hF).divisorClass
       (D - weilDifferentialDivisor hF hex hωmem hω0) = 0 := by

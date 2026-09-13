@@ -107,15 +107,17 @@ theorem le_weilDifferentialOrder_iff (hF : IsFunctionField k F)
 uniformizer**: with `r = v_P (ω)` and `t` a uniformizer at `P`, the local component `ω_P` does not
 kill `t ^ (-r - 1)`.
 
-Some function `z` with `v_P z ≤ exp (r + 1)` escapes `ω_P`, since `r + 1` exceeds the order.  As
-the residue field of `P` is `k`, the function `z` differs from a constant multiple of
-`t ^ (-r - 1)` by a function `ω_P` does kill, so that multiple escapes `ω_P` too, and hence so
-does `t ^ (-r - 1)` itself. -/
+So at a rational place a single power of a uniformizer already detects the order, which is what
+lets a normalization prescribe one value of one local component. -/
 theorem repartitionDualComponent_uniformizer_zpow_ne_zero (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
     (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) {P : Place k F} (hdeg : P.degree = 1)
     {t : F} (ht : P.valuation.IsUniformizer t) :
     repartitionDualComponent ω P (t ^ (-weilDifferentialOrder hF hex hmem hω P - 1)) ≠ 0 := by
+  -- Some function `z` with `v_P z ≤ exp (r + 1)` escapes `ω_P`, since `r + 1` exceeds the order.
+  -- As the residue field of `P` is `k`, the function `z` differs from a constant multiple of
+  -- `t ^ (-r - 1)` by a function `ω_P` does kill, so that multiple escapes `ω_P` too, and hence
+  -- so does `t ^ (-r - 1)` itself.
   set r := weilDifferentialOrder hF hex hmem hω P with hr
   have hordt : P.ord t = 1 := (P.isUniformizer_iff_ord_eq_one).mp ht
   have ht0 : t ≠ 0 := by
