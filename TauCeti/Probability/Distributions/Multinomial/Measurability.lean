@@ -12,18 +12,17 @@ import Mathlib.MeasureTheory.Measure.GiryMonad
 /-!
 # Parameter measurability of the multinomial distribution
 
-The multinomial law is a measurable function of its parameters: the sample size `n : ℕ` and the
+The multinomial law is a measurable function of its parameters, the sample size `n : ℕ` and the
 probability vector `p : StdSimplex ℝ≥0 ι`, the simplex carrying the σ-algebra induced by its
-weight vector. This is the parameter-measurability requirement every family must provide, and it
-is what lets the multinomial law be used with random parameters, as a kernel.
+weight vector. This is what lets the multinomial law be used with random parameters: it is a
+measurable map into the Giry space, hence a kernel from the parameter space.
 
-The proof is elementary. Each multinomial weight is a polynomial in the weight vector, hence
-measurable; the law is a finite sum of Dirac masses scaled by those weights, hence measurable into
-the Giry space for each sample size; and the sample size ranges over a countable type.
+## Main results
 
-## Main result
-
-* `TauCeti.Probability.measurable_multinomialMeasure`
+* `TauCeti.Probability.measurable_multinomialWeight` — each multinomial weight is a measurable
+  function of the weight vector;
+* `TauCeti.Probability.measurable_multinomialMeasure` — the law is a measurable function of the
+  sample size and the probability vector jointly.
 -/
 
 public section
@@ -61,6 +60,7 @@ private theorem measurable_sum_multinomialWeight_smul_dirac (n : ℕ) :
 open Classical in
 /-- **Parameter measurability of the multinomial law**: it is a measurable function of the sample
 size and the probability vector jointly. -/
+@[fun_prop]
 theorem measurable_multinomialMeasure :
     Measurable fun q : ℕ × StdSimplex ℝ≥0 ι => multinomialMeasure q.1 q.2 := by
   have h : (fun q : StdSimplex ℝ≥0 ι × ℕ => multinomialMeasure q.2 q.1)
