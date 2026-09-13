@@ -109,7 +109,52 @@ So the construction here is unconditional where AINTLIB's rests on an assumed cl
     Nullstellensatz* name used above.
 -/
 
-namespace TauCeti.Huber
+namespace TauCeti
+
+/-- Two completion ring homomorphisms are heterogeneously equal when their source and target
+uniformities agree and the first map satisfies the characterization that uniquely determines the
+second. -/
+theorem completionRingHom_heq_of_uniformSpace_eq
+    {A S S' : Type*} [CommRing A] [CommRing S] [CommRing S']
+    {u₁ u₂ : UniformSpace S} (hu : u₂ = u₁) {v₁ v₂ : UniformSpace S'} (hv : v₂ = v₁)
+    (g₁ : @IsUniformAddGroup S u₁ _) (g₂ : @IsUniformAddGroup S u₂ _)
+    (t₁ : @IsTopologicalRing S u₁.toTopologicalSpace _)
+    (t₂ : @IsTopologicalRing S u₂.toTopologicalSpace _)
+    (g₁' : @IsUniformAddGroup S' v₁ _) (g₂' : @IsUniformAddGroup S' v₂ _)
+    (t₁' : @IsTopologicalRing S' v₁.toTopologicalSpace _)
+    (t₂' : @IsTopologicalRing S' v₂.toTopologicalSpace _) :
+    let B₁ := @UniformSpace.Completion S u₁
+    let B₂ := @UniformSpace.Completion S u₂
+    let C₁ := @UniformSpace.Completion S' v₁
+    let C₂ := @UniformSpace.Completion S' v₂
+    let b₁ := @UniformSpace.Completion.commRing S _ u₁ g₁ t₁
+    let b₂ := @UniformSpace.Completion.commRing S _ u₂ g₂ t₂
+    let c₁ := @UniformSpace.Completion.commRing S' _ v₁ g₁' t₁'
+    let c₂ := @UniformSpace.Completion.commRing S' _ v₂ g₂' t₂'
+    ∀ (f₂ : @RingHom B₂ C₂ b₂.toNonAssocSemiring c₂.toNonAssocSemiring)
+      (f₁ : @RingHom B₁ C₁ b₁.toNonAssocSemiring c₁.toNonAssocSemiring)
+      (a₂ : @RingHom A B₂ _ b₂.toNonAssocSemiring)
+      (a₁ : @RingHom A B₁ _ b₁.toNonAssocSemiring)
+      (d₂ : @RingHom A C₂ _ c₂.toNonAssocSemiring)
+      (d₁ : @RingHom A C₁ _ c₁.toNonAssocSemiring),
+      @Continuous B₂ C₂ (@UniformSpace.Completion.uniformSpace S u₂).toTopologicalSpace
+        (@UniformSpace.Completion.uniformSpace S' v₂).toTopologicalSpace f₂ →
+      HEq a₂ a₁ → HEq d₂ d₁ → f₂.comp a₂ = d₂ →
+      (∀ f : @RingHom B₁ C₁ b₁.toNonAssocSemiring c₁.toNonAssocSemiring,
+        @Continuous B₁ C₁
+          (@UniformSpace.Completion.uniformSpace S u₁).toTopologicalSpace
+          (@UniformSpace.Completion.uniformSpace S' v₁).toTopologicalSpace f →
+        f.comp a₁ = d₁ → f = f₁) →
+      HEq f₂ f₁ := by
+  subst hu
+  subst hv
+  dsimp only
+  intro f₂ f₁ a₂ a₁ d₂ d₁ hf₂ ha hd hcomp₂ huniq
+  apply heq_of_eq
+  apply huniq f₂ hf₂
+  rw [← eq_of_heq ha, hcomp₂, eq_of_heq hd]
+
+namespace Huber
 
 open TauCeti.Localization
 
@@ -430,9 +475,7 @@ presentations do likewise inside `S'`. Then the corresponding numerator-enlargem
 maps are heterogeneously equal.
 
 The conclusion is `HEq` because changing a presentation changes the uniformity used to form each
-completion. The equalities of candidate rings identify those uniformities by
-`locUniformSpace_congr`; after that identification, continuity and compatibility with the
-structure maps characterize both restriction maps. -/
+completion. -/
 theorem restrictionRingHomOfSubset_heq
     (P : PairOfDefinition A)
     (T₁ T₁' : Finset A) (s₁ : A) (S : Type*) [CommRing S] [Algebra A S]
@@ -446,48 +489,7 @@ theorem restrictionRingHomOfSubset_heq
     (hS' : locSubring P T₂' s₂ S' = locSubring P T₁' s₁ S') :
     HEq (restrictionRingHomOfSubset P T₂ s₂ S hden₂ T₂' S' hden₂' hT₂T₂')
       (restrictionRingHomOfSubset P T₁ s₁ S hden₁ T₁' S' hden₁' hT₁T₁') := by
-  -- Abstract the two source and target uniformities simultaneously. This avoids rewriting
-  -- dependent `IsUniformAddGroup` and `IsTopologicalRing` arguments one at a time.
-  have htransport {u₁ u₂ : UniformSpace S} (hu : u₂ = u₁)
-      {v₁ v₂ : UniformSpace S'} (hv : v₂ = v₁)
-      (g₁ : @IsUniformAddGroup S u₁ _) (g₂ : @IsUniformAddGroup S u₂ _)
-      (t₁ : @IsTopologicalRing S u₁.toTopologicalSpace _)
-      (t₂ : @IsTopologicalRing S u₂.toTopologicalSpace _)
-      (g₁' : @IsUniformAddGroup S' v₁ _) (g₂' : @IsUniformAddGroup S' v₂ _)
-      (t₁' : @IsTopologicalRing S' v₁.toTopologicalSpace _)
-      (t₂' : @IsTopologicalRing S' v₂.toTopologicalSpace _) :
-      let B₁ := @UniformSpace.Completion S u₁
-      let B₂ := @UniformSpace.Completion S u₂
-      let C₁ := @UniformSpace.Completion S' v₁
-      let C₂ := @UniformSpace.Completion S' v₂
-      let b₁ := @UniformSpace.Completion.commRing S _ u₁ g₁ t₁
-      let b₂ := @UniformSpace.Completion.commRing S _ u₂ g₂ t₂
-      let c₁ := @UniformSpace.Completion.commRing S' _ v₁ g₁' t₁'
-      let c₂ := @UniformSpace.Completion.commRing S' _ v₂ g₂' t₂'
-      ∀ (f₂ : @RingHom B₂ C₂ b₂.toNonAssocSemiring c₂.toNonAssocSemiring)
-        (f₁ : @RingHom B₁ C₁ b₁.toNonAssocSemiring c₁.toNonAssocSemiring)
-        (a₂ : @RingHom A B₂ _ b₂.toNonAssocSemiring)
-        (a₁ : @RingHom A B₁ _ b₁.toNonAssocSemiring)
-        (d₂ : @RingHom A C₂ _ c₂.toNonAssocSemiring)
-        (d₁ : @RingHom A C₁ _ c₁.toNonAssocSemiring),
-        @Continuous B₂ C₂ (@UniformSpace.Completion.uniformSpace S u₂).toTopologicalSpace
-          (@UniformSpace.Completion.uniformSpace S' v₂).toTopologicalSpace f₂ →
-        @Continuous B₁ C₁ (@UniformSpace.Completion.uniformSpace S u₁).toTopologicalSpace
-          (@UniformSpace.Completion.uniformSpace S' v₁).toTopologicalSpace f₁ →
-        HEq a₂ a₁ → HEq d₂ d₁ → f₂.comp a₂ = d₂ → f₁.comp a₁ = d₁ →
-        (∀ f : @RingHom B₁ C₁ b₁.toNonAssocSemiring c₁.toNonAssocSemiring,
-          @Continuous B₁ C₁
-            (@UniformSpace.Completion.uniformSpace S u₁).toTopologicalSpace
-            (@UniformSpace.Completion.uniformSpace S' v₁).toTopologicalSpace f →
-          f.comp a₁ = d₁ → f = f₁) → HEq f₂ f₁ := by
-    subst hu
-    subst hv
-    dsimp only
-    intro f₂ f₁ a₂ a₁ d₂ d₁ hf₂ _ ha hd hcomp₂ _ huniq
-    apply heq_of_eq
-    apply huniq f₂ hf₂
-    rw [← eq_of_heq ha, hcomp₂, eq_of_heq hd]
-  exact htransport
+  exact completionRingHom_heq_of_uniformSpace_eq
     (locUniformSpace_congr P T₁ T₂ s₁ s₂ S hden₁ hden₂ hS)
     (locUniformSpace_congr P T₁' T₂' s₁ s₂ S' hden₁' hden₂' hS')
     (isUniformAddGroup_locUniformSpace P T₁ s₁ S hden₁)
@@ -503,13 +505,10 @@ theorem restrictionRingHomOfSubset_heq
     (toCompletionLoc P T₂ s₂ S hden₂) (toCompletionLoc P T₁ s₁ S hden₁)
     (toCompletionLoc P T₂' s₂ S' hden₂') (toCompletionLoc P T₁' s₁ S' hden₁')
     (continuous_restrictionRingHomOfSubset P T₂ s₂ S hden₂ T₂' S' hden₂' hT₂T₂')
-    (continuous_restrictionRingHomOfSubset P T₁ s₁ S hden₁ T₁' S' hden₁' hT₁T₁')
     (toCompletionLoc_heq P T₁ T₂ s₁ s₂ S hden₁ hden₂ hS)
     (toCompletionLoc_heq P T₁' T₂' s₁ s₂ S' hden₁' hden₂' hS')
     (restrictionRingHomOfSubset_comp_toCompletionLoc P T₂ s₂ S hden₂ T₂' S'
       hden₂' hT₂T₂')
-    (restrictionRingHomOfSubset_comp_toCompletionLoc P T₁ s₁ S hden₁ T₁' S'
-      hden₁' hT₁T₁')
     (eq_restrictionRingHomOfSubset P T₁ s₁ S hden₁ T₁' S' hden₁' hT₁T₁')
 
 /-- **The restriction map carries `t/s` to `t/s`**, for every `t`. This is the fact the Laurent

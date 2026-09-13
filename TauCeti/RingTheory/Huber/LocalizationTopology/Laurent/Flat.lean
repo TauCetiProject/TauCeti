@@ -105,7 +105,38 @@ where Lemma 8.31 needs it too.
 -/
 public section
 
-namespace TauCeti.Huber
+namespace TauCeti
+
+/-- Flatness passes across a heterogeneous equality between ring homomorphisms of completions
+whose source and target uniformities agree. -/
+theorem ringHom_flat_of_completion_heq
+    {S S' : Type*} [CommRing S] [CommRing S']
+    {u₁ u₂ : UniformSpace S} (hu : u₂ = u₁) {v₁ v₂ : UniformSpace S'} (hv : v₂ = v₁)
+    (g₁ : @IsUniformAddGroup S u₁ _) (g₂ : @IsUniformAddGroup S u₂ _)
+    (t₁ : @IsTopologicalRing S u₁.toTopologicalSpace _)
+    (t₂ : @IsTopologicalRing S u₂.toTopologicalSpace _)
+    (g₁' : @IsUniformAddGroup S' v₁ _) (g₂' : @IsUniformAddGroup S' v₂ _)
+    (t₁' : @IsTopologicalRing S' v₁.toTopologicalSpace _)
+    (t₂' : @IsTopologicalRing S' v₂.toTopologicalSpace _) :
+    let R₁ := @UniformSpace.Completion S u₁
+    let R₂ := @UniformSpace.Completion S u₂
+    let B₁ := @UniformSpace.Completion S' v₁
+    let B₂ := @UniformSpace.Completion S' v₂
+    let r₁ := @UniformSpace.Completion.commRing S _ u₁ g₁ t₁
+    let r₂ := @UniformSpace.Completion.commRing S _ u₂ g₂ t₂
+    let b₁ := @UniformSpace.Completion.commRing S' _ v₁ g₁' t₁'
+    let b₂ := @UniformSpace.Completion.commRing S' _ v₂ g₂' t₂'
+    ∀ (f₂ : @RingHom R₂ B₂ r₂.toNonAssocSemiring b₂.toNonAssocSemiring)
+      (f₁ : @RingHom R₁ B₁ r₁.toNonAssocSemiring b₁.toNonAssocSemiring),
+      HEq f₂ f₁ → @RingHom.Flat R₂ B₂ r₂ b₂ f₂ →
+        @RingHom.Flat R₁ B₁ r₁ b₁ f₁ := by
+  subst hu
+  subst hv
+  dsimp only
+  intro f₂ f₁ hf hflat
+  rwa [eq_of_heq hf] at hflat
+
+namespace Huber
 
 open TauCeti.Localization
 
@@ -553,12 +584,8 @@ private theorem flat_restrictionRingHomOfSubset_of_isTopologicallyNilpotent_of_s
 `A⟨T/s⟩ → A⟨T'/s⟩` attached to a numerator enlargement is flat when `T` together with `s`
 generates the unit ideal.
 
-No topological-nilpotence condition is imposed on `s`. For a proper enlargement, a power of a
-pseudouniformiser rescales `s` to a topologically nilpotent denominator. Multiplying every
-numerator by the same unit preserves the two localisation topologies and the restriction map, so
-the topologically nilpotent case applies to the rescaled presentations.
-
-The three hypotheses are conditional on `T ⊂ T'`. Thus the identity enlargement remains
+No topological-nilpotence condition is imposed on `s`. The three hypotheses are conditional on
+`T ⊂ T'`. Thus the identity enlargement remains
 hypothesis-free, while in the intended application to rational subsets of a strongly noetherian
 Tate ring they are supplied by the ambient instances and by
 `TauCeti.Huber.IsTateRing.isOpen_iff_eq_top`. -/
@@ -616,34 +643,7 @@ theorem flat_restrictionRingHomOfSubset_of_span_eq_top [IsHuberRing A]
     have htarget := locSubring_eq_of_coe_eq_image_mul_left P T' U' u s S' hU'
     have hmap := restrictionRingHomOfSubset_heq P T T' s S hden S' hden' hTT'
       U U' (u * s) hdenU hdenU' hUU' hsource htarget
-    -- Flatness is a proposition about a map whose source and target mention both uniformities.
-    -- Abstracting them together lets the heterogeneous map equality transport the proposition.
-    have htransport {u₁ u₂ : UniformSpace S} (hus : u₂ = u₁)
-        {v₁ v₂ : UniformSpace S'} (hus' : v₂ = v₁)
-        (g₁ : @IsUniformAddGroup S u₁ _) (g₂ : @IsUniformAddGroup S u₂ _)
-        (t₁ : @IsTopologicalRing S u₁.toTopologicalSpace _)
-        (t₂ : @IsTopologicalRing S u₂.toTopologicalSpace _)
-        (g₁' : @IsUniformAddGroup S' v₁ _) (g₂' : @IsUniformAddGroup S' v₂ _)
-        (t₁' : @IsTopologicalRing S' v₁.toTopologicalSpace _)
-        (t₂' : @IsTopologicalRing S' v₂.toTopologicalSpace _) :
-        let R₁ := @UniformSpace.Completion S u₁
-        let R₂ := @UniformSpace.Completion S u₂
-        let B₁ := @UniformSpace.Completion S' v₁
-        let B₂ := @UniformSpace.Completion S' v₂
-        let r₁ := @UniformSpace.Completion.commRing S _ u₁ g₁ t₁
-        let r₂ := @UniformSpace.Completion.commRing S _ u₂ g₂ t₂
-        let b₁ := @UniformSpace.Completion.commRing S' _ v₁ g₁' t₁'
-        let b₂ := @UniformSpace.Completion.commRing S' _ v₂ g₂' t₂'
-        ∀ (f₂ : @RingHom R₂ B₂ r₂.toNonAssocSemiring b₂.toNonAssocSemiring)
-          (f₁ : @RingHom R₁ B₁ r₁.toNonAssocSemiring b₁.toNonAssocSemiring),
-          HEq f₂ f₁ → @RingHom.Flat R₂ B₂ r₂ b₂ f₂ →
-            @RingHom.Flat R₁ B₁ r₁ b₁ f₁ := by
-      subst hus
-      subst hus'
-      dsimp only
-      intro f₂ f₁ hf hflat
-      rwa [eq_of_heq hf] at hflat
-    exact htransport
+    exact ringHom_flat_of_completion_heq
       (locUniformSpace_congr P T U s (u * s) S hden hdenU hsource)
       (locUniformSpace_congr P T' U' s (u * s) S' hden' hdenU' htarget)
       (isUniformAddGroup_locUniformSpace P T s S hden)
