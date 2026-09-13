@@ -13,9 +13,9 @@ import Mathlib.MeasureTheory.Integral.Prod
 # McDiarmid's bounded-differences inequality
 
 This file proves the moment-generating-function form of McDiarmid's inequality for a measurable
-real-valued function on a finite product of identical probability spaces. If changing one
-coordinate changes the function by at most `c`, then the centered function is sub-Gaussian with
-variance proxy `|ι| * (c / 2) ^ 2`.
+real-valued function on a finite product of identical probability spaces. If changing coordinate
+`i` changes the function by at most `c i`, then the centered function is sub-Gaussian with variance
+proxy `∑ i, (c i / 2) ^ 2`.
 
 The proof peels off one coordinate at a time. Hoeffding's lemma controls the peeled coordinate,
 and the induction hypothesis controls the function obtained by averaging over it.
@@ -45,15 +45,15 @@ open scoped ENNReal NNReal
 
 namespace TauCeti.Probability
 
-/-- If changing one coordinate moves `f` by at most `c`, then changing every coordinate moves it
-by at most the number of coordinates times `c`. -/
+/-- If changing coordinate `i` moves `f` by at most `c i`, then changing every coordinate moves it
+by at most the sum of the coordinate bounds. -/
 private theorem abs_sub_le_of_bounded_differences {ι : Type*} [Fintype ι]
-    {β : Type*} {c : ℝ} (f : (ι → β) → ℝ)
-    (hbd : ∀ (i : ι) (x x' : ι → β), (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c)
-    (x x' : ι → β) : |f x - f x'| ≤ (Fintype.card ι : ℝ) * c := by
+    {β : Type*} (c : ι → ℝ) (f : (ι → β) → ℝ)
+    (hbd : ∀ (i : ι) (x x' : ι → β), (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
+    (x x' : ι → β) : |f x - f x'| ≤ ∑ i, c i := by
   classical
   have key : ∀ (s : Finset ι) (y y' : ι → β),
-      (∀ l ∉ s, y l = y' l) → |f y - f y'| ≤ (s.card : ℝ) * c := by
+      (∀ l ∉ s, y l = y' l) → |f y - f y'| ≤ ∑ i ∈ s, c i := by
     intro s
     induction s using Finset.induction with
     | empty =>
@@ -64,11 +64,11 @@ private theorem abs_sub_le_of_bounded_differences {ι : Type*} [Fintype ι]
     | insert i s hi ih =>
         intro y y' h
         set y'' := Function.update y i (y' i) with hy''
-        have h1 : |f y - f y''| ≤ c := by
+        have h1 : |f y - f y''| ≤ c i := by
           apply hbd i
           intro l hl
           simp [hy'', Function.update_of_ne hl]
-        have h2 : |f y'' - f y'| ≤ (s.card : ℝ) * c := by
+        have h2 : |f y'' - f y'| ≤ ∑ j ∈ s, c j := by
           apply ih
           intro l hl
           by_cases hli : l = i
@@ -78,25 +78,46 @@ private theorem abs_sub_le_of_bounded_differences {ι : Type*} [Fintype ι]
             exact h l (by simp [Finset.mem_insert, hli, hl])
         calc
           |f y - f y'| ≤ |f y - f y''| + |f y'' - f y'| := abs_sub_le _ _ _
-          _ ≤ c + (s.card : ℝ) * c := by linarith
-          _ = ((insert i s).card : ℝ) * c := by
-            rw [Finset.card_insert_of_notMem hi]
-            push_cast
-            ring
+          _ ≤ c i + ∑ j ∈ s, c j := by linarith
+          _ = ∑ j ∈ insert i s, c j := by simp [hi]
   have := key Finset.univ x x' (by simp)
   simpa using this
+
+/-- A uniform bound on a measurable real function supplies the exponential bound and
+integrability needed for centered moment-generating functions. -/
+private theorem exp_mul_sub_bound_and_integrable {α : Type*} [MeasurableSpace α]
+    (μ : Measure α) [IsFiniteMeasure μ] (F : α → ℝ) (hF : Measurable F) (M : ℝ)
+    (hFM : ∀ x, |F x| ≤ M) (I t : ℝ) :
+    (∀ x, |Real.exp (t * (F x - I))| ≤ Real.exp (|t| * (M + |I|))) ∧
+      Integrable (fun x => Real.exp (t * (F x - I))) μ := by
+  have hbound : ∀ x, |Real.exp (t * (F x - I))| ≤ Real.exp (|t| * (M + |I|)) := by
+    intro x
+    rw [Real.abs_exp]
+    apply Real.exp_le_exp.mpr
+    calc
+      t * (F x - I) ≤ |t * (F x - I)| := le_abs_self _
+      _ = |t| * |F x - I| := abs_mul _ _
+      _ ≤ |t| * (M + |I|) := by
+        apply mul_le_mul_of_nonneg_left _ (abs_nonneg t)
+        calc
+          |F x - I| ≤ |F x| + |I| := by
+            rw [sub_eq_add_neg, ← abs_neg I]
+            exact abs_add_le _ _
+          _ ≤ M + |I| := by linarith [hFM x]
+  exact ⟨hbound, (integrable_const (Real.exp (|t| * (M + |I|)))).mono'
+    (((hF.sub_const I).const_mul t).exp).aestronglyMeasurable (ae_of_all _ hbound)⟩
 
 /-- The exponential-moment estimate underlying McDiarmid's inequality, on a product indexed by
 `Fin n`. -/
 private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpace β]
     (ν : Measure β) [IsProbabilityMeasure ν] {n : ℕ} (f : (Fin n → β) → ℝ)
-    (hf : Measurable f) {c : ℝ} (hc : 0 ≤ c)
+    (hf : Measurable f) (c : Fin n → ℝ) (hc : ∀ i, 0 ≤ c i)
     (hbd : ∀ (i : Fin n) (x x' : Fin n → β),
-      (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c)
+      (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
     (t : ℝ) :
     ∫ x, Real.exp (t * (f x - ∫ x', f x' ∂Measure.pi (fun _ : Fin n => ν)))
         ∂Measure.pi (fun _ : Fin n => ν)
-      ≤ Real.exp ((n : ℝ) * (c / 2) ^ 2 * t ^ 2 / 2) := by
+      ≤ Real.exp ((∑ i, (c i / 2) ^ 2) * t ^ 2 / 2) := by
   have : Nonempty β := by
     by_contra h
     rw [not_nonempty_iff] at h
@@ -128,15 +149,14 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
       set πn := Measure.pi (fun _ : Fin n => ν) with hπn
       set I : ℝ := ∫ x', f x' ∂π1 with hI_def
       set x₀ : Fin (n + 1) → β := fun _ => Classical.arbitrary β with hx0
-      set M : ℝ := ((n + 1 : ℕ) * c + |f x₀|) with hM
+      set M : ℝ := (∑ i, c i) + |f x₀| with hM
       have hMf : ∀ x, |f x| ≤ M := by
         intro x
-        have h1 := abs_sub_le_of_bounded_differences (c := c) f hbd x x₀
-        rw [Fintype.card_fin] at h1
+        have h1 := abs_sub_le_of_bounded_differences c f hbd x x₀
         calc
           |f x| = |(f x - f x₀) + f x₀| := by ring_nf
           _ ≤ |f x - f x₀| + |f x₀| := abs_add_le _ _
-          _ ≤ M := by rw [hM]; push_cast at h1 ⊢; linarith
+          _ ≤ M := by rw [hM]; linarith
       have hpair_meas : ∀ (F : (Fin (n + 1) → β) → ℝ), Measurable F →
           Measurable (fun p : β × (Fin n → β) => F (Fin.cons p.1 p.2)) := by
         intro F hF
@@ -204,9 +224,9 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
             (fun a => hMf (Fin.cons a w))
           _ = M := by simp
       have hg_bd : ∀ (i : Fin n) (w w' : Fin n → β), (∀ l, l ≠ i → w l = w' l) →
-          |g w - g w'| ≤ c := by
+          |g w - g w'| ≤ c i.succ := by
         intro i w w' hww'
-        have hpt : ∀ a : β, |f (Fin.cons a w) - f (Fin.cons a w')| ≤ c := by
+        have hpt : ∀ a : β, |f (Fin.cons a w) - f (Fin.cons a w')| ≤ c i.succ := by
           intro a
           apply hbd i.succ
           intro j hj
@@ -223,19 +243,19 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
           |∫ a, (f (Fin.cons a w) - f (Fin.cons a w')) ∂ν|
               ≤ ∫ a, |f (Fin.cons a w) - f (Fin.cons a w')| ∂ν :=
             abs_integral_le_integral_abs
-          _ ≤ ∫ _a, c ∂ν := integral_mono ((hsec_int w).sub (hsec_int w')).abs
-            (integrable_const c) hpt
-          _ = c := by simp
+          _ ≤ ∫ _a, c i.succ ∂ν := integral_mono ((hsec_int w).sub (hsec_int w')).abs
+            (integrable_const (c i.succ)) hpt
+          _ = c i.succ := by simp
       have hgf : I = ∫ w, g w ∂πn := by
         rw [hI_def, htrans f (hprodint f M hf hMf)]
       -- Hoeffding's lemma controls the centered fluctuation in the peeled coordinate.
       have hHoeff : ∀ w, ∫ a, Real.exp (t * (f (Fin.cons a w) - g w)) ∂ν
-          ≤ Real.exp ((c / 2) ^ 2 * t ^ 2 / 2) := by
+          ≤ Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) := by
         intro w
         rw [hg_def]
         set X : β → ℝ := fun a => f (Fin.cons a w) with hX
         set A : ℝ := sInf (Set.range X) with hA
-        have hosc : ∀ a a', |X a - X a'| ≤ c := by
+        have hosc : ∀ a a', |X a - X a'| ≤ c 0 := by
           intro a a'
           apply hbd (0 : Fin (n + 1))
           intro l hl
@@ -243,16 +263,16 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
           · exact absurd rfl hl
           · simp
         have hbdd : BddBelow (Set.range X) := by
-          refine ⟨X (Classical.arbitrary β) - c, ?_⟩
+          refine ⟨X (Classical.arbitrary β) - c 0, ?_⟩
           rintro _ ⟨a, rfl⟩
           have := hosc (Classical.arbitrary β) a
           rw [abs_sub_le_iff] at this
           linarith [this.1]
         have hne : (Set.range X).Nonempty := Set.range_nonempty X
-        have hmem : ∀ a, X a ∈ Set.Icc A (A + c) := by
+        have hmem : ∀ a, X a ∈ Set.Icc A (A + c 0) := by
           intro a
           refine ⟨csInf_le hbdd ⟨a, rfl⟩, ?_⟩
-          have hle : A ≥ X a - c := by
+          have hle : A ≥ X a - c 0 := by
             apply le_csInf hne
             rintro _ ⟨a', rfl⟩
             have := hosc a a'
@@ -262,18 +282,19 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
         have hsub := ProbabilityTheory.hasSubgaussianMGF_of_mem_Icc (μ := ν)
           (hsec_meas w).aemeasurable (ae_of_all _ hmem)
         have hml := hsub.mgf_le t
-        have hexp : ((((‖(A + c) - A‖₊ / 2) ^ 2 : NNReal) : ℝ)) = (c / 2) ^ 2 := by
-          rw [add_sub_cancel_left, Real.nnnorm_of_nonneg hc]
+        have hexp : ((((‖(A + c 0) - A‖₊ / 2) ^ 2 : NNReal) : ℝ)) =
+            (c 0 / 2) ^ 2 := by
+          rw [add_sub_cancel_left, Real.nnnorm_of_nonneg (hc 0)]
           push_cast
           ring
         rw [ProbabilityTheory.mgf] at hml
         calc
           ∫ a, Real.exp (t * (f (Fin.cons a w) - ∫ a', f (Fin.cons a' w) ∂ν)) ∂ν
-              ≤ Real.exp (((‖(A + c) - A‖₊ / 2) ^ 2 : NNReal) * t ^ 2 / 2) := hml
-          _ = Real.exp ((c / 2) ^ 2 * t ^ 2 / 2) := by rw [hexp]
+              ≤ Real.exp (((‖(A + c 0) - A‖₊ / 2) ^ 2 : NNReal) * t ^ 2 / 2) := hml
+          _ = Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) := by rw [hexp]
       -- Split off the averaged function, then integrate the pointwise Hoeffding estimate.
       have hpoint : ∀ w, ∫ a, Real.exp (t * (f (Fin.cons a w) - I)) ∂ν
-          ≤ Real.exp ((c / 2) ^ 2 * t ^ 2 / 2) * Real.exp (t * (g w - I)) := by
+          ≤ Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) * Real.exp (t * (g w - I)) := by
         intro w
         have hsplit : (fun a => Real.exp (t * (f (Fin.cons a w) - I))) =
             fun a => Real.exp (t * (f (Fin.cons a w) - g w)) * Real.exp (t * (g w - I)) := by
@@ -283,22 +304,9 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
           ring
         rw [hsplit, integral_mul_const]
         exact mul_le_mul_of_nonneg_right (hHoeff w) (Real.exp_nonneg _)
-      have hexpg_int : Integrable (fun w => Real.exp (t * (g w - I))) πn := by
-        refine (integrable_const (Real.exp (|t| * (M + |I|)))).mono'
-          (((hg_meas.sub_const I).const_mul t).exp).aestronglyMeasurable (ae_of_all _ fun w => ?_)
-        rw [Real.norm_eq_abs, Real.abs_exp]
-        apply Real.exp_le_exp.mpr
-        calc
-          t * (g w - I) ≤ |t * (g w - I)| := le_abs_self _
-          _ = |t| * |g w - I| := abs_mul _ _
-          _ ≤ |t| * (M + |I|) := by
-            apply mul_le_mul_of_nonneg_left _ (abs_nonneg t)
-            calc
-              |g w - I| ≤ |g w| + |I| := by
-                rw [sub_eq_add_neg, ← abs_neg I]
-                exact abs_add_le _ _
-              _ ≤ M + |I| := by linarith [hg_bdd w]
-      have hR_int : Integrable (fun w => Real.exp ((c / 2) ^ 2 * t ^ 2 / 2) *
+      have hexpg_int : Integrable (fun w => Real.exp (t * (g w - I))) πn :=
+        (exp_mul_sub_bound_and_integrable πn g hg_meas M hg_bdd I t).2
+      have hR_int : Integrable (fun w => Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) *
           Real.exp (t * (g w - I))) πn := hexpg_int.const_mul _
       have hLmeas : Measurable (fun w => ∫ a, Real.exp (t * (f (Fin.cons a w) - I)) ∂ν) := by
         have hm : Measurable (fun p : β × (Fin n → β) =>
@@ -310,63 +318,50 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
         refine hR_int.mono' hLmeas.aestronglyMeasurable (ae_of_all _ fun w => ?_)
         rw [Real.norm_eq_abs, abs_of_nonneg (integral_nonneg (fun a => Real.exp_nonneg _))]
         exact hpoint w
-      have hFexp_bd : ∀ x, |Real.exp (t * (f x - I))| ≤ Real.exp (|t| * (M + |I|)) := by
-        intro x
-        rw [Real.abs_exp]
-        apply Real.exp_le_exp.mpr
-        calc
-          t * (f x - I) ≤ |t * (f x - I)| := le_abs_self _
-          _ = |t| * |f x - I| := abs_mul _ _
-          _ ≤ |t| * (M + |I|) := by
-            apply mul_le_mul_of_nonneg_left _ (abs_nonneg t)
-            calc
-              |f x - I| ≤ |f x| + |I| := by
-                rw [sub_eq_add_neg, ← abs_neg I]
-                exact abs_add_le _ _
-              _ ≤ M + |I| := by linarith [hMf x]
+      have hFexp_bd : ∀ x, |Real.exp (t * (f x - I))| ≤ Real.exp (|t| * (M + |I|)) :=
+        (exp_mul_sub_bound_and_integrable π1 f hf M hMf I t).1
       rw [htrans (fun x => Real.exp (t * (f x - I)))
         (hprodint _ (Real.exp (|t| * (M + |I|))) (((hf.sub_const I).const_mul t).exp)
           hFexp_bd)]
       calc
         ∫ w, ∫ a, Real.exp (t * (f (Fin.cons a w) - I)) ∂ν ∂πn
-            ≤ ∫ w, Real.exp ((c / 2) ^ 2 * t ^ 2 / 2) *
+            ≤ ∫ w, Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) *
                 Real.exp (t * (g w - I)) ∂πn := integral_mono hL_int hR_int hpoint
-        _ = Real.exp ((c / 2) ^ 2 * t ^ 2 / 2) *
+        _ = Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) *
             ∫ w, Real.exp (t * (g w - I)) ∂πn := by rw [integral_const_mul]
-        _ ≤ Real.exp ((c / 2) ^ 2 * t ^ 2 / 2) *
-            Real.exp ((n : ℝ) * (c / 2) ^ 2 * t ^ 2 / 2) := by
+        _ ≤ Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) *
+            Real.exp ((∑ i : Fin n, (c i.succ / 2) ^ 2) * t ^ 2 / 2) := by
           apply mul_le_mul_of_nonneg_left _ (Real.exp_nonneg _)
           rw [hgf]
-          exact ih g hg_meas hg_bd
-        _ = Real.exp (((n + 1 : ℕ) : ℝ) * (c / 2) ^ 2 * t ^ 2 / 2) := by
+          exact ih g hg_meas (fun i => c i.succ) (fun i => hc i.succ) hg_bd
+        _ = Real.exp ((∑ i : Fin (n + 1), (c i / 2) ^ 2) * t ^ 2 / 2) := by
           rw [← Real.exp_add]
           congr 1
-          push_cast
+          rw [Fin.sum_univ_succ]
           ring
 
 /-- The exponential-moment estimate transported from `Fin (Fintype.card ι)` to an arbitrary
 finite index type. -/
 private theorem integral_exp_mul_centered_le_pi {ι : Type*} [Fintype ι] {β : Type*}
     [MeasurableSpace β] (ν : Measure β) [IsProbabilityMeasure ν] (f : (ι → β) → ℝ)
-    (hf : Measurable f) {c : ℝ} (hc : 0 ≤ c)
+    (hf : Measurable f) (c : ι → ℝ) (hc : ∀ i, 0 ≤ c i)
     (hbd : ∀ (i : ι) (x x' : ι → β),
-      (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c)
+      (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
     (t : ℝ) :
     ∫ x, Real.exp (t * (f x - ∫ x', f x' ∂Measure.pi (fun _ : ι => ν)))
         ∂Measure.pi (fun _ : ι => ν)
-      ≤ Real.exp ((Fintype.card ι : ℝ) * (c / 2) ^ 2 * t ^ 2 / 2) := by
-  set N := Fintype.card ι with hN
+      ≤ Real.exp ((∑ i, (c i / 2) ^ 2) * t ^ 2 / 2) := by
   set e := Fintype.equivFin ι with he
   set φ := MeasurableEquiv.piCongrLeft (fun _ : ι => β) e.symm with hφ
-  have mp : MeasurePreserving φ (Measure.pi (fun _ : Fin N => ν))
+  have mp : MeasurePreserving φ (Measure.pi (fun _ : Fin (Fintype.card ι) => ν))
       (Measure.pi (fun _ : ι => ν)) :=
     measurePreserving_piCongrLeft (α := fun _ : ι => β) (μ := fun _ : ι => ν) e.symm
-  have hcoord : ∀ (w : Fin N → β) (l : ι), φ w l = w (e l) := by
+  have hcoord : ∀ (w : Fin (Fintype.card ι) → β) (l : ι), φ w l = w (e l) := by
     intro w l
     have h := MeasurableEquiv.piCongrLeft_apply_apply (β := fun _ : ι => β) e.symm w (e l)
     rwa [e.symm_apply_apply] at h
-  have hbdF : ∀ (i : Fin N) (w w' : Fin N → β),
-      (∀ l, l ≠ i → w l = w' l) → |f (φ w) - f (φ w')| ≤ c := by
+  have hbdF : ∀ (i : Fin (Fintype.card ι)) (w w' : Fin (Fintype.card ι) → β),
+      (∀ l, l ≠ i → w l = w' l) → |f (φ w) - f (φ w')| ≤ c (e.symm i) := by
     intro i w w' hww'
     apply hbd (e.symm i)
     intro l hl
@@ -374,23 +369,25 @@ private theorem integral_exp_mul_centered_le_pi {ι : Type*} [Fintype ι] {β : 
     refine hww' (e l) (fun hcontra => hl ?_)
     rw [← e.symm_apply_apply l, hcontra]
   have key := integral_exp_mul_centered_le_pi_fin ν (fun w => f (φ w))
-    (hf.comp φ.measurable) hc hbdF t
+    (hf.comp φ.measurable) (fun i => c (e.symm i)) (fun i => hc (e.symm i)) hbdF t
   have hI : (∫ x', f x' ∂Measure.pi (fun _ : ι => ν)) =
-      ∫ w', f (φ w') ∂Measure.pi (fun _ : Fin N => ν) := (mp.integral_comp' f).symm
+      ∫ w', f (φ w') ∂Measure.pi (fun _ : Fin (Fintype.card ι) => ν) :=
+    (mp.integral_comp' f).symm
   have hOuter :
       (∫ x, Real.exp (t * (f x - ∫ x', f x' ∂Measure.pi (fun _ : ι => ν)))
           ∂Measure.pi (fun _ : ι => ν)) =
         ∫ w, Real.exp (t * (f (φ w) - ∫ x', f x' ∂Measure.pi (fun _ : ι => ν)))
-          ∂Measure.pi (fun _ : Fin N => ν) :=
+          ∂Measure.pi (fun _ : Fin (Fintype.card ι) => ν) :=
     (mp.integral_comp'
       (fun x => Real.exp (t * (f x - ∫ x', f x' ∂Measure.pi (fun _ : ι => ν))))).symm
   rw [hOuter, hI]
+  rw [e.symm.sum_comp (fun i => (c i / 2) ^ 2)] at key
   exact key
 
 /-- **McDiarmid's bounded-differences inequality at MGF level.** Let `f` be a measurable
-real-valued function on a finite i.i.d. product. If two inputs that differ only at one coordinate
-have outputs differing by at most `c`, then the centered `f` is sub-Gaussian with variance proxy
-`Fintype.card ι * (c / 2) ^ 2`.
+real-valued function on a finite i.i.d. product. If two inputs that differ only at coordinate `i`
+have outputs differing by at most `c i`, then the centered `f` is sub-Gaussian with variance proxy
+`∑ i, (c i)² / 4`.
 
 The result is stated using Mathlib's `ProbabilityTheory.HasSubgaussianMGF`; its
 `measure_ge_le` theorem gives the one-sided Chernoff tail, and applying `neg` gives the other side.
@@ -398,12 +395,12 @@ The result is stated using Mathlib's `ProbabilityTheory.HasSubgaussianMGF`; its
 theorem hasSubgaussianMGF_of_bounded_differences
     {ι : Type*} [Fintype ι] {β : Type*} [MeasurableSpace β]
     (ν : Measure β) [IsProbabilityMeasure ν]
-    (f : (ι → β) → ℝ) (hf : Measurable f) (c : ℝ) (hc : 0 ≤ c)
+    (f : (ι → β) → ℝ) (hf : Measurable f) (c : ι → ℝ) (hc : ∀ i, 0 ≤ c i)
     (hbd : ∀ (i : ι) (x x' : ι → β),
-      (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c) :
+      (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i) :
     ProbabilityTheory.HasSubgaussianMGF
       (fun x => f x - ∫ y, f y ∂Measure.pi (fun _ : ι => ν))
-      ((Fintype.card ι : ℝ≥0) * (c.toNNReal / 2) ^ 2)
+      (∑ i, (c i).toNNReal ^ 2 / 4)
       (Measure.pi fun _ : ι => ν) := by
   have : Nonempty β := by
     by_contra h
@@ -415,35 +412,23 @@ theorem hasSubgaussianMGF_of_bounded_differences
   set π : Measure (ι → β) := Measure.pi (fun _ : ι => ν) with hπ
   set I : ℝ := ∫ y, f y ∂π with hI
   set x₀ : ι → β := fun _ => Classical.arbitrary β with hx0
-  set M : ℝ := (Fintype.card ι : ℝ) * c + |f x₀| with hM
+  set M : ℝ := (∑ i, c i) + |f x₀| with hM
   have hMf : ∀ x, |f x| ≤ M := by
     intro x
-    have h1 := abs_sub_le_of_bounded_differences (c := c) f hbd x x₀
+    have h1 := abs_sub_le_of_bounded_differences c f hbd x x₀
     calc
       |f x| = |(f x - f x₀) + f x₀| := by ring_nf
       _ ≤ |f x - f x₀| + |f x₀| := abs_add_le _ _
       _ ≤ M := by rw [hM]; linarith
-  have hint : ∀ t : ℝ, Integrable (fun x => Real.exp (t * (f x - I))) π := by
-    intro t
-    refine (integrable_const (Real.exp (|t| * (M + |I|)))).mono'
-      (((hf.sub_const I).const_mul t).exp).aestronglyMeasurable (ae_of_all _ fun x => ?_)
-    rw [Real.norm_eq_abs, Real.abs_exp]
-    apply Real.exp_le_exp.mpr
-    calc
-      t * (f x - I) ≤ |t * (f x - I)| := le_abs_self _
-      _ = |t| * |f x - I| := abs_mul _ _
-      _ ≤ |t| * (M + |I|) := by
-        apply mul_le_mul_of_nonneg_left _ (abs_nonneg t)
-        calc
-          |f x - I| ≤ |f x| + |I| := by
-            rw [sub_eq_add_neg, ← abs_neg I]
-            exact abs_add_le _ _
-          _ ≤ M + |I| := by linarith [hMf x]
+  have hint : ∀ t : ℝ, Integrable (fun x => Real.exp (t * (f x - I))) π := fun t =>
+    (exp_mul_sub_bound_and_integrable π f hf M hMf I t).2
   refine ⟨hint, fun t => ?_⟩
-  have hkey := integral_exp_mul_centered_le_pi ν f hf hc hbd t
-  have hcoe : (((Fintype.card ι : ℝ≥0) * (c.toNNReal / 2) ^ 2 : ℝ≥0) : ℝ) =
-      (Fintype.card ι : ℝ) * (c / 2) ^ 2 := by
-    push_cast [Real.coe_toNNReal c hc]
+  have hkey := integral_exp_mul_centered_le_pi ν f hf c hc hbd t
+  have hcoe : (((∑ i, (c i).toNNReal ^ 2 / 4 : ℝ≥0) : ℝ)) =
+      ∑ i, (c i / 2) ^ 2 := by
+    push_cast [Real.coe_toNNReal (c _) (hc _)]
+    apply Finset.sum_congr rfl
+    intro i hi
     ring
   rw [ProbabilityTheory.mgf, hcoe]
   exact hkey
@@ -471,7 +456,11 @@ theorem hasSubgaussianMGF_of_bounded_differences_fin
         exact (hxx' l hl).symm
     rw [hx', abs_sub_comm]
     exact hosc x i (x' i)
-  simpa only [Fintype.card_fin] using
-    hasSubgaussianMGF_of_bounded_differences ν f hf c hc hbd
+  have hvar : (∑ _ : Fin n, c.toNNReal ^ 2 / 4) =
+      (n : ℝ≥0) * (c.toNNReal / 2) ^ 2 := by
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    ring
+  rw [← hvar]
+  exact hasSubgaussianMGF_of_bounded_differences ν f hf (fun _ => c) (fun _ => hc) hbd
 
 end TauCeti.Probability
