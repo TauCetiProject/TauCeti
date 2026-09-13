@@ -136,7 +136,6 @@ theorem measurable_exposedSample (W : Graphon Ω μ) :
 
 /-- Updating the coordinate of the vertex `i` leaves every pair avoiding `i` unchanged: such a pair
 reads its positions and its coin from vertices other than `i`. -/
-@[simp]
 theorem exposedSample_update_adj_iff (W : Graphon Ω μ) (x : Fin n → Ω × (Fin n → ℝ)) (i : Fin n)
     (y : Ω × (Fin n → ℝ)) {a b : Fin n} (ha : a ≠ i) (hb : b ≠ i) :
     (exposedSample W (Function.update x i y)).Adj a b ↔ (exposedSample W x).Adj a b := by
