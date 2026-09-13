@@ -164,6 +164,30 @@ theorem mapLinearEquiv_apply (e : V ≃ₗ[ℝ] V') (rho : ToricRay σ) :
     mapLinearEquiv e rho = rho.map e :=
   (rfl)
 
+/-- The inverse ray equivalence is transport along the inverse linear equivalence, after
+identifying the double image cone with the original cone. -/
+@[simp]
+theorem mapLinearEquiv_symm_apply (e : V ≃ₗ[ℝ] V')
+    (tau : ToricRay (σ.map (e : V →ₗ[ℝ] V'))) :
+    (mapLinearEquiv e).symm tau =
+      cast (congrArg ToricRay (by
+        ext x
+        simp [PointedCone.mem_map])) (tau.map e.symm) := by
+  apply (mapLinearEquiv e).injective
+  rw [Equiv.apply_symm_apply, mapLinearEquiv_apply]
+  apply SetLike.ext
+  intro x
+  rw [mem_map]
+  have hcone : (σ.map (e : V →ₗ[ℝ] V')).map (e.symm : V' →ₗ[ℝ] V) = σ := by
+    ext y
+    simp [PointedCone.mem_map]
+  have mem_cast {C D : PointedCone ℝ V} (h : C = D) (rho : ToricRay C) (y : V) :
+      y ∈ cast (congrArg ToricRay h) rho ↔ y ∈ rho := by
+    subst D
+    rfl
+  rw [mem_cast hcone (tau.map e.symm) (e.symm x), mem_map]
+  simp
+
 end ToricRay
 
 namespace IsPrimitiveGenerator
