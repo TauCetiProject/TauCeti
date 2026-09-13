@@ -44,10 +44,8 @@ Seifert matrix over `ℤ` read in `ℚ` or `ℝ`, and the two example theorems a
 
 * `TauCeti.KnotTheory.add_transpose_enlargeColumn`: the symmetrisation of a column enlargement,
   in blocks.
-* `TauCeti.KnotTheory.signature_hyperbolicGram`: the hyperbolic plane has signature zero.
 * `TauCeti.KnotTheory.signature_enlargeColumn` and `TauCeti.KnotTheory.signature_enlargeRow`: the
   signature is unchanged by the two enlargements of a Seifert matrix.
-* `TauCeti.KnotTheory.signature_neg_transpose`: the mirror image negates the signature.
 * `TauCeti.KnotTheory.signature_trefoilSeifertMatrix` and
   `TauCeti.KnotTheory.signature_figureEightSeifertMatrix`: the classical values `-2` and `0`.
 
@@ -110,22 +108,6 @@ end CommRing
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- The Gram matrix of a hyperbolic plane has signature zero: it is congruent to
-`diagonal ![2, -2]`. -/
-theorem signature_hyperbolicGram :
-    Matrix.signature (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) 𝕜) = 0 := by
-  have hP : IsUnit (!![(1 : 𝕜), 1; 1, -1]).det := by
-    rw [Matrix.det_fin_two_of, isUnit_iff_ne_zero]
-    norm_num
-  have hd : !![(1 : 𝕜), 1; 1, -1] * !![0, 1; 1, 0] * (!![(1 : 𝕜), 1; 1, -1])ᵀ
-      = Matrix.diagonal ![2, -2] := by
-    rw [Matrix.diagonal_fin_two]
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply] <;> ring
-  rw [Matrix.signature_eq_of_congr_diagonal hP hd, Fin.sum_univ_two]
-  norm_num
-
 section Enlargement
 
 /-- **The signature is unchanged by a column enlargement of a Seifert matrix.** The enlargement
@@ -160,7 +142,7 @@ theorem signature_enlargeColumn (V : Matrix ι ι 𝕜) (ξ : ι → 𝕜) :
     simp only [Matrix.one_mul, Matrix.mul_one, Matrix.zero_mul, Matrix.mul_zero,
       Matrix.transpose_one, Matrix.transpose_zero, hFE, hEF, zero_add, add_zero, hEH]
   rw [← Matrix.signature_add_transpose (enlargeColumn V ξ), ← Matrix.signature_congr hQdet,
-    hcong, Matrix.signature_fromBlocks_zero, hH, signature_hyperbolicGram, add_zero,
+    hcong, Matrix.signature_fromBlocks_zero, hH, Matrix.signature_hyperbolicGram, add_zero,
     Matrix.signature_add_transpose]
 
 /-- **The signature is unchanged by a row enlargement of a Seifert matrix.** -/
@@ -171,15 +153,6 @@ theorem signature_enlargeRow (V : Matrix ι ι 𝕜) (η : ι → 𝕜) :
     Matrix.signature_add_transpose, signature_enlargeColumn, Matrix.signature_transpose]
 
 end Enlargement
-
-omit [IsStrictOrderedRing 𝕜] in
--- Not a `simp` lemma: `Matrix.signature_neg` and `Matrix.signature_transpose` already normalise
--- the left-hand side.
-/-- **The mirror image negates the signature.** The mirror of a knot with Seifert matrix `V` has
-Seifert matrix `-Vᵀ`. -/
-theorem signature_neg_transpose (V : Matrix ι ι 𝕜) :
-    Matrix.signature (-Vᵀ) = -Matrix.signature V := by
-  rw [Matrix.signature_neg, Matrix.signature_transpose]
 
 section Examples
 

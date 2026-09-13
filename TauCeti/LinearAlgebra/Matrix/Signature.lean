@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import Mathlib.LinearAlgebra.Matrix.Notation
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 
 /-!
@@ -35,6 +36,7 @@ as the S-equivalence class of a Seifert matrix — offers.
 * `Matrix.signature_congr`: invariance under congruence by a matrix with unit determinant.
 * `Matrix.signature_fromBlocks_zero`: additivity along a block diagonal.
 * `Matrix.signature_diagonal`: the signature of a diagonal matrix as a sum of signs.
+* `Matrix.signature_hyperbolicGram`: the hyperbolic plane has signature zero.
 * `Matrix.signature_eq_of_congr_diagonal`: the signature read off an explicit diagonalising
   congruence.
 * `Matrix.signature_add_transpose`: the signature of `A + Aᵀ` is the signature of `A`.
@@ -155,7 +157,7 @@ theorem signature_def (A : Matrix ι ι 𝕜) :
 
 /-- Isometric quadratic forms have the same signature, so the signature only depends on the
 isometry class of the form of a matrix. -/
-theorem signature_of_equivalent {A : Matrix ι ι 𝕜} {B : Matrix κ κ 𝕜}
+theorem signature_eq_of_equivalent {A : Matrix ι ι 𝕜} {B : Matrix κ κ 𝕜}
     (h : A.toQuadraticForm'.Equivalent B.toQuadraticForm') : signature A = signature B := by
   rw [signature_def, signature_def, h.sigPos_eq, h.sigNeg_eq]
 
@@ -163,7 +165,7 @@ theorem signature_of_equivalent {A : Matrix ι ι 𝕜} {B : Matrix κ κ 𝕜}
 with unit determinant does not change the signature. -/
 theorem signature_congr {P : Matrix ι ι 𝕜} (hP : IsUnit P.det) (A : Matrix ι ι 𝕜) :
     signature (P * A * Pᵀ) = signature A :=
-  signature_of_equivalent ⟨isometryEquivCongr hP A⟩
+  signature_eq_of_equivalent ⟨isometryEquivCongr hP A⟩
 
 /-- Transposing a matrix does not change its signature. -/
 @[simp]
@@ -197,6 +199,7 @@ theorem signature_add_transpose (A : Matrix ι ι 𝕜) : signature (A + Aᵀ) =
     QuadraticForm.sigPos_smul_of_pos _ two_pos, QuadraticForm.sigNeg_smul_of_pos _ two_pos]
 
 /-- **Additivity of the signature along a block diagonal.** -/
+@[simp]
 theorem signature_fromBlocks_zero (A : Matrix ι ι 𝕜) (B : Matrix κ κ 𝕜) :
     signature (fromBlocks A 0 0 B) = signature A + signature B := by
   have h : (fromBlocks A 0 0 B).toQuadraticForm'.Equivalent
@@ -208,6 +211,7 @@ theorem signature_fromBlocks_zero (A : Matrix ι ι 𝕜) (B : Matrix κ κ 𝕜
 
 /-- **The signature of a diagonal matrix** counts its positive entries against its negative
 ones. -/
+@[simp]
 theorem signature_diagonal (d : ι → 𝕜) :
     signature (diagonal d) = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
   classical
@@ -226,6 +230,23 @@ theorem signature_eq_of_congr_diagonal {P A : Matrix ι ι 𝕜} (hP : IsUnit P.
     (h : P * A * Pᵀ = diagonal d) :
     signature A = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
   rw [← signature_congr hP A, h, signature_diagonal]
+
+/-- The Gram matrix of a hyperbolic plane has signature zero: it is congruent to
+`diagonal ![2, -2]`. -/
+@[simp]
+theorem signature_hyperbolicGram :
+    signature (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) 𝕜) = 0 := by
+  have hP : IsUnit (!![(1 : 𝕜), 1; 1, -1]).det := by
+    rw [det_fin_two_of, isUnit_iff_ne_zero]
+    norm_num
+  have hd : !![(1 : 𝕜), 1; 1, -1] * !![0, 1; 1, 0] * (!![(1 : 𝕜), 1; 1, -1])ᵀ
+      = diagonal ![2, -2] := by
+    rw [diagonal_fin_two]
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [mul_apply, Fin.sum_univ_two, transpose_apply] <;> ring
+  rw [signature_eq_of_congr_diagonal hP hd, Fin.sum_univ_two]
+  norm_num
 
 end StrictOrdered
 
