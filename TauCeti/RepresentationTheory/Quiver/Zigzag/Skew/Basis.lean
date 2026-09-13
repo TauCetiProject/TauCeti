@@ -14,14 +14,15 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Basic
 A skew-zigzag parameter `c` labels each ordered pair of incident edges of a finite simple graph by
 a unit-valued ratio, and `TauCeti.skewZigzagQuotient` imposes `backtrack(h) = c.ratio h h' •
 backtrack(h')` on top of the relations killing non-returning quadratic paths and paths of length at
-least three. This file proves that the resulting algebra has the same vertex, arrow and volume
-basis as the ordinary zigzag relation quotient, and hence the same dimension `2|V| + 2|E|`.
+least three. For a graph with no isolated vertices, this file proves that the resulting algebra has
+the same vertex, arrow and volume basis as the ordinary zigzag relation quotient, and hence the
+same dimension `2|V| + 2|E|`.
 
-Unlike the ordinary relation quotient, a skew quotient has no canonical volume class: the
-backtracks based at a vertex are unit multiples of one another rather than equal. Every statement
-defining the volume family and its basis therefore requires a choice `t` of one incident edge at
-every vertex. The third block of the basis is the class of the backtrack along the chosen edge.
-The resulting basis also gives a linear isomorphism with the ordinary relation quotient.
+For a general skew parameter, the backtracks based at a vertex are unit multiples of one another,
+so the volume class may depend on a chosen incident edge. The full basis therefore requires a
+choice `t` of one incident edge at every vertex. Its third block is the class of the backtrack along
+the chosen edge. The resulting basis also gives a linear isomorphism with the ordinary relation
+quotient.
 
 ## Main definitions
 
@@ -37,7 +38,8 @@ The resulting basis also gives a linear isomorphism with the ordinary relation q
   `TauCeti.span_range_skewZigzagBasisFun_eq_top`: the family is independent and spans.
 * `TauCeti.skewZigzagMk_backtrackElem_ne_zero` and `TauCeti.skewZigzagVolume_ne_zero`: no backtrack
   class vanishes.
-* `TauCeti.finrank_skewZigzagQuotient`: the dimension is `2|V| + 2|E|`, as in the ordinary case.
+* `TauCeti.finrank_skewZigzagQuotient`: when there are no isolated vertices, the dimension is
+  `2|V| + 2|E|`, as in the ordinary case.
 
 ## References
 
@@ -331,23 +333,25 @@ private theorem skewRescale_mem_zigzagIdeal (s : IncidentChoice G)
 
 /-! ### The volume classes -/
 
-variable (t : ∀ i : V, {j : V // G.Adj i j})
-
-/-- The volume class of a vertex in a skew-zigzag relation quotient, relative to a choice of an
-incident edge at every vertex: the class of the backtrack along the chosen edge. Unlike the
-ordinary volume class of `TauCeti.zigzagVolume` it genuinely depends on that choice, the backtracks
-at a vertex being unit multiples of one another rather than equal. -/
-noncomputable def skewZigzagVolume (i : V) : skewZigzagQuotient k G c :=
-  skewZigzagMk k G c (backtrackElem G k (t i).2)
+/-- The volume class of a vertex in a skew-zigzag relation quotient, relative to a chosen incident
+edge: the class of the backtrack along that edge. For a general skew parameter this class may
+depend on the choice, since the backtracks at a vertex are unit multiples of one another. -/
+noncomputable def skewZigzagVolume {i : V} (e : {j : V // G.Adj i j}) :
+    skewZigzagQuotient k G c :=
+  skewZigzagMk k G c (backtrackElem G k e.2)
 
 /-- The class of any backtrack is the prescribed unit multiple of the volume class of its base
 vertex. -/
-theorem skewZigzagMk_backtrackElem_eq_smul_skewZigzagVolume {i j : V} (h : G.Adj i j) :
+@[simp]
+theorem skewZigzagMk_backtrackElem_eq_smul_skewZigzagVolume {i j : V}
+    (e : {j' : V // G.Adj i j'}) (h : G.Adj i j) :
     skewZigzagMk k G c (backtrackElem G k h)
-      = (c.ratio h (t i).2 : k) • skewZigzagVolume k G c t i :=
-  skewZigzagMk_backtrackElem_eq_smul k G c h (t i).2
+      = (c.ratio h e.2 : k) • skewZigzagVolume k G c e :=
+  skewZigzagMk_backtrackElem_eq_smul k G c h e.2
 
 /-! ### The basis -/
+
+variable (t : ∀ i : V, {j : V // G.Adj i j})
 
 /-- The paths underlying the basis family: the trivial path at a vertex, the arrow of a dart, and
 the backtrack along the chosen edge at a vertex. -/
@@ -362,7 +366,7 @@ chosen incident edge. -/
 noncomputable def skewZigzagBasisFun : ZigzagBasisIndex G → skewZigzagQuotient k G c
   | .inl i => skewZigzagMk k G c (vertexIdempotent k (vertex G i))
   | .inr (.inl d) => skewZigzagMk k G c (ofArrow (arrow G d.adj))
-  | .inr (.inr i) => skewZigzagVolume k G c t i
+  | .inr (.inr i) => skewZigzagVolume k G c (t i)
 
 @[simp]
 theorem skewZigzagBasisFun_inl (i : V) :
@@ -376,7 +380,7 @@ theorem skewZigzagBasisFun_inr_inl (d : G.Dart) :
 
 @[simp]
 theorem skewZigzagBasisFun_inr_inr (i : V) :
-    skewZigzagBasisFun k G c t (.inr (.inr i)) = skewZigzagVolume k G c t i := (rfl)
+    skewZigzagBasisFun k G c t (.inr (.inr i)) = skewZigzagVolume k G c (t i) := (rfl)
 
 private theorem skewZigzagMk_ofPath_skewBasisPath (b : ZigzagBasisIndex G) :
     skewZigzagMk k G c (ofPath (skewBasisPath G t b)) = skewZigzagBasisFun k G c t b := by
@@ -458,7 +462,7 @@ theorem span_range_skewZigzagBasisFun_eq_top :
       · rcases eq_or_ne i j with rfl | hij
         · obtain ⟨j', h, rfl⟩ := exists_eq_backtrackPath G p hp
           rw [← backtrackElem_eq_ofPath,
-            skewZigzagMk_backtrackElem_eq_smul_skewZigzagVolume k G c t h]
+            skewZigzagMk_backtrackElem_eq_smul_skewZigzagVolume k G c (t i) h]
           exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨.inr (.inr i), (rfl)⟩)
         · rw [skewZigzagMk_ofPath_eq_zero_of_ne k G c p hp ((vertex_injective G).ne hij)]
           exact Submodule.zero_mem _
@@ -497,11 +501,6 @@ theorem skewZigzagBasis_coord_apply (b b' : ZigzagBasisIndex G) :
       if b' = b then 1 else 0 := by
   rw [Module.Basis.coord_apply, Module.Basis.repr_self_apply]
 
-/-- The volume class of a vertex relative to a chosen incident edge is nonzero. -/
-theorem skewZigzagVolume_ne_zero [Nontrivial k] (i : V) : skewZigzagVolume k G c t i ≠ 0 := by
-  have := (skewZigzagBasis k G c t).ne_zero (Sum.inr (Sum.inr i))
-  rwa [skewZigzagBasis_apply, skewZigzagBasisFun_inr_inr] at this
-
 /-- **No backtrack dies in a skew-zigzag relation quotient**, whatever the parameter or the other
 components of the graph. -/
 theorem skewZigzagMk_backtrackElem_ne_zero [Nontrivial k] {i j : V} (hij : G.Adj i j) :
@@ -517,6 +516,11 @@ theorem skewZigzagMk_backtrackElem_ne_zero [Nontrivial k] {i j : V} (hij : G.Adj
   have hne := zigzagVolume_ne_zero k G hij
   rw [zigzagVolume_eq_zigzagMk_backtrackElem k G hij] at hne
   exact hne hzero'
+
+/-- The volume class of a vertex relative to a chosen incident edge is nonzero. -/
+theorem skewZigzagVolume_ne_zero [Nontrivial k] {i : V} (e : {j : V // G.Adj i j}) :
+    skewZigzagVolume k G c e ≠ 0 := by
+  simpa only [skewZigzagVolume] using skewZigzagMk_backtrackElem_ne_zero k G c e.2
 
 /-! ### The dimension and the comparison with the ordinary quotient -/
 
