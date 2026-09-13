@@ -23,7 +23,7 @@ generation.
   chain condition.
 * `TauCeti.iSupIndep.iSup₂_inf_iSup_eq_iSup₂`: a partial supremum of an independent family
   meets the total supremum of a pointwise dominated family in its corresponding partial supremum.
-* `TauCeti.iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and`: two partial suprema of an independent
+* `iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and`: two partial suprema of an independent
   family meet in the supremum over the intersection of their index predicates.
 -/
 
@@ -59,6 +59,8 @@ theorem iSupIndep.iSup₂_inf_iSup_eq_iSup₂ {α ι : Type*} [CompleteLattice �
     exact h₀.mono_right (iSup₂_mono fun i _ ↦ hB i)
   rw [iSup_split B P, inf_comm, sup_inf_assoc_of_le _ hle, inf_comm, hdisj.eq_bot, sup_bot_eq]
 
+end TauCeti
+
 /-- Two partial suprema of an independent family meet in the partial supremum selected by both
 index predicates. -/
 theorem iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and {α ι : Type*} [CompleteLattice α]
@@ -67,10 +69,8 @@ theorem iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and {α ι : Type*} [CompleteLa
     (⨆ (i) (_ : P i), A i) ⊓ (⨆ (i) (_ : Q i), A i) =
       ⨆ (i) (_ : P i ∧ Q i), A i := by
   classical
-  have h := iSupIndep.iSup₂_inf_iSup_eq_iSup₂
+  have h := TauCeti.iSupIndep.iSup₂_inf_iSup_eq_iSup₂
     (A := A) (B := fun i ↦ if Q i then A i else ⊥) hA
     (fun i ↦ by split <;> simp_all) P
   simp only [iSup_ite, iSup_bot, sup_bot_eq] at h
   simpa only [iSup_and] using h
-
-end TauCeti
