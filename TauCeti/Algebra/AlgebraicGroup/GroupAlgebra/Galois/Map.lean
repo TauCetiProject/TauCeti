@@ -43,6 +43,7 @@ variable {tau : Representation ℤ (L ≃ₐ[k] L) N}
 
 /-- The map of split group algebras induced by an equivariant exponent map commutes with
 the simultaneous Galois action on coefficients and exponents. -/
+@[simp]
 theorem groupAlgebraAction_mapDomain (f : Representation.IntertwiningMap rho tau)
     (sigma : L ≃ₐ[k] L) (x : MonoidAlgebra L (Multiplicative M)) :
     groupAlgebraAction tau sigma
