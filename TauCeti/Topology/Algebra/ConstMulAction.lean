@@ -18,7 +18,7 @@ an ambient scalar action; and a properly discontinuous action has `Finite` point
 
 ## Main results
 
-* `TauCeti.Submonoid.continuousConstSMul` and `TauCeti.Subgroup.continuousConstSMul`: continuity
+* `Submonoid.continuousConstSMul` and `TauCeti.Subgroup.continuousConstSMul`: continuity
   in the point is inherited by a submonoid, hence by a subgroup.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
@@ -28,25 +28,21 @@ public section
 
 namespace TauCeti
 
-namespace Submonoid
-
 /-- A submonoid inherits continuity in the point from an ambient continuous action. -/
-@[to_additive AddSubmonoid.continuousConstVAdd
-/-- An additive submonoid inherits continuity in the point from an ambient continuous additive
-action. -/]
-instance continuousConstSMul {M X : Type*} [MulOneClass M] [TopologicalSpace X] [SMul M X]
-    [ContinuousConstSMul M X] (S : Submonoid M) : ContinuousConstSMul S X :=
+@[to_additive
+  /-- An additive submonoid inherits continuity in the point from an ambient continuous additive
+  action. -/]
+instance _root_.Submonoid.continuousConstSMul {M X : Type*} [MulOneClass M] [TopologicalSpace X]
+    [SMul M X] [ContinuousConstSMul M X] (S : Submonoid M) : ContinuousConstSMul S X :=
   ⟨fun g => by
     simpa only [Submonoid.smul_def] using continuous_const_smul (g : M)⟩
-
-end Submonoid
 
 namespace Subgroup
 
 /-- A subgroup inherits continuity in the point from an ambient continuous action. -/
 instance continuousConstSMul {G X : Type*} [Group G] [TopologicalSpace X] [SMul G X]
     [ContinuousConstSMul G X] (S : Subgroup G) : ContinuousConstSMul S X :=
-  TauCeti.Submonoid.continuousConstSMul S.toSubmonoid
+  Submonoid.continuousConstSMul S.toSubmonoid
 
 end Subgroup
 

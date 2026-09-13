@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
+public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 import TauCeti.Algebra.Group.Subgroup.Map
@@ -30,10 +30,10 @@ the hyperplanes of vectors of invertible norm. The orthogonal group is the targe
 twisted-conjugation homomorphism out of the Pin group, so it is the object the Pin/Spin double
 covers are stated against, and the reflections are the generators an eventual Cartan-Dieudonné
 theorem factors an orthogonal automorphism into. The structural and reflection declarations below
-hold over an arbitrary commutative ring. The equal-norm dichotomy and fixed-subspace correction
-assume a field in which `2` is nonzero. The characteristic restriction is not incidental: in
-characteristic two `polar Q v v = 2 • Q v` vanishes, so `reflection Q v` fixes `v` instead of
-negating it and is a transvection rather than a reflection in `v ^ ⊥`.
+hold over an arbitrary commutative ring. The equal-norm dichotomy, Witt transitivity and the
+fixed-subspace correction assume a field in which `2` is nonzero. The characteristic restriction
+is not incidental: in characteristic two `polar Q v v = 2 • Q v` vanishes, so `reflection Q v`
+fixes `v` instead of negating it and is a transvection rather than a reflection in `v ^ ⊥`.
 
 ## Main definitions
 
@@ -52,7 +52,7 @@ negating it and is a transvection rather than a reflection in `v ^ ⊥`.
 ## Main results
 
 * `TauCeti.QuadraticMap.polar_apply_of_mem_orthogonalGroup`: an orthogonal automorphism preserves
-  the polarization of `Q`; it preserves the orthogonality relation as well
+  polarization and the orthogonality relation
   (`isOrtho_iff_of_mem_orthogonalGroup`). As soon as `2` acts injectively on the target the
   converse holds, `TauCeti.QuadraticMap.mem_orthogonalGroup_iff_polar`, which is the usual
   identification of the isometries of a quadratic form with the isometries of its polar bilinear
@@ -78,6 +78,9 @@ negating it and is a transvection rather than a reflection in `v ^ ⊥`.
   under hypotheses (a field of characteristic not two, a nondegenerate form, finite dimension)
   that are not assumed here, and the image of the Pin group's generating vectors under twisted
   conjugation.
+* `QuadraticMap.exists_isometryEquiv_apply_eq_of_map_eq`: **Witt transitivity**, the orthogonal
+  group acts transitively on the vectors of a fixed nonzero value, by reflecting in `x - y` or in
+  `x + y`.
 * `TauCeti.QuadraticMap.exists_mem_subgroup_mul_eqOn_sup_span_singleton_of_reflection_mem`: a
   subgroup containing the invertible-norm reflections supplies the one-step fixed-subspace
   correction used by Cartan--Dieudonne induction.
@@ -603,6 +606,21 @@ theorem isUnit_sub_or_add_of_map_eq (x y : V) (hxy : Q x = Q y) (hy : Q y ≠ 0)
         mul_ne_zero (NeZero.ne (2 : K)) (NeZero.ne (2 : K))
     exact hy ((mul_eq_zero.mp hzero).resolve_left h4)
   · exact Or.inl hsub
+
+/-- **Witt transitivity** (Lam I.4.5): over a field of characteristic different from two, any two
+vectors with the same nonzero value are related by an isometry of the quadratic form. -/
+theorem _root_.QuadraticMap.exists_isometryEquiv_apply_eq_of_map_eq {x y : V} (hxy : Q x = Q y)
+    (hy : Q y ≠ 0) : ∃ f : Q.IsometryEquiv Q, f x = y := by
+  rcases isUnit_sub_or_add_of_map_eq Q x y hxy hy with h | h
+  · have := h.invertible
+    exact ⟨orthogonalGroupEquivIsometryEquiv Q (reflectionOrthogonal Q (x - y)),
+      by simpa using reflection_sub_apply_eq_of_map_eq Q x y hxy⟩
+  · have : Invertible (Q y) := (isUnit_iff_ne_zero.mpr hy).invertible
+    have : Invertible (Q (x - -y)) := by simpa only [sub_neg_eq_add] using h.invertible
+    have hneg : reflection Q (x - -y) x = -y :=
+      reflection_sub_apply_eq_of_map_eq Q x (-y) (hxy.trans (Q.map_neg y).symm)
+    exact ⟨orthogonalGroupEquivIsometryEquiv Q
+      (reflectionOrthogonal Q y * reflectionOrthogonal Q (x - -y)), by simp [hneg, map_neg]⟩
 
 end Field
 

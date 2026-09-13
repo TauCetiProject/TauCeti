@@ -48,6 +48,8 @@ the unrelated reason that positivity is vacuous
 
 * `NumberField.mkPrincipal_eq_one_or_eq_mkPrincipal_gen`: a principal narrow class of a quadratic
   field is trivial or the narrow class of the generator.
+* `NumberField.mkPrincipal_eq_mkPrincipal_gen_of_norm_neg`: a principal ideal with a generator of
+  negative norm has the narrow class of the generator.
 * `NumberField.card_ker_toClassGroup_le_two`: the kernel of `Cl⁺(K) → Cl(K)` has at most two
   elements.
 * `NumberField.card_narrowClassGroup_le_two_mul_card_classGroup`: `h⁺(K) ≤ 2 h(K)`.
@@ -135,6 +137,32 @@ theorem mkPrincipal_eq_one_or_eq_mkPrincipal_gen (hmin : minpoly ℤ θ = X ^ 2 
             (NarrowClassGroup.mkPrincipal (Units.mk0 (θ : K) hθ) *
               NarrowClassGroup.mkPrincipal x) := by rw [← mul_assoc, hsq, one_mul]
       _ = NarrowClassGroup.mkPrincipal (Units.mk0 (θ : K) hθ) := by rw [huone, mul_one]
+
+/-- **A generator of negative norm has the narrow class of `(θ)`.** For `K = ℚ(√d)` presented by
+`θ` and `x : Kˣ` with `N(x) < 0`, the narrow class of `(x)` is that of `(θ)`, even when both are
+trivial. -/
+theorem mkPrincipal_eq_mkPrincipal_gen_of_norm_neg (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {x : Kˣ} (hx : Algebra.norm ℚ (x : K) < 0) :
+    NarrowClassGroup.mkPrincipal x =
+      NarrowClassGroup.mkPrincipal (Units.mk0 (θ : K) (coe_gen_ne_zero hmin)) := by
+  rcases mkPrincipal_eq_one_or_eq_mkPrincipal_gen hmin hgen x with h | h
+  · obtain ⟨w, hw⟩ := NarrowClassGroup.mkPrincipal_eq_one_iff.mp h
+    have hwx : w • (x : K) = ((w : 𝓞 K) : K) * (x : K) := by
+      simp [Units.smul_def, Algebra.smul_def]
+    have hpos := norm_pos_of_isTotallyPositive
+      (by rw [hwx]; exact mul_ne_zero (RingOfIntegers.coe_ne_zero_iff.mpr w.ne_zero) x.ne_zero) hw
+    rw [hwx, map_mul] at hpos
+    -- The norm of a unit of `𝓞 K` is a unit of `ℤ`; positivity of `N(w) N(x)` rules out `1`.
+    have hw1 : Algebra.norm ℚ ((w : 𝓞 K) : K) = -1 := by
+      rw [← Algebra.coe_norm_int] at hpos ⊢
+      rcases Int.isUnit_iff.mp (w.isUnit.map (Algebra.norm ℤ)) with h1 | h1
+      · rw [h1, Int.cast_one, one_mul] at hpos
+        exact absurd hpos hx.not_gt
+      · rw [h1, Int.cast_neg, Int.cast_one]
+    rw [h, eq_comm, NarrowClassGroup.mkPrincipal_eq_one_iff]
+    exact exists_unit_isTotallyPositive_smul_of_norm_eq_neg_one hmin hgen hw1
+      (coe_gen_ne_zero hmin)
+  · exact h
 
 /-- **The narrow class group of a quadratic field exceeds the ordinary one by at most a factor
 of two.** By exactness the kernel of `Cl⁺(K) → Cl(K)` is the image of the principal-class map.
