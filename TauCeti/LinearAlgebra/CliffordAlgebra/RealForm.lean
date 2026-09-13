@@ -175,15 +175,15 @@ theorem posDef_realCliffordForm_zero (n : ℕ) : (realCliffordForm n 0).PosDef :
     rw [realCliffordWeight_of_lt (by omega), one_mul]
     exact mul_self_pos.mpr hi
 
-/-- The last coordinate unit vector has value one under the compact real Clifford form. -/
+/-- Every coordinate unit vector has value one under the compact real Clifford form. -/
 @[simp]
-theorem realCliffordForm_lastUnitVector (n : ℕ) :
-    realCliffordForm (n + 1) 0 (Pi.single (Fin.last n) 1) = 1 := by
+theorem realCliffordForm_unitVector (n : ℕ) (i : Fin n) :
+    realCliffordForm n 0 (Pi.single i 1) = 1 := by
   classical
   rw [realCliffordForm_zero_eq_weightedSumSquares_one]
   rw [QuadraticMap.weightedSumSquares_apply]
   simp only [Pi.one_apply, one_smul]
-  rw [Finset.sum_eq_single (Fin.last n)]
+  rw [Finset.sum_eq_single i]
   · simp
   · intro b _ hb
     simp [hb]

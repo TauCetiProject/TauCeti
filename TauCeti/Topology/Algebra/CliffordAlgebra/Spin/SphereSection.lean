@@ -61,10 +61,6 @@ private abbrev compactUnitLevel (n : ℕ) :=
 private def lastUnitVector (n : ℕ) : Fin (n + 1) → ℝ :=
   Pi.single (Fin.last n) 1
 
-private theorem compactForm_lastUnitVector (n : ℕ) :
-    compactForm n (lastUnitVector n) = 1 :=
-  realCliffordForm_lastUnitVector n
-
 /-- The unit level of `realCliffordForm (n + 1) 0` with the antipode of the last coordinate unit
 vector removed. -/
 def realCliffordSpinLastUnitNeighborhood (n : ℕ) :
@@ -106,15 +102,6 @@ noncomputable def realCliffordSpinLastLocalSectionDirection {n : ℕ}
   (Real.sqrt (realCliffordForm (n + 1) 0 (Pi.single (Fin.last n) 1 - -x)))⁻¹ •
     (Pi.single (Fin.last n) 1 - -x)
 
-/-- The local-section direction is the normalized vector from the excluded antipode to `x`. -/
-theorem realCliffordSpinLastLocalSectionDirection_def {n : ℕ}
-    (x : Fin (n + 1) → ℝ) :
-    realCliffordSpinLastLocalSectionDirection x =
-      (Real.sqrt (realCliffordForm (n + 1) 0
-        (Pi.single (Fin.last n) 1 - -x)))⁻¹ •
-        (Pi.single (Fin.last n) 1 - -x) := by
-  rw [realCliffordSpinLastLocalSectionDirection]
-
 /-- Away from the last-vector antipode, the local-section direction has quadratic value one. -/
 @[simp]
 theorem realCliffordSpinLastLocalSectionDirection_form {n : ℕ}
@@ -140,7 +127,8 @@ private def localSectionOn {n : ℕ} (x : compactUnitLevel n)
   spinReflectionPair (compactForm n) (realCliffordSpinLastLocalSectionDirection x.1)
     (lastUnitVector n) (realCliffordSpinLastLocalSectionDirection_form x.1
       (mem_realCliffordSpinLastUnitNeighborhood.mp hx))
-    (compactForm_lastUnitVector n)
+    (by simpa only [compactForm, lastUnitVector] using
+      realCliffordForm_unitVector (n + 1) (Fin.last n))
 
 /-- A normalized reflection-pair lift on the last-vector unit neighborhood, totalized by the
 identity at the excluded antipode. -/
@@ -160,7 +148,7 @@ theorem realCliffordSpinLastLocalSection_apply {n : ℕ}
         (Pi.single (Fin.last n) 1)
         (realCliffordSpinLastLocalSectionDirection_form x.1
           (mem_realCliffordSpinLastUnitNeighborhood.mp hx))
-        (realCliffordForm_lastUnitVector n) := by
+        (realCliffordForm_unitVector (n + 1) (Fin.last n)) := by
   rw [realCliffordSpinLastLocalSection]
   simp only [hx, dite_true, localSectionOn, compactForm, lastUnitVector]
 
@@ -186,8 +174,8 @@ theorem continuousOn_realCliffordSpinLastLocalSection (n : ℕ) :
       realCliffordSpinLastLocalSectionDirection x.1.1) := by
     convert hscalar.smul hvector using 1
     funext x
-    simpa only [compactForm, lastUnitVector, Pi.smul_apply'] using
-      realCliffordSpinLastLocalSectionDirection_def x.1.1
+    simp only [realCliffordSpinLastLocalSectionDirection, compactForm, lastUnitVector,
+      Pi.smul_apply']
   have hvalue : Continuous (fun x : realCliffordSpinLastUnitNeighborhood n =>
       ι (compactForm n) (realCliffordSpinLastLocalSectionDirection x.1.1) *
         ι (compactForm n) (lastUnitVector n)) :=
@@ -214,7 +202,7 @@ theorem realCliffordSpinLastLocalSection_action {n : ℕ}
     (realCliffordSpinLastLocalSectionDirection_form x.1
       (mem_realCliffordSpinLastUnitNeighborhood.mp hx)).symm ▸ invertibleOne
   let _ : Invertible (compactForm n (lastUnitVector n)) :=
-    (compactForm_lastUnitVector n).symm ▸ invertibleOne
+    (realCliffordForm_unitVector (n + 1) (Fin.last n)).symm ▸ invertibleOne
   rw [realCliffordSpinLastLocalSection]
   simp only [hx, dite_true]
   rw [← coe_spinToSpecialOrthogonal_apply, localSectionOn]
@@ -225,8 +213,9 @@ theorem realCliffordSpinLastLocalSection_action {n : ℕ}
   rw [show Pi.single (Fin.last n) (1 : ℝ) = lastUnitVector n by rfl]
   rw [QuadraticMap.reflection_apply_self, map_neg]
   have hform : compactForm n (lastUnitVector n) = compactForm n (-x.1) := by
-    rw [QuadraticMap.map_neg, compactForm_lastUnitVector]
-    exact x.2.symm
+    rw [QuadraticMap.map_neg]
+    simpa only [compactForm, lastUnitVector] using
+      (realCliffordForm_unitVector (n + 1) (Fin.last n)).trans x.2.symm
   have hpos := compactForm_last_sub_neg_pos
     (mem_realCliffordSpinLastUnitNeighborhood.mp hx)
   let _ : Invertible (compactForm n (lastUnitVector n - -x.1)) :=
