@@ -14,7 +14,7 @@ public import TauCeti.Algebra.Group.FreeAbelianCharacter
 /-!
 # Integral characters on the complex torus
 
-For an additive character lattice `N`, its integral character lattice is `N →+ ℤ`.  The
+For an additive lattice `N`, its integral character lattice is `N →+ ℤ`.  The
 corresponding complex torus is represented without coordinates as the additive characters of this
 lattice with values
 in `ℂˣ`.  Evaluation is therefore the canonical pairing between an additive character and its
@@ -131,6 +131,7 @@ theorem complexTorusMap_id :
   rfl
 
 /-- Composition of lattice maps induces composition of the corresponding complex-torus maps. -/
+@[simp]
 theorem complexTorusMap_comp (g : N' →+ N'') (f : N →+ N') :
     complexTorusMap (g.comp f) = (complexTorusMap g).comp (complexTorusMap f) := by
   apply MonoidHom.ext
@@ -138,16 +139,6 @@ theorem complexTorusMap_comp (g : N' →+ N'') (f : N →+ N') :
   apply AddChar.ext
   intro m
   rfl
-
-namespace ComplexTorus
-
-/-- Two complex-torus points agreeing under every integral character are equal. -/
-@[ext]
-theorem ext {x y : ComplexTorus N}
-    (h : ∀ m : IntegralCharacter N, characterEvaluation m x = characterEvaluation m y) : x = y :=
-  AddChar.ext x y fun m ↦ by simpa only [characterEvaluation_apply] using h m
-
-end ComplexTorus
 
 /-- Integral characters separate distinct points of the coordinate-free complex torus. -/
 theorem exists_characterEvaluation_ne {x y : ComplexTorus N} (h : x ≠ y) :
