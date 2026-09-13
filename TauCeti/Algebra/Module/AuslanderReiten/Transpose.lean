@@ -27,8 +27,9 @@ the two cokernels (`AuslanderReitenTranspose.linearEquiv`), characterized on rep
 the uniqueness theorem for minimal presentations then gives
 `IsMinimalProjectivePresentation.nonempty_linearEquiv_auslanderReitenTranspose`.
 
-The transpose is a construction on the *non-projective* modules: it vanishes on a projective
-module and on no other, which is
+The transpose is a construction on the *non-projective* modules: for a minimal projective
+presentation `P₁ → P₀ → M` whose left-hand source `P₁` is finitely generated, it vanishes on a
+projective `M` and on no other, which is
 `IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_iff_projective`.
 
 This supplies the transpose construction in sublayer 6C of the quiver-representations roadmap.
@@ -51,13 +52,14 @@ next to the other module structures on the transpose.
 
 * `AuslanderReitenTranspose.subsingleton_iff_exists_comp_eq_id`: for a finitely generated
   projective `P₁`, the transpose of `p₁` vanishes exactly when `p₁` is a split monomorphism.
-* `IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_iff_projective`: **the
-  transpose vanishes exactly on the projective modules**.  The forward direction is
+* `IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_iff_projective`: for a
+  minimal projective presentation with finitely generated left-hand source, **the transpose
+  vanishes exactly on the projective modules**.  The forward direction is
   `IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_of_projective` and needs
   no finiteness; the converse is
   `IsMinimalProjectivePresentation.projective_of_subsingleton_auslanderReitenTranspose`, and asks
   the left-hand source of the presentation to be finitely generated, which it is over an Artin
-  algebra.
+  algebra once the presented module is.
 * `IsMinimalProjectivePresentation.nonempty_linearEquiv_auslanderReitenTranspose`: the transpose
   does not depend on the chosen minimal presentation.
 
@@ -434,8 +436,9 @@ the retraction is zero.  Being a retraction of `p₁` it is also a left inverse,
 syzygy is zero, and `p₀` is an isomorphism `P₀ ≅ M` from a projective module.
 
 Finite generation of `P₁` is a genuine hypothesis rather than a convenience, as it is what makes
-the dual basis assembling the retraction finite; over an Artin algebra, where minimal
-presentations of finitely generated modules exist, it is automatic. -/
+the dual basis assembling the retraction finite; it is automatic for a *finitely generated* `M`
+over an Artin algebra, where such an `M` has a minimal projective presentation by finitely
+generated projectives. -/
 theorem projective_of_subsingleton_auslanderReitenTranspose [Module.Finite A P₁]
     (h : IsMinimalProjectivePresentation p₁ p₀)
     (hTr : Subsingleton (AuslanderReitenTranspose p₁)) : Module.Projective A M := by
