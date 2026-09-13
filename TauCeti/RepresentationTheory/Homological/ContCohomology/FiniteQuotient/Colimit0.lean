@@ -82,7 +82,9 @@ noncomputable def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G)
         induction q using QuotientGroup.induction_on with
         | H g =>
           apply Subtype.ext
-          simp [fixedPointsInclusionOnAddSubgroup])
+          rw [QuotientGroup.mapOfLE_mk]
+          simp only [coe_quotient_smul_fixedPoints_addSubgroup,
+            coe_fixedPointsInclusionOnAddSubgroup, coe_smul_fixedPoints_addSubgroup])
 
 /-- Coercion of a degree-zero transition to the coefficient group. -/
 @[simp]
@@ -92,7 +94,7 @@ theorem coe_explicitFiniteQuotientTransition0 (hVU : V ≤ U)
   by
     unfold explicitFiniteQuotientTransition0
     rw [coe_explicitMap0]
-    exact coe_fixedPointsInclusion hVU ⟨(x : M), x.1.2⟩
+    exact coe_fixedPointsInclusionOnAddSubgroup hVU ⟨(x : M), x.1.2⟩
 
 /-- The transition at an open normal subgroup is the identity. -/
 @[simp]
@@ -104,7 +106,7 @@ theorem explicitFiniteQuotientTransition0_id (U : OpenNormalSubgroup G) :
   apply Subtype.ext
   simp only [coe_explicitMap0, AddMonoidHom.id_apply]
   apply Subtype.ext
-  simp [fixedPointsInclusionOnAddSubgroup]
+  simp only [coe_fixedPointsInclusionOnAddSubgroup]
 
 /-- Degree-zero transitions compose along inclusions of open normal subgroups. -/
 theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
@@ -118,7 +120,7 @@ theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
   apply Subtype.ext
   simp only [coe_explicitMap0, AddMonoidHom.comp_apply]
   apply Subtype.ext
-  simp [fixedPointsInclusionOnAddSubgroup]
+  simp only [coe_fixedPointsInclusionOnAddSubgroup]
 
 private theorem explicitFiniteQuotientTransition0_inflation (hVU : V ≤ U)
     (x : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
@@ -234,7 +236,7 @@ theorem explicitFiniteQuotientSystem0_coeffNatTrans_app (f : M →+[G] N)
               (FixedPoints.addSubgroup U.toSubgroup N) :=
             inferInstanceAs <| DistribMulAction (G ⧸ U.toSubgroup)
               (FixedPoints.addSubmonoid U.toSubgroup N)
-          exact fixedPointsQuotientMap f U.toSubgroup)) := by
+          exact fixedPointsQuotientMapAddSubgroup f U.toSubgroup)) := by
   unfold explicitFiniteQuotientSystem0CoeffNatTrans
   rfl
 

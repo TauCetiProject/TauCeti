@@ -187,7 +187,7 @@ theorem coe_fixedPointsInclusion (h : K ≤ H) (m : FixedPoints.addSubmonoid H M
   AddSubmonoid.coe_inclusion _ m
 
 /-- The inclusion between fixed-point additive subgroups. -/
-@[expose] def fixedPointsInclusionOnAddSubgroup {G : Type*} [Group G] {M : Type*} [AddCommGroup M]
+def fixedPointsInclusionOnAddSubgroup {G : Type*} [Group G] {M : Type*} [AddCommGroup M]
     [DistribMulAction G M] {H K : Subgroup G} (h : K ≤ H) :
     FixedPoints.addSubgroup H M →+ FixedPoints.addSubgroup K M where
   toFun m :=
@@ -195,6 +195,14 @@ theorem coe_fixedPointsInclusion (h : K ≤ H) (m : FixedPoints.addSubmonoid H M
       (fixedPointsInclusion h ⟨(m : M), m.2⟩).2⟩
   map_zero' := by ext; simp
   map_add' _ _ := by ext; simp
+
+/-- The fixed-point subgroup inclusion does not move an element of `M`. -/
+@[simp]
+theorem coe_fixedPointsInclusionOnAddSubgroup {G : Type*} [Group G] {M : Type*} [AddCommGroup M]
+    [DistribMulAction G M] {H K : Subgroup G} (h : K ≤ H)
+    (m : FixedPoints.addSubgroup H M) :
+    (fixedPointsInclusionOnAddSubgroup h m : M) = (m : M) := by
+  exact coe_fixedPointsInclusion h ⟨(m : M), m.2⟩
 
 /-- The fixed-point inclusions are injective. -/
 theorem fixedPointsInclusion_injective (h : K ≤ H) :
@@ -320,7 +328,7 @@ theorem coe_fixedPointsQuotientMap (f : M →+[G] N) (H : Subgroup G) [H.Normal]
 
 /-- A quotient-equivariant map on fixed-point additive subgroups induced by an equivariant
 coefficient homomorphism. -/
-@[expose] def fixedPointsQuotientMapAddSubgroup {G : Type*} [Group G]
+def fixedPointsQuotientMapAddSubgroup {G : Type*} [Group G]
     {M N : Type*} [AddCommGroup M] [AddCommGroup N] [DistribMulAction G M]
     [DistribMulAction G N] (f : M →+[G] N) (H : Subgroup G) [H.Normal] :
     FixedPoints.addSubgroup H M →+[G ⧸ H] FixedPoints.addSubgroup H N := by
