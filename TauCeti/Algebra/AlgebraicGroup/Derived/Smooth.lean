@@ -62,7 +62,7 @@ theorem isReduced_quotient_derivedDefiningIdeal_of_isReduced_tensorProduct
     -- Identify the coerced bialgebra map with its underlying ring homomorphism.
     change (RingHom.ker (mkQuotient H I).hom.toAlgHom.toRingHom).radical ≤ _
     rw [mkQuotient_ker]
-    exact (Ideal.isRadical_bot.comap _).radical_le_iff.mpr
+    exact ((Ideal.isRadical_bot (R := H ⊗[R] H)).comap _).radical_le_iff.mpr
       (derivedDefiningIdeal_toIdeal_le_ker (R := R) H)
   have hred : HopfIdeal.reduction R D = ⊥ :=
     eq_bot_of_comapOfSurjective_le _ hJI
