@@ -123,6 +123,8 @@ noncomputable def mackeyInclusion (s : G) (A : Rep.{u} k H) :
       simp only [Subgroup.coe_subtype, InvMemClass.coe_inv, TauCeti.coe_mackeyToH_apply]
       group⟩
 
+-- The public generator-evaluation lemmas in this file deliberately are not simp lemmas: their
+-- `IndV.mk` arguments unfold under simp, so `@[simp]` would violate the `simpNF` linter.
 /-- The embedding of the Mackey summand on generators: `⟦u ⊗ₜ a⟧ ↦ ⟦s⁻¹ u ⊗ₜ a⟧`. -/
 theorem mackeyInclusion_hom_apply_mk (s : G) (A : Rep.{u} k H) (u : K) (a : A) :
     (mackeyInclusion K s A).hom (IndV.mk _ _ u a) = IndV.mk H.subtype A.ρ (s⁻¹ * u) a := by
