@@ -41,9 +41,10 @@ class and the signs have to be realized by one and the same element of `Kˣ`, so
 through weak approximation at the mixed set of places consisting of the primes dividing
 `𝔪.finitePart` together with all real places
 (`exists_fieldUnit_valuation_sub_lt_and_signHom_eq`).  An approximation to a chosen integral
-representative of the residue class, to within `v.valuation K` at most `exp (-𝔪.exponent v)` at
-each prime of the support, has the same reduction as that representative, because the quotient of
-the two differs from one by exactly that much.
+representative of the residue class, closely enough that `v.valuation K` of their difference stays
+below `exp (-𝔪.exponent v)` at each prime of the support, has the same reduction as that
+representative: the quotient of the two then differs from one by at most that much, which is the
+congruence condition recorded by `residue_eq_one_iff`.
 
 The global units of `K` are nowhere quotiented out here.  Their image in this quotient is the
 obstruction that glues the residue-unit and sign factors to the ordinary class group inside the
@@ -61,7 +62,7 @@ ray class group, and it is why the ray class group is not the product of the thr
   `TauCeti.GlobalNumberFields.ker_residueSignHom`: the kernel is the congruence subgroup.
 * `TauCeti.GlobalNumberFields.residueSignHom_surjective`: every residue unit and sign pattern is
   realized simultaneously, together with its archimedean half
-  `TauCeti.GlobalNumberFields.modulusSignHom_surjective`.
+  `TauCeti.GlobalNumberFields.modulusSignHom_comp_primeToSubgroup_surjective`.
 * `TauCeti.GlobalNumberFields.relIndex_congruenceSubgroup`: the exact relative index.
 
 ## References
@@ -186,7 +187,7 @@ theorem residueSignHom_surjective (𝔪 : Modulus K) : Function.Surjective (resi
 its finite part.**  This is the archimedean half of `residueSignHom_surjective`, the finite half
 being `residueHom_surjective`.  Unlike `signHom_surjective`, the realizing element is also
 constrained at the finite places: it is a unit at every prime dividing `𝔪.finitePart`. -/
-theorem modulusSignHom_surjective (𝔪 : Modulus K) :
+theorem modulusSignHom_comp_primeToSubgroup_surjective (𝔪 : Modulus K) :
     Function.Surjective ((modulusSignHom 𝔪).comp (primeToSubgroup 𝔪).subtype) := fun ε ↦ by
   obtain ⟨x, hx⟩ := residueSignHom_surjective 𝔪 (1, ε)
   exact ⟨x, congrArg Prod.snd hx⟩
@@ -203,7 +204,7 @@ noncomputable def residueSignEquiv (𝔪 : Modulus K) :
   (QuotientGroup.quotientMulEquivOfEq (ker_residueSignHom 𝔪).symm).trans
     (QuotientGroup.quotientKerEquivOfSurjective _ (residueSignHom_surjective 𝔪))
 
-@[simp] theorem residueSignEquiv_mk (𝔪 : Modulus K) (x : primeToSubgroup 𝔪) :
+@[simp] theorem residueSignEquiv_apply_mk (𝔪 : Modulus K) (x : primeToSubgroup 𝔪) :
     residueSignEquiv 𝔪 (QuotientGroup.mk x) = residueSignHom 𝔪 x := by
   simp only [residueSignEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
     TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]

@@ -78,8 +78,9 @@ variable (K) in
 /-- **The narrow modulus is counted by the real places alone.**  Its finite part is the unit ideal,
 so the residue-unit factor disappears and the congruence quotient is the sign group `{±1}^{r₁}`.
 
-This is the nonempty-infinite-part specialization of `relIndex_congruenceSubgroup`: over a field
-with a real place it is `2 ^ r₁ > 1`, so the narrow conditions do not collapse to the wide ones. -/
+This is the narrow-modulus specialization of `relIndex_congruenceSubgroup`.  Over a field with a
+real place it reads `2 ^ r₁ > 1`, so there the narrow conditions do not collapse to the wide ones;
+over a totally complex field the exponent is `0` and the index is `1`. -/
 theorem relIndex_congruenceSubgroup_narrowModulus :
     (congruenceSubgroup (narrowModulus K)).relIndex (primeToSubgroup (narrowModulus K)) =
       2 ^ InfinitePlace.nrRealPlaces K := by
