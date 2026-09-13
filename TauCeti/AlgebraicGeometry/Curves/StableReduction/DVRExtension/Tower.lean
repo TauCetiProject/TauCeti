@@ -119,14 +119,14 @@ def comp {E F G : FiniteDVRExtension R K} (f : Hom E F) (g : Hom F G) : Hom E G 
   ext x
   rfl
 
-lemma id_comp {E F : FiniteDVRExtension R K} (f : Hom E F) : comp (id E) f = f := by
+@[simp] lemma id_comp {E F : FiniteDVRExtension R K} (f : Hom E F) : comp (id E) f = f := by
   apply ext
   · ext x
     simp
   · ext x
     simp
 
-lemma comp_id {E F : FiniteDVRExtension R K} (f : Hom E F) : comp f (id F) = f := by
+@[simp] lemma comp_id {E F : FiniteDVRExtension R K} (f : Hom E F) : comp f (id F) = f := by
   apply ext
   · ext x
     simp
@@ -152,25 +152,14 @@ instance : Category (FiniteDVRExtension R K) where
   comp_id := Hom.comp_id
   assoc := Hom.assoc
 
-/-- A finite separable field tower between two chosen DVR extensions, represented by its compatible
-map of chosen places. -/
-abbrev Tower (E F : FiniteDVRExtension R K) := Hom E F
-
-namespace Tower
-
-variable {E F : FiniteDVRExtension R K}
-
-variable {G : FiniteDVRExtension R K}
-
-variable {H : FiniteDVRExtension R K}
-
 /-- The algebra structure induced by the compatible field embedding. -/
 @[instance_reducible]
-def fieldAlgebra (T : Tower E F) : Algebra E.extensionField F.extensionField :=
+def Hom.fieldAlgebra {E F : FiniteDVRExtension R K} (T : Hom E F) :
+    Algebra E.extensionField F.extensionField :=
   T.field.toRingHom.toAlgebra
 
 /-- The scalar tower induced by the compatible field embedding. -/
-instance fieldTower (T : Tower E F) :
+instance Hom.fieldTower {E F : FiniteDVRExtension R K} (T : Hom E F) :
     letI : Algebra E.extensionField F.extensionField := T.fieldAlgebra
     IsScalarTower K E.extensionField F.extensionField := by
   let algebra : Algebra E.extensionField F.extensionField := T.fieldAlgebra
@@ -181,7 +170,7 @@ instance fieldTower (T : Tower E F) :
       exact (T.field.commutes x).symm)
 
 /-- Finiteness of the upper field over the lower field follows from its finiteness over `K`. -/
-instance fieldFinite (T : Tower E F) :
+instance Hom.fieldFinite {E F : FiniteDVRExtension R K} (T : Hom E F) :
     letI : Algebra E.extensionField F.extensionField := T.fieldAlgebra
     FiniteDimensional E.extensionField F.extensionField := by
   let algebra : Algebra E.extensionField F.extensionField := T.fieldAlgebra
@@ -195,7 +184,7 @@ instance fieldFinite (T : Tower E F) :
       (@Algebra.toSMul K E.extensionField _ _ inferInstance) tower inferInstance
 
 /-- Separability of the upper field over the lower field follows from its separability over `K`. -/
-instance fieldSeparable (T : Tower E F) :
+instance Hom.fieldSeparable {E F : FiniteDVRExtension R K} (T : Hom E F) :
     letI : Algebra E.extensionField F.extensionField := T.fieldAlgebra
     Algebra.IsSeparable E.extensionField F.extensionField := by
   let algebra : Algebra E.extensionField F.extensionField := T.fieldAlgebra
@@ -205,28 +194,6 @@ instance fieldSeparable (T : Tower E F) :
       (@Algebra.toSMul K F.extensionField _ _ inferInstance) := T.fieldTower
   exact @Algebra.isSeparable_tower_top_of_isSeparable K E.extensionField _ F.extensionField
     _ _ inferInstance inferInstance algebra tower inferInstance
-
-/-- The identity tower on a chosen finite DVR extension. -/
-def id (E : FiniteDVRExtension R K) : Tower E E :=
-  Hom.id E
-
-/-- Compose finite separable towers, including their compatible maps of chosen places. -/
-def comp (T : Tower E F) (U : Tower F G) : Tower E G :=
-  Hom.comp T U
-
-@[simp]
-lemma id_comp (T : Tower E F) : comp (id E) T = T :=
-  Hom.id_comp T
-
-@[simp]
-lemma comp_id (T : Tower E F) : comp T (id F) = T :=
-  Hom.comp_id T
-
-lemma assoc (T : Tower E F) (U : Tower F G) (V : Tower G H) :
-    comp (comp T U) V = comp T (comp U V) :=
-  Hom.assoc T U V
-
-end Tower
 
 end FiniteDVRExtension
 
