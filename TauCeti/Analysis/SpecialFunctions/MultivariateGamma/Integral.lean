@@ -12,16 +12,16 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 /-!
 # The multivariate Gamma function as a cone integral
 
-For `(p - 1) / 2 < a` the multivariate Gamma function `TauCeti.multivariateGamma p a` is the
-integral of `(det A) ^ (a - (p + 1) / 2) * exp (-trace A)` over the cone of positive-definite
-symmetric `p × p` matrices, taken against `TauCeti.symmetricLebesgue p`. The normalization of
-that reference measure is part of the identity, not a convention that can be changed afterwards,
-which is why this file, unlike the elementary theory in
+This file proves the cone integral that characterizes the multivariate Gamma function in
+dimension zero: `TauCeti.multivariateGamma 0 a` is the integral of
+`(det A) ^ (a - 1 / 2) * exp (-trace A)` over the positive-definite symmetric `0 × 0` matrices,
+taken against `TauCeti.symmetricLebesgue 0`. Classically the same identity holds in dimension
+`p` for `(p - 1) / 2 < a`, with `(det A) ^ (a - (p + 1) / 2)` in the integrand.
+
+The normalization of the reference measure is part of the identity, not a convention that can be
+changed afterwards, which is why this file, unlike the elementary theory in
 `TauCeti/Analysis/SpecialFunctions/MultivariateGamma/Basic.lean`, depends on the measure theory
 of the symmetric matrices.
-
-Only dimension zero is available so far; the positive-dimensional identity is proved in Cholesky
-coordinates and waits on the Jacobian of `L ↦ L * Lᵀ`.
 
 ## Main results
 

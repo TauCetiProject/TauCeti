@@ -16,9 +16,9 @@ The multivariate Gamma function of dimension `p` is
 
 It is the normalizing constant of the Wishart density, because for `(p - 1) / 2 < a` it is the
 integral of `(det A) ^ (a - (p + 1) / 2) * exp (-trace A)` over the cone of positive-definite
-symmetric `p × p` matrices, taken against `TauCeti.symmetricLebesgue p`; that integral identity
-lives in `TauCeti/Analysis/SpecialFunctions/MultivariateGamma/Integral.lean`, which is where the
-symmetric-matrix measure theory enters.
+symmetric `p × p` matrices, taken against `TauCeti.symmetricLebesgue p`. That integral identity
+is the subject of `TauCeti/Analysis/SpecialFunctions/MultivariateGamma/Integral.lean`, which
+proves its dimension-zero case and is where the symmetric-matrix measure theory enters.
 
 The exponent of `π` is real, not the truncated natural-number quotient `p * (p - 1) / 4`, and so
 is the shift `i / 2` in each Gamma factor; `Γ_p` interpolates the classical constants in half
