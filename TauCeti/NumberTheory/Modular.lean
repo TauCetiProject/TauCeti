@@ -63,7 +63,8 @@ is the arbitrary-subgroup form of `isFundamentalDomain_Gamma1_PSL`
 (`Modularforms/PeterssonLevelN.lean`), which states the tiling for the image of `Γ₁(N)`. Both are
 restated for Mathlib's `volume : Measure ℍ` in place of that project's own hyperbolic measure.
 The proofs are shorter here, resting on `ModularGroup.disjoint_smul_fdo`,
-`Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one` and the coset-tiling transport of
+`QuotientGroup.eq_one_iff` with
+`Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one`, and the coset-tiling transport of
 `TauCeti/MeasureTheory/Group/FundamentalDomain.lean`, which Tau Ceti already had.
 -/
 
@@ -247,8 +248,10 @@ theorem isFundamentalDomain_fdo :
     obtain ⟨γ, hγ⟩ := exists_smul_mem_fd τ
     exact Set.mem_iUnion.mpr ⟨γ, hγ, not_exists.mp hτ (γ : PSL(2, ℤ))⟩
   · refine fun g hg ↦ QuotientGroup.induction_on g (fun γ hγ ↦ ?_) hg
-    have hne : ¬ (γ = 1 ∨ γ = -1) := fun h ↦ hγ ((Matrix.SpecialLinearGroup.pslMk_eq_one_iff
-      γ).mpr h)
+    have hne : ¬ (γ = 1 ∨ γ = -1) := fun h ↦ hγ (by
+      simp only [QuotientGroup.eq_one_iff,
+        Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
+      exact h)
     rw [pslMk_smul_set]
     refine Disjoint.aedisjoint (Disjoint.symm ?_)
     simpa using disjoint_smul_fdo (γ := 1) (δ := γ) (by simpa using fun h ↦ hne (Or.inl h))
