@@ -92,7 +92,7 @@ noncomputable def modulusSignHom (𝔪 : Modulus K) : Kˣ →* (𝔪.infinitePar
     modulusSignHom 𝔪 x w = signHom x w.1 := (rfl)
 
 /-- **The prescribed signs are trivial exactly at an element positive on the infinite part.** -/
-theorem modulusSignHom_eq_one_iff {𝔪 : Modulus K} (x : Kˣ) :
+@[simp] theorem modulusSignHom_eq_one_iff {𝔪 : Modulus K} (x : Kˣ) :
     modulusSignHom 𝔪 x = 1 ↔
       ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) := by
   rw [funext_iff]
@@ -118,7 +118,7 @@ noncomputable def residueSignHom (𝔪 : Modulus K) :
     (residueSignHom 𝔪 x).2 = modulusSignHom 𝔪 (x : Kˣ) := (rfl)
 
 /-- **Congruence to one is exactly trivial reduction together with trivial signs.** -/
-theorem residueSignHom_eq_one_iff {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) :
+@[simp] theorem residueSignHom_eq_one_iff {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) :
     residueSignHom 𝔪 x = 1 ↔ (x : Kˣ) ∈ congruenceSubgroup 𝔪 := by
   rw [Prod.ext_iff, mem_congruenceSubgroup, isCongrOne_iff, Prod.fst_one, Prod.snd_one,
     residueSignHom_fst, residueSignHom_snd, modulusSignHom_eq_one_iff]

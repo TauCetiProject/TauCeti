@@ -14,8 +14,8 @@ public import Mathlib.RingTheory.Ideal.Quotient.Defs
 `Ideal.Quotient.mk_surjective` produces *some* representative of a class in `R ⧸ I`, with no
 control over it.  Modulo a nonzero ideal the representative can be chosen nonzero: a representative
 that happens to vanish is corrected by a nonzero element of the ideal, which does not change its
-class.  This is what a residue class needs before it can be inverted in a fraction field or made
-into a unit of the ambient ring.
+class.  This is what a residue class needs before its representative can be inverted in an
+appropriate fraction field.
 
 ## Main results
 
