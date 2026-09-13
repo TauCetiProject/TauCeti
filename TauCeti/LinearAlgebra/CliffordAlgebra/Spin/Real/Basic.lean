@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DoubleCover
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
+import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # Compact real Spin groups
@@ -34,7 +35,9 @@ separate.
 
 ## References
 
-* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
+This advances the real Spin-group part of Layer 7 in
+`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`. See H. B. Lawson and
+M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
 -/
 
 public section

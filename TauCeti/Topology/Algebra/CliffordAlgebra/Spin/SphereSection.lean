@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Real.Sqrt
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.ReflectionPair
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 
@@ -125,9 +126,19 @@ theorem realCliffordSpinLastLocalSectionDirection_form {n : ℕ}
     (x : {x : Fin (n + 1) → ℝ // realCliffordForm (n + 1) 0 x = 1})
     (hx : x ∈ realCliffordSpinLastUnitNeighborhood n) :
     realCliffordForm (n + 1) 0 (realCliffordSpinLastLocalSectionDirection x) = 1 := by
-  simpa only [compactForm, realCliffordSpinLastLocalSectionDirection, lastUnitVector] using
-    (posDef_realCliffordForm_zero (n + 1)).inv_sqrt_smul_apply
-      (lastUnitVector n - -x.1) (last_sub_neg_ne_zero hx)
+  have hpos := compactForm_last_sub_neg_pos hx
+  have hsqrt : Real.sqrt (compactForm n (lastUnitVector n - -x.1)) ≠ 0 :=
+    Real.sqrt_ne_zero'.mpr hpos
+  calc
+    realCliffordForm (n + 1) 0 (realCliffordSpinLastLocalSectionDirection x) =
+        (Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹ *
+          (Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹ *
+            compactForm n (lastUnitVector n - -x.1) := by
+      rw [realCliffordSpinLastLocalSectionDirection, QuadraticMap.map_smul]
+      rfl
+    _ = 1 := by
+      field_simp
+      simpa [pow_two] using (Real.sq_sqrt hpos.le).symm
 
 private def localSectionOn {n : ℕ} (x : compactUnitLevel n)
     (hx : x ∈ realCliffordSpinLastUnitNeighborhood n) :
@@ -228,17 +239,19 @@ theorem realCliffordSpinLastLocalSection_action {n : ℕ}
   have hreflection : QuadraticMap.reflection (compactForm n)
       (realCliffordSpinLastLocalSectionDirection x) =
         QuadraticMap.reflection (compactForm n) (lastUnitVector n - -x.1) := by
-    let _ : Invertible (realCliffordForm (n + 1) 0
-        ((Real.sqrt (realCliffordForm (n + 1) 0
-      (lastUnitVector n - -x.1)))⁻¹ • (lastUnitVector n - -x.1))) :=
-      ((posDef_realCliffordForm_zero (n + 1)).inv_sqrt_smul_apply
-        (lastUnitVector n - -x.1)
-        (last_sub_neg_ne_zero hx)).symm ▸ invertibleOne
-    convert (posDef_realCliffordForm_zero (n + 1)).reflection_inv_sqrt_smul_eq
-      (lastUnitVector n - -x.1) (last_sub_neg_ne_zero hx) using 1
+    have hscale :
+        (Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹ ≠ 0 :=
+      inv_ne_zero (Real.sqrt_ne_zero'.mpr hpos)
+    let _ : Invertible
+        ((Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹) :=
+      (isUnit_iff_ne_zero.mpr hscale).invertible
+    convert QuadraticMap.reflection_smul_eq (compactForm n)
+      (lastUnitVector n - -x.1)
+      (Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹ using 1
     -- The direction is definitionally this normalized vector; only its proof-irrelevant norm
-    -- instance differs from the one constructed for the shared rescaling theorem.
+    -- instance differs from the one constructed for the generic rescaling theorem.
     congr 1
+    exact Subsingleton.elim _ _
   rw [hreflection, hreflect, neg_neg]
 
 end

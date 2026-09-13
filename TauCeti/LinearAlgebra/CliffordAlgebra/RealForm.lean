@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
 
 /-!
 # The real Clifford algebras `Cliff(p, q)` and the base entries of the Bott table
@@ -29,8 +27,6 @@ sign vector `TauCeti.realCliffordWeight p q`. It is nondegenerate
 The compact form `realCliffordForm n 0` is positive definite
 (`TauCeti.posDef_realCliffordForm_zero`) and equals the standard sum-of-squares form
 (`TauCeti.realCliffordForm_zero_eq_weightedSumSquares_one`).
-The general positive-definite API below normalizes any nonzero vector by the inverse square root of
-its quadratic value and proves that this rescaling preserves its reflection.
 Negating the form swaps the two signature indices through
 `TauCeti.realCliffordFormNegIsometry`; its coordinate action is given by
 `TauCeti.realCliffordFormNegIsometry_pos_of_neg` and
@@ -92,10 +88,6 @@ equivalences and their values, not their bare existence, that the Bott-periodici
 * `TauCeti.nondegenerate_realCliffordForm`: the signature forms are nondegenerate.
 * `TauCeti.realCliffordForm_zero_eq_weightedSumSquares_one`: the compact signature form is the
   standard real sum-of-squares form.
-* `QuadraticMap.PosDef.inv_sqrt_smul_apply`: inverse-square-root normalization has quadratic value
-  one for any positive-definite real quadratic form.
-* `QuadraticMap.PosDef.reflection_inv_sqrt_smul_eq`: the same normalization preserves the
-  associated quadratic reflection.
 * `TauCeti.finrank_cliffordAlgebra_realCliffordForm`:
   `finrank ℝ (CliffordAlgebra (realCliffordForm p q)) = 2 ^ (p + q)`.
 
@@ -182,64 +174,6 @@ theorem posDef_realCliffordForm_zero (n : ℕ) : (realCliffordForm n 0).PosDef :
     refine ⟨i, Finset.mem_univ i, ?_⟩
     rw [realCliffordWeight_of_lt (by omega), one_mul]
     exact mul_self_pos.mpr hi
-
-end TauCeti
-
-namespace QuadraticMap
-
-variable {M : Type*} [AddCommGroup M] [Module ℝ M]
-
-/-- A vector whose value under a real quadratic form is invertible is nonzero. -/
-theorem ne_zero_of_invertible_apply (Q : QuadraticForm ℝ M) (v : M)
-    [Invertible (Q v)] : v ≠ 0 := by
-  intro hv
-  subst v
-  exact (isUnit_of_invertible (Q (0 : M))).ne_zero (by simp)
-
-namespace PosDef
-
-/-- A positive-definite real quadratic form has nonzero square root at every nonzero vector. -/
-theorem sqrt_apply_ne_zero {Q : QuadraticForm ℝ M} (hQ : Q.PosDef) (v : M) (hv : v ≠ 0) :
-    Real.sqrt (Q v) ≠ 0 :=
-  Real.sqrt_ne_zero'.mpr (hQ v hv)
-
-/-- Scaling a nonzero vector by the inverse square root of its value under a positive-definite
-real quadratic form gives a vector of quadratic value one. -/
-@[simp]
-theorem inv_sqrt_smul_apply {Q : QuadraticForm ℝ M} (hQ : Q.PosDef) (v : M) (hv : v ≠ 0) :
-    Q ((Real.sqrt (Q v))⁻¹ • v) = 1 := by
-  have hpos : 0 < Q v := hQ v hv
-  have hsqrt : Real.sqrt (Q v) ≠ 0 := Real.sqrt_ne_zero'.mpr hpos
-  calc
-    Q ((Real.sqrt (Q v))⁻¹ • v) =
-        (Real.sqrt (Q v))⁻¹ * (Real.sqrt (Q v))⁻¹ * Q v := by
-      rw [QuadraticMap.map_smul]
-      rfl
-    _ = 1 := by
-      field_simp
-      simpa [pow_two] using (Real.sq_sqrt hpos.le).symm
-
-/-- Normalizing a nonzero vector in a positive-definite real quadratic form does not change its
-quadratic reflection. -/
-@[simp]
-theorem reflection_inv_sqrt_smul_eq {Q : QuadraticForm ℝ M} (hQ : Q.PosDef)
-    (v : M) (hv : v ≠ 0) [Invertible (Q v)]
-    [Invertible (Q ((Real.sqrt (Q v))⁻¹ • v))] :
-    TauCeti.QuadraticMap.reflection Q ((Real.sqrt (Q v))⁻¹ • v) =
-      TauCeti.QuadraticMap.reflection Q v := by
-  have ha : (Real.sqrt (Q v))⁻¹ ≠ 0 := inv_ne_zero (hQ.sqrt_apply_ne_zero v hv)
-  let _ : Invertible (Real.sqrt (Q v))⁻¹ := (isUnit_iff_ne_zero.mpr ha).invertible
-  -- `reflection_smul_eq` constructs its own proof-irrelevant norm instance; align that instance
-  -- with the one in the public statement after applying the theorem.
-  convert TauCeti.QuadraticMap.reflection_smul_eq Q v (Real.sqrt (Q v))⁻¹ using 1
-  congr 1
-  exact Subsingleton.elim _ _
-
-end PosDef
-
-end QuadraticMap
-
-namespace TauCeti
 
 /-- The real Clifford algebra of signature `(p, q)` has dimension `2 ^ (p + q)`, as every Clifford
 algebra of a space of that dimension does. This is the count that forces the surjections built
