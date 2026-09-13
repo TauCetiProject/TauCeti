@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
+import Mathlib.Geometry.Manifold.PartitionOfUnity
+import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -28,13 +30,15 @@ of a connection on the tangent bundle.
 ## Main definitions and results
 
 * `TauCeti.curvatureOperator`: the curvature operator of a connection.
-* `TauCeti.curvatureOperator_swap`: curvature is antisymmetric in its two
+* `TauCeti.curvatureOperator_antisymm`: curvature is antisymmetric in its two
   vector-field arguments.
 * `TauCeti.contMDiff_curvatureOperator`: a smooth connection has smooth
   curvature on smooth fields and sections.
 * `TauCeti.curvatureOperator_smul_first`, `TauCeti.curvatureOperator_smul_second`, and
   `TauCeti.curvatureOperator_smul_section`: curvature is linear over smooth
   functions in each argument.
+* `TauCeti.curvatureOperator_congr`: on finite-rank smooth bundles, curvature at a point depends
+  only on the values of its three inputs there.
 
 ## References
 
@@ -87,7 +91,7 @@ theorem curvatureOperator_apply (X Y : Π x : M, TangentSpace I x) (σ : Π x : 
           cov σ x (mlieBracket I X Y x) := (rfl)
 
 /-- Curvature is antisymmetric in its two vector-field arguments. -/
-theorem curvatureOperator_swap (X Y : Π x : M, TangentSpace I x) (σ : Π x : M, V x) :
+theorem curvatureOperator_antisymm (X Y : Π x : M, TangentSpace I x) (σ : Π x : M, V x) :
     curvatureOperator cov X Y σ = -curvatureOperator cov Y X σ := by
   funext x
   simp only [Pi.neg_apply]
@@ -121,7 +125,7 @@ theorem curvatureOperator_zero_first (Y : Π x : M, TangentSpace I x) (σ : Π x
 @[simp]
 theorem curvatureOperator_zero_second (X : Π x : M, TangentSpace I x) (σ : Π x : M, V x) :
     curvatureOperator cov X 0 σ = 0 := by
-  rw [curvatureOperator_swap]
+  rw [curvatureOperator_antisymm]
   simp
 
 /-- Curvature vanishes on the zero section. -/
@@ -210,9 +214,9 @@ theorem curvatureOperator_add_second
     (hσ : CMDiff ∞ (T% σ)) :
     curvatureOperator cov X (Y + Y') σ =
       curvatureOperator cov X Y σ + curvatureOperator cov X Y' σ := by
-  rw [curvatureOperator_swap cov X (Y + Y') σ,
+  rw [curvatureOperator_antisymm cov X (Y + Y') σ,
     curvatureOperator_add_first hY hY' hσ,
-    curvatureOperator_swap cov Y X σ, curvatureOperator_swap cov Y' X σ]
+    curvatureOperator_antisymm cov Y X σ, curvatureOperator_antisymm cov Y' X σ]
   module
 
 omit [CompleteSpace E] in
@@ -289,8 +293,8 @@ theorem curvatureOperator_smul_second
     (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hY : CMDiff ∞ (T% Y))
     (hσ : CMDiff ∞ (T% σ)) :
     curvatureOperator cov X (f • Y) σ = f • curvatureOperator cov X Y σ := by
-  rw [curvatureOperator_swap cov X (f • Y) σ,
-    curvatureOperator_smul_first hf hY hσ, curvatureOperator_swap cov Y X σ]
+  rw [curvatureOperator_antisymm cov X (f • Y) σ,
+    curvatureOperator_smul_first hf hY hσ, curvatureOperator_antisymm cov Y X σ]
   simp
 
 /-- Curvature is linear over smooth functions in its section argument. -/
@@ -372,6 +376,186 @@ theorem curvatureOperator_smul_section
   let T := d% (fun y ↦ d% f y (X y)) x (Y x) • σ x
   change A + P + (Q + S) - (B + Q + (P + T)) - (D + (S - T)) = A - B - D
   abel
+
+omit [CompleteSpace E] in
+private theorem curvatureOperator_congr_of_eventuallyEq
+    {X X' Y Y' : Π x : M, TangentSpace I x} {σ σ' : Π x : M, V x} {x : M}
+    (hX : CMDiff ∞ (T% X)) (hX' : CMDiff ∞ (T% X'))
+    (hY : CMDiff ∞ (T% Y)) (hY' : CMDiff ∞ (T% Y'))
+    (hσ : CMDiff ∞ (T% σ)) (hσ' : CMDiff ∞ (T% σ'))
+    (hXX' : X =ᶠ[nhds x] X') (hYY' : Y =ᶠ[nhds x] Y')
+    (hσσ' : Filter.Eventually (fun y ↦ σ y = σ' y) (nhds x)) :
+    curvatureOperator cov X Y σ x = curvatureOperator cov X' Y' σ' x := by
+  have hσd := hσ.mdifferentiable (by simp)
+  have hσ'd := hσ'.mdifferentiable (by simp)
+  have hinnerY : Filter.Eventually
+      (fun y ↦ cov σ y (Y y) = cov σ' y (Y' y)) (nhds x) := by
+    filter_upwards [eventually_eventually_nhds.2 hσσ', hYY'.eventuallyEq_nhds] with y hσy hYy
+    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq
+      (hσd y) (hσ'd y) Filter.univ_mem hσy, hYy.eq_of_nhds]
+  have hinnerX : Filter.Eventually
+      (fun y ↦ cov σ y (X y) = cov σ' y (X' y)) (nhds x) := by
+    filter_upwards [eventually_eventually_nhds.2 hσσ', hXX'.eventuallyEq_nhds] with y hσy hXy
+    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq
+      (hσd y) (hσ'd y) Filter.univ_mem hσy, hXy.eq_of_nhds]
+  have hYσ := Manifold.contMDiff_covariantDerivative_apply cov hY hσ
+  have hY'σ' := Manifold.contMDiff_covariantDerivative_apply cov hY' hσ'
+  have hXσ := Manifold.contMDiff_covariantDerivative_apply cov hX hσ
+  have hX'σ' := Manifold.contMDiff_covariantDerivative_apply cov hX' hσ'
+  have hfirst : cov (fun y ↦ cov σ y (Y y)) x (X x) =
+      cov (fun y ↦ cov σ' y (Y' y)) x (X' x) := by
+    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq
+      (hYσ.mdifferentiable (by simp) x) (hY'σ'.mdifferentiable (by simp) x)
+      Filter.univ_mem hinnerY, hXX'.self_of_nhds]
+  have hsecond : cov (fun y ↦ cov σ y (X y)) x (Y x) =
+      cov (fun y ↦ cov σ' y (X' y)) x (Y' x) := by
+    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq
+      (hXσ.mdifferentiable (by simp) x) (hX'σ'.mdifferentiable (by simp) x)
+      Filter.univ_mem hinnerX, hYY'.self_of_nhds]
+  have hthird : cov σ x (mlieBracket I X Y x) = cov σ' x (mlieBracket I X' Y' x) := by
+    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq
+      (hσd x) (hσ'd x) Filter.univ_mem hσσ', hXX'.mlieBracket_vectorField_eq hYY']
+  rw [curvatureOperator_apply, curvatureOperator_apply, hfirst, hsecond, hthird]
+
+omit [CompleteSpace E] in
+private theorem eq_of_contMDiff_tensorial
+    [FiniteDimensional ℝ E] [T2Space M]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+    {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
+    [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
+    [FiberBundle G W]
+    [VectorBundle ℝ G W] [ContMDiffVectorBundle ∞ G W I]
+    {A : Type*} [AddCommGroup A] [Module ℝ A]
+    (Φ : (Π x : M, W x) → A) (x : M)
+    (hlocal : ∀ {s s' : Π x : M, W x}, CMDiff ∞ (T% s) → CMDiff ∞ (T% s') →
+      Filter.Eventually (fun y ↦ s y = s' y) (nhds x) → Φ s = Φ s')
+    (hadd : ∀ {s s' : Π x : M, W x}, CMDiff ∞ (T% s) → CMDiff ∞ (T% s') →
+      Φ (s + s') = Φ s + Φ s')
+    (hsmul : ∀ {f : M → ℝ} {s : Π x : M, W x}, ContMDiff I 𝓘(ℝ) ∞ f →
+      CMDiff ∞ (T% s) → Φ (f • s) = f x • Φ s)
+    {s s' : Π x : M, W x} (hs : CMDiff ∞ (T% s)) (hs' : CMDiff ∞ (T% s'))
+    (hss' : s x = s' x) : Φ s = Φ s' := by
+  classical
+  -- Cut off a local frame by a bump function which is one near `x`.  This gives globally smooth
+  -- frame sections and coefficients while preserving the local frame expansion near `x`.
+  let t := trivializationAt G W x
+  have hxt : x ∈ t.baseSet := FiberBundle.mem_baseSet_trivializationAt G W x
+  have ht : t.baseSet ∈ nhds x := t.open_baseSet.mem_nhds hxt
+  obtain ⟨ρ, hρt, -⟩ :=
+    (SmoothBumpFunction.nhds_basis_support (I := I) ht).mem_iff.mp ht
+  let b := Basis.ofVectorSpace ℝ G
+  let frame := t.localFrame b
+  let coeff := t.localFrameCoeff I b
+  let frame' (i) := (ρ : M → ℝ) • frame i
+  let coeff' (u : Π x : M, W x) (i) (y : M) := ρ y * coeff i y (u y)
+  let expansion (u : Π x : M, W x) : Π y : M, W y :=
+    ∑ i, coeff' u i • frame' i
+  have hframe (i) : CMDiff ∞ (T% (frame' i)) := by
+    exact ρ.contMDiff.contMDiffOn.smul_section_of_tsupport t.open_baseSet hρt
+      (t.contMDiffOn_localFrame_baseSet ∞ b i)
+  have hcoeff' (u : Π x : M, W x) (hu : CMDiff ∞ (T% u)) (i) :
+      ContMDiff I 𝓘(ℝ) ∞ (coeff' u i) := by
+    apply contMDiff_of_tsupport
+    intro y hy
+    have hyρ : y ∈ tsupport (ρ : M → ℝ) :=
+      (tsupport_mul_subset_left : tsupport (coeff' u i) ⊆ tsupport (ρ : M → ℝ)) hy
+    -- On the support of the bump function, the local coefficient is the corresponding coordinate
+    -- of the section in the chosen trivialization.
+    have hcoeffAt : ContMDiffAt I 𝓘(ℝ) ∞ (fun z ↦ coeff i z (u z)) y := by
+      let aux := fun z ↦ b.repr (t ((T% u) z)).2 i
+      have htriv : CMDiffAt ∞ (fun z ↦ (t ((T% u) z)).2) y := by
+        simpa using (t.contMDiffAt_section_iff (hρt hyρ)).1 (hu y)
+      let breprl : G →L[ℝ] ℝ :=
+        LinearMap.toContinuousLinearMap
+          { toFun := fun v ↦ b.repr v i
+            map_add' := fun v w ↦ by simp
+            map_smul' := fun c v ↦ by simp }
+      have haux : ContMDiffAt I 𝓘(ℝ) ∞ aux y := by
+        exact (contMDiffAt_iff_contDiffAt.mpr (by fun_prop : ContDiffAt ℝ ∞ breprl _)).comp y htriv
+      refine haux.congr_of_eventuallyEq ?_
+      filter_upwards [t.open_baseSet.mem_nhds (hρt hyρ)] with z hz
+      simp [aux, coeff, t.localFrameCoeff_eq_coeff hz]
+    exact ρ.contMDiffAt.mul
+      hcoeffAt
+  have hexpansion (u : Π x : M, W x) (hu : CMDiff ∞ (T% u)) :
+      CMDiff ∞ (T% (expansion u)) := by
+    simpa only [expansion, Finset.sum_apply] using
+      (ContMDiff.sum_section (s := Finset.univ) fun i _ ↦
+        (hcoeff' u hu i).smul_section (hframe i))
+  have hexpansion_eq (u : Π x : M, W x) :
+      Filter.Eventually (fun y ↦ expansion u y = u y) (nhds x) := by
+    filter_upwards [ρ.eventuallyEq_one,
+      t.eventually_eq_localFrame_sum_coeff_smul (I := I) b hxt] with y hρ hu
+    have hρ' : ρ y = 1 := by simpa using hρ
+    dsimp only [expansion]
+    simpa [coeff', frame', hρ', coeff, frame] using hu.symm
+  have hzero : Φ 0 = 0 := by
+    simpa using hsmul (f := (0 : M → ℝ)) (s := (0 : Π x : M, W x))
+      contMDiff_const (contMDiff_zeroSection ℝ W)
+  -- Binary additivity suffices to distribute `Φ` over the finite local-frame expansion.
+  have hsum (u : ∀ _ : Basis.ofVectorSpaceIndex ℝ G, Π x : M, W x)
+      (hu : ∀ i, CMDiff ∞ (T% (u i))) :
+      Φ (∑ i, u i) = ∑ i, Φ (u i) := by
+    let q : Finset (Basis.ofVectorSpaceIndex ℝ G) := Finset.univ
+    change Φ (∑ i ∈ q, u i) = ∑ i ∈ q, Φ (u i)
+    induction q using Finset.induction_on with
+    | empty => simpa using hzero
+    | @insert i q hi ih =>
+        rw [Finset.sum_insert hi, Finset.sum_insert hi, hadd (hu i), ih]
+        simpa only [Finset.sum_apply] using
+          (ContMDiff.sum_section (s := q) fun j _ ↦ hu j)
+  rw [hlocal hs (hexpansion s hs) ((hexpansion_eq s).mono fun y hy ↦ hy.symm),
+    hlocal hs' (hexpansion s' hs') ((hexpansion_eq s').mono fun y hy ↦ hy.symm)]
+  dsimp only [expansion]
+  rw [hsum (fun i ↦ coeff' s i • frame' i) fun i ↦
+      (hcoeff' s hs i).smul_section (hframe i),
+    hsum (fun i ↦ coeff' s' i • frame' i) fun i ↦
+      (hcoeff' s' hs' i).smul_section (hframe i)]
+  apply Finset.sum_congr rfl
+  intro i _
+  rw [hsmul (hcoeff' s hs i) (hframe i), hsmul (hcoeff' s' hs' i) (hframe i)]
+  congr 1
+  simp only [coeff', ρ.eq_one, one_mul]
+  exact t.localFrameCoeff_congr (I := I) b (i := i) hss'
+
+/-- On a finite-dimensional Hausdorff manifold and a finite-rank smooth vector bundle, the value
+of curvature on smooth inputs depends only on their values at the given point. -/
+theorem curvatureOperator_congr
+    [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F]
+    [ContMDiffVectorBundle ∞ F V I]
+    {X X' Y Y' : Π x : M, TangentSpace I x} {σ σ' : Π x : M, V x} {x : M}
+    (hX : CMDiff ∞ (T% X)) (hX' : CMDiff ∞ (T% X'))
+    (hY : CMDiff ∞ (T% Y)) (hY' : CMDiff ∞ (T% Y'))
+    (hσ : CMDiff ∞ (T% σ)) (hσ' : CMDiff ∞ (T% σ'))
+    (hXX' : X x = X' x) (hYY' : Y x = Y' x) (hσσ' : σ x = σ' x) :
+    curvatureOperator cov X Y σ x = curvatureOperator cov X' Y' σ' x := by
+  calc
+    curvatureOperator cov X Y σ x = curvatureOperator cov X' Y σ x :=
+      eq_of_contMDiff_tensorial (G := E) (W := TangentSpace I)
+        (fun Z ↦ curvatureOperator cov Z Y σ x) x
+        (fun hZ hZ' hZZ' ↦ curvatureOperator_congr_of_eventuallyEq
+          hZ hZ' hY hY hσ hσ hZZ' Filter.EventuallyEq.rfl
+            (Filter.Eventually.of_forall fun _ ↦ rfl))
+        (fun hZ hZ' ↦ congrFun (curvatureOperator_add_first hZ hZ' hσ) x)
+        (fun hf hZ ↦ congrFun (curvatureOperator_smul_first hf hZ hσ) x)
+        hX hX' hXX'
+    _ = curvatureOperator cov X' Y' σ x :=
+      eq_of_contMDiff_tensorial (G := E) (W := TangentSpace I)
+        (fun Z ↦ curvatureOperator cov X' Z σ x) x
+        (fun hZ hZ' hZZ' ↦ curvatureOperator_congr_of_eventuallyEq
+          hX' hX' hZ hZ' hσ hσ Filter.EventuallyEq.rfl hZZ'
+            (Filter.Eventually.of_forall fun _ ↦ rfl))
+        (fun hZ hZ' ↦ congrFun (curvatureOperator_add_second hZ hZ' hσ) x)
+        (fun hf hZ ↦ congrFun (curvatureOperator_smul_second hf hZ hσ) x)
+        hY hY' hYY'
+    _ = curvatureOperator cov X' Y' σ' x :=
+      eq_of_contMDiff_tensorial (G := F) (W := V)
+        (fun τ ↦ curvatureOperator cov X' Y' τ x) x
+        (fun hτ hτ' hττ' ↦ curvatureOperator_congr_of_eventuallyEq
+          hX' hX' hY' hY' hτ hτ' Filter.EventuallyEq.rfl Filter.EventuallyEq.rfl hττ')
+        (fun hτ hτ' ↦ congrFun (curvatureOperator_add_section hX' hY' hτ hτ') x)
+        (fun hf hτ ↦ congrFun (curvatureOperator_smul_section hf hX' hY' hτ) x)
+        hσ hσ' hσσ'
 
 end Smooth
 
