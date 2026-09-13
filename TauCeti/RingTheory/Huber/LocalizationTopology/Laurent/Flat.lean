@@ -6,9 +6,9 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.Presentation
-public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.RingTheory.Huber.Restricted.Laurent
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
+public import TauCeti.Topology.Algebra.Nonarchimedean.Completion.RingHom
 
 import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.StronglyNoetherian
 
@@ -105,38 +105,7 @@ where Lemma 8.31 needs it too.
 -/
 public section
 
-namespace TauCeti
-
-/-- Flatness passes across a heterogeneous equality between ring homomorphisms of completions
-whose source and target uniformities agree. -/
-theorem ringHom_flat_of_completion_heq
-    {S S' : Type*} [CommRing S] [CommRing S']
-    {u₁ u₂ : UniformSpace S} (hu : u₂ = u₁) {v₁ v₂ : UniformSpace S'} (hv : v₂ = v₁)
-    (g₁ : @IsUniformAddGroup S u₁ _) (g₂ : @IsUniformAddGroup S u₂ _)
-    (t₁ : @IsTopologicalRing S u₁.toTopologicalSpace _)
-    (t₂ : @IsTopologicalRing S u₂.toTopologicalSpace _)
-    (g₁' : @IsUniformAddGroup S' v₁ _) (g₂' : @IsUniformAddGroup S' v₂ _)
-    (t₁' : @IsTopologicalRing S' v₁.toTopologicalSpace _)
-    (t₂' : @IsTopologicalRing S' v₂.toTopologicalSpace _) :
-    let R₁ := @UniformSpace.Completion S u₁
-    let R₂ := @UniformSpace.Completion S u₂
-    let B₁ := @UniformSpace.Completion S' v₁
-    let B₂ := @UniformSpace.Completion S' v₂
-    let r₁ := @UniformSpace.Completion.commRing S _ u₁ g₁ t₁
-    let r₂ := @UniformSpace.Completion.commRing S _ u₂ g₂ t₂
-    let b₁ := @UniformSpace.Completion.commRing S' _ v₁ g₁' t₁'
-    let b₂ := @UniformSpace.Completion.commRing S' _ v₂ g₂' t₂'
-    ∀ (f₂ : @RingHom R₂ B₂ r₂.toNonAssocSemiring b₂.toNonAssocSemiring)
-      (f₁ : @RingHom R₁ B₁ r₁.toNonAssocSemiring b₁.toNonAssocSemiring),
-      HEq f₂ f₁ → @RingHom.Flat R₂ B₂ r₂ b₂ f₂ →
-        @RingHom.Flat R₁ B₁ r₁ b₁ f₁ := by
-  subst hu
-  subst hv
-  dsimp only
-  intro f₂ f₁ hf hflat
-  rwa [eq_of_heq hf] at hflat
-
-namespace Huber
+namespace TauCeti.Huber
 
 open TauCeti.Localization
 
