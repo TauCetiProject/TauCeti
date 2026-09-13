@@ -58,7 +58,11 @@ public noncomputable section
 
 namespace Representation
 
-variable {R G V : Type*} [CommRing R] [Group G] [AddCommGroup V] [Module R V]
+variable {R G V : Type*} [Group G]
+
+section Semiring
+
+variable [Semiring R] [AddCommMonoid V] [Module R V]
   (ρ : Representation R G V) (H : Subgroup G)
 
 section Defs
@@ -154,6 +158,13 @@ theorem coe_relTransferKerNorm (x : LinearMap.ker ρ.norm) :
   rfl
 
 end Norm
+
+end Semiring
+
+section Ring
+
+variable [CommRing R] [AddCommGroup V] [Module R V]
+  (ρ : Representation R G V) (H : Subgroup G)
 
 section Invariants
 
@@ -268,5 +279,7 @@ theorem relTransfer_mem_coinvariantsKer {x : V} (hx : x ∈ Coinvariants.ker ρ)
   exact hmap ⟨x, hx, rfl⟩
 
 end Coinvariants
+
+end Ring
 
 end Representation
