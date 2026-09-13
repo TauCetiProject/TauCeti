@@ -45,9 +45,9 @@ namespace HeckeRing.GL2
 
 variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
 
-/-- **A good Hecke eigenvector in the new part with `a₁ = 0` is zero.** Its coefficients vanish
-at every index coprime to `N`, so the Main Lemma puts it in the old part, and the old and new
-parts of `S_k(N, χ)` meet only in `0`. -/
+/-- **A good Hecke eigenvector in the new part with `a₁ = 0` is zero**: a cusp form in
+`S_k(N, χ)ᵐᵉʷ` that is an eigenvector of the Hecke ring at every prime not dividing `N` and has
+first `q`-expansion coefficient `0` vanishes. -/
 theorem eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspFormsNew
     {F : cuspFormCharSpace k χ}
     (ha : ∀ p : ℕ, p.Prime → Nat.Coprime p N →

@@ -23,8 +23,10 @@ an eigenvector.
 ## Main results
 
 * `HeckeRing.GL2.smul_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew`: two good
-  Hecke eigenvectors in the new part sharing their eigenvalues are proportional —
-  `a₁(g) • f = a₁(f) • g`.
+  Hecke eigenvectors in the new part sharing their eigenvalues satisfy `a₁(g) • f = a₁(f) • g`.
+* `HeckeRing.GL2.exists_smul_eq_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew`: the same
+  conclusion as proportionality — if one of them is nonzero, the other is a scalar multiple of
+  it.
 
 ## References
 
@@ -61,6 +63,12 @@ theorem smul_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew
         (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
   set a := (qExpansion 1 (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff 1 with hadef
   set b := (qExpansion 1 (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff 1 with hbdef
+  -- the one place the `Submodule` coercion has to be pushed through the combination
+  have hcoe : ((b • f - a • g : cuspFormCharSpace k χ) :
+      CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      b • (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) -
+        a • (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
+    rw [Submodule.coe_sub, Submodule.coe_smul, Submodule.coe_smul]
   -- the combination `b • f - a • g` is a good eigenvector in the new part with `a₁ = 0`
   have key : ((b • f - a • g : cuspFormCharSpace k χ) :
       CuspForm ((Gamma1 N).map (mapGL ℝ)) k) = 0 := by
@@ -69,14 +77,39 @@ theorem smul_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew
     · obtain ⟨c, hcf, hcg⟩ := ha p hp hpN
       exact ⟨c, by rw [map_sub, map_smul, map_smul, hcf, hcg, smul_sub, smul_comm c b,
         smul_comm c a]⟩
-    · rw [Submodule.coe_sub, Submodule.coe_smul, Submodule.coe_smul, FunLike.coe_sub,
-        FunLike.coe_smul, FunLike.coe_smul,
-        TauCeti.qExpansion_coeff_smul_sub_smul one_pos
-          (one_mem_strictPeriods_Gamma1_map N), ← hadef, ← hbdef]
+    · rw [← CuspForm.qExpansionCoeffₗ_apply one_pos (one_mem_strictPeriods_Gamma1_map N), hcoe,
+        map_sub, map_smul, map_smul, CuspForm.qExpansionCoeffₗ_apply,
+        CuspForm.qExpansionCoeffₗ_apply, ← hadef, ← hbdef, smul_eq_mul, smul_eq_mul]
       ring
     · exact Submodule.sub_mem _ (Submodule.smul_mem _ _ hf) (Submodule.smul_mem _ _ hg)
-  rw [Submodule.coe_sub, Submodule.coe_smul, Submodule.coe_smul, sub_eq_zero] at key
+  rw [hcoe, sub_eq_zero] at key
   exact key
+
+/-- **Two good Hecke eigenvectors in the new part are proportional**, in the form a consumer
+wants: if `f` is nonzero, every `g` sharing its eigenvalues is a scalar multiple of it. So a
+simultaneous eigenspace of the good Hecke operators inside the new part of `S_k(N, χ)` is
+spanned by any one of its nonzero vectors, which is one-dimensionality in concrete form.
+
+The nonvanishing hypothesis is only on `f`: the case `a₁(f) = 0` is not an exception to be
+excluded but is impossible once `f ≠ 0`, by
+`eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspFormsNew`. -/
+theorem exists_smul_eq_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew
+    {f g : cuspFormCharSpace k χ}
+    (ha : ∀ p : ℕ, p.Prime → Nat.Coprime p N → ∃ c : ℂ,
+      heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N p) f = c • f ∧
+        heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N p) g = c • g)
+    (hf : (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k)
+    (hg : (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k)
+    (hf0 : (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ≠ 0) :
+    ∃ c : ℂ, (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      c • (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
+  have ha0 : (qExpansion 1 (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff 1 ≠ 0 := fun h ↦
+    hf0 (eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspFormsNew
+      (fun p hp hpN ↦ (ha p hp hpN).imp fun _ hc ↦ hc.1) h hf)
+  refine ⟨((qExpansion 1 (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff 1)⁻¹ *
+    (qExpansion 1 (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff 1, ?_⟩
+  rw [mul_smul, smul_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew ha hf hg,
+    inv_smul_smul₀ ha0]
 
 end HeckeRing.GL2
 
