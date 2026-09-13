@@ -206,13 +206,14 @@ theorem groupAlgebraInvariantsMap_comp (f : Representation.IntertwiningMap rho t
 
 /-- The splitting isomorphisms identify scalar extension of a descended morphism with
 the ordinary split group-algebra morphism. -/
+@[simp]
 theorem groupAlgebraInvariantsBaseChangeBialgEquiv_naturality
     (f : Representation.IntertwiningMap rho tau) :
-    (groupAlgebraInvariantsBaseChangeBialgEquiv tau).toBialgHom.comp
+    (groupAlgebraInvariantsBaseChangeBialgEquiv tau : _ →ₐc[L] _).comp
         (Bialgebra.TensorProduct.map (BialgHom.id L L) (groupAlgebraInvariantsMap f)) =
       (MonoidAlgebra.mapDomainBialgHom L
         f.toLinearMap.toAddMonoidHom.toMultiplicative).comp
-          (groupAlgebraInvariantsBaseChangeBialgEquiv rho).toBialgHom := by
+          ↑(groupAlgebraInvariantsBaseChangeBialgEquiv rho) := by
   apply BialgHom.coe_toAlgHom_injective
   apply Algebra.TensorProduct.ext'
   intro a x
