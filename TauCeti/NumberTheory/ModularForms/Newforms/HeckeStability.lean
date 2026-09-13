@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Degeneracy
-public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime
+public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime.Basic
 public import TauCeti.NumberTheory.ModularForms.Newforms.Basic
 
 /-!
