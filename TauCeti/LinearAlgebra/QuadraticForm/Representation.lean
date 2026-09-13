@@ -14,7 +14,8 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 
 This file defines both representation of values by a quadratic map and representation of one
 quadratic map by another through an injective isometry.  It gives the latter relation its basic
-reflexivity, transitivity, and equivalence-invariance API.
+reflexivity, transitivity, and equivalence-invariance API, from which anisotropy is read off as
+an isometry invariant.
 
 For scalar values, it defines the represented-unit value set, proves its elementary square-class
 invariance, and gives the criterion that, for a form with trivial radical, representing a unit is
@@ -102,6 +103,15 @@ theorem _root_.QuadraticMap.IsRepresentedBy.not_anisotropic
   rw [QuadraticMap.not_anisotropic_iff_exists] at hQ₁ ⊢
   obtain ⟨x, hx, hQx⟩ := hQ₁
   exact ⟨f x, fun hzero ↦ hx (hf (by simpa using hzero)), (f.map_app x).trans hQx⟩
+
+/-- Anisotropy is an invariant of isometry. -/
+theorem _root_.QuadraticMap.Equivalent.anisotropic_iff
+    {M₁ M₂ : Type*} [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N} (h : Q₁.Equivalent Q₂) :
+    Q₁.Anisotropic ↔ Q₂.Anisotropic :=
+  ⟨fun h₁ => not_not.mp fun h₂ => h.symm.isRepresentedBy.not_anisotropic h₂ h₁,
+    fun h₂ => not_not.mp fun h₁ => h.isRepresentedBy.not_anisotropic h₁ h₂⟩
 
 /-- Replacing either quadratic map by an equivalent one preserves representation. -/
 theorem _root_.QuadraticMap.Equivalent.isRepresentedBy_congr
