@@ -75,15 +75,6 @@ noncomputable def kostantTorusSubsystemBaseChangeIdeal :
   CommHopfAlgCat.baseChangeHopfIdeal
     (kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS)
 
-/-- The specialized subsystem ideal is the generic base change of its integral defining ideal. -/
-@[simp]
-theorem kostantTorusSubsystemBaseChangeIdeal_def :
-    kostantTorusSubsystemBaseChangeIdeal e h ρ M hM b wt S hnilS A =
-      CommHopfAlgCat.baseChangeHopfIdeal
-        (kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS) := by
-  unfold kostantTorusSubsystemBaseChangeIdeal
-  rfl
-
 /-- Quotienting by the specialized subsystem ideal agrees with base-changing the integral
 subsystem coordinate ring. -/
 noncomputable def kostantTorusSubsystemBaseChangeIso :
