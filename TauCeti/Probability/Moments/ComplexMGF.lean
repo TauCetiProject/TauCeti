@@ -43,6 +43,11 @@ product: multiplying the factors before taking the logarithm can cross the branc
 
 ## References
 
+* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 6, item 4, which asks for the
+  analytic-continuation step shared by the two Wishart families to be factored into one lemma
+  about a real random variable whose moment-generating function is a product
+  `∏ j, (1 - 2 * t * lam j) ^ (-a j)`; `TauCetiRoadmap/StandardDistributions/Suggested.lean`
+  states it as `complexMGF_I_of_mgf_eq_prod_rpow`, and prescribes the proof used here.
 * E. Mayerhofer, *Reforming the Wishart characteristic function*,
   [arXiv:1901.09347](https://arxiv.org/abs/1901.09347), for the branch analysis that forces the
   sum-of-logarithms form.
