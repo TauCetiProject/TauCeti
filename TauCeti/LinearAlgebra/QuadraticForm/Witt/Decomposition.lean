@@ -16,17 +16,12 @@ space is isometric to an orthogonal sum of hyperbolic planes and an anisotropic 
 the number of planes and the anisotropic summand are determined by the isometry class. The number
 of planes is the *Witt index* and the last summand is the *anisotropic part*.
 
-The material rests on two earlier results of this library: the hyperbolic splitting theorem
-`TauCeti.exists_hyperbolicPlane_prod_equivalent` gives the existence of the decomposition, and
-Witt cancellation, in the form of the `IsCancelAdd (TauCeti.RegularFormClass K)` instance, gives
-its uniqueness.
-
-Both statements are phrased on `TauCeti.RegularFormClass K`, the isometry classes of regular
-forms, whose addition is orthogonal sum. `m` hyperbolic planes are then `m • hyperbolicClass K`,
-so the decomposition reads `c = m • hyperbolicClass K + a`, and the invariance of the Witt index
-and of the anisotropic part under isometry is automatic. `TauCeti.hyperbolicPresentation` names
-the diagonal presentation `⟨1, -1, …, 1, -1⟩` realising `m • hyperbolicClass K`, which is what
-turns the statement back into an isometry of quadratic forms in
+The existence and uniqueness statements are phrased on `TauCeti.RegularFormClass K`, the
+isometry classes of regular forms, whose addition is orthogonal sum. `m` hyperbolic planes are
+then `m • hyperbolicClass K`, so the decomposition reads `c = m • hyperbolicClass K + a`, and the
+invariance of the Witt index and of the anisotropic part under isometry is automatic.
+`TauCeti.hyperbolicPresentation` names the diagonal presentation `⟨1, -1, …, 1, -1⟩` realising
+`m • hyperbolicClass K`, which is what turns the statement back into an isometry of forms in
 `QuadraticForm.exists_equivalent_hyperbolicPresentation_prod`.
 
 This file treats the regular case, which is the case the Witt ring needs. A form with a nonzero
@@ -326,8 +321,9 @@ theorem RegularFormClass.wittIndex_zero :
   RegularFormClass.wittIndex_eq (m := 0) RegularFormClass.anisotropic_zero
     (by rw [zero_nsmul, add_zero])
 
+-- Not `@[simp]`: `simp` already proves this from `anisotropicPart_eq_self` and
+-- `anisotropic_zero`, so tagging it duplicates that rule and fails `simpNF`.
 /-- The anisotropic part of the rank-zero class is itself. -/
-@[simp]
 theorem RegularFormClass.anisotropicPart_zero :
     RegularFormClass.anisotropicPart (0 : RegularFormClass K) = 0 :=
   RegularFormClass.anisotropicPart_eq (m := 0) RegularFormClass.anisotropic_zero
@@ -343,6 +339,7 @@ theorem RegularFormClass.wittIndex_eq_zero_iff {c : RegularFormClass K} :
   exact hc ▸ RegularFormClass.anisotropic_anisotropicPart c
 
 /-- An anisotropic class is its own anisotropic part. -/
+@[simp]
 theorem RegularFormClass.anisotropicPart_eq_self {c : RegularFormClass K}
     (hc : RegularFormClass.Anisotropic c) : RegularFormClass.anisotropicPart c = c :=
   RegularFormClass.anisotropicPart_eq hc (by rw [zero_nsmul, zero_add])
