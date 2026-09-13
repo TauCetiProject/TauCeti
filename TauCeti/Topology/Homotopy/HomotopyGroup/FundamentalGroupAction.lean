@@ -14,16 +14,17 @@ public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 Transporting a generalized loop along a path `γ` from `x` to `y` gives an isomorphism
 `π_n(X, x) ≃* π_n(X, y)` depending only on the homotopy class of `γ`
 (`TauCeti.homotopyGroupMulEquivOfPath`). Taking `y = x` turns that isomorphism into extra
-structure carried by a single homotopy group: the fundamental group at `x` acts on `π_n(X, x)`
+structure carried by a single homotopy group: the fundamental group at `x` acts on the type
+`π_n(X, x)`, and in positive dimensions — where that type carries a group structure — it acts
 by group automorphisms. This file builds that action and identifies its orbits.
 
 The action is the higher-dimensional analogue of the conjugation action of `π₁(X, x)` on
-itself, and it is what the phrase "`π_n` is a `π₁`-module" (for `n ≥ 2`, where `π_n` is
-abelian) abbreviates. Its orbits have a purely topological meaning, recorded here in
-`TauCeti.homotopyGroup_mem_orbit_iff_exists_homotopyAlong`: two generalized loops based at `x`
-lie in the
-same orbit exactly when they are *freely* homotopic, that is, when some homotopy connects them
-through generalized loops whose base points sweep out a loop at `x`. So the quotient of
+itself, and in dimensions at least two, where `π_n` is abelian, it is what the phrase
+"`π_n` is a `π₁`-module" abbreviates. Its orbits have a purely topological meaning, recorded
+here in `TauCeti.homotopyGroup_mem_orbit_iff_exists_homotopyAlong`: two generalized loops based
+at `x` lie in the same orbit exactly when they are *freely* homotopic, that is, when some
+homotopy connects them through generalized loops whose base points sweep out a loop at `x`.
+So the quotient of
 `π_n(X, x)` by the action is, in positive dimensions, the set of free homotopy classes of maps
 `Sⁿ → X` landing in the path component of `x`. In dimension zero, it instead records the
 classes for which the distinguished point of `S⁰` remains in the path component of `x`. The
@@ -169,7 +170,9 @@ instance homotopyGroupMulDistribMulAction [Nonempty N] [DecidableEq N] :
 
 variable (N) in
 /-- **The action of the fundamental group on a positive-dimensional homotopy group, as a
-homomorphism into the automorphism group.** This is the `π₁`-module structure on `π_n`. -/
+homomorphism into the automorphism group.** In dimensions at least two, where `π_n` is abelian,
+this is the `π₁`-module structure on `π_n`; in dimension one it is an action of `π₁(X, x)` on
+itself by group automorphisms. -/
 def fundamentalGroupMulAut [Nonempty N] [DecidableEq N] (x : X) :
     FundamentalGroup X x →* MulAut (HomotopyGroup N X x) :=
   MulDistribMulAction.toMulAut _ _
