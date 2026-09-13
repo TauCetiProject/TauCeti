@@ -159,6 +159,12 @@ lemma baseChangeTowerIso_hom_apply (H : _root_.CommHopfAlgCat.{v} k) (s : K) (e 
     (baseChangeTowerIso k K H).hom.hom (s ⊗ₜ[E] (e ⊗ₜ[k] h)) = (e • s) ⊗ₜ[k] h :=
   TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_tmul k E H K s e h
 
+/-- The inverse tower comparison inserts the unit of the intermediate ring. -/
+@[simp]
+lemma baseChangeTowerIso_inv_apply (H : _root_.CommHopfAlgCat.{v} k) (s : K) (h : H) :
+    (baseChangeTowerIso k K H).inv.hom (s ⊗ₜ[k] h) = s ⊗ₜ[E] (1 ⊗ₜ[k] h) :=
+  TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_symm_tmul k E H K s h
+
 end Tower
 
 variable (A : CommAlgCat.{x} K)

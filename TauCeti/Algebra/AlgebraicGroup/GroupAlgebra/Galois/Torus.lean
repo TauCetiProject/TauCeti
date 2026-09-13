@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.Splitting
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Splitting
-import Mathlib.Algebra.AffineMonoid.UniqueSums
 
 /-!
 # Galois descent produces a torus
@@ -43,15 +42,11 @@ case of the trivial action.
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Theorem 12.23 and Appendix A.64.
-
-This completes the descent construction of Layer 4, "Tori: split and non-split", of the
-ReductiveGroups roadmap: the semilinear action, the invariant algebra, its finite type, its Hopf
-structure and its splitting were the preceding steps, and the torus is what they were for.
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory TensorProduct
 
 namespace TauCeti.GaloisDescent
 
@@ -65,8 +60,9 @@ variable (rho : Representation ℤ (L ≃ₐ[k] L) M)
 /-- The exponent group of the split group algebra, written multiplicatively and bundled as a
 finitely generated commutative group.
 
-Once the descended group is known to be a torus this is its geometric character lattice, but
-finite generation alone is what the bundling needs. -/
+This is the exponent group used to present the split base change; finite generation supplies the
+bundling. -/
+@[expose]
 noncomputable def exponentGroup : FGCommGrpCat.{u} :=
   letI : AddGroup.FG M := Module.Finite.iff_addGroup_fg.mp inferInstance
   FGCommGrpCat.of (Multiplicative M)
@@ -76,8 +72,17 @@ extension, as an object of the category of finite-type commutative Hopf algebras
 
 Its coordinate algebra is the invariant subalgebra `(L[M])^{Gal(L/k)}` for the action twisting
 both the coefficients and the exponents. -/
+@[expose]
 noncomputable def descendedCoordinateRing : FiniteTypeCommHopfAlgCat.{u, u} k :=
   FiniteTypeCommHopfAlgCat.of k (groupAlgebraInvariants rho)
+
+/-- The underlying Hopf algebra of the descended coordinate ring is the invariant group
+algebra. -/
+@[simp]
+theorem descendedCoordinateRing_obj :
+    (descendedCoordinateRing rho).obj =
+      _root_.CommHopfAlgCat.of k (groupAlgebraInvariants rho) :=
+  by rw [descendedCoordinateRing]
 
 /-- **The descended group becomes the diagonalizable group `D(M)` over `L`.**
 
@@ -89,6 +94,24 @@ noncomputable def descendedBaseChangeIso :
   ObjectProperty.isoMk _
     (_root_.CommHopfAlgCat.isoMk (groupAlgebraInvariantsBaseChangeBialgEquiv rho))
 
+/-- The forward descended splitting is the group-algebra base-change equivalence. -/
+@[simp]
+theorem descendedBaseChangeIso_hom_apply (x : L ⊗[k] groupAlgebraInvariants rho) :
+    (descendedBaseChangeIso rho).hom.hom x =
+      groupAlgebraInvariantsBaseChangeBialgEquiv rho x := by
+  simp only [descendedBaseChangeIso, ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom]
+  change groupAlgebraInvariantsBaseChangeBialgEquiv rho x = _
+  rfl
+
+/-- The inverse descended splitting is the inverse group-algebra base-change equivalence. -/
+@[simp]
+theorem descendedBaseChangeIso_inv_apply (x : MonoidAlgebra L (Multiplicative M)) :
+    (descendedBaseChangeIso rho).inv.hom x =
+      (groupAlgebraInvariantsBaseChangeBialgEquiv rho).symm x := by
+  simp only [descendedBaseChangeIso, ObjectProperty.isoMk_inv, ObjectProperty.homMk_hom]
+  change (groupAlgebraInvariantsBaseChangeBialgEquiv rho).symm x = _
+  rfl
+
 /-- **The affine group descended from a Galois lattice is a torus.**
 
 Torsion freeness of the lattice is what rules out the finite groups of multiplicative type such
@@ -97,8 +120,8 @@ the lattice. -/
 theorem torusCommHopfAlgProperty_descendedCoordinateRing [IsAddTorsionFree M] :
     torusCommHopfAlgProperty k (descendedCoordinateRing rho) := by
   have : AddGroup.FG M := Module.Finite.iff_addGroup_fg.mp inferInstance
-  have : UniqueProds (exponentGroup (M := M)) :=
-    inferInstanceAs (UniqueProds (Multiplicative M))
+  have : IsMulTorsionFree (exponentGroup (M := M)) :=
+    inferInstanceAs (IsMulTorsionFree (Multiplicative M))
   exact torusCommHopfAlgProperty.of_baseChange_iso_coordinateRing k L
     (descendedCoordinateRing rho) (exponentGroup (M := M)) (descendedBaseChangeIso rho)
 
