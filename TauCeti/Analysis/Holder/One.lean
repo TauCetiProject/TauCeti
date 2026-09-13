@@ -61,32 +61,6 @@ namespace C1HolderSpace
 a bounded globally Hölder derivative field. -/
 private abbrev C1HolderJet := (E →ᵇ F) × HolderSpace α E (E →L[ℝ] F)
 
-/-- The derivative graph inside the ambient `C^{1,α}` jet space. -/
-private def c1HolderSubmodule : Submodule ℝ (C1HolderJet α E F) where
-  carrier := {J | ∀ x, HasFDerivAt (J.1 : E → F) (J.2 x) x}
-  zero_mem' := fun x ↦ by
-    have hfun : ((0 : E →ᵇ F) : E → F) = fun _ ↦ 0 := by
-      ext
-      rfl
-    have hder : (0 : HolderSpace α E (E →L[ℝ] F)) x = 0 := rfl
-    rw [Prod.fst_zero, Prod.snd_zero, hfun, hder]
-    exact hasFDerivAt_const (x := x) (c := (0 : F))
-  add_mem' := fun {f g} hf hg x ↦ by
-    have hfun : (((f + g).1 : E →ᵇ F) : E → F) =
-        (f.1 : E → F) + (g.1 : E → F) := by
-      ext
-      rfl
-    have hder : (f + g).2 x = f.2 x + g.2 x := rfl
-    rw [hfun, hder]
-    exact (hf x).add (hg x)
-  smul_mem' := fun c {f} hf x ↦ by
-    have hfun : (((c • f).1 : E →ᵇ F) : E → F) = c • (f.1 : E → F) := by
-      ext
-      rfl
-    have hder : (c • f).2 x = c • f.2 x := rfl
-    rw [hfun, hder]
-    exact (hf x).const_smul c
-
 /-- The space of bounded `C¹` maps whose Fréchet derivative is bounded and globally
 `α`-Hölder.  Its inherited product norm is
 
@@ -133,10 +107,10 @@ instance instNormedSpace : NormedSpace ℝ (C1HolderSpace α E F) := by
   unfold C1HolderSpace
   infer_instance
 
-private abbrev toSubmodule (f : C1HolderSpace α E F) : c1HolderSubmodule α E F := f
+private abbrev toJet (f : C1HolderSpace α E F) : C1HolderJet α E F := f.1
 
-private theorem norm_toSubmodule (f : C1HolderSpace α E F) :
-    ‖toSubmodule f‖ = ‖f‖ := rfl
+private theorem norm_toJet (f : C1HolderSpace α E F) : ‖toJet f‖ = ‖f‖ :=
+  Submodule.norm_coe f
 
 /-- A bounded `C^{1,α}` element coerces to its underlying function from `E` to `F`. -/
 instance : CoeFun (C1HolderSpace α E F) fun _ ↦ E → F :=
@@ -150,10 +124,10 @@ linear maps. -/
 def fderiv (f : C1HolderSpace α E F) : HolderSpace α E (E →L[ℝ] F) := f.1.2
 
 private theorem toBoundedContinuousFunction_eq_fst (f : C1HolderSpace α E F) :
-    toBoundedContinuousFunction f = (toSubmodule f : C1HolderJet α E F).1 := rfl
+    toBoundedContinuousFunction f = (toJet f).1 := rfl
 
 private theorem fderiv_eq_snd (f : C1HolderSpace α E F) :
-    fderiv f = (toSubmodule f : C1HolderJet α E F).2 := rfl
+    fderiv f = (toJet f).2 := rfl
 
 @[simp]
 theorem toBoundedContinuousFunction_apply (f : C1HolderSpace α E F) (x : E) :
@@ -245,19 +219,19 @@ theorem ext {f g : C1HolderSpace α E F} (h : ∀ x, f x = g x) : f = g := by
     _ = fderiv g x := fderiv_eq g x
 
 private abbrev valueLinearMap : C1HolderSpace α E F →ₗ[ℝ] (E →ᵇ F) :=
-    { toFun := fun f ↦ (toSubmodule f : C1HolderJet α E F).1
+    { toFun := fun f ↦ (toJet f).1
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl }
 
 private theorem valueLinearMap_apply (f : C1HolderSpace α E F) :
-    valueLinearMap f = (toSubmodule f : C1HolderJet α E F).1 := rfl
+    valueLinearMap f = (toJet f).1 := rfl
 
 /-- Forgetting the derivative defines a continuous linear map to bounded continuous functions. -/
 def valueL : C1HolderSpace α E F →L[ℝ] (E →ᵇ F) :=
   LinearMap.mkContinuous valueLinearMap 1 fun f ↦ by
-    rw [← norm_toSubmodule f]
+    rw [← norm_toJet f]
     simpa only [valueLinearMap_apply, Submodule.norm_coe, one_mul] using
-      norm_fst_le (toSubmodule f : C1HolderJet α E F)
+      norm_fst_le (toJet f)
 
 @[simp]
 theorem valueL_apply (f : C1HolderSpace α E F) :
@@ -266,19 +240,19 @@ theorem valueL_apply (f : C1HolderSpace α E F) :
 
 private abbrev fderivLinearMap :
     C1HolderSpace α E F →ₗ[ℝ] HolderSpace α E (E →L[ℝ] F) :=
-    { toFun := fun f ↦ (toSubmodule f : C1HolderJet α E F).2
+    { toFun := fun f ↦ (toJet f).2
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl }
 
 private theorem fderivLinearMap_apply (f : C1HolderSpace α E F) :
-    fderivLinearMap f = (toSubmodule f : C1HolderJet α E F).2 := rfl
+    fderivLinearMap f = (toJet f).2 := rfl
 
 /-- Returning the derivative defines a continuous linear map to the global Hölder space. -/
 def fderivL : C1HolderSpace α E F →L[ℝ] HolderSpace α E (E →L[ℝ] F) :=
   LinearMap.mkContinuous fderivLinearMap 1 fun f ↦ by
-    rw [← norm_toSubmodule f]
+    rw [← norm_toJet f]
     simpa only [fderivLinearMap_apply, Submodule.norm_coe, one_mul] using
-      norm_snd_le (toSubmodule f : C1HolderJet α E F)
+      norm_snd_le (toJet f)
 
 @[simp]
 theorem fderivL_apply (f : C1HolderSpace α E F) : fderivL f = fderiv f := (rfl)
@@ -287,29 +261,29 @@ theorem fderivL_apply (f : C1HolderSpace α E F) : fderivL f = fderiv f := (rfl)
 supremum-plus-Hölder norm of its derivative. -/
 theorem norm_eq_max (f : C1HolderSpace α E F) :
     ‖f‖ = max ‖toBoundedContinuousFunction f‖ ‖fderiv f‖ := by
-  rw [← norm_toSubmodule f]
+  rw [← norm_toJet f]
   rw [toBoundedContinuousFunction_eq_fst, fderiv_eq_snd]
   simpa only [Submodule.norm_coe] using
-    Prod.norm_def (toSubmodule f : C1HolderJet α E F)
+    Prod.norm_def (toJet f)
 
 /-- The supremum norm of the function is controlled by the `C^{1,α}` norm. -/
 theorem norm_toBoundedContinuousFunction_le (f : C1HolderSpace α E F) :
     ‖toBoundedContinuousFunction f‖ ≤ ‖f‖ := by
-  rw [← norm_toSubmodule f]
+  rw [← norm_toJet f]
   rw [toBoundedContinuousFunction_eq_fst]
   simpa only [Submodule.norm_coe] using
-    norm_fst_le (toSubmodule f : C1HolderJet α E F)
+    norm_fst_le (toJet f)
 
 /-- The Hölder-space norm of the derivative is controlled by the `C^{1,α}` norm. -/
 theorem norm_fderiv_le (f : C1HolderSpace α E F) : ‖fderiv f‖ ≤ ‖f‖ := by
-  rw [← norm_toSubmodule f]
+  rw [← norm_toJet f]
   rw [fderiv_eq_snd]
   simpa only [Submodule.norm_coe] using
-    norm_snd_le (toSubmodule f : C1HolderJet α E F)
+    norm_snd_le (toJet f)
 
 /-- The derivative graph defining `C1HolderSpace` is closed. -/
-private theorem isClosed_c1HolderSubmodule :
-    IsClosed (c1HolderSubmodule α E F : Set (C1HolderJet α E F)) := by
+private theorem isClosed_c1HolderSpace :
+    IsClosed {J : C1HolderJet α E F | ∀ x, HasFDerivAt (J.1 : E → F) (J.2 x) x} := by
   rw [← isSeqClosed_iff_isClosed]
   intro J j hJ hjlim x
   apply hasFDerivAt_of_tendstoUniformly
@@ -348,7 +322,8 @@ private theorem isClosed_c1HolderSubmodule :
 /-- Bounded `C^{1,α}` maps into a Banach space form a Banach space. -/
 noncomputable instance instCompleteSpace [CompleteSpace F] :
     CompleteSpace (C1HolderSpace α E F) := by
-  exact (isClosed_c1HolderSubmodule (α := α) (E := E) (F := F)).completeSpace_coe
+  unfold C1HolderSpace
+  exact (isClosed_c1HolderSpace (α := α) (E := E) (F := F)).completeSpace_coe
 
 attribute [irreducible] _root_.TauCeti.C1HolderSpace
 
