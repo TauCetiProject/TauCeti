@@ -81,7 +81,6 @@ theorem m_eq_zero_of_mem_unit (h : 𝒜.StrictUnit e) {n : ℕ} (hn : n ≠ 2)
   exact h.higher n hn x ⟨i, hi⟩
 
 /-- The higher operations vanish on a tuple containing the strict unit. -/
-@[simp]
 theorem m_eq_zero_of_exists_eq_unit (h : 𝒜.StrictUnit e) {n : ℕ} (hn : n ≠ 2)
     (x : Fin n → A) (hx : ∃ i, x i = e) : 𝒜.m n x = 0 :=
   h.higher n hn x hx
