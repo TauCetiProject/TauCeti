@@ -26,8 +26,8 @@ nontrivial, and meeting each of its distinct conjugates trivially
 known proofs go through the character theory of `G`. What *is* elementary, and is what this file
 proves, is everything about the kernel except its closure under multiplication: it contains the
 identity, it is closed under inversion and under conjugation, it meets every conjugate of `H` only
-in the identity, and — the counting statement the roadmap records — for a finite `G` it has exactly
-`|G : H|` elements.
+in the identity, and — the counting statement everything downstream rests on — for a finite `G` it
+has exactly `|G : H|` elements.
 
 The count is the inclusion-exclusion that gives Frobenius's theorem its shape, and it is really a
 statement about a trivial-intersection *set* `S` for `H` (`TauCeti.IsTISet`): the conjugates
@@ -107,9 +107,6 @@ everything and `⊥` has index `|G|`.
 ## References
 
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 7, Section 7B.
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 8 (`frobeniusKernel`, "a set of size `|G : H|`", `frobeniusKernel_isComplement'`, and the
-  consequence `|H| ∣ |N| - 1`).
 -/
 
 public section

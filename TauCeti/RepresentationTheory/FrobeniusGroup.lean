@@ -93,10 +93,6 @@ class function of the identity class, which is `1` at the identity and `0` elsew
 
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 7, Theorem 7.2.
 * J.-P. Serre, *Linear Representations of Finite Groups*, Section 7.2.
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 8 (`frobeniusKernelSubgroup`, `coe_frobeniusKernelSubgroup`,
-  `frobeniusKernelSubgroup_normal`, `frobeniusKernel_isComplement'`, and the consequence
-  `|H| ∣ |N| - 1`).
 -/
 
 public section
