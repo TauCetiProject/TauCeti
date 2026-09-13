@@ -391,6 +391,7 @@ theorem map_latticeConj_deligneSplitting_sup_below (p q : ℤ) :
   exact key (max k₀ (p + q)) (le_max_left _ _) p q (le_max_right _ _)
 
 /-- Conjugation exchanges the sums of Deligne components below transposed bidegrees. -/
+@[simp]
 theorem map_deligneSplittingBelow (p q : ℤ) :
     (mhs.deligneSplittingBelow p q).map (latticeConj hℂ) =
       mhs.deligneSplittingBelow q p :=
