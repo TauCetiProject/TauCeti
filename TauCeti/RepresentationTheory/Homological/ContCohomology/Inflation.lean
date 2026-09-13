@@ -178,7 +178,8 @@ noncomputable def explicitInfl0Equiv :
 /-- The additive equivalence in degree zero has forward map `explicitInfl0`. -/
 @[simp]
 theorem explicitInfl0Equiv_toAddMonoidHom :
-    (explicitInfl0Equiv G M N).toAddMonoidHom = explicitInfl0 G M N := (rfl)
+    (explicitInfl0Equiv G M N :
+      H0 (G ⧸ N) (FixedPoints.addSubgroup N M) →+ H0 G M) = explicitInfl0 G M N := (rfl)
 
 end DegreeZero
 
