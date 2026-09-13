@@ -42,8 +42,6 @@ doubled when `i = j`.
 ## References
 
 * R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Wiley, 1982, Theorem 2.1.9.
-* Formal declaration scaffold: `TauCetiRoadmap/StandardDistributions/Suggested.lean`, section
-  "Cholesky coordinates".
 -/
 
 public section
