@@ -12,13 +12,16 @@ public import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 /-!
 # Graded exact structures on full subcategories
 
-An extension-closed full subcategory of an exact category inherits an exact structure. If the
-ambient category is graded and the object property is invariant under the grading shift, that
-shift restricts to an autoequivalence of the full subcategory and makes its induced exact
-structure graded.
+An extension-closed full additive subcategory of an exact category — explicitly, one containing a
+zero object and closed under binary products — inherits an exact structure. If the ambient
+category is graded and the object property is moreover stable under the grading shift, that shift
+restricts to an autoequivalence of the full subcategory and makes its induced exact structure
+graded.
 
-Invariance under the forward shift is enough: repleteness of the object property and the unit and
-counit isomorphisms imply invariance under the inverse shift. The restricted equivalence is
+Shift stability is the equality `P.inverseImage E.shift.functor = P`, that is, an object lies in
+`P` if and only if its shift does; one-way closure under the forward shift is not assumed. That
+equality, together with repleteness of the object property and the unit and counit isomorphisms,
+determines the matching invariance under the inverse shift. The restricted equivalence is
 Mathlib's `CategoryTheory.Equivalence.congrFullSubcategory`; its functor and inverse preserve
 conflations because the ambient shift and inverse shift do.
 
@@ -126,7 +129,9 @@ private theorem fullSubcategoryShift_inverse_exact
       (S.mapNatIso (fullSubcategoryShiftInverseCompιIso E P hshift))
       (E.shift_inverse_exact.map_conflation hS)
 
-/-- The graded exact structure induced on a shift-stable, extension-closed full subcategory.
+/-- The graded exact structure induced on a shift-stable, extension-closed full additive
+subcategory, the additivity being required in the explicit form of containing a zero object and
+being closed under binary products.
 
 Its exact structure is the one induced from the ambient exact category, and its grading shift is
 the restriction of the ambient shift. -/
@@ -171,9 +176,10 @@ variable [P.ContainsZero] [P.IsClosedUnderBinaryProducts]
 local instance : P.IsClosedUnderIsomorphisms :=
   ObjectProperty.isClosedUnderIsomorphisms_of_containsZero P
 
-/-- The inclusion of a shift-stable, extension-closed full subcategory is graded
-conflation-exact. Its commutation isomorphism is the canonical comparison between the restricted
-shift followed by inclusion and the ambient shift. -/
+/-- The inclusion of a shift-stable, extension-closed full additive subcategory — one containing a
+zero object and closed under binary products — is graded conflation-exact. Its commutation
+isomorphism is the canonical comparison between the restricted shift followed by inclusion and the
+ambient shift. -/
 def ι
     (hP : E.toExactStructure.IsExtensionClosed P)
     (hshift : P.inverseImage E.shift.functor = P) :
