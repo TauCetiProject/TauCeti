@@ -108,6 +108,8 @@ theorem torusCharacter_geckSimpleReflectionTorusPoint (i : Fin t.rank)
           (t.simpleIndex ht i) • mu) := by
   have hcoroot :
       (t.simplyConnectedRootDatum ht).coroot' (t.simpleIndex ht i) mu = mu i := by
+    -- `coroot'` is an abbreviation for the flipped pairing.  Expose that representation so the
+    -- linter-normal coordinate evaluation lemma can be applied after rewriting the simple coroot.
     change (t.simplyConnectedRootDatum ht).toLinearMap mu
       ((t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht i)) = mu i
     rw [t.coroot_simpleIndex ht, t.coroot'_simpleIndex_apply ht]
@@ -196,11 +198,15 @@ noncomputable def geckWeylTorusAction (A : Type v) [CommRing A] :
   map_one' := by
     apply MulEquiv.ext
     intro s
+    -- The action packages this endomorphism with `MonoidHom.toMulEquiv`; expose its underlying
+    -- function so the pointwise form of `geckWeylTorusEndomorphism_one` applies.
     change t.geckWeylTorusEndomorphism ht 1 A s = s
     simpa using DFunLike.congr_fun (t.geckWeylTorusEndomorphism_one ht A) s
   map_mul' w w' := by
     apply MulEquiv.ext
     intro s
+    -- As above, reduce the packaged equivalences to their underlying endomorphisms so the
+    -- already-proved composition law can be used pointwise.
     change t.geckWeylTorusEndomorphism ht (w * w') A s =
       t.geckWeylTorusEndomorphism ht w A
         (t.geckWeylTorusEndomorphism ht w' A s)
@@ -227,13 +233,12 @@ theorem geckWeylTorusAction_ofIdx (i : Fin t.rank) (A : Type v) [CommRing A] :
         (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht)
           (t.simpleIndex ht i))) =
       t.geckSimpleReflectionTorusPoint ht i A := by
-  change (t.geckWeylTorusAction ht A
-      (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht)
-        (t.simpleIndex ht i))).toMonoidHom =
-    t.geckSimpleReflectionTorusPoint ht i A
-  rw [t.geckWeylTorusAction_eq_word ht (l := [i]) (by simp),
+  apply MonoidHom.ext
+  intro s
+  rw [← MulEquiv.toMonoidHom_eq_coe]
+  rw [DFunLike.congr_fun (t.geckWeylTorusAction_eq_word ht (l := [i]) (by simp) A) s,
     geckWeylWordTorusAction_cons, geckWeylWordTorusAction_nil]
-  exact MonoidHom.comp_id _
+  exact DFunLike.congr_fun (MonoidHom.comp_id _) s
 
 /-- The abstract Weyl action is natural in the commutative ring of torus-point values. -/
 @[simp]
