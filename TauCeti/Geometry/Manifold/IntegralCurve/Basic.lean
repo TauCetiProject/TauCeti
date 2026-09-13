@@ -176,7 +176,7 @@ theorem IsMIntegralCurveAt.contMDiffAt_two
     [BoundarylessManifold I M] [IsManifold I 2 M]
     {γ : ℝ → M} {v : (x : M) → TangentSpace I x} {t₀ : ℝ}
     (hγ : IsMIntegralCurveAt γ v t₀)
-    (hv : CMDiff 1 (fun x => (⟨x, v x⟩ : TangentBundle I M))) :
+    (hv : ContMDiffAt I I.tangent 1 (fun x => (⟨x, v x⟩ : TangentBundle I M)) (γ t₀)) :
     ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t₀ := by
   rw [contMDiffAt_iff_target]
   refine ⟨hγ.continuousAt, ?_⟩
@@ -185,7 +185,7 @@ theorem IsMIntegralCurveAt.contMDiffAt_two
     tangentCoordChange I ((extChartAt I (γ t₀)).symm x) (γ t₀)
       ((extChartAt I (γ t₀)).symm x) (v ((extChartAt I (γ t₀)).symm x))
   have hv' : ContDiffAt ℝ 1 v' (extChartAt I (γ t₀) (γ t₀)) := by
-    have hv₀ := hv.contMDiffAt (x := γ t₀)
+    have hv₀ := hv
     rw [contMDiffAt_iff] at hv₀
     exact (hv₀.2.contDiffAt
       (range_mem_nhds_isInteriorPoint BoundarylessManifold.isInteriorPoint)).snd
@@ -203,7 +203,7 @@ theorem IsMIntegralCurveAt.contMDiffAt_two
     hderiv.and hcu
   obtain ⟨s, hsP, hsopen, hst₀⟩ := mem_nhds_iff.mp hall
   have hc : ContDiffAt ℝ 2 c t₀ :=
-    (contDiffOn_succ_of_hasDerivAt_comp hsopen hvu (fun t ht => (hsP ht).2)
+    (TauCeti.contDiffOn_succ_of_hasDerivAt_comp hsopen hvu (fun t ht => (hsP ht).2)
       (fun t ht => (hsP ht).1)).contDiffAt (hsopen.mem_nhds hst₀)
   have hc' : ContDiffAt ℝ 2 ((extChartAt I (γ t₀)) ∘ γ) t₀ := by
     simpa only [c] using hc
@@ -252,7 +252,7 @@ theorem contMDiff_succ (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
     hderiv.and hcu
   obtain ⟨s, hsP, hsopen, hst₀⟩ := mem_nhds_iff.mp hall
   have hc : ContDiffAt ℝ (n + 1 : ℕ) c t₀ :=
-    (contDiffOn_succ_of_hasDerivAt_comp hsopen hvu (fun t ht => (hsP ht).2)
+    (TauCeti.contDiffOn_succ_of_hasDerivAt_comp hsopen hvu (fun t ht => (hsP ht).2)
       (fun t ht => (hsP ht).1)).contDiffAt (hsopen.mem_nhds hst₀)
   have hc' : ContDiffAt ℝ (n + 1 : ℕ) ((extChartAt I (γ t₀)) ∘ γ) t₀ := by
     simpa only [c] using hc

@@ -19,6 +19,8 @@ public section
 open Set
 open scoped ContDiff
 
+namespace TauCeti
+
 /-- A solution of a first-order equation with a `C^n` right-hand side is `C^(n + 1)`. -/
 theorem contDiffOn_succ_of_hasDerivAt_comp {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] {n : ℕ} {f : ℝ → F} {v : F → F} {s : Set ℝ} {u : Set F}
@@ -42,5 +44,7 @@ theorem contDiffOn_succ_of_hasDerivAt_comp {F : Type*} [NormedAddCommGroup F]
         refine ⟨fun t ht => (hf t ht).differentiableAt.differentiableWithinAt, by simp, ?_⟩
         exact (hv.comp hfn hfu).congr fun t ht => (hf t ht).deriv
       simpa only [Nat.cast_add, Nat.cast_one, Nat.succ_eq_add_one] using h
+
+end TauCeti
 
 end
