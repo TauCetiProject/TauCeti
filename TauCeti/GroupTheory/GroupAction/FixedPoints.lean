@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Ring.Action.Submonoid
 public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 public import Mathlib.GroupTheory.GroupAction.Hom
 public import Mathlib.GroupTheory.GroupAction.OfQuotient
-public import TauCeti.GroupTheory.QuotientGroup.Map
 
 /-!
 # The additive fixed points of a subgroup
@@ -333,6 +332,9 @@ def fixedPointsQuotientMapAddSubgroup {G : Type*} [Group G]
     apply Subtype.ext
     dsimp
     rw [coe_fixedPointsQuotientMap, coe_fixedPointsQuotientMap]
+    -- Extensionality leaves the quotient action on the fixed-point subtype. The following
+    -- definitional reduction exposes its underlying action on `M`, which is exactly the
+    -- equivariance equation supplied by `f`.
     change f (g • (m : M)) = g • f (m : M)
     exact f.map_smul g (m : M)
 
@@ -344,6 +346,9 @@ theorem coe_fixedPointsQuotientMapAddSubgroup {G : Type*} [Group G]
     [DistribMulAction G N] (f : M →+[G] N) (H : Subgroup G) [H.Normal]
     (m : FixedPoints.addSubgroup H M) :
     (fixedPointsQuotientMapAddSubgroup f H m : N) = f (m : M) := by
+  -- The additive-subgroup map is defined by repackaging the canonical fixed-point map between
+  -- additive submonoids. This definitional reduction removes that packaging before applying its
+  -- coercion theorem.
   change (fixedPointsQuotientMap f H ⟨(m : M), m.2⟩ : N) = f (m : M)
   exact coe_fixedPointsQuotientMap f H ⟨(m : M), m.2⟩
 

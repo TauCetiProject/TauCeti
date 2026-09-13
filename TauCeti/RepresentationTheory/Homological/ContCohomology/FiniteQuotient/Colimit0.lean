@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
+public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
@@ -36,11 +37,18 @@ uniform local constancy on a product.
   `(OpenNormalSubgroup G)ᵒᵖ`.
 * `explicitFiniteQuotientComparison0` and `explicitFiniteQuotientCocone0`: the named inflation
   legs with apex `H⁰(G, M)`.
+* `explicitFiniteQuotientSystem0CoeffNatTrans`: the natural transformation induced by a
+  coefficient homomorphism.
 
 ## Main statements
 
 * `explicitFiniteQuotientTransition0_bijective`: every degree-zero transition is bijective.
 * `explicitFiniteQuotientColimit0`: the comparison cocone is a colimit cocone.
+* `explicitFiniteQuotientSystem0_coeffNatTrans_app`: the components are the explicit coefficient
+  maps on each finite level.
+* `explicitFiniteQuotientSystem0_coeffNatTrans_id` and
+  `explicitFiniteQuotientSystem0_coeffNatTrans_comp`: the coefficient transformation preserves
+  identities and composition.
 
 The construction follows Neukirch, Schmidt and Wingberg, *Cohomology of Number Fields*, (1.2.5),
 and Ribes and Zalesskii, *Profinite Groups*, Corollary 6.5.6(a). It uses Mathlib's
@@ -221,6 +229,8 @@ noncomputable def explicitFiniteQuotientSystem0CoeffNatTrans (f : M →+[G] N) :
     simp only [coe_explicitCoeff0, coe_explicitFiniteQuotientTransition0,
       coe_fixedPointsQuotientMapAddSubgroup]
 
+/-- The component at `U` of the coefficient natural transformation is the explicit coefficient
+map on the `U`-level degree-zero groups. -/
 @[simp]
 theorem explicitFiniteQuotientSystem0_coeffNatTrans_app (f : M →+[G] N)
     (U : OpenNormalSubgroup G) :
@@ -242,6 +252,8 @@ theorem explicitFiniteQuotientSystem0_coeffNatTrans_app (f : M →+[G] N)
   unfold explicitFiniteQuotientSystem0CoeffNatTrans
   rfl
 
+/-- The coefficient natural transformation induced by the identity coefficient homomorphism is
+the identity natural transformation. -/
 @[simp]
 theorem explicitFiniteQuotientSystem0_coeffNatTrans_id :
     explicitFiniteQuotientSystem0CoeffNatTrans G M
@@ -266,6 +278,7 @@ theorem explicitFiniteQuotientSystem0_coeffNatTrans_id :
   simp only [coe_explicitCoeff0, coe_fixedPointsQuotientMapAddSubgroup]
   rfl
 
+/-- Coefficient natural transformations preserve composition of coefficient homomorphisms. -/
 theorem explicitFiniteQuotientSystem0_coeffNatTrans_comp
     {P : Type v} [AddCommGroup P] [DistribMulAction G P]
     (f : M →+[G] N) (q : N →+[G] P) :
