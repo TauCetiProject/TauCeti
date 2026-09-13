@@ -22,7 +22,8 @@ obtained from bases of the two steps in a field tower.
 
 The discriminant of a basis is the determinant of its trace pairing. In a tower, the trace
 pairing on the product basis factors through the trace pairing of the lower basis and the relative
-trace map, yielding the displayed power and norm factors.
+Gram matrix associated to the relative trace pairing, yielding the displayed power and norm
+factors.
 -/
 
 public section
@@ -31,8 +32,9 @@ open Matrix Module
 
 namespace Module.Basis
 
-/-- The trace matrix of the product basis factors through the lower trace matrix and the relative
-trace map. This is the matrix identity underlying the tower formula for discriminants. -/
+/-- The trace matrix of the product basis factors through the lower trace matrix and the Gram
+matrix associated to the relative trace pairing. This is the matrix identity underlying the tower
+formula for discriminants. -/
 theorem traceMatrix_smulTower {K : Type*} [Field K]
     {L M : Type*} [Field L] [Field M]
     [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
@@ -47,26 +49,29 @@ theorem traceMatrix_smulTower {K : Type*} [Field K]
   let f : M →ₗ[L] M := Matrix.toLin c c C
   let D : Matrix (ι × κ) (ι × κ) K :=
     Matrix.blockDiagonal fun _ : κ => _root_.Algebra.traceMatrix K b
+  -- The target contains the expanded expressions, while the local abbreviations are needed
+  -- below for the coefficient calculation; this `change` unfolds only those let-bound terms.
   change _root_.Algebra.traceMatrix K (b.smulTower c) =
     D * LinearMap.toMatrix (b.smulTower c) (b.smulTower c) (f.restrictScalars K)
-  ext ⟨i, k⟩ ⟨j, l⟩
-  simp only [_root_.Algebra.traceMatrix_apply, Basis.smulTower_apply,
-    _root_.Algebra.traceForm_apply, Algebra.mul_smul_comm, Algebra.smul_mul_assoc,
-    ← _root_.Algebra.trace_trace_of_basis b c, map_smul, smul_eq_mul, Matrix.mul_apply,
-    ← Finset.univ_product_univ, Matrix.blockDiagonal_apply, LinearMap.toMatrix_apply,
-    LinearMap.coe_restrictScalars, Matrix.toLin_self, Basis.smulTower_repr, map_sum,
-    Basis.repr_self, Finsupp.smul_single, mul_one, Finsupp.coe_smul, Finsupp.coe_finsetSum,
-    Pi.smul_apply, Finset.sum_apply, ite_mul, zero_mul, Finset.sum_product,
-    Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, D, f, C]
-  have hc :
-      (∑ x : κ, (Finsupp.single x (_root_.Algebra.trace L M (c x * c l)) : κ →₀ L) k) =
-        _root_.Algebra.trace L M (c k * c l) := by
+  have hcoeff (i j : ι) (k l : κ) :
+      LinearMap.toMatrix (b.smulTower c) (b.smulTower c) (f.restrictScalars K)
+          (i, k) (j, l) = b.repr (b j * C k l) i := by
+    simp only [LinearMap.toMatrix_apply, Basis.smulTower_apply, Basis.smulTower_repr,
+      LinearMap.coe_restrictScalars, Matrix.toLin_self, map_smul, smul_eq_mul, map_sum,
+      Basis.repr_self, Finsupp.smul_single, mul_one, Finsupp.coe_smul,
+      Finsupp.coe_finsetSum, Pi.smul_apply, Finset.sum_apply, f]
     rw [Finset.sum_eq_single k]
     · simp
     · intro x _ hx
       rw [Finsupp.single_eq_of_ne hx.symm]
     · simp
-  rw [hc]
+  ext ⟨i, k⟩ ⟨j, l⟩
+  simp only [_root_.Algebra.traceMatrix_apply, Basis.smulTower_apply,
+    _root_.Algebra.traceForm_apply, Algebra.mul_smul_comm, Algebra.smul_mul_assoc,
+    ← _root_.Algebra.trace_trace_of_basis b c, Matrix.mul_apply,
+    ← Finset.univ_product_univ, Matrix.blockDiagonal_apply, hcoeff, D, C,
+    Finset.sum_product, ite_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ,
+    ↓reduceIte]
   simpa [Matrix.mulVec, dotProduct, Basis.equivFun_apply, mul_comm, mul_left_comm,
     mul_assoc] using
     (congrFun (_root_.Algebra.traceMatrix_of_basis_mulVec b
@@ -87,7 +92,9 @@ raised to the degree of the upper step, times the norm of the upper basis discri
   simp only [Matrix.det_blockDiagonal, Finset.prod_const, Finset.card_univ]
   rw [← _root_.Algebra.discr_def, LinearMap.det_toMatrix,
     LinearMap.det_restrictScalars]
-  -- Expose the norm as the determinant of the relative trace matrix.
+  -- `rw` leaves the determinant of `Matrix.toLin c c C` inside the norm. The target below is
+  -- definitionally equal after unfolding the local abbreviation `C`, and exposes that wrapper
+  -- so the public `det_toLin` conversion can be applied next.
   change _root_.Algebra.discr K b ^ Fintype.card κ *
       _root_.Algebra.norm K (LinearMap.det (Matrix.toLin c c C)) = _
   have hC : C.det = _root_.Algebra.discr L c := by
