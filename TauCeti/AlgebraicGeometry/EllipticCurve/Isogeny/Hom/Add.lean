@@ -31,6 +31,8 @@ this bijection additive; the zero and the negation are those the carrier already
 
 * `TauCeti.Isogeny.Hom.tautologicalPoint`: the tautological point of a morphism.
 * `TauCeti.Isogeny.Hom.polePointsAddEquiv`: `Hom W₁ W₂ ≃+ polePoints W₂ (Place.infinity W₁)`.
+* `TauCeti.Isogeny.Hom.compRightHom`: precomposition by a morphism, as an additive homomorphism;
+  `zsmul_comp` and `nsmul_comp` are its `map_zsmul` and `map_nsmul`.
 * The `AddCommGroup (Hom W₁ W₂)` instance.
 
 ## Main results
@@ -290,6 +292,32 @@ omit [W₂.IsElliptic] in
 theorem sub_comp [W₃.IsElliptic] (g g' : Hom W₂ W₃) (f : Hom W₁ W₂) :
     (g - g').comp f = g.comp f - g'.comp f := by
   rw [sub_eq_add_neg, add_comp, neg_comp, sub_eq_add_neg]
+
+omit [W₂.IsElliptic] in
+/-- **Precomposition by `f`, as a homomorphism of the additive groups of morphisms.** -/
+noncomputable def compRightHom [W₃.IsElliptic] (f : Hom W₁ W₂) : Hom W₂ W₃ →+ Hom W₁ W₃ where
+  toFun g := g.comp f
+  map_zero' := zero_comp f
+  map_add' g g' := add_comp g g' f
+
+omit [W₂.IsElliptic] in
+@[simp]
+theorem compRightHom_apply [W₃.IsElliptic] (f : Hom W₁ W₂) (g : Hom W₂ W₃) :
+    compRightHom f g = g.comp f := (rfl)
+
+omit [W₂.IsElliptic] in
+/-- **Composition is `ℤ`-linear in the outer morphism.** -/
+@[simp]
+theorem zsmul_comp [W₃.IsElliptic] (n : ℤ) (g : Hom W₂ W₃) (f : Hom W₁ W₂) :
+    (n • g).comp f = n • g.comp f :=
+  (compRightHom (W₃ := W₃) f).map_zsmul n g
+
+omit [W₂.IsElliptic] in
+/-- **Composition is `ℕ`-linear in the outer morphism**, the rule for a natural scalar. -/
+@[simp]
+theorem nsmul_comp [W₃.IsElliptic] (n : ℕ) (g : Hom W₂ W₃) (f : Hom W₁ W₂) :
+    (n • g).comp f = n • g.comp f :=
+  (compRightHom (W₃ := W₃) f).map_nsmul n g
 
 end Hom
 
