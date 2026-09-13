@@ -259,6 +259,12 @@ def DiagonalChain (w w' : Fin n → Rˣ) : Prop :=
 
 namespace DiagonalChain
 
+/-- A diagonal chain is the reflexive-transitive closure of elementary diagonal steps. -/
+@[simp]
+theorem iff {w w' : Fin n → Rˣ} :
+    DiagonalChain w w' ↔ Relation.ReflTransGen DiagonalStep w w' :=
+  Iff.rfl
+
 /-- An elementary diagonal step forms a single-step diagonal chain. -/
 theorem single {w w' : Fin n → Rˣ} (h : DiagonalStep w w') : DiagonalChain w w' :=
   Relation.ReflTransGen.single h
