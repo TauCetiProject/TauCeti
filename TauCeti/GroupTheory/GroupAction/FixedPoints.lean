@@ -187,7 +187,7 @@ theorem coe_fixedPointsInclusion (h : K ≤ H) (m : FixedPoints.addSubmonoid H M
   AddSubmonoid.coe_inclusion _ m
 
 /-- The inclusion between fixed-point additive subgroups. -/
-@[expose] def fixedPointsInclusion_onAddSubgroup {G : Type*} [Group G] {M : Type*} [AddCommGroup M]
+@[expose] def fixedPointsInclusionOnAddSubgroup {G : Type*} [Group G] {M : Type*} [AddCommGroup M]
     [DistribMulAction G M] {H K : Subgroup G} (h : K ≤ H) :
     FixedPoints.addSubgroup H M →+ FixedPoints.addSubgroup K M where
   toFun m :=

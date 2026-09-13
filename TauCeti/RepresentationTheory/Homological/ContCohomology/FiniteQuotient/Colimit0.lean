@@ -76,13 +76,13 @@ noncomputable def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G)
         (FixedPoints.addSubmonoid V.toSubgroup M)
     exact explicitMap0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
       (QuotientGroup.mapOfLE hVU)
-      (fixedPointsInclusion_onAddSubgroup hVU)
+      (fixedPointsInclusionOnAddSubgroup hVU)
       (by
         intro q m
         induction q using QuotientGroup.induction_on with
         | H g =>
           apply Subtype.ext
-          simp [fixedPointsInclusion_onAddSubgroup])
+          simp [fixedPointsInclusionOnAddSubgroup])
 
 /-- Coercion of a degree-zero transition to the coefficient group. -/
 @[simp]
@@ -104,7 +104,7 @@ theorem explicitFiniteQuotientTransition0_id (U : OpenNormalSubgroup G) :
   apply Subtype.ext
   simp only [coe_explicitMap0, AddMonoidHom.id_apply]
   apply Subtype.ext
-  simp [fixedPointsInclusion_onAddSubgroup]
+  simp [fixedPointsInclusionOnAddSubgroup]
 
 /-- Degree-zero transitions compose along inclusions of open normal subgroups. -/
 theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
@@ -118,7 +118,7 @@ theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
   apply Subtype.ext
   simp only [coe_explicitMap0, AddMonoidHom.comp_apply]
   apply Subtype.ext
-  simp [fixedPointsInclusion_onAddSubgroup]
+  simp [fixedPointsInclusionOnAddSubgroup]
 
 private theorem explicitFiniteQuotientTransition0_inflation (hVU : V ≤ U)
     (x : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
