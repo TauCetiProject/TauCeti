@@ -46,6 +46,18 @@ open scoped ENNReal NNReal
 
 namespace TauCeti.Probability
 
+/-- A bounded-differences function is bounded once its value at one base point is fixed. -/
+private theorem abs_le_sum_add_abs_of_bounded_differences {ι : Type*} [Fintype ι]
+    {β : Type*} (c : ι → ℝ) (f : (ι → β) → ℝ)
+    (hbd : ∀ (i : ι) (x x' : ι → β),
+      (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
+    (x₀ x : ι → β) : |f x| ≤ (∑ i, c i) + |f x₀| := by
+  have h1 := abs_sub_le_of_bounded_differences c f hbd x x₀
+  calc
+    |f x| = |(f x - f x₀) + f x₀| := by ring_nf
+    _ ≤ |f x - f x₀| + |f x₀| := abs_add_le _ _
+    _ ≤ (∑ i, c i) + |f x₀| := by linarith
+
 /-- The exponential-moment estimate underlying McDiarmid's inequality, on a product indexed by
 `Fin n`. -/
 private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpace β]
@@ -89,13 +101,9 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
       set I : ℝ := ∫ x', f x' ∂π1 with hI_def
       set x₀ : Fin (n + 1) → β := fun _ => Classical.arbitrary β with hx0
       set M : ℝ := (∑ i, c i) + |f x₀| with hM
-      have hMf : ∀ x, |f x| ≤ M := by
-        intro x
-        have h1 := abs_sub_le_of_bounded_differences c f hbd x x₀
-        calc
-          |f x| = |(f x - f x₀) + f x₀| := by ring_nf
-          _ ≤ |f x - f x₀| + |f x₀| := abs_add_le _ _
-          _ ≤ M := by rw [hM]; linarith
+      have hMf : ∀ x, |f x| ≤ M := fun x => by
+        rw [hM]
+        exact abs_le_sum_add_abs_of_bounded_differences c f hbd x₀ x
       have hpair_meas : ∀ (F : (Fin (n + 1) → β) → ℝ), Measurable F →
           Measurable (fun p : β × (Fin n → β) => F (Fin.cons p.1 p.2)) := by
         intro F hF
@@ -352,7 +360,7 @@ The result is stated using Mathlib's `ProbabilityTheory.HasSubgaussianMGF`; its
 theorem hasSubgaussianMGF_of_bounded_differences
     {ι : Type*} [Fintype ι] {β : Type*} [MeasurableSpace β]
     (ν : Measure β) [IsProbabilityMeasure ν]
-    (f : (ι → β) → ℝ) (hf : Measurable f) (c : ι → ℝ) (hc : ∀ i, 0 ≤ c i)
+    (f : (ι → β) → ℝ) (hf : Measurable f) (c : ι → ℝ)
     (hbd : ∀ (i : ι) (x x' : ι → β),
       (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i) :
     ProbabilityTheory.HasSubgaussianMGF
@@ -369,14 +377,13 @@ theorem hasSubgaussianMGF_of_bounded_differences
   set π : Measure (ι → β) := Measure.pi (fun _ : ι => ν) with hπ
   set I : ℝ := ∫ y, f y ∂π with hI
   set x₀ : ι → β := fun _ => Classical.arbitrary β with hx0
+  have hc : ∀ i, 0 ≤ c i := by
+    intro i
+    simpa using hbd i x₀ x₀ (fun _ _ => rfl)
   set M : ℝ := (∑ i, c i) + |f x₀| with hM
-  have hMf : ∀ x, |f x| ≤ M := by
-    intro x
-    have h1 := abs_sub_le_of_bounded_differences c f hbd x x₀
-    calc
-      |f x| = |(f x - f x₀) + f x₀| := by ring_nf
-      _ ≤ |f x - f x₀| + |f x₀| := abs_add_le _ _
-      _ ≤ M := by rw [hM]; linarith
+  have hMf : ∀ x, |f x| ≤ M := fun x => by
+    rw [hM]
+    exact abs_le_sum_add_abs_of_bounded_differences c f hbd x₀ x
   have hint : ∀ t : ℝ, Integrable (fun x => Real.exp (t * (f x - I))) π := fun t =>
     ProbabilityTheory.integrable_exp_mul_of_mem_Icc (μ := π)
       (a := -(M + |I|)) (b := M + |I|) ((hf.sub_const I).aemeasurable)
@@ -400,7 +407,7 @@ theorem hasSubgaussianMGF_of_bounded_differences
 convenient form where one coordinate is updated explicitly. -/
 theorem hasSubgaussianMGF_of_bounded_differences_fin
     {n : ℕ} {β : Type*} [MeasurableSpace β] (ν : Measure β) [IsProbabilityMeasure ν]
-    (f : (Fin n → β) → ℝ) (hf : Measurable f) (c : ℝ) (hc : 0 ≤ c)
+    (f : (Fin n → β) → ℝ) (hf : Measurable f) (c : ℝ)
     (hosc : ∀ (x : Fin n → β) (i : Fin n) (b : β),
       |f (Function.update x i b) - f x| ≤ c) :
     ProbabilityTheory.HasSubgaussianMGF
@@ -424,6 +431,6 @@ theorem hasSubgaussianMGF_of_bounded_differences_fin
     rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
     ring
   rw [← hvar]
-  exact hasSubgaussianMGF_of_bounded_differences ν f hf (fun _ => c) (fun _ => hc) hbd
+  exact hasSubgaussianMGF_of_bounded_differences ν f hf (fun _ => c) hbd
 
 end TauCeti.Probability
