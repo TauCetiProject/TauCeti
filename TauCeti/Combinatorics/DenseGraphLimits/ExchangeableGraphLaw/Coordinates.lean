@@ -61,19 +61,13 @@ def graphCoordEquiv : SimpleGraph ℕ ≃ (EdgeIndex → Bool) where
   toFun G e := if e.1 ∈ G.edgeSet then true else false
   invFun f := SimpleGraph.fromEdgeSet {s : Sym2 ℕ | ∃ h : ¬ s.IsDiag, f ⟨s, h⟩ = true}
   left_inv G := by
-    ext i j
-    simp only [SimpleGraph.fromEdgeSet_adj, Set.mem_ofPred_eq]
-    constructor
-    · rintro ⟨⟨_, htrue⟩, -⟩
-      have hmem : s(i, j) ∈ G.edgeSet := by
-        by_contra hnot
-        simp only [hnot, ↓reduceIte] at htrue
-        exact Bool.false_ne_true htrue
-      simpa only [SimpleGraph.mem_edgeSet] using hmem
-    · intro hadj
-      have hmem : s(i, j) ∈ G.edgeSet := by
-        simpa only [SimpleGraph.mem_edgeSet] using hadj
-      exact ⟨⟨by simpa using hadj.ne, by simp [hmem]⟩, hadj.ne⟩
+    -- The coordinate predicate cuts out exactly `G.edgeSet`, so `fromEdgeSet_edgeSet` applies.
+    refine Eq.trans ?_ (SimpleGraph.fromEdgeSet_edgeSet G)
+    refine congrArg SimpleGraph.fromEdgeSet (Set.ext fun s => ?_)
+    simp only [Set.mem_ofPred_eq]
+    refine ⟨fun h => ?_, fun hs => ⟨G.not_isDiag_of_mem_edgeSet hs, by simp [hs]⟩⟩
+    by_contra hnot
+    simp [hnot] at h
   right_inv f := by
     funext e
     have hcond :
@@ -99,6 +93,12 @@ theorem graphCoordEquiv_apply (G : SimpleGraph ℕ) (e : EdgeIndex) :
     graphCoordEquiv G e = true ↔ e.1 ∈ G.edgeSet := by
   classical
   simp [graphCoordEquiv]
+
+/-- An edge coordinate is an edge of the decoded graph exactly when its value is true. -/
+@[simp]
+theorem mem_edgeSet_graphCoordEquiv_symm (f : EdgeIndex → Bool) (e : EdgeIndex) :
+    e.1 ∈ (graphCoordEquiv.symm f).edgeSet ↔ f e = true := by
+  rw [← graphCoordEquiv_apply, Equiv.apply_symm_apply]
 
 /-- The graph-to-coordinate map is measurable for Mathlib's adjacency-generated measurable space
 on simple graphs and the product measurable space on Boolean coordinates. -/
@@ -175,17 +175,19 @@ theorem edgeIndexMap_trans (e₁ e₂ : Equiv.Perm ℕ) :
   intro p
   apply Subtype.ext
   -- Unfold the two equivalence applications so functoriality of `Sym2.map` applies.
-  change Sym2.map (e₁.trans e₂) p.1 = Sym2.map e₂ (Sym2.map e₁ p.1)
-  induction p.1 using Sym2.ind with
-  | _ i j => rfl
+  change Sym2.map ⇑(e₁.trans e₂) p.1 = Sym2.map ⇑e₂ (Sym2.map ⇑e₁ p.1)
+  rw [Sym2.map_map, Equiv.coe_trans]
 
 /-- Relabelling an infinite graph is the same as relabelling its Boolean edge coordinates. -/
+@[simp]
 theorem graphCoordEquiv_comap (e : Equiv.Perm ℕ) (G : SimpleGraph ℕ) (p : EdgeIndex) :
     graphCoordEquiv (SimpleGraph.comap ⇑e G) p = graphCoordEquiv G (edgeIndexMap e p) := by
+  -- `e` is a graph isomorphism from the pullback onto `G`, so it preserves edge-set membership.
+  have h := (SimpleGraph.Iso.comap e G).map_mem_edgeSet_iff (e := p.1)
+  rw [show ⇑(SimpleGraph.Iso.comap e G) = ⇑e from funext (SimpleGraph.Iso.comap_apply e G)] at h
   apply Bool.eq_iff_iff.mpr
   simp only [graphCoordEquiv_apply, edgeIndexMap_val]
-  induction p.1 using Sym2.ind with
-  | _ i j => rfl
+  exact h.symm
 
 end DenseGraphLimits
 
