@@ -15,6 +15,7 @@ public import TauCeti.LinearAlgebra.Dimension.DirectSum
 public import TauCeti.LinearAlgebra.TensorProduct.Decomposition
 -- Non-public: this supplies the inputs of the direct-sum additivity proof, never the vocabulary of
 -- a statement.
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Lie.Submodule.DirectSum
 
 /-!
@@ -303,7 +304,7 @@ read on a Cartan subalgebra `H`.
 
 section InternalDirectSum
 
-open scoped DirectSum
+open scoped _root_.DirectSum
 
 variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   {H : LieSubalgebra K L} [LieRing.IsNilpotent H]
@@ -359,9 +360,8 @@ theorem formalCharacter_eq_sum_of_isInternal
         (DirectSum.coeLinearMap fun j ↦ (N j).toSubmodule) h).symm m i : N i) : M)
         ∈ (genWeightSpace M (chi : H → K)).toSubmodule := fun m hm i ↦
     map_genWeightSpace_le (χ := (chi : H → K))
-      ((h.lieModuleProjection i).restrictLie H) ⟨m, hm, by
-        change h.lieModuleProjection i m = _
-        exact h.lieModuleProjection_apply i m⟩
+      ((h.lieModuleProjection i).restrictLie H)
+      ⟨m, hm, h.lieModuleProjection_apply i m⟩
   rw [← finrank_toSubmodule,
     ← h.iSup_inf_eq_of_component_mem
       (genWeightSpace M (chi : H → K)).toSubmodule hcomponent,

@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.Weights.Basic
 public import TauCeti.Algebra.Lie.Isotypic
 public import TauCeti.Algebra.Lie.Multiplicity
 -- Non-public: these declarations support the internal-decomposition proof.
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Lie.Submodule.Decomposition
 import TauCeti.Algebra.Lie.Submodule.DirectSum
 import TauCeti.Algebra.Lie.Submodule.Finrank
@@ -72,17 +73,11 @@ variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
   {M : Type*} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   {ι : Type*} {N : ι → LieSubmodule K L M}
 
-omit [LieModule K L M] in
-/-- The inclusion of a summand, restricted to a Lie subalgebra, is injective. -/
-private theorem injective_incl_restrictLie (i : ι) :
-    Function.Injective ((N i).incl.restrictLie H) :=
-  fun _ _ hxy ↦ LieSubmodule.injective_incl (N i) hxy
-
 /-- The image of a summand's weight space is its intersection with the ambient weight space. -/
 private theorem toSubmodule_map_weightSpace_incl (i : ι) (χ : H → K) :
     ((weightSpace ↥(N i) χ).map ((N i).incl.restrictLie H)).toSubmodule
       = (weightSpace M χ).toSubmodule ⊓ (N i).toSubmodule := by
-  rw [LieModule.map_weightSpace_eq_of_injective χ (injective_incl_restrictLie i),
+  rw [LieModule.map_weightSpace_eq_of_injective χ (LieSubmodule.injective_incl (N i)),
     LieSubmodule.inf_toSubmodule]
   congr 1
   ext x
@@ -93,7 +88,8 @@ private theorem finrank_inf_weightSpace (i : ι) (χ : H → K) :
     finrank K ((weightSpace M χ).toSubmodule ⊓ (N i).toSubmodule : Submodule K M)
       = finrank K (weightSpace ↥(N i) χ) := by
   have hequiv := (LieSubmodule.equivMapOfInjective
-    (weightSpace ↥(N i) χ) (injective_incl_restrictLie i)).toLinearEquiv.finrank_eq
+    (f := (N i).incl.restrictLie H) (weightSpace ↥(N i) χ)
+      (LieSubmodule.injective_incl (N i))).toLinearEquiv.finrank_eq
   rw [← toSubmodule_map_weightSpace_incl i χ, TauCeti.finrank_toSubmodule, ← hequiv]
 
 /-- **Weight-space dimensions are additive over an internal decomposition.** If a finite family of
@@ -115,9 +111,8 @@ theorem finrank_weightSpace_eq_sum [FiniteDimensional K M]
       (((LinearEquiv.ofBijective
         (DirectSum.coeLinearMap fun j ↦ (N j).toSubmodule) h).symm m i : N i) : M)
         ∈ (weightSpace M χ).toSubmodule := fun m hm i ↦
-    LieModule.map_weightSpace_le ((h.lieModuleProjection i).restrictLie H) χ ⟨m, hm, by
-      change h.lieModuleProjection i m = _
-      exact h.lieModuleProjection_apply i m⟩
+    LieModule.map_weightSpace_le ((h.lieModuleProjection i).restrictLie H) χ
+      ⟨m, hm, h.lieModuleProjection_apply i m⟩
   rw [← TauCeti.finrank_toSubmodule,
     ← h.iSup_inf_eq_of_component_mem (weightSpace M χ).toSubmodule hcomponent,
     TauCeti.finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
