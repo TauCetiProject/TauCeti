@@ -55,8 +55,6 @@ variable (α : ℝ≥0) (E : Type u) (F : Type v)
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-set_option backward.privateInPublic true
-set_option backward.privateInPublic.warn false
 namespace C1HolderSpace
 
 /-- The ambient jet space for bounded `C^{1,α}` maps: a bounded continuous value field paired with
@@ -94,18 +92,43 @@ private def c1HolderSubmodule : Submodule ℝ (C1HolderJet α E F) where
 
 `max ‖f‖_∞ (‖Df‖_∞ + [Df]_α)`.
 -/
-@[expose] def _root_.TauCeti.C1HolderSpace : Type _ := c1HolderSubmodule α E F
+@[expose] def _root_.TauCeti.C1HolderSpace : Type _ :=
+  let graph : Submodule ℝ ((E →ᵇ F) × HolderSpace α E (E →L[ℝ] F)) :=
+    { carrier := {J | ∀ x, HasFDerivAt (J.1 : E → F) (J.2 x) x}
+      zero_mem' := fun x ↦ by
+        have hfun : ((0 : E →ᵇ F) : E → F) = fun _ ↦ 0 := by
+          ext
+          rfl
+        have hder : (0 : HolderSpace α E (E →L[ℝ] F)) x = 0 := rfl
+        rw [Prod.fst_zero, Prod.snd_zero, hfun, hder]
+        exact hasFDerivAt_const (x := x) (c := (0 : F))
+      add_mem' := fun {f g} hf hg x ↦ by
+        have hfun : (((f + g).1 : E →ᵇ F) : E → F) =
+            (f.1 : E → F) + (g.1 : E → F) := by
+          ext
+          rfl
+        have hder : (f + g).2 x = f.2 x + g.2 x := rfl
+        rw [hfun, hder]
+        exact (hf x).add (hg x)
+      smul_mem' := fun c {f} hf x ↦ by
+        have hfun : (((c • f).1 : E →ᵇ F) : E → F) = c • (f.1 : E → F) := by
+          ext
+          rfl
+        have hder : (c • f).2 x = c • f.2 x := rfl
+        rw [hfun, hder]
+        exact (hf x).const_smul c }
+  graph
 
 variable {α : ℝ≥0} {E : Type u} {F : Type v}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 instance instNormedAddCommGroup : NormedAddCommGroup (C1HolderSpace α E F) := by
-  change NormedAddCommGroup (c1HolderSubmodule α E F)
+  unfold C1HolderSpace
   infer_instance
 
 instance instNormedSpace : NormedSpace ℝ (C1HolderSpace α E F) := by
-  change NormedSpace ℝ (c1HolderSubmodule α E F)
+  unfold C1HolderSpace
   infer_instance
 
 private abbrev toSubmodule (f : C1HolderSpace α E F) : c1HolderSubmodule α E F := f
@@ -322,8 +345,8 @@ private theorem isClosed_c1HolderSubmodule :
 
 /-- Bounded `C^{1,α}` maps into a Banach space form a Banach space. -/
 noncomputable instance instCompleteSpace [CompleteSpace F] :
-    CompleteSpace (C1HolderSpace α E F) :=
-  isClosed_c1HolderSubmodule.completeSpace_coe
+    CompleteSpace (C1HolderSpace α E F) := by
+  exact (isClosed_c1HolderSubmodule (α := α) (E := E) (F := F)).completeSpace_coe
 
 attribute [irreducible] _root_.TauCeti.C1HolderSpace
 
