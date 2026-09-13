@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Basic
+public import TauCeti.RingTheory.Valuation.IsTrivialOn
 import Mathlib.RingTheory.Polynomial.IsIntegral
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Finrank
@@ -33,7 +34,11 @@ field. `TauCeti.Isogeny.comp` therefore lives here rather than beside `TauCeti.I
   transcendental element inside the pulled-back function field.
 * `TauCeti.Isogeny.pullback_injective`: a coordinate pullback satisfying `MapsInfinity` is
   injective.
-* `TauCeti.Isogeny.fieldPullback`: the induced embedding of function fields.
+* `TauCeti.Isogeny.fieldPullback`: the induced embedding of function fields, with
+  `TauCeti.Isogeny.comap_fieldPullback_apply_algebraMap` computing **any** restricted valuation on
+  the image of the target coordinate ring. Triviality on the base field carries across the
+  restriction by the general `Valuation.IsTrivialOn.comap`, re-exported here so that importing
+  this module suffices to restrict a trivial valuation.
 * `TauCeti.Isogeny.comp`: composition of isogenies, with `TauCeti.Isogeny.comp_fieldPullback`
   its function-field law and `TauCeti.Isogeny.id_comp`, `TauCeti.Isogeny.comp_id`,
   `TauCeti.Isogeny.comp_assoc` the unit and associativity laws. The pointedness obligation is
@@ -312,6 +317,17 @@ factorisation through a fixed `φ` determines its factor uniquely. -/
 theorem comp_right_inj {φ : Isogeny W₁ W₂} {ψ₁ ψ₂ : Isogeny W₂ W₃} :
     ψ₁.comp φ = ψ₂.comp φ ↔ ψ₁ = ψ₂ :=
   (comp_right_injective φ).eq_iff
+
+/-- **A restricted valuation, evaluated on an affine function of the target**: it is the value of
+the pullback of that function, for an arbitrary valuation of the source. -/
+-- Not `@[simp]`: `Valuation.comap_apply` and `fieldPullback_algebraMap` are both `@[simp]` and
+-- already carry the left-hand side to the right, so the annotation would not be in simp normal
+-- form. The theorem earns its name as the rule the places API rewrites by, in both directions.
+theorem comap_fieldPullback_apply_algebraMap {Γ : Type*} [LinearOrderedCommMonoidWithZero Γ]
+    (φ : Isogeny W₁ W₂) (v : Valuation W₁.FunctionField Γ) (c : W₂.CoordinateRing) :
+    (v.comap φ.fieldPullback.toRingHom) (algebraMap W₂.CoordinateRing W₂.FunctionField c)
+      = v (φ.pullback c) := by
+  simp
 
 end Isogeny
 

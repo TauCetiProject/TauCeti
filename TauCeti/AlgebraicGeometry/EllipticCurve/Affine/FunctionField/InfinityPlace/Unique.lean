@@ -16,6 +16,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.ValuationIntegrality
 import Mathlib.NumberTheory.RatFunc.Ostrowski
+import TauCeti.RingTheory.Valuation.IsTrivialOn
 
 /-!
 # The place at infinity is the only place of `F(W)` where `x` has a pole
@@ -128,11 +129,12 @@ section Trivial
 
 variable [v.IsTrivialOn F]
 
-/-- The restriction of `v` to the rational function field is again trivial on the base field. -/
-private instance : (v.comap (algebraMap (RatFunc F) W.FunctionField)).IsTrivialOn F where
-  eq_one c hc := by
-    rw [Valuation.comap_apply, ← IsScalarTower.algebraMap_apply F (RatFunc F) W.FunctionField]
-    exact Valuation.IsTrivialOn.eq_one c hc
+-- The restriction of `v` to the rational function field is again trivial on the base field. This
+-- is the general `Valuation.IsTrivialOn.comap` at the scalar-tower algebra map, not a separate
+-- argument; it is `local` only because instance search cannot see the `AlgHom` through
+-- `algebraMap` on its own.
+local instance : (v.comap (algebraMap (RatFunc F) W.FunctionField)).IsTrivialOn F :=
+  Valuation.IsTrivialOn.comap v (IsScalarTower.toAlgHom F (RatFunc F) W.FunctionField)
 
 variable (hx : 1 < v (algebraMap F[X] W.FunctionField Polynomial.X))
 
