@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Lebesgue
 public import Mathlib.LinearAlgebra.Matrix.Bilinear
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Transvection
+import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
 # Congruence and the change of variables on the symmetric subspace
@@ -83,17 +84,6 @@ theorem symmetricCongruenceLinearMap_one :
   simp
 
 /-! ### The determinant of congruence -/
-
-/-- A matrix that is block triangular for an injective integer ranking of the indices has
-determinant the product of its diagonal entries: an injective ranking cuts it into singleton
-blocks. -/
-private theorem det_eq_prod_diag_of_blockTriangular {ι : Type*} [Fintype ι] [DecidableEq ι]
-    {N : Matrix ι ι ℝ} {f : ι → ℕ} (hf : Function.Injective f) (h : N.BlockTriangular f) :
-    N.det = ∏ i, N i i := by
-  rw [h.det, Finset.prod_image fun x _ y _ hxy => hf hxy]
-  refine Finset.prod_congr rfl fun i _ => ?_
-  let _ : Unique {j // f j = f i} := ⟨⟨⟨i, rfl⟩⟩, fun j => Subtype.ext (hf j.2)⟩
-  exact Matrix.det_unique _
 
 /-- Counting how often each index occurs in an on-or-above-diagonal pair: the index `i` occurs
 `p - i` times as the first entry and `i + 1` times as the second, so `p + 1` times in all. -/
@@ -207,7 +197,7 @@ private theorem det_eq_of_blockTriangular_upperRank
     (hN : N.BlockTriangular fun c : upperTriangle p => p * c.1.1.1 + c.1.2.1)
     (hdiag : ∀ r : upperTriangle p, N r r = d r.1.1 * d r.1.2) :
     N.det = (∏ i, d i) ^ (p + 1) := by
-  rw [det_eq_prod_diag_of_blockTriangular (injective_upperRank p) hN,
+  rw [hN.det_eq_prod_diag (injective_upperRank p),
     Finset.prod_congr rfl fun r _ => hdiag r, prod_upperTriangle_mul d]
 
 /-- For a triangular `M` the coordinate matrix of the congruence is triangular for the ranking of

@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.Cholesky.Coordinates
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.LinearAlgebra.Matrix.Triangular
 import Mathlib.Data.Prod.Lex
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.LinearAlgebra.Matrix.Block
@@ -161,6 +162,8 @@ theorem differentiable_choleskyReconstructionCoordinates :
     Differentiable ℝ (choleskyReconstructionCoordinates p) :=
   fun x ↦ (hasFDerivAt_choleskyReconstructionCoordinates x).differentiableAt
 
+/-- The Fréchet derivative of `TauCeti.choleskyReconstructionCoordinates` at `x` is
+`TauCeti.fderivCholeskyReconstructionCoordinates p x`. -/
 @[simp]
 theorem fderiv_choleskyReconstructionCoordinates (x : lowerTriangle p → ℝ) :
     fderiv ℝ (choleskyReconstructionCoordinates p) x =
@@ -178,16 +181,6 @@ private theorem lowerTriangleKey_injective :
   rintro ⟨⟨i, j⟩, hij⟩ ⟨⟨k, l⟩, hkl⟩ h
   simp only [lowerTriangleKey, toLex_inj, Prod.mk.injEq] at h
   exact Subtype.ext (Prod.ext h.2 h.1)
-
-/-- A matrix vanishing above the diagonal in the column-then-row order has the product of its
-diagonal entries as determinant. -/
-private theorem det_eq_prod_diag_of_lowerTriangleKey
-    {M : Matrix (lowerTriangle p) (lowerTriangle p) ℝ}
-    (hM : ∀ ij kl, lowerTriangleKey ij < lowerTriangleKey kl → M ij kl = 0) :
-    M.det = ∏ ij, M ij ij := by
-  let _ : LinearOrder (lowerTriangle p) :=
-    LinearOrder.lift' lowerTriangleKey lowerTriangleKey_injective
-  exact Matrix.det_of_isLowerTriangular _ fun _ _ h ↦ hM _ _ h
 
 private theorem lowerTriangleMatrix_pi_single (kl : lowerTriangle p) :
     lowerTriangleMatrix p (Pi.single kl 1) = Matrix.single kl.1.1 kl.1.2 1 := by
@@ -216,10 +209,14 @@ private theorem toMatrix_fderivCholeskyReconstructionCoordinates (x : lowerTrian
   by_cases h1 : kl.1.1 = ij.1.2 <;> by_cases h2 : kl.1.1 = ij.1.1 <;>
     simp [h1, h2, Finset.sum_ite_eq]
 
-private theorem toMatrix_fderiv_eq_zero_of_lowerTriangleKey_lt (x : lowerTriangle p → ℝ)
-    (ij kl : lowerTriangle p) (h : lowerTriangleKey ij < lowerTriangleKey kl) :
-    LinearMap.toMatrix (Pi.basisFun ℝ (lowerTriangle p)) (Pi.basisFun ℝ (lowerTriangle p))
-      (fderivCholeskyReconstructionCoordinates p x) ij kl = 0 := by
+/-- The matrix of the derivative vanishes above the diagonal in the column-then-row order, that
+is, it is block triangular for the reversed ranking. -/
+private theorem blockTriangular_toMatrix_fderiv (x : lowerTriangle p → ℝ) :
+    (LinearMap.toMatrix (Pi.basisFun ℝ (lowerTriangle p)) (Pi.basisFun ℝ (lowerTriangle p))
+      (fderivCholeskyReconstructionCoordinates p x)).BlockTriangular
+      (OrderDual.toDual ∘ lowerTriangleKey) := by
+  intro ij kl h
+  simp only [Function.comp_apply, OrderDual.toDual_lt_toDual] at h
   rw [toMatrix_fderivCholeskyReconstructionCoordinates]
   rw [lowerTriangleKey, lowerTriangleKey, Prod.Lex.toLex_lt_toLex] at h
   rcases h with hcol | ⟨hcol, hrow⟩
@@ -273,7 +270,8 @@ theorem det_fderiv_choleskyReconstructionCoordinates (x : lowerTriangle p → �
   -- triangular for the column-then-row order, so only its diagonal survives.
   rw [fderiv_choleskyReconstructionCoordinates, ContinuousLinearMap.det,
     ← LinearMap.det_toMatrix (Pi.basisFun ℝ (lowerTriangle p)),
-    det_eq_prod_diag_of_lowerTriangleKey (toMatrix_fderiv_eq_zero_of_lowerTriangleKey_lt x),
+    (blockTriangular_toMatrix_fderiv x).det_eq_prod_diag
+      (OrderDual.toDual.injective.comp lowerTriangleKey_injective),
     Finset.prod_congr rfl fun ij (_ : ij ∈ univ) ↦ toMatrix_fderiv_diag x ij]
   -- Regroup the diagonal product over the lower-triangular positions by column.
   rw [← Finset.prod_subtype ({ij : Fin p × Fin p | ij.2 ≤ ij.1} : Finset _) (fun _ ↦ by simp)
