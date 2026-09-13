@@ -114,14 +114,17 @@ noncomputable def crossingComponentCount (D : PDCode n) : ℕ :=
 noncomputable abbrev componentCount (D : PDCode n) : ℕ :=
   D.crossingComponentCount + D.crossinglessComponentCount
 
-@[simp] theorem componentCount_eq (D : PDCode n) :
+/-- The total component count is the sum of crossing-bearing and crossing-free components. -/
+theorem componentCount_eq (D : PDCode n) :
     D.componentCount = D.crossingComponentCount + D.crossinglessComponentCount := rfl
 
-theorem componentCount_mirror (D : PDCode n) :
+/-- Mirroring preserves the total number of components. -/
+@[simp] theorem componentCount_mirror (D : PDCode n) :
     D.mirror.componentCount = D.componentCount := by
   simp [componentCount]
 
-theorem componentCount_relabel (D : PDCode n)
+/-- Relabelling preserves the total number of components. -/
+@[simp] theorem componentCount_relabel (D : PDCode n)
     (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
     (D.relabel half cross).componentCount = D.componentCount := by
   simp [componentCount]

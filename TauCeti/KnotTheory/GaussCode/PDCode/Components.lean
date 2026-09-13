@@ -90,6 +90,7 @@ theorem toOrientedPDCode_crossingComponentCount (D : BasedOrientedGaussCode n) :
   simp
 
 /-- Including the explicit crossing-free circles, the converted code has exactly one component. -/
+@[simp]
 theorem toOrientedPDCode_componentCount (D : BasedOrientedGaussCode n) :
     D.toOrientedPDCode.toPDCode.componentCount = 1 := by
   simp only [PDCode.componentCount_eq]

@@ -29,7 +29,7 @@ theorem orbitCount_finRotate (n : ℕ) : orbitCount (finRotate n) = if n = 0 the
     -- `finRotate_zero` exposes the identity permutation definitionally.
     change orbitCount (1 : Equiv.Perm (Fin 0)) = 0
     exact (orbitCount_one (α := Fin 0)).trans (by simp)
-  · rw [show 0 + 1 = 1 by omega, finRotate_one]
+  · rw [Nat.zero_add, finRotate_one]
     -- `finRotate_one` likewise reduces to the identity on the singleton ordinal.
     change orbitCount (1 : Equiv.Perm (Fin 1)) = 1
     exact (orbitCount_one (α := Fin 1)).trans (by simp)
