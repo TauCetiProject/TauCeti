@@ -67,9 +67,10 @@ Both computations are stated for a normal form — a diagonal matrix, and an ele
 torus in the basis `TauCeti.nonSplitTorusBasis` — rather than for an arbitrary regular semisimple
 element. `TauCeti.exists_isConj_normalForm` of
 `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NormalForm.lean` exhausts `GL₂(𝔽_q)` by four
-named normal forms, of which these two are the semisimple ones. That a *regular semisimple*
-element falls into one of those two rather than into the scalar or the Jordan family, and that a
-centralizer transports along a conjugation, are not proved here.
+named normal forms, of which these two are the regular semisimple ones — the central scalar
+family is semisimple too, but not regular. That a *regular semisimple* element falls into one of
+those two rather than into the scalar or the Jordan family, and that a centralizer transports
+along a conjugation, are not proved here.
 
 The third regular family is also here. A **non-semisimple** element is a Jordan block
 `TauCeti.jordanGL a b = !![a, b; 0, a]` with `b ≠ 0`; it is again regular
