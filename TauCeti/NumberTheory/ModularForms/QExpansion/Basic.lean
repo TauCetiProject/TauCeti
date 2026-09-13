@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 public import TauCeti.Analysis.Complex.Periodic
 
@@ -22,6 +23,11 @@ invoke it. The proof is Mathlib's, run through `UpperHalfPlane.hasFPowerSeriesOn
 which *is* stated for `{f : ℍ → ℂ}`, with `qExpansionFormalMultilinearSeries` spelled out
 inline for the same reason.
 
+Alongside them, the `n`-th coefficient bundled as a `ℂ`-linear functional on *cusp* forms,
+`CuspForm.qExpansionCoeffₗ` — the linear map above, composed with the inclusion of cusp forms
+and with `PowerSeries.coeff n`. It is what a coefficient computation on a linear combination of
+cusp forms is run through.
+
 Alongside those, the effect of a `1 / d` translation on the `q`-powers a support condition
 leaves alive: shifting the argument by `1 / d` scales the `n`-th `q`-power by a `d`-th root of
 unity raised to `n`, so a coefficient function supported on the multiples of `d` does not see the
@@ -33,6 +39,8 @@ stated here rather than at the descent because it mentions only coefficients, di
 
 * `TauCeti.ModularForm.qExpansionLinearMap`.
 * `TauCeti.UpperHalfPlane.qExpansion_coeff_unique`.
+* `CuspForm.qExpansionCoeffₗ` (at root, so dot notation on `CuspForm` elaborates): the `n`-th
+  coefficient as a `ℂ`-linear functional on cusp forms.
 * `TauCeti.smul_qParam_pow_shift_eq`: a shift by `1 / d` fixes every `q`-power that a
   `d`-supported coefficient function leaves alive.
 
@@ -83,6 +91,22 @@ lemma UpperHalfPlane.qExpansion_coeff_unique {f : ℍ → ℂ} {c : ℕ → ℂ}
     simpa [_root_.UpperHalfPlane.qExpansion_coeff, div_eq_mul_inv, mul_comm]
       using hfanalytic.hasFPowerSeriesAt
   simpa using congr_arg (FormalMultilinearSeries.coeff · m) (h1.eq_formalMultilinearSeries h2)
+
+/-- **The `n`-th `q`-expansion coefficient as a `ℂ`-linear functional on cusp forms.**
+`f ↦ (qExpansion h f).coeff n`, bundled: the coefficient of a linear combination of cusp forms
+is that combination of their coefficients, by `map_add`, `map_sub` and `map_smul`. -/
+def _root_.CuspForm.qExpansionCoeffₗ {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne]
+    (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) (k : ℤ) (n : ℕ) : CuspForm Γ k →ₗ[ℂ] ℂ :=
+  (PowerSeries.coeff n).comp
+    ((ModularForm.qExpansionLinearMap hh hΓ k).comp CuspForm.toModularFormₗ)
+
+@[simp]
+lemma _root_.CuspForm.qExpansionCoeffₗ_apply {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne]
+    (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) {k : ℤ} (n : ℕ) (f : CuspForm Γ k) :
+    CuspForm.qExpansionCoeffₗ hh hΓ k n f = (qExpansion h ⇑f).coeff n := by
+  rw [CuspForm.qExpansionCoeffₗ, LinearMap.comp_apply, LinearMap.comp_apply,
+    ModularForm.qExpansionLinearMap_apply]
+  exact congrArg (fun g ↦ (qExpansion h g).coeff n) (funext (CuspForm.toModularFormₗ_apply f))
 
 /-- The translate `1 / d +ᵥ σ`, read in `ℂ`, is the subtraction `TauCeti.Periodic.qParam_sub`
 expects: that lemma is stated at `z - j`, and the shift here enters as a `+ᵥ` on `ℍ`. Naming the
