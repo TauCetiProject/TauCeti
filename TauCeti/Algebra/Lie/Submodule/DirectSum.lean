@@ -42,6 +42,8 @@ and `m` is the multiplicity.
 
 * `DirectSum.coeLieModuleHom_toLinearMap` and `DirectSum.coeLieModuleHom_bijective_iff`: the sum
   map refines `DirectSum.coeLinearMap`, so its bijectivity is `DirectSum.IsInternal`.
+* `DirectSum.IsInternal.lieModuleProjection`: the canonical equivariant projection onto one
+  summand, included back into the ambient module.
 * `DirectSum.IsInternal.iSup_inf_eq_of_component_mem`: an internal decomposition restricts to a
   subspace that contains every component of each of its elements.
 * `DirectSum.nonempty_lieModuleEquiv_sigma_of_isInternal`: **an internal decomposition regrouped by
@@ -67,7 +69,7 @@ universe u v w w₁ w₂ w₃ w₄
 
 namespace DirectSum
 
-variable {R : Type u} {L : Type v} {M : Type w} {ι : Type w₁} [DecidableEq ι]
+variable {R : Type u} {L : Type v} {M : Type w} {ι : Type w₁} [dec_ι : DecidableEq ι]
 variable [CommRing R] [LieRing L] [AddCommGroup M] [Module R M] [LieRingModule L M]
 variable (N : ι → LieSubmodule R L M)
 
@@ -133,22 +135,53 @@ theorem lieModuleEquivOfIsInternal_apply (h : IsInternal fun i ↦ (N i).toSubmo
     (m : ⨁ i, N i) : lieModuleEquivOfIsInternal N h m = coeLieModuleHom N m :=
   TauCeti.LieModuleEquiv.ofBijective_apply _ _ _
 
+/-- The underlying linear equivalence of the internal Lie-module decomposition is the canonical
+equivalence supplied by `DirectSum.IsInternal`. -/
+theorem lieModuleEquivOfIsInternal_toLinearEquiv
+    (h : IsInternal fun i ↦ (N i).toSubmodule) :
+    (lieModuleEquivOfIsInternal N h : (⨁ i, N i) ≃ₗ[R] M) =
+      LinearEquiv.ofBijective (coeLinearMap fun i ↦ (N i).toSubmodule)
+        (show Function.Bijective (coeLinearMap fun i ↦ (N i).toSubmodule) from h) := by
+  ext m
+  exact lieModuleEquivOfIsInternal_apply N h m
+
+/-- **The canonical projection onto an internal Lie-module summand.** It extracts one component
+through the internal direct-sum equivalence and includes that component back into the ambient
+module. -/
+noncomputable def IsInternal.lieModuleProjection {N : ι → LieSubmodule R L M}
+    (h : IsInternal fun i ↦ (N i).toSubmodule) (i : ι) : M →ₗ⁅R,L⁆ M :=
+  (N i).incl.comp
+    ((lieModuleComponent R ι L (fun j ↦ ↥(N j)) i).comp
+      (lieModuleEquivOfIsInternal N h).symm)
+
+/-- Applying the canonical projection returns the selected internal direct-sum component. -/
+@[simp]
+theorem IsInternal.lieModuleProjection_apply {N : ι → LieSubmodule R L M}
+    (h : IsInternal fun i ↦ (N i).toSubmodule) (i : ι) (m : M) :
+    h.lieModuleProjection i m =
+      (((LinearEquiv.ofBijective (coeLinearMap fun j ↦ (N j).toSubmodule)
+        (show Function.Bijective (coeLinearMap fun j ↦ (N j).toSubmodule) from h)).symm m i :
+          N i) : M) := by
+  change (((lieModuleEquivOfIsInternal N h).symm m i : N i) : M) = _
+  have he := congrArg LinearEquiv.symm (lieModuleEquivOfIsInternal_toLinearEquiv N h)
+  exact congrArg (fun z : ⨁ i, N i ↦ ((z i : N i) : M)) (DFunLike.congr_fun he m)
+
 /-- **Restricting an internal decomposition to a component-stable subspace.** If a subspace
 contains every canonical component of each of its elements, then it is the internal sum of its
 intersections with the original summands. -/
-theorem IsInternal.iSup_inf_eq_of_component_mem {N : ι → LieSubmodule R L M} [Finite ι]
-    (h : IsInternal fun i ↦ (N i).toSubmodule) (p : Submodule R M)
-    (hp : ∀ (m : M), m ∈ p → ∀ i,
-      (((lieModuleEquivOfIsInternal N h).symm m i : N i) : M) ∈ p) :
-    ⨆ i, p ⊓ (N i).toSubmodule = p := by
+theorem IsInternal.iSup_inf_eq_of_component_mem
+    {S V κ : Type*} [Semiring S] [AddCommMonoid V] [Module S V] [DecidableEq κ]
+    {A : κ → Submodule S V} (h : IsInternal A) (p : Submodule S V)
+    (hp : ∀ (m : V), m ∈ p → ∀ i,
+      (((LinearEquiv.ofBijective (coeLinearMap A) h).symm m i : A i) : V) ∈ p) :
+    ⨆ i, p ⊓ A i = p := by
   classical
-  let _ := Fintype.ofFinite ι
   refine le_antisymm (iSup_le fun _ ↦ inf_le_left) fun m hm ↦ ?_
-  let e := lieModuleEquivOfIsInternal N h
-  have hsum : m = ∑ i, ((e.symm m i : N i) : M) := by
-    conv_lhs => rw [← e.apply_symm_apply m, ← sum_univ_of (e.symm m)]
+  let e := LinearEquiv.ofBijective (coeLinearMap A) h
+  have hsum : m = ∑ i ∈ (e.symm m).support, ((e.symm m i : A i) : V) := by
+    conv_lhs => rw [← e.apply_symm_apply m, ← sum_support_of (e.symm m)]
     rw [map_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ by simp [e]
+    exact Finset.sum_congr rfl fun i _ ↦ coeLinearMap_of A i (e.symm m i)
   rw [hsum]
   exact Submodule.sum_mem _ fun i _ ↦
     Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).2⟩

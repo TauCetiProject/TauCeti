@@ -355,16 +355,13 @@ theorem formalCharacter_eq_sum_of_isInternal
       ((genWeightSpace M (chi : H → K)).toSubmodule ⊓ (N i).toSubmodule) :=
     h.submodule_iSupIndep.mono fun i ↦ inf_le_right
   have hcomponent : ∀ (m : M), m ∈ (genWeightSpace M (chi : H → K)).toSubmodule → ∀ i,
-      (((DirectSum.lieModuleEquivOfIsInternal N h).symm m i : N i) : M)
-        ∈ (genWeightSpace M (chi : H → K)).toSubmodule := fun m hm i ↦ by
-    have hcomp : (DirectSum.lieModuleEquivOfIsInternal N h).symm m i
-        ∈ genWeightSpace (N i : Type w) (chi : H → K) :=
-      map_genWeightSpace_le (χ := (chi : H → K))
-        ((((DirectSum.lieModuleComponent K ι L fun j ↦ (N j : Type w)) i).comp
-          ((DirectSum.lieModuleEquivOfIsInternal N h).symm :
-            M →ₗ⁅K,L⁆ ⨁ j, (N j : Type w))).restrictLie H) ⟨m, hm, rfl⟩
-    exact map_genWeightSpace_le (χ := (chi : H → K))
-      ((N i).incl.restrictLie H) ⟨_, hcomp, rfl⟩
+      (((LinearEquiv.ofBijective
+        (DirectSum.coeLinearMap fun j ↦ (N j).toSubmodule) h).symm m i : N i) : M)
+        ∈ (genWeightSpace M (chi : H → K)).toSubmodule := fun m hm i ↦
+    map_genWeightSpace_le (χ := (chi : H → K))
+      ((h.lieModuleProjection i).restrictLie H) ⟨m, hm, by
+        change h.lieModuleProjection i m = _
+        exact h.lieModuleProjection_apply i m⟩
   rw [← finrank_toSubmodule,
     ← h.iSup_inf_eq_of_component_mem
       (genWeightSpace M (chi : H → K)).toSubmodule hcomponent,
