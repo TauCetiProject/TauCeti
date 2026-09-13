@@ -9,6 +9,7 @@ public import Mathlib.Probability.Distributions.Binomial
 public import Mathlib.Probability.Independence.CharacteristicFunction
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.Variance
+import TauCeti.Probability.Distributions.Bernoulli
 
 /-!
 # Elementary theory of the binomial distribution
@@ -16,7 +17,8 @@ public import Mathlib.Probability.Moments.Variance
 This file develops the moments, transforms, convolution law, and independent-sum
 characterization of Mathlib's binomial measure.  The native law remains
 `ProbabilityTheory.binomial n p` on `ℕ`; real-valued moments and transforms use its cast pushforward
-`Bin(ℝ, n, p)`.
+`Bin(ℝ, n, p)`. The variance follows by realizing this law as a sum of independent Bernoulli
+variables and adding their variances on the product probability space.
 
 ## Main results
 
@@ -33,9 +35,6 @@ characterization of Mathlib's binomial measure.  The native law remains
 
 * N. L. Johnson, A. W. Kemp, S. Kotz, *Univariate Discrete Distributions*, 3rd ed., Wiley,
   2005, Chapter 3.
-* `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, "Bernoulli and binomial".
-* L. Laurance, [mathlib4 PR #40916](https://github.com/leanprover-community/mathlib4/pull/40916),
-  revision `58ab4ff4561a0d87b42863a30f94761fad763dd4` (Apache-2.0), for the variance proof.
 -/
 
 public section
@@ -80,118 +79,6 @@ theorem cgf_id_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
     cgf id Bin(ℝ, n, p) t =
       Real.log ((1 - (p : ℝ) + (p : ℝ) * Real.exp t) ^ n) := by
   rw [cgf, mgf_id_map_cast_binomial]
-
-/-!
-### Variance
-
-The calculation below is adapted from the proof proposed in mathlib4 PR #40916 at revision
-`58ab4ff4561a0d87b42863a30f94761fad763dd4`.  That PR is the upstream API named by the roadmap;
-the pinned Mathlib contains its prerequisite mean theorem but not yet its variance theorem.
--/
-
-/-- The binomial weights of rank `m` sum to `1`; the normalization identity behind the variance
-calculation below. -/
-private theorem sum_binomial_weight (p : unitInterval) (m : ℕ) :
-    ∑ x ∈ Finset.range (m + 1), (m.choose x : ℝ) * (p : ℝ) ^ x * (1 - p : ℝ) ^ (m - x) = 1 := by
-  calc
-    _ = ∑ x ∈ Finset.range (m + 1), (p : ℝ) ^ x * (1 - p : ℝ) ^ (m - x) * m.choose x :=
-      Finset.sum_congr rfl fun x _ ↦ by ring
-    _ = 1 := by rw [← add_pow]; simp
-
-/-- A binomial sum of a constant `c` of rank `m` evaluates to `c`. -/
-private theorem sum_binomial_weight_mul (p : unitInterval) (m : ℕ) (c : ℝ) :
-    ∑ x ∈ Finset.range (m + 1), (m.choose x : ℝ) * (p : ℝ) ^ x * (1 - p : ℝ) ^ (m - x) * c = c := by
-  rw [← Finset.sum_mul, sum_binomial_weight, one_mul]
-
-/-- The variance of a real-valued binomial random variable with parameters `n` and `p` is
-`p(1-p)n`. -/
-theorem variance_of_hasLaw_binomial {n : ℕ} {p : unitInterval} {X : Ω → ℝ}
-    (hX : HasLaw X Bin(ℝ, n, p) P) : Var[X; P] = p * (1 - p) * n := by
-  have hmean := integral_of_hasLaw_binomial hX
-  rw [hX.integral_eq] at hmean
-  simp only [hX.variance_eq, variance_eq_integral aemeasurable_id, id_eq, hmean,
-    integral_map_cast_binomial, ← n.range_succ_eq_Iic, Finset.sum_range_succ']
-  match n with
-  | 0 => norm_num
-  | 1 =>
-    simp only [Finset.range_one, Nat.cast_add, Finset.sum_singleton, Nat.choose_self,
-      Nat.choose_succ_self_right]
-    ring
-  | n + 2 =>
-    -- Expand the centered square and isolate the `x = 0` endpoint of the finite sum.
-    calc
-      _ = ∑ x ∈ Finset.range (n + 2), (n + 2).choose (x + 1) * p.val ^ (x + 1) *
-            (1 - p) ^ (n + 1 - x) *
-              ((x + 1) ^ 2 - 2 * (x + 1) * p * (n + 2) + (p * (n + 2)) ^ 2) +
-          (1 - p.val) ^ (n + 2) * (p * (n + 2)) ^ 2 := by
-        norm_num [sub_sq]
-        grind
-      _ = ∑ x ∈ Finset.range (n + 2), (n + 1 + 1).choose (x + 1) * (x + 1) * (x + 1) *
-            p.val ^ (x + 1) * (1 - p) ^ (n + 1 - x) -
-          ∑ x ∈ Finset.range (n + 2), (n + 1 + 1).choose (x + 1) * (x + 1) *
-            p.val ^ (x + 1) * (1 - p) ^ (n + 1 - x) * 2 * p * (n + 2) +
-          (∑ x ∈ Finset.range (n + 2), (n + 2).choose (x + 1) * p.val ^ (x + 1) *
-            (1 - p) ^ (n + 1 - x) * (p * (n + 2)) ^ 2 +
-          (1 - p.val) ^ (n + 2) * (p * (n + 2)) ^ 2) := by
-        rw [← add_assoc, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
-        congr
-        ext
-        rw [mul_add, mul_sub]
-        ring
-      _ = ∑ x ∈ Finset.range (n + 2), (n + 1).choose x * (x + 1) * (n + 2) *
-            p.val ^ (x + 1) * (1 - p) ^ (n + 1 - x) -
-          ∑ x ∈ Finset.range (n + 2), (n + 1).choose x * (n + 2) * p.val ^ (x + 1) *
-            (1 - p) ^ (n + 1 - x) * (2 * p * (n + 2)) +
-          ∑ x ∈ Finset.range (n + 3), (n + 2).choose x * p.val ^ x *
-            (1 - p) ^ (n + 2 - x) * (p * (n + 2)) ^ 2 := by
-        congrm ?_ - ?_ + ?_
-        any_goals
-          congr
-          ext
-          norm_cast
-          rw [← Nat.add_one_mul_choose_eq]
-          group
-        simp [Finset.sum_range_succ' (n := n + 2)]
-      -- Shift factors of `x + 1` into the binomial coefficients.  The remaining expressions
-      -- are ordinary binomial sums of ranks `n`, `n + 1`, and `n + 2`.
-      _ = ∑ x ∈ Finset.range (n + 2), (n + 1).choose x * x * p.val ^ (x + 1) *
-            (1 - p) ^ (n + 1 - x) * (n + 2) +
-          ∑ x ∈ Finset.range (n + 2), (n + 1).choose x * p.val ^ x *
-            (1 - p) ^ (n + 1 - x) * (p * (n + 2)) -
-          ∑ x ∈ Finset.range (n + 2), (n + 1).choose x * p.val ^ x *
-            (1 - p) ^ (n + 1 - x) * (2 * p * (n + 2) * p * (n + 2)) +
-          (p * (n + 2)) ^ 2 := by
-        congrm ?_ - ?_ + ?_
-        · simp_rw [← Finset.sum_add_distrib, pow_add]
-          group
-        · simp_rw [pow_add]
-          group
-        · exact sum_binomial_weight_mul p (n + 2) _
-      -- Evaluate the normalized sums at `p + (1 - p) = 1` by the binomial theorem.
-      _ = ∑ x ∈ Finset.range (n + 1), n.choose x * p.val ^ (x + 2) *
-            (1 - p) ^ (n + 1 - (x + 1)) * (n + 2) * (n + 1) +
-          p * (n + 2) - 2 * p * (n + 2) * p * (n + 2) + (p * (n + 2)) ^ 2 := by
-        congrm ?_ + ?_ - ?_ + _
-        · norm_cast
-          simp_rw [Finset.sum_range_succ', ← Nat.add_one_mul_choose_eq]
-          grind
-        all_goals exact sum_binomial_weight_mul p (n + 1) _
-      _ = (∑ x ∈ Finset.range (n + 1), n.choose x * p.val ^ x *
-            (1 - p) ^ (n + 1 - (x + 1))) * (p * p * (n + 2) * (n + 1)) +
-          (1 - p * (n + 2)) * p * (n + 2) := by
-        rw [Finset.sum_mul, add_sub_assoc, add_assoc]
-        congr <;> grind
-      _ = p.val * p * (n + 2) * (n + 1) +
-          (1 - p * (n + 2)) * p * (n + 2) := by
-        congrm ?_ + _
-        simp only [Nat.add_sub_add_right]
-        rw [sum_binomial_weight, one_mul]
-      _ = _ := by grind
-
-/-- The variance of the real-valued binomial measure itself. -/
-theorem variance_id_map_cast_binomial (n : ℕ) (p : unitInterval) :
-    Var[id; Bin(ℝ, n, p)] = (p : ℝ) * (1 - p) * n :=
-  variance_of_hasLaw_binomial HasLaw.id
 
 private theorem charFun_map_cast_binomial_aux (n : ℕ) (p : unitInterval) (t : ℝ) :
     charFun Bin(ℝ, n, p) t =
@@ -289,6 +176,36 @@ theorem iIndepFun.hasLaw_sum_bernoulli {ι : Type*} [Fintype ι] {p : unitInterv
     simp
   rw [hcomp]
   exact hsumCast
+
+/-! ### Variance -/
+
+/-- The variance of the real-valued binomial measure itself. -/
+theorem variance_id_map_cast_binomial (n : ℕ) (p : unitInterval) :
+    Var[id; Bin(ℝ, n, p)] = (p : ℝ) * (1 - p) * n := by
+  let μ : Fin n → Measure ℕ := fun _ ↦ Ber((1 : ℕ), 0, p)
+  have hcoord (i : Fin n) : HasLaw (fun ω : Fin n → ℕ ↦ ω i) (μ i) (Measure.pi μ) :=
+    ⟨(measurable_pi_apply i).aemeasurable, (measurePreserving_eval μ i).map_eq⟩
+  have hsum : HasLaw (fun ω : Fin n → ℕ ↦ ∑ i, ω i) Bin(n, p) (Measure.pi μ) := by
+    simpa only [Fintype.card_fin, id_eq] using
+      iIndepFun.hasLaw_sum_bernoulli
+        (iIndepFun_pi (μ := μ) (fun _ ↦ aemeasurable_id)) hcoord
+  have hcast : HasLaw (Nat.cast : ℕ → ℝ) Bin(ℝ, n, p) Bin(n, p) :=
+    ⟨Measurable.of_discrete.aemeasurable, rfl⟩
+  have hsumCast : HasLaw (∑ i : Fin n, fun ω : Fin n → ℕ ↦ (ω i : ℝ))
+      Bin(ℝ, n, p) (Measure.pi μ) := by
+    simpa only [Function.comp_def, Nat.cast_sum, Finset.sum_fn] using hcast.comp hsum
+  have hber : HasLaw (Nat.cast : ℕ → ℝ) Ber((1 : ℝ), 0, p) Ber((1 : ℕ), 0, p) :=
+    ⟨Measurable.of_discrete.aemeasurable, by simp [map_bernoulliMeasure]⟩
+  have hmem : MemLp (Nat.cast : ℕ → ℝ) 2 Ber((1 : ℕ), 0, p) :=
+    (memLp_two_iff_integrable_sq (by fun_prop)).2 (integrable_bernoulliMeasure _ _ _ _)
+  rw [← hsumCast.variance_eq, variance_sum_pi (fun _ ↦ hmem)]
+  simp [variance_of_hasLaw_bernoulliMeasure hber, mul_comm]
+
+/-- The variance of a real-valued binomial random variable with parameters `n` and `p` is
+`p(1-p)n`. -/
+theorem variance_of_hasLaw_binomial {n : ℕ} {p : unitInterval} {X : Ω → ℝ}
+    (hX : HasLaw X Bin(ℝ, n, p) P) : Var[X; P] = p * (1 - p) * n := by
+  rw [hX.variance_eq, variance_id_map_cast_binomial]
 
 end Probability
 
