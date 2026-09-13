@@ -42,6 +42,8 @@ and `m` is the multiplicity.
 
 * `DirectSum.coeLieModuleHom_toLinearMap` and `DirectSum.coeLieModuleHom_bijective_iff`: the sum
   map refines `DirectSum.coeLinearMap`, so its bijectivity is `DirectSum.IsInternal`.
+* `DirectSum.IsInternal.iSup_inf_eq_of_component_mem`: an internal decomposition restricts to a
+  subspace that contains every component of each of its elements.
 * `DirectSum.nonempty_lieModuleEquiv_sigma_of_isInternal`: **an internal decomposition regrouped by
   the labels of its summands.**
 * `TauCeti.LieModule.finrank_lieModuleHom_eq_sum_of_isInternal`: the finrank of a morphism space
@@ -130,6 +132,26 @@ noncomputable def lieModuleEquivOfIsInternal (h : IsInternal fun i ↦ (N i).toS
 theorem lieModuleEquivOfIsInternal_apply (h : IsInternal fun i ↦ (N i).toSubmodule)
     (m : ⨁ i, N i) : lieModuleEquivOfIsInternal N h m = coeLieModuleHom N m :=
   TauCeti.LieModuleEquiv.ofBijective_apply _ _ _
+
+/-- **Restricting an internal decomposition to a component-stable subspace.** If a subspace
+contains every canonical component of each of its elements, then it is the internal sum of its
+intersections with the original summands. -/
+theorem IsInternal.iSup_inf_eq_of_component_mem {N : ι → LieSubmodule R L M} [Finite ι]
+    (h : IsInternal fun i ↦ (N i).toSubmodule) (p : Submodule R M)
+    (hp : ∀ (m : M), m ∈ p → ∀ i,
+      (((lieModuleEquivOfIsInternal N h).symm m i : N i) : M) ∈ p) :
+    ⨆ i, p ⊓ (N i).toSubmodule = p := by
+  classical
+  let _ := Fintype.ofFinite ι
+  refine le_antisymm (iSup_le fun _ ↦ inf_le_left) fun m hm ↦ ?_
+  let e := lieModuleEquivOfIsInternal N h
+  have hsum : m = ∑ i, ((e.symm m i : N i) : M) := by
+    conv_lhs => rw [← e.apply_symm_apply m, ← sum_univ_of (e.symm m)]
+    rw [map_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ by simp [e]
+  rw [hsum]
+  exact Submodule.sum_mem _ fun i _ ↦
+    Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).2⟩
 
 /-- **An internal decomposition regrouped by the labels of its summands.** Suppose the Lie
 submodules `N i` decompose `M` internally, that each `N i` is equivalent to a member `S (c i)` of a
