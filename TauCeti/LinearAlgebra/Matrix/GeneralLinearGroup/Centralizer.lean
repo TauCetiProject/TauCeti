@@ -64,8 +64,11 @@ The counting results all assume `F` finite, where the torus language is uncondit
 
 Both computations are stated for a normal form — a diagonal matrix, and an element of the non-split
 torus in the basis `TauCeti.nonSplitTorusBasis` — rather than for an arbitrary regular semisimple
-element. Every regular semisimple element of `GL₂(𝔽_q)` is conjugate to one of the two, but that
-classification, and the transport of a centralizer along a conjugation, are not proved here.
+element. `TauCeti.exists_isConj_normalForm` of
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NormalForm.lean` exhausts `GL₂(𝔽_q)` by four
+named normal forms, of which these two are the semisimple ones. That a *regular semisimple*
+element falls into one of those two rather than into the scalar or the Jordan family, and that a
+centralizer transports along a conjugation, are not proved here.
 
 The third regular family is also here. A **non-semisimple** element is a Jordan block
 `TauCeti.jordanGL a b = !![a, b; 0, a]` with `b ≠ 0`; it is again regular
@@ -144,16 +147,6 @@ theorem isMulCommutative_centralizer_of_notMem_range_scalar
 end GeneralLinearGroup
 
 section SplitTorus
-
-/-- An invertible diagonal matrix with distinct diagonal entries is not scalar.  Like `diagGL`
-itself, this needs only a semiring; specialized to a field it is what supplies the non-scalarity
-hypothesis of `TauCeti.isMulCommutative_centralizer_of_notMem_range_scalar`, which is stated over
-a field. -/
-theorem notMem_range_scalar_diagGL {k : Type*} [Semiring k] {t : Fin 2 → kˣ} (ht : t 0 ≠ t 1) :
-    (diagGL t : Matrix (Fin 2) (Fin 2) k) ∉ Set.range (Matrix.scalar (Fin 2)) := by
-  rw [mem_range_scalar_fin_two_iff]
-  rintro ⟨-, -, h⟩
-  exact ht (Units.ext (by simpa using h))
 
 section CommSemiring
 
@@ -243,25 +236,6 @@ namespace GL2NonSplitTorus
 variable {F : Type*} [Field F] {E : Type*} [Field E] [Algebra F E]
   (hE : Module.finrank F E = 2) {x : Eˣ}
 
-/-- A scalar matrix over `F` is the image of the algebra map of the matrix algebra, so that the
-commutant description of `TauCeti.commute_fin_two_iff` can be compared with `Algebra.leftMulMatrix`
-through `AlgHom.commutes`. -/
-private theorem scalar_eq_algebraMap (c : F) :
-    Matrix.scalar (Fin 2) c = algebraMap F (Matrix (Fin 2) (Fin 2) F) c := by
-  ext i j
-  rw [Matrix.algebraMap_matrix_apply, Matrix.scalar_apply, Matrix.diagonal_apply]
-  simp
-
-/-- An element of the non-split torus not coming from `F` is not a scalar matrix: multiplication by
-`x` on `E` is multiplication by an element of `F` exactly when `x` lies in `F`. -/
-theorem notMem_range_scalar_gl2NonSplitTorusHom (hx : (x : E) ∉ Set.range (algebraMap F E)) :
-    (GL2NonSplitTorusHom F E hE x : Matrix (Fin 2) (Fin 2) F) ∉
-      Set.range (Matrix.scalar (Fin 2)) := by
-  rintro ⟨c, hc⟩
-  refine hx ⟨c, Algebra.leftMulMatrix_injective (nonSplitTorusBasis F E hE) ?_⟩
-  rw [(Algebra.leftMulMatrix (nonSplitTorusBasis F E hE)).commutes c,
-    ← coe_gl2NonSplitTorusHom hE, ← hc, scalar_eq_algebraMap]
-
 /-- **The centralizer of an element of `GL₂` coming from a quadratic field extension.** An element
 of `TauCeti.GL2NonSplitTorus F E hE`, the unit group of a quadratic extension `E/F` acting on `E`
 by multiplication, that does not come from `F` has that whole group as its centralizer.
@@ -285,8 +259,7 @@ theorem centralizer_gl2NonSplitTorusHom (hx : (x : E) ∉ Set.range (algebraMap 
     -- The commuting matrix is multiplication by `a + b x`, which is nonzero as it is invertible.
     have hmat : (h : Matrix (Fin 2) (Fin 2) F) = Algebra.leftMulMatrix (nonSplitTorusBasis F E hE)
         (algebraMap F E a + b • (x : E)) := by
-      rw [map_add, map_smul, (Algebra.leftMulMatrix (nonSplitTorusBasis F E hE)).commutes a,
-        ← coe_gl2NonSplitTorusHom hE, ← scalar_eq_algebraMap]
+      rw [map_add, map_smul, leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom hE]
       exact hab
     have hy0 : algebraMap F E a + b • (x : E) ≠ 0 := by
       intro h0

@@ -69,6 +69,8 @@ choice, following the convention of
 
 * `TauCeti.GL2NonSplitTorus.natCard_eq`: the torus has `q² - 1` elements over a finite field with
   `q` elements.
+* `TauCeti.GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom`: an element of the torus not
+  coming from `F` is not a scalar matrix, hence is regular.
 * `TauCeti.GL2NonSplitTorus.conj_notMem_gl2Borel`: an element of the torus not coming from `F` has
   no conjugate in the Borel subgroup, and
   `TauCeti.GL2NonSplitTorus.exists_forall_conj_notMem_gl2Borel`: such an element exists, so the
@@ -193,6 +195,18 @@ theorem natCard_eq : Nat.card (GL2NonSplitTorus F E hE) = Nat.card F ^ 2 - 1 := 
   have := Module.finite_of_finrank_eq_succ (n := 1) hE
   rw [← Nat.card_congr (unitsEquiv hE).toEquiv, Nat.card_units,
     Module.natCard_eq_pow_finrank (K := F) (V := E), hE]
+
+/-- An element of the non-split torus not coming from `F` is not a scalar matrix: multiplication by
+`x` on `E` is multiplication by an element of `F` exactly when `x` lies in `F`. It is therefore
+regular, which is what makes its centralizer computable. -/
+theorem notMem_range_scalar_gl2NonSplitTorusHom {x : Eˣ}
+    (hx : (x : E) ∉ Set.range (algebraMap F E)) :
+    (GL2NonSplitTorusHom F E hE x : Matrix (Fin 2) (Fin 2) F) ∉
+      Set.range (Matrix.scalar (Fin 2)) := by
+  rintro ⟨c, hc⟩
+  refine hx ⟨c, Algebra.leftMulMatrix_injective (nonSplitTorusBasis F E hE) ?_⟩
+  rw [leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom hE]
+  exact hc
 
 /-- The key computation behind non-splitness: for `x : E` outside `F`, the matrix of multiplication
 by `x` has no eigenvalue `a : F`. -/
