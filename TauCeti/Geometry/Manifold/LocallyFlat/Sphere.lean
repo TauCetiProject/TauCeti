@@ -34,6 +34,9 @@ side is included in the statement.
 ## Main results
 
 * `TauCeti.brownBicollaring_iff`: the defining characterization of Brown's theorem.
+* `TauCeti.BrownBicollaring.exists_isOpen_sdiff_range_eq_union`: granting Brown's theorem, a
+  locally flat sphere is two-sided, so it separates a neighbourhood of itself into two disjoint
+  nonempty open sides.
 
 ## References
 
@@ -49,7 +52,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Metric
+open Metric Set
 open Topology
 open scoped EuclideanSpace
 
@@ -74,5 +77,29 @@ theorem brownBicollaring_iff {n : ℕ} :
             sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1,
         IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f → IsBicollared f :=
   by rfl
+
+/-- Granting Brown's theorem, a locally flat `n`-sphere in the `(n + 1)`-sphere is **two-sided**:
+it has an open neighbourhood whose complement in that neighbourhood is the union of two disjoint
+nonempty open sets, the two sides of the collar the theorem provides.  This is the separation
+statement the annulus theorem consumes, and the conclusion that fails for a wild embedding such
+as the Alexander horned sphere. -/
+theorem BrownBicollaring.exists_isOpen_sdiff_range_eq_union {n : ℕ} (h : BrownBicollaring n)
+    (f : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 →
+      sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)
+    (hf : IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f) :
+    ∃ U V W : Set (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1),
+      IsOpen U ∧ IsOpen V ∧ IsOpen W ∧ range f ⊆ U ∧ V.Nonempty ∧ W.Nonempty ∧
+        Disjoint V W ∧ U \ range f = V ∪ W := by
+  obtain ⟨b, hb⟩ := isBicollared_iff.mp (h f hf)
+  obtain ⟨x, hx⟩ : (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1).Nonempty :=
+    NormedSpace.sphere_nonempty.2 zero_le_one
+  exact ⟨range b, b '' (univ ×ˢ Ioi 0), b '' (univ ×ˢ Iio 0),
+    hb.isOpenEmbedding.isOpen_range,
+    hb.isOpenEmbedding.isOpenMap _ (isOpen_univ.prod isOpen_Ioi),
+    hb.isOpenEmbedding.isOpenMap _ (isOpen_univ.prod isOpen_Iio),
+    hb.range_subset_range,
+    ⟨b (⟨x, hx⟩, 1), mem_image_of_mem _ ⟨mem_univ _, mem_Ioi.2 one_pos⟩⟩,
+    ⟨b (⟨x, hx⟩, -1), mem_image_of_mem _ ⟨mem_univ _, mem_Iio.2 (by norm_num)⟩⟩,
+    hb.disjoint_image_Ioi_Iio, hb.range_diff_range_eq_union⟩
 
 end TauCeti
