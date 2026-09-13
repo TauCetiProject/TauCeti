@@ -388,4 +388,21 @@ theorem symm_trans_self : Φ.symm.trans Φ = refl J n M := by
 
 end Diffeotopy
 
+/-! The composition calculus equips diffeotopies themselves with a group structure. -/
+
+instance instOne : One (Diffeotopy J n M) where
+  one := Diffeotopy.refl J n M
+
+instance instMul : Mul (Diffeotopy J n M) where
+  mul := Diffeotopy.trans
+
+instance instInv : Inv (Diffeotopy J n M) where
+  inv := Diffeotopy.symm
+
+instance instGroup : Group (Diffeotopy J n M) where
+  mul_assoc a b c := Diffeotopy.trans_assoc a b c
+  one_mul a := Diffeotopy.refl_trans a
+  mul_one a := Diffeotopy.trans_refl a
+  inv_mul_cancel a := Diffeotopy.symm_trans_self a
+
 end TauCeti
