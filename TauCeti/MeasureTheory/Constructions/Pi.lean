@@ -25,6 +25,12 @@ independent, and each single coordinate has law `μ a` (Mathlib's `measurePreser
 is the two-variable companion of `measurePreserving_eval`, and is what transports an
 almost-everywhere statement about a pair back to the product space.
 
+**Splitting off one coordinate.** The map `x ↦ (x i₀, fun j : {i // i ≠ i₀} ↦ x j)` pushes
+`Measure.pi μ` forward to `μ i₀ ⊗ Measure.pi fun j : {i // i ≠ i₀} ↦ μ j`. Mathlib splits a
+product measure along a predicate and leaves both halves as products over subtypes; a
+construction that singles out one index wants the one-element half collapsed to the factor
+itself.
+
 **Refreshing a pair of coordinates.** Overwriting two *distinct*
 probability coordinates by an independent pair samples the same law: the map
 
@@ -44,6 +50,8 @@ construction.
   embedding is measure preserving;
 * `TauCeti.measurePreserving_eval_pair` — reading off two distinct coordinates is measure
   preserving;
+* `TauCeti.measurePreserving_splitAt` — separating the coordinate `i₀` from the rest is
+  measure preserving;
 * `TauCeti.measurePreserving_update_update` — the two-coordinate refresh is measure
   preserving.
 
@@ -103,6 +111,35 @@ theorem measurePreserving_eval_pair (μ : ∀ i, Measure (α i))
   rw [indepFun_iff_map_prod_eq_prod_map_map (measurable_pi_apply a).aemeasurable
     (measurable_pi_apply b).aemeasurable] at hindep
   rw [hindep, (measurePreserving_eval μ a).map_eq, (measurePreserving_eval μ b).map_eq]
+
+/-- **Splitting off one coordinate of a finite product measure.** Reading a product-distributed
+assignment as its value at `i₀` paired with its values at the remaining indices pushes
+`Measure.pi μ` forward to `μ i₀ ⊗ Measure.pi fun j : {i // i ≠ i₀} => μ j`.
+
+This is Mathlib's `MeasureTheory.measurePreserving_piEquivPiSubtypeProd` for the predicate
+`(· = i₀)`, with the one-element factor collapsed to `μ i₀`. -/
+theorem measurePreserving_splitAt (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] (i₀ : ι) :
+    MeasurePreserving (fun w : ∀ i, α i => (w i₀, fun j : {i // i ≠ i₀} => w j))
+      (Measure.pi μ) ((μ i₀).prod (Measure.pi fun j : {i // i ≠ i₀} => μ j)) := by
+  let _ : Unique {i : ι // i = i₀} := ⟨⟨⟨i₀, rfl⟩⟩, fun x => Subtype.ext x.2⟩
+  let _ : Fintype {i : ι // i = i₀} := Subtype.fintype _
+  -- Composing the split at `(· = i₀)` with the collapse of its one-element factor evaluates,
+  -- coordinate by coordinate, to the pair above.  The application lemmas below reduce both
+  -- measurable equivalences to their underlying maps; what is left is that the unique element of
+  -- `{i // i = i₀}` is `i₀` and that `i ≠ i₀` is by definition `¬ i = i₀`.
+  have hfun : Prod.map (MeasurableEquiv.piUnique fun i : {i : ι // i = i₀} => α i)
+        (id : (∀ j : {i : ι // i ≠ i₀}, α j) → ∀ j : {i : ι // i ≠ i₀}, α j) ∘
+      MeasurableEquiv.piEquivPiSubtypeProd α (· = i₀)
+      = fun w : ∀ i, α i => (w i₀, fun j : {i : ι // i ≠ i₀} => w j) := by
+    funext w
+    simp only [Function.comp_apply, MeasurableEquiv.piEquivPiSubtypeProd, MeasurableEquiv.coe_mk,
+      Equiv.piEquivPiSubtypeProd_apply, Prod.map_apply, id_eq, MeasurableEquiv.piUnique,
+      Equiv.piUnique_apply]
+    rfl
+  rw [← hfun]
+  exact ((measurePreserving_piUnique fun i : {i : ι // i = i₀} => μ i).prod
+    (MeasurePreserving.id (Measure.pi fun j : {i : ι // i ≠ i₀} => μ j))).comp
+    (measurePreserving_piEquivPiSubtypeProd μ (· = i₀))
 
 /-- Overwriting the two distinct coordinates `a` and `b` of a product-distributed assignment by an
 independent pair leaves the product law unchanged. -/

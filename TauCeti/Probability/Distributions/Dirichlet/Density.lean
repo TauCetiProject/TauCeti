@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import TauCeti.Algebra.BigOperators.Finset.SubtypeNe
+public import TauCeti.MeasureTheory.Constructions.Pi
 public import TauCeti.MeasureTheory.Measure.PiWithDensity
 public import TauCeti.Probability.Distributions.Dirichlet.Basic
 public import TauCeti.Probability.Distributions.PDFInstances
@@ -41,7 +42,8 @@ Gamma product density factors as the chart density times a Gamma density of shap
 
 ## Main results
 
-* `TauCeti.Probability.det_fderivDirichletUnchart` and
+* `TauCeti.Probability.det_fderivDirichletUnchart`, restated for Lean's `fderiv` in
+  `TauCeti.Probability.det_fderiv_dirichletUnchart`, and
   `TauCeti.Probability.map_dirichletUnchart_withDensity` are the Jacobian of the scaling change of
   variables and the resulting identity of Lebesgue measures;
 * `TauCeti.Probability.dirichletMeasure_eq_map_withDensity_dirichletChartPDF` presents the
@@ -165,6 +167,7 @@ def dirichletChartPDF (a : ι → ℝ) (i₀ : ι) (x : {i // i ≠ i₀} → �
   ENNReal.ofReal (dirichletChartPDFReal a i₀ x)
 
 /-- The value of the chart density on the chart region. -/
+@[simp]
 theorem dirichletChartPDFReal_of_mem (a : ι → ℝ) {x : ({i // i ≠ i₀}) → ℝ}
     (hx : x ∈ dirichletChartRegion i₀) :
     dirichletChartPDFReal a i₀ x =
@@ -173,18 +176,21 @@ theorem dirichletChartPDFReal_of_mem (a : ι → ℝ) {x : ({i // i ≠ i₀}) �
   ite_eq_left hx
 
 /-- The chart density vanishes off the chart region. -/
+@[simp]
 theorem dirichletChartPDFReal_of_notMem (a : ι → ℝ) {x : ({i // i ≠ i₀}) → ℝ}
     (hx : x ∉ dirichletChartRegion i₀) :
     dirichletChartPDFReal a i₀ x = 0 :=
   ite_eq_right hx
 
 /-- The `ℝ≥0∞`-valued chart density vanishes off the chart region. -/
+@[simp]
 theorem dirichletChartPDF_of_notMem (a : ι → ℝ) {x : ({i // i ≠ i₀}) → ℝ}
     (hx : x ∉ dirichletChartRegion i₀) :
     dirichletChartPDF a i₀ x = 0 := by
   rw [dirichletChartPDF, dirichletChartPDFReal_of_notMem a hx, ENNReal.ofReal_zero]
 
 /-- The value of the `ℝ≥0∞`-valued chart density on the chart region. -/
+@[simp]
 theorem dirichletChartPDF_of_mem (a : ι → ℝ) {x : ({i // i ≠ i₀}) → ℝ}
     (hx : x ∈ dirichletChartRegion i₀) :
     dirichletChartPDF a i₀ x = ENNReal.ofReal
@@ -419,6 +425,17 @@ theorem det_fderivDirichletUnchart (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} �
   rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix
     ((Module.Basis.singleton Unit ℝ).prod (Pi.basisFun ℝ ({i // i ≠ i₀}))), htoMatrix, hdet]
 
+/-- `TauCeti.Probability.fderivDirichletUnchart` is the Fréchet derivative of the scaling map. -/
+theorem fderiv_dirichletUnchart (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} → ℝ)) :
+    fderiv ℝ (dirichletUnchart i₀) z = fderivDirichletUnchart i₀ z :=
+  (hasFDerivAt_dirichletUnchart i₀ z).fderiv
+
+/-- The Jacobian determinant of the scaling change of variables, read off the Fréchet derivative
+itself. -/
+theorem det_fderiv_dirichletUnchart (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} → ℝ)) :
+    (fderiv ℝ (dirichletUnchart i₀) z).det = z.1 ^ Fintype.card {i // i ≠ i₀} := by
+  rw [fderiv_dirichletUnchart, det_fderivDirichletUnchart]
+
 /-- The Jacobian formula for the scaling change of variables, as an equality of restricted
 Lebesgue measures. -/
 theorem map_dirichletUnchart_withDensity (i₀ : ι) :
@@ -442,13 +459,6 @@ theorem map_dirichletUnchart_withDensity (i₀ : ι) :
     (dirichletUnchart_injOn i₀)
 
 /-! ### The density computation -/
-
-/-- The unit-rate Gamma density at a positive point, in the divided form the density computation
-below uses. -/
-private theorem gammaPDFReal_one_of_pos {c x : ℝ} (hx : 0 < x) :
-    gammaPDFReal c 1 x = x ^ (c - 1) * Real.exp (-x) / Real.Gamma c := by
-  rw [gammaPDFReal, ite_eq_left hx.le, Real.one_rpow, one_mul]
-  ring
 
 /-- Transported through the scaling change of variables and weighted by its Jacobian, the Gamma
 product density in the split coordinates is the product of the chart density and the Gamma density
@@ -652,22 +662,6 @@ private theorem map_dirichletUnchart_source {a : ι → ℝ} (ha : ∀ i, 0 < a 
     _ = ∫⁻ z in dirichletUnchartTarget i₀, q.indicator (gammaSplitPDF a i₀) z := by
       rw [map_dirichletUnchart_withDensity]
 
-/-- Splitting off the coordinate `i₀` carries a finite product measure to the product of the `i₀`
-factor with the product of the remaining factors. -/
-private theorem measurePreserving_splitAt (i₀ : ι) (μ : ι → Measure ℝ) [∀ i, SigmaFinite (μ i)] :
-    MeasurePreserving (fun w : ι → ℝ ↦ (w i₀, fun j : {i // i ≠ i₀} ↦ w j))
-      (Measure.pi μ) ((μ i₀).prod (Measure.pi fun j : {i // i ≠ i₀} ↦ μ j)) := by
-  let _ : Unique {i : ι // i = i₀} := ⟨⟨⟨i₀, rfl⟩⟩, fun x ↦ Subtype.ext x.2⟩
-  let _ : Fintype {i : ι // i = i₀} := Subtype.fintype _
-  have h₁ := measurePreserving_piEquivPiSubtypeProd (fun i : ι ↦ μ i) (· = i₀)
-  have hfun : (Prod.map (MeasurableEquiv.piUnique fun _ : {i : ι // i = i₀} ↦ ℝ)
-        (id : ({i // i ≠ i₀} → ℝ) → ({i // i ≠ i₀} → ℝ))) ∘
-      (MeasurableEquiv.piEquivPiSubtypeProd (fun _ : ι ↦ ℝ) (· = i₀))
-      = fun w : ι → ℝ ↦ (w i₀, fun j : {i // i ≠ i₀} ↦ w j) := funext fun w ↦ rfl
-  rw [← hfun]
-  exact ((measurePreserving_piUnique fun i : {i : ι // i = i₀} ↦ μ i).prod
-    (MeasurePreserving.id (Measure.pi fun j : {i : ι // i ≠ i₀} ↦ μ j))).comp h₁
-
 /-- On the strictly positive orthant, coordinate normalization is the chart applied to the chart
 coordinates of the split vector. -/
 private theorem dirichletNormalize_eq_dirichletChart (i₀ : ι) {x : ι → ℝ} (hx : ∀ i, 0 < x i) :
@@ -721,7 +715,8 @@ theorem dirichletMeasure_eq_map_withDensity_dirichletChartPDF {a : ι → ℝ} (
     _ = ((gammaMeasure (a i₀) 1).prod
           (Measure.pi fun j : {i // i ≠ i₀} ↦ gammaMeasure (a j) 1)).map
           (dirichletChart i₀ ∘ Prod.snd ∘ dirichletChartCoords i₀) := by
-        rw [← Measure.map_map hchart hsplit, (measurePreserving_splitAt i₀ _).map_eq]
+        rw [← Measure.map_map hchart hsplit,
+          (measurePreserving_splitAt (fun i ↦ gammaMeasure (a i) 1) i₀).map_eq]
     _ = ((volume.restrict (dirichletUnchartSource i₀)).withDensity
           (dirichletSourcePDF a i₀)).map (dirichletChart i₀ ∘ Prod.snd) := by
         rw [← map_dirichletUnchart_source ha i₀,

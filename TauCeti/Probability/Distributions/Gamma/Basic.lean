@@ -109,6 +109,12 @@ private lemma gammaPDFReal_of_pos {x : ℝ} (hx : 0 < x) :
     gammaPDFReal a r x = r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x)) := by
   rw [gammaPDFReal, ite_eq_left hx.le]
 
+/-- On the positive half-line the unit-rate gamma density is `x ^ (a - 1) * exp (-x) / Γ a`. -/
+theorem gammaPDFReal_one_of_pos {x : ℝ} (hx : 0 < x) :
+    gammaPDFReal a 1 x = x ^ (a - 1) * exp (-x) / Real.Gamma a := by
+  rw [gammaPDFReal_of_pos hx, Real.one_rpow, one_mul]
+  ring
+
 /-- An integral against the gamma law is the set integral of the weighted integrand over
 `(0, ∞)`. -/
 theorem integral_gammaMeasure_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
