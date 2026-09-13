@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.Basic
 public import TauCeti.Geometry.Convex.Cone.Basic
 public import TauCeti.Geometry.Convex.Cone.Face.Finite
 

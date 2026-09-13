@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.GaussCode.Basic
-public import TauCeti.KnotTheory.PDCode
+public import TauCeti.KnotTheory.PDCode.Basic
 import Mathlib.Algebra.Ring.Int.Units
 import Mathlib.Tactic.FinCases
 

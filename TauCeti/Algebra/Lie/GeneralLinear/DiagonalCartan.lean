@@ -46,6 +46,8 @@ here, and the Cartan subalgebra has to be produced by hand.
   eigenvector of `ad A` with eigenvalue the difference `A i i - A j j`.
 * `TauCeti.single_mem_rootSpace`: consequently `Eᵢⱼ` lies in the root space for the weight
   `εᵢ - εⱼ`.
+* `TauCeti.mem_weightSpace_glWeightEquiv_iff`: membership in a weight space is equivalent to the
+  coordinate eigenvalue equations for the diagonal matrix units.
 
 ## Implementation notes
 
@@ -250,6 +252,50 @@ theorem glWeightEquiv_symm_apply (f : Module.Dual R (diagonalCartan R n)) (i : n
   rw [glWeightEquiv, LinearEquiv.symm_trans_apply, diagonalEquiv_symm_apply, diag_apply,
     ← diagonalCartanBasis_repr_apply, ← Module.Basis.toDual_apply_left,
     ← Module.Basis.toDualEquiv_apply, LinearEquiv.apply_symm_apply]
+
+/-- A vector has general-linear weight `μ` if and only if each diagonal matrix unit acts on it by
+the corresponding coordinate `μ i`. -/
+@[simp]
+theorem mem_weightSpace_glWeightEquiv_iff
+    {K M n : Type*} [CommRing K] [Fintype n] [DecidableEq n]
+    [AddCommGroup M] [Module K M] [LieRingModule (Matrix n n K) M]
+    [LieModule K (Matrix n n K) M]
+    (mu : n → K) (x : M) :
+    x ∈ LieModule.weightSpace M
+        ((glWeightEquiv K n mu : Module.Dual K (diagonalCartan K n)) :
+          diagonalCartan K n → K) ↔
+      ∀ i : n, ⁅Matrix.single i i (1 : K), x⁆ = mu i • x := by
+  constructor
+  · intro hx i
+    have h := (LieModule.mem_weightSpace _ _).mp hx
+      ⟨Matrix.single i i (1 : K), single_self_mem_diagonalCartan i 1⟩
+    rw [LieSubalgebra.coe_bracket_of_module, glWeightEquiv_apply] at h
+    simpa [Matrix.single_apply, Finset.sum_ite_eq] using h
+  · intro hx
+    rw [LieModule.mem_weightSpace]
+    intro A
+    rw [LieSubalgebra.coe_bracket_of_module, glWeightEquiv_apply]
+    have hA := (diagonalCartanBasis K n).sum_repr A
+    have hsingle (i : n) : Matrix.single i i ((A : Matrix n n K) i i) =
+        (A : Matrix n n K) i i • Matrix.single i i (1 : K) := by
+      rw [Matrix.smul_single, smul_eq_mul, mul_one]
+    calc
+      ⁅(A : Matrix n n K), x⁆ =
+          ∑ i : n, ⁅Matrix.single i i ((A : Matrix n n K) i i), x⁆ := by
+        conv_lhs => rw [← hA]
+        simp [diagonalCartanBasis_apply, diagonalCartanBasis_repr_apply, sum_lie]
+      _ = ∑ i : n, (A : Matrix n n K) i i • ⁅Matrix.single i i (1 : K), x⁆ := by
+        apply Finset.sum_congr rfl
+        intro i hi
+        rw [hsingle, smul_lie]
+      _ = ∑ i : n, (A : Matrix n n K) i i • (mu i • x) := by
+        apply Finset.sum_congr rfl
+        intro i hi
+        rw [hx i]
+      _ = ∑ i : n, (mu i * (A : Matrix n n K) i i) • x := by
+        simp [smul_smul, mul_comm]
+      _ = (∑ i : n, mu i * (A : Matrix n n K) i i) • x := by
+        rw [Finset.sum_smul]
 
 variable (R n)
 
