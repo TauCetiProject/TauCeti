@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 
 /-!
-# The locally integrable kernel for the Poincaré--Wirtinger inequality
+# Integrals of a weakly singular norm power
 
 Let `E` be a nontrivial finite-dimensional real normed space of dimension `d`.  This file
 computes the integral of the weakly singular kernel
@@ -26,9 +26,10 @@ averaged over a ball in the proof of the Poincaré--Wirtinger inequality.
 
 ## Main declarations
 
-* `TauCeti.integrableOn_norm_rpow_one_sub_finrank`: local integrability on a centred ball.
+* `TauCeti.integrableOn_norm_rpow_one_sub_finrank_ball`: integrability on a centred ball.
 * `TauCeti.integral_norm_rpow_one_sub_finrank_ball`: the exact radial integral.
 * `TauCeti.integrableOn_norm_sub_rpow_one_sub_finrank_ball`: integrability after translation.
+* `TauCeti.locallyIntegrable_norm_sub_rpow_one_sub_finrank`: local integrability after translation.
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_ball`: the exact integral with any centre.
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_le`: the translated-ball bound.
 
@@ -53,18 +54,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {mu : Measure E} [mu.IsAddHaarMeasure]
 
 /-- The kernel `x ↦ ‖x‖ ^ (1 - dim E)` is integrable on every ball centred at the origin. -/
-theorem integrableOn_norm_rpow_one_sub_finrank {R : ℝ} :
+theorem integrableOn_norm_rpow_one_sub_finrank_ball {R : ℝ} :
     IntegrableOn (fun x : E => ‖x‖ ^ (1 - (Module.finrank ℝ E : ℝ))) (ball 0 R) mu := by
-  have hd : 1 ≤ Module.finrank ℝ E := Module.finrank_pos
-  apply (integrableOn_fun_norm_addHaar (F := ℝ)
-    (f := fun r => r ^ (1 - (Module.finrank ℝ E : ℝ))) (r := R) mu).2
-  refine (integrableOn_const (C := (1 : ℝ)) (hs := measure_Ioo_lt_top.ne)).congr_fun ?_
-    measurableSet_Ioo
-  intro r hr
-  simp only [smul_eq_mul]
-  rw [← Real.rpow_natCast r (Module.finrank ℝ E - 1), Nat.cast_sub hd,
-    ← Real.rpow_add hr.1]
-  norm_num
+  refine integrableOn_ball_of_norm_le_rpow (μ := mu) Module.finrank_pos
+    (C := 1) (α := (Module.finrank ℝ E : ℝ) - 1) (by linarith) ?_ ?_
+  · filter_upwards with x
+    simp only [Real.norm_eq_abs, one_mul]
+    rw [abs_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)]
+    rw [show -((Module.finrank ℝ E : ℝ) - 1) = 1 - (Module.finrank ℝ E : ℝ) by ring]
+  · apply AEMeasurable.aestronglyMeasurable
+    measurability
 
 /-- The exact integral of the kernel `x ↦ ‖x‖ ^ (1 - dim E)` on a ball centred at the origin.
 The coefficient is stated using the chosen additive Haar measure, so the result applies to both
@@ -117,8 +116,16 @@ theorem integrableOn_norm_sub_rpow_one_sub_finrank_ball (x : E) {R : ℝ} :
     ext z
     simp [mem_ball]
   rw [← hpres.integrableOn_comp_preimage hemb, hpre]
-  exact (integrableOn_norm_rpow_one_sub_finrank (mu := mu) (R := R)).congr
+  exact (integrableOn_norm_rpow_one_sub_finrank_ball (mu := mu) (R := R)).congr
     (ae_of_all _ fun z => by simp [norm_neg])
+
+/-- The kernel with pole `x` is locally integrable. -/
+theorem locallyIntegrable_norm_sub_rpow_one_sub_finrank (x : E) :
+    LocallyIntegrable (fun y : E => ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ))) mu := by
+  rw [locallyIntegrable_iff]
+  intro K hK
+  obtain ⟨R, hKR⟩ := hK.isBounded.subset_ball x
+  exact (integrableOn_norm_sub_rpow_one_sub_finrank_ball (mu := mu) x).mono_set hKR
 
 /-- The integral of the kernel with pole `x` over a ball centred at `x` does not depend on the
 centre and has the same exact value as the radial integral at the origin. -/
@@ -137,19 +144,19 @@ theorem integral_norm_sub_rpow_one_sub_finrank_ball {R : ℝ} (hR : 0 ≤ R) (x 
     simp [norm_neg]
   rw [hfun, integral_norm_rpow_one_sub_finrank_ball hR]
 
-/-- If `x` lies in `closedBall 0 R`, then the integral over `ball 0 R` of the kernel with pole
+/-- If `x` lies in `closedBall z R`, then the integral over `ball z R` of the kernel with pole
 `x` is bounded by the exact integral on `ball 0 (2R)`. -/
-theorem integral_norm_sub_rpow_one_sub_finrank_le {R : ℝ} (x : E)
-    (hx : x ∈ closedBall (0 : E) R) :
-    ∫ y in ball (0 : E) R, ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu ≤
+theorem integral_norm_sub_rpow_one_sub_finrank_le {R : ℝ} (x : E) {z : E}
+    (hx : x ∈ closedBall z R) :
+    ∫ y in ball z R, ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu ≤
       (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) * (2 * R) := by
-  have hxR : dist x 0 ≤ R := mem_closedBall.mp hx
+  have hxR : dist x z ≤ R := mem_closedBall.mp hx
   have hR : 0 ≤ R := dist_nonneg.trans hxR
-  have hsub : ball (0 : E) R ⊆ ball x (2 * R) := by
+  have hsub : ball z R ⊆ ball x (2 * R) := by
     intro y hy
     rw [mem_ball] at hy ⊢
     calc
-      dist y x ≤ dist y 0 + dist 0 x := dist_triangle y 0 x
+      dist y x ≤ dist y z + dist z x := dist_triangle y z x
       _ < R + R := by rw [dist_comm] at hxR; exact add_lt_add_of_lt_of_le hy hxR
       _ = 2 * R := by ring
   have htwoR : 0 ≤ 2 * R := by positivity
@@ -158,7 +165,7 @@ theorem integral_norm_sub_rpow_one_sub_finrank_le {R : ℝ} (x : E)
         (ball x (2 * R)) mu :=
     integrableOn_norm_sub_rpow_one_sub_finrank_ball x
   calc
-    ∫ y in ball (0 : E) R, ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu ≤
+    ∫ y in ball z R, ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu ≤
         ∫ y in ball x (2 * R), ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu := by
       apply setIntegral_mono_set hintegrable
       · exact ae_of_all _ fun y => Real.rpow_nonneg (norm_nonneg _) _
