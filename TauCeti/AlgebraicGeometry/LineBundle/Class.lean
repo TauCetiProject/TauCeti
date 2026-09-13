@@ -104,13 +104,13 @@ lemma mk_trivial : mk (InvertibleSheaf.trivial X) = (1 : LineBundleClass X) :=
   rfl
 
 /-- The trivial line bundle is a left unit on isomorphism classes. -/
-@[simp]
+@[simp high]
 lemma one_mul (a : LineBundleClass X) : 1 * a = a := by
   induction a using Quotient.inductionOn with
   | _ L => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorTrivialLeftIso L)
 
 /-- The trivial line bundle is a right unit on isomorphism classes. -/
-@[simp]
+@[simp high]
 lemma mul_one (a : LineBundleClass X) : a * 1 = a := by
   induction a using Quotient.inductionOn with
   | _ L => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorTrivialRightIso L)
