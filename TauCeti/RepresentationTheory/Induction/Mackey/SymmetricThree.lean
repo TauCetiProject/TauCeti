@@ -33,8 +33,9 @@ For the sign character of `H` the two constituents can be named. Over any field,
 `Ind_H^{S₃} (sgn|_H)` is `sgn + χ_standard`, where `sgn` is the sign character of `S₃` and
 `χ_standard` is the character of `TauCeti.standardRepresentation` -- the two-dimensional
 constituent that the permutation representation of three points splits off. Over an algebraically
-closed field of characteristic zero, where a finite group's representations are determined by their
-characters, this identity of characters is a decomposition of representations,
+closed field of characteristic zero, the remaining results below produce the faithful character
+needed for the `A₃` example. For the point-stabilizer example, characteristic zero alone ensures
+that representations are determined by their characters, so the identity is a decomposition
 `Ind_H^{S₃} (sgn|_H) ≅ sgn ⊕ standard`, exhibiting the reducibility that the Mackey criterion
 detects without naming the pieces.
 
@@ -65,8 +66,7 @@ is what makes it a *worked* example rather than a further piece of theory.
 * `TauCeti.character_indFDRep_sign_stabilizer_perm_fin_three`: **the character of
   `Ind_{C₂}^{S₃} (sgn)` is `sgn + χ_standard`**, over any field.
 * `TauCeti.nonempty_equiv_indFDRep_sign_stabilizer_perm_fin_three`: **hence
-  `Ind_{C₂}^{S₃} (sgn) ≅ sgn ⊕ standard`** over an algebraically closed field of characteristic
-  zero.
+  `Ind_{C₂}^{S₃} (sgn) ≅ sgn ⊕ standard`** over a field of characteristic zero.
 * `TauCeti.simple_indFDRep_ofLinearCharacter_alternatingGroup_fin_three`: **a faithful linear
   character of `A₃` induces irreducibly to `S₃`**.
 * `TauCeti.finrank_indFDRep_ofLinearCharacter_alternatingGroup_fin_three`: what it induces to is
@@ -147,8 +147,9 @@ theorem character_indFDRep_sign_stabilizer_perm_fin_three (a : Fin 3) (σ : Equi
     char_standardRepresentation, char_ofMulAction, coe_signLinearCharacter_apply]
   linear_combination sign_mul_card_fixedPoints_fin_three (k := k) σ
 
-/-- **`Ind_{C₂}^{S₃}(sign) ≅ sgn ⊕ standard`**, over an algebraically closed field of
-characteristic zero: the sign character of a point stabilizer of `S₃` induces to the direct sum of
+omit [IsAlgClosed k] in
+/-- **`Ind_{C₂}^{S₃}(sign) ≅ sgn ⊕ standard`**, over a field of characteristic zero: the sign
+character of a point stabilizer of `S₃` induces to the direct sum of
 the sign character of `S₃` and the two-dimensional standard representation. The two summands are a
 line and an irreducible plane, so this names the constituents whose existence
 `TauCeti.not_simple_indFDRep_stabilizer_perm_fin_three` asserts. The hypotheses on `k` are those

@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.End.FiniteOrder
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 public import Mathlib.FieldTheory.Minpoly.IsConjRoot
+import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.RepresentationTheory.BaseChange
 
 /-!
 # The Galois action on character values
@@ -33,7 +35,9 @@ Complex conjugation is the instance `j = n - 1` of all this, and gives back
 
 Two consequences are recorded: `χ(g)` and `χ(g ^ j)` are conjugate algebraic numbers over `ℚ`
 (they are `IsConjRoot ℚ`), and a character value that is rational is unchanged by the power maps
-that automorphisms of `ℂ` realize.
+that automorphisms of `ℂ` realize.  For a representation already defined over `ℚ`, base change to
+`AlgebraicClosure ℚ` realizes every coprime power and then descends the resulting character
+identity back to `ℚ`.
 
 Only the direction "an automorphism determines the power map" is proved here. The converse
 direction, that every `j` coprime to the exponent is realized by some `σ : ℂ →+* ℂ`, needs a
@@ -56,6 +60,8 @@ consumes once such a `σ` is in hand.
 * `FDRep.isConjRoot_character_pow`: `χ(g)` and `χ(g ^ j)` are conjugate over `ℚ`.
 * `FDRep.character_pow_eq_character_of_mem_range`: a rational character value is unchanged
   by the power maps that automorphisms of `ℂ` realize.
+* `FDRep.character_pow_eq_character_of_coprime`: a rational representation has equal character
+  values on coprime powers.
 
 ## References
 
@@ -161,6 +167,27 @@ theorem _root_.FDRep.character_pow_eq_character_of_mem_range (X : FDRep ℂ G) {
     X.character (g ^ ((hζ.autToPow ℚ f : ZMod n).val)) = X.character g := by
   obtain ⟨q, hq⟩ := hχ
   rw [← FDRep.map_character_eq_character_pow_of_isPrimitiveRoot X hζ hg f, ← hq, AlgEquiv.commutes]
+
+/-- **Rational characters are invariant under coprime power maps.** If `g ^ n = 1` and `j` is
+coprime to `n`, then a representation defined over `ℚ` has `χ(g ^ j) = χ(g)`. The proof realizes
+the power map by a Galois automorphism after base change to `AlgebraicClosure ℚ`, whose action fixes
+the original rational character value. -/
+theorem _root_.FDRep.character_pow_eq_character_of_coprime (X : FDRep ℚ G) {g : G} {n j : ℕ}
+    [NeZero n] (hg : g ^ n = 1) (hj : n.Coprime j) :
+    X.character (g ^ j) = X.character g := by
+  let K := AlgebraicClosure ℚ
+  let Y : FDRep K G := FDRep.of (Representation.baseChange K X.ρ)
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
+  obtain ⟨σ, hσ⟩ := hζ.exists_algEquiv_apply_eq_pow_of_coprime hj
+  have hmap : σ (Y.character g) = Y.character (g ^ j) :=
+    Representation.map_character_eq_character_pow_of_isPrimitiveRoot Y.ρ hζ
+      (Nat.cast_ne_zero.2 (NeZero.ne n)) hg σ.toAlgHom.toRingHom hσ
+  have hY (x : G) : Y.character x = algebraMap ℚ K (X.character x) := by
+    rw [FDRep.character, FDRep.of_ρ']
+    exact Representation.character_baseChange X.ρ x
+  apply (algebraMap ℚ K).injective
+  rw [← hY, ← hY, ← hmap, hY]
+  exact σ.commutes (X.character g)
 
 end FDRep
 
