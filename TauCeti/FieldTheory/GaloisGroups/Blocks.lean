@@ -28,10 +28,10 @@ intermediate fields in the simple extension.
 * `TauCeti.coe_rootBlockIntermediateFieldOrderIso_symm_apply_eq_preimage_rootSet_minpoly`: the
   block attached to an intermediate field is the set of roots of the corresponding minimal
   polynomial.
-* `TauCeti.isPreprimitive_iff_adjoin_simple_isAtom`: the root action is primitive exactly when
+* `TauCeti.isPreprimitive_iff_isAtom_adjoin_simple`: the root action is primitive exactly when
   the generated simple extension is an atom in the lattice of intermediate fields.
-* `TauCeti.isPreprimitive_of_irreducible_of_prime_natDegree`: an irreducible separable polynomial
-  of prime degree has a primitive root action.
+* `TauCeti.isPreprimitive_of_irreducible_of_separable_of_prime_natDegree`: an irreducible
+  separable polynomial of prime degree has a primitive root action.
 
 ## References
 
@@ -54,19 +54,6 @@ variable {F : Type u} [Field F] {p : F[X]}
 private theorem gal_smul_eq_apply (σ : p.Gal) (y : p.SplittingField) : σ • y = σ y :=
   (rfl)
 
-private theorem galSMulCommClass : SMulCommClass p.Gal F p.SplittingField :=
-  ⟨fun σ a y ↦ by
-    rw [gal_smul_eq_apply, gal_smul_eq_apply, Algebra.smul_def, Algebra.smul_def, map_mul]
-    exact congrArg (· * σ y) (σ.commutes a)⟩
-
-private theorem galIsGaloisGroup [IsGalois F p.SplittingField]
-    [SMulCommClass p.Gal F p.SplittingField] :
-    IsGaloisGroup p.Gal F p.SplittingField :=
-  { faithful := ⟨fun {σ τ} h ↦ @Gal.ext F _ p σ τ fun y _ ↦ h y⟩
-    commutes := inferInstance
-    isInvariant := ⟨fun y hy ↦
-      (IsGalois.mem_range_algebraMap_iff_fixed y).2 fun σ ↦ hy σ⟩ }
-
 /-- **Blocks containing a root correspond to intermediate fields of its simple extension.**
 
 The correspondence sends a block `B` to the field fixed by its setwise stabilizer. Its inverse
@@ -80,8 +67,6 @@ noncomputable def rootBlockIntermediateFieldOrderIso
   letI : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hsep
   letI : IsPretransitive p.Gal (p.rootSet p.SplittingField) :=
     isPretransitive_of_irreducible hp
-  letI : SMulCommClass p.Gal F p.SplittingField := galSMulCommClass
-  letI : IsGaloisGroup p.Gal F p.SplittingField := galIsGaloisGroup
   let e := IsGaloisGroup.intermediateFieldEquivSubgroup p.Gal F p.SplittingField
   -- Identify the stabilizer interval with the dual of the image interval of `F⟮x⟯`.
   let dualIci : Set.Ici (stabilizer p.Gal x) ≃o (Set.Iic (e F⟮(x : p.SplittingField)⟯))ᵒᵈ :=
@@ -106,8 +91,6 @@ theorem mem_rootBlockIntermediateFieldOrderIso_apply_iff
       ∀ g ∈ stabilizer p.Gal (B : Set (p.rootSet p.SplittingField)), g • y = y :=
   by
     let _ : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hsep
-    let _ : SMulCommClass p.Gal F p.SplittingField := galSMulCommClass
-    let _ : IsGaloisGroup p.Gal F p.SplittingField := galIsGaloisGroup
     -- `block_stabilizerOrderIso` matches on its argument, so destructure the block first.
     obtain ⟨B, hxB, hB⟩ := B
     have hfield : ((rootBlockIntermediateFieldOrderIso hp hsep x ⟨B, hxB, hB⟩).ofDual :
@@ -146,8 +129,33 @@ theorem coe_rootBlockIntermediateFieldOrderIso_symm_apply
     (x : p.rootSet p.SplittingField) (E : Set.Iic F⟮(x : p.SplittingField)⟯) :
     (((rootBlockIntermediateFieldOrderIso hp hsep x).symm (OrderDual.toDual E) :
       BlockMem p.Gal x) : Set (p.rootSet p.SplittingField)) =
-      orbit (fixingSubgroup p.Gal (E.1 : Set p.SplittingField)) x :=
-  (rfl)
+      orbit (fixingSubgroup p.Gal (E.1 : Set p.SplittingField)) x := by
+  let _ : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hsep
+  let _ : IsPretransitive p.Gal (p.rootSet p.SplittingField) :=
+    isPretransitive_of_irreducible hp
+  -- Any block sent to `E` has `E` as the fixed field of its stabilizer, hence is the orbit of `x`
+  -- under the fixing subgroup of `E`; the block at hand is sent to `E` by `apply_symm_apply`.
+  suffices h : ∀ B : BlockMem p.Gal x,
+      ((rootBlockIntermediateFieldOrderIso hp hsep x B).ofDual.1 :
+        IntermediateField F p.SplittingField) = E.1 →
+      (B : Set (p.rootSet p.SplittingField)) =
+        orbit (fixingSubgroup p.Gal (E.1 : Set p.SplittingField)) x from
+    h _ (by rw [OrderIso.apply_symm_apply, OrderDual.ofDual_toDual])
+  intro B hBE
+  have hfield : ((rootBlockIntermediateFieldOrderIso hp hsep x B).ofDual.1 :
+      IntermediateField F p.SplittingField) =
+      FixedPoints.intermediateField
+        (stabilizer p.Gal (B : Set (p.rootSet p.SplittingField))) := by
+    ext y
+    rw [mem_rootBlockIntermediateFieldOrderIso_apply_iff hp hsep x B y,
+      FixedPoints.mem_intermediateField_iff]
+    exact ⟨fun h g ↦ h g g.2, fun h g hg ↦ h ⟨g, hg⟩⟩
+  have hstab : fixingSubgroup p.Gal (E.1 : Set p.SplittingField) =
+      stabilizer p.Gal (B : Set (p.rootSet p.SplittingField)) := by
+    rw [← hBE, hfield]
+    exact IsGaloisGroup.fixingSubgroup_fixedPoints ..
+  rw [hstab]
+  exact (B.2.2.orbit_stabilizer_eq B.2.1).symm
 
 /-- The block attached to an intermediate field is the fibre, among the roots of `p`, of the
 minimal polynomial of the chosen root over that field. -/
@@ -158,8 +166,6 @@ theorem coe_rootBlockIntermediateFieldOrderIso_symm_apply_eq_preimage_rootSet_mi
       BlockMem p.Gal x) : Set (p.rootSet p.SplittingField)) =
       Subtype.val ⁻¹' (minpoly E.1 (x : p.SplittingField)).rootSet p.SplittingField := by
   let _ : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hsep
-  let _ : SMulCommClass p.Gal F p.SplittingField := galSMulCommClass
-  let _ : IsGaloisGroup p.Gal F p.SplittingField := galIsGaloisGroup
   let H := fixingSubgroup p.Gal (E.1 : Set p.SplittingField)
   have horbit (y : p.rootSet p.SplittingField) :
       y ∈ orbit H x ↔
@@ -193,7 +199,7 @@ theorem coe_rootBlockIntermediateFieldOrderIso_symm_apply_eq_preimage_rootSet_mi
 /-- **The Galois action on the roots is primitive exactly when the simple extension generated by
 a root has no proper intermediate fields.** The degree assumption excludes the one-point action,
 for which Mathlib's definition of primitivity is deliberately nontrivial. -/
-theorem isPreprimitive_iff_adjoin_simple_isAtom
+theorem isPreprimitive_iff_isAtom_adjoin_simple
     (hp : Irreducible p) (hsep : p.Separable) (hdeg : 1 < p.natDegree)
     (x : p.rootSet p.SplittingField) :
     IsPreprimitive p.Gal (p.rootSet p.SplittingField) ↔
@@ -210,7 +216,7 @@ theorem isPreprimitive_iff_adjoin_simple_isAtom
 
 /-- An irreducible separable polynomial of prime degree has a primitive Galois action on its
 roots. -/
-theorem isPreprimitive_of_irreducible_of_prime_natDegree
+theorem isPreprimitive_of_irreducible_of_separable_of_prime_natDegree
     (hp : Irreducible p) (hsep : p.Separable) (hprime : p.natDegree.Prime) :
     IsPreprimitive p.Gal (p.rootSet p.SplittingField) := by
   let _ : IsPretransitive p.Gal (p.rootSet p.SplittingField) :=

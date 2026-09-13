@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import TauCeti.FieldTheory.Galois.FixedField
 public import TauCeti.FieldTheory.GaloisGroups.Orbits
 
@@ -17,6 +18,10 @@ with a relative Galois group: it is the subgroup of `p.Gal` fixing the simple ex
 pointwise. The fixed-field and endpoint readings of the action against the Galois correspondence
 go through that identification.
 
+The file also records that `Polynomial.Gal p` is a Galois group for `L/F` in the sense of
+Mathlib's `IsGaloisGroup`, which is what makes the `IsGaloisGroup` form of the Galois
+correspondence available for the polynomial Galois group.
+
 The identification itself needs no hypothesis on `p`. Recovering the fixed field and the two
 ends of the Galois correspondence needs `IsGalois F L`. The index, however, is an
 orbit-stabilizer calculation: it only needs the minimal polynomial of the chosen root to be
@@ -24,6 +29,7 @@ separable, and for irreducible `p` this follows from `p.Separable`.
 
 ## Main results
 
+* `TauCeti.galIsGaloisGroup`: `Polynomial.Gal p` is a Galois group for `L/F`.
 * `TauCeti.stabilizer_eq_fixingSubgroup_adjoin_simple`: the stabilizer of a root is the fixing
   subgroup of the field the root generates.
 * `TauCeti.fixedField_stabilizer`: for a Galois splitting field, the field the stabilizer fixes
@@ -55,6 +61,29 @@ namespace TauCeti
 open Polynomial IntermediateField MulAction
 
 variable {F : Type*} [Field F] {p : F[X]}
+
+/-! ### The polynomial Galois group as a Galois group -/
+
+/-- The Galois action on the splitting field commutes with the scalar action of the base field.
+
+This is Mathlib's `AlgEquiv.apply_smulCommClass'` for `p.SplittingField ≃ₐ[F] p.SplittingField`;
+`Polynomial.Gal p` is a distinct type carrying the derived action, so the instance is transported
+here. -/
+instance galSMulCommClass : SMulCommClass p.Gal F p.SplittingField :=
+  inferInstanceAs (SMulCommClass (p.SplittingField ≃ₐ[F] p.SplittingField) F p.SplittingField)
+
+/-- **`Polynomial.Gal p` is a Galois group for `L/F`**, where `L = p.SplittingField`: it acts
+faithfully on `L` with fixed field `F`.
+
+Mathlib's `IsGaloisGroup.of_isGalois` says this for `Gal(L/F)`, but `Polynomial.Gal p` is a
+distinct type with its own action, so the instance is restated here; it is what makes the
+`IsGaloisGroup` form of the Galois correspondence, and the fixed-field lemmas that come with it,
+apply to the polynomial Galois group. -/
+instance galIsGaloisGroup [IsGalois F p.SplittingField] :
+    IsGaloisGroup p.Gal F p.SplittingField where
+  faithful := ⟨fun {σ τ} h ↦ @Gal.ext F _ p σ τ fun y _ ↦ h y⟩
+  commutes := inferInstance
+  isInvariant := ⟨fun y hy ↦ (IsGalois.mem_range_algebraMap_iff_fixed y).2 fun σ ↦ hy σ⟩
 
 /-! ### The stabilizer of a root -/
 
