@@ -273,11 +273,9 @@ theorem monodromyFunctor_obj_ρ (x : X) (L : LocalCoefficientSystem.{u, v, w} R 
   rfl
 
 @[simp]
-theorem monodromyFunctor_map_hom_apply (x : X)
-    {L K : LocalCoefficientSystem.{u, v, w} R X} (η : L ⟶ K)
-    (a : L.obj (FundamentalGroupoid.mk x)) :
-    ((monodromyFunctor R X x).map η).hom' a =
-      η.app (FundamentalGroupoid.mk x) a :=
+theorem monodromyFunctor_map_hom (x : X) {L K : LocalCoefficientSystem.{u, v, w} R X}
+    (η : L ⟶ K) :
+    ((monodromyFunctor R X x).map η).hom = monodromyMap η x :=
   rfl
 
 /-- Transport along a path intertwines monodromy after changing the basepoint along that path. -/
