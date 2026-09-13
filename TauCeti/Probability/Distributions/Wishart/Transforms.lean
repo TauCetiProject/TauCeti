@@ -32,8 +32,6 @@ separately.
 
 ## Main results
 
-* `TauCeti.trace_mul_coe_wishartGram` — the trace statistic of a Gram sum is the sum of the
-  Gaussian quadratic forms of its vectors;
 * `TauCeti.mem_integrableExpSet_trace_mul_wishartGramMeasure_iff` — at a positive degree, the
   exact exponential-integrability domain of the trace statistic;
 * `TauCeti.mgf_trace_mul_wishartGramMeasure_sqrt` and
@@ -63,18 +61,6 @@ variable {ι : Type*} [Fintype ι] {p ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
   {Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} {t : ℝ}
 
 /-! ### The trace statistic -/
-
-/-- The trace statistic of a Gram sum is the sum of the quadratic forms of `Θ` at the vectors.
-This is what turns a Wishart trace statistic into a sum of Gaussian quadratic forms, one per
-sampled vector. No symmetry of `Θ` is needed. -/
-theorem trace_mul_coe_wishartGram (Θ : Matrix (Fin p) (Fin p) ℝ)
-    (X : ι → EuclideanSpace ℝ (Fin p)) :
-    (Θ * (wishartGram X : Matrix (Fin p) (Fin p) ℝ)).trace =
-      ∑ r, ⟪X r, Θ.toEuclideanLin (X r)⟫ := by
-  rw [coe_wishartGram, Matrix.mul_sum, Matrix.trace_sum]
-  refine Finset.sum_congr rfl fun r _ => ?_
-  rw [Matrix.mul_vecMulVec, Matrix.trace_vecMulVec]
-  simp [PiLp.inner_apply, Matrix.toLin'_apply, dotProduct]
 
 /-- The exponential of the trace statistic is continuous, hence strongly measurable; this is the
 side condition of every transform computation below. -/
@@ -180,6 +166,7 @@ theorem mgf_trace_mul_wishartGramMeasure_sqrt (ν : ℕ) (S : Matrix (Fin p) (Fi
       (wishartGramMeasure ν S) t =
       (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).det
         ^ (-(ν : ℝ) / 2 : ℝ) := by
+  have hexponent : (-(ν : ℝ) / 2 : ℝ) = -1 / 2 * (ν : ℝ) := by ring
   rw [wishartGramMeasure_eq_map_pi, mgf_map measurable_wishartGram.aemeasurable
       (continuous_exp_trace_mul_coe Θ t).aestronglyMeasurable,
     trace_mul_coe_comp_wishartGram,
@@ -187,8 +174,7 @@ theorem mgf_trace_mul_wishartGramMeasure_sqrt (ν : ℕ) (S : Matrix (Fin p) (Fi
       ⟪x, (Θ : Matrix (Fin p) (Fin p) ℝ).toEuclideanLin x⟫) t,
     Finset.prod_const, Finset.card_univ, Fintype.card_fin,
     mgf_inner_toEuclideanLin_multivariateGaussian_sqrt S (selfAdjoint.isHermitian_coe Θ) ht,
-    show (-(ν : ℝ) / 2 : ℝ) = -1 / 2 * (ν : ℝ) by ring,
-    Real.rpow_mul ht.det_pos.le, Real.rpow_natCast]
+    hexponent, Real.rpow_mul ht.det_pos.le, Real.rpow_natCast]
 
 /-- **The cumulant-generating function of a Wishart trace statistic**, the real logarithm of the
 moment-generating function on the same domain. -/
@@ -248,7 +234,8 @@ theorem integral_exp_neg_trace_mul_wishartGramMeasure (ν : ℕ) (hS : S.PosSemi
   have hpencil : (1 : Matrix (Fin p) (Fin p) ℝ) -
       (2 * (-1 : ℝ)) • ((Θ : Matrix (Fin p) (Fin p) ℝ) * S) =
       1 + (2 : ℝ) • ((Θ : Matrix (Fin p) (Fin p) ℝ) * S) := by
-    rw [show (2 * (-1 : ℝ)) = -2 by norm_num, neg_smul, sub_neg_eq_add]
+    have hcoeff : (2 * (-1 : ℝ)) = -2 := by norm_num
+    rw [hcoeff, neg_smul, sub_neg_eq_add]
   rw [← hpencil, ← mgf_trace_mul_wishartGramMeasure ν hS ht, mgf]
   exact integral_congr_ae (Filter.Eventually.of_forall fun A => by simp only [neg_one_mul])
 
