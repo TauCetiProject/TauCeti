@@ -14,12 +14,9 @@ public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 
 This file adds suprema to the lightweight `Subcomodule` structure. The supremum of a family
 of subcomodules has underlying submodule the supremum of the underlying submodules; the
-coaction is stable because `ρ` is linear, every element of a submodule supremum is a finite
-sum of elements from the summands, and each summand coacts into the tensor product of a
-submodule contained in the larger one.
-
-This is a Layer 1 prerequisite for the reductive-groups roadmap target on finite-dimensional
-subcomodules: finite sums of finite subcomodules remain finite.
+coaction is stable because each summand lies in the inverse image under `ρ` of the tensor
+product of the larger submodule with the coalgebra. The universal property of the submodule
+supremum then gives the same containment for the join.
 
 ## Main declarations
 
@@ -55,45 +52,21 @@ variable [AddCommMonoid M] [Module R M] [Comodule R C M]
 
 namespace Subcomodule
 
-private lemma coact_mem_sup (N P : Subcomodule R C M) {m : M}
-    (hm : m ∈ N.toSubmodule ⊔ P.toSubmodule) :
-    Comodule.coact (R := R) (C := C) (M := M) m ∈
-      LinearMap.range
-        (TensorProduct.map (N.toSubmodule ⊔ P.toSubmodule).subtype
-          (LinearMap.id : C →ₗ[R] C)) := by
-  rcases Submodule.mem_sup.1 hm with ⟨n, hn, p, hp, rfl⟩
-  rw [LinearMap.map_add]
-  exact add_mem
-    (TensorProduct.range_map_mono
-      (by simp only [Submodule.range_subtype]; exact le_sup_left) le_rfl (N.coact_mem hn))
-    (TensorProduct.range_map_mono
-      (by simp only [Submodule.range_subtype]; exact le_sup_right) le_rfl (P.coact_mem hp))
-
-private lemma coact_mem_sSup (S : Set (Subcomodule R C M)) {m : M}
-    (hm : m ∈ ⨆ N : S, (N : Subcomodule R C M).toSubmodule) :
-    Comodule.coact (R := R) (C := C) (M := M) m ∈
-      LinearMap.range
-        (TensorProduct.map (⨆ N : S, (N : Subcomodule R C M).toSubmodule).subtype
-          (LinearMap.id : C →ₗ[R] C)) := by
-  classical
-  rw [Submodule.mem_iSup_iff_exists_finsupp] at hm
-  rcases hm with ⟨f, hf, rfl⟩
-  rw [Finsupp.sum, map_sum]
-  exact Submodule.sum_mem _ fun N _ =>
-    TensorProduct.range_map_mono
-      (by
-        simp only [Submodule.range_subtype]
-        exact le_iSup (fun N : S => (N : Subcomodule R C M).toSubmodule) N)
-      le_rfl (N.1.coact_mem (hf N))
-
 /-- The join of two subcomodules has underlying submodule the join of the underlying
 submodules. -/
 instance instMax : Max (Subcomodule R C M) where
   max N P :=
     { carrier := N.toSubmodule ⊔ P.toSubmodule
       coact_mem' := by
-        intro m hm
-        exact coact_mem_sup N P hm }
+        change N.toSubmodule ⊔ P.toSubmodule ≤
+          (LinearMap.range (TensorProduct.map _ _)).comap (Comodule.coact (C := C))
+        refine sup_le (fun _ hm ↦ ?_) (fun _ hm ↦ ?_)
+        · exact TensorProduct.range_map_mono
+            (by simp only [Submodule.range_subtype]; exact le_sup_left)
+            le_rfl (N.coact_mem hm)
+        · exact TensorProduct.range_map_mono
+            (by simp only [Submodule.range_subtype]; exact le_sup_right)
+            le_rfl (P.coact_mem hm) }
 
 /-- The supremum of a set of subcomodules has underlying submodule the supremum of the
 underlying submodules. -/
@@ -101,8 +74,14 @@ instance instSupSet : SupSet (Subcomodule R C M) where
   sSup S :=
     { carrier := ⨆ N : S, (N : Subcomodule R C M).toSubmodule
       coact_mem' := by
-        intro m hm
-        exact coact_mem_sSup S hm }
+        change (⨆ N : S, (N : Subcomodule R C M).toSubmodule) ≤
+          (LinearMap.range (TensorProduct.map _ _)).comap (Comodule.coact (C := C))
+        refine iSup_le fun N _ hm ↦ ?_
+        exact TensorProduct.range_map_mono
+          (by
+            simp only [Submodule.range_subtype]
+            exact le_iSup (fun N : S ↦ (N : Subcomodule R C M).toSubmodule) N)
+          le_rfl (N.1.coact_mem hm) }
 
 /-- The underlying submodule of the join is the join of the underlying submodules. -/
 @[simp]
@@ -118,21 +97,14 @@ theorem mem_sup {N P : Subcomodule R C M} {m : M} :
 
 /-- Subcomodules form a semilattice under the join whose carrier is the supremum of the
 underlying submodules. -/
-instance instSemilatticeSup : SemilatticeSup (Subcomodule R C M) :=
-  SemilatticeSup.mk (fun N P => N ⊔ P)
-    (fun _ _ => by
-      intro m hm
-      rw [← mem_toSubmodule, sup_toSubmodule]
-      exact Submodule.mem_sup_left ((mem_toSubmodule).2 hm))
-    (fun _ _ => by
-      intro m hm
-      rw [← mem_toSubmodule, sup_toSubmodule]
-      exact Submodule.mem_sup_right ((mem_toSubmodule).2 hm))
-    (fun _ _ _ hN hP => by
-      intro m hm
-      rw [mem_sup] at hm
-      rcases hm with ⟨n, hn, p, hp, rfl⟩
-      exact add_mem (hN hn) (hP hp))
+instance instSemilatticeSup : SemilatticeSup (Subcomodule R C M) where
+  sup D E := D ⊔ E
+  le_sup_left := fun N P ↦
+    show N.toSubmodule ≤ N.toSubmodule ⊔ P.toSubmodule from le_sup_left
+  le_sup_right := fun N P ↦
+    show P.toSubmodule ≤ N.toSubmodule ⊔ P.toSubmodule from le_sup_right
+  sup_le := fun N P Q hN hP ↦
+    show N.toSubmodule ⊔ P.toSubmodule ≤ Q.toSubmodule from sup_le hN hP
 
 /-- The underlying submodule of a supremum of a set of subcomodules is the supremum of the
 underlying submodules indexed by that set. -/
@@ -169,17 +141,12 @@ theorem mem_iSup {ι : Type*} {N : ι → Subcomodule R C M} {m : M} :
 /-- Subcomodules have arbitrary suprema, computed on underlying submodules. -/
 instance instCompleteSemilatticeSup : CompleteSemilatticeSup (Subcomodule R C M) where
   sSup := sSup
-  isLUB_sSup S :=
-    ⟨fun N hN m hm => by
-      rw [← mem_toSubmodule, sSup_toSubmodule]
-      exact Submodule.mem_iSup_of_mem ⟨N, hN⟩ ((mem_toSubmodule).2 hm),
-    fun N hN m hm => by
-      rw [← mem_toSubmodule, sSup_toSubmodule] at hm
-      rw [← mem_toSubmodule]
-      have hle : (⨆ P : S, (P : Subcomodule R C M).toSubmodule) ≤ N.toSubmodule := by
-        refine iSup_le fun P : S => ?_
-        exact toSubmodule_le_toSubmodule.2 (hN P.2)
-      exact hle hm⟩
+  isLUB_sSup S := by
+    refine ⟨fun N hN ↦ ?_, fun N hN ↦ ?_⟩
+    · change N.toSubmodule ≤ ⨆ P : S, (P : Subcomodule R C M).toSubmodule
+      exact le_iSup (fun P : S ↦ (P : Subcomodule R C M).toSubmodule) ⟨N, hN⟩
+    · change (⨆ P : S, (P : Subcomodule R C M).toSubmodule) ≤ N.toSubmodule
+      exact iSup_le fun P ↦ hN P.2
 
 /-- The carrier of a nonempty directed supremum of subcomodules is the union of their carriers. -/
 @[simp]
