@@ -92,6 +92,8 @@ private def c1HolderSubmodule : Submodule ℝ (C1HolderJet α E F) where
 
 `max ‖f‖_∞ (‖Df‖_∞ + [Df]_α)`.
 -/
+-- The module system requires exposure while the declarations below construct and project through
+-- this graph alias.  The final `irreducible` attribute restores the abstraction boundary.
 @[expose] def _root_.TauCeti.C1HolderSpace : Type _ :=
   let graph : Submodule ℝ ((E →ᵇ F) × HolderSpace α E (E →L[ℝ] F)) :=
     { carrier := {J | ∀ x, HasFDerivAt (J.1 : E → F) (J.2 x) x}
