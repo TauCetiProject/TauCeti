@@ -18,17 +18,15 @@ the remaining, independent, Gamma variables.  That total is again Gamma with the
 the Gamma--Beta change of variables identifies the coordinate as a Beta variable whose first
 parameter is `a i` and whose second parameter is the total of the other concentration parameters.
 
-Two indices are needed for the second Beta parameter to be positive.  On a one-element index type
-the Dirichlet law is instead the Dirac mass at the only point of the simplex, and that boundary
-case is recorded here as well.
+Two indices are needed for the second Beta parameter to be positive.  The remaining case of a
+one-element index type, where the Dirichlet law is a Dirac mass, is
+`TauCeti.Probability.dirichletMeasure_eq_dirac_of_card_eq_one`.
 
 ## Main results
 
 * `TauCeti.Probability.map_eval_dirichletMeasure` — a coordinate marginal is a Beta law.
 * `TauCeti.Probability.map_eval_zero_dirichletMeasure_fin_two` — the two-parameter case, where the
   first coordinate carries the Beta law of the two concentration parameters themselves.
-* `TauCeti.Probability.dirichletMeasure_eq_dirac_of_card_eq_one` — on a one-element index type the
-  Dirichlet law is a Dirac mass.
 
 ## References
 
@@ -80,7 +78,7 @@ theorem map_eval_dirichletMeasure [DecidableEq ι] [Nontrivial ι] {a : ι → �
   have hrest : HasLaw (fun x : ι → ℝ ↦ ∑ j ∈ Finset.univ.erase i, x j)
       (gammaMeasure (∑ j ∈ Finset.univ.erase i, a j) 1)
       (Measure.pi fun k ↦ gammaMeasure (a k) 1) :=
-    hasLaw_sum_gammaMeasure_of_iIndepFun hindep one_pos hs (fun j _ ↦ ha j) hlaw
+    iIndepFun.hasLaw_sum_gammaMeasure hindep one_pos hs (fun j _ ↦ ha j) fun j _ ↦ hlaw j
   have hpair : IndepFun (fun x : ι → ℝ ↦ x i) (fun x ↦ ∑ j ∈ Finset.univ.erase i, x j)
       (Measure.pi fun k ↦ gammaMeasure (a k) 1) := by
     have hsplit : (∑ j ∈ Finset.univ.erase i, fun x : ι → ℝ ↦ x j) =
@@ -100,28 +98,6 @@ theorem map_eval_zero_dirichletMeasure_fin_two {a : Fin 2 → ℝ} (ha : ∀ i, 
     (dirichletMeasure a).map (fun x ↦ x 0) = betaMeasure (a 0) (a 1) := by
   have herase : Finset.univ.erase (0 : Fin 2) = {1} := by decide
   rw [map_eval_dirichletMeasure ha 0, Finset.filter_ne', herase, Finset.sum_singleton]
-
-/-- On a one-element index type the Dirichlet law is the Dirac mass at the only point of the
-standard simplex. -/
-theorem dirichletMeasure_eq_dirac_of_card_eq_one {a : ι → ℝ} (ha : ∀ i, 0 < a i)
-    (hcard : Fintype.card ι = 1) :
-    dirichletMeasure a = Measure.dirac ((EuclideanSpace.equiv ι ℝ).symm fun _ ↦ 1) := by
-  have _ : Nonempty ι := Fintype.card_pos_iff.1 (hcard ▸ Nat.one_pos)
-  have _ : Subsingleton ι := Fintype.card_le_one_iff_subsingleton.1 hcard.le
-  have _ : ∀ j, IsProbabilityMeasure (gammaMeasure (a j) 1) :=
-    fun j ↦ isProbabilityMeasure_gammaMeasure (ha j) one_pos
-  rw [dirichletMeasure_of_pos ha]
-  have hae : dirichletNormalize =ᵐ[Measure.pi fun j ↦ gammaMeasure (a j) 1]
-      fun _ ↦ (EuclideanSpace.equiv ι ℝ).symm fun _ ↦ (1 : ℝ) := by
-    filter_upwards [ae_pos_pi_gammaMeasure a fun _ ↦ 1] with x hx
-    apply (EuclideanSpace.equiv ι ℝ).injective
-    ext j
-    have htotal : ∑ k, x k = x j :=
-      Finset.sum_eq_single_of_mem j (Finset.mem_univ j)
-        fun b _ hb ↦ absurd (Subsingleton.elim b j) hb
-    simp [dirichletNormalize_apply, htotal, div_self (hx j).ne']
-  rw [Measure.map_congr hae, Measure.map_const]
-  simp
 
 end Probability
 

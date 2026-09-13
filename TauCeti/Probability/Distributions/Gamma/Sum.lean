@@ -22,7 +22,7 @@ coordinate marginals of the Dirichlet distribution.
 
 ## Main result
 
-* `TauCeti.hasLaw_sum_gammaMeasure_of_iIndepFun` — a nonempty finite sum of independent gamma
+* `TauCeti.iIndepFun.hasLaw_sum_gammaMeasure` — a nonempty finite sum of independent gamma
   variables with a common rate is gamma with the summed shape.
 
 ## References
@@ -40,34 +40,38 @@ open MeasureTheory ProbabilityTheory
 variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ι → Ω → ℝ} {a : ι → ℝ} {r : ℝ}
 
 /-- A nonempty finite sum of independent gamma variables with a common positive rate has the gamma
-law whose shape is the sum of the individual shapes. -/
-theorem hasLaw_sum_gammaMeasure_of_iIndepFun {s : Finset ι} (hindep : iIndepFun X P) (hr : 0 < r)
+law whose shape is the sum of the individual shapes.  Only the variables indexed by `s` need carry
+a gamma law. -/
+theorem iIndepFun.hasLaw_sum_gammaMeasure {s : Finset ι} (hindep : iIndepFun X P) (hr : 0 < r)
     (hs : s.Nonempty) (ha : ∀ i ∈ s, 0 < a i)
-    (hlaw : ∀ i, HasLaw (X i) (gammaMeasure (a i) r) P) :
+    (hlaw : ∀ i ∈ s, HasLaw (X i) (gammaMeasure (a i) r) P) :
     HasLaw (fun ω ↦ ∑ i ∈ s, X i ω) (gammaMeasure (∑ i ∈ s, a i) r) P := by
   classical
   let _ : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  have key : ∀ t : Finset ι, t.Nonempty → (∀ i ∈ t, 0 < a i) →
-      HasLaw (∑ i ∈ t, X i) (gammaMeasure (∑ i ∈ t, a i) r) P := by
+  have _ : Nonempty s := hs.to_subtype
+  -- Reindex by `s`, so that every member of the family carries a gamma law.
+  have hsub : iIndepFun (fun i : s ↦ X i) P := hindep.precomp Subtype.val_injective
+  have hsublaw : ∀ i : s, HasLaw (X i) (gammaMeasure (a i) r) P := fun i ↦ hlaw i i.2
+  have key : ∀ t : Finset s, t.Nonempty →
+      HasLaw (∑ i ∈ t, X (i : ι)) (gammaMeasure (∑ i ∈ t, a (i : ι)) r) P := by
     intro t
     induction t using Finset.induction_on with
     | empty => simp
     | insert i t hi ih =>
-        intro _ hat
-        have hai : 0 < a i := hat i (Finset.mem_insert_self i t)
+        intro _
+        have hai : 0 < a (i : ι) := ha i i.2
         rcases t.eq_empty_or_nonempty with rfl | ht
-        · simpa using hlaw i
-        · have hat' : ∀ j ∈ t, 0 < a j := fun j hj ↦ hat j (Finset.mem_insert_of_mem hj)
-          have htpos : 0 < ∑ j ∈ t, a j := Finset.sum_pos hat' ht
+        · simpa using hsublaw i
+        · have htpos : 0 < ∑ j ∈ t, a (j : ι) := Finset.sum_pos (fun j _ ↦ ha j j.2) ht
           let _ := isProbabilityMeasure_gammaMeasure hai hr
           let _ := isProbabilityMeasure_gammaMeasure htpos hr
-          have hadd := (hindep.indepFun_finsetSum_of_notMem₀
-            (fun j ↦ (hlaw j).aemeasurable) hi).symm.hasLaw_add (hlaw i) (ih ht hat')
+          have hadd := (hsub.indepFun_finsetSum_of_notMem₀
+            (fun j ↦ (hsublaw j).aemeasurable) hi).symm.hasLaw_add (hsublaw i) (ih ht)
           rw [gammaMeasure_conv_gammaMeasure hai htpos hr] at hadd
           simpa only [Finset.sum_insert hi] using hadd
-  have hfun : (fun ω ↦ ∑ i ∈ s, X i ω) = ∑ i ∈ s, X i :=
-    funext fun ω ↦ (Finset.sum_apply ω s X).symm
-  rw [hfun]
-  exact key s hs ha
+  have hfun : (fun ω ↦ ∑ i ∈ s, X i ω) = ∑ i : s, X (i : ι) :=
+    funext fun ω ↦ ((Finset.sum_apply ω _ _).trans (Finset.sum_coe_sort s fun i ↦ X i ω)).symm
+  rw [hfun, ← Finset.sum_coe_sort s a]
+  exact key Finset.univ Finset.univ_nonempty
 
 end TauCeti
