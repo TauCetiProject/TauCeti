@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Finiteness.Projective
+import Mathlib.RingTheory.Finiteness.Projective
 public import TauCeti.Algebra.Module.MinimalProjectivePresentation
 
 /-!
