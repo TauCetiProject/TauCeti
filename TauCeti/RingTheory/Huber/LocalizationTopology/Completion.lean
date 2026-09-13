@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.LocalizationTopology.UniversalProperty
 public import TauCeti.RingTheory.Huber.Completion
 public import TauCeti.RingTheory.Localization.Completion
+public import TauCeti.Topology.Algebra.UniformRing
 
 /-!
 # The completion `A⟨T/s⟩`
@@ -30,8 +31,11 @@ complete Hausdorff targets.
 * `locUniformSpace_toTopologicalSpace`: the topology `locUniformSpace` induces is `locTopology`.
   This is what a proof rewrites against, so no body in this file needs exposing.
 * `locUniformSpace_congr`: presentations sharing a ring of definition share the uniformity, so
-  the two completions `A⟨T/s⟩` are the same object. Whether the restriction maps out of them
-  agree is a further question, and is not settled here.
+  the two completions `A⟨T/s⟩` are the same object.
+* `toCompletionLoc_heq`: the two structure maps `A → A⟨T/s⟩` into them agree. This is what
+  `locUniformSpace_congr` alone does not give — it identifies only the codomains — and it is what
+  a statement about the maps *out of* `A⟨T/s⟩` needs before it can be carried between
+  presentations. The maps out of it remain a further question.
 * `isUniformAddGroup_locUniformSpace` and `isTopologicalRing_locUniformSpace`: the two companions
   of `locUniformSpace`. Since `locTopology` is not an instance, a statement about `A⟨T/s⟩` has to
   name its structures; these three declarations are what it names.
@@ -140,7 +144,9 @@ theorem isTopologicalRing_locUniformSpace [IsTopologicalRing A] (P : PairOfDefin
 
 /-- **A change of presentation with the same ring of definition leaves `locUniformSpace` alone.**
 `restrictionRingHomOfSubset` is stated under `locUniformSpace`, so this identifies the rings such
-a map runs between. Identifying the maps themselves needs more than this. -/
+a map runs between. It does not by itself identify any map; the structure maps *into* those rings
+are identified by `toCompletionLoc_heq` below, and the restriction maps out of them are still
+open. -/
 theorem locUniformSpace_congr [IsTopologicalRing A] (P : PairOfDefinition A) (T T' : Finset A)
     (s s' : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     [IsLocalization.Away s' S] (hden : HasDenominatorPower P T s S)
@@ -215,6 +221,22 @@ theorem toCompletionLoc_apply [IsTopologicalRing A] (P : PairOfDefinition A) (T 
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     toCompletionLoc P T s S hden a = (algebraMap A S a : UniformSpace.Completion S) := (rfl)
+
+/-- **A change of presentation with the same ring of definition leaves the structure map alone.**
+`locUniformSpace_congr` identifies the two completions; this identifies the two structure maps
+`A → A⟨T/s⟩` into them, which is what a statement about maps out of `A⟨T/s⟩` needs before it can
+be carried between presentations.
+
+The conclusion is `HEq` rather than `=` because the type `UniformSpace.Completion S` mentions the
+uniformity on `S`: the two structure maps do not share a codomain until `locUniformSpace_congr` is
+applied. -/
+theorem toCompletionLoc_heq [IsTopologicalRing A] (P : PairOfDefinition A) (T T' : Finset A)
+    (s s' : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    [IsLocalization.Away s' S] (hden : HasDenominatorPower P T s S)
+    (hden' : HasDenominatorPower P T' s' S) (h : locSubring P T' s' S = locSubring P T s S) :
+    HEq (toCompletionLoc P T' s' S hden') (toCompletionLoc P T s S hden) :=
+  (algebraMap A S).completionCoe_comp_heq
+    (locUniformSpace_congr P T T' s s' S hden hden' h) _ _ _ _
 
 
 /-- The localisation pair `localization`, transported along `locUniformSpace_toTopologicalSpace`

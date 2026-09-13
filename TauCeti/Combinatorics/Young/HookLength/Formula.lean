@@ -20,8 +20,12 @@ number of standard Young tableaux. This file proves the **multiplicative hook-le
 `f^μ * ∏ c ∈ μ.cells, hookLength μ c = n !`
 
 (`TauCeti.standardCount_mul_prod_hookLength`), the milestone of Layer 5 of the Schur--Weyl
-roadmap. It carries no division obligation, and the quotient form `f^μ = n ! / ∏ hooks`, which
-follows from it because the hook lengths are positive, is simply not stated here.
+roadmap. It carries no division obligation. The familiar quotient form `f^μ = n ! / ∏ hooks` is
+derived from it at the end of the file, over `ℕ` in
+`TauCeti.standardCount_eq_factorial_div_prod_hookLength` and over a semifield of characteristic
+zero in `TauCeti.cast_standardCount_eq_factorial_div_prod_hookLength`; the `ℕ`-division is exact
+because the product of the hook lengths divides `n !`
+(`YoungDiagram.prod_hookLength_dvd_factorial`), with `f^μ` as cofactor.
 
 ## The route
 
@@ -61,6 +65,10 @@ lengths sum to `n` and the shifts `r - 1 - i` are a reflection of `0, 1, …, r 
 
 * `TauCeti.standardCount_mul_prod_factorial_betaNumber`: **the Frobenius determinant formula.**
 * `TauCeti.standardCount_mul_prod_hookLength`: **the multiplicative hook-length formula.**
+* `YoungDiagram.prod_hookLength_dvd_factorial`: the product of the hook lengths divides `n !`.
+* `TauCeti.standardCount_eq_factorial_div_prod_hookLength` and
+  `TauCeti.cast_standardCount_eq_factorial_div_prod_hookLength`: **the hook-length formula in
+  quotient form**, over `ℕ` and over a semifield of characteristic zero.
 
 ## References
 
@@ -267,8 +275,8 @@ theorem standardCount_mul_prod_factorial_betaNumber (μ : YoungDiagram) {r : ℕ
 /-- **The multiplicative hook-length formula.** The number of standard Young tableaux of shape `μ`,
 times the product of the hook lengths of the cells of `μ`, is the factorial of the number of cells.
 
-The quotient form `f^μ = μ.card ! / ∏ hooks`, which follows from this one because the hook lengths
-are positive, is not stated here. -/
+The quotient form `f^μ = μ.card ! / ∏ hooks` is derived from it below, in
+`TauCeti.standardCount_eq_factorial_div_prod_hookLength`. -/
 theorem standardCount_mul_prod_hookLength (μ : YoungDiagram) :
     standardCount μ * ∏ c ∈ μ.cells, YoungDiagram.hookLength μ c = μ.card ! := by
   obtain ⟨r, hr⟩ : ∃ r, μ.colLen 0 ≤ r := ⟨μ.colLen 0, le_rfl⟩
@@ -282,4 +290,40 @@ theorem standardCount_mul_prod_hookLength (μ : YoungDiagram) :
   rw [mul_assoc, hhook]
   exact standardCount_mul_prod_factorial_betaNumber μ hr
 
+/-! ### The quotient form -/
+
+/-- **The hook-length formula in quotient form**: the number of standard Young tableaux of shape
+`μ` is `μ.card !` divided by the product of the hook lengths.
+
+The division is exact: the product of the hook lengths divides `μ.card !`, by
+`YoungDiagram.prod_hookLength_dvd_factorial`. -/
+theorem standardCount_eq_factorial_div_prod_hookLength (μ : YoungDiagram) :
+    standardCount μ = μ.card ! / ∏ c ∈ μ.cells, YoungDiagram.hookLength μ c :=
+  (Nat.div_eq_of_eq_mul_left μ.prod_hookLength_pos
+    (standardCount_mul_prod_hookLength μ).symm).symm
+
+/-- **The hook-length formula over a semifield of characteristic zero**, in the familiar quotient
+form `f^μ = n ! / ∏ hooks`.  The denominator is nonzero because every hook length is positive. -/
+theorem cast_standardCount_eq_factorial_div_prod_hookLength {K : Type*} [Semifield K] [CharZero K]
+    (μ : YoungDiagram) :
+    (standardCount μ : K) = (μ.card ! : K) / ∏ c ∈ μ.cells, (YoungDiagram.hookLength μ c : K) := by
+  have hp : (∏ c ∈ μ.cells, (YoungDiagram.hookLength μ c : K)) ≠ 0 := by
+    rw [← Nat.cast_prod]
+    exact_mod_cast μ.prod_hookLength_pos.ne'
+  rw [eq_div_iff hp, ← Nat.cast_prod, ← Nat.cast_mul, standardCount_mul_prod_hookLength]
+
 end TauCeti
+
+namespace YoungDiagram
+
+open Finset Nat
+
+/-- **The product of the hook lengths divides `n !`**, the cofactor being the number `f^μ` of
+standard Young tableaux of the shape.  This is the divisibility that makes the quotient form
+`TauCeti.standardCount_eq_factorial_div_prod_hookLength` of the hook-length formula an exact
+identity rather than a truncated one. -/
+theorem prod_hookLength_dvd_factorial (μ : YoungDiagram) :
+    (∏ c ∈ μ.cells, hookLength μ c) ∣ μ.card ! :=
+  ⟨TauCeti.standardCount μ, by rw [← TauCeti.standardCount_mul_prod_hookLength μ, mul_comm]⟩
+
+end YoungDiagram

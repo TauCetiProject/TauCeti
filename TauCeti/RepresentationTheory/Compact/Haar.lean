@@ -99,8 +99,7 @@ theorem haarProb_def :
   by
     rw [haarProb,
       FiniteMeasure.toMeasure_normalize_eq_of_nonzero (haarFinite G) (haarFinite_ne_zero G)]
-    rw [← haarFinite_toMeasure]
-    rw [← FiniteMeasure.ennreal_mass, ← ENNReal.coe_inv]
+    rw [← haarFinite_toMeasure, ← FiniteMeasure.ennreal_mass, ← ENNReal.coe_inv]
     · rfl
     · exact (FiniteMeasure.mass_nonzero_iff (haarFinite G)).mpr (haarFinite_ne_zero G)
 

@@ -10,15 +10,18 @@ import Mathlib.MeasureTheory.SetAlgebra
 import Mathlib.MeasureTheory.MeasurableSpace.CountablyGenerated
 
 /-!
-# Measurable singletons in spaces of finite measures
+# Finite measures
 
 When the underlying σ-algebra is countably generated, singletons are measurable in
 `FiniteMeasure α` and in `ProbabilityMeasure α`.
+
+On a finite measurable space, a probability measure is the sum of its singleton masses.
 
 ## Main results
 
 * `MeasureTheory.FiniteMeasure.instMeasurableSingletonClass`
 * `MeasureTheory.ProbabilityMeasure.instMeasurableSingletonClass`
+* `MeasureTheory.Measure.sum_singleton_eq_one`
 
 ## Implementation
 
@@ -93,5 +96,10 @@ instance ProbabilityMeasure.instMeasurableSingletonClass [CountablyGenerated α]
     rw [hpre]
     exact hmap (measurableSet_singleton _)
 
+/-- The singleton masses of a probability measure on a finite measurable space sum to one. -/
+theorem Measure.sum_singleton_eq_one {κ : Type*} [Fintype κ] [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] (ν : Measure κ) [IsProbabilityMeasure ν] :
+    ∑ k, ν {k} = 1 := by
+  rw [sum_measure_singleton, Finset.coe_univ, measure_univ]
 
 end MeasureTheory

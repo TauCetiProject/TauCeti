@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!
-# Couplings of measures
+# Basic couplings of measures
 
 A **coupling** of two measures `μ₁` and `μ₂` is a measure on their product whose marginals are
 `μ₁` and `μ₂`. This file provides the carrier-independent coupling API used by the dense graph

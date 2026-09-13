@@ -32,6 +32,8 @@ Spin group.
   hypothesis makes the Spin action surjective.
 * `CliffordAlgebra.range_spinToSpecialOrthogonal_eq_ker_spinorNorm`: the Spin image is
   the kernel of the spinor norm.
+* `CliffordAlgebra.spinToSpinorNormKernel`: the Spin action corestricted to that kernel.
+* `CliffordAlgebra.spinToSpinorNormKernel_surjective`: the corestricted action is surjective.
 
 ## References
 
@@ -358,6 +360,38 @@ theorem range_spinToSpecialOrthogonal_eq_ker_spinorNorm
     have hv := congrArg (fun z : QuadraticMap.orthogonalGroup Q => ((z : V ≃ₗ[K] V) v)) horth
     rw [coe_spinToOrthogonal_apply] at hv
     exact hv
+
+/-- The Spin action with codomain restricted to the kernel of the spinor norm. -/
+noncomputable def spinToSpinorNormKernel
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    spinGroup Q →* MonoidHom.ker (spinorNorm Q hQ) :=
+  (spinToSpecialOrthogonal Q).codRestrict _ fun x ↦
+    MonoidHom.mem_ker.mpr (spinorNorm_spinToSpecialOrthogonal Q hQ x)
+
+/-- After inclusion into the special orthogonal group, `spinToSpinorNormKernel` is the usual Spin
+action. -/
+@[simp]
+theorem coe_spinToSpinorNormKernel_apply
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (x : spinGroup Q) :
+    ((spinToSpinorNormKernel Q hQ x : MonoidHom.ker (spinorNorm Q hQ)) :
+      QuadraticMap.specialOrthogonalGroup Q) = spinToSpecialOrthogonal Q x :=
+  by rw [spinToSpinorNormKernel, MonoidHom.codRestrict_apply]
+
+/-- Corestricting the Spin action to the spinor-norm kernel does not change its kernel. -/
+@[simp]
+theorem ker_spinToSpinorNormKernel
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    MonoidHom.ker (spinToSpinorNormKernel Q hQ) =
+      MonoidHom.ker (spinToSpecialOrthogonal Q) := by
+  rw [spinToSpinorNormKernel, MonoidHom.ker_codRestrict]
+
+/-- The Spin action is surjective onto the kernel of the spinor norm. -/
+theorem spinToSpinorNormKernel_surjective
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    Function.Surjective (spinToSpinorNormKernel Q hQ) := by
+  apply (Set.surjective_codRestrict fun x ↦
+    MonoidHom.mem_ker.mpr (spinorNorm_spinToSpecialOrthogonal Q hQ x)).2
+  rw [← MonoidHom.coe_range, range_spinToSpecialOrthogonal_eq_ker_spinorNorm Q hQ]
 
 /-- If every value of a finite-dimensional nondegenerate quadratic form is a square, the Spin
 action on its special orthogonal group is surjective. This differs from

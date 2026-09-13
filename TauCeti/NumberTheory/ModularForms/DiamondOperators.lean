@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.NumberTheory.ModularForms.Basic
-public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Units
 public import TauCeti.NumberTheory.ModularForms.SlashActionRat
 
 /-!
@@ -58,6 +58,10 @@ re-founded slash action with built-in character) and their names. The Hecke pair
   character spaces, commute with the coercion `S_k(Γ₁(N)) → M_k(Γ₁(N))`; a cusp form is a
   `χ`-form exactly when the modular form underlying it is.
 * `eq_of_mem_cuspFormCharSpace_of_ne_zero`: a nonzero cusp form determines its nebentypus.
+* `slash_mapGL_eq_self_of_comp_of_mem_modFormCharSpace`,
+  `slash_mapGL_eq_self_of_comp_of_mem_cuspFormCharSpace`: a matrix of `Γ₀(N)` whose lower-right
+  entry is `1` modulo a divisor `M` acts trivially on a form whose character is pulled back from
+  modulus `M`.
 
 ## References
 
@@ -347,6 +351,22 @@ theorem mem_modFormCharSpace_iff_nebentypus (k : ℤ) (χ₀ : (ZMod N)ˣ →* �
     rw [diamondOpHom_apply, diamondOp_eq_diamondOpAux k d g hg, ← hg]
     exact ModularForm.ext (congr_fun (h g))
 
+/-- **A matrix of `Γ₀(N)` whose lower-right entry is `1` modulo a divisor `M` acts trivially on
+`M_k(Γ₁(N), χ)` when `χ` is pulled back from a character modulo `M`**: its nebentypus value is
+`χ₀` of the lower-right entry modulo `M`, which is `χ₀ 1 = 1`. -/
+theorem slash_mapGL_eq_self_of_comp_of_mem_modFormCharSpace {M N : ℕ} (hMN : M ∣ N)
+    {χ : (ZMod N)ˣ →* ℂˣ} {χ₀ : (ZMod M)ˣ →* ℂˣ} (hcomp : χ = χ₀.comp (ZMod.unitsMap hMN))
+    {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ)
+    {β : SL(2, ℤ)} (hβ : β ∈ Gamma0 N) (hβ11 : ((β 1 1 : ℤ) : ZMod M) = 1) :
+    ⇑f ∣[k] mapGL ℝ β = ⇑f := by
+  rw [(mem_modFormCharSpace_iff_nebentypus k χ f).mp hf ⟨β, hβ⟩, hcomp, MonoidHom.comp_apply,
+    ← Gamma0Map_toHomUnits_of_dvd hMN ⟨β, hβ⟩ (Gamma0_le_Gamma0_of_dvd hMN hβ)]
+  have h1 : (Gamma0Map M).toHomUnits ⟨β, Gamma0_le_Gamma0_of_dvd hMN hβ⟩ = 1 := by
+    refine Units.ext ?_
+    rw [MonoidHom.coe_toHomUnits, Gamma0Map_apply]
+    exact hβ11
+  rw [h1, map_one, Units.val_one, one_smul]
+
 /-- **Bridge (cusp forms)**: for a `Gamma1`-invariant cusp form `f`, membership in the
 diamond-eigenspace `cuspFormCharSpace k χ₀` is equivalent to the classical nebentypus
 relation `f ∣[k] g = χ₀(d_g) • f` for all `g ∈ Γ₀(N)`. -/
@@ -477,3 +497,13 @@ theorem coe_mem_modFormCharSpace_iff (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ)
   exact forall_congr' fun d ↦
     ⟨fun h ↦ DFunLike.ext _ _ fun τ ↦ DFunLike.congr_fun h τ,
       fun h ↦ DFunLike.ext _ _ fun τ ↦ DFunLike.congr_fun h τ⟩
+
+/-- **A matrix of `Γ₀(N)` whose lower-right entry is `1` modulo a divisor `M` acts trivially on
+`S_k(Γ₁(N), χ)` when `χ` is pulled back from a character modulo `M`**: its nebentypus value is
+`χ₀` of the lower-right entry modulo `M`, which is `χ₀ 1 = 1`. -/
+theorem slash_mapGL_eq_self_of_comp_of_mem_cuspFormCharSpace {M N : ℕ} (hMN : M ∣ N)
+    {χ : (ZMod N)ˣ →* ℂˣ} {χ₀ : (ZMod M)ˣ →* ℂˣ} (hcomp : χ = χ₀.comp (ZMod.unitsMap hMN))
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) {β : SL(2, ℤ)}
+    (hβ : β ∈ Gamma0 N) (hβ11 : ((β 1 1 : ℤ) : ZMod M) = 1) : ⇑f ∣[k] mapGL ℝ β = ⇑f :=
+  slash_mapGL_eq_self_of_comp_of_mem_modFormCharSpace hMN hcomp
+    ((coe_mem_modFormCharSpace_iff k χ f).mpr hf) hβ hβ11

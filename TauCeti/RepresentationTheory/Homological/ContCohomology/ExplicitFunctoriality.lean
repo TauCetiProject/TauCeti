@@ -418,6 +418,24 @@ theorem explicitMap2_mk [ContinuousMul G] [ContinuousMul H]
       (cocyclesMap2 G M H N φ f hf hequiv c : H2 H N) :=
   QuotientAddGroup.map_mk _ _ _ _ c
 
+/-- Equality of compatible pairs gives equality of the induced maps on explicit `H²`. -/
+theorem explicitMap2_congr_of_eq [ContinuousMul G] [ContinuousMul H]
+    (φ ψ : H →ₜ* G) (f q : M →+ N) {hf : Continuous f} {hq : Continuous q}
+    {hφ : ∀ (h : H) (m : M), f (φ h • m) = h • f m}
+    {hψ : ∀ (h : H) (m : M), q (ψ h • m) = h • q m}
+    (hφeq : φ = ψ) (hfeq : f = q) :
+    explicitMap2 G M H N φ f hf hφ = explicitMap2 G M H N ψ q hq hψ := by
+  apply AddMonoidHom.ext
+  intro x
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+      rw [explicitMap2_mk, explicitMap2_mk]
+      apply congrArg (fun z : Z2 H N => (z : H2 H N))
+      ext p
+      obtain ⟨h, k⟩ := p
+      simp only [cocyclesMap2_apply]
+      rw [hφeq, hfeq]
+
 /-- Pullback by the identity compatible pair is the identity on explicit `H²`. -/
 @[simp]
 theorem explicitMap2_id [ContinuousMul G] :

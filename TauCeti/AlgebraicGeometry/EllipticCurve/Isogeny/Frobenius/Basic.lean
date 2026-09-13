@@ -30,6 +30,9 @@ on it. The instance Mathlib's map needs is installed locally where it is require
 
 ## Main results
 
+* `AlgHom.comp_fieldPullback_frobeniusIsogeny`: an algebra homomorphism between function fields
+  commutes with the Frobenius pullbacks.
+
 * `TauCeti.Isogeny.fieldPullback_frobeniusIsogeny`: the induced map of function fields is the
   `q`-power map `FiniteField.frobeniusAlgHom F W.FunctionField`.
 * `TauCeti.Isogeny.fieldPullback_frobeniusIsogeny_apply`: the same result pointwise, with no
@@ -66,6 +69,7 @@ original.
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.
+
 -/
 
 public section
@@ -163,6 +167,13 @@ theorem separableDegree_frobeniusIsogeny : (frobeniusIsogeny W).separableDegree 
 theorem inseparableDegree_frobeniusIsogeny :
     (frobeniusIsogeny W).inseparableDegree = Nat.card F := by
   rw [inseparableDegree_eq_degree_of_isPurelyInseparable, degree_frobeniusIsogeny]
+
+/-- **An algebra homomorphism between function fields commutes with the Frobenius pullbacks.** -/
+theorem _root_.AlgHom.comp_fieldPullback_frobeniusIsogeny {W₁ W₂ : WeierstrassCurve.Affine F}
+    (σ : W₁.FunctionField →ₐ[F] W₂.FunctionField) :
+    σ.comp (frobeniusIsogeny W₁).fieldPullback = (frobeniusIsogeny W₂).fieldPullback.comp σ :=
+  AlgHom.ext fun z ↦ by
+    simp only [AlgHom.comp_apply, fieldPullback_frobeniusIsogeny_apply, map_pow]
 
 end Isogeny
 

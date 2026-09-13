@@ -42,7 +42,6 @@ original complex vector space. The almost-complex structure reuses
   associated with an almost complex structure.
 * `TauCeti.AlmostComplexStructure.hodgeStructure_weilOperator`: its Weil operator is the
   complexification of the original almost complex structure.
-
 The construction and conventions follow Voisin, *Hodge Theory and Complex Algebraic Geometry I*,
 §6, and Peters--Steenbrink, *Mixed Hodge Structures*, §2.
 -/

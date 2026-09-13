@@ -27,15 +27,23 @@ at its two nodes.
 
 * `TauCeti.ContCohomology.explicitInfl0`, `explicitInfl1`, and `explicitInfl2`: inflation on the
   explicit model in degrees `0`, `1`, and `2`.
+* `TauCeti.ContCohomology.descendZ1`: the descent to `G ⧸ N` of a continuous `1`-cocycle vanishing
+  on `N`.
 
 ## Main statements
 
 * `TauCeti.ContCohomology.explicitRes1_comp_explicitInfl1` and
   `TauCeti.ContCohomology.explicitRes2_comp_explicitInfl2`: restricting an inflated class back to
   `N` gives zero.
+* `TauCeti.ContCohomology.explicitInfl1_eq_explicitMap1`: inflation in degree `1` is the
+  compatible-pair pullback along `G → G ⧸ N`.
 * `TauCeti.ContCohomology.explicitInfl1_injective`: inflation is injective in degree `1`.
 * `TauCeti.ContCohomology.explicitInfRes_exact`: the image of inflation is exactly the kernel of
   restriction in degree `1`.
+* `TauCeti.ContCohomology.coe_descendZ1_apply_mk`: the descent of a cocycle takes on the coset of
+  `g` the value the cocycle takes at `g`.
+* `TauCeti.ContCohomology.explicitInfl1_descendZ1`: a cocycle vanishing on `N` is the inflation of
+  its descent.
 
 ## Implementation notes
 
@@ -159,6 +167,15 @@ theorem explicitInfl1_mk (c : Z1 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
         (subtype_quotientMk_smul G M N) c : H1 G M) :=
   explicitMap1_mk _ _ _ _ _ _ _ _ c
 
+/-- Inflation in degree one is the compatible-pair pullback along the quotient homomorphism
+`G → G ⧸ N` and the inclusion of the invariants `M ^ N` into `M`. -/
+theorem explicitInfl1_eq_explicitMap1 :
+    explicitInfl1 G M N =
+      explicitMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
+        (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
+        (subtype_quotientMk_smul G M N) := by
+  rw [explicitInfl1]
+
 /-- **Restriction to `N` kills inflation in degree one**, the first half of the
 inflation-restriction sequence: the inflation of a cocycle restricts to the zero cochain on `N`,
 because a continuous `1`-cocycle vanishes at `1`. -/
@@ -228,8 +245,9 @@ private theorem smul_apply_eq_self_of_vanishing {z : Z1 G M}
 /-- The descent to `G ⧸ N` of a continuous `1`-cocycle vanishing on `N`. It is well defined by
 `apply_mul_eq_self_of_vanishing`, takes its values in `M ^ N` by
 `smul_apply_eq_self_of_vanishing`, and is continuous because `G ⧸ N` carries the quotient
-topology. -/
-private def descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0) :
+topology. Together with `TauCeti.ContCohomology.explicitInfl1_descendZ1` it says that a cocycle
+vanishing on `N` is *itself* inflated, with no coboundary subtracted. -/
+def descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0) :
     Z1 (G ⧸ N) (FixedPoints.addSubgroup N M) :=
   ⟨fun q => Quotient.liftOn' q
       (fun g => (⟨(z : G → M) g,
@@ -251,16 +269,17 @@ private def descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0) :
 
 omit [ContinuousSMul G M] [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
 /-- The descent takes on the coset of `g` the value the original cocycle takes at `g`. This is the
-computation rule of `Quotient.liftOn'` at a representative, so it is a `rfl`; isolating it here is
-what lets `explicitInfl1_descendZ1` below be a rewrite rather than a definitional unfolding. -/
-private theorem coe_descendZ1_apply_mk (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0)
+computation rule that characterises `TauCeti.ContCohomology.descendZ1`. -/
+@[simp]
+theorem coe_descendZ1_apply_mk (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0)
     (g : G) :
     ((descendZ1 z hz : (G ⧸ N) → FixedPoints.addSubgroup N M) (g : G ⧸ N) : M) =
-      (z : G → M) g :=
+      (z : G → M) g := by
+  rw [descendZ1]
   rfl
 
 /-- Inflating the descent of a continuous `1`-cocycle vanishing on `N` returns its class. -/
-private theorem explicitInfl1_descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0) :
+theorem explicitInfl1_descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0) :
     explicitInfl1 G M N (descendZ1 z hz : H1 (G ⧸ N) (FixedPoints.addSubgroup N M)) =
       (z : H1 G M) := by
   rw [explicitInfl1_mk]

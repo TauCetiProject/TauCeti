@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.SmoothCircle
+public import TauCeti.Order.Disjoint
 
 /-!
 # Smooth link presentations
@@ -114,6 +115,13 @@ def toContinuousMap (L : SmoothLinkEmbedding I M n) : C((Σ _ : Fin n, Circle), 
     Set.range L.toContinuousMap = L.range := by
   rw [Set.range_sigma_eq_iUnion_range]
   rfl
+/-- Two components of a smooth link have disjoint images exactly when their labels differ. -/
+@[simp, grind =]
+theorem disjoint_range_iff (L : SmoothLinkEmbedding I M n) (i j : Fin n) :
+    Disjoint (Set.range (L i)) (Set.range (L j)) ↔ i ≠ j := by
+  apply Pairwise.disjoint_iff_ne L.pairwiseDisjoint_range
+  intro i
+  exact Set.nonempty_iff_ne_empty.mp (Set.range_nonempty (L i))
 
 /-! ### Empty and one-component links -/
 

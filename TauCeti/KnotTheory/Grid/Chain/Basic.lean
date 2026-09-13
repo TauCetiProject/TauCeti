@@ -33,10 +33,8 @@ will apply.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3,
-"The complexes and `∂² = 0`. Fully blocked `GC̃` over 𝔽₂ (rectangles avoiding all
-markings)". The coefficient formula follows Ozsváth--Stipsicz--Szabó, *Grid Homology for
-Knots and Links*, Chapter 3.
+The coefficient formula follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
+Chapter 3.
 -/
 
 public section

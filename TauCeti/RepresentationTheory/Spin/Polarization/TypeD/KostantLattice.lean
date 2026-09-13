@@ -137,13 +137,16 @@ theorem isNilpotent_typeDSpinRep_rootGenerator (k : Fin n ⊕ Fin n) :
         (TauCeti.serreRootGenerator (CartanMatrix.D n) k))) :=
   ⟨2, P.typeDSpinRep_rootGenerator_sq b hn k⟩
 
-private theorem typeDSpinRep_serreE_eq_spinAction (i : Fin n) :
+/-- The represented positive Serre generator acts through its simple-root Clifford bivector. -/
+theorem typeDSpinRep_serreE_eq_spinAction (i : Fin n) :
     P.typeDSpinRep b hn
         (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreE ℚ (CartanMatrix.D n) i)) =
       spinAction Q P (P.typeDSimpleRootBivector b (by omega) i) := by
   rw [P.typeDSpinRep_ι b hn, P.typeDSpinSerreRepresentation_serreE b hn]
 
-private theorem typeDSpinRep_serreF_eq_spinAction (i : Fin n) :
+/-- The represented negative Serre generator acts through its negative simple-root Clifford
+bivector. -/
+theorem typeDSpinRep_serreF_eq_spinAction (i : Fin n) :
     P.typeDSpinRep b hn
         (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreF ℚ (CartanMatrix.D n) i)) =
       spinAction Q P (P.typeDSimpleNegativeRootBivector b (by omega) i) := by
@@ -288,8 +291,7 @@ theorem spinAction_typeDSimpleCorootBivector_exteriorBasis
     have hspin : spinWeight ℚ s i = spinWeight ℚ s (⟨n - 1, by omega⟩ : Fin n) :=
       congrArg (spinWeight ℚ s) hi
     have hwt := TauCeti.DynkinType.algebraMap_typeDSpinWeight_apply (K := ℚ) s i
-    rw [dite_eq_right hnext, hprev] at hwt
-    rw [hspin] at hwt
+    rw [dite_eq_right hnext, hprev, hspin] at hwt
     simpa only [algebraMap_int_eq, Int.coe_castRingHom] using
       (congrArg (fun z : ℚ ↦ z • b.ExteriorAlgebra s) hwt).symm
 

@@ -79,6 +79,17 @@ theorem pow_card_eq_self_iff_mem_range_algebraMap {K L : Type*} [Field K] [Finty
     eval₂_sub, eval₂_X_pow, eval₂_X, sub_eq_zero] at this
   exact this.symm
 
+/-- **A `K`-algebra homomorphism commutes with the finite-base-field Frobenius.** Applying the
+homomorphism and raising to the `#K`-th power can be done in either order, a ring homomorphism
+carrying `q`-th powers to `q`-th powers. -/
+@[simp]
+theorem _root_.AlgHom.frobeniusAlgHom_comm {K L Ω : Type*} [Field K] [Fintype K] [CommRing L]
+    [Algebra K L] [CommRing Ω] [Algebra K Ω] (σ : L →ₐ[K] Ω) :
+    σ.comp (_root_.FiniteField.frobeniusAlgHom K L) =
+      (_root_.FiniteField.frobeniusAlgHom K Ω).comp σ := by
+  ext x
+  simp [_root_.FiniteField.coe_frobeniusAlgHom]
+
 end FiniteField
 
 /-- **A domain over `K` all of whose elements satisfy `x ^ |K| = x` is `K` itself.** Every element

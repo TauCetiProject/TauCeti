@@ -81,6 +81,12 @@ field. `[IsHuberRing B]` is not a restriction added to make the proof go
 through: Wedhorn states Lemma 8.1 for a
 continuous homomorphism into a *complete affinoid ring*, and an affinoid ring is a Huber pair.
 
+Nonarchimedean-ness of `B` is used throughout but is not assumed: with `[IsHuberRing B]` already
+present, `TauCeti.Huber.IsHuberRing.toNonarchimedeanRing` derives it from `[IsTopologicalRing B]`.
+The target is therefore presented the same way as the source `A` in the same signature —
+`[IsTopologicalRing _]` carrying the topology and `[IsHuberRing _]` (or a pair of definition)
+carrying the Huber structure.
+
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 8.1, whose statement and
@@ -187,7 +193,7 @@ theorem existsUnique_continuous_ringHom_of_isUnit_of_forall_comap_mem_rationalSu
     [IsTopologicalRing A]
     (P : PairOfDefinition A) (Aplus : Subring A) (T : Finset A) (s : A) (S : Type*) [CommRing S]
     [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
-    {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
+    {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
     [IsHuberRing B] [CompleteSpace B] [T0Space B] (Bplus : Subring B)
     (hB : IsRingOfIntegralElements Bplus) {φ : A →+* B} (hφ : ContinuousAt φ 0)
     (hs : IsUnit (φ s))
@@ -211,7 +217,7 @@ unit `φ s` is not assumed but derived from the factorisation, which is step 1. 
 theorem existsUnique_continuous_ringHom_of_forall_comap_mem_rationalSubset [IsTopologicalRing A]
     (P : PairOfDefinition A) (Aplus : Subring A) (T : Finset A) (s : A) (S : Type*) [CommRing S]
     [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
-    {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
+    {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
     [IsHuberRing B] [CompleteSpace B] [T0Space B] (Bplus : Subring B)
     (hB : IsRingOfIntegralElements Bplus) {φ : A →+* B} (hφ : ContinuousAt φ 0)
     (hfac : ∀ w ∈ spa Bplus, comap φ w ∈ rationalSubset Aplus T s) :

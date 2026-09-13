@@ -15,7 +15,7 @@ For `g` slash-invariant under a group with `1` as a strict period, the level-rai
 `V_p g = p^(1-k) • (g ∣[k] scaleGL p)` (the function `τ ↦ g (p τ)`) is slashed by the
 upper-triangular matrix `!![1, b; 0, p]` back to `p⁻¹ • g`:
 `(V_p g) ((τ + b) / p) = g (τ + b) = g τ`, by the period-`1` invariance of `g`. This is the
-upper-triangular part of the descent of a level-raise (`Newforms/Descent/LevelRaise.lean`).
+upper-triangular part of the descent of a level-raise (`Newforms/Descent/LevelRaise/Basic.lean`).
 
 ## Main results
 

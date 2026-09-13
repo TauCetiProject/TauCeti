@@ -38,7 +38,7 @@ for any grid differential whose marking-free test is that disjointness — in pa
 `X`-test of the unblocked differential `∂⁻`. The marking-avoidance predicate
 `GridRectangle.AvoidsMarkings` tests that same region under its other name `GridRectangle.squares`,
 which `GridRectangle.squares_eq_coveredSquares` identifies with `coveredSquares`, so the lemma
-serves the fully blocked differential of `Complex.lean` unchanged.
+serves `TauCeti.GridDiagram.fullyBlockedDifferential` unchanged.
 
 ## Main results
 
@@ -197,8 +197,9 @@ theorem not_disjoint_union_coveredSquares_pointSet (M : GridState n) :
 Applied to the `O`- or `X`-markings of a grid diagram, this is the vanishing of the annular terms
 in the square of a grid differential that tests markings by disjointness from
 `GridRectangle.coveredSquares`, such as the unblocked differential `∂⁻`: two rectangles that return
-to their source can never both avoid the markings in that sense. The fully blocked differential of
-`Complex.lean` is such a differential too: its `GridRectangle.AvoidsMarkings` predicate tests
+to their source can never both avoid the markings in that sense.
+`TauCeti.GridDiagram.fullyBlockedDifferential` is such a differential too: its
+`GridRectangle.AvoidsMarkings` predicate tests
 `GridRectangle.squares`, which `GridRectangle.squares_eq_coveredSquares` identifies with
 `coveredSquares`. -/
 theorem not_disjoint_coveredSquares_or_not_disjoint_coveredSquares (M : GridState n) :

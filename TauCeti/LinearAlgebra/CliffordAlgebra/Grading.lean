@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Grading
+public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 
 /-!
-# Reading the `ℤ/2`-grading: base cases and ordered products
+# Reading the `ℤ/2`-grading: base cases, exterior bases, and ordered products
 
 An induction over the `ℤ/2`-grading of a Clifford algebra — Mathlib's
 `CliffordAlgebra.evenOdd_induction` — hands its base case back as membership in a power of
@@ -24,6 +25,10 @@ is homogeneous of degree `l.length`, which is Mathlib's
 degree of each factor read off `CliffordAlgebra.ι_mem_evenOdd_one`. The case of odd length, where
 the product is odd, is the one that matters downstream.
 
+The coordinate basis of an exterior algebra is homogeneous for this grading: the basis vector
+indexed by `s` has degree `s.card`. This statement belongs to the grading API independently of any
+spin representation.
+
 ## Main results
 
 * `CliffordAlgebra.exists_algebraMap_of_mem_range_ι_pow_zero`: in the even base case the
@@ -32,12 +37,14 @@ the product is odd, is the one that matters downstream.
 * `CliffordAlgebra.prod_map_ι_mem_evenOdd`: an ordered product of `n` generators is homogeneous
   of degree `n`, and `CliffordAlgebra.prod_map_ι_mem_evenOdd_one_of_odd_length` reads that off in
   the odd case.
+* `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
+  homogeneous of degree given by the cardinality of its index set.
 -/
 
 public section
 
 
-universe u v
+universe u v w
 
 namespace CliffordAlgebra
 
@@ -71,3 +78,21 @@ theorem prod_map_ι_mem_evenOdd_one_of_odd_length {l : List M} (hlen : Odd l.len
   exact h ▸ prod_map_ι_mem_evenOdd l
 
 end CliffordAlgebra
+
+namespace Module.Basis
+
+variable {R : Type u} {M : Type v} {I : Type w} [CommRing R] [AddCommGroup M] [Module R M]
+  [LinearOrder I]
+
+/-- **An exterior coordinate-basis vector is homogeneous of degree its number of coordinates.** -/
+@[simp] theorem exteriorAlgebra_mem_evenOdd_card (b : Module.Basis I R M) (s : Finset I) :
+    b.ExteriorAlgebra s ∈
+      CliffordAlgebra.evenOdd (0 : QuadraticForm R M) (s.card : ZMod 2) := by
+  rw [CliffordAlgebra.evenOdd]
+  refine Submodule.mem_iSup_of_mem ⟨s.card, rfl⟩ ?_
+  have h := (b.exteriorPower s.card
+    (⟨s, rfl⟩ : Set.powersetCard I s.card)).2
+  rw [← ExteriorAlgebra.basis_eq_coe_basis] at h
+  exact h
+
+end Module.Basis

@@ -46,6 +46,8 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
 * `TauCeti.glStaircase N`: the staircase tuple `(N - 1/2, N - 3/2, …, 1/2) : Fin N → ℚ`.
 * `TauCeti.glHalfStaircase F N`: the formula `N - 1/2 - i` over any field; when two is
   invertible, this is the same half-shifted staircase.
+* `Fin.natCast_rev_add_one_div_two_eq_glHalfStaircase`: the reverse finite index, cast to
+  a field and shifted by one half, is the corresponding half-staircase entry.
 * `TauCeti.IsGlHighestWeightVector μ v`: `v` is nonzero, the diagonal matrix unit `Eᵢᵢ` acts on it
   by `μ i`, and every raising matrix unit `Eᵢⱼ` with `i < j` annihilates it.
 
@@ -59,6 +61,8 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
 * `TauCeti.IsGlDominantIntegral.add_const`: dominance is invariant under the central direction, and
   `TauCeti.IsGlDominantIntegral.exists_antitone_natCast_add_const` is the converse decomposition:
   every dominant weight is an antitone tuple of natural numbers translated along that direction.
+  `TauCeti.IsGlDominantIntegral.antitone_of_eq_natCast_add_const` recovers antitonicity when that
+  translated tuple is prescribed.
 * `TauCeti.isGlDominantIntegral_glStaircase` and `TauCeti.glStaircase_ne_intCast`: the staircase is
   dominant and no entry of it is an integer, so dominance genuinely does not force integrality.
 * `TauCeti.sum_glStaircase`: the sum of the staircase entries after mapping to a
@@ -250,6 +254,25 @@ theorem IsGlDominantIntegral.exists_antitone_natCast_add_const (hmu : IsGlDomina
     exact Nat.le.intro (Nat.cast_injective hcast)
   · exact sub_eq_iff_eq_add.mp (key i)
 
+/-- If a dominant integral weight is already expressed as a common translate of a natural tuple,
+that tuple is antitone. This is the prescribed-tuple counterpart to
+`TauCeti.IsGlDominantIntegral.exists_antitone_natCast_add_const`. -/
+theorem IsGlDominantIntegral.antitone_of_eq_natCast_add_const
+    (hmu : IsGlDominantIntegral mu) {a : Fin n → ℕ} {c : R}
+    (h : mu = fun i => (a i : R) + c) : Antitone a := by
+  intro i j hij
+  obtain ⟨d, hd⟩ := hmu.exists_natCast_sub_of_le hij
+  have hdiff : (a i : R) - (a j : R) = (d : R) := by
+    calc
+      (a i : R) - (a j : R) = mu i - mu j := by rw [h]; ring
+      _ = (d : R) := hd
+  have hcast : ((a j + d : ℕ) : R) = (a i : R) := by
+    rw [Nat.cast_add]
+    calc
+      (a j : R) + (d : R) = (d : R) + (a j : R) := add_comm _ _
+      _ = (a i : R) := (sub_eq_iff_eq_add.mp hdiff).symm
+  exact Nat.le.intro (Nat.cast_injective hcast)
+
 /-- Over an index type with at most one element there is no consecutive pair, so every tuple is
 dominant. -/
 theorem isGlDominantIntegral_of_le_one (hn : n ≤ 1) (mu : Fin n → R) : IsGlDominantIntegral mu :=
@@ -278,6 +301,35 @@ def glHalfStaircase (F : Type*) [Field F] (N : ℕ) : Fin N → F :=
 @[simp]
 theorem glHalfStaircase_apply {F : Type*} [Field F] (N : ℕ) (i : Fin N) :
     glHalfStaircase F N i = (N : F) - 1 / 2 - (i : ℕ) := (rfl)
+
+end Dominant
+
+end TauCeti
+
+namespace Fin
+
+/-- Casting a reverse finite index and adding the half-unit shift gives the corresponding entry of
+the half-shifted staircase. -/
+@[simp↓]
+theorem natCast_rev_add_one_div_two_eq_glHalfStaircase
+    {F : Type*} [Field F] [Invertible (2 : F)] {N : ℕ} (i : Fin N) :
+    (((Fin.rev i : ℕ) : F) + 1 / 2) = TauCeti.glHalfStaircase F N i := by
+  rw [TauCeti.glHalfStaircase_apply]
+  simp only [Fin.rev, Fin.val_mk]
+  rw [Nat.cast_sub (by omega : (i : ℕ) + 1 ≤ N)]
+  push_cast
+  field_simp [Invertible.ne_zero (2 : F)]
+  ring
+
+end Fin
+
+namespace TauCeti
+
+open Matrix
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+section Dominant
 
 /-- The entries of the half-shifted staircase over a field in which two is invertible sum to
 `N² / 2`. -/

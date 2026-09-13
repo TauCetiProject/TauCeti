@@ -52,7 +52,8 @@ idempotents `e`, so left multiplication by `α` carries the `i`-component of a l
 * `TauCeti.module_finite_pathAlgebra` and `TauCeti.finrank_pathAlgebra`: `kQ` is a free module of
   rank the number of paths of `Q`, with `TauCeti.pathAlgebraBasis_repr_single` reading off the
   coordinates of a basis path and `TauCeti.linearIndependent_ofPath` recording that any
-  subfamily of the path basis stays linearly independent. The specialization to a finite acyclic
+  subfamily of the path basis stays linearly independent. Over a nonzero `k` the finiteness is an
+  equivalence, `TauCeti.module_finite_pathAlgebra_iff`; the specialization to a finite acyclic
   quiver, whose paths are finite, is `TauCeti.finiteDimensional_pathAlgebra_of_isAcyclic` in
   `TauCeti.RepresentationTheory.Quiver.Acyclic.PathAlgebra`.
 * `TauCeti.vertexIdempotent_mul_mul_vertexIdempotent`: when the trivial path is the only path from
@@ -668,6 +669,16 @@ theorem coe_pathAlgebraBasis :
 theorem module_finite_pathAlgebra [Finite (Quiver.TotalPath Q)] :
     Module.Finite k (pathAlgebra k Q) :=
   Module.Finite.of_basis (pathAlgebraBasis k Q)
+
+/-- **The path algebra is a finite module exactly when the quiver has finitely many paths**: the
+paths are a basis of it, and a free module is finite exactly when one — hence any — of its bases
+is. Over a nonzero base ring only; over the zero ring the path algebra is the zero module however
+many paths `Q` has. -/
+theorem module_finite_pathAlgebra_iff [Nontrivial k] :
+    Module.Finite k (pathAlgebra k Q) ↔ Finite (Quiver.TotalPath Q) := by
+  refine ⟨fun _ => Module.Finite.finite_basis (pathAlgebraBasis k Q), fun h => ?_⟩
+  have := h
+  exact module_finite_pathAlgebra k Q
 
 /-- **Any subfamily of the path basis is linearly independent**: the paths satisfying a predicate
 `p`, indexed by the subtype they cut out, are `k`-linearly independent in the path algebra. -/

@@ -14,13 +14,15 @@ import Mathlib.LinearAlgebra.Matrix.Reindex
 
 Mathlib's `Matrix.BlockTriangular` API computes determinants and inverses of triangular
 matrices, but not their individual diagonal entries. This file supplies the facts that
-consumers keep needing: on the diagonal, a product of upper-triangular matrices multiplies
+consumers keep needing: on the diagonal, a product of triangular matrices multiplies
 entrywise, because `∑ k, A i k * B k i` has a single surviving term — and consequences of
-that, such as the diagonal of an inverse. It also defines upper-unitriangular matrices and proves
-that strictly upper-triangular matrices are nilpotent.
+that, such as the diagonal of an inverse. It also proves uniqueness of a lower-triangular Gram
+factor with positive diagonal, defines upper-unitriangular matrices, and proves that strictly
+upper-triangular matrices are nilpotent.
 
-The diagonal results are stated for `Matrix.IsUpperTriangular` rather than through membership in
-the Borel subalgebra, since there is no Lie theory in them. It is
+The diagonal results are stated directly for `Matrix.IsUpperTriangular` and
+`Matrix.IsLowerTriangular` rather than through membership in the Borel subalgebra, since there is
+no Lie theory in them. It is
 `Matrix.mul_apply_diag_of_isUpperTriangular` that `TauCeti.Algebra.Lie.GeneralLinear.Borel`
 consumes in that form, and all of them are available to modules with no business importing
 Lie-algebra theory.
@@ -29,6 +31,12 @@ Lie-algebra theory.
 
 * `Matrix.mul_apply_diag_of_isUpperTriangular` — the diagonal of a product of upper-triangular
   matrices is the pointwise product of the diagonals.
+* `Matrix.mul_apply_diag_of_isLowerTriangular` — the corresponding formula for lower-triangular
+  matrices.
+* `Matrix.IsLowerTriangular.eq_one_of_mul_transpose_self_eq_one` — a lower-triangular orthogonal
+  matrix with nonnegative diagonal is the identity.
+* `Matrix.IsLowerTriangular.eq_of_mul_transpose_self_eq` — lower-triangular matrices with positive
+  diagonal are determined by their product with their transpose.
 * `Matrix.pow_apply_diag_of_isUpperTriangular` — the diagonal of a power of an upper-triangular
   matrix is the corresponding power of the diagonal entry.
 * `Matrix.isUpperUnitriangular_geom_sum_of_isUpperTriangular_of_diag_eq_zero` — the geometric
@@ -186,6 +194,88 @@ theorem mul_apply_diag_of_isUpperTriangular (hA : A.IsUpperTriangular)
     · rw [hA h, zero_mul]
     · rw [hB h, mul_zero]
   · exact fun h ↦ absurd (Finset.mem_univ i) h
+
+/-- The diagonal of a product of lower-triangular matrices is the pointwise product of the
+diagonals. -/
+theorem mul_apply_diag_of_isLowerTriangular (hA : A.IsLowerTriangular)
+    (hB : B.IsLowerTriangular) (i : n) : (A * B) i i = A i i * B i i := by
+  rw [Matrix.mul_apply, Finset.sum_eq_single i]
+  · intro k _ hki
+    rcases lt_or_gt_of_ne hki with hki | hik
+    · rw [hB hki, mul_zero]
+    · rw [hA hik, zero_mul]
+  · exact fun h ↦ absurd (Finset.mem_univ i) h
+
+/-- A lower-triangular matrix over an ordered field with nonnegative diagonal whose product with
+its transpose is the identity is itself the identity. -/
+theorem IsLowerTriangular.eq_one_of_mul_transpose_self_eq_one
+    {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {Q : Matrix n n K} (hQ : Q.IsLowerTriangular) (hQnonneg : ∀ i, 0 ≤ Q i i)
+    (hQorth : Q * Qᵀ = 1) : Q = 1 := by
+  let _ : Invertible Q := invertibleOfRightInverse Q Qᵀ hQorth
+  have hQttri : Qᵀ.IsLowerTriangular := by
+    rw [← Matrix.inv_eq_right_inv hQorth]
+    exact Matrix.blockTriangular_inv_of_blockTriangular hQ
+  have hQupper : Q.IsUpperTriangular := by
+    intro i j hji
+    simpa only [Matrix.transpose_apply] using hQttri hji
+  ext i j
+  rcases lt_trichotomy i j with hij | rfl | hij
+  · rw [hQ hij, Matrix.one_apply_ne hij.ne]
+  · have hii : Q i i * Q i i = 1 := by
+      have hmul := Matrix.mul_apply_diag_of_isUpperTriangular hQupper hQ.transpose i
+      calc
+        Q i i * Q i i = Q i i * Qᵀ i i := by rw [Matrix.transpose_apply]
+        _ = (Q * Qᵀ) i i := hmul.symm
+        _ = 1 := by rw [hQorth, Matrix.one_apply_eq]
+    rw [Matrix.one_apply_eq]
+    nlinarith [hQnonneg i]
+  · have hzero : Qᵀ j i = 0 := hQttri hij
+    rw [Matrix.one_apply_ne hij.ne']
+    simpa only [Matrix.transpose_apply] using hzero
+
+/-- Lower-triangular matrices over an ordered field with positive diagonal are determined by
+their Gram matrices `L * Lᵀ`.
+
+Equivalently, the map `L ↦ L * Lᵀ` is injective on positive-diagonal lower-triangular matrices.
+The empty index type is included. -/
+theorem IsLowerTriangular.eq_of_mul_transpose_self_eq
+    {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {L M : Matrix n n K} (hL : L.IsLowerTriangular) (hM : M.IsLowerTriangular)
+    (hLpos : ∀ i, 0 < L i i) (hMpos : ∀ i, 0 < M i i)
+    (hgram : L * Lᵀ = M * Mᵀ) : L = M := by
+  have hLdet : IsUnit L.det := by
+    rw [Matrix.det_of_isLowerTriangular L hL, isUnit_iff_ne_zero]
+    exact Finset.prod_ne_zero_iff.mpr fun i _ ↦ (hLpos i).ne'
+  let _ : Invertible L := Matrix.invertibleOfIsUnitDet L hLdet
+  have hLinv : L⁻¹.IsLowerTriangular :=
+    Matrix.blockTriangular_inv_of_blockTriangular hL
+  have hQtri : (L⁻¹ * M).IsLowerTriangular := hLinv.mul hM
+  have hQdiag : ∀ i, 0 < (L⁻¹ * M) i i := by
+    intro i
+    rw [mul_apply_diag_of_isLowerTriangular hLinv hM]
+    apply mul_pos
+    · have hinvdiag : L⁻¹ i i * L i i = 1 := by
+        rw [← mul_apply_diag_of_isLowerTriangular hLinv hL,
+          Matrix.nonsing_inv_mul L hLdet, Matrix.one_apply_eq]
+      nlinarith [hLpos i]
+    · exact hMpos i
+  have hLinvt_right : Lᵀ * L⁻¹ᵀ = 1 := by
+    rw [← Matrix.transpose_mul, Matrix.nonsing_inv_mul L hLdet, Matrix.transpose_one]
+  have hQorth : (L⁻¹ * M) * (L⁻¹ * M)ᵀ = 1 := by
+    rw [Matrix.transpose_mul]
+    calc
+      (L⁻¹ * M) * (Mᵀ * L⁻¹ᵀ) = L⁻¹ * (M * Mᵀ) * L⁻¹ᵀ := by
+        simp only [Matrix.mul_assoc]
+      _ = L⁻¹ * (L * Lᵀ) * L⁻¹ᵀ := by rw [← hgram]
+      _ = (L⁻¹ * L) * (Lᵀ * L⁻¹ᵀ) := by simp only [Matrix.mul_assoc]
+      _ = 1 := by rw [Matrix.nonsing_inv_mul L hLdet, hLinvt_right, one_mul]
+  have hQone : L⁻¹ * M = 1 := by
+    exact hQtri.eq_one_of_mul_transpose_self_eq_one (fun i ↦ (hQdiag i).le) hQorth
+  calc
+    L = L * 1 := (Matrix.mul_one L).symm
+    _ = L * (L⁻¹ * M) := by rw [hQone]
+    _ = M := by rw [← Matrix.mul_assoc, Matrix.mul_nonsing_inv L hLdet, Matrix.one_mul]
 
 /-- The diagonal of a power of an upper-triangular matrix is the corresponding power of the
 diagonal entry. -/

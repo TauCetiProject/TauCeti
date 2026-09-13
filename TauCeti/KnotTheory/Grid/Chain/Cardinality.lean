@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Fintype
-public import TauCeti.KnotTheory.Grid.Complex
+public import TauCeti.KnotTheory.Grid.Chain.Basic
 public import TauCeti.KnotTheory.Grid.StateCardinality
 
 /-!
@@ -33,10 +33,9 @@ complexes.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3,
-"The complexes and `∂² = 0`", and the standing convention "Keep computes as a requirement",
-which asks that the grid complexes be evaluable on explicit small grids. The formal counting
-argument reuses Mathlib's `Fintype.card_finsupp`.
+These cardinality formulas quantify the finite search space for explicit computations of small
+fully blocked grid complexes. The formal counting argument reuses Mathlib's
+`Fintype.card_finsupp`.
 -/
 
 public section
