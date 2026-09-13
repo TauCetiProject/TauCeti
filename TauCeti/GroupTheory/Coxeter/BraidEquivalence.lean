@@ -39,11 +39,13 @@ relation occurring in that statement and in its monoid-valued lift formulation.
 
 ## References
 
+* Mathlib's `Mathlib.GroupTheory.Coxeter.Basic` provides `CoxeterSystem.braidWord` and
+  `CoxeterSystem.wordProd_braidWord_eq`, on which this construction is based.
 * [J. E. Humphreys, *Reflection Groups and Coxeter Groups*][humphreys1990]
 * [A. Björner and F. Brenti, *Combinatorics of Coxeter Groups*][bjorner2005]
 -/
 
-@[expose] public section
+public section
 
 namespace CoxeterSystem
 
@@ -130,6 +132,21 @@ namespace BraidEquivalent
 theorem of_isBraidMove {word word' : List B} (h : IsBraidMove M word word') :
     BraidEquivalent M word word' :=
   Relation.EqvGen.rel _ _ h
+
+/-- To prove a property of braid-equivalent words, it suffices to check single braid moves and
+that the property is reflexive, symmetric, and transitive. -/
+protected theorem induction_on {P : List B → List B → Prop} {word word' : List B}
+    (h : BraidEquivalent M word word')
+    (move : ∀ {word word'}, IsBraidMove M word word' → P word word')
+    (refl : ∀ word, P word word)
+    (symm : ∀ {word word'}, P word word' → P word' word)
+    (trans : ∀ {word word' word''}, P word word' → P word' word'' → P word word'') :
+    P word word' := by
+  induction h with
+  | rel word word' h => exact move h
+  | refl word => exact refl word
+  | symm word word' _ ih => exact symm ih
+  | trans word word' word'' _ _ ih ih' => exact trans ih ih'
 
 /-- Adding a common prefix preserves braid equivalence. -/
 theorem append_left (pre : List B) {word word' : List B}
