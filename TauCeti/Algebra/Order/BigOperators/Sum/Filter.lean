@@ -11,9 +11,9 @@ public import Mathlib.Order.Interval.Set.UnorderedInterval
 /-!
 # Finite sums over ordered filters
 
-This file records elementary consequences of a finite family being zero away from an initial
-interval.  They are useful whenever a filtered finite sum is evaluated after all of its nonzero
-terms have been passed.
+This file records elementary consequences of a finite family being zero away from an initial or
+final interval.  They are useful whenever a filtered finite sum is evaluated beyond all of its
+nonzero terms.
 -/
 
 public section
@@ -38,6 +38,14 @@ theorem sum_filter_eq_zero_of_forall_ne_zero_le (s : Finset ι) {a : ι → α}
   exact (not_lt_of_ge hai) ((Finset.mem_filter.mp hi).2 ▸ hpq)
 
 open scoped Classical in
+/-- If all nonzero terms of a finite family have indices at or to the right of `p`, then its sum
+over the terms indexed by `q` vanishes whenever `q < p`. -/
+theorem sum_filter_eq_zero_of_forall_ne_zero_ge (s : Finset ι) {a : ι → α}
+    {e : ι → M} {p q : α} (hqp : q < p) (ha : ∀ i ∈ s, e i ≠ 0 → p ≤ a i) :
+    Finset.sum (s.filter (fun i => a i = q)) e = 0 :=
+  sum_filter_eq_zero_of_forall_ne_zero_le (α := OrderDual α) s hqp ha
+
+open scoped Classical in
 /-- If all nonzero terms of a finite family have indices at or to the left of `p`, then a filtered
 sum beyond `p` is bounded below by any negative `c` that also bounds the sum at `p` from below. -/
 theorem lt_sum_filter_of_lt_zero_of_forall_ne_zero_le {γ β : Type*} [PartialOrder γ]
@@ -51,5 +59,16 @@ theorem lt_sum_filter_of_lt_zero_of_forall_ne_zero_le {γ β : Type*} [PartialOr
   · exact hp
   · rw [sum_filter_eq_zero_of_forall_ne_zero_le s hpq ha]
     exact hc
+
+open scoped Classical in
+/-- If all nonzero terms of a finite family have indices at or to the right of `p`, then a filtered
+sum before `p` is bounded below by any negative `c` that also bounds the sum at `p` from below. -/
+theorem lt_sum_filter_of_lt_zero_of_forall_ne_zero_ge {γ β : Type*} [PartialOrder γ]
+    [Preorder β] [AddCommMonoid β] (s : Finset ι) {a : ι → γ} {e : ι → β}
+    {p : γ} {c : β} (hc : c < 0)
+    (hp : c < Finset.sum (s.filter (fun i => a i = p)) e)
+    (ha : ∀ i ∈ s, e i ≠ 0 → p ≤ a i) :
+    ∀ {q : γ}, q ≤ p → c < Finset.sum (s.filter (fun i => a i = q)) e :=
+  lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual γ) s hc hp ha
 
 end Finset
