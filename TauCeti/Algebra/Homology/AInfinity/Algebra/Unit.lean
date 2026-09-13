@@ -54,36 +54,16 @@ structure StrictUnit (𝒜 : AInfinityAlgebra R A) (e : A) : Prop where
   higher : ∀ (n : ℕ), n ≠ 2 → ∀ x : Fin n → A,
     (∃ i, x i = e) → 𝒜.m n x = 0
 
+attribute [simp] StrictUnit.unary_eq_zero StrictUnit.binary_left StrictUnit.binary_right
+
 namespace StrictUnit
 
 variable {𝒜 : AInfinityAlgebra R A} {e e' : A}
-
-/-! ### The characteristic unit equations -/
-
-/-- A strict unit is closed under the unary `A∞` operation. -/
-@[simp]
-theorem m_one_unit (h : 𝒜.StrictUnit e) : 𝒜.m 1 ![e] = 0 :=
-  h.unary_eq_zero
-
-/-- A strict unit is a left unit for the binary `A∞` operation. -/
-@[simp]
-theorem m_two_unit_left (h : 𝒜.StrictUnit e) (x : A) : 𝒜.m 2 ![e, x] = x :=
-  h.binary_left x
-
-/-- A strict unit is a right unit for the binary `A∞` operation. -/
-@[simp]
-theorem m_two_unit_right (h : 𝒜.StrictUnit e) (x : A) : 𝒜.m 2 ![x, e] = x :=
-  h.binary_right x
 
 /-- The higher operations vanish when a specified input is the strict unit. -/
 theorem m_eq_zero_of_mem_unit (h : 𝒜.StrictUnit e) {n : ℕ} (hn : n ≠ 2)
     (x : Fin n → A) {i : Fin n} (hi : x i = e) : 𝒜.m n x = 0 := by
   exact h.higher n hn x ⟨i, hi⟩
-
-/-- The higher operations vanish on a tuple containing the strict unit. -/
-theorem m_eq_zero_of_exists_eq_unit (h : 𝒜.StrictUnit e) {n : ℕ} (hn : n ≠ 2)
-    (x : Fin n → A) (hx : ∃ i, x i = e) : 𝒜.m n x = 0 :=
-  h.higher n hn x hx
 
 /-! ### Uniqueness -/
 
