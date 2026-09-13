@@ -446,6 +446,7 @@ noncomputable def mackeyDecompositionNatIso :
     rfl).symm
 
 /-- The components of `Rep.mackeyDecompositionNatIso` are the Mackey decompositions. -/
+@[simp]
 theorem mackeyDecompositionNatIso_app (A : Rep.{u} k H) :
     (mackeyDecompositionNatIso H K).app A = mackeyDecomposition A :=
   (rfl)
