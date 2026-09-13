@@ -1,0 +1,126 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Probability.Distributions.Wishart.Transforms
+public import TauCeti.Probability.Moments.ComplexMGF
+
+/-!
+# The characteristic function of the Gaussian-Gram Wishart family
+
+A symmetric matrix `Θ` pairs with a symmetric matrix `A` through the trace statistic
+`A ↦ trace (Θ * A)`, which by `selfAdjoint.inner_eq_trace_mul` is the Frobenius inner product of
+the symmetric subspace. So `MeasureTheory.charFun` of a law on that subspace, evaluated at `Θ`,
+is the value at `Complex.I` of `ProbabilityTheory.complexMGF` of the trace statistic, and a
+closed form for the moment-generating function of that statistic determines the characteristic
+function by analytic continuation.
+
+The moment-generating function of the Wishart trace statistic is a real power of the determinant
+of the pencil `1 - (2 * t) • B`, where `B` is the Hermitian sandwich `√S * Θ * √S`. Diagonalizing
+`B` turns that determinant into the product `∏ j, (1 - 2 * t * λ j)` over the eigenvalues of `B`,
+which is the shape that `TauCeti.complexMGF_I_eq_exp_of_mgf_eq_prod_rpow` continues. The answer
+is therefore an exponential of a *sum* of principal logarithms, one per eigenvalue, and not a
+principal complex power of the determinant: collecting the factors before taking the logarithm
+can cross the branch cut.
+
+## Main results
+
+* `selfAdjoint.charFun_eq_complexMGF_trace_mul` — on the symmetric subspace, the characteristic
+  function at `Θ` is the complex moment-generating function of the trace statistic at
+  `Complex.I`.
+* `TauCeti.charFun_eq_exp_of_mgf_trace_mul_eq_det_rpow` — the spectral characteristic function of
+  any law on the symmetric subspace whose trace moment-generating function is a real power of a
+  Hermitian pencil determinant.
+* `TauCeti.charFun_wishartGramMeasure` — the characteristic function of the Gaussian-Gram Wishart
+  law, at every degree and every scale matrix.
+
+## References
+
+* R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Wiley (1982), Theorem 3.2.3.
+* E. Mayerhofer, *Reforming the Wishart characteristic function*,
+  [arXiv:1901.09347](https://arxiv.org/abs/1901.09347), for the branch analysis that forces the
+  sum-of-logarithms form.
+-/
+
+public section
+
+noncomputable section
+
+open Complex MeasureTheory ProbabilityTheory
+
+namespace selfAdjoint
+
+/-- On the symmetric subspace the Frobenius pairing with `Θ` is the trace statistic
+`A ↦ trace (Θ * A)`, so the characteristic function of a law there, evaluated at `Θ`, is the
+value of the complex moment-generating function of that statistic at `Complex.I`. -/
+theorem charFun_eq_complexMGF_trace_mul {p : ℕ}
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
+    (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) :
+    charFun μ Θ =
+      complexMGF (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+        ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) μ Complex.I := by
+  simp only [TauCeti.charFun_eq_complexMGF_inner, inner_eq_trace_mul]
+
+end selfAdjoint
+
+namespace TauCeti
+
+variable {p : ℕ}
+
+/-- **The spectral characteristic function of a symmetric-matrix law with a determinant-power
+trace transform.** If the moment-generating function of the trace statistic `A ↦ trace (Θ * A)`
+is `det (1 - (2 * t) • B) ^ (-c)` wherever that Hermitian pencil is positive definite, then the
+characteristic function at `Θ` is the exponential of `-c` times the sum of the principal
+logarithms of `1 - 2 * I * λ` over the eigenvalues `λ` of `B`.
+
+The Wishart trace transform has this shape, with `B` the Hermitian sandwich `√S * Θ * √S` of the
+scale matrix. -/
+theorem charFun_eq_exp_of_mgf_trace_mul_eq_det_rpow
+    {μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))}
+    {Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} {B : Matrix (Fin p) (Fin p) ℝ}
+    (hB : B.IsHermitian) (c : ℝ)
+    (hmgf : ∀ t : ℝ, (1 - (2 * t) • B).PosDef →
+      mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+          ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) μ t =
+        (1 - (2 * t) • B).det ^ (-c)) :
+    charFun μ Θ =
+      cexp (-(c : ℂ) * ∑ j, Complex.log (1 - 2 * Complex.I * (hB.eigenvalues j : ℂ))) := by
+  have hprod : ∀ t : ℝ, (∀ j, 0 < 1 - 2 * t * hB.eigenvalues j) →
+      mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+          ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) μ t =
+        ∏ j, (1 - 2 * t * hB.eigenvalues j) ^ (-c) := by
+    intro t ht
+    have hpd : (1 - (2 * t) • B).PosDef :=
+      (hB.posDef_one_sub_smul_iff (2 * t)).2 fun j => by linarith [ht j]
+    have hdet := hB.det_one_sub_smul (2 * t)
+    simp only [RCLike.ofReal_real_eq_id, id_eq] at hdet
+    rw [hmgf t hpd, hdet, Real.finsetProd_rpow _ _ fun j _ => (ht j).le]
+  rw [selfAdjoint.charFun_eq_complexMGF_trace_mul,
+    complexMGF_I_eq_exp_of_mgf_eq_prod_rpow hB.eigenvalues (fun _ => c) hprod]
+  congr 1
+  rw [neg_mul, Finset.mul_sum]
+
+/-- **The characteristic function of the Gaussian-Gram Wishart law.** At the symmetric matrix
+`Θ` it is the exponential of `-ν / 2` times the sum of the principal logarithms of
+`1 - 2 * I * λ` over the eigenvalues `λ` of the Hermitian sandwich `√S * Θ * √S`.
+
+No hypothesis on the scale matrix is needed. Where `S` is not positive semidefinite it is not the
+covariance of the Gaussian factors: Mathlib totalizes them to Dirac masses, `CFC.sqrt S` is zero,
+its sandwich has only zero eigenvalues, and the value is `1`, the characteristic function of the
+Dirac mass at the origin. -/
+theorem charFun_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ)
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    charFun (wishartGramMeasure ν S) Θ =
+      cexp (-(ν : ℂ) / 2 * ∑ j, Complex.log (1 - 2 * Complex.I *
+        ((Matrix.isHermitian_sqrt_mul_mul_sqrt S
+          (selfAdjoint.isHermitian_coe Θ)).eigenvalues j : ℂ))) := by
+  have hcast : (((ν : ℝ) / 2 : ℝ) : ℂ) = (ν : ℂ) / 2 := by push_cast; ring
+  rw [charFun_eq_exp_of_mgf_trace_mul_eq_det_rpow
+      (Matrix.isHermitian_sqrt_mul_mul_sqrt S (selfAdjoint.isHermitian_coe Θ)) ((ν : ℝ) / 2)
+      fun t ht => by rw [mgf_trace_mul_wishartGramMeasure_sqrt ν S ht, neg_div],
+    hcast, neg_div]
+
+end TauCeti
