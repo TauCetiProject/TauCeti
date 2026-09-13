@@ -95,8 +95,10 @@ variable {K L : Type*} [Field K] [Finite K] [CommRing L] [IsDomain L] [Algebra K
 
 /-- **The `Nat.card` spelling of
 `TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`**, for a base field given as
-`Finite` rather than as a `Fintype`. -/
-@[simp]
+`Finite` rather than as a `Fintype`.
+
+This is deliberately not a simp lemma: after synthesizing a `Fintype K` instance, simp rewrites
+`Nat.card K` to `Fintype.card K` and applies the preceding criterion, making this rule redundant. -/
 theorem pow_natCard_eq_self_iff_mem_range_algebraMap (a : L) :
     a ^ Nat.card K = a ↔ a ∈ Set.range (algebraMap K L) := by
   let _ := Fintype.ofFinite K
