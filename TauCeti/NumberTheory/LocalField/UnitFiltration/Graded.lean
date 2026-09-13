@@ -259,10 +259,26 @@ noncomputable def unitFiltrationGradedSuccEquivResidueField (n : ℕ) :
     (AddEquiv.additiveMultiplicative (MaximalIdealGraded K (n + 1))).trans <|
       (Ideal.quotEquivPowQuotPowSucc
         (I := 𝓂[K]) (IsPrincipalIdealRing.principal 𝓂[K])
-        (by
-          rw [ne_eq, ← IsLocalRing.isField_iff_maximalIdeal_eq]
-          exact IsDiscreteValuationRing.not_isField 𝒪[K])
-        (n + 1)).toAddEquiv.symm
+        (IsDiscreteValuationRing.not_a_field 𝒪[K]) (n + 1)).toAddEquiv.symm
+
+/-- On a class represented by `u ∈ U(K,n+1)`, the positive-depth residue-field equivalence is
+the residue class attached to `u - 1` by Mathlib's principal-power-quotient equivalence. -/
+@[simp]
+theorem unitFiltrationGradedSuccEquivResidueField_ofMul_mk (n : ℕ)
+    (x : unitFiltration K (n + 1)) :
+    unitFiltrationGradedSuccEquivResidueField (K := K) n
+        (Additive.ofMul (QuotientGroup.mk x)) =
+      (Ideal.quotEquivPowQuotPowSucc
+        (I := 𝓂[K]) (IsPrincipalIdealRing.principal 𝓂[K])
+        (IsDiscreteValuationRing.not_a_field 𝒪[K]) (n + 1)).symm
+        (Submodule.Quotient.mk (unitFiltrationDifference n x)) := by
+  rw [unitFiltrationGradedSuccEquivResidueField]
+  simp only [AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply,
+    MonoidHom.toAdditive_apply_apply, MulEquiv.coe_toMonoidHom, toMul_ofMul,
+    unitFiltrationGradedSuccEquivMaximalIdealGraded_mk]
+  -- What remains only strips the `Additive`/`Multiplicative` tags of the intermediate
+  -- equivalence and reads the linear equivalence additively; both are definitional.
+  rfl
 
 /-- The positive graded piece `U(K,n+1) / U(K,n+2)` is finite. -/
 noncomputable instance finite_unitFiltrationGraded_succ (n : ℕ) :
