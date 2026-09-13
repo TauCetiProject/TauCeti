@@ -14,6 +14,11 @@ An `R`-valued point of a Hopf algebra acts on its algebra-valued points by conju
 extension to the value algebra. This action is a group automorphism, natural in the value
 algebra, and respects identity, multiplication, and inversion of the conjugating point.
 
+For conjugation by an arbitrary point over a fixed value algebra, use `MulAut.conj` and
+its application lemmas `MulAut.conj_apply` and `MulAut.conj_symm_apply`. The natural
+automorphism below specializes this group construction to the extensions of one `R`-valued
+point, so that its components are compatible with maps of value algebras.
+
 ## Main declarations
 
 * `TauCeti.HopfAlgebra.innerConjugationPointNatIso`: the natural automorphism of the functor
