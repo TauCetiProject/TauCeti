@@ -24,6 +24,13 @@ The discriminant of a basis is the determinant of its trace pairing. In a tower,
 pairing on the product basis factors through the trace pairing of the lower basis and the relative
 Gram matrix associated to the relative trace pairing, yielding the displayed power and norm
 factors.
+
+## References
+
+* [TauCetiRoadmap, NumberFieldArithmetic, Layer 4.4](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/NumberFieldArithmetic/Suggested.lean#L693-L702)
+  specifies this basis-level tower formula.
+* Neukirch, *Algebraic Number Theory*, Chapter III, §2, gives the corresponding discriminant
+  identity for towers of number fields.
 -/
 
 public section
@@ -35,8 +42,8 @@ namespace Module.Basis
 /-- The trace matrix of the product basis factors through the lower trace matrix and the Gram
 matrix associated to the relative trace pairing. This is the matrix identity underlying the tower
 formula for discriminants. -/
-theorem traceMatrix_smulTower {K : Type*} [Field K]
-    {L M : Type*} [Field L] [Field M]
+theorem traceMatrix_smulTower {K : Type*} [CommRing K]
+    {L M : Type*} [CommRing L] [CommRing M]
     [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
     {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
     (b : Module.Basis ι K L) (c : Module.Basis κ L M) :
@@ -79,14 +86,16 @@ theorem traceMatrix_smulTower {K : Type*} [Field K]
 
 /-- The discriminant of the product basis in a tower is the discriminant of the lower basis,
 raised to the degree of the upper step, times the norm of the upper basis discriminant. -/
-@[simp] theorem discr_smulTower {K : Type*} [Field K]
-    {L M : Type*} [Field L] [Field M]
+@[simp] theorem discr_smulTower {K : Type*} [CommRing K]
+    {L M : Type*} [CommRing L] [CommRing M]
     [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
     {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
     (b : Module.Basis ι K L) (c : Module.Basis κ L M) :
     Algebra.discr K (b.smulTower c) =
       Algebra.discr K b ^ Fintype.card κ * Algebra.norm K (Algebra.discr L c) := by
   classical
+  let _ := Module.Free.of_basis b
+  let _ := Module.Free.of_basis c
   let C : Matrix κ κ L := _root_.Algebra.traceMatrix L c
   rw [_root_.Algebra.discr_def, traceMatrix_smulTower, Matrix.det_mul]
   simp only [Matrix.det_blockDiagonal, Finset.prod_const, Finset.card_univ]
