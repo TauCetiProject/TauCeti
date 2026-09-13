@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.Gamma.Basic
 public import TauCeti.Probability.Moments.ComplexMGF
-public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 
 /-!
 # Characteristic function of the gamma distribution
