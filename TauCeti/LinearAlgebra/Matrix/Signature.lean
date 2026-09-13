@@ -141,46 +141,57 @@ def isometryEquivFromBlocks (A : Matrix ι ι R) (B : Matrix κ κ R) :
 end CommRing
 
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
-variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- The signature of a square matrix over a linearly ordered field: the positive index of
 inertia of the quadratic form `x ↦ x ⬝ᵥ A *ᵥ x` minus its negative index.
 
-Only the symmetric part of `A` contributes, by `Matrix.signature_add_transpose`. -/
+Only the symmetric part of `A` contributes, by `Matrix.signature_add_transpose`.
+
+The quadratic form of a matrix does not depend on the decidability of equality on the index
+type, so the local decider here is invisible: `Matrix.signature_def` identifies the definition
+with the one read off any `DecidableEq ι` instance. Keeping it local leaves `DecidableEq` out
+of the statements that do not mention `Matrix.toQuadraticForm'`, `Matrix.diagonal` or
+`Matrix.det` themselves. -/
 noncomputable def signature (A : Matrix ι ι 𝕜) : ℤ :=
+  letI := Classical.decEq ι
   (_root_.sigPos A.toQuadraticForm' : ℤ) - (_root_.sigNeg A.toQuadraticForm' : ℤ)
 
-theorem signature_def (A : Matrix ι ι 𝕜) :
+theorem signature_def [DecidableEq ι] (A : Matrix ι ι 𝕜) :
     signature A =
       (_root_.sigPos A.toQuadraticForm' : ℤ) - (_root_.sigNeg A.toQuadraticForm' : ℤ) := by
-  rw [signature]
+  rw [signature, Subsingleton.elim (Classical.decEq ι) ‹DecidableEq ι›]
 
 /-- Isometric quadratic forms have the same signature, so the signature only depends on the
 isometry class of the form of a matrix. -/
-theorem signature_eq_of_equivalent {A : Matrix ι ι 𝕜} {B : Matrix κ κ 𝕜}
-    (h : A.toQuadraticForm'.Equivalent B.toQuadraticForm') : signature A = signature B := by
+theorem signature_eq_of_equivalent [DecidableEq ι] [DecidableEq κ] {A : Matrix ι ι 𝕜}
+    {B : Matrix κ κ 𝕜} (h : A.toQuadraticForm'.Equivalent B.toQuadraticForm') :
+    signature A = signature B := by
   rw [signature_def, signature_def, h.sigPos_eq, h.sigNeg_eq]
 
 /-- **Congruence invariance of the signature.** Replacing `A` by `P * A * Pᵀ` for a matrix `P`
 with unit determinant does not change the signature. -/
-theorem signature_congr {P : Matrix ι ι 𝕜} (hP : IsUnit P.det) (A : Matrix ι ι 𝕜) :
-    signature (P * A * Pᵀ) = signature A :=
+theorem signature_congr [DecidableEq ι] {P : Matrix ι ι 𝕜} (hP : IsUnit P.det)
+    (A : Matrix ι ι 𝕜) : signature (P * A * Pᵀ) = signature A :=
   signature_eq_of_equivalent ⟨isometryEquivCongr hP A⟩
 
 /-- Transposing a matrix does not change its signature. -/
 @[simp]
 theorem signature_transpose (A : Matrix ι ι 𝕜) : signature Aᵀ = signature A := by
+  classical
   rw [signature_def, signature_def, toQuadraticForm'_transpose]
 
 /-- Negating a matrix negates its signature. -/
 @[simp]
 theorem signature_neg (A : Matrix ι ι 𝕜) : signature (-A) = -signature A := by
+  classical
   rw [signature_def, signature_def, toQuadraticForm'_neg, sigPos_neg, sigNeg_neg]
   ring
 
 /-- A matrix indexed by an empty type has signature zero. -/
 @[simp]
 theorem signature_of_isEmpty [IsEmpty ι] (A : Matrix ι ι 𝕜) : signature A = 0 := by
+  classical
   have h : Module.finrank 𝕜 (ι → 𝕜) = 0 := by simp
   have hpos := _root_.sigPos_le_finrank A.toQuadraticForm'
   have hneg := _root_.sigPos_le_finrank (-A.toQuadraticForm')
@@ -195,6 +206,7 @@ variable [IsStrictOrderedRing 𝕜]
 /-- The signature of a matrix is the signature of its symmetrisation `A + Aᵀ`. -/
 @[simp]
 theorem signature_add_transpose (A : Matrix ι ι 𝕜) : signature (A + Aᵀ) = signature A := by
+  classical
   rw [signature_def, signature_def, toQuadraticForm'_add_transpose,
     QuadraticForm.sigPos_smul_of_pos _ two_pos, QuadraticForm.sigNeg_smul_of_pos _ two_pos]
 
@@ -202,6 +214,7 @@ theorem signature_add_transpose (A : Matrix ι ι 𝕜) : signature (A + Aᵀ) =
 @[simp]
 theorem signature_fromBlocks_zero (A : Matrix ι ι 𝕜) (B : Matrix κ κ 𝕜) :
     signature (fromBlocks A 0 0 B) = signature A + signature B := by
+  classical
   have h : (fromBlocks A 0 0 B).toQuadraticForm'.Equivalent
       (A.toQuadraticForm'.prod B.toQuadraticForm') := ⟨isometryEquivFromBlocks A B⟩
   rw [signature_def, h.sigPos_eq, h.sigNeg_eq,
@@ -212,7 +225,7 @@ theorem signature_fromBlocks_zero (A : Matrix ι ι 𝕜) (B : Matrix κ κ 𝕜
 /-- **The signature of a diagonal matrix** counts its positive entries against its negative
 ones. -/
 @[simp]
-theorem signature_diagonal (d : ι → 𝕜) :
+theorem signature_diagonal [DecidableEq ι] (d : ι → 𝕜) :
     signature (diagonal d) = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
   classical
   rw [signature_def, toQuadraticForm'_diagonal, QuadraticForm.sigPos_weightedSumSquares,
@@ -226,8 +239,8 @@ theorem signature_diagonal (d : ι → 𝕜) :
   · simp [h, h.not_gt]
 
 /-- **The signature from an explicit diagonalising congruence.** -/
-theorem signature_eq_of_congr_diagonal {P A : Matrix ι ι 𝕜} (hP : IsUnit P.det) {d : ι → 𝕜}
-    (h : P * A * Pᵀ = diagonal d) :
+theorem signature_eq_of_congr_diagonal [DecidableEq ι] {P A : Matrix ι ι 𝕜} (hP : IsUnit P.det)
+    {d : ι → 𝕜} (h : P * A * Pᵀ = diagonal d) :
     signature A = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
   rw [← signature_congr hP A, h, signature_diagonal]
 

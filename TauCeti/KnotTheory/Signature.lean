@@ -106,7 +106,7 @@ theorem map_figureEightSeifertMatrix :
 end CommRing
 
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+variable {ι : Type*} [Fintype ι]
 
 section Enlargement
 
@@ -115,6 +115,7 @@ adds a hyperbolic plane, which contributes nothing to the signature. -/
 @[simp]
 theorem signature_enlargeColumn (V : Matrix ι ι 𝕜) (ξ : ι → 𝕜) :
     Matrix.signature (enlargeColumn V ξ) = Matrix.signature V := by
+  classical
   set E : Matrix ι (Fin 2) 𝕜 := enlargeBlock ξ with hE
   set F : Matrix ι (Fin 2) 𝕜 := Matrix.of fun i => ![0, -ξ i] with hF
   set H : Matrix (Fin 2) (Fin 2) 𝕜 := !![0, 1; 1, 0] with hH
