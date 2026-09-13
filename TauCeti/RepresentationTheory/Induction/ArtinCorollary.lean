@@ -70,21 +70,20 @@ theorem subgroupCharacterSum_eq_sum {k : Type*} {G : Type u} [Field k] [Group G]
 /-- The character sum over `C` is `|C|` times the dimension of the fixed space of the restricted
 representation. -/
 theorem subgroupCharacterSum_eq_card_mul_finrank_invariants
-    {k : Type*} {G : Type u} [Field k] [CharZero k] [Group G]
-    (X : FDRep k G) (C : Subgroup G) [Finite C] :
+    {k : Type*} {G : Type u} [Field k] [Group G]
+    (X : FDRep k G) (C : Subgroup G) [Finite C] [Invertible (Nat.card C : k)] :
     subgroupCharacterSum X C =
       (Nat.card C : k) * Module.finrank k (_root_.Representation.invariants (resFDRep C X).ρ) := by
   classical
   let _ : Fintype C := Fintype.ofFinite C
-  let _ : Invertible (Nat.card C : k) :=
-    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  have hcard : (Nat.card C : k) ≠ 0 := (isUnit_of_invertible _).ne_zero
   have hav := FDRep.average_char_eq_finrank_invariants (resFDRep C X)
   rw [subgroupCharacterSum_eq_sum]
   simp_rw [character_resFDRep] at hav
   calc
     ∑ c : C, X.character (c : G) =
         (Nat.card C : k) * ((Nat.card C : k)⁻¹ * ∑ c : C, X.character (c : G)) := by
-      rw [← mul_assoc, mul_inv_cancel₀ (Nat.cast_ne_zero.mpr Nat.card_pos.ne'), one_mul]
+      rw [← mul_assoc, mul_inv_cancel₀ hcard, one_mul]
     _ = (Nat.card C : k) *
         Module.finrank k (_root_.Representation.invariants (resFDRep C X).ρ) := by rw [hav]
 
@@ -157,6 +156,8 @@ theorem nonempty_iso_of_finrank_invariants_eq_cyclic {G : Type u} [Group G] [Fin
     Nonempty (V ≅ W) := by
   apply nonempty_iso_of_subgroupCharacterSum_eq_cyclic V W
   intro C hC
+  let _ : Invertible (Nat.card C : ℚ) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   rw [subgroupCharacterSum_eq_card_mul_finrank_invariants,
     subgroupCharacterSum_eq_card_mul_finrank_invariants, h C hC]
 
