@@ -35,6 +35,8 @@ a density definition cannot.
 
 ## Main results
 
+* `TauCeti.trace_mul_coe_wishartGram` — the trace statistic of a Gram sum is the sum of the
+  quadratic forms of its vectors.
 * `TauCeti.isProbabilityMeasure_wishartGramMeasure` — it is a probability measure, at every
   degree and every scale matrix.
 * `TauCeti.hasLaw_wishartGram_gaussian` — the Gram sum of an independent centred Gaussian
@@ -67,7 +69,7 @@ noncomputable section
 
 open MeasureTheory ProbabilityTheory
 
-open scoped ENNReal Matrix MatrixOrder
+open scoped ENNReal RealInnerProductSpace Matrix MatrixOrder
 
 namespace TauCeti
 
@@ -97,6 +99,18 @@ theorem coe_wishartGram (X : ι → EuclideanSpace ℝ (Fin p)) :
   ext i j
   simp [coe_wishartGram_eq_gram, Matrix.sum_apply, Matrix.vecMulVec_apply, PiLp.inner_apply,
     mul_comm]
+
+/-- The trace statistic of a Gram sum is the sum of the quadratic forms of `Θ` at the vectors.
+This is what turns a Wishart trace statistic into a sum of Gaussian quadratic forms, one per
+sampled vector. No symmetry of `Θ` is needed. -/
+theorem trace_mul_coe_wishartGram (Θ : Matrix (Fin p) (Fin p) ℝ)
+    (X : ι → EuclideanSpace ℝ (Fin p)) :
+    (Θ * (wishartGram X : Matrix (Fin p) (Fin p) ℝ)).trace =
+      ∑ r, ⟪X r, Θ.toEuclideanLin (X r)⟫ := by
+  rw [coe_wishartGram, Matrix.mul_sum, Matrix.trace_sum]
+  refine Finset.sum_congr rfl fun r _ => ?_
+  rw [Matrix.mul_vecMulVec, Matrix.trace_vecMulVec]
+  simp [PiLp.inner_apply, Matrix.toLin'_apply, dotProduct]
 
 /-- The Gram sum of a family of Euclidean vectors is positive semidefinite. -/
 theorem posSemidef_coe_wishartGram (X : ι → EuclideanSpace ℝ (Fin p)) :
@@ -146,6 +160,14 @@ semidefinite Mathlib's `multivariateGaussian 0 S` is `Measure.dirac 0`, and this
 def wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ) :
     Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
   (Measure.pi fun _ : Fin ν => multivariateGaussian 0 S).map wishartGram
+
+/-- The Gaussian-Gram law is the image under the Gram sum of the product of its `ν` independent
+Gaussian factors.  Transporting a statistic of the law along this identity rewrites it as a
+statistic of that product measure, where the `ν` factors are handled one at a time. -/
+theorem wishartGramMeasure_eq_map_pi (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ) :
+    wishartGramMeasure ν S =
+      (Measure.pi fun _ : Fin ν => multivariateGaussian 0 S).map wishartGram :=
+  (rfl)
 
 instance isProbabilityMeasure_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ) :
     IsProbabilityMeasure (wishartGramMeasure ν S) := by

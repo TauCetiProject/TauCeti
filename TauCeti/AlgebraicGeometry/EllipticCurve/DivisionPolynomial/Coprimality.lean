@@ -29,6 +29,8 @@ has `X = Z = 0`, so there was no common factor.
 * `WeierstrassCurve.isCoprime_Φ_ΨSq`: `IsCoprime (W.Φ n) (W.ΨSq n)` whenever `W.Δ ≠ 0`.
 * `WeierstrassCurve.ΨSq_ne_zero_of_Δ_ne_zero`: `W.ΨSq n ≠ 0` for `n ≠ 0`, with **no** hypothesis
   on the characteristic.
+* `WeierstrassCurve.eval_ΨSq_ne_zero_of_zsmul_ne_zero`: the pointwise companion — `ΨSqₙ` does not
+  vanish at the `x`-coordinate of a point that `[n]` does not kill.
 
 ## Implementation notes
 
@@ -122,6 +124,21 @@ theorem isCoprime_Φ_ΨSq (n : ℤ) (hΔ : W.Δ ≠ 0) : IsCoprime (W.Φ n) (W.�
   -- but `n • (a, b)` is a nonsingular Jacobian point, and those never have `X = Z = 0`
   have hns_smul : Jacobian.Nonsingular W' (smulEval W' a b n) := nonsingular_smulEval W' hns n
   exact Jacobian.X_ne_zero_of_Z_eq_zero hns_smul hZ hX
+
+/-- **`ΨSqₙ` does not vanish at a point that `[n]` does not kill.** The pointwise companion of
+`ΨSq_ne_zero_of_Δ_ne_zero`, which says the polynomial itself is nonzero. -/
+theorem eval_ΨSq_ne_zero_of_zsmul_ne_zero [DecidableEq F] {x y : F}
+    (hns : W.toAffine.Nonsingular x y) {n : ℤ}
+    (hP : n • (Affine.Point.some _ _ hns) ≠ 0) : (W.ΨSq n).eval x ≠ 0 := by
+  intro hsq
+  refine hP ?_
+  have hψ : (W.ψ n).evalEval x y = 0 := by
+    refine (pow_eq_zero_iff two_ne_zero).mp ?_
+    rw [evalEval_ψ_eq_evalEval_Ψ W hns.1 n, evalEval_Ψ_sq_eq_eval_ΨSq W hns.1 n]
+    exact hsq
+  have hjac := zsmul_eq_zero_of_evalEval_ψ_eq_zero W hns n hψ
+  rw [← Jacobian.Point.toAffineAddEquiv_symm_apply, ← map_zsmul] at hjac
+  exact (AddEquiv.map_eq_zero_iff _).1 hjac
 
 /-- **`ΨSqₙ` is nonzero on a nonsingular curve, in every characteristic.** Mathlib's
 `ΨSq_ne_zero` assumes `(n : F) ≠ 0` instead; see the module docstring on why neither statement

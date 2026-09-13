@@ -47,7 +47,9 @@ subspace: `TauCeti.symmetricCoordinates` reads off the entries above the diagona
 * `TauCeti.symmetricBasis` — the basis dual to the upper-triangular coordinates.
 * `TauCeti.symmetricFinOneEquiv` — the identification of `1 × 1` symmetric matrices with `ℝ`.
 * `TauCeti.finrank_symmetricMatrix` — the dimension is `p * (p + 1) / 2`.
-* `selfAdjoint.inner_eq_trace_mul` — the Frobenius pairing is the trace pairing.
+* `selfAdjoint.inner_eq_trace_mul` — the Frobenius pairing is the trace pairing, and
+  `selfAdjoint.continuous_trace_mul_coe` — that pairing is continuous in its second argument, as
+  is its exponential `selfAdjoint.continuous_exp_trace_mul_coe`.
 -/
 
 public section
@@ -400,5 +402,23 @@ theorem inner_eq_trace_mul {p : ℕ}
   let _ : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusInnerProductSpace
   rw [coe_inner, Matrix.frobenius_inner_eq_trace_transpose_mul,
     (Matrix.isHermitian_iff_isSymm.1 (isHermitian_coe A)).eq, Matrix.trace_mul_comm]
+
+/-- The trace pairing against a fixed symmetric matrix is continuous, being the Frobenius inner
+product with that matrix. -/
+theorem continuous_trace_mul_coe {p : ℕ}
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace := by
+  simp only [← inner_eq_trace_mul]
+  exact continuous_id.inner continuous_const
+
+/-- The exponential of a scalar multiple of the trace pairing is continuous. This is the
+measurability side condition of the exponential-moment computations on the symmetric
+subspace. -/
+theorem continuous_exp_trace_mul_coe {p : ℕ}
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (t : ℝ) :
+    Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      Real.exp (t * ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) :=
+  (continuous_const.mul (continuous_trace_mul_coe Θ)).rexp
 
 end selfAdjoint

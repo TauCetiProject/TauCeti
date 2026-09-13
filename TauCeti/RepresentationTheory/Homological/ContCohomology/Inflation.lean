@@ -35,8 +35,9 @@ at its two nodes.
 * `TauCeti.ContCohomology.explicitRes1_comp_explicitInfl1` and
   `TauCeti.ContCohomology.explicitRes2_comp_explicitInfl2`: restricting an inflated class back to
   `N` gives zero.
-* `TauCeti.ContCohomology.explicitInfl1_eq_explicitMap1`: inflation in degree `1` is the
-  compatible-pair pullback along `G → G ⧸ N`.
+* `TauCeti.ContCohomology.explicitInfl1_eq_explicitMap1` and
+  `explicitInfl2_eq_explicitMap2`: inflation in degrees `1` and `2` is the compatible-pair
+  pullback along `G → G ⧸ N`.
 * `TauCeti.ContCohomology.explicitInfl1_injective`: inflation is injective in degree `1`.
 * `TauCeti.ContCohomology.explicitInfRes_exact`: the image of inflation is exactly the kernel of
   restriction in degree `1`.
@@ -346,6 +347,15 @@ theorem explicitInfl2_mk (c : Z2 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
         (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
         (subtype_quotientMk_smul G M N) c : H2 G M) :=
   explicitMap2_mk _ _ _ _ _ _ _ _ c
+
+/-- Inflation in degree two is the compatible-pair pullback along the quotient homomorphism
+`G → G ⧸ N` and the inclusion of the invariants `M ^ N` into `M`. -/
+theorem explicitInfl2_eq_explicitMap2 :
+    explicitInfl2 G M N =
+      explicitMap2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M
+        (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N M).subtype
+        (continuous_fixedPoints_addSubgroup_subtype G M N) (subtype_quotientMk_smul G M N) := by
+  rw [explicitInfl2]
 
 /-- **Restriction to `N` kills inflation in degree two.** The inflated cocycle restricts to the
 constant cochain with value `c (1, 1)`, and since `N` fixes that value the constant is the
