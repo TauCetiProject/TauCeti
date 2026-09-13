@@ -79,6 +79,27 @@ theorem characterEvaluation_apply (m : IntegralCharacter N) (x : ComplexTorus N)
     characterEvaluation m x = x m :=
   by simp [characterEvaluation, AddChar.toMonoidHomMulEquiv, AddChar.toMonoidHomEquiv]
 
+/-- Evaluation of the zero integral character is the trivial monoid homomorphism. -/
+@[simp]
+theorem characterEvaluation_zero :
+    characterEvaluation (0 : IntegralCharacter N) = 1 := by
+  ext x
+  simp only [characterEvaluation_apply, AddChar.map_zero_eq_one, MonoidHom.one_apply]
+
+/-- Evaluation sends addition of integral characters to multiplication of monoid homomorphisms. -/
+@[simp]
+theorem characterEvaluation_add (m₁ m₂ : IntegralCharacter N) :
+    characterEvaluation (m₁ + m₂) = characterEvaluation m₁ * characterEvaluation m₂ := by
+  ext x
+  simp only [characterEvaluation_apply, AddChar.map_add_eq_mul, MonoidHom.mul_apply]
+
+/-- Evaluation sends negation of an integral character to inversion of a monoid homomorphism. -/
+@[simp]
+theorem characterEvaluation_neg (m : IntegralCharacter N) :
+    characterEvaluation (-m) = (characterEvaluation m)⁻¹ := by
+  ext x
+  simp only [characterEvaluation_apply, AddChar.map_neg_eq_inv, MonoidHom.inv_apply]
+
 /-- The map of complex tori induced covariantly by an additive map of lattices. -/
 def complexTorusMap (f : N →+ N') : ComplexTorus N →* ComplexTorus N' where
   toFun x := x.compAddMonoidHom (AddMonoidHom.compHom' f)
