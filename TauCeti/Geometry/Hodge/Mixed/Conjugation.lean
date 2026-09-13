@@ -74,20 +74,24 @@ theorem deligneSplitting_le_deligneSplittingBelow {r s p q : ℤ} (hr : r < p) (
     mhs.deligneSplitting r s ≤ mhs.deligneSplittingBelow p q :=
   le_iSup₂_of_le r hr (le_iSup₂_of_le s hs le_rfl)
 
+/-- The lower Deligne sum is contained in a submodule exactly when every component strictly below
+both bounds is. -/
+@[simp]
+theorem deligneSplittingBelow_le_iff {p q : ℤ} {S : Submodule ℂ Vℂ} :
+    mhs.deligneSplittingBelow p q ≤ S ↔ ∀ r < p, ∀ s < q, mhs.deligneSplitting r s ≤ S := by
+  simp [deligneSplittingBelow]
+
 /-- The lower-bidegree error below `(p,q)` lies at least two steps below total weight `p+q`. -/
 theorem deligneSplittingBelow_le_WC (p q : ℤ) :
-    mhs.deligneSplittingBelow p q ≤ mhs.WC (p + q - 2) := by
-  refine iSup₂_le fun r hr ↦ iSup₂_le fun s hs ↦
-    (mhs.deligneSplitting_le_WC r s).trans ?_
-  exact mhs.WC_monotone (by omega)
+    mhs.deligneSplittingBelow p q ≤ mhs.WC (p + q - 2) :=
+  mhs.deligneSplittingBelow_le_iff.2 fun r _ s _ ↦
+    (mhs.deligneSplitting_le_WC r s).trans (mhs.WC_monotone (by omega))
 
 /-- Enlarging either bound enlarges the sum of lower Deligne components. -/
 theorem deligneSplittingBelow_mono {p q p' q' : ℤ} (hp : p ≤ p') (hq : q ≤ q') :
-    mhs.deligneSplittingBelow p q ≤ mhs.deligneSplittingBelow p' q' := by
-  rw [deligneSplittingBelow, deligneSplittingBelow]
-  refine iSup₂_le fun r hr ↦ iSup₂_le fun s hs ↦ ?_
-  exact le_iSup₂_of_le r (hr.trans_le hp)
-    (le_iSup₂_of_le s (hs.trans_le hq) le_rfl)
+    mhs.deligneSplittingBelow p q ≤ mhs.deligneSplittingBelow p' q' :=
+  mhs.deligneSplittingBelow_le_iff.2 fun _ hr _ hs ↦
+    mhs.deligneSplitting_le_deligneSplittingBelow (hr.trans_le hp) (hs.trans_le hq)
 
 /-- The part of Deligne's formula below its leading conjugate-filtration term. -/
 private noncomputable def hodgeTail (p q : ℤ) : Submodule ℂ Vℂ :=
