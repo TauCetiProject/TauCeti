@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.LocallyPrincipal
 
 /-!
@@ -37,17 +38,15 @@ equations of `D - div g` and of `E` at each codimension-one point gives `E = D -
 
 On a curve every Weil divisor is locally principal, so this makes the comparison map
 `SchemeWeilDivisor.classGroupToLineBundleClass` of
-`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/LineBundle.lean` injective. That is the injectivity
-half of `Cl(X) ≅ Pic X` in `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Divisors
-on a curve: ... principal divisors; `Cl(X) ≅ Pic X`". Surjectivity — every line bundle on a curve
-is `𝒪_X(D)` for some `D` — and the compatibility of the comparison with tensor product remain.
+`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/LineBundle.lean` injective: that is the injectivity
+half of `Cl(X) ≅ Pic X`.
 
 The statement is Hartshorne, *Algebraic Geometry*, II, Proposition 6.13; the argument given here
 is the standard one, run through the constant sheaf `𝒦_X` rather than through stalks at the
-generic point. No formalization is vendored. The proofs reuse the divisor sheaf and its
-multiplication isomorphisms from `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Sheaf.lean`, the
-local equations of `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/LocallyPrincipal.lean`, and
-Mathlib's `TopCat.Presheaf.exists_le_germ_eq` and `AlgebraicGeometry.Scheme.ord`.
+generic point. The proofs reuse the divisor sheaf and its multiplication isomorphisms from
+`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Sheaf.lean`, the local equations of
+`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/LocallyPrincipal.lean`, and Mathlib's
+`TopCat.Presheaf.exists_le_germ_eq` and `AlgebraicGeometry.Scheme.ord`.
 -/
 
 public section
@@ -67,13 +66,6 @@ noncomputable section
 section General
 
 variable {X : Scheme.{u}}
-
-/-- Naturality of a morphism of `𝒪_X`-modules, read on sections. -/
-private lemma app_map {M N : X.Modules} (φ : M ⟶ N) {U V : X.Opens} (i : V ⟶ U)
-    (x : Γ(M, U)) :
-    Scheme.Modules.Hom.app φ V (M.presheaf.map i.op x) =
-      N.presheaf.map i.op (Scheme.Modules.Hom.app φ U x) :=
-  ConcreteCategory.congr_hom (φ.mapPresheaf.naturality i.op) x
 
 /-- An open subset with no points is the empty one. -/
 private lemma eq_bot_of_not_nonempty {U : X.Opens} (h : ¬ Nonempty U) : U = ⊥ :=
@@ -137,14 +129,14 @@ theorem IsLocallyPrincipal.exists_rationalFunctionsMul_eq {D : SchemeWeilDivisor
       have hres : (sheaf D).presheaf.map (homOfLE hWU).op s =
           a • (sheaf D).presheaf.map (homOfLE hWU₀).op s₀ := by
         refine sheafι_app_injective D W ((Scheme.rationalFunctionsEquiv W).injective ?_)
-        rw [app_map (sheafι D) (homOfLE hWU) s, Scheme.rationalFunctionsEquiv_map,
-          Scheme.Modules.Hom.app_smul, map_smul, app_map (sheafι D) (homOfLE hWU₀) s₀,
+        rw [(sheafι D).naturality_apply (homOfLE hWU) s, Scheme.rationalFunctionsEquiv_map,
+          Scheme.Modules.Hom.app_smul, map_smul, (sheafι D).naturality_apply (homOfLE hWU₀) s₀,
           Scheme.rationalFunctionsEquiv_map, hιs₀, Algebra.smul_def,
           RingHom.algebraMap_toAlgebra, hgerm, ← htdef, mul_assoc, mul_inv_cancel₀ hfK, mul_one]
       have hψ : Scheme.rationalFunctionsEquiv U (Scheme.Modules.Hom.app ψ U s) = g * t := by
         rw [← Scheme.rationalFunctionsEquiv_map (homOfLE hWU)
-          (Scheme.Modules.Hom.app ψ U s), ← app_map ψ (homOfLE hWU) s, hres,
-          Scheme.Modules.Hom.app_smul, map_smul, app_map ψ (homOfLE hWU₀) s₀,
+          (Scheme.Modules.Hom.app ψ U s), ← ψ.naturality_apply (homOfLE hWU) s, hres,
+          Scheme.Modules.Hom.app_smul, map_smul, ψ.naturality_apply (homOfLE hWU₀) s₀,
           Scheme.rationalFunctionsEquiv_map, Algebra.smul_def, RingHom.algebraMap_toAlgebra,
           hgerm, hgdef]
         ring
@@ -209,10 +201,15 @@ theorem linearlyEquivalent_of_nonempty_iso_sheaf {D E : SchemeWeilDivisor X}
     refine eq_one_of_sheafι_comp_eq hD ?_
     rw [Scheme.rationalFunctionsMul_mul, ← Category.assoc, ← hg, Category.assoc, ← hg',
       Iso.hom_inv_id_assoc]
-  set gu : X.functionFieldˣ := ⟨g, g', by rw [mul_comm]; exact hg'g, hg'g⟩
-  set γ : Additive X.functionFieldˣ := Additive.ofMul gu
-  have hγ : ((Additive.toMul γ : X.functionFieldˣ) : X.functionField) = g := rfl
-  have hγneg : ((Additive.toMul (-γ) : X.functionFieldˣ) : X.functionField) = g' := rfl
+  set gu : X.functionFieldˣ := Units.mk0 g (right_ne_zero_of_mul_eq_one hg'g) with hgudef
+  have hgu : (gu : X.functionField) = g := by rw [hgudef, Units.val_mk0]
+  have hguinv : ((gu⁻¹ : X.functionFieldˣ) : X.functionField) = g' :=
+    Units.inv_eq_of_mul_eq_one_left (by rw [hgu]; exact hg'g)
+  set γ : Additive X.functionFieldˣ := Additive.ofMul gu with hγdef
+  have hγ : ((Additive.toMul γ : X.functionFieldˣ) : X.functionField) = g := by
+    rw [hγdef, toMul_ofMul, hgu]
+  have hγneg : ((Additive.toMul (-γ) : X.functionFieldˣ) : X.functionField) = g' := by
+    rw [hγdef, toMul_neg, toMul_ofMul, hguinv]
   set F : SchemeWeilDivisor X :=
     D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor γ with hFdef
   -- multiplying by `g` and by `g'` are mutually inverse on sections
@@ -223,7 +220,7 @@ theorem linearlyEquivalent_of_nonempty_iso_sheaf {D E : SchemeWeilDivisor X}
       (congrArg (fun η ↦ Scheme.Modules.Hom.app η U) (Scheme.rationalFunctionsMul_inv_comp gu)) t
     simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
       Scheme.Modules.Hom.id_app, ConcreteCategory.id_apply] at key
-    exact key
+    rwa [hgu, hguinv] at key
   -- the two divisors `F` and `E` have the same sections over every open subset
   have hsec : ∀ U : X.Opens, sections F U = sections E U := by
     intro U

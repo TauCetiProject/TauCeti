@@ -220,6 +220,7 @@ lemma sheafι_app_mem (D : SchemeWeilDivisor X) (U : X.Opens) (t : Γ(sheaf D, U
 /-- **The sections of `𝒪_X(D)` over `U` are exactly `sections D U`.** Together with
 `SchemeWeilDivisor.sheafι_app_injective` this identifies the sections of `𝒪_X(D)` with the
 submodule of `Γ(𝒦_X, U)` which defines it. -/
+@[simp]
 lemma range_sheafι_app (D : SchemeWeilDivisor X) (U : X.Opens) :
     Set.range (Scheme.Modules.Hom.app (sheafι D) U) = sections D U := by
   ext t
