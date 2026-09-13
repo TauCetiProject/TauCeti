@@ -156,6 +156,8 @@ variable {E F : FiniteDVRExtension R K}
 
 variable {G : FiniteDVRExtension R K}
 
+/-- Two towers are equal when their compatible maps are equal; the remaining typeclass and proof
+fields are determined propositionally. -/
 @[ext]
 lemma ext {T U : Tower E F} (h : T.hom = U.hom) : T = U := by
   cases T with
