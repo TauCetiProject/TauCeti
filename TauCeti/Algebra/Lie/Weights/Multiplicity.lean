@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Weights.Basic
+public import TauCeti.Algebra.Lie.Weights.Basic
 public import TauCeti.Algebra.Lie.Isotypic
 public import TauCeti.Algebra.Lie.Multiplicity
 -- Non-public: these declarations support the internal-decomposition proof.
@@ -45,20 +45,6 @@ namespace TauCeti
 
 open _root_.LieModule Module
 
-/-- A morphism of Lie modules sends a weight space into the same weight space. -/
-private theorem map_weightSpace_le
-    {K L M P : Type*} [CommRing K] [LieRing L] [LieAlgebra K L]
-    [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
-    [AddCommGroup P] [Module K P] [LieRingModule L P] [LieModule K L P]
-    (f : M →ₗ⁅K,L⁆ P) (χ : L → K) :
-    (weightSpace M χ).map f ≤ weightSpace P χ := by
-  intro y hy
-  rw [LieSubmodule.mem_map] at hy
-  obtain ⟨x, hx, rfl⟩ := hy
-  rw [mem_weightSpace] at hx ⊢
-  intro l
-  rw [← f.map_lie, hx l, map_smul]
-
 /-- **Weight-space dimension is an isomorphism invariant.** An equivalence of Lie modules carries
 the `χ`-weight space of one module onto the `χ`-weight space of the other. -/
 theorem finrank_weightSpace_congr
@@ -67,16 +53,9 @@ theorem finrank_weightSpace_congr
     [AddCommGroup P] [Module K P] [LieRingModule L P] [LieModule K L P]
     (e : M ≃ₗ⁅K,L⁆ P) (χ : L → K) :
     finrank K (weightSpace M χ) = finrank K (weightSpace P χ) := by
-  have hmap : (weightSpace M χ).map (e : M →ₗ⁅K,L⁆ P) = weightSpace P χ := by
-    apply le_antisymm (map_weightSpace_le (e : M →ₗ⁅K,L⁆ P) χ)
-    intro y hy
-    rw [LieSubmodule.mem_map]
-    refine ⟨e.symm y, ?_, e.apply_symm_apply y⟩
-    exact map_weightSpace_le (e.symm : P →ₗ⁅K,L⁆ M) χ
-      (LieSubmodule.mem_map_of_mem hy)
   have hequiv := (LieSubmodule.equivMapOfInjective
     (weightSpace M χ) e.injective).toLinearEquiv.finrank_eq
-  rw [hmap] at hequiv
+  rw [LieModule.map_weightSpace_eq e χ] at hequiv
   exact hequiv
 
 section Internal
@@ -102,7 +81,7 @@ private theorem toSubmodule_map_weightSpace_incl (i : ι) (χ : H → K) :
   · intro hm
     rw [LieSubmodule.mem_map] at hm
     obtain ⟨x, hx, rfl⟩ := hm
-    exact ⟨map_weightSpace_le ((N i).incl.restrictLie H) χ
+    exact ⟨LieModule.map_weightSpace_le ((N i).incl.restrictLie H) χ
       (LieSubmodule.mem_map_of_mem hx), x.2⟩
   · rintro ⟨hm, hmi⟩
     rw [LieSubmodule.mem_map]
@@ -129,12 +108,12 @@ private theorem iSup_inf_weightSpace_eq [Finite ι] [DecidableEq ι]
   refine le_antisymm (iSup_le fun i ↦ inf_le_left) fun m hm ↦ ?_
   set e := DirectSum.lieModuleEquivOfIsInternal N h with he
   have hcomp : ∀ i, (e.symm m i : ↥(N i)) ∈ weightSpace ↥(N i) χ := fun i ↦
-    map_weightSpace_le
+    LieModule.map_weightSpace_le
       ((((DirectSum.lieModuleComponent K ι L fun j ↦ ↥(N j)) i).comp
         (e.symm : M →ₗ⁅K,L⁆ ⨁ j, ↥(N j))).restrictLie H) χ ⟨m, hm, rfl⟩
   have hmem : ∀ i, ((e.symm m i : ↥(N i)) : M)
       ∈ (weightSpace M χ).toSubmodule ⊓ (N i).toSubmodule := fun i ↦
-    ⟨map_weightSpace_le ((N i).incl.restrictLie H) χ ⟨_, hcomp i, rfl⟩,
+    ⟨LieModule.map_weightSpace_le ((N i).incl.restrictLie H) χ ⟨_, hcomp i, rfl⟩,
       (e.symm m i).2⟩
   have hsum : m = ∑ i, ((e.symm m i : ↥(N i)) : M) := by
     conv_lhs => rw [← e.apply_symm_apply m, ← DirectSum.sum_univ_of (e.symm m)]
