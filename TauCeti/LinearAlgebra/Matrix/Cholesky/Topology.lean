@@ -53,13 +53,8 @@ variable {p : ℕ}
 theorem continuous_choleskyReconstruction :
     Continuous (@choleskyReconstruction p) := by
   refine continuous_induced_rng.2 (continuous_induced_rng.2 ?_)
-  have h : (fun L : PosDiagLowerTriangular p ↦
-      ((choleskyReconstruction L).1 : Matrix (Fin p) (Fin p) ℝ)) = fun L ↦ L.1 * L.1ᵀ :=
-    funext choleskyReconstruction_coe
-  change Continuous fun L : PosDiagLowerTriangular p ↦
-    ((choleskyReconstruction L).1 : Matrix (Fin p) (Fin p) ℝ)
-  rw [h]
-  exact continuous_subtype_val.matrix_mul continuous_subtype_val.matrix_transpose
+  exact (continuous_subtype_val.matrix_mul continuous_subtype_val.matrix_transpose).congr
+    fun L ↦ (choleskyReconstruction_coe L).symm
 
 /-- Reconstruction from positive-diagonal lower-triangular factors is a proper map: the factors of
 a compact set of positive-definite matrices form a compact set. -/

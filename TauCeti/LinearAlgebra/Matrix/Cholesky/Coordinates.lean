@@ -72,11 +72,13 @@ theorem lowerTriangleCoordinatesHomeomorph_apply_coe (L : PosDiagLowerTriangular
     (lowerTriangleCoordinatesHomeomorph p L).1 ij = L.1 ij.1.1 ij.1.2 :=
   (rfl)
 
+@[simp]
 theorem lowerTriangleCoordinatesHomeomorph_symm_apply_coe_of_le (x : PosDiagLowerCoordinates p)
     {i j : Fin p} (h : j ≤ i) :
     ((lowerTriangleCoordinatesHomeomorph p).symm x).1 i j = x.1 ⟨(i, j), h⟩ :=
   dite_eq_left h
 
+@[simp]
 theorem lowerTriangleCoordinatesHomeomorph_symm_apply_coe_of_lt (x : PosDiagLowerCoordinates p)
     {i j : Fin p} (h : i < j) :
     ((lowerTriangleCoordinatesHomeomorph p).symm x).1 i j = 0 :=
