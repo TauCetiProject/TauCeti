@@ -102,7 +102,7 @@ spin-carrier points. -/
 theorem pointsMap_injective {f : A →+* B} (hf : Function.Injective f) :
     Function.Injective (pointsMap n f) :=
   GeneralLinear.mapHopfIdealPointsSubgroupCongr_injective (dimension n) (definingIdeal n)
-    (points_def n A) (points_def n B) (φ := f.toIntAlgHom) hf
+    (points_def n A) (points_def n B) (φ := f.toIntAlgHom) (by rwa [RingHom.toIntAlgHom_coe])
 
 /-- The induced map carries a numbered root-subgroup parameter along the homomorphism of value
 rings. -/

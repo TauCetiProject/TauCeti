@@ -140,7 +140,8 @@ Geck carrier. -/
 theorem geckPointsMap_injective {f : A →+* B} (hf : Function.Injective f) :
     Function.Injective (t.geckPointsMap ht f) :=
   GeneralLinear.mapHopfIdealPointsSubgroupCongr_injective (t.geckDim ht) (t.geckDefiningIdeal ht)
-    (t.geckPoints_def ht A) (t.geckPoints_def ht B) (φ := f.toIntAlgHom) hf
+    (t.geckPoints_def ht A) (t.geckPoints_def ht B) (φ := f.toIntAlgHom)
+    (by rwa [RingHom.toIntAlgHom_coe])
 
 /-- **The induced map carries a numbered root-subgroup point along the homomorphism of value
 rings.** -/

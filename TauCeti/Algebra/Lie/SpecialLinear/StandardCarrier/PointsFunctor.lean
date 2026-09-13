@@ -125,7 +125,7 @@ points. -/
 theorem pointsMap_injective {f : A →+* B} (hf : Function.Injective f) :
     Function.Injective (pointsMap r f) :=
   GeneralLinear.mapHopfIdealPointsSubgroupCongr_injective (r + 1) (definingIdeal r)
-    (points_def r A) (points_def r B) (φ := f.toIntAlgHom) hf
+    (points_def r A) (points_def r B) (φ := f.toIntAlgHom) (by rwa [RingHom.toIntAlgHom_coe])
 
 /-- The induced map carries a numbered root-subgroup parameter along the homomorphism of value
 rings. -/
