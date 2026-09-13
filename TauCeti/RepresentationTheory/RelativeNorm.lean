@@ -172,7 +172,7 @@ variable {ρ H}
 
 /-- The image of an `H`-invariant element under `ρ` depends only on the coset `aH`, which is why
 the relative norm is independent of the transversal on the `H`-invariants. -/
-theorem apply_eq_apply_of_mk_eq {x : V}
+theorem apply_eq_apply_of_quotientGroup_mk_eq {x : V}
     (hx : x ∈ Representation.invariants (ρ.comp H.subtype)) {a b : G}
     (hab : (a : G ⧸ H) = (b : G ⧸ H)) : ρ a x = ρ b x := by
   obtain ⟨h, rfl⟩ : ∃ h : H, a * (h : G) = b :=
@@ -196,7 +196,7 @@ theorem relNorm_mem_invariants {x : V}
   rw [relNorm_apply, map_sum]
   refine Fintype.sum_bijective (g • ·) (MulAction.bijective g) _ _ fun q => ?_
   rw [← Module.End.mul_apply, ← map_mul]
-  refine apply_eq_apply_of_mk_eq hx ?_
+  refine apply_eq_apply_of_quotientGroup_mk_eq hx ?_
   rw [QuotientGroup.out_eq', ← smul_eq_mul, ← MulAction.Quotient.smul_coe, QuotientGroup.out_eq']
 
 /-- On `G`-invariant elements the relative norm is multiplication by the index. -/

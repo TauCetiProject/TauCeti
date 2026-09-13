@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Quotient
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.RelativeNorm
 
@@ -75,19 +76,6 @@ noncomputable local instance fintypeSubgroup : Fintype H := Fintype.ofFinite H
 noncomputable local instance fintypeQuotientGroup : Fintype (G ⧸ H) :=
   H.fintypeQuotientOfFiniteIndex
 
-/-- A map conjugated from `Submodule.mapQ p₁ p₂ f` along identifications `e₁`, `e₂` of two
-objects with the quotients sends the class `π₁ x` of a representative to the class `π₂ (f x)`. -/
-private theorem comp_conj_mapQ {X₁ X₂ : Type u} [AddCommGroup X₁] [Module R X₁] [AddCommGroup X₂]
-    [Module R X₂] {p₁ : Submodule R X₁} {p₂ : Submodule R X₂} {A₁ A₂ : ModuleCat.{u} R}
-    (e₁ : A₁ ≅ ModuleCat.of R (X₁ ⧸ p₁)) (e₂ : A₂ ≅ ModuleCat.of R (X₂ ⧸ p₂))
-    {π₁ : ModuleCat.of R X₁ ⟶ A₁} {π₂ : ModuleCat.of R X₂ ⟶ A₂}
-    (hπ₁ : π₁ ≫ e₁.hom = ModuleCat.ofHom p₁.mkQ) (hπ₂ : π₂ ≫ e₂.hom = ModuleCat.ofHom p₂.mkQ)
-    (f : X₁ →ₗ[R] X₂) (hf : p₁ ≤ p₂.comap f) :
-    π₁ ≫ e₁.hom ≫ ModuleCat.ofHom (p₁.mapQ p₂ f hf) ≫ e₂.inv = ModuleCat.ofHom f ≫ π₂ := by
-  rw [← cancel_mono e₂.hom]
-  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, reassoc_of% hπ₁, hπ₂,
-    ← ModuleCat.ofHom_comp, Submodule.mapQ_mkQ]
-
 section Zero
 
 private theorem h0_res_le :
@@ -129,7 +117,7 @@ theorem H0π_comp_H0Res :
         (Representation.invariants_le_invariants_comp_subtype (ρ := M.ρ) (H := H))) ≫
         H0π (Rep.res H.subtype M) := by
   rw [H0Res]
-  exact comp_conj_mapQ _ _ (H0π_comp_H0IsoNormQuotient_hom _)
+  exact ModuleCat.comp_conj_mapQ _ _ (H0π_comp_H0IsoNormQuotient_hom _)
     (H0π_comp_H0IsoNormQuotient_hom _) _ _
 
 /-- Corestriction in degree zero sends the class of an `H`-invariant element to the class of its
@@ -139,7 +127,7 @@ theorem H0π_comp_H0Cor :
     H0π (Rep.res H.subtype M) ≫ H0Cor M H =
       ModuleCat.ofHom (Representation.relNormInvariants M.ρ H) ≫ H0π M := by
   rw [H0Cor]
-  exact comp_conj_mapQ _ _ (H0π_comp_H0IsoNormQuotient_hom _)
+  exact ModuleCat.comp_conj_mapQ _ _ (H0π_comp_H0IsoNormQuotient_hom _)
     (H0π_comp_H0IsoNormQuotient_hom _) _ _
 
 /-- Corestriction of the restriction of a degree-zero class is the index multiple of it. -/
@@ -203,7 +191,7 @@ theorem HNegOneπ_comp_HNegOneRes :
       ModuleCat.ofHom (Representation.relTransferKerNorm M.ρ H) ≫
         HNegOneπ (Rep.res H.subtype M) := by
   rw [HNegOneRes]
-  exact comp_conj_mapQ _ _ (HNegOneπ_comp_HNegOneIsoNormKernelQuotient_hom _)
+  exact ModuleCat.comp_conj_mapQ _ _ (HNegOneπ_comp_HNegOneIsoNormKernelQuotient_hom _)
     (HNegOneπ_comp_HNegOneIsoNormKernelQuotient_hom _) _ _
 
 /-- Corestriction in degree `-1` sends the class of a norm-zero element to the class of the same
@@ -215,7 +203,7 @@ theorem HNegOneπ_comp_HNegOneCor :
         (Representation.ker_norm_comp_subtype_le_ker_norm (ρ := M.ρ) (H := H))) ≫
         HNegOneπ M := by
   rw [HNegOneCor]
-  exact comp_conj_mapQ _ _ (HNegOneπ_comp_HNegOneIsoNormKernelQuotient_hom _)
+  exact ModuleCat.comp_conj_mapQ _ _ (HNegOneπ_comp_HNegOneIsoNormKernelQuotient_hom _)
     (HNegOneπ_comp_HNegOneIsoNormKernelQuotient_hom _) _ _
 
 /-- Corestriction of the restriction of a degree `-1` class is the index multiple of it. -/
