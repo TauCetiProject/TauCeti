@@ -180,10 +180,12 @@ theorem abs_det_fderiv_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin 
         ((A : Matrix (Fin p) (Fin p) ℝ)⁻¹)) := by
     rw [(hasFDerivAt_symmetricInv hA).fderiv, ContinuousLinearMap.det,
       ContinuousLinearMap.toLinearMap_neg, LinearMap.coe_toContinuousLinearMap]
+  -- `Real.rpow_natCast` fires only on an exponent that is literally a cast of a natural number,
+  -- so the sum `(p : ℝ) + 1` has to be contracted to `((p + 1 : ℕ) : ℝ)` first.
+  have hexp : -((p : ℝ) + 1) = -((p + 1 : ℕ) : ℝ) := by push_cast; ring
   have hrpow : |(A : Matrix (Fin p) (Fin p) ℝ).det| ^ (-((p : ℝ) + 1)) =
       |(A : Matrix (Fin p) (Fin p) ℝ).det|⁻¹ ^ (p + 1) := by
-    rw [show -((p : ℝ) + 1) = -((p + 1 : ℕ) : ℝ) by push_cast; ring, Real.rpow_neg habs.le,
-      Real.rpow_natCast, ← inv_pow]
+    rw [hexp, Real.rpow_neg habs.le, Real.rpow_natCast, ← inv_pow]
   rw [hcoe, hrpow, ← neg_one_smul ℝ (Matrix.symmetricCongruenceLinearMap
       ((A : Matrix (Fin p) (Fin p) ℝ)⁻¹)), LinearMap.det_smul,
     Matrix.det_symmetricCongruenceLinearMap, Matrix.det_nonsing_inv, Ring.inverse_eq_inv']
