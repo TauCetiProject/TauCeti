@@ -301,16 +301,17 @@ private theorem nsmul_hyperbolicClass_add_wittDecomposition (m : ℕ) (c : Regul
   conv_lhs => rw [RegularFormClass.wittDecomposition c]
   rw [← add_assoc, ← add_nsmul]
 
+-- Not `@[simp]`: `RegularFormClass K` is a semiring, so the `@[simp] nsmul_eq_mul` rewrites the
+-- left-hand side to `(↑m * hyperbolicClass K + c).wittIndex` and the tag fails `simpNF`.
 /-- Adjoining `m` hyperbolic planes raises the Witt index by `m`. -/
-@[simp]
 theorem RegularFormClass.wittIndex_nsmul_hyperbolicClass_add (m : ℕ) (c : RegularFormClass K) :
     RegularFormClass.wittIndex (m • hyperbolicClass K + c) =
       m + RegularFormClass.wittIndex c :=
   RegularFormClass.wittIndex_eq (RegularFormClass.anisotropic_anisotropicPart c)
     (nsmul_hyperbolicClass_add_wittDecomposition m c)
 
+-- Not `@[simp]`, for the same reason as `wittIndex_nsmul_hyperbolicClass_add` above.
 /-- Adjoining hyperbolic planes leaves the anisotropic part unchanged. -/
-@[simp]
 theorem RegularFormClass.anisotropicPart_nsmul_hyperbolicClass_add (m : ℕ)
     (c : RegularFormClass K) :
     RegularFormClass.anisotropicPart (m • hyperbolicClass K + c) =
