@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import TauCeti.LinearAlgebra.Dual.RightAction
 
@@ -43,6 +44,10 @@ that statement, and it is what licenses the notation `τ M`.
   presentation.
 * `TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranslate_of_projective`: the
   translate of a projective module vanishes.
+* `TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranslate_iff_projective`:
+  over a field, and for a finitely generated left-hand source, the converse holds too — **the
+  translate vanishes exactly on the projective modules** — so that `τ` assigns a nonzero module to
+  every non-projective one.
 
 ## Implementation notes
 
@@ -71,8 +76,10 @@ which names it as the composite of the transpose of sublayer 6C with the duality
 `D = Hom_k(-, k)`, "well-defined only up to projectives, through minimal presentations and duality
 on finite-dimensional modules".
 
-The other half of 6D — AR duality itself, and the bijection it yields from non-projective
-indecomposables to non-injective indecomposables with inverse `Tr D` — is **not proved here**: it
+The vanishing criterion below settles the *source* of that bijection: the modules with `τ M = 0`
+are exactly the projective ones.  The other half of 6D — AR duality itself, and the bijection it
+yields from non-projective indecomposables to non-injective indecomposables with inverse `Tr D` —
+is **not proved here**: it
 needs the finite-dimensional hypotheses and the stable morphism spaces that the rest of sublayer 6C
 supplies, and comes in a later file.
 
@@ -202,6 +209,40 @@ theorem subsingleton_auslanderReitenTranslate_of_projective [Module.Projective A
   inferInstance
 
 end Projective
+
+section Vanishing
+
+variable {P₁ : Type w} [AddCommGroup P₁] [Module A P₁]
+variable {p₁ : P₁ →ₗ[A] P₀} {p₀ : P₀ →ₗ[A] M}
+
+/-- **The Auslander--Reiten translate vanishes exactly on the projective modules**, when the
+duality is taken over a field.
+
+Over a field the dual of a module is zero only if the module is, so the translate `D (Tr M)`
+vanishes exactly when the transpose does, and
+`TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_iff_projective`
+identifies that with projectivity of `M`.  This is the statement that makes `τ` a construction on
+the *non-projective* modules, the source of the bijection of sublayer 6D.
+
+A field is what the backward direction needs: it enters only through
+`Module.subsingleton_dual_iff`, which asks the transpose to be a projective `K`-module, and over a
+field every module is.  The forward direction, the dual of a subsingleton being a subsingleton, is
+`TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranslate_of_projective` and
+holds over any commutative base. -/
+theorem subsingleton_auslanderReitenTranslate_iff_projective (K : Type*) [Field K] [Algebra K A]
+    [Module.Finite A P₁] (h : IsMinimalProjectivePresentation p₁ p₀) :
+    Subsingleton (AuslanderReitenTranslate K p₁) ↔ Module.Projective A M :=
+  (Module.subsingleton_dual_iff K).trans h.subsingleton_auslanderReitenTranspose_iff_projective
+
+/-- **The translate of a non-projective module is nonzero**, the form in which the vanishing
+criterion is consumed: `τ` assigns a genuine module to every non-projective one. -/
+theorem nontrivial_auslanderReitenTranslate_of_not_projective (K : Type*) [Field K] [Algebra K A]
+    [Module.Finite A P₁] (h : IsMinimalProjectivePresentation p₁ p₀)
+    (hM : ¬ Module.Projective A M) : Nontrivial (AuslanderReitenTranslate K p₁) :=
+  not_subsingleton_iff_nontrivial.mp fun hs =>
+    hM ((h.subsingleton_auslanderReitenTranslate_iff_projective K).mp hs)
+
+end Vanishing
 
 section Comparison
 

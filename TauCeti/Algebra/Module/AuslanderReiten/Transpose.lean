@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Finiteness.Projective
 public import TauCeti.Algebra.Module.MinimalProjectivePresentation
 
 /-!
@@ -26,6 +27,10 @@ the two cokernels (`AuslanderReitenTranspose.linearEquiv`), characterized on rep
 the uniqueness theorem for minimal presentations then gives
 `IsMinimalProjectivePresentation.nonempty_linearEquiv_auslanderReitenTranspose`.
 
+The transpose is a construction on the *non-projective* modules: it vanishes on a projective
+module and on no other, which is
+`IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_iff_projective`.
+
 This supplies the transpose construction in sublayer 6C of the quiver-representations roadmap.
 The remaining part of 6C develops its stable equivalence; sublayer 6D applies the duality
 `D = Hom_k(-, k)` to construct the Auslander--Reiten translate `τ = D Tr`, in
@@ -41,6 +46,20 @@ next to the other module structures on the transpose.
   opposite-linear map that kills the functionals factoring through `p₁`.
 * `AuslanderReitenTranspose.linearEquiv`: the equivalence induced by an isomorphism of presentation
   diagrams.
+
+## Main results
+
+* `AuslanderReitenTranspose.subsingleton_iff_exists_comp_eq_id`: for a finitely generated
+  projective `P₁`, the transpose of `p₁` vanishes exactly when `p₁` is a split monomorphism.
+* `IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_iff_projective`: **the
+  transpose vanishes exactly on the projective modules**.  The forward direction is
+  `IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_of_projective` and needs
+  no finiteness; the converse is
+  `IsMinimalProjectivePresentation.projective_of_subsingleton_auslanderReitenTranspose`, and asks
+  the left-hand source of the presentation to be finitely generated, which it is over an Artin
+  algebra.
+* `IsMinimalProjectivePresentation.nonempty_linearEquiv_auslanderReitenTranspose`: the transpose
+  does not depend on the chosen minimal presentation.
 
 ## References
 
@@ -192,6 +211,58 @@ theorem eq_lift (f : Module.Dual A P₁ →ₗ[Aᵐᵒᵖ] N)
   hom_ext p₁ fun φ => by rw [hg, lift_mk]
 
 end Lift
+
+section Split
+
+/-- **A split presenting map has vanishing transpose.**  If `p₁` admits a retraction `r`, then
+every functional on `P₁` factors through `p₁`, namely as the composite with `r`, so the cokernel
+defining the transpose is the whole of `Hom_A(P₁, A)` and the transpose is zero.
+
+No finiteness or projectivity is needed for this direction;
+`TauCeti.AuslanderReitenTranspose.exists_comp_eq_id_of_subsingleton` is the converse, and it needs
+both. -/
+theorem subsingleton_of_comp_eq_id {r : P₀ →ₗ[A] P₁} (hr : r ∘ₗ p₁ = LinearMap.id) :
+    Subsingleton (AuslanderReitenTranspose p₁) := by
+  have hzero : ∀ x : AuslanderReitenTranspose p₁, x = 0 := by
+    intro x
+    induction x using induction_on p₁ with
+    | _ φ =>
+      rw [mk_eq_zero_iff]
+      refine ⟨φ ∘ₗ r, LinearMap.ext fun y => ?_⟩
+      simp only [LinearMap.lcomp_apply, LinearMap.comp_apply]
+      exact congrArg φ (by simpa using LinearMap.congr_fun hr y)
+  exact ⟨fun x y => by rw [hzero x, hzero y]⟩
+
+/-- **A vanishing transpose splits the presenting map.**  If `P₁` is a finitely generated
+projective module and the transpose of `p₁ : P₁ → P₀` vanishes, then `p₁` admits a retraction.
+
+Both hypotheses on `P₁` are used, and they are used together: a finite projective module carries a
+*finite* dual basis, and only finitely many of the chosen factorizations may be assembled into a
+single map `P₀ → P₁`.  Concretely, write `P₁` as a retract `f ∘ₗ g = id` of a finite free module
+`Aⁿ`; each coordinate of `g` is a functional on `P₁`, hence — the transpose being zero — of the
+form `ψ i ∘ₗ p₁`, and the `n` functionals `ψ i` assemble into a map `P₀ → Aⁿ` through which `g`
+factors.  Following it by `f` retracts `p₁`. -/
+theorem exists_comp_eq_id_of_subsingleton [Module.Finite A P₁] [Module.Projective A P₁]
+    (h : Subsingleton (AuslanderReitenTranspose p₁)) :
+    ∃ r : P₀ →ₗ[A] P₁, r ∘ₗ p₁ = LinearMap.id := by
+  obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective A P₁
+  have hcoord : ∀ i : Fin n, ∃ ψ : Module.Dual A P₀,
+      p₁.lcomp Aᵐᵒᵖ A ψ = (LinearMap.proj i : (Fin n → A) →ₗ[A] A) ∘ₗ g :=
+    fun i => LinearMap.mem_range.mp ((mk_eq_zero_iff p₁ _).mp (Subsingleton.elim _ 0))
+  choose ψ hψ using hcoord
+  refine ⟨f ∘ₗ LinearMap.pi ψ, LinearMap.ext fun x => ?_⟩
+  have hx : LinearMap.pi ψ (p₁ x) = g x := by
+    funext i
+    simpa using LinearMap.congr_fun (hψ i) x
+  simpa [hx] using LinearMap.congr_fun hfg x
+
+/-- **The transpose vanishes exactly when the presenting map splits**, for a finitely generated
+projective `P₁`. -/
+theorem subsingleton_iff_exists_comp_eq_id [Module.Finite A P₁] [Module.Projective A P₁] :
+    Subsingleton (AuslanderReitenTranspose p₁) ↔ ∃ r : P₀ →ₗ[A] P₁, r ∘ₗ p₁ = LinearMap.id :=
+  ⟨exists_comp_eq_id_of_subsingleton p₁, fun ⟨_, hr⟩ => subsingleton_of_comp_eq_id p₁ hr⟩
+
+end Split
 
 variable {p₁}
 
@@ -346,6 +417,65 @@ theorem subsingleton_auslanderReitenTranspose_of_projective
     | _ ψ => exact congrArg (AuslanderReitenTranspose.mk p₁) (Subsingleton.elim φ ψ)
 
 end Projective
+
+section Vanishing
+
+variable {P₁ : Type w} [AddCommGroup P₁] [Module A P₁]
+variable {p₁ : P₁ →ₗ[A] P₀} {p₀ : P₀ →ₗ[A] M}
+
+/-- **A module with vanishing Auslander--Reiten transpose is projective**, the converse of
+`TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_of_projective`.
+
+The transpose vanishing splits the presenting map `p₁`, by
+`TauCeti.AuslanderReitenTranspose.exists_comp_eq_id_of_subsingleton`, and minimality then forces
+`P₁` itself to vanish: the image of `p₁` is the syzygy `ker p₀`, which is superfluous in `P₀`, and
+a retraction `r` of `p₁` writes `P₀` as `range p₁ ⊔ ker r`, so `ker r` is already everything and
+the retraction is zero.  Being a retraction of `p₁` it is also a left inverse, so `P₁` is zero, the
+syzygy is zero, and `p₀` is an isomorphism `P₀ ≅ M` from a projective module.
+
+Finite generation of `P₁` is a genuine hypothesis rather than a convenience, as it is what makes
+the dual basis assembling the retraction finite; over an Artin algebra, where minimal
+presentations of finitely generated modules exist, it is automatic. -/
+theorem projective_of_subsingleton_auslanderReitenTranspose [Module.Finite A P₁]
+    (h : IsMinimalProjectivePresentation p₁ p₀)
+    (hTr : Subsingleton (AuslanderReitenTranspose p₁)) : Module.Projective A M := by
+  let _ : Module.Projective A P₁ := h.projective
+  obtain ⟨r, hr⟩ := AuslanderReitenTranspose.exists_comp_eq_id_of_subsingleton p₁ hTr
+  have hid : ∀ x : P₁, r (p₁ x) = x := fun x => by simpa using LinearMap.congr_fun hr x
+  -- The retraction splits `P₀` as `range p₁ ⊔ ker r`, and `range p₁` is the superfluous syzygy.
+  have hsup : LinearMap.ker p₀ ⊔ LinearMap.ker r = ⊤ := by
+    rw [← h.range_eq_ker, eq_top_iff]
+    rintro y -
+    have hy : y = p₁ (r y) + (y - p₁ (r y)) := by abel
+    rw [hy]
+    refine Submodule.add_mem_sup (LinearMap.mem_range_self _ _) (LinearMap.mem_ker.mpr ?_)
+    rw [map_sub, hid (r y), sub_self]
+  have hker : LinearMap.ker r = ⊤ :=
+    h.isProjectiveCover.isSuperfluous_ker.eq_top_of_sup_eq_top hsup
+  -- A retraction that kills everything forces its section's source to vanish.
+  have hzero : ∀ x : P₁, x = 0 := fun x => by
+    rw [← hid x]
+    exact LinearMap.mem_ker.mp (by rw [hker]; trivial)
+  have hp₁ : p₁ = 0 := by
+    ext x
+    rw [hzero x]
+    simp
+  have hkerp₀ : LinearMap.ker p₀ = ⊥ := by
+    rw [← h.range_eq_ker, hp₁, LinearMap.range_zero]
+  let _ : Module.Projective A P₀ := h.isProjectiveCover.projective
+  exact Module.Projective.of_equiv'
+    (LinearEquiv.ofBijective p₀ ⟨LinearMap.ker_eq_bot.mp hkerp₀, h.surjective⟩)
+
+/-- **The Auslander--Reiten transpose vanishes exactly on the projective modules.**  This is what
+makes `Tr`, and with it the translate `τ = D Tr`, a construction on *non-projective* modules: it
+carries no information about a projective one and detects every other. -/
+theorem subsingleton_auslanderReitenTranspose_iff_projective [Module.Finite A P₁]
+    (h : IsMinimalProjectivePresentation p₁ p₀) :
+    Subsingleton (AuslanderReitenTranspose p₁) ↔ Module.Projective A M :=
+  ⟨h.projective_of_subsingleton_auslanderReitenTranspose,
+    fun _ => h.subsingleton_auslanderReitenTranspose_of_projective⟩
+
+end Vanishing
 
 section Comparison
 
