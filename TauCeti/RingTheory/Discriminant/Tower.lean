@@ -8,10 +8,10 @@ module
 public import Mathlib.RingTheory.Discriminant
 
 /-!
-# Discriminants in field towers
+# Discriminants in algebra towers
 
-This file proves the standard discriminant identity for the basis of a composite extension
-obtained from bases of the two steps in a field tower.
+This file proves the standard discriminant identity for the basis of a composite algebra obtained
+from bases of the two steps in an algebra tower.
 
 ## Main result
 
@@ -20,15 +20,12 @@ obtained from bases of the two steps in a field tower.
 
 ## Mathematical context
 
-The discriminant of a basis is the determinant of its trace pairing. In a tower, the trace
-pairing on the product basis factors through the trace pairing of the lower basis and the relative
-Gram matrix associated to the relative trace pairing, yielding the displayed power and norm
-factors.
+The discriminant of a basis is the determinant of its trace pairing. In a tower, the trace pairing
+on the product basis factors through the trace pairing of the lower basis and the relative Gram
+matrix associated to the relative trace pairing, yielding the displayed power and norm factors.
 
 ## References
 
-* [TauCetiRoadmap, NumberFieldArithmetic, Layer 4.4](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/NumberFieldArithmetic/Suggested.lean#L693-L702)
-  specifies this basis-level tower formula.
 * Neukirch, *Algebraic Number Theory*, Chapter III, §2, gives the corresponding discriminant
   identity for towers of number fields.
 -/
@@ -63,22 +60,18 @@ theorem traceMatrix_smulTower {K : Type*} [CommRing K]
   have hcoeff (i j : ι) (k l : κ) :
       LinearMap.toMatrix (b.smulTower c) (b.smulTower c) (f.restrictScalars K)
           (i, k) (j, l) = b.repr (b j * C k l) i := by
-    simp only [LinearMap.toMatrix_apply, Basis.smulTower_apply, Basis.smulTower_repr,
-      LinearMap.coe_restrictScalars, Matrix.toLin_self, map_smul, smul_eq_mul, map_sum,
-      Basis.repr_self, Finsupp.smul_single, mul_one, Finsupp.coe_smul,
-      Finsupp.coe_finsetSum, Pi.smul_apply, Finset.sum_apply, f]
-    rw [Finset.sum_eq_single k]
-    · simp
-    · intro x _ hx
-      rw [Finsupp.single_eq_of_ne hx.symm]
-    · simp
+    rw [LinearMap.toMatrix_apply, Basis.smulTower_apply, Basis.smulTower_repr,
+      LinearMap.coe_restrictScalars, map_smul]
+    rw [map_smul]
+    change b.repr (b j * (c.repr (f (c l)) k)) i = b.repr (b j * C k l) i
+    rw [Matrix.repr_toLin, Basis.repr_self]
+    rw [Finsupp.single_eq_pi_single, Matrix.mulVec_single_one]
+    rfl
   ext ⟨i, k⟩ ⟨j, l⟩
-  simp only [_root_.Algebra.traceMatrix_apply, Basis.smulTower_apply,
-    _root_.Algebra.traceForm_apply, Algebra.mul_smul_comm, Algebra.smul_mul_assoc,
-    ← _root_.Algebra.trace_trace_of_basis b c, Matrix.mul_apply,
-    ← Finset.univ_product_univ, Matrix.blockDiagonal_apply, hcoeff, D, C,
-    Finset.sum_product, ite_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ,
-    ↓reduceIte]
+  simp [hcoeff, D, C, Matrix.mul_apply, Matrix.blockDiagonal_apply,
+    ← Finset.univ_product_univ, Finset.sum_product,
+    ← _root_.Algebra.trace_trace_of_basis b c, Algebra.mul_smul_comm,
+    Algebra.smul_mul_assoc]
   simpa [Matrix.mulVec, dotProduct, Basis.equivFun_apply, mul_comm, mul_left_comm,
     mul_assoc] using
     (congrFun (_root_.Algebra.traceMatrix_of_basis_mulVec b
