@@ -66,14 +66,11 @@ lemma forall_reflTransGen_ne_and_pos_iff {C R : Type*} [PartialOrder R] [Zero R]
     by_contra hne
     exact hcon ⟨i, hi, j, hj, hij, lt_of_le_of_ne (hA i j hij) (Ne.symm hne)⟩
 
-/-- Let `A` be a matrix over a linear ordered field, with nonnegative off-diagonal entries and
-strongly connected positive-entry graph. If `m` is a strictly positive vector in the kernel of
-`A`, then every vector in the kernel of `A` is a scalar multiple of `m`.
-
-This is the weighted maximum principle. At an index where `x i / m i` is maximal, subtracting
-that multiple of the equation `A *ᵥ m = 0` from `A *ᵥ x = 0` shows that the ratio is equal
-at every adjacent index; connectedness propagates the equality to every index. -/
-lemma eq_smul_of_mulVec_eq_zero {C K : Type*} [Fintype C] [Nonempty C]
+/-- The weighted maximum principle for a matrix over a linear ordered field: if its off-diagonal
+entries are nonnegative, its positive-entry graph is strongly connected, and its kernel contains
+a strictly positive vector `m`, then every kernel vector is a scalar multiple of `m`. This is
+useful for proving that kernels of connected intersection matrices have rank one. -/
+lemma eq_smul_of_mulVec_eq_zero {C K : Type*} [Fintype C]
     [Field K] [LinearOrder K] [IsStrictOrderedRing K]
     (A : Matrix C C K)
     (hnonneg : ∀ i j, i ≠ j → 0 ≤ A i j)
@@ -81,6 +78,10 @@ lemma eq_smul_of_mulVec_eq_zero {C K : Type*} [Fintype C] [Nonempty C]
     (m x : C → K) (hm : ∀ i, 0 < m i) (hAm : A.mulVec m = 0) (hAx : A.mulVec x = 0) :
     ∃ c : K, x = c • m := by
   classical
+  rcases isEmpty_or_nonempty C with hC | hC
+  · let _ := hC
+    exact ⟨0, Subsingleton.elim _ _⟩
+  let _ := hC
   let r : C → K := fun i ↦ x i / m i
   obtain ⟨i, -, hi⟩ := Finset.exists_max_image Finset.univ r Finset.univ_nonempty
   have hr_le (j : C) : r j ≤ r i := hi j (Finset.mem_univ j)

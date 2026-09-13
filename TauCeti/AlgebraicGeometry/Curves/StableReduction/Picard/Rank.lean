@@ -31,7 +31,7 @@ kernel rank. Rank-nullity then computes the rank of its cokernel.
 
 The kernel argument is the weighted maximum principle in
 `Matrix.eq_smul_of_mulVec_eq_zero`. The rank-one conclusion is
-[Stacks, Tag 0C7H](https://stacks.math.columbia.edu/tag/0C7H).
+[Stacks, Tag 0C7I](https://stacks.math.columbia.edu/tag/0C7I).
 -/
 
 public section
@@ -154,7 +154,7 @@ theorem vecMul_intersection_eq_zero_iff (v : T.Component → ℤ) :
       (Int.natCast_ne_zero.mpr (T.multiplicity j).ne_zero)
 
 /-- Evaluation at any component is injective on the kernel of the intersection matrix. -/
-lemma injective_ker_vecMulLinear_intersection_apply (i : T.Component) :
+lemma ker_vecMulLinear_intersection_apply_injective (i : T.Component) :
     Function.Injective
       ((LinearMap.proj i).domRestrict (LinearMap.ker T.intersection.vecMulLinear)) := by
   intro x y hxy
@@ -175,7 +175,7 @@ theorem finrank_ker_vecMulLinear_intersection :
     Module.finrank ℤ (LinearMap.ker T.intersection.vecMulLinear) = 1 := by
   have hle : Module.finrank ℤ (LinearMap.ker T.intersection.vecMulLinear) ≤ 1 := by
     simpa using LinearMap.finrank_le_finrank_of_injective
-      (T.injective_ker_vecMulLinear_intersection_apply (Classical.choice inferInstance))
+      (T.ker_vecMulLinear_intersection_apply_injective (Classical.choice inferInstance))
   have hm_mem : (fun i ↦ (T.multiplicity i : ℤ)) ∈
       LinearMap.ker T.intersection.vecMulLinear := by
     rw [LinearMap.mem_ker, Matrix.vecMulLinear_apply]
