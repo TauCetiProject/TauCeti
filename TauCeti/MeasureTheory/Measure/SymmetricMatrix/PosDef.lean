@@ -20,7 +20,7 @@ The Wishart densities are supported on this cone, so its measurability is part o
 carrier API.
 
 The cone is also packaged as a subtype, `TauCeti.PosDefMatrix`, which is the carrier the
-Wishart and Cholesky APIs are stated on.
+Wishart and Cholesky APIs are stated on. Inversion maps the cone to itself.
 
 ## Main declarations
 
@@ -28,6 +28,7 @@ Wishart and Cholesky APIs are stated on.
 * `TauCeti.isOpen_setOfPred_posDefMatrix` — the positive-definite cone is open in the symmetric
   subspace.
 * `TauCeti.measurableSet_posDefMatrix` — the positive-definite cone is measurable.
+* `TauCeti.posDef_coe_symmetricInv` — the cone is preserved by `TauCeti.symmetricInv`.
 -/
 
 public section
@@ -63,5 +64,13 @@ theorem measurableSet_posDefMatrix (p : ℕ) :
     MeasurableSet {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).PosDef} :=
   (isOpen_setOfPred_posDefMatrix p).measurableSet
+
+/-- The inverse of a positive-definite symmetric matrix is positive definite. -/
+theorem posDef_coe_symmetricInv {p : ℕ}
+    {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
+    (hA : (A : Matrix (Fin p) (Fin p) ℝ).PosDef) :
+    (symmetricInv A : Matrix (Fin p) (Fin p) ℝ).PosDef := by
+  rw [coe_symmetricInv]
+  exact hA.inv
 
 end TauCeti

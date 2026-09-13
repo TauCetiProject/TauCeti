@@ -15,24 +15,24 @@ public import Mathlib.Topology.Instances.Matrix
 /-!
 # Inversion and the change of variables on the positive-definite cone
 
-The inverse of a symmetric matrix is symmetric, so matrix inversion is a self-map
-`TauCeti.symmetricInv` of the symmetric subspace, and an involution of the positive-definite cone.
-Its derivative at an invertible `A` is `H ↦ -A⁻¹ H A⁻¹`, that is, minus the congruence by `A⁻¹`,
-whose determinant `Matrix.det_symmetricCongruenceLinearMap` already computes. Hence the absolute
-Jacobian of inversion is `|det A| ^ (-(p + 1))`, and
-`TauCeti.map_symmetricInv_symmetricLebesgue` records the resulting change of variables: inversion
-carries `TauCeti.symmetricLebesgue` restricted to the cone to the same restriction weighted by
-`(det B) ^ (-(p + 1))`.
+Matrix inversion is a self-map `TauCeti.symmetricInv` of the symmetric subspace, and an
+involution of the positive-definite cone. Its derivative at an invertible `A` is `H ↦ -A⁻¹ H A⁻¹`,
+that is, minus the congruence by `A⁻¹`, whose determinant
+`Matrix.det_symmetricCongruenceLinearMap` already computes. Hence the absolute Jacobian of
+inversion is `|det A| ^ (-(p + 1))`, and `TauCeti.map_inv_symmetricLebesgue` records the resulting
+change of variables: inversion carries `TauCeti.symmetricLebesgue` restricted to the cone to the
+same restriction weighted by `(det B) ^ (-(p + 1))`.
 
 This is the change of variables behind the inverse-Wishart density: it reads the density of the
 image of a Wishart law under inversion off the density of the law itself.
 
 ## Main declarations
 
-* `TauCeti.symmetricInv` — matrix inversion as a self-map of the symmetric subspace.
+* `TauCeti.measurable_symmetricInv` — inversion is measurable.
 * `TauCeti.hasFDerivAt_symmetricInv` — its derivative at an invertible matrix is minus the
   congruence by the inverse.
-* `TauCeti.map_symmetricInv_symmetricLebesgue` — the change of variables on the
+* `TauCeti.abs_det_fderiv_symmetricInv` — the absolute Jacobian of inversion.
+* `TauCeti.map_inv_symmetricLebesgue` — the change of variables on the
   positive-definite cone.
 
 ## References
@@ -53,34 +53,7 @@ namespace TauCeti
 
 variable {p : ℕ}
 
-/-! ### Inversion as a self-map of the symmetric subspace -/
-
-/-- Matrix inversion as a self-map of the symmetric subspace. Mathlib's totalized inverse is zero
-on singular matrices and that value is kept here; on the positive-definite cone, where the
-Wishart laws live, the map is an involution. -/
-def symmetricInv (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-    selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
-  ⟨(A : Matrix (Fin p) (Fin p) ℝ)⁻¹,
-    Matrix.isHermitian_iff_isSelfAdjoint.1 (selfAdjoint.isHermitian_coe A).inv⟩
-
-/-- The underlying matrix of the inverse is the inverse of the underlying matrix. -/
-@[simp]
-theorem coe_symmetricInv (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-    (symmetricInv A : Matrix (Fin p) (Fin p) ℝ) = (A : Matrix (Fin p) (Fin p) ℝ)⁻¹ :=
-  (rfl)
-
-/-- Inversion is an involution at an invertible matrix. -/
-@[simp]
-theorem symmetricInv_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
-    (hA : (A : Matrix (Fin p) (Fin p) ℝ).det ≠ 0) : symmetricInv (symmetricInv A) = A :=
-  Subtype.ext <| by
-    rw [coe_symmetricInv, coe_symmetricInv, Matrix.nonsing_inv_nonsing_inv _ hA.isUnit]
-
-/-- The inverse of a positive-definite symmetric matrix is positive definite. -/
-theorem posDef_coe_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
-    (hA : (A : Matrix (Fin p) (Fin p) ℝ).PosDef) :
-    (symmetricInv A : Matrix (Fin p) (Fin p) ℝ).PosDef :=
-  hA.inv
+/-! ### Measurability of inversion -/
 
 /-- Inversion is measurable, being a rational expression in the entries: Mathlib's totalized
 inverse is `(det A)⁻¹ • adjugate A` everywhere. -/
@@ -93,7 +66,7 @@ theorem measurable_symmetricInv : Measurable (symmetricInv (p := p)) := by
   have hadj : Measurable fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (A : Matrix (Fin p) (Fin p) ℝ).adjugate :=
     continuous_subtype_val.matrix_adjugate.measurable
-  simp only [Matrix.inv_def, Ring.inverse_eq_inv']
+  simp only [coe_symmetricInv, Matrix.inv_def, Ring.inverse_eq_inv']
   exact hdet.inv.smul hadj
 
 /-! ### The derivative of inversion -/
@@ -197,7 +170,7 @@ theorem abs_det_fderiv_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin 
 `TauCeti.symmetricLebesgue` restricted to the cone under inversion is the same restriction
 weighted by `(det B) ^ (-(p + 1))`. This is what turns the Wishart density into the
 inverse-Wishart density. -/
-theorem map_symmetricInv_symmetricLebesgue (p : ℕ) :
+theorem map_inv_symmetricLebesgue (p : ℕ) :
     ((symmetricLebesgue p).restrict
         {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
           (A : Matrix (Fin p) (Fin p) ℝ).PosDef}).map symmetricInv =
