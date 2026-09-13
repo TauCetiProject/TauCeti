@@ -71,14 +71,7 @@ private lemma intersectionRat_mulVec_multiplicityRat :
 
 private lemma intersection_mulVec_eq_zero_of_vecMul_eq_zero {v : T.Component → ℤ}
     (hv : v ᵥ* T.intersection = 0) : T.intersection.mulVec v = 0 := by
-  funext i
-  calc
-    T.intersection.mulVec v i = ∑ j, v j * T.intersection j i := by
-      apply Finset.sum_congr rfl
-      intro j _
-      rw [T.intersection_comm, mul_comm]
-    _ = (v ᵥ* T.intersection) i := rfl
-    _ = 0 := congrFun hv i
+  rw [← T.intersection_isSymm.eq, Matrix.mulVec_transpose, hv]
 
 private lemma intersectionRat_mulVec_eq_zero_of_vecMul_eq_zero {v : T.Component → ℤ}
     (hv : v ᵥ* T.intersection = 0) :
@@ -193,24 +186,15 @@ theorem finrank_ker_vecMulLinear_intersection :
 theorem finrank_pic : Module.finrank ℤ T.Pic = 1 := by
   have hker_weighted : LinearMap.ker T.weightedIntersection.vecMulLinear =
       LinearMap.ker T.intersection.vecMulLinear := by
-    ext x
-    rw [LinearMap.mem_ker, LinearMap.mem_ker]
-    have hcomp := LinearMap.congr_fun T.weightScaling_comp_weightedIntersection x
-    rw [LinearMap.comp_apply] at hcomp
-    constructor
-    · intro hx
-      simpa [hx] using hcomp.symm
-    · intro hx
-      apply T.weightScaling_injective
-      simpa [hx] using hcomp
+    rw [← T.weightScaling_comp_weightedIntersection, LinearMap.ker_comp_of_ker_eq_bot _
+      (LinearMap.ker_eq_bot_of_injective T.weightScaling_injective)]
   have hrange : Module.finrank ℤ T.principalDivisors + 1 = Fintype.card T.Component := by
     have h := (LinearMap.ker T.weightedIntersection.vecMulLinear).finrank_quotient_add_finrank
     rw [LinearEquiv.finrank_eq T.weightedIntersection.vecMulLinear.quotKerEquivRange,
       hker_weighted, T.finrank_ker_vecMulLinear_intersection, Module.finrank_pi] at h
     have hp : T.principalDivisors = LinearMap.range T.weightedIntersection.vecMulLinear := by
       ext d
-      rw [T.mem_principalDivisors_iff, LinearMap.mem_range]
-      rfl
+      simp only [T.mem_principalDivisors_iff, LinearMap.mem_range, Matrix.vecMulLinear_apply]
     rwa [hp]
   have hpic := T.principalDivisors.finrank_quotient_add_finrank
   rw [Module.finrank_pi] at hpic
