@@ -33,8 +33,8 @@ the representation normal form to both sides and compares the forced second coef
 Both statements are about the *unit* value set `QuadraticMap.unitValueSet`. Invertibility of the
 represented value carries the whole content of the first theorem: every quadratic form represents
 `0` through the zero vector, so a reading at `c = 0` says nothing. The file also provides the
-general infrastructure for reindexing a weighted sum of squares and extending an equivalence of
-two coefficients across the remaining coordinates.
+general infrastructure for extending an equivalence of two coefficients across the remaining
+coordinates.
 
 ## Main definitions
 
@@ -49,7 +49,6 @@ two coefficients across the remaining coordinates.
 * `TauCeti.isSquare_mul_mul_of_equivalent_binary`: isometric binary forms have equal
   discriminants modulo squares.
 * `TauCeti.equivalent_binary_iff`: the binary equivalence criterion, Lam I.5.1.
-* `TauCeti.equivalent_weightedSumSquares_comp`: reindexing the coefficients preserves equivalence.
 * `TauCeti.equivalent_weightedSumSquares_of_pair`: a binary equivalence extends across fixed
   coordinates.
 
@@ -65,23 +64,7 @@ open QuadraticMap
 
 namespace TauCeti
 
-universe u v
-
-section Reindex
-
-variable {R : Type u} [CommSemiring R] {ι : Type v} [Fintype ι] [DecidableEq ι]
-
-omit [DecidableEq ι] in
-/-- Permuting the coefficients of a diagonal form does not change its equivalence class. -/
-theorem equivalent_weightedSumSquares_comp (w : ι → R) (σ : Equiv.Perm ι) :
-    (weightedSumSquares R w).Equivalent (weightedSumSquares R (w ∘ σ)) := by
-  refine ⟨{
-    toLinearEquiv := LinearEquiv.funCongrLeft R R σ
-    map_app' := fun x => ?_ }⟩
-  simp only [weightedSumSquares_apply, Function.comp_apply, smul_eq_mul]
-  simpa using (Equiv.sum_comp σ.symm (fun i => w (σ i) * (x (σ i) * x (σ i)))).symm
-
-end Reindex
+universe u
 
 section PairExtension
 
