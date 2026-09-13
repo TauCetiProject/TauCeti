@@ -265,7 +265,8 @@ residue-field spectrum. -/
 @[reassoc (attr := simp)]
 lemma genericFiberIsoFiberGenericPrime_inv_hom :
     (genericFiberIsoFiberGenericPrime toBase).inv ≫
-        (genericFiber R K toBase).hom ≫
+        pullback.snd toBase
+          (Spec.map (CommRingCat.ofHom (algebraMap R K))) ≫
         (specFractionRingIsoResidueFieldGenericPrime R K).hom =
       toBase.fiberToSpecResidueField (⟨⊥, inferInstance⟩ : Spec R) :=
   (isPullback_genericFiber_genericPrime toBase).isoIsPullback_inv_snd _ _
@@ -328,7 +329,9 @@ lemma genericFiberTowerIso_hom_genericFiberι :
 /-- The scalar-extension tower isomorphism commutes with the projections to `Spec L`. -/
 @[reassoc (attr := simp)]
 lemma genericFiberTowerIso_hom_hom :
-    (genericFiberTowerIso R K L toBase).hom ≫ (genericFiber R L toBase).hom =
+    (genericFiberTowerIso R K L toBase).hom ≫
+        pullback.snd toBase
+          (Spec.map (CommRingCat.ofHom (algebraMap R L))) =
       (genericFiber K L (genericFiber R K toBase).hom).hom :=
   (isPullback_genericFiberTower R K L toBase).isoIsPullback_hom_snd _ _
     (isPullback_genericFiber R L toBase)
@@ -338,7 +341,10 @@ space. -/
 @[reassoc (attr := simp)]
 lemma genericFiberTowerIso_inv_genericFiberι :
     (genericFiberTowerIso R K L toBase).inv ≫
-        genericFiberι K L (genericFiber R K toBase).hom ≫ genericFiberι R K toBase =
+        genericFiberι K L
+          (pullback.snd toBase
+            (Spec.map (CommRingCat.ofHom (algebraMap R K)))) ≫
+        genericFiberι R K toBase =
       genericFiberι R L toBase :=
   (isPullback_genericFiberTower R K L toBase).isoIsPullback_inv_fst _ _
     (isPullback_genericFiber R L toBase)
@@ -347,7 +353,10 @@ lemma genericFiberTowerIso_inv_genericFiberι :
 @[reassoc (attr := simp)]
 lemma genericFiberTowerIso_inv_hom :
     (genericFiberTowerIso R K L toBase).inv ≫
-        (genericFiber K L (genericFiber R K toBase).hom).hom =
+        pullback.snd
+          (pullback.snd toBase
+            (Spec.map (CommRingCat.ofHom (algebraMap R K))))
+          (Spec.map (CommRingCat.ofHom (algebraMap K L))) =
       (genericFiber R L toBase).hom :=
   (isPullback_genericFiberTower R K L toBase).isoIsPullback_inv_snd _ _
     (isPullback_genericFiber R L toBase)
