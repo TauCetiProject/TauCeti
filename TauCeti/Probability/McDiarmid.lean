@@ -58,13 +58,20 @@ private theorem abs_le_sum_add_abs_of_bounded_differences {ι : Type*} [Fintype 
     _ ≤ |f x - f x₀| + |f x₀| := abs_add_le _ _
     _ ≤ (∑ i, c i) + |f x₀| := by linarith
 
-/-- The centered exponential of a uniformly bounded measurable function is integrable. -/
-private theorem integrable_exp_mul_sub_const {γ : Type*} [MeasurableSpace γ] {μ : Measure γ}
-    [IsFiniteMeasure μ] {F : γ → ℝ} (hF : AEMeasurable F μ) {K : ℝ} (hFb : ∀ x, |F x| ≤ K)
-    (I t : ℝ) : Integrable (fun x => Real.exp (t * (F x - I))) μ :=
-  ProbabilityTheory.integrable_exp_mul_of_mem_Icc (a := -(K + |I|)) (b := K + |I|)
-    (hF.sub_const I)
-    (ae_of_all _ fun x => abs_le.mp ((abs_sub (F x) I).trans (by linarith [hFb x])))
+/-- A measurable bounded-differences function has an integrable centered exponential under any
+finite measure on the product. -/
+private theorem integrable_exp_mul_sub_of_bounded_differences {ι : Type*} [Finite ι]
+    {β : Type*} [MeasurableSpace β] [Nonempty β] {μ : Measure (ι → β)} [IsFiniteMeasure μ]
+    (c : ι → ℝ) {f : (ι → β) → ℝ} (hf : AEMeasurable f μ)
+    (hbd : ∀ (i : ι) (x x' : ι → β),
+      (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
+    (I t : ℝ) : Integrable (fun x => Real.exp (t * (f x - I))) μ := by
+  have : Fintype ι := Fintype.ofFinite ι
+  set x₀ : ι → β := fun _ => Classical.arbitrary β
+  set K : ℝ := (∑ i, c i) + |f x₀| + |I|
+  refine ProbabilityTheory.integrable_exp_mul_of_mem_Icc (a := -K) (b := K) (hf.sub_const I)
+    (ae_of_all _ fun x => abs_le.mp ((abs_sub (f x) I).trans ?_))
+  linarith [abs_le_sum_add_abs_of_bounded_differences c f hbd x₀ x]
 
 /-- The exponential-moment estimate underlying McDiarmid's inequality, on a product indexed by
 `Fin n`. -/
@@ -169,15 +176,6 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
         refine (integrable_const M).mono' (hsec_meas w).aestronglyMeasurable
           (ae_of_all _ fun a => ?_)
         simpa using hMf (Fin.cons a w)
-      have hg_bdd : ∀ w, |g w| ≤ M := by
-        intro w
-        rw [hg_def]
-        calc
-          |∫ a, f (Fin.cons a w) ∂ν| ≤ ∫ a, |f (Fin.cons a w)| ∂ν :=
-            abs_integral_le_integral_abs
-          _ ≤ ∫ _a, M ∂ν := integral_mono (hsec_int w).abs (integrable_const M)
-            (fun a => hMf (Fin.cons a w))
-          _ = M := by simp
       have hg_bd : ∀ (i : Fin n) (w w' : Fin n → β), (∀ l, l ≠ i → w l = w' l) →
           |g w - g w'| ≤ c i.succ := by
         intro i w w' hww'
@@ -260,7 +258,8 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
         rw [hsplit, integral_mul_const]
         exact mul_le_mul_of_nonneg_right (hHoeff w) (Real.exp_nonneg _)
       have hexpg_int : Integrable (fun w => Real.exp (t * (g w - I))) πn :=
-        integrable_exp_mul_sub_const hg_meas.aemeasurable hg_bdd I t
+        integrable_exp_mul_sub_of_bounded_differences (fun i => c i.succ) hg_meas.aemeasurable
+          hg_bd I t
       have hR_int : Integrable (fun w => Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) *
           Real.exp (t * (g w - I))) πn := hexpg_int.const_mul _
       have hLmeas : Measurable (fun w => ∫ a, Real.exp (t * (f (Fin.cons a w) - I)) ∂ν) := by
@@ -378,12 +377,8 @@ theorem hasSubgaussianMGF_of_bounded_differences
   have hc : ∀ i, 0 ≤ c i := by
     intro i
     simpa using hbd i x₀ x₀ (fun _ _ => rfl)
-  set M : ℝ := (∑ i, c i) + |f x₀| with hM
-  have hMf : ∀ x, |f x| ≤ M := fun x => by
-    rw [hM]
-    exact abs_le_sum_add_abs_of_bounded_differences c f hbd x₀ x
   have hint : ∀ t : ℝ, Integrable (fun x => Real.exp (t * (f x - I))) π := fun t =>
-    integrable_exp_mul_sub_const hf.aemeasurable hMf I t
+    integrable_exp_mul_sub_of_bounded_differences c hf.aemeasurable hbd I t
   refine ⟨hint, fun t => ?_⟩
   have hkey := integral_exp_mul_centered_le_pi ν f hf c hc hbd t
   have hcoe : (((∑ i, (c i).toNNReal ^ 2 / 4 : ℝ≥0) : ℝ)) =
