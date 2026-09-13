@@ -53,13 +53,29 @@ variable {G : Type v} [Group G] {N : Subgroup G} {k : Type} [Field k]
 /-- **The Frobenius-Schur indicator of a character induced from an inverted subgroup of index
 two** is the value of the character on the common square `s ^ 2` of the elements outside the
 subgroup.  The hypothesis `ψ ^ 2 ≠ 1` says that `ψ` is not its own inverse, and `hG` that the order
-of `G` is invertible in `k`. -/
+of `G` is invertible in `k`.  That `s` lies outside `N` need not be assumed: inside `N` the
+inversion hypothesis would make `ψ` its own inverse. -/
 theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_of_conj_eq_inv [Fintype G]
-    (hindex : N.index = 2) {s : G} (hs : s ∉ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹)
+    (hindex : N.index = 2) {s : G} (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹)
     (hG : IsUnit (Nat.card G : k)) {ψ : N →* kˣ} (hψ : ψ ^ 2 ≠ 1) :
     FDRep.frobeniusSchurIndicator (indFDRep (FDRep.ofLinearCharacter ψ)) =
       (ψ ⟨s ^ 2, Subgroup.sq_mem_of_index_two hindex s⟩ : k) := by
   classical
+  -- `s` lies outside `N`: inside it, `hinv` would make `ψ` its own inverse, because `kˣ` is
+  -- commutative, and that is what `hψ` forbids.
+  have hs : s ∉ N := by
+    intro hsN
+    refine hψ (MonoidHom.ext fun x => ?_)
+    have hconj : (⟨s, hsN⟩ : N) * x * (⟨s, hsN⟩ : N)⁻¹ = x⁻¹ :=
+      Subtype.ext (by simpa using hinv (x : G) x.2)
+    have hfix : ψ x = (ψ x)⁻¹ := by
+      have h := congrArg ψ hconj
+      simp only [map_mul, map_inv] at h
+      rwa [mul_comm (ψ (⟨s, hsN⟩ : N)) (ψ x), mul_inv_cancel_right] at h
+    have hsq : ψ x * ψ x = 1 := by
+      have hrewrite : ψ x * ψ x = ψ x * (ψ x)⁻¹ := by rw [← hfix]
+      rw [hrewrite, mul_inv_cancel]
+    rw [MonoidHom.pow_apply, MonoidHom.one_apply, pow_two, hsq]
   have hcast : (Nat.card G : k) = (Nat.card N : k) * 2 := by
     rw [← Subgroup.card_mul_index N, hindex]; push_cast; ring
   have hNunit : IsUnit (Nat.card N : k) := isUnit_of_mul_isUnit_left (hcast ▸ hG)
@@ -67,16 +83,21 @@ theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_of_conj_eq_inv [Finty
   -- `ψ z` is a square root of `1`, so the character of the induced representation is `2 ψ z` off
   -- the subgroup.
   have hzsq : z ^ 2 = 1 :=
-    Subtype.ext (by simpa using sq_sq_eq_one_of_conj_eq_inv hindex hinv)
+    Subtype.ext (by
+      simpa using sq_sq_eq_one_of_conj_eq_inv (Subgroup.sq_mem_of_index_two hindex s) hinv)
   have hψz : (ψ z)⁻¹ = ψ z :=
     inv_eq_of_mul_eq_one_right (by rw [← pow_two, ← map_pow, hzsq, map_one])
   have hval : ∀ (g : G) (hg : g ∈ N),
       Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ g =
         (ψ ⟨g, hg⟩ : k) + ((ψ ⟨g, hg⟩)⁻¹ : kˣ) := fun g hg => by
-    -- `Representation.character A.ρ` and `A.character` are the same trace of the same map:
-    -- Mathlib defines each of them as `LinearMap.trace k A (A.ρ g)`, so unfolding the two is all
-    -- that separates this module-spine goal from the `FDRep`-level formula.
-    rw [Representation.character, ← FDRep.character]
+    -- `FDRep.character_forget₂_obj` is the explicit bridge between the two character interfaces.
+    -- It is stated for the representation carried by `forget₂`, the one `FDRep.forget₂_ρ`
+    -- identifies with `V.ρ`; rewriting along that identification is not an option here, because
+    -- the motive is ill-typed while `indFDRep` is not `@[expose]`d.
+    have hbridge : Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ g =
+        (indFDRep (FDRep.ofLinearCharacter ψ)).character g :=
+      FDRep.character_forget₂_obj _ g
+    rw [hbridge]
     exact character_indFDRep_ofLinearCharacter_of_conj_eq_inv hindex hs hinv hNunit ψ hg
   -- The half of `G` inside `N` contributes the sum of the nontrivial character `ψ ^ 2` and of its
   -- inverse, both of which vanish.

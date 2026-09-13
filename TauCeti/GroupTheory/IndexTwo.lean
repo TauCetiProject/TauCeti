@@ -74,12 +74,13 @@ theorem sq_eq_sq_of_notMem_of_index_two (hindex : N.index = 2) {s : G} (hs : s �
     _ = s * (s * n⁻¹) * n := by rw [hns]
     _ = s * s := by group
 
-/-- **The common square of the elements outside an inverted subgroup of index two is an
-involution:** `(s ^ 2) ^ 2 = 1`. -/
-theorem sq_sq_eq_one_of_conj_eq_inv (hindex : N.index = 2) {s : G}
+/-- **The common square of the elements outside an inverted subgroup is an involution:**
+`(s ^ 2) ^ 2 = 1`. Only membership of `s ^ 2` in `N` is needed, which
+`Subgroup.sq_mem_of_index_two` supplies when `N` has index two. -/
+theorem sq_sq_eq_one_of_conj_eq_inv {s : G} (hsq : s ^ 2 ∈ N)
     (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) : (s ^ 2) ^ 2 = 1 := by
   have hfix : s ^ 2 = (s ^ 2)⁻¹ := by
-    rw [← hinv (s ^ 2) (Subgroup.sq_mem_of_index_two hindex s)]
+    rw [← hinv (s ^ 2) hsq]
     group
   rw [pow_two]
   nth_rewrite 2 [hfix]

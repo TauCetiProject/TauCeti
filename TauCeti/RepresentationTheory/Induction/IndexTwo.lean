@@ -68,7 +68,8 @@ theorem character_indFDRep_ofLinearCharacter_of_conj_eq_inv (hindex : N.index = 
     intro x
     rw [dite_eq_left (hconj x), FDRep.char_ofLinearCharacter]
     by_cases hx : x ∈ N
-    · have hsplit : (⟨x⁻¹ * g * x, hconj x⟩ : N) = (⟨x, hx⟩ : N)⁻¹ * ⟨g, hg⟩ * ⟨x, hx⟩ := rfl
+    · have hsplit : (⟨x⁻¹ * g * x, hconj x⟩ : N) = (⟨x, hx⟩ : N)⁻¹ * ⟨g, hg⟩ * ⟨x, hx⟩ :=
+        Subtype.ext (by simp)
       rw [ite_eq_left hx, hsplit, map_mul, map_mul, map_inv, inv_mul_cancel_comm]
     · have hxinv : x⁻¹ ∉ N := fun h => hx (by simpa using N.inv_mem h)
       have hsplit : (⟨x⁻¹ * g * x, hconj x⟩ : N) = (⟨g, hg⟩ : N)⁻¹ :=

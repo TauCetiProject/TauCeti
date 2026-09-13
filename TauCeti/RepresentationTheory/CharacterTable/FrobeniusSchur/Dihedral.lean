@@ -22,7 +22,8 @@ two-dimensional irreducible of `D₄` by
 
 * `TauCeti.frobeniusSchurIndicator_indFDRep_ofLinearCharacter_dihedralGroupFourRotationChar`:
   **the representation of `D₄` induced from the faithful character of its rotation subgroup has
-  Frobenius-Schur indicator `1`.**
+  Frobenius-Schur indicator `1`.**  It is a `simp` lemma, stated on the underlying representation
+  so that it matches after `TauCeti.FDRep.frobeniusSchurIndicator_def` has fired.
 
 ## References
 
@@ -37,10 +38,13 @@ namespace TauCeti
 rotation subgroup sending `r 1` to `i` has Frobenius-Schur indicator `1`.**  That representation
 is the two-dimensional irreducible of `D₄`, by
 `TauCeti.simple_indFDRep_ofLinearCharacter_dihedralGroupFourRotationChar` and
-`TauCeti.finrank_indFDRep_ofLinearCharacter_dihedralGroupFourRotationChar`. -/
+`TauCeti.finrank_indFDRep_ofLinearCharacter_dihedralGroupFourRotationChar`.  The value is stated
+on the module spine, which is where the `simp` lemma `TauCeti.FDRep.frobeniusSchurIndicator_def`
+sends the `FDRep`-level indicator, so `simp` normalizes either spelling to `1`. -/
+@[simp]
 theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_dihedralGroupFourRotationChar :
-    FDRep.frobeniusSchurIndicator
-      (indFDRep (FDRep.ofLinearCharacter dihedralGroupFourRotationChar)) = 1 := by
+    Representation.frobeniusSchurIndicator
+      (indFDRep (FDRep.ofLinearCharacter dihedralGroupFourRotationChar)).ρ = 1 := by
   have hcard : (Nat.card (DihedralGroup 4) : ℂ) = 8 := by
     rw [Nat.card_eq_fintype_card, DihedralGroup.card]; norm_num
   have hψ : dihedralGroupFourRotationChar ^ 2 ≠ 1 := fun hcontra => by
@@ -59,10 +63,11 @@ theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_dihedralGroupFourRota
   have hone : (⟨(DihedralGroup.sr (0 : ZMod 4)) ^ 2,
       Subgroup.sq_mem_of_index_two (index_dihedralRotations 4) _⟩ : dihedralRotations 4) = 1 :=
     Subtype.ext hsq
-  rw [frobeniusSchurIndicator_indFDRep_ofLinearCharacter_of_conj_eq_inv
-    (index_dihedralRotations 4) (sr_notMem_dihedralRotations 0)
-    (fun _ hx => conj_eq_inv_of_notMem_dihedralRotations (sr_notMem_dihedralRotations 0) hx)
-    (isUnit_iff_ne_zero.mpr (by rw [hcard]; norm_num)) hψ]
+  rw [← FDRep.frobeniusSchurIndicator_def,
+    frobeniusSchurIndicator_indFDRep_ofLinearCharacter_of_conj_eq_inv
+      (s := DihedralGroup.sr (0 : ZMod 4)) (index_dihedralRotations 4)
+      (fun _ hx => conj_eq_inv_of_notMem_dihedralRotations (sr_notMem_dihedralRotations 0) hx)
+      (isUnit_iff_ne_zero.mpr (by rw [hcard]; norm_num)) hψ]
   rw [hone, map_one, Units.val_one]
 
 end TauCeti
