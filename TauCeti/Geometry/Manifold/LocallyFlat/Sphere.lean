@@ -18,8 +18,10 @@ the collar presents a whole neighbourhood of the sphere as a product, which is w
 the regions adjacent to it.  It is that global bicollar that wild embeddings such as the
 Alexander horned sphere fail to admit.
 
-This file records Brown's theorem as the dimension-indexed proposition
-`TauCeti.BrownBicollaring`.  The theorem is stated rather than proved.
+Brown's theorem is recorded as the dimension-indexed proposition
+`TauCeti.BrownBicollaring`.  Its hypothesis may equally be read through the codimension-one
+comparison `TauCeti.isLocallyFlat_iff_isEmbedding_and_isLocallyBicollared`, which says that a map
+out of a sphere is locally flat exactly when it is an embedding that is locally bicollared.
 
 The indexing uses an `n`-sphere in `EuclideanSpace ℝ (Fin (n + 1))` embedded in the
 `(n + 1)`-sphere in `EuclideanSpace ℝ (Fin (n + 2))`.  Local flatness is read in the split
@@ -70,9 +72,9 @@ def BrownBicollaring (n : ℕ) : Prop :=
         sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1,
     IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f → IsBicollared f
 
-/-- The defining characterization of Brown's bicollaring theorem.  The module system does not
-expose the body of `TauCeti.BrownBicollaring`, so a downstream file cannot unfold it; this lemma
-is how the proposition is introduced and eliminated there. -/
+/-- Brown's bicollaring theorem in dimension `n` spelled out: every locally flat embedding of the
+standard `n`-sphere in the standard `(n + 1)`-sphere, with local-flatness model
+`EuclideanSpace ℝ (Fin n)`, admits a global bicollar. -/
 @[simp]
 theorem brownBicollaring_iff {n : ℕ} :
     BrownBicollaring n ↔
