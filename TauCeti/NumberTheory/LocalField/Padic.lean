@@ -16,10 +16,10 @@ concrete p-adic norm and valuation APIs.
 
 ## Main results
 
-* `Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized valuation with
-  `Padic.valuation`.
-* `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
-* `Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
+* `TauCeti.Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized
+  valuation with `Padic.valuation`.
+* `TauCeti.Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
+* `TauCeti.Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
   Mathlib's norm on `ℚ_[p]`.
 
 The Padic and residue-field constructions used here are part of Mathlib's upstream
@@ -48,11 +48,7 @@ private theorem valueGroupWithZeroIsoInt_padic (x : ℚ_[p]) :
     ((Valuation.isEquiv_map_self_of_strictMono e.toMonoidWithZeroHom e.strictMono).trans
       (ValuativeRel.isEquiv _ _))) x
 
-end TauCeti
-
 namespace Padic
-
-open TauCeti
 
 /-- The additive normalized valuation on `ℚ_[p]` is Mathlib's p-adic valuation. -/
 @[simp]
@@ -62,7 +58,7 @@ theorem toAdd_normalizedValuation_eq_valuation (x : ℚ_[p]ˣ) :
   simp [Padic.mulValuation, x.ne_zero]
 
 /-- The residue field of `ℚ_[p]` has cardinality `p`. -/
-@[simp]
+@[simp high] -- Compute the cardinality before `Nat.card_eq_fintype_card` changes its form.
 theorem natCard_residueField :
     Nat.card 𝓀[ℚ_[p]] = p := by
   rw [@Nat.card_eq_fintype_card _ (Fintype.ofFinite 𝓀[ℚ_[p]])]
@@ -89,3 +85,5 @@ theorem normalizedAbsoluteValue_eq_nnnorm (x : ℚ_[p]) :
   simpa using (Padic.norm_eq_zpow_neg_valuation hx).symm
 
 end Padic
+
+end TauCeti
