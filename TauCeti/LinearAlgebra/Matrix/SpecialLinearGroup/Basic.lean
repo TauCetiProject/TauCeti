@@ -90,9 +90,7 @@ variable {d : ℕ}
 
 namespace Matrix.SpecialLinearGroup
 
-/-- **`SL(n, R)` is countable when the coefficient ring is.** `Matrix n n R` is a `def` wrapping
-`n → n → R`, so instance search reaches through it to neither the `Pi` instance nor
-`Subtype.countable`; both steps are spelled out here. -/
+/-- **`SL(n, R)` is countable when the coefficient ring is**, the index type being finite. -/
 instance {R : Type*} [CommRing R] [Countable R] {n : Type*} [Fintype n] [DecidableEq n] :
     Countable (SpecialLinearGroup n R) :=
   letI : Countable (Matrix n n R) := inferInstanceAs (Countable (n → n → R))
