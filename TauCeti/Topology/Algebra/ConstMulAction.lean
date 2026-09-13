@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Actions
 public import Mathlib.Algebra.Group.Submonoid.MulAction
+public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.Topology.Algebra.ConstMulAction
 
 /-!
@@ -20,6 +21,8 @@ an ambient scalar action; and a properly discontinuous action has `Finite` point
 
 * `Submonoid.continuousConstSMul` and `TauCeti.Subgroup.continuousConstSMul`: continuity
   in the point is inherited by a submonoid, hence by a subgroup.
+* `SubMulAction.properlyDiscontinuousSMul`: proper discontinuity is inherited by every invariant
+  subspace.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
 -/
@@ -45,6 +48,24 @@ instance continuousConstSMul {G X : Type*} [Group G] [TopologicalSpace X] [SMul 
   Submonoid.continuousConstSMul S.toSubmonoid
 
 end Subgroup
+
+end TauCeti
+
+namespace SubMulAction
+
+/-- A group action remains properly discontinuous on every invariant subspace. -/
+theorem properlyDiscontinuousSMul {G X : Type*} [Group G] [TopologicalSpace X] [MulAction G X]
+    [ProperlyDiscontinuousSMul G X] (S : SubMulAction G X) : ProperlyDiscontinuousSMul G S where
+  finite_disjoint_inter_image {K L} hK hL := by
+    refine (ProperlyDiscontinuousSMul.finite_disjoint_inter_image
+      (hK.image continuous_subtype_val) (hL.image continuous_subtype_val)).subset ?_
+    rintro g ⟨y, ⟨x, hx, hxy⟩, hy⟩
+    exact
+      ⟨(y : X), ⟨(x : X), ⟨x, hx, rfl⟩, congrArg Subtype.val hxy⟩, ⟨y, hy, rfl⟩⟩
+
+end SubMulAction
+
+namespace TauCeti
 
 /-- **A properly discontinuous action has finite point stabilisers**, as a `Finite` instance.
 
