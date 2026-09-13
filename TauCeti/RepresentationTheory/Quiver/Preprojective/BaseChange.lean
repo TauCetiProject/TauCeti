@@ -44,7 +44,7 @@ universe u v w z
 section
 
 variable {k : Type w} {l : Type z} {Q : Type u}
-  [CommRing k] [CommRing l] [Quiver.{v + 1} Q] [Fintype Q]
+  [CommRing k] [CommRing l] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-! ### The path-algebra map behind the quotient map -/

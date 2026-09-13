@@ -67,7 +67,7 @@ open _root_.Quiver
 
 universe u v
 
-variable (Q : Type u) [Quiver.{v + 1} Q]
+variable (Q : Type u) [Quiver.{v} Q]
 
 /-- The quiver obtained from `Q` by turning around exactly the arrows on which the labelling `σ`
 takes the value `true`: an arrow `i ⟶ j` of `Reorient Q σ` is either an arrow `i ⟶ j` of `Q` which
@@ -77,7 +77,7 @@ def Reorient (_σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool) : Type u := Q
 
 variable {Q}
 
-instance reorientQuiver (σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool) : Quiver.{v + 1} (Reorient Q σ) :=
+instance reorientQuiver (σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool) : Quiver.{v} (Reorient Q σ) :=
   ⟨fun i j : Q => {a : i ⟶ j // ¬ σ a} ⊕ {a : j ⟶ i // σ a}⟩
 
 instance instFiniteReorient (σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool) [Finite Q] :

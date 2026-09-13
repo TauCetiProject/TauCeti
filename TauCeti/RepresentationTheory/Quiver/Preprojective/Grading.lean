@@ -71,7 +71,7 @@ universe u v w
 
 section Generators
 
-variable (k : Type w) {Q : Type u} [Semiring k] [Quiver.{v + 1} Q]
+variable (k : Type w) {Q : Type u} [Semiring k] [Quiver.{v} Q]
 
 /-- **The head backtrack of an arrow has degree two**: it is the basis element of a single
 length-two path of the doubled quiver. -/
@@ -95,7 +95,7 @@ end Generators
 
 section Relators
 
-variable (k : Type w) {Q : Type u} [Ring k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [Ring k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- **The local preprojective relator has degree two**: it is a difference of sums of head and
@@ -125,7 +125,7 @@ end Relators
 
 section Ideal
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 variable (Q)
@@ -145,7 +145,7 @@ end Ideal
 
 section Grade
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 variable (Q)
