@@ -23,6 +23,8 @@ strictly unital morphism and augmentation constructions.
 
 * B. Keller, *Introduction to A-infinity algebras and modules*, Section 3.1.
 * E. Getzler and J. D. S. Jones, *A-infinity algebras and the cyclic bar complex*, Sections 1--2.
+* `TauCetiRoadmap/DGAInfinity/Suggested.lean`, following the “Units, morphisms, and equivalences”
+  section of the roadmap.
 -/
 
 public section
@@ -44,8 +46,6 @@ curvature is already excluded by `AInfinityAlgebra.m_zero`. -/
 structure StrictUnit (𝒜 : AInfinityAlgebra R A) (e : A) : Prop where
   /-- The unit is homogeneous of degree zero. -/
   degree_zero : e ∈ 𝒜.grading.piece 0
-  /-- The unit is a cycle for `m₁`. -/
-  unary_eq_zero : 𝒜.m 1 ![e] = 0
   /-- The unit is a left unit for `m₂`. -/
   binary_left : ∀ x, 𝒜.m 2 ![e, x] = x
   /-- The unit is a right unit for `m₂`. -/
@@ -54,14 +54,21 @@ structure StrictUnit (𝒜 : AInfinityAlgebra R A) (e : A) : Prop where
   higher : ∀ (n : ℕ), n ≠ 2 → ∀ x : Fin n → A,
     (∃ i, x i = e) → 𝒜.m n x = 0
 
-attribute [simp] StrictUnit.unary_eq_zero StrictUnit.binary_left StrictUnit.binary_right
+attribute [simp] StrictUnit.binary_left StrictUnit.binary_right
 
 namespace StrictUnit
 
 variable {𝒜 : AInfinityAlgebra R A} {e e' : A}
 
+/-! ### The characteristic unit equations -/
+
+/-- A strict unit is closed under the unary `A∞` operation. -/
+@[simp]
+theorem unary_eq_zero (h : 𝒜.StrictUnit e) : 𝒜.m 1 ![e] = 0 := by
+  simpa using h.higher 1 (by decide) ![e] ⟨0, rfl⟩
+
 /-- The higher operations vanish when a specified input is the strict unit. -/
-theorem m_eq_zero_of_mem_unit (h : 𝒜.StrictUnit e) {n : ℕ} (hn : n ≠ 2)
+theorem m_eq_zero_of_eq_unit (h : 𝒜.StrictUnit e) {n : ℕ} (hn : n ≠ 2)
     (x : Fin n → A) {i : Fin n} (hi : x i = e) : 𝒜.m n x = 0 := by
   exact h.higher n hn x ⟨i, hi⟩
 
