@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Determinant
+public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Inv
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Rank
 
@@ -19,7 +20,9 @@ upper-triangular coordinates (`TauCeti.MeasureTheory.Measure.SymmetricMatrix.Bas
 positive-definite cone (`TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef`), the coordinate
 Lebesgue measure `TauCeti.symmetricLebesgue`
 (`TauCeti.MeasureTheory.Measure.SymmetricMatrix.Lebesgue`), the congruence action and its
-Jacobian (`TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence`), the closedness of the rank
+Jacobian (`TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence`), inversion on the
+positive-definite cone and its change of variables
+(`TauCeti.MeasureTheory.Measure.SymmetricMatrix.Inv`), the closedness of the rank
 sublevel sets (`TauCeti.MeasureTheory.Measure.SymmetricMatrix.Rank`), and the nullity of the
 singular matrices (`TauCeti.MeasureTheory.Measure.SymmetricMatrix.Determinant`). It declares
 nothing of its own.

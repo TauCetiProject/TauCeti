@@ -46,6 +46,7 @@ subspace: `TauCeti.symmetricCoordinates` reads off the entries above the diagona
 * `TauCeti.symmetricCoordinatesMeasurableEquiv` — its measurable-equivalence form.
 * `TauCeti.symmetricBasis` — the basis dual to the upper-triangular coordinates.
 * `TauCeti.finrank_symmetricMatrix` — the dimension is `p * (p + 1) / 2`.
+* `TauCeti.symmetricPart` — the symmetric part of a matrix, a retraction onto the subspace.
 * `selfAdjoint.inner_eq_trace_mul` — the Frobenius pairing is the trace pairing.
 -/
 
@@ -207,6 +208,34 @@ theorem coe_apply_comm {p : ℕ} (A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
 end selfAdjoint
 
 namespace TauCeti
+
+/-! ### The symmetric part -/
+
+/-- The symmetric part `(M + Mᵀ) / 2` of a square real matrix, as a linear map into the symmetric
+subspace. It is a retraction: it restricts to the identity on symmetric matrices, which is what
+makes it available for corestricting a matrix-valued map to the subspace.
+
+This is Mathlib's `selfAdjointPart`, whose codomain is the additive subgroup `selfAdjoint` rather
+than the submodule used here. -/
+def symmetricPart {p : ℕ} : Matrix (Fin p) (Fin p) ℝ →ₗ[ℝ]
+    selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
+  selfAdjointPart ℝ
+
+/-- The symmetric part is the identity on symmetric matrices. -/
+@[simp]
+theorem symmetricPart_coe {p : ℕ} (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    symmetricPart (A : Matrix (Fin p) (Fin p) ℝ) = A :=
+  Subtype.ext (IsSelfAdjoint.coe_selfAdjointPart_apply ℝ A.2)
+
+open scoped Matrix in
+/-- The symmetric part of a matrix is its average with its transpose. -/
+@[simp]
+theorem coe_symmetricPart {p : ℕ} (M : Matrix (Fin p) (Fin p) ℝ) :
+    (symmetricPart M : Matrix (Fin p) (Fin p) ℝ) = (2 : ℝ)⁻¹ • (M + Mᵀ) := by
+  have h : (symmetricPart M : Matrix (Fin p) (Fin p) ℝ) = (⅟2 : ℝ) • (M + star M) :=
+    selfAdjointPart_apply_coe ℝ M
+  rw [h, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_eq_transpose_of_trivial,
+    invOf_eq_inv]
 
 /-! ### Upper-triangular coordinates -/
 
