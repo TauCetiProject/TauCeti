@@ -230,71 +230,69 @@ omit [I.Boundaryless] in
     ⟨by linarith [abs_nonneg t], by linarith [abs_nonneg t]⟩, by simp⟩
 
 omit [I.Boundaryless] in
+private theorem IsGeodesicCurveOnFrom.comp_mul_left_Ioo
+    {p : M} {v : TangentSpace I p} {γ : ℝ → M} {b c : ℝ}
+    (hγ : IsGeodesicCurveOnFrom I γ (Ioo b c) p v) {a : ℝ} (ha : a ≠ 0) :
+    (fun s : ℝ => a * s) ⁻¹' Ioo b c =
+        Ioo (min (b / a) (c / a)) (max (b / a) (c / a)) ∧
+      MapsTo (fun s : ℝ => a * s) (Ioo (min (b / a) (c / a)) (max (b / a) (c / a)))
+        (Ioo b c) ∧
+      (0 : ℝ) ∈ Ioo (min (b / a) (c / a)) (max (b / a) (c / a)) ∧
+      UniqueDiffOn ℝ (Ioo (min (b / a) (c / a)) (max (b / a) (c / a))) ∧
+      IsGeodesicCurveOnFrom I (γ ∘ fun s : ℝ => a * s)
+        (Ioo (min (b / a) (c / a)) (max (b / a) (c / a))) p (a • v) := by
+  have hbc : b < c := hγ.zero_mem.1.trans hγ.zero_mem.2
+  have hu : (fun s : ℝ => a * s) ⁻¹' Ioo b c =
+      Ioo (min (b / a) (c / a)) (max (b / a) (c / a)) := by
+    rcases lt_or_gt_of_ne ha with hneg | hpos
+    · have hbc' : c / a < b / a := (div_lt_iff_of_neg hneg).2 (by
+        rw [div_mul_cancel₀ _ (ne_of_lt hneg)]
+        exact hbc)
+      rw [preimage_const_mul_Ioo_of_neg _ _ hneg]
+      simp only [min_eq_right hbc'.le, max_eq_left hbc'.le]
+    · have hbc' : b / a < c / a :=
+        (div_lt_div_iff₀ hpos hpos).2 (mul_lt_mul_of_pos_right hbc hpos)
+      rw [preimage_const_mul_Ioo₀ _ _ hpos]
+      simp only [min_eq_left hbc'.le, max_eq_right hbc'.le]
+  have hmap : MapsTo (fun s : ℝ => a * s)
+      (Ioo (min (b / a) (c / a)) (max (b / a) (c / a))) (Ioo b c) := by
+    rw [← hu]
+    exact fun _ hs => hs
+  have h0u : (0 : ℝ) ∈ Ioo (min (b / a) (c / a)) (max (b / a) (c / a)) := by
+    rw [← hu]
+    simpa using hγ.zero_mem
+  have huuniq : UniqueDiffOn ℝ (Ioo (min (b / a) (c / a)) (max (b / a) (c / a))) :=
+    uniqueDiffOn_Ioo _ _
+  exact ⟨hu, hmap, h0u, huuniq, hγ.comp_mul_left a huuniq hmap h0u⟩
+
+omit [I.Boundaryless] in
 /-- Nonzero rescaling of the initial velocity rescales the maximal interval by the inverse. -/
 @[simp] theorem mem_geodesicInterval_smul_iff
     {p : M} {v : TangentSpace I p} {a t : ℝ} (ha : a ≠ 0) :
     t ∈ geodesicInterval I M p (a • v) ↔ a * t ∈ geodesicInterval I M p v := by
   constructor
   · rintro ⟨γ, b, c, hγ, ht⟩
-    have hbc : b < c := hγ.zero_mem.1.trans hγ.zero_mem.2
     let u := Ioo (min (b / a⁻¹) (c / a⁻¹)) (max (b / a⁻¹) (c / a⁻¹))
-    have hu : (fun s : ℝ => a⁻¹ * s) ⁻¹' Ioo b c = u := by
-      rcases lt_or_gt_of_ne (inv_ne_zero ha) with hneg | hpos
-      · have hbc' : c / a⁻¹ < b / a⁻¹ := (div_lt_iff_of_neg hneg).2 (by
-          rw [div_mul_cancel₀ _ (ne_of_lt hneg)]
-          exact hbc)
-        rw [preimage_const_mul_Ioo_of_neg _ _ hneg]
-        simp only [u, min_eq_right hbc'.le, max_eq_left hbc'.le]
-      · have hbc' : b / a⁻¹ < c / a⁻¹ :=
-          (div_lt_div_iff₀ hpos hpos).2 (mul_lt_mul_of_pos_right hbc hpos)
-        rw [preimage_const_mul_Ioo₀ _ _ hpos]
-        simp only [u, min_eq_left hbc'.le, max_eq_right hbc'.le]
-    have hmap : MapsTo (fun s : ℝ => a⁻¹ * s) u (Ioo b c) := by
-      rw [← hu]
-      exact fun _ hs => hs
-    have h0u : (0 : ℝ) ∈ u := by
-      rw [← hu]
-      simpa using hγ.zero_mem
-    have huuniq : UniqueDiffOn ℝ u := by
-      dsimp [u]
-      exact uniqueDiffOn_Ioo _ _
+    obtain ⟨hu, hmap, h0u, huuniq, hγ'⟩ :=
+      hγ.comp_mul_left_Ioo (a := a⁻¹) (inv_ne_zero ha)
+    have hu' : (fun s : ℝ => a⁻¹ * s) ⁻¹' Ioo b c = u := by
+      simpa only [u] using hu
     have hγ' : IsGeodesicCurveOnFrom I (γ ∘ fun s : ℝ => a⁻¹ * s) u p v := by
-      simpa [u, smul_smul, inv_mul_cancel₀ ha] using
-        hγ.comp_mul_left a⁻¹ huuniq hmap h0u
+      simpa [u, smul_smul, inv_mul_cancel₀ ha] using hγ'
     refine ⟨γ ∘ fun s : ℝ => a⁻¹ * s, _, _, hγ', ?_⟩
     -- The existential witness unfolds `u`; rewrite its membership as the preimage condition.
     change a * t ∈ u
-    rw [← hu]
+    rw [← hu']
     simpa [← mul_assoc, inv_mul_cancel₀ ha] using ht
   · rintro ⟨γ, b, c, hγ, ht⟩
-    have hbc : b < c := hγ.zero_mem.1.trans hγ.zero_mem.2
     let u := Ioo (min (b / a) (c / a)) (max (b / a) (c / a))
-    have hu : (fun s : ℝ => a * s) ⁻¹' Ioo b c = u := by
-      rcases lt_or_gt_of_ne ha with hneg | hpos
-      · have hbc' : c / a < b / a := (div_lt_iff_of_neg hneg).2 (by
-          rw [div_mul_cancel₀ _ (ne_of_lt hneg)]
-          exact hbc)
-        rw [preimage_const_mul_Ioo_of_neg _ _ hneg]
-        simp only [u, min_eq_right hbc'.le, max_eq_left hbc'.le]
-      · have hbc' : b / a < c / a :=
-          (div_lt_div_iff₀ hpos hpos).2 (mul_lt_mul_of_pos_right hbc hpos)
-        rw [preimage_const_mul_Ioo₀ _ _ hpos]
-        simp only [u, min_eq_left hbc'.le, max_eq_right hbc'.le]
-    have hmap : MapsTo (fun s : ℝ => a * s) u (Ioo b c) := by
-      rw [← hu]
-      exact fun _ hs => hs
-    have h0u : (0 : ℝ) ∈ u := by
-      rw [← hu]
-      simpa using hγ.zero_mem
-    have huuniq : UniqueDiffOn ℝ u := by
-      dsimp [u]
-      exact uniqueDiffOn_Ioo _ _
-    have hγ' : IsGeodesicCurveOnFrom I (γ ∘ fun s : ℝ => a * s) u p (a • v) :=
-      hγ.comp_mul_left a huuniq hmap h0u
+    obtain ⟨hu, hmap, h0u, huuniq, hγ'⟩ := hγ.comp_mul_left_Ioo ha
+    have hu' : (fun s : ℝ => a * s) ⁻¹' Ioo b c = u := by
+      simpa only [u] using hu
     refine ⟨γ ∘ fun s : ℝ => a * s, _, _, hγ', ?_⟩
     -- As above, expose the named witness interval before applying the preimage equality.
     change t ∈ u
-    rw [← hu]
+    rw [← hu']
     exact ht
 
 end Manifold
