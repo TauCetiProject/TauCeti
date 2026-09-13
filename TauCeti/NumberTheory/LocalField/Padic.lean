@@ -52,11 +52,13 @@ end TauCeti
 
 namespace Padic
 
-/-- The inverse of the zero-preserving normalized valuation on `ℚ_[p]` is
+/-- The zero-preserving normalized valuation on `ℚ_[p]` is the inverse of
 Mathlib's p-adic valuation. -/
 @[simp]
-theorem normalizedValuationWithZero_inv_eq_mulValuation (x : ℚ_[p]) :
-    (TauCeti.normalizedValuationWithZero ℚ_[p] x)⁻¹ = Padic.mulValuation x := by
+theorem normalizedValuationWithZero_eq_inv_mulValuation (x : ℚ_[p]) :
+    TauCeti.normalizedValuationWithZero ℚ_[p] x = (Padic.mulValuation x)⁻¹ := by
+  apply inv_injective
+  simp only [inv_inv]
   rcases eq_or_ne x 0 with rfl | hx
   · simp
   let u : ℚ_[p]ˣ := Units.mk0 x hx
