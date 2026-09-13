@@ -28,7 +28,7 @@ the resampling on the estimator.
 
 ## Main results
 
-* `abs_homDensityFin_sub_le_of_adj_iff` — the oscillation bound above.
+* `SimpleGraph.abs_homDensityFin_sub_le_of_adj_iff` — the oscillation bound above.
 
 ## References
 
@@ -39,9 +39,9 @@ public section
 
 open Finset
 
-namespace TauCeti
+namespace SimpleGraph
 
-namespace DenseGraphLimits
+open TauCeti.DenseGraphLimits
 
 variable {V W : Type*} [Fintype V] [Fintype W]
 
@@ -101,6 +101,4 @@ theorem abs_homDensityFin_sub_le_of_adj_iff (F : SimpleGraph V) {G G' : SimpleGr
       ≤ #S * Fintype.card W := mul_le_mul_of_nonneg_right habs hmR.le
     _ ≤ Fintype.card V * Fintype.card W ^ Fintype.card V := hSbound
 
-end DenseGraphLimits
-
-end TauCeti
+end SimpleGraph

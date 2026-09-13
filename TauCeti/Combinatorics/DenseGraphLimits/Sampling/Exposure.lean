@@ -24,7 +24,7 @@ The *padded exposure* supplies the product structure. Each of the `n` vertices c
 position in the graphon's carrier together with a full row of `n` independent uniform coins, and
 the exposure source is the `n`-fold product of these vertex coordinates. The edge `{i, j}` reads
 its coin from one designated row: row `max i j`, column `min i j`, and it is present when that coin
-falls below the graphon value at the two positions. Every coin of a row above the diagonal is
+falls below the graphon value at the two positions. Every coin on or above the diagonal is
 padding that no edge reads. Since every edge reads a coin carried by one of its endpoints,
 changing the coordinate of one vertex changes only the pairs at that vertex.
 
@@ -58,7 +58,7 @@ The two results of the file make this a genuine representation of `G(n, W)`:
   graphon carrier and uses the uniform coin `TauCeti.Probability.uniformMeasure 0 1` and the strict
   comparison of the joint sampler `infiniteSampleLaw`; the law identification evaluates the mass of
   a single pattern as a box of coin intervals, and the oscillation bound is derived from a
-  host-graph statement, `abs_homDensityFin_sub_le_of_adj_iff`.
+  host-graph statement, `SimpleGraph.abs_homDensityFin_sub_le_of_adj_iff`.
 -/
 
 public section
@@ -136,6 +136,7 @@ theorem measurable_exposedSample (W : Graphon Ω μ) :
 
 /-- Updating the coordinate of the vertex `i` leaves every pair avoiding `i` unchanged: such a pair
 reads its positions and its coin from vertices other than `i`. -/
+@[simp]
 theorem exposedSample_update_adj_iff (W : Graphon Ω μ) (x : Fin n → Ω × (Fin n → ℝ)) (i : Fin n)
     (y : Ω × (Fin n → ℝ)) {a b : Fin n} (ha : a ≠ i) (hb : b ≠ i) :
     (exposedSample W (Function.update x i y)).Adj a b ↔ (exposedSample W x).Adj a b := by
@@ -244,6 +245,7 @@ private theorem pi_pi_coinBox (W : Graphon Ω μ) (y : Fin n → Ω) (H : Simple
 /-- **The law identification of the exposure.** Pushing the exposure source through the exposed
 graph gives the finite sampling law `G(n, W)`: the exposure is a representation of the sampled
 graph by independent vertex coordinates. -/
+@[simp]
 theorem map_exposedSample (W : Graphon Ω μ) (n : ℕ) :
     (exposureMeasure μ n).map (exposedSample W) = sampleGraph W n := by
   refine Measure.ext_of_singleton fun H => ?_
@@ -275,7 +277,7 @@ theorem abs_homDensityFin_exposedSample_update_le (F : SimpleGraph V) (W : Graph
     (x : Fin n → Ω × (Fin n → ℝ)) (i : Fin n) (y : Ω × (Fin n → ℝ)) :
     |homDensityFin F (exposedSample W (Function.update x i y)) -
         homDensityFin F (exposedSample W x)| ≤ (Fintype.card V : ℝ) / n := by
-  simpa using abs_homDensityFin_sub_le_of_adj_iff F i
+  simpa using F.abs_homDensityFin_sub_le_of_adj_iff i
     fun a b ha hb => exposedSample_update_adj_iff W x i y ha hb
 
 end Oscillation
