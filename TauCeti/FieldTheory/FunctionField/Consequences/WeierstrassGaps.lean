@@ -13,9 +13,9 @@ public import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
 
 At a place `P`, a positive integer `n` is a pole number if some function has a pole of order
 exactly `n` at `P` and is regular at every other place.  Otherwise `n` is a gap.  At a rational
-place of a function field of positive genus `g`, there are exactly `g` gaps: the first is `1`,
-and every gap is at most `2g - 1`.  This is the Weierstrass gap theorem, Stichtenoth,
-*Algebraic Function Fields and Codes*, 2nd ed., Theorem 1.6.8.
+place of a function field with integrally closed constants and positive genus `g`, there are
+exactly `g` gaps: the first is `1`, and every gap is at most `2g - 1`.  This is the Weierstrass
+gap theorem, Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., Theorem 1.6.8.
 
 The proof counts the jumps in the filtration
 
@@ -40,7 +40,7 @@ exactly when the index is a pole number.  Riemann--Roch computes `ℓ((2g - 1)P)
 * `TauCeti.Place.card_gapNumbersUpTo_add_dim`: among `1, ..., n`, the number of gaps plus
   `ℓ(nP)` is `n + 1`.
 * `TauCeti.Place.card_weierstrassGaps`: the Weierstrass gap theorem: a rational place of a
-  function field of genus `g` has exactly `g` gaps.
+  function field with integrally closed constants and genus `g` has exactly `g` gaps.
 * `TauCeti.Place.one_mem_weierstrassGaps`: the first gap is `1`.
 
 ## References
@@ -76,6 +76,7 @@ def IsGap (P : Place k F) (n : ℕ) : Prop :=
   ¬ P.IsPoleNumber n
 
 /-- Zero is a pole number at every place, witnessed by the constant function `1`. -/
+@[simp]
 theorem isPoleNumber_zero (P : Place k F) : P.IsPoleNumber 0 := by
   refine ⟨1, one_ne_zero, ?_, fun Q _ ↦ ?_⟩ <;> simp
 
@@ -263,7 +264,7 @@ theorem mem_weierstrassGaps_iff_isGap (hF : IsFunctionField k F)
     exact P.not_isGap_of_two_mul_genus_le hF hex hlarge hgap
 
 /-- **Weierstrass gap theorem** (Stichtenoth, Theorem 1.6.8): at a rational place of a function
-field of genus `g`, there are exactly `g` gaps. -/
+field with integrally closed constants and genus `g`, there are exactly `g` gaps. -/
 theorem card_weierstrassGaps (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {P : Place k F} (hP : P.degree = 1) :
     P.weierstrassGaps.card = genus k F := by
@@ -276,7 +277,8 @@ theorem card_weierstrassGaps (hF : IsFunctionField k F)
     mul_one] at hcount hdim ⊢
   omega
 
-/-- At a rational place of a positive-genus function field, `1` is a gap. -/
+/-- At a rational place of a positive-genus function field with integrally closed constants, `1`
+is a gap. -/
 theorem one_mem_weierstrassGaps (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {P : Place k F} (hP : P.degree = 1)
     (hg : 0 < genus k F) : 1 ∈ P.weierstrassGaps := by
