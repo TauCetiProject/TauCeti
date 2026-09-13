@@ -61,6 +61,7 @@ theorem integrableOn_norm_rpow_one_sub_finrank_ball {R : ℝ} :
   · filter_upwards with x
     simp only [Real.norm_eq_abs, one_mul]
     rw [abs_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)]
+    -- Normalize the negated exponent to the kernel's `1 - dim E` form for `Real.rpow`.
     rw [show -((Module.finrank ℝ E : ℝ) - 1) = 1 - (Module.finrank ℝ E : ℝ) by ring]
   · apply AEMeasurable.aestronglyMeasurable
     measurability
