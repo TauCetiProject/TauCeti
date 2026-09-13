@@ -111,6 +111,12 @@ noncomputable def descendedBaseChangeIso :
 theorem descendedBaseChangeIso_hom_apply (x : L ⊗[k] groupAlgebraInvariants rho) :
     (descendedBaseChangeIso rho).hom.hom x =
       groupAlgebraInvariantsBaseChangeBialgEquiv rho x := by
+  -- Stripping the `ObjectProperty` wrapper leaves an application of
+  -- `CommHopfAlgCat.isoMk (groupAlgebraInvariantsBaseChangeBialgEquiv rho)`, but the coalgebra
+  -- instance `CommHopfAlgCat.of` stored on the bundled object is only *definitionally* the one
+  -- carried by `L ⊗[k] groupAlgebraInvariants rho`, so `CommHopfAlgCat.isoMk_hom` cannot rewrite
+  -- here: `rw` reports the goal is not type-correct at `implicit` transparency. `change` is what
+  -- crosses that instance boundary.
   simp only [descendedBaseChangeIso, ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom]
   change groupAlgebraInvariantsBaseChangeBialgEquiv rho x = _
   rfl
@@ -120,6 +126,8 @@ theorem descendedBaseChangeIso_hom_apply (x : L ⊗[k] groupAlgebraInvariants rh
 theorem descendedBaseChangeIso_inv_apply (x : MonoidAlgebra L (Multiplicative M)) :
     (descendedBaseChangeIso rho).inv.hom x =
       (groupAlgebraInvariantsBaseChangeBialgEquiv rho).symm x := by
+  -- The same wrapper instance boundary as in `descendedBaseChangeIso_hom_apply` blocks
+  -- `CommHopfAlgCat.isoMk_inv`, so the reduction is again performed by `change`.
   simp only [descendedBaseChangeIso, ObjectProperty.isoMk_inv, ObjectProperty.homMk_hom]
   change (groupAlgebraInvariantsBaseChangeBialgEquiv rho).symm x = _
   rfl

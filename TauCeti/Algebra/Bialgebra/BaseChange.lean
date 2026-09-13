@@ -19,9 +19,10 @@ equivalence `TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv` to a bialgeb
 K ⊗[L] (L ⊗[k] H) ≃ₐc[K] K ⊗[k] H.
 ```
 
-Contravariantly this is the statement that the geometric fibre of an affine group scheme may be
-computed through an intermediate field: it is what lets a group split by a finite Galois
-extension be recognised over an algebraic closure.
+Contravariantly this is the statement that the geometric fibre of the affine monoid scheme
+represented by `H` — an affine group scheme when `H` is moreover a Hopf algebra — may be computed
+through an intermediate field: it is what lets a group split by a finite Galois extension be
+recognised over an algebraic closure.
 
 ## Main declarations
 
