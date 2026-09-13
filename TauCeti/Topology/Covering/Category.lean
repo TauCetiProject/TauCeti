@@ -53,8 +53,7 @@ fundamental-group actions.
   object satisfies `P`.
 * `TauCeti.CoveringSpace.FullSubcategory.mk`, `mk_coe`, `mk_proj`, `forget_obj_mk`, `proj`,
   `homMk`, `isoMk`: the constructor API shared by every such subcategory.
-* `TauCeti.CoveringSpace.FullSubcategory.prop_obj` and `prop_over_mk_proj`: the cutting property
-  of an object, and of the object rebuilt from its projection.
+* `TauCeti.CoveringSpace.FullSubcategory.prop_obj`: the cutting property of an object.
 * `TauCeti.CoveringSpace.FullSubcategory.totalSpace`, `totalSpace_obj`, `totalSpace_map`: the
   functor taking an object to its total space, and its characteristic equations.
 * `TauCeti.CoveringSpace.FullSubcategory.forget`: the inclusion into all covers.
@@ -257,12 +256,14 @@ only its constructor and the lemmas naming it — `mk`, `mk_coe`, `mk_proj`, `fo
 each takes its property in a different form, and its own `forget`, which fixes `P`. The rest of
 the API below is used from it rather than restated:
 
-* dot notation on an **object** reaches anything with an object or morphism argument, since the
-  subcategory argument may be implicit — `p.proj`, `p.prop_obj`, `p.isCoveringMap_proj`,
-  `p.mkProjIso`, and equally `p.homMk f w`, `p.isoMk e w`, `p.w f`;
-* dot notation on a **morphism** does not resolve, its type being headed by
-  `CategoryTheory.InducedCategory.Hom`, so `f.w` must be written
-  `CoveringSpace.FullSubcategory.w f`;
+* object accessors support dot notation: `p.proj`, `p.prop_obj`, `p.isCoveringMap_proj`,
+  and `p.mkProjIso`;
+* morphism constructors and the commuting triangle can be named as
+  `CoveringSpace.FullSubcategory.homMk f w`, `CoveringSpace.FullSubcategory.isoMk e w`, and
+  `CoveringSpace.FullSubcategory.w f`. The forms `p.homMk f w`, `p.isoMk e w`, and `p.w f`
+  also work: generalized field notation supplies the implicit source object `(p := p)`;
+* `f.w` does not resolve because the morphism type is headed by
+  `CategoryTheory.InducedCategory.Hom`; use the qualified form or `p.w f` instead;
 * a member parameterized only by `X` and `P` is named through this namespace. -/
 abbrev CoveringSpace.FullSubcategory (X : TopCat.{u})
     (P : ObjectProperty (CategoryTheory.Over X)) : Type _ :=
@@ -342,15 +343,6 @@ theorem isCoveringMap_proj (p : CoveringSpace.FullSubcategory X P) : _root_.IsCo
 theorem prop_obj (p : CoveringSpace.FullSubcategory X P) : P p.obj :=
   p.property.2
 
-/-- The cutting property holds of the object rebuilt from an object's projection.
-
-`CategoryTheory.Over.mk p.proj` and `p.obj` are definitionally equal by eta for the `Over`
-structure, so `prop_obj` already elaborates where this is wanted; naming the step keeps that
-definitional equality out of the statements that depend on it. -/
-theorem prop_over_mk_proj (p : CoveringSpace.FullSubcategory X P) :
-    P (CategoryTheory.Over.mk p.proj) :=
-  p.prop_obj
-
 /-- A morphism commutes with the projections to the base. -/
 @[reassoc]
 theorem w {p q : CoveringSpace.FullSubcategory X P} (f : p ⟶ q) : f.hom.left ≫ q.proj = p.proj :=
@@ -385,19 +377,22 @@ theorem isoMk_inv_hom_left {p q : CoveringSpace.FullSubcategory X P}
 
 /-- Reconstructing an object from its projection gives an isomorphic object. -/
 def mkProjIso (p : CoveringSpace.FullSubcategory X P) :
-    mk p.proj p.isCoveringMap_proj p.prop_over_mk_proj ≅ p :=
+    mk (P := P) p.proj p.isCoveringMap_proj
+      ((congrArg P (CostructuredArrow.eq_mk p.obj)).mp p.prop_obj) ≅ p :=
   isoMk (Iso.refl _)
 
 @[simp]
 theorem mkProjIso_hom_hom_left (p : CoveringSpace.FullSubcategory X P) :
     (mkProjIso p).hom.hom.left =
-      eqToHom (mk_coe p.proj p.isCoveringMap_proj p.prop_over_mk_proj) :=
+      eqToHom (mk_coe (P := P) p.proj p.isCoveringMap_proj
+        ((congrArg P (CostructuredArrow.eq_mk p.obj)).mp p.prop_obj)) :=
   (rfl)
 
 @[simp]
 theorem mkProjIso_inv_hom_left (p : CoveringSpace.FullSubcategory X P) :
     (mkProjIso p).inv.hom.left =
-      eqToHom (mk_coe p.proj p.isCoveringMap_proj p.prop_over_mk_proj).symm :=
+      eqToHom (mk_coe (P := P) p.proj p.isCoveringMap_proj
+        ((congrArg P (CostructuredArrow.eq_mk p.obj)).mp p.prop_obj)).symm :=
   (rfl)
 
 /-- A morphism is an isomorphism exactly when its map of total spaces is a homeomorphism. -/
