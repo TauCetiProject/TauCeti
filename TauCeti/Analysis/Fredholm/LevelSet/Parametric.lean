@@ -28,12 +28,13 @@ to the derivative at the origin: it is surjective exactly when `D₁` is, by
 `TauCeti.index_fderiv_levelSetParameterMap`; and over a complete `RCLike` field it is Fredholm as
 soon as `D₁` is, by `TauCeti.isFredholm_fderiv_levelSetParameterMap`.
 
-The same calculation is then carried out at the other points of the chart, where the level set has
-turned and the derivative of the inverse chart is no longer an inclusion but the kernel section of
-`TauCeti.Analysis.Fredholm.LevelSet.Tangent`. That upgrades the regularity criterion from the
-chart origin to a whole neighbourhood of it, and the file closes with local Sard--Smale in the
-resulting geometric form: the parameters near `l` which carry a nearby solution where the
-fixed-parameter linearization fails to be surjective form a closed nowhere dense set of values.
+The same calculation is then carried out at the other points of the chart, where the level set may
+have turned and the derivative of the inverse chart is described in general by the kernel section
+of `TauCeti.Analysis.Fredholm.LevelSet.Tangent` rather than by an inclusion. That upgrades the
+regularity criterion from the chart origin to a whole neighbourhood of it, and the file closes
+with local Sard--Smale in the resulting geometric form: the parameters near `l` which carry a
+nearby solution where the fixed-parameter linearization fails to be surjective form a closed
+nowhere dense set of values.
 
 These results are the local nonlinear calculation in the parametric transversality package of
 McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., Appendix A.3. Passing

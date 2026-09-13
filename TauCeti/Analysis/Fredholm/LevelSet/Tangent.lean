@@ -15,9 +15,9 @@ import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 `TauCeti.levelSetChart` parametrizes the level set `{x | f x = c}` near a regular point `a` by the
 kernel of the derivative `f'` there, and `TauCeti.hasStrictFDerivAt_coe_levelSetChart_symm`
 computes the derivative of that parametrization **at the chart origin**: it is the inclusion of
-`ker f'` into the ambient space. At any other point of the chart the derivative cannot be that
-inclusion, because the level set has turned: its tangent space there is the kernel of the
-derivative of `f` at that point, not at `a`.
+`ker f'` into the ambient space. At any other point of the chart the derivative need not be that
+inclusion, because the level set may have turned: its tangent space there is the kernel of the
+derivative of `f` at that point, which need not be the kernel at `a`.
 
 This file computes the derivative at those other points. At a chart point `k` whose image `z` lies
 in `HasStrictFDerivAt.implicitCoordSource`, the neighbourhood on which the implicit-function
@@ -44,7 +44,7 @@ on.
   point of the coordinate neighbourhood is the kernel section of the derivative there.
 * `TauCeti.range_fderiv_coe_levelSetChart_symm_of_mem`: its range is the kernel of that
   derivative, the tangent space of the level set.
-* `TauCeti.injective_fderiv_coe_levelSetChart_symm_of_mem`: it is injective, so the chart is an
+* `TauCeti.fderiv_coe_levelSetChart_symm_injective_of_mem`: it is injective, so the chart is an
   immersion.
 
 ## References
@@ -103,6 +103,10 @@ theorem hasFDerivAt_coe_levelSetChart_symm_of_mem (hf : HasStrictFDerivAt f f' a
       (ContinuousLinearMap.inr K F ↥f'.ker) k :=
     (hasFDerivAt_const (f a) k).prodMk (hasFDerivAt_id k)
   have hcomp := hsymm.comp k hslice
+  have hsec : (A.prod (Classical.choose hker)).inverse ∘L ContinuousLinearMap.inr K F ↥f'.ker =
+      A.kerSection (Classical.choose hker) :=
+    ContinuousLinearMap.eq_kerSection ⟨e, he⟩ fun v ↦ by rw [← he]; simp
+  rw [← hsec]
   refine hcomp.congr_of_eventuallyEq ?_
   filter_upwards [(levelSetChart hf hf' hker rfl).open_target.mem_nhds hk] with k' hk'
   exact levelSetChart_symm_apply hf hf' hker rfl hk'
@@ -137,7 +141,7 @@ theorem range_fderiv_coe_levelSetChart_symm_of_mem (hf : HasStrictFDerivAt f f' 
 
 /-- The inverse chart is an immersion: its derivative at a point of the coordinate neighbourhood
 is injective. -/
-theorem injective_fderiv_coe_levelSetChart_symm_of_mem (hf : HasStrictFDerivAt f f' a)
+theorem fderiv_coe_levelSetChart_symm_injective_of_mem (hf : HasStrictFDerivAt f f' a)
     (hf' : f'.range = ⊤) (hker : f'.ker.ClosedComplemented) (ha : f a = c) {k : ↥f'.ker}
     (hk : k ∈ (levelSetChart hf hf' hker ha).target)
     (hmem : (((levelSetChart hf hf' hker ha).symm k : ↥{x | f x = c}) : E) ∈
@@ -147,7 +151,7 @@ theorem injective_fderiv_coe_levelSetChart_symm_of_mem (hf : HasStrictFDerivAt f
     Function.Injective
       (fderiv K (fun k ↦ (((levelSetChart hf hf' hker ha).symm k : ↥{x | f x = c}) : E)) k) := by
   rw [fderiv_coe_levelSetChart_symm_of_mem hf hf' hker ha hk hmem hA]
-  exact ContinuousLinearMap.injective_kerSection
+  exact ContinuousLinearMap.kerSection_injective
     (hf.isInvertible_prod_of_mem_implicitCoordSource hf' hker hmem hA)
 
 end TauCeti

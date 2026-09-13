@@ -33,6 +33,7 @@ underlying inverse is Mathlib's total `ContinuousLinearMap.inverse`.
 ## Main declarations
 
 * `ContinuousLinearMap.kerSection`: the section `G →L[R] M` of `q` with values in `ker A`.
+* `ContinuousLinearMap.eq_kerSection`: it is the only map with that defining property.
 * `ContinuousLinearMap.range_kerSection`: its range is exactly `ker A`.
 * `ContinuousLinearMap.kerEquivOfProd`: the resulting isomorphism `G ≃L[R] ↥A.ker`.
 * `ContinuousLinearMap.surjective_of_isInvertible_prod`: an invertible pair has surjective first
@@ -43,10 +44,10 @@ public section
 
 namespace ContinuousLinearMap
 
-variable {R M F G : Type*} [Ring R]
-  [AddCommGroup M] [TopologicalSpace M] [Module R M]
-  [AddCommGroup F] [TopologicalSpace F] [Module R F]
-  [AddCommGroup G] [TopologicalSpace G] [Module R G]
+variable {R M F G : Type*} [Semiring R]
+  [AddCommMonoid M] [TopologicalSpace M] [Module R M]
+  [AddCommMonoid F] [TopologicalSpace F] [Module R F]
+  [AddCommMonoid G] [TopologicalSpace G] [Module R G]
   {A : M →L[R] F} {q : M →L[R] G}
 
 /-- The section of `q` with values in the kernel of `A`: it sends `v : G` to the unique `x : M`
@@ -54,7 +55,6 @@ with `A x = 0` and `q x = v`.
 
 This is meaningful when the pair `A.prod q` is invertible, which every lemma below assumes;
 outside that case Mathlib's `ContinuousLinearMap.inverse` returns `0` and so does this map. -/
-@[expose]
 noncomputable def kerSection (A : M →L[R] F) (q : M →L[R] G) : G →L[R] M :=
   (A.prod q).inverse ∘L .inr R F G
 
@@ -90,8 +90,18 @@ theorem kerSection_apply_of_mem_ker (h : (A.prod q).IsInvertible) {x : M} (hx : 
     simp [← he, ContinuousLinearEquiv.symm_apply_apply]
   rwa [hx'] at this
 
+/-- **The section is characterised by its defining property.** Any continuous linear map sent to
+`(0, v)` by the pair is `ContinuousLinearMap.kerSection`, so consumers never need to unfold the
+definition. -/
+theorem eq_kerSection (h : (A.prod q).IsInvertible) {g : G →L[R] M}
+    (hg : ∀ v, A.prod q (g v) = (0, v)) : g = A.kerSection q := by
+  obtain ⟨e, he⟩ := h
+  have hinj : Function.Injective ⇑(A.prod q) := by rw [← he]; exact e.injective
+  exact ContinuousLinearMap.ext fun v ↦
+    hinj ((hg v).trans (prod_apply_kerSection ⟨e, he⟩ v).symm)
+
 /-- The section is injective, being a right inverse of `q`. -/
-theorem injective_kerSection (h : (A.prod q).IsInvertible) :
+theorem kerSection_injective (h : (A.prod q).IsInvertible) :
     Function.Injective (A.kerSection q) := by
   intro v w hvw
   rw [← apply_kerSection_right h v, ← apply_kerSection_right h w, hvw]
