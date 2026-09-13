@@ -34,12 +34,14 @@ is the first step again and the presented module may be arbitrary.
 Finite generation is therefore not part of the existence statements, and is recovered from them
 instead: over a noetherian ring a presentation of a finitely generated module is automatically
 finitely generated, by `TauCeti.IsProjectiveCover.finite` for the middle term and
-`TauCeti.IsMinimalProjectivePresentation.finite` for the left-hand source. A finite-dimensional
-algebra is both semiprimary and noetherian, so the two combine into
-`TauCeti.exists_finite_isMinimalProjectivePresentation_of_finiteDimensional`: a finitely generated
-module over a finite-dimensional algebra is presented minimally by finitely generated projectives.
-That is the form the Auslander-Reiten transpose consumes, its vanishing criterion asking for a
-finitely generated left-hand source.
+`TauCeti.IsMinimalProjectivePresentation.finite` for the left-hand source. Adding the noetherian
+hypothesis to the semiprimary one therefore combines the two into
+`TauCeti.exists_finite_isMinimalProjectivePresentation`: a finitely generated module over a
+semiprimary noetherian ring is presented minimally by finitely generated projectives. That is the
+form the Auslander-Reiten transpose consumes, its vanishing criterion asking for a finitely
+generated left-hand source. A finite-dimensional algebra is Artinian, hence both semiprimary and
+noetherian, so it is covered by both statements: a consumer working over one installs
+`IsArtinianRing.of_finite` and `IsNoetherianRing.of_finite` and applies them as they stand.
 
 ## The shape of the statements
 
@@ -62,19 +64,15 @@ free module on the underlying set of a module in `Type v` over a ring in `Type u
   syzygy.
 * `TauCeti.exists_isMinimalProjectivePresentation`: **every module over a semiprimary ring has a
   minimal projective presentation.**
-* `TauCeti.exists_isMinimalProjectivePresentation_of_finiteDimensional`: the same statement for a
-  module over a finite-dimensional algebra, which is a semiprimary ring.
-* `TauCeti.exists_finite_isMinimalProjectivePresentation_of_finiteDimensional`: over a
-  finite-dimensional algebra a **finitely generated** module is presented minimally by **finitely
-  generated** projective modules.
+* `TauCeti.exists_finite_isMinimalProjectivePresentation`: over a semiprimary **noetherian** ring a
+  **finitely generated** module is presented minimally by **finitely generated** projective modules.
 
 ## References
 
-This completes the projective half of sublayer 6B, "minimal projective/injective presentations", of
-Layer 6 of
-[the quiver-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md),
-whose transpose `Tr` and Auslander-Reiten translate `τ = D Tr` are read off a minimal presentation
-of the module, and are therefore defined at all only where one exists.
+The Auslander-Reiten transpose `Tr` and the translate `τ = D Tr` are read off a minimal projective
+presentation of the module, so they are defined at all only where one exists; that is what the
+statements here supply, and what makes those constructions unconditional over a finite-dimensional
+algebra.
 
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*, Cambridge
   University Press (1995), Section I.2.
@@ -129,45 +127,29 @@ theorem exists_isMinimalProjectivePresentation [IsSemiprimaryRing R] :
     (P₀ := ↥P₀) (p₀ := Finsupp.linearCombination R id ∘ₗ P₀.subtype) h₀
   exact ⟨↥P₀, inferInstance, inferInstance, _, P₁, inferInstance, inferInstance, p₁, h⟩
 
-end Semiprimary
-
-section FiniteDimensional
-
-/-- **Every module over a finite-dimensional algebra has a minimal projective presentation.** A
-finite-dimensional algebra is an Artinian ring, hence semiprimary, so this is
-`TauCeti.exists_isMinimalProjectivePresentation` read through that instance; in particular no
-finiteness is required of the module. -/
-theorem exists_isMinimalProjectivePresentation_of_finiteDimensional (k : Type w) [Field k]
-    (A : Type u) [Ring A] [Algebra k A] [FiniteDimensional k A] (V : Type v) [AddCommGroup V]
-    [Module A V] :
-    ∃ (P₀ : Type max u v) (_ : AddCommGroup P₀) (_ : Module A P₀) (p₀ : P₀ →ₗ[A] V)
-      (P₁ : Type max u v) (_ : AddCommGroup P₁) (_ : Module A P₁) (p₁ : P₁ →ₗ[A] P₀),
-      IsMinimalProjectivePresentation p₁ p₀ := by
-  have : IsArtinianRing A := IsArtinianRing.of_finite k A
-  exact exists_isMinimalProjectivePresentation A V
-
-/-- **A finitely generated module over a finite-dimensional algebra is presented minimally by
+variable (R M) in
+/-- **A finitely generated module over a semiprimary noetherian ring is presented minimally by
 finitely generated projective modules.** Existence is
-`TauCeti.exists_isMinimalProjectivePresentation_of_finiteDimensional`, through the algebra being
-Artinian; finite generation of the two sources is `TauCeti.IsProjectiveCover.finite` and
-`TauCeti.IsMinimalProjectivePresentation.finite`, through the algebra being noetherian, which it is
-because a field is and the algebra is a finite module over it.
+`TauCeti.exists_isMinimalProjectivePresentation`, which needs only the ring to be semiprimary;
+finite generation of the two sources is `TauCeti.IsProjectiveCover.finite` for the middle term,
+which needs no hypothesis on the ring at all, and `TauCeti.IsMinimalProjectivePresentation.finite`
+for the left-hand source, which is where the noetherian hypothesis is spent — it is what makes the
+syzygy cut out of the middle term finitely generated.
 
 Both halves are carried in a single statement because that is how they are consumed: the
-Auslander-Reiten transpose of `V` is built from a minimal presentation whose left-hand source is
-finitely generated, and neither datum is of use for it without the other. -/
-theorem exists_finite_isMinimalProjectivePresentation_of_finiteDimensional (k : Type w) [Field k]
-    (A : Type u) [Ring A] [Algebra k A] [FiniteDimensional k A] (V : Type v) [AddCommGroup V]
-    [Module A V] [Module.Finite A V] :
-    ∃ (P₀ : Type max u v) (_ : AddCommGroup P₀) (_ : Module A P₀) (_ : Module.Finite A P₀)
-      (p₀ : P₀ →ₗ[A] V) (P₁ : Type max u v) (_ : AddCommGroup P₁) (_ : Module A P₁)
-      (_ : Module.Finite A P₁) (p₁ : P₁ →ₗ[A] P₀), IsMinimalProjectivePresentation p₁ p₀ := by
-  have : IsNoetherianRing A := IsNoetherianRing.of_finite k A
-  obtain ⟨P₀, _, _, p₀, P₁, _, _, p₁, h⟩ :=
-    exists_isMinimalProjectivePresentation_of_finiteDimensional k A V
+Auslander-Reiten transpose of `M` is built from a minimal presentation whose left-hand source is
+finitely generated, and neither datum is of use for it without the other. A finite-dimensional
+algebra satisfies both hypotheses, being Artinian (`IsArtinianRing.of_finite`) and noetherian
+(`IsNoetherianRing.of_finite`). -/
+theorem exists_finite_isMinimalProjectivePresentation [IsSemiprimaryRing R] [IsNoetherianRing R]
+    [Module.Finite R M] :
+    ∃ (P₀ : Type max u v) (_ : AddCommGroup P₀) (_ : Module R P₀) (_ : Module.Finite R P₀)
+      (p₀ : P₀ →ₗ[R] M) (P₁ : Type max u v) (_ : AddCommGroup P₁) (_ : Module R P₁)
+      (_ : Module.Finite R P₁) (p₁ : P₁ →ₗ[R] P₀), IsMinimalProjectivePresentation p₁ p₀ := by
+  obtain ⟨P₀, _, _, p₀, P₁, _, _, p₁, h⟩ := exists_isMinimalProjectivePresentation R M
   exact ⟨P₀, inferInstance, inferInstance, h.isProjectiveCover.finite, p₀, P₁, inferInstance,
     inferInstance, h.finite, p₁, h⟩
 
-end FiniteDimensional
+end Semiprimary
 
 end TauCeti
