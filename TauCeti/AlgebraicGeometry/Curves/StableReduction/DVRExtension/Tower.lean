@@ -53,9 +53,9 @@ structure Hom (E F : FiniteDVRExtension R K) where
     field (algebraMap E.localRing E.extensionField x) =
       algebraMap F.localRing F.extensionField (localMap x)
   /-- The map preserves the chosen maximal ideals. -/
-  local_isLocal : IsLocalHom localMap.toRingHom
+  isLocal_localMap : IsLocalHom localMap.toRingHom
 
-attribute [instance] Hom.local_isLocal
+attribute [instance] Hom.isLocal_localMap
 attribute [simp] Hom.field_local
 
 namespace Hom
@@ -75,7 +75,7 @@ def id (E : FiniteDVRExtension R K) : Hom E E where
   field := AlgHom.id K E.extensionField
   localMap := AlgHom.id R E.localRing
   field_local x := by simp
-  local_isLocal := by
+  isLocal_localMap := by
     have h : (AlgHom.id R E.localRing).toRingHom = RingHom.id E.localRing := by
       ext x
       simp
@@ -89,9 +89,9 @@ def comp {E F G : FiniteDVRExtension R K} (f : Hom E F) (g : Hom F G) : Hom E G 
   field_local x := by
     simp only [AlgHom.comp_apply]
     rw [f.field_local x, g.field_local (f.localMap x)]
-  local_isLocal := by
-    let _ : IsLocalHom g.localMap.toRingHom := g.local_isLocal
-    let _ : IsLocalHom f.localMap.toRingHom := f.local_isLocal
+  isLocal_localMap := by
+    let _ : IsLocalHom g.localMap.toRingHom := g.isLocal_localMap
+    let _ : IsLocalHom f.localMap.toRingHom := f.isLocal_localMap
     have h : (g.localMap.comp f.localMap).toRingHom =
         g.localMap.toRingHom.comp f.localMap.toRingHom := by
       ext x
@@ -99,27 +99,47 @@ def comp {E F G : FiniteDVRExtension R K} (f : Hom E F) (g : Hom F G) : Hom E G 
     rw [h]
     exact RingHom.isLocalHom_comp _ _
 
+@[simp] lemma id_field (E : FiniteDVRExtension R K) :
+    (id E).field = AlgHom.id K E.extensionField := by
+  ext x
+  simp [id]
+
+@[simp] lemma id_localMap (E : FiniteDVRExtension R K) :
+    (id E).localMap = AlgHom.id R E.localRing := by
+  ext x
+  simp [id]
+
+@[simp] lemma comp_field {E F G : FiniteDVRExtension R K} (f : Hom E F) (g : Hom F G) :
+    (comp f g).field = g.field.comp f.field := by
+  ext x
+  rfl
+
+@[simp] lemma comp_localMap {E F G : FiniteDVRExtension R K} (f : Hom E F) (g : Hom F G) :
+    (comp f g).localMap = g.localMap.comp f.localMap := by
+  ext x
+  rfl
+
 lemma id_comp {E F : FiniteDVRExtension R K} (f : Hom E F) : comp (id E) f = f := by
   apply ext
   · ext x
-    simp [id, comp]
+    simp
   · ext x
-    simp [id, comp]
+    simp
 
 lemma comp_id {E F : FiniteDVRExtension R K} (f : Hom E F) : comp f (id F) = f := by
   apply ext
   · ext x
-    simp [id, comp]
+    simp
   · ext x
-    simp [id, comp]
+    simp
 
 lemma assoc {E F G H : FiniteDVRExtension R K} (f : Hom E F) (g : Hom F G) (h : Hom G H) :
     comp (comp f g) h = comp f (comp g h) := by
   apply ext
   · ext x
-    simp [comp]
+    simp
   · ext x
-    simp [comp]
+    simp
 
 end Hom
 
@@ -137,18 +157,6 @@ map of chosen places. -/
 structure Tower (E F : FiniteDVRExtension R K) where
   /-- The compatible map between the chosen extensions. -/
   hom : Hom E F
-  /-- The algebra structure of the upper extension field over the lower one. -/
-  [fieldAlgebra : Algebra E.extensionField F.extensionField]
-  /-- The field algebra map is the field component of `hom`. -/
-  field_algebra : algebraMap E.extensionField F.extensionField = hom.field.toRingHom
-  /-- The scalar actions of `K` through `E` and directly on `F` agree. -/
-  [fieldTower : IsScalarTower K E.extensionField F.extensionField]
-  /-- The upper field is finite-dimensional over the lower one. -/
-  [fieldFinite : FiniteDimensional E.extensionField F.extensionField]
-  /-- The upper field is separable over the lower one. -/
-  [fieldSeparable : Algebra.IsSeparable E.extensionField F.extensionField]
-
-attribute [simp] Tower.field_algebra
 
 namespace Tower
 
@@ -156,21 +164,61 @@ variable {E F : FiniteDVRExtension R K}
 
 variable {G : FiniteDVRExtension R K}
 
-/-- Two towers are equal when their compatible maps are equal; the remaining typeclass and proof
-fields are determined propositionally. -/
+variable {H : FiniteDVRExtension R K}
+
+/-- The algebra structure induced by the compatible field embedding. -/
+@[instance_reducible]
+def fieldAlgebra (T : Tower E F) : Algebra E.extensionField F.extensionField :=
+  T.hom.field.toRingHom.toAlgebra
+
+/-- The scalar tower induced by the compatible field embedding. -/
+instance fieldTower (T : Tower E F) :
+    letI : Algebra E.extensionField F.extensionField := T.fieldAlgebra
+    IsScalarTower K E.extensionField F.extensionField := by
+  let algebra : Algebra E.extensionField F.extensionField := T.fieldAlgebra
+  exact @IsScalarTower.of_algebraMap_eq K E.extensionField F.extensionField _ _ _
+    inferInstance algebra inferInstance (by
+      intro x
+      change algebraMap K F.extensionField x = T.hom.field (algebraMap K E.extensionField x)
+      exact (T.hom.field.commutes x).symm)
+
+/-- Finiteness of the upper field over the lower field follows from its finiteness over `K`. -/
+instance fieldFinite (T : Tower E F) :
+    letI : Algebra E.extensionField F.extensionField := T.fieldAlgebra
+    FiniteDimensional E.extensionField F.extensionField := by
+  let algebra : Algebra E.extensionField F.extensionField := T.fieldAlgebra
+  let tower : @IsScalarTower K E.extensionField F.extensionField
+      (@Algebra.toSMul K E.extensionField _ _ inferInstance)
+      (@Algebra.toSMul E.extensionField F.extensionField _ _ algebra)
+      (@Algebra.toSMul K F.extensionField _ _ inferInstance) := T.fieldTower
+  exact @Module.Finite.of_restrictScalars_finite K E.extensionField F.extensionField
+    _ _ _ (@Algebra.toModule K F.extensionField _ _ inferInstance)
+      (@Algebra.toModule E.extensionField F.extensionField _ _ algebra)
+      (@Algebra.toSMul K E.extensionField _ _ inferInstance) tower inferInstance
+
+/-- Separability of the upper field over the lower field follows from its separability over `K`. -/
+instance fieldSeparable (T : Tower E F) :
+    letI : Algebra E.extensionField F.extensionField := T.fieldAlgebra
+    Algebra.IsSeparable E.extensionField F.extensionField := by
+  let algebra : Algebra E.extensionField F.extensionField := T.fieldAlgebra
+  let tower : @IsScalarTower K E.extensionField F.extensionField
+      (@Algebra.toSMul K E.extensionField _ _ inferInstance)
+      (@Algebra.toSMul E.extensionField F.extensionField _ _ algebra)
+      (@Algebra.toSMul K F.extensionField _ _ inferInstance) := T.fieldTower
+  exact @Algebra.isSeparable_tower_top_of_isSeparable K E.extensionField _ F.extensionField
+    _ _ inferInstance inferInstance algebra tower inferInstance
+
+/-- Two towers are equal when their compatible maps are equal. -/
 @[ext]
 lemma ext {T U : Tower E F} (h : T.hom = U.hom) : T = U := by
-  cases T with
-  | @mk hom fieldAlgebra field_algebra fieldTower fieldFinite fieldSeparable =>
-    cases U with
-    | @mk hom' fieldAlgebra' field_algebra' fieldTower' fieldFinite' fieldSeparable' =>
-      dsimp at h ⊢
-      cases h
-      congr
-      · apply Algebra.algebra_ext fieldAlgebra fieldAlgebra'
-        intro r
-        rw [field_algebra, field_algebra']
-      all_goals exact proof_irrel_heq _ _
+  cases T
+  cases U
+  cases h
+  rfl
+
+/-- The identity tower on a chosen finite DVR extension. -/
+def id (E : FiniteDVRExtension R K) : Tower E E :=
+  ⟨Hom.id E⟩
 
 /-- Compose finite separable towers, including their compatible maps of chosen places. -/
 def comp (T : Tower E F) (U : Tower F G) : Tower E G := by
@@ -182,22 +230,13 @@ def comp (T : Tower E F) (U : Tower F G) : Tower E G := by
     (U.hom.field.toRingHom.comp T.hom.field.toRingHom).toAlgebra
   letI : IsScalarTower E.extensionField F.extensionField G.extensionField :=
     IsScalarTower.of_algebraMap_eq fun x => by
-      rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, ← U.field_algebra,
-        ← T.field_algebra]
+      change U.hom.field (T.hom.field x) = U.hom.field (T.hom.field x)
+      rfl
   letI : IsScalarTower K E.extensionField G.extensionField :=
     IsScalarTower.of_algebraMap_eq fun x => by
-      calc
-        algebraMap K G.extensionField x =
-            algebraMap F.extensionField G.extensionField (algebraMap K F.extensionField x) :=
-          IsScalarTower.algebraMap_apply K F.extensionField G.extensionField x
-        _ = U.hom.field (algebraMap K F.extensionField x) := by
-          rw [U.field_algebra]
-          rfl
-        _ = U.hom.field (T.hom.field (algebraMap K E.extensionField x)) := by
-          rw [T.hom.field.commutes]
-        _ = algebraMap E.extensionField G.extensionField (algebraMap K E.extensionField x) := by
-          rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply]
-          rfl
+      change algebraMap K G.extensionField x =
+        U.hom.field (T.hom.field (algebraMap K E.extensionField x))
+      rw [← U.hom.field.commutes, ← T.hom.field.commutes]
   letI : FiniteDimensional E.extensionField F.extensionField := T.fieldFinite
   letI : FiniteDimensional F.extensionField G.extensionField := U.fieldFinite
   letI : Algebra.IsSeparable E.extensionField F.extensionField := T.fieldSeparable
@@ -206,8 +245,29 @@ def comp (T : Tower E F) (U : Tower F G) : Tower E G := by
     FiniteDimensional.trans E.extensionField F.extensionField G.extensionField
   letI : Algebra.IsSeparable E.extensionField G.extensionField :=
     Algebra.IsSeparable.trans E.extensionField F.extensionField G.extensionField
-  refine ⟨Hom.comp T.hom U.hom, ?_⟩
-  rfl
+  exact ⟨Hom.comp T.hom U.hom⟩
+
+@[simp]
+lemma id_hom (E : FiniteDVRExtension R K) : (id E).hom = Hom.id E := by
+  simp [id]
+
+@[simp]
+lemma comp_hom (T : Tower E F) (U : Tower F G) :
+    (comp T U).hom = Hom.comp T.hom U.hom := by
+  simp [comp]
+
+lemma id_comp (T : Tower E F) : comp (id E) T = T := by
+  apply ext
+  simpa using Hom.id_comp T.hom
+
+lemma comp_id (T : Tower E F) : comp T (id F) = T := by
+  apply ext
+  simpa using Hom.comp_id T.hom
+
+lemma assoc (T : Tower E F) (U : Tower F G) (V : Tower G H) :
+    comp (comp T U) V = comp T (comp U V) := by
+  apply ext
+  simpa using Hom.assoc T.hom U.hom V.hom
 
 end Tower
 
