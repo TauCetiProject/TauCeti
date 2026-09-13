@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cholesky.Basic
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Coordinates on positive-diagonal lower-triangular matrices
@@ -66,6 +67,7 @@ theorem isLowerTriangular_lowerTriangleMatrix (x : lowerTriangle p → ℝ) :
   fun _ _ h ↦ lowerTriangleMatrix_apply_of_lt x (by simpa using h)
 
 /-- A lower-triangular matrix is rebuilt from its on-or-below-diagonal entries. -/
+@[simp]
 theorem lowerTriangleMatrix_entries {A : Matrix (Fin p) (Fin p) ℝ} (hA : A.IsLowerTriangular) :
     lowerTriangleMatrix p (fun ij ↦ A ij.1.1 ij.1.2) = A := by
   refine Matrix.ext fun i j ↦ ?_
@@ -75,12 +77,8 @@ theorem lowerTriangleMatrix_entries {A : Matrix (Fin p) (Fin p) ℝ} (hA : A.IsL
     exact (hA (by simpa using not_le.1 h)).symm
 
 theorem continuous_lowerTriangleMatrix :
-    Continuous fun x : lowerTriangle p → ℝ ↦ lowerTriangleMatrix p x := by
-  refine continuous_pi fun i ↦ continuous_pi fun j ↦ ?_
-  by_cases h : j ≤ i
-  · simpa only [lowerTriangleMatrix_apply_of_le _ h] using
-      continuous_apply (⟨(i, j), h⟩ : lowerTriangle p)
-  · simpa only [lowerTriangleMatrix_apply_of_lt _ (not_le.1 h)] using continuous_const
+    Continuous fun x : lowerTriangle p → ℝ ↦ lowerTriangleMatrix p x :=
+  (lowerTriangleMatrix p).continuous_of_finiteDimensional
 
 variable (p)
 

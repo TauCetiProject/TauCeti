@@ -46,7 +46,7 @@ doubled when `i = j`.
   decomposition".
 * Declaration skeleton: `TauCetiRoadmap/StandardDistributions/Suggested.lean`, section "Cholesky
   coordinates", which supplies `choleskyReconstructionCoordinates` and the statement of the
-  Jacobian theorem (there called `abs_det_fderiv_choleskyReconstruction`).
+  Jacobian theorem.
 -/
 
 public section
