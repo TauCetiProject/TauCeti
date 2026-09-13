@@ -203,12 +203,9 @@ theorem unitFiltrationToMaximalIdealGraded_surjective (n : ℕ) :
   have ha : (a : 𝒪[K]) ∈ 𝓂[K] :=
     Ideal.pow_le_self (Nat.succ_ne_zero n) a.prop
   have hu : IsUnit (1 + (a : 𝒪[K])) := by
-    rw [← IsLocalRing.notMem_maximalIdeal]
-    intro h
-    exact (IsLocalRing.maximalIdeal.isMaximal 𝒪[K]).ne_top
-      ((IsLocalRing.maximalIdeal 𝒪[K]).eq_top_iff_one.mpr
-        (by simpa only [add_sub_cancel_right] using
-          (IsLocalRing.maximalIdeal 𝒪[K]).sub_mem h ha))
+    simpa only [sub_neg_eq_add] using
+      IsLocalRing.isUnit_one_sub_self_of_mem_nonunits _
+        ((IsLocalRing.mem_maximalIdeal _).mp (neg_mem ha))
   let u : 𝒪[K]ˣ := hu.unit
   have hu_spec : (u : 𝒪[K]) = 1 + (a : 𝒪[K]) := hu.unit_spec
   let x : unitFiltration K (n + 1) :=
