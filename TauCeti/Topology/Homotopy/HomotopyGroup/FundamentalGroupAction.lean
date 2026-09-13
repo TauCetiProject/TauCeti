@@ -25,10 +25,10 @@ abelian) abbreviates. Its orbits have a purely topological meaning, recorded her
 lie in the
 same orbit exactly when they are *freely* homotopic, that is, when some homotopy connects them
 through generalized loops whose base points sweep out a loop at `x`. So the quotient of
-`π_n(X, x)` by the action is the set of free homotopy classes of maps `Sⁿ → X` in positive
-dimensions. In dimension zero, it instead records the classes for which the distinguished point
-of `S⁰` remains in the path component of `x`. The action is trivial precisely when the
-corresponding based and free homotopy classes agree.
+`π_n(X, x)` by the action is, in positive dimensions, the set of free homotopy classes of maps
+`Sⁿ → X` landing in the path component of `x`. In dimension zero, it instead records the
+classes for which the distinguished point of `S⁰` remains in the path component of `x`. The
+action is trivial precisely when the corresponding based and free homotopy classes agree.
 
 ## Conventions
 
@@ -52,17 +52,15 @@ monodromy action `IsCoveringMap.fundamentalGroupMulAction` a left action.
   source and target, along the homomorphism it induces on fundamental groups.
 * `TauCeti.homotopyGroup_mem_orbit_iff` and
   `TauCeti.homotopyGroup_mem_orbit_iff_exists_homotopyAlong`: **the orbits of the action are
-  the free homotopy classes in positive dimensions (with the distinguished point restricted to
-  the component of `x` in dimension zero)**, the latter through
+  the free homotopy classes into the path component of `x` in positive dimensions (with the
+  distinguished point restricted to the component of `x` in dimension zero)**, the latter through
   `TauCeti.GenLoop.exists_homotopyAlong_iff_exists_homotopic_transport`, which reads free
   homotopy as transport up to based homotopy.
 * `TauCeti.fundamentalGroup_smul_eq_self`: on a simply connected space the action is trivial.
 
 ## References
 
-This continues the higher-homotopy API requested in `TauCetiRoadmap/UniversalCovers/README.md`,
-Stage 3, item 9, whose base-point-change half is `TauCeti.homotopyGroupMulEquivOfPath`. See
-Hatcher, *Algebraic Topology*, Section 4.1, where the action is introduced immediately after
+See Hatcher, *Algebraic Topology*, Section 4.1, where the action is introduced immediately after
 base-point change and the description of its orbits is the definition of an `n`-simple space.
 -/
 
@@ -113,26 +111,28 @@ theorem homotopyGroupTransportQuotient_trans {x'' : X} (γ : Path.Homotopic.Quot
 
 /-! ### The action of the fundamental group -/
 
+/-- The fundamental group at `x` acts on a homotopy group based at `x` by transport around
+loops; `TauCeti.homotopyGroupMulAction` shows that this is a group action. -/
+instance homotopyGroupSMul : SMul (FundamentalGroup X x) (HomotopyGroup N X x) where
+  smul γ a := homotopyGroupTransportQuotient γ.toPath a
+
+/-- The action of the fundamental group is transport along the class of loops. -/
+theorem fundamentalGroup_smul_def (γ : FundamentalGroup X x) (a : HomotopyGroup N X x) :
+    γ • a = homotopyGroupTransportQuotient γ.toPath a := by
+  rfl
+
 /-- **The fundamental group at `x` acts on every homotopy group based at `x`**, an element of
 `π₁(X, x)` acting by transport around the loop it represents.
 
 The action is a left action: transport composes covariantly and `FundamentalGroup.mul_def`
 reverses the order of concatenation, so the two reversals cancel. -/
 instance homotopyGroupMulAction : MulAction (FundamentalGroup X x) (HomotopyGroup N X x) where
-  smul γ a := homotopyGroupTransportQuotient γ.toPath a
   one_smul a := by
-    change homotopyGroupTransportQuotient (1 : FundamentalGroup X x).toPath a = a
-    rw [FundamentalGroup.one_def, homotopyGroupTransportQuotient_refl, id_eq]
+    rw [fundamentalGroup_smul_def, FundamentalGroup.one_def, homotopyGroupTransportQuotient_refl,
+      id_eq]
   mul_smul γ δ a := by
-    change homotopyGroupTransportQuotient (γ * δ).toPath a =
-      homotopyGroupTransportQuotient γ.toPath (homotopyGroupTransportQuotient δ.toPath a)
-    rw [FundamentalGroup.mul_def, homotopyGroupTransportQuotient_trans]
-    rfl
-
-/-- The action of the fundamental group is transport along the class of loops. -/
-theorem fundamentalGroup_smul_def (γ : FundamentalGroup X x) (a : HomotopyGroup N X x) :
-    γ • a = homotopyGroupTransportQuotient γ.toPath a := by
-  rfl
+    rw [fundamentalGroup_smul_def, fundamentalGroup_smul_def, fundamentalGroup_smul_def,
+      FundamentalGroup.mul_def, homotopyGroupTransportQuotient_trans, Function.comp_apply]
 
 /-- An element of `π₁(X, x)` represented by a loop `p` acts by transport along `p`. -/
 theorem fundamentalGroup_smul_eq_transport {γ : FundamentalGroup X x} {p : Path x x}
@@ -182,19 +182,6 @@ theorem fundamentalGroupMulAut_apply [Nonempty N] [DecidableEq N] (γ : Fundamen
   rfl
 
 /-! ### Naturality -/
-
-namespace GenLoop
-
-/-- Postcomposition with a continuous map commutes with transport, along the image path. -/
-theorem map_transport (F : C(X, Y)) (γ : Path x x') (f : Ω^ N X x) :
-    _root_.GenLoop.map F rfl (transport γ f) =
-      transport (γ.map F.continuous) (_root_.GenLoop.map F rfl f) := by
-  apply _root_.GenLoop.ext
-  intro z
-  rw [_root_.GenLoop.map_apply, transport_apply_eq, transport_apply_eq, apply_ite F]
-  split_ifs <;> simp
-
-end GenLoop
 
 /-- Postcomposition with a continuous map commutes with transport of homotopy classes, along
 the image class of paths. -/
@@ -255,13 +242,9 @@ end GenLoop
 free homotopy classes.** Classes of two generalized loops based at `x` lie in the same orbit
 exactly when some homotopy connects the two loops through generalized loops, the base point
 sweeping out a loop at `x`. Thus in positive dimensions the quotient of `π_n(X, x)` by the
-action is the set of free homotopy classes of maps `Sⁿ → X`. In dimension zero, it instead
-classifies the free homotopy classes of maps `S⁰ → X` whose distinguished point lies in the path
-component of `x`.
-
-The two classes are given by representatives rather than written as `⟦f⟧` and `⟦g⟧` directly,
-because the type of `⟦f⟧` is the underlying quotient rather than `HomotopyGroup N X x`, which
-hides the action from instance search. -/
+action is the set of free homotopy classes of maps `Sⁿ → X` landing in the path component of
+`x`. In dimension zero, it instead classifies the free homotopy classes of maps `S⁰ → X` whose
+distinguished point lies in the path component of `x`. -/
 theorem homotopyGroup_mem_orbit_iff_exists_homotopyAlong {a b : HomotopyGroup N X x}
     {f g : Ω^ N X x}
     (ha : a = ⟦f⟧) (hb : b = ⟦g⟧) :
@@ -275,8 +258,8 @@ theorem homotopyGroup_mem_orbit_iff_exists_homotopyAlong {a b : HomotopyGroup N 
 
 /-- On a space with trivial fundamental group at `x` — a simply connected space, for instance —
 the action is trivial. Thus in positive dimensions based and free homotopy classes of maps
-`Sⁿ → X` agree; in dimension zero this uses the interpretation with the distinguished point
-restricted to the path component of `x`. -/
+`Sⁿ → X` landing in the path component of `x` agree; in dimension zero this uses the
+interpretation with the distinguished point restricted to the path component of `x`. -/
 theorem fundamentalGroup_smul_eq_self [Subsingleton (FundamentalGroup X x)]
     (γ : FundamentalGroup X x) (a : HomotopyGroup N X x) : γ • a = a := by
   rw [Subsingleton.elim γ 1, one_smul]

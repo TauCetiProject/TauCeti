@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Collar
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 
 /-!
 # Base-point change for higher homotopy groups
@@ -289,6 +290,18 @@ theorem homotopic_transAt_transport [DecidableEq N] (i : N) (γ : Path x y) (f f
     GenLoop.Homotopic (_root_.GenLoop.transAt i (transport γ f) (transport γ f'))
       (transport γ (_root_.GenLoop.transAt i f f')) :=
   ((collarHomotopyAlong γ f).transAt i (collarHomotopyAlong γ f')).homotopic_transport
+
+/-! ### Naturality of transport -/
+
+/-- Postcomposition with a continuous map commutes with transport, along the image path. -/
+theorem map_transport {Y : Type*} [TopologicalSpace Y] (F : C(X, Y)) (γ : Path x y)
+    (f : Ω^ N X x) :
+    _root_.GenLoop.map F rfl (transport γ f) =
+      transport (γ.map F.continuous) (_root_.GenLoop.map F rfl f) := by
+  apply _root_.GenLoop.ext
+  intro z
+  rw [_root_.GenLoop.map_apply, transport_apply_eq, transport_apply_eq, apply_ite F]
+  split_ifs <;> simp
 
 end GenLoop
 
