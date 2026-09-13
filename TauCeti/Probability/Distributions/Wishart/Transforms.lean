@@ -98,7 +98,6 @@ private theorem trace_mul_coe_comp_wishartGram
 
 /-- At degree zero the Gaussian-Gram law is a Dirac mass at the origin, so the trace statistic has
 finite exponential moments of every order. -/
-@[simp]
 theorem integrableExpSet_trace_mul_wishartGramMeasure_zero
     (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (S : Matrix (Fin p) (Fin p) ℝ) :
     integrableExpSet (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
@@ -110,7 +109,6 @@ theorem integrableExpSet_trace_mul_wishartGramMeasure_zero
 
 /-- At degree zero the trace statistic vanishes almost everywhere, so its moment-generating
 function is constantly `1`. -/
-@[simp]
 theorem mgf_trace_mul_wishartGramMeasure_zero
     (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (S : Matrix (Fin p) (Fin p) ℝ)
     (t : ℝ) :
@@ -122,7 +120,6 @@ theorem mgf_trace_mul_wishartGramMeasure_zero
   simp
 
 /-- At degree zero the cumulant-generating function is constantly `0`. -/
-@[simp]
 theorem cgf_trace_mul_wishartGramMeasure_zero
     (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (S : Matrix (Fin p) (Fin p) ℝ)
     (t : ℝ) :
