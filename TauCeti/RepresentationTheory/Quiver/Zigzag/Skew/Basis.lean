@@ -341,8 +341,8 @@ noncomputable def skewZigzagVolume {i : V} (e : {j : V // G.Adj i j}) :
   skewZigzagMk k G c (backtrackElem G k e.2)
 
 /-- The class of any backtrack is the prescribed unit multiple of the volume class of its base
-vertex. -/
-@[simp]
+vertex. The reference edge `e` must be supplied explicitly: it cannot be inferred from the
+backtrack on the left-hand side, so this is intentionally not a global simp lemma. -/
 theorem skewZigzagMk_backtrackElem_eq_smul_skewZigzagVolume {i j : V}
     (e : {j' : V // G.Adj i j'}) (h : G.Adj i j) :
     skewZigzagMk k G c (backtrackElem G k h)
