@@ -26,22 +26,24 @@ A minimal projective presentation is two projective covers stacked, and
 `p₀ : P₀ ↠ M`, followed by a cover of the syzygy `ker p₀` pushed back into `P₀` along the inclusion
 of the syzygy. So there is nothing to prove beyond applying `TauCeti.exists_isProjectiveCover`
 twice, and the only thing worth saying is why the second application is available. Over a
-semiperfect ring it would not be: a semiperfect ring covers only the finitely generated modules, so
-the syzygy would have to be finitely generated before it could be covered, and that is a noetherian
-hypothesis on `P₀`, hence on the ring. A semiprimary ring covers *every* module, so the second step
-is the first step again and the presented module may be arbitrary.
+semiperfect ring it would not be, at least not in this generality: semiperfectness guarantees a
+projective cover only for the finitely generated modules, so the syzygy would have to be proved
+finitely generated before a cover of it could be produced, and that is a noetherian hypothesis on
+`P₀`, hence on the ring. A semiprimary ring covers *every* module, so the second step is the first
+step again and the presented module may be arbitrary.
 
-Finite generation is therefore not part of the existence statements, and is recovered from them
-instead: over a noetherian ring a presentation of a finitely generated module is automatically
-finitely generated, by `TauCeti.IsProjectiveCover.finite` for the middle term and
-`TauCeti.IsMinimalProjectivePresentation.finite` for the left-hand source. Adding the noetherian
-hypothesis to the semiprimary one therefore combines the two into
-`TauCeti.exists_finite_isMinimalProjectivePresentation`: a finitely generated module over a
-semiprimary noetherian ring is presented minimally by finitely generated projectives. That is the
-form the Auslander-Reiten transpose consumes, its vanishing criterion asking for a finitely
-generated left-hand source. A finite-dimensional algebra is Artinian, hence both semiprimary and
-noetherian, so it is covered by both statements: a consumer working over one installs
-`IsArtinianRing.of_finite` and `IsNoetherianRing.of_finite` and applies them as they stand.
+Finite generation is therefore not part of the existence statements, and a consumer that needs it
+reads it off the presentation they produce: `TauCeti.IsProjectiveCover.finite` makes the middle term
+finitely generated as soon as `M` is, with no hypothesis on the ring at all, and
+`TauCeti.IsMinimalProjectivePresentation.finite` makes the left-hand source finitely generated over
+a noetherian ring, that hypothesis being what makes the syzygy cut out of the middle term finitely
+generated. So `obtain`ing a presentation of a finitely generated module over a semiprimary
+noetherian ring and applying `h.isProjectiveCover.finite` and `h.finite` to it gives a minimal
+presentation by finitely generated projectives, which is the form the Auslander-Reiten transpose
+consumes, its vanishing criterion asking for a finitely generated left-hand source. A
+finite-dimensional algebra is Artinian, hence both semiprimary and noetherian, so a consumer working
+over one installs `IsArtinianRing.of_finite` and `IsNoetherianRing.of_finite` and applies these
+statements as they stand.
 
 ## The shape of the statements
 
@@ -64,8 +66,6 @@ free module on the underlying set of a module in `Type v` over a ring in `Type u
   syzygy.
 * `TauCeti.exists_isMinimalProjectivePresentation`: **every module over a semiprimary ring has a
   minimal projective presentation.**
-* `TauCeti.exists_finite_isMinimalProjectivePresentation`: over a semiprimary **noetherian** ring a
-  **finitely generated** module is presented minimally by **finitely generated** projective modules.
 
 ## References
 
@@ -126,29 +126,6 @@ theorem exists_isMinimalProjectivePresentation [IsSemiprimaryRing R] :
   obtain ⟨P₁, _, _, p₁, h⟩ := IsProjectiveCover.exists_isMinimalProjectivePresentation
     (P₀ := ↥P₀) (p₀ := Finsupp.linearCombination R id ∘ₗ P₀.subtype) h₀
   exact ⟨↥P₀, inferInstance, inferInstance, _, P₁, inferInstance, inferInstance, p₁, h⟩
-
-variable (R M) in
-/-- **A finitely generated module over a semiprimary noetherian ring is presented minimally by
-finitely generated projective modules.** Existence is
-`TauCeti.exists_isMinimalProjectivePresentation`, which needs only the ring to be semiprimary;
-finite generation of the two sources is `TauCeti.IsProjectiveCover.finite` for the middle term,
-which needs no hypothesis on the ring at all, and `TauCeti.IsMinimalProjectivePresentation.finite`
-for the left-hand source, which is where the noetherian hypothesis is spent — it is what makes the
-syzygy cut out of the middle term finitely generated.
-
-Both halves are carried in a single statement because that is how they are consumed: the
-Auslander-Reiten transpose of `M` is built from a minimal presentation whose left-hand source is
-finitely generated, and neither datum is of use for it without the other. A finite-dimensional
-algebra satisfies both hypotheses, being Artinian (`IsArtinianRing.of_finite`) and noetherian
-(`IsNoetherianRing.of_finite`). -/
-theorem exists_finite_isMinimalProjectivePresentation [IsSemiprimaryRing R] [IsNoetherianRing R]
-    [Module.Finite R M] :
-    ∃ (P₀ : Type max u v) (_ : AddCommGroup P₀) (_ : Module R P₀) (_ : Module.Finite R P₀)
-      (p₀ : P₀ →ₗ[R] M) (P₁ : Type max u v) (_ : AddCommGroup P₁) (_ : Module R P₁)
-      (_ : Module.Finite R P₁) (p₁ : P₁ →ₗ[R] P₀), IsMinimalProjectivePresentation p₁ p₀ := by
-  obtain ⟨P₀, _, _, p₀, P₁, _, _, p₁, h⟩ := exists_isMinimalProjectivePresentation R M
-  exact ⟨P₀, inferInstance, inferInstance, h.isProjectiveCover.finite, p₀, P₁, inferInstance,
-    inferInstance, h.finite, p₁, h⟩
 
 end Semiprimary
 
