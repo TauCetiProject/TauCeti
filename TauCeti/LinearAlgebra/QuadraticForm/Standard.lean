@@ -19,12 +19,10 @@ its skew-adjoint endomorphisms, so Mathlib's endomorphism-to-matrix equivalence 
 endomorphisms with `LieAlgebra.Orthogonal.so n R`.
 
 This supplies the coordinate bridge used in the standard-form statement that exterior bivectors
-are the orthogonal Lie algebra. It does not choose a basis for an abstract quadratic module. The
-file also records that reindexing the weights of a diagonal form preserves its equivalence class.
+are the orthogonal Lie algebra. It does not choose a basis for an abstract quadratic module.
 
 ## Main results
 
-* `TauCeti.equivalent_weightedSumSquares_comp`: reindexing the coefficients preserves equivalence.
 * `TauCeti.weightedSumSquares_eq_toQuadraticForm_diagonal`: a weighted sum of squares is the
   quadratic form of the diagonal weight matrix.
 * `TauCeti.QuadraticForm.polarBilin_weightedSumSquares`: the polar form of a weighted sum of
@@ -36,34 +34,15 @@ file also records that reindexing the weights of a diagonal form preserves its e
 
 * [Tau Ceti Roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), Representation Theory / Spin
   Representations, Layer 3, "Bivectors as a Lie subalgebra".
-* [Tau Ceti Roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), Quadratic Form Invariants,
-  Layer 0, "Chain equivalence".
 -/
 
 public section
 
 open scoped Matrix
 
-universe u v
+universe u
 
 namespace TauCeti
-
-section Reindex
-
-variable {R : Type u} [CommSemiring R] {ι : Type v} [Fintype ι] [DecidableEq ι]
-
-omit [DecidableEq ι] in
-/-- Permuting the coefficients of a diagonal form does not change its equivalence class. -/
-theorem equivalent_weightedSumSquares_comp (w : ι → R) (σ : Equiv.Perm ι) :
-    (QuadraticMap.weightedSumSquares R w).Equivalent
-      (QuadraticMap.weightedSumSquares R (w ∘ σ)) := by
-  refine ⟨{
-    toLinearEquiv := LinearEquiv.funCongrLeft R R σ
-    map_app' := fun x => ?_ }⟩
-  simp only [QuadraticMap.weightedSumSquares_apply, Function.comp_apply, smul_eq_mul]
-  simpa using (Equiv.sum_comp σ.symm (fun i => w (σ i) * (x (σ i) * x (σ i)))).symm
-
-end Reindex
 
 /-- A weighted sum-of-squares quadratic form is the quadratic form associated to the diagonal
 matrix of its weights. -/

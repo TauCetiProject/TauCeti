@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Tactic.LinearCombination
@@ -85,54 +86,38 @@ private theorem replacePair_apply_right (f : (Fin 2 → R) → (Fin 2 → R))
     (hij : i ≠ j) (x : Fin n → R) : replacePair f i j x j = f ![x i, x j] 1 := by
   simp [replacePair, hij.symm]
 
+omit [CommSemiring R] in
+private theorem finTwo_eta (v : Fin 2 → R) : ![v 0, v 1] = v := by
+  ext k
+  fin_cases k <;> rfl
+
+omit [CommSemiring R] in
+private theorem replacePair_comp (f g : (Fin 2 → R) → (Fin 2 → R))
+    (hfg : Function.LeftInverse f g) (hij : i ≠ j) (x : Fin n → R) :
+    replacePair f i j (replacePair g i j x) = x := by
+  funext k
+  by_cases hki : k = i
+  · subst k
+    simp only [replacePair_apply_left,
+      replacePair_apply_right (f := g) (i := i) (j := j) hij]
+    rw [finTwo_eta, hfg]
+    rfl
+  by_cases hkj : k = j
+  · subst k
+    simp only [replacePair_apply_right (f := f) (i := i) (j := j) hij,
+      replacePair_apply_left, replacePair_apply_right (f := g) (i := i) (j := j) hij]
+    rw [finTwo_eta, hfg]
+    rfl
+  · simp [replacePair, hki, hkj]
+
 private def pairLinearEquiv (hij : i ≠ j)
     (e : (weightedSumSquares R ![w i, w j]).IsometryEquiv
       (weightedSumSquares R ![w' i, w' j])) :
     (Fin n → R) ≃ₗ[R] (Fin n → R) where
   toFun := replacePair e i j
   invFun := replacePair e.symm i j
-  left_inv x := by
-    funext k
-    by_cases hki : k = i
-    · subst k
-      simp only [replacePair]
-      simp only [ite_true, hij.symm, ite_false]
-      have hp : ![e ![x i, x j] 0, e ![x i, x j] 1] = e ![x i, x j] := by
-        ext k
-        fin_cases k <;> rfl
-      rw [hp, e.symm_apply_apply]
-      rfl
-    by_cases hkj : k = j
-    · subst k
-      simp only [replacePair]
-      simp only [hki, ite_false, ite_true, hij]
-      have hp : ![e ![x i, x j] 0, e ![x i, x j] 1] = e ![x i, x j] := by
-        ext k
-        fin_cases k <;> rfl
-      rw [hp, e.symm_apply_apply]
-      rfl
-    · simp [replacePair, hki, hkj]
-  right_inv x := by
-    funext k
-    by_cases hki : k = i
-    · subst k
-      simp only [replacePair]
-      simp only [ite_true, hij.symm, ite_false]
-      have hp : ![e.symm ![x i, x j] 0, e.symm ![x i, x j] 1] = e.symm ![x i, x j] := by
-        ext k
-        fin_cases k <;> rfl
-      rw [hp, e.apply_symm_apply]
-      rfl
-    by_cases hkj : k = j
-    · subst k
-      simp only [replacePair]
-      simp only [hki, ite_false, ite_true, hij]
-      have hp : ![e.symm ![x i, x j] 0, e.symm ![x i, x j] 1] = e.symm ![x i, x j] := by
-        ext k
-        fin_cases k <;> rfl
-      rw [hp, e.apply_symm_apply]
-      rfl
-    · simp [replacePair, hki, hkj]
+  left_inv := replacePair_comp e.symm e e.symm_apply_apply hij
+  right_inv := replacePair_comp e e.symm e.apply_symm_apply hij
   map_add' x y := by
     funext k
     by_cases hki : k = i
