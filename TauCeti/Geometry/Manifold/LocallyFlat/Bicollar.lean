@@ -68,6 +68,8 @@ eliminate them downstream.
 * `TauCeti.IsBicollar.range_diff_range_eq_union` and
   `TauCeti.IsBicollar.disjoint_image_Ioi_Iio`: the two sides of a bicollar are disjoint and cover
   the complement of the image inside the collar.
+* `TauCeti.IsBicollared.exists_isOpen_sdiff_range_eq_union`: a bicollared map with nonempty
+  domain is two-sided.
 * `TauCeti.IsLocallyBicollared.restrict`, `TauCeti.IsLocallyBicollared.isOpenEmbedding_comp`, and
   `TauCeti.IsLocallyBicollared.comp_homeomorph`: the local predicate's basic closure API.
 
@@ -230,6 +232,25 @@ theorem comp_homeomorph (h : IsBicollared f) (e : N' ≃ₜ N) : IsBicollared (f
 
 theorem isLocallyBicollared (h : IsBicollared f) : IsLocallyBicollared f :=
   fun _ => ⟨univ, isOpen_univ, mem_univ _, h.restrict isOpen_univ⟩
+
+/-- A bicollared map with nonempty domain is **two-sided**: its image has an open neighbourhood
+whose complement in that neighbourhood is the union of two disjoint nonempty open sets, the two
+sides of a bicollar.  The domain must be nonempty for the two sides to be nonempty; the rest is
+`TauCeti.IsBicollar.range_diff_range_eq_union` and
+`TauCeti.IsBicollar.disjoint_image_Ioi_Iio` read inside the open set the collar sweeps out. -/
+theorem exists_isOpen_sdiff_range_eq_union [Nonempty N] (h : IsBicollared f) :
+    ∃ U V W : Set M,
+      IsOpen U ∧ IsOpen V ∧ IsOpen W ∧ range f ⊆ U ∧ V.Nonempty ∧ W.Nonempty ∧
+        Disjoint V W ∧ U \ range f = V ∪ W := by
+  obtain ⟨b, hb⟩ := h
+  exact ⟨range b, b '' (univ ×ˢ Ioi 0), b '' (univ ×ˢ Iio 0),
+    hb.isOpenEmbedding.isOpen_range,
+    hb.isOpenEmbedding.isOpenMap _ (isOpen_univ.prod isOpen_Ioi),
+    hb.isOpenEmbedding.isOpenMap _ (isOpen_univ.prod isOpen_Iio),
+    hb.range_subset_range,
+    ⟨b (Classical.arbitrary N, 1), mem_image_of_mem _ ⟨mem_univ _, mem_Ioi.2 one_pos⟩⟩,
+    ⟨b (Classical.arbitrary N, -1), mem_image_of_mem _ ⟨mem_univ _, mem_Iio.2 (by norm_num)⟩⟩,
+    hb.disjoint_image_Ioi_Iio, hb.range_diff_range_eq_union⟩
 
 end IsBicollared
 

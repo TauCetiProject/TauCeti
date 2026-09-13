@@ -96,17 +96,9 @@ theorem BrownBicollaring.exists_isOpen_sdiff_range_eq_union {n : ℕ} (h : Brown
     (hf : IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f) :
     ∃ U V W : Set (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1),
       IsOpen U ∧ IsOpen V ∧ IsOpen W ∧ range f ⊆ U ∧ V.Nonempty ∧ W.Nonempty ∧
-        Disjoint V W ∧ U \ range f = V ∪ W := by
-  obtain ⟨b, hb⟩ := isBicollared_iff.mp (h f hf)
-  obtain ⟨x, hx⟩ : (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1).Nonempty :=
-    NormedSpace.sphere_nonempty.2 zero_le_one
-  exact ⟨range b, b '' (univ ×ˢ Ioi 0), b '' (univ ×ˢ Iio 0),
-    hb.isOpenEmbedding.isOpen_range,
-    hb.isOpenEmbedding.isOpenMap _ (isOpen_univ.prod isOpen_Ioi),
-    hb.isOpenEmbedding.isOpenMap _ (isOpen_univ.prod isOpen_Iio),
-    hb.range_subset_range,
-    ⟨b (⟨x, hx⟩, 1), mem_image_of_mem _ ⟨mem_univ _, mem_Ioi.2 one_pos⟩⟩,
-    ⟨b (⟨x, hx⟩, -1), mem_image_of_mem _ ⟨mem_univ _, mem_Iio.2 (by norm_num)⟩⟩,
-    hb.disjoint_image_Ioi_Iio, hb.range_diff_range_eq_union⟩
+        Disjoint V W ∧ U \ range f = V ∪ W :=
+  haveI : Nonempty (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
+    (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  (h f hf).exists_isOpen_sdiff_range_eq_union
 
 end TauCeti
