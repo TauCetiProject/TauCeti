@@ -21,11 +21,6 @@ common-refinement arguments.
 The existence of a common refinement for two arbitrary chosen extensions is not asserted here.
 Constructing it requires the compositum together with a compatible choice of a place.
 
-## References
-
-This module implements the finite and separable tower and compatible-embedding target in Layer 0
-of the StableReduction roadmap:
-https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/README.md
 -/
 
 public section
