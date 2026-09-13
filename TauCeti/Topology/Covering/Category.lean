@@ -26,9 +26,11 @@ carries the constructor API. `TauCeti.ConnectedCoveringSpace X`, the covers with
 space, is the instance taking `P` to be connectedness; `TauCeti.FiniteCoveringSpace` in
 `TauCeti.Topology.Covering.Finite` is the other.
 
-Each is a reducible abbreviation, so the general API applies to it unchanged, and only the
-constructor is restated at each subcategory. The docstring of
-`TauCeti.CoveringSpace.FullSubcategory` says how to name its members from a subcategory.
+Each is a reducible abbreviation, so the general API applies to it unchanged. What a subcategory
+restates is its constructor together with the computation lemmas that mention it — `mk`,
+`mk_coe`, `mk_proj`, `forget_obj_mk` — and its own `forget`, which fixes `P`; it adds whatever its
+property gives, such as `TauCeti.ConnectedCoveringSpace.connectedSpace`. The docstring of
+`TauCeti.CoveringSpace.FullSubcategory` says how to name the rest from a subcategory.
 
 The connected covers are the source category for the classification by transitive
 fundamental-group actions.
@@ -247,8 +249,10 @@ end CoveringSpace
 underlying object of `TopCat / X`.
 
 A subcategory of covers is built by abbreviating this type at its own `P`, as
-`TauCeti.ConnectedCoveringSpace` and `TauCeti.FiniteCoveringSpace` do, and the API below is then
-used from it rather than restated. Naming a member from such a subcategory:
+`TauCeti.ConnectedCoveringSpace` and `TauCeti.FiniteCoveringSpace` do. Such a subcategory restates
+only its constructor and the lemmas naming it — `mk`, `mk_coe`, `mk_proj`, `forget_obj_mk` — since
+each takes its property in a different form, and its own `forget`, which fixes `P`. The rest of
+the API below is used from it rather than restated:
 
 * dot notation on an **object** reaches anything with an object or morphism argument, since the
   subcategory argument may be implicit — `p.proj`, `p.prop_obj`, `p.isCoveringMap_proj`,
@@ -256,10 +260,7 @@ used from it rather than restated. Naming a member from such a subcategory:
 * dot notation on a **morphism** does not resolve, its type being headed by
   `CategoryTheory.InducedCategory.Hom`, so `f.w` must be written
   `CoveringSpace.FullSubcategory.w f`;
-* a member parameterized only by `X` and `P` is named through this namespace.
-
-Only the constructor is restated at each subcategory, since each takes its property in a
-different form. -/
+* a member parameterized only by `X` and `P` is named through this namespace. -/
 abbrev CoveringSpace.FullSubcategory (X : TopCat.{u})
     (P : ObjectProperty (CategoryTheory.Over X)) : Type _ :=
   (Over.isCoveringMap X ⊓ P).FullSubcategory
