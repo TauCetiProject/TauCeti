@@ -32,7 +32,8 @@ resulting measure is a probability measure, and it is concentrated on the standa
 * `TauCeti.Probability.isProbabilityMeasure_dirichletMeasure_iff` characterizes exactly when this
   totalized measure is a probability measure.
 * `TauCeti.ae_pos_sum_pi_gammaMeasure` shows that the zero-denominator locus is null.
-* `TauCeti.Probability.ae_mem_stdSimplex_dirichletMeasure` gives the standard-simplex support.
+* `TauCeti.Probability.ae_sum_eq_one_dirichletMeasure` and
+  `TauCeti.Probability.ae_mem_stdSimplex_dirichletMeasure` give the standard-simplex support.
 
 ## References
 
@@ -185,6 +186,15 @@ theorem ae_pos_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < 
     rw [dirichletNormalize_apply]
     exact div_pos (hx i) hsum
   · measurability
+
+/-- Under a Dirichlet law with positive concentration parameters the coordinates almost surely
+total one. -/
+theorem ae_sum_eq_one_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+    ∀ᵐ x ∂dirichletMeasure a, ∑ i, x i = 1 := by
+  rw [dirichletMeasure_of_pos ha, ae_map_iff measurable_dirichletNormalize.aemeasurable]
+  · filter_upwards [ae_pos_sum_pi_gammaMeasure a (fun _ ↦ 1)] with x hsum
+    exact sum_dirichletNormalize hsum.ne'
+  · exact (Finset.measurable_sum _ fun i _ ↦ by fun_prop) (measurableSet_singleton 1)
 
 /-- A Dirichlet measure with positive concentration parameters is concentrated on the standard
 simplex, represented in Euclidean coordinates. -/
