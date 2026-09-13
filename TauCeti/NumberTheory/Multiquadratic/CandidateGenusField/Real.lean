@@ -21,8 +21,9 @@ real subfield is the candidate for the ordinary genus field. This file defines t
 relates it to the embedded quadratic base.
 
 The key archimedean fact is intrinsic: an extension of a totally real field is unramified at all
-infinite places exactly when it is totally real. Consequently every everywhere-unramified abelian
-extension admitted by the genus-field universal property maps into this maximal real subfield.
+infinite places exactly when it is totally real. Consequently every abelian Galois extension of
+`ℚ` containing the chosen square root and unramified everywhere over the quadratic base maps into
+this maximal real subfield.
 
 The construction is classical; see F. Lemmermeyer, *Reciprocity Laws: From Euler to Eisenstein*,
 Section 2.2, and D. A. Cox, *Primes of the Form x² + ny²*, Section 6.A.
@@ -39,8 +40,9 @@ Section 2.2, and D. A. Cox, *Primes of the Form x² + ny²*, Section 6.A.
   base lies in the real candidate.
 * `TauCeti.Multiquadratic.isAbelianGalois_candidateGenusFieldReal`: the real candidate is abelian
   and Galois over `ℚ`.
-* `TauCeti.Multiquadratic.exists_algHom_candidateGenusFieldReal`: every abelian extension
-  unramified over the base at all places embeds into the real candidate.
+* `TauCeti.Multiquadratic.exists_algHom_candidateGenusFieldReal`: every abelian Galois extension
+  of `ℚ` containing the chosen square root and unramified over the quadratic base at all places
+  embeds into the real candidate.
 -/
 
 public section
@@ -165,11 +167,12 @@ theorem isUnramifiedAtInfinitePlaces_candidateGenusFieldReal (hd : Squarefree d)
       (candidateGenusFieldReal hd) :=
   IsTotallyReal.isUnramifiedAtInfinitePlaces
 
-/-- **Every everywhere-unramified abelian extension of `ℚ(√d)` embeds into the real
-candidate.** The narrow genus-field maximality first embeds it into the full prime-discriminant
-compositum. Unramifiedness at infinity over the real quadratic base makes the source totally real,
-so its image lies in the maximal totally real subfield. The embedding can then be adjusted to
-carry the chosen square root to the chosen root in the real candidate. -/
+/-- **Every abelian Galois extension of `ℚ` containing the chosen square root and unramified
+everywhere over the quadratic base embeds into the real candidate.** The narrow genus-field
+maximality first embeds it into the full prime-discriminant compositum. Unramifiedness at infinity
+over the real quadratic base makes the source totally real, so its image lies in the maximal
+totally real subfield. The embedding can then be adjusted to carry the chosen square root to the
+chosen root in the real candidate. -/
 theorem exists_algHom_candidateGenusFieldReal {M : Type*} [Field M] [NumberField M]
     [IsAbelianGalois ℚ M] (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
     (hpos : 0 < d) {z : M} (hz : z ^ 2 = algebraMap ℤ M d)
