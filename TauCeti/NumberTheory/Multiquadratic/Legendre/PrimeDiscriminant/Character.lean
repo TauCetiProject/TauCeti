@@ -229,10 +229,8 @@ theorem primeDiscriminantCharFun_eq_legendreSym {P : ℤ} (hP : IsPrimeDiscrimin
       legendreSym_oddPrimeDiscriminant_eq_legendreSym hp2 hq,
       jacobiSym.legendreSym.to_jacobiSym]
 
-/-- **The character of a prime discriminant at `-1` is the sign of the discriminant.** The
-character attached to `P` is odd exactly when `P` is negative: `χ₄(-1) = -1` and `χ₈'(-1) = -1` for
-`-4` and `-8`, `χ₈(-1) = 1` for `8`, and at an odd prime discriminant `p* = ±p` the value
-`(-1 / p) = χ₄(p)` is `1` exactly when `p ≡ 1 [MOD 4]`, which is when `p* = p` is positive. -/
+/-- **The character of a prime discriminant at `-1` is the sign of the discriminant.** In
+particular, the character attached to `P` is odd exactly when `P` is negative. -/
 theorem primeDiscriminantCharFun_neg_one {P : ℤ} (hP : IsPrimeDiscriminant P) :
     primeDiscriminantCharFun P (-1) = P.sign := by
   rcases isPrimeDiscriminant_iff.mp hP with hev | ⟨p, hp, hodd, rfl⟩

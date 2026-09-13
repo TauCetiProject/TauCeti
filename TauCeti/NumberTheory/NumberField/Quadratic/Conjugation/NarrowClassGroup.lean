@@ -140,12 +140,7 @@ theorem mkPrincipal_eq_one_or_eq_mkPrincipal_gen (hmin : minpoly ℤ θ = X ^ 2 
 
 /-- **A generator of negative norm has the narrow class of `(θ)`.** For `K = ℚ(√d)` presented by
 `θ` and `x : Kˣ` with `N(x) < 0`, the narrow class of `(x)` is that of `(θ)`, even when both are
-trivial.
-
-By `mkPrincipal_eq_one_or_eq_mkPrincipal_gen` the only other possibility is that `(x)` is narrowly
-trivial, so that some unit multiple `w • x` is totally positive. Its norm `N(w) N(x)` is then
-positive, forcing the unit `w` to have norm `-1`; such a unit makes every principal narrow class
-trivial (`exists_unit_isTotallyPositive_smul_of_norm_eq_neg_one`), that of `(θ)` included. -/
+trivial. -/
 theorem mkPrincipal_eq_mkPrincipal_gen_of_norm_neg (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {x : Kˣ} (hx : Algebra.norm ℚ (x : K) < 0) :
     NarrowClassGroup.mkPrincipal x =

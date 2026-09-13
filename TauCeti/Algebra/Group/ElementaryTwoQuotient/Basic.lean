@@ -534,10 +534,9 @@ theorem _root_.MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow
   rw [twoRank_def, twoRank_def, ← hrn]
   omega
 
-/-- **A surjection keeps the 2-rank exactly when its kernel consists of squares.** For a surjective
-`f : G →* H`, the induced map `G / G² → H / H²` is surjective with kernel the image of `ker f`
-(`MonoidHom.exists_mem_ker_elementaryTwoQuotientMk_eq`), so by rank-nullity the two 2-ranks agree
-exactly when every element of `ker f` has trivial class in `G / G²`, that is, is a square. -/
+/-- **A surjection keeps the 2-rank exactly when its kernel consists of squares.** For a
+surjective `f : G →* H`, the groups `G` and `H` have the same 2-rank if and only if every element
+of `ker f` is a square in `G`. -/
 theorem _root_.MonoidHom.twoRank_eq_twoRank_iff_ker_le_square
     [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] (f : G →* H)
     (hf : Function.Surjective f) :

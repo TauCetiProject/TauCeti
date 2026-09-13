@@ -82,10 +82,7 @@ variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 /-- **The genus character of a principal class is the character at the sign of the norm.** Let
 `K = ℚ(√d)` with a prime-discriminant factorization `s` of its discriminant, and let `x` be a
 nonzero algebraic integer whose norm `n` is coprime to `P ∈ s`. Then the genus character at `P` of
-the narrow class of `(x)` is `χ_P(sign n)`: it is `1` when `n > 0` and `χ_P(-1)` when `n < 0`.
-
-The ideal `(x)` has absolute norm `|n| = sign n · n`, and `χ_P(n) = 1` because `n` is the norm of an
-integer of `K` (`primeDiscriminantCharFun_norm_eq_one`). -/
+the narrow class of `(x)` is `χ_P(sign n)`: it is `1` when `n > 0` and `χ_P(-1)` when `n < 0`. -/
 theorem genusCharFunNarrowClassGroupHom_mkPrincipal {s : Finset ℤ}
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
     (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
@@ -111,13 +108,7 @@ theorem genusCharFunNarrowClassGroupHom_mkPrincipal {s : Finset ℤ}
 
 /-- **The genus characters of `[θ]⁺` are the signs of the prime discriminants.** For a real
 quadratic field `K = ℚ(√d)`, `d > 0`, presented by `θ² = d`, the genus character at each prime
-discriminant `P ∈ s` takes the value `sign P` on the narrow class of the principal ideal `(θ)`.
-
-The norm `-d` of `θ` need not be coprime to `P`, so the character is evaluated at `x = 1 + 2θ`
-instead: its norm `1 - 4d` is negative, so `(x)` has the narrow class of `(θ)`
-(`NumberField.mkPrincipal_eq_mkPrincipal_gen_of_norm_neg`), and coprime to `4d`, which `P`
-divides. Then `genusCharFunNarrowClassGroupHom_mkPrincipal` gives the value `χ_P(-1)`, which is
-`sign P` (`primeDiscriminantCharFun_neg_one`). -/
+discriminant `P ∈ s` takes the value `sign P` on the narrow class of the principal ideal `(θ)`. -/
 theorem genusCharFunNarrowClassGroupHom_mkPrincipal_gen {s : Finset ℤ}
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
     (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
@@ -172,8 +163,7 @@ theorem genusCharFunNarrowClassGroupHom_mkPrincipal_gen {s : Finset ℤ}
 
 /-- **`[θ]⁺` is a square exactly when every prime discriminant is positive.** For a real quadratic
 field `K = ℚ(√d)` with prime-discriminant factorization `s`, the narrow class of `(θ)` lies in
-`Cl⁺(K)²` if and only if every `P ∈ s` is positive: by the principal genus theorem it is a square
-exactly when its genus characters `sign P` are all trivial. -/
+`Cl⁺(K)²` if and only if every `P ∈ s` is positive. -/
 theorem isSquare_mkPrincipal_gen_iff {s : Finset ℤ}
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
     (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
@@ -191,9 +181,7 @@ theorem isSquare_mkPrincipal_gen_iff {s : Finset ℤ}
 /-- **The narrow defect lies in the principal genus exactly when every prime discriminant is
 positive.** For a real quadratic field `K = ℚ(√d)` with prime-discriminant factorization `s`, the
 kernel of the forgetful surjection `Cl⁺(K) → Cl(K)` consists of squares if and only if every
-`P ∈ s` is positive. The kernel is `{1, [θ]⁺}` (`NumberField.NarrowClassGroup.toClassGroup_ker`
-and `NumberField.mkPrincipal_eq_one_or_eq_mkPrincipal_gen`), so this is
-`isSquare_mkPrincipal_gen_iff`. -/
+`P ∈ s` is positive. -/
 theorem ker_toClassGroup_le_square_iff {s : Finset ℤ}
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
     (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
@@ -217,11 +205,7 @@ theorem ker_toClassGroup_le_square_iff {s : Finset ℤ}
 /-- **The ordinary `2`-rank of a real quadratic field is `t - 1` exactly when every prime
 discriminant is positive.** Let `K = ℚ(√d)` with `d > 0` squarefree, let `s` be the
 prime-discriminant factorization of its discriminant, and let `t` be the number of rational primes
-ramifying in `K`. Then `2-rank Cl(K) = t - 1` if and only if every `P ∈ s` is positive.
-
-The narrow `2`-rank is `t - 1` (`narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one`), and the
-surjection `Cl⁺(K) → Cl(K)` keeps the `2`-rank exactly when its kernel consists of squares
-(`MonoidHom.twoRank_eq_twoRank_iff_ker_le_square`), which is `ker_toClassGroup_le_square_iff`. -/
+ramifying in `K`. Then `2-rank Cl(K) = t - 1` if and only if every `P ∈ s` is positive. -/
 theorem twoRank_eq_ncard_ramifiedPrimes_sub_one_iff {s : Finset ℤ}
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
     (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
@@ -238,9 +222,7 @@ theorem twoRank_eq_ncard_ramifiedPrimes_sub_one_iff {s : Finset ℤ}
 
 /-- **A negative prime discriminant drops the ordinary `2`-rank to `t - 2`.** For a real quadratic
 field `K = ℚ(√d)` whose discriminant has a negative prime-discriminant factor `P ∈ s`, the
-`2`-rank of `Cl(K)` is `t - 2`, where `t` is the number of ramified rational primes. It is `t - 1`
-or `t - 2` (`twoRank_eq_ncard_ramifiedPrimes_sub_one_or_sub_two`), and
-`twoRank_eq_ncard_ramifiedPrimes_sub_one_iff` excludes `t - 1`. -/
+`2`-rank of `Cl(K)` is `t - 2`, where `t` is the number of ramified rational primes. -/
 theorem twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg {s : Finset ℤ}
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
     (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
