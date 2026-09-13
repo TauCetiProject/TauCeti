@@ -17,8 +17,8 @@ permutations; cyclic relabelings are the special case used by `GridDiagram.IsMov
 
 The equivalences are defined by transporting the domain of a finitely supported function.  Thus
 they do not introduce a second chain representation, and their action on generators and
-coefficients is exposed by simp lemmas.  No differential is used here: rectangle transport and
-the resulting chain-map theorem belong to the next stage of the invariance construction.
+coefficients is exposed by simp lemmas.  No differential is used here; compatibility with a
+differential is a separate property proved where a differential is defined.
 
 ## Main definitions
 
@@ -36,9 +36,9 @@ the resulting chain-map theorem belong to the next stage of the invariance const
 
 ## References
 
-This is a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.5,
-"Invariance over 𝔽₂. Grid moves = commutation + (de)stabilization".  The relabeling convention
-follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+The construction uses Mathlib's `Finsupp.domLCongr` and `Finsupp.equivMapDomain_apply`.  The
+relabeling convention follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
+Chapter 3.
 -/
 
 public section
@@ -72,6 +72,18 @@ private def relabelColumnsStateEquiv (κ : Equiv.Perm (Fin n)) : GridState n ≃
     intro x
     ext c
     simp
+
+private theorem relabelRowsStateEquiv_symm (ρ : Equiv.Perm (Fin n)) :
+    (relabelRowsStateEquiv ρ).symm = relabelRowsStateEquiv ρ.symm := by
+  apply Equiv.ext
+  intro x
+  rfl
+
+private theorem relabelColumnsStateEquiv_symm (κ : Equiv.Perm (Fin n)) :
+    (relabelColumnsStateEquiv κ).symm = relabelColumnsStateEquiv κ.symm := by
+  apply Equiv.ext
+  intro x
+  rfl
 
 /-- The linear equivalence on grid chains induced by a permutation of the row labels. -/
 noncomputable def relabelRowsEquiv (ρ : Equiv.Perm (Fin n)) :
@@ -120,16 +132,14 @@ theorem relabelColumnsEquiv_apply (κ : Equiv.Perm (Fin n)) (f : GridChain R n)
 theorem relabelRowsEquiv_symm (ρ : Equiv.Perm (Fin n)) :
     (relabelRowsEquiv (R := R) ρ).symm = relabelRowsEquiv ρ.symm := by
   unfold relabelRowsEquiv
-  rw [Finsupp.domLCongr_symm]
-  rfl
+  rw [Finsupp.domLCongr_symm, relabelRowsStateEquiv_symm]
 
 /-- The inverse of a column relabeling is induced by the inverse column permutation. -/
 @[simp]
 theorem relabelColumnsEquiv_symm (κ : Equiv.Perm (Fin n)) :
     (relabelColumnsEquiv (R := R) κ).symm = relabelColumnsEquiv κ.symm := by
   unfold relabelColumnsEquiv
-  rw [Finsupp.domLCongr_symm]
-  rfl
+  rw [Finsupp.domLCongr_symm, relabelColumnsStateEquiv_symm]
 
 /-- The inverse row relabeling has the expected coefficient formula. -/
 theorem relabelRowsEquiv_symm_apply (ρ : Equiv.Perm (Fin n)) (f : GridChain R n)
@@ -170,12 +180,30 @@ theorem relabelRowsEquiv_trans_apply (ρ σ : Equiv.Perm (Fin n)) (f : GridChain
   ext y
   simp [GridState.relabelRows_relabelRows]
 
+/-- Row relabeling equivalences compose in the same order as state relabelings. -/
+@[simp]
+theorem relabelRowsEquiv_trans (ρ σ : Equiv.Perm (Fin n)) :
+    (relabelRowsEquiv (R := R) ρ).trans (relabelRowsEquiv σ) =
+      relabelRowsEquiv (ρ.trans σ) := by
+  apply LinearEquiv.ext
+  intro f
+  exact relabelRowsEquiv_trans_apply ρ σ f
+
 /-- Column relabeling equivalences compose in the same order as state relabelings. -/
 theorem relabelColumnsEquiv_trans_apply (κ τ : Equiv.Perm (Fin n)) (f : GridChain R n) :
     relabelColumnsEquiv τ (relabelColumnsEquiv κ f) =
       relabelColumnsEquiv (κ.trans τ) f := by
   ext y
   simp [GridState.relabelColumns_relabelColumns]
+
+/-- Column relabeling equivalences compose in the same order as state relabelings. -/
+@[simp]
+theorem relabelColumnsEquiv_trans (κ τ : Equiv.Perm (Fin n)) :
+    (relabelColumnsEquiv (R := R) κ).trans (relabelColumnsEquiv τ) =
+      relabelColumnsEquiv (κ.trans τ) := by
+  apply LinearEquiv.ext
+  intro f
+  exact relabelColumnsEquiv_trans_apply κ τ f
 
 end GridChain
 
