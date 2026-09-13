@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.Algebra.Lie.DirectSum
+public import TauCeti.LinearAlgebra.Projection
 import TauCeti.Algebra.DirectSum.Internal
 
 /-!
@@ -163,20 +164,72 @@ theorem IsInternal.lieModuleProjection_apply {N : ι → LieSubmodule R L M}
   have he := congrArg LinearEquiv.symm (lieModuleEquivOfIsInternal_toLinearEquiv N h)
   exact congrArg (fun z : ⨁ i, N i ↦ ((z i : N i) : M)) (DFunLike.congr_fun he m)
 
+/-- The underlying linear map of the equivariant summand projection is the canonical projection
+of the underlying internal direct sum, followed by the summand inclusion. -/
+theorem IsInternal.lieModuleProjection_toLinearMap {N : ι → LieSubmodule R L M}
+    (h : IsInternal fun i ↦ (N i).toSubmodule) (i : ι) :
+    (h.lieModuleProjection i : M →ₗ[R] M) =
+      (N i).toSubmodule.subtype.comp
+        (TauCeti.internalProjection h.submodule_iSupIndep h.submodule_iSup_eq_top i) := by
+  apply LinearMap.ext
+  intro m
+  have hm : m ∈ ⨆ j, (N j).toSubmodule := by
+    rw [h.submodule_iSup_eq_top]
+    exact Submodule.mem_top
+  induction hm using Submodule.iSup_induction' with
+  | mem j x hx =>
+      rcases eq_or_ne j i with rfl | hji
+      · calc
+          ((h.lieModuleProjection j : M →ₗ[R] M) x) = h.lieModuleProjection j x := rfl
+          _ = x := by rw [h.lieModuleProjection_apply,
+            h.ofBijective_coeLinearMap_of_mem hx]
+          _ = ((N j).toSubmodule.subtype.comp
+              (TauCeti.internalProjection h.submodule_iSupIndep
+                h.submodule_iSup_eq_top j)) x := by
+            rw [LinearMap.comp_apply,
+              TauCeti.internalProjection_apply_of_mem (Q := fun k ↦ (N k).toSubmodule)
+                h.submodule_iSupIndep h.submodule_iSup_eq_top hx]
+            rfl
+      · calc
+          ((h.lieModuleProjection i : M →ₗ[R] M) x) = h.lieModuleProjection i x := rfl
+          _ = 0 := by
+            rw [h.lieModuleProjection_apply,
+              h.ofBijective_coeLinearMap_of_mem_ne hji hx]
+            rfl
+          _ = ((N i).toSubmodule.subtype.comp
+              (TauCeti.internalProjection h.submodule_iSupIndep
+                h.submodule_iSup_eq_top i)) x := by
+            rw [LinearMap.comp_apply,
+              TauCeti.internalProjection_apply_eq_zero_of_mem_of_ne
+                (Q := fun k ↦ (N k).toSubmodule) h.submodule_iSupIndep
+                h.submodule_iSup_eq_top hji hx]
+            rfl
+  | zero => simp
+  | add x y _ _ ihx ihy => simpa only [map_add] using congrArg₂ (· + ·) ihx ihy
+
 /-- The canonical projection fixes every element of the selected summand. -/
 @[simp]
 theorem IsInternal.lieModuleProjection_apply_of_mem {N : ι → LieSubmodule R L M}
     (h : IsInternal fun i ↦ (N i).toSubmodule) (i : ι) {m : M} (hm : m ∈ N i) :
     h.lieModuleProjection i m = m := by
-  rw [h.lieModuleProjection_apply, h.ofBijective_coeLinearMap_of_mem hm]
+  have he := congrArg (fun f : M →ₗ[R] M ↦ f m)
+    (IsInternal.lieModuleProjection_toLinearMap h i)
+  rw [LinearMap.comp_apply,
+    TauCeti.internalProjection_apply_of_mem (Q := fun k ↦ (N k).toSubmodule)
+      h.submodule_iSupIndep h.submodule_iSup_eq_top hm] at he
+  exact he
 
 /-- The canonical projection vanishes on every other summand. -/
 @[simp]
 theorem IsInternal.lieModuleProjection_apply_coe_ne {N : ι → LieSubmodule R L M}
     (h : IsInternal fun i ↦ (N i).toSubmodule) {i j : ι} (hji : j ≠ i)
     (m : N j) : h.lieModuleProjection i (m : M) = 0 := by
-  rw [h.lieModuleProjection_apply, h.ofBijective_coeLinearMap_of_ne hji m]
-  rfl
+  have he := congrArg (fun f : M →ₗ[R] M ↦ f (m : M))
+    (IsInternal.lieModuleProjection_toLinearMap h i)
+  rw [LinearMap.comp_apply,
+    TauCeti.internalProjection_apply_of_ne (Q := fun k ↦ (N k).toSubmodule)
+      h.submodule_iSupIndep h.submodule_iSup_eq_top hji m] at he
+  exact he
 
 /-- The canonical projection is idempotent. -/
 @[simp]
