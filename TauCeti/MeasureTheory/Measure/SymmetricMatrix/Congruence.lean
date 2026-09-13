@@ -13,8 +13,9 @@ public import Mathlib.LinearAlgebra.Matrix.Transvection
 /-!
 # Congruence and the change of variables on the symmetric subspace
 
-For an invertible matrix `C`, the congruence `A ↦ C * A * Cᵀ` is a continuous linear
-automorphism of the symmetric subspace. In the upper-triangular coordinates its determinant is
+For a rectangular matrix `M`, congruence `A ↦ M * A * Mᵀ` is a linear map between symmetric
+subspaces. For an invertible square matrix `C`, it is a continuous linear automorphism. In the
+upper-triangular coordinates its determinant is
 `(det C) ^ (p + 1)`, so the congruence image of a set has `|det C| ^ (p + 1)` times its
 `TauCeti.symmetricLebesgue` volume, and the pushforward of `symmetricLebesgue` is
 `(|det C| ^ (p + 1))⁻¹ • symmetricLebesgue`. This change of variables supplies the
@@ -25,8 +26,8 @@ the invertible case as a corollary.
 
 ## Main declarations
 
-* `Matrix.symmetricCongruenceLinearMap` — congruence by an arbitrary square matrix, as a
-  linear endomorphism of the symmetric subspace.
+* `Matrix.symmetricCongruenceLinearMap` — congruence by an arbitrary rectangular matrix, as a
+  linear map between symmetric subspaces.
 * `Matrix.det_symmetricCongruenceLinearMap` — its determinant is `(det M) ^ (p + 1)`.
 * `Matrix.GeneralLinearGroup.symmetricCongruence` — congruence by an invertible matrix, as a
   continuous linear automorphism.
@@ -47,28 +48,29 @@ open MeasureTheory Module TauCeti
 
 namespace Matrix
 
-variable {p : ℕ}
+variable {p q : ℕ}
 
-/-- Congruence `A ↦ M * A * Mᵀ` by an arbitrary square matrix, as a linear endomorphism of the
-symmetric subspace. -/
-def symmetricCongruenceLinearMap (M : Matrix (Fin p) (Fin p) ℝ) :
+/-- Congruence `A ↦ M * A * Mᵀ` by an arbitrary rectangular matrix, as a linear map between
+symmetric subspaces. -/
+def symmetricCongruenceLinearMap (M : Matrix (Fin q) (Fin p) ℝ) :
     selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) →ₗ[ℝ]
-      selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
+      selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ) :=
   LinearMap.codRestrict _
-    (mulRightLinearMap (Fin p) ℝ Mᵀ ∘ₗ mulLeftLinearMap (Fin p) ℝ M ∘ₗ
+    (mulRightLinearMap (Fin q) ℝ Mᵀ ∘ₗ mulLeftLinearMap (Fin p) ℝ M ∘ₗ
       (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)).subtype)
     fun A => by
       have h := Matrix.isHermitian_mul_mul_conjTranspose M (selfAdjoint.isHermitian_coe A)
       rwa [Matrix.conjTranspose_eq_transpose_of_trivial] at h
 
 @[simp]
-theorem coe_symmetricCongruenceLinearMap_apply (M : Matrix (Fin p) (Fin p) ℝ)
+theorem coe_symmetricCongruenceLinearMap_apply (M : Matrix (Fin q) (Fin p) ℝ)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-    (symmetricCongruenceLinearMap M A : Matrix (Fin p) (Fin p) ℝ) =
+    (symmetricCongruenceLinearMap M A : Matrix (Fin q) (Fin q) ℝ) =
       M * (A : Matrix (Fin p) (Fin p) ℝ) * Mᵀ :=
   (rfl)
 
-theorem symmetricCongruenceLinearMap_mul (M N : Matrix (Fin p) (Fin p) ℝ) :
+theorem symmetricCongruenceLinearMap_mul {r : ℕ} (M : Matrix (Fin q) (Fin p) ℝ)
+    (N : Matrix (Fin p) (Fin r) ℝ) :
     symmetricCongruenceLinearMap (M * N) =
       (symmetricCongruenceLinearMap M).comp (symmetricCongruenceLinearMap N) := by
   refine LinearMap.ext fun A => Subtype.ext ?_

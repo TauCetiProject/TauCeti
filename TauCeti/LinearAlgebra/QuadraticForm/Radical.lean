@@ -26,6 +26,8 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 * `QuadraticMap.Nondegenerate.prod`: nondegeneracy passes to an orthogonal product.
 * `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic form on a nontrivial module is
   nonzero.
+* `TauCeti.nondegenerate_of_span_singleton_eq_top`: a form on a line is nondegenerate when it is
+  nonzero on a spanning vector.
 * `QuadraticMap.Anisotropic.radical_eq_bot`: an anisotropic quadratic map has trivial radical.
 * `QuadraticMap.Anisotropic.nondegenerate`: an anisotropic quadratic map is nondegenerate when
   `2` is invertible.
@@ -145,3 +147,23 @@ theorem BilinForm.Nondegenerate.toQuadraticMap [Invertible (2 : R)] {B : LinearM
   · simpa only [LinearMap.smul_apply, smul_eq_mul, h2.mul_right_eq_zero] using hy x
 
 end LinearMap
+
+namespace TauCeti
+
+variable {R V : Type*} [CommRing R] [IsDomain R] [Invertible (2 : R)] [AddCommGroup V]
+  [Module R V]
+
+/-- A form on a line spanned by a vector of nonzero value is nondegenerate. -/
+theorem nondegenerate_of_span_singleton_eq_top {Q : QuadraticForm R V} {v : V}
+    (hspan : Submodule.span R {v} = ⊤) (hv : Q v ≠ 0) : Q.Nondegenerate := by
+  rw [QuadraticMap.nondegenerate_iff_radical_eq_bot, QuadraticMap.radical_eq_ker_polarBilin,
+    LinearMap.ker_eq_bot']
+  intro z hz
+  obtain ⟨c, rfl⟩ := (Submodule.span_singleton_eq_top_iff R v).mp hspan z
+  have hpolar : QuadraticMap.polar Q (c • v) v = 0 := by
+    simpa using congrArg (fun L : V →ₗ[R] R => L v) hz
+  rw [QuadraticMap.polar_smul_left, QuadraticMap.polar_self] at hpolar
+  have hc : c = 0 := by simpa [(isUnit_of_invertible (2 : R)).ne_zero, hv] using hpolar
+  rw [hc, zero_smul]
+
+end TauCeti

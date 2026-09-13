@@ -83,7 +83,7 @@ theorem pow_card_eq_self_iff_mem_range_algebraMap {K L : Type*} [Field K] [Finty
 homomorphism and raising to the `#K`-th power can be done in either order, a ring homomorphism
 carrying `q`-th powers to `q`-th powers. -/
 @[simp]
-theorem _root_.AlgHom.comp_frobeniusAlgHom {K L Ω : Type*} [Field K] [Fintype K] [CommRing L]
+theorem _root_.AlgHom.frobeniusAlgHom_comm {K L Ω : Type*} [Field K] [Fintype K] [CommRing L]
     [Algebra K L] [CommRing Ω] [Algebra K Ω] (σ : L →ₐ[K] Ω) :
     σ.comp (_root_.FiniteField.frobeniusAlgHom K L) =
       (_root_.FiniteField.frobeniusAlgHom K Ω).comp σ := by

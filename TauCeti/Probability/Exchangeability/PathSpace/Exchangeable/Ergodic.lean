@@ -132,14 +132,14 @@ theorem measure_eq_zero_or_one_of_ergodicSMul {ρ : Measure (ℕ → α)} [IsPro
     (hs : MeasurableSet[exchangeableSigma α] s) :
     ρ s = 0 ∨ ρ s = 1 := by
   have hs_meas : MeasurableSet s := exchangeableSigma_le s hs
-  have hconst : EventuallyConst s (ae ρ) :=
+  have hconst : EventuallyEmptyOrUniv s (ae ρ) :=
     MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq FinitaryPerm hs_meas.nullMeasurableSet
       fun g => by
         have hfix := MeasurableSet.preimage_permReindex_eq_of_exchangeableSigma hs
           (π := (FinitaryPerm.toPerm g)⁻¹)
           (by simpa only [MulAction.fixedBy_inv ℕ] using FinitaryPerm.finite_compl_fixedBy_toPerm g)
         rw [preimage_finitaryPerm_smul_path, hfix]
-  rcases eventuallyConst_set'.mp hconst with h | h
+  rcases eventuallyEmptyOrUniv_iff'.mp hconst with h | h
   · exact Or.inl (by simpa using measure_congr h)
   · exact Or.inr (by simpa using measure_congr h)
 
@@ -158,7 +158,7 @@ theorem ergodicSMul_of_exchangeableSigma_trivial {ρ : Measure (ℕ → α)} [Is
     measurableSet_exchangeableSigma_of_forall_permReindex ht fun π hπ => by
       have hg := ht_inv (FinitaryPerm.ofPerm π⁻¹ (by simpa only [MulAction.fixedBy_inv ℕ] using hπ))
       rwa [preimage_finitaryPerm_smul_path, FinitaryPerm.toPerm_ofPerm, inv_inv] at hg
-  refine eventuallyConst_set'.mpr ?_
+  refine eventuallyEmptyOrUniv_iff'.mpr ?_
   rcases htrivial t ht_exch with h | h
   · exact Or.inl (ae_eq_empty.mpr h)
   · exact Or.inr (ae_eq_univ.mpr ((prob_compl_eq_zero_iff ht).mpr h))

@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.MeasureTheory.Measure.Dirac.Basic
+import TauCeti.MeasureTheory.Measure.FiniteOrder
 
 /-!
 # Exchangeable graph laws
@@ -25,7 +26,8 @@ masses take values in `[0, 1]`, take the value `1` at the edgeless pattern, and 
 relabelling a pattern along an injection — the consistency hypothesis seen on upper events. They
 are a complete observable: an upper mass is the total probability of the graphs above the pattern,
 so downward induction along the finite lattice of graphs recovers the probability of an individual
-graph, and hence the whole law, from the upper masses.
+graph, and hence the whole law, from the upper masses
+(`MeasureTheory.Measure.ext_of_Ici_of_finite`).
 
 The label set is always a finite `Fin k`, so its graphs form a finite measurable space and every
 set of them is measurable; no measurability side conditions appear below.
@@ -153,37 +155,13 @@ theorem upperMass_eq_sum (F : SimpleGraph (Fin k)) :
   rw [upperMass_def, hset, ← sum_measure_singleton,
     ENNReal.toReal_sum fun G _ => measure_ne_top _ _]
 
-open Classical in
-/-- **The upper masses determine the law.** The upper mass of a pattern is the probability of the
-pattern itself plus the upper masses contributed by the strictly larger patterns, so downward
-induction along the finite lattice of graphs recovers every marginal from the upper masses. -/
+/-- **The upper masses determine the law.** An upper mass is the mass of an upper ray in the finite
+lattice of graphs, and a finite measure on a finite partial order is determined by its upper rays:
+downward induction along the lattice recovers the probability of every individual graph. -/
 theorem ext_upperMass {L L' : ExchangeableGraphLaw}
-    (h : ∀ (k : ℕ) (F : SimpleGraph (Fin k)), L.upperMass F = L'.upperMass F) : L = L' := by
-  have key : ∀ (k : ℕ) (G : SimpleGraph (Fin k)),
-      (L.law k {G}).toReal = (L'.law k {G}).toReal := by
-    intro k G
-    induction G using WellFoundedGT.induction with
-    | ind G ih =>
-      -- The graphs containing `G` are `G` itself together with the ones strictly above it.
-      have hins : Finset.univ.filter (G ≤ ·) =
-          insert G (Finset.univ.filter (fun H : SimpleGraph (Fin k) => G < H)) := by
-        ext H
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert]
-        exact ⟨fun hle => hle.lt_or_eq.symm.imp Eq.symm id, fun h => h.elim ge_of_eq le_of_lt⟩
-      have hG : G ∉ Finset.univ.filter (fun H : SimpleGraph (Fin k) => G < H) := by simp
-      have hsplit : ∀ M : ExchangeableGraphLaw, M.upperMass G = (M.law k {G}).toReal +
-          ∑ H ∈ Finset.univ.filter (fun H : SimpleGraph (Fin k) => G < H),
-            (M.law k {H}).toReal := fun M => by
-        rw [M.upperMass_eq_sum G, hins, Finset.sum_insert hG]
-      -- The strictly larger patterns contribute the same to both laws, so the rest does too.
-      have htail : ∑ H ∈ Finset.univ.filter (fun H : SimpleGraph (Fin k) => G < H),
-            (L.law k {H}).toReal =
-          ∑ H ∈ Finset.univ.filter (fun H : SimpleGraph (Fin k) => G < H),
-            (L'.law k {H}).toReal :=
-        Finset.sum_congr rfl fun H hH => ih H (Finset.mem_filter.1 hH).2
-      have hadd := ((hsplit L).symm.trans (h k G)).trans (hsplit L')
-      rwa [htail, add_right_cancel_iff] at hadd
-  exact ext fun k => Measure.ext_of_measureReal_singleton (key k)
+    (h : ∀ (k : ℕ) (F : SimpleGraph (Fin k)), L.upperMass F = L'.upperMass F) : L = L' :=
+  ext fun k => Measure.ext_of_Ici_of_finite _ _ fun F =>
+    (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)).1 (h k F)
 
 end ExchangeableGraphLaw
 

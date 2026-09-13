@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.SmoothCircle
+public import TauCeti.Order.Disjoint
 
 /-!
 # Smooth link presentations
@@ -97,6 +98,14 @@ theorem mem_range_iff (L : SmoothLinkEmbedding I M n) (x : M) :
 theorem range_component_subset_range (L : SmoothLinkEmbedding I M n) (i : Fin n) :
     Set.range (L i) ⊆ L.range :=
   Set.subset_iUnion (fun j ↦ Set.range (L j)) i
+
+/-- Two components of a smooth link have disjoint images exactly when their labels differ. -/
+@[simp, grind =]
+theorem disjoint_range_iff (L : SmoothLinkEmbedding I M n) (i j : Fin n) :
+    Disjoint (Set.range (L i)) (Set.range (L j)) ↔ i ≠ j := by
+  apply Pairwise.disjoint_iff_ne L.pairwiseDisjoint_range
+  intro i
+  exact Set.nonempty_iff_ne_empty.mp (Set.range_nonempty (L i))
 
 /-! ### Empty and one-component links -/
 

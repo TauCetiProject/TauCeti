@@ -15,10 +15,25 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.Ba
 The tautological point is additive on morphisms, and the identity's is the generic point, so the
 tautological point of `1 − π_q` is the generic point minus that of Frobenius.
 
+Transported into an extension `Ω` of `F` along a homomorphism `σ` of the function field, that
+reads `Q − Q^q` for `Q = σ(g)` the image there of the generic point. This is the form the
+embedding count of `1 − π_q` is built from, and the rest of the file draws the two consequences it
+needs. The left-hand side depends on `σ` only through the pulled-back field, so two homomorphisms
+agreeing there give points `Q_σ`, `Q_τ` whose difference is fixed by the `q`-power map; and a
+point of `W` over `Ω` fixed by that map descends to a point over `F`. Together these say that the
+embeddings over the pulled-back field are indexed injectively by rational points, which is what
+bounds the degree of `1 − π_q` by the point count.
+
 ## Main results
 
 * `TauCeti.Isogeny.tautologicalPoint_oneSubFrobeniusIsogeny`: the tautological point of
   `1 − π_q` is `g − π_q(g)`.
+* `TauCeti.Isogeny.map_tautologicalPoint_oneSubFrobeniusIsogeny`: transported along `σ`, it is
+  `Q − Q^q`.
+* `TauCeti.Isogeny.map_frobeniusAlgHom_sub_map_genericPoint_eq_self`: two homomorphisms agreeing
+  on the pulled-back field move the generic point by a `q`-power-fixed difference.
+* `TauCeti.Isogeny.exists_baseChange_eq_sub_map_genericPoint`: that difference is the image of a
+  rational point.
 -/
 
 public section
@@ -51,7 +66,8 @@ theorem map_tautologicalPoint_oneSubFrobeniusIsogeny {Ω : Type*} [Field Ω] [De
         Point.map (_root_.FiniteField.frobeniusAlgHom F Ω) (Point.map σ (genericPoint W)) := by
   let _ := Fintype.ofFinite F
   rw [tautologicalPoint_oneSubFrobeniusIsogeny, map_sub, tautologicalPoint_eq_map_genericPoint,
-    fieldPullback_frobeniusIsogeny, WeierstrassCurve.Affine.Point.map_frobeniusAlgHom_comm]
+    fieldPullback_frobeniusIsogeny, Point.map_map, Point.map_map,
+    AlgHom.frobeniusAlgHom_comm]
 
 /-- **Two homomorphisms that agree on the pulled-back field move the generic point to points whose
 difference is `q`-power fixed.** Their images of the tautological point of `1 − π_q` agree, and that

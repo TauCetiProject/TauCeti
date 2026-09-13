@@ -342,6 +342,16 @@ def primeToSubgroup (𝔪 : Modulus K) : Subgroup Kˣ where
       ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart → v.valuation K (x : K) = 1 :=
   Iff.rfl
 
+/-- A larger finite part has a smaller prime-to subgroup.  This is the carrier map used when
+changing the finite part in a reduction statement. -/
+theorem primeToSubgroup_le_of_dvd {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart ∣ 𝔫.finitePart) :
+    primeToSubgroup 𝔫 ≤ primeToSubgroup 𝔪 := by
+  intro x hx
+  rw [mem_primeToSubgroup] at hx
+  rw [mem_primeToSubgroup]
+  intro v hv
+  exact hx v (hv.trans h)
+
 /-- **Congruence to one implies being a unit at the finite part.**  This inclusion is what makes
 the principal ideal of an element congruent to one prime to the modulus. -/
 theorem congruenceSubgroup_le_primeToSubgroup (𝔪 : Modulus K) :
