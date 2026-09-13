@@ -24,15 +24,14 @@ an honest equivalence of coordinates.
 * `TauCeti.DenseGraphLimits.EdgeIndex` is the type of unordered non-diagonal pairs of naturals;
 * `TauCeti.DenseGraphLimits.graphCoordEquiv` identifies infinite graphs with Boolean edge
   coordinates;
-* `TauCeti.DenseGraphLimits.edgeIndexMap` is the coordinate relabelling induced by a permutation
-  of the vertices.
+* `Equiv.Perm.edgeIndexMap` is the coordinate relabelling induced by a permutation of the vertices.
 
 ## Main results
 
 * `TauCeti.DenseGraphLimits.measurable_graphCoordEquiv` and
   `TauCeti.DenseGraphLimits.measurable_graphCoordEquiv_symm` show that the coordinate equivalence
   is measurable in both directions;
-* `TauCeti.DenseGraphLimits.graphCoordEquiv_comap` is the relabelling commuting square.
+* `Equiv.Perm.graphCoordEquiv_comap` is the relabelling commuting square.
 
 ## References
 
@@ -87,6 +86,14 @@ def graphCoordEquiv : SimpleGraph ℕ ≃ (EdgeIndex → Bool) where
       have hfalse : f e = false := Bool.eq_false_of_not_eq_true hf
       exact (ite_eq_right hc).trans hfalse.symm
 
+end DenseGraphLimits
+
+end TauCeti
+
+namespace SimpleGraph
+
+open TauCeti.DenseGraphLimits
+
 /-- The coordinate at `e` is true exactly when `e` is an edge of the graph. -/
 @[simp]
 theorem graphCoordEquiv_apply (G : SimpleGraph ℕ) (e : EdgeIndex) :
@@ -94,11 +101,17 @@ theorem graphCoordEquiv_apply (G : SimpleGraph ℕ) (e : EdgeIndex) :
   classical
   simp [graphCoordEquiv]
 
+end SimpleGraph
+
+namespace TauCeti
+
+namespace DenseGraphLimits
+
 /-- An edge coordinate is an edge of the decoded graph exactly when its value is true. -/
 @[simp]
 theorem mem_edgeSet_graphCoordEquiv_symm (f : EdgeIndex → Bool) (e : EdgeIndex) :
     e.1 ∈ (graphCoordEquiv.symm f).edgeSet ↔ f e = true := by
-  rw [← graphCoordEquiv_apply, Equiv.apply_symm_apply]
+  rw [← SimpleGraph.graphCoordEquiv_apply, Equiv.apply_symm_apply]
 
 /-- The graph-to-coordinate map is measurable for Mathlib's adjacency-generated measurable space
 on simple graphs and the product measurable space on Boolean coordinates. -/
@@ -136,6 +149,14 @@ theorem measurable_graphCoordEquiv_symm : Measurable ⇑graphCoordEquiv.symm := 
       · exact fun hh => ⟨he, hh⟩
     rw [hfun]
     fun_prop
+
+end DenseGraphLimits
+
+end TauCeti
+
+namespace Equiv.Perm
+
+open TauCeti.DenseGraphLimits
 
 /-- A permutation of the vertices relabels the unordered non-diagonal edge coordinates. -/
 def edgeIndexMap (e : Equiv.Perm ℕ) : EdgeIndex ≃ EdgeIndex where
@@ -178,17 +199,24 @@ theorem edgeIndexMap_trans (e₁ e₂ : Equiv.Perm ℕ) :
   change Sym2.map ⇑(e₁.trans e₂) p.1 = Sym2.map ⇑e₂ (Sym2.map ⇑e₁ p.1)
   rw [Sym2.map_map, Equiv.coe_trans]
 
+/-- Inverting a vertex relabelling inverts the induced edge-coordinate relabelling. -/
+@[simp]
+theorem edgeIndexMap_symm (e : Equiv.Perm ℕ) :
+    (edgeIndexMap e).symm = edgeIndexMap e.symm := by
+  apply Equiv.ext
+  intro p
+  rfl
+
 /-- Relabelling an infinite graph is the same as relabelling its Boolean edge coordinates. -/
 @[simp]
 theorem graphCoordEquiv_comap (e : Equiv.Perm ℕ) (G : SimpleGraph ℕ) (p : EdgeIndex) :
     graphCoordEquiv (SimpleGraph.comap ⇑e G) p = graphCoordEquiv G (edgeIndexMap e p) := by
   -- `e` is a graph isomorphism from the pullback onto `G`, so it preserves edge-set membership.
   have h := (SimpleGraph.Iso.comap e G).map_mem_edgeSet_iff (e := p.1)
+  -- The bundled graph isomorphism and the vertex permutation have distinct coercion paths.
   rw [show ⇑(SimpleGraph.Iso.comap e G) = ⇑e from funext (SimpleGraph.Iso.comap_apply e G)] at h
   apply Bool.eq_iff_iff.mpr
-  simp only [graphCoordEquiv_apply, edgeIndexMap_val]
+  simp only [SimpleGraph.graphCoordEquiv_apply, edgeIndexMap_val]
   exact h.symm
 
-end DenseGraphLimits
-
-end TauCeti
+end Equiv.Perm
