@@ -273,31 +273,31 @@ theorem frobeniusKernelSubgroup_ne_bot (hH : IsTISubgroup H) (hne : H ≠ ⊤) :
 /-! ### The order of the complement against the order of the kernel -/
 
 /-- **The Frobenius kernel has `|G : H|` elements**, the counting half of
-`TauCeti.frobeniusKernel_isComplement'` read on the bundled subgroup. -/
+`TauCeti.frobeniusKernel_isComplement'` read on the bundled subgroup.
+
+Not `@[simp]`: `TauCeti.mem_frobeniusKernelSubgroup` already rewrites the left-hand side, so the
+`simpNF` linter rejects the tag. -/
 theorem card_frobeniusKernelSubgroup (hH : IsTISubgroup H) :
     Nat.card (frobeniusKernelSubgroup hH) = H.index :=
   (frobeniusKernel_isComplement' hH).index_eq_card.symm
 
 /-- **The order of a Frobenius complement divides the order of the Frobenius kernel minus one**,
-`|H| ∣ |N| - 1`.
-
-`H` acts on the `|N| - 1` nonidentity elements of `N` by conjugation, and that action is free
-(`TauCeti.IsTISubgroup.stabilizer_eq_bot`), because a nonidentity element of `H` commutes with no
-nonidentity element of the kernel; so those elements fall into orbits of `|H|` elements each. -/
+`|H| ∣ |N| - 1`.  This is `TauCeti.IsTISubgroup.card_dvd_index_sub_one` read on the bundled
+kernel, whose order is `|G : H|`. -/
 theorem card_dvd_card_frobeniusKernelSubgroup_sub_one (hH : IsTISubgroup H) :
     Nat.card H ∣ Nat.card (frobeniusKernelSubgroup hH) - 1 := by
   rw [card_frobeniusKernelSubgroup hH]
   exact hH.card_dvd_index_sub_one
 
-/-- **A Frobenius complement and the Frobenius kernel have coprime orders.**  A common divisor of
-`|H|` and `|N|` divides `|N| - 1` as well, hence divides `1`. -/
+/-- **A Frobenius complement and the Frobenius kernel have coprime orders**, the bundled form of
+`TauCeti.IsTISubgroup.coprime_card_index`. -/
 theorem coprime_card_card_frobeniusKernelSubgroup (hH : IsTISubgroup H) :
     Nat.Coprime (Nat.card H) (Nat.card (frobeniusKernelSubgroup hH)) := by
   rw [card_frobeniusKernelSubgroup hH]
   exact hH.coprime_card_index
 
-/-- **A proper trivial-intersection subgroup is smaller than its Frobenius kernel.**  Its order
-divides `|N| - 1`, and `|N| = |G : H|` is at least `2` because `H ≠ ⊤`, so `|H| ≤ |N| - 1`. -/
+/-- **A proper trivial-intersection subgroup is smaller than its Frobenius kernel**, `|H| < |N|`.
+Properness is needed: for `H = ⊤` the kernel is trivial and the inequality reverses. -/
 theorem card_lt_card_frobeniusKernelSubgroup (hH : IsTISubgroup H) (hne : H ≠ ⊤) :
     Nat.card H < Nat.card (frobeniusKernelSubgroup hH) := by
   have hne1 : H.index ≠ 1 := fun h => hne (Subgroup.index_eq_one.mp h)

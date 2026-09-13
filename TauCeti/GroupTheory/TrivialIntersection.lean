@@ -119,9 +119,8 @@ theorem normalizer_eq_self (hH : IsTISubgroup H) (hne : H ≠ ⊥) :
   exact hx1 (Subtype.ext (hH hgH hx ((Subgroup.mem_normalizer_iff.mp hg x).mp hx)))
 
 /-- **An element commuting with a nonidentity element of a trivial-intersection subgroup lies in
-that subgroup.**  Conjugating `x` by such an element returns `x`, hence lands back in `H`, and
-that is exactly what the trivial-intersection condition forbids an element outside `H` from
-doing. -/
+that subgroup**, in conjugation form; the inclusion form is
+`TauCeti.IsTISubgroup.centralizer_singleton_le`. -/
 theorem mem_of_conj_eq_self (hH : IsTISubgroup H) {g x : G} (hx : x ∈ H) (hx1 : x ≠ 1)
     (hgx : g * x * g⁻¹ = x) : g ∈ H := by
   by_contra hg
@@ -130,9 +129,9 @@ theorem mem_of_conj_eq_self (hH : IsTISubgroup H) {g x : G} (hx : x ∈ H) (hx1 
   exact hx
 
 /-- **The centralizer of a nonidentity element of a trivial-intersection subgroup is contained in
-it**, the inclusion form of `TauCeti.IsTISubgroup.mem_of_conj_eq_self`.  Equivalently, a
-trivial-intersection subgroup contains the centralizer of each of its nonidentity elements, so
-those centralizers are as small as the subgroup itself allows. -/
+it**, the inclusion form of `TauCeti.IsTISubgroup.mem_of_conj_eq_self`.  So the centralizers of the
+nonidentity elements of `H` are as small as `H` itself allows, which is what makes the conjugation
+action of `H` on the nonidentity part of its Frobenius kernel free. -/
 theorem centralizer_singleton_le (hH : IsTISubgroup H) {x : G} (hx : x ∈ H) (hx1 : x ≠ 1) :
     Subgroup.centralizer {x} ≤ H := by
   intro g hg

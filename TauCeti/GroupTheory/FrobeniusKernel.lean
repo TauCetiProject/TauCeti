@@ -26,8 +26,8 @@ nontrivial, and meeting each of its distinct conjugates trivially
 known proofs go through the character theory of `G`. What *is* elementary, and is what this file
 proves, is everything about the kernel except its closure under multiplication: it contains the
 identity, it is closed under inversion and under conjugation, it meets every conjugate of `H` only
-in the identity, and — the counting statement everything downstream rests on — for a finite `G` it
-has exactly `|G : H|` elements.
+in the identity, and — the counting statement the divisibility results below rest on — for a
+finite `G` it has exactly `|G : H|` elements.
 
 The count is the inclusion-exclusion that gives Frobenius's theorem its shape, and it is really a
 statement about a trivial-intersection *set* `S` for `H` (`TauCeti.IsTISet`): the conjugates
@@ -332,9 +332,9 @@ instance : MulAction H ↥(frobeniusKernel H \ {1}) where
     group)
 
 /-- **A nonidentity element of a trivial-intersection subgroup commutes with no nonidentity
-element of its Frobenius kernel.**  Were `y` to commute with `h`, it would centralize a
-nonidentity element of `H` and so lie in `H`
-(`TauCeti.IsTISubgroup.mem_of_conj_eq_self`); but the kernel meets `H` only in the identity. -/
+element of its Frobenius kernel**, in conjugation form.  Both the freeness of the conjugation
+action (`TauCeti.IsTISubgroup.stabilizer_eq_bot`) and the centralizer bound on the kernel side
+(`TauCeti.IsTISubgroup.centralizer_singleton_subset_frobeniusKernel`) are readings of it. -/
 theorem IsTISubgroup.conj_ne_self_of_mem_frobeniusKernel (hH : IsTISubgroup H) {h y : G}
     (hh : h ∈ H) (hh1 : h ≠ 1) (hy : y ∈ frobeniusKernel H) (hy1 : y ≠ 1) :
     h * y * h⁻¹ ≠ y := by
@@ -351,8 +351,8 @@ theorem IsTISubgroup.conj_ne_self_of_mem_frobeniusKernel (hH : IsTISubgroup H) {
   exact hy1 hmem
 
 /-- **The conjugation action of a trivial-intersection subgroup on the nonidentity part of its
-Frobenius kernel is free**: every stabilizer is trivial.  This is
-`TauCeti.IsTISubgroup.conj_ne_self_of_mem_frobeniusKernel` read on the action. -/
+Frobenius kernel is free**: every stabilizer is trivial.  This is the hypothesis the orbit
+counting in `TauCeti.IsTISubgroup.card_dvd_index_sub_one` consumes. -/
 theorem IsTISubgroup.stabilizer_eq_bot (hH : IsTISubgroup H)
     (y : ↥(frobeniusKernel H \ {1})) : MulAction.stabilizer H y = ⊥ := by
   refine eq_bot_iff.2 fun h hh => ?_
@@ -366,9 +366,8 @@ theorem IsTISubgroup.stabilizer_eq_bot (hH : IsTISubgroup H)
   · simpa using y.2.2
 
 /-- **An element commuting with a nonidentity element of the Frobenius kernel lies in the
-kernel.**  An element outside the kernel is conjugate to a nonidentity element of `H`; conjugating
-the whole configuration there would make that element of `H` commute with a nonidentity element of
-the kernel, which `TauCeti.IsTISubgroup.conj_ne_self_of_mem_frobeniusKernel` forbids. -/
+kernel**, the mirror on the kernel side of `TauCeti.IsTISubgroup.mem_of_conj_eq_self`.  Its
+inclusion form is `TauCeti.IsTISubgroup.centralizer_singleton_subset_frobeniusKernel`. -/
 theorem IsTISubgroup.mem_frobeniusKernel_of_conj_eq_self (hH : IsTISubgroup H) {g y : G}
     (hy : y ∈ frobeniusKernel H) (hy1 : y ≠ 1) (hgy : g * y * g⁻¹ = y) :
     g ∈ frobeniusKernel H := by
@@ -403,11 +402,10 @@ theorem IsTISubgroup.centralizer_singleton_subset_frobeniusKernel (hH : IsTISubg
 
 /-! ### The order of the complement divides the size of the kernel minus one -/
 
-/-- **The order of a trivial-intersection subgroup of a finite group divides `|G : H| - 1`.**  The
-Frobenius kernel has `|G : H|` elements (`TauCeti.IsTISubgroup.ncard_frobeniusKernel`), and `H`
-acts freely by conjugation on the `|G : H| - 1` nonidentity ones, so those fall into orbits of
-`|H|` elements each.  For a Frobenius complement `H` the kernel is a subgroup `N` of that order,
-and this is the classical `|H| ∣ |N| - 1`. -/
+/-- **The order of a trivial-intersection subgroup of a finite group divides `|G : H| - 1`.**  For
+a Frobenius complement `H`, Frobenius's theorem makes the kernel a subgroup `N` of order `|G : H|`,
+so this is the classical `|H| ∣ |N| - 1`
+(`TauCeti.card_dvd_card_frobeniusKernelSubgroup_sub_one`). -/
 theorem IsTISubgroup.card_dvd_index_sub_one [Finite G] (hH : IsTISubgroup H) :
     Nat.card H ∣ H.index - 1 := by
   have hcard : Nat.card ↥(frobeniusKernel H \ {1}) = H.index - 1 := by
@@ -419,9 +417,10 @@ theorem IsTISubgroup.card_dvd_index_sub_one [Finite G] (hH : IsTISubgroup H) :
   rw [← hcard, hq]
   exact dvd_mul_left _ _
 
-/-- **The order of a trivial-intersection subgroup of a finite group is coprime to its index.**  A
-common divisor of `|H|` and `|G : H|` divides `|G : H| - 1` as well, hence divides `1`.  For a
-Frobenius group this says that the complement and the kernel have coprime orders. -/
+/-- **The order of a trivial-intersection subgroup of a finite group is coprime to its index**, an
+immediate consequence of `TauCeti.IsTISubgroup.card_dvd_index_sub_one`.  For a Frobenius group it
+says that the complement and the kernel have coprime orders
+(`TauCeti.coprime_card_card_frobeniusKernelSubgroup`). -/
 theorem IsTISubgroup.coprime_card_index [Finite G] (hH : IsTISubgroup H) :
     Nat.Coprime (Nat.card H) H.index := by
   have hpos : 0 < H.index := Nat.pos_of_ne_zero H.index_ne_zero_of_finite
