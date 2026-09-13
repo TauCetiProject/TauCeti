@@ -15,8 +15,6 @@ weight-space theory.
 
 ## Main results
 
-* `LieModule.weightSpace_toSubmodule_eq_iInf_eigenspace`: the underlying submodule of a weight
-  space is the corresponding simultaneous eigenspace.
 * `LieModule.map_weightSpace_le`: a Lie-module homomorphism preserves each weight space.
 * `LieModule.comap_weightSpace_eq_of_injective`: the preimage under an injective Lie-module
   homomorphism is the corresponding source weight space.
@@ -41,11 +39,6 @@ namespace LieModule
 variable {R L M M₂ : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
   [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
   [AddCommGroup M₂] [Module R M₂] [LieRingModule L M₂] [LieModule R L M₂]
-
-/-- The underlying submodule of a weight space is the simultaneous eigenspace of the action. -/
-theorem weightSpace_toSubmodule_eq_iInf_eigenspace (χ : L → R) :
-    (weightSpace M χ).toSubmodule =
-      ⨅ x : L, (LieModule.toEnd R L M x).eigenspace (χ x) := rfl
 
 /-- A morphism of Lie modules sends a weight space into the corresponding weight space. -/
 theorem map_weightSpace_le (f : LieModuleHom R L M M₂) (χ : L → R) :
