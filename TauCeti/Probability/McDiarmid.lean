@@ -58,21 +58,13 @@ private theorem abs_le_sum_add_abs_of_bounded_differences {ι : Type*} [Fintype 
     _ ≤ |f x - f x₀| + |f x₀| := abs_add_le _ _
     _ ≤ (∑ i, c i) + |f x₀| := by linarith
 
-/-- Centering a uniformly bounded quantity keeps it bounded. -/
-private theorem abs_sub_le_add_abs_of_abs_le {u K : ℝ} (hu : |u| ≤ K) (I : ℝ) :
-    |u - I| ≤ K + |I| := by
-  calc
-    |u - I| ≤ |u| + |I| := by
-      rw [sub_eq_add_neg, ← abs_neg I]
-      exact abs_add_le _ _
-    _ ≤ K + |I| := by linarith
-
 /-- The centered exponential of a uniformly bounded measurable function is integrable. -/
 private theorem integrable_exp_mul_sub_const {γ : Type*} [MeasurableSpace γ] {μ : Measure γ}
     [IsFiniteMeasure μ] {F : γ → ℝ} (hF : AEMeasurable F μ) {K : ℝ} (hFb : ∀ x, |F x| ≤ K)
     (I t : ℝ) : Integrable (fun x => Real.exp (t * (F x - I))) μ :=
   ProbabilityTheory.integrable_exp_mul_of_mem_Icc (a := -(K + |I|)) (b := K + |I|)
-    (hF.sub_const I) (ae_of_all _ fun x => abs_le.mp (abs_sub_le_add_abs_of_abs_le (hFb x) I))
+    (hF.sub_const I)
+    (ae_of_all _ fun x => abs_le.mp ((abs_sub (F x) I).trans (by linarith [hFb x])))
 
 /-- The exponential-moment estimate underlying McDiarmid's inequality, on a product indexed by
 `Fin n`. -/
@@ -289,7 +281,8 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
           t * (f x - I) ≤ |t * (f x - I)| := le_abs_self _
           _ = |t| * |f x - I| := abs_mul _ _
           _ ≤ |t| * (M + |I|) :=
-            mul_le_mul_of_nonneg_left (abs_sub_le_add_abs_of_abs_le (hMf x) I) (abs_nonneg t)
+            mul_le_mul_of_nonneg_left ((abs_sub (f x) I).trans (by linarith [hMf x]))
+              (abs_nonneg t)
       rw [htrans (fun x => Real.exp (t * (f x - I)))
         (hprodint _ (Real.exp (|t| * (M + |I|))) (((hf.sub_const I).const_mul t).exp)
           hFexp_bd)]
