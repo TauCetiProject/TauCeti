@@ -128,6 +128,12 @@ def conjRep [Semiring k] (s : G) {H : Subgroup G} (A : Rep k H) :
     Rep k (MulAut.conj s • H : Subgroup G) :=
   (conjRepFunctor s H).obj A
 
+/-- Restriction along `conjSubgroupEquiv` sends `A` to `conjRep s A`.  The `Rep` mirror of
+`res_obj_eq_conjFDRep`. -/
+theorem res_obj_eq_conjRep [Semiring k] (s : G) (H : Subgroup G) (A : Rep k H) :
+    Rep.res (conjSubgroupEquiv s H : _ →* _) A = conjRep s A := by
+  rfl
+
 /-- Conjugation preserves the underlying module of a representation. -/
 @[simp]
 theorem conjRep_V [Semiring k] (s : G) {H : Subgroup G} (A : Rep k H) : (conjRep s A).V = A.V := by
