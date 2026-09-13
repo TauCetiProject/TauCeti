@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Modular
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSLAction
+public import TauCeti.GroupTheory.Index
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.MeasureTheory.Group.FundamentalDomain
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
@@ -47,7 +48,7 @@ every level, which is what a Petersson product for a congruence subgroup is an i
 * `ModularGroup.isFundamentalDomain_fdo`: `𝒟ᵒ` is a fundamental domain for `PSL(2, ℤ)` acting
   on `ℍ` with the invariant measure.
 * `ModularGroup.isFundamentalDomain_iUnion_out_inv_smul_fdo`: the coset tiling of `𝒟ᵒ` is a
-  fundamental domain for a subgroup of `PSL(2, ℤ)` with countable coset space.
+  fundamental domain for any subgroup of `PSL(2, ℤ)`.
 
 Split out of the Petersson inner-product development ported from the AINTLIB
 `LeanModularForms` project
@@ -256,11 +257,10 @@ theorem isFundamentalDomain_fdo :
 
 /-- **A fundamental domain for a subgroup of `PSL(2, ℤ)`**: the union of the `[PSL(2, ℤ) : H]`
 translates `(q.out)⁻¹ • 𝒟ᵒ`, one for each coset `q ∈ PSL(2, ℤ) ⧸ H`, is a fundamental domain for
-`H` acting on `ℍ` with the invariant measure. The coset space is countable at finite index, so
-this covers every congruence subgroup, and it is the domain a Petersson product at level `N` is
-an integral over. -/
-theorem isFundamentalDomain_iUnion_out_inv_smul_fdo (H : Subgroup PSL(2, ℤ))
-    [Countable (PSL(2, ℤ) ⧸ H)] :
+`H` acting on `ℍ` with the invariant measure — for **every** subgroup, no finiteness needed, since
+`PSL(2, ℤ)` is countable and so is each of its coset spaces. At a congruence subgroup this is the
+domain a Petersson product at level `N` is an integral over. -/
+theorem isFundamentalDomain_iUnion_out_inv_smul_fdo (H : Subgroup PSL(2, ℤ)) :
     MeasureTheory.IsFundamentalDomain H
       (⋃ q : PSL(2, ℤ) ⧸ H, ((q.out : PSL(2, ℤ)))⁻¹ • (fdo : Set ℍ)) volume :=
   isFundamentalDomain_fdo.subgroup_iUnion_out_inv_smul H

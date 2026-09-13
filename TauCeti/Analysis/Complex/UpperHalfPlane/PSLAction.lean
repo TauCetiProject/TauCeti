@@ -139,11 +139,8 @@ theorem pslMk_smul (g : SL(2, R)) (τ : ℍ) : (↑g : PSL(2, R)) • τ = g •
 the pointwise-image counterpart of `UpperHalfPlane.pslMk_smul`. -/
 @[simp]
 theorem _root_.Matrix.SpecialLinearGroup.pslMk_smul_set (g : SL(2, R)) (S : Set ℍ) :
-    (↑g : PSL(2, R)) • S = g • S := by
-  ext τ
-  simp only [Set.mem_smul_set]
-  exact ⟨fun ⟨σ, hσ, h⟩ ↦ ⟨σ, hσ, (pslMk_smul g σ) ▸ h⟩,
-    fun ⟨σ, hσ, h⟩ ↦ ⟨σ, hσ, (pslMk_smul g σ).trans h⟩⟩
+    (↑g : PSL(2, R)) • S = g • S :=
+  Set.image_congr fun τ _ ↦ pslMk_smul g τ
 
 noncomputable instance : MeasurableConstSMul PSL(2, R) ℍ where
   measurable_const_smul g := by
