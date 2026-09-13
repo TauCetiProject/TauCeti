@@ -47,7 +47,8 @@ subspace: `TauCeti.symmetricCoordinates` reads off the entries above the diagona
 * `TauCeti.symmetricBasis` — the basis dual to the upper-triangular coordinates.
 * `TauCeti.finrank_symmetricMatrix` — the dimension is `p * (p + 1) / 2`.
 * `selfAdjoint.inner_eq_trace_mul` — the Frobenius pairing is the trace pairing, and
-  `selfAdjoint.continuous_trace_mul_coe` — that pairing is continuous in its second argument.
+  `selfAdjoint.continuous_trace_mul_coe` — that pairing is continuous in its second argument, as
+  is its exponential `selfAdjoint.continuous_exp_trace_mul_coe`.
 -/
 
 public section
@@ -382,5 +383,14 @@ theorem continuous_trace_mul_coe {p : ℕ}
       ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace := by
   simp only [← inner_eq_trace_mul]
   exact continuous_id.inner continuous_const
+
+/-- The exponential of a scalar multiple of the trace pairing is continuous. This is the
+measurability side condition of the exponential-moment computations on the symmetric
+subspace. -/
+theorem continuous_exp_trace_mul_coe {p : ℕ}
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (t : ℝ) :
+    Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      Real.exp (t * ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) :=
+  (continuous_const.mul (continuous_trace_mul_coe Θ)).rexp
 
 end selfAdjoint

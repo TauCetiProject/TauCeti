@@ -20,11 +20,13 @@ determines exactly when that statistic has finite exponential moments under
 `TauCeti.wishartGramMeasure`, and computes its moment- and cumulant-generating functions.
 
 Writing the Gaussian-Gram law as the image of a product of `ν` centred Gaussian factors turns the
-trace statistic into a sum of `ν` independent Gaussian quadratic forms, so both answers are the
-`ν`-th powers of the one-factor answers of
-`TauCeti.Probability.Distributions.Gaussian.QuadraticForm`: the domain is the positive
-definiteness of the single pencil `1 - (2 * t) • (√S * Θ * √S)`, and the moment-generating
-function is the `-ν / 2` power of its determinant.
+trace statistic into a sum of `ν` independent Gaussian quadratic forms, which reduces all three
+answers to the one-factor answers of
+`TauCeti.Probability.Distributions.Gaussian.QuadraticForm`. The factors being identically
+distributed, the domain of the sum is their common domain, the positive definiteness of the
+single pencil `1 - (2 * t) • (√S * Θ * √S)`; the moment-generating function is the `ν`-th power
+of the one-factor one, so the `-ν / 2` power of the determinant of that pencil; and the
+cumulant-generating function is `ν` times the one-factor one.
 
 At degree zero the law is a Dirac mass and the statistic vanishes identically, so the domain is
 all of `ℝ` and the transforms are constant; those statements need no hypothesis and are recorded
@@ -57,28 +59,8 @@ open scoped RealInnerProductSpace Matrix MatrixOrder
 
 namespace TauCeti
 
-variable {ι : Type*} [Fintype ι] {p ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
+variable {p ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
   {Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} {t : ℝ}
-
-/-! ### The trace statistic -/
-
-/-- The exponential of the trace statistic is continuous, hence strongly measurable; this is the
-side condition of every transform computation below. -/
-private theorem continuous_exp_trace_mul_coe
-    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (t : ℝ) :
-    Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
-      Real.exp (t * ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) :=
-  (continuous_const.mul (selfAdjoint.continuous_trace_mul_coe Θ)).rexp
-
-/-- Transported to the Gaussian factors, the trace statistic of the Gaussian-Gram law is the sum
-of the quadratic forms of `Θ` along the `ν` coordinates. -/
-private theorem trace_mul_coe_comp_wishartGram
-    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-    ((fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
-        ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) ∘
-      wishartGram (p := p) (ι := ι)) =
-      fun X => ∑ r, ⟪X r, (Θ : Matrix (Fin p) (Fin p) ℝ).toEuclideanLin (X r)⟫ :=
-  funext fun X => trace_mul_coe_wishartGram _ X
 
 /-! ### Degree zero -/
 
@@ -91,7 +73,8 @@ theorem integrableExpSet_trace_mul_wishartGramMeasure_zero
       (wishartGramMeasure 0 S) = Set.univ := by
   refine Set.eq_univ_of_forall fun t => ?_
   rw [integrableExpSet, Set.mem_ofPred_eq, wishartGramMeasure_zero]
-  exact integrable_dirac' (continuous_exp_trace_mul_coe Θ t).stronglyMeasurable enorm_lt_top
+  exact integrable_dirac' (selfAdjoint.continuous_exp_trace_mul_coe Θ t).stronglyMeasurable
+    enorm_lt_top
 
 /-- At degree zero the trace statistic vanishes almost everywhere, so its moment-generating
 function is constantly `1`. -/
@@ -102,7 +85,7 @@ theorem mgf_trace_mul_wishartGramMeasure_zero
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (wishartGramMeasure 0 S) t = 1 := by
   rw [mgf, wishartGramMeasure_zero,
-    integral_dirac' _ _ (continuous_exp_trace_mul_coe Θ t).stronglyMeasurable]
+    integral_dirac' _ _ (selfAdjoint.continuous_exp_trace_mul_coe Θ t).stronglyMeasurable]
   simp
 
 /-- At degree zero the cumulant-generating function is constantly `0`. -/
@@ -146,7 +129,7 @@ theorem mem_integrableExpSet_trace_mul_wishartGramMeasure_iff (hν : 0 < ν)
         (Measure.pi fun _ : Fin ν => multivariateGaussian 0 S) := by
     rw [wishartGramMeasure_eq_map_pi]
     simp only [integrableExpSet, Set.mem_ofPred_eq]
-    rw [integrable_map_measure (continuous_exp_trace_mul_coe Θ t).aestronglyMeasurable
+    rw [integrable_map_measure (selfAdjoint.continuous_exp_trace_mul_coe Θ t).aestronglyMeasurable
       measurable_wishartGram.aemeasurable, Function.comp_def]
     simp only [trace_mul_coe_wishartGram]
   rw [htransport, hfactor, Set.mem_iInter,
@@ -168,9 +151,9 @@ theorem mgf_trace_mul_wishartGramMeasure_sqrt (ν : ℕ) (S : Matrix (Fin p) (Fi
         ^ (-(ν : ℝ) / 2 : ℝ) := by
   have hexponent : (-(ν : ℝ) / 2 : ℝ) = -1 / 2 * (ν : ℝ) := by ring
   rw [wishartGramMeasure_eq_map_pi, mgf_map measurable_wishartGram.aemeasurable
-      (continuous_exp_trace_mul_coe Θ t).aestronglyMeasurable,
-    trace_mul_coe_comp_wishartGram,
-    mgf_sum_pi (fun _ : Fin ν => fun x : EuclideanSpace ℝ (Fin p) =>
+      (selfAdjoint.continuous_exp_trace_mul_coe Θ t).aestronglyMeasurable, Function.comp_def]
+  simp only [trace_mul_coe_wishartGram]
+  rw [mgf_sum_pi (fun _ : Fin ν => fun x : EuclideanSpace ℝ (Fin p) =>
       ⟪x, (Θ : Matrix (Fin p) (Fin p) ℝ).toEuclideanLin x⟫) t,
     Finset.prod_const, Finset.card_univ, Fintype.card_fin,
     mgf_inner_toEuclideanLin_multivariateGaussian_sqrt S (selfAdjoint.isHermitian_coe Θ) ht,

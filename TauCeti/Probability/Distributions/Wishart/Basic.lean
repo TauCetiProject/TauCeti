@@ -159,7 +159,9 @@ def wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ) :
   (Measure.pi fun _ : Fin ν => multivariateGaussian 0 S).map wishartGram
 
 /-- The Gaussian-Gram law is the image of the product of its `ν` Gaussian factors under the Gram
-sum.  This is the form in which a statistic of the law is transported to the Gaussian factors. -/
+sum.  This is the form in which a statistic of the law is transported to the Gaussian factors.
+The body of `TauCeti.wishartGramMeasure` is not exposed outside this module, so downstream files
+cannot reach the product measure by unfolding and go through this lemma instead. -/
 theorem wishartGramMeasure_eq_map_pi (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ) :
     wishartGramMeasure ν S =
       (Measure.pi fun _ : Fin ν => multivariateGaussian 0 S).map wishartGram :=
