@@ -128,6 +128,7 @@ theorem homotopic_homeomorph_iff (φ : Ω^ M X x ≃ₜ Ω^ N Y y) {p q : Ω^ M 
 
 section Congr
 
+@[simp]
 theorem congr_apply (e : M ≃ N) (p : Ω^ M X x) (t : I^N) :
     _root_.GenLoop.congr x e p t = p fun m => t (e m) :=
   rfl
@@ -136,6 +137,7 @@ variable [DecidableEq M] [DecidableEq N]
 
 /-- Reindexing carries a concatenation in the cube direction `i` to a concatenation in the
 direction `e i`. -/
+@[simp]
 theorem congr_transAt (e : M ≃ N) (i : M) (p q : Ω^ M X x) :
     _root_.GenLoop.congr x e (_root_.GenLoop.transAt i p q) =
       _root_.GenLoop.transAt (e i) (_root_.GenLoop.congr x e p)
@@ -155,6 +157,7 @@ end Congr
 
 section Sum
 
+@[simp]
 theorem genLoopGenLoopEquiv_apply (p : Ω^ M (Ω^ N X x) _root_.GenLoop.const) (y : I^(M ⊕ N)) :
     _root_.GenLoop.genLoopGenLoopEquiv x p y =
       p (fun m => y (Sum.inl m)) fun n => y (Sum.inr n) :=
@@ -164,6 +167,7 @@ variable [DecidableEq M] [DecidableEq N]
 
 /-- Currying carries a concatenation in the cube direction `i` of the outer cube to a
 concatenation in the direction `Sum.inl i`. -/
+@[simp]
 theorem genLoopGenLoopEquiv_transAt (i : M) (p q : Ω^ M (Ω^ N X x) _root_.GenLoop.const) :
     _root_.GenLoop.genLoopGenLoopEquiv x (_root_.GenLoop.transAt i p q) =
       _root_.GenLoop.transAt (Sum.inl i) (_root_.GenLoop.genLoopGenLoopEquiv x p)
