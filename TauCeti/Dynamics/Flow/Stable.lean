@@ -172,22 +172,6 @@ section Conjugacy
 variable {β : Type*} [TopologicalSpace β]
   {φ : _root_.Flow ℝ α} {ψ : _root_.Flow ℝ β} (e : α ≃ₜ β)
 
-private theorem tendsto_flow_iff (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {l : Filter ℝ}
-    {x y : α} :
-    Tendsto (fun t ↦ ψ t (e y)) l (𝓝 (e x)) ↔ Tendsto (fun t ↦ φ t y) l (𝓝 x) := by
-  constructor
-  · intro h
-    apply e.isInducing.tendsto_nhds_iff.mpr
-    refine Filter.Tendsto.congr' (f₂ := e ∘ fun t ↦ φ t y)
-      (Eventually.of_forall fun t ↦ by
-        simpa only [Function.comp_apply] using (hconj.semiconj t y).symm) h
-  · intro h
-    have h' : Tendsto (e ∘ fun t ↦ φ t y) l (𝓝 (e x)) :=
-      e.isInducing.tendsto_nhds_iff.mp h
-    refine Filter.Tendsto.congr' (f₂ := fun t ↦ ψ t (e y))
-      (Eventually.of_forall fun t ↦ by
-        simpa only [Function.comp_apply] using hconj.semiconj t y) h'
-
 /-- A topological conjugacy carries membership in a stable set to membership in the
 corresponding stable set. This is stated as an explicit rewrite lemma because
 `Flow.mem_stableSet` already puts its left-hand side in simp-normal form. -/
@@ -195,7 +179,7 @@ theorem _root_.Homeomorph.map_mem_stableSet_iff
     (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
     e y ∈ stableSet ψ (e x) ↔ y ∈ stableSet φ x := by
   rw [mem_stableSet, mem_stableSet]
-  exact tendsto_flow_iff e hconj
+  exact e.tendsto_flow_iff hconj
 
 /-- A topological conjugacy carries a stable set to the corresponding stable set. -/
 /- This is an explicit rewrite lemma: the target flow is not determined by the left-hand
@@ -218,7 +202,7 @@ theorem _root_.Homeomorph.map_mem_unstableSet_iff
     (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
     e y ∈ unstableSet ψ (e x) ↔ y ∈ unstableSet φ x := by
   rw [mem_unstableSet, mem_unstableSet]
-  exact tendsto_flow_iff e hconj
+  exact e.tendsto_flow_iff hconj
 
 /-- A topological conjugacy carries an unstable set to the corresponding unstable set. -/
 /- This is an explicit rewrite lemma: the target flow is not determined by the left-hand
