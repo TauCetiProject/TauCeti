@@ -7,7 +7,8 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
-public import TauCeti.RingTheory.Ideal.Quotient.Representative
+
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # The residue-and-sign presentation of the congruence quotient
@@ -58,10 +59,9 @@ ray class group, and it is why the ray class group is not the product of the thr
 * `TauCeti.GlobalNumberFields.residueSignHom_eq_one_iff` and
   `TauCeti.GlobalNumberFields.ker_residueSignHom`: the kernel is the congruence subgroup.
 * `TauCeti.GlobalNumberFields.residueSignHom_surjective`: every residue unit and sign pattern is
-  realized, together with its two halves `TauCeti.GlobalNumberFields.residueHom_surjective` and
+  realized simultaneously, together with its archimedean half
   `TauCeti.GlobalNumberFields.modulusSignHom_surjective`.
-* `TauCeti.GlobalNumberFields.relIndex_congruenceSubgroup`: the exact relative index, and its
-  narrow specialization `TauCeti.GlobalNumberFields.relIndex_congruenceSubgroup_narrowModulus`.
+* `TauCeti.GlobalNumberFields.relIndex_congruenceSubgroup`: the exact relative index.
 
 ## References
 
@@ -136,36 +136,6 @@ theorem ker_residueSignHom (𝔪 : Modulus K) :
 
 /-! ### Surjectivity -/
 
-/-- An integral representative of a *unit* residue class lies outside every prime dividing the
-finite part: a common prime factor would make `1` divisible by that prime. -/
-private theorem notMem_of_quotient_mk_eq_unit {𝔪 : Modulus K} {a : 𝓞 K}
-    {u : (𝓞 K ⧸ 𝔪.finitePart)ˣ} (ha : Ideal.Quotient.mk 𝔪.finitePart a = u)
-    {v : HeightOneSpectrum (𝓞 K)} (hv : v.asIdeal ∣ 𝔪.finitePart) : a ∉ v.asIdeal := by
-  obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective ((u⁻¹ : (𝓞 K ⧸ 𝔪.finitePart)ˣ) :
-    𝓞 K ⧸ 𝔪.finitePart)
-  have hab : a * b - 1 ∈ 𝔪.finitePart := by
-    refine Ideal.Quotient.eq.mp ?_
-    rw [map_mul, ha, hb, map_one, Units.mul_inv]
-  intro hav
-  refine v.isPrime.ne_top (Ideal.eq_top_iff_one _ |>.mpr ?_)
-  have hone : (1 : 𝓞 K) = a * b - (a * b - 1) := by ring
-  rw [hone]
-  exact Ideal.sub_mem _ (Ideal.mul_mem_right _ _ hav) (Ideal.le_of_dvd hv hab)
-
-/-- The image in `Kˣ` of an integral representative of a unit residue class is a unit at the
-finite part, and reduces to the class it represents. -/
-private theorem exists_mem_primeToSubgroup_residueHom_eq {𝔪 : Modulus K}
-    (u : (𝓞 K ⧸ 𝔪.finitePart)ˣ) :
-    ∃ (α : Kˣ) (hα : α ∈ primeToSubgroup 𝔪), residueHom 𝔪 ⟨α, hα⟩ = u := by
-  obtain ⟨a, ha0, ha⟩ := Ideal.Quotient.exists_ne_zero_mk_eq 𝔪.finitePart_ne_bot
-    ((u : 𝓞 K ⧸ 𝔪.finitePart))
-  have haK : algebraMap (𝓞 K) K a ≠ 0 :=
-    (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).mpr ha0
-  refine ⟨Units.mk0 _ haK, mem_primeToSubgroup.mpr fun v hv ↦ ?_, Units.ext ?_⟩
-  · rw [Units.val_mk0, valuation_of_algebraMap]
-    exact intValuation_eq_one_iff.mpr (notMem_of_quotient_mk_eq_unit ha hv)
-  · rw [coe_residueHom, residue_eq (a := a) (b := 1) _ (by simp) (by simp), ha]
-
 /-- **The residue-and-sign presentation is surjective.**  Every residue unit modulo the finite part
 and every pattern of signs at the real places of the modulus are realized simultaneously by one
 element of `Kˣ` that is a unit at the finite part.
@@ -177,7 +147,7 @@ theorem residueSignHom_surjective (𝔪 : Modulus K) : Function.Surjective (resi
   -- an integral representative of `u` closely enough to share its reduction, with the signs of `ε`.
   classical
   rintro ⟨u, ε⟩
-  obtain ⟨α, hα, hαu⟩ := exists_mem_primeToSubgroup_residueHom_eq u
+  obtain ⟨⟨α, hα⟩, hαu⟩ := residueHom_surjective 𝔪 u
   -- Extend the prescribed signs by `1` at the real places outside the modulus.
   obtain ⟨x, hxα, hxs⟩ := exists_fieldUnit_valuation_sub_lt_and_signHom_eq (S := 𝔪.support)
     (fun _ ↦ (α : K)) (fun v ↦ WithZero.exp (-(𝔪.exponent v : ℤ)))
@@ -211,18 +181,10 @@ theorem residueSignHom_surjective (𝔪 : Modulus K) : Function.Surjective (resi
     rw [modulusSignHom_apply, hxs]
     exact dite_eq_left w.2
 
-/-- **Every residue unit modulo the finite part is the reduction of a field unit prime to it.**
-This is the finite half of `residueSignHom_surjective`, and it is what makes the residue-unit
-factor of the ray class number formula the *whole* of `(𝓞 K ⧸ 𝔪.finitePart)ˣ` rather than the
-image of the algebraic integers prime to `𝔪`. -/
-theorem residueHom_surjective (𝔪 : Modulus K) : Function.Surjective (residueHom 𝔪) := fun u ↦ by
-  obtain ⟨x, hx⟩ := residueSignHom_surjective 𝔪 (u, 1)
-  exact ⟨x, congrArg Prod.fst hx⟩
-
 /-- **Every pattern of signs at the real places of a modulus is realized by a field unit prime to
-its finite part.**  This is the archimedean half of `residueSignHom_surjective`.  Unlike
-`signHom_surjective`, the realizing element is also constrained at the finite places: it is a unit
-at every prime dividing `𝔪.finitePart`. -/
+its finite part.**  This is the archimedean half of `residueSignHom_surjective`, the finite half
+being `residueHom_surjective`.  Unlike `signHom_surjective`, the realizing element is also
+constrained at the finite places: it is a unit at every prime dividing `𝔪.finitePart`. -/
 theorem modulusSignHom_surjective (𝔪 : Modulus K) :
     Function.Surjective ((modulusSignHom 𝔪).comp (primeToSubgroup 𝔪).subtype) := fun ε ↦ by
   obtain ⟨x, hx⟩ := residueSignHom_surjective 𝔪 (1, ε)
@@ -242,9 +204,8 @@ noncomputable def residueSignEquiv (𝔪 : Modulus K) :
 
 @[simp] theorem residueSignEquiv_mk (𝔪 : Modulus K) (x : primeToSubgroup 𝔪) :
     residueSignEquiv 𝔪 (QuotientGroup.mk x) = residueSignHom 𝔪 x := by
-  rw [residueSignEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
-    QuotientGroup.quotientKerEquivOfSurjective,
-    QuotientGroup.quotientKerEquivOfRightInverse_apply, QuotientGroup.kerLift_mk]
+  simp only [residueSignEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
+    TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
 
 /-- **The exact relative index of the congruence subgroup.**  The elements that are units at the
 finite part of `𝔪`, modulo those congruent to one, are counted by the residue units modulo the
@@ -263,25 +224,5 @@ theorem relIndex_congruenceSubgroup (𝔪 : Modulus K) :
   congr 1
   rw [Finset.prod_const, Nat.card_eq_fintype_card, Fintype.card_units_int, Finset.card_univ,
     Fintype.card_coe]
-
-variable (K) in
-/-- **The narrow modulus is counted by the real places alone.**  Its finite part is the unit ideal,
-so the residue-unit factor disappears and the congruence quotient is the sign group `{±1}^{r₁}`.
-
-This is the nonempty-infinite-part specialization of `relIndex_congruenceSubgroup`: over a field
-with a real place it is `2 ^ r₁ > 1`, so the narrow conditions do not collapse to the wide ones. -/
-theorem relIndex_congruenceSubgroup_narrowModulus :
-    (congruenceSubgroup (narrowModulus K)).relIndex (primeToSubgroup (narrowModulus K)) =
-      2 ^ InfinitePlace.nrRealPlaces K := by
-  classical
-  have hcard : (narrowModulus K).infinitePart.card = InfinitePlace.nrRealPlaces K := by
-    have huniv : (narrowModulus K).infinitePart = Finset.univ :=
-      Finset.eq_univ_iff_forall.mpr mem_narrowModulus_infinitePart
-    rw [huniv, Finset.card_univ]
-  have hunits : Nat.card (𝓞 K ⧸ (narrowModulus K).finitePart)ˣ = 1 := by
-    have : Subsingleton (𝓞 K ⧸ (narrowModulus K).finitePart) :=
-      Ideal.Quotient.subsingleton_iff.mpr narrowModulus_finitePart
-    exact Nat.card_eq_one_iff_unique.mpr ⟨inferInstance, inferInstance⟩
-  rw [relIndex_congruenceSubgroup, hunits, hcard, one_mul]
 
 end TauCeti.GlobalNumberFields

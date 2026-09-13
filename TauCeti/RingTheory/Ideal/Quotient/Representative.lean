@@ -12,10 +12,10 @@ public import Mathlib.RingTheory.Ideal.Quotient.Defs
 # Nonzero representatives of residue classes
 
 `Ideal.Quotient.mk_surjective` produces *some* representative of a class in `R ⧸ I`, with no
-control over it.  Modulo a nonzero ideal the representative can be chosen nonzero: a representative
-that happens to vanish is corrected by a nonzero element of the ideal, which does not change its
-class.  This is what a residue class needs before its representative can be inverted in an
-appropriate fraction field.
+control over it.  Modulo a nonzero two-sided ideal the representative can be chosen nonzero: a
+representative that happens to vanish is corrected by a nonzero element of the ideal, which does
+not change its class.  This is what a residue class needs before its representative can be
+inverted in an appropriate fraction field.
 
 ## Main results
 
@@ -27,7 +27,7 @@ public section
 
 namespace Ideal.Quotient
 
-variable {R : Type*} [CommRing R] {I : Ideal R}
+variable {R : Type*} [Ring R] {I : Ideal R} [I.IsTwoSided]
 
 /-- **A nonzero ideal has a nonzero representative for every residue class.**  A representative
 that happens to vanish can be corrected by a nonzero element of the ideal. -/

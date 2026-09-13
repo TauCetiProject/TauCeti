@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
+public import TauCeti.RingTheory.Ideal.Quotient.Representative
 public import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
 
 /-!
@@ -18,7 +19,9 @@ the elements of `Kˣ` that are units at the primes dividing `𝔪.finitePart` to
 An element `x` in `primeToSubgroup 𝔪` can be written as `x = a / b` with the denominator
 congruent to one modulo the finite part. The class of `a` modulo `𝔪.finitePart` is independent
 of this presentation and defines `residueHom 𝔪`. Its kernel records exactly the finite-place
-conditions in `IsCongrOne`.
+conditions in `IsCongrOne`, and every residue unit is attained: a nonzero integral representative
+of a unit class is already prime to the finite part, so it is itself a field unit reducing to that
+class.
 
 ## Main definitions
 
@@ -33,6 +36,8 @@ conditions in `IsCongrOne`.
   finite-place conditions in `IsCongrOne`.
 * `TauCeti.GlobalNumberFields.residueHom_eq_one_of_mem_congruenceSubgroup`: an element congruent to
   one maps to one under reduction.
+* `TauCeti.GlobalNumberFields.residueHom_surjective`: every residue unit modulo the finite part is
+  the reduction of an element of `Kˣ` that is a unit at that finite part.
 
 ## References
 
@@ -248,5 +253,41 @@ theorem residueHom_eq_one_of_mem_congruenceSubgroup {𝔪 : Modulus K} {x : prim
   rw [coe_residueHom, Units.val_one]
   exact (residue_eq_one_iff x).mpr fun v hv ↦
     (mem_congruenceSubgroup.mp hx).valuation_sub_one_le hv
+
+/-! ### Surjectivity of the reduction -/
+
+/-- An integral representative of a *unit* residue class lies outside every prime dividing the
+finite part: a common prime factor would make `1` divisible by that prime. -/
+private theorem notMem_of_quotient_mk_eq_unit {𝔪 : Modulus K} {a : 𝓞 K}
+    {u : (𝓞 K ⧸ 𝔪.finitePart)ˣ} (ha : Ideal.Quotient.mk 𝔪.finitePart a = u)
+    {v : HeightOneSpectrum (𝓞 K)} (hv : v.asIdeal ∣ 𝔪.finitePart) : a ∉ v.asIdeal := by
+  obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective ((u⁻¹ : (𝓞 K ⧸ 𝔪.finitePart)ˣ) :
+    𝓞 K ⧸ 𝔪.finitePart)
+  have hab : a * b - 1 ∈ 𝔪.finitePart := by
+    refine Ideal.Quotient.eq.mp ?_
+    rw [map_mul, ha, hb, map_one, Units.mul_inv]
+  intro hav
+  refine v.isPrime.ne_top (Ideal.eq_top_iff_one _ |>.mpr ?_)
+  have hone : (1 : 𝓞 K) = a * b - (a * b - 1) := by ring
+  rw [hone]
+  exact Ideal.sub_mem _ (Ideal.mul_mem_right _ _ hav) (Ideal.le_of_dvd hv hab)
+
+/-- **Every residue unit modulo the finite part is the reduction of a field unit prime to it.**
+This is what makes the residue-unit factor of the ray class number formula the *whole* of
+`(𝓞 K ⧸ 𝔪.finitePart)ˣ` rather than the image of the algebraic integers prime to `𝔪`.
+
+A nonzero integral representative of the class does the job by itself: being a unit residue it
+avoids every prime dividing the finite part, so its image in `Kˣ` lies in `primeToSubgroup 𝔪` and
+reduces back to the class. -/
+theorem residueHom_surjective (𝔪 : Modulus K) : Function.Surjective (residueHom 𝔪) := fun u ↦ by
+  obtain ⟨a, ha0, ha⟩ := Ideal.Quotient.exists_ne_zero_mk_eq 𝔪.finitePart_ne_bot
+    ((u : 𝓞 K ⧸ 𝔪.finitePart))
+  have haK : algebraMap (𝓞 K) K a ≠ 0 :=
+    (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).mpr ha0
+  have hmem : Units.mk0 _ haK ∈ primeToSubgroup 𝔪 := mem_primeToSubgroup.mpr fun v hv ↦ by
+    rw [Units.val_mk0, valuation_of_algebraMap]
+    exact intValuation_eq_one_iff.mpr (notMem_of_quotient_mk_eq_unit ha hv)
+  refine ⟨⟨_, hmem⟩, Units.ext ?_⟩
+  rw [coe_residueHom, residue_eq (a := a) (b := 1) _ (by simp) (by simp), ha]
 
 end TauCeti.GlobalNumberFields
