@@ -16,9 +16,9 @@ global-chart `C^n` maps.  This file transports that topology to the self-diffeom
 global-chart manifold by the canonical forgetful map
 `Diffeomorph.toContMDiffMap`.
 
-This is the chart-level topology used by the geometric-topology roadmap's Layer 3.  The manifold
-topology is obtained by applying the same construction in charts; the present result isolates the
-transport step and gives the continuity criterion needed for smooth families.
+The topology on diffeomorphisms is obtained by transporting the weak Whitney topology on bundled
+smooth maps along the forgetful map.  This provides a chart-level topology and continuity
+criterion for families of diffeomorphisms.
 -/
 
 public section
@@ -79,12 +79,8 @@ theorem continuous_iff_toContMDiffMap {X : Type*} [TopologicalSpace X]
   convert (continuous_induced_rng (f := Diffeomorph.toContMDiffMap) (g := f)) using 1
   · rfl
 
-/-- A jointly smooth family whose fibres are diffeomorphisms is continuous in the weak Whitney
-topology on global-chart diffeomorphisms.
-
-The family is supplied as a map into diffeomorphisms, so the fibrewise inverse data is explicit;
-the proof only needs joint smoothness of the forward map, exactly as in the chart-level smooth
-family theorem.
+/-- A family of global-chart diffeomorphisms is continuous in the weak Whitney topology when its
+underlying map, jointly in the parameter and point, is `C^n`.
 -/
 theorem continuous_of_contDiff_family {P : Type*}
     [NormedAddCommGroup P] [NormedSpace 𝕜 P]
