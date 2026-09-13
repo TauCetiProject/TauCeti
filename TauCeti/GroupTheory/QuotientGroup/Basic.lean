@@ -40,9 +40,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   `G ⧸ ⊥` with left translation in `G`.
 * `TauCeti.quotientBot_smul_eq_self_iff`: a group element fixes a coset of the trivial subgroup
   only when it is the identity.
-* `TauCeti.Subgroup.sum_eq_sum_leftCosets` and
-  `TauCeti.Subgroup.sum_eq_sum_rightCosets`: split a finite sum along the left or right cosets of
-  a subgroup.
+* `Subgroup.sum_eq_sum_leftCosets` and `Subgroup.sum_eq_sum_rightCosets`: split a finite sum
+  along the left or right cosets of a subgroup.
 -/
 
 public section
@@ -115,8 +114,6 @@ section Finite
 
 variable {M : Type*} [AddCommMonoid M] [Fintype G] (H : Subgroup G)
 
-namespace Subgroup
-
 /-- A subgroup of a finite group is a finite type. -/
 noncomputable local instance fintypeSubgroup : Fintype H := Fintype.ofFinite H
 
@@ -126,7 +123,7 @@ noncomputable local instance fintypeQuotientGroup : Fintype (G ⧸ H) :=
 
 /-- Every element of a finite group `G` is uniquely the product of the `Quotient.out`
 representative of a left coset of `H` and an element of `H`. -/
-theorem sum_eq_sum_leftCosets (f : G → M) :
+theorem _root_.Subgroup.sum_eq_sum_leftCosets (f : G → M) :
     ∑ g : G, f g = ∑ q : G ⧸ H, ∑ h : H, f (q.out * h) := by
   have hmk (q : G ⧸ H) (h : H) : ((q.out * h : G) : G ⧸ H) = q := by
     rw [QuotientGroup.mk_mul_of_mem _ h.2, QuotientGroup.out_eq']
@@ -141,17 +138,15 @@ theorem sum_eq_sum_leftCosets (f : G → M) :
     (fun p : (G ⧸ H) × H => f ((p.1.out : G) * (p.2 : G))) f fun _ => rfl
   rw [← key, Fintype.sum_prod_type]
 
-/-- The right-coset form of `TauCeti.Subgroup.sum_eq_sum_leftCosets`. -/
-theorem sum_eq_sum_rightCosets (f : G → M) :
+/-- The right-coset form of `Subgroup.sum_eq_sum_leftCosets`. -/
+theorem _root_.Subgroup.sum_eq_sum_rightCosets (f : G → M) :
     ∑ g : G, f g = ∑ q : G ⧸ H, ∑ h : H, f ((h : G) * (q.out : G)⁻¹) := by
   have h1 : ∑ g : G, f g = ∑ g : G, f g⁻¹ :=
     Fintype.sum_equiv (Equiv.inv G) _ _ fun _ => by simp
-  rw [h1, sum_eq_sum_leftCosets H fun g => f g⁻¹]
+  rw [h1, H.sum_eq_sum_leftCosets fun g => f g⁻¹]
   refine Finset.sum_congr rfl fun q _ => ?_
   exact (Fintype.sum_equiv (Equiv.inv H) (fun h => f ((h : G) * (q.out : G)⁻¹))
     (fun h => f ((q.out * (h : G))⁻¹)) fun _ => by simp).symm
-
-end Subgroup
 
 end Finite
 

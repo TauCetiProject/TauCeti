@@ -107,7 +107,7 @@ private theorem norm_apply' (x : V) : ρ.norm x = ∑ g : G, ρ g x := by
 /-- The norm of `G` is the relative norm of `H` evaluated on the norm of `H`. -/
 theorem relNorm_norm_apply (x : V) :
     relNorm ρ H (Representation.norm (ρ.comp H.subtype) x) = ρ.norm x := by
-  conv_rhs => rw [norm_apply', TauCeti.Subgroup.sum_eq_sum_leftCosets H fun g => ρ g x]
+  conv_rhs => rw [norm_apply', H.sum_eq_sum_leftCosets fun g => ρ g x]
   rw [relNorm_apply]
   refine Finset.sum_congr rfl fun q _ => ?_
   simp [Representation.norm, map_sum, ← Module.End.mul_apply, ← map_mul]
@@ -120,7 +120,7 @@ theorem relNorm_comp_norm :
 /-- The norm of `G` is the norm of `H` evaluated on the relative transfer of `H`. -/
 theorem norm_relTransfer_apply (x : V) :
     Representation.norm (ρ.comp H.subtype) (relTransfer ρ H x) = ρ.norm x := by
-  conv_rhs => rw [norm_apply', TauCeti.Subgroup.sum_eq_sum_rightCosets H fun g => ρ g x]
+  conv_rhs => rw [norm_apply', H.sum_eq_sum_rightCosets fun g => ρ g x]
   rw [relTransfer_apply, map_sum]
   refine Finset.sum_congr rfl fun q _ => ?_
   simp [Representation.norm, LinearMap.sum_apply, ← Module.End.mul_apply, ← map_mul]
