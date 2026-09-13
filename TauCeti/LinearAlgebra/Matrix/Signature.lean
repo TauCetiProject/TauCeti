@@ -9,9 +9,9 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 
 /-!
-# The signature of a square matrix over a strictly ordered field
+# The signature of a square matrix over a linearly ordered field
 
-The *signature* of a square matrix `A` over a strictly ordered field is the difference between
+The *signature* of a square matrix `A` over a linearly ordered field is the difference between
 the two indices of inertia of the quadratic form `x ↦ x ⬝ᵥ A *ᵥ x`, that is Mathlib's
 `sigPos A.toQuadraticForm' - sigNeg A.toQuadraticForm'`. Only the symmetric part of `A` is
 visible to that form, so the signature of `A` agrees with the signature of `A + Aᵀ`.
@@ -147,14 +147,12 @@ end CommRing
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
 variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
 
-/-- The signature of a square matrix over a strictly ordered field: the positive index of
+/-- The signature of a square matrix over a linearly ordered field: the positive index of
 inertia of the quadratic form `x ↦ x ⬝ᵥ A *ᵥ x` minus its negative index.
 
 Only the symmetric part of `A` contributes, by `Matrix.signature_add_transpose`. -/
-noncomputable def signature [IsStrictOrderedRing 𝕜] (A : Matrix ι ι 𝕜) : ℤ :=
+noncomputable def signature (A : Matrix ι ι 𝕜) : ℤ :=
   (_root_.sigPos A.toQuadraticForm' : ℤ) - (_root_.sigNeg A.toQuadraticForm' : ℤ)
-
-variable [IsStrictOrderedRing 𝕜]
 
 theorem signature_def (A : Matrix ι ι 𝕜) :
     signature A =
@@ -194,6 +192,10 @@ theorem signature_of_isEmpty [IsEmpty ι] (A : Matrix ι ι 𝕜) : signature A 
   rw [signature_def, ← sigPos_neg]
   omega
 
+section StrictOrdered
+
+variable [IsStrictOrderedRing 𝕜]
+
 /-- The signature of a matrix is the signature of its symmetrisation `A + Aᵀ`. -/
 @[simp]
 theorem signature_add_transpose (A : Matrix ι ι 𝕜) : signature (A + Aᵀ) = signature A := by
@@ -229,5 +231,7 @@ theorem signature_eq_of_congr_diagonal {P A : Matrix ι ι 𝕜} (hP : IsUnit P.
     (h : P * A * Pᵀ = diagonal d) :
     signature A = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
   rw [← signature_congr hP A, h, signature_diagonal]
+
+end StrictOrdered
 
 end Matrix

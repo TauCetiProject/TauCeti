@@ -37,7 +37,7 @@ the whole Tristram--Levine family lives over `ℂ` and needs the Hermitian form
 `(1 - ω) V + (1 - star ω) Vᵀ`, which is not built here.
 
 The block identities behind the enlargements hold over an arbitrary commutative ring, and the
-signature statements over an arbitrary strictly ordered field; the knot-theoretic case is a
+signature statements over an arbitrary linearly ordered field; the knot-theoretic case is a
 Seifert matrix over `ℤ` read in `ℚ` or `ℝ`, and the two example theorems are stated that way.
 
 This is the signature invariant called for by Layer 6 (knot concordance and 4D cobordism) of the
@@ -175,6 +175,7 @@ theorem signature_enlargeRow (V : Matrix ι ι 𝕜) (η : ι → 𝕜) :
 
 end Enlargement
 
+omit [IsStrictOrderedRing 𝕜] in
 /-- **The mirror image negates the signature.** The mirror of a knot with Seifert matrix `V` has
 Seifert matrix `-Vᵀ`.
 
