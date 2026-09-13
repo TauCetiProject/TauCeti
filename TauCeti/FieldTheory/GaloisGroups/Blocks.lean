@@ -7,7 +7,6 @@ module
 
 public import TauCeti.FieldTheory.GaloisGroups.Stabilizer
 public import TauCeti.GroupTheory.Perm.Blocks
-public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 
 /-!
 # Blocks of a polynomial Galois action
@@ -50,9 +49,6 @@ open IntermediateField MulAction Polynomial
 universe u
 
 variable {F : Type u} [Field F] {p : F[X]}
-
-private theorem gal_smul_eq_apply (σ : p.Gal) (y : p.SplittingField) : σ • y = σ y :=
-  (rfl)
 
 /-- **Blocks containing a root correspond to intermediate fields of its simple extension.**
 
@@ -174,7 +170,7 @@ theorem coe_rootBlockIntermediateFieldOrderIso_symm_apply_eq_preimage_rootSet_mi
     · rintro ⟨g, rfl⟩
       refine ⟨IsGaloisGroup.mulEquivCongr H Gal(p.SplittingField/E.1) E.1
         p.SplittingField g, ?_⟩
-      simpa only [Subgroup.smul_def, Gal.coe_smul, gal_smul_eq_apply] using
+      simpa only [Subgroup.smul_def, Gal.coe_smul, Gal.smul_eq_apply] using
         IsGaloisGroup.mulEquivCongr_apply_smul H Gal(p.SplittingField/E.1) E.1
           p.SplittingField g (x : p.SplittingField)
     · rintro ⟨σ, hσ⟩
@@ -183,7 +179,7 @@ theorem coe_rootBlockIntermediateFieldOrderIso_symm_apply_eq_preimage_rootSet_mi
           p.SplittingField).surjective σ
       refine ⟨g, Subtype.ext ?_⟩
       rw [← hσ]
-      simpa only [Subgroup.smul_def, Gal.coe_smul, gal_smul_eq_apply] using
+      simpa only [Subgroup.smul_def, Gal.coe_smul, Gal.smul_eq_apply] using
         (IsGaloisGroup.mulEquivCongr_apply_smul H Gal(p.SplittingField/E.1) E.1
           p.SplittingField g (x : p.SplittingField)).symm
   rw [coe_rootBlockIntermediateFieldOrderIso_symm_apply]
