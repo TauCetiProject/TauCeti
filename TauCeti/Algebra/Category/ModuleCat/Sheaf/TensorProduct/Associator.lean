@@ -61,10 +61,8 @@ instance (M₀ P₀ : PresheafOfModules.{u} (ringCatSheaf R).obj) :
     IsIso ((PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
       ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app M₀ ▷
         P₀)) := by
-  change ((MorphismProperty.isomorphisms _).inverseImage
-    (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)))
-      ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app M₀ ▷ P₀)
-  rw [← PresheafOfModules.inverseImage_W_toPresheaf_eq_inverseImage_isomorphisms]
+  rw [← MorphismProperty.isomorphisms.iff, ← MorphismProperty.inverseImage_iff (.isomorphisms _),
+    ← PresheafOfModules.inverseImage_W_toPresheaf_eq_inverseImage_isomorphisms]
   exact PresheafOfModules.inverseImage_W_toPresheaf_whiskerRight J
     (f := (PresheafOfModules.sheafificationAdjunction
       (𝟙 (ringCatSheaf R).obj)).unit.app M₀) (J.W_toSheafify M₀.presheaf) P₀
@@ -74,11 +72,8 @@ instance (M₀ P₀ : PresheafOfModules.{u} (ringCatSheaf R).obj) :
     IsIso ((PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
       (M₀ ◁ (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
         P₀)) := by
-  change ((MorphismProperty.isomorphisms _).inverseImage
-    (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)))
-      (M₀ ◁ (PresheafOfModules.sheafificationAdjunction
-        (𝟙 (ringCatSheaf R).obj)).unit.app P₀)
-  rw [← PresheafOfModules.inverseImage_W_toPresheaf_eq_inverseImage_isomorphisms]
+  rw [← MorphismProperty.isomorphisms.iff, ← MorphismProperty.inverseImage_iff (.isomorphisms _),
+    ← PresheafOfModules.inverseImage_W_toPresheaf_eq_inverseImage_isomorphisms]
   exact PresheafOfModules.inverseImage_W_toPresheaf_whiskerLeft J M₀
     (f := (PresheafOfModules.sheafificationAdjunction
       (𝟙 (ringCatSheaf R).obj)).unit.app P₀) (J.W_toSheafify P₀.presheaf)
