@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Binary
+public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
 # Chains of elementary equivalences between diagonal quadratic forms
