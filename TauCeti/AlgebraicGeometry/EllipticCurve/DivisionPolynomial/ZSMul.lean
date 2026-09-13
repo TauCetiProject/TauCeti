@@ -112,8 +112,11 @@ is the statement the Nagell–Lutz layer consumes.
 * `WeierstrassCurve.zsmul_point_eq_smulEval`: **the headline**. Over a field, `n • (x, y)`
   in Jacobian
   coordinates is `(φₙ(x,y) : ωₙ(x,y) : ψₙ(x,y))`, for every nonsingular `(x, y)` and every `n`.
-* `WeierstrassCurve.two_zsmul_eq_zero_of_evalEval_ψ₂_eq_zero`: the converse at `n = 2` — a
-  vanishing `ψ₂` at a nonsingular point forces `2 • P = 0`.
+* `WeierstrassCurve.zsmul_eq_zero_of_evalEval_ψ_eq_zero`: **the converse** — a vanishing `ψₙ` at
+  a nonsingular point forces `n • P = 0`. Unrestricted in `n`, and so an annihilation statement
+  rather than a torsion one: at `n = 0` both sides hold of every point.
+* `WeierstrassCurve.two_zsmul_eq_zero_of_evalEval_ψ₂_eq_zero`: that converse at `n = 2`, the form
+  the two-torsion characterisation below is stated through.
 * `WeierstrassCurve.addOrderOf_eq_two_iff_evalEval_ψ₂_eq_zero`: those two directions packaged as
   the characterisation of two-torsion, `addOrderOf P = 2 ↔ ψ₂(x, y) = 0`. Its contrapositive is
   what discharges the `addOrderOf ≠ 2` guard the Nagell–Lutz theorems carry.
@@ -1049,24 +1052,37 @@ theorem zsmul_point_eq_smulEval {x y : F} (h : Affine.Nonsingular W x y) (n : �
     simp_rw [smulEval_neg]
     rfl
 
-/-- If `ψ₂` vanishes at `(x, y)` then `2 • P = 0`: the point equals its own negation, so adding
-it to itself lands at infinity. Field-local — no base ring is involved.
+/-- **A root of `ψₙ` is annihilated by `n`**, the converse of
+`evalEval_ψ_eq_zero_of_zsmul_eq_zero`. If `ψₙ` vanishes at `P` then `n • P = 0`.
+
+Stated as annihilation rather than torsion, and deliberately left unrestricted in `n`. At `n = 0`
+it is tautological on both sides — `ψ₀ = 0` vanishes at every point and `0 • P = 0` for every `P` —
+so that case exhibits no torsion and the equation carries no content there. It is kept because
+every consumer wants the equation at its own `n` without first discharging `n ≠ 0`; a consumer
+that needs genuine torsion supplies that hypothesis itself.
+
+Same mechanism as the forward direction, read the other way: `zsmul_point_eq_smulEval` presents
+`n • P` as the Jacobian class of `(φₙ(x,y) : ωₙ(x,y) : ψₙ(x,y))`, and a nonsingular class whose
+`Z`-coordinate vanishes is the point at infinity. -/
+theorem zsmul_eq_zero_of_evalEval_ψ_eq_zero {x y : F}
+    (hns : W.toAffine.Nonsingular x y) (n : ℤ) (hψ : (W.ψ n).evalEval x y = 0) :
+    n • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0 := by
+  have heval := zsmul_point_eq_smulEval W hns n
+  have hnsEval : Jacobian.Nonsingular W.toAffine.toJacobian (smulEval W.toAffine x y n) := by
+    rw [← Jacobian.nonsingularLift_iff, ← zsmul_point_eq_smulEval W hns n]
+    exact (n • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)).nonsingular
+  rw [Jacobian.Point.ext_iff, heval, Jacobian.Point.zero_point]
+  exact Quotient.sound (Jacobian.equiv_zero_of_Z_eq_zero hnsEval hψ)
+
+/-- If `ψ₂` vanishes at `(x, y)` then `2 • P = 0`, the case `n = 2` of
+`zsmul_eq_zero_of_evalEval_ψ_eq_zero`. Field-local — no base ring is involved.
 
 Stated for the Jacobian point, matching the rest of the torsion API and
-`evalEval_ψ_eq_zero_of_zsmul_eq_zero`. The affine group law is defined by cases and so needs
-`DecidableEq`, but only inside the proof, where `classical` supplies it; the statement does not. -/
+`evalEval_ψ_eq_zero_of_zsmul_eq_zero`. -/
 theorem two_zsmul_eq_zero_of_evalEval_ψ₂_eq_zero {x y : F}
     (hns : W.toAffine.Nonsingular x y) (hψ : W.ψ₂.evalEval x y = 0) :
-    (2 : ℤ) • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns) = 0 := by
-  classical
-  rw [WeierstrassCurve.ψ₂, Affine.evalEval_polynomialY] at hψ
-  have hy : y = W.toAffine.negY x y := by simp only [Affine.negY]; linear_combination hψ
-  have haff : (2 : ℕ) • (Affine.Point.some _ _ hns) = 0 := by
-    rw [two_nsmul]; exact Affine.Point.add_self_of_Y_eq hy
-  have h := congrArg (Jacobian.Point.toAffineAddEquiv W).symm haff
-  rw [map_nsmul, map_zero] at h
-  rw [← natCast_zsmul] at h
-  exact_mod_cast h
+    (2 : ℤ) • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns) = 0 :=
+  zsmul_eq_zero_of_evalEval_ψ_eq_zero W hns 2 (by rwa [WeierstrassCurve.ψ_two])
 
 /-- **A torsion point is a root of its division polynomial.** If `n • P = 0` in the Jacobian
 point group, then `ψₙ` vanishes at `P`.
