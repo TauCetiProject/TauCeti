@@ -43,8 +43,7 @@ characteristic two, which is not constructed here. That `τ` is identified by th
 `τ ^ 2 = Frob_p` in the prime characteristic, and `Frob_p` is not the map supplied here: validity
 forces `1 ≤ m`, so the field order `q = 2 ^ (2m+1)` the index records is larger than the prime.
 Carrier-level calculations that only need `Frob_p` should use
-`TauCeti.SpStd.frobenius 1 d.1.characteristic 1 d.1.Closure` directly; there is no index-level
-wrapper until the pinned carrier supplies a consumer for it.
+`TauCeti.SpStd.frobenius 1 d.1.characteristic 1 d.1.Closure` directly.
 What this file supplies is `Frob_q`, the map the odd power `τ ^ (2m+1)` squares to. Either way the
 map below is the `q`-power Frobenius at the field order the index records, taken on this carrier.
 A Suzuki index reaches all of it through `TauCeti.SuzukiLieIndex.toRankTwoBLieIndex`.
