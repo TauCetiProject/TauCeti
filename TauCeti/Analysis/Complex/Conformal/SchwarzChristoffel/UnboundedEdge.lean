@@ -189,15 +189,6 @@ theorem schwarzChristoffelBoundary_image_Ici_prevertex (a e : ι → ℝ) (z₀ 
 
 /-! ### The left-hand edge -/
 
-private theorem exponent_sum_gt_neg_one_of_forall_ge {a e : ι → ℝ} {p q : ℝ}
-    (hp : -1 < ∑ i with a i = p, e i) (ha : ∀ i, e i ≠ 0 → p ≤ a i) (hq : q ≤ p) :
-    -1 < ∑ i with a i = q, e i := by
-  exact
-    @Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le ι (OrderDual ℝ) ℝ
-      (@OrderDual.instPartialOrder ℝ Real.partialOrder) Real.instPreorder
-      Real.instAddCommMonoid Finset.univ a e p (-1) (by norm_num) hp
-      (by intro i _ hei; exact ha i hei) q hq
-
 /-- **The Schwarz--Christoffel boundary map is injective on a left-hand unbounded edge.**
 Under `-1 < ∑ i with a i = p, e i` and `∀ i, e i ≠ 0 → p ≤ a i`, distinct finite
 parameters in `Iic p` have distinct boundary values. -/
@@ -208,7 +199,9 @@ theorem schwarzChristoffelBoundary_injOn_Iic (a e : ι → ℝ) (z₀ : UpperHal
   have hfree : ∀ {q : ℝ}, q ∈ Iic p → ∀ i, e i ≠ 0 → a i ∉ Ioo q p :=
     fun _ i hei hi => (not_lt_of_ge (ha i hei)) hi.2
   have hsum : ∀ {q : ℝ}, q ∈ Iic p → -1 < ∑ i with a i = q, e i :=
-    fun {_} hq => exponent_sum_gt_neg_one_of_forall_ge hp ha hq
+    fun {_} hq =>
+      Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
+        Finset.univ (by norm_num) hp (by intro i _ hei; exact ha i hei) hq
   intro x hx y hy hxy
   rcases lt_trichotomy x y with h | h | h
   · exact schwarzChristoffelBoundary_injOn_Icc a e z₀ (hfree hx) (hsum hx) hp
@@ -235,7 +228,9 @@ theorem schwarzChristoffelBoundary_image_Iic (a e : ι → ℝ) (z₀ : UpperHal
   have hfree : ∀ {q : ℝ}, q ∈ Iic p → ∀ i, e i ≠ 0 → a i ∉ Ioo q p :=
     fun _ i hei hi => (not_lt_of_ge (ha i hei)) hi.2
   have hsum : ∀ {q : ℝ}, q ∈ Iic p → -1 < ∑ i with a i = q, e i :=
-    fun {_} hq => exponent_sum_gt_neg_one_of_forall_ge hp ha hq
+    fun {_} hq =>
+      Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
+        Finset.univ (by norm_num) hp (by intro i _ hei; exact ha i hei) hq
   have hangle : ∀ {x : ℝ}, x < p →
       schwarzChristoffelEdgeAngle a e x = Real.pi * ∑ i, e i := by
     intro x hx
