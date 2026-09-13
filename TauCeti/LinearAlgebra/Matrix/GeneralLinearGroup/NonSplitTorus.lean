@@ -246,7 +246,7 @@ theorem conj_notMem_of_det_sub_algebraMap_eq_zero {g : GL (Fin 2) F}
   -- conjugation does not change the determinant of `g - a`
   have hdet : (((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) -
       algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det = 0 := by
-    rw [det_sub_algebraMap_conj, ha]
+    rw [Matrix.GeneralLinearGroup.det_sub_algebraMap_conj, ha]
   -- so the norm of `v - a` vanishes, forcing `v` into `F`
   have hnorm : Algebra.norm F ((v : E) - algebraMap F E a) = 0 := by
     rw [Algebra.norm_eq_matrix_det (nonSplitTorusBasis F E hE), map_sub,

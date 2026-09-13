@@ -16,13 +16,13 @@ across the concrete subgroup and conjugacy-class computations.
 
 ## Main results
 
-* `TauCeti.det_sub_algebraMap_conj`: shifting a matrix by a scalar and taking its determinant is
-  invariant under conjugation.
+* `Matrix.GeneralLinearGroup.det_sub_algebraMap_conj`: shifting a matrix by a scalar and taking its
+  determinant is invariant under conjugation.
 -/
 
 public section
 
-namespace TauCeti
+namespace Matrix.GeneralLinearGroup
 
 variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
 
@@ -44,4 +44,4 @@ theorem det_sub_algebraMap_conj (g x : GL n R) (a : R) :
     rw [mul_sub, sub_mul, hcancel, Units.val_mul, Units.val_mul]
   rw [hsplit, Matrix.coe_units_inv, Matrix.det_conj' x.isUnit]
 
-end TauCeti
+end Matrix.GeneralLinearGroup
