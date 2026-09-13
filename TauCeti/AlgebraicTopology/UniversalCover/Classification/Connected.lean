@@ -121,7 +121,7 @@ variable {X : TopCat.{u}} [PathConnectedSpace X] [LocallyPathConnectedSpace X]
 /-- A connected covering space is a connected object of `TauCeti.CoveringSpace X`. -/
 theorem isConnected_forget_obj (p : ConnectedCoveringSpace X) :
     PreGaloisCategory.IsConnected ((forget X).obj p) :=
-  (CoveringSpace.isConnected_iff_connectedSpace ((forget X).obj p)).mpr p.property.2
+  (CoveringSpace.isConnected_iff_connectedSpace ((forget X).obj p)).mpr p.prop_obj
 
 end TauCeti.ConnectedCoveringSpace
 
