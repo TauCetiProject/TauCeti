@@ -416,14 +416,12 @@ theorem toOrientedPDCode_writhe (D : BasedOrientedGaussCode n) :
   simp [OrientedPDCode.writhe_def, writhe_def]
 
 /-- Conversion commutes with reflection on crossing signs. -/
-@[simp]
 theorem toOrientedPDCode_mirror_crossingSign (D : BasedOrientedGaussCode n) (c : Fin n) :
     D.mirror.toOrientedPDCode.crossingSign c =
       D.toOrientedPDCode.mirror.crossingSign c := by
   simp
 
 /-- Conversion commutes with reflection on writhe. -/
-@[simp]
 theorem toOrientedPDCode_mirror_writhe (D : BasedOrientedGaussCode n) :
     D.mirror.toOrientedPDCode.writhe = D.toOrientedPDCode.mirror.writhe := by
   simp
@@ -503,4 +501,3 @@ theorem toFramedOrientedPDCode_injective :
 end FramedBasedOrientedGaussCode
 
 end TauCeti
-
