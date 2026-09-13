@@ -16,7 +16,9 @@ relate the two. This file proves that they agree: two generalized loops are homo
 to the cube boundary exactly when they are joined by a path in `Ω^ N X x`. Currying a homotopy
 `I × I^N → X` gives the path, and uncurrying a path gives the homotopy; the boundary condition
 is automatic in both directions, because every generalized loop is constant at `x` on the cube
-boundary.
+boundary. In the one-dimensional case this is transported across Mathlib's bijection
+`genLoopEquivOfUnique` between one-dimensional generalized loops and paths, where homotopy
+relative to the cube boundary becomes homotopy of paths.
 
 The file also treats homotopies in the base space: a homotopy between based maps must remain
 fixed at the basepoint in order to induce a homotopy between their postcompositions with a
@@ -24,13 +26,12 @@ generalized loop. That construction is made explicit, and pointed-homotopic maps
 induce the same map on every homotopy group, with the corresponding equality of bundled monoid
 homomorphisms in positive dimensions.
 
-This supplies the boundary-relative homotopy API and the pointed-homotopy part of the
-higher-homotopy API requested in Stage 3, item 9 of the Tau Ceti universal-covers roadmap.
-
 ## Main declarations
 
 * `GenLoop.homotopic_iff_joined`: **homotopy relative to the cube boundary is path
   connectedness in `Ω^ N X x`.**
+* `GenLoop.homotopic_genLoopEquivOfUnique_iff`: for a singleton index type, homotopy relative
+  to the cube boundary is homotopy of the corresponding paths.
 * `HomotopyGroup.map_eq_of_homotopicRel`: pointed-homotopic maps induce the same map on
   homotopy groups.
 -/
@@ -86,6 +87,20 @@ therefore records the homotopy relation of `HomotopyGroup N X x` as its path com
 theorem homotopic_iff_joined {p q : Ω^ N X x} :
     _root_.GenLoop.Homotopic p q ↔ Joined p q :=
   ⟨fun h => ⟨pathOfHomotopyRel h.some⟩, fun h => ⟨homotopyRelOfPath h.some⟩⟩
+
+/-- Homotopy of one-dimensional generalized loops relative to the cube boundary is homotopy of
+the paths they correspond to under Mathlib's bijection `genLoopEquivOfUnique`. Both sides say
+that the two classes agree in a quotient, and `homotopyGroupEquivFundamentalGroupOfUnique`
+identifies `HomotopyGroup N X x` with `FundamentalGroup X x` by exactly this bijection. -/
+theorem homotopic_genLoopEquivOfUnique_iff [Unique N] {p q : Ω^ N X x} :
+    (genLoopEquivOfUnique N p).Homotopic (genLoopEquivOfUnique N q) ↔
+      _root_.GenLoop.Homotopic p q :=
+  ⟨fun h => Quotient.exact
+      ((homotopyGroupEquivFundamentalGroupOfUnique (X := X) (x := x) N).injective
+        (Quotient.sound h)),
+   fun h => Quotient.exact
+      (congrArg (homotopyGroupEquivFundamentalGroupOfUnique (X := X) (x := x) N)
+        (Quotient.sound h))⟩
 
 /-! ### Homotopies in the base space -/
 

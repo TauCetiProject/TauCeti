@@ -51,7 +51,7 @@ variable {N X : Type*} [TopologicalSpace X] {x : X}
 
 /-- Mathlib's bijection `genLoopEquivOfUnique` between the one-dimensional generalized loops at
 `x` and the loop space `Ω X x`, upgraded to a homeomorphism for the compact-open topologies. -/
-@[expose] def homeomorphOfUnique (N : Type*) [Unique N] : Ω^ N X x ≃ₜ Ω X x where
+def homeomorphOfUnique (N : Type*) [Unique N] : Ω^ N X x ≃ₜ Ω X x where
   toEquiv := genLoopEquivOfUnique N
   continuous_toFun := Path.continuous_uncurry_iff.1 <|
     continuous_eval.comp (continuous_fst.prodMk (continuous_pi fun _ => continuous_snd))
