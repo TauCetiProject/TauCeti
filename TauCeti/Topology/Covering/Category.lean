@@ -52,8 +52,7 @@ fundamental-group actions.
 * `TauCeti.CoveringSpace.FullSubcategory.mk`, `mk_coe`, `mk_proj`, `forget_obj_mk`, `proj`,
   `homMk`, `isoMk`: the constructor API shared by every such subcategory.
 * `TauCeti.CoveringSpace.FullSubcategory.prop_obj`: the cutting property of an object.
-* `TauCeti.CoveringSpace.FullSubcategory.forget`, `fullyFaithfulForget`: the inclusion into all
-  covers and its full faithfulness.
+* `TauCeti.CoveringSpace.FullSubcategory.forget`: the inclusion into all covers.
 * `TauCeti.CoveringSpace.FullSubcategory.isIso_iff_isHomeomorph_hom_left`: the corresponding
   isomorphism criterion.
 * `TauCeti.ConnectedCoveringSpace X`: connected covering spaces over `X`, with
@@ -257,8 +256,7 @@ used from it rather than restated. Naming a member from such a subcategory:
 * dot notation on a **morphism** does not resolve, its type being headed by
   `CategoryTheory.InducedCategory.Hom`, so `f.w` must be written
   `CoveringSpace.FullSubcategory.w f`;
-* a member parameterized only by `X` and `P`, such as `fullyFaithfulForget`, is named through
-  this namespace.
+* a member parameterized only by `X` and `P` is named through this namespace.
 
 Only the constructor is restated at each subcategory, since each takes its property in a
 different form. -/
@@ -270,7 +268,10 @@ namespace CoveringSpace.FullSubcategory
 
 variable {X : TopCat.{u}} {P : ObjectProperty (CategoryTheory.Over X)}
 
-/-- The fully faithful inclusion into all covering spaces. -/
+/-- The inclusion into all covering spaces. It is fully faithful: `Full` and `Faithful` are
+found by instance search from Mathlib's `ObjectProperty.full_ιOfLE` and
+`ObjectProperty.faithful_ιOfLE`, and the bundled witness is
+`ObjectProperty.fullyFaithfulιOfLE inf_le_left`. -/
 abbrev forget (X : TopCat.{u}) (P : ObjectProperty (CategoryTheory.Over X)) :
     CoveringSpace.FullSubcategory X P ⥤ CoveringSpace X :=
   ObjectProperty.ιOfLE inf_le_left
@@ -317,11 +318,6 @@ theorem isCoveringMap_proj (p : CoveringSpace.FullSubcategory X P) : _root_.IsCo
 /-- The cutting property holds of the underlying object of `TopCat / X`. -/
 theorem prop_obj (p : CoveringSpace.FullSubcategory X P) : P p.obj :=
   p.property.2
-
-/-- The inclusion into all covering spaces is fully faithful. -/
-def fullyFaithfulForget (X : TopCat.{u}) (P : ObjectProperty (CategoryTheory.Over X)) :
-    (forget X P).FullyFaithful :=
-  ObjectProperty.fullyFaithfulιOfLE _
 
 /-- A morphism commutes with the projections to the base. -/
 @[reassoc]
