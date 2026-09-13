@@ -63,6 +63,12 @@ theorem constantFunctor_obj_map (X : TopCat.{v}) (M : ModuleCat.{w} R)
     ((constantFunctor (R := R) X).obj M).map p = 𝟙 M := by
   simp [constantFunctor]
 
+@[simp]
+theorem constantFunctor_map_app (X : TopCat.{v}) {M N : ModuleCat.{w} R} (f : M ⟶ N)
+    (x : FundamentalGroupoid X) :
+    ((constantFunctor (R := R) X).map f).app x = f :=
+  rfl
+
 /-- Pull back local coefficient systems along a continuous map. -/
 @[expose] def pullback {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y)) :
     LocalCoefficientSystem.{u, v₂, w} R Y ⥤ LocalCoefficientSystem.{u, v₁, w} R X :=
@@ -104,7 +110,11 @@ def pullbackIdIso (X : TopCat.{v}) :
 theorem pullbackIdIso_hom_app_app (X : TopCat.{v}) (L : LocalCoefficientSystem.{u, v, w} R X)
     (x : FundamentalGroupoid X) :
     ((pullbackIdIso (R := R) X).hom.app L).app x = 𝟙 _ := by
-  -- Expose the whiskered `eqToHom` component underlying the isomorphism.
+  -- The source of the isomorphism, `(pullback (.id X)).obj L`, is only *definitionally* the
+  -- whiskered functor `FundamentalGroupoid.map (.id X) ⋙ L`, so `rw`/`simp` cannot reach the
+  -- underlying `Iso.trans`: rewriting with `Iso.trans_hom` fails with "the target expression is
+  -- not type-correct under the `implicit` transparency level".  `change` crosses that gap once,
+  -- after which the remaining steps are ordinary rewrites.
   change L.map ((eqToHom FundamentalGroupoid.map_id).app x) ≫ 𝟙 _ = 𝟙 _
   rw [eqToHom_app, eqToHom_map, Category.comp_id]
   rfl
@@ -113,7 +123,8 @@ theorem pullbackIdIso_hom_app_app (X : TopCat.{v}) (L : LocalCoefficientSystem.{
 theorem pullbackIdIso_inv_app_app (X : TopCat.{v}) (L : LocalCoefficientSystem.{u, v, w} R X)
     (x : FundamentalGroupoid X) :
     ((pullbackIdIso (R := R) X).inv.app L).app x = 𝟙 _ := by
-  -- Expose the whiskered `eqToHom` component underlying the isomorphism.
+  -- As in `pullbackIdIso_hom_app_app`, the target of the isomorphism is only definitionally a
+  -- whiskered functor, so the underlying `Iso.trans` is unreachable by rewriting.
   change 𝟙 _ ≫ L.map ((eqToHom FundamentalGroupoid.map_id.symm).app x) = 𝟙 _
   rw [eqToHom_app, eqToHom_map, Category.id_comp]
   rfl
@@ -136,7 +147,8 @@ theorem pullbackCompIso_hom_app_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z :
     (f : C(X, Y)) (g : C(Y, Z)) (L : LocalCoefficientSystem.{u, v₃, w} R Z)
     (x : FundamentalGroupoid X) :
     ((pullbackCompIso (R := R) f g).hom.app L).app x = 𝟙 _ := by
-  -- Expose the whiskered `eqToHom` component underlying the isomorphism.
+  -- As in `pullbackIdIso_hom_app_app`, `(pullback (g.comp f)).obj L` is only definitionally a
+  -- whiskered functor, so the underlying `Iso.trans` is unreachable by rewriting.
   change L.map ((eqToHom (FundamentalGroupoid.map_comp g f)).app x) ≫ 𝟙 _ = 𝟙 _
   rw [eqToHom_app, eqToHom_map, Category.comp_id]
   rfl
@@ -146,7 +158,8 @@ theorem pullbackCompIso_inv_app_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z :
     (f : C(X, Y)) (g : C(Y, Z)) (L : LocalCoefficientSystem.{u, v₃, w} R Z)
     (x : FundamentalGroupoid X) :
     ((pullbackCompIso (R := R) f g).inv.app L).app x = 𝟙 _ := by
-  -- Expose the whiskered `eqToHom` component underlying the isomorphism.
+  -- As in `pullbackIdIso_hom_app_app`, `(pullback (g.comp f)).obj L` is only definitionally a
+  -- whiskered functor, so the underlying `Iso.trans` is unreachable by rewriting.
   change 𝟙 _ ≫ L.map ((eqToHom (FundamentalGroupoid.map_comp g f).symm).app x) = 𝟙 _
   rw [eqToHom_app, eqToHom_map, Category.id_comp]
   rfl
@@ -226,9 +239,7 @@ theorem transport_symm {x y : X} (L : LocalCoefficientSystem.{u, v, w} R X)
   apply (transport L p).injective
   rw [LinearEquiv.apply_symm_apply]
   simp only [transport_apply, ← L.map_comp_apply]
-  -- Expose the path concatenation underlying composition in the fundamental groupoid.
-  change L.map (p.symm.trans p) a = a
-  rw [Path.Homotopic.Quotient.symm_trans]
+  rw [FundamentalGroupoid.comp_eq, Path.Homotopic.Quotient.symm_trans]
   have h : Path.Homotopic.Quotient.refl y = 𝟙 (FundamentalGroupoid.mk y) :=
     (FundamentalGroupoid.id_eq_path_refl _).symm
   rw [h]
@@ -249,9 +260,8 @@ theorem pullback_transport {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
     {x y : X} (p : Path.Homotopic.Quotient x y) :
     transport ((pullback (R := R) f).obj L) p = transport L (p.map f) := by
   ext a
-  -- Expose precomposition by the induced fundamental-groupoid functor.
-  change L.map ((FundamentalGroupoid.map f).map p) a = L.map (p.map f) a
-  rfl
+  simp only [transport_apply, pullback_obj_map, FundamentalGroupoid.map_map]
+  exact (transport_apply L (p.map f) a).symm
 
 /-- The monodromy representation of a local coefficient system at a basepoint. -/
 @[expose] def monodromyRepresentation (L : LocalCoefficientSystem.{u, v, w} R X) (x : X) :
@@ -344,7 +354,13 @@ theorem monodromyFunctor_map_hom (x : X) {L K : LocalCoefficientSystem.{u, v, w}
     ext a
     let α := (Groupoid.isoEquivHom (FundamentalGroupoid.mk x)
       (FundamentalGroupoid.mk y)).symm (⟦p⟧ : Path.Homotopic.Quotient x y)
-    -- Expose the underlying module maps so that functoriality of conjugation applies.
+    -- Transport is `L.mapIso α` read as a linear equivalence and the monodromy action is
+    -- `L.map`, so the goal is the image under `L` of `α`-conjugation.  Neither `rw` nor `simp`
+    -- can bridge those coercions here: once the `Representation.Equiv` and `LinearEquiv`
+    -- coercions are peeled off, rewriting with `transport_apply` fails with "the target
+    -- expression is not type-correct under the `implicit` transparency level".  This single
+    -- `change` states the same goal purely in terms of `L.map`, after which `Functor.map_conj`
+    -- and ordinary rewriting finish it.
     change L.map α.hom (L.map g a) = L.map (α.conj g) (L.map α.hom a)
     rw [L.map_conj]
     simp only [Iso.conj_apply, ModuleCat.comp_apply, Functor.mapIso_hom, Functor.mapIso_inv]
