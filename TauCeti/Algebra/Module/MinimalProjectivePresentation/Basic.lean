@@ -370,14 +370,10 @@ end Radical
 section Finite
 
 /-- **Over a noetherian ring a minimal projective presentation of a finitely generated module is
-finitely generated.** This is the left-hand source `P₁`; the middle term `P₀` is
-`TauCeti.IsProjectiveCover.finite` applied to the projective cover `p₀`, and is what the proof
-starts from.
-
-Being finitely generated, `P₀` is noetherian, so the syzygy `ker p₀` it cuts out is finitely
-generated as well, and `p₁` covers that syzygy. Some noetherian hypothesis is needed: finite
-generation of `P₁` is finite generation of the syzygy, which a noetherian `P₀` supplies and a
-general `P₀` need not. -/
+finitely generated on the left.** Under `IsNoetherianRing R` and `Module.Finite R M`, the left-hand
+source `P₁` of a minimal projective presentation of `M` is finitely generated. The middle term `P₀`
+is finitely generated over any ring (`TauCeti.IsProjectiveCover.finite`); the noetherian hypothesis
+is what makes the syzygy `ker p₀`, which `P₁` covers, finitely generated in turn. -/
 theorem finite [IsNoetherianRing R] [Module.Finite R M]
     (h : IsMinimalProjectivePresentation p₁ p₀) : Module.Finite R P₁ :=
   have : Module.Finite R P₀ := h.isProjectiveCover.finite

@@ -141,13 +141,9 @@ theorem IsProjectiveCover.exists_surjective [Module.Projective R Q] {f : P →�
   obtain ⟨h, hh⟩ := Module.projective_lifting_property f g hf.surjective
   exact ⟨h, hh, hf.isSuperfluous_ker.surjective_of_surjective_comp (by rw [hh]; exact hg)⟩
 
-/-- **A projective cover of a finitely generated module is finitely generated.** A finite generating
-family of `M` presents it from the finite free module `Fin n → R`, and a projective cover receives
-that presentation by a surjection (`TauCeti.IsProjectiveCover.exists_surjective`), so the covering
-module is a quotient of a finite free module as well.
-
-The converse needs no minimality: a covering map is onto, so `Module.Finite.of_surjective` carries
-finite generation of the covering module back to `M`. -/
+/-- **A projective cover of a finitely generated module is finitely generated.** If `M` is finitely
+generated, then so is the source of any projective cover of `M`. This holds over an arbitrary ring:
+no hypothesis on `R`, and no finiteness hypothesis beyond `Module.Finite R M`, is needed. -/
 theorem IsProjectiveCover.finite [Module.Finite R M] {f : P →ₗ[R] M}
     (hf : IsProjectiveCover f) : Module.Finite R P := by
   obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin' R M
