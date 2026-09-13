@@ -152,11 +152,9 @@ instance : Category (FiniteDVRExtension R K) where
   comp_id := Hom.comp_id
   assoc := Hom.assoc
 
-/-- A finite separable field tower between two chosen DVR extensions, together with its compatible
+/-- A finite separable field tower between two chosen DVR extensions, represented by its compatible
 map of chosen places. -/
-structure Tower (E F : FiniteDVRExtension R K) where
-  /-- The compatible map between the chosen extensions. -/
-  hom : Hom E F
+abbrev Tower (E F : FiniteDVRExtension R K) := Hom E F
 
 namespace Tower
 
@@ -169,7 +167,7 @@ variable {H : FiniteDVRExtension R K}
 /-- The algebra structure induced by the compatible field embedding. -/
 @[instance_reducible]
 def fieldAlgebra (T : Tower E F) : Algebra E.extensionField F.extensionField :=
-  T.hom.field.toRingHom.toAlgebra
+  T.field.toRingHom.toAlgebra
 
 /-- The scalar tower induced by the compatible field embedding. -/
 instance fieldTower (T : Tower E F) :
@@ -179,8 +177,8 @@ instance fieldTower (T : Tower E F) :
   exact @IsScalarTower.of_algebraMap_eq K E.extensionField F.extensionField _ _ _
     inferInstance algebra inferInstance (by
       intro x
-      change algebraMap K F.extensionField x = T.hom.field (algebraMap K E.extensionField x)
-      exact (T.hom.field.commutes x).symm)
+      change algebraMap K F.extensionField x = T.field (algebraMap K E.extensionField x)
+      exact (T.field.commutes x).symm)
 
 /-- Finiteness of the upper field over the lower field follows from its finiteness over `K`. -/
 instance fieldFinite (T : Tower E F) :
@@ -208,66 +206,25 @@ instance fieldSeparable (T : Tower E F) :
   exact @Algebra.isSeparable_tower_top_of_isSeparable K E.extensionField _ F.extensionField
     _ _ inferInstance inferInstance algebra tower inferInstance
 
-/-- Two towers are equal when their compatible maps are equal. -/
-@[ext]
-lemma ext {T U : Tower E F} (h : T.hom = U.hom) : T = U := by
-  cases T
-  cases U
-  cases h
-  rfl
-
 /-- The identity tower on a chosen finite DVR extension. -/
 def id (E : FiniteDVRExtension R K) : Tower E E :=
-  ⟨Hom.id E⟩
+  Hom.id E
 
 /-- Compose finite separable towers, including their compatible maps of chosen places. -/
-def comp (T : Tower E F) (U : Tower F G) : Tower E G := by
-  letI : Algebra E.extensionField F.extensionField := T.fieldAlgebra
-  letI : Algebra F.extensionField G.extensionField := U.fieldAlgebra
-  letI : IsScalarTower K E.extensionField F.extensionField := T.fieldTower
-  letI : IsScalarTower K F.extensionField G.extensionField := U.fieldTower
-  letI : Algebra E.extensionField G.extensionField :=
-    (U.hom.field.toRingHom.comp T.hom.field.toRingHom).toAlgebra
-  letI : IsScalarTower E.extensionField F.extensionField G.extensionField :=
-    IsScalarTower.of_algebraMap_eq fun x => by
-      change U.hom.field (T.hom.field x) = U.hom.field (T.hom.field x)
-      rfl
-  letI : IsScalarTower K E.extensionField G.extensionField :=
-    IsScalarTower.of_algebraMap_eq fun x => by
-      change algebraMap K G.extensionField x =
-        U.hom.field (T.hom.field (algebraMap K E.extensionField x))
-      rw [← U.hom.field.commutes, ← T.hom.field.commutes]
-  letI : FiniteDimensional E.extensionField F.extensionField := T.fieldFinite
-  letI : FiniteDimensional F.extensionField G.extensionField := U.fieldFinite
-  letI : Algebra.IsSeparable E.extensionField F.extensionField := T.fieldSeparable
-  letI : Algebra.IsSeparable F.extensionField G.extensionField := U.fieldSeparable
-  letI : FiniteDimensional E.extensionField G.extensionField :=
-    FiniteDimensional.trans E.extensionField F.extensionField G.extensionField
-  letI : Algebra.IsSeparable E.extensionField G.extensionField :=
-    Algebra.IsSeparable.trans E.extensionField F.extensionField G.extensionField
-  exact ⟨Hom.comp T.hom U.hom⟩
+def comp (T : Tower E F) (U : Tower F G) : Tower E G :=
+  Hom.comp T U
 
 @[simp]
-lemma id_hom (E : FiniteDVRExtension R K) : (id E).hom = Hom.id E := by
-  simp [id]
+lemma id_comp (T : Tower E F) : comp (id E) T = T :=
+  Hom.id_comp T
 
 @[simp]
-lemma comp_hom (T : Tower E F) (U : Tower F G) :
-    (comp T U).hom = Hom.comp T.hom U.hom := by
-  simp [comp]
-
-lemma id_comp (T : Tower E F) : comp (id E) T = T := by
-  apply ext
-  simpa using Hom.id_comp T.hom
-
-lemma comp_id (T : Tower E F) : comp T (id F) = T := by
-  apply ext
-  simpa using Hom.comp_id T.hom
+lemma comp_id (T : Tower E F) : comp T (id F) = T :=
+  Hom.comp_id T
 
 lemma assoc (T : Tower E F) (U : Tower F G) (V : Tower G H) :
-    comp (comp T U) V = comp T (comp U V) := by
-  apply ext
-  simpa using Hom.assoc T.hom U.hom V.hom
+    comp (comp T U) V = comp T (comp U V) :=
+  Hom.assoc T U V
 
 end Tower
 
