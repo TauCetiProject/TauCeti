@@ -180,7 +180,6 @@ theorem mem_rootBlockIntermediateFieldOrderIso_apply_iff
 
 /-- The singleton block corresponds to the whole simple extension, confirming the orientation of
 `rootBlockIntermediateFieldOrderIso`. -/
-@[simp]
 theorem rootBlockIntermediateFieldOrderIso_apply_bot
     (hp : Irreducible p) (hsep : p.Separable)
     (x : p.rootSet p.SplittingField) :
@@ -192,7 +191,6 @@ theorem rootBlockIntermediateFieldOrderIso_apply_bot
 
 /-- The block of all roots corresponds to the base field, confirming the orientation of
 `rootBlockIntermediateFieldOrderIso`. -/
-@[simp]
 theorem rootBlockIntermediateFieldOrderIso_apply_top
     (hp : Irreducible p) (hsep : p.Separable)
     (x : p.rootSet p.SplittingField) :
