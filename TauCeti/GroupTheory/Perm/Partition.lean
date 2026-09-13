@@ -266,6 +266,22 @@ theorem _root_.Equiv.Perm.fullCycleType_def (σ : Equiv.Perm α) :
     fullCycleType σ = σ.partition.parts := by
   rfl
 
+/-! The filter and conjugacy forms of the partition API. -/
+
+/-- Filtering the full cycle type to parts of length at least two recovers the cycle type. -/
+@[simp]
+theorem _root_.Equiv.Perm.filter_fullCycleType_eq_cycleType {σ : Equiv.Perm α} :
+    (fullCycleType σ).filter (fun n => 2 ≤ n) = σ.cycleType := by
+  rw [fullCycleType_def]
+  exact Equiv.Perm.filter_parts_partition_eq_cycleType
+
+/-- Conjugate permutations have equal full cycle types. -/
+@[simp]
+theorem _root_.Equiv.Perm.fullCycleType_eq_of_isConj {σ τ : Equiv.Perm α}
+    (hστ : IsConj σ τ) : fullCycleType σ = fullCycleType τ := by
+  rw [fullCycleType_def, fullCycleType_def]
+  exact congrArg Nat.Partition.parts (Equiv.Perm.partition_eq_of_isConj.1 hστ)
+
 /-- The full cycle lengths of a permutation sum to the cardinality of its carrier. -/
 @[simp]
 theorem _root_.Equiv.Perm.sum_fullCycleType (σ : Equiv.Perm α) :
