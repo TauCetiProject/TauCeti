@@ -22,8 +22,6 @@ that the latter is exact.
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf`, the functor sending an `𝒪_X`-module to its
   underlying sheaf of abelian groups, with instances saying that it is additive and preserves
   finite limits and finite colimits;
-* `AlgebraicGeometry.Scheme.Modules.Hom.app_map`, the compatibility of the action of a morphism
-  of `𝒪_X`-modules on sections with the restriction maps;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso`, which lifts an isomorphism of
   underlying sheaves of modules to an isomorphism in `X.Modules`;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.shortExact_map_toSheaf`: a short exact sequence of
@@ -50,13 +48,6 @@ universe u
 noncomputable section
 
 namespace Scheme.Modules
-
-/-- The action of a morphism of `𝒪_X`-modules on sections commutes with restriction. -/
-@[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.Hom.app_map {X : Scheme.{u}} {M N : X.Modules}
-    (φ : M ⟶ N) {U V : X.Opens} (i : V ⟶ U) (s : Γ(M, U)) :
-    φ.app V (M.presheaf.map i.op s) = N.presheaf.map i.op (φ.app U s) :=
-  PresheafOfModules.naturality_apply φ.val i.op s
 
 variable (X : Scheme.{u})
 

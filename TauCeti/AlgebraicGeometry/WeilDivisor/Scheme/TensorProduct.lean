@@ -133,7 +133,12 @@ lemma sectionsMul_smul_right (r : Γ(X, U)) (s : Γ(sheaf D, U)) (t : Γ(sheaf E
 lemma sectionsMul_map {V : X.Opens} (i : V ⟶ U) (s : Γ(sheaf D, U)) (t : Γ(sheaf E, U)) :
     sectionsMul D E V ((sheaf D).presheaf.map i.op s) ((sheaf E).presheaf.map i.op t) =
       (sheaf (D + E)).presheaf.map i.op (sectionsMul D E U s t) :=
-  sheafι_app_injective _ V (by simp)
+  sheafι_app_injective _ V <| by
+    have h {F : SchemeWeilDivisor X} (s : Γ(sheaf F, U)) :=
+      NatTrans.naturality_apply (sheafι F).mapPresheaf i.op s
+    simp only [Scheme.Modules.mapPresheaf_app] at h
+    rw [h, sheafι_app_sectionsMul, sheafι_app_sectionsMul, h, h,
+      Scheme.rationalFunctionsMulBilin_map]
 
 variable (D E U)
 
@@ -379,8 +384,8 @@ theorem tensorProductSheafIso_hom :
 product of the classes of `𝒪_X(D)` and `𝒪_X(E)`. -/
 theorem toLineBundleClass_add :
     toLineBundleClass hX (D + E) = toLineBundleClass hX D * toLineBundleClass hX E := by
-  rw [toLineBundleClass_def, toLineBundleClass_def, toLineBundleClass_def,
-    ← LineBundleClass.mk_tensorProduct, LineBundleClass.mk_eq_mk_iff]
+  unfold toLineBundleClass
+  rw [← LineBundleClass.mk_tensorProduct, LineBundleClass.mk_eq_mk_iff]
   refine ⟨?_⟩
   simpa only [toInvertibleSheaf_obj, InvertibleSheaf.tensorProduct_obj] using
     (tensorProductSheafIso hX D E).symm
