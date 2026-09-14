@@ -65,10 +65,10 @@ theorem schwarzChristoffelEdgeAngle_mem_Ioo_of_adjacent (a e : ι → ℝ) {p q 
 /-- Three consecutive Schwarz--Christoffel boundary values around a prevertex of total exponent
 in `(-1, 0)` are affinely independent.
 
-The two adjacent intervals contain no prevertex with nonzero exponent.  Their boundary images are
-therefore nondegenerate straight segments, and the middle exponent turns their directions through
-a strictly positive angle less than `π`; consequently the two displacement vectors are linearly
-independent over `ℝ`. -/
+The hypotheses ask that the open intervals `(p, q)` and `(q, r)` contain no prevertex with
+nonzero exponent, that the endpoint exponent sums at `p` and `r` exceed `-1`, and that the middle
+exponent sum lies in `(-1, 0)`.  The conclusion says the three boundary values are not collinear,
+so `schwarzChristoffelBoundary a e z₀ q` is a genuine corner of the boundary chain. -/
 theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) {p q r : ℝ} (hpq : p < q) (hqr : q < r)
     (hpqFree : ∀ i, e i ≠ 0 → a i ∉ Ioo p q)
