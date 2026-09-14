@@ -200,9 +200,10 @@ theorem comp_assoc {D : Type uD} [AddCommGroup D] [Module R D]
   ext a
   simp only [comp_apply]
 
-/-! ### The induced reduced-bar map -/
+/-! ### The induced map on the reduced tensor coalgebra -/
 
-/-- The map on reduced bar constructions induced by applying a strict morphism to every letter. -/
+/-- Apply a strict morphism to every letter of the reduced tensor coalgebra.  With the shifted
+gradings and bar differentials, this is the induced map of reduced bar constructions. -/
 noncomputable def barMap (f : AInfinityStrictHom AA BB) :
     ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B :=
   ReducedTensorWords.map (R := R) f.toLinearMap
@@ -211,13 +212,141 @@ noncomputable def barMap (f : AInfinityStrictHom AA BB) :
 theorem barMap_def (f : AInfinityStrictHom AA BB) :
     f.barMap = ReducedTensorWords.map (R := R) f.toLinearMap := (rfl)
 
-/-- On a pure tensor word, the reduced-bar map applies the strict morphism to every letter. -/
+/-- On a pure tensor word, the induced map applies the strict morphism to every letter. -/
+@[simp]
 theorem barMap_of_tprod (f : AInfinityStrictHom AA BB) (n : {n : ℕ // 0 < n})
     (x : Fin n.1 → A) :
     f.barMap (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x)) =
       ReducedTensorWords.of R B n (PiTensorProduct.tprod R fun i ↦ f (x i)) := by
   rw [barMap_def, ReducedTensorWords.map_of_tprod]
   congr 2
+
+/-- The induced map of reduced bar constructions has degree zero for the shifted gradings. -/
+theorem isHomogeneous_barMap (f : AInfinityStrictHom AA BB) :
+    LinearMap.IsHomogeneous f.barMap
+      (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
+      (ReducedTensorWords.gradedPiece (BB.grading.shift 1)) 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro D z hz
+  refine ReducedTensorWords.gradedPiece_induction
+    (motive := fun w ↦ f.barMap w ∈
+      ReducedTensorWords.gradedPiece (BB.grading.shift 1) (D + 0)) hz ?_ ?_ ?_ ?_
+  · intro n hn degree x hx hD
+    rw [barMap_of_tprod]
+    simpa only [hD, add_zero] using
+      ReducedTensorWords.mem_gradedPiece_of_tprod (BB.grading.shift 1) hn
+        (fun i ↦ f (x i)) degree fun i ↦ by
+          have hxi : x i ∈ AA.grading.piece (degree i + 1) := by
+            simpa only [InternalGrading.shift_piece] using hx i
+          simpa only [InternalGrading.shift_piece] using f.map_mem hxi
+  · rw [map_zero]
+    exact Submodule.zero_mem _
+  · intro u v _ _ hu hv
+    rw [map_add]
+    exact Submodule.add_mem _ hu hv
+  · intro a u _ hu
+    rw [map_smul]
+    exact Submodule.smul_mem _ _ hu
+
+private theorem taylor_comp_barMap (f : AInfinityStrictHom AA BB) :
+    BB.taylor ∘ₗ f.barMap = f.toLinearMap ∘ₗ AA.taylor := by
+  apply ReducedTensorWords.linearMap_ext
+  intro n x
+  have hmaps :
+      (BB.taylor ∘ₗ f.barMap) ∘ₗ ReducedTensorWords.of R A n =
+        (f.toLinearMap ∘ₗ AA.taylor) ∘ₗ ReducedTensorWords.of R A n := by
+    apply AA.grading.piTensorProduct_ext
+    intro q
+    let d : ℕ → ℤ := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).1 else 0
+    let y : ℕ → A := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).2 else 0
+    have hy : ∀ i < n.1, y i ∈ AA.grading.piece (d i) := by
+      intro i hi
+      simp only [y, d, hi, dite_true]
+      exact (q ⟨i, hi⟩).2.property
+    have hfy : ∀ i < n.1, f (y i) ∈ BB.grading.piece (d i) :=
+      fun i hi ↦ f.map_mem (hy i hi)
+    have hBB := (AInfinity.isSuspension_def _ _ _).1 BB.taylor_isSuspension n.1 n.2 d
+      (fun i ↦ f (y i)) hfy
+    have hAA := (AInfinity.isSuspension_def _ _ _).1 AA.taylor_isSuspension n.1 n.2 d y hy
+    simp only [y, Fin.isLt, dite_true] at hBB hAA
+    simp only [LinearMap.comp_apply, barMap_of_tprod]
+    rw [hBB, hAA]
+    rw [AInfinity.evalNat_suspend, AInfinity.evalNat_suspend, map_smul]
+    simp only [MultilinearMap.evalNat_def]
+    congr 1
+    exact (f.map_m n.1 fun i ↦ y i).symm
+  exact LinearMap.congr_fun hmaps (PiTensorProduct.tprod R x)
+
+private theorem barMap_subword (f : AInfinityStrictHom AA BB) {n : ℕ} (x : Fin n → A)
+    (a b : ℕ) :
+    f.barMap (ReducedTensorWords.subword R x a b) =
+      ReducedTensorWords.subword R (fun i ↦ f (x i)) a b := by
+  rcases Nat.eq_zero_or_pos b with rfl | hb
+  · simp only [ReducedTensorWords.subword_length_zero, map_zero]
+  · by_cases hab : a + b ≤ n
+    · rw [ReducedTensorWords.subword_eq_of_tprod R x hb hab,
+        ReducedTensorWords.subword_eq_of_tprod R (fun i ↦ f (x i)) hb hab,
+        barMap_of_tprod]
+    · have hlt : n < a + b := by omega
+      rw [ReducedTensorWords.subword_eq_zero_of_lt_add R x hlt,
+        ReducedTensorWords.subword_eq_zero_of_lt_add R (fun i ↦ f (x i)) hlt, map_zero]
+
+private theorem barMap_splice (f : AInfinityStrictHom AA BB) {n : ℕ} (x : Fin n → A)
+    (a b p d : ℕ) (e : A) :
+    f.barMap (ReducedTensorWords.splice R x a b p d e) =
+      ReducedTensorWords.splice R (fun i ↦ f (x i)) a b p d (f e) := by
+  by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
+  · rw [ReducedTensorWords.splice_eq_of_tprod R x e h.1 h.2.1 h.2.2,
+      ReducedTensorWords.splice_eq_of_tprod R (fun i ↦ f (x i)) (f e) h.1 h.2.1 h.2.2,
+      barMap_of_tprod]
+    congr 2
+    funext i
+    split_ifs <;> rfl
+  · rw [ReducedTensorWords.splice_eq_zero R x e h,
+      ReducedTensorWords.splice_eq_zero R (fun i ↦ f (x i)) (f e) h, map_zero]
+
+private theorem twistedTuple_map (f : AInfinityStrictHom AA BB) (q : ℤ) {n : ℕ}
+    (x : Fin n → A) (a b : ℕ) :
+    InternalGrading.twistedTuple (BB.grading.shift 1) q (fun i ↦ f (x i)) a b =
+      fun i ↦ f (InternalGrading.twistedTuple (AA.grading.shift 1) q x a b i) := by
+  have hf : LinearMap.IsHomogeneous f.toLinearMap (AA.grading.shift 1).piece
+      (BB.grading.shift 1).piece 0 := by
+    rw [LinearMap.isHomogeneous_def]
+    intro degree y hy
+    have hy' : y ∈ AA.grading.piece (degree + 1) := by
+      simpa only [InternalGrading.shift_piece] using hy
+    simpa only [InternalGrading.shift_piece, add_zero] using f.map_mem' hy'
+  have hcomm := hf.koszulTwist_comp q
+  funext i
+  simp only [InternalGrading.twistedTuple_apply]
+  split_ifs with h
+  · have hi := LinearMap.congr_fun hcomm (x i)
+    simpa [LinearMap.comp_apply] using hi
+  · rfl
+
+/-- The induced map of reduced bar constructions intertwines their bar differentials. -/
+theorem barDifferential_comp_barMap (f : AInfinityStrictHom AA BB) :
+    BB.barDifferential ∘ₗ f.barMap = f.barMap ∘ₗ AA.barDifferential := by
+  rw [AA.barDifferential_def, BB.barDifferential_def]
+  apply ReducedTensorWords.linearMap_ext
+  intro n x
+  simp only [LinearMap.comp_apply, barMap_of_tprod]
+  rw [ReducedTensorWords.gradedCoderiv_of_tprod,
+    ReducedTensorWords.gradedCoderiv_of_tprod, map_sum]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  rw [map_sum]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [barMap_splice]
+  have htwist := twistedTuple_map f 1 x 0 p
+  rw [← htwist]
+  have htaylor := LinearMap.congr_fun f.taylor_comp_barMap
+    (ReducedTensorWords.subword R x p d)
+  simp only [LinearMap.comp_apply] at htaylor
+  rw [barMap_subword] at htaylor
+  simpa only [← coe_toLinearMap] using congrArg
+    (ReducedTensorWords.splice R
+      (InternalGrading.twistedTuple (BB.grading.shift 1) 1 (fun i ↦ f (x i)) 0 p)
+      0 n.1 p d) htaylor
 
 /-- The reduced-bar map preserves deconcatenation. -/
 theorem deconcatenation_comp_barMap (f : AInfinityStrictHom AA BB) :
@@ -226,11 +355,13 @@ theorem deconcatenation_comp_barMap (f : AInfinityStrictHom AA BB) :
   simpa only [barMap_def] using
     ReducedTensorWords.deconcatenation_natural (R := R) f.toLinearMap
 
+/-- The induced tensor-word map preserves identities. -/
 @[simp]
 theorem barMap_id (AA : AInfinityAlgebra R A) :
     (AInfinityStrictHom.id AA).barMap = LinearMap.id := by
   rw [barMap_def, id_toLinearMap, ReducedTensorWords.map_id]
 
+/-- The induced tensor-word map preserves composition. -/
 @[simp]
 theorem barMap_comp (g : AInfinityStrictHom BB CC) (f : AInfinityStrictHom AA BB) :
     (g.comp f).barMap = g.barMap ∘ₗ f.barMap := by
