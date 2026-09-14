@@ -5,20 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.InitialCondition
+import TauCeti.Analysis.ODE.InitialCondition
 public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
 
 /-!
 # Smooth dependence of the maximal integral curve near time zero
 
-Let `v` be a vector field on a boundaryless `C^1` manifold `M` modelled on a complete space. This
-file shows that the domain of the maximal flow `(x, t) ↦ maximalIntegralCurve v x t` contains a
-neighbourhood of `(x₀, 0)` as soon as `v` is `C^1` at `x₀`; this is read off from the uniform time
-of existence `exists_mem_nhds_forall_exists_isMIntegralCurveOn_Ioo`. If moreover `M` is separated
-and modelled on a finite-dimensional space, and `v` is `C^1` everywhere and `C^(n+1)` at `x₀`,
-then the maximal flow is jointly `C^(n+1)` in the initial point and the time at `(x₀, 0)`. These
-are the local inputs to the smooth flow of a vector field, and in particular to the geodesic flow,
-which is the flow of the geodesic spray on the tangent bundle.
+Let `v` be a vector field on a separated boundaryless `C^1` manifold `M` modelled on a
+finite-dimensional space. This file shows that if `v` is `C^1` everywhere and `C^(n+1)` at `x₀`,
+then the maximal flow `(x, t) ↦ maximalIntegralCurve v x t` is jointly `C^(n+1)` in the initial
+point and the time at `(x₀, 0)`. Together with
+`TauCeti.eventually_mem_maximalIntegralCurveInterval`, which puts a neighbourhood of `(x₀, 0)` in
+the domain of the maximal flow, this is the local input to the smooth flow of a vector field, and
+in particular to the geodesic flow, which is the flow of the geodesic spray on the tangent bundle.
 
 For the smoothness statement, the model-space input is `ODE.exists_contDiffAt_localFlow`, applied
 to the vector field read in the extended chart at `x₀`. That theorem produces a local flow `Φ` in
@@ -32,8 +31,6 @@ assemble into the smooth case.
 
 ## Main results
 
-* `eventually_mem_maximalIntegralCurveInterval`: every point near `(x₀, 0)` lies in the domain of
-  the maximal flow.
 * `contMDiffAt_maximalIntegralCurve`: the maximal flow is `C^(n+1)` in the initial point and the
   time at `(x₀, 0)`.
 
@@ -56,21 +53,7 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] [BoundarylessManifold I M]
-  {v : (x : M) → TangentSpace I x} {x₀ : M}
-
-/-- **The domain of the maximal flow contains a neighbourhood of `(x₀, 0)`.** For a vector field
-which is `C^1` at `x₀`, every initial point near `x₀` has a maximal integral curve defined at every
-time near `0`. -/
-theorem eventually_mem_maximalIntegralCurveInterval [CompleteSpace E]
-    (hv : CMDiffAt 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)) x₀) :
-    ∀ᶠ p in 𝓝 ((x₀, 0) : M × ℝ), p.2 ∈ maximalIntegralCurveInterval v p.1 := by
-  obtain ⟨w, hw, ε, hε, hγ⟩ := exists_mem_nhds_forall_exists_isMIntegralCurveOn_Ioo hv
-  have h0 : (0 : ℝ) ∈ Ioo (0 - ε) (0 + ε) := by simpa using hε
-  filter_upwards [prod_mem_nhds hw (Ioo_mem_nhds h0.1 h0.2)] with p hp
-  obtain ⟨γ, hγ0, hγ⟩ := hγ 0 p.1 hp.1
-  exact hγ.subset_maximalIntegralCurveInterval h0 hγ0 hp.2
-
-variable [FiniteDimensional ℝ E] [T2Space M]
+  [FiniteDimensional ℝ E] [T2Space M] {v : (x : M) → TangentSpace I x} {x₀ : M}
 
 /-- **The maximal flow in a chart.** If the vector field `v`, read in the extended chart at `x₀`,
 is `C^(n+1)` near the image of `x₀`, then there is a coordinate map `Φ` with `Φ z 0 = z`, jointly
