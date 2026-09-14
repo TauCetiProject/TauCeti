@@ -16,7 +16,8 @@ entries identifies the positive-diagonal lower-triangular matrices with the func
 lower-triangular positions whose diagonal values are positive. This file packages that
 identification as a homeomorphism for the subtype topologies on both sides, and as a measurable
 equivalence for the corresponding Borel structures. These are the product coordinates in which
-the Jacobian of Cholesky reconstruction is computed.
+the Jacobian of Cholesky reconstruction is computed. The file also reads the determinant of a
+lower-triangular matrix and the trace of its Gram matrix `L * Lᵀ` off these coordinates.
 
 ## Main declarations
 
@@ -30,6 +31,8 @@ the Jacobian of Cholesky reconstruction is computed.
 public section
 
 noncomputable section
+
+open scoped Matrix
 
 namespace TauCeti
 
@@ -75,6 +78,38 @@ theorem lowerTriangleMatrix_entries {A : Matrix (Fin p) (Fin p) ℝ} (hA : A.IsL
   · exact lowerTriangleMatrix_apply_of_le _ h
   · rw [lowerTriangleMatrix_apply_of_lt _ (not_le.1 h)]
     exact (hA (by simpa using not_le.1 h)).symm
+
+/-- A lower-triangular matrix has determinant the product of its diagonal entries, which in
+coordinates are the values at the diagonal positions. -/
+@[simp]
+theorem det_lowerTriangleMatrix (x : lowerTriangle p → ℝ) :
+    (lowerTriangleMatrix p x).det = ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ := by
+  rw [Matrix.det_of_isLowerTriangular _ (isLowerTriangular_lowerTriangleMatrix x)]
+  exact Finset.prod_congr rfl fun i _ ↦ lowerTriangleMatrix_apply_of_le x le_rfl
+
+/-- The trace of the Gram matrix `L * Lᵀ` of a lower-triangular `L` is the sum of the squares of
+the on-or-below-diagonal coordinates of `L`: the entries above the diagonal contribute nothing. -/
+theorem trace_lowerTriangleMatrix_mul_transpose (x : lowerTriangle p → ℝ) :
+    (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace =
+      ∑ ij : lowerTriangle p, x ij ^ 2 := by
+  classical
+  have hzero : ∀ q : Fin p × Fin p, lowerTriangleMatrix p x q.1 q.2 ^ 2 =
+      if h : q.2 ≤ q.1 then x ⟨q, h⟩ ^ 2 else 0 := by
+    rintro ⟨i, j⟩
+    by_cases h : j ≤ i
+    · simp [h]
+    · simp [lowerTriangleMatrix_apply_of_lt x (not_le.1 h), h]
+  calc (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace
+      = ∑ q : Fin p × Fin p, lowerTriangleMatrix p x q.1 q.2 ^ 2 := by
+        simp [Matrix.trace, Matrix.diag, Matrix.mul_apply, Fintype.sum_prod_type, sq]
+    _ = ∑ q : Fin p × Fin p, if h : q.2 ≤ q.1 then x ⟨q, h⟩ ^ 2 else 0 :=
+        Finset.sum_congr rfl fun q _ ↦ hzero q
+    _ = ∑ q ∈ {q : Fin p × Fin p | q.2 ≤ q.1}, if h : q.2 ≤ q.1 then x ⟨q, h⟩ ^ 2 else 0 :=
+        (Finset.sum_subset (Finset.filter_subset _ _) fun q _ hq ↦ by simp_all).symm
+    _ = ∑ ij : lowerTriangle p, x ij ^ 2 := by
+        rw [Finset.sum_subtype (p := fun q : Fin p × Fin p ↦ q.2 ≤ q.1) _ (fun q ↦ by simp)
+          fun q ↦ if h : q.2 ≤ q.1 then x ⟨q, h⟩ ^ 2 else 0]
+        exact Finset.sum_congr rfl fun ij _ ↦ dite_eq_left ij.2
 
 theorem continuous_lowerTriangleMatrix :
     Continuous fun x : lowerTriangle p → ℝ ↦ lowerTriangleMatrix p x :=
