@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.CofilteredSystem
 public import TauCeti.Topology.Algebra.Group.Profinite.Limit
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Basic
 
 /-!
@@ -58,30 +59,10 @@ theorem isProPSylow_limitSubgroup (S : ∀ U : OpenNormalSubgroup G, Sylow p (G 
   generalize limitSubgroup (fun U ↦ (S U : Subgroup (G ⧸ U.toSubgroup))) = P at hPmap hPclosed ⊢
   -- Every finite quotient of `P` factors through one of its Sylow finite images.
   have hPpro : IsProP p P := by
-    rw [isProP_iff]
-    intro V
-    obtain ⟨U, hUV⟩ := Subgroup.exists_openNormalSubgroup_comap_le P V
-    let f : P →* G ⧸ U.toSubgroup :=
-      (QuotientGroup.mk' U.toSubgroup).domRestrict P
-    have hfP : IsPGroup p f.range := by
-      dsimp [f]
-      rw [MonoidHom.domRestrict_range, hPmap U]
-      exact (S U).isPGroup'
-    let q : P →* P ⧸ V.toSubgroup := QuotientGroup.mk' V.toSubgroup
-    have hker : f.ker ≤ q.ker := by
-      intro x hx
-      rw [MonoidHom.mem_ker] at hx ⊢
-      apply (QuotientGroup.eq_one_iff x).mpr
-      apply hUV
-      exact (QuotientGroup.eq_one_iff (x : G)).mp hx
-    have hker' : f.rangeRestrict.ker ≤ q.ker := by
-      rwa [MonoidHom.ker_rangeRestrict]
-    let q' : f.range →* P ⧸ V.toSubgroup :=
-      f.rangeRestrict.liftOfSurjective f.rangeRestrict_surjective ⟨q, hker'⟩
-    apply hfP.of_surjective q'
-    intro z
-    obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective V.toSubgroup z
-    exact ⟨f.rangeRestrict x, by simp [q', q]⟩
+    rw [P.isProP_iff_isPGroup_map_quotient]
+    intro U
+    rw [hPmap U]
+    exact (S U).isPGroup'
   refine isProPSylow_iff.mpr ⟨hPclosed, hPpro, fun U ↦ ?_⟩
   rw [hPmap U]
   exact (S U).not_dvd_index
