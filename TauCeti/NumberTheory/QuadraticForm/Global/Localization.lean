@@ -238,40 +238,6 @@ theorem atComplexEmbeddingWeightedSumSquares_apply (w : InfinitePlace K) (a : ι
       rfl
     _ = _ := baseChangeWeightedSumSquares_apply (A := ℂ) a x
 
-/-- On a pure tensor, the finite-place diagonal isometry maps each coordinate through the
-completion map and scales it by the tensor coefficient. -/
-theorem atFinitePlaceWeightedSumSquares_tmul [NumberField K]
-    (v : HeightOneSpectrum (𝓞 K)) (a : ι → K) (b : v.adicCompletion K) (x : ι → K) :
-    atFinitePlaceWeightedSumSquares v a (b ⊗ₜ x) =
-      fun i => b * algebraMap K (v.adicCompletion K) (x i) := by
-  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  rw [atFinitePlaceWeightedSumSquares_apply, TensorProduct.piScalarRightHom_tmul]
-  simp [Algebra.smul_def, mul_comm]
-
-/-- On a pure tensor, the real-place diagonal isometry evaluates every coordinate at the
-place's real embedding and scales it by the tensor coefficient. -/
-theorem atRealPlaceWeightedSumSquares_tmul (w : {w : InfinitePlace K // w.IsReal})
-    (a : ι → K) (b : ℝ) (x : ι → K) :
-    let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-    atRealPlaceWeightedSumSquares w a (b ⊗ₜ x) =
-      fun i => b * embedding_of_isReal w.2 (x i) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  rw [atRealPlaceWeightedSumSquares_apply, TensorProduct.piScalarRightHom_tmul]
-  simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra, mul_comm]
-
-/-- On a pure tensor, the complex-embedding diagonal isometry evaluates every coordinate at the
-chosen embedding and scales it by the tensor coefficient. -/
-theorem atComplexEmbeddingWeightedSumSquares_tmul (w : InfinitePlace K)
-    (a : ι → K) (b : ℂ) (x : ι → K) :
-    let _ : Algebra K ℂ := w.embedding.toAlgebra
-    atComplexEmbeddingWeightedSumSquares w a (b ⊗ₜ x) =
-      fun i => b * w.embedding (x i) := by
-  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  rw [atComplexEmbeddingWeightedSumSquares_apply, TensorProduct.piScalarRightHom_tmul]
-  simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra, mul_comm]
-
 end Diagonal
 
 section Evaluation

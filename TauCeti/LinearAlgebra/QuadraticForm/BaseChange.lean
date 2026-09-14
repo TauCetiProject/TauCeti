@@ -241,15 +241,6 @@ theorem baseChangeWeightedSumSquares_apply (w : ι → R) (x : A ⊗[R] (ι → 
   classical
   rfl
 
-/-- On a pure tensor, the diagonal base-change equivalence maps each coordinate and scales it by
-the tensor coefficient. -/
-theorem baseChangeWeightedSumSquares_tmul (w : ι → R) (a : A) (x : ι → R) :
-    baseChangeWeightedSumSquares (A := A) w (a ⊗ₜ x) =
-      fun i => a * algebraMap R A (x i) := by
-  classical
-  rw [baseChangeWeightedSumSquares_apply, TensorProduct.piScalarRightHom_tmul]
-  simp [Algebra.smul_def, mul_comm]
-
 end Diagonal
 
 /-- The canonical equivalence distributing tensor product over a product identifies the base
