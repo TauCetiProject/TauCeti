@@ -31,7 +31,7 @@ At the finite places nothing new happens: the real candidate sits between the qu
 the prime-discriminant compositum, and the compositum is already unramified over the base, so the
 intermediate field is too. The only subtlety is that the base appears twice, once as an
 intermediate field of the real candidate and once as `candidateGenusFieldBase hd` inside the
-compositum; `NumberField.isUnramifiedIn_of_isUnramifiedIn_lift` bridges the two models.
+compositum; `IntermediateField.isUnramifiedIn_of_isUnramifiedIn_lift` bridges the two models.
 
 The construction is classical; see F. Lemmermeyer, *Reciprocity Laws: From Euler to Eisenstein*,
 Section 2.2, and D. A. Cox, *Primes of the Form x² + ny²*, Section 6.A.
@@ -193,7 +193,7 @@ theorem isUnramifiedIn_candidateGenusFieldReal (hd : Squarefree d)
     (q : Ideal (𝓞 (adjoin ℚ {candidateGenusFieldRealBaseRoot hd hpos} :
       IntermediateField ℚ (candidateGenusFieldReal hd)))) [q.IsPrime] :
     Algebra.IsUnramifiedIn (𝓞 (candidateGenusFieldReal hd)) q := by
-  refine NumberField.isUnramifiedIn_of_isUnramifiedIn_lift _ ?_ q
+  refine IntermediateField.isUnramifiedIn_of_isUnramifiedIn_lift _ ?_ q
   rw [lift_adjoin_candidateGenusFieldRealBaseRoot hd hpos]
   exact fun p _ ↦ isUnramifiedIn_candidateGenusField hd hnsq p
 

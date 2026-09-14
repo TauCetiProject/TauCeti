@@ -13,8 +13,9 @@ public import TauCeti.NumberTheory.Multiquadratic.Unramified.Maximality
 /-!
 # The genus field of a quadratic field
 
-This file gives an intrinsic characterization of the genus field and proves that a
-prime-discriminant compositum has that characterization in both signatures.
+This file gives an intrinsic characterization of the genus field and proves that it is attained
+in both signatures: by the prime-discriminant compositum `candidateGenusField hd` when `d < 0`, and
+by its maximal totally real subfield `candidateGenusFieldReal hd` when `0 < d`.
 
 For a chosen square root `y² = d` in an abelian extension `L / ℚ`, the predicate
 `TauCeti.Multiquadratic.IsGenusField d L y` says that:
