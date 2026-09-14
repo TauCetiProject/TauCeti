@@ -43,18 +43,6 @@ the character of `W` on `N` is `e` times that of `V`, and `dim W = e * dim V`.  
 * `TauCeti.clifford_restrict_isotypic_of_index_two_of_odd_finrank`: the case of a subgroup of
   **index two** and an irreducible of odd dimension.
 
-## Implementation notes
-
-`TauCeti.clifford_restrict_character` produces its transversal as a `Finset G` characterised by
-the unique-representative property `∀ g, ∃! r, r ∈ reps ∧ g⁻¹ * r ∈ inertia V`, not as a bundled
-`Subgroup.IsComplement`.  The private lemma below converts that property into Mathlib's
-`Subgroup.IsComplement` and reads the cardinality off `Subgroup.IsComplement.ncard_left`, which is
-the only place the transversal is used.
-
-The dimension identity is stated in `k` rather than in `ℕ` wherever it can be, since that is what
-the character computation gives and it needs no characteristic hypothesis; `[CharZero k]` enters
-only to cancel the cast, and is asked for in the statements whose conclusion is a natural number.
-
 ## References
 
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 6.
