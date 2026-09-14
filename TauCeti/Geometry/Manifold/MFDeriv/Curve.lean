@@ -287,11 +287,11 @@ theorem tangentMapWithin_unit_eq_curveVelocityLiftWithin {u : Set 𝕜} (t : �
     apply (NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).injective
     rw [ContinuousLinearEquiv.apply_symm_apply]
     rfl
-  change TotalSpace.mk' E (γ t)
-      (mfderivWithin 𝓘(𝕜, 𝕜) I γ u t
-        ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm 1)) =
-    TotalSpace.mk' E (γ t) (curveVelocityWithin I γ u t)
-  rw [hunit, curveVelocityWithin_apply]
+  apply TotalSpace.ext
+  · exact tangentMapWithin_proj
+  · rw [tangentMapWithin_snd, curveVelocityLiftWithin_snd, hunit,
+      curveVelocityWithin_apply]
+    rfl
 
 /-- The within-domain velocity lift of a `C¹` curve is continuous on a domain with unique
 manifold derivatives. -/

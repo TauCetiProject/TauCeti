@@ -99,9 +99,10 @@ theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ :
     exact (norm_eq_sqrt_real_inner (curveVelocity I γ t)).symm
   let V : Set ℝ := {t | t ∈ J ∧ 0 < v t}
   have hV_open : IsOpen V := by
-    rw [show V = J ∩ v ⁻¹' Ioi 0 by
+    have hV_eq : V = J ∩ v ⁻¹' Ioi 0 := by
       ext t
-      simp only [V, mem_ofPred_eq, mem_inter_iff, mem_preimage, mem_Ioi]]
+      simp only [V, mem_ofPred_eq, mem_inter_iff, mem_preimage, mem_Ioi]
+    rw [hV_eq]
     exact hv.isOpen_inter_preimage hJ isOpen_Ioi
   have haV : a ∈ V := ⟨hsub (left_mem_Icc.mpr hab),
     norm_pos_iff.mpr (hreg a (left_mem_Icc.mpr hab))⟩
@@ -169,7 +170,8 @@ theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ :
       (hvU.stronglyMeasurableAtFilter hU_open t ht)
       ((hvU t ht).continuousAt (hU_open.mem_nhds ht))
   have hφ_strict : StrictMonoOn φ U := by
-    apply strictMonoOn_of_deriv_pos (show Convex ℝ U from convex_Ioo _ _)
+    have hU_convex : Convex ℝ U := convex_Ioo _ _
+    apply strictMonoOn_of_deriv_pos hU_convex
     · exact fun t ht ↦ (hφ_deriv t ht).continuousAt.continuousWithinAt
     · intro t ht
       rw [hU_open.interior_eq] at ht
@@ -300,7 +302,7 @@ theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ :
   · simpa only [φ, v] using hψ_strict
   · exact hψ_contDiff.mono hIccW
   · simpa only [φ, v] using hη
-  · rw [show (0 : ℝ) = φ a from hφa.symm, Function.comp_apply, hleft a haU]
+  · rw [← hφa, Function.comp_apply, hleft a haU]
   · simpa only [φ, v, Function.comp_apply] using congrArg γ (hleft b hbU)
   · simpa only [φ, v] using hunit
   · simpa only [φ, v] using hlength
