@@ -23,6 +23,8 @@ the exact character-table certificate in
 ## Main declarations
 
 * `TauCeti.symmetricGroupFourClassData`: computable class data for `S₄`.
+* `TauCeti.reps_symmetricGroupFourClassData`, `TauCeti.rep_symmetricGroupFourClassData`: the
+  chosen representatives in cycle-type order.
 * `TauCeti.card_classFinset_symmetricGroupFourClassData`: the five class sizes.
 * `TauCeti.structureConstantTable_symmetricGroupFourClassData`: the complete class-algebra
   multiplication table.
@@ -46,10 +48,27 @@ open Equiv Equiv.Perm
   pairwise_not_isConj := by decide
   exists_isConj := by decide
 
+/-- The chosen representatives of the classes of `S₄`, in the cycle-type ordering
+`1⁴`, `2·1²`, `2²`, `3·1`, `4`. -/
+@[simp]
+theorem reps_symmetricGroupFourClassData :
+    symmetricGroupFourClassData.reps =
+      [1, swap 0 1, swap 0 1 * swap 2 3, [0, 1, 2].formPerm, [0, 1, 2, 3].formPerm] :=
+  rfl
+
 /-- The symmetric group on four letters has five conjugacy classes. -/
 @[simp]
 theorem numClasses_symmetricGroupFourClassData : symmetricGroupFourClassData.numClasses = 5 := by
   decide
+
+/-- The representative numbered `i` is the `i`-th entry of the cycle-type ordering
+`1⁴`, `2·1²`, `2²`, `3·1`, `4`. -/
+@[simp]
+theorem rep_symmetricGroupFourClassData (i : Fin symmetricGroupFourClassData.numClasses) :
+    symmetricGroupFourClassData.rep i =
+      ![1, swap 0 1, swap 0 1 * swap 2 3, [0, 1, 2].formPerm, [0, 1, 2, 3].formPerm]
+        (i.cast numClasses_symmetricGroupFourClassData) := by
+  fin_cases i <;> rfl
 
 /-- **The conjugacy classes of `S₄` have sizes `1, 6, 3, 8, 6`** in the cycle-type ordering
 `1⁴`, `2·1²`, `2²`, `3·1`, `4`. -/
