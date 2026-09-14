@@ -90,8 +90,8 @@ private theorem orbit_subset_rootSet_minpoly (x : E) :
   rintro _ ⟨g, rfl⟩
   have hx : IsIntegral F x := (Algebra.IsAlgebraic.isAlgebraic (R := F) x).isIntegral
   refine mem_rootSet.mpr ⟨minpoly.ne_zero hx, ?_⟩
-  change aeval ((g : E ≃ₐ[F] E) x) (minpoly F x) = 0
-  rw [aeval_algHom_apply, minpoly.aeval, map_zero]
+  beta_reduce
+  rw [Subgroup.smul_def, AlgEquiv.smul_def, aeval_algHom_apply, minpoly.aeval, map_zero]
 
 /-- The Frobenius orbit of an element algebraic over a finite field is finite. -/
 theorem finite_orbit (x : E) :
@@ -234,8 +234,8 @@ theorem mem_orbit_iff_exists_pow_card_pow {x y : E} :
       rw [zpow_add, mul_smul, zpow_mul, hfix]
     have hnat : ((k % (m : ℤ)).toNat : ℤ) = k % (m : ℤ) :=
       Int.toNat_of_nonneg (Int.emod_nonneg k hmpos.ne')
-    change x ^ (Fintype.card F ^ (k % (m : ℤ)).toNat) = (g : E ≃ₐ[F] E) • x
-    rw [← hk, hred, ← hnat, zpow_natCast]
+    beta_reduce
+    rw [Subgroup.smul_def, ← hk, hred, ← hnat, zpow_natCast]
     simp only [hφ, AlgEquiv.smul_def, AlgEquiv.coe_pow,
       _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate, Int.toNat_natCast]
   · rintro ⟨n, rfl⟩
