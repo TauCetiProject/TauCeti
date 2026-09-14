@@ -33,6 +33,7 @@ not defined using them.
 ## Main declarations
 
 * `TauCeti.Toric.AffineSemigroupComplexPoint`: the complex points of an affine semigroup.
+* `TauCeti.Toric.affinePoint_ext`: a complex point is determined by its values on monomials.
 * `TauCeti.Toric.AddGeneratingFamily`: a finite family generating an additive monoid, which
   exists exactly for a finitely generated additive monoid.
 * `TauCeti.Toric.monomialEmbedding`: evaluation of a complex point on such a family.
@@ -62,6 +63,13 @@ variable {S : Type*} [AddCommMonoid S] {r r' : ℕ}
 carrier; no topology is part of the data. -/
 abbrev AffineSemigroupComplexPoint (S : Type*) [AddCommMonoid S] :=
   MonoidAlgebra ℂ (Multiplicative S) →ₐ[ℂ] ℂ
+
+/-- Two complex points of `S` that agree on every monomial are equal: the monomials span the
+monoid algebra, and a `ℂ`-algebra map out of `ℂ` is unique. -/
+theorem affinePoint_ext {x y : AffineSemigroupComplexPoint S}
+    (h : ∀ s : S, x (MonoidAlgebra.single (ofAdd s) 1) = y (MonoidAlgebra.single (ofAdd s) 1)) :
+    x = y :=
+  MonoidAlgebra.algHom_ext (fun m ↦ h (toAdd m)) (Subsingleton.elim _ _)
 
 /-- A finite family generating a commutative additive monoid. The affine complex points of `S`
 are topologized through evaluation on such a family, so the chosen indexed family, and not just
@@ -115,14 +123,12 @@ theorem apply_single_eq_prod_monomialEmbedding (g : AddGeneratingFamily S r) {s 
 theorem monomialEmbedding_injective (g : AddGeneratingFamily S r) :
     Function.Injective (monomialEmbedding g) := by
   intro x y hxy
-  refine (MonoidAlgebra.lift ℂ ℂ (Multiplicative S)).symm.injective (MonoidHom.ext fun m ↦ ?_)
-  obtain ⟨a, ha⟩ := AddSubmonoid.exists_of_mem_closure_range g.toFun (toAdd m) (by
+  refine affinePoint_ext fun s ↦ ?_
+  obtain ⟨a, ha⟩ := AddSubmonoid.exists_of_mem_closure_range g.toFun s (by
     rw [g.spans]
     trivial)
-  have hm : m = ofAdd (∑ j, a j • g.toFun j) := congrArg ofAdd ha
-  rw [MonoidAlgebra.lift_symm_apply, MonoidAlgebra.lift_symm_apply, hm,
-    apply_single_eq_prod_monomialEmbedding g rfl, apply_single_eq_prod_monomialEmbedding g rfl,
-    hxy]
+  rw [apply_single_eq_prod_monomialEmbedding g ha x,
+    apply_single_eq_prod_monomialEmbedding g ha y, hxy]
 
 /-- The range of a monomial embedding is the locus of the binomial relations of the generating
 family: a point of `ℂ^r` extends to an affine complex point exactly when every additive relation
