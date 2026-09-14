@@ -76,6 +76,8 @@ well-definedness argument; the price is that hitting a conjugate has to move a w
 ## References
 
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 7.
+* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
+  Layer 8 (`IsTISet`, `IsFrobeniusComplement`).
 -/
 
 public section

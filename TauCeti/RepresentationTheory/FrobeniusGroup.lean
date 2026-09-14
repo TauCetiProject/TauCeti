@@ -93,6 +93,10 @@ class function of the identity class, which is `1` at the identity and `0` elsew
 
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 7, Theorem 7.2.
 * J.-P. Serre, *Linear Representations of Finite Groups*, Section 7.2.
+* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
+  Layer 8 (`frobeniusKernelSubgroup`, `coe_frobeniusKernelSubgroup`,
+  `frobeniusKernelSubgroup_normal`, `frobeniusKernel_isComplement'`, and the consequence
+  `|H| ∣ |N| - 1`).
 -/
 
 public section
@@ -272,11 +276,10 @@ theorem frobeniusKernelSubgroup_ne_bot (hH : IsTISubgroup H) (hne : H ≠ ⊤) :
 
 /-! ### The order of the complement against the order of the kernel -/
 
+-- Not `@[simp]`: `TauCeti.mem_frobeniusKernelSubgroup` already rewrites the left-hand side, so the
+-- `simpNF` linter rejects the tag.
 /-- **The Frobenius kernel has `|G : H|` elements**, the counting half of
-`TauCeti.frobeniusKernel_isComplement'` read on the bundled subgroup.
-
-Not `@[simp]`: `TauCeti.mem_frobeniusKernelSubgroup` already rewrites the left-hand side, so the
-`simpNF` linter rejects the tag. -/
+`TauCeti.frobeniusKernel_isComplement'` read on the bundled subgroup. -/
 theorem card_frobeniusKernelSubgroup (hH : IsTISubgroup H) :
     Nat.card (frobeniusKernelSubgroup hH) = H.index :=
   (frobeniusKernel_isComplement' hH).index_eq_card.symm

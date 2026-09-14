@@ -107,6 +107,9 @@ everything and `⊥` has index `|G|`.
 ## References
 
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 7, Section 7B.
+* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
+  Layer 8 (`frobeniusKernel`, "a set of size `|G : H|`", `frobeniusKernel_isComplement'`, and
+  the consequence `|H| ∣ |N| - 1`).
 -/
 
 public section
@@ -365,6 +368,15 @@ theorem IsTISubgroup.stabilizer_eq_bot (hH : IsTISubgroup H)
   · simpa using hh1
   · simpa using y.2.2
 
+/-- **The conjugation action of a trivial-intersection subgroup on the nonidentity part of its
+Frobenius kernel is cancellative**, the typeclass form of
+`TauCeti.IsTISubgroup.stabilizer_eq_bot`, for the generic results that take freeness as an
+instance.  It cannot itself be an instance, since freeness holds only under the hypothesis
+`hH`. -/
+theorem IsTISubgroup.isCancelSMul (hH : IsTISubgroup H) :
+    IsCancelSMul H ↥(frobeniusKernel H \ {1}) :=
+  isCancelSMul_iff_stabilizer_eq_bot.2 hH.stabilizer_eq_bot
+
 /-- **An element commuting with a nonidentity element of the Frobenius kernel lies in the
 kernel**, the mirror on the kernel side of `TauCeti.IsTISubgroup.mem_of_conj_eq_self`.  Its
 inclusion form is `TauCeti.IsTISubgroup.centralizer_singleton_subset_frobeniusKernel`. -/
@@ -423,13 +435,10 @@ says that the complement and the kernel have coprime orders
 (`TauCeti.coprime_card_card_frobeniusKernelSubgroup`). -/
 theorem IsTISubgroup.coprime_card_index [Finite G] (hH : IsTISubgroup H) :
     Nat.Coprime (Nat.card H) H.index := by
-  have hpos : 0 < H.index := Nat.pos_of_ne_zero H.index_ne_zero_of_finite
-  have hsplit : H.index - 1 + 1 = H.index := by omega
-  have h1 : Nat.gcd (Nat.card H) H.index ∣ H.index - 1 :=
-    (Nat.gcd_dvd_left _ _).trans hH.card_dvd_index_sub_one
-  have h2 : Nat.gcd (Nat.card H) H.index ∣ H.index - 1 + 1 := by
-    rw [hsplit]
-    exact Nat.gcd_dvd_right _ _
-  exact Nat.dvd_one.1 ((Nat.dvd_add_right h1).mp h2)
+  have hsplit : H.index = 1 + (H.index - 1) := by
+    have : 0 < H.index := Nat.pos_of_ne_zero H.index_ne_zero_of_finite
+    omega
+  rw [hsplit]
+  exact (Nat.coprime_add_iff_left hH.card_dvd_index_sub_one).2 (Nat.coprime_one_right _)
 
 end TauCeti
