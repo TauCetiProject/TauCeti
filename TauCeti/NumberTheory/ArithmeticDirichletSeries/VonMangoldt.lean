@@ -169,6 +169,30 @@ theorem vonMangoldt_re_nonneg {A : (Ideal (𝓞 K))⁰} :
   rw [hvalue, Complex.ofReal_re]
   exact hr
 
+/-- **The von Mangoldt function is bounded by the logarithm of the norm.** On a power `P ^ n` its
+value is `log N(P)`, and the norm of the ideal is `N(P) ^ n` with `n ≥ 1`, so the bound is the
+inequality `log N(P) ≤ n log N(P)`; off the prime powers the function vanishes and the logarithm is
+still nonnegative.
+
+This is the ideal analogue of `ArithmeticFunction.vonMangoldt_le_log`, and it is what compares a
+von Mangoldt weighted ideal term against the `log N(I)` weighted terms of
+`TauCeti.summable_log_absNorm_mul_norm_idealTerm_of_re_lt_re`. -/
+theorem norm_vonMangoldt_le_log (A : (Ideal (𝓞 K))⁰) :
+    ‖(vonMangoldt : IdealArithmeticFunction K) A‖
+      ≤ Real.log (Ideal.absNorm (A : Ideal (𝓞 K))) := by
+  have hA1 : (1 : ℝ) ≤ Ideal.absNorm (A : Ideal (𝓞 K)) := by
+    exact_mod_cast Nat.one_le_iff_ne_zero.mpr (Ideal.absNorm_ne_zero_of_nonZeroDivisors A)
+  by_cases hA : IsPrimePow (A : Ideal (𝓞 K))
+  · obtain ⟨P, n, hP, hn, hpow⟩ := hA
+    have hP1 : (1 : ℝ) ≤ Ideal.absNorm P := by
+      exact_mod_cast (one_lt_absNorm_of_prime hP).le
+    have hlog : 0 ≤ Real.log (Ideal.absNorm P) := Real.log_nonneg hP1
+    rw [vonMangoldt_apply_of_eq_prime_pow hP hn hpow, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg hlog, ← hpow, map_pow, Nat.cast_pow, Real.log_pow]
+    exact le_mul_of_one_le_left hlog (by exact_mod_cast hn)
+  · rw [vonMangoldt_eq_zero_of_not_isPrimePow hA, norm_zero]
+    exact Real.log_nonneg hA1
+
 /-- The **von Mangoldt transform** of an ideal arithmetic function `f`: the pointwise product
 `A ↦ f(A) Λ(A)`. -/
 noncomputable def vonMangoldtTransform (f : IdealArithmeticFunction K) :
