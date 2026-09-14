@@ -217,10 +217,6 @@ theorem residueFieldEquivMaximalIdealGradedOfUniformizer_change (π π' : 𝒪[K
   rw [uniformizerChangeResidueAddEquiv_apply, ← map_pow, ← map_mul,
     residueFieldEquivMaximalIdealGradedOfUniformizer_mk,
     residueFieldEquivMaximalIdealGradedOfUniformizer_mk]
-  rw [Submodule.Quotient.eq]
-  have hπm : π ^ m ∈ 𝓂[K] ^ m := by
-    rw [hπ.maximalIdeal_eq]
-    exact Ideal.pow_mem_pow (Ideal.mem_span_singleton_self π) m
   have heq : x * π' ^ m =
       (uniformizerChangeUnit π π' hπ hπ' : 𝒪[K]) ^ m * x * π ^ m := by
     calc
@@ -230,19 +226,10 @@ theorem residueFieldEquivMaximalIdealGradedOfUniformizer_change (π π' : 𝒪[K
           (mul_uniformizerChangeUnit π π' hπ hπ').symm
       _ = (uniformizerChangeUnit π π' hπ hπ' : 𝒪[K]) ^ m * x * π ^ m := by
         ring
-  have hright :
-      (uniformizerChangeUnit π π' hπ hπ' : 𝒪[K]) ^ m * x * π ^ m ∈ 𝓂[K] ^ m :=
-    (𝓂[K] ^ m).mul_mem_left _ hπm
-  have hleft : x * π' ^ m ∈ 𝓂[K] ^ m := heq ▸ hright
-  let a : (𝓂[K] ^ m : Ideal 𝒪[K]) := ⟨x * π' ^ m, hleft⟩
-  let b : (𝓂[K] ^ m : Ideal 𝒪[K]) :=
-    ⟨(uniformizerChangeUnit π π' hπ hπ' : 𝒪[K]) ^ m * x * π ^ m, hright⟩
-  change a - b ∈ 𝓂[K] • ⊤
-  rw [show a = b from Subtype.ext heq, sub_self]
-  exact Submodule.zero_mem _
+  exact congrArg Submodule.Quotient.mk (Subtype.ext heq)
 
-/-- In inverse coordinates, replacing `π` by `π' = π * a` multiplies the residue
-coordinate by `a ^ m`. -/
+/-- In inverse coordinates, when `π' = π * a`, the coordinate relative to `π` equals the
+residue of `a ^ m` times the coordinate relative to `π'`. -/
 theorem residueFieldEquivMaximalIdealGradedOfUniformizer_symm_change (π π' : 𝒪[K])
     (hπ : Irreducible π) (hπ' : Irreducible π') (m : ℕ)
     (z : MaximalIdealGraded K m) :
