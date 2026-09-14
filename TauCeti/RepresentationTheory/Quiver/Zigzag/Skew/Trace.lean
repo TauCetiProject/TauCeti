@@ -120,7 +120,6 @@ theorem skewZigzagTrace_skewZigzagMk_vertexIdempotent (i : V) :
   simpa using skewZigzagTrace_skewZigzagBasisFun k G c t (.inl i)
 
 /-- The normalized trace vanishes on an arrow. -/
-@[simp]
 theorem skewZigzagTrace_skewZigzagMk_ofArrow (d : G.Dart) :
     skewZigzagTrace k G c t (skewZigzagMk k G c (ofArrow (arrow G d.adj))) = 0 := by
   simpa using skewZigzagTrace_skewZigzagBasisFun k G c t (.inr (.inl d))
