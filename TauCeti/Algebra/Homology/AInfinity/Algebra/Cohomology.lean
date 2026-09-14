@@ -55,7 +55,6 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 def differential (𝒜 : AInfinityAlgebra R A) : A →ₗ[R] A :=
   (𝒜.m 1).curryRight ![]
 
-@[simp]
 theorem differential_apply (𝒜 : AInfinityAlgebra R A) (x : A) :
     𝒜.differential x = 𝒜.m 1 ![x] := by
   simp [differential]
@@ -75,7 +74,7 @@ theorem differential_isHomogeneous (𝒜 : AInfinityAlgebra R A) :
 @[simp]
 theorem differential_sq (𝒜 : AInfinityAlgebra R A) (x : A) :
     𝒜.differential (𝒜.differential x) = 0 := by
-  simpa using 𝒜.stasheff_arity_one x
+  simpa [differential_apply] using 𝒜.stasheff_arity_one x
 
 /-- The graded Leibniz identity on arbitrary inputs.  The Koszul twist packages the sign which,
 on a homogeneous left input `x` of degree `p`, is `(-1)^p`. -/
@@ -314,7 +313,7 @@ theorem quotientMk_eq_zero_iff (𝒜 : AInfinityAlgebra R A) {x : 𝒜.cycles} :
 /-- The cohomology class of a differential vanishes. -/
 @[simp]
 theorem quotientMk_differential_eq_zero (𝒜 : AInfinityAlgebra R A) (x : A) :
-    𝒜.quotientMk ⟨𝒜.differential x, 𝒜.differential_mem_cycles x⟩ = 0 :=
+    (Submodule.Quotient.mk ⟨𝒜.differential x, 𝒜.differential_mem_cycles x⟩ : 𝒜.Cohomology) = 0 :=
   𝒜.quotientMk_eq_zero_iff.mpr (𝒜.differential_mem_boundaries x)
 
 /-- Every cohomology class has a cycle representative. -/
@@ -415,7 +414,8 @@ instance instNonUnitalNonAssocRingCohomology (𝒜 : AInfinityAlgebra R A) :
 
 @[simp]
 theorem quotientMk_mul (𝒜 : AInfinityAlgebra R A) (x y : 𝒜.cycles) :
-    𝒜.quotientMk (x * y) = 𝒜.quotientMk x * 𝒜.quotientMk y := by
+    (Submodule.Quotient.mk (x * y) : 𝒜.Cohomology) =
+      (Submodule.Quotient.mk x : 𝒜.Cohomology) * Submodule.Quotient.mk y := by
   change Submodule.Quotient.mk (𝒜.cyclesMul x y) =
     𝒜.cohomologyMul (Submodule.Quotient.mk x) (Submodule.Quotient.mk y)
   rfl
@@ -427,8 +427,10 @@ instance instNonUnitalRingCohomology (𝒜 : AInfinityAlgebra R A) : NonUnitalRi
     refine Submodule.Quotient.induction_on 𝒜.boundaries x fun a ↦ ?_
     refine Submodule.Quotient.induction_on 𝒜.boundaries y fun b ↦ ?_
     refine Submodule.Quotient.induction_on 𝒜.boundaries z fun c ↦ ?_
-    change (𝒜.quotientMk a * 𝒜.quotientMk b) * 𝒜.quotientMk c =
-      𝒜.quotientMk a * (𝒜.quotientMk b * 𝒜.quotientMk c)
+    change (Submodule.Quotient.mk a * Submodule.Quotient.mk b : 𝒜.Cohomology) *
+        Submodule.Quotient.mk c =
+      Submodule.Quotient.mk a *
+        (Submodule.Quotient.mk b * Submodule.Quotient.mk c : 𝒜.Cohomology)
     rw [← 𝒜.quotientMk_mul, ← 𝒜.quotientMk_mul,
       ← 𝒜.quotientMk_mul, ← 𝒜.quotientMk_mul]
     exact 𝒜.quotient_mul_assoc a b c
@@ -437,20 +439,20 @@ instance (𝒜 : AInfinityAlgebra R A) : IsScalarTower R 𝒜.Cohomology 𝒜.Co
   smul_assoc r x y := by
     refine Submodule.Quotient.induction_on 𝒜.boundaries x fun a ↦ ?_
     refine Submodule.Quotient.induction_on 𝒜.boundaries y fun b ↦ ?_
-    change (r • 𝒜.quotientMk a) * 𝒜.quotientMk b =
-      r • (𝒜.quotientMk a * 𝒜.quotientMk b)
-    rw [← map_smul 𝒜.quotientMk, ← 𝒜.quotientMk_mul,
-      ← 𝒜.quotientMk_mul, ← map_smul 𝒜.quotientMk]
+    change (r • Submodule.Quotient.mk a : 𝒜.Cohomology) * Submodule.Quotient.mk b =
+      r • (Submodule.Quotient.mk a * Submodule.Quotient.mk b : 𝒜.Cohomology)
+    rw [← Submodule.Quotient.mk_smul, ← 𝒜.quotientMk_mul,
+      ← 𝒜.quotientMk_mul, ← Submodule.Quotient.mk_smul]
     exact congr_arg 𝒜.quotientMk ((𝒜.cyclesRightMul b).map_smul r a)
 
 instance (𝒜 : AInfinityAlgebra R A) : SMulCommClass R 𝒜.Cohomology 𝒜.Cohomology where
   smul_comm r x y := by
     refine Submodule.Quotient.induction_on 𝒜.boundaries x fun a ↦ ?_
     refine Submodule.Quotient.induction_on 𝒜.boundaries y fun b ↦ ?_
-    change r • (𝒜.quotientMk a * 𝒜.quotientMk b) =
-      𝒜.quotientMk a * (r • 𝒜.quotientMk b)
-    rw [← map_smul 𝒜.quotientMk, ← 𝒜.quotientMk_mul,
-      ← 𝒜.quotientMk_mul, ← map_smul 𝒜.quotientMk]
+    change r • (Submodule.Quotient.mk a * Submodule.Quotient.mk b : 𝒜.Cohomology) =
+      Submodule.Quotient.mk a * (r • Submodule.Quotient.mk b : 𝒜.Cohomology)
+    rw [← 𝒜.quotientMk_mul, ← Submodule.Quotient.mk_smul,
+      ← Submodule.Quotient.mk_smul, ← 𝒜.quotientMk_mul]
     exact congr_arg 𝒜.quotientMk ((𝒜.cyclesLeftMul a).map_smul r b).symm
 
 end AInfinityAlgebra
