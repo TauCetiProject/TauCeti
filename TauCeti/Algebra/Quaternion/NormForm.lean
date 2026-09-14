@@ -1,0 +1,215 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+-- `Mathlib.Algebra.Quaternion` is imported publicly for `QuaternionAlgebra`, the `ℍ[·,·,·]`
+-- notation, quaternion conjugation `star`, and the coordinate linear maps `QuaternionAlgebra.reₗ`
+-- and `QuaternionAlgebra.linearEquivTuple`, all of which occur in the statements below.
+public import Mathlib.Algebra.Quaternion
+-- `Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv` is imported publicly for
+-- `QuadraticMap.IsometryEquiv` and `QuadraticMap.Equivalent`. It re-exports
+-- `Mathlib.LinearAlgebra.QuadraticForm.Basic`, hence `QuadraticForm`, `QuadraticMap.ofPolar`,
+-- `QuadraticMap.comp` and `QuadraticMap.weightedSumSquares`, which is why that file is not
+-- imported again here.
+public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+
+/-!
+# The norm form of a quaternion algebra
+
+The product `x * star x` of a quaternion with its conjugate is a scalar
+(`QuaternionAlgebra.mul_star_eq_coe`). Its real part is the reduced norm, and this file packages it
+as a quadratic form `QuaternionAlgebra.normForm` on `ℍ[R,c₁,c₂,c₃]` over a commutative ring, with
+its coordinate expression and its multiplicativity.
+
+In the classical presentation `ℍ[R,a,b] = ℍ[R,a,0,b]`, where `i² = a`, `j² = b` and `k = i * j`,
+the basis `1, i, j, k` is orthogonal for the norm form, which is therefore the diagonal form
+`⟨1, -a, -b, ab⟩`; this is the two-fold Pfister form `⟨⟨a,b⟩⟩`. The pure quaternions -- those with
+vanishing real part, which by `QuaternionAlgebra.self_add_star_eq_zero_iff` are exactly those of
+vanishing reduced trace once `2` is invertible -- carry the restricted form `⟨-a, -b, ab⟩`.
+
+The reduced norm is what ties a quaternion algebra to quadratic-form theory: whether the algebra
+is split or a division algebra is a question about its norm form, and the diagonalizations above
+are what turn it into a question about `⟨1, -a, -b, ab⟩`.
+
+## Main definitions
+
+* `QuaternionAlgebra.normForm`: the norm form `x ↦ (x * star x).re` of `ℍ[R,c₁,c₂,c₃]`.
+* `QuaternionAlgebra.pureNormForm`: its restriction to the pure quaternions of `ℍ[R,a,b]`.
+
+## Main results
+
+* `QuaternionAlgebra.normForm_mul`: the norm form is multiplicative.
+* `QuaternionAlgebra.normForm_equivalent_weightedSumSquares`: the norm form of `ℍ[R,a,b]` is the
+  diagonal form `⟨1, -a, -b, ab⟩`, with the explicit isometry
+  `QuaternionAlgebra.normFormIsometryEquivWeightedSumSquares`.
+* `QuaternionAlgebra.pureNormForm_equivalent_weightedSumSquares`: the pure norm form of `ℍ[R,a,b]`
+  is the diagonal form `⟨-a, -b, ab⟩`, with the explicit isometry
+  `QuaternionAlgebra.pureNormFormIsometryEquivWeightedSumSquares`.
+
+## Implementation notes
+
+`QuaternionAlgebra.normForm_mul` is Mathlib's multiplicativity argument for `Quaternion.normSq`,
+which moves `star (x * y) = star y * star x` past the scalar `y * star y`, run for a general
+`ℍ[R,c₁,c₂,c₃]`; `Quaternion.normSq_eq_normForm` records that the two agree on `ℍ[R]`.
+
+## References
+
+* T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005), Chapter III, §2.
+* P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology* (2006), §1.1.
+-/
+
+public section
+
+open QuadraticMap
+
+open scoped Quaternion
+
+namespace QuaternionAlgebra
+
+variable {R : Type*} [CommRing R] (c₁ c₂ c₃ : R)
+
+/-- The **norm form** of a quaternion algebra: the reduced norm `x ↦ (x * star x).re`, which is a
+quadratic form because `x * star x` is the scalar `x.re² + c₂ x.re x.imI - c₁ x.imI² - c₃ x.imJ² -
+c₂ c₃ x.imJ x.imK + c₁ c₃ x.imK²`. -/
+def normForm : QuadraticForm R ℍ[R,c₁,c₂,c₃] :=
+  ofPolar (fun x => (x * star x).re)
+    (fun _ _ => by simp [re_mul]; ring)
+    (fun _ _ _ => by simp [polar, re_mul]; ring)
+    (fun _ _ _ => by simp [polar, re_mul]; ring)
+
+theorem normForm_apply (x : ℍ[R,c₁,c₂,c₃]) : normForm c₁ c₂ c₃ x = (x * star x).re := (rfl)
+
+/-- The norm form in coordinates: the basis `1, i, j, k` is orthogonal for it as soon as
+`c₂ = 0`. -/
+theorem normForm_apply' (x : ℍ[R,c₁,c₂,c₃]) :
+    normForm c₁ c₂ c₃ x = x.re ^ 2 + c₂ * x.re * x.imI - c₁ * x.imI ^ 2 - c₃ * x.imJ ^ 2
+      - c₂ * c₃ * x.imJ * x.imK + c₁ * c₃ * x.imK ^ 2 := by
+  simp [normForm_apply, re_mul]; ring
+
+/-- The companion bilinear form of the norm form is the reduced trace of `x * star y`. -/
+theorem polar_normForm (x y : ℍ[R,c₁,c₂,c₃]) :
+    polar (normForm c₁ c₂ c₃) x y = (x * star y + y * star x).re := by
+  simp [polar, normForm_apply, re_mul]; ring
+
+theorem self_mul_star (x : ℍ[R,c₁,c₂,c₃]) :
+    x * star x = (normForm c₁ c₂ c₃ x : ℍ[R,c₁,c₂,c₃]) := by
+  rw [normForm_apply]; exact mul_star_eq_coe x
+
+theorem star_mul_self (x : ℍ[R,c₁,c₂,c₃]) :
+    star x * x = (normForm c₁ c₂ c₃ x : ℍ[R,c₁,c₂,c₃]) := by
+  rw [star_comm_self', self_mul_star]
+
+@[simp]
+theorem normForm_coe (r : R) : normForm c₁ c₂ c₃ (r : ℍ[R,c₁,c₂,c₃]) = r ^ 2 := by
+  simp [normForm_apply, _root_.sq]
+
+@[simp]
+theorem normForm_one : normForm c₁ c₂ c₃ 1 = 1 := by
+  simpa using normForm_coe c₁ c₂ c₃ 1
+
+@[simp]
+theorem normForm_star (x : ℍ[R,c₁,c₂,c₃]) :
+    normForm c₁ c₂ c₃ (star x) = normForm c₁ c₂ c₃ x := by
+  rw [normForm_apply, normForm_apply, star_star, star_comm_self']
+
+/-- **The norm form is multiplicative.** -/
+@[simp]
+theorem normForm_mul (x y : ℍ[R,c₁,c₂,c₃]) :
+    normForm c₁ c₂ c₃ (x * y) = normForm c₁ c₂ c₃ x * normForm c₁ c₂ c₃ y := by
+  obtain ⟨X, hx⟩ : ∃ X : R, x * star x = (X : ℍ[R,c₁,c₂,c₃]) := ⟨_, mul_star_eq_coe x⟩
+  obtain ⟨Y, hy⟩ : ∃ Y : R, y * star y = (Y : ℍ[R,c₁,c₂,c₃]) := ⟨_, mul_star_eq_coe y⟩
+  have h : x * y * star (x * y) = ((X * Y : R) : ℍ[R,c₁,c₂,c₃]) := by
+    rw [star_mul, mul_assoc, ← mul_assoc y, hy, comm, ← mul_assoc, hx, ← coe_mul]
+  simp only [normForm_apply, h, hx, hy, re_coe]
+
+section Diagonal
+
+variable (a b : R)
+
+/-- The pure quaternions of `ℍ[R,a,b]`, the kernel of the real part, are exactly the quaternions
+of vanishing reduced trace `x + star x`. -/
+theorem self_add_star_eq_zero_iff [Invertible (2 : R)] (x : ℍ[R,a,b]) :
+    x + star x = 0 ↔ x ∈ LinearMap.ker (reₗ a (0 : R) b) := by
+  rw [self_add_star]
+  simp [QuaternionAlgebra.ext_iff, (isUnit_of_invertible (2 : R)).mul_right_eq_zero]
+
+/-- The **pure norm form** of `ℍ[R,a,b]`: the norm form restricted to the pure quaternions, those
+with vanishing real part. -/
+def pureNormForm : QuadraticForm R (LinearMap.ker (reₗ a (0 : R) b)) :=
+  (normForm a 0 b).comp (LinearMap.ker (reₗ a (0 : R) b)).subtype
+
+@[simp]
+theorem pureNormForm_apply (x : LinearMap.ker (reₗ a (0 : R) b)) :
+    pureNormForm a b x = normForm a 0 b x := (rfl)
+
+/-- The pure norm form in coordinates: the basis `i, j, k` is orthogonal for it. -/
+theorem pureNormForm_apply' (x : LinearMap.ker (reₗ a (0 : R) b)) :
+    pureNormForm a b x = -(a * (x : ℍ[R,a,b]).imI ^ 2) - b * (x : ℍ[R,a,b]).imJ ^ 2
+      + a * b * (x : ℍ[R,a,b]).imK ^ 2 := by
+  have hx : (x : ℍ[R,a,b]).re = 0 := x.2
+  rw [pureNormForm_apply, normForm_apply']
+  simp [hx]
+
+/-- The coordinates `1, i, j, k` are an isometry from the norm form of `ℍ[R,a,b]` to the diagonal
+form `⟨1, -a, -b, ab⟩`, the two-fold Pfister form `⟨⟨a,b⟩⟩`. -/
+def normFormIsometryEquivWeightedSumSquares :
+    (normForm a 0 b).IsometryEquiv (weightedSumSquares R ![1, -a, -b, a * b]) where
+  __ := linearEquivTuple a 0 b
+  map_app' x := by simp [normForm_apply', Fin.sum_univ_four]; ring
+
+@[simp]
+theorem normFormIsometryEquivWeightedSumSquares_apply (x : ℍ[R,a,b]) :
+    normFormIsometryEquivWeightedSumSquares a b x = ![x.re, x.imI, x.imJ, x.imK] := (rfl)
+
+/-- **The norm form of `ℍ[R,a,b]` is `⟨1, -a, -b, ab⟩`.** -/
+theorem normForm_equivalent_weightedSumSquares :
+    (normForm a 0 b).Equivalent (weightedSumSquares R ![(1 : R), -a, -b, a * b]) :=
+  ⟨normFormIsometryEquivWeightedSumSquares a b⟩
+
+/-- The coordinates `i, j, k` are an isometry from the pure norm form of `ℍ[R,a,b]` to the
+diagonal form `⟨-a, -b, ab⟩`. -/
+def pureNormFormIsometryEquivWeightedSumSquares :
+    (pureNormForm a b).IsometryEquiv (weightedSumSquares R ![-a, -b, a * b]) where
+  toFun x := ![(x : ℍ[R,a,b]).imI, (x : ℍ[R,a,b]).imJ, (x : ℍ[R,a,b]).imK]
+  map_add' _ _ := by ext i; fin_cases i <;> simp
+  map_smul' _ _ := by ext i; fin_cases i <;> simp
+  invFun v := ⟨⟨0, v 0, v 1, v 2⟩, by simp⟩
+  left_inv x := by
+    have hx : (x : ℍ[R,a,b]).re = 0 := x.2
+    ext <;> simp [hx]
+  right_inv _ := by ext i; fin_cases i <;> simp
+  map_app' x := by
+    have hx : (x : ℍ[R,a,b]).re = 0 := x.2
+    simp [normForm_apply', hx, Fin.sum_univ_three]
+    ring
+
+@[simp]
+theorem pureNormFormIsometryEquivWeightedSumSquares_apply
+    (x : LinearMap.ker (reₗ a (0 : R) b)) :
+    pureNormFormIsometryEquivWeightedSumSquares a b x =
+      ![(x : ℍ[R,a,b]).imI, (x : ℍ[R,a,b]).imJ, (x : ℍ[R,a,b]).imK] := (rfl)
+
+/-- **The pure norm form of `ℍ[R,a,b]` is `⟨-a, -b, ab⟩`.** -/
+theorem pureNormForm_equivalent_weightedSumSquares :
+    (pureNormForm a b).Equivalent (weightedSumSquares R ![-a, -b, a * b]) :=
+  ⟨pureNormFormIsometryEquivWeightedSumSquares a b⟩
+
+end Diagonal
+
+end QuaternionAlgebra
+
+namespace Quaternion
+
+variable {R : Type*} [CommRing R]
+
+/-- Mathlib's `Quaternion.normSq` is the norm form of `ℍ[R] = ℍ[R,-1,0,-1]`. -/
+theorem normSq_eq_normForm (x : ℍ[R]) :
+    normSq x = QuaternionAlgebra.normForm (-1) 0 (-1) x := by
+  rw [QuaternionAlgebra.normForm_apply, normSq_def]
+
+end Quaternion
+
+end
