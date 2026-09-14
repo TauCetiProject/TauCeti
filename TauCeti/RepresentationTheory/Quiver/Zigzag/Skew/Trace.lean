@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.LinearAlgebra.Basis.SMul
-public import Mathlib.LinearAlgebra.BilinearForm.Properties
-public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Trace
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Multiplication
 
@@ -64,10 +61,12 @@ open PathAlgebra DoubledQuiver
 
 universe u w
 
-variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
-  (c : SkewZigzagParameter k G) (t : ∀ i : V, {j : V // G.Adj i j})
-
 /-! ### The weights of the pairing -/
+
+section PairingWeight
+
+variable (k : Type w) [Monoid k] {V : Type u} (G : SimpleGraph V)
+  (c : SkewZigzagParameter k G) (t : ∀ i : V, {j : V // G.Adj i j})
 
 /-- The unit in the Gram-matrix row indexed by a skew-zigzag basis element. Idempotent and volume
 rows have weight one. The row of a dart `d` has the ratio from the return edge `d.symm` to the
@@ -77,23 +76,25 @@ def skewZigzagPairingWeight : ZigzagBasisIndex G → kˣ
   | .inr (.inl d) => c.ratio d.symm.adj (t d.snd).2
   | .inr (.inr _) => 1
 
-omit [Finite V] in
 @[simp]
 theorem skewZigzagPairingWeight_inl (i : V) :
     skewZigzagPairingWeight k G c t (.inl i) = 1 := (rfl)
 
-omit [Finite V] in
 @[simp]
 theorem skewZigzagPairingWeight_inr_inl (d : G.Dart) :
     skewZigzagPairingWeight k G c t (.inr (.inl d)) =
       c.ratio d.symm.adj (t d.snd).2 := (rfl)
 
-omit [Finite V] in
 @[simp]
 theorem skewZigzagPairingWeight_inr_inr (i : V) :
     skewZigzagPairingWeight k G c t (.inr (.inr i)) = 1 := (rfl)
 
+end PairingWeight
+
 /-! ### The normalized trace -/
+
+variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
+  (c : SkewZigzagParameter k G) (t : ∀ i : V, {j : V // G.Adj i j})
 
 /-- **The Frobenius trace of a skew-zigzag algebra**, normalized by chosen incident edges: it is
 one on the chosen volume class at each vertex and zero on the vertex idempotents and arrows. -/
@@ -150,8 +151,8 @@ noncomputable def skewZigzagTracePairing :
 theorem skewZigzagTracePairing_apply (x y : skewZigzagQuotient k G c) :
     skewZigzagTracePairing k G c t x y = skewZigzagTrace k G c t (x * y) := (rfl)
 
-/-- **The skew-zigzag trace pairing is associative**: both sides are the trace of the product of
-the three arguments. -/
+/-- **The skew-zigzag trace pairing is associative**, `(x * y, z) = (x, y * z)`. Together with
+perfectness this is the Frobenius condition for the normalized skew trace. -/
 theorem skewZigzagTracePairing_mul_assoc (x y z : skewZigzagQuotient k G c) :
     skewZigzagTracePairing k G c t (x * y) z =
       skewZigzagTracePairing k G c t x (y * z) := by
@@ -221,9 +222,9 @@ theorem skewZigzagTracePairing_skewZigzagBasisFun (b b' : ZigzagBasisIndex G) :
 
 /-! ### Perfectness -/
 
-/-- **The skew-zigzag trace pairing is perfect.** Its weighted permutation Gram matrix maps the
-skew-zigzag basis to a basis of the dual: the weights are units by definition of a skew parameter.
--/
+/-- **The skew-zigzag trace pairing is perfect** over an arbitrary commutative base ring: it
+identifies the skew-zigzag algebra with its `k`-linear dual through `LinearMap.toPerfPair`. This is
+the Frobenius property of the trace normalized by the chosen incident edges. -/
 instance skewZigzagTracePairing_isPerfPair :
     (skewZigzagTracePairing k G c t).IsPerfPair := by
   classical
@@ -252,8 +253,9 @@ instance skewZigzagTracePairing_isPerfPair :
   rw [hleft]
   exact LinearEquiv.bijective _
 
-/-- **The skew-zigzag trace pairing is nondegenerate.** This follows from its perfectness, which is
-the stronger assertion over a general commutative ring. -/
+/-- **The skew-zigzag trace pairing is nondegenerate**: an element pairing to zero against
+everything is zero. Over a general commutative ring this is weaker than
+`TauCeti.skewZigzagTracePairing_isPerfPair`, which is available whenever this is. -/
 theorem skewZigzagTracePairing_nondegenerate :
     (skewZigzagTracePairing k G c t).Nondegenerate :=
   LinearMap.IsPerfPair.nondegenerate inferInstance
