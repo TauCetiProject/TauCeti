@@ -1,0 +1,324 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Group.Subgroup.Basic
+public import Mathlib.InformationTheory.Hamming
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.LinearAlgebra.Pi
+
+/-!
+# Monomial and permutation equivalences of linear codes
+
+A *monomial* transformation of the coordinate space `ι → R` rescales each coordinate by a unit
+of `R` and then relabels the coordinates along an equivalence of index types; a *permutation*
+transformation only relabels. Two linear codes — unbundled submodules of coordinate spaces — are
+monomially, respectively permutation, equivalent when such a transformation carries one onto the
+other. These are the transformations preserving all Hamming data of a code, so weights, weight
+distributions and minimum distances are invariants of the resulting equivalence classes.
+
+## Main definitions
+
+* `TauCeti.monomialEquiv u e`: the monomial linear equivalence `(ι → R) ≃ₗ[R] (κ → R)` that
+  rescales the `i`-th coordinate by the unit `u i` and moves it to the coordinate `e i`.
+* `TauCeti.IsMonomialEquivalent`, `TauCeti.IsPermutationEquivalent`: the two resulting
+  equivalence relations on linear codes.
+* `TauCeti.monomialGroup R ι`: the group of monomial transformations of `ι → R`.
+* `TauCeti.monomialAut C`: the monomial automorphism group of a code, acting on its codewords.
+
+## Main statements
+
+* `TauCeti.hammingNorm_monomialEquiv`, `TauCeti.hammingDist_monomialEquiv`: a monomial
+  equivalence preserves Hamming weight and Hamming distance.
+* `TauCeti.IsMonomialEquivalent.finrank_eq`, `TauCeti.IsMonomialEquivalent.card_eq`,
+  `TauCeti.IsMonomialEquivalent.card_weight_eq`: monomially equivalent codes have the same
+  dimension, the same number of codewords, and the same weight distribution.
+
+## References
+
+W. C. Huffman and V. Pless, *Fundamentals of Error-Correcting Codes*, Cambridge University
+Press (2003), §1.6.
+-/
+
+public section
+
+open Function
+
+namespace TauCeti
+
+variable {ι κ μ R : Type*}
+
+/-! ### Hamming data under a relabelling of coordinates -/
+
+section Reindex
+
+variable {α : Type*} [Fintype ι] [Fintype κ] [DecidableEq α]
+
+/-- Relabelling coordinates along an equivalence preserves the Hamming distance. -/
+theorem hammingDist_comp_equiv (e : κ ≃ ι) (x y : ι → α) :
+    hammingDist (x ∘ e) (y ∘ e) = hammingDist x y := by
+  simp only [hammingDist, comp_apply]
+  exact Finset.card_equiv e (by simp)
+
+/-- Relabelling coordinates along an equivalence preserves the Hamming weight. -/
+theorem hammingNorm_comp_equiv [Zero α] (e : κ ≃ ι) (x : ι → α) :
+    hammingNorm (x ∘ e) = hammingNorm x := by
+  simp only [hammingNorm, comp_apply]
+  exact Finset.card_equiv e (by simp)
+
+end Reindex
+
+/-! ### Monomial transformations of a coordinate space -/
+
+section Monomial
+
+variable [CommSemiring R]
+
+/-- The monomial equivalence of coordinate spaces attached to a family of units `u : ι → Rˣ`
+and a relabelling `e : ι ≃ κ` of coordinates: it rescales the `i`-th coordinate by `u i` and
+places the result in the coordinate `e i`. -/
+def monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) : (ι → R) ≃ₗ[R] (κ → R) :=
+  (LinearEquiv.piCongrRight fun i ↦ LinearEquiv.smulOfUnit (M := R) (u i)).trans
+    (LinearEquiv.funCongrLeft R R e.symm)
+
+@[simp]
+theorem monomialEquiv_apply (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R) (j : κ) :
+    monomialEquiv u e x j = u (e.symm j) * x (e.symm j) :=
+  (rfl)
+
+@[simp]
+theorem monomialEquiv_symm_apply (u : ι → Rˣ) (e : ι ≃ κ) (y : κ → R) (i : ι) :
+    (monomialEquiv u e).symm y i = ↑(u i)⁻¹ * y (e i) :=
+  (rfl)
+
+/-- With trivial scalars a monomial equivalence is a bare relabelling of coordinates. -/
+theorem monomialEquiv_one (e : ι ≃ κ) :
+    monomialEquiv (1 : ι → Rˣ) e = LinearEquiv.funCongrLeft R R e.symm :=
+  LinearEquiv.ext fun x ↦ funext fun j ↦ by simp
+
+theorem monomialEquiv_trans (u : ι → Rˣ) (e : ι ≃ κ) (v : κ → Rˣ) (f : κ ≃ μ) :
+    (monomialEquiv u e).trans (monomialEquiv v f) =
+      monomialEquiv (fun i ↦ u i * v (e i)) (e.trans f) := by
+  refine LinearEquiv.ext fun x ↦ funext fun m ↦ ?_
+  simp only [LinearEquiv.trans_apply, monomialEquiv_apply, Equiv.symm_trans_apply,
+    Equiv.apply_symm_apply, Units.val_mul]
+  ring
+
+theorem monomialEquiv_symm (u : ι → Rˣ) (e : ι ≃ κ) :
+    (monomialEquiv u e).symm = monomialEquiv (fun j ↦ (u (e.symm j))⁻¹) e.symm :=
+  LinearEquiv.ext fun y ↦ funext fun i ↦ by simp
+
+theorem support_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R) :
+    support (monomialEquiv u e x) = e '' support x := by
+  rw [Equiv.image_eq_preimage_symm]
+  ext j
+  simp [Units.mul_right_eq_zero]
+
+private theorem monomialEquiv_eq_comp (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R) :
+    (monomialEquiv u e x : κ → R) = (fun i ↦ (u i : R) * x i) ∘ e.symm :=
+  funext fun j ↦ by simp
+
+section Fintype
+
+variable [Fintype ι] [Fintype κ] [DecidableEq R]
+
+@[simp]
+theorem hammingNorm_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R) :
+    hammingNorm (monomialEquiv u e x) = hammingNorm x := by
+  rw [monomialEquiv_eq_comp, hammingNorm_comp_equiv]
+  exact hammingNorm_comp (fun i (c : R) ↦ (u i : R) * c)
+    (fun i ↦ (u i).isUnit.mul_right_injective) fun _ ↦ mul_zero _
+
+@[simp]
+theorem hammingDist_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x y : ι → R) :
+    hammingDist (monomialEquiv u e x) (monomialEquiv u e y) = hammingDist x y := by
+  rw [monomialEquiv_eq_comp, monomialEquiv_eq_comp, hammingDist_comp_equiv]
+  exact hammingDist_comp (fun i (c : R) ↦ (u i : R) * c)
+    fun i ↦ (u i).isUnit.mul_right_injective
+
+end Fintype
+
+end Monomial
+
+/-! ### Equivalence of linear codes -/
+
+section Equivalence
+
+variable [CommSemiring R] {C : Submodule R (ι → R)} {D : Submodule R (κ → R)}
+  {E : Submodule R (μ → R)}
+
+/-- Two linear codes are *monomially equivalent* when some monomial transformation of the
+coordinate spaces carries one onto the other. -/
+def IsMonomialEquivalent (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) : Prop :=
+  ∃ (u : ι → Rˣ) (e : ι ≃ κ), C.map (monomialEquiv u e : (ι → R) →ₗ[R] (κ → R)) = D
+
+/-- Two linear codes are *permutation equivalent* when a relabelling of the coordinates carries
+one onto the other. -/
+def IsPermutationEquivalent (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) : Prop :=
+  ∃ e : ι ≃ κ, C.map (LinearEquiv.funCongrLeft R R e.symm : (ι → R) →ₗ[R] (κ → R)) = D
+
+theorem IsPermutationEquivalent.isMonomialEquivalent (h : IsPermutationEquivalent C D) :
+    IsMonomialEquivalent C D := by
+  obtain ⟨e, he⟩ := h
+  exact ⟨1, e, by rw [monomialEquiv_one]; exact he⟩
+
+@[refl]
+theorem IsPermutationEquivalent.refl (C : Submodule R (ι → R)) : IsPermutationEquivalent C C :=
+  ⟨Equiv.refl ι, by simp⟩
+
+theorem IsPermutationEquivalent.symm (h : IsPermutationEquivalent C D) :
+    IsPermutationEquivalent D C := by
+  obtain ⟨e, he⟩ := h
+  refine ⟨e.symm, ?_⟩
+  have h' := (Submodule.map_symm_eq_iff (LinearEquiv.funCongrLeft R R e.symm)).2 he
+  rwa [LinearEquiv.funCongrLeft_symm] at h'
+
+theorem IsPermutationEquivalent.trans (h : IsPermutationEquivalent C D)
+    (h' : IsPermutationEquivalent D E) : IsPermutationEquivalent C E := by
+  obtain ⟨e, rfl⟩ := h
+  obtain ⟨f, rfl⟩ := h'
+  exact ⟨e.trans f, by
+    rw [Equiv.symm_trans, LinearEquiv.funCongrLeft_comp, LinearEquiv.coe_trans,
+      Submodule.map_comp]⟩
+
+@[refl]
+theorem IsMonomialEquivalent.refl (C : Submodule R (ι → R)) : IsMonomialEquivalent C C :=
+  (IsPermutationEquivalent.refl C).isMonomialEquivalent
+
+theorem IsMonomialEquivalent.symm (h : IsMonomialEquivalent C D) : IsMonomialEquivalent D C := by
+  obtain ⟨u, e, he⟩ := h
+  refine ⟨fun j ↦ (u (e.symm j))⁻¹, e.symm, ?_⟩
+  rw [← monomialEquiv_symm]
+  exact (Submodule.map_symm_eq_iff _).2 he
+
+theorem IsMonomialEquivalent.trans (h : IsMonomialEquivalent C D)
+    (h' : IsMonomialEquivalent D E) : IsMonomialEquivalent C E := by
+  obtain ⟨u, e, rfl⟩ := h
+  obtain ⟨v, f, rfl⟩ := h'
+  exact ⟨fun i ↦ u i * v (e i), e.trans f, by
+    rw [← monomialEquiv_trans, LinearEquiv.coe_trans, Submodule.map_comp]⟩
+
+/-- Monomially equivalent codes have the same dimension. -/
+theorem IsMonomialEquivalent.finrank_eq (h : IsMonomialEquivalent C D) :
+    Module.finrank R C = Module.finrank R D := by
+  obtain ⟨u, e, rfl⟩ := h
+  exact (LinearEquiv.finrank_map_eq _ _).symm
+
+/-- Monomially equivalent codes have the same number of codewords. -/
+theorem IsMonomialEquivalent.card_eq (h : IsMonomialEquivalent C D) :
+    Nat.card C = Nat.card D := by
+  obtain ⟨u, e, rfl⟩ := h
+  exact Nat.card_congr ((monomialEquiv u e).submoduleMap C).toEquiv
+
+/-- Monomially equivalent codes have the same weight distribution. -/
+theorem IsMonomialEquivalent.card_weight_eq [Fintype ι] [Fintype κ] [DecidableEq R]
+    (h : IsMonomialEquivalent C D) (w : ℕ) :
+    Nat.card {x : ι → R // x ∈ C ∧ hammingNorm x = w} =
+      Nat.card {y : κ → R // y ∈ D ∧ hammingNorm y = w} := by
+  obtain ⟨u, e, rfl⟩ := h
+  exact Nat.card_congr (Equiv.subtypeEquiv (monomialEquiv u e).toEquiv fun x ↦ by simp)
+
+end Equivalence
+
+/-! ### The monomial group and the automorphism group of a code -/
+
+section Group
+
+/-- The group of monomial transformations of the coordinate space `ι → R`, as a subgroup of its
+group of linear automorphisms. -/
+def monomialGroup (R ι : Type*) [CommSemiring R] : Subgroup ((ι → R) ≃ₗ[R] (ι → R)) where
+  carrier := {f | ∃ (u : ι → Rˣ) (e : Equiv.Perm ι), monomialEquiv u e = f}
+  one_mem' := ⟨1, Equiv.refl ι, by
+    rw [monomialEquiv_one, Equiv.refl_symm, LinearEquiv.funCongrLeft_id,
+      LinearEquiv.one_eq_refl]⟩
+  mul_mem' := by
+    rintro f g ⟨u, e, rfl⟩ ⟨v, d, rfl⟩
+    exact ⟨fun i ↦ v i * u (d i), d.trans e, by
+      rw [← monomialEquiv_trans, LinearEquiv.mul_eq_trans]⟩
+  inv_mem' := by
+    rintro f ⟨u, e, rfl⟩
+    exact ⟨fun j ↦ (u (e.symm j))⁻¹, e.symm, (monomialEquiv_symm u e).symm⟩
+
+variable [CommSemiring R]
+
+theorem mem_monomialGroup {f : (ι → R) ≃ₗ[R] (ι → R)} :
+    f ∈ monomialGroup R ι ↔ ∃ (u : ι → Rˣ) (e : Equiv.Perm ι), monomialEquiv u e = f :=
+  (Iff.rfl)
+
+theorem monomialEquiv_mem_monomialGroup (u : ι → Rˣ) (e : Equiv.Perm ι) :
+    monomialEquiv u e ∈ monomialGroup R ι :=
+  mem_monomialGroup.2 ⟨u, e, rfl⟩
+
+theorem hammingNorm_apply_of_mem_monomialGroup [Fintype ι] [DecidableEq R]
+    {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ monomialGroup R ι) (x : ι → R) :
+    hammingNorm (f x) = hammingNorm x := by
+  obtain ⟨u, e, rfl⟩ := mem_monomialGroup.1 hf
+  exact hammingNorm_monomialEquiv u e x
+
+theorem hammingDist_apply_of_mem_monomialGroup [Fintype ι] [DecidableEq R]
+    {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ monomialGroup R ι) (x y : ι → R) :
+    hammingDist (f x) (f y) = hammingDist x y := by
+  obtain ⟨u, e, rfl⟩ := mem_monomialGroup.1 hf
+  exact hammingDist_monomialEquiv u e x y
+
+variable (C : Submodule R (ι → R))
+
+/-- The monomial automorphism group of a linear code: the monomial transformations of its
+coordinate space that map the code onto itself. -/
+def monomialAut : Subgroup ((ι → R) ≃ₗ[R] (ι → R)) where
+  carrier := {f | f ∈ monomialGroup R ι ∧ C.map (f : (ι → R) →ₗ[R] (ι → R)) = C}
+  one_mem' := ⟨one_mem _, by simp⟩
+  mul_mem' := by
+    rintro f g ⟨hf, hf'⟩ ⟨hg, hg'⟩
+    refine ⟨mul_mem hf hg, ?_⟩
+    rw [LinearEquiv.mul_eq_trans, LinearEquiv.coe_trans, Submodule.map_comp, hg', hf']
+  inv_mem' := by
+    rintro f ⟨hf, hf'⟩
+    -- The inverse in `LinearEquiv.automorphismGroup` is the inverse equivalence.
+    have hinv : (f : (ι → R) ≃ₗ[R] (ι → R))⁻¹ = f.symm := rfl
+    exact ⟨inv_mem hf, by rw [hinv]; exact (Submodule.map_symm_eq_iff _).2 hf'⟩
+
+variable {C}
+
+theorem mem_monomialAut {f : (ι → R) ≃ₗ[R] (ι → R)} :
+    f ∈ monomialAut C ↔
+      f ∈ monomialGroup R ι ∧ C.map (f : (ι → R) →ₗ[R] (ι → R)) = C :=
+  (Iff.rfl)
+
+theorem monomialAut_le_monomialGroup : monomialAut C ≤ monomialGroup R ι :=
+  fun _ hf ↦ (mem_monomialAut.1 hf).1
+
+theorem apply_mem_of_mem_monomialAut {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ monomialAut C)
+    {x : ι → R} (hx : x ∈ C) : f x ∈ C :=
+  (mem_monomialAut.1 hf).2 ▸ Submodule.mem_map_of_mem hx
+
+/-- A monomial automorphism of a code permutes its codewords. -/
+instance instSMulMonomialAut : SMul (monomialAut C) C where
+  smul f c := ⟨(f : (ι → R) ≃ₗ[R] (ι → R)) c, apply_mem_of_mem_monomialAut f.2 c.2⟩
+
+@[simp]
+theorem coe_smul_monomialAut (f : monomialAut C) (c : C) :
+    ((f • c : C) : ι → R) = (f : (ι → R) ≃ₗ[R] (ι → R)) c :=
+  (rfl)
+
+instance instMulActionMonomialAut : MulAction (monomialAut C) C where
+  one_smul _ := Subtype.ext (by simp)
+  mul_smul _ _ _ := Subtype.ext (by simp)
+
+theorem hammingNorm_smul_monomialAut [Fintype ι] [DecidableEq R] (f : monomialAut C) (c : C) :
+    hammingNorm ((f • c : C) : ι → R) = hammingNorm (c : ι → R) := by
+  rw [coe_smul_monomialAut]
+  exact hammingNorm_apply_of_mem_monomialGroup (monomialAut_le_monomialGroup f.2) _
+
+theorem hammingDist_smul_monomialAut [Fintype ι] [DecidableEq R] (f : monomialAut C) (c d : C) :
+    hammingDist ((f • c : C) : ι → R) ((f • d : C) : ι → R) =
+      hammingDist (c : ι → R) (d : ι → R) := by
+  rw [coe_smul_monomialAut, coe_smul_monomialAut]
+  exact hammingDist_apply_of_mem_monomialGroup (monomialAut_le_monomialGroup f.2) _ _
+
+end Group
+
+end TauCeti
