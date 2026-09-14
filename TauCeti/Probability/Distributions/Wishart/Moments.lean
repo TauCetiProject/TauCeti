@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Wishart.Transforms
 
 import TauCeti.LinearAlgebra.Matrix.Trace
+import Mathlib.MeasureTheory.SpecificCodomains.Pi
 
 /-!
 # Moments of the Gaussian-Gram Wishart family
@@ -22,6 +23,9 @@ quadratic form in the underlying Gaussian sample.
 
 ## Main results
 
+* `TauCeti.memLp_trace_mul_wishartGramMeasure`, `TauCeti.memLp_coe_apply_wishartGramMeasure`
+  and `TauCeti.memLp_id_wishartGramMeasure` give finite moments of all orders for trace
+  statistics, entries and the matrix itself;
 * `TauCeti.integral_trace_mul_wishartGramMeasure` computes the mean of every symmetric trace
   statistic;
 * `TauCeti.variance_trace_mul_wishartGramMeasure` computes its variance;
@@ -42,7 +46,7 @@ noncomputable section
 
 open MeasureTheory ProbabilityTheory
 
-open scoped RealInnerProductSpace Matrix MatrixOrder Topology
+open scoped RealInnerProductSpace Matrix MatrixOrder NNReal Topology
 
 namespace TauCeti
 
@@ -128,10 +132,10 @@ private lemma hasDerivAt_deriv_neg_half_mul_sum_log (c : ℝ) (a : Fin p → ℝ
       (2 * c * ∑ j, a j ^ 2) 0 := by
   let f : ℝ → ℝ := fun t => -c / 2 * ∑ j, Real.log (1 - 2 * t * a j)
   let g : ℝ → ℝ := fun t => c * ∑ j, a j / (1 - 2 * t * a j)
-  have hne : ∀ᶠ t in 𝓝 (0 : ℝ), ∀ j, 1 - 2 * t * a j ≠ 0 := by
-    exact Filter.eventually_all.2 fun j =>
-      (show ContinuousAt (fun t : ℝ => 1 - 2 * t * a j) 0 by fun_prop).eventually_ne
-        (by norm_num : (1 - 2 * 0 * a j : ℝ) ≠ 0)
+  have hcont (j : Fin p) : ContinuousAt (fun t : ℝ => 1 - 2 * t * a j) 0 := by fun_prop
+  have hne : ∀ᶠ t in 𝓝 (0 : ℝ), ∀ j, 1 - 2 * t * a j ≠ 0 :=
+    Filter.eventually_all.2 fun j =>
+      (hcont j).eventually_ne (by norm_num : (1 - 2 * 0 * a j : ℝ) ≠ 0)
   have hfg : deriv f =ᶠ[𝓝 (0 : ℝ)] g := by
     filter_upwards [hne] with t ht
     dsimp [f, g]
@@ -187,6 +191,52 @@ private lemma iteratedDeriv_two_neg_half_mul_sum_log (c : ℝ) (a : Fin p → �
       2 * c * ∑ j, a j ^ 2 := by
   rw [iteratedDeriv_succ, iteratedDeriv_one]
   exact (hasDerivAt_deriv_neg_half_mul_sum_log c a).deriv
+
+/-! ### Finite moments -/
+
+/-- Every symmetric trace statistic `A ↦ trace (Θ * A)` has finite moments of all orders under a
+Gaussian-Gram Wishart law. -/
+theorem memLp_trace_mul_wishartGramMeasure
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (S : Matrix (Fin p) (Fin p) ℝ)
+    (ν : ℕ) (q : ℝ≥0) :
+    MemLp (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+        ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) q
+      (wishartGramMeasure ν S) :=
+  memLp_of_mem_interior_integrableExpSet
+    (zero_mem_interior_integrableExpSet_trace_mul_wishartGramMeasure Θ S ν) q
+
+/-- Every entry of a Gaussian-Gram Wishart matrix has finite moments of all orders. -/
+theorem memLp_coe_apply_wishartGramMeasure (S : Matrix (Fin p) (Fin p) ℝ) (ν : ℕ)
+    (i j : Fin p) (q : ℝ≥0) :
+    MemLp (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+        (A : Matrix (Fin p) (Fin p) ℝ) i j) q (wishartGramMeasure ν S) := by
+  simpa only [trace_symmetricEntry_mul_coe] using
+    memLp_trace_mul_wishartGramMeasure (symmetricEntry i j) S ν q
+
+/-- A Gaussian-Gram Wishart matrix has finite moments of all orders. -/
+theorem memLp_id_wishartGramMeasure (S : Matrix (Fin p) (Fin p) ℝ) (ν : ℕ) (q : ℝ≥0) :
+    MemLp (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => A) q
+      (wishartGramMeasure ν S) := by
+  have hcoordinates : MemLp
+      (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+        symmetricCoordinates p A) q (wishartGramMeasure ν S) :=
+    MemLp.of_eval fun ij => by
+      simpa only [symmetricCoordinates_apply] using
+        memLp_coe_apply_wishartGramMeasure S ν ij.1.1 ij.1.2 q
+  have hcomp :
+      ((symmetricCoordinates p).symm.toContinuousLinearMap ∘
+        fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => symmetricCoordinates p A) =
+        fun A => A := by
+    funext A
+    simp
+  rw [← hcomp]
+  exact (symmetricCoordinates p).symm.toContinuousLinearMap.comp_memLp' hcoordinates
+
+/-- A Gaussian-Gram Wishart matrix is integrable. -/
+theorem integrable_id_wishartGramMeasure (S : Matrix (Fin p) (Fin p) ℝ) (ν : ℕ) :
+    Integrable (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => A)
+      (wishartGramMeasure ν S) :=
+  memLp_one_iff_integrable.1 (by exact_mod_cast memLp_id_wishartGramMeasure S ν 1)
 
 /-! ### Trace statistics -/
 
@@ -267,11 +317,9 @@ theorem covariance_trace_mul_wishartGramMeasure (hS : S.PosSemidef)
   let Y := fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
     ((Φ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace
   have hX : MemLp X 2 (wishartGramMeasure ν S) :=
-    memLp_of_mem_interior_integrableExpSet
-      (zero_mem_interior_integrableExpSet_trace_mul_wishartGramMeasure Θ S ν) 2
+    memLp_trace_mul_wishartGramMeasure Θ S ν 2
   have hY : MemLp Y 2 (wishartGramMeasure ν S) :=
-    memLp_of_mem_interior_integrableExpSet
-      (zero_mem_interior_integrableExpSet_trace_mul_wishartGramMeasure Φ S ν) 2
+    memLp_trace_mul_wishartGramMeasure Φ S ν 2
   have hsum : X + Y = fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       ((((Θ + Φ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
         Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) := by
@@ -281,53 +329,11 @@ theorem covariance_trace_mul_wishartGramMeasure (hS : S.PosSemidef)
   rw [hsum, variance_trace_mul_wishartGramMeasure hS (Θ + Φ) ν,
     variance_trace_mul_wishartGramMeasure hS Θ ν,
     variance_trace_mul_wishartGramMeasure hS Φ ν] at hpolar
-  rw [Submodule.coe_add, trace_add_mul_add_mul] at hpolar
+  rw [Submodule.coe_add, Matrix.trace_add_mul_add_mul] at hpolar
   dsimp [X, Y] at hpolar
   linarith
 
 /-! ### Matrix entries -/
-
-/-- The symmetric matrix representing evaluation at the `(i, j)` entry under the trace pairing. -/
-private def symmetricEntry (i j : Fin p) :
-    selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
-  ⟨(1 / 2 : ℝ) • (Matrix.single i j 1 + Matrix.single j i 1),
-    Matrix.isHermitian_iff_isSelfAdjoint.1 <| by
-      rw [Matrix.isHermitian_iff_isSymm, Matrix.IsSymm.ext_iff]
-      intro k l
-      simp only [Matrix.smul_apply, Matrix.add_apply, Matrix.single_apply, smul_eq_mul]
-      split_ifs <;> simp_all [eq_comm] ⟩
-
-private lemma coe_symmetricEntry (i j : Fin p) :
-    ((symmetricEntry i j : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-        Matrix (Fin p) (Fin p) ℝ) =
-      (1 / 2 : ℝ) • (Matrix.single i j 1 + Matrix.single j i 1) :=
-  rfl
-
-private lemma trace_symmetricEntry_mul (i j : Fin p) (A : Matrix (Fin p) (Fin p) ℝ)
-    (hA : A.IsHermitian) :
-    (((symmetricEntry i j : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-        Matrix (Fin p) (Fin p) ℝ) * A).trace = A i j := by
-  rw [coe_symmetricEntry, Matrix.smul_mul, Matrix.trace_smul, Matrix.add_mul, Matrix.trace_add,
-    Matrix.trace_single_mul, Matrix.trace_single_mul]
-  simp only [smul_eq_mul]
-  have hsym : A j i = A i j := by simpa using hA.apply i j
-  rw [hsym]
-  ring
-
-private lemma trace_symmetricEntry_mul_mul_symmetricEntry_mul (i j k l : Fin p)
-    (S : Matrix (Fin p) (Fin p) ℝ) (hS : S.IsHermitian) :
-    (((symmetricEntry i j : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-        Matrix (Fin p) (Fin p) ℝ) * S *
-      ((symmetricEntry k l : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-        Matrix (Fin p) (Fin p) ℝ) * S).trace =
-      (S i k * S j l + S i l * S j k) / 2 := by
-  rw [coe_symmetricEntry, coe_symmetricEntry]
-  simp only [Matrix.smul_mul, Matrix.mul_smul, Matrix.trace_smul, Matrix.add_mul,
-    Matrix.mul_add, Matrix.trace_add]
-  simp_rw [trace_single_mul_mul_single_mul]
-  have hsym (a b : Fin p) : S a b = S b a := by simpa using hS.apply b a
-  rw [hsym j k, hsym l i, hsym j l, hsym k i, hsym i l, hsym k j]
-  ring
 
 /-- **The entrywise mean of a Gaussian-Gram Wishart matrix** is `ν Sᵢⱼ`. -/
 theorem integral_coe_apply_wishartGramMeasure (hS : S.PosSemidef) (ν : ℕ) (i j : Fin p) :
@@ -335,8 +341,7 @@ theorem integral_coe_apply_wishartGramMeasure (hS : S.PosSemidef) (ν : ℕ) (i 
         (A : Matrix (Fin p) (Fin p) ℝ) i j ∂wishartGramMeasure ν S =
       (ν : ℝ) * S i j := by
   have h := integral_trace_mul_wishartGramMeasure hS (symmetricEntry i j) ν
-  simpa only [trace_symmetricEntry_mul i j _ (selfAdjoint.isHermitian_coe _),
-    trace_symmetricEntry_mul i j S hS.1] using h
+  simpa only [trace_symmetricEntry_mul_coe, trace_symmetricEntry_mul i j hS.1] using h
 
 /-- **The mean of a Gaussian-Gram Wishart matrix** is the degree times its scale matrix. -/
 theorem integral_id_wishartGramMeasure (hS : S.PosSemidef) (ν : ℕ) :
@@ -344,19 +349,11 @@ theorem integral_id_wishartGramMeasure (hS : S.PosSemidef) (ν : ℕ) :
       (ν : ℝ) •
         (⟨S, Matrix.isHermitian_iff_isSelfAdjoint.1 hS.1⟩ :
           selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) := by
-  have hentry (i j : Fin p) : Integrable
-      (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
-        (A : Matrix (Fin p) (Fin p) ℝ) i j) (wishartGramMeasure ν S) := by
-    have h := integrable_of_mem_interior_integrableExpSet
-      (zero_mem_interior_integrableExpSet_trace_mul_wishartGramMeasure
-        (symmetricEntry i j) S ν)
-    refine h.congr (Filter.Eventually.of_forall fun A => ?_)
-    exact trace_symmetricEntry_mul i j _ (selfAdjoint.isHermitian_coe A)
   have hcoordinates : Integrable
       (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
-        symmetricCoordinates p A) (wishartGramMeasure ν S) := by
-    refine Integrable.of_eval fun ij => ?_
-    simpa using hentry ij.1.1 ij.1.2
+        symmetricCoordinates p A) (wishartGramMeasure ν S) :=
+    (symmetricCoordinates p).toContinuousLinearMap.integrable_comp
+      (integrable_id_wishartGramMeasure S ν)
   apply (symmetricCoordinates p).injective
   funext ij
   rw [← (symmetricCoordinates p).integral_comp_comm,
@@ -377,21 +374,21 @@ theorem covariance_coe_apply_wishartGramMeasure (hS : S.PosSemidef) (ν : ℕ)
       (ν : ℝ) * (S i k * S j l + S i l * S j k) := by
   have h := covariance_trace_mul_wishartGramMeasure hS
     (symmetricEntry i j) (symmetricEntry k l) ν
-  rw [trace_symmetricEntry_mul_mul_symmetricEntry_mul i j k l S hS.1] at h
+  rw [trace_symmetricEntry_mul_mul_symmetricEntry_mul i j k l hS.1] at h
   have hi : (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (((symmetricEntry i j : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
         Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) =
       fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
         (A : Matrix (Fin p) (Fin p) ℝ) i j := by
     funext A
-    exact trace_symmetricEntry_mul i j _ (selfAdjoint.isHermitian_coe A)
+    exact trace_symmetricEntry_mul_coe i j A
   have hkl : (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (((symmetricEntry k l : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
         Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) =
       fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
         (A : Matrix (Fin p) (Fin p) ℝ) k l := by
     funext A
-    exact trace_symmetricEntry_mul k l _ (selfAdjoint.isHermitian_coe A)
+    exact trace_symmetricEntry_mul_coe k l A
   rw [hi, hkl] at h
   rw [h]
   ring
