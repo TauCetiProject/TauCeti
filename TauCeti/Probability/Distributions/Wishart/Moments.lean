@@ -7,15 +7,18 @@ module
 
 public import TauCeti.Probability.Distributions.Wishart.Transforms
 
+import TauCeti.LinearAlgebra.Matrix.Trace
+
 /-!
 # Moments of the Gaussian-Gram Wishart family
 
-This file computes the first two moments of the Gaussian-Gram Wishart family.  The calculation
-starts from the trace cumulant-generating function: diagonalizing the Hermitian sandwich
-`√S * Θ * √S` writes its logarithm as a finite sum of scalar logarithms.  Its first two
-derivatives give the mean and variance of every symmetric trace statistic.  Polarization then
-gives the covariance of two trace statistics and, by choosing symmetric matrix units, the
-entrywise formulas.
+This file computes the first two moments of the Gaussian-Gram Wishart family
+`wishartGramMeasure ν S`.  A symmetric trace statistic `A ↦ trace (Θ * A)` has mean
+`ν * trace (Θ * S)` and variance `2 * ν * trace (Θ * S * Θ * S)`, two such statistics have
+covariance `2 * ν * trace (Θ * S * Φ * S)`, and the matrix itself has mean `(ν : ℝ) • S` and
+entrywise covariance `ν * (S i k * S j l + S i l * S j k)`.  These are the second-order data of
+the family: they exhibit `(ν : ℝ) • S` as its centre and describe the fluctuation of any
+quadratic form in the underlying Gaussian sample.
 
 ## Main results
 
@@ -31,8 +34,6 @@ entrywise formulas.
 ## References
 
 * R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Wiley (1982), Theorem 3.2.3.
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 6, item 4,
-  **Natural-degree Gaussian-Gram family**.
 -/
 
 public section
@@ -40,7 +41,6 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
-open Unitary
 
 open scoped RealInnerProductSpace Matrix MatrixOrder Topology
 
@@ -54,7 +54,7 @@ private lemma eventually_posDef_one_sub_two_mul_smul (B : Matrix (Fin p) (Fin p)
   rw [Filter.Eventually, mem_nhds_iff]
   refine ⟨⋂ j, {t : ℝ | 2 * t * hB.eigenvalues j < 1}, ?_, ?_, ?_⟩
   · intro t ht
-    change (1 - (2 * t) • B).PosDef
+    simp only [Set.mem_ofPred_eq]
     rw [hB.posDef_one_sub_smul_iff]
     exact fun j => Set.mem_iInter.1 ht j
   · exact isOpen_iInter_of_finite fun j =>
@@ -167,20 +167,6 @@ private lemma hasDerivAt_deriv_neg_half_mul_sum_log (c : ℝ) (a : Fin p → ℝ
     ring_nf
   exact hg.congr_of_eventuallyEq hfg
 
-private lemma sum_sq_eigenvalues_eq_trace_mul_self (B : Matrix (Fin p) (Fin p) ℝ)
-    (hB : B.IsHermitian) :
-    ∑ j, hB.eigenvalues j ^ 2 = (B * B).trace := by
-  let D : Matrix (Fin p) (Fin p) ℝ := Matrix.diagonal hB.eigenvalues
-  have hdiag : ∑ j, hB.eigenvalues j ^ 2 = (D * D).trace := by
-    simp [D, Matrix.trace, pow_two]
-  rw [hdiag, hB.spectral_theorem, ← map_mul]
-  simp only [RCLike.ofReal_real_eq_id]
-  change (D * D).trace =
-    (conjStarAlgAut ℝ _ hB.eigenvectorUnitary (D * D)).trace
-  symm
-  rw [conjStarAlgAut_apply, Matrix.trace_mul_cycle,
-    star_mul_self_of_mem hB.eigenvectorUnitary.2, one_mul]
-
 private lemma trace_sqrt_mul_mul_sqrt (hS : S.PosSemidef) (M : Matrix (Fin p) (Fin p) ℝ) :
     (CFC.sqrt S * M * CFC.sqrt S).trace = (M * S).trace := by
   rw [Matrix.trace_mul_cycle, CFC.sqrt_mul_sqrt_self S hS.nonneg, Matrix.trace_mul_comm]
@@ -204,8 +190,8 @@ private lemma iteratedDeriv_two_neg_half_mul_sum_log (c : ℝ) (a : Fin p → �
 
 /-! ### Trace statistics -/
 
-/-- **The mean of a symmetric trace statistic under a Gaussian-Gram Wishart law.** This is the
-first derivative at zero of its cumulant-generating function. -/
+/-- **The mean of a symmetric trace statistic under a Gaussian-Gram Wishart law.** The
+statistic `A ↦ trace (Θ * A)` has mean `ν * trace (Θ * S)`. -/
 theorem integral_trace_mul_wishartGramMeasure (hS : S.PosSemidef)
     (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (ν : ℕ) :
     ∫ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
@@ -231,9 +217,9 @@ theorem integral_trace_mul_wishartGramMeasure (hS : S.PosSemidef)
     _ = (ν : ℝ) * ((Θ : Matrix (Fin p) (Fin p) ℝ) * S).trace := by
       rw [trace_sqrt_mul_mul_sqrt hS]
 
-/-- **The variance of a symmetric trace statistic under a Gaussian-Gram Wishart law.** It is
-twice the degree times `trace (Θ S Θ S)`, obtained as the second derivative at zero of the
-cumulant-generating function. -/
+/-- **The variance of a symmetric trace statistic under a Gaussian-Gram Wishart law.** The
+statistic `A ↦ trace (Θ * A)` has variance `2 * ν * trace (Θ * S * Θ * S)`, twice the degree
+times the trace of the square of `Θ * S`. -/
 theorem variance_trace_mul_wishartGramMeasure (hS : S.PosSemidef)
     (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (ν : ℕ) :
     Var[fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
@@ -258,20 +244,14 @@ theorem variance_trace_mul_wishartGramMeasure (hS : S.PosSemidef)
   norm_num at hfirst
   rw [hfirst] at hsecond
   simp only [zero_mul, Real.exp_zero, mul_one, mgf_zero, div_one] at hsecond
-  rw [← hsecond, hcumulant, sum_sq_eigenvalues_eq_trace_mul_self B hB,
-    trace_sqrt_mul_mul_sqrt_sq hS]
+  have hsq : ∑ j, hB.eigenvalues j ^ 2 = (B * B).trace := by
+    simpa only [RCLike.ofReal_real_eq_id, id_eq]
+      using hB.trace_mul_self_eq_sum_eigenvalues_sq.symm
+  rw [← hsecond, hcumulant, hsq, trace_sqrt_mul_mul_sqrt_sq hS]
 
-private lemma trace_add_mul_add_mul (M N S : Matrix (Fin p) (Fin p) ℝ) :
-    ((M + N) * S * (M + N) * S).trace =
-      (M * S * M * S).trace + 2 * (M * S * N * S).trace + (N * S * N * S).trace := by
-  have hcross : (N * S * M * S).trace = (M * S * N * S).trace := by
-    simpa only [Matrix.mul_assoc] using Matrix.trace_mul_comm (N * S) (M * S)
-  simp only [Matrix.add_mul, Matrix.mul_add, Matrix.trace_add]
-  rw [hcross]
-  ring
-
-/-- **The covariance of two symmetric trace statistics under a Gaussian-Gram Wishart law.**
-Polarizing the variance formula gives `2 ν trace (Θ S Φ S)`. -/
+/-- **The covariance of two symmetric trace statistics under a Gaussian-Gram Wishart law.** The
+statistics `A ↦ trace (Θ * A)` and `A ↦ trace (Φ * A)` have covariance
+`2 * ν * trace (Θ * S * Φ * S)`. -/
 theorem covariance_trace_mul_wishartGramMeasure (hS : S.PosSemidef)
     (Θ Φ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (ν : ℕ) :
     cov[fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
@@ -317,43 +297,22 @@ private def symmetricEntry (i j : Fin p) :
       simp only [Matrix.smul_apply, Matrix.add_apply, Matrix.single_apply, smul_eq_mul]
       split_ifs <;> simp_all [eq_comm] ⟩
 
+private lemma coe_symmetricEntry (i j : Fin p) :
+    ((symmetricEntry i j : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+        Matrix (Fin p) (Fin p) ℝ) =
+      (1 / 2 : ℝ) • (Matrix.single i j 1 + Matrix.single j i 1) :=
+  rfl
+
 private lemma trace_symmetricEntry_mul (i j : Fin p) (A : Matrix (Fin p) (Fin p) ℝ)
     (hA : A.IsHermitian) :
     (((symmetricEntry i j : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
         Matrix (Fin p) (Fin p) ℝ) * A).trace = A i j := by
-  rw [show ((symmetricEntry i j : selfAdjoint.submodule ℝ
-      (Matrix (Fin p) (Fin p) ℝ)) : Matrix (Fin p) (Fin p) ℝ) =
-      (1 / 2 : ℝ) • (Matrix.single i j 1 + Matrix.single j i 1) from rfl,
-    Matrix.smul_mul, Matrix.trace_smul, Matrix.add_mul, Matrix.trace_add,
+  rw [coe_symmetricEntry, Matrix.smul_mul, Matrix.trace_smul, Matrix.add_mul, Matrix.trace_add,
     Matrix.trace_single_mul, Matrix.trace_single_mul]
   simp only [smul_eq_mul]
   have hsym : A j i = A i j := by simpa using hA.apply i j
   rw [hsym]
   ring
-
-private lemma trace_single_mul_mul_single_mul (i j k l : Fin p)
-    (A B : Matrix (Fin p) (Fin p) ℝ) :
-    (Matrix.single i j 1 * A * Matrix.single k l 1 * B).trace = A j k * B l i := by
-  have hmul (x : Fin p) :
-      ((A * Matrix.single k l 1) : Matrix (Fin p) (Fin p) ℝ) j x =
-        if l = x then A j k else 0 := by
-    rw [Matrix.mul_apply]
-    by_cases hx : l = x
-    · subst x
-      simp [Matrix.single_apply]
-    · simp [hx]
-  calc
-    (Matrix.single i j 1 * A * Matrix.single k l 1 * B).trace =
-        (Matrix.single i j 1 * (A * Matrix.single k l 1 * B)).trace := by
-      congr 1
-      noncomm_ring
-    _ = ((A * Matrix.single k l 1 * B) : Matrix (Fin p) (Fin p) ℝ) j i := by
-      rw [Matrix.trace_single_mul]
-      simp
-    _ = A j k * B l i := by
-      rw [Matrix.mul_apply]
-      simp_rw [hmul]
-      simp
 
 private lemma trace_symmetricEntry_mul_mul_symmetricEntry_mul (i j k l : Fin p)
     (S : Matrix (Fin p) (Fin p) ℝ) (hS : S.IsHermitian) :
@@ -362,8 +321,7 @@ private lemma trace_symmetricEntry_mul_mul_symmetricEntry_mul (i j k l : Fin p)
       ((symmetricEntry k l : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
         Matrix (Fin p) (Fin p) ℝ) * S).trace =
       (S i k * S j l + S i l * S j k) / 2 := by
-  change (((1 / 2 : ℝ) • (Matrix.single i j 1 + Matrix.single j i 1)) * S *
-    ((1 / 2 : ℝ) • (Matrix.single k l 1 + Matrix.single l k 1)) * S).trace = _
+  rw [coe_symmetricEntry, coe_symmetricEntry]
   simp only [Matrix.smul_mul, Matrix.mul_smul, Matrix.trace_smul, Matrix.add_mul,
     Matrix.mul_add, Matrix.trace_add]
   simp_rw [trace_single_mul_mul_single_mul]
