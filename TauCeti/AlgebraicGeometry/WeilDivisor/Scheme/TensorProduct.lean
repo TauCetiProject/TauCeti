@@ -34,7 +34,7 @@ is cut out by a single rational function `g`, multiplying by `g` and by `g⁻¹`
   whose forward map is the sheafified multiplication
   (`SchemeWeilDivisor.tensorProductSheafIso_hom`);
 * `SchemeWeilDivisor.toLineBundleClass_add` and
-  `SchemeWeilDivisor.classGroupToLineBundleClass_add`, saying that `D ↦ [𝒪_X(D)]` carries
+  `SchemeWeilDivisor.classGroupToLineBundleClassHom`, saying that `D ↦ [𝒪_X(D)]` carries
   addition of divisors, and of divisor classes, to tensor product of line bundles;
 * `SchemeWeilDivisor.isUnit_toLineBundleClass`: the class of `𝒪_X(D)` is invertible, with inverse
   the class of `𝒪_X(-D)`.
@@ -188,7 +188,7 @@ end LocallyNoetherian
 
 section LocalEquation
 
-variable [IsNoetherian X]
+variable [IsLocallyNoetherian X]
 variable {E : SchemeWeilDivisor X} {V : X.Opens} [Nonempty V] {g : Additive X.functionFieldˣ}
   (hg : ∀ y : CodimensionOnePoint X, (y : X) ∈ V → WeilDivisor.coeff E y = orderAt y g)
 
@@ -211,9 +211,9 @@ lemma mul_localEquation_mem_sections (s : Γ(sheaf (D + E), V)) :
       (Scheme.Modules.Hom.app (sheafι (D + E)) V s)
       ((Scheme.rationalFunctionsEquiv V).symm
         ((Additive.toMul g : X.functionFieldˣ) : X.functionField)) ∈ sections D V := by
-  have h : sections (D + E + -E) V = sections D V := by rw [show D + E + -E = D by abel]
-  exact h ▸ rationalFunctionsMulBilin_mem_sections (sheafι_app_mem (D + E) V s)
-    (localEquation_mem_sections_neg hg)
+  simpa only [add_assoc, add_neg_cancel, add_zero] using
+    rationalFunctionsMulBilin_mem_sections (sheafι_app_mem (D + E) V s)
+      (localEquation_mem_sections_neg hg)
 
 /-- **Local surjectivity of multiplication.** Where `E` has a local equation `g`, every section
 of `𝒪_X(D + E)` over `V` is the product of a section of `𝒪_X(D)` and a section of `𝒪_X(E)`:
@@ -260,10 +260,9 @@ theorem sectionsMulRetraction_sectionsMul (hX : ∀ y : X, coheight y ≤ 1)
         ((Scheme.rationalFunctionsEquiv V).symm
           ((Additive.toMul g : X.functionFieldˣ) : X.functionField)) := by
     refine (mem_sections_zero_iff (fun y _ ↦ hX y) _).mp ?_
-    have h : sections (E + -E) V = sections (0 : SchemeWeilDivisor X) V := by
-      rw [show E + -E = (0 : SchemeWeilDivisor X) by abel]
-    exact h ▸ rationalFunctionsMulBilin_mem_sections (sheafι_app_mem E V b)
-      (localEquation_mem_sections_neg hg)
+    simpa only [add_neg_cancel] using
+      rationalFunctionsMulBilin_mem_sections (sheafι_app_mem E V b)
+        (localEquation_mem_sections_neg hg)
   have h1 : sectionMk _ (mul_localEquation_mem_sections hg D (sectionsMul D E V a b)) = r • a := by
     refine sheafι_app_injective D V ?_
     rw [sheafι_app_sectionMk, Scheme.Modules.Hom.app_smul,
@@ -382,6 +381,7 @@ theorem tensorProductSheafIso_hom :
 
 /-- **The divisor-to-line-bundle map is multiplicative.** The class of `𝒪_X(D + E)` is the
 product of the classes of `𝒪_X(D)` and `𝒪_X(E)`. -/
+@[simp]
 theorem toLineBundleClass_add :
     toLineBundleClass hX (D + E) = toLineBundleClass hX D * toLineBundleClass hX E := by
   unfold toLineBundleClass
@@ -398,6 +398,7 @@ theorem isUnit_toLineBundleClass : IsUnit (toLineBundleClass hX D) :=
 
 /-- The comparison from the divisor class group to line-bundle classes turns addition of divisor
 classes into tensor product of line bundles. -/
+@[simp]
 theorem classGroupToLineBundleClass_add
     (c c' : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
     classGroupToLineBundleClass hX (c + c') =
@@ -407,6 +408,22 @@ theorem classGroupToLineBundleClass_add
   rw [← map_add, classGroupToLineBundleClass_divisorClass,
     classGroupToLineBundleClass_divisorClass, classGroupToLineBundleClass_divisorClass,
     toLineBundleClass_add]
+
+/-- The comparison from the divisor class group to line-bundle classes, as an additive
+homomorphism into the additive form of the tensor-product monoid. -/
+def classGroupToLineBundleClassHom :
+    (WeilDivisor.OrderSystem.ofScheme X).ClassGroup →+ Additive (LineBundleClass X) where
+  toFun c := Additive.ofMul (classGroupToLineBundleClass hX c)
+  map_zero' := congrArg Additive.ofMul (classGroupToLineBundleClass_zero hX)
+  map_add' c c' := congrArg Additive.ofMul (classGroupToLineBundleClass_add hX c c')
+
+/-- Applying the bundled divisor-class comparison recovers `classGroupToLineBundleClass`. -/
+@[simp]
+lemma classGroupToLineBundleClassHom_apply
+    (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
+    classGroupToLineBundleClassHom hX c =
+      Additive.ofMul (classGroupToLineBundleClass hX c) := by
+  rw [classGroupToLineBundleClassHom, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
 
 end Curve
 
