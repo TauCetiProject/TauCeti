@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Brauer.Compose
+public import TauCeti.Logic.Function.Iterate
 
 /-!
 # Stacking Brauer diagrams is associative
@@ -16,27 +17,8 @@ above `D₂` and the result above `D₃` gives the same matching of the outer bo
 of the Brauer algebra, whose multiplication is the composite diagram weighted by `δ` raised to
 the middle-loop count of `TauCeti/Combinatorics/Brauer/LoopCount.lean`.
 
-The proof reads both bracketings off one and the same walk, the walk along a strand of the
-**three-fold** stack of `D₁` above `D₂` above `D₃`. That stack has two middle boundaries, an
-upper one between `D₁` and `D₂` and a lower one between `D₂` and `D₃`, and a strand that has
-reached a middle point is about to run either up or down through one of the three diagrams; the
-four resulting middle states, together with the outer point at which the strand has already
-left the stack, are the positions of the walk.
-
-Only one direction of the comparison is needed in each bracketing, because the walk is a
-*function*: a strand leaves the three-fold stack at most once, so the outer point at which it
-leaves is unique. So it suffices to prove of *each* bracketing that the point it matches with
-`x` is a point at which the strand of the three-fold stack starting at `x` leaves, and the two
-are then equal without ever chopping a walk of the three-fold stack into walks of a two-fold
-one.
-
-That one direction is in turn a simulation statement, and the same one twice. A two-fold stack
-occurring inside a bracketing embeds into the three-fold stack: its middle states are two of the
-four, and the outer points at which its strands leave are either genuine outer points of the
-three-fold stack or middle states of it. Under that embedding one step of the two-fold walk is
-finitely many steps of the three-fold walk -- one step where the two-fold stack uses a diagram
-directly, and the walk of the inner stack where it uses a composite -- and
-a lemma on simulations of iterates turns that into the same statement for iterates.
+Associativity is what makes the stacking of diagrams the multiplication of an associative
+algebra, so it is the law every consumer of the Brauer algebra rests on.
 
 ## Main results
 
@@ -46,8 +28,6 @@ a lemma on simulations of iterates turns that into the same statement for iterat
 
 * [R. Brauer, *On algebras which are connected with the semisimple continuous groups*][brauer1937],
   Annals of Mathematics 38 (1937), 857-872.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9, "Brauer diagrams and the Brauer algebra".
 -/
 
 public section
@@ -56,19 +36,27 @@ namespace TauCeti
 
 variable {k : ℕ}
 
-/-! ### Simulating one walk by another -/
-
-/-- If every step of `f` is simulated by finitely many steps of `g` along `Φ`, then so is every
-iterate of `f`. -/
-private theorem exists_iterate_of_forall_exists_iterate {α β : Type*} {f : α → α} {g : β → β}
-    {Φ : α → β} (h : ∀ a, ∃ m, g^[m] (Φ a) = Φ (f a)) (n : ℕ) (a : α) :
-    ∃ m, g^[m] (Φ a) = Φ (f^[n] a) := by
-  induction n generalizing a with
-  | zero => exact ⟨0, rfl⟩
-  | succ n ih =>
-    obtain ⟨m₁, h₁⟩ := h a
-    obtain ⟨m₂, h₂⟩ := ih (f a)
-    exact ⟨m₂ + m₁, by rw [Function.iterate_add_apply, h₁, h₂, Function.iterate_succ_apply]⟩
+-- The proof reads both bracketings off one and the same walk, the walk along a strand of the
+-- three-fold stack of `D₁` above `D₂` above `D₃`. That stack has two middle boundaries, an upper
+-- one between `D₁` and `D₂` and a lower one between `D₂` and `D₃`, and a strand that has reached a
+-- middle point is about to run either up or down through one of the three diagrams; the four
+-- resulting middle states, together with the outer point at which the strand has already left the
+-- stack, are the positions of the walk.
+--
+-- Only one direction of the comparison is needed in each bracketing, because the walk is a
+-- function: a strand leaves the three-fold stack at most once, so the outer point at which it
+-- leaves is unique. So it suffices to prove of each bracketing that the point it matches with `x`
+-- is a point at which the strand of the three-fold stack starting at `x` leaves, and the two are
+-- then equal without ever chopping a walk of the three-fold stack into walks of a two-fold one.
+--
+-- That one direction is in turn a simulation statement, and the same one twice. A two-fold stack
+-- occurring inside a bracketing embeds into the three-fold stack: its middle states are two of the
+-- four, and the outer points at which its strands leave are either genuine outer points of the
+-- three-fold stack or middle states of it. Under that embedding one step of the two-fold walk is
+-- at most finitely many steps of the three-fold walk -- one step where the two-fold stack uses a
+-- diagram directly, and the walk of the inner stack where it uses a composite -- and
+-- `TauCeti.exists_iterate_of_forall_exists_iterate` turns that into the same statement for
+-- iterates.
 
 /-! ### The walk along a strand of a stack of two diagrams -/
 
@@ -184,7 +172,8 @@ private def upperEmbed : (Fin k ⊕ Fin k) ⊕ (Fin k ⊕ Fin k) → TriplePos k
   Sum.elim (Sum.elim (fun a => Sum.inr (Sum.inr (Sum.inr a))) fun j => Sum.inl (Sum.inr j))
     fun s => Sum.inr (Sum.inl s)
 
-/-- One step of the walk of the upper two-fold stack is one step of the three-fold walk. -/
+/-- One step of the walk of the upper two-fold stack is at most one step of the three-fold walk:
+one step from a middle state, and none once the strand has left the stack. -/
 private theorem tripleStep_upperEmbed (D₁ D₂ D₃ : BrauerDiagram k)
     (p : (Fin k ⊕ Fin k) ⊕ (Fin k ⊕ Fin k)) :
     ∃ m, (tripleStep D₁ D₂ D₃)^[m] (upperEmbed p) = upperEmbed (stackWalk D₁ D₂ p) := by
@@ -220,7 +209,8 @@ private def lowerEmbed : (Fin k ⊕ Fin k) ⊕ (Fin k ⊕ Fin k) → TriplePos k
   Sum.elim (Sum.elim (fun i => Sum.inl (Sum.inl i)) fun b => Sum.inr (Sum.inl (Sum.inl b)))
     fun s => Sum.inr (Sum.inr s)
 
-/-- One step of the walk of the lower two-fold stack is one step of the three-fold walk. -/
+/-- One step of the walk of the lower two-fold stack is at most one step of the three-fold walk:
+one step from a middle state, and none once the strand has left the stack. -/
 private theorem tripleStep_lowerEmbed (D₁ D₂ D₃ : BrauerDiagram k)
     (p : (Fin k ⊕ Fin k) ⊕ (Fin k ⊕ Fin k)) :
     ∃ m, (tripleStep D₁ D₂ D₃)^[m] (lowerEmbed p) = lowerEmbed (stackWalk D₂ D₃ p) := by
@@ -367,9 +357,7 @@ private theorem exists_iterate_tripleStep_right (D₁ D₂ D₃ : BrauerDiagram 
   exact ⟨m₂ + m₁, by rw [Function.iterate_add_apply, h₁, h₂, hn]; rfl⟩
 
 /-- **Stacking Brauer diagrams is associative.** Stacking `D₁` above `D₂` and the composite above
-`D₃` matches the outer boundary in the same way as stacking `D₂` above `D₃` and `D₁` above that,
-because both read off the point at which a strand of the three-fold stack of `D₁` above `D₂`
-above `D₃` leaves it. -/
+`D₃` matches the outer boundary in the same way as stacking `D₂` above `D₃` and `D₁` above that. -/
 theorem composeDiagram_assoc (D₁ D₂ D₃ : BrauerDiagram k) :
     composeDiagram (composeDiagram D₁ D₂) D₃ = composeDiagram D₁ (composeDiagram D₂ D₃) := by
   refine Subtype.ext (Equiv.ext fun x => ?_)
