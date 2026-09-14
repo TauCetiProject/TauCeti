@@ -64,15 +64,14 @@ theorem map_powMonoidHom_unitFiltration_succ_of_isUnit {n : ℕ} (hn : IsUnit (n
     (i : ℕ) :
     (unitFiltration K (i + 1)).map (powMonoidHom n) = unitFiltration K (i + 1) := by
   refine le_antisymm (Subgroup.map_le_iff_le_comap.mpr fun x hx ↦ pow_mem hx n) fun x hx ↦ ?_
-  -- `𝒪[K]` is Henselian: it is complete for the adic topology of its maximal ideal, which Mathlib
-  -- records for the uniformity attached to the topological additive group `K`.
-  have : HenselianLocalRing 𝒪[K] :=
-    { is_henselian f hf a₀ h₁ h₂ := by
-        let := IsTopologicalAddGroup.rightUniformSpace K
-        have := isUniformAddGroup_of_addCommGroup (G := K)
-        exact (IsAdicComplete.henselianRing 𝒪[K] 𝓂[K]).is_henselian f hf a₀ h₁ (h₂.map _) }
+  -- `𝒪[K]` is Henselian at `𝓂[K]`: it is complete for the adic topology of its maximal ideal,
+  -- which Mathlib records for the uniformity attached to the topological additive group `K`.
+  have : HenselianRing 𝒪[K] 𝓂[K] := by
+    let := IsTopologicalAddGroup.rightUniformSpace K
+    have := isUniformAddGroup_of_addCommGroup (G := K)
+    exact IsAdicComplete.henselianRing 𝒪[K] 𝓂[K]
   obtain ⟨u, hu, hux⟩ := mem_unitFiltration_iff_exists.mp hx
-  obtain ⟨a, ha, ha1⟩ := HenselianLocalRing.exists_pow_eq_of_sub_one_mem
+  obtain ⟨a, ha, ha1⟩ := HenselianRing.exists_pow_eq_and_sub_one_mem_of_sub_one_mem
     (Ideal.pow_le_self i.succ_ne_zero) hn hu
   have hn0 : n ≠ 0 := by
     rintro rfl
