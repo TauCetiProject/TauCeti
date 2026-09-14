@@ -232,9 +232,9 @@ theorem unblockedDifferential_relabelColumns_finRotate :
   refine Finsupp.lhom_ext' fun x => LinearMap.ext_ring (Finsupp.ext fun y => ?_)
   obtain ⟨y, rfl⟩ : ∃ y', y'.relabelColumns (finRotate n) = y :=
     ⟨y.relabelColumns (finRotate n).symm, by simp⟩
-  simp only [GridChain.relabelColumnsRenameEquiv_toLinearMap, LinearMap.comp_apply,
-    Finsupp.lsingle_apply, GridChain.relabelColumnsRename_single, map_one,
-    unblockedDifferential_single_apply, GridChain.relabelColumnsRename_apply,
+  simp only [LinearMap.comp_apply, Finsupp.lsingle_apply,
+    GridChain.relabelColumnsRenameEquiv_single, map_one,
+    unblockedDifferential_single_apply, GridChain.relabelColumnsRenameEquiv_apply,
     GridState.relabelColumns_relabelColumns, Equiv.self_trans_symm, GridState.relabelColumns_refl,
     unblockedCoefficient_relabelColumns_finRotate]
 
