@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
-import TauCeti.NumberTheory.ModularForms.HeckeSlash.LevelSupported
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Composite
 import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Scalar
 
@@ -17,11 +16,6 @@ For an index `n` coprime to the level, every positive Fourier coefficient of the
 composite Hecke-ring element `T_n` on `M_k(N, χ)` has the classical divisor-sum formula
 
 `a_m(T_n F) = ∑ d ∣ gcd(m,n), χ(d) d^{k−1} a_{mn/d²}(F)`.
-
-The proof reads the coefficient at `m` as the first coefficient of `T_m T_n F`, applies the
-global multiplication table in the `Γ₀(N)` Hecke ring, and evaluates its scalar cosets. This
-avoids a second induction over the prime factorisation: the ring multiplication table already
-contains exactly the divisor arithmetic of the coefficient formula.
 
 The character is written through `MulChar.ofUnitHom`, Mathlib's zero-extension of a unit
 homomorphism to a Dirichlet character. Every divisor occurring here is coprime to `N`, so the
@@ -40,8 +34,7 @@ The statement is the coefficient formula `fourierCoeff_heckeT_n_period_one` from
 `LeanModularForms` project (Chris Birkbeck, Apache-2.0,
 <https://github.com/CBirkbeck/AINTLIB> at commit
 `2baa76f742bdb4fb8ee323fabba41203bd390e08`), file
-`LeanModularForms/HeckeRIngs/GL2/FourierHecke.lean`. The proof here instead derives it from Tau
-Ceti's Hecke-ring multiplication table.
+`LeanModularForms/HeckeRIngs/GL2/FourierHecke.lean`.
 
 ## References
 
@@ -59,82 +52,6 @@ open scoped MatrixGroups
 namespace HeckeRing.GL2
 
 variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
-
-/-- At a prime dividing the level, the recurrence block `T_{p^r}` shifts every Fourier
-coefficient by `p^r`. This is the bad-prime counterpart of
-`qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_dvd`. -/
-private theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd
-    {p : ℕ} (hp : p.Prime) (hpN : p ∣ N) (F : modFormCharSpace k χ) (m r : ℕ) :
-    (qExpansion 1 (heckeRingHomCharSpace k χ (heckeTGeneratorRecGamma0 N p r) F :
-        ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff m =
-      (qExpansion 1 (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff (p ^ r * m) := by
-  let _ : NeZero p := ⟨hp.ne_zero⟩
-  have hpc : ¬ Nat.Coprime p N := fun h ↦ (hp.coprime_iff_not_dvd.mp h) hpN
-  rw [heckeTGeneratorRecGamma0_eq_generator_pow_of_not_coprime N hpc, map_pow]
-  induction r generalizing m with
-  | zero => simp
-  | succ r ih =>
-      rw [pow_succ', Module.End.mul_apply,
-        coe_heckeRingHomCharSpace_heckeTGeneratorGamma0 k χ hp]
-      have hs := qExpansion_coeff_heckeTNat_of_primeFactors_subset (N := N) k p
-        (Nat.primeFactors_mono hpN (NeZero.ne N))
-        (((heckeRingHomCharSpace k χ (heckeTGeneratorGamma0 N p)) ^ r) F :
-          ModularForm ((Gamma1 N).map (mapGL ℝ)) k) m
-      rw [hs, ih]
-      congr 1
-      simp [pow_succ', mul_assoc, mul_left_comm]
-
-/-- The first coefficient of the action of `T_n` is the `n`-th coefficient, including when
-`n` has prime factors dividing the level. This is the private normalization step needed to
-read an arbitrary coefficient from the multiplication table. -/
-private theorem qExpansion_coeff_one_heckeRingHomCharSpace_heckeTCompositeGamma0
-    {n : ℕ} (hn : n ≠ 0) (F : modFormCharSpace k χ) :
-    (qExpansion 1 (heckeRingHomCharSpace k χ (heckeTCompositeGamma0 N n) F :
-        ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff 1 =
-      (qExpansion 1 (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff n := by
-  suffices key : ∀ n : ℕ, n ≠ 0 → ∀ m : ℕ, Nat.Coprime m n →
-      (qExpansion 1 (heckeRingHomCharSpace k χ (heckeTCompositeGamma0 N n) F :
-          ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff m =
-        (qExpansion 1 (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff (m * n) by
-    simpa using key n hn 1 (Nat.coprime_one_left n)
-  clear hn n
-  intro n
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-  intro hn m hmn
-  by_cases h1 : n = 1
-  · subst h1
-    rw [heckeTCompositeGamma0_one, map_one, Module.End.one_apply, mul_one]
-  · have hlt : 1 < n := by omega
-    rw [heckeTCompositeGamma0_of_one_lt N hlt, map_mul, Module.End.mul_apply]
-    have hp : n.minFac.Prime := Nat.minFac_prime h1
-    have hpn : n.minFac ∣ n := Nat.minFac_dvd n
-    have hv : n.factorization n.minFac ≠ 0 :=
-      (hp.factorization_pos_of_dvd hn hpn).ne'
-    have hnn' : n.minFac ^ n.factorization n.minFac *
-        (n / n.minFac ^ n.factorization n.minFac) = n :=
-      Nat.ordProj_mul_ordCompl_eq_self n n.minFac
-    have hn'0 : n / n.minFac ^ n.factorization n.minFac ≠ 0 := by
-      intro h
-      rw [h, mul_zero] at hnn'
-      exact hn hnn'.symm
-    have hn'lt : n / n.minFac ^ n.factorization n.minFac < n :=
-      Nat.div_lt_self (Nat.pos_of_ne_zero hn) (Nat.one_lt_pow hv hp.one_lt)
-    have hpm : ¬ n.minFac ∣ m :=
-      (hp.coprime_iff_not_dvd).mp (Nat.Coprime.coprime_dvd_right hpn hmn).symm
-    have hcop : Nat.Coprime (n.minFac ^ n.factorization n.minFac * m)
-        (n / n.minFac ^ n.factorization n.minFac) :=
-      Nat.Coprime.mul_left ((Nat.coprime_ordCompl hp hn).pow_left _)
-        (Nat.Coprime.coprime_dvd_right (Nat.ordCompl_dvd n n.minFac) hmn)
-    by_cases hpN : n.minFac ∣ N
-    · rw [qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd hp hpN,
-        ih _ hn'lt hn'0 _ hcop, mul_comm (n.minFac ^ n.factorization n.minFac) m,
-        mul_assoc, hnn']
-    · have hpNc : Nat.Coprime n.minFac N := hp.coprime_iff_not_dvd.mpr hpN
-      rw [qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_dvd hp hpNc _
-          hpm,
-        ih _ hn'lt hn'0 _ hcop, mul_comm (n.minFac ^ n.factorization n.minFac) m,
-        mul_assoc, hnn']
 
 /-- **The divisor-sum formula for the composite Hecke action on `M_k(N, χ)`.** If `n` is
 nonzero and coprime to the level, then
