@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Matrix.PosSemidef
 public import TauCeti.Probability.Distributions.Gaussian.Conditional
 
 /-!
@@ -28,15 +29,24 @@ nonzero covariance.  In the correlation form the variances and the correlation a
 defining hypotheses rather than spelled out inside the conclusion, which would otherwise repeat
 the four matrix entries several times.
 
+`ρ` is the correlation of the pair only when both variances are positive.  When one of them
+vanishes there is no correlation to speak of and `ρ` is instead the totalized value `0 / 0 = 0`;
+the correlation forms are then still true, but as algebraic identities in which every term
+carrying `ρ` has disappeared.  Likewise, the conditional-law statement below is an identity of
+kernels for any positive semidefinite covariance, whereas reading that kernel as a regular
+conditional distribution needs a positive observed variance.
+
 ## Main results
 
-* `TauCeti.multivariateGaussian_eq_map_single` — over a one-element index type the multivariate
-  Gaussian law is a real Gaussian law carried to the unique coordinate;
+* `EuclideanSpace.multivariateGaussian_eq_map_single` — over a one-element index type the
+  multivariate Gaussian law is a real Gaussian law carried to the unique coordinate;
 * `EuclideanSpace.gaussianCondMean_apply_of_unique_of_posSemidef` and
   `Matrix.gaussianCondCov_apply_of_unique_of_posSemidef` — the bivariate conditional mean and
   variance in terms of the correlation;
 * `EuclideanSpace.gaussianCondKernel_apply_of_unique_of_posSemidef` — the bivariate conditional
-  law itself.
+  law itself;
+* `TauCeti.condDistrib_multivariateGaussian_of_unique` — that law as the regular conditional
+  distribution of a bivariate Gaussian pair, for a positive observed variance.
 
 ## References
 
@@ -52,7 +62,7 @@ open MeasureTheory ProbabilityTheory
 
 variable {ι κ : Type*}
 
-namespace TauCeti
+namespace EuclideanSpace
 
 /-! ### The one-dimensional multivariate Gaussian -/
 
@@ -102,31 +112,7 @@ theorem multivariateGaussian_eq_map_single [Unique ι] [DecidableEq ι]
     ext i
     simp [Unique.eq_default i]
 
-/-! ### Degenerate bivariate covariance matrices -/
-
-/-- A vanishing variance in a positive semidefinite matrix indexed by two singleton blocks forces
-the covariance to vanish as well: otherwise the quadratic form takes a negative value at a
-suitable vector. -/
-private theorem posSemidef_apply_inl_inr_eq_zero [Unique ι] [Unique κ]
-    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef)
-    (h₁₁ : S (Sum.inl default) (Sum.inl default) = 0) :
-    S (Sum.inl default) (Sum.inr default) = 0 := by
-  by_contra hc
-  have hsymm : S (Sum.inr default) (Sum.inl default) = S (Sum.inl default) (Sum.inr default) := by
-    simpa using hS.isHermitian.apply (Sum.inl default) (Sum.inr default)
-  have h := hS.dotProduct_mulVec_nonneg (Sum.elim
-    (fun _ => -(S (Sum.inr default) (Sum.inr default) + 1) /
-      (2 * S (Sum.inl default) (Sum.inr default))) (fun _ => 1))
-  simp only [dotProduct, Matrix.mulVec, Fintype.sum_sum_type, Fintype.sum_unique,
-    Sum.elim_inl, Sum.elim_inr, star_trivial, h₁₁, hsymm] at h
-  have hneg : (0 : ℝ) ≤ -1 := h.trans_eq (by field_simp; ring)
-  norm_num at hneg
-
-end TauCeti
-
 /-! ### The bivariate conditional mean -/
-
-namespace EuclideanSpace
 
 /-- In the bivariate case the conditional mean is the regression line through the observed
 coordinate, with slope the ratio of the covariance to the observed variance. -/
@@ -149,7 +135,10 @@ theorem gaussianCondMean_apply_of_unique [Unique ι] [Unique κ] [DecidableEq κ
 
 /-- **The bivariate conditional mean.**  Write `v₁`, `v₂` for the two variances of a positive
 semidefinite `2 × 2` covariance matrix and `ρ` for the correlation.  The conditional mean of the
-first coordinate given the second is the regression line `m₁ + ρ √(v₁ / v₂) (x₂ - m₂)`. -/
+first coordinate given the second is the regression line `m₁ + ρ √(v₁ / v₂) (x₂ - m₂)`.
+
+`ρ` is the correlation only when both variances are positive; when one of them vanishes it is the
+totalized `0 / 0 = 0`, and the identity holds because the regression slope vanishes as well. -/
 theorem gaussianCondMean_apply_of_unique_of_posSemidef [Unique ι] [Unique κ] [DecidableEq κ]
     (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef)
     (x₂ : EuclideanSpace ℝ κ) {v₁ v₂ ρ : ℝ}
@@ -165,7 +154,7 @@ theorem gaussianCondMean_apply_of_unique_of_posSemidef [Unique ι] [Unique κ] [
     rcases hv₁nonneg.eq_or_lt with hv₁zero | hv₁pos
     · -- A vanishing first variance forces a vanishing covariance, so both sides vanish.
       have hc : S (Sum.inl default) (Sum.inr default) = 0 :=
-        TauCeti.posSemidef_apply_inl_inr_eq_zero hS (by rw [← hv₁, ← hv₁zero])
+        hS.eq_zero_of_apply_self_eq_zero_left (by rw [← hv₁, ← hv₁zero])
       simp [hρ, hc]
     rcases hv₂nonneg.eq_or_lt with hv₂zero | hv₂pos
     · -- A vanishing observed variance makes both sides vanish by division by zero.
@@ -199,7 +188,10 @@ theorem gaussianCondCov_apply_of_unique [Unique ι] [Unique κ] [DecidableEq κ]
 
 /-- **The bivariate conditional variance.**  With the notation of
 `EuclideanSpace.gaussianCondMean_apply_of_unique_of_posSemidef`, the conditional variance of the
-first coordinate given the second is `v₁ (1 - ρ ^ 2)`. -/
+first coordinate given the second is `v₁ (1 - ρ ^ 2)`.
+
+As there, `ρ` is the correlation only when both variances are positive; when one of them vanishes
+it is the totalized `0 / 0 = 0`, and the identity reduces to one with no `ρ` left in it. -/
 theorem gaussianCondCov_apply_of_unique_of_posSemidef [Unique ι] [Unique κ] [DecidableEq κ]
     {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef) {v₁ v₂ ρ : ℝ}
     (hv₁ : v₁ = S (Sum.inl default) (Sum.inl default))
@@ -214,7 +206,7 @@ theorem gaussianCondCov_apply_of_unique_of_posSemidef [Unique ι] [Unique κ] [D
   rcases hv₁nonneg.eq_or_lt with hv₁zero | hv₁pos
   · -- A vanishing first variance forces a vanishing covariance, so both sides vanish.
     have hc : S (Sum.inl default) (Sum.inr default) = 0 :=
-      TauCeti.posSemidef_apply_inl_inr_eq_zero hS (by rw [← hv₁, ← hv₁zero])
+      hS.eq_zero_of_apply_self_eq_zero_left (by rw [← hv₁, ← hv₁zero])
     simp [hc, ← hv₁zero]
   rcases hv₂nonneg.eq_or_lt with hv₂zero | hv₂pos
   · -- A vanishing observed variance makes `ρ` vanish and deletes the Schur correction, by
@@ -234,9 +226,11 @@ namespace EuclideanSpace
 /-- **The conditional law of a bivariate Gaussian.**  Conditionally on the second coordinate
 taking the value `x₂`, the first coordinate of a jointly Gaussian pair with positive semidefinite
 covariance is Gaussian with mean `m₁ + ρ √(v₁ / v₂) (x₂ - m₂)` and variance `v₁ (1 - ρ ^ 2)`,
-read on the unique coordinate of the first block.  Together with
-`TauCeti.condDistrib_multivariateGaussian` this identifies the regular conditional distribution
-of a bivariate Gaussian pair. -/
+read on the unique coordinate of the first block.
+
+This is an identity between the conditional Gaussian kernel and a real Gaussian law, and as such
+needs no constraint on the observed variance; reading it as the regular conditional distribution
+of the pair does, and is `TauCeti.condDistrib_multivariateGaussian_of_unique`. -/
 theorem gaussianCondKernel_apply_of_unique_of_posSemidef [Unique ι] [Unique κ] [DecidableEq ι]
     [DecidableEq κ] (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
     (hS : S.PosSemidef) (x₂ : EuclideanSpace ℝ κ) {v₁ v₂ ρ : ℝ}
@@ -247,8 +241,35 @@ theorem gaussianCondKernel_apply_of_unique_of_posSemidef [Unique ι] [Unique κ]
       (gaussianReal
           (m (Sum.inl default) + ρ * Real.sqrt (v₁ / v₂) * (x₂ default - m (Sum.inr default)))
           (v₁ * (1 - ρ ^ 2)).toNNReal).map (EuclideanSpace.single default) := by
-  rw [EuclideanSpace.gaussianCondKernel_apply, TauCeti.multivariateGaussian_eq_map_single,
+  rw [EuclideanSpace.gaussianCondKernel_apply, multivariateGaussian_eq_map_single,
     EuclideanSpace.gaussianCondMean_apply_of_unique_of_posSemidef m hS x₂ hv₁ hv₂ hρ,
     Matrix.gaussianCondCov_apply_of_unique_of_posSemidef hS hv₁ hv₂ hρ]
 
 end EuclideanSpace
+
+namespace TauCeti
+
+/-- **The regular conditional distribution of a bivariate Gaussian pair.**  For a jointly Gaussian
+pair with positive semidefinite covariance and a positive observed variance, the conditional law
+of the first coordinate given the second is the real Gaussian law with mean
+`m₁ + ρ √(v₁ / v₂) (x₂ - m₂)` and variance `v₁ (1 - ρ ^ 2)`, read on the unique coordinate of the
+first block.  Positive definiteness of the observed block says exactly that `v₂` is positive; if
+`v₁` vanishes as well then `ρ` is again the totalized `0` and the law is the Dirac law at `m₁`. -/
+theorem condDistrib_multivariateGaussian_of_unique {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} [IsProbabilityMeasure P] [Unique ι] [Unique κ] [DecidableEq ι] [DecidableEq κ]
+    (X : Ω → EuclideanSpace ℝ (ι ⊕ κ)) (m : EuclideanSpace ℝ (ι ⊕ κ))
+    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hX : HasLaw X (multivariateGaussian m S) P)
+    (hS : S.PosSemidef) (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) {v₁ v₂ ρ : ℝ}
+    (hv₁ : v₁ = S (Sum.inl default) (Sum.inl default))
+    (hv₂ : v₂ = S (Sum.inr default) (Sum.inr default))
+    (hρ : ρ = S (Sum.inl default) (Sum.inr default) / Real.sqrt (v₁ * v₂)) :
+    ∀ᵐ x₂ ∂P.map fun ω => (EuclideanSpace.sumEquivProd (X ω)).2,
+      condDistrib (fun ω => (EuclideanSpace.sumEquivProd (X ω)).1)
+          (fun ω => (EuclideanSpace.sumEquivProd (X ω)).2) P x₂ =
+        (gaussianReal
+            (m (Sum.inl default) + ρ * Real.sqrt (v₁ / v₂) * (x₂ default - m (Sum.inr default)))
+            (v₁ * (1 - ρ ^ 2)).toNNReal).map (EuclideanSpace.single default) := by
+  filter_upwards [condDistrib_multivariateGaussian X m hX hS hS₂₂] with x₂ hx₂
+  rw [hx₂, EuclideanSpace.gaussianCondKernel_apply_of_unique_of_posSemidef m hS x₂ hv₁ hv₂ hρ]
+
+end TauCeti
