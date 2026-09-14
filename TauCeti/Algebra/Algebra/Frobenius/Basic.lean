@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Algebra.Module.Injective.SelfInjective
 
 /-!
@@ -34,7 +33,7 @@ For finite-dimensional `A` this file proves the standard characterizations.
 * A Frobenius algebra is self-injective on both sides: `A` is injective as a left and as a right
   module over itself.
 
-The trace of square matrices is a symmetric Frobenius functional, which gives the basic example.
+The trace of square matrices is the basic example; see `TauCeti.Algebra.Algebra.Frobenius.Matrix`.
 
 ## Main definitions
 
@@ -57,8 +56,6 @@ The trace of square matrices is a symmetric Frobenius functional, which gives th
 * `LinearMap.IsFrobeniusFunctional.moduleInjective_self` and
   `LinearMap.IsFrobeniusFunctional.moduleInjective_op_self`: a Frobenius algebra is left and right
   self-injective.
-* `Matrix.isSymmetricFrobeniusFunctional_traceLinearMap`: the matrix trace is a symmetric
-  Frobenius functional.
 
 ## References
 
@@ -248,6 +245,7 @@ theorem _root_.LinearMap.IsFrobeniusFunctional.nakayamaAut_eq_refl_iff :
 
 omit hφ in
 /-- The Nakayama automorphism of a symmetric Frobenius functional is the identity. -/
+@[simp]
 theorem _root_.LinearMap.IsSymmetricFrobeniusFunctional.nakayamaAut_eq_refl
     (hφ : φ.IsSymmetricFrobeniusFunctional) :
     hφ.isFrobeniusFunctional.nakayamaAut = AlgEquiv.refl :=
@@ -279,15 +277,5 @@ theorem _root_.LinearMap.IsFrobeniusFunctional.moduleInjective_op_self
 end SelfInjective
 
 end FiniteDimensional
-
-/-! ### The matrix trace -/
-
-/-- The trace of square matrices over a field is a symmetric Frobenius functional. -/
-theorem _root_.Matrix.isSymmetricFrobeniusFunctional_traceLinearMap (n : Type*) [Fintype n]
-    [DecidableEq n] : (Matrix.traceLinearMap n k k).IsSymmetricFrobeniusFunctional where
-  isFrobeniusFunctional := LinearMap.isFrobeniusFunctional_iff.mpr
-    ⟨fun a h => Matrix.ext_iff_trace_mul_right.mpr fun x => by simpa using h x,
-      fun b h => Matrix.ext_iff_trace_mul_left.mpr fun x => by simpa using h x⟩
-  apply_mul_comm a b := by simpa using Matrix.trace_mul_comm a b
 
 end TauCeti
