@@ -40,7 +40,6 @@ the convention `[M{1}] = q[M]` on `TauCeti.LaurentK0`.
 
 ## References
 
-* `TauCetiRoadmap/GrothendieckEulerForms/README.md`, Layer 6, "q-Euler form".
 * Zsuzsanna Dancso and Anthony Licata, "Koszul algebras and flow lattices", *Journal of
   Combinatorial Theory, Series A* **185** (2022), Sections 1.2 and 2.2.
 -/
@@ -52,6 +51,27 @@ namespace TauCeti
 open CategoryTheory LaurentPolynomial
 
 universe w v u t
+
+private def InvertedLaurentPolynomial := LaurentPolynomial ℤ
+
+private noncomputable instance : AddCommGroup InvertedLaurentPolynomial :=
+  inferInstanceAs (AddCommGroup (LaurentPolynomial ℤ))
+
+private noncomputable instance : Module (LaurentPolynomial ℤ) InvertedLaurentPolynomial := by
+  letI : Module (LaurentPolynomial ℤ) InvertedLaurentPolynomial :=
+    inferInstanceAs (Module (LaurentPolynomial ℤ) (LaurentPolynomial ℤ))
+  exact Module.compHom _ (LaurentPolynomial.invert (R := ℤ)).toRingEquiv.toRingHom
+
+private def toInvertedLaurentPolynomial (x : LaurentPolynomial ℤ) :
+    InvertedLaurentPolynomial :=
+  x
+
+private def ofInvertedLaurentPolynomial (x : InvertedLaurentPolynomial) :
+    LaurentPolynomial ℤ :=
+  x
+
+private lemma ofInvertedLaurentPolynomial_injective :
+    Function.Injective ofInvertedLaurentPolynomial := fun _ _ h ↦ h
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Field k] [Linear k C]
   [HasExt.{w} C] {e : C ≌ C} [e.functor.Additive] [e.functor.Linear k]
@@ -171,6 +191,7 @@ private theorem gradedExtEulerPairing_shiftTarget
   have hmaps : lhs = rhs := ExactK0.hom_ext fun X => by
     apply ExactK0.hom_ext
     intro Y
+    -- `ExactK0.hom_ext` exposes applications of the two local additive-map wrappers.
     change b (ExactK0.of X) (EQ.shiftEquiv (ExactK0.of Y)) =
       T 1 * b (ExactK0.of X) (ExactK0.of Y)
     rw [GradedExactStructure.shiftEquiv_of,
@@ -221,6 +242,7 @@ private theorem gradedExtEulerPairing_shiftSource
   have hmaps : lhs = rhs := ExactK0.hom_ext fun X => by
     apply ExactK0.hom_ext
     intro Y
+    -- `ExactK0.hom_ext` exposes applications of the two local additive-map wrappers.
     change b (EP.shiftEquiv (ExactK0.of X)) (ExactK0.of Y) =
       T (-1) * b (ExactK0.of X) (ExactK0.of Y)
     rw [GradedExactStructure.shiftEquiv_of,
@@ -239,35 +261,6 @@ private theorem gradedExtEulerPairing_shiftSource
         (gradedExtEuler_shiftSource (h.isGradedEulerAdmissible X.property Y.property))
   exact DFunLike.congr_fun (DFunLike.congr_fun hmaps x) y
 
-private theorem gradedExtEulerPairing_shiftSourceInverse
-    (hP : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed P)
-    (hQ : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed Q)
-    (hPshift : P.inverseImage (GradedExactStructure.abelian C e).shift.functor = P)
-    (hQshift : Q.inverseImage (GradedExactStructure.abelian C e).shift.functor = Q)
-    (h : IsGradedEulerAdmissibleOn.{w} (k := k) (e := e) P Q)
-    (x : ExactK0 (((GradedExactStructure.abelian C e).fullSubcategory P
-      hP hPshift).toExactStructure))
-    (y : ExactK0 (((GradedExactStructure.abelian C e).fullSubcategory Q
-      hQ hQshift).toExactStructure)) :
-    gradedExtEulerPairingOnGradedSubcategories hP hQ hPshift hQshift h
-        (((GradedExactStructure.abelian C e).fullSubcategory P
-          hP hPshift).shiftEquiv.symm x) y =
-      T 1 * gradedExtEulerPairingOnGradedSubcategories hP hQ hPshift hQshift h x y := by
-  let EP := (GradedExactStructure.abelian C e).fullSubcategory P
-    hP hPshift
-  let b := gradedExtEulerPairingOnGradedSubcategories hP hQ hPshift hQshift h
-  change b (EP.shiftEquiv.symm x) y = T 1 * b x y
-  have hx := gradedExtEulerPairing_shiftSource hP hQ hPshift hQshift h
-    (EP.shiftEquiv.symm x) y
-  have hx' : b x y = T (-1) * b (EP.shiftEquiv.symm x) y := by
-    simpa only [b, EP, AddEquiv.apply_symm_apply] using hx
-  calc
-    b (EP.shiftEquiv.symm x) y = (T 1 * T (-1)) * b (EP.shiftEquiv.symm x) y := by
-      rw [← T_add]
-      norm_num
-    _ = T 1 * (T (-1) * b (EP.shiftEquiv.symm x) y) := by rw [mul_assoc]
-    _ = T 1 * b x y := by rw [← hx']
-
 private theorem gradedExtEulerPairing_shiftSourceZPow
     (hP : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed P)
     (hQ : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed Q)
@@ -285,18 +278,29 @@ private theorem gradedExtEulerPairing_shiftSourceZPow
   let EP := (GradedExactStructure.abelian C e).fullSubcategory P
     hP hPshift
   let b := gradedExtEulerPairingOnGradedSubcategories hP hQ hPshift hQshift h
-  induction n using Int.induction_on with
-  | zero => simp
-  | succ n ih =>
-      rw [GradedExactStructure.shiftZPow_add_one_apply,
-        gradedExtEulerPairing_shiftSource, ih, ← mul_assoc, ← T_add]
-      congr 2
-      ring
-  | pred n ih =>
-      rw [GradedExactStructure.shiftZPow_sub_one_apply,
-        gradedExtEulerPairing_shiftSourceInverse, ih, ← mul_assoc, ← T_add]
-      congr 2
-      ring
+  let f : ExactK0 EP.toExactStructure →+ InvertedLaurentPolynomial :=
+    { toFun := fun x ↦ toInvertedLaurentPolynomial (b x y)
+      map_zero' := by
+        exact DFunLike.congr_fun (map_zero b) y
+      map_add' := by
+        intro x₁ x₂
+        exact DFunLike.congr_fun (map_add b x₁ x₂) y }
+  have hf : ∀ x, f (EP.shiftEquiv x) = (T 1 : LaurentPolynomial ℤ) • f x := fun x => by
+    apply ofInvertedLaurentPolynomial_injective
+    calc
+      ofInvertedLaurentPolynomial (f (EP.shiftEquiv x)) = b (EP.shiftEquiv x) y := rfl
+      _ = T (-1) * b x y := by
+        simpa only [b, EP] using
+          gradedExtEulerPairing_shiftSource hP hQ hPshift hQshift h x y
+      _ = LaurentPolynomial.invert (T 1) * b x y := by
+        rw [LaurentPolynomial.invert_T]
+      _ = ofInvertedLaurentPolynomial ((T 1 : LaurentPolynomial ℤ) • f x) := rfl
+  calc
+    b (EP.shiftZPow n x) y = ofInvertedLaurentPolynomial (f (EP.shiftZPow n x)) := rfl
+    _ = ofInvertedLaurentPolynomial ((T n : LaurentPolynomial ℤ) • f x) :=
+      congrArg ofInvertedLaurentPolynomial (LaurentK0.map_shiftZPow f hf n x)
+    _ = LaurentPolynomial.invert (T n) * b x y := rfl
+    _ = T (-n) * b x y := by rw [LaurentPolynomial.invert_T]
 
 /-- **The q-Euler form on graded Grothendieck groups.**  It is semilinear in the first variable
 for the Laurent involution `q ↦ q⁻¹` and linear in the second variable.  Its value on object
@@ -334,10 +338,11 @@ noncomputable def gradedExtEulerSesquilinear
         rw [mul_smul, LaurentK0.T_smul, laurentPolynomialC_smul,
           ← map_zsmul (LaurentK0.ofExactK0 EP), AddEquiv.symm_apply_apply, map_zsmul b,
           AddMonoidHom.zsmul_apply]
-        rw [show b (EP.shiftZPow n z) ((LaurentK0.ofExactK0 EQ).symm y) =
-            T (-n) * b z ((LaurentK0.ofExactK0 EQ).symm y) by
+        have hshift : b (EP.shiftZPow n z) ((LaurentK0.ofExactK0 EQ).symm y) =
+            T (-n) * b z ((LaurentK0.ofExactK0 EQ).symm y) := by
           simpa only [b, EP, EQ] using gradedExtEulerPairing_shiftSourceZPow
-            hP hQ hPshift hQshift h n z ((LaurentK0.ofExactK0 EQ).symm y)]
+            hP hQ hPshift hQshift h n z ((LaurentK0.ofExactK0 EQ).symm y)
+        rw [hshift]
         simp [map_mul, smul_eq_mul, mul_assoc]
   · intro x y₁ y₂
     simp
@@ -391,6 +396,7 @@ theorem gradedExtEulerSesquilinear_T_smul_left
       (T (-n) : LaurentPolynomial ℤ) *
         gradedExtEulerSesquilinear hP hQ hPshift hQshift h x y := by
   rw [map_smulₛₗ]
+  -- Expose the ring-hom coercion used by semilinear scalar multiplication.
   change ((LaurentPolynomial.invert (R := ℤ)) (T n) •
       gradedExtEulerSesquilinear hP hQ hPshift hQshift h x) y = _
   rw [LaurentPolynomial.invert_T, LinearMap.smul_apply, smul_eq_mul]
