@@ -462,8 +462,11 @@ theorem toLinearMap_simplyConnectedRootDatum (t : DynkinType) (ht : t.Valid)
     rw [simplyConnectedRootDatum_G2]
     exact g2SimplyConnectedRootDatum_toLinearMap x y
 
-/-- Evaluation at the `i`-th simple coroot extracts the `i`-th fundamental-weight coordinate. -/
-@[simp] theorem coroot'_simpleIndex_apply (t : DynkinType) (ht : t.Valid)
+/-- Evaluation at the `i`-th simple coroot extracts the `i`-th fundamental-weight coordinate.
+
+Not a `simp` lemma: `RootPairing.coroot'` is an abbreviation for a `LinearMap.flip`, so `simp`
+rewrites the left-hand side with `LinearMap.flip_apply` before this could fire. -/
+theorem coroot'_simpleIndex_apply (t : DynkinType) (ht : t.Valid)
     (i : Fin t.rank) (mu : Fin t.rank → ℤ) :
     (t.simplyConnectedRootDatum ht).coroot' (t.simpleIndex ht i) mu = mu i := by
   change (t.simplyConnectedRootDatum ht).toLinearMap mu
