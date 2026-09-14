@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.Flat.Equalizer
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
-import TauCeti.Algebra.TensorProduct.Injective
 
 /-!
 # Kernels of Hopf algebra morphisms
@@ -214,7 +213,10 @@ private theorem tensor_kerLiftAlg_injective (f : H →ₐ[k] K)
       (Algebra.TensorProduct.map (Ideal.kerLiftAlg f) (Ideal.kerLiftAlg f)) := by
   let f' : (H ⧸ RingHom.ker f) →ₐ[k] K := Ideal.kerLiftAlg f
   have hf' : Function.Injective f' := Ideal.kerLiftAlg_injective f
-  exact Algebra.TensorProduct.map_injective_of_injective f' f' hf' hf'
+  -- Expose the underlying linear map to apply Mathlib's flat tensor-injectivity theorem.
+  change Function.Injective (Algebra.TensorProduct.map f' f').toLinearMap
+  rw [Algebra.TensorProduct.toLinearMap_map, TensorProduct.AlgebraTensorModule.map_eq]
+  exact TensorProduct.map_injective_of_flat_flat f'.toLinearMap f'.toLinearMap hf' hf'
 
 /-- With flat codomain and kernel quotient, comultiplication carries the ordinary kernel into
 `ker f ⊗ H + H ⊗ ker f`. -/
