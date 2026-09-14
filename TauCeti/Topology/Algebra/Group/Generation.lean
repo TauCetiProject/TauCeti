@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
-public import Mathlib.Topology.Algebra.OpenSubgroup
+import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
 # Topological generation of a topological group

@@ -5,19 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupAction.Quotient
-public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
+import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.GroupTheory.Index
+import Mathlib.Topology.Algebra.Group.ClosedSubgroup
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Topology.Algebra.Group.Generation
 
 /-!
 # Open subgroups of a topologically finitely generated compact group
 
-A compact group has, for each `n`, only finitely many open subgroups of index `n`. The reason is
-the permutation representation: an open subgroup `U` of index `n` makes `G` act on the `n`-element
-coset space `G ⧸ U`, and `U` is recovered from that action as the stabilizer of the trivial coset.
-Transporting the coset space to `Fin n` turns the action into a homomorphism `G →* Equiv.Perm
-(Fin n)` whose kernel, the normal core of `U`, is open; and a topologically finitely generated
-group admits only finitely many homomorphisms with open kernel into a fixed finite group
+A topologically finitely generated compact group has, for each `n`, only finitely many open
+subgroups of index `n`. The reason is the permutation representation: an open subgroup `U` of
+index `n` makes `G` act on the `n`-element coset space `G ⧸ U`, and `U` is recovered from that
+action as the stabilizer of the trivial coset. Transporting the coset space to `Fin n` turns the
+action into a homomorphism `G →* Equiv.Perm (Fin n)` whose kernel, the normal core of `U`, is open;
+and a topologically finitely generated group admits only finitely many homomorphisms with open
+kernel into a fixed finite group
 (`TauCeti.IsTopologicallyFinitelyGenerated.finite_monoidHom_isOpen_ker`).
 
 Counting over all indices, the open subgroups then form a countable family, as do the open normal
@@ -27,8 +30,8 @@ Mathlib's `IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed` in
 directed form.
 
 Only compactness of `G` is used, never total disconnectedness: for a connected compact group the
-statements below are true but empty, since `⊤` is then the one open subgroup. The intended case is
-of course a profinite group, where the open subgroups carry all the information.
+statements below are trivial, since `⊤` is then the one open subgroup. The intended case is of
+course a profinite group, where the open subgroups carry all the information.
 
 ## Main results
 
@@ -82,10 +85,7 @@ theorem finite_openSubgroup_index_eq (hG : IsTopologicallyFinitelyGenerated G) (
   have hmem : ∀ (U : S) (g : G), g ∈ (U.1 : Subgroup G) ↔
       ψ U g (e U (QuotientGroup.mk 1)) = e U (QuotientGroup.mk 1) := fun U g ↦ by
     have hact : ψ U g (e U (QuotientGroup.mk 1)) = e U (QuotientGroup.mk g) := by
-      simp only [hψ, MonoidHom.coe_comp, MonoidHom.coe_coe, Equiv.permCongrHom_coe,
-        Function.comp_apply, MulAction.toPermHom_apply, Equiv.permCongr_apply,
-        Equiv.symm_apply_apply, MulAction.toPerm_apply, MulAction.Quotient.smul_mk, smul_eq_mul,
-        mul_one]
+      simp [hψ]
     rw [hact, (e U).apply_eq_iff_eq, QuotientGroup.eq, mul_one, inv_mem_iff]
   have := hG.finite_monoidHom_isOpen_ker (Equiv.Perm (Fin n))
   refine Finite.of_injective
