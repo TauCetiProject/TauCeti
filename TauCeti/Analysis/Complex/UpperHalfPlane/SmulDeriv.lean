@@ -83,6 +83,7 @@ theorem smulDeriv_coe (g : SL(2, ℝ)) (z : ℍ) :
     smulDeriv (g : PSL(2, ℝ)) z = (denom (mapGL ℝ g) (z : ℂ) ^ 2)⁻¹ := (rfl)
 
 /-- A Möbius transformation of `ℍ` has nowhere vanishing derivative. -/
+@[simp]
 theorem smulDeriv_ne_zero (q : PSL(2, ℝ)) (z : ℍ) : smulDeriv q z ≠ 0 := by
   induction q using QuotientGroup.induction_on with | _ g =>
   simp [denom_ne_zero]

@@ -35,8 +35,8 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
 * `TauCeti.UpperHalfPlane.isCyclic_stabilizer`: a finite point stabilizer is cyclic.
 * `TauCeti.UpperHalfPlane.exists_isPrimitiveRoot_stabilizerDeriv`: a generator of a finite point
   stabilizer has a primitive root of unity of the stabilizer's order as its derivative.
-* `TauCeti.UpperHalfPlane.isElliptic_of_smul_eq_self`: a matrix fixing a point of `ℍ` and
-  nontrivial in `PSL(2, ℝ)` is elliptic.
+* `TauCeti.UpperHalfPlane.isElliptic_of_smul_eq_self_of_ne_one`: a matrix fixing a point of `ℍ`
+  and nontrivial in `PSL(2, ℝ)` is elliptic.
 
 ## References
 
@@ -58,7 +58,8 @@ namespace TauCeti.UpperHalfPlane
 
 /-- An element of `SL(2, ℝ)` that fixes `z : ℍ` and whose automorphy factor at `z` is a real
 number `e` is the scalar matrix `e`. -/
-theorem coe_eq_scalar_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} {e : ℝ} (hz : g • z = z)
+theorem coe_eq_scalar_of_smul_eq_self_of_denom_eq {g : SL(2, ℝ)} {z : ℍ} {e : ℝ}
+    (hz : g • z = z)
     (hd : denom (mapGL ℝ g) (z : ℂ) = (e : ℂ)) :
     (g : Matrix (Fin 2) (Fin 2) ℝ) = Matrix.scalar (Fin 2) e := by
   have hdet : (0 : ℝ) < (mapGL ℝ g).det.val := by simp
@@ -89,25 +90,28 @@ theorem coe_eq_scalar_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} {e : ℝ} (hz :
 
 /-- An element of `SL(2, ℝ)` fixing `z : ℍ` whose automorphy factor at `z` squares to one is
 central, that is, `±1`. -/
-theorem mem_center_of_denom_sq_eq_one {g : SL(2, ℝ)} {z : ℍ} (hz : g • z = z)
+theorem mem_center_of_smul_eq_self_of_denom_sq_eq_one {g : SL(2, ℝ)} {z : ℍ}
+    (hz : g • z = z)
     (hd : denom (mapGL ℝ g) (z : ℂ) ^ 2 = 1) : g ∈ Subgroup.center SL(2, ℝ) := by
   rw [mem_center_iff_eq_one_or_eq_neg_one]
   have hd' : denom (mapGL ℝ g) (z : ℂ) * denom (mapGL ℝ g) (z : ℂ) = 1 := by rw [← sq]; exact hd
   rcases mul_self_eq_one_iff.mp hd' with h | h
   · exact Or.inl (Subtype.ext (by
-      rw [coe_eq_scalar_of_smul_eq_self hz (e := 1) (by simpa using h)]; simp))
+      rw [coe_eq_scalar_of_smul_eq_self_of_denom_eq hz (e := 1) (by simpa using h)]; simp))
   · refine Or.inr (Subtype.ext ?_)
-    rw [coe_eq_scalar_of_smul_eq_self hz (e := -1) (by simpa using h)]
+    rw [coe_eq_scalar_of_smul_eq_self_of_denom_eq hz (e := -1) (by simpa using h)]
     ext i j
     by_cases hij : i = j <;> simp [Matrix.scalar_apply, hij]
 
 /-- **The derivative of the action detects the identity**: a Möbius transformation of `ℍ` fixing
 `z` whose derivative at `z` is `1` is the identity of `PSL(2, ℝ)`. -/
-theorem eq_one_of_smulDeriv_eq_one {q : PSL(2, ℝ)} {z : ℍ} (hz : q • z = z)
+theorem eq_one_of_smul_eq_self_of_smulDeriv_eq_one {q : PSL(2, ℝ)} {z : ℍ}
+    (hz : q • z = z)
     (h : smulDeriv q z = 1) : q = 1 := by
   induction q using QuotientGroup.induction_on with | _ g =>
   rw [smulDeriv_coe, inv_eq_one] at h
-  refine (QuotientGroup.eq_one_iff g).mpr (mem_center_of_denom_sq_eq_one ?_ h)
+  refine (QuotientGroup.eq_one_iff g).mpr
+    (mem_center_of_smul_eq_self_of_denom_sq_eq_one ?_ h)
   rwa [pslMk_smul] at hz
 
 /-- The derivative character of the stabilizer of `z : ℍ` in a subgroup `Γ ≤ PSL(2, ℝ)`: it
@@ -130,7 +134,7 @@ theorem stabilizerDeriv_injective (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
     Function.Injective (stabilizerDeriv Γ z) := by
   rw [injective_iff_map_eq_one]
   intro q hq
-  exact Subtype.ext (Subtype.ext (eq_one_of_smulDeriv_eq_one q.2 hq))
+  exact Subtype.ext (Subtype.ext (eq_one_of_smul_eq_self_of_smulDeriv_eq_one q.2 hq))
 
 /-- A point stabilizer in a subgroup of `PSL(2, ℝ)` is commutative. -/
 instance instIsMulCommutativeStabilizer (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
@@ -163,9 +167,8 @@ theorem exists_isPrimitiveRoot_stabilizerDeriv (Γ : Subgroup PSL(2, ℝ)) (z : 
   rw [← hcard, ← orderOf_stabilizerDeriv]
   exact IsPrimitiveRoot.orderOf _
 
-/-- **A nontrivial point stabilizer consists of elliptic matrices**: an element of `SL(2, ℝ)`
-fixing a point of `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic. -/
-theorem isElliptic_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g • z = z)
+/-- **A nonidentity element fixing a point of `ℍ` is elliptic.** -/
+theorem isElliptic_of_smul_eq_self_of_ne_one {g : SL(2, ℝ)} {z : ℍ} (hz : g • z = z)
     (hg : (g : PSL(2, ℝ)) ≠ 1) : Matrix.GeneralLinearGroup.IsElliptic (mapGL ℝ g) := by
   refine isElliptic_of_exists_smul_eq_self (by simp) (fun hc ↦ hg ?_) ⟨z, hz⟩
   have h := forall_smul_eq_self_iff_mem_center.mpr hc
