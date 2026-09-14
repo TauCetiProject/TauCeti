@@ -305,21 +305,11 @@ abbrev quotientMk (𝒜 : AInfinityAlgebra R A) : 𝒜.cycles →ₗ[R] 𝒜.Coh
 theorem quotientMk_apply (𝒜 : AInfinityAlgebra R A) (x : 𝒜.cycles) :
     𝒜.quotientMk x = Submodule.Quotient.mk x := rfl
 
-/-- A cycle represents zero in cohomology exactly when it is a boundary. -/
-theorem quotientMk_eq_zero_iff (𝒜 : AInfinityAlgebra R A) {x : 𝒜.cycles} :
-    𝒜.quotientMk x = 0 ↔ x ∈ 𝒜.boundaries := by
-  exact Submodule.Quotient.mk_eq_zero 𝒜.boundaries
-
 /-- The cohomology class of a differential vanishes. -/
 @[simp]
 theorem quotientMk_differential_eq_zero (𝒜 : AInfinityAlgebra R A) (x : A) :
     (Submodule.Quotient.mk ⟨𝒜.differential x, 𝒜.differential_mem_cycles x⟩ : 𝒜.Cohomology) = 0 :=
-  𝒜.quotientMk_eq_zero_iff.mpr (𝒜.differential_mem_boundaries x)
-
-/-- Every cohomology class has a cycle representative. -/
-theorem quotientMk_surjective (𝒜 : AInfinityAlgebra R A) :
-    Function.Surjective 𝒜.quotientMk :=
-  Submodule.Quotient.mk_surjective 𝒜.boundaries
+  (Submodule.Quotient.mk_eq_zero 𝒜.boundaries).mpr (𝒜.differential_mem_boundaries x)
 
 /-- Multiplication of cycles respects equivalence modulo boundaries in both variables. -/
 theorem cyclesMul_respects_boundaries (𝒜 : AInfinityAlgebra R A)
