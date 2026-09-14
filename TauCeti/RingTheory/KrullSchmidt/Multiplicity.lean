@@ -195,7 +195,7 @@ theorem indecomposableMultiplicity_eq_of_linearEquiv (f : M ≃ₗ[A] M') :
   rw [← decompositionMultiplicity_eq_indecomposableMultiplicity_of_supIndep hs hsi hsup,
     ← decompositionMultiplicity_image (N := N) f.injective s,
     decompositionMultiplicity_eq_indecomposableMultiplicity_of_supIndep ?_
-      (TauCeti.LinearMap.supIndep_image_map f.toLinearMap f.injective hsi) ?_]
+      (LinearMap.supIndep_image_map f.toLinearMap f.injective hsi) ?_]
   · rintro _ hQ
     obtain ⟨P, hP, rfl⟩ := Finset.mem_image.mp hQ
     exact (hs P hP).of_linearEquiv (Submodule.equivMapOfInjective _ f.injective P)
@@ -353,9 +353,9 @@ theorem indecomposableMultiplicity_prod [IsNoetherian A M'] [IsArtinian A M'] :
     exact (Submodule.nontrivial_iff_ne_bot.mp (hind Q (Finset.mem_union_left _ hQs)).nontrivial)
       hQbot
   rw [← decompositionMultiplicity_eq_indecomposableMultiplicity_of_supIndep hind
-      ((TauCeti.LinearMap.supIndep_image_map (LinearMap.inl A M M')
+      ((LinearMap.supIndep_image_map (LinearMap.inl A M M')
         LinearMap.inl_injective hsi).union
-        (TauCeti.LinearMap.supIndep_image_map (LinearMap.inr A M M')
+        (LinearMap.supIndep_image_map (LinearMap.inr A M M')
           LinearMap.inr_injective hti) hdisj)
       (by rw [Finset.sup_union, hsup', htup']; exact LinearMap.sup_range_inl_inr),
     decompositionMultiplicity_union hfdisj, hs', ht',
