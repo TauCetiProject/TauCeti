@@ -34,17 +34,9 @@ of curves and gives a lower bound for the `liminf` of their Riemannian lengths. 
 carrying that last step is stated in `TauCeti.Topology.EMetricSpace.BoundedVariation`, since its
 proof uses no manifold structure.
 
-The opposite inequality `Manifold.pathELength I γ a b ≤ eVariationOn γ (Icc a b)` needs a sharp
-local comparison of the Riemannian distance with the extended chart at a point `x`, measured in the
-inner product of `T_x M`. Mathlib's `eventually_norm_symmL_trivializationAt_self_comp_lt` says
-that near `x` the derivative of that chart distorts Riemannian norms by a factor arbitrarily close
-to `1`; a short `C¹` path from `x` stays in such a neighbourhood, so every continuous linear
-functional `ℓ` on `T_x M` read in the chart is `(r ‖ℓ‖)`-Lipschitz at `x` for the Riemannian
-distance, for any `r > 1`. Along a `C¹` curve this bounds the speed at every interior parameter
-where the (monotone) variation function `variationOnFromTo γ (Icc a b) a` is differentiable by
-its derivative, by Hahn--Banach in `T_x M`. Such parameters have full measure, and the integral
-of the derivative of a monotone function is at most its increment
-(`MonotoneOn.intervalIntegral_deriv_mem_uIcc`), which gives the bound.
+The reverse comparison bounds the path length of a `C¹` curve by its total variation. Together
+with the forward comparison, it identifies the two quantities and transfers lower semicontinuity
+of total variation to Riemannian path length.
 
 Like the corner-smoothing comparison of
 `TauCeti/Geometry/Manifold/Riemannian/EDistComparison.lean`, the piecewise-`C¹` statement here
