@@ -89,9 +89,9 @@ of `(X, B)` and of `(X, A)`. -/
 noncomputable abbrev singularChainComplexShortComplex : ShortComplex (ChainComplex C ℕ) :=
   ShortComplex.mk _ _ (T.singularChainComplexMap_innerToTotal_comp_totalToOuter R)
 
-/-- The morphism of relative singular chain sequences induced by a morphism of triples. -/
-@[simps]
-noncomputable def singularChainComplexShortComplexMap {T T' : TopTriple.{w}} (φ : T ⟶ T')
+/-- The morphism of relative singular chain sequences induced by a morphism of triples, used to
+prove the naturality of the connecting morphism. -/
+private noncomputable def singularChainComplexShortComplexMap {T T' : TopTriple.{w}} (φ : T ⟶ T')
     (R : C) : T.singularChainComplexShortComplex R ⟶ T'.singularChainComplexShortComplex R where
   τ₁ := TopPair.singularChainComplexMap (innerPair.map φ) R
   τ₂ := TopPair.singularChainComplexMap (totalPair.map φ) R
@@ -127,6 +127,7 @@ lemma shortExact_singularChainComplexShortComplex :
 
 /-- The connecting morphism `Hₙ(X, A) ⟶ Hₘ(A, B)` in the long exact sequence of a triple, for
 `m + 1 = n`. -/
+@[no_expose]
 noncomputable def singularHomologyδ (n m : ℕ) (h : m + 1 = n := by lia) :
     (outerPair.obj T).singularHomology R n ⟶ (innerPair.obj T).singularHomology R m :=
   (T.shortExact_singularChainComplexShortComplex R).δ n m (by simpa)
@@ -149,20 +150,24 @@ lemma singularHomologyMap_innerToTotal_comp_totalToOuter (n : ℕ) :
     T.singularChainComplexMap_innerToTotal_comp_totalToOuter R]
 
 /-- Exactness at `Hₘ(A, B)` in the long exact sequence of a triple. -/
-lemma singularHomology_exact₁ (n m : ℕ) (h : m + 1 = n := by lia) :
+lemma singularHomology_exact_inner (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk _ _ (T.singularHomologyδ_comp R n m h)).Exact :=
   (T.shortExact_singularChainComplexShortComplex R).homology_exact₁ n m (by simpa)
 
 /-- Exactness at `Hₙ(X, B)` in the long exact sequence of a triple. -/
-lemma singularHomology_exact₂ (n : ℕ) :
+lemma singularHomology_exact_total (n : ℕ) :
     (ShortComplex.mk _ _ (T.singularHomologyMap_innerToTotal_comp_totalToOuter R n)).Exact :=
   (T.shortExact_singularChainComplexShortComplex R).homology_exact₂ n
 
 /-- Exactness at `Hₙ(X, A)` in the long exact sequence of a triple. -/
-lemma singularHomology_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
+lemma singularHomology_exact_outer (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk _ _ (T.comp_singularHomologyδ R n m h)).Exact :=
   (T.shortExact_singularChainComplexShortComplex R).homology_exact₃ n m (by simpa)
 
+/-- The connecting morphism of the long exact sequence of a triple is natural: for a morphism of
+triples `φ : (X, A, B) ⟶ (X', A', B')`, following `Hₙ(X, A) ⟶ Hₘ(A, B)` by the map induced by `φ`
+on `Hₘ(A, B)` agrees with following the map induced by `φ` on `Hₙ(X, A)` by
+`Hₙ(X', A') ⟶ Hₘ(A', B')`. -/
 @[reassoc]
 lemma singularHomologyδ_naturality {T T' : TopTriple.{w}} (φ : T ⟶ T') (R : A) (n m : ℕ)
     (h : m + 1 = n := by lia) :
