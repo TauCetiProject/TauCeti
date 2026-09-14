@@ -37,7 +37,7 @@ roots of unity (`TauCeti.orbitRel_rootsOfUnity_apply`).
 
 ## Main declarations
 
-* `TauCeti.SubMulAction.rootsOfUnityQuotientHomeomorph`: the orbit space of an invariant set `s` is
+* `SubMulAction.rootsOfUnityQuotientHomeomorph`: the orbit space of an invariant set `s` is
   homeomorphic to `(· ^ m) '' s`, sending the class of `u` to `u ^ m`.
 * `TauCeti.rootsOfUnityBall`: the open disc of radius `r` about `0`, as an invariant set.
 * `TauCeti.image_pow_ball`: `u ↦ u ^ m` maps the disc of radius `r` onto the disc of radius
@@ -54,20 +54,18 @@ roots of unity (`TauCeti.orbitRel_rootsOfUnity_apply`).
 
 public section
 
-namespace TauCeti
-
 open MulAction Set
 
-variable {m : ℕ} [NeZero m]
-
 namespace SubMulAction
+
+variable {m : ℕ} [NeZero m]
 
 /-- The map from the orbit space of an invariant set to its image under `u ↦ u ^ m`. -/
 def rootsOfUnityQuotientMap (s : SubMulAction (rootsOfUnity m ℂ) ℂ) :
     orbitRel.Quotient (rootsOfUnity m ℂ) s → (· ^ m) '' (s : Set ℂ) :=
   Quotient.lift (fun u ↦ ⟨(u : ℂ) ^ m, mem_image_of_mem _ u.2⟩) fun _ _ h ↦
-    Subtype.ext <| ((_root_.SubMulAction.mem_orbit_subMul_iff).trans
-      (orbitRel_rootsOfUnity_apply (NeZero.ne m))).mp h
+    Subtype.ext <| (mem_orbit_subMul_iff.trans
+      (TauCeti.orbitRel_rootsOfUnity_apply (NeZero.ne m))).mp h
 
 @[simp]
 theorem coe_rootsOfUnityQuotientMap_mk (s : SubMulAction (rootsOfUnity m ℂ) ℂ) (u : s) :
@@ -80,12 +78,12 @@ noncomputable def rootsOfUnityQuotientHomeomorph (s : SubMulAction (rootsOfUnity
     orbitRel.Quotient (rootsOfUnity m ℂ) s ≃ₜ (· ^ m) '' (s : Set ℂ) := by
   let f : s → (· ^ m) '' (s : Set ℂ) := fun u ↦ ⟨(u : ℂ) ^ m, mem_image_of_mem _ u.2⟩
   have hrel (u v : s) : orbitRel (rootsOfUnity m ℂ) s u v ↔ (u : ℂ) ^ m = (v : ℂ) ^ m :=
-    _root_.SubMulAction.mem_orbit_subMul_iff.trans
-      (orbitRel_rootsOfUnity_apply (NeZero.ne m))
+    mem_orbit_subMul_iff.trans (TauCeti.orbitRel_rootsOfUnity_apply (NeZero.ne m))
   have hf : IsOpenMap f := by
     have hpre := (Complex.isOpenQuotientMap_pow m).isOpenMap.restrictPreimage
       ((· ^ m) '' (s : Set ℂ))
-    exact hpre.comp (Homeomorph.setCongr (preimage_image_pow_eq (NeZero.ne m) s).symm).isOpenMap
+    exact hpre.comp (Homeomorph.setCongr
+      (TauCeti.preimage_image_pow_eq (NeZero.ne m) s).symm).isOpenMap
   refine Equiv.toHomeomorphOfContinuousOpen
     (Equiv.ofBijective (rootsOfUnityQuotientMap s) ⟨?_, ?_⟩)
     (continuous_quot_lift _ (by fun_prop))
@@ -102,6 +100,10 @@ theorem coe_rootsOfUnityQuotientHomeomorph_mk (s : SubMulAction (rootsOfUnity m 
   rw [coe_rootsOfUnityQuotientMap_mk]
 
 end SubMulAction
+
+namespace TauCeti
+
+variable {m : ℕ} [NeZero m]
 
 variable (m) in
 /-- The open disc of radius `r` about `0`, as a set invariant under the `m`-th roots of

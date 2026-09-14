@@ -40,7 +40,6 @@ open MulAction
 
 variable {M : Type*} {m : ℕ}
 
-@[simp]
 private theorem rootsOfUnity_smul_eq_mul [CommMonoid M]
     (ζ : rootsOfUnity m M) (u : M) : ζ • u = ((ζ : Mˣ) : M) * u := by
   rw [Subgroup.smul_def, Units.smul_def, smul_eq_mul]
