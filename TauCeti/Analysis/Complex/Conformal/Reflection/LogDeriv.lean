@@ -126,25 +126,35 @@ theorem deriv_deriv_conj_eq_mul_conj_deriv_deriv (hΩopen : IsOpen Ω)
 /-- **The pre-Schwarzian derivative of a reflection-symmetric function is conjugation-symmetric.**
 The factor `u` of the target reflection cancels between the second derivative and the first, so
 `logDeriv (deriv F) = deriv (deriv F) / deriv F` intertwines conjugation with conjugation, whatever
-the target line was. -/
+the target line was. The degenerate factor `u = 0` is allowed: there `F` is constant on `Ω` and
+both sides vanish. -/
 theorem logDeriv_deriv_conj_eq_conj_logDeriv_deriv (hΩopen : IsOpen Ω)
-    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hu : u ≠ 0)
+    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (hrefl : ∀ z ∈ Ω, F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z))
     {z : ℂ} (hz : z ∈ Ω) :
     logDeriv (deriv F) ((starRingEnd ℂ) z) = (starRingEnd ℂ) (logDeriv (deriv F) z) := by
-  rw [logDeriv_apply, logDeriv_apply,
-    deriv_deriv_conj_eq_mul_conj_deriv_deriv hΩopen hΩ hrefl hz,
-    deriv_conj_eq_mul_conj_deriv hΩopen hΩ hrefl hz, mul_div_mul_left _ _ hu]
-  exact (map_div₀ _ _ _).symm
+  rcases eq_or_ne u 0 with rfl | hu
+  · -- `F` is the constant `c` on `Ω`, so every derivative of `F` vanishes there.
+    have hconst : ∀ w ∈ Ω, F w = c := fun w hw => by
+      simpa using hrefl ((starRingEnd ℂ) w) (hΩ hw)
+    have hderiv : ∀ w ∈ Ω, deriv F w = 0 := fun w hw => by
+      rw [(Filter.eventuallyEq_of_mem (hΩopen.mem_nhds hw) hconst).deriv_eq, deriv_const]
+    have hderiv2 : ∀ w ∈ Ω, deriv (deriv F) w = 0 := fun w hw => by
+      rw [(Filter.eventuallyEq_of_mem (hΩopen.mem_nhds hw) hderiv).deriv_eq, deriv_const]
+    simp [logDeriv_apply, hderiv z hz, hderiv2 z hz, hderiv _ (hΩ hz), hderiv2 _ (hΩ hz)]
+  · rw [logDeriv_apply, logDeriv_apply,
+      deriv_deriv_conj_eq_mul_conj_deriv_deriv hΩopen hΩ hrefl hz,
+      deriv_conj_eq_mul_conj_deriv hΩopen hΩ hrefl hz, mul_div_mul_left _ _ hu]
+    exact (map_div₀ _ _ _).symm
 
 /-- **The pre-Schwarzian derivative of a reflection-symmetric function is real on the real axis.**
 -/
 theorem im_logDeriv_deriv_eq_zero (hΩopen : IsOpen Ω)
-    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hu : u ≠ 0)
+    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (hrefl : ∀ z ∈ Ω, F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z))
     {x : ℂ} (hx : x ∈ Ω) (hx0 : x.im = 0) :
     (logDeriv (deriv F) x).im = 0 := by
-  have h := logDeriv_deriv_conj_eq_conj_logDeriv_deriv hΩopen hΩ hu hrefl hx
+  have h := logDeriv_deriv_conj_eq_conj_logDeriv_deriv hΩopen hΩ hrefl hx
   rw [Complex.conj_eq_iff_im.mpr hx0] at h
   exact Complex.conj_eq_iff_im.mp h.symm
 
@@ -190,8 +200,8 @@ theorem im_logDeriv_deriv_lineSchwarzReflection_eq_zero (hb : b ≠ 0) (hΩopen 
     (hline : ∀ z ∈ Ω, z.im = 0 → ((f z - q) / b).im = 0)
     {x : ℂ} (hx : x ∈ Ω) (hx0 : x.im = 0) :
     (logDeriv (deriv (lineSchwarzReflection 0 1 q b f)) x).im = 0 :=
-  im_logDeriv_deriv_eq_zero hΩopen hΩ (div_ne_zero hb (by simpa using hb))
-    (fun z hz => lineSchwarzReflection_conj_eq hb hline hz) hx hx0
+  im_logDeriv_deriv_eq_zero hΩopen hΩ
+    (fun _ hz => lineSchwarzReflection_conj_eq hb hline hz) hx hx0
 
 /-- **The reflected extension has the same pre-Schwarzian derivative as the original branch.**
 On the open upper half-plane the extension agrees with `f`, hence so do all their derivatives. -/
