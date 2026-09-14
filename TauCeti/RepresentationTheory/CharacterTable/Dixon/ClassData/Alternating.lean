@@ -35,6 +35,7 @@ cyclotomic character table.
 * `TauCeti.numClasses_alternatingGroupFourClassData`: `A₄` has four conjugacy classes.
 * `TauCeti.card_classFinset_alternatingGroupFourClassData`: their sizes, in the chosen order, are
   `1`, `3`, `4`, and `4`.
+* `TauCeti.exponent_alternatingGroup_four`: the exponent of `A₄` is six.
 
 ## References
 
@@ -89,5 +90,43 @@ theorem card_classFinset_alternatingGroupFourClassData
 theorem card_classes_alternatingGroupFourClassData :
     alternatingGroupFourClassData.classes.map Finset.card = [1, 3, 4, 4] := by
   decide
+
+private theorem orderOf_alternatingGroupFourDoubleTransposition :
+    orderOf alternatingGroupFourDoubleTransposition = 2 := by
+  apply orderOf_eq_prime <;> decide
+
+private theorem orderOf_alternatingGroupFourThreeCycle :
+    orderOf alternatingGroupFourThreeCycle = 3 := by
+  apply orderOf_eq_prime <;> decide
+
+private theorem alternatingGroupFourDoubleTransposition_pow_six :
+    alternatingGroupFourDoubleTransposition ^ 6 = 1 := by
+  decide
+
+private theorem alternatingGroupFourThreeCycle_pow_six :
+    alternatingGroupFourThreeCycle ^ 6 = 1 := by
+  decide
+
+private theorem alternatingGroupFourThreeCycle_inv_pow_six :
+    alternatingGroupFourThreeCycle⁻¹ ^ 6 = 1 := by
+  decide
+
+/-- The exponent of the alternating group of degree four is six. -/
+theorem exponent_alternatingGroup_four :
+    Monoid.exponent (alternatingGroup (Fin 4)) = 6 := by
+  apply Nat.dvd_antisymm
+  · rw [Monoid.exponent_dvd_iff_forall_pow_eq_one]
+    intro g
+    obtain ⟨r, hr, hrg⟩ := alternatingGroupFourClassData.exists_isConj g
+    simp only [reps_alternatingGroupFourClassData, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · simp [isConj_one_right.mp hrg]
+    · exact isConj_one_right.mp (alternatingGroupFourDoubleTransposition_pow_six ▸ hrg.pow 6)
+    · exact isConj_one_right.mp (alternatingGroupFourThreeCycle_pow_six ▸ hrg.pow 6)
+    · exact isConj_one_right.mp (alternatingGroupFourThreeCycle_inv_pow_six ▸ hrg.pow 6)
+  · exact Nat.lcm_dvd (orderOf_alternatingGroupFourDoubleTransposition ▸
+      Monoid.order_dvd_exponent alternatingGroupFourDoubleTransposition)
+      (orderOf_alternatingGroupFourThreeCycle ▸
+        Monoid.order_dvd_exponent alternatingGroupFourThreeCycle)
 
 end TauCeti

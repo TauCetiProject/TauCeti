@@ -55,8 +55,10 @@ simultaneously sees a nonlinear row and genuinely cyclotomic values.
 
 ## References
 
-The computation follows the Burnside--Dixon--Schneider framework developed in the sibling modules
-and the classical table in J.-P. Serre, *Linear Representations of Finite Groups*, §5.2.
+The formal declaration order and proof plan follow
+`TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.CyclicThree`.  The computation uses
+the Burnside--Dixon--Schneider framework and the classical table in J.-P. Serre, *Linear
+Representations of Finite Groups*, §5.2.
 
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446--450.
@@ -71,43 +73,6 @@ namespace TauCeti
 open Matrix
 
 local instance fact_prime_seven : Fact (Nat.Prime 7) := ⟨by decide⟩
-
-private theorem orderOf_alternatingGroupFourDoubleTransposition :
-    orderOf alternatingGroupFourDoubleTransposition = 2 := by
-  apply orderOf_eq_prime <;> decide
-
-private theorem orderOf_alternatingGroupFourThreeCycle :
-    orderOf alternatingGroupFourThreeCycle = 3 := by
-  apply orderOf_eq_prime <;> decide
-
-private theorem alternatingGroupFourDoubleTransposition_pow_six :
-    alternatingGroupFourDoubleTransposition ^ 6 = 1 := by
-  decide
-
-private theorem alternatingGroupFourThreeCycle_pow_six :
-    alternatingGroupFourThreeCycle ^ 6 = 1 := by
-  decide
-
-private theorem alternatingGroupFourThreeCycle_inv_pow_six :
-    alternatingGroupFourThreeCycle⁻¹ ^ 6 = 1 := by
-  decide
-
-private theorem exponent_alternatingGroup_four :
-    Monoid.exponent (alternatingGroup (Fin 4)) = 6 := by
-  apply Nat.dvd_antisymm
-  · rw [Monoid.exponent_dvd_iff_forall_pow_eq_one]
-    intro g
-    obtain ⟨r, hr, hrg⟩ := alternatingGroupFourClassData.exists_isConj g
-    simp only [reps_alternatingGroupFourClassData, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · simp [isConj_one_right.mp hrg]
-    · exact isConj_one_right.mp (alternatingGroupFourDoubleTransposition_pow_six ▸ hrg.pow 6)
-    · exact isConj_one_right.mp (alternatingGroupFourThreeCycle_pow_six ▸ hrg.pow 6)
-    · exact isConj_one_right.mp (alternatingGroupFourThreeCycle_inv_pow_six ▸ hrg.pow 6)
-  · exact Nat.lcm_dvd (orderOf_alternatingGroupFourDoubleTransposition ▸
-      Monoid.order_dvd_exponent alternatingGroupFourDoubleTransposition)
-      (orderOf_alternatingGroupFourThreeCycle ▸
-        Monoid.order_dvd_exponent alternatingGroupFourThreeCycle)
 
 private theorem natCard_alternatingGroup_four :
     Nat.card (alternatingGroup (Fin 4)) = 12 := by
@@ -258,16 +223,6 @@ def alternatingGroupFourModularCentralRows :
   alternatingGroupFourClassData.rowsOfMap
     (Cyclotomic.reduce 7 alternatingGroupFourDixonPrimeData.root)
     alternatingGroupFourExactCentralCharacterTable
-
-/-- A modular row is displayed exactly when it is the reduction of a row of the exact central
-table. -/
-@[simp]
-theorem mem_alternatingGroupFourModularCentralRows_iff
-    {a : AlternatingGroupFourClassIndex → ZMod 7} :
-    a ∈ alternatingGroupFourModularCentralRows ↔
-      ∃ i, (fun j ↦ Cyclotomic.reduce 7 alternatingGroupFourDixonPrimeData.root
-        (alternatingGroupFourExactCentralCharacterTable i j)) = a := by
-  simp [alternatingGroupFourModularCentralRows]
 
 /-- Reduction at the chosen root preserves every exact central-character eigenrow equation. -/
 theorem isModularEigenrow_alternatingGroupFourExactCentralCharacterTable_zmod
