@@ -64,6 +64,10 @@ jobs:
   # job for exactly that reason.
   verify:
     if: github.repository == 'TauCetiProject/TauCeti'
+    # Namespace runners are provisioned for the leanprover organisation; this repository is in
+    # TauCetiProject, where a job with those labels is never picked up and sits queued forever.
+    # The bubblewrap policy itself runs correctly on a privileged Namespace runner, so this is a
+    # question of provisioning rather than of the sandbox.
     runs-on: ubuntu-24.04
     # The from-scratch build alone ran about 49 minutes as ci.yml's Build step before #3715, and the
     # cache-restored build adds roughly 15. Generous headroom, but bounded; a run that hits this
@@ -231,14 +235,25 @@ jobs:
           # kernel.apparmor_restrict_unprivileged_userns, which would lift it for everything on the
           # runner. Measured on ubuntu-24.04: without this, bwrap fails with
           # "loopback: Failed RTM_NEWADDR: Operation not permitted".
-          printf '%s\n' \
-            'abi <abi/4.0>,' \
-            'include <tunables/global>' \
-            'profile bwrap /usr/bin/bwrap flags=(unconfined) {' \
-            '  userns,' \
-            '  include if exists <local/bwrap>' \
-            '}' | sudo tee /etc/apparmor.d/bwrap >/dev/null
-          sudo apparmor_parser -r /etc/apparmor.d/bwrap
+          #
+          # Only where that restriction is actually in force. A container runner has the knob
+          # unset, unprivileged user namespaces already working, and no `apparmor_parser`
+          # installed, so doing this unconditionally would fail the step for a profile it does
+          # not need. Skipping when the restriction is absent is safe because it is not what
+          # decides the outcome: if bwrap cannot build its sandbox for any reason, the self-test
+          # below refuses to run candidate code.
+          if [ "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo 0)" = 1 ]; then
+            printf '%s\n' \
+              'abi <abi/4.0>,' \
+              'include <tunables/global>' \
+              'profile bwrap /usr/bin/bwrap flags=(unconfined) {' \
+              '  userns,' \
+              '  include if exists <local/bwrap>' \
+              '}' | sudo tee /etc/apparmor.d/bwrap >/dev/null
+            sudo apparmor_parser -r /etc/apparmor.d/bwrap
+          else
+            echo "unprivileged user namespaces are not AppArmor-restricted here; no profile needed"
+          fi
 
           # Prove the sandbox enforces before trusting it with candidate code. bwrap fails closed
           # where landrun's --best-effort could degrade to no sandbox at all, but `--unshare-all`

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Rescale
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Basic
 
 /-!
 # Gauge equivalence of skew-zigzag parameters
