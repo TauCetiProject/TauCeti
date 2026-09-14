@@ -184,10 +184,12 @@ theorem indecomposableMultiplicity_congr (e : N ≃ₗ[A] N') :
   decompositionMultiplicity_congr _ e
 
 /-- **The multiplicity depends on the ambient module only through its isomorphism class.** -/
-theorem indecomposableMultiplicity_eq_of_linearEquiv [IsNoetherian A M'] [IsArtinian A M']
-    (f : M ≃ₗ[A] M') :
-    indecomposableMultiplicity A M N = indecomposableMultiplicity A M' N := by
+theorem indecomposableMultiplicity_eq_of_linearEquiv (f : M ≃ₗ[A] M') :
+    indecomposableMultiplicity A M N =
+      @indecomposableMultiplicity A _ M' _ _ (isArtinian_of_linearEquiv f) N _ _ := by
   classical
+  let _ : IsNoetherian A M' := isNoetherian_of_linearEquiv f
+  let _ : IsArtinian A M' := isArtinian_of_linearEquiv f
   obtain ⟨s, hs, hsi, hsup⟩ :=
     exists_finset_isIndecomposableModule_supIndep_sup_eq (A := A) (⊤ : Submodule A M)
   rw [← decompositionMultiplicity_eq_indecomposableMultiplicity_of_supIndep hs hsi hsup,
@@ -197,7 +199,10 @@ theorem indecomposableMultiplicity_eq_of_linearEquiv [IsNoetherian A M'] [IsArti
   · rintro _ hQ
     obtain ⟨P, hP, rfl⟩ := Finset.mem_image.mp hQ
     exact (hs P hP).of_linearEquiv (Submodule.equivMapOfInjective _ f.injective P)
-  · rw [Submodule.sup_image_map, hsup, Submodule.map_top, LinearMap.range_eq_top.mpr f.surjective]
+  · rw [Finset.sup_image]
+    simpa only [Function.comp_def, id_eq, Finset.sup_eq_iSup, Submodule.map_iSup,
+      Submodule.map_top, LinearMap.range_eq_top.mpr f.surjective] using
+      congrArg (Submodule.map f.toLinearMap) hsup
 
 /-- A zero module has no indecomposable summands. -/
 @[simp]
@@ -268,9 +273,13 @@ theorem indecomposableMultiplicity_prod [IsNoetherian A M'] [IsArtinian A M'] :
   set s' := s.image (Submodule.map (LinearMap.inl A M M')) with hs'
   set t' := t.image (Submodule.map (LinearMap.inr A M M')) with ht'
   have hsup' : s'.sup id = LinearMap.range (LinearMap.inl A M M') := by
-    rw [hs', Submodule.sup_image_map, hsup, Submodule.map_top]
+    rw [hs', Finset.sup_image]
+    simpa only [Function.comp_def, id_eq, Finset.sup_eq_iSup, Submodule.map_iSup,
+      Submodule.map_top] using congrArg (Submodule.map (LinearMap.inl A M M')) hsup
   have htup' : t'.sup id = LinearMap.range (LinearMap.inr A M M') := by
-    rw [ht', Submodule.sup_image_map, htup, Submodule.map_top]
+    rw [ht', Finset.sup_image]
+    simpa only [Function.comp_def, id_eq, Finset.sup_eq_iSup, Submodule.map_iSup,
+      Submodule.map_top] using congrArg (Submodule.map (LinearMap.inr A M M')) htup
   have hind : ∀ P ∈ s' ∪ t', IsIndecomposableModule A P := by
     rintro Q hQ
     rcases Finset.mem_union.mp hQ with hQ | hQ

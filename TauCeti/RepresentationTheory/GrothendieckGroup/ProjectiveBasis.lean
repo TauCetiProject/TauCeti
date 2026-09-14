@@ -77,7 +77,7 @@ private noncomputable def indecomposableInvariant :
     ExactK0.AdditiveInvariant (finiteProjectiveModulesExactStructure R) ℤ where
   obj X := (indecomposableMultiplicity R X.obj N : ℤ)
   map_iso {X Y} e := congrArg Int.ofNat (indecomposableMultiplicity_eq_of_linearEquiv
-    ((finiteProjectiveModules R).ι.mapIso e).toLinearEquiv)
+    (M := X.obj) (M' := Y.obj) ((finiteProjectiveModules R).ι.mapIso e).toLinearEquiv)
   map_conflation {S} hS := by
     have hT := (finiteProjectiveModulesExactStructure_conflation_iff R S).mp hS
     -- Instance search is keyed on the head symbol, so the instances carried by the objects of the
@@ -143,7 +143,7 @@ variable {I : Type*} (P : I → (finiteProjectiveModules R).FullSubcategory)
 /-- On a pairwise nonisomorphic indecomposable family, the Krull-Schmidt coordinates form the
 Kronecker-delta matrix. -/
 @[simp]
-theorem indecomposableCoordinate_exactK0_of [DecidableEq I]
+theorem indecomposableMultiplicity_eq_ite [DecidableEq I]
     (hind : ∀ i, IsIndecomposableModule R (P i).obj)
     (hnoniso : Pairwise fun i j ↦ IsEmpty (↥(P i).obj ≃ₗ[R] ↥(P j).obj)) (i j : I) :
     (indecomposableMultiplicity R ↥(P j).obj ↥(P i).obj : ℤ) = if j = i then 1 else 0 := by
@@ -200,10 +200,9 @@ private theorem mem_span_of_length_le
         Submodule.span ℤ (Set.range fun i ↦
           (ExactK0.of (P i) : ExactK0.{u} (finiteProjectiveModulesExactStructure R))) := by
     intro X hX
-    rw [show (ExactK0.of X : ExactK0.{u} (finiteProjectiveModulesExactStructure R)) = 0 from
-      ExactK0.of_eq_zero_of_isZero (IsZero.of_full_of_faithful_of_isZero
-        (finiteProjectiveModules R).ι X (ModuleCat.isZero_of_subsingleton X.obj))]
-    exact Submodule.zero_mem _
+    convert Submodule.zero_mem _ using 1
+    exact ExactK0.of_eq_zero_of_isZero (IsZero.of_full_of_faithful_of_isZero
+      (finiteProjectiveModules R).ι X (ModuleCat.isZero_of_subsingleton X.obj))
   induction n with
   | zero =>
     intro X hX
@@ -315,7 +314,7 @@ theorem indecomposableProjectiveClassBasis_repr_apply
     (fun c x ↦ funext fun i ↦ map_zsmul _ c x) (fun j ↦ funext fun k ↦ ?_) x i
   rw [indecomposableProjectiveClassBasis_apply, Finsupp.single_apply]
   rw [indecomposableCoordinate_of]
-  exact indecomposableCoordinate_exactK0_of P hind hnoniso k j
+  exact indecomposableMultiplicity_eq_ite P hind hnoniso k j
 
 end Family
 
