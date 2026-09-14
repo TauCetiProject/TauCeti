@@ -302,6 +302,7 @@ noncomputable def comap (f : S →+ T) :
 
 /-- The pulled-back point is the original point composed with the induced map of monoid
 algebras. -/
+@[simp]
 theorem comap_apply (f : S →+ T) (x : AffineSemigroupComplexPoint T)
     (a : MonoidAlgebra ℂ (Multiplicative S)) :
     comap f x a = x (MonoidAlgebra.mapDomainAlgHom ℂ ℂ (AddMonoidHom.toMultiplicative f) a) :=
@@ -317,16 +318,21 @@ theorem comap_apply_single (f : S →+ T) (x : AffineSemigroupComplexPoint T) (s
 @[simp]
 theorem comap_id : comap (AddMonoidHom.id S) = id := by
   funext x
-  refine MonoidAlgebra.algHom_ext (fun m ↦ ?_) (Subsingleton.elim _ _)
-  rw [← ofAdd_toAdd m, comap_apply_single, AddMonoidHom.id_apply, id]
+  rw [comap, AddMonoidHom.toMultiplicative_id, MonoidAlgebra.mapDomainAlgHom_id,
+    AlgHom.comp_id]
+  rfl
 
 /-- Pulling back along two homomorphisms in turn is pulling back along their composite. -/
 @[simp]
 theorem comap_comap (f : S →+ T) (f' : T →+ U) (x : AffineSemigroupComplexPoint U) :
-    comap f (comap f' x) = comap (f'.comp f) x :=
-  MonoidAlgebra.algHom_ext (fun m ↦ by
-    rw [← ofAdd_toAdd m, comap_apply_single, comap_apply_single, comap_apply_single,
-      AddMonoidHom.comp_apply]) (Subsingleton.elim _ _)
+    comap f (comap f' x) = comap (f'.comp f) x := by
+  rw [comap, comap]
+  change
+    (x.comp (MonoidAlgebra.mapDomainAlgHom ℂ ℂ (AddMonoidHom.toMultiplicative f'))).comp
+        (MonoidAlgebra.mapDomainAlgHom ℂ ℂ (AddMonoidHom.toMultiplicative f)) =
+      x.comp (MonoidAlgebra.mapDomainAlgHom ℂ ℂ
+        ((AddMonoidHom.toMultiplicative f').comp (AddMonoidHom.toMultiplicative f)))
+  rw [MonoidAlgebra.mapDomainAlgHom_comp, AlgHom.comp_assoc]
 
 /-- The pullback of complex points is contravariant for composition. -/
 theorem comap_comp (f : S →+ T) (f' : T →+ U) : comap (f'.comp f) = comap f ∘ comap f' := by
