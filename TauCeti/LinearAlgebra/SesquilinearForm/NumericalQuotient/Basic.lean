@@ -23,7 +23,7 @@ right-separating; no assertion is made about the other side until both quotients
 ## Main definitions
 
 * `TauCeti.biadditiveToIntBilinear`: a biadditive pairing viewed as a `ℤ`-bilinear map.
-* `TauCeti.leftRadical` and `TauCeti.rightRadical`: the two radicals of a bilinear map.
+* `TauCeti.leftRadical` and `TauCeti.rightRadical`: the two radicals of a sesquilinear map.
 * `TauCeti.LeftNumericalQuotient` and `TauCeti.RightNumericalQuotient`: the corresponding
   quotient modules.
 * `TauCeti.leftNumericalPairing` and `TauCeti.rightNumericalPairing`: the one-sided quotient
@@ -84,12 +84,14 @@ section Radicals
 
 variable (b : L →ₛₗ[σ] M →ₗ[R] P)
 
-/-- The **left radical** of a bilinear map: the elements in the first argument which pair to zero
+/-- The **left radical** of a sesquilinear map: the elements in the first argument which pair to
+zero
 with every element of the second argument. -/
 def leftRadical : Submodule R L :=
   b.ker
 
-/-- The **right radical** of a bilinear map: the elements in the second argument which pair to zero
+/-- The **right radical** of a sesquilinear map: the elements in the second argument which pair to
+zero
 with every element of the first argument. -/
 def rightRadical : Submodule R M :=
   b.flip.ker
@@ -230,6 +232,28 @@ theorem rightNumericalPairing_mk (x : L) (y : M) :
   rw [rightNumericalPairing, rightNumericalQuotientMk, Submodule.mkQ_apply]
   simpa only [LinearMap.flip_apply] using
     DFunLike.congr_fun (Submodule.liftQ_apply (rightRadical b) b.flip y) x
+
+/-- The left quotient pairing is the unique sesquilinear map which agrees with the original pairing
+on representatives of the left quotient. -/
+theorem leftNumericalPairing_unique
+    (c : LeftNumericalQuotient b →ₛₗ[σ] M →ₗ[R] P)
+    (hc : ∀ x y, c (leftNumericalQuotientMk b x) y = b x y) :
+    c = leftNumericalPairing b := by
+  apply LinearMap.ext₂
+  intro q y
+  obtain ⟨x, rfl⟩ := leftNumericalQuotientMk_surjective b q
+  rw [hc, leftNumericalPairing_mk]
+
+/-- The right quotient pairing is the unique sesquilinear map which agrees with the original pairing
+on representatives of the right quotient. -/
+theorem rightNumericalPairing_unique
+    (c : L →ₛₗ[σ] RightNumericalQuotient b →ₗ[R] P)
+    (hc : ∀ x y, c x (rightNumericalQuotientMk b y) = b x y) :
+    c = rightNumericalPairing b := by
+  apply LinearMap.ext₂
+  intro x q
+  obtain ⟨y, rfl⟩ := rightNumericalQuotientMk_surjective b q
+  rw [hc, rightNumericalPairing_mk]
 
 /-- Quotienting the first argument by the left radical makes the pairing left-separating. -/
 theorem leftNumericalPairing_separatingLeft : (leftNumericalPairing b).SeparatingLeft := by
