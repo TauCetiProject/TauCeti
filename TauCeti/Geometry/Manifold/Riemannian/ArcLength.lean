@@ -65,8 +65,7 @@ containing `[a, b]`, with nonzero velocity along `[a, b]`. There is an increasin
 has the same endpoints and path length as `γ`, and its velocity has norm one throughout its
 parameter interval.
 
-The case `a = b` is included: the new parameter interval is then the singleton `{0}`, while the
-inverse is still constructed on a neighbourhood of zero. -/
+The case `a = b` is included: the new parameter interval is then the singleton `{0}`. -/
 theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ : IsOpen J)
     (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ J) {a b : ℝ} (hab : a ≤ b)
     (hsub : Icc a b ⊆ J) (hreg : ∀ t ∈ Icc a b, curveVelocity I γ t ≠ 0) :
@@ -98,7 +97,9 @@ theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ :
     exact (norm_eq_sqrt_real_inner (curveVelocity I γ t)).symm
   let V : Set ℝ := {t | t ∈ J ∧ 0 < v t}
   have hV_open : IsOpen V := by
-    change IsOpen (J ∩ v ⁻¹' Ioi 0)
+    rw [show V = J ∩ v ⁻¹' Ioi 0 by
+      ext t
+      simp only [V, mem_ofPred_eq, mem_inter_iff, mem_preimage, mem_Ioi]]
     exact hv.isOpen_inter_preimage hJ isOpen_Ioi
   have haV : a ∈ V := ⟨hsub (left_mem_Icc.mpr hab),
     norm_pos_iff.mpr (hreg a (left_mem_Icc.mpr hab))⟩
@@ -152,18 +153,13 @@ theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ :
     exact intervalIntegral.integral_hasDerivAt_right (hInt a haU t ht)
       (hvU.stronglyMeasurableAtFilter hU_open t ht)
       ((hvU t ht).continuousAt (hU_open.mem_nhds ht))
-  have hφ_add : ∀ s ∈ U, ∀ t ∈ U, φ t = φ s + ∫ r in s..t, v r := by
-    intro s hs t ht
-    have hadd := intervalIntegral.integral_add_adjacent_intervals (hInt a haU s hs)
-      (hInt s hs t ht)
-    exact hadd.symm
   have hφ_strict : StrictMonoOn φ U := by
-    intro s hs t ht hst
-    have hpos : 0 < ∫ r in s..t, v r :=
-      intervalIntegral.intervalIntegral_pos_of_pos_on (hInt s hs t ht)
-        (fun r hr ↦ (hU_sub (hU_ord s hs t ht (Ioo_subset_Icc_self hr))).2) hst
-    rw [hφ_add s hs t ht]
-    linarith
+    apply strictMonoOn_of_deriv_pos (show Convex ℝ U from convex_Ioo _ _)
+    · exact fun t ht ↦ (hφ_deriv t ht).continuousAt.continuousWithinAt
+    · intro t ht
+      rw [hU_open.interior_eq] at ht
+      rw [(hφ_deriv t ht).deriv]
+      exact (hU_sub ht).2
   have hφ_contDiff : ContDiffOn ℝ 1 φ U := by
     rw [contDiffOn_one_iff_derivWithin hU_open.uniqueDiffOn]
     refine ⟨fun t ht ↦ (hφ_deriv t ht).differentiableAt.differentiableWithinAt, ?_⟩

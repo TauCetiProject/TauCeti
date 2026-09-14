@@ -42,7 +42,7 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
 * `TauCeti.Manifold.curveVelocityLiftWithin` and `TauCeti.Manifold.curveVelocityLift`: the
   corresponding curves in the tangent bundle, together with their projection and fibre formulas.
 * `ContMDiffOn.continuousOn_curveVelocityLift`: the velocity lift of a `C¹` curve on an open set
-  is continuous there.
+  is continuous there, with `ContMDiff.continuous_curveVelocityLift` as its unrestricted case.
 * `TauCeti.Manifold.hasMFDerivWithinAt_curveVelocityWithin` and
   `TauCeti.Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt`: the two directions relating the
   named velocity to a `HasMFDerivWithinAt` witness.
@@ -301,6 +301,12 @@ theorem ContMDiffOn.continuousOn_curveVelocityLift {u : Set 𝕜}
     TotalSpace.mk' E (γ t) (mfderivWithin 𝓘(𝕜, 𝕜) I γ u t (1 : 𝕜))
   congr 1
   rw [curveVelocity_apply, mfderivWithin_of_mem_nhds (hu.mem_nhds ht)]
+
+/-- The unrestricted case of `ContMDiffOn.continuousOn_curveVelocityLift`. -/
+theorem ContMDiff.continuous_curveVelocityLift
+    (hγ : ContMDiff 𝓘(𝕜, 𝕜) I 1 γ) : Continuous (curveVelocityLift I γ) := by
+  rw [← continuousOn_univ]
+  exact ContMDiffOn.continuousOn_curveVelocityLift hγ.contMDiffOn isOpen_univ
 
 /-- Reading the curve in the extended chart centred at the *current* point differentiates it to
 the velocity itself: the derivative of that chart at its own centre is the identity. -/
