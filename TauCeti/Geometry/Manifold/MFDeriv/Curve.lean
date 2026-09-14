@@ -275,6 +275,24 @@ theorem curveVelocityLift_snd (γ : 𝕜 → M) (t : 𝕜) :
 
 variable [IsManifold I 1 M]
 
+omit [IsManifold I 1 M] in
+/-- Applying the tangent map of a curve to the canonical unit tangent vector of its parameter
+space gives its velocity lift. -/
+theorem tangentMapWithin_unit_eq_curveVelocityLiftWithin {u : Set 𝕜} (t : 𝕜) :
+    tangentMapWithin 𝓘(𝕜, 𝕜) I γ u
+        (TotalSpace.mk' 𝕜 t ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm 1)) =
+      curveVelocityLiftWithin I γ u t := by
+  have hunit : (NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm (1 : 𝕜) =
+      (1 : 𝕜) := by
+    apply (NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).injective
+    rw [ContinuousLinearEquiv.apply_symm_apply]
+    rfl
+  change TotalSpace.mk' E (γ t)
+      (mfderivWithin 𝓘(𝕜, 𝕜) I γ u t
+        ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm 1)) =
+    TotalSpace.mk' E (γ t) (curveVelocityWithin I γ u t)
+  rw [hunit, curveVelocityWithin_apply]
+
 /-- The within-domain velocity lift of a `C¹` curve is continuous on a domain with unique
 manifold derivatives. -/
 theorem ContMDiffOn.continuousOn_curveVelocityLiftWithin {u : Set 𝕜}
@@ -282,7 +300,7 @@ theorem ContMDiffOn.continuousOn_curveVelocityLiftWithin {u : Set 𝕜}
     (hu : UniqueMDiffOn 𝓘(𝕜, 𝕜) u) :
     ContinuousOn (curveVelocityLiftWithin I γ u) u := by
   let ι : 𝕜 → TangentBundle 𝓘(𝕜, 𝕜) 𝕜 := fun t ↦
-    TotalSpace.mk' 𝕜 t ((tangentSpaceCastModel 𝓘(𝕜, 𝕜) t).symm 1)
+    TotalSpace.mk' 𝕜 t ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm 1)
   have hι : ContMDiff 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent ∞ ι := by
     intro t
     rw [contMDiffAt_totalSpace]
@@ -294,14 +312,8 @@ theorem ContMDiffOn.continuousOn_curveVelocityLiftWithin {u : Set 𝕜}
   have htangent := hγ.continuousOn_tangentMapWithin le_rfl hu
   have hcomp := htangent.comp hι.continuous.continuousOn
     (fun t ht ↦ by simpa [ι] using ht)
-  have htangent_apply (t : 𝕜) :
-      tangentMapWithin (modelWithCornersSelf 𝕜 𝕜) I γ u (ι t) =
-        curveVelocityLiftWithin I γ u t := by
-    apply TotalSpace.ext rfl
-    simp only [tangentMapWithin_snd, ι]
-    exact HEq.rfl
   refine hcomp.congr fun t ht ↦ ?_
-  exact (htangent_apply t).symm
+  exact (tangentMapWithin_unit_eq_curveVelocityLiftWithin (I := I) (u := u) t).symm
 
 /-- The velocity lift of a `C¹` curve is continuous on an open parameter set. The openness
 ensures that the unrestricted velocity in `curveVelocityLift` agrees with the derivative within
