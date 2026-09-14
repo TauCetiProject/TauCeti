@@ -11,6 +11,8 @@ public import TauCeti.NumberTheory.Multiquadratic.Unramified.Maximality
 import Mathlib.NumberTheory.NumberField.CMField
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.GaloisGroup
+import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.Ramification
+import TauCeti.NumberTheory.NumberField.UnramifiedTower
 
 /-!
 # The genus-field candidate of a real quadratic field
@@ -24,6 +26,12 @@ The key archimedean fact is intrinsic: an extension of a totally real field is u
 infinite places exactly when it is totally real. Consequently every abelian Galois extension of
 `ℚ` containing the chosen square root and unramified everywhere over the quadratic base maps into
 this maximal real subfield.
+
+At the finite places nothing new happens: the real candidate sits between the quadratic base and
+the prime-discriminant compositum, and the compositum is already unramified over the base, so the
+intermediate field is too. The only subtlety is that the base appears twice, once as an
+intermediate field of the real candidate and once as `candidateGenusFieldBase hd` inside the
+compositum; `NumberField.isUnramifiedIn_of_isUnramifiedIn_lift` bridges the two models.
 
 The construction is classical; see F. Lemmermeyer, *Reciprocity Laws: From Euler to Eisenstein*,
 Section 2.2, and D. A. Cox, *Primes of the Form x² + ny²*, Section 6.A.
@@ -40,6 +48,8 @@ Section 2.2, and D. A. Cox, *Primes of the Form x² + ny²*, Section 6.A.
   base lies in the real candidate.
 * `TauCeti.Multiquadratic.isAbelianGalois_candidateGenusFieldReal`: the real candidate is abelian
   and Galois over `ℚ`.
+* `TauCeti.Multiquadratic.isUnramifiedIn_candidateGenusFieldReal`: the real candidate is
+  unramified over its quadratic base at every finite place.
 * `TauCeti.Multiquadratic.exists_algHom_candidateGenusFieldReal`: every abelian Galois extension
   of `ℚ` containing the chosen square root and unramified over the quadratic base at all places
   embeds into the real candidate.
@@ -166,6 +176,26 @@ theorem isUnramifiedAtInfinitePlaces_candidateGenusFieldReal (hd : Squarefree d)
         IntermediateField ℚ (candidateGenusFieldReal hd))
       (candidateGenusFieldReal hd) :=
   IsTotallyReal.isUnramifiedAtInfinitePlaces
+
+/-- The quadratic base of the real candidate is the copy inside the real candidate of the
+quadratic base `candidateGenusFieldBase hd` of the full prime-discriminant compositum. -/
+theorem lift_adjoin_candidateGenusFieldRealBaseRoot (hd : Squarefree d) (hpos : 0 < d) :
+    IntermediateField.lift (adjoin ℚ {candidateGenusFieldRealBaseRoot hd hpos}) =
+      candidateGenusFieldBase hd := by
+  rw [candidateGenusFieldBase_def, IntermediateField.lift_adjoin_simple,
+    coe_candidateGenusFieldRealBaseRoot]
+
+/-- **The real genus-field candidate is unramified over `ℚ(√d)` at every finite place.** The
+prime-discriminant compositum is unramified over the same base
+(`isUnramifiedIn_candidateGenusField`), and the real candidate lies between the two. -/
+theorem isUnramifiedIn_candidateGenusFieldReal (hd : Squarefree d)
+    (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d)
+    (q : Ideal (𝓞 (adjoin ℚ {candidateGenusFieldRealBaseRoot hd hpos} :
+      IntermediateField ℚ (candidateGenusFieldReal hd)))) [q.IsPrime] :
+    Algebra.IsUnramifiedIn (𝓞 (candidateGenusFieldReal hd)) q := by
+  refine NumberField.isUnramifiedIn_of_isUnramifiedIn_lift _ ?_ q
+  rw [lift_adjoin_candidateGenusFieldRealBaseRoot hd hpos]
+  exact fun p _ ↦ isUnramifiedIn_candidateGenusField hd hnsq p
 
 /-- **Every abelian Galois extension of `ℚ` containing the chosen square root and unramified
 everywhere over the quadratic base embeds into the real candidate.** The narrow genus-field

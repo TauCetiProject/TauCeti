@@ -43,6 +43,9 @@ the compositum is unramified over the quadratic base.
   base descends from an integral extension to the subring below it, for `S` integral and
   torsion-free over the Dedekind domain `R`, with `R` and `S` both essentially of finite type over
   the base `A` and `A ≤ R ≤ S` a scalar tower. The base ring and the ideal are arbitrary.
+* `TauCeti.RamificationInertia.isUnramifiedIn_of_isUnramifiedIn`: that descent read at every prime
+  of the intermediate ring above the ideal at once, so an ideal unramified in `S` is unramified
+  in `R`.
 -/
 
 public section
@@ -191,6 +194,13 @@ theorem isUnramifiedAt_of_isUnramifiedIn {I : Ideal A} (hur : Algebra.IsUnramifi
   have : (P : Ideal S).LiesOver I := Ideal.LiesOver.trans (P : Ideal S) 𝔮 I
   have : Algebra.IsUnramifiedAt A (P : Ideal S) := hur (P : Ideal S) ‹_› ‹_›
   exact Algebra.IsUnramifiedAt.of_liesOver A 𝔮 (P : Ideal S)
+
+/-- **Unramifiedness in an extension is inherited by a subextension.** If an ideal `I` of the base
+`A` is unramified in `S`, then it is unramified in an intermediate ring `R`. This is
+`isUnramifiedAt_of_isUnramifiedIn` read at every prime of `R` above `I` at once. -/
+theorem isUnramifiedIn_of_isUnramifiedIn {I : Ideal A} (hur : Algebra.IsUnramifiedIn S I) :
+    Algebra.IsUnramifiedIn R I :=
+  fun 𝔮 _ _ ↦ isUnramifiedAt_of_isUnramifiedIn hur 𝔮
 
 end Descent
 
