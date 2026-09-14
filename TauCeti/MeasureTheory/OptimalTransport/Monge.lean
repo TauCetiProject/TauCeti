@@ -39,8 +39,9 @@ implies the first, and the gap between them is exactly the gap between the two v
 The definitions and the relaxation need no topology and no normalisation (only the strict
 example asks for a probability target), and the two factors are arbitrary measurable spaces; the
 cost is extended-nonnegative and integrated by `lintegral`, so an infeasible problem
-and a problem of infinite cost both take the value `∞`, separated by
-`TauCeti.exists_hasLaw_of_mongeCost_ne_top`.
+and a feasible problem whose maps all have infinite cost both take the value `∞`; the value alone
+does not distinguish these cases. `TauCeti.exists_hasLaw_of_mongeCost_ne_top` only proves that a
+non-top value implies feasibility.
 
 ## Main definitions
 
