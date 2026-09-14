@@ -108,7 +108,7 @@ theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_coprime 
         (Nat.Coprime.coprime_dvd_right (Nat.ordCompl_dvd n n.minFac) hmn)
     -- the block at `n.minFac` shifts by `n.minFac ^ v`, whether or not that prime divides `N`
     by_cases hpN : n.minFac ∣ N
-    · rw [qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd hp hpN,
+    · rw [qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd_level hp hpN,
         ih _ hn'lt hn'0 _ hcop, mul_comm (n.minFac ^ n.factorization n.minFac) m, mul_assoc,
         hnn']
     · rw [qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_dvd hp

@@ -41,7 +41,7 @@ are the input for the coefficient formula of `T_n` read at a Fourier index `m` c
   the formula above.
 * `HeckeRing.GL2.qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_dvd`:
   `a_m(T_{p^r} F) = a_{p^r m}(F)` at an index `m` prime to `p`.
-* `HeckeRing.GL2.qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd`: the
+* `HeckeRing.GL2.qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd_level`: the
   same shift `a_m(T_{p^r} F) = a_{p^r m}(F)` at a prime `p ∣ N` dividing the level, now at every
   index `m`.
 * `qExpansion_coeff_prime_pow_succ_mul_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0`: the
@@ -202,7 +202,7 @@ theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_d
 `qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_dvd`: at `p ∣ N` the
 recurrence block degenerates to the `r`-th power of `Tₚ`, whose second term is killed by
 `χ(p) = 0`. -/
-theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd (hp : p.Prime)
+theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd_level (hp : p.Prime)
     (hpN : p ∣ N) (F : modFormCharSpace k χ) (m r : ℕ) :
     (qExpansion 1 (heckeRingHomCharSpace k χ (heckeTGeneratorRecGamma0 N p r) F :
         ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff m =
@@ -278,12 +278,12 @@ theorem qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_of_n
 
 /-- **At a prime dividing the level, `T_{p^r}` shifts every Fourier coefficient by `p^r`**, on
 `S_k(N, χ)`. -/
-theorem qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_of_dvd
+theorem qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_of_dvd_level
     (hp : p.Prime) (hpN : p ∣ N) (F : cuspFormCharSpace k χ) (m r : ℕ) :
     (qExpansion 1 (heckeRingHomCuspCharSpace k χ (heckeTGeneratorRecGamma0 N p r) F :
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff m =
       (qExpansion 1 (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff (p ^ r * m) := by
-  have h := qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd hp hpN
+  have h := qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd_level hp hpN
     (cuspToModFormCharSpace k χ F) m r
   rw [heckeRingHomCharSpace_apply, ← cuspToModFormCharSpace_twistedHeckeSlashCuspFormCharLinearMap,
     ← heckeRingHomCuspCharSpace_apply] at h
