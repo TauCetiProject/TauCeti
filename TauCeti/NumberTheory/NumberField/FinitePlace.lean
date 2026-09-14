@@ -11,6 +11,14 @@ public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 # Finite places of number fields
 
 This file records general facts about the finite places of a number field.
+
+The main content is that a number field always *has* a finite place: the finite places are the
+height one primes of its ring of integers, and that ring is a Dedekind domain which is not a
+field, so it has a maximal ideal. Recording this as a `Nonempty` instance lets local-global
+arguments pick a finite place with `Classical.arbitrary` whenever a hypothesis quantified over
+all finite places has to be used at some place — for instance to read off an invariant, such as
+the dimension of the underlying space, that is the same at every place. Without the instance
+each such argument has to rebuild the existence proof inline.
 -/
 
 public section
