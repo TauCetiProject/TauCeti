@@ -30,8 +30,8 @@ linear-character computation of
 ## Main statements
 
 * `FDRep.clifford_restrict_finrank`: **Clifford's theorem, dimension form**, packaging the
-  constituent, the multiplicity and the identity `dim W = e * [G : inertia V] * dim V` as natural
-  numbers.
+  constituent together with its decomposition of `Res_N W`, the multiplicity and the identity
+  `dim W = e * [G : inertia V] * dim V` as natural numbers.
 * `FDRep.clifford_restrict_inertia_eq_top_of_coprime`: when the dimension of `W` is **coprime**
   to `[G : N]`, the restriction of `W` to `N` is isomorphic to `e` copies of a single constituent
   `V` whose inertia group is all of `G`, the character of `W` on `N` being `e` times that of `V`
@@ -69,14 +69,20 @@ private theorem finrank_eq_of_iso_cliffordSum {W : FDRep k G} {V : FDRep k N}
 is the common multiplicity `e` of the constituents of its restriction to `N`, times the number
 `[G : inertia V]` of those constituents, times the dimension of one of them.
 
+The decomposition `Res_N W ≅ V.cliffordSum e` that `FDRep.clifford_restrict_iso` supplies is
+returned alongside the identity, so that `V` is exhibited as a constituent of the restriction and
+not merely named by it.
+
 In particular the index of the inertia group of a constituent divides the dimension of `W`; that
 is the arithmetic that `FDRep.clifford_restrict_inertia_eq_top_of_coprime` exploits. -/
 theorem clifford_restrict_finrank [IsAlgClosed k] (W : FDRep k G) [Simple W] :
-    ∃ (V : FDRep k N) (_ : Simple V) (e : ℕ), e ≠ 0 ∧
-      Module.finrank k W = e * (inertia V).index * Module.finrank k V := by
+    ∃ (V : FDRep k N) (_ : Simple V) (hfinite : Finite (G ⧸ inertia V)),
+      let _ := hfinite
+      ∃ e : ℕ, e ≠ 0 ∧ Nonempty (resFDRep N W ≅ V.cliffordSum e) ∧
+        Module.finrank k W = e * (inertia V).index * Module.finrank k V := by
   obtain ⟨V, hV, hfinite, e, he, ⟨iso⟩⟩ := W.clifford_restrict_iso (N := N)
   let _ : Finite (G ⧸ inertia V) := hfinite
-  exact ⟨V, hV, e, he, finrank_eq_of_iso_cliffordSum iso⟩
+  exact ⟨V, hV, hfinite, e, he, ⟨iso⟩, finrank_eq_of_iso_cliffordSum iso⟩
 
 /-- **Clifford theory when the dimension is coprime to the index.**  If the dimension of an
 irreducible `W : FDRep k G` is coprime to `[G : N]`, then `Res_N W` is isomorphic to `e` copies of
@@ -107,8 +113,7 @@ theorem clifford_restrict_inertia_eq_top_of_coprime [IsAlgClosed k] (W : FDRep k
   have hdvdW : (inertia V).index ∣ Module.finrank k W :=
     ⟨e * Module.finrank k V, by rw [hdim]; ring⟩
   have hdvdN : (inertia V).index ∣ N.index := Subgroup.index_dvd_of_le (le_inertia V)
-  have hone : (inertia V).index = 1 :=
-    Nat.eq_one_of_dvd_one (hcop ▸ Nat.dvd_gcd hdvdW hdvdN)
+  have hone : (inertia V).index = 1 := Nat.eq_one_of_dvd_coprimes hcop hdvdW hdvdN
   have htop : inertia V = ⊤ := Subgroup.index_eq_one.1 hone
   -- A single inertia coset means a single summand, whose conjugate of `V` is `V` again.
   have hsub : Subsingleton (G ⧸ inertia V) := by
