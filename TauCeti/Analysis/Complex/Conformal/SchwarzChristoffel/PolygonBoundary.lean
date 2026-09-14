@@ -14,9 +14,9 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdg
 
 For a nondecreasing finite family of prevertices, the real projective line splits into the
 two unbounded intervals and the intervals between consecutive prevertices.  The
-Schwarz--Christoffel boundary map carries these pieces onto the corresponding sides of
-`schwarzChristoffelPolygon`: the finite intervals give its bounded sides, while the two unbounded
-intervals give the two sides incident to the common vertex at infinity.
+Schwarz--Christoffel boundary map carries each finite interval onto its bounded side.  The real
+points in the two unbounded intervals trace the two sides incident to the common vertex at infinity
+with that vertex omitted; compactification supplies the omitted vertex.
 
 Consequently the range of the compactified boundary map is exactly the boundary of the packaged
 polygon.  This identification does not require the polygon to be simple; proving that distinct
@@ -65,9 +65,9 @@ private theorem exists_mem_Icc_castSucc_succ_of_monotone {α : Type*} [LinearOrd
 
 /-- **The compactified Schwarz--Christoffel boundary traces the polygon boundary.**  For ordered
 prevertices, integrability at every finite prevertex and decay at infinity make each
-closed finite interval and each unbounded interval map onto the corresponding side of
-`schwarzChristoffelPolygon`.  Their union, including the common value at infinity, is the complete
-polygon boundary.
+closed finite interval map onto its corresponding bounded side.  Each unbounded interval traces
+its side with the common vertex at infinity omitted, and the compactified point supplies that
+vertex.  Their union is the complete boundary of `schwarzChristoffelPolygon`.
 
 No simplicity hypothesis is needed: this is an equality of ranges even when nonadjacent polygon
 sides intersect. -/
