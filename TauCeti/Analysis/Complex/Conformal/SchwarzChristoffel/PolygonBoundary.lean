@@ -44,6 +44,25 @@ namespace TauCeti
 
 variable {n : ℕ}
 
+/-- A point strictly between the first and last values of a monotone finite sequence lies in
+one of the closed intervals between consecutive values. -/
+private theorem exists_mem_Icc_castSucc_succ_of_monotone {α : Type*} [LinearOrder α] :
+    ∀ {m : ℕ} {c : Fin (m + 1) → α}, Monotone c → ∀ {x : α},
+      c 0 < x → x < c (Fin.last m) → ∃ i : Fin m, x ∈ Icc (c i.castSucc) (c i.succ)
+  | 0, c, _, x, hxleft, hxright => by
+      have hlast : (Fin.last 0 : Fin 1) = 0 := Fin.ext (by simp)
+      rw [hlast] at hxright
+      exact (lt_asymm hxleft hxright).elim
+  | m + 1, c, hc, x, hxleft, hxright => by
+      by_cases hx : x < c (Fin.last m).castSucc
+      · -- `x` lies below the penultimate value: recurse on the initial segment of `c`.
+        obtain ⟨i, hi⟩ := exists_mem_Icc_castSucc_succ_of_monotone
+          (c := fun i ↦ c i.castSucc) (hc.comp Fin.strictMono_castSucc.monotone)
+          (by simpa using hxleft) (by simpa using hx)
+        exact ⟨i.castSucc, by simpa only [Fin.succ_castSucc] using hi⟩
+      · -- Otherwise `x` lies in the last interval.
+        exact ⟨Fin.last m, not_lt.mp hx, hxright.le⟩
+
 /-- **The compactified Schwarz--Christoffel boundary traces the polygon boundary.**  For ordered
 prevertices, integrability at every finite prevertex and decay at infinity make each
 closed finite interval and each unbounded interval map onto the corresponding side of
@@ -91,31 +110,6 @@ theorem range_schwarzChristoffelCompactifiedBoundary (a e : Fin (n + 1) → ℝ)
         segment ℝ (schwarzChristoffelVertex a e z₀ 0) V \ {V} := by
     exact schwarzChristoffelBoundary_image_Iic_prevertex a e z₀ 0
       (hfinite 0) hleft hinfty
-  have consecutive_cover : ∀ m (c : Fin (m + 1) → ℝ), Monotone c → ∀ x : ℝ,
-      c 0 < x → x < c (Fin.last m) →
-        ∃ i : Fin m, x ∈ Icc (c i.castSucc) (c i.succ) := by
-    intro m
-    induction m with
-    | zero =>
-        intro c _ x hxleft hxright
-        have hlast : (Fin.last 0 : Fin 1) = 0 := Fin.ext (by simp)
-        rw [hlast] at hxright
-        exact (lt_asymm hxleft hxright).elim
-    | succ n ih =>
-        intro c hc x hxleft hxright
-        by_cases hx : x < c (Fin.last n).castSucc
-        · let c' : Fin (n + 1) → ℝ := fun i ↦ c i.castSucc
-          have hc' : Monotone c' := hc.comp Fin.strictMono_castSucc.monotone
-          have hxleft' : c' 0 < x := by simpa [c'] using hxleft
-          have hxright' : x < c' (Fin.last n) := by simpa [c'] using hx
-          obtain ⟨i, hi⟩ := ih c' hc' x hxleft' hxright'
-          refine ⟨i.castSucc, ?_⟩
-          simpa only [c', Fin.succ_castSucc] using hi
-        · refine ⟨Fin.last n, ?_⟩
-          exact ⟨not_lt.mp hx, hxright.le⟩
-  have hcover : ∀ x : ℝ, a 0 < x → x < a (Fin.last n) →
-      ∃ i : Fin n, x ∈ Icc (a i.castSucc) (a i.succ) :=
-    consecutive_cover n a ha
   rw [schwarzChristoffelPolygon_boundary]
   ext z
   constructor
@@ -126,7 +120,6 @@ theorem range_schwarzChristoffelCompactifiedBoundary (a e : Fin (n + 1) → ℝ)
         exact Or.inr (left_mem_segment ℝ _ _)
     | coe x =>
         simp only [schwarzChristoffelCompactifiedBoundary_coe]
-        change B x ∈ _
         by_cases hxleft : x ≤ a 0
         · have himage : B x ∈ B '' Iic (a 0) := ⟨x, hxleft, rfl⟩
           rw [hleftImage] at himage
@@ -136,7 +129,8 @@ theorem range_schwarzChristoffelCompactifiedBoundary (a e : Fin (n + 1) → ℝ)
           · have himage : B x ∈ B '' Ici (a (Fin.last n)) := ⟨x, hxright, rfl⟩
             rw [hrightImage] at himage
             exact Or.inl (Or.inr himage.1)
-          · obtain ⟨i, hi⟩ := hcover x (lt_of_not_ge hxleft) (lt_of_not_ge hxright)
+          · obtain ⟨i, hi⟩ := exists_mem_Icc_castSucc_succ_of_monotone ha
+              (lt_of_not_ge hxleft) (lt_of_not_ge hxright)
             have himage : B x ∈ B '' Icc (a i.castSucc) (a i.succ) := ⟨x, hi, rfl⟩
             rw [hbounded i] at himage
             exact Or.inl (Or.inl (Set.mem_iUnion.mpr ⟨i, himage⟩))
