@@ -199,9 +199,9 @@ theorem mongeCost_eq_top_of_not_exists_hasLaw (h : ¬∃ T : X → Y, HasLaw T �
     (c : X × Y → ℝ≥0∞) : mongeCost c μ ν = ⊤ :=
   eq_top_iff.2 <| le_mongeCost fun T hT ↦ absurd ⟨T, hT⟩ h
 
-/-- A finite Monge value is witnessed by a transport map. The converse fails: a transport map of
-infinite cost leaves the Monge value `∞`, which is why this is not stated as an `iff` with
-`TauCeti.mongeCost_eq_top_of_not_exists_hasLaw`. -/
+/-- A finite Monge value is witnessed by a transport map. The converse fails: feasibility does not
+guarantee a finite-cost transport map, since every feasible map may have infinite cost. This is why
+the result is not stated as an `iff` with `TauCeti.mongeCost_eq_top_of_not_exists_hasLaw`. -/
 theorem exists_hasLaw_of_mongeCost_ne_top (h : mongeCost c μ ν ≠ ⊤) :
     ∃ T : X → Y, HasLaw T ν μ := by
   obtain ⟨T, hT, -⟩ := mongeCost_lt_iff.1 h.lt_top
