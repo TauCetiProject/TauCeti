@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Finite.RootsOfUnity
 public import TauCeti.NumberTheory.LocalField.Henselian
-public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import TauCeti.NumberTheory.LocalField.RootsOfUnity
 public import TauCeti.RingTheory.RootsOfUnity.Henselian
 
 /-!
@@ -112,6 +112,14 @@ theorem teichmuller_pow (α : 𝓀[K]ˣ) : teichmuller K α ^ (Nat.card 𝓀[K] 
   rw [teichmuller_apply]
   exact ((rootsOfUnityEquivResidueFieldUnits K).symm α).2
 
+/-- The simplifier-normalized form of the characteristic torsion equation for the Teichmüller
+lift. -/
+@[simp]
+theorem teichmuller_pow_fintype_card (α : 𝓀[K]ˣ) :
+    teichmuller K α ^ (@Fintype.card 𝓀[K] (Fintype.ofFinite 𝓀[K]) - 1) = 1 := by
+  rw [← @Nat.card_eq_fintype_card 𝓀[K] (Fintype.ofFinite 𝓀[K])]
+  exact teichmuller_pow K α
+
 /-- The Teichmüller lift, viewed in `𝒪[K]ˣ`, belongs to the group of `(q-1)`-st roots of unity
 indexed by the residue field's `Nat.card`. -/
 theorem teichmuller_mem_rootsOfUnity (α : 𝓀[K]ˣ) :
@@ -171,43 +179,6 @@ theorem range_teichmuller :
   · rintro ⟨α, rfl⟩
     exact teichmuller_mem_rootsOfUnity K α
   · rw [teichmuller_apply, MulEquiv.symm_apply_apply]
-
-/-! ### Roots of unity of the field itself
-
-Every root of unity of `K` has valuation one, so the roots of unity of `K` are exactly those of
-`𝒪[K]`. -/
-
-/-- **The roots of unity of a nonarchimedean local field are those of its integer ring**: a root
-of unity has valuation one, so it is a unit of `𝒪[K]`. -/
-theorem map_rootsOfUnity_integer {n : ℕ} (hn : n ≠ 0) :
-    (rootsOfUnity n 𝒪[K]).map (Units.map (Subring.subtype 𝒪[K]).toMonoidHom) =
-      rootsOfUnity n K := by
-  refine le_antisymm (map_rootsOfUnity _ n) fun ζ hζ ↦ ?_
-  have hfin : IsOfFinOrder ζ := isOfFinOrder_iff_pow_eq_one.mpr ⟨n, Nat.pos_of_ne_zero hn, hζ⟩
-  have hval : valuation K (ζ : K) = 1 :=
-    (normalizedValuation_eq_one_iff ζ).mp (normalizedValuation_eq_one_of_isOfFinOrder hfin)
-  have hu : IsUnit (⟨(ζ : K), (Valuation.mem_integer_iff (valuation K) (ζ : K)).mpr hval.le⟩
-      : 𝒪[K]) := (Valuation.integer.integers (valuation K)).isUnit_of_one' hval
-  have hcoe : ((hu.unit : 𝒪[K]) : K) = (ζ : K) := congrArg Subtype.val hu.unit_spec
-  refine ⟨hu.unit, ?_, Units.ext hcoe⟩
-  rw [SetLike.mem_coe, mem_rootsOfUnity']
-  apply Subtype.ext
-  push_cast [hcoe]
-  exact_mod_cast (mem_rootsOfUnity' n ζ).mp hζ
-
-/-- The `n`-th roots of unity of `𝒪[K]` and of `K` agree, for `n ≠ 0`. -/
-def rootsOfUnityIntegerEquiv {n : ℕ} (hn : n ≠ 0) :
-    rootsOfUnity n 𝒪[K] ≃* rootsOfUnity n K :=
-  (Subgroup.equivMapOfInjective _ _
-      (Units.map_injective (f := (Subring.subtype 𝒪[K]).toMonoidHom) Subtype.val_injective)).trans
-    (MulEquiv.subgroupCongr (map_rootsOfUnity_integer K hn))
-
-/-- The equivalence between roots of unity in `𝒪[K]` and `K` is induced by inclusion. -/
-@[simp]
-theorem coe_rootsOfUnityIntegerEquiv {n : ℕ} (hn : n ≠ 0) (ζ : rootsOfUnity n 𝒪[K]) :
-    (((rootsOfUnityIntegerEquiv K hn ζ : rootsOfUnity n K) : Kˣ) : K) =
-      (((ζ : 𝒪[K]ˣ) : 𝒪[K]) : K) := by
-  rfl
 
 /-- **Reduction identifies the `(q-1)`-st roots of unity of `K` with `𝓀[K]ˣ`**: the group
 `μ_{q-1}(K)` is isomorphic to the multiplicative group of the residue field. -/

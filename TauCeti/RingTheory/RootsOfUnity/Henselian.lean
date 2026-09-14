@@ -10,15 +10,15 @@ public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.RootsOfUnity.Basic
 
 /-!
-# Roots of unity of order invertible in a Henselian local domain
+# Roots of unity of order invertible in a Henselian local ring
 
-Reduction modulo the maximal ideal of a Henselian local domain `R` identifies the `n`-th roots
+Reduction modulo the maximal ideal of a Henselian local ring `R` identifies the `n`-th roots
 of unity of `R` with those of its residue field, whenever `n` is invertible in `R`.
 
-Injectivity holds in any commutative domain: a root of unity congruent to `1` modulo a proper
-ideal `I` forces its order into `I`, because the geometric sum attached to the root of unity
-vanishes and is congruent to that order. Surjectivity is Hensel's lemma applied to `X ^ n - 1`,
-whose roots are simple exactly because `n` is invertible.
+Injectivity over a local ring follows because the geometric sum attached to a root of unity
+congruent to `1` is itself congruent to the invertible element `n`, hence is a unit. Surjectivity
+is Hensel's lemma applied to `X ^ n - 1`, whose roots are simple exactly because `n` is
+invertible.
 
 ## Main results
 
@@ -69,29 +69,35 @@ variable [IsLocalRing R]
 unity of a local ring and of its residue field. -/
 def rootsOfUnityResidue (n : ℕ) :
     rootsOfUnity n R →* rootsOfUnity n (ResidueField R) :=
-  ((Units.map (residue R).toMonoidHom).comp (rootsOfUnity n R).subtype).codRestrict _
-    fun ζ ↦ by simpa [← map_pow] using congrArg (Units.map (residue R).toMonoidHom) ζ.2
+  restrictRootsOfUnity (residue R) n
 
 /-- The value of the reduction homomorphism on roots of unity. -/
 @[simp]
 theorem coe_rootsOfUnityResidue (n : ℕ) (ζ : rootsOfUnity n R) :
     ((rootsOfUnityResidue n ζ : (ResidueField R)ˣ) : ResidueField R) =
-      residue R ((ζ : Rˣ) : R) :=
-  (rfl)
+      residue R ((ζ : Rˣ) : R) := by
+  rw [rootsOfUnityResidue, restrictRootsOfUnity_coe_apply]
 
 /-- **Distinct roots of unity of invertible order have distinct reductions.** -/
-theorem rootsOfUnityResidue_injective [IsDomain R] {n : ℕ} (hn : IsUnit (n : R)) :
+theorem rootsOfUnityResidue_injective {n : ℕ} (hn : IsUnit (n : R)) :
     Function.Injective (rootsOfUnityResidue (R := R) n) := by
   refine (injective_iff_map_eq_one _).mpr fun ζ hζ ↦ ?_
   have hval : residue R ((ζ : Rˣ) : R) = 1 := by
     have h := congrArg
       (fun x : rootsOfUnity n (ResidueField R) ↦ ((x : (ResidueField R)ˣ) : ResidueField R)) hζ
     simpa using h
-  have hsub : ((ζ : Rˣ) : R) - 1 ∈ maximalIdeal R := by
-    rw [← residue_eq_zero_iff, map_sub, hval, map_one, sub_self]
   have hpow : ((ζ : Rˣ) : R) ^ n = 1 := (mem_rootsOfUnity' n _).mp ζ.2
+  let s := ∑ i ∈ Finset.range n, ((ζ : Rˣ) : R) ^ i
+  have hs : IsUnit s := by
+    rw [← residue_ne_zero_iff_isUnit]
+    have hres : residue R s = residue R (n : R) := by
+      simp [s, map_pow, hval]
+    rw [hres, residue_ne_zero_iff_isUnit]
+    exact hn
+  have hgeom : s * (((ζ : Rˣ) : R) - 1) = 0 := by
+    simpa [s, hpow] using geom_sum_mul ((ζ : Rˣ) : R) n
   ext
-  exact eq_one_of_pow_eq_one_of_sub_one_mem (maximalIdeal.isMaximal R).ne_top hn hpow hsub
+  exact sub_eq_zero.mp (hs.mul_right_eq_zero.mp hgeom)
 
 end LocalRing
 
@@ -132,20 +138,20 @@ theorem rootsOfUnityResidue_surjective {n : ℕ} (hn : IsUnit (n : R)) :
   simpa using hres
 
 /-- Reduction is a bijection on roots of unity of invertible order. -/
-theorem rootsOfUnityResidue_bijective [IsDomain R] {n : ℕ}
+theorem rootsOfUnityResidue_bijective {n : ℕ}
     (hn : IsUnit (n : R)) : Function.Bijective (rootsOfUnityResidue (R := R) n) :=
   ⟨rootsOfUnityResidue_injective hn, rootsOfUnityResidue_surjective hn⟩
 
 /-- **Roots of unity of invertible order lift uniquely along the residue map of a Henselian local
-domain**: reduction is an isomorphism between the `n`-th roots of unity of `R` and those of its
+ring**: reduction is an isomorphism between the `n`-th roots of unity of `R` and those of its
 residue field. -/
-def rootsOfUnityEquivResidueField [IsDomain R] {n : ℕ}
+def rootsOfUnityEquivResidueField {n : ℕ}
     (hn : IsUnit (n : R)) : rootsOfUnity n R ≃* rootsOfUnity n (ResidueField R) :=
   MulEquiv.ofBijective _ (rootsOfUnityResidue_bijective hn)
 
 /-- The value of `rootsOfUnityEquivResidueField` is the reduction of the root of unity. -/
 @[simp]
-theorem coe_rootsOfUnityEquivResidueField [IsDomain R] {n : ℕ}
+theorem coe_rootsOfUnityEquivResidueField {n : ℕ}
     (hn : IsUnit (n : R)) (ζ : rootsOfUnity n R) :
     ((rootsOfUnityEquivResidueField hn ζ : (ResidueField R)ˣ) : ResidueField R) =
       residue R ((ζ : Rˣ) : R) :=
