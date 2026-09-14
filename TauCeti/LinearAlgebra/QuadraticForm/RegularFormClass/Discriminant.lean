@@ -39,15 +39,17 @@ is killed by two.
 
 ## Main results
 
-* `TauCeti.discr'_presentedForm`: the Gram determinant of a diagonal presentation is the product
-  of its weights.
 * `TauCeti.squareClass_prod_eq_of_equivalent`: isometric diagonal presentations have weight
   products in the same square class.
 * `TauCeti.RegularFormClass.discr_add` and `TauCeti.RegularFormClass.discr_mul`: the discriminant
   of an orthogonal sum is the sum of the discriminants, and the discriminant of a tensor product
   of classes of ranks `m` and `n` is `d(q)^n d(r)^m`.
-* `TauCeti.RegularFormClass.signedDiscr_add`: the signed discriminant of an orthogonal sum picks
-  up the sign `(-1)^{mn}`.
+* `TauCeti.RegularFormClass.signedDiscr_add` and `TauCeti.RegularFormClass.signedDiscr_mul`: the
+  signed discriminant of an orthogonal sum picks up the sign `(-1)^{mn}`, and that of a tensor
+  product is `(-1)^{mn(mn-1)/2} d(q)^n d(r)^m`.
+* `TauCeti.RegularFormClass.signedDiscr_mk_rankOne` and
+  `TauCeti.RegularFormClass.signedDiscr_mk_rankOne_mul`: `d±⟨a⟩ = a`, and scaling by `a` multiplies
+  the signed discriminant of a class of rank `m` by `a^m`.
 * `TauCeti.RegularFormClass.discr_hyperbolicClass` and
   `TauCeti.RegularFormClass.signedDiscr_hyperbolicClass`: the discriminant of a hyperbolic plane
   is the class of `-1`, and its signed discriminant is trivial.
@@ -71,13 +73,6 @@ universe u v
 variable {K : Type u} [Field K] [Invertible (2 : K)]
 
 /-! ### The discriminant of a diagonal presentation -/
-
-/-- The Gram determinant of a diagonal presentation is the product of its weights. -/
-@[simp]
-theorem discr'_presentedForm (p : RegularFormPresentation K) :
-    QuadraticForm.discr' (presentedForm p) = ∏ i, ((p.2 i : K)) := by
-  rw [presentedForm_eq_weightedSumSquares, QuadraticMap.weightedSumSquares_units,
-    QuadraticForm.discr'_weightedSumSquares]
 
 /-- Isometric diagonal presentations have weight products in the same square class, which is what
 makes the discriminant an invariant of an isometry class. -/
@@ -112,8 +107,8 @@ theorem discr_zero : discr (0 : RegularFormClass K) = 0 := by
   rw [RegularFormClass.zero_def, discr_mk]
   simp
 
-/-- **The discriminant of an orthogonal sum is the sum of the discriminants**: `d(q ⊥ r) = d(q)
-d(r)`, written additively in the square-class group. -/
+/-- **The discriminant of an orthogonal sum is the sum of the discriminants**:
+`d(q ⊥ r) = d(q) + d(r)` in the additively written square-class group. -/
 @[simp]
 theorem discr_add (x y : RegularFormClass K) : discr (x + y) = discr x + discr y := by
   refine Quotient.inductionOn₂ x y fun p q => ?_
@@ -167,24 +162,27 @@ theorem signedDiscr_mk (p : RegularFormPresentation K) :
       p.1.choose 2 • squareClass (-1 : Kˣ) + squareClass (∏ i, p.2 i) := by
   rw [signedDiscr_eq_sign_add_discr, rank_mk, discr_mk]
 
-/-- The rank-zero class has trivial signed discriminant. -/
-@[simp]
-theorem signedDiscr_zero : signedDiscr (0 : RegularFormClass K) = 0 := by
-  rw [signedDiscr_eq_sign_add_discr, discr_zero, rank_zero]
-  simp
-
-/-- The multiplicative unit `⟨1⟩` has trivial signed discriminant: in rank one the signed
-discriminant agrees with the discriminant. -/
-@[simp]
-theorem signedDiscr_one : signedDiscr (1 : RegularFormClass K) = 0 := by
-  rw [signedDiscr_eq_sign_add_discr, discr_one, rank_one]
-  simp
-
 /-- In rank at most one the signed discriminant is the discriminant. -/
 theorem signedDiscr_eq_discr_of_rank_le_one {x : RegularFormClass K} (hx : rank x ≤ 1) :
     signedDiscr x = discr x := by
   rw [signedDiscr_eq_sign_add_discr, Nat.choose_eq_zero_of_lt (by omega), zero_nsmul]
   abel
+
+/-- The rank-zero class has trivial signed discriminant. -/
+@[simp]
+theorem signedDiscr_zero : signedDiscr (0 : RegularFormClass K) = 0 := by
+  rw [signedDiscr_eq_discr_of_rank_le_one (by rw [rank_zero]; omega), discr_zero]
+
+/-- The multiplicative unit `⟨1⟩` has trivial signed discriminant: in rank one the signed
+discriminant agrees with the discriminant. -/
+@[simp]
+theorem signedDiscr_one : signedDiscr (1 : RegularFormClass K) = 0 := by
+  rw [signedDiscr_eq_discr_of_rank_le_one rank_one.le, discr_one]
+
+/-- **The signed discriminant of a rank-one class** `⟨a⟩` is the class of `a`. -/
+theorem signedDiscr_mk_rankOne (a : Kˣ) :
+    signedDiscr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) = squareClass a := by
+  rw [signedDiscr_eq_discr_of_rank_le_one (by rw [rank_mk]), discr_mk, Fin.prod_univ_one]
 
 /-- **The signed discriminant of an orthogonal sum**: `d±(q ⊥ r) = (-1)^{mn} d±(q) d±(r)` for `q`
 of rank `m` and `r` of rank `n`, written additively in the square-class group. The cross term is
@@ -194,6 +192,24 @@ theorem signedDiscr_add (x y : RegularFormClass K) :
       (rank x * rank y) • squareClass (-1 : Kˣ) + signedDiscr x + signedDiscr y := by
   rw [signedDiscr_eq_sign_add_discr, signedDiscr_eq_sign_add_discr,
     signedDiscr_eq_sign_add_discr, discr_add, rank_add, Nat.add_choose_two, add_nsmul, add_nsmul]
+  abel
+
+/-- **The signed discriminant of a tensor product**: `d±(q ⊗ r) = (-1)^{mn(mn-1)/2} d(q)^n d(r)^m`
+for `q` of rank `m` and `r` of rank `n`, written additively in the square-class group. -/
+@[simp]
+theorem signedDiscr_mul (x y : RegularFormClass K) :
+    signedDiscr (x * y) =
+      (rank x * rank y).choose 2 • squareClass (-1 : Kˣ) +
+        (rank y • discr x + rank x • discr y) := by
+  rw [signedDiscr_eq_sign_add_discr, discr_mul, rank_mul]
+
+/-- **Scaling by a unit**: `d±(a • q) = a^m d±(q)` for `q` of rank `m`, where scaling by `a` is
+multiplication by the rank-one class `⟨a⟩`, written additively in the square-class group. -/
+theorem signedDiscr_mk_rankOne_mul (a : Kˣ) (x : RegularFormClass K) :
+    signedDiscr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ * x) =
+      rank x • squareClass a + signedDiscr x := by
+  rw [signedDiscr_mul, rank_mk, one_mul, one_nsmul, discr_mk, Fin.prod_univ_one,
+    signedDiscr_eq_sign_add_discr]
   abel
 
 end RegularFormClass
@@ -222,7 +238,7 @@ the class of `-1`. -/
 theorem RegularFormClass.signedDiscr_hyperbolicClass :
     RegularFormClass.signedDiscr (hyperbolicClass K) = 0 := by
   rw [RegularFormClass.signedDiscr_eq_sign_add_discr, RegularFormClass.discr_hyperbolicClass,
-    rank_hyperbolicClass, show ((2 : ℕ).choose 2) = 1 from rfl, one_nsmul, ← squareClass_mul]
+    rank_hyperbolicClass, Nat.choose_self, one_nsmul, ← squareClass_mul]
   simp
 
 /-- **Adding a hyperbolic plane leaves the signed discriminant unchanged.** The cross term of
