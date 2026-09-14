@@ -7,6 +7,7 @@ module
 
 import Mathlib.Tactic.Linarith
 public import Mathlib.Algebra.MvPolynomial.Degrees
+public import TauCeti.Algebra.MvPolynomial.Rename
 public import TauCeti.KnotTheory.Grid.Chain.Relabeling
 public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
 import TauCeti.KnotTheory.Grid.Rectangle.Count
@@ -111,16 +112,6 @@ abbrev GridChainMinus (R : Type*) [CommSemiring R] (n : ℕ) : Type _ :=
 namespace GridChain
 
 variable {n : ℕ} (R : Type*) [CommSemiring R]
-
-/-- Renaming multivariable-polynomial variables along inverse column permutations gives inverse
-ring homomorphisms. This supplies the inverse data used by the semilinear equivalence on `GC⁻`. -/
-noncomputable instance renameColumnsRingHomInvPair (κ : Equiv.Perm (Fin n)) :
-    RingHomInvPair
-      ((rename ⇑κ : MvPolynomial (Fin n) R →ₐ[R] MvPolynomial (Fin n) R) :
-        MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)
-      ((rename ⇑κ.symm : MvPolynomial (Fin n) R →ₐ[R] MvPolynomial (Fin n) R) :
-        MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R) :=
-  RingHomInvPair.of_ringEquiv (renameEquiv R κ).toRingEquiv
 
 /-- The semilinear map on the unblocked grid chains `GC⁻` induced by a permutation `κ` of the
 column labels: it relabels the columns of every grid state and renames the variables of every
