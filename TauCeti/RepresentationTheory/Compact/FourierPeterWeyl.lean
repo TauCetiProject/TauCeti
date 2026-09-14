@@ -80,7 +80,6 @@ by `IrrepModel`. -/
   isIrreducible := ContRepresentation.isIrreducible_congr _ (isIrreducible_fourierRep T n)
 
 omit hT in
-@[simp]
 theorem fourierIrrepModel_dim (n : ℤ) : (fourierIrrepModel T n).dim = 1 :=
   rfl
 
