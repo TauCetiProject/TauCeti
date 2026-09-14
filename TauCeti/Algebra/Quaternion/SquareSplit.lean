@@ -30,7 +30,7 @@ relations can use the splitting without unfolding the quaternion-basis implement
 
 ## Main definition
 
-* `TauCeti.QuaternionAlgebra.secondSquareEquivMatrix`: the equivalence from the quaternion symbol
+* `QuaternionAlgebra.secondSquareEquivMatrix`: the equivalence from the quaternion symbol
   `(a,b²)` to `Matrix (Fin 2) (Fin 2) R` for units `a` and `b`.
 
 ## References
@@ -42,14 +42,12 @@ public section
 
 open scoped Matrix Quaternion
 
-namespace TauCeti
-
 namespace QuaternionAlgebra
 
 variable {R : Type*} [CommRing R] [Invertible (2 : R)]
 
 private def secondSquareMatrixBasis (a b : R) :
-    _root_.QuaternionAlgebra.Basis (Matrix (Fin 2) (Fin 2) R) a 0 (b ^ 2) where
+    QuaternionAlgebra.Basis (Matrix (Fin 2) (Fin 2) R) a 0 (b ^ 2) where
   i := !![0, a; 1, 0]
   j := !![b, 0; 0, -b]
   k := !![0, -(a * b); b, 0]
@@ -69,17 +67,17 @@ private def secondSquareMatrixBasis (a b : R) :
 
 omit [Invertible (2 : R)] in
 private theorem secondSquareMatrixBasis_liftHom_apply (a b : Rˣ)
-    (q : _root_.QuaternionAlgebra R (a : R) 0 ((b : R) ^ 2)) :
+    (q : QuaternionAlgebra R (a : R) 0 ((b : R) ^ 2)) :
     (secondSquareMatrixBasis (a : R) (b : R)).liftHom q =
       !![q.re + (b : R) * q.imJ, (a : R) * q.imI - (a : R) * (b : R) * q.imK;
         q.imI + (b : R) * q.imK, q.re - (b : R) * q.imJ] := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [secondSquareMatrixBasis, _root_.QuaternionAlgebra.Basis.liftHom,
-      _root_.QuaternionAlgebra.Basis.lift, Algebra.algebraMap_eq_smul_one] <;> ring
+    simp [secondSquareMatrixBasis, QuaternionAlgebra.Basis.liftHom,
+      QuaternionAlgebra.Basis.lift, Algebra.algebraMap_eq_smul_one] <;> ring
 
 private def secondSquareMatrixInverse (a b : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) :
-    _root_.QuaternionAlgebra R (a : R) 0 ((b : R) ^ 2) :=
+    QuaternionAlgebra R (a : R) 0 ((b : R) ^ 2) :=
   ⟨⅟(2 : R) * (M 0 0 + M 1 1),
     ⅟(2 : R) * (((a⁻¹ : Rˣ) : R) * M 0 1 + M 1 0),
     ⅟(2 : R) * (((b⁻¹ : Rˣ) : R) * (M 0 0 - M 1 1)),
@@ -186,7 +184,7 @@ private theorem secondSquareMatrixBasis_liftHom_bijective (a b : Rˣ) :
 commutative ring in which two is invertible. It sends the quaternion generators `i` and `j`
 to `!![0, a; 1, 0]` and `!![b, 0; 0, -b]`, respectively. -/
 noncomputable def secondSquareEquivMatrix (a b : Rˣ) :
-    _root_.QuaternionAlgebra R (a : R) 0 ((b : R) ^ 2) ≃ₐ[R]
+    QuaternionAlgebra R (a : R) 0 ((b : R) ^ 2) ≃ₐ[R]
       Matrix (Fin 2) (Fin 2) R :=
   AlgEquiv.ofBijective (secondSquareMatrixBasis (a : R) (b : R)).liftHom
     (secondSquareMatrixBasis_liftHom_bijective a b)
@@ -194,7 +192,7 @@ noncomputable def secondSquareEquivMatrix (a b : Rˣ) :
 /-- The splitting equivalence on an arbitrary quaternion. -/
 @[simp]
 theorem secondSquareEquivMatrix_apply (a b : Rˣ)
-    (q : _root_.QuaternionAlgebra R (a : R) 0 ((b : R) ^ 2)) :
+    (q : QuaternionAlgebra R (a : R) 0 ((b : R) ^ 2)) :
     secondSquareEquivMatrix a b q =
       !![q.re + (b : R) * q.imJ, (a : R) * q.imI - (a : R) * (b : R) * q.imK;
         q.imI + (b : R) * q.imK, q.re - (b : R) * q.imJ] := by
@@ -217,5 +215,3 @@ theorem secondSquareEquivMatrix_symm_apply (a b : Rˣ) (M : Matrix (Fin 2) (Fin 
   exact (secondSquareMatrixInverse_rightInverse a b M).symm
 
 end QuaternionAlgebra
-
-end TauCeti
