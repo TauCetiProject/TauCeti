@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Induced
+public import TauCeti.RepresentationTheory.Induction.FiniteDimensional
 
 /-!
 # The projection formula for induced representations
@@ -47,6 +48,10 @@ that makes the map `H`-equivariant, because `H` acts on `Ind_φ A` by
 * `TauCeti.indProjectionNatIsoLeft`, `TauCeti.indProjectionNatIsoRight`: the projection formula as
   a natural isomorphism of functors, in the left tensor factor (the `Rep k G` argument) and in the
   right one (the `Rep k H` argument) respectively.
+* `TauCeti.indFDRepProjection`: the same isomorphism on finite-dimensional representations,
+  `Ind_S^G (A ⊗ Res_S^G B) ≅ (Ind_S^G A) ⊗ B` in `FDRep k G`, for a finite-index subgroup `S`. It
+  is what makes induction a map of modules over the representation ring, in
+  `TauCeti/RepresentationTheory/RepresentationRing/Induction.lean`.
 
 The classical corollary for a subgroup `S ≤ G`, `Ind_S^G (Res_S^G Y) ≅ k[G ⧸ S] ⊗ Y`, needs the
 identification of `Ind_S^G (trivial)` with the permutation representation and therefore lives
@@ -294,5 +299,30 @@ theorem coinvariantsTensorIndHom_map_indProjection_mk (X : Rep k G) (Y : Rep k H
   simp [Rep.coinvariantsTensorMk]
 
 end Comparison
+
+section FiniteDimensional
+
+variable {k G : Type u} [Field k] [Group G] {S : Subgroup G} [S.FiniteIndex]
+
+/-- **The projection formula on finite-dimensional representations**,
+`Ind_S^G (A ⊗ Res_S^G B) ≅ (Ind_S^G A) ⊗ B` in `FDRep k G`.
+
+It is `TauCeti.indProjection` read through the forgetful functor to `Rep k G`, which is fully
+faithful, takes `TauCeti.indFDRep` to Mathlib's induced representation
+(`TauCeti.indFDRepForgetIso`) and preserves the tensor product on the nose
+(`FDRep.forget₂_obj_tensor`).  The subgroup has finite index because that is what keeps an induced
+representation finite-dimensional; the ambient group shares the universe of `k` because
+`TauCeti.indProjection` does. -/
+noncomputable def indFDRepProjection (A : FDRep k S) (B : FDRep k G) :
+    indFDRep (A ⊗ (Action.res (FGModuleCat k) S.subtype).obj B) ≅ indFDRep A ⊗ B := by
+  refine (forget₂ (FDRep k G) (Rep k G)).preimageIso
+    ((indFDRepForgetIso _).trans ((indProjection S.subtype
+      ((forget₂ (FDRep k S) (Rep k S)).obj A) ((forget₂ (FDRep k G) (Rep k G)).obj B)).trans ?_))
+  -- The remaining step replaces the two induced carriers by the small ones `TauCeti.indFDRep`
+  -- chose; the closing `eqToIso` only renames the tensor product of the forgotten objects.
+  exact ((indFDRepForgetIso A).symm ⊗ᵢ Iso.refl ((forget₂ (FDRep k G) (Rep k G)).obj B)).trans
+    (eqToIso (FDRep.forget₂_obj_tensor (indFDRep A) B).symm)
+
+end FiniteDimensional
 
 end TauCeti
