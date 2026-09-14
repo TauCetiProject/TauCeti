@@ -23,6 +23,8 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 
 * `QuadraticMap.radical_neg`: negating a quadratic map does not change its radical.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
+* `QuadraticMap.polarBilin_isSymm`: the polar form is symmetric.
+* `QuadraticMap.polarBilin_restrict`: polarization commutes with restriction to a submodule.
 * `QuadraticMap.Nondegenerate.prod`: nondegeneracy passes to an orthogonal product.
 * `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic form on a nontrivial module is
   nonzero.
@@ -45,6 +47,20 @@ namespace QuadraticMap
 
 variable {R M P : Type*} [CommRing R] [AddCommGroup M] [AddCommGroup P]
   [Module R M] [Module R P]
+
+/-- The polar bilinear form of a scalar-valued quadratic map is symmetric. -/
+theorem polarBilin_isSymm (Q : QuadraticForm R M) :
+    LinearMap.BilinForm.IsSymm Q.polarBilin :=
+  ⟨fun x y => polar_comm Q x y⟩
+
+/-- Polarization commutes with restricting a quadratic form to a submodule. -/
+@[simp]
+theorem polarBilin_restrict (Q : QuadraticForm R M) (W : Submodule R M) :
+    (Q.restrict W).polarBilin = LinearMap.BilinForm.restrict Q.polarBilin W := by
+  ext x y
+  simp only [polarBilin_apply_apply, polar, restrict_apply,
+    LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply]
+  rw [Submodule.coe_add]
 
 /-- Negating a quadratic map does not change its radical. -/
 @[simp]
