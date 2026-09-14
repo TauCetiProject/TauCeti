@@ -643,12 +643,6 @@ theorem visitedSuccessorArray_eq_self_of_forall_ne (h : ∀ n, x n ≠ a) :
     visitedSuccessorArray x a k = a := by
   simp only [visitedSuccessorArray_def, not_exists.2 h, ite_false]
 
-/-- The row of a value the sequence takes is its successor row. -/
-@[simp]
-theorem visitedSuccessorArray_apply (x : ℕ → α) (i k : ℕ) :
-    visitedSuccessorArray x (x i) k = successorArray x (x i) k :=
-  visitedSuccessorArray_eq_successorArray_of_exists ⟨i, rfl⟩
-
 /-- **A consumed entry of the visited successor array is read off any sequence agreeing with the
 original over the horizon that consumes it.** A row with a visit before `m` is visited by both
 sequences, so this is `TauCeti.successorArray_congr`. -/
