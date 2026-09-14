@@ -36,7 +36,7 @@ The criterion combines two results of independent use.
 * The difference quotients of `u` converge to its distributional derivative: paired with a test
   function `φ`, they tend to `-∫ ∂_v φ * u` as `t → 0`.
 * A distributional derivative that is bounded against the `L²` norm of test functions is an
-  `L²` function: the pairing `φ ↦ ∫ ∂_v φ * u` then extends to a bounded functional on `L²(Ω)`,
+  `L²` function: the pairing `φ ↦ -∫ ∂_v φ * u` then extends to a bounded functional on `L²(Ω)`,
   and its Riesz representative is the weak derivative.
 
 The criterion is stated for the exponent `2`, where every bounded functional on `L²(Ω)` is
