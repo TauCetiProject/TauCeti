@@ -12,7 +12,9 @@ public import TauCeti.AlgebraicTopology.Singular.Relative
 
 This file identifies the relative singular chains and homology of `(X, ∅)` with the ordinary
 singular chains and homology of `X`.  The comparison is induced by the quotient map from ambient
-chains, and is natural in the space.
+chains.  Naturality in the space is the pair-level naturality of that quotient map
+(`SSetPair.chainComplexFunctorπ` on chains, `SSetPair.homologyπ_naturality` on homology) applied
+to `toSSetPair.map (incl.map f)`.
 
 The construction is the empty-subspace case of the quotient-chain presentation of relative
 homology in Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
@@ -56,16 +58,6 @@ lemma singularChainComplexIsoOfTopCat_hom (X : TopCat.{w}) :
     (singularChainComplexIsoOfTopCat C R X).hom =
       (incl.obj X).singularChainComplexπ R := (rfl)
 
-/-- The comparison between ordinary and relative singular chains for an empty-subspace pair is
-natural in the space. -/
-lemma singularChainComplexπ_naturality_ofTopCat {X Y : TopCat.{w}} (f : X ⟶ Y) :
-    ((AlgebraicTopology.singularChainComplexFunctor C).obj R).map f ≫
-        (incl.obj Y).singularChainComplexπ R =
-      (incl.obj X).singularChainComplexπ R ≫
-        singularChainComplexMap (incl.map f) R := by
-  exact ((SSetPair.chainComplexFunctorπ C).app R).naturality
-    (toSSetPair.map (incl.map f))
-
 section Homology
 
 variable [CategoryWithHomology C]
@@ -82,16 +74,6 @@ noncomputable def singularHomologyIsoOfTopCat (X : TopCat.{w}) (n : ℕ) :
 lemma singularHomologyIsoOfTopCat_hom (X : TopCat.{w}) (n : ℕ) :
     (singularHomologyIsoOfTopCat C R X n).hom =
       (incl.obj X).singularHomologyπ R n := (rfl)
-
-/-- The comparison between ordinary and relative singular homology for an empty-subspace pair is
-natural in the space. -/
-lemma singularHomologyπ_naturality_ofTopCat {X Y : TopCat.{w}} (f : X ⟶ Y) (n : ℕ) :
-    ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map f ≫
-        (incl.obj Y).singularHomologyπ R n =
-      (incl.obj X).singularHomologyπ R n ≫
-        (incl.obj X).singularHomologyMap (incl.map f) R n := by
-  exact SSetPair.homologyπ_naturality (toSSetPair.map (incl.map f)) R n
-
 end Homology
 
 end TopPair
