@@ -27,15 +27,17 @@ extension.  It is unchanged when the anisotropic part remains anisotropic after 
 * `TauCeti.RegularFormClass.wittIndex_le_wittIndex_baseChange`: the Witt index cannot decrease.
 * `TauCeti.RegularFormClass.wittIndex_baseChange_eq`: the index is unchanged when the extended
   anisotropic part is anisotropic.
-* `QuadraticForm.wittIndex_le_baseChange`: the corresponding statement for a regular
+* `QuadraticForm.wittIndex_le_wittIndex_baseChange`: the corresponding inequality for a regular
   quadratic form.
+* `QuadraticForm.wittIndex_baseChange_eq`: the corresponding equality for a regular quadratic
+  form whose anisotropic part remains anisotropic.
 
 ## References
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005), Chapter I, §4.
 -/
 
-@[expose] public section
+public section
 noncomputable section
 
 open scoped TensorProduct
@@ -58,13 +60,14 @@ def RegularFormPresentation.baseChange (L : Type v) [Field L] [Algebra K L]
 /-- Base change does not alter the rank of a presentation. -/
 @[simp]
 theorem RegularFormPresentation.fst_baseChange (p : RegularFormPresentation K) :
-    (p.baseChange L).1 = p.1 := rfl
+    (p.baseChange L).1 = p.1 := (rfl)
 
 /-- The coefficients of a base-changed presentation are the images of the original
 coefficients. -/
 @[simp]
 theorem RegularFormPresentation.baseChange_apply (p : RegularFormPresentation K) (i : Fin p.1) :
-    ((p.baseChange L).2 i : L) = algebraMap K L (p.2 i : K) := rfl
+    ((p.baseChange L).2 (Fin.cast (RegularFormPresentation.fst_baseChange p).symm i) : L) =
+      algebraMap K L (p.2 i : K) := (rfl)
 
 variable [Invertible (2 : K)]
 
@@ -112,7 +115,7 @@ def RegularFormClass.baseChange (L : Type v) [Field L] [Algebra K L] :
 @[simp]
 theorem RegularFormClass.baseChange_mk (p : RegularFormPresentation K) :
     RegularFormClass.baseChange L (Quotient.mk (regularFormSetoid K) p) =
-      Quotient.mk (regularFormSetoid L) (p.baseChange L) := rfl
+      Quotient.mk (regularFormSetoid L) (p.baseChange L) := (rfl)
 
 /-- Base change preserves rank. -/
 @[simp]
@@ -158,15 +161,17 @@ theorem RegularFormClass.baseChange_zero :
   have h : presentedForm (RegularFormPresentation.baseChange L
       (⟨0, Fin.elim0⟩ : RegularFormPresentation K)) =
       presentedForm (⟨0, Fin.elim0⟩ : RegularFormPresentation L) := by
-    change presentedForm (⟨0, fun i : Fin 0 ↦
-      Units.map (algebraMap K L).toMonoidHom (Fin.elim0 i : Kˣ)⟩) =
-      presentedForm (⟨0, Fin.elim0⟩ : RegularFormPresentation L)
-    ext x
-    rw [presentedForm_apply, presentedForm_apply]
-    simp
+    congr 1
+    refine Sigma.ext (x := RegularFormPresentation.baseChange L
+      (⟨0, Fin.elim0⟩ : RegularFormPresentation K))
+      (y := (⟨0, Fin.elim0⟩ : RegularFormPresentation L)) rfl ?_
+    apply heq_of_eq
+    funext i
+    exact Fin.elim0 i
   rw [h]
 
 /-- Base change preserves finite orthogonal sums. -/
+@[simp]
 theorem RegularFormClass.baseChange_nsmul (n : ℕ) (c : RegularFormClass K) :
     (n • c).baseChange L = n • c.baseChange L := by
   induction n with
@@ -180,13 +185,15 @@ def RegularFormClass.baseChangeAddMonoidHom (L : Type v) [Field L] [Algebra K L]
   map_zero' := RegularFormClass.baseChange_zero
   map_add' := RegularFormClass.baseChange_add
 
-variable [Invertible (2 : L)]
-
 /-- The class-level construction agrees with base change of a regular quadratic form. -/
 theorem RegularFormClass.baseChange_formClass {V : Type w} [AddCommGroup V] [Module K V]
     [FiniteDimensional K V] (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     RegularFormClass.baseChange L (formClass Q hQ) =
       formClass (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ) := by
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
   rw [formClass_mk Q hQ p hp, RegularFormClass.baseChange_mk,
     ← formClass_presentedForm (p.baseChange L)]
@@ -196,7 +203,11 @@ theorem RegularFormClass.baseChange_formClass {V : Type w} [AddCommGroup V] [Mod
 /-- Base change preserves the hyperbolic class. -/
 @[simp]
 theorem RegularFormClass.baseChange_hyperbolicClass :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     RegularFormClass.baseChange L (hyperbolicClass K) = hyperbolicClass L := by
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   rw [← formClass_hyperbolicPlane, RegularFormClass.baseChange_formClass,
     ← formClass_hyperbolicPlane]
   apply (formClass_eq_iff _ _ _ _).mpr
@@ -205,14 +216,15 @@ theorem RegularFormClass.baseChange_hyperbolicClass :
     presentedForm_one_neg_one.symm
   have hL : presentedForm (RegularFormPresentation.baseChange L
       (⟨2, ![1, -1]⟩ : RegularFormPresentation K)) = hyperbolicPlane L := by
-    change presentedForm
-      (⟨2, fun i : Fin 2 ↦ Units.map (algebraMap K L).toMonoidHom
-        ((![1, -1] i) : Kˣ)⟩ : RegularFormPresentation L) =
-        hyperbolicPlane L
-    ext x
-    rw [presentedForm_apply, hyperbolicPlane_apply, Fin.sum_univ_two]
-    simp
-    ring
+    rw [← presentedForm_one_neg_one]
+    congr 1
+    refine Sigma.ext (x := RegularFormPresentation.baseChange L
+      (⟨2, ![1, -1]⟩ : RegularFormPresentation K))
+      (y := (⟨2, ![1, -1]⟩ : RegularFormPresentation L)) rfl ?_
+    apply heq_of_eq
+    funext i
+    apply Units.ext
+    fin_cases i <;> simp
   rw [hK]
   exact (equivalent_presentedForm_baseChange _).trans (by
     rw [hL]
@@ -222,7 +234,11 @@ theorem RegularFormClass.baseChange_hyperbolicClass :
 
 /-- The Witt index cannot decrease after extending the base field. -/
 theorem RegularFormClass.wittIndex_le_wittIndex_baseChange (c : RegularFormClass K) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     RegularFormClass.wittIndex c ≤ RegularFormClass.wittIndex (c.baseChange L) := by
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   have hdecomp := congrArg (RegularFormClass.baseChange L)
     (RegularFormClass.wittDecomposition c)
   simp only [RegularFormClass.baseChange_add, RegularFormClass.baseChange_nsmul,
@@ -235,7 +251,11 @@ theorem RegularFormClass.wittIndex_le_wittIndex_baseChange (c : RegularFormClass
 /-- If the anisotropic part remains anisotropic after base change, the Witt index is unchanged. -/
 theorem RegularFormClass.wittIndex_baseChange_eq (c : RegularFormClass K)
     (ha : RegularFormClass.Anisotropic (c.anisotropicPart.baseChange L)) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     RegularFormClass.wittIndex (c.baseChange L) = RegularFormClass.wittIndex c := by
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   have hdecomp := congrArg (RegularFormClass.baseChange L)
     (RegularFormClass.wittDecomposition c)
   simp only [RegularFormClass.baseChange_add, RegularFormClass.baseChange_nsmul,
@@ -248,15 +268,35 @@ end TauCeti
 namespace QuadraticForm
 
 variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
-variable [Invertible (2 : K)] [Invertible (2 : L)]
+variable [Invertible (2 : K)]
 
 /-- The Witt index of a regular quadratic form cannot decrease after extending scalars. -/
-theorem wittIndex_le_baseChange {V : Type w} [AddCommGroup V] [Module K V]
+theorem wittIndex_le_wittIndex_baseChange {V : Type w} [AddCommGroup V] [Module K V]
     [FiniteDimensional K V] (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     TauCeti.RegularFormClass.wittIndex (TauCeti.formClass Q hQ) ≤
       TauCeti.RegularFormClass.wittIndex
         (TauCeti.formClass (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)) := by
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   rw [← TauCeti.RegularFormClass.baseChange_formClass Q hQ]
   exact TauCeti.RegularFormClass.wittIndex_le_wittIndex_baseChange _
+
+/-- If the anisotropic part remains anisotropic after extending scalars, the Witt index of a
+regular quadratic form is unchanged. -/
+theorem wittIndex_baseChange_eq {V : Type w} [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (ha : TauCeti.RegularFormClass.Anisotropic
+      ((TauCeti.formClass Q hQ).anisotropicPart.baseChange L)) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+    TauCeti.RegularFormClass.wittIndex
+        (TauCeti.formClass (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)) =
+      TauCeti.RegularFormClass.wittIndex (TauCeti.formClass Q hQ) := by
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  rw [← TauCeti.RegularFormClass.baseChange_formClass Q hQ]
+  exact TauCeti.RegularFormClass.wittIndex_baseChange_eq _ ha
 
 end QuadraticForm
