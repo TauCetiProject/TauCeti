@@ -48,16 +48,14 @@ three outputs.
   integral central-character rows.
 * `TauCeti.dihedralGroupThree_degree_mul_centralCharacterTable`: the division-free conversion to
   the ordinary character table.
-* `TauCeti.isIntegerCharacterTableSpec_dihedralGroupThree`: the exact tables pass the executable
-  checker and hence satisfy the complex character-table specification.
+* `TauCeti.isIntegerCharacterTableSpec_dihedralGroupThree`: the exact tables satisfy the integral
+  character-table specification.
+* `TauCeti.integerCharacterTableChecker_dihedralGroupThree`: the executable exact checker accepts
+  them.
+* `TauCeti.isCharacterTableSpec_dihedralGroupThree`: their complex image satisfies the character
+  table specification.
 
 ## References
-
-This implements the `S₃ ≅ DihedralGroup 3` computation in "Rational tables (first executable
-milestone)" in Layer 6 of the [character theory roadmap][roadmap], including the acceptance check
-that its exact output satisfies `TauCeti.IsCharacterTableSpec`.
-
-[roadmap]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md
 
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446--450.
