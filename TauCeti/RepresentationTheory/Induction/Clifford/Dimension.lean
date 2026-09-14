@@ -54,17 +54,6 @@ open TauCeti
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] {N : Subgroup G} [N.Normal]
 
-/-- The dimension identity read off a single Clifford decomposition of `Res_N W`, shared by
-`FDRep.clifford_restrict_finrank` and `FDRep.clifford_restrict_inertia_eq_top_of_coprime`. -/
-private theorem finrank_eq_of_iso_cliffordSum {W : FDRep k G} {V : FDRep k N}
-    [Finite (G ⧸ inertia V)] {e : ℕ} (iso : resFDRep N W ≅ V.cliffordSum e) :
-    Module.finrank k W = e * (inertia V).index * Module.finrank k V := by
-  have h : Module.finrank k W = Module.finrank k (V.cliffordSum e) :=
-    (isoToLinearEquiv iso).finrank_eq
-  rw [finrank_cliffordSum, ← Subgroup.index_eq_card] at h
-  rw [h]
-  ring
-
 /-- **Clifford's theorem, dimension form.**  The dimension of an irreducible representation of `G`
 is the common multiplicity `e` of the constituents of its restriction to `N`, times the number
 `[G : inertia V]` of those constituents, times the dimension of one of them.
@@ -82,7 +71,12 @@ theorem clifford_restrict_finrank [IsAlgClosed k] (W : FDRep k G) [Simple W] :
         Module.finrank k W = e * (inertia V).index * Module.finrank k V := by
   obtain ⟨V, hV, hfinite, e, he, ⟨iso⟩⟩ := W.clifford_restrict_iso (N := N)
   let _ : Finite (G ⧸ inertia V) := hfinite
-  exact ⟨V, hV, hfinite, e, he, ⟨iso⟩, finrank_eq_of_iso_cliffordSum iso⟩
+  refine ⟨V, hV, hfinite, e, he, ⟨iso⟩, ?_⟩
+  have h : Module.finrank k W = Module.finrank k (V.cliffordSum e) :=
+    (isoToLinearEquiv iso).finrank_eq
+  rw [finrank_cliffordSum, ← Subgroup.index_eq_card] at h
+  rw [h]
+  ring
 
 /-- **Clifford theory when the dimension is coprime to the index.**  If the dimension of an
 irreducible `W : FDRep k G` is coprime to `[G : N]`, then `Res_N W` is isomorphic to `e` copies of
@@ -105,10 +99,8 @@ theorem clifford_restrict_inertia_eq_top_of_coprime [IsAlgClosed k] (W : FDRep k
       ∃ e : ℕ, e ≠ 0 ∧ inertia V = ⊤ ∧ Nonempty (resFDRep N W ≅ V.cliffordSum e) ∧
         Module.finrank k W = e * Module.finrank k V ∧
         ∀ n : N, W.character (n : G) = (e : k) * V.character n := by
-  obtain ⟨V, hV, hfinite, e, he, ⟨iso⟩⟩ := W.clifford_restrict_iso (N := N)
+  obtain ⟨V, hV, hfinite, e, he, ⟨iso⟩, hdim⟩ := W.clifford_restrict_finrank (N := N)
   let _ : Finite (G ⧸ inertia V) := hfinite
-  have hdim : Module.finrank k W = e * (inertia V).index * Module.finrank k V :=
-    finrank_eq_of_iso_cliffordSum iso
   -- The index of the inertia group divides both the dimension and the index of `N`.
   have hdvdW : (inertia V).index ∣ Module.finrank k W :=
     ⟨e * Module.finrank k V, by rw [hdim]; ring⟩
