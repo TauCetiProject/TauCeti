@@ -16,11 +16,8 @@ obtain one as the minimal polynomial of a primitive element of a finite extensio
 
 ## Main results
 
-* `Polynomial.exists_monic_irreducible_natDegree_eq`: a monic irreducible polynomial of any
-  prescribed positive degree over a finite field.
-* `Polynomial.exists_monic_irreducible_natDegree_eq_zmod`: a monic irreducible polynomial of
-  any prescribed positive degree over `ZMod p`, for prime `p`.
-* `Polynomial.exists_monic_irreducible_natDegree_eq_zmod_two`: the specialization to `ZMod 2`.
+* `TauCeti.Polynomial.exists_monic_irreducible_natDegree_eq`: a monic irreducible polynomial of
+  any prescribed positive degree over a finite field.
 -/
 
 public section
@@ -33,7 +30,7 @@ namespace TauCeti
 
 /-- For every positive `d`, there is a monic irreducible polynomial of degree `d` over any
 finite field. -/
-theorem _root_.Polynomial.exists_monic_irreducible_natDegree_eq
+theorem Polynomial.exists_monic_irreducible_natDegree_eq
     {k : Type*} [Field k] [Finite k] (d : ℕ) (hd : 0 < d) :
     ∃ f : k[X], f.Monic ∧ Irreducible f ∧ f.natDegree = d := by
   let ⟨p, hp⟩ := CharP.exists k
@@ -47,20 +44,5 @@ theorem _root_.Polynomial.exists_monic_irreducible_natDegree_eq
     (minpoly k α).natDegree = Module.finrank k (FiniteField.Extension k p d) :=
       (Field.primitive_element_iff_minpoly_natDegree_eq k α).mp hα
     _ = d := FiniteField.finrank_extension k p d
-
-/-- For a prime `p` and every positive `d`, there is a monic irreducible polynomial of
-degree `d` over `ZMod p`. -/
-theorem _root_.Polynomial.exists_monic_irreducible_natDegree_eq_zmod
-    (p d : ℕ) [Fact p.Prime] (hd : 0 < d) :
-    ∃ f : (ZMod p)[X], f.Monic ∧ Irreducible f ∧ f.natDegree = d := by
-  exact Polynomial.exists_monic_irreducible_natDegree_eq d hd
-
-/-- For every positive `d`, there is a monic irreducible polynomial of degree `d` over
-`ZMod 2`. -/
-theorem _root_.Polynomial.exists_monic_irreducible_natDegree_eq_zmod_two
-    (d : ℕ) (hd : 0 < d) :
-    ∃ f : (ZMod 2)[X], f.Monic ∧ Irreducible f ∧ f.natDegree = d := by
-  let _ : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  exact Polynomial.exists_monic_irreducible_natDegree_eq_zmod 2 d hd
 
 end TauCeti
