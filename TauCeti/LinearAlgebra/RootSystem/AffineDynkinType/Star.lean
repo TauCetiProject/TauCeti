@@ -78,11 +78,14 @@ noncomputable def starIndexEquivE6 : StarIndex ![2, 2, 2] ≃ Fin E6.nodes :=
       norm_num [Matrix.cons_val_two]⟩
 
 /-- The affine `E₆` star relabelling sends the centre to node `0`. -/
-@[simp] theorem starIndexEquivE6_none : starIndexEquivE6 none = 0 := (rfl)
+@[simp] theorem starIndexEquivE6_none :
+    @DFunLike.coe (StarIndex ![2, 2, 2] ≃ Fin 7) (StarIndex ![2, 2, 2])
+      (fun _ ↦ Fin 7) EquivLike.toFunLike starIndexEquivE6 none = 0 := (rfl)
 
 /-- The value of the affine `E₆` star relabelling on an arm vertex. -/
 @[simp] theorem starIndexEquivE6_some_val (i : Fin 3) (s : Fin (![2, 2, 2] i)) :
-    ((starIndexEquivE6 (some ⟨i, s⟩) : Fin E6.nodes) : ℕ) =
+    ((@DFunLike.coe (StarIndex ![2, 2, 2] ≃ Fin 7) (StarIndex ![2, 2, 2])
+      (fun _ ↦ Fin 7) EquivLike.toFunLike starIndexEquivE6 (some ⟨i, s⟩)) : ℕ) =
       2 * (i : ℕ) + (s : ℕ) + 1 := (rfl)
 
 private def e7StarEmbedding : StarIndex ![1, 3, 3] → Fin E7.nodes
@@ -119,11 +122,14 @@ noncomputable def starIndexEquivE7 : StarIndex ![1, 3, 3] ≃ Fin E7.nodes :=
       norm_num [Matrix.cons_val_two]⟩
 
 /-- The affine `E₇` star relabelling sends the centre to node `0`. -/
-@[simp] theorem starIndexEquivE7_none : starIndexEquivE7 none = 0 := (rfl)
+@[simp] theorem starIndexEquivE7_none :
+    @DFunLike.coe (StarIndex ![1, 3, 3] ≃ Fin 8) (StarIndex ![1, 3, 3])
+      (fun _ ↦ Fin 8) EquivLike.toFunLike starIndexEquivE7 none = 0 := (rfl)
 
 /-- The value of the affine `E₇` star relabelling on an arm vertex. -/
 @[simp] theorem starIndexEquivE7_some_val (i : Fin 3) (s : Fin (![1, 3, 3] i)) :
-    ((starIndexEquivE7 (some ⟨i, s⟩) : Fin E7.nodes) : ℕ) =
+    ((@DFunLike.coe (StarIndex ![1, 3, 3] ≃ Fin 8) (StarIndex ![1, 3, 3])
+      (fun _ ↦ Fin 8) EquivLike.toFunLike starIndexEquivE7 (some ⟨i, s⟩)) : ℕ) =
       if (i : ℕ) = 0 then 1 else if (i : ℕ) = 1 then 2 + (s : ℕ) else 5 + (s : ℕ) :=
   (rfl)
 
@@ -161,11 +167,14 @@ noncomputable def starIndexEquivE8 : StarIndex ![1, 2, 5] ≃ Fin E8.nodes :=
       norm_num [Matrix.cons_val_two]⟩
 
 /-- The affine `E₈` star relabelling sends the centre to node `0`. -/
-@[simp] theorem starIndexEquivE8_none : starIndexEquivE8 none = 0 := (rfl)
+@[simp] theorem starIndexEquivE8_none :
+    @DFunLike.coe (StarIndex ![1, 2, 5] ≃ Fin 9) (StarIndex ![1, 2, 5])
+      (fun _ ↦ Fin 9) EquivLike.toFunLike starIndexEquivE8 none = 0 := (rfl)
 
 /-- The value of the affine `E₈` star relabelling on an arm vertex. -/
 @[simp] theorem starIndexEquivE8_some_val (i : Fin 3) (s : Fin (![1, 2, 5] i)) :
-    ((starIndexEquivE8 (some ⟨i, s⟩) : Fin E8.nodes) : ℕ) =
+    ((@DFunLike.coe (StarIndex ![1, 2, 5] ≃ Fin 9) (StarIndex ![1, 2, 5])
+      (fun _ ↦ Fin 9) EquivLike.toFunLike starIndexEquivE8 (some ⟨i, s⟩)) : ℕ) =
       if (i : ℕ) = 0 then 1 else if (i : ℕ) = 1 then 2 + (s : ℕ) else 4 + (s : ℕ) :=
   (rfl)
 
@@ -251,7 +260,11 @@ noncomputable def starGraphIsoE6 :
 
 /-- The star graph isomorphism for affine `E₆` has the prescribed arm-coordinate map. -/
 @[simp] theorem starGraphIsoE6_apply (v : StarIndex ![2, 2, 2]) :
-    starGraphIsoE6 v = starIndexEquivE6 v := (rfl)
+    @DFunLike.coe
+      (@SimpleGraph.Iso (StarIndex ![2, 2, 2]) (Fin 7)
+        (diagramGraph (starCartanMatrix ![2, 2, 2])) E6.graph)
+      (StarIndex ![2, 2, 2]) (fun _ ↦ Fin 7) RelIso.instFunLike starGraphIsoE6 v =
+        starIndexEquivE6 v := (rfl)
 
 /-- The graph isomorphism `T₂,₄,₄ ≅ Ẽ₇` induced by the explicit arm-coordinate
 relabelling. -/
@@ -261,7 +274,11 @@ noncomputable def starGraphIsoE7 :
 
 /-- The star graph isomorphism for affine `E₇` has the prescribed arm-coordinate map. -/
 @[simp] theorem starGraphIsoE7_apply (v : StarIndex ![1, 3, 3]) :
-    starGraphIsoE7 v = starIndexEquivE7 v := (rfl)
+    @DFunLike.coe
+      (@SimpleGraph.Iso (StarIndex ![1, 3, 3]) (Fin 8)
+        (diagramGraph (starCartanMatrix ![1, 3, 3])) E7.graph)
+      (StarIndex ![1, 3, 3]) (fun _ ↦ Fin 8) RelIso.instFunLike starGraphIsoE7 v =
+        starIndexEquivE7 v := (rfl)
 
 /-- The graph isomorphism `T₂,₃,₆ ≅ Ẽ₈` induced by the explicit arm-coordinate
 relabelling. -/
@@ -271,7 +288,11 @@ noncomputable def starGraphIsoE8 :
 
 /-- The star graph isomorphism for affine `E₈` has the prescribed arm-coordinate map. -/
 @[simp] theorem starGraphIsoE8_apply (v : StarIndex ![1, 2, 5]) :
-    starGraphIsoE8 v = starIndexEquivE8 v := (rfl)
+    @DFunLike.coe
+      (@SimpleGraph.Iso (StarIndex ![1, 2, 5]) (Fin 9)
+        (diagramGraph (starCartanMatrix ![1, 2, 5])) E8.graph)
+      (StarIndex ![1, 2, 5]) (fun _ ↦ Fin 9) RelIso.instFunLike starGraphIsoE8 v =
+        starIndexEquivE8 v := (rfl)
 
 end AffineDynkinType
 
