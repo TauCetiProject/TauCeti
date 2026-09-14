@@ -96,8 +96,8 @@ theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff
 /-- Reindexing the weights of a weighted sum of squares along an equivalence of the index types
 gives an isometric quadratic form.  The isometry is precomposition with the equivalence. -/
 def _root_.QuadraticForm.weightedSumSquaresCongrEquiv {ι ι' R S : Type*} [Fintype ι] [Fintype ι']
-    [CommSemiring R] [Monoid S] [DistribMulAction S R] [SMulCommClass S R R] [IsScalarTower S R R]
-    (w : ι → S) (e : ι' ≃ ι) :
+    [CommSemiring R] [Monoid S] [DistribMulAction S R] [SMulCommClass S R R] (w : ι → S)
+    (e : ι' ≃ ι) :
     IsometryEquiv (weightedSumSquares R w) (weightedSumSquares R (w ∘ e)) where
   __ := LinearEquiv.funCongrLeft R R e
   map_app' x := by
