@@ -631,14 +631,15 @@ section VisitedRows
 variable {α : Type*} {x y : ℕ → α} {a : α} {k m : ℕ}
 
 /-- On a row the sequence visits, the visited successor array is the successor array. -/
-theorem visitedSuccessorArray_of_exists (h : ∃ n, x n = a) :
+@[simp]
+theorem visitedSuccessorArray_eq_successorArray_of_exists (h : ∃ n, x n = a) :
     visitedSuccessorArray x a k = successorArray x a k := by
   simp only [visitedSuccessorArray_def, h, ite_true]
 
 /-- On a row the sequence never visits, the visited successor array is constant, equal to the row's
 own value. -/
 @[simp]
-theorem visitedSuccessorArray_of_forall_ne (h : ∀ n, x n ≠ a) :
+theorem visitedSuccessorArray_eq_self_of_forall_ne (h : ∀ n, x n ≠ a) :
     visitedSuccessorArray x a k = a := by
   simp only [visitedSuccessorArray_def, not_exists.2 h, ite_false]
 
@@ -646,7 +647,7 @@ theorem visitedSuccessorArray_of_forall_ne (h : ∀ n, x n ≠ a) :
 @[simp]
 theorem visitedSuccessorArray_apply (x : ℕ → α) (i k : ℕ) :
     visitedSuccessorArray x (x i) k = successorArray x (x i) k :=
-  visitedSuccessorArray_of_exists ⟨i, rfl⟩
+  visitedSuccessorArray_eq_successorArray_of_exists ⟨i, rfl⟩
 
 /-- **A consumed entry of the visited successor array is read off any sequence agreeing with the
 original over the horizon that consumes it.** A row with a visit before `m` is visited by both
@@ -656,7 +657,8 @@ theorem visitedSuccessorArray_congr (hxy : ∀ i ≤ m, x i = y i) (hk : k < vis
   have hx := apply_visitTime_of_lt_visitCount hk
   have hy : y (visitTime x a k) = a :=
     (hxy _ (visitTime_lt_of_lt_visitCount hk).le).symm.trans hx
-  rw [visitedSuccessorArray_of_exists ⟨_, hx⟩, visitedSuccessorArray_of_exists ⟨_, hy⟩]
+  rw [visitedSuccessorArray_eq_successorArray_of_exists ⟨_, hx⟩,
+    visitedSuccessorArray_eq_successorArray_of_exists ⟨_, hy⟩]
   exact successorArray_congr hxy hk
 
 end VisitedRows

@@ -245,9 +245,10 @@ theorem aemeasurable_successorProcess {μ : Measure Ω} {X : ℕ → Ω → α}
   (measurable_successorArray_apply p.1 p.2 (measurableSet_singleton p.1)).comp_aemeasurable
     (AEMeasurable.of_eval hX)
 
-/-- The visited successor array of a process, as an array indexed by state and visit number: the
-`(a, k)`-entry is the value the process takes right after its `k`-th visit to `a` when it visits
-`a`, and `a` itself when it does not. -/
+/-- The visited successor array of a process, as an array indexed by state and visit number.
+Genuine visit indices record the value following the visit. Other indices in a visited row retain
+the totalized junk behavior of `TauCeti.successorArray`, while a wholly unvisited row is constant
+at its index `a`. -/
 def visitedSuccessorProcess (X : ℕ → Ω → α) : α × ℕ → Ω → α :=
   fun p ω => visitedSuccessorArray (fun n => X n ω) p.1 p.2
 
