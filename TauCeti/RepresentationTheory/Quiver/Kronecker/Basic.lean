@@ -37,6 +37,8 @@ infinite as soon as there are two arrows -- is settled in
 * `TauCeti.Quiver.Kronecker.arrow`: the arrow attached to an element of the arrow type.
 * `TauCeti.Quiver.Kronecker.vertexEquiv`: the two vertices as indices in `Fin 2`, the target first.
 * `TauCeti.Quiver.Kronecker.pathEquivArrow`: the paths from `src` to `tgt` are the arrows.
+* `TauCeti.Quiver.Kronecker.reflectHomEquivArrow`: the arrows from `tgt` to `src` of the quiver
+  reflected at `tgt` are the arrows of the original, reversed.
 * `TauCeti.Quiver.Kronecker.reflectPathEquivArrow`: the paths from `tgt` to `src` of the quiver
   reflected at `tgt` are again the arrows.
 
@@ -328,15 +330,14 @@ instance elaborated from it would be the unreflected one. -/
 /-- **In the reflected quiver the source vertex is a sink.** Reflecting at `tgt` reverses every
 arrow, so the generalized Kronecker quiver becomes the same quiver read the other way round. -/
 theorem isSink_reflect_src : @IsSink (Reflect (Kronecker A) tgt) _ src :=
-  (@IsSink_def (Reflect (Kronecker A) tgt) _ src).mpr fun b ↦ ⟨fun e ↦ by
+  (@IsSink_def (Reflect (Kronecker A) tgt) _ src).mpr fun b ↦ by
     cases b with
     | src =>
-      exact (isEmpty_hom_to_src (A := A) src).elim
-        (cast ((hom_reflect tgt src src).trans
-          (reflectHom_of_ne_of_ne src_ne_tgt src_ne_tgt)) e)
+      rw [hom_reflect tgt src src, reflectHom_of_ne_of_ne src_ne_tgt src_ne_tgt]
+      infer_instance
     | tgt =>
-      exact (isEmpty_hom_to_src (A := A) tgt).elim
-        (cast ((hom_reflect tgt src tgt).trans (reflectHom_right tgt src)) e)⟩
+      rw [hom_reflect tgt src tgt, reflectHom_right]
+      infer_instance
 
 /-- In the reflected quiver the target vertex is a source, since it was a sink. -/
 theorem isSource_reflect_tgt : @IsSource (Reflect (Kronecker A) tgt) _ tgt :=
@@ -369,21 +370,38 @@ theorem reflectArrowPath_def (a : A) :
   -- would force `reflectArrowPath` to be `@[expose]`.
   (rfl)
 
-/-- Reading a reversed arrow `tgt ⟶ src` of the reflected quiver back as an arrow `src ⟶ tgt` of
-the generalized Kronecker quiver. -/
-private theorem hom_reflect_tgt_src :
-    (@Hom (Reflect (Kronecker A) tgt) _ tgt src) = ((src : Kronecker A) ⟶ tgt) :=
+/-- The arrows `tgt ⟶ src` of the reflected quiver are the elements of the arrow type: reflecting
+at `tgt` reverses exactly the arrows `src ⟶ tgt`, which are the arrow type itself. -/
+private theorem hom_reflect_tgt_src : (@Hom (Reflect (Kronecker A) tgt) _ tgt src) = A :=
   (hom_reflect tgt tgt src).trans (reflectHom_left tgt src)
+
+/-- **The arrows `tgt ⟶ src` of the reflected quiver are the elements of the arrow type**, each
+being the reversal `TauCeti.Quiver.reflectArrow` of the arrow `src ⟶ tgt` it names. This is the
+arrow-level form of the path classification `reflectPathEquivArrow` below, and it is what reads an
+arrow of the reflected quiver back as an arrow of the generalized Kronecker quiver. -/
+def reflectHomEquivArrow : (@Hom (Reflect (Kronecker A) tgt) _ tgt src) ≃ A :=
+  Equiv.cast hom_reflect_tgt_src
+
+/-- Reading the reversal of an arrow back recovers the element of the arrow type it came from. -/
+@[simp]
+theorem reflectHomEquivArrow_reflectArrow (a : A) :
+    reflectHomEquivArrow (reflectArrow tgt (arrow a)) = a :=
+  cast_reflectArrow tgt (arrow a) hom_reflect_tgt_src
+
+/-- **Every arrow `tgt ⟶ src` of the reflected quiver is a reversed arrow**: reversing the arrow
+it is read back as recovers it. This is the elimination rule that the path classification below
+runs on. -/
+@[simp]
+theorem reflectArrow_arrow_reflectHomEquivArrow (e : @Hom (Reflect (Kronecker A) tgt) _ tgt src) :
+    reflectArrow tgt (arrow (reflectHomEquivArrow e)) = e :=
+  reflectArrow_cast tgt e hom_reflect_tgt_src
 
 /-- Distinct arrows trace distinct paths in the reflected quiver. -/
 theorem reflectArrowPath_injective : Function.Injective (reflectArrowPath (A := A)) := by
   intro a b h
   rw [reflectArrowPath_def, reflectArrowPath_def] at h
   have h₁ : reflectArrow tgt (arrow a) = reflectArrow tgt (arrow b) := by injection h
-  have h₂ := congrArg (cast (hom_reflect_tgt_src (A := A))) h₁
-  rw [cast_reflectArrow, cast_reflectArrow] at h₂
-  exact arrowPath_injective
-    (((toPath_arrow a).symm.trans (congrArg Hom.toPath h₂)).trans (toPath_arrow b))
+  simpa using congrArg reflectHomEquivArrow h₁
 
 /-- **Every path from the target to the source of the reflected quiver is a single reversed
 arrow**: the target is a source there and the source is a sink, so no two arrows compose. -/
@@ -394,13 +412,9 @@ theorem reflectArrowPath_surjective : Function.Surjective (reflectArrowPath (A :
     cases b with
     | src => exact (isSink_reflect_src.isEmpty_hom _).elim e
     | tgt =>
-      obtain ⟨a, ha⟩ := arrowPath_surjective (cast (hom_reflect_tgt_src (A := A)) e).toPath
-      refine ⟨a, ?_⟩
-      have h₁ : (arrow a).toPath = (cast (hom_reflect_tgt_src (A := A)) e).toPath :=
-        (toPath_arrow a).trans ha
-      have h₂ : arrow a = cast (hom_reflect_tgt_src (A := A)) e := by injection h₁
-      rw [reflectArrowPath_def, isSource_reflect_tgt.path_self_eq_nil q, h₂,
-        reflectArrow_cast]
+      refine ⟨reflectHomEquivArrow e, ?_⟩
+      rw [reflectArrowPath_def, isSource_reflect_tgt.path_self_eq_nil q,
+        reflectArrow_arrow_reflectHomEquivArrow]
       rfl
 
 /-- **The paths `tgt → src` of the reflected quiver are the elements of the arrow type**, exactly
@@ -434,14 +448,16 @@ theorem reflectArrowPath_reflectPathEquivArrow (p : @Path (Reflect (Kronecker A)
     reflectArrowPath (reflectPathEquivArrow p) = p := by
   rw [← reflectPathEquivArrow_symm_apply, Equiv.symm_apply_apply]
 
--- The closed paths at `src` and at `tgt` are already finite through the `Unique` instances above,
--- so only the two remaining endpoint pairs need an instance here.
-instance instFintypeReflectPathSrcTgt : Fintype (@Path (Reflect (Kronecker A) tgt) _ src tgt) :=
-  Fintype.ofIsEmpty
-
-noncomputable instance instFintypeReflectPathTgtSrc [Fintype A] :
-    Fintype (@Path (Reflect (Kronecker A) tgt) _ tgt src) :=
-  Fintype.ofEquiv A reflectPathEquivArrow.symm
+-- The endpoints are taken in `Kronecker A` rather than in `Reflect (Kronecker A) tgt`, although
+-- the two are the same type: instance search does not unfold the type synonym, so an instance
+-- stated with endpoints in `Reflect (Kronecker A) tgt` would apply to no goal naming a vertex,
+-- `src` and `tgt` being constructors of `Kronecker A`.
+noncomputable instance instFintypeReflectPath [Fintype A] :
+    ∀ a b : Kronecker A, Fintype (@Path (Reflect (Kronecker A) tgt) _ a b)
+  | .src, .src => Unique.fintype
+  | .src, .tgt => Fintype.ofIsEmpty
+  | .tgt, .src => Fintype.ofEquiv A reflectPathEquivArrow.symm
+  | .tgt, .tgt => Unique.fintype
 
 /-- The reflected quiver has as many paths from the target to the source as the generalized
 Kronecker quiver has arrows: by `reflectPathEquivArrow`, each such path is a single reversed
