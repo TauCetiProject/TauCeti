@@ -16,7 +16,7 @@ the arm-coordinate numbering of `TauCeti.AffineDynkinType.graph` with the canoni
 used by `TauCeti.starCartanMatrix`:
 
 ```text
-  Ẽ₆ = T₃,₃,₃,    Ẽ₇ = T₂,₄,₄,    Ẽ₈ = T₂,₃,₆.
+  affine E₆ = T₃,₃,₃,    affine E₇ = T₂,₄,₄,    affine E₈ = T₂,₃,₆.
 ```
 
 The parameters in `TauCeti.StarIndex` count vertices beyond the centre, so the corresponding arm
@@ -252,7 +252,7 @@ private def starGraphIso (t : AffineDynkinType) {l : Fin 3 → ℕ}
 
 /-! ## Graph descriptions -/
 
-/-- The graph isomorphism `T₃,₃,₃ ≅ Ẽ₆` induced by the explicit arm-coordinate
+/-- The graph isomorphism `T₃,₃,₃ ≅ affine E₆` induced by the explicit arm-coordinate
 relabelling. -/
 noncomputable def starGraphIsoE6 :
     diagramGraph (starCartanMatrix ![2, 2, 2]) ≃g E6.graph :=
@@ -266,7 +266,7 @@ noncomputable def starGraphIsoE6 :
       (StarIndex ![2, 2, 2]) (fun _ ↦ Fin 7) RelIso.instFunLike starGraphIsoE6 v =
         starIndexEquivE6 v := (rfl)
 
-/-- The graph isomorphism `T₂,₄,₄ ≅ Ẽ₇` induced by the explicit arm-coordinate
+/-- The graph isomorphism `T₂,₄,₄ ≅ affine E₇` induced by the explicit arm-coordinate
 relabelling. -/
 noncomputable def starGraphIsoE7 :
     diagramGraph (starCartanMatrix ![1, 3, 3]) ≃g E7.graph :=
@@ -280,7 +280,7 @@ noncomputable def starGraphIsoE7 :
       (StarIndex ![1, 3, 3]) (fun _ ↦ Fin 8) RelIso.instFunLike starGraphIsoE7 v =
         starIndexEquivE7 v := (rfl)
 
-/-- The graph isomorphism `T₂,₃,₆ ≅ Ẽ₈` induced by the explicit arm-coordinate
+/-- The graph isomorphism `T₂,₃,₆ ≅ affine E₈` induced by the explicit arm-coordinate
 relabelling. -/
 noncomputable def starGraphIsoE8 :
     diagramGraph (starCartanMatrix ![1, 2, 5]) ≃g E8.graph :=
