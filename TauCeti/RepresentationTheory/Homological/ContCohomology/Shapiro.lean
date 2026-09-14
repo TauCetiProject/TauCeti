@@ -7,20 +7,23 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Homogeneous
 
 /-!
-# Shapiro's lemma in degrees zero and one
+# Shapiro's lemma in degrees zero, one and two
 
 For a profinite group `G`, a **closed** subgroup `U` and a discrete `U`-module `A`, the coinduced
 module `Coind_U^G A` of `TauCeti.DiscreteCoind` computes the cohomology of `U`:
 
 ```text
-H⁰(G, Coind_U^G A) ≅ H⁰(U, A),   H¹(G, Coind_U^G A) ≅ H¹(U, A).
+H⁰(G, Coind_U^G A) ≅ H⁰(U, A),   H¹(G, Coind_U^G A) ≅ H¹(U, A),
+H²(G, Coind_U^G A) ≅ H²(U, A).
 ```
 
-Both isomorphisms are *evaluation at `1`* composed with restriction to `U`, so in degree one the
-forward map is the compatible-pair pullback `TauCeti.ContCohomology.explicitMap1` along the pair
-consisting of the inclusion `U ↪ G` and the counit `TauCeti.DiscreteCoind.eval`; nothing about it
+All three isomorphisms are *evaluation at `1`* composed with restriction to `U`, so in degrees one
+and two the forward map is the compatible-pair pullback `TauCeti.ContCohomology.explicitMap1`,
+respectively `explicitMap2`, along the pair consisting of the inclusion `U ↪ G` and the counit
+`TauCeti.DiscreteCoind.eval`; nothing about it
 depends on a choice. The choice enters only in proving that this map is bijective, and what it uses
 is Layer 0's continuous section of `G → G ⧸ U`
 (`TauCeti.exists_continuous_rightCosetFactorization`, Ribes-Zalesskii Prop. 2.2.2): writing
@@ -40,6 +43,26 @@ forward map bijective, and because the isomorphism is pinned by its forward dire
 formula for the inverse (`TauCeti.ContCohomology.explicitShapiro1_symm_apply`) holds for *every*
 such factorization, so there is no separate independence statement to prove.
 
+Degree two is the same argument written in the homogeneous form of
+`TauCeti/RepresentationTheory/Homological/ContCohomology/Homogeneous.lean`, which is what makes it
+manageable: `TauCeti.ContCohomology.coindCochain2` sends a continuous `2`-cocycle `c` of `U` to
+
+```text
+(a (g, h)) y = homogeneous2 c (w y) (w (y * g)) (w (y * g * h)),
+```
+
+the homogeneous form of `c` read at the three points `y`, `y g`, `y g h` of `G` pushed into `U` by
+`w`. Its cocycle identity is the four-term homogeneous relation
+`TauCeti.ContCohomology.homogeneous2_add_eq_add`, and the comparison of a cocycle with the cochain
+rebuilt from its Shapiro image is `TauCeti.ContCohomology.homogeneous2_sub_comp`, the chain
+homotopy between the identity and the map induced by `w`. Here the factorization is required to be
+**normalized**, `w 1 = 1`, which `TauCeti.exists_continuous_rightCosetFactorization` supplies: the
+Shapiro image of the rebuilt cochain is then `c` on the nose
+(`TauCeti.ContCohomology.shapiroCocycles2_coindCocycle2`), where a factorization with `w 1 = s`
+would return the conjugate of `c` by `s` instead. Local constancy of both cochains in their group
+arguments is uniform local constancy of the underlying function on the compact groups `G × G` and
+`G × G × G` (`TauCeti.exists_isOpen_forall_mul_right_eq`).
+
 ## Main definitions
 
 * `TauCeti.ContCohomology.constCoind` and `TauCeti.ContCohomology.explicitShapiro0`: the constant
@@ -50,19 +73,19 @@ such factorization, so there is no separate independence statement to prove.
   `TauCeti.ContCohomology.coindCocycle1`: the inverse cochain built from a continuous right-coset
   factorization.
 * `TauCeti.ContCohomology.explicitShapiro1`: `H¹(G, Coind_U^G A) ≃+ H¹(U, A)`.
+* `TauCeti.ContCohomology.shapiroCocycles2` and `TauCeti.ContCohomology.explicitShapiroMap2`: the
+  forward Shapiro map on continuous `2`-cocycles and on `H²`.
+* `TauCeti.ContCohomology.coindCochain2` and `TauCeti.ContCohomology.coindCocycle2`: the inverse
+  cochain in degree two, built from a normalized continuous right-coset factorization.
+* `TauCeti.ContCohomology.explicitShapiro2`: `H²(G, Coind_U^G A) ≃+ H²(U, A)`.
 
 ## Implementation notes
 
 Degree zero needs no topological hypothesis beyond a continuous multiplication on `G`: a
 `G`-invariant element of the coinduced module is constant, and the constant it takes is
-`U`-invariant. Degree one is where profiniteness and closedness of `U` are used, through the
-continuous factorization; for an *open* `U` the finite transversal `Quotient.out` would already
+`U`-invariant. Degrees one and two are where profiniteness and closedness of `U` are used, through
+the continuous factorization; for an *open* `U` the finite transversal `Quotient.out` would already
 suffice, but openness is not assumed anywhere here.
-
-This is the degree-`0` and degree-`1` part of the "Shapiro's lemma" milestone of Layer 7 of the
-human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`, whose `Suggested.lean`
-fixes the names `explicitShapiro0` and `explicitShapiro1`, and whose §5 fixes the direction of the
-isomorphism — that of Mathlib's discrete `groupCohomology.coindIso` — and the forward map.
 
 ## References
 
@@ -338,7 +361,7 @@ is `TauCeti.ContCohomology.shapiroCocycles1_coindCocycle1` and injectivity combi
 factorization, which is where closedness of `U` and profiniteness of `G` are used. -/
 theorem bijective_explicitShapiroMap1 (hU : IsClosed (U : Set G)) :
     Function.Bijective (explicitShapiroMap1 G U A) := by
-  obtain ⟨w, -, hw, -, -, hwmul, -⟩ := exists_continuous_rightCosetFactorization U hU
+  obtain ⟨w, -, hw, -, -, hwmul, -, -⟩ := exists_continuous_rightCosetFactorization U hU
   constructor
   · refine (injective_iff_map_eq_zero _).2 fun x hx => ?_
     induction x using QuotientAddGroup.induction_on with
@@ -399,5 +422,381 @@ theorem explicitShapiro1_symm_apply (hU : IsClosed (U : Set G)) {w : G → U} (h
 end Equivalence
 
 end DegreeOne
+
+section Translate
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] [CompactSpace G]
+  {A : Type v}
+
+/-! The two instantiations of `TauCeti.exists_isOpen_forall_mul_right_eq` used to prove that the
+degree-two cochains built below are locally constant in their group arguments: a cochain of the
+form `g ↦ (y ↦ N (y, y * g))`, respectively `(g, h) ↦ (y ↦ Q (y, y * g, y * g * h))`, is locally
+constant because the translations it applies are. -/
+
+private theorem exists_isOpen_translate₂ {N : G × G → A} (hN : IsLocallyConstant N) (g₀ : G) :
+    ∃ V : Set G, IsOpen V ∧ g₀ ∈ V ∧ ∀ g ∈ V, ∀ y : G, N (y, y * g) = N (y, y * g₀) := by
+  obtain ⟨V, hVopen, hg₀, hV⟩ := exists_isOpen_forall_mul_right_eq hN
+    (σ := fun g : G => ((1 : G), g₀⁻¹ * g))
+    (continuous_const.prodMk (continuous_const.mul continuous_id)) g₀
+  refine ⟨V, hVopen, hg₀, fun g hg y => ?_⟩
+  have hy := hV g hg (y, y * g₀)
+  have h1 : ((y, y * g₀) : G × G) * ((1 : G), g₀⁻¹ * g) = (y, y * g) := by
+    simp only [Prod.mk_mul_mk, Prod.mk.injEq]
+    exact ⟨by group, by group⟩
+  have h2 : ((y, y * g₀) : G × G) * ((1 : G), g₀⁻¹ * g₀) = (y, y * g₀) := by
+    simp only [Prod.mk_mul_mk, Prod.mk.injEq]
+    exact ⟨by group, by group⟩
+  rwa [h1, h2] at hy
+
+private theorem exists_isOpen_translate₃ {Q : G × G × G → A} (hQ : IsLocallyConstant Q)
+    (q₀ : G × G) :
+    ∃ V : Set (G × G), IsOpen V ∧ q₀ ∈ V ∧
+      ∀ q ∈ V, ∀ y : G, Q (y, y * q.1, y * q.1 * q.2) = Q (y, y * q₀.1, y * q₀.1 * q₀.2) := by
+  obtain ⟨V, hVopen, hq₀, hV⟩ := exists_isOpen_forall_mul_right_eq hQ
+    (σ := fun q : G × G => ((1 : G), q₀.1⁻¹ * q.1, (q₀.1 * q₀.2)⁻¹ * (q.1 * q.2)))
+    (continuous_const.prodMk ((continuous_const.mul continuous_fst).prodMk
+      (continuous_const.mul (continuous_fst.mul continuous_snd)))) q₀
+  refine ⟨V, hVopen, hq₀, fun q hq y => ?_⟩
+  have hy := hV q hq (y, y * q₀.1, y * q₀.1 * q₀.2)
+  have h1 : ((y, y * q₀.1, y * q₀.1 * q₀.2) : G × G × G) *
+      ((1 : G), q₀.1⁻¹ * q.1, (q₀.1 * q₀.2)⁻¹ * (q.1 * q.2)) = (y, y * q.1, y * q.1 * q.2) := by
+    simp only [Prod.mk_mul_mk, Prod.mk.injEq]
+    exact ⟨by group, by group, by group⟩
+  have h2 : ((y, y * q₀.1, y * q₀.1 * q₀.2) : G × G × G) *
+      ((1 : G), q₀.1⁻¹ * q₀.1, (q₀.1 * q₀.2)⁻¹ * (q₀.1 * q₀.2)) =
+        (y, y * q₀.1, y * q₀.1 * q₀.2) := by
+    simp only [Prod.mk_mul_mk, Prod.mk.injEq]
+    exact ⟨by group, by group, by group⟩
+  rwa [h1, h2] at hy
+
+end Translate
+
+section DegreeTwo
+
+variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  (U : Subgroup G) (A : Type v) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+  [DistribMulAction U A] [ContinuousSMul U A]
+
+/-- **The forward Shapiro map on continuous `2`-cocycles**: restrict a continuous `2`-cocycle of
+`G` with coefficients in `Coind_U^G A` to `U`, and evaluate its values at `1`. -/
+noncomputable abbrev shapiroCocycles2 : Z2 G (DiscreteCoind G U A) →+ Z2 U A :=
+  cocyclesMap2 G (DiscreteCoind G U A) U A (ContinuousMonoidHom.subgroupSubtype U)
+    (DiscreteCoind.eval G U A) DiscreteCoind.continuous_eval (eval_subgroupSubtype_smul G U A)
+
+omit [CompactSpace G] [ContinuousSMul U A] in
+@[simp]
+theorem shapiroCocycles2_apply (f : Z2 G (DiscreteCoind G U A)) (u v : U) :
+    (shapiroCocycles2 G U A f : U × U → A) (u, v) =
+      (f : G × G → DiscreteCoind G U A) ((u : G), (v : G)) 1 := by
+  simp [cocyclesMap2_apply]
+
+/-- **The forward Shapiro map on `H²`**, the compatible-pair pullback along the inclusion `U ↪ G`
+and evaluation at `1`. `TauCeti.ContCohomology.explicitShapiro2` upgrades it to an
+isomorphism. -/
+noncomputable abbrev explicitShapiroMap2 : H2 G (DiscreteCoind G U A) →+ H2 U A :=
+  explicitMap2 G (DiscreteCoind G U A) U A (ContinuousMonoidHom.subgroupSubtype U)
+    (DiscreteCoind.eval G U A) DiscreteCoind.continuous_eval (eval_subgroupSubtype_smul G U A)
+
+variable {G U A}
+
+omit [CompactSpace G] [TopologicalSpace A] [DiscreteTopology A] [ContinuousSMul U A] in
+/-- The homogeneous form of a `2`-cochain with coinduced coefficients, evaluated at `1`, recovers
+the cochain along the three points `y`, `y g`, `y g h`. -/
+theorem homogeneous2_apply_one (f : G × G → DiscreteCoind G U A) (y g h : G) :
+    (homogeneous2 f y (y * g) (y * g * h) : DiscreteCoind G U A) 1 = f (g, h) y := by
+  rw [homogeneous2_apply, show y⁻¹ * (y * g) = g by group,
+    show (y * g)⁻¹ * (y * g * h) = h by group, DiscreteCoind.coe_smul, one_mul]
+
+omit [CompactSpace G] [TopologicalSpace A] [DiscreteTopology A] [ContinuousSMul U A] in
+/-- At a point of `U` the homogeneous form of a `2`-cochain with coinduced coefficients is
+evaluated at `1` by the defining equivariance. This is the shape in which its continuity is
+read off. -/
+theorem homogeneous2_coe_apply_one (f : G × G → DiscreteCoind G U A) (u : U) (h₁ h₂ : G) :
+    (homogeneous2 f (u : G) h₁ h₂ : DiscreteCoind G U A) 1 =
+      u • f ((u : G)⁻¹ * h₁, h₁⁻¹ * h₂) 1 := by
+  simp [homogeneous2_apply, DiscreteCoind.coe_smul]
+
+omit [CompactSpace G] [ContinuousSMul U A] in
+/-- **The Shapiro image has the restricted homogeneous form.** Read at points of `U` and evaluated
+at `1`, the homogeneous form of a continuous `2`-cocycle of `G` with coinduced coefficients is the
+homogeneous form of its Shapiro image. -/
+theorem homogeneous2_shapiroCocycles2 (f : Z2 G (DiscreteCoind G U A)) (u₀ u₁ u₂ : U) :
+    homogeneous2 (shapiroCocycles2 G U A f : U × U → A) u₀ u₁ u₂ =
+      (homogeneous2 (f : G × G → DiscreteCoind G U A) (u₀ : G) (u₁ : G) (u₂ : G) :
+        DiscreteCoind G U A) 1 := by
+  rw [homogeneous2_coe_apply_one, homogeneous2_apply, shapiroCocycles2_apply]
+  push_cast
+  rfl
+
+section Factorization
+
+variable (w : G → U) (c : U × U → A) (hw : Continuous w)
+  (hwmul : ∀ (u : U) (g : G), w ((u : G) * g) = u * w g) (hccont : Continuous c)
+
+/-- **The inverse Shapiro cochain in degree two.** From a continuous `2`-cocycle `c` of `U` and a
+continuous factorization `w` of `G` over the right cosets of `U`, the `2`-cochain of `G` with
+coefficients in `Coind_U^G A` whose value at `(g, h)` is the function
+`y ↦ homogeneous2 c (w y) (w (y * g)) (w (y * g * h))`: the homogeneous form of `c` read at the
+three points `y`, `y g`, `y g h` of `G` pushed into `U` by `w`. -/
+noncomputable def coindCochain2 (q : G × G) : DiscreteCoind G U A :=
+  DiscreteCoind.mk G U A (fun y => homogeneous2 c (w y) (w (y * q.1)) (w (y * q.1 * q.2)))
+    ((IsLocallyConstant.iff_continuous _).2 (continuous_homogeneous2 hccont hw
+      (hw.comp (continuous_mul_const _))
+      (hw.comp ((continuous_mul_const _).comp (continuous_mul_const _)))))
+    (fun u y => by
+      have h2 : (u : G) * y * q.1 * q.2 = (u : G) * (y * q.1 * q.2) := by group
+      have h1 : (u : G) * y * q.1 = (u : G) * (y * q.1) := by group
+      rw [h2, h1, hwmul u y, hwmul u (y * q.1), hwmul u (y * q.1 * q.2)]
+      exact homogeneous2_smul c u (w y) (w (y * q.1)) (w (y * q.1 * q.2)))
+
+omit [CompactSpace G] in
+@[simp]
+theorem coindCochain2_apply (g h y : G) :
+    coindCochain2 w c hw hwmul hccont (g, h) y =
+      homogeneous2 c (w y) (w (y * g)) (w (y * g * h)) := (rfl)
+
+omit [CompactSpace G] in
+/-- The inverse Shapiro cochain satisfies the `2`-cocycle identity: at each `y` it is the
+four-term homogeneous relation for `c` at the four points `w y`, `w (y g)`, `w (y g h)`,
+`w (y g h j)`. -/
+theorem coindCochain2_isCocycle₂ (hccoc : groupCohomology.IsCocycle₂ c) :
+    groupCohomology.IsCocycle₂ (coindCochain2 w c hw hwmul hccont) := by
+  intro g h j
+  refine DiscreteCoind.ext fun y => ?_
+  simp only [DiscreteCoind.coe_add, Pi.add_apply, DiscreteCoind.coe_smul, coindCochain2_apply]
+  have e1 : y * (g * h) = y * g * h := by group
+  have e2 : y * g * (h * j) = y * g * h * j := by group
+  rw [e1, e2]
+  exact (homogeneous2_add_eq_add hccoc (w y) (w (y * g)) (w (y * g * h))
+    (w (y * g * h * j))).symm
+
+/-- The inverse Shapiro cochain is a continuous `2`-cocycle: local constancy in `(g, h)` is
+uniform local constancy of the homogeneous form of `c` read through `w`, on the compact group
+`G × G × G`. -/
+theorem coindCochain2_mem_Z2 (hccoc : groupCohomology.IsCocycle₂ c) :
+    coindCochain2 w c hw hwmul hccont ∈ Z2 G (DiscreteCoind G U A) := by
+  refine mem_Z2_iff.2 ⟨(IsLocallyConstant.iff_continuous _).1 ?_,
+    coindCochain2_isCocycle₂ w c hw hwmul hccont hccoc⟩
+  have hQ : IsLocallyConstant fun p : G × G × G =>
+      homogeneous2 c (w p.1) (w p.2.1) (w p.2.2) :=
+    (IsLocallyConstant.iff_continuous _).2 (continuous_homogeneous2 hccont
+      (hw.comp continuous_fst) (hw.comp (continuous_fst.comp continuous_snd))
+      (hw.comp (continuous_snd.comp continuous_snd)))
+  refine (IsLocallyConstant.iff_exists_open _).2 fun q₀ => ?_
+  obtain ⟨V, hVopen, hq₀, hV⟩ := exists_isOpen_translate₃ hQ q₀
+  exact ⟨V, hVopen, hq₀, fun q hq => DiscreteCoind.ext fun y => hV q hq y⟩
+
+/-- **The inverse Shapiro cochain, as a continuous `2`-cocycle.** -/
+noncomputable def coindCocycle2 (hccoc : groupCohomology.IsCocycle₂ c) :
+    Z2 G (DiscreteCoind G U A) :=
+  ⟨coindCochain2 w c hw hwmul hccont, coindCochain2_mem_Z2 w c hw hwmul hccont hccoc⟩
+
+@[simp]
+theorem coe_coindCocycle2 (hccoc : groupCohomology.IsCocycle₂ c) :
+    (coindCocycle2 w c hw hwmul hccont hccoc : G × G → DiscreteCoind G U A) =
+      coindCochain2 w c hw hwmul hccont := (rfl)
+
+/-- **The Shapiro image of the inverse cochain is the cocycle it was built from.** Unlike degree
+one there is no correction term: a normalized factorization is the identity on `U`, so the three
+points read by the inverse cochain at `y = 1` are `1`, `u₁` and `u₁ u₂`. -/
+theorem shapiroCocycles2_coindCocycle2 (hccoc : groupCohomology.IsCocycle₂ c) (hw1 : w 1 = 1) :
+    (shapiroCocycles2 G U A (coindCocycle2 w c hw hwmul hccont hccoc) : U × U → A) = c := by
+  have hwu : ∀ u : U, w (u : G) = u := fun u => by
+    have h := hwmul u 1
+    rwa [mul_one, hw1, mul_one] at h
+  refine funext fun q => ?_
+  obtain ⟨u₁, u₂⟩ := q
+  have hcoe : ((u₁ : G) * (u₂ : G)) = ((u₁ * u₂ : U) : G) := (Subgroup.coe_mul U u₁ u₂).symm
+  rw [shapiroCocycles2_apply, coe_coindCocycle2, coindCochain2_apply, one_mul, hwu u₁, hw1, hcoe,
+    hwu (u₁ * u₂), homogeneous2_one_left]
+  simp
+
+include hw hwmul hccont in
+/-- The inverse Shapiro cochain of a `2`-coboundary of `U` is a `2`-coboundary of `G`, with the
+primitive `y ↦ homogeneous1 α (w y) (w (y * g))` built from a primitive `α` of `c`. This is what
+makes the inverse construction descend to cohomology. -/
+theorem coindCochain2_mem_B2_of_mem_B2 (hcB : c ∈ B2 U A) :
+    coindCochain2 w c hw hwmul hccont ∈ B2 G (DiscreteCoind G U A) := by
+  obtain ⟨α, hαcont, hα⟩ := mem_B2_iff.1 hcB
+  have hN : IsLocallyConstant fun p : G × G => homogeneous1 α (w p.1) (w p.2) :=
+    (IsLocallyConstant.iff_continuous _).2 (continuous_homogeneous1 hαcont
+      (hw.comp continuous_fst) (hw.comp continuous_snd))
+  refine mem_B2_iff.2 ⟨fun g => DiscreteCoind.mk G U A
+    (fun y => homogeneous1 α (w y) (w (y * g)))
+    ((IsLocallyConstant.iff_continuous _).2 (continuous_homogeneous1 hαcont hw
+      (hw.comp (continuous_mul_const _))))
+    (fun u y => by
+      have h1 : (u : G) * y * g = (u : G) * (y * g) := by group
+      rw [h1, hwmul u y, hwmul u (y * g)]
+      exact homogeneous1_smul α u (w y) (w (y * g))), ?_, ?_⟩
+  · rw [← IsLocallyConstant.iff_continuous]
+    refine (IsLocallyConstant.iff_exists_open _).2 fun g₀ => ?_
+    obtain ⟨V, hVopen, hg₀, hV⟩ := exists_isOpen_translate₂ hN g₀
+    exact ⟨V, hVopen, hg₀, fun g hg => DiscreteCoind.ext fun y => hV g hg y⟩
+  · refine funext fun q => ?_
+    obtain ⟨g, h⟩ := q
+    refine DiscreteCoind.ext fun y => ?_
+    simp only [d1_apply, DiscreteCoind.coe_add, DiscreteCoind.coe_sub, Pi.add_apply,
+      Pi.sub_apply, DiscreteCoind.coe_smul, DiscreteCoind.mk_apply, coindCochain2_apply, ← hα]
+    rw [show y * (g * h) = y * g * h by group, homogeneous2_d1]
+
+omit [CompactSpace G] [ContinuousSMul U A] in
+/-- The `A`-valued function assembling the primitive that rebuilds a continuous `2`-cocycle of `G`
+from its Shapiro image: the comparison cochain
+`TauCeti.ContCohomology.homogeneousHomotopy2` of `f` along `w`, evaluated at `1`. -/
+private noncomputable def shapiroPrimitive2 (f : G × G → DiscreteCoind G U A) (p : G × G) : A :=
+  (homogeneousHomotopy2 f (fun x : G => ((w x : U) : G)) p.1 p.2 : DiscreteCoind G U A) 1
+
+omit [CompactSpace G] [TopologicalSpace A] [DiscreteTopology A] [ContinuousSMul U A] in
+/-- The defining formula for the primitive, with the pair argument spelled out. -/
+private theorem shapiroPrimitive2_eq (f : G × G → DiscreteCoind G U A) (a b : G) :
+    shapiroPrimitive2 w f (a, b) =
+      (homogeneousHomotopy2 f (fun x : G => ((w x : U) : G)) a b : DiscreteCoind G U A) 1 := (rfl)
+
+omit [CompactSpace G] in
+include hw in
+/-- Continuity of the primitive: both of its terms evaluate the cocycle at `1`, by the defining
+equivariance of the coinduced module. -/
+private theorem continuous_shapiroPrimitive2 (f : G × G → DiscreteCoind G U A)
+    (hf : Continuous f) : Continuous (shapiroPrimitive2 w f) := by
+  have hwa : Continuous fun p : G × G => w p.1 := hw.comp continuous_fst
+  have hwb : Continuous fun p : G × G => w p.2 := hw.comp continuous_snd
+  have hva : Continuous fun p : G × G => ((w p.1 : U) : G) := continuous_subtype_val.comp hwa
+  have hvb : Continuous fun p : G × G => ((w p.2 : U) : G) := continuous_subtype_val.comp hwb
+  have hkey : shapiroPrimitive2 w f = fun p : G × G =>
+      w p.1 • f (((w p.1 : U) : G)⁻¹ * p.1, p.1⁻¹ * p.2) 1 -
+        w p.1 • f (((w p.1 : U) : G)⁻¹ * ((w p.2 : U) : G), ((w p.2 : U) : G)⁻¹ * p.2) 1 := by
+    funext p
+    obtain ⟨a, b⟩ := p
+    rw [shapiroPrimitive2_eq, homogeneousHomotopy2_apply]
+    simp only [DiscreteCoind.coe_sub, Pi.sub_apply]
+    rw [homogeneous2_coe_apply_one, homogeneous2_coe_apply_one]
+  rw [hkey]
+  exact (continuous_smul.comp (hwa.prodMk ((DiscreteCoind.continuous_apply G U A 1).comp
+      (hf.comp ((hva.inv.mul continuous_fst).prodMk (continuous_fst.inv.mul continuous_snd)))))).sub
+    (continuous_smul.comp (hwa.prodMk ((DiscreteCoind.continuous_apply G U A 1).comp
+      (hf.comp ((hva.inv.mul hvb).prodMk (hvb.inv.mul continuous_snd))))))
+
+omit [CompactSpace G] [TopologicalSpace A] [DiscreteTopology A] [ContinuousSMul U A] in
+include hwmul in
+/-- The primitive is `U`-equivariant in its two arguments jointly, which is what makes each of its
+sections an element of the coinduced module. -/
+private theorem shapiroPrimitive2_smul (f : G × G → DiscreteCoind G U A) (u : U) (a b : G) :
+    shapiroPrimitive2 w f ((u : G) * a, (u : G) * b) = u • shapiroPrimitive2 w f (a, b) := by
+  have hv : ∀ x : G, ((w ((u : G) * x) : U) : G) = (u : G) * ((w x : U) : G) := by
+    intro x
+    rw [hwmul u x]
+    exact Subgroup.coe_mul U u (w x)
+  rw [shapiroPrimitive2_eq, shapiroPrimitive2_eq,
+    homogeneousHomotopy2_smul f (fun x : G => ((w x : U) : G)) hv a b,
+    DiscreteCoind.coe_smul, one_mul, DiscreteCoind.apply_coe]
+
+include hw hwmul hccont in
+/-- **Every continuous `2`-cocycle of `G` is rebuilt from its Shapiro image**, up to the explicit
+coboundary whose primitive is the comparison cochain of
+`TauCeti.ContCohomology.homogeneous2_sub_comp` along `w`, evaluated at `1`. With
+`TauCeti.ContCohomology.shapiroCocycles2_coindCocycle2` this is what makes the Shapiro map
+bijective. -/
+theorem sub_coindCochain2_mem_B2 (f : Z2 G (DiscreteCoind G U A))
+    (hfc : (shapiroCocycles2 G U A f : U × U → A) = c) :
+    (f : G × G → DiscreteCoind G U A) - coindCochain2 w c hw hwmul hccont ∈
+      B2 G (DiscreteCoind G U A) := by
+  have hfcont : Continuous (f : G × G → DiscreteCoind G U A) := (mem_Z2_iff.1 f.2).1
+  have hfcoc : groupCohomology.IsCocycle₂ (f : G × G → DiscreteCoind G U A) :=
+    (mem_Z2_iff.1 f.2).2
+  have hN : IsLocallyConstant (shapiroPrimitive2 w (f : G × G → DiscreteCoind G U A)) :=
+    (IsLocallyConstant.iff_continuous _).2
+      (continuous_shapiroPrimitive2 w hw (f : G × G → DiscreteCoind G U A) hfcont)
+  refine mem_B2_iff.2 ⟨fun g => DiscreteCoind.mk G U A
+    (fun y => shapiroPrimitive2 w (f : G × G → DiscreteCoind G U A) (y, y * g))
+    ((IsLocallyConstant.iff_continuous _).2
+      (hN.continuous.comp (continuous_id.prodMk (continuous_mul_const g))))
+    (fun u y => by
+      rw [show (u : G) * y * g = (u : G) * (y * g) by group]
+      exact shapiroPrimitive2_smul w hwmul (f : G × G → DiscreteCoind G U A) u y (y * g)),
+    ?_, ?_⟩
+  · rw [← IsLocallyConstant.iff_continuous]
+    refine (IsLocallyConstant.iff_exists_open _).2 fun g₀ => ?_
+    obtain ⟨V, hVopen, hg₀, hV⟩ := exists_isOpen_translate₂ hN g₀
+    exact ⟨V, hVopen, hg₀, fun g hg => DiscreteCoind.ext fun y => hV g hg y⟩
+  · refine funext fun q => ?_
+    obtain ⟨g, h⟩ := q
+    refine DiscreteCoind.ext fun y => ?_
+    have key := congrArg (fun F : DiscreteCoind G U A => F (1 : G))
+      (homogeneous2_sub_comp hfcoc (fun x : G => ((w x : U) : G)) y (y * g) (y * g * h))
+    simp only [DiscreteCoind.coe_sub, DiscreteCoind.coe_add, Pi.sub_apply, Pi.add_apply] at key
+    rw [homogeneous2_apply_one] at key
+    simp only [d1_apply, DiscreteCoind.coe_sub, DiscreteCoind.coe_add, Pi.sub_apply,
+      Pi.add_apply, DiscreteCoind.coe_smul, DiscreteCoind.mk_apply, coindCochain2_apply,
+      shapiroPrimitive2_eq]
+    rw [show y * (g * h) = y * g * h by group, ← hfc, homogeneous2_shapiroCocycles2]
+    exact key.symm
+
+end Factorization
+
+section Equivalence
+
+variable (G U A) [TotallyDisconnectedSpace G]
+
+/-- **The forward Shapiro map in degree two is bijective**, which is Shapiro's lemma. Surjectivity
+is `TauCeti.ContCohomology.shapiroCocycles2_coindCocycle2` and injectivity combines
+`TauCeti.ContCohomology.sub_coindCochain2_mem_B2` with
+`TauCeti.ContCohomology.coindCochain2_mem_B2_of_mem_B2`; both run on a continuous right-coset
+factorization, which is where closedness of `U` and profiniteness of `G` are used. -/
+theorem bijective_explicitShapiroMap2 (hU : IsClosed (U : Set G)) :
+    Function.Bijective (explicitShapiroMap2 G U A) := by
+  obtain ⟨w, -, hw, -, -, hwmul, -, hw1⟩ := exists_continuous_rightCosetFactorization U hU
+  constructor
+  · refine (injective_iff_map_eq_zero _).2 fun x hx => ?_
+    induction x using QuotientAddGroup.induction_on with
+    | _ f =>
+      rw [explicitMap2_mk] at hx
+      have hcont : Continuous (shapiroCocycles2 G U A f : U × U → A) :=
+        (mem_Z2_iff.1 (shapiroCocycles2 G U A f).2).1
+      have h1 := coindCochain2_mem_B2_of_mem_B2 w (shapiroCocycles2 G U A f : U × U → A) hw hwmul
+        hcont (H2pi_eq_zero_iff.1 hx)
+      have h2 := sub_coindCochain2_mem_B2 w (shapiroCocycles2 G U A f : U × U → A) hw hwmul
+        hcont f rfl
+      exact H2pi_eq_zero_iff.2 (by simpa using (B2 G (DiscreteCoind G U A)).add_mem h2 h1)
+  · intro y
+    induction y using QuotientAddGroup.induction_on with
+    | _ c =>
+      refine ⟨(coindCocycle2 w (c : U × U → A) hw hwmul (mem_Z2_iff.1 c.2).1
+        (mem_Z2_iff.1 c.2).2 : H2 G (DiscreteCoind G U A)), ?_⟩
+      rw [explicitMap2_mk]
+      congr 1
+      exact Subtype.ext (shapiroCocycles2_coindCocycle2 w (c : U × U → A) hw hwmul
+        (mem_Z2_iff.1 c.2).1 (mem_Z2_iff.1 c.2).2 hw1)
+
+/-- **Shapiro's lemma in degree two**, `H²(G, Coind_U^G A) ≅ H²(U, A)`, for a profinite `G` and a
+closed subgroup `U`. The forward map is restriction to `U` followed by evaluation at `1`, and it
+involves no choice; the continuous section of `G → G ⧸ U` is used only to prove it bijective. -/
+noncomputable def explicitShapiro2 (hU : IsClosed (U : Set G)) :
+    H2 G (DiscreteCoind G U A) ≃+ H2 U A :=
+  AddEquiv.ofBijective (explicitShapiroMap2 G U A) (bijective_explicitShapiroMap2 G U A hU)
+
+@[simp]
+theorem explicitShapiro2_apply (hU : IsClosed (U : Set G)) (x : H2 G (DiscreteCoind G U A)) :
+    explicitShapiro2 G U A hU x = explicitShapiroMap2 G U A x := (rfl)
+
+/-- The inverse of the degree-two Shapiro isomorphism is the section formula, for every
+**normalized** continuous right-coset factorization of `G` over `U`. Normalization is what makes
+the formula exact on cocycles rather than only on classes: for a factorization with `w 1 = s ≠ 1`
+the same cochain has Shapiro image the conjugate of `c` by `s`. -/
+theorem explicitShapiro2_symm_apply (hU : IsClosed (U : Set G)) {w : G → U} (hw : Continuous w)
+    (hwmul : ∀ (u : U) (g : G), w ((u : G) * g) = u * w g) (hw1 : w 1 = 1) (c : Z2 U A) :
+    (explicitShapiro2 G U A hU).symm (c : H2 U A) =
+      (coindCocycle2 w (c : U × U → A) hw hwmul (mem_Z2_iff.1 c.2).1 (mem_Z2_iff.1 c.2).2 :
+        H2 G (DiscreteCoind G U A)) := by
+  refine (AddEquiv.symm_apply_eq _).2 ?_
+  rw [explicitShapiro2_apply, explicitMap2_mk]
+  congr 1
+  exact (Subtype.ext (shapiroCocycles2_coindCocycle2 w (c : U × U → A) hw hwmul
+    (mem_Z2_iff.1 c.2).1 (mem_Z2_iff.1 c.2).2 hw1)).symm
+
+end Equivalence
+
+end DegreeTwo
+
 
 end TauCeti.ContCohomology

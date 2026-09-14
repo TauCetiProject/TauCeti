@@ -31,6 +31,10 @@ weaker is claimed here: for a non-compact `G` the argument produces a neighbourh
 This is the "uniform local constancy" milestone of Layer 7 of the human-authored roadmap at
 `TauCetiRoadmap/ProfiniteCohomology/README.md`: it is what makes the coinduced module of locally
 constant equivariant maps a *discrete* `G`-module, its right-translation stabilizers being open.
+
+`TauCeti.exists_isOpen_forall_mul_right_eq` is the form in which a cochain construction consumes
+the stabilizer: a continuous family `σ : P → G` of right translations moves `f` only locally in
+the parameter `p`, uniformly in the point being translated.
 -/
 
 public section
@@ -73,5 +77,20 @@ theorem isOpen_rightTranslationStabilizer [TopologicalSpace G] [ContinuousMul G]
   refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset
     (hvopen.mem_nhds (hv1 rfl)) fun g hg x => ?_)
   exact huv (Set.mk_mem_prod (hsu (Set.mem_univ x)) hg)
+
+/-- **Uniform local constancy in a parameter.** For a locally constant `f` on a compact group and
+a continuous family `σ : P → G` of right translations, every parameter has a neighbourhood on
+which `x ↦ f (x * σ p)` does not change at all: the neighbourhood is uniform in `x`. This is the
+form in which a cochain built by right-translating a locally constant function is proved locally
+constant in its group arguments. -/
+theorem exists_isOpen_forall_mul_right_eq [TopologicalSpace G] [ContinuousMul G] [CompactSpace G]
+    {f : G → A} (hf : IsLocallyConstant f) {P : Type*} [TopologicalSpace P] {σ : P → G}
+    (hσ : Continuous σ) (p₀ : P) :
+    ∃ V : Set P, IsOpen V ∧ p₀ ∈ V ∧ ∀ p ∈ V, ∀ x : G, f (x * σ p) = f (x * σ p₀) := by
+  refine ⟨(fun p => (σ p₀)⁻¹ * σ p) ⁻¹' (rightTranslationStabilizer f : Set G),
+    (isOpen_rightTranslationStabilizer hf).preimage (continuous_const.mul hσ), by simp,
+    fun p hp x => ?_⟩
+  have hx := (mem_rightTranslationStabilizer.1 hp) (x * σ p₀)
+  rwa [mul_assoc, mul_inv_cancel_left] at hx
 
 end TauCeti
