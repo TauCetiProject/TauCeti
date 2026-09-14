@@ -17,8 +17,9 @@ additive subgroup. Consequently, the lattice operations, maps, comaps, and membe
 are exactly those of `Submodule` and `AddSubgroup` rather than parallel wrappers.
 
 These aliases let matrix presentations, Hamming invariants, and duality share Mathlib's existing
-subobject APIs. Coordinate types remain arbitrary finite types; particular codes may later use
-`Fin n` to display a conventional matrix.
+subobject APIs. Coordinate types are arbitrary; results about dimensions or matrices add
+finiteness assumptions where needed, and particular codes may use `Fin n` to display a
+conventional matrix.
 -/
 
 public section
