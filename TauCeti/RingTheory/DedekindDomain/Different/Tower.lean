@@ -56,14 +56,14 @@ above `P` in `B`, the coefficient of the different of `C / A` is the coefficient
 different of `C / B` plus the ramification index times the coefficient of the different of
 `B / A`.
 
-This is the ideal-theoretic form of Stichtenoth, Corollary 3.4.12.  It combines Mathlib's
-`differentIdeal_eq_differentIdeal_mul_differentIdeal` and
-`emultiplicity_map_eq_ramificationIdx'_mul`; no factorization of the different is rebuilt. -/
+This is the ideal-theoretic form of Stichtenoth, Corollary 3.4.12. -/
 theorem multiplicity_differentIdeal_tower (P : HeightOneSpectrum B)
     (Q : HeightOneSpectrum C) [Q.asIdeal.LiesOver P.asIdeal] :
     multiplicity Q.asIdeal (differentIdeal A C) =
       multiplicity Q.asIdeal (differentIdeal B C) +
         Q.asIdeal.ramificationIdx B * multiplicity P.asIdeal (differentIdeal A B) := by
+  -- Combine Mathlib's `differentIdeal_eq_differentIdeal_mul_differentIdeal` and
+  -- `emultiplicity_map_eq_ramificationIdx'_mul`; no factorization of the different is rebuilt.
   let _ : Module.Finite A C := .trans B C
   let _ : Algebra.IsSeparable (FractionRing A) (FractionRing B) :=
     Algebra.isSeparable_tower_bot_of_isSeparable (FractionRing A) (FractionRing B)

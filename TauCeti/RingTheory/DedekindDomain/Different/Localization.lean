@@ -31,53 +31,6 @@ open scoped nonZeroDivisors
 
 namespace TauCeti
 
-section IntegralClosure
-
-universe uR uRm uS uSm uL
-
-variable {R : Type uR} {Rₘ : Type uRm} {S : Type uS} {Sₘ : Type uSm} {L : Type uL}
-variable [CommRing R] [CommRing Rₘ] [CommRing S] [CommRing Sₘ] [Field L]
-variable {M : Submonoid R}
-variable [Algebra R Rₘ] [Algebra R S] [Algebra R Sₘ] [Algebra R L]
-variable [Algebra Rₘ Sₘ] [Algebra Rₘ L] [Algebra S Sₘ] [Algebra S L] [Algebra Sₘ L]
-variable [IsScalarTower R Rₘ Sₘ] [IsScalarTower R Rₘ L] [IsScalarTower R S Sₘ]
-variable [IsScalarTower R S L] [IsScalarTower S Sₘ L]
-variable [IsIntegralClosure S R L] [IsIntegralClosure Sₘ Rₘ L]
-variable [IsLocalization M Rₘ]
-
-include Rₘ L M in
-/-- If `Rₘ` is a localization of `R`, then an integral closure of `Rₘ` in a field `L`
-is the corresponding localization of an integral closure of `R` in `L`.
-
-Unlike `IsLocalization.integralClosure`, this applies when the original integral closure is an
-arbitrary type satisfying `IsIntegralClosure`, rather than the literal `integralClosure R L`. -/
-theorem IsIntegralClosure.isLocalization_of_isLocalization :
-    IsLocalization (Algebra.algebraMapSubmonoid S M) Sₘ := by
-  refine ⟨⟨?_, ?_, ?_⟩⟩
-  · rintro ⟨_, m, hm, rfl⟩
-    rw [← IsScalarTower.algebraMap_apply R S Sₘ,
-      IsScalarTower.algebraMap_apply R Rₘ Sₘ]
-    exact (IsLocalization.map_units Rₘ ⟨m, hm⟩).map (algebraMap Rₘ Sₘ)
-  · intro y
-    obtain ⟨m, hm⟩ := IsIntegral.exists_multiple_integral_of_isLocalization
-      (R := R) (Rₘ := Rₘ) M (algebraMap Sₘ L y)
-        ((IsIntegralClosure.isIntegral_iff (A := Sₘ) (R := Rₘ)).mpr ⟨y, rfl⟩)
-    obtain ⟨s, hs⟩ := (IsIntegralClosure.isIntegral_iff (A := S) (R := R)).mp hm
-    refine ⟨⟨s, algebraMap R S m, m, m.2, rfl⟩, ?_⟩
-    apply IsIntegralClosure.algebraMap_injective Sₘ Rₘ L
-    rw [map_mul, ← IsScalarTower.algebraMap_apply S Sₘ L,
-      ← IsScalarTower.algebraMap_apply S Sₘ L,
-      ← IsScalarTower.algebraMap_apply R S L, hs,
-      Submonoid.smul_def, Algebra.smul_def, mul_comm]
-  · intro x y hxy
-    refine ⟨1, ?_⟩
-    simp only [Submonoid.coe_one, one_mul]
-    apply IsIntegralClosure.algebraMap_injective S R L
-    have h := congrArg (algebraMap Sₘ L) hxy
-    simpa only [IsScalarTower.algebraMap_apply S Sₘ L] using h
-
-end IntegralClosure
-
 universe uR uRm uS uSm uK uL
 
 variable {R : Type uR} {Rₘ : Type uRm} {S : Type uS} {Sₘ : Type uSm}
@@ -348,14 +301,13 @@ theorem map_differentIdeal_eq_differentIdeal :
 
 include K L in
 /-- **Localization preserves the coefficients of the different ideal**: at a nonzero prime `P` of
-`Sₘ`, the coefficient of `𝔇(Sₘ / Rₘ)` is the coefficient of `𝔇(S / R)` at `P ∩ S`.
-
-Extending `P ∩ S` to the localization gives back `P`, so its ramification index is one and
-extension preserves the coefficient; `map_differentIdeal_eq_differentIdeal` identifies the
-extended different with `𝔇(Sₘ / Rₘ)`. -/
+`Sₘ`, the coefficient of `𝔇(Sₘ / Rₘ)` is the coefficient of `𝔇(S / R)` at `P ∩ S`. -/
 theorem multiplicity_differentIdeal_eq_multiplicity_under [IsDomain Rₘ] [IsDedekindDomain Sₘ]
     {P : Ideal Sₘ} [P.IsPrime] (hP : P ≠ ⊥) :
     multiplicity P (differentIdeal Rₘ Sₘ) = multiplicity (P.under S) (differentIdeal R S) := by
+  -- Extending `P ∩ S` to the localization gives back `P`, so its ramification index is one and
+  -- extension preserves the coefficient; `map_differentIdeal_eq_differentIdeal` identifies the
+  -- extended different with `𝔇(Sₘ / Rₘ)`.
   have hM : M ≤ R⁰ := fun m hm ↦ mem_nonZeroDivisors_iff_ne_zero.mpr fun hm0 ↦
     (IsLocalization.map_units Rₘ ⟨m, hm⟩).ne_zero (by simp [hm0])
   have hMS : Algebra.algebraMapSubmonoid S M ≤ S⁰ :=

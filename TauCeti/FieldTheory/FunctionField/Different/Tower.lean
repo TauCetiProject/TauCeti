@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 public import TauCeti.RingTheory.DedekindDomain.Different.Localization
 public import TauCeti.RingTheory.DedekindDomain.Different.Tower
+public import TauCeti.RingTheory.Localization.Integral
 
 /-!
 # The different in a tower of function fields
@@ -76,14 +77,12 @@ variable {B : Type*} {C : Type*} [CommRing B] [IsDedekindDomain B] [Algebra B F�
 
 /-- **The different exponent can be read on an affine model**: if `P₂` is finite on the integral
 closure `C` in `F₂` of an affine model `B` of `F₁`, then `d(P₂ / P₁)` is the coefficient of the
-different ideal of `C` over `B` at the centre of `P₂`.
-
-The valuation ring of `P₁` is the localization of `B` at the centre of `P₁`, and its integral
-closure in `F₂` is the matching localization of `C`, so
-`TauCeti.multiplicity_differentIdeal_eq_multiplicity_under` compares the two coefficients. -/
+different ideal of `C` over `B` at the centre of `P₂`. -/
 theorem differentExponent_eq_multiplicity_center (P₂ : Place k₂ F₂)
     (hC : ∀ c : C, algebraMap C F₂ c ∈ P₂.integers) :
     differentExponent k₁ F₁ P₂ = multiplicity (P₂.center hC).asIdeal (differentIdeal B C) := by
+  -- After localizing at the centre of `P₁` (below),
+  -- `TauCeti.multiplicity_differentIdeal_eq_multiplicity_under` compares the two coefficients.
   let P₁ : Place k₁ F₁ := P₂.restrict k₁ F₁
   have hB : ∀ b : B, algebraMap B F₁ b ∈ P₁.integers :=
     algebraMap_mem_integers_restrict k₁ F₁ P₂ hC
