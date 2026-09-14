@@ -122,7 +122,6 @@ theorem map_m (f : AInfinityStrictHom AA BB) (n : ℕ) (x : Fin n → A) :
   exact MultilinearMap.congr_fun (f.map_m_map n) x
 
 /-- A strict morphism commutes with the unary differential. -/
-@[simp]
 theorem map_m_one (f : AInfinityStrictHom AA BB) (a : A) :
     f (AA.m 1 ![a]) = BB.m 1 ![f a] := by
   rw [f.map_m]
@@ -132,7 +131,6 @@ theorem map_m_one (f : AInfinityStrictHom AA BB) (a : A) :
   rfl
 
 /-- A strict morphism preserves the binary product. -/
-@[simp]
 theorem map_m_two (f : AInfinityStrictHom AA BB) (a b : A) :
     f (AA.m 2 ![a, b]) = BB.m 2 ![f a, f b] := by
   rw [f.map_m]
