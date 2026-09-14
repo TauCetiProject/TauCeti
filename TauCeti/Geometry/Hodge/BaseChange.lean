@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Flat.Basic
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.Geometry.Hodge.Conjugation
+import TauCeti.LinearAlgebra.LinearMap.PseudoInverse
 public import TauCeti.RingTheory.IsTensorProduct
 
 /-!
@@ -45,6 +46,9 @@ imposed later as structure data.
   complexification `ℂ ⊗[ℚ] W` of a rational subspace with that complexified subspace.
 * `TauCeti.Hodge.rationalMapToComplex`: scalar extension of a rational linear map between two
   abstract base-change models.
+* `TauCeti.Hodge.range_rationalMapToComplex` and `TauCeti.Hodge.ker_rationalMapToComplex`: that
+  scalar extension has the complexified range and the complexified kernel as its range and
+  kernel.
 * `TauCeti.Hodge.rationalMapToComplex_commutes_conj`: that scalar extension commutes with lattice
   conjugation, for arbitrary complex models.
 * `TauCeti.Hodge.latticeConj_rationalToComplexLinearEquiv_one_tmul`: lattice conjugation fixes
@@ -557,6 +561,47 @@ theorem map_rationalToComplexSubmodule_le (hℚ : IsBaseChange ℚ ιℚ)
       rationalToComplexSubmodule h'ℚ h'ℂ W' := by
   rw [map_rationalToComplexSubmodule]
   exact rationalToComplexSubmodule_mono h'ℚ h'ℂ hW
+
+/-- The scalar extension of a rational linear map has the complexification of its range as its
+range. -/
+theorem range_rationalMapToComplex (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ)
+    (h'ℂ : IsBaseChange ℂ ι'ℂ) (f : Vℚ →ₗ[ℚ] V'ℚ) :
+    LinearMap.range (rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f) =
+      rationalToComplexSubmodule h'ℚ h'ℂ (LinearMap.range f) := by
+  rw [LinearMap.range_eq_map, LinearMap.range_eq_map, ← rationalToComplexSubmodule_top hℚ hℂ,
+    map_rationalToComplexSubmodule]
+
+/-- The scalar extension of a rational linear map has the complexification of its kernel as its
+kernel: extension of scalars along `ℚ → ℂ` is exact.
+
+The proof uses the pseudo-inverse `g` of `f` supplied by `LinearMap.exists_comp_comp_eq_self`: the
+rational map `1 - g ∘ f` has range inside `ker f` and fixes it, and scalar extension is functorial,
+so the complexified `1 - g ∘ f` fixes every complex vector killed by the complexified `f`. -/
+theorem ker_rationalMapToComplex (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ)
+    (h'ℂ : IsBaseChange ℂ ι'ℂ) (f : Vℚ →ₗ[ℚ] V'ℚ) :
+    LinearMap.ker (rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f) =
+      rationalToComplexSubmodule hℚ hℂ (LinearMap.ker f) := by
+  refine le_antisymm ?_ ?_
+  · obtain ⟨g, hg⟩ := f.exists_comp_comp_eq_self
+    have hrange : LinearMap.range (LinearMap.id - g ∘ₗ f) ≤ LinearMap.ker f := by
+      rintro _ ⟨x, rfl⟩
+      have hgx : f (g (f x)) = f x := by
+        simpa only [LinearMap.comp_apply] using LinearMap.congr_fun hg x
+      simp [hgx]
+    intro x hx
+    have hfix : rationalMapToComplex hℚ hℂ hℚ hℂ (LinearMap.id - g ∘ₗ f) x = x := by
+      rw [rationalMapToComplex_sub, rationalMapToComplex_id,
+        rationalMapToComplex_comp hℚ hℂ h'ℚ h'ℂ hℚ hℂ f g]
+      simp [LinearMap.mem_ker.1 hx]
+    refine rationalToComplexSubmodule_mono hℚ hℂ hrange ?_
+    rw [← range_rationalMapToComplex hℚ hℂ hℚ hℂ]
+    exact ⟨x, hfix⟩
+  · rw [rationalToComplexSubmodule_eq_span]
+    refine Submodule.span_le.2 ?_
+    rintro _ ⟨x, hx, rfl⟩
+    simp [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.mem_ker.1 hx]
 
 end Map
 
