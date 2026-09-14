@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Subalgebra.Center
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Basis
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Multiplication
 
 /-!
 # The centre of a skew-zigzag algebra
 
 For a finite connected simple graph without isolated vertices, the centre of every skew-zigzag
-relation quotient is spanned by the unit and one volume class at each vertex. Thus its dimension is
-independent of the skew parameter and equals the number of vertices plus one.
+relation quotient is spanned by the unit and one volume class at each vertex. Thus, over a
+nontrivial coefficient ring, its dimension is independent of the skew parameter and equals the
+number of vertices plus one.
 
 The volume at a vertex is defined relative to a chosen incident edge. Changing that choice rescales
 the corresponding basis vector by a unit, so it does not change the central subspace or its
@@ -23,9 +24,13 @@ along its edge.
 
 ## Main results
 
+* `TauCeti.mem_center_of_commute_vertexIdempotent_ofArrow`: commuting with the vertex idempotents
+  and the arrows is enough to be central.
+* `TauCeti.skewZigzagVolume_mem_center`: every volume class is central, along any incident edge.
 * `TauCeti.mem_center_skewZigzagQuotient_iff`: characterizes all central elements.
 * `TauCeti.skewZigzagCenterBasis`: the unit and chosen volume classes form a basis of the centre.
-* `TauCeti.finrank_center_skewZigzagQuotient`: the centre has dimension `|V| + 1`.
+* `TauCeti.finrank_center_skewZigzagQuotient`: over a nontrivial coefficient ring, the centre has
+  dimension `|V| + 1`.
 
 ## References
 
@@ -46,116 +51,38 @@ universe u w
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
   (c : SkewZigzagParameter k G) (t : ∀ i : V, {j : V // G.Adj i j})
 
-/-! ### Multiplication used by the centre calculation -/
-
-private theorem skewZigzagMk_vertexIdempotent_mul_self (i : V) :
-    skewZigzagMk k G c (vertexIdempotent k (vertex G i)) *
-        skewZigzagMk k G c (vertexIdempotent k (vertex G i)) =
-      skewZigzagMk k G c (vertexIdempotent k (vertex G i)) := by
-  rw [← map_mul, vertexIdempotent_mul_self]
-
-private theorem skewZigzagMk_vertexIdempotent_mul_vertexIdempotent_of_ne
-    {i j : V} (h : i ≠ j) :
-    skewZigzagMk k G c (vertexIdempotent k (vertex G i)) *
-        skewZigzagMk k G c (vertexIdempotent k (vertex G j)) = 0 := by
-  rw [← map_mul, vertexIdempotent_mul_vertexIdempotent_of_ne ((vertex_injective G).ne h),
-    map_zero]
-
-private theorem skewZigzagMk_vertexIdempotent_mul_ofArrow (d : G.Dart) :
-    skewZigzagMk k G c (vertexIdempotent k (vertex G d.snd)) *
-        skewZigzagMk k G c (ofArrow (arrow G d.adj)) =
-      skewZigzagMk k G c (ofArrow (arrow G d.adj)) := by
-  rw [← map_mul, vertexIdempotent_mul_ofArrow]
-
-private theorem skewZigzagMk_vertexIdempotent_mul_ofArrow_of_ne
-    {v : V} (d : G.Dart) (h : v ≠ d.snd) :
-    skewZigzagMk k G c (vertexIdempotent k (vertex G v)) *
-        skewZigzagMk k G c (ofArrow (arrow G d.adj)) = 0 := by
-  rw [← map_mul, vertexIdempotent_mul_ofArrow_of_ne _ _ d.adj h, map_zero]
-
-private theorem skewZigzagMk_ofArrow_mul_vertexIdempotent (d : G.Dart) :
-    skewZigzagMk k G c (ofArrow (arrow G d.adj)) *
-        skewZigzagMk k G c (vertexIdempotent k (vertex G d.fst)) =
-      skewZigzagMk k G c (ofArrow (arrow G d.adj)) := by
-  rw [← map_mul, ofArrow_mul_vertexIdempotent]
-
-private theorem skewZigzagMk_ofArrow_mul_vertexIdempotent_of_ne
-    {v : V} (d : G.Dart) (h : v ≠ d.fst) :
-    skewZigzagMk k G c (ofArrow (arrow G d.adj)) *
-        skewZigzagMk k G c (vertexIdempotent k (vertex G v)) = 0 := by
-  rw [← map_mul, ofArrow_mul_vertexIdempotent_of_ne _ _ d.adj h, map_zero]
-
-private theorem skewZigzagMk_vertexIdempotent_mul_skewZigzagVolume (i : V) :
-    skewZigzagMk k G c (vertexIdempotent k (vertex G i)) *
-      skewZigzagVolume k G c (t i) = skewZigzagVolume k G c (t i) := by
-  rw [skewZigzagVolume_def, ← map_mul, vertexIdempotent_mul_backtrackElem]
-
-private theorem skewZigzagMk_vertexIdempotent_mul_skewZigzagVolume_of_ne
-    {v i : V} (h : v ≠ i) :
-    skewZigzagMk k G c (vertexIdempotent k (vertex G v)) *
-        skewZigzagVolume k G c (t i) = 0 := by
-  rw [skewZigzagVolume_def, ← map_mul,
-    vertexIdempotent_mul_backtrackElem_of_ne _ _ (t i).2 h, map_zero]
-
-private theorem skewZigzagVolume_mul_skewZigzagMk_vertexIdempotent (i : V) :
-    skewZigzagVolume k G c (t i) *
-        skewZigzagMk k G c (vertexIdempotent k (vertex G i)) =
-      skewZigzagVolume k G c (t i) := by
-  rw [skewZigzagVolume_def, ← map_mul, backtrackElem_mul_vertexIdempotent]
-
-private theorem skewZigzagVolume_mul_skewZigzagMk_vertexIdempotent_of_ne
-    {i v : V} (h : v ≠ i) :
-    skewZigzagVolume k G c (t i) *
-        skewZigzagMk k G c (vertexIdempotent k (vertex G v)) = 0 := by
-  rw [skewZigzagVolume_def, ← map_mul,
-    backtrackElem_mul_vertexIdempotent_of_ne _ _ (t i).2 h, map_zero]
-
-private theorem skewZigzagMk_ofPath_mul_ofPath_eq_zero_of_three_le
-    (x y : Quiver.TotalPath (DoubledQuiver G))
-    (h : 3 ≤ x.2.2.length + y.2.2.length) :
-    skewZigzagMk k G c (ofPath x * ofPath y) = 0 := by
-  obtain ⟨a, b, p⟩ := x
-  obtain ⟨d, e, q⟩ := y
-  rcases eq_or_ne e a with rfl | hea
-  · rw [ofPath_mul_ofPath_of_comp]
-    exact skewZigzagMk_ofPath_eq_zero_of_three_le k G c _
-      (by simpa only [_root_.Quiver.Path.length_comp, Nat.add_comm] using h)
-  · rw [ofPath_mul_ofPath_of_not_composable hea, map_zero]
-
-private theorem skewZigzagMk_ofArrow_mul_skewZigzagVolume (d : G.Dart) (i : V) :
-    skewZigzagMk k G c (ofArrow (arrow G d.adj)) * skewZigzagVolume k G c (t i) = 0 := by
-  rw [skewZigzagVolume_def, ← map_mul, backtrackElem_eq_ofPath,
-    ofArrow_eq_ofPath_arrowPath]
-  exact skewZigzagMk_ofPath_mul_ofPath_eq_zero_of_three_le k G c _ _
-    (by simp [length_backtrackPath, length_arrowPath])
-
-private theorem skewZigzagVolume_mul_skewZigzagMk_ofArrow (i : V) (d : G.Dart) :
-    skewZigzagVolume k G c (t i) * skewZigzagMk k G c (ofArrow (arrow G d.adj)) = 0 := by
-  rw [skewZigzagVolume_def, ← map_mul, backtrackElem_eq_ofPath,
-    ofArrow_eq_ofPath_arrowPath]
-  exact skewZigzagMk_ofPath_mul_ofPath_eq_zero_of_three_le k G c _ _
-    (by simp [length_backtrackPath, length_arrowPath])
-
-private theorem skewZigzagVolume_mul_skewZigzagVolume (i j : V) :
-    skewZigzagVolume k G c (t i) * skewZigzagVolume k G c (t j) = 0 := by
-  rw [skewZigzagVolume_def, skewZigzagVolume_def, ← map_mul, backtrackElem_eq_ofPath,
-    backtrackElem_eq_ofPath]
-  exact skewZigzagMk_ofPath_mul_ofPath_eq_zero_of_three_le k G c _ _
-    (by simp [length_backtrackPath])
-
 /-! ### A criterion for centrality -/
 
-/-- An element commuting with every vertex idempotent, every arrow and every volume class is
-central: those classes span the zigzag relation quotient. -/
-theorem mem_center_of_commute_skewZigzagBasisFun {z : skewZigzagQuotient k G c}
-    (h : ∀ b, z * skewZigzagBasisFun k G c t b = skewZigzagBasisFun k G c t b * z) :
+/-- An element commuting with every vertex idempotent and every arrow is central: those classes
+generate the skew-zigzag relation quotient as an algebra. No choice of incident edges is needed. -/
+theorem mem_center_of_commute_vertexIdempotent_ofArrow {z : skewZigzagQuotient k G c}
+    (hv : ∀ i : V, z * skewZigzagMk k G c (vertexIdempotent k (vertex G i))
+      = skewZigzagMk k G c (vertexIdempotent k (vertex G i)) * z)
+    (ha : ∀ d : G.Dart, z * skewZigzagMk k G c (ofArrow (arrow G d.adj))
+      = skewZigzagMk k G c (ofArrow (arrow G d.adj)) * z) :
     z ∈ Subalgebra.center k (skewZigzagQuotient k G c) := by
   rw [Subalgebra.mem_center_iff]
   intro y
-  exact (Commute.span_right (s := Set.range (skewZigzagBasisFun k G c t))
-    (fun _ ⟨b, hb⟩ => by rw [← hb]; exact h b) y (by
-    rw [span_range_skewZigzagBasisFun_eq_top]
-    exact Submodule.mem_top)).eq.symm
+  obtain ⟨x, rfl⟩ := skewZigzagMk_surjective k G c y
+  have hle : Algebra.adjoin k (Set.range (vertexIdempotent k) ∪
+      Set.range fun e : Σ a b : DoubledQuiver G, a ⟶ b => ofArrow e.2.2)
+        ≤ (Subalgebra.centralizer k {z}).comap (skewZigzagMk k G c) := by
+    refine Algebra.adjoin_le ?_
+    rintro _ (⟨v, rfl⟩ | ⟨⟨a, b, f⟩, rfl⟩)
+    · obtain ⟨i, rfl⟩ : ∃ i, vertex G i = v := ⟨_, vertexEquiv_symm_apply G v⟩
+      rw [SetLike.mem_coe, Subalgebra.mem_comap, Subalgebra.mem_centralizer_iff]
+      rintro _ rfl
+      exact hv i
+    · obtain ⟨i, rfl⟩ : ∃ i, vertex G i = a := ⟨_, vertexEquiv_symm_apply G a⟩
+      obtain ⟨j, rfl⟩ : ∃ j, vertex G j = b := ⟨_, vertexEquiv_symm_apply G b⟩
+      have h : G.Adj i j := (nonempty_hom_iff G).mp ⟨f⟩
+      obtain rfl : f = arrow G h := Subsingleton.elim _ _
+      rw [SetLike.mem_coe, Subalgebra.mem_comap, Subalgebra.mem_centralizer_iff]
+      rintro _ rfl
+      exact ha ⟨(i, j), h⟩
+  have hx : x ∈ (Subalgebra.centralizer k {z}).comap (skewZigzagMk k G c) :=
+    hle (by rw [adjoin_vertexIdempotents_union_arrows]; exact Algebra.mem_top)
+  exact ((Subalgebra.mem_centralizer_iff k).mp hx z (Set.mem_singleton z)).symm
 
 /-- A scalar annihilating a member of the vertex, arrow and volume family is zero: that family is
 a basis when no vertex is isolated. -/
@@ -169,24 +96,19 @@ private theorem smul_skewZigzagBasisFun_eq_zero
 
 /-! ### The volume classes are central -/
 
-/-- **The volume class of a vertex is central.** The idempotent at its base is a two-sided unit for
-it, the other idempotents kill it on both sides, and the arrows and the other volume classes
-annihilate it on both sides. -/
+/-- **The volume class of a vertex is central, whichever incident edge it is taken along.** The
+idempotent at its base is a two-sided unit for it, the other idempotents kill it on both sides, and
+the arrows annihilate it on both sides. -/
 @[simp]
-theorem skewZigzagVolume_mem_center (i : V) :
-    skewZigzagVolume k G c (t i) ∈ Subalgebra.center k (skewZigzagQuotient k G c) := by
-  refine mem_center_of_commute_skewZigzagBasisFun k G c t fun b => ?_
-  rcases b with j | d | j
-  · rw [skewZigzagBasisFun_inl]
-    rcases eq_or_ne j i with rfl | hji
+theorem skewZigzagVolume_mem_center {i : V} (e : {j : V // G.Adj i j}) :
+    skewZigzagVolume k G c e ∈ Subalgebra.center k (skewZigzagQuotient k G c) := by
+  refine mem_center_of_commute_vertexIdempotent_ofArrow k G c (fun j => ?_) fun d => ?_
+  · rcases eq_or_ne j i with rfl | hji
     · rw [skewZigzagVolume_mul_skewZigzagMk_vertexIdempotent,
         skewZigzagMk_vertexIdempotent_mul_skewZigzagVolume]
-    · rw [skewZigzagVolume_mul_skewZigzagMk_vertexIdempotent_of_ne k G c t hji,
-        skewZigzagMk_vertexIdempotent_mul_skewZigzagVolume_of_ne k G c t hji]
-  · rw [skewZigzagBasisFun_inr_inl, skewZigzagVolume_mul_skewZigzagMk_ofArrow,
-      skewZigzagMk_ofArrow_mul_skewZigzagVolume]
-  · rw [skewZigzagBasisFun_inr_inr, skewZigzagVolume_mul_skewZigzagVolume,
-      skewZigzagVolume_mul_skewZigzagVolume]
+    · rw [skewZigzagVolume_mul_skewZigzagMk_vertexIdempotent_of_ne k G c e hji,
+        skewZigzagMk_vertexIdempotent_mul_skewZigzagVolume_of_ne k G c e hji]
+  · rw [skewZigzagVolume_mul_skewZigzagMk_ofArrow, skewZigzagMk_ofArrow_mul_skewZigzagVolume]
 
 /-! ### Combinations of vertex idempotents -/
 
@@ -243,49 +165,17 @@ private theorem ofArrow_mul_sum_smul_vertexIdempotent [Fintype V] (f : V → k) 
   · intro hj
     exact absurd (Finset.mem_univ d.fst) hj
 
-/-- A combination of vertex idempotents meets a volume class through the coefficient at its base
-vertex. -/
-private theorem sum_smul_vertexIdempotent_mul_zigzagVolume [Fintype V] (f : V → k) (j : V) :
-    (∑ i, f i • skewZigzagMk k G c (vertexIdempotent k (vertex G i))) * skewZigzagVolume k G c (t j)
-      = f j • skewZigzagVolume k G c (t j) := by
-  rw [Finset.sum_mul, Finset.sum_eq_single j]
-  · rw [smul_mul_assoc, skewZigzagMk_vertexIdempotent_mul_skewZigzagVolume]
-  · intro i _ hij
-    rw [smul_mul_assoc,
-      skewZigzagMk_vertexIdempotent_mul_skewZigzagVolume_of_ne k G c t hij, smul_zero]
-  · intro hj
-    exact absurd (Finset.mem_univ j) hj
-
-/-- A combination of vertex idempotents meets a volume class through the coefficient at its base
-vertex, on the other side. -/
-private theorem skewZigzagVolume_mul_sum_smul_vertexIdempotent [Fintype V] (f : V → k) (j : V) :
-    skewZigzagVolume k G c (t j) * ∑ i, f i • skewZigzagMk k G c (vertexIdempotent k (vertex G i))
-      = f j • skewZigzagVolume k G c (t j) := by
-  rw [Finset.mul_sum, Finset.sum_eq_single j]
-  · rw [mul_smul_comm, skewZigzagVolume_mul_skewZigzagMk_vertexIdempotent]
-  · intro i _ hij
-    rw [mul_smul_comm,
-      skewZigzagVolume_mul_skewZigzagMk_vertexIdempotent_of_ne k G c t hij, smul_zero]
-  · intro hj
-    exact absurd (Finset.mem_univ j) hj
-
 /-- **A combination of vertex idempotents whose coefficients are constant along the edges is
 central.** An arrow sees the coefficient at its head on one side and the coefficient at its tail on
-the other, and an idempotent or a volume class sees the coefficient at its own vertex on both
-sides. -/
-theorem sum_smul_skewZigzagMk_vertexIdempotent_mem_center [Fintype V]
-    (t : ∀ i : V, {j : V // G.Adj i j}) (f : V → k)
+the other, and an idempotent sees the coefficient at its own vertex on both sides. -/
+theorem sum_smul_skewZigzagMk_vertexIdempotent_mem_center [Fintype V] (f : V → k)
     (hf : ∀ ⦃i j : V⦄, G.Adj i j → f i = f j) :
     (∑ i, f i • skewZigzagMk k G c (vertexIdempotent k (vertex G i)))
       ∈ Subalgebra.center k (skewZigzagQuotient k G c) := by
-  refine mem_center_of_commute_skewZigzagBasisFun k G c t fun b => ?_
-  rcases b with j | d | j
-  · rw [skewZigzagBasisFun_inl, sum_smul_vertexIdempotent_mul_vertexIdempotent,
+  refine mem_center_of_commute_vertexIdempotent_ofArrow k G c (fun j => ?_) fun d => ?_
+  · rw [sum_smul_vertexIdempotent_mul_vertexIdempotent,
       vertexIdempotent_mul_sum_smul_vertexIdempotent]
-  · rw [skewZigzagBasisFun_inr_inl, sum_smul_vertexIdempotent_mul_ofArrow,
-      ofArrow_mul_sum_smul_vertexIdempotent, hf d.adj]
-  · rw [skewZigzagBasisFun_inr_inr, sum_smul_vertexIdempotent_mul_zigzagVolume,
-      skewZigzagVolume_mul_sum_smul_vertexIdempotent]
+  · rw [sum_smul_vertexIdempotent_mul_ofArrow, ofArrow_mul_sum_smul_vertexIdempotent, hf d.adj]
 
 /-- **A combination of vertex idempotents is central exactly when its coefficients are constant
 along the edges.** The converse of
@@ -298,7 +188,7 @@ theorem sum_smul_skewZigzagMk_vertexIdempotent_mem_center_iff [Fintype V]
         ∈ Subalgebra.center k (skewZigzagQuotient k G c)
       ↔ ∀ ⦃i j : V⦄, G.Adj i j → f i = f j := by
   let t : ∀ i : V, {j : V // G.Adj i j} := fun i => ⟨(hns i).choose, (hns i).choose_spec⟩
-  refine ⟨fun hz i j hij => ?_, sum_smul_skewZigzagMk_vertexIdempotent_mem_center k G c t f⟩
+  refine ⟨fun hz i j hij => ?_, sum_smul_skewZigzagMk_vertexIdempotent_mem_center k G c f⟩
   have hcomm := (Subalgebra.mem_center_iff.mp hz)
     (skewZigzagMk k G c (ofArrow (arrow G (⟨(i, j), hij⟩ : G.Dart).adj)))
   rw [sum_smul_vertexIdempotent_mul_ofArrow k G c f ⟨(i, j), hij⟩,
@@ -353,7 +243,7 @@ private theorem corner_mem_span (i : V) (y : skewZigzagQuotient k G c) :
       · rw [skewZigzagMk_vertexIdempotent_mul_skewZigzagVolume,
           skewZigzagVolume_mul_skewZigzagMk_vertexIdempotent]
         exact Submodule.subset_span (by simp)
-      · rw [skewZigzagMk_vertexIdempotent_mul_skewZigzagVolume_of_ne k G c t hij, zero_mul]
+      · rw [skewZigzagMk_vertexIdempotent_mul_skewZigzagVolume_of_ne k G c (t j) hij, zero_mul]
         exact Submodule.zero_mem _
   | zero => rw [mul_zero, zero_mul]; exact Submodule.zero_mem _
   | add x y _ _ hx hy => rw [mul_add, add_mul]; exact Submodule.add_mem _ hx hy
@@ -414,7 +304,7 @@ theorem mem_center_skewZigzagQuotient_iff [Fintype V] (t : ∀ i : V, {j : V // 
       exact Finset.sum_congr rfl fun i _ => hfg i
     have hvol : (∑ i, g i • skewZigzagVolume k G c (t i))
         ∈ Subalgebra.center k (skewZigzagQuotient k G c) :=
-      sum_mem fun i _ => Subalgebra.smul_mem _ (skewZigzagVolume_mem_center k G c t i) _
+      sum_mem fun i _ => Subalgebra.smul_mem _ (skewZigzagVolume_mem_center k G c (t i)) _
     have hidem : (∑ i, f i • skewZigzagMk k G c (vertexIdempotent k (vertex G i)))
         ∈ Subalgebra.center k (skewZigzagQuotient k G c) := by
       have := sub_mem hz hvol
@@ -422,8 +312,8 @@ theorem mem_center_skewZigzagQuotient_iff [Fintype V] (t : ∀ i : V, {j : V // 
     exact ⟨f, g, (sum_smul_skewZigzagMk_vertexIdempotent_mem_center_iff k G c
       (fun i => ⟨(t i).1, (t i).2⟩) f).mp hidem, hzsum⟩
   · rintro ⟨f, g, hf, rfl⟩
-    exact add_mem (sum_smul_skewZigzagMk_vertexIdempotent_mem_center k G c t f hf)
-      (sum_mem fun i _ => Subalgebra.smul_mem _ (skewZigzagVolume_mem_center k G c t i) _)
+    exact add_mem (sum_smul_skewZigzagMk_vertexIdempotent_mem_center k G c f hf)
+      (sum_mem fun i _ => Subalgebra.smul_mem _ (skewZigzagVolume_mem_center k G c (t i)) _)
 
 /-! ### The centre of a connected zigzag algebra -/
 
@@ -463,7 +353,7 @@ theorem skewZigzagCenterFun_mem_center (o : Option V) :
     skewZigzagCenterFun k G c t o ∈ Subalgebra.center k (skewZigzagQuotient k G c) := by
   cases o with
   | none => rw [skewZigzagCenterFun_none]; exact one_mem _
-  | some i => rw [skewZigzagCenterFun_some]; exact skewZigzagVolume_mem_center k G c t i
+  | some i => rw [skewZigzagCenterFun_some]; exact skewZigzagVolume_mem_center k G c (t i)
 
 /-- **The unit and the volume classes span the centre of a connected skew-zigzag algebra.** The
 coefficients of a central combination of vertex idempotents are constant along the edges, hence
