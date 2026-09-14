@@ -8,18 +8,23 @@ module
 public import Mathlib.Probability.CDF
 
 /-!
-# The cumulative distribution function of a natural-valued law
+# Cumulative distribution functions of discrete laws
+
+The cumulative distribution function of a law carried by a discrete set is a step function, and
+this file evaluates it in the two basic cases.
 
 A probability measure `μ` on `ℕ` becomes a real law by pushing it forward along the cast
 `ℕ → ℝ`. The resulting cumulative distribution function is determined by the cumulative masses of
 `μ` itself: it vanishes below the origin, where the pushforward has no mass at all, and at a
 nonnegative point `x` it is the mass `μ` gives to the initial segment below the natural floor of
-`x`. Every discrete law on `ℕ` therefore reads its real cdf off its own cumulative masses.
+`x`. Every discrete law on `ℕ` therefore reads its real cdf off its own cumulative masses. The
+one-atom case is the single jump of a Dirac law.
 
 ## Main results
 
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
-* `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin.
+* `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin;
+* `ProbabilityTheory.cdf_dirac` evaluates the cdf of a Dirac law.
 -/
 
 public section
@@ -52,3 +57,20 @@ theorem cdf_map_natCast_of_neg {x : ℝ} (hx : x < 0) :
     measureReal_empty]
 
 end MeasureTheory.Measure
+
+namespace ProbabilityTheory
+
+/-- The cumulative distribution function of a Dirac law jumps from `0` to `1` at its atom. -/
+@[simp]
+theorem cdf_dirac (a x : ℝ) : cdf (Measure.dirac a) x = if a ≤ x then 1 else 0 := by
+  have h := ofReal_cdf (Measure.dirac a) x
+  rw [Measure.dirac_apply' a measurableSet_Iic] at h
+  by_cases hax : a ≤ x
+  · rw [indicator_of_mem (mem_Iic.mpr hax)] at h
+    simp only [hax, ↓reduceIte]
+    exact ENNReal.ofReal_eq_one.mp h
+  · rw [indicator_of_notMem (by simpa using hax)] at h
+    simp only [hax, ↓reduceIte]
+    exact le_antisymm (ENNReal.ofReal_eq_zero.mp h) (cdf_nonneg _ x)
+
+end ProbabilityTheory
