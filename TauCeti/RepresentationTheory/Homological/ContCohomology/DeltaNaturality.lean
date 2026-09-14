@@ -377,7 +377,8 @@ theorem explicitCor_delta0 [ContinuousMul G] [ContinuousInv G] (x : H0 U C) :
     QuotientAddGroup.mk'_apply]
 
 /-- **Corestriction commutes with `δ¹`**: `cor² ∘ δ¹ = δ¹ ∘ cor¹`, the degree-one counterpart of
-`TauCeti.ContCohomology.DiscreteShortExact.explicitCor_delta0`. -/
+`TauCeti.ContCohomology.DiscreteShortExact.explicitCor_delta0`. The connecting map on the left is
+that of `S.restrict U`, where `U` is open and has finite index. -/
 @[simp]
 theorem explicitCor_delta1 [IsTopologicalGroup G] [ContinuousSMul G C] (y : H1 U C) :
     explicitCor2 G A U hU ((S.restrict U).explicitDelta1 y) =
