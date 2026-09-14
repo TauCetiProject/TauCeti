@@ -51,10 +51,10 @@ A vertex `i : Q` is used both as an object of `CategoryTheory.Paths` and as a ve
 `TauCeti.Quiver.Reflect Q i`, identifications that hold only by unfolding semireducible
 definitions, so a goal mentioning both is not type-correct at the transparency `rw` and `simp`
 build motives with. Every step that strips a conjugation by `eqToHom` is therefore factored
-through the general transport lemmas `TauCeti.eq_of_eqToHom_conj` and
-`TauCeti.eqToHom_strip_square` of
-`TauCeti.RepresentationTheory.Quiver.Reflection.Representation`, which `subst` the object
-equalities away in an abstract category, where no such identification is in play.
+through the general transport lemmas `TauCeti.eq_of_eqToHom_conjugate` and
+`TauCeti.eqToHom_conjugate_vertical_square_of_horizontal_square` of
+`TauCeti.CategoryTheory.EqToHom`, which `subst` the object equalities away in an abstract category,
+where no such identification is in play.
 
 ## References
 
@@ -105,7 +105,7 @@ theorem sourceReflectionFunctor_map_injective (hi : IsSource i)
     simp only at h1
     rw [sourceReflectionFunctor_map_app_of_ne η hi hj,
       sourceReflectionFunctor_map_app_of_ne η' hi hj] at h1
-    exact eq_of_eqToHom_conj _ _ h1
+    exact eq_of_eqToHom_conjugate _ _ h1
   refine NatTrans.ext (funext fun j ↦ ?_)
   rcases eq_or_ne j i with rfl | hj
   · refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ hinj ?_)
@@ -175,7 +175,7 @@ private theorem sourceHomQuot_mk_single {b : Q} (e : i ⟶ b) (y : M.obj b) :
   have hnat := θ.naturality (reflectArrowSource i e).toPath
   rw [sourceFunctorObj_map_reflectArrow M hi e,
     sourceFunctorObj_map_reflectArrow N hi e] at hnat
-  have hstrip := eqToHom_strip_square
+  have hstrip := eqToHom_conjugate_vertical_square_of_horizontal_square
     (sourceReflectObj_of_ne M hi (hi.ne_of_hom e)) (sourceReflectObj_self M hi)
     (sourceReflectObj_self N hi) (sourceReflectObj_of_ne N hi (hi.ne_of_hom e))
     _ _ (θ.app i) (θ.app b) hnat
@@ -291,7 +291,8 @@ private theorem sourceHomPreimageApp_naturality
       have hnat := θ.naturality (reflectArrowOfNeOfNe ha hb e).toPath
       rw [sourceFunctorObj_map_reflectArrowOfNeOfNe M hi ha hb e,
         sourceFunctorObj_map_reflectArrowOfNeOfNe N hi ha hb e] at hnat
-      exact eqToHom_strip_square (sourceReflectObj_of_ne M hi ha)
+      exact eqToHom_conjugate_vertical_square_of_horizontal_square
+        (sourceReflectObj_of_ne M hi ha)
         (sourceReflectObj_of_ne M hi hb) (sourceReflectObj_of_ne N hi hb)
         (sourceReflectObj_of_ne N hi ha) _ _ (θ.app b) (θ.app a) hnat
 
@@ -310,7 +311,7 @@ private theorem sourceReflectionFunctor_map_sourceHomPreimage
   refine NatTrans.ext (funext fun j ↦ ?_)
   by_cases hj : j = i
   · subst j
-    refine eq_of_eqToHom_conj (sourceReflectObj_self M hi).symm
+    refine eq_of_eqToHom_conjugate (sourceReflectObj_self M hi).symm
       (sourceReflectObj_self N hi) ?_
     refine ModuleCat.hom_ext (LinearMap.ext fun q ↦ ?_)
     rw [← sourceHomQuot_apply θ q]
