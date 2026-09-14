@@ -51,10 +51,7 @@ exactness needed for the coideal condition is not automatic without an exactness
 The constructions are the standard inverse images of Hopf ideals, reduced here to the
 quotient-kernel constructions already in `TauCeti.Algebra.HopfAlgebra.Kernel`. Over a general
 base the morphism can be surjective or have the required flat quotient algebras; over a field
-it is arbitrary. These constructions follow
-[ReductiveGroups, Layer 3: subgroups, quotients, components][roadmap].
-
-[roadmap]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/ReductiveGroups/README.md#layer-3-subgroups-quotients-components
+it is arbitrary.
 -/
 
 public section
@@ -340,34 +337,42 @@ variable [HopfAlgebra k L]
 /-- The kernel of a composite is the inverse image of the second morphism's kernel. -/
 theorem ker_comp (f : H →ₐc[k] K) (g : K →ₐc[k] L)
     [Module.Flat k L] [Module.Flat k (K ⧸ RingHom.ker g.toAlgHom)]
-    [Module.Flat k (H ⧸ RingHom.ker (g.comp f).toAlgHom)]
-    [Module.Flat k (K ⧸ (ker g).toIdeal)]
-    [Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) (ker g).toIdeal)] :
+    [Module.Flat k (H ⧸ RingHom.ker (g.comp f).toAlgHom)] :
+    haveI : Module.Flat k (K ⧸ (ker g).toIdeal) := by rwa [ker_toIdeal]
+    haveI : Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) (ker g).toIdeal) := by
+      rw [ker_toIdeal, AlgHom.ker_coe, RingHom.comap_ker]
+      exact ‹Module.Flat k (H ⧸ RingHom.ker (g.comp f).toAlgHom)›
     ker (g.comp f) = (ker g).comap f := by
   ext x
-  rw [mem_ker, mem_comap, mem_ker, BialgHom.comp_apply]
+  simp only [mem_ker, mem_comap, BialgHom.comp_apply]
 
 /-- The inverse image of the zero Hopf ideal is the Hopf-ideal kernel when the required
 quotients are flat. -/
 @[simp]
 theorem comap_bot (f : H →ₐc[k] K)
-    [Module.Flat k K] [Module.Flat k (H ⧸ RingHom.ker f.toAlgHom)]
-    [Module.Flat k (K ⧸ (⊥ : HopfIdeal k K).toIdeal)]
-    [Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) (⊥ : HopfIdeal k K).toIdeal)] :
+    [Module.Flat k K] [Module.Flat k (H ⧸ RingHom.ker f.toAlgHom)] :
+    haveI : Module.Flat k (K ⧸ (⊥ : HopfIdeal k K).toIdeal) := by
+      rw [bot_toIdeal]
+      exact Module.Flat.of_linearEquiv (AlgEquiv.quotientBot k K).toLinearEquiv
+    haveI : Module.Flat k
+        (H ⧸ Ideal.comap (f : H →+* K) (⊥ : HopfIdeal k K).toIdeal) := by
+      rw [bot_toIdeal, ← RingHom.ker_eq_comap_bot]
+      exact ‹Module.Flat k (H ⧸ RingHom.ker f.toAlgHom)›
     (⊥ : HopfIdeal k K).comap f = ker f := by
   ext h
-  rw [mem_comap, mem_ker, mem_bot]
+  simp only [mem_comap, mem_ker, mem_bot]
 
-/-- Pulling a Hopf ideal back along the identity leaves it unchanged when the quotient
-presentations are flat. -/
+/-- Pulling a Hopf ideal back along the identity leaves it unchanged when its quotient is flat. -/
 @[simp]
 theorem comap_id (I : HopfIdeal k H)
-    [Module.Flat k (H ⧸ I.toIdeal)]
-    [Module.Flat k (H ⧸ Ideal.comap (BialgHom.id k H : H →+* H) I.toIdeal)] :
+    [Module.Flat k (H ⧸ I.toIdeal)] :
+    haveI : Module.Flat k
+        (H ⧸ Ideal.comap (BialgHom.id k H : H →+* H) I.toIdeal) := by
+      change Module.Flat k (H ⧸ Ideal.comap (RingHom.id H) I.toIdeal)
+      rwa [Ideal.comap_id]
     I.comap (BialgHom.id k H) = I := by
   ext h
-  rw [mem_comap, BialgHom.coe_id]
-  rfl
+  simp only [mem_comap, BialgHom.coe_id, id_eq]
 
 /-- Inverse image of Hopf ideals is compatible with composition when all quotient
 presentations are flat. -/
@@ -376,12 +381,14 @@ theorem comap_comap (I : HopfIdeal k L) (g : K →ₐc[k] L)
     (f : H →ₐc[k] K)
     [Module.Flat k (L ⧸ I.toIdeal)]
     [Module.Flat k (K ⧸ Ideal.comap (g : K →+* L) I.toIdeal)]
-    [Module.Flat k (K ⧸ (I.comap g).toIdeal)]
-    [Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) (I.comap g).toIdeal)]
     [Module.Flat k (H ⧸ Ideal.comap (g.comp f : H →+* L) I.toIdeal)] :
+    haveI : Module.Flat k (K ⧸ (I.comap g).toIdeal) := by rwa [comap_toIdeal]
+    haveI : Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) (I.comap g).toIdeal) := by
+      rw [comap_toIdeal, Ideal.comap_comap]
+      exact ‹Module.Flat k (H ⧸ Ideal.comap (g.comp f : H →+* L) I.toIdeal)›
     (I.comap g).comap f = I.comap (g.comp f) := by
   ext h
-  rw [mem_comap, mem_comap, mem_comap, BialgHom.comp_apply]
+  simp only [mem_comap, BialgHom.comp_apply]
 
 end Flat
 

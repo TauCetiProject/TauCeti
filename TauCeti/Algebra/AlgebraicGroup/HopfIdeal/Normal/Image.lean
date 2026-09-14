@@ -38,15 +38,12 @@ ideal. Over a field all these flatness conditions are automatic.
 
 * J. S. Milne, *Algebraic Groups* (2017), §5.a and §10.20.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §§16--17.
-* [ReductiveGroups, Layer 3: subgroups, quotients, components][roadmap], for normality
-  through the adjoint coaction and Hopf-ideal kernels.
 * The tensor-kernel identity is `ker_lTensor_eq_rightTensorIdeal` from
   `TauCeti.Algebra.HopfAlgebra.Kernel`, using Mathlib's `Module.Flat.ker_lTensor_eq`.
 
 Applied to multiplication from the semidirect product of two normal closed subgroups, the lifted
 action is simultaneous ambient conjugation and the image is their normal product.
 
-[roadmap]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/ReductiveGroups/README.md#layer-3-subgroups-quotients-components
 -/
 
 public section

@@ -45,10 +45,6 @@ in particular over fields, where every module is flat.
 The construction is the standard kernel Hopf ideal. The tensor-kernel exactness steps use
 Mathlib's `Algebra.TensorProduct.map_ker` and `Module.Flat.ker_lTensor_eq`.
 
-The Hopf-ideal and quotient constructions follow
-[ReductiveGroups, Layer 3: subgroups, quotients, components][roadmap].
-
-[roadmap]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/ReductiveGroups/README.md#layer-3-subgroups-quotients-components
 -/
 
 public section
@@ -307,9 +303,11 @@ theorem ker_eq_bot_iff (f : H →ₐc[k] K) [Module.Flat k (H ⧸ RingHom.ker f.
 /-- The kernel of the quotient bialgebra morphism by `I` is `I`. -/
 @[simp]
 theorem ker_mkBialgHom (I : HopfIdeal k H)
-    [Module.Flat k (H ⧸ I.toIdeal)]
-    [Module.Flat k
-      (H ⧸ RingHom.ker (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal).toAlgHom)] :
+    [Module.Flat k (H ⧸ I.toIdeal)] :
+    haveI : Module.Flat k
+        (H ⧸ RingHom.ker (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal).toAlgHom) := by
+      change Module.Flat k (H ⧸ RingHom.ker (Ideal.Quotient.mkₐ k I.toIdeal))
+      rwa [AlgHom.ker_coe, Ideal.Quotient.mkₐ_ker]
     ker (Bialgebra.Quotient.mkBialgHom I.toIdeal) = I := by
   ext x
   rw [mem_ker, Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.eq_zero_iff_mem,
