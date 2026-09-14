@@ -45,16 +45,20 @@ that hypothesis at the named carrier `L(mu)`.
 
 ## The degenerate case
 
-`TauCeti.irreducibleQuotient` is built from the Verma module, and the repository does not yet prove
-`M(mu) ≠ 0` in general — that is the Poincaré--Birkhoff--Witt input recorded at
-`TauCeti.vermaGenerator_eq_zero_iff`. When `M(mu) = 0` the module `L(mu)` is the zero module, it
-has no weights at all, and `IsMinuscule b mu` degenerates to `IsDominantIntegral b mu`
+`TauCeti.irreducibleQuotient` is built from the Verma module, and `L(mu)` is the zero module
+exactly when `M(mu)` is (`TauCeti.subsingleton_irreducibleQuotient_iff`). A zero `L(mu)` has no
+weights at all, so `IsMinuscule b mu` degenerates to `IsDominantIntegral b mu`
 (`TauCeti.isMinuscule_iff_isDominantIntegral_of_vermaGenerator_eq_zero`) while the dimension count
-above fails, a Weyl orbit being nonempty. The results that compute with `L(mu)` therefore carry the
-hypothesis `vermaGenerator b mu ≠ 0`, in the style of `TauCeti.isIrreducible_irreducibleQuotient`;
-it is available from any highest weight vector of weight `mu` in a nonzero module, through
-`TauCeti.vermaGenerator_ne_zero_of_isHighestWeightVector`, and unconditionally at `mu = 0`, through
-`TauCeti.isHighestWeightVector_vermaGenerator_zero`.
+above fails, a Weyl orbit being nonempty.
+
+The results that compute with `L(mu)` therefore take, rather than a nonvanishing assumption, the
+datum that makes `L(mu)` a highest weight module of weight `mu` in the first place: a proof
+`TauCeti.IsHighestWeightVector` for its canonical generator
+`TauCeti.irreducibleQuotientGenerator`. That is what the proofs use, and it is exactly the
+hypothesis of the general statement they specialize. It is supplied by
+`TauCeti.isHighestWeightVector_irreducibleQuotientGenerator`, and at `mu = 0` it is available
+unconditionally, through `TauCeti.isHighestWeightVector_vermaGenerator_zero`; that is how
+`TauCeti.finrank_irreducibleQuotient_zero` reads off `dim L(0) = 1` with nothing assumed.
 
 ## Main definitions
 
@@ -252,46 +256,43 @@ theorem isMinuscule_iff_isDominantIntegral_of_vermaGenerator_eq_zero
 
 /-- **The weights of a minuscule `L(mu)` are exactly the Weyl orbit of `mu`.** -/
 theorem IsMinuscule.genWeightSpace_ne_bot_iff (h : IsMinuscule b mu)
-    (hne : vermaGenerator b mu ≠ 0) (nu : Dual K H) :
+    (hw : IsHighestWeightVector b mu (irreducibleQuotientGenerator b mu)) (nu : Dual K H) :
     genWeightSpace (irreducibleQuotient b mu) (nu : H → K) ≠ ⊥ ↔
       nu ∈ MulAction.orbit (IsKilling.rootSystem H).weylGroup mu := by
   have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral h.isDominantIntegral
-  exact genWeightSpace_ne_bot_iff_mem_orbit_of_isHighestWeightVector
-    (isHighestWeightVector_irreducibleQuotientGenerator b mu hne)
+  exact genWeightSpace_ne_bot_iff_mem_orbit_of_isHighestWeightVector hw
     (lieSpan_irreducibleQuotientGenerator_eq_top b mu) h.2 nu
 
 /-- **Every weight of a minuscule module is simple**: the weight multiplicities of `L(mu)` are all
 `1`. -/
 theorem IsMinuscule.finrank_genWeightSpace_eq_one (h : IsMinuscule b mu)
-    (hne : vermaGenerator b mu ≠ 0) {nu : Dual K H}
+    (hw : IsHighestWeightVector b mu (irreducibleQuotientGenerator b mu)) {nu : Dual K H}
     (hnu : nu ∈ MulAction.orbit (IsKilling.rootSystem H).weylGroup mu) :
     finrank K (genWeightSpace (irreducibleQuotient b mu) (nu : H → K)) = 1 := by
   have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral h.isDominantIntegral
   obtain ⟨w, rfl⟩ := hnu
-  exact finrank_genWeightSpace_weylGroup_smul_eq_one_of_isHighestWeightVector
-    (isHighestWeightVector_irreducibleQuotientGenerator b mu hne)
+  exact finrank_genWeightSpace_weylGroup_smul_eq_one_of_isHighestWeightVector hw
     (lieSpan_irreducibleQuotientGenerator_eq_top b mu) w
 
 /-- **The dimension of a minuscule module is the size of the Weyl orbit of its highest weight.**
 All the weight multiplicities are `1` and the weights are the orbit, so the dimension counts the
 orbit. -/
 theorem IsMinuscule.finrank_irreducibleQuotient (h : IsMinuscule b mu)
-    (hne : vermaGenerator b mu ≠ 0) :
+    (hw : IsHighestWeightVector b mu (irreducibleQuotientGenerator b mu)) :
     finrank K (irreducibleQuotient b mu) =
       Nat.card (MulAction.orbit (IsKilling.rootSystem H).weylGroup mu) := by
   have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral h.isDominantIntegral
-  exact finrank_eq_card_orbit_of_isHighestWeightVector
-    (isHighestWeightVector_irreducibleQuotientGenerator b mu hne)
+  exact finrank_eq_card_orbit_of_isHighestWeightVector hw
     (lieSpan_irreducibleQuotientGenerator_eq_top b mu) h.2
 
 /-- **The orbit-stabilizer form of the dimension count**: the dimension of a minuscule module
 times the order of the stabilizer of its highest weight is the order of the Weyl group. -/
 theorem IsMinuscule.finrank_irreducibleQuotient_mul_card_stabilizer (h : IsMinuscule b mu)
-    (hne : vermaGenerator b mu ≠ 0) :
+    (hw : IsHighestWeightVector b mu (irreducibleQuotientGenerator b mu)) :
     finrank K (irreducibleQuotient b mu) *
         Nat.card (MulAction.stabilizer (IsKilling.rootSystem H).weylGroup mu) =
       Nat.card (IsKilling.rootSystem H).weylGroup := by
-  rw [h.finrank_irreducibleQuotient hne,
+  rw [h.finrank_irreducibleQuotient hw,
     Nat.card_congr (MulAction.orbitEquivQuotientStabilizer _ mu),
     ← Subgroup.index_eq_card]
   exact Subgroup.index_mul_card _
@@ -354,7 +355,8 @@ theorem finrank_irreducibleQuotient_zero :
     rw [MulAction.mem_orbit_iff, Set.mem_singleton_iff]
     exact ⟨fun ⟨w, hw⟩ ↦ by rw [← hw, smul_zero], fun hchi ↦ ⟨1, by rw [hchi, smul_zero]⟩⟩
   rw [(isMinuscule_zero b).finrank_irreducibleQuotient
-      (isHighestWeightVector_vermaGenerator_zero b).ne_zero, horbit]
+      (isHighestWeightVector_irreducibleQuotientGenerator b 0
+        (isHighestWeightVector_vermaGenerator_zero b).ne_zero), horbit]
   simp
 
 end Zero
