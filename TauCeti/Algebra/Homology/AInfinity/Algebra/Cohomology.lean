@@ -20,14 +20,11 @@ disappears, so a boundary times a cycle is a boundary.  With a cycle on the left
 the degree-one Koszul twist, which carries cycles to cycles, so a cycle times a boundary is a
 boundary as well.  Neither argument needs homogeneous inputs.
 
-The arity-three identity is recorded in the same arbitrary-input form, as
-`AInfinityAlgebra.m_one_m_three`.  It exhibits the associator of the binary operation as a unary
-boundary, so the induced product is associative on cohomology.
+The arbitrary-input arity-three identity `AInfinityAlgebra.m_one_m_three` exhibits the associator
+of the binary operation as a unary boundary, so the induced product is associative on cohomology.
 
 ## Main definitions
 
-* `TauCeti.AInfinityAlgebra.differential`: the unary operation as a linear endomorphism.
-* `TauCeti.AInfinityAlgebra.mul`: the binary operation as a bilinear map.
 * `TauCeti.AInfinityAlgebra.cycles` and `TauCeti.AInfinityAlgebra.boundaries`: the cycles and
   boundaries of the unary operation.
 * `TauCeti.AInfinityAlgebra.Cohomology`: the total cohomology module.
@@ -52,24 +49,6 @@ namespace AInfinityAlgebra
 variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 
 /-! ### Cycles and boundaries -/
-
-/-- The unary `A∞` operation, regarded as a linear differential on the total module. -/
-def differential (𝒜 : AInfinityAlgebra R A) : A →ₗ[R] A :=
-  (𝒜.m 1).curryRight ![]
-
-/-- Evaluating the differential is evaluating the unary operation. -/
-@[simp]
-theorem differential_apply (𝒜 : AInfinityAlgebra R A) (x : A) :
-    𝒜.differential x = 𝒜.m 1 ![x] := by
-  simp [differential, MultilinearMap.curryRight_apply]
-
-/-- The unary operation squares to zero. -/
-@[simp]
-theorem differential_comp_self_eq_zero (𝒜 : AInfinityAlgebra R A) :
-    𝒜.differential ∘ₗ 𝒜.differential = 0 := by
-  ext x
-  simp only [LinearMap.comp_apply, differential_apply, LinearMap.zero_apply,
-    𝒜.stasheff_arity_one]
 
 /-- The cycles of an `A∞` algebra are the kernel of its unary operation. -/
 def cycles (𝒜 : AInfinityAlgebra R A) : Submodule R A :=
@@ -108,142 +87,6 @@ theorem differential_mem_cycles (𝒜 : AInfinityAlgebra R A) (x : A) :
   𝒜.boundaries_le_cycles (𝒜.differential_mem_boundaries x)
 
 /-! ### The binary operation on cycles and boundaries -/
-
-/-- The binary `A∞` operation, regarded as a bilinear map on the total module. -/
-def mul (𝒜 : AInfinityAlgebra R A) : A →ₗ[R] A →ₗ[R] A :=
-  LinearMap.mk₂ R (fun x y ↦ 𝒜.m 2 ![x, y])
-    (fun x x' y ↦ by
-      convert (𝒜.m 2).map_update_add ![x, y] 0 x x' using 3 <;> ext i <;> fin_cases i <;> rfl)
-    (fun c x y ↦ by
-      convert (𝒜.m 2).map_update_smul ![x, y] 0 c x using 3 <;> ext i <;> fin_cases i <;> rfl)
-    (fun x y y' ↦ by
-      convert (𝒜.m 2).map_update_add ![x, y] 1 y y' using 3 <;> ext i <;> fin_cases i <;> rfl)
-    (fun c x y ↦ by
-      convert (𝒜.m 2).map_update_smul ![x, y] 1 c y using 3 <;> ext i <;> fin_cases i <;> rfl)
-
-/-- Evaluating the bilinear product is evaluating the binary operation. -/
-@[simp]
-theorem mul_apply (𝒜 : AInfinityAlgebra R A) (x y : A) : 𝒜.mul x y = 𝒜.m 2 ![x, y] := by
-  simp [mul]
-
-/-- The unary operation anticommutes with the degree-one Koszul twist. -/
-theorem m_one_koszulTwist (𝒜 : AInfinityAlgebra R A) (x : A) :
-    𝒜.m 1 ![𝒜.grading.koszulTwist 1 x] = -𝒜.grading.koszulTwist 1 (𝒜.m 1 ![x]) := by
-  have h : 𝒜.differential ∘ₗ 𝒜.grading.koszulTwist 1 =
-      -(𝒜.grading.koszulTwist 1 ∘ₗ 𝒜.differential) := by
-    refine 𝒜.grading.linearMap_ext fun p y hy ↦ ?_
-    have hdy : 𝒜.differential y ∈ 𝒜.grading.piece (p + 1) := by
-      simpa using (𝒜.m_degree 1 one_pos).map_mem (fun _ ↦ p) ![y] (fun _ ↦ by simpa using hy)
-    rw [LinearMap.comp_apply, LinearMap.neg_apply, LinearMap.comp_apply,
-      𝒜.grading.koszulTwist_apply_of_mem hy, map_smul, 𝒜.grading.koszulTwist_apply_of_mem hdy,
-      ← neg_smul]
-    congr 1
-    simp [Int.negOnePow_succ]
-  simpa using LinearMap.congr_fun h x
-
-/-- The graded Leibniz rule for arbitrary inputs, with the sign on the second term carried by the
-degree-one Koszul twist of the left factor. -/
-theorem m_one_m_two (𝒜 : AInfinityAlgebra R A) (x y : A) :
-    𝒜.m 1 ![𝒜.m 2 ![x, y]] =
-      𝒜.m 2 ![𝒜.m 1 ![x], y] + 𝒜.m 2 ![𝒜.grading.koszulTwist 1 x, 𝒜.m 1 ![y]] := by
-  have h : 𝒜.differential ∘ₗ 𝒜.mul.flip y =
-      𝒜.mul.flip y ∘ₗ 𝒜.differential +
-        𝒜.mul.flip (𝒜.m 1 ![y]) ∘ₗ 𝒜.grading.koszulTwist 1 := by
-    refine 𝒜.grading.linearMap_ext fun p z hz ↦ ?_
-    simpa [𝒜.grading.koszulTwist_apply_of_mem hz, negOnePowCast_eq_intCast] using
-      𝒜.stasheff_arity_two z y p hz
-  simpa using LinearMap.congr_fun h x
-
-/-- The arity-three Stasheff identity for arbitrary inputs, with the Koszul signs of the first two
-inputs carried by the degree-one twist.  It expresses the associator of the binary operation as a
-unary boundary, modulo the three terms in which the ternary operation meets a unary boundary. -/
-theorem m_one_m_three (𝒜 : AInfinityAlgebra R A) (x y z : A) :
-    𝒜.m 1 ![𝒜.m 3 ![x, y, z]] =
-      𝒜.m 2 ![x, 𝒜.m 2 ![y, z]] - 𝒜.m 2 ![𝒜.m 2 ![x, y], z]
-        - 𝒜.m 3 ![𝒜.m 1 ![x], y, z]
-        - 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.m 1 ![y], z]
-        - 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.grading.koszulTwist 1 y, 𝒜.m 1 ![z]] := by
-  -- Package the six terms as trilinear maps in the three inputs, so that the identity can be
-  -- checked on homogeneous inputs, where it is `stasheff_arity_three`.
-  let L : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    (𝒜.mul.compMultilinearMap (𝒜.m 2)).uncurryRight
-  let Qc : A →ₗ[R] MultilinearMap R (fun _ : Fin 2 ↦ A) A :=
-    { toFun := fun a ↦ (𝒜.mul a).compMultilinearMap (𝒜.m 2)
-      map_add' := fun a b ↦ by ext v; simp
-      map_smul' := fun r a ↦ by ext v; simp }
-  let Q : MultilinearMap R (fun _ : Fin 3 ↦ A) A := Qc.uncurryLeft
-  have L_apply (a b c : A) : L ![a, b, c] = 𝒜.m 2 ![𝒜.m 2 ![a, b], c] := by
-    simp only [L, MultilinearMap.uncurryRight_apply, LinearMap.compMultilinearMap_apply,
-      mul_apply]
-    congr 1
-    funext i
-    fin_cases i
-    · apply congrArg (𝒜.m 2)
-      funext j
-      fin_cases j <;> rfl
-    · rfl
-  have Q_apply (a b c : A) : Q ![a, b, c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
-    dsimp [Q, Qc]
-    simp only [mul_apply]
-  let D : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    𝒜.differential.compMultilinearMap (𝒜.m 3)
-  let T₀ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    (𝒜.m 3).compLinearMap ![𝒜.differential, LinearMap.id, LinearMap.id]
-  let T₁ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    (𝒜.m 3).compLinearMap
-      ![𝒜.grading.koszulTwist 1, 𝒜.differential, LinearMap.id]
-  let T₂ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    (𝒜.m 3).compLinearMap
-      ![𝒜.grading.koszulTwist 1, 𝒜.grading.koszulTwist 1, 𝒜.differential]
-  have D_apply (a b c : A) : D ![a, b, c] = 𝒜.differential (𝒜.m 3 ![a, b, c]) := rfl
-  have T₀_apply (a b c : A) : T₀ ![a, b, c] = 𝒜.m 3 ![𝒜.differential a, b, c] := by
-    simp only [T₀, MultilinearMap.compLinearMap_apply]
-    congr 1
-    funext i
-    fin_cases i <;> rfl
-  have T₁_apply (a b c : A) : T₁ ![a, b, c] =
-      𝒜.m 3 ![𝒜.grading.koszulTwist 1 a, 𝒜.differential b, c] := by
-    simp only [T₁, MultilinearMap.compLinearMap_apply]
-    congr 1
-    funext i
-    fin_cases i <;> rfl
-  have T₂_apply (a b c : A) : T₂ ![a, b, c] =
-      𝒜.m 3 ![𝒜.grading.koszulTwist 1 a, 𝒜.grading.koszulTwist 1 b,
-        𝒜.differential c] := by
-    simp only [T₂, MultilinearMap.compLinearMap_apply]
-    congr 1
-    funext i
-    fin_cases i <;> rfl
-  have m_three_smul_first (r : R) (a b c : A) :
-      𝒜.m 3 ![r • a, b, c] = r • 𝒜.m 3 ![a, b, c] := by
-    convert (𝒜.m 3).map_update_smul ![a, b, c] 0 r a using 2 <;>
-      congr 1 <;> funext i <;> fin_cases i <;> rfl
-  have m_three_smul_second (r : R) (a b c : A) :
-      𝒜.m 3 ![a, r • b, c] = r • 𝒜.m 3 ![a, b, c] := by
-    convert (𝒜.m 3).map_update_smul ![a, b, c] 1 r b using 2 <;>
-      congr 1 <;> funext i <;> fin_cases i <;> rfl
-  -- On homogeneous inputs the two Koszul twists produce exactly the signs of the graded identity.
-  let E : MultilinearMap R (fun _ : Fin 3 ↦ A) A := D + L - Q + T₀ + T₁ + T₂
-  have hE : E = 0 := by
-    apply 𝒜.grading.multilinearMap_ext
-    intro d a ha
-    have avec : a = ![a 0, a 1, a 2] := by
-      funext i
-      fin_cases i <;> rfl
-    rw [avec]
-    simp only [E, add_apply, sub_apply, D_apply, L_apply, Q_apply, T₀_apply, T₁_apply,
-      T₂_apply, zero_apply, differential_apply,
-      𝒜.grading.koszulTwist_apply_of_mem (ha 0),
-      𝒜.grading.koszulTwist_apply_of_mem (ha 1),
-      m_three_smul_first, m_three_smul_second, smul_smul, one_mul]
-    rw [← negOnePowCast_eq_intCast (R := R) (d 0),
-      ← negOnePowCast_eq_intCast (R := R) (d 1), ← negOnePowCast_add]
-    exact 𝒜.stasheff_arity_three (a 0) (a 1) (a 2) (d 0) (d 1) (ha 0) (ha 1)
-  have h := MultilinearMap.congr_fun hE ![x, y, z]
-  simp only [E, add_apply, sub_apply, D_apply, L_apply, Q_apply, T₀_apply, T₁_apply,
-    T₂_apply, zero_apply, differential_apply] at h
-  rw [← sub_eq_zero, ← h]
-  abel
 
 /-- The binary operation of two cycles is a cycle. -/
 theorem m_two_mem_cycles (𝒜 : AInfinityAlgebra R A) {x y : A} (hx : x ∈ 𝒜.cycles)

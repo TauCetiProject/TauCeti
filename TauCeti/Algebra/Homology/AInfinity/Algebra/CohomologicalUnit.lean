@@ -30,12 +30,6 @@ while every strict unit supplies a cohomological one.
 ## References
 
 * B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3.1 and 3.6.
-
-The signature of `CohomologicalUnit` is adapted from the `CohomologicalUnit` scaffold of the
-roadmap's formal companion
-[`DGAInfinity/Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/DGAInfinity/Suggested.lean),
-whose cycle and boundary conditions are restated here against the submodules of
-`TauCeti.Algebra.Homology.AInfinity.Algebra.Cohomology`.
 -/
 
 public section
@@ -50,6 +44,8 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 
 /-! ### Cohomological units -/
 
+-- Source: the `CohomologicalUnit` scaffold in `TauCetiRoadmap/DGAInfinity/Suggested.lean`, with
+-- its cycle and boundary conditions restated against `cycles` and `boundaries`.
 /-- A chain representative of a unit on the cohomology of an `A∞` algebra.
 
 The representative is a degree-zero cycle.  Its binary products with every cycle differ from that
