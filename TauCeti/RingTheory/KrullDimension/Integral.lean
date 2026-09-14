@@ -30,7 +30,8 @@ ring through Noether normalization.
 * `TauCeti.ringKrullDim_le_of_isIntegral`: `dim S ≤ dim R` for an integral `R`-algebra `S`.
 * `TauCeti.ringKrullDim_le_of_hasGoingUp_of_surjective`: `dim R ≤ dim S` when `R → S` has going
   up and `Spec S → Spec R` is surjective.
-* `TauCeti.ringKrullDim_eq_of_isIntegral`: `dim S = dim R` for an injective integral extension.
+* `TauCeti.ringKrullDim_eq_of_isIntegral_of_faithfulSMul`: `dim S = dim R` for an injective
+  integral extension.
 
 ## References
 
@@ -72,7 +73,7 @@ theorem ringKrullDim_le_of_hasGoingUp_of_surjective [Algebra.HasGoingUp R S]
   exact Order.LTSeries.length_le_krullDim L
 
 /-- An injective integral extension preserves Krull dimension. -/
-theorem ringKrullDim_eq_of_isIntegral [Algebra.IsIntegral R S] [FaithfulSMul R S] :
+theorem ringKrullDim_eq_of_isIntegral_of_faithfulSMul [Algebra.IsIntegral R S] [FaithfulSMul R S] :
     ringKrullDim S = ringKrullDim R :=
   ringKrullDim_le_of_isIntegral.antisymm <|
     ringKrullDim_le_of_hasGoingUp_of_surjective (Algebra.IsIntegral.comap_surjective R S)

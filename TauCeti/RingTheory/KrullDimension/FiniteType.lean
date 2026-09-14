@@ -31,8 +31,8 @@ fibrewise dimension bounds on morphisms stable under base change.
   `k[X₁, …, Xₛ] → A` forces `dim A = s`, the number of variables.
 * `TauCeti.finiteRingKrullDim_of_finiteType`: a nontrivial finitely generated algebra over a field
   has finite Krull dimension.
-* `TauCeti.ringKrullDim_tensorProduct_of_finiteType`: `dim (K ⊗[k] A) = dim K + dim A` for a
-  Noetherian `k`-algebra `K`.
+* `TauCeti.ringKrullDim_tensorProduct_of_isNoetherianRing_of_finiteType`:
+  `dim (K ⊗[k] A) = dim K + dim A` for a Noetherian `k`-algebra `K`.
 * `TauCeti.ringKrullDim_tensorProduct_field_of_finiteType`: `dim (K ⊗[k] A) = dim A` for a field
   extension `K / k`.
 
@@ -56,7 +56,7 @@ theorem ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial {ι A : Type*} [
     (hint : g.IsIntegral) : ringKrullDim A = Nat.card ι := by
   algebraize [g.toRingHom]
   have : FaithfulSMul (MvPolynomial ι k) A := (faithfulSMul_iff_algebraMap_injective _ _).2 hinj
-  rw [ringKrullDim_eq_of_isIntegral (R := MvPolynomial ι k),
+  rw [ringKrullDim_eq_of_isIntegral_of_faithfulSMul (R := MvPolynomial ι k),
     MvPolynomial.ringKrullDim_of_isNoetherianRing, ringKrullDim_eq_zero_of_field, zero_add]
 
 variable (k) in
@@ -71,8 +71,8 @@ theorem finiteRingKrullDim_of_finiteType (A : Type*) [CommRing A] [Nontrivial A]
 /-- The Krull dimension of `K ⊗[k] A`, for a Noetherian `k`-algebra `K` and a finitely generated
 `k`-algebra `A`, is the sum of the Krull dimensions of `K` and `A`. -/
 @[simp]
-theorem ringKrullDim_tensorProduct_of_finiteType (K A : Type*) [CommRing K] [IsNoetherianRing K]
-    [Algebra k K] [CommRing A] [Algebra k A] [Algebra.FiniteType k A] :
+theorem ringKrullDim_tensorProduct_of_isNoetherianRing_of_finiteType (K A : Type*) [CommRing K]
+    [IsNoetherianRing K] [Algebra k K] [CommRing A] [Algebra k A] [Algebra.FiniteType k A] :
     ringKrullDim (K ⊗[k] A) = ringKrullDim K + ringKrullDim A := by
   cases subsingleton_or_nontrivial A with
   | inl hA => simp [ringKrullDim_eq_bot_of_subsingleton]
@@ -87,7 +87,7 @@ theorem ringKrullDim_tensorProduct_of_finiteType (K A : Type*) [CommRing K] [IsN
     algebraize [φ.toRingHom]
     have : FaithfulSMul (K ⊗[k] MvPolynomial (Fin s) k) (K ⊗[k] A) :=
       (faithfulSMul_iff_algebraMap_injective _ _).2 hφinj
-    rw [ringKrullDim_eq_of_isIntegral (R := K ⊗[k] MvPolynomial (Fin s) k),
+    rw [ringKrullDim_eq_of_isIntegral_of_faithfulSMul (R := K ⊗[k] MvPolynomial (Fin s) k),
       ringKrullDim_eq_of_ringEquiv (MvPolynomial.algebraTensorAlgEquiv k K).toRingEquiv,
       MvPolynomial.ringKrullDim_of_isNoetherianRing,
       ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g hinj hfin.to_isIntegral]
@@ -97,6 +97,7 @@ the base field. -/
 theorem ringKrullDim_tensorProduct_field_of_finiteType (K A : Type*) [Field K] [Algebra k K]
     [CommRing A] [Algebra k A] [Algebra.FiniteType k A] :
     ringKrullDim (K ⊗[k] A) = ringKrullDim A := by
-  rw [ringKrullDim_tensorProduct_of_finiteType, ringKrullDim_eq_zero_of_field, zero_add]
+  rw [ringKrullDim_tensorProduct_of_isNoetherianRing_of_finiteType, ringKrullDim_eq_zero_of_field,
+    zero_add]
 
 end TauCeti
