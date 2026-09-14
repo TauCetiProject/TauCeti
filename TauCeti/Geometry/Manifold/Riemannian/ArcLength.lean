@@ -286,8 +286,7 @@ theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ :
   · exact hψ_contDiff.mono hIccW
   · simpa only [φ, v] using hη
   · rw [show (0 : ℝ) = φ a from hφa.symm, Function.comp_apply, hleft a haU]
-  · rw [show (∫ r in a..b, ‖curveVelocity I γ r‖) = φ b by rfl,
-      Function.comp_apply, hleft b hbU]
+  · simpa only [φ, v, Function.comp_apply] using congrArg γ (hleft b hbU)
   · simpa only [φ, v] using hunit
   · simpa only [φ, v] using hlength
 

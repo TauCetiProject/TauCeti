@@ -41,8 +41,9 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   related by `TauCeti.Manifold.curveVelocityWithin_univ`.
 * `TauCeti.Manifold.curveVelocityLiftWithin` and `TauCeti.Manifold.curveVelocityLift`: the
   corresponding curves in the tangent bundle, together with their projection and fibre formulas.
-* `ContMDiffOn.continuousOn_curveVelocityLift`: the velocity lift of a `C¹` curve on an open set
-  is continuous there, with `ContMDiff.continuous_curveVelocityLift` as its unrestricted case.
+* `ContMDiffOn.continuousOn_curveVelocityLiftWithin`: the within-domain velocity lift of a `C¹`
+  curve is continuous on a unique-differentiability domain, with open-domain and unrestricted
+  forms for `curveVelocityLift`.
 * `TauCeti.Manifold.hasMFDerivWithinAt_curveVelocityWithin` and
   `TauCeti.Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt`: the two directions relating the
   named velocity to a `HasMFDerivWithinAt` witness.
@@ -274,12 +275,12 @@ theorem curveVelocityLift_snd (γ : 𝕜 → M) (t : 𝕜) :
 
 variable [IsManifold I 1 M]
 
-/-- The velocity lift of a `C¹` curve is continuous on an open parameter set. The openness
-ensures that the unrestricted velocity in `curveVelocityLift` agrees with the derivative within
-the parameter set. -/
-theorem ContMDiffOn.continuousOn_curveVelocityLift {u : Set 𝕜}
-    (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I 1 γ u) (hu : IsOpen u) :
-    ContinuousOn (curveVelocityLift I γ) u := by
+/-- The within-domain velocity lift of a `C¹` curve is continuous on a domain with unique
+manifold derivatives. -/
+theorem ContMDiffOn.continuousOn_curveVelocityLiftWithin {u : Set 𝕜}
+    (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I 1 γ u)
+    (hu : UniqueMDiffOn 𝓘(𝕜, 𝕜) u) :
+    ContinuousOn (curveVelocityLiftWithin I γ u) u := by
   let ι : 𝕜 → TangentBundle 𝓘(𝕜, 𝕜) 𝕜 := fun t ↦
     TotalSpace.mk' 𝕜 t ((tangentSpaceCastModel 𝓘(𝕜, 𝕜) t).symm 1)
   have hι : ContMDiff 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent ∞ ι := by
@@ -290,23 +291,31 @@ theorem ContMDiffOn.continuousOn_curveVelocityLift {u : Set 𝕜}
     filter_upwards with r
     rw [trivializationAt_model_space_apply]
     rfl
-  have htangent := hγ.continuousOn_tangentMapWithin le_rfl hu.uniqueMDiffOn
+  have htangent := hγ.continuousOn_tangentMapWithin le_rfl hu
   have hcomp := htangent.comp hι.continuous.continuousOn
     (fun t ht ↦ by simpa [ι] using ht)
   refine hcomp.congr fun t ht ↦ ?_
-  rw [curveVelocityLift_apply]
-  -- Expose the fibre components of the two total-space points so the derivative-within theorem
-  -- can replace the derivative on the open set by the unrestricted derivative.
-  change TotalSpace.mk' E (γ t) (curveVelocity I γ t) =
+  rw [curveVelocityLiftWithin_apply]
+  change TotalSpace.mk' E (γ t) (curveVelocityWithin I γ u t) =
     TotalSpace.mk' E (γ t) (mfderivWithin 𝓘(𝕜, 𝕜) I γ u t (1 : 𝕜))
-  congr 1
-  rw [curveVelocity_apply, mfderivWithin_of_mem_nhds (hu.mem_nhds ht)]
+  rw [curveVelocityWithin_apply]
+
+/-- The velocity lift of a `C¹` curve is continuous on an open parameter set. The openness
+ensures that the unrestricted velocity in `curveVelocityLift` agrees with the derivative within
+the parameter set. -/
+theorem ContMDiffOn.continuousOn_curveVelocityLift {u : Set 𝕜}
+    (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I 1 γ u) (hu : IsOpen u) :
+    ContinuousOn (curveVelocityLift I γ) u := by
+  refine (ContMDiffOn.continuousOn_curveVelocityLiftWithin hγ hu.uniqueMDiffOn).congr
+    fun t ht ↦ ?_
+  rw [curveVelocityLiftWithin_apply, curveVelocityLift_apply,
+    curveVelocityWithin_of_mem_nhds (hu.mem_nhds ht)]
 
 /-- The unrestricted case of `ContMDiffOn.continuousOn_curveVelocityLift`. -/
 theorem ContMDiff.continuous_curveVelocityLift
     (hγ : ContMDiff 𝓘(𝕜, 𝕜) I 1 γ) : Continuous (curveVelocityLift I γ) := by
-  rw [← continuousOn_univ]
-  exact ContMDiffOn.continuousOn_curveVelocityLift hγ.contMDiffOn isOpen_univ
+  rw [← continuousOn_univ, ← curveVelocityLiftWithin_univ]
+  exact ContMDiffOn.continuousOn_curveVelocityLiftWithin hγ.contMDiffOn uniqueMDiffOn_univ
 
 /-- Reading the curve in the extended chart centred at the *current* point differentiates it to
 the velocity itself: the derivative of that chart at its own centre is the identity. -/
