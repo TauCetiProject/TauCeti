@@ -29,6 +29,8 @@ tensor words.
 * `TauCeti.AInfinityAlgebra.Augmentation.reducedGrading`: its inherited internal grading.
 * `TauCeti.AInfinityAlgebra.Augmentation.reducedOperation`: the operations restricted to the
   augmentation ideal.
+* `TauCeti.AInfinityAlgebra.Augmentation.reducedAlgebra`: the induced `A∞` algebra on the
+  augmentation ideal.
 * `TauCeti.AInfinityAlgebra.Augmentation.splitLinearEquiv`: the canonical splitting into scalar
   and reduced parts.
 
@@ -65,8 +67,8 @@ structure Augmentation (𝒜 : AInfinityAlgebra R A) where
   map_of_mem_ne_zero : ∀ (p : ℤ) (x : A), x ∈ 𝒜.grading.piece p → p ≠ 0 → toLinearMap x = 0
   /-- The augmentation intertwines the binary operation with multiplication in the ground ring. -/
   map_binary : ∀ x y, toLinearMap (𝒜.m 2 ![x, y]) = toLinearMap x * toLinearMap y
-  /-- The augmentation annihilates every operation of arity other than two. -/
-  map_m_of_ne_two : ∀ (n : ℕ), n ≠ 2 → ∀ x, toLinearMap (𝒜.m n x) = 0
+  /-- The augmentation annihilates every positive-arity operation other than the binary one. -/
+  map_m_of_ne_two : ∀ (n : ℕ), 0 < n → n ≠ 2 → ∀ x, toLinearMap (𝒜.m n x) = 0
 
 namespace Augmentation
 
@@ -79,7 +81,7 @@ attribute [simp] map_unit map_binary map_m_of_ne_two
 
 /-- An augmentation annihilates the unary operation. -/
 theorem map_unary (ε : 𝒜.Augmentation) (x : A) : ε (𝒜.m 1 ![x]) = 0 :=
-  ε.map_m_of_ne_two 1 (by decide) ![x]
+  ε.map_m_of_ne_two 1 (by decide) (by decide) ![x]
 
 /-- An augmentation is determined by its underlying linear map. -/
 @[ext]
@@ -166,18 +168,20 @@ theorem m_mem_augmentationIdeal (ε : 𝒜.Augmentation) (n : ℕ)
     (x : Fin n → ε.augmentationIdeal) :
     𝒜.m n (fun i ↦ (x i : A)) ∈ ε.augmentationIdeal := by
   rw [mem_augmentationIdeal]
-  by_cases hn : n = 2
-  · subst n
-    have h0 := (mem_augmentationIdeal ε).mp (x 0).property
-    have h1 := (mem_augmentationIdeal ε).mp (x 1).property
-    calc
-      ε (𝒜.m 2 fun i ↦ (x i : A)) = ε (𝒜.m 2 ![(x 0 : A), (x 1 : A)]) := by
-        congr 2
-        funext i
-        fin_cases i <;> rfl
-      _ = ε (x 0 : A) * ε (x 1 : A) := ε.map_binary _ _
-      _ = 0 := by rw [h0, h1, zero_mul]
-  · exact ε.map_m_of_ne_two n hn _
+  rcases eq_or_ne n 0 with rfl | hn0
+  · simp
+  · by_cases hn : n = 2
+    · subst n
+      have h0 := (mem_augmentationIdeal ε).mp (x 0).property
+      have h1 := (mem_augmentationIdeal ε).mp (x 1).property
+      calc
+        ε (𝒜.m 2 fun i ↦ (x i : A)) = ε (𝒜.m 2 ![(x 0 : A), (x 1 : A)]) := by
+          congr 2
+          funext i
+          fin_cases i <;> rfl
+        _ = ε (x 0 : A) * ε (x 1 : A) := ε.map_binary _ _
+        _ = 0 := by rw [h0, h1, zero_mul]
+    · exact ε.map_m_of_ne_two n (Nat.pos_of_ne_zero hn0) hn _
 
 /-- The arity-`n` operation restricted to the reduced augmentation ideal. -/
 noncomputable def reducedOperation (ε : 𝒜.Augmentation) (n : ℕ) :
@@ -233,6 +237,106 @@ theorem reducedPart_coe (ε : 𝒜.Augmentation) (x : ε.augmentationIdeal) :
     ε.reducedPart (x : A) = x := by
   apply Subtype.ext
   rw [coe_reducedPart, (mem_augmentationIdeal ε).mp x.property, zero_smul, sub_zero]
+
+private theorem coe_evalNat_reducedOperation (ε : 𝒜.Augmentation) (n : ℕ)
+    (x : ℕ → ε.augmentationIdeal) :
+    ((MultilinearMap.evalNat (ε.reducedOperation n) x : ε.augmentationIdeal) : A) =
+      MultilinearMap.evalNat (𝒜.m n) (fun i ↦ (x i : A)) := by
+  rw [MultilinearMap.evalNat_def, MultilinearMap.evalNat_def, coe_reducedOperation]
+
+private theorem coe_evalNat_suspend_reducedOperation (ε : 𝒜.Augmentation) (n : ℕ)
+    (d : ℕ → ℤ) (x : ℕ → ε.augmentationIdeal) :
+    ((MultilinearMap.evalNat (MultilinearMap.suspend d (ε.reducedOperation n)) x :
+        ε.augmentationIdeal) : A) =
+      MultilinearMap.evalNat (MultilinearMap.suspend d (𝒜.m n)) (fun i ↦ (x i : A)) := by
+  rw [AInfinity.evalNat_suspend, AInfinity.evalNat_suspend, Submodule.coe_smul,
+    coe_evalNat_reducedOperation]
+
+private theorem coe_stasheffTerm_reducedOperation (ε : 𝒜.Augmentation)
+    (d : ℕ → ℤ) (x : ℕ → ε.augmentationIdeal) (p s t : ℕ) :
+    ((AInfinity.stasheffTerm ε.reducedOperation d x p s t : ε.augmentationIdeal) : A) =
+      AInfinity.stasheffTerm 𝒜.m d (fun i ↦ (x i : A)) p s t := by
+  rw [AInfinity.stasheffTerm_def, AInfinity.stasheffTerm_def, Submodule.coe_smul,
+    coe_evalNat_reducedOperation]
+  congr 2
+  funext i
+  rcases lt_trichotomy i p with hi | rfl | hi
+  · rw [replaceBlock_of_lt _ _ _ _ hi, replaceBlock_of_lt _ _ _ _ hi]
+  · rw [replaceBlock_self, replaceBlock_self]
+    exact ε.coe_evalNat_reducedOperation s (fun j ↦ x (i + j))
+  · rw [replaceBlock_of_gt _ _ _ _ hi, replaceBlock_of_gt _ _ _ _ hi]
+
+private theorem coe_stasheffSum_reducedOperation (ε : 𝒜.Augmentation)
+    (d : ℕ → ℤ) (x : ℕ → ε.augmentationIdeal) (n : ℕ) :
+    ((AInfinity.stasheffSum ε.reducedOperation d x n : ε.augmentationIdeal) : A) =
+      AInfinity.stasheffSum 𝒜.m d (fun i ↦ (x i : A)) n := by
+  rw [AInfinity.stasheffSum_def, AInfinity.stasheffSum_def]
+  -- Expose the coercion as the linear inclusion so that it distributes over the finite sums.
+  change ε.augmentationIdeal.subtype (∑ p ∈ Finset.range (n + 1),
+      ∑ s ∈ Finset.Icc 1 (n - p), AInfinity.stasheffTerm ε.reducedOperation d x p s
+        (n - p - s)) = _
+  rw [map_sum]
+  apply Finset.sum_congr rfl
+  intro p hp
+  rw [map_sum]
+  apply Finset.sum_congr rfl
+  intro s hs
+  exact ε.coe_stasheffTerm_reducedOperation d x p s (n - p - s)
+
+private noncomputable def reducedTaylor (ε : 𝒜.Augmentation) :
+    ReducedTensorWords R ε.augmentationIdeal →ₗ[R] ε.augmentationIdeal :=
+  ε.reducedPart ∘ₗ 𝒜.taylor ∘ₗ
+    ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype
+
+private theorem reducedTaylor_isSuspension (ε : 𝒜.Augmentation) :
+    AInfinity.IsSuspension ε.reducedGrading ε.reducedTaylor ε.reducedOperation := by
+  rw [AInfinity.isSuspension_def]
+  intro n hn d x hx
+  have hx' : ∀ i < n, (x i : A) ∈ 𝒜.grading.piece (d i) := by
+    intro i hi
+    -- Expose the subtype inclusion used in the definition of the reduced grading.
+    change ε.augmentationIdeal.subtype (x i) ∈ 𝒜.grading.piece (d i)
+    simpa only [reducedGrading_piece, Submodule.mem_comap] using hx i hi
+  have hTaylor := (AInfinity.isSuspension_def _ _ _).1 𝒜.taylor_isSuspension n hn d
+    (fun i ↦ (x i : A)) hx'
+  apply Subtype.ext
+  simp only [reducedTaylor, LinearMap.comp_apply]
+  rw [ReducedTensorWords.map_of_tprod]
+  simp only [Submodule.subtype_apply]
+  rw [hTaylor, ← ε.coe_evalNat_suspend_reducedOperation n d x]
+  exact congrArg Subtype.val (ε.reducedPart_coe
+    (MultilinearMap.evalNat (MultilinearMap.suspend d (ε.reducedOperation n)) x))
+
+private theorem stasheff_reducedOperation (ε : 𝒜.Augmentation) (n : ℕ) (hn : 0 < n)
+    (d : ℕ → ℤ) (x : ℕ → ε.augmentationIdeal)
+    (hx : ∀ i < n, x i ∈ ε.reducedGrading.piece (d i)) :
+    AInfinity.stasheffSum ε.reducedOperation d x n = 0 := by
+  apply Subtype.ext
+  rw [ε.coe_stasheffSum_reducedOperation, Submodule.coe_zero]
+  apply 𝒜.stasheff n hn d (fun i ↦ (x i : A))
+  intro i hi
+  -- Expose the subtype inclusion used in the definition of the reduced grading.
+  change ε.augmentationIdeal.subtype (x i) ∈ 𝒜.grading.piece (d i)
+  simpa only [reducedGrading_piece, Submodule.mem_comap] using hx i hi
+
+/-- The `A∞` algebra induced on the reduced augmentation ideal. -/
+noncomputable def reducedAlgebra (ε : 𝒜.Augmentation) :
+    AInfinityAlgebra R ε.augmentationIdeal :=
+  AInfinityAlgebra.ofStasheff ε.reducedGrading ε.reducedOperation ε.reducedOperation_zero
+    ε.isHomogeneous_reducedOperation ε.reducedTaylor ε.reducedTaylor_isSuspension
+    ε.stasheff_reducedOperation
+
+/-- The grading of the reduced `A∞` algebra is the inherited grading. -/
+@[simp]
+theorem reducedAlgebra_grading (ε : 𝒜.Augmentation) :
+    ε.reducedAlgebra.grading = ε.reducedGrading := by
+  rw [reducedAlgebra, AInfinityAlgebra.ofStasheff_grading]
+
+/-- The operations of the reduced `A∞` algebra are the restricted operations. -/
+@[simp]
+theorem reducedAlgebra_m (ε : 𝒜.Augmentation) :
+    ε.reducedAlgebra.m = ε.reducedOperation := by
+  rw [reducedAlgebra, AInfinityAlgebra.ofStasheff_m]
 
 /-- The canonical linear splitting of an augmented `A∞` algebra into its scalar and reduced
 parts. -/
