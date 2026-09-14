@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.TensorProduct
-import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
 # Tensor products of regular-form classes
@@ -92,13 +91,46 @@ private theorem associated_presentedForm_basisFun (p : RegularFormPresentation K
     (i j : Fin p.1) :
     associated (R := K) (presentedForm p) (Pi.basisFun K (Fin p.1) i)
         (Pi.basisFun K (Fin p.1) j) = if i = j then (p.2 i : K) else 0 := by
-  rw [presentedForm_eq_weightedSumSquares, QuadraticMap.weightedSumSquares_units,
-    QuadraticMap.associated_weightedSumSquares]
-  simp only [Pi.basisFun_apply, Pi.single_apply, mul_ite, mul_one, mul_zero,
-    Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+  classical
   by_cases h : i = j
-  · simp [h]
-  · simp [h, Ne.symm h]
+  · subst j
+    rw [QuadraticMap.associated_eq_self_apply]
+    rw [presentedForm_apply, Finset.sum_eq_single i]
+    · simp [Pi.basisFun_apply]
+    · intro j _ hji
+      simp [Pi.basisFun_apply, hji]
+    · simp
+  · have hsum :
+        (∑ x, (p.2 x : K) *
+          ((Pi.basisFun K (Fin p.1) i x + Pi.basisFun K (Fin p.1) j x) *
+            (Pi.basisFun K (Fin p.1) i x + Pi.basisFun K (Fin p.1) j x))) -
+            (∑ x, (p.2 x : K) *
+              (Pi.basisFun K (Fin p.1) i x * Pi.basisFun K (Fin p.1) i x)) -
+            (∑ x, (p.2 x : K) *
+              (Pi.basisFun K (Fin p.1) j x * Pi.basisFun K (Fin p.1) j x)) = 0 := by
+      rw [← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
+      apply Finset.sum_eq_zero
+      intro k _
+      by_cases hki : k = i
+      · subst k
+        simp [Pi.basisFun_apply, h]
+      · by_cases hkj : k = j
+        · subst k
+          simp [Pi.basisFun_apply, hki]
+        · simp [Pi.basisFun_apply, hki, hkj]
+    rw [QuadraticMap.associated_apply]
+    simp only [Module.End.smul_def, presentedForm_apply]
+    have hsum' :
+        (∑ x, (p.2 x : K) *
+          ((Pi.basisFun K (Fin p.1) i + Pi.basisFun K (Fin p.1) j) x *
+            (Pi.basisFun K (Fin p.1) i + Pi.basisFun K (Fin p.1) j) x)) -
+            (∑ x, (p.2 x : K) *
+              (Pi.basisFun K (Fin p.1) i x * Pi.basisFun K (Fin p.1) i x)) -
+            (∑ x, (p.2 x : K) *
+              (Pi.basisFun K (Fin p.1) j x * Pi.basisFun K (Fin p.1) j x)) = 0 := by
+      simpa only [Pi.add_apply] using hsum
+    rw [hsum']
+    simp [h]
 
 private theorem presentedForm_basisFun (p : RegularFormPresentation K) (i : Fin p.1) :
     presentedForm p (Pi.basisFun K (Fin p.1) i) = (p.2 i : K) := by
