@@ -82,24 +82,6 @@ theorem isSingular_iff' (W : WeierstrassCurve.Affine R) (x y : R) : W.IsSingular
       2 * y + W.a₁ * x + W.a₃ = 0 := by
   rw [IsSingular, evalEval_polynomialX, evalEval_polynomialY]
 
-private theorem four_ne_zero_of_two_ne_zero {F : Type*} [Field F] (h2 : (2 : F) ≠ 0) :
-    (4 : F) ≠ 0 := by
-  have h4 : (4 : F) = 2 * 2 := by norm_num
-  rw [h4]
-  exact mul_ne_zero h2 h2
-
-private theorem twelve_ne_zero_of_two_ne_zero_of_three_ne_zero {F : Type*} [Field F]
-    (h2 : (2 : F) ≠ 0) (h3 : (3 : F) ≠ 0) : (12 : F) ≠ 0 := by
-  have h12 : (12 : F) = 2 * 2 * 3 := by norm_num
-  rw [h12]
-  exact mul_ne_zero (mul_ne_zero h2 h2) h3
-
-private theorem two_hundred_sixteen_ne_zero_of_two_ne_zero_of_three_ne_zero
-    {F : Type*} [Field F] (h2 : (2 : F) ≠ 0) (h3 : (3 : F) ≠ 0) : (216 : F) ≠ 0 := by
-  have h216 : (216 : F) = 2 ^ 3 * 3 ^ 3 := by norm_num
-  rw [h216]
-  exact mul_ne_zero (pow_ne_zero 3 h2) (pow_ne_zero 3 h3)
-
 private theorem isSingular_of_twoTorsionPolynomial_eq_zero {F : Type*} [Field F]
     (W : WeierstrassCurve.Affine F) (h2 : (2 : F) ≠ 0) (x : F)
     (hD : 4 * x ^ 3 + W.b₂ * x ^ 2 + 2 * W.b₄ * x + W.b₆ = 0)
@@ -111,7 +93,9 @@ private theorem isSingular_of_twoTorsionPolynomial_eq_zero {F : Type*} [Field F]
   · field_simp [h2]
     linear_combination -hD
   · have h4 : (4 : F) ≠ 0 := by
-      exact four_ne_zero_of_two_ne_zero h2
+      have h4' : (4 : F) = 2 * 2 := by norm_num
+      rw [h4']
+      exact mul_ne_zero h2 h2
     apply (mul_eq_zero.mp ?_).resolve_left h4
     calc
       4 * (W.a₁ * (-(W.a₁ * x + W.a₃) / 2) -
@@ -266,10 +250,14 @@ private theorem exists_isSingular_of_Δ_eq_zero_of_c₄_eq_zero_of_three_ne_zero
     (h3 : (3 : F) ≠ 0) (hc₄ : W.c₄ = 0) (hc₆ : W.c₆ = 0) :
     ∃ x y : F, W.IsSingular x y := by
   let x : F := -W.b₂ / 12
-  have h12 : (12 : F) ≠ 0 :=
-    twelve_ne_zero_of_two_ne_zero_of_three_ne_zero h2 h3
-  have h216 : (216 : F) ≠ 0 :=
-    two_hundred_sixteen_ne_zero_of_two_ne_zero_of_three_ne_zero h2 h3
+  have h12 : (12 : F) ≠ 0 := by
+    have h12' : (12 : F) = 2 * 2 * 3 := by norm_num
+    rw [h12']
+    exact mul_ne_zero (mul_ne_zero h2 h2) h3
+  have h216 : (216 : F) ≠ 0 := by
+    have h216' : (216 : F) = 2 ^ 3 * 3 ^ 3 := by norm_num
+    rw [h216']
+    exact mul_ne_zero (pow_ne_zero 3 h2) (pow_ne_zero 3 h3)
   have hD : 4 * x ^ 3 + W.b₂ * x ^ 2 + 2 * W.b₄ * x + W.b₆ = 0 := by
     calc
       4 * x ^ 3 + W.b₂ * x ^ 2 + 2 * W.b₄ * x + W.b₆ = -W.c₆ / 216 := by
@@ -295,7 +283,10 @@ private theorem exists_isSingular_of_Δ_eq_zero_of_c₄_ne_zero {F : Type*} [Fie
     ∃ x y : F, W.IsSingular x y := by
   let n : F := 18 * W.b₆ - W.b₂ * W.b₄
   let x : F := n / W.c₄
-  have h4 : (4 : F) ≠ 0 := four_ne_zero_of_two_ne_zero h2
+  have h4 : (4 : F) ≠ 0 := by
+    have h4' : (4 : F) = 2 * 2 := by norm_num
+    rw [h4']
+    exact mul_ne_zero h2 h2
   have hD : 4 * x ^ 3 + W.b₂ * x ^ 2 + 2 * W.b₄ * x + W.b₆ = 0 := by
     have hmul : W.c₄ ^ 3 *
         (4 * x ^ 3 + W.b₂ * x ^ 2 + 2 * W.b₄ * x + W.b₆) = 0 := by
