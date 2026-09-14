@@ -338,6 +338,14 @@ theorem reducedAlgebra_m (ε : 𝒜.Augmentation) :
     ε.reducedAlgebra.m = ε.reducedOperation := by
   rw [reducedAlgebra, AInfinityAlgebra.ofStasheff_m]
 
+/-- The Taylor map of the reduced `A∞` algebra includes reduced tensor words, applies the ambient
+Taylor map, and projects to the reduced part. -/
+@[simp]
+theorem reducedAlgebra_taylor (ε : 𝒜.Augmentation) :
+    ε.reducedAlgebra.taylor = ε.reducedPart ∘ₗ 𝒜.taylor ∘ₗ
+      ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype := by
+  rw [reducedAlgebra, AInfinityAlgebra.ofStasheff_taylor, reducedTaylor]
+
 /-- The canonical linear splitting of an augmented `A∞` algebra into its scalar and reduced
 parts. -/
 noncomputable def splitLinearEquiv (ε : 𝒜.Augmentation) :
