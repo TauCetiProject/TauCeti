@@ -18,21 +18,25 @@ and `ρ = c / √(v₁ v₂)` for the correlation, the conditional mean of the f
 the second is the regression line `m₁ + ρ √(v₁ / v₂) (x₂ - m₂)` and the conditional variance is
 `v₁ (1 - ρ ^ 2)`.
 
-Both the mean and the variance are recorded twice: once with the regression slope `c / v₂` and
-residual variance `v₁ - c ^ 2 / v₂`, which hold for every `2 × 2` matrix, and once in the
-correlation form above, which needs positive definiteness so that the two variances are positive
-and the covariance matrix is symmetric.  In the correlation form the variances and the
-correlation are bound by defining hypotheses rather than spelled out inside the conclusion, which
-would otherwise repeat the four matrix entries several times.
+Both the mean and the variance are recorded twice.  Once for an arbitrary `2 × 2` matrix, with
+regression slope `S₁₂ / S₂₂` and Schur complement `S₁₁ - S₁₂ S₂₁ / S₂₂`; these forms need no
+hypothesis, but they are the regression slope and the residual variance only when the matrix is
+a covariance matrix.  And once in the correlation form above, which needs positive
+semidefiniteness: it supplies the symmetry `S₂₁ = S₁₂`, and it rules out the one degenerate
+configuration the correlation form would otherwise miss, namely a vanishing variance alongside a
+nonzero covariance.  In the correlation form the variances and the correlation are bound by
+defining hypotheses rather than spelled out inside the conclusion, which would otherwise repeat
+the four matrix entries several times.
 
 ## Main results
 
 * `TauCeti.multivariateGaussian_eq_map_single` — over a one-element index type the multivariate
   Gaussian law is a real Gaussian law carried to the unique coordinate;
-* `EuclideanSpace.gaussianCondMean_apply_of_unique_of_posDef` and
-  `Matrix.gaussianCondCov_apply_of_unique_of_posDef` — the bivariate conditional mean and
+* `EuclideanSpace.gaussianCondMean_apply_of_unique_of_posSemidef` and
+  `Matrix.gaussianCondCov_apply_of_unique_of_posSemidef` — the bivariate conditional mean and
   variance in terms of the correlation;
-* `TauCeti.gaussianCondKernel_apply_of_unique` — the bivariate conditional law itself.
+* `EuclideanSpace.gaussianCondKernel_apply_of_unique_of_posSemidef` — the bivariate conditional
+  law itself.
 
 ## References
 
@@ -98,6 +102,26 @@ theorem multivariateGaussian_eq_map_single [Unique ι] [DecidableEq ι]
     ext i
     simp [Unique.eq_default i]
 
+/-! ### Degenerate bivariate covariance matrices -/
+
+/-- A vanishing variance in a positive semidefinite matrix indexed by two singleton blocks forces
+the covariance to vanish as well: otherwise the quadratic form takes a negative value at a
+suitable vector. -/
+private theorem posSemidef_apply_inl_inr_eq_zero [Unique ι] [Unique κ]
+    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef)
+    (h₁₁ : S (Sum.inl default) (Sum.inl default) = 0) :
+    S (Sum.inl default) (Sum.inr default) = 0 := by
+  by_contra hc
+  have hsymm : S (Sum.inr default) (Sum.inl default) = S (Sum.inl default) (Sum.inr default) := by
+    simpa using hS.isHermitian.apply (Sum.inl default) (Sum.inr default)
+  have h := hS.dotProduct_mulVec_nonneg (Sum.elim
+    (fun _ => -(S (Sum.inr default) (Sum.inr default) + 1) /
+      (2 * S (Sum.inl default) (Sum.inr default))) (fun _ => 1))
+  simp only [dotProduct, Matrix.mulVec, Fintype.sum_sum_type, Fintype.sum_unique,
+    Sum.elim_inl, Sum.elim_inr, star_trivial, h₁₁, hsymm] at h
+  have hneg : (0 : ℝ) ≤ -1 := h.trans_eq (by field_simp; ring)
+  norm_num at hneg
+
 end TauCeti
 
 /-! ### The bivariate conditional mean -/
@@ -123,23 +147,31 @@ theorem gaussianCondMean_apply_of_unique [Unique ι] [Unique κ] [DecidableEq κ
   simp [Matrix.mulVec, dotProduct, Matrix.mul_apply, EuclideanSpace.sumEquivProd,
     div_eq_mul_inv, Matrix.inv_subsingleton]
 
-/-- **The bivariate conditional mean.**  Write `v₁`, `v₂` for the two variances of a
-positive-definite `2 × 2` covariance matrix and `ρ` for the correlation.  The conditional mean of
-the first coordinate given the second is the regression line `m₁ + ρ √(v₁ / v₂) (x₂ - m₂)`. -/
-theorem gaussianCondMean_apply_of_unique_of_posDef [Unique ι] [Unique κ] [DecidableEq κ]
-    (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosDef)
+/-- **The bivariate conditional mean.**  Write `v₁`, `v₂` for the two variances of a positive
+semidefinite `2 × 2` covariance matrix and `ρ` for the correlation.  The conditional mean of the
+first coordinate given the second is the regression line `m₁ + ρ √(v₁ / v₂) (x₂ - m₂)`. -/
+theorem gaussianCondMean_apply_of_unique_of_posSemidef [Unique ι] [Unique κ] [DecidableEq κ]
+    (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef)
     (x₂ : EuclideanSpace ℝ κ) {v₁ v₂ ρ : ℝ}
     (hv₁ : v₁ = S (Sum.inl default) (Sum.inl default))
     (hv₂ : v₂ = S (Sum.inr default) (Sum.inr default))
     (hρ : ρ = S (Sum.inl default) (Sum.inr default) / Real.sqrt (v₁ * v₂)) :
     m.gaussianCondMean S x₂ default =
       m (Sum.inl default) + ρ * Real.sqrt (v₁ / v₂) * (x₂ default - m (Sum.inr default)) := by
-  have hv₁pos : 0 < v₁ := hv₁ ▸ hS.diag_pos
-  have hv₂pos : 0 < v₂ := hv₂ ▸ hS.diag_pos
-  have hs₁ : Real.sqrt v₁ ≠ 0 := ne_of_gt (Real.sqrt_pos.2 hv₁pos)
-  have hs₂ : Real.sqrt v₂ ≠ 0 := ne_of_gt (Real.sqrt_pos.2 hv₂pos)
+  have hv₁nonneg : 0 ≤ v₁ := by rw [hv₁]; exact hS.diag_nonneg
+  have hv₂nonneg : 0 ≤ v₂ := by rw [hv₂]; exact hS.diag_nonneg
   have hslope : ρ * Real.sqrt (v₁ / v₂) =
       S (Sum.inl default) (Sum.inr default) / S (Sum.inr default) (Sum.inr default) := by
+    rcases hv₁nonneg.eq_or_lt with hv₁zero | hv₁pos
+    · -- A vanishing first variance forces a vanishing covariance, so both sides vanish.
+      have hc : S (Sum.inl default) (Sum.inr default) = 0 :=
+        TauCeti.posSemidef_apply_inl_inr_eq_zero hS (by rw [← hv₁, ← hv₁zero])
+      simp [hρ, hc]
+    rcases hv₂nonneg.eq_or_lt with hv₂zero | hv₂pos
+    · -- A vanishing observed variance makes both sides vanish by division by zero.
+      rw [← hv₂]
+      simp [hρ, ← hv₂zero]
+    have hs₂ : Real.sqrt v₂ ≠ 0 := ne_of_gt (Real.sqrt_pos.2 hv₂pos)
     rw [hρ, ← hv₂, Real.sqrt_mul hv₁pos.le, Real.sqrt_div hv₁pos.le]
     field_simp
     rw [Real.sq_sqrt hv₂pos.le]
@@ -151,7 +183,9 @@ end EuclideanSpace
 
 namespace Matrix
 
-/-- In the bivariate case the Schur complement is the residual variance of the regression. -/
+/-- In the bivariate case the Schur complement of the observed block is
+`S₁₁ - S₁₂ S₂₁ / S₂₂`.  For a covariance matrix this is the residual variance of the
+regression. -/
 theorem gaussianCondCov_apply_of_unique [Unique ι] [Unique κ] [DecidableEq κ]
     (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) :
     S.gaussianCondCov default default =
@@ -164,38 +198,48 @@ theorem gaussianCondCov_apply_of_unique [Unique ι] [Unique κ] [DecidableEq κ]
   ring
 
 /-- **The bivariate conditional variance.**  With the notation of
-`EuclideanSpace.gaussianCondMean_apply_of_unique_of_posDef`, the conditional variance of the first
-coordinate given the second is `v₁ (1 - ρ ^ 2)`. -/
-theorem gaussianCondCov_apply_of_unique_of_posDef [Unique ι] [Unique κ] [DecidableEq κ]
-    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosDef) {v₁ v₂ ρ : ℝ}
+`EuclideanSpace.gaussianCondMean_apply_of_unique_of_posSemidef`, the conditional variance of the
+first coordinate given the second is `v₁ (1 - ρ ^ 2)`. -/
+theorem gaussianCondCov_apply_of_unique_of_posSemidef [Unique ι] [Unique κ] [DecidableEq κ]
+    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef) {v₁ v₂ ρ : ℝ}
     (hv₁ : v₁ = S (Sum.inl default) (Sum.inl default))
     (hv₂ : v₂ = S (Sum.inr default) (Sum.inr default))
     (hρ : ρ = S (Sum.inl default) (Sum.inr default) / Real.sqrt (v₁ * v₂)) :
     S.gaussianCondCov default default = v₁ * (1 - ρ ^ 2) := by
-  have hv₁pos : 0 < v₁ := hv₁ ▸ hS.diag_pos
-  have hv₂pos : 0 < v₂ := hv₂ ▸ hS.diag_pos
+  have hv₁nonneg : 0 ≤ v₁ := by rw [hv₁]; exact hS.diag_nonneg
+  have hv₂nonneg : 0 ≤ v₂ := by rw [hv₂]; exact hS.diag_nonneg
   have hsymm : S (Sum.inr default) (Sum.inl default) = S (Sum.inl default) (Sum.inr default) := by
     simpa using hS.isHermitian.apply (Sum.inl default) (Sum.inr default)
+  rw [gaussianCondCov_apply_of_unique, hsymm, ← hv₁, ← hv₂]
+  rcases hv₁nonneg.eq_or_lt with hv₁zero | hv₁pos
+  · -- A vanishing first variance forces a vanishing covariance, so both sides vanish.
+    have hc : S (Sum.inl default) (Sum.inr default) = 0 :=
+      TauCeti.posSemidef_apply_inl_inr_eq_zero hS (by rw [← hv₁, ← hv₁zero])
+    simp [hc, ← hv₁zero]
+  rcases hv₂nonneg.eq_or_lt with hv₂zero | hv₂pos
+  · -- A vanishing observed variance makes `ρ` vanish and deletes the Schur correction, by
+    -- division by zero on both sides.
+    simp [hρ, ← hv₂zero]
   have hsq : Real.sqrt (v₁ * v₂) ^ 2 = v₁ * v₂ :=
     Real.sq_sqrt (mul_nonneg hv₁pos.le hv₂pos.le)
-  rw [gaussianCondCov_apply_of_unique, hsymm, hρ, div_pow, hsq, ← hv₁, ← hv₂]
+  rw [hρ, div_pow, hsq]
   field_simp
 
 end Matrix
 
 /-! ### The bivariate conditional law -/
 
-namespace TauCeti
+namespace EuclideanSpace
 
 /-- **The conditional law of a bivariate Gaussian.**  Conditionally on the second coordinate
-taking the value `x₂`, the first coordinate of a jointly Gaussian pair with positive-definite
+taking the value `x₂`, the first coordinate of a jointly Gaussian pair with positive semidefinite
 covariance is Gaussian with mean `m₁ + ρ √(v₁ / v₂) (x₂ - m₂)` and variance `v₁ (1 - ρ ^ 2)`,
 read on the unique coordinate of the first block.  Together with
 `TauCeti.condDistrib_multivariateGaussian` this identifies the regular conditional distribution
 of a bivariate Gaussian pair. -/
-theorem gaussianCondKernel_apply_of_unique [Unique ι] [Unique κ] [DecidableEq ι] [DecidableEq κ]
-    (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosDef)
-    (x₂ : EuclideanSpace ℝ κ) {v₁ v₂ ρ : ℝ}
+theorem gaussianCondKernel_apply_of_unique_of_posSemidef [Unique ι] [Unique κ] [DecidableEq ι]
+    [DecidableEq κ] (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
+    (hS : S.PosSemidef) (x₂ : EuclideanSpace ℝ κ) {v₁ v₂ ρ : ℝ}
     (hv₁ : v₁ = S (Sum.inl default) (Sum.inl default))
     (hv₂ : v₂ = S (Sum.inr default) (Sum.inr default))
     (hρ : ρ = S (Sum.inl default) (Sum.inr default) / Real.sqrt (v₁ * v₂)) :
@@ -203,8 +247,8 @@ theorem gaussianCondKernel_apply_of_unique [Unique ι] [Unique κ] [DecidableEq 
       (gaussianReal
           (m (Sum.inl default) + ρ * Real.sqrt (v₁ / v₂) * (x₂ default - m (Sum.inr default)))
           (v₁ * (1 - ρ ^ 2)).toNNReal).map (EuclideanSpace.single default) := by
-  rw [EuclideanSpace.gaussianCondKernel_apply, multivariateGaussian_eq_map_single,
-    EuclideanSpace.gaussianCondMean_apply_of_unique_of_posDef m hS x₂ hv₁ hv₂ hρ,
-    Matrix.gaussianCondCov_apply_of_unique_of_posDef hS hv₁ hv₂ hρ]
+  rw [EuclideanSpace.gaussianCondKernel_apply, TauCeti.multivariateGaussian_eq_map_single,
+    EuclideanSpace.gaussianCondMean_apply_of_unique_of_posSemidef m hS x₂ hv₁ hv₂ hρ,
+    Matrix.gaussianCondCov_apply_of_unique_of_posSemidef hS hv₁ hv₂ hρ]
 
-end TauCeti
+end EuclideanSpace
