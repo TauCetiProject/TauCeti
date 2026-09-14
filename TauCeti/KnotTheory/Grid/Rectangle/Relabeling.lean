@@ -117,6 +117,20 @@ theorem relabelRowsEquiv_apply_top (ρ : Equiv.Perm (Fin n)) (R : GridRectangleB
     (relabelRowsEquiv ρ x y R).top = ρ R.top :=
   (rfl)
 
+/-- The inverse of row relabeling renames the initial side row back. -/
+@[simp]
+theorem relabelRowsEquiv_symm_apply_bottom (ρ : Equiv.Perm (Fin n))
+    (S : GridRectangleBetween (x.relabelRows ρ) (y.relabelRows ρ)) :
+    ((relabelRowsEquiv ρ x y).symm S).bottom = ρ.symm S.bottom := by
+  simp [bottom_def]
+
+/-- The inverse of row relabeling renames the terminal side row back. -/
+@[simp]
+theorem relabelRowsEquiv_symm_apply_top (ρ : Equiv.Perm (Fin n))
+    (S : GridRectangleBetween (x.relabelRows ρ) (y.relabelRows ρ)) :
+    ((relabelRowsEquiv ρ x y).symm S).top = ρ.symm S.top := by
+  simp [top_def]
+
 /-- A cyclic permutation of the rows preserves and reflects emptiness of a rectangle. -/
 @[simp]
 theorem isEmpty_relabelRowsEquiv_finRotate (R : GridRectangleBetween x y) :
@@ -127,6 +141,7 @@ theorem isEmpty_relabelRowsEquiv_finRotate (R : GridRectangleBetween x y) :
 
 /-- A cyclic permutation of the rows rotates the squares a rectangle covers in the row
 direction. -/
+@[simp]
 theorem mem_coveredSquares_relabelRowsEquiv_finRotate (R : GridRectangleBetween x y)
     (p : Fin n × Fin n) :
     p ∈ (relabelRowsEquiv (finRotate n) x y R).toGridRectangle.coveredSquares ↔
@@ -207,6 +222,20 @@ theorem relabelColumnsEquiv_apply_top (κ : Equiv.Perm (Fin n)) (R : GridRectang
     (relabelColumnsEquiv κ x y R).top = R.top := by
   simp [top_def]
 
+/-- The inverse of column relabeling keeps the initial side row. -/
+@[simp]
+theorem relabelColumnsEquiv_symm_apply_bottom (κ : Equiv.Perm (Fin n))
+    (S : GridRectangleBetween (x.relabelColumns κ) (y.relabelColumns κ)) :
+    ((relabelColumnsEquiv κ x y).symm S).bottom = S.bottom := by
+  simp [bottom_def]
+
+/-- The inverse of column relabeling keeps the terminal side row. -/
+@[simp]
+theorem relabelColumnsEquiv_symm_apply_top (κ : Equiv.Perm (Fin n))
+    (S : GridRectangleBetween (x.relabelColumns κ) (y.relabelColumns κ)) :
+    ((relabelColumnsEquiv κ x y).symm S).top = S.top := by
+  simp [top_def]
+
 /-- A cyclic permutation of the columns preserves and reflects emptiness of a rectangle. -/
 @[simp]
 theorem isEmpty_relabelColumnsEquiv_finRotate (R : GridRectangleBetween x y) :
@@ -223,6 +252,7 @@ theorem isEmpty_relabelColumnsEquiv_finRotate (R : GridRectangleBetween x y) :
 
 /-- A cyclic permutation of the columns rotates the squares a rectangle covers in the column
 direction. -/
+@[simp]
 theorem mem_coveredSquares_relabelColumnsEquiv_finRotate (R : GridRectangleBetween x y)
     (p : Fin n × Fin n) :
     p ∈ (relabelColumnsEquiv (finRotate n) x y R).toGridRectangle.coveredSquares ↔
