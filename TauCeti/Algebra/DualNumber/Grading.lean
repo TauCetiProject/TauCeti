@@ -80,25 +80,21 @@ theorem mem_dualNumberGrade_two {x : DualNumber R} :
   simp [dualNumberGrade_two_eq_ker_fst]
 
 /-- The scalar inclusion lands in degree zero. -/
-@[simp]
 theorem inl_mem_dualNumberGrade_zero (r : R) :
     TrivSqZeroExt.inl r ∈ dualNumberGrade R 0 := by
   simp
 
 /-- The algebra map lands in degree zero. -/
-@[simp]
 theorem algebraMap_mem_dualNumberGrade_zero (r : R) :
     algebraMap R (DualNumber R) r ∈ dualNumberGrade R 0 := by
   simp [TrivSqZeroExt.algebraMap_eq_inl]
 
 /-- The infinitesimal inclusion lands in degree two. -/
-@[simp]
 theorem inr_mem_dualNumberGrade_two (r : R) :
     TrivSqZeroExt.inr r ∈ dualNumberGrade R 2 := by
   simp
 
 /-- The dual-number generator has degree two. -/
-@[simp]
 theorem eps_mem_dualNumberGrade_two :
     DualNumber.eps ∈ dualNumberGrade R 2 := by
   simpa only [DualNumber.eps] using inr_mem_dualNumberGrade_two R 1
