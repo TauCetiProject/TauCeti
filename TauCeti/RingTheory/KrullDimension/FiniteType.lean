@@ -14,10 +14,11 @@ public import TauCeti.RingTheory.KrullDimension.Integral
 /-!
 # Krull dimension of finitely generated algebras over a field
 
-Let `A` be a finitely generated algebra over a field `k`. Noether normalization gives an injective
-finite map `k[X₁, …, Xₛ] → A`, so `A` has Krull dimension `s`. Extending scalars along any
-Noetherian `k`-algebra `K` keeps the map `K[X₁, …, Xₛ] → K ⊗[k] A` injective (every `k`-module is
-flat) and finite, so `K ⊗[k] A` has the dimension of `K[X₁, …, Xₛ]`, namely `dim K + s`.
+Let `A` be a nontrivial finitely generated algebra over a field `k`. Noether normalization gives an
+injective finite map `k[X₁, …, Xₛ] → A`, so `A` has Krull dimension `s`. Extending scalars along
+any Noetherian `k`-algebra `K` keeps the map `K[X₁, …, Xₛ] → K ⊗[k] A` injective (every
+`k`-module is flat) and finite, so `K ⊗[k] A` has the dimension of `K[X₁, …, Xₛ]`, namely
+`dim K + s`. The tensor-product theorem handles the subsingleton case separately.
 
 In particular the Krull dimension of a finitely generated algebra over a field does not change
 under extension of the base field. This is the affine form of the invariance of the dimension of
@@ -69,6 +70,7 @@ theorem finiteRingKrullDim_of_finiteType (A : Type*) [CommRing A] [Nontrivial A]
 
 /-- The Krull dimension of `K ⊗[k] A`, for a Noetherian `k`-algebra `K` and a finitely generated
 `k`-algebra `A`, is the sum of the Krull dimensions of `K` and `A`. -/
+@[simp]
 theorem ringKrullDim_tensorProduct_of_finiteType (K A : Type*) [CommRing K] [IsNoetherianRing K]
     [Algebra k K] [CommRing A] [Algebra k A] [Algebra.FiniteType k A] :
     ringKrullDim (K ⊗[k] A) = ringKrullDim K + ringKrullDim A := by

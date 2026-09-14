@@ -28,8 +28,8 @@ ring through Noether normalization.
 ## Main results
 
 * `TauCeti.ringKrullDim_le_of_isIntegral`: `dim S ≤ dim R` for an integral `R`-algebra `S`.
-* `TauCeti.ringKrullDim_le_of_hasGoingUp`: `dim R ≤ dim S` when `R → S` has going up and
-  `Spec S → Spec R` is surjective.
+* `TauCeti.ringKrullDim_le_of_hasGoingUp_of_surjective`: `dim R ≤ dim S` when `R → S` has going
+  up and `Spec S → Spec R` is surjective.
 * `TauCeti.ringKrullDim_eq_of_isIntegral`: `dim S = dim R` for an injective integral extension.
 
 ## References
@@ -47,7 +47,7 @@ variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
 /-- Contraction of primes along an integral extension is strictly monotone
 (incomparability). -/
-theorem strictMono_primeSpectrumComap_of_isIntegral [Algebra.IsIntegral R S] :
+theorem primeSpectrumComap_strictMono_of_isIntegral [Algebra.IsIntegral R S] :
     StrictMono (PrimeSpectrum.comap (algebraMap R S)) := fun P Q h ↦ by
   rw [← PrimeSpectrum.asIdeal_lt_asIdeal, PrimeSpectrum.comap_asIdeal, PrimeSpectrum.comap_asIdeal]
   exact Ideal.IsIntegral.comap_lt_comap ((PrimeSpectrum.asIdeal_lt_asIdeal P Q).2 h)
@@ -55,11 +55,11 @@ theorem strictMono_primeSpectrumComap_of_isIntegral [Algebra.IsIntegral R S] :
 /-- The Krull dimension of an integral `R`-algebra is at most that of `R`. -/
 theorem ringKrullDim_le_of_isIntegral [Algebra.IsIntegral R S] :
     ringKrullDim S ≤ ringKrullDim R :=
-  Order.krullDim_le_of_strictMono _ strictMono_primeSpectrumComap_of_isIntegral
+  Order.krullDim_le_of_strictMono _ primeSpectrumComap_strictMono_of_isIntegral
 
 /-- If `R → S` has going up and every prime of `R` is contracted from a prime of `S`, the Krull
 dimension of `R` is at most that of `S`. -/
-theorem ringKrullDim_le_of_hasGoingUp [Algebra.HasGoingUp R S]
+theorem ringKrullDim_le_of_hasGoingUp_of_surjective [Algebra.HasGoingUp R S]
     (hsurj : Function.Surjective (PrimeSpectrum.comap (algebraMap R S))) :
     ringKrullDim R ≤ ringKrullDim S := by
   rw [ringKrullDim, Order.krullDim]
@@ -75,6 +75,6 @@ theorem ringKrullDim_le_of_hasGoingUp [Algebra.HasGoingUp R S]
 theorem ringKrullDim_eq_of_isIntegral [Algebra.IsIntegral R S] [FaithfulSMul R S] :
     ringKrullDim S = ringKrullDim R :=
   ringKrullDim_le_of_isIntegral.antisymm <|
-    ringKrullDim_le_of_hasGoingUp (Algebra.IsIntegral.comap_surjective R S)
+    ringKrullDim_le_of_hasGoingUp_of_surjective (Algebra.IsIntegral.comap_surjective R S)
 
 end TauCeti
