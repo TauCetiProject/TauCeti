@@ -19,20 +19,23 @@ Matrix inversion is a self-map `TauCeti.symmetricInv` of the symmetric subspace,
 involution of the positive-definite cone. Its derivative at an invertible `A` is `H ↦ -A⁻¹ H A⁻¹`,
 that is, minus the congruence by `A⁻¹`, whose determinant
 `Matrix.det_symmetricCongruenceLinearMap` already computes. Hence the absolute Jacobian of
-inversion is `|det A| ^ (-(p + 1))`, and `TauCeti.map_inv_symmetricLebesgue` records the resulting
-change of variables: inversion carries `TauCeti.symmetricLebesgue` restricted to the cone to the
-same restriction weighted by `(det B) ^ (-(p + 1))`.
+inversion is `|det A| ^ (-(p + 1))`, and `TauCeti.map_symmetricInv_symmetricLebesgue` records the
+resulting change of variables: inversion carries `TauCeti.symmetricLebesgue` restricted to the cone
+to the same restriction weighted by `(det B) ^ (-(p + 1))`.
 
 This is the change of variables behind the inverse-Wishart density: it reads the density of the
 image of a Wishart law under inversion off the density of the law itself.
 
 ## Main declarations
 
+* `TauCeti.symmetricInv` — matrix inversion as a self-map of the symmetric subspace.
+* `TauCeti.bijOn_symmetricInv` — inversion is a bijection of the positive-definite cone onto
+  itself.
 * `TauCeti.measurable_symmetricInv` — inversion is measurable.
 * `TauCeti.hasFDerivAt_symmetricInv` — its derivative at an invertible matrix is minus the
   congruence by the inverse.
 * `TauCeti.abs_det_fderiv_symmetricInv` — the absolute Jacobian of inversion.
-* `TauCeti.map_inv_symmetricLebesgue` — the change of variables on the
+* `TauCeti.map_symmetricInv_symmetricLebesgue` — the change of variables on the
   positive-definite cone.
 
 ## References
@@ -53,21 +56,63 @@ namespace TauCeti
 
 variable {p : ℕ}
 
+/-! ### Inversion on the symmetric subspace -/
+
+/-- Matrix inversion as a self-map of the symmetric subspace. Mathlib's totalized inverse is zero
+on singular matrices and that value is kept here; on the positive-definite cone, where the
+Wishart laws live, the map is an involution. -/
+def symmetricInv (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
+  ⟨(A : Matrix (Fin p) (Fin p) ℝ)⁻¹,
+    Matrix.isHermitian_iff_isSelfAdjoint.1 (selfAdjoint.isHermitian_coe A).inv⟩
+
+/-- The underlying matrix of the inverse is the inverse of the underlying matrix. -/
+@[simp]
+theorem coe_symmetricInv (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (symmetricInv A : Matrix (Fin p) (Fin p) ℝ) = (A : Matrix (Fin p) (Fin p) ℝ)⁻¹ :=
+  (rfl)
+
+/-- Inversion is an involution at an invertible matrix. -/
+@[simp]
+theorem symmetricInv_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
+    (hA : (A : Matrix (Fin p) (Fin p) ℝ).det ≠ 0) : symmetricInv (symmetricInv A) = A :=
+  Subtype.ext <| by
+    rw [coe_symmetricInv, coe_symmetricInv, Matrix.nonsing_inv_nonsing_inv _ hA.isUnit]
+
+/-- Inversion is a bijection of the positive-definite cone onto itself: it maps the cone into
+itself and is its own inverse there. -/
+theorem bijOn_symmetricInv (p : ℕ) :
+    Set.BijOn symmetricInv
+      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosDef}
+      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosDef} := by
+  have hmaps : ∀ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
+      (A : Matrix (Fin p) (Fin p) ℝ).PosDef → (symmetricInv A : Matrix (Fin p) (Fin p) ℝ).PosDef :=
+    fun A hA => by simpa using hA
+  have hinv : ∀ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
+      (A : Matrix (Fin p) (Fin p) ℝ).PosDef → symmetricInv (symmetricInv A) = A :=
+    fun _ hA => symmetricInv_symmetricInv hA.det_pos.ne'
+  exact ⟨hmaps, fun A hA B hB h => by rw [← hinv A hA, h, hinv B hB],
+    fun A hA => ⟨symmetricInv A, hmaps A hA, hinv A hA⟩⟩
+
 /-! ### Measurability of inversion -/
 
 /-- Inversion is measurable, being a rational expression in the entries: Mathlib's totalized
 inverse is `(det A)⁻¹ • adjugate A` everywhere. -/
 @[fun_prop]
 theorem measurable_symmetricInv : Measurable (symmetricInv (p := p)) := by
-  refine Measurable.subtype_mk ?_
   have hdet : Measurable fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (A : Matrix (Fin p) (Fin p) ℝ).det :=
     continuous_subtype_val.matrix_det.measurable
   have hadj : Measurable fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (A : Matrix (Fin p) (Fin p) ℝ).adjugate :=
     continuous_subtype_val.matrix_adjugate.measurable
-  simp only [coe_symmetricInv, Matrix.inv_def, Ring.inverse_eq_inv']
-  exact hdet.inv.smul hadj
+  have hcoe : Measurable fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      (symmetricInv A : Matrix (Fin p) (Fin p) ℝ) := by
+    simp only [coe_symmetricInv, Matrix.inv_def, Ring.inverse_eq_inv']
+    exact hdet.inv.smul hadj
+  exact hcoe.subtype_mk
 
 /-! ### The derivative of inversion -/
 
@@ -79,8 +124,6 @@ theorem hasFDerivAt_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
     HasFDerivAt symmetricInv
       (-(Matrix.symmetricCongruenceLinearMap
         ((A : Matrix (Fin p) (Fin p) ℝ)⁻¹)).toContinuousLinearMap) A := by
-  have hAT : (A : Matrix (Fin p) (Fin p) ℝ)ᵀ = (A : Matrix (Fin p) (Fin p) ℝ) :=
-    (Matrix.isHermitian_iff_isSymm.1 (selfAdjoint.isHermitian_coe A)).eq
   -- The ambient inversion is differentiable at `A`, with derivative `H ↦ -A⁻¹ H A⁻¹`.
   obtain ⟨u, hu⟩ := (Matrix.isUnit_iff_isUnit_det (A : Matrix (Fin p) (Fin p) ℝ)).2 hA
   have hu' : ((u⁻¹ : (Matrix (Fin p) (Fin p) ℝ)ˣ) : Matrix (Fin p) (Fin p) ℝ) =
@@ -92,15 +135,14 @@ theorem hasFDerivAt_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
       (A : Matrix (Fin p) (Fin p) ℝ) := by
     have h := hasFDerivAt_ringInverse (𝕜 := ℝ) u
     rwa [hu', hu] at h
-  -- Restrict the source to the symmetric subspace and corestrict the target along the symmetric
+  -- Restrict the source to the symmetric subspace and corestrict the target along the self-adjoint
   -- part, which is the identity on symmetric matrices.
   set ι : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) →L[ℝ] Matrix (Fin p) (Fin p) ℝ :=
-    LinearMap.toContinuousLinearMap
-      (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)).subtype with hι
+    (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)).subtypeL with hι
   set π : Matrix (Fin p) (Fin p) ℝ →L[ℝ]
       selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
-    LinearMap.toContinuousLinearMap (selfAdjointPart ℝ)
-  -- Mathlib states `selfAdjointPart` into the additive subgroup `selfAdjoint`, which carries the
+    selfAdjointPartL ℝ (Matrix (Fin p) (Fin p) ℝ)
+  -- Mathlib states `selfAdjointPartL` into the additive subgroup `selfAdjoint`, which carries the
   -- same subtype and the same module structure as `selfAdjoint.submodule`; Mathlib itself reads
   -- the two interchangeably, as in `selfAdjointPart_comp_subtype_selfAdjoint`. Its lemmas
   -- therefore apply to `π` after `Subtype.ext`.
@@ -113,9 +155,6 @@ theorem hasFDerivAt_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
       selfAdjointPart_apply_coe ℝ M
     rw [h, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_eq_transpose_of_trivial,
       invOf_eq_inv]
-  have hι_apply : ∀ X : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
-      ι X = (X : Matrix (Fin p) (Fin p) ℝ) := fun X => by
-    rw [hι, LinearMap.coe_toContinuousLinearMap', Submodule.subtype_apply]
   have hcomp : HasFDerivAt (fun X : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       π (Ring.inverse (ι X)))
       (π.comp (((-ContinuousLinearMap.mulLeftRight ℝ (Matrix (Fin p) (Fin p) ℝ)
@@ -124,13 +163,15 @@ theorem hasFDerivAt_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
   have hfun : (fun X : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       π (Ring.inverse (ι X))) = symmetricInv := by
     funext X
-    rw [hι_apply, ← Matrix.nonsing_inv_eq_ringInverse, ← coe_symmetricInv X, hπ_apply]
+    rw [hι, Submodule.subtypeL_apply, ← Matrix.nonsing_inv_eq_ringInverse, ← coe_symmetricInv X,
+      hπ_apply]
   rw [hfun] at hcomp
   refine hcomp.congr_fderiv (ContinuousLinearMap.ext fun H => ?_)
-  have hHT : (H : Matrix (Fin p) (Fin p) ℝ)ᵀ = (H : Matrix (Fin p) (Fin p) ℝ) :=
-    (Matrix.isHermitian_iff_isSymm.1 (selfAdjoint.isHermitian_coe H)).eq
-  -- Both sides are the symmetric part of `-A⁻¹ H A⁻¹`: on the left the composite of continuous
+  -- Both sides are the self-adjoint part of `-A⁻¹ H A⁻¹`: on the left the composite of continuous
   -- linear maps evaluates to it definitionally, and on the right the matrix is already symmetric.
+  -- The composite cannot be evaluated by rewriting: its coercion carries the Frobenius normed
+  -- instances of `mulLeftRight`, while `ι` carries the plain matrix module instances, so the two
+  -- agree only up to unfolding.
   have hvalue : π (-((A : Matrix (Fin p) (Fin p) ℝ)⁻¹ *
         (H : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)⁻¹)) =
       -(Matrix.symmetricCongruenceLinearMap
@@ -138,7 +179,8 @@ theorem hasFDerivAt_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
     refine Subtype.ext ?_
     simp only [hπ_coe, LinearMap.coe_toContinuousLinearMap',
       NegMemClass.coe_neg, Matrix.coe_symmetricCongruenceLinearMap_apply, Matrix.transpose_neg,
-      Matrix.transpose_mul, Matrix.transpose_nonsing_inv, hAT, hHT, Matrix.mul_assoc]
+      Matrix.transpose_mul, Matrix.transpose_nonsing_inv, selfAdjoint.transpose_coe,
+      Matrix.mul_assoc]
     module
   exact hvalue
 
@@ -170,7 +212,7 @@ theorem abs_det_fderiv_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin 
 `TauCeti.symmetricLebesgue` restricted to the cone under inversion is the same restriction
 weighted by `(det B) ^ (-(p + 1))`. This is what turns the Wishart density into the
 inverse-Wishart density. -/
-theorem map_inv_symmetricLebesgue (p : ℕ) :
+theorem map_symmetricInv_symmetricLebesgue (p : ℕ) :
     ((symmetricLebesgue p).restrict
         {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
           (A : Matrix (Fin p) (Fin p) ℝ).PosDef}).map symmetricInv =
@@ -185,20 +227,14 @@ theorem map_inv_symmetricLebesgue (p : ℕ) :
   have hs : MeasurableSet s := measurableSet_posDefMatrix p
   have hdet : ∀ A ∈ s, (A : Matrix (Fin p) (Fin p) ℝ).det ≠ 0 := fun _ hA =>
     (Matrix.PosDef.det_pos hA).ne'
-  have himg : symmetricInv '' s = s := by
-    refine Set.Subset.antisymm ?_ fun A hA => ⟨symmetricInv A, posDef_coe_symmetricInv hA, ?_⟩
-    · rintro _ ⟨A, hA, rfl⟩
-      exact posDef_coe_symmetricInv hA
-    · exact symmetricInv_symmetricInv (hdet A hA)
-  have hinj : Set.InjOn symmetricInv s := fun A hA B hB h => by
-    rw [← symmetricInv_symmetricInv (hdet A hA), h, symmetricInv_symmetricInv (hdet B hB)]
+  have hbij : Set.BijOn symmetricInv s s := bijOn_symmetricInv p
   have hderiv : ∀ A ∈ s, HasFDerivWithinAt symmetricInv (fderiv ℝ symmetricInv A) s A :=
     fun A hA => by
       rw [(hasFDerivAt_symmetricInv (hdet A hA).isUnit).fderiv]
       exact (hasFDerivAt_symmetricInv (hdet A hA).isUnit).hasFDerivWithinAt
   have key := MeasureTheory.map_withDensity_abs_det_fderiv_eq_addHaar (symmetricLebesgue p)
-    hs.nullMeasurableSet hderiv hinj
-  rw [himg] at key
+    hs.nullMeasurableSet hderiv hbij.injOn
+  rw [hbij.image_eq] at key
   -- On the cone the Jacobian weight is the asserted density.
   have hweight : ((symmetricLebesgue p).restrict s).withDensity
       (fun A => ENNReal.ofReal |(fderiv ℝ symmetricInv A).det|) =

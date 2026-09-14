@@ -35,10 +35,6 @@ measurable structure is the Borel structure of the subtype topology, and `volume
 It also fixes the upper-triangular coordinate system used to normalize Lebesgue measure on the
 subspace: `TauCeti.symmetricCoordinates` reads off the entries above the diagonal.
 
-Inversion preserves symmetry, so it restricts to a self-map `TauCeti.symmetricInv` of the
-subspace; its derivative and the change of variables it induces are in
-`TauCeti.MeasureTheory.Measure.SymmetricMatrix.Inv`.
-
 ## Main declarations
 
 * `TauCeti.upperTriangle` — the index type of upper-triangular positions.
@@ -46,7 +42,6 @@ subspace; its derivative and the change of variables it induces are in
 * `TauCeti.symmetricMatrixNormedAddCommGroup`, `TauCeti.symmetricMatrixInnerProductSpace` —
   the Frobenius structure on the symmetric subspace.
 * `selfAdjoint.coe_inner` — the subspace inner product is the ambient one on the coercions.
-* `TauCeti.symmetricInv` — matrix inversion as a self-map of the symmetric subspace.
 * `TauCeti.symmetricCoordinates` — the continuous linear equivalence with `upperTriangle p → ℝ`.
 * `TauCeti.symmetricCoordinatesMeasurableEquiv` — its measurable-equivalence form.
 * `TauCeti.symmetricBasis` — the basis dual to the upper-triangular coordinates.
@@ -209,33 +204,15 @@ theorem coe_apply_comm {p : ℕ} (A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
     (A : Matrix (Fin p) (Fin p) ℝ) i j = (A : Matrix (Fin p) (Fin p) ℝ) j i := by
   simpa using (isHermitian_coe A).apply j i
 
+open scoped Matrix in
+/-- An element of the symmetric subspace is fixed by transposition. -/
+theorem transpose_coe {p : ℕ} (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (A : Matrix (Fin p) (Fin p) ℝ)ᵀ = (A : Matrix (Fin p) (Fin p) ℝ) :=
+  (Matrix.isHermitian_iff_isSymm.1 (isHermitian_coe A)).eq
+
 end selfAdjoint
 
 namespace TauCeti
-
-/-! ### Inversion -/
-
-/-- Matrix inversion as a self-map of the symmetric subspace. Mathlib's totalized inverse is zero
-on singular matrices and that value is kept here; on the positive-definite cone, where the
-Wishart laws live, the map is an involution. -/
-def symmetricInv {p : ℕ} (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-    selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
-  ⟨(A : Matrix (Fin p) (Fin p) ℝ)⁻¹,
-    Matrix.isHermitian_iff_isSelfAdjoint.1 (selfAdjoint.isHermitian_coe A).inv⟩
-
-/-- The underlying matrix of the inverse is the inverse of the underlying matrix. -/
-@[simp]
-theorem coe_symmetricInv {p : ℕ} (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-    (symmetricInv A : Matrix (Fin p) (Fin p) ℝ) = (A : Matrix (Fin p) (Fin p) ℝ)⁻¹ :=
-  (rfl)
-
-/-- Inversion is an involution at an invertible matrix. -/
-@[simp]
-theorem symmetricInv_symmetricInv {p : ℕ}
-    {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
-    (hA : (A : Matrix (Fin p) (Fin p) ℝ).det ≠ 0) : symmetricInv (symmetricInv A) = A :=
-  Subtype.ext <| by
-    rw [coe_symmetricInv, coe_symmetricInv, Matrix.nonsing_inv_nonsing_inv _ hA.isUnit]
 
 /-! ### Upper-triangular coordinates -/
 
