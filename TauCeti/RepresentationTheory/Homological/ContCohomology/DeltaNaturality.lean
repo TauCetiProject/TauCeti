@@ -53,9 +53,9 @@ H⁰(U, C) --δ⁰--> H¹(U, A)          H¹(U, C) --δ¹--> H²(U, A)
 H⁰(G, C) --δ⁰--> H¹(G, A)          H¹(G, C) --δ¹--> H²(G, A)
 ```
 
-commute. Both squares already commute on representatives: corestriction of cochains commutes with
-the two coefficient maps and with the coboundaries, so the corestriction of a lift is a lift of the
-corestriction.
+commute. The upper row is the connecting map of the restricted sequence `S.restrict U`, so both
+rows are taken for the same two coefficient maps, and `U` is open of finite index, as
+corestriction requires.
 
 Continuity of a coefficient map is never a hypothesis here: every module in sight is discrete.
 
@@ -335,13 +335,6 @@ theorem explicitDelta1_coeffMap [ContinuousMul G] [ContinuousSMul G C] [Continuo
 end CoefficientMaps
 
 section Corestriction
-
-/-! ### Corestriction
-
-The sequence over `U` is `S.restrict U`, and the corestriction of a lift in `B` is a lift of the
-corestriction, by `TauCeti.ContCohomology.map_cochainsCor1` together with
-`TauCeti.ContCohomology.cochainsCor1_d0` in degree zero and with
-`TauCeti.ContCohomology.cochainsCor2_d1` in degree one. -/
 
 variable {G : Type uG} [Group G] [TopologicalSpace G]
   {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
