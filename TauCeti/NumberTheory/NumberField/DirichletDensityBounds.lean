@@ -17,8 +17,8 @@ For a set `S` of nonzero prime ideals of a number field, Mathlib's
 
 tends to `δ` as `s` approaches `1` from the right.  Squeeze arguments often produce the two
 sides of this limit separately.  This file records those one-sided conclusions as
-`TauCeti.NumberField.Set.IsLowerDirichletDensityBound S δ` and
-`TauCeti.NumberField.Set.IsUpperDirichletDensityBound S δ`.
+`NumberField.Set.IsLowerDirichletDensityBound S δ` and
+`NumberField.Set.IsUpperDirichletDensityBound S δ`.
 
 The predicates use eventual epsilon inequalities, rather than assigning junk-valued lower and
 upper densities.  They are monotone in the proposed bound, and a common lower and upper bound
@@ -27,14 +27,14 @@ comparison also gives the natural interval restrictions on one-sided bounds.
 
 ## Main results
 
-* `TauCeti.NumberField.Set.isLowerDirichletDensityBound_of_tendsto` and
-  `TauCeti.NumberField.Set.isUpperDirichletDensityBound_of_tendsto`: convergence of the defining
+* `NumberField.Set.isLowerDirichletDensityBound_of_tendsto` and
+  `NumberField.Set.isUpperDirichletDensityBound_of_tendsto`: convergence of the defining
   ratio supplies its one-sided bounds.
-* `TauCeti.NumberField.Set.IsLowerDirichletDensityBound.le_of_isUpperDirichletDensityBound`:
+* `NumberField.Set.IsLowerDirichletDensityBound.le_of_isUpperDirichletDensityBound`:
   every lower bound is at most every upper bound.
-* `TauCeti.NumberField.Set.tendsto_primeIdealZetaSum_div_of_upperBound_of_lowerBound`: matching
+* `NumberField.Set.tendsto_primeIdealZetaSum_div_of_upperBound_of_lowerBound`: matching
   one-sided bounds force convergence of the defining ratio.
-* `TauCeti.NumberField.Set.tendsto_primeIdealZetaSum_div_iff_bounds`: the resulting
+* `NumberField.Set.tendsto_primeIdealZetaSum_div_iff_bounds`: the resulting
   characterization of that convergence.
 
 ## References
@@ -47,8 +47,6 @@ public section
 
 open Filter IsDedekindDomain NumberField
 open scoped Topology
-
-namespace TauCeti
 
 namespace NumberField.Set
 
@@ -254,5 +252,3 @@ theorem tendsto_primeIdealZetaSum_div_iff_bounds
     fun h ↦ tendsto_primeIdealZetaSum_div_of_upperBound_of_lowerBound h.1 h.2⟩
 
 end NumberField.Set
-
-end TauCeti
