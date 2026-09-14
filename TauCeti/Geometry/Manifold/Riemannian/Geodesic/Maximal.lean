@@ -31,6 +31,8 @@ results.
   `TauCeti.Manifold.ordConnected_geodesicInterval` give its interval structure.
 * `TauCeti.Manifold.mem_geodesicInterval_iff` extracts a geodesic witness from membership.
 * `TauCeti.Manifold.IsGeodesicCurveOnFrom.eqOn_of_inter` gives uniqueness on overlapping intervals.
+* `TauCeti.Manifold.IsGeodesicCurveOnFrom.exists_comp_mul_left_Ioo_one_mem` produces the
+  rescaled witness at time `1` used to define the exponential map.
 * `TauCeti.Manifold.mem_geodesicInterval_smul_iff` is the precise nonzero scalar domain relation.
 
 ## References
@@ -264,6 +266,21 @@ private theorem IsGeodesicCurveOnFrom.comp_mul_left_Ioo
   have huuniq : UniqueDiffOn ℝ (Ioo (min (b / a) (c / a)) (max (b / a) (c / a))) :=
     uniqueDiffOn_Ioo _ _
   exact ⟨hu, hmap, h0u, huuniq, hγ.comp_mul_left a huuniq hmap h0u⟩
+
+omit [I.Boundaryless] in
+/-- Rescaling a geodesic by a nonzero scalar gives a geodesic with the scaled initial velocity on
+an open interval containing parameter `1`, whenever the corresponding parameter of the original
+curve lies in its domain. -/
+theorem IsGeodesicCurveOnFrom.exists_comp_mul_left_Ioo_one_mem
+    {p : M} {v : TangentSpace I p} {γ : ℝ → M} {b c a : ℝ}
+    (hγ : IsGeodesicCurveOnFrom I γ (Ioo b c) p v) (ha : a ≠ 0)
+    (ha_mem : a ∈ Ioo b c) :
+    ∃ b' c' : ℝ, (1 : ℝ) ∈ Ioo b' c' ∧
+      IsGeodesicCurveOnFrom I (γ ∘ fun s : ℝ ↦ a * s) (Ioo b' c') p (a • v) := by
+  obtain ⟨hu, -, -, -, hγ'⟩ := hγ.comp_mul_left_Ioo ha
+  refine ⟨min (b / a) (c / a), max (b / a) (c / a), ?_, hγ'⟩
+  rw [← hu]
+  simpa using ha_mem
 
 omit [I.Boundaryless] in
 /-- Nonzero rescaling of the initial velocity rescales the maximal interval by the inverse. -/
