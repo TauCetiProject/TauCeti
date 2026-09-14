@@ -51,9 +51,9 @@ namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
 
-noncomputable local instance : DecidableEq {w : InfinitePlace K // w.IsReal} := Classical.decEq _
-noncomputable local instance : DecidableEq (HeightOneSpectrum (RingOfIntegers K)) :=
-  Classical.decEq _
+-- Real places and height-one primes carry no decidable equality, so the `Finset` intersections
+-- and unions below are formed classically.
+attribute [local instance] Classical.decEq
 
 namespace Modulus
 
@@ -64,74 +64,66 @@ ideals and its infinite part contains the real places common to both moduli. -/
 noncomputable def gcd (m n : Modulus K) : Modulus K where
   finitePart := m.finitePart ⊔ n.finitePart
   finitePart_ne_bot := ne_bot_of_le_ne_bot m.finitePart_ne_bot le_sup_left
-  infinitePart := by
-    classical exact m.infinitePart ∩ n.infinitePart
+  infinitePart := m.infinitePart ∩ n.infinitePart
 
 /-- The **least common multiple of two moduli**.  Its finite part is the intersection of the two
 finite ideals and its infinite part contains every real place occurring in either modulus. -/
 noncomputable def lcm (m n : Modulus K) : Modulus K where
   finitePart := m.finitePart ⊓ n.finitePart
   finitePart_ne_bot := Ideal.inf_ne_bot_of_ne_bot m.finitePart_ne_bot n.finitePart_ne_bot
-  infinitePart := by
-    classical exact m.infinitePart ∪ n.infinitePart
+  infinitePart := m.infinitePart ∪ n.infinitePart
 
 @[simp] theorem gcd_finitePart (m n : Modulus K) :
-    (gcd m n).finitePart = m.finitePart ⊔ n.finitePart :=
-  by rw [gcd]
+    (gcd m n).finitePart = m.finitePart ⊔ n.finitePart := by
+  rw [gcd]
 
 @[simp] theorem gcd_infinitePart (m n : Modulus K) :
-    (gcd m n).infinitePart = m.infinitePart ∩ n.infinitePart :=
-  by classical rw [gcd]
+    (gcd m n).infinitePart = m.infinitePart ∩ n.infinitePart := by
+  rw [gcd]
 
 @[simp] theorem lcm_finitePart (m n : Modulus K) :
-    (lcm m n).finitePart = m.finitePart ⊓ n.finitePart :=
-  by rw [lcm]
+    (lcm m n).finitePart = m.finitePart ⊓ n.finitePart := by
+  rw [lcm]
 
 @[simp] theorem lcm_infinitePart (m n : Modulus K) :
-    (lcm m n).infinitePart = m.infinitePart ∪ n.infinitePart :=
-  by classical rw [lcm]
+    (lcm m n).infinitePart = m.infinitePart ∪ n.infinitePart := by
+  rw [lcm]
 
 /-- The greatest common divisor divides its left argument. -/
-theorem gcd_dvd_left (m n : Modulus K) : gcd m n ∣ m := by
-  classical
-  exact dvd_iff.mpr ⟨Ideal.dvd_iff_le.mpr le_sup_left, Finset.inter_subset_left⟩
+theorem gcd_dvd_left (m n : Modulus K) : gcd m n ∣ m :=
+  dvd_iff.mpr ⟨Ideal.dvd_iff_le.mpr le_sup_left, Finset.inter_subset_left⟩
 
 /-- The greatest common divisor divides its right argument. -/
-theorem gcd_dvd_right (m n : Modulus K) : gcd m n ∣ n := by
-  classical
-  exact dvd_iff.mpr ⟨Ideal.dvd_iff_le.mpr le_sup_right, Finset.inter_subset_right⟩
+theorem gcd_dvd_right (m n : Modulus K) : gcd m n ∣ n :=
+  dvd_iff.mpr ⟨Ideal.dvd_iff_le.mpr le_sup_right, Finset.inter_subset_right⟩
 
 /-- A modulus dividing both arguments divides their greatest common divisor. -/
-theorem dvd_gcd {m n p : Modulus K} (hm : p ∣ m) (hn : p ∣ n) : p ∣ gcd m n := by
-  classical
-  exact dvd_iff.mpr ⟨Ideal.dvd_iff_le.mpr <| sup_le
+theorem dvd_gcd {m n p : Modulus K} (hm : p ∣ m) (hn : p ∣ n) : p ∣ gcd m n :=
+  dvd_iff.mpr ⟨Ideal.dvd_iff_le.mpr <| sup_le
       (Ideal.le_of_dvd (dvd_iff.mp hm).1) (Ideal.le_of_dvd (dvd_iff.mp hn).1),
     Finset.subset_inter (dvd_iff.mp hm).2 (dvd_iff.mp hn).2⟩
 
 /-- A modulus divides a greatest common divisor exactly when it divides both arguments. -/
-@[simp] theorem dvd_gcd_iff {m n p : Modulus K} : p ∣ gcd m n ↔ p ∣ m ∧ p ∣ n :=
+theorem dvd_gcd_iff {m n p : Modulus K} : p ∣ gcd m n ↔ p ∣ m ∧ p ∣ n :=
   ⟨fun h ↦ ⟨dvd_trans h (gcd_dvd_left m n), dvd_trans h (gcd_dvd_right m n)⟩,
     fun h ↦ dvd_gcd h.1 h.2⟩
 
 /-- The least common multiple is divisible by its left argument. -/
-theorem dvd_lcm_left (m n : Modulus K) : m ∣ lcm m n := by
-  classical
-  exact dvd_iff.mpr ⟨Ideal.dvd_iff_le.mpr inf_le_left, Finset.subset_union_left⟩
+theorem dvd_lcm_left (m n : Modulus K) : m ∣ lcm m n :=
+  dvd_iff.mpr ⟨Ideal.dvd_iff_le.mpr inf_le_left, Finset.subset_union_left⟩
 
 /-- The least common multiple is divisible by its right argument. -/
-theorem dvd_lcm_right (m n : Modulus K) : n ∣ lcm m n := by
-  classical
-  exact dvd_iff.mpr ⟨Ideal.dvd_iff_le.mpr inf_le_right, Finset.subset_union_right⟩
+theorem dvd_lcm_right (m n : Modulus K) : n ∣ lcm m n :=
+  dvd_iff.mpr ⟨Ideal.dvd_iff_le.mpr inf_le_right, Finset.subset_union_right⟩
 
 /-- The least common multiple divides every common multiple. -/
-theorem lcm_dvd {m n p : Modulus K} (hm : m ∣ p) (hn : n ∣ p) : lcm m n ∣ p := by
-  classical
-  exact dvd_iff.mpr ⟨Ideal.dvd_iff_le.mpr <| le_inf
+theorem lcm_dvd {m n p : Modulus K} (hm : m ∣ p) (hn : n ∣ p) : lcm m n ∣ p :=
+  dvd_iff.mpr ⟨Ideal.dvd_iff_le.mpr <| le_inf
       (Ideal.le_of_dvd (dvd_iff.mp hm).1) (Ideal.le_of_dvd (dvd_iff.mp hn).1),
     Finset.union_subset (dvd_iff.mp hm).2 (dvd_iff.mp hn).2⟩
 
 /-- A least common multiple divides a modulus exactly when both arguments divide it. -/
-@[simp] theorem lcm_dvd_iff {m n p : Modulus K} : lcm m n ∣ p ↔ m ∣ p ∧ n ∣ p :=
+theorem lcm_dvd_iff {m n p : Modulus K} : lcm m n ∣ p ↔ m ∣ p ∧ n ∣ p :=
   ⟨fun h ↦ ⟨dvd_trans (dvd_lcm_left m n) h, dvd_trans (dvd_lcm_right m n) h⟩,
     fun h ↦ lcm_dvd h.1 h.2⟩
 
@@ -180,7 +172,6 @@ theorem lcm_assoc (m n p : Modulus K) : lcm (lcm m n) p = lcm m (lcm n p) := by
 /-- The finite support of a greatest common divisor is the intersection of the supports. -/
 @[simp] theorem support_gcd (m n : Modulus K) :
     (gcd m n).support = m.support ∩ n.support := by
-  classical
   ext v
   rw [mem_support_iff, gcd_finitePart, Finset.mem_inter, mem_support_iff, mem_support_iff,
     Ideal.dvd_iff_le, Ideal.dvd_iff_le, Ideal.dvd_iff_le, sup_le_iff]
@@ -188,7 +179,6 @@ theorem lcm_assoc (m n p : Modulus K) : lcm (lcm m n) p = lcm m (lcm n p) := by
 /-- The finite support of a least common multiple is the union of the supports. -/
 @[simp] theorem support_lcm (m n : Modulus K) :
     (lcm m n).support = m.support ∪ n.support := by
-  classical
   ext v
   rw [mem_support_iff, lcm_finitePart, Finset.mem_union, mem_support_iff, mem_support_iff,
     Ideal.dvd_iff_le, Ideal.dvd_iff_le, Ideal.dvd_iff_le]
