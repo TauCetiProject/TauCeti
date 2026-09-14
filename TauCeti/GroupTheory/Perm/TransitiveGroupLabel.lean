@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
+public import Mathlib.GroupTheory.GroupAction.Jordan
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.GroupTheory.Perm.List
 public import Mathlib.GroupTheory.SpecificGroups.Alternating.KleinFour
@@ -29,7 +29,6 @@ transitive-groups table. The reference family is empty outside degrees one throu
 
 ## References
 
-* `TauCetiRoadmap/PolynomialGaloisGroups`, Layer 6, "The label API".
 * LMFDB, *Transitive groups*, entries of degrees at most five.
 * G. Butler and J. McKay, *The transitive groups of degree up to eleven*.
 -/
@@ -188,27 +187,13 @@ theorem referenceSubgroup_five_four :
     referenceSubgroup 5 ⟨4, by simp [numTransitiveGroups]⟩ = ⊤ := by
   simp [referenceSubgroup, referenceSubgroup5]
 
-/-- The defining witness characterization of a transitive-group label. -/
-theorem transitiveGroupLabel_iff {n : ℕ} (j : TransitiveGroupIndex n)
-    (G : Subgroup (Perm (Fin n))) :
-    TransitiveGroupLabel j G ↔
-      ∃ τ : Perm (Fin n), Subgroup.map (MulAut.conj τ).toMonoidHom G = referenceSubgroup n j :=
-  Iff.rfl
-
-private theorem isPretransitive_of_isCycle_mem_support_eq_univ
-    {n : ℕ} {G : Subgroup (Perm (Fin n))} {g : Perm (Fin n)} (hcycle : g.IsCycle)
-    (hsupport : g.support = Finset.univ) (hg : g ∈ G) : IsPretransitive G (Fin n) := by
-  constructor
-  intro x y
-  have hx : g x ≠ x := by simpa [← mem_support] using congrArg (x ∈ ·) hsupport
-  have hy : g y ≠ y := by simpa [← mem_support] using congrArg (y ∈ ·) hsupport
-  obtain ⟨k, hk⟩ := hcycle.exists_zpow_eq hx hy
-  exact ⟨⟨g ^ k, G.zpow_mem hg k⟩, hk⟩
-
 private theorem isPretransitive_of_finRotate_mem {n : ℕ} (hn : 2 ≤ n)
-    {G : Subgroup (Perm (Fin n))} (hg : finRotate n ∈ G) : IsPretransitive G (Fin n) :=
-  isPretransitive_of_isCycle_mem_support_eq_univ
-    (isCycle_finRotate_of_le hn) (support_finRotate_of_le hn) hg
+    {G : Subgroup (Perm (Fin n))} (hg : finRotate n ∈ G) : IsPretransitive G (Fin n) := by
+  have h := Equiv.Perm.isPretransitive_of_isCycle_mem
+    (G := G) (isCycle_finRotate_of_le hn) hg
+  rw [support_finRotate_of_le hn, Finset.coe_univ, Set.compl_univ] at h
+  exact IsPretransitive.of_surjective_map
+    SubMulAction.ofFixingSubgroupEmpty_equivariantMap_bijective.surjective h
 
 private theorem isPretransitive_referenceSubgroup4_one :
     IsPretransitive (referenceSubgroup4 1) (Fin 4) := by
