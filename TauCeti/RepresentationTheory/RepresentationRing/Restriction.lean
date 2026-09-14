@@ -99,9 +99,8 @@ theorem repRingRes_of (φ : G →* H) (V : FDRep k H) :
 /-- **Restricting along the identity does nothing.** -/
 @[simp]
 theorem repRingRes_id : repRingRes k (MonoidHom.id G) = RingHom.id (repRing k G) :=
-  SplitK0.ringHom_ext fun V => by
-    rw [repRingRes_of, RingHom.id_apply]
-    exact SplitK0.of_congr ((Action.resId (FGModuleCat.{u} k)).app V)
+  (SplitK0.mapRingHom_congr (G := 𝟭 _)
+    fun V => ⟨(Action.resId (FGModuleCat.{u} k)).app V⟩).trans SplitK0.mapRingHom_id
 
 /-- **Restriction is contravariantly functorial**: restricting along a composite is restricting
 twice over. The two functors agree on the nose, so the comparison of classes is the identity
@@ -109,9 +108,9 @@ isomorphism. -/
 @[simp]
 theorem repRingRes_comp (φ : G →* H) (ψ : H →* K) :
     repRingRes k (ψ.comp φ) = (repRingRes k φ).comp (repRingRes k ψ) :=
-  SplitK0.ringHom_ext fun V => by
-    rw [repRingRes_of, RingHom.coe_comp, Function.comp_apply, repRingRes_of, repRingRes_of]
-    exact SplitK0.of_congr (Iso.refl _)
+  (SplitK0.mapRingHom_congr (G := Action.res _ ψ ⋙ Action.res _ φ)
+    fun V => ⟨((Action.resComp (FGModuleCat.{u} k) φ ψ).app V).symm⟩).trans
+      (SplitK0.mapRingHom_comp _ _)
 
 /-- **The character of a restricted virtual representation, elementwise**: it is the character of
 the original, evaluated at the image of the element. -/
