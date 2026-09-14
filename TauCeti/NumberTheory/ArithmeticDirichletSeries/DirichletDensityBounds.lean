@@ -115,6 +115,7 @@ theorem primeIdealZetaSum_div_univ_le_one
   · grw [tsum_eq_zero_of_not_summable hs, div_zero, zero_le_one]
 
 /-- Zero is a lower Dirichlet-density bound for every set of primes. -/
+@[simp]
 theorem isLowerDirichletDensityBound_zero
     (S : Set (HeightOneSpectrum (𝓞 K))) :
     IsLowerDirichletDensityBound S 0 := by
@@ -124,6 +125,7 @@ theorem isLowerDirichletDensityBound_zero
     (neg_lt_zero.mpr hε).trans_le (primeIdealZetaSum_div_univ_nonneg S s)
 
 /-- One is an upper Dirichlet-density bound for every set of primes. -/
+@[simp]
 theorem isUpperDirichletDensityBound_one
     (S : Set (HeightOneSpectrum (𝓞 K))) :
     IsUpperDirichletDensityBound S 1 := by
