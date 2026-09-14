@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.ProductKernel
 public import TauCeti.Probability.Distributions.Wishart.Basic
+
+import TauCeti.MeasureTheory.Measure.ProductKernel
 
 /-!
 # Parameter measurability of the Gaussian-Gram Wishart family
@@ -53,10 +54,8 @@ private theorem measurable_wishartGramMeasure_fixedDegree (nu : ℕ) :
     fun S => ⟨multivariateGaussian 0 (Matrix.of S), inferInstance⟩
   have hgaussian : Measurable gaussian := by
     apply Measurable.subtype_mk
-    have hmatrix : Measurable fun S : Fin p → Fin p → ℝ => Matrix.of S :=
-      Measurable.of_eval fun i => Measurable.of_eval fun j =>
-        (measurable_pi_apply j).comp (measurable_pi_apply i)
-    exact measurable_multivariateGaussian.comp (measurable_const.prodMk hmatrix)
+    exact measurable_multivariateGaussian.comp
+      (measurable_const.prodMk (Matrix.measurable_of (Fin p) (Fin p) ℝ))
   -- `ProbabilityMeasure.toMeasure_pi` is a `rfl` lemma, so the product kernel can be stated
   -- directly as the `Measure.pi` appearing in `wishartGramMeasure_eq_map_pi`.
   have hpi : Measurable fun S : Fin p → Fin p → ℝ =>
