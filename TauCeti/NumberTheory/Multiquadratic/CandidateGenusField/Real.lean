@@ -183,7 +183,9 @@ values in the full prime-discriminant compositum. -/
     ((candidateGenusFieldRealBaseEquiv hd hpos x : candidateGenusFieldBase hd) :
         candidateGenusField hd) =
       ((x : candidateGenusFieldReal hd) : candidateGenusField hd) :=
-  (rfl)
+  by
+    rw [candidateGenusFieldRealBaseEquiv, AlgEquiv.trans_apply,
+      IntermediateField.equivOfEq_apply, IntermediateField.liftAlgEquiv_apply]
 
 /-- The inverse canonical equivalence between the two models of the quadratic base also preserves
 their values in the full prime-discriminant compositum. -/

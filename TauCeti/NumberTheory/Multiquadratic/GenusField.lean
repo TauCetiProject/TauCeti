@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.GaloisGroup
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.InfinitePlace
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Real
-public import TauCeti.NumberTheory.Multiquadratic.Unramified.Maximality
 
 /-!
 # The genus field of a quadratic field
