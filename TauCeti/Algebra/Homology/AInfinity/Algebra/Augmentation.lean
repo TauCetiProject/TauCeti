@@ -75,13 +75,9 @@ variable {𝒜 : AInfinityAlgebra R A}
 instance : CoeFun (𝒜.Augmentation) fun _ ↦ A → R where
   coe ε := ε.toLinearMap
 
-@[simp]
-theorem coe_toLinearMap (ε : 𝒜.Augmentation) : ⇑ε.toLinearMap = ε := (rfl)
-
 attribute [simp] map_unit map_binary map_m_of_ne_two
 
 /-- An augmentation annihilates the unary operation. -/
-@[simp]
 theorem map_unary (ε : 𝒜.Augmentation) (x : A) : ε (𝒜.m 1 ![x]) = 0 :=
   ε.map_m_of_ne_two 1 (by decide) ![x]
 
