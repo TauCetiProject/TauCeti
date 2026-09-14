@@ -15,8 +15,10 @@ with a nonzero coefficient across the family is the largest power of `X` dividin
 Dividing by that power leaves at least one polynomial with nonzero constant term. The family
 may be infinite: the least exponent exists by well-ordering of the natural numbers.
 
-This elementary polynomial result is used in two function-field linear-independence arguments:
-Stichtenoth, *Algebraic Function Fields and Codes*, Lemma 1.1.7 and Proposition 1.1.15.
+This elementary polynomial result is used in three function-field linear-independence arguments:
+the valuation criterion of Stichtenoth, Lemma 1.1.7 (`Place.OfValuationSubring`), the place-degree
+bound of Proposition 1.1.15 (`Place.Degree`), and the bound on zeros counted with multiplicity
+and degree of Proposition 1.3.3 (`Place.Zeros`).
 
 ## Main results
 
@@ -26,7 +28,7 @@ Stichtenoth, *Algebraic Function Fields and Codes*, Lemma 1.1.7 and Proposition 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Lemma 1.1.7 and Proposition 1.1.15.
+  Lemma 1.1.7 and Propositions 1.1.15 and 1.3.3.
 -/
 
 public section
