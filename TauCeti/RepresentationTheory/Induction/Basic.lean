@@ -18,12 +18,10 @@ on the groups or on the representations.
 
 ## Main statements
 
-* `TauCeti.Rep.indMap_add`: inducing an intertwiner along `φ` is additive.
+* `Rep.indMap_add`: inducing an intertwiner along `φ` is additive.
 -/
 
 public section
-
-namespace TauCeti
 
 open CategoryTheory
 
@@ -41,5 +39,3 @@ theorem indMap_add {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Group G]
   simp [Rep.indMap, Rep.add_hom]
 
 end Rep
-
-end TauCeti
