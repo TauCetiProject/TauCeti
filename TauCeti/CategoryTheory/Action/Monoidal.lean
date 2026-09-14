@@ -114,18 +114,26 @@ def resCoreMonoidal : (res V f).CoreMonoidal where
 instance resMonoidal : (res V f).Monoidal :=
   (resCoreMonoidal V f).toMonoidal
 
+/-- The lax unit of the monoidal structure on restriction is the identity on the underlying
+object of `V`: restricting the tensor unit gives back the tensor unit. -/
 @[simp]
 theorem res_ε_hom : (ε (res V f)).hom = 𝟙 (𝟙_ V) :=
   (rfl)
 
+/-- The oplax counit of the monoidal structure on restriction is the identity on the underlying
+object of `V`, being the inverse of `Action.res_ε_hom`. -/
 @[simp]
 theorem res_η_hom : (η (res V f)).hom = 𝟙 (𝟙_ V) :=
   (rfl)
 
+/-- The lax tensorator of the monoidal structure on restriction is the identity on the underlying
+object of `V`: the tensor product of two restrictions is the restriction of the tensor product. -/
 @[simp]
 theorem res_μ_hom (X Y : Action V H) : (μ (res V f) X Y).hom = 𝟙 (X.V ⊗ Y.V) :=
   (rfl)
 
+/-- The oplax tensorator of the monoidal structure on restriction is the identity on the
+underlying object of `V`, being the inverse of `Action.res_μ_hom`. -/
 @[simp]
 theorem res_δ_hom (X Y : Action V H) : (δ (res V f) X Y).hom = 𝟙 (X.V ⊗ Y.V) :=
   (rfl)

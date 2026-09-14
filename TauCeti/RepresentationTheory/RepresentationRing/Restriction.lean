@@ -130,6 +130,7 @@ theorem repRingCharacter_repRingRes_apply (φ : G →* H) (x : repRing k H) (g :
 
 /-- **The character homomorphism intertwines restriction with precomposition.** This is the
 commuting square relating the two character homomorphisms to restriction on the two sides. -/
+@[simp]
 theorem repRingCharacter_repRingRes (φ : G →* H) (x : repRing k H) :
     repRingCharacter k G (repRingRes k φ x) = repRingCharacter k H x ∘ φ :=
   funext fun g => repRingCharacter_repRingRes_apply φ x g
