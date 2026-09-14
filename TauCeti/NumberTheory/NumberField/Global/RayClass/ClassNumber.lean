@@ -8,8 +8,6 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
 
-import TauCeti.RingTheory.ClassGroup.Basic
-
 /-!
 # The ray class number formula
 
