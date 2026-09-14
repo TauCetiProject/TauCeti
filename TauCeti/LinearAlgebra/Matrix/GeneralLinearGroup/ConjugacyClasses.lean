@@ -45,6 +45,11 @@ the pairs `(trace, det)` with the determinant a unit and the trace unconstrained
 of them. Altogether `q² - 1`, which is the number of irreducible complex representations of
 `GL₂(𝔽_q)`.
 
+The representative chosen here is uniform but anonymous. Over a finite field with a supplied
+degree-`2` extension it can be replaced by the four *named* normal forms — a scalar, a diagonal
+matrix with distinct entries, a Jordan block, and an element of the non-split torus — in
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NormalForm.lean`.
+
 Being scalar is spelled `M ∈ Set.range (Matrix.scalar (Fin 2))`, as in
 `TauCeti.LinearAlgebra.Matrix.Commute`, whose commutant computation is the companion result,
 describing the centralizer of a non-scalar matrix rather than its conjugacy class.

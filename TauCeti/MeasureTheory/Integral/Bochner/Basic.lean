@@ -58,6 +58,24 @@ measure cannot be integrable there.
 * `integral_kernel_mem_Icc_of_antitoneOn` squeezes the average of a function against a probability
   density supported in `[-ε, 0]` between the function's values at `t + ε` and `t`, given only
   antitonicity on the sampled interval `[t, t + ε]`.
+
+## Almost-everywhere disjoint finite unions
+
+Mathlib's `MeasureTheory.integral_biUnion_finset` splits an integral over a finite union into a
+sum, but asks for genuinely measurable and genuinely disjoint pieces. A family of translates of
+a fundamental domain need satisfy neither: they overlap on a null set, and
+`MeasureTheory.IsFundamentalDomain` records its pieces as `MeasureTheory.NullMeasurableSet`,
+pairwise `MeasureTheory.AEDisjoint`, rather than as disjoint measurable sets.
+
+* `integral_biUnion_finset₀` is the almost-everywhere form, in the `₀` convention of
+  `MeasureTheory.lintegral_biUnion_finset₀`.
+
+Adapted from the AINTLIB `LeanModularForms` project,
+<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>, commit
+`6d87d596a5372d5b122c47b7082d4c3afa9b7c3b`, Apache-2.0 —
+`HeckeRIngs/GL2/AdjointTheory/SummandAdjoint.lean`, `setIntegral_biUnion_finset_ae`, where it is
+stated for the same purpose. The name here follows the Mathlib lemma it weakens rather than that
+source's.
 -/
 
 public section
@@ -66,7 +84,7 @@ noncomputable section
 
 open MeasureTheory Filter TopologicalSpace
 
-open scoped ENNReal Topology
+open scoped ENNReal Function Topology
 
 namespace TauCeti
 
@@ -210,6 +228,28 @@ theorem integral_kernel_mem_Icc_of_antitoneOn {μ : Measure ℝ} {ψ F : ℝ →
         exact mul_le_mul_of_nonneg_left (hFanti hlo (hsample s hs1 hs2) (by linarith)) (hψ0 s)
     calc ∫ s, ψ s * F (t - s) ∂μ ≤ ∫ s, ψ s * F t ∂μ := integral_mono hintF (hψi.mul_const _) hle
       _ = F t := hmass _
+
+/-- **A Bochner integral over a finite almost-everywhere disjoint union splits as a sum.**
+
+The almost-everywhere counterpart of `MeasureTheory.integral_biUnion_finset`, which asks for
+genuinely measurable and genuinely disjoint pieces: here the pieces need only be
+`MeasureTheory.NullMeasurableSet` and pairwise `MeasureTheory.AEDisjoint`, which is what
+`MeasureTheory.IsFundamentalDomain` supplies for a family of translates of a fundamental domain.
+
+Integrability is asked for once, on the union, rather than on each piece. The two are equivalent
+— `MeasureTheory.integrableOn_finset_iUnion` — and the union is the form
+`MeasureTheory.integral_iUnion_ae` consumes. -/
+theorem integral_biUnion_finset₀ {X E ι : Type*} [MeasurableSpace X] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure X} {f : X → E} (s : Finset ι) {t : ι → Set X}
+    (hd : Set.Pairwise (↑s) (AEDisjoint μ on t)) (hm : ∀ i ∈ s, NullMeasurableSet (t i) μ)
+    (hf : IntegrableOn f (⋃ i ∈ s, t i) μ) :
+    ∫ x in ⋃ i ∈ s, t i, f x ∂μ = ∑ i ∈ s, ∫ x in t i, f x ∂μ := by
+  have hcoe : (⋃ i ∈ s, t i) = ⋃ i : (↑s : Set ι), t (i : ι) := by
+    simp only [← Finset.mem_coe, Set.biUnion_eq_iUnion]
+  rw [hcoe] at hf ⊢
+  rw [integral_iUnion_ae (s := fun i : (↑s : Set ι) ↦ t (i : ι))
+    (fun i ↦ hm (i : ι) i.2) (hd.subtype _ _) hf]
+  exact Finset.tsum_subtype' s fun i ↦ ∫ x in t i, f x ∂μ
 
 end MeasureTheory
 

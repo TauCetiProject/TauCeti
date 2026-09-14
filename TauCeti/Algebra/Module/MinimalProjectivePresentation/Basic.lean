@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Exact.Basic
+public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.Algebra.Module.ProjectiveCover.Basic
 
 /-!
@@ -35,13 +36,21 @@ lets a construction be made *from* a minimal presentation: the Auslander-Reiten 
 the cokernel of `Hom(−, A)` applied to a minimal projective presentation of `M`, is well defined
 because of it.
 
-*Existence* is a separate matter, exactly as for projective covers: it is a condition on the ring
-(over a semiperfect ring every finitely generated module has a projective cover, and over an Artin
-algebra, where finitely generated modules are noetherian and so the syzygy is again finitely
-generated, iterating that gives a minimal presentation). Nothing here assumes it; every statement
-is conditional on a presentation being given, and
-`TauCeti.IsProjectiveCover.isMinimalProjectivePresentation` is the step that turns two covers into
-one presentation.
+*Existence* is a separate matter, exactly as for projective covers: it is a condition on the ring,
+discharged over a semiprimary ring in
+`TauCeti/Algebra/Module/MinimalProjectivePresentation/Existence.lean` by covering `M` and then
+covering its syzygy. Nothing here assumes it; every statement is conditional on a presentation being
+given, and `TauCeti.IsProjectiveCover.isMinimalProjectivePresentation` is the step that turns two
+covers into one presentation.
+
+What *is* proved here about the size of a presentation is that a noetherian middle term forces a
+finitely generated left-hand source (`TauCeti.IsMinimalProjectivePresentation.finite`): the syzygy
+cut out of a noetherian module is finitely generated, and the left-hand source covers that. Neither
+the ring nor the presented module is constrained; over a noetherian ring presenting a finitely
+generated module the middle term is finitely generated, hence noetherian, which is how a consumer
+gets there. This is the finiteness a construction made from a presentation needs — the
+Auslander-Reiten transpose is the cokernel of `Hom(−, A)` applied to one, and its vanishing
+criterion asks for a finitely generated `P₁`.
 
 The file is layered by the coefficients each part needs, as
 `TauCeti/Algebra/Module/ProjectiveCover/Basic.lean` is. The predicate itself and the two cover-form
@@ -83,6 +92,8 @@ submodule need not be closed under negation, as `ℕ ⊆ ℤ` shows — so over 
 * `TauCeti.IsMinimalProjectivePresentation.range_le_jacobson` and
   `TauCeti.IsMinimalProjectivePresentation.ker_le_jacobson`: both kernels sit inside the radical,
   the standard quantitative form of minimality.
+* `TauCeti.IsMinimalProjectivePresentation.finite`: a minimal projective presentation whose middle
+  term is noetherian has a finitely generated left-hand source.
 
 ## References
 
@@ -357,6 +368,24 @@ theorem ker_le_jacobson (h : IsMinimalProjectivePresentation p₁ p₀) :
   h.isSuperfluous_ker.le_jacobson
 
 end Radical
+
+section Finite
+
+/-- **A minimal projective presentation over a noetherian middle term is finitely generated on the
+left.** If `P₀` is a noetherian module then the left-hand source `P₁` of a minimal projective
+presentation with middle term `P₀` is finitely generated: noetherianity of `P₀` is exactly what
+makes the syzygy `ker p₀` finitely generated, and `P₁` covers that syzygy
+(`TauCeti.IsProjectiveCover.finite`).
+
+Nothing is assumed of the ring or of the presented module. A consumer over a noetherian ring
+presenting a finitely generated `M` supplies `IsNoetherian R P₀` from
+`have : Module.Finite R P₀ := h.isProjectiveCover.finite`, the middle term being finitely generated
+over any ring. -/
+theorem finite [IsNoetherian R P₀] (h : IsMinimalProjectivePresentation p₁ p₀) :
+    Module.Finite R P₁ :=
+  h.isProjectiveCover_codRestrict.finite
+
+end Finite
 
 end IsMinimalProjectivePresentation
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.RingTheory.Finiteness.Cardinality
 public import TauCeti.Algebra.Module.Submodule.Superfluous
 
 /-!
@@ -26,9 +27,11 @@ directions need differences, so neither is available for a covering module that 
 
 The first fact is that a projective cover receives every projective presentation: if `Q` is
 projective and `g : Q →ₗ[R] M` is surjective, then `g` factors as `f ∘ₗ h` with `h : Q →ₗ[R] P`
-**surjective** (`TauCeti.IsProjectiveCover.exists_surjective`). The second is that a projective
-cover is unique: any two projective covers of `M` differ by a linear equivalence commuting with the
-covering maps (`TauCeti.IsProjectiveCover.exists_linearEquiv`). Uniqueness is what makes "the"
+**surjective** (`TauCeti.IsProjectiveCover.exists_surjective`); taking for `Q` the finite free
+module on a generating family, this reads off that a cover of a finitely generated module is itself
+finitely generated (`TauCeti.IsProjectiveCover.finite`). The second is that a projective cover is
+unique: any two projective covers of `M` differ by a linear equivalence commuting with the covering
+maps (`TauCeti.IsProjectiveCover.exists_linearEquiv`). Uniqueness is what makes "the"
 projective cover a well-defined object, and hence what makes the Cartan matrix `Cᵢⱼ = [Pᵢ : Sⱼ]` of
 a finite-dimensional algebra well defined.
 
@@ -50,6 +53,8 @@ Nothing here proves or assumes it; every statement below is conditional on a cov
   an additive group is a projective cover exactly when it is an essential epimorphism.
 * `TauCeti.IsProjectiveCover.exists_surjective`: every surjection onto `M` from a projective module
   factors through a projective cover by a surjection.
+* `TauCeti.IsProjectiveCover.finite`: a projective cover of a finitely generated module is finitely
+  generated.
 * `TauCeti.IsProjectiveCover.bijective_of_comp_eq` and
   `TauCeti.IsProjectiveCover.exists_linearEquiv`: **uniqueness**, first as bijectivity of any
   comparison map between two covers and then as the existence of an isomorphism over `M`.
@@ -135,6 +140,15 @@ theorem IsProjectiveCover.exists_surjective [Module.Projective R Q] {f : P →�
     ∃ h : Q →ₗ[R] P, f ∘ₗ h = g ∧ Function.Surjective h := by
   obtain ⟨h, hh⟩ := Module.projective_lifting_property f g hf.surjective
   exact ⟨h, hh, hf.isSuperfluous_ker.surjective_of_surjective_comp (by rw [hh]; exact hg)⟩
+
+/-- **A projective cover of a finitely generated module is finitely generated.** If `M` is finitely
+generated, then so is the source of any projective cover of `M`. This holds over an arbitrary ring:
+no hypothesis on `R`, and no finiteness hypothesis beyond `Module.Finite R M`, is needed. -/
+theorem IsProjectiveCover.finite [Module.Finite R M] {f : P →ₗ[R] M}
+    (hf : IsProjectiveCover f) : Module.Finite R P := by
+  obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin' R M
+  obtain ⟨h, -, hsurj⟩ := hf.exists_surjective (Q := Fin n → R) hg
+  exact Module.Finite.of_surjective h hsurj
 
 /-- **Uniqueness of the projective cover, in comparison-map form.** A map between the sources of
 two projective covers of `M` that commutes with the covering maps is automatically an

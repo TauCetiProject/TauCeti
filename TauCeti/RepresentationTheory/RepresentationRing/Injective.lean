@@ -11,7 +11,7 @@ import TauCeti.RepresentationTheory.CharacterTable.Determined
 /-!
 # Injectivity of the character map on the representation ring
 
-Let `G` be a finite group and `k` an algebraically closed field of characteristic zero. This file
+Let `G` be a finite group and `k` a field of characteristic zero. This file
 proves that the character homomorphism from the representation ring of `G` is injective. Thus a
 virtual representation is determined by its character.
 
@@ -45,9 +45,9 @@ section CharacterMap
 
 variable {k : Type u} {G : Type v} [Field k] [Group G]
 
-/-- **For a finite group over an algebraically closed field of characteristic zero, the character
+/-- **For a finite group over a field of characteristic zero, the character
 homomorphism is injective.** Thus every virtual representation is determined by its character. -/
-theorem repRingCharacter_injective [Finite G] [IsAlgClosed k] [CharZero k] :
+theorem repRingCharacter_injective [Finite G] [CharZero k] :
     Function.Injective (repRingCharacter k G) := by
   intro x y hxy
   apply sub_eq_zero.mp

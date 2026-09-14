@@ -51,31 +51,21 @@ variable {G K : Type*} [Group G] [Group K]
     exact mem_doubleCoset.mpr ⟨e a, ⟨a, ha, rfl⟩,
       e b, ⟨b, hb, rfl⟩, by simp only [map_mul]⟩
 
-/-- A group equivalence carries the decomposition quotient of `g` to that of its image. -/
+/-- A group equivalence carries the decomposition quotient of `g` to that of its image. The
+special case of `decompQuotientEquivMapOfInjective` at an isomorphism, which is the only
+injective homomorphism the multiplicity transport needs. -/
 noncomputable def decompQuotientEquivMap (e : G ≃* K) (H₁ H₂ : Subgroup G) (g : G) :
     DecompQuotient H₁ H₂ g ≃
-      DecompQuotient (H₁.map (e : G →* K)) (H₂.map (e : G →* K)) (e g) := by
-  apply Quotient.congr (e.subgroupMap H₁).toEquiv
-  intro x y
-  simp only [QuotientGroup.leftRel_apply, Subgroup.mem_subgroupOf,
-    Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv,
-    ConjAct.smul_def, ConjAct.ofConjAct_toConjAct, inv_inv, Subgroup.coe_inv,
-    Subgroup.coe_mul]
-  -- `Quotient.congr` exposes the source relation first and the transported relation second;
-  -- this ascription only names those two reducible relations so that `mem_map_iff_mem` applies.
-  change (g⁻¹ * ((x : G)⁻¹ * y) * g ∈ H₂) ↔
-    (((e : G →* K) g)⁻¹ * (((e : G →* K) (x : G))⁻¹ * (e : G →* K) (y : G)) *
-      (e : G →* K) g ∈ H₂.map (e : G →* K))
-  convert
-    (Subgroup.mem_map_iff_mem (f := (e : G →* K)) (K := H₂) e.injective
-      (x := g⁻¹ * ((x : G)⁻¹ * y) * g)).symm using 1
-  simp only [map_inv, map_mul]
+      DecompQuotient (H₁.map (e : G →* K)) (H₂.map (e : G →* K)) (e g) :=
+  decompQuotientEquivMapOfInjective (e : G →* K) e.injective H₁ H₂ g
 
 /-- The image of a decomposition class represented by `x` is represented by `e x`. -/
 @[simp] lemma decompQuotientEquivMap_mk (e : G ≃* K) (H₁ H₂ : Subgroup G) (g : G) (x : H₁) :
     decompQuotientEquivMap e H₁ H₂ g (QuotientGroup.mk x) =
-      QuotientGroup.mk (e.subgroupMap H₁ x) :=
-  (rfl)
+      QuotientGroup.mk (e.subgroupMap H₁ x) := by
+  unfold decompQuotientEquivMap
+  exact (decompQuotientEquivMapOfInjective_mk _ _ _ _ _ x).trans
+    (congrArg QuotientGroup.mk (Subtype.ext (by simp)))
 
 /-- The chosen representative after transport differs from the transported representative by
 an element of the stabilizer. -/

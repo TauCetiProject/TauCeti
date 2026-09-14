@@ -40,6 +40,8 @@ away from a finite set of primes.
 * `TauCeti.GlobalNumberFields.congruenceSubgroup`, `TauCeti.GlobalNumberFields.primeToSubgroup`,
   `TauCeti.GlobalNumberFields.unitsCongruenceSubgroup`: the subgroups of `Kˣ` and `(𝓞 K)ˣ` these
   conditions define.
+* `TauCeti.GlobalNumberFields.unitsToPrimeToSubgroup`: the inclusion of `(𝓞 K)ˣ` into
+  `primeToSubgroup 𝔪`.
 * `TauCeti.GlobalNumberFields.idealsPrimeTo`,
   `TauCeti.GlobalNumberFields.integralIdealsPrimeTo`: ideals prime to the finite part, with the
   inclusion `TauCeti.GlobalNumberFields.integralIdealsPrimeToInclusion` along divisibility.
@@ -61,6 +63,8 @@ away from a finite set of primes.
   modulus to a smaller one.
 * `TauCeti.GlobalNumberFields.isCongrOne_narrowModulus_iff`: congruence to one modulo the modulus
   with unit finite part and every real place is total positivity.
+* `TauCeti.GlobalNumberFields.unitsCongruenceSubgroup_narrowModulus`: the units congruent to one
+  modulo the narrow modulus are the totally positive integer units.
 * `TauCeti.GlobalNumberFields.Modulus.isCoprimeTo_iff_sup_eq_top`: being prime to the support is
   comaximality with the finite part.
 
@@ -367,6 +371,28 @@ def unitsCongruenceSubgroup (𝔪 : Modulus K) : Subgroup (𝓞 K)ˣ :=
     u ∈ unitsCongruenceSubgroup 𝔪 ↔
       IsCongrOne 𝔪 (Units.map (algebraMap (𝓞 K) K).toMonoidHom u) := Iff.rfl
 
+/-- The image of an integer unit is a unit at every finite place, hence lies in
+`primeToSubgroup 𝔪`. -/
+theorem unitsMap_mem_primeToSubgroup (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
+    Units.map (algebraMap (𝓞 K) K).toMonoidHom u ∈ primeToSubgroup 𝔪 := by
+  refine mem_primeToSubgroup.mpr fun v _ ↦ ?_
+  rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, valuation_of_algebraMap]
+  refine intValuation_eq_one_iff.mpr fun hu ↦ v.isPrime.ne_top ?_
+  exact Ideal.eq_top_of_isUnit_mem _ hu u.isUnit
+
+/-- The inclusion of the integer units into the elements that are units at the finite part.  Its
+composition with the residue-and-sign presentation is the unit obstruction in the ray class exact
+sequence. -/
+noncomputable def unitsToPrimeToSubgroup (𝔪 : Modulus K) :
+    (𝓞 K)ˣ →* primeToSubgroup 𝔪 :=
+  MonoidHom.codRestrict (Units.map (algebraMap (𝓞 K) K).toMonoidHom) _
+    (unitsMap_mem_primeToSubgroup 𝔪)
+
+@[simp] theorem coe_unitsToPrimeToSubgroup (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
+    ((unitsToPrimeToSubgroup 𝔪 u : primeToSubgroup 𝔪) : Kˣ) =
+      Units.map (algebraMap (𝓞 K) K).toMonoidHom u := by
+  rw [unitsToPrimeToSubgroup, MonoidHom.codRestrict_apply]
+
 /-- **The trivial modulus imposes no condition.**  Its finite part is the unit ideal, which no
 prime divides, and its infinite part is empty. -/
 @[simp] theorem isCongrOne_one (x : Kˣ) : IsCongrOne (Modulus.one K) x :=
@@ -385,6 +411,15 @@ every real place. -/
   refine ⟨fun hx ↦ isTotallyPositive_iff.mpr fun w hw ↦ hx.pos (w := ⟨w, hw⟩) (by simp),
     fun hx ↦ ⟨fun v hv ↦ ?_, fun w _ ↦ isTotallyPositive_iff.mp hx w w.2⟩⟩
   exact absurd ((Modulus.mem_support_iff _ v).mpr hv) (by simp)
+
+/-- **The integer units congruent to one modulo the narrow modulus are exactly the totally
+positive integer units.** -/
+@[simp] theorem unitsCongruenceSubgroup_narrowModulus :
+    unitsCongruenceSubgroup (narrowModulus K) = totallyPositiveIntegerUnits := by
+  ext u
+  rw [mem_unitsCongruenceSubgroup, isCongrOne_narrowModulus_iff,
+    mem_totallyPositiveIntegerUnits]
+  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe]
 
 /-! ### Ideals prime to a modulus -/
 
