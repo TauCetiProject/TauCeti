@@ -156,8 +156,11 @@ variable [Semiring R]
 codes. -/
 @[simp]
 theorem natCard_directSum (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
-    Nat.card (directSum C D) = Nat.card C * Nat.card D := by
-  rw [Nat.card_congr (directSumEquivProd C D).toEquiv, Nat.card_prod]
+    Nat.card { x : ι ⊕ κ → R //
+      (fun i ↦ x (.inl i)) ∈ C ∧ (fun j ↦ x (.inr j)) ∈ D } =
+      Nat.card C * Nat.card D := by
+  rw [Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ mem_directSum_iff.symm),
+    Nat.card_congr (directSumEquivProd C D).toEquiv, Nat.card_prod]
 
 end Cardinality
 
