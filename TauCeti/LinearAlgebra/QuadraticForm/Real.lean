@@ -53,23 +53,14 @@ namespace QuadraticForm
 
 section Fibres
 
-/-- A fibre counted as a set of indices and as a subtype gives the same number; this is
-`Nat.card_coe_set_eq` in the subtype presentation that `Equiv.ofFiberEquiv` expects. -/
-private theorem ncard_fibre_eq_card {ι : Type*} (u : ι → SignType) (s : SignType) :
-    {i | u i = s}.ncard = Nat.card {i // u i = s} :=
-  (Nat.card_coe_set_eq _).symm
-
 /-- The three fibres of a sign-valued family exhaust the index type. -/
 private theorem ncard_fibre_zero_add_ncard_fibre_neg_add_ncard_fibre_pos {ι : Type*} [Finite ι]
     (u : ι → SignType) :
     {i | u i = 0}.ncard + {i | u i = -1}.ncard + {i | u i = 1}.ncard = Nat.card ι := by
-  have : Fintype ι := Fintype.ofFinite ι
-  simp only [ncard_fibre_eq_card, Nat.card_eq_fintype_card]
-  have hsigma : Fintype.card ι = ∑ s : SignType, Fintype.card {i // u i = s} := by
-    rw [← Fintype.card_sigma]
-    exact (Fintype.card_congr (Equiv.sigmaFiberEquiv u)).symm
-  rw [hsigma, SignType.univ_eq, Finset.sum_insert (by decide), Finset.sum_insert (by decide),
-    Finset.sum_singleton, add_assoc]
+  have hsigma : Nat.card ι = ∑ s : SignType, Nat.card ↥{i | u i = s} := by
+    rw [← Nat.card_sigma]
+    exact Nat.card_congr (Equiv.sigmaFiberEquiv u).symm
+  simpa [SignType.univ_eq, add_assoc] using hsigma.symm
 
 variable {ι ι' : Type*} [Fintype ι] [Fintype ι']
 
@@ -104,7 +95,7 @@ private theorem equivalent_weightedSumSquares_of_ncard_fibre_eq (u : ι → Sign
   have hcomp : (fun i' ↦ ((u' i' : ℝ))) ∘ σ = fun i ↦ ((u i : ℝ)) := by
     funext i
     exact congrArg (fun s : SignType ↦ ((s : ℝ))) (hσ i)
-  exact ⟨((weightedSumSquaresCongrEquiv (R := ℝ) (fun i' ↦ ((u' i' : ℝ))) σ).trans
+  exact ⟨((isometryEquivWeightedSumSquaresReindex (R := ℝ) (fun i' ↦ ((u' i' : ℝ))) σ).trans
     (weightedSumSquaresCongr hcomp)).symm⟩
 
 end Fibres

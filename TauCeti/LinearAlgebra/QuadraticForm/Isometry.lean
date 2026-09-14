@@ -20,8 +20,8 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 * `QuadraticMap.Isometry.polar_apply`: an isometry preserves polarization.
 * `QuadraticMap.IsometryEquiv.trans_apply`: composition of isometries acts by composition.
 * `QuadraticMap.IsometryEquiv.nondegenerate_iff`: nondegeneracy is invariant under isometry.
-* `QuadraticForm.weightedSumSquaresCongrEquiv`: reindexing the weights of a weighted sum of
-  squares along an equivalence of index types gives an isometric quadratic form.
+* `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
+  of squares along an equivalence of index types gives an isometric quadratic form.
 -/
 
 public section
@@ -93,15 +93,28 @@ theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff
     rw [← e.toLinearEquiv.lift_rank_map_eq Q₁.polarBilin.ker, hpolar]
     exact Cardinal.lift_le_one_iff.mpr hQ₂.rank_rad_polar_le
 
+section Reindex
+
+variable {ι ι' R S : Type*} [Fintype ι] [Fintype ι'] [CommSemiring R] [Monoid S]
+  [DistribMulAction S R] [SMulCommClass S R R]
+
 /-- Reindexing the weights of a weighted sum of squares along an equivalence of the index types
 gives an isometric quadratic form.  The isometry is precomposition with the equivalence. -/
-def _root_.QuadraticForm.weightedSumSquaresCongrEquiv {ι ι' R S : Type*} [Fintype ι] [Fintype ι']
-    [CommSemiring R] [Monoid S] [DistribMulAction S R] [SMulCommClass S R R] (w : ι → S)
-    (e : ι' ≃ ι) :
+@[expose]
+def _root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex (w : ι → S) (e : ι' ≃ ι) :
     IsometryEquiv (weightedSumSquares R w) (weightedSumSquares R (w ∘ e)) where
   __ := LinearEquiv.funCongrLeft R R e
   map_app' x := by
     simpa [weightedSumSquares_apply, LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply]
       using e.sum_comp fun i ↦ w i • (x i * x i)
+
+/-- The reindexing isometry acts on a vector by precomposition with the equivalence. -/
+@[simp]
+theorem _root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex_apply (w : ι → S) (e : ι' ≃ ι)
+    (x : ι → R) (i : ι') :
+    QuadraticForm.isometryEquivWeightedSumSquaresReindex w e x i = x (e i) :=
+  rfl
+
+end Reindex
 
 end TauCeti
