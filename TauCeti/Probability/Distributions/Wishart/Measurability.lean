@@ -32,6 +32,8 @@ defined for every real square matrix.
 ## References
 
 * `TauCetiRoadmap/StandardDistributions/README.md`, Layer 6, item 7 (parameter measurability).
+* `TauCetiRoadmap/StandardDistributions/Suggested.lean`, section "Parameter measurability", whose
+  `measurable_wishartGramMeasure` supplies the statement of the main theorem.
 * R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Wiley, 1982, chapter 3.
 -/
 
