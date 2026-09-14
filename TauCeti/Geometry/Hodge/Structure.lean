@@ -43,7 +43,9 @@ Buzzard, and Joël Riou.
   equivalence intertwining the conjugations, with the transport of its Hodge components
   `TauCeti.Hodge.HodgeStructureOn.comap_piece`.
 * `TauCeti.Hodge.HodgeStructureOn.IsEffective`: the filtration is supported in bidegrees with
-  both indices nonnegative.
+  both indices nonnegative, with
+  `TauCeti.Hodge.HodgeStructureOn.IsEffective.piece_weight_eq_F` identifying the Hodge component
+  in the degree of the weight with the filtration step there.
 -/
 
 public section
@@ -333,6 +335,14 @@ theorem IsEffective.F_eq_top_of_nonpos {hs : HodgeStructureOn W ω n}
 theorem IsEffective.F_eq_bot_of_weight_lt {hs : HodgeStructureOn W ω n}
     (h : hs.IsEffective) {p : ℤ} (hp : n < p) : hs.F p = ⊥ := by
   exact hs.F_eq_bot_of_le h.F_eq_bot (by omega)
+
+/-- In an effective Hodge structure the Hodge component in the degree of the weight is the
+filtration step of that degree: the conjugate step cutting it out is the conjugate of `F 0 = ⊤`,
+which is everything. -/
+theorem IsEffective.piece_weight_eq_F {hs : HodgeStructureOn W ω n} (h : hs.IsEffective) :
+    hs.piece n = hs.F n := by
+  rw [piece_def, conjF_def, sub_self, hs.isEffective_iff.1 h]
+  simp
 
 /-- In an effective Hodge structure, a component with negative first index vanishes. -/
 theorem IsEffective.piece_eq_bot_of_neg {hs : HodgeStructureOn W ω n}
