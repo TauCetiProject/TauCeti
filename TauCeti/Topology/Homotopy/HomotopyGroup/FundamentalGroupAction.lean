@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
+import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 
 /-!
 # The action of the fundamental group on the higher homotopy groups
@@ -48,6 +49,10 @@ monodromy action `IsCoveringMap.fundamentalGroupMulAction` a left action.
   class of a loop.
 * `TauCeti.homotopyGroupMulDistribMulAction` and `TauCeti.fundamentalGroupMulAut`: **in
   positive dimensions the action is by group automorphisms**.
+* `TauCeti.pi1MulEquivFundamentalGroup_smul` and
+  `TauCeti.congr_fundamentalGroupMulAut_piOne`: **under the canonical identification
+  `π₁(X, x) ≃* FundamentalGroup X x`, the action in dimension one is the conjugation
+  representation**.
 * `TauCeti.map_fundamentalGroup_smul`: a based continuous map is equivariant for the actions on
   source and target, along the homomorphism it induces on fundamental groups.
 * `TauCeti.homotopyGroup_mem_orbit_iff` and
@@ -182,6 +187,85 @@ def fundamentalGroupMulAut [Nonempty N] [DecidableEq N] (x : X) :
 theorem fundamentalGroupMulAut_apply [Nonempty N] [DecidableEq N] (γ : FundamentalGroup X x)
     (a : HomotopyGroup N X x) : fundamentalGroupMulAut N x γ a = γ • a := by
   rfl
+
+/-! ### The action in dimension one -/
+
+/-- **Under the canonical identification of the first homotopy group with the fundamental
+group, the fundamental-group action is conjugation.**
+
+The order in `MulAut.conj γ g = γ * g * γ⁻¹` agrees with transport: multiplication in
+`FundamentalGroup` reverses path concatenation, so this product is represented by first following
+`γ⁻¹`, then a representative of `g`, and finally `γ`. -/
+@[simp]
+theorem pi1MulEquivFundamentalGroup_smul (γ : FundamentalGroup X x) (a : π_ 1 X x) :
+    HomotopyGroup.pi1MulEquivFundamentalGroup (γ • a) =
+      MulAut.conj γ (HomotopyGroup.pi1MulEquivFundamentalGroup a) := by
+  rw [fundamentalGroup_smul_def]
+  obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective γ.toPath
+  induction a using Quotient.inductionOn with
+  | h f =>
+    rw [homotopyGroupTransportQuotient_mk, homotopyGroupTransport_mk]
+    let q : Path x x := _root_.genLoopEquivOfUnique (Fin 1) f
+    let r : Path x x :=
+      _root_.genLoopEquivOfUnique (Fin 1) (GenLoop.transport p f)
+    let H := GenLoop.collarHomotopyAlong p f
+    let K : (q : C(I, X)).Homotopy (r : C(I, X)) :=
+      { toFun := fun ts => H.toHomotopy (ts.1, fun _ => ts.2)
+        continuous_toFun := H.toHomotopy.continuous.comp (by fun_prop)
+        map_zero_left := fun s => by
+          simp [q, genLoopEquivOfUnique]
+        map_one_left := fun s => by
+          simp [r, genLoopEquivOfUnique] }
+    have hK := Path.Homotopic.map_trans_evalAt K Path.id
+    let p₀ : Path x x := (K.evalAt 0).cast q.source.symm r.source.symm
+    let p₁ : Path x x := (K.evalAt 1).cast q.target.symm r.target.symm
+    have hp₀ : p₀ = p := by
+      ext t
+      exact H.map_boundary t (fun _ => 0) ⟨0, Or.inl rfl⟩
+    have hp₁ : p₁ = p := by
+      ext t
+      exact H.map_boundary t (fun _ => 1) ⟨0, Or.inr rfl⟩
+    have hqr : (q.trans p).Homotopic (p.trans r) := by
+      have hKcast := hK.pathCast q.source.symm r.target.symm
+      have hq : (Path.id.map q.continuous).cast q.source.symm q.target.symm = q := by
+        ext t
+        rfl
+      have hr : (Path.id.map r.continuous).cast r.source.symm r.target.symm = r := by
+        ext t
+        rfl
+      rw [Path.cast_trans (Path.id.map q.continuous) (K.evalAt 1)
+        q.source.symm q.target.symm r.target.symm] at hKcast
+      rw [Path.cast_trans (K.evalAt 0) (Path.id.map r.continuous)
+        q.source.symm r.source.symm r.target.symm] at hKcast
+      rw [hq, hr] at hKcast
+      simpa only [p₀, p₁, hp₀, hp₁] using hKcast
+    change (FundamentalGroup.fromPath (.mk r) : FundamentalGroup X x) =
+      MulAut.conj (FundamentalGroup.fromPath (.mk p) : FundamentalGroup X x)
+        (FundamentalGroup.fromPath (.mk q) : FundamentalGroup X x)
+    rw [MulAut.conj_apply, FundamentalGroup.mul_def, FundamentalGroup.mul_def,
+      FundamentalGroup.inv_def]
+    simp only [← Path.Homotopic.Quotient.mk_trans, ← Path.Homotopic.Quotient.mk_symm]
+    rw [Path.Homotopic.Quotient.eq] at ⊢
+    exact (Path.Homotopic.refl_trans r).symm |>.trans
+      ((Path.Homotopic.symm_trans p).symm.hcomp (Path.Homotopic.refl r)) |>.trans
+      (Path.Homotopic.trans_assoc p.symm p r) |>.trans
+      ((Path.Homotopic.refl p.symm).hcomp hqr.symm)
+
+/-- Conjugating the positive-dimensional action along
+`HomotopyGroup.pi1MulEquivFundamentalGroup` gives the usual conjugation representation of the
+fundamental group on itself. -/
+theorem congr_fundamentalGroupMulAut_piOne (x : X) :
+    (MulAut.congr HomotopyGroup.pi1MulEquivFundamentalGroup).toMonoidHom.comp
+        (fundamentalGroupMulAut (Fin 1) x) = MulAut.conj := by
+  ext γ g
+  obtain ⟨a, rfl⟩ := HomotopyGroup.pi1MulEquivFundamentalGroup.surjective g
+  change HomotopyGroup.pi1MulEquivFundamentalGroup
+      (fundamentalGroupMulAut (Fin 1) x γ
+        (HomotopyGroup.pi1MulEquivFundamentalGroup.symm
+          (HomotopyGroup.pi1MulEquivFundamentalGroup a))) = _
+  rw [HomotopyGroup.pi1MulEquivFundamentalGroup.symm_apply_apply,
+    fundamentalGroupMulAut_apply]
+  exact pi1MulEquivFundamentalGroup_smul γ a
 
 /-! ### Naturality -/
 
