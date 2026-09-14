@@ -287,6 +287,11 @@ protected def id (hA : AA.StrictUnit eA) : AInfinityStrictUnitalHom hA hA where
   map_unit' := rfl
 
 @[simp]
+theorem id_toAInfinityStrictHom (hA : AA.StrictUnit eA) :
+    (AInfinityStrictUnitalHom.id hA).toAInfinityStrictHom = AInfinityStrictHom.id AA :=
+  (rfl)
+
+@[simp]
 theorem id_apply (hA : AA.StrictUnit eA) (a : A) : AInfinityStrictUnitalHom.id hA a = a :=
   (rfl)
 
@@ -296,6 +301,12 @@ def comp (g : AInfinityStrictUnitalHom hB hC) (f : AInfinityStrictUnitalHom hA h
   toAInfinityStrictHom := g.toAInfinityStrictHom.comp f.toAInfinityStrictHom
   map_unit' := by
     rw [AInfinityStrictHom.comp_apply, f.map_unit', g.map_unit']
+
+@[simp]
+theorem comp_toAInfinityStrictHom (g : AInfinityStrictUnitalHom hB hC)
+    (f : AInfinityStrictUnitalHom hA hB) :
+    (g.comp f).toAInfinityStrictHom = g.toAInfinityStrictHom.comp f.toAInfinityStrictHom :=
+  (rfl)
 
 @[simp]
 theorem comp_apply (g : AInfinityStrictUnitalHom hB hC)
