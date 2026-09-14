@@ -36,6 +36,7 @@ whole spectrum have density one and ensures that a fixed finite error disappears
 * `TauCeti.tendsto_primeCount_univ_atTop`: the number of all prime ideals below the cutoff tends
   to infinity.
 * `NumberField.Set.HasNaturalDensity`: ratio-normalized natural density for a set of prime ideals.
+* `NumberField.Set.hasNaturalDensity_def`: the defining ratio-convergence characterization.
 * `NumberField.Set.HasNaturalDensity.union`,
   `NumberField.Set.hasNaturalDensity_biUnion_finset` and
   `NumberField.Set.HasNaturalDensity.compl`: finite Boolean calculus for natural density.
@@ -114,6 +115,12 @@ def HasNaturalDensity (S : Set (HeightOneSpectrum (𝓞 K))) (δ : ℝ) : Prop :
   Tendsto (fun x : ℝ => TauCeti.primeCount K S x /
     TauCeti.primeCount K (Set.univ : Set (HeightOneSpectrum (𝓞 K))) x) atTop (𝓝 δ)
 
+/-- Unfolds `HasNaturalDensity` to the convergence of the ratio of prime counts. -/
+theorem hasNaturalDensity_def :
+    HasNaturalDensity S δ ↔ Tendsto (fun x : ℝ => TauCeti.primeCount K S x /
+      TauCeti.primeCount K (Set.univ : Set (HeightOneSpectrum (𝓞 K))) x) atTop (𝓝 δ) :=
+  (Iff.rfl)
+
 /-- A set of prime ideals has at most one natural density. -/
 theorem HasNaturalDensity.unique (hδ : HasNaturalDensity S δ) (hε : HasNaturalDensity S ε) :
     δ = ε :=
@@ -123,13 +130,13 @@ theorem HasNaturalDensity.unique (hδ : HasNaturalDensity S δ) (hε : HasNatura
 @[simp]
 theorem hasNaturalDensity_empty :
     HasNaturalDensity (∅ : Set (HeightOneSpectrum (𝓞 K))) 0 := by
-  simp [HasNaturalDensity]
+  simp [hasNaturalDensity_def]
 
 /-- The set of all prime ideals has natural density one. -/
 @[simp]
 theorem hasNaturalDensity_univ :
     HasNaturalDensity (Set.univ : Set (HeightOneSpectrum (𝓞 K))) 1 := by
-  rw [HasNaturalDensity]
+  rw [hasNaturalDensity_def]
   have hne : ∀ᶠ x : ℝ in atTop,
       TauCeti.primeCount K (Set.univ : Set (HeightOneSpectrum (𝓞 K))) x ≠ 0 :=
     ((TauCeti.tendsto_primeCount_univ_atTop K).eventually_gt_atTop 0).mono
@@ -157,7 +164,7 @@ theorem HasNaturalDensity.mono (hST : S ⊆ T) (hS : HasNaturalDensity S δ)
 /-- Natural density is additive on disjoint unions of prime sets. -/
 theorem HasNaturalDensity.union (hS : HasNaturalDensity S δ) (hT : HasNaturalDensity T ε)
     (hST : Disjoint S T) : HasNaturalDensity (S ∪ T) (δ + ε) := by
-  rw [HasNaturalDensity] at hS hT ⊢
+  rw [hasNaturalDensity_def] at hS hT ⊢
   simpa only [TauCeti.primeCount_union hST, add_div] using hS.add hT
 
 /-- Natural density is additive on a finite family of pairwise disjoint prime sets. -/
@@ -181,7 +188,7 @@ theorem hasNaturalDensity_biUnion_finset {ι : Type*} {s : Finset ι}
 /-- The complement of a set of natural density `δ` has natural density `1 - δ`. -/
 theorem HasNaturalDensity.compl (hS : HasNaturalDensity S δ) :
     HasNaturalDensity Sᶜ (1 - δ) := by
-  rw [HasNaturalDensity] at hS ⊢
+  rw [hasNaturalDensity_def] at hS ⊢
   have hne : ∀ᶠ x : ℝ in atTop,
       TauCeti.primeCount K (Set.univ : Set (HeightOneSpectrum (𝓞 K))) x ≠ 0 :=
     ((TauCeti.tendsto_primeCount_univ_atTop K).eventually_gt_atTop 0).mono
@@ -199,7 +206,7 @@ theorem HasNaturalDensity.compl (hS : HasNaturalDensity S δ) :
 /-- Changing a set on finitely many prime ideals preserves its natural density. -/
 theorem HasNaturalDensity.of_finite_symmDiff (hT : HasNaturalDensity T δ)
     (hST : (symmDiff S T).Finite) : HasNaturalDensity S δ := by
-  rw [HasNaturalDensity] at hT ⊢
+  rw [hasNaturalDensity_def] at hT ⊢
   let c : ℝ := ∑ v ∈ hST.toFinset, (S.indicator 1 v - T.indicator 1 v)
   have hzero : Tendsto (fun x : ℝ =>
       (TauCeti.primeCount K S x - TauCeti.primeCount K T x) /
