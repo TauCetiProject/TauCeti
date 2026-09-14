@@ -103,7 +103,7 @@ noncomputable def teichmuller (K : Type*) [Field K] [ValuativeRel K]
 /-- The Teichmüller map is a section of reduction on unit groups. -/
 @[simp]
 theorem residue_teichmuller (a : 𝓀[K]ˣ) :
-    Units.map (IsLocalRing.residue 𝒪[K]).toMonoidHom (teichmuller K a) = a := by
+    Units.map (IsLocalRing.residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) (teichmuller K a) = a := by
   ext
   exact residue_teichmullerLift (K := K) a
 
@@ -112,8 +112,10 @@ theorem teichmuller_injective : Function.Injective (teichmuller K) :=
   Function.LeftInverse.injective (residue_teichmuller (K := K))
 
 /-- Every Teichmüller representative is a `(q - 1)`-st root of unity, where
-`q = Nat.card 𝓀[K]`. -/
-@[simp]
+`q = Nat.card 𝓀[K]`.
+
+This is not a `simp` lemma: `simp` normalizes `Nat.card 𝓀[K]` to `Fintype.card 𝓀[K]`, so the
+left-hand side is not in `simp`-normal form. -/
 theorem teichmuller_pow_card_sub_one (a : 𝓀[K]ˣ) :
     teichmuller K a ^ (Nat.card 𝓀[K] - 1) = 1 := by
   classical
@@ -126,7 +128,7 @@ theorem teichmuller_pow_card_sub_one (a : 𝓀[K]ˣ) :
 
 private theorem eq_one_of_residue_eq_one_of_pow_card_sub_one_eq_one
     (u : 𝒪[K]ˣ)
-    (hres : Units.map (IsLocalRing.residue 𝒪[K]).toMonoidHom u = 1)
+    (hres : Units.map (IsLocalRing.residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u = 1)
     (hpow : u ^ (Nat.card 𝓀[K] - 1) = 1) : u = 1 := by
   classical
   let _ := Fintype.ofFinite 𝓀[K]
@@ -134,9 +136,7 @@ private theorem eq_one_of_residue_eq_one_of_pow_card_sub_one_eq_one
   let s : 𝒪[K] := ∑ i ∈ Finset.range (q - 1), (u : 𝒪[K]) ^ i
   have hu_res : IsLocalRing.residue 𝒪[K] (u : 𝒪[K]) = 1 := by
     have hu_res := congrArg Units.val hres
-    simp only [Units.coe_map, Units.val_one] at hu_res
-    rw [RingHom.toMonoidHom_eq_coe] at hu_res
-    exact hu_res
+    simpa only [Units.coe_map, Units.val_one, MonoidHom.coe_coe] using hu_res
   have hs_res : IsLocalRing.residue 𝒪[K] s = -1 := by
     change IsLocalRing.residue 𝒪[K]
         (∑ i ∈ Finset.range (q - 1), (u : 𝒪[K]) ^ i) = -1
@@ -164,7 +164,7 @@ private theorem eq_one_of_residue_eq_one_of_pow_card_sub_one_eq_one
 exponent `q - 1`. -/
 theorem eq_teichmuller_of_residue_eq_of_pow_card_sub_one_eq_one
     (u : 𝒪[K]ˣ) (a : 𝓀[K]ˣ)
-    (hres : Units.map (IsLocalRing.residue 𝒪[K]).toMonoidHom u = a)
+    (hres : Units.map (IsLocalRing.residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u = a)
     (hpow : u ^ (Nat.card 𝓀[K] - 1) = 1) : u = teichmuller K a := by
   apply mul_right_cancel (b := (teichmuller K a)⁻¹)
   rw [mul_inv_cancel]
@@ -176,7 +176,7 @@ theorem eq_teichmuller_of_residue_eq_of_pow_card_sub_one_eq_one
 `a : 𝓀[K]ˣ` exactly when it reduces to `a` and its `(q - 1)`-st power is one. -/
 theorem teichmuller_eq_iff (u : 𝒪[K]ˣ) (a : 𝓀[K]ˣ) :
     u = teichmuller K a ↔
-      Units.map (IsLocalRing.residue 𝒪[K]).toMonoidHom u = a ∧
+      Units.map (IsLocalRing.residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u = a ∧
         u ^ (Nat.card 𝓀[K] - 1) = 1 := by
   constructor
   · rintro rfl
@@ -188,7 +188,7 @@ theorem teichmuller_eq_iff (u : 𝒪[K]ˣ) (a : 𝓀[K]ˣ) :
 `(q - 1)`-st roots of unity. -/
 theorem teichmuller_unique
     (f : 𝓀[K]ˣ →* 𝒪[K]ˣ)
-    (hsection : (Units.map (IsLocalRing.residue 𝒪[K]).toMonoidHom).comp f = .id 𝓀[K]ˣ)
+    (hsection : (Units.map (IsLocalRing.residue 𝒪[K] : 𝒪[K] →* 𝓀[K])).comp f = .id 𝓀[K]ˣ)
     (htorsion : ∀ a, f a ^ (Nat.card 𝓀[K] - 1) = 1) :
     f = teichmuller K := by
   apply MonoidHom.ext
@@ -205,7 +205,7 @@ theorem range_teichmuller :
   · rintro ⟨a, rfl⟩
     exact teichmuller_pow_card_sub_one a
   · intro hu
-    let a := Units.map (IsLocalRing.residue 𝒪[K]).toMonoidHom u
+    let a := Units.map (IsLocalRing.residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u
     exact ⟨a, (eq_teichmuller_of_residue_eq_of_pow_card_sub_one_eq_one
       u a rfl hu).symm⟩
 
@@ -214,12 +214,12 @@ roots of unity in `𝒪[K]`. -/
 noncomputable def teichmullerEquivIntegerRootsOfUnity :
     𝓀[K]ˣ ≃* rootsOfUnity (Nat.card 𝓀[K] - 1) 𝒪[K] where
   toFun a := ⟨teichmuller K a, teichmuller_pow_card_sub_one a⟩
-  invFun u := Units.map (IsLocalRing.residue 𝒪[K]).toMonoidHom u
+  invFun u := Units.map (IsLocalRing.residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u
   left_inv := residue_teichmuller
   right_inv u := by
     apply Subtype.ext
     exact (eq_teichmuller_of_residue_eq_of_pow_card_sub_one_eq_one
-      (u : 𝒪[K]ˣ) (Units.map (IsLocalRing.residue 𝒪[K]).toMonoidHom u) rfl
+      (u : 𝒪[K]ˣ) (Units.map (IsLocalRing.residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) rfl
       ((mem_rootsOfUnity _ _).mp u.prop)).symm
   map_mul' a b := by
     apply Subtype.ext
@@ -238,7 +238,7 @@ theorem teichmullerEquivIntegerRootsOfUnity_apply (a : 𝓀[K]ˣ) :
 theorem teichmullerEquivIntegerRootsOfUnity_symm_apply
     (u : rootsOfUnity (Nat.card 𝓀[K] - 1) 𝒪[K]) :
     (teichmullerEquivIntegerRootsOfUnity (K := K)).symm u =
-      Units.map (IsLocalRing.residue 𝒪[K]).toMonoidHom u :=
+      Units.map (IsLocalRing.residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u :=
   by
     simp only [teichmullerEquivIntegerRootsOfUnity]
     rfl
