@@ -5,55 +5,56 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Laplacian.HopfLemma
+public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
+import TauCeti.Analysis.InnerProductSpace.Laplacian.HopfLemma
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
+import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 /-!
-# The strong maximum principle for subharmonic functions
+# The strong maximum principle for the Laplacian
 
-The weak maximum principle of
-`TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple` bounds a subharmonic
-function on a compact set by its frontier values, but says nothing about what happens when
-the bound is attained inside.  This file proves the **strong maximum principle**: a
-subharmonic function on an open preconnected set that attains its supremum over that set at
-one of its points is constant on the whole set.
+The weak maximum principle of `TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple`
+bounds a subharmonic function by its frontier values. This file proves the **strong maximum
+principle** in a finite-dimensional real inner product space: a `C²` function with `0 ≤ Δ u` on a
+preconnected open set that attains its maximum over the set at some point of it is constant there.
+The superharmonic minimum principle, the strong comparison principle, and their harmonic
+specializations follow.
 
-The proof is the classical Hopf argument.  Write `M` for the attained maximum.  The domain
-is covered by the set where `u = M` and the open set where `u < M`, which are disjoint, so
-preconnectedness empties the second as soon as the first is known to be open.  Openness is
-where the geometry enters: if a ball `closedBall z r` inside the domain has `u z = M` but
-carries a point `p` with `u p < M` near its centre, enlarge the ball around `p` until it
-first meets `{u = M}`.  Its radius is the distance from `p` to the complement of the open
-set `{u < M}`, attained at a point `w` of the resulting sphere because the ambient space is
-proper.  Then `u < M` strictly inside that ball, `u ≤ M` on its sphere, and `u w = M`, so
-`TauCeti.fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere` — Hopf's boundary-point
-lemma — makes the outward derivative at `w` strictly positive.  But `w` is an interior
-maximum point of `u`, where the derivative vanishes.
+The proof is the classical one via **Hopf's boundary-point lemma**
+(`TauCeti.fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere`), and needs neither a
+mean-value property nor analyticity, so it works in every dimension. The local step is
+`TauCeti.eventually_eq_of_laplacian_nonneg_of_isLocalMax`: near a local maximum `x`, if `u` took a
+smaller value at some point `x₂`, then the largest ball about `x₂` on which `u < u x` touches the
+level set `{u = u x}` at a point `x₀` of its sphere. There `u` is strictly below `u x₀` inside the
+ball and weakly below it on the sphere, so Hopf's lemma makes the outward derivative at `x₀`
+strictly positive; but `x₀` is again a local maximum, where the derivative vanishes. Hence `u` is
+locally constant near every point where it attains its maximum, and preconnectedness spreads this
+over the whole set.
 
-Negating gives the strong minimum principle for superharmonic functions, and applying the
-maximum form to a difference gives the strong comparison principle.
-
-In the plane there is a different route, sharper in one respect: planar harmonic functions
-are real-analytic, so an identity propagates along any preconnected set, open or not.  That
-is what `TauCeti.Analysis.PDE.Harnack.StrongPrinciple` exploits: it applies to harmonic
-functions on `ℂ` without assuming the domain open, whereas the results here cover
-subharmonic functions in every dimension, on an open domain.
+Unlike the planar statements of `TauCeti.Analysis.PDE.Harnack.StrongPrinciple`, which use the
+analyticity of planar harmonic functions, the results here need the set to be open: a subharmonic
+function may be constant near a local maximum and increase further away.
 
 ## Main declarations
 
-* `TauCeti.eqOn_const_of_laplacian_nonneg_of_isMaxOn`: **strong maximum principle**. A `C²`
-  subharmonic (`0 ≤ Δ u`) function on an open preconnected set which attains its maximum over
-  that set at one of its points is constant there.
+* `TauCeti.eventually_eq_of_laplacian_nonneg_of_isLocalMax`: a function that is `C²` at a local
+  maximum point and subharmonic near it is constant near it; its superharmonic mirror image is
+  `TauCeti.eventually_eq_of_laplacian_nonpos_of_isLocalMin`.
+* `TauCeti.eqOn_const_of_laplacian_nonneg_of_isMaxOn`: **the strong maximum principle** for
+  subharmonic functions on a preconnected open set.
 * `TauCeti.eqOn_const_of_laplacian_nonpos_of_isMinOn`: the strong minimum principle for
-  superharmonic (`Δ u ≤ 0`) functions.
+  superharmonic functions.
+* `TauCeti.eqOn_of_laplacian_le_of_le_of_eq`: the strong comparison principle.
 * `TauCeti.eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn`,
-  `TauCeti.eqOn_const_closure_of_laplacian_nonpos_of_isMinOn`: the same statements for a
-  function continuous up to the boundary, extremal over `closure Ω` at an interior point.
-* `TauCeti.eqOn_of_laplacian_le_of_le_of_eq`: **strong comparison principle**. If `Δ v ≤ Δ u`
-  on an open preconnected set and `u ≤ v` there with equality at a single point, then `u = v`
-  everywhere on the set.
-* `TauCeti.eqOn_closure_of_laplacian_le_of_le_of_eq`: the same statement for functions
-  continuous up to the boundary, dominated on `closure Ω` and equal at an interior point.
+  `TauCeti.eqOn_const_closure_of_laplacian_nonpos_of_isMinOn`,
+  `TauCeti.eqOn_closure_of_laplacian_le_of_le_of_eq`: the same three statements for functions
+  continuous up to the boundary, extremal (respectively dominated) over `closure U` at a point
+  of `U`.
+* `TauCeti.eqOn_const_of_harmonicOnNhd_of_isMaxOn_of_isOpen`,
+  `TauCeti.eqOn_const_of_harmonicOnNhd_of_isMinOn_of_isOpen`,
+  `TauCeti.eqOn_of_harmonicOnNhd_of_le_of_eq_of_isOpen`,
+  `TauCeti.eq_zero_on_of_harmonicOnNhd_of_nonneg_of_eq_zero_of_isOpen`,
+  `TauCeti.eq_zero_on_or_pos_on_of_harmonicOnNhd_of_nonneg`: the harmonic specializations.
 
 ## References
 
@@ -67,254 +68,287 @@ noncomputable section
 
 namespace TauCeti
 
-open InnerProductSpace Laplacian Metric Set Topology
+open Filter Function InnerProductSpace Laplacian Metric Set Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {u v : E → ℝ} {Ω : Set E} {a : E}
 
-/-- The local step of the strong maximum principle: a subharmonic function bounded by `M` on a
-closed ball and equal to `M` at its centre is equal to `M` on the concentric ball of half the
-radius.
+section Laplacian
 
-Hopf's boundary-point lemma is applied to the largest ball around a hypothetical point with
-`u < M` that still avoids `{u = M}`. -/
-private theorem eqOn_const_of_laplacian_nonneg_of_le_closedBall {z : E} {r M : ℝ} (hr : 0 < r)
-    (hcd : ∀ x ∈ closedBall z r, ContDiffAt ℝ 2 u x)
-    (hlap : ∀ x ∈ closedBall z r, 0 ≤ Δ u x)
-    (hle : ∀ x ∈ closedBall z r, u x ≤ M) (hz : u z = M) :
-    ∀ x ∈ ball z (r / 2), u x = M := by
-  intro p hp
-  by_contra hne
-  have hpr : dist p z < r / 2 := mem_ball.1 hp
-  have hpball : p ∈ ball z r := mem_ball.2 (by linarith)
-  -- The open set of points of `ball z r` where `u` stays strictly below `M`.
-  set V : Set E := ball z r ∩ u ⁻¹' Iio M
-  have hVopen : IsOpen V :=
-    ContinuousOn.isOpen_inter_preimage
-      (fun x hx => (hcd x (ball_subset_closedBall hx)).continuousAt.continuousWithinAt)
-      isOpen_ball isOpen_Iio
-  have hpV : p ∈ V := ⟨hpball, lt_of_le_of_ne (hle p (ball_subset_closedBall hpball)) hne⟩
-  have hzV : z ∉ V := fun h => absurd hz h.2.ne
-  have hVcne : (Vᶜ : Set E).Nonempty := ⟨z, hzV⟩
-  -- The distance from `p` to the complement of `V` is positive, at most `dist p z`, and
-  -- attained, because a finite-dimensional normed space is a proper metric space.
-  set d : ℝ := infDist p Vᶜ
-  have hdpos : 0 < d := (hVopen.isClosed_compl.notMem_iff_infDist_pos hVcne).1 (by simpa using hpV)
-  have hdle : d ≤ dist p z := infDist_le_dist_of_mem hzV
-  obtain ⟨w, hwV, hwd⟩ := hVopen.isClosed_compl.exists_infDist_eq_dist hVcne p
-  have hpw : dist p w = d := hwd.symm
-  -- The open ball of radius `d` around `p` stays inside `V`.
-  have hballV : ball p d ⊆ V := by
-    intro x hx
-    by_contra hxV
-    have hxc : x ∈ (Vᶜ : Set E) := hxV
-    have : d ≤ dist p x := infDist_le_dist_of_mem hxc
-    rw [dist_comm] at this
-    exact absurd (mem_ball.1 hx) (not_lt.2 this)
-  -- The closed ball of radius `d` around `p` stays inside the original ball.
-  have hsub : closedBall p d ⊆ ball z r := by
-    intro x hx
-    have h₁ : dist x z ≤ dist x p + dist p z := dist_triangle x p z
-    have h₂ : dist x p ≤ d := mem_closedBall.1 hx
-    exact mem_ball.2 (by linarith)
-  -- The touching point `w` lies in the original ball, so `u w = M` there.
-  have hwmem : w ∈ closedBall p d := mem_closedBall.2 (by rw [dist_comm]; exact hpw.le)
-  have hwball : w ∈ ball z r := hsub hwmem
-  have hwM : u w = M := by
-    rcases lt_or_ge (u w) M with h | h
-    · exact absurd (⟨hwball, h⟩ : w ∈ V) hwV
-    · exact le_antisymm (hle w (ball_subset_closedBall hwball)) h
-  -- The outward unit normal at `w`, and the identification `p + d • e = w`.
-  set e : E := d⁻¹ • (w - p) with hedef
-  have hwp : ‖w - p‖ = d := by rw [← dist_eq_norm, dist_comm]; exact hpw
+variable {U : Set E} {u v : E → ℝ} {a : E}
+
+/-- A function that is `C²` and subharmonic in a ball, strictly below its value at a point `x₀` of
+the bounding sphere inside the ball and weakly below it on the sphere, has no local maximum at
+`x₀`: by Hopf's lemma its outward derivative there is positive. -/
+private theorem not_isLocalMax_of_lt_ball_of_le_sphere {y x₀ : E} {R : ℝ} (hR : 0 < R)
+    (hx₀ : x₀ ∈ sphere y R) (hucont : ContinuousOn u (closedBall y R))
+    (huinterior : ∀ x ∈ ball y R, ContDiffAt ℝ 2 u x) (hderiv : DifferentiableAt ℝ u x₀)
+    (hlap : ∀ x ∈ ball y R, 0 ≤ Δ u x) (hlt : ∀ x ∈ ball y R, u x < u x₀)
+    (hle : ∀ x ∈ sphere y R, u x ≤ u x₀) : ¬IsLocalMax u x₀ := by
+  intro hmax
+  -- Write `x₀ = y + R • e` for the unit outward normal `e`.
+  set e := R⁻¹ • (x₀ - y) with he_def
+  have hx₀e : y + R • e = x₀ := by
+    rw [he_def, smul_smul, mul_inv_cancel₀ hR.ne', one_smul, add_sub_cancel]
   have he : ‖e‖ = 1 := by
-    rw [hedef, norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos hdpos, hwp,
-      inv_mul_cancel₀ hdpos.ne']
-  have hde : p + d • e = w := by
-    rw [hedef, smul_inv_smul₀ hdpos.ne', add_sub_cancel]
-  have hcd' : ∀ x ∈ closedBall p d, ContDiffAt ℝ 2 u x :=
-    fun x hx => hcd x (ball_subset_closedBall (hsub hx))
-  -- Hopf's boundary-point lemma at `w`.
-  have hpos : 0 < fderiv ℝ u (p + d • e) e := by
-    refine fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere hdpos he
-      (fun x hx => (hcd' x hx).continuousAt.continuousWithinAt)
-      (fun x hx => hcd' x (ball_subset_closedBall hx)) ?_
-      (fun x hx => hlap x (ball_subset_closedBall (hsub (ball_subset_closedBall hx)))) ?_ ?_
-    · rw [hde]
-      exact (hcd' w hwmem).differentiableAt (by norm_num)
-    · intro x hx
-      rw [hde, hwM]
-      exact (hballV hx).2
-    · intro x hx
-      rw [hde, hwM]
-      exact hle x (ball_subset_closedBall (hsub (sphere_subset_closedBall hx)))
-  -- But `w` is an interior maximum point of `u`, so the derivative there vanishes.
-  have hmax : IsLocalMax u w := by
-    filter_upwards [isOpen_ball.mem_nhds hwball] with x hx
-    rw [hwM]
-    exact hle x (ball_subset_closedBall hx)
-  rw [hde, IsLocalMax.fderiv_eq_zero hmax] at hpos
-  simp at hpos
+    rw [he_def, norm_smul, norm_inv, Real.norm_of_nonneg hR.le, ← dist_eq_norm, mem_sphere.mp hx₀,
+      inv_mul_cancel₀ hR.ne']
+  have hpos := fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere hR he hucont huinterior
+    (hx₀e ▸ hderiv) hlap (hx₀e ▸ hlt) (hx₀e ▸ hle)
+  rw [hx₀e, hmax.fderiv_eq_zero] at hpos
+  exact lt_irrefl _ hpos
 
-/-- **Strong maximum principle for subharmonic functions.**
-
-Let `Ω` be an open preconnected subset of a finite-dimensional real inner product space and let
-`u` be `C²` and subharmonic (`0 ≤ Δ u`) on `Ω`.  If `u` attains its maximum over `Ω` at a point
-`a` of `Ω`, then `u` is constant on `Ω`.
-
-Attaining the maximum at an interior point is essential: `Ω` may well be a bounded domain on
-which `u` is nonconstant and attains its supremum only on the boundary. -/
-theorem eqOn_const_of_laplacian_nonneg_of_isMaxOn (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
-    (ha : a ∈ Ω) (hcd : ∀ x ∈ Ω, ContDiffAt ℝ 2 u x) (hlap : ∀ x ∈ Ω, 0 ≤ Δ u x)
-    (hmax : IsMaxOn u Ω a) :
-    EqOn u (fun _ => u a) Ω := by
-  -- The subset of `Ω` where the maximum is attained is open, by the local step, and its
-  -- complement in `Ω` is open by continuity; preconnectedness leaves no room for the latter.
-  set S : Set E := {x ∈ Ω | u x = u a}
-  set T : Set E := Ω ∩ u ⁻¹' Iio (u a)
-  have hTopen : IsOpen T :=
-    ContinuousOn.isOpen_inter_preimage
-      (fun x hx => (hcd x hx).continuousAt.continuousWithinAt) hΩ isOpen_Iio
-  have hSopen : IsOpen S := by
-    rw [isOpen_iff_mem_nhds]
-    rintro x ⟨hxΩ, hxM⟩
-    obtain ⟨r, hr, hrsub⟩ := Metric.isOpen_iff.1 hΩ x hxΩ
-    have hclosed : closedBall x (r / 2) ⊆ Ω :=
-      (closedBall_subset_ball (by linarith)).trans hrsub
-    have hball : ball x (r / 4) ⊆ S := by
-      intro y hy
-      have hyΩ : y ∈ Ω := hclosed (ball_subset_closedBall
-        (ball_subset_ball (by linarith) hy))
-      refine ⟨hyΩ, ?_⟩
-      refine eqOn_const_of_laplacian_nonneg_of_le_closedBall (by linarith)
-        (fun t ht => hcd t (hclosed ht)) (fun t ht => hlap t (hclosed ht))
-        (fun t ht => isMaxOn_iff.1 hmax t (hclosed ht)) hxM y (mem_ball.2 ?_)
-      have := mem_ball.1 hy
-      linarith
-    exact Filter.mem_of_superset (ball_mem_nhds x (by linarith)) hball
-  have hcover : Ω ⊆ S ∪ T := by
-    intro x hxΩ
-    rcases eq_or_lt_of_le (isMaxOn_iff.1 hmax x hxΩ) with h | h
-    · exact Or.inl ⟨hxΩ, h⟩
-    · exact Or.inr ⟨hxΩ, h⟩
-  intro x hxΩ
+/-- **Local strong maximum principle.** A function that is `C²` at a local maximum point `x` and
+subharmonic (`0 ≤ Δ u`) near `x` is constant on a neighbourhood of `x`. -/
+theorem eventually_eq_of_laplacian_nonneg_of_isLocalMax {x : E} (hcd : ContDiffAt ℝ 2 u x)
+    (hlap : ∀ᶠ y in 𝓝 x, 0 ≤ Δ u y) (hmax : IsLocalMax u x) :
+    ∀ᶠ y in 𝓝 x, u y = u x := by
+  -- Work on a ball `ball x (3 * r)` on which `u` is `C²`, subharmonic, and bounded by `u x`.
+  obtain ⟨r₀, hr₀, hr₀sub⟩ := Metric.eventually_nhds_iff_ball.mp
+    ((hcd.eventually (by simp)).and (hlap.and hmax))
+  set r := r₀ / 3 with hr_def
+  have hr : 0 < r := by positivity
+  have hball : ∀ ⦃y⦄, dist y x < 3 * r →
+      ContDiffAt ℝ 2 u y ∧ 0 ≤ Δ u y ∧ u y ≤ u x := fun y hy =>
+    hr₀sub y (by rw [mem_ball]; linarith)
   by_contra hne
-  obtain ⟨y, _, hyS, hyT⟩ :=
-    hconn S T hSopen hTopen hcover ⟨a, ha, ha, rfl⟩
-      ⟨x, hxΩ, hxΩ, lt_of_le_of_ne (isMaxOn_iff.1 hmax x hxΩ) hne⟩
-  exact absurd hyS.2 hyT.2.ne
+  -- Some point `x₂` close to `x` has a strictly smaller value.
+  obtain ⟨x₂, hx₂x, hx₂ne⟩ : ∃ x₂, dist x₂ x < r ∧ u x₂ ≠ u x := by
+    by_contra! h
+    exact hne (Metric.eventually_nhds_iff.mpr ⟨r, hr, fun y hy => h y hy⟩)
+  -- The part `Z` of the level set `{u = u x}` in `closedBall x (2 * r)` is compact.
+  set Z := closedBall x (2 * r) ∩ u ⁻¹' {u x}
+  have hcont : ContinuousOn u (closedBall x (2 * r)) := fun y hy =>
+    (hball (by rw [mem_closedBall] at hy; linarith)).1.continuousAt.continuousWithinAt
+  have hZclosed : IsClosed Z :=
+    hcont.preimage_isClosed_of_isClosed isClosed_closedBall isClosed_singleton
+  have hZcompact : IsCompact Z :=
+    (isCompact_closedBall x (2 * r)).of_isClosed_subset hZclosed inter_subset_left
+  have hxZ : x ∈ Z := ⟨mem_closedBall_self (by positivity), rfl⟩
+  have hx₂Z : x₂ ∉ Z := fun h => hx₂ne h.2
+  -- `ρ` is the distance from `x₂` to `Z`, attained at `x₀ ∈ Z`.
+  set ρ := infDist x₂ Z
+  have hρ : 0 < ρ := (hZclosed.notMem_iff_infDist_pos ⟨x, hxZ⟩).mp hx₂Z
+  have hρr : ρ < r := (infDist_le_dist_of_mem hxZ).trans_lt hx₂x
+  obtain ⟨x₀, hx₀Z, hx₀dist⟩ := hZcompact.exists_infDist_eq_dist ⟨x, hxZ⟩ x₂
+  have hnear : ∀ ⦃y⦄, dist y x₂ ≤ ρ → dist y x < 2 * r := fun y hy => by
+    linarith [dist_triangle y x₂ x]
+  have hlt : ∀ y ∈ ball x₂ ρ, u y < u x₀ := fun y hy => by
+    rw [mem_ball] at hy
+    have hyx := hnear hy.le
+    refine hx₀Z.2 ▸ lt_of_le_of_ne (hball (by linarith)).2.2 fun hyu => ?_
+    have hyZ : y ∈ Z := ⟨mem_closedBall.mpr hyx.le, hyu⟩
+    have := infDist_le_dist_of_mem (x := x₂) hyZ
+    rw [dist_comm] at this
+    linarith
+  have hle : ∀ y ∈ sphere x₂ ρ, u y ≤ u x₀ := fun y hy => by
+    rw [mem_sphere] at hy
+    exact hx₀Z.2 ▸ (hball (by linarith [hnear hy.le])).2.2
+  -- `x₀` is again a local maximum, on the sphere touching `Z`: this contradicts Hopf's lemma.
+  have hx₀x : dist x₀ x < 3 * r := by
+    linarith [hnear (y := x₀) (by rw [dist_comm, ← hx₀dist])]
+  refine not_isLocalMax_of_lt_ball_of_le_sphere hρ (by rw [mem_sphere, dist_comm, ← hx₀dist])
+    (fun y hy => (hball (by rw [mem_closedBall] at hy; linarith [hnear hy])).1.continuousAt
+      |>.continuousWithinAt)
+    (fun y hy => (hball (by rw [mem_ball] at hy; linarith [hnear hy.le])).1)
+    ((hball hx₀x).1.differentiableAt (by simp))
+    (fun y hy => (hball (by rw [mem_ball] at hy; linarith [hnear hy.le])).2.1) hlt hle ?_
+  refine Metric.eventually_nhds_iff_ball.mpr ⟨3 * r - dist x₀ x, by linarith, fun y hy => ?_⟩
+  rw [mem_ball] at hy
+  exact hx₀Z.2 ▸ (hball (by linarith [dist_triangle y x₀ x])).2.2
 
-/-- **Strong maximum principle up to the boundary.**
+/-- **Local strong minimum principle.** A function that is `C²` at a local minimum point `x` and
+superharmonic (`Δ u ≤ 0`) near `x` is constant on a neighbourhood of `x`. -/
+theorem eventually_eq_of_laplacian_nonpos_of_isLocalMin {x : E} (hcd : ContDiffAt ℝ 2 u x)
+    (hlap : ∀ᶠ y in 𝓝 x, Δ u y ≤ 0) (hmin : IsLocalMin u x) :
+    ∀ᶠ y in 𝓝 x, u y = u x := by
+  have h := eventually_eq_of_laplacian_nonneg_of_isLocalMax (u := -u) hcd.neg
+    (hlap.mono fun y hy => by
+      rw [congrFun laplacian_neg y, Pi.neg_apply]
+      exact neg_nonneg.mpr hy)
+    hmin.neg
+  exact h.mono fun y hy => by simpa only [Pi.neg_apply, neg_inj] using hy
 
-If `u` is continuous on `closure Ω`, is `C²` and subharmonic on the open preconnected set `Ω`,
-and attains its maximum over `closure Ω` at a point of `Ω`, then `u` is constant on
-`closure Ω`.  This is the form used to rule out interior maxima for the Dirichlet problem on a
-bounded domain. -/
-theorem eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn (hΩ : IsOpen Ω)
-    (hconn : IsPreconnected Ω) (ha : a ∈ Ω) (hcont : ContinuousOn u (closure Ω))
-    (hcd : ∀ x ∈ Ω, ContDiffAt ℝ 2 u x) (hlap : ∀ x ∈ Ω, 0 ≤ Δ u x)
-    (hmax : IsMaxOn u (closure Ω) a) :
-    EqOn u (fun _ => u a) (closure Ω) := by
-  have hint : EqOn u (fun _ => u a) Ω :=
-    eqOn_const_of_laplacian_nonneg_of_isMaxOn hΩ hconn ha hcd hlap
-      (hmax.on_subset subset_closure)
+/-- **Strong maximum principle for subharmonic functions.** A function that is `C²` and
+subharmonic (`0 ≤ Δ u`) on a preconnected open set `U`, and attains its maximum over `U` at a
+point `a ∈ U`, is constant on `U`. -/
+theorem eqOn_const_of_laplacian_nonneg_of_isMaxOn (hU : IsOpen U) (ha : a ∈ U)
+    (hUconn : IsPreconnected U) (hcd : ∀ x ∈ U, ContDiffAt ℝ 2 u x)
+    (hlap : ∀ x ∈ U, 0 ≤ Δ u x) (hmax : IsMaxOn u U a) :
+    EqOn u (const E (u a)) U := by
+  -- The points near which `u` is identically `u a` form an open set, which is relatively closed
+  -- in `U` by continuity and the local principle, and contains `a`.
+  have hlocal : ∀ x ∈ U, u x = u a → ∀ᶠ y in 𝓝 x, u y = u a := fun x hx hxa => by
+    have hxmax : IsMaxOn u U x := fun y hy => hxa ▸ hmax hy
+    simpa only [hxa] using eventually_eq_of_laplacian_nonneg_of_isLocalMax (hcd x hx)
+      (eventually_of_mem (hU.mem_nhds hx) hlap) (hxmax.isLocalMax (hU.mem_nhds hx))
+  have hsub : U ⊆ {x | ∀ᶠ y in 𝓝 x, u y = u a} := by
+    refine hUconn.subset_of_closure_inter_subset isOpen_setOfPred_eventually_nhds
+      ⟨a, ha, hlocal a ha rfl⟩ ?_
+    rintro x ⟨hxcl, hxU⟩
+    refine hlocal x hxU (by_contra fun hxa => ?_)
+    obtain ⟨y, hy, hyO⟩ := mem_closure_iff_nhds.mp hxcl _
+      ((hcd x hxU).continuousAt.eventually_ne hxa)
+    exact hy hyO.self_of_nhds
+  exact fun x hx => (hsub hx).self_of_nhds
+
+/-- **Strong minimum principle for superharmonic functions.** A function that is `C²` and
+superharmonic (`Δ u ≤ 0`) on a preconnected open set `U`, and attains its minimum over `U` at a
+point `a ∈ U`, is constant on `U`. -/
+theorem eqOn_const_of_laplacian_nonpos_of_isMinOn (hU : IsOpen U) (ha : a ∈ U)
+    (hUconn : IsPreconnected U) (hcd : ∀ x ∈ U, ContDiffAt ℝ 2 u x)
+    (hlap : ∀ x ∈ U, Δ u x ≤ 0) (hmin : IsMinOn u U a) :
+    EqOn u (const E (u a)) U := by
+  have h := eqOn_const_of_laplacian_nonneg_of_isMaxOn (u := -u) hU ha hUconn
+    (fun x hx => (hcd x hx).neg)
+    (fun x hx => by
+      rw [congrFun laplacian_neg x, Pi.neg_apply]
+      exact neg_nonneg.mpr (hlap x hx))
+    hmin.neg
   intro x hx
-  have : (𝓝[Ω] x).NeBot := mem_closure_iff_nhdsWithin_neBot.1 hx
+  simpa only [Pi.neg_apply, const_apply, neg_inj] using h hx
+
+/-- **Strong comparison principle for the Laplacian.** Let `u` and `v` be `C²` on a preconnected
+open set `U`, with `u` at least as subharmonic as `v` there (`Δ v ≤ Δ u`). If `u ≤ v` on `U` and
+they agree at a point of `U`, then they agree on all of `U`. -/
+theorem eqOn_of_laplacian_le_of_le_of_eq (hU : IsOpen U) (ha : a ∈ U)
+    (hUconn : IsPreconnected U) (hucd : ∀ x ∈ U, ContDiffAt ℝ 2 u x)
+    (hvcd : ∀ x ∈ U, ContDiffAt ℝ 2 v x) (hlap : ∀ x ∈ U, Δ v x ≤ Δ u x)
+    (hle : ∀ x ∈ U, u x ≤ v x) (heq : u a = v a) :
+    EqOn u v U := by
+  have h := eqOn_const_of_laplacian_nonneg_of_isMaxOn (u := u - v) hU ha hUconn
+    (fun x hx => (hucd x hx).sub (hvcd x hx))
+    (fun x hx => by
+      rw [(hucd x hx).laplacian_sub (hvcd x hx), sub_nonneg]
+      exact hlap x hx)
+    (fun x hx => by
+      simp only [mem_ofPred_eq, Pi.sub_apply, heq, sub_self, sub_nonpos]
+      exact hle x hx)
+  intro x hx
+  have hx' := h hx
+  simp only [Pi.sub_apply, const_apply, heq, sub_self, sub_eq_zero] at hx'
+  exact hx'
+
+/-- **Strong maximum principle up to the boundary.** If `u` is continuous on `closure U`, is `C²`
+and subharmonic on the preconnected open set `U`, and attains its maximum over `closure U` at a
+point `a ∈ U`, then `u` is constant on `closure U`. -/
+theorem eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn (hU : IsOpen U) (ha : a ∈ U)
+    (hUconn : IsPreconnected U) (hcont : ContinuousOn u (closure U))
+    (hcd : ∀ x ∈ U, ContDiffAt ℝ 2 u x) (hlap : ∀ x ∈ U, 0 ≤ Δ u x)
+    (hmax : IsMaxOn u (closure U) a) :
+    EqOn u (const E (u a)) (closure U) := by
+  have hint := eqOn_const_of_laplacian_nonneg_of_isMaxOn hU ha hUconn hcd hlap
+    (hmax.on_subset subset_closure)
+  intro x hx
+  have : (𝓝[U] x).NeBot := mem_closure_iff_nhdsWithin_neBot.1 hx
   refine tendsto_nhds_unique ((hcont x hx).mono subset_closure) ?_
-  refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
+  refine Tendsto.congr' ?_ tendsto_const_nhds
   filter_upwards [self_mem_nhdsWithin] with y hy using (hint hy).symm
 
-/-- **Strong minimum principle for superharmonic functions.**
-
-The mirror image of `TauCeti.eqOn_const_of_laplacian_nonneg_of_isMaxOn`: a `C²` superharmonic
-(`Δ u ≤ 0`) function on an open preconnected set that attains its minimum over the set at one
-of its points is constant there. -/
-theorem eqOn_const_of_laplacian_nonpos_of_isMinOn (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
-    (ha : a ∈ Ω) (hcd : ∀ x ∈ Ω, ContDiffAt ℝ 2 u x) (hlap : ∀ x ∈ Ω, Δ u x ≤ 0)
-    (hmin : IsMinOn u Ω a) :
-    EqOn u (fun _ => u a) Ω := by
-  have h := eqOn_const_of_laplacian_nonneg_of_isMaxOn (u := -u) hΩ hconn ha
+/-- **Strong minimum principle up to the boundary.** If `u` is continuous on `closure U`, is `C²`
+and superharmonic on the preconnected open set `U`, and attains its minimum over `closure U` at a
+point `a ∈ U`, then `u` is constant on `closure U`. -/
+theorem eqOn_const_closure_of_laplacian_nonpos_of_isMinOn (hU : IsOpen U) (ha : a ∈ U)
+    (hUconn : IsPreconnected U) (hcont : ContinuousOn u (closure U))
+    (hcd : ∀ x ∈ U, ContDiffAt ℝ 2 u x) (hlap : ∀ x ∈ U, Δ u x ≤ 0)
+    (hmin : IsMinOn u (closure U) a) :
+    EqOn u (const E (u a)) (closure U) := by
+  have h := eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn (u := -u) hU ha hUconn hcont.neg
     (fun x hx => (hcd x hx).neg)
-    (fun x hx => by rw [congrFun laplacian_neg x, Pi.neg_apply]; linarith [hlap x hx])
+    (fun x hx => by
+      rw [congrFun laplacian_neg x, Pi.neg_apply]
+      exact neg_nonneg.mpr (hlap x hx))
     hmin.neg
   intro x hx
-  have := h hx
-  simp only [Pi.neg_apply] at this
-  linarith [this]
+  simpa only [Pi.neg_apply, const_apply, neg_inj] using h hx
 
-/-- **Strong minimum principle up to the boundary.**
-
-The mirror image of `TauCeti.eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn` for
-superharmonic functions. -/
-theorem eqOn_const_closure_of_laplacian_nonpos_of_isMinOn (hΩ : IsOpen Ω)
-    (hconn : IsPreconnected Ω) (ha : a ∈ Ω) (hcont : ContinuousOn u (closure Ω))
-    (hcd : ∀ x ∈ Ω, ContDiffAt ℝ 2 u x) (hlap : ∀ x ∈ Ω, Δ u x ≤ 0)
-    (hmin : IsMinOn u (closure Ω) a) :
-    EqOn u (fun _ => u a) (closure Ω) := by
-  have h := eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn (u := -u) hΩ hconn ha hcont.neg
-    (fun x hx => (hcd x hx).neg)
-    (fun x hx => by rw [congrFun laplacian_neg x, Pi.neg_apply]; linarith [hlap x hx])
-    hmin.neg
-  intro x hx
-  have := h hx
-  simp only [Pi.neg_apply] at this
-  linarith [this]
-
-/-- **Strong comparison principle.**
-
-If `u` and `v` are `C²` on an open preconnected set `Ω` with `Δ v ≤ Δ u` there, and `u ≤ v`
-throughout `Ω` with equality at one point `a`, then `u = v` on all of `Ω`.
-
-The hypothesis on the Laplacians says exactly that `u - v` is subharmonic; the case of a
-subharmonic `u` dominated by a superharmonic `v` is the instance `0 ≤ Δ u` and `Δ v ≤ 0`. -/
-theorem eqOn_of_laplacian_le_of_le_of_eq (hΩ : IsOpen Ω)
-    (hconn : IsPreconnected Ω) (ha : a ∈ Ω)
-    (hcdu : ∀ x ∈ Ω, ContDiffAt ℝ 2 u x) (hcdv : ∀ x ∈ Ω, ContDiffAt ℝ 2 v x)
-    (hlap : ∀ x ∈ Ω, Δ v x ≤ Δ u x)
-    (hle : ∀ x ∈ Ω, u x ≤ v x) (heq : u a = v a) :
-    EqOn u v Ω := by
-  have hmax : IsMaxOn (u - v) Ω a := by
-    refine isMaxOn_iff.2 fun x hx => ?_
-    simp only [Pi.sub_apply, heq, sub_self]
-    linarith [hle x hx]
-  have h := eqOn_const_of_laplacian_nonneg_of_isMaxOn (u := u - v) hΩ hconn ha
-    (fun x hx => (hcdu x hx).sub (hcdv x hx))
+/-- **Strong comparison principle up to the boundary.** Let `u` and `v` be continuous on
+`closure U` and `C²` on the preconnected open set `U`, with `Δ v ≤ Δ u` on `U`. If `u ≤ v` on
+`closure U` and they agree at a point of `U`, then they agree on all of `closure U`. -/
+theorem eqOn_closure_of_laplacian_le_of_le_of_eq (hU : IsOpen U) (ha : a ∈ U)
+    (hUconn : IsPreconnected U) (hucont : ContinuousOn u (closure U))
+    (hvcont : ContinuousOn v (closure U)) (hucd : ∀ x ∈ U, ContDiffAt ℝ 2 u x)
+    (hvcd : ∀ x ∈ U, ContDiffAt ℝ 2 v x) (hlap : ∀ x ∈ U, Δ v x ≤ Δ u x)
+    (hle : ∀ x ∈ closure U, u x ≤ v x) (heq : u a = v a) :
+    EqOn u v (closure U) := by
+  have h := eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn (u := u - v) hU ha hUconn
+    (hucont.sub hvcont) (fun x hx => (hucd x hx).sub (hvcd x hx))
     (fun x hx => by
-      rw [(hcdu x hx).laplacian_sub (hcdv x hx)]
-      linarith [hlap x hx])
-    hmax
+      rw [(hucd x hx).laplacian_sub (hvcd x hx), sub_nonneg]
+      exact hlap x hx)
+    (fun x hx => by
+      simp only [mem_ofPred_eq, Pi.sub_apply, heq, sub_self, sub_nonpos]
+      exact hle x hx)
   intro x hx
   have hx' := h hx
-  simp only [Pi.sub_apply, heq, sub_self] at hx'
-  linarith [hx']
+  simp only [Pi.sub_apply, const_apply, heq, sub_self, sub_eq_zero] at hx'
+  exact hx'
 
-/-- **Strong comparison principle up to the boundary.**
+end Laplacian
 
-The counterpart of `TauCeti.eqOn_of_laplacian_le_of_le_of_eq` for functions continuous on
-`closure Ω`: if `u ≤ v` on `closure Ω` and the two agree at a point of `Ω`, then they agree on
-all of `closure Ω`. -/
-theorem eqOn_closure_of_laplacian_le_of_le_of_eq (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
-    (ha : a ∈ Ω) (hcontu : ContinuousOn u (closure Ω)) (hcontv : ContinuousOn v (closure Ω))
-    (hcdu : ∀ x ∈ Ω, ContDiffAt ℝ 2 u x) (hcdv : ∀ x ∈ Ω, ContDiffAt ℝ 2 v x)
-    (hlap : ∀ x ∈ Ω, Δ v x ≤ Δ u x)
-    (hle : ∀ x ∈ closure Ω, u x ≤ v x) (heq : u a = v a) :
-    EqOn u v (closure Ω) := by
-  have hmax : IsMaxOn (u - v) (closure Ω) a := by
-    refine isMaxOn_iff.2 fun x hx => ?_
-    simp only [Pi.sub_apply, heq, sub_self]
-    linarith [hle x hx]
-  have h := eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn (u := u - v) hΩ hconn ha
-    (hcontu.sub hcontv)
-    (fun x hx => (hcdu x hx).sub (hcdv x hx))
-    (fun x hx => by
-      rw [(hcdu x hx).laplacian_sub (hcdv x hx)]
-      linarith [hlap x hx])
-    hmax
-  intro x hx
-  have hx' := h hx
-  simp only [Pi.sub_apply, heq, sub_self] at hx'
-  linarith [hx']
+section Harmonic
+
+variable {Ω : Set E} {f g : E → ℝ} {a : E}
+
+/-- **Strong maximum principle for harmonic functions.** A real-valued harmonic function on a
+preconnected open set that attains its maximum over the set at one of its points is constant
+there. -/
+theorem eqOn_const_of_harmonicOnNhd_of_isMaxOn_of_isOpen
+    (hΩopen : IsOpen Ω) (ha : a ∈ Ω) (hΩconn : IsPreconnected Ω)
+    (hf : HarmonicOnNhd f Ω) (hmax : IsMaxOn f Ω a) :
+    EqOn f (const E (f a)) Ω :=
+  eqOn_const_of_laplacian_nonneg_of_isMaxOn hΩopen ha hΩconn (fun x hx => (hf x hx).1)
+    (fun x hx => le_of_eq (hf x hx).2.eq_of_nhds.symm) hmax
+
+/-- **Strong minimum principle for harmonic functions.** A real-valued harmonic function on a
+preconnected open set that attains its minimum over the set at one of its points is constant
+there. -/
+theorem eqOn_const_of_harmonicOnNhd_of_isMinOn_of_isOpen
+    (hΩopen : IsOpen Ω) (ha : a ∈ Ω) (hΩconn : IsPreconnected Ω)
+    (hf : HarmonicOnNhd f Ω) (hmin : IsMinOn f Ω a) :
+    EqOn f (const E (f a)) Ω :=
+  eqOn_const_of_laplacian_nonpos_of_isMinOn hΩopen ha hΩconn (fun x hx => (hf x hx).1)
+    (fun x hx => le_of_eq (hf x hx).2.eq_of_nhds) hmin
+
+/-- **Strong comparison principle for harmonic functions.** Two harmonic functions on a
+preconnected open set, one below the other, that agree at one point of the set agree throughout
+it. -/
+theorem eqOn_of_harmonicOnNhd_of_le_of_eq_of_isOpen
+    (hΩopen : IsOpen Ω) (ha : a ∈ Ω) (hΩconn : IsPreconnected Ω)
+    (hf : HarmonicOnNhd f Ω) (hg : HarmonicOnNhd g Ω)
+    (hfg : ∀ z ∈ Ω, f z ≤ g z) (hfg_a : f a = g a) : EqOn f g Ω :=
+  eqOn_of_laplacian_le_of_le_of_eq hΩopen ha hΩconn (fun x hx => (hf x hx).1)
+    (fun x hx => (hg x hx).1)
+    (fun x hx => le_of_eq ((hg x hx).2.eq_of_nhds.trans (hf x hx).2.eq_of_nhds.symm)) hfg hfg_a
+
+/-- A nonnegative harmonic function on a preconnected open set that vanishes at one point of the
+set vanishes throughout it. -/
+theorem eq_zero_on_of_harmonicOnNhd_of_nonneg_of_eq_zero_of_isOpen
+    (hΩopen : IsOpen Ω) (ha : a ∈ Ω) (hΩconn : IsPreconnected Ω)
+    (hf : HarmonicOnNhd f Ω) (hnonneg : ∀ z ∈ Ω, 0 ≤ f z) (hfa : f a = 0) :
+    EqOn f 0 Ω := by
+  have h := eqOn_const_of_harmonicOnNhd_of_isMinOn_of_isOpen hΩopen ha hΩconn hf
+    fun z hz => hfa ▸ hnonneg z hz
+  intro z hz
+  simpa only [const_apply, hfa, Pi.zero_apply] using h hz
+
+/-- A nonnegative harmonic function on a preconnected open set either vanishes identically or is
+strictly positive everywhere on the set. -/
+theorem eq_zero_on_or_pos_on_of_harmonicOnNhd_of_nonneg
+    (hΩopen : IsOpen Ω) (hΩconn : IsPreconnected Ω) (hf : HarmonicOnNhd f Ω)
+    (hnonneg : ∀ z ∈ Ω, 0 ≤ f z) :
+    EqOn f 0 Ω ∨ ∀ z ∈ Ω, 0 < f z := by
+  by_cases hzero : ∃ a ∈ Ω, f a = 0
+  · obtain ⟨a, ha, hfa⟩ := hzero
+    exact Or.inl <| eq_zero_on_of_harmonicOnNhd_of_nonneg_of_eq_zero_of_isOpen
+      hΩopen ha hΩconn hf hnonneg hfa
+  · right
+    intro z hz
+    exact lt_of_le_of_ne (hnonneg z hz) fun h => hzero ⟨z, hz, h.symm⟩
+
+end Harmonic
 
 end TauCeti
+
+end
 
 end

@@ -340,6 +340,11 @@ noncomputable def skewZigzagVolume {i : V} (e : {j : V // G.Adj i j}) :
     skewZigzagQuotient k G c :=
   skewZigzagMk k G c (backtrackElem G k e.2)
 
+/-- The chosen skew-zigzag volume is represented by the backtrack along its chosen incident
+edge. -/
+theorem skewZigzagVolume_def {i : V} (e : {j : V // G.Adj i j}) :
+    skewZigzagVolume k G c e = skewZigzagMk k G c (backtrackElem G k e.2) := (rfl)
+
 /-- The class of any backtrack is the prescribed unit multiple of the volume class of its base
 vertex. The reference edge `e` must be supplied explicitly: it cannot be inferred from the
 backtrack on the left-hand side, so this is intentionally not a global simp lemma. -/

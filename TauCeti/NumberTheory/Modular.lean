@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Modular
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
+public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSLAction
 public import TauCeti.GroupTheory.Index.Basic
 import TauCeti.GroupTheory.QuotientGroup.ThirdIso
@@ -41,8 +42,6 @@ every level, which is what a Petersson product for a congruence subgroup is an i
 * `ModularGroup.volume_frontier_fd`: the frontier of `𝒟` has zero invariant measure.
 * `ModularGroup.fd_ae_eq_fdo`: `𝒟` and `𝒟ᵒ` agree almost everywhere (so set integrals
   over them coincide, via `MeasureTheory.setIntegral_congr_set`).
-* `ModularGroup.sl_smul_set`: the `SL(2, ℤ)`-action on subsets of `ℍ` is the `GL(2, ℝ)`-action
-  along the coercion.
 * `ModularGroup.isOpen_smul_fdo` and `ModularGroup.disjoint_smul_fdo`: the translates of the
   open fundamental domain are open, and two of them are disjoint unless the translating
   elements differ by a sign.
@@ -195,12 +194,6 @@ theorem fd_ae_eq_fdo : (fd : Set ℍ) =ᶠ[ae (volume : Measure ℍ)] fdo :=
     (fdo : Set ℍ) =ᶠ[ae (volume : Measure ℍ)] fd)).symm
 
 /-! ### Disjointness of translates of the open fundamental domain -/
-
-/-- **The `SL(2, ℤ)`-action on subsets of `ℍ` is the `GL(2, ℝ)`-action along the coercion**, the
-pointwise-image counterpart of `ModularGroup.sl_moeb`. This is useful as a rewrite even though
-the two actions are definitionally equal. -/
-@[simp]
-theorem sl_smul_set (γ : SL(2, ℤ)) (S : Set ℍ) : γ • S = (γ : GL (Fin 2) ℝ) • S := (rfl)
 
 /-- Every translate of the open fundamental domain is open: translation is a homeomorphism
 of `ℍ`. -/
