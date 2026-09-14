@@ -24,25 +24,23 @@ symmetric polynomials. This is the integral orbit product used by a resolvent sp
 
 ## Main definitions
 
-* `TauCeti.MvPolynomial.universalResolvent`: the product over the rename-orbit of an invariant.
+* `MvPolynomial.universalResolvent`: the product over the rename-orbit of an invariant.
 * `TauCeti.esymmSubst`: substitution of the elementary symmetric polynomials for the variables.
 
 ## Main results
 
-* `TauCeti.MvPolynomial.universalResolvent_map_rename`: the universal resolvent is invariant under
+* `MvPolynomial.universalResolvent_map_rename`: the universal resolvent is invariant under
   renaming.
-* `TauCeti.MvPolynomial.isSymmetric_universalResolvent_coeff`: all of its coefficients are
+* `MvPolynomial.isSymmetric_universalResolvent_coeff`: all of its coefficients are
   symmetric.
 * `TauCeti.esymmSubst_injective`: elementary-symmetric substitution is injective.
-* `TauCeti.MvPolynomial.existsUnique_orbitProduct`: the universal resolvent descends uniquely
+* `MvPolynomial.existsUnique_orbitProduct`: the universal resolvent descends uniquely
   through elementary-symmetric substitution.
 -/
 
 public section
 
 open Polynomial
-
-namespace TauCeti
 
 namespace MvPolynomial
 
@@ -64,9 +62,11 @@ theorem mem_renameOrbit {n : ℕ} (Φ Ψ : MvPolynomial (Fin n) ℤ) :
 /-- The universal resolvent of `Φ`, formed over the orbit obtained by permuting its variables. -/
 noncomputable def universalResolvent {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
     (MvPolynomial (Fin n) ℤ)[X] :=
-  ∏ Ψ ∈ renameOrbit Φ, (X - C Ψ)
+  ∏ Ψ ∈ renameOrbit Φ, (Polynomial.X - Polynomial.C Ψ)
 
 end MvPolynomial
+
+namespace TauCeti
 
 /-- The substitution sending variable `i` to the elementary symmetric polynomial `e_(i+1)`. -/
 noncomputable def esymmSubst (n : ℕ) :
@@ -85,6 +85,8 @@ theorem esymmSubst_apply (n : ℕ) (p : MvPolynomial (Fin n) ℤ) :
     esymmSubst n p = (MvPolynomial.esymmAlgHom (Fin n) ℤ n p).1 := by
   rw [esymmSubst, AlgHom.toRingHom_eq_coe]
   exact (MvPolynomial.esymmAlgHom_apply p).symm
+
+end TauCeti
 
 namespace MvPolynomial
 
@@ -107,7 +109,9 @@ private lemma renameOrbit_image (n : ℕ) (Φ : MvPolynomial (Fin n) ℤ)
 @[simp]
 theorem universalResolvent_map_rename {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ)
     (σ : Equiv.Perm (Fin n)) :
-    (universalResolvent Φ).map (MvPolynomial.rename (⇑σ)).toRingHom =
+    (universalResolvent Φ).map
+        (↑(MvPolynomial.rename (R := ℤ) (⇑σ)) :
+          MvPolynomial (Fin n) ℤ →+* MvPolynomial (Fin n) ℤ) =
       universalResolvent Φ := by
   classical
   rw [universalResolvent, Polynomial.map_prod]
@@ -137,6 +141,8 @@ theorem isSymmetric_universalResolvent_coeff {n : ℕ} (Φ : MvPolynomial (Fin n
 
 end MvPolynomial
 
+namespace TauCeti
+
 /-- Substitution by the elementary symmetric polynomials is injective. -/
 lemma esymmSubst_injective (n : ℕ) : Function.Injective (esymmSubst n) := by
   intro p q hpq
@@ -144,12 +150,14 @@ lemma esymmSubst_injective (n : ℕ) : Function.Injective (esymmSubst n) := by
   apply Subtype.ext
   simpa only [← esymmSubst_apply] using hpq
 
+end TauCeti
+
 namespace MvPolynomial
 
 /-- The universal resolvent has a unique expression in the elementary symmetric polynomials. -/
 theorem existsUnique_orbitProduct {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
     ∃! D : (MvPolynomial (Fin n) ℤ)[X],
-      D.map (esymmSubst n) = universalResolvent Φ := by
+      D.map (TauCeti.esymmSubst n) = universalResolvent Φ := by
   classical
   let S := MvPolynomial.symmetricSubalgebra (Fin n) ℤ
   have hcoeffs : (↑(universalResolvent Φ).coeffs : Set (MvPolynomial (Fin n) ℤ)) ⊆ S := by
@@ -162,12 +170,12 @@ theorem existsUnique_orbitProduct {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
   obtain ⟨D, hD⟩ := Polynomial.map_surjective
     (MvPolynomial.esymmAlgHom (Fin n) ℤ n).toRingHom
     (MvPolynomial.esymmAlgHom_fin_bijective ℤ n).2 P
-  have hD' : D.map (esymmSubst n) = universalResolvent Φ := by
+  have hD' : D.map (TauCeti.esymmSubst n) = universalResolvent Φ := by
     apply Polynomial.ext
     intro k
     have hk := congrArg (fun p : S.toSubring[X] => p.coeff k) hD
     rw [Polynomial.coeff_map] at hk
-    rw [Polynomial.coeff_map, esymmSubst_apply]
+    rw [Polynomial.coeff_map, TauCeti.esymmSubst_apply]
     have hk' :
         ((MvPolynomial.esymmAlgHom (Fin n) ℤ n).toRingHom (D.coeff k)).1 =
           (universalResolvent Φ).coeff k := by
@@ -176,9 +184,7 @@ theorem existsUnique_orbitProduct {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
       (AlgHom.coe_toRingHom (MvPolynomial.esymmAlgHom (Fin n) ℤ n)) (D.coeff k))).symm.trans hk'
   refine ⟨D, hD', ?_⟩
   intro E hE
-  apply Polynomial.map_injective (esymmSubst n) (esymmSubst_injective n)
+  apply Polynomial.map_injective (TauCeti.esymmSubst n) (TauCeti.esymmSubst_injective n)
   exact hE.trans hD'.symm
 
 end MvPolynomial
-
-end TauCeti
