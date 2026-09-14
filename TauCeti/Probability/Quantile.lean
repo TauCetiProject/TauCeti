@@ -23,8 +23,9 @@ the Galois property `μ.quantile t ≤ x ↔ t ≤ cdf μ x`. At levels `t ≤ 0
 ranges over all of `ℝ` or over the empty set, so the value there is the junk value `0`. The
 endpoint level `t = 1` is not junk: the quantile there is the least point of full cumulative mass
 when such a point exists (for instance `(dirac a).quantile 1 = a`), and `0` when the law has
-unbounded support to the right. Apart from `quantile_dirac`, the statements below restrict the
-level to `Ioo 0 1`, and that is also the interval the uniform law is taken on.
+unbounded support to the right. The inverse characterizations below use levels in `Ioo 0 1`,
+while `quantile_dirac` additionally covers `t = 1`; `Ioo 0 1` is also the interval the uniform law
+is taken on.
 
 The main result is **inverse transform sampling**: for a probability measure `μ` the quantile
 function pushes the uniform law on the open unit interval forward to `μ`. It presents every real
