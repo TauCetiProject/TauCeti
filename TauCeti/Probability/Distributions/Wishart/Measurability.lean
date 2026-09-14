@@ -31,9 +31,6 @@ defined for every real square matrix.
 
 ## References
 
-* `TauCetiRoadmap/StandardDistributions/README.md`, Layer 6, item 7 (parameter measurability).
-* `TauCetiRoadmap/StandardDistributions/Suggested.lean`, section "Parameter measurability", whose
-  `measurable_wishartGramMeasure` supplies the statement of the main theorem.
 * R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Wiley, 1982, chapter 3.
 -/
 
@@ -73,6 +70,8 @@ private theorem measurable_wishartGramMeasure_fixedDegree (nu : ℕ) :
 in its natural degree and every coordinate of its scale matrix.  No positivity hypothesis is
 needed: outside the positive-semidefinite cone Mathlib's multivariate Gaussian, and hence this
 family, is the appropriate Dirac law. -/
+-- The statement follows `TauCetiRoadmap/StandardDistributions/Suggested.lean`, section
+-- "Parameter measurability".
 @[fun_prop]
 theorem measurable_wishartGramMeasure :
     Measurable fun q : ℕ × (Fin p → Fin p → ℝ) =>
