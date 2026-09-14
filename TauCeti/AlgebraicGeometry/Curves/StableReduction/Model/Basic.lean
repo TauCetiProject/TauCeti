@@ -131,27 +131,36 @@ lemma baseChangeHom_id (M : Model R K C toK) :
         (Over.mk M.toBase)),
     Over.id_left]
 
-/-- Base change carries a composite of model morphisms to the composite of their base changes. -/
+/-- Base change carries a composite of maps over the DVR to the composite of their base changes. -/
 @[simp]
-lemma baseChangeHom_comp {M N P : Model R K C toK} (f : Hom M N) (g : Hom N P) :
-    M.baseChangeHom (f.hom ≫ g.hom) (by rw [Category.assoc, g.overBase, f.overBase]) =
-      M.baseChangeHom f.hom f.overBase ≫ N.baseChangeHom g.hom g.overBase := by
+lemma baseChangeHom_comp_raw {M N P : Model R K C toK}
+    (f : M.total ⟶ N.total) (g : N.total ⟶ P.total)
+    (hf : f ≫ N.toBase = M.toBase) (hg : g ≫ P.toBase = N.toBase) :
+    M.baseChangeHom (f ≫ g) (by rw [Category.assoc, hg, hf]) =
+      M.baseChangeHom f hf ≫ N.baseChangeHom g hg := by
   dsimp only [baseChangeHom]
-  have hcomp : (f.hom ≫ g.hom) ≫ P.toBase = M.toBase := by
-    rw [Category.assoc, g.overBase, f.overBase]
+  have hcomp : (f ≫ g) ≫ P.toBase = M.toBase := by
+    rw [Category.assoc, hg, hf]
   have h :
-      (Over.homMk (f.hom ≫ g.hom) hcomp :
+      (Over.homMk (f ≫ g) hcomp :
           Over.mk M.toBase ⟶ Over.mk P.toBase) =
-        (Over.homMk f.hom f.overBase : Over.mk M.toBase ⟶ Over.mk N.toBase) ≫
-          (Over.homMk g.hom g.overBase : Over.mk N.toBase ⟶ Over.mk P.toBase) := by
+        (Over.homMk f hf : Over.mk M.toBase ⟶ Over.mk N.toBase) ≫
+          (Over.homMk g hg : Over.mk N.toBase ⟶ Over.mk P.toBase) := by
     ext
     rfl
   rw [h,
     congrArg Over.Hom.left
       ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).map_comp
-        (Over.homMk f.hom f.overBase : Over.mk M.toBase ⟶ Over.mk N.toBase)
-        (Over.homMk g.hom g.overBase : Over.mk N.toBase ⟶ Over.mk P.toBase)),
-    Over.comp_left]
+      (Over.homMk f hf : Over.mk M.toBase ⟶ Over.mk N.toBase)
+      (Over.homMk g hg : Over.mk N.toBase ⟶ Over.mk P.toBase)),
+  Over.comp_left]
+
+/-- The bundled version is the convenient form used by the category structure. -/
+@[simp]
+lemma baseChangeHom_comp {M N P : Model R K C toK} (f : Hom M N) (g : Hom N P) :
+    M.baseChangeHom (f.hom ≫ g.hom) (by rw [Category.assoc, g.overBase, f.overBase]) =
+      M.baseChangeHom f.hom f.overBase ≫ N.baseChangeHom g.hom g.overBase := by
+  exact baseChangeHom_comp_raw f.hom g.hom f.overBase g.overBase
 
 /-- Models of a fixed scheme over the fraction field form a category. -/
 instance : Category (Model R K C toK) where
