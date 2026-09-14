@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
 public import Mathlib.CategoryTheory.Groupoid.Subgroupoid
-public import Mathlib.Topology.Subpath
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import TauCeti.Topology.Homotopy.Path
 
 /-!
@@ -19,13 +18,11 @@ of the groupoid Seifert--van Kampen theorem: every morphism of the fundamental g
 a composite of morphisms coming from the fundamental groupoids of the sets `U i`.
 
 The proof subdivides a path by the Lebesgue number lemma on the unit interval so that each piece
-lies in a single `U i`, and then uses Mathlib's homotopy between a path and the concatenation of
-its consecutive subpaths.
+lies in a single `U i` (`Path.exists_monotone_range_subpath_subset`), and then uses Mathlib's
+homotopy between a path and the concatenation of its consecutive subpaths.
 
 ## Main results
 
-* `Path.exists_monotone_range_subpath_subset`: a path can be subdivided so that every subpath
-  between consecutive subdivision points has range in some `U i`.
 * `TauCeti.FundamentalGroupoid.iSup_im_map_subtypeVal_eq_top`: the images of the inclusion functors
   `FundamentalGroupoid (U i) ⥤ FundamentalGroupoid X` generate the whole fundamental groupoid as
   a subgroupoid.
@@ -37,6 +34,9 @@ its consecutive subpaths.
 
 * R. Brown, *Topology and Groupoids*, Section 6.7.
 * A. Hatcher, *Algebraic Topology*, Section 1.2, proof of Theorem 1.20.
+* T. Zhu, [mathlib4#41603](https://github.com/leanprover-community/mathlib4/pull/41603)
+  (Seifert--van Kampen for the fundamental groupoid functor). Its groupoid formulation informed
+  the direction of this construction; no code from it was copied.
 -/
 
 public section
@@ -45,39 +45,6 @@ open CategoryTheory Set Topology
 open scoped unitInterval
 
 variable {X : Type*} [TopologicalSpace X] {ι : Type*} {U : ι → Set X}
-
-namespace Path
-
-/-- If every point of `X` has some `U i` as a neighbourhood, then a path can be subdivided at
-finitely many monotone times, starting at `0` and ending at `1`, so that the subpath between any
-two consecutive times has range in some `U i`. -/
-theorem exists_monotone_range_subpath_subset (hU : ∀ x, ∃ i, U i ∈ 𝓝 x) {x y : X}
-    (γ : Path x y) :
-    ∃ (n : ℕ) (t : Fin (n + 1) → I), t 0 = 0 ∧ t (Fin.last n) = 1 ∧ Monotone t ∧
-      ∀ k : Fin n, ∃ i, range (γ.subpath (t k.castSucc) (t k.succ)) ⊆ U i := by
-  obtain ⟨t, ht0, ht_mono, ⟨N, hN⟩, ht_cover⟩ :=
-    exists_monotone_Icc_subset_open_cover_unitInterval
-      (c := fun i ↦ γ ⁻¹' interior (U i))
-      (fun i ↦ isOpen_interior.preimage γ.continuous)
-      (fun s _ ↦ by
-        obtain ⟨i, hi⟩ := hU (γ s)
-        exact mem_iUnion.2 ⟨i, mem_interior_iff_mem_nhds.2 hi⟩)
-  refine ⟨N, fun k ↦ t k, by simpa using ht0, by simpa using hN N le_rfl,
-    fun a b hab ↦ ht_mono (by simpa using hab), fun k ↦ ?_⟩
-  obtain ⟨i, hi⟩ := ht_cover k
-  refine ⟨i, ?_⟩
-  rw [range_subpath_of_le _ _ _ (ht_mono (by simp))]
-  rintro _ ⟨s, hs, rfl⟩
-  exact interior_subset (hi (by simpa using hs))
-
-end Path
-
-/-- The functor between fundamental groupoids induced by an injective continuous map is injective
-on objects. -/
-theorem FundamentalGroupoid.map_obj_injective {Y : Type*} [TopologicalSpace Y] {f : C(X, Y)}
-    (hf : Function.Injective f) : Function.Injective (FundamentalGroupoid.map f).obj := by
-  rintro ⟨a⟩ ⟨b⟩ h
-  exact congrArg FundamentalGroupoid.mk (hf (congrArg FundamentalGroupoid.as h))
 
 namespace TauCeti
 
@@ -145,13 +112,15 @@ theorem iSup_im_map_subtypeVal_eq_top (hU : ∀ x, ∃ i, U i ∈ 𝓝 x) :
   rw [eq_top_iff]
   rintro ⟨⟨x⟩, ⟨y⟩, f⟩ -
   induction f using Path.Homotopic.Quotient.ind with | mk γ =>
-  obtain ⟨n, t, ht0, htn, -, ht⟩ := γ.exists_monotone_range_subpath_subset hU
+  obtain ⟨n, t, ht0, htn, -, ht⟩ := γ.exists_monotone_range_subpath_subset fun s ↦ hU (γ s)
   have hsub := mk_concat_mem_iSup_im hU (γ ∘ t) (fun k ↦ γ.subpath (t k.castSucc) (t k.succ)) ht
   rw [Path.Homotopic.Quotient.eq.2 (Path.Homotopic.concat_subpath γ t)] at hsub
-  have hγ : γ = (γ.subpath (t 0) (t (Fin.last n))).cast (by simp [ht0]) (by simp [htn]) := by
-    ext s
-    simp [Path.subpath, ht0, htn]
-  rw [hγ, Path.Homotopic.Quotient.mk_cast]
+  have hγ : ∀ (a b : I) (ha : a = 0) (hb : b = 1),
+      γ = (γ.subpath a b).cast (by simp [ha]) (by simp [hb]) := by
+    rintro _ _ rfl rfl
+    rw [Path.subpath_zero_one]
+    rfl
+  rw [hγ _ _ ht0 htn, Path.Homotopic.Quotient.mk_cast]
   exact cast_mem _ _ hsub
 
 /-- Two functors out of the fundamental groupoid of `X` are equal as soon as they agree after

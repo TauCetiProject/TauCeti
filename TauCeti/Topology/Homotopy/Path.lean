@@ -32,6 +32,12 @@ ambient space whose intermediate paths all stay in `V`. Analytic continuation co
 `AlgebraicTopology/Sphere/Puncture.lean`. The lemma
 `Path.Homotopic.refl_of_forall_mem_of_nullhomotopic` is not from #38292; it was factored out of
 `AlgebraicTopology/SemilocallySimplyConnected/Basic.lean`.
+
+`Path.exists_monotone_range_subpath_subset` subdivides a path, by the Lebesgue number lemma on the
+unit interval, so that each consecutive subpath lies in a member of a given family of sets. It is
+used for the generation half of the groupoid van Kampen theorem in
+`AlgebraicTopology/FundamentalGroupoid/CoverGeneration.lean` and for the tube construction in
+`AlgebraicTopology/UniversalCover/PathHomotopyDiscreteness.lean`.
 -/
 
 public section
@@ -164,6 +170,28 @@ theorem homotopic_of_continuous_square {a b : X} {p q : Path a b} (K : I × I �
        · rw [Set.mem_singleton_iff] at hs
          subst hs
          exact (hK_right t).trans p.target.symm }⟩
+
+/-- If every point of `γ` has some `U i` as a neighbourhood, then `γ` can be subdivided at
+finitely many monotone times, starting at `0` and ending at `1`, so that the subpath between any
+two consecutive times has range in some `U i`. -/
+theorem exists_monotone_range_subpath_subset {ι : Type*} {U : ι → Set X} {x y : X}
+    (γ : Path x y) (hU : ∀ s, ∃ i, U i ∈ 𝓝 (γ s)) :
+    ∃ (n : ℕ) (t : Fin (n + 1) → I), t 0 = 0 ∧ t (Fin.last n) = 1 ∧ Monotone t ∧
+      ∀ k : Fin n, ∃ i, range (γ.subpath (t k.castSucc) (t k.succ)) ⊆ U i := by
+  obtain ⟨t, ht0, ht_mono, ⟨N, hN⟩, ht_cover⟩ :=
+    exists_monotone_Icc_subset_open_cover_unitInterval
+      (c := fun i ↦ γ ⁻¹' interior (U i))
+      (fun i ↦ isOpen_interior.preimage γ.continuous)
+      (fun s _ ↦ by
+        obtain ⟨i, hi⟩ := hU s
+        exact mem_iUnion.2 ⟨i, mem_interior_iff_mem_nhds.2 hi⟩)
+  refine ⟨N, fun k ↦ t k, by simpa using ht0, by simpa using hN N le_rfl,
+    fun a b hab ↦ ht_mono (by simpa using hab), fun k ↦ ?_⟩
+  obtain ⟨i, hi⟩ := ht_cover k
+  refine ⟨i, ?_⟩
+  rw [range_subpath_of_le _ _ _ (ht_mono (by simp))]
+  rintro _ ⟨s, hs, rfl⟩
+  exact interior_subset (hi (by simpa using hs))
 
 end Path
 
