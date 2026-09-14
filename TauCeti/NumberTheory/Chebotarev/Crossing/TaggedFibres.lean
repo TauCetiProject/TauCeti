@@ -87,6 +87,31 @@ theorem taggedFrobeniusPrimeSet_def [NumberField M] [IsGalois K M]
         (ConjClasses.mk ((IsCyclotomicExtension.galEquivProd K L M m hcop hζ).symm (σ, τ))) := by
   rw [taggedFrobeniusPrimeSet]
 
+/-- Membership in a tagged fibre, unfolded into the corresponding Artin-class condition. -/
+@[simp]
+theorem mem_taggedFrobeniusPrimeSet_iff
+    (hcop : ((NumberField.discr L).natAbs).Coprime m) {ζ : M} (hζ : IsPrimitiveRoot ζ m)
+    (σ : Gal(L/K)) (τ : (ZMod m)ˣ) :
+    letI : FiniteDimensional L M :=
+      IsCyclotomicExtension.finiteDimensional (S := {m}) (K := L) M
+    letI : NumberField M := NumberField.of_module_finite L M
+    letI : IsGalois K M :=
+      IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M m
+    ∀ {𝔭 : IsDedekindDomain.HeightOneSpectrum (𝓞 K)},
+      𝔭 ∈ taggedFrobeniusPrimeSet K L M m hcop hζ σ τ ↔
+        ∃ hur : ∀ (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal],
+          Algebra.IsUnramifiedAt (𝓞 K) Q,
+          artinSymbol 𝔭.asIdeal hur =
+            ConjClasses.mk
+              ((IsCyclotomicExtension.galEquivProd K L M m hcop hζ).symm (σ, τ)) := by
+  let _ : FiniteDimensional L M :=
+    IsCyclotomicExtension.finiteDimensional (S := {m}) (K := L) M
+  let _ : NumberField M := NumberField.of_module_finite L M
+  let _ : IsGalois K M :=
+    IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M m
+  intro 𝔭
+  rw [taggedFrobeniusPrimeSet_def, mem_frobeniusPrimeSet_iff]
+
 /-- **Distinct cyclotomic tags give disjoint Frobenius fibres.** The fibres indexed by
 `(σ₁, τ)` and `(σ₂, υ)` are disjoint whenever `τ ≠ υ`, whatever `σ₁ σ₂ : Gal(L/K)`.
 
