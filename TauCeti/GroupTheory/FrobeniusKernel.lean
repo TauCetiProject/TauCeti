@@ -107,8 +107,7 @@ everything and `⊥` has index `|G|`.
 
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 7, Section 7B.
 * [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 8 (`frobeniusKernel`, "a set of size `|G : H|`", `frobeniusKernel_isComplement'`, and
-  the consequence `|H| ∣ |N| - 1`).
+  Layer 8 (`frobeniusKernel`, "a set of size `|G : H|`", and `frobeniusKernel_isComplement'`).
 -/
 
 public section
