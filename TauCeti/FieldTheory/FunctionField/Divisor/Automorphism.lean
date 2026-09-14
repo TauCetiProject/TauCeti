@@ -67,8 +67,11 @@ theorem degree_smul (D : Divisor k F') : degree (σ • D) = degree D := by
 theorem principal_smul (hF : IsFunctionField k F') (z : F'ˣ) :
     principal hF (Units.map (σ : F' →* F') z) = σ • principal hF z := by
   refine AlgebraicGeometry.WeilDivisor.ext fun Q ↦ ?_
-  rw [coeff_principal, AlgebraicGeometry.WeilDivisor.coeff_smul, coeff_principal,
-    Place.ord_smul, AlgEquiv.aut_inv, AlgEquiv.symm_symm]
+  rw [coeff_principal]
+  change _ = (σ • principal hF z) Q
+  rw [Finsupp.comapSMul_apply]
+  change _ = AlgebraicGeometry.WeilDivisor.coeff (principal hF z) (σ⁻¹ • Q)
+  rw [coeff_principal, Place.ord_smul, AlgEquiv.aut_inv, AlgEquiv.symm_symm]
   simp
 
 /-- **The action preserves the principal divisors**, so it descends to the divisor classes. -/

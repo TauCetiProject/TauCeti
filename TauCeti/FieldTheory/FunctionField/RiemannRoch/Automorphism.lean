@@ -59,9 +59,10 @@ theorem mem_riemannRochSpace_smul_iff {f : F'} :
   constructor
   · intro h P
     have hP := h (σ • P)
-    rwa [Place.valuation_smul_apply, AlgebraicGeometry.WeilDivisor.coeff_smul_smul] at hP
+    simpa only [Place.valuation_smul_apply, AlgebraicGeometry.WeilDivisor.coeff,
+      Finsupp.comapSMul_apply, inv_smul_smul] using hP
   · intro h Q
-    rw [AlgebraicGeometry.WeilDivisor.coeff_smul]
+    rw [AlgebraicGeometry.WeilDivisor.coeff, Finsupp.comapSMul_apply]
     have hQ := h (σ⁻¹ • Q)
     rwa [Place.valuation_smul, AlgEquiv.aut_inv, AlgEquiv.symm_symm] at hQ
 

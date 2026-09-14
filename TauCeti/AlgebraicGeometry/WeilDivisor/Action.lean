@@ -26,8 +26,6 @@ pushforward.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.WeilDivisor.coeff_smul`: the coefficient of `g • D` at a point is
-  the coefficient of `D` at its preimage;
 * `TauCeti.AlgebraicGeometry.WeilDivisor.degree_smul` and
   `TauCeti.AlgebraicGeometry.WeilDivisor.weightedDegree_smul`: a symmetry preserves the
   unweighted degree, and transports a weighted degree to the weight composed with the symmetry;
@@ -69,24 +67,14 @@ section Group
 
 variable [Group G] [MulAction G X] (g : G)
 
-/-- The coefficient of `g • D` at a point is the coefficient of `D` at the point it came
-from. -/
-@[simp]
-theorem coeff_smul (D : WeilDivisor X) (x : X) : coeff (g • D) x = coeff D (g⁻¹ • x) :=
-  Finsupp.comapSMul_apply g D x
-
-/-- The coefficient of `g • D` at a translated point is the coefficient of `D` at the point. -/
-theorem coeff_smul_smul (D : WeilDivisor X) (x : X) : coeff (g • D) (g • x) = coeff D x := by
-  simp
-
 @[simp]
 theorem smul_le_smul_iff {D E : WeilDivisor X} : g • D ≤ g • E ↔ D ≤ E := by
-  simp only [le_iff, coeff_smul]
+  simp only [le_iff, coeff, Finsupp.comapSMul_apply]
   exact ⟨fun h x ↦ by simpa using h (g • x), fun h x ↦ h _⟩
 
 @[simp]
 theorem isEffective_smul {D : WeilDivisor X} : IsEffective (g • D) ↔ IsEffective D := by
-  simp only [isEffective_iff, coeff_smul]
+  simp only [isEffective_iff, coeff, Finsupp.comapSMul_apply]
   exact ⟨fun h x ↦ by simpa using h (g • x), fun h x ↦ h _⟩
 
 /-- A symmetry of the points preserves the unweighted degree. -/
