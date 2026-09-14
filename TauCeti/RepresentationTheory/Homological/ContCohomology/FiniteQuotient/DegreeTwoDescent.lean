@@ -16,13 +16,8 @@ For a profinite group `G` and a discrete continuous `G`-module `M`, every contin
 `2`-cocycle on `G` is inflated from a finite quotient. The descent is strict: no coboundary is
 subtracted from the cocycle.
 
-The proof uses compactness twice. First,
-`TauCeti.isOpen_rightTranslationStabilizer` supplies one open subgroup of `G × G` on which the
-cocycle is invariant under right translation. Restricting this subgroup to the two coordinate
-axes and taking open normal subgroups inside the restrictions makes the cocycle descend in both
-variables simultaneously. Second, the cocycle has finite image, and
-`Set.Finite.exists_openNormalSubgroup_smul_eq_self` supplies an open normal subgroup fixing every
-value. Intersecting the three subgroups gives a finite level with invariant coefficients.
+Strict descent supplies the representative-level surjectivity needed to describe continuous
+degree-two cohomology as a colimit of cohomology groups over finite quotients.
 
 ## Main statement
 
@@ -36,6 +31,10 @@ value. Intersecting the three subgroups gives a finite level with invariant coef
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (1.2.5).
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Cor. 6.5.6(a).
 -/
+
+-- Provenance: the statements follow the human-authored roadmap
+-- `TauCetiRoadmap/ProfiniteCohomology/README.md`, which specifies strict degree-two descent by
+-- uniform local constancy and finite-image stabilization.
 
 public section
 
@@ -51,7 +50,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- Descend a continuous `2`-cocycle which is constant on right `N`-cosets in both variables and
 whose values are fixed by `N` to a cocycle on `G ⧸ N` with values in `M ^ N`. -/
-private def descendZ2 (z : Z2 G M)
+def descendZ2 (z : Z2 G M)
     (hright : ∀ (g h : G) (n n' : N),
       (z : G × G → M) (g * n, h * n') = (z : G × G → M) (g, h))
     (hfixed : ∀ (n : N) (g h : G),
@@ -83,9 +82,9 @@ private def descendZ2 (z : Z2 G M)
               exact (mem_Z2_iff.1 z.2).2 g h j⟩⟩
 
 omit [ContinuousSMul G M] [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
-/-- The private descent evaluates on quotient representatives as the original cocycle. -/
+/-- The descended cocycle evaluates on quotient representatives as the original cocycle. -/
 @[simp]
-private theorem coe_descendZ2_apply_mk (z : Z2 G M)
+theorem coe_descendZ2_apply_mk (z : Z2 G M)
     (hright : ∀ (g h : G) (n n' : N),
       (z : G × G → M) (g * n, h * n') = (z : G × G → M) (g, h))
     (hfixed : ∀ (n : N) (g h : G),
@@ -96,8 +95,8 @@ private theorem coe_descendZ2_apply_mk (z : Z2 G M)
       (z : G × G → M) (g, h) := by
   simp only [descendZ2, Quotient.liftOn₂'_mk'']
 
-/-- Inflating the private descent of a continuous `2`-cocycle returns the original class. -/
-private theorem explicitInfl2_descendZ2 (z : Z2 G M)
+/-- Inflating the descent of a continuous `2`-cocycle returns the original class. -/
+theorem explicitInfl2_descendZ2 (z : Z2 G M)
     (hright : ∀ (g h : G) (n n' : N),
       (z : G × G → M) (g * n, h * n') = (z : G × G → M) (g, h))
     (hfixed : ∀ (n : N) (g h : G),
