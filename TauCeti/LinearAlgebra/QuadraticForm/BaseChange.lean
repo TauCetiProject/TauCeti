@@ -269,7 +269,9 @@ theorem baseChange_smul (r : R) (Q : _root_.QuadraticForm R M) :
   apply _root_.baseChange_ext
   simp [Algebra.smul_def, mul_comm]
 
-/-- A quadratic form vanishes after a faithful scalar extension exactly when it vanishes. -/
+/-- A quadratic form vanishes after a faithful scalar extension exactly when it vanishes.
+This is the quadratic-form analogue of Mathlib's
+`LinearMap.BilinForm.baseChange_eq_zero_iff`. -/
 @[simp]
 theorem baseChange_eq_zero_iff [FaithfulSMul R A] {Q : _root_.QuadraticForm R M} :
     Q.baseChange A = 0 ↔ Q = 0 := by
