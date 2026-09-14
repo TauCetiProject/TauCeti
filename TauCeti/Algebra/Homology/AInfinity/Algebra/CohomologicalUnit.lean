@@ -30,6 +30,12 @@ while every strict unit supplies a cohomological one.
 ## References
 
 * B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3.1 and 3.6.
+
+The signature of `CohomologicalUnit` is adapted from the `CohomologicalUnit` scaffold of the
+roadmap's formal companion
+[`DGAInfinity/Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/DGAInfinity/Suggested.lean),
+whose cycle and boundary conditions are restated here against the submodules of
+`TauCeti.Algebra.Homology.AInfinity.Algebra.Cohomology`.
 -/
 
 public section

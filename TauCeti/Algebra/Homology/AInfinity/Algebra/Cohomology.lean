@@ -20,6 +20,10 @@ disappears, so a boundary times a cycle is a boundary.  With a cycle on the left
 the degree-one Koszul twist, which carries cycles to cycles, so a cycle times a boundary is a
 boundary as well.  Neither argument needs homogeneous inputs.
 
+The arity-three identity is recorded in the same arbitrary-input form, as
+`AInfinityAlgebra.m_one_m_three`.  It exhibits the associator of the binary operation as a unary
+boundary, so the induced product is associative on cohomology.
+
 ## Main definitions
 
 * `TauCeti.AInfinityAlgebra.differential`: the unary operation as a linear endomorphism.
@@ -150,6 +154,97 @@ theorem m_one_m_two (𝒜 : AInfinityAlgebra R A) (x y : A) :
       𝒜.stasheff_arity_two z y p hz
   simpa using LinearMap.congr_fun h x
 
+/-- The arity-three Stasheff identity for arbitrary inputs, with the Koszul signs of the first two
+inputs carried by the degree-one twist.  It expresses the associator of the binary operation as a
+unary boundary, modulo the three terms in which the ternary operation meets a unary boundary. -/
+theorem m_one_m_three (𝒜 : AInfinityAlgebra R A) (x y z : A) :
+    𝒜.m 1 ![𝒜.m 3 ![x, y, z]] =
+      𝒜.m 2 ![x, 𝒜.m 2 ![y, z]] - 𝒜.m 2 ![𝒜.m 2 ![x, y], z]
+        - 𝒜.m 3 ![𝒜.m 1 ![x], y, z]
+        - 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.m 1 ![y], z]
+        - 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.grading.koszulTwist 1 y, 𝒜.m 1 ![z]] := by
+  -- Package the six terms as trilinear maps in the three inputs, so that the identity can be
+  -- checked on homogeneous inputs, where it is `stasheff_arity_three`.
+  let L : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    (𝒜.mul.compMultilinearMap (𝒜.m 2)).uncurryRight
+  let Qc : A →ₗ[R] MultilinearMap R (fun _ : Fin 2 ↦ A) A :=
+    { toFun := fun a ↦ (𝒜.mul a).compMultilinearMap (𝒜.m 2)
+      map_add' := fun a b ↦ by ext v; simp
+      map_smul' := fun r a ↦ by ext v; simp }
+  let Q : MultilinearMap R (fun _ : Fin 3 ↦ A) A := Qc.uncurryLeft
+  have L_apply (a b c : A) : L ![a, b, c] = 𝒜.m 2 ![𝒜.m 2 ![a, b], c] := by
+    simp only [L, MultilinearMap.uncurryRight_apply, LinearMap.compMultilinearMap_apply,
+      mul_apply]
+    congr 1
+    funext i
+    fin_cases i
+    · apply congrArg (𝒜.m 2)
+      funext j
+      fin_cases j <;> rfl
+    · rfl
+  have Q_apply (a b c : A) : Q ![a, b, c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
+    dsimp [Q, Qc]
+    simp only [mul_apply]
+  let D : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    𝒜.differential.compMultilinearMap (𝒜.m 3)
+  let T₀ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    (𝒜.m 3).compLinearMap ![𝒜.differential, LinearMap.id, LinearMap.id]
+  let T₁ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    (𝒜.m 3).compLinearMap
+      ![𝒜.grading.koszulTwist 1, 𝒜.differential, LinearMap.id]
+  let T₂ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    (𝒜.m 3).compLinearMap
+      ![𝒜.grading.koszulTwist 1, 𝒜.grading.koszulTwist 1, 𝒜.differential]
+  have D_apply (a b c : A) : D ![a, b, c] = 𝒜.differential (𝒜.m 3 ![a, b, c]) := rfl
+  have T₀_apply (a b c : A) : T₀ ![a, b, c] = 𝒜.m 3 ![𝒜.differential a, b, c] := by
+    simp only [T₀, MultilinearMap.compLinearMap_apply]
+    congr 1
+    funext i
+    fin_cases i <;> rfl
+  have T₁_apply (a b c : A) : T₁ ![a, b, c] =
+      𝒜.m 3 ![𝒜.grading.koszulTwist 1 a, 𝒜.differential b, c] := by
+    simp only [T₁, MultilinearMap.compLinearMap_apply]
+    congr 1
+    funext i
+    fin_cases i <;> rfl
+  have T₂_apply (a b c : A) : T₂ ![a, b, c] =
+      𝒜.m 3 ![𝒜.grading.koszulTwist 1 a, 𝒜.grading.koszulTwist 1 b,
+        𝒜.differential c] := by
+    simp only [T₂, MultilinearMap.compLinearMap_apply]
+    congr 1
+    funext i
+    fin_cases i <;> rfl
+  have m_three_smul_first (r : R) (a b c : A) :
+      𝒜.m 3 ![r • a, b, c] = r • 𝒜.m 3 ![a, b, c] := by
+    convert (𝒜.m 3).map_update_smul ![a, b, c] 0 r a using 2 <;>
+      congr 1 <;> funext i <;> fin_cases i <;> rfl
+  have m_three_smul_second (r : R) (a b c : A) :
+      𝒜.m 3 ![a, r • b, c] = r • 𝒜.m 3 ![a, b, c] := by
+    convert (𝒜.m 3).map_update_smul ![a, b, c] 1 r b using 2 <;>
+      congr 1 <;> funext i <;> fin_cases i <;> rfl
+  -- On homogeneous inputs the two Koszul twists produce exactly the signs of the graded identity.
+  let E : MultilinearMap R (fun _ : Fin 3 ↦ A) A := D + L - Q + T₀ + T₁ + T₂
+  have hE : E = 0 := by
+    apply 𝒜.grading.multilinearMap_ext
+    intro d a ha
+    have avec : a = ![a 0, a 1, a 2] := by
+      funext i
+      fin_cases i <;> rfl
+    rw [avec]
+    simp only [E, add_apply, sub_apply, D_apply, L_apply, Q_apply, T₀_apply, T₁_apply,
+      T₂_apply, zero_apply, differential_apply,
+      𝒜.grading.koszulTwist_apply_of_mem (ha 0),
+      𝒜.grading.koszulTwist_apply_of_mem (ha 1),
+      m_three_smul_first, m_three_smul_second, smul_smul, one_mul]
+    rw [← negOnePowCast_eq_intCast (R := R) (d 0),
+      ← negOnePowCast_eq_intCast (R := R) (d 1), ← negOnePowCast_add]
+    exact 𝒜.stasheff_arity_three (a 0) (a 1) (a 2) (d 0) (d 1) (ha 0) (ha 1)
+  have h := MultilinearMap.congr_fun hE ![x, y, z]
+  simp only [E, add_apply, sub_apply, D_apply, L_apply, Q_apply, T₀_apply, T₁_apply,
+    T₂_apply, zero_apply, differential_apply] at h
+  rw [← sub_eq_zero, ← h]
+  abel
+
 /-- The binary operation of two cycles is a cycle. -/
 theorem m_two_mem_cycles (𝒜 : AInfinityAlgebra R A) {x y : A} (hx : x ∈ 𝒜.cycles)
     (hy : y ∈ 𝒜.cycles) : 𝒜.m 2 ![x, y] ∈ 𝒜.cycles := by
@@ -276,95 +371,19 @@ theorem coe_cyclesMul (𝒜 : AInfinityAlgebra R A) (x y : 𝒜.cycles) :
 private theorem m_two_assoc_sub_mem_boundaries (𝒜 : AInfinityAlgebra R A) {x y z : A}
     (hx : x ∈ 𝒜.cycles) (hy : y ∈ 𝒜.cycles) (hz : z ∈ 𝒜.cycles) :
     𝒜.m 2 ![𝒜.m 2 ![x, y], z] - 𝒜.m 2 ![x, 𝒜.m 2 ![y, z]] ∈ 𝒜.boundaries := by
-  let L : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    (𝒜.mul.compMultilinearMap (𝒜.m 2)).uncurryRight
-  let Qc : A →ₗ[R] MultilinearMap R (fun _ : Fin 2 ↦ A) A :=
-    { toFun := fun a ↦ (𝒜.mul a).compMultilinearMap (𝒜.m 2)
-      map_add' := fun a b ↦ by ext v; simp
-      map_smul' := fun r a ↦ by ext v; simp }
-  let Q : MultilinearMap R (fun _ : Fin 3 ↦ A) A := Qc.uncurryLeft
-  have L_apply (a b c : A) : L ![a, b, c] = 𝒜.m 2 ![𝒜.m 2 ![a, b], c] := by
-    simp only [L, MultilinearMap.uncurryRight_apply, LinearMap.compMultilinearMap_apply,
-      mul_apply]
-    congr 1
-    funext i
-    fin_cases i
-    · apply congrArg (𝒜.m 2)
-      funext j
-      fin_cases j <;> rfl
-    · rfl
-  have Q_apply (a b c : A) : Q ![a, b, c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
-    dsimp [Q, Qc]
-    simp only [mul_apply]
-  let D : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    𝒜.differential.compMultilinearMap (𝒜.m 3)
-  let T₀ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    (𝒜.m 3).compLinearMap ![𝒜.differential, LinearMap.id, LinearMap.id]
-  let T₁ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    (𝒜.m 3).compLinearMap
-      ![𝒜.grading.koszulTwist 1, 𝒜.differential, LinearMap.id]
-  let T₂ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    (𝒜.m 3).compLinearMap
-      ![𝒜.grading.koszulTwist 1, 𝒜.grading.koszulTwist 1, 𝒜.differential]
-  have D_apply (a b c : A) : D ![a, b, c] = 𝒜.differential (𝒜.m 3 ![a, b, c]) := rfl
-  have T₀_apply (a b c : A) : T₀ ![a, b, c] = 𝒜.m 3 ![𝒜.differential a, b, c] := by
-    simp only [T₀, MultilinearMap.compLinearMap_apply]
-    congr 1
-    funext i
-    fin_cases i <;> rfl
-  have T₁_apply (a b c : A) : T₁ ![a, b, c] =
-      𝒜.m 3 ![𝒜.grading.koszulTwist 1 a, 𝒜.differential b, c] := by
-    simp only [T₁, MultilinearMap.compLinearMap_apply]
-    congr 1
-    funext i
-    fin_cases i <;> rfl
-  have T₂_apply (a b c : A) : T₂ ![a, b, c] =
-      𝒜.m 3 ![𝒜.grading.koszulTwist 1 a, 𝒜.grading.koszulTwist 1 b,
-        𝒜.differential c] := by
-    simp only [T₂, MultilinearMap.compLinearMap_apply]
-    congr 1
-    funext i
-    fin_cases i <;> rfl
-  have m_three_smul_first (r : R) (a b c : A) :
-      𝒜.m 3 ![r • a, b, c] = r • 𝒜.m 3 ![a, b, c] := by
-    convert (𝒜.m 3).map_update_smul ![a, b, c] 0 r a using 2 <;>
-      congr 1 <;> funext i <;> fin_cases i <;> rfl
-  have m_three_smul_second (r : R) (a b c : A) :
-      𝒜.m 3 ![a, r • b, c] = r • 𝒜.m 3 ![a, b, c] := by
-    convert (𝒜.m 3).map_update_smul ![a, b, c] 1 r b using 2 <;>
-      congr 1 <;> funext i <;> fin_cases i <;> rfl
-  let E : MultilinearMap R (fun _ : Fin 3 ↦ A) A := D + L - Q + T₀ + T₁ + T₂
-  have hE : E = 0 := by
-    apply 𝒜.grading.multilinearMap_ext
-    intro d a ha
-    have avec : a = ![a 0, a 1, a 2] := by
-      funext i
-      fin_cases i <;> rfl
-    rw [avec]
-    simp only [E, add_apply, sub_apply, D_apply, L_apply, Q_apply, T₀_apply, T₁_apply,
-      T₂_apply, zero_apply, differential_apply,
-      𝒜.grading.koszulTwist_apply_of_mem (ha 0),
-      𝒜.grading.koszulTwist_apply_of_mem (ha 1),
-      m_three_smul_first, m_three_smul_second, smul_smul, one_mul]
-    rw [← negOnePowCast_eq_intCast (R := R) (d 0),
-      ← negOnePowCast_eq_intCast (R := R) (d 1), ← negOnePowCast_add]
-    exact 𝒜.stasheff_arity_three (a 0) (a 1) (a 2) (d 0) (d 1) (ha 0) (ha 1)
-  rw [mem_boundaries]
-  refine ⟨-𝒜.m 3 ![x, y, z], ?_⟩
-  have h := MultilinearMap.congr_fun hE ![x, y, z]
+  -- On cycles the three correction terms of `m_one_m_three` have a vanishing input, so the
+  -- associator is the unary boundary of `-m₃`.
   rw [mem_cycles] at hx hy hz
-  simp only [E, add_apply, sub_apply, D_apply, L_apply, Q_apply, T₀_apply, T₁_apply,
-    T₂_apply, zero_apply, differential_apply, hx, hy, hz] at h
   have h₀ : 𝒜.m 3 ![(0 : A), y, z] = 0 := (𝒜.m 3).map_coord_zero 0 rfl
   have h₁ : 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 0, z] = 0 :=
     (𝒜.m 3).map_coord_zero 1 rfl
   have h₂ : 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.grading.koszulTwist 1 y, 0] = 0 :=
     (𝒜.m 3).map_coord_zero 2 rfl
-  rw [h₀, h₁, h₂, add_zero] at h
-  rw [← differential_apply, map_neg, differential_apply]
-  apply neg_eq_iff_add_eq_zero.mpr
-  abel_nf at h ⊢
-  exact h
+  rw [mem_boundaries]
+  refine ⟨-𝒜.m 3 ![x, y, z], ?_⟩
+  rw [← differential_apply, map_neg, differential_apply, 𝒜.m_one_m_three, hx, hy, hz,
+    h₀, h₁, h₂]
+  abel
 
 /-- The product on cohomology induced by the binary operation. -/
 def cohomologyMul (𝒜 : AInfinityAlgebra R A) :
