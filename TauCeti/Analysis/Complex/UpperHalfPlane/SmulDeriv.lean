@@ -33,7 +33,8 @@ becomes a character, which is what governs the stabilizers of a discrete subgrou
   `TauCeti.UpperHalfPlane.deriv_coe_smul`: it is the complex derivative of that transformation,
   read through Mathlib's partial inverse `UpperHalfPlane.ofComplex` of the inclusion `ℍ → ℂ`.
 * `TauCeti.UpperHalfPlane.smulDeriv_mul`: the chain rule
-  `(q₁ * q₂)' z = q₁' (q₂ • z) * q₂' z`.
+  `(q₁ * q₂)' z = q₁' (q₂ • z) * q₂' z`, and `TauCeti.UpperHalfPlane.smulDeriv_inv` for the
+  inverse.
 
 ## References
 
@@ -94,6 +95,7 @@ theorem smulDeriv_one (z : ℍ) : smulDeriv 1 z = 1 := by
   simp
 
 /-- **The chain rule for the `PSL(2, ℝ)`-action**: the derivative is a cocycle. -/
+@[simp]
 theorem smulDeriv_mul (q₁ q₂ : PSL(2, ℝ)) (z : ℍ) :
     smulDeriv (q₁ * q₂) z = smulDeriv q₁ (q₂ • z) * smulDeriv q₂ z := by
   induction q₁ using QuotientGroup.induction_on with | _ a =>
@@ -106,6 +108,13 @@ theorem smulDeriv_mul (q₁ q₂ : PSL(2, ℝ)) (z : ℍ) :
   rw [hmul, smulDeriv_coe, smulDeriv_coe, hb, smulDeriv_coe, map_mul, denom_cocycle_σ,
     σ_eq_refl_of_det_pos (by simp)]
   simp [mul_pow, mul_comm]
+
+/-- The inverse transformation has the inverse derivative at the image point. -/
+@[simp]
+theorem smulDeriv_inv (q : PSL(2, ℝ)) (z : ℍ) :
+    smulDeriv q⁻¹ (q • z) = (smulDeriv q z)⁻¹ := by
+  refine eq_inv_of_mul_eq_one_left ?_
+  rw [← smulDeriv_mul, inv_mul_cancel, smulDeriv_one]
 
 /-- **`smulDeriv` is the derivative of the Möbius transformation.** The transformation is read
 on `ℂ` through Mathlib's partial inverse `UpperHalfPlane.ofComplex` of the inclusion `ℍ → ℂ`,
@@ -123,6 +132,7 @@ theorem hasStrictDerivAt_coe_smul (q : PSL(2, ℝ)) (z : ℍ) :
   simpa [one_div] using h
 
 /-- The derivative of a Möbius transformation of `ℍ`, in the form `deriv`. -/
+@[simp]
 theorem deriv_coe_smul (q : PSL(2, ℝ)) (z : ℍ) :
     deriv (fun w : ℂ ↦ ((q • ofComplex w : ℍ) : ℂ)) (z : ℂ) = smulDeriv q z :=
   (hasStrictDerivAt_coe_smul q z).hasDerivAt.deriv
