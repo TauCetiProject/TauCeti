@@ -21,7 +21,7 @@ polarizes the structure as soon as
 
 Both relations are also necessary — the first is
 `TauCeti.Hodge.IsPolarization.isOrthogonal_weilOperator` read on real vectors, and the second is
-`TauCeti.Hodge.IsPolarization.integralFormBaseChange_weilOperator_self_pos`, proved here in
+`TauCeti.Hodge.IsPolarization.integralFormBaseChange_weilOperator_self_pos`, which holds in
 arbitrary weight — so together they characterize the polarizing forms. This is the shape in which a
 Riemann form on a lattice with a complex structure polarizes the weight-one Hodge structure it
 carries, as for the first cohomology of a complex torus.
@@ -34,8 +34,6 @@ covered.
 
 ## Main declarations
 
-* `TauCeti.Hodge.IsPolarization.integralFormBaseChange_weilOperator_self_pos`: a polarizing form
-  is positive on the pair `(C v, v)` for every nonzero real vector `v`.
 * `TauCeti.Hodge.isPolarization_of_isOrthogonal_weilOperator_of_pos`: the Riemann bilinear
   relations polarize an effective weight-one Hodge structure.
 
@@ -55,16 +53,6 @@ universe u v
 variable {V : Type u} {Vℂ : Type v}
 variable [AddCommGroup V] [AddCommGroup Vℂ] [Module ℂ Vℂ]
 variable {ιℂ : V →ₗ[ℤ] Vℂ} {hℂ : IsBaseChange ℂ ιℂ} {Q : LinearMap.BilinForm ℤ V}
-
-/-- **A polarizing form is positive on `(C v, v)` for every nonzero real vector `v`.** This is the
-Hodge form of the polarization evaluated on the diagonal, where the conjugation in its first
-argument acts trivially. -/
-theorem IsPolarization.integralFormBaseChange_weilOperator_self_pos {n : ℤ}
-    {hs : HodgeStructure hℂ n} (h : IsPolarization hℂ hs Q) {v : Vℂ}
-    (hv : v ∈ realPoints (latticeConj hℂ)) (hv0 : v ≠ 0) :
-    0 < integralFormBaseChange hℂ Q (hs.weilOperator v) v := by
-  have hpos := (⟨Q, h⟩ : Polarization hℂ hs).hodgeForm_self_pos hv0
-  rwa [Polarization.hodgeForm_apply, mem_realPoints.mp hv, Polarization.Q_def] at hpos
 
 section WeightOne
 
@@ -114,9 +102,7 @@ private theorem pos_I_mul_of_mem_piece_one
       LinearMap.smul_apply, smul_eq_mul]
     rw [hself z, hself (latticeConj hℂ z), hskewℂ z (latticeConj hℂ z)]
     ring
-  have hhalf : (0 : ℂ) < 2⁻¹ := by
-    rw [show (2⁻¹ : ℂ) = ((2⁻¹ : ℝ) : ℂ) by norm_num]
-    exact Complex.zero_lt_real.mpr (by norm_num)
+  have hhalf : (0 : ℂ) < 2⁻¹ := by norm_num [Complex.pos_iff]
   have hfull := hpos _ hvmem hvne
   rw [hval] at hfull
   simpa [← mul_assoc] using mul_pos hhalf hfull
@@ -164,7 +150,8 @@ theorem isPolarization_of_isOrthogonal_weilOperator_of_pos (heff : hs.IsEffectiv
     · have hx1 : x ∈ hs.piece 1 := by rwa [heff.piece_weight_eq_F]
       have hy1 : y ∈ hs.piece 1 := by
         rw [heff.piece_weight_eq_F]
-        rwa [show (1 : ℤ) + 1 - 1 = 1 from by ring] at hy
+        norm_num at hy
+        exact hy
       have h := hiso x y
       rw [hs.weilOperator_apply_of_mem_piece_one hx1,
         hs.weilOperator_apply_of_mem_piece_one hy1] at h
@@ -176,7 +163,7 @@ theorem isPolarization_of_isOrthogonal_weilOperator_of_pos (heff : hs.IsEffectiv
       rw [hbot, Submodule.mem_bot] at hx
       simp [hx]
   · rcases eq_or_ne p 1 with rfl | hp1
-    · rw [show 2 * (1 : ℤ) - 1 = 1 from by ring, zpow_one]
+    · norm_num
       exact pos_I_mul_of_mem_piece_one hskewℂ hpos hx hx0
     rcases eq_or_ne p 0 with rfl | hp0
     · have hconj : latticeConj hℂ x ∈ hs.piece 1 := by simpa using hs.conj_mem_piece hx
@@ -185,7 +172,10 @@ theorem isPolarization_of_isOrthogonal_weilOperator_of_pos (heff : hs.IsEffectiv
         simpa using h)
       have h := pos_I_mul_of_mem_piece_one hskewℂ hpos hconj hne
       rw [latticeConj_apply_apply, hskewℂ x (latticeConj hℂ x)] at h
-      rw [show 2 * (0 : ℤ) - 1 = -1 from by ring, zpow_neg, zpow_one, Complex.inv_I]
+      -- The scalar in the target is `i ^ (2 * 0 - 1) = i⁻¹ = -i`.
+      have hI : (Complex.I : ℂ) ^ (2 * (0 : ℤ) - 1) = -Complex.I := by
+        norm_num [Complex.inv_I]
+      rw [hI]
       convert h using 1
       ring
     · have hbot : hs.piece p = ⊥ := by
