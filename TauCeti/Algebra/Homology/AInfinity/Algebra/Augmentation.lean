@@ -167,8 +167,8 @@ theorem comp_unitLinearMap (ε : 𝒜.Augmentation e) :
 /-- Removing the scalar part of an element leaves an element of the augmentation ideal. -/
 theorem sub_smul_unit_mem_augmentationIdeal (ε : 𝒜.Augmentation e) (x : A) :
     x - ε x • e ∈ ε.augmentationIdeal := by
-  rw [ε.mem_augmentationIdeal, ε.map_sub, ε.toLinearMap.map_smul, ε.map_unit, smul_eq_mul,
-    mul_one, sub_self]
+  rw [ε.mem_augmentationIdeal]
+  simp [ε.map_smul]
 
 /-- The projection onto the augmentation ideal, obtained by subtracting the scalar part. -/
 def reducedPart (ε : 𝒜.Augmentation e) :
@@ -211,9 +211,8 @@ theorem splitLinearEquiv_symm_apply (ε : 𝒜.Augmentation e)
   have hx : ε (x.2 : A) = 0 := (ε.mem_augmentationIdeal).mp x.2.property
   rw [LinearEquiv.symm_apply_eq, ε.splitLinearEquiv_apply]
   refine Prod.ext ?_ (Subtype.ext ?_)
-  · rw [ε.map_add, ε.toLinearMap.map_smul, ε.map_unit, smul_eq_mul, mul_one, hx, add_zero]
-  · rw [ε.reducedPart_apply, ε.map_add, ε.toLinearMap.map_smul, ε.map_unit, smul_eq_mul,
-      mul_one, hx, add_zero, add_sub_cancel_left]
+  · simp [ε.map_smul, hx]
+  · simp [ε.reducedPart_apply]
 
 end Augmentation
 
