@@ -27,10 +27,13 @@ resulting measure is a probability measure, and it is concentrated on the standa
 * `TauCeti.Probability.dirichletNormalize` normalizes a vector by its coordinate sum.
 * `TauCeti.Probability.dirichletMeasure` is the Dirichlet measure obtained from independent Gamma
   variables.
+* `TauCeti.Probability.dirichletMeasure_eq_dirac_of_card_eq_one` evaluates the law on a
+  one-element coordinate type.
 * `TauCeti.Probability.isProbabilityMeasure_dirichletMeasure_iff` characterizes exactly when this
   totalized measure is a probability measure.
 * `TauCeti.ae_pos_sum_pi_gammaMeasure` shows that the zero-denominator locus is null.
-* `TauCeti.Probability.ae_mem_stdSimplex_dirichletMeasure` gives the standard-simplex support.
+* `TauCeti.Probability.ae_mem_stdSimplex_dirichletMeasure` and
+  `TauCeti.Probability.ae_sum_eq_one_dirichletMeasure` give the standard-simplex support.
 
 ## References
 
@@ -126,6 +129,28 @@ theorem dirichletMeasure_eq_zero_of_invalid {a : ι → ℝ}
     (ha : ¬(Nonempty ι ∧ ∀ i, 0 < a i)) : dirichletMeasure a = 0 := by
   rw [dirichletMeasure, ite_eq_right ha]
 
+/-- On a one-element index type the Dirichlet law is the Dirac mass at the only point of the
+standard simplex. -/
+theorem dirichletMeasure_eq_dirac_of_card_eq_one {a : ι → ℝ} (ha : ∀ i, 0 < a i)
+    (hcard : Fintype.card ι = 1) :
+    dirichletMeasure a = Measure.dirac ((EuclideanSpace.equiv ι ℝ).symm fun _ ↦ 1) := by
+  have _ : Nonempty ι := Fintype.card_pos_iff.1 (hcard ▸ Nat.one_pos)
+  have _ : Subsingleton ι := Fintype.card_le_one_iff_subsingleton.1 hcard.le
+  have _ : ∀ j, IsProbabilityMeasure (gammaMeasure (a j) 1) :=
+    fun j ↦ isProbabilityMeasure_gammaMeasure (ha j) one_pos
+  rw [dirichletMeasure_of_pos ha]
+  have hae : dirichletNormalize =ᵐ[Measure.pi fun j ↦ gammaMeasure (a j) 1]
+      fun _ ↦ (EuclideanSpace.equiv ι ℝ).symm fun _ ↦ (1 : ℝ) := by
+    filter_upwards [ae_pos_pi_gammaMeasure a fun _ ↦ 1] with x hx
+    apply (EuclideanSpace.equiv ι ℝ).injective
+    ext j
+    have htotal : ∑ k, x k = x j :=
+      Finset.sum_eq_single_of_mem j (Finset.mem_univ j)
+        fun b _ hb ↦ absurd (Subsingleton.elim b j) hb
+    simp [dirichletNormalize_apply, htotal, div_self (hx j).ne']
+  rw [Measure.map_congr hae, Measure.map_const]
+  simp
+
 /-- A Dirichlet measure with positive concentration parameters is a probability measure. -/
 theorem isProbabilityMeasure_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
     IsProbabilityMeasure (dirichletMeasure a) := by
@@ -176,6 +201,14 @@ theorem ae_mem_stdSimplex_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : 
   · exact
       (StdSimplex.isClosedEmbedding_toFun_comp_weights ℝ ι).isClosed_range.measurableSet.preimage
         (EuclideanSpace.equiv ι ℝ).continuous.measurable
+
+/-- Under a Dirichlet law with positive concentration parameters the coordinates almost surely
+total one: this is the coordinate form of the standard-simplex support. -/
+theorem ae_sum_eq_one_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+    ∀ᵐ x ∂dirichletMeasure a, ∑ i, x i = 1 := by
+  filter_upwards [ae_mem_stdSimplex_dirichletMeasure ha] with x ⟨p, hp⟩
+  have hxp : ∀ i, x i = p.weights i := fun i ↦ (congrFun hp i).symm
+  simp [hxp]
 
 end Probability
 

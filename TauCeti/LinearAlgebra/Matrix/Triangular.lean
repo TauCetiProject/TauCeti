@@ -29,6 +29,8 @@ Lie-algebra theory.
 
 ## Main results
 
+* `Matrix.BlockTriangular.det_eq_prod_diag` — a matrix that is block triangular for an injective
+  ranking of its indices has the product of its diagonal entries as determinant.
 * `Matrix.mul_apply_diag_of_isUpperTriangular` — the diagonal of a product of upper-triangular
   matrices is the pointwise product of the diagonals.
 * `Matrix.mul_apply_diag_of_isLowerTriangular` — the corresponding formula for lower-triangular
@@ -65,6 +67,16 @@ public section
 namespace Matrix
 
 variable {R : Type*} {m : Type*}
+
+/-- A matrix that is block triangular for an injective ranking of its indices has the product of
+its diagonal entries as determinant: an injective ranking cuts it into singleton blocks. -/
+theorem BlockTriangular.det_eq_prod_diag {ι α S : Type*} [Fintype ι] [DecidableEq ι]
+    [LinearOrder α] [CommRing S] {N : Matrix ι ι S} {b : ι → α} (hN : N.BlockTriangular b)
+    (hb : Function.Injective b) : N.det = ∏ i, N i i := by
+  rw [hN.det, Finset.prod_image fun x _ y _ hxy ↦ hb hxy]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  let _ : Unique {j // b j = b i} := ⟨⟨⟨i, rfl⟩⟩, fun j ↦ Subtype.ext (hb j.2)⟩
+  exact Matrix.det_unique _
 
 /-- A square matrix is upper unitriangular when it is upper triangular and every diagonal entry
 is one. -/

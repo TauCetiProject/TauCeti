@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.RingTheory.Finiteness.Cardinality
+public import Mathlib.RingTheory.Jacobson.Semiprimary
 public import TauCeti.Algebra.Module.Submodule.Superfluous
 
 /-!
@@ -26,9 +28,11 @@ directions need differences, so neither is available for a covering module that 
 
 The first fact is that a projective cover receives every projective presentation: if `Q` is
 projective and `g : Q →ₗ[R] M` is surjective, then `g` factors as `f ∘ₗ h` with `h : Q →ₗ[R] P`
-**surjective** (`TauCeti.IsProjectiveCover.exists_surjective`). The second is that a projective
-cover is unique: any two projective covers of `M` differ by a linear equivalence commuting with the
-covering maps (`TauCeti.IsProjectiveCover.exists_linearEquiv`). Uniqueness is what makes "the"
+**surjective** (`TauCeti.IsProjectiveCover.exists_surjective`); taking for `Q` the finite free
+module on a generating family, this reads off that a cover of a finitely generated module is itself
+finitely generated (`TauCeti.IsProjectiveCover.finite`). The second is that a projective cover is
+unique: any two projective covers of `M` differ by a linear equivalence commuting with the covering
+maps (`TauCeti.IsProjectiveCover.exists_linearEquiv`). Uniqueness is what makes "the"
 projective cover a well-defined object, and hence what makes the Cartan matrix `Cᵢⱼ = [Pᵢ : Sⱼ]` of
 a finite-dimensional algebra well defined.
 
@@ -50,6 +54,8 @@ Nothing here proves or assumes it; every statement below is conditional on a cov
   an additive group is a projective cover exactly when it is an essential epimorphism.
 * `TauCeti.IsProjectiveCover.exists_surjective`: every surjection onto `M` from a projective module
   factors through a projective cover by a surjection.
+* `TauCeti.IsProjectiveCover.finite`: a projective cover of a finitely generated module is finitely
+  generated.
 * `TauCeti.IsProjectiveCover.bijective_of_comp_eq` and
   `TauCeti.IsProjectiveCover.exists_linearEquiv`: **uniqueness**, first as bijectivity of any
   comparison map between two covers and then as the existence of an isomorphism over `M`.
@@ -63,6 +69,10 @@ Nothing here proves or assumes it; every statement below is conditional on a cov
   cover of a projective `P` exactly when `N` is superfluous; over a coatomic submodule lattice
   `TauCeti.isProjectiveCover_mkQ_iff_le_jacobson` reads this off the radical, so that `R ↠ R ⧸ I`
   is a projective cover exactly when `I ≤ Ring.jacobson R`.
+* `TauCeti.IsProjectiveCover.exists_comp_eq`: a map into a simple module factors through a
+  projective cover of its source, and `TauCeti.IsProjectiveCover.homEquivOfIsSimpleModule`:
+  precomposition with a projective cover `f : P →ₗ[R] M` is an isomorphism
+  `Hom_R(M, T) ≃ₗ[k] Hom_R(P, T)` for every simple `T`.
 
 ## References
 
@@ -135,6 +145,15 @@ theorem IsProjectiveCover.exists_surjective [Module.Projective R Q] {f : P →�
     ∃ h : Q →ₗ[R] P, f ∘ₗ h = g ∧ Function.Surjective h := by
   obtain ⟨h, hh⟩ := Module.projective_lifting_property f g hf.surjective
   exact ⟨h, hh, hf.isSuperfluous_ker.surjective_of_surjective_comp (by rw [hh]; exact hg)⟩
+
+/-- **A projective cover of a finitely generated module is finitely generated.** If `M` is finitely
+generated, then so is the source of any projective cover of `M`. This holds over an arbitrary ring:
+no hypothesis on `R`, and no finiteness hypothesis beyond `Module.Finite R M`, is needed. -/
+theorem IsProjectiveCover.finite [Module.Finite R M] {f : P →ₗ[R] M}
+    (hf : IsProjectiveCover f) : Module.Finite R P := by
+  obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin' R M
+  obtain ⟨h, -, hsurj⟩ := hf.exists_surjective (Q := Fin n → R) hg
+  exact Module.Finite.of_surjective h hsurj
 
 /-- **Uniqueness of the projective cover, in comparison-map form.** A map between the sources of
 two projective covers of `M` that commutes with the covering maps is automatically an
@@ -232,6 +251,67 @@ theorem isProjectiveCover_mkQ_iff_le_jacobson [Module.Projective R P]
     [IsCoatomic (Submodule R P)] {N : Submodule R P} :
     IsProjectiveCover N.mkQ ↔ N ≤ Module.jacobson R P :=
   isProjectiveCover_mkQ_iff.trans isSuperfluous_iff_le_jacobson
+
+/-! ### A projective cover is invisible to a simple target -/
+
+section Simple
+
+variable {T : Type*} [AddCommGroup T] [Module R T] [IsSimpleModule R T]
+
+/-- Every map from the source of a projective cover into a simple module factors through the
+cover: the kernel of the cover is superfluous, hence contained in the radical of the source, which
+the map annihilates. -/
+theorem IsProjectiveCover.exists_comp_eq {f : P →ₗ[R] M} (hf : IsProjectiveCover f)
+    (φ : P →ₗ[R] T) : ∃ ψ : M →ₗ[R] T, ψ ∘ₗ f = φ := by
+  have hle : LinearMap.ker f ≤ LinearMap.ker φ :=
+    hf.ker_le_jacobson.trans (IsSemisimpleModule.jacobson_le_ker R R P T φ)
+  refine ⟨((LinearMap.ker f).liftQ φ hle) ∘ₗ
+    (f.quotKerEquivOfSurjective hf.surjective).symm.toLinearMap, ?_⟩
+  ext p
+  have hmk : (f.quotKerEquivOfSurjective hf.surjective).symm (f p) = Submodule.Quotient.mk p := by
+    rw [LinearEquiv.symm_apply_eq]
+    simp [LinearMap.quotKerEquivOfSurjective]
+  simp [hmk]
+
+variable (k : Type*) [CommSemiring k] [Algebra k R] [Module k T] [IsScalarTower k R T]
+
+/-- **A projective cover is invisible to a simple target.** Precomposition with a projective cover
+`f : P →ₗ[R] M` is a `k`-linear isomorphism from `Hom_R(M, T)` to `Hom_R(P, T)` for every simple
+`R`-module `T`: it is injective because `f` is onto, and surjective by
+`TauCeti.IsProjectiveCover.exists_comp_eq`.
+
+Compare `TauCeti.homCongrRight`, which transports a hom space along an isomorphism of its target:
+here the map on the source side is only a cover, and it is the simplicity of `T` that makes the
+induced map on hom spaces invertible. -/
+noncomputable def IsProjectiveCover.homEquivOfIsSimpleModule {f : P →ₗ[R] M}
+    (hf : IsProjectiveCover f) : (M →ₗ[R] T) ≃ₗ[k] (P →ₗ[R] T) :=
+  LinearEquiv.ofBijective
+    { toFun ψ := ψ ∘ₗ f
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl }
+    ⟨fun ψ ψ' h => LinearMap.ext fun m => by
+        obtain ⟨p, rfl⟩ := hf.surjective m
+        exact DFunLike.congr_fun h p,
+      fun φ => hf.exists_comp_eq φ⟩
+
+variable {k}
+
+@[simp]
+theorem IsProjectiveCover.homEquivOfIsSimpleModule_apply {f : P →ₗ[R] M}
+    (hf : IsProjectiveCover f) (ψ : M →ₗ[R] T) : hf.homEquivOfIsSimpleModule k ψ = ψ ∘ₗ f :=
+  (rfl)
+
+/-- The inverse of `TauCeti.IsProjectiveCover.homEquivOfIsSimpleModule` is the factorization
+through the cover. -/
+@[simp]
+theorem IsProjectiveCover.homEquivOfIsSimpleModule_symm_comp {f : P →ₗ[R] M}
+    (hf : IsProjectiveCover f) (φ : P →ₗ[R] T) :
+    ((hf.homEquivOfIsSimpleModule k).symm φ) ∘ₗ f = φ := by
+  rw [← IsProjectiveCover.homEquivOfIsSimpleModule_apply (k := k) hf
+      ((hf.homEquivOfIsSimpleModule k).symm φ),
+    LinearEquiv.apply_symm_apply]
+
+end Simple
 
 end Ring
 

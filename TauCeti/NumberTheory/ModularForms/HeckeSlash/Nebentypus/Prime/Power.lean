@@ -30,8 +30,9 @@ case `TauCeti.sum_range_min_zero` (`Algebra/BigOperators/Finset/Range.lean`),
 
 the prime-power case of Diamond–Shurman Proposition 5.3.1, and in particular
 `a_m(T_{p^r} F) = a_{p^r m}(F)`. The composite operators are ordered products of these blocks
-(`heckeTCompositeGamma0`), so this is the input for the coefficient formula at a general index
-coprime to the level.
+(`heckeTCompositeGamma0`), so this is the input for the coefficient formula of `T_n` at an
+operator index `n` coprime to the level — which is what makes each of its primes good — read at
+a Fourier index `m` coprime to `n`.
 
 ## Main results
 

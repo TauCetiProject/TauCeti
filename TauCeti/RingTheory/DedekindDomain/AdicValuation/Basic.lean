@@ -63,14 +63,6 @@ namespace Valuation
 variable {R : Type*} [CommRing R] {K : Type*} [Field K] [Algebra R K]
   {w : _root_.Valuation K ℤᵐ⁰}
 
-/-- A valuation onto `ℤᵐ⁰` that is surjective is nontrivial: some element has value
-`exp (-1) ≠ 1`. -/
-theorem isNontrivial_of_surjective (hw : Function.Surjective w) : w.IsNontrivial := by
-  obtain ⟨x, hx⟩ := hw (WithZero.exp (-1))
-  refine (isNontrivial_iff_exists_lt_one w).mpr ⟨x, ?_, ?_⟩
-  · exact w.ne_zero_iff.mp (by simp [hx])
-  · simp [hx]
-
 section CenterIdeal
 
 variable (R) in

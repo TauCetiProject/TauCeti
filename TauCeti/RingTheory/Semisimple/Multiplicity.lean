@@ -13,11 +13,11 @@ public import TauCeti.RingTheory.Semisimple.RegularIsotypicComponent
 /-!
 # The multiplicity of a simple module, as the dimension of a hom space
 
-Let `A` be an algebra over an algebraically closed field `k` and let `S` be a simple `A`-module,
-finite-dimensional over `k`.  If a module `M` is written as a finite direct sum of simple
+Let `A` be an algebra over a field `k` and let `S` be a simple `A`-module, finite-dimensional over
+`k`. If a module `M` is written as a finite direct sum of simple
 modules, the number of summands isomorphic to `S` is the **multiplicity** of `S` in `M`.  Written
-that way the multiplicity refers to a chosen decomposition; this file identifies it with the
-manifestly choice-free number
+that way the multiplicity refers to a chosen decomposition. Over an algebraically closed field
+this file identifies it with the manifestly choice-free number
 
 `Module.finrank k (S →ₗ[A] M)`,
 
@@ -31,6 +31,11 @@ Schur's lemma, `TauCeti.finrank_linearMap_eq_one_of_nonempty_linearEquiv` and
 `TauCeti/RingTheory/Semisimple/Schur.lean` alongside the transport of a hom space along an
 isomorphism of its target, `TauCeti.homCongrRight`.
 
+Over an arbitrary field, an isomorphic factor instead contributes
+`finrank k (Module.End A S)`.  The corresponding scaled multiplicity formula is enough to recover
+the number of factors, since this endomorphism algebra has positive dimension.  Consequently the
+hom-space reconstruction theorem does not require the field to be algebraically closed.
+
 The multiplicity results are stated for a `k`-algebra `A` and `A`-modules that are `k`-modules
 compatibly, which is the generality the group-representation application needs: for `A = k[G]`
 the hom space is the space of intertwiners. The reconstruction result from simple-module classes
@@ -42,6 +47,8 @@ finite-dimensional `k`-algebra setting.
 * `TauCeti.finrank_linearMap_eq_natCard_of_linearEquiv_pi`: **the multiplicity theorem.**  If
   `M ≃ₗ[A] ∀ i, N i` with every `N i` simple, then `finrank k (S →ₗ[A] M)` is the number of
   indices `i` with `N i ≅ S`.
+* `TauCeti.finrank_linearMap_pi_eq_natCard_mul_finrank_end`: over an arbitrary field, the same
+  count is multiplied by the dimension of the division algebra `End_A(S)`.
 * `TauCeti.natCard_eq_natCard_of_linearEquiv_pi`: consequently equivalent finite products of
   simple modules have the same number of factors isomorphic to `S`; applied to two decompositions
   of one module, this says that the multiplicity is well defined.
@@ -107,6 +114,52 @@ namespace TauCeti
 /-! ### The multiplicity of a simple module in a finite direct sum -/
 
 section Multiplicity
+
+section ArbitraryField
+
+variable {k A S : Type*} [Field k] [Ring A] [Algebra k A]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
+variable [FiniteDimensional k S]
+variable {ι : Type*} [Finite ι] {N : ι → Type*} [∀ i, AddCommGroup (N i)] [∀ i, Module k (N i)]
+  [∀ i, Module A (N i)] [∀ i, IsScalarTower k A (N i)] [∀ i, IsSimpleModule A (N i)]
+
+/-- **The multiplicity formula over an arbitrary field.** The dimension of the space of maps from
+a simple module `S` into a finite product of simple modules is the number of factors isomorphic
+to `S`, multiplied by the dimension of the division algebra `End_A(S)`. -/
+theorem finrank_linearMap_pi_eq_natCard_mul_finrank_end :
+    Module.finrank k (S →ₗ[A] ∀ i, N i) =
+      Nat.card {i // Nonempty (S ≃ₗ[A] N i)} * Module.finrank k (Module.End A S) := by
+  classical
+  let _ : Fintype ι := Fintype.ofFinite ι
+  let _ : Module.Finite k (Module.End A S) :=
+    .of_injective (LinearMap.restrictScalarsₗ k A S S k) (LinearMap.restrictScalars_injective k)
+  have hfin : ∀ i, FiniteDimensional k (S →ₗ[A] N i) := by
+    intro i
+    by_cases hi : Nonempty (S ≃ₗ[A] N i)
+    · exact Module.Finite.equiv (homCongrRight k (S := S) hi.some)
+    · exact finiteDimensional_linearMap_of_isEmpty_linearEquiv (not_nonempty_iff.mp hi)
+  have hpi : Module.finrank k (S →ₗ[A] ∀ i, N i) =
+      ∑ i, Module.finrank k (S →ₗ[A] N i) := by
+    rw [← (LinearEquiv.linearMapPi (R := A) (M₂ := S) (φ := N) k).finrank_eq]
+    exact Module.finrank_pi_fintype k
+  have hval : ∀ i, Module.finrank k (S →ₗ[A] N i) =
+      if Nonempty (S ≃ₗ[A] N i) then Module.finrank k (Module.End A S) else 0 := by
+    intro i
+    split_ifs with hi
+    · exact (homCongrRight k (S := S) hi.some).finrank_eq.symm
+    · exact finrank_linearMap_eq_zero_of_isEmpty_linearEquiv (not_nonempty_iff.mp hi)
+  rw [hpi, Finset.sum_congr rfl fun i _ ↦ hval i]
+  calc
+    (∑ i, if Nonempty (S ≃ₗ[A] N i) then Module.finrank k (Module.End A S) else 0) =
+        (∑ i, if Nonempty (S ≃ₗ[A] N i) then 1 else 0) *
+          Module.finrank k (Module.End A S) := by
+      rw [Finset.sum_mul]
+      apply Finset.sum_congr rfl
+      simp
+    _ = Nat.card {i // Nonempty (S ≃ₗ[A] N i)} * Module.finrank k (Module.End A S) := by
+      rw [Finset.sum_boole, Nat.cast_id, Nat.card_eq_fintype_card, Fintype.card_subtype]
+
+end ArbitraryField
 
 variable {k A S : Type*} [Field k] [IsAlgClosed k] [Ring A] [Algebra k A]
 variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
@@ -222,7 +275,7 @@ end Reconstruction
 
 section ReconstructionFromHom
 
-variable {k A M P : Type*} [Field k] [IsAlgClosed k] [Ring A] [Algebra k A]
+variable {k A M P : Type*} [Field k] [Ring A] [Algebra k A]
   [FiniteDimensional k A] [IsSemisimpleRing A]
 variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M] [Module.Finite A M]
 variable [AddCommGroup P] [Module k P] [Module A P] [IsScalarTower k A P] [Module.Finite A P]
@@ -249,6 +302,12 @@ theorem nonempty_linearEquiv_of_finrank_linearMap_eq
       let _ : IsSimpleModule A S := hS
       let _ : Module.Finite k S :=
         Module.Finite.of_injective (S.subtype.restrictScalars k) Subtype.val_injective
+      let _ : Module.Finite k (Module.End A S) :=
+        .of_injective (LinearMap.restrictScalarsₗ k A S S k) (LinearMap.restrictScalars_injective k)
+      have hendpos : 0 < Module.finrank k (Module.End A S) := by
+        let _ : Nontrivial S := IsSimpleModule.nontrivial A S
+        let _ : Nontrivial (Module.End A S) := inferInstance
+        exact Module.finrank_pos
       have hpredM (i : Fin n) : simpleModuleClass A (SM i) =
           SimpleSubmoduleClasses.mk S ↔ Nonempty (S ≃ₗ[A] SM i) := by
         rw [simpleModuleClass_eq_mk_iff]
@@ -257,15 +316,15 @@ theorem nonempty_linearEquiv_of_finrank_linearMap_eq
           SimpleSubmoduleClasses.mk S ↔ Nonempty (S ≃ₗ[A] SP i) := by
         rw [simpleModuleClass_eq_mk_iff]
         exact ⟨fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩⟩
-      calc
-        Nat.card {i // simpleModuleClass A (SM i) = SimpleSubmoduleClasses.mk S} =
-            Nat.card {i // Nonempty (S ≃ₗ[A] SM i)} :=
-          Nat.card_congr (Equiv.subtypeEquivRight hpredM)
-        _ = Nat.card {i // Nonempty (S ≃ₗ[A] SP i)} := by
-          rw [← finrank_linearMap_eq_natCard_of_linearEquiv_pi (k := k) (S := S) epM,
-            h S, finrank_linearMap_eq_natCard_of_linearEquiv_pi (k := k) (S := S) epP]
-        _ = Nat.card {i // simpleModuleClass A (SP i) = SimpleSubmoduleClasses.mk S} :=
-          Nat.card_congr (Equiv.subtypeEquivRight hpredP).symm
+      rw [Nat.card_congr (Equiv.subtypeEquivRight hpredM),
+        Nat.card_congr (Equiv.subtypeEquivRight hpredP)]
+      apply Nat.eq_of_mul_eq_mul_right hendpos
+      rw [← finrank_linearMap_pi_eq_natCard_mul_finrank_end (k := k) (S := S)
+          (N := fun i ↦ SM i),
+        ← (homCongrRight k (S := S) epM).finrank_eq, h S,
+        (homCongrRight k (S := S) epP).finrank_eq,
+        finrank_linearMap_pi_eq_natCard_mul_finrank_end (k := k) (S := S)
+          (N := fun i ↦ SP i)]
   exact ⟨epM |>.trans (nonempty_linearEquiv_pi_of_natCard_eq hfiber).some |>.trans epP.symm⟩
 
 end ReconstructionFromHom

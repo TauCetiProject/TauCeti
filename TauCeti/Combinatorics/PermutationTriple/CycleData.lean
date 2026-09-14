@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.Basic
-public import TauCeti.GroupTheory.Perm.OrbitCount
+public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 
 /-!
 # Cycle data of permutation triples

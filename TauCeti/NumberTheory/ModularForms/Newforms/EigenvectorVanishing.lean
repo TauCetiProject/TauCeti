@@ -7,20 +7,24 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Eigenvector
 public import TauCeti.NumberTheory.ModularForms.Newforms.MainLemma
-public import TauCeti.NumberTheory.ModularForms.Newforms.Nebentypus
 
 /-!
 # A good Hecke eigenvector in the new part with `a₁ = 0` vanishes
 
-The one statement both multiplicity one and strong multiplicity one run on. A cusp form in
-`S_k(N, χ)` that is an eigenvector of the Hecke ring at every prime not dividing `N` has all its
-coefficients determined by `a₁` at the indices coprime to `N`; if `a₁ = 0` those coefficients all
-vanish (`qExpansion_coeff_eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_coprime`),
+The one statement both multiplicity one and strong multiplicity one run on. For a cusp form in
+`S_k(N, χ)` that is an eigenvector of the Hecke ring at every prime not dividing `N`, the
+eigenvector recurrences propagate `a₁ = 0` to the vanishing of every coefficient at an index
+coprime to `N`
+(`qExpansion_coeff_eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_coprime`);
 the Main Lemma (`TauCeti.mem_cuspFormsOld_of_forall_coprime_qExpansion_coeff_eq_zero`) then puts
 the form in the old part, and the old and new parts meet only in `0`.
 
-Both consumers reach their theorem by producing such an eigenvector: multiplicity one from
-`a₁(g) • f - a₁(f) • g`, strong multiplicity one from the difference of two newforms.
+Both consumers reach their theorem by producing such an eigenvector, and neither gets one for
+free: a difference or combination is a Hecke eigenvector only once the two forms are known to
+share an eigenvalue at each good prime. Multiplicity one assumes that agreement and forms
+`a₁(g) • f - a₁(f) • g`; strong multiplicity one first extends agreement from the complement of a
+finite set to every good index (`EigenformAwayFromLevel.eigenvalue_eq_of_forall_notMem`) and only
+then takes the difference of the two newforms.
 
 ## Main results
 
@@ -41,9 +45,9 @@ namespace HeckeRing.GL2
 
 variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
 
-/-- **A good Hecke eigenvector in the new part with `a₁ = 0` is zero.** Its coefficients vanish
-at every index coprime to `N`, so the Main Lemma puts it in the old part, and the old and new
-parts of `S_k(N, χ)` meet only in `0`. -/
+/-- **A good Hecke eigenvector in the new part with `a₁ = 0` is zero**: a cusp form in
+`S_k(N, χ)ᵐᵉʷ` that is an eigenvector of the Hecke ring at every prime not dividing `N` and has
+first `q`-expansion coefficient `0` vanishes. -/
 theorem eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspFormsNew
     {F : cuspFormCharSpace k χ}
     (ha : ∀ p : ℕ, p.Prime → Nat.Coprime p N →

@@ -454,7 +454,7 @@ theorem rankOneCarrierPointsMap_injective
   GeneralLinear.mapHopfIdealPointsSubgroupCongr_injective 2
     (kostantToralDefiningIdeal e h ρ M hM hnil b rankOneWeight)
     (rankOneCarrierPoints_eq_hopfIdealPoints A) (rankOneCarrierPoints_eq_hopfIdealPoints B)
-    (φ := f.toIntAlgHom) hf
+    (φ := f.toIntAlgHom) (by rwa [RingHom.toIntAlgHom_coe])
 
 /-- The induced map carries rank-one root-subgroup parameters along the value-ring map. -/
 @[simp]

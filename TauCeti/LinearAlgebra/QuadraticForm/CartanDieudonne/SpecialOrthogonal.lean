@@ -20,6 +20,11 @@ by putting those pairs in the identity component.
 The full orthogonal group is generated as a monoid by individual reflections, as expressed by
 `closure_reflectionOrthogonal_eq_top`.
 
+## Main results
+
+* `TauCeti.QuadraticMap.exists_even_reflectionOrthogonal_list_prod_eq` gives a dimension-bounded
+  even reflection word for every determinant-one isometry of a nondegenerate space.
+
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §2.
@@ -33,6 +38,32 @@ universe u v
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] [NeZero (2 : K)]
+
+/-- Every special orthogonal transformation of a nondegenerate quadratic space is a product of an
+even number of reflections, with length at most the dimension. -/
+theorem exists_even_reflectionOrthogonal_list_prod_eq
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (g : QuadraticMap.specialOrthogonalGroup Q) :
+    ∃ l : List (QuadraticMap.orthogonalGroup Q),
+      (∀ r ∈ l, ∃ (v : V) (_ : Invertible (Q v)),
+        QuadraticMap.reflectionOrthogonal Q v = r) ∧
+      l.length ≤ Module.finrank K V ∧ Even l.length ∧
+      l.prod = ⟨g, (QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.2).1⟩ := by
+  have hg := QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.2
+  obtain ⟨l, hlrefl, hllen, hprod⟩ := exists_reflectionOrthogonal_list_prod_eq Q hQ
+    (⟨g, hg.1⟩ : QuadraticMap.orthogonalGroup Q)
+  refine ⟨l, hlrefl, hllen, ?_, hprod⟩
+  apply (neg_one_pow_eq_one_iff_even (R := Kˣ) ?_).mp
+  · calc
+      (-1 : Kˣ) ^ l.length = LinearEquiv.det (l.prod : V ≃ₗ[K] V) := by
+        exact (det_list_prod_of_reflectionOrthogonal Q l hlrefl).symm
+      _ = 1 := by rw [hprod]; exact hg.2
+  · intro h
+    apply NeZero.ne (2 : K)
+    have hneg : (-1 : K) = 1 := congrArg Units.val h
+    calc
+      (2 : K) = 1 - (-1) := by ring
+      _ = 0 := by rw [hneg]; ring
 
 /-- Reflections generate the full orthogonal group as a monoid. -/
 theorem closure_reflectionOrthogonal_eq_top

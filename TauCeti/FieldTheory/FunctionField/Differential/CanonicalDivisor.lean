@@ -70,6 +70,8 @@ the Riemann–Roch identity.
 * `TauCeti.degreeClass_canonicalClass`: the canonical class has degree `2g - 2`.
 * `TauCeti.exists_isRiemannRochDivisor`: **the Riemann–Roch theorem** — a Riemann–Roch divisor
   exists.
+* `TauCeti.exists_isGreatest_of_divisorClass_eq_canonicalClass`: every divisor of the canonical
+  class is the divisor of a nonzero Weil differential.
 * `TauCeti.divisorClass_eq_canonicalClass_iff`: **the characterization of canonical divisors**
   (Stichtenoth, Proposition 1.6.2) — a divisor represents the canonical class exactly when
   `deg D = 2g - 2` and `ℓ(D) ≥ g`.
@@ -427,6 +429,30 @@ theorem isRiemannRochDivisor_of_divisorClass_eq_canonicalClass (hF : IsFunctionF
   refine (isRiemannRochDivisor_weilDifferentialDivisor hF hex hωmem hω0).of_linearlyEquivalent hF
     ((Place.orderSystem hF).divisorClass_eq_iff.mp ?_)
   rw [divisorClass_weilDifferentialDivisor hF hex hωmem hω0, hD]
+
+/-- **Every divisor of the canonical class is the divisor of a Weil differential**: the canonical
+class does not merely contain the divisors of nonzero Weil differentials up to linear equivalence,
+every one of its representatives is such a divisor on the nose. -/
+theorem exists_isGreatest_of_divisorClass_eq_canonicalClass (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {D : Divisor k F}
+    (hD : (Place.orderSystem hF).divisorClass D = canonicalClass hF hex) :
+    ∃ ω ∈ weilDifferentialSpace k F, ω ≠ 0 ∧
+      IsGreatest {E : Divisor k F | ω ∈ weilDifferentialFiltration E} D := by
+  -- Multiplying a differential by a function `z` with `div z = D - (ω)` moves its divisor onto
+  -- `D`, by the transformation law `weilDifferentialDivisor_repartitionDualMul`.
+  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  have hclass : (Place.orderSystem hF).divisorClass
+      (D - weilDifferentialDivisor hF hex hωmem hω0) = 0 := by
+    rw [map_sub, divisorClass_weilDifferentialDivisor hF hex hωmem hω0, hD, sub_self]
+  obtain ⟨z, hz⟩ := (Divisor.divisorClass_eq_zero_iff hF).mp hclass
+  refine ⟨repartitionDualMul hF (z : F) ω,
+    repartitionDualMul_mem_weilDifferentialSpace hF (z : F) hωmem,
+    repartitionDualMul_ne_zero hF (Units.ne_zero z) hω0, ?_⟩
+  have hgreat := isGreatest_weilDifferentialDivisor hF hex
+    (repartitionDualMul_mem_weilDifferentialSpace hF (z : F) hωmem)
+    (repartitionDualMul_ne_zero hF (Units.ne_zero z) hω0)
+  rwa [weilDifferentialDivisor_repartitionDualMul hF hex hωmem hω0 z, hz,
+    sub_add_cancel] at hgreat
 
 /-- **The characterization of canonical divisors** (Stichtenoth, Proposition 1.6.2): a divisor
 represents the canonical class exactly when it has degree `2g - 2` and its Riemann–Roch space
