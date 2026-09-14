@@ -58,21 +58,15 @@ private theorem measurable_wishartGramMeasure_fixedDegree (nu : ℕ) :
       Measurable.of_eval fun i => Measurable.of_eval fun j =>
         (measurable_pi_apply j).comp (measurable_pi_apply i)
     exact measurable_multivariateGaussian.comp (measurable_const.prodMk hmatrix)
-  have hpi : Measurable fun S =>
-      (ProbabilityMeasure.pi fun _ : Fin nu => gaussian S).toMeasure :=
+  -- `ProbabilityMeasure.toMeasure_pi` is a `rfl` lemma, so the product kernel can be stated
+  -- directly as the `Measure.pi` appearing in `wishartGramMeasure_eq_map_pi`.
+  have hpi : Measurable fun S : Fin p → Fin p → ℝ =>
+      Measure.pi fun _ : Fin nu => multivariateGaussian 0 (Matrix.of S) :=
     MeasureTheory.measurable_probabilityMeasure_pi_const_toMeasure gaussian hgaussian
   have hmap : Measurable fun mu : Measure (Fin nu → EuclideanSpace ℝ (Fin p)) =>
       mu.map wishartGram := Measure.measurable_map wishartGram measurable_wishartGram
-  have hm := hmap.comp hpi
-  have heq : (fun S =>
-      (ProbabilityMeasure.pi fun _ : Fin nu => gaussian S).toMeasure.map wishartGram) =
-      fun S => wishartGramMeasure nu (Matrix.of S) := by
-    funext S
-    exact (wishartGramMeasure_eq_map_pi nu (Matrix.of S)).symm
-  change Measurable (fun S =>
-    (ProbabilityMeasure.pi fun _ : Fin nu => gaussian S).toMeasure.map wishartGram) at hm
-  rw [heq] at hm
-  exact hm
+  simp only [wishartGramMeasure_eq_map_pi]
+  exact hmap.comp hpi
 
 /-- **Parameter measurability of the Gaussian-Gram Wishart law.** The law is measurable jointly
 in its natural degree and every coordinate of its scale matrix.  No positivity hypothesis is
