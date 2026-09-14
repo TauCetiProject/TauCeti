@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Groupoid.Subgroupoid
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import TauCeti.Topology.Homotopy.Path
 
@@ -93,15 +92,6 @@ private theorem mk_concat_mem_iSup_im (hU : ∀ x, ∃ i, U i ∈ 𝓝 x) {n : �
     exact Subgroupoid.mul _ (ih (p ∘ Fin.castSucc) (fun k ↦ F k.castSucc) fun k ↦ hF k.castSucc)
       (mk_mem_iSup_im _ hi)
 
-/-- Membership of a path class in a subgroupoid is preserved by casting its endpoints along
-equalities. -/
-private theorem cast_mem {S : Subgroupoid (_root_.FundamentalGroupoid X)} {a b a' b' : X}
-    (ha : a' = a) (hb : b' = b) {q : Path.Homotopic.Quotient a b}
-    (hq : (q : mk a ⟶ mk b) ∈ S.arrows (mk a) (mk b)) :
-    (q.cast ha hb : mk a' ⟶ mk b') ∈ S.arrows (mk a') (mk b') := by
-  subst ha hb
-  simpa using hq
-
 /-- **Generation half of the groupoid van Kampen theorem.** If every point of `X` has some `U i`
 as a neighbourhood, then the images of the inclusion functors
 `FundamentalGroupoid (U i) ⥤ FundamentalGroupoid X` generate the fundamental groupoid of `X`:
@@ -121,7 +111,7 @@ theorem iSup_im_map_subtypeVal_eq_top (hU : ∀ x, ∃ i, U i ∈ 𝓝 x) :
     rw [Path.subpath_zero_one]
     rfl
   rw [hγ _ _ ht0 htn, Path.Homotopic.Quotient.mk_cast]
-  exact cast_mem _ _ hsub
+  exact (cast_mem_arrows_iff _ _ _).2 hsub
 
 /-- Two functors out of the fundamental groupoid of `X` are equal as soon as they agree after
 precomposition with the inclusion functor of every `U i`, provided every point of `X` has some
