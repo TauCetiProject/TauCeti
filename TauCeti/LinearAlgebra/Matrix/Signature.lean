@@ -188,6 +188,13 @@ theorem signature_neg (A : Matrix ι ι 𝕜) : signature (-A) = -signature A :=
   rw [signature_def, signature_def, toQuadraticForm'_neg, sigPos_neg, sigNeg_neg]
   ring
 
+/-- The zero matrix has signature zero. -/
+@[simp]
+theorem signature_zero : signature (0 : Matrix ι ι 𝕜) = 0 := by
+  have h := signature_neg (0 : Matrix ι ι 𝕜)
+  simp only [neg_zero] at h
+  omega
+
 /-- A matrix indexed by an empty type has signature zero. -/
 @[simp]
 theorem signature_of_isEmpty [IsEmpty ι] (A : Matrix ι ι 𝕜) : signature A = 0 := by
