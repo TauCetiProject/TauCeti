@@ -218,41 +218,22 @@ theorem ext {f g : C1HolderSpace α E F} (h : ∀ x, f x = g x) : f = g := by
       exact congrArg DFunLike.coe hvalue
     _ = fderiv g x := fderiv_eq g x
 
-private abbrev valueLinearMap : C1HolderSpace α E F →ₗ[ℝ] (E →ᵇ F) :=
-    { toFun := fun f ↦ (toJet f).1
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-
-private theorem valueLinearMap_apply (f : C1HolderSpace α E F) :
-    valueLinearMap f = (toJet f).1 := rfl
-
 /-- Forgetting the derivative defines a continuous linear map to bounded continuous functions. -/
 def valueL : C1HolderSpace α E F →L[ℝ] (E →ᵇ F) :=
-  LinearMap.mkContinuous valueLinearMap 1 fun f ↦ by
-    rw [← norm_toJet f]
-    simpa only [valueLinearMap_apply, Submodule.norm_coe, one_mul] using
-      norm_fst_le (toJet f)
+  (ContinuousLinearMap.fst ℝ (E →ᵇ F) (HolderSpace α E (E →L[ℝ] F))).comp (by
+    unfold C1HolderSpace
+    exact Submodule.subtypeL _)
 
 @[simp]
 theorem valueL_apply (f : C1HolderSpace α E F) :
     valueL f = toBoundedContinuousFunction f :=
   (rfl)
 
-private abbrev fderivLinearMap :
-    C1HolderSpace α E F →ₗ[ℝ] HolderSpace α E (E →L[ℝ] F) :=
-    { toFun := fun f ↦ (toJet f).2
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-
-private theorem fderivLinearMap_apply (f : C1HolderSpace α E F) :
-    fderivLinearMap f = (toJet f).2 := rfl
-
 /-- Returning the derivative defines a continuous linear map to the global Hölder space. -/
 def fderivL : C1HolderSpace α E F →L[ℝ] HolderSpace α E (E →L[ℝ] F) :=
-  LinearMap.mkContinuous fderivLinearMap 1 fun f ↦ by
-    rw [← norm_toJet f]
-    simpa only [fderivLinearMap_apply, Submodule.norm_coe, one_mul] using
-      norm_snd_le (toJet f)
+  (ContinuousLinearMap.snd ℝ (E →ᵇ F) (HolderSpace α E (E →L[ℝ] F))).comp (by
+    unfold C1HolderSpace
+    exact Submodule.subtypeL _)
 
 @[simp]
 theorem fderivL_apply (f : C1HolderSpace α E F) : fderivL f = fderiv f := (rfl)
