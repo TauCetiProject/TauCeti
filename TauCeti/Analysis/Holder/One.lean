@@ -238,6 +238,53 @@ def fderivL : C1HolderSpace α E F →L[ℝ] HolderSpace α E (E →L[ℝ] F) :=
 @[simp]
 theorem fderivL_apply (f : C1HolderSpace α E F) : fderivL f = fderiv f := (rfl)
 
+@[simp]
+theorem toBoundedContinuousFunction_zero :
+    toBoundedContinuousFunction (0 : C1HolderSpace α E F) = 0 := by
+  simpa only [valueL_apply] using (valueL (α := α) (E := E) (F := F)).map_zero
+
+@[simp]
+theorem toBoundedContinuousFunction_add (f g : C1HolderSpace α E F) :
+    toBoundedContinuousFunction (f + g) =
+      toBoundedContinuousFunction f + toBoundedContinuousFunction g := by
+  simpa only [valueL_apply] using (valueL (α := α) (E := E) (F := F)).map_add f g
+
+@[simp]
+theorem toBoundedContinuousFunction_smul (c : ℝ) (f : C1HolderSpace α E F) :
+    toBoundedContinuousFunction (c • f) = c • toBoundedContinuousFunction f := by
+  simpa only [valueL_apply] using (valueL (α := α) (E := E) (F := F)).map_smul c f
+
+@[simp]
+theorem fderiv_zero : fderiv (0 : C1HolderSpace α E F) = 0 := by
+  simpa only [fderivL_apply] using (fderivL (α := α) (E := E) (F := F)).map_zero
+
+@[simp]
+theorem fderiv_add (f g : C1HolderSpace α E F) :
+    fderiv (f + g) = fderiv f + fderiv g := by
+  simpa only [fderivL_apply] using (fderivL (α := α) (E := E) (F := F)).map_add f g
+
+@[simp]
+theorem fderiv_smul (c : ℝ) (f : C1HolderSpace α E F) :
+    fderiv (c • f) = c • fderiv f := by
+  simpa only [fderivL_apply] using (fderivL (α := α) (E := E) (F := F)).map_smul c f
+
+@[simp]
+theorem zero_apply (x : E) : (0 : C1HolderSpace α E F) x = 0 := by
+  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_zero]
+  rfl
+
+@[simp]
+theorem add_apply (f g : C1HolderSpace α E F) (x : E) :
+    (f + g) x = f x + g x := by
+  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_add]
+  rfl
+
+@[simp]
+theorem smul_apply (c : ℝ) (f : C1HolderSpace α E F) (x : E) :
+    (c • f) x = c • f x := by
+  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_smul]
+  rfl
+
 /-- The `C^{1,α}` norm is the maximum of the supremum norm of the function and the
 supremum-plus-Hölder norm of its derivative. -/
 theorem norm_eq_max (f : C1HolderSpace α E F) :
