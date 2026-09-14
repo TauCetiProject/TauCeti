@@ -9,12 +9,15 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 
 /-!
-# Pro-p subgroups
+# Subgroups of pro-p groups
 
-The pro-`p` property passes from a profinite group to each of its subgroups, equipped with the
-subspace topology. In particular, a closed subgroup is again a profinite pro-`p` group. The
-algebraic property does not itself require closedness: every finite continuous quotient of a
-subgroup factors through its image in some finite continuous quotient of the ambient group.
+The pro-`p` property passes from a profinite group to each of its subgroups. Given an open normal
+subgroup `V` of a subgroup `H`, profiniteness supplies an open normal subgroup `N` of the ambient
+group whose pullback to `H` lies in `V`. The quotient `H / V` is then a quotient of a subgroup of
+the finite `p`-group `G / N`.
+
+Closedness of `H` is not needed for this result. It is needed only when the subgroup itself must
+inherit the profinite typeclass stack.
 
 The same factorization characterizes the pro-`p` property of an arbitrary subgroup by its images
 in the ambient finite quotients. It also shows that taking the topological closure neither creates
@@ -25,7 +28,7 @@ algebraically and then promoted to a profinite subgroup.
 
 * `Subgroup.isProP_iff_isPGroup_map_quotient`: a subgroup is pro-`p` exactly when all its images
   in the ambient finite continuous quotients are `p`-groups.
-* `IsProP.subgroup`: every subgroup of a profinite pro-`p` group is pro-`p` in its subspace
+* `IsProP.subgroup`: every subgroup of a pro-`p` profinite group is pro-`p` in the subspace
   topology.
 * `IsProP.topologicalClosure`, `Subgroup.isProP_topologicalClosure_iff`: the topological closure
   of a pro-`p` subgroup is pro-`p`, and the converse holds as well.
@@ -39,11 +42,8 @@ public section
 
 namespace TauCeti
 
-universe u
-
-variable {p : ℕ}
-variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [TotallyDisconnectedSpace G]
+variable {p : ℕ} {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G]
 
 /-- A subgroup of a profinite group is pro-`p` exactly when its image in every finite
 continuous quotient of the ambient group is a `p`-group.
@@ -85,13 +85,24 @@ theorem _root_.Subgroup.isProP_iff_isPGroup_map_quotient (H : Subgroup G) :
 
 namespace IsProP
 
-/-- Every subgroup of a profinite pro-`p` group is pro-`p` in its subspace topology.
+/-- Every subgroup of a pro-`p` profinite group is pro-`p` in the subspace topology.
 
-Closedness is not needed for this property. When `H` is closed, its standard induced instances
-also make it a compact totally disconnected topological group. -/
+In particular, a closed subgroup is again a profinite pro-`p` group, since closed subgroups
+inherit the remaining profinite instances. -/
 theorem subgroup (hG : IsProP p G) (H : Subgroup G) : IsProP p H := by
-  rw [H.isProP_iff_isPGroup_map_quotient]
-  exact fun U ↦ ((isProP_iff.mp hG) U).to_subgroup _
+  rw [isProP_iff]
+  intro V
+  obtain ⟨N, hNV⟩ := H.exists_openNormalSubgroup_comap_le V
+  intro x
+  obtain ⟨h, rfl⟩ := QuotientGroup.mk'_surjective V.toSubgroup x
+  obtain ⟨k, hk⟩ :=
+    isProP_iff.mp hG N (QuotientGroup.mk' N.toSubgroup (h : G))
+  refine ⟨k, ?_⟩
+  rw [← map_pow, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff]
+  apply hNV
+  rw [Subgroup.mem_comap]
+  apply (QuotientGroup.eq_one_iff ((h : G) ^ p ^ k)).mp
+  simpa using hk
 
 /-- The topological closure of a pro-`p` subgroup of a profinite group is pro-`p`. -/
 theorem topologicalClosure {H : Subgroup G} (hH : IsProP p H) :
