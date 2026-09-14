@@ -36,8 +36,9 @@ optimality notions for maps — minimality among maps, `TauCeti.IsMongeMinimizer
 of the Kantorovich value, `TauCeti.IsKantorovichOptimalTransportMap` — are kept apart: the second
 implies the first, and the gap between them is exactly the gap between the two values.
 
-Nothing here needs a topology or a normalisation, and the two factors are arbitrary measurable
-spaces; the cost is extended-nonnegative and integrated by `lintegral`, so an infeasible problem
+The definitions and the relaxation need no topology and no normalisation (only the strict
+example asks for a probability target), and the two factors are arbitrary measurable spaces; the
+cost is extended-nonnegative and integrated by `lintegral`, so an infeasible problem
 and a problem of infinite cost both take the value `∞`, separated by
 `TauCeti.exists_hasLaw_of_mongeCost_ne_top`.
 
@@ -70,8 +71,8 @@ and a problem of infinite cost both take the value `∞`, separated by
 * `TauCeti.isKantorovichOptimalTransportMap_id` and `TauCeti.mongeCost_self_eq_zero` — for a
   cost vanishing on the diagonal the identity transports any measure onto itself at no cost;
 * `TauCeti.isKantorovichOptimalTransportMap_dirac_dirac` and `TauCeti.mongeCost_dirac_dirac` —
-  between two Dirac measures the only transport map is optimal and the Monge value is the value
-  of the cost at the pair.
+  between two Dirac measures the constant transport map is optimal and the Monge value is the
+  value of the cost at the pair.
 
 ## Implementation notes
 
