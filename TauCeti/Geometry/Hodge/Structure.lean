@@ -336,12 +336,11 @@ theorem IsEffective.F_eq_bot_of_weight_lt {hs : HodgeStructureOn W ω n}
     (h : hs.IsEffective) {p : ℤ} (hp : n < p) : hs.F p = ⊥ := by
   exact hs.F_eq_bot_of_le h.F_eq_bot (by omega)
 
+-- No `simp` attribute: `isEffective_iff` simplifies the `IsEffective` hypothesis, so `simpNF`
+-- rejects the attribute.
 /-- In an effective Hodge structure the Hodge component in the degree of the weight is the
 filtration step of that degree: the conjugate step cutting it out is the conjugate of `F 0 = ⊤`,
-which is everything.
-
-This is intentionally not a simp lemma: `isEffective_iff` simplifies its `IsEffective`
-hypothesis, so `simpNF` rejects the attribute. Use it as an explicit rewrite rule. -/
+which is everything. Use it as an explicit rewrite rule. -/
 theorem IsEffective.piece_weight_eq_F {hs : HodgeStructureOn W ω n} (h : hs.IsEffective) :
     hs.piece n = hs.F n := by
   rw [piece_def, conjF_def, sub_self, hs.isEffective_iff.1 h]

@@ -13,8 +13,8 @@ public import TauCeti.Geometry.Hodge.HodgeForm
 An effective Hodge structure of weight one has only the two Hodge components `H^{1,0}` and
 `H^{0,1}`, and its Weil operator `C` restricts to a complex structure on the real form of its
 lattice. For such a structure the Hodge–Riemann relations become the two classical **Riemann
-bilinear relations**, which speak only about real vectors: an alternating integral form `Q`
-polarizes the structure as soon as
+bilinear relations**, which speak only about real vectors: a nondegenerate alternating integral
+form `Q` polarizes the structure as soon as
 
 * `Q (C x) (C y) = Q x y` for all real `x` and `y`, and
 * `0 < Q (C x) x` for every nonzero real `x`.
@@ -22,20 +22,22 @@ polarizes the structure as soon as
 Both relations are also necessary — the first is
 `TauCeti.Hodge.IsPolarization.isOrthogonal_weilOperator` read on real vectors, and the second is
 `TauCeti.Hodge.IsPolarization.integralFormBaseChange_weilOperator_self_pos`, which holds in
-arbitrary weight — so together they characterize the polarizing forms. This is the shape in which a
-Riemann form on a lattice with a complex structure polarizes the weight-one Hodge structure it
-carries, as for the first cohomology of a complex torus.
+arbitrary weight — so among nondegenerate alternating forms the two relations characterize the
+polarizing ones. This is the shape in which a Riemann form on a lattice with a complex structure
+polarizes the weight-one Hodge structure it carries, as for the first cohomology of a complex
+torus.
 
-Effectivity is what makes the two relations sufficient, and it is not decoration. Invariance of `Q`
-under `C` forces two Hodge components to be orthogonal only when their degrees differ by an odd
-number; in weight one those are exactly the pairs of degrees taken from `{0, 1}`, so a
-non-effective weight-one structure, which also has components `H^{p,1-p}` with `p ∉ {0, 1}`, is not
-covered.
+Effectivity is what makes the two relations sufficient, and it is not decoration. The operator `C`
+acts on `H^{p,1-p}` by `i^{2p-1}`, so invariance of `Q` under `C` forces that component to be
+orthogonal to `H^{p',1-p'}` only when `p` and `p'` have the same parity. For an effective structure
+the sole orthogonality a polarization asks for is `H^{1,0}` against itself, a pair of equal — hence
+equal-parity — degrees. A non-effective weight-one structure also has components `H^{p,1-p}` with
+`p ∉ {0, 1}`, where the relations pair degrees of opposite parity, so it is not covered.
 
 ## Main declarations
 
-* `TauCeti.Hodge.isPolarization_of_isOrthogonal_weilOperator_of_pos`: the Riemann bilinear
-  relations polarize an effective weight-one Hodge structure.
+* `TauCeti.Hodge.isPolarization_of_weilOperator_invariant_on_realPoints_of_pos`: the Riemann
+  bilinear relations polarize an effective weight-one Hodge structure.
 
 The conventions are those pinned in `TauCeti.Hodge.IsPolarization`; the relations follow Voisin,
 *Hodge Theory and Complex Algebraic Geometry I*, §7.1.2, and Peters–Steenbrink, *Mixed Hodge
@@ -117,7 +119,7 @@ Invariance under `C` gives the first Hodge–Riemann relation: on `H^{1,0}` the 
 `i`, so invariance forces the form to vanish there, and in weight one that is the only relation to
 check. Positivity on the real form gives the second: a nonzero class of `H^{1,0}` and its conjugate
 add up to a nonzero real vector on which the hypothesis applies. -/
-theorem isPolarization_of_isOrthogonal_weilOperator_of_pos (heff : hs.IsEffective)
+theorem isPolarization_of_weilOperator_invariant_on_realPoints_of_pos (heff : hs.IsEffective)
     (hskew : ∀ x y, Q y x = -Q x y) (hnd : Q.Nondegenerate)
     (hinv : ∀ x ∈ realPoints (latticeConj hℂ), ∀ y ∈ realPoints (latticeConj hℂ),
       integralFormBaseChange hℂ Q (hs.weilOperator x) (hs.weilOperator y) =
