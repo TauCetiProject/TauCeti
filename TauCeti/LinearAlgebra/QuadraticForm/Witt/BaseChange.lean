@@ -171,7 +171,6 @@ theorem RegularFormClass.baseChange_zero :
   rw [h]
 
 /-- Base change preserves finite orthogonal sums. -/
-@[simp]
 theorem RegularFormClass.baseChange_nsmul (n : ℕ) (c : RegularFormClass K) :
     (n • c).baseChange L = n • c.baseChange L := by
   induction n with
