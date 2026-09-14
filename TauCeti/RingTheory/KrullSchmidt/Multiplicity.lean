@@ -151,7 +151,7 @@ variable (A M) in
 decomposition of the finite-length module `M` into indecomposable submodules.  Every such
 decomposition computes it, by
 `TauCeti.decompositionMultiplicity_eq_indecomposableMultiplicity`. -/
-noncomputable def indecomposableMultiplicity [IsNoetherian A M] [IsArtinian A M]
+noncomputable def indecomposableMultiplicity [IsArtinian A M]
     (N : Type w) [AddCommGroup N] [Module A N] : ℕ :=
   decompositionMultiplicity (exists_isInternal_isIndecomposableModule (A := A) (M := M)).choose N
 
@@ -177,6 +177,7 @@ theorem decompositionMultiplicity_eq_indecomposableMultiplicity_of_supIndep
     (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
       ⟨hsi.independent, by simpa only [Finset.sup_eq_iSup, iSup_subtype, id_eq] using hsup⟩
 
+omit [IsNoetherian A M] in
 /-- The multiplicity depends on `N` only through its isomorphism class. -/
 theorem indecomposableMultiplicity_congr (e : N ≃ₗ[A] N') :
     indecomposableMultiplicity A M N = indecomposableMultiplicity A M N' :=
@@ -207,6 +208,7 @@ theorem indecomposableMultiplicity_eq_zero_of_subsingleton [Subsingleton M] :
     decompositionMultiplicity_def]
   simp
 
+omit [IsNoetherian A M] in
 /-- **Only an indecomposable module has a nonzero multiplicity**: the summands counted are
 indecomposable by construction. -/
 theorem isIndecomposableModule_of_indecomposableMultiplicity_ne_zero

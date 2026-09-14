@@ -146,7 +146,8 @@ Kronecker-delta matrix. -/
 theorem indecomposableCoordinate_exactK0_of [DecidableEq I]
     (hind : ∀ i, IsIndecomposableModule R (P i).obj)
     (hnoniso : Pairwise fun i j ↦ IsEmpty (↥(P i).obj ≃ₗ[R] ↥(P j).obj)) (i j : I) :
-    indecomposableCoordinate R ↥(P i).obj (ExactK0.of (P j)) = if j = i then 1 else 0 := by
+    (indecomposableMultiplicity R ↥(P j).obj ↥(P i).obj : ℤ) = if j = i then 1 else 0 := by
+  rw [← indecomposableCoordinate_of]
   by_cases hji : j = i
   · subst j
     simpa using indecomposableCoordinate_self (P i) (hind i)
@@ -313,6 +314,7 @@ theorem indecomposableProjectiveClassBasis_repr_apply
     (fun x i ↦ indecomposableCoordinate R ↥(P i).obj x) (fun x y ↦ funext fun i ↦ map_add _ x y)
     (fun c x ↦ funext fun i ↦ map_zsmul _ c x) (fun j ↦ funext fun k ↦ ?_) x i
   rw [indecomposableProjectiveClassBasis_apply, Finsupp.single_apply]
+  rw [indecomposableCoordinate_of]
   exact indecomposableCoordinate_exactK0_of P hind hnoniso k j
 
 end Family
