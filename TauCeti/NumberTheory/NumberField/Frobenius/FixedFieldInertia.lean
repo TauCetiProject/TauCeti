@@ -10,17 +10,26 @@ public import TauCeti.NumberTheory.NumberField.FixedField
 public import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 
 /-!
-# The residue degree of a prime below a fixed field
+# Ramification and residue degrees below a fixed field
 
 Let `H` be a subgroup of `Gal(L/K)`, let `E = L ^ H`, and let `Q` be a nonzero prime of `𝓞 L`
-unramified over `𝓞 K`.  The residue degree of `Q ∩ 𝓞 E` over `𝓞 K`, times the number of elements
-`H` shares with the decomposition group of `Q`, is the residue degree of `Q` itself.
+over `𝓞 K`. The product of the ramification index and residue degree of `Q ∩ 𝓞 E` over
+`𝓞 K` is the relative index
 
-Nothing in that needs `H` cyclic or a Frobenius in sight: the Galois correspondence identifies
+`[D(Q) : D(Q) ∩ H]`.
+
+Equivalently, multiplying that product by the order of `D(Q) ∩ H` gives the corresponding
+product for `Q` over `𝓞 K`. The proof combines multiplicativity of ramification indices and
+residue degrees in the tower `K ⊆ E ⊆ L` with the identification of the decomposition group over
+`E` with `D(Q) ∩ H`. Applied to a translate `σ • Q`, this is the decomposition-group index formula
+for the prime of `E` below that translate.
+
+If `Q` is unramified over `K`, all ramification indices in the tower are one. The general formula
+then specializes to the residue-degree identity previously used in Frobenius arguments. Nothing
+in either statement needs `H` cyclic: the Galois correspondence identifies
 `Gal(L/E)` with `H` acting on ideals exactly as it does over `K`, so the decomposition group of `Q`
 over `E` corresponds to `H ⊓ D(Q)` and in particular has as many elements, and multiplicativity of
-the inertia degree in the tower `K ⊆ E ⊆ L` does the rest.  It is stated as a product so that no
-natural-number division is truncated.
+the two local invariants does the rest.
 
 A Frobenius `φ` at `Q` generates `D(Q)`, so the count is `Subgroup.relIndex` — the index of
 `H ⊓ ⟨φ⟩` in `⟨φ⟩` — and the residue degree is one exactly when `φ ∈ H`.  At `H = ⟨φ⟩` membership
@@ -30,6 +39,10 @@ runs through.
 
 ## Main results
 
+* `Ideal.ramificationIdx_mul_inertiaDeg_under_fixedField_mul_card_inf`: the local degree below
+  `L ^ H`, multiplied by the order of `D(Q) ∩ H`, is the local degree of `Q` over the base.
+* `Ideal.ramificationIdx_mul_inertiaDeg_under_fixedField_eq_relIndex`: the local degree below
+  `L ^ H` is `[D(Q) : D(Q) ∩ H]`.
 * `Ideal.inertiaDeg_under_fixedField_mul_card_inf`: the number of elements of `D(Q) ⊓ H` times the
   residue degree below `L ^ H` is the residue degree of `Q`.
 * `Ideal.inertiaDeg_under_fixedField_eq_relIndex`: that residue degree is `Subgroup.relIndex`,
@@ -41,7 +54,9 @@ runs through.
 
 ## References
 
-Sharifi, *Algebraic Number Theory*, Theorem 7.2.2.  The corresponding step of the
+The decomposition-group index formula is Neukirch, *Algebraic Number Theory*, Chapter I, §9,
+and Janusz, *Algebraic Number Fields*, Chapter I. The unramified Frobenius specialization also
+appears in Sharifi, *Algebraic Number Theory*, Theorem 7.2.2. The corresponding step of the
 Birkbeck--Brasca Chebotarev development,
 [CBirkbeck/chebotarev-density](https://github.com/CBirkbeck/chebotarev-density) (Apache-2.0) at
 commit `55a89985d47a3befcf6069aca1da250ff088b5c7`, is the private declaration
@@ -62,6 +77,60 @@ namespace Ideal
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
   [Algebra K L] [IsGalois K L]
+
+omit [IsGalois K L] in
+/-- **The local-degree product below a fixed field.** For any subgroup `H` and `E = L ^ H`, the
+ramification index times the residue degree of `Q ∩ 𝓞 E` over `𝓞 K`, multiplied by the size of
+`D(Q) ∩ H`, is the ramification index times the residue degree of `Q` over `𝓞 K`.
+
+This is the division-free form of
+`Ideal.ramificationIdx_mul_inertiaDeg_under_fixedField_eq_relIndex`. -/
+theorem ramificationIdx_mul_inertiaDeg_under_fixedField_mul_card_inf
+    (Q : Ideal (𝓞 L)) [Q.IsPrime] (H : Subgroup (L ≃ₐ[K] L)) :
+    (Q.under (𝓞 ↥(fixedField H))).ramificationIdx (𝓞 K)
+          * (Q.under (𝓞 ↥(fixedField H))).inertiaDeg (𝓞 K)
+          * Nat.card ((MulAction.stabilizer (L ≃ₐ[K] L) Q ⊓ H : Subgroup (L ≃ₐ[K] L)))
+      = Q.ramificationIdx (𝓞 K) * Q.inertiaDeg (𝓞 K) := by
+  set E := fixedField H
+  let _ : IsScalarTower K E L := E.isScalarTower_mid'
+  let _ : IsGalois E L := IsGalois.of_fixed_field L H
+  have hcard :
+      Nat.card ((MulAction.stabilizer (L ≃ₐ[K] L) Q ⊓ H : Subgroup (L ≃ₐ[K] L)))
+        = Q.ramificationIdx (𝓞 E) * Q.inertiaDeg (𝓞 E) := by
+    rw [← card_stabilizer_fixedField_eq_card_inf Q H,
+      Ideal.card_stabilizer_eq (Q.under (𝓞 E)) Q,
+      Ideal.ramificationIdxIn_eq_ramificationIdx (Q.under (𝓞 E)) Q (L ≃ₐ[E] L),
+      Ideal.inertiaDegIn_eq_inertiaDeg (Q.under (𝓞 E)) Q (L ≃ₐ[E] L)]
+  rw [hcard, Ideal.ramificationIdx_tower (R := 𝓞 K) (Q.under (𝓞 E)) Q,
+    Ideal.inertiaDeg_tower (R := 𝓞 K) (Q.under (𝓞 E)) Q]
+  ring
+
+/-- **The decomposition-group index formula.** For any subgroup `H` of `Gal(L/K)`, the
+ramification index times the residue degree of the prime below `Q` in `L ^ H` is the index of
+`D(Q) ∩ H` in the decomposition group `D(Q)`.
+
+Instantiating this theorem at `σ • Q` gives the usual double-coset formula
+`e(𝔮_σ/𝔭) f(𝔮_σ/𝔭) = [σDσ⁻¹ : H ∩ σDσ⁻¹]`. -/
+theorem ramificationIdx_mul_inertiaDeg_under_fixedField_eq_relIndex
+    (Q : Ideal (𝓞 L)) [Q.IsPrime] (H : Subgroup (L ≃ₐ[K] L)) :
+    (Q.under (𝓞 ↥(fixedField H))).ramificationIdx (𝓞 K)
+        * (Q.under (𝓞 ↥(fixedField H))).inertiaDeg (𝓞 K) =
+      H.relIndex (MulAction.stabilizer (L ≃ₐ[K] L) Q) := by
+  let D := MulAction.stabilizer (L ≃ₐ[K] L) Q
+  have hmul := ramificationIdx_mul_inertiaDeg_under_fixedField_mul_card_inf Q H
+  have hcardD : Nat.card D = Q.ramificationIdx (𝓞 K) * Q.inertiaDeg (𝓞 K) := by
+    rw [Ideal.card_stabilizer_eq (Q.under (𝓞 K)) Q,
+      Ideal.ramificationIdxIn_eq_ramificationIdx (Q.under (𝓞 K)) Q (L ≃ₐ[K] L),
+      Ideal.inertiaDegIn_eq_inertiaDeg (Q.under (𝓞 K)) Q (L ≃ₐ[K] L)]
+  have hidx :
+      H.relIndex D * Nat.card ((D ⊓ H : Subgroup (L ≃ₐ[K] L))) = Nat.card D := by
+    rw [Subgroup.relIndex, ← Subgroup.index_mul_card (H.subgroupOf D)]
+    congr 1
+    rw [inf_comm, ← Subgroup.inf_subgroupOf_right]
+    exact (Nat.card_congr (Subgroup.subgroupOfEquivOfLe
+      (H := H ⊓ D) (K := D) inf_le_right).toEquiv).symm
+  rw [hcardD] at hidx
+  exact Nat.eq_of_mul_eq_mul_right Nat.card_pos (hmul.trans hidx.symm)
 
 omit [IsGalois K L] in
 /-- **The residue degree below a fixed field.**  For any subgroup `H` and `E = L ^ H`, the residue
