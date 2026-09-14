@@ -45,9 +45,6 @@ bounds the `ℓ`-torsion of its Picard group.
 ## Main results
 
 * `TauCeti.NumericalType.arithmeticGenus_eq_one_add_sum_genusContribution`: `g = 1 + ∑ᵢ Φᵢ`.
-* `TauCeti.NumericalType.intersection_eq_zero_of_card_eq_one`: a numerical type with a single
-  component has zero intersection matrix
-  ([Stacks, Tag 0C73](https://stacks.math.columbia.edu/tag/0C73)).
 * `TauCeti.NumericalType.genusContribution_neg_iff` and
   `TauCeti.NumericalType.genusContribution_eq_zero_iff`: with more than one component, the
   negative contributions are those of the `(-1)`-indices and the zero contributions those of the
@@ -56,10 +53,6 @@ bounds the `ℓ`-torsion of its Picard group.
 * `TauCeti.NumericalType.IsMinimal.one_le_arithmeticGenus`: a minimal numerical type with more
   than one component has genus at least one
   ([Stacks, Tag 0C7B](https://stacks.math.columbia.edu/tag/0C7B)).
-* `TauCeti.NumericalType.multiplicity_mul_intersection_le_of_pos` and
-  `TauCeti.NumericalType.multiplicity_mul_weight_le_of_pos`: the data at a neighbour of a
-  component are bounded by its weighted self-intersection
-  ([Stacks, Tag 0C9U](https://stacks.math.columbia.edu/tag/0C9U)).
 * `TauCeti.NumericalType.IsMinimal.card_filter_not_isMinusTwoIndex_le`,
   `TauCeti.NumericalType.IsMinimal.genus_lt_arithmeticGenus`,
   `TauCeti.NumericalType.IsMinimal.multiplicity_mul_abs_intersection_self_le` and
@@ -131,28 +124,6 @@ lemma IsMinusTwoIndex.not_isMinusOneIndex {i : T.Component} (h : T.IsMinusTwoInd
 
 /-! ### Numerical types with one component -/
 
-/-- A numerical type with a single component has zero intersection matrix
-([Stacks, Tag 0C73](https://stacks.math.columbia.edu/tag/0C73)). -/
-lemma intersection_eq_zero_of_card_eq_one (h : Fintype.card T.Component = 1)
-    (i j : T.Component) : T.intersection i j = 0 := by
-  have hsub : ∀ k : T.Component, k = i := fun k ↦ Fintype.card_le_one_iff.mp h.le k i
-  obtain rfl := hsub j
-  have hrel := T.fiber_relation j
-  rw [Fintype.sum_eq_single j fun k hk ↦ absurd (hsub k) hk] at hrel
-  exact (mul_eq_zero.mp hrel).resolve_left (Int.natCast_pos.mpr (T.multiplicity j).pos).ne'
-
-/-- The signed genus of a numerical type with a single component `i` is `1 + mᵢwᵢ(gᵢ - 1)`
-([Stacks, Tag 0C73](https://stacks.math.columbia.edu/tag/0C73)). -/
-lemma arithmeticGenus_of_card_eq_one (h : Fintype.card T.Component = 1) (i : T.Component) :
-    T.arithmeticGenus =
-      1 + (T.multiplicity i : ℤ) * (T.weight i : ℤ) * ((T.genus i : ℤ) - 1) := by
-  have hsub : ∀ k : T.Component, k ≠ i → False := fun k hk ↦
-    hk (Fintype.card_le_one_iff.mp h.le k i)
-  rw [arithmeticGenus_def, Fintype.sum_eq_single i fun k hk ↦ (hsub k hk).elim,
-    Fintype.sum_eq_single i fun k hk ↦ (hsub k hk).elim,
-    T.intersection_eq_zero_of_card_eq_one h i i]
-  simp
-
 /-- A numerical type with a single component is minimal. -/
 lemma isMinimal_of_card_eq_one (h : Fintype.card T.Component = 1) : T.IsMinimal := fun i hi ↦ by
   have hw : (0 : ℤ) < T.weight i := Int.natCast_pos.mpr (T.weight i).pos
@@ -184,20 +155,6 @@ lemma arithmeticGenus_eq_one_add_sum_genusContribution :
     exact Finset.sum_congr rfl fun i _ ↦ by rw [genusContribution]; ring
   rw [hsum]
   linarith
-
-/-- With more than one component, every self-intersection is a negative multiple of the weight. -/
-private lemma exists_intersection_self_eq (h : 1 < Fintype.card T.Component) (i : T.Component) :
-    ∃ k : ℕ, 1 ≤ k ∧ T.intersection i i = -((k : ℤ) * (T.weight i : ℤ)) := by
-  obtain ⟨c, hc⟩ := T.weight_dvd i i
-  have hw : (0 : ℤ) < T.weight i := Int.natCast_pos.mpr (T.weight i).pos
-  have hneg := T.intersection_self_neg h i
-  have hc0 : c < 0 := by
-    by_contra hc0
-    rw [hc] at hneg
-    exact absurd hneg (not_lt.mpr (mul_nonneg hw.le (not_lt.mp hc0)))
-  refine ⟨(-c).toNat, by omega, ?_⟩
-  rw [hc, Int.toNat_of_nonneg (by omega)]
-  ring
 
 /-- Twice the contribution of a component whose self-intersection is `-k` times its weight. -/
 private lemma two_mul_genusContribution_eq {i : T.Component} {k : ℕ}
@@ -295,29 +252,6 @@ lemma one_half_le_genusContribution (h : 1 < Fintype.card T.Component) {i : T.Co
     push_cast at this
     linarith
   nlinarith [mul_le_mul hm hw zero_le_one (by linarith : (0 : ℚ) ≤ T.multiplicity i)]
-
-/-! ### Bounds at the neighbours of a component -/
-
-/-- If two components meet, the multiplicity-weighted intersection number is bounded by the
-weighted self-intersection of the second component. -/
-lemma multiplicity_mul_intersection_le_of_pos {i j : T.Component} (hij : 0 < T.intersection i j) :
-    (T.multiplicity i : ℤ) * T.intersection i j ≤
-      (T.multiplicity j : ℤ) * |T.intersection j j| := by
-  have hne : i ≠ j := by
-    rintro rfl
-    exact absurd hij (not_lt.mpr (T.intersection_self_nonpos i))
-  rw [abs_of_nonpos (T.intersection_self_nonpos j), mul_neg,
-    T.multiplicity_mul_intersection_self j, neg_neg, T.intersection_comm i j]
-  exact Finset.single_le_sum (f := fun k ↦ (T.multiplicity k : ℤ) * T.intersection j k)
-    (fun k hk ↦ T.multiplicity_mul_intersection_nonneg (Finset.ne_of_mem_erase hk).symm)
-    (Finset.mem_erase.mpr ⟨hne, Finset.mem_univ i⟩)
-
-/-- If two components meet, the multiplicity times the weight of the first is bounded by the
-weighted self-intersection of the second. -/
-lemma multiplicity_mul_weight_le_of_pos {i j : T.Component} (hij : 0 < T.intersection i j) :
-    (T.multiplicity i : ℤ) * (T.weight i : ℤ) ≤ (T.multiplicity j : ℤ) * |T.intersection j j| :=
-  (mul_le_mul_of_nonneg_left (Int.le_of_dvd hij (T.weight_dvd i j))
-    (Int.natCast_nonneg _)).trans (T.multiplicity_mul_intersection_le_of_pos hij)
 
 /-! ### Minimal numerical types -/
 
@@ -429,12 +363,9 @@ multiplicity-weighted intersection number `mᵢaᵢⱼ` with a component `j` tha
 `(-2)`-index is at most `6g - 6`. -/
 theorem multiplicity_mul_intersection_le (hT : T.IsMinimal) (h : 1 < Fintype.card T.Component)
     {j : T.Component} (hj : ¬ T.IsMinusTwoIndex j) (i : T.Component) :
-    (T.multiplicity i : ℤ) * T.intersection i j ≤ 6 * T.arithmeticGenus - 6 := by
-  rcases le_or_gt (T.intersection i j) 0 with hij | hij
-  · have := hT.one_le_arithmeticGenus h
-    nlinarith [mul_nonpos_of_nonneg_of_nonpos (Int.natCast_nonneg (T.multiplicity i : ℕ)) hij]
-  · exact (T.multiplicity_mul_intersection_le_of_pos hij).trans
-      (hT.multiplicity_mul_abs_intersection_self_le h hj)
+    (T.multiplicity i : ℤ) * T.intersection i j ≤ 6 * T.arithmeticGenus - 6 :=
+  (T.multiplicity_mul_intersection_le i j).trans
+    (hT.multiplicity_mul_abs_intersection_self_le h hj)
 
 end IsMinimal
 

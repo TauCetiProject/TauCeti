@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.Connected
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 
 /-!
@@ -57,6 +58,14 @@ matrix that forces `∑ᵢ mᵢ aᵢᵢ` to be even
 * `TauCeti.NumericalType.intersection_self_nonpos` and
   `TauCeti.NumericalType.intersection_self_neg`: self-intersections are nonpositive, and are
   negative as soon as there is more than one component.
+* `TauCeti.NumericalType.multiplicity_mul_intersection_le` and
+  `TauCeti.NumericalType.multiplicity_mul_weight_le_of_pos`: the data at a neighbour of a
+  component are bounded by its weighted self-intersection
+  ([Stacks, Tag 0C9U](https://stacks.math.columbia.edu/tag/0C9U)).
+* `TauCeti.NumericalType.intersection_eq_zero_of_card_eq_one` and
+  `TauCeti.NumericalType.arithmeticGenus_of_card_eq_one`: a numerical type with a single
+  component has zero intersection matrix and signed genus `1 + mᵢwᵢ(gᵢ - 1)`
+  ([Stacks, Tag 0C73](https://stacks.math.columbia.edu/tag/0C73)).
 * `TauCeti.NumericalType.exists_mem_notMem_adj`: every nonempty proper set of components meets
   its complement, the no-disconnected-cut form in which
   [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z) states the connectedness
@@ -212,6 +221,56 @@ lemma intersection_self_neg (h : 1 < Fintype.card T.Component) (i : T.Component)
   rw [not_lt] at hge
   exact absurd hneg (not_lt.2 (mul_nonneg (T.multiplicity_pos i).le hge))
 
+/-- With more than one component, every self-intersection is a negative multiple of the weight. -/
+lemma exists_intersection_self_eq (h : 1 < Fintype.card T.Component) (i : T.Component) :
+    ∃ k : ℕ, 1 ≤ k ∧ T.intersection i i = -((k : ℤ) * (T.weight i : ℤ)) := by
+  obtain ⟨c, hc⟩ := T.weight_dvd i i
+  have hw : (0 : ℤ) < T.weight i := Int.natCast_pos.mpr (T.weight i).pos
+  have hneg := T.intersection_self_neg h i
+  have hc0 : c < 0 := by
+    by_contra hc0
+    rw [hc] at hneg
+    exact absurd hneg (not_lt.mpr (mul_nonneg hw.le (not_lt.mp hc0)))
+  refine ⟨(-c).toNat, by omega, ?_⟩
+  rw [hc, Int.toNat_of_nonneg (by omega)]
+  ring
+
+/-! ### Bounds at the neighbours of a component -/
+
+/-- The multiplicity-weighted intersection number `mᵢaᵢⱼ` is bounded by the weighted
+self-intersection `mⱼ|aⱼⱼ|` of the second component
+([Stacks, Tag 0C9U](https://stacks.math.columbia.edu/tag/0C9U)). -/
+lemma multiplicity_mul_intersection_le (i j : T.Component) :
+    (T.multiplicity i : ℤ) * T.intersection i j ≤
+      (T.multiplicity j : ℤ) * |T.intersection j j| := by
+  rcases eq_or_ne i j with rfl | hne
+  · exact mul_le_mul_of_nonneg_left (le_abs_self _) (T.multiplicity_pos i).le
+  rw [abs_of_nonpos (T.intersection_self_nonpos j), mul_neg,
+    T.multiplicity_mul_intersection_self j, neg_neg, T.intersection_comm i j]
+  exact Finset.single_le_sum (f := fun k ↦ (T.multiplicity k : ℤ) * T.intersection j k)
+    (fun k hk ↦ T.multiplicity_mul_intersection_nonneg (Finset.ne_of_mem_erase hk).symm)
+    (Finset.mem_erase.mpr ⟨hne, Finset.mem_univ i⟩)
+
+/-- If two components meet, the multiplicity times the weight of the first is bounded by the
+weighted self-intersection of the second
+([Stacks, Tag 0C9U](https://stacks.math.columbia.edu/tag/0C9U)). -/
+lemma multiplicity_mul_weight_le_of_pos {i j : T.Component} (hij : 0 < T.intersection i j) :
+    (T.multiplicity i : ℤ) * (T.weight i : ℤ) ≤ (T.multiplicity j : ℤ) * |T.intersection j j| :=
+  (mul_le_mul_of_nonneg_left (Int.le_of_dvd hij (T.weight_dvd i j))
+    (Int.natCast_nonneg _)).trans (T.multiplicity_mul_intersection_le i j)
+
+/-! ### Numerical types with one component -/
+
+/-- A numerical type with a single component has zero intersection matrix
+([Stacks, Tag 0C73](https://stacks.math.columbia.edu/tag/0C73)). -/
+lemma intersection_eq_zero_of_card_eq_one (h : Fintype.card T.Component = 1)
+    (i j : T.Component) : T.intersection i j = 0 := by
+  have hsub : ∀ k : T.Component, k = i := fun k ↦ Fintype.card_le_one_iff.mp h.le k i
+  obtain rfl := hsub j
+  have hrel := T.fiber_relation j
+  rw [Fintype.sum_eq_single j fun k hk ↦ absurd (hsub k) hk] at hrel
+  exact (mul_eq_zero.mp hrel).resolve_left (Int.natCast_pos.mpr (T.multiplicity j).pos).ne'
+
 /-! ### Integrality of the signed genus -/
 
 /-- The multiplicity-weighted sum of the self-intersections of a numerical type is even.
@@ -259,6 +318,18 @@ lemma two_mul_arithmeticGenus :
     Int.mul_ediv_cancel' T.even_sum_multiplicity_mul_diagonal.two_dvd
   rw [arithmeticGenus]
   linarith
+
+/-- The signed genus of a numerical type with a single component `i` is `1 + mᵢwᵢ(gᵢ - 1)`
+([Stacks, Tag 0C73](https://stacks.math.columbia.edu/tag/0C73)). -/
+lemma arithmeticGenus_of_card_eq_one (h : Fintype.card T.Component = 1) (i : T.Component) :
+    T.arithmeticGenus =
+      1 + (T.multiplicity i : ℤ) * (T.weight i : ℤ) * ((T.genus i : ℤ) - 1) := by
+  have hsub : ∀ k : T.Component, k ≠ i → False := fun k hk ↦
+    hk (Fintype.card_le_one_iff.mp h.le k i)
+  rw [arithmeticGenus_def, Fintype.sum_eq_single i fun k hk ↦ (hsub k hk).elim,
+    Fintype.sum_eq_single i fun k hk ↦ (hsub k hk).elim,
+    T.intersection_eq_zero_of_card_eq_one h i i]
+  simp
 
 /-! ### Reindexing -/
 
