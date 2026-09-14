@@ -32,7 +32,7 @@ submodule.
   *sheaf* `𝒦_X` — the membership condition is local — and
   `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheaf D`, the resulting sheaf `𝒪_X(D)` of
   `𝒪_X`-modules, together with its monomorphism `sheafι D : 𝒪_X(D) ⟶ 𝒦_X`, which is described on
-  sections by `sheafι_app_injective` and `sheafι_app_mem`;
+  sections by `sheafι_app_injective`, `sheafι_app_mem` and `range_sheafι_app`;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheafHomOfLE`, the inclusion
   `𝒪_X(D) ⟶ 𝒪_X(E)` for `D ≤ E`, and
   `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.unitToSheaf`, the factorization of `𝒪_X ⟶ 𝒦_X`
@@ -216,6 +216,15 @@ imposed by `D`. -/
 lemma sheafι_app_mem (D : SchemeWeilDivisor X) (U : X.Opens) (t : Γ(sheaf D, U)) :
     Scheme.Modules.Hom.app (sheafι D) U t ∈ sections D U :=
   TauCeti.SheafOfModules.ι_val_app_mem (submodule D) (op U) t
+
+/-- **The sections of `𝒪_X(D)` over `U` are exactly `sections D U`.** Together with
+`SchemeWeilDivisor.sheafι_app_injective` this identifies the sections of `𝒪_X(D)` with the
+submodule of `Γ(𝒦_X, U)` which defines it. -/
+@[simp]
+lemma range_sheafι_app (D : SchemeWeilDivisor X) (U : X.Opens) :
+    Set.range (Scheme.Modules.Hom.app (sheafι D) U) = sections D U := by
+  ext t
+  exact ⟨fun ⟨s, hs⟩ ↦ hs ▸ sheafι_app_mem D U s, fun ht ↦ ⟨⟨t, ht⟩, rfl⟩⟩
 
 /-- The canonical inclusion `𝒪_X(D) ⟶ 𝒦_X` is a monomorphism: over every open subset it is the
 inclusion of a submodule, hence injective. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Petersson.FiniteIndex
 public import TauCeti.NumberTheory.ModularForms.SlashAdjugate
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The Petersson product under a slash and as an integral over translated domains
@@ -40,6 +41,14 @@ statements carry the same content and the determinant factor above is exactly th
 involution absorbs. Either way it is the analytic input to the Petersson adjoint
 `Tₙ* = ⟨n⟩⁻¹Tₙ` of the Hecke operators at indices prime to the level.
 
+When the slashed right arguments all coincide — `h ∣[k] αᵢ^ι = h'` for every `i` — those
+translated pairings reassemble into *one* pairing over the union `⋃ᵢ αᵢ • S`. The translates
+are only almost-everywhere disjoint, which is why the reassembly runs through
+`TauCeti.MeasureTheory.integral_biUnion_finset₀` rather than Mathlib's
+`MeasureTheory.integral_biUnion_finset`. Whether that union is itself a fundamental domain is a
+separate question about the family, not settled here; once it is, `peterssonInner` moves to any
+other fundamental domain by `UpperHalfPlane.peterssonInner_eq_of_isFundamentalDomain`.
+
 The same change of variables identifies the coset sum defining the Petersson product on
 `S_k(Γ)` with a *single* integral. Each summand
 `⟪f ∣[k] q⁻¹, g ∣[k] q⁻¹⟫_𝒟` is the integral of the unslashed Petersson integrand over the
@@ -63,6 +72,9 @@ union is itself a fundamental domain for `Γ`.
   `UpperHalfPlane.peterssonInner_sum_slash_right_adjugateGL`: the same, for a *finite family* of
   slashes at once — the shape a Hecke operator presents, being a slash sum over coset
   representatives.
+* `UpperHalfPlane.peterssonInner_sum_slash_left_adjugateGL_biUnion` and
+  `UpperHalfPlane.peterssonInner_sum_slash_right_adjugateGL_biUnion`: when the slashed arguments
+  all coincide, that finite sum is a *single* pairing over the union of the translated domains.
 * `UpperHalfPlane.peterssonInner_slash_slash_SL`: the determinant-one case, where the scalar
   disappears and only the domain moves.
 * `CuspForm.peterssonInnerCosets_eq_sum_smul_fd`: the coset pairing is a sum of integrals over
@@ -80,7 +92,9 @@ union is itself a fundamental domain for `Γ`.
 * The AINTLIB `LeanModularForms` project,
   <https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>, commit
   `6d87d596a5372d5b122c47b7082d4c3afa9b7c3b`, Apache-2.0 — `AdjointTheory.lean` for the
-  single-slash involution form, `AdjointTheory/SummandAdjoint.lean` for the finite-family form.
+  single-slash involution form, `AdjointTheory/SummandAdjoint.lean` for the finite-family form
+  (`peterssonInner_sum_slash_adjoint`) and for the reassembly over the union
+  (`peterssonInner_sum_slash_adjoint_constantRHS`).
 -/
 
 public section
@@ -89,7 +103,7 @@ noncomputable section
 
 open MeasureTheory UpperHalfPlane ModularGroup
 
-open scoped MatrixGroups ModularForm Pointwise
+open scoped Function MatrixGroups ModularForm Pointwise
 
 namespace UpperHalfPlane
 
@@ -231,6 +245,65 @@ theorem peterssonInner_sum_slash_right_adjugateGL (k : ℤ) {ι : Type*} (s : Fi
   rw [peterssonInner_sum_right k S s f (fun i ↦ h ∣[k] α i) hint]
   exact Finset.sum_congr rfl fun i hi ↦
     peterssonInner_slash_right_adjugateGL k (hα i hi) S f h
+
+/-! ### Reassembling the translated domains -/
+
+/-- **The aggregate adjoint identity, on the left argument.** When all the translated right
+arguments coincide — `h ∣[k] αᵢ^ι = h'` for every `i` — the sum produced by
+`peterssonInner_sum_slash_left_adjugateGL` is a *single* pairing, over the union of the
+translated domains:
+
+```text
+⟪∑ᵢ f ∣[k] αᵢ, h⟫_S = ⟪f, h'⟫_{⋃ᵢ αᵢ • S}.
+```
+
+The constancy hypothesis `hadj` is what makes the reassembly possible at all: with a different
+integrand on each piece there is nothing to reassemble. It is not a restriction in the Hecke
+setting. There the `αᵢ` are right-coset representatives of a double coset, and their involutions
+`αᵢ^ι` differ from one another by *left* multiplication by elements of the group `h` is modular
+for, which slashing kills. For `Tₚ` on `Γ₁(N)` the representatives are `![![1, b], ![0, p]]`,
+whose involution is `![![1, -b], ![0, 1]] * ![![p, 0], ![0, 1]]` with the first factor in
+`Γ₁(N)`, so every `h ∣[k] αᵢ^ι` is `h ∣[k] ![![p, 0], ![0, 1]]`.
+
+The union is not asserted to be a fundamental domain — that is a separate statement about the
+family, and once it is available `peterssonInner_eq_of_isFundamentalDomain` moves the pairing to
+any other fundamental domain. -/
+theorem peterssonInner_sum_slash_left_adjugateGL_biUnion (k : ℤ) {ι : Type*} (s : Finset ι)
+    (α : ι → GL (Fin 2) ℝ)
+    (hα : ∀ i ∈ s, 0 < ((α i : Matrix (Fin 2) (Fin 2) ℝ)).det) (S : Set ℍ) (f h h' : ℍ → ℂ)
+    (hadj : ∀ i ∈ s, h ∣[k] TauCeti.adjugateGL (α i) = h')
+    (hint : ∀ i ∈ s,
+      IntegrableOn (fun τ ↦ petersson k (f ∣[k] α i) h τ) S (volume : Measure ℍ))
+    (hd : Set.Pairwise (↑s) (AEDisjoint (volume : Measure ℍ) on fun i ↦ α i • S))
+    (hm : ∀ i ∈ s, NullMeasurableSet (α i • S) (volume : Measure ℍ))
+    (hfi : IntegrableOn (fun τ ↦ petersson k f h' τ) (⋃ i ∈ s, α i • S) (volume : Measure ℍ)) :
+    peterssonInner k S (∑ i ∈ s, f ∣[k] α i) h =
+      peterssonInner k (⋃ i ∈ s, α i • S) f h' := by
+  rw [peterssonInner_sum_slash_left_adjugateGL k s α hα S f h hint, peterssonInner_def,
+    TauCeti.MeasureTheory.integral_biUnion_finset₀ s hd hm hfi]
+  exact Finset.sum_congr rfl fun i hi ↦ by rw [peterssonInner_def, hadj i hi]
+
+/-- **The aggregate adjoint identity, on the right argument**: the mirror of
+`peterssonInner_sum_slash_left_adjugateGL_biUnion`,
+
+```text
+⟪f, ∑ᵢ h ∣[k] αᵢ⟫_S = ⟪f', h⟫_{⋃ᵢ αᵢ • S}    whenever f ∣[k] αᵢ^ι = f' for every i.
+```
+-/
+theorem peterssonInner_sum_slash_right_adjugateGL_biUnion (k : ℤ) {ι : Type*} (s : Finset ι)
+    (α : ι → GL (Fin 2) ℝ)
+    (hα : ∀ i ∈ s, 0 < ((α i : Matrix (Fin 2) (Fin 2) ℝ)).det) (S : Set ℍ) (f f' h : ℍ → ℂ)
+    (hadj : ∀ i ∈ s, f ∣[k] TauCeti.adjugateGL (α i) = f')
+    (hint : ∀ i ∈ s,
+      IntegrableOn (fun τ ↦ petersson k f (h ∣[k] α i) τ) S (volume : Measure ℍ))
+    (hd : Set.Pairwise (↑s) (AEDisjoint (volume : Measure ℍ) on fun i ↦ α i • S))
+    (hm : ∀ i ∈ s, NullMeasurableSet (α i • S) (volume : Measure ℍ))
+    (hfi : IntegrableOn (fun τ ↦ petersson k f' h τ) (⋃ i ∈ s, α i • S) (volume : Measure ℍ)) :
+    peterssonInner k S f (∑ i ∈ s, h ∣[k] α i) =
+      peterssonInner k (⋃ i ∈ s, α i • S) f' h := by
+  rw [peterssonInner_sum_slash_right_adjugateGL k s α hα S f h hint, peterssonInner_def,
+    TauCeti.MeasureTheory.integral_biUnion_finset₀ s hd hm hfi]
+  exact Finset.sum_congr rfl fun i hi ↦ by rw [peterssonInner_def, hadj i hi]
 
 /-! ### Slashing by an element of `SL(2, ℤ)` -/
 

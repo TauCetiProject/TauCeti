@@ -5,34 +5,36 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Quotient.Basic
-public import TauCeti.Algebra.DirectSum.Internal
+public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Algebra.Homology.AInfinity.Algebra
 
 /-!
-# The cohomology algebra of an A-infinity algebra
+# Cohomology of an `A∞` algebra
 
-For an uncurved `A∞` algebra, the unary operation `m₁` is a differential and the binary operation
-`m₂` descends to an associative multiplication on its cohomology.  On the chain level `m₂` need
-not be associative: the arity-three Stasheff identity says that its associator on cycles is the
-boundary of `-m₃`.  This file packages that standard construction as a nonunital `R`-algebra.
+The unary operation of an `A∞` algebra squares to zero, so it has cycles, boundaries, and a total
+cohomology module.  The arity-two Stasheff identity is the graded Leibniz rule for the binary
+operation, which therefore descends to a bilinear product on cohomology.
 
-The signs in the Leibniz rule are expressed by `InternalGrading.koszulTwist`.  This gives identities
-for arbitrary, rather than only homogeneous, inputs and keeps the proofs of closure under `m₂`
-and absorption by boundaries independent of chosen homogeneous decompositions.
+The Leibniz sign depends only on the degree of the left factor.  With a cycle on the right it
+disappears, so a boundary times a cycle is a boundary.  With a cycle on the left it is removed by
+the degree-one Koszul twist, which carries cycles to cycles, so a cycle times a boundary is a
+boundary as well.  Neither argument needs homogeneous inputs.
+
+The arbitrary-input arity-three identity `AInfinityAlgebra.m_one_m_three` exhibits the associator
+of the binary operation as a unary boundary, so the induced product is associative on cohomology.
+Together with bilinearity, this makes the cohomology an associative nonunital `R`-algebra.
 
 ## Main definitions
 
-* `AInfinityAlgebra.differential`: the unary operation `m₁` as a linear map.
-* `AInfinityAlgebra.cycles`: the kernel of `m₁`, with multiplication induced by `m₂`.
-* `AInfinityAlgebra.boundaries`: the image of `m₁` in the cycles, which absorbs multiplication
-  on both sides.
-* `AInfinityAlgebra.Cohomology`: cycles modulo boundaries, with its associative nonunital
-  `R`-algebra structure.
-
-This advances `TauCetiRoadmap/DGAInfinity/README.md`, Layer 2, item “`A∞` algebras, categories,
-morphisms, functors, modules, and bimodules”.  It supplies the cohomology algebra needed to state
-the requested cohomologically unital variant without selecting a strict chain-level unit.
+* `TauCeti.AInfinityAlgebra.cycles` and `TauCeti.AInfinityAlgebra.boundaries`: the cycles and
+  boundaries of the unary operation.
+* `TauCeti.AInfinityAlgebra.Cohomology`: the total cohomology module.
+* `TauCeti.AInfinityAlgebra.cohomologyClassLinearMap`: the quotient map from cycles to cohomology.
+* `TauCeti.AInfinityAlgebra.cohomologyClass`: the class represented by a cycle.
+* `TauCeti.AInfinityAlgebra.cohomologyMul`: the product on cohomology induced by the binary
+  operation.
+* `TauCeti.AInfinityAlgebra.instNonUnitalRingCohomology`, together with the scalar tower and
+  commuting-scalars instances: the cohomology as an associative nonunital `R`-algebra.
 
 ## References
 
@@ -40,8 +42,6 @@ the requested cohomologically unital variant without selecting a strict chain-le
 -/
 
 public section
-
-open scoped DirectSum
 
 namespace TauCeti
 
@@ -51,399 +51,240 @@ namespace AInfinityAlgebra
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 
-/-- The differential underlying an uncurved `A∞` algebra. -/
-def differential (𝒜 : AInfinityAlgebra R A) : A →ₗ[R] A :=
-  (𝒜.m 1).curryRight ![]
+/-! ### Cycles and boundaries -/
 
-theorem differential_apply (𝒜 : AInfinityAlgebra R A) (x : A) :
-    𝒜.differential x = 𝒜.m 1 ![x] := by
-  simp [differential]
-
-/-- The `A∞` differential is homogeneous of degree one. -/
-theorem differential_isHomogeneous (𝒜 : AInfinityAlgebra R A) :
-    LinearMap.IsHomogeneous 𝒜.differential 𝒜.grading.piece 𝒜.grading.piece 1 := by
-  rw [LinearMap.isHomogeneous_def]
-  intro p x hx
-  have h := (𝒜.m_degree 1 (by omega)).map_mem (fun _ ↦ p) ![x] (by
-    intro i
-    fin_cases i
-    simpa using hx)
-  simpa [differential] using h
-
-/-- The differential squares to zero. -/
-@[simp]
-theorem differential_sq (𝒜 : AInfinityAlgebra R A) (x : A) :
-    𝒜.differential (𝒜.differential x) = 0 := by
-  simpa [differential_apply] using 𝒜.stasheff_arity_one x
-
-/-- The graded Leibniz identity on arbitrary inputs.  The Koszul twist packages the sign which,
-on a homogeneous left input `x` of degree `p`, is `(-1)^p`. -/
-theorem differential_m_two (𝒜 : AInfinityAlgebra R A) (x y : A) :
-    𝒜.differential (𝒜.m 2 ![x, y]) =
-      𝒜.m 2 ![𝒜.differential x, y] +
-        𝒜.m 2 ![𝒜.grading.koszulTwist 1 x, 𝒜.differential y] := by
-  let L : MultilinearMap R (fun _ : Fin 2 ↦ A) A :=
-    𝒜.differential.compMultilinearMap (𝒜.m 2)
-  let Q : MultilinearMap R (fun _ : Fin 2 ↦ A) A :=
-    (𝒜.m 2).compLinearMap ![𝒜.differential, LinearMap.id] +
-      (𝒜.m 2).compLinearMap ![𝒜.grading.koszulTwist 1, 𝒜.differential]
-  have hLQ : L = Q := by
-    apply 𝒜.grading.multilinearMap_ext
-    intro d z hz
-    have h := 𝒜.stasheff_arity_two (z 0) (z 1) (d 0) (hz 0)
-    unfold L Q
-    simp only [LinearMap.compMultilinearMap_apply, add_apply,
-      MultilinearMap.compLinearMap_apply]
-    rw [show (fun i ↦ (![𝒜.differential, LinearMap.id] i) (z i)) =
-        ![𝒜.differential (z 0), z 1] by funext i; fin_cases i <;> rfl,
-      show (fun i ↦ (![𝒜.grading.koszulTwist 1, 𝒜.differential] i) (z i)) =
-        ![𝒜.grading.koszulTwist 1 (z 0), 𝒜.differential (z 1)] by
-          funext i; fin_cases i <;> rfl,
-      𝒜.grading.koszulTwist_apply_of_mem (hz 0) 1, one_mul,
-      ← negOnePowCast_eq_intCast]
-    rw [show 𝒜.m 2 ![negOnePowCast R (d 0) • z 0, 𝒜.differential (z 1)] =
-        negOnePowCast R (d 0) • 𝒜.m 2 ![z 0, 𝒜.differential (z 1)] by
-      change ((𝒜.m 2).curryLeft (negOnePowCast R (d 0) • z 0))
-        ![𝒜.differential (z 1)] = _
-      rw [map_smul]
-      rfl]
-    rw [show z = ![z 0, z 1] by funext i; fin_cases i <;> rfl]
-    simpa [differential] using h
-  have h := DFunLike.congr_fun hLQ ![x, y]
-  unfold L Q at h
-  simp only [LinearMap.compMultilinearMap_apply, add_apply,
-    MultilinearMap.compLinearMap_apply] at h
-  convert h using 1
-  · congr 2 <;> funext i <;> fin_cases i <;> rfl
-
-/-- The cycles of an `A∞` algebra: the kernel of `m₁`. -/
+/-- The cycles of an `A∞` algebra are the kernel of its unary operation. -/
 def cycles (𝒜 : AInfinityAlgebra R A) : Submodule R A :=
   LinearMap.ker 𝒜.differential
 
+/-- An element is a cycle exactly when its unary operation vanishes. -/
 @[simp]
 theorem mem_cycles (𝒜 : AInfinityAlgebra R A) {x : A} :
-    x ∈ 𝒜.cycles ↔ 𝒜.differential x = 0 := Iff.rfl
+    x ∈ 𝒜.cycles ↔ 𝒜.m 1 ![x] = 0 := by
+  rw [cycles, LinearMap.mem_ker, differential_apply]
 
-/-- Every differential is a cycle. -/
+/-- The boundaries of an `A∞` algebra are the range of its unary operation. -/
+def boundaries (𝒜 : AInfinityAlgebra R A) : Submodule R A :=
+  LinearMap.range 𝒜.differential
+
+/-- An element is a boundary exactly when it is the unary operation of some element. -/
+@[simp]
+theorem mem_boundaries (𝒜 : AInfinityAlgebra R A) {x : A} :
+    x ∈ 𝒜.boundaries ↔ ∃ y : A, 𝒜.m 1 ![y] = x := by
+  simp only [boundaries, LinearMap.mem_range, differential_apply]
+
+/-- Every boundary is a cycle. -/
+theorem boundaries_le_cycles (𝒜 : AInfinityAlgebra R A) : 𝒜.boundaries ≤ 𝒜.cycles := by
+  rintro _ ⟨y, rfl⟩
+  rw [mem_cycles, differential_apply]
+  exact 𝒜.stasheff_arity_one y
+
+/-- The differential of every element is a boundary. -/
+theorem differential_mem_boundaries (𝒜 : AInfinityAlgebra R A) (x : A) :
+    𝒜.differential x ∈ 𝒜.boundaries :=
+  ⟨x, rfl⟩
+
+/-- The differential of every element is a cycle. -/
 theorem differential_mem_cycles (𝒜 : AInfinityAlgebra R A) (x : A) :
     𝒜.differential x ∈ 𝒜.cycles :=
-  𝒜.differential_sq x
+  𝒜.boundaries_le_cycles (𝒜.differential_mem_boundaries x)
 
-/-- The binary operation takes cycles to cycles. -/
-theorem m_two_mem_cycles (𝒜 : AInfinityAlgebra R A) {x y : A}
+/-! ### The binary operation on cycles and boundaries -/
+
+/-- The binary operation of two cycles is a cycle. -/
+theorem m_two_mem_cycles (𝒜 : AInfinityAlgebra R A) {x y : A} (hx : x ∈ 𝒜.cycles)
+    (hy : y ∈ 𝒜.cycles) : 𝒜.m 2 ![x, y] ∈ 𝒜.cycles := by
+  rw [mem_cycles] at hx hy ⊢
+  rw [𝒜.m_one_m_two, hx, hy, ← mul_apply, ← mul_apply]
+  simp only [map_zero, LinearMap.zero_apply, add_zero]
+
+/-- The binary operation of a boundary and a cycle is a boundary. -/
+theorem m_two_mem_boundaries_of_left (𝒜 : AInfinityAlgebra R A) {x y : A}
+    (hx : x ∈ 𝒜.boundaries) (hy : y ∈ 𝒜.cycles) : 𝒜.m 2 ![x, y] ∈ 𝒜.boundaries := by
+  obtain ⟨z, rfl⟩ := hx
+  rw [mem_cycles] at hy
+  refine ⟨𝒜.m 2 ![z, y], ?_⟩
+  rw [differential_apply, differential_apply, 𝒜.m_one_m_two, hy, ← 𝒜.mul_apply _ 0]
+  simp only [map_zero, add_zero]
+
+/-- The binary operation of a cycle and a boundary is a boundary. -/
+theorem m_two_mem_boundaries_of_right (𝒜 : AInfinityAlgebra R A) {x y : A}
+    (hx : x ∈ 𝒜.cycles) (hy : y ∈ 𝒜.boundaries) : 𝒜.m 2 ![x, y] ∈ 𝒜.boundaries := by
+  obtain ⟨z, rfl⟩ := hy
+  rw [mem_cycles] at hx
+  refine ⟨𝒜.m 2 ![𝒜.grading.koszulTwist 1 x, z], ?_⟩
+  have htwist : 𝒜.grading.koszulTwist 1 (𝒜.grading.koszulTwist 1 x) = x := by
+    simpa only [LinearMap.comp_apply, LinearMap.id_apply] using
+      LinearMap.congr_fun (𝒜.grading.koszulTwist_comp_self 1) x
+  rw [differential_apply, differential_apply, 𝒜.m_one_m_two, 𝒜.m_one_koszulTwist, hx, htwist,
+    map_zero, neg_zero, ← 𝒜.mul_apply 0]
+  simp only [map_zero, LinearMap.zero_apply, zero_add]
+
+/-! ### Cohomology -/
+
+/-- The boundaries, viewed as a submodule of the cycles. -/
+def boundariesInCycles (𝒜 : AInfinityAlgebra R A) : Submodule R 𝒜.cycles :=
+  𝒜.boundaries.submoduleOf 𝒜.cycles
+
+/-- A cycle belongs to `boundariesInCycles` exactly when its underlying element is a boundary. -/
+@[simp]
+theorem mem_boundariesInCycles (𝒜 : AInfinityAlgebra R A) {x : 𝒜.cycles} :
+    x ∈ 𝒜.boundariesInCycles ↔ (x : A) ∈ 𝒜.boundaries := by
+  rw [boundariesInCycles, Submodule.submoduleOf, Submodule.mem_comap]
+  rfl
+
+/-- The total cohomology module of an `A∞` algebra: unary cycles modulo unary boundaries.
+
+Its elements are not required to be homogeneous; degree conditions on representatives are stated
+separately using `AInfinityAlgebra.grading`. -/
+abbrev Cohomology (𝒜 : AInfinityAlgebra R A) := 𝒜.cycles ⧸ 𝒜.boundariesInCycles
+
+/-- The linear quotient map from cycles to cohomology. -/
+def cohomologyClassLinearMap (𝒜 : AInfinityAlgebra R A) : 𝒜.cycles →ₗ[R] 𝒜.Cohomology :=
+  𝒜.boundariesInCycles.mkQ
+
+/-- The cohomology class represented by a cycle. -/
+def cohomologyClass (𝒜 : AInfinityAlgebra R A) {x : A} (hx : x ∈ 𝒜.cycles) : 𝒜.Cohomology :=
+  𝒜.cohomologyClassLinearMap ⟨x, hx⟩
+
+/-- Zero represents zero in cohomology. -/
+@[simp]
+theorem cohomologyClass_zero (𝒜 : AInfinityAlgebra R A) :
+    𝒜.cohomologyClass (𝒜.cycles.zero_mem) = 0 := by
+  exact 𝒜.cohomologyClassLinearMap.map_zero
+
+/-- The class of a sum of cycles is the sum of their classes. -/
+@[simp]
+theorem cohomologyClass_add (𝒜 : AInfinityAlgebra R A) {x y : A}
     (hx : x ∈ 𝒜.cycles) (hy : y ∈ 𝒜.cycles) :
-    𝒜.m 2 ![x, y] ∈ 𝒜.cycles := by
-  rw [𝒜.mem_cycles] at hx hy ⊢
-  rw [𝒜.differential_m_two, hx, hy]
-  rw [show 𝒜.m 2 ![0, y] = 0 by
-      change ((𝒜.m 2).curryLeft 0) ![y] = 0
-      rw [map_zero]
-      rfl,
-    show 𝒜.m 2 ![𝒜.grading.koszulTwist 1 x, 0] = 0 by
-      simpa using map_zero ((𝒜.m 2).curryRight ![𝒜.grading.koszulTwist 1 x]), add_zero]
+    𝒜.cohomologyClass (𝒜.cycles.add_mem hx hy) =
+      𝒜.cohomologyClass hx + 𝒜.cohomologyClass hy := by
+  exact 𝒜.cohomologyClassLinearMap.map_add ⟨x, hx⟩ ⟨y, hy⟩
 
-/-- Multiplication of cycles, induced by `m₂`. -/
-def cyclesMul (𝒜 : AInfinityAlgebra R A) (x y : 𝒜.cycles) : 𝒜.cycles :=
-  ⟨𝒜.m 2 ![(x : A), (y : A)], 𝒜.m_two_mem_cycles x.2 y.2⟩
-
-instance instMulCycles (𝒜 : AInfinityAlgebra R A) : Mul 𝒜.cycles :=
-  ⟨𝒜.cyclesMul⟩
-
+/-- The class of a scalar multiple of a cycle is the scalar multiple of its class. -/
 @[simp]
-theorem coe_cycles_mul (𝒜 : AInfinityAlgebra R A) (x y : 𝒜.cycles) :
-    ((x * y : 𝒜.cycles) : A) = 𝒜.m 2 ![(x : A), (y : A)] := by
-  change ((𝒜.cyclesMul x y : 𝒜.cycles) : A) = _
+theorem cohomologyClass_smul (𝒜 : AInfinityAlgebra R A) (r : R) {x : A}
+    (hx : x ∈ 𝒜.cycles) :
+    𝒜.cohomologyClass (𝒜.cycles.smul_mem r hx) = r • 𝒜.cohomologyClass hx := by
+  exact 𝒜.cohomologyClassLinearMap.map_smul r ⟨x, hx⟩
+
+/-- Every cohomology class is represented by a cycle. -/
+theorem exists_cohomologyClass_eq (𝒜 : AInfinityAlgebra R A) (c : 𝒜.Cohomology) :
+    ∃ (x : A) (hx : x ∈ 𝒜.cycles), 𝒜.cohomologyClass hx = c := by
+  induction c using Submodule.Quotient.induction_on with
+  | H x => exact ⟨x, x.2, rfl⟩
+
+/-- Two cycles represent the same cohomology class exactly when their difference is a boundary. -/
+@[simp]
+theorem cohomologyClass_eq_iff (𝒜 : AInfinityAlgebra R A) {x y : A}
+    (hx : x ∈ 𝒜.cycles) (hy : y ∈ 𝒜.cycles) :
+    𝒜.cohomologyClass hx = 𝒜.cohomologyClass hy ↔ x - y ∈ 𝒜.boundaries := by
+  simp only [cohomologyClass, cohomologyClassLinearMap, Submodule.mkQ_apply]
+  rw [Submodule.Quotient.eq, mem_boundariesInCycles]
   rfl
 
-/-- The differential with codomain restricted to cycles. -/
-def boundaryMap (𝒜 : AInfinityAlgebra R A) : A →ₗ[R] 𝒜.cycles where
-  toFun x := ⟨𝒜.differential x, 𝒜.differential_mem_cycles x⟩
-  map_add' _ _ := Subtype.ext (map_add 𝒜.differential _ _)
-  map_smul' _ _ := Subtype.ext (map_smul 𝒜.differential _ _)
-
+/-- A cycle represents zero in cohomology exactly when it is a boundary. -/
 @[simp]
-theorem coe_boundaryMap (𝒜 : AInfinityAlgebra R A) (x : A) :
-    (𝒜.boundaryMap x : A) = 𝒜.differential x := by
-  simp [boundaryMap]
+theorem cohomologyClass_eq_zero_iff (𝒜 : AInfinityAlgebra R A) {x : A}
+    (hx : x ∈ 𝒜.cycles) : 𝒜.cohomologyClass hx = 0 ↔ x ∈ 𝒜.boundaries := by
+  simp only [cohomologyClass, cohomologyClassLinearMap, Submodule.mkQ_apply]
+  rw [Submodule.Quotient.mk_eq_zero, mem_boundariesInCycles]
 
-/-- The image of the differential, as a submodule of the cycles. -/
-def boundaries (𝒜 : AInfinityAlgebra R A) : Submodule R 𝒜.cycles :=
-  LinearMap.range 𝒜.boundaryMap
-
+/-- The cohomology class of a boundary is zero. -/
 @[simp]
-theorem mem_boundaries (𝒜 : AInfinityAlgebra R A) {z : 𝒜.cycles} :
-    z ∈ 𝒜.boundaries ↔ ∃ x : A, 𝒜.differential x = z := by
-  rw [boundaries, LinearMap.mem_range]
-  constructor
-  · rintro ⟨x, hx⟩
-    exact ⟨x, congr_arg Subtype.val hx⟩
-  · rintro ⟨x, hx⟩
-    exact ⟨x, Subtype.ext hx⟩
+theorem cohomologyClass_m_one_eq_zero (𝒜 : AInfinityAlgebra R A) (x : A) :
+    𝒜.cohomologyClass (𝒜.mem_cycles.mpr (𝒜.stasheff_arity_one x)) = 0 :=
+  (𝒜.cohomologyClass_eq_zero_iff _).mpr (𝒜.mem_boundaries.mpr ⟨x, rfl⟩)
 
-/-- The cycle represented by a differential is a boundary. -/
-theorem differential_mem_boundaries (𝒜 : AInfinityAlgebra R A) (x : A) :
-    (⟨𝒜.differential x, 𝒜.differential_mem_cycles x⟩ : 𝒜.cycles) ∈ 𝒜.boundaries :=
-  𝒜.mem_boundaries.mpr ⟨x, rfl⟩
+/-- The binary operation, restricted to a bilinear map on cycles. -/
+def cyclesMul (𝒜 : AInfinityAlgebra R A) : 𝒜.cycles →ₗ[R] 𝒜.cycles →ₗ[R] 𝒜.cycles :=
+  LinearMap.mk₂ R (fun x y ↦ ⟨𝒜.m 2 ![x, y], 𝒜.m_two_mem_cycles x.2 y.2⟩)
+    (fun x x' y ↦ Subtype.ext <| by
+      simpa only [mul_apply, Submodule.coe_add] using 𝒜.mul.map_add₂ x x' y)
+    (fun c x y ↦ Subtype.ext <| by
+      simpa only [mul_apply, Submodule.coe_smul] using 𝒜.mul.map_smul₂ c x y)
+    (fun x y y' ↦ Subtype.ext <| by
+      simpa only [mul_apply, Submodule.coe_add] using (𝒜.mul x).map_add y y')
+    (fun c x y ↦ Subtype.ext <| by
+      simpa only [mul_apply, Submodule.coe_smul] using (𝒜.mul x).map_smul c y)
 
-/-- Left multiplication by a cycle, as a linear endomorphism of the cycles. -/
-def cyclesLeftMul (𝒜 : AInfinityAlgebra R A) (x : 𝒜.cycles) :
-    𝒜.cycles →ₗ[R] 𝒜.cycles where
-  toFun y := 𝒜.cyclesMul x y
-  map_add' y z := by
-    apply Subtype.ext
-    simpa [cyclesMul] using
-      map_add ((𝒜.m 2).curryRight ![(x : A)]) (y : A) (z : A)
-  map_smul' r y := by
-    apply Subtype.ext
-    dsimp [cyclesMul, instMulCycles]
-    have h := map_smul ((𝒜.m 2).curryRight ![(x : A)]) r (y : A)
-    simp only [MultilinearMap.curryRight_apply] at h
-    rw [show Fin.snoc ![(x : A)] (r • (y : A)) = ![(x : A), r • (y : A)] by
-        funext i; fin_cases i <;> rfl,
-      show Fin.snoc ![(x : A)] (y : A) = ![(x : A), (y : A)] by
-        funext i; fin_cases i <;> rfl] at h
-    exact h
-
+/-- The underlying element of the product of two cycles is their binary operation. -/
 @[simp]
-theorem cyclesLeftMul_apply (𝒜 : AInfinityAlgebra R A) (x y : 𝒜.cycles) :
-    𝒜.cyclesLeftMul x y = x * y := by
-  change 𝒜.cyclesMul x y = (instMulCycles 𝒜).mul x y
+theorem coe_cyclesMul (𝒜 : AInfinityAlgebra R A) (x y : 𝒜.cycles) :
+    (𝒜.cyclesMul x y : A) = 𝒜.m 2 ![x, y] := by
+  simp [cyclesMul]
+
+private theorem m_two_assoc_sub_mem_boundaries (𝒜 : AInfinityAlgebra R A) {x y z : A}
+    (hx : x ∈ 𝒜.cycles) (hy : y ∈ 𝒜.cycles) (hz : z ∈ 𝒜.cycles) :
+    𝒜.m 2 ![𝒜.m 2 ![x, y], z] - 𝒜.m 2 ![x, 𝒜.m 2 ![y, z]] ∈ 𝒜.boundaries := by
+  -- On cycles the three correction terms of `m_one_m_three` have a vanishing input, so the
+  -- associator is the unary boundary of `-m₃`.
+  rw [mem_cycles] at hx hy hz
+  have h₀ : 𝒜.m 3 ![(0 : A), y, z] = 0 := (𝒜.m 3).map_coord_zero 0 rfl
+  have h₁ : 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 0, z] = 0 :=
+    (𝒜.m 3).map_coord_zero 1 rfl
+  have h₂ : 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.grading.koszulTwist 1 y, 0] = 0 :=
+    (𝒜.m 3).map_coord_zero 2 rfl
+  rw [mem_boundaries]
+  refine ⟨-𝒜.m 3 ![x, y, z], ?_⟩
+  rw [← differential_apply, map_neg, differential_apply, 𝒜.m_one_m_three, hx, hy, hz,
+    h₀, h₁, h₂]
+  abel
+
+/-- The product on cohomology induced by the binary operation. -/
+def cohomologyMul (𝒜 : AInfinityAlgebra R A) :
+    𝒜.Cohomology →ₗ[R] 𝒜.Cohomology →ₗ[R] 𝒜.Cohomology :=
+  (𝒜.cyclesMul.compr₂ 𝒜.boundariesInCycles.mkQ).liftQ₂ _ _
+    (fun _ hx ↦ LinearMap.ext fun y ↦ (Submodule.Quotient.mk_eq_zero _).mpr <|
+      (𝒜.mem_boundariesInCycles).mpr <|
+        𝒜.m_two_mem_boundaries_of_left ((𝒜.mem_boundariesInCycles).mp hx) y.2)
+    (fun _ hy ↦ LinearMap.ext fun x ↦ (Submodule.Quotient.mk_eq_zero _).mpr <|
+      (𝒜.mem_boundariesInCycles).mpr <|
+        𝒜.m_two_mem_boundaries_of_right x.2 ((𝒜.mem_boundariesInCycles).mp hy))
+
+/-- The product of two classes is represented by the binary operation of their representatives. -/
+@[simp]
+theorem cohomologyMul_cohomologyClass (𝒜 : AInfinityAlgebra R A) {x y : A}
+    (hx : x ∈ 𝒜.cycles) (hy : y ∈ 𝒜.cycles) :
+    𝒜.cohomologyMul (𝒜.cohomologyClass hx) (𝒜.cohomologyClass hy) =
+      𝒜.cohomologyClass (𝒜.m_two_mem_cycles hx hy) := by
+  simp only [cohomologyMul, cohomologyClass]
   rfl
 
-/-- Right multiplication by a cycle, as a linear endomorphism of the cycles. -/
-def cyclesRightMul (𝒜 : AInfinityAlgebra R A) (y : 𝒜.cycles) :
-    𝒜.cycles →ₗ[R] 𝒜.cycles where
-  toFun x := 𝒜.cyclesMul x y
-  map_add' x z := by
-    apply Subtype.ext
-    change ((𝒜.m 2).curryLeft ((x : A) + z)) ![(y : A)] =
-      ((𝒜.m 2).curryLeft x) ![(y : A)] + ((𝒜.m 2).curryLeft z) ![(y : A)]
-    exact DFunLike.congr_fun (map_add (𝒜.m 2).curryLeft (x : A) (z : A)) ![(y : A)]
-  map_smul' r x := by
-    apply Subtype.ext
-    change ((𝒜.m 2).curryLeft (r • (x : A))) ![(y : A)] =
-      r • ((𝒜.m 2).curryLeft x) ![(y : A)]
-    exact DFunLike.congr_fun (map_smul (𝒜.m 2).curryLeft r (x : A)) ![(y : A)]
+/-- The product induced on cohomology is associative. -/
+theorem cohomologyMul_assoc (𝒜 : AInfinityAlgebra R A) (a b c : 𝒜.Cohomology) :
+    𝒜.cohomologyMul (𝒜.cohomologyMul a b) c =
+      𝒜.cohomologyMul a (𝒜.cohomologyMul b c) := by
+  obtain ⟨x, hx, rfl⟩ := 𝒜.exists_cohomologyClass_eq a
+  obtain ⟨y, hy, rfl⟩ := 𝒜.exists_cohomologyClass_eq b
+  obtain ⟨z, hz, rfl⟩ := 𝒜.exists_cohomologyClass_eq c
+  simp only [cohomologyMul_cohomologyClass]
+  rw [cohomologyClass_eq_iff]
+  exact 𝒜.m_two_assoc_sub_mem_boundaries hx hy hz
 
+/-! ### The cohomology algebra -/
+
+/-- The cohomology of an `A∞` algebra is an associative nonunital ring under `cohomologyMul`. -/
+instance instNonUnitalRingCohomology (𝒜 : AInfinityAlgebra R A) :
+    NonUnitalRing 𝒜.Cohomology where
+  mul := fun a b ↦ 𝒜.cohomologyMul a b
+  left_distrib a b c := (𝒜.cohomologyMul a).map_add b c
+  right_distrib a b c := LinearMap.map_add₂ 𝒜.cohomologyMul a b c
+  zero_mul a := LinearMap.map_zero₂ 𝒜.cohomologyMul a
+  mul_zero a := (𝒜.cohomologyMul a).map_zero
+  mul_assoc := 𝒜.cohomologyMul_assoc
+
+/-- Multiplication on cohomology is `cohomologyMul`. -/
 @[simp]
-theorem cyclesRightMul_apply (𝒜 : AInfinityAlgebra R A) (x y : 𝒜.cycles) :
-    𝒜.cyclesRightMul y x = x * y := by
-  change 𝒜.cyclesMul x y = (instMulCycles 𝒜).mul x y
+theorem cohomology_mul_eq_cohomologyMul (𝒜 : AInfinityAlgebra R A) (a b : 𝒜.Cohomology) :
+    a * b = 𝒜.cohomologyMul a b :=
   rfl
-
-/-- A cycle times a boundary is a boundary. -/
-theorem mul_mem_boundaries_left (𝒜 : AInfinityAlgebra R A) (x : 𝒜.cycles)
-    {y : 𝒜.cycles} (hy : y ∈ 𝒜.boundaries) : x * y ∈ 𝒜.boundaries := by
-  obtain ⟨b, hb⟩ := 𝒜.mem_boundaries.mp hy
-  refine 𝒜.mem_boundaries.mpr ⟨𝒜.m 2 ![𝒜.grading.koszulTwist 1 (x : A), b], ?_⟩
-  have hx : 𝒜.differential (x : A) = 0 := x.2
-  have htwist : 𝒜.differential (𝒜.grading.koszulTwist 1 (x : A)) = 0 := by
-    have h := LinearMap.congr_fun (𝒜.differential_isHomogeneous.koszulTwist_comp 1) (x : A)
-    simp only [LinearMap.comp_apply, hx, map_zero, one_mul, Int.negOnePow_one,
-      Units.val_neg, Units.val_one, LinearMap.smul_apply] at h
-    have h' : -𝒜.differential (𝒜.grading.koszulTwist 1 (x : A)) = 0 := by
-      simpa using h.symm
-    exact neg_eq_zero.mp h'
-  have hinvol : 𝒜.grading.koszulTwist 1 (𝒜.grading.koszulTwist 1 (x : A)) = x := by
-    rw [← LinearMap.comp_apply, 𝒜.grading.koszulTwist_comp_self]
-    rfl
-  rw [𝒜.differential_m_two, htwist, hinvol, hb]
-  rw [show 𝒜.m 2 ![0, b] = 0 by
-    change ((𝒜.m 2).curryLeft 0) ![b] = 0
-    rw [map_zero]
-    rfl, zero_add]
-  rfl
-
-/-- A boundary times a cycle is a boundary. -/
-theorem mul_mem_boundaries_right (𝒜 : AInfinityAlgebra R A) {x : 𝒜.cycles}
-    (hx : x ∈ 𝒜.boundaries) (y : 𝒜.cycles) : x * y ∈ 𝒜.boundaries := by
-  obtain ⟨a, ha⟩ := 𝒜.mem_boundaries.mp hx
-  refine 𝒜.mem_boundaries.mpr ⟨𝒜.m 2 ![a, (y : A)], ?_⟩
-  rw [𝒜.differential_m_two, show 𝒜.differential (y : A) = 0 from y.2, ha]
-  rw [show 𝒜.m 2 ![𝒜.grading.koszulTwist 1 a, 0] = 0 by
-    simpa using map_zero ((𝒜.m 2).curryRight ![𝒜.grading.koszulTwist 1 a]), add_zero]
-  rfl
-
-/-- The degree-`p` cycles of an `A∞` algebra. -/
-def cyclesDeg (𝒜 : AInfinityAlgebra R A) (p : ℤ) : Submodule R 𝒜.cycles :=
-  (𝒜.grading.piece p).comap 𝒜.cycles.subtype
-
-@[simp]
-theorem mem_cyclesDeg (𝒜 : AInfinityAlgebra R A) {p : ℤ} {x : 𝒜.cycles} :
-    x ∈ 𝒜.cyclesDeg p ↔ (x : A) ∈ 𝒜.grading.piece p := Iff.rfl
-
-private theorem differential_decompose (𝒜 : AInfinityAlgebra R A) (p : ℤ) (x : A) :
-    𝒜.differential (DirectSum.decompose 𝒜.grading.piece x p : A) =
-      (DirectSum.decompose 𝒜.grading.piece (𝒜.differential x) (p + 1) : A) :=
-  DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece 𝒜.differential
-    (· + 1) (add_left_injective 1)
-    (fun _ _ hx ↦ 𝒜.differential_isHomogeneous.map_mem hx) p x
-
-/-- The cycles inherit the internal grading of the `A∞` algebra. -/
-noncomputable def cyclesGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.cycles := by
-  letI : DirectSum.Decomposition 𝒜.cyclesDeg :=
-    DirectSum.Decomposition.restrict 𝒜.grading.piece 𝒜.cyclesDeg 𝒜.cycles.subtype
-      Subtype.val_injective (fun _ _ ↦ Iff.rfl) fun p x ↦ by
-        refine ⟨⟨(DirectSum.decompose 𝒜.grading.piece (x : A) p : A), ?_⟩, rfl⟩
-        rw [𝒜.mem_cycles, 𝒜.differential_decompose, show 𝒜.differential (x : A) = 0 from x.2]
-        simp
-  exact InternalGrading.ofDecomposition 𝒜.cyclesDeg
-
-@[simp]
-theorem cyclesGrading_piece (𝒜 : AInfinityAlgebra R A) (p : ℤ) :
-    𝒜.cyclesGrading.piece p = 𝒜.cyclesDeg p := by
-  simp [cyclesGrading]
-
-/-- The cohomology of an `A∞` algebra: cycles modulo boundaries. -/
-abbrev Cohomology (𝒜 : AInfinityAlgebra R A) := 𝒜.cycles ⧸ 𝒜.boundaries
-
-/-- The quotient map from cycles to cohomology. -/
-abbrev quotientMk (𝒜 : AInfinityAlgebra R A) : 𝒜.cycles →ₗ[R] 𝒜.Cohomology :=
-  Submodule.mkQ 𝒜.boundaries
-
-@[simp]
-theorem quotientMk_apply (𝒜 : AInfinityAlgebra R A) (x : 𝒜.cycles) :
-    𝒜.quotientMk x = Submodule.Quotient.mk x := rfl
-
-/-- The cohomology class of a differential vanishes. -/
-@[simp]
-theorem quotientMk_differential_eq_zero (𝒜 : AInfinityAlgebra R A) (x : A) :
-    (Submodule.Quotient.mk ⟨𝒜.differential x, 𝒜.differential_mem_cycles x⟩ : 𝒜.Cohomology) = 0 :=
-  (Submodule.Quotient.mk_eq_zero 𝒜.boundaries).mpr (𝒜.differential_mem_boundaries x)
-
-/-- Multiplication of cycles respects equivalence modulo boundaries in both variables. -/
-theorem cyclesMul_respects_boundaries (𝒜 : AInfinityAlgebra R A)
-    {x₁ x₂ y₁ y₂ : 𝒜.cycles} (hx : 𝒜.boundaries.quotientRel x₁ x₂)
-    (hy : 𝒜.boundaries.quotientRel y₁ y₂) :
-    𝒜.boundaries.quotientRel (𝒜.cyclesMul x₁ y₁) (𝒜.cyclesMul x₂ y₂) := by
-  change 𝒜.boundaries.quotientRel (x₁ * y₁) (x₂ * y₂)
-  rw [Submodule.quotientRel_def] at hx hy ⊢
-  have h₁ := 𝒜.mul_mem_boundaries_right hx y₁
-  have h₂ := 𝒜.mul_mem_boundaries_left x₂ hy
-  have hrewrite : x₁ * y₁ - x₂ * y₂ = (x₁ - x₂) * y₁ + x₂ * (y₁ - y₂) := by
-    calc
-      x₁ * y₁ - x₂ * y₂ = (x₁ * y₁ - x₂ * y₁) + (x₂ * y₁ - x₂ * y₂) := by abel
-      _ = (x₁ - x₂) * y₁ + x₂ * (y₁ - y₂) := by
-        congr 1
-        · exact ((𝒜.cyclesRightMul y₁).map_sub x₁ x₂).symm
-        · exact ((𝒜.cyclesLeftMul x₂).map_sub y₁ y₂).symm
-  rw [hrewrite]
-  exact 𝒜.boundaries.add_mem h₁ h₂
-
-/-- Multiplication on cohomology representatives, well-defined modulo boundaries. -/
-def cohomologyMul (𝒜 : AInfinityAlgebra R A) : 𝒜.Cohomology → 𝒜.Cohomology → 𝒜.Cohomology :=
-  Quotient.map₂ 𝒜.cyclesMul fun _ _ hx _ _ hy ↦
-    cyclesMul_respects_boundaries 𝒜 hx hy
-
-private theorem quotient_mul_assoc (𝒜 : AInfinityAlgebra R A) (x y z : 𝒜.cycles) :
-    𝒜.quotientMk ((x * y) * z) = 𝒜.quotientMk (x * (y * z)) := by
-  let L : 𝒜.cycles →ₗ[R] 𝒜.Cohomology :=
-    𝒜.quotientMk.comp ((𝒜.cyclesRightMul z).comp (𝒜.cyclesRightMul y))
-  let Q : 𝒜.cycles →ₗ[R] 𝒜.Cohomology :=
-    𝒜.quotientMk.comp (𝒜.cyclesRightMul (y * z))
-  suffices L x = Q x by simpa [L, Q]
-  apply LinearMap.congr_fun (𝒜.cyclesGrading.linearMap_ext fun p a ha ↦ ?_)
-  let L' : 𝒜.cycles →ₗ[R] 𝒜.Cohomology :=
-    𝒜.quotientMk.comp ((𝒜.cyclesRightMul z).comp (𝒜.cyclesLeftMul a))
-  let Q' : 𝒜.cycles →ₗ[R] 𝒜.Cohomology :=
-    𝒜.quotientMk.comp ((𝒜.cyclesLeftMul a).comp (𝒜.cyclesRightMul z))
-  suffices L' y = Q' y by simpa [L, Q, L', Q'] using this
-  apply LinearMap.congr_fun (𝒜.cyclesGrading.linearMap_ext fun q b hb ↦ ?_)
-  rw [cyclesGrading_piece, mem_cyclesDeg] at ha hb
-  apply (Submodule.Quotient.eq 𝒜.boundaries).mpr
-  apply 𝒜.mem_boundaries.mpr
-  refine ⟨-𝒜.m 3 ![(a : A), (b : A), (z : A)], ?_⟩
-  have h := 𝒜.stasheff_arity_three (a : A) (b : A) (z : A) p q ha hb
-  have ha0 : 𝒜.m 1 ![(a : A)] = 0 := by rw [← 𝒜.differential_apply]; exact a.2
-  have hb0 : 𝒜.m 1 ![(b : A)] = 0 := by rw [← 𝒜.differential_apply]; exact b.2
-  have hz0 : 𝒜.m 1 ![(z : A)] = 0 := by rw [← 𝒜.differential_apply]; exact z.2
-  rw [ha0, hb0, hz0] at h
-  have hm30 : 𝒜.m 3 ![0, (b : A), (z : A)] = 0 := by
-    exact (𝒜.m 3).map_coord_zero 0 rfl
-  have hm31 : 𝒜.m 3 ![(a : A), 0, (z : A)] = 0 := by
-    exact (𝒜.m 3).map_coord_zero 1 rfl
-  have hm32 : 𝒜.m 3 ![(a : A), (b : A), 0] = 0 := by
-    exact (𝒜.m 3).map_coord_zero 2 rfl
-  rw [hm30, hm31, hm32, smul_zero, add_zero] at h
-  change 𝒜.differential (-𝒜.m 3 ![(a : A), (b : A), (z : A)]) =
-    (𝒜.m 2 ![𝒜.m 2 ![(a : A), (b : A)], (z : A)] -
-      𝒜.m 2 ![(a : A), 𝒜.m 2 ![(b : A), (z : A)]])
-  rw [map_neg, differential_apply]
-  simp only [add_zero, smul_zero] at h
-  apply neg_eq_of_add_eq_zero_right
-  simpa only [sub_eq_add_neg, add_assoc] using h
-
-/-- The additive and multiplicative operations on cohomology form a nonassociative nonunital
-ring before the arity-three identity is used to prove associativity. -/
-instance instNonUnitalNonAssocRingCohomology (𝒜 : AInfinityAlgebra R A) :
-    NonUnitalNonAssocRing 𝒜.Cohomology := by
-  letI : Mul 𝒜.Cohomology := ⟨𝒜.cohomologyMul⟩
-  exact NonUnitalNonAssocRing.mk
-    (fun x y z ↦ by
-      refine Submodule.Quotient.induction_on 𝒜.boundaries x fun a ↦ ?_
-      refine Submodule.Quotient.induction_on 𝒜.boundaries y fun b ↦ ?_
-      refine Submodule.Quotient.induction_on 𝒜.boundaries z fun c ↦ ?_
-      change 𝒜.quotientMk (𝒜.cyclesMul a (b + c)) =
-        𝒜.quotientMk (𝒜.cyclesMul a b) + 𝒜.quotientMk (𝒜.cyclesMul a c)
-      exact congr_arg 𝒜.quotientMk ((𝒜.cyclesLeftMul a).map_add b c))
-    (fun x y z ↦ by
-      refine Submodule.Quotient.induction_on 𝒜.boundaries x fun a ↦ ?_
-      refine Submodule.Quotient.induction_on 𝒜.boundaries y fun b ↦ ?_
-      refine Submodule.Quotient.induction_on 𝒜.boundaries z fun c ↦ ?_
-      change 𝒜.quotientMk (𝒜.cyclesMul (a + b) c) =
-        𝒜.quotientMk (𝒜.cyclesMul a c) + 𝒜.quotientMk (𝒜.cyclesMul b c)
-      exact congr_arg 𝒜.quotientMk ((𝒜.cyclesRightMul c).map_add a b))
-    (fun x ↦ by
-      refine Submodule.Quotient.induction_on 𝒜.boundaries x fun a ↦ ?_
-      change 𝒜.quotientMk (𝒜.cyclesMul 0 a) = 𝒜.quotientMk 0
-      exact congr_arg 𝒜.quotientMk ((𝒜.cyclesRightMul a).map_zero))
-    (fun x ↦ by
-      refine Submodule.Quotient.induction_on 𝒜.boundaries x fun a ↦ ?_
-      change 𝒜.quotientMk (𝒜.cyclesMul a 0) = 𝒜.quotientMk 0
-      exact congr_arg 𝒜.quotientMk ((𝒜.cyclesLeftMul a).map_zero))
-
-@[simp]
-theorem quotientMk_mul (𝒜 : AInfinityAlgebra R A) (x y : 𝒜.cycles) :
-    (Submodule.Quotient.mk (x * y) : 𝒜.Cohomology) =
-      (Submodule.Quotient.mk x : 𝒜.Cohomology) * Submodule.Quotient.mk y := by
-  change Submodule.Quotient.mk (𝒜.cyclesMul x y) =
-    𝒜.cohomologyMul (Submodule.Quotient.mk x) (Submodule.Quotient.mk y)
-  rfl
-
-/-- Cohomology multiplication is associative: the arity-three Stasheff identity makes every
-chain-level associator a boundary. -/
-instance instNonUnitalRingCohomology (𝒜 : AInfinityAlgebra R A) : NonUnitalRing 𝒜.Cohomology :=
-  NonUnitalRing.mk fun x y z ↦ by
-    refine Submodule.Quotient.induction_on 𝒜.boundaries x fun a ↦ ?_
-    refine Submodule.Quotient.induction_on 𝒜.boundaries y fun b ↦ ?_
-    refine Submodule.Quotient.induction_on 𝒜.boundaries z fun c ↦ ?_
-    change (Submodule.Quotient.mk a * Submodule.Quotient.mk b : 𝒜.Cohomology) *
-        Submodule.Quotient.mk c =
-      Submodule.Quotient.mk a *
-        (Submodule.Quotient.mk b * Submodule.Quotient.mk c : 𝒜.Cohomology)
-    rw [← 𝒜.quotientMk_mul, ← 𝒜.quotientMk_mul,
-      ← 𝒜.quotientMk_mul, ← 𝒜.quotientMk_mul]
-    exact 𝒜.quotient_mul_assoc a b c
 
 instance (𝒜 : AInfinityAlgebra R A) : IsScalarTower R 𝒜.Cohomology 𝒜.Cohomology where
-  smul_assoc r x y := by
-    refine Submodule.Quotient.induction_on 𝒜.boundaries x fun a ↦ ?_
-    refine Submodule.Quotient.induction_on 𝒜.boundaries y fun b ↦ ?_
-    change (r • Submodule.Quotient.mk a : 𝒜.Cohomology) * Submodule.Quotient.mk b =
-      r • (Submodule.Quotient.mk a * Submodule.Quotient.mk b : 𝒜.Cohomology)
-    rw [← Submodule.Quotient.mk_smul, ← 𝒜.quotientMk_mul,
-      ← 𝒜.quotientMk_mul, ← Submodule.Quotient.mk_smul]
-    exact congr_arg 𝒜.quotientMk ((𝒜.cyclesRightMul b).map_smul r a)
+  smul_assoc r a b := LinearMap.map_smul₂ 𝒜.cohomologyMul r a b
 
 instance (𝒜 : AInfinityAlgebra R A) : SMulCommClass R 𝒜.Cohomology 𝒜.Cohomology where
-  smul_comm r x y := by
-    refine Submodule.Quotient.induction_on 𝒜.boundaries x fun a ↦ ?_
-    refine Submodule.Quotient.induction_on 𝒜.boundaries y fun b ↦ ?_
-    change r • (Submodule.Quotient.mk a * Submodule.Quotient.mk b : 𝒜.Cohomology) =
-      Submodule.Quotient.mk a * (r • Submodule.Quotient.mk b : 𝒜.Cohomology)
-    rw [← 𝒜.quotientMk_mul, ← Submodule.Quotient.mk_smul,
-      ← Submodule.Quotient.mk_smul, ← 𝒜.quotientMk_mul]
-    exact congr_arg 𝒜.quotientMk ((𝒜.cyclesLeftMul a).map_smul r b).symm
+  smul_comm r a b := ((𝒜.cohomologyMul a).map_smul r b).symm
 
 end AInfinityAlgebra
 

@@ -17,7 +17,8 @@ Mathlib records that this map is surjective when `f` is
 (`MonoidHom.subgroupComap_surjective_of_surjective`); this file records the companion fact for
 injectivity. It also records how surjective homomorphisms act on centres and on derived subgroups.
 
-An isomorphism carrying a subgroup `A` onto a subgroup `B` restricts to an isomorphism `↥A ≃* ↥B`.
+An isomorphism carrying a subgroup `A` onto a subgroup `B` restricts to an isomorphism `↥A ≃* ↥B`,
+and carries the coset space `G ⧸ A` bijectively onto `H ⧸ B`.
 That restriction is `TauCeti.Subgroup.congrOfMapEq`, and every subgroup a construction transports
 along an isomorphism — here the derived subgroup, elsewhere the fixed subgroup of an endomorphism —
 uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
@@ -31,6 +32,9 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `MonoidHom.subgroupCongr`: a homomorphism of subgroups transported along equalities of its
   domain and codomain, for reading a construction through two presentations of the subgroups it
   connects.
+* `TauCeti.QuotientGroup.congrOfMapEq`: its coset-space companion — an isomorphism carrying `A`
+  onto `B` gives a bijection `G ⧸ A ≃ H ⧸ B`. Neither subgroup need be normal, which is what
+  distinguishes it from Mathlib's `QuotientGroup.congr`.
 
 ## Main results
 
@@ -239,5 +243,28 @@ theorem _root_.Subgroup.map_mk'_map_quotientGroupMap (R : Subgroup G) {N : Subgr
       (QuotientGroup.mk' M).comp f :=
     MonoidHom.ext fun x ↦ QuotientGroup.map_mk' N M f h x
   rw [Subgroup.map_map, Subgroup.map_map, hf]
+
+/-! ## Transporting a coset space along an isomorphism -/
+
+/-- **Coset spaces transport along an isomorphism.** If `e : G ≃* H` carries `A` onto `B`, then
+`G ⧸ A ≃ H ⧸ B`, by `e` on representatives.
+
+Neither subgroup is assumed normal, so this is an equivalence of coset *spaces*.
+`QuotientGroup.congr` is the normal case, where the same data upgrades to a `MulEquiv`; it does
+not apply to a subgroup like `Γ₁ ∩ gΓ₂g⁻¹`, which is where this is needed. It is the coset-space
+companion of `Subgroup.congrOfMapEq` above. -/
+def QuotientGroup.congrOfMapEq (e : G ≃* H) {A : Subgroup G} {B : Subgroup H}
+    (h : A.map (e : G →* H) = B) : G ⧸ A ≃ H ⧸ B :=
+  Quotient.congr e.toEquiv fun a b ↦ by
+    subst h
+    rw [QuotientGroup.leftRel_apply, QuotientGroup.leftRel_apply]
+    simp [← map_inv, ← map_mul]
+
+@[simp]
+theorem QuotientGroup.congrOfMapEq_mk (e : G ≃* H) {A : Subgroup G} {B : Subgroup H}
+    (h : A.map (e : G →* H) = B) (a : G) :
+    QuotientGroup.congrOfMapEq e h (QuotientGroup.mk a) = QuotientGroup.mk (e a) := by
+  unfold QuotientGroup.congrOfMapEq
+  rfl
 
 end TauCeti

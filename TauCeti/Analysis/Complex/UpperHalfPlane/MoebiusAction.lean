@@ -24,6 +24,8 @@ unfolded by hand.
 ## Main results
 
 * `UpperHalfPlane.σ_eq_refl_of_det_pos`: `σ g = ContinuousAlgEquiv.refl ℝ ℂ` for `0 < det g`.
+* `ModularGroup.sl_smul_set`: the `SL(2, ℤ)`-action on subsets of `ℍ` is the `GL(2, ℝ)`-action
+  along the coercion, the pointwise-image counterpart of Mathlib's `ModularGroup.sl_moeb`.
 
 ## Provenance
 
@@ -36,6 +38,10 @@ pin — `if_pos` is deprecated here in favour of `ite_eq_left`.
 -/
 
 public section
+
+open UpperHalfPlane
+
+open scoped MatrixGroups Pointwise
 
 namespace UpperHalfPlane
 
@@ -54,3 +60,13 @@ lemma σ_eq_refl_of_det_pos {g : GL (Fin 2) ℝ}
   ite_eq_left (by rwa [Matrix.GeneralLinearGroup.val_det_apply])
 
 end UpperHalfPlane
+
+namespace ModularGroup
+
+/-- **The `SL(2, ℤ)`-action on subsets of `ℍ` is the `GL(2, ℝ)`-action along the coercion**, the
+pointwise-image counterpart of `ModularGroup.sl_moeb`. This is useful as a rewrite even though
+the two actions are definitionally equal. -/
+@[simp]
+theorem sl_smul_set (γ : SL(2, ℤ)) (S : Set ℍ) : γ • S = (γ : GL (Fin 2) ℝ) • S := (rfl)
+
+end ModularGroup
