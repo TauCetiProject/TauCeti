@@ -390,7 +390,7 @@ component orientations and the disjointness condition, while changing the number
 def restrict {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
     (hι : Function.Injective ι) : SmoothLinkEmbedding I M m where
   component i := L (ι i)
-  pairwiseDisjoint_range i j hij := L.pairwiseDisjoint_range (hι.ne hij)
+  pairwiseDisjoint_range _ _ hij := L.pairwiseDisjoint_range (hι.ne hij)
 
 /-- The selected component of a restricted link is the corresponding original component. -/
 @[simp]
