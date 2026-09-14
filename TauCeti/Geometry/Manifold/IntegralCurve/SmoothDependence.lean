@@ -51,6 +51,8 @@ public section
 open Filter Manifold Set
 open scoped ContDiff Manifold Topology
 
+namespace TauCeti
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] [BoundarylessManifold I M]
@@ -164,5 +166,7 @@ theorem contMDiffAt_maximalIntegralCurve {n : ℕ∞}
       (contMDiffAt_maximalIntegralCurve_nat m hv (hvx.of_le (by exact_mod_cast le_top))).of_le
         (by exact_mod_cast Nat.le_succ m)
   | coe m => exact contMDiffAt_maximalIntegralCurve_nat m hv (by exact_mod_cast hvx)
+
+end TauCeti
 
 end
