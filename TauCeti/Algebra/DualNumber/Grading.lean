@@ -29,12 +29,10 @@ the usual ungraded dual-number algebra.
   `TauCeti.dualNumberGrade_two_eq_ker_fst`: the two nonzero pieces in coordinates.
 * `TauCeti.dualNumberGrade_eq_bot`: every degree other than zero and two vanishes.
 
-## References
+## Implementation notes
 
-This is the singleton-component prerequisite for Layer 0 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`, where the componentwise zigzag algebra uses
-`DualNumber R` for an `A₁` component. It also implements the grading convention in the roadmap's
-Layer 1 example `Z_R(A₁) = R[x]/(x²)`, with `deg x = 2`.
+In this grading the dual numbers `R[ε]` model the ring `R[x]/(x²)` with `deg x = 2`, which is the
+zigzag algebra of a single vertex with no edges.
 -/
 
 public section
@@ -174,58 +172,45 @@ private noncomputable def decompose :
   (DirectSum.lof R ℕ (fun n => dualNumberGrade R n) 0).comp (degreeZeroPart R) +
     (DirectSum.lof R ℕ (fun n => dualNumberGrade R n) 2).comp (degreeTwoPart R)
 
-@[simp]
-private theorem coeLinearMap_decompose (x : DualNumber R) :
-    DirectSum.coeLinearMap (dualNumberGrade R) (decompose R x) = x := by
-  rw [decompose, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    map_add, DirectSum.coeLinearMap_lof, DirectSum.coeLinearMap_lof]
-  exact TrivSqZeroExt.inl_fst_add_inr_snd_eq x
+/-- Reassembling the two coordinate parts recovers the original dual number. -/
+private theorem coeAddMonoidHom_decompose (x : DualNumber R) :
+    DirectSum.coeAddMonoidHom (dualNumberGrade R) (decompose R x) = x := by
+  simpa [decompose, DirectSum.lof_eq_of] using TrivSqZeroExt.inl_fst_add_inr_snd_eq x
 
-private theorem decompose_coeLinearMap (x : DirectSum ℕ (fun n => dualNumberGrade R n)) :
-    decompose R (DirectSum.coeLinearMap (dualNumberGrade R) x) = x := by
+/-- Decomposing the sum of a family of graded components recovers that family. -/
+private theorem decompose_coeAddMonoidHom (x : DirectSum ℕ (fun n => dualNumberGrade R n)) :
+    decompose R (DirectSum.coeAddMonoidHom (dualNumberGrade R) x) = x := by
   induction x using DirectSum.induction_on with
-  | zero => simp [decompose]
-  | add x y hx hy => simpa using congrArg₂ (fun a b => a + b) hx hy
+  | zero => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
   | of n x =>
       rcases eq_or_ne n 0 with rfl | hn0
-      · rw [DirectSum.coeLinearMap_of]
-        have hsnd : (x : DualNumber R).snd = 0 :=
-          (mem_dualNumberGrade_zero (R := R)).mp x.property
-        have hzero : degreeZeroPart R (x : DualNumber R) = x := by
-          apply Subtype.ext
-          apply TrivSqZeroExt.ext <;> simp [hsnd]
-        have htwo : degreeTwoPart R (x : DualNumber R) = 0 := by
-          apply Subtype.ext
-          apply TrivSqZeroExt.ext <;> simp [hsnd]
-        rw [decompose, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-          hzero, htwo, map_zero, add_zero, DirectSum.lof_eq_of]
-      · rcases eq_or_ne n 2 with rfl | hn2
-        · rw [DirectSum.coeLinearMap_of]
-          have hfst : (x : DualNumber R).fst = 0 :=
-            (mem_dualNumberGrade_two (R := R)).mp x.property
-          have hzero : degreeZeroPart R (x : DualNumber R) = 0 := by
-            apply Subtype.ext
-            apply TrivSqZeroExt.ext <;> simp [hfst]
-          have htwo : degreeTwoPart R (x : DualNumber R) = x := by
-            apply Subtype.ext
-            apply TrivSqZeroExt.ext <;> simp [hfst]
-          rw [decompose, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-            hzero, htwo, map_zero, zero_add, DirectSum.lof_eq_of]
-        · have hx0 : x = 0 := by
-            apply Subtype.ext
-            simpa [dualNumberGrade_eq_bot R hn0 hn2] using x.property
-          subst x
-          simp [decompose]
+      · have hx := (mem_dualNumberGrade_zero R).1 x.property
+        have hzero : degreeZeroPart R x = x := Subtype.ext (TrivSqZeroExt.ext rfl (by simp [hx]))
+        have htwo : degreeTwoPart R x = 0 := Subtype.ext (by simp [hx])
+        simp [decompose, hzero, htwo, DirectSum.lof_eq_of]
+      rcases eq_or_ne n 2 with rfl | hn2
+      · have hx := (mem_dualNumberGrade_two R).1 x.property
+        have hzero : degreeZeroPart R x = 0 := Subtype.ext (by simp [hx])
+        have htwo : degreeTwoPart R x = x := Subtype.ext (TrivSqZeroExt.ext (by simp [hx]) rfl)
+        simp [decompose, hzero, htwo, DirectSum.lof_eq_of]
+      · obtain rfl : x = 0 := Subtype.ext (by simpa [dualNumberGrade_eq_bot R hn0 hn2] using x.2)
+        simp
+
+/-- The coordinate decomposition of the dual numbers into their degree pieces. -/
+@[instance_reducible]
+private noncomputable def decomposition : DirectSum.Decomposition (dualNumberGrade R) where
+  decompose' := decompose R
+  left_inv := coeAddMonoidHom_decompose R
+  right_inv := decompose_coeAddMonoidHom R
 
 end DualNumberGrading
 
 /-- The dual numbers are the internal direct sum of the scalar piece in degree zero and the
 infinitesimal piece in degree two. -/
-theorem isInternal_dualNumberGrade : DirectSum.IsInternal (dualNumberGrade R) := by
-  change Function.Bijective (DirectSum.coeLinearMap (dualNumberGrade R))
-  constructor
-  · exact Function.LeftInverse.injective (DualNumberGrading.decompose_coeLinearMap R)
-  · exact Function.RightInverse.surjective (DualNumberGrading.coeLinearMap_decompose R)
+theorem isInternal_dualNumberGrade : DirectSum.IsInternal (dualNumberGrade R) :=
+  letI := DualNumberGrading.decomposition R
+  DirectSum.Decomposition.isInternal _
 
 /-- The standard degree-two grading makes `DualNumber R` a graded algebra. This is a definition
 rather than a global instance so callers choose when to install it locally. -/
