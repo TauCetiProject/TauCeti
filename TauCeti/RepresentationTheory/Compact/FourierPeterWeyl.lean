@@ -11,12 +11,14 @@ public import TauCeti.RepresentationTheory.Compact.PeterWeyl
 /-!
 # Fourier series as Peter--Weyl theory for the circle
 
-This file completes the circle acceptance check for the compact-group Peter--Weyl theorem.  The
+The Peter--Weyl basis of a compact group consists of normalized matrix coefficients of a skeleton
+of its irreducible unitary representations; for the circle it is the Fourier basis.  The
 irreducible representations of `Multiplicative (AddCircle T)` were classified in
 `TauCeti/RepresentationTheory/Compact/Circle.lean`; here they are transported to the standard
 one-dimensional carrier required by `TauCeti.IrrepModel` and assembled into an
-`IsIrrepSkeleton`.  The resulting abstract Peter--Weyl basis is then identified with Mathlib's
-`AddCircle.fourierBasis` at the level of its basis vectors.
+`IsIrrepSkeleton`.  Their matrix coefficients are the Fourier monomials, so the resulting abstract
+Peter--Weyl basis, pulled back along `Multiplicative.ofAdd`, is Mathlib's `AddCircle.fourierBasis`
+vector by vector.
 
 There are two small but mathematically significant normalizations in the identification.
 
@@ -26,8 +28,8 @@ There are two small but mathematically significant normalizations in the identif
   coefficient `⟪fourierRep T n · v, v⟫` of a unit vector is `fourier (-n)`, not `fourier n`.
   The indexing equivalence `fourierPeterWeylIndexEquiv` includes this negation.
 
-After those choices, `coeFn_peterWeylBasis_fourier` says that every vector of the general
-Peter--Weyl basis is represented by the corresponding vector of Mathlib's Fourier basis.
+After those choices, `compMeasurePreserving_peterWeylBasis_fourier` says that every vector of the
+general Peter--Weyl basis is the corresponding vector of Mathlib's Fourier basis.
 
 ## Main definitions
 
@@ -41,8 +43,10 @@ Peter--Weyl basis is represented by the corresponding vector of Mathlib's Fourie
   dual of the circle.
 * `TauCeti.peterWeylFamily_fourierIrrepModel`: their normalized matrix coefficients are exactly
   Mathlib's Fourier monomials after reindexing.
-* `TauCeti.coeFn_peterWeylBasis_fourier`: Peter--Weyl for the circle has the Fourier monomials as
-  its basis vectors.
+* `TauCeti.coeFn_peterWeylBasis_fourier`: the almost-everywhere representatives of the Peter--Weyl
+  basis vectors of the circle are the Fourier monomials.
+* `TauCeti.compMeasurePreserving_peterWeylBasis_fourier`: transported to `L²(AddCircle T)`, the
+  Peter--Weyl basis vectors of the circle are the vectors of `AddCircle.fourierBasis`.
 
 The mathematical convention follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 
@@ -71,7 +75,7 @@ noncomputable def fourierModelEquiv : ℂ ≃ₗᵢ[ℂ] EuclideanSpace ℂ (Fin
 
 /-- The `n`-th Fourier representation, transported to the standard one-dimensional carrier used
 by `IrrepModel`. -/
-@[expose] noncomputable def fourierIrrepModel (n : ℤ) :
+noncomputable def fourierIrrepModel (n : ℤ) :
     IrrepModel ℂ (Multiplicative (AddCircle T)) where
   dim := 1
   rep := ContRepresentation.congr (fourierModelEquiv.toContinuousLinearEquiv) (fourierRep T n)
@@ -80,7 +84,7 @@ by `IrrepModel`. -/
   isIrreducible := ContRepresentation.isIrreducible_congr _ (isIrreducible_fourierRep T n)
 
 omit hT in
-theorem fourierIrrepModel_dim (n : ℤ) : (fourierIrrepModel T n).dim = 1 :=
+theorem fourierIrrepModel_dim (n : ℤ) : (fourierIrrepModel T n).dim = 1 := by
   rfl
 
 omit hT in
@@ -88,6 +92,10 @@ omit hT in
 theorem fourierIrrepModel_rep_apply (n : ℤ) (x : Multiplicative (AddCircle T))
     (v : EuclideanSpace ℂ (Fin (fourierIrrepModel T n).dim)) :
     (fourierIrrepModel T n).rep x v = fourier n (Multiplicative.toAdd x) • v := by
+  -- The carrier `EuclideanSpace ℂ (Fin (fourierIrrepModel T n).dim)` depends on the model, so
+  -- `rw`/`simp` cannot unfold `fourierIrrepModel` in the goal without breaking the type of `v`
+  -- (the motive is not type correct). Both steps below only unfold `fourierIrrepModel` by
+  -- definition: first in the type of `v`, then in the representation applied to it.
   change EuclideanSpace ℂ (Fin 1) at v
   change ContRepresentation.congr fourierModelEquiv.toContinuousLinearEquiv
     (fourierRep T n) x v = fourier n (Multiplicative.toAdd x) • v
@@ -95,10 +103,9 @@ theorem fourierIrrepModel_rep_apply (n : ℤ) (x : Multiplicative (AddCircle T))
   exact congrArg (fourier n (Multiplicative.toAdd x) • ·)
     (LinearIsometryEquiv.apply_symm_apply fourierModelEquiv v)
 
-/-- **The Fourier models form a skeleton of the unitary dual of the circle.** Pairwise
-inequivalence is the injectivity of the Fourier index.  Exhaustiveness combines the classification
-of circle irreducibles with the fact that an equivalence between irreducible unitary
-representations can be rescaled to a linear isometry equivalence. -/
+/-- **The Fourier models form a skeleton of the unitary dual of the circle.** They are pairwise
+inequivalent, and every irreducible unitary representation of the circle is unitarily equivalent to
+one of them, so they are a valid input to `peterWeylBasis`. -/
 theorem isIrrepSkeleton_fourierIrrepModel : IsIrrepSkeleton (fourierIrrepModel T) where
   pairwise_isEmpty_equiv m n hmn :=
     ⟨fun φ ↦ hmn <| (nonempty_equiv_fourierRep_iff T hT.out.ne').mp ⟨
@@ -117,7 +124,7 @@ theorem isIrrepSkeleton_fourierIrrepModel : IsIrrepSkeleton (fourierIrrepModel T
 /-- The matrix-coefficient index of the one-dimensional Fourier models is equivalent to `ℤ`.
 The negation compensates for Mathlib's convention that the inner product is conjugate-linear in
 its first argument. -/
-@[expose] noncomputable def fourierPeterWeylIndexEquiv :
+noncomputable def fourierPeterWeylIndexEquiv :
     (Σ n : ℤ, Fin (fourierIrrepModel T n).dim × Fin (fourierIrrepModel T n).dim) ≃ ℤ := by
   let collapse : (Σ _ : ℤ, Fin 1 × Fin 1) ≃ ℤ :=
     { toFun := Sigma.fst
@@ -137,7 +144,7 @@ omit hT in
 @[simp]
 theorem fourierPeterWeylIndexEquiv_apply
     (x : Σ n : ℤ, Fin (fourierIrrepModel T n).dim × Fin (fourierIrrepModel T n).dim) :
-    fourierPeterWeylIndexEquiv T x = -x.1 :=
+    fourierPeterWeylIndexEquiv T x = -x.1 := by
   rfl
 
 omit hT in
@@ -203,5 +210,30 @@ theorem coeFn_peterWeylBasis_fourier (n : ℤ) :
   convert DFunLike.congr_fun (character_fourierRep T n) x using 1
   · rw [ContRepresentation.character_apply]
   · rfl
+
+/-- `Multiplicative.ofAdd` carries Mathlib's Haar measure on `AddCircle T` to the normalized Haar
+measure of the circle group, so it transports `L²` of the circle group to `L²(AddCircle T)`. -/
+theorem measurePreserving_ofAdd_haarAddCircle :
+    MeasurePreserving (Multiplicative.ofAdd : AddCircle T → Multiplicative (AddCircle T))
+      haarAddCircle (haarProb (Multiplicative (AddCircle T))) := by
+  rw [haarProb_eq_haarAddCircle]
+  exact MeasurePreserving.id _
+
+/-- **The Peter--Weyl basis of the circle is Mathlib's Fourier basis.** Transported to
+`L²(AddCircle T)` along `Multiplicative.ofAdd`, the Peter--Weyl basis vector with index
+`(fourierPeterWeylIndexEquiv T).symm n` is the `n`-th vector of `AddCircle.fourierBasis`. -/
+theorem compMeasurePreserving_peterWeylBasis_fourier (n : ℤ) :
+    Lp.compMeasurePreserving Multiplicative.ofAdd (measurePreserving_ofAdd_haarAddCircle T)
+      (peterWeylBasis (isIrrepSkeleton_fourierIrrepModel T)
+        ((fourierPeterWeylIndexEquiv T).symm n)) = fourierBasis n := by
+  rw [coe_fourierBasis]
+  apply Lp.ext
+  filter_upwards [Lp.coeFn_compMeasurePreserving
+      (peterWeylBasis (isIrrepSkeleton_fourierIrrepModel T) ((fourierPeterWeylIndexEquiv T).symm n))
+      (measurePreserving_ofAdd_haarAddCircle T),
+    (measurePreserving_ofAdd_haarAddCircle T).quasiMeasurePreserving.ae_eq_comp
+      (coeFn_peterWeylBasis_fourier T n), coeFn_fourierLp 2 n] with x h₁ h₂ h₃
+  rw [h₁, h₃]
+  exact h₂
 
 end TauCeti
