@@ -40,8 +40,8 @@ course a profinite group, where the open subgroups carry all the information.
 * `TauCeti.IsTopologicallyFinitelyGenerated.countable_openSubgroup`,
   `TauCeti.IsTopologicallyFinitelyGenerated.countable_openNormalSubgroup`: countably many open
   subgroups, and countably many open normal subgroups.
-* `TauCeti.IsTopologicallyFinitelyGenerated.exists_antitone_openNormalSubgroup`: a descending
-  sequence of open normal subgroups cofinal among them.
+* `TauCeti.IsTopologicallyFinitelyGenerated.exists_antitone_openNormalSubgroup_cofinal`: a
+  descending sequence of open normal subgroups cofinal among them.
 
 ## References
 
@@ -54,19 +54,21 @@ namespace TauCeti
 
 namespace IsTopologicallyFinitelyGenerated
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
-/-- **A topologically finitely generated compact group has finitely many open subgroups of each
+/-- **A topologically finitely generated group has finitely many open subgroups of each nonzero
 index.** An open subgroup of index `n` is the stabilizer of the trivial coset for the action of
 `G` on its `n` cosets, so it is determined by that action together with the trivial coset; both
 range over finite sets once the coset space is transported to `Fin n`. -/
-theorem finite_openSubgroup_index_eq (hG : IsTopologicallyFinitelyGenerated G) (n : ℕ) :
+theorem finite_openSubgroup_index_eq_of_ne_zero (hG : IsTopologicallyFinitelyGenerated G)
+    (n : ℕ) (hn : n ≠ 0) :
     Finite {U : OpenSubgroup G // (U : Subgroup G).index = n} := by
   classical
   set S := {U : OpenSubgroup G // (U : Subgroup G).index = n}
+  have hindex : ∀ U : S, (U.1 : Subgroup G).index ≠ 0 := fun U ↦ U.2.symm ▸ hn
   -- Each coset space has exactly `n` elements, so it can be transported to `Fin n`.
   have hcard : ∀ U : S, Nonempty ((G ⧸ (U.1 : Subgroup G)) ≃ Fin n) := fun U ↦ by
-    have : Fintype (G ⧸ (U.1 : Subgroup G)) := Fintype.ofFinite _
+    let _ := (U.1 : Subgroup G).fintypeOfIndexNeZero (hindex U)
     exact ⟨Fintype.equivFinOfCardEq <| by
       rw [← Nat.card_eq_fintype_card, ← Subgroup.index_eq_card, U.2]⟩
   set e : ∀ U : S, (G ⧸ (U.1 : Subgroup G)) ≃ Fin n := fun U ↦ (hcard U).some
@@ -77,7 +79,7 @@ theorem finite_openSubgroup_index_eq (hG : IsTopologicallyFinitelyGenerated G) (
   have hker : ∀ U : S, ((ψ U).ker : Subgroup G) = (U.1 : Subgroup G).normalCore := fun U ↦ by
     rw [hψ, MonoidHom.ker_mulEquiv_comp, ← Subgroup.normalCore_eq_ker]
   have hopen : ∀ U : S, IsOpen (((ψ U).ker : Subgroup G) : Set G) := fun U ↦ by
-    have : (U.1 : Subgroup G).FiniteIndex := U.1.finiteIndex_of_finite_quotient
+    let _ : (U.1 : Subgroup G).FiniteIndex := ⟨hindex U⟩
     rw [hker U]
     exact Subgroup.isOpen_of_isClosed_of_finiteIndex _
       (Subgroup.normalCore_isClosed _ U.1.isClosed)
@@ -95,6 +97,19 @@ theorem finite_openSubgroup_index_eq (hG : IsTopologicallyFinitelyGenerated G) (
   have hpt : e U (QuotientGroup.mk 1) = e V (QuotientGroup.mk 1) := congrArg Prod.snd huv
   refine Subtype.ext (OpenSubgroup.toSubgroup_injective (SetLike.ext fun g ↦ ?_))
   rw [hmem U g, hmem V g, hUV, hpt]
+
+variable [CompactSpace G]
+
+/-- **A topologically finitely generated compact group has finitely many open subgroups of each
+index.** This includes index zero, whose fiber is empty because open subgroups of a compact group
+have finite index. -/
+theorem finite_openSubgroup_index_eq (hG : IsTopologicallyFinitelyGenerated G) (n : ℕ) :
+    Finite {U : OpenSubgroup G // (U : Subgroup G).index = n} := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · let _ : IsEmpty {U : OpenSubgroup G // (U : Subgroup G).index = 0} :=
+      ⟨fun U ↦ (U.1 : Subgroup G).index_ne_zero_of_finite U.2⟩
+    infer_instance
+  · exact hG.finite_openSubgroup_index_eq_of_ne_zero n hn
 
 /-- A topologically finitely generated compact group has only countably many open subgroups: they
 are sorted into finitely many of each index. -/
@@ -117,7 +132,7 @@ theorem countable_openNormalSubgroup (hG : IsTopologicallyFinitelyGenerated G) :
 generated compact group the open normal subgroups, being countable and closed under binary
 infima, are refined by a single antitone sequence. This is what turns an inverse-limit argument
 over the finite quotients into a statement about a sequence. -/
-theorem exists_antitone_openNormalSubgroup (hG : IsTopologicallyFinitelyGenerated G) :
+theorem exists_antitone_openNormalSubgroup_cofinal (hG : IsTopologicallyFinitelyGenerated G) :
     ∃ N : ℕ → OpenNormalSubgroup G, Antitone N ∧ ∀ U : OpenNormalSubgroup G, ∃ k, N k ≤ U := by
   have hcount := hG.countable_openNormalSubgroup
   have hne : Nonempty (OpenNormalSubgroup G) := ⟨{ toOpenSubgroup := ⟨⊤, isOpen_univ⟩ }⟩
