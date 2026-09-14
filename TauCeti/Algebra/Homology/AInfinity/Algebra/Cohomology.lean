@@ -27,6 +27,7 @@ boundary as well.  Neither argument needs homogeneous inputs.
 * `TauCeti.AInfinityAlgebra.cycles` and `TauCeti.AInfinityAlgebra.boundaries`: the cycles and
   boundaries of the unary operation.
 * `TauCeti.AInfinityAlgebra.Cohomology`: the total cohomology module.
+* `TauCeti.AInfinityAlgebra.cohomologyClassLinearMap`: the quotient map from cycles to cohomology.
 * `TauCeti.AInfinityAlgebra.cohomologyClass`: the class represented by a cycle.
 * `TauCeti.AInfinityAlgebra.cohomologyMul`: the product on cohomology induced by the binary
   operation.
@@ -197,9 +198,13 @@ Its elements are not required to be homogeneous; degree conditions on representa
 separately using `AInfinityAlgebra.grading`. -/
 abbrev Cohomology (𝒜 : AInfinityAlgebra R A) := 𝒜.cycles ⧸ 𝒜.boundariesInCycles
 
+/-- The linear quotient map from cycles to cohomology. -/
+def cohomologyClassLinearMap (𝒜 : AInfinityAlgebra R A) : 𝒜.cycles →ₗ[R] 𝒜.Cohomology :=
+  𝒜.boundariesInCycles.mkQ
+
 /-- The cohomology class represented by a cycle. -/
 def cohomologyClass (𝒜 : AInfinityAlgebra R A) {x : A} (hx : x ∈ 𝒜.cycles) : 𝒜.Cohomology :=
-  Submodule.Quotient.mk ⟨x, hx⟩
+  𝒜.cohomologyClassLinearMap ⟨x, hx⟩
 
 /-- Every cohomology class is represented by a cycle. -/
 theorem exists_cohomologyClass_eq (𝒜 : AInfinityAlgebra R A) (c : 𝒜.Cohomology) :
@@ -212,15 +217,16 @@ theorem exists_cohomologyClass_eq (𝒜 : AInfinityAlgebra R A) (c : 𝒜.Cohomo
 theorem cohomologyClass_eq_iff (𝒜 : AInfinityAlgebra R A) {x y : A}
     (hx : x ∈ 𝒜.cycles) (hy : y ∈ 𝒜.cycles) :
     𝒜.cohomologyClass hx = 𝒜.cohomologyClass hy ↔ x - y ∈ 𝒜.boundaries := by
-  rw [cohomologyClass, cohomologyClass, Submodule.Quotient.eq,
-    mem_boundariesInCycles]
+  simp only [cohomologyClass, cohomologyClassLinearMap, Submodule.mkQ_apply]
+  rw [Submodule.Quotient.eq, mem_boundariesInCycles]
   rfl
 
 /-- A cycle represents zero in cohomology exactly when it is a boundary. -/
 @[simp]
 theorem cohomologyClass_eq_zero_iff (𝒜 : AInfinityAlgebra R A) {x : A}
     (hx : x ∈ 𝒜.cycles) : 𝒜.cohomologyClass hx = 0 ↔ x ∈ 𝒜.boundaries := by
-  rw [cohomologyClass, Submodule.Quotient.mk_eq_zero, mem_boundariesInCycles]
+  simp only [cohomologyClass, cohomologyClassLinearMap, Submodule.mkQ_apply]
+  rw [Submodule.Quotient.mk_eq_zero, mem_boundariesInCycles]
 
 /-- The cohomology class of a boundary is zero. -/
 @[simp]
