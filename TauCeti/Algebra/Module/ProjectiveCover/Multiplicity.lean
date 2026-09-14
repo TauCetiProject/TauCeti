@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Algebra.Module.ProjectiveCover.Basic
 public import TauCeti.RingTheory.CompositionSeries.Additivity
-public import TauCeti.RingTheory.Semisimple.Schur
+import TauCeti.Algebra.Module.Projective.LinearMap
+import TauCeti.RingTheory.Semisimple.Schur
 
 /-!
 # Hom out of a projective cover counts composition factors
@@ -32,17 +34,13 @@ lies in the radical of `P`, which every map into a simple module annihilates; pr
 `f` therefore identifies `Hom_A(S, T)` with `Hom_A(P, T)` for every simple `T`, and Schur's lemma
 evaluates the latter. Induction along a composition series of `M` adds up the factors.
 
-That identification is proved for a projective cover of an arbitrary module, not just of a simple
-one: a cover is invisible to a simple target.
+The identification is `TauCeti.IsProjectiveCover.homEquivOfIsSimpleModule` in
+`TauCeti/Algebra/Module/ProjectiveCover/Basic.lean`, and the additivity is
+`TauCeti.finrank_linearMap_quotient_add_finrank_linearMap` in
+`TauCeti/Algebra/Module/Projective/LinearMap.lean`.
 
 ## Main results
 
-* `TauCeti.IsProjectiveCover.exists_comp_eq`: a map into a simple module factors through a
-  projective cover of its source, and `TauCeti.IsProjectiveCover.linearMapEquiv`: precomposition
-  with a projective cover `f : P →ₗ[A] M` is an isomorphism `Hom_A(M, T) ≃ₗ[k] Hom_A(P, T)` for
-  every simple `T`.
-* `TauCeti.finrank_linearMap_quotient_add_finrank_linearMap`: additivity of `dim_k Hom_A(P, -)`
-  for a projective `P`.
 * `TauCeti.IsProjectiveCover.finrank_linearMap_eq_finrank_end` and
   `TauCeti.IsProjectiveCover.finrank_linearMap_eq_zero`: the diagonal evaluation
   `dim_k Hom_A(Pᵢ, Sⱼ) = δᵢⱼ · dim_k Dᵢ`.
@@ -67,113 +65,6 @@ universe w
 
 namespace TauCeti
 
-/-! ### A projective cover is invisible to a simple target -/
-
-section Factorization
-
-variable {A P M T : Type*} [Ring A] [AddCommGroup P] [Module A P] [AddCommGroup M] [Module A M]
-  [AddCommGroup T] [Module A T] [IsSimpleModule A T]
-
-/-- Every map from the source of a projective cover into a simple module factors through the
-cover: the kernel of the cover is superfluous, hence contained in the radical of the source, which
-the map annihilates. -/
-theorem IsProjectiveCover.exists_comp_eq {f : P →ₗ[A] M} (hf : IsProjectiveCover f)
-    (φ : P →ₗ[A] T) : ∃ ψ : M →ₗ[A] T, ψ ∘ₗ f = φ := by
-  have hle : LinearMap.ker f ≤ LinearMap.ker φ :=
-    hf.ker_le_jacobson.trans (IsSemisimpleModule.jacobson_le_ker A A P T φ)
-  refine ⟨((LinearMap.ker f).liftQ φ hle) ∘ₗ
-    (f.quotKerEquivOfSurjective hf.surjective).symm.toLinearMap, ?_⟩
-  ext p
-  have hmk : (f.quotKerEquivOfSurjective hf.surjective).symm (f p) = Submodule.Quotient.mk p := by
-    rw [LinearEquiv.symm_apply_eq]
-    simp [LinearMap.quotKerEquivOfSurjective]
-  simp [hmk]
-
-end Factorization
-
-section LinearMapEquiv
-
-variable {k A P M T : Type*} [CommSemiring k] [Ring A] [Algebra k A]
-  [AddCommGroup P] [Module A P] [AddCommGroup M] [Module A M]
-  [AddCommGroup T] [Module k T] [Module A T] [IsScalarTower k A T] [IsSimpleModule A T]
-
-variable (k) in
-/-- **A projective cover is invisible to a simple target.** Precomposition with a projective cover
-`f : P →ₗ[A] M` is a `k`-linear isomorphism from `Hom_A(M, T)` to `Hom_A(P, T)` for every simple
-`A`-module `T`: it is injective because `f` is onto, and surjective by
-`TauCeti.IsProjectiveCover.exists_comp_eq`.
-
-Compare `TauCeti.homCongrRight`, which transports a hom space along an isomorphism of its target:
-here the map on the source side is only a cover, and it is the simplicity of `T` that makes the
-induced map on hom spaces invertible. -/
-noncomputable def IsProjectiveCover.linearMapEquiv {f : P →ₗ[A] M} (hf : IsProjectiveCover f) :
-    (M →ₗ[A] T) ≃ₗ[k] (P →ₗ[A] T) :=
-  LinearEquiv.ofBijective
-    { toFun ψ := ψ ∘ₗ f
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl }
-    ⟨fun ψ ψ' h => LinearMap.ext fun m => by
-        obtain ⟨p, rfl⟩ := hf.surjective m
-        exact DFunLike.congr_fun h p,
-      fun φ => hf.exists_comp_eq φ⟩
-
-@[simp]
-theorem IsProjectiveCover.linearMapEquiv_apply {f : P →ₗ[A] M} (hf : IsProjectiveCover f)
-    (ψ : M →ₗ[A] T) : hf.linearMapEquiv k ψ = ψ ∘ₗ f :=
-  (rfl)
-
-/-- The inverse of `TauCeti.IsProjectiveCover.linearMapEquiv` is the factorization through the
-cover. -/
-@[simp]
-theorem IsProjectiveCover.linearMapEquiv_symm_comp {f : P →ₗ[A] M} (hf : IsProjectiveCover f)
-    (φ : P →ₗ[A] T) : ((hf.linearMapEquiv k).symm φ) ∘ₗ f = φ := by
-  rw [← IsProjectiveCover.linearMapEquiv_apply (k := k) hf ((hf.linearMapEquiv k).symm φ),
-    LinearEquiv.apply_symm_apply]
-
-end LinearMapEquiv
-
-/-! ### Additivity of the dimension of a hom space out of a projective -/
-
-section Additivity
-
-variable {k A P M : Type*} [Field k] [Ring A] [Algebra k A]
-  [AddCommGroup P] [Module k P] [Module A P] [IsScalarTower k A P] [FiniteDimensional k P]
-  [Module.Projective A P]
-  [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M] [FiniteDimensional k M]
-
-variable (k P) in
-/-- **`dim_k Hom_A(P, -)` is additive**, for `P` projective and finite-dimensional over `k`: the
-functor `Hom_A(P, -)` is exact, so a submodule and its quotient split the dimension of the hom
-space out of `P`. -/
-theorem finrank_linearMap_quotient_add_finrank_linearMap (N : Submodule A M) :
-    Module.finrank k (P →ₗ[A] M ⧸ N) + Module.finrank k (P →ₗ[A] N)
-      = Module.finrank k (P →ₗ[A] M) := by
-  have : FiniteDimensional k N :=
-    Module.Finite.of_injective ((N.subtype).restrictScalars k) N.injective_subtype
-  have : FiniteDimensional k (M ⧸ N) :=
-    Module.Finite.of_surjective ((N.mkQ).restrictScalars k) N.mkQ_surjective
-  set α : (P →ₗ[A] N) →ₗ[k] (P →ₗ[A] M) := LinearMap.compRight k N.subtype with hα
-  set β : (P →ₗ[A] M) →ₗ[k] (P →ₗ[A] M ⧸ N) := LinearMap.compRight k N.mkQ with hβ
-  have hβsurj : Function.Surjective β := fun g =>
-    (Module.projective_lifting_property N.mkQ g N.mkQ_surjective).imp fun _ h => h
-  have hαinj : Function.Injective α := fun g g' h =>
-    LinearMap.ext fun p => Subtype.ext (DFunLike.congr_fun h p)
-  have hker : LinearMap.ker β = LinearMap.range α := by
-    ext g
-    refine ⟨fun hg => ?_, ?_⟩
-    · have hmem : ∀ p, g p ∈ N := fun p =>
-        (Submodule.Quotient.mk_eq_zero N).mp (DFunLike.congr_fun hg p)
-      exact ⟨g.codRestrict N hmem, by ext p; simp [hα]⟩
-    · rintro ⟨g', rfl⟩
-      ext p
-      simp [hα, hβ]
-  have h1 := LinearMap.finrank_range_add_finrank_ker β
-  rw [hker, LinearMap.range_eq_top.mpr hβsurj, Submodule.topEquiv.finrank_eq,
-    ← (LinearEquiv.ofInjective α hαinj).finrank_eq] at h1
-  exact h1
-
-end Additivity
-
 /-! ### The multiplicity formula -/
 
 section Multiplicity
@@ -192,7 +83,8 @@ division algebra `End_A(S)`. -/
 theorem IsProjectiveCover.finrank_linearMap_eq_finrank_end {f : P →ₗ[A] S}
     (hf : IsProjectiveCover f) (e : T ≃ₗ[A] S) :
     Module.finrank k (P →ₗ[A] T) = Module.finrank k (Module.End A S) := by
-  rw [← (hf.linearMapEquiv (k := k) (T := T)).finrank_eq, ← (homCongrRight k (S := S) e).finrank_eq]
+  rw [← (hf.homEquivOfIsSimpleModule k (T := T)).finrank_eq,
+    ← (homCongrRight k (S := S) e).finrank_eq]
 
 omit [Module k S] [IsScalarTower k A S] in
 /-- **The off-diagonal value of the projective/simple pairing.** Between a projective cover of `S`
@@ -200,7 +92,7 @@ and a simple module not isomorphic to `S` the hom space vanishes, by Schur's lem
 theorem IsProjectiveCover.finrank_linearMap_eq_zero {f : P →ₗ[A] S}
     (hf : IsProjectiveCover f) (he : IsEmpty (T ≃ₗ[A] S)) :
     Module.finrank k (P →ₗ[A] T) = 0 := by
-  rw [← (hf.linearMapEquiv (k := k) (T := T)).finrank_eq]
+  rw [← (hf.homEquivOfIsSimpleModule k (T := T)).finrank_eq]
   exact finrank_linearMap_eq_zero_of_isEmpty_linearEquiv ⟨fun e => he.elim e.symm⟩
 
 /-- The simple case of the multiplicity formula, the step of the induction on a composition
