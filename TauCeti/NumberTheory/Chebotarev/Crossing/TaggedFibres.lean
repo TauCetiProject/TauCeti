@@ -17,8 +17,8 @@ joint restriction isomorphism
 `Gal(M/K) ≃ Gal(L/K) × (ZMod m)ˣ`
 
 allows a Frobenius condition over `M / K` to carry both a prescribed element `σ : Gal(L/K)` and
-a cyclotomic tag `τ : (ZMod m)ˣ`. This file packages the resulting prime fibre and proves that,
-for fixed `σ`, distinct tags give disjoint fibres.
+a cyclotomic tag `τ : (ZMod m)ˣ`. This file packages the resulting prime fibre and proves that
+distinct tags give disjoint fibres, whatever the base elements.
 
 The point is slightly stronger than injectivity of the product equivalence. Equality of Frobenius
 fibres is indexed by *conjugacy classes*, so one must show that two elements whose cyclotomic
@@ -32,11 +32,10 @@ equality because `(ZMod m)ˣ` is commutative.
 
 ## Main results
 
+* `NumberField.Chebotarev.disjoint_taggedFrobeniusPrimeSet`: the fibres of `(σ₁, τ)` and
+  `(σ₂, υ)` are disjoint whenever `τ ≠ υ`.
 * `NumberField.Chebotarev.pairwise_disjoint_taggedFrobeniusPrimeSet`: the tagged fibres for a
   fixed `σ` are pairwise disjoint as `τ` varies.
-
-This is the pairwise-disjointness step in Layer 7.5 of the Chebotarev roadmap. It is consumed in
-Layer 9, where lower-density bounds for the separate tags are added before the final squeeze.
 -/
 
 public section
@@ -69,7 +68,7 @@ noncomputable def taggedFrobeniusPrimeSet
 corresponding element of `Gal(M/K)`. This is the unfolding interface for applying results about
 `frobeniusPrimeSet`; the instances on `M` are precisely those that its right-hand side requires. -/
 @[simp]
-theorem taggedFrobeniusPrimeSet_eq [NumberField M] [IsGalois K M]
+theorem taggedFrobeniusPrimeSet_def [NumberField M] [IsGalois K M]
     (hcop : ((NumberField.discr L).natAbs).Coprime m) {ζ : M} (hζ : IsPrimitiveRoot ζ m)
     (σ : Gal(L/K)) (τ : (ZMod m)ˣ) :
     taggedFrobeniusPrimeSet K L M m hcop hζ σ τ =
@@ -77,23 +76,23 @@ theorem taggedFrobeniusPrimeSet_eq [NumberField M] [IsGalois K M]
         (ConjClasses.mk ((IsCyclotomicExtension.galEquivProd K L M m hcop hζ).symm (σ, τ))) := by
   rw [taggedFrobeniusPrimeSet]
 
-/-- **Distinct cyclotomic tags give disjoint Frobenius fibres.** For a fixed
-`σ : Gal(L/K)`, the fibres indexed by `(σ, τ)` are pairwise disjoint as `τ : (ZMod m)ˣ` varies.
+/-- **Distinct cyclotomic tags give disjoint Frobenius fibres.** The fibres indexed by
+`(σ₁, τ)` and `(σ₂, υ)` are disjoint whenever `τ ≠ υ`, whatever `σ₁ σ₂ : Gal(L/K)`.
 
 Indeed, conjugate representatives have conjugate images under the cyclotomic character, while
 conjugacy in the commutative group `(ZMod m)ˣ` is equality. The character reads the second
 coordinate of `galEquivProd`, so equality of the two conjugacy classes would force the tags to be
 equal. -/
-theorem pairwise_disjoint_taggedFrobeniusPrimeSet
+theorem disjoint_taggedFrobeniusPrimeSet
     (hcop : ((NumberField.discr L).natAbs).Coprime m) {ζ : M} (hζ : IsPrimitiveRoot ζ m)
-    (σ : Gal(L/K)) :
-    Pairwise (Function.onFun Disjoint (taggedFrobeniusPrimeSet K L M m hcop hζ σ)) := by
+    (σ₁ σ₂ : Gal(L/K)) {τ υ : (ZMod m)ˣ} (hτυ : τ ≠ υ) :
+    Disjoint (taggedFrobeniusPrimeSet K L M m hcop hζ σ₁ τ)
+      (taggedFrobeniusPrimeSet K L M m hcop hζ σ₂ υ) := by
   let _ : FiniteDimensional L M :=
     IsCyclotomicExtension.finiteDimensional (S := {m}) (K := L) M
   let _ : NumberField M := NumberField.of_module_finite L M
   let _ : IsGalois K M :=
     IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M m
-  intro τ υ hτυ
   apply disjoint_frobeniusPrimeSet
   intro hclasses
   apply hτυ
@@ -101,5 +100,13 @@ theorem pairwise_disjoint_taggedFrobeniusPrimeSet
   have hconj := (hζ.autToPow K).map_isConj
     (ConjClasses.mk_eq_mk_iff_isConj.mp hclasses)
   simpa using hconj
+
+/-- **Tagged fibres over a fixed base element are pairwise disjoint.** For a fixed
+`σ : Gal(L/K)`, the fibres indexed by `(σ, τ)` are pairwise disjoint as `τ : (ZMod m)ˣ` varies. -/
+theorem pairwise_disjoint_taggedFrobeniusPrimeSet
+    (hcop : ((NumberField.discr L).natAbs).Coprime m) {ζ : M} (hζ : IsPrimitiveRoot ζ m)
+    (σ : Gal(L/K)) :
+    Pairwise (Function.onFun Disjoint (taggedFrobeniusPrimeSet K L M m hcop hζ σ)) :=
+  fun _ _ hτυ ↦ disjoint_taggedFrobeniusPrimeSet K L M m hcop hζ σ σ hτυ
 
 end NumberField.Chebotarev
