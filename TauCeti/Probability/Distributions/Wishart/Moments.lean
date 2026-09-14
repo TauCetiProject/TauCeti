@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.Wishart.Transforms
 public import TauCeti.Probability.Moments.PencilMGF
 
 import TauCeti.Analysis.Matrix.Spectrum
+import TauCeti.LinearAlgebra.Matrix.Trace
 
 /-!
 # The mean and covariance of the Gaussian-Gram Wishart family
@@ -16,9 +17,9 @@ import TauCeti.Analysis.Matrix.Spectrum
 The trace statistics `A ↦ trace (Θ * A)` of a Gaussian-Gram Wishart matrix have finite
 exponential moments on a neighbourhood of the origin, because the pencil
 `1 - (2 * t) • (√S * Θ * √S)` that governs them is positive definite for small `t`. Their
-moment-generating function is therefore differentiable at the origin, and this file reads its
-first two derivatives there: the mean `ν * trace (Θ * S)` and the variance
-`2 * ν * trace (Θ * S * Θ * S)`.
+cumulant-generating function, the logarithm of the moment-generating function, is therefore
+differentiable at the origin, and this file reads its first two derivatives there: the mean
+`ν * trace (Θ * S)` and the variance `2 * ν * trace (Θ * S * Θ * S)`.
 
 Polarizing the variance gives the covariance of two trace statistics, and pairing with the
 symmetrized matrix units `TauCeti.symmetricSingle` turns that into the classical entrywise
@@ -135,15 +136,6 @@ theorem variance_trace_mul_wishartGramMeasure (ν : ℕ) (hS : S.PosSemidef)
 
 /-! ### Covariance -/
 
-/-- Expanding a Wishart variance at a sum of two symmetric matrices. -/
-private theorem trace_add_mul_mul_add_mul (S Θ₁ Θ₂ : Matrix (Fin p) (Fin p) ℝ) :
-    ((Θ₁ + Θ₂) * S * (Θ₁ + Θ₂) * S).trace =
-      (Θ₁ * S * Θ₁ * S).trace + 2 * (Θ₁ * S * Θ₂ * S).trace + (Θ₂ * S * Θ₂ * S).trace := by
-  have hcomm : (Θ₂ * S * Θ₁ * S).trace = (Θ₁ * S * Θ₂ * S).trace := by
-    rw [Matrix.mul_assoc (Θ₂ * S) Θ₁ S, Matrix.trace_mul_comm, ← Matrix.mul_assoc]
-  simp only [Matrix.add_mul, Matrix.mul_add, Matrix.trace_add, hcomm]
-  ring
-
 /-- **The covariance of two Wishart trace statistics** is `2 * ν * trace (Θ₁ * S * Θ₂ * S)`, the
 polarization of `TauCeti.variance_trace_mul_wishartGramMeasure`. -/
 theorem covariance_trace_mul_wishartGramMeasure (ν : ℕ) (hS : S.PosSemidef)
@@ -167,7 +159,7 @@ theorem covariance_trace_mul_wishartGramMeasure (ν : ℕ) (hS : S.PosSemidef)
     (memLp_trace_mul_wishartGramMeasure ν S Θ₂)
   rw [hadd, variance_trace_mul_wishartGramMeasure ν hS,
     variance_trace_mul_wishartGramMeasure ν hS, variance_trace_mul_wishartGramMeasure ν hS,
-    Submodule.coe_add, trace_add_mul_mul_add_mul] at hvar
+    Submodule.coe_add, Matrix.trace_add_mul_mul_add_mul] at hvar
   linarith
 
 /-! ### The mean of the law and the covariance of its entries -/
@@ -204,23 +196,6 @@ theorem integral_id_wishartGramMeasure (ν : ℕ) (hS : S.PosSemidef) :
       (integrable_id_wishartGramMeasure ν S) Θ, real_inner_smul_right]
   simp only [hinner]
   rw [integral_trace_mul_wishartGramMeasure ν hS]
-
-/-- The trace of a product of two symmetrized matrix units sandwiched by a symmetric matrix. -/
-private theorem trace_symmetricSingle_mul_mul_symmetricSingle_mul (hS : S.IsHermitian)
-    (i j k l : Fin p) :
-    ((symmetricSingle i j : Matrix (Fin p) (Fin p) ℝ) * S *
-        (symmetricSingle k l : Matrix (Fin p) (Fin p) ℝ) * S).trace =
-      (S i k * S j l + S i l * S j k) / 2 := by
-  have hsymm : ∀ x y, S x y = S y x := fun x y => by simpa using hS.apply y x
-  have hunit : ∀ a b c d : Fin p, (Matrix.single a b (1 : ℝ) * S * Matrix.single c d 1 * S).trace =
-      S b c * S d a := by
-    intro a b c d
-    rw [Matrix.mul_assoc, Matrix.mul_assoc, Matrix.trace_single_mul]
-    simp [Matrix.mul_apply, Matrix.single_apply, ite_and, Finset.sum_ite_eq, mul_ite]
-  simp only [coe_symmetricSingle, Matrix.smul_mul, Matrix.mul_smul, Matrix.trace_smul,
-    Matrix.add_mul, Matrix.mul_add, Matrix.trace_add, hunit, smul_eq_mul]
-  rw [hsymm l i, hsymm k i, hsymm l j, hsymm k j]
-  ring
 
 /-- **The entrywise covariance of the Gaussian-Gram Wishart law**: the entries at `(i, j)` and
 at `(k, l)` have covariance `ν * (S i k * S j l + S i l * S j k)`. -/

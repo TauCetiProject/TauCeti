@@ -50,6 +50,10 @@ subspace: `TauCeti.symmetricCoordinates` reads off the entries above the diagona
 * `selfAdjoint.inner_eq_trace_mul` — the Frobenius pairing is the trace pairing, and
   `selfAdjoint.continuous_trace_mul_coe` — that pairing is continuous in its second argument, as
   is its exponential `selfAdjoint.continuous_exp_trace_mul_coe`.
+* `TauCeti.symmetricSingle` — the symmetrized matrix unit, the symmetric matrix dual to an entry
+  under the trace pairing, together with the trace identities
+  `TauCeti.trace_symmetricSingle_mul` and
+  `TauCeti.trace_symmetricSingle_mul_mul_symmetricSingle_mul`.
 -/
 
 public section
@@ -419,6 +423,26 @@ theorem trace_symmetricSingle_mul {p : ℕ} (i j : Fin p)
   rw [coe_symmetricSingle, Matrix.smul_mul, Matrix.trace_smul, Matrix.add_mul, Matrix.trace_add,
     Matrix.trace_single_mul, Matrix.trace_single_mul, selfAdjoint.coe_apply_comm A j i]
   simp only [smul_eq_mul]
+  ring
+
+/-- The trace of a product of two symmetrized matrix units sandwiched by a symmetric matrix. This
+is the matrix identity behind the entrywise covariance of a symmetric-matrix distribution: it
+turns a trace statistic paired with two symmetrized units into entries of the sandwiched
+matrix. -/
+theorem trace_symmetricSingle_mul_mul_symmetricSingle_mul {p : ℕ}
+    {S : Matrix (Fin p) (Fin p) ℝ} (hS : S.IsHermitian) (i j k l : Fin p) :
+    ((symmetricSingle i j : Matrix (Fin p) (Fin p) ℝ) * S *
+        (symmetricSingle k l : Matrix (Fin p) (Fin p) ℝ) * S).trace =
+      (S i k * S j l + S i l * S j k) / 2 := by
+  have hsymm : ∀ x y, S x y = S y x := fun x y => by simpa using hS.apply y x
+  have hunit : ∀ a b c d : Fin p, (Matrix.single a b (1 : ℝ) * S * Matrix.single c d 1 * S).trace =
+      S b c * S d a := by
+    intro a b c d
+    rw [Matrix.mul_assoc, Matrix.mul_assoc, Matrix.trace_single_mul]
+    simp [Matrix.mul_apply, Matrix.single_apply, ite_and, Finset.sum_ite_eq, mul_ite]
+  simp only [coe_symmetricSingle, Matrix.smul_mul, Matrix.mul_smul, Matrix.trace_smul,
+    Matrix.add_mul, Matrix.mul_add, Matrix.trace_add, hunit, smul_eq_mul]
+  rw [hsymm l i, hsymm k i, hsymm l j, hsymm k j]
   ring
 
 end TauCeti
