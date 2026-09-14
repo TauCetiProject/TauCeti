@@ -21,6 +21,8 @@ The reconstruction is total: entries after the last genuine visit use the junk v
 * `TauCeti.visitCount`: the number of visits to a value before a given index.
 * `TauCeti.visitTime`: the index of a given visit to a value.
 * `TauCeti.successorArray`: the values following successive visits to each value.
+* `TauCeti.visitedSuccessorArray`: the successor array with the rows of unvisited values reset to
+  constants.
 * `TauCeti.visitCell`: the cell of the successor array a sequence uses at a given time.
 * `TauCeti.pathOfSuccessors`: reconstruction from an initial value and successor array.
 
@@ -54,7 +56,9 @@ The reconstruction is total: entries after the last genuine visit use the junk v
   down by its initial value together with the successor-array entries at the cells that segment
   designates. This is the finite-horizon form of `TauCeti.eq_pathOfSuccessors`, and the form a
   finite-path event needs: the cells are read off a *reference* sequence, so they do not move with
-  the sequence being described.
+  the sequence being described. `TauCeti.eqOn_iff_visitCell_of_apply_eq_successorArray` is the same
+  criterion for any array agreeing with the successor array on the visited rows, such as
+  `TauCeti.visitedSuccessorArray`.
 
 ## References
 
@@ -85,6 +89,14 @@ def visitTime (x : ℕ → α) (a : α) (k : ℕ) : ℕ :=
 not exist. -/
 def successorArray (x : ℕ → α) (a : α) (k : ℕ) : α :=
   x (visitTime x a k + 1)
+
+open Classical in
+/-- The successor array with the rows of the values the sequence never visits reset to a constant:
+the `(a, k)`-entry is `successorArray x a k` if `x` visits `a`, and `a` itself otherwise. Unlike
+`TauCeti.successorArray`, whose unvisited rows repeat a genuine successor entry, the unvisited rows
+of this array carry no information about the sequence beyond the fact that it avoids them. -/
+def visitedSuccessorArray (x : ℕ → α) (a : α) (k : ℕ) : α :=
+  if ∃ n, x n = a then successorArray x a k else a
 
 /-- The finite-horizon recursion used to rebuild a sequence from an initial value and a successor
 array. -/
@@ -127,6 +139,17 @@ private theorem successorArray_def_private (x : ℕ → α) (a : α) (k : ℕ) :
 theorem successorArray_def (x : ℕ → α) (a : α) (k : ℕ) :
     successorArray x a k = x (visitTime x a k + 1) :=
   successorArray_def_private x a k
+
+open Classical in
+private theorem visitedSuccessorArray_def_private (x : ℕ → α) (a : α) (k : ℕ) :
+    visitedSuccessorArray x a k = if ∃ n, x n = a then successorArray x a k else a :=
+  rfl
+
+open Classical in
+/-- The defining equation for an entry of the visited successor array. -/
+theorem visitedSuccessorArray_def (x : ℕ → α) (a : α) (k : ℕ) :
+    visitedSuccessorArray x a k = if ∃ n, x n = a then successorArray x a k else a :=
+  visitedSuccessorArray_def_private x a k
 
 end Defs
 
@@ -223,6 +246,12 @@ theorem occCount_succ_add_zero_eq_visitCount_add_last (z : ℕ → α) (b : α) 
 theorem visitCount_eq_zero_of_forall_ne (h : ∀ i < n, x i ≠ a) : visitCount x a n = 0 := by
   classical
   simpa only [visitCount_eq_count] using Nat.count_iff_forall_not.2 h
+
+/-- A visit count is positive exactly when the sequence visits the value before the horizon. -/
+theorem visitCount_pos_iff : 0 < visitCount x a n ↔ ∃ i < n, x i = a := by
+  classical
+  simp only [Nat.pos_iff_ne_zero, ne_eq, visitCount_eq_count, Nat.count_iff_forall_not, not_forall,
+    not_not, exists_prop]
 
 /-- If time `r` is a visit and the sequence does not return to `x r` before `m`, its visit count
 at `m` is its visit count at `r` plus that final visit. -/
@@ -560,6 +589,32 @@ theorem eqOn_of_successorArray_visitCell_eq (h₀ : x 0 = w 0)
   intro i hi
   exact key n (le_refl n) i hi
 
+/-- **The criterion of `TauCeti.eqOn_iff_successorArray_visitCell` for any array that records the
+successors on the visited rows.** The cells a reference sequence designates lie in rows it
+visits, so along a sequence agreeing with it those rows are visited, and an array agreeing with
+the successor array there pins the initial segment down just as well. -/
+theorem eqOn_iff_visitCell_of_apply_eq_successorArray {s : α → ℕ → α}
+    (hs : ∀ i k, s (x i) k = successorArray x (x i) k) (w : ℕ → α) (n : ℕ) :
+    (∀ i ≤ n, x i = w i) ↔
+      x 0 = w 0 ∧ ∀ i < n, s (visitCell w i).1 (visitCell w i).2 = w (i + 1) := by
+  -- Along the agreement with `w`, the rows `w` designates are rows `x` visits.
+  have hcell : ∀ i, x i = w i → s (visitCell w i).1 (visitCell w i).2 =
+      successorArray x (visitCell w i).1 (visitCell w i).2 :=
+    fun i hi => by simp only [visitCell_def, ← hi, hs]
+  refine ⟨fun h => ⟨h 0 (Nat.zero_le n), fun i hi => ?_⟩, fun h => ?_⟩
+  · rw [hcell i (h i hi.le)]
+    exact successorArray_visitCell_eq_of_eqOn h hi
+  · have key : ∀ j ≤ n, ∀ i ≤ j, x i = w i := by
+      intro j
+      induction j with
+      | zero => intro _ i hi; rw [Nat.le_zero.1 hi]; exact h.1
+      | succ j ih =>
+        intro hj
+        refine eqOn_of_successorArray_visitCell_eq h.1 fun i hi => ?_
+        rw [← hcell i (ih (Nat.le_of_succ_le hj) i (Nat.lt_succ_iff.1 hi))]
+        exact h.2 i (hi.trans_le hj)
+    exact key n le_rfl
+
 /-- **A finite initial segment is pinned down by its initial value and the successor-array entries
 at the cells it designates.** Both the cells and the prescribed successors are read off the
 reference sequence `w`, so the right-hand side is a condition on `x` through finitely many entries
@@ -567,10 +622,44 @@ of its successor array at cells that do not depend on `x`. -/
 theorem eqOn_iff_successorArray_visitCell (w x : ℕ → α) (n : ℕ) :
     (∀ i ≤ n, x i = w i) ↔
       x 0 = w 0 ∧ ∀ i < n, successorArray x (visitCell w i).1 (visitCell w i).2 = w (i + 1) :=
-  ⟨fun h => ⟨h 0 (Nat.zero_le n), fun _ hi => successorArray_visitCell_eq_of_eqOn h hi⟩,
-    fun h => eqOn_of_successorArray_visitCell_eq h.1 h.2⟩
+  eqOn_iff_visitCell_of_apply_eq_successorArray (fun _ _ => rfl) w n
 
 end Cells
+
+section VisitedRows
+
+variable {α : Type*} {x y : ℕ → α} {a : α} {k m : ℕ}
+
+/-- On a row the sequence visits, the visited successor array is the successor array. -/
+theorem visitedSuccessorArray_of_exists (h : ∃ n, x n = a) :
+    visitedSuccessorArray x a k = successorArray x a k := by
+  simp only [visitedSuccessorArray_def, h, ite_true]
+
+/-- On a row the sequence never visits, the visited successor array is constant, equal to the row's
+own value. -/
+@[simp]
+theorem visitedSuccessorArray_of_forall_ne (h : ∀ n, x n ≠ a) :
+    visitedSuccessorArray x a k = a := by
+  simp only [visitedSuccessorArray_def, not_exists.2 h, ite_false]
+
+/-- The row of a value the sequence takes is its successor row. -/
+@[simp]
+theorem visitedSuccessorArray_apply (x : ℕ → α) (i k : ℕ) :
+    visitedSuccessorArray x (x i) k = successorArray x (x i) k :=
+  visitedSuccessorArray_of_exists ⟨i, rfl⟩
+
+/-- **A consumed entry of the visited successor array is read off any sequence agreeing with the
+original over the horizon that consumes it.** A row with a visit before `m` is visited by both
+sequences, so this is `TauCeti.successorArray_congr`. -/
+theorem visitedSuccessorArray_congr (hxy : ∀ i ≤ m, x i = y i) (hk : k < visitCount x a m) :
+    visitedSuccessorArray x a k = visitedSuccessorArray y a k := by
+  have hx := apply_visitTime_of_lt_visitCount hk
+  have hy : y (visitTime x a k) = a :=
+    (hxy _ (visitTime_lt_of_lt_visitCount hk).le).symm.trans hx
+  rw [visitedSuccessorArray_of_exists ⟨_, hx⟩, visitedSuccessorArray_of_exists ⟨_, hy⟩]
+  exact successorArray_congr hxy hk
+
+end VisitedRows
 
 end TauCeti
 

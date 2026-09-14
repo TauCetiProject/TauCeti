@@ -9,6 +9,8 @@ public import TauCeti.Probability.Exchangeability.DiaconisFreedman
 public import TauCeti.Probability.Exchangeability.Recurrence.LastExit
 -- Non-public: finite-dimensional determinacy of a law is used only inside the proofs below.
 import Mathlib.Probability.Process.FiniteDimensionalLaws
+-- Non-public: the convergence of masses of eventually coinciding events is used only in a proof.
+import Mathlib.MeasureTheory.Integral.Indicator
 
 /-!
 # The successor array of a Markov exchangeable process is row exchangeable
@@ -16,10 +18,11 @@ import Mathlib.Probability.Process.FiniteDimensionalLaws
 Diaconis and Freedman represent a recurrent Markov exchangeable process as a mixture of Markov
 chains by passing to its **successor array**, whose `(a, k)`-entry is the state reached right after
 the `k`-th visit to `a`. `TauCeti/Probability/Exchangeability/DiaconisFreedman.lean` supplies the
-change of variables that turns a row exchangeable successor array back into a mixture of Markov
-chains. This file supplies the missing hypothesis of that change of variables: for a process that
-almost surely visits every state infinitely often, Markov exchangeability makes the successor
-array row exchangeable, and the Diaconis--Freedman representation follows.
+change of variables that turns a row exchangeable array recording those successors back into a
+mixture of Markov chains. This file supplies the missing hypothesis of that change of variables:
+for a recurrent Markov exchangeable process, the **visited successor array**
+`TauCeti.Probability.visitedSuccessorProcess`, whose rows at unvisited states are constant, is row
+exchangeable, and the Diaconis--Freedman representation follows.
 
 ## The argument
 
@@ -30,30 +33,37 @@ of `TauCeti/Combinatorics/Enumerative/LastExit.lean` establish. Markov exchangea
 masses of two such words, so a prefix law is invariant under a last-exit-admissible reindexing
 (`TauCeti.Probability.MarkovExchangeable.measure_setOf_eqOn_pathOfReindexedSuccessors`).
 
-Row exchangeability is the limit of that finite statement. A finitely supported family of row
-permutations is last-exit admissible over every long enough horizon, and any finite family of
-cells is consumed by every long enough prefix, so the array event at those cells is a prefix event
-there; the reconstruction pairs the prefixes realizing the reindexed event with those realizing
-the original one, and the horizons exhaust the space.
+Row exchangeability is the limit of that finite statement. Fix a finitely supported family of row
+permutations and a finite family of cells. Over a horizon at which every relevant row the prefix
+visits has consumed its relevant cells, a last-exit reindexing is legitimate, and the
+reconstruction pairs the prefixes realizing the reindexed cell values with those realizing the
+original ones. Along a recurrent path each relevant row is either never visited or visited
+infinitely often, so every long enough prefix is such a horizon and reads the visited successor
+array at those cells correctly; the masses of the prefix events therefore converge to the mass of
+the array event.
 
-## Why every state has to be attained
+## Why the unvisited rows are reset
 
 `TauCeti/Probability/Exchangeability/Recurrence/UnvisitedRow.lean` exhibits a recurrent Markov
-exchangeable process whose successor array is *not* row exchangeable: an unattained state has junk
-visit times, so its whole row is tied to the cell `(x 0, 0)`, and permuting the row of `x 0` breaks
-the tie. Recurrence constrains only the states a process does attain, so the hypothesis that every
-state is attained is what rules that degeneracy out; it holds for instance for an irreducible
-recurrent chain on its own state space.
+exchangeable process whose plain successor array is *not* row exchangeable: an unattained state
+has junk visit times, so its whole row is tied to the cell `(x 0, 0)`, and permuting the row of
+`x 0` breaks the tie. Recurrence constrains only the states a process does attain, so for the plain
+array one needs every state to be attained
+(`TauCeti.Probability.MarkovExchangeable.rowExchangeable_successorProcess`). The visited successor
+array agrees with the successor array on every visited row, which is all the change of variables
+reads, and carries no such tie.
 
 ## Main results
 
 * `TauCeti.Probability.MarkovExchangeable.measure_setOf_eqOn_pathOfReindexedSuccessors` — a finite
   path and its last-exit reconstruction are equally likely.
-* `TauCeti.Probability.MarkovExchangeable.rowExchangeable_successorProcess` — **the successor array
-  of a Markov exchangeable process that almost surely attains every state and is recurrent is row
-  exchangeable.**
+* `TauCeti.Probability.MarkovExchangeable.rowExchangeable_visitedSuccessorProcess` — **the visited
+  successor array of a recurrent Markov exchangeable process is row exchangeable.**
+* `TauCeti.Probability.MarkovExchangeable.rowExchangeable_successorProcess` — the plain successor
+  array is row exchangeable when every state is almost surely attained.
 * `TauCeti.Probability.MarkovExchangeable.mixedMarkovChain` — **the Diaconis--Freedman
-  representation**: such a process started at a fixed state is a mixture of Markov chains.
+  representation**: a recurrent Markov exchangeable process started at a fixed state is a mixture
+  of Markov chains.
 
 ## References
 
@@ -67,7 +77,7 @@ public section
 
 noncomputable section
 
-open Filter MeasureTheory
+open Filter MeasureTheory Topology
 
 namespace TauCeti
 
@@ -149,42 +159,96 @@ private theorem successorArray_wordSeq_reindexWord {π : α → Equiv.Perm ℕ} 
   rw [← hshift]
   exact successorArray_pathOfReindexedSuccessors_of_lt_visitCount π (wordSeq u) a hk'
 
-/-- The words whose visit counts before `m` already exhaust every cell moved by `π` and every cell
-of `F`, together with its `π`-image. On such a word a last-exit reindexing by `π` is legitimate
-and the successor entries at the cells of `F` are determined. -/
+/-- A word visits a letter exactly when its visit count through its last letter is positive. -/
+private theorem exists_wordSeq_eq_iff (u : Fin (m + 1) → α) (a : α) :
+    (∃ n, wordSeq u n = a) ↔ 0 < visitCount (wordSeq u) a (m + 1) :=
+  Iff.trans ⟨fun ⟨n, hn⟩ => ⟨Fin.clamp n m, (Fin.clamp n m).isLt, (wordSeq_val u _).trans hn⟩,
+    fun ⟨i, _, hi⟩ => ⟨i, hi⟩⟩ visitCount_pos_iff.symm
+
+/-- A last-exit reindexing keeps the visit counts of a word through its last letter, since it keeps
+both the counts before the last letter and the last letter itself. -/
+private theorem visitCount_succ_wordSeq_reindexWord {π : α → Equiv.Perm ℕ} {u : Fin (m + 1) → α}
+    (h : LastExitAdmissible π (wordSeq u) m) (a : α) :
+    visitCount (wordSeq (reindexWord π m u)) a (m + 1) = visitCount (wordSeq u) a (m + 1) := by
+  classical
+  have hlast : wordSeq (reindexWord π m u) m = wordSeq u m := by
+    rw [wordSeq_reindexWord π u le_rfl, pathOfReindexedSuccessors_eq π (wordSeq u) m h]
+  rw [visitCount_succ, visitCount_succ, hlast, visitCount_wordSeq_reindexWord h]
+
+private theorem visitedSuccessorArray_wordSeq_reindexWord {π : α → Equiv.Perm ℕ}
+    {u : Fin (m + 1) → α} (h : LastExitAdmissible π (wordSeq u) m) {a : α} {k : ℕ}
+    (hk : k < visitCount (wordSeq u) a m) :
+    visitedSuccessorArray (wordSeq (reindexWord π m u)) a k =
+      visitedSuccessorArray (wordSeq u) a (π a k) := by
+  have hpos : 0 < visitCount (wordSeq u) a (m + 1) :=
+    (Nat.zero_lt_of_lt hk).trans_le (visitCount_monotone _ a (Nat.le_succ m))
+  rw [visitedSuccessorArray_of_exists ((exists_wordSeq_eq_iff _ a).2
+      ((visitCount_succ_wordSeq_reindexWord h a).symm ▸ hpos)),
+    visitedSuccessorArray_of_exists ((exists_wordSeq_eq_iff u a).2 hpos)]
+  exact successorArray_wordSeq_reindexWord h hk
+
+/-- The words over which a last-exit reindexing by `π` is legitimate and the entries of the visited
+successor array at the cells of `F` are determined: every row that the word visits and that
+carries a cell moved by `π` or a cell of `F` has already consumed that cell and its `π`-image. -/
 private def HorizonWords (π : α → Equiv.Perm ℕ) (F : Finset (α × ℕ)) (m : ℕ) :
     Set (Fin (m + 1) → α) :=
   {u | ∀ p : α × ℕ, π p.1 p.2 ≠ p.2 ∨ p ∈ F →
-    p.2 + 1 < visitCount (wordSeq u) p.1 m ∧ π p.1 p.2 + 1 < visitCount (wordSeq u) p.1 m}
+    visitCount (wordSeq u) p.1 (m + 1) = 0 ∨
+      (p.2 + 1 < visitCount (wordSeq u) p.1 m ∧ π p.1 p.2 + 1 < visitCount (wordSeq u) p.1 m)}
 
-/-- The words whose successor array takes the values `g` at the cells of `F` reindexed by `ρ`. -/
+/-- The words whose visited successor array takes the values `g` at the cells of `F` reindexed by
+`ρ`. -/
 private def CellWords (ρ : α → ℕ → ℕ) (F : Finset (α × ℕ)) (m : ℕ) (g : F → α) :
     Set (Fin (m + 1) → α) :=
-  {u | ∀ p : F, successorArray (wordSeq u) (p : α × ℕ).1 (ρ (p : α × ℕ).1 (p : α × ℕ).2) = g p}
+  {u | ∀ p : F,
+    visitedSuccessorArray (wordSeq u) (p : α × ℕ).1 (ρ (p : α × ℕ).1 (p : α × ℕ).2) = g p}
 
 variable {π : α → Equiv.Perm ℕ} {F : Finset (α × ℕ)} {g : F → α} {u : Fin (m + 1) → α}
 
+/-- On a horizon word, a row with a visit before the last letter has consumed its relevant cells. -/
+private theorem lt_visitCount_of_mem_horizonWords (hu : u ∈ HorizonWords π F m) {p : α × ℕ}
+    (hp : π p.1 p.2 ≠ p.2 ∨ p ∈ F) (hpos : 0 < visitCount (wordSeq u) p.1 m) :
+    p.2 + 1 < visitCount (wordSeq u) p.1 m ∧ π p.1 p.2 + 1 < visitCount (wordSeq u) p.1 m := by
+  refine (hu p hp).resolve_left fun h0 => ?_
+  have := visitCount_monotone (wordSeq u) p.1 (Nat.le_add_right m 1)
+  omega
+
 private theorem lastExitAdmissible_of_mem_horizonWords (hu : u ∈ HorizonWords π F m) :
     LastExitAdmissible π (wordSeq u) m :=
-  lastExitAdmissible_of_support_lt_visitCount fun a _ k hk => (hu (a, k) (Or.inl hk)).1
+  lastExitAdmissible_of_support_lt_visitCount fun a ha k hk =>
+    (lt_visitCount_of_mem_horizonWords hu (p := (a, k)) (Or.inl hk) ha).1
 
 private theorem lastExitAdmissible_symm_of_mem_horizonWords (hu : u ∈ HorizonWords π F m) :
     LastExitAdmissible (fun a => (π a).symm) (wordSeq u) m := by
-  refine lastExitAdmissible_of_support_lt_visitCount fun a _ k hk => (hu (a, k) (Or.inl ?_)).1
+  refine lastExitAdmissible_of_support_lt_visitCount fun a ha k hk =>
+    (lt_visitCount_of_mem_horizonWords hu (p := (a, k)) (Or.inl ?_) ha).1
   exact fun hfix => hk ((Equiv.symm_apply_eq _).2 hfix.symm)
 
 private theorem reindexWord_mem_horizonWords {ρ : α → Equiv.Perm ℕ}
     (hu : u ∈ HorizonWords π F m) (hρ : LastExitAdmissible ρ (wordSeq u) m) :
     reindexWord ρ m u ∈ HorizonWords π F m := by
   intro p hp
-  rw [visitCount_wordSeq_reindexWord hρ]
+  rw [visitCount_wordSeq_reindexWord hρ, visitCount_succ_wordSeq_reindexWord hρ]
   exact hu p hp
 
-private theorem successorArray_reindexWord_cell (hu : u ∈ HorizonWords π F m) (p : F) :
-    successorArray (wordSeq (reindexWord π m u)) (p : α × ℕ).1 (p : α × ℕ).2
-      = successorArray (wordSeq u) (p : α × ℕ).1 (π (p : α × ℕ).1 (p : α × ℕ).2) :=
-  successorArray_wordSeq_reindexWord (lastExitAdmissible_of_mem_horizonWords hu)
-    (by have := (hu (p : α × ℕ) (Or.inr p.2)).1; omega)
+private theorem visitedSuccessorArray_reindexWord_cell (hu : u ∈ HorizonWords π F m) (p : F) :
+    visitedSuccessorArray (wordSeq (reindexWord π m u)) (p : α × ℕ).1 (p : α × ℕ).2
+      = visitedSuccessorArray (wordSeq u) (p : α × ℕ).1 (π (p : α × ℕ).1 (p : α × ℕ).2) := by
+  have hadm := lastExitAdmissible_of_mem_horizonWords hu
+  rcases Nat.eq_zero_or_pos (visitCount (wordSeq u) (p : α × ℕ).1 m) with h0 | hpos
+  · -- A row not visited before the last letter holds no consumed cell of `F`, so it is unvisited.
+    have hunv : visitCount (wordSeq u) (p : α × ℕ).1 (m + 1) = 0 := by
+      refine (hu (p : α × ℕ) (Or.inr p.2)).resolve_right fun h => ?_
+      omega
+    have hne : ∀ v : Fin (m + 1) → α, visitCount (wordSeq v) (p : α × ℕ).1 (m + 1) = 0 →
+        ∀ n, wordSeq v n ≠ (p : α × ℕ).1 := fun v hv n hn => by
+      have := (exists_wordSeq_eq_iff v _).1 ⟨n, hn⟩
+      omega
+    rw [visitedSuccessorArray_of_forall_ne (hne u hunv),
+      visitedSuccessorArray_of_forall_ne (hne _ ((visitCount_succ_wordSeq_reindexWord hadm _).trans
+        hunv))]
+  · exact visitedSuccessorArray_wordSeq_reindexWord hadm
+      (by have := (lt_visitCount_of_mem_horizonWords hu (Or.inr p.2) hpos).1; omega)
 
 private theorem reindexWord_reindexWord_symm (hu : u ∈ HorizonWords π F m) :
     reindexWord π m (reindexWord (fun a => (π a).symm) m u) = u := by
@@ -199,18 +263,64 @@ private def reindexEquiv (π : α → Equiv.Perm ℕ) (F : Finset (α × ℕ)) (
       (HorizonWords π F m ∩ CellWords (fun _ k => k) F m g : Set (Fin (m + 1) → α)) where
   toFun u := ⟨reindexWord π m u.1,
     reindexWord_mem_horizonWords u.2.1 (lastExitAdmissible_of_mem_horizonWords u.2.1),
-    fun p => (successorArray_reindexWord_cell u.2.1 p).trans (u.2.2 p)⟩
+    fun p => (visitedSuccessorArray_reindexWord_cell u.2.1 p).trans (u.2.2 p)⟩
   invFun v := ⟨reindexWord (fun a => (π a).symm) m v.1,
     reindexWord_mem_horizonWords v.2.1 (lastExitAdmissible_symm_of_mem_horizonWords v.2.1),
     fun p => by
       have hmem := reindexWord_mem_horizonWords (ρ := fun a => (π a).symm) v.2.1
         (lastExitAdmissible_symm_of_mem_horizonWords v.2.1)
-      have hcell := successorArray_reindexWord_cell hmem p
+      have hcell := visitedSuccessorArray_reindexWord_cell hmem p
       rw [reindexWord_reindexWord_symm v.2.1] at hcell
       exact hcell.symm.trans (v.2.2 p)⟩
   left_inv u :=
     Subtype.ext (reindexWord_symm_reindexWord (lastExitAdmissible_of_mem_horizonWords u.2.1))
   right_inv v := Subtype.ext (reindexWord_reindexWord_symm v.2.1)
+
+/-- **Along a recurrent sequence, the horizon cell words of its prefixes eventually describe the
+visited successor array itself.** Each relevant row is either never visited, and then no prefix
+visits it, or visited infinitely often, and then every long enough prefix has consumed its relevant
+cells; either way the prefix reads the visited successor array at the cells of `F` correctly. -/
+private theorem eventually_prefix_mem_iff {x : ℕ → α} (hio : ∀ k, {n | x n = x k}.Infinite)
+    (hπ : {p : α × ℕ | π p.1 p.2 ≠ p.2}.Finite) {ρ : α → ℕ → ℕ}
+    (hρ : ∀ p : F, ρ (p : α × ℕ).1 (p : α × ℕ).2 = (p : α × ℕ).2 ∨
+      ρ (p : α × ℕ).1 (p : α × ℕ).2 = π (p : α × ℕ).1 (p : α × ℕ).2) :
+    ∀ᶠ m in atTop, (fun i : Fin (m + 1) => x i.val) ∈ HorizonWords π F m ∩ CellWords ρ F m g ↔
+      ∀ p : F, visitedSuccessorArray x (p : α × ℕ).1 (ρ (p : α × ℕ).1 (p : α × ℕ).2) = g p := by
+  have hfin : {p : α × ℕ | π p.1 p.2 ≠ p.2 ∨ p ∈ F}.Finite :=
+    (hπ.union F.finite_toSet).subset fun _ hp => hp
+  have hev : ∀ᶠ m : ℕ in atTop, ∀ p ∈ {p : α × ℕ | π p.1 p.2 ≠ p.2 ∨ p ∈ F},
+      (∀ n, x n ≠ p.1) ∨ (p.2 + 1 < visitCount x p.1 m ∧ π p.1 p.2 + 1 < visitCount x p.1 m) := by
+    refine hfin.eventually_all.2 fun p _ => ?_
+    by_cases hvis : ∃ n, x n = p.1
+    · obtain ⟨n, hn⟩ := hvis
+      obtain ⟨j, -, hj⟩ := exists_visitCount_of_infinite (hn ▸ hio n)
+        (max (p.2 + 2) (π p.1 p.2 + 2))
+      refine eventually_atTop.2 ⟨j, fun m hjm => Or.inr ?_⟩
+      have := visitCount_monotone x p.1 hjm
+      omega
+    · exact Eventually.of_forall fun _ => Or.inl (not_exists.1 hvis)
+  filter_upwards [hev] with m hm
+  set u : Fin (m + 1) → α := fun i => x i.val
+  have hxu : ∀ i ≤ m, x i = wordSeq u i := fun i hi => (wordSeq_of_le u hi).symm
+  have hvc : ∀ a : α, visitCount (wordSeq u) a m = visitCount x a m :=
+    fun a => visitCount_congr fun i hi => (hxu i hi.le).symm
+  have hunv : ∀ a : α, (∀ n, x n ≠ a) → ∀ n, wordSeq u n ≠ a :=
+    fun a ha n => by rw [wordSeq_apply]; exact ha _
+  have hhor : u ∈ HorizonWords π F m := by
+    intro p hp
+    rcases hm p hp with ha | ha
+    · exact Or.inl (visitCount_eq_zero_of_forall_ne fun i _ => hunv p.1 ha i)
+    · exact Or.inr (by rw [hvc]; exact ha)
+  have hcell : ∀ p : F,
+      visitedSuccessorArray (wordSeq u) (p : α × ℕ).1 (ρ (p : α × ℕ).1 (p : α × ℕ).2) =
+        visitedSuccessorArray x (p : α × ℕ).1 (ρ (p : α × ℕ).1 (p : α × ℕ).2) := by
+    intro p
+    rcases hm (p : α × ℕ) (Or.inr p.2) with ha | ha
+    · rw [visitedSuccessorArray_of_forall_ne ha, visitedSuccessorArray_of_forall_ne (hunv _ ha)]
+    · refine (visitedSuccessorArray_congr hxu ?_).symm
+      rcases hρ p with hr | hr <;> rw [hr] <;> omega
+  simp only [Set.mem_inter_iff, CellWords, Set.mem_ofPred_eq, hcell]
+  exact and_iff_right hhor
 
 end Words
 
@@ -252,129 +362,74 @@ theorem MarkovExchangeable.measure_setOf_eqOn_pathOfReindexedSuccessors
 
 end Prefix
 
-section Horizon
-
-variable {Ω α : Type*} {X : ℕ → Ω → α}
-
-/-- The paths whose visit counts before `m` already exhaust every cell moved by `π` and every cell
-of `F`, together with its `π`-image. -/
-private def Horizon (X : ℕ → Ω → α) (π : α → Equiv.Perm ℕ) (F : Finset (α × ℕ)) (m : ℕ) :
-    Set Ω :=
-  {ω | ∀ p : α × ℕ, π p.1 p.2 ≠ p.2 ∨ p ∈ F →
-    p.2 + 1 < visitCount (fun n => X n ω) p.1 m ∧
-      π p.1 p.2 + 1 < visitCount (fun n => X n ω) p.1 m}
-
-/-- The event that the successor array takes the values `g` at the cells of `F` reindexed by
-`ρ`. -/
-private def CellEvent (X : ℕ → Ω → α) (ρ : α → ℕ → ℕ) (F : Finset (α × ℕ)) (g : F → α) :
-    Set Ω :=
-  {ω | ∀ p : F, successorArray (fun n => X n ω) (p : α × ℕ).1 (ρ (p : α × ℕ).1 (p : α × ℕ).2)
-    = g p}
-
-variable {π : α → Equiv.Perm ℕ} {F : Finset (α × ℕ)} {m m' : ℕ} {g : F → α} {ρ : α → ℕ → ℕ}
-
-private theorem horizon_mono (hm : m ≤ m') : Horizon X π F m ⊆ Horizon X π F m' := by
-  intro ω hω p hp
-  have h₁ := (hω p hp).1
-  have h₂ := (hω p hp).2
-  have := visitCount_monotone (fun n => X n ω) p.1 hm
-  omega
-
-/-- Over its horizon, the array event at the cells of `F` is an event of the length-`m` prefix. -/
-private theorem horizon_inter_cellEvent (hcell : ∀ p : F,
-      ρ (p : α × ℕ).1 (p : α × ℕ).2 = (p : α × ℕ).2 ∨
-        ρ (p : α × ℕ).1 (p : α × ℕ).2 = π (p : α × ℕ).1 (p : α × ℕ).2) :
-    Horizon X π F m ∩ CellEvent X ρ F g
-      = (fun ω (i : Fin (m + 1)) => X i.val ω) ⁻¹' (HorizonWords π F m ∩ CellWords ρ F m g) := by
-  ext ω
-  have hws : ∀ i ≤ m, X i ω = wordSeq (fun i : Fin (m + 1) => X i.val ω) i :=
-    fun i hi => (wordSeq_of_le (fun i : Fin (m + 1) => X i.val ω) hi).symm
-  have hvc : ∀ a : α, visitCount (wordSeq fun i : Fin (m + 1) => X i.val ω) a m
-      = visitCount (fun n => X n ω) a m :=
-    fun a => visitCount_congr fun i hi => (hws i hi.le).symm
-  have hhor : ω ∈ Horizon X π F m ↔
-      (fun i : Fin (m + 1) => X i.val ω) ∈ HorizonWords π F m := by
-    simp only [Horizon, HorizonWords, Set.mem_ofPred_eq, hvc]
-  refine ⟨fun hω => ⟨hhor.1 hω.1, fun p => ?_⟩, fun hω => ⟨hhor.2 hω.1, fun p => ?_⟩⟩
-  · have hb : ρ (p : α × ℕ).1 (p : α × ℕ).2 < visitCount (fun n => X n ω) (p : α × ℕ).1 m := by
-      have h₁ := hω.1 (p : α × ℕ) (Or.inr p.2)
-      rcases hcell p with hr | hr <;> rw [hr] <;> omega
-    rw [← successorArray_congr hws hb]
-    exact hω.2 p
-  · have hb : ρ (p : α × ℕ).1 (p : α × ℕ).2 < visitCount (fun n => X n ω) (p : α × ℕ).1 m := by
-      have h₁ := hhor.2 hω.1 (p : α × ℕ) (Or.inr p.2)
-      rcases hcell p with hr | hr <;> rw [hr] <;> omega
-    rw [successorArray_congr hws hb]
-    exact hω.2 p
-
-private theorem exists_mem_horizon {α : Type*} {x : ℕ → α}
-    (hio : ∀ a : α, {n | x n = a}.Infinite) (π : α → Equiv.Perm ℕ)
-    (hπ : {p : α × ℕ | π p.1 p.2 ≠ p.2}.Finite) (F : Finset (α × ℕ)) :
-    ∃ m, ∀ p : α × ℕ, π p.1 p.2 ≠ p.2 ∨ p ∈ F →
-      p.2 + 1 < visitCount x p.1 m ∧ π p.1 p.2 + 1 < visitCount x p.1 m := by
-  have hcount : ∀ a : α, Tendsto (visitCount x a) atTop atTop := by
-    intro a
-    refine tendsto_atTop_atTop.2 fun b => ?_
-    obtain ⟨n, -, hn⟩ := exists_visitCount_of_infinite (hio a) b
-    exact ⟨n, fun j hnj => hn ▸ visitCount_monotone x a hnj⟩
-  have hfin : {p : α × ℕ | π p.1 p.2 ≠ p.2 ∨ p ∈ F}.Finite :=
-    (hπ.union F.finite_toSet).subset fun _ hp => hp
-  have hev : ∀ᶠ j : ℕ in atTop, ∀ p ∈ {p : α × ℕ | π p.1 p.2 ≠ p.2 ∨ p ∈ F},
-      p.2 + 1 < visitCount x p.1 j ∧ π p.1 p.2 + 1 < visitCount x p.1 j := by
-    refine hfin.eventually_all.2 fun p _ => ?_
-    obtain ⟨N, hN⟩ := tendsto_atTop_atTop.1 (hcount p.1) (max (p.2 + 2) (π p.1 p.2 + 2))
-    exact eventually_atTop.2 ⟨N, fun j hj => by have := hN j hj; omega⟩
-  obtain ⟨j, hj⟩ := hev.exists
-  exact ⟨j, fun p hp => hj p hp⟩
-
-end Horizon
-
 section Representation
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] {μ : Measure Ω} {X : ℕ → Ω → α}
 
-/-- Over its horizon, the array event at the cells of `F` is a prefix event, and the last-exit
-reconstruction pairs the reindexed prefixes with the original ones. -/
-private theorem measure_horizon_inter_cellEvent (h : MarkovExchangeable μ X)
+/-- Over each horizon, the words realizing the reindexed cell values and those realizing the
+original ones have the same prefix-law mass: the last-exit reconstruction pairs them. -/
+private theorem prefixLaw_horizonWords_inter_cellWords (h : MarkovExchangeable μ X)
     (π : α → Equiv.Perm ℕ) (F : Finset (α × ℕ)) (m : ℕ) (g : F → α) :
-    μ (Horizon X π F m ∩ CellEvent X (fun a k => π a k) F g)
-      = μ (Horizon X π F m ∩ CellEvent X (fun _ k => k) F g) := by
-  have := h.countable
-  have := h.measurableSingletonClass
-  have hpre : ∀ S : Set (Fin (m + 1) → α),
-      μ ((fun ω (i : Fin (m + 1)) => X i.val ω) ⁻¹' S) = prefixLaw μ X (m + 1) S := fun S => by
-    rw [prefixLaw_def, blockLaw_apply_of_measurable _ _ _
-      (fun i : Fin (m + 1) => h.aemeasurable i.val) MeasurableSet.of_discrete]
-  rw [horizon_inter_cellEvent (ρ := fun a k => π a k) fun _ => Or.inr rfl,
-    horizon_inter_cellEvent (ρ := fun _ k => k) fun _ => Or.inl rfl, hpre, hpre]
-  exact h.prefixLaw_apply_eq_of_equiv m (reindexEquiv π F m g)
+    prefixLaw μ X (m + 1) (HorizonWords π F m ∩ CellWords (fun a k => π a k) F m g)
+      = prefixLaw μ X (m + 1) (HorizonWords π F m ∩ CellWords (fun _ k => k) F m g) :=
+  h.prefixLaw_apply_eq_of_equiv m (reindexEquiv π F m g)
     (fun w => reindexWord_zero π w.1)
     (fun w => transitionCount_reindexWord (lastExitAdmissible_of_mem_horizonWords w.2.1))
 
-/-- **The successor array of a recurrent Markov exchangeable process that almost surely attains
-every state is row exchangeable.** Its law is unchanged when the entries of each row are permuted,
-with a permutation chosen separately for each row.
-
-Together with `TauCeti.Probability.mixedMarkovChain_of_rowExchangeable_successorProcess` this is
-the Diaconis--Freedman representation. The hypothesis that every state is almost surely attained
-is not decorative: `TauCeti.Probability.spareStateProcess_not_rowExchangeable_successorProcess`
-is a recurrent Markov exchangeable process without it whose successor array is not row
-exchangeable. -/
--- The `haveI` in the statement supplies the `Countable α` that `RowExchangeable` takes as an
--- instance from `h` itself, so that a caller holding `h` needs no ambient discrete-state instance.
-theorem MarkovExchangeable.rowExchangeable_successorProcess [IsFiniteMeasure μ]
-    (h : MarkovExchangeable μ X) (hrec : Recurrent μ X)
-    (hvis : ∀ᵐ ω ∂μ, ∀ a : α, ∃ n, X n ω = a) :
-    haveI := h.countable
-    RowExchangeable μ (successorProcess X) := by
+/-- **The mass of an event of the visited successor array is the limit of the masses of its
+horizon prefix events**, because along almost every path of a recurrent process those events
+eventually coincide with it. -/
+private theorem tendsto_prefixLaw_horizonWords_inter_cellWords [IsFiniteMeasure μ]
+    (h : MarkovExchangeable μ X) (hrec : Recurrent μ X) {π : α → Equiv.Perm ℕ}
+    (hπ : {p : α × ℕ | π p.1 p.2 ≠ p.2}.Finite) {F : Finset (α × ℕ)} {g : F → α}
+    {ρ : α → ℕ → ℕ} (hρ : ∀ p : F, ρ (p : α × ℕ).1 (p : α × ℕ).2 = (p : α × ℕ).2 ∨
+      ρ (p : α × ℕ).1 (p : α × ℕ).2 = π (p : α × ℕ).1 (p : α × ℕ).2) :
+    Tendsto (fun m => prefixLaw μ X (m + 1) (HorizonWords π F m ∩ CellWords ρ F m g)) atTop
+      (𝓝 (μ {ω | ∀ p : F, visitedSuccessorArray (fun n => X n ω) (p : α × ℕ).1
+        (ρ (p : α × ℕ).1 (p : α × ℕ).2) = g p})) := by
   have := h.countable
   have := h.measurableSingletonClass
-  have hSA : ∀ p, AEMeasurable (successorProcess X p) μ :=
-    aemeasurable_successorProcess h.aemeasurable
-  have hio : ∀ᵐ ω ∂μ, ∀ a : α, {n | X n ω = a}.Infinite := by
-    filter_upwards [hrec.ae_infinite_setOf_eq, hvis] with ω hinf hatt a
-    obtain ⟨n, hn⟩ := hatt a
-    simpa only [hn] using hinf n
+  have hΦ : AEMeasurable (fun ω n => X n ω) μ := AEMeasurable.of_eval h.aemeasurable
+  -- Almost every path of the process revisits each of its states infinitely often.
+  have hio : ∀ᵐ x ∂(μ.map fun ω n => X n ω), ∀ k, {n | x n = x k}.Infinite := by
+    have hpath := ((recurrent_pathLaw_iff h.aemeasurable).2 hrec).ae_infinite_setOf_eq
+    rwa [pathLaw_def] at hpath
+  have hcell : MeasurableSet {x : ℕ → α | ∀ p : F,
+      visitedSuccessorArray x (p : α × ℕ).1 (ρ (p : α × ℕ).1 (p : α × ℕ).2) = g p} := by
+    simp only [Set.ofPred_forall]
+    exact MeasurableSet.iInter fun p => measurable_visitedSuccessorArray_apply _ _
+      (measurableSet_singleton _) (measurableSet_singleton _)
+  have hpre : ∀ m, MeasurableSet ((fun (x : ℕ → α) (i : Fin (m + 1)) => x i.val) ⁻¹'
+      (HorizonWords π F m ∩ CellWords ρ F m g)) := fun m =>
+    (Measurable.of_eval fun i => measurable_pi_apply _) MeasurableSet.of_discrete
+  have hlim := tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure atTop hcell hpre
+    (hio.mono fun x hx => eventually_prefix_mem_iff hx hπ hρ)
+  rw [Measure.map_apply_of_aemeasurable hΦ hcell] at hlim
+  refine hlim.congr fun m => ?_
+  rw [Measure.map_apply_of_aemeasurable hΦ (hpre m), prefixLaw_def,
+    blockLaw_apply_of_measurable _ _ _ (fun i : Fin (m + 1) => h.aemeasurable i.val)
+      MeasurableSet.of_discrete]
+  rfl
+
+/-- **The visited successor array of a recurrent Markov exchangeable process is row
+exchangeable.** Its law is unchanged when the entries of each row are permuted, with a permutation
+chosen separately for each row.
+
+Together with `TauCeti.Probability.mixedMarkovChain_of_rowExchangeable` this is the
+Diaconis--Freedman representation. No state needs to be attained: the rows of the states the
+process never visits are constant, so the obstruction exhibited by
+`TauCeti.Probability.spareStateProcess_not_rowExchangeable_successorProcess` for the plain
+successor array does not arise. -/
+-- The `haveI` in the statement supplies the `Countable α` that `RowExchangeable` takes as an
+-- instance from `h` itself, so that a caller holding `h` needs no ambient discrete-state instance.
+theorem MarkovExchangeable.rowExchangeable_visitedSuccessorProcess [IsFiniteMeasure μ]
+    (h : MarkovExchangeable μ X) (hrec : Recurrent μ X) :
+    haveI := h.countable
+    RowExchangeable μ (visitedSuccessorProcess X) := by
+  have := h.countable
+  have := h.measurableSingletonClass
+  have hSA : ∀ p, AEMeasurable (visitedSuccessorProcess X p) μ :=
+    aemeasurable_visitedSuccessorProcess h.aemeasurable
   rw [rowExchangeable_iff_forall_prodCongrRight_mem_finitary (AEMeasurable.of_eval hSA)]
   intro π hπ
   have hsupp : {p : α × ℕ | π p.1 p.2 ≠ p.2}.Finite := by
@@ -385,49 +440,70 @@ theorem MarkovExchangeable.rowExchangeable_successorProcess [IsFiniteMeasure μ]
   intro F
   refine Measure.ext_of_singleton fun g => ?_
   have hm₁ : AEMeasurable (fun ω => F.restrict fun p : α × ℕ =>
-      successorProcess X (p.1, π p.1 p.2) ω) μ :=
+      visitedSuccessorProcess X (p.1, π p.1 p.2) ω) μ :=
     AEMeasurable.of_eval fun p => hSA ((p : α × ℕ).1, π (p : α × ℕ).1 (p : α × ℕ).2)
-  have hm₂ : AEMeasurable (fun ω => F.restrict fun p : α × ℕ => successorProcess X p ω) μ :=
+  have hm₂ : AEMeasurable (fun ω => F.restrict fun p : α × ℕ => visitedSuccessorProcess X p ω) μ :=
     AEMeasurable.of_eval fun p => hSA (p : α × ℕ)
   rw [Measure.map_apply_of_aemeasurable hm₁ MeasurableSet.of_discrete,
     Measure.map_apply_of_aemeasurable hm₂ MeasurableSet.of_discrete]
-  have hcellπ : (fun ω => F.restrict fun p : α × ℕ => successorProcess X (p.1, π p.1 p.2) ω)
-      ⁻¹' {g} = CellEvent X (fun a k => π a k) F g := by
+  have hcellπ : (fun ω => F.restrict fun p : α × ℕ =>
+      visitedSuccessorProcess X (p.1, π p.1 p.2) ω) ⁻¹' {g} = {ω | ∀ p : F,
+        visitedSuccessorArray (fun n => X n ω) (p : α × ℕ).1 (π (p : α × ℕ).1 (p : α × ℕ).2)
+          = g p} := by
     ext ω
     simp only [Set.mem_preimage, Set.mem_singleton_iff, funext_iff, Finset.restrict_def,
-      successorProcess_apply, CellEvent, Set.mem_ofPred_eq]
-  have hcellid : (fun ω => F.restrict fun p : α × ℕ => successorProcess X p ω) ⁻¹' {g}
-      = CellEvent X (fun _ k => k) F g := by
+      visitedSuccessorProcess_apply, Set.mem_ofPred_eq]
+  have hcellid : (fun ω => F.restrict fun p : α × ℕ => visitedSuccessorProcess X p ω) ⁻¹' {g}
+      = {ω | ∀ p : F, visitedSuccessorArray (fun n => X n ω) (p : α × ℕ).1 (p : α × ℕ).2
+          = g p} := by
     ext ω
     simp only [Set.mem_preimage, Set.mem_singleton_iff, funext_iff, Finset.restrict_def,
-      successorProcess_apply, CellEvent, Set.mem_ofPred_eq]
-  have hfull : ∀ᵐ ω ∂μ, ∃ m, ω ∈ Horizon X π F m := by
-    filter_upwards [hio] with ω hω
-    exact exists_mem_horizon hω π hsupp F
-  have key : ∀ ρ : α → ℕ → ℕ,
-      μ (CellEvent X ρ F g) = ⨆ m, μ (Horizon X π F m ∩ CellEvent X ρ F g) := by
-    intro ρ
-    have hmono : Monotone fun m => Horizon X π F m ∩ CellEvent X ρ F g :=
-      fun _ _ hm => Set.inter_subset_inter_left _ (horizon_mono hm)
-    rw [← hmono.measure_iUnion]
-    refine measure_congr (Filter.eventuallyEqSet_iff.2 ?_)
-    filter_upwards [hfull] with ω hω
-    simp only [Set.mem_iUnion, Set.mem_inter_iff]
-    exact ⟨fun hc => hω.imp fun _ hm => ⟨hm, hc⟩, fun hc => hc.choose_spec.2⟩
-  rw [hcellπ, hcellid, key (fun a k => π a k), key (fun _ k => k)]
-  exact iSup_congr fun m => measure_horizon_inter_cellEvent h π F m g
+      visitedSuccessorProcess_apply, Set.mem_ofPred_eq]
+  rw [hcellπ, hcellid]
+  -- Both masses are limits of horizon prefix masses, and those agree term by term.
+  exact tendsto_nhds_unique
+    ((tendsto_prefixLaw_horizonWords_inter_cellWords h hrec hsupp fun _ => Or.inr rfl).congr
+      fun m => prefixLaw_horizonWords_inter_cellWords h π F m g)
+    (tendsto_prefixLaw_horizonWords_inter_cellWords h hrec hsupp fun _ => Or.inl rfl)
 
-/-- **The Diaconis--Freedman representation theorem.** A Markov exchangeable process that starts
-almost surely at a fixed state, is recurrent, and almost surely attains every state, is a mixture
-of Markov chains. -/
-theorem MarkovExchangeable.mixedMarkovChain [IsProbabilityMeasure μ] {a₀ : α}
+/-- **The successor array of a recurrent Markov exchangeable process that almost surely attains
+every state is row exchangeable.** Almost surely it coincides with the visited successor array.
+
+The hypothesis that every state is almost surely attained is not decorative:
+`TauCeti.Probability.spareStateProcess_not_rowExchangeable_successorProcess` is a recurrent Markov
+exchangeable process without it whose successor array is not row exchangeable. -/
+theorem MarkovExchangeable.rowExchangeable_successorProcess [IsFiniteMeasure μ]
     (h : MarkovExchangeable μ X) (hrec : Recurrent μ X)
-    (hvis : ∀ᵐ ω ∂μ, ∀ a : α, ∃ n, X n ω = a) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
+    (hvis : ∀ᵐ ω ∂μ, ∀ a : α, ∃ n, X n ω = a) :
+    haveI := h.countable
+    RowExchangeable μ (successorProcess X) := by
+  have := h.countable
+  have hae : ∀ᵐ ω ∂μ, ∀ p : α × ℕ, visitedSuccessorProcess X p ω = successorProcess X p ω := by
+    filter_upwards [hvis] with ω hω p
+    rw [visitedSuccessorProcess_apply, successorProcess_apply]
+    exact visitedSuccessorArray_of_exists (hω p.1)
+  refine rowExchangeable_def.2 fun π => ?_
+  refine (Measure.map_congr ?_).trans
+    ((rowExchangeable_def.1 (h.rowExchangeable_visitedSuccessorProcess hrec) π).trans
+      (Measure.map_congr ?_))
+  · filter_upwards [hae] with ω hω
+    exact funext fun p => (hω _).symm
+  · filter_upwards [hae] with ω hω
+    exact funext hω
+
+/-- **The Diaconis--Freedman representation theorem.** A recurrent Markov exchangeable process that
+starts almost surely at a fixed state is a mixture of Markov chains. -/
+theorem MarkovExchangeable.mixedMarkovChain [IsProbabilityMeasure μ] {a₀ : α}
+    (h : MarkovExchangeable μ X) (hrec : Recurrent μ X) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
     MixedMarkovChain μ X := by
   have := h.countable
   have := h.measurableSingletonClass
-  exact mixedMarkovChain_of_rowExchangeable_successorProcess h.aemeasurable h0
-    (h.rowExchangeable_successorProcess hrec hvis)
+  exact mixedMarkovChain_of_rowExchangeable h.aemeasurable h0
+    (aemeasurable_visitedSuccessorProcess h.aemeasurable)
+    (ae_of_all _ fun _ n _ => by
+      rw [visitedSuccessorProcess_apply, successorProcess_apply]
+      exact visitedSuccessorArray_of_exists ⟨n, rfl⟩)
+    (h.rowExchangeable_visitedSuccessorProcess hrec)
 
 end Representation
 
