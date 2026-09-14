@@ -106,7 +106,6 @@ theorem support_prod : (Φ.prod Ψ).support = Φ.support ×ˢ Ψ.support := by
       ⟨σ.prod τ, (Φ.mem_prod_cones Ψ).2 ⟨σ, hσ, τ, hτ, rfl⟩, ⟨hxσ, hyτ⟩⟩
 
 /-- A product fan is complete exactly when both factors are complete. -/
-@[simp]
 theorem isComplete_prod_iff : (Φ.prod Ψ).IsComplete ↔ Φ.IsComplete ∧ Ψ.IsComplete := by
   constructor
   · intro h
