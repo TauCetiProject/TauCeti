@@ -34,10 +34,6 @@ archimedean inputs for the full compositum. For positive nonsquare `d`,
 `isGenusField_candidateGenusFieldReal` instead uses the descended finite-place theorem, total
 reality at the infinite places, and the real candidate's root-preserving maximality.
 
-Together these results complete the field-side definition and maximality part of Layer 3 of the
-Multiquadratic roadmap for both signatures. Identifying the real candidate's relative Galois group
-with the elementary-two quotient of the ordinary class group remains downstream.
-
 ## References
 
 * D. A. Cox, *Primes of the Form x² + ny²*, Section 6.A.
