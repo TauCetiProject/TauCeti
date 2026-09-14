@@ -16,11 +16,10 @@ scale matrix.  The scale is first presented by all its coordinates, as required 
 matrix-parameterized probability kernel.  A second theorem restricts the scale to the symmetric
 matrix carrier used by the Wishart law.
 
-The proof writes the law as the image under `TauCeti.wishartGram` of a finite product of centered
-multivariate Gaussian laws.  Mathlib supplies measurability of the multivariate Gaussian in its
-mean and covariance, and `TauCeti.MeasureTheory.measurable_probabilityMeasure_pi_const_toMeasure`
-supplies measurability of the finite product.  Since the natural degree is countable, the
-fixed-degree results assemble into a jointly measurable family.
+These results are what is needed to use the Gaussian-Gram Wishart law as a probability kernel
+whose degree and scale are themselves random, for instance in hierarchical models or as a mixing
+law.  No positive-semidefiniteness hypothesis on the scale is required, since the family is
+defined for every real square matrix.
 
 ## Main results
 
