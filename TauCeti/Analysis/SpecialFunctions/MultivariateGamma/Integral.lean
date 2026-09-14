@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Basic
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
 public import Mathlib.Analysis.Matrix.Order
-public import Mathlib.LinearAlgebra.Matrix.PosDef
 
 /-!
 # The multivariate Gamma function as a cone integral
@@ -23,10 +22,10 @@ multiplies the integral by `(det T) ^ a`.
 The scale identity is a congruence change of variables: writing `T = C * Cᵀ`, the map
 `A ↦ C * A * Cᵀ` preserves the cone, carries the plain exponential weight to the weighted one,
 and contributes the Jacobian `|det C| ^ (p + 1)`; the two determinant powers combine to
-`(det T) ^ a`. It is proved for every real `a`, with both sides infinite outside the classical
-range `(p - 1) / 2 < a` where the integral converges. Together with the unscaled integral it
-fixes the normalizing constant of a Wishart density with scale matrix `S`, whose exponential
-weight is `exp (-trace (S⁻¹ * A) / 2)` and hence has scale `2 • S`.
+`(det T) ^ a`. It is proved for every real `a`, with no convergence hypothesis on either side.
+Together with the unscaled integral it fixes the normalizing constant of a Wishart density with
+scale matrix `S`, whose exponential weight is `exp (-trace (S⁻¹ * A) / 2)` and hence has scale
+`2 • S`.
 
 The normalization of the reference measure is part of these identities, not a convention that can
 be changed afterwards, which is why this file, unlike the elementary theory in
@@ -81,21 +80,7 @@ section Scale
 
 variable {p : ℕ} {S T : Matrix (Fin p) (Fin p) ℝ}
 
-open scoped ENNReal Matrix MatrixOrder
-
-/-- Every positive-definite matrix is `C * Cᵀ` for an invertible `C`, namely its square root. -/
-private theorem exists_gl_mul_transpose_eq (hT : T.PosDef) :
-    ∃ C : Matrix.GeneralLinearGroup (Fin p) ℝ,
-      (C : Matrix (Fin p) (Fin p) ℝ) * (C : Matrix (Fin p) (Fin p) ℝ)ᵀ = T := by
-  have hsq : CFC.sqrt T * CFC.sqrt T = T := CFC.sqrt_mul_sqrt_self T hT.posSemidef.nonneg
-  have htr : (CFC.sqrt T)ᵀ = CFC.sqrt T := by
-    rw [← Matrix.conjTranspose_eq_transpose_of_trivial,
-      (Matrix.nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg T)).isHermitian.eq]
-  have hdet : (CFC.sqrt T).det ≠ 0 := fun h => by
-    have hpos := hT.det_pos
-    rw [← hsq, Matrix.det_mul, h, mul_zero] at hpos
-    exact lt_irrefl 0 hpos
-  exact ⟨Matrix.GeneralLinearGroup.mkOfDetNeZero _ hdet, by simpa [htr] using hsq⟩
+open scoped ENNReal Matrix
 
 /-- Congruence by `C` multiplies the determinant of a symmetric matrix by `det (C * Cᵀ)`. -/
 private theorem det_coe_symmetricCongruence {C : Matrix.GeneralLinearGroup (Fin p) ℝ}
@@ -104,9 +89,8 @@ private theorem det_coe_symmetricCongruence {C : Matrix.GeneralLinearGroup (Fin 
     ((Matrix.GeneralLinearGroup.symmetricCongruence C A :
           selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
         Matrix (Fin p) (Fin p) ℝ).det = T.det * (A : Matrix (Fin p) (Fin p) ℝ).det := by
-  rw [Matrix.GeneralLinearGroup.coe_symmetricCongruence_apply, Matrix.det_mul, Matrix.det_mul,
-    ← hC, Matrix.det_mul]
-  ring
+  rw [Matrix.GeneralLinearGroup.det_symmetricCongruence_apply, ← hC, Matrix.det_mul,
+    Matrix.det_transpose, sq]
 
 /-- Congruence by `C` turns the trace against the inverse scale `(C * Cᵀ)⁻¹` into the plain
 trace: the two copies of `C` cancel against the inverse. -/
@@ -197,7 +181,7 @@ theorem lintegral_posDef_det_rpow_mul_exp_neg_trace_inv_mul (hT : T.PosDef) (a :
             (A : Matrix (Fin p) (Fin p) ℝ).PosDef},
           ENNReal.ofReal ((A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
             exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace)) ∂symmetricLebesgue p := by
-  obtain ⟨C, hC⟩ := exists_gl_mul_transpose_eq hT
+  obtain ⟨C, hC⟩ := Matrix.GeneralLinearGroup.exists_mul_transpose_eq_of_posDef hT
   have hJne : ENNReal.ofReal |(C : Matrix (Fin p) (Fin p) ℝ).det| ^ (p + 1) ≠ 0 :=
     pow_ne_zero _
       (ENNReal.ofReal_pos.2 (abs_pos.2 (Matrix.GeneralLinearGroup.det_ne_zero C))).ne'
@@ -230,7 +214,7 @@ theorem integral_posDef_det_rpow_mul_exp_neg_trace_inv_mul (hT : T.PosDef) (a : 
             (A : Matrix (Fin p) (Fin p) ℝ).PosDef},
           (A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
             exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace) ∂symmetricLebesgue p := by
-  obtain ⟨C, hC⟩ := exists_gl_mul_transpose_eq hT
+  obtain ⟨C, hC⟩ := Matrix.GeneralLinearGroup.exists_mul_transpose_eq_of_posDef hT
   have hJpos : (0 : ℝ) < |(C : Matrix (Fin p) (Fin p) ℝ).det| ^ (p + 1) :=
     pow_pos (abs_pos.2 (Matrix.GeneralLinearGroup.det_ne_zero C)) _
   have key := Matrix.GeneralLinearGroup.integral_posDef_symmetricCongruence C
