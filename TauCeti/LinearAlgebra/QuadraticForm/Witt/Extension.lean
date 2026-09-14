@@ -22,9 +22,6 @@ not split off as orthogonal summands.
 
 ## Main results
 
-* `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a regular subspace splits off orthogonally.
-* `QuadraticMap.Nondegenerate.restrict_orthogonal`: its orthogonal complement is regular when the
-  ambient quadratic form is regular.
 * `QuadraticMap.IsometryEquiv.exists_extension`: Witt's extension theorem.
 * `QuadraticMap.IsometryEquiv.extension`: a chosen extension, with the simplification theorem
   `QuadraticMap.IsometryEquiv.extension_apply` on the original subspace.
@@ -46,32 +43,6 @@ universe u v
 variable {K : Type u} [Field K] [Invertible (2 : K)]
   {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   {Q : QuadraticForm K V} {W W' : Submodule K V}
-
-/-- A subspace on which a quadratic form restricts nondegenerately is complementary to its
-orthogonal complement. -/
-theorem Nondegenerate.isCompl_orthogonal (hW : (Q.restrict W).Nondegenerate) :
-    IsCompl W (LinearMap.BilinForm.orthogonal Q.polarBilin W) := by
-  apply LinearMap.BilinForm.isCompl_orthogonal_of_restrict_nondegenerate
-    Q.polarBilin_isSymm.isRefl
-  have hpolar := nondegenerate_polar_iff.mpr hW
-  rwa [polarBilin_restrict] at hpolar
-
-/-- In a regular finite-dimensional quadratic space, the orthogonal complement of a regular
-subspace is regular. -/
-theorem Nondegenerate.restrict_orthogonal (hQ : Q.Nondegenerate)
-    (hW : (Q.restrict W).Nondegenerate) :
-    (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)).Nondegenerate := by
-  have hB : Q.polarBilin.Nondegenerate := nondegenerate_polar_iff.mpr hQ
-  have hBsymm : Q.polarBilin.IsRefl := Q.polarBilin_isSymm.isRefl
-  have hcomp : IsCompl W (LinearMap.BilinForm.orthogonal Q.polarBilin W) :=
-    hW.isCompl_orthogonal
-  apply nondegenerate_polar_iff.mp
-  rw [polarBilin_restrict]
-  exact
-    (LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal
-      (B := Q.polarBilin) hBsymm).mpr (by
-      rw [LinearMap.BilinForm.orthogonal_orthogonal hB hBsymm]
-      exact hcomp.symm)
 
 /-- **Witt's extension theorem** (Lam I.4.9). An isometry between regular subspaces of a
 finite-dimensional quadratic space extends to an isometry of the whole space. No regularity

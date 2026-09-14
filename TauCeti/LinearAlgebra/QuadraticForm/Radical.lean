@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Invertible
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
@@ -23,8 +24,12 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 
 * `QuadraticMap.radical_neg`: negating a quadratic map does not change its radical.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
-* `QuadraticMap.polarBilin_isSymm`: the polar form is symmetric.
+* `QuadraticMap.isSymm_polarBilin`: the polar form is symmetric.
 * `QuadraticMap.polarBilin_restrict`: polarization commutes with restriction to a submodule.
+* `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a subspace on which the form restricts
+  nondegenerately is complementary to its polar orthogonal complement.
+* `QuadraticMap.Nondegenerate.restrict_orthogonal`: in a regular finite-dimensional quadratic
+  space, the orthogonal complement of a regular subspace is regular.
 * `QuadraticMap.Nondegenerate.prod`: nondegeneracy passes to an orthogonal product.
 * `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic form on a nontrivial module is
   nonzero.
@@ -49,7 +54,7 @@ variable {R M P : Type*} [CommRing R] [AddCommGroup M] [AddCommGroup P]
   [Module R M] [Module R P]
 
 /-- The polar bilinear form of a scalar-valued quadratic map is symmetric. -/
-theorem polarBilin_isSymm (Q : QuadraticForm R M) :
+theorem isSymm_polarBilin (Q : QuadraticForm R M) :
     LinearMap.BilinForm.IsSymm Q.polarBilin :=
   ⟨fun x y => polar_comm Q x y⟩
 
@@ -108,6 +113,38 @@ theorem ne_zero [Nontrivial M] {Q : QuadraticForm R M} (hQ : Q.Nondegenerate) : 
     rw [hzero, QuadraticMap.mem_radical_iff']
     simp
   rwa [hQ.radical_eq_bot, Submodule.mem_bot] at hm
+
+section Orthogonal
+
+variable {K : Type*} [Field K] [Invertible (2 : K)] {V : Type*} [AddCommGroup V] [Module K V]
+  [FiniteDimensional K V] {Q : QuadraticForm K V} {W : Submodule K V}
+
+/-- A subspace on which a quadratic form restricts nondegenerately is complementary to its
+orthogonal complement. -/
+theorem isCompl_orthogonal (hW : (Q.restrict W).Nondegenerate) :
+    IsCompl W (LinearMap.BilinForm.orthogonal Q.polarBilin W) := by
+  apply LinearMap.BilinForm.isCompl_orthogonal_of_restrict_nondegenerate
+    Q.isSymm_polarBilin.isRefl
+  have hpolar := QuadraticMap.nondegenerate_polar_iff.mpr hW
+  rwa [QuadraticMap.polarBilin_restrict] at hpolar
+
+/-- In a regular finite-dimensional quadratic space, the orthogonal complement of a regular
+subspace is regular. -/
+theorem restrict_orthogonal (hQ : Q.Nondegenerate) (hW : (Q.restrict W).Nondegenerate) :
+    (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)).Nondegenerate := by
+  have hB : Q.polarBilin.Nondegenerate := QuadraticMap.nondegenerate_polar_iff.mpr hQ
+  have hBsymm : Q.polarBilin.IsRefl := Q.isSymm_polarBilin.isRefl
+  have hcomp : IsCompl W (LinearMap.BilinForm.orthogonal Q.polarBilin W) :=
+    hW.isCompl_orthogonal
+  apply QuadraticMap.nondegenerate_polar_iff.mp
+  rw [QuadraticMap.polarBilin_restrict]
+  exact
+    (LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal
+      (B := Q.polarBilin) hBsymm).mpr (by
+      rw [LinearMap.BilinForm.orthogonal_orthogonal hB hBsymm]
+      exact hcomp.symm)
+
+end Orthogonal
 
 end QuadraticMap.Nondegenerate
 
