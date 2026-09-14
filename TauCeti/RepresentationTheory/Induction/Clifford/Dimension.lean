@@ -23,10 +23,10 @@ into an identity of dimensions,
 so in particular the index of the inertia group divides `dim W`.  This file proves that identity
 from the character form `TauCeti.clifford_restrict_character`, and draws the arithmetic
 consequence: `[G : inertia V]` divides `[G : N]` as well, so whenever `dim W` and `[G : N]` are
-**coprime** the inertia group is everything and the restriction to `N` is isotypic,
-`Res_N W ≅ e · V` on characters.  The case `[G : N] = 2` with `dim W` odd is recorded separately,
-since it is the one that arises for `alternatingGroup α ◁ Equiv.Perm α`, complementary to the
-linear-character computation of
+**coprime** the inertia group is everything and the restriction to `N` is isotypic on characters:
+the character of `W` on `N` is `e` times that of `V`, and `dim W = e * dim V`.  The case
+`[G : N] = 2` with `dim W` odd is recorded separately, since it is the one that arises for
+`alternatingGroup α ◁ Equiv.Perm α`, complementary to the linear-character computation of
 `TauCeti/RepresentationTheory/Induction/Clifford/Alternating.lean`, where the inertia group is as
 *small* as Clifford theory allows.
 
@@ -38,7 +38,8 @@ linear-character computation of
   constituent, the multiplicity and the identity `dim W = e * [G : inertia V] * dim V` as natural
   numbers in characteristic zero.
 * `TauCeti.clifford_restrict_isotypic_of_coprime`: when the dimension of `W` is **coprime** to
-  `[G : N]`, the restriction of `W` to `N` is isotypic and its constituent is `G`-stable.
+  `[G : N]`, the restriction of `W` to `N` has a `G`-stable irreducible constituent `V`, the
+  character of `W` on `N` being `e` times that of `V` and `dim W = e * dim V`.
 * `TauCeti.clifford_restrict_isotypic_of_index_two_of_odd_finrank`: the case of a subgroup of
   **index two** and an irreducible of odd dimension.
 
@@ -57,10 +58,6 @@ only to cancel the cast, and is asked for in the statements whose conclusion is 
 ## References
 
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 6.
-* Layer 5 (Clifford theory over a normal subgroup) of
-  `TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, which asks for
-  `Res_N W ≅ e · ⨁ᵢ {}^{gᵢ} V` with `g₁, …, g_t` representatives of the cosets of `inertia V`,
-  "in particular `t = [G : inertia V]` divides `finrank W / (e · finrank V)`".
 -/
 
 public section
@@ -132,9 +129,9 @@ theorem clifford_restrict_finrank [Finite G] [IsAlgClosed k] [CharZero k] (W : F
   exact_mod_cast h
 
 /-- **Clifford theory when the dimension is coprime to the index.**  If the dimension of an
-irreducible `W : FDRep k G` is coprime to `[G : N]`, then some — hence, the constituents being
-conjugate, every — irreducible constituent `V` of `Res_N W` is `G`-stable, and the restriction is
-isotypic: its character is `e` times that of `V`, and `dim W = e * dim V`.
+irreducible `W : FDRep k G` is coprime to `[G : N]`, then `Res_N W` has an irreducible
+constituent `V` that is `G`-stable, and the restriction is isotypic on characters: the character
+of `W` on `N` is `e` times that of `V`, and `dim W = e * dim V`.
 
 The number of constituents is the index `[G : inertia V]`, which divides `[G : N]` because
 `N ≤ inertia V`, and divides `dim W` by the dimension identity that
@@ -166,9 +163,10 @@ theorem clifford_restrict_isotypic_of_coprime [Finite G] [IsAlgClosed k] [CharZe
   refine ⟨V, hV, e, he, htop, by rw [hdim, hone, mul_one], fun n ↦ ?_⟩
   rw [hchar n, hr, Finset.sum_singleton, FDRep.char_iso hiso]
 
-/-- **Clifford theory over a subgroup of index two, in odd dimension.**  An irreducible
-representation of odd dimension restricts to a subgroup of index two as `e` copies of a single
-`G`-stable irreducible.
+/-- **Clifford theory over a subgroup of index two, in odd dimension.**  The restriction of an
+irreducible representation `W` of odd dimension to a subgroup of index two has a `G`-stable
+irreducible constituent `V`: the character of `W` on `N` is `e` times that of `V`, and
+`dim W = e * dim V`.
 
 This is `TauCeti.clifford_restrict_isotypic_of_coprime` at `[G : N] = 2`, an odd natural number
 being exactly one coprime to `2`.  For `alternatingGroup α ◁ Equiv.Perm α` it is the case of the
