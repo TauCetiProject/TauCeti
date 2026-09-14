@@ -45,13 +45,22 @@ admissible reflection sequence.
 * `TauCeti.indecomposable_sourceReflectRep`: source reflection preserves indecomposability when
   the outgoing map is injective.
 
+## Implementation notes
+
+A vertex `i : Q` is used both as an object of `CategoryTheory.Paths` and as a vertex of
+`TauCeti.Quiver.Reflect Q i`, identifications that hold only by unfolding semireducible
+definitions, so a goal mentioning both is not type-correct at the transparency `rw` and `simp`
+build motives with. Every step that strips a conjugation by `eqToHom` is therefore factored
+through the general transport lemmas `TauCeti.eq_of_eqToHom_conj` and
+`TauCeti.eqToHom_strip_square` of
+`TauCeti.RepresentationTheory.Quiver.Reflection.Representation`, which `subst` the object
+equalities away in an abstract category, where no such identification is in play.
+
 ## References
 
-This supplies the source-side form of the second milestone in Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`: reflection carries an
-indecomposable away from the exceptional vertex simple to an indecomposable. See
-Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and Derksen--Weyman,
-*An Introduction to Quiver Representations*, Ch. 2.
+See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and Derksen--Weyman,
+*An Introduction to Quiver Representations*, Ch. 2. The formal template is the sink-side argument
+in `TauCeti.RepresentationTheory.Quiver.Reflection.FullyFaithful`.
 -/
 
 public section
@@ -67,22 +76,6 @@ variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
 variable {M N : QuiverRep.{u, v, w, max v w x} k Q} {i : Q}
 
 /-! ### Transport helpers -/
-
-private theorem eq_of_eqToHom_conj {C : Type*} [Category* C] {X X' Y Y' : C} (hX : X' = X)
-    (hY : Y = Y') {f g : X ⟶ Y}
-    (h : eqToHom hX ≫ f ≫ eqToHom hY = eqToHom hX ≫ g ≫ eqToHom hY) : f = g :=
-  (eqToHom_conjugate_cancel hX hY.symm f).symm.trans
-    ((congrArg (fun z : X' ⟶ Y' ↦ eqToHom hX.symm ≫ z ≫ eqToHom hY.symm) h).trans
-      (eqToHom_conjugate_cancel hX hY.symm g))
-
-private theorem eqToHom_strip_square {C : Type*} [Category* C]
-    {A A' B B' D D' E E' : C} (hA : A = A') (hB : B = B') (hD : D = D') (hE : E = E')
-    (p : A' ⟶ B') (q : E' ⟶ D') (f : B ⟶ D) (g : A ⟶ E)
-    (h : (eqToHom hA ≫ p ≫ eqToHom hB.symm) ≫ f =
-      g ≫ eqToHom hE ≫ q ≫ eqToHom hD.symm) :
-    p ≫ (eqToHom hB.symm ≫ f ≫ eqToHom hD) =
-      (eqToHom hA.symm ≫ g ≫ eqToHom hE) ≫ q :=
-  (eqToHom_conjugate_square hA hB hD hE p _ _ q).mp (by simpa using h)
 
 variable (M) in
 private theorem sourceReflectObj_self (hi : IsSource i) :
@@ -139,6 +132,14 @@ private noncomputable def sourceHomQuot :
       (((e : Σ b : Q, (i ⟶ b)) → N.obj e.1) ⧸ LinearMap.range (outgoingMap N i)) :=
   (eqToHom (sourceReflectObj_self M hi).symm ≫ θ.app i ≫
     eqToHom (sourceReflectObj_self N hi)).hom
+
+/-- `TauCeti.sourceHomQuot` is the underlying linear map of the component of `θ` at the source,
+conjugated by the two transports of the vertex spaces there. -/
+private theorem sourceHomQuot_apply
+    (q : ((e : Σ b : Q, (i ⟶ b)) → M.obj e.1) ⧸ LinearMap.range (outgoingMap M i)) :
+    sourceHomQuot θ q =
+      (eqToHom (sourceReflectObj_self M hi).symm ≫ θ.app i ≫
+        eqToHom (sourceReflectObj_self N hi)).hom q := rfl
 
 variable (M) in
 open scoped Classical in
@@ -265,6 +266,14 @@ private theorem sourceHomPreimageApp_of_ne (hinj : Function.Injective (outgoingM
   classical
   simp [sourceHomPreimageApp, hj]
 
+/-- Every coordinate of the outgoing product is indexed by an arrow out of the source, so on that
+product the reconstructed morphism acts coordinatewise as `TauCeti.sourceHomPi`. -/
+private theorem sourceHomPreimageApp_coord (hinj : Function.Injective (outgoingMap N i))
+    (f : (e : Σ b : Q, (i ⟶ b)) → M.obj e.1) :
+    (fun e ↦ sourceHomPreimageApp θ hinj e.1 (f e)) = sourceHomPi θ f :=
+  funext fun e ↦ by
+    rw [sourceHomPreimageApp_of_ne θ hinj (hi.ne_of_hom e.2), sourceHomPi_apply]
+
 private theorem sourceHomPreimageApp_naturality
     [Finite (Σ b : Q, (i ⟶ b))] (hinj : Function.Injective (outgoingMap N i))
     {a b : Q} (e : a ⟶ b) :
@@ -304,21 +313,14 @@ private theorem sourceReflectionFunctor_map_sourceHomPreimage
     refine eq_of_eqToHom_conj (sourceReflectObj_self M hi).symm
       (sourceReflectObj_self N hi) ?_
     refine ModuleCat.hom_ext (LinearMap.ext fun q ↦ ?_)
+    rw [← sourceHomQuot_apply θ q]
     induction q using Submodule.Quotient.induction_on with
     | _ f =>
       simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
       rw [sourceReflectionFunctor_map_app_self_mk (sourceHomPreimage (θ := θ) hinj) hi f]
-      change (LinearMap.range (outgoingMap N i)).mkQ
-          (fun e ↦ sourceHomPreimageApp θ hinj e.1 (f e)) =
-        sourceHomQuot θ ((LinearMap.range (outgoingMap M i)).mkQ f)
-      have happ : ∀ e : Σ b : Q, (i ⟶ b),
-          (sourceHomPreimageApp θ hinj e.1) (f e) = sourceHomPi θ f e := by
-        intro e
-        rw [sourceHomPreimageApp_of_ne θ hinj (hi.ne_of_hom e.2)]
-        rfl
-      rw [show (fun e ↦ (sourceHomPreimageApp θ hinj e.1) (f e)) =
-          sourceHomPi θ f from funext happ]
-      exact (sourceHomQuot_mk θ f).symm
+      simp only [sourceHomPreimage_app]
+      rw [sourceHomPreimageApp_coord θ hinj f,
+        ← Submodule.mkQ_apply (LinearMap.range (outgoingMap M i)) f, sourceHomQuot_mk θ f]
   · have happ : (sourceHomPreimage (θ := θ) hinj).app j =
         eqToHom (sourceReflectObj_of_ne M hi hj).symm ≫ θ.app j ≫
           eqToHom (sourceReflectObj_of_ne N hi hj) :=

@@ -69,8 +69,9 @@ and as a vertex of `TauCeti.Quiver.Reflect Q i`, identifications that hold only 
 semireducible definitions. Goals mentioning both are therefore not type-correct at the transparency
 `rw` and `simp` build motives with, so every step that strips a conjugation by `eqToHom` is
 factored through `TauCeti.eqToHom_conjugate_cancel` and `TauCeti.eqToHom_conjugate_square`, which
-`subst` the object equalities away before doing anything, or through one of the two rearrangements
-of them at the top of the file.
+`subst` the object equalities away before doing anything, or through one of their two
+rearrangements `TauCeti.eq_of_eqToHom_conj` and `TauCeti.eqToHom_strip_square`, all from
+`TauCeti.RepresentationTheory.Quiver.Reflection.Representation`.
 
 The linear section of the incoming sum used to build the preimage exists because a vector space is
 projective; the private `sinkSection` is a choice of one. Nothing downstream depends on which
@@ -100,36 +101,6 @@ section General
 variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q] [Fintype Q]
   [∀ a b : Q, Fintype (a ⟶ b)]
 variable {M N : QuiverRep.{u, v, w, max v w x} k Q} {i : Q}
-
-/-! ### Stripping conjugations by `eqToHom`
-
-The two helpers below only move conjugations by `eqToHom` from one pair of edges to another; each
-is a rearrangement of `TauCeti.eqToHom_conjugate_cancel`, respectively of
-`TauCeti.eqToHom_conjugate_square`, from
-`TauCeti.RepresentationTheory.Quiver.Reflection.Representation`, and is proved from it rather than
-by unfolding transports again. Like those, they are stated for an abstract category, where a vertex
-is not simultaneously an object of `CategoryTheory.Paths` and a vertex of the reflected quiver;
-that is what makes them usable on goals where it is. -/
-
-/-- Two morphisms conjugated to the same morphism are equal: conjugating back cancels, by
-`TauCeti.eqToHom_conjugate_cancel`, on both sides at once. -/
-private theorem eq_of_eqToHom_conj {C : Type*} [Category* C] {X X' Y Y' : C} (hX : X' = X)
-    (hY : Y = Y') {f g : X ⟶ Y}
-    (h : eqToHom hX ≫ f ≫ eqToHom hY = eqToHom hX ≫ g ≫ eqToHom hY) : f = g :=
-  (eqToHom_conjugate_cancel hX hY.symm f).symm.trans
-    ((congrArg (fun u : X' ⟶ Y' ↦ eqToHom hX.symm ≫ u ≫ eqToHom hY.symm) h).trans
-      (eqToHom_conjugate_cancel hX hY.symm g))
-
-/-- A commuting square whose two horizontal edges are conjugates commutes after the conjugations
-are moved onto the vertical edges. This is `TauCeti.eqToHom_conjugate_square` for the square whose
-vertical edges are the conjugated ones, whose horizontal edges are then conjugated twice and so, by
-`TauCeti.eqToHom_conjugate_cancel`, are the given ones. -/
-private theorem eqToHom_strip_square {C : Type*} [Category* C]
-    {A A' B B' D D' E E' : C} (hA : A = A') (hB : B = B') (hD : D = D') (hE : E = E')
-    (p : A' ⟶ B') (q : E' ⟶ D') (f : B ⟶ D) (g : A ⟶ E)
-    (h : (eqToHom hA ≫ p ≫ eqToHom hB.symm) ≫ f = g ≫ eqToHom hE ≫ q ≫ eqToHom hD.symm) :
-    p ≫ (eqToHom hB.symm ≫ f ≫ eqToHom hD) = (eqToHom hA.symm ≫ g ≫ eqToHom hE) ≫ q :=
-  (eqToHom_conjugate_square hA hB hD hE p _ _ q).mp (by simpa using h)
 
 /-! ### Faithfulness -/
 
