@@ -80,13 +80,27 @@ noncomputable def starIndexEquivE6 : StarIndex ![2, 2, 2] ≃ Fin E6.nodes :=
 /-- The affine `E₆` star relabelling sends the centre to node `0`. -/
 @[simp] theorem starIndexEquivE6_none :
     @DFunLike.coe (StarIndex ![2, 2, 2] ≃ Fin 7) (StarIndex ![2, 2, 2])
-      (fun _ ↦ Fin 7) EquivLike.toFunLike starIndexEquivE6 none = 0 := (rfl)
+      (fun _ ↦ Fin 7) EquivLike.toFunLike starIndexEquivE6 none = 0 := by
+  change e6StarEmbedding none = 0
+  rfl
 
-/-- The value of the affine `E₆` star relabelling on an arm vertex. -/
-@[simp] theorem starIndexEquivE6_some_val (i : Fin 3) (s : Fin (![2, 2, 2] i)) :
-    ((@DFunLike.coe (StarIndex ![2, 2, 2] ≃ Fin 7) (StarIndex ![2, 2, 2])
-      (fun _ ↦ Fin 7) EquivLike.toFunLike starIndexEquivE6 (some ⟨i, s⟩)) : ℕ) =
-      2 * (i : ℕ) + (s : ℕ) + 1 := (rfl)
+/-- The affine `E₆` star relabelling sends an arm vertex to its prescribed affine node. -/
+@[simp] theorem starIndexEquivE6_some (i : Fin 3) (s : Fin (![2, 2, 2] i)) :
+    @DFunLike.coe (StarIndex ![2, 2, 2] ≃ Fin 7) (StarIndex ![2, 2, 2])
+      (fun _ ↦ Fin 7) EquivLike.toFunLike starIndexEquivE6 (some ⟨i, s⟩) =
+        ⟨2 * (i : ℕ) + (s : ℕ) + 1, by
+          fin_cases i <;> simp at s ⊢
+          all_goals omega⟩ := by
+  change e6StarEmbedding (some ⟨i, s⟩) = _
+  rfl
+
+/-- The inverse affine `E₆` relabelling, listed in affine-node order. -/
+@[simp] theorem starIndexEquivE6_symm_apply (v : Fin 7) :
+    (@Equiv.symm (StarIndex ![2, 2, 2]) (Fin 7) starIndexEquivE6) v =
+      ![none, some ⟨0, ⟨0, by decide⟩⟩, some ⟨0, ⟨1, by decide⟩⟩,
+        some ⟨1, ⟨0, by decide⟩⟩, some ⟨1, ⟨1, by decide⟩⟩,
+        some ⟨2, ⟨0, by decide⟩⟩, some ⟨2, ⟨1, by decide⟩⟩] v := by
+  fin_cases v <;> apply starIndexEquivE6.symm_apply_eq.mpr <;> rfl
 
 private def e7StarEmbedding : StarIndex ![1, 3, 3] → Fin E7.nodes
   | none => 0
@@ -124,14 +138,28 @@ noncomputable def starIndexEquivE7 : StarIndex ![1, 3, 3] ≃ Fin E7.nodes :=
 /-- The affine `E₇` star relabelling sends the centre to node `0`. -/
 @[simp] theorem starIndexEquivE7_none :
     @DFunLike.coe (StarIndex ![1, 3, 3] ≃ Fin 8) (StarIndex ![1, 3, 3])
-      (fun _ ↦ Fin 8) EquivLike.toFunLike starIndexEquivE7 none = 0 := (rfl)
+      (fun _ ↦ Fin 8) EquivLike.toFunLike starIndexEquivE7 none = 0 := by
+  change e7StarEmbedding none = 0
+  rfl
 
-/-- The value of the affine `E₇` star relabelling on an arm vertex. -/
-@[simp] theorem starIndexEquivE7_some_val (i : Fin 3) (s : Fin (![1, 3, 3] i)) :
-    ((@DFunLike.coe (StarIndex ![1, 3, 3] ≃ Fin 8) (StarIndex ![1, 3, 3])
-      (fun _ ↦ Fin 8) EquivLike.toFunLike starIndexEquivE7 (some ⟨i, s⟩)) : ℕ) =
-      if (i : ℕ) = 0 then 1 else if (i : ℕ) = 1 then 2 + (s : ℕ) else 5 + (s : ℕ) :=
-  (rfl)
+/-- The affine `E₇` star relabelling sends an arm vertex to its prescribed affine node. -/
+@[simp] theorem starIndexEquivE7_some (i : Fin 3) (s : Fin (![1, 3, 3] i)) :
+    @DFunLike.coe (StarIndex ![1, 3, 3] ≃ Fin 8) (StarIndex ![1, 3, 3])
+      (fun _ ↦ Fin 8) EquivLike.toFunLike starIndexEquivE7 (some ⟨i, s⟩) =
+        ⟨if (i : ℕ) = 0 then 1 else if (i : ℕ) = 1 then 2 + (s : ℕ) else 5 + (s : ℕ), by
+          fin_cases i <;> simp at s ⊢
+          all_goals omega⟩ := by
+  change e7StarEmbedding (some ⟨i, s⟩) = _
+  rfl
+
+/-- The inverse affine `E₇` relabelling, listed in affine-node order. -/
+@[simp] theorem starIndexEquivE7_symm_apply (v : Fin 8) :
+    (@Equiv.symm (StarIndex ![1, 3, 3]) (Fin 8) starIndexEquivE7) v =
+      ![none, some ⟨0, ⟨0, by decide⟩⟩, some ⟨1, ⟨0, by decide⟩⟩,
+        some ⟨1, ⟨1, by decide⟩⟩, some ⟨1, ⟨2, by decide⟩⟩,
+        some ⟨2, ⟨0, by decide⟩⟩, some ⟨2, ⟨1, by decide⟩⟩,
+        some ⟨2, ⟨2, by decide⟩⟩] v := by
+  fin_cases v <;> apply starIndexEquivE7.symm_apply_eq.mpr <;> rfl
 
 private def e8StarEmbedding : StarIndex ![1, 2, 5] → Fin E8.nodes
   | none => 0
@@ -169,14 +197,28 @@ noncomputable def starIndexEquivE8 : StarIndex ![1, 2, 5] ≃ Fin E8.nodes :=
 /-- The affine `E₈` star relabelling sends the centre to node `0`. -/
 @[simp] theorem starIndexEquivE8_none :
     @DFunLike.coe (StarIndex ![1, 2, 5] ≃ Fin 9) (StarIndex ![1, 2, 5])
-      (fun _ ↦ Fin 9) EquivLike.toFunLike starIndexEquivE8 none = 0 := (rfl)
+      (fun _ ↦ Fin 9) EquivLike.toFunLike starIndexEquivE8 none = 0 := by
+  change e8StarEmbedding none = 0
+  rfl
 
-/-- The value of the affine `E₈` star relabelling on an arm vertex. -/
-@[simp] theorem starIndexEquivE8_some_val (i : Fin 3) (s : Fin (![1, 2, 5] i)) :
-    ((@DFunLike.coe (StarIndex ![1, 2, 5] ≃ Fin 9) (StarIndex ![1, 2, 5])
-      (fun _ ↦ Fin 9) EquivLike.toFunLike starIndexEquivE8 (some ⟨i, s⟩)) : ℕ) =
-      if (i : ℕ) = 0 then 1 else if (i : ℕ) = 1 then 2 + (s : ℕ) else 4 + (s : ℕ) :=
-  (rfl)
+/-- The affine `E₈` star relabelling sends an arm vertex to its prescribed affine node. -/
+@[simp] theorem starIndexEquivE8_some (i : Fin 3) (s : Fin (![1, 2, 5] i)) :
+    @DFunLike.coe (StarIndex ![1, 2, 5] ≃ Fin 9) (StarIndex ![1, 2, 5])
+      (fun _ ↦ Fin 9) EquivLike.toFunLike starIndexEquivE8 (some ⟨i, s⟩) =
+        ⟨if (i : ℕ) = 0 then 1 else if (i : ℕ) = 1 then 2 + (s : ℕ) else 4 + (s : ℕ), by
+          fin_cases i <;> simp at s ⊢
+          all_goals omega⟩ := by
+  change e8StarEmbedding (some ⟨i, s⟩) = _
+  rfl
+
+/-- The inverse affine `E₈` relabelling, listed in affine-node order. -/
+@[simp] theorem starIndexEquivE8_symm_apply (v : Fin 9) :
+    (@Equiv.symm (StarIndex ![1, 2, 5]) (Fin 9) starIndexEquivE8) v =
+      ![none, some ⟨0, ⟨0, by decide⟩⟩, some ⟨1, ⟨0, by decide⟩⟩,
+        some ⟨1, ⟨1, by decide⟩⟩, some ⟨2, ⟨0, by decide⟩⟩,
+        some ⟨2, ⟨1, by decide⟩⟩, some ⟨2, ⟨2, by decide⟩⟩,
+        some ⟨2, ⟨3, by decide⟩⟩, some ⟨2, ⟨4, by decide⟩⟩] v := by
+  fin_cases v <;> apply starIndexEquivE8.symm_apply_eq.mpr <;> rfl
 
 /-! ## Cartan matrix descriptions -/
 
@@ -250,6 +292,11 @@ private def starGraphIso (t : AffineDynkinType) {l : Fin 3 → ℕ}
     rw [h, diagramGraph_submatrix e.injective, SimpleGraph.comap_adj,
       t.graph_eq_diagramGraph_cartanMatrix]
 
+private theorem starGraphIso_apply (t : AffineDynkinType) {l : Fin 3 → ℕ}
+    (e : StarIndex l ≃ Fin t.nodes)
+    (h : starCartanMatrix l = t.cartanMatrix.submatrix e e) (v : StarIndex l) :
+    starGraphIso t e h v = e v := rfl
+
 /-! ## Graph descriptions -/
 
 /-- The graph isomorphism `T₃,₃,₃ ≅ affine E₆` induced by the explicit arm-coordinate
@@ -264,7 +311,19 @@ noncomputable def starGraphIsoE6 :
       (@SimpleGraph.Iso (StarIndex ![2, 2, 2]) (Fin 7)
         (diagramGraph (starCartanMatrix ![2, 2, 2])) E6.graph)
       (StarIndex ![2, 2, 2]) (fun _ ↦ Fin 7) RelIso.instFunLike starGraphIsoE6 v =
-        starIndexEquivE6 v := (rfl)
+        starIndexEquivE6 v := by
+  change starGraphIso E6 starIndexEquivE6 starCartanMatrix_two_two_two_eq_submatrix_E6 v = _
+  exact starGraphIso_apply E6 starIndexEquivE6
+    starCartanMatrix_two_two_two_eq_submatrix_E6 v
+
+/-- The inverse affine `E₆` graph isomorphism, listed in affine-node order. -/
+@[simp] theorem starGraphIsoE6_symm_apply (v : Fin 7) :
+    (@SimpleGraph.Iso.symm (StarIndex ![2, 2, 2]) (Fin 7)
+      (diagramGraph (starCartanMatrix ![2, 2, 2])) E6.graph starGraphIsoE6) v =
+      ![none, some ⟨0, ⟨0, by decide⟩⟩, some ⟨0, ⟨1, by decide⟩⟩,
+        some ⟨1, ⟨0, by decide⟩⟩, some ⟨1, ⟨1, by decide⟩⟩,
+        some ⟨2, ⟨0, by decide⟩⟩, some ⟨2, ⟨1, by decide⟩⟩] v := by
+  fin_cases v <;> apply starGraphIsoE6.symm_apply_eq.mpr <;> rfl
 
 /-- The graph isomorphism `T₂,₄,₄ ≅ affine E₇` induced by the explicit arm-coordinate
 relabelling. -/
@@ -278,7 +337,20 @@ noncomputable def starGraphIsoE7 :
       (@SimpleGraph.Iso (StarIndex ![1, 3, 3]) (Fin 8)
         (diagramGraph (starCartanMatrix ![1, 3, 3])) E7.graph)
       (StarIndex ![1, 3, 3]) (fun _ ↦ Fin 8) RelIso.instFunLike starGraphIsoE7 v =
-        starIndexEquivE7 v := (rfl)
+        starIndexEquivE7 v := by
+  change starGraphIso E7 starIndexEquivE7 starCartanMatrix_one_three_three_eq_submatrix_E7 v = _
+  exact starGraphIso_apply E7 starIndexEquivE7
+    starCartanMatrix_one_three_three_eq_submatrix_E7 v
+
+/-- The inverse affine `E₇` graph isomorphism, listed in affine-node order. -/
+@[simp] theorem starGraphIsoE7_symm_apply (v : Fin 8) :
+    (@SimpleGraph.Iso.symm (StarIndex ![1, 3, 3]) (Fin 8)
+      (diagramGraph (starCartanMatrix ![1, 3, 3])) E7.graph starGraphIsoE7) v =
+      ![none, some ⟨0, ⟨0, by decide⟩⟩, some ⟨1, ⟨0, by decide⟩⟩,
+        some ⟨1, ⟨1, by decide⟩⟩, some ⟨1, ⟨2, by decide⟩⟩,
+        some ⟨2, ⟨0, by decide⟩⟩, some ⟨2, ⟨1, by decide⟩⟩,
+        some ⟨2, ⟨2, by decide⟩⟩] v := by
+  fin_cases v <;> apply starGraphIsoE7.symm_apply_eq.mpr <;> rfl
 
 /-- The graph isomorphism `T₂,₃,₆ ≅ affine E₈` induced by the explicit arm-coordinate
 relabelling. -/
@@ -292,7 +364,20 @@ noncomputable def starGraphIsoE8 :
       (@SimpleGraph.Iso (StarIndex ![1, 2, 5]) (Fin 9)
         (diagramGraph (starCartanMatrix ![1, 2, 5])) E8.graph)
       (StarIndex ![1, 2, 5]) (fun _ ↦ Fin 9) RelIso.instFunLike starGraphIsoE8 v =
-        starIndexEquivE8 v := (rfl)
+        starIndexEquivE8 v := by
+  change starGraphIso E8 starIndexEquivE8 starCartanMatrix_one_two_five_eq_submatrix_E8 v = _
+  exact starGraphIso_apply E8 starIndexEquivE8
+    starCartanMatrix_one_two_five_eq_submatrix_E8 v
+
+/-- The inverse affine `E₈` graph isomorphism, listed in affine-node order. -/
+@[simp] theorem starGraphIsoE8_symm_apply (v : Fin 9) :
+    (@SimpleGraph.Iso.symm (StarIndex ![1, 2, 5]) (Fin 9)
+      (diagramGraph (starCartanMatrix ![1, 2, 5])) E8.graph starGraphIsoE8) v =
+      ![none, some ⟨0, ⟨0, by decide⟩⟩, some ⟨1, ⟨0, by decide⟩⟩,
+        some ⟨1, ⟨1, by decide⟩⟩, some ⟨2, ⟨0, by decide⟩⟩,
+        some ⟨2, ⟨1, by decide⟩⟩, some ⟨2, ⟨2, by decide⟩⟩,
+        some ⟨2, ⟨3, by decide⟩⟩, some ⟨2, ⟨4, by decide⟩⟩] v := by
+  fin_cases v <;> apply starGraphIsoE8.symm_apply_eq.mpr <;> rfl
 
 end AffineDynkinType
 
