@@ -55,24 +55,25 @@ abbrev MonodromyOrbit (t : PermutationTriple n) :=
 /-- The action of the monodromy group on one of its orbits, transported to the finite ordinal
 numbering that is used by `restrictToOrbit`. -/
 noncomputable def orbitActionHom (t : PermutationTriple n) (O : MonodromyOrbit t) :
-    t.monodromyGroup →* Perm (Fin (Nat.card O.orbit)) :=
-  (Finite.equivFin O.orbit).permCongrHom.toMonoidHom.comp
+    t.monodromyGroup →* Perm (Fin O.orbit.ncard) :=
+  (Finite.equivFinOfCardEq (Nat.card_coe_set_eq O.orbit)).permCongrHom.toMonoidHom.comp
     (MulAction.toPermHom t.monodromyGroup O.orbit)
 
 /-- Evaluating the transported orbit action and then undoing the finite numbering recovers the
 original action on the orbit. -/
 @[simp] theorem orbitActionHom_apply (t : PermutationTriple n) (O : MonodromyOrbit t)
-    (g : t.monodromyGroup) (i : Fin (Nat.card O.orbit)) :
-    (Finite.equivFin O.orbit).symm (t.orbitActionHom O g i) =
-      g • (Finite.equivFin O.orbit).symm i := by
+    (g : t.monodromyGroup) (i : Fin O.orbit.ncard) :
+    (Finite.equivFinOfCardEq (Nat.card_coe_set_eq O.orbit)).symm
+        (t.orbitActionHom O g i) =
+      g • (Finite.equivFinOfCardEq (Nat.card_coe_set_eq O.orbit)).symm i := by
   rw [orbitActionHom, MonoidHom.coe_comp, Function.comp_apply, MulEquiv.coe_toMonoidHom,
     permCongrHom_coe, permCongr_apply, symm_apply_apply, MulAction.toPermHom_apply,
     MulAction.toPerm_apply]
 
 /-- The restriction of a permutation triple to a monodromy orbit, numbered by
-`Fin (Nat.card O.orbit)`. -/
+`Fin O.orbit.ncard`. -/
 noncomputable def restrictToOrbit (t : PermutationTriple n) (O : MonodromyOrbit t) :
-    PermutationTriple (Nat.card O.orbit) where
+    PermutationTriple O.orbit.ncard where
   σ0 := t.orbitActionHom O ⟨t.σ0, t.σ0_mem_monodromyGroup⟩
   σ1 := t.orbitActionHom O ⟨t.σ1, t.σ1_mem_monodromyGroup⟩
   σinf := t.orbitActionHom O ⟨t.σinf, t.σinf_mem_monodromyGroup⟩
@@ -115,9 +116,10 @@ theorem isConnected_restrictToOrbit : (t.restrictToOrbit O).IsConnected := by
     constructor
     intro i j
     obtain ⟨g, hg⟩ := MulAction.exists_smul_eq t.monodromyGroup
-      ((Finite.equivFin O.orbit).symm i) ((Finite.equivFin O.orbit).symm j)
+      ((Finite.equivFinOfCardEq (Nat.card_coe_set_eq O.orbit)).symm i)
+      ((Finite.equivFinOfCardEq (Nat.card_coe_set_eq O.orbit)).symm j)
     refine ⟨⟨t.orbitActionHom O g, MonoidHom.mem_range.mpr ⟨g, rfl⟩⟩,
-      (Finite.equivFin O.orbit).symm.injective ?_⟩
+      (Finite.equivFinOfCardEq (Nat.card_coe_set_eq O.orbit)).symm.injective ?_⟩
     rw [Submonoid.mk_smul, Perm.smul_def, orbitActionHom_apply, hg]
 
 /-! ### Reconstruction -/
@@ -125,14 +127,16 @@ theorem isConnected_restrictToOrbit : (t.restrictToOrbit O).IsConnected := by
 /-- The numbering of the disjoint union of the numbered monodromy orbits induced by the
 canonical orbit decomposition of the original labels. -/
 noncomputable def orbitDecompositionEquiv (t : PermutationTriple n) :
-    (Σ O : MonodromyOrbit t, Fin (Nat.card O.orbit)) ≃ Fin n :=
-  (Equiv.sigmaCongrRight fun (O : MonodromyOrbit t) ↦ (Finite.equivFin O.orbit).symm).trans
+    (Σ O : MonodromyOrbit t, Fin O.orbit.ncard) ≃ Fin n :=
+  (Equiv.sigmaCongrRight fun (O : MonodromyOrbit t) ↦
+      (Finite.equivFinOfCardEq (Nat.card_coe_set_eq O.orbit)).symm).trans
     (MulAction.selfEquivSigmaOrbits' t.monodromyGroup (Fin n)).symm
 
 /-- The orbit-decomposition numbering agrees with the chosen numbering on each orbit. -/
 @[simp] theorem orbitDecompositionEquiv_apply_val (t : PermutationTriple n)
-    (O : MonodromyOrbit t) (i : Fin (Nat.card O.orbit)) :
-    (t.orbitDecompositionEquiv ⟨O, i⟩ : Fin n) = ((Finite.equivFin O.orbit).symm i : Fin n) := by
+    (O : MonodromyOrbit t) (i : Fin O.orbit.ncard) :
+    (t.orbitDecompositionEquiv ⟨O, i⟩ : Fin n) =
+      ((Finite.equivFinOfCardEq (Nat.card_coe_set_eq O.orbit)).symm i : Fin n) := by
   rfl
 
 /-- A permutation triple is the indexed disjoint sum of its restrictions to the orbits of its
