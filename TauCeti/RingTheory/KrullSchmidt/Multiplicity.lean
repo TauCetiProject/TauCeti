@@ -195,7 +195,7 @@ theorem indecomposableMultiplicity_eq_of_linearEquiv (f : M ≃ₗ[A] M') :
   rw [← decompositionMultiplicity_eq_indecomposableMultiplicity_of_supIndep hs hsi hsup,
     ← decompositionMultiplicity_image (N := N) f.injective s,
     decompositionMultiplicity_eq_indecomposableMultiplicity_of_supIndep ?_
-      (Submodule.supIndep_image_map f.injective hsi) ?_]
+      (TauCeti.LinearMap.supIndep_image_map f.toLinearMap f.injective hsi) ?_]
   · rintro _ hQ
     obtain ⟨P, hP, rfl⟩ := Finset.mem_image.mp hQ
     exact (hs P hP).of_linearEquiv (Submodule.equivMapOfInjective _ f.injective P)
@@ -204,12 +204,20 @@ theorem indecomposableMultiplicity_eq_of_linearEquiv (f : M ≃ₗ[A] M') :
       Submodule.map_top, LinearMap.range_eq_top.mpr f.surjective] using
       congrArg (Submodule.map f.toLinearMap) hsup
 
+omit [IsNoetherian A M] in
+private theorem indecomposableDecomposition_eq_empty [Subsingleton M] :
+    (exists_isInternal_isIndecomposableModule (A := A) (M := M)).choose = ∅ := by
+  rw [Finset.eq_empty_iff_forall_notMem]
+  intro P hP
+  exact not_nontrivial P
+    ((exists_isInternal_isIndecomposableModule (A := A) (M := M)).choose_spec.1 P hP).nontrivial
+
+omit [IsNoetherian A M] in
 /-- A zero module has no indecomposable summands. -/
 @[simp]
 theorem indecomposableMultiplicity_eq_zero_of_subsingleton [Subsingleton M] :
     indecomposableMultiplicity A M N = 0 := by
-  rw [← decompositionMultiplicity_eq_indecomposableMultiplicity_of_supIndep (s := ∅)
-      (by simp) (Finset.supIndep_empty _) (by simp [Subsingleton.elim (⊥ : Submodule A M) ⊤]),
+  rw [indecomposableMultiplicity, indecomposableDecomposition_eq_empty,
     decompositionMultiplicity_def]
   simp
 
@@ -227,18 +235,60 @@ theorem isIndecomposableModule_of_indecomposableMultiplicity_ne_zero
   exact IsIndecomposableModule.of_linearEquiv
     ((exists_isInternal_isIndecomposableModule (A := A) (M := M)).choose_spec.1 P hP) e
 
+omit [IsNoetherian A M] in
+/-- A non-indecomposable module has zero multiplicity in every Artinian module. -/
+@[simp]
+theorem indecomposableMultiplicity_eq_zero_of_not_isIndecomposableModule
+    (hN : ¬IsIndecomposableModule A N) : indecomposableMultiplicity A M N = 0 := by
+  by_contra h
+  exact hN (isIndecomposableModule_of_indecomposableMultiplicity_ne_zero h)
+
 section Indecomposable
 
 variable (hM : IsIndecomposableModule A M)
 include hM
 
+omit [IsNoetherian A M] in
+/-- The chosen indecomposable decomposition of an indecomposable module is the one-member
+decomposition by the whole module. -/
+private theorem indecomposableDecomposition_eq_singleton_top :
+    (exists_isInternal_isIndecomposableModule (A := A) (M := M)).choose = {⊤} := by
+  classical
+  let s := (exists_isInternal_isIndecomposableModule (A := A) (M := M)).choose
+  have hs := (exists_isInternal_isIndecomposableModule (A := A) (M := M)).choose_spec.1
+  have hi := (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mp
+    (exists_isInternal_isIndecomposableModule (A := A) (M := M)).choose_spec.2
+  have hind : s.SupIndep id := hi.1.supIndep
+  have hsup : s.sup id = (⊤ : Submodule A M) := by
+    simpa only [Finset.sup_eq_iSup, iSup_subtype, id_eq] using hi.2
+  have hPtop : ∀ P ∈ s, P = ⊤ := by
+    intro P hP
+    have hcompl : IsCompl P ((s.erase P).sup id) := by
+      refine ⟨(Finset.supIndep_iff_disjoint_erase.mp hind P hP), ?_⟩
+      rw [codisjoint_iff, ← hsup]
+      conv_rhs => rw [← Finset.insert_erase hP, Finset.sup_insert]
+      rfl
+    rcases (isIndecomposableModule_iff_nontrivial_and_forall_isCompl.mp hM).2 _ _ hcompl with
+      hPbot | hrest
+    · exact (Submodule.nontrivial_iff_ne_bot.mp (hs P hP).nontrivial hPbot).elim
+    · exact eq_top_of_isCompl_bot (hrest ▸ hcompl)
+  have htop : ⊤ ∈ s := by
+    obtain ⟨P, hP⟩ : s.Nonempty := by
+      rw [Finset.nonempty_iff_ne_empty]
+      intro hs0
+      let _ := hM.nontrivial
+      apply top_ne_bot (α := Submodule A M)
+      simpa [hs0] using hsup.symm
+    simpa [hPtop P hP] using hP
+  exact Finset.eq_singleton_iff_unique_mem.mpr ⟨htop, hPtop⟩
+
+omit [IsNoetherian A M] in
 /-- The one-member decomposition of an indecomposable module. -/
 private theorem decompositionMultiplicity_top :
     decompositionMultiplicity {(⊤ : Submodule A M)} N = indecomposableMultiplicity A M N :=
-  decompositionMultiplicity_eq_indecomposableMultiplicity_of_supIndep
-    (by simpa using hM.of_linearEquiv Submodule.topEquiv.symm)
-    (Finset.supIndep_singleton _ _) (by simp)
+  by rw [indecomposableMultiplicity, indecomposableDecomposition_eq_singleton_top hM]
 
+omit [IsNoetherian A M] in
 /-- **An indecomposable module occurs exactly once in itself.** -/
 theorem indecomposableMultiplicity_self (e : M ≃ₗ[A] N) :
     indecomposableMultiplicity A M N = 1 := by
@@ -247,6 +297,7 @@ theorem indecomposableMultiplicity_self (e : M ≃ₗ[A] N) :
     ⟨⟨⊤, by simp, ⟨Submodule.topEquiv.trans e⟩⟩⟩⟩
   rw [Finset.mem_singleton.mp P.2.1, Finset.mem_singleton.mp Q.2.1]
 
+omit [IsNoetherian A M] in
 /-- **A nonisomorphic module does not occur in an indecomposable module.** -/
 theorem indecomposableMultiplicity_eq_zero_of_isEmpty_linearEquiv (he : IsEmpty (M ≃ₗ[A] N)) :
     indecomposableMultiplicity A M N = 0 := by
@@ -262,6 +313,7 @@ end Indecomposable
 /-! ### Additivity -/
 
 /-- **Multiplicity is additive on direct sums.** -/
+@[simp]
 theorem indecomposableMultiplicity_prod [IsNoetherian A M'] [IsArtinian A M'] :
     indecomposableMultiplicity A (M × M') N =
       indecomposableMultiplicity A M N + indecomposableMultiplicity A M' N := by
@@ -301,8 +353,10 @@ theorem indecomposableMultiplicity_prod [IsNoetherian A M'] [IsArtinian A M'] :
     exact (Submodule.nontrivial_iff_ne_bot.mp (hind Q (Finset.mem_union_left _ hQs)).nontrivial)
       hQbot
   rw [← decompositionMultiplicity_eq_indecomposableMultiplicity_of_supIndep hind
-      ((Submodule.supIndep_image_map LinearMap.inl_injective hsi).union
-        (Submodule.supIndep_image_map LinearMap.inr_injective hti) hdisj)
+      ((TauCeti.LinearMap.supIndep_image_map (LinearMap.inl A M M')
+        LinearMap.inl_injective hsi).union
+        (TauCeti.LinearMap.supIndep_image_map (LinearMap.inr A M M')
+          LinearMap.inr_injective hti) hdisj)
       (by rw [Finset.sup_union, hsup', htup']; exact LinearMap.sup_range_inl_inr),
     decompositionMultiplicity_union hfdisj, hs', ht',
     decompositionMultiplicity_image LinearMap.inl_injective,

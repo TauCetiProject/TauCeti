@@ -52,6 +52,8 @@ the Cartan map `TauCeti.cartanMap` as a matrix; the simple side is
   and 7.
 * Ibrahim Assem, Daniel Simson, and Andrzej Skowroński, *Elements of the Representation Theory
   of Associative Algebras I*, Chapter I, Section 4, and Chapter III, Section 3.
+* The construction and proof architecture are adapted from
+  `TauCeti/RepresentationTheory/GrothendieckGroup/SimpleBasis.lean`.
 -/
 
 public section
@@ -60,7 +62,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits CategoryTheory.ObjectProperty
 
-universe u w
+universe u w w'
 
 variable {R : Type u} [Ring R] [IsArtinianRing R]
 
@@ -114,6 +116,14 @@ noncomputable def indecomposableCoordinate :
 theorem indecomposableCoordinate_of (X : (finiteProjectiveModules R).FullSubcategory) :
     indecomposableCoordinate R N (ExactK0.of X) = indecomposableMultiplicity R X.obj N :=
   ExactK0.lift_of _ _
+
+/-- Linearly equivalent modules define the same Krull-Schmidt coordinate. -/
+theorem indecomposableCoordinate_congr
+    {N' : Type w'} [AddCommGroup N'] [Module R N'] (e : N ≃ₗ[R] N') :
+    indecomposableCoordinate R N = indecomposableCoordinate R N' := by
+  refine ExactK0.hom_ext fun X ↦ ?_
+  simp only [indecomposableCoordinate_of]
+  exact congrArg Int.ofNat (indecomposableMultiplicity_congr e)
 
 end Coordinate
 
