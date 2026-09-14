@@ -11,9 +11,9 @@ public import TauCeti.Algebra.HopfAlgebra.Kernel
 # Inverse images of Hopf ideals
 
 This file records inverse images of Hopf ideals. Over a general commutative base, a surjective
-bialgebra morphism supplies the tensor exactness needed for the construction. Over a field, the
-kernel of the composite with the quotient morphism gives the inverse image along an arbitrary
-bialgebra morphism.
+bialgebra morphism supplies the tensor exactness needed for the construction. Alternatively,
+flatness of `K/I` and `H/f⁻¹(I)` lets us take the kernel of the composite `H → K → K/I`.
+Over a field these flatness conditions hold for every bialgebra morphism.
 
 For a surjective morphism `f : H →ₐc[R] K` and a Hopf ideal `I` of `K`, the preimage
 `f ⁻¹ I` is a Hopf ideal of `H`. The construction is made by applying the existing
@@ -22,21 +22,17 @@ kernel-of-a-surjective-Hopf-map theorem to the composite `H → K → K/I`.
 The surjectivity hypothesis is intentional: over a general commutative base, the tensor
 exactness needed for the coideal condition is not automatic without an exactness hypothesis.
 
-This is a Layer 3 prerequisite for the reductive-groups roadmap target "Hopf ideals ↔ closed
-subgroup schemes", including kernels and pullback-style operations on closed subgroup
-schemes in the affine Hopf-algebra dictionary.
-
 ## Main declarations
 
-* `TauCeti.HopfIdeal.comap`: the inverse image along an arbitrary morphism over a field.
+* `TauCeti.HopfIdeal.comap`: the inverse image when the quotient and preimage quotient are flat.
 * `TauCeti.HopfIdeal.comapOfSurjective`: the inverse image under a surjective morphism over a
   general base.
-* `TauCeti.HopfIdeal.comap_toIdeal` and `TauCeti.HopfIdeal.mem_comap`: characteristic API over a
-  field.
+* `TauCeti.HopfIdeal.comap_toIdeal` and `TauCeti.HopfIdeal.mem_comap`: characteristic API for
+  the flat construction.
 * `TauCeti.HopfIdeal.comapOfSurjective_toIdeal` and
   `TauCeti.HopfIdeal.mem_comapOfSurjective`: characteristic API over a general base.
-* `TauCeti.HopfIdeal.comapOfSurjective_eq_comap`: comparison of the two constructions over a
-  field.
+* `TauCeti.HopfIdeal.comapOfSurjective_eq_comap`: comparison of the two constructions when
+  both apply.
 * `TauCeti.HopfIdeal.comapOfSurjective_le_comapOfSurjective_iff`: surjective inverse image reflects
   containment.
 * `TauCeti.HopfIdeal.comapOfSurjective_bot`: the kernel of a surjective morphism is the inverse
@@ -283,48 +279,70 @@ theorem comapOfSurjective_bialgEquiv_symm_apply (I : HopfIdeal R H) (e : H ≃�
   simp only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom,
     e.symm_apply_apply]
 
+section Flat
+
+variable {k : Type u} [CommRing k]
+variable [HopfAlgebra k H] [HopfAlgebra k K]
+
+/-- The inverse image of a Hopf ideal along a bialgebra morphism with flat quotient algebras
+`K/I` and `H/f⁻¹(I)`.
+
+In particular, this construction needs no surjectivity hypothesis over a field. -/
+noncomputable def comap (I : HopfIdeal k K) (f : H →ₐc[k] K)
+    [Module.Flat k (K ⧸ I.toIdeal)]
+    [Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) I.toIdeal)] : HopfIdeal k H := by
+  have : Module.Flat k
+      (H ⧸ RingHom.ker ((Bialgebra.Quotient.mkBialgHom I.toIdeal).comp f).toAlgHom) := by
+    rwa [ker_quotient_comp]
+  exact ker ((Bialgebra.Quotient.mkBialgHom I.toIdeal).comp f)
+
+/-- The underlying ideal of `comap` is the ordinary ideal-theoretic inverse image. -/
+@[simp]
+theorem comap_toIdeal (I : HopfIdeal k K) (f : H →ₐc[k] K)
+    [Module.Flat k (K ⧸ I.toIdeal)]
+    [Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) I.toIdeal)] :
+    (I.comap f).toIdeal = Ideal.comap (f : H →+* K) I.toIdeal := by
+  rw [comap, ker_toIdeal, ker_quotient_comp]
+
+/-- Membership in the inverse image is membership after applying the morphism. -/
+@[simp]
+theorem mem_comap {I : HopfIdeal k K} {f : H →ₐc[k] K}
+    [Module.Flat k (K ⧸ I.toIdeal)]
+    [Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) I.toIdeal)] {h : H} :
+    h ∈ I.comap f ↔ f h ∈ I := by
+  rw [← mem_toIdeal, comap_toIdeal, Ideal.mem_comap]
+  exact mem_toIdeal
+
+/-- The surjective and flat inverse-image constructions agree whenever both apply. -/
+theorem comapOfSurjective_eq_comap (I : HopfIdeal k K) (f : H →ₐc[k] K)
+    [Module.Flat k (K ⧸ I.toIdeal)]
+    [Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) I.toIdeal)]
+    (hf : Function.Surjective f) :
+    I.comapOfSurjective f hf = I.comap f := by
+  ext h
+  rw [mem_comapOfSurjective, mem_comap]
+
+/-- Inverse image of Hopf ideals is monotone whenever the required quotients are flat. -/
+theorem comap_mono (f : H →ₐc[k] K) {I J : HopfIdeal k K} (hIJ : I ≤ J)
+    [Module.Flat k (K ⧸ I.toIdeal)] [Module.Flat k (K ⧸ J.toIdeal)]
+    [Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) I.toIdeal)]
+    [Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) J.toIdeal)] :
+    I.comap f ≤ J.comap f := by
+  intro h hh
+  exact mem_comap.mpr (hIJ (mem_comap.mp hh))
+
+end Flat
+
 section Field
 
 variable {k : Type u} [Field k]
 variable [HopfAlgebra k H] [HopfAlgebra k K] [HopfAlgebra k L]
-
-/-- The inverse image of a Hopf ideal along an arbitrary bialgebra morphism over a field.
-
-Unlike `HopfIdeal.comapOfSurjective`, this construction needs no surjectivity hypothesis: over a
-field the kernel of every bialgebra morphism is a Hopf ideal. -/
-noncomputable def comap (I : HopfIdeal k K) (f : H →ₐc[k] K) : HopfIdeal k H :=
-  ker ((Bialgebra.Quotient.mkBialgHom I.toIdeal).comp f)
-
-/-- The underlying ideal of `comap` is the ordinary ideal-theoretic inverse image. -/
-@[simp]
-theorem comap_toIdeal (I : HopfIdeal k K) (f : H →ₐc[k] K) :
-    (I.comap f).toIdeal = Ideal.comap (f : H →+* K) I.toIdeal := by
-  rw [comap, ker_toIdeal, ker_quotient_comp]
-
-/-- Membership in the inverse image over a field is membership after applying the morphism. -/
-@[simp]
-theorem mem_comap {I : HopfIdeal k K} {f : H →ₐc[k] K} {h : H} :
-    h ∈ I.comap f ↔ f h ∈ I := by
-  rw [← mem_toIdeal, comap_toIdeal, Ideal.mem_comap]
-  exact mem_toIdeal
 
 /-- The kernel of a composite is the inverse image of the second morphism's kernel. -/
 theorem ker_comp (f : H →ₐc[k] K) (g : K →ₐc[k] L) :
     ker (g.comp f) = (ker g).comap f := by
   ext x
   rw [mem_ker, mem_comap, mem_ker, BialgHom.comp_apply]
-
-/-- Over a field, the surjective inverse image agrees with the unrestricted construction. -/
-theorem comapOfSurjective_eq_comap (I : HopfIdeal k K) (f : H →ₐc[k] K)
-    (hf : Function.Surjective f) :
-    I.comapOfSurjective f hf = I.comap f := by
-  rw [comapOfSurjective_eq_kerOfSurjective, comap, kerOfSurjective_eq_ker]
-
-/-- Inverse image of Hopf ideals over a field is monotone. -/
-theorem comap_mono (f : H →ₐc[k] K) {I J : HopfIdeal k K} (hIJ : I ≤ J) :
-    I.comap f ≤ J.comap f := by
-  intro h hh
-  exact mem_comap.mpr (hIJ (mem_comap.mp hh))
 
 /-- The inverse image of the zero Hopf ideal over a field is the Hopf-ideal kernel. -/
 @[simp]
