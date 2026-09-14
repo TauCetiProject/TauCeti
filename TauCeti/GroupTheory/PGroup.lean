@@ -14,7 +14,7 @@ Mathlib's `IsPGroup.to_quotient` says that every quotient of a `p`-group is agai
 This file records the complementary behaviour, in which the group is fixed and the normal
 subgroup varies: how the property `IsPGroup p (G ⧸ N)` of *the quotient* behaves under
 intersection of normal subgroups and under preimage along a group homomorphism. It also records
-closure of `p`-groups under binary products.
+closure of `p`-groups under binary and finite products.
 
 The two quotient statements are group-theoretic, with no topology. They are what makes the family of
 normal subgroups with `p`-group quotient usable: `IsPGroup.quotient_inf` says the family is
@@ -26,6 +26,7 @@ that a homomorphism into a pro-`p` group kills their intersection.
 ## Main results
 
 * `IsPGroup.prod`: a product of two `p`-groups is a `p`-group.
+* `IsPGroup.pi`: a finite product of `p`-groups is a `p`-group.
 * `IsPGroup.quotient_inf`: if `G ⧸ M` and `G ⧸ N` are `p`-groups, so is `G ⧸ (M ⊓ N)`.
 * `IsPGroup.quotient_comap`: if `H ⧸ N` is a `p`-group and `f : G →* H`, then `G ⧸ N.comap f`
   is a `p`-group.
@@ -43,11 +44,20 @@ theorem _root_.IsPGroup.prod (hG : IsPGroup p G) (hH : IsPGroup p H) :
   rintro ⟨g, h⟩
   obtain ⟨m, hm⟩ := hG g
   obtain ⟨n, hn⟩ := hH h
-  refine ⟨m + n, Prod.ext ?_ ?_⟩
-  · change g ^ p ^ (m + n) = 1
-    rw [pow_add, pow_mul, hm, one_pow]
-  · change h ^ p ^ (m + n) = 1
-    rw [add_comm, pow_add, pow_mul, hn, one_pow]
+  refine ⟨m + n, ?_⟩
+  rw [Prod.pow_mk, Prod.mk_eq_one, pow_add, pow_mul, hm, one_pow, mul_comm, pow_mul, hn, one_pow]
+  exact ⟨rfl, rfl⟩
+
+/-- A product of finitely many `p`-groups is a `p`-group. -/
+theorem _root_.IsPGroup.pi {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, Group (G i)]
+    (hG : ∀ i, IsPGroup p (G i)) : IsPGroup p (∀ i, G i) := by
+  cases nonempty_fintype ι
+  intro g
+  choose n hn using fun i ↦ hG i (g i)
+  refine ⟨∑ i, n i, funext fun i ↦ ?_⟩
+  obtain ⟨k, hk⟩ := pow_dvd_pow p (Finset.single_le_sum (fun j _ ↦ Nat.zero_le (n j))
+    (Finset.mem_univ i))
+  rw [Pi.pow_apply, hk, pow_mul, hn, one_pow, Pi.one_apply]
 
 /-- The normal subgroups of `G` with `p`-group quotient are closed under binary intersection. -/
 theorem _root_.IsPGroup.quotient_inf {M N : Subgroup G} [M.Normal] [N.Normal]
