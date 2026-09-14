@@ -165,7 +165,6 @@ theorem zigzagProjectiveHeadCoeff_apply (i : V) (x : zigzagProjective k G i) :
       zigzagTrivialCoeff k G (x : nonisolatedZigzagQuotient k G) (vertex G i) :=
   (rfl)
 
-@[simp]
 theorem zigzagProjectiveHeadCoeff_generator (i : V) :
     zigzagProjectiveHeadCoeff k G i (zigzagProjectiveGenerator k G i) = 1 := by
   classical
