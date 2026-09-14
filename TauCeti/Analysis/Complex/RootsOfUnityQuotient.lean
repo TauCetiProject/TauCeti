@@ -96,8 +96,7 @@ noncomputable def rootsOfUnityQuotientHomeomorph (s : SubMulAction (rootsOfUnity
 @[simp]
 theorem coe_rootsOfUnityQuotientHomeomorph_mk (s : SubMulAction (rootsOfUnity m ℂ) ℂ) (u : s) :
     (rootsOfUnityQuotientHomeomorph s (Quotient.mk _ u) : ℂ) = (u : ℂ) ^ m := by
-  change (rootsOfUnityQuotientMap s (Quotient.mk _ u) : ℂ) = (u : ℂ) ^ m
-  rw [coe_rootsOfUnityQuotientMap_mk]
+  exact coe_rootsOfUnityQuotientMap_mk s u
 
 end SubMulAction
 
@@ -150,9 +149,7 @@ noncomputable def rootsOfUnityBallQuotientHomeomorph {r : ℝ} (hr : 0 ≤ r) :
 theorem coe_rootsOfUnityBallQuotientHomeomorph_mk {r : ℝ} (hr : 0 ≤ r)
     (u : rootsOfUnityBall m r) :
     (rootsOfUnityBallQuotientHomeomorph hr (Quotient.mk _ u) : ℂ) = (u : ℂ) ^ m := by
-  change (SubMulAction.rootsOfUnityQuotientHomeomorph (rootsOfUnityBall m r)
-    (Quotient.mk _ u) : ℂ) = (u : ℂ) ^ m
-  rw [SubMulAction.coe_rootsOfUnityQuotientHomeomorph_mk]
+  exact SubMulAction.coe_rootsOfUnityQuotientHomeomorph_mk (rootsOfUnityBall m r) u
 
 omit [NeZero m] in
 /-- For `m ≥ 2`, the `m`-th roots of unity act freely exactly on the nonzero complex numbers:
