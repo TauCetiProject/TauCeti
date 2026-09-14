@@ -88,8 +88,15 @@ theorem map_add (ε : 𝒜.Augmentation e) (x y : A) : ε (x + y) = ε x + ε y 
   ε.toLinearMap.map_add x y
 
 @[simp]
+theorem map_neg (ε : 𝒜.Augmentation e) (x : A) : ε (-x) = -ε x :=
+  ε.toLinearMap.map_neg x
+
+@[simp]
 theorem map_sub (ε : 𝒜.Augmentation e) (x y : A) : ε (x - y) = ε x - ε y :=
   ε.toLinearMap.map_sub x y
+
+theorem map_smul (ε : 𝒜.Augmentation e) (r : R) (x : A) : ε (r • x) = r • ε x :=
+  ε.toLinearMap.map_smul r x
 
 /-- A homogeneous element of nonzero degree has zero augmentation. -/
 theorem map_eq_zero_of_mem_piece (ε : 𝒜.Augmentation e) {p : ℤ} (hp : p ≠ 0) {x : A}
@@ -172,7 +179,7 @@ def reducedPart (ε : 𝒜.Augmentation e) :
 
 /-- The reduced-part projection subtracts the scalar multiple of the strict unit. -/
 @[simp]
-theorem coe_reducedPart (ε : 𝒜.Augmentation e) (x : A) :
+theorem reducedPart_apply (ε : 𝒜.Augmentation e) (x : A) :
     (ε.reducedPart x : A) = x - ε x • e := by
   rfl
 
@@ -181,7 +188,7 @@ theorem coe_reducedPart (ε : 𝒜.Augmentation e) (x : A) :
 theorem reducedPart_coe (ε : 𝒜.Augmentation e) (x : ε.augmentationIdeal) :
     ε.reducedPart (x : A) = x := by
   apply Subtype.ext
-  rw [ε.coe_reducedPart, (ε.mem_augmentationIdeal).mp x.property, zero_smul, sub_zero]
+  rw [ε.reducedPart_apply, (ε.mem_augmentationIdeal).mp x.property, zero_smul, sub_zero]
 
 /-- The canonical splitting into scalar and reduced parts. -/
 noncomputable def splitLinearEquiv (ε : 𝒜.Augmentation e) :
@@ -193,7 +200,8 @@ noncomputable def splitLinearEquiv (ε : 𝒜.Augmentation e) :
 /-- The splitting records the scalar and reduced parts of an element. -/
 @[simp]
 theorem splitLinearEquiv_apply (ε : 𝒜.Augmentation e) (x : A) :
-    ε.splitLinearEquiv x = (ε x, ε.reducedPart x) := (rfl)
+    ε.splitLinearEquiv x = (ε x, ε.reducedPart x) := by
+  apply LinearMap.equivProdOfSurjectiveOfIsCompl_apply
 
 /-- The inverse splitting adds the scalar and reduced parts. -/
 @[simp]
@@ -204,8 +212,8 @@ theorem splitLinearEquiv_symm_apply (ε : 𝒜.Augmentation e)
   rw [LinearEquiv.symm_apply_eq, ε.splitLinearEquiv_apply]
   refine Prod.ext ?_ (Subtype.ext ?_)
   · rw [ε.map_add, ε.toLinearMap.map_smul, ε.map_unit, smul_eq_mul, mul_one, hx, add_zero]
-  · rw [ε.coe_reducedPart, ε.map_add, ε.toLinearMap.map_smul, ε.map_unit, smul_eq_mul, mul_one, hx,
-      add_zero, add_sub_cancel_left]
+  · rw [ε.reducedPart_apply, ε.map_add, ε.toLinearMap.map_smul, ε.map_unit, smul_eq_mul,
+      mul_one, hx, add_zero, add_sub_cancel_left]
 
 end Augmentation
 
