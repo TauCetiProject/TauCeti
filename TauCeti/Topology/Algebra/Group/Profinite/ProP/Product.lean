@@ -12,12 +12,12 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 /-!
 # Products of pro-p groups
 
-The product of two pro-`p` groups is pro-`p`. Given an open normal subgroup `U` of a product,
-its preimages under the two coordinate inclusions give open normal subgroups `V` and `W` of the
-factors. The product `V × W` lies in `U`, so the quotient by `U` is a quotient of
-`(G × H) ⧸ (V × W)`, which is a `p`-group. For a finite product `∀ i, G i`, the preimages `V i`
-under the coordinate inclusions play the same role: the kernel of the map to `∀ i, G i ⧸ V i`
-lies in `U`, and that map embeds its quotient into a finite product of `p`-groups.
+The class of pro-`p` groups is stable under finite products: if each factor is pro-`p`, then so
+is their product with the product topology. Together with stability under continuous surjective
+images from `ProP.Basic`, this is part of the basic closure API for `IsProP`, and lets new pro-`p`
+groups be assembled from known factors without re-examining their open normal subgroups. The
+result is stated both for binary products `G × H` and for finite indexed products `∀ i, G i`,
+the two product forms used in practice.
 
 ## Main results
 
@@ -43,6 +43,8 @@ variable {H : Type v} [Group H] [TopologicalSpace H]
 
 /-- A product of two pro-`p` groups, with the product topology, is pro-`p`. -/
 theorem prod (hG : IsProP p G) (hH : IsProP p H) : IsProP p (G × H) := by
+  -- Pull `U` back along the coordinate inclusions to open normal subgroups `V` and `W`. Then
+  -- `V × W ≤ U`, so `(G × H) ⧸ U` is a quotient of the `p`-group `(G × H) ⧸ (V × W)`.
   rw [isProP_iff]
   intro U
   let V := OpenNormalSubgroup.comap U (ContinuousMonoidHom.inl G H).toMonoidHom
@@ -62,6 +64,8 @@ theorem prod (hG : IsProP p G) (hH : IsProP p H) : IsProP p (G × H) := by
 /-- A product of finitely many pro-`p` groups, with the product topology, is pro-`p`. -/
 theorem pi {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, Group (G i)]
     [∀ i, TopologicalSpace (G i)] (hG : ∀ i, IsProP p (G i)) : IsProP p (∀ i, G i) := by
+  -- Pull `U` back along each coordinate inclusion to `V i`. The kernel of the map to
+  -- `∀ i, G i ⧸ V i` lies in `U`, and its quotient embeds in a finite product of `p`-groups.
   classical
   rw [isProP_iff]
   intro U
