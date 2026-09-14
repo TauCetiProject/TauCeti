@@ -89,11 +89,6 @@ theorem squareClass_prod {ι : Type*} (S : Finset ι) (d : ι → Kˣ) :
   rw [← QuotientAddGroup.mk'_apply, map_sum]
   simp only [QuotientAddGroup.mk'_apply]
 
-/-- Every element of the square-class group has order dividing two. -/
-@[simp]
-theorem SquareClassGroup.two_nsmul_eq_zero (x : SquareClassGroup K) : 2 • x = 0 := by
-  rw [← Nat.cast_smul_eq_nsmul (ZMod 2) 2 x, ZMod.natCast_self, zero_smul]
-
 /-- **Two units have the same square class exactly when their product is a square.** This is the
 quotient-free reading of equality in the square-class group. -/
 theorem squareClass_eq_iff_isSquare_mul (u v : Kˣ) :

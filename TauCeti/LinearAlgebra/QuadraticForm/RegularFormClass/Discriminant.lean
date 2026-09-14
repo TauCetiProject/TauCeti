@@ -8,8 +8,8 @@ module
 public import TauCeti.Data.Nat.Choose
 public import TauCeti.FieldTheory.SquareClassGroup.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.TensorProduct
-public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Decomposition
 
 /-!
 # The discriminant and the signed discriminant of a regular quadratic form
@@ -196,6 +196,7 @@ theorem signedDiscr_mk_rankOne (a : Kˣ) :
 `d±(q ⊥ r) = mn • squareClass (-1) + d±(q) + d±(r)` for `q` of rank `m` and `r` of rank
 `n`, in the additively written square-class group. The cross term is what the unsigned
 discriminant misses. -/
+@[simp]
 theorem signedDiscr_add (x y : RegularFormClass K) :
     signedDiscr (x + y) =
       (rank x * rank y) • squareClass (-1 : Kˣ) + signedDiscr x + signedDiscr y := by
@@ -233,6 +234,14 @@ theorem discr_formClass {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimens
     RegularFormClass.discr (formClass Q hQ) = squareClass (∏ i, p.2 i) := by
   rw [formClass_mk Q hQ p hp, RegularFormClass.discr_mk]
 
+/-- The signed discriminant of a regular form is computed by any of its diagonalizations. -/
+theorem signedDiscr_formClass {V : Type v} [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (p : RegularFormPresentation K) (hp : Q.Equivalent (presentedForm p)) :
+    RegularFormClass.signedDiscr (formClass Q hQ) =
+      p.1.choose 2 • squareClass (-1 : Kˣ) + squareClass (∏ i, p.2 i) := by
+  rw [formClass_mk Q hQ p hp, RegularFormClass.signedDiscr_mk]
+
 /-- The discriminant of the hyperbolic class is the class of `-1`. -/
 @[simp]
 theorem RegularFormClass.discr_hyperbolicClass :
@@ -254,11 +263,17 @@ theorem RegularFormClass.signedDiscr_hyperbolicClass :
 /-- **Adding a hyperbolic plane leaves the signed discriminant unchanged.** The cross term of
 `TauCeti.RegularFormClass.signedDiscr_add` is an even multiple of the class of `-1`, so it
 vanishes. The unsigned discriminant instead picks up the class of `-1` each time. -/
-@[simp]
 theorem RegularFormClass.signedDiscr_add_hyperbolicClass (x : RegularFormClass K) :
     RegularFormClass.signedDiscr (x + hyperbolicClass K) = RegularFormClass.signedDiscr x := by
   rw [RegularFormClass.signedDiscr_add, RegularFormClass.signedDiscr_hyperbolicClass,
-    rank_hyperbolicClass, mul_nsmul, SquareClassGroup.two_nsmul_eq_zero]
+    rank_hyperbolicClass]
+  have hcross : (RegularFormClass.rank x * 2) • squareClass (-1 : Kˣ) = 0 := by
+    calc
+      _ = 2 • (RegularFormClass.rank x • squareClass (-1 : Kˣ)) :=
+        mul_nsmul _ _ _
+      _ = 0 := ZModModule.char_nsmul_eq_zero 2
+        (RegularFormClass.rank x • squareClass (-1 : Kˣ) : SquareClassGroup K)
+  rw [hcross]
   abel
 
 end TauCeti

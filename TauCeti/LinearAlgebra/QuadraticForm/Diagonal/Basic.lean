@@ -32,7 +32,7 @@ public section
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 open QuadraticMap
 
@@ -155,10 +155,10 @@ theorem equivalent_weightedSumSquares_of_pair (hij : i ≠ j)
 
 end PairExtension
 
-variable {R : Type u} [CommSemiring R] {ι : Type v} [Fintype ι]
+variable {R : Type u} [CommSemiring R] {ι : Type v} {κ : Type w} [Fintype ι] [Fintype κ]
 
-/-- Permuting the coefficients of a diagonal form does not change its equivalence class. -/
-theorem equivalent_weightedSumSquares_comp (w : ι → R) (σ : Equiv.Perm ι) :
+/-- Reindexing the coefficients of a diagonal form does not change its equivalence class. -/
+theorem equivalent_weightedSumSquares_comp (w : ι → R) (σ : κ ≃ ι) :
     (QuadraticMap.weightedSumSquares R w).Equivalent
       (QuadraticMap.weightedSumSquares R (w ∘ σ)) := by
   refine ⟨{
@@ -176,7 +176,8 @@ theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :
 
 section Discriminant
 
-variable {R : Type u} [CommRing R] [Invertible (2 : R)] {ι : Type v} [Fintype ι]
+variable {R : Type u} [CommRing R] [Invertible (2 : R)]
+variable {ι : Type v} {κ : Type w} [Fintype ι] [Fintype κ]
 
 /-- The bilinear form associated with a diagonal quadratic form pairs the coordinates
 diagonally: it is the weighted dot product. -/
@@ -221,25 +222,43 @@ theorem _root_.QuadraticForm.discr'_weightedSumSquares [DecidableEq ι] (w : ι 
 isometry of the coordinate spaces changes the Gram matrix of a diagonal form by a congruence, so
 it changes its determinant — the product of the weights — by the square of the determinant of that
 isometry. -/
-theorem isSquare_prod_mul_prod_of_equivalent {w v : ι → Rˣ}
+theorem isSquare_prod_mul_prod_of_equivalent {w : ι → Rˣ} {v : κ → Rˣ}
     (h : (QuadraticMap.weightedSumSquares R w).Equivalent
       (QuadraticMap.weightedSumSquares R v)) :
     IsSquare ((∏ i, w i) * ∏ i, v i) := by
   classical
+  by_cases hR : Nontrivial R
+  swap
+  · have _ : Subsingleton R := not_nontrivial_iff_subsingleton.mp hR
+    exact ⟨1, Subsingleton.elim _ _⟩
+  let _ : Nontrivial R := hR
   obtain ⟨f⟩ := h
+  let e : ι ≃ κ := Fintype.equivOfCardEq <| by
+    simpa only [Module.finrank_fintype_fun_eq_card] using f.toLinearEquiv.finrank_eq
+  have hreindex : (QuadraticMap.weightedSumSquares R v).Equivalent
+      (QuadraticMap.weightedSumSquares R (v ∘ e)) := by
+    rw [QuadraticMap.weightedSumSquares_units, QuadraticMap.weightedSumSquares_units]
+    exact equivalent_weightedSumSquares_comp (fun i => ((v i : R))) e
+  have h' : (QuadraticMap.weightedSumSquares R w).Equivalent
+      (QuadraticMap.weightedSumSquares R (v ∘ e)) :=
+    QuadraticMap.Equivalent.trans ⟨f⟩ hreindex
+  obtain ⟨f⟩ := h'
   obtain ⟨g, hg⟩ : ∃ g : (ι → R) ≃ₗ[R] (ι → R),
       QuadraticMap.weightedSumSquares R w
-        = (QuadraticMap.weightedSumSquares R v).comp g.toLinearMap :=
+        = (QuadraticMap.weightedSumSquares R (v ∘ e)).comp g.toLinearMap :=
     ⟨f.toLinearEquiv, by ext x; exact (f.map_app' x).symm⟩
   have hdet : (∏ i, ((w i : R))) =
-      ((LinearEquiv.det g : Rˣ) : R) * ((LinearEquiv.det g : Rˣ) : R) * ∏ i, ((v i : R)) := by
+      ((LinearEquiv.det g : Rˣ) : R) * ((LinearEquiv.det g : Rˣ) : R) *
+        ∏ i, (((v ∘ e) i : R)) := by
     rw [← QuadraticForm.discr'_weightedSumSquares fun i => ((w i : R)),
-      ← QuadraticForm.discr'_weightedSumSquares fun i => ((v i : R)),
+      ← QuadraticForm.discr'_weightedSumSquares fun i => (((v ∘ e) i : R)),
       ← QuadraticMap.weightedSumSquares_units, ← QuadraticMap.weightedSumSquares_units, hg,
       QuadraticForm.discr'_comp, LinearMap.det_toMatrix', LinearEquiv.coe_det]
-  refine ⟨LinearEquiv.det g * ∏ i, v i, Units.ext ?_⟩
+  refine ⟨LinearEquiv.det g * ∏ i, (v ∘ e) i, Units.ext ?_⟩
   push_cast
-  rw [hdet]
+  have he : (∏ i, (((v ∘ e) i : R))) = ∏ i, ((v i : R)) :=
+    Equiv.prod_comp e fun i => ((v i : R))
+  rw [hdet, he]
   ring
 
 end Discriminant
