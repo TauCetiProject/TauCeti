@@ -101,8 +101,7 @@ theorem deriv_conj_eq_mul_conj_deriv (hΩopen : IsOpen Ω)
     intro w hw
     have hcc : deriv ((starRingEnd ℂ) ∘ F ∘ (starRingEnd ℂ)) w
         = (starRingEnd ℂ) (deriv F ((starRingEnd ℂ) w)) := by
-      rw [deriv_conj_conj]
-      rfl
+      simpa only [Function.comp_def] using congrFun deriv_conj_conj w
     calc deriv F w
         = deriv (fun w : ℂ => c + u * ((starRingEnd ℂ) ∘ F ∘ (starRingEnd ℂ)) w) w :=
           (Filter.eventuallyEq_of_mem (hΩopen.mem_nhds hw) hEq).deriv_eq
@@ -112,9 +111,9 @@ theorem deriv_conj_eq_mul_conj_deriv (hΩopen : IsOpen Ω)
       _ = u * (starRingEnd ℂ) (deriv F ((starRingEnd ℂ) w)) := by rw [hcc]
   simpa using hstep ((starRingEnd ℂ) z) (hΩ hz)
 
-/-- **The second derivative inherits the same reflection identity.** This is
-`TauCeti.deriv_conj_eq_mul_conj_deriv` applied to `deriv F`, whose reflection identity that lemma
-has just produced with zero constant. -/
+/-- **The second derivative inherits the same reflection identity.** If `F` intertwines
+conjugation with an affine reflection on a conjugation-symmetric open set, then its second
+derivative obeys the same multiplier relation as its first derivative. -/
 theorem deriv_deriv_conj_eq_mul_conj_deriv_deriv (hΩopen : IsOpen Ω)
     (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (hrefl : ∀ z ∈ Ω, F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z))
