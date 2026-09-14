@@ -54,7 +54,6 @@ open TauCeti.Complexification
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
-@[simp]
 private theorem restrictScalars_complexify_apply_re (T : X →L[ℝ] X)
     (z : TauCeti.Complexification X) :
     ((T.complexify.restrictScalars ℝ) z).re = T z.re := by
@@ -62,7 +61,6 @@ private theorem restrictScalars_complexify_apply_re (T : X →L[ℝ] X)
   change (T.complexify z).re = T z.re
   exact ContinuousLinearMap.complexify_apply_re T z
 
-@[simp]
 private theorem restrictScalars_complexify_apply_im (T : X →L[ℝ] X)
     (z : TauCeti.Complexification X) :
     ((T.complexify.restrictScalars ℝ) z).im = T z.im := by
@@ -116,7 +114,6 @@ theorem complexify_apply (S : StronglyContinuousSemigroup X) (t : ℝ≥0) :
   (rfl)
 
 /-- The real part of the complexified semigroup action is the original action on the real part. -/
-@[simp]
 theorem complexify_apply_re (S : StronglyContinuousSemigroup X) (t : ℝ≥0)
     (z : TauCeti.Complexification X) : (S.complexify t z).re = S t z.re :=
   by
@@ -125,7 +122,6 @@ theorem complexify_apply_re (S : StronglyContinuousSemigroup X) (t : ℝ≥0)
 
 /-- The imaginary part of the complexified semigroup action is the original action on the
 imaginary part. -/
-@[simp]
 theorem complexify_apply_im (S : StronglyContinuousSemigroup X) (t : ℝ≥0)
     (z : TauCeti.Complexification X) : (S.complexify t z).im = S t z.im :=
   by
@@ -133,7 +129,6 @@ theorem complexify_apply_im (S : StronglyContinuousSemigroup X) (t : ℝ≥0)
     exact restrictScalars_complexify_apply_im (S t) z
 
 /-- The complexified semigroup extends the original semigroup along the real embedding. -/
-@[simp]
 theorem complexify_apply_ofReal (S : StronglyContinuousSemigroup X) (t : ℝ≥0) (x : X) :
     S.complexify t (ofReal x) = ofReal (S t x) := by
   ext <;> simp
@@ -146,13 +141,11 @@ theorem complexify_realOperator (S : StronglyContinuousSemigroup X) (t : ℝ) :
   by rw [S.complexify.realOperator_def, S.realOperator_def, complexify_apply]
 
 /-- The real-time action of the complexified semigroup extends the original real-time action. -/
-@[simp]
 theorem complexify_realOperator_apply_ofReal (S : StronglyContinuousSemigroup X) (t : ℝ)
     (x : X) : S.complexify.realOperator t (ofReal x) = ofReal (S.realOperator t x) := by
   ext <;> simp
 
 /-- The real part of the complexified real-time action is the original action on the real part. -/
-@[simp]
 theorem complexify_realOperator_apply_re (S : StronglyContinuousSemigroup X) (t : ℝ)
     (z : TauCeti.Complexification X) :
     (S.complexify.realOperator t z).re = S.realOperator t z.re := by
@@ -161,7 +154,6 @@ theorem complexify_realOperator_apply_re (S : StronglyContinuousSemigroup X) (t 
 
 /-- The imaginary part of the complexified real-time action is the original action on the
 imaginary part. -/
-@[simp]
 theorem complexify_realOperator_apply_im (S : StronglyContinuousSemigroup X) (t : ℝ)
     (z : TauCeti.Complexification X) :
     (S.complexify.realOperator t z).im = S.realOperator t z.im := by
@@ -169,7 +161,6 @@ theorem complexify_realOperator_apply_im (S : StronglyContinuousSemigroup X) (t 
   exact restrictScalars_complexify_apply_im (S.realOperator t) z
 
 /-- Complexifying a semigroup preserves the operator norm at every nonnegative time. -/
-@[simp]
 theorem norm_complexify_apply (S : StronglyContinuousSemigroup X) (t : ℝ≥0) :
     ‖S.complexify t‖ = ‖S t‖ := by
   rw [S.complexify_apply]
@@ -177,7 +168,6 @@ theorem norm_complexify_apply (S : StronglyContinuousSemigroup X) (t : ℝ≥0) 
     (ContinuousLinearMap.norm_complexify (S t))
 
 /-- Complexifying a semigroup preserves the operator norm of its real-time extension. -/
-@[simp]
 theorem norm_complexify_realOperator (S : StronglyContinuousSemigroup X) (t : ℝ) :
     ‖S.complexify.realOperator t‖ = ‖S.realOperator t‖ := by
   rw [S.complexify_realOperator]
@@ -259,7 +249,6 @@ theorem generator_complexify_apply (S : StronglyContinuousSemigroup X)
 
 /-- The complex generator of the complexified semigroup acts componentwise by the original real
 generator. -/
-@[simp]
 theorem complexGenerator_complexify_apply (S : StronglyContinuousSemigroup X)
     (z : (S.complexify.complexGenerator S.isComplexLinear_complexify).domain) :
     S.complexify.complexGenerator S.isComplexLinear_complexify z =
