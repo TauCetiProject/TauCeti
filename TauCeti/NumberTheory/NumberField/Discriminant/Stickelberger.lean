@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Galois.Infinite
-public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import TauCeti.LinearAlgebra.Matrix.LeibnizPart
+public import TauCeti.NumberTheory.AlgebraicClosure.Integral
 
 /-!
 # Stickelberger's congruence
@@ -28,7 +27,7 @@ of Dedekind domains is an ideal, and has no residue modulo `4`.
 
 ## Main results
 
-* `TauCeti.NumberField.exists_discr_eq_sq_sub_four_mul_of_isIntegral`: the discriminant of a
+* `Module.Basis.exists_discr_eq_sq_sub_four_mul_of_isIntegral`: the discriminant of a
   `ℚ`-basis of algebraic integers has the form `s ^ 2 - 4 * p` with `s p : ℤ`.
 * `TauCeti.NumberField.exists_discr_eq_sq_sub_four_mul`: the same for the discriminant of `K`.
 * `TauCeti.NumberField.discr_emod_four_eq_zero_or_one`: **Stickelberger's congruence**,
@@ -46,7 +45,7 @@ public section
 open Matrix Module
 open scoped NumberField
 
-namespace TauCeti.NumberField
+namespace Module.Basis
 
 variable {K : Type*} [Field K] [NumberField K]
 
@@ -61,14 +60,6 @@ theorem exists_discr_eq_sq_sub_four_mul_of_isIntegral {ι : Type*} [Fintype ι] 
   let e : ι ≃ (K →ₐ[ℚ] E) :=
     Fintype.equivOfCardEq ((AlgHom.card ℚ K E).trans (finrank_eq_card_basis b)).symm
   set M := Algebra.embeddingsMatrixReindex ℚ E b e with hM
-  -- An algebraic integer of `E` fixed by every automorphism is a rational integer.
-  have hZ {x : E} (hfix : ∀ τ : Gal(E/ℚ), τ x = x) (hx : IsIntegral ℤ x) :
-      ∃ z : ℤ, algebraMap ℤ E z = x := by
-    obtain ⟨q, rfl⟩ := (InfiniteGalois.mem_range_algebraMap_iff_fixed x).mpr hfix
-    obtain ⟨z, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp <|
-      (isIntegral_algHom_iff ((Algebra.ofId ℚ E).restrictScalars ℤ)
-        (algebraMap ℚ E).injective).mp hx
-    exact ⟨z, IsScalarTower.algebraMap_apply ℤ ℚ E z⟩
   -- An automorphism `τ` of `E` acts on `M` by permuting its columns, through `φ ↦ τ ∘ φ` on the
   -- embeddings.
   have hmap (τ : Gal(E/ℚ)) :
@@ -79,27 +70,31 @@ theorem exists_discr_eq_sq_sub_four_mul_of_isIntegral {ι : Type*} [Fintype ι] 
     rw [leibnizPart_def]
     refine IsIntegral.sum _ fun σ _ ↦ IsIntegral.prod _ fun i _ ↦ ?_
     exact (hb (σ i)).map ((e i).restrictScalars ℤ)
-  obtain ⟨s, hs⟩ := hZ (x := M.permanent)
+  obtain ⟨s, hs⟩ := TauCeti.AlgebraicClosure.exists_algebraMap_int_eq_of_isIntegral_of_fixed
+    (x := M.permanent)
+    (by rw [← leibnizPart_one_add_leibnizPart_neg_one]; exact (hint 1).add (hint (-1)))
     (fun τ ↦ by
       rw [← leibnizPart_one_add_leibnizPart_neg_one, map_add, ← leibnizPart_map τ,
         ← leibnizPart_map τ, leibnizPart_one_add_leibnizPart_neg_one, hmap τ,
         permanent_permute_rows, leibnizPart_one_add_leibnizPart_neg_one])
-    (by rw [← leibnizPart_one_add_leibnizPart_neg_one]; exact (hint 1).add (hint (-1)))
-  obtain ⟨p, hp⟩ := hZ (x := M.leibnizPart 1 * M.leibnizPart (-1))
-    (fun τ ↦ by
+  obtain ⟨p, hp⟩ := TauCeti.AlgebraicClosure.exists_algebraMap_int_eq_of_isIntegral_of_fixed
+    (x := M.leibnizPart 1 * M.leibnizPart (-1)) ((hint 1).mul (hint (-1))) (fun τ ↦ by
       rw [map_mul, ← leibnizPart_map τ, ← leibnizPart_map τ, hmap τ,
         leibnizPart_one_mul_leibnizPart_neg_one_submatrix_right])
-    ((hint 1).mul (hint (-1)))
   refine ⟨s, p, (algebraMap ℚ E).injective ?_⟩
   rw [Algebra.discr_eq_det_embeddingsMatrixReindex_pow_two ℚ E b e, ← hM,
     det_sq_eq_permanent_sq_sub_four_mul, ← hs, ← hp]
   simp only [map_sub, map_mul, map_pow, map_ofNat, eq_intCast, map_intCast]
 
+end Module.Basis
+
+namespace TauCeti.NumberField
+
 /-- **The discriminant of a number field is a square minus four times an integer.** -/
 theorem exists_discr_eq_sq_sub_four_mul (K : Type*) [Field K] [NumberField K] :
     ∃ s p : ℤ, NumberField.discr K = s ^ 2 - 4 * p := by
   obtain ⟨s, p, h⟩ :=
-    exists_discr_eq_sq_sub_four_mul_of_isIntegral (NumberField.integralBasis K) fun i ↦ by
+    (NumberField.integralBasis K).exists_discr_eq_sq_sub_four_mul_of_isIntegral fun i ↦ by
       rw [NumberField.integralBasis_apply]
       exact NumberField.RingOfIntegers.isIntegral_coe _
   exact ⟨s, p, by exact_mod_cast (NumberField.coe_discr K).trans h⟩
