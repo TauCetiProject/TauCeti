@@ -394,6 +394,11 @@ private def cyclePreservingSubgroup (π : Perm α) : Subgroup (Perm α) where
     have hx := (hg (g⁻¹ x)).symm
     simpa using hx
 
+omit [DecidableEq α] in
+/-- Membership in `TauCeti.cyclePreservingSubgroup`. -/
+private theorem mem_cyclePreservingSubgroup {π g : Perm α} :
+    g ∈ cyclePreservingSubgroup π ↔ ∀ x, π.SameCycle x (g x) := Iff.rfl
+
 /-- A list of transpositions admits a permutation whose cycles are the components joined by the
 transpositions. The numerical inequality records, simultaneously, the number of components and
 the number of cycles of the list product. -/
@@ -434,8 +439,8 @@ private theorem exists_componentPerm [Finite α] (L : List (Perm α))
         have hcycle : ¬ L.prod.SameCycle a b := by
           intro hcycle
           obtain ⟨i, hi⟩ := hcycle
-          have hpow := (cyclePreservingSubgroup π).zpow_mem hprod_mem i
-          change ∀ x, π.SameCycle x ((L.prod ^ i) x) at hpow
+          have hpow := mem_cyclePreservingSubgroup.mp
+            ((cyclePreservingSubgroup π).zpow_mem hprod_mem i)
           exact hcomp (by simpa [hi] using hpow a)
         have hprodMerge := orbitCount_swap_mul_add_one_of_not_sameCycle hcycle
         have hcompMerge := orbitCount_swap_mul_add_one_of_not_sameCycle hcomp
@@ -455,17 +460,20 @@ private theorem exists_componentPerm [Finite α] (L : List (Perm α))
           · exact hab'.swap_mul_of_sameCycle (hpres g hg x)
 
 /-- **Hurwitz's transposition bound.** If a list of transpositions generates a group acting
-transitively on a nonempty finite type, its length is at least the number of points plus the
-number of cycles of its product, minus two. Equivalently,
-`Nat.card α + orbitCount L.prod ≤ L.length + 2`.
-
-The proof tracks the components joined by the transpositions. Adding a transposition within one
-component may split a cycle of the product; adding one between components merges both a component
-and a cycle of the product. Transitivity leaves exactly one component. -/
-theorem card_add_orbitCount_le_length_add_two [Finite α] [Nonempty α]
+transitively on a finite type, its length is at least the number of points plus the number of
+cycles of its product, minus two. Equivalently,
+`Nat.card α + orbitCount L.prod ≤ L.length + 2`. -/
+theorem card_add_orbitCount_le_length_add_two [Finite α]
     {L : List (Perm α)} (hL : ∀ g ∈ L, g.IsSwap)
     (htrans : MulAction.IsPretransitive (Subgroup.closure {g | g ∈ L}) α) :
     Nat.card α + orbitCount L.prod ≤ L.length + 2 := by
+  rcases isEmpty_or_nonempty α with _ | _
+  · have := L.prod.orbitCount_le_card
+    have hcard : Nat.card α = 0 := Nat.card_of_isEmpty
+    omega
+  -- Track the components joined by the transpositions. Adding a transposition within one
+  -- component may split a cycle of the product; adding one between components merges both a
+  -- component and a cycle of the product. Transitivity leaves exactly one component.
   obtain ⟨π, hbound, hpres⟩ := exists_componentPerm L hL
   have hclosure : Subgroup.closure {g | g ∈ L} ≤ cyclePreservingSubgroup π := by
     rw [Subgroup.closure_le]
@@ -473,8 +481,8 @@ theorem card_add_orbitCount_le_length_add_two [Finite α] [Nonempty α]
   have hall : ∀ x y, π.SameCycle x y := by
     intro x y
     obtain ⟨g, hg⟩ := htrans.exists_smul_eq x y
-    have hxy := hclosure g.2 x
-    change g.1 x = y at hg
+    have hxy := mem_cyclePreservingSubgroup.mp (hclosure g.2) x
+    rw [Subgroup.smul_def, Equiv.Perm.smul_def] at hg
     rwa [hg] at hxy
   have horbit : orbitCount π = 1 := orbitCount_eq_one_of_forall_sameCycle hall
   omega
