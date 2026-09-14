@@ -30,11 +30,11 @@ form in which the existence of an optimal map is proved downstream, where a plan
 to be deterministic and then read as a map.
 
 The inequality is strict in general: `TauCeti.transportCost_lt_mongeCost_dirac` splits a Dirac
-source, whose mass cannot be divided by any map, over an atomless target. So a statement about
-transport maps really is a statement about `TauCeti.mongeCost`, and the two optimality notions
-for maps — minimality among maps, `TauCeti.IsMongeMinimizer`, and attainment of the Kantorovich
-value, `TauCeti.IsKantorovichOptimalTransportMap` — are kept apart: the second implies the
-first, and the gap between them is exactly the gap between the two values.
+source, whose mass cannot be divided by any map, over a target that is null on singletons. So a
+statement about transport maps really is a statement about `TauCeti.mongeCost`, and the two
+optimality notions for maps — minimality among maps, `TauCeti.IsMongeMinimizer`, and attainment
+of the Kantorovich value, `TauCeti.IsKantorovichOptimalTransportMap` — are kept apart: the second
+implies the first, and the gap between them is exactly the gap between the two values.
 
 Nothing here needs a topology or a normalisation, and the two factors are arbitrary measurable
 spaces; the cost is extended-nonnegative and integrated by `lintegral`, so an infeasible problem
@@ -56,8 +56,9 @@ and a problem of infinite cost both take the value `∞`, separated by
 * `TauCeti.transportCost_le_mongeCost` — **the Monge-to-Kantorovich relaxation inequality**, the
   Monge value dominates the Kantorovich value;
 * `TauCeti.transportCost_lt_mongeCost_dirac` — the inequality is strict for a Dirac source and
-  an atomless target, where `TauCeti.mongeCost_eq_top_of_measure_singleton_ne_zero` makes the
-  Monge problem infeasible while the Kantorovich problem is not;
+  a target that is null on singletons, where
+  `TauCeti.mongeCost_eq_top_of_measure_singleton_ne_zero` makes the Monge problem infeasible
+  while the Kantorovich problem is not;
 * `TauCeti.isMongeMinimizer_iff` — minimality among transport maps is the form of
   `TauCeti.IsMongeMinimizer` that avoids the value `TauCeti.mongeCost c μ ν`, which may be `∞`;
 * `TauCeti.IsKantorovichOptimalTransportMap.isMongeMinimizer` and
@@ -118,8 +119,8 @@ variable {X : Type u} {Y : Type v} [MeasurableSpace X]
 def transportMapCost (c : X × Y → ℝ≥0∞) (μ : Measure X) (T : X → Y) : ℝ≥0∞ :=
   ∫⁻ x, c (x, T x) ∂μ
 
-/-- The cost of a transport map as an integral. The definition's body is not exposed, so this is
-the lemma downstream modules should rewrite with. -/
+/-- The cost of a transport map as its defining integral, exposed as a convenient rewrite
+lemma. -/
 theorem transportMapCost_def : transportMapCost c μ T = ∫⁻ x, c (x, T x) ∂μ := (rfl)
 
 /-- There is nothing to transport out of the zero measure. -/
@@ -131,29 +132,37 @@ theorem transportMapCost_zero_measure (c : X × Y → ℝ≥0∞) (T : X → Y) 
 /-- The cost of a transport map only depends on the map up to `μ`-almost everywhere equality,
 which is the equivalence `ProbabilityTheory.HasLaw` is invariant under. -/
 theorem transportMapCost_congr (h : T =ᵐ[μ] S) (c : X × Y → ℝ≥0∞) :
-    transportMapCost c μ T = transportMapCost c μ S :=
-  lintegral_congr_ae <| h.mono fun x hx ↦ by simp only [hx]
+    transportMapCost c μ T = transportMapCost c μ S := by
+  rw [transportMapCost_def, transportMapCost_def]
+  exact lintegral_congr_ae <| h.mono fun x hx ↦ by simp only [hx]
 
 /-- The cost of a transport map is monotone in the cost function. -/
 @[gcongr]
-theorem transportMapCost_mono (h : c ≤ c') : transportMapCost c μ T ≤ transportMapCost c' μ T :=
-  lintegral_mono fun _ ↦ h _
+theorem transportMapCost_mono (h : c ≤ c') : transportMapCost c μ T ≤ transportMapCost c' μ T := by
+  rw [transportMapCost_def, transportMapCost_def]
+  exact lintegral_mono fun _ ↦ h _
 
 /-- A Dirac source leaves a map nothing to integrate: the cost of `T` is the cost of its single
 move. -/
 @[simp]
 theorem transportMapCost_dirac [MeasurableSingletonClass X] (c : X × Y → ℝ≥0∞) (x : X)
-    (T : X → Y) : transportMapCost c (Measure.dirac x) T = c (x, T x) :=
-  lintegral_dirac _ _
+    (T : X → Y) : transportMapCost c (Measure.dirac x) T = c (x, T x) := by
+  rw [transportMapCost_def, lintegral_dirac]
 
 variable [MeasurableSpace Y] {ν : Measure Y}
+
+/-- The cost of a transport map is the cost integral of its graph plan. -/
+theorem transportMapCost_eq_lintegral_graphPlan (hT : AEMeasurable T μ)
+    (hc : AEMeasurable c (graphPlan T μ)) :
+    transportMapCost c μ T = ∫⁻ z, c z ∂graphPlan T μ := by
+  rw [transportMapCost_def, lintegral_graphPlan hT hc]
 
 /-! ### The Monge value -/
 
 /-- The **Monge value** of `μ` and `ν` for the cost `c`: the infimum of
 `TauCeti.transportMapCost c μ T` over the transport maps `T` from `μ` to `ν`. It is `∞` when
 `μ` and `ν` admit no transport map at all, which — unlike for `TauCeti.transportCost` — happens
-already for a Dirac `μ` and an atomless `ν`. -/
+already for a Dirac `μ` and a `ν` that is null on singletons. -/
 def mongeCost (c : X × Y → ℝ≥0∞) (μ : Measure X) (ν : Measure Y) : ℝ≥0∞ :=
   ⨅ (T : X → Y) (_ : HasLaw T ν μ), transportMapCost c μ T
 
@@ -163,12 +172,15 @@ theorem mongeCost_def :
 
 /-- Every transport map bounds the Monge value from above. -/
 theorem mongeCost_le_transportMapCost (hT : HasLaw T ν μ) (c : X × Y → ℝ≥0∞) :
-    mongeCost c μ ν ≤ transportMapCost c μ T :=
-  iInf₂_le T hT
+    mongeCost c μ ν ≤ transportMapCost c μ T := by
+  rw [mongeCost_def]
+  exact iInf₂_le T hT
 
 /-- A bound valid on every transport map bounds the Monge value from below. -/
-theorem le_mongeCost (h : ∀ T, HasLaw T ν μ → a ≤ transportMapCost c μ T) : a ≤ mongeCost c μ ν :=
-  le_iInf₂ h
+theorem le_mongeCost (h : ∀ T, HasLaw T ν μ → a ≤ transportMapCost c μ T) :
+    a ≤ mongeCost c μ ν := by
+  rw [mongeCost_def]
+  exact le_iInf₂ h
 
 /-- The Monge value is below a threshold exactly when some transport map is. -/
 theorem mongeCost_lt_iff :
@@ -177,8 +189,9 @@ theorem mongeCost_lt_iff :
 
 /-- The Monge value is monotone in the cost function. -/
 @[gcongr]
-theorem mongeCost_mono (h : c ≤ c') : mongeCost c μ ν ≤ mongeCost c' μ ν :=
-  iInf₂_mono fun _ _ ↦ transportMapCost_mono h
+theorem mongeCost_mono (h : c ≤ c') : mongeCost c μ ν ≤ mongeCost c' μ ν := by
+  rw [mongeCost_def, mongeCost_def]
+  exact iInf₂_mono fun _ _ ↦ transportMapCost_mono h
 
 /-- An infeasible Monge problem has value `∞`. -/
 theorem mongeCost_eq_top_of_not_exists_hasLaw (h : ¬∃ T : X → Y, HasLaw T ν μ)
@@ -288,8 +301,10 @@ theorem isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan (hT : H
     IsKantorovichOptimalTransportMap c μ ν T ↔ IsOptimalCoupling c (graphPlan T μ) μ ν := by
   rw [isOptimalCoupling_graphPlan_iff hT hc]
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨hT, ?_⟩⟩
-  · rw [← transportMapCost_def, h.transportMapCost_eq]
-  · rw [transportMapCost_def, h]
+  · rw [← lintegral_graphPlan hT.aemeasurable hc,
+      ← transportMapCost_eq_lintegral_graphPlan hT.aemeasurable hc, h.transportMapCost_eq]
+  · rw [transportMapCost_eq_lintegral_graphPlan hT.aemeasurable hc,
+      lintegral_graphPlan hT.aemeasurable hc, h]
 
 /-! ### Transporting a measure to itself -/
 
@@ -302,7 +317,7 @@ theorem mongeCost_self_eq_zero {c : X × X → ℝ≥0∞} (hc : ∀ x, c (x, x)
 
 /-- The identity is a Kantorovich-optimal transport map of a measure onto itself whenever the
 cost vanishes on the diagonal. Together with `TauCeti.mongeCost_self_eq_zero` this exhibits both
-optimality notions at an arbitrary measure, not only at an atom. -/
+optimality notions at an arbitrary measure, not only at Dirac measures. -/
 theorem isKantorovichOptimalTransportMap_id {c : X × X → ℝ≥0∞} (hc : ∀ x, c (x, x) = 0)
     (μ : Measure X) : IsKantorovichOptimalTransportMap c μ μ id where
   toHasLaw := HasLaw.id
@@ -317,34 +332,36 @@ theorem isKantorovichOptimalTransportMap_id {c : X × X → ℝ≥0∞} (hc : �
 
 /-- Between two Dirac measures the constant map is a transport map attaining the Kantorovich
 value computed by `TauCeti.transportCost_dirac_dirac`. -/
-theorem isKantorovichOptimalTransportMap_dirac_dirac [MeasurableSingletonClass X]
-    (hc : Measurable c) (x : X) (y : Y) :
+theorem isKantorovichOptimalTransportMap_dirac_dirac (hc : Measurable c) (x : X) (y : Y) :
     IsKantorovichOptimalTransportMap c (Measure.dirac x) (Measure.dirac y) (fun _ ↦ y) where
   aemeasurable := aemeasurable_const
   map_eq := Measure.map_dirac' measurable_const x
-  transportMapCost_eq := by rw [transportMapCost_dirac, transportCost_dirac_dirac hc]
+  transportMapCost_eq := by
+    have hcxy : Measurable (fun x' : X ↦ c (x', y)) :=
+      hc.comp (measurable_id.prodMk measurable_const)
+    rw [transportMapCost_def, lintegral_dirac' x hcxy, transportCost_dirac_dirac hc]
 
 /-- The Monge value of two Dirac measures is the value of the cost at the pair, matching
 `TauCeti.transportCost_dirac_dirac`. -/
-theorem mongeCost_dirac_dirac [MeasurableSingletonClass X] (hc : Measurable c) (x : X) (y : Y) :
+theorem mongeCost_dirac_dirac (hc : Measurable c) (x : X) (y : Y) :
     mongeCost c (Measure.dirac x) (Measure.dirac y) = c (x, y) :=
   (isKantorovichOptimalTransportMap_dirac_dirac hc x y).mongeCost_eq_transportCost.trans
     (transportCost_dirac_dirac hc x y)
 
-/-! ### Atoms obstruct the Monge problem -/
+/-! ### Nonzero singletons obstruct the Monge problem -/
 
-/-- **An atom of the source makes the Monge problem infeasible over an atomless target.** No map
-can split the mass sitting at a single point, so a source with an atom has no transport map at
-all onto a target that is null on singletons, and the Monge value is `∞` for every cost. -/
+/-- **A nonzero source singleton makes the Monge problem infeasible over a target that is null on
+singletons.** No map can split the mass sitting at a single point, so such a source has no
+transport map onto the target, and the Monge value is `∞` for every cost. -/
 theorem mongeCost_eq_top_of_measure_singleton_ne_zero [NullSingletonClass ν] {x : X}
     (hx : μ {x} ≠ 0) (c : X × Y → ℝ≥0∞) : mongeCost c μ ν = ⊤ :=
   mongeCost_eq_top_of_not_exists_hasLaw
     (fun ⟨_, hT⟩ ↦ Probability.not_hasLaw_of_measure_singleton_ne_zero hx _ hT) c
 
 /-- **The relaxation inequality is strict in general.** Splitting a Dirac source over an
-atomless target of finite cost is a Kantorovich problem with a finite value and a Monge problem
-with no competitor at all. This is the standard obstruction to Monge's problem: there is no map
-carrying an atom onto a diffuse measure. -/
+target that is null on singletons and has finite cost is a Kantorovich problem with a finite
+value and a Monge problem with no competitor at all. This is the standard obstruction to
+Monge's problem: there is no map carrying a point mass onto such a measure. -/
 theorem transportCost_lt_mongeCost_dirac [IsProbabilityMeasure ν] [NullSingletonClass ν]
     (hc : Measurable c) {x : X} (h : ∫⁻ y, c (x, y) ∂ν ≠ ⊤) :
     transportCost c (Measure.dirac x) ν < mongeCost c (Measure.dirac x) ν := by

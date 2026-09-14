@@ -9,13 +9,13 @@ public import Mathlib.Probability.HasLaw
 public import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
-# Laws of maps and the atoms of the source
+# Laws of maps and source point masses
 
-An atom of the source measure is an obstruction to a prescribed law: a map sends the whole mass
-of an atom `{x}` to the single point `T x`, so the law of `T` must carry at least that mass at
+A nonzero singleton of the source measure is an obstruction to a prescribed law: a map sends the
+whole mass of `{x}` to the single point `T x`, so the law of `T` must carry at least that mass at
 `T x`. This file records that constraint, `ProbabilityTheory.HasLaw.measure_singleton_le`, and
-its two extreme consequences: a map out of a Dirac measure has a Dirac law, and a measure with
-an atom has no map at all onto a law that is null on singletons.
+its two extreme consequences: a map out of a Dirac measure has a Dirac law, and a measure with a
+nonzero singleton has no map at all onto a law that is null on singletons.
 
 ## Main results
 
@@ -43,7 +43,7 @@ namespace Probability
 variable {X : Type*} {Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {T : X → Y}
 variable {μ : Measure X} {ν : Measure Y}
 
-/-- **An atom of the source constrains the law.** A map moves all the mass of `{x}` to the single
+/-- **A source point mass constrains the law.** A map moves all the mass of `{x}` to the single
 point `T x`, so its law weighs `{T x}` at least as much as the source weighs `{x}`. No
 measurability of the singletons is needed: the bound comes from
 `MeasureTheory.Measure.le_map_apply_image`, which only uses a.e. measurability of the map. -/
@@ -51,15 +51,14 @@ theorem _root_.ProbabilityTheory.HasLaw.measure_singleton_le (h : HasLaw T ν μ
     μ {x} ≤ ν {T x} := by
   simpa only [Set.image_singleton, h.map_eq] using Measure.le_map_apply_image h.aemeasurable {x}
 
-/-- A map whose law is null on singletons has a source that is null on singletons: the source
-of a transport onto an atomless law is itself atomless. -/
+/-- A map whose law is null on singletons has a source that is null on singletons. -/
 theorem _root_.ProbabilityTheory.HasLaw.measure_singleton_eq_zero [NullSingletonClass ν]
     (h : HasLaw T ν μ) (x : X) : μ {x} = 0 :=
   nonpos_iff_eq_zero.1 ((h.measure_singleton_le x).trans_eq (measure_singleton _))
 
-/-- **An atom has no transport onto an atomless law.** This is the basic infeasibility of the
-Monge problem: no map at all pushes a measure with an atom forward onto a measure that is null
-on singletons. -/
+/-- **A nonzero source singleton has no transport onto a law that is null on singletons.** This
+is the basic infeasibility of the Monge problem: no map can push such a source measure onto such
+a target measure. -/
 theorem not_hasLaw_of_measure_singleton_ne_zero [NullSingletonClass ν] {x : X}
     (hx : μ {x} ≠ 0) (T : X → Y) : ¬HasLaw T ν μ :=
   fun h ↦ hx (h.measure_singleton_eq_zero x)
