@@ -163,6 +163,7 @@ theorem realSignatureForm_apply (p q : ℕ) (x : Fin p ⊕ Fin q → ℝ) :
   simp [realSignatureForm, weightedSumSquares_apply, Fintype.sum_sum_type, _root_.sq,
     sub_eq_add_neg]
 
+/-- The positive index of inertia of the normal form `realSignatureForm p q` is `p`. -/
 @[simp]
 theorem sigPos_realSignatureForm (p q : ℕ) : sigPos (realSignatureForm p q) = p := by
   have hset : {x : Fin p ⊕ Fin q | 0 < Sum.elim (fun _ ↦ (1 : ℝ)) (fun _ ↦ -1) x} =
@@ -173,6 +174,7 @@ theorem sigPos_realSignatureForm (p q : ℕ) : sigPos (realSignatureForm p q) = 
     Set.ncard_image_of_injective _ Sum.inl_injective, Set.ncard_univ, Nat.card_eq_fintype_card,
     Fintype.card_fin]
 
+/-- The negative index of inertia of the normal form `realSignatureForm p q` is `q`. -/
 @[simp]
 theorem sigNeg_realSignatureForm (p q : ℕ) : sigNeg (realSignatureForm p q) = q := by
   have hset : {x : Fin p ⊕ Fin q | Sum.elim (fun _ ↦ (1 : ℝ)) (fun _ ↦ -1) x < 0} =
@@ -185,6 +187,7 @@ theorem sigNeg_realSignatureForm (p q : ℕ) : sigNeg (realSignatureForm p q) = 
 
 /-- The normal form of signature `(p, q)` is regular, so every signature is realized by a regular
 real quadratic form. -/
+@[simp]
 theorem nondegenerate_realSignatureForm (p q : ℕ) : (realSignatureForm p q).Nondegenerate := by
   let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
   rw [nondegenerate_iff_radical_eq_bot, ← Submodule.finrank_eq_zero]
