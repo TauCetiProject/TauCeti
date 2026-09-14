@@ -89,11 +89,9 @@ theorem isIso_iff_isIso_hom (f : M ⟶ N) : IsIso f ↔ IsIso f.hom := by
     let _ : IsIso f.hom := hf
     refine ⟨⟨homOfIsIso f, ?_, ?_⟩⟩
     · apply Hom.ext
-      change f.hom ≫ inv f.hom = 𝟙 _
-      exact IsIso.hom_inv_id f.hom
+      simpa only [comp_hom, id_hom, homOfIsIso] using IsIso.hom_inv_id f.hom
     · apply Hom.ext
-      change inv f.hom ≫ f.hom = 𝟙 _
-      exact IsIso.inv_hom_id f.hom
+      simpa only [comp_hom, id_hom, homOfIsIso] using IsIso.inv_hom_id f.hom
 
 /-- A model morphism is an isomorphism whenever its map on total spaces is one. -/
 instance isIso_of_isIso_hom (f : M ⟶ N) [IsIso f.hom] : IsIso f :=
