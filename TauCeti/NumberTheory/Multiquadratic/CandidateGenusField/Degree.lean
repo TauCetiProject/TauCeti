@@ -25,7 +25,9 @@ corresponding specialization of `finrank_adjoin_range`.
 
 This is the degree step in proving that the candidate genus field is multiquadratic. For negative
 `d`, `isGenusField_candidateGenusField` identifies this candidate with the maximal extension
-satisfying the genus-field ramification conditions. The real case remains future work.
+satisfying the genus-field ramification conditions. For positive nonsquare `d`,
+`isGenusField_candidateGenusFieldReal` identifies its maximal totally real subfield with the
+ordinary genus field.
 
 The prime-discriminant description of the genus field is classical; see D. A. Cox,
 *Primes of the Form x² + ny²*, and F. Lemmermeyer, *Reciprocity Laws*.

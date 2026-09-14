@@ -24,8 +24,9 @@ order `2 ^ (genusPrimeDiscriminants hd).card`.
 
 This supplies the Galois and abelian parts of the multiquadratic description of the candidate
 genus field. For negative `d`, `isGenusField_candidateGenusField` identifies this candidate with
-the maximal extension satisfying the genus-field ramification conditions. The real case and the
-identification of its relative Galois group with `Cl/Cl²` remain future work.
+the maximal extension satisfying the genus-field ramification conditions. For positive nonsquare
+`d`, `isGenusField_candidateGenusFieldReal` identifies its maximal totally real subfield with the
+ordinary genus field; identifying that subfield's relative Galois group with `Cl/Cl²` remains.
 
 The prime-discriminant description of the genus field is classical; see D. A. Cox,
 *Primes of the Form x² + ny²*, and F. Lemmermeyer, *Reciprocity Laws*.

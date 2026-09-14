@@ -43,8 +43,9 @@ prime discriminant is odd exactly when the discriminant is negative
 
 In the dictionary between narrow classes and sign patterns on the prime discriminants, `[θ]⁺` is
 thus the pattern `(sign P)_{P ∈ s}`. This is the pattern that complex conjugation puts on the
-square roots `√P` in the genus field. Identifying the ordinary genus field of a real quadratic
-field with the corresponding fixed field is not done here.
+square roots `√P` in the genus field. The ordinary genus field is now constructed as the maximal
+totally real subfield; identifying its relative Galois group explicitly with the ordinary
+elementary-two class-group quotient is not done here.
 
 The criterion is classical: the ordinary and narrow `2`-ranks agree exactly when `-1` is a norm
 from `K` everywhere locally, that is, when no prime `p ≡ 3 [MOD 4]` divides `d`. See

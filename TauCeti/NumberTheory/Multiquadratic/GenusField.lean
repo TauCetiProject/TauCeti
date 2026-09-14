@@ -7,13 +7,16 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.GaloisGroup
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.InfinitePlace
+public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Real
 public import TauCeti.NumberTheory.Multiquadratic.Unramified.Maximality
 
 /-!
-# The genus field of an imaginary quadratic field
+# The genus field of a quadratic field
 
 This file gives an intrinsic characterization of the genus field and proves that the
 prime-discriminant compositum `candidateGenusField hd` has that characterization when `d < 0`.
+For positive `d`, its maximal totally real subfield `candidateGenusFieldReal hd` has the same
+characterization.
 
 For a chosen square root `y² = d` in an abelian extension `L / ℚ`, the predicate
 `TauCeti.Multiquadratic.IsGenusField d L y` says that:
@@ -27,15 +30,15 @@ The last clause is the maximality in the classical definition. It is stated by a
 property, rather than by choosing a maximal element of a collection of fields. The theorem
 `IsGenusField.exists_algEquiv_apply_eq` makes the resulting root-preserving uniqueness explicit.
 
-For squarefree negative `d`, `isGenusField_candidateGenusField` assembles the existing arithmetic
-and archimedean inputs. The finite-prime theorem is `isUnramifiedIn_candidateGenusField`, the
-infinite-place theorem is
-`isUnramifiedAtInfinitePlaces_candidateGenusField`, and maximality is
-`nonempty_algHom_candidateGenusField`.
+For squarefree negative `d`, `isGenusField_candidateGenusField` assembles the finite-prime theorem
+`isUnramifiedIn_candidateGenusField`, the infinite-place theorem
+`isUnramifiedAtInfinitePlaces_candidateGenusField`, and maximality
+`nonempty_algHom_candidateGenusField`. For positive nonsquare `d`,
+`isGenusField_candidateGenusFieldReal` uses the corresponding real-candidate results.
 
-This completes the definition and maximality part of Layer 3 of the Multiquadratic roadmap in the
-imaginary quadratic case. Identifying the relative Galois group with the elementary-two quotient
-of the class group still requires the Artin map.
+Together these give the genus-field definition and maximality in both signatures. The relative
+Galois group of the real candidate remains to be identified explicitly with the elementary-two
+quotient of the ordinary class group.
 
 ## References
 
@@ -56,8 +59,8 @@ universe u v
 **genus field** when it is unramified over that subfield at every place and is maximal among
 abelian extensions with those properties.
 
-This predicate is the ordinary, all-places notion. A narrow genus-field predicate for real
-quadratic fields, imposing only the finite-place condition, remains future work. -/
+This predicate is the ordinary, all-places notion. The separate predicate `IsNarrowGenusField`
+imposes only the finite-place condition. -/
 structure IsGenusField (d : ℤ) (L : Type u) [Field L] [NumberField L] (y : L) : Prop where
   /-- The chosen element is a square root of the radicand. -/
   root_sq : y ^ 2 = algebraMap ℤ L d
@@ -143,5 +146,30 @@ theorem isGenusField_candidateGenusField {d : ℤ} (hd : Squarefree d) (hneg : d
         rw [hz, IsScalarTower.algebraMap_apply ℤ ℚ M]
         norm_num)
     exact nonempty_algHom_candidateGenusField hd hnsq hz hfinite
+
+/-- **The maximal totally real subfield of the prime-discriminant compositum is the genus field in
+the real quadratic case.** For a positive squarefree nonsquare integer `d`,
+`candidateGenusFieldReal hd` is abelian over `ℚ`, is unramified at every place over its embedded
+copy of `ℚ(√d)`, and admits a root-preserving embedding from every other abelian extension with
+those properties. -/
+theorem isGenusField_candidateGenusFieldReal {d : ℤ} (hd : Squarefree d)
+    (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d) :
+    IsGenusField.{0, v} d (candidateGenusFieldReal hd)
+      (candidateGenusFieldRealBaseRoot hd hpos) := by
+  refine
+    { root_sq := ?_
+      finrank_adjoin := finrank_adjoin_candidateGenusFieldRealBaseRoot hd hnsq hpos
+      isAbelianGalois := inferInstance
+      isUnramifiedAtFinitePlaces := ?_
+      isUnramifiedAtInfinitePlaces :=
+        isUnramifiedAtInfinitePlaces_candidateGenusFieldReal hd hpos
+      maximal := ?_ }
+  · rw [candidateGenusFieldRealBaseRoot_sq, IsScalarTower.algebraMap_apply ℤ ℚ]
+    norm_num
+  · intro q hq _
+    let _ : q.IsPrime := hq
+    exact isUnramifiedIn_candidateGenusFieldReal hd hnsq hpos q
+  · intro M _ _ _ z hz hfinite hinfinite
+    exact exists_algHom_candidateGenusFieldReal hd hnsq hpos hz hfinite hinfinite
 
 end TauCeti.Multiquadratic
