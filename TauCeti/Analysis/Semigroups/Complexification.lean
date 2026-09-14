@@ -54,20 +54,6 @@ open TauCeti.Complexification
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
-private theorem restrictScalars_complexify_apply_re (T : X →L[ℝ] X)
-    (z : TauCeti.Complexification X) :
-    ((T.complexify.restrictScalars ℝ) z).re = T z.re := by
-  -- Restricting scalars changes only the bundled scalar structure, so expose the original map.
-  change (T.complexify z).re = T z.re
-  exact ContinuousLinearMap.complexify_apply_re T z
-
-private theorem restrictScalars_complexify_apply_im (T : X →L[ℝ] X)
-    (z : TauCeti.Complexification X) :
-    ((T.complexify.restrictScalars ℝ) z).im = T z.im := by
-  -- Restricting scalars changes only the bundled scalar structure, so expose the original map.
-  change (T.complexify z).im = T z.im
-  exact ContinuousLinearMap.complexify_apply_im T z
-
 namespace StronglyContinuousSemigroup
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
@@ -118,7 +104,8 @@ theorem complexify_apply_re (S : StronglyContinuousSemigroup X) (t : ℝ≥0)
     (z : TauCeti.Complexification X) : (S.complexify t z).re = S t z.re :=
   by
     rw [complexify_apply]
-    exact restrictScalars_complexify_apply_re (S t) z
+    change ((S t).complexify z).re = S t z.re
+    exact ContinuousLinearMap.complexify_apply_re (S t) z
 
 /-- The imaginary part of the complexified semigroup action is the original action on the
 imaginary part. -/
@@ -126,7 +113,8 @@ theorem complexify_apply_im (S : StronglyContinuousSemigroup X) (t : ℝ≥0)
     (z : TauCeti.Complexification X) : (S.complexify t z).im = S t z.im :=
   by
     rw [complexify_apply]
-    exact restrictScalars_complexify_apply_im (S t) z
+    change ((S t).complexify z).im = S t z.im
+    exact ContinuousLinearMap.complexify_apply_im (S t) z
 
 /-- The complexified semigroup extends the original semigroup along the real embedding. -/
 theorem complexify_apply_ofReal (S : StronglyContinuousSemigroup X) (t : ℝ≥0) (x : X) :
@@ -150,7 +138,8 @@ theorem complexify_realOperator_apply_re (S : StronglyContinuousSemigroup X) (t 
     (z : TauCeti.Complexification X) :
     (S.complexify.realOperator t z).re = S.realOperator t z.re := by
   rw [S.complexify_realOperator]
-  exact restrictScalars_complexify_apply_re (S.realOperator t) z
+  change ((S.realOperator t).complexify z).re = S.realOperator t z.re
+  exact ContinuousLinearMap.complexify_apply_re (S.realOperator t) z
 
 /-- The imaginary part of the complexified real-time action is the original action on the
 imaginary part. -/
@@ -158,7 +147,8 @@ theorem complexify_realOperator_apply_im (S : StronglyContinuousSemigroup X) (t 
     (z : TauCeti.Complexification X) :
     (S.complexify.realOperator t z).im = S.realOperator t z.im := by
   rw [S.complexify_realOperator]
-  exact restrictScalars_complexify_apply_im (S.realOperator t) z
+  change ((S.realOperator t).complexify z).im = S.realOperator t z.im
+  exact ContinuousLinearMap.complexify_apply_im (S.realOperator t) z
 
 /-- Complexifying a semigroup preserves the operator norm at every nonnegative time. -/
 theorem norm_complexify_apply (S : StronglyContinuousSemigroup X) (t : ℝ≥0) :
@@ -208,8 +198,17 @@ private theorem tendsto_complexify_genQuot_iff (S : StronglyContinuousSemigroup 
           (nhdsWithin 0 (Set.Ioi 0)) (𝓝 y.im) := by
   rw [(equivProd X).toHomeomorph.isEmbedding.tendsto_nhds_iff, Prod.tendsto_iff]
   simp only [ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_apply, equivProd_apply,
-    real_smul_re, real_smul_im, sub_re, sub_im, complexify_realOperator,
-    restrictScalars_complexify_apply_re, restrictScalars_complexify_apply_im]
+    real_smul_re, real_smul_im, sub_re, sub_im, complexify_realOperator]
+  change
+    Tendsto (fun t : ℝ => (1 / t) • (((S.realOperator t).complexify z).re - z.re))
+          (nhdsWithin 0 (Set.Ioi 0)) (nhds y.re) ∧
+        Tendsto (fun t : ℝ => (1 / t) • (((S.realOperator t).complexify z).im - z.im))
+          (nhdsWithin 0 (Set.Ioi 0)) (nhds y.im) ↔
+      Tendsto (fun t : ℝ => (1 / t) • (S.realOperator t z.re - z.re))
+          (nhdsWithin 0 (Set.Ioi 0)) (nhds y.re) ∧
+        Tendsto (fun t : ℝ => (1 / t) • (S.realOperator t z.im - z.im))
+          (nhdsWithin 0 (Set.Ioi 0)) (nhds y.im)
+  simp only [ContinuousLinearMap.complexify_apply_re, ContinuousLinearMap.complexify_apply_im]
 
 /-- A vector belongs to the generator domain of the complexified semigroup exactly when its real
 and imaginary parts belong to the generator domain of the original semigroup. -/
