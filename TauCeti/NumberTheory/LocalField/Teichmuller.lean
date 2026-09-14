@@ -107,11 +107,9 @@ theorem teichmuller_apply (α : 𝓀[K]ˣ) :
   (rfl)
 
 /-- The Teichmüller lift takes values in the `(q-1)`-torsion. -/
-@[simp]
-theorem teichmuller_pow (α : 𝓀[K]ˣ) :
-    teichmuller K α ^ (@Fintype.card 𝓀[K] (Fintype.ofFinite 𝓀[K]) - 1) = 1 := by
+-- This is not a `simp` lemma because `Nat.card_eq_fintype_card` rewrites its left-hand side.
+theorem teichmuller_pow (α : 𝓀[K]ˣ) : teichmuller K α ^ (Nat.card 𝓀[K] - 1) = 1 := by
   rw [teichmuller_apply]
-  rw [← @Nat.card_eq_fintype_card 𝓀[K] (Fintype.ofFinite 𝓀[K])]
   exact ((rootsOfUnityEquivResidueFieldUnits K).symm α).2
 
 /-- The Teichmüller lift, viewed in `𝒪[K]ˣ`, belongs to the group of `(q-1)`-st roots of unity
