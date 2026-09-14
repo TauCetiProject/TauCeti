@@ -57,13 +57,13 @@ theorem isSymm_polarBilin (Q : QuadraticForm R M) :
     LinearMap.BilinForm.IsSymm Q.polarBilin :=
   ⟨fun x y => polar_comm Q x y⟩
 
-/-- Polarization commutes with restricting a quadratic form to a submodule. -/
+/-- Polarization commutes with restricting a quadratic map to a submodule. -/
 @[simp]
-theorem polarBilin_restrict (Q : QuadraticForm R M) (W : Submodule R M) :
-    (Q.restrict W).polarBilin = LinearMap.BilinForm.restrict Q.polarBilin W := by
+theorem polarBilin_restrict (Q : QuadraticMap R M P) (W : Submodule R M) :
+    (Q.restrict W).polarBilin = Q.polarBilin.domRestrict₁₂ W W := by
   ext x y
   simp only [polarBilin_apply_apply, polar, restrict_apply,
-    LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply]
+    LinearMap.domRestrict₁₂_apply]
   rw [Submodule.coe_add]
 
 /-- Negating a quadratic map does not change its radical. -/
