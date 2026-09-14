@@ -239,10 +239,13 @@ theorem pi1MulEquivFundamentalGroup_smul (γ : FundamentalGroup X x) (a : π_ 1 
         q.source.symm r.source.symm r.target.symm] at hKcast
       rw [hq, hr] at hKcast
       simpa only [p₀, p₁, hp₀, hp₁] using hKcast
-    change (FundamentalGroup.fromPath (.mk r) : FundamentalGroup X x) =
-      MulAut.conj (FundamentalGroup.fromPath (.mk p) : FundamentalGroup X x)
-        (FundamentalGroup.fromPath (.mk q) : FundamentalGroup X x)
-    rw [MulAut.conj_apply, FundamentalGroup.mul_def, FundamentalGroup.mul_def,
+    -- Mathlib defines `pi1MulEquivFundamentalGroup` as a `Quotient.congr` along
+    -- `genLoopEquivOfUnique` and supplies no lemma computing it on a class, so isolate that one
+    -- definitional step here; `FundamentalGroup.fromPath` is an `abbrev` for the identity on
+    -- `Path.Homotopic.Quotient`, so no other unfolding is involved.
+    have hmk : ∀ g : Ω^ (Fin 1) X x, HomotopyGroup.pi1MulEquivFundamentalGroup ⟦g⟧ =
+        FundamentalGroup.fromPath (.mk (_root_.genLoopEquivOfUnique (Fin 1) g)) := fun _ ↦ rfl
+    rw [hmk, hmk, MulAut.conj_apply, FundamentalGroup.mul_def, FundamentalGroup.mul_def,
       FundamentalGroup.inv_def]
     simp only [← Path.Homotopic.Quotient.mk_trans, ← Path.Homotopic.Quotient.mk_symm]
     rw [Path.Homotopic.Quotient.eq] at ⊢
@@ -259,13 +262,7 @@ theorem congr_fundamentalGroupMulAut_piOne (x : X) :
         (fundamentalGroupMulAut (Fin 1) x) = MulAut.conj := by
   ext γ g
   obtain ⟨a, rfl⟩ := HomotopyGroup.pi1MulEquivFundamentalGroup.surjective g
-  change HomotopyGroup.pi1MulEquivFundamentalGroup
-      (fundamentalGroupMulAut (Fin 1) x γ
-        (HomotopyGroup.pi1MulEquivFundamentalGroup.symm
-          (HomotopyGroup.pi1MulEquivFundamentalGroup a))) = _
-  rw [HomotopyGroup.pi1MulEquivFundamentalGroup.symm_apply_apply,
-    fundamentalGroupMulAut_apply]
-  exact pi1MulEquivFundamentalGroup_smul γ a
+  simp
 
 /-! ### Naturality -/
 
