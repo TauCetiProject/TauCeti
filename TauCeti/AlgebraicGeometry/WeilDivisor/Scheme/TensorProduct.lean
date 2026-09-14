@@ -252,14 +252,14 @@ lemma sectionsMulRetraction_apply (s : Γ(sheaf (D + E), V)) :
   (rfl)
 
 /-- Dividing by a local equation retracts multiplication of sections. -/
-theorem sectionsMulRetraction_sectionsMul (hX : ∀ y : X, coheight y ≤ 1)
+theorem sectionsMulRetraction_sectionsMul (hV : ∀ y ∈ V, coheight y ≤ 1)
     (a : Γ(sheaf D, V)) (b : Γ(sheaf E, V)) :
     sectionsMulRetraction hg D (sectionsMul D E V a b) = a ⊗ₜ b := by
   obtain ⟨r, hr⟩ : ∃ r : Γ(X, V), Scheme.Modules.Hom.app (Scheme.toRationalFunctions X) V r =
       Scheme.rationalFunctionsMulBilin X V (Scheme.Modules.Hom.app (sheafι E) V b)
         ((Scheme.rationalFunctionsEquiv V).symm
           ((Additive.toMul g : X.functionFieldˣ) : X.functionField)) := by
-    refine (mem_sections_zero_iff (fun y _ ↦ hX y) _).mp ?_
+    refine (mem_sections_zero_iff hV _).mp ?_
     simpa only [add_neg_cancel] using
       rationalFunctionsMulBilin_mem_sections (sheafι_app_mem E V b)
         (localEquation_mem_sections_neg hg)
@@ -280,7 +280,7 @@ theorem sectionsMulRetraction_sectionsMul (hX : ∀ y : X, coheight y ≤ 1)
 /-- **Local injectivity of multiplication.** Where `E` has a local equation, multiplication is
 injective on the sectionwise tensor product over `V`, because dividing by that equation retracts
 it. -/
-theorem sectionsMulLift_injective (hX : ∀ y : X, coheight y ≤ 1) :
+theorem sectionsMulLift_injective (hV : ∀ y ∈ V, coheight y ≤ 1) :
     Function.Injective (sectionsMulLift D E V) := by
   have key : Function.LeftInverse (sectionsMulRetraction hg D) (sectionsMulLift D E V) := by
     intro w
@@ -288,7 +288,7 @@ theorem sectionsMulLift_injective (hX : ∀ y : X, coheight y ≤ 1) :
     | zero => rw [map_zero, map_zero]
     | tmul a b =>
       rw [sectionsMulLift_tmul]
-      exact sectionsMulRetraction_sectionsMul hg D hX a b
+      exact sectionsMulRetraction_sectionsMul hg D hV a b
     | add u v hu hv => rw [map_add, map_add, hu, hv]
   exact key.injective
 
@@ -336,7 +336,7 @@ theorem isLocallyInjective_tensorPresheafHom :
     have : Nonempty V := ⟨⟨x, hxV⟩⟩
     -- Forgetting the module structures leaves the action on sections untouched, so the two
     -- restricted sections are compared by `sectionsMulLift` over `V`, where it is injective.
-    refine ⟨V, homOfLE hVU, sectionsMulLift_injective hg D hX ?_, hxV⟩
+    refine ⟨V, homOfLE hVU, sectionsMulLift_injective hg D (fun y _ ↦ hX y) ?_, hxV⟩
     exact (PresheafOfModules.naturality_apply (tensorPresheafHom D E) (homOfLE hVU).op z).trans
       ((congrArg ((sheaf (D + E)).val.map (homOfLE hVU).op) h).trans
         (PresheafOfModules.naturality_apply (tensorPresheafHom D E) (homOfLE hVU).op z').symm)
@@ -384,8 +384,11 @@ product of the classes of `𝒪_X(D)` and `𝒪_X(E)`. -/
 @[simp]
 theorem toLineBundleClass_add :
     toLineBundleClass hX (D + E) = toLineBundleClass hX D * toLineBundleClass hX E := by
-  unfold toLineBundleClass
-  rw [← LineBundleClass.mk_tensorProduct, LineBundleClass.mk_eq_mk_iff]
+  rw [(toLineBundleClass_eq_mk_iff (hX := hX) (D := D)
+      (L := toInvertibleSheaf hX D)).2 ⟨Iso.refl _⟩,
+    (toLineBundleClass_eq_mk_iff (hX := hX) (D := E)
+      (L := toInvertibleSheaf hX E)).2 ⟨Iso.refl _⟩,
+    ← LineBundleClass.mk_tensorProduct, toLineBundleClass_eq_mk_iff]
   refine ⟨?_⟩
   simpa only [toInvertibleSheaf_obj, InvertibleSheaf.tensorProduct_obj] using
     (tensorProductSheafIso hX D E).symm

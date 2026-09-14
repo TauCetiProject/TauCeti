@@ -64,8 +64,16 @@ lemma toInvertibleSheaf_obj (D : SchemeWeilDivisor X) :
     (isLocallyPrincipal_of_forall_coheight_le_one hX D) hX
 
 /-- The isomorphism class of the line bundle `𝓞_X(D)` associated to a Weil divisor. -/
-@[expose] def toLineBundleClass (D : SchemeWeilDivisor X) : LineBundleClass X :=
+def toLineBundleClass (D : SchemeWeilDivisor X) : LineBundleClass X :=
   LineBundleClass.mk (toInvertibleSheaf hX D)
+
+/-- The line-bundle class of `D` equals the class of `L` exactly when their underlying sheaves
+are isomorphic. -/
+lemma toLineBundleClass_eq_mk_iff {D : SchemeWeilDivisor X} {L : InvertibleSheaf X} :
+    toLineBundleClass hX D = LineBundleClass.mk L ↔
+      Nonempty ((toInvertibleSheaf hX D).obj ≅ L.obj) := by
+  unfold toLineBundleClass
+  exact LineBundleClass.mk_eq_mk_iff
 
 /-- Linearly equivalent Weil divisors determine the same line-bundle class. -/
 theorem toLineBundleClass_eq_of_linearlyEquivalent {D E : SchemeWeilDivisor X}
