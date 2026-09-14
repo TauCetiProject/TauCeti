@@ -30,8 +30,8 @@ variable (r : ℕ)
 /-- The carrier's matrix points, presented by its defining integral Hopf ideal. -/
 abbrev pointsPresentation (A : Type v) [CommRing A] :
     GeneralLinear.IntegralPointsPresentation (r + 1) (definingIdeal r) A where
-  subgroup := points r A
-  subgroup_eq := points_def r A
+  val := points r A
+  property := points_def r A
 
 variable {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
 

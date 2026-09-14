@@ -33,15 +33,11 @@ namespace TauCeti.GeneralLinear
 
 universe v w z
 
--- The equality field already determines the subgroup, so constructor injectivity is redundant.
-set_option genInjectivity false in
 /-- A matrix subgroup over a value ring, presented by an integral Hopf ideal. -/
-structure IntegralPointsPresentation (n : ℕ)
-    (I : HopfIdeal ℤ (coordinateHopfAlgebra ℤ n)) (A : Type v) [CommRing A] where
-  /-- The matrix subgroup in the chosen presentation. -/
-  subgroup : Subgroup (Matrix.GeneralLinearGroup (Fin n) A)
-  /-- The subgroup is cut out by the defining Hopf ideal. -/
-  subgroup_eq : subgroup = hopfIdealPointsSubgroup n I A
+abbrev IntegralPointsPresentation (n : ℕ)
+    (I : HopfIdeal ℤ (coordinateHopfAlgebra ℤ n)) (A : Type v) [CommRing A] :=
+  {subgroup : Subgroup (Matrix.GeneralLinearGroup (Fin n) A) //
+    subgroup = hopfIdealPointsSubgroup n I A}
 
 namespace IntegralPointsPresentation
 
@@ -53,20 +49,20 @@ variable [CommRing A] [CommRing B] [CommRing C]
 
 /-- The map of presented points induced by a homomorphism of value rings. -/
 def map (P : IntegralPointsPresentation n I A) (Q : IntegralPointsPresentation n I B)
-    (f : A →+* B) : P.subgroup →* Q.subgroup :=
-  mapHopfIdealPointsSubgroupCongr n I P.subgroup_eq Q.subgroup_eq f.toIntAlgHom
+    (f : A →+* B) : P.val →* Q.val :=
+  mapHopfIdealPointsSubgroupCongr n I P.property Q.property f.toIntAlgHom
 
 /-- The map of presented points is the entrywise matrix map. -/
 @[simp]
 theorem coe_map (P : IntegralPointsPresentation n I A) (Q : IntegralPointsPresentation n I B)
-    (f : A →+* B) (g : P.subgroup) :
+    (f : A →+* B) (g : P.val) :
     (P.map Q f g : Matrix.GeneralLinearGroup (Fin n) B) =
       Matrix.GeneralLinearGroup.map f g := by
   simp [map]
 
 /-- The induced map applies the value-ring homomorphism to each matrix coefficient. -/
 theorem coe_map_apply (P : IntegralPointsPresentation n I A)
-    (Q : IntegralPointsPresentation n I B) (f : A →+* B) (g : P.subgroup) (i j : Fin n) :
+    (Q : IntegralPointsPresentation n I B) (f : A →+* B) (g : P.val) (i j : Fin n) :
     ((P.map Q f g : Matrix.GeneralLinearGroup (Fin n) B) : Matrix (Fin n) (Fin n) B) i j =
       f (((g : Matrix.GeneralLinearGroup (Fin n) A) : Matrix (Fin n) (Fin n) A) i j) := by
   rw [coe_map, Matrix.GeneralLinearGroup.map_apply]
@@ -84,13 +80,13 @@ theorem map_comp (P : IntegralPointsPresentation n I A)
     P.map S (g.comp f) = (Q.map S g).comp (P.map Q f) := by
   simp only [map, RingHom.toIntAlgHom_comp]
   exact mapHopfIdealPointsSubgroupCongr_comp n I
-    P.subgroup_eq Q.subgroup_eq S.subgroup_eq f.toIntAlgHom g.toIntAlgHom
+    P.property Q.property S.property f.toIntAlgHom g.toIntAlgHom
 
 /-- An injective homomorphism of value rings induces an injective map of presented points. -/
 theorem map_injective (P : IntegralPointsPresentation n I A)
     (Q : IntegralPointsPresentation n I B) {f : A →+* B} (hf : Function.Injective f) :
     Function.Injective (P.map Q f) :=
-  mapHopfIdealPointsSubgroupCongr_injective n I P.subgroup_eq Q.subgroup_eq
+  mapHopfIdealPointsSubgroupCongr_injective n I P.property Q.property
     (φ := f.toIntAlgHom) (by rwa [RingHom.toIntAlgHom_coe])
 
 section Representation
@@ -99,8 +95,8 @@ variable {A B : CommAlgCat.{v} ℤ}
 
 /-- At a bundled value algebra, the presentation agrees with its given algebra structure. -/
 private theorem subgroup_eq_bundled (P : IntegralPointsPresentation n I A) :
-    P.subgroup = hopfIdealPointsSubgroup n I A := by
-  rw [P.subgroup_eq]
+    P.val = hopfIdealPointsSubgroup n I A := by
+  rw [P.property]
   congr 1
   exact Subsingleton.elim _ _
 
@@ -108,7 +104,7 @@ private theorem subgroup_eq_bundled (P : IntegralPointsPresentation n I A) :
 def mulEquiv (P : IntegralPointsPresentation n I A) :
     HopfAlgebra.points
         (R := ℤ) (H := CommHopfAlgCat.quotient (coordinateHopfAlgebra ℤ n) I) A ≃*
-      P.subgroup :=
+      P.val :=
   (hopfIdealPointsSubgroupMulEquiv n I A).trans
     (MulEquiv.subgroupCongr P.subgroup_eq_bundled).symm
 
@@ -125,7 +121,7 @@ theorem coe_mulEquiv_apply (P : IntegralPointsPresentation n I A)
 /-- The inverse representing equivalence recovers the ambient point of the underlying matrix. -/
 @[simp]
 theorem quotientPointsHom_mulEquiv_symm (P : IntegralPointsPresentation n I A)
-    (g : P.subgroup) :
+    (g : P.val) :
     CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra ℤ n) I A (P.mulEquiv.symm g) =
       (pointsMulEquiv (R := ℤ) n).symm (g : Matrix.GeneralLinearGroup (Fin n) A) := by
   simp only [mulEquiv, MulEquiv.symm_trans_apply, MulEquiv.symm_symm]
@@ -156,7 +152,7 @@ variable (P : ∀ (A : Type v) [CommRing A], IntegralPointsPresentation n I A)
 
 /-- A family of presentations gives a group-valued functor on commutative integer algebras. -/
 def functor : CommAlgCat.{v} ℤ ⥤ GrpCat.{v} where
-  obj A := GrpCat.of (P A).subgroup
+  obj A := GrpCat.of (P A).val
   map f := GrpCat.ofHom ((P _).map (P _) f.hom.toRingHom)
   map_id A := congrArg GrpCat.ofHom ((P A).map_id)
   map_comp f g := congrArg GrpCat.ofHom
@@ -165,7 +161,7 @@ def functor : CommAlgCat.{v} ℤ ⥤ GrpCat.{v} where
 /-- The object part is the chosen subgroup of matrices. -/
 @[simp]
 theorem functor_obj (A : CommAlgCat.{v} ℤ) :
-    (functor P).obj A = GrpCat.of (P A).subgroup :=
+    (functor P).obj A = GrpCat.of (P A).val :=
   (rfl)
 
 /-- The morphism part is the map of presented points. -/
@@ -195,7 +191,7 @@ theorem natIso_hom_app_apply (A : CommAlgCat.{v} ℤ)
 
 /-- The inverse component of the representing isomorphism is the inverse pointwise equivalence. -/
 @[simp]
-theorem natIso_inv_app_apply (A : CommAlgCat.{v} ℤ) (g : (P A).subgroup) :
+theorem natIso_inv_app_apply (A : CommAlgCat.{v} ℤ) (g : (P A).val) :
     (natIso P).inv.app A (eqToHom (functor_obj P A).symm g) = (P A).mulEquiv.symm g :=
   (rfl)
 

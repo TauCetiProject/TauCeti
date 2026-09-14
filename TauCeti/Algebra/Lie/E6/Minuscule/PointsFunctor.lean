@@ -28,8 +28,8 @@ noncomputable section
 /-- The carrier's matrix points, presented by its defining integral Hopf ideal. -/
 abbrev pointsPresentation (A : Type v) [CommRing A] :
     GeneralLinear.IntegralPointsPresentation 27 definingIdeal A where
-  subgroup := points A
-  subgroup_eq := points_def A
+  val := points A
+  property := points_def A
 
 variable {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
 
