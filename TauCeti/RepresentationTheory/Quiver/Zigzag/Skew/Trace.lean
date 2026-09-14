@@ -28,11 +28,12 @@ then the product of the arrow of `d` with the arrow of `d.symm` is the backtrack
 c.ratio d.symm.adj (t d.snd).2.
 ```
 
-These units are the nonzero entries of the Gram matrix. Thus the same basis involution as in the
-ordinary case still locates the unique nonzero entry in every row, while the skew parameter gives
-its value. This proves perfectness over an arbitrary commutative ring without inverting any scalar
-outside the units already carried by the parameter. It also gives an exact criterion for the
-chosen trace to be symmetric: the weights of a dart and its reverse must agree.
+These units are the distinguished entries of the Gram matrix. Thus the same basis involution as in
+the ordinary case still locates the one unit-valued entry in every row, all other entries of that
+row being zero, while the skew parameter gives its value. This proves perfectness over an
+arbitrary commutative ring without inverting any scalar outside the units already carried by the
+parameter. It also gives an exact criterion for the chosen trace to be symmetric: the weights of a
+dart and its reverse must agree.
 
 ## Main definitions
 
@@ -48,10 +49,6 @@ chosen trace to be symmetric: the weights of a dart and its reverse must agree.
   equal pairing weights.
 
 ## References
-
-This implements the Layer 1 instruction to normalize the skew Frobenius trace from the chosen
-parameter and the Layer 2 instruction to extend the trace calculation to skew parameters in
-`TauCetiRoadmap/ZigzagPreprojective/README.md`.
 
 See C. Couture, *Skew-Zigzag Algebras*, Section 3,
 https://arxiv.org/abs/1509.08405, and S. Huerfano and M. Khovanov,
@@ -163,9 +160,10 @@ theorem skewZigzagTracePairing_mul_assoc (x y z : skewZigzagQuotient k G c) :
 /-! ### The weighted permutation Gram matrix -/
 
 open scoped Classical in
-/-- **The Gram matrix of the skew-zigzag trace pairing is a weighted permutation matrix.** The
-only nonzero entry in the row indexed by `b` occurs at `zigzagDualIndex G b`, and its value is the
-unit `skewZigzagPairingWeight k G c t b`. -/
+/-- **The Gram matrix of the skew-zigzag trace pairing is a weighted permutation matrix.** In the
+row indexed by `b`, the entry at `zigzagDualIndex G b` is the unit
+`skewZigzagPairingWeight k G c t b` and every other entry is zero; over a nontrivial base ring it
+is therefore the unique nonzero entry of that row. -/
 theorem skewZigzagTracePairing_skewZigzagBasisFun (b b' : ZigzagBasisIndex G) :
     skewZigzagTracePairing k G c t (skewZigzagBasisFun k G c t b)
         (skewZigzagBasisFun k G c t b') =
@@ -293,6 +291,10 @@ theorem skewZigzagTracePairing_isSymm_iff :
           skewZigzagPairingWeight_inr_inr]
       · rw [zigzagDualIndex_inr_inl, skewZigzagPairingWeight_inr_inl,
           skewZigzagPairingWeight_inr_inl]
+        -- `Dart.symm` swaps `toProd`, so `d.symm.symm = d` and `d.symm.snd = d.fst` hold by
+        -- `rfl`; the right-hand weight is therefore already the one `h d` speaks about. A
+        -- `rw [SimpleGraph.Dart.symm_symm]` is not available here because the adjacency argument
+        -- of `ratio` is indexed by the dart, so the rewrite motive is not type-correct.
         change c.ratio d.symm.adj (t d.snd).2 = c.ratio d.adj (t d.fst).2
         exact h d
       · rw [zigzagDualIndex_inr_inr, skewZigzagPairingWeight_inr_inr,
