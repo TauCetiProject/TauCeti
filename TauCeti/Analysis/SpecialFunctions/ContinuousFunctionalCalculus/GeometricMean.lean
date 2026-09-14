@@ -19,8 +19,8 @@ is the unique nonnegative solution `x` of the Riccati equation `x * a⁻¹ * x =
 definite matrices, and for positive operators on a real Hilbert space, this is the classical
 geometric mean. The element `geometricMean a⁻¹ b`, characterised here as the unique nonnegative
 solution of `x * a * x = b`, is the linear map transporting a centred Gaussian law of covariance
-`a` to one of covariance `b`, that is, the linear Brenier map between two nondegenerate
-Gaussians.
+`a` to one of covariance `b`, that is, the linear Brenier map from a nondegenerate source Gaussian
+to a possibly degenerate target Gaussian.
 
 The definition is phrased through Mathlib's `CFC.conjSqrt`, so all of the identities below reduce
 to associativity together with `CFC.sqrt_mul_sqrt_self` and the uniqueness of nonnegative square
@@ -69,9 +69,9 @@ theorem conjSqrt_mul_mul_conjSqrt (c y w z : A) :
     conjSqrt c y * w * conjSqrt c z = conjSqrt c (y * conjSqrt c w * z) := by
   simp only [conjSqrt_apply, mul_assoc]
 
-/-- The geometric mean `a # b = √a * √(√a⁻¹ * b * √a⁻¹) * √a` of two elements of a unital algebra
-with a continuous functional calculus. The intended range of the definition is `a` strictly
-positive and `b` nonnegative; the value is `0` whenever `a` fails to be nonnegative. -/
+/-- The geometric mean `geometricMean a b = √a * √(√a⁻¹ * b * √a⁻¹) * √a` of two elements of a
+unital algebra with a continuous functional calculus. The intended range of the definition is `a`
+strictly positive and `b` nonnegative; the value is `0` whenever `a` fails to be nonnegative. -/
 def geometricMean (a b : A) : A := conjSqrt a (sqrt (conjSqrt a⁻¹ʳ b))
 
 theorem geometricMean_def (a b : A) :
@@ -190,7 +190,8 @@ theorem geometricMean_ringInverse_ringInverse (ha : IsStrictlyPositive a := by c
   rw [inverse_inverse ha.isUnit]
   exact conjugate_geometricMean_ringInverse ha hb
 
-/-- The **arithmetic--geometric mean inequality** for positive elements: `2 (a # b) ≤ a + b`. -/
+/-- The **arithmetic--geometric mean inequality** for positive elements:
+`geometricMean a b + geometricMean a b ≤ a + b`. -/
 theorem geometricMean_add_geometricMean_le (ha : IsStrictlyPositive a := by cfc_tac)
     (hb : 0 ≤ b := by cfc_tac) : geometricMean a b + geometricMean a b ≤ a + b := by
   set c := conjSqrt a⁻¹ʳ b with hc
