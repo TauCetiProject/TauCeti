@@ -46,12 +46,7 @@ variable {p : ℕ} {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGrou
   [CompactSpace G] [TotallyDisconnectedSpace G]
 
 /-- A subgroup of a profinite group is pro-`p` exactly when its image in every finite
-continuous quotient of the ambient group is a `p`-group.
-
-The reverse implication uses that the ambient open normal subgroups induce a neighbourhood basis
-on every subgroup. Given an open normal subgroup `V` of `H`, choose an ambient open normal `U`
-whose pullback lies in `V`. The quotient `H / V` is then a quotient of the image of `H` in
-`G / U`. -/
+continuous quotient of the ambient group is a `p`-group. -/
 theorem _root_.Subgroup.isProP_iff_isPGroup_map_quotient (H : Subgroup G) :
     IsProP p H ↔ ∀ U : OpenNormalSubgroup G,
       IsPGroup p (H.map (QuotientGroup.mk' U.toSubgroup)) := by
