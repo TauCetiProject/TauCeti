@@ -156,7 +156,6 @@ lemma baseChangeHom_comp_raw {M N P : Model R K C toK}
   Over.comp_left]
 
 /-- The bundled version is the convenient form used by the category structure. -/
-@[simp]
 lemma baseChangeHom_comp {M N P : Model R K C toK} (f : Hom M N) (g : Hom N P) :
     M.baseChangeHom (f.hom ≫ g.hom) (by rw [Category.assoc, g.overBase, f.overBase]) =
       M.baseChangeHom f.hom f.overBase ≫ N.baseChangeHom g.hom g.overBase := by
