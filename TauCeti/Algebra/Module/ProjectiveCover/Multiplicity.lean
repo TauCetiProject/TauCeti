@@ -18,12 +18,13 @@ cover of `S`. This file proves the multiplicity formula
 
 `dim_k Hom_A(P, M) = [M : S] · dim_k End_A(S)`,
 
-where `[M : S]` is the Jordan--Hölder multiplicity `TauCeti.jordanHolderMultiplicity`. It is the
-integral pairing between projectives and modules made explicit: reading `dim_k Hom_A(P, -)` off a
-module of finite length returns its `S`-multiplicity, scaled by the dimension of the division
-algebra `D = End_A(S)`. Over a splitting field `D` is `k` and the scale disappears, so the hom
-dimension *is* the multiplicity; over a general field the scale is genuinely there, which is why
-the raw hom dimension is not the multiplicity coordinate.
+for every `A`-module `M` that is finite-dimensional over `k`, where `[M : S]` is the
+Jordan--Hölder multiplicity `TauCeti.jordanHolderMultiplicity`. It is the integral pairing between
+projectives and modules made explicit: reading `dim_k Hom_A(P, -)` off a finite-dimensional module
+returns its `S`-multiplicity, scaled by the dimension of the division algebra `D = End_A(S)`. Over
+a splitting field `D` is `k` and the scale disappears, so the hom dimension *is* the multiplicity;
+over a general field the scale is genuinely there, which is why the raw hom dimension is not the
+multiplicity coordinate.
 
 Two facts drive the proof. Since `P` is projective, `Hom_A(P, -)` is exact, so `dim_k Hom_A(P, -)`
 is additive in short exact sequences. Since the kernel of a projective cover is superfluous, it
@@ -219,8 +220,9 @@ section Formula
 variable [Module k P] [IsScalarTower k A P] [FiniteDimensional k P]
 
 /-- **The multiplicity formula.** For a projective cover `f : P →ₗ[A] S` of a simple module `S`
-and a module `M` of finite length, the dimension of `Hom_A(P, M)` is the Jordan--Hölder
-multiplicity of `S` in `M`, scaled by the dimension of the division algebra `End_A(S)`.
+and an `A`-module `M` that is finite-dimensional over `k`, the dimension of `Hom_A(P, M)` is the
+Jordan--Hölder multiplicity of `S` in `M`, scaled by the dimension of the division algebra
+`End_A(S)`.
 
 The Noetherian and Artinian hypotheses on `M` follow from `FiniteDimensional k M`, but are binders
 here because `TauCeti.jordanHolderMultiplicity A M S` does not elaborate without them, so a caller
