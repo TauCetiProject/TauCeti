@@ -123,7 +123,6 @@ theorem complexify_realOperator (S : StronglyContinuousSemigroup X) (t : ℝ) :
 
 omit [CompleteSpace X] in
 /-- The real-time operator norm is unchanged by complexification. -/
-@[simp]
 theorem norm_complexify_realOperator (S : StronglyContinuousSemigroup X) (t : ℝ) :
     ‖S.complexify.realOperator t‖ = ‖S.realOperator t‖ := by
   rw [S.complexify_realOperator, ContinuousLinearMap.norm_restrictScalars,
