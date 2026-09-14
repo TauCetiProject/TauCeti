@@ -13,7 +13,7 @@ public section
 
 namespace TauCeti
 
-variable {M N : Type*} [TopologicalSpace M] [TopologicalSpace N]
+variable {M N : Type*}
 
 /-- The quotient space obtained by gluing the summands according to an equivalence relation. -/
 def TopologicalGluing (r : Setoid (M ⊕ N)) := Quotient r
@@ -28,7 +28,6 @@ def inl : M → TopologicalGluing r := Quotient.mk' (s := r) ∘ Sum.inl
 /-- The canonical map from the right summand into a gluing. -/
 def inr : N → TopologicalGluing r := Quotient.mk' (s := r) ∘ Sum.inr
 
-omit [TopologicalSpace M] [TopologicalSpace N] in
 theorem surjective :
     Function.Surjective (Sum.elim (inl r) (inr r)) := by
   intro z
@@ -39,7 +38,6 @@ theorem surjective :
   | inr y => exact ⟨Sum.inr y, rfl⟩
 
 /-- The two canonical inclusions agree whenever the relation identifies the corresponding points. -/
-omit [TopologicalSpace M] [TopologicalSpace N] in
 theorem eq_of_rel {a : M} {b : N} (h : (Sum.inl a : M ⊕ N) ≈ Sum.inr b) :
     inl r a = inr r b :=
   Quotient.sound h
