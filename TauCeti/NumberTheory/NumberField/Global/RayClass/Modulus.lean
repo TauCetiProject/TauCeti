@@ -93,6 +93,14 @@ variable {K : Type*} [Field K] [NumberField K]
 
 namespace Modulus
 
+/-- Two moduli are equal when their finite and infinite parts are equal. -/
+@[ext]
+theorem ext {m n : Modulus K} (hfinite : m.finitePart = n.finitePart)
+    (hinfinite : m.infinitePart = n.infinitePart) : m = n := by
+  cases m
+  cases n
+  simp_all
+
 theorem finitePart_ne_zero (𝔪 : Modulus K) : 𝔪.finitePart ≠ 0 := fun h ↦
   𝔪.finitePart_ne_bot (by rwa [Ideal.zero_eq_bot] at h)
 
@@ -137,6 +145,11 @@ theorem support_mono {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) : 𝔪.support 
 of the finite part. -/
 noncomputable def exponent (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) : ℕ :=
   (Associates.mk v.asIdeal).count (Associates.mk 𝔪.finitePart).factors
+
+/-- The exponent of a finite place is its multiplicity in the factorization of the finite part. -/
+theorem exponent_def (m : Modulus K) (v : HeightOneSpectrum (RingOfIntegers K)) :
+    m.exponent v = (Associates.mk v.asIdeal).count (Associates.mk m.finitePart).factors := by
+  rw [exponent]
 
 /-- A prime lies in the support of a modulus exactly when it occurs in the finite part with a
 positive exponent. -/
