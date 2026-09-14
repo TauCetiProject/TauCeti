@@ -51,8 +51,7 @@ theorem subgroup (hG : IsProP p G) (H : Subgroup G) : IsProP p H := by
   obtain ⟨k, hk⟩ :=
     isProP_iff.mp hG N (QuotientGroup.mk' N.toSubgroup (h : G))
   refine ⟨k, ?_⟩
-  change QuotientGroup.mk' V.toSubgroup (h ^ p ^ k) = 1
-  rw [QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff]
+  rw [← map_pow, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff]
   apply hNV
   rw [Subgroup.mem_comap]
   apply (QuotientGroup.eq_one_iff ((h : G) ^ p ^ k)).mp
