@@ -399,7 +399,6 @@ theorem restrict_apply {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m →
   by change L (ι i) = L (ι i); rfl
 
 /-- Membership in the range of a restricted link is membership in one of the selected components. -/
-@[simp]
 theorem mem_range_restrict_iff {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
     (hι : Function.Injective ι) (x : M) : x ∈ (L.restrict ι hι).range ↔
     ∃ i y, L (ι i) y = x := by
