@@ -101,8 +101,7 @@ their dimensions agree. -/
     exact e.toLinearEquiv.finrank_eq
   · exact _root_.QuadraticForm.equivalent_of_finrank_eq_of_isAlgClosed Q R hQ hR
 
-/-- A nonzero quadratic form over an algebraically closed field represents every scalar: a value
-`Q v ≠ 0` can be rescaled to any scalar by a square root of the ratio. -/
+/-- A nonzero quadratic form over an algebraically closed field represents every scalar. -/
 theorem _root_.QuadraticForm.represents_of_ne_zero_of_isAlgClosed
     {K W : Type*} [Field K] [IsAlgClosed K] [AddCommGroup W] [Module K W]
     {Q : QuadraticForm K W} (hQ : Q ≠ 0) (a : K) : QuadraticMap.Represents Q a := by
@@ -115,6 +114,7 @@ theorem _root_.QuadraticForm.represents_of_ne_zero_of_isAlgClosed
 
 /-- A regular quadratic form over an algebraically closed field represents a nonzero scalar
 precisely when its space is nonzero. -/
+@[simp]
 theorem _root_.QuadraticForm.represents_iff_finrank_pos_of_isAlgClosed
     {K W : Type*} [Field K] [IsAlgClosed K] [AddCommGroup W] [Module K W]
     [FiniteDimensional K W] {Q : QuadraticForm K W} (hQ : Q.Nondegenerate) {a : K}
@@ -130,6 +130,7 @@ theorem _root_.QuadraticForm.represents_iff_finrank_pos_of_isAlgClosed
 
 /-- One regular quadratic form over an algebraically closed field is represented by another
 precisely when its dimension is at most the dimension of the other. -/
+@[simp]
 theorem _root_.QuadraticForm.isRepresentedBy_iff_finrank_le_of_isAlgClosed
     {K W₁ W₂ : Type*} [Field K] [IsAlgClosed K] [Invertible (2 : K)]
     [AddCommGroup W₁] [Module K W₁] [FiniteDimensional K W₁]
