@@ -29,9 +29,9 @@ exponent.
 
 * `TauCeti.TypeDSpinCarrier.pointsMulEquivFixedSubgroupFrobenius`: the fixed-point group
   equivalence.
-* `TauCeti.TypeDSpinCarrier.coe_pointsMulEquivFixedSubgroupFrobenius_eq_pointsMap`: the forward
+* `TauCeti.TypeDSpinCarrier.coe_pointsMulEquivFixedSubgroupFrobenius_eq_map`: the forward
   map is the functorial map on carrier points induced by `A^F → A`.
-* `TauCeti.TypeDSpinCarrier.pointsMap_pointsMulEquivFixedSubgroupFrobenius_symm_apply`: the inverse
+* `TauCeti.TypeDSpinCarrier.map_pointsMulEquivFixedSubgroupFrobenius_symm_apply`: the inverse
   map recovers a fixed point after applying that inclusion.
 * `TauCeti.TypeDSpinCarrier.finite_fixedSubgroup_frobenius_of_charP`: the fixed-point group over a
   field of characteristic `p` is finite for every nonzero exponent.
@@ -96,11 +96,13 @@ theorem coe_pointsMulEquivFixedSubgroupFrobenius_apply
 /-- The fixed-point equivalence is the functorial point map along the inclusion of the
 Frobenius-fixed subring. -/
 @[simp]
-theorem coe_pointsMulEquivFixedSubgroupFrobenius_eq_pointsMap
+theorem coe_pointsMulEquivFixedSubgroupFrobenius_eq_map
     (g : points n hn ↥(frobeniusFixedSubring A p k)) :
     (pointsMulEquivFixedSubgroupFrobenius n hn p k A g : points n hn A) =
-      pointsMap n hn (frobeniusFixedSubring A p k).subtype g :=
-  Subtype.ext (by rw [coe_pointsMulEquivFixedSubgroupFrobenius, coe_pointsMap])
+      (pointsPresentation n hn ↥(frobeniusFixedSubring A p k)).map
+        (pointsPresentation n hn A) (frobeniusFixedSubring A p k).subtype g :=
+  Subtype.ext (by rw [coe_pointsMulEquivFixedSubgroupFrobenius,
+    GeneralLinear.IntegralPointsPresentation.coe_map])
 
 /-- Including the matrix underlying the inverse image of a Frobenius-fixed point returns the
 original matrix. -/
@@ -131,11 +133,12 @@ theorem coe_pointsMulEquivFixedSubgroupFrobenius_symm_apply_apply
 /-- The inverse equivalence, followed by the functorial point map from the fixed subring, returns
 the Frobenius-fixed carrier point. -/
 @[simp]
-theorem pointsMap_pointsMulEquivFixedSubgroupFrobenius_symm_apply
+theorem map_pointsMulEquivFixedSubgroupFrobenius_symm_apply
     (x : ↥(fixedSubgroup (frobenius n hn p k A))) :
-    pointsMap n hn (frobeniusFixedSubring A p k).subtype
+    (pointsPresentation n hn ↥(frobeniusFixedSubring A p k)).map
+        (pointsPresentation n hn A) (frobeniusFixedSubring A p k).subtype
         ((pointsMulEquivFixedSubgroupFrobenius n hn p k A).symm x) = (x : points n hn A) := by
-  rw [← coe_pointsMulEquivFixedSubgroupFrobenius_eq_pointsMap, MulEquiv.apply_symm_apply]
+  rw [← coe_pointsMulEquivFixedSubgroupFrobenius_eq_map, MulEquiv.apply_symm_apply]
 
 /-! ## Finiteness -/
 
