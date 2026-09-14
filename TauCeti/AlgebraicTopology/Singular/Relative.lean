@@ -42,10 +42,6 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
 lemma homologyπ_naturality {P P' : SSetPair.{w}} (f : P ⟶ P') (R : C) (n : ℕ) :
     SSet.homologyMap f.right R n ≫ P'.homologyπ R n =
       P.homologyπ R n ≫ SSetPair.homologyMap f R n := by
-  change HomologicalComplex.homologyMap (SSet.chainComplexMap f.right R) n ≫
-      HomologicalComplex.homologyMap (P'.chainComplexπ R) n =
-    HomologicalComplex.homologyMap (P.chainComplexπ R) n ≫
-      HomologicalComplex.homologyMap (SSetPair.chainComplexMap f R) n
   rw [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
   exact congrArg (fun k ↦ HomologicalComplex.homologyMap k n)
     (((SSetPair.chainComplexFunctorπ C).app R).naturality f)

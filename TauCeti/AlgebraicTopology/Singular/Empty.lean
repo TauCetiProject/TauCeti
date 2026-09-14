@@ -18,7 +18,7 @@ The construction is the empty-subspace case of the quotient-chain presentation o
 homology in Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -35,15 +35,13 @@ local instance hasDimensionLT_toSSetPair_ofTopCat (X : TopCat.{w}) :
     (toSSetPair.obj (incl.obj X)).left.HasDimensionLT 0 :=
   (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun h ↦ by
     obtain ⟨σ⟩ := h
-    exact PEmpty.elim (show PEmpty from
-      (TopCat.toSSetObjEquiv _ _ σ) (Classical.arbitrary _))
+    exact PEmpty.elim ((TopCat.toSSetObjEquiv _ _ σ) (Classical.arbitrary _))
 
 /-- The quotient map from the singular chains of `X` to the relative singular chains of
 `(X, ∅)` is an isomorphism. -/
 instance isIso_singularChainComplexπ_ofTopCat (X : TopCat.{w}) :
-    IsIso ((incl.obj X).singularChainComplexπ R) := by
-  let _ : (toSSetPair.obj (incl.obj X)).left.HasDimensionLT 0 := inferInstance
-  exact SSetPair.isIso_chainComplexπ (P := toSSetPair.obj (incl.obj X)) R
+    IsIso ((incl.obj X).singularChainComplexπ R) :=
+  SSetPair.isIso_chainComplexπ (P := toSSetPair.obj (incl.obj X)) R
 
 /-- The canonical chain-complex isomorphism from ordinary singular chains to the relative
 singular chains of `(X, ∅)`. -/
@@ -56,7 +54,7 @@ noncomputable def singularChainComplexIsoOfTopCat (X : TopCat.{w}) :
 @[simp]
 lemma singularChainComplexIsoOfTopCat_hom (X : TopCat.{w}) :
     (singularChainComplexIsoOfTopCat C R X).hom =
-      (incl.obj X).singularChainComplexπ R := rfl
+      (incl.obj X).singularChainComplexπ R := (rfl)
 
 /-- The comparison between ordinary and relative singular chains for an empty-subspace pair is
 natural in the space. -/
@@ -83,7 +81,7 @@ noncomputable def singularHomologyIsoOfTopCat (X : TopCat.{w}) (n : ℕ) :
 @[simp]
 lemma singularHomologyIsoOfTopCat_hom (X : TopCat.{w}) (n : ℕ) :
     (singularHomologyIsoOfTopCat C R X n).hom =
-      (incl.obj X).singularHomologyπ R n := rfl
+      (incl.obj X).singularHomologyπ R n := (rfl)
 
 /-- The comparison between ordinary and relative singular homology for an empty-subspace pair is
 natural in the space. -/
