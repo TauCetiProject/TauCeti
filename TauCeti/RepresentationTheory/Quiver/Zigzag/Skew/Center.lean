@@ -293,10 +293,11 @@ along the edges.** The converse of
 hence the hypothesis that no vertex is isolated. -/
 @[simp]
 theorem sum_smul_skewZigzagMk_vertexIdempotent_mem_center_iff [Fintype V]
-    (t : ∀ i : V, {j : V // G.Adj i j}) (f : V → k) :
+    (hns : ∀ i : V, ∃ j, G.Adj i j) (f : V → k) :
     (∑ i, f i • skewZigzagMk k G c (vertexIdempotent k (vertex G i)))
         ∈ Subalgebra.center k (skewZigzagQuotient k G c)
       ↔ ∀ ⦃i j : V⦄, G.Adj i j → f i = f j := by
+  let t : ∀ i : V, {j : V // G.Adj i j} := fun i => ⟨(hns i).choose, (hns i).choose_spec⟩
   refine ⟨fun hz i j hij => ?_, sum_smul_skewZigzagMk_vertexIdempotent_mem_center k G c t f⟩
   have hcomm := (Subalgebra.mem_center_iff.mp hz)
     (skewZigzagMk k G c (ofArrow (arrow G (⟨(i, j), hij⟩ : G.Dart).adj)))
@@ -418,8 +419,8 @@ theorem mem_center_skewZigzagQuotient_iff [Fintype V] (t : ∀ i : V, {j : V // 
         ∈ Subalgebra.center k (skewZigzagQuotient k G c) := by
       have := sub_mem hz hvol
       rwa [hzsum, add_sub_cancel_right] at this
-    exact ⟨f, g,
-      (sum_smul_skewZigzagMk_vertexIdempotent_mem_center_iff k G c t f).mp hidem, hzsum⟩
+    exact ⟨f, g, (sum_smul_skewZigzagMk_vertexIdempotent_mem_center_iff k G c
+      (fun i => ⟨(t i).1, (t i).2⟩) f).mp hidem, hzsum⟩
   · rintro ⟨f, g, hf, rfl⟩
     exact add_mem (sum_smul_skewZigzagMk_vertexIdempotent_mem_center k G c t f hf)
       (sum_mem fun i _ => Subalgebra.smul_mem _ (skewZigzagVolume_mem_center k G c t i) _)
