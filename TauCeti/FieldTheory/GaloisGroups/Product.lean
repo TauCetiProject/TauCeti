@@ -31,7 +31,6 @@ Separability is what makes `L/F` Galois, which the description of the image uses
 * `Polynomial.Gal.mem_range_restrictProd_iff`: the image of `restrictProd` consists of the pairs
   agreeing on `L_p ∩ L_q`.
 * `Polynomial.Gal.restrictProd_surjective_iff`: `restrictProd` is surjective iff `L_p ∩ L_q = F`.
-* `Polynomial.Gal.restrictProd_bijective`: under that hypothesis `restrictProd` is bijective.
 -/
 
 public section
@@ -98,15 +97,5 @@ theorem _root_.Polynomial.Gal.restrictProd_surjective_iff (hp : p.Separable) (hq
   have := hp.isGalois_splittingField_mul hq
   rw [Gal.restrictProd_eq_prod_restrict p q (mul_ne_zero hp.ne_zero hq.ne_zero)]
   exact AlgEquiv.prod_restrictNormalHom_surjective_iff
-
-/-- **Disjoint splitting fields.** If the splitting fields of separable `p` and `q` meet
-only in `F`, then `Polynomial.Gal.restrictProd` identifies `(p * q).Gal` with `p.Gal × q.Gal`. -/
-theorem _root_.Polynomial.Gal.restrictProd_bijective (hp : p.Separable) (hq : q.Separable)
-    [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
-    [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)]
-    (h : (IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).fieldRange ⊓
-      (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).fieldRange = ⊥) :
-    Function.Bijective (Gal.restrictProd p q) :=
-  ⟨Gal.restrictProd_injective p q, (Gal.restrictProd_surjective_iff hp hq).2 h⟩
 
 end TauCeti

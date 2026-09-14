@@ -76,14 +76,6 @@ theorem _root_.AlgHom.restrictNormalHom_eq_iff (f : M →ₐ[F] K) [Normal F M] 
   ext x
   exact f.injective ((f.restrictNormalHom_commutes σ x).trans (h x))
 
-/-- `AlgEquiv.restrictNormal_commutes`, stated for the homomorphism `AlgEquiv.restrictNormalHom`:
-restricting `σ : Gal(K/F)` to a normal subextension `M` commutes with the algebra map. -/
-@[simp]
-theorem _root_.AlgEquiv.restrictNormalHom_commutes [Algebra M K]
-    [IsScalarTower F M K] [Normal F M] (σ : Gal(K/F)) (x : M) :
-    algebraMap M K (AlgEquiv.restrictNormalHom M σ x) = σ (algebraMap M K x) :=
-  AlgEquiv.restrictNormal_commutes σ M x
-
 /-- For the algebra map of a scalar tower, restriction along it is Mathlib's
 `AlgEquiv.restrictNormalHom`. -/
 @[simp]
@@ -91,7 +83,7 @@ theorem _root_.AlgHom.restrictNormalHom_toAlgHom [Algebra M K] [IsScalarTower F 
     [Normal F M] :
     (IsScalarTower.toAlgHom F M K).restrictNormalHom = AlgEquiv.restrictNormalHom M :=
   MonoidHom.ext fun σ ↦ (IsScalarTower.toAlgHom F M K).restrictNormalHom_eq_iff.2
-    fun y ↦ (AlgEquiv.restrictNormalHom_commutes σ y).symm
+    fun y ↦ (AlgEquiv.restrictNormal_commutes σ M y).symm
 
 end RestrictAlong
 
@@ -114,7 +106,8 @@ theorem _root_.AlgEquiv.mem_range_prod_restrictNormalHom_iff [FiniteDimensional 
   constructor
   · rintro ⟨g, hg⟩ x₁ x₂ hx
     obtain ⟨rfl, rfl⟩ := Prod.ext_iff.1 hg
-    simp only [MonoidHom.prod_apply, AlgEquiv.restrictNormalHom_commutes, hx]
+    simpa only [MonoidHom.prod_apply, AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
+      AlgEquiv.restrictNormal_commutes] using congrArg g hx
   intro h
   obtain ⟨a, rfl⟩ := AlgEquiv.restrictNormalHom_surjective (F := F) (K₁ := K₁) E σ₁
   obtain ⟨b, rfl⟩ := AlgEquiv.restrictNormalHom_surjective (F := F) (K₁ := K₂) E σ₂
@@ -127,8 +120,8 @@ theorem _root_.AlgEquiv.mem_range_prod_restrictNormalHom_iff [FiniteDimensional 
     simp only [IntermediateField.mem_inf, AlgHom.mem_fieldRange, IsScalarTower.coe_toAlgHom'] at hx
     obtain ⟨⟨x₁, rfl⟩, ⟨x₂, hx⟩⟩ := hx
     have hb : b (algebraMap K₂ E x₂) = a (algebraMap K₁ E x₁) := by
-      rw [← AlgEquiv.restrictNormalHom_commutes, ← AlgEquiv.restrictNormalHom_commutes,
-        h _ _ hx.symm]
+      simpa only [AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
+        AlgEquiv.restrictNormal_commutes] using (h _ _ hx.symm).symm
     calc (a⁻¹ * b) (algebraMap K₁ E x₁) = a⁻¹ (b (algebraMap K₂ E x₂)) := by
           rw [AlgEquiv.mul_apply, hx]
       _ = algebraMap K₁ E x₁ := by rw [hb, AlgEquiv.aut_inv, AlgEquiv.symm_apply_apply]
@@ -160,7 +153,8 @@ theorem _root_.AlgEquiv.prod_restrictNormalHom_surjective_iff [FiniteDimensional
     have hg := (AlgEquiv.mem_range_prod_restrictNormalHom_iff
       (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₁ g) 1).1
         (htop ▸ Subgroup.mem_top _) x₁ x₂ hx.symm
-    rwa [AlgEquiv.restrictNormalHom_commutes, AlgEquiv.one_apply, hx] at hg
+    simpa only [AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
+      AlgEquiv.restrictNormal_commutes, AlgEquiv.one_apply, hx] using hg
   · intro hbot
     refine eq_top_iff.2 fun ⟨σ₁, σ₂⟩ _ ↦ ?_
     refine (AlgEquiv.mem_range_prod_restrictNormalHom_iff σ₁ σ₂).2 fun x₁ x₂ hx ↦ ?_
