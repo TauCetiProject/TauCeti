@@ -44,7 +44,8 @@ private lemma inv_overBase (f : Hom M N) [IsIso f.hom] :
   rw [← f.overBase]
   exact IsIso.inv_hom_id_assoc f.hom N.toBase
 
-/-- Base change preserves the composition law also for unbundled maps over the base. -/
+/-- The base change of the inverse of an isomorphism, followed by the base change of the original
+    morphism, is the identity. -/
 private lemma baseChangeHom_inv_comp (f : Hom M N) [IsIso f.hom] :
     N.baseChangeHom (inv f.hom) (inv_overBase f) ≫
         M.baseChangeHom f.hom f.overBase = 𝟙 _ := by
@@ -52,7 +53,7 @@ private lemma baseChangeHom_inv_comp (f : Hom M N) [IsIso f.hom] :
     N.baseChangeHom (inv f.hom) (inv_overBase f) ≫
         M.baseChangeHom f.hom f.overBase =
       N.baseChangeHom (inv f.hom ≫ f.hom) _ := by
-        rw [baseChangeHom_comp_raw]
+        rw [baseChangeHom_comp]
     _ = N.baseChangeHom (𝟙 N.total) _ := by simp only [IsIso.inv_hom_id]
     _ = 𝟙 _ := baseChangeHom_id N
 
@@ -71,7 +72,7 @@ private lemma inv_genericFiber (f : Hom M N) [IsIso f.hom] :
     _ = N.genericFiberIso.hom.left := by
       rw [baseChangeHom_inv_comp f, Category.id_comp]
 
-/-- A total-space isomorphism gives a categorical isomorphism of models. -/
+/-- Construct the inverse model morphism from an isomorphism of total spaces. -/
 private noncomputable def homOfIsIso (f : Hom M N) [IsIso f.hom] : N ⟶ M where
   hom := inv f.hom
   overBase := inv_overBase f
@@ -96,6 +97,9 @@ theorem isIso_iff_isIso_hom (f : M ⟶ N) : IsIso f ↔ IsIso f.hom := by
 /-- A model morphism is an isomorphism whenever its map on total spaces is one. -/
 instance isIso_of_isIso_hom (f : M ⟶ N) [IsIso f.hom] : IsIso f :=
   (isIso_iff_isIso_hom f).2 inferInstance
+
+instance isIso_hom_of_isIso (f : M ⟶ N) [IsIso f] : IsIso f.hom :=
+  (isIso_iff_isIso_hom f).1 inferInstance
 
 end Model
 

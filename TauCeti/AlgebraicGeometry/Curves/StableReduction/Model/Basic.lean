@@ -133,7 +133,7 @@ lemma baseChangeHom_id (M : Model R K C toK) :
 
 /-- Base change carries a composite of maps over the DVR to the composite of their base changes. -/
 @[simp]
-lemma baseChangeHom_comp_raw {M N P : Model R K C toK}
+lemma baseChangeHom_comp {M N P : Model R K C toK}
     (f : M.total ⟶ N.total) (g : N.total ⟶ P.total)
     (hf : f ≫ N.toBase = M.toBase) (hg : g ≫ P.toBase = N.toBase) :
     M.baseChangeHom (f ≫ g) (by rw [Category.assoc, hg, hf]) =
@@ -155,12 +155,6 @@ lemma baseChangeHom_comp_raw {M N P : Model R K C toK}
       (Over.homMk g hg : Over.mk N.toBase ⟶ Over.mk P.toBase)),
   Over.comp_left]
 
-/-- The bundled version is the convenient form used by the category structure. -/
-lemma baseChangeHom_comp {M N P : Model R K C toK} (f : Hom M N) (g : Hom N P) :
-    M.baseChangeHom (f.hom ≫ g.hom) (by rw [Category.assoc, g.overBase, f.overBase]) =
-      M.baseChangeHom f.hom f.overBase ≫ N.baseChangeHom g.hom g.overBase := by
-  exact baseChangeHom_comp_raw f.hom g.hom f.overBase g.overBase
-
 /-- Models of a fixed scheme over the fraction field form a category. -/
 instance : Category (Model R K C toK) where
   Hom := Hom
@@ -172,7 +166,8 @@ instance : Category (Model R K C toK) where
     { hom := f.hom ≫ g.hom
       overBase := by rw [Category.assoc, g.overBase, f.overBase]
       genericFiber := by
-        rw [baseChangeHom_comp, Category.assoc, g.genericFiber, f.genericFiber] }
+        rw [baseChangeHom_comp f.hom g.hom f.overBase g.overBase, Category.assoc,
+          g.genericFiber, f.genericFiber] }
   id_comp f := by ext; simp
   comp_id f := by ext; simp
   assoc f g h := by ext; simp
