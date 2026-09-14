@@ -54,6 +54,8 @@ existential is what keeps the fibres free of them.
 * `NumberField.Chebotarev.frobeniusPrimeSet_map_autCongr`: equivariance — an isomorphism
   `e : L ≃ₐ[K] L'` of extensions of `K` matches the fibre of `C` in `L` with the fibre in `L'` of
   the image of `C` under the induced isomorphism `AlgEquiv.autCongr e` of Galois groups.
+* `NumberField.Chebotarev.frobeniusPrimeSet_subset_map_restrictNormalHom`: a fibre over `L` lies
+  in the fibre over a Galois subextension `M` of the restricted class.
 * `NumberField.Chebotarev.disjoint_frobeniusPrimeSet`: distinct classes have disjoint fibres.
 * `NumberField.Chebotarev.iUnion_frobeniusPrimeSet`: the fibres cover exactly the complement of
   `ramifiedPrimes K L`, so `existsUnique_mem_frobeniusPrimeSet` partitions the unramified primes
@@ -197,6 +199,24 @@ theorem frobeniusPrimeSet_map_autCongr (C : ConjClasses (L ≃ₐ[K] L)) (e : L 
     exact ⟨hur', by rw [artinSymbol_eq_map_autCongr 𝔭.asIdeal e hur hur', hC]⟩
 
 end IsoOfExtensions
+
+section RestrictNormal
+
+variable {M : Type*} [Field M] [NumberField M] [Algebra K M] [Algebra M L] [IsScalarTower K M L]
+  [IsGalois K M]
+
+/-- **Fibres shrink along restriction to a normal subextension.** For a tower `L / M / K` with
+`M / K` Galois, a prime in the fibre of `C` over `L` lies in the fibre over `M` of the restriction
+of `C`. Unramifiedness in `M` is part of the conclusion, not a hypothesis.
+
+This is `artinSymbol_map_restrictNormalHom` read on fibres: restriction takes no power. -/
+theorem frobeniusPrimeSet_subset_map_restrictNormalHom (C : ConjClasses (L ≃ₐ[K] L)) :
+    frobeniusPrimeSet K L C ⊆
+      frobeniusPrimeSet K M (ConjClasses.map (AlgEquiv.restrictNormalHom M) C) := by
+  rintro 𝔭 ⟨hur, rfl⟩
+  exact ⟨_, (artinSymbol_map_restrictNormalHom 𝔭.asIdeal hur).symm⟩
+
+end RestrictNormal
 
 /-- **Distinct classes have disjoint fibres.** A prime unramified in `L` has one Artin class. -/
 theorem disjoint_frobeniusPrimeSet {C D : ConjClasses (L ≃ₐ[K] L)} (h : C ≠ D) :
