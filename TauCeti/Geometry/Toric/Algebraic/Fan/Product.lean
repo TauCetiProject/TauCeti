@@ -25,12 +25,15 @@ combinatorial product operation used by products of toric realizations.
 * `TauCeti.Toric.Fan.isComplete_prod_iff`: a product fan is complete exactly when both factors
   are complete.
 * `TauCeti.Toric.Fan.IsRegular.prod`: products preserve regularity.
-* `TauCeti.Toric.FanHom.prod`: the componentwise product of two fan morphisms.
+* `TauCeti.Toric.FanHom.prodMap`: the componentwise product of two fan morphisms.
 
 ## References
 
 The construction is described in §1.4 of W. Fulton, *Introduction to Toric Varieties*, and
 §3.1 of D. Cox, J. Little and H. Schenck, *Toric Varieties*.
+
+The face-splitting argument uses `PointedCone.Face.fst_prod_snd` from
+`Mathlib.Geometry.Convex.Cone.Face.Lattice`.
 -/
 
 public section
@@ -106,6 +109,8 @@ theorem support_prod : (Φ.prod Ψ).support = Φ.support ×ˢ Ψ.support := by
       ⟨σ.prod τ, (Φ.mem_prod_cones Ψ).2 ⟨σ, hσ, τ, hτ, rfl⟩, ⟨hxσ, hyτ⟩⟩
 
 /-- A product fan is complete exactly when both factors are complete. -/
+-- This is not a simp lemma: `Fan.isComplete_iff` rewrites its left-hand side first, so the
+-- `simpNF` linter rejects the redundant attribute.
 theorem isComplete_prod_iff : (Φ.prod Ψ).IsComplete ↔ Φ.IsComplete ∧ Ψ.IsComplete := by
   constructor
   · intro h
@@ -152,13 +157,12 @@ variable {N₁ N₂ N₁' N₂' V₁ V₂ V₁' V₂' : Type*}
   {Φ₁ : Fan i₁} {Φ₂ : Fan i₂} {Ψ₁ : Fan i₁'} {Ψ₂ : Fan i₂'}
 
 /-- The product of two fan morphisms is given by the componentwise maps. -/
-def prod (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) : FanHom (Φ₁.prod Φ₂) (Ψ₁.prod Ψ₂) where
+def prodMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) : FanHom (Φ₁.prod Φ₂) (Ψ₁.prod Ψ₂) where
   latticeMap := f.latticeMap.prodMap g.latticeMap
   realMap := f.realMap.prodMap g.realMap
   map_lattice n := by
-    change (f.realMap (i₁ n.1), g.realMap (i₂ n.2)) =
-      (i₁' (f.latticeMap n.1), i₂' (g.latticeMap n.2))
-    rw [f.map_lattice, g.map_lattice]
+    simp only [LinearMap.prodMap_apply, AddMonoidHom.coe_prodMap, Prod.map_apply', f.map_lattice,
+      g.map_lattice]
   map_cone ξ hξ := by
     obtain ⟨σ, hσ, τ, hτ, rfl⟩ := (Φ₁.mem_prod_cones Φ₂).1 hξ
     obtain ⟨σ', hσ', hleσ⟩ := f.map_cone hσ
@@ -170,21 +174,22 @@ def prod (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) : FanHom (Φ₁.prod 
 
 /-- The integral map of a product morphism is the product of the integral maps. -/
 @[simp]
-theorem prod_latticeMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
-    (f.prod g).latticeMap = f.latticeMap.prodMap g.latticeMap := by
-  rw [prod]
+theorem prodMap_latticeMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
+    (f.prodMap g).latticeMap = f.latticeMap.prodMap g.latticeMap := by
+  rw [prodMap]
 
 /-- The real-linear map of a product morphism is the product of the real-linear maps. -/
 @[simp]
-theorem prod_realMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
-    (f.prod g).realMap = f.realMap.prodMap g.realMap := by
-  rw [prod]
+theorem prodMap_realMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
+    (f.prodMap g).realMap = f.realMap.prodMap g.realMap := by
+  rw [prodMap]
 
 /-- Products of identity fan morphisms are identity fan morphisms. -/
 @[simp]
-theorem prod_id : (FanHom.id Φ₁).prod (FanHom.id Φ₂) = FanHom.id (Φ₁.prod Φ₂) := by
+theorem prodMap_id :
+    (FanHom.id Φ₁).prodMap (FanHom.id Φ₂) = FanHom.id (Φ₁.prod Φ₂) := by
   apply FanHom.ext
-  simp only [prod_latticeMap, id_latticeMap]
+  simp only [prodMap_latticeMap, id_latticeMap]
   ext x <;> rfl
 
 section Comp
@@ -194,11 +199,12 @@ variable {N₁'' N₂'' V₁'' V₂'' : Type*} [AddCommGroup N₁''] [AddCommGro
   {i₁'' : N₁'' →+ V₁''} {i₂'' : N₂'' →+ V₂''} {Ω₁ : Fan i₁''} {Ω₂ : Fan i₂''}
 
 /-- Products commute with composition of fan morphisms. -/
-theorem prod_comp (f₁ : FanHom Φ₁ Ψ₁) (f₂ : FanHom Ψ₁ Ω₁) (g₁ : FanHom Φ₂ Ψ₂)
+theorem prodMap_comp (f₁ : FanHom Φ₁ Ψ₁) (f₂ : FanHom Ψ₁ Ω₁) (g₁ : FanHom Φ₂ Ψ₂)
     (g₂ : FanHom Ψ₂ Ω₂) :
-    (f₂.comp f₁).prod (g₂.comp g₁) = (f₂.prod g₂).comp (f₁.prod g₁) := by
+    (f₂.comp f₁).prodMap (g₂.comp g₁) =
+      (f₂.prodMap g₂).comp (f₁.prodMap g₁) := by
   apply FanHom.ext
-  simp only [prod_latticeMap, comp_latticeMap]
+  simp only [prodMap_latticeMap, comp_latticeMap]
   ext x <;> rfl
 
 end Comp
