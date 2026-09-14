@@ -36,13 +36,6 @@ equality because `(ZMod m)ˣ` is commutative.
   `(σ₂, υ)` are disjoint whenever `τ ≠ υ`.
 * `NumberField.Chebotarev.pairwise_disjoint_taggedFrobeniusPrimeSet`: the tagged fibres for a
   fixed `σ` are pairwise disjoint as `τ` varies.
-
-## References
-
-This implements the pairwise-disjointness target of Layer 7.5, “Why the tagged fixed fields are
-cyclotomic”, of the
-[Chebotarev roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/Chebotarev/README.md),
-which asks to prove pairwise disjointness of the tagged Frobenius fibres for distinct `τ`.
 -/
 
 public section
