@@ -310,7 +310,7 @@ theorem TransitiveGroupLabel.map_conj {n : ℕ} {j : TransitiveGroupIndex n}
 @[simp]
 theorem transitiveGroupLabel_map_conj_iff {n : ℕ} {j : TransitiveGroupIndex n}
     (G : Subgroup (Perm (Fin n))) (σ : Perm (Fin n)) :
-    TransitiveGroupLabel j (Subgroup.map (MulAut.conj σ).toMonoidHom G) ↔
+    TransitiveGroupLabel j (Subgroup.map (MulAut.conj σ) G) ↔
       TransitiveGroupLabel j G := by
   constructor
   · rintro ⟨τ, hτ⟩
