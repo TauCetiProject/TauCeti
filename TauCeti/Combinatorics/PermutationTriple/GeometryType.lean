@@ -95,7 +95,6 @@ theorem orderTriple_transport (e : Fin n ≃ Fin m) (t : PermutationTriple n) :
     e.permCongrHom.orderOf_eq t.σ1, e.permCongrHom.orderOf_eq t.σinf⟩
 
 /-- Inverting all three components does not change their ordered triple of orders. -/
-@[simp]
 theorem orderTriple_inv_components (t : PermutationTriple n) :
     (orderOf t.σ0⁻¹, orderOf t.σ1⁻¹, orderOf t.σinf⁻¹) = t.orderTriple := by
   simp [orderTriple, orderOf_inv]
@@ -212,7 +211,6 @@ theorem geometryType_one : (1 : PermutationTriple n).geometryType = .spherical :
 
 /-- Inverting all three components, as in the opposite composition convention, does not change
 the geometry type computed from their orders. -/
-@[simp]
 theorem geometryType_inv_components (t : PermutationTriple n) :
     GeometryType.ofOrders (orderOf t.σ0⁻¹, orderOf t.σ1⁻¹, orderOf t.σinf⁻¹) =
       t.geometryType := by
