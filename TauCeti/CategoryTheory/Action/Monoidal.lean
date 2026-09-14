@@ -36,16 +36,6 @@ rings in `TauCeti/RepresentationTheory/RepresentationRing/Restriction.lean`.
 * `Action.res_ε_hom`, `Action.res_μ_hom`, `Action.res_η_hom`, `Action.res_δ_hom`: all four
   structure maps of the monoidal functor are identities on the underlying objects of `V`. These
   mirror Mathlib's `Action.forget_ε`, `Action.forget_μ`, `Action.forget_η`, `Action.forget_δ`.
-
-## Implementation notes
-
-The three coherence axioms are proved by simplifying the `Action`-level statement down to `V`,
-where the monoidal structure maps of `Action V G` are those of `V`
-(`Action.associator_hom_hom` and friends), and then closing the resulting identity in `V`. The
-final `exact` restates that identity with `X.V` in place of the definitionally equal
-`((Action.res V f).obj X).V`: `simp` cannot perform that replacement itself, because the object
-being whiskered by occurs in the *type* of the surrounding composite, but the two are
-definitionally equal, so `exact` accepts the tidier form.
 -/
 
 public section
@@ -99,6 +89,10 @@ def resCoreMonoidal : (res V f).CoreMonoidal where
     apply hom_ext; exact (Category.comp_id _).trans (Category.id_comp _).symm
   μIso_hom_natural_right _ _ := by
     apply hom_ext; exact (Category.comp_id _).trans (Category.id_comp _).symm
+  -- Each coherence axiom reduces to the corresponding identity in `V`. The `exact` restates that
+  -- identity with `X.V` in place of the definitionally equal `((res V f).obj X).V`: `simp` cannot
+  -- make that replacement itself, since the object whiskered by occurs in the *type* of the
+  -- surrounding composite.
   associativity X Y Z := by
     apply hom_ext
     simp only [tensorObj_V, comp_hom, whiskerRight_hom, resTensorator_hom_hom, res_map_hom,

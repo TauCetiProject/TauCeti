@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Action.Monoidal
-public import TauCeti.RepresentationTheory.Induction.Restriction
 public import TauCeti.RepresentationTheory.RepresentationRing.Basic
 
 /-!
@@ -45,8 +44,7 @@ in its statement.
 ## Main statements
 
 * `TauCeti.repRingRes_of`: restriction sends the class of a representation to the class of its
-  restriction. For a subgroup `S ≤ G` this is the class of `TauCeti.resFDRep S`, which is a
-  reducible abbreviation for the same object.
+  restriction. For a subgroup `S ≤ G`, restriction along `S.subtype` is restriction to `S`.
 * `TauCeti.repRingRes_id` and `TauCeti.repRingRes_comp`: restriction is functorial, contravariantly
   in the homomorphism.
 * `TauCeti.repRingCharacter_repRingRes` and `TauCeti.repRingCharacter_repRingRes_apply`: the
@@ -63,12 +61,6 @@ Induction in the other direction is *not* a ring homomorphism -- it is a homomor
 `R(G)`-modules, by the projection formula `TauCeti.indProjection` -- and is not built here.
 
 ## References
-
-This is the first bullet of Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md` ("the representation ring and
-its character map"): "Restriction `Res_H^G : R(G) → R(H)` is a ring homomorphism". The
-representation ring itself, and its character homomorphism, are Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md`.
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, Springer GTM 42 (1977), Part II, §9.
 -/
@@ -91,9 +83,8 @@ variable {k : Type u} [Field k] {G : Type v} {H : Type v'} {K : Type v''} [Monoi
 representation of `H` to the class of its restriction along `φ`.
 
 It is Mathlib's restriction functor `CategoryTheory.Action.res` fed to
-`TauCeti.SplitK0.mapRingHom`; the multiplicativity is the monoidal structure of that functor, and
-`TauCeti.repRingRes_of` together with `TauCeti.SplitK0.ringHom_ext` is the interface, so the body
-is never unfolded. -/
+`TauCeti.SplitK0.mapRingHom`, and it is multiplicative because that functor is monoidal
+(`Action.resMonoidal`). -/
 noncomputable def repRingRes (k : Type u) [Field k] {G : Type v} {H : Type v'} [Monoid G]
     [Monoid H] (φ : G →* H) : repRing k H →+* repRing k G :=
   SplitK0.mapRingHom (Action.res (FGModuleCat.{u} k) φ)
@@ -113,8 +104,9 @@ theorem repRingRes_id : repRingRes k (MonoidHom.id G) = RingHom.id (repRing k G)
     exact SplitK0.of_congr ((Action.resId (FGModuleCat.{u} k)).app V)
 
 /-- **Restriction is contravariantly functorial**: restricting along a composite is restricting
-twice over. The two functors agree on the nose (`TauCeti.actionRes_comp`), so the comparison of
-classes is the identity isomorphism. -/
+twice over. The two functors agree on the nose, so the comparison of classes is the identity
+isomorphism. -/
+@[simp]
 theorem repRingRes_comp (φ : G →* H) (ψ : H →* K) :
     repRingRes k (ψ.comp φ) = (repRingRes k φ).comp (repRingRes k ψ) :=
   SplitK0.ringHom_ext fun V => by
