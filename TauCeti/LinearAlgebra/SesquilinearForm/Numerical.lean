@@ -118,23 +118,19 @@ theorem rightNumericalQuotientMk_surjective :
     Function.Surjective (rightNumericalQuotientMk b) :=
   (rightRadical b).mkQ_surjective
 
-@[simp]
 theorem leftNumericalQuotientMk_eq_zero_iff (x : L) :
     leftNumericalQuotientMk b x = 0 ↔ x ∈ leftRadical b := by
   rw [← LinearMap.mem_ker, ker_leftNumericalQuotientMk]
 
-@[simp]
 theorem rightNumericalQuotientMk_eq_zero_iff (y : M) :
     rightNumericalQuotientMk b y = 0 ↔ y ∈ rightRadical b := by
   rw [← LinearMap.mem_ker, ker_rightNumericalQuotientMk]
 
-@[simp]
 theorem leftNumericalQuotientMk_eq_iff (x x' : L) :
     leftNumericalQuotientMk b x = leftNumericalQuotientMk b x' ↔
       x - x' ∈ leftRadical b := by
   rw [← sub_eq_zero, ← map_sub, leftNumericalQuotientMk_eq_zero_iff]
 
-@[simp]
 theorem rightNumericalQuotientMk_eq_iff (y y' : M) :
     rightNumericalQuotientMk b y = rightNumericalQuotientMk b y' ↔
       y - y' ∈ rightRadical b := by
@@ -148,13 +144,11 @@ def leftNumericalPairing : LeftNumericalQuotient b →ₛₗ[σ] M →ₗ[R] P :
 def rightNumericalPairing : L →ₛₗ[σ] RightNumericalQuotient b →ₗ[R] P :=
   ((rightRadical b).liftQ b.flip le_rfl).flip
 
-@[simp]
 theorem leftNumericalPairing_mk (x : L) (y : M) :
     leftNumericalPairing b (leftNumericalQuotientMk b x) y = b x y := by
   rw [leftNumericalPairing, leftNumericalQuotientMk, Submodule.mkQ_apply]
   exact DFunLike.congr_fun (Submodule.liftQ_apply (leftRadical b) b x) y
 
-@[simp]
 theorem rightNumericalPairing_mk (x : L) (y : M) :
     rightNumericalPairing b x (rightNumericalQuotientMk b y) = b x y := by
   rw [rightNumericalPairing, rightNumericalQuotientMk, Submodule.mkQ_apply]
@@ -180,7 +174,6 @@ def numericalPairing :
     LeftNumericalQuotient b →ₛₗ[σ] RightNumericalQuotient b →ₗ[R] P :=
   b.liftQ₂ (leftRadical b) (rightRadical b) le_rfl le_rfl
 
-@[simp]
 theorem numericalPairing_mk (x : L) (y : M) :
     numericalPairing b (leftNumericalQuotientMk b x) (rightNumericalQuotientMk b y) =
       b x y := by
@@ -240,13 +233,11 @@ def rightNumericalMap (hg : rightRadical b ≤ (rightRadical c).comap g) :
     RightNumericalQuotient b →ₗ[R] RightNumericalQuotient c :=
   (rightRadical b).mapQ (rightRadical c) g hg
 
-@[simp]
 theorem leftNumericalMap_mk (hf : leftRadical b ≤ (leftRadical c).comap f) (x : L) :
     leftNumericalMap b c f hf (leftNumericalQuotientMk b x) =
       leftNumericalQuotientMk c (f x) := by
   simp only [leftNumericalMap, leftNumericalQuotientMk_apply, Submodule.mapQ_apply]
 
-@[simp]
 theorem rightNumericalMap_mk (hg : rightRadical b ≤ (rightRadical c).comap g) (y : M) :
     rightNumericalMap b c g hg (rightNumericalQuotientMk b y) =
       rightNumericalQuotientMk c (g y) := by
@@ -370,27 +361,23 @@ def rightNumericalEquiv (hpair : ∀ x y, c (f x) (g y) = b x y) :
   Submodule.Quotient.equiv (rightRadical b) (rightRadical c) g
     (map_rightRadical_eq b c f g hpair)
 
-@[simp]
 theorem leftNumericalEquiv_mk (hpair : ∀ x y, c (f x) (g y) = b x y) (x : L) :
     leftNumericalEquiv b c f g hpair (leftNumericalQuotientMk b x) =
       leftNumericalQuotientMk c (f x) := by
   simp only [leftNumericalEquiv, Submodule.Quotient.equiv_apply,
     leftNumericalQuotientMk_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe]
 
-@[simp]
 theorem rightNumericalEquiv_mk (hpair : ∀ x y, c (f x) (g y) = b x y) (y : M) :
     rightNumericalEquiv b c f g hpair (rightNumericalQuotientMk b y) =
       rightNumericalQuotientMk c (g y) := by
   simp only [rightNumericalEquiv, Submodule.Quotient.equiv_apply,
     rightNumericalQuotientMk_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe]
 
-@[simp]
 theorem leftNumericalEquiv_symm_mk (hpair : ∀ x y, c (f x) (g y) = b x y) (x : L') :
     (leftNumericalEquiv b c f g hpair).symm (leftNumericalQuotientMk c x) =
       leftNumericalQuotientMk b (f.symm x) := by
   rw [LinearEquiv.symm_apply_eq, leftNumericalEquiv_mk, LinearEquiv.apply_symm_apply]
 
-@[simp]
 theorem rightNumericalEquiv_symm_mk (hpair : ∀ x y, c (f x) (g y) = b x y) (y : M') :
     (rightNumericalEquiv b c f g hpair).symm (rightNumericalQuotientMk c y) =
       rightNumericalQuotientMk b (g.symm y) := by
