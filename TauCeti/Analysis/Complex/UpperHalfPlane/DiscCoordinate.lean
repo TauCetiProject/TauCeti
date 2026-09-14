@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
-public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
+public import TauCeti.Algebra.Field.LinearFractional
+public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 
 /-!
 # The disc coordinate centred at a point of the upper half-plane
@@ -15,8 +16,8 @@ public import Mathlib.Analysis.Complex.UnitDisc.Basic
 For `z ∈ ℍ`, the Cayley transform `τ ↦ (τ - z) / (τ - conj z)` is a bijection from the upper
 half-plane onto the open unit disc sending `z` to `0`, with inverse
 `w ↦ (z - conj z * w) / (1 - w)`; its modulus is `tanh (d / 2)` for the
-hyperbolic distance `d` to `z`. In this coordinate every element of
-`SL(2, ℝ)` fixing `z` is a rotation of the disc about `0`: if `g • z = z`, then
+hyperbolic distance `d` to `z`. In this coordinate every matrix of positive determinant fixing
+`z` is a rotation of the disc about `0`: if `g • z = z`, then
 `discCoordinate z (g • τ) = conj (denom g z) / denom g z * discCoordinate z τ`.
 
 This is the local linearizing coordinate at a point with nontrivial stabilizer: the multiplier
@@ -31,8 +32,10 @@ derivative of `τ ↦ g • τ` at its fixed point `z`.
   `tanh (dist τ z / 2)`, so the coordinate takes values in the unit disc.
 * `UpperHalfPlane.discCoordinateEquiv`: the disc coordinate as an equivalence `ℍ ≃ 𝔻`, with
   explicit inverse, and `UpperHalfPlane.range_discCoordinate`: its range is the open unit disc.
-* `UpperHalfPlane.discCoordinate_smul_of_smul_eq_self`: an element of `SL(2, ℝ)` fixing `z`
-  acts in the disc coordinate by multiplication by `conj (denom g z) / denom g z`.
+* `UpperHalfPlane.discCoordinate_smul_of_smul_eq_self`: a matrix of positive determinant
+  fixing `z` acts in the disc coordinate by multiplication by `conj (denom g z) / denom g z`,
+  with the `SL(2, ℝ)` specialization
+  `UpperHalfPlane.discCoordinate_specialLinearGroup_smul_of_smul_eq_self`.
 
 ## References
 
@@ -156,40 +159,47 @@ theorem range_discCoordinate (z : ℍ) : Set.range (discCoordinate z) = Metric.b
     exact ⟨(discCoordinateEquiv z).symm w,
       congrArg ((↑) : 𝔻 → ℂ) ((discCoordinateEquiv z).apply_symm_apply w)⟩
 
-/-- The Möbius difference formula at a fixed point: if `(a w + b) / (c w + d) = w` and
-`a d - b c = 1`, then `(a t + b) / (c t + d) - w = (t - w) / ((c t + d) (c w + d))`. -/
-private theorem moebius_sub_of_fixed {a b c d w t : ℂ} (hdet : a * d - b * c = 1)
-    (hw : a * w + b = w * (c * w + d)) (hj : c * w + d ≠ 0) (hjt : c * t + d ≠ 0) :
-    (a * t + b) / (c * t + d) - w = (t - w) / ((c * t + d) * (c * w + d)) := by
-  rw [div_sub' hjt, div_eq_div_iff hjt (mul_ne_zero hjt hj)]
-  linear_combination (c * t + d) * ((t - w) * hdet + (c * t + d) * hw)
+/-- **A matrix of positive determinant fixing `z` is a rotation in the disc coordinate centred
+at `z`**, by the unimodular multiplier `conj (denom g z) / denom g z`.
 
-/-- **An element of `SL(2, ℝ)` fixing `z` is a rotation in the disc coordinate centred at `z`**,
-by the unimodular multiplier `conj (denom g z) / denom g z`. -/
-theorem discCoordinate_smul_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hg : g • z = z) (τ : ℍ) :
+Positive determinant is what makes the Möbius transformation holomorphic; the determinant
+itself cancels, since it scales the displacements from `z` and from `conj z` alike. -/
+theorem discCoordinate_smul_of_smul_eq_self {g : GL (Fin 2) ℝ} (hdet : 0 < g.det.val) {z : ℍ}
+    (hg : g • z = z) (τ : ℍ) :
     discCoordinate z (g • τ) = conj (denom g z) / denom g z * discCoordinate z τ := by
   have hz := congrArg ((↑) : ℍ → ℂ) hg
   have hj := denom_ne_zero g z
   have hjτ := denom_ne_zero g τ
   have hτ := coe_sub_conj_ne_zero z τ
-  have hdet : (g 0 0 : ℂ) * g 1 1 - g 0 1 * g 1 0 = 1 := by
-    have h := g.det_coe
+  have hD : (g 0 0 : ℂ) * g 1 1 - g 0 1 * g 1 0 ≠ 0 := by
+    have h : (g : Matrix (Fin 2) (Fin 2) ℝ).det ≠ 0 := by
+      rw [← Matrix.GeneralLinearGroup.val_det_apply]
+      exact hdet.ne'
     rw [Matrix.det_fin_two] at h
     exact_mod_cast h
-  simp only [coe_specialLinearGroup_apply, Algebra.algebraMap_self, RingHom.id_apply] at hz
-  simp only [denom, Matrix.SpecialLinearGroup.coe_GL_coe_matrix] at hj hjτ ⊢
+  rw [coe_smul_of_det_pos hdet] at hz
+  simp only [num, denom] at hz hj hjτ
   rw [div_eq_iff hj] at hz
   have hjc : (g 1 0 : ℂ) * conj (z : ℂ) + g 1 1 ≠ 0 := by
     simpa using (map_ne_zero (starRingEnd ℂ)).mpr hj
   have hzc : (g 0 0 : ℂ) * conj (z : ℂ) + g 0 1 =
       conj (z : ℂ) * ((g 1 0 : ℂ) * conj (z : ℂ) + g 1 1) := by
     simpa using congrArg conj hz
-  simp only [discCoordinate_def, coe_specialLinearGroup_apply, Algebra.algebraMap_self,
-    RingHom.id_apply]
-  rw [moebius_sub_of_fixed hdet hz hj hjτ, moebius_sub_of_fixed hdet hzc hjc hjτ]
+  simp only [discCoordinate_def, coe_smul_of_det_pos hdet, num, denom]
+  rw [TauCeti.moebius_sub_of_fixed hz hj hjτ, TauCeti.moebius_sub_of_fixed hzc hjc hjτ]
   simp only [map_add, map_mul, Complex.conj_ofReal]
-  rw [div_div_div_eq, div_mul_div_comm, div_eq_div_iff (mul_ne_zero (mul_ne_zero hjτ hj) hτ)
-    (mul_ne_zero hj hτ)]
+  rw [div_div_div_eq, div_mul_div_comm,
+    div_eq_div_iff (mul_ne_zero (mul_ne_zero hjτ hj) (mul_ne_zero hD hτ)) (mul_ne_zero hj hτ)]
   ring
+
+/-- **An element of `SL(2, ℝ)` fixing `z` is a rotation in the disc coordinate centred at `z`**,
+by the unimodular multiplier `conj (denom g z) / denom g z`: the determinant-one case of
+`UpperHalfPlane.discCoordinate_smul_of_smul_eq_self`. -/
+theorem discCoordinate_specialLinearGroup_smul_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ}
+    (hg : g • z = z) (τ : ℍ) :
+    discCoordinate z (g • τ) = conj (denom g z) / denom g z * discCoordinate z τ := by
+  rw [← Matrix.SpecialLinearGroup.toGL_smul]
+  exact discCoordinate_smul_of_smul_eq_self (by simp)
+    (by rwa [Matrix.SpecialLinearGroup.toGL_smul]) τ
 
 end UpperHalfPlane
