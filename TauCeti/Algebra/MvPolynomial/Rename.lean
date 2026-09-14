@@ -9,10 +9,10 @@ public import Mathlib.Algebra.MvPolynomial.Rename
 public import Mathlib.Algebra.Ring.CompTypeclasses
 
 /-!
-# Renaming variables along a permutation as a ring-homomorphism inverse pair
+# Renaming variables along an equivalence as a ring-homomorphism inverse pair
 
-Renaming the variables of a multivariable polynomial along a permutation `e : Equiv.Perm σ` and
-along its inverse `e.symm` are mutually inverse ring homomorphisms. Mathlib's
+Renaming the variables of a multivariable polynomial along an equivalence `e : σ ≃ τ` and along
+its inverse `e.symm` are mutually inverse ring homomorphisms. Mathlib's
 `RingHomInvPair.of_ringEquiv` is deliberately not an instance, so this file registers the
 `RingHomInvPair` instance for this pair. It lets semilinear equivalences over
 `MvPolynomial.rename e`, such as `M ≃ₛₗ[rename e] N`, be stated and inverted without local
@@ -30,16 +30,16 @@ namespace TauCeti
 
 open MvPolynomial
 
-variable {σ : Type*} (R : Type*) [CommSemiring R]
+variable {σ τ : Type*} (R : Type*) [CommSemiring R]
 
-/-- Renaming variables along a permutation and along its inverse are inverse ring
+/-- Renaming variables along an equivalence and along its inverse are inverse ring
 homomorphisms. -/
-noncomputable instance renameRingHomInvPair (e : Equiv.Perm σ) :
+noncomputable instance renameRingHomInvPair (e : σ ≃ τ) :
     RingHomInvPair
-      ((rename ⇑e : MvPolynomial σ R →ₐ[R] MvPolynomial σ R) :
-        MvPolynomial σ R →+* MvPolynomial σ R)
-      ((rename ⇑e.symm : MvPolynomial σ R →ₐ[R] MvPolynomial σ R) :
-        MvPolynomial σ R →+* MvPolynomial σ R) :=
+      ((rename ⇑e : MvPolynomial σ R →ₐ[R] MvPolynomial τ R) :
+        MvPolynomial σ R →+* MvPolynomial τ R)
+      ((rename ⇑e.symm : MvPolynomial τ R →ₐ[R] MvPolynomial σ R) :
+        MvPolynomial τ R →+* MvPolynomial σ R) :=
   RingHomInvPair.of_ringEquiv (renameEquiv R e).toRingEquiv
 
 end TauCeti

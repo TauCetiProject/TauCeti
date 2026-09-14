@@ -172,8 +172,7 @@ theorem relabelColumnsRenameEquiv_symm_apply (κ : Equiv.Perm (Fin n))
     (c : GridChainMinus R n) (y : GridState n) :
     (relabelColumnsRenameEquiv R κ).symm c y =
       rename κ.symm (c (y.relabelColumns κ)) := by
-  change relabelColumnsRename R κ.symm c y = _
-  simp
+  simp [relabelColumnsRenameEquiv]
 
 end GridChain
 
