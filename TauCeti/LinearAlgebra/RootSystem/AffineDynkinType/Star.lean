@@ -303,6 +303,11 @@ private theorem starGraphIso_apply (t : AffineDynkinType) {l : Fin 3 → ℕ}
     (h : starCartanMatrix l = t.cartanMatrix.submatrix e e) (v : StarIndex l) :
     starGraphIso t e h v = e v := rfl
 
+private theorem starGraphIso_symm_apply (t : AffineDynkinType) {l : Fin 3 → ℕ}
+    (e : StarIndex l ≃ Fin t.nodes)
+    (h : starCartanMatrix l = t.cartanMatrix.submatrix e e) (v : Fin t.nodes) :
+    (starGraphIso t e h).symm v = e.symm v := rfl
+
 /-! ## Graph descriptions -/
 
 /-- The graph isomorphism `T₃,₃,₃ ≅ affine E₆` induced by the explicit arm-coordinate
@@ -330,7 +335,11 @@ noncomputable def starGraphIsoE6 :
       ![none, some ⟨0, ⟨0, by decide⟩⟩, some ⟨0, ⟨1, by decide⟩⟩,
         some ⟨1, ⟨0, by decide⟩⟩, some ⟨1, ⟨1, by decide⟩⟩,
         some ⟨2, ⟨0, by decide⟩⟩, some ⟨2, ⟨1, by decide⟩⟩] v := by
-  fin_cases v <;> apply starGraphIsoE6.symm_apply_eq.mpr <;> rfl
+  -- The normalized `Fin 7` coercion prevents `starGraphIso_symm_apply` from matching directly.
+  change
+    (starGraphIso E6 starIndexEquivE6 starCartanMatrix_two_two_two_eq_submatrix_E6).symm v = _
+  exact (starGraphIso_symm_apply E6 starIndexEquivE6
+    starCartanMatrix_two_two_two_eq_submatrix_E6 v).trans (starIndexEquivE6_symm_apply v)
 
 /-- The graph isomorphism `T₂,₄,₄ ≅ affine E₇` induced by the explicit arm-coordinate
 relabelling. -/
@@ -358,7 +367,11 @@ noncomputable def starGraphIsoE7 :
         some ⟨1, ⟨1, by decide⟩⟩, some ⟨1, ⟨2, by decide⟩⟩,
         some ⟨2, ⟨0, by decide⟩⟩, some ⟨2, ⟨1, by decide⟩⟩,
         some ⟨2, ⟨2, by decide⟩⟩] v := by
-  fin_cases v <;> apply starGraphIsoE7.symm_apply_eq.mpr <;> rfl
+  -- The normalized `Fin 8` coercion prevents `starGraphIso_symm_apply` from matching directly.
+  change
+    (starGraphIso E7 starIndexEquivE7 starCartanMatrix_one_three_three_eq_submatrix_E7).symm v = _
+  exact (starGraphIso_symm_apply E7 starIndexEquivE7
+    starCartanMatrix_one_three_three_eq_submatrix_E7 v).trans (starIndexEquivE7_symm_apply v)
 
 /-- The graph isomorphism `T₂,₃,₆ ≅ affine E₈` induced by the explicit arm-coordinate
 relabelling. -/
@@ -386,7 +399,11 @@ noncomputable def starGraphIsoE8 :
         some ⟨1, ⟨1, by decide⟩⟩, some ⟨2, ⟨0, by decide⟩⟩,
         some ⟨2, ⟨1, by decide⟩⟩, some ⟨2, ⟨2, by decide⟩⟩,
         some ⟨2, ⟨3, by decide⟩⟩, some ⟨2, ⟨4, by decide⟩⟩] v := by
-  fin_cases v <;> apply starGraphIsoE8.symm_apply_eq.mpr <;> rfl
+  -- The normalized `Fin 9` coercion prevents `starGraphIso_symm_apply` from matching directly.
+  change
+    (starGraphIso E8 starIndexEquivE8 starCartanMatrix_one_two_five_eq_submatrix_E8).symm v = _
+  exact (starGraphIso_symm_apply E8 starIndexEquivE8
+    starCartanMatrix_one_two_five_eq_submatrix_E8 v).trans (starIndexEquivE8_symm_apply v)
 
 end AffineDynkinType
 
