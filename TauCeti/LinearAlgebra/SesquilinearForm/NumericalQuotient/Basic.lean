@@ -40,7 +40,7 @@ right-separating; no assertion is made about the other side until both quotients
 The quotient construction uses Mathlib's asymmetric `LinearMap.liftQ₂`, so the first argument may
 be semilinear along an arbitrary endomorphism of the coefficient ring. The terminology and the
 warning that the two radicals remain distinct follow Dancso–Licata, *Koszul algebras and flow
-lattices*, Section 3.1, and the Grothendieck-groups, Cartan-maps, and Euler-forms roadmap, Layer 7.
+lattices*, Section 3.1.
 -/
 
 public section

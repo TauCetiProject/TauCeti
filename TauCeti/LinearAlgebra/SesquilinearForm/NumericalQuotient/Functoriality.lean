@@ -21,9 +21,8 @@ argument supplies the required radical inclusion.  In particular, a pair of line
 preserving a pairing induces linear equivalences of both numerical quotients, and those
 equivalences preserve the numerical pairing.
 
-This is the functoriality target in Layer 7 of the Grothendieck-groups, Cartan-maps, and Euler-forms
-roadmap.  The separate left and right hypotheses are essential for nonsymmetric pairings: neither
-radical condition follows from the other.
+The separate left and right hypotheses are essential for nonsymmetric pairings: neither radical
+condition follows from the other.
 
 ## Main definitions
 
