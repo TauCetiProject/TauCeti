@@ -61,8 +61,7 @@ private def relabelRowsStateEquiv (ρ : Equiv.Perm (Fin n)) : GridState n ≃ Gr
     ext c
     simp
 
-/-- Relabeling columns as an equivalence of the basis indices of a grid chain. -/
-def relabelColumnsStateEquiv (κ : Equiv.Perm (Fin n)) : GridState n ≃ GridState n where
+private def relabelColumnsStateEquiv (κ : Equiv.Perm (Fin n)) : GridState n ≃ GridState n where
   toFun := GridState.relabelColumns κ
   invFun := GridState.relabelColumns κ.symm
   left_inv := by
@@ -74,15 +73,13 @@ def relabelColumnsStateEquiv (κ : Equiv.Perm (Fin n)) : GridState n ≃ GridSta
     ext c
     simp
 
-/-- The column-relabeling equivalence acts by relabeling the grid state. -/
 @[simp]
-theorem relabelColumnsStateEquiv_apply (κ : Equiv.Perm (Fin n)) (x : GridState n) :
+private theorem relabelColumnsStateEquiv_apply (κ : Equiv.Perm (Fin n)) (x : GridState n) :
     relabelColumnsStateEquiv κ x = x.relabelColumns κ :=
   (rfl)
 
-/-- The inverse column-relabeling equivalence acts by the inverse permutation. -/
 @[simp]
-theorem relabelColumnsStateEquiv_symm_apply (κ : Equiv.Perm (Fin n)) (x : GridState n) :
+private theorem relabelColumnsStateEquiv_symm_apply (κ : Equiv.Perm (Fin n)) (x : GridState n) :
     (relabelColumnsStateEquiv κ).symm x = x.relabelColumns κ.symm :=
   (rfl)
 

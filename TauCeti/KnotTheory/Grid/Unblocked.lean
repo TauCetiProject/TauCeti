@@ -113,6 +113,28 @@ namespace GridChain
 
 variable {n : ℕ} (R : Type*) [CommSemiring R]
 
+private def relabelColumnsStateEquiv (κ : Equiv.Perm (Fin n)) : GridState n ≃ GridState n where
+  toFun := GridState.relabelColumns κ
+  invFun := GridState.relabelColumns κ.symm
+  left_inv := by
+    intro x
+    ext c
+    simp
+  right_inv := by
+    intro x
+    ext c
+    simp
+
+@[simp]
+private theorem relabelColumnsStateEquiv_apply (κ : Equiv.Perm (Fin n)) (x : GridState n) :
+    relabelColumnsStateEquiv κ x = x.relabelColumns κ :=
+  (rfl)
+
+@[simp]
+private theorem relabelColumnsStateEquiv_symm_apply (κ : Equiv.Perm (Fin n)) (x : GridState n) :
+    (relabelColumnsStateEquiv κ).symm x = x.relabelColumns κ.symm :=
+  (rfl)
+
 /-- The semilinear equivalence on `GC⁻` induced by relabeling columns and renaming coefficient
 variables by the same permutation. Its inverse uses the inverse column permutation. -/
 noncomputable def relabelColumnsRenameEquiv (κ : Equiv.Perm (Fin n)) :
