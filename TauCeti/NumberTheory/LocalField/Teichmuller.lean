@@ -229,4 +229,15 @@ theorem coe_rootsOfUnityFieldEquivResidueFieldUnits
             rootsOfUnity (Nat.card 𝓀[K] - 1) 𝒪[K]) : 𝒪[K]ˣ) : 𝒪[K]) := by
   exact coe_rootsOfUnityEquivResidueFieldUnits K _
 
+/-- The inverse field-level roots-of-unity equivalence is the inclusion of the Teichmüller
+lift into the field. -/
+@[simp]
+theorem coe_rootsOfUnityFieldEquivResidueFieldUnits_symm_apply (α : 𝓀[K]ˣ) :
+    ((((rootsOfUnityFieldEquivResidueFieldUnits K).symm α :
+        rootsOfUnity (Nat.card 𝓀[K] - 1) K) : Kˣ) : K) =
+      (((teichmuller K α : 𝒪[K]ˣ) : 𝒪[K]) : K) := by
+  rw [rootsOfUnityFieldEquivResidueFieldUnits, MulEquiv.symm_trans_apply,
+    teichmuller_apply]
+  exact coe_rootsOfUnityIntegerEquiv K (Nat.sub_ne_zero_of_lt Finite.one_lt_card) _
+
 end TauCeti
