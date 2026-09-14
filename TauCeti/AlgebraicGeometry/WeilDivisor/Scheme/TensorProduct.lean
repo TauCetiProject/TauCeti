@@ -175,8 +175,11 @@ lemma tensorPresheafHom_app :
 
 end Multiplication
 
+end LocallyNoetherian
+
 section LocalEquation
 
+variable [IsNoetherian X]
 variable {E : SchemeWeilDivisor X} {V : X.Opens} [Nonempty V] {g : Additive X.functionFieldˣ}
   (hg : ∀ y : CodimensionOnePoint X, (y : X) ∈ V → WeilDivisor.coeff E y = orderAt y g)
 
@@ -189,14 +192,6 @@ lemma localEquation_mem_sections_neg :
   refine rationalFunctionsEquiv_symm_mem_sections fun y hy ↦ ?_
   rw [WeilDivisor.coeff_neg, neg_neg, ← orderAt_apply]
   exact le_of_eq (hg y hy)
-
-/-- The inverse of a local equation for `E` over `V` is a section of `𝒪_X(E)` there. -/
-lemma inv_localEquation_mem_sections :
-    (Scheme.rationalFunctionsEquiv V).symm
-      ((Additive.toMul (-g) : X.functionFieldˣ) : X.functionField) ∈ sections E V := by
-  refine rationalFunctionsEquiv_symm_mem_sections fun y hy ↦ ?_
-  rw [← orderAt_apply, map_neg]
-  exact le_of_eq (congrArg Neg.neg (hg y hy))
 
 variable (D : SchemeWeilDivisor X)
 
@@ -290,9 +285,6 @@ theorem injective_sectionsMulLift (hX : ∀ y : X, coheight y ≤ 1) :
   exact key.injective
 
 end LocalEquation
-
-
-end LocallyNoetherian
 
 section Curve
 
