@@ -184,7 +184,7 @@ theorem variance_id_map_cast_binomial (n : ℕ) (p : unitInterval) :
     Var[id; Bin(ℝ, n, p)] = (p : ℝ) * (1 - p) * n := by
   let μ : Fin n → Measure ℕ := fun _ ↦ Ber((1 : ℕ), 0, p)
   have hcoord (i : Fin n) : HasLaw (fun ω : Fin n → ℕ ↦ ω i) (μ i) (Measure.pi μ) :=
-    ⟨(measurable_pi_apply i).aemeasurable, (measurePreserving_eval μ i).map_eq⟩
+    (measurePreserving_eval μ i).hasLaw
   have hsum : HasLaw (fun ω : Fin n → ℕ ↦ ∑ i, ω i) Bin(n, p) (Measure.pi μ) := by
     simpa only [Fintype.card_fin, id_eq] using
       iIndepFun.hasLaw_sum_bernoulli
