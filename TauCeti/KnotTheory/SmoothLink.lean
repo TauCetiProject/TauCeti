@@ -396,7 +396,7 @@ def restrict {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
 @[simp]
 theorem restrict_apply {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
     (hι : Function.Injective ι) (i : Fin m) : L.restrict ι hι i = L (ι i) :=
-  by change L (ι i) = L (ι i); rfl
+  by rfl
 
 /-- Membership in the range of a restricted link is membership in one of the selected components. -/
 theorem mem_range_restrict_iff {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
