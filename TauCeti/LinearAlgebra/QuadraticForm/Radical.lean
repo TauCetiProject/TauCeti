@@ -90,6 +90,7 @@ theorem isSymm_polarBilin (Q : QuadraticForm R M) :
 
 /-- The polar form of the restriction of a quadratic form to a submodule is the restriction of its
 polar form. -/
+@[simp]
 theorem polarBilin_restrict (Q : QuadraticForm R M) (W : Submodule R M) :
     (Q.restrict W).polarBilin = LinearMap.BilinForm.restrict Q.polarBilin W := by
   ext x y
