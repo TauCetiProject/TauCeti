@@ -199,6 +199,18 @@ coordinate sum vanishes; the inverse laws below apply on the positive orthant. -
 def dirichletUnscale (i₀ : ι) (y : ι → ℝ) : ({i : ι // i ≠ i₀} → ℝ) × ℝ :=
   (fun j ↦ y j / ∑ i, y i, ∑ i, y i)
 
+/-- A displayed proportion recovered from a vector is its coordinate divided by the total. -/
+@[simp]
+theorem dirichletUnscale_fst_apply (i₀ : ι) (y : ι → ℝ) (j : {i : ι // i ≠ i₀}) :
+    (dirichletUnscale i₀ y).1 j = y j / ∑ i, y i := by
+  simp only [dirichletUnscale]
+
+/-- The total mass recovered from a vector is its coordinate sum. -/
+@[simp]
+theorem dirichletUnscale_snd (i₀ : ι) (y : ι → ℝ) :
+    (dirichletUnscale i₀ y).2 = ∑ i, y i := by
+  simp only [dirichletUnscale]
+
 /-- A coordinate of a scaled simplex point is its reconstructed proportion times the total. -/
 @[simp]
 theorem dirichletScale_apply (i₀ : ι) (z : ({i : ι // i ≠ i₀} → ℝ) × ℝ) (i : ι) :
@@ -224,7 +236,7 @@ theorem dirichletUnscale_mem_source {i₀ : ι} {y : ι → ℝ} (hy : y ∈ dir
     dirichletUnscale i₀ y ∈ dirichletScaleSource i₀ := by
   have hsum : 0 < ∑ i, y i := Finset.sum_pos (fun i _ ↦ hy i) ⟨i₀, Finset.mem_univ _⟩
   refine ⟨⟨fun j ↦ div_pos (hy j) hsum, ?_⟩, hsum⟩
-  simp only [dirichletUnscale]
+  simp only [dirichletUnscale_fst_apply]
   rw [← Finset.sum_div]
   apply (div_lt_one hsum).2
   rw [Fintype.sum_eq_add_sum_subtype_ne y i₀]
@@ -237,9 +249,9 @@ theorem dirichletScale_dirichletUnscale {i₀ : ι} {y : ι → ℝ}
     (Finset.sum_pos (fun i _ ↦ hy i) ⟨i₀, Finset.mem_univ _⟩).ne'
   have hnorm : ∑ i, y i / ∑ i, y i = 1 := by
     rw [← Finset.sum_div, div_self hsum]
-  rw [dirichletScale]
-  simp only [dirichletUnscale]
-  rw [dirichletReconstruct_restrict i₀ hnorm]
+  have hfst : (dirichletUnscale i₀ y).1 = fun j : {i : ι // i ≠ i₀} ↦ y j / ∑ i, y i :=
+    funext fun j ↦ dirichletUnscale_fst_apply i₀ y j
+  rw [dirichletScale, hfst, dirichletUnscale_snd, dirichletReconstruct_restrict i₀ hnorm]
   funext i
   exact mul_div_cancel₀ (y i) hsum
 
@@ -250,10 +262,11 @@ theorem dirichletUnscale_dirichletScale {i₀ : ι}
   have ht : z.2 ≠ 0 := ne_of_gt hz.2
   apply Prod.ext
   · funext j
-    simp only [dirichletUnscale]
-    rw [sum_dirichletScale, dirichletScale_apply, dirichletReconstruct_subtype]
+    rw [dirichletUnscale_fst_apply, sum_dirichletScale, dirichletScale_apply,
+      dirichletReconstruct_subtype]
     exact mul_div_cancel_left₀ _ ht
-  · exact sum_dirichletScale i₀ z
+  · rw [dirichletUnscale_snd]
+    exact sum_dirichletScale i₀ z
 
 /-- The scaled simplex chart maps its source region onto the positive orthant. -/
 theorem dirichletScale_image_source (i₀ : ι) :
