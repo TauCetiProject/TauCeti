@@ -28,11 +28,12 @@ In the classical presentation `ℍ[R,a,b] = ℍ[R,a,0,b]`, where `i² = a`, `j²
 the basis `1, i, j, k` is orthogonal for the norm form, which is therefore the diagonal form
 `⟨1, -a, -b, ab⟩`; this is the two-fold Pfister form `⟨⟨a,b⟩⟩`. The pure quaternions -- those with
 vanishing real part, which by `QuaternionAlgebra.self_add_star_eq_zero_iff` are exactly those of
-vanishing reduced trace once `2` is invertible -- carry the restricted form `⟨-a, -b, ab⟩`.
+vanishing reduced trace once `2` is regular -- carry the restricted form `⟨-a, -b, ab⟩`.
 
-The reduced norm is what ties a quaternion algebra to quadratic-form theory: whether the algebra
-is split or a division algebra is a question about its norm form, and the diagonalizations above
-are what turn it into a question about `⟨1, -a, -b, ab⟩`.
+The reduced norm is what ties a quaternion algebra to quadratic-form theory. Over a field of
+characteristic other than two, with nonzero parameters `a` and `b`, whether `ℍ[K,a,b]` is split or
+a division algebra is determined by its norm form; the diagonalizations above turn this into a
+question about `⟨1, -a, -b, ab⟩`.
 
 ## Main definitions
 
@@ -42,10 +43,10 @@ are what turn it into a question about `⟨1, -a, -b, ab⟩`.
 ## Main results
 
 * `QuaternionAlgebra.normForm_mul`: the norm form is multiplicative.
-* `QuaternionAlgebra.normForm_equivalent_weightedSumSquares`: the norm form of `ℍ[R,a,b]` is the
+* `QuaternionAlgebra.equivalent_normForm_weightedSumSquares`: the norm form of `ℍ[R,a,b]` is the
   diagonal form `⟨1, -a, -b, ab⟩`, with the explicit isometry
   `QuaternionAlgebra.normFormIsometryEquivWeightedSumSquares`.
-* `QuaternionAlgebra.pureNormForm_equivalent_weightedSumSquares`: the pure norm form of `ℍ[R,a,b]`
+* `QuaternionAlgebra.equivalent_pureNormForm_weightedSumSquares`: the pure norm form of `ℍ[R,a,b]`
   is the diagonal form `⟨-a, -b, ab⟩`, with the explicit isometry
   `QuaternionAlgebra.pureNormFormIsometryEquivWeightedSumSquares`.
 
@@ -103,10 +104,6 @@ theorem normForm_coe (r : R) : normForm c₁ c₂ c₃ (r : ℍ[R,c₁,c₂,c₃
   simp [normForm_apply, _root_.sq]
 
 @[simp]
-theorem normForm_one : normForm c₁ c₂ c₃ 1 = 1 := by
-  simpa using normForm_coe c₁ c₂ c₃ 1
-
-@[simp]
 theorem normForm_star (x : ℍ[R,c₁,c₂,c₃]) :
     normForm c₁ c₂ c₃ (star x) = normForm c₁ c₂ c₃ x := by
   rw [normForm_apply, normForm_apply, star_star, star_comm_self']
@@ -133,10 +130,10 @@ variable (a b : R)
 
 /-- The pure quaternions of `ℍ[R,a,b]`, the kernel of the real part, are exactly the quaternions
 of vanishing reduced trace `x + star x`. -/
-theorem self_add_star_eq_zero_iff [Invertible (2 : R)] (x : ℍ[R,a,b]) :
+theorem self_add_star_eq_zero_iff (h2 : IsRegular (2 : R)) (x : ℍ[R,a,b]) :
     x + star x = 0 ↔ x ∈ LinearMap.ker (reₗ a (0 : R) b) := by
   rw [self_add_star]
-  simp [QuaternionAlgebra.ext_iff, (isUnit_of_invertible (2 : R)).mul_right_eq_zero]
+  simp [QuaternionAlgebra.ext_iff, h2.left.mul_left_eq_zero_iff]
 
 /-- The **pure norm form** of `ℍ[R,a,b]`: the norm form restricted to the pure quaternions, those
 with vanishing real part. -/
@@ -166,8 +163,12 @@ def normFormIsometryEquivWeightedSumSquares :
 theorem normFormIsometryEquivWeightedSumSquares_apply (x : ℍ[R,a,b]) :
     normFormIsometryEquivWeightedSumSquares a b x = ![x.re, x.imI, x.imJ, x.imK] := (rfl)
 
+@[simp]
+theorem normFormIsometryEquivWeightedSumSquares_symm_apply (v : Fin 4 → R) :
+    (normFormIsometryEquivWeightedSumSquares a b).symm v = ⟨v 0, v 1, v 2, v 3⟩ := (rfl)
+
 /-- **The norm form of `ℍ[R,a,b]` is `⟨1, -a, -b, ab⟩`.** -/
-theorem normForm_equivalent_weightedSumSquares :
+theorem equivalent_normForm_weightedSumSquares :
     (normForm a 0 b).Equivalent (weightedSumSquares R ![(1 : R), -a, -b, a * b]) :=
   ⟨normFormIsometryEquivWeightedSumSquares a b⟩
 
@@ -194,8 +195,13 @@ theorem pureNormFormIsometryEquivWeightedSumSquares_apply
     pureNormFormIsometryEquivWeightedSumSquares a b x =
       ![(x : ℍ[R,a,b]).imI, (x : ℍ[R,a,b]).imJ, (x : ℍ[R,a,b]).imK] := (rfl)
 
+@[simp]
+theorem pureNormFormIsometryEquivWeightedSumSquares_symm_apply (v : Fin 3 → R) :
+    (pureNormFormIsometryEquivWeightedSumSquares a b).symm v =
+      ⟨⟨0, v 0, v 1, v 2⟩, by simp⟩ := (rfl)
+
 /-- **The pure norm form of `ℍ[R,a,b]` is `⟨-a, -b, ab⟩`.** -/
-theorem pureNormForm_equivalent_weightedSumSquares :
+theorem equivalent_pureNormForm_weightedSumSquares :
     (pureNormForm a b).Equivalent (weightedSumSquares R ![-a, -b, a * b]) :=
   ⟨pureNormFormIsometryEquivWeightedSumSquares a b⟩
 
