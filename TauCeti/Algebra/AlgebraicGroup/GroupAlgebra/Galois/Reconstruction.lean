@@ -5,11 +5,12 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.Splitting
+public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.Hopf
 public import TauCeti.Algebra.Bialgebra.GroupLike.Evaluation
 public import TauCeti.Algebra.Bialgebra.GroupLike.ScalarAut
 import TauCeti.Algebra.TensorProduct.Galois
 public import Mathlib.RingTheory.HopfAlgebra.GroupLike
+public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 
 /-!
 # Reconstructing a group from its Galois module of characters
@@ -20,8 +21,7 @@ of the group algebra on its characters over `L`, with the simultaneous Galois ac
 coefficients and characters. In particular this applies to tori split by `L`.
 
 The comparison is canonical: after extension to `L`, it is inverse to evaluation of formal
-characters at their group-like values. It uses `GroupLike.evaluationBialgEquiv` for split
-reconstruction and `ScalarAut.forall_smul_eq_iff` for descent to the original algebra.
+characters at their group-like values.
 
 ## References
 
@@ -116,7 +116,7 @@ private theorem characterInvariantsAlgHom_bijective :
       intro σ
       rw [← characterEvaluationEquiv_action,
         (mem_groupAlgebraInvariants_iff ρ x).mp x.property σ]
-    obtain ⟨a, ha⟩ := (ScalarAut.forall_smul_eq_iff _).mp hx
+    obtain ⟨a, ha⟩ := (ScalarAut.forall_map_eq_self_iff_exists_one_tmul_eq _).mp hx
     refine ⟨a, Subtype.ext ?_⟩
     rw [characterInvariantsAlgHom_val, ha, BialgEquiv.symm_apply_apply]
 
