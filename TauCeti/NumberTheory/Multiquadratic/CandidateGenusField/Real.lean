@@ -181,8 +181,7 @@ private noncomputable def candidateGenusFieldRealBaseEquiv (hd : Squarefree d)
   exact (B.equivMap i).trans (IntermediateField.equivOfEq hmap)
 
 /-- The canonical equivalence between the two copies of the quadratic base commutes with their
-inclusions into the real candidate. Keeping this compatibility separate prevents the
-unramifiedness proof from depending on the implementation of `equivMap` or `equivOfEq`. -/
+inclusions into the real candidate. -/
 private theorem candidateGenusFieldRealBaseEquiv_commutes (hd : Squarefree d)
     (hpos : 0 < d)
     (x : (adjoin ℚ {candidateGenusFieldRealBaseRoot hd hpos} :
