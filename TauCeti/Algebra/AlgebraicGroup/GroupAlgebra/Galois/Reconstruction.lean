@@ -122,7 +122,7 @@ private theorem characterInvariantsAlgHom_bijective :
       intro σ
       rw [← characterEvaluationEquiv_action,
         (mem_groupAlgebraInvariants_iff ρ x).mp x.property σ]
-    obtain ⟨a, ha⟩ := (TensorProduct.forall_map_eq_self_iff_exists_one_tmul_eq _).mp hx
+    obtain ⟨a, ha⟩ := (tensorProduct_forall_map_eq_self_iff_exists_one_tmul_eq _).mp hx
     refine ⟨a, Subtype.ext ?_⟩
     rw [characterInvariantsAlgHom_val, ha, BialgEquiv.symm_apply_apply]
 

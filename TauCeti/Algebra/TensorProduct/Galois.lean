@@ -24,14 +24,14 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti.TensorProduct
+namespace TauCeti.GaloisDescent
 
 variable {k L A : Type*} [Field k] [Field L] [Algebra k L]
 variable [AddCommGroup A] [Module k A] [FiniteDimensional k L] [IsGalois k L]
 
 /-- The fixed elements of a scalar extension along a finite Galois extension are exactly
 the image of the original vector space. -/
-theorem forall_map_eq_self_iff_exists_one_tmul_eq (x : L ⊗[k] A) :
+theorem tensorProduct_forall_map_eq_self_iff_exists_one_tmul_eq (x : L ⊗[k] A) :
     (∀ σ : L ≃ₐ[k] L, TensorProduct.map σ.toLinearMap LinearMap.id x = x) ↔
       ∃ a : A, 1 ⊗ₜ[k] a = x := by
   let ρ : Representation k (L ≃ₐ[k] L) (L ⊗[k] A) :=
@@ -61,4 +61,4 @@ theorem forall_map_eq_self_iff_exists_one_tmul_eq (x : L ⊗[k] A) :
   rw [hx, ← hrange]
   simp only [LinearMap.mem_range, f, TensorProduct.mk_apply]
 
-end TauCeti.TensorProduct
+end TauCeti.GaloisDescent
