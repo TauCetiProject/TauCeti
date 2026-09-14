@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Socle
 
 /-!
@@ -183,6 +183,13 @@ theorem zigzagProjectiveHeadCoeff_surjective (i : V) :
 noncomputable def zigzagProjectiveVolumeLine (i : V) :
     Submodule k (zigzagProjective k G i) :=
   k ∙ zigzagProjectiveVolume k G i
+
+/-- Membership in the volume line means being a scalar multiple of the volume vector. -/
+@[simp]
+theorem mem_zigzagProjectiveVolumeLine_iff (i : V) (x : zigzagProjective k G i) :
+    x ∈ zigzagProjectiveVolumeLine k G i ↔
+      ∃ c : k, c • zigzagProjectiveVolume k G i = x := by
+  rw [zigzagProjectiveVolumeLine, Submodule.mem_span_singleton]
 
 variable {k G}
 
@@ -393,9 +400,15 @@ theorem finrank_zigzagProjectiveRadicalLayer_add_finrank_succ
   let Pnextk := Pnext.restrictScalars k
   have hlek : Pnextk ≤ Pnk := hle
   have hdim := (Pnextk.submoduleOf Pnk).finrank_quotient_add_finrank
+  let quotientRestrictScalarsEquiv :
+      (Pnk ⧸ (Pnextk.submoduleOf Pnk)) ≃ₗ[k] zigzagProjectiveRadicalLayer k G i n :=
+    Submodule.Quotient.restrictScalarsEquiv k (Pnext.submoduleOf Pn)
+  have hquotient : Module.finrank k (Pnk ⧸ (Pnextk.submoduleOf Pnk)) =
+      Module.finrank k (zigzagProjectiveRadicalLayer k G i n) :=
+    quotientRestrictScalarsEquiv.finrank_eq
   have hsub : Module.finrank k (Pnextk.submoduleOf Pnk) = Module.finrank k Pnextk :=
     LinearEquiv.finrank_eq (Submodule.submoduleOfEquivOfLe hlek)
-  rw [hsub] at hdim
+  rw [hquotient, hsub] at hdim
   exact hdim
 
 /-- The head layer `P_i / J P_i` is one-dimensional. -/
