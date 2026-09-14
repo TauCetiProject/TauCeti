@@ -90,7 +90,13 @@ private noncomputable def characterInvariantsAlgHom : H →ₐ[k] groupAlgebraIn
 
 private theorem characterInvariantsAlgHom_val (a : H) :
     (characterInvariantsAlgHom k L H hspan a : D) =
-      (characterEvaluationEquiv k L H hspan).symm (1 ⊗ₜ[k] a) := rfl
+      (characterEvaluationEquiv k L H hspan).symm (1 ⊗ₜ[k] a) := by
+  -- Apply the codomain-restriction equation directly: its membership witness is stated
+  -- using evaluation, definitionally equal to the composite algebra map's application.
+  refine (AlgHom.coe_codRestrict _ _ _ a).trans ?_
+  simp only [AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom, AlgEquiv.restrictScalars_apply, BialgEquiv.coe_toAlgEquiv,
+    Algebra.TensorProduct.includeRight_apply]
 
 private theorem characterEvaluationEquiv_characterInvariantsAlgHom (a : H) :
     characterEvaluationEquiv k L H hspan (characterInvariantsAlgHom k L H hspan a : D) =
@@ -116,7 +122,7 @@ private theorem characterInvariantsAlgHom_bijective :
       intro σ
       rw [← characterEvaluationEquiv_action,
         (mem_groupAlgebraInvariants_iff ρ x).mp x.property σ]
-    obtain ⟨a, ha⟩ := (ScalarAut.forall_map_eq_self_iff_exists_one_tmul_eq _).mp hx
+    obtain ⟨a, ha⟩ := (TensorProduct.forall_map_eq_self_iff_exists_one_tmul_eq _).mp hx
     refine ⟨a, Subtype.ext ?_⟩
     rw [characterInvariantsAlgHom_val, ha, BialgEquiv.symm_apply_apply]
 

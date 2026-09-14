@@ -24,7 +24,7 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti.ScalarAut
+namespace TauCeti.TensorProduct
 
 variable {k L A : Type*} [Field k] [Field L] [Algebra k L]
 variable [AddCommGroup A] [Module k A] [FiniteDimensional k L] [IsGalois k L]
@@ -59,6 +59,6 @@ theorem forall_map_eq_self_iff_exists_one_tmul_eq (x : L ⊗[k] A) :
       x ∈ ρ.invariants := by
     simp [Representation.mem_invariants, ρ]
   rw [hx, ← hrange]
-  rfl
+  simp only [LinearMap.mem_range, f, TensorProduct.mk_apply]
 
-end TauCeti.ScalarAut
+end TauCeti.TensorProduct
