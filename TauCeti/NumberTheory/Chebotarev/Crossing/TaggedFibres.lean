@@ -36,6 +36,13 @@ equality because `(ZMod m)ˣ` is commutative.
   `(σ₂, υ)` are disjoint whenever `τ ≠ υ`.
 * `NumberField.Chebotarev.pairwise_disjoint_taggedFrobeniusPrimeSet`: the tagged fibres for a
   fixed `σ` are pairwise disjoint as `τ` varies.
+
+## References
+
+This implements the pairwise-disjointness target of Layer 7.5, “Why the tagged fixed fields are
+cyclotomic”, of the
+[Chebotarev roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/Chebotarev/README.md),
+which asks to prove pairwise disjointness of the tagged Frobenius fibres for distinct `τ`.
 -/
 
 public section
@@ -79,10 +86,8 @@ theorem taggedFrobeniusPrimeSet_def [NumberField M] [IsGalois K M]
 /-- **Distinct cyclotomic tags give disjoint Frobenius fibres.** The fibres indexed by
 `(σ₁, τ)` and `(σ₂, υ)` are disjoint whenever `τ ≠ υ`, whatever `σ₁ σ₂ : Gal(L/K)`.
 
-Indeed, conjugate representatives have conjugate images under the cyclotomic character, while
-conjugacy in the commutative group `(ZMod m)ˣ` is equality. The character reads the second
-coordinate of `galEquivProd`, so equality of the two conjugacy classes would force the tags to be
-equal. -/
+Disjointness is what allows the densities of the separate tagged fibres to be added, so this is
+the form consumed by lower-bound density estimates over the compositum. -/
 theorem disjoint_taggedFrobeniusPrimeSet
     (hcop : ((NumberField.discr L).natAbs).Coprime m) {ζ : M} (hζ : IsPrimitiveRoot ζ m)
     (σ₁ σ₂ : Gal(L/K)) {τ υ : (ZMod m)ˣ} (hτυ : τ ≠ υ) :
