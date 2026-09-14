@@ -51,6 +51,8 @@ multiplicities are the Kronecker delta.
   module occurs, and `TauCeti.indecomposableMultiplicity_self` and
   `TauCeti.indecomposableMultiplicity_eq_zero_of_isEmpty_linearEquiv`: an indecomposable module
   occurs exactly once in itself and not at all in a nonisomorphic indecomposable module.
+  `TauCeti.indecomposableMultiplicity_eq_ite` reads the last two as a Kronecker delta on a
+  pairwise nonisomorphic indecomposable family.
 * `TauCeti.indecomposableMultiplicity_prod`: **multiplicity is additive on direct sums**, with
   `TauCeti.indecomposableMultiplicity_eq_add_of_isCompl` the internal form.
 
@@ -199,10 +201,8 @@ theorem indecomposableMultiplicity_eq_of_linearEquiv (f : M ≃ₗ[A] M') :
   · rintro _ hQ
     obtain ⟨P, hP, rfl⟩ := Finset.mem_image.mp hQ
     exact (hs P hP).of_linearEquiv (Submodule.equivMapOfInjective _ f.injective P)
-  · rw [Finset.sup_image]
-    simpa only [Function.comp_def, id_eq, Finset.sup_eq_iSup, Submodule.map_iSup,
-      Submodule.map_top, LinearMap.range_eq_top.mpr f.surjective] using
-      congrArg (Submodule.map f.toLinearMap) hsup
+  · rw [LinearMap.sup_image_map_eq_range_of_sup_eq_top _ hsup]
+    exact LinearMap.range_eq_top.mpr f.surjective
 
 omit [IsNoetherian A M] in
 private theorem indecomposableDecomposition_eq_empty [Subsingleton M] :
@@ -310,6 +310,20 @@ theorem indecomposableMultiplicity_eq_zero_of_isEmpty_linearEquiv (he : IsEmpty 
 
 end Indecomposable
 
+/-- **The multiplicities inside a pairwise nonisomorphic indecomposable family are the Kronecker
+delta**: a member occurs once in itself and not at all in any other member. -/
+@[simp]
+theorem indecomposableMultiplicity_eq_ite {I : Type*} [DecidableEq I] {P : I → Type w}
+    [∀ i, AddCommGroup (P i)] [∀ i, Module A (P i)] [∀ i, IsArtinian A (P i)]
+    (hind : ∀ i, IsIndecomposableModule A (P i))
+    (hnoniso : Pairwise fun i j ↦ IsEmpty (P i ≃ₗ[A] P j)) (i j : I) :
+    indecomposableMultiplicity A (P j) (P i) = if j = i then 1 else 0 := by
+  by_cases hji : j = i
+  · subst hji
+    simpa using indecomposableMultiplicity_self (hind j) (LinearEquiv.refl A _)
+  · simpa only [hji, ↓reduceIte] using
+      indecomposableMultiplicity_eq_zero_of_isEmpty_linearEquiv (hind j) (hnoniso hji)
+
 /-! ### Additivity -/
 
 /-- **Multiplicity is additive on direct sums.** -/
@@ -324,14 +338,10 @@ theorem indecomposableMultiplicity_prod [IsNoetherian A M'] [IsArtinian A M'] :
     exists_finset_isIndecomposableModule_supIndep_sup_eq (A := A) (⊤ : Submodule A M')
   set s' := s.image (Submodule.map (LinearMap.inl A M M')) with hs'
   set t' := t.image (Submodule.map (LinearMap.inr A M M')) with ht'
-  have hsup' : s'.sup id = LinearMap.range (LinearMap.inl A M M') := by
-    rw [hs', Finset.sup_image]
-    simpa only [Function.comp_def, id_eq, Finset.sup_eq_iSup, Submodule.map_iSup,
-      Submodule.map_top] using congrArg (Submodule.map (LinearMap.inl A M M')) hsup
-  have htup' : t'.sup id = LinearMap.range (LinearMap.inr A M M') := by
-    rw [ht', Finset.sup_image]
-    simpa only [Function.comp_def, id_eq, Finset.sup_eq_iSup, Submodule.map_iSup,
-      Submodule.map_top] using congrArg (Submodule.map (LinearMap.inr A M M')) htup
+  have hsup' : s'.sup id = LinearMap.range (LinearMap.inl A M M') :=
+    hs' ▸ LinearMap.sup_image_map_eq_range_of_sup_eq_top _ hsup
+  have htup' : t'.sup id = LinearMap.range (LinearMap.inr A M M') :=
+    ht' ▸ LinearMap.sup_image_map_eq_range_of_sup_eq_top _ htup
   have hind : ∀ P ∈ s' ∪ t', IsIndecomposableModule A P := by
     rintro Q hQ
     rcases Finset.mem_union.mp hQ with hQ | hQ

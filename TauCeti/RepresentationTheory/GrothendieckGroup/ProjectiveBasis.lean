@@ -105,8 +105,8 @@ private noncomputable def indecomposableInvariant :
 /-- **The Krull-Schmidt coordinate** of a fixed module `N` on `K₀(proj R)`.  On the class of a
 finitely generated projective module `M` it is the number of summands of `M` isomorphic to `N` in a
 decomposition of `M` into indecomposables.  It is useful as a coordinate when `N` is indecomposable,
-but the construction is valid for arbitrary `N` (and is then identically zero, by
-`TauCeti.isIndecomposableModule_of_indecomposableMultiplicity_ne_zero`). -/
+but the construction is valid for arbitrary `N` (and is identically zero when `N` is not
+indecomposable, by `TauCeti.isIndecomposableModule_of_indecomposableMultiplicity_ne_zero`). -/
 noncomputable def indecomposableCoordinate :
     ExactK0.{u} (finiteProjectiveModulesExactStructure R) →+ ℤ :=
   ExactK0.lift (indecomposableInvariant R N)
@@ -149,20 +149,6 @@ theorem indecomposableCoordinate_eq_zero_of_isEmpty_linearEquiv
 section Family
 
 variable {I : Type*} (P : I → (finiteProjectiveModules R).FullSubcategory)
-
-/-- On a pairwise nonisomorphic indecomposable family, the Krull-Schmidt coordinates form the
-Kronecker-delta matrix. -/
-@[simp]
-theorem indecomposableMultiplicity_eq_ite [DecidableEq I]
-    (hind : ∀ i, IsIndecomposableModule R (P i).obj)
-    (hnoniso : Pairwise fun i j ↦ IsEmpty (↥(P i).obj ≃ₗ[R] ↥(P j).obj)) (i j : I) :
-    (indecomposableMultiplicity R ↥(P j).obj ↥(P i).obj : ℤ) = if j = i then 1 else 0 := by
-  rw [← indecomposableCoordinate_of]
-  by_cases hji : j = i
-  · subst j
-    simpa using indecomposableCoordinate_self (P i) (hind i)
-  · simpa only [hji, ↓reduceIte] using
-      indecomposableCoordinate_eq_zero_of_isEmpty_linearEquiv (P i) (P j) (hind j) (hnoniso hji)
 
 /-- **Pairwise nonisomorphic indecomposable projective classes are linearly independent in
 `K₀(proj R)`.** -/
@@ -322,9 +308,8 @@ theorem indecomposableProjectiveClassBasis_repr_apply
   refine (indecomposableProjectiveClassBasis P hind hnoniso hexh).repr_apply_eq
     (fun x i ↦ indecomposableCoordinate R ↥(P i).obj x) (fun x y ↦ funext fun i ↦ map_add _ x y)
     (fun c x ↦ funext fun i ↦ map_zsmul _ c x) (fun j ↦ funext fun k ↦ ?_) x i
-  rw [indecomposableProjectiveClassBasis_apply, Finsupp.single_apply]
-  rw [indecomposableCoordinate_of]
-  exact indecomposableMultiplicity_eq_ite P hind hnoniso k j
+  rw [indecomposableProjectiveClassBasis_apply, Finsupp.single_apply, indecomposableCoordinate_of]
+  exact_mod_cast indecomposableMultiplicity_eq_ite (P := fun i ↦ ↥(P i).obj) hind hnoniso k j
 
 end Family
 
