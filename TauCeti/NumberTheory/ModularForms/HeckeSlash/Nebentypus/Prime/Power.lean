@@ -276,4 +276,18 @@ theorem qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_of_n
     pow_zero, one_mul, zero_le, inf_of_le_left, zero_add, Finset.range_one, Finset.sum_singleton,
     mul_zero, tsub_zero] using h
 
+/-- **At a prime dividing the level, `T_{p^r}` shifts every Fourier coefficient by `p^r`**, on
+`S_k(N, χ)`. -/
+theorem qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_of_dvd
+    (hp : p.Prime) (hpN : p ∣ N) (F : cuspFormCharSpace k χ) (m r : ℕ) :
+    (qExpansion 1 (heckeRingHomCuspCharSpace k χ (heckeTGeneratorRecGamma0 N p r) F :
+        CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff m =
+      (qExpansion 1 (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff (p ^ r * m) := by
+  have h := qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd hp hpN
+    (cuspToModFormCharSpace k χ F) m r
+  rw [heckeRingHomCharSpace_apply, ← cuspToModFormCharSpace_twistedHeckeSlashCuspFormCharLinearMap,
+    ← heckeRingHomCuspCharSpace_apply] at h
+  simp only [coe_cuspToModFormCharSpace, ModularFormClass.coe_modularForm] at h
+  exact h
+
 end HeckeRing.GL2
