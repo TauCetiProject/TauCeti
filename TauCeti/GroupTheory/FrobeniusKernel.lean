@@ -52,21 +52,20 @@ subgroup whose carrier is the Frobenius kernel is automatically a complement to 
 Frobenius's theorem supplies the subgroup, the semidirect decomposition `G = N ⋊ H` is free.
 Nothing here asserts that a subgroup with that carrier exists.
 
-The count has an arithmetic refinement, proved here as well: `H` acts on the nonidentity part of
-the kernel by conjugation, and that action is **free**.  Indeed a nonidentity `h ∈ H` fixing a
-kernel element `y` commutes with it, so `y` centralizes a nonidentity element of `H` and therefore
-lies in `H` (`TauCeti.IsTISubgroup.mem_of_conj_eq_self`) — where the kernel meets `H` only in the
-identity, forcing `y = 1`.  All orbits therefore have `|H|` elements, and since the nonidentity
-part of the kernel has `|G : H| - 1` of them,
+The count has an arithmetic refinement, proved here as well: the conjugation action of `H` on the
+nonidentity part of the kernel is **free** (`TauCeti.IsTISubgroup.stabilizer_eq_bot`, with
+`TauCeti.IsTISubgroup.isCancelSMul` its typeclass form), and freeness against the `|G : H| - 1`
+nonidentity kernel elements gives
 
 `|H| ∣ |G : H| - 1`
 
-(`TauCeti.IsTISubgroup.card_dvd_index_sub_one`), whence also `|H|` and `|G : H|` are coprime.  When
-Frobenius's theorem supplies the kernel as a subgroup `N` of order `|G : H|`, these are the
-classical statements that `|H|` divides `|N| - 1` and that a Frobenius complement and a Frobenius
-kernel have coprime orders.  The same freeness argument, run at a conjugated configuration, bounds
-the centralizers the other way round: the centralizer of a nonidentity element of the kernel is
-contained in the kernel (`TauCeti.IsTISubgroup.centralizer_singleton_subset_frobeniusKernel`).
+(`TauCeti.IsTISubgroup.card_dvd_index_sub_one`), whence also `|H|` and `|G : H|` are coprime
+(`TauCeti.IsTISubgroup.coprime_card_index`).  When Frobenius's theorem supplies the kernel as a
+subgroup `N` of order `|G : H|`, these are the classical statements that `|H|` divides `|N| - 1`
+and that a Frobenius complement and a Frobenius kernel have coprime orders.  Freeness has a second
+reading, bounding the centralizers the other way round: the centralizer of a nonidentity element
+of the kernel is contained in the kernel
+(`TauCeti.IsTISubgroup.centralizer_singleton_subset_frobeniusKernel`).
 
 No subgroup hypothesis beyond `TauCeti.IsTISubgroup` is needed for the count once `G` is finite, and
 the two degenerate cases are honest instances rather than exclusions:
@@ -94,10 +93,10 @@ everything and `⊥` has index `|G|`.
   elements.**
 * `TauCeti.IsTISubgroup.isComplement'_of_coe_eq_frobeniusKernel`: for a finite `G`, a subgroup
   whose carrier is the kernel is a complement to `H`.
-* `TauCeti.IsTISubgroup.conj_ne_self_of_mem_frobeniusKernel` and
-  `TauCeti.IsTISubgroup.stabilizer_eq_bot`: a nonidentity element of `H` commutes with no
-  nonidentity element of the kernel, so the conjugation action of `H` on the nonidentity part of
-  the kernel is **free**.
+* `TauCeti.IsTISubgroup.conj_ne_self_of_mem_frobeniusKernel`,
+  `TauCeti.IsTISubgroup.stabilizer_eq_bot` and `TauCeti.IsTISubgroup.isCancelSMul`: a nonidentity
+  element of `H` commutes with no nonidentity element of the kernel, so the conjugation action of
+  `H` on the nonidentity part of the kernel is **free**.
 * `TauCeti.IsTISubgroup.mem_frobeniusKernel_of_conj_eq_self` and
   `TauCeti.IsTISubgroup.centralizer_singleton_subset_frobeniusKernel`: the centralizer of a
   nonidentity element of the kernel is contained in the kernel.
