@@ -31,6 +31,8 @@ on the first `m` labels and by the second on the last `n`.
   product.
 * `TauCeti.PermutationTriple.not_isConnected_disjointSum`: a disjoint sum of two triples of
   nonzero degree is disconnected.
+* `TauCeti.PermutationTriple.indexedDisjointSum`: the disjoint sum of an indexed family of triples
+  of varying degrees, after a numbering of the disjoint union of their labels.
 
 ## References
 
@@ -149,6 +151,39 @@ theorem not_isConnected_disjointSum (hm : m ≠ 0) (hn : n ≠ 0) :
     exact congrArg Fin.val (hg : (g : Perm (Fin (m + n))) (Fin.castAdd n i) = Fin.natAdd m j)
   simp only [Fin.val_castAdd, Fin.val_natAdd] at hval
   omega
+
+/-! ### Indexed disjoint sums -/
+
+section IndexedDisjointSum
+
+variable {N : ℕ} {I : Type*} {d : I → ℕ}
+
+/-- The disjoint sum of an indexed family of permutation triples, transported along a numbering
+of the sigma type of their labels.  Unlike binary `disjointSum`, this construction permits the
+summand degrees to vary with the index. -/
+def indexedDisjointSum (t : ∀ i, PermutationTriple (d i)) (e : (Σ i, Fin (d i)) ≃ Fin N) :
+    PermutationTriple N where
+  σ0 := e.permCongr (Equiv.Perm.sigmaCongrRight fun i ↦ (t i).σ0)
+  σ1 := e.permCongr (Equiv.Perm.sigmaCongrRight fun i ↦ (t i).σ1)
+  σinf := e.permCongr (Equiv.Perm.sigmaCongrRight fun i ↦ (t i).σinf)
+  product_eq_one := by
+    rw [← permCongr_mul, ← permCongr_mul, sigmaCongrRight_mul, sigmaCongrRight_mul]
+    have h : (fun i ↦ (t i).σinf) * (fun i ↦ (t i).σ1) * (fun i ↦ (t i).σ0) = 1 :=
+      funext fun i ↦ (t i).product_eq_one
+    rw [h, sigmaCongrRight_one, ← permCongrHom_coe, map_one]
+
+variable (t : ∀ i, PermutationTriple (d i)) (e : (Σ i, Fin (d i)) ≃ Fin N)
+
+@[simp] theorem indexedDisjointSum_σ0 : (indexedDisjointSum t e).σ0 =
+    e.permCongr (Equiv.Perm.sigmaCongrRight fun i ↦ (t i).σ0) := (rfl)
+
+@[simp] theorem indexedDisjointSum_σ1 : (indexedDisjointSum t e).σ1 =
+    e.permCongr (Equiv.Perm.sigmaCongrRight fun i ↦ (t i).σ1) := (rfl)
+
+@[simp] theorem indexedDisjointSum_σinf : (indexedDisjointSum t e).σinf =
+    e.permCongr (Equiv.Perm.sigmaCongrRight fun i ↦ (t i).σinf) := (rfl)
+
+end IndexedDisjointSum
 
 end PermutationTriple
 
