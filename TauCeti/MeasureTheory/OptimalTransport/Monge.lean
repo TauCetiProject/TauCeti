@@ -23,7 +23,7 @@ This file introduces the objective `TauCeti.transportMapCost`, the value
 `TauCeti.mongeCost`, the two optimality predicates for maps, and the relations between them.
 The relaxation `TauCeti.transportCost_le_mongeCost` is the passage from Monge to Kantorovich,
 and it comes from the graph plan of `TauCeti/MeasureTheory/OptimalTransport/GraphPlan.lean`:
-every transport map induces a coupling of the same cost. Its equality case,
+every transport map induces a coupling whose cost is at most the map cost. Its equality case,
 `TauCeti.isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan`, says that a map is
 optimal for the Kantorovich value exactly when its graph plan is an optimal plan; this is the
 form in which the existence of an optimal map is proved downstream, where a plan is first shown
@@ -208,8 +208,9 @@ theorem exists_hasLaw_of_mongeCost_ne_top (h : mongeCost c μ ν ≠ ⊤) :
   exact ⟨T, hT⟩
 
 /-- **The Monge-to-Kantorovich relaxation inequality**: the Kantorovich value of `μ` and `ν` is
-at most their Monge value, because the graph plan of a transport map is a coupling of the same
-cost. The inequality can be strict — see `TauCeti.transportCost_lt_mongeCost_dirac` — and its
+at most their Monge value, because the graph plan of a transport map is a coupling whose cost is
+at most the map cost. The inequality can be strict — see
+`TauCeti.transportCost_lt_mongeCost_dirac` — and its
 equality case at a fixed map is
 `TauCeti.isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan`. -/
 theorem transportCost_le_mongeCost (c : X × Y → ℝ≥0∞) (μ : Measure X) (ν : Measure Y) :
