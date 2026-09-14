@@ -40,6 +40,8 @@ away from a finite set of primes.
 * `TauCeti.GlobalNumberFields.congruenceSubgroup`, `TauCeti.GlobalNumberFields.primeToSubgroup`,
   `TauCeti.GlobalNumberFields.unitsCongruenceSubgroup`: the subgroups of `Kˣ` and `(𝓞 K)ˣ` these
   conditions define.
+* `TauCeti.GlobalNumberFields.unitsToPrimeToSubgroup`: the inclusion of `(𝓞 K)ˣ` into
+  `primeToSubgroup 𝔪`.
 * `TauCeti.GlobalNumberFields.idealsPrimeTo`,
   `TauCeti.GlobalNumberFields.integralIdealsPrimeTo`: ideals prime to the finite part, with the
   inclusion `TauCeti.GlobalNumberFields.integralIdealsPrimeToInclusion` along divisibility.
@@ -366,6 +368,28 @@ def unitsCongruenceSubgroup (𝔪 : Modulus K) : Subgroup (𝓞 K)ˣ :=
 @[simp] theorem mem_unitsCongruenceSubgroup {𝔪 : Modulus K} {u : (𝓞 K)ˣ} :
     u ∈ unitsCongruenceSubgroup 𝔪 ↔
       IsCongrOne 𝔪 (Units.map (algebraMap (𝓞 K) K).toMonoidHom u) := Iff.rfl
+
+/-- The image of an integer unit is a unit at every finite place, hence lies in
+`primeToSubgroup 𝔪`. -/
+theorem unitsMap_mem_primeToSubgroup (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
+    Units.map (algebraMap (𝓞 K) K).toMonoidHom u ∈ primeToSubgroup 𝔪 := by
+  refine mem_primeToSubgroup.mpr fun v _ ↦ ?_
+  rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, valuation_of_algebraMap]
+  refine intValuation_eq_one_iff.mpr fun hu ↦ v.isPrime.ne_top ?_
+  exact Ideal.eq_top_of_isUnit_mem _ hu u.isUnit
+
+/-- The inclusion of the integer units into the elements that are units at the finite part.  Its
+composition with the residue-and-sign presentation is the unit obstruction in the ray class exact
+sequence. -/
+noncomputable def unitsToPrimeToSubgroup (𝔪 : Modulus K) :
+    (𝓞 K)ˣ →* primeToSubgroup 𝔪 :=
+  MonoidHom.codRestrict (Units.map (algebraMap (𝓞 K) K).toMonoidHom) _
+    (unitsMap_mem_primeToSubgroup 𝔪)
+
+@[simp] theorem coe_unitsToPrimeToSubgroup (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
+    ((unitsToPrimeToSubgroup 𝔪 u : primeToSubgroup 𝔪) : Kˣ) =
+      Units.map (algebraMap (𝓞 K) K).toMonoidHom u := by
+  rw [unitsToPrimeToSubgroup, MonoidHom.codRestrict_apply]
 
 /-- **The trivial modulus imposes no condition.**  Its finite part is the unit ideal, which no
 prime divides, and its infinite part is empty. -/
