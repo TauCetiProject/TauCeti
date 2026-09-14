@@ -309,7 +309,6 @@ theorem comap_apply (f : S →+ T) (x : AffineSemigroupComplexPoint T)
   (rfl)
 
 /-- The pulled-back point takes the value of the original point on the image monomial. -/
-@[simp]
 theorem comap_apply_single (f : S →+ T) (x : AffineSemigroupComplexPoint T) (s : S) :
     comap f x (MonoidAlgebra.single (ofAdd s) 1) = x (MonoidAlgebra.single (ofAdd (f s)) 1) := by
   simp [comap_apply]
